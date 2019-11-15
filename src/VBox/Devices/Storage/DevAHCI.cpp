@@ -495,7 +495,7 @@ typedef struct AHCI
     uint32_t                        uCccCurrentNr;
 
     /** Register structure per port */
-    AHCIPORT                        ahciPort[AHCI_MAX_NR_PORTS_IMPL];
+    AHCIPORT                        aPorts[AHCI_MAX_NR_PORTS_IMPL];
 
     /** The critical section. */
     PDMCRITSECT                     lock;
@@ -543,7 +543,7 @@ typedef struct AHCI
     /** PCI region \#5: MMIO registers. */
     IOMMMIOHANDLE                   hMmio;
 } AHCI;
-AssertCompileMemberAlignment(AHCI, ahciPort, 8);
+AssertCompileMemberAlignment(AHCI, aPorts, 8);
 /** Pointer to the state of an AHCI device. */
 typedef AHCI *PAHCI;
 
@@ -1663,7 +1663,7 @@ static VBOXSTRICTRC HbaInterruptStatus_w(PPDMDEVINS pDevIns, PAHCI pThis, uint32
         {
             if (u32Value & 0x01)
             {
-                PAHCIPORT pAhciPort = &pThis->ahciPort[i];
+                PAHCIPORT pAhciPort = &pThis->aPorts[i];
 
                 if (pAhciPort->regIE & pAhciPort->regIS)
                 {
@@ -1718,7 +1718,7 @@ static VBOXSTRICTRC HbaInterruptStatus_r(PPDMDEVINS pDevIns, PAHCI pThis, uint32
 
 #ifdef LOG_ENABLED
     Log(("%s:", __FUNCTION__));
-    uint32_t const cPortsImpl = RT_MIN(pThis->cPortsImpl, RT_ELEMENTS(pThis->ahciPort));
+    uint32_t const cPortsImpl = RT_MIN(pThis->cPortsImpl, RT_ELEMENTS(pThis->aPorts));
     for (unsigned i = 0; i < cPortsImpl; i++)
     {
         if ((pThis->regHbaIs >> i) & 0x01)
@@ -1867,7 +1867,7 @@ static VBOXSTRICTRC HbaCccPorts_r(PPDMDEVINS pDevIns, PAHCI pThis, uint32_t iReg
 
 #ifdef LOG_ENABLED
     Log(("%s:", __FUNCTION__));
-    uint32_t const cPortsImpl = RT_MIN(pThis->cPortsImpl, RT_ELEMENTS(pThis->ahciPort));
+    uint32_t const cPortsImpl = RT_MIN(pThis->cPortsImpl, RT_ELEMENTS(pThis->aPorts));
     for (unsigned i = 0; i < cPortsImpl; i++)
     {
         if ((pThis->regHbaCccPorts >> i) & 0x01)
@@ -2075,7 +2075,7 @@ static void ahciR3HBAReset(PPDMDEVINS pDevIns, PAHCI pThis, PAHCIR3 pThisCC)
     uint32_t const cPortsImpl = RT_MIN(pThis->cPortsImpl, RT_ELEMENTS(pThisCC->aPorts));
     for (i = 0; i < cPortsImpl; i++)
     {
-        PAHCIPORT   pAhciPort   = &pThis->ahciPort[i];
+        PAHCIPORT   pAhciPort   = &pThis->aPorts[i];
         PAHCIPORTR3 pAhciPortR3 = &pThisCC->aPorts[i];
 
         pAhciPort->iLUN   = i;
@@ -2164,11 +2164,11 @@ static VBOXSTRICTRC ahciRegisterRead(PPDMDEVINS pDevIns, PAHCI pThis, uint32_t u
 
         Log3(("%s: Trying to read from port %u and register %u\n", __FUNCTION__, iPort, iReg));
 
-        if (RT_LIKELY(   iPort < RT_MIN(pThis->cPortsImpl, RT_ELEMENTS(pThis->ahciPort))
+        if (RT_LIKELY(   iPort < RT_MIN(pThis->cPortsImpl, RT_ELEMENTS(pThis->aPorts))
                       && iReg < RT_ELEMENTS(g_aPortOpRegs)))
         {
             const AHCIPORTOPREG *pPortReg = &g_aPortOpRegs[iReg];
-            rc = pPortReg->pfnRead(pDevIns, pThis, &pThis->ahciPort[iPort], iReg, (uint32_t *)pv);
+            rc = pPortReg->pfnRead(pDevIns, pThis, &pThis->aPorts[iPort], iReg, (uint32_t *)pv);
         }
         else
         {
@@ -2250,11 +2250,11 @@ static VBOXSTRICTRC ahciRegisterWrite(PPDMDEVINS pDevIns, PAHCI pThis, uint32_t 
         iPort   =  offReg / AHCI_PORT_REGISTER_SIZE;
         iReg    = (offReg % AHCI_PORT_REGISTER_SIZE) >> 2;
         Log3(("%s: Trying to write to port %u and register %u\n", __FUNCTION__, iPort, iReg));
-        if (RT_LIKELY(   iPort < RT_MIN(pThis->cPortsImpl, RT_ELEMENTS(pThis->ahciPort))
+        if (RT_LIKELY(   iPort < RT_MIN(pThis->cPortsImpl, RT_ELEMENTS(pThis->aPorts))
                       && iReg < RT_ELEMENTS(g_aPortOpRegs)))
         {
             const AHCIPORTOPREG *pPortReg = &g_aPortOpRegs[iReg];
-            rc = pPortReg->pfnWrite(pDevIns, pThis, &pThis->ahciPort[iPort], iReg, u32Value);
+            rc = pPortReg->pfnWrite(pDevIns, pThis, &pThis->aPorts[iPort], iReg, u32Value);
         }
         else
         {
@@ -2451,7 +2451,7 @@ static DECLCALLBACK(int) ahciR3Status_QueryStatusLed(PPDMILEDPORTS pInterface, u
     if (iLUN < AHCI_MAX_NR_PORTS_IMPL)
     {
         PAHCI pThis = PDMDEVINS_2_DATA(pThisCC->pDevIns, PAHCI);
-        *ppLed = &pThis->ahciPort[iLUN].Led;
+        *ppLed = &pThis->aPorts[iLUN].Led;
         Assert((*ppLed)->u32Magic == PDMLED_MAGIC);
         return VINF_SUCCESS;
     }
@@ -2509,7 +2509,7 @@ static DECLCALLBACK(int) ahciR3PortQueryScsiInqStrings(PPDMIMEDIAPORT pInterface
 {
     PAHCIPORTR3 pAhciPortR3 = RT_FROM_MEMBER(pInterface, AHCIPORTR3, IPort);
     PAHCI       pThis       = PDMDEVINS_2_DATA(pAhciPortR3->pDevIns, PAHCI);
-    PAHCIPORT   pAhciPort   = &RT_SAFE_SUBSCRIPT(pThis->ahciPort, pAhciPortR3->iLUN);
+    PAHCIPORT   pAhciPort   = &RT_SAFE_SUBSCRIPT(pThis->aPorts, pAhciPortR3->iLUN);
 
     if (ppszVendorId)
         *ppszVendorId = &pAhciPort->szInquiryVendorId[0];
@@ -3883,7 +3883,7 @@ static DECLCALLBACK(int) ahciR3IoReqQueryDiscardRanges(PPDMIMEDIAEXPORT pInterfa
     PAHCIPORTR3 pAhciPortR3 = RT_FROM_MEMBER(pInterface, AHCIPORTR3, IMediaExPort);
     PPDMDEVINS  pDevIns     = pAhciPortR3->pDevIns;
     PAHCI       pThis       = PDMDEVINS_2_DATA(pDevIns, PAHCI);
-    PAHCIPORT   pAhciPort   = &RT_SAFE_SUBSCRIPT(pThis->ahciPort, pAhciPortR3->iLUN);
+    PAHCIPORT   pAhciPort   = &RT_SAFE_SUBSCRIPT(pThis->aPorts, pAhciPortR3->iLUN);
     PAHCIREQ    pIoReq      = (PAHCIREQ)pvIoReqAlloc;
     RT_NOREF(hIoReq);
 
@@ -3900,7 +3900,7 @@ static DECLCALLBACK(int) ahciR3IoReqCompleteNotify(PPDMIMEDIAEXPORT pInterface, 
     PPDMDEVINS  pDevIns     = pAhciPortR3->pDevIns;
     PAHCIR3     pThisCC     = PDMDEVINS_2_DATA_CC(pDevIns, PAHCICC);
     PAHCI       pThis       = PDMDEVINS_2_DATA(pDevIns, PAHCI);
-    PAHCIPORT   pAhciPort   = &RT_SAFE_SUBSCRIPT(pThis->ahciPort, pAhciPortR3->iLUN);
+    PAHCIPORT   pAhciPort   = &RT_SAFE_SUBSCRIPT(pThis->aPorts, pAhciPortR3->iLUN);
     PAHCIREQ    pIoReq      = (PAHCIREQ)pvIoReqAlloc;
     RT_NOREF(hIoReq);
 
@@ -3918,7 +3918,7 @@ static DECLCALLBACK(void) ahciR3IoReqStateChanged(PPDMIMEDIAEXPORT pInterface, P
     PPDMDEVINS  pDevIns     = pAhciPortR3->pDevIns;
     PAHCIR3     pThisCC     = PDMDEVINS_2_DATA_CC(pDevIns, PAHCICC);
     PAHCI       pThis       = PDMDEVINS_2_DATA(pDevIns, PAHCI);
-    PAHCIPORT   pAhciPort   = &RT_SAFE_SUBSCRIPT(pThis->ahciPort, pAhciPortR3->iLUN);
+    PAHCIPORT   pAhciPort   = &RT_SAFE_SUBSCRIPT(pThis->aPorts, pAhciPortR3->iLUN);
     RT_NOREF(hIoReq, pvIoReqAlloc);
 
     switch (enmState)
@@ -3949,7 +3949,7 @@ static DECLCALLBACK(void) ahciR3MediumEjected(PPDMIMEDIAEXPORT pInterface)
     PPDMDEVINS  pDevIns     = pAhciPortR3->pDevIns;
     PAHCIR3     pThisCC     = PDMDEVINS_2_DATA_CC(pDevIns, PAHCICC);
     PAHCI       pThis       = PDMDEVINS_2_DATA(pDevIns, PAHCI);
-    PAHCIPORT   pAhciPort   = &RT_SAFE_SUBSCRIPT(pThis->ahciPort, pAhciPortR3->iLUN);
+    PAHCIPORT   pAhciPort   = &RT_SAFE_SUBSCRIPT(pThis->aPorts, pAhciPortR3->iLUN);
 
     if (pThisCC->pMediaNotify)
     {
@@ -4497,7 +4497,7 @@ static DECLCALLBACK(int) ahciAsyncIOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
     PAHCIPORTR3 pAhciPortR3 = (PAHCIPORTR3)pThread->pvUser;
     PAHCI       pThis       = PDMDEVINS_2_DATA(pDevIns, PAHCI);
     PAHCIR3     pThisCC     = PDMDEVINS_2_DATA_CC(pDevIns, PAHCICC);
-    PAHCIPORT   pAhciPort   = &RT_SAFE_SUBSCRIPT(pThis->ahciPort, pAhciPortR3->iLUN);
+    PAHCIPORT   pAhciPort   = &RT_SAFE_SUBSCRIPT(pThis->aPorts, pAhciPortR3->iLUN);
     int         rc          = VINF_SUCCESS;
 
     ahciLog(("%s: Port %d entering async IO loop.\n", __FUNCTION__, pAhciPort->iLUN));
@@ -4637,7 +4637,7 @@ static DECLCALLBACK(int) ahciAsyncIOLoopWakeUp(PPDMDEVINS pDevIns, PPDMTHREAD pT
 {
     PAHCIPORTR3 pAhciPortR3 = (PAHCIPORTR3)pThread->pvUser;
     PAHCI       pThis       = PDMDEVINS_2_DATA(pDevIns, PAHCI);
-    PAHCIPORT   pAhciPort   = &RT_SAFE_SUBSCRIPT(pThis->ahciPort, pAhciPortR3->iLUN);
+    PAHCIPORT   pAhciPort   = &RT_SAFE_SUBSCRIPT(pThis->aPorts, pAhciPortR3->iLUN);
     return PDMDevHlpSUPSemEventSignal(pDevIns, pAhciPort->hEvtProcess);
 }
 
@@ -4682,10 +4682,10 @@ static DECLCALLBACK(void) ahciR3Info(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, con
     /*
      * Per port data.
      */
-    uint32_t const cPortsImpl = RT_MIN(pThis->cPortsImpl, RT_ELEMENTS(pThis->ahciPort));
+    uint32_t const cPortsImpl = RT_MIN(pThis->cPortsImpl, RT_ELEMENTS(pThis->aPorts));
     for (unsigned i = 0; i < cPortsImpl; i++)
     {
-        PAHCIPORT pThisPort = &pThis->ahciPort[i];
+        PAHCIPORT pThisPort = &pThis->aPorts[i];
 
         pHlp->pfnPrintf(pHlp, "Port %d: device-attached=%RTbool\n", pThisPort->iLUN, pThisPort->fPresent);
         pHlp->pfnPrintf(pHlp, "PortClb=%#x\n", pThisPort->regCLB);
@@ -4734,9 +4734,9 @@ static bool ahciR3AllAsyncIOIsFinished(PPDMDEVINS pDevIns)
     if (pThis->cThreadsActive)
         return false;
 
-    for (uint32_t i = 0; i < RT_ELEMENTS(pThis->ahciPort); i++)
+    for (uint32_t i = 0; i < RT_ELEMENTS(pThis->aPorts); i++)
     {
-        PAHCIPORT pThisPort = &pThis->ahciPort[i];
+        PAHCIPORT pThisPort = &pThis->aPorts[i];
         if (pThisPort->fPresent)
         {
             if (   (pThisPort->cTasksActive != 0)
@@ -4782,11 +4782,11 @@ static DECLCALLBACK(int) ahciR3LiveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uin
     pHlp->pfnSSMPutU32(pSSM, pThis->cPortsImpl);
     for (uint32_t i = 0; i < AHCI_MAX_NR_PORTS_IMPL; i++)
     {
-        pHlp->pfnSSMPutBool(pSSM, pThis->ahciPort[i].fPresent);
-        pHlp->pfnSSMPutBool(pSSM, pThis->ahciPort[i].fHotpluggable);
-        pHlp->pfnSSMPutStrZ(pSSM, pThis->ahciPort[i].szSerialNumber);
-        pHlp->pfnSSMPutStrZ(pSSM, pThis->ahciPort[i].szFirmwareRevision);
-        pHlp->pfnSSMPutStrZ(pSSM, pThis->ahciPort[i].szModelNumber);
+        pHlp->pfnSSMPutBool(pSSM, pThis->aPorts[i].fPresent);
+        pHlp->pfnSSMPutBool(pSSM, pThis->aPorts[i].fHotpluggable);
+        pHlp->pfnSSMPutStrZ(pSSM, pThis->aPorts[i].szSerialNumber);
+        pHlp->pfnSSMPutStrZ(pSSM, pThis->aPorts[i].szFirmwareRevision);
+        pHlp->pfnSSMPutStrZ(pSSM, pThis->aPorts[i].szModelNumber);
     }
 
     static const char *s_apszIdeEmuPortNames[4] = { "PrimaryMaster", "PrimarySlave", "SecondaryMaster", "SecondarySlave" };
@@ -4839,39 +4839,39 @@ static DECLCALLBACK(int) ahciR3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
     /* Now every port. */
     for (i = 0; i < AHCI_MAX_NR_PORTS_IMPL; i++)
     {
-        Assert(pThis->ahciPort[i].cTasksActive == 0);
-        pHlp->pfnSSMPutU32(pSSM, pThis->ahciPort[i].regCLB);
-        pHlp->pfnSSMPutU32(pSSM, pThis->ahciPort[i].regCLBU);
-        pHlp->pfnSSMPutU32(pSSM, pThis->ahciPort[i].regFB);
-        pHlp->pfnSSMPutU32(pSSM, pThis->ahciPort[i].regFBU);
-        pHlp->pfnSSMPutGCPhys(pSSM, pThis->ahciPort[i].GCPhysAddrClb);
-        pHlp->pfnSSMPutGCPhys(pSSM, pThis->ahciPort[i].GCPhysAddrFb);
-        pHlp->pfnSSMPutU32(pSSM, pThis->ahciPort[i].regIS);
-        pHlp->pfnSSMPutU32(pSSM, pThis->ahciPort[i].regIE);
-        pHlp->pfnSSMPutU32(pSSM, pThis->ahciPort[i].regCMD);
-        pHlp->pfnSSMPutU32(pSSM, pThis->ahciPort[i].regTFD);
-        pHlp->pfnSSMPutU32(pSSM, pThis->ahciPort[i].regSIG);
-        pHlp->pfnSSMPutU32(pSSM, pThis->ahciPort[i].regSSTS);
-        pHlp->pfnSSMPutU32(pSSM, pThis->ahciPort[i].regSCTL);
-        pHlp->pfnSSMPutU32(pSSM, pThis->ahciPort[i].regSERR);
-        pHlp->pfnSSMPutU32(pSSM, pThis->ahciPort[i].regSACT);
-        pHlp->pfnSSMPutU32(pSSM, pThis->ahciPort[i].regCI);
-        pHlp->pfnSSMPutU32(pSSM, pThis->ahciPort[i].PCHSGeometry.cCylinders);
-        pHlp->pfnSSMPutU32(pSSM, pThis->ahciPort[i].PCHSGeometry.cHeads);
-        pHlp->pfnSSMPutU32(pSSM, pThis->ahciPort[i].PCHSGeometry.cSectors);
-        pHlp->pfnSSMPutU64(pSSM, pThis->ahciPort[i].cTotalSectors);
-        pHlp->pfnSSMPutU32(pSSM, pThis->ahciPort[i].cMultSectors);
-        pHlp->pfnSSMPutU8(pSSM, pThis->ahciPort[i].uATATransferMode);
-        pHlp->pfnSSMPutBool(pSSM, pThis->ahciPort[i].fResetDevice);
-        pHlp->pfnSSMPutBool(pSSM, pThis->ahciPort[i].fPoweredOn);
-        pHlp->pfnSSMPutBool(pSSM, pThis->ahciPort[i].fSpunUp);
-        pHlp->pfnSSMPutU32(pSSM, pThis->ahciPort[i].u32TasksFinished);
-        pHlp->pfnSSMPutU32(pSSM, pThis->ahciPort[i].u32QueuedTasksFinished);
-        pHlp->pfnSSMPutU32(pSSM, pThis->ahciPort[i].u32CurrentCommandSlot);
+        Assert(pThis->aPorts[i].cTasksActive == 0);
+        pHlp->pfnSSMPutU32(pSSM, pThis->aPorts[i].regCLB);
+        pHlp->pfnSSMPutU32(pSSM, pThis->aPorts[i].regCLBU);
+        pHlp->pfnSSMPutU32(pSSM, pThis->aPorts[i].regFB);
+        pHlp->pfnSSMPutU32(pSSM, pThis->aPorts[i].regFBU);
+        pHlp->pfnSSMPutGCPhys(pSSM, pThis->aPorts[i].GCPhysAddrClb);
+        pHlp->pfnSSMPutGCPhys(pSSM, pThis->aPorts[i].GCPhysAddrFb);
+        pHlp->pfnSSMPutU32(pSSM, pThis->aPorts[i].regIS);
+        pHlp->pfnSSMPutU32(pSSM, pThis->aPorts[i].regIE);
+        pHlp->pfnSSMPutU32(pSSM, pThis->aPorts[i].regCMD);
+        pHlp->pfnSSMPutU32(pSSM, pThis->aPorts[i].regTFD);
+        pHlp->pfnSSMPutU32(pSSM, pThis->aPorts[i].regSIG);
+        pHlp->pfnSSMPutU32(pSSM, pThis->aPorts[i].regSSTS);
+        pHlp->pfnSSMPutU32(pSSM, pThis->aPorts[i].regSCTL);
+        pHlp->pfnSSMPutU32(pSSM, pThis->aPorts[i].regSERR);
+        pHlp->pfnSSMPutU32(pSSM, pThis->aPorts[i].regSACT);
+        pHlp->pfnSSMPutU32(pSSM, pThis->aPorts[i].regCI);
+        pHlp->pfnSSMPutU32(pSSM, pThis->aPorts[i].PCHSGeometry.cCylinders);
+        pHlp->pfnSSMPutU32(pSSM, pThis->aPorts[i].PCHSGeometry.cHeads);
+        pHlp->pfnSSMPutU32(pSSM, pThis->aPorts[i].PCHSGeometry.cSectors);
+        pHlp->pfnSSMPutU64(pSSM, pThis->aPorts[i].cTotalSectors);
+        pHlp->pfnSSMPutU32(pSSM, pThis->aPorts[i].cMultSectors);
+        pHlp->pfnSSMPutU8(pSSM, pThis->aPorts[i].uATATransferMode);
+        pHlp->pfnSSMPutBool(pSSM, pThis->aPorts[i].fResetDevice);
+        pHlp->pfnSSMPutBool(pSSM, pThis->aPorts[i].fPoweredOn);
+        pHlp->pfnSSMPutBool(pSSM, pThis->aPorts[i].fSpunUp);
+        pHlp->pfnSSMPutU32(pSSM, pThis->aPorts[i].u32TasksFinished);
+        pHlp->pfnSSMPutU32(pSSM, pThis->aPorts[i].u32QueuedTasksFinished);
+        pHlp->pfnSSMPutU32(pSSM, pThis->aPorts[i].u32CurrentCommandSlot);
 
         /* ATAPI saved state. */
-        pHlp->pfnSSMPutBool(pSSM, pThis->ahciPort[i].fATAPI);
-        pHlp->pfnSSMPutMem(pSSM, &pThis->ahciPort[i].abATAPISense[0], sizeof(pThis->ahciPort[i].abATAPISense));
+        pHlp->pfnSSMPutBool(pSSM, pThis->aPorts[i].fATAPI);
+        pHlp->pfnSSMPutMem(pSSM, &pThis->aPorts[i].abATAPISense[0], sizeof(pThis->aPorts[i].abATAPISense));
     }
 
     return pHlp->pfnSSMPutU32(pSSM, UINT32_MAX); /* sanity/terminator */
@@ -4986,7 +4986,7 @@ static DECLCALLBACK(int) ahciR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uin
             bool fInUse;
             rc = pHlp->pfnSSMGetBool(pSSM, &fInUse);
             AssertRCReturn(rc, rc);
-            if (fInUse != pThis->ahciPort[i].fPresent)
+            if (fInUse != pThis->aPorts[i].fPresent)
                 return pHlp->pfnSSMSetCfgError(pSSM, RT_SRC_POS,
                                                N_("The %s VM is missing a device on port %u. Please make sure the source and target VMs have compatible storage configurations"),
                                                fInUse ? "target" : "source", i);
@@ -4996,34 +4996,34 @@ static DECLCALLBACK(int) ahciR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uin
                 bool fHotpluggable;
                 rc = pHlp->pfnSSMGetBool(pSSM, &fHotpluggable);
                 AssertRCReturn(rc, rc);
-                if (fHotpluggable != pThis->ahciPort[i].fHotpluggable)
+                if (fHotpluggable != pThis->aPorts[i].fHotpluggable)
                     return pHlp->pfnSSMSetCfgError(pSSM, RT_SRC_POS,
                                                    N_("AHCI: Port %u config mismatch: Hotplug flag - saved=%RTbool config=%RTbool\n"),
-                                                   i, fHotpluggable, pThis->ahciPort[i].fHotpluggable);
+                                                   i, fHotpluggable, pThis->aPorts[i].fHotpluggable);
             }
             else
-                Assert(pThis->ahciPort[i].fHotpluggable);
+                Assert(pThis->aPorts[i].fHotpluggable);
 
             char szSerialNumber[AHCI_SERIAL_NUMBER_LENGTH+1];
             rc = pHlp->pfnSSMGetStrZ(pSSM, szSerialNumber,     sizeof(szSerialNumber));
             AssertRCReturn(rc, rc);
-            if (strcmp(szSerialNumber, pThis->ahciPort[i].szSerialNumber))
+            if (strcmp(szSerialNumber, pThis->aPorts[i].szSerialNumber))
                 LogRel(("AHCI: Port %u config mismatch: Serial number - saved='%s' config='%s'\n",
-                        i, szSerialNumber, pThis->ahciPort[i].szSerialNumber));
+                        i, szSerialNumber, pThis->aPorts[i].szSerialNumber));
 
             char szFirmwareRevision[AHCI_FIRMWARE_REVISION_LENGTH+1];
             rc = pHlp->pfnSSMGetStrZ(pSSM, szFirmwareRevision, sizeof(szFirmwareRevision));
             AssertRCReturn(rc, rc);
-            if (strcmp(szFirmwareRevision, pThis->ahciPort[i].szFirmwareRevision))
+            if (strcmp(szFirmwareRevision, pThis->aPorts[i].szFirmwareRevision))
                 LogRel(("AHCI: Port %u config mismatch: Firmware revision - saved='%s' config='%s'\n",
-                        i, szFirmwareRevision, pThis->ahciPort[i].szFirmwareRevision));
+                        i, szFirmwareRevision, pThis->aPorts[i].szFirmwareRevision));
 
             char szModelNumber[AHCI_MODEL_NUMBER_LENGTH+1];
             rc = pHlp->pfnSSMGetStrZ(pSSM, szModelNumber,      sizeof(szModelNumber));
             AssertRCReturn(rc, rc);
-            if (strcmp(szModelNumber, pThis->ahciPort[i].szModelNumber))
+            if (strcmp(szModelNumber, pThis->aPorts[i].szModelNumber))
                 LogRel(("AHCI: Port %u config mismatch: Model number - saved='%s' config='%s'\n",
-                        i, szModelNumber, pThis->ahciPort[i].szModelNumber));
+                        i, szModelNumber, pThis->aPorts[i].szModelNumber));
         }
 
         static const char *s_apszIdeEmuPortNames[4] = { "PrimaryMaster", "PrimarySlave", "SecondaryMaster", "SecondarySlave" };
@@ -5072,31 +5072,31 @@ static DECLCALLBACK(int) ahciR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uin
         /* Now every port. */
         for (uint32_t i = 0; i < AHCI_MAX_NR_PORTS_IMPL; i++)
         {
-            PAHCIPORT pAhciPort = &pThis->ahciPort[i];
+            PAHCIPORT pAhciPort = &pThis->aPorts[i];
 
-            pHlp->pfnSSMGetU32(pSSM, &pThis->ahciPort[i].regCLB);
-            pHlp->pfnSSMGetU32(pSSM, &pThis->ahciPort[i].regCLBU);
-            pHlp->pfnSSMGetU32(pSSM, &pThis->ahciPort[i].regFB);
-            pHlp->pfnSSMGetU32(pSSM, &pThis->ahciPort[i].regFBU);
-            pHlp->pfnSSMGetGCPhysV(pSSM, &pThis->ahciPort[i].GCPhysAddrClb);
-            pHlp->pfnSSMGetGCPhysV(pSSM, &pThis->ahciPort[i].GCPhysAddrFb);
-            pHlp->pfnSSMGetU32V(pSSM, &pThis->ahciPort[i].regIS);
-            pHlp->pfnSSMGetU32(pSSM, &pThis->ahciPort[i].regIE);
-            pHlp->pfnSSMGetU32(pSSM, &pThis->ahciPort[i].regCMD);
-            pHlp->pfnSSMGetU32(pSSM, &pThis->ahciPort[i].regTFD);
-            pHlp->pfnSSMGetU32(pSSM, &pThis->ahciPort[i].regSIG);
-            pHlp->pfnSSMGetU32(pSSM, &pThis->ahciPort[i].regSSTS);
-            pHlp->pfnSSMGetU32(pSSM, &pThis->ahciPort[i].regSCTL);
-            pHlp->pfnSSMGetU32(pSSM, &pThis->ahciPort[i].regSERR);
-            pHlp->pfnSSMGetU32V(pSSM, &pThis->ahciPort[i].regSACT);
-            pHlp->pfnSSMGetU32V(pSSM, &pThis->ahciPort[i].regCI);
-            pHlp->pfnSSMGetU32(pSSM, &pThis->ahciPort[i].PCHSGeometry.cCylinders);
-            pHlp->pfnSSMGetU32(pSSM, &pThis->ahciPort[i].PCHSGeometry.cHeads);
-            pHlp->pfnSSMGetU32(pSSM, &pThis->ahciPort[i].PCHSGeometry.cSectors);
-            pHlp->pfnSSMGetU64(pSSM, &pThis->ahciPort[i].cTotalSectors);
-            pHlp->pfnSSMGetU32(pSSM, &pThis->ahciPort[i].cMultSectors);
-            pHlp->pfnSSMGetU8(pSSM, &pThis->ahciPort[i].uATATransferMode);
-            pHlp->pfnSSMGetBool(pSSM, &pThis->ahciPort[i].fResetDevice);
+            pHlp->pfnSSMGetU32(pSSM, &pThis->aPorts[i].regCLB);
+            pHlp->pfnSSMGetU32(pSSM, &pThis->aPorts[i].regCLBU);
+            pHlp->pfnSSMGetU32(pSSM, &pThis->aPorts[i].regFB);
+            pHlp->pfnSSMGetU32(pSSM, &pThis->aPorts[i].regFBU);
+            pHlp->pfnSSMGetGCPhysV(pSSM, &pThis->aPorts[i].GCPhysAddrClb);
+            pHlp->pfnSSMGetGCPhysV(pSSM, &pThis->aPorts[i].GCPhysAddrFb);
+            pHlp->pfnSSMGetU32V(pSSM, &pThis->aPorts[i].regIS);
+            pHlp->pfnSSMGetU32(pSSM, &pThis->aPorts[i].regIE);
+            pHlp->pfnSSMGetU32(pSSM, &pThis->aPorts[i].regCMD);
+            pHlp->pfnSSMGetU32(pSSM, &pThis->aPorts[i].regTFD);
+            pHlp->pfnSSMGetU32(pSSM, &pThis->aPorts[i].regSIG);
+            pHlp->pfnSSMGetU32(pSSM, &pThis->aPorts[i].regSSTS);
+            pHlp->pfnSSMGetU32(pSSM, &pThis->aPorts[i].regSCTL);
+            pHlp->pfnSSMGetU32(pSSM, &pThis->aPorts[i].regSERR);
+            pHlp->pfnSSMGetU32V(pSSM, &pThis->aPorts[i].regSACT);
+            pHlp->pfnSSMGetU32V(pSSM, &pThis->aPorts[i].regCI);
+            pHlp->pfnSSMGetU32(pSSM, &pThis->aPorts[i].PCHSGeometry.cCylinders);
+            pHlp->pfnSSMGetU32(pSSM, &pThis->aPorts[i].PCHSGeometry.cHeads);
+            pHlp->pfnSSMGetU32(pSSM, &pThis->aPorts[i].PCHSGeometry.cSectors);
+            pHlp->pfnSSMGetU64(pSSM, &pThis->aPorts[i].cTotalSectors);
+            pHlp->pfnSSMGetU32(pSSM, &pThis->aPorts[i].cMultSectors);
+            pHlp->pfnSSMGetU8(pSSM, &pThis->aPorts[i].uATATransferMode);
+            pHlp->pfnSSMGetBool(pSSM, &pThis->aPorts[i].fResetDevice);
 
             if (uVersion <= AHCI_SAVED_STATE_VERSION_VBOX_30)
                 pHlp->pfnSSMSkip(pSSM, AHCI_NR_COMMAND_SLOTS * sizeof(uint8_t)); /* no active data here */
@@ -5106,25 +5106,25 @@ static DECLCALLBACK(int) ahciR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uin
                 /* The old positions in the FIFO, not required. */
                 pHlp->pfnSSMSkip(pSSM, 2*sizeof(uint8_t));
             }
-            pHlp->pfnSSMGetBool(pSSM, &pThis->ahciPort[i].fPoweredOn);
-            pHlp->pfnSSMGetBool(pSSM, &pThis->ahciPort[i].fSpunUp);
-            pHlp->pfnSSMGetU32V(pSSM, &pThis->ahciPort[i].u32TasksFinished);
-            pHlp->pfnSSMGetU32V(pSSM, &pThis->ahciPort[i].u32QueuedTasksFinished);
+            pHlp->pfnSSMGetBool(pSSM, &pThis->aPorts[i].fPoweredOn);
+            pHlp->pfnSSMGetBool(pSSM, &pThis->aPorts[i].fSpunUp);
+            pHlp->pfnSSMGetU32V(pSSM, &pThis->aPorts[i].u32TasksFinished);
+            pHlp->pfnSSMGetU32V(pSSM, &pThis->aPorts[i].u32QueuedTasksFinished);
 
             if (uVersion >= AHCI_SAVED_STATE_VERSION_IDE_EMULATION)
-                pHlp->pfnSSMGetU32V(pSSM, &pThis->ahciPort[i].u32CurrentCommandSlot);
+                pHlp->pfnSSMGetU32V(pSSM, &pThis->aPorts[i].u32CurrentCommandSlot);
 
             if (uVersion > AHCI_SAVED_STATE_VERSION_PRE_ATAPI)
             {
-                pHlp->pfnSSMGetBool(pSSM, &pThis->ahciPort[i].fATAPI);
-                pHlp->pfnSSMGetMem(pSSM, pThis->ahciPort[i].abATAPISense, sizeof(pThis->ahciPort[i].abATAPISense));
+                pHlp->pfnSSMGetBool(pSSM, &pThis->aPorts[i].fATAPI);
+                pHlp->pfnSSMGetMem(pSSM, pThis->aPorts[i].abATAPISense, sizeof(pThis->aPorts[i].abATAPISense));
                 if (uVersion <= AHCI_SAVED_STATE_VERSION_PRE_ATAPI_REMOVE)
                 {
                     pHlp->pfnSSMSkip(pSSM, 1); /* cNotifiedMediaChange. */
                     pHlp->pfnSSMSkip(pSSM, 4); /* MediaEventStatus */
                 }
             }
-            else if (pThis->ahciPort[i].fATAPI)
+            else if (pThis->aPorts[i].fATAPI)
                 return pHlp->pfnSSMSetCfgError(pSSM, RT_SRC_POS, N_("Config mismatch: atapi - saved=false config=true"));
 
             /* Check if we have tasks pending. */
@@ -5324,9 +5324,9 @@ static DECLCALLBACK(void) ahciR3Resume(PPDMDEVINS pDevIns)
      * Check if one of the ports has pending tasks.
      * Queue a notification item again in this case.
      */
-    for (unsigned i = 0; i < RT_ELEMENTS(pThis->ahciPort); i++)
+    for (unsigned i = 0; i < RT_ELEMENTS(pThis->aPorts); i++)
     {
-        PAHCIPORT pAhciPort = &pThis->ahciPort[i];
+        PAHCIPORT pAhciPort = &pThis->aPorts[i];
 
         if (pAhciPort->u32TasksRedo)
         {
@@ -5473,7 +5473,7 @@ static DECLCALLBACK(void) ahciR3Detach(PPDMDEVINS pDevIns, unsigned iLUN, uint32
     Log(("%s:\n", __FUNCTION__));
 
     AssertMsgReturnVoid(iLUN < RT_MIN(pThis->cPortsImpl, RT_ELEMENTS(pThisCC->aPorts)), ("iLUN=%u", iLUN));
-    PAHCIPORT   pAhciPort   = &pThis->ahciPort[iLUN];
+    PAHCIPORT   pAhciPort   = &pThis->aPorts[iLUN];
     PAHCIPORTR3 pAhciPortR3 = &pThisCC->aPorts[iLUN];
     AssertMsgReturnVoid(   pAhciPort->fHotpluggable
                         || (fFlags & PDM_TACH_FLAGS_NOT_HOT_PLUG),
@@ -5540,7 +5540,7 @@ static DECLCALLBACK(int)  ahciR3Attach(PPDMDEVINS pDevIns, unsigned iLUN, uint32
 
     /* the usual paranoia */
     AssertMsgReturn(iLUN < RT_MIN(pThis->cPortsImpl, RT_ELEMENTS(pThisCC->aPorts)), ("iLUN=%u", iLUN), VERR_PDM_LUN_NOT_FOUND);
-    PAHCIPORT   pAhciPort   = &pThis->ahciPort[iLUN];
+    PAHCIPORT   pAhciPort   = &pThis->aPorts[iLUN];
     PAHCIPORTR3 pAhciPortR3 = &pThisCC->aPorts[iLUN];
     AssertRelease(!pAhciPortR3->pDrvBase);
     AssertRelease(!pAhciPortR3->pDrvMedia);
@@ -5635,8 +5635,8 @@ static int ahciR3ResetCommon(PPDMDEVINS pDevIns)
     ahciR3HBAReset(pDevIns, pThis, pThisCC);
 
     /* Hardware reset for the ports. */
-    for (uint32_t i = 0; i < RT_ELEMENTS(pThis->ahciPort); i++)
-        ahciPortHwReset(&pThis->ahciPort[i]);
+    for (uint32_t i = 0; i < RT_ELEMENTS(pThis->aPorts); i++)
+        ahciPortHwReset(&pThis->aPorts[i]);
     return VINF_SUCCESS;
 }
 
@@ -5713,10 +5713,10 @@ static DECLCALLBACK(int) ahciR3Destruct(PPDMDEVINS pDevIns)
         pThis->hHbaCccTimer = NIL_TMTIMERHANDLE;
 
         Log(("%s: Destruct every port\n", __FUNCTION__));
-        uint32_t const cPortsImpl = RT_MIN(pThis->cPortsImpl, RT_ELEMENTS(pThis->ahciPort));
+        uint32_t const cPortsImpl = RT_MIN(pThis->cPortsImpl, RT_ELEMENTS(pThis->aPorts));
         for (unsigned iActPort = 0; iActPort < cPortsImpl; iActPort++)
         {
-            PAHCIPORT pAhciPort = &pThis->ahciPort[iActPort];
+            PAHCIPORT pAhciPort = &pThis->aPorts[iActPort];
 
             if (pAhciPort->hEvtProcess != NIL_SUPSEMEVENT)
             {
@@ -5795,7 +5795,7 @@ static DECLCALLBACK(int) ahciR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
     /* Initialize port members. */
     for (i = 0; i < AHCI_MAX_NR_PORTS_IMPL; i++)
     {
-        PAHCIPORT   pAhciPort           = &pThis->ahciPort[i];
+        PAHCIPORT   pAhciPort           = &pThis->aPorts[i];
         PAHCIPORTR3 pAhciPortR3         = &pThisCC->aPorts[i];
         pAhciPortR3->pDevIns            = pDevIns;
         pAhciPort->iLUN                 = i;
@@ -5946,12 +5946,12 @@ static DECLCALLBACK(int) ahciR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
 
     /* Initialize static members on every port. */
     for (i = 0; i < AHCI_MAX_NR_PORTS_IMPL; i++)
-        ahciPortHwReset(&pThis->ahciPort[i]);
+        ahciPortHwReset(&pThis->aPorts[i]);
 
     /* Attach drivers to every available port. */
     for (i = 0; i < pThis->cPortsImpl; i++)
     {
-        PAHCIPORT   pAhciPort   = &pThis->ahciPort[i];
+        PAHCIPORT   pAhciPort   = &pThis->aPorts[i];
         PAHCIPORTR3 pAhciPortR3 = &pThisCC->aPorts[i];
 
         RTStrPrintf(pAhciPortR3->szDesc, sizeof(pAhciPortR3->szDesc), "Port%u", i);
