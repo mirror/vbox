@@ -4041,7 +4041,7 @@ static DECLCALLBACK(void) ataR3MountNotify(PPDMIMOUNTNOTIFY pInterface)
 {
     PATADEVSTATER3  pIfR3 = RT_FROM_MEMBER(pInterface, ATADEVSTATER3, IMountNotify);
     PATASTATE       pThis = PDMDEVINS_2_DATA(pIfR3->pDevIns, PATASTATE);
-    PATADEVSTATE    pIf   = &pThis->aCts[pIfR3->iCtl % RT_ELEMENTS(pThis->aCts)].aIfs[pIfR3->iDev % RT_ELEMENTS(pThis->aCts[0].aIfs)];
+    PATADEVSTATE    pIf   = &RT_SAFE_SUBSCRIPT(RT_SAFE_SUBSCRIPT(pThis->aCts, pIfR3->iCtl).aIfs, pIfR3->iDev);
     Log(("%s: changing LUN#%d\n", __FUNCTION__, pIfR3->iLUN));
 
     /* Ignore the call if we're called while being attached. */
@@ -4074,7 +4074,7 @@ static DECLCALLBACK(void) ataR3UnmountNotify(PPDMIMOUNTNOTIFY pInterface)
 {
     PATADEVSTATER3  pIfR3 = RT_FROM_MEMBER(pInterface, ATADEVSTATER3, IMountNotify);
     PATASTATE       pThis = PDMDEVINS_2_DATA(pIfR3->pDevIns, PATASTATE);
-    PATADEVSTATE    pIf   = &pThis->aCts[pIfR3->iCtl % RT_ELEMENTS(pThis->aCts)].aIfs[pIfR3->iDev % RT_ELEMENTS(pThis->aCts[0].aIfs)];
+    PATADEVSTATE    pIf   = &RT_SAFE_SUBSCRIPT(RT_SAFE_SUBSCRIPT(pThis->aCts, pIfR3->iCtl).aIfs, pIfR3->iDev);
     Log(("%s:\n", __FUNCTION__));
     pIf->cTotalSectors = 0;
 
@@ -4823,7 +4823,7 @@ static VBOXSTRICTRC ataIOPortReadU8(PPDMDEVINS pDevIns, PATACONTROLLER pCtl, uin
                         pCtl->u64ResetTime = u64ResetTimeStop;
 # ifndef RT_OS_WINDOWS /* We've got this API on windows, but it doesn't necessarily interrupt I/O. */
                         PATASTATER3 pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PATASTATER3);
-                        PATACONTROLLERR3 pCtlR3 = &pThisCC->aCts[pCtl->iCtl % RT_ELEMENTS(pThisCC->aCts)];
+                        PATACONTROLLERR3 pCtlR3 = &RT_SAFE_SUBSCRIPT(pThisCC->aCts, pCtl->iCtl);
                         RTThreadPoke(pCtlR3->hAsyncIOThread);
 # endif
                         Assert(fYield);
@@ -5023,7 +5023,7 @@ static void ataHCPIOTransfer(PPDMDEVINS pDevIns, PATACONTROLLER pCtl)
             bool fRedo;
             uint8_t        status  = s->uATARegStatus;
             PATASTATER3    pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PATASTATER3);
-            PATADEVSTATER3 pDevR3  = &pThisCC->aCts[pCtl->iCtl % RT_ELEMENTS(pThisCC->aCts)].aIfs[s->iDev % RT_ELEMENTS(pThisCC->aCts[0].aIfs)];
+            PATADEVSTATER3 pDevR3  = &RT_SAFE_SUBSCRIPT(RT_SAFE_SUBSCRIPT(pThisCC->aCts, pCtl->iCtl).aIfs, s->iDev);
 
             ataSetStatusValue(pCtl, s, ATA_STAT_BUSY);
             Log2(("%s: calling source/sink function\n", __FUNCTION__));
@@ -5205,7 +5205,7 @@ static DECLCALLBACK(VBOXSTRICTRC)
 ataIOPortWrite1Data(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t u32, unsigned cb)
 {
     PATASTATE      pThis = PDMDEVINS_2_DATA(pDevIns, PATASTATE);
-    PATACONTROLLER pCtl  = &pThis->aCts[(uintptr_t)pvUser % RT_ELEMENTS(pThis->aCts)];
+    PATACONTROLLER pCtl  = &RT_SAFE_SUBSCRIPT(pThis->aCts, (uintptr_t)pvUser);
     RT_NOREF(offPort);
 
     Assert((uintptr_t)pvUser < 2);
@@ -5276,7 +5276,7 @@ static DECLCALLBACK(VBOXSTRICTRC)
 ataIOPortRead1Data(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t *pu32, unsigned cb)
 {
     PATASTATE      pThis = PDMDEVINS_2_DATA(pDevIns, PATASTATE);
-    PATACONTROLLER pCtl  = &pThis->aCts[(uintptr_t)pvUser % RT_ELEMENTS(pThis->aCts)];
+    PATACONTROLLER pCtl  = &RT_SAFE_SUBSCRIPT(pThis->aCts, (uintptr_t)pvUser);
     RT_NOREF(offPort);
 
     Assert((uintptr_t)pvUser < 2);
@@ -5364,7 +5364,7 @@ static DECLCALLBACK(VBOXSTRICTRC)
 ataIOPortReadStr1Data(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint8_t *pbDst, uint32_t *pcTransfers, unsigned cb)
 {
     PATASTATE      pThis = PDMDEVINS_2_DATA(pDevIns, PATASTATE);
-    PATACONTROLLER pCtl  = &pThis->aCts[(uintptr_t)pvUser % RT_ELEMENTS(pThis->aCts)];
+    PATACONTROLLER pCtl  = &RT_SAFE_SUBSCRIPT(pThis->aCts, (uintptr_t)pvUser);
     RT_NOREF(offPort);
 
     Assert((uintptr_t)pvUser < 2);
@@ -5455,7 +5455,7 @@ static DECLCALLBACK(VBOXSTRICTRC)
 ataIOPortWriteStr1Data(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint8_t const *pbSrc, uint32_t *pcTransfers, unsigned cb)
 {
     PATASTATE      pThis = PDMDEVINS_2_DATA(pDevIns, PATASTATE);
-    PATACONTROLLER pCtl  = &pThis->aCts[(uintptr_t)pvUser % RT_ELEMENTS(pThis->aCts)];
+    PATACONTROLLER pCtl  = &RT_SAFE_SUBSCRIPT(pThis->aCts, (uintptr_t)pvUser);
     RT_NOREF(offPort);
 
     Assert((uintptr_t)pvUser < 2);
@@ -5761,7 +5761,7 @@ static DECLCALLBACK(int) ataR3AsyncIOThread(RTTHREAD hThreadSelf, void *pvUser)
     PATASTATE const         pThis   = PDMDEVINS_2_DATA(pDevIns, PATASTATE);
     PATASTATER3 const       pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PATASTATER3);
     uintptr_t const         iCtl    = pCtlR3 - &pThisCC->aCts[0];
-    PATACONTROLLER const    pCtl    = &pThis->aCts[iCtl % RT_ELEMENTS(pThisCC->aCts)];
+    PATACONTROLLER const    pCtl    = &RT_SAFE_SUBSCRIPT(pThis->aCts, iCtl);
     int                     rc      = VINF_SUCCESS;
     uint64_t                u64TS   = 0; /* shut up gcc */
     uint64_t                uWait;
@@ -6386,7 +6386,7 @@ static DECLCALLBACK(VBOXSTRICTRC)
 ataBMDMAIOPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t *pu32, unsigned cb)
 {
     PATASTATE      pThis = PDMDEVINS_2_DATA(pDevIns, PATASTATE);
-    PATACONTROLLER pCtl  = &pThis->aCts[(offPort >> BM_DMA_CTL_IOPORTS_SHIFT) % RT_ELEMENTS(pThis->aCts)];
+    PATACONTROLLER pCtl  = &RT_SAFE_SUBSCRIPT(pThis->aCts, (offPort >> BM_DMA_CTL_IOPORTS_SHIFT));
     RT_NOREF(pvUser);
 
     VBOXSTRICTRC rc = PDMDevHlpCritSectEnter(pDevIns, &pCtl->lock, VINF_IOM_R3_IOPORT_READ);
@@ -6421,7 +6421,7 @@ static DECLCALLBACK(VBOXSTRICTRC)
 ataBMDMAIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t u32, unsigned cb)
 {
     PATASTATE      pThis = PDMDEVINS_2_DATA(pDevIns, PATASTATE);
-    PATACONTROLLER pCtl  = &pThis->aCts[(offPort >> BM_DMA_CTL_IOPORTS_SHIFT) % RT_ELEMENTS(pThis->aCts)];
+    PATACONTROLLER pCtl  = &RT_SAFE_SUBSCRIPT(pThis->aCts, (offPort >> BM_DMA_CTL_IOPORTS_SHIFT));
     RT_NOREF(pvUser);
 
     VBOXSTRICTRC rc = PDMDevHlpCritSectEnter(pDevIns, &pCtl->lock, VINF_IOM_R3_IOPORT_WRITE);
@@ -6554,7 +6554,7 @@ ataIOPortWriteEmptyBus(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint3
 
 #ifdef VBOX_STRICT
     PATASTATE      pThis = PDMDEVINS_2_DATA(pDevIns, PATASTATE);
-    PATACONTROLLER pCtl  = &pThis->aCts[(uintptr_t)pvUser % RT_ELEMENTS(pThis->aCts)];
+    PATACONTROLLER pCtl  = &RT_SAFE_SUBSCRIPT(pThis->aCts, (uintptr_t)pvUser);
     Assert((uintptr_t)pvUser < 2);
     Assert(!pCtl->aIfs[0].fPresent && !pCtl->aIfs[1].fPresent);
 #endif
@@ -6577,7 +6577,7 @@ ataIOPortReadEmptyBus(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32
 
 #ifdef VBOX_STRICT
     PATASTATE      pThis = PDMDEVINS_2_DATA(pDevIns, PATASTATE);
-    PATACONTROLLER pCtl = &pThis->aCts[(uintptr_t)pvUser % RT_ELEMENTS(pThis->aCts)];
+    PATACONTROLLER pCtl = &RT_SAFE_SUBSCRIPT(pThis->aCts, (uintptr_t)pvUser);
     Assert((uintptr_t)pvUser < 2);
     Assert(cb <= 4);
     Assert(!pCtl->aIfs[0].fPresent && !pCtl->aIfs[1].fPresent);
@@ -6641,7 +6641,7 @@ static DECLCALLBACK(VBOXSTRICTRC)
 ataIOPortRead1Other(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t *pu32, unsigned cb)
 {
     PATASTATE      pThis = PDMDEVINS_2_DATA(pDevIns, PATASTATE);
-    PATACONTROLLER pCtl = &pThis->aCts[(uintptr_t)pvUser % RT_ELEMENTS(pThis->aCts)];
+    PATACONTROLLER pCtl = &RT_SAFE_SUBSCRIPT(pThis->aCts, (uintptr_t)pvUser);
 
     Assert((uintptr_t)pvUser < 2);
 
@@ -6679,7 +6679,7 @@ static DECLCALLBACK(VBOXSTRICTRC)
 ataIOPortWrite2(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t u32, unsigned cb)
 {
     PATASTATE      pThis = PDMDEVINS_2_DATA(pDevIns, PATASTATE);
-    PATACONTROLLER pCtl = &pThis->aCts[(uintptr_t)pvUser % RT_ELEMENTS(pThis->aCts)];
+    PATACONTROLLER pCtl = &RT_SAFE_SUBSCRIPT(pThis->aCts, (uintptr_t)pvUser);
     int rc;
 
     Assert((uintptr_t)pvUser < 2);
@@ -6711,7 +6711,7 @@ static DECLCALLBACK(VBOXSTRICTRC)
 ataIOPortRead2(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t *pu32, unsigned cb)
 {
     PATASTATE      pThis = PDMDEVINS_2_DATA(pDevIns, PATASTATE);
-    PATACONTROLLER pCtl = &pThis->aCts[(uintptr_t)pvUser % RT_ELEMENTS(pThis->aCts)];
+    PATACONTROLLER pCtl = &RT_SAFE_SUBSCRIPT(pThis->aCts, (uintptr_t)pvUser);
     int            rc;
 
     Assert((uintptr_t)pvUser < 2);
