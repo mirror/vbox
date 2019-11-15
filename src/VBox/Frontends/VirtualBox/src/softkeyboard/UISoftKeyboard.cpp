@@ -143,6 +143,14 @@ struct UIKeyCaptions
     QString m_strShiftAltGr;
 };
 
+QPointF linearInterpolation(qreal t, const QPointF &p0, const QPointF &p1)
+{
+    if (t < 0)
+        return p0;
+    if (t> 1)
+        return p1;
+    return QPointF((1 - t) * p0 + t * p1);
+}
 
 /*********************************************************************************************************************************
 *   UISoftKeyboardColorButton definition.                                                                                        *
@@ -424,10 +432,11 @@ public:
     void release();
     void press();
 
-    void setPolygon(const QPolygon &polygon);
-    const QPolygon &polygon() const;
+    void setPoints(const QVector<QPointF> &points);
+    const QVector<QPointF> &points() const;
+    const QPainterPath &painterPath() const;
 
-    QPolygon polygonInGlobal() const;
+    QPolygonF polygonInGlobal() const;
 
     int cutoutCorner() const;
     int cutoutWidth() const;
@@ -439,10 +448,13 @@ public:
 private:
 
     void updateState(bool fPressed);
+    void computePainterPath();
 
     QRect    m_keyGeometry;
-    /** Stores the key polygon in local coordinates. */
-    QPolygon m_polygon;
+    /** Stores the key points (vertices) in local coordinates. */
+    QVector<QPointF> m_points;
+    /** We cache the path since re-computing that at each draw is meaningless. */
+    QPainterPath m_painterPath;
     KeyType  m_enmType;
     KeyState m_enmState;
     /** Key width as it is read from the xml file. */
@@ -735,7 +747,7 @@ class UIPhysicalLayoutReader
 public:
 
     bool parseXMLFile(const QString &strFileName, UISoftKeyboardPhysicalLayout &physicalLayout);
-    static QVector<QPoint> computeKeyVertices(const UISoftKeyboardKey &key);
+    static QVector<QPointF> computeKeyVertices(const UISoftKeyboardKey &key);
 
 private:
 
@@ -1679,19 +1691,40 @@ void UISoftKeyboardKey::press()
         updateState(true);
 }
 
-void UISoftKeyboardKey::setPolygon(const QPolygon &polygon)
+void UISoftKeyboardKey::setPoints(const QVector<QPointF> &points)
 {
-    m_polygon = polygon;
+    m_points = points;
+    computePainterPath();
 }
 
-const QPolygon &UISoftKeyboardKey::polygon() const
+const QVector<QPointF> &UISoftKeyboardKey::points() const
 {
-    return m_polygon;
+    return m_points;
 }
 
-QPolygon UISoftKeyboardKey::polygonInGlobal() const
+const QPainterPath &UISoftKeyboardKey::painterPath() const
 {
-    QPolygon globalPolygon(m_polygon);
+    return m_painterPath;
+}
+
+void UISoftKeyboardKey::computePainterPath()
+{
+    if (m_points.size() < 3)
+        return;
+    double d = 0.1;
+    m_painterPath = QPainterPath(linearInterpolation(d, m_points[0], m_points[1]));
+    for (int i = 0; i < m_points.size(); ++i)
+    {
+        QPointF p0 = linearInterpolation(1-d, m_points[i], m_points[(i+1)%m_points.size()]);
+        QPointF p1 = linearInterpolation(d, m_points[(i+1)%m_points.size()], m_points[(i+2)%m_points.size()]);
+        m_painterPath.lineTo(p0);
+        m_painterPath.quadTo(m_points[(i+1)%m_points.size()], p1);
+    }
+}
+
+QPolygonF UISoftKeyboardKey::polygonInGlobal() const
+{
+    QPolygonF globalPolygon(m_points);
     globalPolygon.translate(m_keyGeometry.x(), m_keyGeometry.y());
     return globalPolygon;
 }
@@ -2233,7 +2266,8 @@ void UISoftKeyboardWidget::paintEvent(QPaintEvent *pEvent) /* override */
             else
                 painter.setPen(QPen(color(KeyboardColorType_Font), 2));
 
-            painter.drawPolygon(key.polygon());
+            /* Draw the key shape: */
+            painter.drawPath(key.painterPath());
 
             currentLayout.drawTextInRect(key, painter);
             /* Draw small LED like circles on the modifier/lock keys: */
@@ -2551,6 +2585,8 @@ QString UISoftKeyboardWidget::currentColorThemeName() const
 
 void UISoftKeyboardWidget::setColorThemeByName(const QString &strColorThemeName)
 {
+    if (strColorThemeName.isEmpty())
+        return;
     if (m_currentColorTheme && m_currentColorTheme->name() == strColorThemeName)
         return;
     for (int i = 0; i < m_colorThemes.size(); ++i)
@@ -2909,7 +2945,7 @@ bool UISoftKeyboardWidget::loadPhysicalLayout(const QString &strLayoutFileName, 
                 newPhysicalLayout->setLockKey(key.position(), &key);
 
             key.setKeyGeometry(QRect(iX, iY, key.width(), key.height()));
-            key.setPolygon(QPolygon(UIPhysicalLayoutReader::computeKeyVertices(key)));
+            key.setPoints(UIPhysicalLayoutReader::computeKeyVertices(key));
             key.setParentWidget(this);
             iX += key.width();
             if (j < row.keys().size() - 1)
@@ -3331,9 +3367,9 @@ void UIPhysicalLayoutReader::parseCutout(UISoftKeyboardKey &key)
     key.setCutout(iCorner, iWidth, iHeight);
 }
 
-QVector<QPoint> UIPhysicalLayoutReader::computeKeyVertices(const UISoftKeyboardKey &key)
+QVector<QPointF> UIPhysicalLayoutReader::computeKeyVertices(const UISoftKeyboardKey &key)
 {
-    QVector<QPoint> vertices;
+    QVector<QPointF> vertices;
 
     if (key.cutoutCorner() == -1 || key.width() <= key.cutoutWidth() || key.height() <= key.cutoutHeight())
     {
@@ -4132,12 +4168,16 @@ void UISoftKeyboard::loadSettings()
     if (m_pKeyboardWidget)
     {
         QStringList colorTheme = gEDataManager->softKeyboardColorTheme();
-        /* The fist item is the theme name and the rest are color codes: */
-        QString strThemeName = colorTheme[0];
-        colorTheme.removeFirst();
-        m_pKeyboardWidget->colorsFromStringList(strThemeName, colorTheme);
+        if (!colorTheme.empty())
+        {
+            /* The fist item is the theme name and the rest are color codes: */
+            QString strThemeName = colorTheme[0];
+            colorTheme.removeFirst();
+            m_pKeyboardWidget->colorsFromStringList(strThemeName, colorTheme);
+        }
         m_pKeyboardWidget->setColorThemeByName(gEDataManager->softKeyboardSelectedColorTheme());
         m_pKeyboardWidget->setCurrentLayout(gEDataManager->softKeyboardSelectedLayout());
+
         /* Load other options from exra data: */
         bool fHideNumPad = false;
         bool fHideOSMenuKeys = false;
@@ -4145,7 +4185,7 @@ void UISoftKeyboard::loadSettings()
         gEDataManager->softKeyboardOptions(fHideNumPad, fHideOSMenuKeys, fHideMultimediaKeys);
         m_pKeyboardWidget->setHideNumPad(fHideNumPad);
         m_pKeyboardWidget->setHideOSMenuKeys(fHideOSMenuKeys);
-       m_pKeyboardWidget->setHideMultimediaKeys(fHideMultimediaKeys);
+        m_pKeyboardWidget->setHideMultimediaKeys(fHideMultimediaKeys);
     }
 }
 
