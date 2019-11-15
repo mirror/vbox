@@ -574,9 +574,6 @@ typedef struct AHCI
 #if HC_ARCH_BITS == 64
     uint32_t                        Alignment7;
 #endif
-
-    /** The support driver session handle. */
-    R3R0PTRTYPE(PSUPDRVSESSION)     pSupDrvSession;
 } AHCI;
 AssertCompileMemberAlignment(AHCI, ahciPort, 8);
 /** Pointer to the state of an AHCI device. */
@@ -1024,7 +1021,7 @@ static void ahciPortResetFinish(PAHCIPort pAhciPort)
 static void ahciIoThreadKick(PAHCI pAhci, PAHCIPort pAhciPort)
 {
     LogFlowFunc(("Signal event semaphore\n"));
-    int rc = SUPSemEventSignal(pAhci->pSupDrvSession, pAhciPort->hEvtProcess);
+    int rc = PDMDevHlpSUPSemEventSignal(pAhci->CTX_SUFF(pDevIns), pAhciPort->hEvtProcess);
     AssertRC(rc);
 }
 
@@ -1298,7 +1295,7 @@ static int PortCmd_w(PAHCI pAhci, PAHCIPort pAhciPort, uint32_t iReg, uint32_t u
                 {
                     ASMAtomicOrU32(&pAhciPort->u32TasksNew, pAhciPort->regCI);
                     LogFlowFunc(("Signal event semaphore\n"));
-                    int rc = SUPSemEventSignal(pAhci->pSupDrvSession, pAhciPort->hEvtProcess);
+                    int rc = PDMDevHlpSUPSemEventSignal(pAhci->CTX_SUFF(pDevIns), pAhciPort->hEvtProcess);
                     AssertRC(rc);
                 }
             }
@@ -4584,7 +4581,7 @@ static DECLCALLBACK(int) ahciAsyncIOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
         if (!u32Tasks)
         {
             Assert(ASMAtomicReadBool(&pAhciPort->fWrkThreadSleeping));
-            rc = SUPSemEventWaitNoResume(pAhci->pSupDrvSession, pAhciPort->hEvtProcess, RT_INDEFINITE_WAIT);
+            rc = PDMDevHlpSUPSemEventWaitNoResume(pDevIns, pAhciPort->hEvtProcess, RT_INDEFINITE_WAIT);
             AssertLogRelMsgReturn(RT_SUCCESS(rc) || rc == VERR_INTERRUPTED, ("%Rrc\n", rc), rc);
             if (RT_UNLIKELY(pThread->enmState != PDMTHREADSTATE_RUNNING))
                 break;
@@ -4705,9 +4702,8 @@ static DECLCALLBACK(int) ahciAsyncIOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
  */
 static DECLCALLBACK(int) ahciAsyncIOLoopWakeUp(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
 {
-    PAHCI pThis = PDMDEVINS_2_DATA(pDevIns, PAHCI);
     PAHCIPort pAhciPort = (PAHCIPort)pThread->pvUser;
-    return SUPSemEventSignal(pThis->pSupDrvSession, pAhciPort->hEvtProcess);
+    return PDMDevHlpSUPSemEventSignal(pDevIns, pAhciPort->hEvtProcess);
 }
 
 /* -=-=-=-=- DBGF -=-=-=-=- */
@@ -5415,7 +5411,7 @@ static DECLCALLBACK(void) ahciR3Resume(PPDMDEVINS pDevIns)
             pAhciPort->fRedo = false;
 
             /* Notify the async IO thread. */
-            int rc = SUPSemEventSignal(pThis->pSupDrvSession, pAhciPort->hEvtProcess);
+            int rc = PDMDevHlpSUPSemEventSignal(pDevIns, pAhciPort->hEvtProcess);
             AssertRC(rc);
         }
     }
@@ -5647,7 +5643,7 @@ static DECLCALLBACK(int)  ahciR3Attach(PPDMDEVINS pDevIns, unsigned iLUN, uint32
     }
     else
     {
-        rc = SUPSemEventCreate(pThis->pSupDrvSession, &pAhciPort->hEvtProcess);
+        rc = PDMDevHlpSUPSemEventCreate(pDevIns, &pAhciPort->hEvtProcess);
         if (RT_FAILURE(rc))
             return PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS,
                                        N_("AHCI: Failed to create SUP event semaphore"));
@@ -5794,7 +5790,7 @@ static DECLCALLBACK(int) ahciR3Destruct(PPDMDEVINS pDevIns)
 
             if (pAhciPort->hEvtProcess != NIL_SUPSEMEVENT)
             {
-                SUPSemEventClose(pThis->pSupDrvSession, pAhciPort->hEvtProcess);
+                PDMDevHlpSUPSemEventClose(pDevIns, pAhciPort->hEvtProcess);
                 pAhciPort->hEvtProcess = NIL_SUPSEMEVENT;
             }
 
@@ -5898,7 +5894,6 @@ static DECLCALLBACK(int) ahciR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
     pThis->pDevInsR3 = pDevIns;
     pThis->pDevInsR0 = PDMDEVINS_2_R0PTR(pDevIns);
     pThis->pDevInsRC = PDMDEVINS_2_RCPTR(pDevIns);
-    pThis->pSupDrvSession = PDMDevHlpGetSupDrvSession(pDevIns);
 
     PPDMPCIDEV pPciDev = pDevIns->apPciDevs[0];
     PDMPCIDEV_ASSERT_VALID(pDevIns, pPciDev);
@@ -6106,7 +6101,7 @@ static DECLCALLBACK(int) ahciR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
             if (RT_FAILURE(rc))
                 return rc;
 
-            rc = SUPSemEventCreate(pThis->pSupDrvSession, &pAhciPort->hEvtProcess);
+            rc = PDMDevHlpSUPSemEventCreate(pDevIns, &pAhciPort->hEvtProcess);
             if (RT_FAILURE(rc))
                 return PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS,
                                            N_("AHCI: Failed to create SUP event semaphore"));
