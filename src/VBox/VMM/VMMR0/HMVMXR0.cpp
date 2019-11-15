@@ -3744,7 +3744,6 @@ static int hmR0VmxSetupVmcsProcCtls2(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcsInfo)
 static int hmR0VmxSetupVmcsProcCtls(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcsInfo)
 {
     PVMCC pVM = pVCpu->CTX_SUFF(pVM);
-
     uint32_t       fVal = pVM->hm.s.vmx.Msrs.ProcCtls.n.allowed0;     /* Bits set here must be set in the VMCS. */
     uint32_t const fZap = pVM->hm.s.vmx.Msrs.ProcCtls.n.allowed1;     /* Bits cleared here must be cleared in the VMCS. */
 
@@ -4662,7 +4661,7 @@ static int hmR0VmxExportGuestEntryExitCtls(PVMCPUCC pVCpu, PCVMXTRANSIENT pVmxTr
 {
     if (ASMAtomicUoReadU64(&pVCpu->hm.s.fCtxChanged) & HM_CHANGED_VMX_ENTRY_EXIT_CTLS)
     {
-        PVMCC        pVM            = pVCpu->CTX_SUFF(pVM);
+        PVMCC pVM = pVCpu->CTX_SUFF(pVM);
         PVMXVMCSINFO pVmcsInfo      = pVmxTransient->pVmcsInfo;
         bool const   fGstInLongMode = CPUMIsGuestInLongModeEx(&pVCpu->cpum.GstCtx);
 
@@ -5329,7 +5328,7 @@ static int hmR0VmxExportGuestCR0(PVMCPUCC pVCpu, PCVMXTRANSIENT pVmxTransient)
 {
     if (ASMAtomicUoReadU64(&pVCpu->hm.s.fCtxChanged) & HM_CHANGED_GUEST_CR0)
     {
-        PVMCC          pVM       = pVCpu->CTX_SUFF(pVM);
+        PVMCC pVM = pVCpu->CTX_SUFF(pVM);
         PVMXVMCSINFO pVmcsInfo = pVmxTransient->pVmcsInfo;
 
         uint64_t       fSetCr0 = pVM->hm.s.vmx.Msrs.u64Cr0Fixed0;
@@ -5909,7 +5908,7 @@ static void hmR0VmxValidateSegmentRegs(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcsInfo)
      * because hmR0VmxExportGuestSegReg() only updates the VMCS' copy of the value with the
      * unusable bit and doesn't change the guest-context value.
      */
-    PVMCC       pVM  = pVCpu->CTX_SUFF(pVM);
+    PVMCC pVM = pVCpu->CTX_SUFF(pVM);
     PCCPUMCTX pCtx = &pVCpu->cpum.GstCtx;
     hmR0VmxImportGuestState(pVCpu, pVmcsInfo, CPUMCTX_EXTRN_CR0);
     if (   !pVM->hm.s.vmx.fUnrestrictedGuest
@@ -6138,8 +6137,8 @@ static int hmR0VmxExportGuestSegReg(PVMCPUCC pVCpu, PCVMXVMCSINFO pVmcsInfo, uin
  */
 static int hmR0VmxExportGuestSegRegsXdtr(PVMCPUCC pVCpu, PCVMXTRANSIENT pVmxTransient)
 {
-    int          rc        = VERR_INTERNAL_ERROR_5;
-    PVMCC          pVM       = pVCpu->CTX_SUFF(pVM);
+    int   rc  = VERR_INTERNAL_ERROR_5;
+    PVMCC pVM = pVCpu->CTX_SUFF(pVM);
     PCCPUMCTX    pCtx      = &pVCpu->cpum.GstCtx;
     PVMXVMCSINFO pVmcsInfo = pVmxTransient->pVmcsInfo;
 
@@ -6384,7 +6383,7 @@ static int hmR0VmxExportGuestMsrs(PVMCPUCC pVCpu, PCVMXTRANSIENT pVmxTransient)
     AssertPtr(pVCpu);
     AssertPtr(pVmxTransient);
 
-    PVMCC       pVM  = pVCpu->CTX_SUFF(pVM);
+    PVMCC pVM = pVCpu->CTX_SUFF(pVM);
     PCCPUMCTX pCtx = &pVCpu->cpum.GstCtx;
 
     /*
@@ -6765,7 +6764,7 @@ static void hmR0VmxUpdateTscOffsettingAndPreemptTimer(PVMCPUCC pVCpu, PVMXTRANSI
     bool         fOffsettedTsc;
     bool         fParavirtTsc;
     uint64_t     uTscOffset;
-    PVMCC          pVM = pVCpu->CTX_SUFF(pVM);
+    PVMCC pVM = pVCpu->CTX_SUFF(pVM);
     PVMXVMCSINFO pVmcsInfo = hmGetVmxActiveVmcsInfo(pVCpu);
 
     if (pVM->hm.s.vmx.fUsePreemptTimer)
@@ -9251,10 +9250,10 @@ static uint32_t hmR0VmxCheckGuestState(PVMCPUCC pVCpu, PCVMXVMCSINFO pVmcsInfo)
                                                 if (!(expr)) { uError = (err); break; } \
                                             } while (0)
 
-    PVMCC      pVM    = pVCpu->CTX_SUFF(pVM);
-    PCPUMCTX   pCtx   = &pVCpu->cpum.GstCtx;
-    uint32_t   uError = VMX_IGS_ERROR;
-    uint32_t   u32IntrState = 0;
+    PVMCC    pVM    = pVCpu->CTX_SUFF(pVM);
+    PCPUMCTX pCtx   = &pVCpu->cpum.GstCtx;
+    uint32_t uError = VMX_IGS_ERROR;
+    uint32_t u32IntrState = 0;
     bool const fUnrestrictedGuest = pVM->hm.s.vmx.fUnrestrictedGuest;
     do
     {
@@ -15236,8 +15235,8 @@ HMVMX_EXIT_DECL hmR0VmxExitIoInstr(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransient)
 
         uint32_t const cbValue  = s_aIOSizes[uIOSize];
         uint32_t const cbInstr  = pVmxTransient->cbExitInstr;
-        bool fUpdateRipAlready  = false; /* ugly hack, should be temporary. */
-        PVMCC pVM                 = pVCpu->CTX_SUFF(pVM);
+        bool  fUpdateRipAlready = false; /* ugly hack, should be temporary. */
+        PVMCC pVM = pVCpu->CTX_SUFF(pVM);
         if (fIOString)
         {
             /*
@@ -15728,7 +15727,7 @@ HMVMX_EXIT_DECL hmR0VmxExitEptMisconfig(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransi
          * in the host TLB), resume execution which would cause a guest page fault to let the guest handle this
          * weird case. See @bugref{6043}.
          */
-        PVMCC      pVM  = pVCpu->CTX_SUFF(pVM);
+        PVMCC    pVM  = pVCpu->CTX_SUFF(pVM);
         PCPUMCTX pCtx = &pVCpu->cpum.GstCtx;
         rcStrict = PGMR0Trap0eHandlerNPMisconfig(pVM, pVCpu, PGMMODE_EPT, CPUMCTX2CORE(pCtx), GCPhys, UINT32_MAX);
         Log4Func(("At %#RGp RIP=%#RX64 rc=%Rrc\n", GCPhys, pCtx->rip, VBOXSTRICTRC_VAL(rcStrict)));
@@ -15813,7 +15812,7 @@ HMVMX_EXIT_DECL hmR0VmxExitEptViolation(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransi
     if (uExitQual & VMX_EXIT_QUAL_EPT_ENTRY_PRESENT)
         uErrorCode |= X86_TRAP_PF_P;
 
-    PVMCC      pVM  = pVCpu->CTX_SUFF(pVM);
+    PVMCC    pVM  = pVCpu->CTX_SUFF(pVM);
     PCPUMCTX pCtx = &pVCpu->cpum.GstCtx;
     Log4Func(("at %#RX64 (%#RX64 errcode=%#x) cs:rip=%#04x:%#RX64\n", GCPhys, uExitQual, uErrorCode, pCtx->cs.Sel, pCtx->rip));
 
