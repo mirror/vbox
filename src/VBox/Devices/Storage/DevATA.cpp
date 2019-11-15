@@ -192,7 +192,7 @@ typedef struct BMDMADesc
 /**
  * The shared state of an ATA device.
  */
-typedef struct ATADevState
+typedef struct ATADEVSTATE
 {
     /** The I/O buffer.
      * @note Page aligned in case it helps.  */
@@ -380,7 +380,7 @@ typedef struct ATADevState
 
     /** Padding the structure to a multiple of 4096 for better I/O buffer alignment. */
     uint8_t                             abAlignment4[7 + 3544];
-} ATADEVSTATE, ATADevState;
+} ATADEVSTATE;
 AssertCompileMemberAlignment(ATADEVSTATE, cTotalSectors, 8);
 AssertCompileMemberAlignment(ATADEVSTATE, StatATADMA, 8);
 AssertCompileMemberAlignment(ATADEVSTATE, u64CmdTS, 8);
@@ -508,7 +508,7 @@ typedef struct ATARequest
 typedef struct ATACONTROLLER
 {
     /** The ATA/ATAPI interfaces of this controller. */
-    ATADevState         aIfs[2];
+    ATADEVSTATE         aIfs[2];
 
     /** The base of the first I/O Port range. */
     RTIOPORT            IOPortBase1;
@@ -590,7 +590,6 @@ AssertCompileMemberAlignment(ATACONTROLLER, u64ResetTime, 8);
 AssertCompileMemberAlignment(ATACONTROLLER, StatAsyncOps, 8);
 AssertCompileMemberAlignment(ATACONTROLLER, AsyncIORequestLock, 8);
 AssertCompileSizeAlignment(ATACONTROLLER, 4096); /* To align the controllers, devices and I/O buffers on page boundaries. */
-
 /** Pointer to the shared state of an ATA controller. */
 typedef ATACONTROLLER *PATACONTROLLER;
 
@@ -630,25 +629,27 @@ typedef enum CHIPSET
     /** PIIX3 chipset, must be 0 for saved state compatibility */
     CHIPSET_PIIX3 = 0,
     /** PIIX4 chipset, must be 1 for saved state compatibility */
-    CHIPSET_PIIX4 = 1,
+    CHIPSET_PIIX4,
     /** ICH6 chipset */
-    CHIPSET_ICH6 = 2
+    CHIPSET_ICH6,
+    CHIPSET_32BIT_HACK=0x7fffffff
 } CHIPSET;
+AssertCompileSize(CHIPSET, 4);
 
 /**
  * The shared state of a ATA PCI device.
  */
-typedef struct PCIATAState
+typedef struct ATASTATE
 {
     /** The controllers. */
     ATACONTROLLER                   aCts[2];
-    /** Flag indicating chipset being emulated (CHIPSET). */
-    uint8_t                         u8Type;
+    /** Flag indicating chipset being emulated. */
+    CHIPSET                         enmChipset;
     /** Explicit alignment padding. */
     uint8_t                         abAlignment1[7];
     /** PCI region \#4: Bus-master DMA I/O ports. */
     IOMIOPORTHANDLE                 hIoPortsBmDma;
-} PCIATAState, ATASTATE;
+} ATASTATE;
 /** Pointer to the shared state of an ATA PCI device. */
 typedef ATASTATE *PATASTATE;
 
@@ -709,7 +710,7 @@ typedef CTX_SUFF(PATASTATE) PATASTATECC;
 
 
 #ifdef IN_RING3
-DECLINLINE(void) ataSetStatusValue(PATACONTROLLER pCtl, ATADevState *s, uint8_t stat)
+DECLINLINE(void) ataSetStatusValue(PATACONTROLLER pCtl, PATADEVSTATE s, uint8_t stat)
 {
     /* Freeze status register contents while processing RESET. */
     if (!pCtl->fReset)
@@ -721,7 +722,7 @@ DECLINLINE(void) ataSetStatusValue(PATACONTROLLER pCtl, ATADevState *s, uint8_t 
 #endif /* IN_RING3 */
 
 
-DECLINLINE(void) ataSetStatus(PATACONTROLLER pCtl, ATADevState *s, uint8_t stat)
+DECLINLINE(void) ataSetStatus(PATACONTROLLER pCtl, PATADEVSTATE s, uint8_t stat)
 {
     /* Freeze status register contents while processing RESET. */
     if (!pCtl->fReset)
@@ -732,7 +733,7 @@ DECLINLINE(void) ataSetStatus(PATACONTROLLER pCtl, ATADevState *s, uint8_t stat)
 }
 
 
-DECLINLINE(void) ataUnsetStatus(PATACONTROLLER pCtl, ATADevState *s, uint8_t stat)
+DECLINLINE(void) ataUnsetStatus(PATACONTROLLER pCtl, PATADEVSTATE s, uint8_t stat)
 {
     /* Freeze status register contents while processing RESET. */
     if (!pCtl->fReset)
@@ -1062,7 +1063,7 @@ static bool ataR3AsyncIOIsIdle(PPDMDEVINS pDevIns, PATACONTROLLER pCtl, bool fSt
  * @param   iSourceSink         Index of SourceSink callback.
  * @param   fChainedTransfer    Whether this is a transfer that is part of the previous command/transfer.
  */
-static void ataR3StartTransfer(PPDMDEVINS pDevIns, PATACONTROLLER pCtl, ATADevState *s,
+static void ataR3StartTransfer(PPDMDEVINS pDevIns, PATACONTROLLER pCtl, PATADEVSTATE s,
                                uint32_t cbTotalTransfer, uint8_t uTxDir, ATAFNBT iBeginTransfer,
                                ATAFNSS iSourceSink, bool fChainedTransfer)
 {
@@ -1115,7 +1116,7 @@ static void ataR3StartTransfer(PPDMDEVINS pDevIns, PATACONTROLLER pCtl, ATADevSt
  * @param   s           Pointer to the ATA device state data.
  * @param   fResetDrive Whether to reset the drive or just abort a command.
  */
-static void ataR3AbortCurrentCommand(PPDMDEVINS pDevIns, PATACONTROLLER pCtl, ATADevState *s, bool fResetDrive)
+static void ataR3AbortCurrentCommand(PPDMDEVINS pDevIns, PATACONTROLLER pCtl, PATADEVSTATE s, bool fResetDrive)
 {
     ATARequest Req;
 
@@ -1145,7 +1146,7 @@ static void ataR3AbortCurrentCommand(PPDMDEVINS pDevIns, PATACONTROLLER pCtl, AT
  * @param   pCtl        The ATA controller.
  * @param   s           Pointer to the ATA device state data.
  */
-static void ataHCSetIRQ(PPDMDEVINS pDevIns, PATACONTROLLER pCtl, ATADevState *s)
+static void ataHCSetIRQ(PPDMDEVINS pDevIns, PATACONTROLLER pCtl, PATADEVSTATE s)
 {
     if (!s->fIrqPending)
     {
@@ -1179,7 +1180,7 @@ static void ataHCSetIRQ(PPDMDEVINS pDevIns, PATACONTROLLER pCtl, ATADevState *s)
  * @param   pCtl        The ATA controller.
  * @param   s           Pointer to the ATA device state data.
  */
-static void ataUnsetIRQ(PPDMDEVINS pDevIns, PATACONTROLLER pCtl, ATADevState *s)
+static void ataUnsetIRQ(PPDMDEVINS pDevIns, PATACONTROLLER pCtl, PATADEVSTATE s)
 {
     if (s->fIrqPending)
     {
@@ -1201,7 +1202,7 @@ static void ataUnsetIRQ(PPDMDEVINS pDevIns, PATACONTROLLER pCtl, ATADevState *s)
 
 #if defined(IN_RING0) || defined(IN_RING3)
 
-static void ataHCPIOTransferStart(PATACONTROLLER pCtl, ATADevState *s, uint32_t start, uint32_t size)
+static void ataHCPIOTransferStart(PATACONTROLLER pCtl, PATADEVSTATE s, uint32_t start, uint32_t size)
 {
     Log2(("%s: LUN#%d start %d size %d\n", __FUNCTION__, s->iLUN, start, size));
     s->iIOBufferPIODataStart = start;
@@ -1211,7 +1212,7 @@ static void ataHCPIOTransferStart(PATACONTROLLER pCtl, ATADevState *s, uint32_t 
 }
 
 
-static void ataHCPIOTransferStop(PPDMDEVINS pDevIns, PATACONTROLLER pCtl, ATADevState *s)
+static void ataHCPIOTransferStop(PPDMDEVINS pDevIns, PATACONTROLLER pCtl, PATADEVSTATE s)
 {
     Log2(("%s: LUN#%d\n", __FUNCTION__, s->iLUN));
     if (s->fATAPITransfer)
@@ -1230,7 +1231,7 @@ static void ataHCPIOTransferStop(PPDMDEVINS pDevIns, PATACONTROLLER pCtl, ATADev
 }
 
 
-static void ataHCPIOTransferLimitATAPI(ATADevState *s)
+static void ataHCPIOTransferLimitATAPI(PATADEVSTATE s)
 {
     uint32_t cbLimit, cbTransfer;
 
@@ -1282,7 +1283,7 @@ DECLINLINE(void) ataR3LockLeave(PPDMDEVINS pDevIns, PATACONTROLLER pCtl)
     PDMDevHlpCritSectLeave(pDevIns, &pCtl->lock);
 }
 
-static uint32_t ataR3GetNSectors(ATADevState *s)
+static uint32_t ataR3GetNSectors(PATADEVSTATE s)
 {
     /* 0 means either 256 (LBA28) or 65536 (LBA48) sectors. */
     if (s->fLBA48)
@@ -1344,14 +1345,14 @@ DECLINLINE(int) atapiCmpMSF(const uint8_t *pbMSF1, const uint8_t *pbMSF2)
 }
 #endif /* unused */
 
-static void ataR3CmdOK(PATACONTROLLER pCtl, ATADevState *s, uint8_t status)
+static void ataR3CmdOK(PATACONTROLLER pCtl, PATADEVSTATE s, uint8_t status)
 {
     s->uATARegError = 0; /* Not needed by ATA spec, but cannot hurt. */
     ataSetStatusValue(pCtl, s, ATA_STAT_READY | status);
 }
 
 
-static void ataR3CmdError(PATACONTROLLER pCtl, ATADevState *s, uint8_t uErrorCode)
+static void ataR3CmdError(PATACONTROLLER pCtl, PATADEVSTATE s, uint8_t uErrorCode)
 {
     Log(("%s: code=%#x\n", __FUNCTION__, uErrorCode));
     Assert(uErrorCode);
@@ -1584,7 +1585,7 @@ static bool atapiR3IdentifySS(PPDMDEVINS pDevIns, PATACONTROLLER pCtl, PATADEVST
 }
 
 
-static void ataR3SetSignature(ATADevState *s)
+static void ataR3SetSignature(PATADEVSTATE s)
 {
     s->uATARegSelect &= 0xf0; /* clear head */
     /* put signature */
@@ -1603,7 +1604,7 @@ static void ataR3SetSignature(ATADevState *s)
 }
 
 
-static uint64_t ataR3GetSector(ATADevState *s)
+static uint64_t ataR3GetSector(PATADEVSTATE s)
 {
     uint64_t iLBA;
     if (s->uATARegSelect & 0x40)
@@ -1639,7 +1640,7 @@ static uint64_t ataR3GetSector(ATADevState *s)
     return iLBA;
 }
 
-static void ataR3SetSector(ATADevState *s, uint64_t iLBA)
+static void ataR3SetSector(PATADEVSTATE s, uint64_t iLBA)
 {
     uint32_t cyl, r;
     if (s->uATARegSelect & 0x40)
@@ -1739,7 +1740,7 @@ static bool ataR3IsRedoSetWarning(PPDMDEVINS pDevIns, PATACONTROLLER pCtl, int r
 }
 
 
-static int ataR3ReadSectors(PPDMDEVINS pDevIns, PATACONTROLLER pCtl, ATADevState *s, PATADEVSTATER3 pDevR3,
+static int ataR3ReadSectors(PPDMDEVINS pDevIns, PATACONTROLLER pCtl, PATADEVSTATE s, PATADEVSTATER3 pDevR3,
                             uint64_t u64Sector, void *pvBuf, uint32_t cSectors, bool *pfRedo)
 {
     int rc;
@@ -1770,7 +1771,7 @@ static int ataR3ReadSectors(PPDMDEVINS pDevIns, PATACONTROLLER pCtl, ATADevState
 }
 
 
-static int ataR3WriteSectors(PPDMDEVINS pDevIns, PATACONTROLLER pCtl, ATADevState *s, PATADEVSTATER3 pDevR3,
+static int ataR3WriteSectors(PPDMDEVINS pDevIns, PATACONTROLLER pCtl, PATADEVSTATE s, PATADEVSTATER3 pDevR3,
                              uint64_t u64Sector, const void *pvBuf, uint32_t cSectors, bool *pfRedo)
 {
     int rc;
@@ -1812,7 +1813,7 @@ static int ataR3WriteSectors(PPDMDEVINS pDevIns, PATACONTROLLER pCtl, ATADevStat
 /**
  * Begin Transfer: READ/WRITE SECTORS
  */
-static void ataR3ReadWriteSectorsBT(PATACONTROLLER pCtl, ATADevState *s)
+static void ataR3ReadWriteSectorsBT(PATACONTROLLER pCtl, PATADEVSTATE s)
 {
     uint32_t const cbSector = RT_MAX(s->cbSector, 1);
     uint32_t cSectors;
@@ -1911,7 +1912,7 @@ static bool ataR3WriteSectorsSS(PPDMDEVINS pDevIns, PATACONTROLLER pCtl, PATADEV
 }
 
 
-static void atapiR3CmdOK(PATACONTROLLER pCtl, ATADevState *s)
+static void atapiR3CmdOK(PATACONTROLLER pCtl, PATADEVSTATE s)
 {
     s->uATARegError = 0;
     ataSetStatusValue(pCtl, s, ATA_STAT_READY);
@@ -1926,7 +1927,7 @@ static void atapiR3CmdOK(PATACONTROLLER pCtl, ATADevState *s)
 }
 
 
-static void atapiR3CmdError(PATACONTROLLER pCtl, ATADevState *s, const uint8_t *pabATAPISense, size_t cbATAPISense)
+static void atapiR3CmdError(PATACONTROLLER pCtl, PATADEVSTATE s, const uint8_t *pabATAPISense, size_t cbATAPISense)
 {
     Log(("%s: sense=%#x (%s) asc=%#x ascq=%#x (%s)\n", __FUNCTION__, pabATAPISense[2] & 0x0f, SCSISenseText(pabATAPISense[2] & 0x0f),
          pabATAPISense[12], pabATAPISense[13], SCSISenseExtText(pabATAPISense[12], pabATAPISense[13])));
@@ -1949,7 +1950,7 @@ static void atapiR3CmdError(PATACONTROLLER pCtl, ATADevState *s, const uint8_t *
 
 /** @todo deprecated function - doesn't provide enough info. Replace by direct
  * calls to atapiR3CmdError()  with full data. */
-static void atapiR3CmdErrorSimple(PATACONTROLLER pCtl, ATADevState *s, uint8_t uATAPISenseKey, uint8_t uATAPIASC)
+static void atapiR3CmdErrorSimple(PATACONTROLLER pCtl, PATADEVSTATE s, uint8_t uATAPISenseKey, uint8_t uATAPIASC)
 {
     uint8_t abATAPISense[ATAPI_SENSE_SIZE];
     memset(abATAPISense, '\0', sizeof(abATAPISense));
@@ -1964,7 +1965,7 @@ static void atapiR3CmdErrorSimple(PATACONTROLLER pCtl, ATADevState *s, uint8_t u
 /**
  * Begin Transfer: ATAPI command
  */
-static void atapiR3CmdBT(PATACONTROLLER pCtl, ATADevState *s)
+static void atapiR3CmdBT(PATACONTROLLER pCtl, PATADEVSTATE s)
 {
     s->fATAPITransfer = true;
     s->cbElementaryTransfer = s->cbTotalTransfer;
@@ -1978,7 +1979,7 @@ static void atapiR3CmdBT(PATACONTROLLER pCtl, ATADevState *s)
 /**
  * Begin Transfer: ATAPI Passthrough command
  */
-static void atapiR3PassthroughCmdBT(PATACONTROLLER pCtl, ATADevState *s)
+static void atapiR3PassthroughCmdBT(PATACONTROLLER pCtl, PATADEVSTATE s)
 {
     atapiR3CmdBT(pCtl, s);
 }
@@ -2105,7 +2106,7 @@ static bool atapiR3ReadSS(PPDMDEVINS pDevIns, PATACONTROLLER pCtl, PATADEVSTATE 
 /**
  * Sets the given media track type.
  */
-static uint32_t ataR3MediumTypeSet(ATADevState *s, uint32_t MediaTrackType)
+static uint32_t ataR3MediumTypeSet(PATADEVSTATE s, uint32_t MediaTrackType)
 {
     return ASMAtomicXchgU32(&s->MediaTrackType, MediaTrackType);
 }
@@ -2573,7 +2574,7 @@ static bool atapiR3ReadDVDStructureSS(PPDMDEVINS pDevIns, PATACONTROLLER pCtl, P
 }
 
 
-static bool atapiR3ReadSectors(PPDMDEVINS pDevIns, PATACONTROLLER pCtl, ATADevState *s,
+static bool atapiR3ReadSectors(PPDMDEVINS pDevIns, PATACONTROLLER pCtl, PATADEVSTATE s,
                                uint32_t iATAPILBA, uint32_t cSectors, uint32_t cbSector)
 {
     Assert(cSectors > 0);
@@ -2728,7 +2729,7 @@ static bool atapiR3ReadTrackInformationSS(PPDMDEVINS pDevIns, PATACONTROLLER pCt
     return false;
 }
 
-static DECLCALLBACK(uint32_t) atapiR3GetConfigurationFillFeatureListProfiles(ATADevState *s, uint8_t *pbBuf, size_t cbBuf)
+static DECLCALLBACK(uint32_t) atapiR3GetConfigurationFillFeatureListProfiles(PATADEVSTATE s, uint8_t *pbBuf, size_t cbBuf)
 {
     RT_NOREF(s);
     if (cbBuf < 3*4)
@@ -2747,7 +2748,7 @@ static DECLCALLBACK(uint32_t) atapiR3GetConfigurationFillFeatureListProfiles(ATA
     return 3*4; /* Header + 2 profiles entries */
 }
 
-static DECLCALLBACK(uint32_t) atapiR3GetConfigurationFillFeatureCore(ATADevState *s, uint8_t *pbBuf, size_t cbBuf)
+static DECLCALLBACK(uint32_t) atapiR3GetConfigurationFillFeatureCore(PATADEVSTATE s, uint8_t *pbBuf, size_t cbBuf)
 {
     RT_NOREF(s);
     if (cbBuf < 12)
@@ -2763,7 +2764,7 @@ static DECLCALLBACK(uint32_t) atapiR3GetConfigurationFillFeatureCore(ATADevState
     return 12;
 }
 
-static DECLCALLBACK(uint32_t) atapiR3GetConfigurationFillFeatureMorphing(ATADevState *s, uint8_t *pbBuf, size_t cbBuf)
+static DECLCALLBACK(uint32_t) atapiR3GetConfigurationFillFeatureMorphing(PATADEVSTATE s, uint8_t *pbBuf, size_t cbBuf)
 {
     RT_NOREF(s);
     if (cbBuf < 8)
@@ -2778,7 +2779,7 @@ static DECLCALLBACK(uint32_t) atapiR3GetConfigurationFillFeatureMorphing(ATADevS
     return 8;
 }
 
-static DECLCALLBACK(uint32_t) atapiR3GetConfigurationFillFeatureRemovableMedium(ATADevState *s, uint8_t *pbBuf, size_t cbBuf)
+static DECLCALLBACK(uint32_t) atapiR3GetConfigurationFillFeatureRemovableMedium(PATADEVSTATE s, uint8_t *pbBuf, size_t cbBuf)
 {
     RT_NOREF(s);
     if (cbBuf < 8)
@@ -2794,7 +2795,7 @@ static DECLCALLBACK(uint32_t) atapiR3GetConfigurationFillFeatureRemovableMedium(
     return 8;
 }
 
-static DECLCALLBACK(uint32_t) atapiR3GetConfigurationFillFeatureRandomReadable (ATADevState *s, uint8_t *pbBuf, size_t cbBuf)
+static DECLCALLBACK(uint32_t) atapiR3GetConfigurationFillFeatureRandomReadable (PATADEVSTATE s, uint8_t *pbBuf, size_t cbBuf)
 {
     RT_NOREF(s);
     if (cbBuf < 12)
@@ -2811,7 +2812,7 @@ static DECLCALLBACK(uint32_t) atapiR3GetConfigurationFillFeatureRandomReadable (
     return 12;
 }
 
-static DECLCALLBACK(uint32_t) atapiR3GetConfigurationFillFeatureCDRead(ATADevState *s, uint8_t *pbBuf, size_t cbBuf)
+static DECLCALLBACK(uint32_t) atapiR3GetConfigurationFillFeatureCDRead(PATADEVSTATE s, uint8_t *pbBuf, size_t cbBuf)
 {
     RT_NOREF(s);
     if (cbBuf < 8)
@@ -2826,7 +2827,7 @@ static DECLCALLBACK(uint32_t) atapiR3GetConfigurationFillFeatureCDRead(ATADevSta
     return 8;
 }
 
-static DECLCALLBACK(uint32_t) atapiR3GetConfigurationFillFeaturePowerManagement(ATADevState *s, uint8_t *pbBuf, size_t cbBuf)
+static DECLCALLBACK(uint32_t) atapiR3GetConfigurationFillFeaturePowerManagement(PATADEVSTATE s, uint8_t *pbBuf, size_t cbBuf)
 {
     RT_NOREF(s);
     if (cbBuf < 4)
@@ -2839,7 +2840,7 @@ static DECLCALLBACK(uint32_t) atapiR3GetConfigurationFillFeaturePowerManagement(
     return 4;
 }
 
-static DECLCALLBACK(uint32_t) atapiR3GetConfigurationFillFeatureTimeout(ATADevState *s, uint8_t *pbBuf, size_t cbBuf)
+static DECLCALLBACK(uint32_t) atapiR3GetConfigurationFillFeatureTimeout(PATADEVSTATE s, uint8_t *pbBuf, size_t cbBuf)
 {
     RT_NOREF(s);
     if (cbBuf < 8)
@@ -2861,7 +2862,7 @@ static DECLCALLBACK(uint32_t) atapiR3GetConfigurationFillFeatureTimeout(ATADevSt
  * @param   pbBuf   The buffer to fill the data with.
  * @param   cbBuf   Size of the buffer.
  */
-typedef DECLCALLBACK(uint32_t) FNATAPIR3FEATUREFILL(ATADevState *s, uint8_t *pbBuf, size_t cbBuf);
+typedef DECLCALLBACK(uint32_t) FNATAPIR3FEATUREFILL(PATADEVSTATE s, uint8_t *pbBuf, size_t cbBuf);
 /** Pointer to a feature fill callback. */
 typedef FNATAPIR3FEATUREFILL *PFNATAPIR3FEATUREFILL;
 
@@ -4001,7 +4002,7 @@ static bool ataR3PacketSS(PPDMDEVINS pDevIns, PATACONTROLLER pCtl, PATADEVSTATE 
  * SCSI_GET_EVENT_STATUS_NOTIFICATION should return "medium removed" event
  * from now on, regardless if there was a medium inserted or not.
  */
-static void ataR3MediumRemoved(ATADevState *s)
+static void ataR3MediumRemoved(PATADEVSTATE s)
 {
     ASMAtomicWriteU32(&s->MediaEventStatus, ATA_EVENT_STATUS_MEDIA_REMOVED);
 }
@@ -4012,7 +4013,7 @@ static void ataR3MediumRemoved(ATADevState *s)
  * there was already a medium inserted, don't forget to send the "medium
  * removed" event first.
  */
-static void ataR3MediumInserted(ATADevState *s)
+static void ataR3MediumInserted(PATADEVSTATE s)
 {
     uint32_t OldStatus, NewStatus;
     do
@@ -4091,7 +4092,7 @@ static DECLCALLBACK(void) ataR3UnmountNotify(PPDMIMOUNTNOTIFY pInterface)
 /**
  * Begin Transfer: PACKET
  */
-static void ataR3PacketBT(PATACONTROLLER pCtl, ATADevState *s)
+static void ataR3PacketBT(PATACONTROLLER pCtl, PATADEVSTATE s)
 {
     s->cbElementaryTransfer = s->cbTotalTransfer;
     s->cbAtapiPassthroughTransfer = s->cbTotalTransfer;
@@ -4101,7 +4102,7 @@ static void ataR3PacketBT(PATACONTROLLER pCtl, ATADevState *s)
 }
 
 
-static void ataR3ResetDevice(PPDMDEVINS pDevIns, PATACONTROLLER pCtl, ATADevState *s)
+static void ataR3ResetDevice(PPDMDEVINS pDevIns, PATACONTROLLER pCtl, PATADEVSTATE s)
 {
     s->cMultSectors = ATA_MAX_MULT_SECTORS;
     s->cNotifiedMediaChange = 0;
@@ -4127,7 +4128,7 @@ static void ataR3ResetDevice(PPDMDEVINS pDevIns, PATACONTROLLER pCtl, ATADevStat
 }
 
 
-static void ataR3DeviceDiag(PATACONTROLLER pCtl, ATADevState *s)
+static void ataR3DeviceDiag(PATACONTROLLER pCtl, PATADEVSTATE s)
 {
     ataR3SetSignature(s);
     if (s->fATAPI)
@@ -4689,7 +4690,7 @@ static VBOXSTRICTRC ataIOPortWriteU8(PPDMDEVINS pDevIns, PATACONTROLLER pCtl, ui
 
 static VBOXSTRICTRC ataIOPortReadU8(PPDMDEVINS pDevIns, PATACONTROLLER pCtl, uint32_t addr, uint32_t *pu32)
 {
-    ATADevState *s = &pCtl->aIfs[pCtl->iSelectedIf & ATA_SELECTED_IF_MASK];
+    PATADEVSTATE s = &pCtl->aIfs[pCtl->iSelectedIf & ATA_SELECTED_IF_MASK];
     uint32_t    val;
     bool        fHOB;
 
@@ -4872,7 +4873,7 @@ static VBOXSTRICTRC ataIOPortReadU8(PPDMDEVINS pDevIns, PATACONTROLLER pCtl, uin
  */
 static uint32_t ataStatusRead(PATACONTROLLER pCtl, uint32_t uIoPortForLog)
 {
-    ATADevState *s = &pCtl->aIfs[pCtl->iSelectedIf & ATA_SELECTED_IF_MASK];
+    PATADEVSTATE s = &pCtl->aIfs[pCtl->iSelectedIf & ATA_SELECTED_IF_MASK];
     uint32_t val;
     RT_NOREF(uIoPortForLog);
 
@@ -5001,7 +5002,7 @@ static int ataControlWrite(PPDMDEVINS pDevIns, PATACONTROLLER pCtl, uint32_t val
 
 static void ataHCPIOTransfer(PPDMDEVINS pDevIns, PATACONTROLLER pCtl)
 {
-    ATADevState *s;
+    PATADEVSTATE s;
 
     s = &pCtl->aIfs[pCtl->iAIOIf & ATA_SELECTED_IF_MASK];
     Log3(("%s: if=%p\n", __FUNCTION__, s));
@@ -5064,7 +5065,7 @@ static void ataHCPIOTransfer(PPDMDEVINS pDevIns, PATACONTROLLER pCtl)
 }
 
 
-DECLINLINE(void) ataHCPIOTransferFinish(PPDMDEVINS pDevIns, PATACONTROLLER pCtl, ATADevState *s)
+DECLINLINE(void) ataHCPIOTransferFinish(PPDMDEVINS pDevIns, PATACONTROLLER pCtl, PATADEVSTATE s)
 {
     /* Do not interfere with RESET processing if the PIO transfer finishes
      * while the RESET line is asserted. */
@@ -5124,7 +5125,7 @@ DECLINLINE(void) ataHCPIOTransferFinish(PPDMDEVINS pDevIns, PATACONTROLLER pCtl,
  * @param   offStart    The start offset (iIOBufferPIODataStart).
  * @param   cbCopy      The number of bytes to copy, either 1, 2 or 4 bytes.
  */
-DECL_NO_INLINE(static, void) ataCopyPioData124Slow(ATADevState *pIf, uint8_t *pbDst, const uint8_t *pbSrc,
+DECL_NO_INLINE(static, void) ataCopyPioData124Slow(PATADEVSTATE pIf, uint8_t *pbDst, const uint8_t *pbSrc,
                                                    uint32_t offStart, uint32_t cbCopy)
 {
     uint32_t const offNext    = offStart + cbCopy;
@@ -5169,7 +5170,7 @@ DECL_NO_INLINE(static, void) ataCopyPioData124Slow(ATADevState *pIf, uint8_t *pb
  * @param   offStart    The start offset (iIOBufferPIODataStart).
  * @param   cbCopy      The number of bytes to copy, either 1, 2 or 4 bytes.
  */
-DECLINLINE(void) ataCopyPioData124(ATADevState *pIf, uint8_t *pbDst, const uint8_t *pbSrc, uint32_t offStart, uint32_t cbCopy)
+DECLINLINE(void) ataCopyPioData124(PATADEVSTATE pIf, uint8_t *pbDst, const uint8_t *pbSrc, uint32_t offStart, uint32_t cbCopy)
 {
     /*
      * Quick bounds checking can be done by checking that the abIOBuffer offset
@@ -5203,7 +5204,7 @@ DECLINLINE(void) ataCopyPioData124(ATADevState *pIf, uint8_t *pbDst, const uint8
 static DECLCALLBACK(VBOXSTRICTRC)
 ataIOPortWrite1Data(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t u32, unsigned cb)
 {
-    PCIATAState   *pThis = PDMDEVINS_2_DATA(pDevIns, PCIATAState *);
+    PATASTATE      pThis = PDMDEVINS_2_DATA(pDevIns, PATASTATE);
     PATACONTROLLER pCtl  = &pThis->aCts[(uintptr_t)pvUser % RT_ELEMENTS(pThis->aCts)];
     RT_NOREF(offPort);
 
@@ -5214,7 +5215,7 @@ ataIOPortWrite1Data(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t
     VBOXSTRICTRC rc = PDMDevHlpCritSectEnter(pDevIns, &pCtl->lock, VINF_IOM_R3_IOPORT_WRITE);
     if (rc == VINF_SUCCESS)
     {
-        ATADevState *s = &pCtl->aIfs[pCtl->iSelectedIf & ATA_SELECTED_IF_MASK];
+        PATADEVSTATE s = &pCtl->aIfs[pCtl->iSelectedIf & ATA_SELECTED_IF_MASK];
         uint32_t const iIOBufferPIODataStart = RT_MIN(s->iIOBufferPIODataStart, sizeof(s->abIOBuffer));
         uint32_t const iIOBufferPIODataEnd   = RT_MIN(s->iIOBufferPIODataEnd,   sizeof(s->abIOBuffer));
 
@@ -5274,7 +5275,7 @@ ataIOPortWrite1Data(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t
 static DECLCALLBACK(VBOXSTRICTRC)
 ataIOPortRead1Data(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t *pu32, unsigned cb)
 {
-    PCIATAState   *pThis = PDMDEVINS_2_DATA(pDevIns, PCIATAState *);
+    PATASTATE      pThis = PDMDEVINS_2_DATA(pDevIns, PATASTATE);
     PATACONTROLLER pCtl  = &pThis->aCts[(uintptr_t)pvUser % RT_ELEMENTS(pThis->aCts)];
     RT_NOREF(offPort);
 
@@ -5290,7 +5291,7 @@ ataIOPortRead1Data(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t 
     VBOXSTRICTRC rc = PDMDevHlpCritSectEnter(pDevIns, &pCtl->lock, VINF_IOM_R3_IOPORT_READ);
     if (rc == VINF_SUCCESS)
     {
-        ATADevState *s = &pCtl->aIfs[pCtl->iSelectedIf & ATA_SELECTED_IF_MASK];
+        PATADEVSTATE s = &pCtl->aIfs[pCtl->iSelectedIf & ATA_SELECTED_IF_MASK];
 
         if (s->iIOBufferPIODataStart < s->iIOBufferPIODataEnd)
         {
@@ -5362,7 +5363,7 @@ ataIOPortRead1Data(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t 
 static DECLCALLBACK(VBOXSTRICTRC)
 ataIOPortReadStr1Data(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint8_t *pbDst, uint32_t *pcTransfers, unsigned cb)
 {
-    PCIATAState   *pThis = PDMDEVINS_2_DATA(pDevIns, PCIATAState *);
+    PATASTATE      pThis = PDMDEVINS_2_DATA(pDevIns, PATASTATE);
     PATACONTROLLER pCtl  = &pThis->aCts[(uintptr_t)pvUser % RT_ELEMENTS(pThis->aCts)];
     RT_NOREF(offPort);
 
@@ -5376,7 +5377,7 @@ ataIOPortReadStr1Data(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint8_
         rc = PDMDevHlpCritSectEnter(pDevIns, &pCtl->lock, VINF_IOM_R3_IOPORT_READ);
         if (rc == VINF_SUCCESS)
         {
-            ATADevState *s = &pCtl->aIfs[pCtl->iSelectedIf & ATA_SELECTED_IF_MASK];
+            PATADEVSTATE s = &pCtl->aIfs[pCtl->iSelectedIf & ATA_SELECTED_IF_MASK];
 
             uint32_t const offStart = s->iIOBufferPIODataStart;
             uint32_t const offEnd   = s->iIOBufferPIODataEnd;
@@ -5453,7 +5454,7 @@ ataIOPortReadStr1Data(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint8_
 static DECLCALLBACK(VBOXSTRICTRC)
 ataIOPortWriteStr1Data(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint8_t const *pbSrc, uint32_t *pcTransfers, unsigned cb)
 {
-    PCIATAState   *pThis = PDMDEVINS_2_DATA(pDevIns, PCIATAState *);
+    PATASTATE      pThis = PDMDEVINS_2_DATA(pDevIns, PATASTATE);
     PATACONTROLLER pCtl  = &pThis->aCts[(uintptr_t)pvUser % RT_ELEMENTS(pThis->aCts)];
     RT_NOREF(offPort);
 
@@ -5467,7 +5468,7 @@ ataIOPortWriteStr1Data(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint8
         rc = PDMDevHlpCritSectEnter(pDevIns, &pCtl->lock, VINF_IOM_R3_IOPORT_WRITE);
         if (rc == VINF_SUCCESS)
         {
-            ATADevState *s = &pCtl->aIfs[pCtl->iSelectedIf & ATA_SELECTED_IF_MASK];
+            PATADEVSTATE s = &pCtl->aIfs[pCtl->iSelectedIf & ATA_SELECTED_IF_MASK];
 
             uint32_t const offStart = s->iIOBufferPIODataStart;
             uint32_t const offEnd   = s->iIOBufferPIODataEnd;
@@ -5534,7 +5535,7 @@ ataIOPortWriteStr1Data(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint8
 
 #ifdef IN_RING3
 
-static void ataR3DMATransferStop(ATADevState *s)
+static void ataR3DMATransferStop(PATADEVSTATE s)
 {
     s->cbTotalTransfer = 0;
     s->cbElementaryTransfer = 0;
@@ -6384,7 +6385,7 @@ static void ataBMDMAAddrWriteHighWord(PATACONTROLLER pCtl, uint32_t addr, uint32
 static DECLCALLBACK(VBOXSTRICTRC)
 ataBMDMAIOPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t *pu32, unsigned cb)
 {
-    PCIATAState   *pThis = PDMDEVINS_2_DATA(pDevIns, PCIATAState *);
+    PATASTATE      pThis = PDMDEVINS_2_DATA(pDevIns, PATASTATE);
     PATACONTROLLER pCtl  = &pThis->aCts[(offPort >> BM_DMA_CTL_IOPORTS_SHIFT) % RT_ELEMENTS(pThis->aCts)];
     RT_NOREF(pvUser);
 
@@ -6419,7 +6420,7 @@ ataBMDMAIOPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t 
 static DECLCALLBACK(VBOXSTRICTRC)
 ataBMDMAIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t u32, unsigned cb)
 {
-    PCIATAState   *pThis = PDMDEVINS_2_DATA(pDevIns, PCIATAState *);
+    PATASTATE      pThis = PDMDEVINS_2_DATA(pDevIns, PATASTATE);
     PATACONTROLLER pCtl  = &pThis->aCts[(offPort >> BM_DMA_CTL_IOPORTS_SHIFT) % RT_ELEMENTS(pThis->aCts)];
     RT_NOREF(pvUser);
 
@@ -6455,7 +6456,7 @@ ataBMDMAIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t
 
 #ifdef IN_RING3
 
-/* -=-=-=-=-=- PCIATAState::IBase  -=-=-=-=-=- */
+/* -=-=-=-=-=- ATASTATE::IBase  -=-=-=-=-=- */
 
 /**
  * @interface_method_impl{PDMIBASE,pfnQueryInterface}
@@ -6469,7 +6470,7 @@ static DECLCALLBACK(void *) ataR3Status_QueryInterface(PPDMIBASE pInterface, con
 }
 
 
-/* -=-=-=-=-=- PCIATAState::ILeds  -=-=-=-=-=- */
+/* -=-=-=-=-=- ATASTATE::ILeds  -=-=-=-=-=- */
 
 /**
  * Gets the pointer to the status LED of a unit.
@@ -6499,7 +6500,7 @@ static DECLCALLBACK(int) ataR3Status_QueryStatusLed(PPDMILEDPORTS pInterface, un
 }
 
 
-/* -=-=-=-=-=- ATADevState::IBase   -=-=-=-=-=- */
+/* -=-=-=-=-=- ATADEVSTATE::IBase   -=-=-=-=-=- */
 
 /**
  * @interface_method_impl{PDMIBASE,pfnQueryInterface}
@@ -6514,7 +6515,7 @@ static DECLCALLBACK(void *) ataR3QueryInterface(PPDMIBASE pInterface, const char
 }
 
 
-/* -=-=-=-=-=- ATADevState::IPort  -=-=-=-=-=- */
+/* -=-=-=-=-=- ATADEVSTATE::IPort  -=-=-=-=-=- */
 
 /**
  * @interface_method_impl{PDMIMEDIAPORT,pfnQueryDeviceLocation}
@@ -6552,8 +6553,8 @@ ataIOPortWriteEmptyBus(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint3
     RT_NOREF(pDevIns, pvUser, offPort, u32, cb);
 
 #ifdef VBOX_STRICT
-    PCIATAState *pThis = PDMDEVINS_2_DATA(pDevIns, PCIATAState *);
-    PATACONTROLLER pCtl = &pThis->aCts[(uintptr_t)pvUser % RT_ELEMENTS(pThis->aCts)];
+    PATASTATE      pThis = PDMDEVINS_2_DATA(pDevIns, PATASTATE);
+    PATACONTROLLER pCtl  = &pThis->aCts[(uintptr_t)pvUser % RT_ELEMENTS(pThis->aCts)];
     Assert((uintptr_t)pvUser < 2);
     Assert(!pCtl->aIfs[0].fPresent && !pCtl->aIfs[1].fPresent);
 #endif
@@ -6575,7 +6576,7 @@ ataIOPortReadEmptyBus(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32
     RT_NOREF(pDevIns, offPort, pvUser);
 
 #ifdef VBOX_STRICT
-    PCIATAState   *pThis = PDMDEVINS_2_DATA(pDevIns, PCIATAState *);
+    PATASTATE      pThis = PDMDEVINS_2_DATA(pDevIns, PATASTATE);
     PATACONTROLLER pCtl = &pThis->aCts[(uintptr_t)pvUser % RT_ELEMENTS(pThis->aCts)];
     Assert((uintptr_t)pvUser < 2);
     Assert(cb <= 4);
@@ -6607,7 +6608,7 @@ ataIOPortReadEmptyBus(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32
 static DECLCALLBACK(VBOXSTRICTRC)
 ataIOPortWrite1Other(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t u32, unsigned cb)
 {
-    PCIATAState   *pThis = PDMDEVINS_2_DATA(pDevIns, PCIATAState *);
+    PATASTATE      pThis = PDMDEVINS_2_DATA(pDevIns, PATASTATE);
     uintptr_t      iCtl = (uintptr_t)pvUser % RT_ELEMENTS(pThis->aCts);
     PATACONTROLLER pCtl = &pThis->aCts[iCtl];
 
@@ -6639,7 +6640,7 @@ ataIOPortWrite1Other(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_
 static DECLCALLBACK(VBOXSTRICTRC)
 ataIOPortRead1Other(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t *pu32, unsigned cb)
 {
-    PCIATAState   *pThis = PDMDEVINS_2_DATA(pDevIns, PCIATAState *);
+    PATASTATE      pThis = PDMDEVINS_2_DATA(pDevIns, PATASTATE);
     PATACONTROLLER pCtl = &pThis->aCts[(uintptr_t)pvUser % RT_ELEMENTS(pThis->aCts)];
 
     Assert((uintptr_t)pvUser < 2);
@@ -6677,7 +6678,7 @@ ataIOPortRead1Other(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t
 static DECLCALLBACK(VBOXSTRICTRC)
 ataIOPortWrite2(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t u32, unsigned cb)
 {
-    PCIATAState   *pThis = PDMDEVINS_2_DATA(pDevIns, PCIATAState *);
+    PATASTATE      pThis = PDMDEVINS_2_DATA(pDevIns, PATASTATE);
     PATACONTROLLER pCtl = &pThis->aCts[(uintptr_t)pvUser % RT_ELEMENTS(pThis->aCts)];
     int rc;
 
@@ -6709,7 +6710,7 @@ ataIOPortWrite2(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t u32
 static DECLCALLBACK(VBOXSTRICTRC)
 ataIOPortRead2(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t *pu32, unsigned cb)
 {
-    PCIATAState   *pThis = PDMDEVINS_2_DATA(pDevIns, PCIATAState *);
+    PATASTATE      pThis = PDMDEVINS_2_DATA(pDevIns, PATASTATE);
     PATACONTROLLER pCtl = &pThis->aCts[(uintptr_t)pvUser % RT_ELEMENTS(pThis->aCts)];
     int            rc;
 
@@ -7085,8 +7086,8 @@ static bool ataR3AllAsyncIOIsIdle(PPDMDEVINS pDevIns)
  */
 static DECLCALLBACK(int) ataR3SaveLoadPrep(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 {
+    PATASTATE pThis = PDMDEVINS_2_DATA(pDevIns, PATASTATE);
     RT_NOREF(pSSM);
-    PCIATAState *pThis = PDMDEVINS_2_DATA(pDevIns, PCIATAState *);
 
     /* sanity - the suspend notification will wait on the async stuff. */
     for (uint32_t i = 0; i < RT_ELEMENTS(pThis->aCts); i++)
@@ -7106,7 +7107,7 @@ static DECLCALLBACK(int) ataR3LiveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint
     PCPDMDEVHLPR3   pHlp = pDevIns->pHlpR3;
     RT_NOREF(uPass);
 
-    pHlp->pfnSSMPutU8(pSSM, pThis->u8Type);
+    pHlp->pfnSSMPutU8(pSSM, (uint8_t)pThis->enmChipset);
     for (uint32_t i = 0; i < RT_ELEMENTS(pThis->aCts); i++)
     {
         pHlp->pfnSSMPutBool(pSSM, true);       /* For controller enabled / disabled. */
@@ -7246,8 +7247,8 @@ static DECLCALLBACK(int) ataR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint
         uint8_t u8Type;
         rc = pHlp->pfnSSMGetU8(pSSM, &u8Type);
         AssertRCReturn(rc, rc);
-        if (u8Type != pThis->u8Type)
-            return pHlp->pfnSSMSetCfgError(pSSM, RT_SRC_POS, N_("Config mismatch: u8Type - saved=%u config=%u"), u8Type, pThis->u8Type);
+        if ((CHIPSET)u8Type != pThis->enmChipset)
+            return pHlp->pfnSSMSetCfgError(pSSM, RT_SRC_POS, N_("Config mismatch: enmChipset - saved=%u config=%u"), u8Type, pThis->enmChipset);
 
         for (uint32_t i = 0; i < RT_ELEMENTS(pThis->aCts); i++)
         {
@@ -7297,7 +7298,7 @@ static DECLCALLBACK(int) ataR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint
         return VINF_SUCCESS;
 
     /*
-     * Restore valid parts of the PCIATAState structure
+     * Restore valid parts of the ATASTATE structure
      */
     for (uint32_t i = 0; i < RT_ELEMENTS(pThis->aCts); i++)
     {
@@ -7430,7 +7431,7 @@ static DECLCALLBACK(int) ataR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint
         }
     }
     if (uVersion <= ATA_SAVED_STATE_VERSION_VBOX_30)
-        pHlp->pfnSSMGetU8(pSSM, &pThis->u8Type);
+        PDMDEVHLP_SSM_GET_ENUM8_RET(pHlp, pSSM, pThis->enmChipset, CHIPSET);
 
     rc = pHlp->pfnSSMGetU32(pSSM, &u32);
     if (RT_FAILURE(rc))
@@ -7502,7 +7503,7 @@ static DECLCALLBACK(void) ataR3Suspend(PPDMDEVINS pDevIns)
  */
 static DECLCALLBACK(bool) ataR3IsAsyncResetDone(PPDMDEVINS pDevIns)
 {
-    PCIATAState *pThis = PDMDEVINS_2_DATA(pDevIns, PCIATAState *);
+    PATASTATE pThis = PDMDEVINS_2_DATA(pDevIns, PATASTATE);
 
     if (!ataR3AllAsyncIOIsIdle(pDevIns))
         return false;
@@ -7792,7 +7793,7 @@ static DECLCALLBACK(int) ataR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     rc = ataR3ControllerFromCfg(pDevIns, pCfg, &enmChipset);
     if (RT_FAILURE(rc))
         return rc;
-    pThis->u8Type = (uint8_t)enmChipset;
+    pThis->enmChipset = enmChipset;
 
     /*
      * Initialize data (most of it anyway).
@@ -7921,7 +7922,7 @@ static DECLCALLBACK(int) ataR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     {
         for (uint32_t j = 0; j < RT_ELEMENTS(pThis->aCts[i].aIfs); j++)
         {
-            ATADevState *pIf = &pThis->aCts[i].aIfs[j];
+            PATADEVSTATE pIf = &pThis->aCts[i].aIfs[j];
             PDMDevHlpSTAMRegisterF(pDevIns, &pIf->StatATADMA,       STAMTYPE_COUNTER,    STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,
                                    "Number of ATA DMA transfers.",              "/Devices/IDE%d/ATA%d/Unit%d/DMA", iInstance, i, j);
             PDMDevHlpSTAMRegisterF(pDevIns, &pIf->StatATAPIO,       STAMTYPE_COUNTER,    STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,
@@ -8233,7 +8234,7 @@ static DECLCALLBACK(int) ataR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
 static DECLCALLBACK(int) ataRZConstruct(PPDMDEVINS pDevIns)
 {
     PDMDEV_CHECK_VERSIONS_RETURN(pDevIns);
-    PCIATAState *pThis = PDMDEVINS_2_DATA(pDevIns, PCIATAState *);
+    PATASTATE pThis = PDMDEVINS_2_DATA(pDevIns, PATASTATE);
 
     int rc = PDMDevHlpSetDeviceCritSect(pDevIns, PDMDevHlpCritSectGetNop(pDevIns));
     AssertRCReturn(rc, rc);
