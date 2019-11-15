@@ -6896,9 +6896,10 @@ void MachineConfigFile::buildHardwareXML(xml::ElementNode &elmParent,
         }
     }
 
-    /** @todo In the future (6.0?) place the storage controllers under \<Hardware\>, because
-     * this is where it always should've been. What else than hardware are they? */
-    xml::ElementNode &elmStorageParent = (m->sv > SettingsVersion_Future) ? *pelmHardware : elmParent;
+    /* Starting with settings version of 6.0 (and only 6.1 and later does this, while
+     * 5.2 and 6.0 understand it), place storage controller settings under hardware,
+     * where it always should've been. */
+    xml::ElementNode &elmStorageParent = (m->sv >= SettingsVersion_v1_17) ? *pelmHardware : elmParent;
     buildStorageControllersXML(elmStorageParent,
                                hw.storage,
                                !!(fl & BuildMachineXML_SkipRemovableMedia),

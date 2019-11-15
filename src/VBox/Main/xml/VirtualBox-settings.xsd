@@ -257,6 +257,30 @@
   </xsd:restriction>
 </xsd:simpleType>
 
+<xsd:simpleType name="TStorageControllerType">
+  <xsd:restriction base="xsd:token">
+    <xsd:enumeration value="AHCI"/>
+    <xsd:enumeration value="LsiLogic"/>
+    <xsd:enumeration value="BusLogic"/>
+    <xsd:enumeration value="PIIX3"/>
+    <xsd:enumeration value="PIIX4"/>
+    <xsd:enumeration value="ICH6"/>
+    <xsd:enumeration value="LsiLogicSas"/>
+    <xsd:enumeration value="I82078"/>
+    <xsd:enumeration value="USB"/>
+    <xsd:enumeration value="NVMe"/>
+    <xsd:enumeration value="VirtioSCSI"/>
+  </xsd:restriction>
+</xsd:simpleType>
+
+<xsd:simpleType name="TDisplayControllerType">
+  <xsd:restriction base="xsd:token">
+    <xsd:enumeration value="VBoxVGA"/>
+    <xsd:enumeration value="VMSVGA"/>
+    <xsd:enumeration value="VBoxSVGA"/>
+  </xsd:restriction>
+</xsd:simpleType>
+
 <!--
 // Complex types
 /////////////////////////////////////////////////////////////////////////
@@ -421,6 +445,7 @@
   <xsd:attribute name="LogHistoryCount" type="xsd:unsignedInt" default="3"/>
   <xsd:attribute name="defaultVRDEExtPack" type="xsd:string"/>
   <xsd:attribute name="exclusiveHwVirt" type="xsd:boolean"/>
+  <xsd:attribute name="proxyMode" type="xsd:string"/>
 </xsd:complexType>
 
 <xsd:complexType name="TExtraData">
@@ -620,6 +645,7 @@
   <xsd:attribute name="MonitorCount" type="TMonitorCount"/> <!-- deprecated -->
   <xsd:attribute name="accelerate3D" type="xsd:boolean" default="false"/>
   <xsd:attribute name="accelerate2DVideo" type="xsd:boolean" default="false"/>
+  <xsd:attribute name="controller" type="TDisplayControllerType" default="VBoxSVGA"/>
 </xsd:complexType>
 
 <xsd:complexType name="TVideoRecording">
@@ -723,6 +749,11 @@
         <xsd:attribute name="path" type="xsd:string"/>
       </xsd:complexType>
     </xsd:element>
+    <xsd:element name="SmbiosUuidLittleEndian" minOccurs="0">
+      <xsd:complexType>
+          <xsd:attribute name="enabled" type="xsd:boolean" default="false"/>
+      </xsd:complexType>
+    </xsd:element>
     <xsd:element name="IDEController" minOccurs="0"> <!-- deprecated -->
       <xsd:complexType>
         <xsd:attribute name="type">
@@ -760,22 +791,7 @@
                  minOccurs="0" maxOccurs="unbounded"/>
   </xsd:sequence>
   <xsd:attribute name="name" type="xsd:string" use="required"/>
-  <xsd:attribute name="type" use="required">
-    <xsd:simpleType>
-      <xsd:restriction base="xsd:token">
-      <xsd:enumeration value="AHCI"/>
-      <xsd:enumeration value="LsiLogic"/>
-      <xsd:enumeration value="BusLogic"/>
-      <xsd:enumeration value="PIIX3"/>
-      <xsd:enumeration value="PIIX4"/>
-      <xsd:enumeration value="ICH6"/>
-      <xsd:enumeration value="LsiLogicSas"/>
-      <xsd:enumeration value="I82078"/>
-      <xsd:enumeration value="USB"/>
-      <xsd:enumeration value="NVMe"/>
-      </xsd:restriction>
-    </xsd:simpleType>
-  </xsd:attribute>
+  <xsd:attribute name="type" type="TStorageControllerType" use="required"/>
   <xsd:attribute name="PortCount"   type="xsd:unsignedInt" use="required"/>
   <xsd:attribute name="useHostIOCache" type="xsd:boolean"  use="optional" default="true"/>
   <xsd:attribute name="Bootable"    type="xsd:boolean"     use="optional"/>
@@ -884,6 +900,8 @@
 
 <xsd:complexType name="TAudioAdapter">
   <xsd:attribute name="enabled" type="xsd:boolean" default="false"/>
+  <xsd:attribute name="enabledIn" type="xsd:boolean" default="false"/>
+  <xsd:attribute name="enabledOut" type="xsd:boolean" default="false"/>
   <xsd:attribute name="controller" default="AC97">
     <xsd:simpleType>
       <xsd:restriction base="xsd:token">
@@ -1153,7 +1171,7 @@
 </xsd:complexType>
 
 <xsd:complexType name="TClipboard">
-  <xsd:attribute name="mode" type="TClipboardMode" use="required"/>
+  <xsd:attribute name="mode" type="TClipboardMode" default="Disabled"/>
 </xsd:complexType>
 
 <xsd:complexType name="TDragAndDrop">
