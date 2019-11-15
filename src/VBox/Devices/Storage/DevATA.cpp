@@ -5057,11 +5057,11 @@ ataIOPortWrite1Data(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t
         else
             Log2(("%s: DUMMY data\n", __FUNCTION__));
 
-        Log3(("%s: addr=%#x val=%.*Rhxs rc=%d\n", __FUNCTION__, offPort + pCtl->IOPortBase1, cb, &u32, rc));
+        Log3(("%s: addr=%#x val=%.*Rhxs rc=%d\n", __FUNCTION__, offPort + pCtl->IOPortBase1, cb, &u32, VBOXSTRICTRC_VAL(rc)));
         PDMDevHlpCritSectLeave(pCtl->CTX_SUFF(pDevIns), &pCtl->lock);
     }
     else
-        Log3(("%s: addr=%#x -> %d\n", __FUNCTION__, offPort + pCtl->IOPortBase1, rc));
+        Log3(("%s: addr=%#x -> %d\n", __FUNCTION__, offPort + pCtl->IOPortBase1, VBOXSTRICTRC_VAL(rc)));
     return rc;
 }
 
@@ -5143,12 +5143,12 @@ ataIOPortRead1Data(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t 
             Log2(("%s: DUMMY data\n", __FUNCTION__));
             memset(pu32, 0xff, cb);
         }
-        Log3(("%s: addr=%#x val=%.*Rhxs rc=%d\n", __FUNCTION__, offPort, cb, pu32, rc));
+        Log3(("%s: addr=%#x val=%.*Rhxs rc=%d\n", __FUNCTION__, offPort, cb, pu32, VBOXSTRICTRC_VAL(rc)));
 
         PDMDevHlpCritSectLeave(pCtl->CTX_SUFF(pDevIns), &pCtl->lock);
     }
     else
-        Log3(("%s: addr=%#x -> %d\n", __FUNCTION__, offPort, rc));
+        Log3(("%s: addr=%#x -> %d\n", __FUNCTION__, offPort, VBOXSTRICTRC_VAL(rc)));
 
     return rc;
 }
