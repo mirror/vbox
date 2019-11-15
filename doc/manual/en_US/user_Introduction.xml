@@ -539,12 +539,6 @@
 
           <listitem>
             <para>
-              Windows 7
-            </para>
-          </listitem>
-
-          <listitem>
-            <para>
               Windows 8
             </para>
           </listitem>
@@ -599,7 +593,13 @@
 
           <listitem>
             <para>
-              Windows Server 2008 R2
+              Windows 10 May 2019 Update (19H1 / 1903) build 18362
+            </para>
+          </listitem>
+
+          <listitem>
+            <para>
+              Windows 10 November 2019 Update (19H2 / 1909) build 18363
             </para>
           </listitem>
 
@@ -639,12 +639,6 @@
 
           <listitem>
             <para>
-              10.12 (Sierra)
-            </para>
-          </listitem>
-
-          <listitem>
-            <para>
               10.13 (High Sierra)
             </para>
           </listitem>
@@ -655,12 +649,17 @@
             </para>
           </listitem>
 
+          <listitem>
+            <para>
+              10.15 (Catalina)
+            </para>
+          </listitem>
+
         </itemizedlist>
 
         <para>
           Intel hardware is required. See also
-          <xref
-        linkend="KnownIssues" />.
+          <xref linkend="KnownIssues" />.
         </para>
       </listitem>
 
@@ -674,31 +673,31 @@
 
           <listitem>
             <para>
-              Ubuntu 16.04 LTS, 18.04 LTS and 18.10
+              Ubuntu 18.04 LTS, 19.03 and 19.10
             </para>
           </listitem>
 
           <listitem>
             <para>
-              Debian GNU/Linux 9 ("Stretch")
+              Debian GNU/Linux 9 ("Stretch") and 10 ("Buster")
             </para>
           </listitem>
 
           <listitem>
             <para>
-              Oracle Linux 6 and 7
+              Oracle Linux 6, 7 and 8
             </para>
           </listitem>
 
           <listitem>
             <para>
-              Redhat Enterprise Linux 6 and 7
+              Redhat Enterprise Linux 6, 7 and 8
             </para>
           </listitem>
 
           <listitem>
             <para>
-              Fedora 28 and 29
+              Fedora 30 and 31
             </para>
           </listitem>
 
@@ -716,7 +715,7 @@
 
           <listitem>
             <para>
-              openSUSE Leap 42.3 and 15.0
+              openSUSE Leap 15.1
             </para>
           </listitem>
 
@@ -724,7 +723,7 @@
 
         <para>
           It should be possible to use &product-name; on most systems
-          based on Linux kernel 2.6 or 3.x using either the
+          based on Linux kernel 2.6, 3.x, 4.x or 5.x using either the
           &product-name; installer or by doing a manual installation.
           See <xref linkend="install-linux-host" />. However, the
           formally tested and supported Linux distributions are those
