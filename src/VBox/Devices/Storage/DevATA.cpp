@@ -951,6 +951,7 @@ static const ATARequest *ataR3AsyncIOGetCurrentRequest(PPDMDEVINS pDevIns, PATAC
  * is not removed blindly, as this could mean a RESET request that is not
  * yet processed (but has cleared the request queue) is lost.
  *
+ * @param pDevIns   The device instance.
  * @param pCtl      Controller for which to remove the request.
  * @param ReqType   Type of the request to remove.
  */
@@ -975,6 +976,7 @@ static void ataR3AsyncIORemoveCurrentRequest(PPDMDEVINS pDevIns, PATACONTROLLER 
  * contents, then the already processed entries, as long as they haven't been
  * overwritten.
  *
+ * @param pDevIns   The device instance.
  * @param pCtl      Controller for which to dump the queue.
  */
 static void ataR3AsyncIODumpRequests(PPDMDEVINS pDevIns, PATACONTROLLER pCtl)
@@ -1027,6 +1029,7 @@ static void ataR3AsyncIODumpRequests(PPDMDEVINS pDevIns, PATACONTROLLER pCtl)
  * Checks whether the request queue for a particular controller is empty
  * or whether a particular controller is idle.
  *
+ * @param pDevIns   The device instance.
  * @param pCtl      Controller for which to check the queue.
  * @param fStrict   If set then the controller is checked to be idle.
  */
@@ -5545,7 +5548,9 @@ static void ataR3DMATransferStop(ATADevState *s)
  * has to be redone or a RESET comes in between). Unlike the PIO counterpart
  * this function cannot handle empty transfers.
  *
- * @param pCtl      Controller for which to perform the transfer.
+ * @param pDevIns   The device instance.
+ * @param pCtl      Controller for which to perform the transfer, shared bits.
+ * @param pCtlR3    The ring-3 controller state.
  */
 static void ataR3DMATransfer(PPDMDEVINS pDevIns, PATACONTROLLER pCtl, PATACONTROLLERR3 pCtlR3)
 {
