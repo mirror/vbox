@@ -554,7 +554,6 @@
             <scancode>0x1d</scancode>
         </key>
         <key>
-
             <width>75</width>
             <usageid>0xe3</usageid>
             <usagepage>0x7</usagepage>
@@ -598,6 +597,7 @@
             <position>231</position>
             <scancodeprefix>0xe0</scancodeprefix>
             <scancode>0x5c</scancode>
+            <staticcaption>◆</staticcaption>
             <osmenukey>true</osmenukey>
         </key>
         <key>

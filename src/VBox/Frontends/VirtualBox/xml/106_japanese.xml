@@ -615,6 +615,7 @@
             <scancodeprefix>0xe0</scancodeprefix>
             <scancode>0x5c</scancode>
             <osmenukey>true</osmenukey>
+            <staticcaption>◆</staticcaption>
         </key>
         <key><!-- Menu / Application -->
             <usageid>0x65</usageid>
