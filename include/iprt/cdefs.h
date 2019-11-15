@@ -2475,6 +2475,45 @@
  */
 #define RT_ELEMENTS(aArray)                     ( sizeof(aArray) / sizeof((aArray)[0]) )
 
+/** @def RT_SAFE_SUBSCRIPT
+ * Safe array subscript using modulo and size_t cast.
+ * @param   a_Array     The array.
+ * @param   a_idx       The array index, cast to size_t to ensure unsigned.
+ */
+#define RT_SAFE_SUBSCRIPT(a_Array, a_idx)      (a_Array)[(size_t)(a_idx) % RT_ELEMENTS(a_Array)]
+
+/** @def RT_SAFE_SUBSCRIPT32
+ * Safe array subscript using modulo and uint32_t cast.
+ * @param   a_Array     The array.
+ * @param   a_idx       The array index, cast to size_t to ensure unsigned.
+ * @note    Only consider using this if array size is not power of two.
+ */
+#define RT_SAFE_SUBSCRIPT32(a_Array, a_idx)    (a_Array)[(uint32_t)(a_idx) % RT_ELEMENTS(a_Array)]
+
+/** @def RT_SAFE_SUBSCRIPT16
+ * Safe array subscript using modulo and uint16_t cast.
+ * @param   a_Array     The array.
+ * @param   a_idx       The array index, cast to size_t to ensure unsigned.
+ * @note    Only consider using this if array size is not power of two.
+ */
+#define RT_SAFE_SUBSCRIPT16(a_Array, a_idx)     (a_Array)[(uint16_t)(a_idx) % RT_ELEMENTS(a_Array)]
+
+/** @def RT_SAFE_SUBSCRIPT8
+ * Safe array subscript using modulo and uint8_t cast.
+ * @param   a_Array     The array.
+ * @param   a_idx       The array index, cast to size_t to ensure unsigned.
+ * @note    Only consider using this if array size is not power of two.
+ */
+#define RT_SAFE_SUBSCRIPT8(a_Array, a_idx)      (a_Array)[(uint8_t)(a_idx) % RT_ELEMENTS(a_Array)]
+
+/** @def RT_SAFE_SUBSCRIPT_NC
+ * Safe array subscript using modulo but no cast.
+ * @param   a_Array     The array.
+ * @param   a_idx       The array index - assumes unsigned type.
+ * @note    Only consider using this if array size is not power of two.
+ */
+#define RT_SAFE_SUBSCRIPT_NC(a_Array, a_idx)    (a_Array)[(a_idx) % RT_ELEMENTS(a_Array)]
+
 /** @def RT_FLEXIBLE_ARRAY
  * What to up inside the square brackets when declaring a structure member
  * with a flexible size.
