@@ -510,16 +510,8 @@ typedef struct AHCI
     uint32_t                        Alignment3;
 #endif
 
-    /** Countdown timer for command completion coalescing - R3 ptr */
-    PTMTIMERR3                      pHbaCccTimerR3;
-    /** Countdown timer for command completion coalescing - R0 ptr */
-    PTMTIMERR0                      pHbaCccTimerR0;
-    /** Countdown timer for command completion coalescing - RC ptr */
-    PTMTIMERRC                      pHbaCccTimerRC;
-
-#if HC_ARCH_BITS == 64
-    uint32_t                        Alignment4;
-#endif
+    /** Countdown timer for command completion coalescing. */
+    TMTIMERHANDLE                   hHbaCccTimer;
 
     /** Which port number is used to mark an CCC interrupt */
     uint8_t                         uCccPortNr;
@@ -902,7 +894,7 @@ static int ahciHbaSetInterrupt(PAHCI pAhci, uint8_t iPort, int rcBusy)
             if (pAhci->uCccCurrentNr >= pAhci->uCccNr)
             {
                 /* Reset command completion coalescing state. */
-                TMTimerSetMillies(pAhci->CTX_SUFF(pHbaCccTimer), pAhci->uCccTimeout);
+                PDMDevHlpTimerSetMillies(pAhci->CTX_SUFF(pDevIns), pAhci->hHbaCccTimer, pAhci->uCccTimeout);
                 pAhci->uCccCurrentNr = 0;
 
                 pAhci->u32PortsInterrupted |= (1 << pAhci->uCccPortNr);
@@ -935,8 +927,8 @@ static int ahciHbaSetInterrupt(PAHCI pAhci, uint8_t iPort, int rcBusy)
 
 #ifdef IN_RING3
 
-/*
- * Assert irq when an CCC timeout occurs
+/**
+ * @callback_method_impl{FNTMTIMERDEV, Assert irq when an CCC timeout occurs.}
  */
 static DECLCALLBACK(void) ahciCccTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser)
 {
@@ -984,8 +976,8 @@ static void ahciPortResetFinish(PAHCIPort pAhciPort)
         }
     }
 
-    pAhciPort->regSSTS = (0x01 << 8)  | /* Interface is active. */
-                         (0x03 << 0);   /* Device detected and communication established. */
+    pAhciPort->regSSTS = (0x01 << 8)    /* Interface is active. */
+                       | (0x03 << 0);   /* Device detected and communication established. */
 
     /*
      * Use the maximum allowed speed.
@@ -1791,9 +1783,9 @@ static int HbaCccCtl_w(PAHCI pAhci, uint32_t iReg, uint32_t u32Value)
     pAhci->uCccNr       = AHCI_HBA_CCC_CTL_CC_GET(u32Value);
 
     if (u32Value & AHCI_HBA_CCC_CTL_EN)
-        TMTimerSetMillies(pAhci->CTX_SUFF(pHbaCccTimer), pAhci->uCccTimeout); /* Arm the timer */
+        PDMDevHlpTimerSetMillies(pAhci->CTX_SUFF(pDevIns), pAhci->hHbaCccTimer, pAhci->uCccTimeout); /* Arm the timer */
     else
-        TMTimerStop(pAhci->CTX_SUFF(pHbaCccTimer));
+        PDMDevHlpTimerStop(pAhci->CTX_SUFF(pDevIns), pAhci->hHbaCccTimer);
 
     return VINF_SUCCESS;
 }
@@ -2031,7 +2023,7 @@ static void ahciHBAReset(PAHCI pThis)
     /* Stop the CCC timer. */
     if (pThis->regHbaCccCtl & AHCI_HBA_CCC_CTL_EN)
     {
-        rc = TMTimerStop(pThis->CTX_SUFF(pHbaCccTimer));
+        rc = PDMDevHlpTimerStop(pThis->CTX_SUFF(pDevIns), pThis->hHbaCccTimer);
         if (RT_FAILURE(rc))
             AssertMsgFailed(("%s: Failed to stop timer!\n", __FUNCTION__));
     }
@@ -5228,7 +5220,6 @@ static DECLCALLBACK(void) ahciR3Relocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta
     PAHCI pAhci = PDMDEVINS_2_DATA(pDevIns, PAHCI);
 
     pAhci->pDevInsRC += offDelta;
-    pAhci->pHbaCccTimerRC = TMTimerRCPtr(pAhci->pHbaCccTimerR3);
 
     /* Relocate every port. */
     for (i = 0; i < RT_ELEMENTS(pAhci->ahciPort); i++)
@@ -5772,8 +5763,8 @@ static DECLCALLBACK(int) ahciR3Destruct(PPDMDEVINS pDevIns)
      */
     if (PDMDevHlpCritSectIsInitialized(pDevIns, &pThis->lock))
     {
-        TMR3TimerDestroy(pThis->CTX_SUFF(pHbaCccTimer));
-        pThis->CTX_SUFF(pHbaCccTimer) = NULL;
+        PDMDevHlpTimerDestroy(pDevIns, pThis->hHbaCccTimer);
+        pThis->hHbaCccTimer = NIL_TMTIMERHANDLE;
 
         Log(("%s: Destruct every port\n", __FUNCTION__));
         for (unsigned iActPort = 0; iActPort < pThis->cPortsImpl; iActPort++)
@@ -5993,15 +5984,9 @@ static DECLCALLBACK(int) ahciR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
                                 N_("AHCI cannot register PCI memory region for registers"));
 
     /* Create the timer for command completion coalescing feature. */
-    rc = PDMDevHlpTMTimerCreate(pDevIns, TMCLOCK_VIRTUAL, ahciCccTimer, pThis,
-                                TMTIMER_FLAGS_NO_CRIT_SECT, "AHCI CCC Timer", &pThis->pHbaCccTimerR3);
-    if (RT_FAILURE(rc))
-    {
-        AssertMsgFailed(("pfnTMTimerCreate -> %Rrc\n", rc));
-        return rc;
-    }
-    pThis->pHbaCccTimerR0 = TMTimerR0Ptr(pThis->pHbaCccTimerR3);
-    pThis->pHbaCccTimerRC = TMTimerRCPtr(pThis->pHbaCccTimerR3);
+    rc = PDMDevHlpTimerCreate(pDevIns, TMCLOCK_VIRTUAL, ahciCccTimer, pThis,
+                              TMTIMER_FLAGS_NO_CRIT_SECT, "AHCI CCC Timer", &pThis->hHbaCccTimer);
+    AssertRCReturn(rc, rc);
 
     /* Status LUN. */
     pThis->IBase.pfnQueryInterface = ahciR3Status_QueryInterface;
