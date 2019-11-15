@@ -46,6 +46,7 @@
 #include <VBox/sup.h>
 #include <VBox/scsi.h>
 #include <VBox/ata.h>
+#include <VBox/AssertGuest.h>
 #include <iprt/assert.h>
 #include <iprt/asm.h>
 #include <iprt/string.h>
@@ -481,12 +482,10 @@ typedef struct AHCI
     uint32_t                        Alignment1;
 #endif
 
-    /** Base address of the MMIO region. */
-    RTGCPHYS                        MMIOBase;
-    /** Base address of the I/O port region for Idx/Data. */
-    RTIOPORT                        IOPortBase;
-
-    /** Global Host Control register of the HBA */
+    /** Global Host Control register of the HBA
+     *  @todo r=bird: Make this a 'name' doxygen comment with { and add a
+     * corrsponding at-} where appropriate. I cannot tell where to put the
+     * latter. */
 
     /** HBA Capabilities - Readonly */
     uint32_t                        regHbaCap;
@@ -563,6 +562,20 @@ typedef struct AHCI
 #if HC_ARCH_BITS == 64
     uint32_t                        Alignment8;
 #endif
+
+    /** PCI region \#0: Legacy IDE fake, 8 ports. */
+    IOMIOPORTHANDLE                 hIoPortsLegacyFake0;
+    /** PCI region \#1: Legacy IDE fake, 1 port. */
+    IOMIOPORTHANDLE                 hIoPortsLegacyFake1;
+    /** PCI region \#2: Legacy IDE fake, 8 ports. */
+    IOMIOPORTHANDLE                 hIoPortsLegacyFake2;
+    /** PCI region \#3: Legacy IDE fake, 1 port. */
+    IOMIOPORTHANDLE                 hIoPortsLegacyFake3;
+    /** PCI region \#4: BMDMA I/O port range, 16 ports, used for the Index/Data
+     *                  pair register access. */
+    IOMIOPORTHANDLE                 hIoPortIdxData;
+    /** PCI region \#5: MMIO registers. */
+    IOMMMIOHANDLE                   hMmio;
 } AHCI;
 AssertCompileMemberAlignment(AHCI, ahciPort, 8);
 /** Pointer to the state of an AHCI device. */
@@ -1016,7 +1029,7 @@ static void ahciIoThreadKick(PAHCI pThis, PAHCIPort pAhciPort)
 
 static int PortCmdIssue_w(PAHCI pThis, PAHCIPort pAhciPort, uint32_t iReg, uint32_t u32Value)
 {
-    RT_NOREF1(iReg);
+    RT_NOREF(iReg);
     ahciLog(("%s: write u32Value=%#010x\n", __FUNCTION__, u32Value));
 
     /* Update the CI register first. */
@@ -1050,7 +1063,7 @@ static int PortCmdIssue_w(PAHCI pThis, PAHCIPort pAhciPort, uint32_t iReg, uint3
 
 static int PortCmdIssue_r(PAHCI pThis, PAHCIPort pAhciPort, uint32_t iReg, uint32_t *pu32Value)
 {
-    RT_NOREF2(pThis, iReg);
+    RT_NOREF(pThis, iReg);
 
     uint32_t uCIValue = ASMAtomicXchgU32(&pAhciPort->u32TasksFinished, 0);
     ahciLog(("%s: read regCI=%#010x uCIValue=%#010x\n", __FUNCTION__, pAhciPort->regCI, uCIValue));
@@ -1063,7 +1076,7 @@ static int PortCmdIssue_r(PAHCI pThis, PAHCIPort pAhciPort, uint32_t iReg, uint3
 
 static int PortSActive_w(PAHCI pThis, PAHCIPort pAhciPort, uint32_t iReg, uint32_t u32Value)
 {
-    RT_NOREF2(pThis, iReg);
+    RT_NOREF(pThis, iReg);
     ahciLog(("%s: write u32Value=%#010x\n", __FUNCTION__, u32Value));
 
     pAhciPort->regSACT |= u32Value;
@@ -1073,7 +1086,7 @@ static int PortSActive_w(PAHCI pThis, PAHCIPort pAhciPort, uint32_t iReg, uint32
 
 static int PortSActive_r(PAHCI pThis, PAHCIPort pAhciPort, uint32_t iReg, uint32_t *pu32Value)
 {
-    RT_NOREF2(pThis, iReg);
+    RT_NOREF(pThis, iReg);
 
     uint32_t u32TasksFinished = ASMAtomicXchgU32(&pAhciPort->u32QueuedTasksFinished, 0);
     pAhciPort->regSACT &= ~u32TasksFinished;
@@ -1088,7 +1101,7 @@ static int PortSActive_r(PAHCI pThis, PAHCIPort pAhciPort, uint32_t iReg, uint32
 
 static int PortSError_w(PAHCI pThis, PAHCIPort pAhciPort, uint32_t iReg, uint32_t u32Value)
 {
-    RT_NOREF2(pThis, iReg);
+    RT_NOREF(pThis, iReg);
     ahciLog(("%s: write u32Value=%#010x\n", __FUNCTION__, u32Value));
 
     if (   (u32Value & AHCI_PORT_SERR_X)
@@ -1110,7 +1123,7 @@ static int PortSError_w(PAHCI pThis, PAHCIPort pAhciPort, uint32_t iReg, uint32_
 
 static int PortSError_r(PAHCI pThis, PAHCIPort pAhciPort, uint32_t iReg, uint32_t *pu32Value)
 {
-    RT_NOREF2(pThis, iReg);
+    RT_NOREF(pThis, iReg);
     ahciLog(("%s: read regSERR=%#010x\n", __FUNCTION__, pAhciPort->regSERR));
     *pu32Value = pAhciPort->regSERR;
     return VINF_SUCCESS;
@@ -1118,13 +1131,13 @@ static int PortSError_r(PAHCI pThis, PAHCIPort pAhciPort, uint32_t iReg, uint32_
 
 static int PortSControl_w(PAHCI pThis, PAHCIPort pAhciPort, uint32_t iReg, uint32_t u32Value)
 {
-    RT_NOREF2(pThis, iReg);
+    RT_NOREF(pThis, iReg);
     ahciLog(("%s: write u32Value=%#010x\n", __FUNCTION__, u32Value));
     ahciLog(("%s: IPM=%d SPD=%d DET=%d\n", __FUNCTION__,
              AHCI_PORT_SCTL_IPM_GET(u32Value), AHCI_PORT_SCTL_SPD_GET(u32Value), AHCI_PORT_SCTL_DET_GET(u32Value)));
 
 #ifndef IN_RING3
-    RT_NOREF2(pAhciPort, u32Value);
+    RT_NOREF(pAhciPort, u32Value);
     return VINF_IOM_R3_MMIO_WRITE;
 #else
     if ((u32Value & AHCI_PORT_SCTL_DET) == AHCI_PORT_SCTL_DET_INIT)
@@ -1170,7 +1183,7 @@ static int PortSControl_w(PAHCI pThis, PAHCIPort pAhciPort, uint32_t iReg, uint3
 
 static int PortSControl_r(PAHCI pThis, PAHCIPort pAhciPort, uint32_t iReg, uint32_t *pu32Value)
 {
-    RT_NOREF2(pThis, iReg);
+    RT_NOREF(pThis, iReg);
     ahciLog(("%s: read regSCTL=%#010x\n", __FUNCTION__, pAhciPort->regSCTL));
     ahciLog(("%s: IPM=%d SPD=%d DET=%d\n", __FUNCTION__,
              AHCI_PORT_SCTL_IPM_GET(pAhciPort->regSCTL), AHCI_PORT_SCTL_SPD_GET(pAhciPort->regSCTL),
@@ -1182,7 +1195,7 @@ static int PortSControl_r(PAHCI pThis, PAHCIPort pAhciPort, uint32_t iReg, uint3
 
 static int PortSStatus_r(PAHCI pThis, PAHCIPort pAhciPort, uint32_t iReg, uint32_t *pu32Value)
 {
-    RT_NOREF2(pThis, iReg);
+    RT_NOREF(pThis, iReg);
     ahciLog(("%s: read regSSTS=%#010x\n", __FUNCTION__, pAhciPort->regSSTS));
     ahciLog(("%s: IPM=%d SPD=%d DET=%d\n", __FUNCTION__,
              AHCI_PORT_SSTS_IPM_GET(pAhciPort->regSSTS), AHCI_PORT_SSTS_SPD_GET(pAhciPort->regSSTS),
@@ -1194,7 +1207,7 @@ static int PortSStatus_r(PAHCI pThis, PAHCIPort pAhciPort, uint32_t iReg, uint32
 
 static int PortSignature_r(PAHCI pThis, PAHCIPort pAhciPort, uint32_t iReg, uint32_t *pu32Value)
 {
-    RT_NOREF2(pThis, iReg);
+    RT_NOREF(pThis, iReg);
     ahciLog(("%s: read regSIG=%#010x\n", __FUNCTION__, pAhciPort->regSIG));
     *pu32Value = pAhciPort->regSIG;
     return VINF_SUCCESS;
@@ -1202,7 +1215,7 @@ static int PortSignature_r(PAHCI pThis, PAHCIPort pAhciPort, uint32_t iReg, uint
 
 static int PortTaskFileData_r(PAHCI pThis, PAHCIPort pAhciPort, uint32_t iReg, uint32_t *pu32Value)
 {
-    RT_NOREF2(pThis, iReg);
+    RT_NOREF(pThis, iReg);
     ahciLog(("%s: read regTFD=%#010x\n", __FUNCTION__, pAhciPort->regTFD));
     ahciLog(("%s: ERR=%x BSY=%d DRQ=%d ERR=%d\n", __FUNCTION__,
              (pAhciPort->regTFD >> 8), (pAhciPort->regTFD & AHCI_PORT_TFD_BSY) >> 7,
@@ -1216,7 +1229,7 @@ static int PortTaskFileData_r(PAHCI pThis, PAHCIPort pAhciPort, uint32_t iReg, u
  */
 static int PortCmd_r(PAHCI pThis, PAHCIPort pAhciPort, uint32_t iReg, uint32_t *pu32Value)
 {
-    RT_NOREF2(pThis, iReg);
+    RT_NOREF(pThis, iReg);
     ahciLog(("%s: read regCMD=%#010x\n", __FUNCTION__, pAhciPort->regCMD | AHCI_PORT_CMD_CCS_SHIFT(pAhciPort->u32CurrentCommandSlot)));
     ahciLog(("%s: ICC=%d ASP=%d ALPE=%d DLAE=%d ATAPI=%d CPD=%d ISP=%d HPCP=%d PMA=%d CPS=%d CR=%d FR=%d ISS=%d CCS=%d FRE=%d CLO=%d POD=%d SUD=%d ST=%d\n",
              __FUNCTION__, (pAhciPort->regCMD & AHCI_PORT_CMD_ICC) >> 28, (pAhciPort->regCMD & AHCI_PORT_CMD_ASP) >> 27,
@@ -1239,7 +1252,7 @@ static int PortCmd_r(PAHCI pThis, PAHCIPort pAhciPort, uint32_t iReg, uint32_t *
  */
 static int PortCmd_w(PAHCI pThis, PAHCIPort pAhciPort, uint32_t iReg, uint32_t u32Value)
 {
-    RT_NOREF1(iReg);
+    RT_NOREF(iReg);
     ahciLog(("%s: write u32Value=%#010x\n", __FUNCTION__, u32Value));
     ahciLog(("%s: ICC=%d ASP=%d ALPE=%d DLAE=%d ATAPI=%d CPD=%d ISP=%d HPCP=%d PMA=%d CPS=%d CR=%d FR=%d ISS=%d CCS=%d FRE=%d CLO=%d POD=%d SUD=%d ST=%d\n",
              __FUNCTION__, (u32Value & AHCI_PORT_CMD_ICC) >> 28, (u32Value & AHCI_PORT_CMD_ASP) >> 27,
@@ -1387,7 +1400,7 @@ static int PortCmd_w(PAHCI pThis, PAHCIPort pAhciPort, uint32_t iReg, uint32_t u
  */
 static int PortIntrEnable_r(PAHCI pThis, PAHCIPort pAhciPort, uint32_t iReg, uint32_t *pu32Value)
 {
-    RT_NOREF2(pThis, iReg);
+    RT_NOREF(pThis, iReg);
     ahciLog(("%s: read regIE=%#010x\n", __FUNCTION__, pAhciPort->regIE));
     ahciLog(("%s: CPDE=%d TFEE=%d HBFE=%d HBDE=%d IFE=%d INFE=%d OFE=%d IPME=%d PRCE=%d DIE=%d PCE=%d DPE=%d UFE=%d SDBE=%d DSE=%d PSE=%d DHRE=%d\n",
              __FUNCTION__, (pAhciPort->regIE & AHCI_PORT_IE_CPDE) >> 31, (pAhciPort->regIE & AHCI_PORT_IE_TFEE) >> 30,
@@ -1408,7 +1421,7 @@ static int PortIntrEnable_r(PAHCI pThis, PAHCIPort pAhciPort, uint32_t iReg, uin
  */
 static int PortIntrEnable_w(PAHCI pThis, PAHCIPort pAhciPort, uint32_t iReg, uint32_t u32Value)
 {
-    RT_NOREF1(iReg);
+    RT_NOREF(iReg);
     ahciLog(("%s: write u32Value=%#010x\n", __FUNCTION__, u32Value));
     ahciLog(("%s: CPDE=%d TFEE=%d HBFE=%d HBDE=%d IFE=%d INFE=%d OFE=%d IPME=%d PRCE=%d DIE=%d PCE=%d DPE=%d UFE=%d SDBE=%d DSE=%d PSE=%d DHRE=%d\n",
              __FUNCTION__, (u32Value & AHCI_PORT_IE_CPDE) >> 31, (u32Value & AHCI_PORT_IE_TFEE) >> 30,
@@ -1441,7 +1454,7 @@ static int PortIntrEnable_w(PAHCI pThis, PAHCIPort pAhciPort, uint32_t iReg, uin
  */
 static int PortIntrSts_r(PAHCI pThis, PAHCIPort pAhciPort, uint32_t iReg, uint32_t *pu32Value)
 {
-    RT_NOREF2(pThis, iReg);
+    RT_NOREF(pThis, iReg);
     ahciLog(("%s: read regIS=%#010x\n", __FUNCTION__, pAhciPort->regIS));
     ahciLog(("%s: CPDS=%d TFES=%d HBFS=%d HBDS=%d IFS=%d INFS=%d OFS=%d IPMS=%d PRCS=%d DIS=%d PCS=%d DPS=%d UFS=%d SDBS=%d DSS=%d PSS=%d DHRS=%d\n",
              __FUNCTION__, (pAhciPort->regIS & AHCI_PORT_IS_CPDS) >> 31, (pAhciPort->regIS & AHCI_PORT_IS_TFES) >> 30,
@@ -1462,7 +1475,7 @@ static int PortIntrSts_r(PAHCI pThis, PAHCIPort pAhciPort, uint32_t iReg, uint32
  */
 static int PortIntrSts_w(PAHCI pThis, PAHCIPort pAhciPort, uint32_t iReg, uint32_t u32Value)
 {
-    RT_NOREF2(pThis, iReg);
+    RT_NOREF(pThis, iReg);
     ahciLog(("%s: write u32Value=%#010x\n", __FUNCTION__, u32Value));
     ASMAtomicAndU32(&pAhciPort->regIS, ~(u32Value & AHCI_PORT_IS_READONLY));
 
@@ -1474,7 +1487,7 @@ static int PortIntrSts_w(PAHCI pThis, PAHCIPort pAhciPort, uint32_t iReg, uint32
  */
 static int PortFisAddrUp_r(PAHCI pThis, PAHCIPort pAhciPort, uint32_t iReg, uint32_t *pu32Value)
 {
-    RT_NOREF2(pThis, iReg);
+    RT_NOREF(pThis, iReg);
     ahciLog(("%s: read regFBU=%#010x\n", __FUNCTION__, pAhciPort->regFBU));
     *pu32Value = pAhciPort->regFBU;
     return VINF_SUCCESS;
@@ -1485,7 +1498,7 @@ static int PortFisAddrUp_r(PAHCI pThis, PAHCIPort pAhciPort, uint32_t iReg, uint
  */
 static int PortFisAddrUp_w(PAHCI pThis, PAHCIPort pAhciPort, uint32_t iReg, uint32_t u32Value)
 {
-    RT_NOREF2(pThis, iReg);
+    RT_NOREF(pThis, iReg);
     ahciLog(("%s: write u32Value=%#010x\n", __FUNCTION__, u32Value));
 
     pAhciPort->regFBU = u32Value;
@@ -1499,7 +1512,7 @@ static int PortFisAddrUp_w(PAHCI pThis, PAHCIPort pAhciPort, uint32_t iReg, uint
  */
 static int PortFisAddr_r(PAHCI pThis, PAHCIPort pAhciPort, uint32_t iReg, uint32_t *pu32Value)
 {
-    RT_NOREF2(pThis, iReg);
+    RT_NOREF(pThis, iReg);
     ahciLog(("%s: read regFB=%#010x\n", __FUNCTION__, pAhciPort->regFB));
     *pu32Value = pAhciPort->regFB;
     return VINF_SUCCESS;
@@ -1510,7 +1523,7 @@ static int PortFisAddr_r(PAHCI pThis, PAHCIPort pAhciPort, uint32_t iReg, uint32
  */
 static int PortFisAddr_w(PAHCI pThis, PAHCIPort pAhciPort, uint32_t iReg, uint32_t u32Value)
 {
-    RT_NOREF2(pThis, iReg);
+    RT_NOREF(pThis, iReg);
     ahciLog(("%s: write u32Value=%#010x\n", __FUNCTION__, u32Value));
 
     Assert(!(u32Value & ~AHCI_PORT_FB_RESERVED));
@@ -1526,7 +1539,7 @@ static int PortFisAddr_w(PAHCI pThis, PAHCIPort pAhciPort, uint32_t iReg, uint32
  */
 static int PortCmdLstAddrUp_w(PAHCI pThis, PAHCIPort pAhciPort, uint32_t iReg, uint32_t u32Value)
 {
-    RT_NOREF2(pThis, iReg);
+    RT_NOREF(pThis, iReg);
     ahciLog(("%s: write u32Value=%#010x\n", __FUNCTION__, u32Value));
 
     pAhciPort->regCLBU = u32Value;
@@ -1540,7 +1553,7 @@ static int PortCmdLstAddrUp_w(PAHCI pThis, PAHCIPort pAhciPort, uint32_t iReg, u
  */
 static int PortCmdLstAddrUp_r(PAHCI pThis, PAHCIPort pAhciPort, uint32_t iReg, uint32_t *pu32Value)
 {
-    RT_NOREF2(pThis, iReg);
+    RT_NOREF(pThis, iReg);
     ahciLog(("%s: read regCLBU=%#010x\n", __FUNCTION__, pAhciPort->regCLBU));
     *pu32Value = pAhciPort->regCLBU;
     return VINF_SUCCESS;
@@ -1551,7 +1564,7 @@ static int PortCmdLstAddrUp_r(PAHCI pThis, PAHCIPort pAhciPort, uint32_t iReg, u
  */
 static int PortCmdLstAddr_r(PAHCI pThis, PAHCIPort pAhciPort, uint32_t iReg, uint32_t *pu32Value)
 {
-    RT_NOREF2(pThis, iReg);
+    RT_NOREF(pThis, iReg);
     ahciLog(("%s: read regCLB=%#010x\n", __FUNCTION__, pAhciPort->regCLB));
     *pu32Value = pAhciPort->regCLB;
     return VINF_SUCCESS;
@@ -1562,7 +1575,7 @@ static int PortCmdLstAddr_r(PAHCI pThis, PAHCIPort pAhciPort, uint32_t iReg, uin
  */
 static int PortCmdLstAddr_w(PAHCI pThis, PAHCIPort pAhciPort, uint32_t iReg, uint32_t u32Value)
 {
-    RT_NOREF2(pThis, iReg);
+    RT_NOREF(pThis, iReg);
     ahciLog(("%s: write u32Value=%#010x\n", __FUNCTION__, u32Value));
 
     Assert(!(u32Value & ~AHCI_PORT_CLB_RESERVED));
@@ -1578,7 +1591,7 @@ static int PortCmdLstAddr_w(PAHCI pThis, PAHCIPort pAhciPort, uint32_t iReg, uin
  */
 static int HbaVersion_r(PAHCI pThis, uint32_t iReg, uint32_t *pu32Value)
 {
-    RT_NOREF1(iReg);
+    RT_NOREF(iReg);
     Log(("%s: read regHbaVs=%#010x\n", __FUNCTION__, pThis->regHbaVs));
     *pu32Value = pThis->regHbaVs;
     return VINF_SUCCESS;
@@ -1589,7 +1602,7 @@ static int HbaVersion_r(PAHCI pThis, uint32_t iReg, uint32_t *pu32Value)
  */
 static int HbaPortsImplemented_r(PAHCI pThis, uint32_t iReg, uint32_t *pu32Value)
 {
-    RT_NOREF1(iReg);
+    RT_NOREF(iReg);
     Log(("%s: read regHbaPi=%#010x\n", __FUNCTION__, pThis->regHbaPi));
     *pu32Value = pThis->regHbaPi;
     return VINF_SUCCESS;
@@ -1600,7 +1613,7 @@ static int HbaPortsImplemented_r(PAHCI pThis, uint32_t iReg, uint32_t *pu32Value
  */
 static int HbaInterruptStatus_w(PAHCI pThis, uint32_t iReg, uint32_t u32Value)
 {
-    RT_NOREF1(iReg);
+    RT_NOREF(iReg);
     Log(("%s: write u32Value=%#010x\n", __FUNCTION__, u32Value));
 
     int rc = PDMDevHlpCritSectEnter(pThis->CTX_SUFF(pDevIns), &pThis->lock, VINF_IOM_R3_MMIO_WRITE);
@@ -1664,7 +1677,7 @@ static int HbaInterruptStatus_w(PAHCI pThis, uint32_t iReg, uint32_t u32Value)
  */
 static int HbaInterruptStatus_r(PAHCI pThis, uint32_t iReg, uint32_t *pu32Value)
 {
-    RT_NOREF1(iReg);
+    RT_NOREF(iReg);
 
     int rc = PDMDevHlpCritSectEnter(pThis->CTX_SUFF(pDevIns), &pThis->lock, VINF_IOM_R3_MMIO_READ);
     if (rc != VINF_SUCCESS)
@@ -1698,7 +1711,7 @@ static int HbaInterruptStatus_r(PAHCI pThis, uint32_t iReg, uint32_t *pu32Value)
  */
 static int HbaControl_w(PAHCI pThis, uint32_t iReg, uint32_t u32Value)
 {
-    RT_NOREF1(iReg);
+    RT_NOREF(iReg);
     Log(("%s: write u32Value=%#010x\n"
          "%s: AE=%d IE=%d HR=%d\n",
          __FUNCTION__, u32Value,
@@ -1706,7 +1719,7 @@ static int HbaControl_w(PAHCI pThis, uint32_t iReg, uint32_t u32Value)
          (u32Value & AHCI_HBA_CTRL_HR)));
 
 #ifndef IN_RING3
-    RT_NOREF2(pThis, u32Value);
+    RT_NOREF(pThis, u32Value);
     return VINF_IOM_R3_MMIO_WRITE;
 #else
     /*
@@ -1734,7 +1747,7 @@ static int HbaControl_w(PAHCI pThis, uint32_t iReg, uint32_t u32Value)
  */
 static int HbaControl_r(PAHCI pThis, uint32_t iReg, uint32_t *pu32Value)
 {
-    RT_NOREF1(iReg);
+    RT_NOREF(iReg);
     Log(("%s: read regHbaCtrl=%#010x\n"
          "%s: AE=%d IE=%d HR=%d\n",
          __FUNCTION__, pThis->regHbaCtrl,
@@ -1749,7 +1762,7 @@ static int HbaControl_r(PAHCI pThis, uint32_t iReg, uint32_t *pu32Value)
  */
 static int HbaCapabilities_r(PAHCI pThis, uint32_t iReg, uint32_t *pu32Value)
 {
-    RT_NOREF1(iReg);
+    RT_NOREF(iReg);
     Log(("%s: read regHbaCap=%#010x\n"
          "%s: S64A=%d SNCQ=%d SIS=%d SSS=%d SALP=%d SAL=%d SCLO=%d ISS=%d SNZO=%d SAM=%d SPM=%d PMD=%d SSC=%d PSC=%d NCS=%d NP=%d\n",
           __FUNCTION__, pThis->regHbaCap,
@@ -1770,7 +1783,7 @@ static int HbaCapabilities_r(PAHCI pThis, uint32_t iReg, uint32_t *pu32Value)
  */
 static int HbaCccCtl_w(PAHCI pThis, uint32_t iReg, uint32_t u32Value)
 {
-    RT_NOREF1(iReg);
+    RT_NOREF(iReg);
     Log(("%s: write u32Value=%#010x\n"
          "%s: TV=%d CC=%d INT=%d EN=%d\n",
          __FUNCTION__, u32Value,
@@ -1795,7 +1808,7 @@ static int HbaCccCtl_w(PAHCI pThis, uint32_t iReg, uint32_t u32Value)
  */
 static int HbaCccCtl_r(PAHCI pThis, uint32_t iReg, uint32_t *pu32Value)
 {
-    RT_NOREF1(iReg);
+    RT_NOREF(iReg);
     Log(("%s: read regHbaCccCtl=%#010x\n"
          "%s: TV=%d CC=%d INT=%d EN=%d\n",
          __FUNCTION__, pThis->regHbaCccCtl,
@@ -1810,7 +1823,7 @@ static int HbaCccCtl_r(PAHCI pThis, uint32_t iReg, uint32_t *pu32Value)
  */
 static int HbaCccPorts_w(PAHCI pThis, uint32_t iReg, uint32_t u32Value)
 {
-    RT_NOREF1(iReg);
+    RT_NOREF(iReg);
     Log(("%s: write u32Value=%#010x\n", __FUNCTION__, u32Value));
 
     pThis->regHbaCccPorts = u32Value;
@@ -1823,7 +1836,7 @@ static int HbaCccPorts_w(PAHCI pThis, uint32_t iReg, uint32_t u32Value)
  */
 static int HbaCccPorts_r(PAHCI pThis, uint32_t iReg, uint32_t *pu32Value)
 {
-    RT_NOREF1(iReg);
+    RT_NOREF(iReg);
     Log(("%s: read regHbaCccPorts=%#010x\n", __FUNCTION__, pThis->regHbaCccPorts));
 
 #ifdef LOG_ENABLED
@@ -1846,7 +1859,7 @@ static int HbaCccPorts_r(PAHCI pThis, uint32_t iReg, uint32_t *pu32Value)
  */
 static int HbaInvalid_w(PAHCI pThis, uint32_t iReg, uint32_t u32Value)
 {
-    RT_NOREF3(pThis, iReg, u32Value);
+    RT_NOREF(pThis, iReg, u32Value);
     Log(("%s: Write denied!!! iReg=%u u32Value=%#010x\n", __FUNCTION__, iReg, u32Value));
     return VINF_SUCCESS;
 }
@@ -1856,7 +1869,7 @@ static int HbaInvalid_w(PAHCI pThis, uint32_t iReg, uint32_t u32Value)
  */
 static int PortInvalid_w(PAHCI pThis, PAHCIPort pAhciPort, uint32_t iReg, uint32_t u32Value)
 {
-    RT_NOREF4(pThis, pAhciPort, iReg, u32Value);
+    RT_NOREF(pThis, pAhciPort, iReg, u32Value);
     ahciLog(("%s: Write denied!!! iReg=%u u32Value=%#010x\n", __FUNCTION__, iReg, u32Value));
     return VINF_SUCCESS;
 }
@@ -1866,7 +1879,7 @@ static int PortInvalid_w(PAHCI pThis, PAHCIPort pAhciPort, uint32_t iReg, uint32
  */
 static int PortInvalid_r(PAHCI pThis, PAHCIPort pAhciPort, uint32_t iReg, uint32_t *pu32Value)
 {
-    RT_NOREF4(pThis, pAhciPort, iReg, pu32Value);
+    RT_NOREF(pThis, pAhciPort, iReg, pu32Value);
     ahciLog(("%s: Read denied!!! iReg=%u\n", __FUNCTION__, iReg));
     return VINF_SUCCESS;
 }
@@ -2216,51 +2229,36 @@ static int ahciRegisterWrite(PAHCI pThis, uint32_t offReg, uint32_t u32Value)
     return rc;
 }
 
+
 /**
- * Memory mapped I/O Handler for read operations.
- *
- * @returns VBox status code.
- *
- * @param   pDevIns     The device instance.
- * @param   pvUser      User argument.
- * @param   GCPhysAddr  Physical address (in GC) where the read starts.
- * @param   pv          Where to store the result.
- * @param   cb          Number of bytes read.
+ * @callback_method_impl{IOMMMIONEWWRITE}
  */
-PDMBOTHCBDECL(int) ahciMMIORead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr, void *pv, unsigned cb)
+static DECLCALLBACK(VBOXSTRICTRC) ahciMMIORead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS off, void *pv, unsigned cb)
 {
     PAHCI pThis = PDMDEVINS_2_DATA(pDevIns, PAHCI);
-    Log2(("#%d ahciMMIORead: pvUser=%p:{%.*Rhxs} cb=%d GCPhysAddr=%RGp\n", pDevIns->iInstance, pv, cb, pv, cb, GCPhysAddr));
-    RT_NOREF1(pvUser);
+    Log2(("#%d ahciMMIORead: pvUser=%p:{%.*Rhxs} cb=%d off=%RGp\n", pDevIns->iInstance, pv, cb, pv, cb, off));
+    RT_NOREF(pvUser);
 
-    int rc = ahciRegisterRead(pThis, GCPhysAddr - pThis->MMIOBase, pv, cb);
+    VBOXSTRICTRC rc = ahciRegisterRead(pThis, off, pv, cb);
 
-    Log2(("#%d ahciMMIORead: return pvUser=%p:{%.*Rhxs} cb=%d GCPhysAddr=%RGp rc=%Rrc\n",
-          pDevIns->iInstance, pv, cb, pv, cb, GCPhysAddr, rc));
+    Log2(("#%d ahciMMIORead: return pvUser=%p:{%.*Rhxs} cb=%d off=%RGp rc=%Rrc\n",
+          pDevIns->iInstance, pv, cb, pv, cb, off, VBOXSTRICTRC_VAL(rc)));
     return rc;
 }
 
-
 /**
- * Memory mapped I/O Handler for write operations.
- *
- * @returns VBox status code.
- *
- * @param   pDevIns     The device instance.
- * @param   pvUser      User argument.
- * @param   GCPhysAddr  Physical address (in GC) where the read starts.
- * @param   pv          Where to fetch the result.
- * @param   cb          Number of bytes to write.
+ * @callback_method_impl{IOMMMIONEWWRITE}
  */
-PDMBOTHCBDECL(int) ahciMMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr, void const *pv, unsigned cb)
+static DECLCALLBACK(VBOXSTRICTRC) ahciMMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS off, void const *pv, unsigned cb)
 {
     PAHCI pThis = PDMDEVINS_2_DATA(pDevIns, PAHCI);
-    Assert(cb == 4 || cb == 8);
-    Assert(!(GCPhysAddr & (cb - 1)));
+
+    Assert(cb == 4 || cb == 8);     /* Assert IOM flags & sanity  */
+    Assert(!(off & (cb - 1)));      /* Ditto. */
 
     /* Break up 64 bits writes into two dword writes. */
     /** @todo Eliminate this code once the IOM/EM starts taking care of these
-         *    situations. */
+     *        situations. */
     if (cb == 8)
     {
         /*
@@ -2270,17 +2268,17 @@ PDMBOTHCBDECL(int) ahciMMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPh
          * Writing the first 4 bytes again could cause indeterminate behavior
          * which can cause errors in the guest.
          */
-        int rc = VINF_SUCCESS;
+        VBOXSTRICTRC rc = VINF_SUCCESS;
         if (!pThis->f8ByteMMIO4BytesWrittenSuccessfully)
         {
-            rc = ahciMMIOWrite(pDevIns, pvUser, GCPhysAddr, pv, 4);
+            rc = ahciMMIOWrite(pDevIns, pvUser, off, pv, 4);
             if (rc != VINF_SUCCESS)
                 return rc;
 
             pThis->f8ByteMMIO4BytesWrittenSuccessfully = true;
         }
 
-        rc = ahciMMIOWrite(pDevIns, pvUser, GCPhysAddr + 4, (uint8_t *)pv + 4, 4);
+        rc = ahciMMIOWrite(pDevIns, pvUser, off + 4, (uint8_t *)pv + 4, 4);
         /*
          * Reset flag again so that the first 4 bytes are written again on the next
          * 8byte MMIO access.
@@ -2292,47 +2290,52 @@ PDMBOTHCBDECL(int) ahciMMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPh
     }
 
     /* Do the access. */
-    Log2(("#%d ahciMMIOWrite: pvUser=%p:{%.*Rhxs} cb=%d GCPhysAddr=%RGp\n", pDevIns->iInstance, pv, cb, pv, cb, GCPhysAddr));
-    return ahciRegisterWrite(pThis, GCPhysAddr - pThis->MMIOBase, *(uint32_t const *)pv);
+    Log2(("#%d ahciMMIOWrite: pvUser=%p:{%.*Rhxs} cb=%d GCPhysAddr=%RGp\n", pDevIns->iInstance, pv, cb, pv, cb, off));
+    return ahciRegisterWrite(pThis, off, *(uint32_t const *)pv);
 }
 
-PDMBOTHCBDECL(int) ahciLegacyFakeWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb)
-{
-    RT_NOREF5(pDevIns, pvUser, Port, u32, cb);
-    AssertMsgFailed(("Should not happen\n"));
-    return VINF_SUCCESS;
-}
 
-PDMBOTHCBDECL(int) ahciLegacyFakeRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32, unsigned cb)
+/**
+ * @callback_method_impl{FNIOMIOPORTNEWOUT,
+ * Fake IDE port handler provided to make solaris happy.}
+ */
+static DECLCALLBACK(VBOXSTRICTRC)
+ahciLegacyFakeWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t u32, unsigned cb)
 {
-    RT_NOREF5(pDevIns, pvUser, Port, pu32, cb);
-    AssertMsgFailed(("Should not happen\n"));
+    RT_NOREF(pDevIns, pvUser, offPort, u32, cb);
+    ASSERT_GUEST_MSG_FAILED(("Should not happen\n"));
     return VINF_SUCCESS;
 }
 
 /**
- * I/O port handler for writes to the index/data register pair.
- *
- * @returns VBox status code.
- *
- * @param   pDevIns     The device instance.
- * @param   pvUser      User argument.
- * @param   Port        Port address where the write starts.
- * @param   u32         Where to fetch the result.
- * @param   cb          Number of bytes to write.
+ * @callback_method_impl{FNIOMIOPORTNEWIN,
+ * Fake IDE port handler provided to make solaris happy.}
  */
-PDMBOTHCBDECL(int) ahciIdxDataWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb)
+static DECLCALLBACK(VBOXSTRICTRC)
+ahciLegacyFakeRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t *pu32, unsigned cb)
 {
-    PAHCI pThis = PDMDEVINS_2_DATA(pDevIns, PAHCI);
-    int   rc = VINF_SUCCESS;
-    RT_NOREF2(pvUser, cb);
+    /** @todo we should set *pu32 to something. */
+    RT_NOREF(pDevIns, pvUser, offPort, pu32, cb);
+    ASSERT_GUEST_MSG_FAILED(("Should not happen\n"));
+    return VINF_SUCCESS;
+}
 
-    if (Port - pThis->IOPortBase >= 8)
+
+/**
+ * @callback_method_impl{FNIOMIOPORTNEWOUT,
+ * I/O port handler for writes to the index/data register pair.}
+ */
+static DECLCALLBACK(VBOXSTRICTRC) ahciIdxDataWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t u32, unsigned cb)
+{
+    PAHCI           pThis = PDMDEVINS_2_DATA(pDevIns, PAHCI);
+    VBOXSTRICTRC    rc = VINF_SUCCESS;
+    RT_NOREF(pvUser, cb);
+
+    if (offPort >= 8)
     {
-        unsigned iReg = (Port - pThis->IOPortBase - 8) / 4;
+        ASSERT_GUEST(cb == 4);
 
-        Assert(cb == 4);
-
+        uint32_t const iReg = (offPort - 8) / 4;
         if (iReg == 0)
         {
             /* Write the index register. */
@@ -2341,7 +2344,7 @@ PDMBOTHCBDECL(int) ahciIdxDataWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT P
         else
         {
             /** @todo range check? */
-            Assert(iReg == 1);
+            ASSERT_GUEST(iReg == 1);
             rc = ahciRegisterWrite(pThis, pThis->regIdx, u32);
             if (rc == VINF_IOM_R3_MMIO_WRITE)
                 rc = VINF_IOM_R3_IOPORT_WRITE;
@@ -2349,34 +2352,26 @@ PDMBOTHCBDECL(int) ahciIdxDataWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT P
     }
     /* else: ignore */
 
-    Log2(("#%d ahciIdxDataWrite: pu32=%p:{%.*Rhxs} cb=%d Port=%#x rc=%Rrc\n",
-          pDevIns->iInstance, &u32, cb, &u32, cb, Port, rc));
+    Log2(("#%d ahciIdxDataWrite: pu32=%p:{%.*Rhxs} cb=%d offPort=%#x rc=%Rrc\n",
+          pDevIns->iInstance, &u32, cb, &u32, cb, offPort, VBOXSTRICTRC_VAL(rc)));
     return rc;
 }
 
 /**
- * I/O port handler for reads from the index/data register pair.
- *
- * @returns VBox status code.
- *
- * @param   pDevIns     The device instance.
- * @param   pvUser      User argument.
- * @param   Port        Port address where the read starts.
- * @param   pu32        Where to fetch the result.
- * @param   cb          Number of bytes to write.
+ * @callback_method_impl{FNIOMIOPORTNEWOUT,
+ * I/O port handler for reads from the index/data register pair.}
  */
-PDMBOTHCBDECL(int) ahciIdxDataRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32, unsigned cb)
+static DECLCALLBACK(VBOXSTRICTRC) ahciIdxDataRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t *pu32, unsigned cb)
 {
-    PAHCI pThis = PDMDEVINS_2_DATA(pDevIns, PAHCI);
-    int   rc = VINF_SUCCESS;
-    RT_NOREF1(pvUser);
+    PAHCI           pThis = PDMDEVINS_2_DATA(pDevIns, PAHCI);
+    VBOXSTRICTRC    rc = VINF_SUCCESS;
+    RT_NOREF(pvUser);
 
-    if (Port - pThis->IOPortBase >= 8)
+    if (offPort >= 8)
     {
-        unsigned iReg = (Port - pThis->IOPortBase - 8) / 4;
+        ASSERT_GUEST(cb == 4);
 
-        Assert(cb == 4);
-
+        uint32_t const iReg = (offPort - 8) / 4;
         if (iReg == 0)
         {
             /* Read the index register. */
@@ -2384,8 +2379,8 @@ PDMBOTHCBDECL(int) ahciIdxDataRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Po
         }
         else
         {
-            Assert(iReg == 1);
             /** @todo range check? */
+            ASSERT_GUEST(iReg == 1);
             rc = ahciRegisterRead(pThis, pThis->regIdx, pu32, cb);
             if (rc == VINF_IOM_R3_MMIO_READ)
                 rc = VINF_IOM_R3_IOPORT_READ;
@@ -2394,137 +2389,14 @@ PDMBOTHCBDECL(int) ahciIdxDataRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Po
         }
     }
     else
-        *pu32 = UINT32_C(0xffffffff);
+        *pu32 = UINT32_MAX;
 
-    Log2(("#%d ahciIdxDataRead: pu32=%p:{%.*Rhxs} cb=%d Port=%#x rc=%Rrc\n",
-          pDevIns->iInstance, pu32, cb, pu32, cb, Port, rc));
+    Log2(("#%d ahciIdxDataRead: pu32=%p:{%.*Rhxs} cb=%d offPort=%#x rc=%Rrc\n",
+          pDevIns->iInstance, pu32, cb, pu32, cb, offPort, VBOXSTRICTRC_VAL(rc)));
     return rc;
 }
 
 #ifdef IN_RING3
-
-/**
- * @callback_method_impl{FNPCIIOREGIONMAP}
- */
-static DECLCALLBACK(int) ahciR3MMIOMap(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t iRegion,
-                                       RTGCPHYS GCPhysAddress, RTGCPHYS cb, PCIADDRESSSPACE enmType)
-{
-    PAHCI pThis = PDMDEVINS_2_DATA(pDevIns, PAHCI);
-    RT_NOREF(pPciDev, iRegion, enmType);
-
-    Log2(("%s: registering MMIO area at GCPhysAddr=%RGp cb=%RGp\n", __FUNCTION__, GCPhysAddress, cb));
-
-    Assert(enmType == PCI_ADDRESS_SPACE_MEM);
-    Assert(cb >= 4352);
-    Assert(pPciDev == pDevIns->apPciDevs[0]);
-
-    /* We use the assigned size here, because we currently only support page aligned MMIO ranges. */
-    /** @todo change this to IOMMMIO_FLAGS_WRITE_ONLY_DWORD once EM/IOM starts
-     * handling 2nd DWORD failures on split accesses correctly. */
-    int rc = PDMDevHlpMMIORegister(pDevIns, GCPhysAddress, cb, NULL /*pvUser*/,
-                                   IOMMMIO_FLAGS_READ_DWORD | IOMMMIO_FLAGS_WRITE_DWORD_QWORD_READ_MISSING,
-                                   ahciMMIOWrite, ahciMMIORead, "AHCI");
-    if (RT_FAILURE(rc))
-        return rc;
-
-    if (pDevIns->fR0Enabled)
-    {
-        rc = PDMDevHlpMMIORegisterR0(pDevIns, GCPhysAddress, cb, NIL_RTR0PTR /*pvUser*/, "ahciMMIOWrite", "ahciMMIORead");
-        if (RT_FAILURE(rc))
-            return rc;
-    }
-
-    if (pDevIns->fRCEnabled)
-    {
-        rc = PDMDevHlpMMIORegisterRC(pDevIns, GCPhysAddress, cb, NIL_RTRCPTR /*pvUser*/, "ahciMMIOWrite", "ahciMMIORead");
-        if (RT_FAILURE(rc))
-            return rc;
-    }
-
-    pThis->MMIOBase = GCPhysAddress;
-    return rc;
-}
-
-
-/**
- * @callback_method_impl{FNPCIIOREGIONMAP,
- *      Map the legacy I/O port ranges to make Solaris work with the
- *      controller.}
- */
-static DECLCALLBACK(int) ahciR3LegacyFakeIORangeMap(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t iRegion,
-                                                    RTGCPHYS GCPhysAddress, RTGCPHYS cb, PCIADDRESSSPACE enmType)
-{
-    Log2(("%s: registering fake I/O area at GCPhysAddr=%RGp cb=%RGp\n", __FUNCTION__, GCPhysAddress, cb));
-    RT_NOREF(pPciDev, iRegion, enmType);
-
-    Assert(enmType == PCI_ADDRESS_SPACE_IO);
-    Assert(pPciDev == pDevIns->apPciDevs[0]);
-
-    /* We use the assigned size here, because we currently only support page aligned MMIO ranges. */
-    int rc = PDMDevHlpIOPortRegister(pDevIns, (RTIOPORT)GCPhysAddress, cb, NULL,
-                                     ahciLegacyFakeWrite, ahciLegacyFakeRead, NULL, NULL, "AHCI Fake");
-    if (RT_FAILURE(rc))
-        return rc;
-
-    if (pDevIns->fR0Enabled)
-    {
-        rc = PDMDevHlpIOPortRegisterR0(pDevIns, (RTIOPORT)GCPhysAddress, cb, 0,
-                                       "ahciLegacyFakeWrite", "ahciLegacyFakeRead", NULL, NULL, "AHCI Fake");
-        if (RT_FAILURE(rc))
-            return rc;
-    }
-
-    if (pDevIns->fRCEnabled)
-    {
-        rc = PDMDevHlpIOPortRegisterRC(pDevIns, (RTIOPORT)GCPhysAddress, cb, 0,
-                                       "ahciLegacyFakeWrite", "ahciLegacyFakeRead", NULL, NULL, "AHCI Fake");
-        if (RT_FAILURE(rc))
-            return rc;
-    }
-
-    return rc;
-}
-
-/**
- * @callback_method_impl{FNPCIIOREGIONMAP,
- *      Map the BMDMA I/O port range (used for the Index/Data pair register access)}
- */
-static DECLCALLBACK(int) ahciR3IdxDataIORangeMap(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t iRegion,
-                                                 RTGCPHYS GCPhysAddress, RTGCPHYS cb, PCIADDRESSSPACE enmType)
-{
-    RT_NOREF(pPciDev, iRegion, enmType);
-    PAHCI pThis = PDMDEVINS_2_DATA(pDevIns, PAHCI);
-
-    Log2(("%s: registering fake I/O area at GCPhysAddr=%RGp cb=%RGp\n", __FUNCTION__, GCPhysAddress, cb));
-
-    Assert(enmType == PCI_ADDRESS_SPACE_IO);
-    Assert(pPciDev == pDevIns->apPciDevs[0]);
-
-    /* We use the assigned size here, because we currently only support page aligned MMIO ranges. */
-    int rc = PDMDevHlpIOPortRegister(pDevIns, (RTIOPORT)GCPhysAddress, cb, NULL,
-                                     ahciIdxDataWrite, ahciIdxDataRead, NULL, NULL, "AHCI IDX/DATA");
-    if (RT_FAILURE(rc))
-        return rc;
-
-    if (pDevIns->fR0Enabled)
-    {
-        rc = PDMDevHlpIOPortRegisterR0(pDevIns, (RTIOPORT)GCPhysAddress, cb, 0,
-                                       "ahciIdxDataWrite", "ahciIdxDataRead", NULL, NULL, "AHCI IDX/DATA");
-        if (RT_FAILURE(rc))
-            return rc;
-    }
-
-    if (pDevIns->fRCEnabled)
-    {
-        rc = PDMDevHlpIOPortRegisterRC(pDevIns, (RTIOPORT)GCPhysAddress, cb, 0,
-                                       "ahciIdxDataWrite", "ahciIdxDataRead", NULL, NULL, "AHCI IDX/DATA");
-        if (RT_FAILURE(rc))
-            return rc;
-    }
-
-    pThis->IOPortBase = (RTIOPORT)GCPhysAddress;
-    return rc;
-}
 
 /* -=-=-=-=-=- PAHCI::ILeds  -=-=-=-=-=- */
 
@@ -3879,7 +3751,7 @@ static DECLCALLBACK(int) ahciR3IoReqCopyFromBuf(PPDMIMEDIAEXPORT pInterface, PDM
                                                 void *pvIoReqAlloc, uint32_t offDst, PRTSGBUF pSgBuf,
                                                 size_t cbCopy)
 {
-    RT_NOREF1(hIoReq);
+    RT_NOREF(hIoReq);
     PAHCIPort pAhciPort = RT_FROM_MEMBER(pInterface, AHCIPort, IMediaExPort);
     int rc = VINF_SUCCESS;
     PAHCIREQ pIoReq = (PAHCIREQ)pvIoReqAlloc;
@@ -3899,7 +3771,7 @@ static DECLCALLBACK(int) ahciR3IoReqCopyToBuf(PPDMIMEDIAEXPORT pInterface, PDMME
                                               void *pvIoReqAlloc, uint32_t offSrc, PRTSGBUF pSgBuf,
                                               size_t cbCopy)
 {
-    RT_NOREF1(hIoReq);
+    RT_NOREF(hIoReq);
     PAHCIPort pAhciPort = RT_FROM_MEMBER(pInterface, AHCIPort, IMediaExPort);
     int rc = VINF_SUCCESS;
     PAHCIREQ pIoReq = (PAHCIREQ)pvIoReqAlloc;
@@ -3961,7 +3833,7 @@ static DECLCALLBACK(int) ahciR3IoReqQueryDiscardRanges(PPDMIMEDIAEXPORT pInterfa
                                                        uint32_t cRanges, PRTRANGE paRanges,
                                                        uint32_t *pcRanges)
 {
-    RT_NOREF1(hIoReq);
+    RT_NOREF(hIoReq);
     PAHCIPort pAhciPort = RT_FROM_MEMBER(pInterface, AHCIPort, IMediaExPort);
     PAHCIREQ pIoReq = (PAHCIREQ)pvIoReqAlloc;
 
@@ -3986,7 +3858,7 @@ static DECLCALLBACK(int) ahciR3IoReqCompleteNotify(PPDMIMEDIAEXPORT pInterface, 
 static DECLCALLBACK(void) ahciR3IoReqStateChanged(PPDMIMEDIAEXPORT pInterface, PDMMEDIAEXIOREQ hIoReq,
                                                   void *pvIoReqAlloc, PDMMEDIAEXIOREQSTATE enmState)
 {
-    RT_NOREF2(hIoReq, pvIoReqAlloc);
+    RT_NOREF(hIoReq, pvIoReqAlloc);
     PAHCIPort pAhciPort = RT_FROM_MEMBER(pInterface, AHCIPort, IMediaExPort);
 
     switch (enmState)
@@ -4712,7 +4584,7 @@ static DECLCALLBACK(void) ahciR3Info(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, con
                     "%s#%d: mmio=%RGp ports=%u GC=%RTbool R0=%RTbool\n",
                     pDevIns->pReg->szName,
                     pDevIns->iInstance,
-                    pThis->MMIOBase,
+                    PDMDevHlpMmioGetMappingAddress(pDevIns, pThis->hMmio),
                     pThis->cPortsImpl,
                     pDevIns->fRCEnabled,
                     pDevIns->fR0Enabled);
@@ -5891,6 +5763,9 @@ static DECLCALLBACK(int) ahciR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
 
     pThis->cThreadsActive = 0;
 
+    pThis->IBase.pfnQueryInterface = ahciR3Status_QueryInterface;
+    pThis->ILeds.pfnQueryStatusLed = ahciR3Status_QueryStatusLed;
+
     /* Initialize port members. */
     for (i = 0; i < AHCI_MAX_NR_PORTS_IMPL; i++)
     {
@@ -5913,8 +5788,7 @@ static DECLCALLBACK(int) ahciR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
      * Init locks, using explicit locking where necessary.
      */
     rc = PDMDevHlpSetDeviceCritSect(pDevIns, PDMDevHlpCritSectGetNop(pDevIns));
-    if (RT_FAILURE(rc))
-        return rc;
+    AssertRCReturn(rc, rc);
 
     rc = PDMDevHlpCritSectInit(pDevIns, &pThis->lock, RT_SRC_POS, "AHCI#%u", iInstance);
     if (RT_FAILURE(rc))
@@ -5945,52 +5819,63 @@ static DECLCALLBACK(int) ahciR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
 #endif
 
     /*
-     * Solaris 10 U5 fails to map the AHCI register space when the sets (0..5) for the legacy
-     * IDE registers are not available.
-     * We set up "fake" entries in the PCI configuration register.
-     * That means they are available but read and writes from/to them have no effect.
-     * No guest should access them anyway because the controller is marked as AHCI in the Programming interface
-     * and we don't have an option to change to IDE emulation (real hardware provides an option in the BIOS
-     * to switch to it which also changes device Id and other things in the PCI configuration space).
+     * Solaris 10 U5 fails to map the AHCI register space when the sets (0..3)
+     * for the legacy IDE registers are not available.  We set up "fake" entries
+     * in the PCI configuration  register.  That means they are available but
+     * read and writes from/to them have no effect.  No guest should access them
+     * anyway because the controller is marked as AHCI in the Programming
+     * interface and we don't have an option to change to IDE emulation (real
+     * hardware provides an option in the BIOS to switch to it which also changes
+     * device Id and other things in the PCI configuration space).
      */
-    rc = PDMDevHlpPCIIORegionRegister(pDevIns, 0, 8, PCI_ADDRESS_SPACE_IO, ahciR3LegacyFakeIORangeMap);
-    if (RT_FAILURE(rc))
-        return PDMDEV_SET_ERROR(pDevIns, rc,
-                                N_("AHCI cannot register PCI I/O region"));
+    rc = PDMDevHlpPCIIORegionCreateIo(pDevIns, 0 /*iPciRegion*/, 8 /*cPorts*/,
+                                      ahciLegacyFakeWrite, ahciLegacyFakeRead, NULL /*pvUser*/,
+                                      "AHCI Fake #0", NULL /*paExtDescs*/, &pThis->hIoPortsLegacyFake0);
+    AssertRCReturn(rc, PDMDEV_SET_ERROR(pDevIns, rc, N_("AHCI cannot register PCI I/O region")));
 
-    rc = PDMDevHlpPCIIORegionRegister(pDevIns, 1, 1, PCI_ADDRESS_SPACE_IO, ahciR3LegacyFakeIORangeMap);
-    if (RT_FAILURE(rc))
-        return PDMDEV_SET_ERROR(pDevIns, rc,
-                                N_("AHCI cannot register PCI I/O region"));
+    rc = PDMDevHlpPCIIORegionCreateIo(pDevIns, 1 /*iPciRegion*/, 1 /*cPorts*/,
+                                      ahciLegacyFakeWrite, ahciLegacyFakeRead, NULL /*pvUser*/,
+                                      "AHCI Fake #1", NULL /*paExtDescs*/, &pThis->hIoPortsLegacyFake1);
+    AssertRCReturn(rc, PDMDEV_SET_ERROR(pDevIns, rc, N_("AHCI cannot register PCI I/O region")));
 
-    rc = PDMDevHlpPCIIORegionRegister(pDevIns, 2, 8, PCI_ADDRESS_SPACE_IO, ahciR3LegacyFakeIORangeMap);
-    if (RT_FAILURE(rc))
-        return PDMDEV_SET_ERROR(pDevIns, rc,
-                                N_("AHCI cannot register PCI I/O region"));
+    rc = PDMDevHlpPCIIORegionCreateIo(pDevIns, 2 /*iPciRegion*/, 8 /*cPorts*/,
+                                      ahciLegacyFakeWrite, ahciLegacyFakeRead, NULL /*pvUser*/,
+                                      "AHCI Fake #2", NULL /*paExtDescs*/, &pThis->hIoPortsLegacyFake2);
+    AssertRCReturn(rc, PDMDEV_SET_ERROR(pDevIns, rc, N_("AHCI cannot register PCI I/O region")));
 
-    rc = PDMDevHlpPCIIORegionRegister(pDevIns, 3, 1, PCI_ADDRESS_SPACE_IO, ahciR3LegacyFakeIORangeMap);
-    if (RT_FAILURE(rc))
-        return PDMDEV_SET_ERROR(pDevIns, rc,
-                                N_("AHCI cannot register PCI I/O region"));
+    rc = PDMDevHlpPCIIORegionCreateIo(pDevIns, 3 /*iPciRegion*/, 1 /*cPorts*/,
+                                      ahciLegacyFakeWrite, ahciLegacyFakeRead, NULL /*pvUser*/,
+                                      "AHCI Fake #3", NULL /*paExtDescs*/, &pThis->hIoPortsLegacyFake3);
+    AssertRCReturn(rc, PDMDEV_SET_ERROR(pDevIns, rc, N_("AHCI cannot register PCI I/O region")));
 
-    rc = PDMDevHlpPCIIORegionRegister(pDevIns, 4, 0x10, PCI_ADDRESS_SPACE_IO, ahciR3IdxDataIORangeMap);
-    if (RT_FAILURE(rc))
-        return PDMDEV_SET_ERROR(pDevIns, rc,
-                                N_("AHCI cannot register PCI I/O region for BMDMA"));
+    /*
+     * The non-fake PCI I/O regions:
+     * Note! The 4352 byte MMIO region will be rounded up to PAGE_SIZE.
+     */
+    rc = PDMDevHlpPCIIORegionCreateIo(pDevIns, 4 /*iPciRegion*/, 0x10 /*cPorts*/,
+                                      ahciIdxDataWrite, ahciIdxDataRead, NULL /*pvUser*/,
+                                      "AHCI IDX/DATA", NULL /*paExtDescs*/, &pThis->hIoPortIdxData);
+    AssertRCReturn(rc, PDMDEV_SET_ERROR(pDevIns, rc, N_("AHCI cannot register PCI I/O region for BMDMA")));
 
-    rc = PDMDevHlpPCIIORegionRegister(pDevIns, 5, 4352, PCI_ADDRESS_SPACE_MEM, ahciR3MMIOMap);
-    if (RT_FAILURE(rc))
-        return PDMDEV_SET_ERROR(pDevIns, rc,
-                                N_("AHCI cannot register PCI memory region for registers"));
 
-    /* Create the timer for command completion coalescing feature. */
+    /** @todo change this to IOMMMIO_FLAGS_WRITE_ONLY_DWORD once EM/IOM starts
+     * handling 2nd DWORD failures on split accesses correctly. */
+    rc = PDMDevHlpPCIIORegionCreateMmio(pDevIns, 5 /*iPciRegion*/, 4352 /*cbRegion*/, PCI_ADDRESS_SPACE_MEM,
+                                        ahciMMIOWrite, ahciMMIORead, NULL /*pvUser*/,
+                                        IOMMMIO_FLAGS_READ_DWORD | IOMMMIO_FLAGS_WRITE_DWORD_QWORD_READ_MISSING,
+                                        "AHCI", &pThis->hMmio);
+    AssertRCReturn(rc, PDMDEV_SET_ERROR(pDevIns, rc, N_("AHCI cannot register PCI memory region for registers")));
+
+    /*
+     * Create the timer for command completion coalescing feature.
+     */
     rc = PDMDevHlpTimerCreate(pDevIns, TMCLOCK_VIRTUAL, ahciCccTimer, pThis,
                               TMTIMER_FLAGS_NO_CRIT_SECT, "AHCI CCC Timer", &pThis->hHbaCccTimer);
     AssertRCReturn(rc, rc);
 
-    /* Status LUN. */
-    pThis->IBase.pfnQueryInterface = ahciR3Status_QueryInterface;
-    pThis->ILeds.pfnQueryStatusLed = ahciR3Status_QueryStatusLed;
+    /*
+     * Initialize ports.
+     */
 
     /* Initialize static members on every port. */
     for (i = 0; i < AHCI_MAX_NR_PORTS_IMPL; i++)
@@ -6083,11 +5968,13 @@ static DECLCALLBACK(int) ahciR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
         pThis->pLedsConnector = PDMIBASE_QUERY_INTERFACE(pBase, PDMILEDCONNECTORS);
         pThis->pMediaNotify = PDMIBASE_QUERY_INTERFACE(pBase, PDMIMEDIANOTIFY);
     }
-    else if (rc != VERR_PDM_NO_ATTACHED_DRIVER)
-    {
-        AssertMsgFailed(("Failed to attach to status driver. rc=%Rrc\n", rc));
-        return PDMDEV_SET_ERROR(pDevIns, rc, N_("AHCI cannot attach to status driver"));
-    }
+    else
+        AssertMsgReturn(rc == VERR_PDM_NO_ATTACHED_DRIVER, ("Failed to attach to status driver. rc=%Rrc\n", rc),
+                        PDMDEV_SET_ERROR(pDevIns, rc, N_("AHCI cannot attach to status driver")));
+
+    /*
+     * Saved state.
+     */
     rc = PDMDevHlpSSMRegisterEx(pDevIns, AHCI_SAVED_STATE_VERSION, sizeof(*pThis) + cbTotalBufferSize, NULL,
                                 NULL,           ahciR3LiveExec, NULL,
                                 ahciR3SavePrep, ahciR3SaveExec, NULL,
@@ -6105,7 +5992,38 @@ static DECLCALLBACK(int) ahciR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
     return ahciR3ResetCommon(pDevIns);
 }
 
-#endif /* IN_RING3 */
+#else  /* !IN_RING3 */
+
+/**
+ * @callback_method_impl{PDMDEVREGR0,pfnConstruct}
+ */
+static DECLCALLBACK(int) ahciRZConstruct(PPDMDEVINS pDevIns)
+{
+    PDMDEV_CHECK_VERSIONS_RETURN(pDevIns);
+    PAHCI pThis = PDMDEVINS_2_DATA(pDevIns, PAHCI);
+
+    int rc = PDMDevHlpSetDeviceCritSect(pDevIns, PDMDevHlpCritSectGetNop(pDevIns));
+    AssertRCReturn(rc, rc);
+
+    rc = PDMDevHlpIoPortSetUpContext(pDevIns, pThis->hIoPortsLegacyFake0, ahciLegacyFakeWrite, ahciLegacyFakeRead, NULL /*pvUser*/);
+    AssertRCReturn(rc, rc);
+    rc = PDMDevHlpIoPortSetUpContext(pDevIns, pThis->hIoPortsLegacyFake1, ahciLegacyFakeWrite, ahciLegacyFakeRead, NULL /*pvUser*/);
+    AssertRCReturn(rc, rc);
+    rc = PDMDevHlpIoPortSetUpContext(pDevIns, pThis->hIoPortsLegacyFake2, ahciLegacyFakeWrite, ahciLegacyFakeRead, NULL /*pvUser*/);
+    AssertRCReturn(rc, rc);
+    rc = PDMDevHlpIoPortSetUpContext(pDevIns, pThis->hIoPortsLegacyFake3, ahciLegacyFakeWrite, ahciLegacyFakeRead, NULL /*pvUser*/);
+    AssertRCReturn(rc, rc);
+
+    rc = PDMDevHlpIoPortSetUpContext(pDevIns, pThis->hIoPortIdxData, ahciIdxDataWrite, ahciIdxDataRead, NULL /*pvUser*/);
+    AssertRCReturn(rc, rc);
+
+    rc = PDMDevHlpMmioSetUpContext(pDevIns, pThis->hMmio, ahciMMIOWrite, ahciMMIORead, NULL /*pvUser*/);
+    AssertRCReturn(rc, rc);
+
+    return VINF_SUCCESS;
+}
+
+#endif /* !IN_RING3 */
 
 /**
  * The device registration structure.
@@ -6154,7 +6072,7 @@ const PDMDEVREG g_DeviceAHCI =
     /* .pfnReserved7 = */           NULL,
 #elif defined(IN_RING0)
     /* .pfnEarlyConstruct = */      NULL,
-    /* .pfnConstruct = */           NULL,
+    /* .pfnConstruct = */           ahciRZConstruct,
     /* .pfnDestruct = */            NULL,
     /* .pfnFinalDestruct = */       NULL,
     /* .pfnRequest = */             NULL,
@@ -6167,7 +6085,7 @@ const PDMDEVREG g_DeviceAHCI =
     /* .pfnReserved6 = */           NULL,
     /* .pfnReserved7 = */           NULL,
 #elif defined(IN_RC)
-    /* .pfnConstruct = */           NULL,
+    /* .pfnConstruct = */           ahciRZConstruct,
     /* .pfnReserved0 = */           NULL,
     /* .pfnReserved1 = */           NULL,
     /* .pfnReserved2 = */           NULL,
