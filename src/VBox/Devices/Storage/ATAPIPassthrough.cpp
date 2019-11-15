@@ -538,7 +538,7 @@ DECLHIDDEN(void) ATAPIPassthroughTrackListClear(PTRACKLIST pTrackList)
  *
  * @returns VBox status code.
  * @param   pTrackList  The track list to update.
- * @param   pCDB        The CDB buffer.
+ * @param   pbCDB       The CDB buffer.
  * @param   pvBuf       The data buffer.
  * @param   cbBuf       The buffer isze.
  */

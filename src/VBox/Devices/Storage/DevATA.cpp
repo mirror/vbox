@@ -6543,7 +6543,6 @@ static DECLCALLBACK(void) ataR3Detach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_
  * Configure a LUN.
  *
  * @returns VBox status code.
- * @param   pDevIns     The device instance.
  * @param   pIf         The ATA unit state.
  */
 static int ataR3ConfigLun(ATADevState *pIf)
