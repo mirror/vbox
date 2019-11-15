@@ -136,11 +136,13 @@ static UARTTYPE serialR3GetUartTypeFromString(const char *pszUartType)
  */
 static DECLCALLBACK(int) serialR3LiveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uPass)
 {
+    PDEVSERIAL      pThis = PDMDEVINS_2_DATA(pDevIns, PDEVSERIAL);
+    PCPDMDEVHLPR3   pHlp  = pDevIns->pHlpR3;
     RT_NOREF(uPass);
-    PDEVSERIAL pThis = PDMDEVINS_2_DATA(pDevIns, PDEVSERIAL);
-    SSMR3PutU8(pSSM, pThis->uIrq);
-    SSMR3PutIOPort(pSSM, pThis->PortBase);
-    SSMR3PutU32(pSSM, pThis->UartCore.enmType);
+
+    pHlp->pfnSSMPutU8(pSSM, pThis->uIrq);
+    pHlp->pfnSSMPutIOPort(pSSM, pThis->PortBase);
+    pHlp->pfnSSMPutU32(pSSM, pThis->UartCore.enmType);
 
     return VINF_SSM_DONT_CALL_AGAIN;
 }
@@ -151,14 +153,15 @@ static DECLCALLBACK(int) serialR3LiveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, u
  */
 static DECLCALLBACK(int) serialR3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 {
-    PDEVSERIAL pThis = PDMDEVINS_2_DATA(pDevIns, PDEVSERIAL);
+    PDEVSERIAL      pThis = PDMDEVINS_2_DATA(pDevIns, PDEVSERIAL);
+    PCPDMDEVHLPR3   pHlp  = pDevIns->pHlpR3;
 
-    SSMR3PutU8(    pSSM, pThis->uIrq);
-    SSMR3PutIOPort(pSSM, pThis->PortBase);
-    SSMR3PutU32(   pSSM, pThis->UartCore.enmType);
+    pHlp->pfnSSMPutU8(    pSSM, pThis->uIrq);
+    pHlp->pfnSSMPutIOPort(pSSM, pThis->PortBase);
+    pHlp->pfnSSMPutU32(   pSSM, pThis->UartCore.enmType);
 
     uartR3SaveExec(&pThis->UartCore, pSSM);
-    return SSMR3PutU32(pSSM, UINT32_MAX); /* sanity/terminator */
+    return pHlp->pfnSSMPutU32(pSSM, UINT32_MAX); /* sanity/terminator */
 }
 
 
@@ -167,18 +170,19 @@ static DECLCALLBACK(int) serialR3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
  */
 static DECLCALLBACK(int) serialR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass)
 {
-    PDEVSERIAL pThis = PDMDEVINS_2_DATA(pDevIns, PDEVSERIAL);
-    uint8_t    bIrq;
-    RTIOPORT   PortBase;
-    UARTTYPE   enmType;
+    PDEVSERIAL      pThis = PDMDEVINS_2_DATA(pDevIns, PDEVSERIAL);
+    PCPDMDEVHLPR3   pHlp  = pDevIns->pHlpR3;
+    uint8_t         bIrq;
+    RTIOPORT        PortBase;
+    UARTTYPE        enmType;
     int rc;
 
     AssertMsgReturn(uVersion >= UART_SAVED_STATE_VERSION_16450, ("%d\n", uVersion), VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION);
     if (uVersion > UART_SAVED_STATE_VERSION_LEGACY_CODE)
     {
-        SSMR3GetU8(    pSSM, &bIrq);
-        SSMR3GetIOPort(pSSM, &PortBase);
-        PDMDEVHLP_SSM_GET_ENUM32_RET(pDevIns->pHlpR3, pSSM, enmType, UARTTYPE);
+        pHlp->pfnSSMGetU8(    pSSM, &bIrq);
+        pHlp->pfnSSMGetIOPort(pSSM, &PortBase);
+        PDMDEVHLP_SSM_GET_ENUM32_RET(pHlp, pSSM, enmType, UARTTYPE);
         if (uPass == SSM_PASS_FINAL)
         {
             rc = uartR3LoadExec(&pThis->UartCore, pSSM, uVersion, uPass, NULL, NULL);
@@ -191,9 +195,9 @@ static DECLCALLBACK(int) serialR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, u
         if (uPass != SSM_PASS_FINAL)
         {
             int32_t iIrqTmp;
-            SSMR3GetS32(pSSM, &iIrqTmp);
+            pHlp->pfnSSMGetS32(pSSM, &iIrqTmp);
             uint32_t uPortBaseTmp;
-            rc = SSMR3GetU32(pSSM, &uPortBaseTmp);
+            rc = pHlp->pfnSSMGetU32(pSSM, &uPortBaseTmp);
             AssertRCReturn(rc, rc);
 
             bIrq     = (uint8_t)iIrqTmp;
@@ -210,7 +214,7 @@ static DECLCALLBACK(int) serialR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, u
     {
         /* The marker. */
         uint32_t u32;
-        rc = SSMR3GetU32(pSSM, &u32);
+        rc = pHlp->pfnSSMGetU32(pSSM, &u32);
         AssertRCReturn(rc, rc);
         AssertMsgReturn(u32 == UINT32_MAX, ("%#x\n", u32), VERR_SSM_DATA_UNIT_FORMAT_CHANGED);
     }
@@ -221,9 +225,9 @@ static DECLCALLBACK(int) serialR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, u
     if (    pThis->uIrq     != bIrq
         ||  pThis->PortBase != PortBase
         ||  pThis->UartCore.enmType != enmType)
-        return SSMR3SetCfgError(pSSM, RT_SRC_POS,
-                                N_("Config mismatch - saved IRQ=%#x PortBase=%#x Type=%d; configured IRQ=%#x PortBase=%#x Type=%d"),
-                                bIrq, PortBase, enmType, pThis->uIrq, pThis->PortBase, pThis->UartCore.enmType);
+        return pHlp->pfnSSMSetCfgError(pSSM, RT_SRC_POS,
+                                       N_("Config mismatch - saved IRQ=%#x PortBase=%#x Type=%d; configured IRQ=%#x PortBase=%#x Type=%d"),
+                                       bIrq, PortBase, enmType, pThis->uIrq, pThis->PortBase, pThis->UartCore.enmType);
 
     return VINF_SUCCESS;
 }
@@ -288,8 +292,8 @@ static DECLCALLBACK(void) serialR3Detach(PPDMDEVINS pDevIns, unsigned iLUN, uint
  */
 static DECLCALLBACK(int) serialR3Destruct(PPDMDEVINS pDevIns)
 {
-    PDEVSERIAL pThis = PDMDEVINS_2_DATA(pDevIns, PDEVSERIAL);
     PDMDEV_CHECK_VERSIONS_RETURN_QUIET(pDevIns);
+    PDEVSERIAL pThis = PDMDEVINS_2_DATA(pDevIns, PDEVSERIAL);
 
     uartR3Destruct(&pThis->UartCore);
     return VINF_SUCCESS;
@@ -301,11 +305,12 @@ static DECLCALLBACK(int) serialR3Destruct(PPDMDEVINS pDevIns)
  */
 static DECLCALLBACK(int) serialR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE pCfg)
 {
-    PDEVSERIAL pThis = PDMDEVINS_2_DATA(pDevIns, PDEVSERIAL);
-    int        rc = VINF_SUCCESS;
+    PDMDEV_CHECK_VERSIONS_RETURN(pDevIns);
+    PDEVSERIAL      pThis = PDMDEVINS_2_DATA(pDevIns, PDEVSERIAL);
+    PCPDMDEVHLPR3   pHlp  = pDevIns->pHlpR3;
+    int             rc;
 
     Assert(iInstance < 4);
-    PDMDEV_CHECK_VERSIONS_RETURN(pDevIns);
 
     /*
      * Initialize the instance data.
@@ -318,36 +323,23 @@ static DECLCALLBACK(int) serialR3Construct(PPDMDEVINS pDevIns, int iInstance, PC
     /*
      * Validate and read the configuration.
      */
-    if (!CFGMR3AreValuesValid(pCfg, "IRQ\0"
-                                    "IOBase\0"
-                                    "GCEnabled\0"
-                                    "R0Enabled\0"
-                                    "YieldOnLSRRead\0"
-                                    "UartType\0"
-                                    ))
-    {
-        AssertMsgFailed(("serialConstruct Invalid configuration values\n"));
-        return VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES;
-    }
+    PDMDEV_VALIDATE_CONFIG_RETURN(pDevIns, "IRQ|IOBase|YieldOnLSRRead|UartType", "");
 
-    rc = CFGMR3QueryBoolDef(pCfg, "GCEnabled", &pThis->fRCEnabled, true);
+    rc = pHlp->pfnCFGMQueryBoolDef(pCfg, "GCEnabled", &pThis->fRCEnabled, true);
     if (RT_FAILURE(rc))
-        return PDMDEV_SET_ERROR(pDevIns, rc,
-                                N_("Configuration error: Failed to get the \"GCEnabled\" value"));
+        return PDMDEV_SET_ERROR(pDevIns, rc, N_("Configuration error: Failed to get the \"GCEnabled\" value"));
 
-    rc = CFGMR3QueryBoolDef(pCfg, "R0Enabled", &pThis->fR0Enabled, true);
+    rc = pHlp->pfnCFGMQueryBoolDef(pCfg, "R0Enabled", &pThis->fR0Enabled, true);
     if (RT_FAILURE(rc))
-        return PDMDEV_SET_ERROR(pDevIns, rc,
-                                N_("Configuration error: Failed to get the \"R0Enabled\" value"));
+        return PDMDEV_SET_ERROR(pDevIns, rc, N_("Configuration error: Failed to get the \"R0Enabled\" value"));
 
     bool fYieldOnLSRRead = false;
-    rc = CFGMR3QueryBoolDef(pCfg, "YieldOnLSRRead", &fYieldOnLSRRead, false);
+    rc = pHlp->pfnCFGMQueryBoolDef(pCfg, "YieldOnLSRRead", &fYieldOnLSRRead, false);
     if (RT_FAILURE(rc))
-        return PDMDEV_SET_ERROR(pDevIns, rc,
-                                N_("Configuration error: Failed to get the \"YieldOnLSRRead\" value"));
+        return PDMDEV_SET_ERROR(pDevIns, rc, N_("Configuration error: Failed to get the \"YieldOnLSRRead\" value"));
 
     uint8_t uIrq = 0;
-    rc = CFGMR3QueryU8(pCfg, "IRQ", &uIrq);
+    rc = pHlp->pfnCFGMQueryU8(pCfg, "IRQ", &uIrq);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
     {
         /* Provide sensible defaults. */
@@ -359,11 +351,10 @@ static DECLCALLBACK(int) serialR3Construct(PPDMDEVINS pDevIns, int iInstance, PC
             AssertReleaseFailed(); /* irq_lvl is undefined. */
     }
     else if (RT_FAILURE(rc))
-        return PDMDEV_SET_ERROR(pDevIns, rc,
-                                N_("Configuration error: Failed to get the \"IRQ\" value"));
+        return PDMDEV_SET_ERROR(pDevIns, rc, N_("Configuration error: Failed to get the \"IRQ\" value"));
 
     uint16_t uIoBase = 0;
-    rc = CFGMR3QueryU16(pCfg, "IOBase", &uIoBase);
+    rc = pHlp->pfnCFGMQueryU16(pCfg, "IOBase", &uIoBase);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
     {
         if (iInstance == 0)
@@ -377,23 +368,17 @@ static DECLCALLBACK(int) serialR3Construct(PPDMDEVINS pDevIns, int iInstance, PC
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed to get the \"IOBase\" value"));
 
-    char *pszUartType;
-    rc = CFGMR3QueryStringAllocDef(pCfg, "UartType", &pszUartType, "16550A");
+    char szUartType[32];
+    rc = pHlp->pfnCFGMQueryStringDef(pCfg, "UartType", szUartType, sizeof(szUartType), "16550A");
     if (RT_FAILURE(rc))
-        return PDMDEV_SET_ERROR(pDevIns, rc,
-                                N_("Configuration error: failed to read \"UartType\" as string"));
+        return PDMDEV_SET_ERROR(pDevIns, rc, N_("Configuration error: failed to read \"UartType\" as string"));
 
-    UARTTYPE enmUartType = serialR3GetUartTypeFromString(pszUartType);
-
+    UARTTYPE enmUartType = serialR3GetUartTypeFromString(szUartType);
     if (enmUartType != UARTTYPE_INVALID)
-        LogRel(("Serial#%d: emulating %s (IOBase: %04x IRQ: %u)\n",
-                pDevIns->iInstance, pszUartType, uIoBase, uIrq));
-
-    MMR3HeapFree(pszUartType);
-
-    if (enmUartType == UARTTYPE_INVALID)
-        return PDMDEV_SET_ERROR(pDevIns, VERR_INVALID_PARAMETER,
-                                N_("Configuration error: \"UartType\" contains invalid type"));
+        LogRel(("Serial#%d: emulating %s (IOBase: %04x IRQ: %u)\n", pDevIns->iInstance, szUartType, uIoBase, uIrq));
+    else
+        return PDMDevHlpVMSetError(pDevIns, VERR_INVALID_PARAMETER, RT_SRC_POS,
+                                   N_("Configuration error: Invalid \"UartType\" type value: %s"), szUartType);
 
     pThis->uIrq     = uIrq;
     pThis->PortBase = uIoBase;
@@ -402,8 +387,7 @@ static DECLCALLBACK(int) serialR3Construct(PPDMDEVINS pDevIns, int iInstance, PC
      * Init locks, using explicit locking where necessary.
      */
     rc = PDMDevHlpSetDeviceCritSect(pDevIns, PDMDevHlpCritSectGetNop(pDevIns));
-    if (RT_FAILURE(rc))
-        return rc;
+    AssertRCReturn(rc, rc);
 
     /*
      * Register the I/O ports.
@@ -419,7 +403,7 @@ static DECLCALLBACK(int) serialR3Construct(PPDMDEVINS pDevIns, int iInstance, PC
     RTRCPTR pfnSerialIrqReqRC = NIL_RTRCPTR;
 
 #ifdef VBOX_WITH_RAW_MODE_KEEP
-    if (pThis->fRCEnabled)
+    if (pDevIns->fRCEnabled)
     {
         rc = PDMDevHlpIOPortRegisterRC(pDevIns, uIoBase, 8, 0, "serialIoPortWrite", "serialIoPortRead", NULL, NULL, "SERIAL");
         if (   RT_SUCCESS(rc)
@@ -430,7 +414,7 @@ static DECLCALLBACK(int) serialR3Construct(PPDMDEVINS pDevIns, int iInstance, PC
     }
 #endif
 
-    if (pThis->fR0Enabled)
+    if (pDevIns->fR0Enabled)
     {
         rc = PDMDevHlpIOPortRegisterR0(pDevIns, uIoBase, 8, 0, "serialIoPortWrite", "serialIoPortRead", NULL, NULL, "SERIAL");
         if (RT_SUCCESS(rc)) /** @todo this dynamic symbol resolving will be reworked later! */
@@ -446,14 +430,12 @@ static DECLCALLBACK(int) serialR3Construct(PPDMDEVINS pDevIns, int iInstance, PC
                                 NULL, serialR3LiveExec, NULL,
                                 NULL, serialR3SaveExec, NULL,
                                 NULL, serialR3LoadExec, serialR3LoadDone);
-    if (RT_FAILURE(rc))
-        return rc;
+    AssertRCReturn(rc, rc);
 
     /* Init the UART core structure. */
     rc = uartR3Init(&pThis->UartCore, pDevIns, enmUartType, 0,
                     fYieldOnLSRRead ? UART_CORE_YIELD_ON_LSR_READ : 0, serialIrqReq, pfnSerialIrqReqR0, pfnSerialIrqReqRC);
-    if (RT_FAILURE(rc))
-        return rc;
+    AssertRCReturn(rc, rc);
 
     serialR3Reset(pDevIns);
     return VINF_SUCCESS;
