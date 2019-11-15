@@ -1960,7 +1960,7 @@ HRESULT VirtualBox::createMachine(const com::Utf8Str &aSettingsFile,
         if (fDirectoryIncludesUUID)
             strNewCreateFlags += ",directoryIncludesUUID=1";
 
-        com::Utf8Str blstr = "";
+        com::Utf8Str blstr;
         rc = composeMachineFilename(aName,
                                     llGroups.front(),
                                     strNewCreateFlags,
@@ -3890,7 +3890,7 @@ int VirtualBox::i_natNetworkRefInc(const Utf8Str &aNetworkName)
         HRESULT rc = findNATNetworkByName(aNetworkName, nat);
         if (FAILED(rc)) return -1;
 
-        rc = nat->Start(Bstr("whatever").raw());
+        rc = nat->Start();
         if (SUCCEEDED(rc))
             LogRel(("Started NAT network '%s'\n", aNetworkName.c_str()));
         else

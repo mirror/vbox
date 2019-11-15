@@ -82,12 +82,8 @@ private:
     HRESULT getNetworkName(com::Utf8Str &aName) RT_OVERRIDE;
     HRESULT getLowerIP(com::Utf8Str &aIPAddress) RT_OVERRIDE;
     HRESULT getUpperIP(com::Utf8Str &aIPAddress) RT_OVERRIDE;
-    HRESULT getGlobalOptions(std::vector<com::Utf8Str> &aGlobalOptions) RT_OVERRIDE;
-    HRESULT getVmConfigs(std::vector<com::Utf8Str> &aVmConfigs) RT_OVERRIDE;
-    HRESULT getMacOptions(const com::Utf8Str &aMAC, std::vector<com::Utf8Str> &aValues) RT_OVERRIDE;
     HRESULT setConfiguration(const com::Utf8Str &aIPAddress, const com::Utf8Str &aNetworkMask,
                              const com::Utf8Str &aFromIPAddress, const com::Utf8Str &aToIPAddress) RT_OVERRIDE;
-    HRESULT getVmSlotOptions(const com::Utf8Str &aVmName, LONG aSlot, std::vector<com::Utf8Str> &aValues) RT_OVERRIDE;
     HRESULT getGlobalConfig(ComPtr<IDHCPGlobalConfig> &aGlobalConfig) RT_OVERRIDE;
     HRESULT getGroupConfigs(std::vector<ComPtr<IDHCPGroupConfig> > &aGroupConfigs) RT_OVERRIDE;
     HRESULT getIndividualConfigs(std::vector<ComPtr<IDHCPIndividualConfig> > &aIndividualConfigs) ;
@@ -95,13 +91,7 @@ private:
 
     /** @name IDHCPServer Methods
      * @{ */
-    HRESULT addGlobalOption(DhcpOpt_T aOption, const com::Utf8Str &aValue) RT_OVERRIDE;
-    HRESULT removeGlobalOption(DhcpOpt_T aOption) RT_OVERRIDE;
-    HRESULT removeGlobalOptions() RT_OVERRIDE;
-    HRESULT addVmSlotOption(const com::Utf8Str &aVmName, LONG aSlot, DhcpOpt_T aOption, const com::Utf8Str &aValue) RT_OVERRIDE;
-    HRESULT removeVmSlotOption(const com::Utf8Str &aVmName, LONG aSlot, DhcpOpt_T aOption) RT_OVERRIDE;
-    HRESULT removeVmSlotOptions(const com::Utf8Str &aVmName, LONG aSlot) RT_OVERRIDE;
-    HRESULT start(const com::Utf8Str &aNetworkName, const com::Utf8Str &aTrunkName, const com::Utf8Str &aTrunkType) RT_OVERRIDE;
+    HRESULT start(const com::Utf8Str &aTrunkName, const com::Utf8Str &aTrunkType) RT_OVERRIDE;
     HRESULT stop() RT_OVERRIDE;
     HRESULT restart() RT_OVERRIDE;
     HRESULT findLeaseByMAC(const com::Utf8Str &aMac, LONG aType, com::Utf8Str &aAddress, com::Utf8Str &aState,
@@ -119,11 +109,6 @@ private:
     HRESULT i_vmNameToIdAndValidateSlot(const com::Utf8Str &aVmName, LONG aSlot, com::Guid &idMachine);
     HRESULT i_vmNameAndSlotToConfig(const com::Utf8Str &a_strVmName, LONG a_uSlot, bool a_fCreateIfNeeded,
                                     ComObjPtr<DHCPIndividualConfig> &a_rPtrConfig);
-
-    HRESULT i_encode60Option(com::Utf8Str &strEncoded, DHCPOption_T enmOption,
-                             DHCPOptionEncoding_T enmEncoding, const com::Utf8Str &strValue);
-    HRESULT i_getAllOptions60(DHCPConfig &aSourceConfig, std::vector<com::Utf8Str> &aValues);
-    HRESULT i_add60Option(DHCPConfig &aTargetConfig, DhcpOpt_T aOption, const com::Utf8Str &aValue);
     /** @} */
 
     /** Private data */

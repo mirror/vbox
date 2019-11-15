@@ -5898,8 +5898,7 @@ int Console::i_configNetwork(const char *pszDevice,
                             }
 
                             if (fEnabledDhcp)
-                                hrc = dhcpServer->Start(networkName.raw(),
-                                                        trunkName.raw(),
+                                hrc = dhcpServer->Start(trunkName.raw(),
                                                         trunkType.raw());
                         }
                         else

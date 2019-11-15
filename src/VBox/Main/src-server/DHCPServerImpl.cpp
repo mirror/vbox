@@ -82,8 +82,7 @@ struct DHCPServer::Data
 
     /** weak VirtualBox parent */
     VirtualBox * const  pVirtualBox;
-    /** The DHCP server name (network).
-     * @todo Kind of duplicated by networkName, if I understand it correctly.  */
+    /** The DHCP server name (network). */
     Utf8Str const       strName;
 
     Utf8Str IPAddress;
@@ -97,7 +96,6 @@ struct DHCPServer::Data
     com::Utf8Str strConfigFilename;
     com::Utf8Str strLogFilename;
 
-    com::Utf8Str networkName;
     com::Utf8Str trunkName;
     com::Utf8Str trunkType;
 
@@ -576,187 +574,6 @@ HRESULT DHCPServer::setConfiguration(const com::Utf8Str &aIPAddress,
 
 
 /**
- * Used by the legacy 6.0 IDHCPServer::GetVmSlotOptions() and
- * IDHCPServer::GetGlobalOptions() implementations.
- *
- * New interfaces have the option number and option encoding separate from the
- * value.
- */
-HRESULT DHCPServer::i_encode60Option(com::Utf8Str &strEncoded, DHCPOption_T enmOption,
-                                     DHCPOptionEncoding_T enmEncoding, const com::Utf8Str &strValue)
-{
-    int vrc;
-    switch (enmEncoding)
-    {
-        case DHCPOptionEncoding_Normal:
-        {
-            /*
-             * This is original encoding which assumed that for each
-             * option we know its format and so we know how option
-             * "value" text is to be interpreted.
-             *
-             *   "2:10800"           # integer 32
-             *   "6:1.2.3.4 8.8.8.8" # array of ip-address
-             */
-            vrc = strEncoded.printfNoThrow("%d:%s", (int)enmOption, strValue.c_str());
-            break;
-        }
-
-        case DHCPOptionEncoding_Hex:
-        {
-            /*
-             * This is a bypass for any option - preformatted value as
-             * hex string with no semantic involved in formatting the
-             * value for the DHCP reply.
-             *
-             *   234=68:65:6c:6c:6f:2c:20:77:6f:72:6c:64
-             */
-            vrc = strEncoded.printfNoThrow("%d=%s", (int)enmOption, strValue.c_str());
-            break;
-        }
-
-        default:
-        {
-            /*
-             * Try to be forward compatible.
-             *
-             *   "254@42=i hope you know what this means"
-             */
-            vrc = strEncoded.printfNoThrow("%d@%d=%s", (int)enmOption, (int)enmEncoding, strValue.c_str());
-            break;
-        }
-    }
-    return RT_SUCCESS(vrc) ? S_OK : E_OUTOFMEMORY;
-}
-
-
-/**
- * worker for IDHCPServer::GetGlobalOptions.
- */
-HRESULT DHCPServer::i_getAllOptions60(DHCPConfig &aSourceConfig, std::vector<com::Utf8Str> &aValues)
-{
-    /* Get the values using the new getter: */
-    std::vector<DHCPOption_T>           Options;
-    std::vector<DHCPOptionEncoding_T>   Encodings;
-    std::vector<com::Utf8Str>           Values;
-    HRESULT hrc = aSourceConfig.i_getAllOptions(Options, Encodings, Values);
-    if (SUCCEEDED(hrc))
-    {
-        /* Encoding them using in the 6.0 style: */
-        size_t const cValues = Values.size();
-        aValues.resize(cValues);
-        for (size_t i = 0; i < cValues && SUCCEEDED(hrc); i++)
-            hrc = i_encode60Option(aValues[i], Options[i], Encodings[i], Values[i]);
-    }
-    return hrc;
-}
-
-
-/**
- * Worker for legacy <=6.0 interfaces for adding options.
- *
- * @throws std::bad_alloc
- */
-HRESULT DHCPServer::i_add60Option(DHCPConfig &aTargetConfig, DhcpOpt_T aOption, const com::Utf8Str &aValue)
-{
-    if (aOption != 0)
-        return aTargetConfig.i_setOption((DHCPOption_T)aOption, DHCPOptionEncoding_Normal, aValue);
-
-    /*
-     * This is a kludge to sneak in option encoding information
-     * through existing API.  We use option 0 and supply the real
-     * option/value in the same format that i_encode60Option() above
-     * produces for getter methods.
-     */
-    uint8_t u8Code;
-    char    *pszNext;
-    int vrc = RTStrToUInt8Ex(aValue.c_str(), &pszNext, 10, &u8Code);
-    if (RT_FAILURE(vrc))
-        return setErrorBoth(E_INVALIDARG, VERR_PARSE_ERROR);
-
-    DHCPOptionEncoding_T enmEncoding;
-    switch (*pszNext)
-    {
-        case ':':           /* support legacy format too */
-        {
-            enmEncoding = DHCPOptionEncoding_Normal;
-            break;
-        }
-
-        case '=':
-        {
-            enmEncoding = DHCPOptionEncoding_Hex;
-            break;
-        }
-
-        case '@':
-        {
-            uint32_t u32Enc = 0;
-            vrc = RTStrToUInt32Ex(pszNext + 1, &pszNext, 10, &u32Enc);
-            if (RT_FAILURE(vrc))
-                return setErrorBoth(E_INVALIDARG, VERR_PARSE_ERROR);
-            if (*pszNext != '=')
-                return setErrorBoth(E_INVALIDARG, VERR_PARSE_ERROR);
-            enmEncoding = (DHCPOptionEncoding_T)u32Enc;
-            break;
-        }
-
-        default:
-            return VERR_PARSE_ERROR;
-    }
-
-    return aTargetConfig.i_setOption((DHCPOption_T)aOption, enmEncoding, com::Utf8Str(pszNext + 1));
-}
-
-
-HRESULT DHCPServer::addGlobalOption(DhcpOpt_T aOption, const com::Utf8Str &aValue)
-{
-    return i_add60Option(*m->globalConfig, aOption, aValue);
-}
-
-
-HRESULT DHCPServer::removeGlobalOption(DhcpOpt_T aOption)
-{
-    return m->globalConfig->i_removeOption((DHCPOption_T)aOption);
-}
-
-
-HRESULT DHCPServer::removeGlobalOptions()
-{
-    return m->globalConfig->i_removeAllOptions();
-}
-
-
-HRESULT DHCPServer::getGlobalOptions(std::vector<com::Utf8Str> &aValues)
-{
-    return i_getAllOptions60(*m->globalConfig, aValues);
-}
-
-
-HRESULT DHCPServer::getVmConfigs(std::vector<com::Utf8Str> &aValues)
-{
-    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-
-    try
-    {
-        aValues.resize(m->individualConfigs.size());
-        size_t i = 0;
-        for (Data::IndividualConfigIterator it = m->individualConfigs.begin(); it != m->individualConfigs.end(); ++it, i++)
-            if (it->second->i_getScope() != DHCPConfigScope_MAC)
-                aValues[i].printf("[%RTuuid]:%d", it->second->i_getMachineId().raw(), it->second->i_getSlot());
-            else
-                aValues[i].printf("[%RTmac]", it->second->i_getMACAddress());
-    }
-    catch (std::bad_alloc &)
-    {
-        return E_OUTOFMEMORY;
-    }
-
-    return S_OK;
-}
-
-
-/**
  * Validates the VM name and slot, returning the machine ID.
  *
  * If a machine ID is given instead of a name, we won't check whether it
@@ -875,59 +692,6 @@ HRESULT DHCPServer::i_vmNameAndSlotToConfig(const com::Utf8Str &a_strVmName, LON
 }
 
 
-HRESULT DHCPServer::addVmSlotOption(const com::Utf8Str &aVmName, LONG aSlot, DhcpOpt_T aOption, const com::Utf8Str &aValue)
-{
-    ComObjPtr<DHCPIndividualConfig> ptrConfig;
-    HRESULT hrc = i_vmNameAndSlotToConfig(aVmName, aSlot, true, ptrConfig);
-    if (SUCCEEDED(hrc))
-        hrc = i_add60Option(*ptrConfig, aOption, aValue);
-    return hrc;
-}
-
-
-HRESULT DHCPServer::removeVmSlotOption(const com::Utf8Str &aVmName, LONG aSlot, DhcpOpt_T aOption)
-{
-    ComObjPtr<DHCPIndividualConfig> ptrConfig;
-    HRESULT hrc = i_vmNameAndSlotToConfig(aVmName, aSlot, false, ptrConfig);
-    if (SUCCEEDED(hrc))
-        hrc = ptrConfig->i_removeOption((DHCPOption_T)aOption);
-    return hrc;
-}
-
-
-HRESULT DHCPServer::removeVmSlotOptions(const com::Utf8Str &aVmName, LONG aSlot)
-{
-    ComObjPtr<DHCPIndividualConfig> ptrConfig;
-    HRESULT hrc = i_vmNameAndSlotToConfig(aVmName, aSlot, false, ptrConfig);
-    if (SUCCEEDED(hrc))
-        hrc = ptrConfig->i_removeAllOptions();
-    return hrc;
-}
-
-
-HRESULT DHCPServer::getVmSlotOptions(const com::Utf8Str &aVmName, LONG aSlot, std::vector<com::Utf8Str> &aValues)
-{
-    ComObjPtr<DHCPIndividualConfig> ptrConfig;
-    HRESULT hrc = i_vmNameAndSlotToConfig(aVmName, aSlot, false, ptrConfig);
-    if (SUCCEEDED(hrc))
-        hrc = i_getAllOptions60(*ptrConfig, aValues);
-    else if (hrc == VBOX_E_OBJECT_NOT_FOUND)
-    {
-        aValues.resize(0);
-        hrc = S_OK;
-    }
-    return hrc;
-}
-
-
-HRESULT DHCPServer::getMacOptions(const com::Utf8Str &aMAC, std::vector<com::Utf8Str> &aOption)
-{
-    RT_NOREF(aMAC, aOption);
-    AssertFailed();
-    return setError(E_NOTIMPL, tr("The GetMacOptions method has been discontinued as it was only supposed to be used by the DHCP server and it does not need it any more. sorry"));
-}
-
-
 HRESULT DHCPServer::getEventSource(ComPtr<IEventSource> &aEventSource)
 {
     NOREF(aEventSource);
@@ -1007,7 +771,7 @@ HRESULT DHCPServer::restart()
      */
     HRESULT hrc = stop();
     if (SUCCEEDED(hrc))
-        hrc = start(m->networkName, m->trunkName, m->trunkType);
+        hrc = start(m->trunkName, m->trunkType);
     return hrc;
 }
 
@@ -1024,7 +788,7 @@ HRESULT DHCPServer::i_writeDhcpdConfig(const char *pszFilename, uint32_t uMACAdd
     try
     {
         xml::ElementNode *pElmRoot = doc.createRootElement("DHCPServer");
-        pElmRoot->setAttribute("networkName", m->networkName);
+        pElmRoot->setAttribute("networkName", m->strName);
         if (m->trunkName.isNotEmpty())
             pElmRoot->setAttribute("trunkName", m->trunkName);
         pElmRoot->setAttribute("trunkType", m->trunkType);
@@ -1080,9 +844,7 @@ HRESULT DHCPServer::i_writeDhcpdConfig(const char *pszFilename, uint32_t uMACAdd
 }
 
 
-/** @todo r=bird: why do we get the network name passed in here?  it's the same
- *        as m->strName, isn't it? */
-HRESULT DHCPServer::start(const com::Utf8Str &aNetworkName, const com::Utf8Str &aTrunkName, const com::Utf8Str &aTrunkType)
+HRESULT DHCPServer::start(const com::Utf8Str &aTrunkName, const com::Utf8Str &aTrunkType)
 {
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -1136,10 +898,9 @@ HRESULT DHCPServer::start(const com::Utf8Str &aNetworkName, const com::Utf8Str &
     /*
      * Copy the startup parameters.
      */
-    m->networkName = aNetworkName;
     m->trunkName   = aTrunkName;
     m->trunkType   = aTrunkType;
-    HRESULT hrc = i_calcLeasesConfigAndLogFilenames(aNetworkName);
+    HRESULT hrc = i_calcLeasesConfigAndLogFilenames(m->strName);
     if (SUCCEEDED(hrc))
     {
         /*
@@ -1152,7 +913,7 @@ HRESULT DHCPServer::start(const com::Utf8Str &aNetworkName, const com::Utf8Str &
              * Setup the arguments and start the DHCP server.
              */
             m->dhcp.resetArguments();
-            int vrc = m->dhcp.addArgPair("--comment", m->networkName.c_str());
+            int vrc = m->dhcp.addArgPair("--comment", m->strName.c_str());
             if (RT_SUCCESS(vrc))
                 vrc = m->dhcp.addArgPair("--config", m->strConfigFilename.c_str());
             if (RT_SUCCESS(vrc))
@@ -1212,7 +973,7 @@ HRESULT DHCPServer::findLeaseByMAC(const com::Utf8Str &aMac, LONG aType,
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
     if (m->strLeasesFilename.isEmpty())
     {
-        HRESULT hrc = i_calcLeasesConfigAndLogFilenames(m->networkName.isEmpty() ? m->strName : m->networkName);
+        HRESULT hrc = i_calcLeasesConfigAndLogFilenames(m->strName);
         if (FAILED(hrc))
             return hrc;
     }

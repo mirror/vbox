@@ -1625,7 +1625,7 @@
   -->
 
   <interface name="INATNetwork" extends="$unknown"
-    uuid="4bbc405d-f268-4483-9a52-f43ffdbf67f8"
+    uuid="4fdebbf0-be30-49c0-b315-e9749e1bded1"
     wsmap="managed"
     reservedMethods="2" reservedAttributes="8"
     >
@@ -1723,13 +1723,7 @@
       <param name="iSipv6" type="boolean" dir="in"/>
       <param name="ruleName" type="wstring" dir="in"/>
     </method>
-    <method name="start">
-      <param name="trunkType" type="wstring" dir="in">
-        <desc>
-          Type of internal network trunk.
-        </desc>
-      </param>
-    </method>
+    <method name="start"/>
     <method name="stop"/>
   </interface>
 
@@ -1742,7 +1736,7 @@
   <interface name="ICloudNetwork" extends="$unknown"
     uuid="d8e3496e-735f-4fde-8a54-427d49409b5f"
     wsmap="managed"
-    reservedMethods="4" reservedAttributes="3"
+    reservedMethods="4" reservedAttributes="12"
     >
 
     <attribute name="networkName" type="wstring">
@@ -1773,75 +1767,6 @@
   // IDHCPServer and associates
   /////////////////////////////////////////////////////////////////////////
   -->
-
-  <enum
-      name="DhcpOpt"
-      uuid="40d99bd3-3ece-44d2-a07e-1085fe9c4f0b">
-    <desc>Deprecated enum, will be removed in 6.1.</desc>
-    <const name="SubnetMask" value="1"/>
-    <const name="TimeOffset" value="2"/>
-    <const name="Router" value="3"/>
-    <const name="TimeServer" value="4"/>
-    <const name="NameServer" value="5"/>
-    <const name="DomainNameServer" value="6"/>
-    <const name="LogServer" value="7"/>
-    <const name="Cookie" value="8"/>
-    <const name="LPRServer" value="9"/>
-    <const name="ImpressServer" value="10"/>
-    <const name="ResourseLocationServer" value="11"/>
-    <const name="HostName" value="12"/>
-    <const name="BootFileSize" value="13"/>
-    <const name="MeritDumpFile" value="14"/>
-    <const name="DomainName" value="15"/>
-    <const name="SwapServer" value="16"/>
-    <const name="RootPath" value="17"/>
-    <const name="ExtensionPath" value="18"/>
-    <const name="IPForwardingEnableDisable" value="19"/>
-    <const name="NonLocalSourceRoutingEnableDisable" value="20"/>
-    <const name="PolicyFilter" value="21"/>
-    <const name="MaximumDatagramReassemblySize" value="22"/>
-    <const name="DefaultIPTime2Live" value="23"/>
-    <const name="PathMTUAgingTimeout" value="24"/>
-    <const name="IPLayerParametersPerInterface" value="25"/>
-    <const name="InterfaceMTU" value="26"/>
-    <const name="AllSubnetsAreLocal" value="27"/>
-    <const name="BroadcastAddress" value="28"/>
-    <const name="PerformMaskDiscovery" value="29"/>
-    <const name="MaskSupplier" value="30"/>
-    <const name="PerformRouteDiscovery" value="31"/>
-    <const name="RouterSolicitationAddress" value="32"/>
-    <const name="StaticRoute" value="33"/>
-    <const name="TrailerEncapsulation" value="34"/>
-    <const name="ARPCacheTimeout" value="35"/>
-    <const name="EthernetEncapsulation" value="36"/>
-    <const name="TCPDefaultTTL" value="37"/>
-    <const name="TCPKeepAliveInterval" value="38"/>
-    <const name="TCPKeepAliveGarbage" value="39"/>
-    <const name="NetworkInformationServiceDomain" value="40"/>
-    <const name="NetworkInformationServiceServers" value="41"/>
-    <const name="NetworkTimeProtocolServers" value="42"/>
-    <const name="VendorSpecificInformation" value="43"/>
-    <const name="Option_44" value="44"/>
-    <const name="Option_45" value="45"/>
-    <const name="Option_46" value="46"/>
-    <const name="Option_47" value="47"/>
-    <const name="Option_48" value="48"/>
-    <const name="Option_49" value="49"/>
-    <const name="IPAddressLeaseTime" value="51"/>
-    <const name="Option_64" value="64"/>
-    <const name="Option_65" value="65"/>
-    <const name="TFTPServerName" value="66"/>
-    <const name="BootfileName" value="67"/>
-    <const name="Option_68" value="68"/>
-    <const name="Option_69" value="69"/>
-    <const name="Option_70" value="70"/>
-    <const name="Option_71" value="71"/>
-    <const name="Option_72" value="72"/>
-    <const name="Option_73" value="73"/>
-    <const name="Option_74" value="74"/>
-    <const name="Option_75" value="75"/>
-    <const name="Option_119" value="119"/>
-  </enum>
 
   <enum
       name="DHCPOption"
@@ -1960,7 +1885,7 @@
 
   <interface
     name="IDHCPServer" extends="$unknown"
-    uuid="ea2d467f-b6c2-4b9a-8eb5-6e2f275dd72e"
+    uuid="cadef0a2-a1a9-4ac2-8e80-c049af69dac8"
     wsmap="managed"
     reservedMethods="0" reservedAttributes="3"
     >
@@ -2008,31 +1933,6 @@
       </desc>
     </attribute>
 
-    <method name="addGlobalOption">
-      <desc>6.0 legacy, will be removed in 6.1.</desc>
-      <param name="option" type="DhcpOpt" dir="in"/>
-      <param name="value" type="wstring" dir="in" />
-    </method>
-
-    <method name="removeGlobalOption">
-      <desc>6.0 legacy, will be removed in 6.1.</desc>
-      <param name="option" type="DhcpOpt" dir="in"/>
-    </method>
-
-    <method name="removeGlobalOptions">
-      <desc>Legacy interface, will be removed in 6.1.</desc>
-    </method>
-
-    <!-- string in format: "option_id:value" -->
-    <attribute name="globalOptions" type="wstring" safearray="yes" readonly="yes">
-      <desc>Legacy interface, will be removed in 6.1.</desc>
-    </attribute>
-
-    <!-- string in format: "[vm name]:slot" -->
-    <attribute name="vmConfigs" type="wstring" safearray="yes" readonly="yes">
-      <desc>Legacy interface, will be removed in 6.1.</desc>
-    </attribute>
-
     <attribute name="globalConfig" type="IDHCPGlobalConfig" readonly="yes">
       <desc>Global configuration that applies to all clients.</desc>
     </attribute>
@@ -2065,42 +1965,6 @@
          VM configuration files. And we haven't got the attachment type for
          NATNetwork.
     -->
-    <method name="addVmSlotOption">
-      <desc>6.0 legacy, will be removed in 6.1.</desc>
-      <param name="vmname" type="wstring" dir="in"/>
-      <param name="slot" type="long" dir="in"/>
-      <param name="option" type="DhcpOpt" dir="in"/>
-      <param name="value" type="wstring" dir="in" />
-    </method>
-
-    <method name="removeVmSlotOption">
-      <desc>6.0 legacy, will be removed in 6.1.</desc>
-      <param name="vmname" type="wstring" dir="in"/>
-      <param name="slot" type="long" dir="in"/>
-      <param name="option" type="DhcpOpt" dir="in"/>
-    </method>
-
-    <method name="removeVmSlotOptions">
-      <desc>6.0 legacy, will be removed in 6.1.</desc>
-      <param name="vmname" type="wstring" dir="in"/>
-      <param name="slot" type="long" dir="in"/>
-    </method>
-
-    <!-- returns array of strings in format: "option_id:value" for a given pair (vm, slot) -->
-    <method name="getVmSlotOptions">
-      <desc>6.0 legacy, will be removed in 6.1.</desc>
-      <param name="vmname" type="wstring" dir="in"/>
-      <param name="slot" type="long" dir="in"/>
-      <param name="option" type="wstring" safearray="yes" dir="return"/>
-    </method>
-
-    <!-- Returns options by MAC address -->
-    <method name="getMacOptions">
-      <desc>6.0 legacy, will be removed in 6.1.</desc>
-      <param name="mac" type="wstring" dir="in"/>
-      <param name="option" type="wstring" safearray="yes" dir="return"/>
-    </method>
-
     <method name="setConfiguration">
       <desc>
         configures the server
@@ -2137,11 +2001,6 @@
           Failed to start the process.
         </result>
       </desc>
-      <param name="networkName" type="wstring" dir="in">
-        <desc>
-          Name of internal network DHCP server should attach to.
-        </desc>
-      </param>
       <param name="trunkName" type="wstring" dir="in">
         <desc>
           Name of internal network trunk.
@@ -19028,7 +18887,6 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   <enum
     name="GuestMonitorStatus"
     uuid="6b8d3f71-39cb-459e-a916-48917ed43e19"
-    wsmap="managed"
     >
     <desc>
       The current status of the guest display.
@@ -19056,7 +18914,6 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   <enum
     name="ScreenLayoutMode"
     uuid="8fa1964c-8774-11e9-ae5d-1f419105e68d"
-    wsmap="managed"
     >
     <desc>
       How <link to="IDisplay::setScreenLayout"/> method should work.
@@ -26549,11 +26406,11 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface
     name="IGuestAdditionsStatusChangedEvent" extends="IEvent"
-    uuid="fd1a34ad-0b74-4e2b-ed0f-46222de8a883"
+    uuid="a443da5b-aa82-4720-bc84-bd097b2b13b8"
     wsmap="managed" autogen="VBoxEvent" id="OnGuestAdditionsStatusChanged">
     <desc>The guest addition status changed.</desc>
 
-    <attribute name="facility" type="AdditionsFacilityType" dir="in">
+    <attribute name="facility" type="AdditionsFacilityType" readonly="yes">
       <desc>Facility this event relates to.</desc>
     </attribute>
     <attribute name="status" type="AdditionsFacilityStatus" readonly="yes">

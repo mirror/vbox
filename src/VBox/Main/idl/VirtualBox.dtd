@@ -20,7 +20,7 @@
     <!ATTLIST if target (midl|xpidl|wsdl) #REQUIRED>
   <!ELEMENT cpp ANY>                                          <!-- done -->
     <!ATTLIST cpp line CDATA #IMPLIED>
-  <!ELEMENT library (application)*>                           <!-- done -->
+  <!ELEMENT library (application|if)*>                        <!-- done -->
     <!ATTLIST library name CDATA #REQUIRED>
     <!ATTLIST library uuid CDATA #REQUIRED>
     <!ATTLIST library version CDATA #REQUIRED>
@@ -75,6 +75,7 @@
     <!ATTLIST interface wrap-hint-server-addinterfaces CDATA #IMPLIED>
     <!ATTLIST interface wrap-hint-server CDATA #IMPLIED>
     <!ATTLIST interface wrap-gen-hook (yes|no) "no">
+    <!ATTLIST interface notdual (yes|no) "no">
     <!-- DTrace has a probe name length limit, so dtracename helps dealing with excessivly long names. -->
     <!ATTLIST interface dtracename CDATA #IMPLIED>
     <!ATTLIST interface reservedAttributes CDATA #IMPLIED>

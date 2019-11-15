@@ -479,7 +479,7 @@ static RTEXITCODE handleOp(HandlerArg *a, OPCODE enmCode)
         }
         case OP_START:
         {
-            CHECK_ERROR(net, Start(Bstr("whatever").raw()));
+            CHECK_ERROR(net, Start());
             if (FAILED(rc))
                 return errorArgument("Failed to start network");
             break;
@@ -488,7 +488,7 @@ static RTEXITCODE handleOp(HandlerArg *a, OPCODE enmCode)
         {
             CHECK_ERROR(net, Stop());
             if (FAILED(rc))
-                return errorArgument("Failed to start network");
+                return errorArgument("Failed to stop network");
             break;
         }
         default:;

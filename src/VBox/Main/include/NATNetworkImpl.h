@@ -110,7 +110,7 @@ private:
                                USHORT aGuestPort);
     HRESULT removePortForwardRule(BOOL aISipv6,
                                   const com::Utf8Str &aRuleName);
-    HRESULT start(const com::Utf8Str &aTrunkType);
+    HRESULT start();
     HRESULT stop();
 
     // Internal methods

@@ -647,14 +647,21 @@ void NATNetwork::i_updateDomainNameOption(ComPtr<IHost> &host)
     com::Bstr domain;
     if (FAILED(host->COMGETTER(DomainName)(domain.asOutParam())))
         LogRel(("NATNetwork: Failed to get host's domain name\n"));
+    ComPtr<IDHCPGlobalConfig> pDHCPConfig;
+    HRESULT hrc = m->dhcpServer->COMGETTER(GlobalConfig)(pDHCPConfig.asOutParam());
+    if (FAILED(hrc))
+    {
+        LogRel(("NATNetwork: Failed to get global DHCP config when updating domain name option with %Rhrc\n", hrc));
+        return;
+    }
     if (domain.isNotEmpty())
     {
-        HRESULT hrc = m->dhcpServer->AddGlobalOption(DhcpOpt_DomainName, domain.raw());
+        hrc = pDHCPConfig->SetOption(DHCPOption_DomainName, DHCPOptionEncoding_Normal, domain.raw());
         if (FAILED(hrc))
             LogRel(("NATNetwork: Failed to add domain name option with %Rhrc\n", hrc));
     }
     else
-        m->dhcpServer->RemoveGlobalOption(DhcpOpt_DomainName);
+        pDHCPConfig->RemoveOption(DHCPOption_DomainName);
 }
 
 void NATNetwork::i_updateDomainNameServerOption(ComPtr<IHost> &host)
@@ -677,6 +684,13 @@ void NATNetwork::i_updateDomainNameServerOption(ComPtr<IHost> &host)
     if (FAILED(hrc))
     {
         LogRel(("NATNetwork: Failed to get name servers from host with %Rhrc\n", hrc));
+        return;
+    }
+    ComPtr<IDHCPGlobalConfig> pDHCPConfig;
+    hrc = m->dhcpServer->COMGETTER(GlobalConfig)(pDHCPConfig.asOutParam());
+    if (FAILED(hrc))
+    {
+        LogRel(("NATNetwork: Failed to get global DHCP config when updating domain name server option with %Rhrc\n", hrc));
         return;
     }
 
@@ -734,12 +748,12 @@ void NATNetwork::i_updateDomainNameServerOption(ComPtr<IHost> &host)
         if (lstServers.isEmpty() && fUnmappedLoopback)
             lstServers.append(RTCStringFmt("%RTnaipv4", networkid.u | RT_H2N_U32_C(1U))); /* proxy */
 
-        hrc = m->dhcpServer->AddGlobalOption(DhcpOpt_DomainNameServer, Bstr(RTCString::join(lstServers, " ")).raw());
+        hrc = pDHCPConfig->SetOption(DHCPOption_DomainNameServers, DHCPOptionEncoding_Normal, Bstr(RTCString::join(lstServers, " ")).raw());
         if (FAILED(hrc))
             LogRel(("NATNetwork: Failed to add domain name server option '%s' with %Rhrc\n", RTCString::join(lstServers, " ").c_str(), hrc));
     }
     else
-        m->dhcpServer->RemoveGlobalOption(DhcpOpt_DomainNameServer);
+        pDHCPConfig->RemoveOption(DHCPOption_DomainNameServers);
 }
 
 void NATNetwork::i_updateDnsOptions()
@@ -753,14 +767,14 @@ void NATNetwork::i_updateDnsOptions()
 }
 
 
-HRESULT  NATNetwork::start(const com::Utf8Str &aTrunkType)
+HRESULT  NATNetwork::start()
 {
 #ifdef VBOX_WITH_NAT_SERVICE
     if (!m->s.fEnabled) return S_OK;
     AssertReturn(!m->s.strNetworkName.isEmpty(), E_FAIL);
 
     m->NATRunner.addArgPair(NetworkServiceRunner::kpszKeyNetwork, Utf8Str(m->s.strNetworkName).c_str());
-    m->NATRunner.addArgPair(NetworkServiceRunner::kpszKeyTrunkType, Utf8Str(aTrunkType).c_str());
+    m->NATRunner.addArgPair(NetworkServiceRunner::kpszKeyTrunkType, Utf8Str(TRUNKTYPE_WHATEVER).c_str());
     m->NATRunner.addArgPair(NetworkServiceRunner::kpszIpAddress, Utf8Str(m->IPv4Gateway).c_str());
     m->NATRunner.addArgPair(NetworkServiceRunner::kpszIpNetmask, Utf8Str(m->IPv4NetworkMask).c_str());
 
@@ -819,9 +833,17 @@ HRESULT  NATNetwork::start(const com::Utf8Str &aTrunkType)
         i_updateDnsOptions();
 #endif /* VBOX_WITH_DHCPD */
         /* XXX: AddGlobalOption(DhcpOpt_Router,) - enables attachement of DhcpServer to Main (no longer true with VBoxNetDhcpd). */
-        m->dhcpServer->AddGlobalOption(DhcpOpt_Router, Bstr(m->IPv4Gateway).raw());
+        ComPtr<IDHCPGlobalConfig> pDHCPConfig;
+        hrc = m->dhcpServer->COMGETTER(GlobalConfig)(pDHCPConfig.asOutParam());
+        if (FAILED(hrc))
+        {
+            LogRel(("NATNetwork: Failed to get global DHCP config when updating IPv4 gateway option with %Rhrc\n", hrc));
+            m->dhcpServer.setNull();
+            return E_FAIL;
+        }
+        pDHCPConfig->SetOption(DHCPOption_Routers, DHCPOptionEncoding_Normal, Bstr(m->IPv4Gateway).raw());
 
-        hrc = m->dhcpServer->Start(Bstr(m->s.strNetworkName).raw(), Bstr("").raw(), Bstr(aTrunkType).raw());
+        hrc = m->dhcpServer->Start(Bstr::Empty.raw(), Bstr(TRUNKTYPE_WHATEVER).raw());
         if (FAILED(hrc))
         {
             m->dhcpServer.setNull();
@@ -837,7 +859,6 @@ HRESULT  NATNetwork::start(const com::Utf8Str &aTrunkType)
     /** @todo missing setError()! */
     return E_FAIL;
 #else
-    NOREF(aTrunkType);
     ReturnComNotImplemented();
 #endif
 }
