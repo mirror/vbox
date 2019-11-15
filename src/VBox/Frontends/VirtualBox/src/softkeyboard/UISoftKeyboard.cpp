@@ -114,7 +114,6 @@ enum KeyboardRegion
     KeyboardRegion_Main = 0,
     KeyboardRegion_NumPad,
     KeyboardRegion_MultimediaKeys,
-    KeyboardRegion_OSMenuKeys,
     KeyboardRegion_Max
 };
 
@@ -436,6 +435,9 @@ public:
     void setParentWidget(UISoftKeyboardWidget* pParent);
     QVector<LONG> scanCodeWithPrefix() const;
 
+    void setIsOSMenuKey(bool fFlag);
+    bool isOSMenuKey() const;
+
     void release();
     void press();
 
@@ -491,6 +493,7 @@ private:
       * caption (usually a single char). This caption is defined in the physical layout file
       * and has precedence over the captions defined in keyboard layout files. */
     QString m_strStaticCaption;
+    bool m_fIsOSMenuKey;
 };
 
 
@@ -1549,6 +1552,7 @@ UISoftKeyboardKey::UISoftKeyboardKey()
     , m_iPosition(0)
     , m_pParentWidget(0)
     , m_enmKeyboardRegion(KeyboardRegion_Main)
+    , m_fIsOSMenuKey(false)
 {
 }
 
@@ -1683,6 +1687,16 @@ const QString &UISoftKeyboardKey::staticCaption() const
 void UISoftKeyboardKey::setParentWidget(UISoftKeyboardWidget* pParent)
 {
     m_pParentWidget = pParent;
+}
+
+void UISoftKeyboardKey::setIsOSMenuKey(bool fFlag)
+{
+    m_fIsOSMenuKey = fFlag;
+}
+
+bool UISoftKeyboardKey::isOSMenuKey() const
+{
+    return m_fIsOSMenuKey;
 }
 
 void UISoftKeyboardKey::release()
@@ -2248,7 +2262,7 @@ void UISoftKeyboardWidget::paintEvent(QPaintEvent *pEvent) /* override */
         {
             UISoftKeyboardKey &key = keys[j];
 
-            if (m_fHideOSMenuKeys && key.keyboardRegion() == KeyboardRegion_OSMenuKeys)
+            if (m_fHideOSMenuKeys && key.isOSMenuKey())
                 continue;
 
             if (m_fHideNumPad && key.keyboardRegion() == KeyboardRegion_NumPad)
@@ -3315,7 +3329,7 @@ void UIPhysicalLayoutReader::parseKey(UISoftKeyboardRow &row)
         else if (m_xmlReader.name() == "osmenukey")
         {
             if (m_xmlReader.readElementText() == "true")
-                key.setKeyboardRegion(KeyboardRegion_OSMenuKeys);
+                key.setIsOSMenuKey(true);
         }
         else if (m_xmlReader.name() == "staticcaption")
             key.setStaticCaption(m_xmlReader.readElementText());
