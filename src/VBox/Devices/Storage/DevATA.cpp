@@ -675,8 +675,8 @@ DECLINLINE(void) ataUnsetStatus(ATADevState *s, uint8_t stat)
 #if defined(IN_RING3) || defined(IN_RING0)
 
 # ifdef IN_RING3
-typedef void (*PBeginTransferFunc)(ATADevState *);
-typedef bool (*PSourceSinkFunc)(ATADevState *);
+typedef void (*PFNBEGINTRANSFER)(ATADevState *);
+typedef bool (*PFNSOURCESINK)(ATADevState *);
 
 static void ataR3ReadWriteSectorsBT(ATADevState *);
 static void ataR3PacketBT(ATADevState *);
@@ -729,7 +729,7 @@ typedef enum ATAFNBT
  * Array of end transfer functions, the index is ATAFNET.
  * Make sure ATAFNET and this array match!
  */
-static const PBeginTransferFunc g_apfnBeginTransFuncs[ATAFN_BT_MAX] =
+static const PFNBEGINTRANSFER g_apfnBeginTransFuncs[ATAFN_BT_MAX] =
 {
     NULL,
     ataR3ReadWriteSectorsBT,
@@ -779,7 +779,7 @@ typedef enum ATAFNSS
  * Array of source/sink functions, the index is ATAFNSS.
  * Make sure ATAFNSS and this array match!
  */
-static const PSourceSinkFunc g_apfnSourceSinkFuncs[ATAFN_SS_MAX] =
+static const PFNSOURCESINK g_apfnSourceSinkFuncs[ATAFN_SS_MAX] =
 {
     NULL,
     ataR3IdentifySS,
@@ -4822,13 +4822,15 @@ static void ataHCPIOTransfer(PATACONTROLLER pCtl)
          * In a real system it would block the CPU via IORDY, here we do it
          * very similarly by not continuing with the current instruction
          * until the transfer to/from the storage medium is completed. */
-        if (s->iSourceSink != ATAFN_SS_NULL)
+        uint8_t const iSourceSink = s->iSourceSink;
+        if (   iSourceSink != ATAFN_SS_NULL
+            && iSourceSink < RT_ELEMENTS(g_apfnSourceSinkFuncs))
         {
             bool fRedo;
             uint8_t status = s->uATARegStatus;
             ataSetStatusValue(s, ATA_STAT_BUSY);
             Log2(("%s: calling source/sink function\n", __FUNCTION__));
-            fRedo = g_apfnSourceSinkFuncs[s->iSourceSink](s);
+            fRedo = g_apfnSourceSinkFuncs[iSourceSink](s);
             pCtl->fRedo = fRedo;
             if (RT_UNLIKELY(fRedo))
                 return;
@@ -4836,6 +4838,8 @@ static void ataHCPIOTransfer(PATACONTROLLER pCtl)
             s->iIOBufferCur = 0;
             s->iIOBufferEnd = s->cbElementaryTransfer;
         }
+        else
+            Assert(iSourceSink == ATAFN_SS_NULL);
 # else
         AssertReleaseFailed();
 # endif
@@ -5440,14 +5444,16 @@ static void ataR3DMATransfer(PATACONTROLLER pCtl)
                  * state (since we didn't hold the lock until just now
                  * the guest can continue in parallel). If so, the state
                  * is already set up so the loop is exited immediately. */
-                if (s->iSourceSink != ATAFN_SS_NULL)
+                uint8_t const iSourceSink = s->iSourceSink;
+                if (   iSourceSink != ATAFN_SS_NULL
+                    && iSourceSink < RT_ELEMENTS(g_apfnSourceSinkFuncs))
                 {
                     s->iIOBufferCur = iIOBufferCur;
                     s->iIOBufferEnd = iIOBufferEnd;
                     s->cbElementaryTransfer = cbElementaryTransfer;
                     s->cbTotalTransfer = cbTotalTransfer;
                     Log2(("%s: calling source/sink function\n", __FUNCTION__));
-                    fRedo = g_apfnSourceSinkFuncs[s->iSourceSink](s);
+                    fRedo = g_apfnSourceSinkFuncs[iSourceSink](s);
                     if (RT_UNLIKELY(fRedo))
                     {
                         pCtl->GCPhysFirstDMADesc = GCPhysDesc;
@@ -5470,6 +5476,7 @@ static void ataR3DMATransfer(PATACONTROLLER pCtl)
                 else
                 {
                     /* This forces the loop to exit immediately. */
+                    Assert(iSourceSink == ATAFN_SS_NULL);
                     GCPhysDesc = pCtl->GCPhysLastDMADesc + 1;
                 }
 
@@ -5635,7 +5642,7 @@ static DECLCALLBACK(int) ataR3AsyncIOThread(RTTHREAD hThreadSelf, void *pvUser)
         switch (ReqType)
         {
             case ATA_AIO_NEW:
-
+            {
                 pCtl->iAIOIf = pReq->u.t.iIf;
                 s = &pCtl->aIfs[pCtl->iAIOIf & ATA_SELECTED_IF_MASK];
                 s->cbTotalTransfer = pReq->u.t.cbTotalTransfer;
@@ -5667,16 +5674,19 @@ static DECLCALLBACK(int) ataR3AsyncIOThread(RTTHREAD hThreadSelf, void *pvUser)
 
                 pCtl->fChainedTransfer = false;
 
-                if (s->iBeginTransfer != ATAFN_BT_NULL)
+                uint8_t const iBeginTransfer = s->iBeginTransfer;
+                if (   iBeginTransfer != ATAFN_BT_NULL
+                    && iBeginTransfer < RT_ELEMENTS(g_apfnBeginTransFuncs))
                 {
                     Log2(("%s: Ctl#%d: calling begin transfer function\n", __FUNCTION__, ATACONTROLLER_IDX(pCtl)));
-                    g_apfnBeginTransFuncs[s->iBeginTransfer](s);
+                    g_apfnBeginTransFuncs[iBeginTransfer](s);
                     s->iBeginTransfer = ATAFN_BT_NULL;
                     if (s->uTxDir != PDMMEDIATXDIR_FROM_DEVICE)
                         s->iIOBufferEnd = s->cbElementaryTransfer;
                 }
                 else
                 {
+                    Assert(iBeginTransfer == ATAFN_BT_NULL);
                     s->cbElementaryTransfer = s->cbTotalTransfer;
                     s->iIOBufferEnd = s->cbTotalTransfer;
                 }
@@ -5684,11 +5694,13 @@ static DECLCALLBACK(int) ataR3AsyncIOThread(RTTHREAD hThreadSelf, void *pvUser)
 
                 if (s->uTxDir != PDMMEDIATXDIR_TO_DEVICE)
                 {
-                    if (s->iSourceSink != ATAFN_SS_NULL)
+                    uint8_t const iSourceSink = s->iSourceSink;
+                    if (   iSourceSink != ATAFN_SS_NULL
+                        && iSourceSink < RT_ELEMENTS(g_apfnSourceSinkFuncs))
                     {
                         bool fRedo;
                         Log2(("%s: Ctl#%d: calling source/sink function\n", __FUNCTION__, ATACONTROLLER_IDX(pCtl)));
-                        fRedo = g_apfnSourceSinkFuncs[s->iSourceSink](s);
+                        fRedo = g_apfnSourceSinkFuncs[iSourceSink](s);
                         pCtl->fRedo = fRedo;
                         if (RT_UNLIKELY(fRedo && !pCtl->fReset))
                         {
@@ -5701,7 +5713,10 @@ static DECLCALLBACK(int) ataR3AsyncIOThread(RTTHREAD hThreadSelf, void *pvUser)
                         }
                     }
                     else
+                    {
+                        Assert(iSourceSink == ATAFN_SS_NULL);
                         ataR3CmdOK(s, 0);
+                    }
                     s->iIOBufferEnd = s->cbElementaryTransfer;
 
                 }
@@ -5777,6 +5792,7 @@ static DECLCALLBACK(int) ataR3AsyncIOThread(RTTHREAD hThreadSelf, void *pvUser)
                     }
                 }
                 break;
+            }
 
             case ATA_AIO_DMA:
             {
@@ -5835,13 +5851,16 @@ static DECLCALLBACK(int) ataR3AsyncIOThread(RTTHREAD hThreadSelf, void *pvUser)
             }
 
             case ATA_AIO_PIO:
+            {
                 s = &pCtl->aIfs[pCtl->iAIOIf & ATA_SELECTED_IF_MASK]; /* Do not remove or there's an instant crash after loading the saved state */
 
-                if (s->iSourceSink != ATAFN_SS_NULL)
+                uint8_t const iSourceSink = s->iSourceSink;
+                if (   iSourceSink != ATAFN_SS_NULL
+                    && iSourceSink < RT_ELEMENTS(g_apfnSourceSinkFuncs))
                 {
                     bool fRedo;
                     Log2(("%s: Ctl#%d: calling source/sink function\n", __FUNCTION__, ATACONTROLLER_IDX(pCtl)));
-                    fRedo = g_apfnSourceSinkFuncs[s->iSourceSink](s);
+                    fRedo = g_apfnSourceSinkFuncs[iSourceSink](s);
                     pCtl->fRedo = fRedo;
                     if (RT_UNLIKELY(fRedo && !pCtl->fReset))
                     {
@@ -5855,6 +5874,7 @@ static DECLCALLBACK(int) ataR3AsyncIOThread(RTTHREAD hThreadSelf, void *pvUser)
                 else
                 {
                     /* Continue a previously started transfer. */
+                    Assert(iSourceSink == ATAFN_SS_NULL);
                     ataUnsetStatus(s, ATA_STAT_BUSY);
                     ataSetStatus(s, ATA_STAT_READY);
                 }
@@ -5904,6 +5924,7 @@ static DECLCALLBACK(int) ataR3AsyncIOThread(RTTHREAD hThreadSelf, void *pvUser)
                     pCtl->uAsyncIOState = ATA_AIO_NEW;
                 }
                 break;
+            }
 
             case ATA_AIO_RESET_ASSERTED:
                 pCtl->uAsyncIOState = ATA_AIO_RESET_CLEARED;
