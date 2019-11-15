@@ -549,10 +549,6 @@ typedef struct AHCI
     bool                            fReset;
     /** Supports 64bit addressing */
     bool                            f64BitAddr;
-    /** GC enabled. */
-    bool                            fGCEnabled;
-    /** R0 enabled. */
-    bool                            fR0Enabled;
     /** Indicates that PDMDevHlpAsyncNotificationCompleted should be called when
      * a port is entering the idle state. */
     bool volatile                   fSignalIdle;
@@ -562,6 +558,7 @@ typedef struct AHCI
     bool                            fLegacyPortResetMethod;
     /** Enable tiger (10.4.x) SSTS hack or not. */
     bool                            fTigerHack;
+    bool                            afAlignment7[2];
 
     /** Number of usable ports on this controller. */
     uint32_t                        cPortsImpl;
@@ -572,7 +569,7 @@ typedef struct AHCI
     volatile bool                   f8ByteMMIO4BytesWrittenSuccessfully;
 
 #if HC_ARCH_BITS == 64
-    uint32_t                        Alignment7;
+    uint32_t                        Alignment8;
 #endif
 } AHCI;
 AssertCompileMemberAlignment(AHCI, ahciPort, 8);
@@ -2438,14 +2435,14 @@ static DECLCALLBACK(int) ahciR3MMIOMap(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, u
     if (RT_FAILURE(rc))
         return rc;
 
-    if (pThis->fR0Enabled)
+    if (pDevIns->fR0Enabled)
     {
         rc = PDMDevHlpMMIORegisterR0(pDevIns, GCPhysAddress, cb, NIL_RTR0PTR /*pvUser*/, "ahciMMIOWrite", "ahciMMIORead");
         if (RT_FAILURE(rc))
             return rc;
     }
 
-    if (pThis->fGCEnabled)
+    if (pDevIns->fRCEnabled)
     {
         rc = PDMDevHlpMMIORegisterRC(pDevIns, GCPhysAddress, cb, NIL_RTRCPTR /*pvUser*/, "ahciMMIOWrite", "ahciMMIORead");
         if (RT_FAILURE(rc))
@@ -2465,10 +2462,8 @@ static DECLCALLBACK(int) ahciR3MMIOMap(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, u
 static DECLCALLBACK(int) ahciR3LegacyFakeIORangeMap(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t iRegion,
                                                     RTGCPHYS GCPhysAddress, RTGCPHYS cb, PCIADDRESSSPACE enmType)
 {
-    RT_NOREF(pPciDev, iRegion, enmType);
-    PAHCI pThis = PDMDEVINS_2_DATA(pDevIns, PAHCI);
-
     Log2(("%s: registering fake I/O area at GCPhysAddr=%RGp cb=%RGp\n", __FUNCTION__, GCPhysAddress, cb));
+    RT_NOREF(pPciDev, iRegion, enmType);
 
     Assert(enmType == PCI_ADDRESS_SPACE_IO);
     Assert(pPciDev == pDevIns->apPciDevs[0]);
@@ -2479,7 +2474,7 @@ static DECLCALLBACK(int) ahciR3LegacyFakeIORangeMap(PPDMDEVINS pDevIns, PPDMPCID
     if (RT_FAILURE(rc))
         return rc;
 
-    if (pThis->fR0Enabled)
+    if (pDevIns->fR0Enabled)
     {
         rc = PDMDevHlpIOPortRegisterR0(pDevIns, (RTIOPORT)GCPhysAddress, cb, 0,
                                        "ahciLegacyFakeWrite", "ahciLegacyFakeRead", NULL, NULL, "AHCI Fake");
@@ -2487,7 +2482,7 @@ static DECLCALLBACK(int) ahciR3LegacyFakeIORangeMap(PPDMDEVINS pDevIns, PPDMPCID
             return rc;
     }
 
-    if (pThis->fGCEnabled)
+    if (pDevIns->fRCEnabled)
     {
         rc = PDMDevHlpIOPortRegisterRC(pDevIns, (RTIOPORT)GCPhysAddress, cb, 0,
                                        "ahciLegacyFakeWrite", "ahciLegacyFakeRead", NULL, NULL, "AHCI Fake");
@@ -2519,7 +2514,7 @@ static DECLCALLBACK(int) ahciR3IdxDataIORangeMap(PPDMDEVINS pDevIns, PPDMPCIDEV 
     if (RT_FAILURE(rc))
         return rc;
 
-    if (pThis->fR0Enabled)
+    if (pDevIns->fR0Enabled)
     {
         rc = PDMDevHlpIOPortRegisterR0(pDevIns, (RTIOPORT)GCPhysAddress, cb, 0,
                                        "ahciIdxDataWrite", "ahciIdxDataRead", NULL, NULL, "AHCI IDX/DATA");
@@ -2527,7 +2522,7 @@ static DECLCALLBACK(int) ahciR3IdxDataIORangeMap(PPDMDEVINS pDevIns, PPDMPCIDEV 
             return rc;
     }
 
-    if (pThis->fGCEnabled)
+    if (pDevIns->fRCEnabled)
     {
         rc = PDMDevHlpIOPortRegisterRC(pDevIns, (RTIOPORT)GCPhysAddress, cb, 0,
                                        "ahciIdxDataWrite", "ahciIdxDataRead", NULL, NULL, "AHCI IDX/DATA");
@@ -4729,8 +4724,8 @@ static DECLCALLBACK(void) ahciR3Info(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, con
                     pDevIns->iInstance,
                     pThis->MMIOBase,
                     pThis->cPortsImpl,
-                    pThis->fGCEnabled ? true : false,
-                    pThis->fR0Enabled ? true : false);
+                    pDevIns->fRCEnabled,
+                    pDevIns->fR0Enabled);
 
     /*
      * Show global registers.
@@ -4839,27 +4834,28 @@ static DECLCALLBACK(int) ahciR3LoadPrep(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
  */
 static DECLCALLBACK(int) ahciR3LiveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uPass)
 {
+    PAHCI           pThis = PDMDEVINS_2_DATA(pDevIns, PAHCI);
+    PCPDMDEVHLPR3   pHlp  = pDevIns->pHlpR3;
     RT_NOREF(uPass);
-    PAHCI pThis = PDMDEVINS_2_DATA(pDevIns, PAHCI);
 
     /* config. */
-    SSMR3PutU32(pSSM, pThis->cPortsImpl);
+    pHlp->pfnSSMPutU32(pSSM, pThis->cPortsImpl);
     for (uint32_t i = 0; i < AHCI_MAX_NR_PORTS_IMPL; i++)
     {
-        SSMR3PutBool(pSSM, pThis->ahciPort[i].pDrvBase != NULL);
-        SSMR3PutBool(pSSM, pThis->ahciPort[i].fHotpluggable);
-        SSMR3PutStrZ(pSSM, pThis->ahciPort[i].szSerialNumber);
-        SSMR3PutStrZ(pSSM, pThis->ahciPort[i].szFirmwareRevision);
-        SSMR3PutStrZ(pSSM, pThis->ahciPort[i].szModelNumber);
+        pHlp->pfnSSMPutBool(pSSM, pThis->ahciPort[i].pDrvBase != NULL);
+        pHlp->pfnSSMPutBool(pSSM, pThis->ahciPort[i].fHotpluggable);
+        pHlp->pfnSSMPutStrZ(pSSM, pThis->ahciPort[i].szSerialNumber);
+        pHlp->pfnSSMPutStrZ(pSSM, pThis->ahciPort[i].szFirmwareRevision);
+        pHlp->pfnSSMPutStrZ(pSSM, pThis->ahciPort[i].szModelNumber);
     }
 
     static const char *s_apszIdeEmuPortNames[4] = { "PrimaryMaster", "PrimarySlave", "SecondaryMaster", "SecondarySlave" };
     for (uint32_t i = 0; i < RT_ELEMENTS(s_apszIdeEmuPortNames); i++)
     {
         uint32_t iPort;
-        int rc = CFGMR3QueryU32Def(pDevIns->pCfg, s_apszIdeEmuPortNames[i], &iPort, i);
+        int rc = pHlp->pfnCFGMQueryU32Def(pDevIns->pCfg, s_apszIdeEmuPortNames[i], &iPort, i);
         AssertRCReturn(rc, rc);
-        SSMR3PutU32(pSSM, iPort);
+        pHlp->pfnSSMPutU32(pSSM, iPort);
     }
 
     return VINF_SSM_DONT_CALL_AGAIN;
@@ -4870,7 +4866,8 @@ static DECLCALLBACK(int) ahciR3LiveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uin
  */
 static DECLCALLBACK(int) ahciR3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 {
-    PAHCI pThis = PDMDEVINS_2_DATA(pDevIns, PAHCI);
+    PAHCI           pThis = PDMDEVINS_2_DATA(pDevIns, PAHCI);
+    PCPDMDEVHLPR3   pHlp  = pDevIns->pHlpR3;
     uint32_t i;
     int rc;
 
@@ -4881,72 +4878,73 @@ static DECLCALLBACK(int) ahciR3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
     AssertRCReturn(rc, rc);
 
     /* The main device structure. */
-    SSMR3PutU32(pSSM, pThis->regHbaCap);
-    SSMR3PutU32(pSSM, pThis->regHbaCtrl);
-    SSMR3PutU32(pSSM, pThis->regHbaIs);
-    SSMR3PutU32(pSSM, pThis->regHbaPi);
-    SSMR3PutU32(pSSM, pThis->regHbaVs);
-    SSMR3PutU32(pSSM, pThis->regHbaCccCtl);
-    SSMR3PutU32(pSSM, pThis->regHbaCccPorts);
-    SSMR3PutU8(pSSM, pThis->uCccPortNr);
-    SSMR3PutU64(pSSM, pThis->uCccTimeout);
-    SSMR3PutU32(pSSM, pThis->uCccNr);
-    SSMR3PutU32(pSSM, pThis->uCccCurrentNr);
-    SSMR3PutU32(pSSM, pThis->u32PortsInterrupted);
-    SSMR3PutBool(pSSM, pThis->fReset);
-    SSMR3PutBool(pSSM, pThis->f64BitAddr);
-    SSMR3PutBool(pSSM, pThis->fR0Enabled);
-    SSMR3PutBool(pSSM, pThis->fGCEnabled);
-    SSMR3PutBool(pSSM, pThis->fLegacyPortResetMethod);
+    pHlp->pfnSSMPutU32(pSSM, pThis->regHbaCap);
+    pHlp->pfnSSMPutU32(pSSM, pThis->regHbaCtrl);
+    pHlp->pfnSSMPutU32(pSSM, pThis->regHbaIs);
+    pHlp->pfnSSMPutU32(pSSM, pThis->regHbaPi);
+    pHlp->pfnSSMPutU32(pSSM, pThis->regHbaVs);
+    pHlp->pfnSSMPutU32(pSSM, pThis->regHbaCccCtl);
+    pHlp->pfnSSMPutU32(pSSM, pThis->regHbaCccPorts);
+    pHlp->pfnSSMPutU8(pSSM, pThis->uCccPortNr);
+    pHlp->pfnSSMPutU64(pSSM, pThis->uCccTimeout);
+    pHlp->pfnSSMPutU32(pSSM, pThis->uCccNr);
+    pHlp->pfnSSMPutU32(pSSM, pThis->uCccCurrentNr);
+    pHlp->pfnSSMPutU32(pSSM, pThis->u32PortsInterrupted);
+    pHlp->pfnSSMPutBool(pSSM, pThis->fReset);
+    pHlp->pfnSSMPutBool(pSSM, pThis->f64BitAddr);
+    pHlp->pfnSSMPutBool(pSSM, pDevIns->fR0Enabled);
+    pHlp->pfnSSMPutBool(pSSM, pDevIns->fRCEnabled);
+    pHlp->pfnSSMPutBool(pSSM, pThis->fLegacyPortResetMethod);
 
     /* Now every port. */
     for (i = 0; i < AHCI_MAX_NR_PORTS_IMPL; i++)
     {
         Assert(pThis->ahciPort[i].cTasksActive == 0);
-        SSMR3PutU32(pSSM, pThis->ahciPort[i].regCLB);
-        SSMR3PutU32(pSSM, pThis->ahciPort[i].regCLBU);
-        SSMR3PutU32(pSSM, pThis->ahciPort[i].regFB);
-        SSMR3PutU32(pSSM, pThis->ahciPort[i].regFBU);
-        SSMR3PutGCPhys(pSSM, pThis->ahciPort[i].GCPhysAddrClb);
-        SSMR3PutGCPhys(pSSM, pThis->ahciPort[i].GCPhysAddrFb);
-        SSMR3PutU32(pSSM, pThis->ahciPort[i].regIS);
-        SSMR3PutU32(pSSM, pThis->ahciPort[i].regIE);
-        SSMR3PutU32(pSSM, pThis->ahciPort[i].regCMD);
-        SSMR3PutU32(pSSM, pThis->ahciPort[i].regTFD);
-        SSMR3PutU32(pSSM, pThis->ahciPort[i].regSIG);
-        SSMR3PutU32(pSSM, pThis->ahciPort[i].regSSTS);
-        SSMR3PutU32(pSSM, pThis->ahciPort[i].regSCTL);
-        SSMR3PutU32(pSSM, pThis->ahciPort[i].regSERR);
-        SSMR3PutU32(pSSM, pThis->ahciPort[i].regSACT);
-        SSMR3PutU32(pSSM, pThis->ahciPort[i].regCI);
-        SSMR3PutU32(pSSM, pThis->ahciPort[i].PCHSGeometry.cCylinders);
-        SSMR3PutU32(pSSM, pThis->ahciPort[i].PCHSGeometry.cHeads);
-        SSMR3PutU32(pSSM, pThis->ahciPort[i].PCHSGeometry.cSectors);
-        SSMR3PutU64(pSSM, pThis->ahciPort[i].cTotalSectors);
-        SSMR3PutU32(pSSM, pThis->ahciPort[i].cMultSectors);
-        SSMR3PutU8(pSSM, pThis->ahciPort[i].uATATransferMode);
-        SSMR3PutBool(pSSM, pThis->ahciPort[i].fResetDevice);
-        SSMR3PutBool(pSSM, pThis->ahciPort[i].fPoweredOn);
-        SSMR3PutBool(pSSM, pThis->ahciPort[i].fSpunUp);
-        SSMR3PutU32(pSSM, pThis->ahciPort[i].u32TasksFinished);
-        SSMR3PutU32(pSSM, pThis->ahciPort[i].u32QueuedTasksFinished);
-        SSMR3PutU32(pSSM, pThis->ahciPort[i].u32CurrentCommandSlot);
+        pHlp->pfnSSMPutU32(pSSM, pThis->ahciPort[i].regCLB);
+        pHlp->pfnSSMPutU32(pSSM, pThis->ahciPort[i].regCLBU);
+        pHlp->pfnSSMPutU32(pSSM, pThis->ahciPort[i].regFB);
+        pHlp->pfnSSMPutU32(pSSM, pThis->ahciPort[i].regFBU);
+        pHlp->pfnSSMPutGCPhys(pSSM, pThis->ahciPort[i].GCPhysAddrClb);
+        pHlp->pfnSSMPutGCPhys(pSSM, pThis->ahciPort[i].GCPhysAddrFb);
+        pHlp->pfnSSMPutU32(pSSM, pThis->ahciPort[i].regIS);
+        pHlp->pfnSSMPutU32(pSSM, pThis->ahciPort[i].regIE);
+        pHlp->pfnSSMPutU32(pSSM, pThis->ahciPort[i].regCMD);
+        pHlp->pfnSSMPutU32(pSSM, pThis->ahciPort[i].regTFD);
+        pHlp->pfnSSMPutU32(pSSM, pThis->ahciPort[i].regSIG);
+        pHlp->pfnSSMPutU32(pSSM, pThis->ahciPort[i].regSSTS);
+        pHlp->pfnSSMPutU32(pSSM, pThis->ahciPort[i].regSCTL);
+        pHlp->pfnSSMPutU32(pSSM, pThis->ahciPort[i].regSERR);
+        pHlp->pfnSSMPutU32(pSSM, pThis->ahciPort[i].regSACT);
+        pHlp->pfnSSMPutU32(pSSM, pThis->ahciPort[i].regCI);
+        pHlp->pfnSSMPutU32(pSSM, pThis->ahciPort[i].PCHSGeometry.cCylinders);
+        pHlp->pfnSSMPutU32(pSSM, pThis->ahciPort[i].PCHSGeometry.cHeads);
+        pHlp->pfnSSMPutU32(pSSM, pThis->ahciPort[i].PCHSGeometry.cSectors);
+        pHlp->pfnSSMPutU64(pSSM, pThis->ahciPort[i].cTotalSectors);
+        pHlp->pfnSSMPutU32(pSSM, pThis->ahciPort[i].cMultSectors);
+        pHlp->pfnSSMPutU8(pSSM, pThis->ahciPort[i].uATATransferMode);
+        pHlp->pfnSSMPutBool(pSSM, pThis->ahciPort[i].fResetDevice);
+        pHlp->pfnSSMPutBool(pSSM, pThis->ahciPort[i].fPoweredOn);
+        pHlp->pfnSSMPutBool(pSSM, pThis->ahciPort[i].fSpunUp);
+        pHlp->pfnSSMPutU32(pSSM, pThis->ahciPort[i].u32TasksFinished);
+        pHlp->pfnSSMPutU32(pSSM, pThis->ahciPort[i].u32QueuedTasksFinished);
+        pHlp->pfnSSMPutU32(pSSM, pThis->ahciPort[i].u32CurrentCommandSlot);
 
         /* ATAPI saved state. */
-        SSMR3PutBool(pSSM, pThis->ahciPort[i].fATAPI);
-        SSMR3PutMem(pSSM, &pThis->ahciPort[i].abATAPISense[0], sizeof(pThis->ahciPort[i].abATAPISense));
+        pHlp->pfnSSMPutBool(pSSM, pThis->ahciPort[i].fATAPI);
+        pHlp->pfnSSMPutMem(pSSM, &pThis->ahciPort[i].abATAPISense[0], sizeof(pThis->ahciPort[i].abATAPISense));
     }
 
-    return SSMR3PutU32(pSSM, UINT32_MAX); /* sanity/terminator */
+    return pHlp->pfnSSMPutU32(pSSM, UINT32_MAX); /* sanity/terminator */
 }
 
 /**
  * Loads a saved legacy ATA emulated device state.
  *
  * @returns VBox status code.
- * @param   pSSM  The handle to the saved state.
+ * @param   pHlp    The device helper call table.
+ * @param   pSSM    The handle to the saved state.
  */
-static int ahciR3LoadLegacyEmulationState(PSSMHANDLE pSSM)
+static int ahciR3LoadLegacyEmulationState(PCPDMDEVHLPR3 pHlp, PSSMHANDLE pSSM)
 {
     int             rc;
     uint32_t        u32Version;
@@ -4954,7 +4952,7 @@ static int ahciR3LoadLegacyEmulationState(PSSMHANDLE pSSM)
     uint32_t        u32IOBuffer;
 
     /* Test for correct version. */
-    rc = SSMR3GetU32(pSSM, &u32Version);
+    rc = pHlp->pfnSSMGetU32(pSSM, &u32Version);
     AssertRCReturn(rc, rc);
     LogFlow(("LoadOldSavedStates u32Version = %d\n", u32Version));
 
@@ -4966,29 +4964,29 @@ static int ahciR3LoadLegacyEmulationState(PSSMHANDLE pSSM)
         return VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
     }
 
-    SSMR3Skip(pSSM, 19 + 5 * sizeof(bool) + 8 /* sizeof(BMDMAState) */);
+    pHlp->pfnSSMSkip(pSSM, 19 + 5 * sizeof(bool) + 8 /* sizeof(BMDMAState) */);
 
     for (uint32_t j = 0; j < 2; j++)
     {
-        SSMR3Skip(pSSM, 88 + 5 * sizeof(bool) );
+        pHlp->pfnSSMSkip(pSSM, 88 + 5 * sizeof(bool) );
 
         if (u32Version > ATA_CTL_SAVED_STATE_VERSION_WITHOUT_FULL_SENSE)
-            SSMR3Skip(pSSM, 64);
+            pHlp->pfnSSMSkip(pSSM, 64);
         else
-            SSMR3Skip(pSSM, 2);
+            pHlp->pfnSSMSkip(pSSM, 2);
         /** @todo triple-check this hack after passthrough is working */
-        SSMR3Skip(pSSM, 1);
+        pHlp->pfnSSMSkip(pSSM, 1);
 
         if (u32Version > ATA_CTL_SAVED_STATE_VERSION_WITHOUT_EVENT_STATUS)
-            SSMR3Skip(pSSM, 4);
+            pHlp->pfnSSMSkip(pSSM, 4);
 
-        SSMR3Skip(pSSM, sizeof(PDMLED));
-        SSMR3GetU32(pSSM, &u32IOBuffer);
+        pHlp->pfnSSMSkip(pSSM, sizeof(PDMLED));
+        pHlp->pfnSSMGetU32(pSSM, &u32IOBuffer);
         if (u32IOBuffer)
-            SSMR3Skip(pSSM, u32IOBuffer);
+            pHlp->pfnSSMSkip(pSSM, u32IOBuffer);
     }
 
-    rc = SSMR3GetU32(pSSM, &u32);
+    rc = pHlp->pfnSSMGetU32(pSSM, &u32);
     if (RT_FAILURE(rc))
         return rc;
     if (u32 != ~0U)
@@ -5006,7 +5004,8 @@ static int ahciR3LoadLegacyEmulationState(PSSMHANDLE pSSM)
  */
 static DECLCALLBACK(int) ahciR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass)
 {
-    PAHCI pThis = PDMDEVINS_2_DATA(pDevIns, PAHCI);
+    PAHCI           pThis = PDMDEVINS_2_DATA(pDevIns, PAHCI);
+    PCPDMDEVHLPR3   pHlp  = pDevIns->pHlpR3;
     uint32_t u32;
     int rc;
 
@@ -5017,8 +5016,8 @@ static DECLCALLBACK(int) ahciR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uin
     /* Deal with the priod after removing the saved IDE bits where the saved
        state version remained unchanged. */
     if (   uVersion == AHCI_SAVED_STATE_VERSION_IDE_EMULATION
-        && SSMR3HandleRevision(pSSM) >= 79045
-        && SSMR3HandleRevision(pSSM) <  79201)
+        && pHlp->pfnSSMHandleRevision(pSSM) >= 79045
+        && pHlp->pfnSSMHandleRevision(pSSM) <  79201)
         uVersion++;
 
     /*
@@ -5031,56 +5030,56 @@ static DECLCALLBACK(int) ahciR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uin
     /* Verify config. */
     if (uVersion > AHCI_SAVED_STATE_VERSION_VBOX_30)
     {
-        rc = SSMR3GetU32(pSSM, &u32);
+        rc = pHlp->pfnSSMGetU32(pSSM, &u32);
         AssertRCReturn(rc, rc);
         if (u32 != pThis->cPortsImpl)
         {
             LogRel(("AHCI: Config mismatch: cPortsImpl - saved=%u config=%u\n", u32, pThis->cPortsImpl));
             if (    u32 < pThis->cPortsImpl
                 ||  u32 > AHCI_MAX_NR_PORTS_IMPL)
-                return SSMR3SetCfgError(pSSM, RT_SRC_POS, N_("Config mismatch: cPortsImpl - saved=%u config=%u"),
-                                        u32, pThis->cPortsImpl);
+                return pHlp->pfnSSMSetCfgError(pSSM, RT_SRC_POS, N_("Config mismatch: cPortsImpl - saved=%u config=%u"),
+                                               u32, pThis->cPortsImpl);
         }
 
         for (uint32_t i = 0; i < AHCI_MAX_NR_PORTS_IMPL; i++)
         {
             bool fInUse;
-            rc = SSMR3GetBool(pSSM, &fInUse);
+            rc = pHlp->pfnSSMGetBool(pSSM, &fInUse);
             AssertRCReturn(rc, rc);
             if (fInUse != (pThis->ahciPort[i].pDrvBase != NULL))
-                return SSMR3SetCfgError(pSSM, RT_SRC_POS,
-                                        N_("The %s VM is missing a device on port %u. Please make sure the source and target VMs have compatible storage configurations"),
-                                        fInUse ? "target" : "source", i );
+                return pHlp->pfnSSMSetCfgError(pSSM, RT_SRC_POS,
+                                               N_("The %s VM is missing a device on port %u. Please make sure the source and target VMs have compatible storage configurations"),
+                                               fInUse ? "target" : "source", i);
 
             if (uVersion > AHCI_SAVED_STATE_VERSION_PRE_HOTPLUG_FLAG)
             {
                 bool fHotpluggable;
-                rc = SSMR3GetBool(pSSM, &fHotpluggable);
+                rc = pHlp->pfnSSMGetBool(pSSM, &fHotpluggable);
                 AssertRCReturn(rc, rc);
                 if (fHotpluggable != pThis->ahciPort[i].fHotpluggable)
-                    return SSMR3SetCfgError(pSSM, RT_SRC_POS,
-                                            N_("AHCI: Port %u config mismatch: Hotplug flag - saved=%RTbool config=%RTbool\n"),
-                                            i, fHotpluggable, pThis->ahciPort[i].fHotpluggable);
+                    return pHlp->pfnSSMSetCfgError(pSSM, RT_SRC_POS,
+                                                   N_("AHCI: Port %u config mismatch: Hotplug flag - saved=%RTbool config=%RTbool\n"),
+                                                   i, fHotpluggable, pThis->ahciPort[i].fHotpluggable);
             }
             else
                 Assert(pThis->ahciPort[i].fHotpluggable);
 
             char szSerialNumber[AHCI_SERIAL_NUMBER_LENGTH+1];
-            rc = SSMR3GetStrZ(pSSM, szSerialNumber,     sizeof(szSerialNumber));
+            rc = pHlp->pfnSSMGetStrZ(pSSM, szSerialNumber,     sizeof(szSerialNumber));
             AssertRCReturn(rc, rc);
             if (strcmp(szSerialNumber, pThis->ahciPort[i].szSerialNumber))
                 LogRel(("AHCI: Port %u config mismatch: Serial number - saved='%s' config='%s'\n",
                         i, szSerialNumber, pThis->ahciPort[i].szSerialNumber));
 
             char szFirmwareRevision[AHCI_FIRMWARE_REVISION_LENGTH+1];
-            rc = SSMR3GetStrZ(pSSM, szFirmwareRevision, sizeof(szFirmwareRevision));
+            rc = pHlp->pfnSSMGetStrZ(pSSM, szFirmwareRevision, sizeof(szFirmwareRevision));
             AssertRCReturn(rc, rc);
             if (strcmp(szFirmwareRevision, pThis->ahciPort[i].szFirmwareRevision))
                 LogRel(("AHCI: Port %u config mismatch: Firmware revision - saved='%s' config='%s'\n",
                         i, szFirmwareRevision, pThis->ahciPort[i].szFirmwareRevision));
 
             char szModelNumber[AHCI_MODEL_NUMBER_LENGTH+1];
-            rc = SSMR3GetStrZ(pSSM, szModelNumber,      sizeof(szModelNumber));
+            rc = pHlp->pfnSSMGetStrZ(pSSM, szModelNumber,      sizeof(szModelNumber));
             AssertRCReturn(rc, rc);
             if (strcmp(szModelNumber, pThis->ahciPort[i].szModelNumber))
                 LogRel(("AHCI: Port %u config mismatch: Model number - saved='%s' config='%s'\n",
@@ -5091,16 +5090,16 @@ static DECLCALLBACK(int) ahciR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uin
         for (uint32_t i = 0; i < RT_ELEMENTS(s_apszIdeEmuPortNames); i++)
         {
             uint32_t iPort;
-            rc = CFGMR3QueryU32Def(pDevIns->pCfg, s_apszIdeEmuPortNames[i], &iPort, i);
+            rc = pHlp->pfnCFGMQueryU32Def(pDevIns->pCfg, s_apszIdeEmuPortNames[i], &iPort, i);
             AssertRCReturn(rc, rc);
 
             uint32_t iPortSaved;
-            rc = SSMR3GetU32(pSSM, &iPortSaved);
+            rc = pHlp->pfnSSMGetU32(pSSM, &iPortSaved);
             AssertRCReturn(rc, rc);
 
             if (iPortSaved != iPort)
-                return SSMR3SetCfgError(pSSM, RT_SRC_POS, N_("IDE %s config mismatch: saved=%u config=%u"),
-                                        s_apszIdeEmuPortNames[i], iPortSaved, iPort);
+                return pHlp->pfnSSMSetCfgError(pSSM, RT_SRC_POS, N_("IDE %s config mismatch: saved=%u config=%u"),
+                                               s_apszIdeEmuPortNames[i], iPortSaved, iPort);
         }
     }
 
@@ -5109,83 +5108,84 @@ static DECLCALLBACK(int) ahciR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uin
         /* Restore data. */
 
         /* The main device structure. */
-        SSMR3GetU32(pSSM, &pThis->regHbaCap);
-        SSMR3GetU32(pSSM, &pThis->regHbaCtrl);
-        SSMR3GetU32(pSSM, &pThis->regHbaIs);
-        SSMR3GetU32(pSSM, &pThis->regHbaPi);
-        SSMR3GetU32(pSSM, &pThis->regHbaVs);
-        SSMR3GetU32(pSSM, &pThis->regHbaCccCtl);
-        SSMR3GetU32(pSSM, &pThis->regHbaCccPorts);
-        SSMR3GetU8(pSSM, &pThis->uCccPortNr);
-        SSMR3GetU64(pSSM, &pThis->uCccTimeout);
-        SSMR3GetU32(pSSM, &pThis->uCccNr);
-        SSMR3GetU32(pSSM, &pThis->uCccCurrentNr);
+        pHlp->pfnSSMGetU32(pSSM, &pThis->regHbaCap);
+        pHlp->pfnSSMGetU32(pSSM, &pThis->regHbaCtrl);
+        pHlp->pfnSSMGetU32(pSSM, &pThis->regHbaIs);
+        pHlp->pfnSSMGetU32(pSSM, &pThis->regHbaPi);
+        pHlp->pfnSSMGetU32(pSSM, &pThis->regHbaVs);
+        pHlp->pfnSSMGetU32(pSSM, &pThis->regHbaCccCtl);
+        pHlp->pfnSSMGetU32(pSSM, &pThis->regHbaCccPorts);
+        pHlp->pfnSSMGetU8(pSSM, &pThis->uCccPortNr);
+        pHlp->pfnSSMGetU64(pSSM, &pThis->uCccTimeout);
+        pHlp->pfnSSMGetU32(pSSM, &pThis->uCccNr);
+        pHlp->pfnSSMGetU32(pSSM, &pThis->uCccCurrentNr);
 
-        SSMR3GetU32V(pSSM, &pThis->u32PortsInterrupted);
-        SSMR3GetBool(pSSM, &pThis->fReset);
-        SSMR3GetBool(pSSM, &pThis->f64BitAddr);
-        SSMR3GetBool(pSSM, &pThis->fR0Enabled);
-        SSMR3GetBool(pSSM, &pThis->fGCEnabled);
+        pHlp->pfnSSMGetU32V(pSSM, &pThis->u32PortsInterrupted);
+        pHlp->pfnSSMGetBool(pSSM, &pThis->fReset);
+        pHlp->pfnSSMGetBool(pSSM, &pThis->f64BitAddr);
+        bool fIgn;
+        pHlp->pfnSSMGetBool(pSSM, &fIgn); /* Was fR0Enabled, which should never have been saved! */
+        pHlp->pfnSSMGetBool(pSSM, &fIgn); /* Was fGCEnabled, which should never have been saved! */
         if (uVersion > AHCI_SAVED_STATE_VERSION_PRE_PORT_RESET_CHANGES)
-            SSMR3GetBool(pSSM, &pThis->fLegacyPortResetMethod);
+            pHlp->pfnSSMGetBool(pSSM, &pThis->fLegacyPortResetMethod);
 
         /* Now every port. */
         for (uint32_t i = 0; i < AHCI_MAX_NR_PORTS_IMPL; i++)
         {
             PAHCIPort pAhciPort = &pThis->ahciPort[i];
 
-            SSMR3GetU32(pSSM, &pThis->ahciPort[i].regCLB);
-            SSMR3GetU32(pSSM, &pThis->ahciPort[i].regCLBU);
-            SSMR3GetU32(pSSM, &pThis->ahciPort[i].regFB);
-            SSMR3GetU32(pSSM, &pThis->ahciPort[i].regFBU);
-            SSMR3GetGCPhysV(pSSM, &pThis->ahciPort[i].GCPhysAddrClb);
-            SSMR3GetGCPhysV(pSSM, &pThis->ahciPort[i].GCPhysAddrFb);
-            SSMR3GetU32V(pSSM, &pThis->ahciPort[i].regIS);
-            SSMR3GetU32(pSSM, &pThis->ahciPort[i].regIE);
-            SSMR3GetU32(pSSM, &pThis->ahciPort[i].regCMD);
-            SSMR3GetU32(pSSM, &pThis->ahciPort[i].regTFD);
-            SSMR3GetU32(pSSM, &pThis->ahciPort[i].regSIG);
-            SSMR3GetU32(pSSM, &pThis->ahciPort[i].regSSTS);
-            SSMR3GetU32(pSSM, &pThis->ahciPort[i].regSCTL);
-            SSMR3GetU32(pSSM, &pThis->ahciPort[i].regSERR);
-            SSMR3GetU32V(pSSM, &pThis->ahciPort[i].regSACT);
-            SSMR3GetU32V(pSSM, &pThis->ahciPort[i].regCI);
-            SSMR3GetU32(pSSM, &pThis->ahciPort[i].PCHSGeometry.cCylinders);
-            SSMR3GetU32(pSSM, &pThis->ahciPort[i].PCHSGeometry.cHeads);
-            SSMR3GetU32(pSSM, &pThis->ahciPort[i].PCHSGeometry.cSectors);
-            SSMR3GetU64(pSSM, &pThis->ahciPort[i].cTotalSectors);
-            SSMR3GetU32(pSSM, &pThis->ahciPort[i].cMultSectors);
-            SSMR3GetU8(pSSM, &pThis->ahciPort[i].uATATransferMode);
-            SSMR3GetBool(pSSM, &pThis->ahciPort[i].fResetDevice);
+            pHlp->pfnSSMGetU32(pSSM, &pThis->ahciPort[i].regCLB);
+            pHlp->pfnSSMGetU32(pSSM, &pThis->ahciPort[i].regCLBU);
+            pHlp->pfnSSMGetU32(pSSM, &pThis->ahciPort[i].regFB);
+            pHlp->pfnSSMGetU32(pSSM, &pThis->ahciPort[i].regFBU);
+            pHlp->pfnSSMGetGCPhysV(pSSM, &pThis->ahciPort[i].GCPhysAddrClb);
+            pHlp->pfnSSMGetGCPhysV(pSSM, &pThis->ahciPort[i].GCPhysAddrFb);
+            pHlp->pfnSSMGetU32V(pSSM, &pThis->ahciPort[i].regIS);
+            pHlp->pfnSSMGetU32(pSSM, &pThis->ahciPort[i].regIE);
+            pHlp->pfnSSMGetU32(pSSM, &pThis->ahciPort[i].regCMD);
+            pHlp->pfnSSMGetU32(pSSM, &pThis->ahciPort[i].regTFD);
+            pHlp->pfnSSMGetU32(pSSM, &pThis->ahciPort[i].regSIG);
+            pHlp->pfnSSMGetU32(pSSM, &pThis->ahciPort[i].regSSTS);
+            pHlp->pfnSSMGetU32(pSSM, &pThis->ahciPort[i].regSCTL);
+            pHlp->pfnSSMGetU32(pSSM, &pThis->ahciPort[i].regSERR);
+            pHlp->pfnSSMGetU32V(pSSM, &pThis->ahciPort[i].regSACT);
+            pHlp->pfnSSMGetU32V(pSSM, &pThis->ahciPort[i].regCI);
+            pHlp->pfnSSMGetU32(pSSM, &pThis->ahciPort[i].PCHSGeometry.cCylinders);
+            pHlp->pfnSSMGetU32(pSSM, &pThis->ahciPort[i].PCHSGeometry.cHeads);
+            pHlp->pfnSSMGetU32(pSSM, &pThis->ahciPort[i].PCHSGeometry.cSectors);
+            pHlp->pfnSSMGetU64(pSSM, &pThis->ahciPort[i].cTotalSectors);
+            pHlp->pfnSSMGetU32(pSSM, &pThis->ahciPort[i].cMultSectors);
+            pHlp->pfnSSMGetU8(pSSM, &pThis->ahciPort[i].uATATransferMode);
+            pHlp->pfnSSMGetBool(pSSM, &pThis->ahciPort[i].fResetDevice);
 
             if (uVersion <= AHCI_SAVED_STATE_VERSION_VBOX_30)
-                SSMR3Skip(pSSM, AHCI_NR_COMMAND_SLOTS * sizeof(uint8_t)); /* no active data here */
+                pHlp->pfnSSMSkip(pSSM, AHCI_NR_COMMAND_SLOTS * sizeof(uint8_t)); /* no active data here */
 
             if (uVersion < AHCI_SAVED_STATE_VERSION_IDE_EMULATION)
             {
                 /* The old positions in the FIFO, not required. */
-                SSMR3Skip(pSSM, 2*sizeof(uint8_t));
+                pHlp->pfnSSMSkip(pSSM, 2*sizeof(uint8_t));
             }
-            SSMR3GetBool(pSSM, &pThis->ahciPort[i].fPoweredOn);
-            SSMR3GetBool(pSSM, &pThis->ahciPort[i].fSpunUp);
-            SSMR3GetU32V(pSSM, &pThis->ahciPort[i].u32TasksFinished);
-            SSMR3GetU32V(pSSM, &pThis->ahciPort[i].u32QueuedTasksFinished);
+            pHlp->pfnSSMGetBool(pSSM, &pThis->ahciPort[i].fPoweredOn);
+            pHlp->pfnSSMGetBool(pSSM, &pThis->ahciPort[i].fSpunUp);
+            pHlp->pfnSSMGetU32V(pSSM, &pThis->ahciPort[i].u32TasksFinished);
+            pHlp->pfnSSMGetU32V(pSSM, &pThis->ahciPort[i].u32QueuedTasksFinished);
 
             if (uVersion >= AHCI_SAVED_STATE_VERSION_IDE_EMULATION)
-                SSMR3GetU32V(pSSM, &pThis->ahciPort[i].u32CurrentCommandSlot);
+                pHlp->pfnSSMGetU32V(pSSM, &pThis->ahciPort[i].u32CurrentCommandSlot);
 
             if (uVersion > AHCI_SAVED_STATE_VERSION_PRE_ATAPI)
             {
-                SSMR3GetBool(pSSM, &pThis->ahciPort[i].fATAPI);
-                SSMR3GetMem(pSSM, pThis->ahciPort[i].abATAPISense, sizeof(pThis->ahciPort[i].abATAPISense));
+                pHlp->pfnSSMGetBool(pSSM, &pThis->ahciPort[i].fATAPI);
+                pHlp->pfnSSMGetMem(pSSM, pThis->ahciPort[i].abATAPISense, sizeof(pThis->ahciPort[i].abATAPISense));
                 if (uVersion <= AHCI_SAVED_STATE_VERSION_PRE_ATAPI_REMOVE)
                 {
-                    SSMR3Skip(pSSM, 1); /* cNotifiedMediaChange. */
-                    SSMR3Skip(pSSM, 4); /* MediaEventStatus */
+                    pHlp->pfnSSMSkip(pSSM, 1); /* cNotifiedMediaChange. */
+                    pHlp->pfnSSMSkip(pSSM, 4); /* MediaEventStatus */
                 }
             }
             else if (pThis->ahciPort[i].fATAPI)
-                return SSMR3SetCfgError(pSSM, RT_SRC_POS, N_("Config mismatch: atapi - saved=false config=true"));
+                return pHlp->pfnSSMSetCfgError(pSSM, RT_SRC_POS, N_("Config mismatch: atapi - saved=false config=true"));
 
             /* Check if we have tasks pending. */
             uint32_t fTasksOutstanding = pAhciPort->regCI & ~pAhciPort->u32TasksFinished;
@@ -5207,13 +5207,13 @@ static DECLCALLBACK(int) ahciR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uin
         {
             for (uint32_t i = 0; i < 2; i++)
             {
-                rc = ahciR3LoadLegacyEmulationState(pSSM);
+                rc = ahciR3LoadLegacyEmulationState(pHlp, pSSM);
                 if(RT_FAILURE(rc))
                     return rc;
             }
         }
 
-        rc = SSMR3GetU32(pSSM, &u32);
+        rc = pHlp->pfnSSMGetU32(pSSM, &u32);
         if (RT_FAILURE(rc))
             return rc;
         AssertMsgReturn(u32 == UINT32_MAX, ("%#x\n", u32), VERR_SSM_DATA_UNIT_FORMAT_CHANGED);
@@ -5429,6 +5429,7 @@ static DECLCALLBACK(void) ahciR3Resume(PPDMDEVINS pDevIns)
  */
 static int ahciR3VpdInit(PPDMDEVINS pDevIns, PAHCIPort pAhciPort, const char *pszName)
 {
+    PCPDMDEVHLPR3   pHlp = pDevIns->pHlpR3;
 
     /* Generate a default serial number. */
     char szSerial[AHCI_SERIAL_NUMBER_LENGTH+1];
@@ -5443,89 +5444,82 @@ static int ahciR3VpdInit(PPDMDEVINS pDevIns, PAHCIPort pAhciPort, const char *ps
     if (RT_FAILURE(rc) || RTUuidIsNull(&Uuid))
     {
         /* Generate a predictable serial for drives which don't have a UUID. */
-        RTStrPrintf(szSerial, sizeof(szSerial), "VB%x-1a2b3c4d",
-                    pAhciPort->iLUN);
+        RTStrPrintf(szSerial, sizeof(szSerial), "VB%x-1a2b3c4d", pAhciPort->iLUN);
     }
     else
         RTStrPrintf(szSerial, sizeof(szSerial), "VB%08x-%08x", Uuid.au32[0], Uuid.au32[3]);
 
     /* Get user config if present using defaults otherwise. */
-    PCFGMNODE pCfgNode = CFGMR3GetChild(pDevIns->pCfg, pszName);
-    rc = CFGMR3QueryStringDef(pCfgNode, "SerialNumber", pAhciPort->szSerialNumber, sizeof(pAhciPort->szSerialNumber),
-                              szSerial);
+    PCFGMNODE pCfgNode = pHlp->pfnCFGMGetChild(pDevIns->pCfg, pszName);
+    rc = pHlp->pfnCFGMQueryStringDef(pCfgNode, "SerialNumber", pAhciPort->szSerialNumber,
+                                     sizeof(pAhciPort->szSerialNumber), szSerial);
     if (RT_FAILURE(rc))
     {
         if (rc == VERR_CFGM_NOT_ENOUGH_SPACE)
             return PDMDEV_SET_ERROR(pDevIns, VERR_INVALID_PARAMETER,
                                     N_("AHCI configuration error: \"SerialNumber\" is longer than 20 bytes"));
-        return PDMDEV_SET_ERROR(pDevIns, rc,
-                                N_("AHCI configuration error: failed to read \"SerialNumber\" as string"));
+        return PDMDEV_SET_ERROR(pDevIns, rc, N_("AHCI configuration error: failed to read \"SerialNumber\" as string"));
     }
 
-    rc = CFGMR3QueryStringDef(pCfgNode, "FirmwareRevision", pAhciPort->szFirmwareRevision, sizeof(pAhciPort->szFirmwareRevision),
-                              "1.0");
+    rc = pHlp->pfnCFGMQueryStringDef(pCfgNode, "FirmwareRevision", pAhciPort->szFirmwareRevision,
+                                     sizeof(pAhciPort->szFirmwareRevision), "1.0");
     if (RT_FAILURE(rc))
     {
         if (rc == VERR_CFGM_NOT_ENOUGH_SPACE)
             return PDMDEV_SET_ERROR(pDevIns, VERR_INVALID_PARAMETER,
                                     N_("AHCI configuration error: \"FirmwareRevision\" is longer than 8 bytes"));
-        return PDMDEV_SET_ERROR(pDevIns, rc,
-                                N_("AHCI configuration error: failed to read \"FirmwareRevision\" as string"));
+        return PDMDEV_SET_ERROR(pDevIns, rc, N_("AHCI configuration error: failed to read \"FirmwareRevision\" as string"));
     }
 
-    rc = CFGMR3QueryStringDef(pCfgNode, "ModelNumber", pAhciPort->szModelNumber, sizeof(pAhciPort->szModelNumber),
-                              pAhciPort->fATAPI ? "VBOX CD-ROM" : "VBOX HARDDISK");
+    rc = pHlp->pfnCFGMQueryStringDef(pCfgNode, "ModelNumber", pAhciPort->szModelNumber, sizeof(pAhciPort->szModelNumber),
+                                     pAhciPort->fATAPI ? "VBOX CD-ROM" : "VBOX HARDDISK");
     if (RT_FAILURE(rc))
     {
         if (rc == VERR_CFGM_NOT_ENOUGH_SPACE)
             return PDMDEV_SET_ERROR(pDevIns, VERR_INVALID_PARAMETER,
                                    N_("AHCI configuration error: \"ModelNumber\" is longer than 40 bytes"));
-        return PDMDEV_SET_ERROR(pDevIns, rc,
-                                N_("AHCI configuration error: failed to read \"ModelNumber\" as string"));
+        return PDMDEV_SET_ERROR(pDevIns, rc, N_("AHCI configuration error: failed to read \"ModelNumber\" as string"));
     }
 
-    rc = CFGMR3QueryU8Def(pCfgNode, "LogicalSectorsPerPhysical", &pAhciPort->cLogSectorsPerPhysicalExp, 0);
+    rc = pHlp->pfnCFGMQueryU8Def(pCfgNode, "LogicalSectorsPerPhysical", &pAhciPort->cLogSectorsPerPhysicalExp, 0);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
-                    N_("AHCI configuration error: failed to read \"LogicalSectorsPerPhysical\" as integer"));
+                                N_("AHCI configuration error: failed to read \"LogicalSectorsPerPhysical\" as integer"));
     if (pAhciPort->cLogSectorsPerPhysicalExp >= 16)
         return PDMDEV_SET_ERROR(pDevIns, rc,
-                    N_("AHCI configuration error: \"LogicalSectorsPerPhysical\" must be between 0 and 15"));
+                                N_("AHCI configuration error: \"LogicalSectorsPerPhysical\" must be between 0 and 15"));
 
     /* There are three other identification strings for CD drives used for INQUIRY */
     if (pAhciPort->fATAPI)
     {
-        rc = CFGMR3QueryStringDef(pCfgNode, "ATAPIVendorId", pAhciPort->szInquiryVendorId, sizeof(pAhciPort->szInquiryVendorId),
-                                  "VBOX");
+        rc = pHlp->pfnCFGMQueryStringDef(pCfgNode, "ATAPIVendorId", pAhciPort->szInquiryVendorId,
+                                         sizeof(pAhciPort->szInquiryVendorId), "VBOX");
         if (RT_FAILURE(rc))
         {
             if (rc == VERR_CFGM_NOT_ENOUGH_SPACE)
                 return PDMDEV_SET_ERROR(pDevIns, VERR_INVALID_PARAMETER,
-                                N_("AHCI configuration error: \"ATAPIVendorId\" is longer than 16 bytes"));
-            return PDMDEV_SET_ERROR(pDevIns, rc,
-                    N_("AHCI configuration error: failed to read \"ATAPIVendorId\" as string"));
+                                        N_("AHCI configuration error: \"ATAPIVendorId\" is longer than 16 bytes"));
+            return PDMDEV_SET_ERROR(pDevIns, rc, N_("AHCI configuration error: failed to read \"ATAPIVendorId\" as string"));
         }
 
-        rc = CFGMR3QueryStringDef(pCfgNode, "ATAPIProductId", pAhciPort->szInquiryProductId, sizeof(pAhciPort->szInquiryProductId),
-                                  "CD-ROM");
+        rc = pHlp->pfnCFGMQueryStringDef(pCfgNode, "ATAPIProductId", pAhciPort->szInquiryProductId,
+                                         sizeof(pAhciPort->szInquiryProductId), "CD-ROM");
         if (RT_FAILURE(rc))
         {
             if (rc == VERR_CFGM_NOT_ENOUGH_SPACE)
                 return PDMDEV_SET_ERROR(pDevIns, VERR_INVALID_PARAMETER,
-                                N_("AHCI configuration error: \"ATAPIProductId\" is longer than 16 bytes"));
-            return PDMDEV_SET_ERROR(pDevIns, rc,
-                    N_("AHCI configuration error: failed to read \"ATAPIProductId\" as string"));
+                                        N_("AHCI configuration error: \"ATAPIProductId\" is longer than 16 bytes"));
+            return PDMDEV_SET_ERROR(pDevIns, rc, N_("AHCI configuration error: failed to read \"ATAPIProductId\" as string"));
         }
 
-        rc = CFGMR3QueryStringDef(pCfgNode, "ATAPIRevision", pAhciPort->szInquiryRevision, sizeof(pAhciPort->szInquiryRevision),
-                                  "1.0");
+        rc = pHlp->pfnCFGMQueryStringDef(pCfgNode, "ATAPIRevision", pAhciPort->szInquiryRevision,
+                                         sizeof(pAhciPort->szInquiryRevision), "1.0");
         if (RT_FAILURE(rc))
         {
             if (rc == VERR_CFGM_NOT_ENOUGH_SPACE)
                 return PDMDEV_SET_ERROR(pDevIns, VERR_INVALID_PARAMETER,
-                                N_("AHCI configuration error: \"ATAPIRevision\" is longer than 4 bytes"));
-            return PDMDEV_SET_ERROR(pDevIns, rc,
-                    N_("AHCI configuration error: failed to read \"ATAPIRevision\" as string"));
+                                        N_("AHCI configuration error: \"ATAPIRevision\" is longer than 4 bytes"));
+            return PDMDEV_SET_ERROR(pDevIns, rc, N_("AHCI configuration error: failed to read \"ATAPIRevision\" as string"));
         }
     }
 
@@ -5809,13 +5803,12 @@ static DECLCALLBACK(int) ahciR3Destruct(PPDMDEVINS pDevIns)
  */
 static DECLCALLBACK(int) ahciR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE pCfg)
 {
-    PAHCI      pThis = PDMDEVINS_2_DATA(pDevIns, PAHCI);
-    PPDMIBASE  pBase;
-    int        rc = VINF_SUCCESS;
-    unsigned   i = 0;
-    bool       fGCEnabled = false;
-    bool       fR0Enabled = false;
-    uint32_t   cbTotalBufferSize = 0;
+    PAHCI           pThis = PDMDEVINS_2_DATA(pDevIns, PAHCI);
+    PCPDMDEVHLPR3   pHlp  = pDevIns->pHlpR3;
+    PPDMIBASE       pBase;
+    int             rc = VINF_SUCCESS;
+    unsigned        i = 0;
+    uint32_t        cbTotalBufferSize = 0;
     PDMDEV_CHECK_VERSIONS_RETURN(pDevIns);
 
     LogFlowFunc(("pThis=%#p\n", pThis));
@@ -5823,35 +5816,14 @@ static DECLCALLBACK(int) ahciR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
     /*
      * Validate and read configuration.
      */
-    if (!CFGMR3AreValuesValid(pCfg, "GCEnabled\0"
-                                    "R0Enabled\0"
-                                    "PrimaryMaster\0"
-                                    "PrimarySlave\0"
-                                    "SecondaryMaster\0"
-                                    "SecondarySlave\0"
-                                    "PortCount\0"
-                                    "Bootable\0"
-                                    "CmdSlotsAvail\0"
-                                    "TigerHack\0"))
-        return PDMDEV_SET_ERROR(pDevIns, VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES,
-                                N_("AHCI configuration error: unknown option specified"));
+    PDMDEV_VALIDATE_CONFIG_RETURN(pDevIns,
+                                  "PrimaryMaster|PrimarySlave|SecondaryMaster"
+                                  "|SecondarySlave|PortCount|Bootable|CmdSlotsAvail|TigerHack",
+                                  "");
 
-    rc = CFGMR3QueryBoolDef(pCfg, "GCEnabled", &fGCEnabled, true);
+    rc = pHlp->pfnCFGMQueryU32Def(pCfg, "PortCount", &pThis->cPortsImpl, AHCI_MAX_NR_PORTS_IMPL);
     if (RT_FAILURE(rc))
-        return PDMDEV_SET_ERROR(pDevIns, rc,
-                                N_("AHCI configuration error: failed to read GCEnabled as boolean"));
-    Log(("%s: fGCEnabled=%d\n", __FUNCTION__, fGCEnabled));
-
-    rc = CFGMR3QueryBoolDef(pCfg, "R0Enabled", &fR0Enabled, true);
-    if (RT_FAILURE(rc))
-        return PDMDEV_SET_ERROR(pDevIns, rc,
-                                N_("AHCI configuration error: failed to read R0Enabled as boolean"));
-    Log(("%s: fR0Enabled=%d\n", __FUNCTION__, fR0Enabled));
-
-    rc = CFGMR3QueryU32Def(pCfg, "PortCount", &pThis->cPortsImpl, AHCI_MAX_NR_PORTS_IMPL);
-    if (RT_FAILURE(rc))
-        return PDMDEV_SET_ERROR(pDevIns, rc,
-                                N_("AHCI configuration error: failed to read PortCount as integer"));
+        return PDMDEV_SET_ERROR(pDevIns, rc, N_("AHCI configuration error: failed to read PortCount as integer"));
     Log(("%s: cPortsImpl=%u\n", __FUNCTION__, pThis->cPortsImpl));
     if (pThis->cPortsImpl > AHCI_MAX_NR_PORTS_IMPL)
         return PDMDevHlpVMSetError(pDevIns, VERR_INVALID_PARAMETER, RT_SRC_POS,
@@ -5862,15 +5834,14 @@ static DECLCALLBACK(int) ahciR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
                                    N_("AHCI configuration error: PortCount=%u should be at least 1"),
                                    pThis->cPortsImpl);
 
-    rc = CFGMR3QueryBoolDef(pCfg, "Bootable", &pThis->fBootable, true);
+    rc = pHlp->pfnCFGMQueryBoolDef(pCfg, "Bootable", &pThis->fBootable, true);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("AHCI configuration error: failed to read Bootable as boolean"));
 
-    rc = CFGMR3QueryU32Def(pCfg, "CmdSlotsAvail", &pThis->cCmdSlotsAvail, AHCI_NR_COMMAND_SLOTS);
+    rc = pHlp->pfnCFGMQueryU32Def(pCfg, "CmdSlotsAvail", &pThis->cCmdSlotsAvail, AHCI_NR_COMMAND_SLOTS);
     if (RT_FAILURE(rc))
-        return PDMDEV_SET_ERROR(pDevIns, rc,
-                                N_("AHCI configuration error: failed to read CmdSlotsAvail as integer"));
+        return PDMDEV_SET_ERROR(pDevIns, rc, N_("AHCI configuration error: failed to read CmdSlotsAvail as integer"));
     Log(("%s: cCmdSlotsAvail=%u\n", __FUNCTION__, pThis->cCmdSlotsAvail));
     if (pThis->cCmdSlotsAvail > AHCI_NR_COMMAND_SLOTS)
         return PDMDevHlpVMSetError(pDevIns, VERR_INVALID_PARAMETER, RT_SRC_POS,
@@ -5881,7 +5852,7 @@ static DECLCALLBACK(int) ahciR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
                                    N_("AHCI configuration error: CmdSlotsAvail=%u should be at least 1"),
                                    pThis->cCmdSlotsAvail);
     bool fTigerHack;
-    rc = CFGMR3QueryBoolDef(pCfg, "TigerHack", &fTigerHack, false);
+    rc = pHlp->pfnCFGMQueryBoolDef(pCfg, "TigerHack", &fTigerHack, false);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc, N_("AHCI configuration error: failed to read TigerHack as boolean"));
 
@@ -5889,8 +5860,6 @@ static DECLCALLBACK(int) ahciR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
      * Initialize the instance data (everything touched by the destructor need
      * to be initialized here!).
      */
-    pThis->fR0Enabled = fR0Enabled;
-    pThis->fGCEnabled = fGCEnabled;
     pThis->pDevInsR3 = pDevIns;
     pThis->pDevInsR0 = PDMDEVINS_2_R0PTR(pDevIns);
     pThis->pDevInsRC = PDMDEVINS_2_RCPTR(pDevIns);
@@ -6068,13 +6037,12 @@ static DECLCALLBACK(int) ahciR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
         pAhciPort->fWrkThreadSleeping                      = true;
 
         /* Query per port configuration options if available. */
-        PCFGMNODE pCfgPort = CFGMR3GetChild(pDevIns->pCfg, pAhciPort->pszDesc);
+        PCFGMNODE pCfgPort = pHlp->pfnCFGMGetChild(pDevIns->pCfg, pAhciPort->pszDesc);
         if (pCfgPort)
         {
-            rc = CFGMR3QueryBoolDef(pCfgPort, "Hotpluggable", &pAhciPort->fHotpluggable, true);
+            rc = pHlp->pfnCFGMQueryBoolDef(pCfgPort, "Hotpluggable", &pAhciPort->fHotpluggable, true);
             if (RT_FAILURE(rc))
-                return PDMDEV_SET_ERROR(pDevIns, rc,
-                                        N_("AHCI configuration error: failed to read Hotpluggable as boolean"));
+                return PDMDEV_SET_ERROR(pDevIns, rc, N_("AHCI configuration error: failed to read Hotpluggable as boolean"));
         }
 
         /*
