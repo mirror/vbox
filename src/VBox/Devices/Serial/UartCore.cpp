@@ -1570,7 +1570,7 @@ static DECLCALLBACK(int) uartR3DataAvailRdrNotify(PPDMISERIALPORT pInterface, si
 
     AssertMsg((uint32_t)cbAvail == cbAvail, ("Too much data available\n"));
 
-    PDMCritSectEnter(&pThis->CritSect, VERR_IGNORED);
+    PDMDevHlpCritSectEnter(pDevIns, &pThis->CritSect, VERR_IGNORED);
     uint32_t cbAvailOld = ASMAtomicAddU32(&pThis->cbAvailRdr, (uint32_t)cbAvail);
     LogFlow(("    cbAvailRdr=%u -> cbAvailRdr=%u\n", cbAvailOld, cbAvail + cbAvailOld));
     if (pThis->uRegFcr & UART_REG_FCR_FIFO_EN)
@@ -1583,7 +1583,7 @@ static DECLCALLBACK(int) uartR3DataAvailRdrNotify(PPDMISERIALPORT pInterface, si
         UART_REG_SET(pThis->uRegLsr, UART_REG_LSR_DR);
         uartIrqUpdate(pDevIns, pThis, pThisCC);
     }
-    PDMCritSectLeave(&pThis->CritSect);
+    PDMDevHlpCritSectLeave(pDevIns, &pThis->CritSect);
 
     return VINF_SUCCESS;
 }
@@ -1688,23 +1688,25 @@ static DECLCALLBACK(void *) uartR3QueryInterface(PPDMIBASE pInterface, const cha
  */
 DECLHIDDEN(int) uartR3SaveExec(PPDMDEVINS pDevIns, PUARTCORE pThis, PSSMHANDLE pSSM)
 {
-    SSMR3PutU16(pSSM,  pThis->uRegDivisor);
-    SSMR3PutU8(pSSM,   pThis->uRegRbr);
-    SSMR3PutU8(pSSM,   pThis->uRegThr);
-    SSMR3PutU8(pSSM,   pThis->uRegIer);
-    SSMR3PutU8(pSSM,   pThis->uRegIir);
-    SSMR3PutU8(pSSM,   pThis->uRegFcr);
-    SSMR3PutU8(pSSM,   pThis->uRegLcr);
-    SSMR3PutU8(pSSM,   pThis->uRegMcr);
-    SSMR3PutU8(pSSM,   pThis->uRegLsr);
-    SSMR3PutU8(pSSM,   pThis->uRegMsr);
-    SSMR3PutU8(pSSM,   pThis->uRegScr);
-    SSMR3PutBool(pSSM, pThis->fIrqCtiPending);
-    SSMR3PutBool(pSSM, pThis->fThreEmptyPending);
-    SSMR3PutU8(pSSM,   pThis->FifoXmit.cbMax);
-    SSMR3PutU8(pSSM,   pThis->FifoXmit.cbItl);
-    SSMR3PutU8(pSSM,   pThis->FifoRecv.cbMax);
-    SSMR3PutU8(pSSM,   pThis->FifoRecv.cbItl);
+    PCPDMDEVHLPR3 pHlp = pDevIns->pHlpR3;
+
+    pHlp->pfnSSMPutU16(pSSM,  pThis->uRegDivisor);
+    pHlp->pfnSSMPutU8(pSSM,   pThis->uRegRbr);
+    pHlp->pfnSSMPutU8(pSSM,   pThis->uRegThr);
+    pHlp->pfnSSMPutU8(pSSM,   pThis->uRegIer);
+    pHlp->pfnSSMPutU8(pSSM,   pThis->uRegIir);
+    pHlp->pfnSSMPutU8(pSSM,   pThis->uRegFcr);
+    pHlp->pfnSSMPutU8(pSSM,   pThis->uRegLcr);
+    pHlp->pfnSSMPutU8(pSSM,   pThis->uRegMcr);
+    pHlp->pfnSSMPutU8(pSSM,   pThis->uRegLsr);
+    pHlp->pfnSSMPutU8(pSSM,   pThis->uRegMsr);
+    pHlp->pfnSSMPutU8(pSSM,   pThis->uRegScr);
+    pHlp->pfnSSMPutBool(pSSM, pThis->fIrqCtiPending);
+    pHlp->pfnSSMPutBool(pSSM, pThis->fThreEmptyPending);
+    pHlp->pfnSSMPutU8(pSSM,   pThis->FifoXmit.cbMax);
+    pHlp->pfnSSMPutU8(pSSM,   pThis->FifoXmit.cbItl);
+    pHlp->pfnSSMPutU8(pSSM,   pThis->FifoRecv.cbMax);
+    pHlp->pfnSSMPutU8(pSSM,   pThis->FifoRecv.cbItl);
 
     int rc = PDMDevHlpTimerSave(pDevIns, pThis->hTimerRcvFifoTimeout, pSSM);
     if (RT_SUCCESS(rc))
@@ -1731,28 +1733,29 @@ DECLHIDDEN(int) uartR3SaveExec(PPDMDEVINS pDevIns, PUARTCORE pThis, PSSMHANDLE p
 DECLHIDDEN(int) uartR3LoadExec(PPDMDEVINS pDevIns, PUARTCORE pThis, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass,
                                uint8_t *pbIrq, RTIOPORT *pPortBase)
 {
-    RT_NOREF(uPass);
+    PCPDMDEVHLPR3 pHlp = pDevIns->pHlpR3;
     int rc;
+    RT_NOREF(uPass);
 
     if (uVersion > UART_SAVED_STATE_VERSION_LEGACY_CODE)
     {
-        SSMR3GetU16(pSSM,  &pThis->uRegDivisor);
-        SSMR3GetU8(pSSM,   &pThis->uRegRbr);
-        SSMR3GetU8(pSSM,   &pThis->uRegThr);
-        SSMR3GetU8(pSSM,   &pThis->uRegIer);
-        SSMR3GetU8(pSSM,   &pThis->uRegIir);
-        SSMR3GetU8(pSSM,   &pThis->uRegFcr);
-        SSMR3GetU8(pSSM,   &pThis->uRegLcr);
-        SSMR3GetU8(pSSM,   &pThis->uRegMcr);
-        SSMR3GetU8(pSSM,   &pThis->uRegLsr);
-        SSMR3GetU8(pSSM,   &pThis->uRegMsr);
-        SSMR3GetU8(pSSM,   &pThis->uRegScr);
-        SSMR3GetBool(pSSM, &pThis->fIrqCtiPending);
-        SSMR3GetBool(pSSM, &pThis->fThreEmptyPending);
-        SSMR3GetU8(pSSM,   &pThis->FifoXmit.cbMax);
-        SSMR3GetU8(pSSM,   &pThis->FifoXmit.cbItl);
-        SSMR3GetU8(pSSM,   &pThis->FifoRecv.cbMax);
-        SSMR3GetU8(pSSM,   &pThis->FifoRecv.cbItl);
+        pHlp->pfnSSMGetU16(pSSM,  &pThis->uRegDivisor);
+        pHlp->pfnSSMGetU8(pSSM,   &pThis->uRegRbr);
+        pHlp->pfnSSMGetU8(pSSM,   &pThis->uRegThr);
+        pHlp->pfnSSMGetU8(pSSM,   &pThis->uRegIer);
+        pHlp->pfnSSMGetU8(pSSM,   &pThis->uRegIir);
+        pHlp->pfnSSMGetU8(pSSM,   &pThis->uRegFcr);
+        pHlp->pfnSSMGetU8(pSSM,   &pThis->uRegLcr);
+        pHlp->pfnSSMGetU8(pSSM,   &pThis->uRegMcr);
+        pHlp->pfnSSMGetU8(pSSM,   &pThis->uRegLsr);
+        pHlp->pfnSSMGetU8(pSSM,   &pThis->uRegMsr);
+        pHlp->pfnSSMGetU8(pSSM,   &pThis->uRegScr);
+        pHlp->pfnSSMGetBool(pSSM, &pThis->fIrqCtiPending);
+        pHlp->pfnSSMGetBool(pSSM, &pThis->fThreEmptyPending);
+        pHlp->pfnSSMGetU8(pSSM,   &pThis->FifoXmit.cbMax);
+        pHlp->pfnSSMGetU8(pSSM,   &pThis->FifoXmit.cbItl);
+        pHlp->pfnSSMGetU8(pSSM,   &pThis->FifoRecv.cbMax);
+        pHlp->pfnSSMGetU8(pSSM,   &pThis->FifoRecv.cbItl);
 
         rc = PDMDevHlpTimerLoad(pDevIns, pThis->hTimerRcvFifoTimeout, pSSM);
         if (uVersion > UART_SAVED_STATE_VERSION_PRE_UNCONNECTED_TX_TIMER)
@@ -1768,53 +1771,53 @@ DECLHIDDEN(int) uartR3LoadExec(PPDMDEVINS pDevIns, PUARTCORE pThis, PSSMHANDLE p
             LogRel(("Serial#%d: falling back to 16450 mode from load state\n", pDevIns->iInstance));
         }
 
-        SSMR3GetU16(pSSM, &pThis->uRegDivisor);
-        SSMR3GetU8(pSSM, &pThis->uRegRbr);
-        SSMR3GetU8(pSSM, &pThis->uRegIer);
-        SSMR3GetU8(pSSM, &pThis->uRegLcr);
-        SSMR3GetU8(pSSM, &pThis->uRegMcr);
-        SSMR3GetU8(pSSM, &pThis->uRegLsr);
-        SSMR3GetU8(pSSM, &pThis->uRegMsr);
-        SSMR3GetU8(pSSM, &pThis->uRegScr);
+        pHlp->pfnSSMGetU16(pSSM, &pThis->uRegDivisor);
+        pHlp->pfnSSMGetU8(pSSM, &pThis->uRegRbr);
+        pHlp->pfnSSMGetU8(pSSM, &pThis->uRegIer);
+        pHlp->pfnSSMGetU8(pSSM, &pThis->uRegLcr);
+        pHlp->pfnSSMGetU8(pSSM, &pThis->uRegMcr);
+        pHlp->pfnSSMGetU8(pSSM, &pThis->uRegLsr);
+        pHlp->pfnSSMGetU8(pSSM, &pThis->uRegMsr);
+        pHlp->pfnSSMGetU8(pSSM, &pThis->uRegScr);
         if (uVersion > UART_SAVED_STATE_VERSION_16450)
-            SSMR3GetU8(pSSM, &pThis->uRegFcr);
+            pHlp->pfnSSMGetU8(pSSM, &pThis->uRegFcr);
 
         int32_t iTmp = 0;
-        SSMR3GetS32(pSSM, &iTmp);
+        pHlp->pfnSSMGetS32(pSSM, &iTmp);
         pThis->fThreEmptyPending = RT_BOOL(iTmp);
 
-        rc = SSMR3GetS32(pSSM, &iTmp);
+        rc = pHlp->pfnSSMGetS32(pSSM, &iTmp);
         AssertRCReturn(rc, rc);
         *pbIrq = (uint8_t)iTmp;
 
-        SSMR3Skip(pSSM, sizeof(int32_t)); /* was: last_break_enable */
+        pHlp->pfnSSMSkip(pSSM, sizeof(int32_t)); /* was: last_break_enable */
 
         uint32_t uPortBaseTmp = 0;
-        rc = SSMR3GetU32(pSSM, &uPortBaseTmp);
+        rc = pHlp->pfnSSMGetU32(pSSM, &uPortBaseTmp);
         AssertRCReturn(rc, rc);
         *pPortBase = (RTIOPORT)uPortBaseTmp;
 
-        rc = SSMR3Skip(pSSM, sizeof(bool)); /* was: msr_changed */
+        rc = pHlp->pfnSSMSkip(pSSM, sizeof(bool)); /* was: msr_changed */
         if (   RT_SUCCESS(rc)
             && uVersion > UART_SAVED_STATE_VERSION_MISSING_BITS)
         {
-            SSMR3GetU8(pSSM, &pThis->uRegThr);
-            SSMR3Skip(pSSM, sizeof(uint8_t)); /* The old transmit shift register, not used anymore. */
-            SSMR3GetU8(pSSM, &pThis->uRegIir);
+            pHlp->pfnSSMGetU8(pSSM, &pThis->uRegThr);
+            pHlp->pfnSSMSkip(pSSM, sizeof(uint8_t)); /* The old transmit shift register, not used anymore. */
+            pHlp->pfnSSMGetU8(pSSM, &pThis->uRegIir);
 
             int32_t iTimeoutPending = 0;
-            SSMR3GetS32(pSSM, &iTimeoutPending);
+            pHlp->pfnSSMGetS32(pSSM, &iTimeoutPending);
             pThis->fIrqCtiPending = RT_BOOL(iTimeoutPending);
 
             rc = PDMDevHlpTimerLoad(pDevIns, pThis->hTimerRcvFifoTimeout, pSSM);
             AssertRCReturn(rc, rc);
 
             bool fWasActiveIgn;
-            rc = TMR3TimerSkip(pSSM, &fWasActiveIgn);  /* was: transmit_timerR3 */
+            rc = pHlp->pfnTimerSkipLoad(pSSM, &fWasActiveIgn);  /* was: transmit_timerR3 */
             AssertRCReturn(rc, rc);
 
-            SSMR3GetU8(pSSM, &pThis->FifoRecv.cbItl);
-            rc = SSMR3GetU8(pSSM, &pThis->FifoRecv.cbItl);
+            pHlp->pfnSSMGetU8(pSSM, &pThis->FifoRecv.cbItl);
+            rc = pHlp->pfnSSMGetU8(pSSM, &pThis->FifoRecv.cbItl);
         }
     }
 
@@ -1842,8 +1845,8 @@ DECLHIDDEN(int) uartR3LoadDone(PPDMDEVINS pDevIns, PUARTCORE pThis, PUARTCORECC 
     {
         /* Set the modem lines to reflect the current state. */
         int rc = pThisCC->pDrvSerial->pfnChgModemLines(pThisCC->pDrvSerial,
-                                                     RT_BOOL(pThis->uRegMcr & UART_REG_MCR_RTS),
-                                                     RT_BOOL(pThis->uRegMcr & UART_REG_MCR_DTR));
+                                                       RT_BOOL(pThis->uRegMcr & UART_REG_MCR_RTS),
+                                                       RT_BOOL(pThis->uRegMcr & UART_REG_MCR_DTR));
         if (RT_FAILURE(rc))
             LogRel(("Serial#%d: Failed to set modem lines with %Rrc during saved state load\n",
                     pDevIns->iInstance, rc));
