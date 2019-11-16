@@ -1042,7 +1042,7 @@ static void ahciPortResetFinish(PPDMDEVINS pDevIns, PAHCI pThis, PAHCIPORT pAhci
  *
  * @returns nothing.
  * @param   pDevIns     The device instance.
- * @param   pAhciPort   The port to kick.
+ * @param   pAhciPort   The port to kick, shared bits.
  */
 static void ahciIoThreadKick(PPDMDEVINS pDevIns, PAHCIPORT pAhciPort)
 {
@@ -2018,7 +2018,7 @@ static void ahciR3PortSwReset(PAHCIPORT pAhciPort, PAHCIPORTR3 pAhciPortR3)
 /**
  * Hardware reset used for machine power on and reset.
  *
- * @param pAhciPort     The port to reset.
+ * @param pAhciPort     The port to reset, shared bits.
  */
 static void ahciPortHwReset(PAHCIPORT pAhciPort)
 {
@@ -2268,7 +2268,7 @@ static VBOXSTRICTRC ahciRegisterWrite(PPDMDEVINS pDevIns, PAHCI pThis, uint32_t 
 
 
 /**
- * @callback_method_impl{IOMMMIONEWWRITE}
+ * @callback_method_impl{FNIOMMMIONEWWRITE}
  */
 static DECLCALLBACK(VBOXSTRICTRC) ahciMMIORead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS off, void *pv, unsigned cb)
 {
@@ -2284,7 +2284,7 @@ static DECLCALLBACK(VBOXSTRICTRC) ahciMMIORead(PPDMDEVINS pDevIns, void *pvUser,
 }
 
 /**
- * @callback_method_impl{IOMMMIONEWWRITE}
+ * @callback_method_impl{FNIOMMMIONEWWRITE}
  */
 static DECLCALLBACK(VBOXSTRICTRC) ahciMMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS off, void const *pv, unsigned cb)
 {
@@ -2526,7 +2526,7 @@ static DECLCALLBACK(int) ahciR3PortQueryScsiInqStrings(PPDMIMEDIAPORT pInterface
  * Dump info about the FIS
  *
  * @returns nothing
- * @param   pAhciPort     The port the command FIS was read from.
+ * @param   pAhciPort     The port the command FIS was read from (shared bits).
  * @param   cmdFis        The FIS to print info from.
  */
 static void ahciDumpFisInfo(PAHCIPORT pAhciPort, uint8_t *cmdFis)
@@ -2608,7 +2608,8 @@ static void ahciDumpFisInfo(PAHCIPORT pAhciPort, uint8_t *cmdFis)
  * Dump info about the command header
  *
  * @returns nothing
- * @param   pAhciPort   Pointer to the port the command header was read from.
+ * @param   pAhciPort   Pointer to the port the command header was read from
+ *                      (shared bits).
  * @param   pCmdHdr     The command header to print info from.
  */
 static void ahciDumpCmdHdrInfo(PAHCIPORT pAhciPort, CmdHdr *pCmdHdr)
@@ -2643,7 +2644,7 @@ static void ahciDumpCmdHdrInfo(PAHCIPORT pAhciPort, CmdHdr *pCmdHdr)
  *
  * @returns nothing
  * @param   pDevIns     The device instance.
- * @param   pAhciPort   Pointer to the port which "receives" the FIS.
+ * @param   pAhciPort   Pointer to the port which "receives" the FIS (shared bits).
  */
 static void ahciPostFirstD2HFisIntoMemory(PPDMDEVINS pDevIns, PAHCIPORT pAhciPort)
 {
@@ -2686,7 +2687,7 @@ static void ahciPostFirstD2HFisIntoMemory(PPDMDEVINS pDevIns, PAHCIPORT pAhciPor
  *
  * @returns VBox status code
  * @param   pDevIns     The device instance.
- * @param   pAhciPort  The port which "receives" the FIS.
+ * @param   pAhciPort  The port which "receives" the FIS(shared bits).
  * @param   uFisType   The type of the FIS.
  * @param   pCmdFis    Pointer to the FIS which is to be posted into memory.
  */
@@ -2929,7 +2930,8 @@ static int ahciR3AtapiIdentify(PPDMDEVINS pDevIns, PAHCIREQ pAhciReq, PAHCIPORT 
  * @returns nothing
  * @param   pDevIns     The device instance.
  * @param   pThis       The shared AHCI state.
- * @param   pAhciPort   The port the device is attached to, shared bits.
+ * @param   pAhciPort   The port the device is attached to, shared bits(shared
+ *                      bits).
  * @param   pAhciReq    The state to get the tag number from.
  */
 static void ahciFinishStorageDeviceReset(PPDMDEVINS pDevIns, PAHCI pThis, PAHCIPORT pAhciPort, PAHCIREQ pAhciReq)
@@ -2958,7 +2960,7 @@ static void ahciFinishStorageDeviceReset(PPDMDEVINS pDevIns, PAHCI pThis, PAHCIP
  * @returns nothing.
  * @param   pDevIns     The device instance.
  * @param   pThis       The shared AHCI state.
- * @param   pAhciPort   The device to reset.
+ * @param   pAhciPort   The device to reset(shared bits).
  * @param   pAhciReq    The task state.
  */
 static void ahciDeviceReset(PPDMDEVINS pDevIns, PAHCI pThis, PAHCIPORT pAhciPort, PAHCIREQ pAhciReq)
@@ -2980,7 +2982,7 @@ static void ahciDeviceReset(PPDMDEVINS pDevIns, PAHCI pThis, PAHCIPORT pAhciPort
  * @returns nothing.
  * @param   pDevIns     The device instance.
  * @param   pThis       The shared AHCI state.
- * @param   pAhciPort   The port of the SATA controller.
+ * @param   pAhciPort   The port of the SATA controller (shared bits).
  * @param   cbTransfer  Transfer size of the request.
  * @param   pCmdFis     Pointer to the command FIS from the guest.
  * @param   fRead       Flag whether this is a read request.
@@ -3048,7 +3050,7 @@ static void ahciSendPioSetupFis(PPDMDEVINS pDevIns, PAHCI pThis, PAHCIPORT pAhci
  * @returns Nothing
  * @param   pDevIns     The device instance.
  * @param   pThis       The shared AHCI state.
- * @param   pAhciPort   The port of the SATA controller.
+ * @param   pAhciPort   The port of the SATA controller (shared bits).
  * @param   uTag        The tag of the request.
  * @param   pCmdFis     Pointer to the command FIS from the guest.
  * @param   fInterrupt  If an interrupt should be send to the guest.
@@ -3422,7 +3424,6 @@ static size_t ahciR3CopyBufferToPrdtl(PPDMDEVINS pDevIns, PAHCIREQ pAhciReq, con
  *
  * @returns VBox status code.
  * @param   pDevIns     The device instance.
- * @param   pThis       The AHCI controller device instance.
  * @param   pAhciReq    AHCI request structure.
  * @param   pcbPrdt     Where to store the size of the guest buffer.
  */
@@ -3471,7 +3472,7 @@ static bool ahciR3CancelActiveTasks(PAHCIPORTR3 pAhciPortR3)
  *
  * @returns VBox status code.
  * @param   pDevIns         The device instance.
- * @param   pAhciPort       AHCI port state.
+ * @param   pAhciPort       AHCI port state, shared bits.
  * @param   pAhciReq        The request handling the TRIM request.
  * @param   idxRangeStart   Index of the first range to start copying.
  * @param   paRanges        Where to store the ranges.
@@ -3572,7 +3573,6 @@ static PAHCIREQ ahciR3ReqAlloc(PAHCIPORTR3 pAhciPortR3, uint32_t uTag)
  * Frees a given AHCI request structure.
  *
  * @returns nothing.
- * @param   pAhciPort   The AHCI port, shared bits.
  * @param   pAhciPortR3 The AHCI port, ring-3 bits.
  * @param   pAhciReq    The request to free.
  */
@@ -4251,7 +4251,7 @@ static PDMMEDIAEXIOREQTYPE ahciProcessCmd(PPDMDEVINS pDevIns, PAHCI pThis, PAHCI
  * @returns whether the H2D FIS was successfully read from the guest memory.
  * @param   pDevIns     The device instance.
  * @param   pThis       The shared AHCI state.
- * @param   pAhciPort   The AHCI port of the request.
+ * @param   pAhciPort   The AHCI port of the request, shared bits.
  * @param   pAhciReq    The state of the actual task.
  */
 static bool ahciPortTaskGetCommandFis(PPDMDEVINS pDevIns, PAHCI pThis, PAHCIPORT pAhciPort, PAHCIREQ pAhciReq)
@@ -4346,7 +4346,8 @@ static bool ahciPortTaskGetCommandFis(PPDMDEVINS pDevIns, PAHCI pThis, PAHCIPORT
  * @param   pDevIns     The device instance.
  * @param   pThis       The shared AHCI state.
  * @param   pThisCC     The ring-3 AHCI state.
- * @param   pAhciPort   The port the request is for.
+ * @param   pAhciPort   The port the request is for, shared bits.
+ * @param   pAhciPortR3 The port the request is for, ring-3 bits.
  * @param   pAhciReq    The request to submit.
  * @param   enmType     The request type.
  */
@@ -4423,7 +4424,7 @@ static bool ahciR3ReqSubmit(PPDMDEVINS pDevIns, PAHCI pThis, PAHCICC pThisCC, PA
  *          can be continued.
  * @param   pDevIns     The device instance.
  * @param   pThis       The shared AHCI state.
- * @param   pAhciPort   The AHCI port the request is for.
+ * @param   pAhciPort   The AHCI port the request is for, shared bits.
  * @param   pAhciReq    Request structure to copy the command to.
  */
 static bool ahciR3CmdPrepare(PPDMDEVINS pDevIns, PAHCI pThis, PAHCIPORT pAhciPort, PAHCIREQ pAhciReq)
