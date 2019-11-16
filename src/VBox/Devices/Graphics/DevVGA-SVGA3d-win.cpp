@@ -5362,6 +5362,16 @@ int vmsvga3dDrawPrimitives(PVGASTATE pThis, uint32_t cid, uint32_t numVertexDecl
         int rc2 = vmsvga3dSurfaceFromSid(pState, pContext->state.aRenderTargets[SVGA3D_RT_COLOR0], &pSurface);
         if (RT_SUCCESS(rc2))
             vmsvga3dInfoSurfaceToBitmap(NULL, pSurface, "bmpd3d", "rt", "-post");
+# if 0
+        /* Stage 0 texture. */
+        if (pContext->aSidActiveTextures[0] != SVGA3D_INVALID_ID)
+        {
+            vmsvga3dUpdateHeapBuffersForSurfaces(pThis, pContext->aSidActiveTextures[0]);
+            rc2 = vmsvga3dSurfaceFromSid(pState, pContext->aSidActiveTextures[0], &pSurface);
+            if (RT_SUCCESS(rc2))
+                vmsvga3dInfoSurfaceToBitmap(NULL, pSurface, "bmpd3d", "rt", "-post-tx");
+        }
+# endif
     }
 #endif
 

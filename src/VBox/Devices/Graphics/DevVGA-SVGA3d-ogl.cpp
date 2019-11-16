@@ -6458,6 +6458,16 @@ internal_error:
         int rc2 = vmsvga3dSurfaceFromSid(pState, pContext->state.aRenderTargets[SVGA3D_RT_COLOR0], &pSurface);
         if (RT_SUCCESS(rc2))
             vmsvga3dInfoSurfaceToBitmap(NULL, pSurface, "bmpgl", "rt", "-post");
+# if 0
+        /* Stage 0 texture. */
+        if (pContext->aSidActiveTextures[0] != SVGA3D_INVALID_ID)
+        {
+            vmsvga3dUpdateHeapBuffersForSurfaces(pThis, pContext->aSidActiveTextures[0]);
+            rc2 = vmsvga3dSurfaceFromSid(pState, pContext->aSidActiveTextures[0], &pSurface);
+            if (RT_SUCCESS(rc2))
+                vmsvga3dInfoSurfaceToBitmap(NULL, pSurface, "bmpgl", "rt", "-post-tx");
+        }
+# endif
     }
 #endif
 
@@ -6547,10 +6557,12 @@ int vmsvga3dShaderDefine(PVGASTATE pThis, uint32_t cid, uint32_t shid, SVGA3dSha
     {
     case SVGA3D_SHADERTYPE_VS:
         rc = ShaderCreateVertexShader(pContext->pShaderContext, (const uint32_t *)pShaderData, &pShader->u.pVertexShader);
+        AssertRC(rc);
         break;
 
     case SVGA3D_SHADERTYPE_PS:
         rc = ShaderCreatePixelShader(pContext->pShaderContext, (const uint32_t *)pShaderData, &pShader->u.pPixelShader);
+        AssertRC(rc);
         break;
 
     default:
