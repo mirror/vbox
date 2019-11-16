@@ -106,12 +106,7 @@ typedef struct DEVOX958
     PPDMDEVINSR0                    pDevInsR0;
     /** Pointer to the device instance - RC ptr. */
     PPDMDEVINSRC                    pDevInsRC;
-    /** Flag whether R0 is enabled. */
-    bool                            fR0Enabled;
-    /** Flag whether RC is enabled. */
-    bool                            fRCEnabled;
-    /** Alignment. */
-    bool                            afAlignment[2];
+    uint32_t                        u32Alignment;
     /** UART global IRQ status. */
     volatile uint32_t               u32RegIrqStsGlob;
     /** UART global IRQ enable mask. */
@@ -122,9 +117,10 @@ typedef struct DEVOX958
     uint32_t                        cUarts;
     /** MMIO Base address. */
     RTGCPHYS                        GCPhysMMIO;
+    /** Handle to the MMIO region (PCI region \#0). */
+    IOMMMIOHANDLE                   hMmio;
     /** The UARTs. */
     OX958UART                       aUarts[OX958_UARTS_MAX];
-
 } DEVOX958;
 /** Pointer to an OXPCIe958 device instance. */
 typedef DEVOX958 *PDEVOX958;
@@ -137,38 +133,40 @@ typedef DEVOX958 *PDEVOX958;
  * Update IRQ status of the device.
  *
  * @returns nothing.
+ * @param   pDevIns             The device instance.
  * @param   pThis               The OXPCIe958 device instance.
  */
-static void ox958IrqUpdate(PDEVOX958 pThis)
+static void ox958IrqUpdate(PPDMDEVINS pDevIns, PDEVOX958 pThis)
 {
     uint32_t u32IrqSts = ASMAtomicReadU32(&pThis->u32RegIrqStsGlob);
     uint32_t u32IrqEn  = ASMAtomicReadU32(&pThis->u32RegIrqEnGlob);
 
     if (u32IrqSts & u32IrqEn)
-        PDMDevHlpPCISetIrq(pThis->CTX_SUFF(pDevIns), 0, PDM_IRQ_LEVEL_HIGH);
+        PDMDevHlpPCISetIrq(pDevIns, 0, PDM_IRQ_LEVEL_HIGH);
     else
-        PDMDevHlpPCISetIrq(pThis->CTX_SUFF(pDevIns), 0, PDM_IRQ_LEVEL_LOW);
+        PDMDevHlpPCISetIrq(pDevIns, 0, PDM_IRQ_LEVEL_LOW);
 }
 
 
 /**
  * Performs a register read from the given UART.
  *
- * @returns nothing.
+ * @returns Strict VBox status code.
  * @param   pThis               The OXPCIe958 device instance.
  * @param   pUart               The UART accessed.
  * @param   offUartReg          Offset of the register being read.
  * @param   pv                  Where to store the read data.
  * @param   cb                  Number of bytes to read.
  */
-static int ox958UartRegRead(PDEVOX958 pThis, POX958UART pUart, uint32_t offUartReg, void *pv, unsigned cb)
+static VBOXSTRICTRC ox958UartRegRead(PDEVOX958 pThis, POX958UART pUart, uint32_t offUartReg, void *pv, unsigned cb)
 {
-    int rc = VINF_SUCCESS;
+    VBOXSTRICTRC rc;
     RT_NOREF(pThis);
 
     if (offUartReg >= OX958_REG_UART_DMA_REGION_OFFSET)
     {
         /* Access to the DMA registers. */
+        rc = VINF_SUCCESS;
     }
     else /* Access UART registers. */
         rc = uartRegRead(&pUart->UartCore, offUartReg, (uint32_t *)pv, cb);
@@ -180,21 +178,22 @@ static int ox958UartRegRead(PDEVOX958 pThis, POX958UART pUart, uint32_t offUartR
 /**
  * Performs a register write to the given UART.
  *
- * @returns nothing.
+ * @returns Strict VBox status code.
  * @param   pThis               The OXPCIe958 device instance.
  * @param   pUart               The UART accessed.
  * @param   offUartReg          Offset of the register being written.
  * @param   pv                  The data to write.
  * @param   cb                  Number of bytes to write.
  */
-static int ox958UartRegWrite(PDEVOX958 pThis, POX958UART pUart, uint32_t offUartReg, const void *pv, unsigned cb)
+static VBOXSTRICTRC ox958UartRegWrite(PDEVOX958 pThis, POX958UART pUart, uint32_t offUartReg, const void *pv, unsigned cb)
 {
-    int rc = VINF_SUCCESS;
+    VBOXSTRICTRC rc;
     RT_NOREF(pThis);
 
     if (offUartReg >= OX958_REG_UART_DMA_REGION_OFFSET)
     {
         /* Access to the DMA registers. */
+        rc = VINF_SUCCESS;
     }
     else /* Access UART registers. */
         rc = uartRegWrite(&pUart->UartCore, offUartReg, *(const uint32_t *)pv, cb);
@@ -221,33 +220,25 @@ PDMBOTHCBDECL(void) ox958IrqReq(PPDMDEVINS pDevIns, PUARTCORE pUart, unsigned iL
         ASMAtomicOrU32(&pThis->u32RegIrqStsGlob, RT_BIT_32(iLUN));
     else
         ASMAtomicAndU32(&pThis->u32RegIrqStsGlob, ~RT_BIT_32(iLUN));
-    ox958IrqUpdate(pThis);
+    ox958IrqUpdate(pDevIns, pThis);
 }
 
 
 /**
- * Read a MMIO register.
- *
- * @returns VBox status code suitable for scheduling.
- * @param   pDevIns     The device instance.
- * @param   pvUser      A user argument (ignored).
- * @param   GCPhysAddr  The physical address being written to. (This is within our MMIO memory range.)
- * @param   pv          Where to put the data we read.
- * @param   cb          The size of the read.
+ * @callback_method_impl{FNIOMMMIONEWREAD}
  */
-PDMBOTHCBDECL(int) ox958MmioRead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr, void *pv, unsigned cb)
+static DECLCALLBACK(VBOXSTRICTRC) ox958MmioRead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS off, void *pv, unsigned cb)
 {
-    PDEVOX958 pThis = PDMDEVINS_2_DATA(pDevIns, PDEVOX958);
-    uint32_t  offReg = (GCPhysAddr - pThis->GCPhysMMIO);
-    int       rc = VINF_SUCCESS;
-    RT_NOREF(pThis, pvUser);
+    PDEVOX958    pThis = PDMDEVINS_2_DATA(pDevIns, PDEVOX958);
+    VBOXSTRICTRC rc    = VINF_SUCCESS;
+    RT_NOREF(pvUser);
 
-    if (offReg < OX958_REG_UART_REGION_OFFSET)
+    if (off < OX958_REG_UART_REGION_OFFSET)
     {
         uint32_t *pu32 = (uint32_t *)pv;
         Assert(cb == 4);
 
-        switch (offReg)
+        switch ((uint32_t)off)
         {
             case OX958_REG_CC_REV_ID:
                 *pu32 = 0x00070002;
@@ -277,10 +268,10 @@ PDMBOTHCBDECL(int) ox958MmioRead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPh
     else
     {
         /* Figure out the UART accessed from the offset. */
-        offReg -= OX958_REG_UART_REGION_OFFSET;
-        uint32_t iUart = offReg / OX958_REG_UART_REGION_SIZE;
-        uint32_t offUartReg = offReg % OX958_REG_UART_REGION_SIZE;
-        if (iUart < pThis->cUarts)
+        off -= OX958_REG_UART_REGION_OFFSET;
+        uint32_t iUart      = (uint32_t)off / OX958_REG_UART_REGION_SIZE;
+        uint32_t offUartReg = (uint32_t)off % OX958_REG_UART_REGION_SIZE;
+        if (iUart < RT_MIN(pThis->cUarts, RT_ELEMENTS(pThis->aUarts)))
         {
             POX958UART pUart = &pThis->aUarts[iUart];
             rc = ox958UartRegRead(pThis, pUart, offUartReg, pv, cb);
@@ -296,36 +287,28 @@ PDMBOTHCBDECL(int) ox958MmioRead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPh
 
 
 /**
- * Write to a MMIO register.
- *
- * @returns VBox status code suitable for scheduling.
- * @param   pDevIns     The device instance.
- * @param   pvUser      A user argument (ignored).
- * @param   GCPhysAddr  The physical address being written to. (This is within our MMIO memory range.)
- * @param   pv          Pointer to the data being written.
- * @param   cb          The size of the data being written.
+ * @callback_method_impl{FNIOMMMIONEWWRITE}
  */
-PDMBOTHCBDECL(int) ox958MmioWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr, void const *pv, unsigned cb)
+static DECLCALLBACK(VBOXSTRICTRC) ox958MmioWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS off, void const *pv, unsigned cb)
 {
-    PDEVOX958 pThis = PDMDEVINS_2_DATA(pDevIns, PDEVOX958);
-    uint32_t  offReg = (GCPhysAddr - pThis->GCPhysMMIO);
-    int       rc = VINF_SUCCESS;
+    PDEVOX958    pThis = PDMDEVINS_2_DATA(pDevIns, PDEVOX958);
+    VBOXSTRICTRC rc    = VINF_SUCCESS;
     RT_NOREF1(pvUser);
 
-    if (offReg < OX958_REG_UART_REGION_OFFSET)
+    if (off < OX958_REG_UART_REGION_OFFSET)
     {
         const uint32_t u32 = *(const uint32_t *)pv;
         Assert(cb == 4);
 
-        switch (offReg)
+        switch ((uint32_t)off)
         {
             case OX958_REG_UART_IRQ_ENABLE:
                 ASMAtomicOrU32(&pThis->u32RegIrqEnGlob, u32);
-                ox958IrqUpdate(pThis);
+                ox958IrqUpdate(pDevIns, pThis);
                 break;
             case OX958_REG_UART_IRQ_DISABLE:
                 ASMAtomicAndU32(&pThis->u32RegIrqEnGlob, ~u32);
-                ox958IrqUpdate(pThis);
+                ox958IrqUpdate(pDevIns, pThis);
                 break;
             case OX958_REG_UART_WAKE_IRQ_ENABLE:
                 ASMAtomicOrU32(&pThis->u32RegIrqEnWake, u32);
@@ -337,16 +320,16 @@ PDMBOTHCBDECL(int) ox958MmioWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCP
             case OX958_REG_CC_REV_ID:    /* Readonly */
             case OX958_REG_UART_CNT:     /* Readonly */
             default:
-                rc = VINF_SUCCESS;
+                break;
         }
     }
     else
     {
         /* Figure out the UART accessed from the offset. */
-        offReg -= OX958_REG_UART_REGION_OFFSET;
-        uint32_t iUart = offReg / OX958_REG_UART_REGION_SIZE;
-        uint32_t offUartReg = offReg % OX958_REG_UART_REGION_SIZE;
-        if (iUart < pThis->cUarts)
+        off -= OX958_REG_UART_REGION_OFFSET;
+        uint32_t iUart      = (uint32_t)off / OX958_REG_UART_REGION_SIZE;
+        uint32_t offUartReg = (uint32_t)off % OX958_REG_UART_REGION_SIZE;
+        if (iUart < RT_MIN(pThis->cUarts, RT_ELEMENTS(pThis->aUarts)))
         {
             POX958UART pUart = &pThis->aUarts[iUart];
             rc = ox958UartRegWrite(pThis, pUart, offUartReg, pv, cb);
@@ -360,50 +343,6 @@ PDMBOTHCBDECL(int) ox958MmioWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCP
 
 
 #ifdef IN_RING3
-/**
- * @callback_method_impl{FNPCIIOREGIONMAP}
- */
-static DECLCALLBACK(int) ox958R3Map(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t iRegion,
-                                    RTGCPHYS GCPhysAddress, RTGCPHYS cb, PCIADDRESSSPACE enmType)
-{
-    PDEVOX958 pThis = PDMDEVINS_2_DATA(pDevIns, PDEVOX958);
-    int       rc    = VINF_SUCCESS;
-    RT_NOREF(pPciDev, enmType);
-    Assert(pPciDev == pDevIns->apPciDevs[0]);
-
-    if (iRegion == 0)
-    {
-        Assert(enmType == PCI_ADDRESS_SPACE_MEM);
-
-        rc = PDMDevHlpMMIORegister(pDevIns, GCPhysAddress, cb, NULL /*pvUser*/,
-                                   IOMMMIO_FLAGS_READ_PASSTHRU | IOMMMIO_FLAGS_WRITE_PASSTHRU,
-                                   ox958MmioWrite, ox958MmioRead, "OxPCIe958");
-        if (RT_FAILURE(rc))
-            return rc;
-
-        /* Enable (or not) RC/R0 support. */
-        if (pThis->fRCEnabled)
-        {
-            rc = PDMDevHlpMMIORegisterRC(pDevIns, GCPhysAddress, cb, NIL_RTRCPTR /*pvUser*/,
-                                         "ox958MmioWrite", "ox958MmioRead");
-            if (RT_FAILURE(rc))
-                return rc;
-        }
-
-        if (pThis->fR0Enabled)
-        {
-            rc = PDMDevHlpMMIORegisterR0(pDevIns, GCPhysAddress, cb, NIL_RTR0PTR /*pvUser*/,
-                                         "ox958MmioWrite", "ox958MmioRead");
-            if (RT_FAILURE(rc))
-                return rc;
-        }
-
-        pThis->GCPhysMMIO = GCPhysAddress;
-    }
-
-    return VINF_SUCCESS;
-}
-
 
 /** @interface_method_impl{PDMDEVREG,pfnDetach} */
 static DECLCALLBACK(void) ox958R3Detach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t fFlags)
@@ -424,7 +363,7 @@ static DECLCALLBACK(int) ox958R3Attach(PPDMDEVINS pDevIns, unsigned iLUN, uint32
 
     RT_NOREF(fFlags);
 
-    if (iLUN >= pThis->cUarts)
+    if (iLUN >= RT_MIN(pThis->cUarts, RT_ELEMENTS(pThis->aUarts)))
         return VERR_PDM_LUN_NOT_FOUND;
 
     return uartR3Attach(&pThis->aUarts[iLUN].UartCore, iLUN);
@@ -440,7 +379,8 @@ static DECLCALLBACK(void) ox958R3Reset(PPDMDEVINS pDevIns)
     pThis->u32RegIrqEnGlob  = 0x00;
     pThis->u32RegIrqEnWake  = 0x00;
 
-    for (uint32_t i = 0; i < pThis->cUarts; i++)
+    uint32_t const cUarts = RT_MIN(pThis->cUarts, RT_ELEMENTS(pThis->aUarts));
+    for (uint32_t i = 0; i < cUarts; i++)
         uartR3Reset(&pThis->aUarts[i].UartCore);
 }
 
@@ -452,7 +392,8 @@ static DECLCALLBACK(void) ox958R3Relocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelt
     RT_NOREF(offDelta);
 
     pThis->pDevInsRC = PDMDEVINS_2_RCPTR(pDevIns);
-    for (uint32_t i = 0; i < pThis->cUarts; i++)
+    uint32_t const cUarts = RT_MIN(pThis->cUarts, RT_ELEMENTS(pThis->aUarts));
+    for (uint32_t i = 0; i < cUarts; i++)
         uartR3Relocate(&pThis->aUarts[i].UartCore, offDelta);
 }
 
@@ -460,10 +401,11 @@ static DECLCALLBACK(void) ox958R3Relocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelt
 /** @interface_method_impl{PDMDEVREG,pfnDestruct} */
 static DECLCALLBACK(int) ox958R3Destruct(PPDMDEVINS pDevIns)
 {
-    PDEVOX958 pThis = PDMDEVINS_2_DATA(pDevIns, PDEVOX958);
     PDMDEV_CHECK_VERSIONS_RETURN_QUIET(pDevIns);
+    PDEVOX958 pThis = PDMDEVINS_2_DATA(pDevIns, PDEVOX958);
 
-    for (uint32_t i = 0; i < pThis->cUarts; i++)
+    uint32_t const cUarts = RT_MIN(pThis->cUarts, RT_ELEMENTS(pThis->aUarts));
+    for (uint32_t i = 0; i < cUarts; i++)
         uartR3Destruct(&pThis->aUarts[i].UartCore);
 
     return VINF_SUCCESS;
@@ -473,44 +415,35 @@ static DECLCALLBACK(int) ox958R3Destruct(PPDMDEVINS pDevIns)
 /** @interface_method_impl{PDMDEVREG,pfnConstruct} */
 static DECLCALLBACK(int) ox958R3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE pCfg)
 {
-    RT_NOREF(iInstance);
-    PDEVOX958   pThis = PDMDEVINS_2_DATA(pDevIns, PDEVOX958);
-    bool        fRCEnabled = true;
-    bool        fR0Enabled = true;
-    bool        fMsiXSupported = false;
-    int         rc;
-
     PDMDEV_CHECK_VERSIONS_RETURN(pDevIns);
+    RT_NOREF(iInstance);
+    PDEVOX958       pThis = PDMDEVINS_2_DATA(pDevIns, PDEVOX958);
+    PCPDMDEVHLPR3   pHlp  = pDevIns->pHlpR3;
+    bool            fMsiXSupported = false;
+    int             rc;
+
+    /*
+     * Init instance data.
+     */
+    pThis->pDevInsR3             = pDevIns;
+    pThis->pDevInsR0             = PDMDEVINS_2_R0PTR(pDevIns);
+    pThis->pDevInsRC             = PDMDEVINS_2_RCPTR(pDevIns);
+
+    rc = PDMDevHlpSetDeviceCritSect(pDevIns, PDMDevHlpCritSectGetNop(pDevIns));
+    AssertRCReturn(rc, rc);
 
     /*
      * Validate and read configuration.
      */
-    if (!CFGMR3AreValuesValid(pCfg, "RCEnabled\0"
-                                    "R0Enabled\0"
-                                    "MsiXSupported\0"
-                                    "UartCount\0"))
-        return PDMDEV_SET_ERROR(pDevIns, VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES,
-                                N_("OXPCIe958 configuration error: Unknown option specified"));
+    PDMDEV_VALIDATE_CONFIG_RETURN(pDevIns, "MsiXSupported|UartCount", "");
 
-    rc = CFGMR3QueryBoolDef(pCfg, "RCEnabled", &fRCEnabled, true);
+    rc = pHlp->pfnCFGMQueryBoolDef(pCfg, "MsiXSupported", &fMsiXSupported, true);
     if (RT_FAILURE(rc))
-        return PDMDEV_SET_ERROR(pDevIns, rc,
-                                N_("OXPCIe958 configuration error: Failed to read \"RCEnabled\" as boolean"));
+        return PDMDEV_SET_ERROR(pDevIns, rc, N_("OXPCIe958 configuration error: failed to read \"MsiXSupported\" as boolean"));
 
-    rc = CFGMR3QueryBoolDef(pCfg, "R0Enabled", &fR0Enabled, true);
+    rc = pHlp->pfnCFGMQueryU32Def(pCfg, "UartCount", &pThis->cUarts, OX958_UARTS_MAX);
     if (RT_FAILURE(rc))
-        return PDMDEV_SET_ERROR(pDevIns, rc,
-                                N_("OXPCIe958 configuration error: failed to read \"R0Enabled\" as boolean"));
-
-    rc = CFGMR3QueryBoolDef(pCfg, "MsiXSupported", &fMsiXSupported, true);
-    if (RT_FAILURE(rc))
-        return PDMDEV_SET_ERROR(pDevIns, rc,
-                                N_("OXPCIe958 configuration error: failed to read \"MsiXSupported\" as boolean"));
-
-    rc = CFGMR3QueryU32Def(pCfg, "UartCount", &pThis->cUarts, OX958_UARTS_MAX);
-    if (RT_FAILURE(rc))
-        return PDMDEV_SET_ERROR(pDevIns, rc,
-                                N_("OXPCIe958 configuration error: failed to read \"UartCount\" as unsigned 32bit integer"));
+        return PDMDEV_SET_ERROR(pDevIns, rc, N_("OXPCIe958 configuration error: failed to read \"UartCount\" as unsigned 32bit integer"));
 
     if (!pThis->cUarts || pThis->cUarts > OX958_UARTS_MAX)
         return PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS,
@@ -518,27 +451,20 @@ static DECLCALLBACK(int) ox958R3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
                                    pThis->cUarts, OX958_UARTS_MAX);
 
     /*
-     * Init instance data.
+     * Fill PCI config space.
      */
-    pThis->fR0Enabled            = fR0Enabled;
-    pThis->fRCEnabled            = fRCEnabled;
-    pThis->pDevInsR3             = pDevIns;
-    pThis->pDevInsR0             = PDMDEVINS_2_R0PTR(pDevIns);
-    pThis->pDevInsRC             = PDMDEVINS_2_RCPTR(pDevIns);
-
-    /* Fill PCI config space. */
     PPDMPCIDEV pPciDev = pDevIns->apPciDevs[0];
     PDMPCIDEV_ASSERT_VALID(pDevIns, pPciDev);
 
     PDMPciDevSetVendorId(pPciDev,           OX958_PCI_VENDOR_ID);
     PDMPciDevSetDeviceId(pPciDev,           OX958_PCI_DEVICE_ID);
     PDMPciDevSetCommand(pPciDev,            0x0000);
-#ifdef VBOX_WITH_MSI_DEVICES
+# ifdef VBOX_WITH_MSI_DEVICES
     PDMPciDevSetStatus(pPciDev,             VBOX_PCI_STATUS_CAP_LIST);
     PDMPciDevSetCapabilityList(pPciDev,     OX958_PCI_MSI_CAP_OFS);
-#else
+# else
     PDMPciDevSetCapabilityList(pPciDev,     0x70);
-#endif
+# endif
     PDMPciDevSetRevisionId(pPciDev,         0x00);
     PDMPciDevSetClassBase(pPciDev,          0x07); /* Communication controller. */
     PDMPciDevSetClassSub(pPciDev,           0x00); /* Serial controller. */
@@ -552,10 +478,6 @@ static DECLCALLBACK(int) ox958R3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
     PDMPciDevSetInterruptPin(pPciDev,       0x01);
     /** @todo More Capabilities. */
 
-    rc = PDMDevHlpSetDeviceCritSect(pDevIns, PDMDevHlpCritSectGetNop(pDevIns));
-    if (RT_FAILURE(rc))
-        return rc;
-
     /*
      * Register PCI device and I/O region.
      */
@@ -563,7 +485,7 @@ static DECLCALLBACK(int) ox958R3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
     if (RT_FAILURE(rc))
         return rc;
 
-#ifdef VBOX_WITH_MSI_DEVICES
+# ifdef VBOX_WITH_MSI_DEVICES
     PDMMSIREG MsiReg;
     RT_ZERO(MsiReg);
     MsiReg.cMsiVectors     = 1;
@@ -583,28 +505,30 @@ static DECLCALLBACK(int) ox958R3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
         PDMPciDevSetCapabilityList(pPciDev, 0x0);
         /* That's OK, we can work without MSI */
     }
-#endif
+# endif
 
-    rc = PDMDevHlpPCIIORegionRegister(pDevIns, 0, _16K, PCI_ADDRESS_SPACE_MEM, ox958R3Map);
-    if (RT_FAILURE(rc))
-        return rc;
+    rc = PDMDevHlpPCIIORegionCreateMmio(pDevIns, 0 /*iPciRegion*/, _16K, PCI_ADDRESS_SPACE_MEM,
+                                        ox958MmioWrite, ox958MmioRead, NULL /*pvUser*/,
+                                        IOMMMIO_FLAGS_READ_PASSTHRU | IOMMMIO_FLAGS_WRITE_PASSTHRU,
+                                        "OxPCIe958", &pThis->hMmio);
+    AssertRCReturn(rc, rc);
 
     /** @todo This dynamic symbol resolving will be reworked later! */
     PVM pVM = PDMDevHlpGetVM(pDevIns);
     RTR0PTR pfnSerialIrqReqR0 = NIL_RTR0PTR;
     RTRCPTR pfnSerialIrqReqRC = NIL_RTRCPTR;
 
-#ifdef VBOX_WITH_RAW_MODE_KEEP
-    if (   fRCEnabled
+# ifdef VBOX_WITH_RAW_MODE_KEEP
+    if (   pDevIns->fRCEnabled
         && VM_IS_RAW_MODE_ENABLED(pVM))
     {
         rc = PDMR3LdrGetSymbolRC(pVM, pDevIns->pReg->pszRCMod, "ox958IrqReq", &pfnSerialIrqReqRC);
         if (RT_FAILURE(rc))
             return rc;
     }
-#endif
+# endif
 
-    if (fR0Enabled)
+    if (pDevIns->fR0Enabled)
     {
         rc = PDMR3LdrGetSymbolR0(pVM, pDevIns->pReg->pszR0Mod, "ox958IrqReq", &pfnSerialIrqReqR0);
         if (RT_FAILURE(rc))
@@ -624,7 +548,26 @@ static DECLCALLBACK(int) ox958R3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
     return VINF_SUCCESS;
 }
 
-#endif /* IN_RING3 */
+#else  /* !IN_RING3 */
+
+/**
+ * @callback_method_impl{PDMDEVREGR0,pfnConstruct}
+ */
+static DECLCALLBACK(int) ox958RZConstruct(PPDMDEVINS pDevIns)
+{
+    PDMDEV_CHECK_VERSIONS_RETURN(pDevIns);
+    PDEVOX958 pThis = PDMDEVINS_2_DATA(pDevIns, PDEVOX958);
+
+    int rc = PDMDevHlpSetDeviceCritSect(pDevIns, PDMDevHlpCritSectGetNop(pDevIns));
+    AssertRCReturn(rc, rc);
+
+    rc = PDMDevHlpMmioSetUpContext(pDevIns, pThis->hMmio, ox958MmioWrite, ox958MmioRead, NULL /*pvUser*/);
+    AssertRCReturn(rc, rc);
+
+    return VINF_SUCCESS;
+}
+
+#endif /* !IN_RING3 */
 
 
 const PDMDEVREG g_DeviceOxPcie958 =
@@ -669,7 +612,7 @@ const PDMDEVREG g_DeviceOxPcie958 =
     /* .pfnReserved7 = */           NULL,
 #elif defined(IN_RING0)
     /* .pfnEarlyConstruct = */      NULL,
-    /* .pfnConstruct = */           NULL,
+    /* .pfnConstruct = */           ox958RZConstruct,
     /* .pfnDestruct = */            NULL,
     /* .pfnFinalDestruct = */       NULL,
     /* .pfnRequest = */             NULL,
@@ -682,7 +625,7 @@ const PDMDEVREG g_DeviceOxPcie958 =
     /* .pfnReserved6 = */           NULL,
     /* .pfnReserved7 = */           NULL,
 #elif defined(IN_RC)
-    /* .pfnConstruct = */           NULL,
+    /* .pfnConstruct = */           ox958RZConstruct,
     /* .pfnReserved0 = */           NULL,
     /* .pfnReserved1 = */           NULL,
     /* .pfnReserved2 = */           NULL,
