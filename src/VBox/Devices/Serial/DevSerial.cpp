@@ -39,16 +39,10 @@
 *********************************************************************************************************************************/
 
 /**
- * Serial device.
+ * Shared serial device state.
  */
 typedef struct DEVSERIAL
 {
-    /** Pointer to the device instance - R3 Ptr. */
-    PPDMDEVINSR3                    pDevInsR3;
-    /** Pointer to the device instance - R0 Ptr. */
-    PPDMDEVINSR0                    pDevInsR0;
-    /** Pointer to the device instance - RC Ptr. */
-    PPDMDEVINSRC                    pDevInsRC;
     /** The IRQ value. */
     uint8_t                         uIrq;
     uint8_t                         bAlignment;
@@ -60,8 +54,50 @@ typedef struct DEVSERIAL
     /** The UART core. */
     UARTCORE                        UartCore;
 } DEVSERIAL;
-/** Pointer to the serial device state. */
+/** Pointer to the shared serial device state. */
 typedef DEVSERIAL *PDEVSERIAL;
+
+
+/**
+ * Serial device state for ring-3.
+ */
+typedef struct DEVSERIALR3
+{
+    /** The UART core. */
+    UARTCORER3                      UartCore;
+} DEVSERIALR3;
+/** Pointer to the serial device state for ring-3. */
+typedef DEVSERIALR3 *PDEVSERIALR3;
+
+
+/**
+ * Serial device state for ring-0.
+ */
+typedef struct DEVSERIALR0
+{
+    /** The UART core. */
+    UARTCORER0                      UartCore;
+} DEVSERIALR0;
+/** Pointer to the serial device state for ring-0. */
+typedef DEVSERIALR0 *PDEVSERIALR0;
+
+
+/**
+ * Serial device state for raw-mode.
+ */
+typedef struct DEVSERIALRC
+{
+    /** The UART core. */
+    UARTCORERC                      UartCore;
+} DEVSERIALRC;
+/** Pointer to the serial device state for raw-mode. */
+typedef DEVSERIALRC *PDEVSERIALRC;
+
+/** The serial device state for the current context. */
+typedef CTX_SUFF(DEVSERIAL) DEVSERIALCC;
+/** Pointer to the serial device state for the current context. */
+typedef CTX_SUFF(PDEVSERIAL) PDEVSERIALCC;
+
 
 #ifndef VBOX_DEVICE_STRUCT_TESTCASE
 
@@ -83,10 +119,11 @@ PDMBOTHCBDECL(void) serialIrqReq(PPDMDEVINS pDevIns, PUARTCORE pUart, unsigned i
 static DECLCALLBACK(VBOXSTRICTRC)
 serialIoPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t u32, unsigned cb)
 {
-    PDEVSERIAL pThis = PDMDEVINS_2_DATA(pDevIns, PDEVSERIAL);
+    PDEVSERIAL   pThis   = PDMDEVINS_2_DATA(pDevIns, PDEVSERIAL);
+    PDEVSERIALCC pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PDEVSERIALCC);
     RT_NOREF_PV(pvUser);
 
-    return uartRegWrite(&pThis->UartCore, offPort, u32, cb);
+    return uartRegWrite(pDevIns, &pThis->UartCore, &pThisCC->UartCore, offPort, u32, cb);
 }
 
 
@@ -96,10 +133,11 @@ serialIoPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t u
 static DECLCALLBACK(VBOXSTRICTRC)
 serialIoPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t *pu32, unsigned cb)
 {
-    PDEVSERIAL pThis = PDMDEVINS_2_DATA(pDevIns, PDEVSERIAL);
+    PDEVSERIAL   pThis   = PDMDEVINS_2_DATA(pDevIns, PDEVSERIAL);
+    PDEVSERIALCC pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PDEVSERIALCC);
     RT_NOREF_PV(pvUser);
 
-    return uartRegRead(&pThis->UartCore, offPort, pu32, cb);
+    return uartRegRead(pDevIns, &pThis->UartCore, &pThisCC->UartCore, offPort, pu32, cb);
 }
 
 
@@ -121,8 +159,7 @@ static UARTTYPE serialR3GetUartTypeFromString(const char *pszUartType)
     else if (!RTStrCmp(pszUartType, "16750"))
         return UARTTYPE_16750;
 
-    AssertLogRelMsgFailedReturn(("Unknown UART type \"%s\" specified", pszUartType),
-                                UARTTYPE_INVALID);
+    AssertLogRelMsgFailedReturn(("Unknown UART type \"%s\" specified", pszUartType), UARTTYPE_INVALID);
 }
 
 
@@ -157,7 +194,7 @@ static DECLCALLBACK(int) serialR3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
     pHlp->pfnSSMPutIOPort(pSSM, pThis->PortBase);
     pHlp->pfnSSMPutU32(   pSSM, pThis->UartCore.enmType);
 
-    uartR3SaveExec(&pThis->UartCore, pSSM);
+    uartR3SaveExec(pDevIns, &pThis->UartCore, pSSM);
     return pHlp->pfnSSMPutU32(pSSM, UINT32_MAX); /* sanity/terminator */
 }
 
@@ -182,7 +219,7 @@ static DECLCALLBACK(int) serialR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, u
         PDMDEVHLP_SSM_GET_ENUM32_RET(pHlp, pSSM, enmType, UARTTYPE);
         if (uPass == SSM_PASS_FINAL)
         {
-            rc = uartR3LoadExec(&pThis->UartCore, pSSM, uVersion, uPass, NULL, NULL);
+            rc = uartR3LoadExec(pDevIns, &pThis->UartCore, pSSM, uVersion, uPass, NULL, NULL);
             AssertRCReturn(rc, rc);
         }
     }
@@ -202,7 +239,7 @@ static DECLCALLBACK(int) serialR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, u
         }
         else
         {
-            rc = uartR3LoadExec(&pThis->UartCore, pSSM, uVersion, uPass, &bIrq, &PortBase);
+            rc = uartR3LoadExec(pDevIns, &pThis->UartCore, pSSM, uVersion, uPass, &bIrq, &PortBase);
             AssertRCReturn(rc, rc);
         }
     }
@@ -235,30 +272,22 @@ static DECLCALLBACK(int) serialR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, u
  */
 static DECLCALLBACK(int) serialR3LoadDone(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 {
-    PDEVSERIAL  pThis = PDMDEVINS_2_DATA(pDevIns, PDEVSERIAL);
-    return uartR3LoadDone(&pThis->UartCore, pSSM);
+    PDEVSERIAL   pThis   = PDMDEVINS_2_DATA(pDevIns, PDEVSERIAL);
+    PDEVSERIALCC pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PDEVSERIALCC);
+    return uartR3LoadDone(pDevIns, &pThis->UartCore, &pThisCC->UartCore, pSSM);
 }
 
 
 /* -=-=-=-=-=-=-=-=- PDMDEVREG -=-=-=-=-=-=-=-=- */
 
 /**
- * @interface_method_impl{PDMDEVREG,pfnRelocate}
- */
-static DECLCALLBACK(void) serialR3Relocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta)
-{
-    PDEVSERIAL pThis = PDMDEVINS_2_DATA(pDevIns, PDEVSERIAL);
-    uartR3Relocate(&pThis->UartCore, offDelta);
-}
-
-
-/**
  * @interface_method_impl{PDMDEVREG,pfnReset}
  */
 static DECLCALLBACK(void) serialR3Reset(PPDMDEVINS pDevIns)
 {
-    PDEVSERIAL pThis = PDMDEVINS_2_DATA(pDevIns, PDEVSERIAL);
-    uartR3Reset(&pThis->UartCore);
+    PDEVSERIAL   pThis   = PDMDEVINS_2_DATA(pDevIns, PDEVSERIAL);
+    PDEVSERIALCC pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PDEVSERIALCC);
+    uartR3Reset(pDevIns, &pThis->UartCore, &pThisCC->UartCore);
 }
 
 
@@ -267,9 +296,12 @@ static DECLCALLBACK(void) serialR3Reset(PPDMDEVINS pDevIns)
  */
 static DECLCALLBACK(int) serialR3Attach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t fFlags)
 {
+    PDEVSERIAL   pThis   = PDMDEVINS_2_DATA(pDevIns, PDEVSERIAL);
+    PDEVSERIALCC pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PDEVSERIALCC);
     RT_NOREF(fFlags);
-    PDEVSERIAL pThis = PDMDEVINS_2_DATA(pDevIns, PDEVSERIAL);
-    return uartR3Attach(&pThis->UartCore, iLUN);
+    AssertReturn(iLUN == 0, VERR_PDM_LUN_NOT_FOUND);
+
+    return uartR3Attach(pDevIns, &pThis->UartCore, &pThisCC->UartCore, iLUN);
 }
 
 
@@ -278,9 +310,12 @@ static DECLCALLBACK(int) serialR3Attach(PPDMDEVINS pDevIns, unsigned iLUN, uint3
  */
 static DECLCALLBACK(void) serialR3Detach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t fFlags)
 {
-    RT_NOREF(iLUN, fFlags);
-    PDEVSERIAL pThis = PDMDEVINS_2_DATA(pDevIns, PDEVSERIAL);
-    uartR3Detach(&pThis->UartCore);
+    PDEVSERIAL   pThis   = PDMDEVINS_2_DATA(pDevIns, PDEVSERIAL);
+    PDEVSERIALCC pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PDEVSERIALCC);
+    RT_NOREF(fFlags);
+    AssertReturnVoid(iLUN == 0);
+
+    uartR3Detach(pDevIns, &pThis->UartCore, &pThisCC->UartCore);
 }
 
 
@@ -292,7 +327,7 @@ static DECLCALLBACK(int) serialR3Destruct(PPDMDEVINS pDevIns)
     PDMDEV_CHECK_VERSIONS_RETURN_QUIET(pDevIns);
     PDEVSERIAL pThis = PDMDEVINS_2_DATA(pDevIns, PDEVSERIAL);
 
-    uartR3Destruct(&pThis->UartCore);
+    uartR3Destruct(pDevIns, &pThis->UartCore);
     return VINF_SUCCESS;
 }
 
@@ -303,19 +338,12 @@ static DECLCALLBACK(int) serialR3Destruct(PPDMDEVINS pDevIns)
 static DECLCALLBACK(int) serialR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE pCfg)
 {
     PDMDEV_CHECK_VERSIONS_RETURN(pDevIns);
-    PDEVSERIAL      pThis = PDMDEVINS_2_DATA(pDevIns, PDEVSERIAL);
-    PCPDMDEVHLPR3   pHlp  = pDevIns->pHlpR3;
+    PDEVSERIAL      pThis   = PDMDEVINS_2_DATA(pDevIns, PDEVSERIAL);
+    PDEVSERIALCC    pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PDEVSERIALCC);
+    PCPDMDEVHLPR3   pHlp    = pDevIns->pHlpR3;
     int             rc;
 
     Assert(iInstance < 4);
-
-    /*
-     * Initialize the instance data.
-     * (Do this early or the destructor might choke on something!)
-     */
-    pThis->pDevInsR3 = pDevIns;
-    pThis->pDevInsR0 = PDMDEVINS_2_R0PTR(pDevIns);
-    pThis->pDevInsRC = PDMDEVINS_2_RCPTR(pDevIns);
 
     /*
      * Validate and read the configuration.
@@ -385,28 +413,6 @@ static DECLCALLBACK(int) serialR3Construct(PPDMDEVINS pDevIns, int iInstance, PC
                                      "SERIAL", NULL /*paExtDescs*/, &pThis->hIoPorts);
     AssertRCReturn(rc, rc);
 
-    PVM pVM = PDMDevHlpGetVM(pDevIns);
-    RTR0PTR pfnSerialIrqReqR0 = NIL_RTR0PTR;
-    RTRCPTR pfnSerialIrqReqRC = NIL_RTRCPTR;
-
-#ifdef VBOX_WITH_RAW_MODE_KEEP
-    if (pDevIns->fRCEnabled)
-    {
-        if (VM_IS_RAW_MODE_ENABLED(pVM)) /** @todo this dynamic symbol resolving will be reworked later! */
-            rc = PDMR3LdrGetSymbolRC(pVM, pDevIns->pReg->pszRCMod, "serialIrqReq", &pfnSerialIrqReqRC);
-        if (RT_FAILURE(rc))
-            return rc;
-    }
-#endif
-
-    if (pDevIns->fR0Enabled)
-    {
-        /** @todo this dynamic symbol resolving will be reworked later! */
-        rc = PDMR3LdrGetSymbolR0(pVM, pDevIns->pReg->pszR0Mod, "serialIrqReq", &pfnSerialIrqReqR0);
-        if (RT_FAILURE(rc))
-            return rc;
-    }
-
     /*
      * Saved state.
      */
@@ -416,9 +422,11 @@ static DECLCALLBACK(int) serialR3Construct(PPDMDEVINS pDevIns, int iInstance, PC
                                 NULL, serialR3LoadExec, serialR3LoadDone);
     AssertRCReturn(rc, rc);
 
-    /* Init the UART core structure. */
-    rc = uartR3Init(&pThis->UartCore, pDevIns, enmUartType, 0,
-                    fYieldOnLSRRead ? UART_CORE_YIELD_ON_LSR_READ : 0, serialIrqReq, pfnSerialIrqReqR0, pfnSerialIrqReqRC);
+    /*
+     * Init the UART core structure.
+     */
+    rc = uartR3Init(pDevIns, &pThis->UartCore, &pThisCC->UartCore, enmUartType, 0,
+                    fYieldOnLSRRead ? UART_CORE_YIELD_ON_LSR_READ : 0, serialIrqReq);
     AssertRCReturn(rc, rc);
 
     serialR3Reset(pDevIns);
@@ -433,12 +441,16 @@ static DECLCALLBACK(int) serialR3Construct(PPDMDEVINS pDevIns, int iInstance, PC
 static DECLCALLBACK(int) serialRZConstruct(PPDMDEVINS pDevIns)
 {
     PDMDEV_CHECK_VERSIONS_RETURN(pDevIns);
-    PDEVSERIAL pThis = PDMDEVINS_2_DATA(pDevIns, PDEVSERIAL);
+    PDEVSERIAL   pThis   = PDMDEVINS_2_DATA(pDevIns, PDEVSERIAL);
+    PDEVSERIALCC pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PDEVSERIALCC);
 
     int rc = PDMDevHlpSetDeviceCritSect(pDevIns, PDMDevHlpCritSectGetNop(pDevIns));
     AssertRCReturn(rc, rc);
 
     rc = PDMDevHlpIoPortSetUpContext(pDevIns, pThis->hIoPorts, serialIoPortWrite, serialIoPortRead, NULL /*pvUser*/);
+    AssertRCReturn(rc, rc);
+
+    rc = uartRZInit(&pThisCC->UartCore, serialIrqReq);
     AssertRCReturn(rc, rc);
 
     return VINF_SUCCESS;
@@ -459,8 +471,8 @@ const PDMDEVREG g_DeviceSerialPort =
     /* .cMaxInstances = */          UINT32_MAX,
     /* .uSharedVersion = */         42,
     /* .cbInstanceShared = */       sizeof(DEVSERIAL),
-    /* .cbInstanceCC = */           0,
-    /* .cbInstanceRC = */           0,
+    /* .cbInstanceCC = */           sizeof(DEVSERIALCC),
+    /* .cbInstanceRC = */           sizeof(DEVSERIALRC),
     /* .cMaxPciDevices = */         0,
     /* .cMaxMsixVectors = */        0,
     /* .pszDescription = */         "Serial Communication Port",
@@ -469,7 +481,7 @@ const PDMDEVREG g_DeviceSerialPort =
     /* .pszR0Mod = */               "VBoxDDR0.r0",
     /* .pfnConstruct = */           serialR3Construct,
     /* .pfnDestruct = */            serialR3Destruct,
-    /* .pfnRelocate = */            serialR3Relocate,
+    /* .pfnRelocate = */            NULL,
     /* .pfnMemSetup = */            NULL,
     /* .pfnPowerOn = */             NULL,
     /* .pfnReset = */               serialR3Reset,

@@ -274,9 +274,11 @@ static const char *s_aszStopBits[] =
  * Updates the IRQ state based on the current device state.
  *
  * @returns nothing.
- * @param   pThis               The UART core instance.
+ * @param   pDevIns             The device instance.
+ * @param   pThis               The shared serial port instance data.
+ * @param   pThisCC             The serial port instance data for the current context.
  */
-static void uartIrqUpdate(PUARTCORE pThis)
+static void uartIrqUpdate(PPDMDEVINS pDevIns, PUARTCORE pThis, PUARTCORECC pThisCC)
 {
     LogFlowFunc(("pThis=%#p\n", pThis));
 
@@ -320,9 +322,9 @@ static void uartIrqUpdate(PUARTCORE pThis)
                  pThis->uRegIir == UART_REG_IIR_IP_NO_INT ? 0 : 1,
                  uRegIirNew == UART_REG_IIR_IP_NO_INT ? 0 : 1));
         if (uRegIirNew == UART_REG_IIR_IP_NO_INT)
-            pThis->CTX_SUFF(pfnUartIrqReq)(pThis->CTX_SUFF(pDevIns), pThis, pThis->iLUN, 0);
+            pThisCC->pfnUartIrqReq(pDevIns, pThis, pThis->iLUN, 0);
         else
-            pThis->CTX_SUFF(pfnUartIrqReq)(pThis->CTX_SUFF(pDevIns), pThis, pThis->iLUN, 1);
+            pThisCC->pfnUartIrqReq(pDevIns, pThis, pThis->iLUN, 1);
     }
     else
         LogFlow(("    No change in interrupt source\n"));
@@ -398,8 +400,8 @@ DECLINLINE(uint8_t) uartFifoGet(PUARTFIFO pFifo)
     return bRet;
 }
 
-
 #ifdef IN_RING3
+
 /**
  * Clears the given FIFO.
  *
@@ -494,10 +496,12 @@ DECLINLINE(size_t) uartFifoCopyFrom(PUARTFIFO pFifo, void *pvSrc, size_t cbCopy)
  * bits set.
  *
  * @returns nothing.
- * @param   pThis               The serial port instance.
+ * @param   pDevIns             The device instance.
+ * @param   pThis               The shared serial port instance data.
+ * @param   pThisCC             The serial port instance data for the current context.
  * @param   uMsrSts             MSR value with the appropriate status bits set.
  */
-static void uartR3MsrUpdate(PUARTCORE pThis, uint8_t uMsrSts)
+static void uartR3MsrUpdate(PPDMDEVINS pDevIns, PUARTCORE pThis, PUARTCORECC pThisCC, uint8_t uMsrSts)
 {
     /* Compare current and new states and set remaining bits accordingly. */
     if ((uMsrSts & UART_REG_MSR_CTS) != (pThis->uRegMsr & UART_REG_MSR_CTS))
@@ -511,7 +515,7 @@ static void uartR3MsrUpdate(PUARTCORE pThis, uint8_t uMsrSts)
 
     pThis->uRegMsr = uMsrSts;
 
-    uartIrqUpdate(pThis);
+    uartIrqUpdate(pDevIns, pThis, pThisCC);
 }
 
 
@@ -519,12 +523,14 @@ static void uartR3MsrUpdate(PUARTCORE pThis, uint8_t uMsrSts)
  * Updates the serial port parameters of the attached driver with the current configuration.
  *
  * @returns nothing.
- * @param   pThis               The serial port instance.
+ * @param   pDevIns             The device instance.
+ * @param   pThis               The shared serial port instance data.
+ * @param   pThisCC             The serial port instance data for the current context.
  */
-static void uartR3ParamsUpdate(PUARTCORE pThis)
+static void uartR3ParamsUpdate(PPDMDEVINS pDevIns, PUARTCORE pThis, PUARTCORECC pThisCC)
 {
     if (   pThis->uRegDivisor != 0
-        && pThis->pDrvSerial)
+        && pThisCC->pDrvSerial)
     {
         uint32_t uBps = 115200 / pThis->uRegDivisor; /* This is for PC compatible serial port with a 1.8432 MHz crystal. */
         unsigned cDataBits = UART_REG_LCR_WLS_GET(pThis->uRegLcr) + 5;
@@ -566,19 +572,19 @@ static void uartR3ParamsUpdate(PUARTCORE pThis)
             cFrameBits++;
         }
 
-        uint64_t uTimerFreq = PDMDevHlpTimerGetFreq(pThis->CTX_SUFF(pDevIns), pThis->hTimerRcvFifoTimeout);
+        uint64_t uTimerFreq = PDMDevHlpTimerGetFreq(pDevIns, pThis->hTimerRcvFifoTimeout);
         pThis->cSymbolXferTicks = (uTimerFreq / uBps) * cFrameBits;
 
         LogFlowFunc(("Changing parameters to: %u,%s,%u,%s\n",
                      uBps, s_aszParity[enmParity], cDataBits, s_aszStopBits[enmStopBits]));
 
-        int rc = pThis->pDrvSerial->pfnChgParams(pThis->pDrvSerial, uBps, enmParity, cDataBits, enmStopBits);
+        int rc = pThisCC->pDrvSerial->pfnChgParams(pThisCC->pDrvSerial, uBps, enmParity, cDataBits, enmStopBits);
         if (RT_FAILURE(rc))
             LogRelMax(10, ("Serial#%d: Failed to change parameters to %u,%s,%u,%s -> %Rrc\n",
-                           pThis->pDevInsR3->iInstance, uBps, s_aszParity[enmParity], cDataBits, s_aszStopBits[enmStopBits], rc));
+                           pDevIns->iInstance, uBps, s_aszParity[enmParity], cDataBits, s_aszStopBits[enmStopBits], rc));
 
         /* Changed parameters will flush all receive queues, so there won't be any data to read even if indicated. */
-        pThis->pDrvSerial->pfnQueuesFlush(pThis->pDrvSerial, true /*fQueueRecv*/, false /*fQueueXmit*/);
+        pThisCC->pDrvSerial->pfnQueuesFlush(pThisCC->pDrvSerial, true /*fQueueRecv*/, false /*fQueueXmit*/);
         ASMAtomicWriteU32(&pThis->cbAvailRdr, 0);
         UART_REG_CLR(pThis->uRegLsr, UART_REG_LSR_DR);
     }
@@ -589,10 +595,12 @@ static void uartR3ParamsUpdate(PUARTCORE pThis)
  * Updates the internal device state with the given PDM status line states.
  *
  * @returns nothing.
- * @param   pThis               The serial port instance.
+ * @param   pDevIns             The device instance.
+ * @param   pThis               The shared serial port instance data.
+ * @param   pThisCC             The serial port instance data for the current context.
  * @param   fStsLines           The PDM status line states.
  */
-static void uartR3StsLinesUpdate(PUARTCORE pThis, uint32_t fStsLines)
+static void uartR3StsLinesUpdate(PPDMDEVINS pDevIns, PUARTCORE pThis, PUARTCORECC pThisCC, uint32_t fStsLines)
 {
     uint8_t uRegMsrNew = 0; /* The new MSR value. */
 
@@ -605,7 +613,7 @@ static void uartR3StsLinesUpdate(PUARTCORE pThis, uint32_t fStsLines)
     if (fStsLines & PDMISERIALPORT_STS_LINE_CTS)
         uRegMsrNew |= UART_REG_MSR_CTS;
 
-    uartR3MsrUpdate(pThis, uRegMsrNew);
+    uartR3MsrUpdate(pDevIns, pThis, pThisCC, uRegMsrNew);
 }
 
 
@@ -613,9 +621,11 @@ static void uartR3StsLinesUpdate(PUARTCORE pThis, uint32_t fStsLines)
  * Fills up the receive FIFO with as much data as possible.
  *
  * @returns nothing.
- * @param   pThis               The serial port instance.
+ * @param   pDevIns             The device instance.
+ * @param   pThis               The shared serial port instance data.
+ * @param   pThisCC             The serial port instance data for the current context.
  */
-static void uartR3RecvFifoFill(PUARTCORE pThis)
+static void uartR3RecvFifoFill(PPDMDEVINS pDevIns, PUARTCORE pThis, PUARTCORECC pThisCC)
 {
     LogFlowFunc(("pThis=%#p\n", pThis));
 
@@ -634,7 +644,7 @@ static void uartR3RecvFifoFill(PUARTCORE pThis)
             cbThisRead = RT_MIN(cbThisRead, (uint8_t)(pFifo->offRead - pFifo->offWrite));
 
         size_t cbRead = 0;
-        int rc = pThis->pDrvSerial->pfnReadRdr(pThis->pDrvSerial, &pFifo->abBuf[pFifo->offWrite], cbThisRead, &cbRead);
+        int rc = pThisCC->pDrvSerial->pfnReadRdr(pThisCC->pDrvSerial, &pFifo->abBuf[pFifo->offWrite], cbThisRead, &cbRead);
         AssertRC(rc); Assert(cbRead <= UINT8_MAX); RT_NOREF(rc);
 
         pFifo->offWrite = (pFifo->offWrite + (uint8_t)cbRead) % pFifo->cbMax;
@@ -651,9 +661,9 @@ static void uartR3RecvFifoFill(PUARTCORE pThis)
         if (pFifo->cbUsed < pFifo->cbItl)
         {
             pThis->fIrqCtiPending = false;
-            PDMDevHlpTimerSetRelative(pThis->CTX_SUFF(pDevIns), pThis->hTimerRcvFifoTimeout, pThis->cSymbolXferTicks * 4, NULL);
+            PDMDevHlpTimerSetRelative(pDevIns, pThis->hTimerRcvFifoTimeout, pThis->cSymbolXferTicks * 4, NULL);
         }
-        uartIrqUpdate(pThis);
+        uartIrqUpdate(pDevIns, pThis, pThisCC);
     }
 
     Assert(cbFilled <= (size_t)pThis->cbAvailRdr);
@@ -665,17 +675,19 @@ static void uartR3RecvFifoFill(PUARTCORE pThis)
  * Fetches a single byte and writes it to RBR.
  *
  * @returns nothing.
- * @param   pThis               The serial port instance.
+ * @param   pDevIns             The device instance.
+ * @param   pThis               The shared serial port instance data.
+ * @param   pThisCC             The serial port instance data for the current context.
  */
-static void uartR3ByteFetch(PUARTCORE pThis)
+static void uartR3ByteFetch(PPDMDEVINS pDevIns, PUARTCORE pThis, PUARTCORECC pThisCC)
 {
     if (ASMAtomicReadU32(&pThis->cbAvailRdr))
     {
         size_t cbRead = 0;
-        int rc2 = pThis->pDrvSerial->pfnReadRdr(pThis->pDrvSerial, &pThis->uRegRbr, 1, &cbRead);
+        int rc2 = pThisCC->pDrvSerial->pfnReadRdr(pThisCC->pDrvSerial, &pThis->uRegRbr, 1, &cbRead);
         AssertMsg(RT_SUCCESS(rc2) && cbRead == 1, ("This shouldn't fail and always return one byte!\n")); RT_NOREF(rc2);
         UART_REG_SET(pThis->uRegLsr, UART_REG_LSR_DR);
-        uartIrqUpdate(pThis);
+        uartIrqUpdate(pDevIns, pThis, pThisCC);
     }
 }
 
@@ -684,16 +696,18 @@ static void uartR3ByteFetch(PUARTCORE pThis)
  * Fetches a ready data based on the FIFO setting.
  *
  * @returns nothing.
- * @param   pThis               The serial port instance.
+ * @param   pDevIns             The device instance.
+ * @param   pThis               The shared serial port instance data.
+ * @param   pThisCC             The serial port instance data for the current context.
  */
-static void uartR3DataFetch(PUARTCORE pThis)
+static void uartR3DataFetch(PPDMDEVINS pDevIns, PUARTCORE pThis, PUARTCORECC pThisCC)
 {
-    AssertPtrReturnVoid(pThis->pDrvSerial);
+    AssertPtrReturnVoid(pThisCC->pDrvSerial);
 
     if (pThis->uRegFcr & UART_REG_FCR_FIFO_EN)
-        uartR3RecvFifoFill(pThis);
+        uartR3RecvFifoFill(pDevIns, pThis, pThisCC);
     else
-        uartR3ByteFetch(pThis);
+        uartR3ByteFetch(pDevIns, pThis, pThisCC);
 }
 
 
@@ -702,35 +716,37 @@ static void uartR3DataFetch(PUARTCORE pThis)
  * (after a detach/attach/reset event).
  *
  * @returns nothing.
- * @param   pThis               The serial port instance.
+ * @param   pDevIns             The device instance.
+ * @param   pThis               The shared serial port instance data.
+ * @param   pThisCC             The serial port instance data for the current context.
  */
-static void uartR3XferReset(PUARTCORE pThis)
+static void uartR3XferReset(PPDMDEVINS pDevIns, PUARTCORE pThis, PUARTCORECC pThisCC)
 {
-    PDMDevHlpTimerStop(pThis->CTX_SUFF(pDevIns), pThis->hTimerRcvFifoTimeout);
-    PDMDevHlpTimerStop(pThis->CTX_SUFF(pDevIns), pThis->hTimerTxUnconnected);
+    PDMDevHlpTimerStop(pDevIns, pThis->hTimerRcvFifoTimeout);
+    PDMDevHlpTimerStop(pDevIns, pThis->hTimerTxUnconnected);
     pThis->uRegLsr = UART_REG_LSR_THRE | UART_REG_LSR_TEMT;
     pThis->fThreEmptyPending = false;
 
     uartFifoClear(&pThis->FifoXmit);
     uartFifoClear(&pThis->FifoRecv);
-    uartR3ParamsUpdate(pThis);
-    uartIrqUpdate(pThis);
+    uartR3ParamsUpdate(pDevIns, pThis, pThisCC);
+    uartIrqUpdate(pDevIns, pThis, pThisCC);
 
-    if (pThis->pDrvSerial)
+    if (pThisCC->pDrvSerial)
     {
         /* Set the modem lines to reflect the current state. */
-        int rc = pThis->pDrvSerial->pfnChgModemLines(pThis->pDrvSerial, false /*fRts*/, false /*fDtr*/);
+        int rc = pThisCC->pDrvSerial->pfnChgModemLines(pThisCC->pDrvSerial, false /*fRts*/, false /*fDtr*/);
         if (RT_FAILURE(rc))
             LogRel(("Serial#%d: Failed to set modem lines with %Rrc during reset\n",
-                    pThis->pDevInsR3->iInstance, rc));
+                    pDevIns->iInstance, rc));
 
         uint32_t fStsLines = 0;
-        rc = pThis->pDrvSerial->pfnQueryStsLines(pThis->pDrvSerial, &fStsLines);
+        rc = pThisCC->pDrvSerial->pfnQueryStsLines(pThisCC->pDrvSerial, &fStsLines);
         if (RT_SUCCESS(rc))
-            uartR3StsLinesUpdate(pThis, fStsLines);
+            uartR3StsLinesUpdate(pDevIns, pThis, pThisCC, fStsLines);
         else
             LogRel(("Serial#%d: Failed to query status line status with %Rrc during reset\n",
-                    pThis->pDevInsR3->iInstance, rc));
+                    pDevIns->iInstance, rc));
     }
 
 }
@@ -740,12 +756,15 @@ static void uartR3XferReset(PUARTCORE pThis)
  * Tries to copy the specified amount of data from the active TX queue (register or FIFO).
  *
  * @returns nothing.
- * @param   pThis               The serial port instance.
+ * @param   pDevIns             The device instance.
+ * @param   pThis               The shared serial port instance data.
+ * @param   pThisCC             The serial port instance data for the current context.
  * @param   pvBuf               Where to store the data.
  * @param   cbRead              How much to read from the TX queue.
  * @param   pcbRead             Where to store the amount of data read.
  */
-static void uartR3TxQueueCopyFrom(PUARTCORE pThis, void *pvBuf, size_t cbRead, size_t *pcbRead)
+static void uartR3TxQueueCopyFrom(PPDMDEVINS pDevIns, PUARTCORE pThis, PUARTCORECC pThisCC,
+                                  void *pvBuf, size_t cbRead, size_t *pcbRead)
 {
     if (pThis->uRegFcr & UART_REG_FCR_FIFO_EN)
     {
@@ -757,7 +776,7 @@ static void uartR3TxQueueCopyFrom(PUARTCORE pThis, void *pvBuf, size_t cbRead, s
         }
         if (*pcbRead)
             UART_REG_CLR(pThis->uRegLsr, UART_REG_LSR_TEMT);
-        uartIrqUpdate(pThis);
+        uartIrqUpdate(pDevIns, pThis, pThisCC);
     }
     else if (!(pThis->uRegLsr & UART_REG_LSR_THRE))
     {
@@ -766,7 +785,7 @@ static void uartR3TxQueueCopyFrom(PUARTCORE pThis, void *pvBuf, size_t cbRead, s
         UART_REG_SET(pThis->uRegLsr, UART_REG_LSR_THRE);
         UART_REG_CLR(pThis->uRegLsr, UART_REG_LSR_TEMT);
         pThis->fThreEmptyPending = true;
-        uartIrqUpdate(pThis);
+        uartIrqUpdate(pDevIns, pThis, pThisCC);
     }
     else
     {
@@ -777,23 +796,27 @@ static void uartR3TxQueueCopyFrom(PUARTCORE pThis, void *pvBuf, size_t cbRead, s
         *pcbRead = 0;
     }
 }
-#endif
+
+#endif /* IN_RING3 */
 
 
 /**
  * Transmits the given byte.
  *
- * @returns VBox status code.
- * @param   pThis               The serial port instance.
+ * @returns Strict VBox status code.
+ * @param   pDevIns             The device instance.
+ * @param   pThis               The shared serial port instance data.
+ * @param   pThisCC             The serial port instance data for the current context.
  * @param   bVal                Byte to transmit.
  */
-static int uartXmit(PUARTCORE pThis, uint8_t bVal)
+static VBOXSTRICTRC uartXmit(PPDMDEVINS pDevIns, PUARTCORE pThis, PUARTCORECC pThisCC, uint8_t bVal)
 {
     int rc = VINF_SUCCESS;
 
     if (pThis->uRegFcr & UART_REG_FCR_FIFO_EN)
     {
 #ifndef IN_RING3
+        RT_NOREF(pDevIns, pThisCC);
         if (!uartFifoUsedGet(&pThis->FifoXmit))
             rc = VINF_IOM_R3_IOPORT_WRITE;
         else
@@ -805,18 +828,18 @@ static int uartXmit(PUARTCORE pThis, uint8_t bVal)
         uartFifoPut(&pThis->FifoXmit, true /*fOvrWr*/, bVal);
         UART_REG_CLR(pThis->uRegLsr, UART_REG_LSR_THRE | UART_REG_LSR_TEMT);
         pThis->fThreEmptyPending = false;
-        uartIrqUpdate(pThis);
+        uartIrqUpdate(pDevIns, pThis, pThisCC);
         if (uartFifoUsedGet(&pThis->FifoXmit) == 1)
         {
-            if (   pThis->pDrvSerial
+            if (   pThisCC->pDrvSerial
                 && !(pThis->uRegMcr & UART_REG_MCR_LOOP))
             {
-                int rc2 = pThis->pDrvSerial->pfnDataAvailWrNotify(pThis->pDrvSerial);
+                int rc2 = pThisCC->pDrvSerial->pfnDataAvailWrNotify(pThisCC->pDrvSerial);
                 if (RT_FAILURE(rc2))
-                    LogRelMax(10, ("Serial#%d: Failed to send data with %Rrc\n", pThis->pDevInsR3->iInstance, rc2));
+                    LogRelMax(10, ("Serial#%d: Failed to send data with %Rrc\n", pDevIns->iInstance, rc2));
             }
             else
-                PDMDevHlpTimerSetRelative(pThis->CTX_SUFF(pDevIns), pThis->hTimerTxUnconnected, pThis->cSymbolXferTicks, NULL);
+                PDMDevHlpTimerSetRelative(pDevIns, pThis->hTimerTxUnconnected, pThis->cSymbolXferTicks, NULL);
         }
 #endif
     }
@@ -831,16 +854,16 @@ static int uartXmit(PUARTCORE pThis, uint8_t bVal)
             pThis->uRegThr = bVal;
             UART_REG_CLR(pThis->uRegLsr, UART_REG_LSR_THRE | UART_REG_LSR_TEMT);
             pThis->fThreEmptyPending = false;
-            uartIrqUpdate(pThis);
-            if (   pThis->pDrvSerial
+            uartIrqUpdate(pDevIns, pThis, pThisCC);
+            if (   pThisCC->pDrvSerial
                 && !(pThis->uRegMcr & UART_REG_MCR_LOOP))
             {
-                int rc2 = pThis->pDrvSerial->pfnDataAvailWrNotify(pThis->pDrvSerial);
+                int rc2 = pThisCC->pDrvSerial->pfnDataAvailWrNotify(pThisCC->pDrvSerial);
                 if (RT_FAILURE(rc2))
-                    LogRelMax(10, ("Serial#%d: Failed to send data with %Rrc\n", pThis->pDevInsR3->iInstance, rc2));
+                    LogRelMax(10, ("Serial#%d: Failed to send data with %Rrc\n", pDevIns->iInstance, rc2));
             }
             else
-                PDMDevHlpTimerSetRelative(pThis->CTX_SUFF(pDevIns), pThis->hTimerTxUnconnected, pThis->cSymbolXferTicks, NULL);
+                PDMDevHlpTimerSetRelative(pDevIns, pThis->hTimerTxUnconnected, pThis->cSymbolXferTicks, NULL);
 #endif
         }
         else
@@ -854,13 +877,15 @@ static int uartXmit(PUARTCORE pThis, uint8_t bVal)
 /**
  * Write handler for the THR/DLL register (depending on the DLAB bit in LCR).
  *
- * @returns VBox status code.
- * @param   pThis               The serial port instance.
+ * @returns Strict VBox status code.
+ * @param   pDevIns             The device instance.
+ * @param   pThis               The shared serial port instance data.
+ * @param   pThisCC             The serial port instance data for the current context.
  * @param   uVal                The value to write.
  */
-DECLINLINE(int) uartRegThrDllWrite(PUARTCORE pThis, uint8_t uVal)
+DECLINLINE(VBOXSTRICTRC) uartRegThrDllWrite(PPDMDEVINS pDevIns, PUARTCORE pThis, PUARTCORECC pThisCC, uint8_t uVal)
 {
-    int rc = VINF_SUCCESS;
+    VBOXSTRICTRC rc = VINF_SUCCESS;
 
     /* A set DLAB causes a write to the lower 8bits of the divisor latch. */
     if (pThis->uRegLcr & UART_REG_LCR_DLAB)
@@ -871,12 +896,12 @@ DECLINLINE(int) uartRegThrDllWrite(PUARTCORE pThis, uint8_t uVal)
             rc = VINF_IOM_R3_IOPORT_WRITE;
 #else
             pThis->uRegDivisor = (pThis->uRegDivisor & 0xff00) | uVal;
-            uartR3ParamsUpdate(pThis);
+            uartR3ParamsUpdate(pDevIns, pThis, pThisCC);
 #endif
         }
     }
     else
-        rc = uartXmit(pThis, uVal);
+        rc = uartXmit(pDevIns, pThis, pThisCC, uVal);
 
     return rc;
 }
@@ -885,24 +910,24 @@ DECLINLINE(int) uartRegThrDllWrite(PUARTCORE pThis, uint8_t uVal)
 /**
  * Write handler for the IER/DLM register (depending on the DLAB bit in LCR).
  *
- * @returns VBox status code.
- * @param   pThis               The serial port instance.
+ * @returns Strict VBox status code.
+ * @param   pDevIns             The device instance.
+ * @param   pThis               The shared serial port instance data.
+ * @param   pThisCC             The serial port instance data for the current context.
  * @param   uVal                The value to write.
  */
-DECLINLINE(int) uartRegIerDlmWrite(PUARTCORE pThis, uint8_t uVal)
+DECLINLINE(VBOXSTRICTRC) uartRegIerDlmWrite(PPDMDEVINS pDevIns, PUARTCORE pThis, PUARTCORECC pThisCC, uint8_t uVal)
 {
-    int rc = VINF_SUCCESS;
-
     /* A set DLAB causes a write to the higher 8bits of the divisor latch. */
     if (pThis->uRegLcr & UART_REG_LCR_DLAB)
     {
         if (uVal != (pThis->uRegDivisor & 0xff00) >> 8)
         {
 #ifndef IN_RING3
-            rc = VINF_IOM_R3_IOPORT_WRITE;
+            return VINF_IOM_R3_IOPORT_WRITE;
 #else
             pThis->uRegDivisor = (pThis->uRegDivisor & 0xff) | (uVal << 8);
-            uartR3ParamsUpdate(pThis);
+            uartR3ParamsUpdate(pDevIns, pThis, pThisCC);
 #endif
         }
     }
@@ -916,27 +941,27 @@ DECLINLINE(int) uartRegIerDlmWrite(PUARTCORE pThis, uint8_t uVal)
         if (pThis->uRegLsr & UART_REG_LSR_THRE)
             pThis->fThreEmptyPending = true;
 
-        uartIrqUpdate(pThis);
+        uartIrqUpdate(pDevIns, pThis, pThisCC);
     }
-
-    return rc;
+    return VINF_SUCCESS;
 }
 
 
 /**
  * Write handler for the FCR register.
  *
- * @returns VBox status code.
- * @param   pThis               The serial port instance.
+ * @returns Strict VBox status code.
+ * @param   pDevIns             The device instance.
+ * @param   pThis               The shared serial port instance data.
+ * @param   pThisCC             The serial port instance data for the current context.
  * @param   uVal                The value to write.
  */
-DECLINLINE(int) uartRegFcrWrite(PUARTCORE pThis, uint8_t uVal)
+DECLINLINE(VBOXSTRICTRC) uartRegFcrWrite(PPDMDEVINS pDevIns, PUARTCORE pThis, PUARTCORECC pThisCC, uint8_t uVal)
 {
 #ifndef IN_RING3
-    RT_NOREF(pThis, uVal);
+    RT_NOREF(pDevIns, pThis, pThisCC, uVal);
     return VINF_IOM_R3_IOPORT_WRITE;
-#else
-    int rc = VINF_SUCCESS;
+#else /* IN_RING3 */
     if (   pThis->enmType >= UARTTYPE_16550A
         && uVal != pThis->uRegFcr)
     {
@@ -958,11 +983,11 @@ DECLINLINE(int) uartRegFcrWrite(PUARTCORE pThis, uint8_t uVal)
             UART_REG_CLR(pThis->uRegLsr, UART_REG_LSR_DR);
         }
 
-        if (rc == VINF_SUCCESS)
+        /** @todo r=bird: Why was this here: if (rc == VINF_SUCCESS) */
         {
             if (uVal & UART_REG_FCR_RCV_FIFO_RST)
             {
-                PDMDevHlpTimerStop(pThis->CTX_SUFF(pDevIns), pThis->hTimerRcvFifoTimeout);
+                PDMDevHlpTimerStop(pDevIns, pThis->hTimerRcvFifoTimeout);
                 pThis->fIrqCtiPending = false;
                 uartFifoClear(&pThis->FifoRecv);
             }
@@ -1001,65 +1026,66 @@ DECLINLINE(int) uartRegFcrWrite(PUARTCORE pThis, uint8_t uVal)
 
             /* The FIFO reset bits are self clearing. */
             pThis->uRegFcr = uVal & UART_REG_FCR_MASK_STICKY;
-            uartIrqUpdate(pThis);
+            uartIrqUpdate(pDevIns, pThis, pThisCC);
         }
 
         /* Fill in the next data. */
         if (ASMAtomicReadU32(&pThis->cbAvailRdr))
-            uartR3DataFetch(pThis);
+            uartR3DataFetch(pDevIns, pThis, pThisCC);
     }
 
-    return rc;
-#endif
+    return VINF_SUCCESS;
+#endif /* IN_RING3 */
 }
 
 
 /**
  * Write handler for the LCR register.
  *
- * @returns VBox status code.
- * @param   pThis               The serial port instance.
+ * @returns Strict VBox status code.
+ * @param   pDevIns             The device instance.
+ * @param   pThis               The shared serial port instance data.
+ * @param   pThisCC             The serial port instance data for the current context.
  * @param   uVal                The value to write.
  */
-DECLINLINE(int) uartRegLcrWrite(PUARTCORE pThis, uint8_t uVal)
+DECLINLINE(VBOXSTRICTRC) uartRegLcrWrite(PPDMDEVINS pDevIns, PUARTCORE pThis, PUARTCORECC pThisCC, uint8_t uVal)
 {
-    int rc = VINF_SUCCESS;
-
     /* Any change except the DLAB bit causes a switch to R3. */
     if ((pThis->uRegLcr & ~UART_REG_LCR_DLAB) != (uVal & ~UART_REG_LCR_DLAB))
     {
 #ifndef IN_RING3
-        rc = VINF_IOM_R3_IOPORT_WRITE;
+        RT_NOREF(pThisCC, pDevIns);
+        return VINF_IOM_R3_IOPORT_WRITE;
 #else
         /* Check whether the BREAK bit changed before updating the LCR value. */
         bool fBrkEn = RT_BOOL(uVal & UART_REG_LCR_BRK_SET);
         bool fBrkChg = fBrkEn != RT_BOOL(pThis->uRegLcr & UART_REG_LCR_BRK_SET);
         pThis->uRegLcr = uVal;
-        uartR3ParamsUpdate(pThis);
+        uartR3ParamsUpdate(pDevIns, pThis, pThisCC);
 
         if (   fBrkChg
-            && pThis->pDrvSerial)
-            pThis->pDrvSerial->pfnChgBrk(pThis->pDrvSerial, fBrkEn);
+            && pThisCC->pDrvSerial)
+            pThisCC->pDrvSerial->pfnChgBrk(pThisCC->pDrvSerial, fBrkEn);
 #endif
     }
     else
         pThis->uRegLcr = uVal;
 
-    return rc;
+    return VINF_SUCCESS;
 }
 
 
 /**
  * Write handler for the MCR register.
  *
- * @returns VBox status code.
- * @param   pThis               The serial port instance.
+ * @returns Strict VBox status code.
+ * @param   pDevIns             The device instance.
+ * @param   pThis               The shared serial port instance data.
+ * @param   pThisCC             The serial port instance data for the current context.
  * @param   uVal                The value to write.
  */
-DECLINLINE(int) uartRegMcrWrite(PUARTCORE pThis, uint8_t uVal)
+DECLINLINE(VBOXSTRICTRC) uartRegMcrWrite(PPDMDEVINS pDevIns, PUARTCORE pThis, PUARTCORECC pThisCC, uint8_t uVal)
 {
-    int rc = VINF_SUCCESS;
-
     if (pThis->enmType < UARTTYPE_16750)
         uVal &= UART_REG_MCR_MASK_WR;
     else
@@ -1067,7 +1093,8 @@ DECLINLINE(int) uartRegMcrWrite(PUARTCORE pThis, uint8_t uVal)
     if (pThis->uRegMcr != uVal)
     {
 #ifndef IN_RING3
-        rc = VINF_IOM_R3_IOPORT_WRITE;
+        RT_NOREF(pThisCC, pDevIns);
+        return VINF_IOM_R3_IOPORT_WRITE;
 #else
         /*
          * When loopback mode is activated the RTS, DTR, OUT1 and OUT2 lines are
@@ -1075,8 +1102,8 @@ DECLINLINE(int) uartRegMcrWrite(PUARTCORE pThis, uint8_t uVal)
          */
         if (   (uVal & UART_REG_MCR_LOOP)
             && !(pThis->uRegMcr & UART_REG_MCR_LOOP)
-            && pThis->pDrvSerial)
-            pThis->pDrvSerial->pfnChgModemLines(pThis->pDrvSerial, false /*fRts*/, false /*fDtr*/);
+            && pThisCC->pDrvSerial)
+            pThisCC->pDrvSerial->pfnChgModemLines(pThisCC->pDrvSerial, false /*fRts*/, false /*fDtr*/);
 
         pThis->uRegMcr = uVal;
         if (uVal & UART_REG_MCR_LOOP)
@@ -1091,16 +1118,16 @@ DECLINLINE(int) uartRegMcrWrite(PUARTCORE pThis, uint8_t uVal)
                 uRegMsrSts |= UART_REG_MSR_RI;
             if (uVal & UART_REG_MCR_OUT2)
                 uRegMsrSts |= UART_REG_MSR_DCD;
-            uartR3MsrUpdate(pThis, uRegMsrSts);
+            uartR3MsrUpdate(pDevIns, pThis, pThisCC, uRegMsrSts);
         }
-        else if (pThis->pDrvSerial)
-            pThis->pDrvSerial->pfnChgModemLines(pThis->pDrvSerial,
-                                                RT_BOOL(uVal & UART_REG_MCR_RTS),
-                                                RT_BOOL(uVal & UART_REG_MCR_DTR));
+        else if (pThisCC->pDrvSerial)
+            pThisCC->pDrvSerial->pfnChgModemLines(pThisCC->pDrvSerial,
+                                                  RT_BOOL(uVal & UART_REG_MCR_RTS),
+                                                  RT_BOOL(uVal & UART_REG_MCR_DTR));
 #endif
     }
 
-    return rc;
+    return VINF_SUCCESS;
 }
 
 
@@ -1108,12 +1135,14 @@ DECLINLINE(int) uartRegMcrWrite(PUARTCORE pThis, uint8_t uVal)
  * Read handler for the RBR/DLL register (depending on the DLAB bit in LCR).
  *
  * @returns VBox status code.
- * @param   pThis               The serial port instance.
+ * @param   pDevIns             The device instance.
+ * @param   pThis               The shared serial port instance data.
+ * @param   pThisCC             The serial port instance data for the current context.
  * @param   puVal               Where to store the read value on success.
  */
-DECLINLINE(int) uartRegRbrDllRead(PUARTCORE pThis, uint32_t *puVal)
+DECLINLINE(VBOXSTRICTRC) uartRegRbrDllRead(PPDMDEVINS pDevIns, PUARTCORE pThis, PUARTCORECC pThisCC, uint32_t *puVal)
 {
-    int rc = VINF_SUCCESS;
+    VBOXSTRICTRC rc = VINF_SUCCESS;
 
     /* A set DLAB causes a read from the lower 8bits of the divisor latch. */
     if (pThis->uRegLcr & UART_REG_LCR_DLAB)
@@ -1132,7 +1161,7 @@ DECLINLINE(int) uartRegRbrDllRead(PUARTCORE pThis, uint32_t *puVal)
 #ifndef IN_RING3
                 rc = VINF_IOM_R3_IOPORT_READ;
 #else
-                uartR3RecvFifoFill(pThis);
+                uartR3RecvFifoFill(pDevIns, pThis, pThisCC);
 #endif
             }
 
@@ -1142,13 +1171,13 @@ DECLINLINE(int) uartRegRbrDllRead(PUARTCORE pThis, uint32_t *puVal)
                 pThis->fIrqCtiPending = false;
                 if (!pThis->FifoRecv.cbUsed)
                 {
-                    PDMDevHlpTimerStop(pThis->CTX_SUFF(pDevIns), pThis->hTimerRcvFifoTimeout);
+                    PDMDevHlpTimerStop(pDevIns, pThis->hTimerRcvFifoTimeout);
                     UART_REG_CLR(pThis->uRegLsr, UART_REG_LSR_DR);
                 }
                 else if (pThis->FifoRecv.cbUsed < pThis->FifoRecv.cbItl)
-                    PDMDevHlpTimerSetRelative(pThis->CTX_SUFF(pDevIns), pThis->hTimerRcvFifoTimeout,
+                    PDMDevHlpTimerSetRelative(pDevIns, pThis->hTimerRcvFifoTimeout,
                                               pThis->cSymbolXferTicks * 4, NULL);
-                uartIrqUpdate(pThis);
+                uartIrqUpdate(pDevIns, pThis, pThisCC);
             }
         }
         else
@@ -1162,7 +1191,7 @@ DECLINLINE(int) uartRegRbrDllRead(PUARTCORE pThis, uint32_t *puVal)
                 if (!cbAvail)
                 {
                     UART_REG_CLR(pThis->uRegLsr, UART_REG_LSR_DR);
-                    uartIrqUpdate(pThis);
+                    uartIrqUpdate(pDevIns, pThis, pThisCC);
                 }
                 else
                 {
@@ -1172,7 +1201,7 @@ DECLINLINE(int) uartRegRbrDllRead(PUARTCORE pThis, uint32_t *puVal)
                     rc = VINF_IOM_R3_IOPORT_READ;
 #else
                     /* Fetch new data and keep the DR bit set. */
-                    uartR3DataFetch(pThis);
+                    uartR3DataFetch(pDevIns, pThis, pThisCC);
 #endif
                 }
             }
@@ -1186,55 +1215,50 @@ DECLINLINE(int) uartRegRbrDllRead(PUARTCORE pThis, uint32_t *puVal)
 /**
  * Read handler for the IER/DLM register (depending on the DLAB bit in LCR).
  *
- * @returns VBox status code.
- * @param   pThis               The serial port instance.
+ * @param   pThis               The shared serial port instance data.
  * @param   puVal               Where to store the read value on success.
  */
-DECLINLINE(int) uartRegIerDlmRead(PUARTCORE pThis, uint32_t *puVal)
+DECLINLINE(void) uartRegIerDlmRead(PUARTCORE pThis, uint32_t *puVal)
 {
-    int rc = VINF_SUCCESS;
-
     /* A set DLAB causes a read from the upper 8bits of the divisor latch. */
     if (pThis->uRegLcr & UART_REG_LCR_DLAB)
         *puVal = (pThis->uRegDivisor & 0xff00) >> 8;
     else
         *puVal = pThis->uRegIer;
-
-    return rc;
 }
 
 
 /**
  * Read handler for the IIR register.
  *
- * @returns VBox status code.
- * @param   pThis               The serial port instance.
+ * @param   pDevIns             The device instance.
+ * @param   pThis               The shared serial port instance data.
+ * @param   pThisCC             The serial port instance data for the current context.
  * @param   puVal               Where to store the read value on success.
  */
-DECLINLINE(int) uartRegIirRead(PUARTCORE pThis, uint32_t *puVal)
+DECLINLINE(void) uartRegIirRead(PPDMDEVINS pDevIns, PUARTCORE pThis, PUARTCORECC pThisCC, uint32_t *puVal)
 {
     *puVal = pThis->uRegIir;
     /* Reset the THRE empty interrupt id when this gets returned to the guest (see table 3 UART Reset configuration). */
     if (UART_REG_IIR_ID_GET(pThis->uRegIir) == UART_REG_IIR_ID_THRE)
     {
         pThis->fThreEmptyPending = false;
-        uartIrqUpdate(pThis);
+        uartIrqUpdate(pDevIns, pThis, pThisCC);
     }
-    return VINF_SUCCESS;
 }
 
 
 /**
  * Read handler for the LSR register.
  *
- * @returns VBox status code.
- * @param   pThis               The serial port instance.
+ * @returns Strict VBox status code.
+ * @param   pDevIns             The device instance.
+ * @param   pThis               The shared serial port instance data.
+ * @param   pThisCC             The serial port instance data for the current context.
  * @param   puVal               Where to store the read value on success.
  */
-DECLINLINE(int) uartRegLsrRead(PUARTCORE pThis, uint32_t *puVal)
+DECLINLINE(VBOXSTRICTRC) uartRegLsrRead(PPDMDEVINS pDevIns, PUARTCORE pThis, PUARTCORECC pThisCC, uint32_t *puVal)
 {
-    int rc = VINF_SUCCESS;
-
     /* Yield if configured and there is no data available. */
     if (   !(pThis->uRegLsr & UART_REG_LSR_DR)
         && (pThis->fFlags & UART_CORE_YIELD_ON_LSR_READ))
@@ -1252,27 +1276,27 @@ DECLINLINE(int) uartRegLsrRead(PUARTCORE pThis, uint32_t *puVal)
      * as well as the Break Interrupt (BI).
      */
     UART_REG_CLR(pThis->uRegLsr, UART_REG_LSR_BITS_IIR_RCL);
-    uartIrqUpdate(pThis);
+    uartIrqUpdate(pDevIns, pThis, pThisCC);
 
-    return rc;
+    return VINF_SUCCESS;
 }
 
 
 /**
  * Read handler for the MSR register.
  *
- * @returns VBox status code.
- * @param   pThis               The serial port instance.
+ * @param   pDevIns             The device instance.
+ * @param   pThis               The shared serial port instance data.
+ * @param   pThisCC             The serial port instance data for the current context.
  * @param   puVal               Where to store the read value on success.
  */
-DECLINLINE(int) uartRegMsrRead(PUARTCORE pThis, uint32_t *puVal)
+DECLINLINE(void) uartRegMsrRead(PPDMDEVINS pDevIns, PUARTCORE pThis, PUARTCORECC pThisCC, uint32_t *puVal)
 {
     *puVal = pThis->uRegMsr;
 
     /* Clear any of the delta bits. */
     UART_REG_CLR(pThis->uRegMsr, UART_REG_MSR_BITS_IIR_MS);
-    uartIrqUpdate(pThis);
-    return VINF_SUCCESS;
+    uartIrqUpdate(pDevIns, pThis, pThisCC);
 }
 
 
@@ -1281,7 +1305,7 @@ DECLINLINE(int) uartRegMsrRead(PUARTCORE pThis, uint32_t *puVal)
  * Converts the register index into a sensible memnonic.
  *
  * @returns Register memnonic.
- * @param   pThis               The serial port instance.
+ * @param   pThis               The shared serial port instance data.
  * @param   idxReg              Register index.
  * @param   fWrite              Flag whether the register gets written.
  */
@@ -1335,92 +1359,117 @@ DECLINLINE(const char *) uartRegIdx2Str(PUARTCORE pThis, uint8_t idxReg, bool fW
 #endif
 
 
-DECLHIDDEN(int) uartRegWrite(PUARTCORE pThis, uint32_t uReg, uint32_t u32, size_t cb)
+/**
+ * Performs a register write to the given register offset.
+ *
+ * @returns Strict VBox status code.
+ * @param   pDevIns             The device instance.
+ * @param   pThis               The shared UART core instance data.
+ * @param   pThisCC             The current context UART core instance data.
+ * @param   uReg                The register offset (byte offset) to start writing to.
+ * @param   u32                 The value to write.
+ * @param   cb                  Number of bytes to write.
+ */
+DECLHIDDEN(VBOXSTRICTRC) uartRegWrite(PPDMDEVINS pDevIns, PUARTCORE pThis, PUARTCORECC pThisCC,
+                                      uint32_t uReg, uint32_t u32, size_t cb)
 {
     AssertMsgReturn(cb == 1, ("uReg=%#x cb=%d u32=%#x\n", uReg, cb, u32), VINF_SUCCESS);
 
-    int rc = PDMCritSectEnter(&pThis->CritSect, VINF_IOM_R3_IOPORT_WRITE);
-    if (rc != VINF_SUCCESS)
-        return rc;
-
-    uint8_t idxReg = uReg & 0x7;
-    LogFlowFunc(("pThis=%#p uReg=%u{%s} u32=%#x cb=%u\n",
-                 pThis, uReg, uartRegIdx2Str(pThis, idxReg, true /*fWrite*/), u32, cb));
-
-    uint8_t uVal = (uint8_t)u32;
-    switch (idxReg)
+    VBOXSTRICTRC rc = PDMDevHlpCritSectEnter(pDevIns, &pThis->CritSect, VINF_IOM_R3_IOPORT_WRITE);
+    if (rc == VINF_SUCCESS)
     {
-        case UART_REG_THR_DLL_INDEX:
-            rc = uartRegThrDllWrite(pThis, uVal);
-            break;
-        case UART_REG_IER_DLM_INDEX:
-            rc = uartRegIerDlmWrite(pThis, uVal);
-            break;
-        case UART_REG_FCR_INDEX:
-            rc = uartRegFcrWrite(pThis, uVal);
-            break;
-        case UART_REG_LCR_INDEX:
-            rc = uartRegLcrWrite(pThis, uVal);
-            break;
-        case UART_REG_MCR_INDEX:
-            rc = uartRegMcrWrite(pThis, uVal);
-            break;
-        case UART_REG_SCR_INDEX:
-            pThis->uRegScr = u32;
-            break;
-        default:
-            break;
-    }
+        uint8_t idxReg = uReg & 0x7;
+        LogFlowFunc(("pThis=%#p uReg=%u{%s} u32=%#x cb=%u\n",
+                     pThis, uReg, uartRegIdx2Str(pThis, idxReg, true /*fWrite*/), u32, cb));
 
-    PDMCritSectLeave(&pThis->CritSect);
-    LogFlowFunc(("-> %Rrc\n", rc));
+        uint8_t uVal = (uint8_t)u32;
+        switch (idxReg)
+        {
+            case UART_REG_THR_DLL_INDEX:
+                rc = uartRegThrDllWrite(pDevIns, pThis, pThisCC, uVal);
+                break;
+            case UART_REG_IER_DLM_INDEX:
+                rc = uartRegIerDlmWrite(pDevIns, pThis, pThisCC, uVal);
+                break;
+            case UART_REG_FCR_INDEX:
+                rc = uartRegFcrWrite(pDevIns, pThis, pThisCC, uVal);
+                break;
+            case UART_REG_LCR_INDEX:
+                rc = uartRegLcrWrite(pDevIns, pThis, pThisCC, uVal);
+                break;
+            case UART_REG_MCR_INDEX:
+                rc = uartRegMcrWrite(pDevIns, pThis, pThisCC, uVal);
+                break;
+            case UART_REG_SCR_INDEX:
+                pThis->uRegScr = u32;
+                break;
+            default:
+                break;
+        }
+
+        PDMDevHlpCritSectLeave(pDevIns, &pThis->CritSect);
+    }
+    LogFlowFunc(("-> %Rrc\n", VBOXSTRICTRC_VAL(rc)));
     return rc;
 }
 
 
-DECLHIDDEN(int) uartRegRead(PUARTCORE pThis, uint32_t uReg, uint32_t *pu32, size_t cb)
+/**
+ * Performs a register read from the given register offset.
+ *
+ * @returns VBox status code.
+ * @param   pDevIns             The device instance.
+ * @param   pThis               The shared UART core instance data.
+ * @param   pThisCC             The current context UART core instance data.
+ * @param   uReg                The register offset (byte offset) to start reading from.
+ * @param   pu32                Where to store the read value.
+ * @param   cb                  Number of bytes to read.
+ */
+DECLHIDDEN(VBOXSTRICTRC) uartRegRead(PPDMDEVINS pDevIns, PUARTCORE pThis, PUARTCORECC pThisCC,
+                                     uint32_t uReg, uint32_t *pu32, size_t cb)
 {
     if (cb != 1)
         return VERR_IOM_IOPORT_UNUSED;
 
-    int rc = PDMCritSectEnter(&pThis->CritSect, VINF_IOM_R3_IOPORT_READ);
-    if (rc != VINF_SUCCESS)
-        return rc;
-
-    uint8_t idxReg = uReg & 0x7;
-    switch (idxReg)
+    VBOXSTRICTRC rc = PDMDevHlpCritSectEnter(pDevIns, &pThis->CritSect, VINF_IOM_R3_IOPORT_READ);
+    if (rc == VINF_SUCCESS)
     {
-        case UART_REG_RBR_DLL_INDEX:
-            rc = uartRegRbrDllRead(pThis, pu32);
-            break;
-        case UART_REG_IER_DLM_INDEX:
-            rc = uartRegIerDlmRead(pThis, pu32);
-            break;
-        case UART_REG_IIR_INDEX:
-            rc = uartRegIirRead(pThis, pu32);
-            break;
-        case UART_REG_LCR_INDEX:
-            *pu32 = pThis->uRegLcr;
-            break;
-        case UART_REG_MCR_INDEX:
-            *pu32 = pThis->uRegMcr;
-            break;
-        case UART_REG_LSR_INDEX:
-            rc = uartRegLsrRead(pThis, pu32);
-            break;
-        case UART_REG_MSR_INDEX:
-            rc = uartRegMsrRead(pThis, pu32);
-            break;
-        case UART_REG_SCR_INDEX:
-            *pu32 = pThis->uRegScr;
-            break;
-        default:
-            rc = VERR_IOM_IOPORT_UNUSED;
+        uint8_t idxReg = uReg & 0x7;
+        switch (idxReg)
+        {
+            case UART_REG_RBR_DLL_INDEX:
+                rc = uartRegRbrDllRead(pDevIns, pThis, pThisCC, pu32);
+                break;
+            case UART_REG_IER_DLM_INDEX:
+                uartRegIerDlmRead(pThis, pu32);
+                break;
+            case UART_REG_IIR_INDEX:
+                uartRegIirRead(pDevIns, pThis, pThisCC, pu32);
+                break;
+            case UART_REG_LCR_INDEX:
+                *pu32 = pThis->uRegLcr;
+                break;
+            case UART_REG_MCR_INDEX:
+                *pu32 = pThis->uRegMcr;
+                break;
+            case UART_REG_LSR_INDEX:
+                rc = uartRegLsrRead(pDevIns, pThis, pThisCC, pu32);
+                break;
+            case UART_REG_MSR_INDEX:
+                uartRegMsrRead(pDevIns, pThis, pThisCC, pu32);
+                break;
+            case UART_REG_SCR_INDEX:
+                *pu32 = pThis->uRegScr;
+                break;
+            default:
+                rc = VERR_IOM_IOPORT_UNUSED;
+        }
+        PDMDevHlpCritSectLeave(pDevIns, &pThis->CritSect);
+        LogFlowFunc(("pThis=%#p uReg=%u{%s} u32=%#x cb=%u -> %Rrc\n",
+                     pThis, uReg, uartRegIdx2Str(pThis, idxReg, false /*fWrite*/), *pu32, cb, VBOXSTRICTRC_VAL(rc)));
     }
-
-    PDMCritSectLeave(&pThis->CritSect);
-    LogFlowFunc(("pThis=%#p uReg=%u{%s} u32=%#x cb=%u -> %Rrc\n",
-                 pThis, uReg, uartRegIdx2Str(pThis, idxReg, false /*fWrite*/), *pu32, cb, rc));
+    else
+        LogFlowFunc(("-> %Rrc\n", VBOXSTRICTRC_VAL(rc)));
     return rc;
 }
 
@@ -1435,15 +1484,19 @@ DECLHIDDEN(int) uartRegRead(PUARTCORE pThis, uint32_t uReg, uint32_t *pu32, size
 static DECLCALLBACK(void) uartR3RcvFifoTimeoutTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser)
 {
     LogFlowFunc(("pDevIns=%#p pTimer=%#p pvUser=%#p\n", pDevIns, pTimer, pvUser));
-    RT_NOREF(pDevIns, pTimer);
-    PUARTCORE pThis = (PUARTCORE)pvUser;
-    PDMCritSectEnter(&pThis->CritSect, VERR_IGNORED);
+    PUARTCORER3 pThisCC = (PUARTCORECC)pvUser;
+    PUARTCORE   pThis   = pThisCC->pShared;
+    RT_NOREF(pTimer);
+
+    PDMDevHlpCritSectEnter(pDevIns, &pThis->CritSect, VERR_IGNORED); /** @todo r=bird: You already own this crit sect, don't you?!? */
+
     if (pThis->FifoRecv.cbUsed < pThis->FifoRecv.cbItl)
     {
         pThis->fIrqCtiPending = true;
-        uartIrqUpdate(pThis);
+        uartIrqUpdate(pDevIns, pThis, pThisCC);
     }
-    PDMCritSectLeave(&pThis->CritSect);
+
+    PDMDevHlpCritSectLeave(pDevIns, &pThis->CritSect);
 }
 
 /**
@@ -1452,12 +1505,15 @@ static DECLCALLBACK(void) uartR3RcvFifoTimeoutTimer(PPDMDEVINS pDevIns, PTMTIMER
 static DECLCALLBACK(void) uartR3TxUnconnectedTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser)
 {
     LogFlowFunc(("pDevIns=%#p pTimer=%#p pvUser=%#p\n", pDevIns, pTimer, pvUser));
-    RT_NOREF(pDevIns, pTimer);
-    PUARTCORE pThis = (PUARTCORE)pvUser;
-    PDMCritSectEnter(&pThis->CritSect, VERR_IGNORED);
+    PUARTCORER3 pThisCC = (PUARTCORECC)pvUser;
+    PUARTCORE   pThis   = pThisCC->pShared;
+    RT_NOREF(pTimer);
+
+    PDMDevHlpCritSectEnter(pDevIns, &pThis->CritSect, VERR_IGNORED); /** @todo r=bird: You already own this crit sect, don't you?!? */
+
     uint8_t bVal = 0;
     size_t cbRead = 0;
-    uartR3TxQueueCopyFrom(pThis, &bVal, sizeof(bVal), &cbRead);
+    uartR3TxQueueCopyFrom(pDevIns, pThis, pThisCC, &bVal, sizeof(bVal), &cbRead);
     if (pThis->uRegMcr & UART_REG_MCR_LOOP)
     {
         /* Loopback mode is active, feed in the data at the receiving end. */
@@ -1475,10 +1531,10 @@ static DECLCALLBACK(void) uartR3TxUnconnectedTimer(PPDMDEVINS pDevIns, PTMTIMER 
                 if (pFifo->cbUsed < pFifo->cbItl)
                 {
                     pThis->fIrqCtiPending = false;
-                    PDMDevHlpTimerSetRelative(pThis->CTX_SUFF(pDevIns), pThis->hTimerRcvFifoTimeout,
+                    PDMDevHlpTimerSetRelative(pDevIns, pThis->hTimerRcvFifoTimeout,
                                               pThis->cSymbolXferTicks * 4, NULL);
                 }
-                uartIrqUpdate(pThis);
+                uartIrqUpdate(pDevIns, pThis, pThisCC);
             }
 
             ASMAtomicSubU32(&pThis->cbAvailRdr, 1);
@@ -1487,14 +1543,15 @@ static DECLCALLBACK(void) uartR3TxUnconnectedTimer(PPDMDEVINS pDevIns, PTMTIMER 
         {
             pThis->uRegRbr = bVal;
             UART_REG_SET(pThis->uRegLsr, UART_REG_LSR_DR);
-            uartIrqUpdate(pThis);
+            uartIrqUpdate(pDevIns, pThis, pThisCC);
         }
         else
             ASMAtomicSubU32(&pThis->cbAvailRdr, 1);
     }
     if (cbRead == 1)
-        PDMDevHlpTimerSetRelative(pThis->CTX_SUFF(pDevIns), pThis->hTimerTxUnconnected, pThis->cSymbolXferTicks, NULL);
-    PDMCritSectLeave(&pThis->CritSect);
+        PDMDevHlpTimerSetRelative(pDevIns, pThis->hTimerTxUnconnected, pThis->cSymbolXferTicks, NULL);
+
+    PDMDevHlpCritSectLeave(pDevIns, &pThis->CritSect);
 }
 
 
@@ -1507,7 +1564,9 @@ static DECLCALLBACK(void) uartR3TxUnconnectedTimer(PPDMDEVINS pDevIns, PTMTIMER 
 static DECLCALLBACK(int) uartR3DataAvailRdrNotify(PPDMISERIALPORT pInterface, size_t cbAvail)
 {
     LogFlowFunc(("pInterface=%#p cbAvail=%zu\n", pInterface, cbAvail));
-    PUARTCORE pThis = RT_FROM_MEMBER(pInterface, UARTCORE, ISerialPort);
+    PUARTCORECC pThisCC = RT_FROM_MEMBER(pInterface, UARTCORECC, ISerialPort);
+    PUARTCORE   pThis   = pThisCC->pShared;
+    PPDMDEVINS  pDevIns = pThisCC->pDevIns;
 
     AssertMsg((uint32_t)cbAvail == cbAvail, ("Too much data available\n"));
 
@@ -1515,14 +1574,14 @@ static DECLCALLBACK(int) uartR3DataAvailRdrNotify(PPDMISERIALPORT pInterface, si
     uint32_t cbAvailOld = ASMAtomicAddU32(&pThis->cbAvailRdr, (uint32_t)cbAvail);
     LogFlow(("    cbAvailRdr=%u -> cbAvailRdr=%u\n", cbAvailOld, cbAvail + cbAvailOld));
     if (pThis->uRegFcr & UART_REG_FCR_FIFO_EN)
-        uartR3RecvFifoFill(pThis);
+        uartR3RecvFifoFill(pDevIns, pThis, pThisCC);
     else if (!cbAvailOld)
     {
         size_t cbRead = 0;
-        int rc = pThis->pDrvSerial->pfnReadRdr(pThis->pDrvSerial, &pThis->uRegRbr, 1, &cbRead);
+        int rc = pThisCC->pDrvSerial->pfnReadRdr(pThisCC->pDrvSerial, &pThis->uRegRbr, 1, &cbRead);
         AssertMsg(RT_SUCCESS(rc) && cbRead == 1, ("This shouldn't fail and always return one byte!\n")); RT_NOREF(rc);
         UART_REG_SET(pThis->uRegLsr, UART_REG_LSR_DR);
-        uartIrqUpdate(pThis);
+        uartIrqUpdate(pDevIns, pThis, pThisCC);
     }
     PDMCritSectLeave(&pThis->CritSect);
 
@@ -1536,12 +1595,14 @@ static DECLCALLBACK(int) uartR3DataAvailRdrNotify(PPDMISERIALPORT pInterface, si
 static DECLCALLBACK(int) uartR3DataSentNotify(PPDMISERIALPORT pInterface)
 {
     LogFlowFunc(("pInterface=%#p\n", pInterface));
-    PUARTCORE pThis = RT_FROM_MEMBER(pInterface, UARTCORE, ISerialPort);
+    PUARTCORECC pThisCC = RT_FROM_MEMBER(pInterface, UARTCORECC, ISerialPort);
+    PUARTCORE   pThis   = pThisCC->pShared;
+    PPDMDEVINS  pDevIns = pThisCC->pDevIns;
 
     /* Set the transmitter empty bit because everything was sent. */
     PDMCritSectEnter(&pThis->CritSect, VERR_IGNORED);
     UART_REG_SET(pThis->uRegLsr, UART_REG_LSR_TEMT);
-    uartIrqUpdate(pThis);
+    uartIrqUpdate(pDevIns, pThis, pThisCC);
     PDMCritSectLeave(&pThis->CritSect);
     return VINF_SUCCESS;
 }
@@ -1553,12 +1614,14 @@ static DECLCALLBACK(int) uartR3DataSentNotify(PPDMISERIALPORT pInterface)
 static DECLCALLBACK(int) uartR3ReadWr(PPDMISERIALPORT pInterface, void *pvBuf, size_t cbRead, size_t *pcbRead)
 {
     LogFlowFunc(("pInterface=%#p pvBuf=%#p cbRead=%zu pcbRead=%#p\n", pInterface, pvBuf, cbRead, pcbRead));
-    PUARTCORE pThis = RT_FROM_MEMBER(pInterface, UARTCORE, ISerialPort);
+    PUARTCORECC pThisCC = RT_FROM_MEMBER(pInterface, UARTCORECC, ISerialPort);
+    PUARTCORE   pThis   = pThisCC->pShared;
+    PPDMDEVINS  pDevIns = pThisCC->pDevIns;
 
     AssertReturn(cbRead > 0, VERR_INVALID_PARAMETER);
 
     PDMCritSectEnter(&pThis->CritSect, VERR_IGNORED);
-    uartR3TxQueueCopyFrom(pThis, pvBuf, cbRead, pcbRead);
+    uartR3TxQueueCopyFrom(pDevIns, pThis, pThisCC, pvBuf, cbRead, pcbRead);
     PDMCritSectLeave(&pThis->CritSect);
 
     LogFlowFunc(("-> VINF_SUCCESS{*pcbRead=%zu}\n", *pcbRead));
@@ -1572,10 +1635,12 @@ static DECLCALLBACK(int) uartR3ReadWr(PPDMISERIALPORT pInterface, void *pvBuf, s
 static DECLCALLBACK(int) uartR3NotifyStsLinesChanged(PPDMISERIALPORT pInterface, uint32_t fNewStatusLines)
 {
     LogFlowFunc(("pInterface=%#p fNewStatusLines=%#x\n", pInterface, fNewStatusLines));
-    PUARTCORE pThis = RT_FROM_MEMBER(pInterface, UARTCORE, ISerialPort);
+    PUARTCORECC pThisCC = RT_FROM_MEMBER(pInterface, UARTCORECC, ISerialPort);
+    PUARTCORE   pThis   = pThisCC->pShared;
+    PPDMDEVINS  pDevIns = pThisCC->pDevIns;
 
     PDMCritSectEnter(&pThis->CritSect, VERR_IGNORED);
-    uartR3StsLinesUpdate(pThis, fNewStatusLines);
+    uartR3StsLinesUpdate(pDevIns, pThis, pThisCC, fNewStatusLines);
     PDMCritSectLeave(&pThis->CritSect);
     return VINF_SUCCESS;
 }
@@ -1587,11 +1652,13 @@ static DECLCALLBACK(int) uartR3NotifyStsLinesChanged(PPDMISERIALPORT pInterface,
 static DECLCALLBACK(int) uartR3NotifyBrk(PPDMISERIALPORT pInterface)
 {
     LogFlowFunc(("pInterface=%#p\n", pInterface));
-    PUARTCORE pThis = RT_FROM_MEMBER(pInterface, UARTCORE, ISerialPort);
+    PUARTCORECC pThisCC = RT_FROM_MEMBER(pInterface, UARTCORECC, ISerialPort);
+    PUARTCORE   pThis   = pThisCC->pShared;
+    PPDMDEVINS  pDevIns = pThisCC->pDevIns;
 
     PDMCritSectEnter(&pThis->CritSect, VERR_IGNORED);
     UART_REG_SET(pThis->uRegLsr, UART_REG_LSR_BI);
-    uartIrqUpdate(pThis);
+    uartIrqUpdate(pDevIns, pThis, pThisCC);
     PDMCritSectLeave(&pThis->CritSect);
     return VINF_SUCCESS;
 }
@@ -1604,14 +1671,22 @@ static DECLCALLBACK(int) uartR3NotifyBrk(PPDMISERIALPORT pInterface)
  */
 static DECLCALLBACK(void *) uartR3QueryInterface(PPDMIBASE pInterface, const char *pszIID)
 {
-    PUARTCORE pThis = RT_FROM_MEMBER(pInterface, UARTCORE, IBase);
-    PDMIBASE_RETURN_INTERFACE(pszIID, PDMIBASE, &pThis->IBase);
-    PDMIBASE_RETURN_INTERFACE(pszIID, PDMISERIALPORT, &pThis->ISerialPort);
+    PUARTCORECC pThisCC = RT_FROM_MEMBER(pInterface, UARTCORECC, IBase);
+    PDMIBASE_RETURN_INTERFACE(pszIID, PDMIBASE, &pThisCC->IBase);
+    PDMIBASE_RETURN_INTERFACE(pszIID, PDMISERIALPORT, &pThisCC->ISerialPort);
     return NULL;
 }
 
 
-DECLHIDDEN(int) uartR3SaveExec(PUARTCORE pThis, PSSMHANDLE pSSM)
+/**
+ * Saves the UART state to the given SSM handle.
+ *
+ * @returns VBox status code.
+ * @param   pDevIns             The device instance.
+ * @param   pThis               The UART core instance.
+ * @param   pSSM                The SSM handle to save to.
+ */
+DECLHIDDEN(int) uartR3SaveExec(PPDMDEVINS pDevIns, PUARTCORE pThis, PSSMHANDLE pSSM)
 {
     SSMR3PutU16(pSSM,  pThis->uRegDivisor);
     SSMR3PutU8(pSSM,   pThis->uRegRbr);
@@ -1631,15 +1706,29 @@ DECLHIDDEN(int) uartR3SaveExec(PUARTCORE pThis, PSSMHANDLE pSSM)
     SSMR3PutU8(pSSM,   pThis->FifoRecv.cbMax);
     SSMR3PutU8(pSSM,   pThis->FifoRecv.cbItl);
 
-    int rc = PDMDevHlpTimerSave(pThis->CTX_SUFF(pDevIns), pThis->hTimerRcvFifoTimeout, pSSM);
+    int rc = PDMDevHlpTimerSave(pDevIns, pThis->hTimerRcvFifoTimeout, pSSM);
     if (RT_SUCCESS(rc))
-        rc = PDMDevHlpTimerSave(pThis->CTX_SUFF(pDevIns), pThis->hTimerTxUnconnected, pSSM);
+        rc = PDMDevHlpTimerSave(pDevIns, pThis->hTimerTxUnconnected, pSSM);
 
     return rc;
 }
 
 
-DECLHIDDEN(int) uartR3LoadExec(PUARTCORE pThis, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass,
+/**
+ * Loads the UART state from the given SSM handle.
+ *
+ * @returns VBox status code.
+ * @param   pDevIns             The device instance.
+ * @param   pThis               The UART core instance.
+ * @param   pSSM                The SSM handle to load from.
+ * @param   uVersion            Saved state version.
+ * @param   uPass               The SSM pass the call is done in.
+ * @param   puIrq               Where to store the IRQ value for legacy
+ *                              saved states - optional.
+ * @param   pPortBase           Where to store the I/O port base for legacy
+ *                              saved states - optional.
+ */
+DECLHIDDEN(int) uartR3LoadExec(PPDMDEVINS pDevIns, PUARTCORE pThis, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass,
                                uint8_t *pbIrq, RTIOPORT *pPortBase)
 {
     RT_NOREF(uPass);
@@ -1665,9 +1754,9 @@ DECLHIDDEN(int) uartR3LoadExec(PUARTCORE pThis, PSSMHANDLE pSSM, uint32_t uVersi
         SSMR3GetU8(pSSM,   &pThis->FifoRecv.cbMax);
         SSMR3GetU8(pSSM,   &pThis->FifoRecv.cbItl);
 
-        rc = PDMDevHlpTimerLoad(pThis->CTX_SUFF(pDevIns), pThis->hTimerRcvFifoTimeout, pSSM);
+        rc = PDMDevHlpTimerLoad(pDevIns, pThis->hTimerRcvFifoTimeout, pSSM);
         if (uVersion > UART_SAVED_STATE_VERSION_PRE_UNCONNECTED_TX_TIMER)
-            rc = PDMDevHlpTimerLoad(pThis->CTX_SUFF(pDevIns), pThis->hTimerTxUnconnected, pSSM);
+            rc = PDMDevHlpTimerLoad(pDevIns, pThis->hTimerTxUnconnected, pSSM);
     }
     else
     {
@@ -1676,7 +1765,7 @@ DECLHIDDEN(int) uartR3LoadExec(PUARTCORE pThis, PSSMHANDLE pSSM, uint32_t uVersi
         if (uVersion == UART_SAVED_STATE_VERSION_16450)
         {
             pThis->enmType = UARTTYPE_16450;
-            LogRel(("Serial#%d: falling back to 16450 mode from load state\n", pThis->pDevInsR3->iInstance));
+            LogRel(("Serial#%d: falling back to 16450 mode from load state\n", pDevIns->iInstance));
         }
 
         SSMR3GetU16(pSSM, &pThis->uRegDivisor);
@@ -1717,7 +1806,7 @@ DECLHIDDEN(int) uartR3LoadExec(PUARTCORE pThis, PSSMHANDLE pSSM, uint32_t uVersi
             SSMR3GetS32(pSSM, &iTimeoutPending);
             pThis->fIrqCtiPending = RT_BOOL(iTimeoutPending);
 
-            rc = PDMDevHlpTimerLoad(pThis->CTX_SUFF(pDevIns), pThis->hTimerRcvFifoTimeout, pSSM);
+            rc = PDMDevHlpTimerLoad(pDevIns, pThis->hTimerRcvFifoTimeout, pSSM);
             AssertRCReturn(rc, rc);
 
             bool fWasActiveIgn;
@@ -1733,45 +1822,54 @@ DECLHIDDEN(int) uartR3LoadExec(PUARTCORE pThis, PSSMHANDLE pSSM, uint32_t uVersi
 }
 
 
-DECLHIDDEN(int) uartR3LoadDone(PUARTCORE pThis, PSSMHANDLE pSSM)
+/**
+ * Called when loading the state completed, updates the parameters of any driver underneath.
+ *
+ * @returns VBox status code.
+ * @param   pDevIns             The device instance.
+ * @param   pThis               The shared serial port instance data.
+ * @param   pThisCC             The serial port instance data for the current context.
+ * @param   pSSM                The SSM handle.
+ */
+DECLHIDDEN(int) uartR3LoadDone(PPDMDEVINS pDevIns, PUARTCORE pThis, PUARTCORECC pThisCC, PSSMHANDLE pSSM)
 {
     RT_NOREF(pSSM);
 
-    uartR3ParamsUpdate(pThis);
-    uartIrqUpdate(pThis);
+    uartR3ParamsUpdate(pDevIns, pThis, pThisCC);
+    uartIrqUpdate(pDevIns, pThis, pThisCC);
 
-    if (pThis->pDrvSerial)
+    if (pThisCC->pDrvSerial)
     {
         /* Set the modem lines to reflect the current state. */
-        int rc = pThis->pDrvSerial->pfnChgModemLines(pThis->pDrvSerial,
+        int rc = pThisCC->pDrvSerial->pfnChgModemLines(pThisCC->pDrvSerial,
                                                      RT_BOOL(pThis->uRegMcr & UART_REG_MCR_RTS),
                                                      RT_BOOL(pThis->uRegMcr & UART_REG_MCR_DTR));
         if (RT_FAILURE(rc))
             LogRel(("Serial#%d: Failed to set modem lines with %Rrc during saved state load\n",
-                    pThis->pDevInsR3->iInstance, rc));
+                    pDevIns->iInstance, rc));
 
         uint32_t fStsLines = 0;
-        rc = pThis->pDrvSerial->pfnQueryStsLines(pThis->pDrvSerial, &fStsLines);
+        rc = pThisCC->pDrvSerial->pfnQueryStsLines(pThisCC->pDrvSerial, &fStsLines);
         if (RT_SUCCESS(rc))
-            uartR3StsLinesUpdate(pThis, fStsLines);
+            uartR3StsLinesUpdate(pDevIns, pThis, pThisCC, fStsLines);
         else
             LogRel(("Serial#%d: Failed to query status line status with %Rrc during reset\n",
-                    pThis->pDevInsR3->iInstance, rc));
+                    pDevIns->iInstance, rc));
     }
 
     return VINF_SUCCESS;
 }
 
 
-DECLHIDDEN(void) uartR3Relocate(PUARTCORE pThis, RTGCINTPTR offDelta)
-{
-    RT_NOREF(offDelta);
-    pThis->pDevInsRC              = PDMDEVINS_2_RCPTR(pThis->pDevInsR3);
-    pThis->pfnUartIrqReqRC       += offDelta;
-}
-
-
-DECLHIDDEN(void) uartR3Reset(PUARTCORE pThis)
+/**
+ * Resets the given UART core instance.
+ *
+ * @returns nothing.
+ * @param   pDevIns             The device instance.
+ * @param   pThis               The shared serial port instance data.
+ * @param   pThisCC             The serial port instance data for the current context.
+ */
+DECLHIDDEN(void) uartR3Reset(PPDMDEVINS pDevIns, PUARTCORE pThis, PUARTCORECC pThisCC)
 {
     pThis->uRegDivisor    = 0x0c; /* Default to 9600 Baud. */
     pThis->uRegRbr        = 0;
@@ -1792,95 +1890,129 @@ DECLHIDDEN(void) uartR3Reset(PUARTCORE pThis)
     pThis->FifoRecv.cbMax = 16;
     pThis->FifoRecv.cbItl = 1;
 
-    uartR3XferReset(pThis);
+    uartR3XferReset(pDevIns, pThis, pThisCC);
 }
 
 
-DECLHIDDEN(int) uartR3Attach(PUARTCORE pThis, unsigned iLUN)
+/**
+ * Attaches the given UART core instance to the drivers at the given LUN.
+ *
+ * @returns VBox status code.
+ * @param   pDevIns             The device instance.
+ * @param   pThis               The shared serial port instance data.
+ * @param   pThisCC             The serial port instance data for the current context.
+ * @param   iLUN                The LUN being attached.
+ */
+DECLHIDDEN(int) uartR3Attach(PPDMDEVINS pDevIns, PUARTCORE pThis, PUARTCORECC pThisCC, unsigned iLUN)
 {
-    int rc = PDMDevHlpDriverAttach(pThis->pDevInsR3, iLUN, &pThis->IBase, &pThis->pDrvBase, "Serial Char");
+    int rc = PDMDevHlpDriverAttach(pDevIns, iLUN, &pThisCC->IBase, &pThisCC->pDrvBase, "Serial Char");
     if (RT_SUCCESS(rc))
     {
-        pThis->pDrvSerial = PDMIBASE_QUERY_INTERFACE(pThis->pDrvBase, PDMISERIALCONNECTOR);
-        if (!pThis->pDrvSerial)
+        pThisCC->pDrvSerial = PDMIBASE_QUERY_INTERFACE(pThisCC->pDrvBase, PDMISERIALCONNECTOR);
+        if (!pThisCC->pDrvSerial)
         {
-            AssertLogRelMsgFailed(("Configuration error: instance %d has no serial interface!\n", pThis->pDevInsR3->iInstance));
+            AssertLogRelMsgFailed(("Configuration error: instance %d has no serial interface!\n", pDevIns->iInstance));
             return VERR_PDM_MISSING_INTERFACE;
         }
-        uartR3XferReset(pThis);
+        uartR3XferReset(pDevIns, pThis, pThisCC);
     }
     else if (rc == VERR_PDM_NO_ATTACHED_DRIVER)
     {
-        pThis->pDrvBase = NULL;
-        pThis->pDrvSerial = NULL;
+        pThisCC->pDrvBase = NULL;
+        pThisCC->pDrvSerial = NULL;
         rc = VINF_SUCCESS;
-        uartR3XferReset(pThis);
-        LogRel(("Serial#%d: no unit\n", pThis->pDevInsR3->iInstance));
+        uartR3XferReset(pDevIns, pThis, pThisCC);
+        LogRel(("Serial#%d: no unit\n", pDevIns->iInstance));
     }
     else /* Don't call VMSetError here as we assume that the driver already set an appropriate error */
-        LogRel(("Serial#%d: Failed to attach to serial driver. rc=%Rrc\n", pThis->pDevInsR3->iInstance, rc));
+        LogRel(("Serial#%d: Failed to attach to serial driver. rc=%Rrc\n", pDevIns->iInstance, rc));
 
    return rc;
 }
 
 
-DECLHIDDEN(void) uartR3Detach(PUARTCORE pThis)
+/**
+ * Detaches any attached driver from the given UART core instance.
+ *
+ * @returns nothing.
+ * @param   pDevIns             The device instance.
+ * @param   pThis               The shared serial port instance data.
+ * @param   pThisCC             The serial port instance data for the current context.
+ */
+DECLHIDDEN(void) uartR3Detach(PPDMDEVINS pDevIns, PUARTCORE pThis, PUARTCORECC pThisCC)
 {
     /* Zero out important members. */
-    pThis->pDrvBase   = NULL;
-    pThis->pDrvSerial = NULL;
-    uartR3XferReset(pThis);
+    pThisCC->pDrvBase   = NULL;
+    pThisCC->pDrvSerial = NULL;
+    uartR3XferReset(pDevIns, pThis, pThisCC);
 }
 
 
-DECLHIDDEN(void) uartR3Destruct(PUARTCORE pThis)
+/**
+ * Destroys the given UART core instance freeing all allocated resources.
+ *
+ * @returns nothing.
+ * @param   pDevIns             The device instance.
+ * @param   pThis               The shared UART core instance data..
+ */
+DECLHIDDEN(void) uartR3Destruct(PPDMDEVINS pDevIns, PUARTCORE pThis)
 {
-    PDMR3CritSectDelete(&pThis->CritSect);
+    PDMDevHlpCritSectDelete(pDevIns, &pThis->CritSect);
 }
 
 
-DECLHIDDEN(int) uartR3Init(PUARTCORE pThis, PPDMDEVINS pDevInsR3, UARTTYPE enmType, unsigned iLUN, uint32_t fFlags,
-                           R3PTRTYPE(PFNUARTCOREIRQREQ) pfnUartIrqReqR3, R0PTRTYPE(PFNUARTCOREIRQREQ) pfnUartIrqReqR0,
-                           RCPTRTYPE(PFNUARTCOREIRQREQ) pfnUartIrqReqRC)
+/**
+ * Initializes the given UART core instance using the provided configuration.
+ *
+ * @returns VBox status code.
+ * @param   pDevIns             The device instance pointer.
+ * @param   pThis               The shared UART core instance data to
+ *                              initialize.
+ * @param   pThisCC             The ring-3 UART core instance data to
+ *                              initialize.
+ * @param   enmType             The type of UART emulated.
+ * @param   iLUN                The LUN the UART should look for attached drivers.
+ * @param   fFlags              Additional flags controlling device behavior.
+ * @param   pfnUartIrqReq       Pointer to the interrupt request callback.
+ */
+DECLHIDDEN(int) uartR3Init(PPDMDEVINS pDevIns, PUARTCORE pThis, PUARTCORECC pThisCC,
+                           UARTTYPE enmType, unsigned iLUN, uint32_t fFlags, PFNUARTCOREIRQREQ pfnUartIrqReq)
 {
-    int rc;
-
     /*
      * Initialize the instance data.
      * (Do this early or the destructor might choke on something!)
      */
-    pThis->pDevInsR3                            = pDevInsR3;
-    pThis->pDevInsR0                            = PDMDEVINS_2_R0PTR(pDevInsR3);
-    pThis->pDevInsRC                            = PDMDEVINS_2_RCPTR(pDevInsR3);
-    pThis->iLUN                                 = iLUN;
-    pThis->enmType                              = enmType;
-    pThis->fFlags                               = fFlags;
-    pThis->pfnUartIrqReqR3                      = pfnUartIrqReqR3;
-    pThis->pfnUartIrqReqR0                      = pfnUartIrqReqR0;
-    pThis->pfnUartIrqReqRC                      = pfnUartIrqReqRC;
+    pThis->iLUN                                     = iLUN;
+    pThis->enmType                                  = enmType;
+    pThis->fFlags                                   = fFlags;
+
+    pThisCC->iLUN                                   = iLUN;
+    pThisCC->pDevIns                                = pDevIns;
+    pThisCC->pShared                                = pThis;
+    pThisCC->pfnUartIrqReq                          = pfnUartIrqReq;
 
     /* IBase */
-    pThis->IBase.pfnQueryInterface              = uartR3QueryInterface;
+    pThisCC->IBase.pfnQueryInterface                = uartR3QueryInterface;
 
     /* ISerialPort */
-    pThis->ISerialPort.pfnDataAvailRdrNotify    = uartR3DataAvailRdrNotify;
-    pThis->ISerialPort.pfnDataSentNotify        = uartR3DataSentNotify;
-    pThis->ISerialPort.pfnReadWr                = uartR3ReadWr;
-    pThis->ISerialPort.pfnNotifyStsLinesChanged = uartR3NotifyStsLinesChanged;
-    pThis->ISerialPort.pfnNotifyBrk             = uartR3NotifyBrk;
+    pThisCC->ISerialPort.pfnDataAvailRdrNotify      = uartR3DataAvailRdrNotify;
+    pThisCC->ISerialPort.pfnDataSentNotify          = uartR3DataSentNotify;
+    pThisCC->ISerialPort.pfnReadWr                  = uartR3ReadWr;
+    pThisCC->ISerialPort.pfnNotifyStsLinesChanged   = uartR3NotifyStsLinesChanged;
+    pThisCC->ISerialPort.pfnNotifyBrk               = uartR3NotifyBrk;
 
-    rc = PDMDevHlpCritSectInit(pDevInsR3, &pThis->CritSect, RT_SRC_POS, "Uart{%s#%d}#%d",
-                               pDevInsR3->pReg->szName, pDevInsR3->iInstance, iLUN);
+    int rc = PDMDevHlpCritSectInit(pDevIns, &pThis->CritSect, RT_SRC_POS, "Uart{%s#%d}#%d",
+                                   pDevIns->pReg->szName, pDevIns->iInstance, iLUN);
     AssertRCReturn(rc, rc);
 
     /*
      * Attach the char driver and get the interfaces.
      */
-    rc = PDMDevHlpDriverAttach(pDevInsR3, iLUN, &pThis->IBase, &pThis->pDrvBase, "UART");
+    rc = PDMDevHlpDriverAttach(pDevIns, iLUN, &pThisCC->IBase, &pThisCC->pDrvBase, "UART");
     if (RT_SUCCESS(rc))
     {
-        pThis->pDrvSerial = PDMIBASE_QUERY_INTERFACE(pThis->pDrvBase, PDMISERIALCONNECTOR);
-        if (!pThis->pDrvSerial)
+        pThisCC->pDrvSerial = PDMIBASE_QUERY_INTERFACE(pThisCC->pDrvBase, PDMISERIALCONNECTOR);
+        if (!pThisCC->pDrvSerial)
         {
             AssertLogRelMsgFailed(("Configuration error: instance %d has no serial interface!\n", iLUN));
             return VERR_PDM_MISSING_INTERFACE;
@@ -1888,8 +2020,8 @@ DECLHIDDEN(int) uartR3Init(PUARTCORE pThis, PPDMDEVINS pDevInsR3, UARTTYPE enmTy
     }
     else if (rc == VERR_PDM_NO_ATTACHED_DRIVER)
     {
-        pThis->pDrvBase   = NULL;
-        pThis->pDrvSerial = NULL;
+        pThisCC->pDrvBase   = NULL;
+        pThisCC->pDrvSerial = NULL;
         LogRel(("Serial#%d: no unit\n", iLUN));
     }
     else
@@ -1902,29 +2034,46 @@ DECLHIDDEN(int) uartR3Init(PUARTCORE pThis, PPDMDEVINS pDevInsR3, UARTTYPE enmTy
     /*
      * Create the receive FIFO character timeout indicator timer.
      */
-    rc = PDMDevHlpTimerCreate(pDevInsR3, TMCLOCK_VIRTUAL, uartR3RcvFifoTimeoutTimer, pThis,
+    rc = PDMDevHlpTimerCreate(pDevIns, TMCLOCK_VIRTUAL, uartR3RcvFifoTimeoutTimer, pThisCC,
                               TMTIMER_FLAGS_NO_CRIT_SECT, "UART Rcv FIFO Timer",
                               &pThis->hTimerRcvFifoTimeout);
     AssertRCReturn(rc, rc);
 
-    rc = PDMDevHlpTimerSetCritSect(pDevInsR3, pThis->hTimerRcvFifoTimeout, &pThis->CritSect);
+    rc = PDMDevHlpTimerSetCritSect(pDevIns, pThis->hTimerRcvFifoTimeout, &pThis->CritSect);
     AssertRCReturn(rc, rc);
 
     /*
      * Create the transmit timer when no device is connected.
      */
-    rc = PDMDevHlpTimerCreate(pDevInsR3, TMCLOCK_VIRTUAL, uartR3TxUnconnectedTimer, pThis,
+    rc = PDMDevHlpTimerCreate(pDevIns, TMCLOCK_VIRTUAL, uartR3TxUnconnectedTimer, pThisCC,
                               TMTIMER_FLAGS_NO_CRIT_SECT, "UART TX uncon. Timer",
                               &pThis->hTimerTxUnconnected);
     AssertRCReturn(rc, rc);
 
-    rc = PDMDevHlpTimerSetCritSect(pDevInsR3, pThis->hTimerTxUnconnected, &pThis->CritSect);
+    rc = PDMDevHlpTimerSetCritSect(pDevIns, pThis->hTimerTxUnconnected, &pThis->CritSect);
     AssertRCReturn(rc, rc);
 
-    uartR3Reset(pThis);
+    uartR3Reset(pDevIns, pThis, pThisCC);
     return VINF_SUCCESS;
 }
 
-#endif /* IN_RING3 */
+#else  /* !IN_RING3 */
+
+/**
+ * Initializes the ring-0 / raw-mode instance data.
+ *
+ * @returns VBox status code.
+ * @param   pThisCC             The serial port instance data for the current context.
+ * @param   pfnUartIrqReq       Pointer to the interrupt request callback.
+ */
+DECLHIDDEN(int) uartRZInit(PUARTCORECC pThisCC, PFNUARTCOREIRQREQ pfnUartIrqReq)
+{
+    AssertPtrReturn(pfnUartIrqReq, VERR_INVALID_POINTER);
+    AssertPtrReturn(pThisCC, VERR_INVALID_POINTER);
+    pThisCC->pfnUartIrqReq = pfnUartIrqReq;
+    return VINF_SUCCESS;
+}
+
+#endif /* !IN_RING3 */
 
 #endif /* !VBOX_DEVICE_STRUCT_TESTCASE */

@@ -63,7 +63,7 @@ typedef struct UARTCORE *PUARTCORE;
  *
  * @returns nothing.
  * @param   pDevIns             The owning device instance.
- * @param   pThis               The UART core instance.
+ * @param   pThis               The shared UART core instance data.
  * @param   iLUN                The LUN associated with the UART core.
  * @param   iLvl                The interrupt level.
  */
@@ -115,7 +115,7 @@ typedef UARTFIFO *PUARTFIFO;
 
 
 /**
- * UART core device.
+ * Shared UART core device state.
  *
  * @implements  PDMIBASE
  * @implements  PDMISERIALPORT
@@ -124,40 +124,12 @@ typedef struct UARTCORE
 {
     /** Access critical section. */
     PDMCRITSECT                     CritSect;
-    /** Pointer to the device instance - R3 Ptr. */
-    PPDMDEVINSR3                    pDevInsR3;
-    /** Pointer to the device instance - R0 Ptr. */
-    PPDMDEVINSR0                    pDevInsR0;
-    /** Pointer to the device instance - RC Ptr. */
-    PPDMDEVINSRC                    pDevInsRC;
     /** The LUN on the owning device instance for this core. */
     uint32_t                        iLUN;
-    /** LUN\#0: The base interface. */
-    PDMIBASE                        IBase;
-    /** LUN\#0: The serial port interface. */
-    PDMISERIALPORT                  ISerialPort;
-    /** Pointer to the attached base driver. */
-    R3PTRTYPE(PPDMIBASE)            pDrvBase;
-    /** Pointer to the attached serial driver. */
-    R3PTRTYPE(PPDMISERIALCONNECTOR) pDrvSerial;
     /** Configuration flags. */
     uint32_t                        fFlags;
     /** The selected UART type. */
     UARTTYPE                        enmType;
-
-    /** Timer handle for the character timeout indication. */
-    TMTIMERHANDLE                   hTimerRcvFifoTimeout;
-    /** Timer handle for the send loop if no driver is connected/loopback mode is active. */
-    TMTIMERHANDLE                   hTimerTxUnconnected;
-
-    /** R3 interrupt request callback of the owning device. */
-    R3PTRTYPE(PFNUARTCOREIRQREQ)    pfnUartIrqReqR3;
-    /** R0 interrupt request callback of the owning device. */
-    R0PTRTYPE(PFNUARTCOREIRQREQ)    pfnUartIrqReqR0;
-    /** RC interrupt request callback of the owning device. */
-    RCPTRTYPE(PFNUARTCOREIRQREQ)    pfnUartIrqReqRC;
-    /** Alignment */
-    uint32_t                        u32Alignment;
 
     /** The divisor register (DLAB = 1). */
     uint16_t                        uRegDivisor;
@@ -182,6 +154,11 @@ typedef struct UARTCORE
     /** The Scratch Register (SCR). */
     uint8_t                         uRegScr;
 
+    /** Timer handle for the character timeout indication. */
+    TMTIMERHANDLE                   hTimerRcvFifoTimeout;
+    /** Timer handle for the send loop if no driver is connected/loopback mode is active. */
+    TMTIMERHANDLE                   hTimerTxUnconnected;
+
     /** Flag whether a character timeout interrupt is pending
      * (no symbols were inserted or removed from the receive FIFO
      * during an 4 times the character transmit/receive period and the FIFO
@@ -191,8 +168,8 @@ typedef struct UARTCORE
      * IIR register was read. This gets reset when IIR is read so the guest will get this
      * interrupt ID only once. */
     bool                            fThreEmptyPending;
-    /** Alignment. */
-    bool                            afAlignment[2];
+    /** Explicit alignment. */
+    bool                            afAlignment1[2];
     /** The transmit FIFO. */
     UARTFIFO                        FifoXmit;
     /** The receive FIFO. */
@@ -202,13 +179,74 @@ typedef struct UARTCORE
     uint64_t                        cSymbolXferTicks;
     /** Number of bytes available for reading from the layer below. */
     volatile uint32_t               cbAvailRdr;
-
-#if defined(IN_RC) || HC_ARCH_BITS == 32
-    uint32_t                        uAlignment;
-#endif
+    /** Explicit alignment. */
+    uint32_t                        u32Alignment2;
 } UARTCORE;
-
 AssertCompileSizeAlignment(UARTCORE, 8);
+
+
+/**
+ * Ring-3 UART core device state.
+ *
+ * @implements  PDMIBASE
+ * @implements  PDMISERIALPORT
+ */
+typedef struct UARTCORER3
+{
+    /** The LUN on the owning device instance for this core. */
+    uint32_t                        iLUN;
+    uint32_t                        u32Padding;
+    /** LUN\#0: The base interface. */
+    PDMIBASE                        IBase;
+    /** LUN\#0: The serial port interface. */
+    PDMISERIALPORT                  ISerialPort;
+    /** Pointer to the attached base driver. */
+    R3PTRTYPE(PPDMIBASE)            pDrvBase;
+    /** Pointer to the attached serial driver. */
+    R3PTRTYPE(PPDMISERIALCONNECTOR) pDrvSerial;
+
+    /** Interrupt request callback of the owning device. */
+    R3PTRTYPE(PFNUARTCOREIRQREQ)    pfnUartIrqReq;
+
+    /** Pointer to the shared data - for timers callbacks and interface methods
+     *  only. */
+    R3PTRTYPE(PUARTCORE)            pShared;
+    /** Pointer to the device instance - only for getting our bearings in
+     *  interface methods. */
+    PPDMDEVINS                      pDevIns;
+} UARTCORER3;
+/** Pointer to the core ring-3 UART device state. */
+typedef UARTCORER3 *PUARTCORER3;
+
+
+/**
+ * Ring-0 UART core device state.
+ */
+typedef struct UARTCORER0
+{
+    /** Interrupt request callback of the owning device. */
+    R0PTRTYPE(PFNUARTCOREIRQREQ)    pfnUartIrqReq;
+} UARTCORER0;
+/** Pointer to the core ring-0 UART device state. */
+typedef UARTCORER0 *PUARTCORER0;
+
+
+/**
+ * Raw-mode UART core device state.
+ */
+typedef struct UARTCORERC
+{
+    /** Interrupt request callback of the owning device. */
+    R0PTRTYPE(PFNUARTCOREIRQREQ)    pfnUartIrqReq;
+} UARTCORERC;
+/** Pointer to the core raw-mode UART device state. */
+typedef UARTCORERC *PUARTCORERC;
+
+
+/** Current context UAR core device state. */
+typedef CTX_SUFF(UARTCORE) UARTCORECC;
+/** Pointer to the current context UAR core device state. */
+typedef CTX_SUFF(PUARTCORE) PUARTCORECC;
 
 
 #ifndef VBOX_DEVICE_STRUCT_TESTCASE
@@ -216,122 +254,26 @@ AssertCompileSizeAlignment(UARTCORE, 8);
 /** Flag whether to yield the CPU on an LSR read. */
 #define UART_CORE_YIELD_ON_LSR_READ      RT_BIT_32(0)
 
-/**
- * Performs a register write to the given register offset.
- *
- * @returns VBox status code.
- * @param   pThis               The UART core instance.
- * @param   uReg                The register offset (byte offset) to start writing to.
- * @param   u32                 The value to write.
- * @param   cb                  Number of bytes to write.
- */
-DECLHIDDEN(int) uartRegWrite(PUARTCORE pThis, uint32_t uReg, uint32_t u32, size_t cb);
-
-/**
- * Performs a register read from the given register offset.
- *
- * @returns VBox status code.
- * @param   pThis               The UART core instance.
- * @param   uReg                The register offset (byte offset) to start reading from.
- * @param   pu32                Where to store the read value.
- * @param   cb                  Number of bytes to read.
- */
-DECLHIDDEN(int) uartRegRead(PUARTCORE pThis, uint32_t uReg, uint32_t *pu32, size_t cb);
+DECLHIDDEN(VBOXSTRICTRC) uartRegWrite(PPDMDEVINS pDevIns, PUARTCORE pThis, PUARTCORECC pThisCC,
+                                      uint32_t uReg, uint32_t u32, size_t cb);
+DECLHIDDEN(VBOXSTRICTRC) uartRegRead(PPDMDEVINS pDevIns, PUARTCORE pThis, PUARTCORECC pThisCC,
+                                     uint32_t uReg, uint32_t *pu32, size_t cb);
 
 # ifdef IN_RING3
-/**
- * Initializes the given UART core instance using the provided configuration.
- *
- * @returns VBox status code.
- * @param   pThis               The UART core instance to initialize.
- * @param   pDevInsR3           The R3 device instance pointer.
- * @param   enmType             The type of UART emulated.
- * @param   iLUN                The LUN the UART should look for attached drivers.
- * @param   fFlags              Additional flags controlling device behavior.
- * @param   pfnUartIrqReqR3     Pointer to the R3 interrupt request callback.
- * @param   pfnUartIrqReqR0     Pointer to the R0 interrupt request callback.
- * @param   pfnUartIrqReqRC     Pointer to the RC interrupt request callback.
- */
-DECLHIDDEN(int) uartR3Init(PUARTCORE pThis, PPDMDEVINS pDevInsR3, UARTTYPE enmType, unsigned iLUN, uint32_t fFlags,
-                           R3PTRTYPE(PFNUARTCOREIRQREQ) pfnUartIrqReqR3, R0PTRTYPE(PFNUARTCOREIRQREQ) pfnUartIrqReqR0,
-                           RCPTRTYPE(PFNUARTCOREIRQREQ) pfnUartIrqReqRC);
+DECLHIDDEN(int)  uartR3Init(PPDMDEVINS pDevIns, PUARTCORE pThis, PUARTCORECC pThisCC,
+                            UARTTYPE enmType, unsigned iLUN, uint32_t fFlags, PFNUARTCOREIRQREQ pfnUartIrqReq);
+DECLHIDDEN(void) uartR3Destruct(PPDMDEVINS pDevIns, PUARTCORE pThis);
+DECLHIDDEN(void) uartR3Detach(PPDMDEVINS pDevIns, PUARTCORE pThis, PUARTCORECC pThisCC);
+DECLHIDDEN(int)  uartR3Attach(PPDMDEVINS pDevIns, PUARTCORE pThis, PUARTCORECC pThisCC, unsigned iLUN);
+DECLHIDDEN(void) uartR3Reset(PPDMDEVINS pDevIns, PUARTCORE pThis, PUARTCORECC pThisCC);
+DECLHIDDEN(int)  uartR3SaveExec(PPDMDEVINS pDevIns, PUARTCORE pThis, PSSMHANDLE pSSM);
+DECLHIDDEN(int)  uartR3LoadExec(PPDMDEVINS pDevIns, PUARTCORE pThis, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass,
+                                uint8_t *puIrq, RTIOPORT *pPortBase);
+DECLHIDDEN(int)  uartR3LoadDone(PPDMDEVINS pDevIns, PUARTCORE pThis, PUARTCORECC pThisCC, PSSMHANDLE pSSM);
 
-/**
- * Destroys the given UART core instance freeing all allocated resources.
- *
- * @returns nothing.
- * @param   pThis               The UART core instance.
- */
-DECLHIDDEN(void) uartR3Destruct(PUARTCORE pThis);
-
-/**
- * Detaches any attached driver from the given UART core instance.
- *
- * @returns nothing.
- * @param   pThis               The UART core instance.
- */
-DECLHIDDEN(void) uartR3Detach(PUARTCORE pThis);
-
-/**
- * Attaches the given UART core instance to the drivers at the given LUN.
- *
- * @returns VBox status code.
- * @param   pThis               The UART core instance.
- * @param   iLUN                The LUN being attached.
- */
-DECLHIDDEN(int) uartR3Attach(PUARTCORE pThis, unsigned iLUN);
-
-/**
- * Resets the given UART core instance.
- *
- * @returns nothing.
- * @param   pThis               The UART core instance.
- */
-DECLHIDDEN(void) uartR3Reset(PUARTCORE pThis);
-
-/**
- * Relocates an RC pointers of the given UART core instance
- *
- * @returns nothing.
- * @param   pThis               The UART core instance.
- * @param   offDelta            The delta to relocate RC pointers with.
- */
-DECLHIDDEN(void) uartR3Relocate(PUARTCORE pThis, RTGCINTPTR offDelta);
-
-/**
- * Saves the UART state to the given SSM handle.
- *
- * @returns VBox status code.
- * @param   pThis               The UART core instance.
- * @param   pSSM                The SSM handle to save to.
- */
-DECLHIDDEN(int) uartR3SaveExec(PUARTCORE pThis, PSSMHANDLE pSSM);
-
-/**
- * Loads the UART state from the given SSM handle.
- *
- * @returns VBox status code.
- * @param   pThis               The UART core instance.
- * @param   pSSM                The SSM handle to load from.
- * @param   uVersion            Saved state version.
- * @param   uPass               The SSM pass the call is done in.
- * @param   puIrq               Where to store the IRQ value for legacy
- *                              saved states - optional.
- * @param   pPortBase           Where to store the I/O port base for legacy
- *                              saved states - optional.
- */
-DECLHIDDEN(int) uartR3LoadExec(PUARTCORE pThis, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass,
-                               uint8_t *puIrq, RTIOPORT *pPortBase);
-
-/**
- * Called when loading the state completed, updates the parameters of any driver underneath.
- *
- * @returns VBox status code.
- * @param   pThis               The UART core instance.
- * @param   pSSM                The SSM handle.
- */
-DECLHIDDEN(int) uartR3LoadDone(PUARTCORE pThis, PSSMHANDLE pSSM);
-
+# endif /* IN_RING3 */
+# if !defined(IN_RING3) || defined(DOXYGEN_RUNNING)
+DECLHIDDEN(int) uartRZInit(PUARTCORECC pThisCC, PFNUARTCOREIRQREQ pfnUartIrqReq);
 # endif
 
 #endif

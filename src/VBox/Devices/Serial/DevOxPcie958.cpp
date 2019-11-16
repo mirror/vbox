@@ -78,7 +78,7 @@
 
 
 /**
- * OXPCIe958 UART core.
+ * Shared OXPCIe958 UART core.
  */
 typedef struct OX958UART
 {
@@ -91,22 +91,54 @@ typedef struct OX958UART
     /** The DMA status registers. */
     uint32_t                        u32RegDmaSts;
 } OX958UART;
-/** Pointer to a OXPCIe958 UART core. */
+/** Pointer to a shared OXPCIe958 UART core. */
 typedef OX958UART *POX958UART;
+
+/**
+ * Ring-3 OXPCIe958 UART core.
+ */
+typedef struct OX958UARTR3
+{
+    /** The ring-3 UART core. */
+    UARTCORER3                      UartCore;
+} OX958UARTR3;
+/** Pointer to a ring-3 OXPCIe958 UART core. */
+typedef OX958UARTR3 *POX958UARTR3;
+
+/**
+ * Ring-0 OXPCIe958 UART core.
+ */
+typedef struct OX958UARTR0
+{
+    /** The ring-0 UART core. */
+    UARTCORER0                      UartCore;
+} OX958UARTR0;
+/** Pointer to a ring-0 OXPCIe958 UART core. */
+typedef OX958UARTR0 *POX958UARTR0;
 
 
 /**
- * OXPCIe958 device instance data.
+ * Raw-mode OXPCIe958 UART core.
+ */
+typedef struct OX958UARTRC
+{
+    /** The raw-mode UART core. */
+    UARTCORERC                      UartCore;
+} OX958UARTRC;
+/** Pointer to a raw-mode OXPCIe958 UART core. */
+typedef OX958UARTRC *POX958UARTRC;
+
+/** Current context OXPCIe958 UART core. */
+typedef CTX_SUFF(OX958UART) OX958UARTCC;
+/** Pointer to a current context OXPCIe958 UART core. */
+typedef CTX_SUFF(POX958UART) POX958UARTCC;
+
+
+/**
+ * Shared OXPCIe958 device instance data.
  */
 typedef struct DEVOX958
 {
-    /** Pointer to the device instance - R3 ptr. */
-    PPDMDEVINSR3                    pDevInsR3;
-    /** Pointer to the device instance - R0 ptr */
-    PPDMDEVINSR0                    pDevInsR0;
-    /** Pointer to the device instance - RC ptr. */
-    PPDMDEVINSRC                    pDevInsRC;
-    uint32_t                        u32Alignment;
     /** UART global IRQ status. */
     volatile uint32_t               u32RegIrqStsGlob;
     /** UART global IRQ enable mask. */
@@ -115,15 +147,52 @@ typedef struct DEVOX958
     volatile uint32_t               u32RegIrqEnWake;
     /** Number of UARTs configured. */
     uint32_t                        cUarts;
-    /** MMIO Base address. */
-    RTGCPHYS                        GCPhysMMIO;
     /** Handle to the MMIO region (PCI region \#0). */
     IOMMMIOHANDLE                   hMmio;
     /** The UARTs. */
     OX958UART                       aUarts[OX958_UARTS_MAX];
 } DEVOX958;
-/** Pointer to an OXPCIe958 device instance. */
+/** Pointer to shared OXPCIe958 device instance data. */
 typedef DEVOX958 *PDEVOX958;
+
+/**
+ * Ring-3 OXPCIe958 device instance data.
+ */
+typedef struct DEVOX958R3
+{
+    /** The UARTs. */
+    OX958UARTR3                     aUarts[OX958_UARTS_MAX];
+} DEVOX958R3;
+/** Pointer to ring-3 OXPCIe958 device instance data. */
+typedef DEVOX958R3 *PDEVOX958R3;
+
+/**
+ * Ring-0 OXPCIe958 device instance data.
+ */
+typedef struct DEVOX958R0
+{
+    /** The UARTs. */
+    OX958UARTR0                     aUarts[OX958_UARTS_MAX];
+} DEVOX958R0;
+/** Pointer to ring-0 OXPCIe958 device instance data. */
+typedef DEVOX958R0 *PDEVOX958R0;
+
+/**
+ * Raw-mode OXPCIe958 device instance data.
+ */
+typedef struct DEVOX958RC
+{
+    /** The UARTs. */
+    OX958UARTRC                     aUarts[OX958_UARTS_MAX];
+} DEVOX958RC;
+/** Pointer to raw-mode OXPCIe958 device instance data. */
+typedef DEVOX958RC *PDEVOX958RC;
+
+/** Current context OXPCIe958 device instance data. */
+typedef CTX_SUFF(DEVOX958) DEVOX958CC;
+/** Pointer to current context OXPCIe958 device instance data. */
+typedef CTX_SUFF(PDEVOX958) PDEVOX958CC;
+
 
 #ifndef VBOX_DEVICE_STRUCT_TESTCASE
 
@@ -134,7 +203,7 @@ typedef DEVOX958 *PDEVOX958;
  *
  * @returns nothing.
  * @param   pDevIns             The device instance.
- * @param   pThis               The OXPCIe958 device instance.
+ * @param   pThis               The shared OXPCIe958 device instance data.
  */
 static void ox958IrqUpdate(PPDMDEVINS pDevIns, PDEVOX958 pThis)
 {
@@ -152,13 +221,16 @@ static void ox958IrqUpdate(PPDMDEVINS pDevIns, PDEVOX958 pThis)
  * Performs a register read from the given UART.
  *
  * @returns Strict VBox status code.
- * @param   pThis               The OXPCIe958 device instance.
- * @param   pUart               The UART accessed.
+ * @param   pDevIns             The device instance.
+ * @param   pThis               The shared OXPCIe958 device instance data.
+ * @param   pUart               The UART accessed, shared bits.
+ * @param   pUartCC             The UART accessed, current context bits.
  * @param   offUartReg          Offset of the register being read.
  * @param   pv                  Where to store the read data.
  * @param   cb                  Number of bytes to read.
  */
-static VBOXSTRICTRC ox958UartRegRead(PDEVOX958 pThis, POX958UART pUart, uint32_t offUartReg, void *pv, unsigned cb)
+static VBOXSTRICTRC ox958UartRegRead(PPDMDEVINS pDevIns, PDEVOX958 pThis, POX958UART pUart, POX958UARTCC pUartCC,
+                                     uint32_t offUartReg, void *pv, unsigned cb)
 {
     VBOXSTRICTRC rc;
     RT_NOREF(pThis);
@@ -169,7 +241,7 @@ static VBOXSTRICTRC ox958UartRegRead(PDEVOX958 pThis, POX958UART pUart, uint32_t
         rc = VINF_SUCCESS;
     }
     else /* Access UART registers. */
-        rc = uartRegRead(&pUart->UartCore, offUartReg, (uint32_t *)pv, cb);
+        rc = uartRegRead(pDevIns, &pUart->UartCore, &pUartCC->UartCore, offUartReg, (uint32_t *)pv, cb);
 
     return rc;
 }
@@ -179,13 +251,16 @@ static VBOXSTRICTRC ox958UartRegRead(PDEVOX958 pThis, POX958UART pUart, uint32_t
  * Performs a register write to the given UART.
  *
  * @returns Strict VBox status code.
- * @param   pThis               The OXPCIe958 device instance.
- * @param   pUart               The UART accessed.
+ * @param   pDevIns             The device instance.
+ * @param   pThis               The shared OXPCIe958 device instance data.
+ * @param   pUart               The UART accessed, shared bits.
+ * @param   pUartCC             The UART accessed, current context bits.
  * @param   offUartReg          Offset of the register being written.
  * @param   pv                  The data to write.
  * @param   cb                  Number of bytes to write.
  */
-static VBOXSTRICTRC ox958UartRegWrite(PDEVOX958 pThis, POX958UART pUart, uint32_t offUartReg, const void *pv, unsigned cb)
+static VBOXSTRICTRC ox958UartRegWrite(PPDMDEVINS pDevIns, PDEVOX958 pThis, POX958UART pUart, POX958UARTCC pUartCC,
+                                      uint32_t offUartReg, const void *pv, unsigned cb)
 {
     VBOXSTRICTRC rc;
     RT_NOREF(pThis);
@@ -196,7 +271,7 @@ static VBOXSTRICTRC ox958UartRegWrite(PDEVOX958 pThis, POX958UART pUart, uint32_
         rc = VINF_SUCCESS;
     }
     else /* Access UART registers. */
-        rc = uartRegWrite(&pUart->UartCore, offUartReg, *(const uint32_t *)pv, cb);
+        rc = uartRegWrite(pDevIns, &pUart->UartCore, &pUartCC->UartCore, offUartReg, *(const uint32_t *)pv, cb);
 
     return rc;
 }
@@ -229,8 +304,9 @@ PDMBOTHCBDECL(void) ox958IrqReq(PPDMDEVINS pDevIns, PUARTCORE pUart, unsigned iL
  */
 static DECLCALLBACK(VBOXSTRICTRC) ox958MmioRead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS off, void *pv, unsigned cb)
 {
-    PDEVOX958    pThis = PDMDEVINS_2_DATA(pDevIns, PDEVOX958);
-    VBOXSTRICTRC rc    = VINF_SUCCESS;
+    PDEVOX958    pThis   = PDMDEVINS_2_DATA(pDevIns, PDEVOX958);
+    PDEVOX958CC  pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PDEVOX958CC);
+    VBOXSTRICTRC rc      = VINF_SUCCESS;
     RT_NOREF(pvUser);
 
     if (off < OX958_REG_UART_REGION_OFFSET)
@@ -273,8 +349,9 @@ static DECLCALLBACK(VBOXSTRICTRC) ox958MmioRead(PPDMDEVINS pDevIns, void *pvUser
         uint32_t offUartReg = (uint32_t)off % OX958_REG_UART_REGION_SIZE;
         if (iUart < RT_MIN(pThis->cUarts, RT_ELEMENTS(pThis->aUarts)))
         {
-            POX958UART pUart = &pThis->aUarts[iUart];
-            rc = ox958UartRegRead(pThis, pUart, offUartReg, pv, cb);
+            POX958UART   pUart   = &pThis->aUarts[iUart];
+            POX958UARTCC pUartCC = &pThisCC->aUarts[iUart];
+            rc = ox958UartRegRead(pDevIns, pThis, pUart, pUartCC, offUartReg, pv, cb);
             if (rc == VINF_IOM_R3_IOPORT_READ)
                 rc = VINF_IOM_R3_MMIO_READ;
         }
@@ -291,8 +368,9 @@ static DECLCALLBACK(VBOXSTRICTRC) ox958MmioRead(PPDMDEVINS pDevIns, void *pvUser
  */
 static DECLCALLBACK(VBOXSTRICTRC) ox958MmioWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS off, void const *pv, unsigned cb)
 {
-    PDEVOX958    pThis = PDMDEVINS_2_DATA(pDevIns, PDEVOX958);
-    VBOXSTRICTRC rc    = VINF_SUCCESS;
+    PDEVOX958    pThis   = PDMDEVINS_2_DATA(pDevIns, PDEVOX958);
+    PDEVOX958CC  pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PDEVOX958CC);
+    VBOXSTRICTRC rc      = VINF_SUCCESS;
     RT_NOREF1(pvUser);
 
     if (off < OX958_REG_UART_REGION_OFFSET)
@@ -331,8 +409,9 @@ static DECLCALLBACK(VBOXSTRICTRC) ox958MmioWrite(PPDMDEVINS pDevIns, void *pvUse
         uint32_t offUartReg = (uint32_t)off % OX958_REG_UART_REGION_SIZE;
         if (iUart < RT_MIN(pThis->cUarts, RT_ELEMENTS(pThis->aUarts)))
         {
-            POX958UART pUart = &pThis->aUarts[iUart];
-            rc = ox958UartRegWrite(pThis, pUart, offUartReg, pv, cb);
+            POX958UART   pUart   = &pThis->aUarts[iUart];
+            POX958UARTCC pUartCC = &pThisCC->aUarts[iUart];
+            rc = ox958UartRegWrite(pDevIns, pThis, pUart, pUartCC, offUartReg, pv, cb);
             if (rc == VINF_IOM_R3_IOPORT_WRITE)
                 rc = VINF_IOM_R3_MMIO_WRITE;
         }
@@ -347,33 +426,36 @@ static DECLCALLBACK(VBOXSTRICTRC) ox958MmioWrite(PPDMDEVINS pDevIns, void *pvUse
 /** @interface_method_impl{PDMDEVREG,pfnDetach} */
 static DECLCALLBACK(void) ox958R3Detach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t fFlags)
 {
-    PDEVOX958 pThis = PDMDEVINS_2_DATA(pDevIns, PDEVOX958);
+    PDEVOX958   pThis   = PDMDEVINS_2_DATA(pDevIns, PDEVOX958);
+    PDEVOX958CC pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PDEVOX958CC);
     AssertReturnVoid(iLUN >= pThis->cUarts);
 
     RT_NOREF(fFlags);
 
-    return uartR3Detach(&pThis->aUarts[iLUN].UartCore);
+    return uartR3Detach(pDevIns, &pThis->aUarts[iLUN].UartCore, &pThisCC->aUarts[iLUN].UartCore);
 }
 
 
 /** @interface_method_impl{PDMDEVREG,pfnAttach} */
 static DECLCALLBACK(int) ox958R3Attach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t fFlags)
 {
-    PDEVOX958 pThis = PDMDEVINS_2_DATA(pDevIns, PDEVOX958);
+    PDEVOX958   pThis   = PDMDEVINS_2_DATA(pDevIns, PDEVOX958);
+    PDEVOX958CC pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PDEVOX958CC);
 
     RT_NOREF(fFlags);
 
     if (iLUN >= RT_MIN(pThis->cUarts, RT_ELEMENTS(pThis->aUarts)))
         return VERR_PDM_LUN_NOT_FOUND;
 
-    return uartR3Attach(&pThis->aUarts[iLUN].UartCore, iLUN);
+    return uartR3Attach(pDevIns, &pThis->aUarts[iLUN].UartCore, &pThisCC->aUarts[iLUN].UartCore, iLUN);
 }
 
 
 /** @interface_method_impl{PDMDEVREG,pfnReset} */
 static DECLCALLBACK(void) ox958R3Reset(PPDMDEVINS pDevIns)
 {
-    PDEVOX958 pThis = PDMDEVINS_2_DATA(pDevIns, PDEVOX958);
+    PDEVOX958   pThis   = PDMDEVINS_2_DATA(pDevIns, PDEVOX958);
+    PDEVOX958CC pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PDEVOX958CC);
 
     pThis->u32RegIrqStsGlob = 0x00;
     pThis->u32RegIrqEnGlob  = 0x00;
@@ -381,20 +463,7 @@ static DECLCALLBACK(void) ox958R3Reset(PPDMDEVINS pDevIns)
 
     uint32_t const cUarts = RT_MIN(pThis->cUarts, RT_ELEMENTS(pThis->aUarts));
     for (uint32_t i = 0; i < cUarts; i++)
-        uartR3Reset(&pThis->aUarts[i].UartCore);
-}
-
-
-/** @interface_method_impl{PDMDEVREG,pfnRelocate} */
-static DECLCALLBACK(void) ox958R3Relocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta)
-{
-    PDEVOX958 pThis = PDMDEVINS_2_DATA(pDevIns, PDEVOX958);
-    RT_NOREF(offDelta);
-
-    pThis->pDevInsRC = PDMDEVINS_2_RCPTR(pDevIns);
-    uint32_t const cUarts = RT_MIN(pThis->cUarts, RT_ELEMENTS(pThis->aUarts));
-    for (uint32_t i = 0; i < cUarts; i++)
-        uartR3Relocate(&pThis->aUarts[i].UartCore, offDelta);
+        uartR3Reset(pDevIns, &pThis->aUarts[i].UartCore, &pThisCC->aUarts[i].UartCore);
 }
 
 
@@ -406,7 +475,7 @@ static DECLCALLBACK(int) ox958R3Destruct(PPDMDEVINS pDevIns)
 
     uint32_t const cUarts = RT_MIN(pThis->cUarts, RT_ELEMENTS(pThis->aUarts));
     for (uint32_t i = 0; i < cUarts; i++)
-        uartR3Destruct(&pThis->aUarts[i].UartCore);
+        uartR3Destruct(pDevIns, &pThis->aUarts[i].UartCore);
 
     return VINF_SUCCESS;
 }
@@ -417,18 +486,15 @@ static DECLCALLBACK(int) ox958R3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
 {
     PDMDEV_CHECK_VERSIONS_RETURN(pDevIns);
     RT_NOREF(iInstance);
-    PDEVOX958       pThis = PDMDEVINS_2_DATA(pDevIns, PDEVOX958);
-    PCPDMDEVHLPR3   pHlp  = pDevIns->pHlpR3;
+    PDEVOX958       pThis   = PDMDEVINS_2_DATA(pDevIns, PDEVOX958);
+    PDEVOX958R3     pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PDEVOX958CC);
+    PCPDMDEVHLPR3   pHlp    = pDevIns->pHlpR3;
     bool            fMsiXSupported = false;
     int             rc;
 
     /*
      * Init instance data.
      */
-    pThis->pDevInsR3             = pDevIns;
-    pThis->pDevInsR0             = PDMDEVINS_2_R0PTR(pDevIns);
-    pThis->pDevInsRC             = PDMDEVINS_2_RCPTR(pDevIns);
-
     rc = PDMDevHlpSetDeviceCritSect(pDevIns, PDMDevHlpCritSectGetNop(pDevIns));
     AssertRCReturn(rc, rc);
 
@@ -513,32 +579,15 @@ static DECLCALLBACK(int) ox958R3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
                                         "OxPCIe958", &pThis->hMmio);
     AssertRCReturn(rc, rc);
 
-    /** @todo This dynamic symbol resolving will be reworked later! */
-    PVM pVM = PDMDevHlpGetVM(pDevIns);
-    RTR0PTR pfnSerialIrqReqR0 = NIL_RTR0PTR;
-    RTRCPTR pfnSerialIrqReqRC = NIL_RTRCPTR;
 
-# ifdef VBOX_WITH_RAW_MODE_KEEP
-    if (   pDevIns->fRCEnabled
-        && VM_IS_RAW_MODE_ENABLED(pVM))
-    {
-        rc = PDMR3LdrGetSymbolRC(pVM, pDevIns->pReg->pszRCMod, "ox958IrqReq", &pfnSerialIrqReqRC);
-        if (RT_FAILURE(rc))
-            return rc;
-    }
-# endif
-
-    if (pDevIns->fR0Enabled)
-    {
-        rc = PDMR3LdrGetSymbolR0(pVM, pDevIns->pReg->pszR0Mod, "ox958IrqReq", &pfnSerialIrqReqR0);
-        if (RT_FAILURE(rc))
-            return rc;
-    }
-
+    /*
+     * Initialize the UARTs.
+     */
     for (uint32_t i = 0; i < pThis->cUarts; i++)
     {
-        POX958UART pUart = &pThis->aUarts[i];
-        rc = uartR3Init(&pUart->UartCore, pDevIns, UARTTYPE_16550A, i, 0, ox958IrqReq, pfnSerialIrqReqR0, pfnSerialIrqReqRC);
+        POX958UART   pUart   = &pThis->aUarts[i];
+        POX958UARTCC pUartCC = &pThisCC->aUarts[i];
+        rc = uartR3Init(pDevIns, &pUart->UartCore, &pUartCC->UartCore, UARTTYPE_16550A, i, 0, ox958IrqReq);
         if (RT_FAILURE(rc))
             return PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS,
                                        N_("OXPCIe958 configuration error: failed to initialize UART %u"), i);
@@ -556,13 +605,22 @@ static DECLCALLBACK(int) ox958R3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
 static DECLCALLBACK(int) ox958RZConstruct(PPDMDEVINS pDevIns)
 {
     PDMDEV_CHECK_VERSIONS_RETURN(pDevIns);
-    PDEVOX958 pThis = PDMDEVINS_2_DATA(pDevIns, PDEVOX958);
+    PDEVOX958   pThis   = PDMDEVINS_2_DATA(pDevIns, PDEVOX958);
+    PDEVOX958CC pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PDEVOX958CC);
 
     int rc = PDMDevHlpSetDeviceCritSect(pDevIns, PDMDevHlpCritSectGetNop(pDevIns));
     AssertRCReturn(rc, rc);
 
     rc = PDMDevHlpMmioSetUpContext(pDevIns, pThis->hMmio, ox958MmioWrite, ox958MmioRead, NULL /*pvUser*/);
     AssertRCReturn(rc, rc);
+
+    uint32_t const cUarts = RT_MIN(pThis->cUarts, RT_ELEMENTS(pThis->aUarts));
+    for (uint32_t i = 0; i < cUarts; i++)
+    {
+        POX958UARTCC pUartCC = &pThisCC->aUarts[i];
+        rc = uartRZInit(&pUartCC->UartCore, ox958IrqReq);
+        AssertRCReturn(rc, rc);
+    }
 
     return VINF_SUCCESS;
 }
@@ -575,13 +633,13 @@ const PDMDEVREG g_DeviceOxPcie958 =
     /* .u32version = */             PDM_DEVREG_VERSION,
     /* .uReserved0 = */             0,
     /* .szName = */                 "oxpcie958uart",
-    /* .fFlags = */                 PDM_DEVREG_FLAGS_DEFAULT_BITS | PDM_DEVREG_FLAGS_RZ,
+    /* .fFlags = */                 PDM_DEVREG_FLAGS_DEFAULT_BITS | PDM_DEVREG_FLAGS_RZ | PDM_DEVREG_FLAGS_NEW_STYLE,
     /* .fClass = */                 PDM_DEVREG_CLASS_SERIAL,
     /* .cMaxInstances = */          ~0U,
     /* .uSharedVersion = */         42,
     /* .cbInstanceShared = */       sizeof(DEVOX958),
-    /* .cbInstanceCC = */           0,
-    /* .cbInstanceRC = */           0,
+    /* .cbInstanceCC = */           sizeof(DEVOX958CC),
+    /* .cbInstanceRC = */           sizeof(DEVOX958RC),
     /* .cMaxPciDevices = */         1,
     /* .cMaxMsixVectors = */        VBOX_MSIX_MAX_ENTRIES,
     /* .pszDescription = */         "OXPCIe958 based UART controller.\n",
@@ -590,7 +648,7 @@ const PDMDEVREG g_DeviceOxPcie958 =
     /* .pszR0Mod = */               "VBoxDDR0.r0",
     /* .pfnConstruct = */           ox958R3Construct,
     /* .pfnDestruct = */            ox958R3Destruct,
-    /* .pfnRelocate = */            ox958R3Relocate,
+    /* .pfnRelocate = */            NULL,
     /* .pfnMemSetup = */            NULL,
     /* .pfnPowerOn = */             NULL,
     /* .pfnReset = */               ox958R3Reset,
