@@ -104,9 +104,9 @@
 /**
  * Acquires the PIT lock or returns.
  */
-#define DEVPIT_LOCK_RETURN(a_pThis, a_rcBusy)  \
+#define DEVPIT_LOCK_RETURN(a_pDevIns, a_pThis, a_rcBusy)  \
     do { \
-        int rcLock = PDMCritSectEnter(&(a_pThis)->CritSect, (a_rcBusy)); \
+        int rcLock = PDMDevHlpCritSectEnter((a_pDevIns), &(a_pThis)->CritSect, (a_rcBusy)); \
         if (rcLock != VINF_SUCCESS) \
             return rcLock; \
     } while (0)
@@ -114,19 +114,19 @@
 /**
  * Releases the PIT lock.
  */
-#define DEVPIT_UNLOCK(a_pThis) \
-    do { PDMCritSectLeave(&(a_pThis)->CritSect); } while (0)
+#define DEVPIT_UNLOCK(a_pDevIns, a_pThis) \
+    do { PDMDevHlpCritSectLeave((a_pDevIns), &(a_pThis)->CritSect); } while (0)
 
 
 /**
  * Acquires the TM lock and PIT lock, returns on failure.
  */
-#define DEVPIT_LOCK_BOTH_RETURN(a_pThis, a_rcBusy)  \
+#define DEVPIT_LOCK_BOTH_RETURN(a_pDevIns, a_pThis, a_rcBusy)  \
     do { \
         int rcLock = TMTimerLock((a_pThis)->channels[0].CTX_SUFF(pTimer), (a_rcBusy)); \
         if (rcLock != VINF_SUCCESS) \
             return rcLock; \
-        rcLock = PDMCritSectEnter(&(a_pThis)->CritSect, (a_rcBusy)); \
+        rcLock = PDMDevHlpCritSectEnter((a_pDevIns), &(a_pThis)->CritSect, (a_rcBusy)); \
         if (rcLock != VINF_SUCCESS) \
         { \
             TMTimerUnlock((a_pThis)->channels[0].CTX_SUFF(pTimer)); \
@@ -138,19 +138,19 @@
 /**
  * Acquires the TM lock and PIT lock, ignores failures.
  */
-# define DEVPIT_R3_LOCK_BOTH(a_pThis)  \
+# define DEVPIT_R3_LOCK_BOTH(a_pDevIns, a_pThis)  \
     do { \
         TMTimerLock((a_pThis)->channels[0].CTX_SUFF(pTimer), VERR_IGNORED); \
-        PDMCritSectEnter(&(a_pThis)->CritSect, VERR_IGNORED); \
+        PDMDevHlpCritSectEnter((a_pDevIns), &(a_pThis)->CritSect, VERR_IGNORED); \
     } while (0)
 #endif /* IN_RING3 */
 
 /**
  * Releases the PIT lock and TM lock.
  */
-#define DEVPIT_UNLOCK_BOTH(a_pThis) \
+#define DEVPIT_UNLOCK_BOTH(a_pDevIns, a_pThis) \
     do { \
-        PDMCritSectLeave(&(a_pThis)->CritSect); \
+        PDMDevHlpCritSectLeave((a_pDevIns), &(a_pThis)->CritSect); \
         TMTimerUnlock((a_pThis)->channels[0].CTX_SUFF(pTimer)); \
     } while (0)
 
@@ -664,12 +664,12 @@ PDMBOTHCBDECL(int) pitIOPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT uPor
     PPITCHANNEL pChan = &pThis->channels[uPort];
     int ret;
 
-    DEVPIT_LOCK_RETURN(pThis, VINF_IOM_R3_IOPORT_READ);
+    DEVPIT_LOCK_RETURN(pDevIns, pThis, VINF_IOM_R3_IOPORT_READ);
     if (pChan->status_latched)
     {
         pChan->status_latched = 0;
         ret = pChan->status;
-        DEVPIT_UNLOCK(pThis);
+        DEVPIT_UNLOCK(pDevIns, pThis);
     }
     else if (pChan->count_latched)
     {
@@ -689,12 +689,12 @@ PDMBOTHCBDECL(int) pitIOPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT uPor
                 pChan->count_latched = RW_STATE_MSB;
                 break;
         }
-        DEVPIT_UNLOCK(pThis);
+        DEVPIT_UNLOCK(pDevIns, pThis);
     }
     else
     {
-        DEVPIT_UNLOCK(pThis);
-        DEVPIT_LOCK_BOTH_RETURN(pThis, VINF_IOM_R3_IOPORT_READ);
+        DEVPIT_UNLOCK(pDevIns, pThis);
+        DEVPIT_LOCK_BOTH_RETURN(pDevIns, pThis, VINF_IOM_R3_IOPORT_READ);
         int count;
         switch (pChan->read_state)
         {
@@ -718,7 +718,7 @@ PDMBOTHCBDECL(int) pitIOPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT uPor
                 pChan->read_state = RW_STATE_WORD0;
                 break;
         }
-        DEVPIT_UNLOCK_BOTH(pThis);
+        DEVPIT_UNLOCK_BOTH(pDevIns, pThis);
     }
 
     *pu32 = ret;
@@ -765,7 +765,7 @@ PDMBOTHCBDECL(int) pitIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT uPo
         if (channel == 3)
         {
             /* read-back command */
-            DEVPIT_LOCK_BOTH_RETURN(pThis, VINF_IOM_R3_IOPORT_WRITE);
+            DEVPIT_LOCK_BOTH_RETURN(pDevIns, pThis, VINF_IOM_R3_IOPORT_WRITE);
             for (channel = 0; channel < RT_ELEMENTS(pThis->channels); channel++)
             {
                 PPITCHANNEL pChan = &pThis->channels[channel];
@@ -786,7 +786,7 @@ PDMBOTHCBDECL(int) pitIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT uPo
                     }
                 }
             }
-            DEVPIT_UNLOCK_BOTH(pThis);
+            DEVPIT_UNLOCK_BOTH(pDevIns, pThis);
         }
         else
         {
@@ -794,13 +794,13 @@ PDMBOTHCBDECL(int) pitIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT uPo
             unsigned access = (u32 >> 4) & 3;
             if (access == 0)
             {
-                DEVPIT_LOCK_BOTH_RETURN(pThis, VINF_IOM_R3_IOPORT_WRITE);
+                DEVPIT_LOCK_BOTH_RETURN(pDevIns, pThis, VINF_IOM_R3_IOPORT_WRITE);
                 pit_latch_count(pChan);
-                DEVPIT_UNLOCK_BOTH(pThis);
+                DEVPIT_UNLOCK_BOTH(pDevIns, pThis);
             }
             else
             {
-                DEVPIT_LOCK_RETURN(pThis, VINF_IOM_R3_IOPORT_WRITE);
+                DEVPIT_LOCK_RETURN(pDevIns, pThis, VINF_IOM_R3_IOPORT_WRITE);
                 pChan->rw_mode = access;
                 pChan->read_state = access;
                 pChan->write_state = access;
@@ -808,7 +808,7 @@ PDMBOTHCBDECL(int) pitIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT uPo
                 pChan->mode = (u32 >> 1) & 7;
                 pChan->bcd = u32 & 1;
                 /* XXX: update irq timer ? */
-                DEVPIT_UNLOCK(pThis);
+                DEVPIT_UNLOCK(pDevIns, pThis);
             }
         }
     }
@@ -824,7 +824,7 @@ PDMBOTHCBDECL(int) pitIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT uPo
          */
         RT_UNTRUSTED_VALIDATED_FENCE(); /* paranoia */
         PPITCHANNEL pChan = &pThis->channels[uPort];
-        DEVPIT_LOCK_BOTH_RETURN(pThis, VINF_IOM_R3_IOPORT_WRITE);
+        DEVPIT_LOCK_BOTH_RETURN(pDevIns, pThis, VINF_IOM_R3_IOPORT_WRITE);
         switch (pChan->write_state)
         {
             default:
@@ -843,7 +843,7 @@ PDMBOTHCBDECL(int) pitIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT uPo
                 pChan->write_state = RW_STATE_WORD0;
                 break;
         }
-        DEVPIT_UNLOCK_BOTH(pThis);
+        DEVPIT_UNLOCK_BOTH(pDevIns, pThis);
 #endif /* !IN_RING3 */
     }
     return VINF_SUCCESS;
@@ -855,11 +855,11 @@ PDMBOTHCBDECL(int) pitIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT uPo
  */
 PDMBOTHCBDECL(int) pitIOPortSpeakerRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT uPort, uint32_t *pu32, unsigned cb)
 {
-    RT_NOREF2(pvUser, uPort);
+    RT_NOREF(pvUser, uPort);
     if (cb == 1)
     {
         PPITSTATE pThis = PDMDEVINS_2_DATA(pDevIns, PPITSTATE);
-        DEVPIT_LOCK_BOTH_RETURN(pThis, VINF_IOM_R3_IOPORT_READ);
+        DEVPIT_LOCK_BOTH_RETURN(pDevIns, pThis, VINF_IOM_R3_IOPORT_READ);
 
         const uint64_t u64Now = TMTimerGet(pThis->channels[0].CTX_SUFF(pTimer));
         Assert(TMTimerGetFreq(pThis->channels[0].CTX_SUFF(pTimer)) == 1000000000); /* lazy bird. */
@@ -881,7 +881,7 @@ PDMBOTHCBDECL(int) pitIOPortSpeakerRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPO
         /* bit 0 - timer 2 clock gate to speaker status. */
         const int fTimer2GateStatus = pit_get_gate(pThis, 2);
 
-        DEVPIT_UNLOCK_BOTH(pThis);
+        DEVPIT_UNLOCK_BOTH(pDevIns, pThis);
 
         *pu32 = fTimer2GateStatus
               | (fSpeakerStatus << 1)
@@ -901,11 +901,11 @@ PDMBOTHCBDECL(int) pitIOPortSpeakerRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPO
  */
 PDMBOTHCBDECL(int) pitIOPortSpeakerWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT uPort, uint32_t u32, unsigned cb)
 {
-    RT_NOREF2(pvUser, uPort);
+    RT_NOREF(pvUser, uPort);
     if (cb == 1)
     {
         PPITSTATE pThis = PDMDEVINS_2_DATA(pDevIns, PPITSTATE);
-        DEVPIT_LOCK_BOTH_RETURN(pThis, VERR_IGNORED);
+        DEVPIT_LOCK_BOTH_RETURN(pDevIns, pThis, VERR_IGNORED);
 
         pThis->speaker_data_on = (u32 >> 1) & 1;
         pit_set_gate(pThis, 2, u32 & 1);
@@ -913,7 +913,7 @@ PDMBOTHCBDECL(int) pitIOPortSpeakerWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOP
         /** @todo r=klaus move this to a (system-specific) driver, which can
          * abstract the details, and if necessary create a thread to minimize
          * impact on VM execution. */
-#ifdef RT_OS_LINUX
+# ifdef RT_OS_LINUX
         if (pThis->enmSpeakerEmu != PIT_SPEAKER_EMU_NONE)
         {
             PPITCHANNEL pChan = &pThis->channels[2];
@@ -991,9 +991,9 @@ PDMBOTHCBDECL(int) pitIOPortSpeakerWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOP
                 }
             }
         }
-#endif
+# endif /* RT_OS_LINUX */
 
-        DEVPIT_UNLOCK_BOTH(pThis);
+        DEVPIT_UNLOCK_BOTH(pDevIns, pThis);
     }
     Log(("pitIOPortSpeakerWrite: uPort=%#x cb=%x u32=%#x\n", uPort, cb, u32));
     return VINF_SUCCESS;
@@ -1007,11 +1007,12 @@ PDMBOTHCBDECL(int) pitIOPortSpeakerWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOP
  */
 static DECLCALLBACK(int) pitLiveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uPass)
 {
-    RT_NOREF1(uPass);
-    PPITSTATE pThis = PDMDEVINS_2_DATA(pDevIns, PPITSTATE);
-    SSMR3PutIOPort(pSSM, pThis->IOPortBaseCfg);
-    SSMR3PutU8(    pSSM, pThis->channels[0].irq);
-    SSMR3PutBool(  pSSM, pThis->fSpeakerCfg);
+    PPITSTATE     pThis = PDMDEVINS_2_DATA(pDevIns, PPITSTATE);
+    PCPDMDEVHLPR3 pHlp  = pDevIns->pHlpR3;
+    RT_NOREF(uPass);
+    pHlp->pfnSSMPutIOPort(pSSM, pThis->IOPortBaseCfg);
+    pHlp->pfnSSMPutU8(    pSSM, pThis->channels[0].irq);
+    pHlp->pfnSSMPutBool(  pSSM, pThis->fSpeakerCfg);
     return VINF_SSM_DONT_CALL_AGAIN;
 }
 
@@ -1021,8 +1022,9 @@ static DECLCALLBACK(int) pitLiveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32
  */
 static DECLCALLBACK(int) pitSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 {
-    PPITSTATE pThis = PDMDEVINS_2_DATA(pDevIns, PPITSTATE);
-    PDMCritSectEnter(&pThis->CritSect, VERR_IGNORED);
+    PPITSTATE     pThis = PDMDEVINS_2_DATA(pDevIns, PPITSTATE);
+    PCPDMDEVHLPR3 pHlp  = pDevIns->pHlpR3;
+    PDMDevHlpCritSectEnter(pDevIns, &pThis->CritSect, VERR_IGNORED);
 
     /* The config. */
     pitLiveExec(pDevIns, pSSM, SSM_PASS_FINAL);
@@ -1031,36 +1033,36 @@ static DECLCALLBACK(int) pitSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
     for (unsigned i = 0; i < RT_ELEMENTS(pThis->channels); i++)
     {
         PPITCHANNEL pChan = &pThis->channels[i];
-        SSMR3PutU32(pSSM, pChan->count);
-        SSMR3PutU16(pSSM, pChan->latched_count);
-        SSMR3PutU8(pSSM, pChan->count_latched);
-        SSMR3PutU8(pSSM, pChan->status_latched);
-        SSMR3PutU8(pSSM, pChan->status);
-        SSMR3PutU8(pSSM, pChan->read_state);
-        SSMR3PutU8(pSSM, pChan->write_state);
-        SSMR3PutU8(pSSM, pChan->write_latch);
-        SSMR3PutU8(pSSM, pChan->rw_mode);
-        SSMR3PutU8(pSSM, pChan->mode);
-        SSMR3PutU8(pSSM, pChan->bcd);
-        SSMR3PutU8(pSSM, pChan->gate);
-        SSMR3PutU64(pSSM, pChan->count_load_time);
-        SSMR3PutU64(pSSM, pChan->u64NextTS);
-        SSMR3PutU64(pSSM, pChan->u64ReloadTS);
-        SSMR3PutS64(pSSM, pChan->next_transition_time);
+        pHlp->pfnSSMPutU32(pSSM, pChan->count);
+        pHlp->pfnSSMPutU16(pSSM, pChan->latched_count);
+        pHlp->pfnSSMPutU8(pSSM, pChan->count_latched);
+        pHlp->pfnSSMPutU8(pSSM, pChan->status_latched);
+        pHlp->pfnSSMPutU8(pSSM, pChan->status);
+        pHlp->pfnSSMPutU8(pSSM, pChan->read_state);
+        pHlp->pfnSSMPutU8(pSSM, pChan->write_state);
+        pHlp->pfnSSMPutU8(pSSM, pChan->write_latch);
+        pHlp->pfnSSMPutU8(pSSM, pChan->rw_mode);
+        pHlp->pfnSSMPutU8(pSSM, pChan->mode);
+        pHlp->pfnSSMPutU8(pSSM, pChan->bcd);
+        pHlp->pfnSSMPutU8(pSSM, pChan->gate);
+        pHlp->pfnSSMPutU64(pSSM, pChan->count_load_time);
+        pHlp->pfnSSMPutU64(pSSM, pChan->u64NextTS);
+        pHlp->pfnSSMPutU64(pSSM, pChan->u64ReloadTS);
+        pHlp->pfnSSMPutS64(pSSM, pChan->next_transition_time);
         if (pChan->CTX_SUFF(pTimer))
             TMR3TimerSave(pChan->CTX_SUFF(pTimer), pSSM);
     }
 
-    SSMR3PutS32(pSSM, pThis->speaker_data_on);
+    pHlp->pfnSSMPutS32(pSSM, pThis->speaker_data_on);
 #ifdef FAKE_REFRESH_CLOCK
-    SSMR3PutS32(pSSM, pThis->dummy_refresh_clock);
+    pHlp->pfnSSMPutS32(pSSM, pThis->dummy_refresh_clock);
 #else
-    SSMR3PutS32(pSSM, 0);
+    pHlp->pfnSSMPutS32(pSSM, 0);
 #endif
 
-    SSMR3PutBool(pSSM, pThis->fDisabledByHpet);
+    pHlp->pfnSSMPutBool(pSSM, pThis->fDisabledByHpet);
 
-    PDMCritSectLeave(&pThis->CritSect);
+    PDMDevHlpCritSectLeave(pDevIns, &pThis->CritSect);
     return VINF_SUCCESS;
 }
 
@@ -1070,8 +1072,9 @@ static DECLCALLBACK(int) pitSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
  */
 static DECLCALLBACK(int) pitLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass)
 {
-    PPITSTATE   pThis = PDMDEVINS_2_DATA(pDevIns, PPITSTATE);
-    int         rc;
+    PPITSTATE     pThis = PDMDEVINS_2_DATA(pDevIns, PPITSTATE);
+    PCPDMDEVHLPR3 pHlp  = pDevIns->pHlpR3;
+    int           rc;
 
     if (    uVersion != PIT_SAVED_STATE_VERSION
         &&  uVersion != PIT_SAVED_STATE_VERSION_VBOX_30
@@ -1082,21 +1085,21 @@ static DECLCALLBACK(int) pitLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32
     if (uVersion > PIT_SAVED_STATE_VERSION_VBOX_30)
     {
         RTIOPORT IOPortBaseCfg;
-        rc = SSMR3GetIOPort(pSSM, &IOPortBaseCfg); AssertRCReturn(rc, rc);
+        rc = pHlp->pfnSSMGetIOPort(pSSM, &IOPortBaseCfg); AssertRCReturn(rc, rc);
         if (IOPortBaseCfg != pThis->IOPortBaseCfg)
-            return SSMR3SetCfgError(pSSM, RT_SRC_POS, N_("Config mismatch - IOPortBaseCfg: saved=%RTiop config=%RTiop"),
+            return pHlp->pfnSSMSetCfgError(pSSM, RT_SRC_POS, N_("Config mismatch - IOPortBaseCfg: saved=%RTiop config=%RTiop"),
                                     IOPortBaseCfg, pThis->IOPortBaseCfg);
 
         uint8_t u8Irq;
-        rc = SSMR3GetU8(pSSM, &u8Irq); AssertRCReturn(rc, rc);
+        rc = pHlp->pfnSSMGetU8(pSSM, &u8Irq); AssertRCReturn(rc, rc);
         if (u8Irq != pThis->channels[0].irq)
-            return SSMR3SetCfgError(pSSM, RT_SRC_POS, N_("Config mismatch - u8Irq: saved=%#x config=%#x"),
+            return pHlp->pfnSSMSetCfgError(pSSM, RT_SRC_POS, N_("Config mismatch - u8Irq: saved=%#x config=%#x"),
                                     u8Irq, pThis->channels[0].irq);
 
         bool fSpeakerCfg;
-        rc = SSMR3GetBool(pSSM, &fSpeakerCfg); AssertRCReturn(rc, rc);
+        rc = pHlp->pfnSSMGetBool(pSSM, &fSpeakerCfg); AssertRCReturn(rc, rc);
         if (fSpeakerCfg != pThis->fSpeakerCfg)
-            return SSMR3SetCfgError(pSSM, RT_SRC_POS, N_("Config mismatch - fSpeakerCfg: saved=%RTbool config=%RTbool"),
+            return pHlp->pfnSSMSetCfgError(pSSM, RT_SRC_POS, N_("Config mismatch - fSpeakerCfg: saved=%RTbool config=%RTbool"),
                                     fSpeakerCfg, pThis->fSpeakerCfg);
     }
 
@@ -1107,43 +1110,43 @@ static DECLCALLBACK(int) pitLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32
     for (unsigned i = 0; i < RT_ELEMENTS(pThis->channels); i++)
     {
         PPITCHANNEL pChan = &pThis->channels[i];
-        SSMR3GetU32(pSSM, &pChan->count);
-        SSMR3GetU16(pSSM, &pChan->latched_count);
-        SSMR3GetU8(pSSM, &pChan->count_latched);
-        SSMR3GetU8(pSSM, &pChan->status_latched);
-        SSMR3GetU8(pSSM, &pChan->status);
-        SSMR3GetU8(pSSM, &pChan->read_state);
-        SSMR3GetU8(pSSM, &pChan->write_state);
-        SSMR3GetU8(pSSM, &pChan->write_latch);
-        SSMR3GetU8(pSSM, &pChan->rw_mode);
-        SSMR3GetU8(pSSM, &pChan->mode);
-        SSMR3GetU8(pSSM, &pChan->bcd);
-        SSMR3GetU8(pSSM, &pChan->gate);
-        SSMR3GetU64(pSSM, &pChan->count_load_time);
-        SSMR3GetU64(pSSM, &pChan->u64NextTS);
-        SSMR3GetU64(pSSM, &pChan->u64ReloadTS);
-        SSMR3GetS64(pSSM, &pChan->next_transition_time);
+        pHlp->pfnSSMGetU32(pSSM, &pChan->count);
+        pHlp->pfnSSMGetU16(pSSM, &pChan->latched_count);
+        pHlp->pfnSSMGetU8(pSSM, &pChan->count_latched);
+        pHlp->pfnSSMGetU8(pSSM, &pChan->status_latched);
+        pHlp->pfnSSMGetU8(pSSM, &pChan->status);
+        pHlp->pfnSSMGetU8(pSSM, &pChan->read_state);
+        pHlp->pfnSSMGetU8(pSSM, &pChan->write_state);
+        pHlp->pfnSSMGetU8(pSSM, &pChan->write_latch);
+        pHlp->pfnSSMGetU8(pSSM, &pChan->rw_mode);
+        pHlp->pfnSSMGetU8(pSSM, &pChan->mode);
+        pHlp->pfnSSMGetU8(pSSM, &pChan->bcd);
+        pHlp->pfnSSMGetU8(pSSM, &pChan->gate);
+        pHlp->pfnSSMGetU64(pSSM, &pChan->count_load_time);
+        pHlp->pfnSSMGetU64(pSSM, &pChan->u64NextTS);
+        pHlp->pfnSSMGetU64(pSSM, &pChan->u64ReloadTS);
+        pHlp->pfnSSMGetS64(pSSM, &pChan->next_transition_time);
         if (pChan->CTX_SUFF(pTimer))
         {
             TMR3TimerLoad(pChan->CTX_SUFF(pTimer), pSSM);
             LogRel(("PIT: mode=%d count=%#x (%u) - %d.%02d Hz (ch=%d) (restore)\n",
                     pChan->mode, pChan->count, pChan->count, PIT_FREQ / pChan->count, (PIT_FREQ * 100 / pChan->count) % 100, i));
-            PDMCritSectEnter(&pThis->CritSect, VERR_IGNORED);
+            PDMDevHlpCritSectEnter(pDevIns, &pThis->CritSect, VERR_IGNORED);
             TMTimerSetFrequencyHint(pChan->CTX_SUFF(pTimer), PIT_FREQ / pChan->count);
-            PDMCritSectLeave(&pThis->CritSect);
+            PDMDevHlpCritSectLeave(pDevIns, &pThis->CritSect);
         }
         pThis->channels[i].cRelLogEntries = 0;
     }
 
-    SSMR3GetS32(pSSM, &pThis->speaker_data_on);
+    pHlp->pfnSSMGetS32(pSSM, &pThis->speaker_data_on);
 #ifdef FAKE_REFRESH_CLOCK
-    SSMR3GetS32(pSSM, &pThis->dummy_refresh_clock);
+    pHlp->pfnSSMGetS32(pSSM, &pThis->dummy_refresh_clock);
 #else
     int32_t u32Dummy;
-    SSMR3GetS32(pSSM, &u32Dummy);
+    pHlp->pfnSSMGetS32(pSSM, &u32Dummy);
 #endif
     if (uVersion > PIT_SAVED_STATE_VERSION_VBOX_31)
-        SSMR3GetBool(pSSM, &pThis->fDisabledByHpet);
+        pHlp->pfnSSMGetBool(pSSM, &pThis->fDisabledByHpet);
 
     return VINF_SUCCESS;
 }
@@ -1157,12 +1160,12 @@ static DECLCALLBACK(int) pitLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32
  */
 static DECLCALLBACK(void) pitTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser)
 {
-    RT_NOREF1(pDevIns);
+    RT_NOREF(pDevIns);
     PPITCHANNEL pChan = (PPITCHANNEL)pvUser;
     STAM_PROFILE_ADV_START(&pChan->CTX_SUFF(pPit)->StatPITHandler, a);
 
     Log(("pitTimer\n"));
-    Assert(PDMCritSectIsOwner(&PDMDEVINS_2_DATA(pDevIns, PPITSTATE)->CritSect));
+    Assert(PDMDevHlpCritSectIsOwner(pDevIns, &PDMDEVINS_2_DATA(pDevIns, PPITSTATE)->CritSect));
     Assert(TMTimerIsLockOwner(pTimer));
 
     pit_irq_timer_update(pChan, pChan->next_transition_time, TMTimerGet(pTimer), true);
@@ -1178,7 +1181,7 @@ static DECLCALLBACK(void) pitTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pv
  */
 static DECLCALLBACK(void) pitInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *pszArgs)
 {
-    RT_NOREF1(pszArgs);
+    RT_NOREF(pszArgs);
     PPITSTATE   pThis = PDMDEVINS_2_DATA(pDevIns, PPITSTATE);
     unsigned    i;
     for (i = 0; i < RT_ELEMENTS(pThis->channels); i++)
@@ -1220,12 +1223,13 @@ static DECLCALLBACK(void) pitInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const 
  */
 static DECLCALLBACK(void) pitNotifyHpetLegacyNotify_ModeChanged(PPDMIHPETLEGACYNOTIFY pInterface, bool fActivated)
 {
-    PPITSTATE pThis = RT_FROM_MEMBER(pInterface, PITSTATE, IHpetLegacyNotify);
-    PDMCritSectEnter(&pThis->CritSect, VERR_IGNORED);
+    PPITSTATE  pThis   = RT_FROM_MEMBER(pInterface, PITSTATE, IHpetLegacyNotify);
+    PPDMDEVINS pDevIns = pThis->pDevIns;
+    PDMDevHlpCritSectEnter(pDevIns, &pThis->CritSect, VERR_IGNORED);
 
     pThis->fDisabledByHpet = fActivated;
 
-    PDMCritSectLeave(&pThis->CritSect);
+    PDMDevHlpCritSectLeave(pDevIns, &pThis->CritSect);
 }
 
 
@@ -1251,7 +1255,7 @@ static DECLCALLBACK(void *) pitQueryInterface(PPDMIBASE pInterface, const char *
  */
 static DECLCALLBACK(void) pitRelocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta)
 {
-    RT_NOREF1(offDelta);
+    RT_NOREF(offDelta);
     PPITSTATE pThis = PDMDEVINS_2_DATA(pDevIns, PPITSTATE);
     LogFlow(("pitRelocate: \n"));
 
@@ -1273,7 +1277,7 @@ static DECLCALLBACK(void) pitReset(PPDMDEVINS pDevIns)
     PPITSTATE pThis = PDMDEVINS_2_DATA(pDevIns, PPITSTATE);
     LogFlow(("pitReset: \n"));
 
-    DEVPIT_R3_LOCK_BOTH(pThis);
+    DEVPIT_R3_LOCK_BOTH(pDevIns, pThis);
 
     pThis->fDisabledByHpet = false;
 
@@ -1299,7 +1303,7 @@ static DECLCALLBACK(void) pitReset(PPDMDEVINS pDevIns)
         pit_load_count(pChan, 0);
     }
 
-    DEVPIT_UNLOCK_BOTH(pThis);
+    DEVPIT_UNLOCK_BOTH(pDevIns, pThis);
 }
 
 
@@ -1309,66 +1313,47 @@ static DECLCALLBACK(void) pitReset(PPDMDEVINS pDevIns)
 static DECLCALLBACK(int)  pitConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE pCfg)
 {
     PDMDEV_CHECK_VERSIONS_RETURN(pDevIns);
-    PPITSTATE   pThis = PDMDEVINS_2_DATA(pDevIns, PPITSTATE);
-    int         rc;
-    uint8_t     u8Irq;
-    uint16_t    u16Base;
-    bool        fSpeaker;
-    bool        fGCEnabled;
-    bool        fR0Enabled;
-    unsigned    i;
+    PPITSTATE       pThis = PDMDEVINS_2_DATA(pDevIns, PPITSTATE);
+    PCPDMDEVHLPR3   pHlp  = pDevIns->pHlpR3;
+    int             rc;
+    uint8_t         u8Irq;
+    uint16_t        u16Base;
+    bool            fSpeaker;
+    unsigned        i;
     Assert(iInstance == 0);
 
     /*
-     * Validate configuration.
+     * Validate and read the configuration.
      */
-    if (!CFGMR3AreValuesValid(pCfg, "Irq\0" "Base\0"
-                                    "SpeakerEnabled\0" "PassthroughSpeaker\0" "PassthroughSpeakerDevice\0"
-                                    "R0Enabled\0" "GCEnabled\0"))
-        return VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES;
+    PDMDEV_VALIDATE_CONFIG_RETURN(pDevIns, "Irq|Base|SpeakerEnabled|PassthroughSpeaker|PassthroughSpeakerDevice", "");
+
+    rc = pHlp->pfnCFGMQueryU8Def(pCfg, "Irq", &u8Irq, 0);
+    if (RT_FAILURE(rc))
+        return PDMDEV_SET_ERROR(pDevIns, rc, N_("Configuration error: Querying \"Irq\" as a uint8_t failed"));
+
+    rc = pHlp->pfnCFGMQueryU16Def(pCfg, "Base", &u16Base, 0x40);
+    if (RT_FAILURE(rc))
+        return PDMDEV_SET_ERROR(pDevIns, rc, N_("Configuration error: Querying \"Base\" as a uint16_t failed"));
+
+    rc = pHlp->pfnCFGMQueryBoolDef(pCfg, "SpeakerEnabled", &fSpeaker, true);
+    if (RT_FAILURE(rc))
+        return PDMDEV_SET_ERROR(pDevIns, rc, N_("Configuration error: Querying \"SpeakerEnabled\" as a bool failed"));
+
+    uint8_t uPassthroughSpeaker;
+    char *pszPassthroughSpeakerDevice = NULL;
+    rc = pHlp->pfnCFGMQueryU8Def(pCfg, "PassthroughSpeaker", &uPassthroughSpeaker, 0);
+    if (RT_FAILURE(rc))
+        return PDMDEV_SET_ERROR(pDevIns, rc, N_("Configuration error: failed to read PassthroughSpeaker as uint8_t"));
+    if (uPassthroughSpeaker)
+    {
+        rc = pHlp->pfnCFGMQueryStringAllocDef(pCfg, "PassthroughSpeakerDevice", &pszPassthroughSpeakerDevice, NULL);
+        if (RT_FAILURE(rc))
+            return PDMDEV_SET_ERROR(pDevIns, rc, N_("Configuration error: failed to read PassthroughSpeakerDevice as string"));
+    }
 
     /*
      * Init the data.
      */
-    rc = CFGMR3QueryU8Def(pCfg, "Irq", &u8Irq, 0);
-    if (RT_FAILURE(rc))
-        return PDMDEV_SET_ERROR(pDevIns, rc,
-                                N_("Configuration error: Querying \"Irq\" as a uint8_t failed"));
-
-    rc = CFGMR3QueryU16Def(pCfg, "Base", &u16Base, 0x40);
-    if (RT_FAILURE(rc))
-        return PDMDEV_SET_ERROR(pDevIns, rc,
-                                N_("Configuration error: Querying \"Base\" as a uint16_t failed"));
-
-    rc = CFGMR3QueryBoolDef(pCfg, "SpeakerEnabled", &fSpeaker, true);
-    if (RT_FAILURE(rc))
-        return PDMDEV_SET_ERROR(pDevIns, rc,
-                                N_("Configuration error: Querying \"SpeakerEnabled\" as a bool failed"));
-
-    uint8_t uPassthroughSpeaker;
-    char *pszPassthroughSpeakerDevice = NULL;
-    rc = CFGMR3QueryU8Def(pCfg, "PassthroughSpeaker", &uPassthroughSpeaker, 0);
-    if (RT_FAILURE(rc))
-        return PDMDEV_SET_ERROR(pDevIns, rc,
-                                N_("Configuration error: failed to read PassthroughSpeaker as uint8_t"));
-    if (uPassthroughSpeaker)
-    {
-        rc = CFGMR3QueryStringAllocDef(pCfg, "PassthroughSpeakerDevice", &pszPassthroughSpeakerDevice, NULL);
-        if (RT_FAILURE(rc))
-            return PDMDEV_SET_ERROR(pDevIns, rc,
-                                    N_("Configuration error: failed to read PassthroughSpeakerDevice as string"));
-    }
-
-    rc = CFGMR3QueryBoolDef(pCfg, "GCEnabled", &fGCEnabled, true);
-    if (RT_FAILURE(rc))
-        return PDMDEV_SET_ERROR(pDevIns, rc,
-                                N_("Configuration error: Querying \"GCEnabled\" as a bool failed"));
-
-    rc = CFGMR3QueryBoolDef(pCfg, "R0Enabled", &fR0Enabled, true);
-    if (RT_FAILURE(rc))
-        return PDMDEV_SET_ERROR(pDevIns, rc,
-                                N_("Configuration error: failed to read R0Enabled as boolean"));
-
     pThis->pDevIns         = pDevIns;
     pThis->IOPortBaseCfg   = u16Base;
     pThis->fSpeakerCfg     = fSpeaker;
@@ -1424,7 +1409,7 @@ static DECLCALLBACK(int)  pitConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
 #endif
         if (pszPassthroughSpeakerDevice)
         {
-            MMR3HeapFree(pszPassthroughSpeakerDevice);
+            PDMDevHlpMMHeapFree(pDevIns, pszPassthroughSpeakerDevice);
             pszPassthroughSpeakerDevice = NULL;
         }
     }
@@ -1472,13 +1457,13 @@ static DECLCALLBACK(int)  pitConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
     rc = PDMDevHlpIOPortRegister(pDevIns, u16Base, 4, NULL, pitIOPortWrite, pitIOPortRead, NULL, NULL, "i8254 Programmable Interval Timer");
     if (RT_FAILURE(rc))
         return rc;
-    if (fGCEnabled)
+    if (pDevIns->fRCEnabled)
     {
         rc = PDMDevHlpIOPortRegisterRC(pDevIns, u16Base, 4, 0, "pitIOPortWrite", "pitIOPortRead", NULL, NULL, "i8254 Programmable Interval Timer");
         if (RT_FAILURE(rc))
             return rc;
     }
-    if (fR0Enabled)
+    if (pDevIns->fR0Enabled)
     {
         rc = PDMDevHlpIOPortRegisterR0(pDevIns, u16Base, 4, 0, "pitIOPortWrite", "pitIOPortRead", NULL, NULL, "i8254 Programmable Interval Timer");
         if (RT_FAILURE(rc))
@@ -1490,7 +1475,7 @@ static DECLCALLBACK(int)  pitConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
         rc = PDMDevHlpIOPortRegister(pDevIns, 0x61, 1, NULL, pitIOPortSpeakerWrite, pitIOPortSpeakerRead, NULL, NULL, "PC Speaker");
         if (RT_FAILURE(rc))
             return rc;
-        if (fGCEnabled)
+        if (pDevIns->fRCEnabled)
         {
             rc = PDMDevHlpIOPortRegisterRC(pDevIns, 0x61, 1, 0, NULL, "pitIOPortSpeakerRead", NULL, NULL, "PC Speaker");
             if (RT_FAILURE(rc))
