@@ -199,12 +199,10 @@ typedef RTCSTATER3 *PRTCSTATER3;
 
 /**
  * RTC ring-0 instance data.
- * @note Not needed, but serves as example for testing the new model.
  */
 typedef struct RTCSTATER0
 {
-    /** Pointer to the device instance. */
-    PPDMDEVINSR0            pDevInsR0;
+    uint64_t                uUnused;
 } RTCSTATER0;
 /** Pointer to the ring-0 RTC device instance data. */
 typedef RTCSTATER0 *PRTCSTATER0;
@@ -212,33 +210,19 @@ typedef RTCSTATER0 *PRTCSTATER0;
 
 /**
  * RTC raw-mode instance data.
- * @note Not needed, but serves as example for testing the new model.
  */
 typedef struct RTCSTATERC
 {
-    /** Pointer to the device instance. */
-    PPDMDEVINSRC            pDevInsRC;
+    uint64_t                uUnused;
 } RTCSTATERC;
 /** Pointer to the raw-mode RTC device instance data. */
 typedef RTCSTATERC *PRTCSTATERC;
 
 
-/** @typedef RTCSTATECC
- * The instance data for the current context. */
-/** @typedef PRTCSTATECC
- * Pointer to the instance data for the current context. */
-#ifdef IN_RING3
-typedef  RTCSTATER3  RTCSTATECC;
-typedef PRTCSTATER3 PRTCSTATECC;
-#elif defined(IN_RING0)
-typedef  RTCSTATER0  RTCSTATECC;
-typedef PRTCSTATER0 PRTCSTATECC;
-#elif defined(IN_RC)
-typedef  RTCSTATERC  RTCSTATECC;
-typedef PRTCSTATERC PRTCSTATECC;
-#else
-# error "Not IN_RING3, IN_RING0 or IN_RC"
-#endif
+/** The instance data for the current context. */
+typedef CTX_SUFF(RTCSTATE)  RTCSTATECC;
+/** Pointer to the instance data for the current context. */
+typedef CTX_SUFF(PRTCSTATE) PRTCSTATECC;
 
 
 #ifndef VBOX_DEVICE_STRUCT_TESTCASE
@@ -1101,17 +1085,6 @@ static DECLCALLBACK(int)  rtcInitComplete(PPDMDEVINS pDevIns)
 
 
 /**
- * @interface_method_impl{PDMDEVREG,pfnRelocate}
- */
-static DECLCALLBACK(void) rtcRelocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta)
-{
-    RT_NOREF1(offDelta);
-    PRTCSTATERC pThisRC = PDMINS_2_DATA_RC(pDevIns, PRTCSTATERC);
-    pThisRC->pDevInsRC = PDMDEVINS_2_RCPTR(pDevIns);
-}
-
-
-/**
  * @interface_method_impl{PDMDEVREG,pfnReset}
  */
 static DECLCALLBACK(void) rtcReset(PPDMDEVINS pDevIns)
@@ -1258,9 +1231,7 @@ static DECLCALLBACK(int)  rtcConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
 static DECLCALLBACK(int)  rtcRZConstruct(PPDMDEVINS pDevIns)
 {
     PDMDEV_CHECK_VERSIONS_RETURN(pDevIns);
-    PRTCSTATE   pThis   = PDMDEVINS_2_DATA(pDevIns, PRTCSTATE);
-    PRTCSTATER0 pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PRTCSTATECC);
-    pThisCC->CTX_SUFF(pDevIns) = pDevIns;
+    PRTCSTATE pThis = PDMDEVINS_2_DATA(pDevIns, PRTCSTATE);
 
     int rc = PDMDevHlpIoPortSetUpContext(pDevIns, pThis->hIoPorts, rtcIOPortWrite, rtcIOPortRead, NULL /*pvUser*/);
     AssertRCReturn(rc, rc);
@@ -1293,7 +1264,7 @@ const PDMDEVREG g_DeviceMC146818 =
     /* .pszR0Mod = */               "VBoxDDR0.r0",
     /* .pfnConstruct = */           rtcConstruct,
     /* .pfnDestruct = */            NULL,
-    /* .pfnRelocate = */            rtcRelocate,
+    /* .pfnRelocate = */            NULL,
     /* .pfnMemSetup = */            NULL,
     /* .pfnPowerOn = */             NULL,
     /* .pfnReset = */               rtcReset,
