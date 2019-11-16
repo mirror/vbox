@@ -566,7 +566,7 @@ static void uartR3ParamsUpdate(PUARTCORE pThis)
             cFrameBits++;
         }
 
-        uint64_t uTimerFreq = TMTimerGetFreq(pThis->CTX_SUFF(pTimerRcvFifoTimeout));
+        uint64_t uTimerFreq = PDMDevHlpTimerGetFreq(pThis->CTX_SUFF(pDevIns), pThis->hTimerRcvFifoTimeout);
         pThis->cSymbolXferTicks = (uTimerFreq / uBps) * cFrameBits;
 
         LogFlowFunc(("Changing parameters to: %u,%s,%u,%s\n",
@@ -651,7 +651,7 @@ static void uartR3RecvFifoFill(PUARTCORE pThis)
         if (pFifo->cbUsed < pFifo->cbItl)
         {
             pThis->fIrqCtiPending = false;
-            TMTimerSetRelative(pThis->CTX_SUFF(pTimerRcvFifoTimeout), pThis->cSymbolXferTicks * 4, NULL);
+            PDMDevHlpTimerSetRelative(pThis->CTX_SUFF(pDevIns), pThis->hTimerRcvFifoTimeout, pThis->cSymbolXferTicks * 4, NULL);
         }
         uartIrqUpdate(pThis);
     }
@@ -706,8 +706,8 @@ static void uartR3DataFetch(PUARTCORE pThis)
  */
 static void uartR3XferReset(PUARTCORE pThis)
 {
-    TMTimerStop(pThis->CTX_SUFF(pTimerRcvFifoTimeout));
-    TMTimerStop(pThis->CTX_SUFF(pTimerTxUnconnected));
+    PDMDevHlpTimerStop(pThis->CTX_SUFF(pDevIns), pThis->hTimerRcvFifoTimeout);
+    PDMDevHlpTimerStop(pThis->CTX_SUFF(pDevIns), pThis->hTimerTxUnconnected);
     pThis->uRegLsr = UART_REG_LSR_THRE | UART_REG_LSR_TEMT;
     pThis->fThreEmptyPending = false;
 
@@ -816,7 +816,7 @@ static int uartXmit(PUARTCORE pThis, uint8_t bVal)
                     LogRelMax(10, ("Serial#%d: Failed to send data with %Rrc\n", pThis->pDevInsR3->iInstance, rc2));
             }
             else
-                TMTimerSetRelative(pThis->CTX_SUFF(pTimerTxUnconnected), pThis->cSymbolXferTicks, NULL);
+                PDMDevHlpTimerSetRelative(pThis->CTX_SUFF(pDevIns), pThis->hTimerTxUnconnected, pThis->cSymbolXferTicks, NULL);
         }
 #endif
     }
@@ -840,7 +840,7 @@ static int uartXmit(PUARTCORE pThis, uint8_t bVal)
                     LogRelMax(10, ("Serial#%d: Failed to send data with %Rrc\n", pThis->pDevInsR3->iInstance, rc2));
             }
             else
-                TMTimerSetRelative(pThis->CTX_SUFF(pTimerTxUnconnected), pThis->cSymbolXferTicks, NULL);
+                PDMDevHlpTimerSetRelative(pThis->CTX_SUFF(pDevIns), pThis->hTimerTxUnconnected, pThis->cSymbolXferTicks, NULL);
 #endif
         }
         else
@@ -962,7 +962,7 @@ DECLINLINE(int) uartRegFcrWrite(PUARTCORE pThis, uint8_t uVal)
         {
             if (uVal & UART_REG_FCR_RCV_FIFO_RST)
             {
-                TMTimerStop(pThis->CTX_SUFF(pTimerRcvFifoTimeout));
+                PDMDevHlpTimerStop(pThis->CTX_SUFF(pDevIns), pThis->hTimerRcvFifoTimeout);
                 pThis->fIrqCtiPending = false;
                 uartFifoClear(&pThis->FifoRecv);
             }
@@ -1142,11 +1142,12 @@ DECLINLINE(int) uartRegRbrDllRead(PUARTCORE pThis, uint32_t *puVal)
                 pThis->fIrqCtiPending = false;
                 if (!pThis->FifoRecv.cbUsed)
                 {
-                    TMTimerStop(pThis->CTX_SUFF(pTimerRcvFifoTimeout));
+                    PDMDevHlpTimerStop(pThis->CTX_SUFF(pDevIns), pThis->hTimerRcvFifoTimeout);
                     UART_REG_CLR(pThis->uRegLsr, UART_REG_LSR_DR);
                 }
                 else if (pThis->FifoRecv.cbUsed < pThis->FifoRecv.cbItl)
-                    TMTimerSetRelative(pThis->CTX_SUFF(pTimerRcvFifoTimeout), pThis->cSymbolXferTicks * 4, NULL);
+                    PDMDevHlpTimerSetRelative(pThis->CTX_SUFF(pDevIns), pThis->hTimerRcvFifoTimeout,
+                                              pThis->cSymbolXferTicks * 4, NULL);
                 uartIrqUpdate(pThis);
             }
         }
@@ -1474,7 +1475,8 @@ static DECLCALLBACK(void) uartR3TxUnconnectedTimer(PPDMDEVINS pDevIns, PTMTIMER 
                 if (pFifo->cbUsed < pFifo->cbItl)
                 {
                     pThis->fIrqCtiPending = false;
-                    TMTimerSetRelative(pThis->CTX_SUFF(pTimerRcvFifoTimeout), pThis->cSymbolXferTicks * 4, NULL);
+                    PDMDevHlpTimerSetRelative(pThis->CTX_SUFF(pDevIns), pThis->hTimerRcvFifoTimeout,
+                                              pThis->cSymbolXferTicks * 4, NULL);
                 }
                 uartIrqUpdate(pThis);
             }
@@ -1491,7 +1493,7 @@ static DECLCALLBACK(void) uartR3TxUnconnectedTimer(PPDMDEVINS pDevIns, PTMTIMER 
             ASMAtomicSubU32(&pThis->cbAvailRdr, 1);
     }
     if (cbRead == 1)
-        TMTimerSetRelative(pThis->CTX_SUFF(pTimerTxUnconnected), pThis->cSymbolXferTicks, NULL);
+        PDMDevHlpTimerSetRelative(pThis->CTX_SUFF(pDevIns), pThis->hTimerTxUnconnected, pThis->cSymbolXferTicks, NULL);
     PDMCritSectLeave(&pThis->CritSect);
 }
 
@@ -1629,9 +1631,9 @@ DECLHIDDEN(int) uartR3SaveExec(PUARTCORE pThis, PSSMHANDLE pSSM)
     SSMR3PutU8(pSSM,   pThis->FifoRecv.cbMax);
     SSMR3PutU8(pSSM,   pThis->FifoRecv.cbItl);
 
-    int rc = TMR3TimerSave(pThis->pTimerRcvFifoTimeoutR3, pSSM);
+    int rc = PDMDevHlpTimerSave(pThis->CTX_SUFF(pDevIns), pThis->hTimerRcvFifoTimeout, pSSM);
     if (RT_SUCCESS(rc))
-        rc = TMR3TimerSave(pThis->pTimerTxUnconnectedR3, pSSM);
+        rc = PDMDevHlpTimerSave(pThis->CTX_SUFF(pDevIns), pThis->hTimerTxUnconnected, pSSM);
 
     return rc;
 }
@@ -1663,9 +1665,9 @@ DECLHIDDEN(int) uartR3LoadExec(PUARTCORE pThis, PSSMHANDLE pSSM, uint32_t uVersi
         SSMR3GetU8(pSSM,   &pThis->FifoRecv.cbMax);
         SSMR3GetU8(pSSM,   &pThis->FifoRecv.cbItl);
 
-        rc = TMR3TimerLoad(pThis->pTimerRcvFifoTimeoutR3, pSSM);
+        rc = PDMDevHlpTimerLoad(pThis->CTX_SUFF(pDevIns), pThis->hTimerRcvFifoTimeout, pSSM);
         if (uVersion > UART_SAVED_STATE_VERSION_PRE_UNCONNECTED_TX_TIMER)
-            rc = TMR3TimerLoad(pThis->pTimerTxUnconnectedR3, pSSM);
+            rc = PDMDevHlpTimerLoad(pThis->CTX_SUFF(pDevIns), pThis->hTimerTxUnconnected, pSSM);
     }
     else
     {
@@ -1715,7 +1717,7 @@ DECLHIDDEN(int) uartR3LoadExec(PUARTCORE pThis, PSSMHANDLE pSSM, uint32_t uVersi
             SSMR3GetS32(pSSM, &iTimeoutPending);
             pThis->fIrqCtiPending = RT_BOOL(iTimeoutPending);
 
-            rc = TMR3TimerLoad(pThis->pTimerRcvFifoTimeoutR3, pSSM);
+            rc = PDMDevHlpTimerLoad(pThis->CTX_SUFF(pDevIns), pThis->hTimerRcvFifoTimeout, pSSM);
             AssertRCReturn(rc, rc);
 
             bool fWasActiveIgn;
@@ -1765,8 +1767,6 @@ DECLHIDDEN(void) uartR3Relocate(PUARTCORE pThis, RTGCINTPTR offDelta)
 {
     RT_NOREF(offDelta);
     pThis->pDevInsRC              = PDMDEVINS_2_RCPTR(pThis->pDevInsR3);
-    pThis->pTimerRcvFifoTimeoutRC = TMTimerRCPtr(pThis->pTimerRcvFifoTimeoutR3);
-    pThis->pTimerTxUnconnectedRC  = TMTimerRCPtr(pThis->pTimerTxUnconnectedR3);
     pThis->pfnUartIrqReqRC       += offDelta;
 }
 
@@ -1843,7 +1843,7 @@ DECLHIDDEN(int) uartR3Init(PUARTCORE pThis, PPDMDEVINS pDevInsR3, UARTTYPE enmTy
                            R3PTRTYPE(PFNUARTCOREIRQREQ) pfnUartIrqReqR3, R0PTRTYPE(PFNUARTCOREIRQREQ) pfnUartIrqReqR0,
                            RCPTRTYPE(PFNUARTCOREIRQREQ) pfnUartIrqReqRC)
 {
-    int rc = VINF_SUCCESS;
+    int rc;
 
     /*
      * Initialize the instance data.
@@ -1902,30 +1902,24 @@ DECLHIDDEN(int) uartR3Init(PUARTCORE pThis, PPDMDEVINS pDevInsR3, UARTTYPE enmTy
     /*
      * Create the receive FIFO character timeout indicator timer.
      */
-    rc = PDMDevHlpTMTimerCreate(pDevInsR3, TMCLOCK_VIRTUAL, uartR3RcvFifoTimeoutTimer, pThis,
-                                TMTIMER_FLAGS_NO_CRIT_SECT, "UART Rcv FIFO Timer",
-                                &pThis->pTimerRcvFifoTimeoutR3);
+    rc = PDMDevHlpTimerCreate(pDevInsR3, TMCLOCK_VIRTUAL, uartR3RcvFifoTimeoutTimer, pThis,
+                              TMTIMER_FLAGS_NO_CRIT_SECT, "UART Rcv FIFO Timer",
+                              &pThis->hTimerRcvFifoTimeout);
     AssertRCReturn(rc, rc);
 
-    rc = TMR3TimerSetCritSect(pThis->pTimerRcvFifoTimeoutR3, &pThis->CritSect);
+    rc = PDMDevHlpTimerSetCritSect(pDevInsR3, pThis->hTimerRcvFifoTimeout, &pThis->CritSect);
     AssertRCReturn(rc, rc);
-
-    pThis->pTimerRcvFifoTimeoutR0 = TMTimerR0Ptr(pThis->pTimerRcvFifoTimeoutR3);
-    pThis->pTimerRcvFifoTimeoutRC = TMTimerRCPtr(pThis->pTimerRcvFifoTimeoutR3);
 
     /*
      * Create the transmit timer when no device is connected.
      */
-    rc = PDMDevHlpTMTimerCreate(pDevInsR3, TMCLOCK_VIRTUAL, uartR3TxUnconnectedTimer, pThis,
-                                TMTIMER_FLAGS_NO_CRIT_SECT, "UART TX uncon. Timer",
-                                &pThis->pTimerTxUnconnectedR3);
+    rc = PDMDevHlpTimerCreate(pDevInsR3, TMCLOCK_VIRTUAL, uartR3TxUnconnectedTimer, pThis,
+                              TMTIMER_FLAGS_NO_CRIT_SECT, "UART TX uncon. Timer",
+                              &pThis->hTimerTxUnconnected);
     AssertRCReturn(rc, rc);
 
-    rc = TMR3TimerSetCritSect(pThis->pTimerTxUnconnectedR3, &pThis->CritSect);
+    rc = PDMDevHlpTimerSetCritSect(pDevInsR3, pThis->hTimerTxUnconnected, &pThis->CritSect);
     AssertRCReturn(rc, rc);
-
-    pThis->pTimerTxUnconnectedR0 = TMTimerR0Ptr(pThis->pTimerTxUnconnectedR3);
-    pThis->pTimerTxUnconnectedRC = TMTimerRCPtr(pThis->pTimerTxUnconnectedR3);
 
     uartR3Reset(pThis);
     return VINF_SUCCESS;

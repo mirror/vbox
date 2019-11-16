@@ -132,7 +132,7 @@ typedef struct UARTCORE
     PPDMDEVINSRC                    pDevInsRC;
     /** The LUN on the owning device instance for this core. */
     uint32_t                        iLUN;
-        /** LUN\#0: The base interface. */
+    /** LUN\#0: The base interface. */
     PDMIBASE                        IBase;
     /** LUN\#0: The serial port interface. */
     PDMISERIALPORT                  ISerialPort;
@@ -145,22 +145,15 @@ typedef struct UARTCORE
     /** The selected UART type. */
     UARTTYPE                        enmType;
 
-    /** R3 timer pointer for the character timeout indication. */
-    PTMTIMERR3                      pTimerRcvFifoTimeoutR3;
-    /** R3 timer pointer for the send loop if no driver is connected/loopback mode is active. */
-    PTMTIMERR3                      pTimerTxUnconnectedR3;
+    /** Timer handle for the character timeout indication. */
+    TMTIMERHANDLE                   hTimerRcvFifoTimeout;
+    /** Timer handle for the send loop if no driver is connected/loopback mode is active. */
+    TMTIMERHANDLE                   hTimerTxUnconnected;
+
     /** R3 interrupt request callback of the owning device. */
     R3PTRTYPE(PFNUARTCOREIRQREQ)    pfnUartIrqReqR3;
-    /** R0 timer pointer fo the character timeout indication. */
-    PTMTIMERR0                      pTimerRcvFifoTimeoutR0;
-    /** R0 timer pointer for the send loop if no driver is connected/loopback mode is active. */
-    PTMTIMERR0                      pTimerTxUnconnectedR0;
     /** R0 interrupt request callback of the owning device. */
     R0PTRTYPE(PFNUARTCOREIRQREQ)    pfnUartIrqReqR0;
-    /** RC timer pointer fo the character timeout indication. */
-    PTMTIMERRC                      pTimerRcvFifoTimeoutRC;
-    /** RC timer pointer for the send loop if no driver is connected/loopback mode is active. */
-    PTMTIMERRC                      pTimerTxUnconnectedRC;
     /** RC interrupt request callback of the owning device. */
     RCPTRTYPE(PFNUARTCOREIRQREQ)    pfnUartIrqReqRC;
     /** Alignment */
