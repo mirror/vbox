@@ -4831,7 +4831,7 @@ typedef struct PDMDEVHLPRC
      * @param   pDevIns     The device instance.
      * @param   pPicReg     The PIC registration information for ring-0,
      *                      considered volatile and copied.
-     * @param   ppPciHlp    Where to return the raw-mode PIC helpers.
+     * @param   ppPicHlp    Where to return the raw-mode PIC helpers.
      */
     DECLRCCALLBACKMEMBER(int, pfnPCISetUpContext,(PPDMDEVINS pDevIns, PPDMPICREG pPicReg, PCPDMPICHLP *ppPicHlp));
 
@@ -5310,7 +5310,7 @@ typedef struct PDMDEVHLPR0
      * @param   pDevIns     The device instance.
      * @param   pPicReg     The PIC registration information for ring-0,
      *                      considered volatile and copied.
-     * @param   ppPciHlp    Where to return the ring-0 PIC helpers.
+     * @param   ppPicHlp    Where to return the ring-0 PIC helpers.
      */
     DECLR0CALLBACKMEMBER(int, pfnPICSetUpContext,(PPDMDEVINS pDevIns, PPDMPICREG pPicReg, PCPDMPICHLP *ppPicHlp));
 
