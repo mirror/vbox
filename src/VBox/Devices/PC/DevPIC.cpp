@@ -763,7 +763,7 @@ static DECLCALLBACK(void) picIR3nfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, cons
     /*
      * Show info.
      */
-    for (int i = 0; i < RT_ELEMENTS(pThis->aPics); i++)
+    for (unsigned i = 0; i < RT_ELEMENTS(pThis->aPics); i++)
     {
         PPICSTATE pPic = &pThis->aPics[i];
 
