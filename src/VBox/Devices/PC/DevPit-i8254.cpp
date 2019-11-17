@@ -250,6 +250,10 @@ typedef struct PITSTATE
     STAMPROFILEADV          StatPITHandler;
     /** Critical section protecting the state. */
     PDMCRITSECT             CritSect;
+    /** The primary I/O port range (0x40-0x43). */
+    IOMIOPORTHANDLE         hIoPorts;
+    /** The speaker I/O port range (0x40-0x43). */
+    IOMIOPORTHANDLE         hIoPortSpeaker;
 } PITSTATE;
 /** Pointer to the PIT device state. */
 typedef PITSTATE *PPITSTATE;
@@ -642,22 +646,22 @@ static void pit_irq_timer_update(PPDMDEVINS pDevIns, PPITSTATE pThis, PPITCHANNE
 
 
 /**
- * @callback_method_impl{FNIOMIOPORTIN}
+ * @callback_method_impl{FNIOMIOPORTNEWIN}
  */
-PDMBOTHCBDECL(int) pitIOPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT uPort, uint32_t *pu32, unsigned cb)
+static DECLCALLBACK(VBOXSTRICTRC) pitIOPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t *pu32, unsigned cb)
 {
-    Log2(("pitIOPortRead: uPort=%#x cb=%x\n", uPort, cb));
+    Log2(("pitIOPortRead: offPort=%#x cb=%x\n", offPort, cb));
     NOREF(pvUser);
-    uPort &= 3;
-    if (cb != 1 || uPort == 3)
+    Assert(offPort < 4);
+    if (cb != 1 || offPort == 3)
     {
-        Log(("pitIOPortRead: uPort=%#x cb=%x *pu32=unused!\n", uPort, cb));
+        Log(("pitIOPortRead: offPort=%#x cb=%x *pu32=unused!\n", offPort, cb));
         return VERR_IOM_IOPORT_UNUSED;
     }
     RT_UNTRUSTED_VALIDATED_FENCE(); /* paranoia */
 
     PPITSTATE   pThis = PDMDEVINS_2_DATA(pDevIns, PPITSTATE);
-    PPITCHANNEL pChan = &pThis->channels[uPort];
+    PPITCHANNEL pChan = &pThis->channels[offPort];
     int ret;
 
     DEVPIT_LOCK_RETURN(pDevIns, pThis, VINF_IOM_R3_IOPORT_READ);
@@ -718,24 +722,25 @@ PDMBOTHCBDECL(int) pitIOPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT uPor
     }
 
     *pu32 = ret;
-    Log2(("pitIOPortRead: uPort=%#x cb=%x *pu32=%#04x\n", uPort, cb, *pu32));
+    Log2(("pitIOPortRead: offPort=%#x cb=%x *pu32=%#04x\n", offPort, cb, *pu32));
     return VINF_SUCCESS;
 }
 
 
 /**
- * @callback_method_impl{FNIOMIOPORTOUT}
+ * @callback_method_impl{FNIOMIOPORTNEWOUT}
  */
-PDMBOTHCBDECL(int) pitIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT uPort, uint32_t u32, unsigned cb)
+static DECLCALLBACK(VBOXSTRICTRC) pitIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t u32, unsigned cb)
 {
-    Log2(("pitIOPortWrite: uPort=%#x cb=%x u32=%#04x\n", uPort, cb, u32));
+    Log2(("pitIOPortWrite: offPort=%#x cb=%x u32=%#04x\n", offPort, cb, u32));
     NOREF(pvUser);
+    Assert(offPort < 4);
+
     if (cb != 1)
         return VINF_SUCCESS;
 
     PPITSTATE pThis = PDMDEVINS_2_DATA(pDevIns, PPITSTATE);
-    uPort &= 3;
-    if (uPort == 3)
+    if (offPort == 3)
     {
         /*
          * Port 43h - Mode/Command Register.
@@ -819,7 +824,7 @@ PDMBOTHCBDECL(int) pitIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT uPo
          * Port 40-42h - Channel Data Ports.
          */
         RT_UNTRUSTED_VALIDATED_FENCE(); /* paranoia */
-        PPITCHANNEL pChan = &pThis->channels[uPort];
+        PPITCHANNEL pChan = &pThis->channels[offPort];
         DEVPIT_LOCK_BOTH_RETURN(pDevIns, pThis, VINF_IOM_R3_IOPORT_WRITE);
         switch (pChan->write_state)
         {
@@ -847,11 +852,12 @@ PDMBOTHCBDECL(int) pitIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT uPo
 
 
 /**
- * @callback_method_impl{FNIOMIOPORTIN, Speaker}
+ * @callback_method_impl{FNIOMIOPORTNEWIN, Speaker}
  */
-PDMBOTHCBDECL(int) pitIOPortSpeakerRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT uPort, uint32_t *pu32, unsigned cb)
+static DECLCALLBACK(VBOXSTRICTRC)
+pitIOPortSpeakerRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t *pu32, unsigned cb)
 {
-    RT_NOREF(pvUser, uPort);
+    RT_NOREF(pvUser, offPort);
     if (cb == 1)
     {
         PPITSTATE pThis = PDMDEVINS_2_DATA(pDevIns, PPITSTATE);
@@ -883,21 +889,22 @@ PDMBOTHCBDECL(int) pitIOPortSpeakerRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPO
               | (fSpeakerStatus << 1)
               | (fRefresh << 4)
               | (fOut << 5);
-        Log(("pitIOPortSpeakerRead: uPort=%#x cb=%x *pu32=%#x\n", uPort, cb, *pu32));
+        Log(("pitIOPortSpeakerRead: offPort=%#x cb=%x *pu32=%#x\n", offPort, cb, *pu32));
         return VINF_SUCCESS;
     }
-    Log(("pitIOPortSpeakerRead: uPort=%#x cb=%x *pu32=unused!\n", uPort, cb));
+    Log(("pitIOPortSpeakerRead: offPort=%#x cb=%x *pu32=unused!\n", offPort, cb));
     return VERR_IOM_IOPORT_UNUSED;
 }
 
 #ifdef IN_RING3
 
 /**
- * @callback_method_impl{FNIOMIOPORTOUT, Speaker}
+ * @callback_method_impl{FNIOMIOPORTNEWOUT, Speaker}
  */
-PDMBOTHCBDECL(int) pitIOPortSpeakerWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT uPort, uint32_t u32, unsigned cb)
+static DECLCALLBACK(VBOXSTRICTRC)
+pitR3IOPortSpeakerWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t u32, unsigned cb)
 {
-    RT_NOREF(pvUser, uPort);
+    RT_NOREF(pvUser, offPort);
     if (cb == 1)
     {
         PPITSTATE pThis = PDMDEVINS_2_DATA(pDevIns, PPITSTATE);
@@ -991,7 +998,7 @@ PDMBOTHCBDECL(int) pitIOPortSpeakerWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOP
 
         DEVPIT_UNLOCK_BOTH(pDevIns, pThis);
     }
-    Log(("pitIOPortSpeakerWrite: uPort=%#x cb=%x u32=%#x\n", uPort, cb, u32));
+    Log(("pitR3IOPortSpeakerWrite: offPort=%#x cb=%x u32=%#x\n", offPort, cb, u32));
     return VINF_SUCCESS;
 }
 
@@ -1427,33 +1434,15 @@ static DECLCALLBACK(int)  pitConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
     /*
      * Register I/O ports.
      */
-    rc = PDMDevHlpIOPortRegister(pDevIns, u16Base, 4, NULL, pitIOPortWrite, pitIOPortRead, NULL, NULL, "i8254 Programmable Interval Timer");
-    if (RT_FAILURE(rc))
-        return rc;
-    if (pDevIns->fRCEnabled)
-    {
-        rc = PDMDevHlpIOPortRegisterRC(pDevIns, u16Base, 4, 0, "pitIOPortWrite", "pitIOPortRead", NULL, NULL, "i8254 Programmable Interval Timer");
-        if (RT_FAILURE(rc))
-            return rc;
-    }
-    if (pDevIns->fR0Enabled)
-    {
-        rc = PDMDevHlpIOPortRegisterR0(pDevIns, u16Base, 4, 0, "pitIOPortWrite", "pitIOPortRead", NULL, NULL, "i8254 Programmable Interval Timer");
-        if (RT_FAILURE(rc))
-            return rc;
-    }
+    rc = PDMDevHlpIoPortCreateAndMap(pDevIns, u16Base, 4 /*cPorts*/, pitIOPortWrite, pitIOPortRead,
+                                     "i8254 Programmable Interval Timer", NULL /*paExtDescs*/, &pThis->hIoPorts);
+    AssertRCReturn(rc, rc);
 
     if (fSpeaker)
     {
-        rc = PDMDevHlpIOPortRegister(pDevIns, 0x61, 1, NULL, pitIOPortSpeakerWrite, pitIOPortSpeakerRead, NULL, NULL, "PC Speaker");
-        if (RT_FAILURE(rc))
-            return rc;
-        if (pDevIns->fRCEnabled)
-        {
-            rc = PDMDevHlpIOPortRegisterRC(pDevIns, 0x61, 1, 0, NULL, "pitIOPortSpeakerRead", NULL, NULL, "PC Speaker");
-            if (RT_FAILURE(rc))
-                return rc;
-        }
+        rc = PDMDevHlpIoPortCreateAndMap(pDevIns, 0x61, 1 /*cPorts*/, pitR3IOPortSpeakerWrite, pitIOPortSpeakerRead,
+                                         "PC Speaker", NULL /*paExtDescs*/, &pThis->hIoPortSpeaker);
+        AssertRCReturn(rc, rc);
     }
 
     /*
@@ -1479,7 +1468,29 @@ static DECLCALLBACK(int)  pitConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
     return VINF_SUCCESS;
 }
 
-#endif /* IN_RING3 */
+#else  /* !IN_RING3 */
+
+/**
+ * @callback_method_impl{PDMDEVREGR0,pfnConstruct}
+ */
+static DECLCALLBACK(int) picRZConstruct(PPDMDEVINS pDevIns)
+{
+    PDMDEV_CHECK_VERSIONS_RETURN(pDevIns);
+    PPITSTATE pThis = PDMDEVINS_2_DATA(pDevIns, PPITSTATE);
+
+    int rc = PDMDevHlpSetDeviceCritSect(pDevIns, PDMDevHlpCritSectGetNop(pDevIns));
+    AssertRCReturn(rc, rc);
+
+    rc = PDMDevHlpIoPortSetUpContext(pDevIns, pThis->hIoPorts, pitIOPortWrite, pitIOPortRead, NULL /*pvUser*/);
+    AssertRCReturn(rc, rc);
+
+    rc = PDMDevHlpIoPortSetUpContext(pDevIns, pThis->hIoPortSpeaker, NULL /*pfnWrite*/, pitIOPortSpeakerRead, NULL /*pvUser*/);
+    AssertRCReturn(rc, rc);
+
+    return VINF_SUCCESS;
+}
+
+#endif /* !IN_RING3 */
 
 /**
  * The device registration structure.
@@ -1526,7 +1537,7 @@ const PDMDEVREG g_DeviceI8254 =
     /* .pfnReserved7 = */           NULL,
 #elif defined(IN_RING0)
     /* .pfnEarlyConstruct = */      NULL,
-    /* .pfnConstruct = */           NULL,
+    /* .pfnConstruct = */           picRZConstruct,
     /* .pfnDestruct = */            NULL,
     /* .pfnFinalDestruct = */       NULL,
     /* .pfnRequest = */             NULL,
@@ -1539,7 +1550,7 @@ const PDMDEVREG g_DeviceI8254 =
     /* .pfnReserved6 = */           NULL,
     /* .pfnReserved7 = */           NULL,
 #elif defined(IN_RC)
-    /* .pfnConstruct = */           NULL,
+    /* .pfnConstruct = */           picRZConstruct,
     /* .pfnReserved0 = */           NULL,
     /* .pfnReserved1 = */           NULL,
     /* .pfnReserved2 = */           NULL,
