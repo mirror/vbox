@@ -725,6 +725,21 @@
 # define CTXTYPE(GCType, R3Type, R0Type)  R0Type
 #endif
 
+/** @def CTX_EXPR
+ * Expression selector for avoiding \#ifdef's.
+ *
+ * @param   a_R3Expr    The R3 expression.
+ * @param   a_R0Expr    The R0 expression.
+ * @param   a_RCExpr    The RC expression.
+ */
+#if defined(IN_RC) && !defined(DOXYGEN_RUNNING)
+# define CTX_EXPR(a_R3Expr, a_R0Expr, a_RCExpr)  a_RCExpr
+#elif defined(IN_RING0) && !defined(DOXYGEN_RUNNING)
+# define CTX_EXPR(a_R3Expr, a_R0Expr, a_RCExpr)  a_R0Expr
+#else
+# define CTX_EXPR(a_R3Expr, a_R0Expr, a_RCExpr)  a_R3Expr
+#endif
+
 /** @def RCPTRTYPE
  * Declare a pointer which is used in the raw mode context but appears in structure(s) used by
  * both HC and RC. The main purpose is to make sure structures have the same
