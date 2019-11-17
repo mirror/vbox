@@ -81,7 +81,7 @@ enum pipe_error svga_hwtnl_flush(struct svga_hwtnl *hwtnl);
 void svga_hwtnl_set_index_bias(struct svga_hwtnl *hwtnl, int index_bias);
 
 #ifdef VBOX_WITH_MESA3D_SVGA_INSTANCING
-void svga_hwtnl_set_instanced(struct svga_hwtnl *hwtnl, boolean instanced);
+void svga_hwtnl_set_instance_divisor(struct svga_hwtnl *hwtnl, int velem_index, unsigned instance_divisor);
 #endif
 
 #endif /* SVGA_DRAW_H_ */

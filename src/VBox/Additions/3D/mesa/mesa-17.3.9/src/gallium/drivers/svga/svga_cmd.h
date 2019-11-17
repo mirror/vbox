@@ -167,7 +167,8 @@ SVGA3D_BeginDrawPrimitives(struct svga_winsys_context *swc,
                            uint32 numVertexDecls,
                            SVGA3dPrimitiveRange **ranges,
                            uint32 numRanges,
-                           uint32 instanceCount);
+                           SVGA3dVertexDivisor **divisors,
+                           uint32 numDivisors);
 #endif
 
 /*

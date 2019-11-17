@@ -198,6 +198,9 @@ draw_vgpu9(struct svga_hwtnl *hwtnl)
    struct svga_winsys_surface *handle;
    SVGA3dVertexDecl *vdecl;
    SVGA3dPrimitiveRange *prim;
+#ifdef VBOX_WITH_MESA3D_SVGA_INSTANCING
+   SVGA3dVertexDivisor *divisor;
+#endif
    unsigned i;
 
    /* Re-validate those sampler views with backing copy
@@ -293,7 +296,8 @@ draw_vgpu9(struct svga_hwtnl *hwtnl)
                                     &vdecl,
                                     hwtnl->cmd.vdecl_count,
                                     &prim, hwtnl->cmd.prim_count,
-                                    hwtnl->cmd.instanced ? hwtnl->cmd.instance_count : 0);
+                                    &divisor,
+                                    hwtnl->cmd.instanced ? hwtnl->cmd.vdecl_count : 0); // Same number as vertex decls
 #endif
 
    if (ret != PIPE_OK)
@@ -329,6 +333,26 @@ draw_vgpu9(struct svga_hwtnl *hwtnl)
    memcpy(prim,
           hwtnl->cmd.prim, hwtnl->cmd.prim_count * sizeof hwtnl->cmd.prim[0]);
 
+#ifdef VBOX_WITH_MESA3D_SVGA_INSTANCING
+   if (hwtnl->cmd.instanced)
+   {
+      assert(hwtnl->cmd.instance_count);
+      for (i = 0; i < hwtnl->cmd.vdecl_count; ++i)
+      {
+         if (hwtnl->cmd.instance_divisors[i])
+         {
+            divisor[i].count = hwtnl->cmd.instance_divisors[i];
+            divisor[i].instanceData = 1;
+         }
+         else
+         {
+            divisor[i].count = hwtnl->cmd.instance_count;
+            divisor[i].indexedData = 1;
+         }
+      }
+   }
+#endif
+
    for (i = 0; i < hwtnl->cmd.prim_count; i++) {
       swc->surface_relocation(swc,
                               &prim[i].indexArray.surfaceId,
@@ -339,6 +363,11 @@ draw_vgpu9(struct svga_hwtnl *hwtnl)
    SVGA_FIFOCommitAll(swc);
 
    hwtnl->cmd.prim_count = 0;
+#ifdef VBOX_WITH_MESA3D_SVGA_INSTANCING
+   hwtnl->cmd.instanced = 0;
+   hwtnl->cmd.instance_count = 0;
+   memset(hwtnl->cmd.instance_divisors, 0, sizeof(hwtnl->cmd.instance_divisors));
+#endif
 
    return PIPE_OK;
 }
@@ -875,9 +904,11 @@ svga_hwtnl_set_index_bias(struct svga_hwtnl *hwtnl, int index_bias)
 }
 
 #ifdef VBOX_WITH_MESA3D_SVGA_INSTANCING
-void svga_hwtnl_set_instanced(struct svga_hwtnl *hwtnl, boolean instanced)
+void svga_hwtnl_set_instance_divisor(struct svga_hwtnl *hwtnl, int velem_index, unsigned instance_divisor)
 {
-    hwtnl->cmd.instanced = instanced;
+   hwtnl->cmd.instance_divisors[velem_index] = instance_divisor;
+   if (instance_divisor)
+      hwtnl->cmd.instanced = true;
 }
 #endif
 

@@ -47,9 +47,6 @@ emit_hw_vs_vdecl(struct svga_context *svga, unsigned dirty)
    unsigned buffer_indexes[SVGA3D_INPUTREG_MAX];
    unsigned i;
    unsigned neg_bias = 0;
-#ifdef VBOX_WITH_MESA3D_SVGA_INSTANCING
-   boolean instanced = 0;
-#endif
 
    assert(svga->curr.velems->count >=
           svga->curr.vs->base.info.file_count[TGSI_FILE_INPUT]);
@@ -123,7 +120,7 @@ emit_hw_vs_vdecl(struct svga_context *svga, unsigned dirty)
       assert(!buffer->uploaded.buffer);
 
 #ifdef VBOX_WITH_MESA3D_SVGA_INSTANCING
-      instanced = instanced || (ve[i].instance_divisor != 0);
+      svga_hwtnl_set_instance_divisor( svga->hwtnl, i, ve[i].instance_divisor );
 #endif
    }
 
@@ -138,10 +135,6 @@ emit_hw_vs_vdecl(struct svga_context *svga, unsigned dirty)
                              svga->curr.vb);
 
    svga_hwtnl_set_index_bias( svga->hwtnl, -(int) neg_bias );
-
-#ifdef VBOX_WITH_MESA3D_SVGA_INSTANCING
-   svga_hwtnl_set_instanced( svga->hwtnl, instanced );
-#endif
 
    return PIPE_OK;
 }

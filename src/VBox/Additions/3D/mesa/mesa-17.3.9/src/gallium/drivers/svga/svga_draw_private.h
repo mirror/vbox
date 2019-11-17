@@ -150,6 +150,7 @@ struct draw_cmd {
    /* For VGPU9. */
    boolean instanced;
    unsigned instance_count;
+   unsigned instance_divisors[PIPE_MAX_ATTRIBS];
 #endif
 };
 

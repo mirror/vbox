@@ -1001,18 +1001,20 @@ SVGA3D_BeginDrawPrimitives(struct svga_winsys_context *swc,
                            uint32 numVertexDecls,         // IN
                            SVGA3dPrimitiveRange **ranges, // OUT
                            uint32 numRanges,              // IN
-                           uint32 instanceCount)          // IN
+                           SVGA3dVertexDivisor **divisors, // OUT
+                           uint32 numDivisors)            // IN
 #endif
 {
    SVGA3dCmdDrawPrimitives *cmd;
    SVGA3dVertexDecl *declArray;
    SVGA3dPrimitiveRange *rangeArray;
+#ifdef VBOX_WITH_MESA3D_SVGA_INSTANCING
+   SVGA3dVertexDivisor *divisorArray;
+#endif
    uint32 declSize = sizeof **decls * numVertexDecls;
    uint32 rangeSize = sizeof **ranges * numRanges;
 #ifdef VBOX_WITH_MESA3D_SVGA_INSTANCING
-   SVGA3dVertexDivisor *vertexDivisorArray;
-   uint32 i;
-   uint32 vertexDivisorSize = instanceCount ? sizeof(SVGA3dVertexDivisor) * numVertexDecls : 0;
+   uint32 divisorSize = sizeof **divisors * numDivisors;
 #endif
 
    cmd = SVGA3D_FIFOReserve(swc,
@@ -1020,7 +1022,7 @@ SVGA3D_BeginDrawPrimitives(struct svga_winsys_context *swc,
 #ifndef VBOX_WITH_MESA3D_SVGA_INSTANCING
                             sizeof *cmd + declSize + rangeSize,
 #else
-                            sizeof *cmd + declSize + rangeSize + vertexDivisorSize,
+                            sizeof *cmd + declSize + rangeSize + divisorSize,
 #endif
                             numVertexDecls + numRanges);
    if (!cmd)
@@ -1033,25 +1035,20 @@ SVGA3D_BeginDrawPrimitives(struct svga_winsys_context *swc,
    declArray = (SVGA3dVertexDecl*) &cmd[1];
    rangeArray = (SVGA3dPrimitiveRange*) &declArray[numVertexDecls];
 #ifdef VBOX_WITH_MESA3D_SVGA_INSTANCING
-   if (instanceCount)
-   {
-      vertexDivisorArray = (SVGA3dVertexDivisor*) &rangeArray[numRanges];
-      memset(vertexDivisorArray, 0, vertexDivisorSize);
-      vertexDivisorArray[0].count = instanceCount;
-      vertexDivisorArray[0].indexedData = 1;
-      for (i = 1; i < numVertexDecls; ++i)
-      {
-          vertexDivisorArray[i].count = 1;
-          vertexDivisorArray[i].instanceData = 1;
-      }
-   }
+   divisorArray = (SVGA3dVertexDivisor*) &rangeArray[numRanges];
 #endif
 
    memset(declArray, 0, declSize);
    memset(rangeArray, 0, rangeSize);
+#ifdef VBOX_WITH_MESA3D_SVGA_INSTANCING
+   memset(divisorArray, 0, divisorSize);
+#endif
 
    *decls = declArray;
    *ranges = rangeArray;
+#ifdef VBOX_WITH_MESA3D_SVGA_INSTANCING
+   *divisors = divisorArray;
+#endif
 
    swc->hints |= SVGA_HINT_FLAG_CAN_PRE_FLUSH;
 
