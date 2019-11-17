@@ -436,6 +436,8 @@ static void fwCommonUseHostDMIStrings(void)
  */
 int FwCommonPlantDMITable(PPDMDEVINS pDevIns, uint8_t *pTable, unsigned cbMax, PCRTUUID pUuid, PCFGMNODE pCfg, uint16_t cCpus, uint16_t *pcbDmiTables, uint16_t *pcNumDmiTables)
 {
+    PCPDMDEVHLPR3 pHlp = pDevIns->pHlpR3;
+
     /*
      * CFGM Hint!
      *
@@ -470,7 +472,7 @@ int FwCommonPlantDMITable(PPDMDEVINS pDevIns, uint8_t *pTable, unsigned cbMax, P
             pszTmp = default_value; \
         else \
         { \
-            rc = CFGMR3QueryStringDef(pCfg, name, szBuf, sizeof(szBuf), default_value); \
+            rc = pHlp->pfnCFGMQueryStringDef(pCfg, name, szBuf, sizeof(szBuf), default_value); \
             if (RT_FAILURE(rc)) \
             { \
                 if (fHideErrors) \
@@ -507,7 +509,7 @@ int FwCommonPlantDMITable(PPDMDEVINS pDevIns, uint8_t *pTable, unsigned cbMax, P
             variable = g_iDef ## name; \
         else \
         { \
-            rc = CFGMR3QueryS32Def(pCfg, # name, & variable, g_iDef ## name); \
+            rc = pHlp->pfnCFGMQueryS32Def(pCfg, # name, & variable, g_iDef ## name); \
             if (RT_FAILURE(rc)) \
             { \
                 if (fHideErrors) \
@@ -549,25 +551,22 @@ int FwCommonPlantDMITable(PPDMDEVINS pDevIns, uint8_t *pTable, unsigned cbMax, P
 #endif
 
     uint8_t fDmiUseHostInfo;
-    int rc = CFGMR3QueryU8Def(pCfg, "DmiUseHostInfo", &fDmiUseHostInfo, 0);
+    int rc = pHlp->pfnCFGMQueryU8Def(pCfg, "DmiUseHostInfo", &fDmiUseHostInfo, 0);
     if (RT_FAILURE (rc))
-        return PDMDEV_SET_ERROR(pDevIns, rc,
-                                N_("Configuration error: Failed to read \"DmiUseHostInfo\""));
+        return PDMDEV_SET_ERROR(pDevIns, rc, N_("Configuration error: Failed to read \"DmiUseHostInfo\""));
 
     /* Sync up with host default DMI values */
     if (fDmiUseHostInfo)
         fwCommonUseHostDMIStrings();
 
     uint8_t fDmiExposeMemoryTable;
-    rc = CFGMR3QueryU8Def(pCfg, "DmiExposeMemoryTable", &fDmiExposeMemoryTable, 0);
+    rc = pHlp->pfnCFGMQueryU8Def(pCfg, "DmiExposeMemoryTable", &fDmiExposeMemoryTable, 0);
     if (RT_FAILURE (rc))
-        return PDMDEV_SET_ERROR(pDevIns, rc,
-                                N_("Configuration error: Failed to read \"DmiExposeMemoryTable\""));
+        return PDMDEV_SET_ERROR(pDevIns, rc, N_("Configuration error: Failed to read \"DmiExposeMemoryTable\""));
     uint8_t fDmiExposeProcessorInf;
-    rc = CFGMR3QueryU8Def(pCfg, "DmiExposeProcInf", &fDmiExposeProcessorInf, 0);
+    rc = pHlp->pfnCFGMQueryU8Def(pCfg, "DmiExposeProcInf", &fDmiExposeProcessorInf, 0);
     if (RT_FAILURE (rc))
-        return PDMDEV_SET_ERROR(pDevIns, rc,
-                                N_("Configuration error: Failed to read \"DmiExposeProcInf\""));
+        return PDMDEV_SET_ERROR(pDevIns, rc, N_("Configuration error: Failed to read \"DmiExposeProcInf\""));
 
     for  (;; fForceDefault = true, fHideErrors = false)
     {
@@ -582,7 +581,7 @@ int FwCommonPlantDMITable(PPDMDEVINS pDevIns, uint8_t *pTable, unsigned cbMax, P
             pszDmiSystemUuid = NULL;
         else
         {
-            rc = CFGMR3QueryString(pCfg, "DmiSystemUuid", szDmiSystemUuid, sizeof(szDmiSystemUuid));
+            rc = pHlp->pfnCFGMQueryString(pCfg, "DmiSystemUuid", szDmiSystemUuid, sizeof(szDmiSystemUuid));
             if (rc == VERR_CFGM_VALUE_NOT_FOUND)
                 pszDmiSystemUuid = NULL;
             else if (RT_FAILURE(rc))
