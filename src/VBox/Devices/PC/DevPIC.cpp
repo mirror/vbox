@@ -108,7 +108,12 @@ typedef struct PICSTATE
     uint8_t         abAlignment0[3]; /**< Alignment padding. */
     /** The IRQ tags and source IDs for each (tracing purposes). */
     uint32_t        auTags[8];
+    /** The two I/O ports at 0x20 or 0xa0. */
+    IOMIOPORTHANDLE hIoPorts0;
+    /** The ELCR I/O port at 0x4d0 or 0x4d1. */
+    IOMIOPORTHANDLE hIoPorts1;
 } PICSTATE;
+AssertCompileMemberAlignment(PICSTATE, hIoPorts0, 8);
 /** Pointer to the state of one PIC. */
 typedef PICSTATE *PPICSTATE;
 
@@ -136,8 +141,8 @@ typedef struct DEVPIC
     uint32_t                cRelLogEntries;
     uint32_t                u32AlignmentPadding;
 #ifdef VBOX_WITH_STATISTICS
-    STAMCOUNTER             StatSetIrqGC;
-    STAMCOUNTER             StatSetIrqHC;
+    STAMCOUNTER             StatSetIrqRZ;
+    STAMCOUNTER             StatSetIrqR3;
     STAMCOUNTER             StatClearedActiveIRQ2;
     STAMCOUNTER             StatClearedActiveMasterIRQ;
     STAMCOUNTER             StatClearedActiveSlaveIRQ;
@@ -337,7 +342,7 @@ PDMBOTHCBDECL(void) picSetIrq(PPDMDEVINS pDevIns, int iIrq, int iLevel, uint32_t
     Log(("picSetIrq %d %d\n", iIrq, iLevel));
     DumpPICState(&pThis->aPics[0], "picSetIrq");
     DumpPICState(&pThis->aPics[1], "picSetIrq");
-    STAM_COUNTER_INC(&pThis->CTXSUFF(StatSetIrq));
+    STAM_COUNTER_INC(&pThis->CTX_SUFF_Z(StatSetIrq));
     if ((iLevel & PDM_IRQ_LEVEL_FLIP_FLOP) == PDM_IRQ_LEVEL_FLIP_FLOP)
     {
         /* A flip-flop lowers the IRQ line and immediately raises it, so
@@ -436,28 +441,32 @@ PDMBOTHCBDECL(int) picGetInterrupt(PPDMDEVINS pDevIns, uint32_t *puTagSrc)
 
 static void pic_reset(PPICSTATE pPic)
 {
-    PPDMDEVINSR3 pDevInsR3 = pPic->pDevInsR3;
-    PPDMDEVINSR0 pDevInsR0 = pPic->pDevInsR0;
-    PPDMDEVINSRC pDevInsRC = pPic->pDevInsRC;
-    int elcr_mask = pPic->elcr_mask;
-    int elcr = pPic->elcr;
-
-    memset(pPic, 0, sizeof(*pPic));
-
-    pPic->elcr = elcr;
-    pPic->elcr_mask = elcr_mask;
-    pPic->pDevInsRC = pDevInsRC;
-    pPic->pDevInsR0 = pDevInsR0;
-    pPic->pDevInsR3 = pDevInsR3;
+    pPic->last_irr                  = 0;
+    pPic->irr                       = 0;
+    pPic->imr                       = 0;
+    pPic->isr                       = 0;
+    pPic->priority_add              = 0;
+    pPic->irq_base                  = 0;
+    pPic->read_reg_select           = 0;
+    pPic->poll                      = 0;
+    pPic->special_mask              = 0;
+    pPic->init_state                = 0;
+    pPic->auto_eoi                  = 0;
+    pPic->rotate_on_auto_eoi        = 0;
+    pPic->special_fully_nested_mode = 0;
+    pPic->init4                     = 0;
+    //pPic->elcr                    - not cleared;
+    //pPic->elcr_mask               - not cleared;
+    RT_ZERO(pPic->auTags);
 }
 
 
-static int pic_ioport_write(PDEVPIC pThis, PPICSTATE pPic, uint32_t addr, uint32_t val)
+static VBOXSTRICTRC pic_ioport_write(PDEVPIC pThis, PPICSTATE pPic, uint32_t addr, uint32_t val)
 {
-    int         rc = VINF_SUCCESS;
-    int         irq;
+    VBOXSTRICTRC rc = VINF_SUCCESS;
+    int          irq;
 
-    Log(("pic_write: addr=0x%02x val=0x%02x\n", addr, val));
+    Log(("pic_write/%zu: addr=0x%02x val=0x%02x\n", pPic - pThis->aPics, addr, val));
     addr &= 1;
     if (addr == 0)
     {
@@ -644,7 +653,7 @@ static uint32_t pic_ioport_read(PPICSTATE pPic, uint32_t addr1, int *pRC)
 /**
  * @callback_method_impl{FNIOMIOPORTIN}
  */
-PDMBOTHCBDECL(int) picIOPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT uPort, uint32_t *pu32, unsigned cb)
+static DECLCALLBACK(VBOXSTRICTRC) picIOPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t *pu32, unsigned cb)
 {
     PDEVPIC     pThis = PDMDEVINS_2_DATA(pDevIns, PDEVPIC);
     uint32_t    iPic  = (uint32_t)(uintptr_t)pvUser;
@@ -654,7 +663,7 @@ PDMBOTHCBDECL(int) picIOPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT uPor
     {
         int rc;
         PIC_LOCK(pThis, VINF_IOM_R3_IOPORT_READ);
-        *pu32 = pic_ioport_read(&pThis->aPics[iPic], uPort, &rc);
+        *pu32 = pic_ioport_read(&RT_SAFE_SUBSCRIPT(pThis->aPics, iPic), offPort, &rc);
         PIC_UNLOCK(pThis);
         return rc;
     }
@@ -663,9 +672,9 @@ PDMBOTHCBDECL(int) picIOPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT uPor
 
 
 /**
- * @callback_method_impl{FNIOMIOPORTOUT}
+ * @callback_method_impl{FNIOMIOPORTNEWOUT}
  */
-PDMBOTHCBDECL(int) picIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT uPort, uint32_t u32, unsigned cb)
+static DECLCALLBACK(VBOXSTRICTRC) picIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t u32, unsigned cb)
 {
     PDEVPIC     pThis = PDMDEVINS_2_DATA(pDevIns, PDEVPIC);
     uint32_t    iPic  = (uint32_t)(uintptr_t)pvUser;
@@ -674,9 +683,9 @@ PDMBOTHCBDECL(int) picIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT uPo
 
     if (cb == 1)
     {
-        int rc;
+        VBOXSTRICTRC rc;
         PIC_LOCK(pThis, VINF_IOM_R3_IOPORT_WRITE);
-        rc = pic_ioport_write(pThis, &pThis->aPics[iPic], uPort, u32);
+        rc = pic_ioport_write(pThis, &RT_SAFE_SUBSCRIPT(pThis->aPics, iPic), offPort, u32);
         PIC_UNLOCK(pThis);
         return rc;
     }
@@ -685,9 +694,9 @@ PDMBOTHCBDECL(int) picIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT uPo
 
 
 /**
- * @callback_method_impl{FNIOMIOPORTIN, ELCR}
+ * @callback_method_impl{FNIOMIOPORTNEWIN, ELCR}
  */
-PDMBOTHCBDECL(int) picIOPortElcrRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32, unsigned cb)
+static DECLCALLBACK(VBOXSTRICTRC) picIOPortElcrRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t *pu32, unsigned cb)
 {
     if (cb == 1)
     {
@@ -697,15 +706,15 @@ PDMBOTHCBDECL(int) picIOPortElcrRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT 
         PIC_UNLOCK(PDMDEVINS_2_DATA(pDevIns, PDEVPIC));
         return VINF_SUCCESS;
     }
-    NOREF(Port);
+    RT_NOREF(offPort);
     return VERR_IOM_IOPORT_UNUSED;
 }
 
 
 /**
- * @callback_method_impl{FNIOMIOPORTOUT, ELCR}
+ * @callback_method_impl{FNIOMIOPORTNEWOUT, ELCR}
  */
-PDMBOTHCBDECL(int) picIOPortElcrWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb)
+static DECLCALLBACK(VBOXSTRICTRC) picIOPortElcrWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t u32, unsigned cb)
 {
     if (cb == 1)
     {
@@ -714,7 +723,7 @@ PDMBOTHCBDECL(int) picIOPortElcrWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT
         pPic->elcr = u32 & pPic->elcr_mask;
         PIC_UNLOCK(PDMDEVINS_2_DATA(pDevIns, PDEVPIC));
     }
-    NOREF(Port);
+    RT_NOREF(offPort);
     return VINF_SUCCESS;
 }
 
@@ -912,68 +921,27 @@ static DECLCALLBACK(int)  picR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
     /*
      * Register I/O ports and save state.
      */
-    rc = PDMDevHlpIOPortRegister(pDevIns,  0x20, 2, (void *)0, picIOPortWrite, picIOPortRead, NULL, NULL, "i8259 PIC #0");
-    if (RT_FAILURE(rc))
-        return rc;
-    rc = PDMDevHlpIOPortRegister(pDevIns,  0xa0, 2, (void *)1, picIOPortWrite, picIOPortRead, NULL, NULL, "i8259 PIC #1");
-    if (RT_FAILURE(rc))
-        return rc;
-    if (pDevIns->fRCEnabled)
-    {
-        rc = PDMDevHlpIOPortRegisterRC(pDevIns,  0x20, 2, 0, "picIOPortWrite", "picIOPortRead", NULL, NULL, "i8259 PIC #0");
-        if (RT_FAILURE(rc))
-            return rc;
-        rc = PDMDevHlpIOPortRegisterRC(pDevIns,  0xa0, 2, 1, "picIOPortWrite", "picIOPortRead", NULL, NULL, "i8259 PIC #1");
-        if (RT_FAILURE(rc))
-            return rc;
-    }
-    if (pDevIns->fR0Enabled)
-    {
-        rc = PDMDevHlpIOPortRegisterR0(pDevIns,  0x20, 2, 0, "picIOPortWrite", "picIOPortRead", NULL, NULL, "i8259 PIC #0");
-        if (RT_FAILURE(rc))
-            return rc;
-        rc = PDMDevHlpIOPortRegisterR0(pDevIns,  0xa0, 2, 1, "picIOPortWrite", "picIOPortRead", NULL, NULL, "i8259 PIC #1");
-        if (RT_FAILURE(rc))
-            return rc;
-    }
+    rc = PDMDevHlpIoPortCreateUAndMap(pDevIns, 0x20 /*uPort*/, 2 /*cPorts*/, picIOPortWrite, picIOPortRead, (void *)0,
+                                      "i8259 PIC #0", NULL /*paExtDesc*/, &pThis->aPics[0].hIoPorts0);
+    AssertRCReturn(rc, rc);
+LogRel(("pThis->aPics[0].hIoPorts0=%RX64 - YYY pThis=%p &hIoPorts0=%p\n", pThis->aPics[0].hIoPorts0, pThis, &pThis->aPics[0].hIoPorts0));
+    rc = PDMDevHlpIoPortCreateUAndMap(pDevIns, 0xa0 /*uPort*/, 2 /*cPorts*/, picIOPortWrite, picIOPortRead, (void *)1,
+                                      "i8259 PIC #1", NULL /*paExtDesc*/, &pThis->aPics[1].hIoPorts0);
+    AssertRCReturn(rc, rc);
 
-    rc = PDMDevHlpIOPortRegister(pDevIns, 0x4d0, 1, &pThis->aPics[0],
-                                 picIOPortElcrWrite, picIOPortElcrRead, NULL, NULL, "i8259 PIC #0 - elcr");
-    if (RT_FAILURE(rc))
-        return rc;
-    rc = PDMDevHlpIOPortRegister(pDevIns, 0x4d1, 1, &pThis->aPics[1],
-                                 picIOPortElcrWrite, picIOPortElcrRead, NULL, NULL, "i8259 PIC #1 - elcr");
-    if (RT_FAILURE(rc))
-        return rc;
-    if (pDevIns->fRCEnabled)
-    {
-        RTRCPTR pDataRC = PDMINS_2_DATA_RCPTR(pDevIns);
-        rc = PDMDevHlpIOPortRegisterRC(pDevIns, 0x4d0, 1, pDataRC + RT_OFFSETOF(DEVPIC, aPics[0]),
-                                       "picIOPortElcrWrite", "picIOPortElcrRead", NULL, NULL, "i8259 PIC #0 - elcr");
-        if (RT_FAILURE(rc))
-            return rc;
-        rc = PDMDevHlpIOPortRegisterRC(pDevIns, 0x4d1, 1, pDataRC + RT_OFFSETOF(DEVPIC, aPics[1]),
-                                       "picIOPortElcrWrite", "picIOPortElcrRead", NULL, NULL, "i8259 PIC #1 - elcr");
-        if (RT_FAILURE(rc))
-            return rc;
-    }
-    if (pDevIns->fR0Enabled)
-    {
-        RTR0PTR pDataR0 = PDMINS_2_DATA_R0PTR(pDevIns);
-        rc = PDMDevHlpIOPortRegisterR0(pDevIns, 0x4d0, 1, pDataR0 + RT_OFFSETOF(DEVPIC, aPics[0]),
-                                       "picIOPortElcrWrite", "picIOPortElcrRead", NULL, NULL, "i8259 PIC #0 - elcr");
-        if (RT_FAILURE(rc))
-            return rc;
-        rc = PDMDevHlpIOPortRegisterR0(pDevIns, 0x4d1, 1, pDataR0 + RT_OFFSETOF(DEVPIC, aPics[1]),
-                                       "picIOPortElcrWrite", "picIOPortElcrRead", NULL, NULL, "i8259 PIC #1 - elcr");
-        if (RT_FAILURE(rc))
-            return rc;
-    }
 
+    rc = PDMDevHlpIoPortCreateUAndMap(pDevIns, 0x4d0 /*uPort*/, 1 /*cPorts*/, picIOPortElcrWrite, picIOPortElcrRead,
+                                      &pThis->aPics[0], "i8259 PIC #0 - elcr", NULL /*paExtDesc*/, &pThis->aPics[0].hIoPorts1);
+    AssertRCReturn(rc, rc);
+    rc = PDMDevHlpIoPortCreateUAndMap(pDevIns, 0x4d1 /*uPort*/, 1 /*cPorts*/, picIOPortElcrWrite, picIOPortElcrRead,
+                                      &pThis->aPics[1], "i8259 PIC #1 - elcr", NULL /*paExtDesc*/, &pThis->aPics[1].hIoPorts1);
+    AssertRCReturn(rc, rc);
+
+    /*
+     * Saved state.
+     */
     rc = PDMDevHlpSSMRegister(pDevIns, 1 /* uVersion */, sizeof(*pThis), picR3SaveExec, picR3LoadExec);
-    if (RT_FAILURE(rc))
-        return rc;
-
+    AssertRCReturn(rc, rc);
 
     /*
      * Register the info item.
@@ -989,12 +957,12 @@ static DECLCALLBACK(int)  picR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
     /*
      * Statistics.
      */
-    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatSetIrqGC, STAMTYPE_COUNTER, "/Devices/PIC/SetIrqGC", STAMUNIT_OCCURENCES, "Number of PIC SetIrq calls in GC.");
-    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatSetIrqHC, STAMTYPE_COUNTER, "/Devices/PIC/SetIrqHC", STAMUNIT_OCCURENCES, "Number of PIC SetIrq calls in HC.");
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatSetIrqRZ, STAMTYPE_COUNTER, "SetIrqRZ", STAMUNIT_OCCURENCES, "Number of PIC SetIrq calls in ring-0/raw-mode.");
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatSetIrqR3, STAMTYPE_COUNTER, "SetIrqR3", STAMUNIT_OCCURENCES, "Number of PIC SetIrq calls in ring-3.");
 
-    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatClearedActiveIRQ2,       STAMTYPE_COUNTER, "/Devices/PIC/Masked/ActiveIRQ2",   STAMUNIT_OCCURENCES, "Number of cleared irq 2.");
-    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatClearedActiveMasterIRQ,  STAMTYPE_COUNTER, "/Devices/PIC/Masked/ActiveMaster", STAMUNIT_OCCURENCES, "Number of cleared master irqs.");
-    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatClearedActiveSlaveIRQ,   STAMTYPE_COUNTER, "/Devices/PIC/Masked/ActiveSlave",  STAMUNIT_OCCURENCES, "Number of cleared slave irqs.");
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatClearedActiveIRQ2,       STAMTYPE_COUNTER, "Masked/ActiveIRQ2",   STAMUNIT_OCCURENCES, "Number of cleared irq 2.");
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatClearedActiveMasterIRQ,  STAMTYPE_COUNTER, "Masked/ActiveMaster", STAMUNIT_OCCURENCES, "Number of cleared master irqs.");
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatClearedActiveSlaveIRQ,   STAMTYPE_COUNTER, "Masked/ActiveSlave",  STAMUNIT_OCCURENCES, "Number of cleared slave irqs.");
 #endif
 
     return VINF_SUCCESS;
@@ -1010,9 +978,11 @@ static DECLCALLBACK(int) picRZConstruct(PPDMDEVINS pDevIns)
     PDMDEV_CHECK_VERSIONS_RETURN(pDevIns);
     PDEVPIC pThis = PDMDEVINS_2_DATA(pDevIns, PDEVPIC);
 
+    /* NOP the critsect: */
     int rc = PDMDevHlpSetDeviceCritSect(pDevIns, PDMDevHlpCritSectGetNop(pDevIns));
     AssertRCReturn(rc, rc);
 
+    /* Set up the PIC callbacks: */
     PDMPICREG PicReg;
     PicReg.u32Version           = PDM_PICREG_VERSION;
     PicReg.pfnSetIrq            = picSetIrq;
@@ -1020,6 +990,29 @@ static DECLCALLBACK(int) picRZConstruct(PPDMDEVINS pDevIns)
     PicReg.u32TheEnd            = PDM_PICREG_VERSION;
     rc = PDMDevHlpPICSetUpContext(pDevIns, &PicReg, &pThis->CTX_SUFF(pPicHlp));
     AssertLogRelMsgRCReturn(rc, ("PDMDevHlpPICSetUpContext -> %Rrc\n", rc), rc);
+
+    /* I/O port callbacks: */
+LogRel(("pThis->aPics[0].hIoPorts0=%RX64 - XXX pThis=%p &hIoPorts0=%p\n", pThis->aPics[0].hIoPorts0, pThis, &pThis->aPics[0].hIoPorts0));
+PRTLOGGER pLogger = RTLogRelGetDefaultInstance();
+if (pLogger)
+    RTLogLoggerEx(pLogger, 0, ~0U, "pThis->aPics[0].hIoPorts0=%RX64 - XX\n", pThis->aPics[0].hIoPorts0);
+pLogger = RTLogGetDefaultInstance();
+if (pLogger)
+    RTLogLoggerEx(pLogger, 0, ~0U, "pThis->aPics[0].hIoPorts0=%RX64 - X\n", pThis->aPics[0].hIoPorts0);
+
+    rc = PDMDevHlpIoPortSetUpContext(pDevIns, pThis->aPics[0].hIoPorts0, picIOPortWrite, picIOPortRead, (void *)0);
+    AssertRCReturn(rc, VERR_INTERNAL_ERROR_2);
+    AssertRCReturn(rc, rc);
+    rc = PDMDevHlpIoPortSetUpContext(pDevIns, pThis->aPics[1].hIoPorts0, picIOPortWrite, picIOPortRead, (void *)1);
+    AssertRCReturn(rc, VERR_INTERNAL_ERROR_3);
+    AssertRCReturn(rc, rc);
+
+    rc = PDMDevHlpIoPortSetUpContext(pDevIns, pThis->aPics[0].hIoPorts1, picIOPortElcrWrite, picIOPortElcrRead, &pThis->aPics[0]);
+    AssertRCReturn(rc, VERR_INTERNAL_ERROR_4);
+    AssertRCReturn(rc, rc);
+    rc = PDMDevHlpIoPortSetUpContext(pDevIns, pThis->aPics[1].hIoPorts1, picIOPortElcrWrite, picIOPortElcrRead, &pThis->aPics[1]);
+    AssertRCReturn(rc, VERR_INTERNAL_ERROR_5);
+    AssertRCReturn(rc, rc);
 
     return VINF_SUCCESS;
 }
