@@ -5881,6 +5881,18 @@ DECLINLINE(int) PDMDevHlpIoPortCreate(PPDMDEVINS pDevIns, RTIOPORT cPorts, PPDMP
                                               pfnOut, pfnIn, NULL, NULL, pvUser, pszDesc, paExtDescs, phIoPorts);
 }
 
+
+/**
+ * @sa PDMDevHlpIoPortCreateEx
+ */
+DECLINLINE(int) PDMDevHlpIoPortCreateIsa(PPDMDEVINS pDevIns, RTIOPORT cPorts, PFNIOMIOPORTNEWOUT pfnOut,
+                                         PFNIOMIOPORTNEWIN pfnIn, void *pvUser, const char *pszDesc,
+                                         PCIOMIOPORTDESC paExtDescs, PIOMIOPORTHANDLE phIoPorts)
+{
+    return pDevIns->pHlpR3->pfnIoPortCreateEx(pDevIns, cPorts, 0, NULL, UINT32_MAX,
+                                              pfnOut, pfnIn, NULL, NULL, pvUser, pszDesc, paExtDescs, phIoPorts);
+}
+
 /**
  * @copydoc PDMDEVHLPR3::pfnIoPortCreateEx
  */
