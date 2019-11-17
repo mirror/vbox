@@ -5837,7 +5837,8 @@ int vmsvga3dResetTransformMatrices(PVGASTATE pThis, PVMSVGA3DCONTEXT pContext)
 
 int vmsvga3dDrawPrimitivesProcessVertexDecls(PVGASTATE pThis, PVMSVGA3DCONTEXT pContext,
                                              uint32_t iVertexDeclBase, uint32_t numVertexDecls,
-                                             SVGA3dVertexDecl *pVertexDecl, SVGA3dVertexDivisor const *paVertexDivisors)
+                                             SVGA3dVertexDecl *pVertexDecl,
+                                             SVGA3dVertexDivisor const *paVertexDivisors, uint32_t cInstances)
 {
     PVMSVGA3DSTATE      pState = pThis->svga.p3dState;
     unsigned            sidVertex = pVertexDecl[0].array.surfaceId;
@@ -5908,14 +5909,18 @@ int vmsvga3dDrawPrimitivesProcessVertexDecls(PVGASTATE pThis, PVMSVGA3DCONTEXT p
             VMSVGA3D_CHECK_LAST_ERROR(pState, pContext);
 
             GLuint divisor = paVertexDivisors && paVertexDivisors[index].s.instanceData ? 1 : 0;
-            if (pVertexDecl[iVertex].array.stride == 0 && divisor == 0)
+            if (pVertexDecl[iVertex].array.stride == 0)
             {
                 /* Zero stride means that the attribute pointer must not be increased.
                  * See comment about stride in vmsvga3dDrawPrimitives.
                  */
-                LogRelMax(8, ("VMSVGA: Warning: zero stride array (instancing %s)\n", paVertexDivisors ? "on" : "off"));
-                AssertFailed();
-                divisor = 1;
+                if (!divisor)
+                {
+                    LogRelMax(8, ("VMSVGA: zero stride array (instancing %s %d)\n", paVertexDivisors ? "on" : "off", cInstances));
+                    AssertFailed();
+                }
+
+                divisor = cInstances; /* This attrib must never advance. */
             }
             pState->ext.glVertexAttribDivisor(index, divisor);
             VMSVGA3D_CHECK_LAST_ERROR(pState, pContext);
@@ -6245,7 +6250,7 @@ int vmsvga3dDrawPrimitives(PVGASTATE pThis, uint32_t cid, uint32_t numVertexDecl
         }
 
         rc = vmsvga3dDrawPrimitivesProcessVertexDecls(pThis, pContext, iCurrentVertex, iVertex - iCurrentVertex,
-                                                      &pVertexDecl[iCurrentVertex], pVertexDivisor);
+                                                      &pVertexDecl[iCurrentVertex], pVertexDivisor, cInstances);
         AssertRCReturn(rc, rc);
 
         iCurrentVertex = iVertex;

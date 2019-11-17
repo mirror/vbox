@@ -5162,9 +5162,9 @@ int vmsvga3dDrawPrimitives(PVGASTATE pThis, uint32_t cid, uint32_t numVertexDecl
 
         if (cVertexDivisor)
         {
-            LogFunc(("SetStreamSourceFreq[%d]=%x\n", iCurrentStreamId, pVertexDivisor[iCurrentStreamId].value));
+            LogFunc(("SetStreamSourceFreq[%d]=%x\n", iCurrentStreamId, pVertexDivisor[iCurrentVertex].value));
             HRESULT hr2 = pContext->pDevice->SetStreamSourceFreq(iCurrentStreamId,
-                                                                 pVertexDivisor[iCurrentStreamId].value);
+                                                                 pVertexDivisor[iCurrentVertex].value);
             Assert(SUCCEEDED(hr2)); RT_NOREF(hr2);
         }
 
