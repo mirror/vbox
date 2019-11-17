@@ -213,7 +213,7 @@ typedef enum PITSPEAKEREMU
 } PITSPEAKEREMU;
 
 /**
- * The whole PIT state.
+ * The shared PIT state.
  */
 typedef struct PITSTATE
 {
@@ -240,10 +240,6 @@ typedef struct PITSTATE
     int                     hHostSpeaker;
     int                     afAlignment2;
 #endif
-    /** PIT port interface. */
-    PDMIHPETLEGACYNOTIFY    IHpetLegacyNotify;
-    /** Pointer to the device instance. */
-    PPDMDEVINSR3            pDevIns;
     /** Number of IRQs that's been raised. */
     STAMCOUNTER             StatPITIrq;
     /** Profiling the timer callback handler. */
@@ -255,8 +251,22 @@ typedef struct PITSTATE
     /** The speaker I/O port range (0x40-0x43). */
     IOMIOPORTHANDLE         hIoPortSpeaker;
 } PITSTATE;
-/** Pointer to the PIT device state. */
+/** Pointer to the shared PIT device state. */
 typedef PITSTATE *PPITSTATE;
+
+
+/**
+ * The ring-3 PIT state.
+ */
+typedef struct PITSTATER3
+{
+    /** PIT port interface. */
+    PDMIHPETLEGACYNOTIFY    IHpetLegacyNotify;
+    /** Pointer to the device instance. */
+    PPDMDEVINSR3            pDevIns;
+} PITSTATER3;
+/** Pointer to the ring-3 PIT device state. */
+typedef PITSTATER3 *PPITSTATER3;
 
 
 #ifndef VBOX_DEVICE_STRUCT_TESTCASE
@@ -1227,8 +1237,9 @@ static DECLCALLBACK(void) pitInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const 
  */
 static DECLCALLBACK(void) pitNotifyHpetLegacyNotify_ModeChanged(PPDMIHPETLEGACYNOTIFY pInterface, bool fActivated)
 {
-    PPITSTATE  pThis   = RT_FROM_MEMBER(pInterface, PITSTATE, IHpetLegacyNotify);
-    PPDMDEVINS pDevIns = pThis->pDevIns;
+    PPITSTATER3  pThisCC = RT_FROM_MEMBER(pInterface, PITSTATER3, IHpetLegacyNotify);
+    PPDMDEVINS   pDevIns = pThisCC->pDevIns;
+    PPITSTATE    pThis   = PDMDEVINS_2_DATA(pDevIns, PPITSTATE);
     PDMDevHlpCritSectEnter(pDevIns, &pThis->CritSect, VERR_IGNORED);
 
     pThis->fDisabledByHpet = fActivated;
@@ -1245,9 +1256,9 @@ static DECLCALLBACK(void) pitNotifyHpetLegacyNotify_ModeChanged(PPDMIHPETLEGACYN
 static DECLCALLBACK(void *) pitQueryInterface(PPDMIBASE pInterface, const char *pszIID)
 {
     PPDMDEVINS  pDevIns = RT_FROM_MEMBER(pInterface, PDMDEVINS, IBase);
-    PPITSTATE   pThis   = PDMDEVINS_2_DATA(pDevIns, PPITSTATE);
+    PPITSTATER3 pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PPITSTATER3);
     PDMIBASE_RETURN_INTERFACE(pszIID, PDMIBASE,    &pDevIns->IBase);
-    PDMIBASE_RETURN_INTERFACE(pszIID, PDMIHPETLEGACYNOTIFY, &pThis->IHpetLegacyNotify);
+    PDMIBASE_RETURN_INTERFACE(pszIID, PDMIHPETLEGACYNOTIFY, &pThisCC->IHpetLegacyNotify);
     return NULL;
 }
 
@@ -1298,8 +1309,9 @@ static DECLCALLBACK(void) pitReset(PPDMDEVINS pDevIns)
 static DECLCALLBACK(int)  pitConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE pCfg)
 {
     PDMDEV_CHECK_VERSIONS_RETURN(pDevIns);
-    PPITSTATE       pThis = PDMDEVINS_2_DATA(pDevIns, PPITSTATE);
-    PCPDMDEVHLPR3   pHlp  = pDevIns->pHlpR3;
+    PPITSTATE       pThis   = PDMDEVINS_2_DATA(pDevIns, PPITSTATE);
+    PPITSTATER3     pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PPITSTATER3);
+    PCPDMDEVHLPR3   pHlp    = pDevIns->pHlpR3;
     int             rc;
     uint8_t         u8Irq;
     uint16_t        u16Base;
@@ -1339,8 +1351,13 @@ static DECLCALLBACK(int)  pitConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
     /*
      * Init the data.
      */
-    pThis->pDevIns         = pDevIns;
     pThis->IOPortBaseCfg   = u16Base;
+    pThis->channels[0].irq = u8Irq;
+    for (i = 0; i < RT_ELEMENTS(pThis->channels); i++)
+    {
+        pThis->channels[i].hTimer = NIL_TMTIMERHANDLE;
+        pThis->channels[i].iChan  = i;
+    }
     pThis->fSpeakerCfg     = fSpeaker;
     pThis->enmSpeakerEmu   = PIT_SPEAKER_EMU_NONE;
     if (uPassthroughSpeaker)
@@ -1398,20 +1415,15 @@ static DECLCALLBACK(int)  pitConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
             pszPassthroughSpeakerDevice = NULL;
         }
     }
-    pThis->channels[0].irq = u8Irq;
-    for (i = 0; i < RT_ELEMENTS(pThis->channels); i++)
-    {
-        pThis->channels[i].hTimer = NIL_TMTIMERHANDLE;
-        pThis->channels[i].iChan  = i;
-    }
 
     /*
      * Interfaces
      */
     /* IBase */
-    pDevIns->IBase.pfnQueryInterface        = pitQueryInterface;
+    pDevIns->IBase.pfnQueryInterface          = pitQueryInterface;
     /* IHpetLegacyNotify */
-    pThis->IHpetLegacyNotify.pfnModeChanged = pitNotifyHpetLegacyNotify_ModeChanged;
+    pThisCC->IHpetLegacyNotify.pfnModeChanged = pitNotifyHpetLegacyNotify_ModeChanged;
+    pThisCC->pDevIns                          = pDevIns;
 
     /*
      * We do our own locking.  This must be done before creating timers.
@@ -1505,7 +1517,7 @@ const PDMDEVREG g_DeviceI8254 =
     /* .cMaxInstances = */          1,
     /* .uSharedVersion = */         42,
     /* .cbInstanceShared = */       sizeof(PITSTATE),
-    /* .cbInstanceCC = */           0,
+    /* .cbInstanceCC = */           CTX_EXPR(sizeof(PITSTATER3), 0, 0),
     /* .cbInstanceRC = */           0,
     /* .cMaxPciDevices = */         0,
     /* .cMaxMsixVectors = */        0,
