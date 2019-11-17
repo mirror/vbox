@@ -357,8 +357,7 @@ static int pcbiosRegisterShutdown(PPDMDEVINS pDevIns, PDEVPCBIOS pThis, bool fNe
 static DECLCALLBACK(int) pcbiosSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 {
     PDEVPCBIOS pThis = PDMDEVINS_2_DATA(pDevIns, PDEVPCBIOS);
-    SSMR3PutStruct(pSSM, pThis, g_aPcBiosFields);
-    return VINF_SUCCESS;
+    return pDevIns->pHlpR3->pfnSSMPutStruct(pSSM, pThis, g_aPcBiosFields);
 }
 
 
@@ -391,7 +390,7 @@ static DECLCALLBACK(int) pcbiosLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uin
         return VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
     Assert(uPass == SSM_PASS_FINAL); NOREF(uPass);
 
-    return SSMR3GetStruct(pSSM, pThis, g_aPcBiosFields);
+    return pDevIns->pHlpR3->pfnSSMGetStruct(pSSM, pThis, g_aPcBiosFields);
 }
 
 
@@ -1152,30 +1151,27 @@ static DECLCALLBACK(int) pcbiosDestruct(PPDMDEVINS pDevIns)
  */
 static int pcbiosBootFromCfg(PPDMDEVINS pDevIns, PCFGMNODE pCfg, const char *pszParam, DEVPCBIOSBOOT *penmBoot)
 {
-    char *psz;
-    int rc = CFGMR3QueryStringAlloc(pCfg, pszParam, &psz);
+    PCPDMDEVHLPR3 pHlp = pDevIns->pHlpR3;
+
+    char szBuf[64];
+    int rc = pHlp->pfnCFGMQueryString(pCfg, pszParam, szBuf, sizeof(szBuf));
     if (RT_FAILURE(rc))
         return PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS,
-                                   N_("Configuration error: Querying \"%s\" as a string failed"),
-                                   pszParam);
-    if (!strcmp(psz, "DVD") || !strcmp(psz, "CDROM"))
+                                   N_("Configuration error: Querying \"%s\" as a string failed"), pszParam);
+
+    if (!strcmp(szBuf, "DVD") || !strcmp(szBuf, "CDROM"))
         *penmBoot = DEVPCBIOSBOOT_DVD;
-    else if (!strcmp(psz, "IDE"))
+    else if (!strcmp(szBuf, "IDE"))
         *penmBoot = DEVPCBIOSBOOT_HD;
-    else if (!strcmp(psz, "FLOPPY"))
+    else if (!strcmp(szBuf, "FLOPPY"))
         *penmBoot = DEVPCBIOSBOOT_FLOPPY;
-    else if (!strcmp(psz, "LAN"))
+    else if (!strcmp(szBuf, "LAN"))
         *penmBoot = DEVPCBIOSBOOT_LAN;
-    else if (!strcmp(psz, "NONE"))
+    else if (!strcmp(szBuf, "NONE"))
         *penmBoot = DEVPCBIOSBOOT_NONE;
     else
-    {
-        PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS,
-                            N_("Configuration error: The \"%s\" value \"%s\" is unknown"),
-                            pszParam, psz);
-        rc = VERR_INTERNAL_ERROR;
-    }
-    MMR3HeapFree(psz);
+        rc = PDMDevHlpVMSetError(pDevIns, VERR_INVALID_PARAMETER, RT_SRC_POS,
+                                 N_("Configuration error: The \"%s\" value \"%s\" is unknown"),  pszParam, szBuf);
     return rc;
 }
 
@@ -1185,110 +1181,103 @@ static int pcbiosBootFromCfg(PPDMDEVINS pDevIns, PCFGMNODE pCfg, const char *psz
 static DECLCALLBACK(int)  pcbiosConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE pCfg)
 {
     PDMDEV_CHECK_VERSIONS_RETURN(pDevIns);
-    PDEVPCBIOS  pThis = PDMDEVINS_2_DATA(pDevIns, PDEVPCBIOS);
-    int         rc;
-    int         cb;
+    PDEVPCBIOS      pThis   = PDMDEVINS_2_DATA(pDevIns, PDEVPCBIOS);
+    PCPDMDEVHLPR3   pHlp    = pDevIns->pHlpR3;
+    int             rc;
+    int             cb;
     Assert(iInstance == 0); RT_NOREF(iInstance);
 
     /*
      * Validate configuration.
      */
-    if (!CFGMR3AreValuesValid(pCfg,
-                              "BootDevice0\0"
-                              "BootDevice1\0"
-                              "BootDevice2\0"
-                              "BootDevice3\0"
-                              "HardDiskDevice\0"
-                              "SataHardDiskDevice\0"
-                              "SataLUN1\0"
-                              "SataLUN2\0"
-                              "SataLUN3\0"
-                              "SataLUN4\0"
-                              "ScsiHardDiskDevice\0"
-                              "ScsiLUN1\0"
-                              "ScsiLUN2\0"
-                              "ScsiLUN3\0"
-                              "ScsiLUN4\0"
-                              "FloppyDevice\0"
-                              "DelayBoot\0"
-                              "BiosRom\0"
-                              "LanBootRom\0"
-                              "PXEDebug\0"
-                              "UUID\0"
-                              "UuidLe\0"
-                              "IOAPIC\0"
-                              "APIC\0"
-                              "NumCPUs\0"
-                              "McfgBase\0"
-                              "McfgLength\0"
-                              "DmiBIOSFirmwareMajor\0"
-                              "DmiBIOSFirmwareMinor\0"
-                              "DmiBIOSReleaseDate\0"
-                              "DmiBIOSReleaseMajor\0"
-                              "DmiBIOSReleaseMinor\0"
-                              "DmiBIOSVendor\0"
-                              "DmiBIOSVersion\0"
-                              "DmiSystemFamily\0"
-                              "DmiSystemProduct\0"
-                              "DmiSystemSerial\0"
-                              "DmiSystemSKU\0"
-                              "DmiSystemUuid\0"
-                              "DmiSystemVendor\0"
-                              "DmiSystemVersion\0"
-                              "DmiBoardAssetTag\0"
-                              "DmiBoardBoardType\0"
-                              "DmiBoardLocInChass\0"
-                              "DmiBoardProduct\0"
-                              "DmiBoardSerial\0"
-                              "DmiBoardVendor\0"
-                              "DmiBoardVersion\0"
-                              "DmiChassisAssetTag\0"
-                              "DmiChassisSerial\0"
-                              "DmiChassisType\0"
-                              "DmiChassisVendor\0"
-                              "DmiChassisVersion\0"
-                              "DmiProcManufacturer\0"
-                              "DmiProcVersion\0"
-                              "DmiOEMVBoxVer\0"
-                              "DmiOEMVBoxRev\0"
-                              "DmiUseHostInfo\0"
-                              "DmiExposeMemoryTable\0"
-                              "DmiExposeProcInf\0"
-                              "CheckShutdownStatusForSoftReset\0"
-                              "ClearShutdownStatusOnHardReset\0"
-                              ))
-        return PDMDEV_SET_ERROR(pDevIns, VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES,
-                                N_("Invalid configuration for device pcbios device"));
-
+    PDMDEV_VALIDATE_CONFIG_RETURN(pDevIns,
+                                  "BootDevice0"
+                                  "|BootDevice1"
+                                  "|BootDevice2"
+                                  "|BootDevice3"
+                                  "|HardDiskDevice"
+                                  "|SataHardDiskDevice"
+                                  "|SataLUN1"
+                                  "|SataLUN2"
+                                  "|SataLUN3"
+                                  "|SataLUN4"
+                                  "|ScsiHardDiskDevice"
+                                  "|ScsiLUN1"
+                                  "|ScsiLUN2"
+                                  "|ScsiLUN3"
+                                  "|ScsiLUN4"
+                                  "|FloppyDevice"
+                                  "|DelayBoot"
+                                  "|BiosRom"
+                                  "|LanBootRom"
+                                  "|PXEDebug"
+                                  "|UUID"
+                                  "|UuidLe"
+                                  "|IOAPIC"
+                                  "|APIC"
+                                  "|NumCPUs"
+                                  "|McfgBase"
+                                  "|McfgLength"
+                                  "|DmiBIOSFirmwareMajor"
+                                  "|DmiBIOSFirmwareMinor"
+                                  "|DmiBIOSReleaseDate"
+                                  "|DmiBIOSReleaseMajor"
+                                  "|DmiBIOSReleaseMinor"
+                                  "|DmiBIOSVendor"
+                                  "|DmiBIOSVersion"
+                                  "|DmiSystemFamily"
+                                  "|DmiSystemProduct"
+                                  "|DmiSystemSerial"
+                                  "|DmiSystemSKU"
+                                  "|DmiSystemUuid"
+                                  "|DmiSystemVendor"
+                                  "|DmiSystemVersion"
+                                  "|DmiBoardAssetTag"
+                                  "|DmiBoardBoardType"
+                                  "|DmiBoardLocInChass"
+                                  "|DmiBoardProduct"
+                                  "|DmiBoardSerial"
+                                  "|DmiBoardVendor"
+                                  "|DmiBoardVersion"
+                                  "|DmiChassisAssetTag"
+                                  "|DmiChassisSerial"
+                                  "|DmiChassisType"
+                                  "|DmiChassisVendor"
+                                  "|DmiChassisVersion"
+                                  "|DmiProcManufacturer"
+                                  "|DmiProcVersion"
+                                  "|DmiOEMVBoxVer"
+                                  "|DmiOEMVBoxRev"
+                                  "|DmiUseHostInfo"
+                                  "|DmiExposeMemoryTable"
+                                  "|DmiExposeProcInf"
+                                  "|CheckShutdownStatusForSoftReset"
+                                  "|ClearShutdownStatusOnHardReset"
+                                  , "");
     /*
      * Init the data.
      */
-    rc = CFGMR3QueryU16Def(pCfg, "NumCPUs", &pThis->cCpus, 1);
+    rc = pHlp->pfnCFGMQueryU16Def(pCfg, "NumCPUs", &pThis->cCpus, 1);
     if (RT_FAILURE(rc))
-        return PDMDEV_SET_ERROR(pDevIns, rc,
-                                N_("Configuration error: Querying \"NumCPUs\" as integer failed"));
+        return PDMDEV_SET_ERROR(pDevIns, rc, N_("Configuration error: Querying \"NumCPUs\" as integer failed"));
 
-    rc = CFGMR3QueryU64Def(pCfg, "McfgBase", &pThis->u64McfgBase, 0);
+    rc = pHlp->pfnCFGMQueryU64Def(pCfg, "McfgBase", &pThis->u64McfgBase, 0);
     if (RT_FAILURE(rc))
-        return PDMDEV_SET_ERROR(pDevIns, rc,
-                                N_("Configuration error: Querying \"\" as integer failed"));
-    rc = CFGMR3QueryU64Def(pCfg, "McfgLength", &pThis->cbMcfgLength, 0);
+        return PDMDEV_SET_ERROR(pDevIns, rc, N_("Configuration error: Querying \"\" as integer failed"));
+    rc = pHlp->pfnCFGMQueryU64Def(pCfg, "McfgLength", &pThis->cbMcfgLength, 0);
     if (RT_FAILURE(rc))
-        return PDMDEV_SET_ERROR(pDevIns, rc,
-                                N_("Configuration error: Querying \"McfgLength\" as integer failed"));
+        return PDMDEV_SET_ERROR(pDevIns, rc, N_("Configuration error: Querying \"McfgLength\" as integer failed"));
 
 
     LogRel(("PcBios: [SMP] BIOS with %u CPUs\n", pThis->cCpus));
 
-    rc = CFGMR3QueryU8Def(pCfg, "IOAPIC", &pThis->u8IOAPIC, 1);
+    rc = pHlp->pfnCFGMQueryU8Def(pCfg, "IOAPIC", &pThis->u8IOAPIC, 1);
     if (RT_FAILURE (rc))
-        return PDMDEV_SET_ERROR(pDevIns, rc,
-                                N_("Configuration error: Failed to read \"IOAPIC\""));
+        return PDMDEV_SET_ERROR(pDevIns, rc, N_("Configuration error: Failed to read \"IOAPIC\""));
 
-    rc = CFGMR3QueryU8Def(pCfg, "APIC", &pThis->u8APICMode, 1);
+    rc = pHlp->pfnCFGMQueryU8Def(pCfg, "APIC", &pThis->u8APICMode, 1);
     if (RT_FAILURE (rc))
-        return PDMDEV_SET_ERROR(pDevIns, rc,
-                                N_("Configuration error: Failed to read \"APIC\""));
+        return PDMDEV_SET_ERROR(pDevIns, rc, N_("Configuration error: Failed to read \"APIC\""));
 
     static const char * const s_apszBootDevices[] = { "BootDevice0", "BootDevice1", "BootDevice2", "BootDevice3" };
     Assert(RT_ELEMENTS(s_apszBootDevices) == RT_ELEMENTS(pThis->aenmBootDevice));
@@ -1299,31 +1288,27 @@ static DECLCALLBACK(int)  pcbiosConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
             return rc;
     }
 
-    rc = CFGMR3QueryStringAlloc(pCfg, "HardDiskDevice", &pThis->pszHDDevice);
+    rc = pHlp->pfnCFGMQueryStringAlloc(pCfg, "HardDiskDevice", &pThis->pszHDDevice);
     if (RT_FAILURE(rc))
-        return PDMDEV_SET_ERROR(pDevIns, rc,
-                                N_("Configuration error: Querying \"HardDiskDevice\" as a string failed"));
+        return PDMDEV_SET_ERROR(pDevIns, rc, N_("Configuration error: Querying \"HardDiskDevice\" as a string failed"));
 
-    rc = CFGMR3QueryStringAlloc(pCfg, "FloppyDevice", &pThis->pszFDDevice);
+    rc = pHlp->pfnCFGMQueryStringAlloc(pCfg, "FloppyDevice", &pThis->pszFDDevice);
     if (RT_FAILURE(rc))
-        return PDMDEV_SET_ERROR(pDevIns, rc,
-                                N_("Configuration error: Querying \"FloppyDevice\" as a string failed"));
+        return PDMDEV_SET_ERROR(pDevIns, rc, N_("Configuration error: Querying \"FloppyDevice\" as a string failed"));
 
-    rc = CFGMR3QueryStringAlloc(pCfg, "SataHardDiskDevice", &pThis->pszSataDevice);
+    rc = pHlp->pfnCFGMQueryStringAlloc(pCfg, "SataHardDiskDevice", &pThis->pszSataDevice);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
         pThis->pszSataDevice = NULL;
     else if (RT_FAILURE(rc))
-        return PDMDEV_SET_ERROR(pDevIns, rc,
-                                N_("Configuration error: Querying \"SataHardDiskDevice\" as a string failed"));
+        return PDMDEV_SET_ERROR(pDevIns, rc, N_("Configuration error: Querying \"SataHardDiskDevice\" as a string failed"));
 
     if (pThis->pszSataDevice)
     {
-        static const char * const s_apszSataDisks[] =
-            { "SataLUN1", "SataLUN2", "SataLUN3", "SataLUN4" };
+        static const char * const s_apszSataDisks[] = { "SataLUN1", "SataLUN2", "SataLUN3", "SataLUN4" };
         Assert(RT_ELEMENTS(s_apszSataDisks) == RT_ELEMENTS(pThis->iSataHDLUN));
         for (unsigned i = 0; i < RT_ELEMENTS(pThis->iSataHDLUN); i++)
         {
-            rc = CFGMR3QueryU32(pCfg, s_apszSataDisks[i], &pThis->iSataHDLUN[i]);
+            rc = pHlp->pfnCFGMQueryU32(pCfg, s_apszSataDisks[i], &pThis->iSataHDLUN[i]);
             if (rc == VERR_CFGM_VALUE_NOT_FOUND)
                 pThis->iSataHDLUN[i] = i;
             else if (RT_FAILURE(rc))
@@ -1333,21 +1318,19 @@ static DECLCALLBACK(int)  pcbiosConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
     }
 
     /* Repeat the exercise for SCSI drives. */
-    rc = CFGMR3QueryStringAlloc(pCfg, "ScsiHardDiskDevice", &pThis->pszScsiDevice);
+    rc = pHlp->pfnCFGMQueryStringAlloc(pCfg, "ScsiHardDiskDevice", &pThis->pszScsiDevice);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
         pThis->pszScsiDevice = NULL;
     else if (RT_FAILURE(rc))
-        return PDMDEV_SET_ERROR(pDevIns, rc,
-                                N_("Configuration error: Querying \"ScsiHardDiskDevice\" as a string failed"));
+        return PDMDEV_SET_ERROR(pDevIns, rc, N_("Configuration error: Querying \"ScsiHardDiskDevice\" as a string failed"));
 
     if (pThis->pszScsiDevice)
     {
-        static const char * const s_apszScsiDisks[] =
-            { "ScsiLUN1", "ScsiLUN2", "ScsiLUN3", "ScsiLUN4" };
+        static const char * const s_apszScsiDisks[] = { "ScsiLUN1", "ScsiLUN2", "ScsiLUN3", "ScsiLUN4" };
         Assert(RT_ELEMENTS(s_apszScsiDisks) == RT_ELEMENTS(pThis->iScsiHDLUN));
         for (unsigned i = 0; i < RT_ELEMENTS(pThis->iScsiHDLUN); i++)
         {
-            rc = CFGMR3QueryU32(pCfg, s_apszScsiDisks[i], &pThis->iScsiHDLUN[i]);
+            rc = pHlp->pfnCFGMQueryU32(pCfg, s_apszScsiDisks[i], &pThis->iScsiHDLUN[i]);
             if (rc == VERR_CFGM_VALUE_NOT_FOUND)
                 pThis->iScsiHDLUN[i] = i;
             else if (RT_FAILURE(rc))
@@ -1379,7 +1362,7 @@ static DECLCALLBACK(int)  pcbiosConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
     /*
      * Read the PXE debug logging option.
      */
-    rc = CFGMR3QueryU8Def(pCfg, "PXEDebug", &pThis->u8PXEDebug, false);
+    rc = pHlp->pfnCFGMQueryU8Def(pCfg, "PXEDebug", &pThis->u8PXEDebug, false);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Querying \"PXEDebug\" as integer failed"));
@@ -1392,7 +1375,7 @@ static DECLCALLBACK(int)  pcbiosConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
     /*
      * Determine the network boot order.
      */
-    PCFGMNODE pCfgNetBoot = CFGMR3GetChild(pCfg, "NetBoot");
+    PCFGMNODE pCfgNetBoot = pHlp->pfnCFGMGetChild(pCfg, "NetBoot");
     if (pCfgNetBoot == NULL)
     {
         /* Do nothing. */
@@ -1411,9 +1394,9 @@ static DECLCALLBACK(int)  pcbiosConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
         for (unsigned i = 0; i < NET_BOOT_DEVS; ++i)
         {
             szIndex[0] = '0' + i;
-            pCfgNetBootDevice = CFGMR3GetChild(pCfgNetBoot, szIndex);
+            pCfgNetBootDevice = pHlp->pfnCFGMGetChild(pCfgNetBoot, szIndex);
 
-            rc = CFGMR3QueryU8(pCfgNetBootDevice, "PCIBusNo", &u8PciBus);
+            rc = pHlp->pfnCFGMQueryU8(pCfgNetBootDevice, "PCIBusNo", &u8PciBus);
             if (rc == VERR_CFGM_VALUE_NOT_FOUND || rc == VERR_CFGM_NO_PARENT)
             {
                 /* Do nothing and stop iterating. */
@@ -1423,7 +1406,7 @@ static DECLCALLBACK(int)  pcbiosConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
             else if (RT_FAILURE(rc))
                 return PDMDEV_SET_ERROR(pDevIns, rc,
                                         N_("Configuration error: Querying \"Netboot/x/PCIBusNo\" as integer failed"));
-            rc = CFGMR3QueryU8(pCfgNetBootDevice, "PCIDeviceNo", &u8PciDev);
+            rc = pHlp->pfnCFGMQueryU8(pCfgNetBootDevice, "PCIDeviceNo", &u8PciDev);
             if (rc == VERR_CFGM_VALUE_NOT_FOUND || rc == VERR_CFGM_NO_PARENT)
             {
                 /* Do nothing and stop iterating. */
@@ -1433,7 +1416,7 @@ static DECLCALLBACK(int)  pcbiosConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
             else if (RT_FAILURE(rc))
                 return PDMDEV_SET_ERROR(pDevIns, rc,
                                         N_("Configuration error: Querying \"Netboot/x/PCIDeviceNo\" as integer failed"));
-            rc = CFGMR3QueryU8(pCfgNetBootDevice, "PCIFunctionNo", &u8PciFn);
+            rc = pHlp->pfnCFGMQueryU8(pCfgNetBootDevice, "PCIFunctionNo", &u8PciFn);
             if (rc == VERR_CFGM_VALUE_NOT_FOUND || rc == VERR_CFGM_NO_PARENT)
             {
                 /* Do nothing and stop iterating. */
@@ -1451,7 +1434,7 @@ static DECLCALLBACK(int)  pcbiosConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
     /*
      * Get the system BIOS ROM file name.
      */
-    rc = CFGMR3QueryStringAlloc(pCfg, "BiosRom", &pThis->pszPcBiosFile);
+    rc = pHlp->pfnCFGMQueryStringAlloc(pCfg, "BiosRom", &pThis->pszPcBiosFile);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
     {
         pThis->pszPcBiosFile = NULL;
@@ -1462,7 +1445,7 @@ static DECLCALLBACK(int)  pcbiosConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
                                 N_("Configuration error: Querying \"BiosRom\" as a string failed"));
     else if (!*pThis->pszPcBiosFile)
     {
-        MMR3HeapFree(pThis->pszPcBiosFile);
+        PDMDevHlpMMHeapFree(pDevIns, pThis->pszPcBiosFile);
         pThis->pszPcBiosFile = NULL;
     }
 
@@ -1570,13 +1553,13 @@ static DECLCALLBACK(int)  pcbiosConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
      * Query the machine's UUID for SMBIOS/DMI use.
      */
     RTUUID  uuid;
-    rc = CFGMR3QueryBytes(pCfg, "UUID", &uuid, sizeof(uuid));
+    rc = pHlp->pfnCFGMQueryBytes(pCfg, "UUID", &uuid, sizeof(uuid));
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Querying \"UUID\" failed"));
 
     bool fUuidLe;
-    rc = CFGMR3QueryBoolDef(pCfg, "UuidLe", &fUuidLe, false);
+    rc = pHlp->pfnCFGMQueryBoolDef(pCfg, "UuidLe", &fUuidLe, false);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Querying \"UuidLe\" failed"));
@@ -1657,7 +1640,7 @@ static DECLCALLBACK(int)  pcbiosConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
     /*
      * Get the LAN boot ROM file name.
      */
-    rc = CFGMR3QueryStringAlloc(pCfg, "LanBootRom", &pThis->pszLanBootFile);
+    rc = pHlp->pfnCFGMQueryStringAlloc(pCfg, "LanBootRom", &pThis->pszLanBootFile);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
     {
         pThis->pszLanBootFile = NULL;
@@ -1668,7 +1651,7 @@ static DECLCALLBACK(int)  pcbiosConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
                                 N_("Configuration error: Querying \"LanBootRom\" as a string failed"));
     else if (!*pThis->pszLanBootFile)
     {
-        MMR3HeapFree(pThis->pszLanBootFile);
+        PDMDevHlpMMHeapFree(pDevIns, pThis->pszLanBootFile);
         pThis->pszLanBootFile = NULL;
     }
 
@@ -1728,7 +1711,7 @@ static DECLCALLBACK(int)  pcbiosConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
                 /** @todo r=bird: This should have some kind of rational. We don't usually
                  *        ignore the VM configuration.  */
                 LogRel(("PcBios: Failed to open LAN boot ROM file '%s', rc=%Rrc!\n", pThis->pszLanBootFile, rc));
-                MMR3HeapFree(pThis->pszLanBootFile);
+                PDMDevHlpMMHeapFree(pDevIns, pThis->pszLanBootFile);
                 pThis->pszLanBootFile = NULL;
             }
         }
@@ -1777,7 +1760,7 @@ static DECLCALLBACK(int)  pcbiosConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
     /*
      * Configure Boot delay.
      */
-    rc = CFGMR3QueryU8Def(pCfg, "DelayBoot", &pThis->uBootDelay, 0);
+    rc = pHlp->pfnCFGMQueryU8Def(pCfg, "DelayBoot", &pThis->uBootDelay, 0);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                     N_("Configuration error: Querying \"DelayBoot\" as integer failed"));
@@ -1793,12 +1776,12 @@ static DECLCALLBACK(int)  pcbiosConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
      * Whether to consult the shutdown status code (CMOS register 0Fh) to
      * determine whether the guest intended a soft or hard reset.  Currently only
      * shutdown status codes 05h, 09h and 0Ah are considered soft reset. */
-    rc = CFGMR3QueryBoolDef(pCfg, "CheckShutdownStatusForSoftReset", &pThis->fCheckShutdownStatusForSoftReset, true);
+    rc = pHlp->pfnCFGMQueryBoolDef(pCfg, "CheckShutdownStatusForSoftReset", &pThis->fCheckShutdownStatusForSoftReset, true);
     AssertLogRelRCReturn(rc, rc);
 
     /** @cfgm{ClearShutdownStatusOnHardReset, boolean, true}
      * Whether to clear the shutdown status code (CMOS register 0Fh) on hard reset. */
-    rc = CFGMR3QueryBoolDef(pCfg, "ClearShutdownStatusOnHardReset", &pThis->fClearShutdownStatusOnHardReset, true);
+    rc = pHlp->pfnCFGMQueryBoolDef(pCfg, "ClearShutdownStatusOnHardReset", &pThis->fClearShutdownStatusOnHardReset, true);
     AssertLogRelRCReturn(rc, rc);
 
     LogRel(("PcBios: fCheckShutdownStatusForSoftReset=%RTbool  fClearShutdownStatusOnHardReset=%RTbool\n",
