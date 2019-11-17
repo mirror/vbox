@@ -209,17 +209,20 @@ typedef struct DEVPCBIOS
     PDMFWREG        FwReg;
     /** Dummy. */
     PCPDMFWHLPR3    pFwHlpR3;
+    /** Number of soft resets we've logged. */
+    uint32_t        cLoggedSoftResets;
     /** Whether to consult the shutdown status (CMOS[0xf]) for deciding upon soft
      * or hard reset. */
     bool            fCheckShutdownStatusForSoftReset;
     /** Whether to clear the shutdown status on hard reset. */
     bool            fClearShutdownStatusOnHardReset;
-    /** Number of soft resets we've logged. */
-    uint32_t        cLoggedSoftResets;
     /** Current port number for Bochs shutdown (used by APM). */
     RTIOPORT        ShutdownPort;
     /** True=use new port number for Bochs shutdown (used by APM). */
     bool            fNewShutdownPort;
+    bool            afPadding[3+4];
+    /** The shudown I/O port, either at 0x040f or 0x8900 (old saved state). */
+    IOMMMIOHANDLE   hIoPortShutdown;
 } DEVPCBIOS;
 /** Pointer to the BIOS device state. */
 typedef DEVPCBIOS *PDEVPCBIOS;
@@ -244,29 +247,32 @@ static SSMFIELD const g_aPcBiosFields[] =
 
 
 /**
- * @callback_method_impl{FNIOMIOPORTIN, Bochs Debug and Shutdown ports.}
+ * @callback_method_impl{FNIOMIOPORTNEWIN, Bochs Debug.}
  */
-static DECLCALLBACK(int) pcbiosIOPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32, unsigned cb)
+static DECLCALLBACK(VBOXSTRICTRC)
+pcbiosIOPortDebugRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t *pu32, unsigned cb)
 {
-    RT_NOREF5(pDevIns, pvUser, Port, pu32, cb);
+    RT_NOREF5(pDevIns, pvUser, offPort, pu32, cb);
     return VERR_IOM_IOPORT_UNUSED;
 }
 
 
 /**
- * @callback_method_impl{FNIOMIOPORTOUT, Bochs Debug and Shutdown ports.}
+ * @callback_method_impl{FNIOMIOPORTNEWOUT, Bochs Debug.}
  */
-static DECLCALLBACK(int) pcbiosIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb)
+static DECLCALLBACK(VBOXSTRICTRC)
+pcbiosIOPortDebugWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t u32, unsigned cb)
 {
-    RT_NOREF1(pvUser);
     PDEVPCBIOS pThis = PDMDEVINS_2_DATA(pDevIns, PDEVPCBIOS);
+    RT_NOREF(pvUser);
+    Assert(offPort < 4);
 
     /*
      * Bochs BIOS char printing.
      */
     if (    cb == 1
-        &&  (   Port == 0x402
-             || Port == 0x403))
+        &&  (   offPort == 2
+             || offPort == 3))
     {
         /* The raw version. */
         switch (u32)
@@ -302,10 +308,33 @@ static DECLCALLBACK(int) pcbiosIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTI
         return VINF_SUCCESS;
     }
 
-    /*
-     * Bochs BIOS shutdown request.
-     */
-    if (cb == 1 && Port == pThis->ShutdownPort)
+    /* not in use. */
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * @callback_method_impl{FNIOMIOPORTNEWIN, Bochs Shutdown port.}
+ */
+static DECLCALLBACK(VBOXSTRICTRC)
+pcbiosIOPortShutdownRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t *pu32, unsigned cb)
+{
+    RT_NOREF5(pDevIns, pvUser, offPort, pu32, cb);
+    return VERR_IOM_IOPORT_UNUSED;
+}
+
+
+/**
+ * @callback_method_impl{FNIOMIOPORTNEWOUT, Bochs Shutdown port.}
+ */
+static DECLCALLBACK(VBOXSTRICTRC)
+pcbiosIOPortShutdownWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t u32, unsigned cb)
+{
+    PDEVPCBIOS pThis = PDMDEVINS_2_DATA(pDevIns, PDEVPCBIOS);
+    RT_NOREF(pvUser, offPort);
+    Assert(offPort == 0);
+
+    if (cb == 1)
     {
         static const unsigned char s_szShutdown[] = "Shutdown";
         if (   pThis->iShutdown < sizeof(s_szShutdown) /* paranoia */
@@ -321,10 +350,9 @@ static DECLCALLBACK(int) pcbiosIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTI
         }
         else
             pThis->iShutdown = 0;
-        return VINF_SUCCESS;
     }
+    /* else: not in use. */
 
-    /* not in use. */
     return VINF_SUCCESS;
 }
 
@@ -337,17 +365,16 @@ static int pcbiosRegisterShutdown(PPDMDEVINS pDevIns, PDEVPCBIOS pThis, bool fNe
 {
     if (pThis->ShutdownPort != 0)
     {
-        int rc = PDMDevHlpIOPortDeregister(pDevIns, pThis->ShutdownPort, 1);
+        int rc = PDMDevHlpIoPortUnmap(pDevIns, pThis->hIoPortShutdown);
         AssertRC(rc);
     }
+
     pThis->fNewShutdownPort = fNewShutdownPort;
     if (fNewShutdownPort)
         pThis->ShutdownPort = VBOX_BIOS_SHUTDOWN_PORT;
     else
         pThis->ShutdownPort = VBOX_BIOS_OLD_SHUTDOWN_PORT;
-    return PDMDevHlpIOPortRegister(pDevIns, pThis->ShutdownPort, 1, NULL,
-                                   pcbiosIOPortWrite, pcbiosIOPortRead,
-                                   NULL, NULL, "Bochs PC BIOS - Shutdown");
+    return PDMDevHlpIoPortMap(pDevIns, pThis->hIoPortShutdown, pThis->ShutdownPort);
 }
 
 
@@ -1347,15 +1374,18 @@ static DECLCALLBACK(int)  pcbiosConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
 
 
     /*
-     * Register I/O Ports and PC BIOS.
+     * Register the I/O Ports.
      */
-    rc = PDMDevHlpIOPortRegister(pDevIns, 0x400, 4, NULL, pcbiosIOPortWrite, pcbiosIOPortRead,
-                                 NULL, NULL, "Bochs PC BIOS - Panic & Debug");
-    if (RT_FAILURE(rc))
-        return rc;
+    IOMIOPORTHANDLE hIoPorts;
+    rc = PDMDevHlpIoPortCreateAndMap(pDevIns, 0x400 /*uPort*/, 4 /*cPorts*/, pcbiosIOPortDebugWrite, pcbiosIOPortDebugRead,
+                                     "Bochs PC BIOS - Panic & Debug", NULL, &hIoPorts);
+    AssertRCReturn(rc, rc);
+
+    rc = PDMDevHlpIoPortCreateIsa(pDevIns, 1 /*cPorts*/, pcbiosIOPortShutdownWrite, pcbiosIOPortShutdownRead, NULL /*pvUser*/,
+                                  "Bochs PC BIOS - Shutdown", NULL /*paExtDescs*/, &pThis->hIoPortShutdown);
+    AssertRCReturn(rc, rc);
     rc = pcbiosRegisterShutdown(pDevIns, pThis, true /* fNewShutdownPort */);
-    if (RT_FAILURE(rc))
-        return rc;
+    AssertRCReturn(rc, rc);
 
     /*
      * Register SSM handlers, for remembering which shutdown port to use.
