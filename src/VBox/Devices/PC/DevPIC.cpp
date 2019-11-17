@@ -669,7 +669,7 @@ static uint32_t pic_ioport_read(PPDMDEVINS pDevIns, PDEVPIC pThis, PDEVPICCC pTh
 /* -=-=-=-=-=- I/O ports -=-=-=-=-=- */
 
 /**
- * @callback_method_impl{FNIOMIOPORTIN}
+ * @callback_method_impl{FNIOMIOPORTNEWIN}
  */
 static DECLCALLBACK(VBOXSTRICTRC) picIOPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t *pu32, unsigned cb)
 {
