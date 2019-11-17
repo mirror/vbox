@@ -924,7 +924,6 @@ static DECLCALLBACK(int)  picR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
     rc = PDMDevHlpIoPortCreateUAndMap(pDevIns, 0x20 /*uPort*/, 2 /*cPorts*/, picIOPortWrite, picIOPortRead, (void *)0,
                                       "i8259 PIC #0", NULL /*paExtDesc*/, &pThis->aPics[0].hIoPorts0);
     AssertRCReturn(rc, rc);
-LogRel(("pThis->aPics[0].hIoPorts0=%RX64 - YYY pThis=%p &hIoPorts0=%p\n", pThis->aPics[0].hIoPorts0, pThis, &pThis->aPics[0].hIoPorts0));
     rc = PDMDevHlpIoPortCreateUAndMap(pDevIns, 0xa0 /*uPort*/, 2 /*cPorts*/, picIOPortWrite, picIOPortRead, (void *)1,
                                       "i8259 PIC #1", NULL /*paExtDesc*/, &pThis->aPics[1].hIoPorts0);
     AssertRCReturn(rc, rc);
@@ -992,14 +991,6 @@ static DECLCALLBACK(int) picRZConstruct(PPDMDEVINS pDevIns)
     AssertLogRelMsgRCReturn(rc, ("PDMDevHlpPICSetUpContext -> %Rrc\n", rc), rc);
 
     /* I/O port callbacks: */
-LogRel(("pThis->aPics[0].hIoPorts0=%RX64 - XXX pThis=%p &hIoPorts0=%p\n", pThis->aPics[0].hIoPorts0, pThis, &pThis->aPics[0].hIoPorts0));
-PRTLOGGER pLogger = RTLogRelGetDefaultInstance();
-if (pLogger)
-    RTLogLoggerEx(pLogger, 0, ~0U, "pThis->aPics[0].hIoPorts0=%RX64 - XX\n", pThis->aPics[0].hIoPorts0);
-pLogger = RTLogGetDefaultInstance();
-if (pLogger)
-    RTLogLoggerEx(pLogger, 0, ~0U, "pThis->aPics[0].hIoPorts0=%RX64 - X\n", pThis->aPics[0].hIoPorts0);
-
     rc = PDMDevHlpIoPortSetUpContext(pDevIns, pThis->aPics[0].hIoPorts0, picIOPortWrite, picIOPortRead, (void *)0);
     AssertRCReturn(rc, VERR_INTERNAL_ERROR_2);
     AssertRCReturn(rc, rc);
