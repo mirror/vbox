@@ -53,7 +53,7 @@
 *********************************************************************************************************************************/
 RT_C_DECLS_BEGIN
 extern DECLEXPORT(const PDMDEVHLPR0)    g_pdmR0DevHlp;
-extern DECLEXPORT(const PDMPICHLPR0)    g_pdmR0PicHlp;
+extern DECLEXPORT(const PDMPICHLP)      g_pdmR0PicHlp;
 extern DECLEXPORT(const PDMIOAPICHLPR0) g_pdmR0IoApicHlp;
 extern DECLEXPORT(const PDMPCIHLPR0)    g_pdmR0PciHlp;
 extern DECLEXPORT(const PDMHPETHLPR0)   g_pdmR0HpetHlp;
@@ -1096,6 +1096,53 @@ static DECLCALLBACK(int) pdmR0DevHlp_PCIBusSetUpContext(PPDMDEVINS pDevIns, PPDM
 }
 
 
+/** @interface_method_impl{PDMDEVHLPR0,pfnPICSetUpContext} */
+static DECLCALLBACK(int) pdmR0DevHlp_PICSetUpContext(PPDMDEVINS pDevIns, PPDMPICREG pPicReg, PCPDMPICHLP *ppPicHlp)
+{
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    LogFlow(("pdmR0DevHlp_PICSetUpContext: caller='%s'/%d: pPicReg=%p:{.u32Version=%#x, .pfnSetIrqR3=%p, .pfnGetInterruptR3=%p, .pszGetIrqRC=%p:{%s}, .pszGetInterruptRC=%p:{%s}, .pszGetIrqR0=%p:{%s}, .pszGetInterruptR0=%p:{%s} } ppPicHlp=%p\n",
+             pDevIns->pReg->szName, pDevIns->iInstance, pPicReg, pPicReg->u32Version, pPicReg->pfnSetIrq, pPicReg->pfnGetInterrupt, ppPicHlp));
+    PGVM pGVM = pDevIns->Internal.s.pGVM;
+
+    /*
+     * Validate input.
+     */
+    AssertMsgReturn(pPicReg->u32Version == PDM_PICREG_VERSION,
+                    ("%s/%d: u32Version=%#x expected %#x\n", pDevIns->pReg->szName, pDevIns->iInstance, pPicReg->u32Version, PDM_PICREG_VERSION),
+                    VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pPicReg->pfnSetIrq, VERR_INVALID_POINTER);
+    AssertPtrReturn(pPicReg->pfnGetInterrupt, VERR_INVALID_POINTER);
+    AssertMsgReturn(pPicReg->u32TheEnd == PDM_PICREG_VERSION,
+                    ("%s/%d: u32TheEnd=%#x expected %#x\n", pDevIns->pReg->szName, pDevIns->iInstance, pPicReg->u32TheEnd, PDM_PICREG_VERSION),
+                    VERR_INVALID_PARAMETER);
+    AssertPtrReturn(ppPicHlp, VERR_INVALID_POINTER);
+
+    VM_ASSERT_STATE_RETURN(pGVM, VMSTATE_CREATING, VERR_WRONG_ORDER);
+    VM_ASSERT_EMT0_RETURN(pGVM, VERR_VM_THREAD_NOT_EMT);
+
+    /* Check that it's the same device as made the ring-3 registrations: */
+    AssertLogRelMsgReturn(pGVM->pdm.s.Pic.pDevInsR3 == pDevIns->pDevInsForR3,
+                          ("%p vs %p\n", pGVM->pdm.s.Pic.pDevInsR3, pDevIns->pDevInsForR3), VERR_NOT_OWNER);
+
+    /* Check that it isn't already registered in ring-0: */
+    AssertLogRelMsgReturn(pGVM->pdm.s.Pic.pDevInsR0 == NULL, ("%p (caller pDevIns=%p)\n", pGVM->pdm.s.Pic.pDevInsR0, pDevIns),
+                          VERR_ALREADY_EXISTS);
+
+    /*
+     * Take down the callbacks and instance.
+     */
+    pGVM->pdm.s.Pic.pDevInsR0 = pDevIns;
+    pGVM->pdm.s.Pic.pfnSetIrqR0 = pPicReg->pfnSetIrq;
+    pGVM->pdm.s.Pic.pfnGetInterruptR0 = pPicReg->pfnGetInterrupt;
+    Log(("PDM: Registered PIC device '%s'/%d pDevIns=%p\n", pDevIns->pReg->szName, pDevIns->iInstance, pDevIns));
+
+    /* set the helper pointer and return. */
+    *ppPicHlp = &g_pdmR0PicHlp;
+    LogFlow(("pdmR0DevHlp_PICSetUpContext: caller='%s'/%d: returns %Rrc\n", pDevIns->pReg->szName, pDevIns->iInstance, VINF_SUCCESS));
+    return VINF_SUCCESS;
+}
+
+
 /**
  * The Ring-0 Device Helper Callbacks.
  */
@@ -1173,6 +1220,7 @@ extern DECLEXPORT(const PDMDEVHLPR0) g_pdmR0DevHlp =
     pdmR0DevHlp_CritSectScheduleExitEvent,
     pdmR0DevHlp_DBGFTraceBuf,
     pdmR0DevHlp_PCIBusSetUpContext,
+    pdmR0DevHlp_PICSetUpContext,
     NULL /*pfnReserved1*/,
     NULL /*pfnReserved2*/,
     NULL /*pfnReserved3*/,
@@ -1195,7 +1243,7 @@ extern DECLEXPORT(const PDMDEVHLPR0) g_pdmR0DevHlp =
  * @{
  */
 
-/** @interface_method_impl{PDMPICHLPR0,pfnSetInterruptFF} */
+/** @interface_method_impl{PDMPICHLP,pfnSetInterruptFF} */
 static DECLCALLBACK(void) pdmR0PicHlp_SetInterruptFF(PPDMDEVINS pDevIns)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
@@ -1206,7 +1254,7 @@ static DECLCALLBACK(void) pdmR0PicHlp_SetInterruptFF(PPDMDEVINS pDevIns)
 }
 
 
-/** @interface_method_impl{PDMPICHLPR0,pfnClearInterruptFF} */
+/** @interface_method_impl{PDMPICHLP,pfnClearInterruptFF} */
 static DECLCALLBACK(void) pdmR0PicHlp_ClearInterruptFF(PPDMDEVINS pDevIns)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
@@ -1217,7 +1265,7 @@ static DECLCALLBACK(void) pdmR0PicHlp_ClearInterruptFF(PPDMDEVINS pDevIns)
 }
 
 
-/** @interface_method_impl{PDMPICHLPR0,pfnLock} */
+/** @interface_method_impl{PDMPICHLP,pfnLock} */
 static DECLCALLBACK(int) pdmR0PicHlp_Lock(PPDMDEVINS pDevIns, int rc)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
@@ -1225,7 +1273,7 @@ static DECLCALLBACK(int) pdmR0PicHlp_Lock(PPDMDEVINS pDevIns, int rc)
 }
 
 
-/** @interface_method_impl{PDMPICHLPR0,pfnUnlock} */
+/** @interface_method_impl{PDMPICHLP,pfnUnlock} */
 static DECLCALLBACK(void) pdmR0PicHlp_Unlock(PPDMDEVINS pDevIns)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
@@ -1236,14 +1284,14 @@ static DECLCALLBACK(void) pdmR0PicHlp_Unlock(PPDMDEVINS pDevIns)
 /**
  * The Ring-0 PIC Helper Callbacks.
  */
-extern DECLEXPORT(const PDMPICHLPR0) g_pdmR0PicHlp =
+extern DECLEXPORT(const PDMPICHLP) g_pdmR0PicHlp =
 {
-    PDM_PICHLPR0_VERSION,
+    PDM_PICHLP_VERSION,
     pdmR0PicHlp_SetInterruptFF,
     pdmR0PicHlp_ClearInterruptFF,
     pdmR0PicHlp_Lock,
     pdmR0PicHlp_Unlock,
-    PDM_PICHLPR0_VERSION
+    PDM_PICHLP_VERSION
 };
 
 /** @} */

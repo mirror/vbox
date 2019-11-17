@@ -3677,139 +3677,46 @@ static DECLCALLBACK(int) pdmR3DevHlp_PCIBusRegister(PPDMDEVINS pDevIns, PPDMPCIB
 
 
 /** @interface_method_impl{PDMDEVHLPR3,pfnPICRegister} */
-static DECLCALLBACK(int) pdmR3DevHlp_PICRegister(PPDMDEVINS pDevIns, PPDMPICREG pPicReg, PCPDMPICHLPR3 *ppPicHlpR3)
+static DECLCALLBACK(int) pdmR3DevHlp_PICRegister(PPDMDEVINS pDevIns, PPDMPICREG pPicReg, PCPDMPICHLP *ppPicHlp)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
     VM_ASSERT_EMT(pDevIns->Internal.s.pVMR3);
-    LogFlow(("pdmR3DevHlp_PICRegister: caller='%s'/%d: pPicReg=%p:{.u32Version=%#x, .pfnSetIrqR3=%p, .pfnGetInterruptR3=%p, .pszGetIrqRC=%p:{%s}, .pszGetInterruptRC=%p:{%s}, .pszGetIrqR0=%p:{%s}, .pszGetInterruptR0=%p:{%s} } ppPicHlpR3=%p\n",
-             pDevIns->pReg->szName, pDevIns->iInstance, pPicReg, pPicReg->u32Version, pPicReg->pfnSetIrqR3, pPicReg->pfnGetInterruptR3,
-             pPicReg->pszSetIrqRC, pPicReg->pszSetIrqRC, pPicReg->pszGetInterruptRC, pPicReg->pszGetInterruptRC,
-             pPicReg->pszSetIrqR0, pPicReg->pszSetIrqR0, pPicReg->pszGetInterruptR0, pPicReg->pszGetInterruptR0,
-             ppPicHlpR3));
+    LogFlow(("pdmR3DevHlp_PICRegister: caller='%s'/%d: pPicReg=%p:{.u32Version=%#x, .pfnSetIrqR3=%p, .pfnGetInterruptR3=%p, .pszGetIrqRC=%p:{%s}, .pszGetInterruptRC=%p:{%s}, .pszGetIrqR0=%p:{%s}, .pszGetInterruptR0=%p:{%s} } ppPicHlp=%p\n",
+             pDevIns->pReg->szName, pDevIns->iInstance, pPicReg, pPicReg->u32Version, pPicReg->pfnSetIrq, pPicReg->pfnGetInterrupt, ppPicHlp));
+    PVM pVM = pDevIns->Internal.s.pVMR3;
 
     /*
      * Validate input.
      */
-    if (pPicReg->u32Version != PDM_PICREG_VERSION)
-    {
-        AssertMsgFailed(("u32Version=%#x expected %#x\n", pPicReg->u32Version, PDM_PICREG_VERSION));
-        LogFlow(("pdmR3DevHlp_PICRegister: caller='%s'/%d: returns %Rrc (version)\n", pDevIns->pReg->szName, pDevIns->iInstance, VERR_INVALID_PARAMETER));
-        return VERR_INVALID_PARAMETER;
-    }
-    if (    !pPicReg->pfnSetIrqR3
-        ||  !pPicReg->pfnGetInterruptR3)
-    {
-        Assert(pPicReg->pfnSetIrqR3);
-        Assert(pPicReg->pfnGetInterruptR3);
-        LogFlow(("pdmR3DevHlp_PICRegister: caller='%s'/%d: returns %Rrc (R3 callbacks)\n", pDevIns->pReg->szName, pDevIns->iInstance, VERR_INVALID_PARAMETER));
-        return VERR_INVALID_PARAMETER;
-    }
-    if (    (   pPicReg->pszSetIrqRC
-             || pPicReg->pszGetInterruptRC)
-        &&  (   !VALID_PTR(pPicReg->pszSetIrqRC)
-             || !VALID_PTR(pPicReg->pszGetInterruptRC))
-       )
-    {
-        Assert(VALID_PTR(pPicReg->pszSetIrqRC));
-        Assert(VALID_PTR(pPicReg->pszGetInterruptRC));
-        LogFlow(("pdmR3DevHlp_PICRegister: caller='%s'/%d: returns %Rrc (RC callbacks)\n", pDevIns->pReg->szName, pDevIns->iInstance, VERR_INVALID_PARAMETER));
-        return VERR_INVALID_PARAMETER;
-    }
-    if (    pPicReg->pszSetIrqRC
-        &&  !(pDevIns->pReg->fFlags & PDM_DEVREG_FLAGS_RC))
-    {
-        Assert(pDevIns->pReg->fFlags & PDM_DEVREG_FLAGS_RC);
-        LogFlow(("pdmR3DevHlp_PICRegister: caller='%s'/%d: returns %Rrc (RC flag)\n", pDevIns->pReg->szName, pDevIns->iInstance, VERR_INVALID_PARAMETER));
-        return VERR_INVALID_PARAMETER;
-    }
-    if (    pPicReg->pszSetIrqR0
-        &&  !(pDevIns->pReg->fFlags & PDM_DEVREG_FLAGS_R0))
-    {
-        Assert(pDevIns->pReg->fFlags & PDM_DEVREG_FLAGS_R0);
-        LogFlow(("pdmR3DevHlp_PICRegister: caller='%s'/%d: returns %Rrc (R0 flag)\n", pDevIns->pReg->szName, pDevIns->iInstance, VERR_INVALID_PARAMETER));
-        return VERR_INVALID_PARAMETER;
-    }
-    if (!ppPicHlpR3)
-    {
-        Assert(ppPicHlpR3);
-        LogFlow(("pdmR3DevHlp_PICRegister: caller='%s'/%d: returns %Rrc (ppPicHlpR3)\n", pDevIns->pReg->szName, pDevIns->iInstance, VERR_INVALID_PARAMETER));
-        return VERR_INVALID_PARAMETER;
-    }
+    AssertMsgReturn(pPicReg->u32Version == PDM_PICREG_VERSION,
+                    ("%s/%d: u32Version=%#x expected %#x\n", pDevIns->pReg->szName, pDevIns->iInstance, pPicReg->u32Version, PDM_PICREG_VERSION),
+                    VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pPicReg->pfnSetIrq, VERR_INVALID_POINTER);
+    AssertPtrReturn(pPicReg->pfnGetInterrupt, VERR_INVALID_POINTER);
+    AssertMsgReturn(pPicReg->u32TheEnd == PDM_PICREG_VERSION,
+                    ("%s/%d: u32TheEnd=%#x expected %#x\n", pDevIns->pReg->szName, pDevIns->iInstance, pPicReg->u32TheEnd, PDM_PICREG_VERSION),
+                    VERR_INVALID_PARAMETER);
+    AssertPtrReturn(ppPicHlp, VERR_INVALID_POINTER);
+
+    VM_ASSERT_STATE_RETURN(pVM, VMSTATE_CREATING, VERR_WRONG_ORDER);
+    VM_ASSERT_EMT0_RETURN(pVM, VERR_VM_THREAD_NOT_EMT);
 
     /*
      * Only one PIC device.
      */
-    PVM pVM = pDevIns->Internal.s.pVMR3;
-    if (pVM->pdm.s.Pic.pDevInsR3)
-    {
-        AssertMsgFailed(("Only one pic device is supported!\n"));
-        LogFlow(("pdmR3DevHlp_PICRegister: caller='%s'/%d: returns %Rrc\n", pDevIns->pReg->szName, pDevIns->iInstance, VERR_INVALID_PARAMETER));
-        return VERR_INVALID_PARAMETER;
-    }
+    AssertMsgReturn(pVM->pdm.s.Pic.pDevInsR3 == NULL, ("%s/%d: Only one PIC!\n", pDevIns->pReg->szName, pDevIns->iInstance),
+                    VERR_ALREADY_EXISTS);
 
     /*
-     * RC stuff.
-     */
-    if (pPicReg->pszSetIrqRC)
-    {
-        int rc = pdmR3DevGetSymbolRCLazy(pDevIns, pPicReg->pszSetIrqRC, &pVM->pdm.s.Pic.pfnSetIrqRC);
-        AssertMsgRC(rc, ("%s::%s rc=%Rrc\n", pDevIns->pReg->pszRCMod, pPicReg->pszSetIrqRC, rc));
-        if (RT_SUCCESS(rc))
-        {
-            rc = pdmR3DevGetSymbolRCLazy(pDevIns, pPicReg->pszGetInterruptRC, &pVM->pdm.s.Pic.pfnGetInterruptRC);
-            AssertMsgRC(rc, ("%s::%s rc=%Rrc\n", pDevIns->pReg->pszRCMod, pPicReg->pszGetInterruptRC, rc));
-        }
-        if (RT_FAILURE(rc))
-        {
-            LogFlow(("pdmR3DevHlp_PICRegister: caller='%s'/%d: returns %Rrc\n", pDevIns->pReg->szName, pDevIns->iInstance, rc));
-            return rc;
-        }
-        pVM->pdm.s.Pic.pDevInsRC = PDMDEVINS_2_RCPTR(pDevIns);
-    }
-    else
-    {
-        pVM->pdm.s.Pic.pDevInsRC = 0;
-        pVM->pdm.s.Pic.pfnSetIrqRC = 0;
-        pVM->pdm.s.Pic.pfnGetInterruptRC = 0;
-    }
-
-    /*
-     * R0 stuff.
-     */
-    if (pPicReg->pszSetIrqR0)
-    {
-        int rc = pdmR3DevGetSymbolR0Lazy(pDevIns, pPicReg->pszSetIrqR0, &pVM->pdm.s.Pic.pfnSetIrqR0);
-        AssertMsgRC(rc, ("%s::%s rc=%Rrc\n", pDevIns->pReg->pszR0Mod, pPicReg->pszSetIrqR0, rc));
-        if (RT_SUCCESS(rc))
-        {
-            rc = pdmR3DevGetSymbolR0Lazy(pDevIns, pPicReg->pszGetInterruptR0, &pVM->pdm.s.Pic.pfnGetInterruptR0);
-            AssertMsgRC(rc, ("%s::%s rc=%Rrc\n", pDevIns->pReg->pszR0Mod, pPicReg->pszGetInterruptR0, rc));
-        }
-        if (RT_FAILURE(rc))
-        {
-            LogFlow(("pdmR3DevHlp_PICRegister: caller='%s'/%d: returns %Rrc\n", pDevIns->pReg->szName, pDevIns->iInstance, rc));
-            return rc;
-        }
-        pVM->pdm.s.Pic.pDevInsR0 = PDMDEVINS_2_R0PTR(pDevIns);
-        Assert(pVM->pdm.s.Pic.pDevInsR0);
-    }
-    else
-    {
-        pVM->pdm.s.Pic.pfnSetIrqR0 = 0;
-        pVM->pdm.s.Pic.pfnGetInterruptR0 = 0;
-        pVM->pdm.s.Pic.pDevInsR0 = 0;
-    }
-
-    /*
-     * R3 stuff.
+     * Take down the callbacks and instance.
      */
     pVM->pdm.s.Pic.pDevInsR3 = pDevIns;
-    pVM->pdm.s.Pic.pfnSetIrqR3 = pPicReg->pfnSetIrqR3;
-    pVM->pdm.s.Pic.pfnGetInterruptR3 = pPicReg->pfnGetInterruptR3;
+    pVM->pdm.s.Pic.pfnSetIrqR3 = pPicReg->pfnSetIrq;
+    pVM->pdm.s.Pic.pfnGetInterruptR3 = pPicReg->pfnGetInterrupt;
     Log(("PDM: Registered PIC device '%s'/%d pDevIns=%p\n", pDevIns->pReg->szName, pDevIns->iInstance, pDevIns));
 
     /* set the helper pointer and return. */
-    *ppPicHlpR3 = &g_pdmR3DevPicHlp;
+    *ppPicHlp = &g_pdmR3DevPicHlp;
     LogFlow(("pdmR3DevHlp_PICRegister: caller='%s'/%d: returns %Rrc\n", pDevIns->pReg->szName, pDevIns->iInstance, VINF_SUCCESS));
     return VINF_SUCCESS;
 }

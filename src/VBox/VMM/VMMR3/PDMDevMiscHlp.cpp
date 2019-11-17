@@ -44,12 +44,12 @@
  * @{
  */
 
-/** @interface_method_impl{PDMPICHLPR3,pfnSetInterruptFF} */
+/** @interface_method_impl{PDMPICHLP,pfnSetInterruptFF} */
 static DECLCALLBACK(void) pdmR3PicHlp_SetInterruptFF(PPDMDEVINS pDevIns)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
     PVM    pVM = pDevIns->Internal.s.pVMR3;
-    PVMCPU pVCpu = pVM->apCpusR3[0];  /* for PIC we always deliver to CPU 0, MP use APIC */
+    PVMCPU pVCpu = pVM->apCpusR3[0];  /* for PIC we always deliver to CPU 0, SMP uses APIC */
 
     /* IRQ state should be loaded as-is by "LoadExec". Changes can be made from LoadDone. */
     Assert(pVM->enmVMState != VMSTATE_LOADING || pVM->pdm.s.fStateLoaded);
@@ -58,12 +58,12 @@ static DECLCALLBACK(void) pdmR3PicHlp_SetInterruptFF(PPDMDEVINS pDevIns)
 }
 
 
-/** @interface_method_impl{PDMPICHLPR3,pfnClearInterruptFF} */
+/** @interface_method_impl{PDMPICHLP,pfnClearInterruptFF} */
 static DECLCALLBACK(void) pdmR3PicHlp_ClearInterruptFF(PPDMDEVINS pDevIns)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
     PVM pVM = pDevIns->Internal.s.pVMR3;
-    PVMCPU pVCpu = pVM->apCpusR3[0];  /* for PIC we always deliver to CPU 0, MP use APIC */
+    PVMCPU pVCpu = pVM->apCpusR3[0];  /* for PIC we always deliver to CPU 0, SMP uses APIC */
 
     /* IRQ state should be loaded as-is by "LoadExec". Changes can be made from LoadDone. */
     Assert(pVM->enmVMState != VMSTATE_LOADING || pVM->pdm.s.fStateLoaded);
@@ -72,7 +72,7 @@ static DECLCALLBACK(void) pdmR3PicHlp_ClearInterruptFF(PPDMDEVINS pDevIns)
 }
 
 
-/** @interface_method_impl{PDMPICHLPR3,pfnLock} */
+/** @interface_method_impl{PDMPICHLP,pfnLock} */
 static DECLCALLBACK(int) pdmR3PicHlp_Lock(PPDMDEVINS pDevIns, int rc)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
@@ -80,7 +80,7 @@ static DECLCALLBACK(int) pdmR3PicHlp_Lock(PPDMDEVINS pDevIns, int rc)
 }
 
 
-/** @interface_method_impl{PDMPICHLPR3,pfnUnlock} */
+/** @interface_method_impl{PDMPICHLP,pfnUnlock} */
 static DECLCALLBACK(void) pdmR3PicHlp_Unlock(PPDMDEVINS pDevIns)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
@@ -88,56 +88,17 @@ static DECLCALLBACK(void) pdmR3PicHlp_Unlock(PPDMDEVINS pDevIns)
 }
 
 
-/** @interface_method_impl{PDMPICHLPR3,pfnGetRCHelpers} */
-static DECLCALLBACK(PCPDMPICHLPRC) pdmR3PicHlp_GetRCHelpers(PPDMDEVINS pDevIns)
-{
-    PDMDEV_ASSERT_DEVINS(pDevIns);
-    PVM pVM = pDevIns->Internal.s.pVMR3;
-    VM_ASSERT_EMT(pVM);
-
-    RTRCPTR pRCHelpers = NIL_RTRCPTR;
-    if (VM_IS_RAW_MODE_ENABLED(pVM))
-    {
-        int rc = PDMR3LdrGetSymbolRC(pVM, NULL, "g_pdmRCPicHlp", &pRCHelpers);
-        AssertReleaseRC(rc);
-        AssertRelease(pRCHelpers);
-    }
-
-    LogFlow(("pdmR3PicHlp_GetRCHelpers: caller='%s'/%d: returns %RRv\n",
-             pDevIns->pReg->szName, pDevIns->iInstance, pRCHelpers));
-    return pRCHelpers;
-}
-
-
-/** @interface_method_impl{PDMPICHLPR3,pfnGetR0Helpers} */
-static DECLCALLBACK(PCPDMPICHLPR0) pdmR3PicHlp_GetR0Helpers(PPDMDEVINS pDevIns)
-{
-    PDMDEV_ASSERT_DEVINS(pDevIns);
-    PVM pVM = pDevIns->Internal.s.pVMR3;
-    VM_ASSERT_EMT(pVM);
-    PCPDMPICHLPR0 pR0Helpers = 0;
-    int rc = PDMR3LdrGetSymbolR0(pVM, NULL, "g_pdmR0PicHlp", &pR0Helpers);
-    AssertReleaseRC(rc);
-    AssertRelease(pR0Helpers);
-    LogFlow(("pdmR3PicHlp_GetR0Helpers: caller='%s'/%d: returns %RHv\n",
-             pDevIns->pReg->szName, pDevIns->iInstance, pR0Helpers));
-    return pR0Helpers;
-}
-
-
 /**
  * PIC Device Helpers.
  */
-const PDMPICHLPR3 g_pdmR3DevPicHlp =
+const PDMPICHLP g_pdmR3DevPicHlp =
 {
-    PDM_PICHLPR3_VERSION,
+    PDM_PICHLP_VERSION,
     pdmR3PicHlp_SetInterruptFF,
     pdmR3PicHlp_ClearInterruptFF,
     pdmR3PicHlp_Lock,
     pdmR3PicHlp_Unlock,
-    pdmR3PicHlp_GetRCHelpers,
-    pdmR3PicHlp_GetR0Helpers,
-    PDM_PICHLPR3_VERSION /* the end */
+    PDM_PICHLP_VERSION /* the end */
 };
 
 /** @} */

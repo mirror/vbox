@@ -123,15 +123,15 @@ typedef struct DEVPIC
     /** Pointer to the device instance - R3 Ptr. */
     PPDMDEVINSR3            pDevInsR3;
     /** Pointer to the PIC R3 helpers. */
-    PCPDMPICHLPR3           pPicHlpR3;
+    R3PTRTYPE(PCPDMPICHLP)  pPicHlpR3;
     /** Pointer to the device instance - R0 Ptr. */
     PPDMDEVINSR0            pDevInsR0;
     /** Pointer to the PIC R0 helpers. */
-    PCPDMPICHLPR0           pPicHlpR0;
+    R0PTRTYPE(PCPDMPICHLP)  pPicHlpR0;
     /** Pointer to the device instance - RC Ptr. */
     PPDMDEVINSRC            pDevInsRC;
     /** Pointer to the PIC RC helpers. */
-    PCPDMPICHLPRC           pPicHlpRC;
+    RCPTRTYPE(PCPDMPICHLP)  pPicHlpRC;
     /** Number of release log entries. Used to prevent flooding. */
     uint32_t                cRelLogEntries;
     uint32_t                u32AlignmentPadding;
@@ -724,7 +724,7 @@ PDMBOTHCBDECL(int) picIOPortElcrWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT
 /**
  * @callback_method_impl{FNDBGFHANDLERDEV}
  */
-static DECLCALLBACK(void) picInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *pszArgs)
+static DECLCALLBACK(void) picIR3nfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *pszArgs)
 {
     PDEVPIC pThis = PDMDEVINS_2_DATA(pDevIns, PDEVPIC);
     NOREF(pszArgs);
@@ -756,26 +756,28 @@ static DECLCALLBACK(void) picInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const 
 /**
  * @callback_method_impl{FNSSMDEVSAVEEXEC}
  */
-static DECLCALLBACK(int) picSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
+static DECLCALLBACK(int) picR3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 {
-    PDEVPIC     pThis = PDMDEVINS_2_DATA(pDevIns, PDEVPIC);
+    PDEVPIC         pThis = PDMDEVINS_2_DATA(pDevIns, PDEVPIC);
+    PCPDMDEVHLPR3   pHlp  = pDevIns->pHlpR3;
+
     for (unsigned i = 0; i < RT_ELEMENTS(pThis->aPics); i++)
     {
-        SSMR3PutU8(pSSM, pThis->aPics[i].last_irr);
-        SSMR3PutU8(pSSM, pThis->aPics[i].irr);
-        SSMR3PutU8(pSSM, pThis->aPics[i].imr);
-        SSMR3PutU8(pSSM, pThis->aPics[i].isr);
-        SSMR3PutU8(pSSM, pThis->aPics[i].priority_add);
-        SSMR3PutU8(pSSM, pThis->aPics[i].irq_base);
-        SSMR3PutU8(pSSM, pThis->aPics[i].read_reg_select);
-        SSMR3PutU8(pSSM, pThis->aPics[i].poll);
-        SSMR3PutU8(pSSM, pThis->aPics[i].special_mask);
-        SSMR3PutU8(pSSM, pThis->aPics[i].init_state);
-        SSMR3PutU8(pSSM, pThis->aPics[i].auto_eoi);
-        SSMR3PutU8(pSSM, pThis->aPics[i].rotate_on_auto_eoi);
-        SSMR3PutU8(pSSM, pThis->aPics[i].special_fully_nested_mode);
-        SSMR3PutU8(pSSM, pThis->aPics[i].init4);
-        SSMR3PutU8(pSSM, pThis->aPics[i].elcr);
+        pHlp->pfnSSMPutU8(pSSM, pThis->aPics[i].last_irr);
+        pHlp->pfnSSMPutU8(pSSM, pThis->aPics[i].irr);
+        pHlp->pfnSSMPutU8(pSSM, pThis->aPics[i].imr);
+        pHlp->pfnSSMPutU8(pSSM, pThis->aPics[i].isr);
+        pHlp->pfnSSMPutU8(pSSM, pThis->aPics[i].priority_add);
+        pHlp->pfnSSMPutU8(pSSM, pThis->aPics[i].irq_base);
+        pHlp->pfnSSMPutU8(pSSM, pThis->aPics[i].read_reg_select);
+        pHlp->pfnSSMPutU8(pSSM, pThis->aPics[i].poll);
+        pHlp->pfnSSMPutU8(pSSM, pThis->aPics[i].special_mask);
+        pHlp->pfnSSMPutU8(pSSM, pThis->aPics[i].init_state);
+        pHlp->pfnSSMPutU8(pSSM, pThis->aPics[i].auto_eoi);
+        pHlp->pfnSSMPutU8(pSSM, pThis->aPics[i].rotate_on_auto_eoi);
+        pHlp->pfnSSMPutU8(pSSM, pThis->aPics[i].special_fully_nested_mode);
+        pHlp->pfnSSMPutU8(pSSM, pThis->aPics[i].init4);
+        pHlp->pfnSSMPutU8(pSSM, pThis->aPics[i].elcr);
     }
     return VINF_SUCCESS;
 }
@@ -784,9 +786,10 @@ static DECLCALLBACK(int) picSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 /**
  * @callback_method_impl{FNSSMDEVLOADEXEC}
  */
-static DECLCALLBACK(int) picLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass)
+static DECLCALLBACK(int) picR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass)
 {
-    PDEVPIC pThis = PDMDEVINS_2_DATA(pDevIns, PDEVPIC);
+    PDEVPIC         pThis = PDMDEVINS_2_DATA(pDevIns, PDEVPIC);
+    PCPDMDEVHLPR3   pHlp  = pDevIns->pHlpR3;
 
     if (uVersion != 1)
         return VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
@@ -794,21 +797,21 @@ static DECLCALLBACK(int) picLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32
 
     for (unsigned i = 0; i < RT_ELEMENTS(pThis->aPics); i++)
     {
-        SSMR3GetU8(pSSM, &pThis->aPics[i].last_irr);
-        SSMR3GetU8(pSSM, &pThis->aPics[i].irr);
-        SSMR3GetU8(pSSM, &pThis->aPics[i].imr);
-        SSMR3GetU8(pSSM, &pThis->aPics[i].isr);
-        SSMR3GetU8(pSSM, &pThis->aPics[i].priority_add);
-        SSMR3GetU8(pSSM, &pThis->aPics[i].irq_base);
-        SSMR3GetU8(pSSM, &pThis->aPics[i].read_reg_select);
-        SSMR3GetU8(pSSM, &pThis->aPics[i].poll);
-        SSMR3GetU8(pSSM, &pThis->aPics[i].special_mask);
-        SSMR3GetU8(pSSM, &pThis->aPics[i].init_state);
-        SSMR3GetU8(pSSM, &pThis->aPics[i].auto_eoi);
-        SSMR3GetU8(pSSM, &pThis->aPics[i].rotate_on_auto_eoi);
-        SSMR3GetU8(pSSM, &pThis->aPics[i].special_fully_nested_mode);
-        SSMR3GetU8(pSSM, &pThis->aPics[i].init4);
-        SSMR3GetU8(pSSM, &pThis->aPics[i].elcr);
+        pHlp->pfnSSMGetU8(pSSM, &pThis->aPics[i].last_irr);
+        pHlp->pfnSSMGetU8(pSSM, &pThis->aPics[i].irr);
+        pHlp->pfnSSMGetU8(pSSM, &pThis->aPics[i].imr);
+        pHlp->pfnSSMGetU8(pSSM, &pThis->aPics[i].isr);
+        pHlp->pfnSSMGetU8(pSSM, &pThis->aPics[i].priority_add);
+        pHlp->pfnSSMGetU8(pSSM, &pThis->aPics[i].irq_base);
+        pHlp->pfnSSMGetU8(pSSM, &pThis->aPics[i].read_reg_select);
+        pHlp->pfnSSMGetU8(pSSM, &pThis->aPics[i].poll);
+        pHlp->pfnSSMGetU8(pSSM, &pThis->aPics[i].special_mask);
+        pHlp->pfnSSMGetU8(pSSM, &pThis->aPics[i].init_state);
+        pHlp->pfnSSMGetU8(pSSM, &pThis->aPics[i].auto_eoi);
+        pHlp->pfnSSMGetU8(pSSM, &pThis->aPics[i].rotate_on_auto_eoi);
+        pHlp->pfnSSMGetU8(pSSM, &pThis->aPics[i].special_fully_nested_mode);
+        pHlp->pfnSSMGetU8(pSSM, &pThis->aPics[i].init4);
+        pHlp->pfnSSMGetU8(pSSM, &pThis->aPics[i].elcr);
     }
 
     /* Note! PDM will restore the VMCPU_FF_INTERRUPT_PIC state. */
@@ -821,11 +824,11 @@ static DECLCALLBACK(int) picLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32
 /**
  * @interface_method_impl{PDMDEVREG,pfnReset}
  */
-static DECLCALLBACK(void)  picReset(PPDMDEVINS pDevIns)
+static DECLCALLBACK(void)  picR3Reset(PPDMDEVINS pDevIns)
 {
     PDEVPIC     pThis = PDMDEVINS_2_DATA(pDevIns, PDEVPIC);
     unsigned    i;
-    LogFlow(("picReset:\n"));
+    LogFlow(("picR3Reset:\n"));
     pThis->pPicHlpR3->pfnLock(pDevIns, VERR_INTERNAL_ERROR);
 
     for (i = 0; i < RT_ELEMENTS(pThis->aPics); i++)
@@ -838,14 +841,14 @@ static DECLCALLBACK(void)  picReset(PPDMDEVINS pDevIns)
 /**
  * @interface_method_impl{PDMDEVREG,pfnRelocate}
  */
-static DECLCALLBACK(void) picRelocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta)
+static DECLCALLBACK(void) picR3Relocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta)
 {
     RT_NOREF1(offDelta);
     PDEVPIC         pThis = PDMDEVINS_2_DATA(pDevIns, PDEVPIC);
     unsigned        i;
 
     pThis->pDevInsRC = PDMDEVINS_2_RCPTR(pDevIns);
-    pThis->pPicHlpRC = pThis->pPicHlpR3->pfnGetRCHelpers(pDevIns);
+    pThis->pPicHlpRC += offDelta;
     for (i = 0; i < RT_ELEMENTS(pThis->aPics); i++)
         pThis->aPics[i].pDevInsRC = PDMDEVINS_2_RCPTR(pDevIns);
 }
@@ -854,33 +857,20 @@ static DECLCALLBACK(void) picRelocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta)
 /**
  * @interface_method_impl{PDMDEVREG,pfnConstruct}
  */
-static DECLCALLBACK(int)  picConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE pCfg)
+static DECLCALLBACK(int)  picR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE pCfg)
 {
     PDMDEV_CHECK_VERSIONS_RETURN(pDevIns);
-    RT_NOREF1(iInstance);
     PDEVPIC         pThis = PDMDEVINS_2_DATA(pDevIns, PDEVPIC);
     int             rc;
-    bool            fGCEnabled;
-    bool            fR0Enabled;
+    RT_NOREF(iInstance, pCfg);
+
     Assert(iInstance == 0);
 
     /*
      * Validate and read configuration.
      */
-    if (!CFGMR3AreValuesValid(pCfg, "GCEnabled\0" "R0Enabled\0"))
-        return VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES;
-
-    rc = CFGMR3QueryBoolDef(pCfg, "GCEnabled", &fGCEnabled, true);
-    if (RT_FAILURE(rc))
-        return PDMDEV_SET_ERROR(pDevIns, rc,
-                                N_("Configuration error: failed to read GCEnabled as boolean"));
-
-    rc = CFGMR3QueryBoolDef(pCfg, "R0Enabled", &fR0Enabled, true);
-    if (RT_FAILURE(rc))
-        return PDMDEV_SET_ERROR(pDevIns, rc,
-                                N_("Configuration error: failed to read R0Enabled as boolean"));
-
-    Log(("DevPIC: fGCEnabled=%RTbool fR0Enabled=%RTbool\n", fGCEnabled, fR0Enabled));
+    PDMDEV_VALIDATE_CONFIG_RETURN(pDevIns, "", "");
+    Log(("DevPIC: fRCEnabled=%RTbool fR0Enabled=%RTbool\n", pDevIns->fRCEnabled, pDevIns->fR0Enabled));
 
     /*
      * Init the data.
@@ -906,37 +896,11 @@ static DECLCALLBACK(int)  picConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
      */
     PDMPICREG PicReg;
     PicReg.u32Version           = PDM_PICREG_VERSION;
-    PicReg.pfnSetIrqR3          = picSetIrq;
-    PicReg.pfnGetInterruptR3    = picGetInterrupt;
-
-    if (fGCEnabled)
-    {
-        PicReg.pszSetIrqRC          = "picSetIrq";
-        PicReg.pszGetInterruptRC    = "picGetInterrupt";
-    }
-    else
-    {
-        PicReg.pszSetIrqRC          = NULL;
-        PicReg.pszGetInterruptRC    = NULL;
-    }
-
-    if (fR0Enabled)
-    {
-        PicReg.pszSetIrqR0          = "picSetIrq";
-        PicReg.pszGetInterruptR0    = "picGetInterrupt";
-    }
-    else
-    {
-        PicReg.pszSetIrqR0          = NULL;
-        PicReg.pszGetInterruptR0    = NULL;
-    }
-
+    PicReg.pfnSetIrq            = picSetIrq;
+    PicReg.pfnGetInterrupt      = picGetInterrupt;
+    PicReg.u32TheEnd            = PDM_PICREG_VERSION;
     rc = PDMDevHlpPICRegister(pDevIns, &PicReg, &pThis->pPicHlpR3);
-    AssertLogRelMsgRCReturn(rc, ("PICRegister -> %Rrc\n", rc), rc);
-    if (fGCEnabled)
-        pThis->pPicHlpRC = pThis->pPicHlpR3->pfnGetRCHelpers(pDevIns);
-    if (fR0Enabled)
-        pThis->pPicHlpR0 = pThis->pPicHlpR3->pfnGetR0Helpers(pDevIns);
+    AssertLogRelMsgRCReturn(rc, ("PDMDevHlpPICRegister -> %Rrc\n", rc), rc);
 
     /*
      * Since the PIC helper interface provides access to the PDM lock,
@@ -954,7 +918,7 @@ static DECLCALLBACK(int)  picConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
     rc = PDMDevHlpIOPortRegister(pDevIns,  0xa0, 2, (void *)1, picIOPortWrite, picIOPortRead, NULL, NULL, "i8259 PIC #1");
     if (RT_FAILURE(rc))
         return rc;
-    if (fGCEnabled)
+    if (pDevIns->fRCEnabled)
     {
         rc = PDMDevHlpIOPortRegisterRC(pDevIns,  0x20, 2, 0, "picIOPortWrite", "picIOPortRead", NULL, NULL, "i8259 PIC #0");
         if (RT_FAILURE(rc))
@@ -963,7 +927,7 @@ static DECLCALLBACK(int)  picConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
         if (RT_FAILURE(rc))
             return rc;
     }
-    if (fR0Enabled)
+    if (pDevIns->fR0Enabled)
     {
         rc = PDMDevHlpIOPortRegisterR0(pDevIns,  0x20, 2, 0, "picIOPortWrite", "picIOPortRead", NULL, NULL, "i8259 PIC #0");
         if (RT_FAILURE(rc))
@@ -981,7 +945,7 @@ static DECLCALLBACK(int)  picConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
                                  picIOPortElcrWrite, picIOPortElcrRead, NULL, NULL, "i8259 PIC #1 - elcr");
     if (RT_FAILURE(rc))
         return rc;
-    if (fGCEnabled)
+    if (pDevIns->fRCEnabled)
     {
         RTRCPTR pDataRC = PDMINS_2_DATA_RCPTR(pDevIns);
         rc = PDMDevHlpIOPortRegisterRC(pDevIns, 0x4d0, 1, pDataRC + RT_OFFSETOF(DEVPIC, aPics[0]),
@@ -993,7 +957,7 @@ static DECLCALLBACK(int)  picConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
         if (RT_FAILURE(rc))
             return rc;
     }
-    if (fR0Enabled)
+    if (pDevIns->fR0Enabled)
     {
         RTR0PTR pDataR0 = PDMINS_2_DATA_R0PTR(pDevIns);
         rc = PDMDevHlpIOPortRegisterR0(pDevIns, 0x4d0, 1, pDataR0 + RT_OFFSETOF(DEVPIC, aPics[0]),
@@ -1006,7 +970,7 @@ static DECLCALLBACK(int)  picConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
             return rc;
     }
 
-    rc = PDMDevHlpSSMRegister(pDevIns, 1 /* uVersion */, sizeof(*pThis), picSaveExec, picLoadExec);
+    rc = PDMDevHlpSSMRegister(pDevIns, 1 /* uVersion */, sizeof(*pThis), picR3SaveExec, picR3LoadExec);
     if (RT_FAILURE(rc))
         return rc;
 
@@ -1014,12 +978,12 @@ static DECLCALLBACK(int)  picConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
     /*
      * Register the info item.
      */
-    PDMDevHlpDBGFInfoRegister(pDevIns, "pic", "PIC info.", picInfo);
+    PDMDevHlpDBGFInfoRegister(pDevIns, "pic", "PIC info.", picIR3nfo);
 
     /*
      * Initialize the device state.
      */
-    picReset(pDevIns);
+    picR3Reset(pDevIns);
 
 #ifdef VBOX_WITH_STATISTICS
     /*
@@ -1036,7 +1000,31 @@ static DECLCALLBACK(int)  picConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
     return VINF_SUCCESS;
 }
 
-#endif /* IN_RING3 */
+#else  /* !IN_RING3 */
+
+/**
+ * @callback_method_impl{PDMDEVREGR0,pfnConstruct}
+ */
+static DECLCALLBACK(int) picRZConstruct(PPDMDEVINS pDevIns)
+{
+    PDMDEV_CHECK_VERSIONS_RETURN(pDevIns);
+    PDEVPIC pThis = PDMDEVINS_2_DATA(pDevIns, PDEVPIC);
+
+    int rc = PDMDevHlpSetDeviceCritSect(pDevIns, PDMDevHlpCritSectGetNop(pDevIns));
+    AssertRCReturn(rc, rc);
+
+    PDMPICREG PicReg;
+    PicReg.u32Version           = PDM_PICREG_VERSION;
+    PicReg.pfnSetIrq            = picSetIrq;
+    PicReg.pfnGetInterrupt      = picGetInterrupt;
+    PicReg.u32TheEnd            = PDM_PICREG_VERSION;
+    rc = PDMDevHlpPICSetUpContext(pDevIns, &PicReg, &pThis->CTX_SUFF(pPicHlp));
+    AssertLogRelMsgRCReturn(rc, ("PDMDevHlpPICSetUpContext -> %Rrc\n", rc), rc);
+
+    return VINF_SUCCESS;
+}
+
+#endif /* !IN_RING3 */
 
 /**
  * The device registration structure.
@@ -1059,12 +1047,12 @@ const PDMDEVREG g_DeviceI8259 =
 #if defined(IN_RING3)
     /* .pszRCMod = */               "VBoxDDRC.rc",
     /* .pszR0Mod = */               "VBoxDDR0.r0",
-    /* .pfnConstruct = */           picConstruct,
+    /* .pfnConstruct = */           picR3Construct,
     /* .pfnDestruct = */            NULL,
-    /* .pfnRelocate = */            picRelocate,
+    /* .pfnRelocate = */            picR3Relocate,
     /* .pfnMemSetup = */            NULL,
     /* .pfnPowerOn = */             NULL,
-    /* .pfnReset = */               picReset,
+    /* .pfnReset = */               picR3Reset,
     /* .pfnSuspend = */             NULL,
     /* .pfnResume = */              NULL,
     /* .pfnAttach = */              NULL,
@@ -1083,7 +1071,7 @@ const PDMDEVREG g_DeviceI8259 =
     /* .pfnReserved7 = */           NULL,
 #elif defined(IN_RING0)
     /* .pfnEarlyConstruct = */      NULL,
-    /* .pfnConstruct = */           NULL,
+    /* .pfnConstruct = */           picRZConstruct,
     /* .pfnDestruct = */            NULL,
     /* .pfnFinalDestruct = */       NULL,
     /* .pfnRequest = */             NULL,
@@ -1096,7 +1084,7 @@ const PDMDEVREG g_DeviceI8259 =
     /* .pfnReserved6 = */           NULL,
     /* .pfnReserved7 = */           NULL,
 #elif defined(IN_RC)
-    /* .pfnConstruct = */           NULL,
+    /* .pfnConstruct = */           picRZConstruct,
     /* .pfnReserved0 = */           NULL,
     /* .pfnReserved1 = */           NULL,
     /* .pfnReserved2 = */           NULL,

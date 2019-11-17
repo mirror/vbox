@@ -1253,7 +1253,7 @@ typedef R3PTRTYPE(const PDMPCIHLPR3 *) PCPDMPCIHLPR3;
 
 
 /**
- * Programmable Interrupt Controller registration structure.
+ * Programmable Interrupt Controller registration structure (all contexts).
  */
 typedef struct PDMPICREG
 {
@@ -1269,7 +1269,7 @@ typedef struct PDMPICREG
      * @param   uTagSrc         The IRQ tag and source (for tracing).
      * @remarks Caller enters the PDM critical section.
      */
-    DECLR3CALLBACKMEMBER(void, pfnSetIrqR3,(PPDMDEVINS pDevIns, int iIrq, int iLevel, uint32_t uTagSrc));
+    DECLCALLBACKMEMBER(void, pfnSetIrq)(PPDMDEVINS pDevIns, int iIrq, int iLevel, uint32_t uTagSrc);
 
     /**
      * Get a pending interrupt.
@@ -1279,131 +1279,21 @@ typedef struct PDMPICREG
      * @param   puTagSrc        Where to return the IRQ tag and source.
      * @remarks Caller enters the PDM critical section.
      */
-    DECLR3CALLBACKMEMBER(int, pfnGetInterruptR3,(PPDMDEVINS pDevIns, uint32_t *puTagSrc));
+    DECLCALLBACKMEMBER(int, pfnGetInterrupt)(PPDMDEVINS pDevIns, uint32_t *puTagSrc);
 
-    /** The name of the RC SetIrq entry point. */
-    const char         *pszSetIrqRC;
-    /** The name of the RC GetInterrupt entry point. */
-    const char         *pszGetInterruptRC;
-
-    /** The name of the R0 SetIrq entry point. */
-    const char         *pszSetIrqR0;
-    /** The name of the R0 GetInterrupt entry point. */
-    const char         *pszGetInterruptR0;
+    /** Just a safety precaution. */
+    uint32_t                    u32TheEnd;
 } PDMPICREG;
 /** Pointer to a PIC registration structure. */
 typedef PDMPICREG *PPDMPICREG;
 
 /** Current PDMPICREG version number. */
-#define PDM_PICREG_VERSION                      PDM_VERSION_MAKE(0xfffa, 2, 0)
+#define PDM_PICREG_VERSION                      PDM_VERSION_MAKE(0xfffa, 3, 0)
 
 /**
- * PIC RC helpers.
+ * PIC helpers, same in all contexts.
  */
-typedef struct PDMPICHLPRC
-{
-    /** Structure version. PDM_PICHLPRC_VERSION defines the current version. */
-    uint32_t                u32Version;
-
-    /**
-     * Set the interrupt force action flag.
-     *
-     * @param   pDevIns         Device instance of the PIC.
-     */
-    DECLRCCALLBACKMEMBER(void, pfnSetInterruptFF,(PPDMDEVINS pDevIns));
-
-    /**
-     * Clear the interrupt force action flag.
-     *
-     * @param   pDevIns         Device instance of the PIC.
-     */
-    DECLRCCALLBACKMEMBER(void, pfnClearInterruptFF,(PPDMDEVINS pDevIns));
-
-    /**
-     * Acquires the PDM lock.
-     *
-     * @returns VINF_SUCCESS on success.
-     * @returns rc if we failed to acquire the lock.
-     * @param   pDevIns         The PIC device instance.
-     * @param   rc              What to return if we fail to acquire the lock.
-     */
-    DECLRCCALLBACKMEMBER(int,   pfnLock,(PPDMDEVINS pDevIns, int rc));
-
-    /**
-     * Releases the PDM lock.
-     *
-     * @param   pDevIns         The PIC device instance.
-     */
-    DECLRCCALLBACKMEMBER(void,  pfnUnlock,(PPDMDEVINS pDevIns));
-
-    /** Just a safety precaution. */
-    uint32_t                u32TheEnd;
-} PDMPICHLPRC;
-
-/** Pointer to PIC RC helpers. */
-typedef RCPTRTYPE(PDMPICHLPRC *) PPDMPICHLPRC;
-/** Pointer to const PIC RC helpers. */
-typedef RCPTRTYPE(const PDMPICHLPRC *) PCPDMPICHLPRC;
-
-/** Current PDMPICHLPRC version number. */
-#define PDM_PICHLPRC_VERSION                    PDM_VERSION_MAKE(0xfff9, 2, 0)
-
-
-/**
- * PIC R0 helpers.
- */
-typedef struct PDMPICHLPR0
-{
-    /** Structure version. PDM_PICHLPR0_VERSION defines the current version. */
-    uint32_t                u32Version;
-
-    /**
-     * Set the interrupt force action flag.
-     *
-     * @param   pDevIns         Device instance of the PIC.
-     */
-    DECLR0CALLBACKMEMBER(void, pfnSetInterruptFF,(PPDMDEVINS pDevIns));
-
-    /**
-     * Clear the interrupt force action flag.
-     *
-     * @param   pDevIns         Device instance of the PIC.
-     */
-    DECLR0CALLBACKMEMBER(void, pfnClearInterruptFF,(PPDMDEVINS pDevIns));
-
-    /**
-     * Acquires the PDM lock.
-     *
-     * @returns VINF_SUCCESS on success.
-     * @returns rc if we failed to acquire the lock.
-     * @param   pDevIns         The PIC device instance.
-     * @param   rc              What to return if we fail to acquire the lock.
-     */
-    DECLR0CALLBACKMEMBER(int,   pfnLock,(PPDMDEVINS pDevIns, int rc));
-
-    /**
-     * Releases the PDM lock.
-     *
-     * @param   pDevIns         The PCI device instance.
-     */
-    DECLR0CALLBACKMEMBER(void,  pfnUnlock,(PPDMDEVINS pDevIns));
-
-    /** Just a safety precaution. */
-    uint32_t                u32TheEnd;
-} PDMPICHLPR0;
-
-/** Pointer to PIC R0 helpers. */
-typedef R0PTRTYPE(PDMPICHLPR0 *) PPDMPICHLPR0;
-/** Pointer to const PIC R0 helpers. */
-typedef R0PTRTYPE(const PDMPICHLPR0 *) PCPDMPICHLPR0;
-
-/** Current PDMPICHLPR0 version number. */
-#define PDM_PICHLPR0_VERSION                    PDM_VERSION_MAKE(0xfff8, 1, 0)
-
-/**
- * PIC R3 helpers.
- */
-typedef struct PDMPICHLPR3
+typedef struct PDMPICHLP
 {
     /** Structure version. PDM_PICHLP_VERSION defines the current version. */
     uint32_t                u32Version;
@@ -1413,66 +1303,42 @@ typedef struct PDMPICHLPR3
      *
      * @param   pDevIns         Device instance of the PIC.
      */
-    DECLR3CALLBACKMEMBER(void, pfnSetInterruptFF,(PPDMDEVINS pDevIns));
+    DECLCALLBACKMEMBER(void, pfnSetInterruptFF)(PPDMDEVINS pDevIns);
 
     /**
      * Clear the interrupt force action flag.
      *
      * @param   pDevIns         Device instance of the PIC.
      */
-    DECLR3CALLBACKMEMBER(void, pfnClearInterruptFF,(PPDMDEVINS pDevIns));
+    DECLCALLBACKMEMBER(void, pfnClearInterruptFF)(PPDMDEVINS pDevIns);
 
     /**
      * Acquires the PDM lock.
      *
      * @returns VINF_SUCCESS on success.
-     * @returns Fatal error on failure.
+     * @returns rc if we failed to acquire the lock.
      * @param   pDevIns         The PIC device instance.
-     * @param   rc              Dummy for making the interface identical to the RC and R0 versions.
+     * @param   rc              What to return if we fail to acquire the lock.
      */
-    DECLR3CALLBACKMEMBER(int,   pfnLock,(PPDMDEVINS pDevIns, int rc));
+    DECLCALLBACKMEMBER(int,   pfnLock)(PPDMDEVINS pDevIns, int rc);
 
     /**
      * Releases the PDM lock.
      *
      * @param   pDevIns         The PIC device instance.
      */
-    DECLR3CALLBACKMEMBER(void,  pfnUnlock,(PPDMDEVINS pDevIns));
-
-    /**
-     * Gets the address of the RC PIC helpers.
-     *
-     * This should be called at both construction and relocation time
-     * to obtain the correct address of the RC helpers.
-     *
-     * @returns RC pointer to the PIC helpers.
-     * @param   pDevIns         Device instance of the PIC.
-     */
-    DECLR3CALLBACKMEMBER(PCPDMPICHLPRC, pfnGetRCHelpers,(PPDMDEVINS pDevIns));
-
-    /**
-     * Gets the address of the R0 PIC helpers.
-     *
-     * This should be called at both construction and relocation time
-     * to obtain the correct address of the R0 helpers.
-     *
-     * @returns R0 pointer to the PIC helpers.
-     * @param   pDevIns         Device instance of the PIC.
-     */
-    DECLR3CALLBACKMEMBER(PCPDMPICHLPR0, pfnGetR0Helpers,(PPDMDEVINS pDevIns));
+    DECLCALLBACKMEMBER(void,  pfnUnlock)(PPDMDEVINS pDevIns);
 
     /** Just a safety precaution. */
     uint32_t                u32TheEnd;
-} PDMPICHLPR3;
+} PDMPICHLP;
+/** Pointer to PIC helpers. */
+typedef PDMPICHLP *PPDMPICHLP;
+/** Pointer to const PIC helpers. */
+typedef const PDMPICHLP *PCPDMPICHLP;
 
-/** Pointer to PIC R3 helpers. */
-typedef R3PTRTYPE(PDMPICHLPR3 *) PPDMPICHLPR3;
-/** Pointer to const PIC R3 helpers. */
-typedef R3PTRTYPE(const PDMPICHLPR3 *) PCPDMPICHLPR3;
-
-/** Current PDMPICHLPR3 version number. */
-#define PDM_PICHLPR3_VERSION                    PDM_VERSION_MAKE(0xfff7, 1, 0)
-
+/** Current PDMPICHLP version number. */
+#define PDM_PICHLP_VERSION                      PDM_VERSION_MAKE(0xfff9, 3, 0)
 
 
 /**
@@ -4032,10 +3898,11 @@ typedef struct PDMDEVHLPR3
      * @returns VBox status code.
      * @param   pDevIns             The device instance.
      * @param   pPicReg             Pointer to a PIC registration structure.
-     * @param   ppPicHlpR3          Where to store the pointer to the PIC HC
+     * @param   ppPicHlp            Where to store the pointer to the ring-3 PIC
      *                              helpers.
+     * @sa      PDMDevHlpPICSetUpContext
      */
-    DECLR3CALLBACKMEMBER(int, pfnPICRegister,(PPDMDEVINS pDevIns, PPDMPICREG pPicReg, PCPDMPICHLPR3 *ppPicHlpR3));
+    DECLR3CALLBACKMEMBER(int, pfnPICRegister,(PPDMDEVINS pDevIns, PPDMPICREG pPicReg, PCPDMPICHLP *ppPicHlp));
 
     /**
      * Register the APIC device.
@@ -4954,6 +4821,20 @@ typedef struct PDMDEVHLPRC
      */
     DECLRCCALLBACKMEMBER(int, pfnPCIBusSetUpContext,(PPDMDEVINS pDevIns, PPDMPCIBUSREGRC pPciBusReg, PCPDMPCIHLPRC *ppPciHlp));
 
+    /**
+     * Sets up the PIC for the raw-mode context.
+     *
+     * This must be called after ring-3 has registered the PIC using
+     * PDMDevHlpPICRegister().
+     *
+     * @returns VBox status code.
+     * @param   pDevIns     The device instance.
+     * @param   pPicReg     The PIC registration information for ring-0,
+     *                      considered volatile and copied.
+     * @param   ppPciHlp    Where to return the raw-mode PIC helpers.
+     */
+    DECLRCCALLBACKMEMBER(int, pfnPCISetUpContext,(PPDMDEVINS pDevIns, PPDMPICREG pPicReg, PCPDMPICHLP *ppPicHlp));
+
     /** Space reserved for future members.
      * @{ */
     DECLRCCALLBACKMEMBER(void, pfnReserved1,(void));
@@ -4977,7 +4858,7 @@ typedef RGPTRTYPE(struct PDMDEVHLPRC *) PPDMDEVHLPRC;
 typedef RGPTRTYPE(const struct PDMDEVHLPRC *) PCPDMDEVHLPRC;
 
 /** Current PDMDEVHLP version number. */
-#define PDM_DEVHLPRC_VERSION                    PDM_VERSION_MAKE(0xffe6, 10, 0)
+#define PDM_DEVHLPRC_VERSION                    PDM_VERSION_MAKE(0xffe6, 11, 0)
 
 
 /**
@@ -5414,10 +5295,24 @@ typedef struct PDMDEVHLPR0
      * @returns VBox status code.
      * @param   pDevIns     The device instance.
      * @param   pPciBusReg  The PCI bus registration information for ring-0,
-     *                      considered volatile.
+     *                      considered volatile and copied.
      * @param   ppPciHlp    Where to return the ring-0 PCI bus helpers.
      */
     DECLR0CALLBACKMEMBER(int, pfnPCIBusSetUpContext,(PPDMDEVINS pDevIns, PPDMPCIBUSREGR0 pPciBusReg, PCPDMPCIHLPR0 *ppPciHlp));
+
+    /**
+     * Sets up the PIC for the ring-0 context.
+     *
+     * This must be called after ring-3 has registered the PIC using
+     * PDMDevHlpPICRegister().
+     *
+     * @returns VBox status code.
+     * @param   pDevIns     The device instance.
+     * @param   pPicReg     The PIC registration information for ring-0,
+     *                      considered volatile and copied.
+     * @param   ppPciHlp    Where to return the ring-0 PIC helpers.
+     */
+    DECLR0CALLBACKMEMBER(int, pfnPICSetUpContext,(PPDMDEVINS pDevIns, PPDMPICREG pPicReg, PCPDMPICHLP *ppPicHlp));
 
     /** Space reserved for future members.
      * @{ */
@@ -5442,7 +5337,7 @@ typedef R0PTRTYPE(struct PDMDEVHLPR0 *) PPDMDEVHLPR0;
 typedef R0PTRTYPE(const struct PDMDEVHLPR0 *) PCPDMDEVHLPR0;
 
 /** Current PDMDEVHLP version number. */
-#define PDM_DEVHLPR0_VERSION                    PDM_VERSION_MAKE(0xffe5, 11, 0)
+#define PDM_DEVHLPR0_VERSION                    PDM_VERSION_MAKE(0xffe5, 12, 0)
 
 
 /**
@@ -7758,7 +7653,7 @@ DECLINLINE(int) PDMDevHlpCritSectScheduleExitEvent(PPDMDEVINS pDevIns, PPDMCRITS
 # endif
 #endif
 
-#ifdef IN_RING3
+#if defined(IN_RING3) || defined(DOXYGEN_RUNNING)
 
 /**
  * @copydoc PDMR3CritSectDelete
@@ -7875,9 +7770,9 @@ DECLINLINE(int) PDMDevHlpPCIBusRegister(PPDMDEVINS pDevIns, PPDMPCIBUSREGR3 pPci
 /**
  * @copydoc PDMDEVHLPR3::pfnPICRegister
  */
-DECLINLINE(int) PDMDevHlpPICRegister(PPDMDEVINS pDevIns, PPDMPICREG pPicReg, PCPDMPICHLPR3 *ppPicHlpR3)
+DECLINLINE(int) PDMDevHlpPICRegister(PPDMDEVINS pDevIns, PPDMPICREG pPicReg, PCPDMPICHLP *ppPicHlp)
 {
-    return pDevIns->pHlpR3->pfnPICRegister(pDevIns, pPicReg, ppPicHlpR3);
+    return pDevIns->pHlpR3->pfnPICRegister(pDevIns, pPicReg, ppPicHlp);
 }
 
 /**
@@ -8016,14 +7911,24 @@ DECLINLINE(PUVM) PDMDevHlpGetUVM(PPDMDEVINS pDevIns)
     return pDevIns->CTX_SUFF(pHlp)->pfnGetUVM(pDevIns);
 }
 
-#else  /* !IN_RING3 */
+#endif /* IN_RING3 || DOXYGEN_RUNNING */
+
+#if !defined(IN_RING3) || defined(DOXYGEN_RUNNING)
 
 /**
- * @copydoc PDMDEVHLPR0::pfnPCIBusSetUp
+ * @copydoc PDMDEVHLPR0::pfnPCIBusSetUpContext
  */
 DECLINLINE(int) PDMDevHlpPCIBusSetUpContext(PPDMDEVINS pDevIns, CTX_SUFF(PPDMPCIBUSREG) pPciBusReg, CTX_SUFF(PCPDMPCIHLP) *ppPciHlp)
 {
     return pDevIns->CTX_SUFF(pHlp)->pfnPCIBusSetUpContext(pDevIns, pPciBusReg, ppPciHlp);
+}
+
+/**
+ * @copydoc PDMDEVHLPR0::pfnPICSetUpContext
+ */
+DECLINLINE(int) PDMDevHlpPICSetUpContext(PPDMDEVINS pDevIns, PPDMPICREG pPicReg, PCPDMPICHLP *ppPicHlp)
+{
+    return pDevIns->CTX_SUFF(pHlp)->pfnPICSetUpContext(pDevIns, pPicReg, ppPicHlp);
 }
 
 #endif /* !IN_RING3 || DOXYGEN_RUNNING */
