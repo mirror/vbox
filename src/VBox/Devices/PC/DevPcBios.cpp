@@ -1253,7 +1253,8 @@ static DECLCALLBACK(int)  pcbiosConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
                                   "|DmiExposeProcInf"
                                   "|CheckShutdownStatusForSoftReset"
                                   "|ClearShutdownStatusOnHardReset"
-                                  , "");
+                                  ,
+                                  "NetBoot");
     /*
      * Init the data.
      */
@@ -1339,6 +1340,11 @@ static DECLCALLBACK(int)  pcbiosConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
         }
     }
 
+    /* PXE debug logging option. */
+    rc = pHlp->pfnCFGMQueryU8Def(pCfg, "PXEDebug", &pThis->u8PXEDebug, false);
+    if (RT_FAILURE(rc))
+        return PDMDEV_SET_ERROR(pDevIns, rc, N_("Configuration error: Querying \"PXEDebug\" as integer failed"));
+
 
     /*
      * Register I/O Ports and PC BIOS.
@@ -1358,14 +1364,6 @@ static DECLCALLBACK(int)  pcbiosConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
                                 NULL, NULL, NULL,
                                 NULL, pcbiosSaveExec, NULL,
                                 pcbiosLoadPrep, pcbiosLoadExec, pcbiosLoadDone);
-
-    /*
-     * Read the PXE debug logging option.
-     */
-    rc = pHlp->pfnCFGMQueryU8Def(pCfg, "PXEDebug", &pThis->u8PXEDebug, false);
-    if (RT_FAILURE(rc))
-        return PDMDEV_SET_ERROR(pDevIns, rc,
-                                N_("Configuration error: Querying \"PXEDebug\" as integer failed"));
 
     /* Clear the net boot device list. All bits set invokes old behavior,
      * as if no second CMOS bank was present.
