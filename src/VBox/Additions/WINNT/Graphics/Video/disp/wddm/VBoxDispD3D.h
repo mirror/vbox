@@ -166,9 +166,17 @@ typedef struct VBOXWDDMDISP_DEVICE
     struct VBOXWDDMDISP_ALLOCATION *aStreamSource[VBOXWDDMDISP_MAX_VERTEX_STREAMS];
     VBOXWDDMDISP_STREAM_SOURCE_INFO StreamSourceInfo[VBOXWDDMDISP_MAX_VERTEX_STREAMS];
     VBOXWDDMDISP_INDICES_INFO IndiciesInfo;
-    /* need to cache the ViewPort data because IDirect3DDevice9::SetViewport
-     * is split into two calls : SetViewport & SetZRange */
+    /* Need to cache the ViewPort data because IDirect3DDevice9::SetViewport
+     * is split into two calls: SetViewport & SetZRange.
+     * Also the viewport must be restored after IDirect3DDevice9::SetRenderTarget.
+     */
     D3DVIEWPORT9 ViewPort;
+    /* The scissor rectangle must be restored after IDirect3DDevice9::SetRenderTarget. */
+    RECT ScissorRect;
+    /* Whether the ViewPort field is valid, i.e. GaDdiSetViewport has been called. */
+    bool fViewPort : 1;
+    /* Whether the ScissorRect field is valid, i.e. GaDdiSetScissorRect has been called. */
+    bool fScissorRect : 1;
     VBOXWDDMDISP_CONTEXT DefaultContext;
 
     /* no lock is needed for this since we're guaranteed the per-device calls are not reentrant */

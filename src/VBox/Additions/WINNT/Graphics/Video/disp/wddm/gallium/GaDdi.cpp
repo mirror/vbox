@@ -3169,6 +3169,7 @@ HRESULT APIENTRY GaDdiSetViewport(HANDLE hDevice, const D3DDDIARG_VIEWPORTINFO *
     pDevice->ViewPort.Y      = pData->Y;
     pDevice->ViewPort.Width  = pData->Width;
     pDevice->ViewPort.Height = pData->Height;
+    pDevice->fViewPort = true;
 
     HRESULT hr = pDevice9If->SetViewport(&pDevice->ViewPort);
     Assert(hr == S_OK);
@@ -3188,6 +3189,7 @@ HRESULT APIENTRY GaDdiSetZRange(HANDLE hDevice, const D3DDDIARG_ZRANGE *pData)
 
     pDevice->ViewPort.MinZ = pData->MinZ;
     pDevice->ViewPort.MaxZ = pData->MaxZ;
+    pDevice->fViewPort = true;
 
     HRESULT hr = pDevice9If->SetViewport(&pDevice->ViewPort);
     Assert(hr == S_OK);
@@ -3455,6 +3457,9 @@ HRESULT APIENTRY GaDdiSetScissorRect(HANDLE hDevice, const RECT *pRect)
 
     PVBOXWDDMDISP_DEVICE pDevice = (PVBOXWDDMDISP_DEVICE)hDevice;
     IDirect3DDevice9 *pDevice9If = VBOXDISP_D3DEV(pDevice);
+
+    pDevice->ScissorRect = *pRect;
+    pDevice->fScissorRect = true;
 
     HRESULT hr = pDevice9If->SetScissorRect(pRect);
     Assert(hr == S_OK);
@@ -3832,6 +3837,16 @@ HRESULT APIENTRY GaDdiSetRenderTarget(HANDLE hDevice, const D3DDDIARG_SETRENDERT
     if (hr == S_OK)
     {
         pDevice->apRTs[pData->RenderTargetIndex] = pAlloc;
+
+        /* IDirect3DDevice9::SetRenderTarget method resets the viewport and the scissor rectangle. */
+        if (pDevice->fViewPort)
+        {
+            pDevice9If->SetViewport(&pDevice->ViewPort);
+        }
+        if (pDevice->fScissorRect)
+        {
+            pDevice9If->SetScissorRect(&pDevice->ScissorRect);
+        }
     }
 
     if (pD3D9Surf)
@@ -4582,6 +4597,8 @@ HRESULT APIENTRY GaDdiAdapterCreateDevice(HANDLE hAdapter, D3DDDIARG_CREATEDEVIC
         pDevice->ViewPort.Height = 1;
         pDevice->ViewPort.MinZ   = 0.;
         pDevice->ViewPort.MaxZ   = 1.;
+        pDevice->fViewPort = false;
+        pDevice->fScissorRect = false;
 
         /*
          * Set data for the DX runtime.
