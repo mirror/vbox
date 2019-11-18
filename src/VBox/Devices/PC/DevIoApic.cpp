@@ -1314,13 +1314,13 @@ static DECLCALLBACK(int) ioapicR3Construct(PPDMDEVINS pDevIns, int iInstance, PC
     AssertRCReturn(rc, rc);
 
     /*
-     * Register saved-state callbacks.
+     * Register the saved state.
      */
     rc = PDMDevHlpSSMRegister(pDevIns, IOAPIC_SAVED_STATE_VERSION, sizeof(*pThis), ioapicR3SaveExec, ioapicR3LoadExec);
     AssertRCReturn(rc, rc);
 
     /*
-     * Register debugger info callback.
+     * Register debugger info item.
      */
     rc = PDMDevHlpDBGFInfoRegister(pDevIns, "ioapic", "Display IO APIC state.", ioapicR3DbgInfo);
     AssertRCReturn(rc, rc);
