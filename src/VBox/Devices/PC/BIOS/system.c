@@ -651,22 +651,13 @@ void BIOSCALL int15_function32(sys32_regs_t r)
                     extended_memory_size += (1L * 1024 * 1024);
                 }
 
-#ifdef VBOX     /* We've already used the CMOS entries for SATA.
-                   BTW. This is the amount of memory above 4GB measured in 64KB units. */
+                /* This is the amount of memory above 4GB measured in 64KB units. */
                 extra_lowbits_memory_size = inb_cmos(0x62);
                 extra_lowbits_memory_size <<= 8;
                 extra_lowbits_memory_size |= inb_cmos(0x61);
                 extra_lowbits_memory_size <<= 16;
                 extra_highbits_memory_size = inb_cmos(0x63);
                 /* 0x64 and 0x65 can be used if we need to dig 1 TB or more at a later point. */
-#else
-                extra_lowbits_memory_size = inb_cmos(0x5c);
-                extra_lowbits_memory_size <<= 8;
-                extra_lowbits_memory_size |= inb_cmos(0x5b);
-                extra_lowbits_memory_size *= 64;
-                extra_lowbits_memory_size *= 1024;
-                extra_highbits_memory_size = inb_cmos(0x5d);
-#endif /* !VBOX */
 
                 mcfgStart = 0;
                 mcfgSize  = 0;
@@ -675,24 +666,15 @@ void BIOSCALL int15_function32(sys32_regs_t r)
                 {
                     case 0:
                         set_e820_range(ES, DI,
-#ifndef VBOX /** @todo Upstream suggests the following, needs checking. (see next as well) */
-                                       0x0000000L, 0x0009f000L, 0, 0, 1);
-#else
                                        0x0000000L, 0x0009fc00L, 0, 0, 1);
-#endif
                         EBX = 1;
                         break;
                     case 1:
                         set_e820_range(ES, DI,
-#ifndef VBOX /** @todo Upstream suggests the following, needs checking. (see next as well) */
-                                       0x0009f000L, 0x000a0000L, 0, 0, 2);
-#else
                                        0x0009fc00L, 0x000a0000L, 0, 0, 2);
-#endif
                         EBX = 2;
                         break;
                     case 2:
-#ifdef VBOX
                         /* Mark the BIOS as reserved. VBox doesn't currently
                          * use the 0xe0000-0xeffff area. It does use the
                          * 0xd0000-0xdffff area for the BIOS logo, but it's
@@ -706,24 +688,13 @@ void BIOSCALL int15_function32(sys32_regs_t r)
                          * A 128K area starting from 0xd0000 works. */
                         set_e820_range(ES, DI,
                                        0x000f0000L, 0x00100000L, 0, 0, 2);
-#else /* !VBOX */
-                        set_e820_range(ES, DI,
-                                       0x000e8000L, 0x00100000L, 0, 0, 2);
-#endif /* !VBOX */
                         EBX = 3;
                         break;
                     case 3:
-#if BX_ROMBIOS32 || defined(VBOX)
                         set_e820_range(ES, DI,
                                        0x00100000L,
                                        extended_memory_size - ACPI_DATA_SIZE, 0, 0, 1);
                         EBX = 4;
-#else
-                        set_e820_range(ES, DI,
-                                       0x00100000L,
-                                       extended_memory_size, 1);
-                        EBX = 5;
-#endif
                         break;
                     case 4:
                         set_e820_range(ES, DI,
@@ -745,10 +716,8 @@ void BIOSCALL int15_function32(sys32_regs_t r)
                         break;
                     case 7:
                         /* 256KB BIOS area at the end of 4 GB */
-#ifdef VBOX
                         /* We don't set the end to 1GB here and rely on the 32-bit
                            unsigned wrap around effect (0-0xfffc0000L). */
-#endif
                         set_e820_range(ES, DI,
                                        0xfffc0000L, 0x00000000L, 0, 0, 2);
                         if (mcfgStart != 0)
@@ -772,7 +741,6 @@ void BIOSCALL int15_function32(sys32_regs_t r)
                             EBX = 0;
                         break;
                     case 9:
-#ifdef VBOX /* Don't succeeded if no memory above 4 GB.  */
                         /* Mapping of memory above 4 GB if present.
                            Note1: set_e820_range needs do no borrowing in the
                                   subtraction because of the nice numbers.
@@ -784,17 +752,9 @@ void BIOSCALL int15_function32(sys32_regs_t r)
                                            0x00000000L, extra_lowbits_memory_size,
                                            1 /*x4GB*/, extra_highbits_memory_size + 1 /*x4GB*/, 1);
                             EBX = 0;
+                            break;
                         }
-                        break;
                         /* fall thru */
-#else  /* !VBOX */
-                        /* Mapping of memory above 4 GB */
-                        set_e820_range(ES, DI, 0x00000000L,
-                        extra_lowbits_memory_size, 1, extra_highbits_memory_size
-                                       + 1, 1);
-                        EBX = 0;
-                        break;
-#endif /* !VBOX */
                     default:  /* AX=E820, DX=534D4150, BX unrecognized */
                         goto int15_unimplemented;
                         break;
