@@ -174,11 +174,6 @@ Machine::HWData::HWData()
     mCPUHotPlugEnabled = false;
     mMemoryBalloonSize = 0;
     mPageFusionEnabled = false;
-    mGraphicsControllerType = GraphicsControllerType_VBoxVGA;
-    mVRAMSize = 8;
-    mAccelerate3DEnabled = false;
-    mAccelerate2DVideoEnabled = false;
-    mMonitorCount = 1;
     mHWVirtExEnabled = true;
     mHWVirtExNestedPagingEnabled = true;
 #if HC_ARCH_BITS == 64 && !defined(RT_OS_LINUX)
@@ -11723,13 +11718,13 @@ void Machine::i_rollback(bool aNotify)
     if (mRecordingSettings && (mData->flModifications & IsModified_Recording))
         mRecordingSettings->i_rollback();
 
-    if (mGraphicsAdapter)
+    if (mGraphicsAdapter && (mData->flModifications & IsModified_GraphicsAdapter))
         mGraphicsAdapter->i_rollback();
 
     if (mVRDEServer && (mData->flModifications & IsModified_VRDEServer))
         mVRDEServer->i_rollback();
 
-    if (mAudioAdapter)
+    if (mAudioAdapter && (mData->flModifications & IsModified_AudioAdapter))
         mAudioAdapter->i_rollback();
 
     if (mUSBDeviceFilters && (mData->flModifications & IsModified_USB))
@@ -15264,16 +15259,33 @@ HRESULT Machine::applyDefaults(const com::Utf8Str &aFlags)
     rc = osType->COMGETTER(RecommendedRAM)(&mHWData->mMemorySize);
     if (FAILED(rc)) return rc;
 
-    rc = osType->COMGETTER(RecommendedGraphicsController)(&mHWData->mGraphicsControllerType);
+    /* Graphics stuff. */
+    GraphicsControllerType_T graphicsController;
+    rc = osType->COMGETTER(RecommendedGraphicsController)(&graphicsController);
     if (FAILED(rc)) return rc;
 
-    rc = osType->COMGETTER(RecommendedVRAM)(&mHWData->mVRAMSize);
+    rc = mGraphicsAdapter->COMSETTER(GraphicsControllerType)(graphicsController);
     if (FAILED(rc)) return rc;
 
-    rc = osType->COMGETTER(Recommended2DVideoAcceleration)(&mHWData->mAccelerate2DVideoEnabled);
+    ULONG vramSize;
+    rc = osType->COMGETTER(RecommendedVRAM)(&vramSize);
     if (FAILED(rc)) return rc;
 
-    rc = osType->COMGETTER(Recommended3DAcceleration)(&mHWData->mAccelerate3DEnabled);
+    rc = mGraphicsAdapter->COMSETTER(VRAMSize)(vramSize);
+    if (FAILED(rc)) return rc;
+
+    BOOL fAccelerate2DVideoEnabled;
+    rc = osType->COMGETTER(Recommended2DVideoAcceleration)(&fAccelerate2DVideoEnabled);
+    if (FAILED(rc)) return rc;
+
+    rc = mGraphicsAdapter->COMSETTER(Accelerate2DVideoEnabled)(fAccelerate2DVideoEnabled);
+    if (FAILED(rc)) return rc;
+
+    BOOL fAccelerate3DEnabled;
+    rc = osType->COMGETTER(Recommended3DAcceleration)(&fAccelerate3DEnabled);
+    if (FAILED(rc)) return rc;
+
+    rc = mGraphicsAdapter->COMSETTER(Accelerate3DEnabled)(fAccelerate3DEnabled);
     if (FAILED(rc)) return rc;
 
     rc = osType->COMGETTER(RecommendedFirmware)(&mHWData->mFirmwareType);

@@ -275,10 +275,7 @@ public:
         ULONG               mMemorySize;
         ULONG               mMemoryBalloonSize;
         BOOL                mPageFusionEnabled;
-        GraphicsControllerType_T mGraphicsControllerType;
-        ULONG               mVRAMSize;
         settings::RecordingSettings mRecordSettings;
-        ULONG               mMonitorCount;
         BOOL                mHWVirtExEnabled;
         BOOL                mHWVirtExNestedPagingEnabled;
         BOOL                mHWVirtExLargePagesEnabled;
@@ -286,7 +283,6 @@ public:
         BOOL                mHWVirtExUXEnabled;
         BOOL                mHWVirtExForceEnabled;
         BOOL                mHWVirtExUseNativeApi;
-        BOOL                mAccelerate2DVideoEnabled;
         BOOL                mPAEEnabled;
         settings::Hardware::LongModeType mLongMode;
         BOOL                mTripleFaultReset;
@@ -306,7 +302,6 @@ public:
         ULONG               mCpuExecutionCap;
         uint32_t            mCpuIdPortabilityLevel;
         Utf8Str             mCpuProfile;
-        BOOL                mAccelerate3DEnabled;
         BOOL                mHPETEnabled;
 
         BOOL                mCPUAttached[SchemaDefs::MaxCPUCount];
@@ -494,7 +489,8 @@ public:
         IsModified_SharedFolders        = 0x0400,
         IsModified_Snapshots            = 0x0800,
         IsModified_BandwidthControl     = 0x1000,
-        IsModified_Recording            = 0x2000
+        IsModified_Recording            = 0x2000,
+        IsModified_GraphicsAdapter      = 0x4000,
     };
 
     /**
@@ -507,7 +503,6 @@ public:
     Utf8Str i_getOSTypeId() const { return mUserData->s.strOsType; }
     ChipsetType_T i_getChipsetType() const { return mHWData->mChipsetType; }
     FirmwareType_T i_getFirmwareType() const { return mHWData->mFirmwareType; }
-    ULONG i_getMonitorCount() const { return mHWData->mMonitorCount; }
     ParavirtProvider_T i_getParavirtProvider() const { return mHWData->mParavirtProvider; }
     Utf8Str i_getParavirtDebug() const { return mHWData->mParavirtDebug; }
 

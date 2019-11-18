@@ -635,10 +635,14 @@ void RecordingSettings::i_onSettingsChanged(void)
  */
 int RecordingSettings::i_syncToMachineDisplays(void)
 {
-    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-
     AssertPtr(m->pMachine);
-    const ULONG cMonitors = m->pMachine->i_getMonitorCount();
+    ComPtr<IGraphicsAdapter> pGraphicsAdapter;
+    m->pMachine->COMGETTER(GraphicsAdapter)(pGraphicsAdapter.asOutParam());
+    ULONG cMonitors = 0;
+    if (!pGraphicsAdapter.isNull())
+        pGraphicsAdapter->COMGETTER(MonitorCount)(&cMonitors);
+
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     LogFlowThisFunc(("cMonitors=%RU32\n", cMonitors));
     LogFlowThisFunc(("Data screen count = %zu, COM object count = %zu\n", m->bd->mapScreens.size(), m->mapScreenObj.size()));
