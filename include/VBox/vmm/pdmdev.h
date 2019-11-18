@@ -1504,8 +1504,6 @@ typedef struct PDMIOAPICHLP
     /**
      * Private interface between the IOAPIC and APIC.
      *
-     * See comments about this hack on PDMAPICREG::pfnBusDeliverR3.
-     *
      * @returns status code.
      * @param   pDevIns         Device instance of the IOAPIC.
      * @param   u8Dest          See APIC implementation.
@@ -1515,6 +1513,8 @@ typedef struct PDMIOAPICHLP
      * @param   u8Polarity      See APIC implementation.
      * @param   u8TriggerMode   See APIC implementation.
      * @param   uTagSrc         The IRQ tag and source (for tracing).
+     *
+     * @sa      APICBusDeliver()
      */
     DECLCALLBACKMEMBER(int, pfnApicBusDeliver)(PPDMDEVINS pDevIns, uint8_t u8Dest, uint8_t u8DestMode, uint8_t u8DeliveryMode,
                                                uint8_t uVector, uint8_t u8Polarity, uint8_t u8TriggerMode, uint32_t uTagSrc);
