@@ -254,9 +254,8 @@
       <listitem>
         <para>
           <emphasis role="bold">Portability.</emphasis> &product-name;
-          runs on a large number of 32-bit and 64-bit host OS. See
-          <xref
-          linkend="hostossupport" />.
+          runs on a large number of 64-bit host operating systems. See
+          <xref linkend="hostossupport" />.
         </para>
 
         <para>
@@ -285,18 +284,13 @@
           import OVFs that were created with a different virtualization
           software. See <xref linkend="ovf" />.
         </para>
-      </listitem>
 
-      <listitem>
         <para>
-          <emphasis role="bold">No hardware virtualization
-          required.</emphasis> For many scenarios, &product-name; does
-          not require the processor features built into newer hardware
-          like Intel VT-x or AMD-V. As opposed to many other
-          virtualization solutions, you can therefore use &product-name;
-          even on older hardware where these features are not present.
-          See <xref
-        linkend="hwvirt" />.
+          For users of &oci; the functionality extends to exporting
+          and importing virtial machines to and from the cloud. This
+          simplifies development of applications and deployment to
+          the production environment. See
+          <xref linkend="cloud-export-oci"/>.
         </para>
       </listitem>
 
@@ -539,37 +533,19 @@
 
           <listitem>
             <para>
-              Windows 8
-            </para>
-          </listitem>
-
-          <listitem>
-            <para>
               Windows 8.1
             </para>
           </listitem>
 
           <listitem>
             <para>
-              Windows 10 RTM (1507) build 10240
+              Windows 10 RTM (1507 / 2015 LTSB) build 10240
             </para>
           </listitem>
 
           <listitem>
             <para>
-              Windows 10 November Update (1511) build 10586
-            </para>
-          </listitem>
-
-          <listitem>
-            <para>
-              Windows 10 Anniversary Update (1607) build 14393
-            </para>
-          </listitem>
-
-          <listitem>
-            <para>
-              Windows 10 Creators Update (1703) build 15063
+              Windows 10 Anniversary Update (1607 / 2016 LTSB) build 14393
             </para>
           </listitem>
 
@@ -587,7 +563,7 @@
 
           <listitem>
             <para>
-              Windows 10 October 2018 Update (1809) build 17763
+              Windows 10 October 2018 Update (1809 / 2019 LTSC) build 17763
             </para>
           </listitem>
 
