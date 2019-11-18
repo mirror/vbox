@@ -54,3 +54,5 @@ EXPORTS
     RTTimeNanoTSLFenceSyncInvarWithDeltaUseRdtscp
     RTTimeNanoTSLFenceSyncInvarWithDeltaUseIdtrLim
 
+    RTStrMemFind32
+

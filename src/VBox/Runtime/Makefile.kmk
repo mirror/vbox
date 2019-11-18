@@ -728,18 +728,22 @@ RuntimeR3_SOURCES       = \
 
 RuntimeR3_SOURCES.x86 += \
 	generic/RTMpGetDescription-generic.cpp \
-	common/misc/RTSystemIsInsideVM-amd64-x86.cpp
+	common/misc/RTSystemIsInsideVM-amd64-x86.cpp \
+	common/string/RTStrMemFind32.asm
 RuntimeR3_SOURCES.amd64 += \
 	generic/RTMpGetDescription-generic.cpp \
-	common/misc/RTSystemIsInsideVM-amd64-x86.cpp
+	common/misc/RTSystemIsInsideVM-amd64-x86.cpp \
+	common/string/RTStrMemFind32.asm
 RuntimeR3_SOURCES.sparc32 += \
 	generic/RTMpGetDescription-generic-stub.cpp \
 	generic/RTSystemIsInsideVM-generic.cpp \
-	common/asm/asm-fake.cpp
+	common/asm/asm-fake.cpp \
+	common/string/RTStrMemFindU32.cpp
 RuntimeR3_SOURCES.sparc64 += \
 	generic/RTMpGetDescription-generic-stub.cpp \
 	generic/RTSystemIsInsideVM-generic.cpp \
-	common/asm/asm-fake.cpp
+	common/asm/asm-fake.cpp \
+	common/string/RTStrMemFindU32.cpp
 
 ifdef IPRT_WITH_LZJB
  RuntimeR3_SOURCES += common/misc/lzjb.c
