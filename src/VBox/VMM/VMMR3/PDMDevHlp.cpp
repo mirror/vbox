@@ -59,24 +59,6 @@
 
 
 /**
- * Wrapper around PDMR3LdrGetSymbolRCLazy.
- */
-DECLINLINE(int) pdmR3DevGetSymbolRCLazy(PPDMDEVINS pDevIns, const char *pszSymbol, PRTRCPTR ppvValue)
-{
-    PVM pVM = pDevIns->Internal.s.pVMR3;
-    if (!VM_IS_RAW_MODE_ENABLED(pVM))
-    {
-        *ppvValue = NIL_RTRCPTR;
-        return VINF_SUCCESS;
-    }
-    return PDMR3LdrGetSymbolRCLazy(pVM,
-                                   pDevIns->Internal.s.pDevR3->pReg->pszRCMod,
-                                   pDevIns->Internal.s.pDevR3->pszRCSearchPath,
-                                   pszSymbol, ppvValue);
-}
-
-
-/**
  * Wrapper around PDMR3LdrGetSymbolR0Lazy.
  */
 DECLINLINE(int) pdmR3DevGetSymbolR0Lazy(PPDMDEVINS pDevIns, const char *pszSymbol, PRTR0PTR ppvValue)
