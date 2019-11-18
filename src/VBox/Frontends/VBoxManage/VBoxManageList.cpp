@@ -213,6 +213,8 @@ static HRESULT listHostInfo(const ComPtr<IVirtualBox> pVirtualBox)
         { ProcessorFeature_PAE,          "PAE" },
         { ProcessorFeature_LongMode,     "long mode" },
         { ProcessorFeature_NestedPaging, "nested paging" },
+        { ProcessorFeature_UnrestrictedGuest, "unrestricted guest" },
+        { ProcessorFeature_NestedHWVirt, "nested HW virtualization" },
     };
     HRESULT rc;
     ComPtr<IHost> Host;
