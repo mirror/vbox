@@ -47,29 +47,33 @@ typedef struct DEVPCARCH
 
 
 /**
- * @callback_method_impl{FNIOMIOPORTIN, Math coprocessor.}
+ * @callback_method_impl{FNIOMIOPORTNEWIN, Math coprocessor.}
+ * @note offPort is absolute
  */
-static DECLCALLBACK(int) pcarchIOPortFPURead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32, unsigned cb)
+static DECLCALLBACK(VBOXSTRICTRC)
+pcarchIOPortFPURead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t *pu32, unsigned cb)
 {
     int rc;
     NOREF(pvUser); NOREF(pDevIns); NOREF(pu32);
-    rc = PDMDevHlpDBGFStop(pDevIns, RT_SRC_POS, "Port=%#x cb=%d\n", Port, cb);
+    rc = PDMDevHlpDBGFStop(pDevIns, RT_SRC_POS, "Port=%#x cb=%d\n", offPort, cb);
     if (rc == VINF_SUCCESS)
         rc = VERR_IOM_IOPORT_UNUSED;
     return rc;
 }
 
 /**
- * @callback_method_impl{FNIOMIOPORTOUT, Math coprocessor.}
+ * @callback_method_impl{FNIOMIOPORTNEWOUT, Math coprocessor.}
+ * @note    offPort is absolute
  * @todo Add IGNNE support.
  */
-static DECLCALLBACK(int) pcarchIOPortFPUWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb)
+static DECLCALLBACK(VBOXSTRICTRC)
+pcarchIOPortFPUWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t u32, unsigned cb)
 {
     int rc = VINF_SUCCESS;
     NOREF(pvUser);
     if (cb == 1)
     {
-        switch (Port)
+        switch (offPort)
         {
             /*
              * Clear busy latch.
@@ -79,7 +83,7 @@ static DECLCALLBACK(int) pcarchIOPortFPUWrite(PPDMDEVINS pDevIns, void *pvUser, 
 /* This is triggered when booting Knoppix (3.7) */
 #if 0
                 if (!u32)
-                    rc = PDMDeviceDBGFStop(pDevIns, RT_SRC_POS, "Port=%#x cb=%d u32=%#x\n", Port, cb, u32);
+                    rc = PDMDeviceDBGFStop(pDevIns, RT_SRC_POS, "Port=%#x cb=%d u32=%#x\n", offPort, cb, u32);
 #endif
                 /* pDevIns->pHlp->pfnPICSetIrq(pDevIns, 13, 0); */
                 break;
@@ -96,14 +100,14 @@ static DECLCALLBACK(int) pcarchIOPortFPUWrite(PPDMDEVINS pDevIns, void *pvUser, 
             case 0xfa:
             case 0xfc:
             default:
-                rc = PDMDevHlpDBGFStop(pDevIns, RT_SRC_POS, "Port=%#x cb=%d u32=%#x\n", Port, cb, u32);
+                rc = PDMDevHlpDBGFStop(pDevIns, RT_SRC_POS, "Port=%#x cb=%d u32=%#x\n", offPort, cb, u32);
                 break;
         }
         /* this works better, but probably not entirely correct. */
         PDMDevHlpISASetIrq(pDevIns, 13, 0);
     }
     else
-        rc = PDMDevHlpDBGFStop(pDevIns, RT_SRC_POS, "Port=%#x cb=%d u32=%#x\n", Port, cb, u32);
+        rc = PDMDevHlpDBGFStop(pDevIns, RT_SRC_POS, "Port=%#x cb=%d u32=%#x\n", offPort, cb, u32);
     return rc;
 }
 
@@ -142,9 +146,10 @@ Notes:  once set, bit 3 may only be cleared by a power-on reset
           (see #P0398).
 SeeAlso: #P0416,#P0417,MSR 00001000h
  * @endverbatim
+ * @note    offPort is absolute
  */
-static DECLCALLBACK(int)
-pcarchIOPortPS2SysControlPortARead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32, unsigned cb)
+static DECLCALLBACK(VBOXSTRICTRC)
+pcarchIOPortPS2SysControlPortARead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t *pu32, unsigned cb)
 {
     RT_NOREF1(pvUser);
     if (cb == 1)
@@ -152,16 +157,17 @@ pcarchIOPortPS2SysControlPortARead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Po
         *pu32 = PDMDevHlpA20IsEnabled(pDevIns) << 1;
         return VINF_SUCCESS;
     }
-    return PDMDevHlpDBGFStop(pDevIns, RT_SRC_POS, "Port=%#x cb=%d\n", Port, cb);
+    return PDMDevHlpDBGFStop(pDevIns, RT_SRC_POS, "Port=%#x cb=%d\n", offPort, cb);
 }
 
 
 /**
  * @callback_method_impl{FNIOMIOPORTOUT, PS/2 system control port A.}
  * @see     Remark and todo of pcarchIOPortPS2SysControlPortARead().
+ * @note    offPort is absolute
  */
-static DECLCALLBACK(int)
-pcarchIOPortPS2SysControlPortAWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb)
+static DECLCALLBACK(VBOXSTRICTRC)
+pcarchIOPortPS2SysControlPortAWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t u32, unsigned cb)
 {
     NOREF(pvUser);
     if (cb == 1)
@@ -181,29 +187,32 @@ pcarchIOPortPS2SysControlPortAWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT P
         PDMDevHlpA20Set(pDevIns, !!(u32 & 2));
         return VINF_SUCCESS;
     }
-    return PDMDevHlpDBGFStop(pDevIns, RT_SRC_POS, "Port=%#x cb=%d u32=%#x\n", Port, cb, u32);
+    return PDMDevHlpDBGFStop(pDevIns, RT_SRC_POS, "Port=%#x cb=%d u32=%#x\n", offPort, cb, u32);
 }
 
 
 /**
- * @callback_method_impl{FNIOMMMIOWRITE, Ignores writes to the reserved memory.}
+ * @callback_method_impl{FNIOMMMIONEWWRITE, Ignores writes to the reserved memory.}
+ * @note    off is an absolute address.
  */
-static DECLCALLBACK(int) pcarchReservedMemoryWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr,
-                                                   void const *pv, unsigned cb)
+static DECLCALLBACK(VBOXSTRICTRC)
+pcarchReservedMemoryWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS off, void const *pv, unsigned cb)
 {
-    Log2(("pcarchReservedMemoryRead: %#RGp LB %#x %.*Rhxs\n", GCPhysAddr, cb, RT_MIN(cb, 16), pv));
-    NOREF(pDevIns); NOREF(pvUser); NOREF(GCPhysAddr); NOREF(pv); NOREF(cb);
+    Log2(("pcarchReservedMemoryRead: %#RGp LB %#x %.*Rhxs\n", off, cb, RT_MIN(cb, 16), pv));
+    RT_NOREF(pDevIns, pvUser, off, pv, cb);
     return VINF_SUCCESS;
 }
 
 
 /**
- * @callback_method_impl{FNIOMMMIOREAD, The reserved memory reads as 0xff.}
+ * @callback_method_impl{FNIOMMMIONEWREAD, The reserved memory reads as 0xff.}
+ * @note    off is an absolute address.
  */
-static DECLCALLBACK(int) pcarchReservedMemoryRead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr, void *pv, unsigned cb)
+static DECLCALLBACK(VBOXSTRICTRC)
+pcarchReservedMemoryRead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS off, void *pv, unsigned cb)
 {
-    Log2(("pcarchReservedMemoryRead: %#RGp LB %#x\n", GCPhysAddr, cb));
-    NOREF(pDevIns); NOREF(pvUser); NOREF(GCPhysAddr);
+    Log2(("pcarchReservedMemoryRead: %#RGp LB %#x\n", off, cb));
+    RT_NOREF(pDevIns, pvUser, off);
     memset(pv, 0xff, cb);
     return VINF_SUCCESS;
 }
@@ -230,10 +239,12 @@ static DECLCALLBACK(int) pcarchInitComplete(PPDMDEVINS pDevIns)
                 GCPhysCur += X86_PAGE_SIZE;
             while (GCPhysCur < GCPhysEnd && PGMPhysIsGCPhysNormal(pVM, GCPhysCur));
 
-            int rc = PDMDevHlpMMIORegister(pDevIns, GCPhysStart, GCPhysCur - GCPhysStart, NULL /*pvUser*/,
-                                           IOMMMIO_FLAGS_READ_PASSTHRU | IOMMMIO_FLAGS_WRITE_PASSTHRU,
-                                           pcarchReservedMemoryWrite, pcarchReservedMemoryRead,
-                                           MMR3HeapAPrintf(pVM, MM_TAG_PGM_PHYS /* bad bird*/, "PC Arch Reserved #%u", iRegion));
+            IOMMMIOHANDLE hMmioRegion;
+            int rc = PDMDevHlpMmioCreateAndMap(pDevIns, GCPhysStart, GCPhysCur - GCPhysStart,
+                                               pcarchReservedMemoryWrite, pcarchReservedMemoryRead,
+                                               IOMMMIO_FLAGS_READ_PASSTHRU | IOMMMIO_FLAGS_WRITE_PASSTHRU | IOMMMIO_FLAGS_ABS,
+                                               MMR3HeapAPrintf(pVM, MM_TAG_PGM_PHYS /* bad bird*/, "PC Arch Reserved #%u", iRegion),
+                                               &hMmioRegion);
             AssertLogRelRCReturn(rc, rc);
             iRegion++;
         }
@@ -267,16 +278,15 @@ static DECLCALLBACK(int)  pcarchConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
     /*
      * Register I/O Ports
      */
-    rc = PDMDevHlpIOPortRegister(pDevIns, 0xF0, 0x10, NULL,
-                                 pcarchIOPortFPUWrite, pcarchIOPortFPURead,
-                                 NULL, NULL, "Math Co-Processor (DOS/OS2 mode)");
-    if (RT_FAILURE(rc))
-        return rc;
-    rc = PDMDevHlpIOPortRegister(pDevIns, 0x92, 1, NULL,
-                                 pcarchIOPortPS2SysControlPortAWrite, pcarchIOPortPS2SysControlPortARead,
-                                 NULL, NULL, "PS/2 system control port A (A20 and more)");
-    if (RT_FAILURE(rc))
-        return rc;
+    IOMIOPORTHANDLE hIoPorts;
+    rc = PDMDevHlpIoPortCreateFlagsAndMap(pDevIns, 0xf0 /*uPort*/, 0x10 /*cPorts*/, IOM_IOPORT_F_ABS,
+                                          pcarchIOPortFPUWrite, pcarchIOPortFPURead,
+                                          "Math Co-Processor (DOS/OS2 mode)", NULL /*paExtDescs*/, &hIoPorts);
+    AssertRCReturn(rc, rc);
+    rc = PDMDevHlpIoPortCreateFlagsAndMap(pDevIns, 0x92 /*uPort*/, 1 /*cPorts*/, IOM_IOPORT_F_ABS,
+                                          pcarchIOPortPS2SysControlPortAWrite, pcarchIOPortPS2SysControlPortARead,
+                                          "PS/2 system control port A (A20 and more)", NULL /*paExtDescs*/, &hIoPorts);
+    AssertRCReturn(rc, rc);
 
     return VINF_SUCCESS;
 }
@@ -290,7 +300,7 @@ const PDMDEVREG g_DevicePcArch =
     /* .u32Version = */             PDM_DEVREG_VERSION,
     /* .uReserved0 = */             0,
     /* .szName = */                 "pcarch",
-    /* .fFlags = */                 PDM_DEVREG_FLAGS_DEFAULT_BITS,
+    /* .fFlags = */                 PDM_DEVREG_FLAGS_DEFAULT_BITS | PDM_DEVREG_FLAGS_NEW_STYLE,
     /* .fClass = */                 PDM_DEVREG_CLASS_ARCH,
     /* .cMaxInstances = */          1,
     /* .uSharedVersion = */         42,
