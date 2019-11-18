@@ -396,7 +396,7 @@ DECLINLINE(uint32_t) ioapicGetIndex(PCIOAPIC pThis)
  * @param   pDevIns     The device instance.
  * @param   pThis       The shared I/O APIC device state.
  * @param   pThisCC     The I/O APIC device state for the current context.
- * @param   idxRte      The index of the RTE.
+ * @param   idxRte      The index of the RTE (validated).
  *
  * @remarks It is the responsibility of the caller to verify that an interrupt is
  *          pending for the pin corresponding to the RTE before calling this
@@ -1057,7 +1057,8 @@ static DECLCALLBACK(void) ioapicR3DbgInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp
     pHlp->pfnPrintf(pHlp, "  I/O Redirection Table and IRR:\n");
     pHlp->pfnPrintf(pHlp, "  idx dst_mode dst_addr mask irr trigger rirr polar dlvr_st dlvr_mode vector\n");
 
-    for (uint8_t idxRte = 0; idxRte <= pThis->u8MaxRte; idxRte++)
+    uint8_t const idxMaxRte = RT_MIN(pThis->u8MaxRte, RT_ELEMENTS(pThis->au64RedirTable) - 1);
+    for (uint8_t idxRte = 0; idxRte <= idxMaxRte; idxRte++)
     {
         static const char * const s_apszDeliveryModes[] =
         {
