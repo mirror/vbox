@@ -45,17 +45,12 @@
  */
 typedef struct LPCSTATE
 {
-    /** Pointer to the ring-3 device instance. */
-    PPDMDEVINSR3    pDevInsR3;
-
     /** The root complex base address. */
     RTGCPHYS32      GCPhys32Rcba;
-    /** Set if R0/RC context is enabled.   */
-    bool            fRZEnabled;
     /** The ICH version (7 or 9). */
     uint8_t         uIchVersion;
     /** Explicit padding. */
-    uint8_t         abPadding[HC_ARCH_BITS == 32 ? 2 : 6];
+    uint8_t         abPadding[HC_ARCH_BITS == 32 ? 3 : 7];
 
     /** Number of MMIO reads. */
     STAMCOUNTER     StatMmioReads;
@@ -65,6 +60,9 @@ typedef struct LPCSTATE
     STAMCOUNTER     StatPciCfgReads;
     /** Number of PCI config space writes. */
     STAMCOUNTER     StatPciCfgWrites;
+
+    /** Handle to the MMIO region. */
+    IOMMMIOHANDLE   hMmio;
 } LPCSTATE;
 /** Pointer to the LPC state. */
 typedef LPCSTATE *PLPCSTATE;
@@ -73,22 +71,21 @@ typedef LPCSTATE *PLPCSTATE;
 #ifndef VBOX_DEVICE_STRUCT_TESTCASE
 
 /**
- * @callback_method_impl{FNIOMMMIOREAD}
+ * @callback_method_impl{FNIOMMMIONEWREAD}
  */
-PDMBOTHCBDECL(int) lpcMmioRead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr, void *pv, unsigned cb)
+static DECLCALLBACK(VBOXSTRICTRC) lpcMmioRead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS off, void *pv, unsigned cb)
 {
     RT_NOREF(pvUser, cb);
     PLPCSTATE        pThis  = PDMDEVINS_2_DATA(pDevIns, PLPCSTATE);
-    RTGCPHYS32 const offReg = (RTGCPHYS32)GCPhysAddr - pThis->GCPhys32Rcba;
-    Assert(cb == 4); Assert(!(GCPhysAddr & 3)); /* IOMMMIO_FLAGS_READ_DWORD should make sure of this */
+    Assert(cb == 4); Assert(!(off & 3)); /* IOMMMIO_FLAGS_READ_DWORD should make sure of this */
 
     uint32_t *puValue = (uint32_t *)pv;
-    if (offReg == LPC_REG_HPET_CONFIG_POINTER)
+    if (off == LPC_REG_HPET_CONFIG_POINTER)
     {
         *puValue = 0xf0;
         Log(("lpcMmioRead: HPET_CONFIG_POINTER: %#x\n", *puValue));
     }
-    else if (offReg == LPC_REG_GCS)
+    else if (off == LPC_REG_GCS)
     {
         *puValue = 0;
         Log(("lpcMmioRead: GCS: %#x\n", *puValue));
@@ -96,7 +93,7 @@ PDMBOTHCBDECL(int) lpcMmioRead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhys
     else
     {
         *puValue = 0;
-        Log(("lpcMmioRead: WARNING! Unknown register %#x!\n", offReg));
+        Log(("lpcMmioRead: WARNING! Unknown register %#RGp!\n", off));
     }
 
     STAM_REL_COUNTER_INC(&pThis->StatMmioReads);
@@ -105,23 +102,22 @@ PDMBOTHCBDECL(int) lpcMmioRead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhys
 
 
 /**
- * @callback_method_impl{FNIOMMMIOWRITE}
+ * @callback_method_impl{FNIOMMMIONEWWRITE}
  */
-PDMBOTHCBDECL(int) lpcMmioWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr, void const *pv, unsigned cb)
+static DECLCALLBACK(VBOXSTRICTRC) lpcMmioWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS off, void const *pv, unsigned cb)
 {
-    RT_NOREF(pvUser, pv);
     PLPCSTATE        pThis  = PDMDEVINS_2_DATA(pDevIns, PLPCSTATE);
-    RTGCPHYS32 const offReg = (RTGCPHYS32)GCPhysAddr - pThis->GCPhys32Rcba;
+    RT_NOREF(pvUser, pv);
 
     if (cb == 4)
     {
-        if (offReg == LPC_REG_GCS)
+        if (off == LPC_REG_GCS)
             Log(("lpcMmioWrite: Ignorning write to GCS: %.*Rhxs\n", cb, pv));
         else
-            Log(("lpcMmioWrite: Ignorning write to unknown register %#x: %.*Rhxs\n", offReg, cb, pv));
+            Log(("lpcMmioWrite: Ignorning write to unknown register %#RGp: %.*Rhxs\n", off, cb, pv));
     }
     else
-        Log(("lpcMmioWrite: WARNING! Ignoring non-DWORD write to offReg=%#x: %.*Rhxs\n", offReg, cb, pv));
+        Log(("lpcMmioWrite: WARNING! Ignoring non-DWORD write to off=%#RGp: %.*Rhxs\n", off, cb, pv));
 
     STAM_REL_COUNTER_INC(&pThis->StatMmioWrites);
     return VINF_SUCCESS;
@@ -213,31 +209,23 @@ static DECLCALLBACK(void) lpcInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const 
 static DECLCALLBACK(int) lpcConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE pCfg)
 {
     PDMDEV_CHECK_VERSIONS_RETURN(pDevIns);
-    PLPCSTATE pThis = PDMDEVINS_2_DATA(pDevIns, PLPCSTATE);
+    PLPCSTATE       pThis = PDMDEVINS_2_DATA(pDevIns, PLPCSTATE);
+    PCPDMDEVHLPR3   pHlp  = pDevIns->pHlpR3;
     Assert(iInstance == 0); RT_NOREF(iInstance);
-
-    /*
-     * Initialize state.
-     */
-    pThis->pDevInsR3 = pDevIns;
 
     /*
      * Read configuration.
      */
-    PDMDEV_VALIDATE_CONFIG_RETURN(pDevIns, "RZEnabled|RCBA|ICHVersion", "");
+    PDMDEV_VALIDATE_CONFIG_RETURN(pDevIns, "RCBA|ICHVersion", "");
 
-    int rc = CFGMR3QueryBoolDef(pCfg, "RZEnabled", &pThis->fRZEnabled, true);
-    if (RT_FAILURE(rc))
-        return PDMDEV_SET_ERROR(pDevIns, rc, N_("Configuration error: Failed to query boolean value \"RZEnabled\""));
-
-    rc = CFGMR3QueryU8Def(pCfg, "ICHVersion", &pThis->uIchVersion, 7 /** @todo 9 */);
+    int rc = pHlp->pfnCFGMQueryU8Def(pCfg, "ICHVersion", &pThis->uIchVersion, 7 /** @todo 9 */);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc, N_("Configuration error: Failed to query boolean value \"ICHVersion\""));
     if (   pThis->uIchVersion != 7
         && pThis->uIchVersion != 9)
         return PDMDEV_SET_ERROR(pDevIns, rc, N_("Configuration error: Invalid \"ICHVersion\" value (must be 7 or 9)"));
 
-    rc = CFGMR3QueryU32Def(pCfg, "RCBA", &pThis->GCPhys32Rcba, UINT32_C(0xfed1c000));
+    rc = pHlp->pfnCFGMQueryU32Def(pCfg, "RCBA", &pThis->GCPhys32Rcba, UINT32_C(0xfed1c000));
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc, N_("Configuration error: Failed to query boolean value \"RCBA\""));
 
@@ -358,19 +346,19 @@ static DECLCALLBACK(int) lpcConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
      */
     /** @todo This should actually be done when RCBA is enabled, but was
      *        mentioned above we just want this working. */
-    rc = PDMDevHlpMMIORegister(pDevIns, pThis->GCPhys32Rcba, 0x4000, pThis,
-                               IOMMMIO_FLAGS_READ_DWORD | IOMMMIO_FLAGS_WRITE_PASSTHRU,
-                               lpcMmioWrite, lpcMmioRead, "LPC Memory");
+    rc = PDMDevHlpMmioCreateAndMap(pDevIns, pThis->GCPhys32Rcba, 0x4000, lpcMmioWrite, lpcMmioRead,
+                                   IOMMMIO_FLAGS_READ_DWORD | IOMMMIO_FLAGS_WRITE_PASSTHRU,
+                                   "LPC Memory", &pThis->hMmio);
     AssertRCReturn(rc, rc);
 
 
     /*
      * Debug info and stats.
      */
-    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatMmioReads,    STAMTYPE_COUNTER, "/Devices/LPC/MMIOReads", STAMUNIT_OCCURENCES, "MMIO reads");
-    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatMmioWrites,   STAMTYPE_COUNTER, "/Devices/LPC/MMIOWrites", STAMUNIT_OCCURENCES, "MMIO writes");
-    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatPciCfgReads,  STAMTYPE_COUNTER, "/Devices/LPC/ConfigReads", STAMUNIT_OCCURENCES, "PCI config reads");
-    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatPciCfgWrites, STAMTYPE_COUNTER, "/Devices/LPC/ConfigWrites", STAMUNIT_OCCURENCES, "PCI config writes");
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatMmioReads,    STAMTYPE_COUNTER, "MMIOReads", STAMUNIT_OCCURENCES, "MMIO reads");
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatMmioWrites,   STAMTYPE_COUNTER, "MMIOWrites", STAMUNIT_OCCURENCES, "MMIO writes");
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatPciCfgReads,  STAMTYPE_COUNTER, "ConfigReads", STAMUNIT_OCCURENCES, "PCI config reads");
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatPciCfgWrites, STAMTYPE_COUNTER, "ConfigWrites", STAMUNIT_OCCURENCES, "PCI config writes");
 
     PDMDevHlpDBGFInfoRegister(pDevIns, "lpc", "Display LPC status. (no arguments)", lpcInfo);
 
@@ -387,7 +375,7 @@ const PDMDEVREG g_DeviceLPC =
     /* .u32Version = */             PDM_DEVREG_VERSION,
     /* .uReserved0 = */             0,
     /* .szName = */                 "lpc",
-    /* .fFlags = */                 PDM_DEVREG_FLAGS_DEFAULT_BITS,
+    /* .fFlags = */                 PDM_DEVREG_FLAGS_DEFAULT_BITS | PDM_DEVREG_FLAGS_NEW_STYLE,
     /* .fClass = */                 PDM_DEVREG_CLASS_MISC,
     /* .cMaxInstances = */          1,
     /* .uSharedVersion = */         42,
