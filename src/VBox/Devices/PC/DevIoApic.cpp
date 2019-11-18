@@ -629,9 +629,9 @@ static VBOXSTRICTRC ioapicSetData(PPDMDEVINS pDevIns, PIOAPIC pThis, PIOAPICCC p
 
 
 /**
- * @interface_method_impl{PDMIOAPICREG,pfnSetEoiR3}
+ * @interface_method_impl{PDMIOAPICREG,pfnSetEoi}
  */
-static DECLCALLBACK(int) ioapicSetEoi(PPDMDEVINS pDevIns, uint8_t u8Vector)
+static DECLCALLBACK(VBOXSTRICTRC) ioapicSetEoi(PPDMDEVINS pDevIns, uint8_t u8Vector)
 {
     PIOAPIC   pThis   = PDMDEVINS_2_DATA(pDevIns, PIOAPIC);
     PIOAPICCC pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PIOAPICCC);
@@ -639,7 +639,7 @@ static DECLCALLBACK(int) ioapicSetEoi(PPDMDEVINS pDevIns, uint8_t u8Vector)
     LogFlow(("IOAPIC: ioapicSetEoi: u8Vector=%#x (%u)\n", u8Vector, u8Vector));
 
     bool fRemoteIrrCleared = false;
-    int rc = IOAPIC_LOCK(pDevIns, pThis, pThisCC, VINF_IOM_R3_MMIO_WRITE);
+    VBOXSTRICTRC rc = IOAPIC_LOCK(pDevIns, pThis, pThisCC, VINF_IOM_R3_MMIO_WRITE);
     if (rc == VINF_SUCCESS)
     {
         for (uint8_t idxRte = 0; idxRte < RT_ELEMENTS(pThis->au64RedirTable); idxRte++)
@@ -676,7 +676,7 @@ static DECLCALLBACK(int) ioapicSetEoi(PPDMDEVINS pDevIns, uint8_t u8Vector)
 
 
 /**
- * @interface_method_impl{PDMIOAPICREG,pfnSetIrqR3}
+ * @interface_method_impl{PDMIOAPICREG,pfnSetIrq}
  */
 static DECLCALLBACK(void) ioapicSetIrq(PPDMDEVINS pDevIns, int iIrq, int iLevel, uint32_t uTagSrc)
 {
@@ -772,7 +772,7 @@ static DECLCALLBACK(void) ioapicSetIrq(PPDMDEVINS pDevIns, int iIrq, int iLevel,
 
 
 /**
- * @interface_method_impl{PDMIOAPICREG,pfnSendMsiR3}
+ * @interface_method_impl{PDMIOAPICREG,pfnSendMsi}
  */
 static DECLCALLBACK(void) ioapicSendMsi(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, uint32_t uValue, uint32_t uTagSrc)
 {

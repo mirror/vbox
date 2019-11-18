@@ -1472,7 +1472,7 @@ typedef struct PDMIOAPICREG
      * Set the EOI for an interrupt vector.
      *
      * @returns Strict VBox status code - only the following informational status codes:
-     * @retval  VINF_IOM_R3_MMIO_WRITE if the I/O APIC lock is contenteded and we're in R0 or RC.2
+     * @retval  VINF_IOM_R3_MMIO_WRITE if the I/O APIC lock is contenteded and we're in R0 or RC.
      * @retval  VINF_SUCCESS
      *
      * @param   pDevIns         Device instance of the I/O APIC.
@@ -1481,7 +1481,7 @@ typedef struct PDMIOAPICREG
      * @remarks Caller enters the PDM critical section
      *          Actually, as per 2018-07-21 this isn't true (bird).
      */
-    DECLCALLBACKMEMBER(int, pfnSetEoi)(PPDMDEVINS pDevIns, uint8_t u8Vector);
+    DECLCALLBACKMEMBER(VBOXSTRICTRC, pfnSetEoi)(PPDMDEVINS pDevIns, uint8_t u8Vector);
 
     /** Just a safety precaution. */
     uint32_t                u32TheEnd;

@@ -1255,7 +1255,7 @@ static VBOXSTRICTRC apicSetEoi(PVMCPUCC pVCpu, uint32_t uEoi, int rcBusy, bool f
         bool const fLevelTriggered = apicTestVectorInReg(&pXApicPage->tmr, uVector);
         if (fLevelTriggered)
         {
-            int rc = PDMIoApicBroadcastEoi(pVCpu->CTX_SUFF(pVM), uVector);
+            VBOXSTRICTRC rc = PDMIoApicBroadcastEoi(pVCpu->CTX_SUFF(pVM), uVector);
             if (rc == VINF_SUCCESS)
             { /* likely */ }
             else

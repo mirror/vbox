@@ -53,7 +53,7 @@ VMMDECL(int)            PDMIsaSetIrq(PVMCC pVM, uint8_t u8Irq, uint8_t u8Level, 
 VMM_INT_DECL(bool)      PDMHasIoApic(PVM pVM);
 VMM_INT_DECL(bool)      PDMHasApic(PVM pVM);
 VMM_INT_DECL(int)       PDMIoApicSetIrq(PVM pVM, uint8_t u8Irq, uint8_t u8Level, uint32_t uTagSrc);
-VMM_INT_DECL(int)       PDMIoApicBroadcastEoi(PVM pVM, uint8_t uVector);
+VMM_INT_DECL(VBOXSTRICTRC) PDMIoApicBroadcastEoi(PVM pVM, uint8_t uVector);
 VMM_INT_DECL(int)       PDMIoApicSendMsi(PVM pVM, RTGCPHYS GCAddr, uint32_t uValue, uint32_t uTagSrc);
 VMM_INT_DECL(int)       PDMVmmDevHeapR3ToGCPhys(PVM pVM, RTR3PTR pv, RTGCPHYS *pGCPhys);
 VMM_INT_DECL(bool)      PDMVmmDevHeapIsEnabled(PVM pVM);

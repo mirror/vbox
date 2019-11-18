@@ -195,7 +195,7 @@ VMM_INT_DECL(int) PDMIoApicSetIrq(PVM pVM, uint8_t u8Irq, uint8_t u8Level, uint3
  * @param   pVM             The cross context VM structure.
  * @param   uVector         The interrupt vector corresponding to the EOI.
  */
-VMM_INT_DECL(int) PDMIoApicBroadcastEoi(PVM pVM, uint8_t uVector)
+VMM_INT_DECL(VBOXSTRICTRC) PDMIoApicBroadcastEoi(PVM pVM, uint8_t uVector)
 {
     /* At present, we support only a maximum of one I/O APIC per-VM. If we ever implement having
        multiple I/O APICs per-VM, we'll have to broadcast this EOI to all of the I/O APICs. */
