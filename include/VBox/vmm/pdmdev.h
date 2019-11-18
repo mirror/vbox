@@ -5856,6 +5856,20 @@ DECLINLINE(int) PDMDevHlpIoPortCreateUAndMap(PPDMDEVINS pDevIns, RTIOPORT Port, 
 }
 
 /**
+ * Combines PDMDevHlpIoPortCreate() & PDMDevHlpIoPortMap(), but with flags.
+ */
+DECLINLINE(int) PDMDevHlpIoPortCreateFlagsAndMap(PPDMDEVINS pDevIns, RTIOPORT Port, RTIOPORT cPorts, uint32_t fFlags,
+                                                 PFNIOMIOPORTNEWOUT pfnOut, PFNIOMIOPORTNEWIN pfnIn,
+                                                 const char *pszDesc, PCIOMIOPORTDESC paExtDescs, PIOMIOPORTHANDLE phIoPorts)
+{
+    int rc = pDevIns->pHlpR3->pfnIoPortCreateEx(pDevIns, cPorts, fFlags, NULL, UINT32_MAX,
+                                                pfnOut, pfnIn, NULL, NULL, NULL, pszDesc, paExtDescs, phIoPorts);
+    if (RT_SUCCESS(rc))
+        rc = pDevIns->pHlpR3->pfnIoPortMap(pDevIns, *phIoPorts, Port);
+    return rc;
+}
+
+/**
  * Combines PDMDevHlpIoPortCreateEx() & PDMDevHlpIoPortMap().
  */
 DECLINLINE(int) PDMDevHlpIoPortCreateExAndMap(PPDMDEVINS pDevIns, RTIOPORT Port, RTIOPORT cPorts, uint32_t fFlags,
