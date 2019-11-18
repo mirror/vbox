@@ -4130,11 +4130,26 @@ AuthResult AUTHCALL AuthEntry(
     existing client code.</para>
 
     <sect1>
+      <title>Incompatible API changes with version 6.1</title>
+
+      <itemizedlist>
+
+        <listitem><para>Split off the graphics adapter part of
+          <link linkend="IMachine">IMachine</link> into
+          <link linkend="IGraphicsAdapter">IGraphicsAdapter</link>.
+          This moved 5 attributes.</para>
+        </listitem>
+
+      </itemizedlist>
+
+    </sect1>
+
+    <sect1>
       <title>Incompatible API changes with version 6.0</title>
 
       <itemizedlist>
 
-        <listitem><para>Video recording APIs for were changed as follows:
+        <listitem><para>Video recording APIs were changed as follows:
           <itemizedlist>
             <listitem><para>All attributes which were living in <link linkend="IMachine">IMachine</link> before
               have been moved to an own, dedicated interface named <link linkend="IRecordingSettings">IRecordingSettings</link>.
@@ -6214,8 +6229,7 @@ AuthResult AUTHCALL AuthEntry(
         </listitem>
 
         <listitem>
-          <para>New attributes in IMachine:
-          <link linkend="IMachine__accelerate3DEnabled">accelerate3DEnabled</link>,
+          <para>New attributes in IMachine: accelerate3DEnabled,
           HWVirtExVPIDEnabled,
           <computeroutput>IMachine::guestPropertyNotificationPatterns</computeroutput>,
           <link linkend="IMachine__CPUCount">CPUCount</link>.</para>
