@@ -1014,7 +1014,7 @@ static DECLCALLBACK(int) pitR3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
         pHlp->pfnSSMPutU64(pSSM, pChan->u64NextTS);
         pHlp->pfnSSMPutU64(pSSM, pChan->u64ReloadTS);
         pHlp->pfnSSMPutS64(pSSM, pChan->next_transition_time);
-        if (pChan->hTimer)
+        if (pChan->hTimer != NIL_TMTIMERHANDLE)
             PDMDevHlpTimerSave(pDevIns, pChan->hTimer, pSSM);
     }
 
@@ -1091,7 +1091,7 @@ static DECLCALLBACK(int) pitR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint
         pHlp->pfnSSMGetU64(pSSM, &pChan->u64NextTS);
         pHlp->pfnSSMGetU64(pSSM, &pChan->u64ReloadTS);
         pHlp->pfnSSMGetS64(pSSM, &pChan->next_transition_time);
-        if (pChan->hTimer)
+        if (pChan->hTimer != NIL_TMTIMERHANDLE)
         {
             PDMDevHlpTimerLoad(pDevIns, pChan->hTimer, pSSM);
             LogRel(("PIT: mode=%d count=%#x (%u) - %d.%02d Hz (ch=%d) (restore)\n",
