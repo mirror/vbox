@@ -857,15 +857,11 @@ PGM_ALL_CB2_DECL(VBOXSTRICTRC) iomMmioHandlerNew(PVMCC pVM, PVMCPUCC pVCpu, RTGC
      * Assert the right entry in strict builds.  This may yield a false positive
      * for SMP VMs if we're unlucky and the guest isn't well behaved.
      */
-    IOM_LOCK_SHARED(pVM);  /** @todo Need lookup that doesn't require locking... */
-    RTGCPHYS offIgn;
-    uint16_t idxIgn = UINT16_MAX;
 # ifdef IN_RING0
-    Assert(pRegEntry == iomMmioGetEntry(pVM, GCPhysFault, &offIgn, &idxIgn) || !pRegEntryR3->fMapped);
+    Assert(pRegEntry && (GCPhysFault - pRegEntryR3->GCPhysMapping < pRegEntryR3->cbRegion || !pRegEntryR3->fMapped));
 # else
-    Assert(pRegEntry == iomMmioGetEntry(pVM, GCPhysFault, &offIgn, &idxIgn) || !pRegEntry->fMapped);
+    Assert(pRegEntry && (GCPhysFault - pRegEntry->GCPhysMapping   < pRegEntry->cbRegion   || !pRegEntry->fMapped));
 # endif
-    IOM_UNLOCK_SHARED(pVM);
 #endif
 
 #ifndef IN_RING3
@@ -1045,7 +1041,7 @@ PGM_ALL_CB2_DECL(VBOXSTRICTRC) iomMmioHandlerNew(PVMCC pVM, PVMCPUCC pVCpu, RTGC
  * IOMMmioResetRegion() to undo the mapping.
  *
  * @returns VBox status code.  This API may return VINF_SUCCESS even if no
- *          remapping is made,.
+ *          remapping is made.
  *
  * @param   pVM             The cross context VM structure.
  * @param   pDevIns         The device instance @a hRegion and @a hMmio2 are
@@ -1101,27 +1097,31 @@ VMM_INT_DECL(int) IOMMmioMapMmio2Page(PVMCC pVM, PPDMDEVINS pDevIns, IOMMMIOHAND
      * When getting and using the mapping address, we must sit on the IOM lock
      * to prevent remapping.  Shared suffices as we change nothing.
      */
-    IOM_LOCK_SHARED(pVM);
+    int rc = IOM_LOCK_SHARED(pVM);
+    if (rc == VINF_SUCCESS)
+    {
+        RTGCPHYS const GCPhys = pRegEntry->fMapped ? pRegEntry->GCPhysMapping : NIL_RTGCPHYS;
+        if (GCPhys != NIL_RTGCPHYS)
+        {
+            Assert(!(GCPhys & PAGE_OFFSET_MASK));
 
-    RTGCPHYS const GCPhys = pRegEntry->fMapped ? pRegEntry->GCPhysMapping : NIL_RTGCPHYS;
-    AssertReturnStmt(GCPhys != NIL_RTGCPHYS, IOM_UNLOCK_SHARED(pVM), VERR_IOM_MMIO_REGION_NOT_MAPPED);
-    Assert(!(GCPhys & PAGE_OFFSET_MASK));
-
-    /*
-     * Do the aliasing; page align the addresses since PGM is picky.
-     */
+            /*
+             * Do the aliasing; page align the addresses since PGM is picky.
+             */
 #if 0 /** @todo fix when DevVGA is converted to new model.  */
-    int rc = PGMHandlerPhysicalPageAlias(pVM, GCPhys, GCPhys + (offRange & ~(RTGCPHYS)PAGE_OFFSET_MASK),
-                                         pDevIns, hMmio2, offMmio2);
+            rc = PGMHandlerPhysicalPageAlias(pVM, GCPhys, GCPhys + (offRange & ~(RTGCPHYS)PAGE_OFFSET_MASK),
+                                             pDevIns, hMmio2, offMmio2);
 #else
-    AssertFailed();
-    int rc = VERR_NOT_IMPLEMENTED;
-    RT_NOREF(offMmio2, hMmio2);
+            AssertFailed();
+            rc = VERR_NOT_IMPLEMENTED;
+            RT_NOREF(offMmio2, hMmio2);
 #endif
+        }
+        else
+            AssertFailedStmt(rc = VERR_IOM_MMIO_REGION_NOT_MAPPED);
 
-    IOM_UNLOCK_SHARED(pVM);
-
-    AssertRCReturn(rc, rc);
+        IOM_UNLOCK_SHARED(pVM);
+    }
 
 /** @todo either ditch this or replace it with something that works in the
  *        nested case, since we really only care about nested paging! */
@@ -1143,7 +1143,7 @@ VMM_INT_DECL(int) IOMMmioMapMmio2Page(PVMCC pVM, PPDMDEVINS pDevIns, IOMMMIOHAND
     rc = PGMPrefetchPage(pVCpu, (RTGCPTR)GCPhys);
     Assert(rc == VINF_SUCCESS || rc == VERR_PAGE_NOT_PRESENT || rc == VERR_PAGE_TABLE_NOT_PRESENT);
 #endif
-    return VINF_SUCCESS;
+    return rc;
 }
 
 
@@ -1179,13 +1179,16 @@ VMM_INT_DECL(int) IOMR0MmioMapMmioHCPage(PVMCC pVM, PVMCPUCC pVCpu, RTGCPHYS GCP
     /*
      * Check input address (it's HM calling, not the device, so no region handle).
      */
-    IOM_LOCK_SHARED(pVM);
-    RTGCPHYS offIgn;
-    uint16_t idxIgn = UINT16_MAX;
-    PIOMMMIOENTRYR0 pRegEntry = iomMmioGetEntry(pVM, GCPhys, &offIgn, &idxIgn);
-    IOM_UNLOCK_SHARED(pVM);
-    Assert(pRegEntry);
-    Assert(pRegEntry && !(pRegEntry->cbRegion & PAGE_OFFSET_MASK));
+    int rcSem = IOM_LOCK_SHARED(pVM);
+    if (rcSem == VINF_SUCCESS)
+    {
+        RTGCPHYS offIgn;
+        uint16_t idxIgn = UINT16_MAX;
+        PIOMMMIOENTRYR0 pRegEntry = iomMmioGetEntry(pVM, GCPhys, &offIgn, &idxIgn);
+        IOM_UNLOCK_SHARED(pVM);
+        Assert(pRegEntry);
+        Assert(pRegEntry && !(pRegEntry->cbRegion & PAGE_OFFSET_MASK));
+    }
 # endif
 
     /*
@@ -1262,9 +1265,10 @@ VMM_INT_DECL(int) IOMMmioResetRegion(PVMCC pVM, PPDMDEVINS pDevIns, IOMMMIOHANDL
 #endif
     Assert((pRegEntry->cbRegion & PAGE_OFFSET_MASK) == 0);
 
-    IOM_LOCK_SHARED(pVM);
+    int rcSem = IOM_LOCK_SHARED(pVM);
     RTGCPHYS GCPhys = pRegEntry->fMapped ? pRegEntry->GCPhysMapping : NIL_RTGCPHYS;
-    IOM_UNLOCK_SHARED(pVM);
+    if (rcSem == VINF_SUCCESS)
+        IOM_UNLOCK_SHARED(pVM);
 
     Assert(!(GCPhys              & PAGE_OFFSET_MASK));
     Assert(!(pRegEntry->cbRegion & PAGE_OFFSET_MASK));
