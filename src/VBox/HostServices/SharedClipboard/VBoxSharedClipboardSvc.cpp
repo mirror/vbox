@@ -1192,12 +1192,36 @@ int ShClSvcDataReadSignal(PSHCLCLIENT pClient, PSHCLCLIENTCMDCTX pCmdCtx,
     return rc;
 }
 
+/**
+ * Reports available VBox clipboard formats to the guest.
+ *
+ * @returns VBox status code.
+ * @param   pClient             Client to request to read data form.
+ * @param   pFormats            Formats to report.
+ */
 int ShClSvcFormatsReport(PSHCLCLIENT pClient, PSHCLFORMATDATA pFormats)
 {
     AssertPtrReturn(pClient,  VERR_INVALID_POINTER);
     AssertPtrReturn(pFormats, VERR_INVALID_POINTER);
 
     LogFlowFuncEnter();
+
+    uint32_t fFormats = pFormats->Formats;
+    uint32_t fFlags   = pFormats->fFlags;
+
+#ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
+    /* If transfer mode is set to disabled, don't report the URI list format to the guest. */
+    if (!(g_fTransferMode & VBOX_SHCL_TRANSFER_MODE_ENABLED))
+        fFormats &= ~VBOX_SHCL_FMT_URI_LIST;
+#endif
+
+    LogFlowFunc(("fFormats=0x%x -> 0x%x\n", pFormats->Formats, fFormats));
+
+    /* Nothing to report? Bail out early. */
+    if (fFormats == VBOX_SHCL_FMT_NONE)
+        return VINF_SUCCESS;
+
+    LogRel2(("Shared Clipboard: Reporting formats 0x%x to guest\n", fFormats));
 
     int rc;
 
@@ -1208,16 +1232,16 @@ int ShClSvcFormatsReport(PSHCLCLIENT pClient, PSHCLFORMATDATA pFormats)
 
         HGCMSvcSetU64(&pMsg->paParms[0], VBOX_SHCL_CONTEXTID_MAKE(pClient->State.uSessionID,
                                                                   pClient->Events.uID, uEvent));
-        HGCMSvcSetU32(&pMsg->paParms[1], pFormats->Formats);
-        HGCMSvcSetU32(&pMsg->paParms[2], 0 /* fFlags */);
+        HGCMSvcSetU32(&pMsg->paParms[1], fFormats);
+        HGCMSvcSetU32(&pMsg->paParms[2], fFlags);
 
         rc = shClSvcMsgAdd(pClient, pMsg, true /* fAppend */);
         if (RT_SUCCESS(rc))
         {
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
-            /* If this is an URI list, create a transfer locally and also tell the guest to create
+            /* If we announce an URI list, create a transfer locally and also tell the guest to create
              * a transfer on the guest side. */
-            if (pFormats->Formats & VBOX_SHCL_FMT_URI_LIST)
+            if (fFormats & VBOX_SHCL_FMT_URI_LIST)
             {
                 rc = shClSvcTransferStart(pClient, SHCLTRANSFERDIR_WRITE, SHCLSOURCE_LOCAL,
                                           NULL /* pTransfer */);

@@ -1861,7 +1861,8 @@ static int vbglR3ClipboardTransferStart(PVBGLR3SHCLCMDCTX pCmdCtx, PSHCLTRANSFER
     int rc2 = VbglR3ClipboardTransferStatusReply(pCmdCtx, pTransfer,
                                                    RT_SUCCESS(rc)
                                                  ? SHCLTRANSFERSTATUS_STARTED : SHCLTRANSFERSTATUS_ERROR, rc);
-    AssertRC(rc2);
+    if (RT_SUCCESS(rc))
+        rc = rc2;
 
     if (RT_FAILURE(rc))
     {

@@ -1144,7 +1144,7 @@ DECLCALLBACK(int) VBoxShClWorker(void *pInstance, bool volatile *pfShutdown)
             break;
     }
 
-    LogRel(("Shared Clipboard: Worker loop ended\n"));
+    LogRel2(("Shared Clipboard: Worker loop ended\n"));
 
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
     OleSetClipboard(NULL); /* Make sure to flush the clipboard on destruction. */

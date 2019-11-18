@@ -153,6 +153,8 @@ enum
  */
 static Atom clipAtomForX11Format(CLIPBACKEND *pCtx, CLIPX11FORMAT format)
 {
+    LogFlowFunc(("format=%u -> pcszAtom=%s\n", format, g_aFormats[format].pcszAtom));
+    AssertReturn(format <= RT_ELEMENTS(g_aFormats), 0);
     return clipGetAtom(pCtx, g_aFormats[format].pcszAtom);
 }
 
@@ -161,12 +163,14 @@ static Atom clipAtomForX11Format(CLIPBACKEND *pCtx, CLIPX11FORMAT format)
  */
 static CLIPFORMAT clipRealFormatForX11Format(CLIPX11FORMAT format)
 {
+    AssertReturn(format <= RT_ELEMENTS(g_aFormats), INVALID);
     return g_aFormats[format].enmFormat;
 }
 
 /** Returns the atom corresponding to a supported X11 format. */
 static uint32_t clipVBoxFormatForX11Format(CLIPX11FORMAT format)
 {
+    AssertReturn(format <= RT_ELEMENTS(g_aFormats), VBOX_SHCL_FMT_NONE);
     return g_aFormats[format].u32VBoxFormat;
 }
 
@@ -250,7 +254,7 @@ struct _CLIPBACKEND
      * table */
     CLIPX11FORMAT X11URIListFormat;
 #endif
-    /** What formats does VBox have on offer? */
+    /** What kind of formats does VBox have to offer? */
     SHCLFORMATS vboxFormats;
     /** Cache of the last unicode data that we received */
     void *pvUnicodeCache;
@@ -1271,6 +1275,9 @@ static int clipReadVBoxShCl(CLIPBACKEND *pCtx, SHCLFORMAT Format,
                                                &pCtx->cbUnicodeCache);
         if (RT_SUCCESS(rc))
         {
+            AssertPtrReturn(pCtx->pvUnicodeCache, VERR_INVALID_POINTER);
+            AssertReturn   (pCtx->cbUnicodeCache, VERR_INVALID_PARAMETER);
+
             *ppv = RTMemDup(pCtx->pvUnicodeCache, pCtx->cbUnicodeCache);
             *pcb = pCtx->cbUnicodeCache;
             if (*ppv == NULL)
