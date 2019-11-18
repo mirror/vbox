@@ -5665,7 +5665,7 @@
     name="GraphicsControllerType"
     uuid="3e009bb0-2b57-4283-a39b-4c363d4f0808"
     >
-    <desc>Graphics controller type, used with <link to="IMachine::graphicsControllerType" />.
+    <desc>Graphics controller type, used with <link to="IGraphicsAdapter::graphicsControllerType" />.
     </desc>
     <const name="Null"      value="0">
       <desc>Reserved value, invalid.</desc>
