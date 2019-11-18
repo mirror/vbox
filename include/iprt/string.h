@@ -3395,6 +3395,50 @@ RTDECL(uint32_t)    RTStrHash1ExNV(size_t cPairs, va_list va);
 
 /** @}  */
 
+
+/** @defgroup rt_str_mem       Raw memory operations.
+ *
+ * @note Following the memchr/memcpy/memcmp/memset tradition and putting these
+ *       in the string.h header rather than in the mem.h one.
+ *
+ * @{ */
+
+/**
+ * Searches @a pvHaystack for a 16-bit sized and aligned @a uNeedle.
+ *
+ * @returns Pointer to the first hit if found, NULL if not found.
+ * @param   pvHaystack      The memory to search.
+ * @param   uNeedle         The 16-bit value to find.
+ * @param   cbHaystack      Size of the memory to search.
+ * @sa      memchr, RTStrMemFind32, RTStrMemFind64
+ */
+RTDECL(uint16_t *) RTStrMemFind16(const void *pvHaystack, uint16_t uNeedle, size_t cbHaystack);
+
+/**
+ * Searches @a pvHaystack for a 32-bit sized and aligned @a uNeedle.
+ *
+ * @returns Pointer to the first hit if found, NULL if not found.
+ * @param   pvHaystack      The memory to search.
+ * @param   uNeedle         The 32-bit value to find.
+ * @param   cbHaystack      Size of the memory to search.
+ * @sa      memchr, RTStrMemFind16, RTStrMemFind64
+ */
+RTDECL(uint32_t *) RTStrMemFind32(const void *pvHaystack, uint32_t uNeedle, size_t cbHaystack);
+
+/**
+ * Searches @a pvHaystack for a 64-bit sized and aligned @a uNeedle.
+ *
+ * @returns Pointer to the first hit if found, NULL if not found.
+ * @param   pvHaystack      The memory to search.
+ * @param   uNeedle         The 64-bit value to find.
+ * @param   cbHaystack      Size of the memory to search.
+ * @sa      memchr, RTStrMemFind16, RTStrMemFind32
+ */
+RTDECL(uint64_t *) RTStrMemFind64(const void *pvHaystack, uint64_t uNeedle, size_t cbHaystack);
+
+/** @}  */
+
+
 /** @} */
 
 RT_C_DECLS_END
