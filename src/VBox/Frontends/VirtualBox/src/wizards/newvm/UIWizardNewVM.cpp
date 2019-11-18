@@ -27,6 +27,7 @@
 
 /* COM includes: */
 #include "CAudioAdapter.h"
+#include "CGraphicsAdapter.h"
 #include "CUSBController.h"
 #include "CUSBDeviceFilters.h"
 #include "CExtPackManager.h"
@@ -128,7 +129,8 @@ bool UIWizardNewVM::createVM()
     /* correct the RAM size. IMachine::applyDefaults may have overwritten the user setting: */
     m_machine.SetMemorySize(field("ram").toUInt());
     /* Correct the VRAM size since API does not take fullscreen memory requirements into account: */
-    m_machine.SetVRAMSize(qMax(m_machine.GetVRAMSize(), (ULONG)(UICommon::requiredVideoMemory(strTypeId) / _1M)));
+    CGraphicsAdapter comGraphics = m_machine.GetGraphicsAdapter();
+    comGraphics.SetVRAMSize(qMax(comGraphics.GetVRAMSize(), (ULONG)(UICommon::requiredVideoMemory(strTypeId) / _1M)));
 #endif
 
     /* Register the VM prior to attaching hard disks: */
@@ -148,11 +150,12 @@ void UIWizardNewVM::configureVM(const QString &strGuestTypeId, const CGuestOSTyp
     /* RAM size: */
     m_machine.SetMemorySize(field("ram").toInt());
 
+    CGraphicsAdapter comGraphics = m_machine.GetGraphicsAdapter();
     /* Graphics Controller type: */
-    m_machine.SetGraphicsControllerType(comGuestType.GetRecommendedGraphicsController());
+    comGraphics.SetGraphicsControllerType(comGuestType.GetRecommendedGraphicsController());
 
     /* VRAM size - select maximum between recommended and minimum for fullscreen: */
-    m_machine.SetVRAMSize(qMax(comGuestType.GetRecommendedVRAM(), (ULONG)(UICommon::requiredVideoMemory(strGuestTypeId) / _1M)));
+    comGraphics.SetVRAMSize(qMax(comGuestType.GetRecommendedVRAM(), (ULONG)(UICommon::requiredVideoMemory(strGuestTypeId) / _1M)));
 
     /* Selecting recommended chipset type: */
     m_machine.SetChipsetType(comGuestType.GetRecommendedChipset());
@@ -274,10 +277,10 @@ void UIWizardNewVM::configureVM(const QString &strGuestTypeId, const CGuestOSTyp
 
     /* Set graphic bits: */
     if (comGuestType.GetRecommended2DVideoAcceleration())
-        m_machine.SetAccelerate2DVideoEnabled(comGuestType.GetRecommended2DVideoAcceleration());
+        comGraphics.SetAccelerate2DVideoEnabled(comGuestType.GetRecommended2DVideoAcceleration());
 
     if (comGuestType.GetRecommended3DAcceleration())
-        m_machine.SetAccelerate3DEnabled(comGuestType.GetRecommended3DAcceleration());
+        comGraphics.SetAccelerate3DEnabled(comGuestType.GetRecommended3DAcceleration());
 }
 
 bool UIWizardNewVM::attachDefaultDevices(const CGuestOSType &comGuestType)

@@ -62,6 +62,7 @@
 
 /* COM includes: */
 #include "CAudioAdapter.h"
+#include "CGraphicsAdapter.h"
 #include "CRecordingSettings.h"
 #include "CSystemProperties.h"
 #include "CStorageController.h"
@@ -245,7 +246,7 @@ bool UISession::initialize()
 #ifdef VBOX_WITH_VIDEOHWACCEL
     /* Log whether 2D video acceleration is enabled: */
     LogRel(("GUI: 2D video acceleration is %s\n",
-           machine().GetAccelerate2DVideoEnabled() && VBox2DHelpers::isAcceleration2DVideoAvailable()
+           machine().GetGraphicsAdapter().GetAccelerate2DVideoEnabled() && VBox2DHelpers::isAcceleration2DVideoAvailable()
            ? "enabled" : "disabled"));
 #endif /* VBOX_WITH_VIDEOHWACCEL */
 
@@ -1223,12 +1224,12 @@ void UISession::prepareScreens()
 #endif /* VBOX_WS_MAC */
 
     /* Prepare initial screen visibility status: */
-    m_monitorVisibilityVector.resize(machine().GetMonitorCount());
+    m_monitorVisibilityVector.resize(machine().GetGraphicsAdapter().GetMonitorCount());
     m_monitorVisibilityVector.fill(false);
     m_monitorVisibilityVector[0] = true;
 
     /* Prepare empty last full-screen size vector: */
-    m_monitorLastFullScreenSizeVector.resize(machine().GetMonitorCount());
+    m_monitorLastFullScreenSizeVector.resize(machine().GetGraphicsAdapter().GetMonitorCount());
     m_monitorLastFullScreenSizeVector.fill(QSize(-1, -1));
 
     /* If machine is in 'saved' state: */
@@ -1268,7 +1269,7 @@ void UISession::prepareScreens()
     }
 
     /* Prepare initial screen visibility status of host-desires (same as facts): */
-    m_monitorVisibilityVectorHostDesires.resize(machine().GetMonitorCount());
+    m_monitorVisibilityVectorHostDesires.resize(machine().GetGraphicsAdapter().GetMonitorCount());
     for (int iScreenIndex = 0; iScreenIndex < m_monitorVisibilityVector.size(); ++iScreenIndex)
         m_monitorVisibilityVectorHostDesires[iScreenIndex] = m_monitorVisibilityVector[iScreenIndex];
 
@@ -1280,7 +1281,7 @@ void UISession::prepareScreens()
 void UISession::prepareFramebuffers()
 {
     /* Each framebuffer will be really prepared on first UIMachineView creation: */
-    m_frameBufferVector.resize(machine().GetMonitorCount());
+    m_frameBufferVector.resize(machine().GetGraphicsAdapter().GetMonitorCount());
 
     /* Make sure action-pool knows guest-screen count: */
     actionPool()->toRuntime()->setGuestScreenCount(m_frameBufferVector.size());
@@ -2194,7 +2195,7 @@ void UISession::setScreenVisible(ulong uScreenId, bool fIsMonitorVisible)
     m_monitorVisibilityVector[(int)uScreenId] = fIsMonitorVisible;
     /* Remember 'desired' visibility status: */
     /* See note in UIMachineView::sltHandleNotifyChange() regarding the graphics controller check. */
-    if (machine().GetGraphicsControllerType() != KGraphicsControllerType_VMSVGA)
+    if (machine().GetGraphicsAdapter().GetGraphicsControllerType() != KGraphicsControllerType_VMSVGA)
         gEDataManager->setLastGuestScreenVisibilityStatus(uScreenId, fIsMonitorVisible, uiCommon().managedVMUuid());
 
     /* Make sure action-pool knows guest-screen visibility status: */

@@ -682,6 +682,7 @@ private:
                                    const GraphicsControllerType_T graphicsController,
                                    BusAssignmentManager *pBusMgr,
                                    const ComPtr<IMachine> &ptrMachine,
+                                   const ComPtr<IGraphicsAdapter> &ptrGraphicsAdapter,
                                    const ComPtr<IBIOSSettings> &ptrBiosSettings,
                                    bool fHMEnabled);
     int i_checkMediumLocation(IMedium *pMedium, bool *pfUseHostIOCache);

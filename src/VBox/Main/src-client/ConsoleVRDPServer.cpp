@@ -617,9 +617,7 @@ DECLCALLBACK(int) ConsoleVRDPServer::VRDPCallbackQueryProperty(void *pvCallback,
 
         case VRDE_QP_NUMBER_MONITORS:
         {
-            ULONG cMonitors = 1;
-
-            server->mConsole->i_machine()->COMGETTER(MonitorCount)(&cMonitors);
+            uint32_t cMonitors = server->mConsole->i_getDisplay()->i_getMonitorCount();
 
             if (cbBuffer >= sizeof(uint32_t))
             {

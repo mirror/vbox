@@ -1911,6 +1911,9 @@ RTEXITCODE handleControlVM(HandlerArg *a)
             SafeIfaceArray <IRecordingScreenSettings> saRecordingScreenScreens;
             CHECK_ERROR_BREAK(recordingSettings, COMGETTER(Screens)(ComSafeArrayAsOutParam(saRecordingScreenScreens)));
 
+            ComPtr<IGraphicsAdapter> pGraphicsAdapter;
+            CHECK_ERROR_BREAK(sessionMachine, COMGETTER(GraphicsAdapter)(pGraphicsAdapter.asOutParam()));
+
             /* Note: For now all screens have the same configuration. */
 
             /*
@@ -1928,7 +1931,7 @@ RTEXITCODE handleControlVM(HandlerArg *a)
             else if (!strcmp(a->argv[2], "screens"))
             {
                 ULONG cMonitors = 64;
-                CHECK_ERROR_BREAK(sessionMachine, COMGETTER(MonitorCount)(&cMonitors));
+                CHECK_ERROR_BREAK(pGraphicsAdapter, COMGETTER(MonitorCount)(&cMonitors));
                 com::SafeArray<BOOL> saScreens(cMonitors);
                 if (   a->argc == 4
                     && !strcmp(a->argv[3], "all"))

@@ -483,8 +483,13 @@ HRESULT Display::init(Console *aParent)
     mfSourceBitmapEnabled = true;
     fVGAResizing = false;
 
+    ComPtr<IGraphicsAdapter> pGraphicsAdapter;
+    HRESULT hrc = mParent->i_machine()->COMGETTER(GraphicsAdapter)(pGraphicsAdapter.asOutParam());
+    AssertComRCReturnRC(hrc);
+    AssertReturn(!pGraphicsAdapter.isNull(), E_FAIL);
+
     ULONG ul;
-    mParent->i_machine()->COMGETTER(MonitorCount)(&ul);
+    pGraphicsAdapter->COMGETTER(MonitorCount)(&ul);
     mcMonitors = ul;
     xInputMappingOrigin = 0;
     yInputMappingOrigin = 0;

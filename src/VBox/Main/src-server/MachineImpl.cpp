@@ -1746,71 +1746,6 @@ HRESULT Machine::setHPETEnabled(BOOL aHPETEnabled)
     return rc;
 }
 
-HRESULT Machine::getGraphicsControllerType(GraphicsControllerType_T *aGraphicsControllerType)
-{
-    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-
-    *aGraphicsControllerType = mHWData->mGraphicsControllerType;
-
-    return S_OK;
-}
-
-HRESULT Machine::setGraphicsControllerType(GraphicsControllerType_T aGraphicsControllerType)
-{
-    switch (aGraphicsControllerType)
-    {
-        case GraphicsControllerType_Null:
-        case GraphicsControllerType_VBoxVGA:
-#ifdef VBOX_WITH_VMSVGA
-        case GraphicsControllerType_VMSVGA:
-        case GraphicsControllerType_VBoxSVGA:
-#endif
-            break;
-        default:
-            return setError(E_INVALIDARG, tr("The graphics controller type (%d) is invalid"), aGraphicsControllerType);
-    }
-
-    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-
-    HRESULT rc = i_checkStateDependency(MutableStateDep);
-    if (FAILED(rc)) return rc;
-
-    i_setModified(IsModified_MachineData);
-    mHWData.backup();
-    mHWData->mGraphicsControllerType = aGraphicsControllerType;
-
-    return S_OK;
-}
-
-HRESULT Machine::getVRAMSize(ULONG *aVRAMSize)
-{
-    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-
-    *aVRAMSize = mHWData->mVRAMSize;
-
-    return S_OK;
-}
-
-HRESULT Machine::setVRAMSize(ULONG aVRAMSize)
-{
-    /* check VRAM limits */
-    if (aVRAMSize > SchemaDefs::MaxGuestVRAM)
-        return setError(E_INVALIDARG,
-                        tr("Invalid VRAM size: %lu MB (must be in range [%lu, %lu] MB)"),
-                        aVRAMSize, SchemaDefs::MinGuestVRAM, SchemaDefs::MaxGuestVRAM);
-
-    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-
-    HRESULT rc = i_checkStateDependency(MutableStateDep);
-    if (FAILED(rc)) return rc;
-
-    i_setModified(IsModified_MachineData);
-    mHWData.backup();
-    mHWData->mVRAMSize = aVRAMSize;
-
-    return S_OK;
-}
-
 /** @todo this method should not be public */
 HRESULT Machine::getMemoryBalloonSize(ULONG *aMemoryBalloonSize)
 {
@@ -1874,90 +1809,6 @@ HRESULT Machine::setPageFusionEnabled(BOOL aPageFusionEnabled)
 #endif
 }
 
-HRESULT Machine::getAccelerate3DEnabled(BOOL *aAccelerate3DEnabled)
-{
-    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-
-    *aAccelerate3DEnabled = mHWData->mAccelerate3DEnabled;
-
-    return S_OK;
-}
-
-HRESULT Machine::setAccelerate3DEnabled(BOOL aAccelerate3DEnabled)
-{
-    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-
-    HRESULT rc = i_checkStateDependency(MutableStateDep);
-    if (FAILED(rc)) return rc;
-
-    /** @todo check validity! */
-
-    i_setModified(IsModified_MachineData);
-    mHWData.backup();
-    mHWData->mAccelerate3DEnabled = aAccelerate3DEnabled;
-
-    return S_OK;
-}
-
-
-HRESULT Machine::getAccelerate2DVideoEnabled(BOOL *aAccelerate2DVideoEnabled)
-{
-    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-
-    /** @todo quick workaround for hang with Win10 guest when 2d accel
-     * is enabled when non-VBoxVGA graphics is configured. */
-    if (mHWData->mGraphicsControllerType == GraphicsControllerType_VBoxVGA)
-        *aAccelerate2DVideoEnabled = mHWData->mAccelerate2DVideoEnabled;
-    else
-        *aAccelerate2DVideoEnabled = FALSE;
-
-    return S_OK;
-}
-
-HRESULT Machine::setAccelerate2DVideoEnabled(BOOL aAccelerate2DVideoEnabled)
-{
-    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-
-    HRESULT rc = i_checkStateDependency(MutableStateDep);
-    if (FAILED(rc)) return rc;
-
-    /** @todo check validity! */
-    i_setModified(IsModified_MachineData);
-    mHWData.backup();
-    mHWData->mAccelerate2DVideoEnabled = aAccelerate2DVideoEnabled;
-
-    return S_OK;
-}
-
-HRESULT Machine::getMonitorCount(ULONG *aMonitorCount)
-{
-    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-
-    *aMonitorCount = mHWData->mMonitorCount;
-
-    return S_OK;
-}
-
-HRESULT Machine::setMonitorCount(ULONG aMonitorCount)
-{
-    /* make sure monitor count is a sensible number */
-    if (aMonitorCount < 1 || aMonitorCount > SchemaDefs::MaxGuestMonitors)
-        return setError(E_INVALIDARG,
-                        tr("Invalid monitor count: %lu (must be in range [%lu, %lu])"),
-                        aMonitorCount, 1, SchemaDefs::MaxGuestMonitors);
-
-    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-
-    HRESULT rc = i_checkStateDependency(MutableStateDep);
-    if (FAILED(rc)) return rc;
-
-    i_setModified(IsModified_MachineData);
-    mHWData.backup();
-    mHWData->mMonitorCount = aMonitorCount;
-
-    return S_OK;
-}
-
 HRESULT Machine::getBIOSSettings(ComPtr<IBIOSSettings> &aBIOSSettings)
 {
     /* mBIOSSettings is constant during life time, no need to lock */
@@ -1971,6 +1822,15 @@ HRESULT Machine::getRecordingSettings(ComPtr<IRecordingSettings> &aRecordingSett
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     aRecordingSettings = mRecordingSettings;
+
+    return S_OK;
+}
+
+HRESULT Machine::getGraphicsAdapter(ComPtr<IGraphicsAdapter> &aGraphicsAdapter)
+{
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    aGraphicsAdapter = mGraphicsAdapter;
 
     return S_OK;
 }
@@ -8353,6 +8213,10 @@ HRESULT Machine::initDataAndChildObjects()
     unconst(mRecordingSettings).createObject();
     mRecordingSettings->init(this);
 
+    /* create the graphics adapter object (always present) */
+    unconst(mGraphicsAdapter).createObject();
+    mGraphicsAdapter->init(this);
+
     /* create an associated VRDE object (default is disabled) */
     unconst(mVRDEServer).createObject();
     mVRDEServer->init(this);
@@ -8460,6 +8324,12 @@ void Machine::uninitDataAndChildObjects()
     {
         mVRDEServer->uninit();
         unconst(mVRDEServer).setNull();
+    }
+
+    if (mGraphicsAdapter)
+    {
+        mGraphicsAdapter->uninit();
+        unconst(mGraphicsAdapter).setNull();
     }
 
     if (mBIOSSettings)
@@ -8970,11 +8840,6 @@ HRESULT Machine::i_loadHardware(const Guid *puuidRegistry,
                 mHWData->mBootOrder[i] = it->second;
         }
 
-        mHWData->mGraphicsControllerType = data.graphicsControllerType;
-        mHWData->mVRAMSize      = data.ulVRAMSizeMB;
-        mHWData->mMonitorCount  = data.cMonitors;
-        mHWData->mAccelerate3DEnabled = data.fAccelerate3D;
-        mHWData->mAccelerate2DVideoEnabled = data.fAccelerate2DVideo;
         mHWData->mFirmwareType = data.firmwareType;
         mHWData->mPointingHIDType = data.pointingHIDType;
         mHWData->mKeyboardHIDType = data.keyboardHIDType;
@@ -8983,6 +8848,10 @@ HRESULT Machine::i_loadHardware(const Guid *puuidRegistry,
         mHWData->mParavirtDebug = data.strParavirtDebug;
         mHWData->mEmulatedUSBCardReaderEnabled = data.fEmulatedUSBCardReader;
         mHWData->mHPETEnabled = data.fHPETEnabled;
+
+        /* GraphicsAdapter */
+        rc = mGraphicsAdapter->i_loadSettings(data.graphicsAdapter);
+        if (FAILED(rc)) return rc;
 
         /* VRDEServer */
         rc = mVRDEServer->i_loadSettings(data.vrdeSettings);
@@ -10329,13 +10198,6 @@ HRESULT Machine::i_saveHardware(settings::Hardware &data, settings::Debugging *p
         for (unsigned i = 0; i < RT_ELEMENTS(mHWData->mBootOrder); ++i)
             data.mapBootOrder[i] = mHWData->mBootOrder[i];
 
-        // display
-        data.graphicsControllerType = mHWData->mGraphicsControllerType;
-        data.ulVRAMSizeMB = mHWData->mVRAMSize;
-        data.cMonitors = mHWData->mMonitorCount;
-        data.fAccelerate3D = !!mHWData->mAccelerate3DEnabled;
-        data.fAccelerate2DVideo = !!mHWData->mAccelerate2DVideoEnabled;
-
         /* VRDEServer settings (optional) */
         rc = mVRDEServer->i_saveSettings(data.vrdeSettings);
         if (FAILED(rc)) throw rc;
@@ -10346,6 +10208,10 @@ HRESULT Machine::i_saveHardware(settings::Hardware &data, settings::Debugging *p
 
         /* Recording settings (required) */
         rc = mRecordingSettings->i_saveSettings(data.recordingSettings);
+        if (FAILED(rc)) throw rc;
+
+        /* GraphicsAdapter settings (required) */
+        rc = mGraphicsAdapter->i_saveSettings(data.graphicsAdapter);
         if (FAILED(rc)) throw rc;
 
         /* USB Controller (required) */
@@ -11857,6 +11723,9 @@ void Machine::i_rollback(bool aNotify)
     if (mRecordingSettings && (mData->flModifications & IsModified_Recording))
         mRecordingSettings->i_rollback();
 
+    if (mGraphicsAdapter)
+        mGraphicsAdapter->i_rollback();
+
     if (mVRDEServer && (mData->flModifications & IsModified_VRDEServer))
         mVRDEServer->i_rollback();
 
@@ -11977,6 +11846,7 @@ void Machine::i_commit()
 
     mBIOSSettings->i_commit();
     mRecordingSettings->i_commit();
+    mGraphicsAdapter->i_commit();
     mVRDEServer->i_commit();
     mAudioAdapter->i_commit();
     mUSBDeviceFilters->i_commit();
@@ -12230,6 +12100,7 @@ void Machine::i_copyFrom(Machine *aThat)
 
     mBIOSSettings->i_copyFrom(aThat->mBIOSSettings);
     mRecordingSettings->i_copyFrom(aThat->mRecordingSettings);
+    mGraphicsAdapter->i_copyFrom(aThat->mGraphicsAdapter);
     mVRDEServer->i_copyFrom(aThat->mVRDEServer);
     mAudioAdapter->i_copyFrom(aThat->mAudioAdapter);
     mUSBDeviceFilters->i_copyFrom(aThat->mUSBDeviceFilters);
@@ -12605,6 +12476,9 @@ HRESULT SessionMachine::init(Machine *aMachine)
     mBIOSSettings->init(this, aMachine->mBIOSSettings);
     unconst(mRecordingSettings).createObject();
     mRecordingSettings->init(this, aMachine->mRecordingSettings);
+    /* create another GraphicsAdapter object that will be mutable */
+    unconst(mGraphicsAdapter).createObject();
+    mGraphicsAdapter->init(this, aMachine->mGraphicsAdapter);
     /* create another VRDEServer object that will be mutable */
     unconst(mVRDEServer).createObject();
     mVRDEServer->init(this, aMachine->mVRDEServer);

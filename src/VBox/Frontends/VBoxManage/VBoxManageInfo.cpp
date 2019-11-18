@@ -722,7 +722,9 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
     SHOW_UUID_PROP(        machine, HardwareUUID,               "hardwareuuid",         "Hardware UUID:");
     SHOW_ULONG_PROP(       machine, MemorySize,                 "memory",               "Memory size",      "MB");
     SHOW_BOOLEAN_PROP(     machine, PageFusionEnabled,          "pagefusion",           "Page Fusion:");
-    SHOW_ULONG_PROP(       machine, VRAMSize,                   "vram",                 "VRAM size:",        "MB");
+    ComPtr<IGraphicsAdapter> pGraphicsAdapter;
+    machine->COMGETTER(GraphicsAdapter)(pGraphicsAdapter.asOutParam());
+    SHOW_ULONG_PROP(pGraphicsAdapter, VRAMSize,                 "vram",                 "VRAM size:",        "MB");
     SHOW_ULONG_PROP(       machine, CPUExecutionCap,            "cpuexecutioncap",      "CPU exec cap:",     "%");
     SHOW_BOOLEAN_PROP(     machine, HPETEnabled,                "hpet",                 "HPET:");
     SHOW_STRING_PROP_MAJ(  machine, CPUProfile,                 "cpu-profile",          "CPUProfile:",       "host", 6);
@@ -919,7 +921,7 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
         RTPrintf("%-28s %s (since %s)\n", "State:", pszState, pszTime);
 
     GraphicsControllerType_T enmGraphics;
-    rc = machine->COMGETTER(GraphicsControllerType)(&enmGraphics);
+    rc = pGraphicsAdapter->COMGETTER(GraphicsControllerType)(&enmGraphics);
     if (SUCCEEDED(rc))
     {
         const char *pszCtrl  = "Unknown";
@@ -961,10 +963,10 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
             RTPrintf("%-28s %s\n", "Graphics Controller:", pszCtrl);
     }
 
-    SHOW_ULONG_PROP(      machine,  MonitorCount,               "monitorcount",             "Monitor count:", "");
-    SHOW_BOOLEAN_PROP(    machine,  Accelerate3DEnabled,        "accelerate3d",             "3D Acceleration:");
+    SHOW_ULONG_PROP(pGraphicsAdapter, MonitorCount,             "monitorcount",             "Monitor count:", "");
+    SHOW_BOOLEAN_PROP(pGraphicsAdapter, Accelerate3DEnabled,    "accelerate3d",             "3D Acceleration:");
 #ifdef VBOX_WITH_VIDEOHWACCEL
-    SHOW_BOOLEAN_PROP(    machine,  Accelerate2DVideoEnabled,   "accelerate2dvideo",        "2D Video Acceleration:");
+    SHOW_BOOLEAN_PROP(pGraphicsAdapter, Accelerate2DVideoEnabled, "accelerate2dvideo",      "2D Video Acceleration:");
 #endif
     SHOW_BOOLEAN_PROP(    machine,  TeleporterEnabled,          "teleporterenabled",        "Teleporter Enabled:");
     SHOW_ULONG_PROP(      machine,  TeleporterPort,             "teleporterport",           "Teleporter Port:", "");

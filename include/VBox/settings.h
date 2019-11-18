@@ -659,6 +659,26 @@ struct RecordingSettings
  * the operator== which is used by MachineConfigFile::operator==(), or otherwise
  * your settings might never get saved.
  */
+struct GraphicsAdapter
+{
+    GraphicsAdapter();
+
+    bool areDefaultSettings() const;
+
+    bool operator==(const GraphicsAdapter &g) const;
+
+    GraphicsControllerType_T graphicsControllerType;
+    uint32_t            ulVRAMSizeMB;
+    uint32_t            cMonitors;
+    bool                fAccelerate3D,
+                        fAccelerate2DVideo;     // requires settings version 1.8 (VirtualBox 3.1)
+};
+
+/**
+ * NOTE: If you add any fields in here, you must update a) the constructor and b)
+ * the operator== which is used by MachineConfigFile::operator==(), or otherwise
+ * your settings might never get saved.
+ */
 struct USBController
 {
     USBController();
@@ -1111,12 +1131,6 @@ struct Hardware
 
     BootOrderMap        mapBootOrder;           // item 0 has highest priority
 
-    GraphicsControllerType_T graphicsControllerType;
-    uint32_t            ulVRAMSizeMB;
-    uint32_t            cMonitors;
-    bool                fAccelerate3D,
-                        fAccelerate2DVideo;     // requires settings version 1.8 (VirtualBox 3.1)
-
     FirmwareType_T      firmwareType;           // requires settings version 1.9 (VirtualBox 3.1)
 
     PointingHIDType_T   pointingHIDType;        // requires settings version 1.10 (VirtualBox 3.2)
@@ -1132,6 +1146,7 @@ struct Hardware
 
     BIOSSettings        biosSettings;
     RecordingSettings   recordingSettings;
+    GraphicsAdapter     graphicsAdapter;
     USB                 usbSettings;
     NetworkAdaptersList llNetworkAdapters;
     SerialPortsList     llSerialPorts;

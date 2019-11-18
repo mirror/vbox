@@ -30,6 +30,7 @@
 #include "UISession.h"
 
 /* COM includes: */
+#include "CGraphicsAdapter.h"
 #include "CGuest.h"
 #include "CVRDEServerInfo.h"
 
@@ -250,7 +251,7 @@ void UIRuntimeInfoWidget::sltTimeout()
 
 void UIRuntimeInfoWidget::updateScreenInfo(int iScreenID /* = -1 */)
 {
-    ULONG uGuestScreens = m_machine.GetMonitorCount();
+    ULONG uGuestScreens = m_machine.GetGraphicsAdapter().GetMonitorCount();
     m_screenResolutions.resize(uGuestScreens);
     if (iScreenID != -1 && iScreenID >= (int)uGuestScreens)
         return;

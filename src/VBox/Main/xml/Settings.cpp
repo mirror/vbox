@@ -2768,6 +2768,45 @@ bool RecordingSettings::operator==(const RecordingSettings &d) const
 /**
  * Constructor. Needs to set sane defaults which stand the test of time.
  */
+GraphicsAdapter::GraphicsAdapter() :
+    graphicsControllerType(GraphicsControllerType_VBoxVGA),
+    ulVRAMSizeMB(8),
+    cMonitors(1),
+    fAccelerate3D(false),
+    fAccelerate2DVideo(false)
+{
+}
+
+/**
+ * Check if all settings have default values.
+ */
+bool GraphicsAdapter::areDefaultSettings() const
+{
+    return graphicsControllerType == GraphicsControllerType_VBoxVGA
+        && ulVRAMSizeMB == 8
+        && cMonitors <= 1
+        && !fAccelerate3D
+        && !fAccelerate2DVideo;
+}
+
+/**
+ * Comparison operator. This gets called from MachineConfigFile::operator==,
+ * which in turn gets called from Machine::saveSettings to figure out whether
+ * machine settings have really changed and thus need to be written out to disk.
+ */
+bool GraphicsAdapter::operator==(const GraphicsAdapter &g) const
+{
+    return (this == &g)
+        || (   graphicsControllerType         == g.graphicsControllerType
+            && ulVRAMSizeMB                   == g.ulVRAMSizeMB
+            && cMonitors                      == g.cMonitors
+            && fAccelerate3D                  == g.fAccelerate3D
+            && fAccelerate2DVideo             == g.fAccelerate2DVideo);
+}
+
+/**
+ * Constructor. Needs to set sane defaults which stand the test of time.
+ */
 USBController::USBController() :
     enmType(USBControllerType_Null)
 {
@@ -3304,11 +3343,6 @@ Hardware::Hardware() :
     uCpuIdPortabilityLevel(0),
     strCpuProfile("host"),
     ulMemorySizeMB((uint32_t)-1),
-    graphicsControllerType(GraphicsControllerType_VBoxVGA),
-    ulVRAMSizeMB(8),
-    cMonitors(1),
-    fAccelerate3D(false),
-    fAccelerate2DVideo(false),
     firmwareType(FirmwareType_BIOS),
     pointingHIDType(PointingHIDType_PS2Mouse),
     keyboardHIDType(KeyboardHIDType_PS2Keyboard),
@@ -3377,18 +3411,6 @@ bool Hardware::areBootOrderDefaultSettings() const
 }
 
 /**
- * Check if all Display settings have default values.
- */
-bool Hardware::areDisplayDefaultSettings() const
-{
-    return graphicsControllerType == GraphicsControllerType_VBoxVGA
-        && ulVRAMSizeMB == 8
-        && cMonitors <= 1
-        && !fAccelerate3D
-        && !fAccelerate2DVideo;
-}
-
-/**
  * Check if all Network Adapter settings have default values.
  */
 bool Hardware::areAllNetworkAdaptersDefaultSettings(SettingsVersion_T sv) const
@@ -3444,11 +3466,6 @@ bool Hardware::operator==(const Hardware& h) const
             && llCpuIdLeafs                   == h.llCpuIdLeafs
             && ulMemorySizeMB                 == h.ulMemorySizeMB
             && mapBootOrder                   == h.mapBootOrder
-            && graphicsControllerType         == h.graphicsControllerType
-            && ulVRAMSizeMB                   == h.ulVRAMSizeMB
-            && cMonitors                      == h.cMonitors
-            && fAccelerate3D                  == h.fAccelerate3D
-            && fAccelerate2DVideo             == h.fAccelerate2DVideo
             && firmwareType                   == h.firmwareType
             && pointingHIDType                == h.pointingHIDType
             && keyboardHIDType                == h.keyboardHIDType
@@ -3458,6 +3475,7 @@ bool Hardware::operator==(const Hardware& h) const
             && fEmulatedUSBCardReader         == h.fEmulatedUSBCardReader
             && vrdeSettings                   == h.vrdeSettings
             && biosSettings                   == h.biosSettings
+            && graphicsAdapter                == h.graphicsAdapter
             && usbSettings                    == h.usbSettings
             && llNetworkAdapters              == h.llNetworkAdapters
             && llSerialPorts                  == h.llSerialPorts
@@ -4644,7 +4662,7 @@ void MachineConfigFile::readHardware(const xml::ElementNode &elmHardware,
         {
             Utf8Str strGraphicsControllerType;
             if (!pelmHwChild->getAttributeValue("controller", strGraphicsControllerType))
-                hw.graphicsControllerType = GraphicsControllerType_VBoxVGA;
+                hw.graphicsAdapter.graphicsControllerType = GraphicsControllerType_VBoxVGA;
             else
             {
                 strGraphicsControllerType.toUpper();
@@ -4659,14 +4677,14 @@ void MachineConfigFile::readHardware(const xml::ElementNode &elmHardware,
                     type = GraphicsControllerType_Null;
                 else
                     throw ConfigFileError(this, pelmHwChild, N_("Invalid value '%s' in Display/@controller attribute"), strGraphicsControllerType.c_str());
-                hw.graphicsControllerType = type;
+                hw.graphicsAdapter.graphicsControllerType = type;
             }
-            pelmHwChild->getAttributeValue("VRAMSize", hw.ulVRAMSizeMB);
-            if (!pelmHwChild->getAttributeValue("monitorCount", hw.cMonitors))
-                pelmHwChild->getAttributeValue("MonitorCount", hw.cMonitors);       // pre-v1.5 variant
-            if (!pelmHwChild->getAttributeValue("accelerate3D", hw.fAccelerate3D))
-                pelmHwChild->getAttributeValue("Accelerate3D", hw.fAccelerate3D);   // pre-v1.5 variant
-            pelmHwChild->getAttributeValue("accelerate2DVideo", hw.fAccelerate2DVideo);
+            pelmHwChild->getAttributeValue("VRAMSize", hw.graphicsAdapter.ulVRAMSizeMB);
+            if (!pelmHwChild->getAttributeValue("monitorCount", hw.graphicsAdapter.cMonitors))
+                pelmHwChild->getAttributeValue("MonitorCount", hw.graphicsAdapter.cMonitors);       // pre-v1.5 variant
+            if (!pelmHwChild->getAttributeValue("accelerate3D", hw.graphicsAdapter.fAccelerate3D))
+                pelmHwChild->getAttributeValue("Accelerate3D", hw.graphicsAdapter.fAccelerate3D);   // pre-v1.5 variant
+            pelmHwChild->getAttributeValue("accelerate2DVideo", hw.graphicsAdapter.fAccelerate2DVideo);
         }
         else if (pelmHwChild->nameEquals("VideoCapture"))
         {
@@ -4691,7 +4709,7 @@ void MachineConfigFile::readHardware(const xml::ElementNode &elmHardware,
             pelmHwChild->getAttributeValue("rate",      screen0Settings.Video.ulRate);
             pelmHwChild->getAttributeValue("fps",       screen0Settings.Video.ulFPS);
 
-            for (unsigned i = 0; i < hw.cMonitors; i++) /* Don't add more settings than we have monitors configured. */
+            for (unsigned i = 0; i < hw.graphicsAdapter.cMonitors; i++) /* Don't add more settings than we have monitors configured. */
             {
                 /* Add screen i to config in any case. */
                 hw.recordingSettings.mapScreens[i] = screen0Settings;
@@ -6079,13 +6097,13 @@ void MachineConfigFile::buildHardwareXML(xml::ElementNode &elmParent,
         }
     }
 
-    if (!hw.areDisplayDefaultSettings())
+    if (!hw.graphicsAdapter.areDefaultSettings())
     {
         xml::ElementNode *pelmDisplay = pelmHardware->createChild("Display");
-        if (hw.graphicsControllerType != GraphicsControllerType_VBoxVGA)
+        if (hw.graphicsAdapter.graphicsControllerType != GraphicsControllerType_VBoxVGA)
         {
             const char *pcszGraphics;
-            switch (hw.graphicsControllerType)
+            switch (hw.graphicsAdapter.graphicsControllerType)
             {
                 case GraphicsControllerType_VBoxVGA:            pcszGraphics = "VBoxVGA"; break;
                 case GraphicsControllerType_VMSVGA:             pcszGraphics = "VMSVGA"; break;
@@ -6094,17 +6112,17 @@ void MachineConfigFile::buildHardwareXML(xml::ElementNode &elmParent,
             }
             pelmDisplay->setAttribute("controller", pcszGraphics);
         }
-        if (hw.ulVRAMSizeMB != 8)
-            pelmDisplay->setAttribute("VRAMSize", hw.ulVRAMSizeMB);
-        if (hw.cMonitors > 1)
-            pelmDisplay->setAttribute("monitorCount", hw.cMonitors);
-        if (hw.fAccelerate3D)
-            pelmDisplay->setAttribute("accelerate3D", hw.fAccelerate3D);
+        if (hw.graphicsAdapter.ulVRAMSizeMB != 8)
+            pelmDisplay->setAttribute("VRAMSize", hw.graphicsAdapter.ulVRAMSizeMB);
+        if (hw.graphicsAdapter.cMonitors > 1)
+            pelmDisplay->setAttribute("monitorCount", hw.graphicsAdapter.cMonitors);
+        if (hw.graphicsAdapter.fAccelerate3D)
+            pelmDisplay->setAttribute("accelerate3D", hw.graphicsAdapter.fAccelerate3D);
 
         if (m->sv >= SettingsVersion_v1_8)
         {
-            if (hw.fAccelerate2DVideo)
-                pelmDisplay->setAttribute("accelerate2DVideo", hw.fAccelerate2DVideo);
+            if (hw.graphicsAdapter.fAccelerate2DVideo)
+                pelmDisplay->setAttribute("accelerate2DVideo", hw.graphicsAdapter.fAccelerate2DVideo);
         }
     }
 
@@ -7785,7 +7803,7 @@ void MachineConfigFile::bumpSettingsVersionIfNeeded()
         // VirtualBox 4.3 adds default frontend setting, graphics controller
         // setting, explicit long mode setting, (video) capturing and NAT networking.
         if (   !hardwareMachine.strDefaultFrontend.isEmpty()
-            || hardwareMachine.graphicsControllerType != GraphicsControllerType_VBoxVGA
+            || hardwareMachine.graphicsAdapter.graphicsControllerType != GraphicsControllerType_VBoxVGA
             || hardwareMachine.enmLongMode != Hardware::LongMode_Legacy
             || machineUserData.ovIcon.size() > 0
             || hardwareMachine.recordingSettings.fEnabled)
@@ -8170,7 +8188,7 @@ void MachineConfigFile::bumpSettingsVersionIfNeeded()
 
     // "accelerate 2d video" requires settings version 1.8
     if (    (m->sv < SettingsVersion_v1_8)
-         && (hardwareMachine.fAccelerate2DVideo)
+         && (hardwareMachine.graphicsAdapter.fAccelerate2DVideo)
        )
         m->sv = SettingsVersion_v1_8;
 

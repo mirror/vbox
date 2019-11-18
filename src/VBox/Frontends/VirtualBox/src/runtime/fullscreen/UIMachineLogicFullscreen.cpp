@@ -38,6 +38,9 @@
 # include <Carbon/Carbon.h>
 #endif /* VBOX_WS_MAC */
 
+/* COM includes: */
+#include "CGraphicsAdapter.h"
+
 
 UIMachineLogicFullscreen::UIMachineLogicFullscreen(QObject *pParent, UISession *pSession)
     : UIMachineLogic(pParent, pSession, UIVisualStateType_Fullscreen)
@@ -61,7 +64,7 @@ bool UIMachineLogicFullscreen::checkAvailability()
     /* Check if there is enough physical memory to enter fullscreen: */
     if (uisession()->isGuestSupportsGraphics())
     {
-        quint64 availBits = machine().GetVRAMSize() /* VRAM */ * _1M /* MiB to bytes */ * 8 /* to bits */;
+        quint64 availBits = machine().GetGraphicsAdapter().GetVRAMSize() /* VRAM */ * _1M /* MiB to bytes */ * 8 /* to bits */;
         quint64 usedBits = m_pScreenLayout->memoryRequirements();
         if (availBits < usedBits)
         {
@@ -526,7 +529,7 @@ void UIMachineLogicFullscreen::prepareMachineWindows()
     m_pScreenLayout->update();
 
     /* Create machine-window(s): */
-    for (uint cScreenId = 0; cScreenId < machine().GetMonitorCount(); ++cScreenId)
+    for (uint cScreenId = 0; cScreenId < machine().GetGraphicsAdapter().GetMonitorCount(); ++cScreenId)
         addMachineWindow(UIMachineWindow::create(this, cScreenId));
 
     /* Listen for frame-buffer resize: */

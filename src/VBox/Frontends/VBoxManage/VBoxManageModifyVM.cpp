@@ -557,6 +557,9 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
     ComPtr<IBIOSSettings> biosSettings;
     sessionMachine->COMGETTER(BIOSSettings)(biosSettings.asOutParam());
 
+    ComPtr<IGraphicsAdapter> pGraphicsAdapter;
+    sessionMachine->COMGETTER(GraphicsAdapter)(pGraphicsAdapter.asOutParam());
+
     RTGETOPTSTATE GetOptState;
     RTGetOptInit(&GetOptState, a->argc, a->argv, g_aModifyVMOptions,
                  RT_ELEMENTS(g_aModifyVMOptions), 1, RTGETOPTINIT_FLAGS_NO_STD_OPTS);
@@ -641,7 +644,7 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
 
             case MODIFYVM_VRAM:
             {
-                CHECK_ERROR(sessionMachine, COMSETTER(VRAMSize)(ValueUnion.u32));
+                CHECK_ERROR(pGraphicsAdapter, COMSETTER(VRAMSize)(ValueUnion.u32));
                 break;
             }
 
@@ -891,19 +894,19 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
             {
                 if (   !RTStrICmp(ValueUnion.psz, "none")
                     || !RTStrICmp(ValueUnion.psz, "disabled"))
-                    CHECK_ERROR(sessionMachine, COMSETTER(GraphicsControllerType)(GraphicsControllerType_Null));
+                    CHECK_ERROR(pGraphicsAdapter, COMSETTER(GraphicsControllerType)(GraphicsControllerType_Null));
                 else if (   !RTStrICmp(ValueUnion.psz, "vboxvga")
                          || !RTStrICmp(ValueUnion.psz, "vbox")
                          || !RTStrICmp(ValueUnion.psz, "vga")
                          || !RTStrICmp(ValueUnion.psz, "vesa"))
-                    CHECK_ERROR(sessionMachine, COMSETTER(GraphicsControllerType)(GraphicsControllerType_VBoxVGA));
+                    CHECK_ERROR(pGraphicsAdapter, COMSETTER(GraphicsControllerType)(GraphicsControllerType_VBoxVGA));
 #ifdef VBOX_WITH_VMSVGA
                 else if (   !RTStrICmp(ValueUnion.psz, "vmsvga")
                          || !RTStrICmp(ValueUnion.psz, "vmware"))
-                    CHECK_ERROR(sessionMachine, COMSETTER(GraphicsControllerType)(GraphicsControllerType_VMSVGA));
+                    CHECK_ERROR(pGraphicsAdapter, COMSETTER(GraphicsControllerType)(GraphicsControllerType_VMSVGA));
                 else if (   !RTStrICmp(ValueUnion.psz, "vboxsvga")
                          || !RTStrICmp(ValueUnion.psz, "svga"))
-                    CHECK_ERROR(sessionMachine, COMSETTER(GraphicsControllerType)(GraphicsControllerType_VBoxSVGA));
+                    CHECK_ERROR(pGraphicsAdapter, COMSETTER(GraphicsControllerType)(GraphicsControllerType_VBoxSVGA));
 #endif
                 else
                 {
@@ -915,20 +918,20 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
 
             case MODIFYVM_MONITORCOUNT:
             {
-                CHECK_ERROR(sessionMachine, COMSETTER(MonitorCount)(ValueUnion.u32));
+                CHECK_ERROR(pGraphicsAdapter, COMSETTER(MonitorCount)(ValueUnion.u32));
                 break;
             }
 
             case MODIFYVM_ACCELERATE3D:
             {
-                CHECK_ERROR(sessionMachine, COMSETTER(Accelerate3DEnabled)(ValueUnion.f));
+                CHECK_ERROR(pGraphicsAdapter, COMSETTER(Accelerate3DEnabled)(ValueUnion.f));
                 break;
             }
 
 #ifdef VBOX_WITH_VIDEOHWACCEL
             case MODIFYVM_ACCELERATE2DVIDEO:
             {
-                CHECK_ERROR(sessionMachine, COMSETTER(Accelerate2DVideoEnabled)(ValueUnion.f));
+                CHECK_ERROR(pGraphicsAdapter, COMSETTER(Accelerate2DVideoEnabled)(ValueUnion.f));
                 break;
             }
 #endif
@@ -3005,7 +3008,7 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
                     case MODIFYVM_RECORDING_SCREENS:
                     {
                         ULONG cMonitors = 64;
-                        CHECK_ERROR(sessionMachine, COMGETTER(MonitorCount)(&cMonitors));
+                        CHECK_ERROR(pGraphicsAdapter, COMGETTER(MonitorCount)(&cMonitors));
                         com::SafeArray<BOOL> screens(cMonitors);
                         if (parseScreens(ValueUnion.psz, &screens))
                         {

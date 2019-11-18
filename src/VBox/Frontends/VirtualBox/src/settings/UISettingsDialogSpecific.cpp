@@ -51,6 +51,7 @@
 #include "UIMachineSettingsUSB.h"
 
 /* COM includes: */
+#include "CGraphicsAdapter.h"
 #include "CUSBController.h"
 
 #ifdef VBOX_WS_MAC
@@ -468,7 +469,7 @@ void UISettingsDialogMachine::saveOwnData()
         if (pGeneralPage && !pGeneralPage->isWindowsOSTypeSelected())
         {
             if (pDisplayPage && pDisplayPage->isAcceleration2DVideoSelected())
-                m_machine.SetAccelerate2DVideoEnabled(false);
+                m_machine.GetGraphicsAdapter().SetAccelerate2DVideoEnabled(false);
         }
 #endif /* VBOX_WITH_VIDEOHWACCEL */
 
@@ -477,7 +478,7 @@ void UISettingsDialogMachine::saveOwnData()
         if (   pDisplayPage
             && pDisplayPage->isAcceleration3DSelected()
             && pDisplayPage->graphicsControllerTypeCurrent() != pDisplayPage->graphicsControllerTypeRecommended())
-            m_machine.SetGraphicsControllerType(pDisplayPage->graphicsControllerTypeRecommended());
+            m_machine.GetGraphicsAdapter().SetGraphicsControllerType(pDisplayPage->graphicsControllerTypeRecommended());
 #endif /* VBOX_WITH_3D_ACCELERATION */
 
         /* Enable OHCI controller if HID is enabled but no USB controllers present: */

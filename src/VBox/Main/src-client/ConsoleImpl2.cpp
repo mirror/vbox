@@ -1633,8 +1633,10 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
         /*
          * VGA.
          */
+        ComPtr<IGraphicsAdapter> pGraphicsAdapter;
+        hrc = pMachine->COMGETTER(GraphicsAdapter)(pGraphicsAdapter.asOutParam());           H();
         GraphicsControllerType_T enmGraphicsController;
-        hrc = pMachine->COMGETTER(GraphicsControllerType)(&enmGraphicsController);          H();
+        hrc = pGraphicsAdapter->COMGETTER(GraphicsControllerType)(&enmGraphicsController);          H();
         switch (enmGraphicsController)
         {
             case GraphicsControllerType_Null:
@@ -1646,7 +1648,7 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
             case GraphicsControllerType_VBoxSVGA:
 #endif
             case GraphicsControllerType_VBoxVGA:
-                rc = i_configGraphicsController(pDevices, enmGraphicsController, pBusMgr, pMachine, biosSettings,
+                rc = i_configGraphicsController(pDevices, enmGraphicsController, pBusMgr, pMachine, pGraphicsAdapter, biosSettings,
                                                 RT_BOOL(fHMEnabled));
                 if (FAILED(rc))
                     return rc;
@@ -3758,6 +3760,7 @@ int Console::i_configGraphicsController(PCFGMNODE pDevices,
                                         const GraphicsControllerType_T enmGraphicsController,
                                         BusAssignmentManager *pBusMgr,
                                         const ComPtr<IMachine> &ptrMachine,
+                                        const ComPtr<IGraphicsAdapter> &ptrGraphicsAdapter,
                                         const ComPtr<IBIOSSettings> &ptrBiosSettings,
                                         bool fHMEnabled)
 {
@@ -3777,10 +3780,10 @@ int Console::i_configGraphicsController(PCFGMNODE pDevices,
         hrc = pBusMgr->assignPCIDevice(pcszDevice, pInst);                                  H();
         InsertConfigNode(pInst,    "Config", &pCfg);
         ULONG cVRamMBs;
-        hrc = ptrMachine->COMGETTER(VRAMSize)(&cVRamMBs);                                   H();
+        hrc = ptrGraphicsAdapter->COMGETTER(VRAMSize)(&cVRamMBs);                           H();
         InsertConfigInteger(pCfg,  "VRamSize",             cVRamMBs * _1M);
         ULONG cMonitorCount;
-        hrc = ptrMachine->COMGETTER(MonitorCount)(&cMonitorCount);                          H();
+        hrc = ptrGraphicsAdapter->COMGETTER(MonitorCount)(&cMonitorCount);                  H();
         InsertConfigInteger(pCfg,  "MonitorCount",         cMonitorCount);
 #ifdef VBOX_WITH_2X_4GB_ADDR_SPACE
         InsertConfigInteger(pCfg,  "R0Enabled",            fHMEnabled);
@@ -3788,7 +3791,7 @@ int Console::i_configGraphicsController(PCFGMNODE pDevices,
         NOREF(fHMEnabled);
 #endif
         BOOL f3DEnabled;
-        hrc = ptrMachine->COMGETTER(Accelerate3DEnabled)(&f3DEnabled);                      H();
+        hrc = ptrGraphicsAdapter->COMGETTER(Accelerate3DEnabled)(&f3DEnabled);              H();
         InsertConfigInteger(pCfg,  "3DEnabled",            f3DEnabled);
 
         i_attachStatusDriver(pInst, &mapCrOglLed, 0, 0, NULL, NULL, 0);

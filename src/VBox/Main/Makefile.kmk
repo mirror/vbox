@@ -548,6 +548,7 @@ VBoxSVC_SOURCES = \
 	src-server/BIOSSettingsImpl.cpp \
 	src-server/RecordingSettingsImpl.cpp \
 	src-server/RecordingScreenSettingsImpl.cpp \
+	src-server/GraphicsAdapterImpl.cpp \
 	src-server/ClientWatcher.cpp \
 	src-server/ClientToken.cpp \
 	src-server/CloudProviderManagerImpl.cpp \

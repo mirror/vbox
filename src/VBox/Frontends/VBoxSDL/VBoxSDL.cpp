@@ -1456,6 +1456,7 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
     NativeEventQueue* eventQ = com::NativeEventQueue::getMainEventQueue();
 
     ComPtr<IMachine> pMachine;
+    ComPtr<IGraphicsAdapter> pGraphicsAdapter;
 
     rc = pVirtualBoxClient.createInprocObject(CLSID_VirtualBoxClient);
     if (FAILED(rc))
@@ -1949,12 +1950,19 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
         }
     }
 
+    rc = gpMachine->COMGETTER(GraphicsAdapter)(pGraphicsAdapter.asOutParam());
+    if (rc != S_OK)
+    {
+        RTPrintf("Error: could not get graphics adapter object\n");
+        goto leave;
+    }
+
     if (vramSize)
     {
-        rc = gpMachine->COMSETTER(VRAMSize)(vramSize);
+        rc = pGraphicsAdapter->COMSETTER(VRAMSize)(vramSize);
         if (rc != S_OK)
         {
-            gpMachine->COMGETTER(VRAMSize)((ULONG*)&vramSize);
+            pGraphicsAdapter->COMGETTER(VRAMSize)((ULONG*)&vramSize);
             RTPrintf("Error: could not set VRAM size, using current setting of %d MBytes\n", vramSize);
         }
     }
@@ -1975,7 +1983,7 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
     if (!VBoxSDLFB::init(fShowSDLConfig))
         goto leave;
 
-    gpMachine->COMGETTER(MonitorCount)(&gcMonitors);
+    pGraphicsAdapter->COMGETTER(MonitorCount)(&gcMonitors);
     if (gcMonitors > 64)
         gcMonitors = 64;
 

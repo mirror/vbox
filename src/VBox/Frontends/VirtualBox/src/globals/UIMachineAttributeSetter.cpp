@@ -26,6 +26,7 @@
 
 /* COM includes: */
 #include "CAudioAdapter.h"
+#include "CGraphicsAdapter.h"
 #include "CNetworkAdapter.h"
 #include "CUSBController.h"
 
@@ -158,7 +159,7 @@ void UIMachineAttributeSetter::setMachineAttribute(const CMachine &comConstMachi
             case MachineAttribute_VideoMemory:
             {
                 /* Change machine video memory (VRAM): */
-                comMachine.SetVRAMSize(guiAttribute.toInt());
+                comMachine.GetGraphicsAdapter().SetVRAMSize(guiAttribute.toInt());
                 if (!comMachine.isOk())
                 {
                     msgCenter().cannotChangeMachineAttribute(comMachine);
@@ -169,7 +170,7 @@ void UIMachineAttributeSetter::setMachineAttribute(const CMachine &comConstMachi
             case MachineAttribute_GraphicsControllerType:
             {
                 /* Change machine graphics controller type: */
-                comMachine.SetGraphicsControllerType(guiAttribute.value<KGraphicsControllerType>());
+                comMachine.GetGraphicsAdapter().SetGraphicsControllerType(guiAttribute.value<KGraphicsControllerType>());
                 if (!comMachine.isOk())
                 {
                     msgCenter().cannotChangeMachineAttribute(comMachine);

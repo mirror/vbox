@@ -430,6 +430,8 @@ typedef enum VBOXLOGGROUP
     LOG_GROUP_MAIN_FRAMEBUFFEROVERLAY,
     /** Main group, IFsObjInfo. */
     LOG_GROUP_MAIN_FSOBJINFO,
+    /** Main group, IGraphicsAdapter. */
+    LOG_GROUP_MAIN_GRAPHICSADAPTER,
     /** Main group, IGuest. */
     LOG_GROUP_MAIN_GUEST,
     /** Main group, IGuestDirectory. */
@@ -943,6 +945,7 @@ typedef enum VBOXLOGGROUP
     "MAIN_FRAMEBUFFER", \
     "MAIN_FRAMEBUFFEROVERLAY", \
     "MAIN_FSOBJINFO", \
+    "MAIN_GRAPHICSADAPTER", \
     "MAIN_GUEST", \
     "MAIN_GUESTDIRECTORY", \
     "MAIN_GUESTDNDSOURCE", \

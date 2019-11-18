@@ -3862,7 +3862,10 @@ void Appliance::i_importMachineGeneric(const ovf::VirtualSystem &vsysThis,
     if (FAILED(rc)) throw rc;
 
     /* Set the VRAM */
-    rc = pNewMachine->COMSETTER(VRAMSize)(vramVBox);
+    ComPtr<IGraphicsAdapter> pGraphicsAdapter;
+    rc = pNewMachine->COMGETTER(GraphicsAdapter)(pGraphicsAdapter.asOutParam());
+    if (FAILED(rc)) throw rc;
+    rc = pGraphicsAdapter->COMSETTER(VRAMSize)(vramVBox);
     if (FAILED(rc)) throw rc;
 
     // I/O APIC: Generic OVF has no setting for this. Enable it if we

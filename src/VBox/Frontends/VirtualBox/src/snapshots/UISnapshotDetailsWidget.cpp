@@ -43,6 +43,7 @@
 
 /* COM includes: */
 #include "CAudioAdapter.h"
+#include "CGraphicsAdapter.h"
 #include "CRecordingSettings.h"
 #include "CRecordingScreenSettings.h"
 #include "CMachine.h"
@@ -1310,16 +1311,18 @@ QString UISnapshotDetailsWidget::detailsReport(DetailsElementType enmType,
         }
         case DetailsElementType_Display:
         {
+            const CGraphicsAdapter &comGraphics = comMachine.GetGraphicsAdapter();
+            const CGraphicsAdapter &comGraphicsOld = comMachineOld.GetGraphicsAdapter();
             /* Video Memory: */
             ++iRowCount;
-            const QString strVram = QApplication::translate("UIDetails", "%1 MB", "details").arg(comMachine.GetVRAMSize());
-            const QString strVramOld = QApplication::translate("UIDetails", "%1 MB", "details").arg(comMachineOld.GetVRAMSize());
+            const QString strVram = QApplication::translate("UIDetails", "%1 MB", "details").arg(comGraphics.GetVRAMSize());
+            const QString strVramOld = QApplication::translate("UIDetails", "%1 MB", "details").arg(comGraphicsOld.GetVRAMSize());
             strItem += QString(sSectionItemTpl2).arg(QApplication::translate("UIDetails", "Video Memory", "details (display)"),
                                                      empReport(strVram, strVramOld));
 
             /* Screens? */
-            const int cScreens = comMachine.GetMonitorCount();
-            const int cScreensOld = comMachineOld.GetMonitorCount();
+            const int cScreens = comGraphics.GetMonitorCount();
+            const int cScreensOld = comGraphicsOld.GetMonitorCount();
             if (cScreens > 1)
             {
                 ++iRowCount;
@@ -1340,14 +1343,14 @@ QString UISnapshotDetailsWidget::detailsReport(DetailsElementType enmType,
 
             /* Graphics Controller: */
             ++iRowCount;
-            const QString strGc = gpConverter->toString(comMachine.GetGraphicsControllerType());
-            const QString strGcOld = gpConverter->toString(comMachineOld.GetGraphicsControllerType());
+            const QString strGc = gpConverter->toString(comGraphics.GetGraphicsControllerType());
+            const QString strGcOld = gpConverter->toString(comGraphicsOld.GetGraphicsControllerType());
             strItem += QString(sSectionItemTpl2).arg(QApplication::translate("UIDetails", "Graphics Controller", "details (display)"),
                                                      empReport(strGc, strGcOld));
 
             /* Acceleration? */
-            const QString strAcceleration = displayAccelerationReport(comMachine);
-            const QString strAccelerationOld = displayAccelerationReport(comMachineOld);
+            const QString strAcceleration = displayAccelerationReport(comGraphics);
+            const QString strAccelerationOld = displayAccelerationReport(comGraphicsOld);
             if (!strAcceleration.isNull())
             {
                 ++iRowCount;
@@ -1710,17 +1713,17 @@ double UISnapshotDetailsWidget::scaleFactorReport(CMachine comMachine)
 }
 
 /* static */
-QString UISnapshotDetailsWidget::displayAccelerationReport(CMachine comMachine)
+QString UISnapshotDetailsWidget::displayAccelerationReport(CGraphicsAdapter comGraphics)
 {
     /* Prepare report: */
     QStringList aReport;
 #ifdef VBOX_WITH_VIDEOHWACCEL
     /* 2D Video Acceleration? */
-    if (comMachine.GetAccelerate2DVideoEnabled())
+    if (comGraphics.GetAccelerate2DVideoEnabled())
         aReport << QApplication::translate("UIDetails", "2D Video", "details (display)");
 #endif
     /* 3D Acceleration? */
-    if (comMachine.GetAccelerate3DEnabled() && uiCommon().is3DAvailable())
+    if (comGraphics.GetAccelerate3DEnabled() && uiCommon().is3DAvailable())
         aReport << QApplication::translate("UIDetails", "3D", "details (display)");
     /* Compose and return report: */
     return aReport.isEmpty() ? QString() : aReport.join(", ");

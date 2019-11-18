@@ -1152,6 +1152,10 @@ HRESULT SnapshotMachine::init(SessionMachine *aSessionMachine,
     rc = mRecordingSettings->initCopy(this, pMachine->mRecordingSettings);
     if (FAILED(rc)) return rc;
 
+    unconst(mGraphicsAdapter).createObject();
+    rc = mGraphicsAdapter->initCopy(this, pMachine->mGraphicsAdapter);
+    if (FAILED(rc)) return rc;
+
     unconst(mVRDEServer).createObject();
     rc = mVRDEServer->initCopy(this, pMachine->mVRDEServer);
     if (FAILED(rc)) return rc;
@@ -1276,6 +1280,9 @@ HRESULT SnapshotMachine::initFromSettings(Machine *aMachine,
 
     unconst(mRecordingSettings).createObject();
     mRecordingSettings->init(this);
+
+    unconst(mGraphicsAdapter).createObject();
+    mGraphicsAdapter->init(this);
 
     unconst(mVRDEServer).createObject();
     mVRDEServer->init(this);

@@ -29,6 +29,7 @@
 /* COM includes: */
 #include "COMEnums.h"
 #include "CAudioAdapter.h"
+#include "CGraphicsAdapter.h"
 #include "CMachine.h"
 #include "CMediumAttachment.h"
 #include "CNetworkAdapter.h"
@@ -259,12 +260,14 @@ UITextTable UIDetailsGenerator::generateMachineInformationDisplay(CMachine &comM
         return table;
     }
 
+    const CGraphicsAdapter comGraphics = comMachine.GetGraphicsAdapter();
+
     /* Video memory: */
     if (fOptions & UIExtraDataMetaDefs::DetailsElementOptionTypeDisplay_VRAM)
     {
         /* Configure hovering anchor: */
         const QString strAnchorType = QString("video_memory");
-        const int iVideoMemory = comMachine.GetVRAMSize();
+        const int iVideoMemory = comGraphics.GetVRAMSize();
         table << UITextTableLine(QApplication::translate("UIDetails", "Video Memory", "details (display)"),
                                  QString("<a href=#%1,%2>%3</a>")
                                      .arg(strAnchorType)
@@ -275,7 +278,7 @@ UITextTable UIDetailsGenerator::generateMachineInformationDisplay(CMachine &comM
     /* Screens: */
     if (fOptions & UIExtraDataMetaDefs::DetailsElementOptionTypeDisplay_ScreenCount)
     {
-        const int cGuestScreens = comMachine.GetMonitorCount();
+        const int cGuestScreens = comGraphics.GetMonitorCount();
         if (cGuestScreens > 1)
             table << UITextTableLine(QApplication::translate("UIDetails", "Screens", "details (display)"),
                                      QString::number(cGuestScreens));
@@ -303,7 +306,7 @@ UITextTable UIDetailsGenerator::generateMachineInformationDisplay(CMachine &comM
     if (fOptions & UIExtraDataMetaDefs::DetailsElementOptionTypeDisplay_GraphicsController)
     {
         const QString strAnchorType = QString("graphics_controller_type");
-        const KGraphicsControllerType enmType = comMachine.GetGraphicsControllerType();
+        const KGraphicsControllerType enmType = comGraphics.GetGraphicsControllerType();
         table << UITextTableLine(QApplication::translate("UIDetails", "Graphics Controller", "details (display)"),
                                  QString("<a href=#%1,%2>%3</a>")
                                      .arg(strAnchorType)
@@ -317,11 +320,11 @@ UITextTable UIDetailsGenerator::generateMachineInformationDisplay(CMachine &comM
         QStringList acceleration;
 #ifdef VBOX_WITH_VIDEOHWACCEL
         /* 2D acceleration: */
-        if (comMachine.GetAccelerate2DVideoEnabled())
+        if (comGraphics.GetAccelerate2DVideoEnabled())
             acceleration << QApplication::translate("UIDetails", "2D Video", "details (display)");
 #endif
         /* 3D acceleration: */
-        if (comMachine.GetAccelerate3DEnabled())
+        if (comGraphics.GetAccelerate3DEnabled())
             acceleration << QApplication::translate("UIDetails", "3D", "details (display)");
         if (!acceleration.isEmpty())
             table << UITextTableLine(QApplication::translate("UIDetails", "Acceleration", "details (display)"),

@@ -67,6 +67,7 @@
 
 /* COM includes: */
 #include "CKeyboard.h"
+#include "CGraphicsAdapter.h"
 
 /* Other VBox includes: */
 #ifdef VBOX_WS_MAC
@@ -1013,7 +1014,7 @@ void UIKeyboardHandler::prepareCommon()
     /* Pressed keys: */
     ::memset(m_pressedKeys, 0, sizeof(m_pressedKeys));
 
-    m_cMonitors = uisession()->machine().GetMonitorCount();
+    m_cMonitors = uisession()->machine().GetGraphicsAdapter().GetMonitorCount();
 }
 
 void UIKeyboardHandler::loadSettings()

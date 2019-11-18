@@ -975,8 +975,8 @@ def infoCmd(ctx, args):
     print()
     print("  CPUs [CPUCount]: %d" % (mach.CPUCount))
     print("  RAM [memorySize]: %dM" % (mach.memorySize))
-    print("  VRAM [VRAMSize]: %dM" % (mach.VRAMSize))
-    print("  Monitors [monitorCount]: %d" % (mach.monitorCount))
+    print("  VRAM [VRAMSize]: %dM" % (mach.graphicsAdapter.VRAMSize))
+    print("  Monitors [monitorCount]: %d" % (mach.graphicsAdapter.monitorCount))
     print("  Chipset [chipsetType]: %s (%s)" % (asEnumElem(ctx, "ChipsetType", mach.chipsetType), mach.chipsetType))
     print()
     print("  Clipboard mode [clipboardMode]: %s (%s)" % (asEnumElem(ctx, "ClipboardMode", mach.clipboardMode), mach.clipboardMode))
@@ -995,8 +995,8 @@ def infoCmd(ctx, args):
     hwVirtNestedPaging = mach.getHWVirtExProperty(ctx['const'].HWVirtExPropertyType_NestedPaging)
     print("  Nested paging [guest win machine.setHWVirtExProperty(ctx[\\'const\\'].HWVirtExPropertyType_NestedPaging, value)]: " + asState(hwVirtNestedPaging))
 
-    print("  Hardware 3d acceleration [accelerate3DEnabled]: " + asState(mach.accelerate3DEnabled))
-    print("  Hardware 2d video acceleration [accelerate2DVideoEnabled]: " + asState(mach.accelerate2DVideoEnabled))
+    print("  Hardware 3d acceleration [accelerate3DEnabled]: " + asState(mach.graphicsAdapter.accelerate3DEnabled))
+    print("  Hardware 2d video acceleration [accelerate2DVideoEnabled]: " + asState(mach.graphicsAdapter.accelerate2DVideoEnabled))
 
     print("  Use universal time [RTCUseUTC]: %s" % (asState(mach.RTCUseUTC)))
     print("  HPET [HPETEnabled]: %s" % (asState(mach.HPETEnabled)))

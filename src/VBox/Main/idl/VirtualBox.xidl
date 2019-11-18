@@ -5116,10 +5116,53 @@
   </interface>
 
   <interface
+    name="IGraphicsAdapter" extends="$unknown"
+    uuid="f692806f-febe-4049-b476-1292a8e45b09"
+    wsmap="managed"
+    reservedMethods="4" reservedAttributes="8"
+    >
+    <desc>
+        The IGraphicsAdapter interface represents the graphics adapter
+        of the virtual machine.
+    </desc>
+
+    <attribute name="graphicsControllerType" type="GraphicsControllerType">
+      <desc>Graphics controller type.</desc>
+    </attribute>
+
+    <attribute name="VRAMSize" type="unsigned long">
+      <desc>Video memory size in megabytes.</desc>
+    </attribute>
+
+    <attribute name="accelerate3DEnabled" type="boolean" default="false">
+      <desc>
+        This setting determines whether VirtualBox allows this machine to make
+        use of the 3D graphics support available on the host.</desc>
+    </attribute>
+
+    <attribute name="accelerate2DVideoEnabled" type="boolean" default="false">
+      <desc>
+        This setting determines whether VirtualBox allows this machine to make
+        use of the 2D video acceleration support available on the host.</desc>
+    </attribute>
+
+    <attribute name="monitorCount" type="unsigned long">
+      <desc>
+        Number of virtual monitors.
+        <note>
+          Only effective on Windows XP and later guests with
+          Guest Additions installed.
+        </note>
+      </desc>
+    </attribute>
+
+  </interface>
+
+  <interface
     name="IBIOSSettings" extends="$unknown"
     uuid="73af4152-7e67-4144-bf34-41c38e8b4cc7"
     wsmap="managed"
-    reservedMethods="1" reservedAttributes="7"
+    reservedMethods="2" reservedAttributes="8"
     >
     <desc>
         The IBIOSSettings interface represents BIOS settings of the virtual
@@ -5773,11 +5816,11 @@
 
   <interface
     name="IMachine" extends="$unknown"
-    uuid="0020076B-00D0-494E-0023-C293000086A7"
+    uuid="85632c68-b5bb-4316-a900-5eb28d3413df"
     wsmap="managed"
     wrap-hint-server-addinterfaces="IInternalMachineControl"
     wrap-hint-server="manualaddinterfaces"
-    reservedMethods="8" reservedAttributes="12"
+    reservedMethods="8" reservedAttributes="16"
     >
     <!-- Note! This interface is not compatible between 5.0 and 5.1 as it had too many
                methods/attributes for midl and the reservedAttributes had to be
@@ -6024,34 +6067,8 @@
       </desc>
     </attribute>
 
-    <attribute name="graphicsControllerType" type="GraphicsControllerType">
-      <desc>Graphics controller type.</desc>
-    </attribute>
-
-    <attribute name="VRAMSize" type="unsigned long">
-      <desc>Video memory size in megabytes.</desc>
-    </attribute>
-
-    <attribute name="accelerate3DEnabled" type="boolean" default="false">
-      <desc>
-        This setting determines whether VirtualBox allows this machine to make
-        use of the 3D graphics support available on the host.</desc>
-    </attribute>
-
-    <attribute name="accelerate2DVideoEnabled" type="boolean" default="false">
-      <desc>
-        This setting determines whether VirtualBox allows this machine to make
-        use of the 2D video acceleration support available on the host.</desc>
-    </attribute>
-
-    <attribute name="monitorCount" type="unsigned long">
-      <desc>
-        Number of virtual monitors.
-        <note>
-          Only effective on Windows XP and later guests with
-          Guest Additions installed.
-        </note>
-      </desc>
+    <attribute name="graphicsAdapter" type="IGraphicsAdapter" readonly="yes">
+      <desc>Graphics adapter object.</desc>
     </attribute>
 
     <attribute name="BIOSSettings" type="IBIOSSettings" readonly="yes">

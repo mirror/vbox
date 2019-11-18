@@ -35,6 +35,9 @@
 # include "VBoxUtils.h"
 #endif
 
+/* GUI includes: */
+#include "CGraphicsAdapter.h"
+
 
 UIMachineLogicScale::UIMachineLogicScale(QObject *pParent, UISession *pSession)
     : UIMachineLogic(pParent, pSession, UIVisualStateType_Scale)
@@ -137,7 +140,7 @@ void UIMachineLogicScale::prepareMachineWindows()
 #endif /* VBOX_WS_MAC */
 
     /* Get monitors count: */
-    ulong uMonitorCount = machine().GetMonitorCount();
+    ulong uMonitorCount = machine().GetGraphicsAdapter().GetMonitorCount();
     /* Create machine window(s): */
     for (ulong uScreenId = 0; uScreenId < uMonitorCount; ++ uScreenId)
         addMachineWindow(UIMachineWindow::create(this, uScreenId));

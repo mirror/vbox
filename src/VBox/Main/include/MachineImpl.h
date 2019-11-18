@@ -35,6 +35,7 @@
 #include "ParallelPortImpl.h"
 #include "BIOSSettingsImpl.h"
 #include "RecordingSettingsImpl.h"
+#include "GraphicsAdapterImpl.h"
 #include "StorageControllerImpl.h"          // required for MachineImpl.h to compile on Windows
 #include "USBControllerImpl.h"              // required for MachineImpl.h to compile on Windows
 #include "BandwidthControlImpl.h"
@@ -806,6 +807,7 @@ HRESULT i_disconnectFromCloudNetwork();
     const ComObjPtr<USBDeviceFilters>  mUSBDeviceFilters;
     const ComObjPtr<BIOSSettings>      mBIOSSettings;
     const ComObjPtr<RecordingSettings> mRecordingSettings;
+    const ComObjPtr<GraphicsAdapter>   mGraphicsAdapter;
     const ComObjPtr<BandwidthControl>  mBandwidthControl;
 
     typedef std::vector<ComObjPtr<NetworkAdapter> > NetworkAdapterVector;
@@ -897,16 +899,7 @@ private:
     HRESULT setMemoryBalloonSize(ULONG aMemoryBalloonSize);
     HRESULT getPageFusionEnabled(BOOL *aPageFusionEnabled);
     HRESULT setPageFusionEnabled(BOOL aPageFusionEnabled);
-    HRESULT getGraphicsControllerType(GraphicsControllerType_T *aGraphicsControllerType);
-    HRESULT setGraphicsControllerType(GraphicsControllerType_T aGraphicsControllerType);
-    HRESULT getVRAMSize(ULONG *aVRAMSize);
-    HRESULT setVRAMSize(ULONG aVRAMSize);
-    HRESULT getAccelerate3DEnabled(BOOL *aAccelerate3DEnabled);
-    HRESULT setAccelerate3DEnabled(BOOL aAccelerate3DEnabled);
-    HRESULT getAccelerate2DVideoEnabled(BOOL *aAccelerate2DVideoEnabled);
-    HRESULT setAccelerate2DVideoEnabled(BOOL aAccelerate2DVideoEnabled);
-    HRESULT getMonitorCount(ULONG *aMonitorCount);
-    HRESULT setMonitorCount(ULONG aMonitorCount);
+    HRESULT getGraphicsAdapter(ComPtr<IGraphicsAdapter> &aGraphicsAdapter);
     HRESULT getBIOSSettings(ComPtr<IBIOSSettings> &aBIOSSettings);
     HRESULT getRecordingSettings(ComPtr<IRecordingSettings> &aRecordingSettings);
     HRESULT getFirmwareType(FirmwareType_T *aFirmwareType);
