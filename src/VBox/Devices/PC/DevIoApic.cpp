@@ -847,7 +847,7 @@ PDMBOTHCBDECL(int) ioapicMmioWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GC
 #ifdef IN_RING3
 
 /** @interface_method_impl{DBGFREGDESC,pfnGet} */
-static DECLCALLBACK(int) ioapicDbgReg_GetIndex(void *pvUser, PCDBGFREGDESC pDesc, PDBGFREGVAL pValue)
+static DECLCALLBACK(int) ioapicR3DbgReg_GetIndex(void *pvUser, PCDBGFREGDESC pDesc, PDBGFREGVAL pValue)
 {
     RT_NOREF(pDesc);
     pValue->u32 = ioapicGetIndex(PDMDEVINS_2_DATA((PPDMDEVINS)pvUser, PCIOAPIC));
@@ -856,7 +856,7 @@ static DECLCALLBACK(int) ioapicDbgReg_GetIndex(void *pvUser, PCDBGFREGDESC pDesc
 
 
 /** @interface_method_impl{DBGFREGDESC,pfnSet} */
-static DECLCALLBACK(int) ioapicDbgReg_SetIndex(void *pvUser, PCDBGFREGDESC pDesc, PCDBGFREGVAL pValue, PCDBGFREGVAL pfMask)
+static DECLCALLBACK(int) ioapicR3DbgReg_SetIndex(void *pvUser, PCDBGFREGDESC pDesc, PCDBGFREGVAL pValue, PCDBGFREGVAL pfMask)
 {
     RT_NOREF(pDesc, pfMask);
     ioapicSetIndex(PDMDEVINS_2_DATA((PPDMDEVINS)pvUser, PIOAPIC), pValue->u8);
@@ -865,7 +865,7 @@ static DECLCALLBACK(int) ioapicDbgReg_SetIndex(void *pvUser, PCDBGFREGDESC pDesc
 
 
 /** @interface_method_impl{DBGFREGDESC,pfnGet} */
-static DECLCALLBACK(int) ioapicDbgReg_GetData(void *pvUser, PCDBGFREGDESC pDesc, PDBGFREGVAL pValue)
+static DECLCALLBACK(int) ioapicR3DbgReg_GetData(void *pvUser, PCDBGFREGDESC pDesc, PDBGFREGVAL pValue)
 {
     RT_NOREF(pDesc);
     pValue->u32 = ioapicGetData((PDMDEVINS_2_DATA((PPDMDEVINS)pvUser, PCIOAPIC)));
@@ -874,7 +874,7 @@ static DECLCALLBACK(int) ioapicDbgReg_GetData(void *pvUser, PCDBGFREGDESC pDesc,
 
 
 /** @interface_method_impl{DBGFREGDESC,pfnSet} */
-static DECLCALLBACK(int) ioapicDbgReg_SetData(void *pvUser, PCDBGFREGDESC pDesc, PCDBGFREGVAL pValue, PCDBGFREGVAL pfMask)
+static DECLCALLBACK(int) ioapicR3DbgReg_SetData(void *pvUser, PCDBGFREGDESC pDesc, PCDBGFREGVAL pValue, PCDBGFREGVAL pfMask)
 {
     RT_NOREF(pDesc, pfMask);
      return ioapicSetData(PDMDEVINS_2_DATA((PPDMDEVINS)pvUser, PIOAPIC), pValue->u32);
@@ -882,7 +882,7 @@ static DECLCALLBACK(int) ioapicDbgReg_SetData(void *pvUser, PCDBGFREGDESC pDesc,
 
 
 /** @interface_method_impl{DBGFREGDESC,pfnGet} */
-static DECLCALLBACK(int) ioapicDbgReg_GetVersion(void *pvUser, PCDBGFREGDESC pDesc, PDBGFREGVAL pValue)
+static DECLCALLBACK(int) ioapicR3DbgReg_GetVersion(void *pvUser, PCDBGFREGDESC pDesc, PDBGFREGVAL pValue)
 {
     PCIOAPIC pThis = PDMDEVINS_2_DATA((PPDMDEVINS)pvUser, PCIOAPIC);
     RT_NOREF(pDesc);
@@ -892,7 +892,7 @@ static DECLCALLBACK(int) ioapicDbgReg_GetVersion(void *pvUser, PCDBGFREGDESC pDe
 
 
 /** @interface_method_impl{DBGFREGDESC,pfnGet} */
-static DECLCALLBACK(int) ioapicDbgReg_GetArb(void *pvUser, PCDBGFREGDESC pDesc, PDBGFREGVAL pValue)
+static DECLCALLBACK(int) ioapicR3DbgReg_GetArb(void *pvUser, PCDBGFREGDESC pDesc, PDBGFREGVAL pValue)
 {
     RT_NOREF(pvUser, pDesc);
     pValue->u32 = ioapicGetArb();
@@ -901,7 +901,7 @@ static DECLCALLBACK(int) ioapicDbgReg_GetArb(void *pvUser, PCDBGFREGDESC pDesc, 
 
 
 /** @interface_method_impl{DBGFREGDESC,pfnGet} */
-static DECLCALLBACK(int) ioapicDbgReg_GetRte(void *pvUser, PCDBGFREGDESC pDesc, PDBGFREGVAL pValue)
+static DECLCALLBACK(int) ioapicR3DbgReg_GetRte(void *pvUser, PCDBGFREGDESC pDesc, PDBGFREGVAL pValue)
 {
     PCIOAPIC pThis = PDMDEVINS_2_DATA((PPDMDEVINS)pvUser, PCIOAPIC);
     Assert(pDesc->offRegister < RT_ELEMENTS(pThis->au64RedirTable));
@@ -911,7 +911,7 @@ static DECLCALLBACK(int) ioapicDbgReg_GetRte(void *pvUser, PCDBGFREGDESC pDesc, 
 
 
 /** @interface_method_impl{DBGFREGDESC,pfnSet} */
-static DECLCALLBACK(int) ioapicDbgReg_SetRte(void *pvUser, PCDBGFREGDESC pDesc, PCDBGFREGVAL pValue, PCDBGFREGVAL pfMask)
+static DECLCALLBACK(int) ioapicR3DbgReg_SetRte(void *pvUser, PCDBGFREGDESC pDesc, PCDBGFREGVAL pValue, PCDBGFREGVAL pfMask)
 {
     RT_NOREF(pfMask);
     PIOAPIC pThis = PDMDEVINS_2_DATA((PPDMDEVINS)pvUser, PIOAPIC);
@@ -942,34 +942,34 @@ static DBGFREGSUBFIELD const g_aRteSubs[] =
 /** Register descriptors for DBGF. */
 static DBGFREGDESC const g_aRegDesc[] =
 {
-    { "index",      DBGFREG_END, DBGFREGVALTYPE_U8,  0,  0, ioapicDbgReg_GetIndex, ioapicDbgReg_SetIndex,    NULL, NULL },
-    { "data",       DBGFREG_END, DBGFREGVALTYPE_U32, 0,  0, ioapicDbgReg_GetData,  ioapicDbgReg_SetData,     NULL, NULL },
-    { "version",    DBGFREG_END, DBGFREGVALTYPE_U32, DBGFREG_FLAGS_READ_ONLY, 0, ioapicDbgReg_GetVersion, NULL, NULL, NULL },
-    { "arb",        DBGFREG_END, DBGFREGVALTYPE_U32, DBGFREG_FLAGS_READ_ONLY, 0, ioapicDbgReg_GetArb,     NULL, NULL, NULL },
-    { "rte0",       DBGFREG_END, DBGFREGVALTYPE_U64, 0,  0, ioapicDbgReg_GetRte, ioapicDbgReg_SetRte, NULL, &g_aRteSubs[0] },
-    { "rte1",       DBGFREG_END, DBGFREGVALTYPE_U64, 0,  1, ioapicDbgReg_GetRte, ioapicDbgReg_SetRte, NULL, &g_aRteSubs[0] },
-    { "rte2",       DBGFREG_END, DBGFREGVALTYPE_U64, 0,  2, ioapicDbgReg_GetRte, ioapicDbgReg_SetRte, NULL, &g_aRteSubs[0] },
-    { "rte3",       DBGFREG_END, DBGFREGVALTYPE_U64, 0,  3, ioapicDbgReg_GetRte, ioapicDbgReg_SetRte, NULL, &g_aRteSubs[0] },
-    { "rte4",       DBGFREG_END, DBGFREGVALTYPE_U64, 0,  4, ioapicDbgReg_GetRte, ioapicDbgReg_SetRte, NULL, &g_aRteSubs[0] },
-    { "rte5",       DBGFREG_END, DBGFREGVALTYPE_U64, 0,  5, ioapicDbgReg_GetRte, ioapicDbgReg_SetRte, NULL, &g_aRteSubs[0] },
-    { "rte6",       DBGFREG_END, DBGFREGVALTYPE_U64, 0,  6, ioapicDbgReg_GetRte, ioapicDbgReg_SetRte, NULL, &g_aRteSubs[0] },
-    { "rte7",       DBGFREG_END, DBGFREGVALTYPE_U64, 0,  7, ioapicDbgReg_GetRte, ioapicDbgReg_SetRte, NULL, &g_aRteSubs[0] },
-    { "rte8",       DBGFREG_END, DBGFREGVALTYPE_U64, 0,  8, ioapicDbgReg_GetRte, ioapicDbgReg_SetRte, NULL, &g_aRteSubs[0] },
-    { "rte9",       DBGFREG_END, DBGFREGVALTYPE_U64, 0,  9, ioapicDbgReg_GetRte, ioapicDbgReg_SetRte, NULL, &g_aRteSubs[0] },
-    { "rte10",      DBGFREG_END, DBGFREGVALTYPE_U64, 0, 10, ioapicDbgReg_GetRte, ioapicDbgReg_SetRte, NULL, &g_aRteSubs[0] },
-    { "rte11",      DBGFREG_END, DBGFREGVALTYPE_U64, 0, 11, ioapicDbgReg_GetRte, ioapicDbgReg_SetRte, NULL, &g_aRteSubs[0] },
-    { "rte12",      DBGFREG_END, DBGFREGVALTYPE_U64, 0, 12, ioapicDbgReg_GetRte, ioapicDbgReg_SetRte, NULL, &g_aRteSubs[0] },
-    { "rte13",      DBGFREG_END, DBGFREGVALTYPE_U64, 0, 13, ioapicDbgReg_GetRte, ioapicDbgReg_SetRte, NULL, &g_aRteSubs[0] },
-    { "rte14",      DBGFREG_END, DBGFREGVALTYPE_U64, 0, 14, ioapicDbgReg_GetRte, ioapicDbgReg_SetRte, NULL, &g_aRteSubs[0] },
-    { "rte15",      DBGFREG_END, DBGFREGVALTYPE_U64, 0, 15, ioapicDbgReg_GetRte, ioapicDbgReg_SetRte, NULL, &g_aRteSubs[0] },
-    { "rte16",      DBGFREG_END, DBGFREGVALTYPE_U64, 0, 16, ioapicDbgReg_GetRte, ioapicDbgReg_SetRte, NULL, &g_aRteSubs[0] },
-    { "rte17",      DBGFREG_END, DBGFREGVALTYPE_U64, 0, 17, ioapicDbgReg_GetRte, ioapicDbgReg_SetRte, NULL, &g_aRteSubs[0] },
-    { "rte18",      DBGFREG_END, DBGFREGVALTYPE_U64, 0, 18, ioapicDbgReg_GetRte, ioapicDbgReg_SetRte, NULL, &g_aRteSubs[0] },
-    { "rte19",      DBGFREG_END, DBGFREGVALTYPE_U64, 0, 19, ioapicDbgReg_GetRte, ioapicDbgReg_SetRte, NULL, &g_aRteSubs[0] },
-    { "rte20",      DBGFREG_END, DBGFREGVALTYPE_U64, 0, 20, ioapicDbgReg_GetRte, ioapicDbgReg_SetRte, NULL, &g_aRteSubs[0] },
-    { "rte21",      DBGFREG_END, DBGFREGVALTYPE_U64, 0, 21, ioapicDbgReg_GetRte, ioapicDbgReg_SetRte, NULL, &g_aRteSubs[0] },
-    { "rte22",      DBGFREG_END, DBGFREGVALTYPE_U64, 0, 22, ioapicDbgReg_GetRte, ioapicDbgReg_SetRte, NULL, &g_aRteSubs[0] },
-    { "rte23",      DBGFREG_END, DBGFREGVALTYPE_U64, 0, 23, ioapicDbgReg_GetRte, ioapicDbgReg_SetRte, NULL, &g_aRteSubs[0] },
+    { "index",      DBGFREG_END, DBGFREGVALTYPE_U8,  0,  0, ioapicR3DbgReg_GetIndex, ioapicR3DbgReg_SetIndex,    NULL, NULL },
+    { "data",       DBGFREG_END, DBGFREGVALTYPE_U32, 0,  0, ioapicR3DbgReg_GetData,  ioapicR3DbgReg_SetData,     NULL, NULL },
+    { "version",    DBGFREG_END, DBGFREGVALTYPE_U32, DBGFREG_FLAGS_READ_ONLY, 0, ioapicR3DbgReg_GetVersion, NULL, NULL, NULL },
+    { "arb",        DBGFREG_END, DBGFREGVALTYPE_U32, DBGFREG_FLAGS_READ_ONLY, 0, ioapicR3DbgReg_GetArb,     NULL, NULL, NULL },
+    { "rte0",       DBGFREG_END, DBGFREGVALTYPE_U64, 0,  0, ioapicR3DbgReg_GetRte, ioapicR3DbgReg_SetRte, NULL, &g_aRteSubs[0] },
+    { "rte1",       DBGFREG_END, DBGFREGVALTYPE_U64, 0,  1, ioapicR3DbgReg_GetRte, ioapicR3DbgReg_SetRte, NULL, &g_aRteSubs[0] },
+    { "rte2",       DBGFREG_END, DBGFREGVALTYPE_U64, 0,  2, ioapicR3DbgReg_GetRte, ioapicR3DbgReg_SetRte, NULL, &g_aRteSubs[0] },
+    { "rte3",       DBGFREG_END, DBGFREGVALTYPE_U64, 0,  3, ioapicR3DbgReg_GetRte, ioapicR3DbgReg_SetRte, NULL, &g_aRteSubs[0] },
+    { "rte4",       DBGFREG_END, DBGFREGVALTYPE_U64, 0,  4, ioapicR3DbgReg_GetRte, ioapicR3DbgReg_SetRte, NULL, &g_aRteSubs[0] },
+    { "rte5",       DBGFREG_END, DBGFREGVALTYPE_U64, 0,  5, ioapicR3DbgReg_GetRte, ioapicR3DbgReg_SetRte, NULL, &g_aRteSubs[0] },
+    { "rte6",       DBGFREG_END, DBGFREGVALTYPE_U64, 0,  6, ioapicR3DbgReg_GetRte, ioapicR3DbgReg_SetRte, NULL, &g_aRteSubs[0] },
+    { "rte7",       DBGFREG_END, DBGFREGVALTYPE_U64, 0,  7, ioapicR3DbgReg_GetRte, ioapicR3DbgReg_SetRte, NULL, &g_aRteSubs[0] },
+    { "rte8",       DBGFREG_END, DBGFREGVALTYPE_U64, 0,  8, ioapicR3DbgReg_GetRte, ioapicR3DbgReg_SetRte, NULL, &g_aRteSubs[0] },
+    { "rte9",       DBGFREG_END, DBGFREGVALTYPE_U64, 0,  9, ioapicR3DbgReg_GetRte, ioapicR3DbgReg_SetRte, NULL, &g_aRteSubs[0] },
+    { "rte10",      DBGFREG_END, DBGFREGVALTYPE_U64, 0, 10, ioapicR3DbgReg_GetRte, ioapicR3DbgReg_SetRte, NULL, &g_aRteSubs[0] },
+    { "rte11",      DBGFREG_END, DBGFREGVALTYPE_U64, 0, 11, ioapicR3DbgReg_GetRte, ioapicR3DbgReg_SetRte, NULL, &g_aRteSubs[0] },
+    { "rte12",      DBGFREG_END, DBGFREGVALTYPE_U64, 0, 12, ioapicR3DbgReg_GetRte, ioapicR3DbgReg_SetRte, NULL, &g_aRteSubs[0] },
+    { "rte13",      DBGFREG_END, DBGFREGVALTYPE_U64, 0, 13, ioapicR3DbgReg_GetRte, ioapicR3DbgReg_SetRte, NULL, &g_aRteSubs[0] },
+    { "rte14",      DBGFREG_END, DBGFREGVALTYPE_U64, 0, 14, ioapicR3DbgReg_GetRte, ioapicR3DbgReg_SetRte, NULL, &g_aRteSubs[0] },
+    { "rte15",      DBGFREG_END, DBGFREGVALTYPE_U64, 0, 15, ioapicR3DbgReg_GetRte, ioapicR3DbgReg_SetRte, NULL, &g_aRteSubs[0] },
+    { "rte16",      DBGFREG_END, DBGFREGVALTYPE_U64, 0, 16, ioapicR3DbgReg_GetRte, ioapicR3DbgReg_SetRte, NULL, &g_aRteSubs[0] },
+    { "rte17",      DBGFREG_END, DBGFREGVALTYPE_U64, 0, 17, ioapicR3DbgReg_GetRte, ioapicR3DbgReg_SetRte, NULL, &g_aRteSubs[0] },
+    { "rte18",      DBGFREG_END, DBGFREGVALTYPE_U64, 0, 18, ioapicR3DbgReg_GetRte, ioapicR3DbgReg_SetRte, NULL, &g_aRteSubs[0] },
+    { "rte19",      DBGFREG_END, DBGFREGVALTYPE_U64, 0, 19, ioapicR3DbgReg_GetRte, ioapicR3DbgReg_SetRte, NULL, &g_aRteSubs[0] },
+    { "rte20",      DBGFREG_END, DBGFREGVALTYPE_U64, 0, 20, ioapicR3DbgReg_GetRte, ioapicR3DbgReg_SetRte, NULL, &g_aRteSubs[0] },
+    { "rte21",      DBGFREG_END, DBGFREGVALTYPE_U64, 0, 21, ioapicR3DbgReg_GetRte, ioapicR3DbgReg_SetRte, NULL, &g_aRteSubs[0] },
+    { "rte22",      DBGFREG_END, DBGFREGVALTYPE_U64, 0, 22, ioapicR3DbgReg_GetRte, ioapicR3DbgReg_SetRte, NULL, &g_aRteSubs[0] },
+    { "rte23",      DBGFREG_END, DBGFREGVALTYPE_U64, 0, 23, ioapicR3DbgReg_GetRte, ioapicR3DbgReg_SetRte, NULL, &g_aRteSubs[0] },
     DBGFREGDESC_TERMINATOR()
 };
 
@@ -1056,14 +1056,15 @@ static DECLCALLBACK(void) ioapicR3DbgInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp
  */
 static DECLCALLBACK(int) ioapicR3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 {
-    PCIOAPIC pThis = PDMDEVINS_2_DATA(pDevIns, PCIOAPIC);
+    PCIOAPIC        pThis = PDMDEVINS_2_DATA(pDevIns, PCIOAPIC);
+    PCPDMDEVHLPR3   pHlp  = pDevIns->pHlpR3;
     LogFlow(("IOAPIC: ioapicR3SaveExec\n"));
 
-    SSMR3PutU32(pSSM, pThis->uIrr);
-    SSMR3PutU8(pSSM,  pThis->u8Id);
-    SSMR3PutU8(pSSM,  pThis->u8Index);
+    pHlp->pfnSSMPutU32(pSSM, pThis->uIrr);
+    pHlp->pfnSSMPutU8(pSSM,  pThis->u8Id);
+    pHlp->pfnSSMPutU8(pSSM,  pThis->u8Index);
     for (uint8_t idxRte = 0; idxRte < RT_ELEMENTS(pThis->au64RedirTable); idxRte++)
-        SSMR3PutU64(pSSM, pThis->au64RedirTable[idxRte]);
+        pHlp->pfnSSMPutU64(pSSM, pThis->au64RedirTable[idxRte]);
 
     return VINF_SUCCESS;
 }
@@ -1074,7 +1075,8 @@ static DECLCALLBACK(int) ioapicR3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
  */
 static DECLCALLBACK(int) ioapicR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass)
 {
-    PIOAPIC pThis = PDMDEVINS_2_DATA(pDevIns, PIOAPIC);
+    PIOAPIC         pThis = PDMDEVINS_2_DATA(pDevIns, PIOAPIC);
+    PCPDMDEVHLPR3   pHlp  = pDevIns->pHlpR3;
     LogFlow(("APIC: apicR3LoadExec: uVersion=%u uPass=%#x\n", uVersion, uPass));
 
     Assert(uPass == SSM_PASS_FINAL);
@@ -1089,12 +1091,12 @@ static DECLCALLBACK(int) ioapicR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, u
     }
 
     if (uVersion == IOAPIC_SAVED_STATE_VERSION)
-        SSMR3GetU32(pSSM, &pThis->uIrr);
+        pHlp->pfnSSMGetU32(pSSM, &pThis->uIrr);
 
-    SSMR3GetU8V(pSSM, &pThis->u8Id);
-    SSMR3GetU8V(pSSM, &pThis->u8Index);
+    pHlp->pfnSSMGetU8V(pSSM, &pThis->u8Id);
+    pHlp->pfnSSMGetU8V(pSSM, &pThis->u8Index);
     for (uint8_t idxRte = 0; idxRte < RT_ELEMENTS(pThis->au64RedirTable); idxRte++)
-        SSMR3GetU64(pSSM, &pThis->au64RedirTable[idxRte]);
+        pHlp->pfnSSMGetU64(pSSM, &pThis->au64RedirTable[idxRte]);
 
     return VINF_SUCCESS;
 }
