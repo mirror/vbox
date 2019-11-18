@@ -207,19 +207,12 @@ typedef struct HPETTIMER
     /** The HPET timer. */
     TMTIMERHANDLE               hTimer;
 
-    /** Pointer to the instance data - R3 Ptr. */
-    R3PTRTYPE(struct HPET *)    pHpetR3;
-    /** Pointer to the instance data - R0 Ptr. */
-    R0PTRTYPE(struct HPET *)    pHpetR0;
-    /** Pointer to the instance data - RC Ptr. */
-    RCPTRTYPE(struct HPET *)    pHpetRC;
-
     /** Timer index. */
     uint8_t                     idxTimer;
     /** Wrap. */
     uint8_t                     u8Wrap;
     /** Explicit padding. */
-    uint8_t                     abPadding[2];
+    uint8_t                     abPadding[6];
 
     /** @name Memory-mapped, software visible timer registers.
      * @{ */
@@ -249,20 +242,13 @@ typedef HPETTIMER const *PCHPETTIMER;
  */
 typedef struct HPET
 {
-    /** Pointer to the device instance. - R3 ptr. */
-    PPDMDEVINSR3                pDevInsR3;
     /** The HPET helpers - R3 Ptr. */
     PCPDMHPETHLPR3              pHpetHlpR3;
-
-    /** Pointer to the device instance. - R0 ptr. */
-    PPDMDEVINSR0                pDevInsR0;
     /** The HPET helpers - R0 Ptr. */
     PCPDMHPETHLPR0              pHpetHlpR0;
-
-    /** Pointer to the device instance. - RC ptr. */
-    PPDMDEVINSRC                pDevInsRC;
     /** The HPET helpers - RC Ptr. */
     PCPDMHPETHLPRC              pHpetHlpRC;
+    uint32_t                    u32Padding;
 
     /** Timer structures. */
     HPETTIMER                   aTimers[RT_MAX(HPET_NUM_TIMERS_PIIX, HPET_NUM_TIMERS_ICH9)];
@@ -409,7 +395,7 @@ static void hpetProgramTimer(PPDMDEVINS pDevIns, PHPET pThis, PHPETTIMER pHpetTi
     /* no wrapping on new timers */
     pHpetTimer->u8Wrap = 0;
 
-    uint64_t u64Ticks = hpetGetTicks(pDevIns, pHpetTimer->CTX_SUFF(pHpet));
+    uint64_t u64Ticks = hpetGetTicks(pDevIns, pThis);
     hpetAdjustComparator(pHpetTimer, u64Ticks);
 
     uint64_t u64Diff = hpetComputeDiff(pHpetTimer, u64Ticks);
@@ -442,8 +428,8 @@ static void hpetProgramTimer(PPDMDEVINS pDevIns, PHPET pThis, PHPETTIMER pHpetTi
     uint64_t u64TickLimit = pThis->fIch9 ? HPET_TICKS_IN_100YR_ICH9 : HPET_TICKS_IN_100YR_PIIX;
     if (u64Diff <= u64TickLimit)
     {
-        Log4(("HPET: next IRQ in %lld ticks (%lld ns)\n", u64Diff, hpetTicksToNs(pHpetTimer->CTX_SUFF(pHpet), u64Diff)));
-        PDMDevHlpTimerSetNano(pDevIns, pHpetTimer->hTimer, hpetTicksToNs(pHpetTimer->CTX_SUFF(pHpet), u64Diff));
+        Log4(("HPET: next IRQ in %lld ticks (%lld ns)\n", u64Diff, hpetTicksToNs(pThis, u64Diff)));
+        PDMDevHlpTimerSetNano(pDevIns, pHpetTimer->hTimer, hpetTicksToNs(pThis, u64Diff));
     }
     else
     {
@@ -769,7 +755,7 @@ static int hpetConfigRegWrite32(PPDMDEVINS pDevIns, PHPET pThis, uint32_t idxReg
                 && pThis->pHpetHlpR3 != NIL_RTR3PTR)
             {
 #ifdef IN_RING3
-                rc = pThis->pHpetHlpR3->pfnSetLegacyMode(pThis->pDevInsR3, RT_BOOL(u32NewValue & HPET_CFG_LEGACY));
+                rc = pThis->pHpetHlpR3->pfnSetLegacyMode(pDevIns, RT_BOOL(u32NewValue & HPET_CFG_LEGACY));
                 if (rc != VINF_SUCCESS)
 #else
                 rc = VINF_IOM_R3_MMIO_WRITE;
@@ -1009,9 +995,10 @@ PDMBOTHCBDECL(int) hpetMMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPh
  * Gets the IRQ of an HPET timer.
  *
  * @returns IRQ number.
+ * @param   pThis               The shared HPET state.
  * @param   pHpetTimer          The HPET timer.
  */
-static uint32_t hpetR3TimerGetIrq(PCHPETTIMER pHpetTimer)
+static uint32_t hpetR3TimerGetIrq(PHPET pThis, PCHPETTIMER pHpetTimer)
 {
     /*
      * Per spec, in legacy mode the HPET timers are wired as follows:
@@ -1022,7 +1009,7 @@ static uint32_t hpetR3TimerGetIrq(PCHPETTIMER pHpetTimer)
      * to the different ICs.
      */
     if (   (pHpetTimer->idxTimer <= 1)
-        && (pHpetTimer->CTX_SUFF(pHpet)->u64HpetConfig & HPET_CFG_LEGACY))
+        && (pThis->u64HpetConfig & HPET_CFG_LEGACY))
         return (pHpetTimer->idxTimer == 0) ? 0 : 8;
 
     return (pHpetTimer->u64Config & HPET_TN_INT_ROUTE_MASK) >> HPET_TN_INT_ROUTE_SHIFT;
@@ -1032,16 +1019,17 @@ static uint32_t hpetR3TimerGetIrq(PCHPETTIMER pHpetTimer)
 /**
  * Used by hpetR3Timer to update the IRQ status.
  *
- * @param   pThis               The HPET device state.
+ * @param   pDevIns             The device instance.
+ * @param   pThis               The shared HPET state.
  * @param   pHpetTimer          The HPET timer.
  */
-static void hpetR3TimerUpdateIrq(PHPET pThis, PHPETTIMER pHpetTimer)
+static void hpetR3TimerUpdateIrq(PPDMDEVINS pDevIns, PHPET pThis, PHPETTIMER pHpetTimer)
 {
     /** @todo is it correct? */
     if (   !!(pHpetTimer->u64Config & HPET_TN_ENABLE)
         && !!(pThis->u64HpetConfig & HPET_CFG_ENABLE))
     {
-        uint32_t irq = hpetR3TimerGetIrq(pHpetTimer);
+        uint32_t irq = hpetR3TimerGetIrq(pThis, pHpetTimer);
         Log4(("HPET: raising IRQ %d\n", irq));
 
         /* ISR bits are only set in level-triggered mode. */
@@ -1051,7 +1039,7 @@ static void hpetR3TimerUpdateIrq(PHPET pThis, PHPETTIMER pHpetTimer)
         /* We trigger flip/flop in edge-triggered mode and do nothing in
            level-triggered mode yet. */
         if ((pHpetTimer->u64Config & HPET_TN_INT_TYPE) == HPET_TIMER_TYPE_EDGE)
-            pThis->pHpetHlpR3->pfnSetIrq(pThis->CTX_SUFF(pDevIns), irq, PDM_IRQ_LEVEL_FLIP_FLOP);
+            pThis->pHpetHlpR3->pfnSetIrq(pDevIns, irq, PDM_IRQ_LEVEL_FLIP_FLOP);
         else
             AssertFailed();
         /** @todo implement IRQs in level-triggered mode */
@@ -1106,7 +1094,7 @@ static DECLCALLBACK(void) hpetR3Timer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void 
     }
 
     /* Should it really be under lock, does it really matter? */
-    hpetR3TimerUpdateIrq(pThis, pHpetTimer);
+    hpetR3TimerUpdateIrq(pDevIns, pThis, pHpetTimer);
 }
 
 
@@ -1282,14 +1270,7 @@ static DECLCALLBACK(void) hpetR3Relocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta
     LogFlow(("hpetR3Relocate:\n"));
     NOREF(offDelta);
 
-    pThis->pDevInsRC    = PDMDEVINS_2_RCPTR(pDevIns);
     pThis->pHpetHlpRC   = pThis->pHpetHlpR3->pfnGetRCHelpers(pDevIns);
-
-    for (unsigned i = 0; i < RT_ELEMENTS(pThis->aTimers); i++)
-    {
-        PHPETTIMER pTm = &pThis->aTimers[i];
-        pTm->pHpetRC = PDMINS_2_DATA_RCPTR(pDevIns);
-    }
 }
 
 
@@ -1372,19 +1353,13 @@ static DECLCALLBACK(int) hpetR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
     /*
      * Initialize the device state.
      */
-    pThis->pDevInsR3 = pDevIns;
-    pThis->pDevInsR0 = PDMDEVINS_2_R0PTR(pDevIns);
-    pThis->pDevInsRC = PDMDEVINS_2_RCPTR(pDevIns);
 
     /* Init the HPET timers (init all regardless of how many we expose). */
     for (unsigned i = 0; i < RT_ELEMENTS(pThis->aTimers); i++)
     {
         PHPETTIMER pHpetTimer = &pThis->aTimers[i];
-
         pHpetTimer->idxTimer = i;
-        pHpetTimer->pHpetR3  = pThis;
-        pHpetTimer->pHpetR0  = PDMINS_2_DATA_R0PTR(pDevIns);
-        pHpetTimer->pHpetRC  = PDMINS_2_DATA_RCPTR(pDevIns);
+        pHpetTimer->hTimer   = NIL_TMTIMERHANDLE;
     }
 
     /*
