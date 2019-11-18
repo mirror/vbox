@@ -6,7 +6,7 @@
  *    - Level 1:   The most important (but usually rare) things to note
  *    - Level 2:   SCSI command logging
  *    - Level 3:   Vector and I/O transfer summary (shows what client sent an expects and fulfillment)
- *    - Level 6:   Device ⟷ Guest Driver negotation, traffic, notifications and state handling
+ *    - Level 6:   Device <-> Guest Driver negotation, traffic, notifications and state handling
  *    - Level 12:  Brief formatted hex dumps of I/O data
  */
 
