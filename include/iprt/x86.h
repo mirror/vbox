@@ -4354,11 +4354,15 @@ typedef enum X86XCPT
     X86_XCPT_AC = 0x11,
     /** \#MC - Machine check. */
     X86_XCPT_MC = 0x12,
-    /** \#XF - SIMD Floating-Pointer Exception. */
+    /** \#XF - SIMD Floating-Point Exception. */
     X86_XCPT_XF = 0x13,
-    /** \#VE - Virtualization Exception. */
+    /** \#VE - Virtualization Exception (Intel only). */
     X86_XCPT_VE = 0x14,
-    /** \#SX - Security Exception. */
+    /** \#CP - Control Protection Exception (Intel only). */
+    X86_XCPT_CP = 0x15,
+    /** \#VC - VMM Communication Exception (AMD only). */
+    X86_XCPT_VC = 0x1d,
+    /** \#SX - Security Exception (AMD only). */
     X86_XCPT_SX = 0x1e
 } X86XCPT;
 /** Pointer to a x86 exception code. */
