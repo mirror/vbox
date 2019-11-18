@@ -262,7 +262,8 @@ static DECLCALLBACK(int)  pcarchConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
     PDMDEV_CHECK_VERSIONS_RETURN(pDevIns);
     PDEVPCARCH  pThis = PDMDEVINS_2_DATA(pDevIns, PDEVPCARCH);
     int         rc;
-    Assert(iInstance == 0); RT_NOREF(iInstance);
+    RT_NOREF(iInstance, pCfg);
+    Assert(iInstance == 0);
 
     /*
      * Validate configuration.
