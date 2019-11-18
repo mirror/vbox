@@ -2596,7 +2596,7 @@ void UIMachineLogic::sltChangeDockIconUpdate(bool fEnabled)
         {
             m_pDockPreviewSelectMonitorGroup->setEnabled(fEnabled);
             m_DockIconPreviewMonitor = qMin(gEDataManager->realtimeDockIconUpdateMonitor(uiCommon().managedVMUuid()),
-                                            (int)machine().GetMonitorCount() - 1);
+                                            (int)machine().GetGraphicsAdapter().GetMonitorCount() - 1);
         }
         /* Resize the dock icon in the case the preview monitor has changed. */
         QSize size = machineWindows().at(m_DockIconPreviewMonitor)->machineView()->size();
