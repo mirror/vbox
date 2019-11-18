@@ -1230,6 +1230,8 @@ typedef struct PDM
     PDMAPIC                         Apic;
     /** The registered I/O APIC device. */
     PDMIOAPIC                       IoApic;
+    /** The registered HPET device. */
+    PPDMDEVINSR3                    pHpet;
 
     /** List of registered devices. (FIFO) */
     R3PTRTYPE(PPDMDEV)              pDevs;

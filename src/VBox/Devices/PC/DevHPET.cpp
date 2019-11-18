@@ -238,18 +238,10 @@ typedef HPETTIMER const *PCHPETTIMER;
 
 
 /**
- * The shared HPET state.
+ * The shared HPET device state.
  */
 typedef struct HPET
 {
-    /** The HPET helpers - R3 Ptr. */
-    PCPDMHPETHLPR3              pHpetHlpR3;
-    /** The HPET helpers - R0 Ptr. */
-    PCPDMHPETHLPR0              pHpetHlpR0;
-    /** The HPET helpers - RC Ptr. */
-    PCPDMHPETHLPRC              pHpetHlpRC;
-    uint32_t                    u32Padding;
-
     /** Timer structures. */
     HPETTIMER                   aTimers[RT_MAX(HPET_NUM_TIMERS_PIIX, HPET_NUM_TIMERS_ICH9)];
 
@@ -285,6 +277,48 @@ typedef struct HPET
 typedef HPET *PHPET;
 /** Const pointer to the shared HPET device state. */
 typedef const HPET *PCHPET;
+
+
+/**
+ * The ring-3 specific HPET device state.
+ */
+typedef struct HPETR3
+{
+    /** The HPET helpers. */
+    PCPDMHPETHLPR3              pHpetHlp;
+} HPETR3;
+/** Pointer to the ring-3 specific HPET device state. */
+typedef HPETR3 *PHPETR3;
+
+
+/**
+ * The ring-0 specific HPET device state.
+ */
+typedef struct HPETR0
+{
+    /** The HPET helpers. */
+    PCPDMHPETHLPR0              pHpetHlp;
+} HPETR0;
+/** Pointer to the ring-0 specific HPET device state. */
+typedef HPETR0 *PHPETR0;
+
+
+/**
+ * The raw-mode specific HPET device state.
+ */
+typedef struct HPETRC
+{
+    /** The HPET helpers. */
+    PCPDMHPETHLPRC              pHpetHlp;
+} HPETRC;
+/** Pointer to the raw-mode specific HPET device state. */
+typedef HPETRC *PHPETRC;
+
+
+/** The HPET device state specific to the current context. */
+typedef CTX_SUFF(HPET) HPETCC;
+/** Pointer to the HPET device state specific to the current context. */
+typedef CTX_SUFF(PHPET) PHPETCC;
 
 
 #ifndef VBOX_DEVICE_STRUCT_TESTCASE
@@ -753,19 +787,24 @@ static VBOXSTRICTRC hpetConfigRegWrite32(PPDMDEVINS pDevIns, PHPET pThis, uint32
              * This check must be here, before actual update, as hpetLegacyMode
              * may request retry in R3 - so we must keep state intact.
              */
-            if (   ((iOldValue ^ u32NewValue) & HPET_CFG_LEGACY)
-                && pThis->pHpetHlpR3 != NIL_RTR3PTR)
+            if ((iOldValue ^ u32NewValue) & HPET_CFG_LEGACY)
             {
 #ifdef IN_RING3
-                rc = pThis->pHpetHlpR3->pfnSetLegacyMode(pDevIns, RT_BOOL(u32NewValue & HPET_CFG_LEGACY));
-                if (rc != VINF_SUCCESS)
+                PHPETCC pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PHPETCC);
+                if (pThisCC->pHpetHlp != NULL)
+                {
+                    rc = pThisCC->pHpetHlp->pfnSetLegacyMode(pDevIns, RT_BOOL(u32NewValue & HPET_CFG_LEGACY));
+                    if (rc != VINF_SUCCESS)
+                    {
+                        DEVHPET_UNLOCK_BOTH(pDevIns, pThis);
+                        break;
+                    }
+                }
 #else
                 rc = VINF_IOM_R3_MMIO_WRITE;
+                DEVHPET_UNLOCK_BOTH(pDevIns, pThis);
+                break;
 #endif
-                {
-                    DEVHPET_UNLOCK_BOTH(pDevIns, pThis);
-                    break;
-                }
             }
 
             pThis->u64HpetConfig = hpetUpdateMasked(u32NewValue, iOldValue, HPET_CFG_WRITE_MASK);
@@ -1040,7 +1079,11 @@ static void hpetR3TimerUpdateIrq(PPDMDEVINS pDevIns, PHPET pThis, PHPETTIMER pHp
         /* We trigger flip/flop in edge-triggered mode and do nothing in
            level-triggered mode yet. */
         if ((pHpetTimer->u64Config & HPET_TN_INT_TYPE) == HPET_TIMER_TYPE_EDGE)
-            pThis->pHpetHlpR3->pfnSetIrq(pDevIns, irq, PDM_IRQ_LEVEL_FLIP_FLOP);
+        {
+            PHPETCC pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PHPETCC);
+            AssertReturnVoid(pThisCC);
+            pThisCC->pHpetHlp->pfnSetIrq(pDevIns, irq, PDM_IRQ_LEVEL_FLIP_FLOP);
+        }
         else
             AssertFailed();
         /** @todo implement IRQs in level-triggered mode */
@@ -1267,11 +1310,10 @@ static DECLCALLBACK(int) hpetR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uin
  */
 static DECLCALLBACK(void) hpetR3Relocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta)
 {
-    PHPET pThis = PDMDEVINS_2_DATA(pDevIns, PHPET);
+    PHPETRC pThisRC = PDMINS_2_DATA_RC(pDevIns, PHPETRC);
     LogFlow(("hpetR3Relocate:\n"));
-    NOREF(offDelta);
 
-    pThis->pHpetHlpRC   = pThis->pHpetHlpR3->pfnGetRCHelpers(pDevIns);
+    pThisRC->pHpetHlp += offDelta;
 }
 
 
@@ -1280,7 +1322,8 @@ static DECLCALLBACK(void) hpetR3Relocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta
  */
 static DECLCALLBACK(void) hpetR3Reset(PPDMDEVINS pDevIns)
 {
-    PHPET pThis = PDMDEVINS_2_DATA(pDevIns, PHPET);
+    PHPET   pThis   = PDMDEVINS_2_DATA(pDevIns, PHPET);
+    PHPETCC pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PHPETCC);
     LogFlow(("hpetR3Reset:\n"));
 
     /*
@@ -1334,8 +1377,8 @@ static DECLCALLBACK(void) hpetR3Reset(PPDMDEVINS pDevIns)
     /*
      * Notify the PIT/RTC devices.
      */
-    if (pThis->pHpetHlpR3)
-        pThis->pHpetHlpR3->pfnSetLegacyMode(pDevIns, false /*fActive*/);
+    if (pThisCC->pHpetHlp)
+        pThisCC->pHpetHlp->pfnSetLegacyMode(pDevIns, false /*fActive*/);
 }
 
 
@@ -1346,6 +1389,7 @@ static DECLCALLBACK(int) hpetR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
 {
     PDMDEV_CHECK_VERSIONS_RETURN(pDevIns);
     PHPET           pThis   = PDMDEVINS_2_DATA(pDevIns, PHPET);
+    PHPETCC         pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PHPETCC);
     PCPDMDEVHLPR3   pHlp    = pDevIns->pHlpR3;
 
     /* Only one HPET device now, as we use fixed MMIO region. */
@@ -1408,7 +1452,7 @@ static DECLCALLBACK(int) hpetR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
      */
     PDMHPETREG HpetReg;
     HpetReg.u32Version = PDM_HPETREG_VERSION;
-    rc = PDMDevHlpHPETRegister(pDevIns, &HpetReg, &pThis->pHpetHlpR3);
+    rc = PDMDevHlpHpetRegister(pDevIns, &HpetReg, &pThisCC->pHpetHlp);
     AssertRCReturn(rc, rc);
 
     /*
@@ -1419,17 +1463,6 @@ static DECLCALLBACK(int) hpetR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
                                    IOMMMIO_FLAGS_READ_DWORD_QWORD | IOMMMIO_FLAGS_WRITE_ONLY_DWORD_QWORD,
                                    "HPET Memory", &pThis->hMmio);
     AssertRCReturn(rc, rc);
-
-    if (pDevIns->fRCEnabled)
-    {
-        pThis->pHpetHlpRC = pThis->pHpetHlpR3->pfnGetRCHelpers(pDevIns);
-    }
-
-    if (pDevIns->fR0Enabled)
-    {
-        pThis->pHpetHlpR0 = pThis->pHpetHlpR3->pfnGetR0Helpers(pDevIns);
-        AssertReturn(pThis->pHpetHlpR0 != NIL_RTR0PTR, VERR_INTERNAL_ERROR);
-    }
 
     /*
      * Register SSM state and info item.
@@ -1451,9 +1484,14 @@ static DECLCALLBACK(int) hpetRZConstruct(PPDMDEVINS pDevIns)
 {
     PDMDEV_CHECK_VERSIONS_RETURN(pDevIns);
     PHPET   pThis   = PDMDEVINS_2_DATA(pDevIns, PHPET);
-    //PHPETCC pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PHPETCC);
+    PHPETCC pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PHPETCC);
 
     int rc = PDMDevHlpSetDeviceCritSect(pDevIns, PDMDevHlpCritSectGetNop(pDevIns));
+    AssertRCReturn(rc, rc);
+
+    PDMHPETREG HpetReg;
+    HpetReg.u32Version = PDM_HPETREG_VERSION;
+    rc = PDMDevHlpHpetSetUpContext(pDevIns, &HpetReg, &pThisCC->pHpetHlp);
     AssertRCReturn(rc, rc);
 
     rc = PDMDevHlpMmioSetUpContext(pDevIns, pThis->hMmio, hpetMMIOWrite, hpetMMIORead, NULL /*pvUser*/);
@@ -1472,13 +1510,13 @@ const PDMDEVREG g_DeviceHPET =
     /* .u32Version = */             PDM_DEVREG_VERSION,
     /* .uReserved0 = */             0,
     /* .szName = */                 "hpet",
-    /* .fFlags = */                 PDM_DEVREG_FLAGS_DEFAULT_BITS | PDM_DEVREG_FLAGS_RZ,
+    /* .fFlags = */                 PDM_DEVREG_FLAGS_DEFAULT_BITS | PDM_DEVREG_FLAGS_RZ | PDM_DEVREG_FLAGS_NEW_STYLE,
     /* .fClass = */                 PDM_DEVREG_CLASS_PIT,
     /* .cMaxInstances = */          1,
     /* .uSharedVersion = */         42,
     /* .cbInstanceShared = */       sizeof(HPET),
-    /* .cbInstanceCC = */           0,
-    /* .cbInstanceRC = */           0,
+    /* .cbInstanceCC = */           sizeof(HPETCC),
+    /* .cbInstanceRC = */           sizeof(HPETRC),
     /* .cMaxPciDevices = */         0,
     /* .cMaxMsixVectors = */        0,
     /* .pszDescription = */         "High Precision Event Timer (HPET) Device",

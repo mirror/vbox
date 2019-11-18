@@ -1192,6 +1192,45 @@ static DECLCALLBACK(int) pdmR0DevHlp_IoApicSetUpContext(PPDMDEVINS pDevIns, PPDM
 }
 
 
+/** @interface_method_impl{PDMDEVHLPR0,pfnHpetSetUpContext} */
+static DECLCALLBACK(int) pdmR0DevHlp_HpetSetUpContext(PPDMDEVINS pDevIns, PPDMHPETREG pHpetReg, PCPDMHPETHLPR0 *ppHpetHlp)
+{
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    LogFlow(("pdmR0DevHlp_HpetSetUpContext: caller='%s'/%d: pHpetReg=%p:{.u32Version=%#x, } ppHpetHlp=%p\n",
+             pDevIns->pReg->szName, pDevIns->iInstance, pHpetReg, pHpetReg->u32Version, ppHpetHlp));
+    PGVM pGVM = pDevIns->Internal.s.pGVM;
+
+    /*
+     * Validate input.
+     */
+    AssertMsgReturn(pHpetReg->u32Version == PDM_HPETREG_VERSION,
+                    ("%s/%d: u32Version=%#x expected %#x\n", pDevIns->pReg->szName, pDevIns->iInstance, pHpetReg->u32Version, PDM_HPETREG_VERSION),
+                    VERR_VERSION_MISMATCH);
+    AssertPtrReturn(ppHpetHlp, VERR_INVALID_POINTER);
+
+    VM_ASSERT_STATE_RETURN(pGVM, VMSTATE_CREATING, VERR_WRONG_ORDER);
+    VM_ASSERT_EMT0_RETURN(pGVM, VERR_VM_THREAD_NOT_EMT);
+
+    /* Check that it's the same device as made the ring-3 registrations: */
+    AssertLogRelMsgReturn(pGVM->pdm.s.pHpet == pDevIns->pDevInsForR3, ("%p vs %p\n", pGVM->pdm.s.pHpet, pDevIns->pDevInsForR3),
+                          VERR_NOT_OWNER);
+
+    ///* Check that it isn't already registered in ring-0: */
+    //AssertLogRelMsgReturn(pGVM->pdm.s.Hpet.pDevInsR0 == NULL, ("%p (caller pDevIns=%p)\n", pGVM->pdm.s.Hpet.pDevInsR0, pDevIns),
+    //                      VERR_ALREADY_EXISTS);
+
+    /*
+     * Nothing to take down here at present.
+     */
+    Log(("PDM: Registered HPET device '%s'/%d pDevIns=%p\n", pDevIns->pReg->szName, pDevIns->iInstance, pDevIns));
+
+    /* set the helper pointer and return. */
+    *ppHpetHlp = &g_pdmR0HpetHlp;
+    LogFlow(("pdmR0DevHlp_HpetSetUpContext: caller='%s'/%d: returns %Rrc\n", pDevIns->pReg->szName, pDevIns->iInstance, VINF_SUCCESS));
+    return VINF_SUCCESS;
+}
+
+
 /**
  * The Ring-0 Device Helper Callbacks.
  */
@@ -1271,6 +1310,7 @@ extern DECLEXPORT(const PDMDEVHLPR0) g_pdmR0DevHlp =
     pdmR0DevHlp_PCIBusSetUpContext,
     pdmR0DevHlp_PICSetUpContext,
     pdmR0DevHlp_IoApicSetUpContext,
+    pdmR0DevHlp_HpetSetUpContext,
     NULL /*pfnReserved1*/,
     NULL /*pfnReserved2*/,
     NULL /*pfnReserved3*/,

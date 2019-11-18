@@ -316,51 +316,12 @@ static DECLCALLBACK(int) pdmR3HpetHlp_SetIrq(PPDMDEVINS pDevIns, int iIrq, int i
 }
 
 
-/** @interface_method_impl{PDMHPETHLPR3,pfnGetRCHelpers} */
-static DECLCALLBACK(PCPDMHPETHLPRC) pdmR3HpetHlp_GetRCHelpers(PPDMDEVINS pDevIns)
-{
-    PDMDEV_ASSERT_DEVINS(pDevIns);
-    PVM pVM = pDevIns->Internal.s.pVMR3;
-    VM_ASSERT_EMT(pVM);
-
-    RTRCPTR pRCHelpers = NIL_RTRCPTR;
-    if (VM_IS_RAW_MODE_ENABLED(pVM))
-    {
-        int rc = PDMR3LdrGetSymbolRC(pVM, NULL, "g_pdmRCHpetHlp", &pRCHelpers);
-        AssertReleaseRC(rc);
-        AssertRelease(pRCHelpers);
-    }
-
-    LogFlow(("pdmR3HpetHlp_GetGCHelpers: caller='%s'/%d: returns %RRv\n",
-             pDevIns->pReg->szName, pDevIns->iInstance, pRCHelpers));
-    return pRCHelpers;
-}
-
-
-/** @interface_method_impl{PDMHPETHLPR3,pfnGetR0Helpers} */
-static DECLCALLBACK(PCPDMHPETHLPR0) pdmR3HpetHlp_GetR0Helpers(PPDMDEVINS pDevIns)
-{
-    PDMDEV_ASSERT_DEVINS(pDevIns);
-    PVM pVM = pDevIns->Internal.s.pVMR3;
-    VM_ASSERT_EMT(pVM);
-    PCPDMHPETHLPR0 pR0Helpers = 0;
-    int rc = PDMR3LdrGetSymbolR0(pVM, NULL, "g_pdmR0HpetHlp", &pR0Helpers);
-    AssertReleaseRC(rc);
-    AssertRelease(pR0Helpers);
-    LogFlow(("pdmR3HpetHlp_GetR0Helpers: caller='%s'/%d: returns %RHv\n",
-             pDevIns->pReg->szName, pDevIns->iInstance, pR0Helpers));
-    return pR0Helpers;
-}
-
-
 /**
  * HPET Device Helpers.
  */
 const PDMHPETHLPR3 g_pdmR3DevHpetHlp =
 {
     PDM_HPETHLPR3_VERSION,
-    pdmR3HpetHlp_GetRCHelpers,
-    pdmR3HpetHlp_GetR0Helpers,
     pdmR3HpetHlp_SetLegacyMode,
     pdmR3HpetHlp_SetIrq,
     PDM_HPETHLPR3_VERSION, /* the end */

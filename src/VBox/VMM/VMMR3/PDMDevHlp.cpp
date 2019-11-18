@@ -3741,9 +3741,9 @@ static DECLCALLBACK(int) pdmR3DevHlp_APICRegister(PPDMDEVINS pDevIns)
 static DECLCALLBACK(int) pdmR3DevHlp_IoApicRegister(PPDMDEVINS pDevIns, PPDMIOAPICREG pIoApicReg, PCPDMIOAPICHLP *ppIoApicHlp)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
-    VM_ASSERT_EMT(pDevIns->Internal.s.pVMR3);
     LogFlow(("pdmR3DevHlp_IoApicRegister: caller='%s'/%d: pIoApicReg=%p:{.u32Version=%#x, .pfnSetIrq=%p, .pfnSendMsi=%p, .pfnSetEoi=%p, .u32TheEnd=%#x } ppIoApicHlp=%p\n",
              pDevIns->pReg->szName, pDevIns->iInstance, pIoApicReg, pIoApicReg->u32Version, pIoApicReg->pfnSetIrq, pIoApicReg->pfnSendMsi, pIoApicReg->pfnSetEoi, pIoApicReg->u32TheEnd, ppIoApicHlp));
+    PVM pVM = pDevIns->Internal.s.pVMR3;
 
     /*
      * Validate input.
@@ -3758,19 +3758,20 @@ static DECLCALLBACK(int) pdmR3DevHlp_IoApicRegister(PPDMDEVINS pDevIns, PPDMIOAP
                     ("%s/%d: u32TheEnd=%#x expected %#x\n", pDevIns->pReg->szName, pDevIns->iInstance, pIoApicReg->u32TheEnd, PDM_IOAPICREG_VERSION),
                     VERR_VERSION_MISMATCH);
     AssertPtrReturn(ppIoApicHlp, VERR_INVALID_POINTER);
+    VM_ASSERT_STATE_RETURN(pVM, VMSTATE_CREATING, VERR_WRONG_ORDER);
+    VM_ASSERT_EMT0_RETURN(pVM, VERR_VM_THREAD_NOT_EMT);
 
     /*
      * The I/O APIC requires the APIC to be present (hacks++).
      * If the I/O APIC does GC stuff so must the APIC.
      */
-    PVM pVM = pDevIns->Internal.s.pVMR3;
     AssertMsgReturn(pVM->pdm.s.Apic.pDevInsR3 != NULL, ("Configuration error / Init order error! No APIC!\n"), VERR_WRONG_ORDER);
 
     /*
      * Only one I/O APIC device.
      */
     AssertMsgReturn(pVM->pdm.s.IoApic.pDevInsR3 == NULL,
-                    ("Only one ioapic device is supported! (caller %s/%d)\n", pDevIns->pReg->szName, pDevIns->iInstance),
+                    ("Only one IOAPIC device is supported! (caller %s/%d)\n", pDevIns->pReg->szName, pDevIns->iInstance),
                     VERR_ALREADY_EXISTS);
 
     /*
@@ -3789,33 +3790,37 @@ static DECLCALLBACK(int) pdmR3DevHlp_IoApicRegister(PPDMDEVINS pDevIns, PPDMIOAP
 }
 
 
-/** @interface_method_impl{PDMDEVHLPR3,pfnHPETRegister} */
-static DECLCALLBACK(int) pdmR3DevHlp_HPETRegister(PPDMDEVINS pDevIns, PPDMHPETREG pHpetReg, PCPDMHPETHLPR3 *ppHpetHlpR3)
+/** @interface_method_impl{PDMDEVHLPR3,pfnHpetRegister} */
+static DECLCALLBACK(int) pdmR3DevHlp_HpetRegister(PPDMDEVINS pDevIns, PPDMHPETREG pHpetReg, PCPDMHPETHLPR3 *ppHpetHlpR3)
 {
-    PDMDEV_ASSERT_DEVINS(pDevIns); RT_NOREF_PV(pDevIns);
-    VM_ASSERT_EMT(pDevIns->Internal.s.pVMR3);
-    LogFlow(("pdmR3DevHlp_HPETRegister: caller='%s'/%d:\n", pDevIns->pReg->szName, pDevIns->iInstance));
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    LogFlow(("pdmR3DevHlp_HpetRegister: caller='%s'/%d:\n", pDevIns->pReg->szName, pDevIns->iInstance));
+    PVM pVM = pDevIns->Internal.s.pVMR3;
 
     /*
      * Validate input.
      */
-    if (pHpetReg->u32Version != PDM_HPETREG_VERSION)
-    {
-        AssertMsgFailed(("u32Version=%#x expected %#x\n", pHpetReg->u32Version, PDM_HPETREG_VERSION));
-        LogFlow(("pdmR3DevHlp_HPETRegister: caller='%s'/%d: returns %Rrc (version)\n", pDevIns->pReg->szName, pDevIns->iInstance, VERR_INVALID_PARAMETER));
-        return VERR_INVALID_PARAMETER;
-    }
+    AssertMsgReturn(pHpetReg->u32Version == PDM_HPETREG_VERSION,
+                    ("%s/%u: u32Version=%#x expected %#x\n", pDevIns->pReg->szName, pDevIns->iInstance, pHpetReg->u32Version, PDM_HPETREG_VERSION),
+                    VERR_VERSION_MISMATCH);
+    AssertPtrReturn(ppHpetHlpR3, VERR_INVALID_POINTER);
+    VM_ASSERT_STATE_RETURN(pVM, VMSTATE_CREATING, VERR_WRONG_ORDER);
+    VM_ASSERT_EMT0_RETURN(pVM, VERR_VM_THREAD_NOT_EMT);
 
-    if (!ppHpetHlpR3)
-    {
-        Assert(ppHpetHlpR3);
-        LogFlow(("pdmR3DevHlp_HPETRegister: caller='%s'/%d: returns %Rrc (ppApicHlpR3)\n", pDevIns->pReg->szName, pDevIns->iInstance, VERR_INVALID_PARAMETER));
-        return VERR_INVALID_PARAMETER;
-    }
+    /*
+     * Only one HPET device.
+     */
+    AssertMsgReturn(pVM->pdm.s.pHpet == NULL,
+                    ("Only one HPET device is supported! (caller %s/%d)\n", pDevIns->pReg->szName, pDevIns->iInstance),
+                    VERR_ALREADY_EXISTS);
 
-    /* set the helper pointer and return. */
+    /*
+     * Do the job (what there is of it).
+     */
+    pVM->pdm.s.pHpet = pDevIns;
     *ppHpetHlpR3 = &g_pdmR3DevHpetHlp;
-    LogFlow(("pdmR3DevHlp_HPETRegister: caller='%s'/%d: returns %Rrc\n", pDevIns->pReg->szName, pDevIns->iInstance, VINF_SUCCESS));
+
+    LogFlow(("pdmR3DevHlp_HpetRegister: caller='%s'/%d: returns %Rrc\n", pDevIns->pReg->szName, pDevIns->iInstance, VINF_SUCCESS));
     return VINF_SUCCESS;
 }
 
@@ -4539,7 +4544,7 @@ const PDMDEVHLPR3 g_pdmR3DevHlpTrusted =
     pdmR3DevHlp_PICRegister,
     pdmR3DevHlp_APICRegister,
     pdmR3DevHlp_IoApicRegister,
-    pdmR3DevHlp_HPETRegister,
+    pdmR3DevHlp_HpetRegister,
     pdmR3DevHlp_PciRawRegister,
     pdmR3DevHlp_DMACRegister,
     pdmR3DevHlp_DMARegister,
@@ -5035,7 +5040,7 @@ const PDMDEVHLPR3 g_pdmR3DevHlpUnTrusted =
     pdmR3DevHlp_PICRegister,
     pdmR3DevHlp_APICRegister,
     pdmR3DevHlp_IoApicRegister,
-    pdmR3DevHlp_HPETRegister,
+    pdmR3DevHlp_HpetRegister,
     pdmR3DevHlp_PciRawRegister,
     pdmR3DevHlp_DMACRegister,
     pdmR3DevHlp_DMARegister,

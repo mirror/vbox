@@ -1555,7 +1555,6 @@ typedef struct PDMHPETREG
 {
     /** Struct version+magic number (PDM_HPETREG_VERSION). */
     uint32_t            u32Version;
-
 } PDMHPETREG;
 /** Pointer to an HPET registration structure. */
 typedef PDMHPETREG *PPDMHPETREG;
@@ -1619,28 +1618,6 @@ typedef struct PDMHPETHLPR3
     uint32_t                u32Version;
 
     /**
-     * Gets the address of the RC HPET helpers.
-     *
-     * This should be called at both construction and relocation time
-     * to obtain the correct address of the RC helpers.
-     *
-     * @returns RC pointer to the HPET helpers.
-     * @param   pDevIns         Device instance of the HPET.
-     */
-    DECLR3CALLBACKMEMBER(PCPDMHPETHLPRC, pfnGetRCHelpers,(PPDMDEVINS pDevIns));
-
-    /**
-     * Gets the address of the R0 HPET helpers.
-     *
-     * This should be called at both construction and relocation time
-     * to obtain the correct address of the R0 helpers.
-     *
-     * @returns R0 pointer to the HPET helpers.
-     * @param   pDevIns         Device instance of the HPET.
-     */
-    DECLR3CALLBACKMEMBER(PCPDMHPETHLPR0, pfnGetR0Helpers,(PPDMDEVINS pDevIns));
-
-    /**
      * Set legacy mode on PIT and RTC.
      *
      * @returns VINF_SUCCESS on success.
@@ -1672,7 +1649,7 @@ typedef R3PTRTYPE(PDMHPETHLPR3 *) PPDMHPETHLPR3;
 typedef R3PTRTYPE(const PDMHPETHLPR3 *) PCPDMHPETHLPR3;
 
 /** Current PDMHPETHLPR3 version number. */
-#define PDM_HPETHLPR3_VERSION                   PDM_VERSION_MAKE(0xffec, 2, 0)
+#define PDM_HPETHLPR3_VERSION                   PDM_VERSION_MAKE(0xffec, 3, 0)
 
 
 /**
@@ -3786,7 +3763,7 @@ typedef struct PDMDEVHLPR3
      * @param   ppHpetHlpR3         Where to store the pointer to the HPET
      *                              helpers.
      */
-    DECLR3CALLBACKMEMBER(int, pfnHPETRegister,(PPDMDEVINS pDevIns, PPDMHPETREG pHpetReg, PCPDMHPETHLPR3 *ppHpetHlpR3));
+    DECLR3CALLBACKMEMBER(int, pfnHpetRegister,(PPDMDEVINS pDevIns, PPDMHPETREG pHpetReg, PCPDMHPETHLPR3 *ppHpetHlpR3));
 
     /**
      * Register a raw PCI device.
@@ -4687,7 +4664,7 @@ typedef struct PDMDEVHLPRC
      *                      considered volatile and copied.
      * @param   ppPicHlp    Where to return the ring-0 PIC helpers.
      */
-    DECLR0CALLBACKMEMBER(int, pfnPICSetUpContext,(PPDMDEVINS pDevIns, PPDMPICREG pPicReg, PCPDMPICHLP *ppPicHlp));
+    DECLRCCALLBACKMEMBER(int, pfnPICSetUpContext,(PPDMDEVINS pDevIns, PPDMPICREG pPicReg, PCPDMPICHLP *ppPicHlp));
 
     /**
      * Sets up the IOAPIC for the ring-0 context.
@@ -4701,7 +4678,21 @@ typedef struct PDMDEVHLPRC
      *                      considered volatile and copied.
      * @param   ppIoApicHlp Where to return the ring-0 IOAPIC helpers.
      */
-    DECLR0CALLBACKMEMBER(int, pfnIoApicSetUpContext,(PPDMDEVINS pDevIns, PPDMIOAPICREG pIoApicReg, PCPDMIOAPICHLP *ppIoApicHlp));
+    DECLRCCALLBACKMEMBER(int, pfnIoApicSetUpContext,(PPDMDEVINS pDevIns, PPDMIOAPICREG pIoApicReg, PCPDMIOAPICHLP *ppIoApicHlp));
+
+    /**
+     * Sets up the HPET for the raw-mode context.
+     *
+     * This must be called after ring-3 has registered the PIC using
+     * PDMDevHlpHpetRegister().
+     *
+     * @returns VBox status code.
+     * @param   pDevIns     The device instance.
+     * @param   pHpetReg    The PIC registration information for raw-mode,
+     *                      considered volatile and copied.
+     * @param   ppHpetHlp   Where to return the raw-mode HPET helpers.
+     */
+    DECLRCCALLBACKMEMBER(int, pfnHpetSetUpContext,(PPDMDEVINS pDevIns, PPDMHPETREG pHpetReg, PCPDMHPETHLPRC *ppHpetHlp));
 
     /** Space reserved for future members.
      * @{ */
@@ -4726,7 +4717,7 @@ typedef RGPTRTYPE(struct PDMDEVHLPRC *) PPDMDEVHLPRC;
 typedef RGPTRTYPE(const struct PDMDEVHLPRC *) PCPDMDEVHLPRC;
 
 /** Current PDMDEVHLP version number. */
-#define PDM_DEVHLPRC_VERSION                    PDM_VERSION_MAKE(0xffe6, 12, 0)
+#define PDM_DEVHLPRC_VERSION                    PDM_VERSION_MAKE(0xffe6, 13, 0)
 
 
 /**
@@ -5196,6 +5187,20 @@ typedef struct PDMDEVHLPR0
      */
     DECLR0CALLBACKMEMBER(int, pfnIoApicSetUpContext,(PPDMDEVINS pDevIns, PPDMIOAPICREG pIoApicReg, PCPDMIOAPICHLP *ppIoApicHlp));
 
+    /**
+     * Sets up the HPET for the ring-0 context.
+     *
+     * This must be called after ring-3 has registered the PIC using
+     * PDMDevHlpHpetRegister().
+     *
+     * @returns VBox status code.
+     * @param   pDevIns     The device instance.
+     * @param   pHpetReg    The PIC registration information for ring-0,
+     *                      considered volatile and copied.
+     * @param   ppHpetHlp   Where to return the ring-0 HPET helpers.
+     */
+    DECLR0CALLBACKMEMBER(int, pfnHpetSetUpContext,(PPDMDEVINS pDevIns, PPDMHPETREG pHpetReg, PCPDMHPETHLPR0 *ppHpetHlp));
+
     /** Space reserved for future members.
      * @{ */
     DECLR0CALLBACKMEMBER(void, pfnReserved1,(void));
@@ -5219,7 +5224,7 @@ typedef R0PTRTYPE(struct PDMDEVHLPR0 *) PPDMDEVHLPR0;
 typedef R0PTRTYPE(const struct PDMDEVHLPR0 *) PCPDMDEVHLPR0;
 
 /** Current PDMDEVHLP version number. */
-#define PDM_DEVHLPR0_VERSION                    PDM_VERSION_MAKE(0xffe5, 13, 0)
+#define PDM_DEVHLPR0_VERSION                    PDM_VERSION_MAKE(0xffe5, 14, 0)
 
 
 /**
@@ -7714,11 +7719,11 @@ DECLINLINE(int) PDMDevHlpIoApicRegister(PPDMDEVINS pDevIns, PPDMIOAPICREG pIoApi
 }
 
 /**
- * @copydoc PDMDEVHLPR3::pfnHPETRegister
+ * @copydoc PDMDEVHLPR3::pfnHpetRegister
  */
-DECLINLINE(int) PDMDevHlpHPETRegister(PPDMDEVINS pDevIns, PPDMHPETREG pHpetReg, PCPDMHPETHLPR3 *ppHpetHlpR3)
+DECLINLINE(int) PDMDevHlpHpetRegister(PPDMDEVINS pDevIns, PPDMHPETREG pHpetReg, PCPDMHPETHLPR3 *ppHpetHlpR3)
 {
-    return pDevIns->pHlpR3->pfnHPETRegister(pDevIns, pHpetReg, ppHpetHlpR3);
+    return pDevIns->pHlpR3->pfnHpetRegister(pDevIns, pHpetReg, ppHpetHlpR3);
 }
 
 /**
@@ -7859,6 +7864,14 @@ DECLINLINE(int) PDMDevHlpPICSetUpContext(PPDMDEVINS pDevIns, PPDMPICREG pPicReg,
 DECLINLINE(int) PDMDevHlpIoApicSetUpContext(PPDMDEVINS pDevIns, PPDMIOAPICREG pIoApicReg, PCPDMIOAPICHLP *ppIoApicHlp)
 {
     return pDevIns->CTX_SUFF(pHlp)->pfnIoApicSetUpContext(pDevIns, pIoApicReg, ppIoApicHlp);
+}
+
+/**
+ * @copydoc PDMDEVHLPR0::pfnHpetSetUpContext
+ */
+DECLINLINE(int) PDMDevHlpHpetSetUpContext(PPDMDEVINS pDevIns, PPDMHPETREG pHpetReg, CTX_SUFF(PCPDMHPETHLP) *ppHpetHlp)
+{
+    return pDevIns->CTX_SUFF(pHlp)->pfnHpetSetUpContext(pDevIns, pHpetReg, ppHpetHlp);
 }
 
 #endif /* !IN_RING3 || DOXYGEN_RUNNING */
