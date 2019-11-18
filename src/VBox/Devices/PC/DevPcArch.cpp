@@ -267,8 +267,7 @@ static DECLCALLBACK(int)  pcarchConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
     /*
      * Validate configuration.
      */
-    if (!CFGMR3AreValuesValid(pCfg, "\0"))
-        return VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES;
+    PDMDEV_VALIDATE_CONFIG_RETURN(pDevIns, "", "");
 
     /*
      * Init the data.
