@@ -388,29 +388,27 @@ DECLINLINE(uint64_t) hpetComputeDiff(PHPETTIMER pHpetTimer, uint64_t u64Now)
         uint32_t u32Diff;
 
         u32Diff = (uint32_t)pHpetTimer->u64Cmp - (uint32_t)u64Now;
-        u32Diff = ((int32_t)u32Diff > 0) ? u32Diff : (uint32_t)0;
+        u32Diff = (int32_t)u32Diff > 0 ? u32Diff : (uint32_t)0;
         return (uint64_t)u32Diff;
     }
-    else
-    {
-        uint64_t u64Diff;
+    uint64_t u64Diff;
 
-        u64Diff = pHpetTimer->u64Cmp - u64Now;
-        u64Diff = ((int64_t)u64Diff > 0) ?  u64Diff : (uint64_t)0;
-        return u64Diff;
-    }
+    u64Diff = pHpetTimer->u64Cmp - u64Now;
+    u64Diff = (int64_t)u64Diff > 0 ?  u64Diff : (uint64_t)0;
+    return u64Diff;
 }
 
 
 static void hpetAdjustComparator(PHPETTIMER pHpetTimer, uint64_t u64Now)
 {
-    uint64_t    u64Period = pHpetTimer->u64Period;
-
-    if ((pHpetTimer->u64Config & HPET_TN_PERIODIC) && u64Period)
+    if ((pHpetTimer->u64Config & HPET_TN_PERIODIC))
     {
-          uint64_t  cPeriods = (u64Now - pHpetTimer->u64Cmp) / u64Period;
-
-          pHpetTimer->u64Cmp += (cPeriods + 1) * u64Period;
+        uint64_t u64Period = pHpetTimer->u64Period;
+        if (u64Period)
+        {
+            uint64_t  cPeriods = (u64Now - pHpetTimer->u64Cmp) / u64Period;
+            pHpetTimer->u64Cmp += (cPeriods + 1) * u64Period;
+        }
     }
 }
 
