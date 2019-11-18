@@ -229,6 +229,9 @@ typedef struct HPETTIMER
     /** Last value written to comparator. */
     uint64_t                    u64Period;
     /** @} */
+
+    STAMCOUNTER                 StatSetIrq;
+    STAMCOUNTER                 StatSetTimer;
 } HPETTIMER;
 AssertCompileMemberAlignment(HPETTIMER, u64Config, sizeof(uint64_t));
 /** Pointer to the shared state of an HPET timer. */
@@ -262,16 +265,21 @@ typedef struct HPET
     uint64_t                    u64HpetCounter;
     /** @}  */
 
-    /** Global device lock. */
-    PDMCRITSECT                 CritSect;
-
     /** Whether we emulate ICH9 HPET (different frequency & timer count). */
     bool                        fIch9;
     /** Size alignment padding. */
     uint8_t                     abPadding0[7];
 
-    /** The handle of the MMIO region.   */
+    /** Global device lock. */
+    PDMCRITSECT                 CritSect;
+
+    /** The handle of the MMIO region. */
     IOMMMIOHANDLE               hMmio;
+
+    STAMCOUNTER                 StatCounterRead4Byte;
+    STAMCOUNTER                 StatCounterRead8Byte;
+    STAMCOUNTER                 StatCounterWriteLow;
+    STAMCOUNTER                 StatCounterWriteHigh;
 } HPET;
 /** Pointer to the shared HPET device state. */
 typedef HPET *PHPET;
@@ -327,7 +335,6 @@ typedef CTX_SUFF(PHPET) PHPETCC;
 DECLINLINE(bool) hpet32bitTimer(PHPETTIMER pHpetTimer)
 {
     uint64_t u64Cfg = pHpetTimer->u64Config;
-
     return ((u64Cfg & HPET_TN_SIZE_CAP) == 0) || ((u64Cfg & HPET_TN_32BIT) != 0);
 }
 
@@ -343,6 +350,7 @@ DECLINLINE(uint64_t) hpetTicksToNs(PHPET pThis, uint64_t value)
 
 DECLINLINE(uint64_t) nsToHpetTicks(PCHPET pThis, uint64_t u64Value)
 {
+    //return ASMMultU64ByU32DivByU32(u64Value, FS_PER_NS, RT_MAX(pThis->u32Period, 1 /* no div/zero */));
     return ASMMultU64ByU32DivByU32(u64Value, FS_PER_NS, pThis->u32Period);
 }
 
@@ -466,6 +474,7 @@ static void hpetProgramTimer(PPDMDEVINS pDevIns, PHPET pThis, PHPETTIMER pHpetTi
     if (u64Diff <= u64TickLimit)
     {
         Log4(("HPET: next IRQ in %lld ticks (%lld ns)\n", u64Diff, hpetTicksToNs(pThis, u64Diff)));
+        STAM_REL_COUNTER_INC(&pHpetTimer->StatSetTimer);
         PDMDevHlpTimerSetNano(pDevIns, pHpetTimer->hTimer, hpetTicksToNs(pThis, u64Diff));
     }
     else
@@ -495,49 +504,50 @@ static void hpetTimerRegRead32(PPDMDEVINS pDevIns, PCHPET pThis, uint32_t iTimer
     Assert(PDMDevHlpCritSectIsOwner(pDevIns, &pThis->CritSect));
     RT_NOREF(pDevIns);
 
-    if (   iTimerNo >= HPET_CAP_GET_TIMERS(pThis->u32Capabilities)  /* The second check is only to satisfy Parfait; */
-        || iTimerNo >= RT_ELEMENTS(pThis->aTimers) )                /* in practice, the number of configured timers */
-    {                                                               /* will always be <= aTimers elements. */
-        LogRelMax(10, ("HPET: Using timer above configured range: %d\n", iTimerNo));
-        *pu32Value = 0;
-        return;
-    }
-
-    PCHPETTIMER pHpetTimer = &pThis->aTimers[iTimerNo];
     uint32_t u32Value;
-    switch (iTimerReg)
+    if (   iTimerNo < HPET_CAP_GET_TIMERS(pThis->u32Capabilities)
+        && iTimerNo < RT_ELEMENTS(pThis->aTimers) )
     {
-        case HPET_TN_CFG:
-            u32Value = (uint32_t)pHpetTimer->u64Config;
-            Log(("read HPET_TN_CFG on %d: %#x\n", iTimerNo, u32Value));
-            break;
-
-        case HPET_TN_CFG + 4:
-            u32Value = (uint32_t)(pHpetTimer->u64Config >> 32);
-            Log(("read HPET_TN_CFG+4 on %d: %#x\n", iTimerNo, u32Value));
-            break;
-
-        case HPET_TN_CMP:
-            u32Value = (uint32_t)pHpetTimer->u64Cmp;
-            Log(("read HPET_TN_CMP on %d: %#x (%#llx)\n", pHpetTimer->idxTimer, u32Value, pHpetTimer->u64Cmp));
-            break;
-
-        case HPET_TN_CMP + 4:
-            u32Value = (uint32_t)(pHpetTimer->u64Cmp >> 32);
-            Log(("read HPET_TN_CMP+4 on %d: %#x (%#llx)\n", pHpetTimer->idxTimer, u32Value, pHpetTimer->u64Cmp));
-            break;
-
-        case HPET_TN_ROUTE:
-            u32Value = (uint32_t)(pHpetTimer->u64Fsb >> 32); /** @todo Looks wrong, but since it's not supported, who cares. */
-            Log(("read HPET_TN_ROUTE on %d: %#x\n", iTimerNo, u32Value));
-            break;
-
-        default:
+        PCHPETTIMER pHpetTimer = &pThis->aTimers[iTimerNo];
+        switch (iTimerReg)
         {
-            LogRelMax(10, ("HPET: Invalid HPET register read %d on %d\n", iTimerReg, pHpetTimer->idxTimer));
-            u32Value = 0;
-            break;
+            case HPET_TN_CFG:
+                u32Value = (uint32_t)pHpetTimer->u64Config;
+                Log(("read HPET_TN_CFG on %d: %#x\n", iTimerNo, u32Value));
+                break;
+
+            case HPET_TN_CFG + 4:
+                u32Value = (uint32_t)(pHpetTimer->u64Config >> 32);
+                Log(("read HPET_TN_CFG+4 on %d: %#x\n", iTimerNo, u32Value));
+                break;
+
+            case HPET_TN_CMP:
+                u32Value = (uint32_t)pHpetTimer->u64Cmp;
+                Log(("read HPET_TN_CMP on %d: %#x (%#llx)\n", pHpetTimer->idxTimer, u32Value, pHpetTimer->u64Cmp));
+                break;
+
+            case HPET_TN_CMP + 4:
+                u32Value = (uint32_t)(pHpetTimer->u64Cmp >> 32);
+                Log(("read HPET_TN_CMP+4 on %d: %#x (%#llx)\n", pHpetTimer->idxTimer, u32Value, pHpetTimer->u64Cmp));
+                break;
+
+            case HPET_TN_ROUTE:
+                u32Value = (uint32_t)(pHpetTimer->u64Fsb >> 32); /** @todo Looks wrong, but since it's not supported, who cares. */
+                Log(("read HPET_TN_ROUTE on %d: %#x\n", iTimerNo, u32Value));
+                break;
+
+            default:
+            {
+                LogRelMax(10, ("HPET: Invalid HPET register read %d on %d\n", iTimerReg, pHpetTimer->idxTimer));
+                u32Value = 0;
+                break;
+            }
         }
+    }
+    else
+    {
+        LogRelMax(10, ("HPET: Using timer above configured range: %d\n", iTimerNo));
+        u32Value = 0;
     }
     *pu32Value = u32Value;
 }
@@ -715,6 +725,7 @@ static int hpetConfigRegRead32(PPDMDEVINS pDevIns, PHPET pThis, uint32_t idxReg,
         case HPET_COUNTER:
         case HPET_COUNTER + 4:
         {
+            STAM_REL_COUNTER_INC(&pThis->StatCounterRead4Byte);
             DEVHPET_LOCK_BOTH_RETURN(pDevIns, pThis, VINF_IOM_R3_MMIO_READ);
 
             uint64_t u64Ticks;
@@ -727,8 +738,7 @@ static int hpetConfigRegRead32(PPDMDEVINS pDevIns, PHPET pThis, uint32_t idxReg,
 
             /** @todo is it correct? */
             u32Value = (idxReg == HPET_COUNTER) ? (uint32_t)u64Ticks : (uint32_t)(u64Ticks >> 32);
-            Log(("read HPET_COUNTER: %s part value %x (%#llx)\n",
-                 (idxReg == HPET_COUNTER) ? "low" : "high", u32Value, u64Ticks));
+            Log(("read HPET_COUNTER: %s part value %x (%#llx)\n", (idxReg == HPET_COUNTER) ? "low" : "high", u32Value, u64Ticks));
             break;
         }
 
@@ -873,6 +883,7 @@ static VBOXSTRICTRC hpetConfigRegWrite32(PPDMDEVINS pDevIns, PHPET pThis, uint32
 
         case HPET_COUNTER:
         {
+            STAM_REL_COUNTER_INC(&pThis->StatCounterWriteLow);
             DEVHPET_LOCK_RETURN(pDevIns, pThis, VINF_IOM_R3_MMIO_WRITE);
             pThis->u64HpetCounter = RT_MAKE_U64(u32NewValue, RT_HI_U32(pThis->u64HpetCounter));
             Log(("write HPET_COUNTER: %#x -> %llx\n", u32NewValue, pThis->u64HpetCounter));
@@ -882,6 +893,7 @@ static VBOXSTRICTRC hpetConfigRegWrite32(PPDMDEVINS pDevIns, PHPET pThis, uint32
 
         case HPET_COUNTER + 4:
         {
+            STAM_REL_COUNTER_INC(&pThis->StatCounterWriteHigh);
             DEVHPET_LOCK_RETURN(pDevIns, pThis, VINF_IOM_R3_MMIO_WRITE);
             pThis->u64HpetCounter = RT_MAKE_U64(RT_LO_U32(pThis->u64HpetCounter), u32NewValue);
             Log(("write HPET_COUNTER + 4: %#x -> %llx\n", u32NewValue, pThis->u64HpetCounter));
@@ -942,6 +954,7 @@ static DECLCALLBACK(VBOXSTRICTRC) hpetMMIORead(PPDMDEVINS pDevIns, void *pvUser,
         {
             /* When reading HPET counter we must read it in a single read,
                to avoid unexpected time jumps on 32-bit overflow. */
+            STAM_REL_COUNTER_INC(&pThis->StatCounterRead8Byte);
             DEVHPET_LOCK_BOTH_RETURN(pDevIns, pThis, VINF_IOM_R3_MMIO_READ);
             if (pThis->u64HpetConfig & HPET_CFG_ENABLE)
                 pValue->u = hpetGetTicks(pDevIns, pThis);
@@ -1083,6 +1096,7 @@ static void hpetR3TimerUpdateIrq(PPDMDEVINS pDevIns, PHPET pThis, PHPETTIMER pHp
             PHPETCC pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PHPETCC);
             AssertReturnVoid(pThisCC);
             pThisCC->pHpetHlp->pfnSetIrq(pDevIns, irq, PDM_IRQ_LEVEL_FLIP_FLOP);
+            STAM_REL_COUNTER_INC(&pHpetTimer->StatSetIrq);
         }
         else
             AssertFailed();
@@ -1118,7 +1132,7 @@ static DECLCALLBACK(void) hpetR3Timer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void 
             if (u64Diff <= u64TickLimit)
             {
                 Log4(("HPET: periodic: next in %llu\n", hpetTicksToNs(pThis, u64Diff)));
-                PDMDevHlpTimerSetNano(pDevIns, pHpetTimer->hTimer, hpetTicksToNs(pThis, u64Diff));
+                STAM_REL_COUNTER_INC(&pHpetTimer->StatSetTimer);
             }
             else
             {
@@ -1465,12 +1479,29 @@ static DECLCALLBACK(int) hpetR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
     AssertRCReturn(rc, rc);
 
     /*
-     * Register SSM state and info item.
+     * Register SSM state, info item and statistics.
      */
     rc = PDMDevHlpSSMRegister3(pDevIns, HPET_SAVED_STATE_VERSION, sizeof(*pThis), hpetR3LiveExec, hpetR3SaveExec, hpetR3LoadExec);
     AssertRCReturn(rc, rc);
 
     PDMDevHlpDBGFInfoRegister(pDevIns, "hpet", "Display HPET status. (no arguments)", hpetR3Info);
+
+    /* Statistics: */
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatCounterRead4Byte, STAMTYPE_COUNTER,
+                          "CounterRead4Byte", STAMUNIT_OCCURENCES, "HPET_COUNTER 32-bit reads");
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatCounterRead8Byte, STAMTYPE_COUNTER,
+                          "CounterRead8Byte", STAMUNIT_OCCURENCES, "HPET_COUNTER 64-bit reads");
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatCounterWriteLow,  STAMTYPE_COUNTER,
+                          "CounterWriteLow",  STAMUNIT_OCCURENCES, "Low HPET_COUNTER writes");
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatCounterWriteHigh, STAMTYPE_COUNTER,
+                          "CounterWriteHigh", STAMUNIT_OCCURENCES, "High HPET_COUNTER writes");
+    for (unsigned i = 0; i < RT_ELEMENTS(pThis->aTimers); i++)
+    {
+        PDMDevHlpSTAMRegisterF(pDevIns, &pThis->aTimers[i].StatSetIrq, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS,
+                               STAMUNIT_OCCURENCES, "Number of times the IRQ has been set.",  "timer%u/SetIrq", i);
+        PDMDevHlpSTAMRegisterF(pDevIns, &pThis->aTimers[i].StatSetTimer, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS,
+                               STAMUNIT_OCCURENCES, "Number of times the timer has be programmed.",  "timer%u/SetTimer", i);
+    }
 
     return VINF_SUCCESS;
 }
