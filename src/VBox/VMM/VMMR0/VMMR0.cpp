@@ -2317,6 +2317,7 @@ VMMR0DECL(int) VMMR0EntryEx(PGVM pGVM, PVMCC pVM, VMCPUID idCpu, VMMR0OPERATION 
             case VMMR0_DO_VMMR0_TERM:
 
             case VMMR0_DO_PDM_DEVICE_CREATE:
+            case VMMR0_DO_PDM_DEVICE_GEN_CALL:
             case VMMR0_DO_IOM_GROW_IO_PORTS:
             case VMMR0_DO_IOM_GROW_IO_PORT_STATS:
             {
