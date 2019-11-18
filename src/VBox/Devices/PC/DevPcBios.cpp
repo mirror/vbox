@@ -1202,6 +1202,7 @@ static int pcbiosBootFromCfg(PPDMDEVINS pDevIns, PCFGMNODE pCfg, const char *psz
     return rc;
 }
 
+
 /**
  * @interface_method_impl{PDMDEVREG,pfnConstruct}
  */
@@ -1608,29 +1609,35 @@ static DECLCALLBACK(int)  pcbiosConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
     }
 
     uint16_t cbDmiTables = 0;
-    uint16_t cNumDmiTables = 0;
+    uint16_t cDmiTables = 0;
     rc = FwCommonPlantDMITable(pDevIns, pThis->au8DMIPage, VBOX_DMI_TABLE_SIZE,
-                               &uuid, pCfg, pThis->cCpus, &cbDmiTables, &cNumDmiTables);
+                               &uuid, pCfg, pThis->cCpus, &cbDmiTables, &cDmiTables);
     if (RT_FAILURE(rc))
         return rc;
 
     /* Look for _SM_/_DMI_ anchor strings within the BIOS and replace the table headers. */
-    for (unsigned i = 0; i < (pThis->cbPcBios - 16); i += 16)
+    unsigned       offAnchor  = ~0U;
+    unsigned const cbToSearch = pThis->cbPcBios - 32;
+    for (unsigned off = 0; off <= cbToSearch; off += 16)
     {
-        if (   pThis->pu8PcBios[i + 0x00] == '_'
-            && pThis->pu8PcBios[i + 0x01] == 'S'
-            && pThis->pu8PcBios[i + 0x02] == 'M'
-            && pThis->pu8PcBios[i + 0x03] == '_'
-            && pThis->pu8PcBios[i + 0x10] == '_'
-            && pThis->pu8PcBios[i + 0x11] == 'D'
-            && pThis->pu8PcBios[i + 0x12] == 'M'
-            && pThis->pu8PcBios[i + 0x13] == 'I'
-            && pThis->pu8PcBios[i + 0x14] == '_')
+        if (   pThis->pu8PcBios[off + 0x00] != '_'
+            || pThis->pu8PcBios[off + 0x01] != 'S'
+            || pThis->pu8PcBios[off + 0x02] != 'M'
+            || pThis->pu8PcBios[off + 0x03] != '_'
+            || pThis->pu8PcBios[off + 0x10] != '_'
+            || pThis->pu8PcBios[off + 0x11] != 'D'
+            || pThis->pu8PcBios[off + 0x12] != 'M'
+            || pThis->pu8PcBios[off + 0x13] != 'I'
+            || pThis->pu8PcBios[off + 0x14] != '_')
+        { /* likely */ }
+        else
         {
-            FwCommonPlantSmbiosAndDmiHdrs(pDevIns, pThis->pu8PcBios + i, cbDmiTables, cNumDmiTables);
+            offAnchor = off;
+            FwCommonPlantSmbiosAndDmiHdrs(pDevIns, pThis->pu8PcBios + off, cbDmiTables, cDmiTables);
             break;
         }
     }
+    AssertLogRel(offAnchor <= cbToSearch);
 
     if (pThis->u8IOAPIC)
     {
@@ -1831,7 +1838,7 @@ const PDMDEVREG g_DevicePcBios =
     /* .u32Version = */             PDM_DEVREG_VERSION,
     /* .uReserved0 = */             0,
     /* .szName = */                 "pcbios",
-    /* .fFlags = */                 PDM_DEVREG_FLAGS_DEFAULT_BITS,
+    /* .fFlags = */                 PDM_DEVREG_FLAGS_DEFAULT_BITS | PDM_DEVREG_FLAGS_NEW_STYLE,
     /* .fClass = */                 PDM_DEVREG_CLASS_ARCH_BIOS,
     /* .cMaxInstances = */          1,
     /* .uSharedVersion = */         42,

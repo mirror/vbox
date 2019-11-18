@@ -432,9 +432,10 @@ static void fwCommonUseHostDMIStrings(void)
  * @param   pCfg                The handle to our config node.
  * @param   cCpus               Number of VCPUs.
  * @param   pcbDmiTables        Size of DMI data in bytes.
- * @param   pcNumDmiTables      Number of DMI tables.
+ * @param   pcDmiTables         Number of DMI tables.
  */
-int FwCommonPlantDMITable(PPDMDEVINS pDevIns, uint8_t *pTable, unsigned cbMax, PCRTUUID pUuid, PCFGMNODE pCfg, uint16_t cCpus, uint16_t *pcbDmiTables, uint16_t *pcNumDmiTables)
+int FwCommonPlantDMITable(PPDMDEVINS pDevIns, uint8_t *pTable, unsigned cbMax, PCRTUUID pUuid, PCFGMNODE pCfg, uint16_t cCpus,
+                          uint16_t *pcbDmiTables, uint16_t *pcDmiTables)
 {
     PCPDMDEVHLPR3 pHlp = pDevIns->pHlpR3;
 
@@ -937,7 +938,7 @@ int FwCommonPlantDMITable(PPDMDEVINS pDevIns, uint8_t *pTable, unsigned cbMax, P
         *pcbDmiTables = ((uintptr_t)pszStr - (uintptr_t)pTable) + 2;
 
         /* We currently plant 10 DMI tables. Update this if tables number changed. */
-        *pcNumDmiTables = 10;
+        *pcDmiTables = 10;
 
         /* If more fields are added here, fix the size check in DMI_READ_CFG_STR */
 
