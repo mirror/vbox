@@ -130,7 +130,7 @@ HRESULT AudioAdapter::init(Machine *aParent, AudioAdapter *aThat)
 }
 
 /**
- *  Initializes the guest object given another guest object
+ *  Initializes the audio adapter object given another audio adapter object
  *  (a kind of copy constructor). This object makes a private copy of data
  *  of the original object passed as an argument.
  *
