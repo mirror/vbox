@@ -240,6 +240,11 @@ typedef struct HPETTIMER
     /** @} */
 } HPETTIMER;
 AssertCompileMemberAlignment(HPETTIMER, u64Config, sizeof(uint64_t));
+/** Pointer to the shared state of an HPET timer. */
+typedef HPETTIMER *PHPETTIMER;
+/** Const pointer to the shared state of an HPET timer. */
+typedef HPETTIMER const *PCHPETTIMER;
+
 
 /**
  * The HPET state.
@@ -289,34 +294,38 @@ typedef struct HPET
     /** Size alignment padding. */
     uint8_t                     abPadding0[7];
 } HPET;
+/** Pointer to the shared HPET device state. */
+typedef HPET *PHPET;
+/** Const pointer to the shared HPET device state. */
+typedef const HPET *PCHPET;
 
 
 #ifndef VBOX_DEVICE_STRUCT_TESTCASE
 
 
-DECLINLINE(bool) hpet32bitTimer(HPETTIMER *pHpetTimer)
+DECLINLINE(bool) hpet32bitTimer(PHPETTIMER pHpetTimer)
 {
     uint64_t u64Cfg = pHpetTimer->u64Config;
 
     return ((u64Cfg & HPET_TN_SIZE_CAP) == 0) || ((u64Cfg & HPET_TN_32BIT) != 0);
 }
 
-DECLINLINE(uint64_t) hpetInvalidValue(HPETTIMER *pHpetTimer)
+DECLINLINE(uint64_t) hpetInvalidValue(PHPETTIMER pHpetTimer)
 {
     return hpet32bitTimer(pHpetTimer) ? UINT32_MAX : UINT64_MAX;
 }
 
-DECLINLINE(uint64_t) hpetTicksToNs(HPET *pThis, uint64_t value)
+DECLINLINE(uint64_t) hpetTicksToNs(PHPET pThis, uint64_t value)
 {
     return ASMMultU64ByU32DivByU32(value,  pThis->u32Period, FS_PER_NS);
 }
 
-DECLINLINE(uint64_t) nsToHpetTicks(HPET const *pThis, uint64_t u64Value)
+DECLINLINE(uint64_t) nsToHpetTicks(PCHPET pThis, uint64_t u64Value)
 {
     return ASMMultU64ByU32DivByU32(u64Value, FS_PER_NS, pThis->u32Period);
 }
 
-DECLINLINE(uint64_t) hpetGetTicks(HPET const *pThis)
+DECLINLINE(uint64_t) hpetGetTicks(PCHPET pThis)
 {
     /*
      * We can use any timer to get current time, they all go
@@ -346,7 +355,7 @@ DECLINLINE(bool) hpetBitJustCleared(uint64_t u64OldValue, uint64_t u64NewValue, 
         && !(u64NewValue & u64Mask);
 }
 
-DECLINLINE(uint64_t) hpetComputeDiff(HPETTIMER *pHpetTimer, uint64_t u64Now)
+DECLINLINE(uint64_t) hpetComputeDiff(PHPETTIMER pHpetTimer, uint64_t u64Now)
 {
 
     if (hpet32bitTimer(pHpetTimer))
@@ -368,7 +377,7 @@ DECLINLINE(uint64_t) hpetComputeDiff(HPETTIMER *pHpetTimer, uint64_t u64Now)
 }
 
 
-static void hpetAdjustComparator(HPETTIMER *pHpetTimer, uint64_t u64Now)
+static void hpetAdjustComparator(PHPETTIMER pHpetTimer, uint64_t u64Now)
 {
     uint64_t    u64Period = pHpetTimer->u64Period;
 
@@ -387,7 +396,7 @@ static void hpetAdjustComparator(HPETTIMER *pHpetTimer, uint64_t u64Now)
  * @param   pThis       The HPET state.
  * @param   pHpetTimer  The timer.
  */
-DECLINLINE(void) hpetTimerSetFrequencyHint(HPET *pThis, HPETTIMER *pHpetTimer)
+DECLINLINE(void) hpetTimerSetFrequencyHint(PHPET pThis, PHPETTIMER pHpetTimer)
 {
     if (pHpetTimer->u64Config & HPET_TN_PERIODIC)
     {
@@ -399,7 +408,7 @@ DECLINLINE(void) hpetTimerSetFrequencyHint(HPET *pThis, HPETTIMER *pHpetTimer)
 }
 
 
-static void hpetProgramTimer(HPET *pThis, HPETTIMER *pHpetTimer)
+static void hpetProgramTimer(PHPET pThis, PHPETTIMER pHpetTimer)
 {
     /* no wrapping on new timers */
     pHpetTimer->u8Wrap = 0;
@@ -462,7 +471,7 @@ static void hpetProgramTimer(HPET *pThis, HPETTIMER *pHpetTimer)
  *
  * @remarks ASSUMES the caller holds the HPET lock.
  */
-static int hpetTimerRegRead32(HPET const *pThis, uint32_t iTimerNo, uint32_t iTimerReg, uint32_t *pu32Value)
+static int hpetTimerRegRead32(PCHPET pThis, uint32_t iTimerNo, uint32_t iTimerReg, uint32_t *pu32Value)
 {
     Assert(PDMCritSectIsOwner(&pThis->CritSect));
 
@@ -474,7 +483,7 @@ static int hpetTimerRegRead32(HPET const *pThis, uint32_t iTimerNo, uint32_t iTi
         return VINF_SUCCESS;
     }
 
-    HPETTIMER const *pHpetTimer = &pThis->aTimers[iTimerNo];
+    PCHPETTIMER pHpetTimer = &pThis->aTimers[iTimerNo];
     uint32_t u32Value;
     switch (iTimerReg)
     {
@@ -528,7 +537,7 @@ static int hpetTimerRegRead32(HPET const *pThis, uint32_t iTimerNo, uint32_t iTi
  * @remarks The caller should not hold the device lock, unless it also holds
  *          the TM lock.
  */
-static int hpetTimerRegWrite32(HPET *pThis, uint32_t iTimerNo, uint32_t iTimerReg, uint32_t u32NewValue)
+static int hpetTimerRegWrite32(PHPET pThis, uint32_t iTimerNo, uint32_t iTimerReg, uint32_t u32NewValue)
 {
     Assert(!PDMCritSectIsOwner(&pThis->CritSect) || TMTimerIsLockOwner(pThis->aTimers[0].CTX_SUFF(pTimer)));
 
@@ -538,7 +547,7 @@ static int hpetTimerRegWrite32(HPET *pThis, uint32_t iTimerNo, uint32_t iTimerRe
         LogRelMax(10, ("HPET: Using timer above configured range: %d\n", iTimerNo));
         return VINF_SUCCESS;
     }
-    HPETTIMER *pHpetTimer = &pThis->aTimers[iTimerNo];
+    PHPETTIMER pHpetTimer = &pThis->aTimers[iTimerNo];
 
     switch (iTimerReg)
     {
@@ -646,7 +655,7 @@ static int hpetTimerRegWrite32(HPET *pThis, uint32_t iTimerNo, uint32_t iTimerRe
  *
  * @remarks The caller must not own the device lock if HPET_COUNTER is read.
  */
-static int hpetConfigRegRead32(HPET *pThis, uint32_t idxReg, uint32_t *pu32Value)
+static int hpetConfigRegRead32(PHPET pThis, uint32_t idxReg, uint32_t *pu32Value)
 {
     Assert(!PDMCritSectIsOwner(&pThis->CritSect) || (idxReg != HPET_COUNTER && idxReg != HPET_COUNTER + 4));
 
@@ -731,7 +740,7 @@ static int hpetConfigRegRead32(HPET *pThis, uint32_t idxReg, uint32_t *pu32Value
  * @remarks The caller should not hold the device lock, unless it also holds
  *          the TM lock.
  */
-static int hpetConfigRegWrite32(HPET *pThis, uint32_t idxReg, uint32_t u32NewValue)
+static int hpetConfigRegWrite32(PHPET pThis, uint32_t idxReg, uint32_t u32NewValue)
 {
     Assert(!PDMCritSectIsOwner(&pThis->CritSect) || TMTimerIsLockOwner(pThis->aTimers[0].CTX_SUFF(pTimer)));
 
@@ -1001,7 +1010,7 @@ PDMBOTHCBDECL(int) hpetMMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPh
  * @returns IRQ number.
  * @param   pHpetTimer          The HPET timer.
  */
-static uint32_t hpetR3TimerGetIrq(struct HPETTIMER const *pHpetTimer)
+static uint32_t hpetR3TimerGetIrq(PCHPETTIMER pHpetTimer)
 {
     /*
      * Per spec, in legacy mode the HPET timers are wired as follows:
@@ -1025,7 +1034,7 @@ static uint32_t hpetR3TimerGetIrq(struct HPETTIMER const *pHpetTimer)
  * @param   pThis               The HPET device state.
  * @param   pHpetTimer          The HPET timer.
  */
-static void hpetR3TimerUpdateIrq(HPET *pThis, struct HPETTIMER *pHpetTimer)
+static void hpetR3TimerUpdateIrq(PHPET pThis, PHPETTIMER pHpetTimer)
 {
     /** @todo is it correct? */
     if (   !!(pHpetTimer->u64Config & HPET_TN_ENABLE)
@@ -1057,8 +1066,8 @@ static void hpetR3TimerUpdateIrq(HPET *pThis, struct HPETTIMER *pHpetTimer)
  */
 static DECLCALLBACK(void) hpetR3Timer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser)
 {
-    HPET *pThis      = PDMDEVINS_2_DATA(pDevIns, HPET *);
-    HPETTIMER *pHpetTimer = (HPETTIMER *)pvUser;
+    PHPET pThis      = PDMDEVINS_2_DATA(pDevIns, PHPET);
+    PHPETTIMER pHpetTimer = (HPETTIMER *)pvUser;
     uint64_t   u64Period  = pHpetTimer->u64Period;
     uint64_t   u64CurTick = hpetGetTicks(pThis);
     uint64_t   u64Diff;
@@ -1106,7 +1115,7 @@ static DECLCALLBACK(void) hpetR3Timer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void 
  */
 static DECLCALLBACK(void) hpetR3Info(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *pszArgs)
 {
-    HPET *pThis = PDMDEVINS_2_DATA(pDevIns, HPET *);
+    PHPET pThis = PDMDEVINS_2_DATA(pDevIns, PHPET);
     NOREF(pszArgs);
 
     pHlp->pfnPrintf(pHlp,
@@ -1139,10 +1148,11 @@ static DECLCALLBACK(void) hpetR3Info(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, con
  */
 static DECLCALLBACK(int) hpetR3LiveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uPass)
 {
-    HPET *pThis = PDMDEVINS_2_DATA(pDevIns, HPET *);
+    PHPET           pThis   = PDMDEVINS_2_DATA(pDevIns, PHPET);
+    PCPDMDEVHLPR3   pHlp    = pDevIns->pHlpR3;
     NOREF(uPass);
 
-    SSMR3PutU8(pSSM, HPET_CAP_GET_TIMERS(pThis->u32Capabilities));
+    pHlp->pfnSSMPutU8(pSSM, HPET_CAP_GET_TIMERS(pThis->u32Capabilities));
 
     return VINF_SSM_DONT_CALL_AGAIN;
 }
@@ -1153,7 +1163,8 @@ static DECLCALLBACK(int) hpetR3LiveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uin
  */
 static DECLCALLBACK(int) hpetR3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 {
-    HPET *pThis = PDMDEVINS_2_DATA(pDevIns, HPET *);
+    PHPET           pThis   = PDMDEVINS_2_DATA(pDevIns, PHPET);
+    PCPDMDEVHLPR3   pHlp    = pDevIns->pHlpR3;
 
     /*
      * The config.
@@ -1166,21 +1177,21 @@ static DECLCALLBACK(int) hpetR3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
     uint32_t const cTimers = HPET_CAP_GET_TIMERS(pThis->u32Capabilities);
     for (uint32_t iTimer = 0; iTimer < cTimers; iTimer++)
     {
-        HPETTIMER *pHpetTimer = &pThis->aTimers[iTimer];
+        PHPETTIMER pHpetTimer = &pThis->aTimers[iTimer];
         TMR3TimerSave(pHpetTimer->pTimerR3, pSSM);
-        SSMR3PutU8(pSSM,  pHpetTimer->u8Wrap);
-        SSMR3PutU64(pSSM, pHpetTimer->u64Config);
-        SSMR3PutU64(pSSM, pHpetTimer->u64Cmp);
-        SSMR3PutU64(pSSM, pHpetTimer->u64Fsb);
-        SSMR3PutU64(pSSM, pHpetTimer->u64Period);
+        pHlp->pfnSSMPutU8(pSSM,  pHpetTimer->u8Wrap);
+        pHlp->pfnSSMPutU64(pSSM, pHpetTimer->u64Config);
+        pHlp->pfnSSMPutU64(pSSM, pHpetTimer->u64Cmp);
+        pHlp->pfnSSMPutU64(pSSM, pHpetTimer->u64Fsb);
+        pHlp->pfnSSMPutU64(pSSM, pHpetTimer->u64Period);
     }
 
-    SSMR3PutU64(pSSM, pThis->u64HpetOffset);
+    pHlp->pfnSSMPutU64(pSSM, pThis->u64HpetOffset);
     uint64_t u64CapPer = RT_MAKE_U64(pThis->u32Capabilities, pThis->u32Period);
-    SSMR3PutU64(pSSM, u64CapPer);
-    SSMR3PutU64(pSSM, pThis->u64HpetConfig);
-    SSMR3PutU64(pSSM, pThis->u64Isr);
-    return SSMR3PutU64(pSSM, pThis->u64HpetCounter);
+    pHlp->pfnSSMPutU64(pSSM, u64CapPer);
+    pHlp->pfnSSMPutU64(pSSM, pThis->u64HpetConfig);
+    pHlp->pfnSSMPutU64(pSSM, pThis->u64Isr);
+    return pHlp->pfnSSMPutU64(pSSM, pThis->u64HpetCounter);
 }
 
 
@@ -1189,7 +1200,8 @@ static DECLCALLBACK(int) hpetR3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
  */
 static DECLCALLBACK(int) hpetR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass)
 {
-    HPET *pThis = PDMDEVINS_2_DATA(pDevIns, HPET *);
+    PHPET           pThis   = PDMDEVINS_2_DATA(pDevIns, PHPET);
+    PCPDMDEVHLPR3   pHlp    = pDevIns->pHlpR3;
 
     /*
      * Version checks.
@@ -1203,11 +1215,11 @@ static DECLCALLBACK(int) hpetR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uin
      * The config.
      */
     uint8_t cTimers;
-    int rc = SSMR3GetU8(pSSM, &cTimers);
+    int rc = pHlp->pfnSSMGetU8(pSSM, &cTimers);
     AssertRCReturn(rc, rc);
     if (cTimers > RT_ELEMENTS(pThis->aTimers))
-        return SSMR3SetCfgError(pSSM, RT_SRC_POS, N_("Config mismatch - too many timers: saved=%#x config=%#x"),
-                                cTimers, RT_ELEMENTS(pThis->aTimers));
+        return pHlp->pfnSSMSetCfgError(pSSM, RT_SRC_POS, N_("Config mismatch - too many timers: saved=%#x config=%#x"),
+                                       cTimers, RT_ELEMENTS(pThis->aTimers));
 
     if (uPass != SSM_PASS_FINAL)
         return VINF_SUCCESS;
@@ -1217,26 +1229,26 @@ static DECLCALLBACK(int) hpetR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uin
      */
     for (uint32_t iTimer = 0; iTimer < cTimers; iTimer++)
     {
-        HPETTIMER *pHpetTimer = &pThis->aTimers[iTimer];
+        PHPETTIMER pHpetTimer = &pThis->aTimers[iTimer];
         TMR3TimerLoad(pHpetTimer->pTimerR3, pSSM);
-        SSMR3GetU8(pSSM,  &pHpetTimer->u8Wrap);
-        SSMR3GetU64(pSSM, &pHpetTimer->u64Config);
-        SSMR3GetU64(pSSM, &pHpetTimer->u64Cmp);
-        SSMR3GetU64(pSSM, &pHpetTimer->u64Fsb);
-        SSMR3GetU64(pSSM, &pHpetTimer->u64Period);
+        pHlp->pfnSSMGetU8(pSSM,  &pHpetTimer->u8Wrap);
+        pHlp->pfnSSMGetU64(pSSM, &pHpetTimer->u64Config);
+        pHlp->pfnSSMGetU64(pSSM, &pHpetTimer->u64Cmp);
+        pHlp->pfnSSMGetU64(pSSM, &pHpetTimer->u64Fsb);
+        pHlp->pfnSSMGetU64(pSSM, &pHpetTimer->u64Period);
     }
 
-    SSMR3GetU64(pSSM, &pThis->u64HpetOffset);
+    pHlp->pfnSSMGetU64(pSSM, &pThis->u64HpetOffset);
     uint64_t u64CapPer;
-    SSMR3GetU64(pSSM, &u64CapPer);
-    SSMR3GetU64(pSSM, &pThis->u64HpetConfig);
-    SSMR3GetU64(pSSM, &pThis->u64Isr);
-    rc = SSMR3GetU64(pSSM, &pThis->u64HpetCounter);
+    pHlp->pfnSSMGetU64(pSSM, &u64CapPer);
+    pHlp->pfnSSMGetU64(pSSM, &pThis->u64HpetConfig);
+    pHlp->pfnSSMGetU64(pSSM, &pThis->u64Isr);
+    rc = pHlp->pfnSSMGetU64(pSSM, &pThis->u64HpetCounter);
     if (RT_FAILURE(rc))
         return rc;
     if (HPET_CAP_GET_TIMERS(RT_LO_U32(u64CapPer)) != cTimers)
-        return SSMR3SetCfgError(pSSM, RT_SRC_POS, N_("Capabilities does not match timer count: cTimers=%#x caps=%#x"),
-                                cTimers, (unsigned)HPET_CAP_GET_TIMERS(u64CapPer));
+        return pHlp->pfnSSMSetCfgError(pSSM, RT_SRC_POS, N_("Capabilities does not match timer count: cTimers=%#x caps=%#x"),
+                                       cTimers, (unsigned)HPET_CAP_GET_TIMERS(u64CapPer));
     pThis->u32Capabilities  = RT_LO_U32(u64CapPer);
     pThis->u32Period        = RT_HI_U32(u64CapPer);
 
@@ -1246,7 +1258,7 @@ static DECLCALLBACK(int) hpetR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uin
     PDMCritSectEnter(&pThis->CritSect, VERR_IGNORED);
     for (uint32_t iTimer = 0; iTimer < cTimers; iTimer++)
     {
-        HPETTIMER *pHpetTimer = &pThis->aTimers[iTimer];
+        PHPETTIMER pHpetTimer = &pThis->aTimers[iTimer];
         if (TMTimerIsActive(pHpetTimer->CTX_SUFF(pTimer)))
             hpetTimerSetFrequencyHint(pThis, pHpetTimer);
     }
@@ -1263,7 +1275,7 @@ static DECLCALLBACK(int) hpetR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uin
  */
 static DECLCALLBACK(void) hpetR3Relocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta)
 {
-    HPET *pThis = PDMDEVINS_2_DATA(pDevIns, HPET *);
+    PHPET pThis = PDMDEVINS_2_DATA(pDevIns, PHPET);
     LogFlow(("hpetR3Relocate:\n"));
     NOREF(offDelta);
 
@@ -1272,7 +1284,7 @@ static DECLCALLBACK(void) hpetR3Relocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta
 
     for (unsigned i = 0; i < RT_ELEMENTS(pThis->aTimers); i++)
     {
-        HPETTIMER *pTm = &pThis->aTimers[i];
+        PHPETTIMER pTm = &pThis->aTimers[i];
         if (pTm->pTimerR3)
             pTm->pTimerRC = TMTimerRCPtr(pTm->pTimerR3);
         pTm->pHpetRC = PDMINS_2_DATA_RCPTR(pDevIns);
@@ -1285,7 +1297,7 @@ static DECLCALLBACK(void) hpetR3Relocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta
  */
 static DECLCALLBACK(void) hpetR3Reset(PPDMDEVINS pDevIns)
 {
-    HPET *pThis = PDMDEVINS_2_DATA(pDevIns, HPET *);
+    PHPET pThis = PDMDEVINS_2_DATA(pDevIns, PHPET);
     LogFlow(("hpetR3Reset:\n"));
 
     /*
@@ -1294,7 +1306,7 @@ static DECLCALLBACK(void) hpetR3Reset(PPDMDEVINS pDevIns)
     TMTimerLock(pThis->aTimers[0].pTimerR3, VERR_IGNORED);
     for (unsigned i = 0; i < RT_ELEMENTS(pThis->aTimers); i++)
     {
-        HPETTIMER *pHpetTimer = &pThis->aTimers[i];
+        PHPETTIMER pHpetTimer = &pThis->aTimers[i];
         Assert(pHpetTimer->idxTimer == i);
         TMTimerStop(pHpetTimer->pTimerR3);
 
@@ -1350,7 +1362,8 @@ static DECLCALLBACK(void) hpetR3Reset(PPDMDEVINS pDevIns)
 static DECLCALLBACK(int) hpetR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE pCfg)
 {
     PDMDEV_CHECK_VERSIONS_RETURN(pDevIns);
-    HPET *pThis = PDMDEVINS_2_DATA(pDevIns, HPET *);
+    PHPET           pThis   = PDMDEVINS_2_DATA(pDevIns, PHPET);
+    PCPDMDEVHLPR3   pHlp    = pDevIns->pHlpR3;
 
     /* Only one HPET device now, as we use fixed MMIO region. */
     Assert(iInstance == 0); RT_NOREF(iInstance);
@@ -1365,7 +1378,7 @@ static DECLCALLBACK(int) hpetR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
     /* Init the HPET timers (init all regardless of how many we expose). */
     for (unsigned i = 0; i < RT_ELEMENTS(pThis->aTimers); i++)
     {
-        HPETTIMER *pHpetTimer = &pThis->aTimers[i];
+        PHPETTIMER pHpetTimer = &pThis->aTimers[i];
 
         pHpetTimer->idxTimer = i;
         pHpetTimer->pHpetR3  = pThis;
@@ -1376,24 +1389,11 @@ static DECLCALLBACK(int) hpetR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
     /*
      * Validate and read the configuration.
      */
-    PDMDEV_VALIDATE_CONFIG_RETURN(pDevIns, "GCEnabled|R0Enabled|ICH9", "");
+    PDMDEV_VALIDATE_CONFIG_RETURN(pDevIns, "ICH9", "");
 
-    bool fRCEnabled;
-    int rc = CFGMR3QueryBoolDef(pCfg, "GCEnabled", &fRCEnabled, true);
+    int rc = pHlp->pfnCFGMQueryBoolDef(pCfg, "ICH9", &pThis->fIch9, false);
     if (RT_FAILURE(rc))
-        return PDMDEV_SET_ERROR(pDevIns, rc,
-                                N_("Configuration error: Querying \"GCEnabled\" as a bool failed"));
-
-    bool fR0Enabled;
-    rc = CFGMR3QueryBoolDef(pCfg, "R0Enabled", &fR0Enabled, true);
-    if (RT_FAILURE(rc))
-        return PDMDEV_SET_ERROR(pDevIns, rc,
-                                N_("Configuration error: failed to read R0Enabled as boolean"));
-
-    rc = CFGMR3QueryBoolDef(pCfg, "ICH9", &pThis->fIch9, false);
-    if (RT_FAILURE(rc))
-        return PDMDEV_SET_ERROR(pDevIns, rc,
-                                N_("Configuration error: failed to read ICH9 as boolean"));
+        return PDMDEV_SET_ERROR(pDevIns, rc, N_("Configuration error: failed to read ICH9 as boolean"));
 
 
     /*
@@ -1409,7 +1409,7 @@ static DECLCALLBACK(int) hpetR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
     /* Init the HPET timers (init all regardless of how many we expose). */
     for (unsigned i = 0; i < RT_ELEMENTS(pThis->aTimers); i++)
     {
-        HPETTIMER *pHpetTimer = &pThis->aTimers[i];
+        PHPETTIMER pHpetTimer = &pThis->aTimers[i];
 
         rc = PDMDevHlpTMTimerCreate(pDevIns, TMCLOCK_VIRTUAL_SYNC, hpetR3Timer, pHpetTimer,
                                     TMTIMER_FLAGS_NO_CRIT_SECT, "HPET Timer",
@@ -1443,7 +1443,7 @@ static DECLCALLBACK(int) hpetR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
                                hpetMMIOWrite, hpetMMIORead, "HPET Memory");
     AssertRCReturn(rc, rc);
 
-    if (fRCEnabled)
+    if (pDevIns->fRCEnabled)
     {
         rc = PDMDevHlpMMIORegisterRC(pDevIns, HPET_BASE, HPET_BAR_SIZE, NIL_RTRCPTR /*pvUser*/, "hpetMMIOWrite", "hpetMMIORead");
         AssertRCReturn(rc, rc);
@@ -1451,10 +1451,9 @@ static DECLCALLBACK(int) hpetR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
         pThis->pHpetHlpRC = pThis->pHpetHlpR3->pfnGetRCHelpers(pDevIns);
     }
 
-    if (fR0Enabled)
+    if (pDevIns->fR0Enabled)
     {
-        rc = PDMDevHlpMMIORegisterR0(pDevIns, HPET_BASE, HPET_BAR_SIZE, NIL_RTR0PTR /*pvUser*/,
-                                     "hpetMMIOWrite", "hpetMMIORead");
+        rc = PDMDevHlpMMIORegisterR0(pDevIns, HPET_BASE, HPET_BAR_SIZE, NIL_RTR0PTR /*pvUser*/, "hpetMMIOWrite", "hpetMMIORead");
         AssertRCReturn(rc, rc);
 
         pThis->pHpetHlpR0 = pThis->pHpetHlpR3->pfnGetR0Helpers(pDevIns);
