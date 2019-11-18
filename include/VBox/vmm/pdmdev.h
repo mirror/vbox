@@ -1435,7 +1435,7 @@ typedef enum PDMAPICIRQ
 
 
 /**
- * I/O APIC registration structure.
+ * I/O APIC registration structure (all contexts).
  */
 typedef struct PDMIOAPICREG
 {
@@ -1453,13 +1453,7 @@ typedef struct PDMIOAPICREG
      * @remarks Caller enters the PDM critical section
      *          Actually, as per 2018-07-21 this isn't true (bird).
      */
-    DECLR3CALLBACKMEMBER(void, pfnSetIrqR3,(PPDMDEVINS pDevIns, int iIrq, int iLevel, uint32_t uTagSrc));
-
-    /** The name of the RC SetIrq entry point. */
-    const char         *pszSetIrqRC;
-
-    /** The name of the R0 SetIrq entry point. */
-    const char         *pszSetIrqR0;
+    DECLCALLBACKMEMBER(void, pfnSetIrq)(PPDMDEVINS pDevIns, int iIrq, int iLevel, uint32_t uTagSrc);
 
     /**
      * Send a MSI.
@@ -1472,13 +1466,7 @@ typedef struct PDMIOAPICREG
      * @remarks Caller enters the PDM critical section
      *          Actually, as per 2018-07-21 this isn't true (bird).
      */
-    DECLR3CALLBACKMEMBER(void, pfnSendMsiR3,(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, uint32_t uValue, uint32_t uTagSrc));
-
-    /** The name of the RC SendMsi entry point. */
-    const char         *pszSendMsiRC;
-
-    /** The name of the R0 SendMsi entry point. */
-    const char         *pszSendMsiR0;
+    DECLCALLBACKMEMBER(void, pfnSendMsi)(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, uint32_t uValue, uint32_t uTagSrc);
 
     /**
      * Set the EOI for an interrupt vector.
@@ -1493,27 +1481,24 @@ typedef struct PDMIOAPICREG
      * @remarks Caller enters the PDM critical section
      *          Actually, as per 2018-07-21 this isn't true (bird).
      */
-    DECLR3CALLBACKMEMBER(int, pfnSetEoiR3,(PPDMDEVINS pDevIns, uint8_t u8Vector));
+    DECLCALLBACKMEMBER(int, pfnSetEoi)(PPDMDEVINS pDevIns, uint8_t u8Vector);
 
-    /** The name of the RC SetEoi entry point. */
-    const char         *pszSetEoiRC;
-
-    /** The name of the R0 SetEoi entry point. */
-    const char         *pszSetEoiR0;
+    /** Just a safety precaution. */
+    uint32_t                u32TheEnd;
 } PDMIOAPICREG;
 /** Pointer to an APIC registration structure. */
 typedef PDMIOAPICREG *PPDMIOAPICREG;
 
 /** Current PDMAPICREG version number. */
-#define PDM_IOAPICREG_VERSION                   PDM_VERSION_MAKE(0xfff2, 5, 0)
+#define PDM_IOAPICREG_VERSION                   PDM_VERSION_MAKE(0xfff2, 6, 0)
 
 
 /**
- * IOAPIC RC helpers.
+ * IOAPIC helpers, same in all contexts.
  */
-typedef struct PDMIOAPICHLPRC
+typedef struct PDMIOAPICHLP
 {
-    /** Structure version. PDM_IOAPICHLPRC_VERSION defines the current version. */
+    /** Structure version. PDM_IOAPICHLP_VERSION defines the current version. */
     uint32_t                u32Version;
 
     /**
@@ -1531,8 +1516,8 @@ typedef struct PDMIOAPICHLPRC
      * @param   u8TriggerMode   See APIC implementation.
      * @param   uTagSrc         The IRQ tag and source (for tracing).
      */
-    DECLRCCALLBACKMEMBER(int, pfnApicBusDeliver,(PPDMDEVINS pDevIns, uint8_t u8Dest, uint8_t u8DestMode, uint8_t u8DeliveryMode,
-                                                  uint8_t uVector, uint8_t u8Polarity, uint8_t u8TriggerMode, uint32_t uTagSrc));
+    DECLCALLBACKMEMBER(int, pfnApicBusDeliver)(PPDMDEVINS pDevIns, uint8_t u8Dest, uint8_t u8DestMode, uint8_t u8DeliveryMode,
+                                               uint8_t uVector, uint8_t u8Polarity, uint8_t u8TriggerMode, uint32_t uTagSrc);
 
     /**
      * Acquires the PDM lock.
@@ -1542,156 +1527,25 @@ typedef struct PDMIOAPICHLPRC
      * @param   pDevIns         The IOAPIC device instance.
      * @param   rc              What to return if we fail to acquire the lock.
      */
-    DECLRCCALLBACKMEMBER(int,   pfnLock,(PPDMDEVINS pDevIns, int rc));
+    DECLCALLBACKMEMBER(int,   pfnLock)(PPDMDEVINS pDevIns, int rc);
 
     /**
      * Releases the PDM lock.
      *
      * @param   pDevIns         The IOAPIC device instance.
      */
-    DECLRCCALLBACKMEMBER(void,  pfnUnlock,(PPDMDEVINS pDevIns));
+    DECLCALLBACKMEMBER(void,  pfnUnlock)(PPDMDEVINS pDevIns);
 
     /** Just a safety precaution. */
     uint32_t                u32TheEnd;
-} PDMIOAPICHLPRC;
-/** Pointer to IOAPIC RC helpers. */
-typedef RCPTRTYPE(PDMIOAPICHLPRC *) PPDMIOAPICHLPRC;
+} PDMIOAPICHLP;
+/** Pointer to IOAPIC helpers. */
+typedef PDMIOAPICHLP * PPDMIOAPICHLP;
 /** Pointer to const IOAPIC helpers. */
-typedef RCPTRTYPE(const PDMIOAPICHLPRC *) PCPDMIOAPICHLPRC;
+typedef const PDMIOAPICHLP * PCPDMIOAPICHLP;
 
-/** Current PDMIOAPICHLPRC version number. */
-#define PDM_IOAPICHLPRC_VERSION                 PDM_VERSION_MAKE(0xfff1, 2, 0)
-
-
-/**
- * IOAPIC R0 helpers.
- */
-typedef struct PDMIOAPICHLPR0
-{
-    /** Structure version. PDM_IOAPICHLPR0_VERSION defines the current version. */
-    uint32_t                u32Version;
-
-    /**
-     * Private interface between the IOAPIC and APIC.
-     *
-     * See comments about this hack on PDMAPICREG::pfnBusDeliverR3.
-     *
-     * @returns status code.
-     * @param   pDevIns         Device instance of the IOAPIC.
-     * @param   u8Dest          See APIC implementation.
-     * @param   u8DestMode      See APIC implementation.
-     * @param   u8DeliveryMode  See APIC implementation.
-     * @param   uVector         See APIC implementation.
-     * @param   u8Polarity      See APIC implementation.
-     * @param   u8TriggerMode   See APIC implementation.
-     * @param   uTagSrc         The IRQ tag and source (for tracing).
-     */
-    DECLR0CALLBACKMEMBER(int, pfnApicBusDeliver,(PPDMDEVINS pDevIns, uint8_t u8Dest, uint8_t u8DestMode, uint8_t u8DeliveryMode,
-                                                  uint8_t uVector, uint8_t u8Polarity, uint8_t u8TriggerMode, uint32_t uTagSrc));
-
-    /**
-     * Acquires the PDM lock.
-     *
-     * @returns VINF_SUCCESS on success.
-     * @returns rc if we failed to acquire the lock.
-     * @param   pDevIns         The IOAPIC device instance.
-     * @param   rc              What to return if we fail to acquire the lock.
-     */
-    DECLR0CALLBACKMEMBER(int,   pfnLock,(PPDMDEVINS pDevIns, int rc));
-
-    /**
-     * Releases the PDM lock.
-     *
-     * @param   pDevIns         The IOAPIC device instance.
-     */
-    DECLR0CALLBACKMEMBER(void,  pfnUnlock,(PPDMDEVINS pDevIns));
-
-    /** Just a safety precaution. */
-    uint32_t                u32TheEnd;
-} PDMIOAPICHLPR0;
-/** Pointer to IOAPIC R0 helpers. */
-typedef R0PTRTYPE(PDMIOAPICHLPR0 *) PPDMIOAPICHLPR0;
-/** Pointer to const IOAPIC helpers. */
-typedef R0PTRTYPE(const PDMIOAPICHLPR0 *) PCPDMIOAPICHLPR0;
-
-/** Current PDMIOAPICHLPR0 version number. */
-#define PDM_IOAPICHLPR0_VERSION                 PDM_VERSION_MAKE(0xfff0, 2, 0)
-
-/**
- * IOAPIC R3 helpers.
- */
-typedef struct PDMIOAPICHLPR3
-{
-    /** Structure version. PDM_IOAPICHLPR3_VERSION defines the current version. */
-    uint32_t                u32Version;
-
-    /**
-     * Private interface between the IOAPIC and APIC.
-     *
-     * See comments about this hack on PDMAPICREG::pfnBusDeliverR3.
-     *
-     * @returns status code
-     * @param   pDevIns         Device instance of the IOAPIC.
-     * @param   u8Dest          See APIC implementation.
-     * @param   u8DestMode      See APIC implementation.
-     * @param   u8DeliveryMode  See APIC implementation.
-     * @param   uVector         See APIC implementation.
-     * @param   u8Polarity      See APIC implementation.
-     * @param   u8TriggerMode   See APIC implementation.
-     * @param   uTagSrc         The IRQ tag and source (for tracing).
-     */
-    DECLR3CALLBACKMEMBER(int, pfnApicBusDeliver,(PPDMDEVINS pDevIns, uint8_t u8Dest, uint8_t u8DestMode, uint8_t u8DeliveryMode,
-                                                  uint8_t uVector, uint8_t u8Polarity, uint8_t u8TriggerMode, uint32_t uTagSrc));
-
-    /**
-     * Acquires the PDM lock.
-     *
-     * @returns VINF_SUCCESS on success.
-     * @returns Fatal error on failure.
-     * @param   pDevIns         The IOAPIC device instance.
-     * @param   rc              Dummy for making the interface identical to the GC and R0 versions.
-     */
-    DECLR3CALLBACKMEMBER(int,   pfnLock,(PPDMDEVINS pDevIns, int rc));
-
-    /**
-     * Releases the PDM lock.
-     *
-     * @param   pDevIns         The IOAPIC device instance.
-     */
-    DECLR3CALLBACKMEMBER(void,  pfnUnlock,(PPDMDEVINS pDevIns));
-
-    /**
-     * Gets the address of the RC IOAPIC helpers.
-     *
-     * This should be called at both construction and relocation time
-     * to obtain the correct address of the RC helpers.
-     *
-     * @returns RC pointer to the IOAPIC helpers.
-     * @param   pDevIns         Device instance of the IOAPIC.
-     */
-    DECLR3CALLBACKMEMBER(PCPDMIOAPICHLPRC, pfnGetRCHelpers,(PPDMDEVINS pDevIns));
-
-    /**
-     * Gets the address of the R0 IOAPIC helpers.
-     *
-     * This should be called at both construction and relocation time
-     * to obtain the correct address of the R0 helpers.
-     *
-     * @returns R0 pointer to the IOAPIC helpers.
-     * @param   pDevIns         Device instance of the IOAPIC.
-     */
-    DECLR3CALLBACKMEMBER(PCPDMIOAPICHLPR0, pfnGetR0Helpers,(PPDMDEVINS pDevIns));
-
-    /** Just a safety precaution. */
-    uint32_t                u32TheEnd;
-} PDMIOAPICHLPR3;
-/** Pointer to IOAPIC R3 helpers. */
-typedef R3PTRTYPE(PDMIOAPICHLPR3 *) PPDMIOAPICHLPR3;
-/** Pointer to const IOAPIC helpers. */
-typedef R3PTRTYPE(const PDMIOAPICHLPR3 *) PCPDMIOAPICHLPR3;
-
-/** Current PDMIOAPICHLPR3 version number. */
-#define PDM_IOAPICHLPR3_VERSION                 PDM_VERSION_MAKE(0xffef, 2, 0)
+/** Current PDMIOAPICHLP version number. */
+#define PDM_IOAPICHLP_VERSION                   PDM_VERSION_MAKE(0xfff0, 2, 0)
 
 
 /**
@@ -2143,7 +1997,7 @@ typedef const PDMRTCHLP *PCPDMRTCHLP;
 /** @} */
 
 /** Current PDMDEVHLPR3 version number. */
-#define PDM_DEVHLPR3_VERSION                    PDM_VERSION_MAKE_PP(0xffe7, 35, 0)
+#define PDM_DEVHLPR3_VERSION                    PDM_VERSION_MAKE_PP(0xffe7, 36, 0)
 
 /**
  * PDM Device API.
@@ -3918,10 +3772,10 @@ typedef struct PDMDEVHLPR3
      * @returns VBox status code.
      * @param   pDevIns             The device instance.
      * @param   pIoApicReg          Pointer to a I/O APIC registration structure.
-     * @param   ppIoApicHlpR3       Where to store the pointer to the IOAPIC
+     * @param   ppIoApicHlp         Where to store the pointer to the IOAPIC
      *                              helpers.
      */
-    DECLR3CALLBACKMEMBER(int, pfnIOAPICRegister,(PPDMDEVINS pDevIns, PPDMIOAPICREG pIoApicReg, PCPDMIOAPICHLPR3 *ppIoApicHlpR3));
+    DECLR3CALLBACKMEMBER(int, pfnIoApicRegister,(PPDMDEVINS pDevIns, PPDMIOAPICREG pIoApicReg, PCPDMIOAPICHLP *ppIoApicHlp));
 
     /**
      * Register the HPET device.
@@ -4822,7 +4676,7 @@ typedef struct PDMDEVHLPRC
     DECLRCCALLBACKMEMBER(int, pfnPCIBusSetUpContext,(PPDMDEVINS pDevIns, PPDMPCIBUSREGRC pPciBusReg, PCPDMPCIHLPRC *ppPciHlp));
 
     /**
-     * Sets up the PIC for the raw-mode context.
+     * Sets up the PIC for the ring-0 context.
      *
      * This must be called after ring-3 has registered the PIC using
      * PDMDevHlpPICRegister().
@@ -4831,9 +4685,23 @@ typedef struct PDMDEVHLPRC
      * @param   pDevIns     The device instance.
      * @param   pPicReg     The PIC registration information for ring-0,
      *                      considered volatile and copied.
-     * @param   ppPicHlp    Where to return the raw-mode PIC helpers.
+     * @param   ppPicHlp    Where to return the ring-0 PIC helpers.
      */
-    DECLRCCALLBACKMEMBER(int, pfnPCISetUpContext,(PPDMDEVINS pDevIns, PPDMPICREG pPicReg, PCPDMPICHLP *ppPicHlp));
+    DECLR0CALLBACKMEMBER(int, pfnPICSetUpContext,(PPDMDEVINS pDevIns, PPDMPICREG pPicReg, PCPDMPICHLP *ppPicHlp));
+
+    /**
+     * Sets up the IOAPIC for the ring-0 context.
+     *
+     * This must be called after ring-3 has registered the PIC using
+     * PDMDevHlpIoApicRegister().
+     *
+     * @returns VBox status code.
+     * @param   pDevIns     The device instance.
+     * @param   pIoApicReg  The PIC registration information for ring-0,
+     *                      considered volatile and copied.
+     * @param   ppIoApicHlp Where to return the ring-0 IOAPIC helpers.
+     */
+    DECLR0CALLBACKMEMBER(int, pfnIoApicSetUpContext,(PPDMDEVINS pDevIns, PPDMIOAPICREG pIoApicReg, PCPDMIOAPICHLP *ppIoApicHlp));
 
     /** Space reserved for future members.
      * @{ */
@@ -4858,7 +4726,7 @@ typedef RGPTRTYPE(struct PDMDEVHLPRC *) PPDMDEVHLPRC;
 typedef RGPTRTYPE(const struct PDMDEVHLPRC *) PCPDMDEVHLPRC;
 
 /** Current PDMDEVHLP version number. */
-#define PDM_DEVHLPRC_VERSION                    PDM_VERSION_MAKE(0xffe6, 11, 0)
+#define PDM_DEVHLPRC_VERSION                    PDM_VERSION_MAKE(0xffe6, 12, 0)
 
 
 /**
@@ -5314,6 +5182,20 @@ typedef struct PDMDEVHLPR0
      */
     DECLR0CALLBACKMEMBER(int, pfnPICSetUpContext,(PPDMDEVINS pDevIns, PPDMPICREG pPicReg, PCPDMPICHLP *ppPicHlp));
 
+    /**
+     * Sets up the IOAPIC for the ring-0 context.
+     *
+     * This must be called after ring-3 has registered the PIC using
+     * PDMDevHlpIoApicRegister().
+     *
+     * @returns VBox status code.
+     * @param   pDevIns     The device instance.
+     * @param   pIoApicReg  The PIC registration information for ring-0,
+     *                      considered volatile and copied.
+     * @param   ppIoApicHlp Where to return the ring-0 IOAPIC helpers.
+     */
+    DECLR0CALLBACKMEMBER(int, pfnIoApicSetUpContext,(PPDMDEVINS pDevIns, PPDMIOAPICREG pIoApicReg, PCPDMIOAPICHLP *ppIoApicHlp));
+
     /** Space reserved for future members.
      * @{ */
     DECLR0CALLBACKMEMBER(void, pfnReserved1,(void));
@@ -5337,7 +5219,7 @@ typedef R0PTRTYPE(struct PDMDEVHLPR0 *) PPDMDEVHLPR0;
 typedef R0PTRTYPE(const struct PDMDEVHLPR0 *) PCPDMDEVHLPR0;
 
 /** Current PDMDEVHLP version number. */
-#define PDM_DEVHLPR0_VERSION                    PDM_VERSION_MAKE(0xffe5, 12, 0)
+#define PDM_DEVHLPR0_VERSION                    PDM_VERSION_MAKE(0xffe5, 13, 0)
 
 
 /**
@@ -7824,11 +7706,11 @@ DECLINLINE(int) PDMDevHlpAPICRegister(PPDMDEVINS pDevIns)
 }
 
 /**
- * @copydoc PDMDEVHLPR3::pfnIOAPICRegister
+ * @copydoc PDMDEVHLPR3::pfnIoApicRegister
  */
-DECLINLINE(int) PDMDevHlpIOAPICRegister(PPDMDEVINS pDevIns, PPDMIOAPICREG pIoApicReg, PCPDMIOAPICHLPR3 *ppIoApicHlpR3)
+DECLINLINE(int) PDMDevHlpIoApicRegister(PPDMDEVINS pDevIns, PPDMIOAPICREG pIoApicReg, PCPDMIOAPICHLP *ppIoApicHlp)
 {
-    return pDevIns->pHlpR3->pfnIOAPICRegister(pDevIns, pIoApicReg, ppIoApicHlpR3);
+    return pDevIns->pHlpR3->pfnIoApicRegister(pDevIns, pIoApicReg, ppIoApicHlp);
 }
 
 /**
@@ -7969,6 +7851,14 @@ DECLINLINE(int) PDMDevHlpPCIBusSetUpContext(PPDMDEVINS pDevIns, CTX_SUFF(PPDMPCI
 DECLINLINE(int) PDMDevHlpPICSetUpContext(PPDMDEVINS pDevIns, PPDMPICREG pPicReg, PCPDMPICHLP *ppPicHlp)
 {
     return pDevIns->CTX_SUFF(pHlp)->pfnPICSetUpContext(pDevIns, pPicReg, ppPicHlp);
+}
+
+/**
+ * @copydoc PDMDEVHLPR0::pfnIoApicSetUpContext
+ */
+DECLINLINE(int) PDMDevHlpIoApicSetUpContext(PPDMDEVINS pDevIns, PPDMIOAPICREG pIoApicReg, PCPDMIOAPICHLP *ppIoApicHlp)
+{
+    return pDevIns->CTX_SUFF(pHlp)->pfnIoApicSetUpContext(pDevIns, pIoApicReg, ppIoApicHlp);
 }
 
 #endif /* !IN_RING3 || DOXYGEN_RUNNING */

@@ -54,7 +54,7 @@
 RT_C_DECLS_BEGIN
 extern DECLEXPORT(const PDMDEVHLPR0)    g_pdmR0DevHlp;
 extern DECLEXPORT(const PDMPICHLP)      g_pdmR0PicHlp;
-extern DECLEXPORT(const PDMIOAPICHLPR0) g_pdmR0IoApicHlp;
+extern DECLEXPORT(const PDMIOAPICHLP)   g_pdmR0IoApicHlp;
 extern DECLEXPORT(const PDMPCIHLPR0)    g_pdmR0PciHlp;
 extern DECLEXPORT(const PDMHPETHLPR0)   g_pdmR0HpetHlp;
 extern DECLEXPORT(const PDMPCIRAWHLPR0) g_pdmR0PciRawHlp;
@@ -1109,12 +1109,12 @@ static DECLCALLBACK(int) pdmR0DevHlp_PICSetUpContext(PPDMDEVINS pDevIns, PPDMPIC
      */
     AssertMsgReturn(pPicReg->u32Version == PDM_PICREG_VERSION,
                     ("%s/%d: u32Version=%#x expected %#x\n", pDevIns->pReg->szName, pDevIns->iInstance, pPicReg->u32Version, PDM_PICREG_VERSION),
-                    VERR_INVALID_PARAMETER);
+                    VERR_VERSION_MISMATCH);
     AssertPtrReturn(pPicReg->pfnSetIrq, VERR_INVALID_POINTER);
     AssertPtrReturn(pPicReg->pfnGetInterrupt, VERR_INVALID_POINTER);
     AssertMsgReturn(pPicReg->u32TheEnd == PDM_PICREG_VERSION,
                     ("%s/%d: u32TheEnd=%#x expected %#x\n", pDevIns->pReg->szName, pDevIns->iInstance, pPicReg->u32TheEnd, PDM_PICREG_VERSION),
-                    VERR_INVALID_PARAMETER);
+                    VERR_VERSION_MISMATCH);
     AssertPtrReturn(ppPicHlp, VERR_INVALID_POINTER);
 
     VM_ASSERT_STATE_RETURN(pGVM, VMSTATE_CREATING, VERR_WRONG_ORDER);
@@ -1139,6 +1139,55 @@ static DECLCALLBACK(int) pdmR0DevHlp_PICSetUpContext(PPDMDEVINS pDevIns, PPDMPIC
     /* set the helper pointer and return. */
     *ppPicHlp = &g_pdmR0PicHlp;
     LogFlow(("pdmR0DevHlp_PICSetUpContext: caller='%s'/%d: returns %Rrc\n", pDevIns->pReg->szName, pDevIns->iInstance, VINF_SUCCESS));
+    return VINF_SUCCESS;
+}
+
+
+/** @interface_method_impl{PDMDEVHLPR0,pfnIoApicSetUpContext} */
+static DECLCALLBACK(int) pdmR0DevHlp_IoApicSetUpContext(PPDMDEVINS pDevIns, PPDMIOAPICREG pIoApicReg, PCPDMIOAPICHLP *ppIoApicHlp)
+{
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    LogFlow(("pdmR0DevHlp_IoApicSetUpContext: caller='%s'/%d: pIoApicReg=%p:{.u32Version=%#x, .pfnSetIrq=%p, .pfnSendMsi=%p, .pfnSetEoi=%p, .u32TheEnd=%#x } ppIoApicHlp=%p\n",
+             pDevIns->pReg->szName, pDevIns->iInstance, pIoApicReg, pIoApicReg->u32Version, pIoApicReg->pfnSetIrq, pIoApicReg->pfnSendMsi, pIoApicReg->pfnSetEoi, pIoApicReg->u32TheEnd, ppIoApicHlp));
+    PGVM pGVM = pDevIns->Internal.s.pGVM;
+
+    /*
+     * Validate input.
+     */
+    AssertMsgReturn(pIoApicReg->u32Version == PDM_IOAPICREG_VERSION,
+                    ("%s/%d: u32Version=%#x expected %#x\n", pDevIns->pReg->szName, pDevIns->iInstance, pIoApicReg->u32Version, PDM_IOAPICREG_VERSION),
+                    VERR_VERSION_MISMATCH);
+    AssertPtrReturn(pIoApicReg->pfnSetIrq, VERR_INVALID_POINTER);
+    AssertPtrReturn(pIoApicReg->pfnSendMsi, VERR_INVALID_POINTER);
+    AssertPtrReturn(pIoApicReg->pfnSetEoi, VERR_INVALID_POINTER);
+    AssertMsgReturn(pIoApicReg->u32TheEnd == PDM_IOAPICREG_VERSION,
+                    ("%s/%d: u32TheEnd=%#x expected %#x\n", pDevIns->pReg->szName, pDevIns->iInstance, pIoApicReg->u32TheEnd, PDM_IOAPICREG_VERSION),
+                    VERR_VERSION_MISMATCH);
+    AssertPtrReturn(ppIoApicHlp, VERR_INVALID_POINTER);
+
+    VM_ASSERT_STATE_RETURN(pGVM, VMSTATE_CREATING, VERR_WRONG_ORDER);
+    VM_ASSERT_EMT0_RETURN(pGVM, VERR_VM_THREAD_NOT_EMT);
+
+    /* Check that it's the same device as made the ring-3 registrations: */
+    AssertLogRelMsgReturn(pGVM->pdm.s.IoApic.pDevInsR3 == pDevIns->pDevInsForR3,
+                          ("%p vs %p\n", pGVM->pdm.s.IoApic.pDevInsR3, pDevIns->pDevInsForR3), VERR_NOT_OWNER);
+
+    /* Check that it isn't already registered in ring-0: */
+    AssertLogRelMsgReturn(pGVM->pdm.s.IoApic.pDevInsR0 == NULL, ("%p (caller pDevIns=%p)\n", pGVM->pdm.s.IoApic.pDevInsR0, pDevIns),
+                          VERR_ALREADY_EXISTS);
+
+    /*
+     * Take down the callbacks and instance.
+     */
+    pGVM->pdm.s.IoApic.pDevInsR0    = pDevIns;
+    pGVM->pdm.s.IoApic.pfnSetIrqR0  = pIoApicReg->pfnSetIrq;
+    pGVM->pdm.s.IoApic.pfnSendMsiR0 = pIoApicReg->pfnSendMsi;
+    pGVM->pdm.s.IoApic.pfnSetEoiR0  = pIoApicReg->pfnSetEoi;
+    Log(("PDM: Registered IOAPIC device '%s'/%d pDevIns=%p\n", pDevIns->pReg->szName, pDevIns->iInstance, pDevIns));
+
+    /* set the helper pointer and return. */
+    *ppIoApicHlp = &g_pdmR0IoApicHlp;
+    LogFlow(("pdmR0DevHlp_IoApicSetUpContext: caller='%s'/%d: returns %Rrc\n", pDevIns->pReg->szName, pDevIns->iInstance, VINF_SUCCESS));
     return VINF_SUCCESS;
 }
 
@@ -1221,6 +1270,7 @@ extern DECLEXPORT(const PDMDEVHLPR0) g_pdmR0DevHlp =
     pdmR0DevHlp_DBGFTraceBuf,
     pdmR0DevHlp_PCIBusSetUpContext,
     pdmR0DevHlp_PICSetUpContext,
+    pdmR0DevHlp_IoApicSetUpContext,
     NULL /*pfnReserved1*/,
     NULL /*pfnReserved2*/,
     NULL /*pfnReserved3*/,
@@ -1301,7 +1351,7 @@ extern DECLEXPORT(const PDMPICHLP) g_pdmR0PicHlp =
  * @{
  */
 
-/** @interface_method_impl{PDMIOAPICHLPR0,pfnApicBusDeliver} */
+/** @interface_method_impl{PDMIOAPICHLP,pfnApicBusDeliver} */
 static DECLCALLBACK(int) pdmR0IoApicHlp_ApicBusDeliver(PPDMDEVINS pDevIns, uint8_t u8Dest, uint8_t u8DestMode,
                                                        uint8_t u8DeliveryMode, uint8_t uVector, uint8_t u8Polarity,
                                                        uint8_t u8TriggerMode, uint32_t uTagSrc)
@@ -1314,7 +1364,7 @@ static DECLCALLBACK(int) pdmR0IoApicHlp_ApicBusDeliver(PPDMDEVINS pDevIns, uint8
 }
 
 
-/** @interface_method_impl{PDMIOAPICHLPR0,pfnLock} */
+/** @interface_method_impl{PDMIOAPICHLP,pfnLock} */
 static DECLCALLBACK(int) pdmR0IoApicHlp_Lock(PPDMDEVINS pDevIns, int rc)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
@@ -1322,7 +1372,7 @@ static DECLCALLBACK(int) pdmR0IoApicHlp_Lock(PPDMDEVINS pDevIns, int rc)
 }
 
 
-/** @interface_method_impl{PDMIOAPICHLPR0,pfnUnlock} */
+/** @interface_method_impl{PDMIOAPICHLP,pfnUnlock} */
 static DECLCALLBACK(void) pdmR0IoApicHlp_Unlock(PPDMDEVINS pDevIns)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
@@ -1333,13 +1383,13 @@ static DECLCALLBACK(void) pdmR0IoApicHlp_Unlock(PPDMDEVINS pDevIns)
 /**
  * The Ring-0 I/O APIC Helper Callbacks.
  */
-extern DECLEXPORT(const PDMIOAPICHLPR0) g_pdmR0IoApicHlp =
+extern DECLEXPORT(const PDMIOAPICHLP) g_pdmR0IoApicHlp =
 {
-    PDM_IOAPICHLPR0_VERSION,
+    PDM_IOAPICHLP_VERSION,
     pdmR0IoApicHlp_ApicBusDeliver,
     pdmR0IoApicHlp_Lock,
     pdmR0IoApicHlp_Unlock,
-    PDM_IOAPICHLPR0_VERSION
+    PDM_IOAPICHLP_VERSION
 };
 
 /** @} */

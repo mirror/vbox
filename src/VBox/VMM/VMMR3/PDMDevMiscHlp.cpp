@@ -108,7 +108,7 @@ const PDMPICHLP g_pdmR3DevPicHlp =
  * @{
  */
 
-/** @interface_method_impl{PDMIOAPICHLPR3,pfnApicBusDeliver} */
+/** @interface_method_impl{PDMIOAPICHLP,pfnApicBusDeliver} */
 static DECLCALLBACK(int) pdmR3IoApicHlp_ApicBusDeliver(PPDMDEVINS pDevIns, uint8_t u8Dest, uint8_t u8DestMode,
                                                        uint8_t u8DeliveryMode, uint8_t uVector, uint8_t u8Polarity,
                                                        uint8_t u8TriggerMode, uint32_t uTagSrc)
@@ -121,7 +121,7 @@ static DECLCALLBACK(int) pdmR3IoApicHlp_ApicBusDeliver(PPDMDEVINS pDevIns, uint8
 }
 
 
-/** @interface_method_impl{PDMIOAPICHLPR3,pfnLock} */
+/** @interface_method_impl{PDMIOAPICHLP,pfnLock} */
 static DECLCALLBACK(int) pdmR3IoApicHlp_Lock(PPDMDEVINS pDevIns, int rc)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
@@ -130,7 +130,7 @@ static DECLCALLBACK(int) pdmR3IoApicHlp_Lock(PPDMDEVINS pDevIns, int rc)
 }
 
 
-/** @interface_method_impl{PDMIOAPICHLPR3,pfnUnlock} */
+/** @interface_method_impl{PDMIOAPICHLP,pfnUnlock} */
 static DECLCALLBACK(void) pdmR3IoApicHlp_Unlock(PPDMDEVINS pDevIns)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
@@ -139,55 +139,16 @@ static DECLCALLBACK(void) pdmR3IoApicHlp_Unlock(PPDMDEVINS pDevIns)
 }
 
 
-/** @interface_method_impl{PDMIOAPICHLPR3,pfnGetRCHelpers} */
-static DECLCALLBACK(PCPDMIOAPICHLPRC) pdmR3IoApicHlp_GetRCHelpers(PPDMDEVINS pDevIns)
-{
-    PDMDEV_ASSERT_DEVINS(pDevIns);
-    PVM pVM = pDevIns->Internal.s.pVMR3;
-    VM_ASSERT_EMT(pVM);
-
-    RTRCPTR pRCHelpers = NIL_RTRCPTR;
-    if (VM_IS_RAW_MODE_ENABLED(pVM))
-    {
-        int rc = PDMR3LdrGetSymbolRC(pVM, NULL, "g_pdmRCIoApicHlp", &pRCHelpers);
-        AssertReleaseRC(rc);
-        AssertRelease(pRCHelpers);
-    }
-
-    LogFlow(("pdmR3IoApicHlp_GetRCHelpers: caller='%s'/%d: returns %RRv\n",
-             pDevIns->pReg->szName, pDevIns->iInstance, pRCHelpers));
-    return pRCHelpers;
-}
-
-
-/** @interface_method_impl{PDMIOAPICHLPR3,pfnGetR0Helpers} */
-static DECLCALLBACK(PCPDMIOAPICHLPR0) pdmR3IoApicHlp_GetR0Helpers(PPDMDEVINS pDevIns)
-{
-    PDMDEV_ASSERT_DEVINS(pDevIns);
-    PVM pVM = pDevIns->Internal.s.pVMR3;
-    VM_ASSERT_EMT(pVM);
-    PCPDMIOAPICHLPR0 pR0Helpers = 0;
-    int rc = PDMR3LdrGetSymbolR0(pVM, NULL, "g_pdmR0IoApicHlp", &pR0Helpers);
-    AssertReleaseRC(rc);
-    AssertRelease(pR0Helpers);
-    LogFlow(("pdmR3IoApicHlp_GetR0Helpers: caller='%s'/%d: returns %RHv\n",
-             pDevIns->pReg->szName, pDevIns->iInstance, pR0Helpers));
-    return pR0Helpers;
-}
-
-
 /**
  * I/O APIC Device Helpers.
  */
-const PDMIOAPICHLPR3 g_pdmR3DevIoApicHlp =
+const PDMIOAPICHLP g_pdmR3DevIoApicHlp =
 {
-    PDM_IOAPICHLPR3_VERSION,
+    PDM_IOAPICHLP_VERSION,
     pdmR3IoApicHlp_ApicBusDeliver,
     pdmR3IoApicHlp_Lock,
     pdmR3IoApicHlp_Unlock,
-    pdmR3IoApicHlp_GetRCHelpers,
-    pdmR3IoApicHlp_GetR0Helpers,
-    PDM_IOAPICHLPR3_VERSION /* the end */
+    PDM_IOAPICHLP_VERSION /* the end */
 };
 
 /** @} */

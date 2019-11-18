@@ -184,19 +184,19 @@ Controller" */
 typedef struct IOAPIC
 {
     /** The device instance - R3 Ptr. */
-    PPDMDEVINSR3            pDevInsR3;
+    PPDMDEVINSR3                pDevInsR3;
     /** The IOAPIC helpers - R3 Ptr. */
-    PCPDMIOAPICHLPR3        pIoApicHlpR3;
+    R3PTRTYPE(PCPDMIOAPICHLP)   pIoApicHlpR3;
 
     /** The device instance - R0 Ptr. */
-    PPDMDEVINSR0            pDevInsR0;
+    PPDMDEVINSR0                pDevInsR0;
     /** The IOAPIC helpers - R0 Ptr. */
-    PCPDMIOAPICHLPR0        pIoApicHlpR0;
+    R0PTRTYPE(PCPDMIOAPICHLP)   pIoApicHlpR0;
 
     /** The device instance - RC Ptr. */
-    PPDMDEVINSRC            pDevInsRC;
+    PPDMDEVINSRC                pDevInsRC;
     /** The IOAPIC helpers - RC Ptr. */
-    PCPDMIOAPICHLPRC        pIoApicHlpRC;
+    RCPTRTYPE(PCPDMIOAPICHLP)   pIoApicHlpRC;
 
     /** The ID register. */
     uint8_t volatile        u8Id;
@@ -1135,7 +1135,7 @@ static DECLCALLBACK(void) ioapicR3Relocate(PPDMDEVINS pDevIns, RTGCINTPTR offDel
     LogFlow(("IOAPIC: ioapicR3Relocate: pThis=%p offDelta=%RGi\n", pThis, offDelta));
 
     pThis->pDevInsRC    = PDMDEVINS_2_RCPTR(pDevIns);
-    pThis->pIoApicHlpRC = pThis->pIoApicHlpR3->pfnGetRCHelpers(pDevIns);
+    pThis->pIoApicHlpRC += offDelta;
 }
 
 
@@ -1168,7 +1168,8 @@ static DECLCALLBACK(int) ioapicR3Destruct(PPDMDEVINS pDevIns)
 static DECLCALLBACK(int) ioapicR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE pCfg)
 {
     PDMDEV_CHECK_VERSIONS_RETURN(pDevIns);
-    PIOAPIC pThis = PDMDEVINS_2_DATA(pDevIns, PIOAPIC);
+    PIOAPIC         pThis = PDMDEVINS_2_DATA(pDevIns, PIOAPIC);
+    PCPDMDEVHLPR3   pHlp  = pDevIns->pHlpR3;
     LogFlow(("IOAPIC: ioapicR3Construct: pThis=%p iInstance=%d\n", pThis, iInstance));
     Assert(iInstance == 0); RT_NOREF(iInstance);
 
@@ -1182,23 +1183,18 @@ static DECLCALLBACK(int) ioapicR3Construct(PPDMDEVINS pDevIns, int iInstance, PC
     /*
      * Validate and read the configuration.
      */
-    PDMDEV_VALIDATE_CONFIG_RETURN(pDevIns, "NumCPUs|RZEnabled|ChipType", "");
+    PDMDEV_VALIDATE_CONFIG_RETURN(pDevIns, "NumCPUs|ChipType", "");
 
     /* The number of CPUs is currently unused, but left in CFGM and saved-state in case an ID of 0 is
        upsets some guest which we haven't yet tested. */
     uint32_t cCpus;
-    int rc = CFGMR3QueryU32Def(pCfg, "NumCPUs", &cCpus, 1);
+    int rc = pHlp->pfnCFGMQueryU32Def(pCfg, "NumCPUs", &cCpus, 1);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc, N_("Configuration error: Failed to query integer value \"NumCPUs\""));
     pThis->cCpus = (uint8_t)cCpus;
 
-    bool fRZEnabled;
-    rc = CFGMR3QueryBoolDef(pCfg, "RZEnabled", &fRZEnabled, true);
-    if (RT_FAILURE(rc))
-        return PDMDEV_SET_ERROR(pDevIns, rc, N_("Configuration error: Failed to query boolean value \"RZEnabled\""));
-
     char szChipType[16];
-    rc = CFGMR3QueryStringDef(pCfg, "ChipType", &szChipType[0], sizeof(szChipType), "ICH9");
+    rc = pHlp->pfnCFGMQueryStringDef(pCfg, "ChipType", &szChipType[0], sizeof(szChipType), "ICH9");
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc, N_("Configuration error: Failed to query string value \"ChipType\""));
 
@@ -1234,12 +1230,9 @@ static DECLCALLBACK(int) ioapicR3Construct(PPDMDEVINS pDevIns, int iInstance, PC
         pThis->u64RteReadMask  = IOAPIC_RTE_VALID_READ_MASK_82093AA;
     }
     else
-    {
         return PDMDevHlpVMSetError(pDevIns, VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES, RT_SRC_POS,
-                                   N_("I/O APIC configuration error: The \"ChipType\" value \"%s\" is unsupported"),
-                                   szChipType);
-    }
-    Log2(("IOAPIC: cCpus=%u fRZEnabled=%RTbool szChipType=%s\n", cCpus, fRZEnabled, szChipType));
+                                   N_("I/O APIC configuration error: The \"ChipType\" value \"%s\" is unsupported"), szChipType);
+    Log2(("IOAPIC: cCpus=%u fRZEnabled=%RTbool szChipType=%s\n", cCpus, pDevIns->fR0Enabled | pDevIns->fRCEnabled, szChipType));
 
     /*
      * We will use our own critical section for the IOAPIC device.
@@ -1252,36 +1245,20 @@ static DECLCALLBACK(int) ioapicR3Construct(PPDMDEVINS pDevIns, int iInstance, PC
      * Setup the critical section to protect concurrent writes to the RTEs.
      */
     rc = PDMDevHlpCritSectInit(pDevIns, &pThis->CritSect, RT_SRC_POS, "IOAPIC");
-    if (RT_FAILURE(rc))
-        return PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS, N_("IOAPIC: Failed to create critical section. rc=%Rrc"), rc);
+    AssertRCReturn(rc, rc);
 # endif
 
     /*
      * Register the IOAPIC.
      */
     PDMIOAPICREG IoApicReg;
-    RT_ZERO(IoApicReg);
     IoApicReg.u32Version   = PDM_IOAPICREG_VERSION;
-    IoApicReg.pfnSetIrqR3  = ioapicSetIrq;
-    IoApicReg.pfnSendMsiR3 = ioapicSendMsi;
-    IoApicReg.pfnSetEoiR3  = ioapicSetEoi;
-    if (fRZEnabled)
-    {
-        IoApicReg.pszSetIrqRC  = "ioapicSetIrq";
-        IoApicReg.pszSetIrqR0  = "ioapicSetIrq";
-
-        IoApicReg.pszSendMsiRC = "ioapicSendMsi";
-        IoApicReg.pszSendMsiR0 = "ioapicSendMsi";
-
-        IoApicReg.pszSetEoiRC = "ioapicSetEoi";
-        IoApicReg.pszSetEoiR0 = "ioapicSetEoi";
-    }
-    rc = PDMDevHlpIOAPICRegister(pDevIns, &IoApicReg, &pThis->pIoApicHlpR3);
-    if (RT_FAILURE(rc))
-    {
-        AssertMsgFailed(("IOAPIC: PDMDevHlpIOAPICRegister failed! rc=%Rrc\n", rc));
-        return rc;
-    }
+    IoApicReg.pfnSetIrq    = ioapicSetIrq;
+    IoApicReg.pfnSendMsi   = ioapicSendMsi;
+    IoApicReg.pfnSetEoi    = ioapicSetEoi;
+    IoApicReg.u32TheEnd    = PDM_IOAPICREG_VERSION;
+    rc = PDMDevHlpIoApicRegister(pDevIns, &IoApicReg, &pThis->pIoApicHlpR3);
+    AssertRCReturn(rc, rc);
 
     /*
      * Register MMIO callbacks.
@@ -1289,36 +1266,23 @@ static DECLCALLBACK(int) ioapicR3Construct(PPDMDEVINS pDevIns, int iInstance, PC
     rc = PDMDevHlpMMIORegister(pDevIns, IOAPIC_MMIO_BASE_PHYSADDR, IOAPIC_MMIO_SIZE, pThis,
                                IOMMMIO_FLAGS_READ_DWORD | IOMMMIO_FLAGS_WRITE_DWORD_ZEROED, ioapicMmioWrite, ioapicMmioRead,
                                "I/O APIC");
-    if (RT_SUCCESS(rc))
+    AssertRCReturn(rc, rc);
+    if (pDevIns->fR0Enabled | pDevIns->fRCEnabled)
     {
-        if (fRZEnabled)
-        {
-            pThis->pIoApicHlpRC = pThis->pIoApicHlpR3->pfnGetRCHelpers(pDevIns);
-            rc = PDMDevHlpMMIORegisterRC(pDevIns, IOAPIC_MMIO_BASE_PHYSADDR, IOAPIC_MMIO_SIZE, NIL_RTRCPTR /* pvUser */,
-                                         "ioapicMmioWrite", "ioapicMmioRead");
-            AssertRCReturn(rc, rc);
+        rc = PDMDevHlpMMIORegisterRC(pDevIns, IOAPIC_MMIO_BASE_PHYSADDR, IOAPIC_MMIO_SIZE, NIL_RTRCPTR /* pvUser */,
+                                     "ioapicMmioWrite", "ioapicMmioRead");
+        AssertRCReturn(rc, rc);
 
-            pThis->pIoApicHlpR0 = pThis->pIoApicHlpR3->pfnGetR0Helpers(pDevIns);
-            rc = PDMDevHlpMMIORegisterR0(pDevIns, IOAPIC_MMIO_BASE_PHYSADDR, IOAPIC_MMIO_SIZE, NIL_RTR0PTR /* pvUser */,
-                                         "ioapicMmioWrite", "ioapicMmioRead");
-            AssertRCReturn(rc, rc);
-        }
-    }
-    else
-    {
-        LogRel(("IOAPIC: PDMDevHlpMMIORegister failed! rc=%Rrc\n", rc));
-        return rc;
+        rc = PDMDevHlpMMIORegisterR0(pDevIns, IOAPIC_MMIO_BASE_PHYSADDR, IOAPIC_MMIO_SIZE, NIL_RTR0PTR /* pvUser */,
+                                     "ioapicMmioWrite", "ioapicMmioRead");
+        AssertRCReturn(rc, rc);
     }
 
     /*
      * Register saved-state callbacks.
      */
     rc = PDMDevHlpSSMRegister(pDevIns, IOAPIC_SAVED_STATE_VERSION, sizeof(*pThis), ioapicR3SaveExec, ioapicR3LoadExec);
-    if (RT_FAILURE(rc))
-    {
-        LogRel(("IOAPIC: PDMDevHlpSSMRegister failed! rc=%Rrc\n", rc));
-        return rc;
-    }
+    AssertRCReturn(rc, rc);
 
     /*
      * Register debugger info callback.
@@ -1336,25 +1300,25 @@ static DECLCALLBACK(int) ioapicR3Construct(PPDMDEVINS pDevIns, int iInstance, PC
     /*
      * Statistics.
      */
-    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatMmioReadRZ,  STAMTYPE_COUNTER, "/Devices/IOAPIC/RZ/MmioReadRZ",  STAMUNIT_OCCURENCES, "Number of IOAPIC MMIO reads in RZ.");
-    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatMmioWriteRZ, STAMTYPE_COUNTER, "/Devices/IOAPIC/RZ/MmioWriteRZ", STAMUNIT_OCCURENCES, "Number of IOAPIC MMIO writes in RZ.");
-    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatSetIrqRZ,    STAMTYPE_COUNTER, "/Devices/IOAPIC/RZ/SetIrqRZ",    STAMUNIT_OCCURENCES, "Number of IOAPIC SetIrq calls in RZ.");
-    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatSetEoiRZ,    STAMTYPE_COUNTER, "/Devices/IOAPIC/RZ/SetEoiRZ",    STAMUNIT_OCCURENCES, "Number of IOAPIC SetEoi calls in RZ.");
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatMmioReadRZ,  STAMTYPE_COUNTER, "RZ/MmioReadRZ",  STAMUNIT_OCCURENCES, "Number of IOAPIC MMIO reads in RZ.");
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatMmioWriteRZ, STAMTYPE_COUNTER, "RZ/MmioWriteRZ", STAMUNIT_OCCURENCES, "Number of IOAPIC MMIO writes in RZ.");
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatSetIrqRZ,    STAMTYPE_COUNTER, "RZ/SetIrqRZ",    STAMUNIT_OCCURENCES, "Number of IOAPIC SetIrq calls in RZ.");
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatSetEoiRZ,    STAMTYPE_COUNTER, "RZ/SetEoiRZ",    STAMUNIT_OCCURENCES, "Number of IOAPIC SetEoi calls in RZ.");
 
-    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatMmioReadR3,  STAMTYPE_COUNTER, "/Devices/IOAPIC/R3/MmioReadR3",  STAMUNIT_OCCURENCES, "Number of IOAPIC MMIO reads in R3");
-    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatMmioWriteR3, STAMTYPE_COUNTER, "/Devices/IOAPIC/R3/MmioWriteR3", STAMUNIT_OCCURENCES, "Number of IOAPIC MMIO writes in R3.");
-    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatSetIrqR3,    STAMTYPE_COUNTER, "/Devices/IOAPIC/R3/SetIrqR3",    STAMUNIT_OCCURENCES, "Number of IOAPIC SetIrq calls in R3.");
-    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatSetEoiR3,    STAMTYPE_COUNTER, "/Devices/IOAPIC/R3/SetEoiR3",    STAMUNIT_OCCURENCES, "Number of IOAPIC SetEoi calls in R3.");
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatMmioReadR3,  STAMTYPE_COUNTER, "R3/MmioReadR3",  STAMUNIT_OCCURENCES, "Number of IOAPIC MMIO reads in R3");
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatMmioWriteR3, STAMTYPE_COUNTER, "R3/MmioWriteR3", STAMUNIT_OCCURENCES, "Number of IOAPIC MMIO writes in R3.");
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatSetIrqR3,    STAMTYPE_COUNTER, "R3/SetIrqR3",    STAMUNIT_OCCURENCES, "Number of IOAPIC SetIrq calls in R3.");
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatSetEoiR3,    STAMTYPE_COUNTER, "R3/SetEoiR3",    STAMUNIT_OCCURENCES, "Number of IOAPIC SetEoi calls in R3.");
 
-    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatRedundantEdgeIntr,   STAMTYPE_COUNTER, "/Devices/IOAPIC/RedundantEdgeIntr",   STAMUNIT_OCCURENCES, "Number of redundant edge-triggered interrupts (no IRR change).");
-    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatRedundantLevelIntr,  STAMTYPE_COUNTER, "/Devices/IOAPIC/RedundantLevelIntr",  STAMUNIT_OCCURENCES, "Number of redundant level-triggered interrupts (no IRR change).");
-    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatSuppressedLevelIntr, STAMTYPE_COUNTER, "/Devices/IOAPIC/SuppressedLevelIntr", STAMUNIT_OCCURENCES, "Number of suppressed level-triggered interrupts by remote IRR.");
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatRedundantEdgeIntr,   STAMTYPE_COUNTER, "RedundantEdgeIntr",   STAMUNIT_OCCURENCES, "Number of redundant edge-triggered interrupts (no IRR change).");
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatRedundantLevelIntr,  STAMTYPE_COUNTER, "RedundantLevelIntr",  STAMUNIT_OCCURENCES, "Number of redundant level-triggered interrupts (no IRR change).");
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatSuppressedLevelIntr, STAMTYPE_COUNTER, "SuppressedLevelIntr", STAMUNIT_OCCURENCES, "Number of suppressed level-triggered interrupts by remote IRR.");
 
-    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatEoiContention,    STAMTYPE_COUNTER, "/Devices/IOAPIC/CritSect/ContentionSetEoi", STAMUNIT_OCCURENCES, "Number of times the critsect is busy during EOI writes causing trips to R3.");
-    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatSetRteContention, STAMTYPE_COUNTER, "/Devices/IOAPIC/CritSect/ContentionSetRte", STAMUNIT_OCCURENCES, "Number of times the critsect is busy during RTE writes causing trips to R3.");
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatEoiContention,    STAMTYPE_COUNTER, "CritSect/ContentionSetEoi", STAMUNIT_OCCURENCES, "Number of times the critsect is busy during EOI writes causing trips to R3.");
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatSetRteContention, STAMTYPE_COUNTER, "CritSect/ContentionSetRte", STAMUNIT_OCCURENCES, "Number of times the critsect is busy during RTE writes causing trips to R3.");
 
-    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatLevelIrqSent, STAMTYPE_COUNTER, "/Devices/IOAPIC/LevelIntr/Sent", STAMUNIT_OCCURENCES, "Number of level-triggered interrupts sent to the local APIC(s).");
-    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatEoiReceived,  STAMTYPE_COUNTER, "/Devices/IOAPIC/LevelIntr/Recv", STAMUNIT_OCCURENCES, "Number of EOIs received for level-triggered interrupts from the local APIC(s).");
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatLevelIrqSent, STAMTYPE_COUNTER, "LevelIntr/Sent", STAMUNIT_OCCURENCES, "Number of level-triggered interrupts sent to the local APIC(s).");
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatEoiReceived,  STAMTYPE_COUNTER, "LevelIntr/Recv", STAMUNIT_OCCURENCES, "Number of EOIs received for level-triggered interrupts from the local APIC(s).");
 # endif
 
     /*
@@ -1366,7 +1330,32 @@ static DECLCALLBACK(int) ioapicR3Construct(PPDMDEVINS pDevIns, int iInstance, PC
     return VINF_SUCCESS;
 }
 
-#endif /* IN_RING3 */
+#else /* !IN_RING3 */
+
+/**
+ * @callback_method_impl{PDMDEVREGR0,pfnConstruct}
+ */
+static DECLCALLBACK(int) ioapicRZConstruct(PPDMDEVINS pDevIns)
+{
+    PDMDEV_CHECK_VERSIONS_RETURN(pDevIns);
+    PIOAPIC pThis = PDMDEVINS_2_DATA(pDevIns, PIOAPIC);
+
+    int rc = PDMDevHlpSetDeviceCritSect(pDevIns, PDMDevHlpCritSectGetNop(pDevIns));
+    AssertRCReturn(rc, rc);
+
+    PDMIOAPICREG IoApicReg;
+    IoApicReg.u32Version   = PDM_IOAPICREG_VERSION;
+    IoApicReg.pfnSetIrq    = ioapicSetIrq;
+    IoApicReg.pfnSendMsi   = ioapicSendMsi;
+    IoApicReg.pfnSetEoi    = ioapicSetEoi;
+    IoApicReg.u32TheEnd    = PDM_IOAPICREG_VERSION;
+    rc = PDMDevHlpIoApicSetUpContext(pDevIns, &IoApicReg, &pThis->CTX_SUFF(pIoApicHlp));
+    AssertRCReturn(rc, rc);
+
+    return VINF_SUCCESS;
+}
+
+#endif /* !IN_RING3 */
 
 /**
  * IO APIC device registration structure.
@@ -1413,7 +1402,7 @@ const PDMDEVREG g_DeviceIOAPIC =
     /* .pfnReserved7 = */           NULL,
 #elif defined(IN_RING0)
     /* .pfnEarlyConstruct = */      NULL,
-    /* .pfnConstruct = */           NULL,
+    /* .pfnConstruct = */           ioapicRZConstruct,
     /* .pfnDestruct = */            NULL,
     /* .pfnFinalDestruct = */       NULL,
     /* .pfnRequest = */             NULL,
@@ -1426,7 +1415,7 @@ const PDMDEVREG g_DeviceIOAPIC =
     /* .pfnReserved6 = */           NULL,
     /* .pfnReserved7 = */           NULL,
 #elif defined(IN_RC)
-    /* .pfnConstruct = */           NULL,
+    /* .pfnConstruct = */           ioapicRZConstruct,
     /* .pfnReserved0 = */           NULL,
     /* .pfnReserved1 = */           NULL,
     /* .pfnReserved2 = */           NULL,
