@@ -234,6 +234,9 @@ typedef struct IOAPIC
     PDMCRITSECT             CritSect;
 #endif
 
+    /** The MMIO region. */
+    IOMMMIOHANDLE           hMmio;
+
 #ifdef VBOX_WITH_STATISTICS
     /** Number of MMIO reads in RZ. */
     STAMCOUNTER             StatMmioReadRZ;
@@ -450,6 +453,9 @@ static void ioapicSignalIntrForRte(PIOAPIC pThis, uint8_t idxRte)
 DECLINLINE(uint32_t) ioapicGetRedirTableEntry(PCIOAPIC pThis, uint32_t uIndex)
 {
     uint8_t const idxRte = (uIndex - IOAPIC_INDIRECT_INDEX_REDIR_TBL_START) >> 1;
+    AssertMsgReturn(idxRte < RT_ELEMENTS(pThis->au64RedirTable),
+                    ("Invalid index %u, expected < %u\n", idxRte, RT_ELEMENTS(pThis->au64RedirTable)),
+                    UINT32_MAX);
     uint32_t uValue;
     if (!(uIndex & 1))
         uValue = RT_LO_U32(pThis->au64RedirTable[idxRte]) & RT_LO_U32(pThis->u64RteReadMask);
@@ -464,17 +470,19 @@ DECLINLINE(uint32_t) ioapicGetRedirTableEntry(PCIOAPIC pThis, uint32_t uIndex)
 /**
  * Sets the redirection table entry.
  *
+ * @returns Strict VBox status code (VINF_IOM_R3_MMIO_WRITE / VINF_SUCCESS).
  * @param   pThis       Pointer to the IOAPIC instance.
  * @param   uIndex      The index value.
  * @param   uValue      The value to set.
  */
-static int ioapicSetRedirTableEntry(PIOAPIC pThis, uint32_t uIndex, uint32_t uValue)
+static VBOXSTRICTRC ioapicSetRedirTableEntry(PIOAPIC pThis, uint32_t uIndex, uint32_t uValue)
 {
     uint8_t const idxRte = (uIndex - IOAPIC_INDIRECT_INDEX_REDIR_TBL_START) >> 1;
-    AssertMsg(idxRte < RT_ELEMENTS(pThis->au64RedirTable), ("Invalid index %u, expected <= %u\n", idxRte,
-                                                            RT_ELEMENTS(pThis->au64RedirTable)));
+    AssertMsgReturn(idxRte < RT_ELEMENTS(pThis->au64RedirTable),
+                    ("Invalid index %u, expected < %u\n", idxRte, RT_ELEMENTS(pThis->au64RedirTable)),
+                    VINF_SUCCESS);
 
-    int rc = IOAPIC_LOCK(pThis, VINF_IOM_R3_MMIO_WRITE);
+    VBOXSTRICTRC rc = IOAPIC_LOCK(pThis, VINF_IOM_R3_MMIO_WRITE);
     if (rc == VINF_SUCCESS)
     {
         /*
@@ -562,10 +570,11 @@ static uint32_t ioapicGetData(PCIOAPIC pThis)
 /**
  * Sets the data register.
  *
- * @param pThis     Pointer to the IOAPIC instance.
- * @param uValue    The value to set.
+ * @returns Strict VBox status code.
+ * @param   pThis   Pointer to the IOAPIC instance.
+ * @param   uValue  The value to set.
  */
-static int ioapicSetData(PIOAPIC pThis, uint32_t uValue)
+static VBOXSTRICTRC ioapicSetData(PIOAPIC pThis, uint32_t uValue)
 {
     uint8_t const uIndex = pThis->u8Index;
     RT_UNTRUSTED_NONVOLATILE_COPY_FENCE();
@@ -587,7 +596,7 @@ static int ioapicSetData(PIOAPIC pThis, uint32_t uValue)
 /**
  * @interface_method_impl{PDMIOAPICREG,pfnSetEoiR3}
  */
-PDMBOTHCBDECL(int) ioapicSetEoi(PPDMDEVINS pDevIns, uint8_t u8Vector)
+static DECLCALLBACK(int) ioapicSetEoi(PPDMDEVINS pDevIns, uint8_t u8Vector)
 {
     PIOAPIC pThis = PDMDEVINS_2_DATA(pDevIns, PIOAPIC);
     STAM_COUNTER_INC(&pThis->CTX_SUFF_Z(StatSetEoi));
@@ -633,9 +642,9 @@ PDMBOTHCBDECL(int) ioapicSetEoi(PPDMDEVINS pDevIns, uint8_t u8Vector)
 /**
  * @interface_method_impl{PDMIOAPICREG,pfnSetIrqR3}
  */
-PDMBOTHCBDECL(void) ioapicSetIrq(PPDMDEVINS pDevIns, int iIrq, int iLevel, uint32_t uTagSrc)
+static DECLCALLBACK(void) ioapicSetIrq(PPDMDEVINS pDevIns, int iIrq, int iLevel, uint32_t uTagSrc)
 {
-#define IOAPIC_ASSERT_IRQ(a_idxRte, a_PinMask)       do { \
+#define IOAPIC_ASSERT_IRQ(a_idxRte, a_PinMask) do { \
         pThis->au32TagSrc[(a_idxRte)] = !pThis->au32TagSrc[(a_idxRte)] ? uTagSrc : RT_BIT_32(31); \
         pThis->uIrr |= a_PinMask; \
         ioapicSignalIntrForRte(pThis, (a_idxRte)); \
@@ -646,7 +655,7 @@ PDMBOTHCBDECL(void) ioapicSetIrq(PPDMDEVINS pDevIns, int iIrq, int iLevel, uint3
 
     STAM_COUNTER_INC(&pThis->CTX_SUFF_Z(StatSetIrq));
 
-    if (RT_LIKELY(iIrq >= 0 && iIrq < (int)RT_ELEMENTS(pThis->au64RedirTable)))
+    if (RT_LIKELY((unsigned)iIrq < RT_ELEMENTS(pThis->au64RedirTable)))
     {
         int rc = IOAPIC_LOCK(pThis, VINF_SUCCESS);
         AssertRC(rc);
@@ -728,7 +737,7 @@ PDMBOTHCBDECL(void) ioapicSetIrq(PPDMDEVINS pDevIns, int iIrq, int iLevel, uint3
 /**
  * @interface_method_impl{PDMIOAPICREG,pfnSendMsiR3}
  */
-PDMBOTHCBDECL(void) ioapicSendMsi(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, uint32_t uValue, uint32_t uTagSrc)
+static DECLCALLBACK(void) ioapicSendMsi(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, uint32_t uValue, uint32_t uTagSrc)
 {
     PCIOAPIC pThis = PDMDEVINS_2_DATA(pDevIns, PCIOAPIC);
     LogFlow(("IOAPIC: ioapicSendMsi: GCPhys=%#RGp uValue=%#RX32\n", GCPhys, uValue));
@@ -767,18 +776,18 @@ PDMBOTHCBDECL(void) ioapicSendMsi(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, uint32_t 
 
 
 /**
- * @callback_method_impl{FNIOMMMIOREAD}
+ * @callback_method_impl{FNIOMMMIONEWREAD}
  */
-PDMBOTHCBDECL(int) ioapicMmioRead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr, void *pv, unsigned cb)
+static DECLCALLBACK(VBOXSTRICTRC) ioapicMmioRead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS off, void *pv, unsigned cb)
 {
     PIOAPIC pThis = PDMDEVINS_2_DATA(pDevIns, PIOAPIC);
     STAM_COUNTER_INC(&pThis->CTX_SUFF_Z(StatMmioRead));
     Assert(cb == 4); RT_NOREF_PV(cb); /* registered for dwords only */
     RT_NOREF_PV(pvUser);
 
-    int       rc      = VINF_SUCCESS;
-    uint32_t *puValue = (uint32_t *)pv;
-    uint32_t  offReg  = GCPhysAddr & IOAPIC_MMIO_REG_MASK;
+    VBOXSTRICTRC rc      = VINF_SUCCESS;
+    uint32_t    *puValue = (uint32_t *)pv;
+    uint32_t     offReg  = off & IOAPIC_MMIO_REG_MASK;
     switch (offReg)
     {
         case IOAPIC_DIRECT_OFF_INDEX:
@@ -790,7 +799,7 @@ PDMBOTHCBDECL(int) ioapicMmioRead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCP
             break;
 
         default:
-            Log2(("IOAPIC: ioapicMmioRead: Invalid offset. GCPhysAddr=%#RGp offReg=%#x\n", GCPhysAddr, offReg));
+            Log2(("IOAPIC: ioapicMmioRead: Invalid offset. off=%#RGp offReg=%#x\n", off, offReg));
             rc = VINF_IOM_MMIO_UNUSED_FF;
             break;
     }
@@ -801,23 +810,23 @@ PDMBOTHCBDECL(int) ioapicMmioRead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCP
 
 
 /**
- * @callback_method_impl{FNIOMMMIOWRITE}
+ * @callback_method_impl{FNIOMMMIONEWWRITE}
  */
-PDMBOTHCBDECL(int) ioapicMmioWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr, void const *pv, unsigned cb)
+static DECLCALLBACK(VBOXSTRICTRC) ioapicMmioWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS off, void const *pv, unsigned cb)
 {
     PIOAPIC pThis = PDMDEVINS_2_DATA(pDevIns, PIOAPIC);
     RT_NOREF_PV(pvUser);
 
     STAM_COUNTER_INC(&pThis->CTX_SUFF_Z(StatMmioWrite));
 
-    Assert(!(GCPhysAddr & 3));
+    Assert(!(off & 3));
     Assert(cb == 4); RT_NOREF_PV(cb); /* registered for dwords only */
 
+    VBOXSTRICTRC   rc     = VINF_SUCCESS;
     uint32_t const uValue = *(uint32_t const *)pv;
-    uint32_t const offReg = GCPhysAddr & IOAPIC_MMIO_REG_MASK;
+    uint32_t const offReg = off & IOAPIC_MMIO_REG_MASK;
 
-    LogFlow(("IOAPIC: ioapicMmioWrite: pThis=%p GCPhysAddr=%#RGp cb=%u uValue=%#RX32\n", pThis, GCPhysAddr, cb, uValue));
-    int rc = VINF_SUCCESS;
+    LogFlow(("IOAPIC: ioapicMmioWrite: pThis=%p off=%#RGp cb=%u uValue=%#RX32\n", pThis, off, cb, uValue));
     switch (offReg)
     {
         case IOAPIC_DIRECT_OFF_INDEX:
@@ -836,7 +845,7 @@ PDMBOTHCBDECL(int) ioapicMmioWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GC
             break;
 
         default:
-            Log2(("IOAPIC: ioapicMmioWrite: Invalid offset. GCPhysAddr=%#RGp offReg=%#x\n", GCPhysAddr, offReg));
+            Log2(("IOAPIC: ioapicMmioWrite: Invalid offset. off=%#RGp offReg=%#x\n", off, offReg));
             break;
     }
 
@@ -877,7 +886,7 @@ static DECLCALLBACK(int) ioapicR3DbgReg_GetData(void *pvUser, PCDBGFREGDESC pDes
 static DECLCALLBACK(int) ioapicR3DbgReg_SetData(void *pvUser, PCDBGFREGDESC pDesc, PCDBGFREGVAL pValue, PCDBGFREGVAL pfMask)
 {
     RT_NOREF(pDesc, pfMask);
-     return ioapicSetData(PDMDEVINS_2_DATA((PPDMDEVINS)pvUser, PIOAPIC), pValue->u32);
+     return VBOXSTRICTRC_VAL(ioapicSetData(PDMDEVINS_2_DATA((PPDMDEVINS)pvUser, PIOAPIC), pValue->u32));
 }
 
 
@@ -1265,20 +1274,9 @@ static DECLCALLBACK(int) ioapicR3Construct(PPDMDEVINS pDevIns, int iInstance, PC
     /*
      * Register MMIO callbacks.
      */
-    rc = PDMDevHlpMMIORegister(pDevIns, IOAPIC_MMIO_BASE_PHYSADDR, IOAPIC_MMIO_SIZE, pThis,
-                               IOMMMIO_FLAGS_READ_DWORD | IOMMMIO_FLAGS_WRITE_DWORD_ZEROED, ioapicMmioWrite, ioapicMmioRead,
-                               "I/O APIC");
+    rc = PDMDevHlpMmioCreateAndMap(pDevIns, IOAPIC_MMIO_BASE_PHYSADDR, IOAPIC_MMIO_SIZE, ioapicMmioWrite, ioapicMmioRead,
+                                   IOMMMIO_FLAGS_READ_DWORD | IOMMMIO_FLAGS_WRITE_DWORD_ZEROED, "I/O APIC", &pThis->hMmio);
     AssertRCReturn(rc, rc);
-    if (pDevIns->fR0Enabled | pDevIns->fRCEnabled)
-    {
-        rc = PDMDevHlpMMIORegisterRC(pDevIns, IOAPIC_MMIO_BASE_PHYSADDR, IOAPIC_MMIO_SIZE, NIL_RTRCPTR /* pvUser */,
-                                     "ioapicMmioWrite", "ioapicMmioRead");
-        AssertRCReturn(rc, rc);
-
-        rc = PDMDevHlpMMIORegisterR0(pDevIns, IOAPIC_MMIO_BASE_PHYSADDR, IOAPIC_MMIO_SIZE, NIL_RTR0PTR /* pvUser */,
-                                     "ioapicMmioWrite", "ioapicMmioRead");
-        AssertRCReturn(rc, rc);
-    }
 
     /*
      * Register saved-state callbacks.
@@ -1352,6 +1350,9 @@ static DECLCALLBACK(int) ioapicRZConstruct(PPDMDEVINS pDevIns)
     IoApicReg.pfnSetEoi    = ioapicSetEoi;
     IoApicReg.u32TheEnd    = PDM_IOAPICREG_VERSION;
     rc = PDMDevHlpIoApicSetUpContext(pDevIns, &IoApicReg, &pThis->CTX_SUFF(pIoApicHlp));
+    AssertRCReturn(rc, rc);
+
+    rc = PDMDevHlpMmioSetUpContext(pDevIns, pThis->hMmio, ioapicMmioWrite, ioapicMmioRead, NULL /*pvUser*/);
     AssertRCReturn(rc, rc);
 
     return VINF_SUCCESS;
