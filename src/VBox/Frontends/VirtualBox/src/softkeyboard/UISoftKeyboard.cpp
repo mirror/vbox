@@ -153,7 +153,7 @@ QPointF pointInBetween(qreal fDistance, const QPointF &p0, const QPointF &p1)
     if (length == 0)
         return QPointF();
     /* Normalize the vector and add it to starting point: */
-    vectorP0P1 = (fDistance /length) * vectorP0P1 + p0;
+    vectorP0P1 = (fDistance / length) * vectorP0P1 + p0;
     return vectorP0P1;
 }
 
@@ -188,6 +188,7 @@ class UISoftKeyboardPhysicalLayout
 {
 
 public:
+    UISoftKeyboardPhysicalLayout();
 
     void setName(const QString &strName);
     const QString &name() const;
@@ -205,6 +206,9 @@ public:
     void updateLockKeyStates(bool fCapsLockState, bool fNumLockState, bool fScrollLockState);
     void reset();
 
+    void setDefaultKeyWidth(int iDefaultKeyWidth);
+    int defaultKeyWidth() const;
+
     /** Returns the sum totalHeight() of all rows(). */
     int totalHeight() const;
 
@@ -215,6 +219,7 @@ private:
     QUuid    m_uId;
     QString  m_strName;
     QVector<UISoftKeyboardRow>    m_rows;
+    int m_iDefaultKeyWidth;
     /** Scroll, Num, and Caps Lock keys' states are updated thru some API events. Thus we keep their pointers in a containter. */
     QMap<int, UISoftKeyboardKey*> m_lockKeys;
 };
@@ -445,6 +450,9 @@ public:
     const QVector<QPointF> &points() const;
     const QPainterPath &painterPath() const;
 
+
+    void setCornerRadius(float fCornerRadius);
+
     QPolygonF polygonInGlobal() const;
 
     int cutoutCorner() const;
@@ -493,7 +501,8 @@ private:
       * caption (usually a single char). This caption is defined in the physical layout file
       * and has precedence over the captions defined in keyboard layout files. */
     QString m_strStaticCaption;
-    bool m_fIsOSMenuKey;
+    bool    m_fIsOSMenuKey;
+    double  m_fCornerRadius;
 };
 
 
@@ -538,18 +547,17 @@ public:
 
     QString baseCaption(int iKeyPosition) const;
     QString shiftCaption(int iKeyPosition) const;
+
     QString altGrCaption(int iKeyPosition) const;
     QString shiftAltGrCaption(int iKeyPosition) const;
 
     void setEditedBuNotSaved(bool fEditedButNotsaved);
     bool editedButNotSaved() const;
 
-    void setUid(const QUuid &uid);
+    void  setUid(const QUuid &uid);
     QUuid uid() const;
 
     void drawTextInRect(const UISoftKeyboardKey &key, QPainter &painter);
-
-
 
 private:
 
@@ -892,6 +900,11 @@ KeyboardColorType UISoftKeyboardColorButton::colorType() const
 *   UISoftKeyboardPhysicalLayout implementation.                                                                                 *
 *********************************************************************************************************************************/
 
+UISoftKeyboardPhysicalLayout::UISoftKeyboardPhysicalLayout()
+    :m_iDefaultKeyWidth(50)
+{
+}
+
 void UISoftKeyboardPhysicalLayout::setName(const QString &strName)
 {
     m_strName = strName;
@@ -942,6 +955,16 @@ void UISoftKeyboardPhysicalLayout::updateLockKeyStates(bool fCapsLockState, bool
     updateLockKeyState(fCapsLockState, m_lockKeys.value(iCapsLockPosition, 0));
     updateLockKeyState(fNumLockState, m_lockKeys.value(iNumLockPosition, 0));
     updateLockKeyState(fScrollLockState, m_lockKeys.value(iScrollLockPosition, 0));
+}
+
+void UISoftKeyboardPhysicalLayout::setDefaultKeyWidth(int iDefaultKeyWidth)
+{
+    m_iDefaultKeyWidth = iDefaultKeyWidth;
+}
+
+int UISoftKeyboardPhysicalLayout::defaultKeyWidth() const
+{
+    return m_iDefaultKeyWidth;
 }
 
 void UISoftKeyboardPhysicalLayout::reset()
@@ -1553,6 +1576,7 @@ UISoftKeyboardKey::UISoftKeyboardKey()
     , m_pParentWidget(0)
     , m_enmKeyboardRegion(KeyboardRegion_Main)
     , m_fIsOSMenuKey(false)
+    , m_fCornerRadius(5.)
 {
 }
 
@@ -1733,15 +1757,20 @@ void UISoftKeyboardKey::computePainterPath()
 {
     if (m_points.size() < 3)
         return;
-    qreal fRadius = 5;
-    m_painterPath = QPainterPath(pointInBetween(fRadius, m_points[0], m_points[1]));
+
+    m_painterPath = QPainterPath(pointInBetween(m_fCornerRadius, m_points[0], m_points[1]));
     for (int i = 0; i < m_points.size(); ++i)
     {
-        QPointF p0 = pointInBetween(fRadius, m_points[(i+1)%m_points.size()], m_points[i]);
-        QPointF p1 = pointInBetween(fRadius, m_points[(i+1)%m_points.size()], m_points[(i+2)%m_points.size()]);
+        QPointF p0 = pointInBetween(m_fCornerRadius, m_points[(i+1)%m_points.size()], m_points[i]);
+        QPointF p1 = pointInBetween(m_fCornerRadius, m_points[(i+1)%m_points.size()], m_points[(i+2)%m_points.size()]);
         m_painterPath.lineTo(p0);
         m_painterPath.quadTo(m_points[(i+1)%m_points.size()], p1);
     }
+}
+
+void UISoftKeyboardKey::setCornerRadius(float fCornerRadius)
+{
+    m_fCornerRadius = fCornerRadius;
 }
 
 QPolygonF UISoftKeyboardKey::polygonInGlobal() const
@@ -2248,7 +2277,7 @@ void UISoftKeyboardWidget::paintEvent(QPaintEvent *pEvent) /* override */
     painter.scale(m_fScaleFactorX, m_fScaleFactorY);
     int unitSize = qApp->style()->pixelMetric(QStyle::PM_LayoutLeftMargin);
     float fLedRadius =  0.8 * unitSize;
-    float fLedMargin =  0.6 * unitSize;
+    float fLedMargin =  5;//0.6 * unitSize;
 
     UISoftKeyboardPhysicalLayout *pPhysicalLayout = findPhysicalLayout(currentLayout.physicalLayoutUuid());
     if (!pPhysicalLayout)
@@ -2967,6 +2996,7 @@ bool UISoftKeyboardWidget::loadPhysicalLayout(const QString &strLayoutFileName, 
                 newPhysicalLayout->setLockKey(key.position(), &key);
 
             key.setKeyGeometry(QRect(iX, iY, key.width(), key.height()));
+            key.setCornerRadius(0.1 * newPhysicalLayout->defaultKeyWidth());
             key.setPoints(UIPhysicalLayoutReader::computeKeyVertices(key));
             key.setParentWidget(this);
             iX += key.width();
@@ -3228,6 +3258,7 @@ bool UIPhysicalLayoutReader::parseXMLFile(const QString &strFileName, UISoftKeyb
     int iDefaultWidth = attributes.value("defaultWidth").toInt();
     int iDefaultHeight = attributes.value("defaultHeight").toInt();
     QVector<UISoftKeyboardRow> &rows = physicalLayout.rows();
+    physicalLayout.setDefaultKeyWidth(iDefaultWidth);
 
     while (m_xmlReader.readNextStartElement())
     {
