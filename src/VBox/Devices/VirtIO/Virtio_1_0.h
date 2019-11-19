@@ -35,6 +35,15 @@ typedef struct VIRTIOCORERC *PVIRTIOCORERC;
 /** Pointer to the instance data for the current context. */
 typedef CTX_SUFF(PVIRTIOCORE) PVIRTIOCORECC;
 
+typedef enum VIRTIOVMSTATECHANGED
+{
+    kvirtIoVmStateChangedInvalid = 0,
+    kvirtIoVmStateChangedReset,
+    kvirtIoVmStateChangedSuspend,
+    kvirtIoVmStateChangedPowerOff,
+    kvirtIoVmStateChangedResume,
+    kvirtIoVmStateChangedFor32BitHack = 0x7fffffff
+} VIRTIOVMSTATECHANGED;
 
 /**
  * Important sizing and bounds params for this impl. of VirtIO 1.0 PCI device
@@ -158,10 +167,10 @@ typedef struct virtio_pci_cap
  */
 typedef struct VIRTQSTATE
 {
-    char        szVirtqName[32];                                 /**< Dev-specific name of queue                */
-    uint16_t    uAvailIdx;                                       /**< Consumer's position in avail ring         */
-    uint16_t    uUsedIdx;                                        /**< Consumer's position in used ring          */
-    bool        fEventThresholdReached;                          /**< Don't lose track while queueing ahead     */
+    char      szVirtqName[32];                                 /**< Dev-specific name of queue                */
+    uint16_t  uAvailIdx;                                       /**< Consumer's position in avail ring         */
+    uint16_t  uUsedIdx;                                        /**< Consumer's position in used ring          */
+    bool      fEventThresholdReached;                          /**< Don't lose track while queueing ahead     */
 } VIRTQSTATE, *PVIRTQSTATE;
 
 /**
@@ -221,7 +230,7 @@ typedef struct VIRTIO_PCI_CAP_LOCATIONS_T
 typedef struct VIRTIOCORE
 {
     char                        szInstance[16];                     /**< Instance name, e.g. "VIRTIOSCSI0"         */
-
+    PPDMDEVINS                  pDevIns;                            /**< Client device instance                    */
     RTGCPHYS                    aGCPhysQueueDesc[VIRTQ_MAX_CNT];    /**< (MMIO) PhysAdr per-Q desc structs   GUEST */
     RTGCPHYS                    aGCPhysQueueAvail[VIRTQ_MAX_CNT];   /**< (MMIO) PhysAdr per-Q avail structs  GUEST */
     RTGCPHYS                    aGCPhysQueueUsed[VIRTQ_MAX_CNT];    /**< (MMIO) PhysAdr per-Q used structs   GUEST */
@@ -236,11 +245,6 @@ typedef struct VIRTIOCORE
     uint32_t                    uDeviceFeaturesSelect;              /**< (MMIO) hi/lo select uDeviceFeatures GUEST */
     uint32_t                    uDriverFeaturesSelect;              /**< (MMIO) hi/lo select uDriverFeatures GUEST */
     uint32_t                    uMsixConfig;                        /**< (MMIO) MSI-X vector                 GUEST */
-    uint32_t                    uNumQueues;                         /**< (MMIO) Actual number of queues      GUEST
-                                                                     * @todo r=bird: This value is always VIRTQ_MAX_CNT
-                                                                     * and only used in for loops.  Guest always see
-                                                                     * VIRTQ_MAX_CNT regardless of this value, so
-                                                                     * what's the point of having this? */
     uint8_t                     uDeviceStatus;                      /**< (MMIO) Device Status                GUEST */
     uint8_t                     uPrevDeviceStatus;                  /**< (MMIO) Prev Device Status           GUEST */
     uint8_t                     uConfigGeneration;                  /**< (MMIO) Device config sequencer       HOST */
@@ -260,7 +264,6 @@ typedef struct VIRTIOCORE
     uint8_t                     uPciCfgDataOff;
     uint8_t                     uISR;                               /**< Interrupt Status Register.                */
     uint8_t                     fMsiSupport;
-
 
     /** The MMIO handle for the PCI capability region (\#2). */
     IOMMMIOHANDLE               hMmioPciCap;
@@ -368,16 +371,11 @@ typedef CTX_SUFF(VIRTIOCORE) VIRTIOCORECC;
 /** @name API for VirtIO parent device
  * @{ */
 
-int virtioCoreR3QueueAttach(PVIRTIOCORE pVirtio, uint16_t idxQueue, const char *pcszName);
-#if 0 /* no such function */
-/**
- * Detaches from queue and release resources
- *
- * @param hVirtio   Handle for VirtIO framework
- * @param idxQueue      Queue number
- */
-int virtioCoreR3QueueDetach(PVIRTIOCORE pVirtio, uint16_t idxQueue);
-#endif
+int  virtioCoreR3QueueAttach(PVIRTIOCORE pVirtio, uint16_t idxQueue, const char *pcszName);
+
+int  virtioCoreR3DescChainGet(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t idxQueue,
+                             uint16_t uHeadIdx, PPVIRTIO_DESC_CHAIN_T ppDescChain);
+
 int  virtioCoreR3QueueGet(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t idxQueue,
                           PPVIRTIO_DESC_CHAIN_T ppDescChain, bool fRemove);
 int  virtioCoreR3QueuePut(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t idxQueue, PRTSGBUF pSgVirtReturn,
@@ -385,6 +383,15 @@ int  virtioCoreR3QueuePut(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t idxQ
 int  virtioCoreQueueSync(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t idxQueue);
 bool virtioCoreQueueIsEmpty(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t idxQueue);
 void virtioCoreQueueEnable(PVIRTIOCORE pVirtio, uint16_t idxQueue, bool fEnabled);
+
+/**
+ * Skip the next entry in the specified queue
+ *
+ * @param   pVirtio     Pointer to the virtio state.
+ * @param   idxQueue    Index of queue
+ *
+ */
+int virtioQueueSkip(PVIRTIOCORE pVirtio, uint16_t idxQueue);
 
 /**
  * Reset the device and driver (see VirtIO 1.0 section 2.1.1/2.1.2)
@@ -468,12 +475,13 @@ size_t   virtioCoreSgBufCalcTotalLength(PCVIRTIOSGBUF pGcSgBuf);
 void     virtioCoreSgBufReset(PVIRTIOSGBUF pGcSgBuf);
 int      virtioCoreR3SaveExec(PVIRTIOCORE pVirtio, PCPDMDEVHLPR3 pHlp, PSSMHANDLE pSSM);
 int      virtioCoreR3LoadExec(PVIRTIOCORE pVirtio, PCPDMDEVHLPR3 pHlp, PSSMHANDLE pSSM);
-void     virtioCoreR3PropagateResetNotification(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio);
-void     virtioCoreR3PropagateResumeNotification(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio);
+void     virtioCoreR3VmStateChanged(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, VIRTIOVMSTATECHANGED enmState);
 void     virtioCoreR3Term(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, PVIRTIOCORECC pVirtioCC);
 int      virtioCoreR3Init(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, PVIRTIOCORECC pVirtioCC, PVIRTIOPCIPARAMS pPciParams,
                       const char *pcszInstance, uint64_t fDevSpecificFeatures, void *pvDevSpecificCfg, uint16_t cbDevSpecificCfg);
 int      virtioCoreRZInit(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, PVIRTIOCORECC pVirtioCC);
+const char *virtioCoreGetStateChangeText(VIRTIOVMSTATECHANGED enmState);
+
 /** @} */
 
 
