@@ -345,10 +345,6 @@ typedef struct ACPIState
     RTIOPORT            uPmIoPortBase;
     /** I/O port address of SMBus device. */
     RTIOPORT            uSMBusIoPortBase;
-    /** Flag whether the GC part of the device is enabled. */
-    bool                fGCEnabled;
-    /** Flag whether the R0 part of the device is enabled. */
-    bool                fR0Enabled;
     /** Array of flags of attached CPUs */
     VMCPUSET            CpuSetAttached;
     /** Which CPU to check for the locked status. */
@@ -381,8 +377,6 @@ typedef struct ACPIState
     uint32_t            u32IocPciAddress;
     /** PCI address of the host bus controller device. */
     uint32_t            u32HbcPciAddress;
-
-    uint32_t            Alignment1;
 
     /** Physical address of PCI config space MMIO region */
     uint64_t            u64PciConfigMMioAddress;
@@ -485,7 +479,9 @@ typedef struct ACPIState
     uint32_t            uPmTimeA;
     uint32_t            uPmTimeB;
     uint32_t            Alignment5;
-} ACPIState;
+} ACPIState, ACPISTATE;
+/** Pointer to the shared ACPI device state. */
+typedef ACPISTATE *PACPISTATE;
 
 #pragma pack(1)
 
@@ -819,7 +815,7 @@ DECLINLINE(bool) acpiSCILevel(PPDMDEVINS pDevIns, ACPIState *pThis)
  * Caller must hold the state lock.
  *
  * @param   pDevIns     The PDM device instance.
- * @param   pThis       The ACPI instance.
+ * @param   pThis       The ACPI shared instance data.
  * @param   sts         The new PM1a.STS value.
  * @param   en          The new PM1a.EN value.
  */
@@ -847,7 +843,7 @@ static void acpiUpdatePm1a(PPDMDEVINS pDevIns, ACPIState *pThis, uint32_t sts, u
  * Caller must hold the state lock.
  *
  * @param   pDevIns     The PDM device instance.
- * @param   pThis       The ACPI instance.
+ * @param   pThis       The ACPI shared instance data.
  * @param   sts         The new GPE0.STS value.
  * @param   en          The new GPE0.EN value.
  */
@@ -869,7 +865,7 @@ static void apicR3UpdateGpe0(PPDMDEVINS pDevIns, ACPIState *pThis, uint32_t sts,
 /**
  * Used by acpiR3PM1aCtlWrite to power off the VM.
  *
- * @param   pThis   The ACPI instance.
+ * @param   pThis   The ACPI shared instance data.
  * @returns Strict VBox status code.
  */
 static int acpiR3DoPowerOff(ACPIState *pThis)
@@ -883,7 +879,7 @@ static int acpiR3DoPowerOff(ACPIState *pThis)
 /**
  * Used by acpiR3PM1aCtlWrite to put the VM to sleep.
  *
- * @param   pThis   The ACPI instance.
+ * @param   pThis   The ACPI shared instance data.
  * @returns Strict VBox status code.
  */
 static int acpiR3DoSleep(ACPIState *pThis)
@@ -1032,7 +1028,7 @@ static DECLCALLBACK(int) acpiR3Port_BatteryStatusChangeEvent(PPDMIACPIPORT pInte
  * The caller is expected to either hold the clock lock or to have made sure
  * the VM is resetting or loading state.
  *
- * @param   pThis               The ACPI instance.
+ * @param   pThis               The ACPI shared instance data.
  * @param   uNow                The current time.
  */
 static void acpiR3PmTimerReset(ACPIState *pThis, uint64_t uNow)
@@ -1075,7 +1071,7 @@ static void acpiPmTimerUpdate(PPDMDEVINS pDevIns, ACPIState *pThis, uint64_t u64
  */
 static DECLCALLBACK(void) acpiR3PmTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser)
 {
-    ACPIState *pThis = PDMDEVINS_2_DATA(pDevIns, ACPIState *);
+    PACPISTATE pThis = PDMDEVINS_2_DATA(pDevIns, PACPISTATE);
     Assert(TMTimerIsLockOwner(pTimer));
     RT_NOREF(pvUser);
 
@@ -1095,7 +1091,7 @@ static DECLCALLBACK(void) acpiR3PmTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, voi
  * acpiR3LoadState.
  *
  * @returns VINF_SUCCESS.
- * @param   pThis           The ACPI instance.
+ * @param   pThis           The ACPI shared instance data.
  */
 static int acpiR3FetchBatteryStatus(ACPIState *pThis)
 {
@@ -1133,7 +1129,7 @@ static int acpiR3FetchBatteryStatus(ACPIState *pThis)
  * acpiR3LoadState.
  *
  * @returns VINF_SUCCESS.
- * @param   pThis           The ACPI instance.
+ * @param   pThis           The ACPI shared instance data.
  */
 static int acpiR3FetchBatteryInfo(ACPIState *pThis)
 {
@@ -1156,7 +1152,7 @@ static int acpiR3FetchBatteryInfo(ACPIState *pThis)
  * The _STA method - used by acpiR3BatDataRead to implement BAT_DEVICE_STATUS.
  *
  * @returns status mask or 0.
- * @param   pThis           The ACPI instance.
+ * @param   pThis           The ACPI shared instance data.
  */
 static uint32_t acpiR3GetBatteryDeviceStatus(ACPIState *pThis)
 {
@@ -1185,7 +1181,7 @@ static uint32_t acpiR3GetBatteryDeviceStatus(ACPIState *pThis)
  * Used by acpiR3BatDataRead to implement BAT_POWER_SOURCE.
  *
  * @returns status.
- * @param   pThis           The ACPI instance.
+ * @param   pThis           The ACPI shared instance data.
  */
 static uint32_t acpiR3GetPowerSource(ACPIState *pThis)
 {
@@ -1729,7 +1725,7 @@ PDMBOTHCBDECL(int) acpiPMTmrRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port
     if (cb != 4)
         return VERR_IOM_IOPORT_UNUSED;
 
-    ACPIState *pThis = PDMDEVINS_2_DATA(pDevIns, ACPIState *);
+    PACPISTATE pThis = PDMDEVINS_2_DATA(pDevIns, PACPISTATE);
 
     /*
      * We use the clock lock to serialize access to u64PmTimerInitial and to
@@ -1782,7 +1778,7 @@ PDMBOTHCBDECL(int) acpiPMTmrRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port
 static DECLCALLBACK(void) acpiR3Info(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *pszArgs)
 {
     RT_NOREF(pszArgs);
-    ACPIState *pThis = PDMDEVINS_2_DATA(pDevIns, ACPIState *);
+    PACPISTATE pThis = PDMDEVINS_2_DATA(pDevIns, PACPISTATE);
     pHlp->pfnPrintf(pHlp,
                     "timer: old=%08RX32, current=%08RX32\n", pThis->uPmTimeA, pThis->uPmTimeB);
 }
@@ -1960,7 +1956,7 @@ PDMBOTHCBDECL(int) acpiR3DchrWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Po
  * Called by acpiR3Reset and acpiR3Construct to set up the PM PCI config space.
  *
  * @param   pDevIns     The PDM device instance.
- * @param   pThis       The ACPI instance.
+ * @param   pThis       The ACPI shared instance data.
  */
 static void acpiR3PmPCIBIOSFake(PPDMDEVINS pDevIns, ACPIState *pThis)
 {
@@ -1975,7 +1971,7 @@ static void acpiR3PmPCIBIOSFake(PPDMDEVINS pDevIns, ACPIState *pThis)
  * Used to calculate the value of a PM I/O port.
  *
  * @returns The actual I/O port value.
- * @param   pThis               The ACPI instance.
+ * @param   pThis               The ACPI shared instance data.
  * @param   offset              The offset into the I/O space, or -1 if invalid.
  */
 static RTIOPORT acpiR3CalcPmPort(ACPIState *pThis, int32_t offset)
@@ -1993,9 +1989,10 @@ static RTIOPORT acpiR3CalcPmPort(ACPIState *pThis, int32_t offset)
  * timer and GPE0 I/O ports.
  *
  * @returns VBox status code.
- * @param   pThis           The ACPI instance.
+ * @param   pDevIns         The device instance.
+ * @param   pThis           The ACPI shared instance data.
  */
-static int acpiR3RegisterPmHandlers(ACPIState *pThis)
+static int acpiR3RegisterPmHandlers(PPDMDEVINS pDevIns, ACPIState *pThis)
 {
     if (pThis->uPmIoPortBase == 0)
         return VINF_SUCCESS;
@@ -2019,7 +2016,7 @@ static int acpiR3RegisterPmHandlers(ACPIState *pThis)
 #undef R
 
     /* register RC stuff */
-    if (pThis->fGCEnabled)
+    if (pDevIns->fRCEnabled)
     {
         int rc = PDMDevHlpIOPortRegisterRC(pThis->pDevInsR3, acpiR3CalcPmPort(pThis, PM_TMR_OFFSET),
                                            1, 0, NULL, "acpiPMTmrRead",
@@ -2028,7 +2025,7 @@ static int acpiR3RegisterPmHandlers(ACPIState *pThis)
     }
 
     /* register R0 stuff */
-    if (pThis->fR0Enabled)
+    if (pDevIns->fR0Enabled)
     {
         int rc = PDMDevHlpIOPortRegisterR0(pThis->pDevInsR3, acpiR3CalcPmPort(pThis, PM_TMR_OFFSET),
                                            1, 0, NULL, "acpiPMTmrRead",
@@ -2044,7 +2041,7 @@ static int acpiR3RegisterPmHandlers(ACPIState *pThis)
  * timer and GPE0 I/O ports.
  *
  * @returns VBox status code.
- * @param   pThis           The ACPI instance.
+ * @param   pThis           The ACPI shared instance data.
  */
 static int acpiR3UnregisterPmHandlers(ACPIState *pThis)
 {
@@ -2076,10 +2073,11 @@ static int acpiR3UnregisterPmHandlers(ACPIState *pThis)
  *
  * @returns VBox status code.
  *
- * @param   pThis           The ACPI instance.
+ * @param   pDevIns         The device instance.
+ * @param   pThis           The ACPI shared instance data.
  * @param   NewIoPortBase   The new base address of the I/O ports.
  */
-static int acpiR3UpdatePmHandlers(ACPIState *pThis, RTIOPORT NewIoPortBase)
+static int acpiR3UpdatePmHandlers(PPDMDEVINS pDevIns, ACPIState *pThis, RTIOPORT NewIoPortBase)
 {
     Log(("acpi: rebasing PM 0x%x -> 0x%x\n", pThis->uPmIoPortBase, NewIoPortBase));
     if (NewIoPortBase != pThis->uPmIoPortBase)
@@ -2090,7 +2088,7 @@ static int acpiR3UpdatePmHandlers(ACPIState *pThis, RTIOPORT NewIoPortBase)
 
         pThis->uPmIoPortBase = NewIoPortBase;
 
-        rc = acpiR3RegisterPmHandlers(pThis);
+        rc = acpiR3RegisterPmHandlers(pDevIns, pThis);
         if (RT_FAILURE(rc))
             return rc;
 
@@ -2263,7 +2261,7 @@ PDMBOTHCBDECL(int) acpiR3SMBusRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Po
  * Called by acpiR3Reset and acpiR3Construct to set up the SMBus PCI config space.
  *
  * @param   pDevIns     The PDM device instance.
- * @param   pThis       The ACPI instance.
+ * @param   pThis       The ACPI shared instance data.
  */
 static void acpiR3SMBusPCIBIOSFake(PPDMDEVINS pDevIns, ACPIState *pThis)
 {
@@ -2282,7 +2280,7 @@ static void acpiR3SMBusPCIBIOSFake(PPDMDEVINS pDevIns, ACPIState *pThis)
 /**
  * Called by acpiR3LoadState, acpiR3Reset and acpiR3Construct to reset the SMBus device register state.
  *
- * @param   pThis           The ACPI instance.
+ * @param   pThis           The ACPI shared instance data.
  */
 static void acpiR3SMBusResetDevice(ACPIState *pThis)
 {
@@ -2305,7 +2303,7 @@ static void acpiR3SMBusResetDevice(ACPIState *pThis)
  * Called by acpiR3LoadState and acpiR3UpdateSMBusHandlers to register the SMBus ports.
  *
  * @returns VBox status code.
- * @param   pThis           The ACPI instance.
+ * @param   pThis           The ACPI shared instance data.
  */
 static int acpiR3RegisterSMBusHandlers(ACPIState *pThis)
 {
@@ -2325,7 +2323,7 @@ static int acpiR3RegisterSMBusHandlers(ACPIState *pThis)
  * Called by acpiR3LoadState and acpiR3UpdateSMBusHandlers to unregister the SMBus ports.
  *
  * @returns VBox status code.
- * @param   pThis           The ACPI instance.
+ * @param   pThis           The ACPI shared instance data.
  */
 static int acpiR3UnregisterSMBusHandlers(ACPIState *pThis)
 {
@@ -2344,7 +2342,7 @@ static int acpiR3UnregisterSMBusHandlers(ACPIState *pThis)
  *
  * @returns VBox status code.
  *
- * @param   pThis           The ACPI instance.
+ * @param   pThis           The ACPI shared instance data.
  * @param   NewIoPortBase   The new base address of the I/O ports.
  */
 static int acpiR3UpdateSMBusHandlers(ACPIState *pThis, RTIOPORT NewIoPortBase)
@@ -2495,7 +2493,7 @@ static const SSMFIELD g_AcpiSavedStateFields8[] =
  */
 static DECLCALLBACK(int) acpiR3SaveState(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 {
-    ACPIState *pThis = PDMDEVINS_2_DATA(pDevIns, ACPIState *);
+    PACPISTATE pThis = PDMDEVINS_2_DATA(pDevIns, PACPISTATE);
     return SSMR3PutStruct(pSSM, pThis, &g_AcpiSavedStateFields8[0]);
 }
 
@@ -2504,7 +2502,7 @@ static DECLCALLBACK(int) acpiR3SaveState(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
  */
 static DECLCALLBACK(int) acpiR3LoadState(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass)
 {
-    ACPIState *pThis = PDMDEVINS_2_DATA(pDevIns, ACPIState *);
+    PACPISTATE pThis = PDMDEVINS_2_DATA(pDevIns, PACPISTATE);
     Assert(uPass == SSM_PASS_FINAL); NOREF(uPass);
 
     /*
@@ -2549,7 +2547,7 @@ static DECLCALLBACK(int) acpiR3LoadState(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, ui
     {
         AssertLogRelMsgReturn(pThis->u8SMBusBlkIdx < RT_ELEMENTS(pThis->au8SMBusBlkDat),
                               ("%#x\n", pThis->u8SMBusBlkIdx), VERR_SSM_LOAD_CONFIG_MISMATCH);
-        rc = acpiR3RegisterPmHandlers(pThis);
+        rc = acpiR3RegisterPmHandlers(pDevIns, pThis);
         if (RT_FAILURE(rc))
             return rc;
         rc = acpiR3RegisterSMBusHandlers(pThis);
@@ -3060,7 +3058,7 @@ static void acpiR3SetupHpet(ACPIState *pThis, RTGCPHYS32 addr)
  * Used by acpiR3PlantTables to plant a MMCONFIG PCI config space access (MCFG)
  * descriptor.
  *
- * @param   pThis       The ACPI instance.
+ * @param   pThis       The ACPI shared instance data.
  * @param   GCPhysDst   Where to plant it.
  */
 static void acpiR3SetupMcfg(ACPIState *pThis, RTGCPHYS32 GCPhysDst)
@@ -3368,7 +3366,7 @@ static DECLCALLBACK(VBOXSTRICTRC) acpiR3PciConfigRead(PPDMDEVINS pDevIns, PPDMPC
 static DECLCALLBACK(VBOXSTRICTRC) acpiR3PciConfigWrite(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev,
                                                        uint32_t uAddress, unsigned cb, uint32_t u32Value)
 {
-    ACPIState *pThis = PDMDEVINS_2_DATA(pDevIns, ACPIState *);
+    PACPISTATE pThis = PDMDEVINS_2_DATA(pDevIns, PACPISTATE);
 
     Log2(("acpi: PCI config write: 0x%x -> 0x%x (%d)\n", u32Value, uAddress, cb));
     DEVACPI_LOCK_R3(pThis);
@@ -3395,7 +3393,7 @@ static DECLCALLBACK(VBOXSTRICTRC) acpiR3PciConfigWrite(PPDMDEVINS pDevIns, PPDMP
             NewIoPortBase &= 0xffc0;
         }
 
-        int rc = acpiR3UpdatePmHandlers(pThis, NewIoPortBase);
+        int rc = acpiR3UpdatePmHandlers(pDevIns, pThis, NewIoPortBase);
         AssertRC(rc);
     }
 
@@ -3429,7 +3427,7 @@ static DECLCALLBACK(VBOXSTRICTRC) acpiR3PciConfigWrite(PPDMDEVINS pDevIns, PPDMP
  */
 static DECLCALLBACK(int) acpiR3Attach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t fFlags)
 {
-    ACPIState *pThis = PDMDEVINS_2_DATA(pDevIns, ACPIState *);
+    PACPISTATE pThis = PDMDEVINS_2_DATA(pDevIns, PACPISTATE);
     LogFlow(("acpiAttach: pDevIns=%p iLUN=%u fFlags=%#x\n", pDevIns, iLUN, fFlags));
 
     AssertMsgReturn(!(fFlags & PDM_TACH_FLAGS_NOT_HOT_PLUG),
@@ -3474,7 +3472,7 @@ static DECLCALLBACK(int) acpiR3Attach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_
  */
 static DECLCALLBACK(void) acpiR3Detach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t fFlags)
 {
-    ACPIState *pThis = PDMDEVINS_2_DATA(pDevIns, ACPIState *);
+    PACPISTATE pThis = PDMDEVINS_2_DATA(pDevIns, PACPISTATE);
 
     LogFlow(("acpiDetach: pDevIns=%p iLUN=%u fFlags=%#x\n", pDevIns, iLUN, fFlags));
 
@@ -3506,7 +3504,7 @@ static DECLCALLBACK(void) acpiR3Detach(PPDMDEVINS pDevIns, unsigned iLUN, uint32
  */
 static DECLCALLBACK(void) acpiR3Resume(PPDMDEVINS pDevIns)
 {
-    ACPIState *pThis = PDMDEVINS_2_DATA(pDevIns, ACPIState *);
+    PACPISTATE pThis = PDMDEVINS_2_DATA(pDevIns, PACPISTATE);
     if (pThis->fSetWakeupOnResume)
     {
         Log(("acpiResume: setting WAK_STS\n"));
@@ -3521,7 +3519,7 @@ static DECLCALLBACK(void) acpiR3Resume(PPDMDEVINS pDevIns)
 static DECLCALLBACK(void) acpiR3MemSetup(PPDMDEVINS pDevIns, PDMDEVMEMSETUPCTX enmCtx)
 {
     RT_NOREF1(enmCtx);
-    ACPIState *pThis = PDMDEVINS_2_DATA(pDevIns, ACPIState *);
+    PACPISTATE pThis = PDMDEVINS_2_DATA(pDevIns, PACPISTATE);
     acpiR3PlantTables(pThis);
 }
 
@@ -3530,7 +3528,7 @@ static DECLCALLBACK(void) acpiR3MemSetup(PPDMDEVINS pDevIns, PDMDEVMEMSETUPCTX e
  */
 static DECLCALLBACK(void) acpiR3Reset(PPDMDEVINS pDevIns)
 {
-    ACPIState *pThis = PDMDEVINS_2_DATA(pDevIns, ACPIState *);
+    PACPISTATE pThis = PDMDEVINS_2_DATA(pDevIns, PACPISTATE);
 
     /* Play safe: make sure that the IRQ isn't stuck after a reset. */
     acpiSetIrq(pThis, 0);
@@ -3552,7 +3550,7 @@ static DECLCALLBACK(void) acpiR3Reset(PPDMDEVINS pDevIns)
 
     /* Real device behavior is resetting only the PM controller state,
      * but we're additionally doing the job of the BIOS. */
-    acpiR3UpdatePmHandlers(pThis, PM_PORT_BASE);
+    acpiR3UpdatePmHandlers(pDevIns, pThis, PM_PORT_BASE);
     acpiR3PmPCIBIOSFake(pDevIns, pThis);
 
     /* Reset SMBus base and PCI config space in addition to the SMBus controller
@@ -3568,7 +3566,7 @@ static DECLCALLBACK(void) acpiR3Reset(PPDMDEVINS pDevIns)
  */
 static DECLCALLBACK(void) acpiR3Relocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta)
 {
-    ACPIState *pThis = PDMDEVINS_2_DATA(pDevIns, ACPIState *);
+    PACPISTATE pThis = PDMDEVINS_2_DATA(pDevIns, PACPISTATE);
     pThis->pDevInsRC = PDMDEVINS_2_RCPTR(pDevIns);
     pThis->pPmTimerRC = TMTimerRCPtr(pThis->pPmTimerR3);
     NOREF(offDelta);
@@ -3580,7 +3578,7 @@ static DECLCALLBACK(void) acpiR3Relocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta
 static DECLCALLBACK(int) acpiR3Destruct(PPDMDEVINS pDevIns)
 {
     PDMDEV_CHECK_VERSIONS_RETURN(pDevIns);
-    ACPIState *pThis = PDMDEVINS_2_DATA(pDevIns, ACPIState *);
+    PACPISTATE pThis = PDMDEVINS_2_DATA(pDevIns, PACPISTATE);
     for (uint8_t i = 0; i < pThis->cCustTbls; i++)
     {
         if (pThis->apu8CustBin[i])
@@ -3598,7 +3596,8 @@ static DECLCALLBACK(int) acpiR3Destruct(PPDMDEVINS pDevIns)
 static DECLCALLBACK(int) acpiR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE pCfg)
 {
     PDMDEV_CHECK_VERSIONS_RETURN(pDevIns);
-    ACPIState *pThis = PDMDEVINS_2_DATA(pDevIns, ACPIState *);
+    PACPISTATE      pThis   = PDMDEVINS_2_DATA(pDevIns, PACPISTATE);
+    PCPDMDEVHLPR3   pHlp    = pDevIns->pHlpR3;
 
     /*
      * Init data and set defaults.
@@ -3641,243 +3640,198 @@ static DECLCALLBACK(int) acpiR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
     /*
      * Validate and read the configuration.
      */
-    if (!CFGMR3AreValuesValid(pCfg,
-                              "IOAPIC\0"
-                              "NumCPUs\0"
-                              "GCEnabled\0"
-                              "R0Enabled\0"
-                              "HpetEnabled\0"
-                              "McfgEnabled\0"
-                              "McfgBase\0"
-                              "McfgLength\0"
-                              "PciPref64Enabled\0"
-                              "PciPref64LimitGB\0"
-                              "SmcEnabled\0"
-                              "FdcEnabled\0"
-                              "ShowRtc\0"
-                              "ShowCpu\0"
-                              "NicPciAddress\0"
-                              "AudioPciAddress\0"
-                              "IocPciAddress\0"
-                              "HostBusPciAddress\0"
-                              "EnableSuspendToDisk\0"
-                              "PowerS1Enabled\0"
-                              "PowerS4Enabled\0"
-                              "CpuHotPlug\0"
-                              "AmlFilePath\0"
-                              "Serial0IoPortBase\0"
-                              "Serial1IoPortBase\0"
-                              "Serial2IoPortBase\0"
-                              "Serial3IoPortBase\0"
-                              "Serial0Irq\0"
-                              "Serial1Irq\0"
-                              "Serial2Irq\0"
-                              "Serial3Irq\0"
-                              "AcpiOemId\0"
-                              "AcpiCreatorId\0"
-                              "AcpiCreatorRev\0"
-                              "CustomTable\0"
-                              "CustomTable0\0"
-                              "CustomTable1\0"
-                              "CustomTable2\0"
-                              "CustomTable3\0"
-                              "Parallel0IoPortBase\0"
-                              "Parallel1IoPortBase\0"
-                              "Parallel0Irq\0"
-                              "Parallel1Irq\0"
-                              ))
-        return PDMDEV_SET_ERROR(pDevIns, VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES,
-                                N_("Configuration error: Invalid config key for ACPI device"));
+    PDMDEV_VALIDATE_CONFIG_RETURN(pDevIns,
+                                  "IOAPIC"
+                                  "|NumCPUs"
+                                  "|HpetEnabled"
+                                  "|McfgEnabled"
+                                  "|McfgBase"
+                                  "|McfgLength"
+                                  "|PciPref64Enabled"
+                                  "|PciPref64LimitGB"
+                                  "|SmcEnabled"
+                                  "|FdcEnabled"
+                                  "|ShowRtc"
+                                  "|ShowCpu"
+                                  "|NicPciAddress"
+                                  "|AudioPciAddress"
+                                  "|IocPciAddress"
+                                  "|HostBusPciAddress"
+                                  "|EnableSuspendToDisk"
+                                  "|PowerS1Enabled"
+                                  "|PowerS4Enabled"
+                                  "|CpuHotPlug"
+                                  "|AmlFilePath"
+                                  "|Serial0IoPortBase"
+                                  "|Serial1IoPortBase"
+                                  "|Serial2IoPortBase"
+                                  "|Serial3IoPortBase"
+                                  "|Serial0Irq"
+                                  "|Serial1Irq"
+                                  "|Serial2Irq"
+                                  "|Serial3Irq"
+                                  "|AcpiOemId"
+                                  "|AcpiCreatorId"
+                                  "|AcpiCreatorRev"
+                                  "|CustomTable"
+                                  "|CustomTable0"
+                                  "|CustomTable1"
+                                  "|CustomTable2"
+                                  "|CustomTable3"
+                                  "|Parallel0IoPortBase"
+                                  "|Parallel1IoPortBase"
+                                  "|Parallel0Irq"
+                                  "|Parallel1Irq"
+                                  , "");
 
     /* query whether we are supposed to present an IOAPIC */
-    rc = CFGMR3QueryU8Def(pCfg, "IOAPIC", &pThis->u8UseIOApic, 1);
+    rc = pHlp->pfnCFGMQueryU8Def(pCfg, "IOAPIC", &pThis->u8UseIOApic, 1);
     if (RT_FAILURE(rc))
-        return PDMDEV_SET_ERROR(pDevIns, rc,
-                                N_("Configuration error: Failed to read \"IOAPIC\""));
+        return PDMDEV_SET_ERROR(pDevIns, rc, N_("Configuration error: Failed to read \"IOAPIC\""));
 
-    rc = CFGMR3QueryU16Def(pCfg, "NumCPUs", &pThis->cCpus, 1);
+    rc = pHlp->pfnCFGMQueryU16Def(pCfg, "NumCPUs", &pThis->cCpus, 1);
     if (RT_FAILURE(rc))
-        return PDMDEV_SET_ERROR(pDevIns, rc,
-                                N_("Configuration error: Querying \"NumCPUs\" as integer failed"));
+        return PDMDEV_SET_ERROR(pDevIns, rc, N_("Configuration error: Querying \"NumCPUs\" as integer failed"));
 
     /* query whether we are supposed to present an FDC controller */
-    rc = CFGMR3QueryBoolDef(pCfg, "FdcEnabled", &pThis->fUseFdc, true);
+    rc = pHlp->pfnCFGMQueryBoolDef(pCfg, "FdcEnabled", &pThis->fUseFdc, true);
     if (RT_FAILURE(rc))
-        return PDMDEV_SET_ERROR(pDevIns, rc,
-                                N_("Configuration error: Failed to read \"FdcEnabled\""));
+        return PDMDEV_SET_ERROR(pDevIns, rc, N_("Configuration error: Failed to read \"FdcEnabled\""));
 
     /* query whether we are supposed to present HPET */
-    rc = CFGMR3QueryBoolDef(pCfg, "HpetEnabled", &pThis->fUseHpet, false);
+    rc = pHlp->pfnCFGMQueryBoolDef(pCfg, "HpetEnabled", &pThis->fUseHpet, false);
     if (RT_FAILURE(rc))
-        return PDMDEV_SET_ERROR(pDevIns, rc,
-                                N_("Configuration error: Failed to read \"HpetEnabled\""));
+        return PDMDEV_SET_ERROR(pDevIns, rc, N_("Configuration error: Failed to read \"HpetEnabled\""));
     /* query MCFG configuration */
-    rc = CFGMR3QueryU64Def(pCfg, "McfgBase", &pThis->u64PciConfigMMioAddress, 0);
+    rc = pHlp->pfnCFGMQueryU64Def(pCfg, "McfgBase", &pThis->u64PciConfigMMioAddress, 0);
     if (RT_FAILURE(rc))
-        return PDMDEV_SET_ERROR(pDevIns, rc,
-                                N_("Configuration error: Failed to read \"McfgBase\""));
-    rc = CFGMR3QueryU64Def(pCfg, "McfgLength", &pThis->u64PciConfigMMioLength, 0);
+        return PDMDEV_SET_ERROR(pDevIns, rc, N_("Configuration error: Failed to read \"McfgBase\""));
+    rc = pHlp->pfnCFGMQueryU64Def(pCfg, "McfgLength", &pThis->u64PciConfigMMioLength, 0);
     if (RT_FAILURE(rc))
-        return PDMDEV_SET_ERROR(pDevIns, rc,
-                                N_("Configuration error: Failed to read \"McfgLength\""));
+        return PDMDEV_SET_ERROR(pDevIns, rc, N_("Configuration error: Failed to read \"McfgLength\""));
     pThis->fUseMcfg = (pThis->u64PciConfigMMioAddress != 0) && (pThis->u64PciConfigMMioLength != 0);
 
     /* query whether we are supposed to set up the 64-bit prefetchable memory window */
-    rc = CFGMR3QueryBoolDef(pCfg, "PciPref64Enabled", &pThis->fPciPref64Enabled, false);
+    rc = pHlp->pfnCFGMQueryBoolDef(pCfg, "PciPref64Enabled", &pThis->fPciPref64Enabled, false);
     if (RT_FAILURE(rc))
-        return PDMDEV_SET_ERROR(pDevIns, rc,
-                                N_("Configuration error: Failed to read \"PciPref64Enabled\""));
+        return PDMDEV_SET_ERROR(pDevIns, rc, N_("Configuration error: Failed to read \"PciPref64Enabled\""));
 
     /* query the limit of the the 64-bit prefetchable memory window */
     uint64_t u64PciPref64MaxGB;
-    rc = CFGMR3QueryU64Def(pCfg, "PciPref64LimitGB", &u64PciPref64MaxGB, 64);
+    rc = pHlp->pfnCFGMQueryU64Def(pCfg, "PciPref64LimitGB", &u64PciPref64MaxGB, 64);
     if (RT_FAILURE(rc))
-        return PDMDEV_SET_ERROR(pDevIns, rc,
-                                N_("Configuration error: Failed to read \"PciPref64LimitGB\""));
+        return PDMDEV_SET_ERROR(pDevIns, rc, N_("Configuration error: Failed to read \"PciPref64LimitGB\""));
     pThis->u64PciPref64Max = _1G64 * u64PciPref64MaxGB;
 
     /* query whether we are supposed to present SMC */
-    rc = CFGMR3QueryBoolDef(pCfg, "SmcEnabled", &pThis->fUseSmc, false);
+    rc = pHlp->pfnCFGMQueryBoolDef(pCfg, "SmcEnabled", &pThis->fUseSmc, false);
     if (RT_FAILURE(rc))
-        return PDMDEV_SET_ERROR(pDevIns, rc,
-                                N_("Configuration error: Failed to read \"SmcEnabled\""));
+        return PDMDEV_SET_ERROR(pDevIns, rc, N_("Configuration error: Failed to read \"SmcEnabled\""));
 
     /* query whether we are supposed to present RTC object */
-    rc = CFGMR3QueryBoolDef(pCfg, "ShowRtc", &pThis->fShowRtc, false);
+    rc = pHlp->pfnCFGMQueryBoolDef(pCfg, "ShowRtc", &pThis->fShowRtc, false);
     if (RT_FAILURE(rc))
-        return PDMDEV_SET_ERROR(pDevIns, rc,
-                                N_("Configuration error: Failed to read \"ShowRtc\""));
+        return PDMDEV_SET_ERROR(pDevIns, rc, N_("Configuration error: Failed to read \"ShowRtc\""));
 
     /* query whether we are supposed to present CPU objects */
-    rc = CFGMR3QueryBoolDef(pCfg, "ShowCpu", &pThis->fShowCpu, false);
+    rc = pHlp->pfnCFGMQueryBoolDef(pCfg, "ShowCpu", &pThis->fShowCpu, false);
     if (RT_FAILURE(rc))
-        return PDMDEV_SET_ERROR(pDevIns, rc,
-                                N_("Configuration error: Failed to read \"ShowCpu\""));
+        return PDMDEV_SET_ERROR(pDevIns, rc, N_("Configuration error: Failed to read \"ShowCpu\""));
 
     /* query primary NIC PCI address */
-    rc = CFGMR3QueryU32Def(pCfg, "NicPciAddress", &pThis->u32NicPciAddress, 0);
+    rc = pHlp->pfnCFGMQueryU32Def(pCfg, "NicPciAddress", &pThis->u32NicPciAddress, 0);
     if (RT_FAILURE(rc))
-        return PDMDEV_SET_ERROR(pDevIns, rc,
-                                N_("Configuration error: Failed to read \"NicPciAddress\""));
+        return PDMDEV_SET_ERROR(pDevIns, rc, N_("Configuration error: Failed to read \"NicPciAddress\""));
 
     /* query primary NIC PCI address */
-    rc = CFGMR3QueryU32Def(pCfg, "AudioPciAddress", &pThis->u32AudioPciAddress, 0);
+    rc = pHlp->pfnCFGMQueryU32Def(pCfg, "AudioPciAddress", &pThis->u32AudioPciAddress, 0);
     if (RT_FAILURE(rc))
-        return PDMDEV_SET_ERROR(pDevIns, rc,
-                                N_("Configuration error: Failed to read \"AudioPciAddress\""));
+        return PDMDEV_SET_ERROR(pDevIns, rc, N_("Configuration error: Failed to read \"AudioPciAddress\""));
 
     /* query IO controller (southbridge) PCI address */
-    rc = CFGMR3QueryU32Def(pCfg, "IocPciAddress", &pThis->u32IocPciAddress, 0);
+    rc = pHlp->pfnCFGMQueryU32Def(pCfg, "IocPciAddress", &pThis->u32IocPciAddress, 0);
     if (RT_FAILURE(rc))
-        return PDMDEV_SET_ERROR(pDevIns, rc,
-                                N_("Configuration error: Failed to read \"IocPciAddress\""));
+        return PDMDEV_SET_ERROR(pDevIns, rc, N_("Configuration error: Failed to read \"IocPciAddress\""));
 
     /* query host bus controller PCI address */
-    rc = CFGMR3QueryU32Def(pCfg, "HostBusPciAddress", &pThis->u32HbcPciAddress, 0);
+    rc = pHlp->pfnCFGMQueryU32Def(pCfg, "HostBusPciAddress", &pThis->u32HbcPciAddress, 0);
     if (RT_FAILURE(rc))
-        return PDMDEV_SET_ERROR(pDevIns, rc,
-                                N_("Configuration error: Failed to read \"HostBusPciAddress\""));
+        return PDMDEV_SET_ERROR(pDevIns, rc, N_("Configuration error: Failed to read \"HostBusPciAddress\""));
 
     /* query whether S1 power state should be exposed */
-    rc = CFGMR3QueryBoolDef(pCfg, "PowerS1Enabled", &pThis->fS1Enabled, false);
+    rc = pHlp->pfnCFGMQueryBoolDef(pCfg, "PowerS1Enabled", &pThis->fS1Enabled, false);
     if (RT_FAILURE(rc))
-        return PDMDEV_SET_ERROR(pDevIns, rc,
-                                N_("Configuration error: Failed to read \"PowerS1Enabled\""));
+        return PDMDEV_SET_ERROR(pDevIns, rc, N_("Configuration error: Failed to read \"PowerS1Enabled\""));
 
     /* query whether S4 power state should be exposed */
-    rc = CFGMR3QueryBoolDef(pCfg, "PowerS4Enabled", &pThis->fS4Enabled, false);
+    rc = pHlp->pfnCFGMQueryBoolDef(pCfg, "PowerS4Enabled", &pThis->fS4Enabled, false);
     if (RT_FAILURE(rc))
-        return PDMDEV_SET_ERROR(pDevIns, rc,
-                                N_("Configuration error: Failed to read \"PowerS4Enabled\""));
+        return PDMDEV_SET_ERROR(pDevIns, rc, N_("Configuration error: Failed to read \"PowerS4Enabled\""));
 
     /* query whether S1 power state should save the VM state */
-    rc = CFGMR3QueryBoolDef(pCfg, "EnableSuspendToDisk", &pThis->fSuspendToSavedState, false);
+    rc = pHlp->pfnCFGMQueryBoolDef(pCfg, "EnableSuspendToDisk", &pThis->fSuspendToSavedState, false);
     if (RT_FAILURE(rc))
-        return PDMDEV_SET_ERROR(pDevIns, rc,
-                                N_("Configuration error: Failed to read \"EnableSuspendToDisk\""));
+        return PDMDEV_SET_ERROR(pDevIns, rc, N_("Configuration error: Failed to read \"EnableSuspendToDisk\""));
 
     /* query whether we are allow CPU hot plugging */
-    rc = CFGMR3QueryBoolDef(pCfg, "CpuHotPlug", &pThis->fCpuHotPlug, false);
+    rc = pHlp->pfnCFGMQueryBoolDef(pCfg, "CpuHotPlug", &pThis->fCpuHotPlug, false);
     if (RT_FAILURE(rc))
-        return PDMDEV_SET_ERROR(pDevIns, rc,
-                                N_("Configuration error: Failed to read \"CpuHotPlug\""));
-
-    rc = CFGMR3QueryBoolDef(pCfg, "GCEnabled", &pThis->fGCEnabled, true);
-    if (RT_FAILURE(rc))
-        return PDMDEV_SET_ERROR(pDevIns, rc,
-                                N_("Configuration error: Failed to read \"GCEnabled\""));
-
-    rc = CFGMR3QueryBoolDef(pCfg, "R0Enabled", &pThis->fR0Enabled, true);
-    if (RT_FAILURE(rc))
-        return PDMDEV_SET_ERROR(pDevIns, rc,
-                                N_("configuration error: failed to read \"R0Enabled\""));
+        return PDMDEV_SET_ERROR(pDevIns, rc, N_("Configuration error: Failed to read \"CpuHotPlug\""));
 
     /* query serial info */
-    rc = CFGMR3QueryU8Def(pCfg, "Serial0Irq", &pThis->uSerial0Irq, 4);
+    rc = pHlp->pfnCFGMQueryU8Def(pCfg, "Serial0Irq", &pThis->uSerial0Irq, 4);
     if (RT_FAILURE(rc))
-        return PDMDEV_SET_ERROR(pDevIns, rc,
-                                N_("Configuration error: Failed to read \"Serial0Irq\""));
+        return PDMDEV_SET_ERROR(pDevIns, rc, N_("Configuration error: Failed to read \"Serial0Irq\""));
 
-    rc = CFGMR3QueryU16Def(pCfg, "Serial0IoPortBase", &pThis->uSerial0IoPortBase, 0x3f8);
+    rc = pHlp->pfnCFGMQueryU16Def(pCfg, "Serial0IoPortBase", &pThis->uSerial0IoPortBase, 0x3f8);
     if (RT_FAILURE(rc))
-        return PDMDEV_SET_ERROR(pDevIns, rc,
-                                N_("Configuration error: Failed to read \"Serial0IoPortBase\""));
+        return PDMDEV_SET_ERROR(pDevIns, rc, N_("Configuration error: Failed to read \"Serial0IoPortBase\""));
 
     /* Serial 1 is enabled, get config data */
-    rc = CFGMR3QueryU8Def(pCfg, "Serial1Irq", &pThis->uSerial1Irq, 3);
+    rc = pHlp->pfnCFGMQueryU8Def(pCfg, "Serial1Irq", &pThis->uSerial1Irq, 3);
     if (RT_FAILURE(rc))
-        return PDMDEV_SET_ERROR(pDevIns, rc,
-                                N_("Configuration error: Failed to read \"Serial1Irq\""));
+        return PDMDEV_SET_ERROR(pDevIns, rc, N_("Configuration error: Failed to read \"Serial1Irq\""));
 
-    rc = CFGMR3QueryU16Def(pCfg, "Serial1IoPortBase", &pThis->uSerial1IoPortBase, 0x2f8);
+    rc = pHlp->pfnCFGMQueryU16Def(pCfg, "Serial1IoPortBase", &pThis->uSerial1IoPortBase, 0x2f8);
     if (RT_FAILURE(rc))
-        return PDMDEV_SET_ERROR(pDevIns, rc,
-                                N_("Configuration error: Failed to read \"Serial1IoPortBase\""));
+        return PDMDEV_SET_ERROR(pDevIns, rc, N_("Configuration error: Failed to read \"Serial1IoPortBase\""));
 
     /* Read serial port 2 settings; disabled if CFGM keys do not exist. */
-    rc = CFGMR3QueryU8Def(pCfg, "Serial2Irq", &pThis->uSerial2Irq, 0);
+    rc = pHlp->pfnCFGMQueryU8Def(pCfg, "Serial2Irq", &pThis->uSerial2Irq, 0);
     if (RT_FAILURE(rc))
-        return PDMDEV_SET_ERROR(pDevIns, rc,
-                                N_("Configuration error: Failed to read \"Serial2Irq\""));
+        return PDMDEV_SET_ERROR(pDevIns, rc, N_("Configuration error: Failed to read \"Serial2Irq\""));
 
-    rc = CFGMR3QueryU16Def(pCfg, "Serial2IoPortBase", &pThis->uSerial2IoPortBase, 0);
+    rc = pHlp->pfnCFGMQueryU16Def(pCfg, "Serial2IoPortBase", &pThis->uSerial2IoPortBase, 0);
     if (RT_FAILURE(rc))
-        return PDMDEV_SET_ERROR(pDevIns, rc,
-                                N_("Configuration error: Failed to read \"Serial2IoPortBase\""));
+        return PDMDEV_SET_ERROR(pDevIns, rc, N_("Configuration error: Failed to read \"Serial2IoPortBase\""));
 
     /* Read serial port 3 settings; disabled if CFGM keys do not exist. */
-    rc = CFGMR3QueryU8Def(pCfg, "Serial3Irq", &pThis->uSerial3Irq, 0);
+    rc = pHlp->pfnCFGMQueryU8Def(pCfg, "Serial3Irq", &pThis->uSerial3Irq, 0);
     if (RT_FAILURE(rc))
-        return PDMDEV_SET_ERROR(pDevIns, rc,
-                                N_("Configuration error: Failed to read \"Serial3Irq\""));
+        return PDMDEV_SET_ERROR(pDevIns, rc, N_("Configuration error: Failed to read \"Serial3Irq\""));
 
-    rc = CFGMR3QueryU16Def(pCfg, "Serial3IoPortBase", &pThis->uSerial3IoPortBase, 0);
+    rc = pHlp->pfnCFGMQueryU16Def(pCfg, "Serial3IoPortBase", &pThis->uSerial3IoPortBase, 0);
     if (RT_FAILURE(rc))
-        return PDMDEV_SET_ERROR(pDevIns, rc,
-                                N_("Configuration error: Failed to read \"Serial3IoPortBase\""));
+        return PDMDEV_SET_ERROR(pDevIns, rc, N_("Configuration error: Failed to read \"Serial3IoPortBase\""));
     /*
      * Query settings for both parallel ports, if the CFGM keys don't exist pretend that
      * the corresponding parallel port is not enabled.
      */
-    rc = CFGMR3QueryU8Def(pCfg, "Parallel0Irq", &pThis->uParallel0Irq, 0);
+    rc = pHlp->pfnCFGMQueryU8Def(pCfg, "Parallel0Irq", &pThis->uParallel0Irq, 0);
     if (RT_FAILURE(rc))
-        return PDMDEV_SET_ERROR(pDevIns, rc,
-                                N_("Configuration error: Failed to read \"Parallel0Irq\""));
+        return PDMDEV_SET_ERROR(pDevIns, rc, N_("Configuration error: Failed to read \"Parallel0Irq\""));
 
-    rc = CFGMR3QueryU16Def(pCfg, "Parallel0IoPortBase", &pThis->uParallel0IoPortBase, 0);
+    rc = pHlp->pfnCFGMQueryU16Def(pCfg, "Parallel0IoPortBase", &pThis->uParallel0IoPortBase, 0);
     if (RT_FAILURE(rc))
-        return PDMDEV_SET_ERROR(pDevIns, rc,
-                                N_("Configuration error: Failed to read \"Parallel0IoPortBase\""));
+        return PDMDEV_SET_ERROR(pDevIns, rc, N_("Configuration error: Failed to read \"Parallel0IoPortBase\""));
 
-    rc = CFGMR3QueryU8Def(pCfg, "Parallel1Irq", &pThis->uParallel1Irq, 0);
+    rc = pHlp->pfnCFGMQueryU8Def(pCfg, "Parallel1Irq", &pThis->uParallel1Irq, 0);
     if (RT_FAILURE(rc))
-        return PDMDEV_SET_ERROR(pDevIns, rc,
-                                N_("Configuration error: Failed to read \"Parallel1Irq\""));
+        return PDMDEV_SET_ERROR(pDevIns, rc, N_("Configuration error: Failed to read \"Parallel1Irq\""));
 
-    rc = CFGMR3QueryU16Def(pCfg, "Parallel1IoPortBase", &pThis->uParallel1IoPortBase, 0);
+    rc = pHlp->pfnCFGMQueryU16Def(pCfg, "Parallel1IoPortBase", &pThis->uParallel1IoPortBase, 0);
     if (RT_FAILURE(rc))
-        return PDMDEV_SET_ERROR(pDevIns, rc,
-                                N_("Configuration error: Failed to read \"Parallel1IoPortBase\""));
+        return PDMDEV_SET_ERROR(pDevIns, rc, N_("Configuration error: Failed to read \"Parallel1IoPortBase\""));
 
     /* Try to attach the other CPUs */
     for (unsigned i = 1; i < pThis->cCpus; i++)
@@ -3906,86 +3860,58 @@ static DECLCALLBACK(int) acpiR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
         }
     }
 
-    char *pszOemId = NULL;
-    rc = CFGMR3QueryStringAllocDef(pCfg, "AcpiOemId", &pszOemId, "VBOX  ");
+    char szOemId[16];
+    rc = pHlp->pfnCFGMQueryStringDef(pCfg, "AcpiOemId", szOemId, sizeof(szOemId), "VBOX  ");
     if (RT_FAILURE(rc))
-        return PDMDEV_SET_ERROR(pDevIns, rc,
-                                N_("Configuration error: Querying \"AcpiOemId\" as string failed"));
-    size_t cbOemId = strlen(pszOemId);
-    if (cbOemId > 6)
-        return PDMDEV_SET_ERROR(pDevIns, rc,
-                                N_("Configuration error: \"AcpiOemId\" must contain not more than 6 characters"));
+        return PDMDEV_SET_ERROR(pDevIns, rc, N_("Configuration error: Querying \"AcpiOemId\" as string failed"));
+    size_t cchOemId = strlen(szOemId);
+    if (cchOemId > 6)
+        return PDMDEV_SET_ERROR(pDevIns, rc, N_("Configuration error: \"AcpiOemId\" must contain not more than 6 characters"));
     memset(pThis->au8OemId, ' ', sizeof(pThis->au8OemId));
-    memcpy(pThis->au8OemId, pszOemId, cbOemId);
-    MMR3HeapFree(pszOemId);
+    memcpy(pThis->au8OemId, szOemId, cchOemId);
 
-    char *pszCreatorId = NULL;
-    rc = CFGMR3QueryStringAllocDef(pCfg, "AcpiCreatorId", &pszCreatorId, "ASL ");
+    char szCreatorId[16];
+    rc = pHlp->pfnCFGMQueryStringDef(pCfg, "AcpiCreatorId", szCreatorId, sizeof(szCreatorId), "ASL ");
     if (RT_FAILURE(rc))
-        return PDMDEV_SET_ERROR(pDevIns, rc,
-                                N_("Configuration error: Querying \"AcpiCreatorId\" as string failed"));
-    size_t cbCreatorId = strlen(pszCreatorId);
-    if (cbCreatorId > 4)
-        return PDMDEV_SET_ERROR(pDevIns, rc,
-                                N_("Configuration error: \"AcpiCreatorId\" must contain not more than 4 characters"));
+        return PDMDEV_SET_ERROR(pDevIns, rc, N_("Configuration error: Querying \"AcpiCreatorId\" as string failed"));
+    size_t cchCreatorId = strlen(szCreatorId);
+    if (cchCreatorId > 4)
+        return PDMDEV_SET_ERROR(pDevIns, rc, N_("Configuration error: \"AcpiCreatorId\" must contain not more than 4 characters"));
     memset(pThis->au8CreatorId, ' ', sizeof(pThis->au8CreatorId));
-    memcpy(pThis->au8CreatorId, pszCreatorId, cbCreatorId);
-    MMR3HeapFree(pszCreatorId);
+    memcpy(pThis->au8CreatorId, szCreatorId, cchCreatorId);
 
-    rc = CFGMR3QueryU32Def(pCfg, "AcpiCreatorRev", &pThis->u32CreatorRev, RT_H2LE_U32(0x61));
+    rc = pHlp->pfnCFGMQueryU32Def(pCfg, "AcpiCreatorRev", &pThis->u32CreatorRev, RT_H2LE_U32(0x61));
     if (RT_FAILURE(rc))
-        return PDMDEV_SET_ERROR(pDevIns, rc,
-                                N_("Configuration error: Querying \"AcpiCreatorRev\" as integer failed"));
-    pThis->u32OemRevision         = RT_H2LE_U32(0x1);
+        return PDMDEV_SET_ERROR(pDevIns, rc, N_("Configuration error: Querying \"AcpiCreatorRev\" as integer failed"));
+
+    pThis->u32OemRevision = RT_H2LE_U32(0x1);
 
     /*
      * Load custom ACPI tables.
      */
-    char *pszCustBinFile;
-
-    /* Maintain legacy behavior for CustomTable config key.
-     * If present, use it as alias for CustomTable1. */
-    rc = CFGMR3QueryStringAlloc(pCfg, "CustomTable", &pszCustBinFile);
-    if (rc != VERR_CFGM_VALUE_NOT_FOUND)
-    {
-        if (RT_FAILURE(rc))
-            return PDMDEV_SET_ERROR(pDevIns, rc,
-                                    N_("Configuration error: Querying \"CustomTable\" as a string failed"));
-        if (!*pszCustBinFile)
-        {
-            MMR3HeapFree(pszCustBinFile);
-            pszCustBinFile = NULL;
-        }
-        else if (pszCustBinFile)
-        {
-            /* Try creating CustomTable0 using legacy value. */
-            rc = CFGMR3InsertString(pCfg, "CustomTable0", pszCustBinFile);
-            if (rc == VERR_CFGM_LEAF_EXISTS)
-                LogRel(("ACPI: Warning: \"CustomTable\" configuration"
-                        " setting ignored as \"CustomTable0\" setting exists.\n"));
-            MMR3HeapFree(pszCustBinFile);
-        }
-    }
-
-    /* Total space available for custom ACPI tables
-     * @todo define as appropriate, remove as a magic number, and document
-     *       limitation in product manual */
+    /* Total space available for custom ACPI tables */
+    /** @todo define as appropriate, remove as a magic number, and document
+     *        limitation in product manual */
     uint32_t cbBufAvail = 3072;
     pThis->cCustTbls = 0;
 
-    const char* custTblConfigKeys[] = {"CustomTable0", "CustomTable1", "CustomTable2", "CustomTable3"};
-    for (unsigned i = 0; i < RT_ELEMENTS(custTblConfigKeys); ++i)
+    static const char *s_apszCustTblConfigKeys[] = {"CustomTable0", "CustomTable1", "CustomTable2", "CustomTable3"};
+    AssertCompile(RT_ELEMENTS(s_apszCustTblConfigKeys) <= RT_ELEMENTS(pThis->apu8CustBin));
+    for (unsigned i = 0; i < RT_ELEMENTS(s_apszCustTblConfigKeys); ++i)
     {
-        const char* pszConfigKey = custTblConfigKeys[i];
+        const char *pszConfigKey = s_apszCustTblConfigKeys[i];
 
         /*
          * Get the custom table binary file name.
          */
-        rc = CFGMR3QueryStringAlloc(pCfg, pszConfigKey, &pszCustBinFile);
+        char *pszCustBinFile = NULL;
+        rc = pHlp->pfnCFGMQueryStringAlloc(pCfg, pszConfigKey, &pszCustBinFile);
+        if (rc == VERR_CFGM_VALUE_NOT_FOUND && i == 0)
+            rc = pHlp->pfnCFGMQueryStringAlloc(pCfg, "CustomTable", &pszCustBinFile); /* legacy */
         if (rc == VERR_CFGM_VALUE_NOT_FOUND)
         {
-            pszCustBinFile = NULL;
             rc = VINF_SUCCESS;
+            pszCustBinFile = NULL;
         }
         else if (RT_FAILURE(rc))
             return PDMDEV_SET_ERROR(pDevIns, rc,
@@ -3995,24 +3921,25 @@ static DECLCALLBACK(int) acpiR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
             MMR3HeapFree(pszCustBinFile);
             pszCustBinFile = NULL;
         }
+
         /*
          * Determine the custom table binary size, open specified file in the process.
          */
         if (pszCustBinFile)
         {
-            uint32_t tblIdx = pThis->cCustTbls;
-            rc = acpiR3ReadCustomTable(pDevIns, &(pThis->apu8CustBin[tblIdx]),
-                                       &(pThis->acbCustBin[tblIdx]), pszCustBinFile, cbBufAvail);
+            uint32_t idxCust = pThis->cCustTbls;
+            rc = acpiR3ReadCustomTable(pDevIns, &pThis->apu8CustBin[idxCust],
+                                       &pThis->acbCustBin[idxCust], pszCustBinFile, cbBufAvail);
             LogRel(("ACPI: Reading custom ACPI table(%u) from file '%s' (%d bytes)\n",
-                    tblIdx, pszCustBinFile, pThis->acbCustBin[tblIdx]));
+                    idxCust, pszCustBinFile, pThis->acbCustBin[idxCust]));
             MMR3HeapFree(pszCustBinFile);
             if (RT_FAILURE(rc))
                 return PDMDEV_SET_ERROR(pDevIns, rc, N_("Error reading custom ACPI table."));
-            cbBufAvail -= pThis->acbCustBin[tblIdx];
+            cbBufAvail -= pThis->acbCustBin[idxCust];
 
-            /* Update custom OEM attributes based on custom table
-             * @todo: is it intended for custom tables to overwrite user provided values above? */
-            ACPITBLHEADER *pTblHdr = (ACPITBLHEADER*)pThis->apu8CustBin[tblIdx];
+            /* Update custom OEM attributes based on custom table */
+            /** @todo is it intended for custom tables to overwrite user provided values above? */
+            ACPITBLHEADER *pTblHdr = (ACPITBLHEADER*)pThis->apu8CustBin[idxCust];
             memcpy(&pThis->au8OemId[0], &pTblHdr->au8OemId[0], 6);
             memcpy(&pThis->au8OemTabId[0], &pTblHdr->au8OemTabId[0], 8);
             pThis->u32OemRevision = pTblHdr->u32OemRevision;
@@ -4049,31 +3976,25 @@ static DECLCALLBACK(int) acpiR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
                                 N_("Can not find space for RSDP. ACPI is disabled"));
 
     rc = acpiR3PlantTables(pThis);
-    if (RT_FAILURE(rc))
-        return rc;
+    AssertRCReturn(rc, rc);
 
     rc = PDMDevHlpROMRegister(pDevIns, GCPhysRsdp, 0x1000, pThis->au8RSDPPage, 0x1000,
                               PGMPHYS_ROM_FLAGS_PERMANENT_BINARY, "ACPI RSDP");
-    if (RT_FAILURE(rc))
-        return rc;
+    AssertRCReturn(rc, rc);
 
     /*
      * Register I/O ports.
      */
-    rc = acpiR3RegisterPmHandlers(pThis);
-    if (RT_FAILURE(rc))
-        return rc;
+    rc = acpiR3RegisterPmHandlers(pDevIns, pThis);
+    AssertRCReturn(rc, rc);
 
     rc = acpiR3RegisterSMBusHandlers(pThis);
-    if (RT_FAILURE(rc))
-        return rc;
+    AssertRCReturn(rc, rc);
 
 #define R(addr, cnt, writer, reader, description)       \
     do { \
-        rc = PDMDevHlpIOPortRegister(pDevIns, addr, cnt, pThis, writer, reader, \
-                                      NULL, NULL, description); \
-        if (RT_FAILURE(rc)) \
-            return rc; \
+        rc = PDMDevHlpIOPortRegister(pDevIns, addr, cnt, pThis, writer, reader, NULL, NULL, description); \
+        AssertRCReturn(rc, rc); \
     } while (0)
     R(SMI_CMD,        1, acpiR3SmiWrite,          NULL,                "ACPI SMI");
 #ifdef DEBUG_ACPI
