@@ -580,7 +580,7 @@ static DECLCALLBACK(VBOXSTRICTRC) dmaWriteHiPage(PPDMDEVINS pDevIns, void *pvUse
 #ifdef IN_RING3
 
 /** Perform any pending transfers on a single DMA channel. */
-static void dmaRunChannel(DMAState *pThis, int ctlidx, int chidx)
+static void dmaR3RunChannel(DMAState *pThis, int ctlidx, int chidx)
 {
     DMAControl  *dc = &pThis->DMAC[ctlidx];
     DMAChannel  *ch = &dc->ChState[chidx];
@@ -639,7 +639,7 @@ static DECLCALLBACK(bool) dmaR3Run(PPDMDEVINS pDevIns)
         {
             mask = 1 << chidx;
             if (!(dc->u8Mask & mask) && (dc->u8Status & (mask << 4)))
-                dmaRunChannel(pThis, ctlidx, chidx);
+                dmaR3RunChannel(pThis, ctlidx, chidx);
         }
     }
 
