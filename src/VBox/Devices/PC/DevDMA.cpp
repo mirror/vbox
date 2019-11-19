@@ -259,10 +259,10 @@ DECLINLINE(bool) dmaReadBytePtr(DMAControl *dc)
  */
 static DECLCALLBACK(VBOXSTRICTRC) dmaWriteAddr(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t u32, unsigned cb)
 {
+    PDMACONTROLLER dc = (PDMACONTROLLER)pvUser;
     RT_NOREF(pDevIns);
     if (cb == 1)
     {
-        PDMACONTROLLER dc       = (PDMACONTROLLER)pvUser;
         unsigned const reg      = (offPort >> dc->is16bit) & 0x0f;
         unsigned const chidx    = reg >> 1;
         unsigned const is_count = reg & 1;
@@ -288,12 +288,12 @@ static DECLCALLBACK(VBOXSTRICTRC) dmaWriteAddr(PPDMDEVINS pDevIns, void *pvUser,
             else
                 ch->u16BaseAddr  = RT_MAKE_U16(u32, RT_HIBYTE(ch->u16BaseAddr));
         }
-        Log2(("dmaWriteAddr: offPort %#06x, chidx %d, data %#02x\n", offPort, chidx, u32));
+        Log2(("dmaWriteAddr/%u: offPort %#06x, chidx %d, data %#02x\n", dc->is16bit, offPort, chidx, u32));
     }
     else
     {
         /* Likely a guest bug. */
-        Log(("Bad size write to count register %#x (size %d, data %#x)\n", offPort, cb, u32));
+        Log(("dmaWriteAddr/%u: Bad size write to count register %#x (size %d, data %#x)\n", dc->is16bit, offPort, cb, u32));
     }
     return VINF_SUCCESS;
 }
@@ -323,7 +323,7 @@ static DECLCALLBACK(VBOXSTRICTRC) dmaReadAddr(PPDMDEVINS pDevIns, void *pvUser, 
         bptr = dmaReadBytePtr(dc);
         *pu32 = RT_LOBYTE(val >> (bptr * 8));
 
-        Log(("Count read: offPort %#06x, reg %#04x, data %#x\n", offPort, reg, val));
+        Log(("dmaReadAddr/%u: Count read: offPort %#06x, reg %#04x, data %#x\n", dc->is16bit, offPort, reg, val));
         return VINF_SUCCESS;
     }
     return VERR_IOM_IOPORT_UNUSED;
@@ -336,12 +336,11 @@ static DECLCALLBACK(VBOXSTRICTRC) dmaReadAddr(PPDMDEVINS pDevIns, void *pvUser, 
  */
 static DECLCALLBACK(VBOXSTRICTRC) dmaWriteCtl(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t u32, unsigned cb)
 {
+    PDMACONTROLLER dc = (PDMACONTROLLER)pvUser;
     RT_NOREF(pDevIns);
     if (cb == 1)
     {
-        PDMACONTROLLER dc = (PDMACONTROLLER)pvUser;
         unsigned       chidx = 0;
-
         unsigned const reg = (offPort >> dc->is16bit) & 0x0f;
         Assert((int)reg >= CTL_W_CMD && reg <= CTL_W_MASK);
         Assert(!(u32 & ~0xff)); /* Check for garbage in high bits. */
@@ -351,7 +350,7 @@ static DECLCALLBACK(VBOXSTRICTRC) dmaWriteCtl(PPDMDEVINS pDevIns, void *pvUser, 
             /* Unsupported commands are entirely ignored. */
             if (u32 & CMD_UNSUPPORTED)
             {
-                Log(("DMA command %#x is not supported, ignoring!\n", u32));
+                Log(("dmaWriteCtl/%u: DMA command %#x is not supported, ignoring!\n", dc->is16bit, u32));
                 break;
             }
             dc->u8Command = u32;
@@ -374,7 +373,7 @@ static DECLCALLBACK(VBOXSTRICTRC) dmaWriteCtl(PPDMDEVINS pDevIns, void *pvUser, 
         case CTL_W_MODE:
             chidx = u32 & 3;
             dc->ChState[chidx].u8Mode = u32;
-            Log2(("chidx %d, op %d, %sauto-init, %screment, opmode %d\n",
+            Log2(("dmaWriteCtl/%u: chidx %d, op %d, %sauto-init, %screment, opmode %d\n", dc->is16bit,
                   chidx, (u32 >> 2) & 3, IS_MODE_AI(u32) ? "" : "no ", IS_MODE_DEC(u32) ? "de" : "in", (u32 >> 6) & 3));
             break;
         case CTL_W_CLRBPTR:
@@ -393,12 +392,12 @@ static DECLCALLBACK(VBOXSTRICTRC) dmaWriteCtl(PPDMDEVINS pDevIns, void *pvUser, 
             ASSERT_GUEST_MSG_FAILED(("reg=%u\n", reg));
             break;
         }
-        Log(("dmaWriteCtl: offPort %#06x, chidx %d, data %#02x\n", offPort, chidx, u32));
+        Log(("dmaWriteCtl/%u: offPort %#06x, chidx %d, data %#02x\n", dc->is16bit, offPort, chidx, u32));
     }
     else
     {
         /* Likely a guest bug. */
-        Log(("Bad size write to controller register %#x (size %d, data %#x)\n", offPort, cb, u32));
+        Log(("dmaWriteCtl/%u: Bad size write to controller register %#x (size %d, data %#x)\n", dc->is16bit, offPort, cb, u32));
     }
     return VINF_SUCCESS;
 }
@@ -451,7 +450,7 @@ static DECLCALLBACK(VBOXSTRICTRC) dmaReadCtl(PPDMDEVINS pDevIns, void *pvUser, R
                 break;
         }
 
-        Log(("Ctrl read: offPort %#06x, reg %#04x, data %#x\n", offPort, reg, val));
+        Log(("dmaReadCtl/%u: Ctrl read: offPort %#06x, reg %#04x, data %#x\n", dc->is16bit, offPort, reg, val));
         *pu32 = val;
 
         return VINF_SUCCESS;
@@ -480,7 +479,7 @@ static DECLCALLBACK(VBOXSTRICTRC) dmaReadPage(PPDMDEVINS pDevIns, void *pvUser, 
     {
         reg   = offPort & 7;
         *pu32 = dc->au8Page[reg];
-        Log2(("Read %#x (byte) from page register %#x (channel %d)\n", *pu32, offPort, DMAPG2CX(reg)));
+        Log2(("dmaReadPage/%u: Read %#x (byte) from page register %#x (channel %d)\n", dc->is16bit, *pu32, offPort, DMAPG2CX(reg)));
         return VINF_SUCCESS;
     }
 
@@ -488,7 +487,7 @@ static DECLCALLBACK(VBOXSTRICTRC) dmaReadPage(PPDMDEVINS pDevIns, void *pvUser, 
     {
         reg   = offPort & 7;
         *pu32 = dc->au8Page[reg] | (dc->au8Page[(reg + 1) & 7] << 8);
-        Log2(("Read %#x (word) from page register %#x (channel %d)\n", *pu32, offPort, DMAPG2CX(reg)));
+        Log2(("dmaReadPage/%u: Read %#x (word) from page register %#x (channel %d)\n", dc->is16bit, *pu32, offPort, DMAPG2CX(reg)));
         return VINF_SUCCESS;
     }
 
@@ -512,7 +511,7 @@ static DECLCALLBACK(VBOXSTRICTRC) dmaWritePage(PPDMDEVINS pDevIns, void *pvUser,
         reg = offPort & 7;
         dc->au8Page[reg]   = u32;
         dc->au8PageHi[reg] = 0;  /* Corresponding high page cleared. */
-        Log2(("Wrote %#x to page register %#x (channel %d)\n", u32, offPort, DMAPG2CX(reg)));
+        Log2(("dmaWritePage/%u: Wrote %#x to page register %#x (channel %d)\n", dc->is16bit, u32, offPort, DMAPG2CX(reg)));
     }
     else if (cb == 2)
     {
@@ -527,7 +526,7 @@ static DECLCALLBACK(VBOXSTRICTRC) dmaWritePage(PPDMDEVINS pDevIns, void *pvUser,
     else
     {
         /* Likely a guest bug. */
-        Log(("Bad size write to page register %#x (size %d, data %#x)\n", offPort, cb, u32));
+        Log(("dmaWritePage/%u: Bad size write to page register %#x (size %d, data %#x)\n", dc->is16bit, offPort, cb, u32));
     }
     return VINF_SUCCESS;
 }
@@ -547,7 +546,7 @@ static DECLCALLBACK(VBOXSTRICTRC) dmaReadHiPage(PPDMDEVINS pDevIns, void *pvUser
         unsigned const reg = offPort & 7;
 
         *pu32 = dc->au8PageHi[reg];
-        Log2(("Read %#x to from high page register %#x (channel %d)\n", *pu32, offPort, DMAPG2CX(reg)));
+        Log2(("dmaReadHiPage/%u: Read %#x to from high page register %#x (channel %d)\n", dc->is16bit, *pu32, offPort, DMAPG2CX(reg)));
         return VINF_SUCCESS;
     }
     return VERR_IOM_IOPORT_UNUSED;
@@ -560,19 +559,19 @@ static DECLCALLBACK(VBOXSTRICTRC) dmaReadHiPage(PPDMDEVINS pDevIns, void *pvUser
 static DECLCALLBACK(VBOXSTRICTRC) dmaWriteHiPage(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t u32, unsigned cb)
 {
     RT_NOREF(pDevIns);
+    PDMACONTROLLER dc = (PDMACONTROLLER)pvUser;
     if (cb == 1)
     {
-        PDMACONTROLLER dc = (PDMACONTROLLER)pvUser;
         unsigned const reg = offPort & 7;
 
         Assert(!(u32 & ~0xff)); /* Check for garbage in high bits. */
         dc->au8PageHi[reg] = u32;
-        Log2(("Wrote %#x to high page register %#x (channel %d)\n", u32, offPort, DMAPG2CX(reg)));
+        Log2(("dmaWriteHiPage/%u: Wrote %#x to high page register %#x (channel %d)\n", dc->is16bit, u32, offPort, DMAPG2CX(reg)));
     }
     else
     {
         /* Likely a guest bug. */
-        Log(("Bad size write to high page register %#x (size %d, data %#x)\n", offPort, cb, u32));
+        Log(("Bad size write to high page register %#x (size %d, data %#x)\n", dc->is16bit, offPort, cb, u32));
     }
     return VINF_SUCCESS;
 }
@@ -619,7 +618,7 @@ static void dmaRunChannel(DMAState *pThis, int ctlidx, int chidx)
 /**
  * @interface_method_impl{PDMDMAREG,pfnRun}
  */
-static DECLCALLBACK(bool) dmaRun(PPDMDEVINS pDevIns)
+static DECLCALLBACK(bool) dmaR3Run(PPDMDEVINS pDevIns)
 {
     DMAState    *pThis = PDMDEVINS_2_DATA(pDevIns, PDMASTATE);
     DMAControl  *dc;
@@ -652,13 +651,13 @@ static DECLCALLBACK(bool) dmaRun(PPDMDEVINS pDevIns)
 /**
  * @interface_method_impl{PDMDMAREG,pfnRegister}
  */
-static DECLCALLBACK(void) dmaRegister(PPDMDEVINS pDevIns, unsigned uChannel,
-                                      PFNDMATRANSFERHANDLER pfnTransferHandler, void *pvUser)
+static DECLCALLBACK(void) dmaR3Register(PPDMDEVINS pDevIns, unsigned uChannel,
+                                        PFNDMATRANSFERHANDLER pfnTransferHandler, void *pvUser)
 {
     DMAState    *pThis = PDMDEVINS_2_DATA(pDevIns, PDMASTATE);
     DMAChannel  *ch = &pThis->DMAC[DMACH2C(uChannel)].ChState[uChannel & 3];
 
-    LogFlow(("dmaRegister: pThis=%p uChannel=%u pfnTransferHandler=%p pvUser=%p\n", pThis, uChannel, pfnTransferHandler, pvUser));
+    LogFlow(("dmaR3Register: pThis=%p uChannel=%u pfnTransferHandler=%p pvUser=%p\n", pThis, uChannel, pfnTransferHandler, pvUser));
 
     PDMCritSectEnter(pDevIns->pCritSectRoR3, VERR_IGNORED);
     ch->pfnXferHandler = pfnTransferHandler;
@@ -703,8 +702,8 @@ static void dmaReverseBuf16(void *buf, unsigned len)
 /**
  * @interface_method_impl{PDMDMAREG,pfnReadMemory}
  */
-static DECLCALLBACK(uint32_t) dmaReadMemory(PPDMDEVINS pDevIns, unsigned uChannel,
-                                            void *pvBuffer, uint32_t off, uint32_t cbBlock)
+static DECLCALLBACK(uint32_t) dmaR3ReadMemory(PPDMDEVINS pDevIns, unsigned uChannel,
+                                              void *pvBuffer, uint32_t off, uint32_t cbBlock)
 {
     DMAState    *pThis = PDMDEVINS_2_DATA(pDevIns, PDMASTATE);
     DMAControl  *dc = &pThis->DMAC[DMACH2C(uChannel)];
@@ -712,7 +711,7 @@ static DECLCALLBACK(uint32_t) dmaReadMemory(PPDMDEVINS pDevIns, unsigned uChanne
     uint32_t    page, pagehi;
     uint32_t    addr;
 
-    LogFlow(("dmaReadMemory: pThis=%p uChannel=%u pvBuffer=%p off=%u cbBlock=%u\n", pThis, uChannel, pvBuffer, off, cbBlock));
+    LogFlow(("dmaR3ReadMemory: pThis=%p uChannel=%u pvBuffer=%p off=%u cbBlock=%u\n", pThis, uChannel, pvBuffer, off, cbBlock));
 
     PDMCritSectEnter(pDevIns->pCritSectRoR3, VERR_IGNORED);
 
@@ -739,8 +738,8 @@ static DECLCALLBACK(uint32_t) dmaReadMemory(PPDMDEVINS pDevIns, unsigned uChanne
 /**
  * @interface_method_impl{PDMDMAREG,pfnWriteMemory}
  */
-static DECLCALLBACK(uint32_t) dmaWriteMemory(PPDMDEVINS pDevIns, unsigned uChannel,
-                                             const void *pvBuffer, uint32_t off, uint32_t cbBlock)
+static DECLCALLBACK(uint32_t) dmaR3WriteMemory(PPDMDEVINS pDevIns, unsigned uChannel,
+                                               const void *pvBuffer, uint32_t off, uint32_t cbBlock)
 {
     DMAState    *pThis = PDMDEVINS_2_DATA(pDevIns, PDMASTATE);
     DMAControl  *dc = &pThis->DMAC[DMACH2C(uChannel)];
@@ -748,7 +747,7 @@ static DECLCALLBACK(uint32_t) dmaWriteMemory(PPDMDEVINS pDevIns, unsigned uChann
     uint32_t    page, pagehi;
     uint32_t    addr;
 
-    LogFlow(("dmaWriteMemory: pThis=%p uChannel=%u pvBuffer=%p off=%u cbBlock=%u\n", pThis, uChannel, pvBuffer, off, cbBlock));
+    LogFlow(("dmaR3WriteMemory: pThis=%p uChannel=%u pvBuffer=%p off=%u cbBlock=%u\n", pThis, uChannel, pvBuffer, off, cbBlock));
     if (GET_MODE_XTYP(ch->u8Mode) == DTYPE_VERIFY)
     {
         Log(("DMA verify transfer, ignoring write.\n"));
@@ -784,13 +783,13 @@ static DECLCALLBACK(uint32_t) dmaWriteMemory(PPDMDEVINS pDevIns, unsigned uChann
 /**
  * @interface_method_impl{PDMDMAREG,pfnSetDREQ}
  */
-static DECLCALLBACK(void) dmaSetDREQ(PPDMDEVINS pDevIns, unsigned uChannel, unsigned uLevel)
+static DECLCALLBACK(void) dmaR3SetDREQ(PPDMDEVINS pDevIns, unsigned uChannel, unsigned uLevel)
 {
     DMAState    *pThis = PDMDEVINS_2_DATA(pDevIns, PDMASTATE);
     DMAControl  *dc = &pThis->DMAC[DMACH2C(uChannel)];
     int         chidx;
 
-    LogFlow(("dmaSetDREQ: pThis=%p uChannel=%u uLevel=%u\n", pThis, uChannel, uLevel));
+    LogFlow(("dmaR3SetDREQ: pThis=%p uChannel=%u uLevel=%u\n", pThis, uChannel, uLevel));
 
     PDMCritSectEnter(pDevIns->pCritSectRoR3, VERR_IGNORED);
     chidx  = uChannel & 3;
@@ -804,11 +803,11 @@ static DECLCALLBACK(void) dmaSetDREQ(PPDMDEVINS pDevIns, unsigned uChannel, unsi
 /**
  * @interface_method_impl{PDMDMAREG,pfnGetChannelMode}
  */
-static DECLCALLBACK(uint8_t) dmaGetChannelMode(PPDMDEVINS pDevIns, unsigned uChannel)
+static DECLCALLBACK(uint8_t) dmaR3GetChannelMode(PPDMDEVINS pDevIns, unsigned uChannel)
 {
     PDMASTATE pThis = PDMDEVINS_2_DATA(pDevIns, PDMASTATE);
 
-    LogFlow(("dmaGetChannelMode: pThis=%p uChannel=%u\n", pThis, uChannel));
+    LogFlow(("dmaR3GetChannelMode: pThis=%p uChannel=%u\n", pThis, uChannel));
 
     PDMCritSectEnter(pDevIns->pCritSectRoR3, VERR_IGNORED);
     uint8_t u8Mode = pThis->DMAC[DMACH2C(uChannel)].ChState[uChannel & 3].u8Mode;
@@ -817,26 +816,8 @@ static DECLCALLBACK(uint8_t) dmaGetChannelMode(PPDMDEVINS pDevIns, unsigned uCha
 }
 
 
-/**
- * @interface_method_impl{PDMDEVREG,pfnReset}
- */
-static DECLCALLBACK(void) dmaReset(PPDMDEVINS pDevIns)
+static void dmaR3SaveController(PCPDMDEVHLPR3 pHlp, PSSMHANDLE pSSM, DMAControl *dc)
 {
-    PDMASTATE pThis = PDMDEVINS_2_DATA(pDevIns, PDMASTATE);
-
-    LogFlow(("dmaReset: pThis=%p\n", pThis));
-
-    /* NB: The page and address registers are unaffected by a reset
-     * and in an undefined state after power-up.
-     */
-    dmaClear(&pThis->DMAC[0]);
-    dmaClear(&pThis->DMAC[1]);
-}
-
-static void dmaSaveController(PCPDMDEVHLPR3 pHlp, PSSMHANDLE pSSM, DMAControl *dc)
-{
-    int         chidx;
-
     /* Save controller state... */
     pHlp->pfnSSMPutU8(pSSM, dc->u8Command);
     pHlp->pfnSSMPutU8(pSSM, dc->u8Mask);
@@ -849,7 +830,7 @@ static void dmaSaveController(PCPDMDEVHLPR3 pHlp, PSSMHANDLE pSSM, DMAControl *d
     pHlp->pfnSSMPutMem(pSSM, &dc->au8PageHi, sizeof(dc->au8PageHi));
 
     /* ...and all four of its channels. */
-    for (chidx = 0; chidx < 4; ++chidx)
+    for (unsigned chidx = 0; chidx < RT_ELEMENTS(dc->ChState); ++chidx)
     {
         DMAChannel  *ch = &dc->ChState[chidx];
 
@@ -861,11 +842,10 @@ static void dmaSaveController(PCPDMDEVHLPR3 pHlp, PSSMHANDLE pSSM, DMAControl *d
     }
 }
 
-static int dmaLoadController(PCPDMDEVHLPR3 pHlp, PSSMHANDLE pSSM, DMAControl *dc, int version)
+static int dmaR3LoadController(PCPDMDEVHLPR3 pHlp, PSSMHANDLE pSSM, DMAControl *dc, int version)
 {
     uint8_t     u8val;
     uint32_t    u32val;
-    int         chidx;
 
     pHlp->pfnSSMGetU8(pSSM, &dc->u8Command);
     pHlp->pfnSSMGetU8(pSSM, &dc->u8Mask);
@@ -881,7 +861,7 @@ static int dmaLoadController(PCPDMDEVHLPR3 pHlp, PSSMHANDLE pSSM, DMAControl *dc
         pHlp->pfnSSMGetMem(pSSM, &dc->au8PageHi, sizeof(dc->au8PageHi));
     }
 
-    for (chidx = 0; chidx < 4; ++chidx)
+    for (unsigned chidx = 0; chidx < RT_ELEMENTS(dc->ChState); ++chidx)
     {
         DMAChannel  *ch = &dc->ChState[chidx];
 
@@ -918,18 +898,18 @@ static int dmaLoadController(PCPDMDEVHLPR3 pHlp, PSSMHANDLE pSSM, DMAControl *dc
 }
 
 /** @callback_method_impl{FNSSMDEVSAVEEXEC}  */
-static DECLCALLBACK(int) dmaSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
+static DECLCALLBACK(int) dmaR3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 {
     PDMASTATE       pThis = PDMDEVINS_2_DATA(pDevIns, PDMASTATE);
     PCPDMDEVHLPR3   pHlp  = pDevIns->pHlpR3;
 
-    dmaSaveController(pHlp, pSSM, &pThis->DMAC[0]);
-    dmaSaveController(pHlp, pSSM, &pThis->DMAC[1]);
+    dmaR3SaveController(pHlp, pSSM, &pThis->DMAC[0]);
+    dmaR3SaveController(pHlp, pSSM, &pThis->DMAC[1]);
     return VINF_SUCCESS;
 }
 
 /** @callback_method_impl{FNSSMDEVLOADEXEC}  */
-static DECLCALLBACK(int) dmaLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass)
+static DECLCALLBACK(int) dmaR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass)
 {
     PDMASTATE       pThis = PDMDEVINS_2_DATA(pDevIns, PDMASTATE);
     PCPDMDEVHLPR3   pHlp  = pDevIns->pHlpR3;
@@ -937,14 +917,30 @@ static DECLCALLBACK(int) dmaLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32
     AssertMsgReturn(uVersion <= DMA_SAVESTATE_CURRENT, ("%d\n", uVersion), VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION);
     Assert(uPass == SSM_PASS_FINAL); NOREF(uPass);
 
-    dmaLoadController(pHlp, pSSM, &pThis->DMAC[0], uVersion);
-    return dmaLoadController(pHlp, pSSM, &pThis->DMAC[1], uVersion);
+    dmaR3LoadController(pHlp, pSSM, &pThis->DMAC[0], uVersion);
+    return dmaR3LoadController(pHlp, pSSM, &pThis->DMAC[1], uVersion);
+}
+
+/**
+ * @interface_method_impl{PDMDEVREG,pfnReset}
+ */
+static DECLCALLBACK(void) dmaR3Reset(PPDMDEVINS pDevIns)
+{
+    PDMASTATE pThis = PDMDEVINS_2_DATA(pDevIns, PDMASTATE);
+
+    LogFlow(("dmaR3Reset: pThis=%p\n", pThis));
+
+    /* NB: The page and address registers are unaffected by a reset
+     * and in an undefined state after power-up.
+     */
+    dmaClear(&pThis->DMAC[0]);
+    dmaClear(&pThis->DMAC[1]);
 }
 
 /**
  * @interface_method_impl{PDMDEVREG,pfnConstruct}
  */
-static DECLCALLBACK(int) dmaConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE pCfg)
+static DECLCALLBACK(int) dmaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE pCfg)
 {
     PDMDEV_CHECK_VERSIONS_RETURN(pDevIns);
     PDMASTATE       pThis = PDMDEVINS_2_DATA(pDevIns, PDMASTATE);
@@ -1008,19 +1004,19 @@ static DECLCALLBACK(int) dmaConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
     /*
      * Reset controller state.
      */
-    dmaReset(pDevIns);
+    dmaR3Reset(pDevIns);
 
     /*
      * Register ourselves with PDM as the DMA controller.
      */
     PDMDMACREG Reg;
     Reg.u32Version        = PDM_DMACREG_VERSION;
-    Reg.pfnRun            = dmaRun;
-    Reg.pfnRegister       = dmaRegister;
-    Reg.pfnReadMemory     = dmaReadMemory;
-    Reg.pfnWriteMemory    = dmaWriteMemory;
-    Reg.pfnSetDREQ        = dmaSetDREQ;
-    Reg.pfnGetChannelMode = dmaGetChannelMode;
+    Reg.pfnRun            = dmaR3Run;
+    Reg.pfnRegister       = dmaR3Register;
+    Reg.pfnReadMemory     = dmaR3ReadMemory;
+    Reg.pfnWriteMemory    = dmaR3WriteMemory;
+    Reg.pfnSetDREQ        = dmaR3SetDREQ;
+    Reg.pfnGetChannelMode = dmaR3GetChannelMode;
 
     rc = PDMDevHlpDMACRegister(pDevIns, &Reg, &pThis->pHlp);
     AssertRCReturn(rc, rc);
@@ -1028,13 +1024,13 @@ static DECLCALLBACK(int) dmaConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
     /*
      * Register the saved state.
      */
-    rc = PDMDevHlpSSMRegister(pDevIns, DMA_SAVESTATE_CURRENT, sizeof(*pThis), dmaSaveExec, dmaLoadExec);
+    rc = PDMDevHlpSSMRegister(pDevIns, DMA_SAVESTATE_CURRENT, sizeof(*pThis), dmaR3SaveExec, dmaR3LoadExec);
     AssertRCReturn(rc, rc);
 
     /*
      * Statistics.
      */
-    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatRun, STAMTYPE_PROFILE, "DmaRun", STAMUNIT_TICKS_PER_CALL, "Profiling dmaRun().");
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatRun, STAMTYPE_PROFILE, "DmaRun", STAMUNIT_TICKS_PER_CALL, "Profiling dmaR3Run().");
 
     return VINF_SUCCESS;
 }
@@ -1096,12 +1092,12 @@ const PDMDEVREG g_DeviceDMA =
 #if defined(IN_RING3)
     /* .pszRCMod = */               "VBoxDDRC.rc",
     /* .pszR0Mod = */               "VBoxDDR0.r0",
-    /* .pfnConstruct = */           dmaConstruct,
+    /* .pfnConstruct = */           dmaR3Construct,
     /* .pfnDestruct = */            NULL,
     /* .pfnRelocate = */            NULL,
     /* .pfnMemSetup = */            NULL,
     /* .pfnPowerOn = */             NULL,
-    /* .pfnReset = */               dmaReset,
+    /* .pfnReset = */               dmaR3Reset,
     /* .pfnSuspend = */             NULL,
     /* .pfnResume = */              NULL,
     /* .pfnAttach = */              NULL,
