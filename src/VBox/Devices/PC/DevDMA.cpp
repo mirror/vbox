@@ -622,12 +622,12 @@ static DECLCALLBACK(bool) dmaR3Run(PPDMDEVINS pDevIns)
 {
     DMAState    *pThis = PDMDEVINS_2_DATA(pDevIns, PDMASTATE);
     DMAControl  *dc;
-    int         ctlidx, chidx, mask;
+    int          chidx, mask;
     STAM_PROFILE_START(&pThis->StatRun, a);
-    PDMCritSectEnter(pDevIns->pCritSectRoR3, VERR_IGNORED);
+    PDMDevHlpCritSectEnter(pDevIns, pDevIns->pCritSectRoR3, VERR_IGNORED);
 
     /* Run all controllers and channels. */
-    for (ctlidx = 0; ctlidx < RT_ELEMENTS(pThis->DMAC); ++ctlidx)
+    for (unsigned ctlidx = 0; ctlidx < RT_ELEMENTS(pThis->DMAC); ++ctlidx)
     {
         dc = &pThis->DMAC[ctlidx];
 
@@ -643,7 +643,7 @@ static DECLCALLBACK(bool) dmaR3Run(PPDMDEVINS pDevIns)
         }
     }
 
-    PDMCritSectLeave(pDevIns->pCritSectRoR3);
+    PDMDevHlpCritSectLeave(pDevIns, pDevIns->pCritSectRoR3);
     STAM_PROFILE_STOP(&pThis->StatRun, a);
     return 0;
 }
@@ -659,10 +659,10 @@ static DECLCALLBACK(void) dmaR3Register(PPDMDEVINS pDevIns, unsigned uChannel,
 
     LogFlow(("dmaR3Register: pThis=%p uChannel=%u pfnTransferHandler=%p pvUser=%p\n", pThis, uChannel, pfnTransferHandler, pvUser));
 
-    PDMCritSectEnter(pDevIns->pCritSectRoR3, VERR_IGNORED);
+    PDMDevHlpCritSectEnter(pDevIns, pDevIns->pCritSectRoR3, VERR_IGNORED);
     ch->pfnXferHandler = pfnTransferHandler;
     ch->pvUser = pvUser;
-    PDMCritSectLeave(pDevIns->pCritSectRoR3);
+    PDMDevHlpCritSectLeave(pDevIns, pDevIns->pCritSectRoR3);
 }
 
 /** Reverse the order of bytes in a memory buffer. */
@@ -713,7 +713,7 @@ static DECLCALLBACK(uint32_t) dmaR3ReadMemory(PPDMDEVINS pDevIns, unsigned uChan
 
     LogFlow(("dmaR3ReadMemory: pThis=%p uChannel=%u pvBuffer=%p off=%u cbBlock=%u\n", pThis, uChannel, pvBuffer, off, cbBlock));
 
-    PDMCritSectEnter(pDevIns->pCritSectRoR3, VERR_IGNORED);
+    PDMDevHlpCritSectEnter(pDevIns, pDevIns->pCritSectRoR3, VERR_IGNORED);
 
     /* Build the address for this transfer. */
     page   = dc->au8Page[DMACH2PG(uChannel)] & ~dc->is16bit;
@@ -731,7 +731,7 @@ static DECLCALLBACK(uint32_t) dmaR3ReadMemory(PPDMDEVINS pDevIns, unsigned uChan
     else
         PDMDevHlpPhysRead(pThis->pDevIns, addr + off, pvBuffer, cbBlock);
 
-    PDMCritSectLeave(pDevIns->pCritSectRoR3);
+    PDMDevHlpCritSectLeave(pDevIns, pDevIns->pCritSectRoR3);
     return cbBlock;
 }
 
@@ -754,7 +754,7 @@ static DECLCALLBACK(uint32_t) dmaR3WriteMemory(PPDMDEVINS pDevIns, unsigned uCha
         return cbBlock;
     }
 
-    PDMCritSectEnter(pDevIns->pCritSectRoR3, VERR_IGNORED);
+    PDMDevHlpCritSectEnter(pDevIns, pDevIns->pCritSectRoR3, VERR_IGNORED);
 
     /* Build the address for this transfer. */
     page   = dc->au8Page[DMACH2PG(uChannel)] & ~dc->is16bit;
@@ -776,7 +776,7 @@ static DECLCALLBACK(uint32_t) dmaR3WriteMemory(PPDMDEVINS pDevIns, unsigned uCha
     else
         PDMDevHlpPhysWrite(pThis->pDevIns, addr + off, pvBuffer, cbBlock);
 
-    PDMCritSectLeave(pDevIns->pCritSectRoR3);
+    PDMDevHlpCritSectLeave(pDevIns, pDevIns->pCritSectRoR3);
     return cbBlock;
 }
 
@@ -791,13 +791,13 @@ static DECLCALLBACK(void) dmaR3SetDREQ(PPDMDEVINS pDevIns, unsigned uChannel, un
 
     LogFlow(("dmaR3SetDREQ: pThis=%p uChannel=%u uLevel=%u\n", pThis, uChannel, uLevel));
 
-    PDMCritSectEnter(pDevIns->pCritSectRoR3, VERR_IGNORED);
+    PDMDevHlpCritSectEnter(pDevIns, pDevIns->pCritSectRoR3, VERR_IGNORED);
     chidx  = uChannel & 3;
     if (uLevel)
         dc->u8Status |= 1 << (chidx + 4);
     else
         dc->u8Status &= ~(1 << (chidx + 4));
-    PDMCritSectLeave(pDevIns->pCritSectRoR3);
+    PDMDevHlpCritSectLeave(pDevIns, pDevIns->pCritSectRoR3);
 }
 
 /**
@@ -809,9 +809,9 @@ static DECLCALLBACK(uint8_t) dmaR3GetChannelMode(PPDMDEVINS pDevIns, unsigned uC
 
     LogFlow(("dmaR3GetChannelMode: pThis=%p uChannel=%u\n", pThis, uChannel));
 
-    PDMCritSectEnter(pDevIns->pCritSectRoR3, VERR_IGNORED);
+    PDMDevHlpCritSectEnter(pDevIns, pDevIns->pCritSectRoR3, VERR_IGNORED);
     uint8_t u8Mode = pThis->DMAC[DMACH2C(uChannel)].ChState[uChannel & 3].u8Mode;
-    PDMCritSectLeave(pDevIns->pCritSectRoR3);
+    PDMDevHlpCritSectLeave(pDevIns, pDevIns->pCritSectRoR3);
     return u8Mode;
 }
 
