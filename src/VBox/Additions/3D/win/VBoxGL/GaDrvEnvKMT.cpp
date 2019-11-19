@@ -382,6 +382,8 @@ static D3DDDIFORMAT svgaToD3DDDIFormat(SVGA3dSurfaceFormat format)
         case SVGA3D_A1R5G5B5:       return D3DDDIFMT_A1R5G5B5;
         case SVGA3D_LUMINANCE8_ALPHA8: return D3DDDIFMT_A8L8;
         case SVGA3D_R5G6B5:         return D3DDDIFMT_R5G6B5;
+        case SVGA3D_ARGB_S10E5:     return D3DDDIFMT_A16B16G16R16F;
+        case SVGA3D_ARGB_S23E8:     return D3DDDIFMT_A32B32G32R32F;
         default: break;
     }
 
