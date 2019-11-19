@@ -5705,7 +5705,8 @@ int vmsvga3dShaderSetConst(PVGASTATE pThis, uint32_t cid, uint32_t reg, SVGA3dSh
             case SVGA3D_CONST_TYPE_FLOAT:
             {
                 float *pValuesF = (float *)pValues;
-                Log(("ConstantF %d: value=%d, %d, %d, %d\n", reg + i, (int)(pValuesF[i*4 + 0] * 10000.0f), (int)(pValuesF[i*4 + 1] * 10000.0f), (int)(pValuesF[i*4 + 2] * 10000.0f), (int)(pValuesF[i*4 + 3] * 10000.0f)));
+                Log(("ConstantF %d: value=" FLOAT_FMT_STR ", " FLOAT_FMT_STR ", " FLOAT_FMT_STR ", " FLOAT_FMT_STR "\n",
+                     reg + i, FLOAT_FMT_ARGS(pValuesF[i*4 + 0]), FLOAT_FMT_ARGS(pValuesF[i*4 + 1]), FLOAT_FMT_ARGS(pValuesF[i*4 + 2]), FLOAT_FMT_ARGS(pValuesF[i*4 + 3])));
                 break;
             }
 
