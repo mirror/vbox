@@ -2493,8 +2493,9 @@ static const SSMFIELD g_AcpiSavedStateFields8[] =
  */
 static DECLCALLBACK(int) acpiR3SaveState(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 {
-    PACPISTATE pThis = PDMDEVINS_2_DATA(pDevIns, PACPISTATE);
-    return SSMR3PutStruct(pSSM, pThis, &g_AcpiSavedStateFields8[0]);
+    PACPISTATE      pThis = PDMDEVINS_2_DATA(pDevIns, PACPISTATE);
+    PCPDMDEVHLPR3   pHlp  = pDevIns->pHlpR3;
+    return pHlp->pfnSSMPutStruct(pSSM, pThis, &g_AcpiSavedStateFields8[0]);
 }
 
 /**
@@ -2502,7 +2503,8 @@ static DECLCALLBACK(int) acpiR3SaveState(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
  */
 static DECLCALLBACK(int) acpiR3LoadState(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass)
 {
-    PACPISTATE pThis = PDMDEVINS_2_DATA(pDevIns, PACPISTATE);
+    PACPISTATE      pThis = PDMDEVINS_2_DATA(pDevIns, PACPISTATE);
+    PCPDMDEVHLPR3   pHlp  = pDevIns->pHlpR3;
     Assert(uPass == SSM_PASS_FINAL); NOREF(uPass);
 
     /*
@@ -2525,19 +2527,19 @@ static DECLCALLBACK(int) acpiR3LoadState(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, ui
     switch (uVersion)
     {
         case 4:
-            rc = SSMR3GetStruct(pSSM, pThis, &g_AcpiSavedStateFields4[0]);
+            rc = pHlp->pfnSSMGetStruct(pSSM, pThis, &g_AcpiSavedStateFields4[0]);
             break;
         case 5:
-            rc = SSMR3GetStruct(pSSM, pThis, &g_AcpiSavedStateFields5[0]);
+            rc = pHlp->pfnSSMGetStruct(pSSM, pThis, &g_AcpiSavedStateFields5[0]);
             break;
         case 6:
-            rc = SSMR3GetStruct(pSSM, pThis, &g_AcpiSavedStateFields6[0]);
+            rc = pHlp->pfnSSMGetStruct(pSSM, pThis, &g_AcpiSavedStateFields6[0]);
             break;
         case 7:
-            rc = SSMR3GetStruct(pSSM, pThis, &g_AcpiSavedStateFields7[0]);
+            rc = pHlp->pfnSSMGetStruct(pSSM, pThis, &g_AcpiSavedStateFields7[0]);
             break;
         case 8:
-            rc = SSMR3GetStruct(pSSM, pThis, &g_AcpiSavedStateFields8[0]);
+            rc = pHlp->pfnSSMGetStruct(pSSM, pThis, &g_AcpiSavedStateFields8[0]);
             break;
         default:
             rc = VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
