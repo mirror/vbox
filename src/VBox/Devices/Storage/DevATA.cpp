@@ -4183,7 +4183,6 @@ static bool ataR3InitDevParmSS(PPDMDEVINS pDevIns, PATACONTROLLER pCtl, PATADEVS
     RTThreadSleep(pCtl->msDelayIRQ);
     ataR3LockEnter(pDevIns, pCtl);
     ataR3CmdOK(pCtl, s, ATA_STAT_SEEK);
-    ataHCSetIRQ(pDevIns, pCtl, s);
     return false;
 }
 
@@ -4199,7 +4198,6 @@ static bool ataR3RecalibrateSS(PPDMDEVINS pDevIns, PATACONTROLLER pCtl, PATADEVS
     RTThreadSleep(pCtl->msDelayIRQ);
     ataR3LockEnter(pDevIns, pCtl);
     ataR3CmdOK(pCtl, s, ATA_STAT_SEEK);
-    ataHCSetIRQ(pDevIns, pCtl, s);
     return false;
 }
 
