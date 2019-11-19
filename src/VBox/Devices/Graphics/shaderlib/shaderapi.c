@@ -225,7 +225,12 @@ SHADERDECL(int) ShaderContextCreate(void **ppShaderContext)
     pContext->pDeviceContext->shader_backend = &glsl_shader_backend;
     pContext->pDeviceContext->ps_selected_mode = SHADER_GLSL;
     pContext->pDeviceContext->vs_selected_mode = SHADER_GLSL;
+#ifndef VBOX_WITH_VMSVGA
     pContext->render_offscreen = false;
+#else
+    /* VMSVGA always renders offscreen. */
+    pContext->render_offscreen = true;
+#endif
 
     list_init(&pContext->pDeviceContext->shaders);
 
