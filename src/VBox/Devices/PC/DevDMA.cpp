@@ -48,6 +48,7 @@
 #include <VBox/vmm/pdmdev.h>
 #include <VBox/err.h>
 
+#include <VBox/AssertGuest.h>
 #include <VBox/log.h>
 #include <iprt/assert.h>
 #include <iprt/string.h>
@@ -109,7 +110,8 @@ typedef struct {
     uint16_t                            u16CurCount;    /* Current count. */
     uint8_t                             u8Mode;         /* Channel mode. */
     uint8_t                             abPadding[7];
-} DMAChannel;
+} DMAChannel, DMACHANNEL;
+typedef DMACHANNEL *PDMACHANNEL;
 
 /* State information for a DMA controller (DMA8 or DMA16). */
 typedef struct {
@@ -142,6 +144,7 @@ typedef struct {
     DMAControl              DMAC[2];    /* Two DMA controllers. */
     PPDMDEVINSR3            pDevIns;    /* Device instance. */
     R3PTRTYPE(PCPDMDMACHLP) pHlp;       /* PDM DMA helpers. */
+    STAMPROFILE             StatRun;
 } DMAState, DMASTATE;
 /** Pointer to the shared DMA state information. */
 typedef DMASTATE *PDMASTATE;
@@ -259,15 +262,13 @@ static DECLCALLBACK(VBOXSTRICTRC) dmaWriteAddr(PPDMDEVINS pDevIns, void *pvUser,
     RT_NOREF(pDevIns);
     if (cb == 1)
     {
-        DMAControl  *dc = (DMAControl *)pvUser;
-        DMAChannel  *ch;
-        int         chidx, reg, is_count;
-
+        PDMACONTROLLER dc       = (PDMACONTROLLER)pvUser;
+        unsigned const reg      = (offPort >> dc->is16bit) & 0x0f;
+        unsigned const chidx    = reg >> 1;
+        unsigned const is_count = reg & 1;
+        PDMACHANNEL    ch       = &RT_SAFE_SUBSCRIPT(dc->ChState, chidx);
         Assert(!(u32 & ~0xff)); /* Check for garbage in high bits. */
-        reg      = (offPort >> dc->is16bit) & 0x0f;
-        chidx    = reg >> 1;
-        is_count = reg & 1;
-        ch       = &dc->ChState[chidx];
+
         if (dmaReadBytePtr(dc))
         {
             /* Write the high byte. */
@@ -306,16 +307,14 @@ static DECLCALLBACK(VBOXSTRICTRC) dmaReadAddr(PPDMDEVINS pDevIns, void *pvUser, 
     RT_NOREF(pDevIns);
     if (cb == 1)
     {
-        DMAControl  *dc = (DMAControl *)pvUser;
-        DMAChannel  *ch;
-        int         chidx, reg, val, dir;
-        int         bptr;
+        PDMACONTROLLER dc    = (PDMACONTROLLER)pvUser;
+        unsigned const reg   = (offPort >> dc->is16bit) & 0x0f;
+        unsigned const chidx = reg >> 1;
+        PDMACHANNEL    ch    = &RT_SAFE_SUBSCRIPT(dc->ChState, chidx);
+        int const      dir   = IS_MODE_DEC(ch->u8Mode) ? -1 : 1;
+        int            val;
+        int            bptr;
 
-        reg   = (offPort >> dc->is16bit) & 0x0f;
-        chidx = reg >> 1;
-        ch    = &dc->ChState[chidx];
-
-        dir = IS_MODE_DEC(ch->u8Mode) ? -1 : 1;
         if (reg & 1)
             val = ch->u16BaseCount - ch->u16CurCount;
         else
@@ -340,8 +339,8 @@ static DECLCALLBACK(VBOXSTRICTRC) dmaWriteCtl(PPDMDEVINS pDevIns, void *pvUser, 
     RT_NOREF(pDevIns);
     if (cb == 1)
     {
-        DMAControl  *dc = (DMAControl *)pvUser;
-        unsigned     chidx = 0;
+        PDMACONTROLLER dc = (PDMACONTROLLER)pvUser;
+        unsigned       chidx = 0;
 
         unsigned const reg = (offPort >> dc->is16bit) & 0x0f;
         Assert((int)reg >= CTL_W_CMD && reg <= CTL_W_MASK);
@@ -373,19 +372,11 @@ static DECLCALLBACK(VBOXSTRICTRC) dmaWriteCtl(PPDMDEVINS pDevIns, void *pvUser, 
                 dc->u8Mask &= ~(1 << chidx);
             break;
         case CTL_W_MODE:
-            {
-                int op, opmode;
-
-                chidx = u32 & 3;
-                op = (u32 >> 2) & 3;
-                opmode = (u32 >> 6) & 3;
-                Log2(("chidx %d, op %d, %sauto-init, %screment, opmode %d\n",
-                      chidx, op, IS_MODE_AI(u32) ? "" : "no ",
-                      IS_MODE_DEC(u32) ? "de" : "in", opmode));
-
-                dc->ChState[chidx].u8Mode = u32;
-                break;
-            }
+            chidx = u32 & 3;
+            dc->ChState[chidx].u8Mode = u32;
+            Log2(("chidx %d, op %d, %sauto-init, %screment, opmode %d\n",
+                  chidx, (u32 >> 2) & 3, IS_MODE_AI(u32) ? "" : "no ", IS_MODE_DEC(u32) ? "de" : "in", (u32 >> 6) & 3));
+            break;
         case CTL_W_CLRBPTR:
             dc->fHiByte = false;
             break;
@@ -399,7 +390,7 @@ static DECLCALLBACK(VBOXSTRICTRC) dmaWriteCtl(PPDMDEVINS pDevIns, void *pvUser, 
             dc->u8Mask = u32;
             break;
         default:
-            Assert(0);
+            ASSERT_GUEST_MSG_FAILED(("reg=%u\n", reg));
             break;
         }
         Log(("dmaWriteCtl: offPort %#06x, chidx %d, data %#02x\n", offPort, chidx, u32));
@@ -421,8 +412,8 @@ static DECLCALLBACK(VBOXSTRICTRC) dmaReadCtl(PPDMDEVINS pDevIns, void *pvUser, R
     RT_NOREF(pDevIns);
     if (cb == 1)
     {
-        DMAControl  *dc = (DMAControl *)pvUser;
-        uint8_t     val = 0;
+        PDMACONTROLLER dc = (PDMACONTROLLER)pvUser;
+        uint8_t        val = 0;
 
         unsigned const reg = (offPort >> dc->is16bit) & 0x0f;
         Assert((int)reg >= CTL_R_STAT && reg <= CTL_R_MASK);
@@ -440,7 +431,7 @@ static DECLCALLBACK(VBOXSTRICTRC) dmaReadCtl(PPDMDEVINS pDevIns, void *pvUser, R
                 val = dc->u8Command;
                 break;
             case CTL_R_MODE:
-                val = dc->ChState[dc->u8ModeCtr].u8Mode | 3;
+                val = RT_SAFE_SUBSCRIPT(dc->ChState, dc->u8ModeCtr).u8Mode | 3;
                 dc->u8ModeCtr = (dc->u8ModeCtr + 1) & 3;
                 break;
             case CTL_R_SETBPTR:
@@ -482,8 +473,8 @@ static DECLCALLBACK(VBOXSTRICTRC) dmaReadCtl(PPDMDEVINS pDevIns, void *pvUser, R
 static DECLCALLBACK(VBOXSTRICTRC) dmaReadPage(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t *pu32, unsigned cb)
 {
     RT_NOREF(pDevIns);
-    DMAControl  *dc = (DMAControl *)pvUser;
-    int         reg;
+    PDMACONTROLLER dc = (PDMACONTROLLER)pvUser;
+    int            reg;
 
     if (cb == 1)
     {
@@ -512,8 +503,8 @@ static DECLCALLBACK(VBOXSTRICTRC) dmaReadPage(PPDMDEVINS pDevIns, void *pvUser, 
 static DECLCALLBACK(VBOXSTRICTRC) dmaWritePage(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t u32, unsigned cb)
 {
     RT_NOREF(pDevIns);
-    DMAControl  *dc = (DMAControl *)pvUser;
-    int         reg;
+    PDMACONTROLLER dc = (PDMACONTROLLER)pvUser;
+    unsigned       reg;
 
     if (cb == 1)
     {
@@ -552,10 +543,9 @@ static DECLCALLBACK(VBOXSTRICTRC) dmaReadHiPage(PPDMDEVINS pDevIns, void *pvUser
     RT_NOREF(pDevIns);
     if (cb == 1)
     {
-        DMAControl  *dc = (DMAControl *)pvUser;
-        int         reg;
+        PDMACONTROLLER dc = (PDMACONTROLLER)pvUser;
+        unsigned const reg = offPort & 7;
 
-        reg   = offPort & 7;
         *pu32 = dc->au8PageHi[reg];
         Log2(("Read %#x to from high page register %#x (channel %d)\n", *pu32, offPort, DMAPG2CX(reg)));
         return VINF_SUCCESS;
@@ -572,11 +562,10 @@ static DECLCALLBACK(VBOXSTRICTRC) dmaWriteHiPage(PPDMDEVINS pDevIns, void *pvUse
     RT_NOREF(pDevIns);
     if (cb == 1)
     {
-        DMAControl  *dc = (DMAControl *)pvUser;
-        int         reg;
+        PDMACONTROLLER dc = (PDMACONTROLLER)pvUser;
+        unsigned const reg = offPort & 7;
 
         Assert(!(u32 & ~0xff)); /* Check for garbage in high bits. */
-        reg = offPort & 7;
         dc->au8PageHi[reg] = u32;
         Log2(("Wrote %#x to high page register %#x (channel %d)\n", u32, offPort, DMAPG2CX(reg)));
     }
@@ -601,9 +590,7 @@ static void dmaRunChannel(DMAState *pThis, int ctlidx, int chidx)
 
     opmode = (ch->u8Mode >> 6) & 3;
 
-    Log3(("DMA address %screment, mode %d\n",
-          IS_MODE_DEC(ch->u8Mode) ? "de" : "in",
-          ch->u8Mode >> 6));
+    Log3(("DMA address %screment, mode %d\n", IS_MODE_DEC(ch->u8Mode) ? "de" : "in", ch->u8Mode >> 6));
 
     /* Addresses and counts are shifted for 16-bit channels. */
     start_cnt = ch->u16CurCount << dc->is16bit;
@@ -637,10 +624,11 @@ static DECLCALLBACK(bool) dmaRun(PPDMDEVINS pDevIns)
     DMAState    *pThis = PDMDEVINS_2_DATA(pDevIns, PDMASTATE);
     DMAControl  *dc;
     int         ctlidx, chidx, mask;
+    STAM_PROFILE_START(&pThis->StatRun, a);
     PDMCritSectEnter(pDevIns->pCritSectRoR3, VERR_IGNORED);
 
     /* Run all controllers and channels. */
-    for (ctlidx = 0; ctlidx < 2; ++ctlidx)
+    for (ctlidx = 0; ctlidx < RT_ELEMENTS(pThis->DMAC); ++ctlidx)
     {
         dc = &pThis->DMAC[ctlidx];
 
@@ -657,6 +645,7 @@ static DECLCALLBACK(bool) dmaRun(PPDMDEVINS pDevIns)
     }
 
     PDMCritSectLeave(pDevIns->pCritSectRoR3);
+    STAM_PROFILE_STOP(&pThis->StatRun, a);
     return 0;
 }
 
@@ -1042,6 +1031,11 @@ static DECLCALLBACK(int) dmaConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
     rc = PDMDevHlpSSMRegister(pDevIns, DMA_SAVESTATE_CURRENT, sizeof(*pThis), dmaSaveExec, dmaLoadExec);
     AssertRCReturn(rc, rc);
 
+    /*
+     * Statistics.
+     */
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatRun, STAMTYPE_PROFILE, "DmaRun", STAMUNIT_TICKS_PER_CALL, "Profiling dmaRun().");
+
     return VINF_SUCCESS;
 }
 
@@ -1089,7 +1083,7 @@ const PDMDEVREG g_DeviceDMA =
     /* .u32Version = */             PDM_DEVREG_VERSION,
     /* .uReserved0 = */             0,
     /* .szName = */                 "8237A",
-    /* .fFlags = */                 PDM_DEVREG_FLAGS_DEFAULT_BITS | PDM_DEVREG_FLAGS_RZ,
+    /* .fFlags = */                 PDM_DEVREG_FLAGS_DEFAULT_BITS | PDM_DEVREG_FLAGS_RZ | PDM_DEVREG_FLAGS_NEW_STYLE,
     /* .fClass = */                 PDM_DEVREG_CLASS_DMA,
     /* .cMaxInstances = */          1,
     /* .uSharedVersion = */         42,
