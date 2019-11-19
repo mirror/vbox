@@ -6164,11 +6164,11 @@ static DECLCALLBACK(int) ataR3AsyncIOThread(RTTHREAD hThreadSelf, void *pvUser)
                 LogRel(("PIIX3 ATA: Ctl#%d: finished processing RESET\n", pCtl->iCtl));
                 for (uint32_t i = 0; i < RT_ELEMENTS(pCtl->aIfs); i++)
                 {
+                    ataR3SetSignature(&pCtl->aIfs[i]);
                     if (pCtl->aIfs[i].fATAPI)
                         ataSetStatusValue(pCtl, &pCtl->aIfs[i], 0); /* NOTE: READY is _not_ set */
                     else
                         ataSetStatusValue(pCtl, &pCtl->aIfs[i], ATA_STAT_READY | ATA_STAT_SEEK);
-                    ataR3SetSignature(&pCtl->aIfs[i]);
                 }
                 break;
 
