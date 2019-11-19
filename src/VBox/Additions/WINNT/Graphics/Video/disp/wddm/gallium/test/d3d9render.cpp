@@ -1134,13 +1134,13 @@ HRESULT D3D9RenderShared::DoRender(D3D9DeviceProvider *pDP)
                                       &mhRtShared));
 
         drawTexture(pDevice2, mpTexShared, 50, 50, 200, 200);
+        HTEST(pDevice2->Present(0, 0, 0, 0));
     }
     else
     {
         drawTexture(pDevice, mpRT, 50, 50, 200, 200);
+        HTEST(pDevice->Present(0, 0, 0, 0));
     }
-
-    HTEST(pDevice->Present(0, 0, 0, 0));
 
     return S_OK;
 }
