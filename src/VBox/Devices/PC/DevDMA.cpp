@@ -571,7 +571,7 @@ static DECLCALLBACK(VBOXSTRICTRC) dmaWriteHiPage(PPDMDEVINS pDevIns, void *pvUse
     else
     {
         /* Likely a guest bug. */
-        Log(("Bad size write to high page register %#x (size %d, data %#x)\n", dc->is16bit, offPort, cb, u32));
+        Log(("dmaWriteHiPage/%u: Bad size write to high page register %#x (size %d, data %#x)\n", dc->is16bit, offPort, cb, u32));
     }
     return VINF_SUCCESS;
 }
