@@ -2921,7 +2921,7 @@ int vmsvga3dBackSurfaceDMACopyBox(PVGASTATE pThis, PVMSVGA3DSTATE pState, PVMSVG
                                        pBox->h);
                 AssertRC(rc);
 
-                Log4(("Buffer content (updated at [0x%x;0x%x):\n%.*Rhxd\n", offHst, offHst + cbWidth, pMipLevel->cbSurface, pbData));
+                Log4(("Buffer updated at [0x%x;0x%x):\n%.*Rhxd\n", offHst, offHst + cbWidth, cbWidth, (uint8_t *)pbData + offHst));
 
                 pState->ext.glUnmapBuffer(GL_ARRAY_BUFFER);
                 VMSVGA3D_CHECK_LAST_ERROR(pState, pContext);
@@ -6488,7 +6488,7 @@ int vmsvga3dShaderDefine(PVGASTATE pThis, uint32_t cid, uint32_t shid, SVGA3dSha
     AssertReturn(pState, VERR_NO_MEMORY);
     int                   rc;
 
-    Log(("vmsvga3dShaderDefine cid=%x shid=%x type=%s cbData=%x\n", cid, shid, (type == SVGA3D_SHADERTYPE_VS) ? "VERTEX" : "PIXEL", cbData));
+    Log(("vmsvga3dShaderDefine cid=%x shid=%d type=%s cbData=0x%x\n", cid, shid, (type == SVGA3D_SHADERTYPE_VS) ? "VERTEX" : "PIXEL", cbData));
     Log3(("shader code:\n%.*Rhxd\n", cbData, pShaderData));
 
     if (    cid >= pState->cContexts
@@ -6591,7 +6591,7 @@ int vmsvga3dShaderDestroy(PVGASTATE pThis, uint32_t cid, uint32_t shid, SVGA3dSh
     PVMSVGA3DSHADER       pShader = NULL;
     int                   rc;
 
-    Log(("vmsvga3dShaderDestroy cid=%x shid=%x type=%s\n", cid, shid, (type == SVGA3D_SHADERTYPE_VS) ? "VERTEX" : "PIXEL"));
+    Log(("vmsvga3dShaderDestroy cid=%x shid=%d type=%s\n", cid, shid, (type == SVGA3D_SHADERTYPE_VS) ? "VERTEX" : "PIXEL"));
 
     if (    cid >= pState->cContexts
         ||  pState->papContexts[cid]->id != cid)

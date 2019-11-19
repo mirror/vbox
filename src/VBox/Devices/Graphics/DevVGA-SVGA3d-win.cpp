@@ -2493,7 +2493,7 @@ int vmsvga3dBackSurfaceDMACopyBox(PVGASTATE pThis, PVMSVGA3DSTATE pState, PVMSVG
                                1); /* Buffers are 1-dimensional */
         AssertRC(rc);
 
-        Log4(("Buffer content (updated at [0x%x;0x%x):\n%.*Rhxd\n", offHst, offHst + cbWidth, pMipLevel->cbSurface, pMipLevel->pSurfaceData));
+        Log4(("Buffer updated at [0x%x;0x%x):\n%.*Rhxd\n", offHst, offHst + cbWidth, cbWidth, (uint8_t *)pMipLevel->pSurfaceData + offHst));
 
         /* Do not bother to copy the data to the D3D resource now. vmsvga3dDrawPrimitives will do that.
          * The SVGA driver may use the same surface for both index and vertex data.
