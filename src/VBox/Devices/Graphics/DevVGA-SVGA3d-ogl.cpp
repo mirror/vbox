@@ -903,7 +903,7 @@ int vmsvga3dPowerOn(PVGASTATE pThis)
     pState->caps.maxClipDistances              = 4;
     pState->caps.maxColorAttachments           = 1;
     pState->caps.maxRectangleTextureSize       = 2048;
-    pState->caps.maxTextureAnisotropy          = 2;
+    pState->caps.maxTextureAnisotropy          = 1;
     pState->caps.maxVertexShaderInstructions   = 1024;
     pState->caps.maxFragmentShaderInstructions = 1024;
     pState->caps.vertexShaderVersion           = SVGA3DVSVERSION_NONE;
@@ -914,6 +914,9 @@ int vmsvga3dPowerOn(PVGASTATE pThis)
     /*
      * Query capabilities
      */
+    pState->caps.fS3TCSupported = vmsvga3dCheckGLExtension(pState, 0.0f, " GL_EXT_texture_compression_s3tc ");
+    pState->caps.fTextureFilterAnisotropicSupported = vmsvga3dCheckGLExtension(pState, 0.0f, " GL_EXT_texture_filter_anisotropic ");
+
     VMSVGA3D_INIT_CHECKED_BOTH(pState, pContext, pOtherCtx, glGetIntegerv(GL_MAX_LIGHTS, &pState->caps.maxActiveLights));
     VMSVGA3D_INIT_CHECKED_BOTH(pState, pContext, pOtherCtx, glGetIntegerv(GL_MAX_TEXTURE_UNITS_ARB, &pState->caps.maxTextures));
 #ifdef VBOX_VMSVGA3D_DUAL_OPENGL_PROFILE /* The alternative profile has a higher number here (ati/darwin). */
@@ -925,7 +928,8 @@ int vmsvga3dPowerOn(PVGASTATE pThis)
 #endif
     VMSVGA3D_INIT_CHECKED(glGetIntegerv(GL_MAX_COLOR_ATTACHMENTS, &pState->caps.maxColorAttachments));
     VMSVGA3D_INIT_CHECKED(glGetIntegerv(GL_MAX_RECTANGLE_TEXTURE_SIZE, &pState->caps.maxRectangleTextureSize));
-    VMSVGA3D_INIT_CHECKED(glGetIntegerv(GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT, &pState->caps.maxTextureAnisotropy));
+    if (pState->caps.fTextureFilterAnisotropicSupported)
+        VMSVGA3D_INIT_CHECKED(glGetIntegerv(GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT, &pState->caps.maxTextureAnisotropy));
     VMSVGA3D_INIT_CHECKED_BOTH(pState, pContext, pOtherCtx, glGetFloatv(GL_ALIASED_POINT_SIZE_RANGE, pState->caps.flPointSize));
 
     VMSVGA3D_INIT_CHECKED_BOTH(pState, pContext, pOtherCtx,
@@ -940,8 +944,6 @@ int vmsvga3dPowerOn(PVGASTATE pThis)
     VMSVGA3D_INIT_CHECKED_BOTH(pState, pContext, pOtherCtx,
                                pState->ext.glGetProgramivARB(GL_VERTEX_PROGRAM_ARB, GL_MAX_PROGRAM_NATIVE_INSTRUCTIONS_ARB,
                                                              &pState->caps.maxVertexShaderInstructions));
-
-    pState->caps.fS3TCSupported = vmsvga3dCheckGLExtension(pState, 0.0f, " GL_EXT_texture_compression_s3tc ");
 
     /* http://http://www.opengl.org/wiki/Detecting_the_Shader_Model
      * ARB Assembly Language
@@ -1097,8 +1099,10 @@ int vmsvga3dPowerOn(PVGASTATE pThis)
             pState->caps.maxFragmentShaderTemps,
             (int)pState->caps.flPointSize[0], (int)(pState->caps.flPointSize[0] * 100) % 100,
             (int)pState->caps.flPointSize[1], (int)(pState->caps.flPointSize[1] * 100) % 100));
-    LogRel(("VMSVGA3d:   fragmentShaderVersion=%-2d vertexShaderVersion=%-2d   fS3TCSupported=%d\n",
-            pState->caps.fragmentShaderVersion, pState->caps.vertexShaderVersion, pState->caps.fS3TCSupported));
+    LogRel(("VMSVGA3d:   fragmentShaderVersion=%-2d vertexShaderVersion=%-2d\n",
+            pState->caps.fragmentShaderVersion, pState->caps.vertexShaderVersion));
+    LogRel(("VMSVGA3d:   fS3TCSupported=%-2d        fTextureFilterAnisotropicSupported=%d\n",
+            pState->caps.fS3TCSupported, pState->caps.fTextureFilterAnisotropicSupported));
 
 
     /* Initialize the shader library. */
@@ -4869,11 +4873,10 @@ static GLenum vmsvga3dTextureFilter2OGL(SVGA3dTextureFilter value)
     {
     case SVGA3D_TEX_FILTER_NONE:
     case SVGA3D_TEX_FILTER_LINEAR:
+    case SVGA3D_TEX_FILTER_ANISOTROPIC: /* Anisotropic filtering is controlled by SVGA3D_TS_TEXTURE_ANISOTROPIC_LEVEL */
         return GL_LINEAR;
     case SVGA3D_TEX_FILTER_NEAREST:
         return GL_NEAREST;
-    case SVGA3D_TEX_FILTER_ANISOTROPIC:
-        /** @todo */
     case SVGA3D_TEX_FILTER_FLATCUBIC:       // Deprecated, not implemented
     case SVGA3D_TEX_FILTER_GAUSSIANCUBIC:   // Deprecated, not implemented
     case SVGA3D_TEX_FILTER_PYRAMIDALQUAD:   // Not currently implemented
@@ -5161,12 +5164,15 @@ int vmsvga3dSetTextureState(PVGASTATE pThis, uint32_t cid, uint32_t cTextureStat
             val = pTextureState[i].value;
             break;
 
-#if 0
         case SVGA3D_TS_TEXTURE_ANISOTROPIC_LEVEL:   /* uint32_t */
-            samplerType = D3DSAMP_MAXANISOTROPY;
-            val = pTextureState[i].value;   /* Identical?? */
+            if (pState->caps.fTextureFilterAnisotropicSupported)
+            {
+                textureType = GL_TEXTURE_MAX_ANISOTROPY_EXT;
+                val = RT_MIN((GLint)pTextureState[i].value, pState->caps.maxTextureAnisotropy);
+            } /* otherwise ignore. */
             break;
 
+#if 0
         case SVGA3D_TS_GAMMA:                       /* float */
             samplerType = D3DSAMP_SRGBTEXTURE;
             /* Boolean in D3D */
@@ -5195,6 +5201,24 @@ int vmsvga3dSetTextureState(PVGASTATE pThis, uint32_t cid, uint32_t cTextureStat
             {
                 /* No texture bound, assume 2D. */
                 targetGL = GL_TEXTURE_2D;
+            }
+
+            switch (pTextureState[i].name)
+            {
+                case SVGA3D_TS_MINFILTER:
+                case SVGA3D_TS_MAGFILTER:
+                {
+                    if (pState->caps.fTextureFilterAnisotropicSupported)
+                    {
+                        uint32_t const anisotropyLevel = (SVGA3dTextureFilter)pTextureState[i].value == SVGA3D_TEX_FILTER_ANISOTROPIC
+                            ? RT_MAX(1, pContext->state.aTextureStates[currentStage][SVGA3D_TS_TEXTURE_ANISOTROPIC_LEVEL].value)
+                            : 1;
+                        glTexParameteri(targetGL, GL_TEXTURE_MAX_ANISOTROPY_EXT, RT_MIN((GLint)anisotropyLevel, pState->caps.maxTextureAnisotropy));
+                        VMSVGA3D_CHECK_LAST_ERROR(pState, pContext);
+                    }
+                } break;
+
+                default: break;
             }
 
             glTexParameteri(targetGL, textureType, val);

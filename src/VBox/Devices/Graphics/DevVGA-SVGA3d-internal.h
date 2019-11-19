@@ -1081,6 +1081,8 @@ typedef struct VMSVGA3DSTATE
 
     struct
     {
+        bool                            fS3TCSupported : 1;
+        bool                            fTextureFilterAnisotropicSupported : 1;
         GLint                           maxActiveLights;
         GLint                           maxTextures;
         GLint                           maxClipDistances;
@@ -1094,7 +1096,6 @@ typedef struct VMSVGA3DSTATE
         GLfloat                         flPointSize[2];
         SVGA3dPixelShaderVersion        fragmentShaderVersion;
         SVGA3dVertexShaderVersion       vertexShaderVersion;
-        bool                            fS3TCSupported;
     } caps;
 
     /** The GL_EXTENSIONS value (space padded) for the default OpenGL profile.
