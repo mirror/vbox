@@ -952,7 +952,6 @@ static DECLCALLBACK(int) virtioScsiR3IoReqFinish(PPDMIMEDIAEXPORT pInterface, PD
                          cbReqSgBuf, pReq->pDescChain->cbPhysReturn),
                        VERR_BUFFER_OVERFLOW);
 
-
         virtioCoreR3QueuePut(pDevIns, &pThis->Virtio, pReq->qIdx, pReqSegBuf, pReq->pDescChain, true /* fFence TBD */);
         virtioCoreQueueSync(pDevIns, &pThis->Virtio, pReq->qIdx);
 

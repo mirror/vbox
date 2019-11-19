@@ -269,8 +269,7 @@ DECLINLINE(void) virtioWriteUsedAvailEvent(PPDMDEVINS pDevIns, PVIRTIOCORE pVirt
 void virtioCoreSgBufInit(PVIRTIOSGBUF pGcSgBuf, PVIRTIOSGSEG paSegs, size_t cSegs)
 {
     AssertPtr(pGcSgBuf);
-    Assert(   (cSegs > 0 && VALID_PTR(paSegs))
-           || (!cSegs && !paSegs));
+    Assert(   (cSegs > 0 && VALID_PTR(paSegs)) || (!cSegs && !paSegs));
     Assert(cSegs < (~(unsigned)0 >> 1));
 
     pGcSgBuf->paSegs = paSegs;
@@ -292,6 +291,7 @@ static RTGCPHYS virtioCoreSgBufGet(PVIRTIOSGBUF pGcSgBuf, size_t *pcbData)
 {
     size_t cbData;
     RTGCPHYS pGcBuf;
+
     /* Check that the S/G buffer has memory left. */
     if (RT_LIKELY(pGcSgBuf->idxSeg < pGcSgBuf->cSegs && pGcSgBuf->cbSegLeft))
     { /* likely */ }
@@ -301,15 +301,15 @@ static RTGCPHYS virtioCoreSgBufGet(PVIRTIOSGBUF pGcSgBuf, size_t *pcbData)
         return 0;
     }
 
-    AssertMsg(  pGcSgBuf->cbSegLeft <= 128 * _1M
-            && (RTGCPHYS)pGcSgBuf->pGcSegCur >= (RTGCPHYS)pGcSgBuf->paSegs[pGcSgBuf->idxSeg].pGcSeg
-            && (RTGCPHYS)pGcSgBuf->pGcSegCur + pGcSgBuf->cbSegLeft <=
+    AssertMsg(    pGcSgBuf->cbSegLeft <= 128 * _1M
+              && (RTGCPHYS)pGcSgBuf->pGcSegCur >= (RTGCPHYS)pGcSgBuf->paSegs[pGcSgBuf->idxSeg].pGcSeg
+              && (RTGCPHYS)pGcSgBuf->pGcSegCur + pGcSgBuf->cbSegLeft <=
                    (RTGCPHYS)pGcSgBuf->paSegs[pGcSgBuf->idxSeg].pGcSeg + pGcSgBuf->paSegs[pGcSgBuf->idxSeg].cbSeg,
-              ("pGcSgBuf->idxSeg=%d pGcSgBuf->cSegs=%d pGcSgBuf->pGcSegCur=%p pGcSgBuf->cbSegLeft=%zd "
-               "pGcSgBuf->paSegs[%d].pGcSeg=%p pGcSgBuf->paSegs[%d].cbSeg=%zd\n",
-               pGcSgBuf->idxSeg, pGcSgBuf->cSegs, pGcSgBuf->pGcSegCur, pGcSgBuf->cbSegLeft,
-               pGcSgBuf->idxSeg, pGcSgBuf->paSegs[pGcSgBuf->idxSeg].pGcSeg, pGcSgBuf->idxSeg,
-               pGcSgBuf->paSegs[pGcSgBuf->idxSeg].cbSeg));
+                 ("pGcSgBuf->idxSeg=%d pGcSgBuf->cSegs=%d pGcSgBuf->pGcSegCur=%p pGcSgBuf->cbSegLeft=%zd "
+                  "pGcSgBuf->paSegs[%d].pGcSeg=%p pGcSgBuf->paSegs[%d].cbSeg=%zd\n",
+                  pGcSgBuf->idxSeg, pGcSgBuf->cSegs, pGcSgBuf->pGcSegCur, pGcSgBuf->cbSegLeft,
+                  pGcSgBuf->idxSeg, pGcSgBuf->paSegs[pGcSgBuf->idxSeg].pGcSeg, pGcSgBuf->idxSeg,
+                  pGcSgBuf->paSegs[pGcSgBuf->idxSeg].cbSeg));
 
     cbData = RT_MIN(*pcbData, pGcSgBuf->cbSegLeft);
     pGcBuf = pGcSgBuf->pGcSegCur;
@@ -880,6 +880,7 @@ static void virtioR3QueueNotified(PVIRTIOCORE pVirtio, PVIRTIOCORECC pVirtioCC, 
  */
 static void virtioNotifyGuestDriver(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t idxQueue, bool fForce)
 {
+
     Assert(idxQueue < RT_ELEMENTS(pVirtio->virtqState));
     PVIRTQSTATE pVirtq = &pVirtio->virtqState[idxQueue];
 
@@ -1307,20 +1308,17 @@ static int virtioCommonCfgAccessed(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, PVIR
 /**
  * @callback_method_impl{FNIOMMMIONEWREAD,
  * Memory mapped I/O Handler for PCI Capabilities read operations.}
+ *
+ * This MMIO handler specifically supports the VIRTIO_PCI_CAP_PCI_CFG capability defined
+ * in the VirtIO 1.0 specification, section 4.1.4.7, and as such is limited to cb == 1, cb == 2, or cb==4 type reads.
+ *
  */
 static DECLCALLBACK(VBOXSTRICTRC) virtioMmioRead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS off, void *pv, unsigned cb)
 {
     PVIRTIOCORE   pVirtio   = PDMINS_2_DATA(pDevIns, PVIRTIOCORE);
     PVIRTIOCORECC pVirtioCC = PDMINS_2_DATA_CC(pDevIns, PVIRTIOCORECC);
+    AssertReturn(cb == 1 || cb == 2 || cb == 4, VERR_INVALID_PARAMETER);
     Assert(pVirtio == (PVIRTIOCORE)pvUser); RT_NOREF(pvUser);
-
-    /** @todo r=bird: This code does not handle reads spanning more than one
-     * capability structure/area.   How does that match the spec?   For instance
-     * if the guest uses a 64-bit MOV instruction on this MMIO region, you'll
-     * see cb=8 here.  Same if it uses 16 or 32 byte reads.  Intel allows all
-     * this, so question is how it's supposed to be handled.  At a minimum there
-     * must be an explanation of that here.
-     */
 
     uint32_t offIntra;
     if (MATCHES_VIRTIO_CAP_STRUCT(off, cb, offIntra, pVirtio->LocDeviceCap))
@@ -1380,20 +1378,18 @@ static DECLCALLBACK(VBOXSTRICTRC) virtioMmioRead(PPDMDEVINS pDevIns, void *pvUse
 /**
  * @callback_method_impl{FNIOMMMIONEWREAD,
  * Memory mapped I/O Handler for PCI Capabilities write operations.}
+ *
+ * This MMIO handler specifically supports the VIRTIO_PCI_CAP_PCI_CFG capability defined
+ * in the VirtIO 1.0 specification, section 4.1.4.7, and as such is limited to cb == 1, cb == 2, or cb==4 type writes.
  */
 static DECLCALLBACK(VBOXSTRICTRC) virtioMmioWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS off, void const *pv, unsigned cb)
 {
     PVIRTIOCORE   pVirtio   = PDMINS_2_DATA(pDevIns, PVIRTIOCORE);
     PVIRTIOCORECC pVirtioCC = PDMINS_2_DATA_CC(pDevIns, PVIRTIOCORECC);
-    Assert(pVirtio == (PVIRTIOCORE)pvUser); RT_NOREF(pvUser);
 
-    /** @todo r=bird: This code does not handle writes spanning more than one
-     * capability structure/area.   How does that match the spec?   For instance
-     * if the guest uses a 64-bit MOV instruction on this MMIO region, you'll
-     * see cb=8 here.  Same if it uses 16 or 32 byte reads.  Intel allows all
-     * this, so question is how it's supposed to be handled.  At a minimum there
-     * must be an explanation of that here.
-     */
+    AssertReturn(cb == 1 || cb == 2 || cb == 4, VERR_INVALID_PARAMETER);
+
+    Assert(pVirtio == (PVIRTIOCORE)pvUser); RT_NOREF(pvUser);
 
     uint32_t offIntra;
     if (MATCHES_VIRTIO_CAP_STRUCT(off, cb, offIntra, pVirtio->LocDeviceCap))
@@ -1635,7 +1631,7 @@ int virtioCoreR3LoadExec(PVIRTIOCORE pVirtio, PCPDMDEVHLPR3 pHlp, PSSMHANDLE pSS
 void virtioCoreR3VmStateChanged(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, VIRTIOVMSTATECHANGED enmState)
 {
 
-    LogFunc(("State changing to %s: ***FUNCTIONALITY TBD***\n",
+    LogFunc(("State changing to %s\n",
         virtioCoreGetStateChangeText(enmState)));
 
     switch(enmState)
@@ -1648,6 +1644,7 @@ void virtioCoreR3VmStateChanged(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, VIRTIOV
         case kvirtIoVmStateChangedPowerOff:
             break;
         case kvirtIoVmStateChangedResume:
+            virtioNotifyGuestDriver(pVirtio->pDevIns, pVirtio, 0 /* idxQueue */, true /* fForce */);
             break;
         default:
             LogRelFunc(("Bad enum value"));
@@ -1655,21 +1652,6 @@ void virtioCoreR3VmStateChanged(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, VIRTIOV
     }
     RT_NOREF(pDevIns, pVirtio);
 }
-
-
-/**
- * This sends notification ('kicks') guest driver to check queues for any new
- * elements in the used queue to process.
- *
- * It should be called after resuming in case anything was added to the queues
- * during suspend/quiescing and a notification was missed, to prevent the guest
- * from stalling after suspend.
- */
-void virtioCoreR3PropagateResumeNotification(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio)
-{
-    virtioNotifyGuestDriver(pDevIns, pVirtio, 0 /* idxQueue */, true /* fForce */);
-}
-
 
 /**
  * This should be called from PDMDEVREGR3::pfnDestruct.
