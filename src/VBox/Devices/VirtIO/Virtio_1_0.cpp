@@ -573,7 +573,6 @@ int virtioCoreR3DescChainGet(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t i
     AssertReturn(ppDescChain, VERR_INVALID_PARAMETER);
 
     Assert(idxQueue < RT_ELEMENTS(pVirtio->virtqState));
-    PVIRTQSTATE pVirtq  = &pVirtio->virtqState[idxQueue];
 
     PVIRTIOSGSEG paSegsIn = (PVIRTIOSGSEG)RTMemAlloc(VIRTQ_MAX_SIZE * sizeof(VIRTIOSGSEG));
     AssertReturn(paSegsIn, VERR_NO_MEMORY);
