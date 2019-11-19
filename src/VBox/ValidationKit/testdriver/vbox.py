@@ -2032,7 +2032,8 @@ class TestDriver(base.TestDriver):                                              
             reporter.log("  VRAM:               %sMB" % (oVM.graphicsAdapter.VRAMSize,));
             reporter.log("  Monitors:           %s" % (oVM.graphicsAdapter.monitorCount,));
             reporter.log("  GraphicsController: %s"
-                         % (self.oVBoxMgr.getEnumValueName('GraphicsControllerType', oVM.graphicsAdapter.graphicsControllerType),));
+                         % (self.oVBoxMgr.getEnumValueName('GraphicsControllerType',
+                                                           oVM.graphicsAdapter.graphicsControllerType),));
         else:
             reporter.log("  VRAM:               %sMB" % (oVM.VRAMSize,));
             reporter.log("  Monitors:           %s" % (oVM.monitorCount,));
