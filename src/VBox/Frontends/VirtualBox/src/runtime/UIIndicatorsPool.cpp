@@ -742,7 +742,9 @@ private:
         /* Prepare tool-tip: */
         QString strFullData;
 
+        /* Get graphics adapter: */
         CGraphicsAdapter comGraphics = machine.GetGraphicsAdapter();
+
         /* Video Memory: */
         const ULONG uVRAMSize = comGraphics.GetVRAMSize();
         const QString strVRAMSize = UICommon::tr("<nobr>%1 MB</nobr>", "details report").arg(uVRAMSize);

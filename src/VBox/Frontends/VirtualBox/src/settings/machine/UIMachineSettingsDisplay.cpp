@@ -370,18 +370,23 @@ void UIMachineSettingsDisplay::loadToCacheFrom(QVariant &data)
     /* Prepare old display data: */
     UIDataSettingsMachineDisplay oldDisplayData;
 
-    /* Gather old 'Screen' data: */
+    /* Check whether graphics adapter is valid: */
     const CGraphicsAdapter &comGraphics = m_machine.GetGraphicsAdapter();
-    oldDisplayData.m_iCurrentVRAM = comGraphics.GetVRAMSize();
-    oldDisplayData.m_cGuestScreenCount = comGraphics.GetMonitorCount();
-    oldDisplayData.m_scaleFactors = gEDataManager->scaleFactors(m_machine.GetId());
-    oldDisplayData.m_graphicsControllerType = comGraphics.GetGraphicsControllerType();
+    if (!comGraphics.isNull())
+    {
+        /* Gather old 'Screen' data: */
+        oldDisplayData.m_iCurrentVRAM = comGraphics.GetVRAMSize();
+        oldDisplayData.m_cGuestScreenCount = comGraphics.GetMonitorCount();
+        oldDisplayData.m_scaleFactors = gEDataManager->scaleFactors(m_machine.GetId());
+        oldDisplayData.m_graphicsControllerType = comGraphics.GetGraphicsControllerType();
 #ifdef VBOX_WITH_3D_ACCELERATION
-    oldDisplayData.m_f3dAccelerationEnabled = comGraphics.GetAccelerate3DEnabled();
+        oldDisplayData.m_f3dAccelerationEnabled = comGraphics.GetAccelerate3DEnabled();
 #endif
 #ifdef VBOX_WITH_VIDEOHWACCEL
-    oldDisplayData.m_f2dVideoAccelerationEnabled = comGraphics.GetAccelerate2DVideoEnabled();
+        oldDisplayData.m_f2dVideoAccelerationEnabled = comGraphics.GetAccelerate2DVideoEnabled();
 #endif
+    }
+
     /* Check whether remote display server is valid: */
     const CVRDEServer &vrdeServer = m_machine.GetVRDEServer();
     oldDisplayData.m_fRemoteDisplayServerSupported = !vrdeServer.isNull();
@@ -1374,63 +1379,70 @@ bool UIMachineSettingsDisplay::saveScreenData()
     /* Save 'Screen' data from the cache: */
     if (fSuccess)
     {
-        CGraphicsAdapter comGraphics = m_machine.GetGraphicsAdapter();
         /* Get old display data from the cache: */
         const UIDataSettingsMachineDisplay &oldDisplayData = m_pCache->base();
         /* Get new display data from the cache: */
         const UIDataSettingsMachineDisplay &newDisplayData = m_pCache->data();
 
-        /* Save video RAM size: */
-        if (fSuccess && isMachineOffline() && newDisplayData.m_iCurrentVRAM != oldDisplayData.m_iCurrentVRAM)
-        {
-            comGraphics.SetVRAMSize(newDisplayData.m_iCurrentVRAM);
-            fSuccess = comGraphics.isOk();
-        }
-        /* Save guest screen count: */
-        if (fSuccess && isMachineOffline() && newDisplayData.m_cGuestScreenCount != oldDisplayData.m_cGuestScreenCount)
-        {
-            comGraphics.SetMonitorCount(newDisplayData.m_cGuestScreenCount);
-            fSuccess = comGraphics.isOk();
-        }
-        /* Save the Graphics Controller Type: */
-        if (fSuccess && isMachineOffline() && newDisplayData.m_graphicsControllerType != oldDisplayData.m_graphicsControllerType)
-        {
-            comGraphics.SetGraphicsControllerType(newDisplayData.m_graphicsControllerType);
-            fSuccess = comGraphics.isOk();
-        }
-#ifdef VBOX_WITH_3D_ACCELERATION
-        /* Save whether 3D acceleration is enabled: */
-        if (fSuccess && isMachineOffline() && newDisplayData.m_f3dAccelerationEnabled != oldDisplayData.m_f3dAccelerationEnabled)
-        {
-            comGraphics.SetAccelerate3DEnabled(newDisplayData.m_f3dAccelerationEnabled);
-            fSuccess = comGraphics.isOk();
-        }
-#endif
-#ifdef VBOX_WITH_VIDEOHWACCEL
-        /* Save whether 2D video acceleration is enabled: */
-        if (fSuccess && isMachineOffline() && newDisplayData.m_f2dVideoAccelerationEnabled != oldDisplayData.m_f2dVideoAccelerationEnabled)
-        {
-            comGraphics.SetAccelerate2DVideoEnabled(newDisplayData.m_f2dVideoAccelerationEnabled);
-            fSuccess = comGraphics.isOk();
-        }
-#endif
-
-        /* Get machine ID for further activities: */
-        QUuid uMachineId;
-        if (fSuccess)
-        {
-            uMachineId = m_machine.GetId();
-            fSuccess = m_machine.isOk();
-        }
+        /* Get graphics adapter for further activities: */
+        CGraphicsAdapter comGraphics = m_machine.GetGraphicsAdapter();
+        fSuccess = m_machine.isOk() && comGraphics.isNotNull();
 
         /* Show error message if necessary: */
         if (!fSuccess)
             notifyOperationProgressError(UIErrorString::formatErrorInfo(m_machine));
-
-        /* Save guest-screen scale-factor: */
-        if (fSuccess && newDisplayData.m_scaleFactors != oldDisplayData.m_scaleFactors)
+        else
         {
-            gEDataManager->setScaleFactors(newDisplayData.m_scaleFactors, uMachineId);
+            /* Save video RAM size: */
+            if (fSuccess && isMachineOffline() && newDisplayData.m_iCurrentVRAM != oldDisplayData.m_iCurrentVRAM)
+            {
+                comGraphics.SetVRAMSize(newDisplayData.m_iCurrentVRAM);
+                fSuccess = comGraphics.isOk();
+            }
+            /* Save guest screen count: */
+            if (fSuccess && isMachineOffline() && newDisplayData.m_cGuestScreenCount != oldDisplayData.m_cGuestScreenCount)
+            {
+                comGraphics.SetMonitorCount(newDisplayData.m_cGuestScreenCount);
+                fSuccess = comGraphics.isOk();
+            }
+            /* Save the Graphics Controller Type: */
+            if (fSuccess && isMachineOffline() && newDisplayData.m_graphicsControllerType != oldDisplayData.m_graphicsControllerType)
+            {
+                comGraphics.SetGraphicsControllerType(newDisplayData.m_graphicsControllerType);
+                fSuccess = comGraphics.isOk();
+            }
+#ifdef VBOX_WITH_3D_ACCELERATION
+            /* Save whether 3D acceleration is enabled: */
+            if (fSuccess && isMachineOffline() && newDisplayData.m_f3dAccelerationEnabled != oldDisplayData.m_f3dAccelerationEnabled)
+            {
+                comGraphics.SetAccelerate3DEnabled(newDisplayData.m_f3dAccelerationEnabled);
+                fSuccess = comGraphics.isOk();
+            }
+#endif
+#ifdef VBOX_WITH_VIDEOHWACCEL
+            /* Save whether 2D video acceleration is enabled: */
+            if (fSuccess && isMachineOffline() && newDisplayData.m_f2dVideoAccelerationEnabled != oldDisplayData.m_f2dVideoAccelerationEnabled)
+            {
+                comGraphics.SetAccelerate2DVideoEnabled(newDisplayData.m_f2dVideoAccelerationEnabled);
+                fSuccess = comGraphics.isOk();
+            }
+#endif
+
+            /* Get machine ID for further activities: */
+            QUuid uMachineId;
+            if (fSuccess)
+            {
+                uMachineId = m_machine.GetId();
+                fSuccess = m_machine.isOk();
+            }
+
+            /* Show error message if necessary: */
+            if (!fSuccess)
+                notifyOperationProgressError(UIErrorString::formatErrorInfo(m_machine));
+
+            /* Save guest-screen scale-factor: */
+            if (fSuccess && newDisplayData.m_scaleFactors != oldDisplayData.m_scaleFactors)
+                /* fSuccess = */ gEDataManager->setScaleFactors(newDisplayData.m_scaleFactors, uMachineId);
         }
     }
     /* Return result: */

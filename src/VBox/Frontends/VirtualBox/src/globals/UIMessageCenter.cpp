@@ -60,6 +60,7 @@
 #include "CCloudProvider.h"
 #include "CCloudProviderManager.h"
 #include "CDHCPServer.h"
+#include "CGraphicsAdapter.h"
 #include "CNATEngine.h"
 #include "CNATNetwork.h"
 #include "CNetworkAdapter.h"
@@ -1241,6 +1242,13 @@ void UIMessageCenter::cannotSaveMachineSettings(const CMachine &machine, QWidget
           tr("Failed to save the settings of the virtual machine <b>%1</b> to <b><nobr>%2</nobr></b>.")
              .arg(machine.GetName(), CMachine(machine).GetSettingsFilePath()),
           UIErrorString::formatErrorInfo(machine));
+}
+
+void UIMessageCenter::cannotChangeGraphicsAdapterAttribute(const CGraphicsAdapter &comAdapter, QWidget *pParent /* = 0 */) const
+{
+    error(pParent, MessageType_Error,
+          tr("Failed to change graphics adapter attribute."),
+          UIErrorString::formatErrorInfo(comAdapter));
 }
 
 void UIMessageCenter::cannotChangeAudioAdapterAttribute(const CAudioAdapter &comAdapter, QWidget *pParent /* = 0 */) const

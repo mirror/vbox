@@ -35,7 +35,7 @@
 # include "VBoxUtils.h"
 #endif
 
-/* GUI includes: */
+/* COM includes: */
 #include "CGraphicsAdapter.h"
 
 

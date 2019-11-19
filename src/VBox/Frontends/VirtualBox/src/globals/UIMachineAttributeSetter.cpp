@@ -158,22 +158,38 @@ void UIMachineAttributeSetter::setMachineAttribute(const CMachine &comConstMachi
             }
             case MachineAttribute_VideoMemory:
             {
-                /* Change machine video memory (VRAM): */
-                comMachine.GetGraphicsAdapter().SetVRAMSize(guiAttribute.toInt());
+                /* Acquire graphics adapter: */
+                CGraphicsAdapter comGraphics = comMachine.GetGraphicsAdapter();
                 if (!comMachine.isOk())
                 {
-                    msgCenter().cannotChangeMachineAttribute(comMachine);
+                    msgCenter().cannotAcquireMachineParameter(comMachine);
+                    fErrorHappened = true;
+                    break;
+                }
+                /* Change machine video memory (VRAM): */
+                comGraphics.SetVRAMSize(guiAttribute.toInt());
+                if (!comGraphics.isOk())
+                {
+                    msgCenter().cannotChangeGraphicsAdapterAttribute(comGraphics);
                     fErrorHappened = true;
                 }
                 break;
             }
             case MachineAttribute_GraphicsControllerType:
             {
-                /* Change machine graphics controller type: */
-                comMachine.GetGraphicsAdapter().SetGraphicsControllerType(guiAttribute.value<KGraphicsControllerType>());
+                /* Acquire graphics adapter: */
+                CGraphicsAdapter comGraphics = comMachine.GetGraphicsAdapter();
                 if (!comMachine.isOk())
                 {
-                    msgCenter().cannotChangeMachineAttribute(comMachine);
+                    msgCenter().cannotAcquireMachineParameter(comMachine);
+                    fErrorHappened = true;
+                    break;
+                }
+                /* Change machine graphics controller type: */
+                comGraphics.SetGraphicsControllerType(guiAttribute.value<KGraphicsControllerType>());
+                if (!comGraphics.isOk())
+                {
+                    msgCenter().cannotChangeGraphicsAdapterAttribute(comGraphics);
                     fErrorHappened = true;
                 }
                 break;

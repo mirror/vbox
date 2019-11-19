@@ -231,8 +231,6 @@ protected:
     /** The root window at the time we grab the mouse buttons. */
     xcb_window_t m_hButtonGrabWindow;
 #endif /* VBOX_WS_X11 */
-
-    ULONG m_cMonitors;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_runtime_UIKeyboardHandler_h */

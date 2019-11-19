@@ -330,6 +330,7 @@ public:
     bool confirmCancelingPortForwardingDialog(QWidget *pParent = 0) const;
     void cannotChangeMachineAttribute(const CMachine &comMachine, QWidget *pParent = 0) const;
     void cannotSaveMachineSettings(const CMachine &machine, QWidget *pParent = 0) const;
+    void cannotChangeGraphicsAdapterAttribute(const CGraphicsAdapter &comAdapter, QWidget *pParent = 0) const;
     void cannotChangeAudioAdapterAttribute(const CAudioAdapter &comAdapter, QWidget *pParent = 0) const;
     void cannotChangeNetworkAdapterAttribute(const CNetworkAdapter &comAdapter, QWidget *pParent = 0) const;
 

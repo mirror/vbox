@@ -36,7 +36,7 @@
 # include "VBoxUtils.h"
 #endif /* VBOX_WS_MAC */
 
-/* GUI includes: */
+/* COM includes: */
 #include "CGraphicsAdapter.h"
 
 

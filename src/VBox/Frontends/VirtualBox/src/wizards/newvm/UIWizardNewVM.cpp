@@ -145,12 +145,12 @@ bool UIWizardNewVM::createVM()
 
 void UIWizardNewVM::configureVM(const QString &strGuestTypeId, const CGuestOSType &comGuestType)
 {
-    CVirtualBox vbox = uiCommon().virtualBox();
+    /* Get graphics adapter: */
+    CGraphicsAdapter comGraphics = m_machine.GetGraphicsAdapter();
 
     /* RAM size: */
     m_machine.SetMemorySize(field("ram").toInt());
 
-    CGraphicsAdapter comGraphics = m_machine.GetGraphicsAdapter();
     /* Graphics Controller type: */
     comGraphics.SetGraphicsControllerType(comGuestType.GetRecommendedGraphicsController());
 
