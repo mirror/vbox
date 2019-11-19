@@ -1024,8 +1024,6 @@ static int vmR3InitDoCompleted(PVM pVM, VMINITCOMPLETED enmWhat)
         rc = CPUMR3InitCompleted(pVM, enmWhat);
     if (RT_SUCCESS(rc))
         rc = EMR3InitCompleted(pVM, enmWhat);
-    if (RT_SUCCESS(rc))
-        rc = IOMR3InitCompleted(pVM, enmWhat);
     if (enmWhat == VMINITCOMPLETED_RING3)
     {
         if (RT_SUCCESS(rc))
@@ -1033,6 +1031,11 @@ static int vmR3InitDoCompleted(PVM pVM, VMINITCOMPLETED enmWhat)
     }
     if (RT_SUCCESS(rc))
         rc = PDMR3InitCompleted(pVM, enmWhat);
+
+    /* IOM *must* come after PDM, as device (DevPcArch) may register some final
+       handlers in their init completion method. */
+    if (RT_SUCCESS(rc))
+        rc = IOMR3InitCompleted(pVM, enmWhat);
     return rc;
 }
 

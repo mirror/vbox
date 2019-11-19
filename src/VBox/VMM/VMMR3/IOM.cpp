@@ -245,7 +245,7 @@ VMMR3_INT_DECL(int) IOMR3Init(PVM pVM)
 VMMR3_INT_DECL(int) IOMR3InitCompleted(PVM pVM, VMINITCOMPLETED enmWhat)
 {
 #ifdef VBOX_WITH_STATISTICS
-    if (enmWhat == VMINITCOMPLETED_RING3)
+    if (enmWhat == VMINITCOMPLETED_RING0)
     {
         /*
          * Synchronize the ring-3 I/O port and MMIO statistics indices into the
