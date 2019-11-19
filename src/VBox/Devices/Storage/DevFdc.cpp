@@ -691,6 +691,8 @@ struct fdctrl_t {
     /** Status LUN: The Partner of ILeds. */
     PPDMILEDCONNECTORS pLedsConnector;
 
+    /** I/O ports: 0x3f0 */
+    IOMIOPORTHANDLE hIoPorts0;
     /** I/O ports: 0x3f1..0x3f5 */
     IOMIOPORTHANDLE hIoPorts1;
     /** I/O port:  0x3f7 */
@@ -2184,7 +2186,38 @@ static DECLCALLBACK(void) fdcTimerCallback(PPDMDEVINS pDevIns, PTMTIMER pTimer, 
 /* -=-=-=-=-=-=-=-=- I/O Port Access Handlers -=-=-=-=-=-=-=-=- */
 
 /**
- * @callback_method_impl{FNIOMIOPORTNEWOUT, Handling 0x3f1..0x3f5 acceses.}
+ * @callback_method_impl{FNIOMIOPORTNEWOUT, Handling 0x3f0 accesses.}
+ */
+static DECLCALLBACK(VBOXSTRICTRC) fdcIoPort0Write(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t u32, unsigned cb)
+{
+    RT_NOREF(pvUser);
+
+    if (cb == 1)
+        fdctrl_write(PDMDEVINS_2_DATA(pDevIns, fdctrl_t *), offPort, u32);
+    else
+        ASSERT_GUEST_MSG_FAILED(("offPort=%#x cb=%d u32=%#x\n", offPort, cb, u32));
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * @callback_method_impl{FNIOMIOPORTNEWIN, Handling 0x3f0 accesses.}
+ */
+static DECLCALLBACK(VBOXSTRICTRC) fdcIoPort0Read(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t *pu32, unsigned cb)
+{
+    RT_NOREF(pvUser);
+
+    if (cb == 1)
+    {
+        *pu32 = fdctrl_read(PDMDEVINS_2_DATA(pDevIns, fdctrl_t *), offPort);
+        return VINF_SUCCESS;
+    }
+    return VERR_IOM_IOPORT_UNUSED;
+}
+
+
+/**
+ * @callback_method_impl{FNIOMIOPORTNEWOUT, Handling 0x3f1..0x3f5 accesses.}
  */
 static DECLCALLBACK(VBOXSTRICTRC) fdcIoPort1Write(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t u32, unsigned cb)
 {
@@ -2199,7 +2232,7 @@ static DECLCALLBACK(VBOXSTRICTRC) fdcIoPort1Write(PPDMDEVINS pDevIns, void *pvUs
 
 
 /**
- * @callback_method_impl{FNIOMIOPORTNEWIN, Handling 0x3f1..0x3f5 acceses.}
+ * @callback_method_impl{FNIOMIOPORTNEWIN, Handling 0x3f1..0x3f5 accesses.}
  */
 static DECLCALLBACK(VBOXSTRICTRC) fdcIoPort1Read(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t *pu32, unsigned cb)
 {
@@ -2724,7 +2757,7 @@ static DECLCALLBACK(int) fdcConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
     /*
      * Validate configuration.
      */
-    PDMDEV_VALIDATE_CONFIG_RETURN(pDevIns, "IRQ|DMA|MemMapped|IOBase", "");
+    PDMDEV_VALIDATE_CONFIG_RETURN(pDevIns, "IRQ|DMA|MemMapped|IOBase|StatusA", "");
 
     /*
      * Read the configuration.
@@ -2742,6 +2775,10 @@ static DECLCALLBACK(int) fdcConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
     rc = pHlp->pfnCFGMQueryBoolDef(pCfg, "MemMapped", &fMemMapped, false);
     AssertMsgRCReturn(rc, ("Configuration error: Failed to read bool value MemMapped rc=%Rrc\n", rc), rc);
 
+    bool fStatusA;
+    rc = pHlp->pfnCFGMQueryBoolDef(pCfg, "StatusA", &fStatusA, false);
+    AssertMsgRCReturn(rc, ("Configuration error: Failed to read bool value fStatusA rc=%Rrc\n", rc), rc);
+
     /*
      * Initialize data.
      */
@@ -2750,6 +2787,9 @@ static DECLCALLBACK(int) fdcConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
     pThis->version   = 0x90;   /* Intel 82078 controller */
     pThis->config    = FD_CONFIG_EIS | FD_CONFIG_EFIFO; /* Implicit seek, polling & FIFO enabled */
     pThis->num_floppies = MAX_FD;
+    pThis->hIoPorts0 = NIL_IOMMMIOHANDLE;
+    pThis->hIoPorts1 = NIL_IOMMMIOHANDLE;
+    pThis->hIoPorts2 = NIL_IOMMMIOHANDLE;
 
     /* Fill 'command_to_handler' lookup table */
     for (int ii = RT_ELEMENTS(handlers) - 1; ii >= 0; ii--)
@@ -2811,6 +2851,14 @@ static DECLCALLBACK(int) fdcConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
             { "DIR", "CCR", "Digital input register", "Configuration control register"},
             { NULL, NULL, NULL, NULL }
         };
+
+        /* 0x3f0 */
+        if (fStatusA)
+        {
+            rc = PDMDevHlpIoPortCreateAndMap(pDevIns, pThis->io_base, 1 /*cPorts*/, fdcIoPort0Write, fdcIoPort0Read,
+                                             "FDC-SRA", s_aDescs, &pThis->hIoPorts0);
+            AssertRCReturn(rc, rc);
+        }
 
         /* 0x3f1..0x3f5 */
         rc = PDMDevHlpIoPortCreateAndMap(pDevIns, pThis->io_base + 0x1, 5, fdcIoPort1Write, fdcIoPort1Read,
