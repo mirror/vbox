@@ -2028,10 +2028,16 @@ class TestDriver(base.TestDriver):                                              
             reporter.log("  Session Name:       %s" % (oVM.sessionType,));
         reporter.log("  CPUs:               %s" % (oVM.CPUCount,));
         reporter.log("  RAM:                %sMB" % (oVM.memorySize,));
-        reporter.log("  VRAM:               %sMB" % (oVM.VRAMSize,));
-        reporter.log("  Monitors:           %s" % (oVM.monitorCount,));
-        reporter.log("  GraphicsController: %s"
-                     % (self.oVBoxMgr.getEnumValueName('GraphicsControllerType', oVM.graphicsControllerType),));
+        if self.fpApiVer >= 6.1 and hasattr(oVM, 'graphicsAdapter'):
+            reporter.log("  VRAM:               %sMB" % (oVM.graphicsAdapter.VRAMSize,));
+            reporter.log("  Monitors:           %s" % (oVM.graphicsAdapter.monitorCount,));
+            reporter.log("  GraphicsController: %s"
+                         % (self.oVBoxMgr.getEnumValueName('GraphicsControllerType', oVM.graphicsAdapter.graphicsControllerType),));
+        else:
+            reporter.log("  VRAM:               %sMB" % (oVM.VRAMSize,));
+            reporter.log("  Monitors:           %s" % (oVM.monitorCount,));
+            reporter.log("  GraphicsController: %s"
+                         % (self.oVBoxMgr.getEnumValueName('GraphicsControllerType', oVM.graphicsControllerType),));
         reporter.log("  Chipset:            %s" % (self.oVBoxMgr.getEnumValueName('ChipsetType', oVM.chipsetType),));
         reporter.log("  Firmware:           %s" % (self.oVBoxMgr.getEnumValueName('FirmwareType', oVM.firmwareType),));
         reporter.log("  HwVirtEx:           %s" % (oVM.getHWVirtExProperty(vboxcon.HWVirtExPropertyType_Enabled),));
@@ -2058,8 +2064,12 @@ class TestDriver(base.TestDriver):                                              
                 reporter.log("  HPET:               %s" % (oVM.HPETEnabled,));
             else:
                 reporter.log("  HPET:               %s" % (oVM.hpetEnabled,));
-        reporter.log("  3D acceleration:    %s" % (oVM.accelerate3DEnabled,));
-        reporter.log("  2D acceleration:    %s" % (oVM.accelerate2DVideoEnabled,));
+        if self.fpApiVer >= 6.1 and hasattr(oVM, 'graphicsAdapter'):
+            reporter.log("  3D acceleration:    %s" % (oVM.graphicsAdapter.accelerate3DEnabled,));
+            reporter.log("  2D acceleration:    %s" % (oVM.graphicsAdapter.accelerate2DVideoEnabled,));
+        else:
+            reporter.log("  3D acceleration:    %s" % (oVM.accelerate3DEnabled,));
+            reporter.log("  2D acceleration:    %s" % (oVM.accelerate2DVideoEnabled,));
         reporter.log("  TeleporterEnabled:  %s" % (oVM.teleporterEnabled,));
         reporter.log("  TeleporterPort:     %s" % (oVM.teleporterPort,));
         reporter.log("  TeleporterAddress:  %s" % (oVM.teleporterAddress,));

@@ -1634,7 +1634,10 @@ class SessionWrapper(TdTaskBase):
         """
         fRc = True;
         try:
-            self.o.machine.VRAMSize = cMB;
+            if oSession.fpApiVer >= 6.1 and hasattr(self.o.machine, 'graphicsAdapter'):
+                self.o.machine.graphicsAdapter.VRAMSize = cMB;
+            else:
+                self.o.machine.VRAMSize = cMB;
         except:
             reporter.errorXcpt('failed to set the VRAM size of "%s" to %s' % (self.sName, cMB));
             fRc = False;
