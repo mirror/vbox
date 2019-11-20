@@ -8084,9 +8084,9 @@ static DECLCALLBACK(int) ataR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
                     {
                         if (rc == VERR_CFGM_NOT_ENOUGH_SPACE)
                             return PDMDEV_SET_ERROR(pDevIns, VERR_INVALID_PARAMETER,
-                                        N_("PIIX3 configuration error: \"SerialNumber\" is longer than 20 bytes"));
+                                                    N_("PIIX3 configuration error: \"SerialNumber\" is longer than 20 bytes"));
                         return PDMDEV_SET_ERROR(pDevIns, rc,
-                                  N_("PIIX3 configuration error: failed to read \"SerialNumber\" as string"));
+                                                N_("PIIX3 configuration error: failed to read \"SerialNumber\" as string"));
                     }
 
                     rc = pHlp->pfnCFGMQueryStringDef(pCfgNode, "FirmwareRevision", pIf->szFirmwareRevision,
@@ -8095,9 +8095,9 @@ static DECLCALLBACK(int) ataR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
                     {
                         if (rc == VERR_CFGM_NOT_ENOUGH_SPACE)
                             return PDMDEV_SET_ERROR(pDevIns, VERR_INVALID_PARAMETER,
-                                        N_("PIIX3 configuration error: \"FirmwareRevision\" is longer than 8 bytes"));
+                                                    N_("PIIX3 configuration error: \"FirmwareRevision\" is longer than 8 bytes"));
                         return PDMDEV_SET_ERROR(pDevIns, rc,
-                                    N_("PIIX3 configuration error: failed to read \"FirmwareRevision\" as string"));
+                                                N_("PIIX3 configuration error: failed to read \"FirmwareRevision\" as string"));
                     }
 
                     rc = pHlp->pfnCFGMQueryStringDef(pCfgNode, "ModelNumber", pIf->szModelNumber, sizeof(pIf->szModelNumber),
@@ -8106,9 +8106,9 @@ static DECLCALLBACK(int) ataR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
                     {
                         if (rc == VERR_CFGM_NOT_ENOUGH_SPACE)
                             return PDMDEV_SET_ERROR(pDevIns, VERR_INVALID_PARAMETER,
-                                       N_("PIIX3 configuration error: \"ModelNumber\" is longer than 40 bytes"));
+                                                    N_("PIIX3 configuration error: \"ModelNumber\" is longer than 40 bytes"));
                         return PDMDEV_SET_ERROR(pDevIns, rc,
-                                    N_("PIIX3 configuration error: failed to read \"ModelNumber\" as string"));
+                                                N_("PIIX3 configuration error: failed to read \"ModelNumber\" as string"));
                     }
 
                     /* There are three other identification strings for CD drives used for INQUIRY */
@@ -8120,9 +8120,9 @@ static DECLCALLBACK(int) ataR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
                         {
                             if (rc == VERR_CFGM_NOT_ENOUGH_SPACE)
                                 return PDMDEV_SET_ERROR(pDevIns, VERR_INVALID_PARAMETER,
-                                           N_("PIIX3 configuration error: \"ATAPIVendorId\" is longer than 16 bytes"));
+                                                        N_("PIIX3 configuration error: \"ATAPIVendorId\" is longer than 16 bytes"));
                             return PDMDEV_SET_ERROR(pDevIns, rc,
-                                        N_("PIIX3 configuration error: failed to read \"ATAPIVendorId\" as string"));
+                                                    N_("PIIX3 configuration error: failed to read \"ATAPIVendorId\" as string"));
                         }
 
                         rc = pHlp->pfnCFGMQueryStringDef(pCfgNode, "ATAPIProductId", pIf->szInquiryProductId,
@@ -8131,9 +8131,9 @@ static DECLCALLBACK(int) ataR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
                         {
                             if (rc == VERR_CFGM_NOT_ENOUGH_SPACE)
                                 return PDMDEV_SET_ERROR(pDevIns, VERR_INVALID_PARAMETER,
-                                           N_("PIIX3 configuration error: \"ATAPIProductId\" is longer than 16 bytes"));
+                                                        N_("PIIX3 configuration error: \"ATAPIProductId\" is longer than 16 bytes"));
                             return PDMDEV_SET_ERROR(pDevIns, rc,
-                                        N_("PIIX3 configuration error: failed to read \"ATAPIProductId\" as string"));
+                                                    N_("PIIX3 configuration error: failed to read \"ATAPIProductId\" as string"));
                         }
 
                         rc = pHlp->pfnCFGMQueryStringDef(pCfgNode, "ATAPIRevision", pIf->szInquiryRevision,
@@ -8142,15 +8142,15 @@ static DECLCALLBACK(int) ataR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
                         {
                             if (rc == VERR_CFGM_NOT_ENOUGH_SPACE)
                                 return PDMDEV_SET_ERROR(pDevIns, VERR_INVALID_PARAMETER,
-                                           N_("PIIX3 configuration error: \"ATAPIRevision\" is longer than 4 bytes"));
+                                                        N_("PIIX3 configuration error: \"ATAPIRevision\" is longer than 4 bytes"));
                             return PDMDEV_SET_ERROR(pDevIns, rc,
-                                        N_("PIIX3 configuration error: failed to read \"ATAPIRevision\" as string"));
+                                                    N_("PIIX3 configuration error: failed to read \"ATAPIRevision\" as string"));
                         }
 
                         rc = pHlp->pfnCFGMQueryBoolDef(pCfgNode, "OverwriteInquiry", &pIf->fOverwriteInquiry, true);
                         if (RT_FAILURE(rc))
                             return PDMDEV_SET_ERROR(pDevIns, rc,
-                                        N_("PIIX3 configuration error: failed to read \"OverwriteInquiry\" as boolean"));
+                                                    N_("PIIX3 configuration error: failed to read \"OverwriteInquiry\" as boolean"));
                     }
                 }
             }
