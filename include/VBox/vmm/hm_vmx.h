@@ -1485,12 +1485,15 @@ AssertCompileSize(VMXABORT, 4);
  *  bits in VMX control MSRs. */
 #define VMX_BF_BASIC_TRUE_CTLS_SHIFT                            55
 #define VMX_BF_BASIC_TRUE_CTLS_MASK                             UINT64_C(0x0080000000000000)
-/** Bits 56:63 are reserved and RAZ. */
-#define VMX_BF_BASIC_RSVD_56_63_SHIFT                           56
-#define VMX_BF_BASIC_RSVD_56_63_MASK                            UINT64_C(0xff00000000000000)
+/** Whether VM-entry can delivery error code for all hardware exception vectors. */
+#define VMX_BF_BASIC_XCPT_ERRCODE_SHIFT                         56
+#define VMX_BF_BASIC_XCPT_ERRCODE_MASK                          UINT64_C(0x0100000000000000)
+/** Bits 57:63 are reserved and RAZ. */
+#define VMX_BF_BASIC_RSVD_56_63_SHIFT                           57
+#define VMX_BF_BASIC_RSVD_56_63_MASK                            UINT64_C(0xfe00000000000000)
 RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_BASIC_, UINT64_C(0), UINT64_MAX,
                             (VMCS_ID, RSVD_32, VMCS_SIZE, RSVD_45_47, PHYSADDR_WIDTH, DUAL_MON, VMCS_MEM_TYPE,
-                             VMCS_INS_OUTS, TRUE_CTLS, RSVD_56_63));
+                             VMCS_INS_OUTS, TRUE_CTLS, XCPT_ERRCODE, RSVD_56_63));
 /** @} */
 
 
@@ -1614,6 +1617,10 @@ RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_VMFUNC_, UINT64_C(0), UINT64_MAX,
 #define MSR_IA32_VMX_EPT_VPID_CAP_INVEPT                        RT_BIT_64(20)
 /** Supports accessed and dirty flags for EPT. */
 #define MSR_IA32_VMX_EPT_VPID_CAP_EPT_ACCESS_DIRTY              RT_BIT_64(21)
+/** Supports advanced VM-exit info. for EPT violations. */
+#define MSR_IA32_VMX_EPT_VPID_CAP_ADVEXITINFO_EPT               RT_BIT_64(22)
+/** Supports supervisor shadow-stack control. */
+#define MSR_IA32_VMX_EPT_VPID_CAP_SSS                           RT_BIT_64(23)
 /** Supports single-context INVEPT type. */
 #define MSR_IA32_VMX_EPT_VPID_CAP_INVEPT_SINGLE_CONTEXT         RT_BIT_64(25)
 /** Supports all-context INVEPT type. */
@@ -1656,8 +1663,12 @@ RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_VMFUNC_, UINT64_C(0), UINT64_MAX,
 #define VMX_BF_EPT_VPID_CAP_INVEPT_MASK                         UINT64_C(0x0000000000100000)
 #define VMX_BF_EPT_VPID_CAP_EPT_ACCESS_DIRTY_SHIFT              21
 #define VMX_BF_EPT_VPID_CAP_EPT_ACCESS_DIRTY_MASK               UINT64_C(0x0000000000200000)
-#define VMX_BF_EPT_VPID_CAP_RSVD_22_24_SHIFT                    22
-#define VMX_BF_EPT_VPID_CAP_RSVD_22_24_MASK                     UINT64_C(0x0000000001c00000)
+#define VMX_BF_EPT_VPID_CAP_ADVEXITINFO_EPT_SHIFT               22
+#define VMX_BF_EPT_VPID_CAP_ADVEXITINFO_EPT_MASK                UINT64_C(0x0000000000400000)
+#define VMX_BF_EPT_VPID_CAP_SSS_SHIFT                           23
+#define VMX_BF_EPT_VPID_CAP_SSS_MASK                            UINT64_C(0x0000000000800000)
+#define VMX_BF_EPT_VPID_CAP_RSVD_24_SHIFT                       24
+#define VMX_BF_EPT_VPID_CAP_RSVD_24_MASK                        UINT64_C(0x0000000001000000)
 #define VMX_BF_EPT_VPID_CAP_INVEPT_SINGLE_CTX_SHIFT             25
 #define VMX_BF_EPT_VPID_CAP_INVEPT_SINGLE_CTX_MASK              UINT64_C(0x0000000002000000)
 #define VMX_BF_EPT_VPID_CAP_INVEPT_ALL_CTX_SHIFT                26
@@ -1680,7 +1691,7 @@ RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_VMFUNC_, UINT64_C(0), UINT64_MAX,
 #define VMX_BF_EPT_VPID_CAP_RSVD_44_63_MASK                     UINT64_C(0xfffff00000000000)
 RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_EPT_VPID_CAP_, UINT64_C(0), UINT64_MAX,
                             (RWX_X_ONLY, RSVD_1_5, PAGE_WALK_LENGTH_4, RSVD_7, EMT_UC, RSVD_9_13, EMT_WB, RSVD_15, PDE_2M,
-                             PDPTE_1G, RSVD_18_19, INVEPT, EPT_ACCESS_DIRTY, RSVD_22_24, INVEPT_SINGLE_CTX,
+                             PDPTE_1G, RSVD_18_19, INVEPT, EPT_ACCESS_DIRTY, ADVEXITINFO_EPT, SSS, RSVD_24, INVEPT_SINGLE_CTX,
                              INVEPT_ALL_CTX, RSVD_27_31, INVVPID, RSVD_33_39, INVVPID_INDIV_ADDR, INVVPID_SINGLE_CTX,
                              INVVPID_ALL_CTX, INVVPID_SINGLE_CTX_RETAIN_GLOBALS, RSVD_44_63));
 /** @} */
@@ -2383,6 +2394,8 @@ RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_PROC_CTLS2_, UINT32_C(0), UINT32_MAX,
 #define VMX_ENTRY_CTLS_CONCEAL_VMX_FROM_PT                      RT_BIT(17)
 /** Whether the guest IA32_RTIT MSR is loaded on VM-entry. */
 #define VMX_ENTRY_CTLS_LOAD_RTIT_CTL_MSR                        RT_BIT(18)
+/** Whether the guest CET-related MSRs and SPP are loaded on VM-entry. */
+#define VMX_ENTRY_CTLS_LOAD_CET_STATE                           RT_BIT(20)
 /** Default1 class when true-capability MSRs are not supported. */
 #define VMX_ENTRY_CTLS_DEFAULT1                                 UINT32_C(0x000011ff)
 
@@ -2451,6 +2464,8 @@ RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_ENTRY_CTLS_, UINT32_C(0), UINT32_MAX,
 #define VMX_EXIT_CTLS_CONCEAL_VMX_FROM_PT                       RT_BIT(24)
 /** Whether IA32_RTIT_CTL MSR is cleared on VM-exit. */
 #define VMX_EXIT_CTLS_CLEAR_RTIT_CTL_MSR                        RT_BIT(25)
+/** Whether CET-related MSRs and SPP are loaded on VM-exit. */
+#define VMX_EXIT_CTLS_LOAD_CET_STATE                            RT_BIT(28)
 /** Default1 class when true-capability MSRs are not supported. */
 #define VMX_EXIT_CTLS_DEFAULT1                                  UINT32_C(0x00036dff)
 

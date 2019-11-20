@@ -1184,6 +1184,7 @@ static void hmR3VmxReportBasicMsr(uint64_t uBasicMsr)
     LogRel(("HM:   Dual-monitor treatment support    = %RTbool\n",  RT_BF_GET(uBasicMsr, VMX_BF_BASIC_DUAL_MON)));
     LogRel(("HM:   OUTS & INS instruction-info       = %RTbool\n",  RT_BF_GET(uBasicMsr, VMX_BF_BASIC_VMCS_INS_OUTS)));
     LogRel(("HM:   Supports true-capability MSRs     = %RTbool\n",  RT_BF_GET(uBasicMsr, VMX_BF_BASIC_TRUE_CTLS)));
+    LogRel(("HM:   VM-entry Xcpt error-code optional = %RTbool\n",  RT_BF_GET(uBasicMsr, VMX_BF_BASIC_XCPT_ERRCODE)));
 }
 
 
@@ -1344,6 +1345,8 @@ static void hmR3VmxReportEptVpidCapsMsr(uint64_t fCaps)
     HMVMX_REPORT_MSR_CAP(fCaps, "PDPTE_1G",                              MSR_IA32_VMX_EPT_VPID_CAP_PDPTE_1G);
     HMVMX_REPORT_MSR_CAP(fCaps, "INVEPT",                                MSR_IA32_VMX_EPT_VPID_CAP_INVEPT);
     HMVMX_REPORT_MSR_CAP(fCaps, "EPT_ACCESS_DIRTY",                      MSR_IA32_VMX_EPT_VPID_CAP_EPT_ACCESS_DIRTY);
+    HMVMX_REPORT_MSR_CAP(fCaps, "ADVEXITINFO_EPT",                       MSR_IA32_VMX_EPT_VPID_CAP_ADVEXITINFO_EPT);
+    HMVMX_REPORT_MSR_CAP(fCaps, "SSS",                                   MSR_IA32_VMX_EPT_VPID_CAP_SSS);
     HMVMX_REPORT_MSR_CAP(fCaps, "INVEPT_SINGLE_CONTEXT",                 MSR_IA32_VMX_EPT_VPID_CAP_INVEPT_SINGLE_CONTEXT);
     HMVMX_REPORT_MSR_CAP(fCaps, "INVEPT_ALL_CONTEXTS",                   MSR_IA32_VMX_EPT_VPID_CAP_INVEPT_ALL_CONTEXTS);
     HMVMX_REPORT_MSR_CAP(fCaps, "INVVPID",                               MSR_IA32_VMX_EPT_VPID_CAP_INVVPID);
