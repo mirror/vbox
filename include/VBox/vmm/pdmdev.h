@@ -4667,6 +4667,17 @@ typedef struct PDMDEVHLPRC
     DECLRCCALLBACKMEMBER(int, pfnPICSetUpContext,(PPDMDEVINS pDevIns, PPDMPICREG pPicReg, PCPDMPICHLP *ppPicHlp));
 
     /**
+     * Sets up the APIC for the raw-mode context.
+     *
+     * This must be called after ring-3 has registered the APIC using
+     * PDMDevHlpApicRegister().
+     *
+     * @returns VBox status code.
+     * @param   pDevIns     The device instance.
+     */
+    DECLRCCALLBACKMEMBER(int, pfnApicSetUpContext,(PPDMDEVINS pDevIns));
+
+    /**
      * Sets up the IOAPIC for the ring-0 context.
      *
      * This must be called after ring-3 has registered the PIC using
@@ -4717,7 +4728,7 @@ typedef RGPTRTYPE(struct PDMDEVHLPRC *) PPDMDEVHLPRC;
 typedef RGPTRTYPE(const struct PDMDEVHLPRC *) PCPDMDEVHLPRC;
 
 /** Current PDMDEVHLP version number. */
-#define PDM_DEVHLPRC_VERSION                    PDM_VERSION_MAKE(0xffe6, 13, 0)
+#define PDM_DEVHLPRC_VERSION                    PDM_VERSION_MAKE(0xffe6, 14, 0)
 
 
 /**
