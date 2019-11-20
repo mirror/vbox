@@ -3001,13 +3001,14 @@ static void vmsvgaR3FifoHandleExtCmd(PVGASTATE pThis)
  * doing a job on the FIFO thread (even when it's officially suspended).
  *
  * @returns VBox status code (fully asserted).
+ * @param   pDevIns         The device instance.
  * @param   pThis           VGA device instance data.
  * @param   uExtCmd         The command to execute on the FIFO thread.
  * @param   pvParam         Pointer to command parameters.
  * @param   cMsWait         The time to wait for the command, given in
  *                          milliseconds.
  */
-static int vmsvgaR3RunExtCmdOnFifoThread(PVGASTATE pThis, uint8_t uExtCmd, void *pvParam, RTMSINTERVAL cMsWait)
+static int vmsvgaR3RunExtCmdOnFifoThread(PPDMDEVINS pDevIns, PVGASTATE pThis, uint8_t uExtCmd, void *pvParam, RTMSINTERVAL cMsWait)
 {
     Assert(cMsWait >= RT_MS_1SEC * 5);
     AssertLogRelMsg(pThis->svga.u8FIFOExtCommand == VMSVGA_FIFO_EXTCMD_NONE,
@@ -3031,7 +3032,7 @@ static int vmsvgaR3RunExtCmdOnFifoThread(PVGASTATE pThis, uint8_t uExtCmd, void 
         ASMMemoryFence(); /* paranoia^3 */
 
         /* Resume the thread. */
-        rc = PDMR3ThreadResume(pThread);
+        rc = PDMDevHlpThreadResume(pDevIns, pThread);
         AssertLogRelRC(rc);
         if (RT_SUCCESS(rc))
         {
@@ -3045,7 +3046,7 @@ static int vmsvgaR3RunExtCmdOnFifoThread(PVGASTATE pThis, uint8_t uExtCmd, void 
 
             /* suspend the thread */
             pThis->svga.fFifoExtCommandWakeup = false;
-            int rc2 = PDMR3ThreadSuspend(pThread);
+            int rc2 = PDMDevHlpThreadSuspend(pDevIns, pThread);
             AssertLogRelRC(rc2);
             if (RT_FAILURE(rc2) && RT_SUCCESS(rc))
                 rc = rc2;
@@ -5368,14 +5369,15 @@ DECLCALLBACK(int) vmsvgaR3IORegionMap(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, ui
  * Used by vmsvga3dInfoSurfaceWorker to make the FIFO thread to save one or all
  * surfaces to VMSVGA3DMIPMAPLEVEL::pSurfaceData heap buffers.
  *
+ * @param   pDevIns             The device instance.
  * @param   pThis               The VGA device instance data.
  * @param   sid                 Either UINT32_MAX or the ID of a specific
  *                              surface.  If UINT32_MAX is used, all surfaces
  *                              are processed.
  */
-void vmsvga3dSurfaceUpdateHeapBuffersOnFifoThread(PVGASTATE pThis, uint32_t sid)
+void vmsvga3dSurfaceUpdateHeapBuffersOnFifoThread(PPDMDEVINS pDevIns, PVGASTATE pThis, uint32_t sid)
 {
-    vmsvgaR3RunExtCmdOnFifoThread(pThis, VMSVGA_FIFO_EXTCMD_UPDATE_SURFACE_HEAP_BUFFERS, (void *)(uintptr_t)sid,
+    vmsvgaR3RunExtCmdOnFifoThread(pDevIns, pThis, VMSVGA_FIFO_EXTCMD_UPDATE_SURFACE_HEAP_BUFFERS, (void *)(uintptr_t)sid,
                                   sid == UINT32_MAX ? 10 * RT_MS_1SEC : RT_MS_1MIN);
 }
 
@@ -5420,7 +5422,7 @@ DECLCALLBACK(void) vmsvgaR3Info3dSurface(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp,
     if (RTStrIStr(pszArgs, "invy"))
         fInvY = true;
 
-    vmsvga3dInfoSurfaceWorker(PDMINS_2_DATA(pDevIns, PVGASTATE), pHlp, sid, fVerbose, cxAscii, fInvY, NULL);
+    vmsvga3dInfoSurfaceWorker(pDevIns, PDMINS_2_DATA(pDevIns, PVGASTATE), pHlp, sid, fVerbose, cxAscii, fInvY, NULL);
 }
 
 
@@ -5445,7 +5447,7 @@ DECLCALLBACK(void) vmsvgaR3Info3dSurfaceBmp(PPDMDEVINS pDevIns, PCDBGFINFOHLP pH
     const bool fVerbose = true;
     const uint32_t cxAscii = 0; /* No ASCII */
     const bool fInvY = false;   /* Do not invert. */
-    vmsvga3dInfoSurfaceWorker(PDMINS_2_DATA(pDevIns, PVGASTATE), pHlp, sid, fVerbose, cxAscii, fInvY, pszBitmapPath);
+    vmsvga3dInfoSurfaceWorker(pDevIns, PDMINS_2_DATA(pDevIns, PVGASTATE), pHlp, sid, fVerbose, cxAscii, fInvY, pszBitmapPath);
 }
 
 
@@ -5679,7 +5681,7 @@ int vmsvgaLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uVersion, uint3
     LoadState.pSSM     = pSSM;
     LoadState.uVersion = uVersion;
     LoadState.uPass    = uPass;
-    rc = vmsvgaR3RunExtCmdOnFifoThread(pThis, VMSVGA_FIFO_EXTCMD_LOADSTATE, &LoadState, RT_INDEFINITE_WAIT);
+    rc = vmsvgaR3RunExtCmdOnFifoThread(pDevIns, pThis, VMSVGA_FIFO_EXTCMD_LOADSTATE, &LoadState, RT_INDEFINITE_WAIT);
     AssertLogRelRCReturn(rc, rc);
 
     return VINF_SUCCESS;
@@ -5793,7 +5795,7 @@ int vmsvgaSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
     /*
      * Must save some state (3D in particular) in the FIFO thread.
      */
-    rc = vmsvgaR3RunExtCmdOnFifoThread(pThis, VMSVGA_FIFO_EXTCMD_SAVESTATE, pSSM, RT_INDEFINITE_WAIT);
+    rc = vmsvgaR3RunExtCmdOnFifoThread(pDevIns, pThis, VMSVGA_FIFO_EXTCMD_SAVESTATE, pSSM, RT_INDEFINITE_WAIT);
     AssertLogRelRCReturn(rc, rc);
 
     return VINF_SUCCESS;
@@ -6058,7 +6060,7 @@ int vmsvgaReset(PPDMDEVINS pDevIns)
 
     /* Reset the FIFO processing as well as the 3d state (if we have one). */
     pThis->svga.pFIFOR3[SVGA_FIFO_NEXT_CMD] = pThis->svga.pFIFOR3[SVGA_FIFO_STOP] = 0; /** @todo should probably let the FIFO thread do this ... */
-    int rc = vmsvgaR3RunExtCmdOnFifoThread(pThis, VMSVGA_FIFO_EXTCMD_RESET, NULL /*pvParam*/, 10000 /*ms*/);
+    int rc = vmsvgaR3RunExtCmdOnFifoThread(pDevIns, pThis, VMSVGA_FIFO_EXTCMD_RESET, NULL /*pvParam*/, 10000 /*ms*/);
 
     /* Reset other stuff. */
     pThis->svga.cScratchRegion = VMSVGA_SCRATCH_SIZE;
@@ -6106,10 +6108,10 @@ int vmsvgaDestruct(PPDMDEVINS pDevIns)
      */
     if (pThis->svga.pFIFOIOThread)
     {
-        int rc = vmsvgaR3RunExtCmdOnFifoThread(pThis, VMSVGA_FIFO_EXTCMD_TERMINATE, NULL /*pvParam*/, 30000 /*ms*/);
+        int rc = vmsvgaR3RunExtCmdOnFifoThread(pDevIns, pThis, VMSVGA_FIFO_EXTCMD_TERMINATE, NULL /*pvParam*/, 30000 /*ms*/);
         AssertLogRelRC(rc);
 
-        rc = PDMR3ThreadDestroy(pThis->svga.pFIFOIOThread, NULL);
+        rc = PDMDevHlpThreadDestroy(pDevIns, pThis->svga.pFIFOIOThread, NULL);
         AssertLogRelRC(rc);
         pThis->svga.pFIFOIOThread = NULL;
     }

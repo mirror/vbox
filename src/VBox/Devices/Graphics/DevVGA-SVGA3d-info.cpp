@@ -2078,7 +2078,8 @@ static void vmsvga3dInfoSurfaceWorkerOne(PCDBGFINFOHLP pHlp, PVMSVGA3DSURFACE pS
 }
 
 
-void vmsvga3dInfoSurfaceWorker(PVGASTATE pThis, PCDBGFINFOHLP pHlp, uint32_t sid, bool fVerbose, uint32_t cxAscii, bool fInvY, const char *pszBitmapPath)
+void vmsvga3dInfoSurfaceWorker(PPDMDEVINS pDevIns, PVGASTATE pThis, PCDBGFINFOHLP pHlp, uint32_t sid, bool fVerbose,
+                               uint32_t cxAscii, bool fInvY, const char *pszBitmapPath)
 {
     /* Warning! This code is currently racing papSurfaces reallocation! */
     /* Warning! This code is currently racing papSurfaces reallocation! */
@@ -2097,7 +2098,7 @@ void vmsvga3dInfoSurfaceWorker(PVGASTATE pThis, PCDBGFINFOHLP pHlp, uint32_t sid
                 if (pSurface && pSurface->id == sid)
                 {
                     if (fVerbose)
-                        vmsvga3dSurfaceUpdateHeapBuffersOnFifoThread(pThis, sid);
+                        vmsvga3dSurfaceUpdateHeapBuffersOnFifoThread(pDevIns, pThis, sid);
                     vmsvga3dInfoSurfaceWorkerOne(pHlp, pSurface, fVerbose, cxAscii, fInvY);
                     if (pszBitmapPath && *pszBitmapPath)
                         vmsvga3dInfoSurfaceToBitmap(pHlp, pSurface, pszBitmapPath, "info", "");
@@ -2112,7 +2113,7 @@ void vmsvga3dInfoSurfaceWorker(PVGASTATE pThis, PCDBGFINFOHLP pHlp, uint32_t sid
              * Dump all.
              */
             if (fVerbose)
-                vmsvga3dSurfaceUpdateHeapBuffersOnFifoThread(pThis, UINT32_MAX);
+                vmsvga3dSurfaceUpdateHeapBuffersOnFifoThread(pDevIns, pThis, UINT32_MAX);
             uint32_t cSurfaces = pState->cSurfaces;
             pHlp->pfnPrintf(pHlp, "cSurfaces=%d\n", cSurfaces);
             for (sid = 0; sid < cSurfaces; sid++)
