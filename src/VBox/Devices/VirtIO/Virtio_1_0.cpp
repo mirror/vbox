@@ -106,10 +106,10 @@ const char *virtioCoreGetStateChangeText(VIRTIOVMSTATECHANGED enmState)
 {
     switch (enmState)
     {
-        case kvirtIoVmStateChangedReset:                return "<VM RESET>";
-        case kvirtIoVmStateChangedSuspend:              return "<VM SUSPEND>";
-        case kvirtIoVmStateChangedPowerOff:             return "<VM POWEROFF>";
-        case kvirtIoVmStateChangedResume:               return "<VM RESUME>";
+        case kvirtIoVmStateChangedReset:                return "VM RESET";
+        case kvirtIoVmStateChangedSuspend:              return "VM SUSPEND";
+        case kvirtIoVmStateChangedPowerOff:             return "VM POWER OFF";
+        case kvirtIoVmStateChangedResume:               return "VM RESUME";
         default:                                        return "<BAD ENUM>";
     }
 }

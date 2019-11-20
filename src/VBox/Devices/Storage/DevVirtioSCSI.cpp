@@ -333,12 +333,6 @@ AssertCompile(sizeof(VIRTIO_SCSI_CTRL_UNION_T) == 24); /* VIRTIOSCSI_CTRL_T forc
      | VIRTIOSCSI_EVT_ASYNC_MULTI_HOST \
      | VIRTIOSCSI_EVT_ASYNC_DEVICE_BUSY )
 
-typedef struct VIRTIOSCSI_REQ_REDO
-{
-    struct VIRTIOSCSI_REQ_REDO *next;                           /**< link to next in chain                             */
-    uint16_t  uHeadIdx;                                         /**< desc chain head idx                               */
-} VIRTIOSCSI_REQ_REDO, *PVIRTIOSCSI_REQ_REDO;
-
 /**
  * Worker thread context, shared state.
  */
@@ -357,7 +351,8 @@ typedef struct VIRTIOSCSIWORKERR3
     R3PTRTYPE(PPDMTHREAD)           pThread;                    /**< pointer to worker thread's handle                 */
     bool volatile                   fSleeping;                  /**< Flags whether worker thread is sleeping or not    */
     bool volatile                   fNotified;                  /**< Flags whether worker thread notified              */
-    PVIRTIOSCSI_REQ_REDO            pReqRedoQueue;              /**< Singly-linked listhead for suspended reqs to redo */
+    uint16_t                        auRedoDescs[VIRTQ_MAX_SIZE];/**< List of previously suspended reqs to re-submit    */
+    uint16_t                        cRedoDescs;                 /**< Number of redo desc chain head desc idxes in list */
 } VIRTIOSCSIWORKERR3;
 /** Pointer to a VirtIO SCSI worker. */
 typedef VIRTIOSCSIWORKERR3 *PVIRTIOSCSIWORKERR3;
@@ -1505,7 +1500,7 @@ static DECLCALLBACK(int) virtioScsiR3WorkerThread(PPDMDEVINS pDevIns, PPDMTHREAD
 
     while (pThread->enmState == PDMTHREADSTATE_RUNNING)
     {
-        if (!pWorkerR3->pReqRedoQueue && virtioCoreQueueIsEmpty(pDevIns, &pThis->Virtio, qIdx))
+        if (!pWorkerR3->cRedoDescs && virtioCoreQueueIsEmpty(pDevIns, &pThis->Virtio, qIdx))
         {
             /* Atomic interlocks avoid missing alarm while going to sleep & notifier waking the awoken */
             ASMAtomicWriteBool(&pWorkerR3->fSleeping, true);
@@ -1532,12 +1527,11 @@ static DECLCALLBACK(int) virtioScsiR3WorkerThread(PPDMDEVINS pDevIns, PPDMTHREAD
         if (!pThisCC->fQuiescing)
         {
              /* Process any reqs that were suspended saved to the redo queue in save exec. */
-             PVIRTIOSCSI_REQ_REDO pReqRedo = pWorkerR3->pReqRedoQueue;
-             for (; pReqRedo; pReqRedo = pReqRedo->next)
+             for (int i = 0; i < pWorkerR3->cRedoDescs; i++)
              {
                   PVIRTIO_DESC_CHAIN_T pDescChain;
                   int rc = virtioCoreR3DescChainGet(pDevIns, &pThis->Virtio, qIdx,
-                                                pReqRedo->uHeadIdx, &pDescChain);
+                                                pWorkerR3->auRedoDescs[i], &pDescChain);
                   if (RT_FAILURE(rc))
                      LogRel(("Error fetching desc chain to redo, %Rrc", rc));
 
@@ -1545,7 +1539,7 @@ static DECLCALLBACK(int) virtioScsiR3WorkerThread(PPDMDEVINS pDevIns, PPDMTHREAD
                   if (RT_FAILURE(rc))
                      LogRel(("Error submitting req packet, resetting %Rrc", rc));
              }
-             pWorkerR3->pReqRedoQueue = NULL;
+             pWorkerR3->cRedoDescs = 0;
 
              Log6Func(("fetching next descriptor chain from %s\n", QUEUENAME(qIdx)));
              PVIRTIO_DESC_CHAIN_T pDescChain;
@@ -1958,35 +1952,65 @@ static DECLCALLBACK(void) virtioScsiR3Info(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHl
 static DECLCALLBACK(int) virtioScsiR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass)
 {
     PVIRTIOSCSI     pThis   = PDMDEVINS_2_DATA(pDevIns, PVIRTIOSCSI);
-//    PVIRTIOSCSICC   pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PVIRTIOSCSICC);
+    PVIRTIOSCSICC   pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PVIRTIOSCSICC);
     PCPDMDEVHLPR3   pHlp    = pDevIns->pHlpR3;
     LogFunc(("LOAD EXEC!!\n"));
 
     AssertReturn(uPass == SSM_PASS_FINAL, VERR_SSM_UNEXPECTED_PASS);
     AssertLogRelMsgReturn(uVersion == VIRTIOSCSI_SAVED_STATE_VERSION,
                           ("uVersion=%u\n", uVersion), VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION);
+// re-calculate names in aszQueueNames
 
-    pHlp->pfnSSMGetU32(pSSM, &pThis->virtioScsiConfig.uNumQueues);
-    pHlp->pfnSSMGetU32(pSSM, &pThis->virtioScsiConfig.uSegMax);
-    pHlp->pfnSSMGetU32(pSSM, &pThis->virtioScsiConfig.uMaxSectors);
-    pHlp->pfnSSMGetU32(pSSM, &pThis->virtioScsiConfig.uCmdPerLun);
-    pHlp->pfnSSMGetU32(pSSM, &pThis->virtioScsiConfig.uEventInfoSize);
-    pHlp->pfnSSMGetU32(pSSM, &pThis->virtioScsiConfig.uSenseSize);
-    pHlp->pfnSSMGetU32(pSSM, &pThis->virtioScsiConfig.uCdbSize);
-    pHlp->pfnSSMGetU16(pSSM, &pThis->virtioScsiConfig.uMaxChannel);
-    pHlp->pfnSSMGetU16(pSSM, &pThis->virtioScsiConfig.uMaxTarget);
-    pHlp->pfnSSMGetU32(pSSM, &pThis->virtioScsiConfig.uMaxLun);
-    pHlp->pfnSSMGetU32(pSSM, &pThis->fAsyncEvtsEnabled);
-    pHlp->pfnSSMGetU32(pSSM, (uint32_t *)&pThis->cActiveReqs);
-    pHlp->pfnSSMGetU32(pSSM, &pThis->fVirtioReady);
-    pHlp->pfnSSMGetU32(pSSM, &pThis->fHasT10pi);
-    pHlp->pfnSSMGetU32(pSSM, &pThis->fHasHotplug);
-    pHlp->pfnSSMGetU32(pSSM, &pThis->fHasInOutBufs);
-    pHlp->pfnSSMGetU32(pSSM, &pThis->fHasLunChange);
-    pHlp->pfnSSMGetU32(pSSM, &pThis->fResetting);
+    for (int qIdx = 0; qIdx < VIRTIOSCSI_QUEUE_CNT; qIdx++)
+        pHlp->pfnSSMGetBool(pSSM, &pThis->afQueueAttached[qIdx]);
+
+    pHlp->pfnSSMGetU32(pSSM,  &pThis->virtioScsiConfig.uNumQueues);
+    pHlp->pfnSSMGetU32(pSSM,  &pThis->virtioScsiConfig.uSegMax);
+    pHlp->pfnSSMGetU32(pSSM,  &pThis->virtioScsiConfig.uMaxSectors);
+    pHlp->pfnSSMGetU32(pSSM,  &pThis->virtioScsiConfig.uCmdPerLun);
+    pHlp->pfnSSMGetU32(pSSM,  &pThis->virtioScsiConfig.uEventInfoSize);
+    pHlp->pfnSSMGetU32(pSSM,  &pThis->virtioScsiConfig.uSenseSize);
+    pHlp->pfnSSMGetU32(pSSM,  &pThis->virtioScsiConfig.uCdbSize);
+    pHlp->pfnSSMGetU16(pSSM,  &pThis->virtioScsiConfig.uMaxChannel);
+    pHlp->pfnSSMGetU16(pSSM,  &pThis->virtioScsiConfig.uMaxTarget);
+    pHlp->pfnSSMGetU32(pSSM,  &pThis->virtioScsiConfig.uMaxLun);
+    pHlp->pfnSSMGetU32(pSSM,  &pThis->fAsyncEvtsEnabled);
     pHlp->pfnSSMGetBool(pSSM, &pThis->fEventsMissed);
+    pHlp->pfnSSMGetU32(pSSM,  &pThis->fVirtioReady);
+    pHlp->pfnSSMGetU32(pSSM,  &pThis->fHasT10pi);
+    pHlp->pfnSSMGetU32(pSSM,  &pThis->fHasHotplug);
+    pHlp->pfnSSMGetU32(pSSM,  &pThis->fHasInOutBufs);
+    pHlp->pfnSSMGetU32(pSSM,  &pThis->fHasLunChange);
+    pHlp->pfnSSMGetU32(pSSM,  &pThis->fResetting);
 
-//    int rc = vboxscsiR3LoadExec(pHlp, &pThisCC->VBoxSCSI, pSSM);
+    /* TODO: Ask aiechner about BIOS-related changes */
+    pHlp->pfnSSMGetU32(pSSM, &pThis->cTargets);
+
+
+    uint16_t cReqsRedo;
+    pHlp->pfnSSMGetU16(pSSM, &cReqsRedo);
+
+    for (uint16_t qIdx = VIRTQ_REQ_BASE; qIdx < VIRTIOSCSI_QUEUE_CNT; qIdx++)
+    {
+        PVIRTIOSCSIWORKERR3 pWorkerR3 = &pThisCC->aWorkers[qIdx];
+        pWorkerR3->cRedoDescs = 0;
+    }
+
+LogFunc(("Have %d redo reqs to load:%d\n", cReqsRedo));
+
+    for (int i = 0; i < cReqsRedo; i++)
+    {
+        uint16_t qIdx, uHeadIdx;
+
+        pHlp->pfnSSMGetU16(pSSM, &qIdx);
+
+        pHlp->pfnSSMGetU16(pSSM, &uHeadIdx);
+LogFunc(("    loaded redo req: qIdx=%d, headIdx=%d\n", qIdx, uHeadIdx));
+
+        PVIRTIOSCSIWORKERR3 pWorkerR3 = &pThisCC->aWorkers[qIdx];
+        pWorkerR3->auRedoDescs[pWorkerR3->cRedoDescs++] = uHeadIdx;
+        pWorkerR3->cRedoDescs %= VIRTQ_MAX_SIZE;
+    }
 
     /*
      * Call the virtio core to let it load its state.
@@ -2018,68 +2042,72 @@ static DECLCALLBACK(int) virtioScsiR3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSS
     PCPDMDEVHLPR3   pHlp    = pDevIns->pHlpR3;
     LogFunc(("SAVE EXEC!!\n"));
 
-     /* Every device first. */
-//     lsilogicR3LiveExec(pDevIns, pSSM, SSM_PASS_FINAL);
-     for (unsigned i = 0; i < pThis->cTargets; i++)
-     {
-         PVIRTIOSCSITARGET pTarget = &pThisCC->paTargetInstances[i];
+    for (int qIdx = 0; qIdx < VIRTIOSCSI_QUEUE_CNT; qIdx++)
+        pHlp->pfnSSMPutBool(pSSM, pThis->afQueueAttached[qIdx]);
 
-         AssertMsg(!pThis->cActiveReqs, ("There are still outstanding requests on this device\n"));
-         pHlp->pfnSSMPutU32(pSSM, pThis->cTargets);
+    pHlp->pfnSSMPutU32(pSSM,  pThis->virtioScsiConfig.uNumQueues);
+    pHlp->pfnSSMPutU32(pSSM,  pThis->virtioScsiConfig.uSegMax);
+    pHlp->pfnSSMPutU32(pSSM,  pThis->virtioScsiConfig.uMaxSectors);
+    pHlp->pfnSSMPutU32(pSSM,  pThis->virtioScsiConfig.uCmdPerLun);
+    pHlp->pfnSSMPutU32(pSSM,  pThis->virtioScsiConfig.uEventInfoSize);
+    pHlp->pfnSSMPutU32(pSSM,  pThis->virtioScsiConfig.uSenseSize);
+    pHlp->pfnSSMPutU32(pSSM,  pThis->virtioScsiConfig.uCdbSize);
+    pHlp->pfnSSMPutU16(pSSM,  pThis->virtioScsiConfig.uMaxChannel);
+    pHlp->pfnSSMPutU16(pSSM,  pThis->virtioScsiConfig.uMaxTarget);
+    pHlp->pfnSSMPutU32(pSSM,  pThis->virtioScsiConfig.uMaxLun);
+    pHlp->pfnSSMPutU32(pSSM,  pThis->fAsyncEvtsEnabled);
+    pHlp->pfnSSMPutBool(pSSM, pThis->fEventsMissed);
+    pHlp->pfnSSMPutU32(pSSM,  pThis->fVirtioReady);
+    pHlp->pfnSSMPutU32(pSSM,  pThis->fHasT10pi);
+    pHlp->pfnSSMPutU32(pSSM,  pThis->fHasHotplug);
+    pHlp->pfnSSMPutU32(pSSM,  pThis->fHasInOutBufs);
+    pHlp->pfnSSMPutU32(pSSM,  pThis->fHasLunChange);
+    pHlp->pfnSSMPutU32(pSSM,  pThis->fResetting);
+
+    /* Save suspended I/O requests */
+    /* TODO: Ask aiechner about BIOS-related changes */
+
+
+    AssertMsg(!pThis->cActiveReqs, ("There are still outstanding requests on this device\n"));
+
+     pHlp->pfnSSMPutU32(pSSM, pThis->cTargets);
+
+     for (uint16_t uTarget = 0; uTarget < pThis->cTargets; uTarget++)
+     {
+
+        PVIRTIOSCSITARGET pTarget = &pThisCC->paTargetInstances[uTarget];
 
          /* Query all suspended requests and store them in the request queue. */
          if (pTarget->pDrvMediaEx)
          {
              uint32_t cReqsRedo = pTarget->pDrvMediaEx->pfnIoReqGetSuspendedCount(pTarget->pDrvMediaEx);
+LogFunc(("Saving redo reqs target=%d, cReqsRedo=%d\n", uTarget, cReqsRedo));
+
+             pHlp->pfnSSMPutU16(pSSM, cReqsRedo);
+
              if (cReqsRedo)
              {
                  PDMMEDIAEXIOREQ hIoReq;
                  PVIRTIOSCSIREQ pReq;
+
                  int rc = pTarget->pDrvMediaEx->pfnIoReqQuerySuspendedStart(pTarget->pDrvMediaEx, &hIoReq,
                                                                             (void **)&pReq);
                  AssertRCBreak(rc);
 
-                 /* todo: BIOS? */
-                 for (; cReqsRedo; --cReqsRedo)
+                 while(--cReqsRedo)
                  {
+LogFunc(("     redo req: qIdx=%d, headIdx=%d\n", pReq->qIdx, pReq->pDescChain->uHeadIdx));
 
-                    /* Add the head virtio desc idx of this request to the redo queue */
-                    PVIRTIOSCSI_REQ_REDO pReqRedo = (PVIRTIOSCSI_REQ_REDO)RTMemAllocZ(sizeof(VIRTIOSCSI_REQ_REDO));
-                    AssertReturn(pReqRedo, VERR_NO_MEMORY);
-                    pReqRedo->uHeadIdx = pReq->pDescChain->uHeadIdx;
-                    PVIRTIOSCSIWORKERR3 pWorkerR3 = &pThisCC->aWorkers[pReq->qIdx];
-                    PVIRTIOSCSI_REQ_REDO *pReqRedoSlot = &pWorkerR3->pReqRedoQueue;
+                    pHlp->pfnSSMPutU16(pSSM, pReq->qIdx);
+                    pHlp->pfnSSMPutU16(pSSM, pReq->pDescChain->uHeadIdx);
 
-                    while(*pReqRedoSlot)
-                        pReqRedoSlot = &((*pReqRedoSlot)->next);
-
-                    *pReqRedoSlot = pReqRedo;
-                     rc = pTarget->pDrvMediaEx->pfnIoReqQuerySuspendedNext(pTarget->pDrvMediaEx, hIoReq,
-                                                                           &hIoReq, (void **)&pReq);
-                     AssertRCBreak(rc);
+                    rc = pTarget->pDrvMediaEx->pfnIoReqQuerySuspendedNext(pTarget->pDrvMediaEx, hIoReq,
+                                                                          &hIoReq, (void **)&pReq);
+                    AssertRCBreak(rc);
                  }
              }
          }
-//         int rc = vboxscsiR3SaveExec(pHlp, &pThisCC->VBoxSCSI, pSSM);
      }
-    pHlp->pfnSSMPutU32(pSSM, pThis->virtioScsiConfig.uNumQueues);
-    pHlp->pfnSSMPutU32(pSSM, pThis->virtioScsiConfig.uSegMax);
-    pHlp->pfnSSMPutU32(pSSM, pThis->virtioScsiConfig.uMaxSectors);
-    pHlp->pfnSSMPutU32(pSSM, pThis->virtioScsiConfig.uCmdPerLun);
-    pHlp->pfnSSMPutU32(pSSM, pThis->virtioScsiConfig.uEventInfoSize);
-    pHlp->pfnSSMPutU32(pSSM, pThis->virtioScsiConfig.uSenseSize);
-    pHlp->pfnSSMPutU32(pSSM, pThis->virtioScsiConfig.uCdbSize);
-    pHlp->pfnSSMPutU16(pSSM, pThis->virtioScsiConfig.uMaxChannel);
-    pHlp->pfnSSMPutU16(pSSM, pThis->virtioScsiConfig.uMaxTarget);
-    pHlp->pfnSSMPutU32(pSSM, pThis->virtioScsiConfig.uMaxLun);
-    pHlp->pfnSSMPutU32(pSSM, pThis->fAsyncEvtsEnabled);
-    pHlp->pfnSSMPutBool(pSSM, pThis->fEventsMissed);
-    pHlp->pfnSSMPutU32(pSSM, pThis->fVirtioReady);
-    pHlp->pfnSSMPutU32(pSSM, pThis->fHasT10pi);
-    pHlp->pfnSSMPutU32(pSSM, pThis->fHasHotplug);
-    pHlp->pfnSSMPutU32(pSSM, pThis->fHasInOutBufs);
-    pHlp->pfnSSMPutU32(pSSM, pThis->fHasLunChange);
-    pHlp->pfnSSMPutU32(pSSM, pThis->fResetting);
 
     /*
      * Call the virtio core to let it save its state.
@@ -2195,7 +2223,7 @@ static DECLCALLBACK(bool) virtioScsiR3DeviceQuiesced(PPDMDEVINS pDevIns)
     if (ASMAtomicReadU32(&pThis->cActiveReqs))
         return false;
 
-    LogFunc(("Device I/O activity quiesced: enmQuiescingFor=%s\n",
+    LogFunc(("Device I/O activity quiesced: %s\n",
         virtioCoreGetStateChangeText(pThisCC->enmQuiescingFor)));
 
     virtioCoreR3VmStateChanged(pDevIns, &pThis->Virtio, pThisCC->enmQuiescingFor);
