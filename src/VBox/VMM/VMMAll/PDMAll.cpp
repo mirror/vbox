@@ -130,6 +130,8 @@ VMMDECL(int) PDMIsaSetIrq(PVMCC pVM, uint8_t u8Irq, uint8_t u8Level, uint32_t uT
     }
 
     int rc = VERR_PDM_NO_PIC_INSTANCE;
+/** @todo r=bird: This code is incorrect, as it ASSUMES the PIC and I/O APIC
+ *        are always ring-0 enabled! */
     if (pVM->pdm.s.Pic.CTX_SUFF(pDevIns))
     {
         Assert(pVM->pdm.s.Pic.CTX_SUFF(pfnSetIrq));
@@ -240,7 +242,7 @@ VMM_INT_DECL(int) PDMIoApicSendMsi(PVM pVM, RTGCPHYS GCAddr, uint32_t uValue, ui
  */
 VMM_INT_DECL(bool) PDMHasIoApic(PVM pVM)
 {
-    return pVM->pdm.s.IoApic.CTX_SUFF(pDevIns) != NULL;
+    return pVM->pdm.s.IoApic.pDevInsR3 != NULL;
 }
 
 
@@ -252,7 +254,7 @@ VMM_INT_DECL(bool) PDMHasIoApic(PVM pVM)
  */
 VMM_INT_DECL(bool) PDMHasApic(PVM pVM)
 {
-    return pVM->pdm.s.Apic.CTX_SUFF(pDevIns) != NULL;
+    return pVM->pdm.s.Apic.pDevInsR3 != NIL_RTR3PTR;
 }
 
 
