@@ -7789,7 +7789,7 @@ static DECLCALLBACK(int) ataR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     /*
      * Validate and read configuration.
      */
-    PDMDEV_VALIDATE_CONFIG_RETURN(pDevIns, "IRQDelay|Type", "");
+    PDMDEV_VALIDATE_CONFIG_RETURN(pDevIns, "IRQDelay|Type",  "PrimaryMaster|PrimarySlave|SecondaryMaster|SecondarySlave");
 
     rc = pHlp->pfnCFGMQueryU32Def(pCfg, "IRQDelay", &msDelayIRQ, 0);
     if (RT_FAILURE(rc))
