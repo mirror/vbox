@@ -763,10 +763,11 @@ DECLCALLBACK(void) vmsvgaPortSetViewport(PPDMIDISPLAYPORT pInterface, uint32_t i
  * Read port register
  *
  * @returns VBox status code.
+ * @param   pDevIns     The device instance.
  * @param   pThis       VMSVGA State
  * @param   pu32        Where to store the read value
  */
-PDMBOTHCBDECL(int) vmsvgaReadPort(PVGASTATE pThis, uint32_t *pu32)
+static int vmsvgaReadPort(PPDMDEVINS pDevIns, PVGASTATE pThis, uint32_t *pu32)
 {
     int rc = VINF_SUCCESS;
     *pu32 = 0;
@@ -1069,6 +1070,7 @@ PDMBOTHCBDECL(int) vmsvgaReadPort(PVGASTATE pThis, uint32_t *pu32)
 #ifndef IN_RING3
             /* Go to ring-3 and halt the CPU. */
             rc = VINF_IOM_R3_IOPORT_READ;
+            RT_NOREF(pDevIns);
             break;
 #else
 # if defined(VMSVGA_USE_EMT_HALT_CODE)
@@ -1082,9 +1084,9 @@ PDMBOTHCBDECL(int) vmsvgaReadPort(PVGASTATE pThis, uint32_t *pu32)
             ASMAtomicIncU32(&pSVGAState->cBusyDelayedEmts);
             if (pThis->svga.fBusy)
             {
-                PDMCritSectLeave(&pThis->CritSect); /* hack around lock order issue. */
+                PDMDevHlpCritSectLeave(pDevIns, &pThis->CritSect); /* hack around lock order issue. */
                 rc = VMR3WaitForDeviceReady(pVM, idCpu);
-                PDMCritSectEnter(&pThis->CritSect, VERR_IGNORED);
+                PDMDevHlpCritSectEnter(pDevIns, &pThis->CritSect, VERR_IGNORED);
             }
             ASMAtomicDecU32(&pSVGAState->cBusyDelayedEmts);
             VMCPUSET_ATOMIC_DEL(&pSVGAState->BusyDelayedEmts, idCpu);
@@ -1995,7 +1997,7 @@ PDMBOTHCBDECL(int) vmsvgaIORead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT uPort
         break;
 
     case SVGA_VALUE_PORT:
-        return vmsvgaReadPort(pThis, pu32);
+        return vmsvgaReadPort(pDevIns, pThis, pu32);
 
     case SVGA_BIOS_PORT:
         Log(("Ignoring BIOS port read\n"));
@@ -4754,7 +4756,7 @@ static DECLCALLBACK(int) vmsvgaFIFOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
             if (   u32IrqStatus
                 || (pThis->svga.u32IrqMask & SVGA_IRQFLAG_FIFO_PROGRESS))
             {
-                int rc2 = PDMCritSectEnter(&pThis->CritSect, VERR_IGNORED);
+                int rc2 = PDMDevHlpCritSectEnter(pDevIns, &pThis->CritSect, VERR_IGNORED);
                 AssertRC(rc2);
 
                 /* FIFO progress might trigger an interrupt. */
@@ -4772,7 +4774,7 @@ static DECLCALLBACK(int) vmsvgaFIFOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
                     PDMDevHlpPCISetIrq(pDevIns, 0, 1);
                 }
 
-                PDMCritSectLeave(&pThis->CritSect);
+                PDMDevHlpCritSectLeave(pDevIns, &pThis->CritSect);
             }
         }
 

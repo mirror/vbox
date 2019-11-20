@@ -2879,7 +2879,7 @@ static void vga_init_expand(void)
 PDMBOTHCBDECL(int) vgaIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb)
 {
     PVGASTATE pThis = PDMDEVINS_2_DATA(pDevIns, PVGASTATE);
-    Assert(PDMCritSectIsOwner(pDevIns->CTX_SUFF(pCritSectRo)));
+    Assert(PDMDevHlpCritSectIsOwner(pDevIns, pDevIns->CTX_SUFF(pCritSectRo)));
 
     NOREF(pvUser);
     if (cb == 1)
@@ -2899,7 +2899,7 @@ PDMBOTHCBDECL(int) vgaIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Por
 PDMBOTHCBDECL(int) vgaIOPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32, unsigned cb)
 {
     PVGASTATE pThis = PDMDEVINS_2_DATA(pDevIns, PVGASTATE);
-    Assert(PDMCritSectIsOwner(pDevIns->CTX_SUFF(pCritSectRo)));
+    Assert(PDMDevHlpCritSectIsOwner(pDevIns, pDevIns->CTX_SUFF(pCritSectRo)));
     NOREF(pvUser);
 
     int rc = VINF_SUCCESS;
@@ -2920,7 +2920,7 @@ PDMBOTHCBDECL(int) vgaIOPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port
 PDMBOTHCBDECL(int) vgaIOPortWriteVBEData(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb)
 {
     PVGASTATE pThis = PDMDEVINS_2_DATA(pDevIns, PVGASTATE);
-    Assert(PDMCritSectIsOwner(pDevIns->CTX_SUFF(pCritSectRo)));
+    Assert(PDMDevHlpCritSectIsOwner(pDevIns, pDevIns->CTX_SUFF(pCritSectRo)));
 
     NOREF(pvUser);
 
@@ -2986,7 +2986,7 @@ PDMBOTHCBDECL(int) vgaIOPortWriteVBEData(PPDMDEVINS pDevIns, void *pvUser, RTIOP
 PDMBOTHCBDECL(int) vgaIOPortWriteVBEIndex(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb)
 {
     PVGASTATE pThis = PDMDEVINS_2_DATA(pDevIns, PVGASTATE); NOREF(pvUser);
-    Assert(PDMCritSectIsOwner(pDevIns->CTX_SUFF(pCritSectRo)));
+    Assert(PDMDevHlpCritSectIsOwner(pDevIns, pDevIns->CTX_SUFF(pCritSectRo)));
 
 #ifdef VBE_BYTEWISE_IO
     if (cb == 1)
@@ -3017,7 +3017,7 @@ PDMBOTHCBDECL(int) vgaIOPortWriteVBEIndex(PPDMDEVINS pDevIns, void *pvUser, RTIO
 PDMBOTHCBDECL(int) vgaIOPortReadVBEData(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32, unsigned cb)
 {
     PVGASTATE pThis = PDMDEVINS_2_DATA(pDevIns, PVGASTATE); NOREF(pvUser);
-    Assert(PDMCritSectIsOwner(pDevIns->CTX_SUFF(pCritSectRo)));
+    Assert(PDMDevHlpCritSectIsOwner(pDevIns, pDevIns->CTX_SUFF(pCritSectRo)));
 
 #ifdef VBE_BYTEWISE_IO
     if (cb == 1)
@@ -3058,7 +3058,7 @@ PDMBOTHCBDECL(int) vgaIOPortReadVBEIndex(PPDMDEVINS pDevIns, void *pvUser, RTIOP
 {
     NOREF(pvUser);
     PVGASTATE pThis = PDMDEVINS_2_DATA(pDevIns, PVGASTATE);
-    Assert(PDMCritSectIsOwner(pDevIns->CTX_SUFF(pCritSectRo)));
+    Assert(PDMDevHlpCritSectIsOwner(pDevIns, pDevIns->CTX_SUFF(pCritSectRo)));
 
 #ifdef VBE_BYTEWISE_IO
     if (cb == 1)
@@ -3091,7 +3091,7 @@ PDMBOTHCBDECL(int) vgaIOPortReadVBEIndex(PPDMDEVINS pDevIns, void *pvUser, RTIOP
 static DECLCALLBACK(int) vgaR3IOPortHGSMIWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb)
 {
     PVGASTATE pThis = PDMDEVINS_2_DATA(pDevIns, PVGASTATE);
-    Assert(PDMCritSectIsOwner(pDevIns->CTX_SUFF(pCritSectRo)));
+    Assert(PDMDevHlpCritSectIsOwner(pDevIns, pDevIns->CTX_SUFF(pCritSectRo)));
     LogFlowFunc(("Port 0x%x, u32 0x%x, cb %d\n", Port, u32, cb));
 
 
@@ -3106,7 +3106,7 @@ static DECLCALLBACK(int) vgaR3IOPortHGSMIWrite(PPDMDEVINS pDevIns, void *pvUser,
 # if defined(VBOX_WITH_VIDEOHWACCEL) || defined(VBOX_WITH_VDMA) || defined(VBOX_WITH_WDDM)
                 if (u32 == HGSMIOFFSET_VOID)
                 {
-                    PDMCritSectEnter(&pThis->CritSectIRQ, VERR_SEM_BUSY);
+                    PDMDevHlpCritSectEnter(pDevIns, &pThis->CritSectIRQ, VERR_SEM_BUSY);
 
                     if (pThis->fu32PendingGuestFlags == 0)
                     {
@@ -3125,7 +3125,7 @@ static DECLCALLBACK(int) vgaR3IOPortHGSMIWrite(PPDMDEVINS pDevIns, void *pvUser,
                         /* Keep the IRQ unchanged. */
                     }
 
-                    PDMCritSectLeave(&pThis->CritSectIRQ);
+                    PDMDevHlpCritSectLeave(pDevIns, &pThis->CritSectIRQ);
                 }
                 else
 # endif
@@ -3163,7 +3163,7 @@ static DECLCALLBACK(int) vgaR3IOPortHGSMIWrite(PPDMDEVINS pDevIns, void *pvUser,
 static DECLCALLBACK(int) vgaR3IOPortHGSMIRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32, unsigned cb)
 {
     PVGASTATE pThis = PDMDEVINS_2_DATA(pDevIns, PVGASTATE);
-    Assert(PDMCritSectIsOwner(pDevIns->CTX_SUFF(pCritSectRo)));
+    Assert(PDMDevHlpCritSectIsOwner(pDevIns, pDevIns->CTX_SUFF(pCritSectRo)));
     LogFlowFunc(("Port 0x%x, cb %d\n", Port, cb));
 
     NOREF(pvUser);
@@ -3423,7 +3423,7 @@ static int vgaInternalMMIOFill(PVGASTATE pThis, void *pvUser, RTGCPHYS GCPhysAdd
 PDMBOTHCBDECL(int) vgaMMIOFill(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr, uint32_t u32Item, unsigned cbItem, unsigned cItems)
 {
     PVGASTATE pThis = PDMDEVINS_2_DATA(pDevIns, PVGASTATE);
-    Assert(PDMCritSectIsOwner(pDevIns->CTX_SUFF(pCritSectRo)));
+    Assert(PDMDevHlpCritSectIsOwner(pDevIns, pDevIns->CTX_SUFF(pCritSectRo)));
 
     return vgaInternalMMIOFill(pThis, pvUser, GCPhysAddr, u32Item, cbItem, cItems);
 }
@@ -3438,7 +3438,7 @@ PDMBOTHCBDECL(int) vgaMMIORead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhys
 {
     PVGASTATE pThis = PDMDEVINS_2_DATA(pDevIns, PVGASTATE);
     STAM_PROFILE_START(&pThis->CTX_MID_Z(Stat,MemoryRead), a);
-    Assert(PDMCritSectIsOwner(pDevIns->CTX_SUFF(pCritSectRo)));
+    Assert(PDMDevHlpCritSectIsOwner(pDevIns, pDevIns->CTX_SUFF(pCritSectRo)));
     NOREF(pvUser);
 
     int rc = VINF_SUCCESS;
@@ -3495,7 +3495,7 @@ PDMBOTHCBDECL(int) vgaMMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhy
     uint8_t const *pbSrc = (uint8_t const *)pv;
     NOREF(pvUser);
     STAM_PROFILE_START(&pThis->CTX_MID_Z(Stat,MemoryWrite), a);
-    Assert(PDMCritSectIsOwner(pDevIns->CTX_SUFF(pCritSectRo)));
+    Assert(PDMDevHlpCritSectIsOwner(pDevIns, pDevIns->CTX_SUFF(pCritSectRo)));
 
     int rc;
     switch (cb)
@@ -3568,7 +3568,7 @@ PDMBOTHCBDECL(int) vgaMMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhy
  */
 static int vgaLFBAccess(PVMCC pVM, PVGASTATE pThis, RTGCPHYS GCPhys, RTGCPTR GCPtr)
 {
-    int rc = PDMCritSectEnter(&pThis->CritSect, VINF_EM_RAW_EMULATE_INSTR);
+    int rc = PDMDevHlpCritSectEnter(pThis->CTX_SUFF(pDevIns), &pThis->CritSect, VINF_EM_RAW_EMULATE_INSTR);
     if (rc != VINF_SUCCESS)
         return rc;
 
@@ -3589,7 +3589,7 @@ static int vgaLFBAccess(PVMCC pVM, PVGASTATE pThis, RTGCPHYS GCPhys, RTGCPTR GCP
 #ifndef IN_RING3
         rc = PGMShwMakePageWritable(PDMDevHlpGetVMCPU(pThis->CTX_SUFF(pDevIns)), GCPtr,
                                     PGM_MK_PG_IS_MMIO2 | PGM_MK_PG_IS_WRITE_FAULT);
-        PDMCritSectLeave(&pThis->CritSect);
+        PDMDevHlpCritSectLeave(pThis->CTX_SUFF(pDevIns), &pThis->CritSect);
         AssertMsgReturn(    rc == VINF_SUCCESS
                         /* In the SMP case the page table might be removed while we wait for the PGM lock in the trap handler. */
                         ||  rc == VERR_PAGE_TABLE_NOT_PRESENT
@@ -3597,14 +3597,14 @@ static int vgaLFBAccess(PVMCC pVM, PVGASTATE pThis, RTGCPHYS GCPhys, RTGCPTR GCP
                         ("PGMShwModifyPage -> GCPtr=%RGv rc=%d\n", GCPtr, rc),
                         rc);
 #else /* IN_RING3 : We don't have any virtual page address of the access here. */
-        PDMCritSectLeave(&pThis->CritSect);
+        PDMDevHlpCritSectLeave(pThis->CTX_SUFF(pDevIns), &pThis->CritSect);
         Assert(GCPtr == 0);
         RT_NOREF1(GCPtr);
 #endif
         return VINF_SUCCESS;
     }
 
-    PDMCritSectLeave(&pThis->CritSect);
+    PDMDevHlpCritSectLeave(pThis->CTX_SUFF(pDevIns), &pThis->CritSect);
     AssertMsgFailed(("PGMHandlerPhysicalPageTempOff -> rc=%d\n", rc));
     return rc;
 }
@@ -3673,7 +3673,7 @@ PDMBOTHCBDECL(int) vgaIOPortWriteBIOS(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT
 {
     static int lastWasNotNewline = 0;  /* We are only called in a single-threaded way */
     RT_NOREF2(pDevIns, pvUser);
-    Assert(PDMCritSectIsOwner(pDevIns->CTX_SUFF(pCritSectRo)));
+    Assert(PDMDevHlpCritSectIsOwner(pDevIns, pDevIns->CTX_SUFF(pCritSectRo)));
 
     /*
      * VGA BIOS char printing.
@@ -3719,7 +3719,7 @@ PDMBOTHCBDECL(int) vgaIOPortWriteBIOS(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT
 PDMBOTHCBDECL(int) vbeIOPortWriteVBEExtra(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb)
 {
     PVGASTATE pThis = PDMDEVINS_2_DATA(pDevIns, PVGASTATE);
-    Assert(PDMCritSectIsOwner(pDevIns->CTX_SUFF(pCritSectRo)));
+    Assert(PDMDevHlpCritSectIsOwner(pDevIns, pDevIns->CTX_SUFF(pCritSectRo)));
     NOREF(pvUser); NOREF(Port);
 
     if (cb == 2)
@@ -3742,7 +3742,7 @@ PDMBOTHCBDECL(int) vbeIOPortReadVBEExtra(PPDMDEVINS pDevIns, void *pvUser, RTIOP
 {
     PVGASTATE pThis = PDMDEVINS_2_DATA(pDevIns, PVGASTATE);
     NOREF(pvUser); NOREF(Port);
-    Assert(PDMCritSectIsOwner(pDevIns->CTX_SUFF(pCritSectRo)));
+    Assert(PDMDevHlpCritSectIsOwner(pDevIns, pDevIns->CTX_SUFF(pCritSectRo)));
 
     int rc = VINF_SUCCESS;
     if (pThis->u16VBEExtraAddress == 0xffff)
@@ -4722,7 +4722,7 @@ static DECLCALLBACK(int) vgaPortUpdateDisplay(PPDMIDISPLAYPORT pInterface)
     PDMDEV_ASSERT_EMT(VGASTATE2DEVINS(pThis));
     PPDMDEVINS pDevIns = pThis->CTX_SUFF(pDevIns);
 
-    int rc = PDMCritSectEnter(&pThis->CritSect, VERR_SEM_BUSY);
+    int rc = PDMDevHlpCritSectEnter(pDevIns, &pThis->CritSect, VERR_SEM_BUSY);
     AssertRC(rc);
 
 #ifdef VBOX_WITH_VMSVGA
@@ -4730,7 +4730,7 @@ static DECLCALLBACK(int) vgaPortUpdateDisplay(PPDMIDISPLAYPORT pInterface)
         &&  !pThis->svga.fTraces)
     {
         /* Nothing to do as the guest will explicitely update us about frame buffer changes. */
-        PDMCritSectLeave(&pThis->CritSect);
+        PDMDevHlpCritSectLeave(pDevIns, &pThis->CritSect);
         return VINF_SUCCESS;
     }
 #endif
@@ -4740,7 +4740,7 @@ static DECLCALLBACK(int) vgaPortUpdateDisplay(PPDMIDISPLAYPORT pInterface)
 #else
     if (VBVAUpdateDisplay (pThis) == VINF_SUCCESS)
     {
-        PDMCritSectLeave(&pThis->CritSect);
+        PDMDevHlpCritSectLeave(pDevIns, &pThis->CritSect);
         return VINF_SUCCESS;
     }
 #endif /* VBOX_WITH_HGSMI */
@@ -4759,7 +4759,7 @@ static DECLCALLBACK(int) vgaPortUpdateDisplay(PPDMIDISPLAYPORT pInterface)
 
     rc = vga_update_display(pThis, false /*fUpdateAll*/, false /*fFailOnResize*/, true /*reset_dirty*/,
                             pThis->pDrv, &pThis->graphic_mode);
-    PDMCritSectLeave(&pThis->CritSect);
+    PDMDevHlpCritSectLeave(pDevIns, &pThis->CritSect);
     return rc;
 }
 
@@ -4796,16 +4796,17 @@ static int updateDisplayAll(PVGASTATE pThis, bool fFailOnResize)
 
 DECLCALLBACK(int) vgaUpdateDisplayAll(PVGASTATE pThis, bool fFailOnResize)
 {
+    PPDMDEVINS pDevIns = pThis->CTX_SUFF(pDevIns);
 #ifdef DEBUG_sunlover
     LogFlow(("vgaPortUpdateDisplayAll\n"));
 #endif /* DEBUG_sunlover */
 
-    int rc = PDMCritSectEnter(&pThis->CritSect, VERR_SEM_BUSY);
+    int rc = PDMDevHlpCritSectEnter(pDevIns, &pThis->CritSect, VERR_SEM_BUSY);
     AssertRC(rc);
 
     rc = updateDisplayAll(pThis, fFailOnResize);
 
-    PDMCritSectLeave(&pThis->CritSect);
+    PDMDevHlpCritSectLeave(pDevIns, &pThis->CritSect);
     return rc;
 }
 
@@ -4886,7 +4887,8 @@ static DECLCALLBACK(int) vgaPortQueryVideoMode(PPDMIDISPLAYPORT pInterface, uint
 static DECLCALLBACK(int) vgaPortTakeScreenshot(PPDMIDISPLAYPORT pInterface, uint8_t **ppbData, size_t *pcbData,
                                                uint32_t *pcx, uint32_t *pcy)
 {
-    PVGASTATE pThis = IDISPLAYPORT_2_VGASTATE(pInterface);
+    PVGASTATE  pThis   = IDISPLAYPORT_2_VGASTATE(pInterface);
+    PPDMDEVINS pDevIns = pThis->CTX_SUFF(pDevIns);
     PDMDEV_ASSERT_EMT(VGASTATE2DEVINS(pThis));
 
     LogFlow(("vgaPortTakeScreenshot: ppbData=%p pcbData=%p pcx=%p pcy=%p\n", ppbData, pcbData, pcx, pcy));
@@ -4897,7 +4899,7 @@ static DECLCALLBACK(int) vgaPortTakeScreenshot(PPDMIDISPLAYPORT pInterface, uint
     if (!RT_VALID_PTR(ppbData) || !RT_VALID_PTR(pcbData) || !RT_VALID_PTR(pcx) || !RT_VALID_PTR(pcy))
         return VERR_INVALID_PARAMETER;
 
-    int rc = PDMCritSectEnter(&pThis->CritSect, VERR_SEM_BUSY);
+    int rc = PDMDevHlpCritSectEnter(pDevIns, &pThis->CritSect, VERR_SEM_BUSY);
     AssertRCReturn(rc, rc);
 
     /*
@@ -4978,7 +4980,7 @@ static DECLCALLBACK(int) vgaPortTakeScreenshot(PPDMIDISPLAYPORT pInterface, uint
     else
         rc = VERR_NOT_SUPPORTED;
 
-    PDMCritSectLeave(&pThis->CritSect);
+    PDMDevHlpCritSectLeave(pDevIns, &pThis->CritSect);
 
     LogFlow(("vgaPortTakeScreenshot: returns %Rrc (cbData=%d cx=%d cy=%d)\n", rc, *pcbData, *pcx, *pcy));
     return rc;
@@ -5014,12 +5016,13 @@ static DECLCALLBACK(void) vgaPortFreeScreenshot(PPDMIDISPLAYPORT pInterface, uin
 static DECLCALLBACK(int) vgaPortDisplayBlt(PPDMIDISPLAYPORT pInterface, const void *pvData, uint32_t x, uint32_t y,
                                            uint32_t cx, uint32_t cy)
 {
-    PVGASTATE       pThis = IDISPLAYPORT_2_VGASTATE(pInterface);
-    int             rc = VINF_SUCCESS;
+    PVGASTATE       pThis   = IDISPLAYPORT_2_VGASTATE(pInterface);
+    PPDMDEVINS      pDevIns = pThis->CTX_SUFF(pDevIns);
+    int             rc;
     PDMDEV_ASSERT_EMT(VGASTATE2DEVINS(pThis));
     LogFlow(("vgaPortDisplayBlt: pvData=%p x=%d y=%d cx=%d cy=%d\n", pvData, x, y, cx, cy));
 
-    rc = PDMCritSectEnter(&pThis->CritSect, VERR_SEM_BUSY);
+    rc = PDMDevHlpCritSectEnter(pDevIns, &pThis->CritSect, VERR_SEM_BUSY);
     AssertRC(rc);
 
     /*
@@ -5084,7 +5087,7 @@ static DECLCALLBACK(int) vgaPortDisplayBlt(PPDMIDISPLAYPORT pInterface, const vo
     else
         rc = VERR_INVALID_PARAMETER;
 
-    PDMCritSectLeave(&pThis->CritSect);
+    PDMDevHlpCritSectLeave(pDevIns, &pThis->CritSect);
 
     LogFlow(("vgaPortDisplayBlt: returns %Rrc\n", rc));
     return rc;
@@ -5092,6 +5095,8 @@ static DECLCALLBACK(int) vgaPortDisplayBlt(PPDMIDISPLAYPORT pInterface, const vo
 
 static DECLCALLBACK(void) vgaPortUpdateDisplayRect(PPDMIDISPLAYPORT pInterface, int32_t x, int32_t y, uint32_t w, uint32_t h)
 {
+    PVGASTATE  pThis   = IDISPLAYPORT_2_VGASTATE(pInterface);
+    PPDMDEVINS pDevIns = pThis->CTX_SUFF(pDevIns);
     uint32_t v;
     vga_draw_line_func *vga_draw_line;
 
@@ -5103,7 +5108,6 @@ static DECLCALLBACK(void) vgaPortUpdateDisplayRect(PPDMIDISPLAYPORT pInterface, 
     uint32_t cbLineSrc;
     uint8_t *pbSrc;
 
-    PVGASTATE pThis = IDISPLAYPORT_2_VGASTATE(pInterface);
 
 #ifdef DEBUG_sunlover
     LogFlow(("vgaPortUpdateDisplayRect: %d,%d %dx%d\n", x, y, w, h));
@@ -5111,7 +5115,7 @@ static DECLCALLBACK(void) vgaPortUpdateDisplayRect(PPDMIDISPLAYPORT pInterface, 
 
     Assert(pInterface);
 
-    int rc = PDMCritSectEnter(&pThis->CritSect, VERR_SEM_BUSY);
+    int rc = PDMDevHlpCritSectEnter(pDevIns, &pThis->CritSect, VERR_SEM_BUSY);
     AssertRC(rc);
 
     /* Check if there is something to do at all. */
@@ -5121,7 +5125,7 @@ static DECLCALLBACK(void) vgaPortUpdateDisplayRect(PPDMIDISPLAYPORT pInterface, 
 #ifdef DEBUG_sunlover
         LogFlow(("vgaPortUpdateDisplayRect: nothing to do fRender is false.\n"));
 #endif /* DEBUG_sunlover */
-        PDMCritSectLeave(&pThis->CritSect);
+        PDMDevHlpCritSectLeave(pDevIns, &pThis->CritSect);
         return;
     }
 
@@ -5167,7 +5171,7 @@ static DECLCALLBACK(void) vgaPortUpdateDisplayRect(PPDMIDISPLAYPORT pInterface, 
 #ifdef DEBUG_sunlover
         LogFlow(("vgaPortUpdateDisplayRect: nothing to do: %dx%d\n", w, h));
 #endif /* DEBUG_sunlover */
-        PDMCritSectLeave(&pThis->CritSect);
+        PDMDevHlpCritSectLeave(pDevIns, &pThis->CritSect);
         return;
     }
 
@@ -5185,7 +5189,7 @@ static DECLCALLBACK(void) vgaPortUpdateDisplayRect(PPDMIDISPLAYPORT pInterface, 
              * by Display because VBVA buffer is being flushed.
              * Nothing to do, just return.
              */
-            PDMCritSectLeave(&pThis->CritSect);
+            PDMDevHlpCritSectLeave(pDevIns, &pThis->CritSect);
             return;
         case 8:
             v = VGA_DRAW_LINE8;
@@ -5234,7 +5238,7 @@ static DECLCALLBACK(void) vgaPortUpdateDisplayRect(PPDMIDISPLAYPORT pInterface, 
         pbSrc += cbLineSrc;
     }
 
-    PDMCritSectLeave(&pThis->CritSect);
+    PDMDevHlpCritSectLeave(pDevIns, &pThis->CritSect);
 #ifdef DEBUG_sunlover
     LogFlow(("vgaPortUpdateDisplayRect: completed.\n"));
 #endif /* DEBUG_sunlover */
@@ -5250,14 +5254,14 @@ vgaPortCopyRect(PPDMIDISPLAYPORT pInterface,
                 uint8_t *pbDst, int32_t xDst, int32_t yDst, uint32_t cxDst, uint32_t cyDst,
                 uint32_t cbDstLine, uint32_t cDstBitsPerPixel)
 {
+    PVGASTATE  pThis   = IDISPLAYPORT_2_VGASTATE(pInterface);
+    PPDMDEVINS pDevIns = pThis->CTX_SUFF(pDevIns);
     uint32_t v;
     vga_draw_line_func *vga_draw_line;
 
 #ifdef DEBUG_sunlover
     LogFlow(("vgaPortCopyRect: %d,%d %dx%d -> %d,%d\n", xSrc, ySrc, cx, cy, xDst, yDst));
 #endif /* DEBUG_sunlover */
-
-    PVGASTATE pThis = IDISPLAYPORT_2_VGASTATE(pInterface);
 
     Assert(pInterface);
     Assert(pThis->pDrv);
@@ -5320,7 +5324,7 @@ vgaPortCopyRect(PPDMIDISPLAYPORT pInterface,
         return VERR_INVALID_PARAMETER;
     }
 
-    int rc = PDMCritSectEnter(&pThis->CritSect, VERR_SEM_BUSY);
+    int rc = PDMDevHlpCritSectEnter(pDevIns, &pThis->CritSect, VERR_SEM_BUSY);
     AssertRC(rc);
 
     /* This method only works if the VGA device is in a VBE mode or not paused VBVA mode.
@@ -5341,7 +5345,7 @@ vgaPortCopyRect(PPDMIDISPLAYPORT pInterface,
 #endif
        )
     {
-        PDMCritSectLeave(&pThis->CritSect);
+        PDMDevHlpCritSectLeave(pDevIns, &pThis->CritSect);
         return VERR_INVALID_STATE;
     }
 
@@ -5351,7 +5355,7 @@ vgaPortCopyRect(PPDMIDISPLAYPORT pInterface,
         default:
         case 0:
             /* Nothing to do, just return. */
-            PDMCritSectLeave(&pThis->CritSect);
+            PDMDevHlpCritSectLeave(pDevIns, &pThis->CritSect);
             return VINF_SUCCESS;
         case 8:
             v = VGA_DRAW_LINE8;
@@ -5392,7 +5396,7 @@ vgaPortCopyRect(PPDMIDISPLAYPORT pInterface,
         pbSrcCur += cbLineSrc;
     }
 
-    PDMCritSectLeave(&pThis->CritSect);
+    PDMDevHlpCritSectLeave(pDevIns, &pThis->CritSect);
 #ifdef DEBUG_sunlover
     LogFlow(("vgaPortCopyRect: completed.\n"));
 #endif /* DEBUG_sunlover */
@@ -5402,16 +5406,17 @@ vgaPortCopyRect(PPDMIDISPLAYPORT pInterface,
 
 static DECLCALLBACK(void) vgaPortSetRenderVRAM(PPDMIDISPLAYPORT pInterface, bool fRender)
 {
-    PVGASTATE pThis = IDISPLAYPORT_2_VGASTATE(pInterface);
+    PVGASTATE  pThis   = IDISPLAYPORT_2_VGASTATE(pInterface);
+    PPDMDEVINS pDevIns = pThis->CTX_SUFF(pDevIns);
 
     LogFlow(("vgaPortSetRenderVRAM: fRender = %d\n", fRender));
 
-    int rc = PDMCritSectEnter(&pThis->CritSect, VERR_SEM_BUSY);
+    int rc = PDMDevHlpCritSectEnter(pDevIns, &pThis->CritSect, VERR_SEM_BUSY);
     AssertRC(rc);
 
     pThis->fRenderVRAM = fRender;
 
-    PDMCritSectLeave(&pThis->CritSect);
+    PDMDevHlpCritSectLeave(pDevIns, &pThis->CritSect);
 }
 
 static DECLCALLBACK(void) vgaPortReportHostCursorPosition(PPDMIDISPLAYPORT pInterface, uint32_t x, uint32_t y, bool fOutOfRange)
@@ -5501,7 +5506,7 @@ static DECLCALLBACK(int) vgaR3IORegionMap(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev
 #endif
     Assert(pPciDev == pDevIns->apPciDevs[0]);
 
-    int rc = PDMCritSectEnter(&pThis->CritSect, VERR_SEM_BUSY);
+    int rc = PDMDevHlpCritSectEnter(pDevIns, &pThis->CritSect, VERR_SEM_BUSY);
     AssertRC(rc);
 
     if (GCPhysAddress != NIL_RTGCPHYS)
@@ -5550,7 +5555,7 @@ static DECLCALLBACK(int) vgaR3IORegionMap(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev
         pThis->GCPhysVRAM = 0;
         /* NB: VBE_DISPI_INDEX_FB_BASE_HI is left unchanged here. */
     }
-    PDMCritSectLeave(&pThis->CritSect);
+    PDMDevHlpCritSectLeave(pDevIns, &pThis->CritSect);
     return rc;
 }
 
@@ -5974,10 +5979,10 @@ static DECLCALLBACK(void)  vgaR3Reset(PPDMDEVINS pDevIns)
     /* notify port handler */
     if (pThis->pDrv)
     {
-        PDMCritSectLeave(&pThis->CritSect); /* hack around lock order issue. */
+        PDMDevHlpCritSectLeave(pDevIns, &pThis->CritSect); /* hack around lock order issue. */
         pThis->pDrv->pfnReset(pThis->pDrv);
         pThis->pDrv->pfnVBVAMousePointerShape(pThis->pDrv, false, false, 0, 0, 0, 0, NULL);
-        PDMCritSectEnter(&pThis->CritSect, VERR_IGNORED);
+        PDMDevHlpCritSectEnter(pDevIns, &pThis->CritSect, VERR_IGNORED);
     }
 
     /* Reset latched access mask. */
@@ -6180,8 +6185,8 @@ static DECLCALLBACK(int) vgaR3Destruct(PPDMDEVINS pDevIns)
         pThis->pbLogo = NULL;
     }
 
-    PDMR3CritSectDelete(&pThis->CritSectIRQ);
-    PDMR3CritSectDelete(&pThis->CritSect);
+    PDMDevHlpCritSectDelete(pDevIns, &pThis->CritSectIRQ);
+    PDMDevHlpCritSectDelete(pDevIns, &pThis->CritSect);
     return VINF_SUCCESS;
 }
 

@@ -906,7 +906,7 @@ static void vbvaVHWACommandCompleteAllPending(PVGASTATE pVGAState, int rc)
     if (!ASMAtomicUoReadU32(&pVGAState->pendingVhwaCommands.cPending))
         return;
 
-    PDMCritSectEnter(&pVGAState->CritSect, VERR_SEM_BUSY);
+    PDMDevHlpCritSectEnter(pVGAState->CTX_SUFF(pDevIns), &pVGAState->CritSect, VERR_SEM_BUSY);
 
     VBOX_VHWA_PENDINGCMD *pIter, *pNext;
     RTListForEachSafe(&pVGAState->pendingVhwaCommands.PendingList, pIter, pNext, VBOX_VHWA_PENDINGCMD, Node)
@@ -920,7 +920,7 @@ static void vbvaVHWACommandCompleteAllPending(PVGASTATE pVGAState, int rc)
         RTMemFree(pIter);
     }
 
-    PDMCritSectLeave(&pVGAState->CritSect);
+    PDMDevHlpCritSectLeave(pVGAState->CTX_SUFF(pDevIns), &pVGAState->CritSect);
 }
 
 static void vbvaVHWACommandClearAllPending(PVGASTATE pVGAState)
@@ -928,7 +928,7 @@ static void vbvaVHWACommandClearAllPending(PVGASTATE pVGAState)
     if (!ASMAtomicUoReadU32(&pVGAState->pendingVhwaCommands.cPending))
         return;
 
-    PDMCritSectEnter(&pVGAState->CritSect, VERR_SEM_BUSY);
+    PDMDevHlpCritSectEnter(pVGAState->CTX_SUFF(pDevIns), &pVGAState->CritSect, VERR_SEM_BUSY);
 
     VBOX_VHWA_PENDINGCMD *pIter, *pNext;
     RTListForEachSafe(&pVGAState->pendingVhwaCommands.PendingList, pIter, pNext, VBOX_VHWA_PENDINGCMD, Node)
@@ -938,7 +938,7 @@ static void vbvaVHWACommandClearAllPending(PVGASTATE pVGAState)
         RTMemFree(pIter);
     }
 
-    PDMCritSectLeave(&pVGAState->CritSect);
+    PDMDevHlpCritSectLeave(pVGAState->CTX_SUFF(pDevIns), &pVGAState->CritSect);
 }
 
 static void vbvaVHWACommandPend(PVGASTATE pVGAState, VBOXVHWACMD RT_UNTRUSTED_VOLATILE_GUEST *pCommand)
@@ -952,15 +952,15 @@ static void vbvaVHWACommandPend(PVGASTATE pVGAState, VBOXVHWACMD RT_UNTRUSTED_VO
         {
             pCommand->Flags |= VBOXVHWACMD_FLAG_HG_ASYNCH;
             pPend->pCommand = pCommand;
-            PDMCritSectEnter(&pVGAState->CritSect, VERR_SEM_BUSY);
+            PDMDevHlpCritSectEnter(pVGAState->CTX_SUFF(pDevIns), &pVGAState->CritSect, VERR_SEM_BUSY);
             if (ASMAtomicUoReadU32(&pVGAState->pendingVhwaCommands.cPending) < VBOX_VHWA_MAX_PENDING_COMMANDS)
             {
                 RTListAppend(&pVGAState->pendingVhwaCommands.PendingList, &pPend->Node);
                 ASMAtomicIncU32(&pVGAState->pendingVhwaCommands.cPending);
-                PDMCritSectLeave(&pVGAState->CritSect);
+                PDMDevHlpCritSectLeave(pVGAState->CTX_SUFF(pDevIns), &pVGAState->CritSect);
                 return;
             }
-            PDMCritSectLeave(&pVGAState->CritSect);
+            PDMDevHlpCritSectLeave(pVGAState->CTX_SUFF(pDevIns), &pVGAState->CritSect);
             LogRel(("VBVA: Pending command count has reached its threshold.. completing them all.."));
             RTMemFree(pPend);
         }
@@ -1106,14 +1106,14 @@ static bool vbvaVHWACheckPendingCommands(PVGASTATE pVGAState)
     if (!ASMAtomicUoReadU32(&pVGAState->pendingVhwaCommands.cPending))
         return true;
 
-    PDMCritSectEnter(&pVGAState->CritSect, VERR_SEM_BUSY);
+    PDMDevHlpCritSectEnter(pVGAState->CTX_SUFF(pDevIns), &pVGAState->CritSect, VERR_SEM_BUSY);
 
     VBOX_VHWA_PENDINGCMD *pIter, *pNext;
     RTListForEachSafe(&pVGAState->pendingVhwaCommands.PendingList, pIter, pNext, VBOX_VHWA_PENDINGCMD, Node)
     {
         if (!vbvaVHWACommandSubmit(pVGAState, pIter->pCommand, true))
         {
-            PDMCritSectLeave(&pVGAState->CritSect);
+            PDMDevHlpCritSectLeave(pVGAState->CTX_SUFF(pDevIns), &pVGAState->CritSect);
             return false; /* the command should be still pending */
         }
 
@@ -1123,7 +1123,7 @@ static bool vbvaVHWACheckPendingCommands(PVGASTATE pVGAState)
         RTMemFree(pIter);
     }
 
-    PDMCritSectLeave(&pVGAState->CritSect);
+    PDMDevHlpCritSectLeave(pVGAState->CTX_SUFF(pDevIns), &pVGAState->CritSect);
 
     return true;
 }
@@ -2083,7 +2083,7 @@ void VBVARaiseIrq (PVGASTATE pVGAState, uint32_t fFlags)
 {
     PPDMDEVINS pDevIns = pVGAState->pDevInsR3;
 
-    PDMCritSectEnter(&pVGAState->CritSectIRQ, VERR_SEM_BUSY);
+    PDMDevHlpCritSectEnter(pVGAState->CTX_SUFF(pDevIns), &pVGAState->CritSectIRQ, VERR_SEM_BUSY);
 
     const uint32_t fu32CurrentGuestFlags = HGSMIGetHostGuestFlags(pVGAState->pHGSMI);
     if ((fu32CurrentGuestFlags & HGSMIHOSTFLAGS_IRQ) == 0)
@@ -2105,19 +2105,19 @@ void VBVARaiseIrq (PVGASTATE pVGAState, uint32_t fFlags)
         pVGAState->fu32PendingGuestFlags |= HGSMIHOSTFLAGS_IRQ | fFlags;
     }
 
-    PDMCritSectLeave(&pVGAState->CritSectIRQ);
+    PDMDevHlpCritSectLeave(pVGAState->CTX_SUFF(pDevIns), &pVGAState->CritSectIRQ);
 }
 
 void VBVAOnResume(PVGASTATE pThis)
 {
     PPDMDEVINS pDevIns = pThis->pDevInsR3;
 
-    PDMCritSectEnter(&pThis->CritSectIRQ, VERR_SEM_BUSY);
+    PDMDevHlpCritSectEnter(pDevIns, &pThis->CritSectIRQ, VERR_SEM_BUSY);
 
     if (HGSMIGetHostGuestFlags(pThis->pHGSMI) & HGSMIHOSTFLAGS_IRQ)
         PDMDevHlpPCISetIrqNoWait(pDevIns, 0, PDM_IRQ_LEVEL_HIGH);
 
-    PDMCritSectLeave(&pThis->CritSectIRQ);
+    PDMDevHlpCritSectLeave(pDevIns, &pThis->CritSectIRQ);
 }
 
 static int vbvaHandleQueryConf32(PVGASTATE pVGAState, VBVACONF32 RT_UNTRUSTED_VOLATILE_GUEST *pConf32)
@@ -2796,11 +2796,11 @@ DECLCALLBACK(int) vbvaPortSendModeHint(PPDMIDISPLAYPORT pInterface, uint32_t cx,
     int rc;
 
     pThis = IDISPLAYPORT_2_VGASTATE(pInterface);
-    rc = PDMCritSectEnter(&pThis->CritSect, VERR_SEM_BUSY);
+    rc = PDMDevHlpCritSectEnter(pThis->pDevInsR3, &pThis->CritSect, VERR_SEM_BUSY);
     AssertRC(rc);
     rc = vbvaSendModeHintWorker(pThis, cx, cy, cBPP, iDisplay, dx, dy, fEnabled,
                                 fNotifyGuest);
-    PDMCritSectLeave(&pThis->CritSect);
+    PDMDevHlpCritSectLeave(pThis->pDevInsR3, &pThis->CritSect);
     return rc;
 }
 
