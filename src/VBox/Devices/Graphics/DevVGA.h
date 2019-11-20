@@ -214,7 +214,8 @@ typedef struct _VBOX_VHWA_PENDINGCMD
 #endif
 
 
-typedef struct VGAState {
+typedef struct VGAState
+{
 #ifndef VBOX
     VGA_STATE_COMMON
 #else /* VBOX */
@@ -490,6 +491,11 @@ typedef struct VGAState {
             } dummy;
         };
     } pendingVhwaCommands;
+
+    /** The VBE extra data I/O port. */
+    IOMIOPORTHANDLE             hIoPortVbeExtra;
+    /** The logo command I/O port. */
+    IOMIOPORTHANDLE             hIoPortCmdLogo;
 #endif /* VBOX */
 } VGAState;
 #ifdef VBOX

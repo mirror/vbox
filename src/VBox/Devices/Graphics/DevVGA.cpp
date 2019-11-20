@@ -3713,48 +3713,50 @@ PDMBOTHCBDECL(int) vgaIOPortWriteBIOS(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT
 #ifdef IN_RING3
 
 /**
- * @callback_method_impl{FNIOMIOPORTOUT,
+ * @callback_method_impl{FNIOMIOPORTNEWOUT,
  *      Port I/O Handler for VBE Extra OUT operations.}
  */
-PDMBOTHCBDECL(int) vbeIOPortWriteVBEExtra(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb)
+static DECLCALLBACK(VBOXSTRICTRC)
+vbeR3IOPortWriteVbeExtra(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t u32, unsigned cb)
 {
     PVGASTATE pThis = PDMDEVINS_2_DATA(pDevIns, PVGASTATE);
     Assert(PDMDevHlpCritSectIsOwner(pDevIns, pDevIns->CTX_SUFF(pCritSectRo)));
-    NOREF(pvUser); NOREF(Port);
+    RT_NOREF(offPort, pvUser);
 
     if (cb == 2)
     {
-        Log(("vbeIOPortWriteVBEExtra: addr=%#RX32\n", u32));
+        Log(("vbeR3IOPortWriteVbeExtra: addr=%#RX32\n", u32));
         pThis->u16VBEExtraAddress = u32;
     }
     else
-        Log(("vbeIOPortWriteVBEExtra: Ignoring invalid cb=%d writes to the VBE Extra port!!!\n", cb));
+        Log(("vbeR3IOPortWriteVbeExtra: Ignoring invalid cb=%d writes to the VBE Extra port!!!\n", cb));
 
     return VINF_SUCCESS;
 }
 
 
 /**
- * @callback_method_impl{FNIOMIOPORTIN,
+ * @callback_method_impl{FNIOMIOPORTNEWIN,
  *      Port I/O Handler for VBE Extra IN operations.}
  */
-PDMBOTHCBDECL(int) vbeIOPortReadVBEExtra(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32, unsigned cb)
+static DECLCALLBACK(VBOXSTRICTRC)
+vbeR3IoPortReadVbeExtra(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t *pu32, unsigned cb)
 {
     PVGASTATE pThis = PDMDEVINS_2_DATA(pDevIns, PVGASTATE);
-    NOREF(pvUser); NOREF(Port);
     Assert(PDMDevHlpCritSectIsOwner(pDevIns, pDevIns->CTX_SUFF(pCritSectRo)));
+    RT_NOREF(offPort, pvUser);
 
     int rc = VINF_SUCCESS;
     if (pThis->u16VBEExtraAddress == 0xffff)
     {
-        Log(("vbeIOPortReadVBEExtra: Requested number of 64k video banks\n"));
+        Log(("vbeR3IoPortReadVbeExtra: Requested number of 64k video banks\n"));
         *pu32 = pThis->vram_size / _64K;
     }
     else if (   pThis->u16VBEExtraAddress >= pThis->cbVBEExtraData
              || pThis->u16VBEExtraAddress + cb > pThis->cbVBEExtraData)
     {
         *pu32 = 0;
-        Log(("vbeIOPortReadVBEExtra: Requested address is out of VBE data!!! Address=%#x(%d) cbVBEExtraData=%#x(%d)\n",
+        Log(("vbeR3IoPortReadVbeExtra: Requested address is out of VBE data!!! Address=%#x(%d) cbVBEExtraData=%#x(%d)\n",
              pThis->u16VBEExtraAddress, pThis->u16VBEExtraAddress, pThis->cbVBEExtraData, pThis->cbVBEExtraData));
     }
     else
@@ -3764,18 +3766,18 @@ PDMBOTHCBDECL(int) vbeIOPortReadVBEExtra(PPDMDEVINS pDevIns, void *pvUser, RTIOP
         {
             *pu32 = pThis->pbVBEExtraData[pThis->u16VBEExtraAddress] & 0xFF;
 
-            Log(("vbeIOPortReadVBEExtra: cb=%#x %.*Rhxs\n", cb, cb, pu32));
+            Log(("vbeR3IoPortReadVbeExtra: cb=%#x %.*Rhxs\n", cb, cb, pu32));
         }
         else if (cb == 2)
         {
             *pu32 =           pThis->pbVBEExtraData[pThis->u16VBEExtraAddress]
                   | (uint32_t)pThis->pbVBEExtraData[pThis->u16VBEExtraAddress + 1] << 8;
 
-            Log(("vbeIOPortReadVBEExtra: cb=%#x %.*Rhxs\n", cb, cb, pu32));
+            Log(("vbeR3IoPortReadVbeExtra: cb=%#x %.*Rhxs\n", cb, cb, pu32));
         }
         else
         {
-            Log(("vbeIOPortReadVBEExtra: Invalid cb=%d read from the VBE Extra port!!!\n", cb));
+            Log(("vbeR3IoPortReadVbeExtra: Invalid cb=%d read from the VBE Extra port!!!\n", cb));
             rc = VERR_IOM_IOPORT_UNUSED;
         }
     }
@@ -4054,16 +4056,16 @@ static void vbeShowBitmap(uint16_t cBits, uint16_t xLogo, uint16_t yLogo, uint16
 
 
 /**
- * @callback_method_impl{FNIOMIOPORTOUT,
+ * @callback_method_impl{FNIOMIOPORTNEWOUT,
  *      Port I/O Handler for BIOS Logo OUT operations.}
  */
-PDMBOTHCBDECL(int) vbeIOPortWriteCMDLogo(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb)
+static DECLCALLBACK(VBOXSTRICTRC)
+vbeR3IoPortWriteCmdLogo(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t u32, unsigned cb)
 {
     PVGASTATE pThis = PDMDEVINS_2_DATA(pDevIns, PVGASTATE);
-    NOREF(pvUser);
-    NOREF(Port);
+    RT_NOREF(pvUser, offPort);
 
-    Log(("vbeIOPortWriteCMDLogo: cb=%d u32=%#04x(%#04d) (byte)\n", cb, u32, u32));
+    Log(("vbeR3IoPortWriteCmdLogo: cb=%d u32=%#04x(%#04d) (byte)\n", cb, u32, u32));
 
     if (cb == 2)
     {
@@ -4139,7 +4141,7 @@ PDMBOTHCBDECL(int) vbeIOPortWriteCMDLogo(PPDMDEVINS pDevIns, void *pvUser, RTIOP
             }
 
             default:
-                Log(("vbeIOPortWriteCMDLogo: invalid command %d\n", u32));
+                Log(("vbeR3IoPortWriteCmdLogo: invalid command %d\n", u32));
                 pThis->LogoCommand = LOGO_CMD_NOP;
                 break;
         }
@@ -4147,7 +4149,7 @@ PDMBOTHCBDECL(int) vbeIOPortWriteCMDLogo(PPDMDEVINS pDevIns, void *pvUser, RTIOP
         return VINF_SUCCESS;
     }
 
-    Log(("vbeIOPortWriteCMDLogo: Ignoring invalid cb=%d writes to the VBE Extra port!!!\n", cb));
+    Log(("vbeR3IoPortWriteCmdLogo: Ignoring invalid cb=%d writes to the VBE Extra port!!!\n", cb));
     return VINF_SUCCESS;
 }
 
@@ -4156,15 +4158,15 @@ PDMBOTHCBDECL(int) vbeIOPortWriteCMDLogo(PPDMDEVINS pDevIns, void *pvUser, RTIOP
  * @callback_method_impl{FNIOMIOPORTIN,
  *      Port I/O Handler for BIOS Logo IN operations.}
  */
-PDMBOTHCBDECL(int) vbeIOPortReadCMDLogo(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32, unsigned cb)
+static DECLCALLBACK(VBOXSTRICTRC)
+vbeR3IoPortReadCmdLogo(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t *pu32, unsigned cb)
 {
     PVGASTATE pThis = PDMDEVINS_2_DATA(pDevIns, PVGASTATE);
-    NOREF(pvUser);
-    NOREF(Port);
+    RT_NOREF(pvUser, offPort);
 
     if (pThis->offLogoData + cb > pThis->cbLogo)
     {
-        Log(("vbeIOPortReadCMDLogo: Requested address is out of Logo data!!! offLogoData=%#x(%d) cbLogo=%#x(%d)\n",
+        Log(("vbeR3IoPortReadCmdLogo: Requested address is out of Logo data!!! offLogoData=%#x(%d) cbLogo=%#x(%d)\n",
              pThis->offLogoData, pThis->offLogoData, pThis->cbLogo, pThis->cbLogo));
         return VINF_SUCCESS;
     }
@@ -4179,7 +4181,7 @@ PDMBOTHCBDECL(int) vbeIOPortReadCMDLogo(PPDMDEVINS pDevIns, void *pvUser, RTIOPO
         //case 8: *pu32 = p->au64[0]; break;
         default: AssertFailed(); break;
     }
-    Log(("vbeIOPortReadCMDLogo: LogoOffset=%#x(%d) cb=%#x %.*Rhxs\n", pThis->offLogoData, pThis->offLogoData, cb, cb, pu32));
+    Log(("vbeR3IoPortReadCmdLogo: LogoOffset=%#x(%d) cb=%#x %.*Rhxs\n", pThis->offLogoData, pThis->offLogoData, cb, cb, pu32));
 
     pThis->LogoCommand = LOGO_CMD_NOP;
     pThis->offLogoData += cb;
@@ -6561,37 +6563,28 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
      * Register I/O ports.
      */
     rc = PDMDevHlpIOPortRegister(pDevIns,  0x3c0, 16, NULL, vgaIOPortWrite,       vgaIOPortRead, NULL, NULL,      "VGA - 3c0");
-    if (RT_FAILURE(rc))
-        return rc;
+    AssertRCReturn(rc, rc);
     rc = PDMDevHlpIOPortRegister(pDevIns,  0x3b4,  2, NULL, vgaIOPortWrite,       vgaIOPortRead, NULL, NULL,      "VGA - 3b4");
-    if (RT_FAILURE(rc))
-        return rc;
+    AssertRCReturn(rc, rc);
     rc = PDMDevHlpIOPortRegister(pDevIns,  0x3ba,  1, NULL, vgaIOPortWrite,       vgaIOPortRead, NULL, NULL,      "VGA - 3ba");
-    if (RT_FAILURE(rc))
-        return rc;
+    AssertRCReturn(rc, rc);
     rc = PDMDevHlpIOPortRegister(pDevIns,  0x3d4,  2, NULL, vgaIOPortWrite,       vgaIOPortRead, NULL, NULL,      "VGA - 3d4");
-    if (RT_FAILURE(rc))
-        return rc;
+    AssertRCReturn(rc, rc);
     rc = PDMDevHlpIOPortRegister(pDevIns,  0x3da,  1, NULL, vgaIOPortWrite,       vgaIOPortRead, NULL, NULL,      "VGA - 3da");
-    if (RT_FAILURE(rc))
-        return rc;
+    AssertRCReturn(rc, rc);
 #ifdef VBOX_WITH_HGSMI
     /* Use reserved VGA IO ports for HGSMI. */
     rc = PDMDevHlpIOPortRegister(pDevIns,  VGA_PORT_HGSMI_HOST,  4, NULL, vgaR3IOPortHGSMIWrite, vgaR3IOPortHGSMIRead, NULL, NULL, "VGA - 3b0 (HGSMI host)");
-    if (RT_FAILURE(rc))
-        return rc;
+    AssertRCReturn(rc, rc);
     rc = PDMDevHlpIOPortRegister(pDevIns,  VGA_PORT_HGSMI_GUEST,  4, NULL, vgaR3IOPortHGSMIWrite, vgaR3IOPortHGSMIRead, NULL, NULL, "VGA - 3d0 (HGSMI guest)");
-    if (RT_FAILURE(rc))
-        return rc;
+    AssertRCReturn(rc, rc);
 #endif /* VBOX_WITH_HGSMI */
 
 #ifdef CONFIG_BOCHS_VBE
     rc = PDMDevHlpIOPortRegister(pDevIns,  0x1ce,  1, NULL, vgaIOPortWriteVBEIndex, vgaIOPortReadVBEIndex, NULL, NULL, "VGA/VBE - Index");
-    if (RT_FAILURE(rc))
-        return rc;
+    AssertRCReturn(rc, rc);
     rc = PDMDevHlpIOPortRegister(pDevIns,  0x1cf,  1, NULL, vgaIOPortWriteVBEData, vgaIOPortReadVBEData, NULL, NULL, "VGA/VBE - Data");
-    if (RT_FAILURE(rc))
-        return rc;
+    AssertRCReturn(rc, rc);
 #endif /* CONFIG_BOCHS_VBE */
 
     /* guest context extension */
@@ -6654,8 +6647,7 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
     rc = PDMDevHlpMMIORegisterEx(pDevIns, 0x000a0000, 0x00020000, NULL /*pvUser*/,
                                  IOMMMIO_FLAGS_READ_PASSTHRU | IOMMMIO_FLAGS_WRITE_PASSTHRU,
                                  vgaMMIOWrite, vgaMMIORead, vgaMMIOFill, "VGA - VGA Video Buffer");
-    if (RT_FAILURE(rc))
-        return rc;
+    AssertRCReturn(rc, rc);
     if (pDevIns->fRCEnabled)
     {
         rc = PDMDevHlpMMIORegisterRCEx(pDevIns, 0x000a0000, 0x00020000, NIL_RTRCPTR /*pvUser*/,
@@ -6673,8 +6665,7 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
 
     /* vga bios */
     rc = PDMDevHlpIOPortRegister(pDevIns, VBE_PRINTF_PORT, 1, NULL, vgaIOPortWriteBIOS, vgaIOPortReadBIOS, NULL, NULL, "VGA BIOS debug/panic");
-    if (RT_FAILURE(rc))
-        return rc;
+    AssertRCReturn(rc, rc);
     if (pDevIns->fR0Enabled)
     {
         rc = PDMDevHlpIOPortRegisterR0(pDevIns, VBE_PRINTF_PORT,  1, 0, "vgaIOPortWriteBIOS", "vgaIOPortReadBIOS", NULL, NULL, "VGA BIOS debug/panic");
@@ -6804,8 +6795,7 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
     /* Note! Because of old saved states we'll always register at least 36KB of ROM. */
     rc = PDMDevHlpROMRegister(pDevIns, 0x000c0000, RT_MAX(cbVgaBiosBinary, 36*_1K), pbVgaBiosBinary, cbVgaBiosBinary,
                               fFlags, "VGA BIOS");
-    if (RT_FAILURE(rc))
-        return rc;
+    AssertRCReturn(rc, rc);
 
     /*
      * Saved state.
@@ -6814,16 +6804,14 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
                                 NULL,          vgaR3LiveExec, NULL,
                                 vgaR3SavePrep, vgaR3SaveExec, vgaR3SaveDone,
                                 NULL,          vgaR3LoadExec, vgaR3LoadDone);
-    if (RT_FAILURE(rc))
-        return rc;
+    AssertRCReturn(rc, rc);
 
     /*
      * Create the refresh timer.
      */
     rc = PDMDevHlpTimerCreate(pDevIns, TMCLOCK_REAL, vgaTimerRefresh, pThis, TMTIMER_FLAGS_NO_CRIT_SECT,
                               "VGA Refresh Timer", &pThis->hRefreshTimer);
-    if (RT_FAILURE(rc))
-        return rc;
+    AssertRCReturn(rc, rc);
 
     /*
      * Attach to the display.
@@ -7019,16 +7007,16 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
     /*
      * Register I/O Port for the VBE BIOS Extra Data.
      */
-    rc = PDMDevHlpIOPortRegister(pDevIns, VBE_EXTRA_PORT, 1, NULL, vbeIOPortWriteVBEExtra, vbeIOPortReadVBEExtra, NULL, NULL, "VBE BIOS Extra Data");
-    if (RT_FAILURE(rc))
-        return rc;
+    rc = PDMDevHlpIoPortCreateAndMap(pDevIns, VBE_EXTRA_PORT, 1 /*cPorts*/, vbeR3IOPortWriteVbeExtra, vbeR3IoPortReadVbeExtra,
+                                     "VBE BIOS Extra Data", NULL /*paExtDesc*/, &pThis->hIoPortVbeExtra);
+    AssertRCReturn(rc, rc);
 
     /*
      * Register I/O Port for the BIOS Logo.
      */
-    rc = PDMDevHlpIOPortRegister(pDevIns, LOGO_IO_PORT, 1, NULL, vbeIOPortWriteCMDLogo, vbeIOPortReadCMDLogo, NULL, NULL, "BIOS Logo");
-    if (RT_FAILURE(rc))
-        return rc;
+    rc = PDMDevHlpIoPortCreateAndMap(pDevIns, LOGO_IO_PORT, 1 /*cPorts*/, vbeR3IoPortWriteCmdLogo, vbeR3IoPortReadCmdLogo,
+                                     "BIOS Logo", NULL /*paExtDesc*/, &pThis->hIoPortCmdLogo);
+    AssertRCReturn(rc, rc);
 
     /*
      * Register debugger info callbacks.
