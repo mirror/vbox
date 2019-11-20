@@ -20,12 +20,12 @@
 
 UIMousePointerShapeData::UIMousePointerShapeData(bool fVisible /* = false */,
                                                  bool fAlpha /* = false */,
-                                                 const QPoint &hotPoint /* = QPoint() */,
+                                                 const QPoint &hotSpot /* = QPoint() */,
                                                  const QSize &shapeSize /* = QSize() */,
                                                  const QVector<BYTE> &shape /* = QVector<BYTE>() */)
     : m_fVisible(fVisible)
     , m_fAlpha(fAlpha)
-    , m_hotPoint(hotPoint)
+    , m_hotSpot(hotSpot)
     , m_shapeSize(shapeSize)
     , m_shape(shape)
 {
@@ -34,7 +34,7 @@ UIMousePointerShapeData::UIMousePointerShapeData(bool fVisible /* = false */,
 UIMousePointerShapeData::UIMousePointerShapeData(const UIMousePointerShapeData &another)
     : m_fVisible(another.isVisible())
     , m_fAlpha(another.hasAlpha())
-    , m_hotPoint(another.hotPoint())
+    , m_hotSpot(another.hotSpot())
     , m_shapeSize(another.shapeSize())
     , m_shape(another.shape())
 {
@@ -44,7 +44,7 @@ UIMousePointerShapeData &UIMousePointerShapeData::operator=(const UIMousePointer
 {
     m_fVisible = another.isVisible();
     m_fAlpha = another.hasAlpha();
-    m_hotPoint = another.hotPoint();
+    m_hotSpot = another.hotSpot();
     m_shapeSize = another.shapeSize();
     m_shape = another.shape();
     return *this;

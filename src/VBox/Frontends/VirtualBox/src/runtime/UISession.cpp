@@ -1657,8 +1657,8 @@ void UISession::updateMousePointerShape()
 {
     /* Fetch incoming shape data: */
     const bool fHasAlpha = m_shapeData.hasAlpha();
-    uint uXHot = m_shapeData.hotPoint().x();
-    uint uYHot = m_shapeData.hotPoint().y();
+    uint uXHot = m_shapeData.hotSpot().x();
+    uint uYHot = m_shapeData.hotSpot().y();
     const uint uWidth = m_shapeData.shapeSize().width();
     const uint uHeight = m_shapeData.shapeSize().height();
     const uchar *pShapeData = m_shapeData.shape().constData();

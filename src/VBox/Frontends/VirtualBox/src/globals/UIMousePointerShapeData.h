@@ -42,12 +42,12 @@ public:
     /** Constructs mouse pointer shape data.
       * @param  fVisible   Brings whether mouse pointer should be visible.
       * @param  fAlpha     Brings whether mouse pointer chape has alpha channel.
-      * @param  hotPoint   Brings the mouse pointer hot point.
+      * @param  hotSpot    Brings the mouse pointer hot-spot.
       * @param  shapeSize  Brings the mouse pointer shape size.
       * @param  shape      Brings the mouse pointer shape byte array. */
     UIMousePointerShapeData(bool fVisible = false,
                             bool fAlpha = false,
-                            const QPoint &hotPoint = QPoint(),
+                            const QPoint &hotSpot = QPoint(),
                             const QSize &shapeSize = QSize(),
                             const QVector<BYTE> &shape = QVector<BYTE>());
 
@@ -61,8 +61,8 @@ public:
     bool isVisible() const { return m_fVisible; }
     /** Returns whether mouse pointer chape has alpha channel. */
     bool hasAlpha() const { return m_fAlpha; }
-    /** Returns the mouse pointer hot point. */
-    const QPoint &hotPoint() const { return m_hotPoint; }
+    /** Returns the mouse pointer hot-spot. */
+    const QPoint &hotSpot() const { return m_hotSpot; }
     /** Returns the mouse pointer shape size. */
     const QSize &shapeSize() const { return m_shapeSize; }
     /** Returns the mouse pointer shape byte array. */
@@ -74,8 +74,8 @@ private:
     bool           m_fVisible;
     /** Holds whether mouse pointer chape has alpha channel. */
     bool           m_fAlpha;
-    /** Holds the mouse pointer hot point. */
-    QPoint         m_hotPoint;
+    /** Holds the mouse pointer hot-spot. */
+    QPoint         m_hotSpot;
     /** Holds the mouse pointer shape size. */
     QSize          m_shapeSize;
     /** Holds the mouse pointer shape byte array. */
