@@ -929,14 +929,14 @@ static int apicR3LoadLegacyVCpuData(PPDMDEVINS pDevIns, PVMCPU pVCpu, PSSMHANDLE
     if (uNextTS >= pApicCpu->u64TimerInitial + ((pXApicPage->timer_icr.u32InitialCount + 1) << uTimerShift))
         pXApicPage->timer_ccr.u32CurrentCount = pXApicPage->timer_icr.u32InitialCount;
 
-    rc = TMR3TimerLoad(pApicCpu->pTimerR3, pSSM);
+    rc = PDMDevHlpTimerLoad(pDevIns, pApicCpu->hTimer, pSSM);
     AssertRCReturn(rc, rc);
     Assert(pApicCpu->uHintedTimerInitialCount == 0);
     Assert(pApicCpu->uHintedTimerShift == 0);
-    if (TMTimerIsActive(pApicCpu->pTimerR3))
+    if (PDMDevHlpTimerIsActive(pDevIns, pApicCpu->hTimer))
     {
         uint32_t const uInitialCount = pXApicPage->timer_icr.u32InitialCount;
-        apicHintTimerFreq(pApicCpu, uInitialCount, uTimerShift);
+        apicHintTimerFreq(pDevIns, pApicCpu, uInitialCount, uTimerShift);
     }
 
     return rc;
@@ -980,7 +980,7 @@ static DECLCALLBACK(int) apicR3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 
         /* Save the timer. */
         pHlp->pfnSSMPutU64(pSSM, pApicCpu->u64TimerInitial);
-        TMR3TimerSave(pApicCpu->pTimerR3, pSSM);
+        PDMDevHlpTimerSave(pDevIns, pApicCpu->hTimer, pSSM);
 
         /* Save the LINT0, LINT1 interrupt line states. */
         pHlp->pfnSSMPutBool(pSSM, pApicCpu->fActiveLint0);
@@ -1060,15 +1060,15 @@ static DECLCALLBACK(int) apicR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uin
 
             /* Load the timer. */
             rc = pHlp->pfnSSMGetU64(pSSM, &pApicCpu->u64TimerInitial);     AssertRCReturn(rc, rc);
-            rc = TMR3TimerLoad(pApicCpu->pTimerR3, pSSM);           AssertRCReturn(rc, rc);
+            rc = PDMDevHlpTimerLoad(pDevIns, pApicCpu->hTimer, pSSM);      AssertRCReturn(rc, rc);
             Assert(pApicCpu->uHintedTimerShift == 0);
             Assert(pApicCpu->uHintedTimerInitialCount == 0);
-            if (TMTimerIsActive(pApicCpu->pTimerR3))
+            if (PDMDevHlpTimerIsActive(pDevIns, pApicCpu->hTimer))
             {
                 PCXAPICPAGE    pXApicPage    = VMCPU_TO_CXAPICPAGE(pVCpu);
                 uint32_t const uInitialCount = pXApicPage->timer_icr.u32InitialCount;
                 uint8_t const  uTimerShift   = apicGetTimerShift(pXApicPage);
-                apicHintTimerFreq(pApicCpu, uInitialCount, uTimerShift);
+                apicHintTimerFreq(pDevIns, pApicCpu, uInitialCount, uTimerShift);
             }
 
             /* Load the LINT0, LINT1 interrupt line states. */
@@ -1115,8 +1115,9 @@ static DECLCALLBACK(int) apicR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uin
  */
 static DECLCALLBACK(void) apicR3TimerCallback(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser)
 {
-    PVMCPU pVCpu = (PVMCPU)pvUser;
-    Assert(TMTimerIsLockOwner(pTimer));
+    PVMCPU      pVCpu    = (PVMCPU)pvUser;
+    PAPICCPU    pApicCpu = VMCPU_TO_APICCPU(pVCpu);
+    Assert(PDMDevHlpTimerIsLockOwner(pDevIns, pApicCpu->hTimer));
     Assert(pVCpu);
     LogFlow(("APIC%u: apicR3TimerCallback\n", pVCpu->idCpu));
     RT_NOREF2(pDevIns, pTimer);
@@ -1124,7 +1125,6 @@ static DECLCALLBACK(void) apicR3TimerCallback(PPDMDEVINS pDevIns, PTMTIMER pTime
     PXAPICPAGE     pXApicPage = VMCPU_TO_XAPICPAGE(pVCpu);
     uint32_t const uLvtTimer  = pXApicPage->lvt_timer.all.u32LvtTimer;
 #ifdef VBOX_WITH_STATISTICS
-    PAPICCPU       pApicCpu   = VMCPU_TO_APICCPU(pVCpu);
     STAM_COUNTER_INC(&pApicCpu->StatTimerCallback);
 #endif
     if (!XAPIC_LVT_IS_MASKED(uLvtTimer))
@@ -1182,8 +1182,8 @@ DECLCALLBACK(void) apicR3Reset(PPDMDEVINS pDevIns)
         PVMCPU   pVCpuDest = pVM->apCpusR3[idCpu];
         PAPICCPU pApicCpu  = VMCPU_TO_APICCPU(pVCpuDest);
 
-        if (TMTimerIsActive(pApicCpu->pTimerR3))
-            TMTimerStop(pApicCpu->pTimerR3);
+        if (PDMDevHlpTimerIsActive(pDevIns, pApicCpu->hTimer))
+            PDMDevHlpTimerStop(pDevIns, pApicCpu->hTimer);
 
         apicResetCpu(pVCpuDest, true /* fResetApicBaseMsr */);
 
@@ -1410,6 +1410,7 @@ DECLCALLBACK(int) apicR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE p
      */
     pApicDev->pDevInsR3 = pDevIns;
 
+    pApic->pDevInsR3    = pDevIns;
     pApic->pApicDevR3   = pApicDev;
     pApic->pApicDevR0   = PDMINS_2_DATA_R0PTR(pDevIns);
     pApic->fR0Enabled   = pDevIns->fR0Enabled;
@@ -1491,10 +1492,9 @@ DECLCALLBACK(int) apicR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE p
         PVMCPU   pVCpu    = pVM->apCpusR3[idCpu];
         PAPICCPU pApicCpu = VMCPU_TO_APICCPU(pVCpu);
         RTStrPrintf(&pApicCpu->szTimerDesc[0], sizeof(pApicCpu->szTimerDesc), "APIC Timer %u", pVCpu->idCpu);
-        rc = PDMDevHlpTMTimerCreate(pDevIns, TMCLOCK_VIRTUAL_SYNC, apicR3TimerCallback, pVCpu, TMTIMER_FLAGS_NO_CRIT_SECT,
-                                    pApicCpu->szTimerDesc, &pApicCpu->pTimerR3);
+        rc = PDMDevHlpTimerCreate(pDevIns, TMCLOCK_VIRTUAL_SYNC, apicR3TimerCallback, pVCpu, TMTIMER_FLAGS_NO_CRIT_SECT,
+                                  pApicCpu->szTimerDesc, &pApicCpu->hTimer);
         AssertRCReturn(rc, rc);
-        pApicCpu->pTimerR0 = TMTimerR0Ptr(pApicCpu->pTimerR3);
     }
 
     /*

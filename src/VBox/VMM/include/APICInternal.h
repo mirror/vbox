@@ -57,6 +57,11 @@
 #define VMCPU_TO_APICCPU(a_pVCpu)            (&(a_pVCpu)->apic.s)
 #define VM_TO_APIC(a_pVM)                    (&(a_pVM)->apic.s)
 #define VM_TO_APICDEV(a_pVM)                 CTX_SUFF(VM_TO_APIC(a_pVM)->pApicDev)
+#ifdef IN_RING3
+# define VMCPU_TO_DEVINS(a_pVCpu)           ((a_pVCpu)->pVMR3->apic.s.pDevInsR3)
+#elif defined(IN_RING0)
+# define VMCPU_TO_DEVINS(a_pVCpu)           ((a_pVCpu)->pGVM->apicr0.s.pDevInsR0)
+#endif
 
 #define APICCPU_TO_XAPICPAGE(a_ApicCpu)      ((PXAPICPAGE)(CTX_SUFF((a_ApicCpu)->pvApicPage)))
 #define APICCPU_TO_CXAPICPAGE(a_ApicCpu)     ((PCXAPICPAGE)(CTX_SUFF((a_ApicCpu)->pvApicPage)))
@@ -1163,6 +1168,17 @@ typedef APICDEV *PAPICDEV;
 /** Pointer to a const APIC device. */
 typedef APICDEV const *PCAPICDEV;
 
+
+/**
+ * The APIC GVM instance data.
+ */
+typedef struct APICR0PERVM
+{
+    /** The ring-0 device instance. */
+    PPDMDEVINSR0                pDevInsR0;
+} APICR0PERVM;
+
+
 /**
  * APIC VM Instance data.
  */
@@ -1174,6 +1190,8 @@ typedef struct APIC
     R0PTRTYPE(PAPICDEV)         pApicDevR0;
     /** The APIC device - R3 ptr. */
     R3PTRTYPE(PAPICDEV)         pApicDevR3;
+    /** The ring-3 device instance. */
+    PPDMDEVINSR3                pDevInsR3;
     /** @} */
 
     /** @name The APIC pending-interrupt bitmap (PIB).
@@ -1282,10 +1300,8 @@ typedef struct APICCPU
 
     /** @name The APIC timer.
      * @{ */
-    /** The timer - R0 ptr. */
-    PTMTIMERR0                  pTimerR0;
-    /** The timer - R3 ptr. */
-    PTMTIMERR3                  pTimerR3;
+    /** The timer. */
+    TMTIMERHANDLE               hTimer;
     /** The time stamp when the timer was initialized. */
     uint64_t                    u64TimerInitial;
     /** Cache of timer initial count of the frequency hint to TM. */
@@ -1411,7 +1427,7 @@ const char                   *apicGetDestModeName(XAPICDESTMODE enmDestMode);
 const char                   *apicGetTriggerModeName(XAPICTRIGGERMODE enmTriggerMode);
 const char                   *apicGetDestShorthandName(XAPICDESTSHORTHAND enmDestShorthand);
 const char                   *apicGetTimerModeName(XAPICTIMERMODE enmTimerMode);
-void                          apicHintTimerFreq(PAPICCPU pApicCpu, uint32_t uInitialCount, uint8_t uTimerShift);
+void                          apicHintTimerFreq(PPDMDEVINS pDevIns, PAPICCPU pApicCpu, uint32_t uInitialCount, uint8_t uTimerShift);
 APICMODE                      apicGetMode(uint64_t uApicBaseMsr);
 
 APICBOTHCBDECL(uint64_t)      apicGetBaseMsr(PPDMDEVINS pDevIns, PVMCPU pVCpu);

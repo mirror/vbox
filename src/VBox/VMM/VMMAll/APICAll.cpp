@@ -1383,11 +1383,12 @@ static VBOXSTRICTRC apicSetTimerDcr(PVMCPUCC pVCpu, uint32_t uTimerDcr)
  * Gets the timer's Current Count Register (CCR).
  *
  * @returns VBox status code.
+ * @param   pDevIns         The device instance.
  * @param   pVCpu           The cross context virtual CPU structure.
  * @param   rcBusy          The busy return code for the timer critical section.
  * @param   puValue         Where to store the LVT timer CCR.
  */
-static VBOXSTRICTRC apicGetTimerCcr(PVMCPUCC pVCpu, int rcBusy, uint32_t *puValue)
+static VBOXSTRICTRC apicGetTimerCcr(PPDMDEVINS pDevIns, PVMCPUCC pVCpu, int rcBusy, uint32_t *puValue)
 {
     VMCPU_ASSERT_EMT(pVCpu);
     Assert(puValue);
@@ -1410,25 +1411,25 @@ static VBOXSTRICTRC apicGetTimerCcr(PVMCPUCC pVCpu, int rcBusy, uint32_t *puValu
      *
      * We also need to lock before reading the timer CCR, see apicR3TimerCallback().
      */
-    PCAPICCPU pApicCpu = VMCPU_TO_APICCPU(pVCpu);
-    PTMTIMER  pTimer   = pApicCpu->CTX_SUFF(pTimer);
+    PCAPICCPU       pApicCpu = VMCPU_TO_APICCPU(pVCpu);
+    TMTIMERHANDLE   hTimer   = pApicCpu->hTimer;
 
-    int rc = TMTimerLock(pTimer, rcBusy);
+    int rc = PDMDevHlpTimerLock(pDevIns, hTimer, rcBusy);
     if (rc == VINF_SUCCESS)
     {
         /* If the current-count register is 0, it implies the timer expired. */
         uint32_t const uCurrentCount = pXApicPage->timer_ccr.u32CurrentCount;
         if (uCurrentCount)
         {
-            uint64_t const cTicksElapsed = TMTimerGet(pApicCpu->CTX_SUFF(pTimer)) - pApicCpu->u64TimerInitial;
-            TMTimerUnlock(pTimer);
+            uint64_t const cTicksElapsed = PDMDevHlpTimerGet(pDevIns, hTimer) - pApicCpu->u64TimerInitial;
+            PDMDevHlpTimerUnlock(pDevIns, hTimer);
             uint8_t  const uTimerShift   = apicGetTimerShift(pXApicPage);
             uint64_t const uDelta        = cTicksElapsed >> uTimerShift;
             if (uInitialCount > uDelta)
                 *puValue = uInitialCount - uDelta;
         }
         else
-            TMTimerUnlock(pTimer);
+            PDMDevHlpTimerUnlock(pDevIns, hTimer);
     }
     return rc;
 }
@@ -1438,18 +1439,18 @@ static VBOXSTRICTRC apicGetTimerCcr(PVMCPUCC pVCpu, int rcBusy, uint32_t *puValu
  * Sets the timer's Initial-Count Register (ICR).
  *
  * @returns Strict VBox status code.
+ * @param   pDevIns         The device instance.
  * @param   pVCpu           The cross context virtual CPU structure.
  * @param   rcBusy          The busy return code for the timer critical section.
  * @param   uInitialCount   The timer ICR.
  */
-static VBOXSTRICTRC apicSetTimerIcr(PVMCPUCC pVCpu, int rcBusy, uint32_t uInitialCount)
+static VBOXSTRICTRC apicSetTimerIcr(PPDMDEVINS pDevIns, PVMCPUCC pVCpu, int rcBusy, uint32_t uInitialCount)
 {
     VMCPU_ASSERT_EMT(pVCpu);
 
     PAPIC      pApic      = VM_TO_APIC(pVCpu->CTX_SUFF(pVM));
     PAPICCPU   pApicCpu   = VMCPU_TO_APICCPU(pVCpu);
     PXAPICPAGE pXApicPage = VMCPU_TO_XAPICPAGE(pVCpu);
-    PTMTIMER   pTimer     = pApicCpu->CTX_SUFF(pTimer);
 
     Log2(("APIC%u: apicSetTimerIcr: uInitialCount=%#RX32\n", pVCpu->idCpu, uInitialCount));
     STAM_COUNTER_INC(&pApicCpu->StatTimerIcrWrite);
@@ -1464,7 +1465,8 @@ static VBOXSTRICTRC apicSetTimerIcr(PVMCPUCC pVCpu, int rcBusy, uint32_t uInitia
      * so obtain the lock -before- updating it here to be consistent with the
      * timer ICR. We rely on CCR being consistent in apicGetTimerCcr().
      */
-    int rc = TMTimerLock(pTimer, rcBusy);
+    TMTIMERHANDLE hTimer = pApicCpu->hTimer;
+    int rc = PDMDevHlpTimerLock(pDevIns, hTimer, rcBusy);
     if (rc == VINF_SUCCESS)
     {
         pXApicPage->timer_icr.u32InitialCount = uInitialCount;
@@ -1473,7 +1475,7 @@ static VBOXSTRICTRC apicSetTimerIcr(PVMCPUCC pVCpu, int rcBusy, uint32_t uInitia
             apicStartTimer(pVCpu, uInitialCount);
         else
             apicStopTimer(pVCpu);
-        TMTimerUnlock(pTimer);
+        PDMDevHlpTimerUnlock(pDevIns, hTimer);
     }
     return rc;
 }
@@ -1587,12 +1589,13 @@ static int apicSetLvtExtEntry(PVMCPUCC pVCpu, uint16_t offLvt, uint32_t uLvt)
 /**
  * Hints TM about the APIC timer frequency.
  *
+ * @param   pDevIns         The device instance.
  * @param   pApicCpu        The APIC CPU state.
  * @param   uInitialCount   The new initial count.
  * @param   uTimerShift     The new timer shift.
  * @thread  Any.
  */
-void apicHintTimerFreq(PAPICCPU pApicCpu, uint32_t uInitialCount, uint8_t uTimerShift)
+void apicHintTimerFreq(PPDMDEVINS pDevIns, PAPICCPU pApicCpu, uint32_t uInitialCount, uint8_t uTimerShift)
 {
     Assert(pApicCpu);
 
@@ -1603,12 +1606,12 @@ void apicHintTimerFreq(PAPICCPU pApicCpu, uint32_t uInitialCount, uint8_t uTimer
         if (uInitialCount)
         {
             uint64_t cTicksPerPeriod = (uint64_t)uInitialCount << uTimerShift;
-            uHz = TMTimerGetFreq(pApicCpu->CTX_SUFF(pTimer)) / cTicksPerPeriod;
+            uHz = PDMDevHlpTimerGetFreq(pDevIns, pApicCpu->hTimer) / cTicksPerPeriod;
         }
         else
             uHz = 0;
 
-        TMTimerSetFrequencyHint(pApicCpu->CTX_SUFF(pTimer), uHz);
+        PDMDevHlpTimerSetFrequencyHint(pDevIns, pApicCpu->hTimer, uHz);
         pApicCpu->uHintedTimerInitialCount = uInitialCount;
         pApicCpu->uHintedTimerShift = uTimerShift;
     }
@@ -1697,7 +1700,7 @@ DECLINLINE(VBOXSTRICTRC) apicReadRegister(PPDMDEVINS pDevIns, PVMCPUCC pVCpu, ui
         case XAPIC_OFF_TIMER_CCR:
         {
             Assert(!XAPIC_IN_X2APIC_MODE(pVCpu));
-            rc = apicGetTimerCcr(pVCpu, VINF_IOM_R3_MMIO_READ, &uValue);
+            rc = apicGetTimerCcr(pDevIns, pVCpu, VINF_IOM_R3_MMIO_READ, &uValue);
             break;
         }
 
@@ -1765,7 +1768,7 @@ DECLINLINE(VBOXSTRICTRC) apicWriteRegister(PPDMDEVINS pDevIns, PVMCPUCC pVCpu, u
 
         case XAPIC_OFF_TIMER_ICR:
         {
-            rcStrict = apicSetTimerIcr(pVCpu, VINF_IOM_R3_MMIO_WRITE, uValue);
+            rcStrict = apicSetTimerIcr(pDevIns, pVCpu, VINF_IOM_R3_MMIO_WRITE, uValue);
             break;
         }
 
@@ -1909,7 +1912,7 @@ VMM_INT_DECL(VBOXSTRICTRC) APICReadMsr(PVMCPUCC pVCpu, uint32_t u32Reg, uint64_t
             case MSR_IA32_X2APIC_TIMER_CCR:
             {
                 uint32_t uValue;
-                rcStrict = apicGetTimerCcr(pVCpu, VINF_CPUM_R3_MSR_READ, &uValue);
+                rcStrict = apicGetTimerCcr(VMCPU_TO_DEVINS(pVCpu), pVCpu, VINF_CPUM_R3_MSR_READ, &uValue);
                 *pu64Value = uValue;
                 break;
             }
@@ -2010,10 +2013,8 @@ VMM_INT_DECL(VBOXSTRICTRC) APICWriteMsr(PVMCPUCC pVCpu, uint32_t u32Reg, uint64_
     if (APICIsEnabled(pVCpu))
     { /* likely */ }
     else
-    {
         return apicMsrAccessError(pVCpu, u32Reg, pApic->enmMaxMode == PDMAPICMODE_NONE ?
-                                                 APICMSRACCESS_WRITE_DISALLOWED_CONFIG : APICMSRACCESS_WRITE_RSVD_OR_UNKNOWN);
-    }
+                                  APICMSRACCESS_WRITE_DISALLOWED_CONFIG : APICMSRACCESS_WRITE_RSVD_OR_UNKNOWN);
 
 #ifndef IN_RING3
     if (pApic->CTXALLMID(f,Enabled))
@@ -2087,7 +2088,7 @@ VMM_INT_DECL(VBOXSTRICTRC) APICWriteMsr(PVMCPUCC pVCpu, uint32_t u32Reg, uint64_
 
             case MSR_IA32_X2APIC_TIMER_ICR:
             {
-                rcStrict = apicSetTimerIcr(pVCpu, VINF_CPUM_R3_MSR_WRITE, u32Value);
+                rcStrict = apicSetTimerIcr(VMCPU_TO_DEVINS(pVCpu), pVCpu, VINF_CPUM_R3_MSR_WRITE, u32Value);
                 break;
             }
 
@@ -2610,7 +2611,7 @@ VMM_INT_DECL(int) APICGetTimerFreq(PVMCC pVM, uint64_t *pu64Value)
     if (APICIsEnabled(pVCpu))
     {
         PCAPICCPU pApicCpu = VMCPU_TO_APICCPU(pVCpu);
-        *pu64Value = TMTimerGetFreq(pApicCpu->CTX_SUFF(pTimer));
+        *pu64Value = PDMDevHlpTimerGetFreq(VMCPU_TO_DEVINS(pVCpu), pApicCpu->hTimer);
         return VINF_SUCCESS;
     }
     return VERR_PDM_NO_APIC_INSTANCE;
@@ -3158,8 +3159,9 @@ VMM_INT_DECL(bool) apicPostInterrupt(PVMCPUCC pVCpu, uint8_t uVector, XAPICTRIGG
 VMM_INT_DECL(void) apicStartTimer(PVMCPUCC pVCpu, uint32_t uInitialCount)
 {
     Assert(pVCpu);
-    PAPICCPU pApicCpu = VMCPU_TO_APICCPU(pVCpu);
-    Assert(TMTimerIsLockOwner(pApicCpu->CTX_SUFF(pTimer)));
+    PAPICCPU   pApicCpu = VMCPU_TO_APICCPU(pVCpu);
+    PPDMDEVINS pDevIns  = VMCPU_TO_DEVINS(pVCpu);
+    Assert(PDMDevHlpTimerIsLockOwner(pDevIns, pApicCpu->hTimer));
     Assert(uInitialCount > 0);
 
     PCXAPICPAGE    pXApicPage   = APICCPU_TO_CXAPICPAGE(pApicCpu);
@@ -3175,9 +3177,8 @@ VMM_INT_DECL(void) apicStartTimer(PVMCPUCC pVCpu, uint32_t uInitialCount)
      * however is updating u64TimerInitial 'atomically' while setting the next
      * tick.
      */
-    PTMTIMER pTimer = pApicCpu->CTX_SUFF(pTimer);
-    TMTimerSetRelative(pTimer, cTicksToNext, &pApicCpu->u64TimerInitial);
-    apicHintTimerFreq(pApicCpu, uInitialCount, uTimerShift);
+    PDMDevHlpTimerSetRelative(pDevIns, pApicCpu->hTimer, cTicksToNext, &pApicCpu->u64TimerInitial);
+    apicHintTimerFreq(pDevIns, pApicCpu, uInitialCount, uTimerShift);
 }
 
 
@@ -3190,13 +3191,13 @@ VMM_INT_DECL(void) apicStartTimer(PVMCPUCC pVCpu, uint32_t uInitialCount)
 static void apicStopTimer(PVMCPUCC pVCpu)
 {
     Assert(pVCpu);
-    PAPICCPU pApicCpu = VMCPU_TO_APICCPU(pVCpu);
-    Assert(TMTimerIsLockOwner(pApicCpu->CTX_SUFF(pTimer)));
+    PAPICCPU   pApicCpu = VMCPU_TO_APICCPU(pVCpu);
+    PPDMDEVINS pDevIns  = VMCPU_TO_DEVINS(pVCpu);
+    Assert(PDMDevHlpTimerIsLockOwner(pDevIns, pApicCpu->hTimer));
 
     Log2(("APIC%u: apicStopTimer\n", pVCpu->idCpu));
 
-    PTMTIMER pTimer = pApicCpu->CTX_SUFF(pTimer);
-    TMTimerStop(pTimer);    /* This will reset the hint, no need to explicitly call TMTimerSetFrequencyHint(). */
+    PDMDevHlpTimerStop(pDevIns, pApicCpu->hTimer); /* This will reset the hint, no need to explicitly call TMTimerSetFrequencyHint(). */
     pApicCpu->uHintedTimerInitialCount = 0;
     pApicCpu->uHintedTimerShift = 0;
 }
@@ -3506,6 +3507,9 @@ static DECLCALLBACK(int) apicRZConstruct(PPDMDEVINS pDevIns)
 {
     PDMDEV_CHECK_VERSIONS_RETURN(pDevIns);
     PAPICDEV pThis = PDMDEVINS_2_DATA(pDevIns, PAPICDEV);
+    PVMCC    pVM   = PDMDevHlpGetVM(pDevIns);
+
+    pVM->apicr0.s.pDevInsR0 = pDevIns;
 
     int rc = PDMDevHlpMmioSetUpContext(pDevIns, pThis->hMmio, apicWriteMmio, apicReadMmio, NULL /*pvUser*/);
     AssertRCReturn(rc, rc);
