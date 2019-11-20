@@ -921,18 +921,18 @@ static VBOXSTRICTRC acpiR3DoSleep(PPDMDEVINS pDevIns, ACPIState *pThis)
     {
         rc = PDMDevHlpVMSuspendSaveAndPowerOff(pDevIns);
         if (rc != VERR_NOT_SUPPORTED)
-            AssertRC(rc);
+            AssertRC(VBOXSTRICTRC_VAL(rc));
         else
         {
             LogRel(("ACPI: PDMDevHlpVMSuspendSaveAndPowerOff is not supported, falling back to suspend-only\n"));
             rc = PDMDevHlpVMSuspend(pDevIns);
-            AssertRC(rc);
+            AssertRC(VBOXSTRICTRC_VAL(rc));
         }
     }
     else
     {
         rc = PDMDevHlpVMSuspend(pDevIns);
-        AssertRC(rc);
+        AssertRC(VBOXSTRICTRC_VAL(rc));
     }
     return rc;
 }
