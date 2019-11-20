@@ -138,6 +138,8 @@ protected slots:
 
     /* Console callback handlers: */
     virtual void sltMachineStateChanged();
+    /** Handles guest request to change the mouse pointer shape. */
+    void sltMousePointerShapeChange();
 
 protected:
 
@@ -232,6 +234,9 @@ protected:
     void takePausePixmapSnapshot();
     /** Updates the scaled pause-pixmap. */
     void updateScaledPausePixmap();
+
+    /** Returns cached mouse cursor. */
+    QCursor cursor() const { return m_cursor; }
 
     /** The available area on the current screen for application windows. */
     virtual QRect workingArea() const = 0;
@@ -339,6 +344,9 @@ protected:
     /** Scales passed size backward. */
     QSize scaledBackward(QSize size) const;
 
+    /** Updates mouse pointer @a pixmap, @a uXHot and @a uYHot according to scaling attributes. */
+    void updateMousePointerPixmapScaling(QPixmap &pixmap, uint &uXHot, uint &uYHot);
+
     /* Protected members: */
     UIMachineWindow *m_pMachineWindow;
     ulong m_uScreenId;
@@ -376,6 +384,9 @@ protected:
     QPixmap m_pausePixmap;
     /** Holds the scaled pause-pixmap. */
     QPixmap m_pausePixmapScaled;
+
+    /** Holds cached mouse cursor. */
+    QCursor  m_cursor;
 
 #ifdef VBOX_WITH_DRAG_AND_DROP
     /** Pointer to drag and drop handler instance. */

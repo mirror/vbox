@@ -134,8 +134,6 @@ public:
     WId mainMachineWindowId() const;
     UIMachineWindow *activeMachineWindow() const;
 
-    /** Returns currently cached mouse cursor. */
-    QCursor cursor() const { return m_cursor; }
     /** Returns currently cached mouse cursor shape pixmap. */
     QPixmap cursorShapePixmap() const { return m_cursorShapePixmap; }
     /** Returns currently cached mouse cursor mask pixmap. */
@@ -447,8 +445,6 @@ private:
 
     /** Updates mouse pointer shape. */
     void updateMousePointerShape();
-    /** Updates mouse pointer @a pixmap, @a uXHot and @a uYHot according to scaling attributes. */
-    void updateMousePointerPixmapScaling(QPixmap &pixmap, uint &uXHot, uint &uYHot);
 
     /* Common helpers: */
     bool preprocessInitialization();
@@ -511,8 +507,6 @@ private:
     KMachineState m_machineStatePrevious;
     KMachineState m_machineState;
 
-    /** Holds cached mouse cursor. */
-    QCursor  m_cursor;
     /** Holds cached mouse cursor shape pixmap. */
     QPixmap  m_cursorShapePixmap;
     /** Holds cached mouse cursor mask pixmap. */

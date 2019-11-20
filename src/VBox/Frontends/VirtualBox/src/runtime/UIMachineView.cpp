@@ -16,6 +16,7 @@
  */
 
 /* Qt includes: */
+#include <QBitmap>
 #include <QMainWindow>
 #include <QPainter>
 #include <QScrollBar>
@@ -619,6 +620,37 @@ void UIMachineView::sltMachineStateChanged()
     m_previousState = state;
 }
 
+void UIMachineView::sltMousePointerShapeChange()
+{
+    /* Fetch the shape and the mask: */
+    QPixmap pixmapShape = uisession()->cursorShapePixmap();
+    QPixmap pixmapMask = uisession()->cursorMaskPixmap();
+    const QPoint hotspot = uisession()->cursorHotspot();
+    uint uXHot = hotspot.x();
+    uint uYHot = hotspot.y();
+
+    /* If there is no mask: */
+    if (pixmapMask.isNull())
+    {
+        /* Scale the shape pixmap and
+         * compose the cursor on the basis of shape only: */
+        updateMousePointerPixmapScaling(pixmapShape, uXHot, uYHot);
+        m_cursor = QCursor(pixmapShape, uXHot, uYHot);
+    }
+    /* Otherwise: */
+    else
+    {
+        /* Scale the shape and the mask pixmaps and
+         * compose the cursor on the basis of shape and mask both: */
+        updateMousePointerPixmapScaling(pixmapShape, uXHot, uYHot);
+        /// @todo updateMousePointerPixmapScaling(pixmapMask, uXHot, uYHot);
+        m_cursor = QCursor(pixmapShape, pixmapMask, uXHot, uYHot);
+    }
+
+    /* Let the listeners know: */
+    emit sigMousePointerShapeChange();
+}
+
 UIMachineView::UIMachineView(  UIMachineWindow *pMachineWindow
                              , ulong uScreenId
 #ifdef VBOX_WITH_VIDEOHWACCEL
@@ -836,7 +868,7 @@ void UIMachineView::prepareConsoleConnections()
     /* Machine state-change updater: */
     connect(uisession(), &UISession::sigMachineStateChange, this, &UIMachineView::sltMachineStateChanged);
     /* Mouse pointer shape updater: */
-    connect(uisession(), &UISession::sigMousePointerShapeChange, this, &UIMachineView::sigMousePointerShapeChange);
+    connect(uisession(), &UISession::sigMousePointerShapeChange, this, &UIMachineView::sltMousePointerShapeChange);
 }
 
 void UIMachineView::cleanupFrameBuffer()
@@ -1908,4 +1940,85 @@ QSize UIMachineView::scaledBackward(QSize size) const
 
     /* Return result: */
     return size;
+}
+
+void UIMachineView::updateMousePointerPixmapScaling(QPixmap &pixmap, uint &uXHot, uint &uYHot)
+{
+#if defined(VBOX_WS_MAC)
+
+    /* Take into account scale-factor if necessary: */
+    const double dScaleFactor = frameBuffer()->scaleFactor();
+    //printf("Scale-factor: %f\n", dScaleFactor);
+    if (dScaleFactor > 1.0)
+    {
+        /* Scale the pixmap up: */
+        pixmap = pixmap.scaled(pixmap.width() * dScaleFactor, pixmap.height() * dScaleFactor,
+                               Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
+        uXHot *= dScaleFactor;
+        uYHot *= dScaleFactor;
+    }
+
+    /* Take into account device-pixel-ratio if necessary: */
+    const double dDevicePixelRatio = frameBuffer()->devicePixelRatio();
+    const bool fUseUnscaledHiDPIOutput = frameBuffer()->useUnscaledHiDPIOutput();
+    //printf("Device-pixel-ratio: %f, Unscaled HiDPI Output: %d\n",
+    //       dDevicePixelRatio, fUseUnscaledHiDPIOutput);
+    if (dDevicePixelRatio > 1.0 && fUseUnscaledHiDPIOutput)
+    {
+        /* Scale the pixmap down: */
+        pixmap.setDevicePixelRatio(dDevicePixelRatio);
+        uXHot /= dDevicePixelRatio;
+        uYHot /= dDevicePixelRatio;
+    }
+
+#elif defined(VBOX_WS_WIN) || defined(VBOX_WS_X11)
+
+    /* We want to scale the pixmap just once, so let's prepare cumulative multiplier: */
+    double dScaleMultiplier = 1.0;
+
+    /* Take into account scale-factor if necessary: */
+    const double dScaleFactor = frameBuffer()->scaleFactor();
+    //printf("Scale-factor: %f\n", dScaleFactor);
+    if (dScaleFactor > 1.0)
+        dScaleMultiplier *= dScaleFactor;
+
+    /* Take into account device-pixel-ratio if necessary: */
+# ifdef VBOX_WS_WIN
+    const double dDevicePixelRatio = frameBuffer()->devicePixelRatio();
+# endif
+    const double dDevicePixelRatioActual = frameBuffer()->devicePixelRatioActual();
+    const bool fUseUnscaledHiDPIOutput = frameBuffer()->useUnscaledHiDPIOutput();
+    //printf("Device-pixel-ratio/actual: %f/%f, Unscaled HiDPI Output: %d\n",
+    //       dDevicePixelRatio, dDevicePixelRatioActual, fUseUnscaledHiDPIOutput);
+    if (dDevicePixelRatioActual > 1.0 && !fUseUnscaledHiDPIOutput)
+        dScaleMultiplier *= dDevicePixelRatioActual;
+
+    /* If scale multiplier was set: */
+    if (dScaleMultiplier > 1.0)
+    {
+        /* Scale the pixmap up: */
+        pixmap = pixmap.scaled(pixmap.width() * dScaleMultiplier, pixmap.height() * dScaleMultiplier,
+                               Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
+        uXHot *= dScaleMultiplier;
+        uYHot *= dScaleMultiplier;
+    }
+
+# ifdef VBOX_WS_WIN
+    /* If device pixel ratio was set: */
+    if (dDevicePixelRatio > 1.0)
+    {
+        /* Scale the pixmap down: */
+        pixmap.setDevicePixelRatio(dDevicePixelRatio);
+        uXHot /= dDevicePixelRatio;
+        uYHot /= dDevicePixelRatio;
+    }
+# endif
+
+#else
+
+    Q_UNUSED(pixmap);
+    Q_UNUSED(uXHot);
+    Q_UNUSED(uYHot);
+
+#endif
 }

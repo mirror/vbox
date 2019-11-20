@@ -1657,8 +1657,6 @@ void UISession::updateMousePointerShape()
 {
     /* Fetch incoming shape data: */
     const bool fHasAlpha = m_shapeData.hasAlpha();
-    uint uXHot = m_shapeData.hotSpot().x();
-    uint uYHot = m_shapeData.hotSpot().y();
     const uint uWidth = m_shapeData.shapeSize().width();
     const uint uHeight = m_shapeData.shapeSize().height();
     const uchar *pShapeData = m_shapeData.shape().constData();
@@ -1673,9 +1671,6 @@ void UISession::updateMousePointerShape()
     const uchar *pSrcAndMaskPtr = pShapeData;
     const uint uAndMaskSize = (uWidth + 7) / 8 * uHeight;
     const uchar *pSrcShapePtr = pShapeData + ((uAndMaskSize + 3) & ~3);
-
-    /* Remember initial cursor hotspot: */
-    m_cursorHotspot = QPoint(uXHot, uYHot);
 
 #if defined (VBOX_WS_WIN)
 
@@ -1697,8 +1692,6 @@ void UISession::updateMousePointerShape()
             memcpy(image.scanLine(y), pu32SrcShapeScanline, uWidth * sizeof(uint32_t));
 
         m_cursorShapePixmap = QPixmap::fromImage(image);
-        updateMousePointerPixmapScaling(m_cursorShapePixmap, uXHot, uYHot);
-        m_cursor = QCursor(m_cursorShapePixmap, uXHot, uYHot);
     }
     else
     {
@@ -1789,9 +1782,6 @@ void UISession::updateMousePointerShape()
 
             m_cursorShapePixmap = QBitmap::fromImage(bitmap);
             m_cursorMaskPixmap = QBitmap::fromImage(mask);
-            updateMousePointerPixmapScaling(m_cursorShapePixmap, uXHot, uYHot);
-            updateMousePointerPixmapScaling(m_cursorMaskPixmap, uXHot, uYHot);
-            m_cursor = QCursor(m_cursorShapePixmap, m_cursorMaskPixmap, uXHot, uYHot);
         }
         else
         {
@@ -1822,8 +1812,6 @@ void UISession::updateMousePointerShape()
             }
 
             m_cursorShapePixmap = QPixmap::fromImage(image);
-            updateMousePointerPixmapScaling(m_cursorShapePixmap, uXHot, uYHot);
-            m_cursor = QCursor(m_cursorShapePixmap, uXHot, uYHot);
         }
     }
 
@@ -1848,8 +1836,6 @@ void UISession::updateMousePointerShape()
 
     /* Create cursor-pixmap from the image: */
     m_cursorShapePixmap = QPixmap::fromImage(image);
-    updateMousePointerPixmapScaling(m_cursorShapePixmap, uXHot, uYHot);
-    m_cursor = QCursor(m_cursorShapePixmap, uXHot, uYHot);
 
     /* Mark mouse pointer shape valid: */
     m_fIsValidPointerShapePresent = true;
@@ -1860,97 +1846,9 @@ void UISession::updateMousePointerShape()
 
 #endif
 
-    /* Cache cursor pixmap size: */
+    /* Cache cursor pixmap size and hotspot: */
     m_cursorSize = m_cursorShapePixmap.size();
-}
-
-void UISession::updateMousePointerPixmapScaling(QPixmap &pixmap, uint &uXHot, uint &uYHot)
-{
-#if defined(VBOX_WS_MAC)
-
-    /* Get screen-id of active machine-window: */
-    /// @todo In case of multi-monitor setup check whether parameters are screen specific.
-    const ulong uScreenID = activeMachineWindow()->screenId();
-
-    /* Take into account scale-factor if necessary: */
-    const double dScaleFactor = frameBuffer(uScreenID)->scaleFactor();
-    //printf("Scale-factor: %f\n", dScaleFactor);
-    if (dScaleFactor > 1.0)
-    {
-        /* Scale the pixmap up: */
-        pixmap = pixmap.scaled(pixmap.width() * dScaleFactor, pixmap.height() * dScaleFactor,
-                               Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
-        uXHot *= dScaleFactor;
-        uYHot *= dScaleFactor;
-    }
-
-    /* Take into account device-pixel-ratio if necessary: */
-    const double dDevicePixelRatio = frameBuffer(uScreenID)->devicePixelRatio();
-    const bool fUseUnscaledHiDPIOutput = frameBuffer(uScreenID)->useUnscaledHiDPIOutput();
-    //printf("Device-pixel-ratio: %f, Unscaled HiDPI Output: %d\n",
-    //       dDevicePixelRatio, fUseUnscaledHiDPIOutput);
-    if (dDevicePixelRatio > 1.0 && fUseUnscaledHiDPIOutput)
-    {
-        /* Scale the pixmap down: */
-        pixmap.setDevicePixelRatio(dDevicePixelRatio);
-        uXHot /= dDevicePixelRatio;
-        uYHot /= dDevicePixelRatio;
-    }
-
-#elif defined(VBOX_WS_WIN) || defined(VBOX_WS_X11)
-
-    /* Get screen-id of active machine-window: */
-    /// @todo In case of multi-monitor setup check whether parameters are screen specific.
-    const ulong uScreenID = activeMachineWindow()->screenId();
-
-    /* We want to scale the pixmap just once, so let's prepare cumulative multiplier: */
-    double dScaleMultiplier = 1.0;
-
-    /* Take into account scale-factor if necessary: */
-    const double dScaleFactor = frameBuffer(uScreenID)->scaleFactor();
-    //printf("Scale-factor: %f\n", dScaleFactor);
-    if (dScaleFactor > 1.0)
-        dScaleMultiplier *= dScaleFactor;
-
-    /* Take into account device-pixel-ratio if necessary: */
-# ifdef VBOX_WS_WIN
-    const double dDevicePixelRatio = frameBuffer(uScreenID)->devicePixelRatio();
-# endif
-    const double dDevicePixelRatioActual = frameBuffer(uScreenID)->devicePixelRatioActual();
-    const bool fUseUnscaledHiDPIOutput = frameBuffer(uScreenID)->useUnscaledHiDPIOutput();
-    //printf("Device-pixel-ratio/actual: %f/%f, Unscaled HiDPI Output: %d\n",
-    //       dDevicePixelRatio, dDevicePixelRatioActual, fUseUnscaledHiDPIOutput);
-    if (dDevicePixelRatioActual > 1.0 && !fUseUnscaledHiDPIOutput)
-        dScaleMultiplier *= dDevicePixelRatioActual;
-
-    /* If scale multiplier was set: */
-    if (dScaleMultiplier > 1.0)
-    {
-        /* Scale the pixmap up: */
-        pixmap = pixmap.scaled(pixmap.width() * dScaleMultiplier, pixmap.height() * dScaleMultiplier,
-                               Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
-        uXHot *= dScaleMultiplier;
-        uYHot *= dScaleMultiplier;
-    }
-
-# ifdef VBOX_WS_WIN
-    /* If device pixel ratio was set: */
-    if (dDevicePixelRatio > 1.0)
-    {
-        /* Scale the pixmap down: */
-        pixmap.setDevicePixelRatio(dDevicePixelRatio);
-        uXHot /= dDevicePixelRatio;
-        uYHot /= dDevicePixelRatio;
-    }
-# endif
-
-#else
-
-    Q_UNUSED(pixmap);
-    Q_UNUSED(uXHot);
-    Q_UNUSED(uYHot);
-
-#endif
+    m_cursorHotspot = m_shapeData.hotSpot();
 }
 
 bool UISession::preprocessInitialization()
