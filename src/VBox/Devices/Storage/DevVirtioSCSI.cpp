@@ -1996,7 +1996,7 @@ static DECLCALLBACK(int) virtioScsiR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSS
         pWorkerR3->cRedoDescs = 0;
     }
 
-LogFunc(("Have %d redo reqs to load:%d\n", cReqsRedo));
+LogFunc(("Have %d redo reqs to load\n", cReqsRedo));
 
     for (int i = 0; i < cReqsRedo; i++)
     {
@@ -2332,7 +2332,6 @@ static DECLCALLBACK(void) virtioScsiR3Resume(PPDMDEVINS pDevIns)
             AssertRC(rc);
         }
     }
-
     /* Ensure guest is working the queues too. */
     virtioCoreR3VmStateChanged(pDevIns, &pThis->Virtio, kvirtIoVmStateChangedResume);
 }
