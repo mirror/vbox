@@ -1405,8 +1405,6 @@ DECLCALLBACK(int) apicR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE p
     /*
      * Init the data.
      */
-    pApicDev->pDevInsR3 = pDevIns;
-
     pApic->pDevInsR3    = pDevIns;
     pApic->pApicDevR3   = pApicDev;
     pApic->pApicDevR0   = PDMINS_2_DATA_R0PTR(pDevIns);
@@ -1552,8 +1550,8 @@ DECLCALLBACK(int) apicR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE p
         APIC_REG_COUNTER(&pApicCpu->StatIcrFullWrite,  "%u/IcrFullWrite",   "Number of times the ICR full (send IPI, x2APIC) is written.");
 
         APIC_PROF_COUNTER(&pApicCpu->StatUpdatePendingIntrs,
-                                                       "/PROF/CPU%d/APIC/UpdatePendingInterrupts", "Profiling of APICUpdatePendingInterrupts");
-        APIC_PROF_COUNTER(&pApicCpu->StatPostIntr,     "/PROF/CPU%d/APIC/PostInterrupt",  "Profiling of APICPostInterrupt");
+                                                       "/PROF/CPU%u/APIC/UpdatePendingInterrupts", "Profiling of APICUpdatePendingInterrupts");
+        APIC_PROF_COUNTER(&pApicCpu->StatPostIntr,     "/PROF/CPU%u/APIC/PostInterrupt",  "Profiling of APICPostInterrupt");
     }
 
 # undef APIC_PROF_COUNTER

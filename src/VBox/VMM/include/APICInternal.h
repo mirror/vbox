@@ -1160,8 +1160,6 @@ typedef struct APICDEV
 {
     /** The MMIO handle. */
     IOMMMIOHANDLE               hMmio;
-    /** The device instance - R3 Ptr. */
-    PPDMDEVINSR3                pDevInsR3;
 } APICDEV;
 /** Pointer to an APIC device. */
 typedef APICDEV *PAPICDEV;
