@@ -1827,6 +1827,7 @@ void UISession::updateMousePointerShape()
         }
     }
 
+    /* Mark mouse pointer shape valid: */
     m_fIsValidPointerShapePresent = true;
 
 #elif defined(VBOX_WS_X11) || defined(VBOX_WS_MAC)
@@ -1849,6 +1850,8 @@ void UISession::updateMousePointerShape()
     m_cursorShapePixmap = QPixmap::fromImage(image);
     updateMousePointerPixmapScaling(m_cursorShapePixmap, uXHot, uYHot);
     m_cursor = QCursor(m_cursorShapePixmap, uXHot, uYHot);
+
+    /* Mark mouse pointer shape valid: */
     m_fIsValidPointerShapePresent = true;
 
 #else
