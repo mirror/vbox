@@ -1182,15 +1182,8 @@ typedef struct APICR0PERVM
  */
 typedef struct APIC
 {
-    /** @name The APIC PDM device instance.
-     * @{ */
-    /** The APIC device - R0 ptr. */
-    R0PTRTYPE(PAPICDEV)         pApicDevR0;
-    /** The APIC device - R3 ptr. */
-    R3PTRTYPE(PAPICDEV)         pApicDevR3;
     /** The ring-3 device instance. */
     PPDMDEVINSR3                pDevInsR3;
-    /** @} */
 
     /** @name The APIC pending-interrupt bitmap (PIB).
      * @{ */
@@ -1206,8 +1199,6 @@ typedef struct APIC
     R3PTRTYPE(void *)           pvApicPibR3;
     /** The size of the page in bytes. */
     uint32_t                    cbApicPib;
-    /** Alignment padding. */
-    uint32_t                    u32Aligment0;
     /** @} */
 
     /** @name Other miscellaneous data.
@@ -1230,8 +1221,6 @@ typedef struct APIC
     bool                        afAlignment[1];
     /** The max supported APIC mode from CFGM.  */
     PDMAPICMODE                 enmMaxMode;
-    /** Alignment padding. */
-    uint32_t                    u32Alignment1;
     /** @} */
 } APIC;
 /** Pointer to APIC VM instance data. */
@@ -1239,8 +1228,6 @@ typedef APIC *PAPIC;
 /** Pointer to const APIC VM instance data. */
 typedef APIC const *PCAPIC;
 AssertCompileMemberAlignment(APIC, cbApicPib, 8);
-AssertCompileMemberAlignment(APIC, fVirtApicRegsEnabled, 8);
-AssertCompileMemberAlignment(APIC, enmMaxMode, 8);
 AssertCompileSizeAlignment(APIC, 8);
 
 /**

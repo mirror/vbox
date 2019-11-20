@@ -1395,8 +1395,6 @@
 #endif
 
     GEN_CHECK_SIZE(APIC);
-    GEN_CHECK_OFF(APIC, pApicDevR0);
-    GEN_CHECK_OFF(APIC, pApicDevR3);
     GEN_CHECK_OFF(APIC, pvApicPibR0);
     GEN_CHECK_OFF(APIC, pvApicPibR3);
     GEN_CHECK_OFF(APIC, cbApicPib);
