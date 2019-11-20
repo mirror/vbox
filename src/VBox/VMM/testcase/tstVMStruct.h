@@ -1406,7 +1406,6 @@
     GEN_CHECK_OFF(APICCPU, pvApicPibR3);
     GEN_CHECK_OFF(APICCPU, ApicPibLevel);
     GEN_CHECK_OFF(APICCPU, hTimer);
-    GEN_CHECK_OFF(APICCPU, TimerCritSect);
 
     GEN_CHECK_SIZE(VM);
     GEN_CHECK_OFF(VM, enmVMState);

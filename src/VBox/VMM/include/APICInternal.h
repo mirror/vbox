@@ -1287,16 +1287,15 @@ typedef struct APICCPU
      * @{ */
     /** The timer. */
     TMTIMERHANDLE               hTimer;
-    /** The time stamp when the timer was initialized. */
+    /** The time stamp when the timer was initialized.
+     * @note Access protected by the timer critsect.  */
     uint64_t                    u64TimerInitial;
     /** Cache of timer initial count of the frequency hint to TM. */
     uint32_t                    uHintedTimerInitialCount;
     /** Cache of timer shift of the frequency hint to TM. */
     uint32_t                    uHintedTimerShift;
-    /** The timer critical sect protecting @a u64TimerInitial  */
-    PDMCRITSECT                 TimerCritSect;
     /** The timer description. */
-    char                        szTimerDesc[32];
+    char                        szTimerDesc[16];
     /** @} */
 
     /** @name Log Max counters
