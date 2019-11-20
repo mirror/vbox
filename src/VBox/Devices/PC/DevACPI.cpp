@@ -899,7 +899,7 @@ static void apicR3UpdateGpe0(PPDMDEVINS pDevIns, ACPIState *pThis, uint32_t sts,
 static VBOXSTRICTRC acpiR3DoPowerOff(PPDMDEVINS pDevIns)
 {
     VBOXSTRICTRC rc = PDMDevHlpVMPowerOff(pDevIns);
-    AssertRC(rc);
+    AssertRC(VBOXSTRICTRC_VAL(rc));
     return rc;
 }
 
