@@ -280,7 +280,7 @@ enum
 *   Structures and Typedefs                                                                                                      *
 *********************************************************************************************************************************/
 /**
- * The ACPI device state.
+ * The shared ACPI device state.
  */
 typedef struct ACPISTATE
 {
@@ -307,6 +307,7 @@ typedef struct ACPISTATE
     uint32_t            au8BatteryInfo[13];
 
     uint32_t            uSystemInfoIndex;
+    uint32_t            u32Alignment0;
     uint64_t            u64RamSize;
     /** Offset of the 64-bit prefetchable memory window. */
     uint64_t            u64PciPref64Min;
@@ -344,10 +345,10 @@ typedef struct ACPISTATE
     RTIOPORT            uPmIoPortBase;
     /** I/O port address of SMBus device. */
     RTIOPORT            uSMBusIoPortBase;
-    /** Array of flags of attached CPUs */
-    VMCPUSET            CpuSetAttached;
     /** Which CPU to check for the locked status. */
     uint32_t            idCpuLockCheck;
+    /** Array of flags of attached CPUs */
+    VMCPUSET            CpuSetAttached;
     /** Mask of locked CPUs (used by the guest). */
     VMCPUSET            CpuSetLocked;
     /** The CPU event type. */
@@ -360,6 +361,7 @@ typedef struct ACPISTATE
     bool                fUseMcfg;
     /** if the 64-bit prefetchable memory window is shown to the guest */
     bool                fPciPref64Enabled;
+    bool                afAlignment1;
     /** Primary NIC PCI address. */
     uint32_t            u32NicPciAddress;
     /** Primary audio card PCI address. */
@@ -400,30 +402,15 @@ typedef struct ACPISTATE
 
     /** @name Parallel port config bits
      * @{ */
-    /** Parallel 0 IRQ number */
-    uint8_t             uParallel0Irq;
-    /** Parallel 1 IRQ number */
-    uint8_t             uParallel1Irq;
     /** Parallel 0 IO port base */
     RTIOPORT            uParallel0IoPortBase;
     /** Parallel 1 IO port base */
     RTIOPORT            uParallel1IoPortBase;
+    /** Parallel 0 IRQ number */
+    uint8_t             uParallel0Irq;
+    /** Parallel 1 IRQ number */
+    uint8_t             uParallel1Irq;
     /** @} */
-
-    uint32_t            Alignment2;
-
-    /** ACPI port base interface. */
-    PDMIBASE            IBase;
-    /** ACPI port interface. */
-    PDMIACPIPORT        IACPIPort;
-    /** Pointer to the device instance so we can get our bearings from
-     *  interface functions. */
-    PPDMDEVINSR3        pDevIns;
-
-    /** Pointer to the driver base interface. */
-    R3PTRTYPE(PPDMIBASE) pDrvBase;
-    /** Pointer to the driver connector interface. */
-    R3PTRTYPE(PPDMIACPICONNECTOR) pDrv;
 
     /** Number of custom ACPI tables */
     uint8_t             cCustTbls;
@@ -431,18 +418,13 @@ typedef struct ACPISTATE
     uint8_t             au8OemId[6];
     /** ACPI Crator ID */
     uint8_t             au8CreatorId[4];
+    uint8_t             abAlignment2[3];
     /** ACPI Crator Rev */
     uint32_t            u32CreatorRev;
     /** ACPI custom OEM Tab ID */
     uint8_t             au8OemTabId[8];
     /** ACPI custom OEM Rev */
     uint32_t            u32OemRevision;
-    uint32_t            Alignment4;
-
-    /** Custom ACPI tables binary data. */
-    R3PTRTYPE(uint8_t *) apu8CustBin[MAX_CUST_TABLES];
-    /** The size of the custom table binary. */
-    uint64_t            acbCustBin[MAX_CUST_TABLES];
 
     /** SMBus Host Status Register */
     uint8_t             u8SMBusHstSts;
@@ -460,16 +442,17 @@ typedef struct ACPISTATE
     uint8_t             u8SMBusHstDat1;
     /** SMBus Slave Control Register */
     uint8_t             u8SMBusSlvCnt;
-    /** SMBus Shadow Command Register */
-    uint8_t             u8SMBusShdwCmd;
     /** SMBus Slave Event Register */
     uint16_t            u16SMBusSlvEvt;
     /** SMBus Slave Data Register */
     uint16_t            u16SMBusSlvDat;
-    /** SMBus Host Block Data Buffer */
-    uint8_t             au8SMBusBlkDat[32];
+    /** SMBus Shadow Command Register */
+    uint8_t             u8SMBusShdwCmd;
     /** SMBus Host Block Index */
     uint8_t             u8SMBusBlkIdx;
+    uint8_t             abAlignment3[2];
+    /** SMBus Host Block Data Buffer */
+    uint8_t             au8SMBusBlkDat[32];
 
     /** @todo DEBUGGING */
     uint32_t            uPmTimeOld;
@@ -513,6 +496,34 @@ typedef struct ACPISTATE
 } ACPISTATE;
 /** Pointer to the shared ACPI device state. */
 typedef ACPISTATE *PACPISTATE;
+
+
+/**
+ * The ring-3 ACPI device state.
+ */
+typedef struct ACPISTATER3
+{
+    /** ACPI port base interface. */
+    PDMIBASE            IBase;
+    /** ACPI port interface. */
+    PDMIACPIPORT        IACPIPort;
+    /** Pointer to the device instance so we can get our bearings from
+     *  interface functions. */
+    PPDMDEVINSR3        pDevIns;
+
+    /** Pointer to the driver base interface. */
+    R3PTRTYPE(PPDMIBASE) pDrvBase;
+    /** Pointer to the driver connector interface. */
+    R3PTRTYPE(PPDMIACPICONNECTOR) pDrv;
+
+    /** Custom ACPI tables binary data. */
+    R3PTRTYPE(uint8_t *) apu8CustBin[MAX_CUST_TABLES];
+    /** The size of the custom table binary. */
+    uint64_t            acbCustBin[MAX_CUST_TABLES];
+} ACPISTATER3;
+/** Pointer to the ring-3 ACPI device state. */
+typedef ACPISTATER3 *PACPISTATER3;
+
 
 #pragma pack(1)
 
@@ -800,7 +811,7 @@ AssertCompileSize(ACPITBLCUST, 512);
 *   Internal Functions                                                                                                           *
 *********************************************************************************************************************************/
 #ifdef IN_RING3
-static int acpiR3PlantTables(PPDMDEVINS pDevIns, PACPISTATE pThis);
+static int acpiR3PlantTables(PPDMDEVINS pDevIns, PACPISTATE pThis, PACPISTATER3 pThisCC);
 #endif
 
 /* SCI, usually IRQ9 */
@@ -943,8 +954,9 @@ static VBOXSTRICTRC acpiR3DoSleep(PPDMDEVINS pDevIns, PACPISTATE pThis)
  */
 static DECLCALLBACK(int) acpiR3Port_PowerButtonPress(PPDMIACPIPORT pInterface)
 {
-    PACPISTATE pThis = RT_FROM_MEMBER(pInterface, ACPISTATE, IACPIPort);
-    PPDMDEVINS pDevIns = pThis->pDevIns;
+    PACPISTATER3 pThisCC = RT_FROM_MEMBER(pInterface, ACPISTATER3, IACPIPort);
+    PPDMDEVINS   pDevIns = pThisCC->pDevIns;
+    PACPISTATE   pThis   = PDMDEVINS_2_DATA(pDevIns, PACPISTATE);
     DEVACPI_LOCK_R3(pDevIns, pThis);
 
     Log(("acpiR3Port_PowerButtonPress: handled=%d status=%x\n", pThis->fPowerButtonHandled, pThis->pm1a_sts));
@@ -960,8 +972,9 @@ static DECLCALLBACK(int) acpiR3Port_PowerButtonPress(PPDMIACPIPORT pInterface)
  */
 static DECLCALLBACK(int) acpiR3Port_GetPowerButtonHandled(PPDMIACPIPORT pInterface, bool *pfHandled)
 {
-    PACPISTATE pThis = RT_FROM_MEMBER(pInterface, ACPISTATE, IACPIPort);
-    PPDMDEVINS pDevIns = pThis->pDevIns;
+    PACPISTATER3 pThisCC = RT_FROM_MEMBER(pInterface, ACPISTATER3, IACPIPort);
+    PPDMDEVINS   pDevIns = pThisCC->pDevIns;
+    PACPISTATE   pThis   = PDMDEVINS_2_DATA(pDevIns, PACPISTATE);
     DEVACPI_LOCK_R3(pDevIns, pThis);
 
     *pfHandled = pThis->fPowerButtonHandled;
@@ -976,8 +989,9 @@ static DECLCALLBACK(int) acpiR3Port_GetPowerButtonHandled(PPDMIACPIPORT pInterfa
  */
 static DECLCALLBACK(int) acpiR3Port_GetGuestEnteredACPIMode(PPDMIACPIPORT pInterface, bool *pfEntered)
 {
-    PACPISTATE pThis = RT_FROM_MEMBER(pInterface, ACPISTATE, IACPIPort);
-    PPDMDEVINS pDevIns = pThis->pDevIns;
+    PACPISTATER3 pThisCC = RT_FROM_MEMBER(pInterface, ACPISTATER3, IACPIPort);
+    PPDMDEVINS   pDevIns = pThisCC->pDevIns;
+    PACPISTATE   pThis   = PDMDEVINS_2_DATA(pDevIns, PACPISTATE);
     DEVACPI_LOCK_R3(pDevIns, pThis);
 
     *pfEntered = (pThis->pm1a_ctl & SCI_EN) != 0;
@@ -991,8 +1005,9 @@ static DECLCALLBACK(int) acpiR3Port_GetGuestEnteredACPIMode(PPDMIACPIPORT pInter
  */
 static DECLCALLBACK(int) acpiR3Port_GetCpuStatus(PPDMIACPIPORT pInterface, unsigned uCpu, bool *pfLocked)
 {
-    PACPISTATE pThis = RT_FROM_MEMBER(pInterface, ACPISTATE, IACPIPort);
-    PPDMDEVINS pDevIns = pThis->pDevIns;
+    PACPISTATER3 pThisCC = RT_FROM_MEMBER(pInterface, ACPISTATER3, IACPIPort);
+    PPDMDEVINS   pDevIns = pThisCC->pDevIns;
+    PACPISTATE   pThis   = PDMDEVINS_2_DATA(pDevIns, PACPISTATE);
     DEVACPI_LOCK_R3(pDevIns, pThis);
 
     *pfLocked = VMCPUSET_IS_PRESENT(&pThis->CpuSetLocked, uCpu);
@@ -1009,8 +1024,9 @@ static DECLCALLBACK(int) acpiR3Port_GetCpuStatus(PPDMIACPIPORT pInterface, unsig
  */
 static DECLCALLBACK(int) acpiR3Port_SleepButtonPress(PPDMIACPIPORT pInterface)
 {
-    PACPISTATE pThis = RT_FROM_MEMBER(pInterface, ACPISTATE, IACPIPort);
-    PPDMDEVINS pDevIns = pThis->pDevIns;
+    PACPISTATER3 pThisCC = RT_FROM_MEMBER(pInterface, ACPISTATER3, IACPIPort);
+    PPDMDEVINS   pDevIns = pThisCC->pDevIns;
+    PACPISTATE   pThis   = PDMDEVINS_2_DATA(pDevIns, PACPISTATE);
     DEVACPI_LOCK_R3(pDevIns, pThis);
 
     acpiUpdatePm1a(pDevIns, pThis, pThis->pm1a_sts | SLPBTN_STS, pThis->pm1a_en);
@@ -1028,8 +1044,9 @@ static DECLCALLBACK(int) acpiR3Port_SleepButtonPress(PPDMIACPIPORT pInterface)
  */
 static DECLCALLBACK(int) acpiR3Port_MonitorHotPlugEvent(PPDMIACPIPORT pInterface)
 {
-    PACPISTATE pThis = RT_FROM_MEMBER(pInterface, ACPISTATE, IACPIPort);
-    PPDMDEVINS pDevIns = pThis->pDevIns;
+    PACPISTATER3 pThisCC = RT_FROM_MEMBER(pInterface, ACPISTATER3, IACPIPort);
+    PPDMDEVINS   pDevIns = pThisCC->pDevIns;
+    PACPISTATE   pThis   = PDMDEVINS_2_DATA(pDevIns, PACPISTATE);
     DEVACPI_LOCK_R3(pDevIns, pThis);
 
     apicR3UpdateGpe0(pDevIns, pThis, pThis->gpe0_sts | 0x4, pThis->gpe0_en);
@@ -1047,8 +1064,9 @@ static DECLCALLBACK(int) acpiR3Port_MonitorHotPlugEvent(PPDMIACPIPORT pInterface
  */
 static DECLCALLBACK(int) acpiR3Port_BatteryStatusChangeEvent(PPDMIACPIPORT pInterface)
 {
-    PACPISTATE pThis = RT_FROM_MEMBER(pInterface, ACPISTATE, IACPIPort);
-    PPDMDEVINS pDevIns = pThis->pDevIns;
+    PACPISTATER3 pThisCC = RT_FROM_MEMBER(pInterface, ACPISTATER3, IACPIPort);
+    PPDMDEVINS   pDevIns = pThisCC->pDevIns;
+    PACPISTATE   pThis   = PDMDEVINS_2_DATA(pDevIns, PACPISTATE);
     DEVACPI_LOCK_R3(pDevIns, pThis);
 
     apicR3UpdateGpe0(pDevIns, pThis, pThis->gpe0_sts | 0x1, pThis->gpe0_en);
@@ -1130,8 +1148,9 @@ static DECLCALLBACK(void) acpiR3PmTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, voi
  *
  * @returns VINF_SUCCESS.
  * @param   pThis           The ACPI shared instance data.
+ * @param   pThisCC         The ACPI instance data for ring-3.
  */
-static int acpiR3FetchBatteryStatus(PACPISTATE pThis)
+static int acpiR3FetchBatteryStatus(PACPISTATE pThis, PACPISTATER3 pThisCC)
 {
     uint32_t           *p = pThis->au8BatteryInfo;
     bool               fPresent;              /* battery present? */
@@ -1140,10 +1159,10 @@ static int acpiR3FetchBatteryStatus(PACPISTATE pThis)
     uint32_t           hostPresentRate;       /* 0..1000 */
     int                rc;
 
-    if (!pThis->pDrv)
+    if (!pThisCC->pDrv)
         return VINF_SUCCESS;
-    rc = pThis->pDrv->pfnQueryBatteryStatus(pThis->pDrv, &fPresent, &hostRemainingCapacity,
-                                            &hostBatteryState, &hostPresentRate);
+    rc = pThisCC->pDrv->pfnQueryBatteryStatus(pThisCC->pDrv, &fPresent, &hostRemainingCapacity,
+                                              &hostBatteryState, &hostPresentRate);
     AssertRC(rc);
 
     /* default values */
@@ -1190,9 +1209,9 @@ static int acpiR3FetchBatteryInfo(PACPISTATE pThis)
  * The _STA method - used by acpiR3BatDataRead to implement BAT_DEVICE_STATUS.
  *
  * @returns status mask or 0.
- * @param   pThis           The ACPI shared instance data.
+ * @param   pThisCC         The ACPI instance data for ring-3.
  */
-static uint32_t acpiR3GetBatteryDeviceStatus(PACPISTATE pThis)
+static uint32_t acpiR3GetBatteryDeviceStatus(PACPISTATER3 pThisCC)
 {
     bool               fPresent;              /* battery present? */
     PDMACPIBATCAPACITY hostRemainingCapacity; /* 0..100 */
@@ -1200,35 +1219,35 @@ static uint32_t acpiR3GetBatteryDeviceStatus(PACPISTATE pThis)
     uint32_t           hostPresentRate;       /* 0..1000 */
     int                rc;
 
-    if (!pThis->pDrv)
+    if (!pThisCC->pDrv)
         return 0;
-    rc = pThis->pDrv->pfnQueryBatteryStatus(pThis->pDrv, &fPresent, &hostRemainingCapacity,
-                                            &hostBatteryState, &hostPresentRate);
+    rc = pThisCC->pDrv->pfnQueryBatteryStatus(pThisCC->pDrv, &fPresent, &hostRemainingCapacity,
+                                              &hostBatteryState, &hostPresentRate);
     AssertRC(rc);
 
     return fPresent
-        ?   STA_DEVICE_PRESENT_MASK                     /* present */
-          | STA_DEVICE_ENABLED_MASK                     /* enabled and decodes its resources */
-          | STA_DEVICE_SHOW_IN_UI_MASK                  /* should be shown in UI */
-          | STA_DEVICE_FUNCTIONING_PROPERLY_MASK        /* functioning properly */
-          | STA_BATTERY_PRESENT_MASK                    /* battery is present */
-        : 0;                                            /* device not present */
+         ?   STA_DEVICE_PRESENT_MASK                     /* present */
+           | STA_DEVICE_ENABLED_MASK                     /* enabled and decodes its resources */
+           | STA_DEVICE_SHOW_IN_UI_MASK                  /* should be shown in UI */
+           | STA_DEVICE_FUNCTIONING_PROPERLY_MASK        /* functioning properly */
+           | STA_BATTERY_PRESENT_MASK                    /* battery is present */
+         : 0;                                            /* device not present */
 }
 
 /**
  * Used by acpiR3BatDataRead to implement BAT_POWER_SOURCE.
  *
  * @returns status.
- * @param   pThis           The ACPI shared instance data.
+ * @param   pThisCC         The ACPI instance data for ring-3.
  */
-static uint32_t acpiR3GetPowerSource(PACPISTATE pThis)
+static uint32_t acpiR3GetPowerSource(PACPISTATER3 pThisCC)
 {
     /* query the current power source from the host driver */
-    if (!pThis->pDrv)
+    if (!pThisCC->pDrv)
         return AC_ONLINE;
 
     PDMACPIPOWERSOURCE ps;
-    int rc = pThis->pDrv->pfnQueryPowerSource(pThis->pDrv, &ps);
+    int rc = pThisCC->pDrv->pfnQueryPowerSource(pThisCC->pDrv, &ps);
     AssertRC(rc);
     return ps == PDM_ACPI_POWER_SOURCE_BATTERY ? AC_OFFLINE : AC_ONLINE;
 }
@@ -1269,14 +1288,15 @@ static DECLCALLBACK(VBOXSTRICTRC)  acpiR3BatDataRead(PPDMDEVINS pDevIns, void *p
     if (cb != 4)
         return VERR_IOM_IOPORT_UNUSED;
 
-    PACPISTATE pThis = PDMDEVINS_2_DATA(pDevIns, PACPISTATE);
+    PACPISTATE   pThis   = PDMDEVINS_2_DATA(pDevIns, PACPISTATE);
+    PACPISTATER3 pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PACPISTATER3);
     DEVACPI_LOCK_R3(pDevIns, pThis);
 
     VBOXSTRICTRC rc = VINF_SUCCESS;
     switch (pThis->uBatteryIndex)
     {
         case BAT_STATUS_STATE:
-            acpiR3FetchBatteryStatus(pThis);
+            acpiR3FetchBatteryStatus(pThis, pThisCC);
             RT_FALL_THRU();
         case BAT_STATUS_PRESENT_RATE:
         case BAT_STATUS_REMAINING_CAPACITY:
@@ -1299,11 +1319,11 @@ static DECLCALLBACK(VBOXSTRICTRC)  acpiR3BatDataRead(PPDMDEVINS pDevIns, void *p
             break;
 
         case BAT_DEVICE_STATUS:
-            *pu32 = acpiR3GetBatteryDeviceStatus(pThis);
+            *pu32 = acpiR3GetBatteryDeviceStatus(pThisCC);
             break;
 
         case BAT_POWER_SOURCE:
-            *pu32 = acpiR3GetPowerSource(pThis);
+            *pu32 = acpiR3GetPowerSource(pThisCC);
             break;
 
         default:
@@ -2106,9 +2126,10 @@ static int acpiR3UnmapPmIoPorts(PPDMDEVINS pDevIns, PACPISTATE pThis)
  *
  * @param   pDevIns         The device instance.
  * @param   pThis           The ACPI shared instance data.
+ * @param   pThisCC         The ACPI instance data for ring-3.
  * @param   NewIoPortBase   The new base address of the I/O ports.
  */
-static int acpiR3UpdatePmHandlers(PPDMDEVINS pDevIns, PACPISTATE pThis, RTIOPORT NewIoPortBase)
+static int acpiR3UpdatePmHandlers(PPDMDEVINS pDevIns, PACPISTATE pThis, PACPISTATER3 pThisCC, RTIOPORT NewIoPortBase)
 {
     Log(("acpi: rebasing PM 0x%x -> 0x%x\n", pThis->uPmIoPortBase, NewIoPortBase));
     if (NewIoPortBase != pThis->uPmIoPortBase)
@@ -2124,7 +2145,7 @@ static int acpiR3UpdatePmHandlers(PPDMDEVINS pDevIns, PACPISTATE pThis, RTIOPORT
             return rc;
 
         /* We have to update FADT table acccording to the new base */
-        rc = acpiR3PlantTables(pDevIns, pThis);
+        rc = acpiR3PlantTables(pDevIns, pThis, pThisCC);
         AssertRC(rc);
         if (RT_FAILURE(rc))
             return rc;
@@ -2531,8 +2552,9 @@ static DECLCALLBACK(int) acpiR3SaveState(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
  */
 static DECLCALLBACK(int) acpiR3LoadState(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass)
 {
-    PACPISTATE      pThis = PDMDEVINS_2_DATA(pDevIns, PACPISTATE);
-    PCPDMDEVHLPR3   pHlp  = pDevIns->pHlpR3;
+    PACPISTATE      pThis   = PDMDEVINS_2_DATA(pDevIns, PACPISTATE);
+    PACPISTATER3    pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PACPISTATER3);
+    PCPDMDEVHLPR3   pHlp    = pDevIns->pHlpR3;
     Assert(uPass == SSM_PASS_FINAL); NOREF(uPass);
 
     /*
@@ -2579,7 +2601,7 @@ static DECLCALLBACK(int) acpiR3LoadState(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, ui
         AssertRCReturn(rc, rc);
         rc = acpiR3MapSMBusIoPorts(pDevIns, pThis);
         AssertRCReturn(rc, rc);
-        rc = acpiR3FetchBatteryStatus(pThis);
+        rc = acpiR3FetchBatteryStatus(pThis, pThisCC);
         AssertRCReturn(rc, rc);
         rc = acpiR3FetchBatteryInfo(pThis);
         AssertRCReturn(rc, rc);
@@ -2601,9 +2623,9 @@ static DECLCALLBACK(int) acpiR3LoadState(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, ui
  */
 static DECLCALLBACK(void *) acpiR3QueryInterface(PPDMIBASE pInterface, const char *pszIID)
 {
-    PACPISTATE pThis = RT_FROM_MEMBER(pInterface, ACPISTATE, IBase);
-    PDMIBASE_RETURN_INTERFACE(pszIID, PDMIBASE, &pThis->IBase);
-    PDMIBASE_RETURN_INTERFACE(pszIID, PDMIACPIPORT, &pThis->IACPIPort);
+    PACPISTATER3 pThisCC = RT_FROM_MEMBER(pInterface, ACPISTATER3, IBase);
+    PDMIBASE_RETURN_INTERFACE(pszIID, PDMIBASE, &pThisCC->IBase);
+    PDMIBASE_RETURN_INTERFACE(pszIID, PDMIACPIPORT, &pThisCC->IACPIPort);
     return NULL;
 }
 
@@ -2815,13 +2837,12 @@ static int acpiR3SetupRsdt(PPDMDEVINS pDevIns, PACPISTATE pThis, RTGCPHYS32 addr
 static int acpiR3SetupXsdt(PPDMDEVINS pDevIns, PACPISTATE pThis, RTGCPHYS32 addr, unsigned int nb_entries, uint32_t *addrs)
 {
     ACPITBLXSDT *xsdt;
-    const size_t size = sizeof(ACPITBLHEADER) + nb_entries * sizeof(xsdt->u64Entry[0]);
-
-    xsdt = (ACPITBLXSDT*)RTMemAllocZ(size);
+    const size_t cbXsdt = sizeof(ACPITBLHEADER) + nb_entries * sizeof(xsdt->u64Entry[0]);
+    xsdt = (ACPITBLXSDT *)RTMemAllocZ(cbXsdt);
     if (!xsdt)
         return VERR_NO_TMP_MEMORY;
 
-    acpiR3PrepareHeader(pThis, &xsdt->header, "XSDT", (uint32_t)size, 1 /* according to ACPI 3.0 specs */);
+    acpiR3PrepareHeader(pThis, &xsdt->header, "XSDT", (uint32_t)cbXsdt, 1 /* according to ACPI 3.0 specs */);
 
     if (pThis->cCustTbls > 0)
         memcpy(xsdt->header.au8OemTabId, pThis->au8OemTabId, 8);
@@ -2831,8 +2852,9 @@ static int acpiR3SetupXsdt(PPDMDEVINS pDevIns, PACPISTATE pThis, RTGCPHYS32 addr
         xsdt->u64Entry[i] = RT_H2LE_U64((uint64_t)addrs[i]);
         Log(("Setup XSDT: [%d] = %RX64\n", i, xsdt->u64Entry[i]));
     }
-    xsdt->header.u8Checksum = acpiR3Checksum(xsdt, size);
-    acpiR3PhysCopy(pDevIns, addr, xsdt, size);
+    xsdt->header.u8Checksum = acpiR3Checksum(xsdt, cbXsdt);
+    acpiR3PhysCopy(pDevIns, addr, xsdt, cbXsdt);
+
     RTMemFree(xsdt);
     return VINF_SUCCESS;
 }
@@ -3171,7 +3193,7 @@ static int acpiR3ReadCustomTable(PPDMDEVINS pDevIns, uint8_t **ppu8CustBin, uint
 /**
  * Create the ACPI tables in guest memory.
  */
-static int acpiR3PlantTables(PPDMDEVINS pDevIns, PACPISTATE pThis)
+static int acpiR3PlantTables(PPDMDEVINS pDevIns, PACPISTATE pThis, PACPISTATER3 pThisCC)
 {
     int        rc;
     RTGCPHYS32 GCPhysCur, GCPhysRsdt, GCPhysXsdt, GCPhysFadtAcpi1, GCPhysFadtAcpi2, GCPhysFacs, GCPhysDsdt;
@@ -3283,7 +3305,7 @@ static int acpiR3PlantTables(PPDMDEVINS pDevIns, PACPISTATE pThis)
     for (uint8_t i = 0; i < pThis->cCustTbls; i++)
     {
         aGCPhysCust[i] = GCPhysCur;
-        GCPhysCur = RT_ALIGN_32(GCPhysCur + pThis->acbCustBin[i], 16);
+        GCPhysCur = RT_ALIGN_32(GCPhysCur + pThisCC->acbCustBin[i], 16);
     }
 
     void  *pvSsdtCode = NULL;
@@ -3354,10 +3376,10 @@ static int acpiR3PlantTables(PPDMDEVINS pDevIns, PACPISTATE pThis)
     for (uint8_t i = 0; i < pThis->cCustTbls; i++)
     {
         Assert(i < MAX_CUST_TABLES);
-        acpiR3PhysCopy(pDevIns, aGCPhysCust[i] + addend, pThis->apu8CustBin[i], pThis->acbCustBin[i]);
+        acpiR3PhysCopy(pDevIns, aGCPhysCust[i] + addend, pThisCC->apu8CustBin[i], pThisCC->acbCustBin[i]);
         aGCPhysRsdt[iCust + i] = aGCPhysCust[i] + addend;
         aGCPhysXsdt[iCust + i] = aGCPhysCust[i] + addend;
-        uint8_t* pSig = pThis->apu8CustBin[i];
+        uint8_t* pSig = pThisCC->apu8CustBin[i];
         LogRel(("ACPI: Planted custom table '%c%c%c%c' at 0x%08X\n",
                pSig[0], pSig[1], pSig[2], pSig[3], aGCPhysCust[i] + addend));
     }
@@ -3390,7 +3412,8 @@ static DECLCALLBACK(VBOXSTRICTRC) acpiR3PciConfigRead(PPDMDEVINS pDevIns, PPDMPC
 static DECLCALLBACK(VBOXSTRICTRC) acpiR3PciConfigWrite(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev,
                                                        uint32_t uAddress, unsigned cb, uint32_t u32Value)
 {
-    PACPISTATE pThis = PDMDEVINS_2_DATA(pDevIns, PACPISTATE);
+    PACPISTATE      pThis   = PDMDEVINS_2_DATA(pDevIns, PACPISTATE);
+    PACPISTATER3    pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PACPISTATER3);
 
     Log2(("acpi: PCI config write: 0x%x -> 0x%x (%d)\n", u32Value, uAddress, cb));
     DEVACPI_LOCK_R3(pDevIns, pThis);
@@ -3417,7 +3440,7 @@ static DECLCALLBACK(VBOXSTRICTRC) acpiR3PciConfigWrite(PPDMDEVINS pDevIns, PPDMP
             NewIoPortBase &= 0xffc0;
         }
 
-        int rc = acpiR3UpdatePmHandlers(pDevIns, pThis, NewIoPortBase);
+        int rc = acpiR3UpdatePmHandlers(pDevIns, pThis, pThisCC, NewIoPortBase);
         AssertRC(rc);
     }
 
@@ -3451,7 +3474,8 @@ static DECLCALLBACK(VBOXSTRICTRC) acpiR3PciConfigWrite(PPDMDEVINS pDevIns, PPDMP
  */
 static DECLCALLBACK(int) acpiR3Attach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t fFlags)
 {
-    PACPISTATE pThis = PDMDEVINS_2_DATA(pDevIns, PACPISTATE);
+    PACPISTATE      pThis   = PDMDEVINS_2_DATA(pDevIns, PACPISTATE);
+    PACPISTATER3    pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PACPISTATER3);
     LogFlow(("acpiAttach: pDevIns=%p iLUN=%u fFlags=%#x\n", pDevIns, iLUN, fFlags));
 
     AssertMsgReturn(!(fFlags & PDM_TACH_FLAGS_NOT_HOT_PLUG),
@@ -3465,7 +3489,7 @@ static DECLCALLBACK(int) acpiR3Attach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_
     if (!VMCPUSET_IS_PRESENT(&pThis->CpuSetAttached, iLUN))
     {
         PPDMIBASE IBaseTmp;
-        rc = PDMDevHlpDriverAttach(pDevIns, iLUN, &pThis->IBase, &IBaseTmp, "ACPI CPU");
+        rc = PDMDevHlpDriverAttach(pDevIns, iLUN, &pThisCC->IBase, &IBaseTmp, "ACPI CPU");
         if (RT_SUCCESS(rc))
         {
             /* Enable the CPU */
@@ -3542,9 +3566,10 @@ static DECLCALLBACK(void) acpiR3Resume(PPDMDEVINS pDevIns)
  */
 static DECLCALLBACK(void) acpiR3MemSetup(PPDMDEVINS pDevIns, PDMDEVMEMSETUPCTX enmCtx)
 {
-    RT_NOREF1(enmCtx);
-    PACPISTATE pThis = PDMDEVINS_2_DATA(pDevIns, PACPISTATE);
-    acpiR3PlantTables(pDevIns, pThis);
+    RT_NOREF(enmCtx);
+    PACPISTATE      pThis = PDMDEVINS_2_DATA(pDevIns, PACPISTATE);
+    PACPISTATER3    pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PACPISTATER3);
+    acpiR3PlantTables(pDevIns, pThis, pThisCC);
 }
 
 /**
@@ -3552,7 +3577,8 @@ static DECLCALLBACK(void) acpiR3MemSetup(PPDMDEVINS pDevIns, PDMDEVMEMSETUPCTX e
  */
 static DECLCALLBACK(void) acpiR3Reset(PPDMDEVINS pDevIns)
 {
-    PACPISTATE pThis = PDMDEVINS_2_DATA(pDevIns, PACPISTATE);
+    PACPISTATE      pThis   = PDMDEVINS_2_DATA(pDevIns, PACPISTATE);
+    PACPISTATER3    pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PACPISTATER3);
 
     /* Play safe: make sure that the IRQ isn't stuck after a reset. */
     acpiSetIrq(pDevIns, 0);
@@ -3574,7 +3600,7 @@ static DECLCALLBACK(void) acpiR3Reset(PPDMDEVINS pDevIns)
 
     /* Real device behavior is resetting only the PM controller state,
      * but we're additionally doing the job of the BIOS. */
-    acpiR3UpdatePmHandlers(pDevIns, pThis, PM_PORT_BASE);
+    acpiR3UpdatePmHandlers(pDevIns, pThis, pThisCC, PM_PORT_BASE);
     acpiR3PmPCIBIOSFake(pDevIns, pThis);
 
     /* Reset SMBus base and PCI config space in addition to the SMBus controller
@@ -3591,13 +3617,15 @@ static DECLCALLBACK(void) acpiR3Reset(PPDMDEVINS pDevIns)
 static DECLCALLBACK(int) acpiR3Destruct(PPDMDEVINS pDevIns)
 {
     PDMDEV_CHECK_VERSIONS_RETURN(pDevIns);
-    PACPISTATE pThis = PDMDEVINS_2_DATA(pDevIns, PACPISTATE);
+    PACPISTATE      pThis = PDMDEVINS_2_DATA(pDevIns, PACPISTATE);
+    PACPISTATER3    pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PACPISTATER3);
+
     for (uint8_t i = 0; i < pThis->cCustTbls; i++)
     {
-        if (pThis->apu8CustBin[i])
+        if (pThisCC->apu8CustBin[i])
         {
-            PDMDevHlpMMHeapFree(pDevIns, pThis->apu8CustBin[i]);
-            pThis->apu8CustBin[i] = NULL;
+            PDMDevHlpMMHeapFree(pDevIns, pThisCC->apu8CustBin[i]);
+            pThisCC->apu8CustBin[i] = NULL;
         }
     }
     return VINF_SUCCESS;
@@ -3610,6 +3638,7 @@ static DECLCALLBACK(int) acpiR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
 {
     PDMDEV_CHECK_VERSIONS_RETURN(pDevIns);
     PACPISTATE      pThis   = PDMDEVINS_2_DATA(pDevIns, PACPISTATE);
+    PACPISTATER3    pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PACPISTATER3);
     PCPDMDEVHLPR3   pHlp    = pDevIns->pHlpR3;
 
     /*
@@ -3617,7 +3646,7 @@ static DECLCALLBACK(int) acpiR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
      */
     /** @todo move more of the code up! */
 
-    pThis->pDevIns         = pDevIns;
+    pThisCC->pDevIns       = pDevIns;
     VMCPUSET_EMPTY(&pThis->CpuSetAttached);
     VMCPUSET_EMPTY(&pThis->CpuSetLocked);
     pThis->idCpuLockCheck  = UINT32_C(0xffffffff);
@@ -3629,15 +3658,15 @@ static DECLCALLBACK(int) acpiR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
     VMCPUSET_ADD(&pThis->CpuSetLocked, 0);
 
     /* IBase */
-    pThis->IBase.pfnQueryInterface               = acpiR3QueryInterface;
+    pThisCC->IBase.pfnQueryInterface               = acpiR3QueryInterface;
     /* IACPIPort */
-    pThis->IACPIPort.pfnSleepButtonPress         = acpiR3Port_SleepButtonPress;
-    pThis->IACPIPort.pfnPowerButtonPress         = acpiR3Port_PowerButtonPress;
-    pThis->IACPIPort.pfnGetPowerButtonHandled    = acpiR3Port_GetPowerButtonHandled;
-    pThis->IACPIPort.pfnGetGuestEnteredACPIMode  = acpiR3Port_GetGuestEnteredACPIMode;
-    pThis->IACPIPort.pfnGetCpuStatus             = acpiR3Port_GetCpuStatus;
-    pThis->IACPIPort.pfnMonitorHotPlugEvent      = acpiR3Port_MonitorHotPlugEvent;
-    pThis->IACPIPort.pfnBatteryStatusChangeEvent = acpiR3Port_BatteryStatusChangeEvent;
+    pThisCC->IACPIPort.pfnSleepButtonPress         = acpiR3Port_SleepButtonPress;
+    pThisCC->IACPIPort.pfnPowerButtonPress         = acpiR3Port_PowerButtonPress;
+    pThisCC->IACPIPort.pfnGetPowerButtonHandled    = acpiR3Port_GetPowerButtonHandled;
+    pThisCC->IACPIPort.pfnGetGuestEnteredACPIMode  = acpiR3Port_GetGuestEnteredACPIMode;
+    pThisCC->IACPIPort.pfnGetCpuStatus             = acpiR3Port_GetCpuStatus;
+    pThisCC->IACPIPort.pfnMonitorHotPlugEvent      = acpiR3Port_MonitorHotPlugEvent;
+    pThisCC->IACPIPort.pfnBatteryStatusChangeEvent = acpiR3Port_BatteryStatusChangeEvent;
 
     /*
      * Set the default critical section to NOP (related to the PM timer).
@@ -3850,7 +3879,7 @@ static DECLCALLBACK(int) acpiR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
         if (pThis->fCpuHotPlug)
         {
             PPDMIBASE IBaseTmp;
-            rc = PDMDevHlpDriverAttach(pDevIns, i, &pThis->IBase, &IBaseTmp, "ACPI CPU");
+            rc = PDMDevHlpDriverAttach(pDevIns, i, &pThisCC->IBase, &IBaseTmp, "ACPI CPU");
 
             if (RT_SUCCESS(rc))
             {
@@ -3907,7 +3936,7 @@ static DECLCALLBACK(int) acpiR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
     pThis->cCustTbls = 0;
 
     static const char *s_apszCustTblConfigKeys[] = {"CustomTable0", "CustomTable1", "CustomTable2", "CustomTable3"};
-    AssertCompile(RT_ELEMENTS(s_apszCustTblConfigKeys) <= RT_ELEMENTS(pThis->apu8CustBin));
+    AssertCompile(RT_ELEMENTS(s_apszCustTblConfigKeys) <= RT_ELEMENTS(pThisCC->apu8CustBin));
     for (unsigned i = 0; i < RT_ELEMENTS(s_apszCustTblConfigKeys); ++i)
     {
         const char *pszConfigKey = s_apszCustTblConfigKeys[i];
@@ -3929,7 +3958,7 @@ static DECLCALLBACK(int) acpiR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
                                     N_("Configuration error: Querying \"CustomTableN\" as a string failed"));
         else if (!*pszCustBinFile)
         {
-            MMR3HeapFree(pszCustBinFile);
+            PDMDevHlpMMHeapFree(pDevIns, pszCustBinFile);
             pszCustBinFile = NULL;
         }
 
@@ -3939,18 +3968,18 @@ static DECLCALLBACK(int) acpiR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
         if (pszCustBinFile)
         {
             uint32_t idxCust = pThis->cCustTbls;
-            rc = acpiR3ReadCustomTable(pDevIns, &pThis->apu8CustBin[idxCust],
-                                       &pThis->acbCustBin[idxCust], pszCustBinFile, cbBufAvail);
+            rc = acpiR3ReadCustomTable(pDevIns, &pThisCC->apu8CustBin[idxCust],
+                                       &pThisCC->acbCustBin[idxCust], pszCustBinFile, cbBufAvail);
             LogRel(("ACPI: Reading custom ACPI table(%u) from file '%s' (%d bytes)\n",
-                    idxCust, pszCustBinFile, pThis->acbCustBin[idxCust]));
-            MMR3HeapFree(pszCustBinFile);
+                    idxCust, pszCustBinFile, pThisCC->acbCustBin[idxCust]));
+            PDMDevHlpMMHeapFree(pDevIns, pszCustBinFile);
             if (RT_FAILURE(rc))
                 return PDMDEV_SET_ERROR(pDevIns, rc, N_("Error reading custom ACPI table."));
-            cbBufAvail -= pThis->acbCustBin[idxCust];
+            cbBufAvail -= pThisCC->acbCustBin[idxCust];
 
             /* Update custom OEM attributes based on custom table */
             /** @todo is it intended for custom tables to overwrite user provided values above? */
-            ACPITBLHEADER *pTblHdr = (ACPITBLHEADER*)pThis->apu8CustBin[idxCust];
+            ACPITBLHEADER *pTblHdr = (ACPITBLHEADER*)pThisCC->apu8CustBin[idxCust];
             memcpy(&pThis->au8OemId[0], &pTblHdr->au8OemId[0], 6);
             memcpy(&pThis->au8OemTabId[0], &pTblHdr->au8OemTabId[0], 8);
             pThis->u32OemRevision = pTblHdr->u32OemRevision;
@@ -3985,7 +4014,7 @@ static DECLCALLBACK(int) acpiR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
     if (!GCPhysRsdp)
         return PDMDEV_SET_ERROR(pDevIns, VERR_NO_MEMORY, N_("Can not find space for RSDP. ACPI is disabled"));
 
-    rc = acpiR3PlantTables(pDevIns, pThis);
+    rc = acpiR3PlantTables(pDevIns, pThis, pThisCC);
     AssertRCReturn(rc, rc);
 
     rc = PDMDevHlpROMRegister(pDevIns, GCPhysRsdp, 0x1000, pThis->au8RSDPPage, 0x1000,
@@ -4116,18 +4145,16 @@ static DECLCALLBACK(int) acpiR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
    /*
     * Get the corresponding connector interface
     */
-   rc = PDMDevHlpDriverAttach(pDevIns, 0, &pThis->IBase, &pThis->pDrvBase, "ACPI Driver Port");
+   rc = PDMDevHlpDriverAttach(pDevIns, 0, &pThisCC->IBase, &pThisCC->pDrvBase, "ACPI Driver Port");
    if (RT_SUCCESS(rc))
    {
-       pThis->pDrv = PDMIBASE_QUERY_INTERFACE(pThis->pDrvBase, PDMIACPICONNECTOR);
-       if (!pThis->pDrv)
-           return PDMDEV_SET_ERROR(pDevIns, VERR_PDM_MISSING_INTERFACE,
-                                   N_("LUN #0 doesn't have an ACPI connector interface"));
+       pThisCC->pDrv = PDMIBASE_QUERY_INTERFACE(pThisCC->pDrvBase, PDMIACPICONNECTOR);
+       if (!pThisCC->pDrv)
+           return PDMDEV_SET_ERROR(pDevIns, VERR_PDM_MISSING_INTERFACE, N_("LUN #0 doesn't have an ACPI connector interface"));
    }
    else if (rc == VERR_PDM_NO_ATTACHED_DRIVER)
    {
-       Log(("acpi: %s/%d: warning: no driver attached to LUN #0!\n",
-            pDevIns->pReg->szName, pDevIns->iInstance));
+       Log(("acpi: %s/%d: warning: no driver attached to LUN #0!\n", pDevIns->pReg->szName, pDevIns->iInstance));
        rc = VINF_SUCCESS;
    }
    else
@@ -4173,7 +4200,7 @@ const PDMDEVREG g_DeviceACPI =
     /* .cMaxInstances = */          ~0U,
     /* .uSharedVersion = */         42,
     /* .cbInstanceShared = */       sizeof(ACPISTATE),
-    /* .cbInstanceCC = */           0,
+    /* .cbInstanceCC = */           CTX_EXPR(sizeof(ACPISTATER3), 0, 0),
     /* .cbInstanceRC = */           0,
     /* .cMaxPciDevices = */         1,
     /* .cMaxMsixVectors = */        0,
