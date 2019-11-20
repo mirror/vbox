@@ -1655,42 +1655,43 @@ static bool isPointer1bpp(const uint8_t *pu8XorMask,
 
 void UISession::updateMousePointerShape()
 {
+    /* Fetch incoming shape data: */
     const bool fHasAlpha = m_shapeData.hasAlpha();
     uint uXHot = m_shapeData.hotPoint().x();
     uint uYHot = m_shapeData.hotPoint().y();
-    uint uWidth = m_shapeData.shapeSize().width();
-    uint uHeight = m_shapeData.shapeSize().height();
+    const uint uWidth = m_shapeData.shapeSize().width();
+    const uint uHeight = m_shapeData.shapeSize().height();
     const uchar *pShapeData = m_shapeData.shape().constData();
-    AssertMsg(pShapeData, ("Shape data must not be NULL!\n"));
+    AssertMsgReturnVoid(pShapeData, ("Shape data must not be NULL!\n"));
 
+    /* Invalidate mouse pointer shape initially: */
     m_fIsValidPointerShapePresent = false;
-    const uchar *srcAndMaskPtr = pShapeData;
-    uint andMaskSize = (uWidth + 7) / 8 * uHeight;
-    const uchar *srcShapePtr = pShapeData + ((andMaskSize + 3) & ~3);
-    uint srcShapePtrScan = uWidth * 4;
+
+    /* Parse incoming shape data: */
+    const uchar *pSrcAndMaskPtr = pShapeData;
+    const uint uAndMaskSize = (uWidth + 7) / 8 * uHeight;
+    const uchar *pSrcShapePtr = pShapeData + ((uAndMaskSize + 3) & ~3);
 
     /* Remember initial cursor hotspot: */
     m_cursorHotspot = QPoint(uXHot, uYHot);
 
 #if defined (VBOX_WS_WIN)
 
-    /* Create a ARGB image out of the shape data: */
+    /* Create an ARGB image out of the shape data: */
 
-    /*
-     * Qt5 QCursor recommends 32 x 32 cursor, therefore the original data is copied to
-     * a larger QImage if necessary. Cursors like 10x16 did not work correctly (Solaris 10 guest).
-     */
-    uint uCursorWidth = uWidth >= 32? uWidth: 32;
-    uint uCursorHeight = uHeight >= 32? uHeight: 32;
-    uint x, y;
+    // WORKAROUND:
+    // Qt5 QCursor recommends 32 x 32 cursor, therefore the original data is copied to
+    // a larger QImage if necessary. Cursors like 10x16 did not work correctly (Solaris 10 guest).
+    const uint uCursorWidth = uWidth >= 32 ? uWidth : 32;
+    const uint uCursorHeight = uHeight >= 32 ? uHeight : 32;
 
     if (fHasAlpha)
     {
         QImage image(uCursorWidth, uCursorHeight, QImage::Format_ARGB32);
         memset(image.bits(), 0, image.byteCount());
 
-        const uint32_t *pu32SrcShapeScanline = (uint32_t *)srcShapePtr;
-        for (y = 0; y < uHeight; ++y, pu32SrcShapeScanline += uWidth)
+        const uint32_t *pu32SrcShapeScanline = (uint32_t *)pSrcShapePtr;
+        for (uint y = 0; y < uHeight; ++y, pu32SrcShapeScanline += uWidth)
             memcpy(image.scanLine(y), pu32SrcShapeScanline, uWidth * sizeof(uint32_t));
 
         m_cursorPixmap = QPixmap::fromImage(image);
@@ -1699,7 +1700,7 @@ void UISession::updateMousePointerShape()
     }
     else
     {
-        if (isPointer1bpp(srcShapePtr, uWidth, uHeight))
+        if (isPointer1bpp(pSrcShapePtr, uWidth, uHeight))
         {
             /* Incoming data consist of 32 bit BGR XOR mask and 1 bit AND mask.
              * XOR pixels contain either 0x00000000 or 0x00FFFFFF.
@@ -1733,11 +1734,11 @@ void UISession::updateMousePointerShape()
             mask.setColorTable(colors);
             memset(mask.bits(), 0xFF, mask.byteCount());
 
-            const uint8_t *pu8SrcAndScanline = srcAndMaskPtr;
-            const uint32_t *pu32SrcShapeScanline = (uint32_t *)srcShapePtr;
-            for (y = 0; y < uHeight; ++y)
+            const uint8_t *pu8SrcAndScanline = pSrcAndMaskPtr;
+            const uint32_t *pu32SrcShapeScanline = (uint32_t *)pSrcShapePtr;
+            for (uint y = 0; y < uHeight; ++y)
             {
-                for (x = 0; x < uWidth; ++x)
+                for (uint x = 0; x < uWidth; ++x)
                 {
                     const uint8_t u8Bit = (uint8_t)(1 << (7 - x % 8));
 
@@ -1794,14 +1795,14 @@ void UISession::updateMousePointerShape()
             QImage image(uCursorWidth, uCursorHeight, QImage::Format_ARGB32);
             memset(image.bits(), 0, image.byteCount());
 
-            const uint8_t *pu8SrcAndScanline = srcAndMaskPtr;
-            const uint32_t *pu32SrcShapeScanline = (uint32_t *)srcShapePtr;
+            const uint8_t *pu8SrcAndScanline = pSrcAndMaskPtr;
+            const uint32_t *pu32SrcShapeScanline = (uint32_t *)pSrcShapePtr;
 
-            for (y = 0; y < uHeight; ++y)
+            for (uint y = 0; y < uHeight; ++y)
             {
                 uint32_t *pu32DstPixel = (uint32_t *)image.scanLine(y);
 
-                for (x = 0; x < uWidth; ++x)
+                for (uint x = 0; x < uWidth; ++x)
                 {
                     const uint8_t u8Bit = (uint8_t)(1 << (7 - x % 8));
                     const uint8_t u8SrcMaskByte = pu8SrcAndScanline[x / 8];
@@ -1823,20 +1824,19 @@ void UISession::updateMousePointerShape()
     }
 
     m_fIsValidPointerShapePresent = true;
-    NOREF(srcShapePtrScan);
 
 #elif defined(VBOX_WS_X11) || defined(VBOX_WS_MAC)
 
-    /* Create a ARGB image out of the shape data: */
+    /* Create an ARGB image out of the shape data: */
     QImage image(uWidth, uHeight, QImage::Format_ARGB32);
 
     if (fHasAlpha)
     {
-        memcpy(image.bits(), srcShapePtr, uHeight * uWidth * 4);
+        memcpy(image.bits(), pSrcShapePtr, uHeight * uWidth * 4);
     }
     else
     {
-        renderCursorPixels((uint32_t *)srcShapePtr, srcAndMaskPtr,
+        renderCursorPixels((uint32_t *)pSrcShapePtr, pSrcAndMaskPtr,
                            uWidth, uHeight,
                            (uint32_t *)image.bits(), uHeight * uWidth * 4);
     }
@@ -1846,7 +1846,6 @@ void UISession::updateMousePointerShape()
     updateMousePointerPixmapScaling(m_cursorPixmap, uXHot, uYHot);
     m_cursor = QCursor(m_cursorPixmap, uXHot, uYHot);
     m_fIsValidPointerShapePresent = true;
-    NOREF(srcShapePtrScan);
 
 #else
 
