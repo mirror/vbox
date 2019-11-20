@@ -6132,6 +6132,19 @@ static DECLCALLBACK(int) ataR3AsyncIOThread(RTTHREAD hThreadSelf, void *pvUser)
                 }
                 else
                 {
+                    /* The infamous delay IRQ hack. */
+                    if (RT_UNLIKELY(pCtl->msDelayIRQ))
+                    {
+                        /* Various antique guests have buggy disk drivers silently
+                         * assuming that disk operations take a relatively long time.
+                         * Work around such bugs by holding off interrupts a bit.
+                         */
+                        Log(("%s: delay IRQ hack (PIO)\n", __FUNCTION__));
+                        ataR3LockLeave(pDevIns, pCtl);
+                        RTThreadSleep(pCtl->msDelayIRQ);
+                        ataR3LockEnter(pDevIns, pCtl);
+                    }
+
                     /* Finish PIO transfer. */
                     ataHCPIOTransfer(pDevIns, pCtl);
                     if (    !pCtl->fChainedTransfer
