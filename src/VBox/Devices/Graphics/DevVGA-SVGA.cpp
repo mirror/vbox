@@ -544,8 +544,8 @@ static SSMFIELD const g_aVGAStateSVGAFields[] =
 };
 
 static void vmsvgaSetTraces(PVGASTATE pThis, bool fTraces);
-static int vmsvgaLoadExecFifo(PVGASTATE pThis, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass);
-static int vmsvgaSaveExecFifo(PVGASTATE pThis, PSSMHANDLE pSSM);
+static int vmsvgaLoadExecFifo(PCPDMDEVHLPR3 pHlp, PVGASTATE pThis, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass);
+static int vmsvgaSaveExecFifo(PCPDMDEVHLPR3 pHlp, PVGASTATE pThis, PSSMHANDLE pSSM);
 
 VMSVGASCREENOBJECT *vmsvgaGetScreenObject(PVGASTATE pThis, uint32_t idScreen)
 {
@@ -2947,7 +2947,7 @@ static void vmsvgaR3FifoHandleExtCmd(PVGASTATE pThis)
             Log(("vmsvgaFIFOLoop: VMSVGA_FIFO_EXTCMD_SAVESTATE.\n"));
             PSSMHANDLE pSSM = (PSSMHANDLE)pThis->svga.pvFIFOExtCmdParam;
             AssertLogRelMsgBreak(RT_VALID_PTR(pSSM), ("pSSM=%p\n", pSSM));
-            vmsvgaSaveExecFifo(pThis, pSSM);
+            vmsvgaSaveExecFifo(pThis->pDevInsR3->pHlpR3, pThis, pSSM);
 # ifdef VBOX_WITH_VMSVGA3D
             if (pThis->svga.f3DEnabled)
                 vmsvga3dSaveExec(pThis, pSSM);
@@ -2960,7 +2960,7 @@ static void vmsvgaR3FifoHandleExtCmd(PVGASTATE pThis)
             Log(("vmsvgaFIFOLoop: VMSVGA_FIFO_EXTCMD_LOADSTATE.\n"));
             PVMSVGA_STATE_LOAD pLoadState = (PVMSVGA_STATE_LOAD)pThis->svga.pvFIFOExtCmdParam;
             AssertLogRelMsgBreak(RT_VALID_PTR(pLoadState), ("pLoadState=%p\n", pLoadState));
-            vmsvgaLoadExecFifo(pThis, pLoadState->pSSM, pLoadState->uVersion, pLoadState->uPass);
+            vmsvgaLoadExecFifo(pThis->pDevInsR3->pHlpR3, pThis, pLoadState->pSSM, pLoadState->uVersion, pLoadState->uPass);
 # ifdef VBOX_WITH_VMSVGA3D
             if (pThis->svga.f3DEnabled)
                 vmsvga3dLoadExec(pThis, pLoadState->pSSM, pLoadState->uVersion, pLoadState->uPass);
@@ -5521,7 +5521,7 @@ static DECLCALLBACK(void) vmsvgaR3Info(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, c
 
 /** Portion of VMSVGA state which must be loaded oin the FIFO thread.
  */
-static int vmsvgaLoadExecFifo(PVGASTATE pThis, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass)
+static int vmsvgaLoadExecFifo(PCPDMDEVHLPR3 pHlp, PVGASTATE pThis, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass)
 {
     RT_NOREF(uPass);
 
@@ -5531,7 +5531,7 @@ static int vmsvgaLoadExecFifo(PVGASTATE pThis, PSSMHANDLE pSSM, uint32_t uVersio
     if (uVersion >= VGA_SAVEDSTATE_VERSION_VMSVGA_SCREENS)
     {
         uint32_t cScreens = 0;
-        rc = SSMR3GetU32(pSSM, &cScreens);
+        rc = pHlp->pfnSSMGetU32(pSSM, &cScreens);
         AssertRCReturn(rc, rc);
         AssertLogRelMsgReturn(cScreens <= _64K, /* big enough */
                               ("cScreens=%#x\n", cScreens),
@@ -5542,7 +5542,7 @@ static int vmsvgaLoadExecFifo(PVGASTATE pThis, PSSMHANDLE pSSM, uint32_t uVersio
             VMSVGASCREENOBJECT screen;
             RT_ZERO(screen);
 
-            rc = SSMR3GetStructEx(pSSM, &screen, sizeof(screen), 0, g_aVMSVGASCREENOBJECTFields, NULL);
+            rc = pHlp->pfnSSMGetStructEx(pSSM, &screen, sizeof(screen), 0, g_aVMSVGASCREENOBJECTFields, NULL);
             AssertLogRelRCReturn(rc, rc);
 
             if (screen.idScreen < RT_ELEMENTS(pSVGAState->aScreens))
@@ -5583,12 +5583,13 @@ static int vmsvgaLoadExecFifo(PVGASTATE pThis, PSSMHANDLE pSSM, uint32_t uVersio
 int vmsvgaLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass)
 {
     RT_NOREF(uPass);
-    PVGASTATE       pThis = PDMINS_2_DATA(pDevIns, PVGASTATE);
+    PVGASTATE       pThis      = PDMINS_2_DATA(pDevIns, PVGASTATE);
     PVMSVGAR3STATE  pSVGAState = pThis->svga.pSvgaR3State;
+    PCPDMDEVHLPR3   pHlp       = pDevIns->pHlpR3;
     int             rc;
 
     /* Load our part of the VGAState */
-    rc = SSMR3GetStructEx(pSSM, &pThis->svga, sizeof(pThis->svga), 0, g_aVGAStateSVGAFields, NULL);
+    rc = pHlp->pfnSSMGetStructEx(pSSM, &pThis->svga, sizeof(pThis->svga), 0, g_aVGAStateSVGAFields, NULL);
     AssertRCReturn(rc, rc);
 
     /* Load the VGA framebuffer. */
@@ -5596,7 +5597,7 @@ int vmsvgaLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uVersion, uint3
     uint32_t cbVgaFramebuffer = _32K;
     if (uVersion >= VGA_SAVEDSTATE_VERSION_VMSVGA_VGA_FB_FIX)
     {
-        rc = SSMR3GetU32(pSSM, &cbVgaFramebuffer);
+        rc = pHlp->pfnSSMGetU32(pSSM, &cbVgaFramebuffer);
         AssertRCReturn(rc, rc);
         AssertLogRelMsgReturn(cbVgaFramebuffer <= _4M && cbVgaFramebuffer >= _32K && RT_IS_POWER_OF_TWO(cbVgaFramebuffer),
                               ("cbVgaFramebuffer=%#x - expected 32KB..4MB, power of two\n", cbVgaFramebuffer),
@@ -5604,15 +5605,15 @@ int vmsvgaLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uVersion, uint3
         AssertCompile(VMSVGA_VGA_FB_BACKUP_SIZE <= _4M);
         AssertCompile(RT_IS_POWER_OF_TWO(VMSVGA_VGA_FB_BACKUP_SIZE));
     }
-    rc = SSMR3GetMem(pSSM, pThis->svga.pbVgaFrameBufferR3, RT_MIN(cbVgaFramebuffer, VMSVGA_VGA_FB_BACKUP_SIZE));
+    rc = pHlp->pfnSSMGetMem(pSSM, pThis->svga.pbVgaFrameBufferR3, RT_MIN(cbVgaFramebuffer, VMSVGA_VGA_FB_BACKUP_SIZE));
     AssertRCReturn(rc, rc);
     if (cbVgaFramebuffer > VMSVGA_VGA_FB_BACKUP_SIZE)
-        SSMR3Skip(pSSM, cbVgaFramebuffer - VMSVGA_VGA_FB_BACKUP_SIZE);
+        pHlp->pfnSSMSkip(pSSM, cbVgaFramebuffer - VMSVGA_VGA_FB_BACKUP_SIZE);
     else if (cbVgaFramebuffer < VMSVGA_VGA_FB_BACKUP_SIZE)
         RT_BZERO(&pThis->svga.pbVgaFrameBufferR3[cbVgaFramebuffer], VMSVGA_VGA_FB_BACKUP_SIZE - cbVgaFramebuffer);
 
     /* Load the VMSVGA state. */
-    rc = SSMR3GetStructEx(pSSM, pSVGAState, sizeof(*pSVGAState), 0, g_aVMSVGAR3STATEFields, NULL);
+    rc = pHlp->pfnSSMGetStructEx(pSSM, pSVGAState, sizeof(*pSVGAState), 0, g_aVMSVGAR3STATEFields, NULL);
     AssertRCReturn(rc, rc);
 
     /* Load the active cursor bitmaps. */
@@ -5621,7 +5622,7 @@ int vmsvgaLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uVersion, uint3
         pSVGAState->Cursor.pData = RTMemAlloc(pSVGAState->Cursor.cbData);
         AssertReturn(pSVGAState->Cursor.pData, VERR_NO_MEMORY);
 
-        rc = SSMR3GetMem(pSSM, pSVGAState->Cursor.pData, pSVGAState->Cursor.cbData);
+        rc = pHlp->pfnSSMGetMem(pSSM, pSVGAState->Cursor.pData, pSVGAState->Cursor.cbData);
         AssertRCReturn(rc, rc);
     }
 
@@ -5629,7 +5630,7 @@ int vmsvgaLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uVersion, uint3
     uint32_t cGMR = 256; /* Hardcoded in previous saved state versions. */
     if (uVersion >= VGA_SAVEDSTATE_VERSION_VMSVGA_GMR_COUNT)
     {
-        rc = SSMR3GetU32(pSSM, &cGMR);
+        rc = pHlp->pfnSSMGetU32(pSSM, &cGMR);
         AssertRCReturn(rc, rc);
         /* Numbers of GMRs was never less than 256. 1MB is a large arbitrary limit. */
         AssertLogRelMsgReturn(cGMR <= _1M && cGMR >= 256,
@@ -5651,7 +5652,7 @@ int vmsvgaLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uVersion, uint3
     {
         PGMR pGMR = &pSVGAState->paGMR[i];
 
-        rc = SSMR3GetStructEx(pSSM, pGMR, sizeof(*pGMR), 0, g_aGMRFields, NULL);
+        rc = pHlp->pfnSSMGetStructEx(pSSM, pGMR, sizeof(*pGMR), 0, g_aGMRFields, NULL);
         AssertRCReturn(rc, rc);
 
         if (pGMR->numDescriptors)
@@ -5662,7 +5663,7 @@ int vmsvgaLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uVersion, uint3
 
             for (uint32_t j = 0; j < pGMR->numDescriptors; ++j)
             {
-                rc = SSMR3GetStructEx(pSSM, &pGMR->paDesc[j], sizeof(pGMR->paDesc[j]), 0, g_aVMSVGAGMRDESCRIPTORFields, NULL);
+                rc = pHlp->pfnSSMGetStructEx(pSSM, &pGMR->paDesc[j], sizeof(pGMR->paDesc[j]), 0, g_aVMSVGAGMRDESCRIPTORFields, NULL);
                 AssertRCReturn(rc, rc);
             }
         }
@@ -5687,7 +5688,7 @@ int vmsvgaLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uVersion, uint3
  */
 int vmsvgaLoadDone(PPDMDEVINS pDevIns)
 {
-    PVGASTATE       pThis = PDMINS_2_DATA(pDevIns, PVGASTATE);
+    PVGASTATE       pThis      = PDMINS_2_DATA(pDevIns, PVGASTATE);
     PVMSVGAR3STATE  pSVGAState = pThis->svga.pSvgaR3State;
 
     ASMAtomicOrU32(&pThis->svga.u32ActionFlags, VMSVGA_ACTION_CHANGEMODE);
@@ -5713,7 +5714,7 @@ int vmsvgaLoadDone(PPDMDEVINS pDevIns)
 /**
  * Portion of SVGA state which must be saved in the FIFO thread.
  */
-static int vmsvgaSaveExecFifo(PVGASTATE pThis, PSSMHANDLE pSSM)
+static int vmsvgaSaveExecFifo(PCPDMDEVHLPR3 pHlp, PVGASTATE pThis, PSSMHANDLE pSSM)
 {
     PVMSVGAR3STATE  pSVGAState = pThis->svga.pSvgaR3State;
     int             rc;
@@ -5727,14 +5728,14 @@ static int vmsvgaSaveExecFifo(PVGASTATE pThis, PSSMHANDLE pSSM)
              ++cScreens;
     }
 
-    rc = SSMR3PutU32(pSSM, cScreens);
+    rc = pHlp->pfnSSMPutU32(pSSM, cScreens);
     AssertLogRelRCReturn(rc, rc);
 
     for (uint32_t i = 0; i < cScreens; ++i)
     {
         VMSVGASCREENOBJECT *pScreen = &pSVGAState->aScreens[i];
 
-        rc = SSMR3PutStructEx(pSSM, pScreen, sizeof(*pScreen), 0, g_aVMSVGASCREENOBJECTFields, NULL);
+        rc = pHlp->pfnSSMPutStructEx(pSSM, pScreen, sizeof(*pScreen), 0, g_aVMSVGASCREENOBJECTFields, NULL);
         AssertLogRelRCReturn(rc, rc);
     }
     return VINF_SUCCESS;
@@ -5745,43 +5746,44 @@ static int vmsvgaSaveExecFifo(PVGASTATE pThis, PSSMHANDLE pSSM)
  */
 int vmsvgaSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 {
-    PVGASTATE       pThis = PDMINS_2_DATA(pDevIns, PVGASTATE);
+    PVGASTATE       pThis      = PDMINS_2_DATA(pDevIns, PVGASTATE);
     PVMSVGAR3STATE  pSVGAState = pThis->svga.pSvgaR3State;
+    PCPDMDEVHLPR3   pHlp       = pDevIns->pHlpR3;
     int             rc;
 
     /* Save our part of the VGAState */
-    rc = SSMR3PutStructEx(pSSM, &pThis->svga, sizeof(pThis->svga), 0, g_aVGAStateSVGAFields, NULL);
+    rc = pHlp->pfnSSMPutStructEx(pSSM, &pThis->svga, sizeof(pThis->svga), 0, g_aVGAStateSVGAFields, NULL);
     AssertLogRelRCReturn(rc, rc);
 
     /* Save the framebuffer backup. */
-    rc = SSMR3PutU32(pSSM, VMSVGA_VGA_FB_BACKUP_SIZE);
-    rc = SSMR3PutMem(pSSM, pThis->svga.pbVgaFrameBufferR3, VMSVGA_VGA_FB_BACKUP_SIZE);
+    rc = pHlp->pfnSSMPutU32(pSSM, VMSVGA_VGA_FB_BACKUP_SIZE);
+    rc = pHlp->pfnSSMPutMem(pSSM, pThis->svga.pbVgaFrameBufferR3, VMSVGA_VGA_FB_BACKUP_SIZE);
     AssertLogRelRCReturn(rc, rc);
 
     /* Save the VMSVGA state. */
-    rc = SSMR3PutStructEx(pSSM, pSVGAState, sizeof(*pSVGAState), 0, g_aVMSVGAR3STATEFields, NULL);
+    rc = pHlp->pfnSSMPutStructEx(pSSM, pSVGAState, sizeof(*pSVGAState), 0, g_aVMSVGAR3STATEFields, NULL);
     AssertLogRelRCReturn(rc, rc);
 
     /* Save the active cursor bitmaps. */
     if (pSVGAState->Cursor.fActive)
     {
-        rc = SSMR3PutMem(pSSM, pSVGAState->Cursor.pData, pSVGAState->Cursor.cbData);
+        rc = pHlp->pfnSSMPutMem(pSSM, pSVGAState->Cursor.pData, pSVGAState->Cursor.cbData);
         AssertLogRelRCReturn(rc, rc);
     }
 
     /* Save the GMR state */
-    rc = SSMR3PutU32(pSSM, pThis->svga.cGMR);
+    rc = pHlp->pfnSSMPutU32(pSSM, pThis->svga.cGMR);
     AssertLogRelRCReturn(rc, rc);
     for (uint32_t i = 0; i < pThis->svga.cGMR; ++i)
     {
         PGMR pGMR = &pSVGAState->paGMR[i];
 
-        rc = SSMR3PutStructEx(pSSM, pGMR, sizeof(*pGMR), 0, g_aGMRFields, NULL);
+        rc = pHlp->pfnSSMPutStructEx(pSSM, pGMR, sizeof(*pGMR), 0, g_aGMRFields, NULL);
         AssertLogRelRCReturn(rc, rc);
 
         for (uint32_t j = 0; j < pGMR->numDescriptors; ++j)
         {
-            rc = SSMR3PutStructEx(pSSM, &pGMR->paDesc[j], sizeof(pGMR->paDesc[j]), 0, g_aVMSVGAGMRDESCRIPTORFields, NULL);
+            rc = pHlp->pfnSSMPutStructEx(pSSM, &pGMR->paDesc[j], sizeof(pGMR->paDesc[j]), 0, g_aVMSVGAGMRDESCRIPTORFields, NULL);
             AssertLogRelRCReturn(rc, rc);
         }
     }
