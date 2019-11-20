@@ -108,8 +108,8 @@
 #define EVENTQ_IDX                                  1           /**< Spec-defined Index of event queue               */
 #define VIRTQ_REQ_BASE                              2           /**< Spec-defined base index of request queues       */
 
-#define QUEUENAME(qIdx) (pThis->aszQueueNames[qIdx])            /**< Macro to get queue name from its index          */
-#define CBQUEUENAME(qIdx) RTStrNLen(QUEUENAME(qIdx), sizeof(QUEUENAME(qIdx)))
+#define VIRTQNAME(qIdx) (pThis->aszVIRTQNAMEs[qIdx])            /**< Macro to get queue name from its index          */
+#define CBVIRTQNAME(qIdx) RTStrNLen(VIRTQNAME(qIdx), sizeof(VIRTQNAME(qIdx)))
 
 #define IS_REQ_QUEUE(qIdx) (qIdx >= VIRTQ_REQ_BASE && qIdx < VIRTIOSCSI_QUEUE_CNT)
 
@@ -425,8 +425,8 @@ typedef struct VIRTIOSCSI
     /** Instance name */
     char                            szInstance[16];
 
-    /** Device-specific spec-based VirtIO queuenames */
-    char                            aszQueueNames[VIRTIOSCSI_QUEUE_CNT][VIRTIO_MAX_QUEUE_NAME_SIZE];
+    /** Device-specific spec-based VirtIO VIRTQNAMEs */
+    char                            aszVIRTQNAMEs[VIRTIOSCSI_QUEUE_CNT][VIRTIO_MAX_QUEUE_NAME_SIZE];
 
     /** Track which VirtIO queues we've attached to */
     bool                            afQueueAttached[VIRTIOSCSI_QUEUE_CNT];
@@ -576,7 +576,18 @@ typedef VIRTIOSCSIREQ *PVIRTIOSCSIREQ;
 
 #ifdef IN_RING3 /* spans most of the file, at the moment. */
 
+
+DECLINLINE(void) virtioScsiSetVirtqNames(PVIRTIOSCSI pThis)
+{
+    RTStrCopy(pThis->aszVIRTQNAMEs[CONTROLQ_IDX], VIRTIO_MAX_QUEUE_NAME_SIZE, "controlq");
+    RTStrCopy(pThis->aszVIRTQNAMEs[EVENTQ_IDX],   VIRTIO_MAX_QUEUE_NAME_SIZE, "eventq");
+    for (uint16_t qIdx = VIRTQ_REQ_BASE; qIdx < VIRTQ_REQ_BASE + VIRTIOSCSI_REQ_QUEUE_CNT; qIdx++)
+        RTStrPrintf(pThis->aszVIRTQNAMEs[qIdx], VIRTIO_MAX_QUEUE_NAME_SIZE,
+                    "requestq<%d>", qIdx - VIRTQ_REQ_BASE);
+}
+
 #ifdef LOG_ENABLED
+
 
 DECLINLINE(const char *) virtioGetTxDirText(uint32_t enmTxDir)
 {
@@ -1324,7 +1335,7 @@ static int virtioScsiR3Ctrl(PPDMDEVINS pDevIns, PVIRTIOSCSI pThis, PVIRTIOSCSICC
             uint32_t uScsiLun = (pScsiCtrlUnion->scsiCtrlTmf.abScsiLun[2] << 8
                                | pScsiCtrlUnion->scsiCtrlTmf.abScsiLun[3]) & 0x3fff;
             Log2Func(("[%s] (Target: %d LUN: %d)  Task Mgt Function: %s\n",
-                      QUEUENAME(qIdx), uTarget, uScsiLun, virtioGetTMFTypeText(pScsiCtrlUnion->scsiCtrlTmf.uSubtype)));
+                      VIRTQNAME(qIdx), uTarget, uScsiLun, virtioGetTMFTypeText(pScsiCtrlUnion->scsiCtrlTmf.uSubtype)));
 
             if (uTarget >= pThis->cTargets || !pThisCC->paTargetInstances[uTarget].fPresent)
                 bResponse = VIRTIOSCSI_S_BAD_TARGET;
@@ -1392,7 +1403,7 @@ static int virtioScsiR3Ctrl(PPDMDEVINS pDevIns, PVIRTIOSCSI pThis, PVIRTIOSCSICC
                 char szTypeText[128];
                 virtioGetControlAsyncMaskText(szTypeText, sizeof(szTypeText), pScsiCtrlAnQuery->fEventsRequested);
                 Log2Func(("[%s] (Target: %d LUN: %d)  Async. Notification Query: %s\n",
-                          QUEUENAME(qIdx), uTarget, uScsiLun, szTypeText));
+                          VIRTQNAME(qIdx), uTarget, uScsiLun, szTypeText));
             }
 #endif
             RTSGSEG aSegs[] = { { &fSubscribedEvents, sizeof(fSubscribedEvents) },
@@ -1423,7 +1434,7 @@ static int virtioScsiR3Ctrl(PPDMDEVINS pDevIns, PVIRTIOSCSI pThis, PVIRTIOSCSICC
                 char szTypeText[128];
                 virtioGetControlAsyncMaskText(szTypeText, sizeof(szTypeText), pScsiCtrlAnSubscribe->fEventsRequested);
                 Log2Func(("[%s] (Target: %d LUN: %d)  Async. Notification Subscribe: %s\n",
-                          QUEUENAME(qIdx), uTarget, uScsiLun, szTypeText));
+                          VIRTQNAME(qIdx), uTarget, uScsiLun, szTypeText));
             }
 #endif
             if (uTarget >= pThis->cTargets || !pThisCC->paTargetInstances[uTarget].fPresent)
@@ -1451,7 +1462,7 @@ static int virtioScsiR3Ctrl(PPDMDEVINS pDevIns, PVIRTIOSCSI pThis, PVIRTIOSCSICC
         }
         default:
         {
-            LogFunc(("Unknown control type extracted from %s: %u\n", QUEUENAME(qIdx), pScsiCtrlUnion->scsiCtrl.uType));
+            LogFunc(("Unknown control type extracted from %s: %u\n", VIRTQNAME(qIdx), pScsiCtrlUnion->scsiCtrl.uType));
 
             bResponse = VIRTIOSCSI_S_FAILURE;
             RTSGSEG aSegs[] = { { &bResponse, sizeof(bResponse) } };
@@ -1507,13 +1518,13 @@ static DECLCALLBACK(int) virtioScsiR3WorkerThread(PPDMDEVINS pDevIns, PPDMTHREAD
             bool fNotificationSent = ASMAtomicXchgBool(&pWorkerR3->fNotified, false);
             if (!fNotificationSent)
             {
-                Log6Func(("%s worker sleeping...\n", QUEUENAME(qIdx)));
+                Log6Func(("%s worker sleeping...\n", VIRTQNAME(qIdx)));
                 Assert(ASMAtomicReadBool(&pWorkerR3->fSleeping));
                 int rc = PDMDevHlpSUPSemEventWaitNoResume(pDevIns, pWorker->hEvtProcess, RT_INDEFINITE_WAIT);
                 AssertLogRelMsgReturn(RT_SUCCESS(rc) || rc == VERR_INTERRUPTED, ("%Rrc\n", rc), rc);
                 if (RT_UNLIKELY(pThread->enmState != PDMTHREADSTATE_RUNNING))
                     return VINF_SUCCESS;
-                Log6Func(("%s worker woken\n", QUEUENAME(qIdx)));
+                Log6Func(("%s worker woken\n", VIRTQNAME(qIdx)));
                 ASMAtomicWriteBool(&pWorkerR3->fNotified, false);
             }
             ASMAtomicWriteBool(&pWorkerR3->fSleeping, false);
@@ -1521,7 +1532,7 @@ static DECLCALLBACK(int) virtioScsiR3WorkerThread(PPDMDEVINS pDevIns, PPDMTHREAD
 
         if (!pThis->afQueueAttached[qIdx])
         {
-            LogFunc(("%s queue not attached, worker aborting...\n", QUEUENAME(qIdx)));
+            LogFunc(("%s queue not attached, worker aborting...\n", VIRTQNAME(qIdx)));
             break;
         }
         if (!pThisCC->fQuiescing)
@@ -1541,12 +1552,12 @@ static DECLCALLBACK(int) virtioScsiR3WorkerThread(PPDMDEVINS pDevIns, PPDMTHREAD
              }
              pWorkerR3->cRedoDescs = 0;
 
-             Log6Func(("fetching next descriptor chain from %s\n", QUEUENAME(qIdx)));
+             Log6Func(("fetching next descriptor chain from %s\n", VIRTQNAME(qIdx)));
              PVIRTIO_DESC_CHAIN_T pDescChain;
              int rc = virtioCoreR3QueueGet(pDevIns, &pThis->Virtio, qIdx, &pDescChain, true);
              if (rc == VERR_NOT_AVAILABLE)
              {
-                Log6Func(("Nothing found in %s\n", QUEUENAME(qIdx)));
+                Log6Func(("Nothing found in %s\n", VIRTQNAME(qIdx)));
                 continue;
              }
 
@@ -1663,13 +1674,13 @@ static DECLCALLBACK(void) virtioScsiR3Notified(PVIRTIOCORE pVirtio, PVIRTIOCOREC
 
     if (qIdx == CONTROLQ_IDX || IS_REQ_QUEUE(qIdx))
     {
-        Log6Func(("%s has available data\n", QUEUENAME(qIdx)));
+        Log6Func(("%s has available data\n", VIRTQNAME(qIdx)));
         /* Wake queue's worker thread up if sleeping */
         if (!ASMAtomicXchgBool(&pWorkerR3->fNotified, true))
         {
             if (ASMAtomicReadBool(&pWorkerR3->fSleeping))
             {
-                Log6Func(("waking %s worker.\n", QUEUENAME(qIdx)));
+                Log6Func(("waking %s worker.\n", VIRTQNAME(qIdx)));
                 int rc = PDMDevHlpSUPSemEventSignal(pDevIns, pWorker->hEvtProcess);
                 AssertRC(rc);
             }
@@ -1677,7 +1688,7 @@ static DECLCALLBACK(void) virtioScsiR3Notified(PVIRTIOCORE pVirtio, PVIRTIOCOREC
     }
     else if (qIdx == EVENTQ_IDX)
     {
-        Log3Func(("Driver queued buffer(s) to %s\n", QUEUENAME(qIdx)));
+        Log3Func(("Driver queued buffer(s) to %s\n", VIRTQNAME(qIdx)));
         if (ASMAtomicXchgBool(&pThis->fEventsMissed, false))
             virtioScsiR3ReportEventsMissed(pDevIns, pThis, 0);
     }
@@ -1959,10 +1970,11 @@ static DECLCALLBACK(int) virtioScsiR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSS
     AssertReturn(uPass == SSM_PASS_FINAL, VERR_SSM_UNEXPECTED_PASS);
     AssertLogRelMsgReturn(uVersion == VIRTIOSCSI_SAVED_STATE_VERSION,
                           ("uVersion=%u\n", uVersion), VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION);
-// re-calculate names in aszQueueNames
 
+    virtioScsiSetVirtqNames(pThis);
     for (int qIdx = 0; qIdx < VIRTIOSCSI_QUEUE_CNT; qIdx++)
         pHlp->pfnSSMGetBool(pSSM, &pThis->afQueueAttached[qIdx]);
+
 
     pHlp->pfnSSMGetU32(pSSM,  &pThis->virtioScsiConfig.uNumQueues);
     pHlp->pfnSSMGetU32(pSSM,  &pThis->virtioScsiConfig.uSegMax);
@@ -1983,7 +1995,7 @@ static DECLCALLBACK(int) virtioScsiR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSS
     pHlp->pfnSSMGetU32(pSSM,  &pThis->fHasLunChange);
     pHlp->pfnSSMGetU32(pSSM,  &pThis->fResetting);
 
-    /* TODO: Ask aiechner about BIOS-related changes */
+    /* TODO: Ask aeichner about BIOS-related changes */
     pHlp->pfnSSMGetU32(pSSM, &pThis->cTargets);
 
 
@@ -2003,7 +2015,6 @@ LogFunc(("Have %d redo reqs to load\n", cReqsRedo));
         uint16_t qIdx, uHeadIdx;
 
         pHlp->pfnSSMGetU16(pSSM, &qIdx);
-
         pHlp->pfnSSMGetU16(pSSM, &uHeadIdx);
 LogFunc(("    loaded redo req: qIdx=%d, headIdx=%d\n", qIdx, uHeadIdx));
 
@@ -2024,7 +2035,7 @@ LogFunc(("    loaded redo req: qIdx=%d, headIdx=%d\n", qIdx, uHeadIdx));
     {
         if (pThis->afQueueAttached[qIdx])
         {
-            LogFunc(("Waking %s worker.\n", QUEUENAME(qIdx)));
+            LogFunc(("Waking %s worker.\n", VIRTQNAME(qIdx)));
             rc = PDMDevHlpSUPSemEventSignal(pDevIns, pThis->aWorkers[qIdx].hEvtProcess);
             AssertRCReturn(rc, rc);
         }
@@ -2327,7 +2338,7 @@ static DECLCALLBACK(void) virtioScsiR3Resume(PPDMDEVINS pDevIns)
     {
         if (ASMAtomicReadBool(&pThisCC->aWorkers[qIdx].fSleeping))
         {
-            Log6Func(("waking %s worker.\n", QUEUENAME(qIdx)));
+            Log6Func(("waking %s worker.\n", VIRTQNAME(qIdx)));
             int rc = PDMDevHlpSUPSemEventSignal(pDevIns, pThis->aWorkers[qIdx].hEvtProcess);
             AssertRC(rc);
         }
@@ -2493,27 +2504,22 @@ static DECLCALLBACK(int) virtioScsiR3Construct(PPDMDEVINS pDevIns, int iInstance
      * Initialize queues.
      */
 
-    /* Name the queues: */
-    RTStrCopy(pThis->aszQueueNames[CONTROLQ_IDX], VIRTIO_MAX_QUEUE_NAME_SIZE, "controlq");
-    RTStrCopy(pThis->aszQueueNames[EVENTQ_IDX],   VIRTIO_MAX_QUEUE_NAME_SIZE, "eventq");
-    for (uint16_t qIdx = VIRTQ_REQ_BASE; qIdx < VIRTQ_REQ_BASE + VIRTIOSCSI_REQ_QUEUE_CNT; qIdx++)
-        RTStrPrintf(pThis->aszQueueNames[qIdx], VIRTIO_MAX_QUEUE_NAME_SIZE,
-                    "requestq<%d>", qIdx - VIRTQ_REQ_BASE);
+    virtioScsiSetVirtqNames(pThis);
 
     /* Attach the queues and create worker threads for them: */
     for (uint16_t qIdx = 0; qIdx < VIRTIOSCSI_QUEUE_CNT; qIdx++)
     {
-        rc = virtioCoreR3QueueAttach(&pThis->Virtio, qIdx, QUEUENAME(qIdx));
+        rc = virtioCoreR3QueueAttach(&pThis->Virtio, qIdx, VIRTQNAME(qIdx));
         if (RT_FAILURE(rc))
             continue;
         if (qIdx == CONTROLQ_IDX || IS_REQ_QUEUE(qIdx))
         {
             rc = PDMDevHlpThreadCreate(pDevIns, &pThisCC->aWorkers[qIdx].pThread,
                                        (void *)(uintptr_t)qIdx, virtioScsiR3WorkerThread,
-                                       virtioScsiR3WorkerWakeUp, 0, RTTHREADTYPE_IO, QUEUENAME(qIdx));
+                                       virtioScsiR3WorkerWakeUp, 0, RTTHREADTYPE_IO, VIRTQNAME(qIdx));
             if (rc != VINF_SUCCESS)
             {
-                LogRel(("Error creating thread for Virtual Queue %s: %Rrc\n", QUEUENAME(qIdx), rc));
+                LogRel(("Error creating thread for Virtual Queue %s: %Rrc\n", VIRTQNAME(qIdx), rc));
                 return rc;
             }
 
