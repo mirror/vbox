@@ -1996,6 +1996,7 @@ static DECLCALLBACK(int) virtioScsiR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSS
     pHlp->pfnSSMGetU32(pSSM,  &pThis->fResetting);
 
     /** @todo Ask aeichner about BIOS-related changes */
+
     pHlp->pfnSSMGetU32(pSSM, &pThis->cTargets);
 
 
@@ -2076,8 +2077,9 @@ static DECLCALLBACK(int) virtioScsiR3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSS
     pHlp->pfnSSMPutU32(pSSM,  pThis->fResetting);
 
     /* Save suspended I/O requests */
-    /* TODO: Ask aiechner about BIOS-related changes */
 
+
+    /** @todo Ask aeichner about BIOS-related changes */
 
     AssertMsg(!pThis->cActiveReqs, ("There are still outstanding requests on this device\n"));
 
