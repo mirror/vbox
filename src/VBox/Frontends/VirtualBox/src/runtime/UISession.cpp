@@ -1666,6 +1666,8 @@ void UISession::updateMousePointerShape()
 
     /* Invalidate mouse pointer shape initially: */
     m_fIsValidPointerShapePresent = false;
+    m_cursorShapePixmap = QPixmap();
+    m_cursorMaskPixmap = QPixmap();
 
     /* Parse incoming shape data: */
     const uchar *pSrcAndMaskPtr = pShapeData;
@@ -1694,9 +1696,9 @@ void UISession::updateMousePointerShape()
         for (uint y = 0; y < uHeight; ++y, pu32SrcShapeScanline += uWidth)
             memcpy(image.scanLine(y), pu32SrcShapeScanline, uWidth * sizeof(uint32_t));
 
-        m_cursorPixmap = QPixmap::fromImage(image);
-        updateMousePointerPixmapScaling(m_cursorPixmap, uXHot, uYHot);
-        m_cursor = QCursor(m_cursorPixmap, uXHot, uYHot);
+        m_cursorShapePixmap = QPixmap::fromImage(image);
+        updateMousePointerPixmapScaling(m_cursorShapePixmap, uXHot, uYHot);
+        m_cursor = QCursor(m_cursorShapePixmap, uXHot, uYHot);
     }
     else
     {
@@ -1785,9 +1787,11 @@ void UISession::updateMousePointerShape()
                 pu32SrcShapeScanline += uWidth;
             }
 
-            m_cursorPixmap = QBitmap::fromImage(bitmap);
-            updateMousePointerPixmapScaling(m_cursorPixmap, uXHot, uYHot);
-            m_cursor = QCursor(m_cursorPixmap, QBitmap::fromImage(mask), uXHot, uYHot);
+            m_cursorShapePixmap = QBitmap::fromImage(bitmap);
+            m_cursorMaskPixmap = QBitmap::fromImage(mask);
+            updateMousePointerPixmapScaling(m_cursorShapePixmap, uXHot, uYHot);
+            updateMousePointerPixmapScaling(m_cursorMaskPixmap, uXHot, uYHot);
+            m_cursor = QCursor(m_cursorShapePixmap, m_cursorMaskPixmap, uXHot, uYHot);
         }
         else
         {
@@ -1817,9 +1821,9 @@ void UISession::updateMousePointerShape()
                 pu8SrcAndScanline += (uWidth + 7) / 8;
             }
 
-            m_cursorPixmap = QPixmap::fromImage(image);
-            updateMousePointerPixmapScaling(m_cursorPixmap, uXHot, uYHot);
-            m_cursor = QCursor(m_cursorPixmap, uXHot, uYHot);
+            m_cursorShapePixmap = QPixmap::fromImage(image);
+            updateMousePointerPixmapScaling(m_cursorShapePixmap, uXHot, uYHot);
+            m_cursor = QCursor(m_cursorShapePixmap, uXHot, uYHot);
         }
     }
 
@@ -1842,9 +1846,9 @@ void UISession::updateMousePointerShape()
     }
 
     /* Create cursor-pixmap from the image: */
-    m_cursorPixmap = QPixmap::fromImage(image);
-    updateMousePointerPixmapScaling(m_cursorPixmap, uXHot, uYHot);
-    m_cursor = QCursor(m_cursorPixmap, uXHot, uYHot);
+    m_cursorShapePixmap = QPixmap::fromImage(image);
+    updateMousePointerPixmapScaling(m_cursorShapePixmap, uXHot, uYHot);
+    m_cursor = QCursor(m_cursorShapePixmap, uXHot, uYHot);
     m_fIsValidPointerShapePresent = true;
 
 #else
@@ -1854,7 +1858,7 @@ void UISession::updateMousePointerShape()
 #endif
 
     /* Cache cursor pixmap size: */
-    m_cursorSize = m_cursorPixmap.size();
+    m_cursorSize = m_cursorShapePixmap.size();
 }
 
 void UISession::updateMousePointerPixmapScaling(QPixmap &pixmap, uint &uXHot, uint &uYHot)

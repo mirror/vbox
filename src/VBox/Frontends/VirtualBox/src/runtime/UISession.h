@@ -136,8 +136,10 @@ public:
 
     /** Returns currently cached mouse cursor. */
     QCursor cursor() const { return m_cursor; }
-    /** Returns currently cached mouse cursor pixmap. */
-    QPixmap cursorPixmap() const { return m_cursorPixmap; }
+    /** Returns currently cached mouse cursor shape pixmap. */
+    QPixmap cursorShapePixmap() const { return m_cursorShapePixmap; }
+    /** Returns currently cached mouse cursor mask pixmap. */
+    QPixmap cursorMaskPixmap() const { return m_cursorMaskPixmap; }
     /** Returns currently cached mouse cursor size. */
     QSize cursorSize() const { return m_cursorSize; }
     /** Returns currently cached mouse cursor hotspot. */
@@ -511,8 +513,10 @@ private:
 
     /** Holds cached mouse cursor. */
     QCursor  m_cursor;
-    /** Holds cached mouse cursor pixmap. */
-    QPixmap  m_cursorPixmap;
+    /** Holds cached mouse cursor shape pixmap. */
+    QPixmap  m_cursorShapePixmap;
+    /** Holds cached mouse cursor mask pixmap. */
+    QPixmap  m_cursorMaskPixmap;
     /** Holds cached mouse cursor size. */
     QSize    m_cursorSize;
     /** Holds cached mouse cursor hotspot. */
