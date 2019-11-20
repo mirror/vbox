@@ -778,15 +778,17 @@ static void apicR3DumpState(PVMCPU pVCpu, const char *pszPrefix, uint32_t uVersi
  * Worker for saving per-VM APIC data.
  *
  * @returns VBox status code.
+ * @param   pDevIns     The device instance.
  * @param   pVM     The cross context VM structure.
  * @param   pSSM    The SSM handle.
  */
-static int apicR3SaveVMData(PVM pVM, PSSMHANDLE pSSM)
+static int apicR3SaveVMData(PPDMDEVINS pDevIns, PVM pVM, PSSMHANDLE pSSM)
 {
-    PAPIC pApic = VM_TO_APIC(pVM);
-    SSMR3PutU32(pSSM,  pVM->cCpus);
-    SSMR3PutBool(pSSM, pApic->fIoApicPresent);
-    return SSMR3PutU32(pSSM, pApic->enmMaxMode);
+    PCPDMDEVHLPR3   pHlp  = pDevIns->pHlpR3;
+    PAPIC           pApic = VM_TO_APIC(pVM);
+    pHlp->pfnSSMPutU32(pSSM,  pVM->cCpus);
+    pHlp->pfnSSMPutBool(pSSM, pApic->fIoApicPresent);
+    return pHlp->pfnSSMPutU32(pSSM, pApic->enmMaxMode);
 }
 
 
@@ -794,34 +796,36 @@ static int apicR3SaveVMData(PVM pVM, PSSMHANDLE pSSM)
  * Worker for loading per-VM APIC data.
  *
  * @returns VBox status code.
+ * @param   pDevIns     The device instance.
  * @param   pVM     The cross context VM structure.
  * @param   pSSM    The SSM handle.
  */
-static int apicR3LoadVMData(PVM pVM, PSSMHANDLE pSSM)
+static int apicR3LoadVMData(PPDMDEVINS pDevIns, PVM pVM, PSSMHANDLE pSSM)
 {
-    PAPIC pApic = VM_TO_APIC(pVM);
+    PAPIC           pApic = VM_TO_APIC(pVM);
+    PCPDMDEVHLPR3   pHlp  = pDevIns->pHlpR3;
 
     /* Load and verify number of CPUs. */
     uint32_t cCpus;
-    int rc = SSMR3GetU32(pSSM, &cCpus);
+    int rc = pHlp->pfnSSMGetU32(pSSM, &cCpus);
     AssertRCReturn(rc, rc);
     if (cCpus != pVM->cCpus)
-        return SSMR3SetCfgError(pSSM, RT_SRC_POS, N_("Config mismatch - cCpus: saved=%u config=%u"), cCpus, pVM->cCpus);
+        return pHlp->pfnSSMSetCfgError(pSSM, RT_SRC_POS, N_("Config mismatch - cCpus: saved=%u config=%u"), cCpus, pVM->cCpus);
 
     /* Load and verify I/O APIC presence. */
     bool fIoApicPresent;
-    rc = SSMR3GetBool(pSSM, &fIoApicPresent);
+    rc = pHlp->pfnSSMGetBool(pSSM, &fIoApicPresent);
     AssertRCReturn(rc, rc);
     if (fIoApicPresent != pApic->fIoApicPresent)
-        return SSMR3SetCfgError(pSSM, RT_SRC_POS, N_("Config mismatch - fIoApicPresent: saved=%RTbool config=%RTbool"),
+        return pHlp->pfnSSMSetCfgError(pSSM, RT_SRC_POS, N_("Config mismatch - fIoApicPresent: saved=%RTbool config=%RTbool"),
                                 fIoApicPresent, pApic->fIoApicPresent);
 
     /* Load and verify configured max APIC mode. */
     uint32_t uSavedMaxApicMode;
-    rc = SSMR3GetU32(pSSM, &uSavedMaxApicMode);
+    rc = pHlp->pfnSSMGetU32(pSSM, &uSavedMaxApicMode);
     AssertRCReturn(rc, rc);
     if (uSavedMaxApicMode != (uint32_t)pApic->enmMaxMode)
-        return SSMR3SetCfgError(pSSM, RT_SRC_POS, N_("Config mismatch - uApicMode: saved=%u config=%u"),
+        return pHlp->pfnSSMSetCfgError(pSSM, RT_SRC_POS, N_("Config mismatch - uApicMode: saved=%u config=%u"),
                                 uSavedMaxApicMode, pApic->enmMaxMode);
     return VINF_SUCCESS;
 }
@@ -831,19 +835,21 @@ static int apicR3LoadVMData(PVM pVM, PSSMHANDLE pSSM)
  * Worker for loading per-VCPU APIC data for legacy (old) saved-states.
  *
  * @returns VBox status code.
+ * @param   pDevIns     The device instance.
  * @param   pVCpu       The cross context virtual CPU structure.
  * @param   pSSM        The SSM handle.
  * @param   uVersion    Data layout version.
  */
-static int apicR3LoadLegacyVCpuData(PVMCPU pVCpu, PSSMHANDLE pSSM, uint32_t uVersion)
+static int apicR3LoadLegacyVCpuData(PPDMDEVINS pDevIns, PVMCPU pVCpu, PSSMHANDLE pSSM, uint32_t uVersion)
 {
     AssertReturn(uVersion <= APIC_SAVED_STATE_VERSION_VBOX_50, VERR_NOT_SUPPORTED);
 
-    PAPICCPU   pApicCpu   = VMCPU_TO_APICCPU(pVCpu);
-    PXAPICPAGE pXApicPage = VMCPU_TO_XAPICPAGE(pVCpu);
+    PCPDMDEVHLPR3   pHlp       = pDevIns->pHlpR3;
+    PAPICCPU        pApicCpu   = VMCPU_TO_APICCPU(pVCpu);
+    PXAPICPAGE      pXApicPage = VMCPU_TO_XAPICPAGE(pVCpu);
 
     uint32_t uApicBaseLo;
-    int rc = SSMR3GetU32(pSSM, &uApicBaseLo);
+    int rc = pHlp->pfnSSMGetU32(pSSM, &uApicBaseLo);
     AssertRCReturn(rc, rc);
     pApicCpu->uApicBaseMsr = uApicBaseLo;
     Log2(("APIC%u: apicR3LoadLegacyVCpuData: uApicBaseMsr=%#RX64\n", pVCpu->idCpu, pApicCpu->uApicBaseMsr));
@@ -854,17 +860,17 @@ static int apicR3LoadLegacyVCpuData(PVMCPU pVCpu, PSSMHANDLE pSSM, uint32_t uVer
         case APIC_SAVED_STATE_VERSION_VBOX_30:
         {
             uint32_t uApicId, uPhysApicId, uArbId;
-            SSMR3GetU32(pSSM, &uApicId);      pXApicPage->id.u8ApicId = uApicId;
-            SSMR3GetU32(pSSM, &uPhysApicId);  NOREF(uPhysApicId); /* PhysId == pVCpu->idCpu */
-            SSMR3GetU32(pSSM, &uArbId);       NOREF(uArbId);      /* ArbID is & was unused. */
+            pHlp->pfnSSMGetU32(pSSM, &uApicId);      pXApicPage->id.u8ApicId = uApicId;
+            pHlp->pfnSSMGetU32(pSSM, &uPhysApicId);  NOREF(uPhysApicId); /* PhysId == pVCpu->idCpu */
+            pHlp->pfnSSMGetU32(pSSM, &uArbId);       NOREF(uArbId);      /* ArbID is & was unused. */
             break;
         }
 
         case APIC_SAVED_STATE_VERSION_ANCIENT:
         {
             uint8_t uPhysApicId;
-            SSMR3GetU8(pSSM, &pXApicPage->id.u8ApicId);
-            SSMR3GetU8(pSSM, &uPhysApicId);   NOREF(uPhysApicId); /* PhysId == pVCpu->idCpu */
+            pHlp->pfnSSMGetU8(pSSM, &pXApicPage->id.u8ApicId);
+            pHlp->pfnSSMGetU8(pSSM, &uPhysApicId);   NOREF(uPhysApicId); /* PhysId == pVCpu->idCpu */
             break;
         }
 
@@ -873,14 +879,14 @@ static int apicR3LoadLegacyVCpuData(PVMCPU pVCpu, PSSMHANDLE pSSM, uint32_t uVer
     }
 
     uint32_t u32Tpr;
-    SSMR3GetU32(pSSM, &u32Tpr);
+    pHlp->pfnSSMGetU32(pSSM, &u32Tpr);
     pXApicPage->tpr.u8Tpr = u32Tpr & XAPIC_TPR_VALID;
 
-    SSMR3GetU32(pSSM, &pXApicPage->svr.all.u32Svr);
-    SSMR3GetU8(pSSM,  &pXApicPage->ldr.u.u8LogicalApicId);
+    pHlp->pfnSSMGetU32(pSSM, &pXApicPage->svr.all.u32Svr);
+    pHlp->pfnSSMGetU8(pSSM,  &pXApicPage->ldr.u.u8LogicalApicId);
 
     uint8_t uDfr;
-    SSMR3GetU8(pSSM,  &uDfr);
+    pHlp->pfnSSMGetU8(pSSM,  &uDfr);
     pXApicPage->dfr.u.u4Model = uDfr >> 4;
 
     AssertCompile(RT_ELEMENTS(pXApicPage->isr.u) == 8);
@@ -888,25 +894,25 @@ static int apicR3LoadLegacyVCpuData(PVMCPU pVCpu, PSSMHANDLE pSSM, uint32_t uVer
     AssertCompile(RT_ELEMENTS(pXApicPage->irr.u) == 8);
     for (size_t i = 0; i < 8; i++)
     {
-        SSMR3GetU32(pSSM, &pXApicPage->isr.u[i].u32Reg);
-        SSMR3GetU32(pSSM, &pXApicPage->tmr.u[i].u32Reg);
-        SSMR3GetU32(pSSM, &pXApicPage->irr.u[i].u32Reg);
+        pHlp->pfnSSMGetU32(pSSM, &pXApicPage->isr.u[i].u32Reg);
+        pHlp->pfnSSMGetU32(pSSM, &pXApicPage->tmr.u[i].u32Reg);
+        pHlp->pfnSSMGetU32(pSSM, &pXApicPage->irr.u[i].u32Reg);
     }
 
-    SSMR3GetU32(pSSM, &pXApicPage->lvt_timer.all.u32LvtTimer);
-    SSMR3GetU32(pSSM, &pXApicPage->lvt_thermal.all.u32LvtThermal);
-    SSMR3GetU32(pSSM, &pXApicPage->lvt_perf.all.u32LvtPerf);
-    SSMR3GetU32(pSSM, &pXApicPage->lvt_lint0.all.u32LvtLint0);
-    SSMR3GetU32(pSSM, &pXApicPage->lvt_lint1.all.u32LvtLint1);
-    SSMR3GetU32(pSSM, &pXApicPage->lvt_error.all.u32LvtError);
+    pHlp->pfnSSMGetU32(pSSM, &pXApicPage->lvt_timer.all.u32LvtTimer);
+    pHlp->pfnSSMGetU32(pSSM, &pXApicPage->lvt_thermal.all.u32LvtThermal);
+    pHlp->pfnSSMGetU32(pSSM, &pXApicPage->lvt_perf.all.u32LvtPerf);
+    pHlp->pfnSSMGetU32(pSSM, &pXApicPage->lvt_lint0.all.u32LvtLint0);
+    pHlp->pfnSSMGetU32(pSSM, &pXApicPage->lvt_lint1.all.u32LvtLint1);
+    pHlp->pfnSSMGetU32(pSSM, &pXApicPage->lvt_error.all.u32LvtError);
 
-    SSMR3GetU32(pSSM, &pXApicPage->esr.all.u32Errors);
-    SSMR3GetU32(pSSM, &pXApicPage->icr_lo.all.u32IcrLo);
-    SSMR3GetU32(pSSM, &pXApicPage->icr_hi.all.u32IcrHi);
+    pHlp->pfnSSMGetU32(pSSM, &pXApicPage->esr.all.u32Errors);
+    pHlp->pfnSSMGetU32(pSSM, &pXApicPage->icr_lo.all.u32IcrLo);
+    pHlp->pfnSSMGetU32(pSSM, &pXApicPage->icr_hi.all.u32IcrHi);
 
     uint32_t u32TimerShift;
-    SSMR3GetU32(pSSM, &pXApicPage->timer_dcr.all.u32DivideValue);
-    SSMR3GetU32(pSSM, &u32TimerShift);
+    pHlp->pfnSSMGetU32(pSSM, &pXApicPage->timer_dcr.all.u32DivideValue);
+    pHlp->pfnSSMGetU32(pSSM, &u32TimerShift);
     /*
      * Old implementation may have left the timer shift uninitialized until
      * the timer configuration register was written. Unfortunately zero is
@@ -916,10 +922,10 @@ static int apicR3LoadLegacyVCpuData(PVMCPU pVCpu, PSSMHANDLE pSSM, uint32_t uVer
      */
     uint8_t const uTimerShift = apicGetTimerShift(pXApicPage);
 
-    SSMR3GetU32(pSSM, &pXApicPage->timer_icr.u32InitialCount);
-    SSMR3GetU64(pSSM, &pApicCpu->u64TimerInitial);
+    pHlp->pfnSSMGetU32(pSSM, &pXApicPage->timer_icr.u32InitialCount);
+    pHlp->pfnSSMGetU64(pSSM, &pApicCpu->u64TimerInitial);
     uint64_t uNextTS;
-    rc = SSMR3GetU64(pSSM, &uNextTS);       AssertRCReturn(rc, rc);
+    rc = pHlp->pfnSSMGetU64(pSSM, &uNextTS);       AssertRCReturn(rc, rc);
     if (uNextTS >= pApicCpu->u64TimerInitial + ((pXApicPage->timer_icr.u32InitialCount + 1) << uTimerShift))
         pXApicPage->timer_ccr.u32CurrentCount = pXApicPage->timer_icr.u32InitialCount;
 
@@ -942,13 +948,15 @@ static int apicR3LoadLegacyVCpuData(PVMCPU pVCpu, PSSMHANDLE pSSM, uint32_t uVer
  */
 static DECLCALLBACK(int) apicR3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 {
-    PVM pVM = PDMDevHlpGetVM(pDevIns);
+    PVM             pVM  = PDMDevHlpGetVM(pDevIns);
+    PCPDMDEVHLPR3   pHlp = pDevIns->pHlpR3;
+
     AssertReturn(pVM, VERR_INVALID_VM_HANDLE);
 
     LogFlow(("APIC: apicR3SaveExec\n"));
 
     /* Save per-VM data. */
-    int rc = apicR3SaveVMData(pVM, pSSM);
+    int rc = apicR3SaveVMData(pDevIns, pVM, pSSM);
     AssertRCReturn(rc, rc);
 
     /* Save per-VCPU data.*/
@@ -961,22 +969,22 @@ static DECLCALLBACK(int) apicR3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
         APICUpdatePendingInterrupts(pVCpu);
 
         /* Save the auxiliary data. */
-        SSMR3PutU64(pSSM, pApicCpu->uApicBaseMsr);
-        SSMR3PutU32(pSSM, pApicCpu->uEsrInternal);
+        pHlp->pfnSSMPutU64(pSSM, pApicCpu->uApicBaseMsr);
+        pHlp->pfnSSMPutU32(pSSM, pApicCpu->uEsrInternal);
 
         /* Save the APIC page. */
         if (XAPIC_IN_X2APIC_MODE(pVCpu))
-            SSMR3PutStruct(pSSM, (const void *)pApicCpu->pvApicPageR3, &g_aX2ApicPageFields[0]);
+            pHlp->pfnSSMPutStruct(pSSM, (const void *)pApicCpu->pvApicPageR3, &g_aX2ApicPageFields[0]);
         else
-            SSMR3PutStruct(pSSM, (const void *)pApicCpu->pvApicPageR3, &g_aXApicPageFields[0]);
+            pHlp->pfnSSMPutStruct(pSSM, (const void *)pApicCpu->pvApicPageR3, &g_aXApicPageFields[0]);
 
         /* Save the timer. */
-        SSMR3PutU64(pSSM, pApicCpu->u64TimerInitial);
+        pHlp->pfnSSMPutU64(pSSM, pApicCpu->u64TimerInitial);
         TMR3TimerSave(pApicCpu->pTimerR3, pSSM);
 
         /* Save the LINT0, LINT1 interrupt line states. */
-        SSMR3PutBool(pSSM, pApicCpu->fActiveLint0);
-        SSMR3PutBool(pSSM, pApicCpu->fActiveLint1);
+        pHlp->pfnSSMPutBool(pSSM, pApicCpu->fActiveLint0);
+        pHlp->pfnSSMPutBool(pSSM, pApicCpu->fActiveLint1);
 
 #if defined(APIC_FUZZY_SSM_COMPAT_TEST) || defined(DEBUG_ramshankar)
         apicR3DumpState(pVCpu, "Saved state", APIC_SAVED_STATE_VERSION);
@@ -997,7 +1005,8 @@ static DECLCALLBACK(int) apicR3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
  */
 static DECLCALLBACK(int) apicR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass)
 {
-    PVM pVM = PDMDevHlpGetVM(pDevIns);
+    PVM             pVM  = PDMDevHlpGetVM(pDevIns);
+    PCPDMDEVHLPR3   pHlp = pDevIns->pHlpR3;
 
     AssertReturn(pVM, VERR_INVALID_VM_HANDLE);
     AssertReturn(uPass == SSM_PASS_FINAL, VERR_WRONG_ORDER);
@@ -1018,7 +1027,7 @@ static DECLCALLBACK(int) apicR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uin
     int rc = VINF_SUCCESS;
     if (uVersion > APIC_SAVED_STATE_VERSION_VBOX_30)
     {
-        rc = apicR3LoadVMData(pVM, pSSM);
+        rc = apicR3LoadVMData(pDevIns, pVM, pSSM);
         AssertRCReturn(rc, rc);
 
         if (uVersion == APIC_SAVED_STATE_VERSION)
@@ -1040,17 +1049,17 @@ static DECLCALLBACK(int) apicR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uin
         if (uVersion > APIC_SAVED_STATE_VERSION_VBOX_50)
         {
             /* Load the auxiliary data. */
-            SSMR3GetU64V(pSSM, &pApicCpu->uApicBaseMsr);
-            SSMR3GetU32(pSSM, &pApicCpu->uEsrInternal);
+            pHlp->pfnSSMGetU64V(pSSM, &pApicCpu->uApicBaseMsr);
+            pHlp->pfnSSMGetU32(pSSM, &pApicCpu->uEsrInternal);
 
             /* Load the APIC page. */
             if (XAPIC_IN_X2APIC_MODE(pVCpu))
-                SSMR3GetStruct(pSSM, pApicCpu->pvApicPageR3, &g_aX2ApicPageFields[0]);
+                pHlp->pfnSSMGetStruct(pSSM, pApicCpu->pvApicPageR3, &g_aX2ApicPageFields[0]);
             else
-                SSMR3GetStruct(pSSM, pApicCpu->pvApicPageR3, &g_aXApicPageFields[0]);
+                pHlp->pfnSSMGetStruct(pSSM, pApicCpu->pvApicPageR3, &g_aXApicPageFields[0]);
 
             /* Load the timer. */
-            rc = SSMR3GetU64(pSSM, &pApicCpu->u64TimerInitial);     AssertRCReturn(rc, rc);
+            rc = pHlp->pfnSSMGetU64(pSSM, &pApicCpu->u64TimerInitial);     AssertRCReturn(rc, rc);
             rc = TMR3TimerLoad(pApicCpu->pTimerR3, pSSM);           AssertRCReturn(rc, rc);
             Assert(pApicCpu->uHintedTimerShift == 0);
             Assert(pApicCpu->uHintedTimerInitialCount == 0);
@@ -1065,20 +1074,20 @@ static DECLCALLBACK(int) apicR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uin
             /* Load the LINT0, LINT1 interrupt line states. */
             if (uVersion > APIC_SAVED_STATE_VERSION_VBOX_51_BETA2)
             {
-                SSMR3GetBoolV(pSSM, &pApicCpu->fActiveLint0);
-                SSMR3GetBoolV(pSSM, &pApicCpu->fActiveLint1);
+                pHlp->pfnSSMGetBoolV(pSSM, &pApicCpu->fActiveLint0);
+                pHlp->pfnSSMGetBoolV(pSSM, &pApicCpu->fActiveLint1);
             }
         }
         else
         {
-            rc = apicR3LoadLegacyVCpuData(pVCpu, pSSM, uVersion);
+            rc = apicR3LoadLegacyVCpuData(pDevIns, pVCpu, pSSM, uVersion);
             AssertRCReturn(rc, rc);
         }
 
         /*
          * Check that we're still good wrt restored data, then tell CPUM about the current CPUID[1].EDX[9] visibility.
          */
-        rc = SSMR3HandleGetStatus(pSSM);
+        rc = pHlp->pfnSSMHandleGetStatus(pSSM);
         AssertRCReturn(rc, rc);
         CPUMSetGuestCpuIdPerCpuApicFeature(pVCpu, RT_BOOL(pApicCpu->uApicBaseMsr & MSR_IA32_APICBASE_EN));
 
@@ -1389,47 +1398,34 @@ DECLCALLBACK(int) apicR3InitComplete(PPDMDEVINS pDevIns)
  */
 DECLCALLBACK(int) apicR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE pCfg)
 {
-    /*
-     * Validate inputs.
-     */
-    Assert(pDevIns);
     PDMDEV_CHECK_VERSIONS_RETURN(pDevIns);
+    PAPICDEV        pApicDev = PDMDEVINS_2_DATA(pDevIns, PAPICDEV);
+    PCPDMDEVHLPR3   pHlp     = pDevIns->pHlpR3;
+    PVM             pVM      = PDMDevHlpGetVM(pDevIns);
+    PAPIC           pApic    = VM_TO_APIC(pVM);
     Assert(iInstance == 0); NOREF(iInstance);
-
-    PAPICDEV pApicDev = PDMDEVINS_2_DATA(pDevIns, PAPICDEV);
-    PVM      pVM      = PDMDevHlpGetVM(pDevIns);
-    PAPIC    pApic    = VM_TO_APIC(pVM);
 
     /*
      * Init the data.
      */
     pApicDev->pDevInsR3 = pDevIns;
-    pApicDev->pDevInsR0 = PDMDEVINS_2_R0PTR(pDevIns);
 
     pApic->pApicDevR3   = pApicDev;
     pApic->pApicDevR0   = PDMINS_2_DATA_R0PTR(pDevIns);
+    pApic->fR0Enabled   = pDevIns->fR0Enabled;
+    pApic->fRCEnabled   = pDevIns->fRCEnabled;
 
     /*
      * Validate APIC settings.
      */
-    if (!CFGMR3AreValuesValid(pCfg, "RZEnabled\0"
-                                    "Mode\0"
-                                    "IOAPIC\0"
-                                    "NumCPUs\0"))
-    {
-        return PDMDEV_SET_ERROR(pDevIns, VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES,
-                                N_("APIC configuration error: unknown option specified"));
-    }
+    PDMDEV_VALIDATE_CONFIG_RETURN(pDevIns, "Mode|IOAPIC|NumCPUs", "");
 
-    int rc = CFGMR3QueryBoolDef(pCfg, "RZEnabled", &pApic->fRZEnabled, true);
-    AssertLogRelRCReturn(rc, rc);
-
-    rc = CFGMR3QueryBoolDef(pCfg, "IOAPIC", &pApic->fIoApicPresent, true);
+    int rc = pHlp->pfnCFGMQueryBoolDef(pCfg, "IOAPIC", &pApic->fIoApicPresent, true);
     AssertLogRelRCReturn(rc, rc);
 
     /* Max APIC feature level. */
     uint8_t uMaxMode;
-    rc = CFGMR3QueryU8Def(pCfg, "Mode", &uMaxMode, PDMAPICMODE_APIC);
+    rc = pHlp->pfnCFGMQueryU8Def(pCfg, "Mode", &uMaxMode, PDMAPICMODE_APIC);
     AssertLogRelRCReturn(rc, rc);
     switch ((PDMAPICMODE)uMaxMode)
     {
@@ -1472,6 +1468,7 @@ DECLCALLBACK(int) apicR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE p
 
     /* Tell CPUM about the APIC feature level so it can adjust APICBASE MSR GP mask and CPUID bits. */
     apicR3SetCpuIdFeatureLevel(pVM, pApic->enmMaxMode);
+
     /* Finally, initialize the state. */
     rc = apicR3InitState(pVM);
     AssertRCReturn(rc, rc);
@@ -1482,19 +1479,9 @@ DECLCALLBACK(int) apicR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE p
     PAPICCPU pApicCpu0 = VMCPU_TO_APICCPU(pVM->apCpusR3[0]);
     RTGCPHYS GCPhysApicBase = MSR_IA32_APICBASE_GET_ADDR(pApicCpu0->uApicBaseMsr);
 
-    rc = PDMDevHlpMMIORegister(pDevIns, GCPhysApicBase, sizeof(XAPICPAGE), NULL /* pvUser */,
-                               IOMMMIO_FLAGS_READ_DWORD | IOMMMIO_FLAGS_WRITE_DWORD_ZEROED,
-                               apicWriteMmio, apicReadMmio, "APIC");
-    if (RT_FAILURE(rc))
-        return rc;
-
-    if (pApic->fRZEnabled)
-    {
-        rc = PDMDevHlpMMIORegisterR0(pDevIns, GCPhysApicBase, sizeof(XAPICPAGE), NIL_RTR0PTR /*pvUser*/,
-                                     "apicWriteMmio", "apicReadMmio");
-        if (RT_FAILURE(rc))
-            return rc;
-    }
+    rc = PDMDevHlpMmioCreateAndMap(pDevIns, GCPhysApicBase, sizeof(XAPICPAGE), apicWriteMmio, apicReadMmio,
+                                   IOMMMIO_FLAGS_READ_DWORD | IOMMMIO_FLAGS_WRITE_DWORD_ZEROED, "APIC", &pApicDev->hMmio);
+    AssertRCReturn(rc, rc);
 
     /*
      * Create the APIC timers.
@@ -1513,8 +1500,8 @@ DECLCALLBACK(int) apicR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE p
     /*
      * Register saved state callbacks.
      */
-    rc = PDMDevHlpSSMRegister3(pDevIns, APIC_SAVED_STATE_VERSION, sizeof(*pApicDev), NULL /*pfnLiveExec*/, apicR3SaveExec,
-                               apicR3LoadExec);
+    rc = PDMDevHlpSSMRegister3(pDevIns, APIC_SAVED_STATE_VERSION, sizeof(*pApicDev),
+                               NULL /*pfnLiveExec*/, apicR3SaveExec, apicR3LoadExec);
     if (RT_FAILURE(rc))
         return rc;
 

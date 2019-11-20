@@ -884,7 +884,7 @@ VMMDECL(int) IOMMMIOMapMMIO2Page(PVMCC pVM, RTGCPHYS GCPhys, RTGCPHYS GCPhysRema
     return VINF_SUCCESS;
 }
 
-
+#if 0  /* not used any more */
 /**
  * Mapping a HC page in place of an MMIO page for direct access.
  *
@@ -939,6 +939,7 @@ VMMDECL(int) IOMMMIOMapMMIOHCPage(PVMCC pVM, PVMCPUCC pVCpu, RTGCPHYS GCPhys, RT
     Assert(rc == VINF_SUCCESS || rc == VERR_PAGE_NOT_PRESENT || rc == VERR_PAGE_TABLE_NOT_PRESENT);
     return VINF_SUCCESS;
 }
+#endif
 
 
 /**

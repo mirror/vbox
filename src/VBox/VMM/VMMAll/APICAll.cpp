@@ -1636,12 +1636,12 @@ DECLINLINE(uint64_t) apicGetIcrNoCheck(PVMCPUCC pVCpu)
  * Reads an APIC register.
  *
  * @returns VBox status code.
- * @param   pApicDev        The APIC device instance.
+ * @param   pDevIns         The device instance.
  * @param   pVCpu           The cross context virtual CPU structure.
  * @param   offReg          The offset of the register being read.
  * @param   puValue         Where to store the register value.
  */
-DECLINLINE(VBOXSTRICTRC) apicReadRegister(PAPICDEV pApicDev, PVMCPUCC pVCpu, uint16_t offReg, uint32_t *puValue)
+DECLINLINE(VBOXSTRICTRC) apicReadRegister(PPDMDEVINS pDevIns, PVMCPUCC pVCpu, uint16_t offReg, uint32_t *puValue)
 {
     VMCPU_ASSERT_EMT(pVCpu);
     Assert(offReg <= XAPIC_OFF_MAX_VALID);
@@ -1715,8 +1715,7 @@ DECLINLINE(VBOXSTRICTRC) apicReadRegister(PAPICDEV pApicDev, PVMCPUCC pVCpu, uin
         default:
         {
             Assert(!XAPIC_IN_X2APIC_MODE(pVCpu));
-            rc = PDMDevHlpDBGFStop(pApicDev->CTX_SUFF(pDevIns), RT_SRC_POS, "VCPU[%u]: offReg=%#RX16\n", pVCpu->idCpu,
-                                          offReg);
+            rc = PDMDevHlpDBGFStop(pDevIns, RT_SRC_POS, "VCPU[%u]: offReg=%#RX16\n", pVCpu->idCpu, offReg);
             apicSetError(pVCpu, XAPIC_ESR_ILLEGAL_REG_ADDRESS);
             break;
         }
@@ -1731,12 +1730,12 @@ DECLINLINE(VBOXSTRICTRC) apicReadRegister(PAPICDEV pApicDev, PVMCPUCC pVCpu, uin
  * Writes an APIC register.
  *
  * @returns Strict VBox status code.
- * @param   pApicDev        The APIC device instance.
+ * @param   pDevIns         The device instance.
  * @param   pVCpu           The cross context virtual CPU structure.
  * @param   offReg          The offset of the register being written.
  * @param   uValue          The register value.
  */
-DECLINLINE(VBOXSTRICTRC) apicWriteRegister(PAPICDEV pApicDev, PVMCPUCC pVCpu, uint16_t offReg, uint32_t uValue)
+DECLINLINE(VBOXSTRICTRC) apicWriteRegister(PPDMDEVINS pDevIns, PVMCPUCC pVCpu, uint16_t offReg, uint32_t uValue)
 {
     VMCPU_ASSERT_EMT(pVCpu);
     Assert(offReg <= XAPIC_OFF_MAX_VALID);
@@ -1847,8 +1846,7 @@ DECLINLINE(VBOXSTRICTRC) apicWriteRegister(PAPICDEV pApicDev, PVMCPUCC pVCpu, ui
         case XAPIC_OFF_TIMER_CCR:
         default:
         {
-            rcStrict = PDMDevHlpDBGFStop(pApicDev->CTX_SUFF(pDevIns), RT_SRC_POS, "APIC%u: offReg=%#RX16\n", pVCpu->idCpu,
-                                         offReg);
+            rcStrict = PDMDevHlpDBGFStop(pDevIns, RT_SRC_POS, "APIC%u: offReg=%#RX16\n", pVCpu->idCpu, offReg);
             apicSetError(pVCpu, XAPIC_ESR_ILLEGAL_REG_ADDRESS);
             break;
         }
@@ -1882,13 +1880,11 @@ VMM_INT_DECL(VBOXSTRICTRC) APICReadMsr(PVMCPUCC pVCpu, uint32_t u32Reg, uint64_t
     if (APICIsEnabled(pVCpu))
     { /* likely */ }
     else
-    {
         return apicMsrAccessError(pVCpu, u32Reg, pApic->enmMaxMode == PDMAPICMODE_NONE ?
                                                  APICMSRACCESS_READ_DISALLOWED_CONFIG : APICMSRACCESS_READ_RSVD_OR_UNKNOWN);
-    }
 
 #ifndef IN_RING3
-    if (pApic->fRZEnabled)
+    if (pApic->CTXALLMID(f,Enabled))
     { /* likely */}
     else
         return VINF_CPUM_R3_MSR_READ;
@@ -2020,7 +2016,7 @@ VMM_INT_DECL(VBOXSTRICTRC) APICWriteMsr(PVMCPUCC pVCpu, uint32_t u32Reg, uint64_
     }
 
 #ifndef IN_RING3
-    if (pApic->fRZEnabled)
+    if (pApic->CTXALLMID(f,Enabled))
     { /* likely */ }
     else
         return VINF_CPUM_R3_MSR_WRITE;
@@ -2929,22 +2925,21 @@ VMM_INT_DECL(int) APICGetInterrupt(PVMCPUCC pVCpu, uint8_t *pu8Vector, uint32_t 
 
 
 /**
- * @callback_method_impl{FNIOMMMIOREAD}
+ * @callback_method_impl{FNIOMMMIONEWREAD}
  */
-APICBOTHCBDECL(int) apicReadMmio(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr, void *pv, unsigned cb)
+DECLCALLBACK(VBOXSTRICTRC) apicReadMmio(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS off, void *pv, unsigned cb)
 {
     NOREF(pvUser);
-    Assert(!(GCPhysAddr & 0xf));
+    Assert(!(off & 0xf));
     Assert(cb == 4); RT_NOREF_PV(cb);
 
-    PAPICDEV pApicDev = PDMDEVINS_2_DATA(pDevIns, PAPICDEV);
     PVMCPUCC pVCpu    = PDMDevHlpGetVMCPU(pDevIns);
-    uint16_t offReg   = GCPhysAddr & 0xff0;
+    uint16_t offReg   = off & 0xff0;
     uint32_t uValue   = 0;
 
     STAM_COUNTER_INC(&pVCpu->apic.s.CTX_SUFF_Z(StatMmioRead));
 
-    int rc = VBOXSTRICTRC_VAL(apicReadRegister(pApicDev, pVCpu, offReg, &uValue));
+    VBOXSTRICTRC rc = VBOXSTRICTRC_VAL(apicReadRegister(pDevIns, pVCpu, offReg, &uValue));
     *(uint32_t *)pv = uValue;
 
     Log2(("APIC%u: apicReadMmio: offReg=%#RX16 uValue=%#RX32\n", pVCpu->idCpu, offReg, uValue));
@@ -2953,25 +2948,23 @@ APICBOTHCBDECL(int) apicReadMmio(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPh
 
 
 /**
- * @callback_method_impl{FNIOMMMIOWRITE}
+ * @callback_method_impl{FNIOMMMIONEWWRITE}
  */
-APICBOTHCBDECL(int) apicWriteMmio(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr, void const *pv, unsigned cb)
+DECLCALLBACK(VBOXSTRICTRC) apicWriteMmio(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS off, void const *pv, unsigned cb)
 {
     NOREF(pvUser);
-    Assert(!(GCPhysAddr & 0xf));
+    Assert(!(off & 0xf));
     Assert(cb == 4); RT_NOREF_PV(cb);
 
-    PAPICDEV pApicDev = PDMDEVINS_2_DATA(pDevIns, PAPICDEV);
     PVMCPUCC pVCpu    = PDMDevHlpGetVMCPU(pDevIns);
-    uint16_t offReg   = GCPhysAddr & 0xff0;
+    uint16_t offReg   = off & 0xff0;
     uint32_t uValue   = *(uint32_t *)pv;
 
     STAM_COUNTER_INC(&pVCpu->apic.s.CTX_SUFF_Z(StatMmioWrite));
 
     Log2(("APIC%u: apicWriteMmio: offReg=%#RX16 uValue=%#RX32\n", pVCpu->idCpu, offReg, uValue));
 
-    int rc = VBOXSTRICTRC_VAL(apicWriteRegister(pApicDev, pVCpu, offReg, uValue));
-    return rc;
+    return apicWriteRegister(pDevIns, pVCpu, offReg, uValue);
 }
 
 
@@ -3504,6 +3497,22 @@ VMM_INT_DECL(int) APICGetApicPageForCpu(PCVMCPUCC pVCpu, PRTHCPHYS pHCPhys, PRTR
     return VINF_SUCCESS;
 }
 
+#ifndef IN_RING3
+
+/**
+ * @callback_method_impl{PDMDEVREGR0,pfnConstruct}
+ */
+static DECLCALLBACK(int) apicRZConstruct(PPDMDEVINS pDevIns)
+{
+    PDMDEV_CHECK_VERSIONS_RETURN(pDevIns);
+    PAPICDEV pThis = PDMDEVINS_2_DATA(pDevIns, PAPICDEV);
+
+    int rc = PDMDevHlpMmioSetUpContext(pDevIns, pThis->hMmio, apicWriteMmio, apicReadMmio, NULL /*pvUser*/);
+    AssertRCReturn(rc, rc);
+
+    return VINF_SUCCESS;
+}
+#endif
 
 /**
  * APIC device registration structure.
@@ -3550,7 +3559,7 @@ const PDMDEVREG g_DeviceAPIC =
     /* .pfnReserved7 = */           NULL,
 #elif defined(IN_RING0)
     /* .pfnEarlyConstruct = */      NULL,
-    /* .pfnConstruct = */           NULL,
+    /* .pfnConstruct = */           apicRZConstruct,
     /* .pfnDestruct = */            NULL,
     /* .pfnFinalDestruct = */       NULL,
     /* .pfnRequest = */             NULL,
@@ -3563,7 +3572,7 @@ const PDMDEVREG g_DeviceAPIC =
     /* .pfnReserved6 = */           NULL,
     /* .pfnReserved7 = */           NULL,
 #elif defined(IN_RC)
-    /* .pfnConstruct = */           NULL,
+    /* .pfnConstruct = */           apicRZConstruct,
     /* .pfnReserved0 = */           NULL,
     /* .pfnReserved1 = */           NULL,
     /* .pfnReserved2 = */           NULL,

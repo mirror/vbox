@@ -1153,10 +1153,10 @@ typedef const APICPIB *PCAPICPIB;
  */
 typedef struct APICDEV
 {
+    /** The MMIO handle. */
+    IOMMMIOHANDLE               hMmio;
     /** The device instance - R3 Ptr. */
     PPDMDEVINSR3                pDevInsR3;
-    /** The device instance - R0 Ptr. */
-    PPDMDEVINSR0                pDevInsR0;
 } APICDEV;
 /** Pointer to an APIC device. */
 typedef APICDEV *PAPICDEV;
@@ -1204,12 +1204,14 @@ typedef struct APIC
     bool                        fSupportsTscDeadline;
     /** Whether this VM has an IO-APIC. */
     bool                        fIoApicPresent;
-    /** Whether RZ is enabled or not (applies to MSR handling as well). */
-    bool                        fRZEnabled;
+    /** Whether R0 is enabled or not (applies to MSR handling as well). */
+    bool                        fR0Enabled;
+    /** Whether RC is enabled or not (applies to MSR handling as well). */
+    bool                        fRCEnabled;
     /** Whether Hyper-V x2APIC compatibility mode is enabled. */
     bool                        fHyperVCompatMode;
     /** Alignment padding. */
-    bool                        afAlignment[2];
+    bool                        afAlignment[1];
     /** The max supported APIC mode from CFGM.  */
     PDMAPICMODE                 enmMaxMode;
     /** Alignment padding. */
@@ -1417,8 +1419,8 @@ APICBOTHCBDECL(VBOXSTRICTRC)  apicSetBaseMsr(PPDMDEVINS pDevIns, PVMCPU pVCpu, u
 APICBOTHCBDECL(uint8_t)       apicGetTpr(PPDMDEVINS pDevIns, PVMCPU pVCpu, bool *pfPending, uint8_t *pu8PendingIntr);
 APICBOTHCBDECL(void)          apicSetTpr(PPDMDEVINS pDevIns, PVMCPU pVCpu, uint8_t u8Tpr);
 APICBOTHCBDECL(uint64_t)      apicGetTimerFreq(PPDMDEVINS pDevIns);
-APICBOTHCBDECL(int)           apicReadMmio(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr, void *pv, unsigned cb);
-APICBOTHCBDECL(int)           apicWriteMmio(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr, void const *pv, unsigned cb);
+DECLCALLBACK(VBOXSTRICTRC)    apicReadMmio(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS off, void *pv, unsigned cb);
+DECLCALLBACK(VBOXSTRICTRC)    apicWriteMmio(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS off, void const *pv, unsigned cb);
 APICBOTHCBDECL(VBOXSTRICTRC)  apicReadMsr(PPDMDEVINS pDevIns,  PVMCPU pVCpu, uint32_t u32Reg, uint64_t *pu64Val);
 APICBOTHCBDECL(VBOXSTRICTRC)  apicWriteMsr(PPDMDEVINS pDevIns, PVMCPU pVCpu, uint32_t u32Reg, uint64_t u64Val);
 APICBOTHCBDECL(int)           apicGetInterrupt(PPDMDEVINS pDevIns,  PVMCPU pVCpu, uint8_t *puVector, uint32_t *puTagSrc);
