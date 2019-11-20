@@ -1101,13 +1101,10 @@ static DECLCALLBACK(int) apicR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uin
 
 
 /**
- * The timer callback.
+ * @callback_method_impl{FNTMTIMERDEV}
  *
- * @param   pDevIns      The device instance.
- * @param   pTimer       The timer handle.
- * @param   pvUser       Opaque pointer to the VMCPU.
+ * @note    pvUser points to the VMCPU.
  *
- * @thread  Any.
  * @remarks Currently this function is invoked on the last EMT, see @c
  *          idTimerCpu in tmR3TimerCallback().  However, the code does -not-
  *          rely on this and is designed to work with being invoked on any
@@ -1120,7 +1117,7 @@ static DECLCALLBACK(void) apicR3TimerCallback(PPDMDEVINS pDevIns, PTMTIMER pTime
     Assert(PDMDevHlpTimerIsLockOwner(pDevIns, pApicCpu->hTimer));
     Assert(pVCpu);
     LogFlow(("APIC%u: apicR3TimerCallback\n", pVCpu->idCpu));
-    RT_NOREF2(pDevIns, pTimer);
+    RT_NOREF(pDevIns, pTimer, pApicCpu);
 
     PXAPICPAGE     pXApicPage = VMCPU_TO_XAPICPAGE(pVCpu);
     uint32_t const uLvtTimer  = pXApicPage->lvt_timer.all.u32LvtTimer;
@@ -1500,10 +1497,8 @@ DECLCALLBACK(int) apicR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE p
     /*
      * Register saved state callbacks.
      */
-    rc = PDMDevHlpSSMRegister3(pDevIns, APIC_SAVED_STATE_VERSION, sizeof(*pApicDev),
-                               NULL /*pfnLiveExec*/, apicR3SaveExec, apicR3LoadExec);
-    if (RT_FAILURE(rc))
-        return rc;
+    rc = PDMDevHlpSSMRegister(pDevIns, APIC_SAVED_STATE_VERSION, sizeof(*pApicDev), apicR3SaveExec, apicR3LoadExec);
+    AssertRCReturn(rc, rc);
 
     /*
      * Register debugger info callbacks.
@@ -1512,68 +1507,55 @@ DECLCALLBACK(int) apicR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE p
      * dumped in an automated fashion while collecting crash diagnostics and
      * not just used during live debugging via the VM debugger.
      */
-    rc  = DBGFR3InfoRegisterInternalEx(pVM, "apic",      "Dumps APIC basic information.", apicR3Info,      DBGFINFO_FLAGS_ALL_EMTS);
-    rc |= DBGFR3InfoRegisterInternalEx(pVM, "apiclvt",   "Dumps APIC LVT information.",   apicR3InfoLvt,   DBGFINFO_FLAGS_ALL_EMTS);
-    rc |= DBGFR3InfoRegisterInternalEx(pVM, "apictimer", "Dumps APIC timer information.", apicR3InfoTimer, DBGFINFO_FLAGS_ALL_EMTS);
-    AssertRCReturn(rc, rc);
+    DBGFR3InfoRegisterInternalEx(pVM, "apic",      "Dumps APIC basic information.", apicR3Info,      DBGFINFO_FLAGS_ALL_EMTS);
+    DBGFR3InfoRegisterInternalEx(pVM, "apiclvt",   "Dumps APIC LVT information.",   apicR3InfoLvt,   DBGFINFO_FLAGS_ALL_EMTS);
+    DBGFR3InfoRegisterInternalEx(pVM, "apictimer", "Dumps APIC timer information.", apicR3InfoTimer, DBGFINFO_FLAGS_ALL_EMTS);
 
 #ifdef VBOX_WITH_STATISTICS
     /*
      * Statistics.
      */
-#define APIC_REG_COUNTER(a_Reg, a_Desc, a_Key) \
-    do { \
-        rc = STAMR3RegisterF(pVM, a_Reg, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, a_Desc, a_Key, idCpu); \
-        AssertRCReturn(rc, rc); \
-    } while(0)
-
-#define APIC_PROF_COUNTER(a_Reg, a_Desc, a_Key) \
-    do { \
-        rc = STAMR3RegisterF(pVM, a_Reg, STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, a_Desc, a_Key, \
-                             idCpu); \
-        AssertRCReturn(rc, rc); \
-    } while(0)
+#define APIC_REG_COUNTER(a_pvReg, a_pszNameFmt, a_pszDesc) \
+        PDMDevHlpSTAMRegisterF(pDevIns, a_pvReg, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, \
+                               STAMUNIT_OCCURENCES, a_pszDesc, a_pszNameFmt, idCpu)
+# define APIC_PROF_COUNTER(a_pvReg, a_pszNameFmt, a_pszDesc) \
+        PDMDevHlpSTAMRegisterF(pDevIns, a_pvReg, STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, \
+                               STAMUNIT_TICKS_PER_CALL, a_pszDesc, a_pszNameFmt, idCpu)
 
     for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
     {
         PVMCPU   pVCpu     = pVM->apCpusR3[idCpu];
         PAPICCPU pApicCpu  = VMCPU_TO_APICCPU(pVCpu);
 
-        APIC_REG_COUNTER(&pApicCpu->StatMmioReadRZ,  "Number of APIC MMIO reads in RZ.",  "/Devices/APIC/%u/RZ/MmioRead");
-        APIC_REG_COUNTER(&pApicCpu->StatMmioWriteRZ, "Number of APIC MMIO writes in RZ.", "/Devices/APIC/%u/RZ/MmioWrite");
-        APIC_REG_COUNTER(&pApicCpu->StatMsrReadRZ,   "Number of APIC MSR reads in RZ.",   "/Devices/APIC/%u/RZ/MsrRead");
-        APIC_REG_COUNTER(&pApicCpu->StatMsrWriteRZ,  "Number of APIC MSR writes in RZ.",  "/Devices/APIC/%u/RZ/MsrWrite");
+        APIC_REG_COUNTER(&pApicCpu->StatMmioReadRZ,    "%u/RZ/MmioRead",    "Number of APIC MMIO reads in RZ.");
+        APIC_REG_COUNTER(&pApicCpu->StatMmioWriteRZ,   "%u/RZ/MmioWrite",   "Number of APIC MMIO writes in RZ.");
+        APIC_REG_COUNTER(&pApicCpu->StatMsrReadRZ,     "%u/RZ/MsrRead",     "Number of APIC MSR reads in RZ.");
+        APIC_REG_COUNTER(&pApicCpu->StatMsrWriteRZ,    "%u/RZ/MsrWrite",    "Number of APIC MSR writes in RZ.");
 
-        APIC_REG_COUNTER(&pApicCpu->StatMmioReadR3,  "Number of APIC MMIO reads in R3.",  "/Devices/APIC/%u/R3/MmioReadR3");
-        APIC_REG_COUNTER(&pApicCpu->StatMmioWriteR3, "Number of APIC MMIO writes in R3.", "/Devices/APIC/%u/R3/MmioWriteR3");
-        APIC_REG_COUNTER(&pApicCpu->StatMsrReadR3,   "Number of APIC MSR reads in R3.",   "/Devices/APIC/%u/R3/MsrReadR3");
-        APIC_REG_COUNTER(&pApicCpu->StatMsrWriteR3,  "Number of APIC MSR writes in R3.",  "/Devices/APIC/%u/R3/MsrWriteR3");
+        APIC_REG_COUNTER(&pApicCpu->StatMmioReadR3,    "%u/R3/MmioReadR3",  "Number of APIC MMIO reads in R3.");
+        APIC_REG_COUNTER(&pApicCpu->StatMmioWriteR3,   "%u/R3/MmioWriteR3", "Number of APIC MMIO writes in R3.");
+        APIC_REG_COUNTER(&pApicCpu->StatMsrReadR3,     "%u/R3/MsrReadR3",   "Number of APIC MSR reads in R3.");
+        APIC_REG_COUNTER(&pApicCpu->StatMsrWriteR3,    "%u/R3/MsrWriteR3",  "Number of APIC MSR writes in R3.");
 
-        APIC_PROF_COUNTER(&pApicCpu->StatUpdatePendingIntrs, "Profiling of APICUpdatePendingInterrupts",
-                          "/PROF/CPU%d/APIC/UpdatePendingInterrupts");
-        APIC_PROF_COUNTER(&pApicCpu->StatPostIntr, "Profiling of APICPostInterrupt", "/PROF/CPU%d/APIC/PostInterrupt");
+        APIC_REG_COUNTER(&pApicCpu->StatPostIntrAlreadyPending,
+                                                       "%u/PostInterruptAlreadyPending", "Number of times an interrupt is already pending.");
+        APIC_REG_COUNTER(&pApicCpu->StatTimerCallback, "%u/TimerCallback",  "Number of times the timer callback is invoked.");
 
-        APIC_REG_COUNTER(&pApicCpu->StatPostIntrAlreadyPending,  "Number of times an interrupt is already pending.",
-                         "/Devices/APIC/%u/PostInterruptAlreadyPending");
-        APIC_REG_COUNTER(&pApicCpu->StatTimerCallback,  "Number of times the timer callback is invoked.",
-                         "/Devices/APIC/%u/TimerCallback");
+        APIC_REG_COUNTER(&pApicCpu->StatTprWrite,      "%u/TprWrite",       "Number of TPR writes.");
+        APIC_REG_COUNTER(&pApicCpu->StatTprRead,       "%u/TprRead",        "Number of TPR reads.");
+        APIC_REG_COUNTER(&pApicCpu->StatEoiWrite,      "%u/EoiWrite",       "Number of EOI writes.");
+        APIC_REG_COUNTER(&pApicCpu->StatMaskedByTpr,   "%u/MaskedByTpr",    "Number of times TPR masks an interrupt in apicGetInterrupt.");
+        APIC_REG_COUNTER(&pApicCpu->StatMaskedByPpr,   "%u/MaskedByPpr",    "Number of times PPR masks an interrupt in apicGetInterrupt.");
+        APIC_REG_COUNTER(&pApicCpu->StatTimerIcrWrite, "%u/TimerIcrWrite",  "Number of times the timer ICR is written.");
+        APIC_REG_COUNTER(&pApicCpu->StatIcrLoWrite,    "%u/IcrLoWrite",     "Number of times the ICR Lo (send IPI) is written.");
+        APIC_REG_COUNTER(&pApicCpu->StatIcrHiWrite,    "%u/IcrHiWrite",     "Number of times the ICR Hi is written.");
+        APIC_REG_COUNTER(&pApicCpu->StatIcrFullWrite,  "%u/IcrFullWrite",   "Number of times the ICR full (send IPI, x2APIC) is written.");
 
-        APIC_REG_COUNTER(&pApicCpu->StatTprWrite,      "Number of TPR writes.", "/Devices/APIC/%u/TprWrite");
-        APIC_REG_COUNTER(&pApicCpu->StatTprRead,       "Number of TPR reads.",  "/Devices/APIC/%u/TprRead");
-        APIC_REG_COUNTER(&pApicCpu->StatEoiWrite,      "Number of EOI writes.", "/Devices/APIC/%u/EoiWrite");
-        APIC_REG_COUNTER(&pApicCpu->StatMaskedByTpr,   "Number of times TPR masks an interrupt in apicGetInterrupt.",
-                         "/Devices/APIC/%u/MaskedByTpr");
-        APIC_REG_COUNTER(&pApicCpu->StatMaskedByPpr,   "Number of times PPR masks an interrupt in apicGetInterrupt.",
-                         "/Devices/APIC/%u/MaskedByPpr");
-        APIC_REG_COUNTER(&pApicCpu->StatTimerIcrWrite, "Number of times the timer ICR is written.",
-                         "/Devices/APIC/%u/TimerIcrWrite");
-        APIC_REG_COUNTER(&pApicCpu->StatIcrLoWrite,    "Number of times the ICR Lo (send IPI) is written.",
-                         "/Devices/APIC/%u/IcrLoWrite");
-        APIC_REG_COUNTER(&pApicCpu->StatIcrHiWrite,    "Number of times the ICR Hi is written.",
-                         "/Devices/APIC/%u/IcrHiWrite");
-        APIC_REG_COUNTER(&pApicCpu->StatIcrFullWrite,  "Number of times the ICR full (send IPI, x2APIC) is written.",
-                         "/Devices/APIC/%u/IcrFullWrite");
+        APIC_PROF_COUNTER(&pApicCpu->StatUpdatePendingIntrs,
+                                                       "/PROF/CPU%d/APIC/UpdatePendingInterrupts", "Profiling of APICUpdatePendingInterrupts");
+        APIC_PROF_COUNTER(&pApicCpu->StatPostIntr,     "/PROF/CPU%d/APIC/PostInterrupt",  "Profiling of APICPostInterrupt");
     }
+
 # undef APIC_PROF_COUNTER
 # undef APIC_REG_ACCESS_COUNTER
 #endif
