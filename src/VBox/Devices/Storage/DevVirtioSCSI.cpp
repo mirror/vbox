@@ -1995,7 +1995,7 @@ static DECLCALLBACK(int) virtioScsiR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSS
     pHlp->pfnSSMGetU32(pSSM,  &pThis->fHasLunChange);
     pHlp->pfnSSMGetU32(pSSM,  &pThis->fResetting);
 
-    /* TODO: Ask aeichner about BIOS-related changes */
+    /** @todo Ask aeichner about BIOS-related changes */
     pHlp->pfnSSMGetU32(pSSM, &pThis->cTargets);
 
 
