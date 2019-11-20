@@ -114,9 +114,8 @@ const char *virtioCoreGetStateChangeText(VIRTIOVMSTATECHANGED enmState)
     }
 }
 
-/*********************************************************************************************************************************
-*   Internal Functions                                                                                                           *
-*********************************************************************************************************************************/
+/* Internal Functions */
+
 static void virtioNotifyGuestDriver(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t idxQueue, bool fForce);
 static int  virtioKick(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint8_t uCause, uint16_t uVec, bool fForce);
 
