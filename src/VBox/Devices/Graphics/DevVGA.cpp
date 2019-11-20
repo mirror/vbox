@@ -5877,6 +5877,16 @@ static DECLCALLBACK(int) vgaR3LoadDone(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 /* -=-=-=-=-=- Ring 3: Device callbacks -=-=-=-=-=- */
 
 /**
+ * @interface_method_impl{PDMDEVREG,pfnResume}
+ */
+static DECLCALLBACK(void) vgaR3Resume(PPDMDEVINS pDevIns)
+{
+    PVGASTATE pThis = PDMDEVINS_2_DATA(pDevIns, PVGASTATE);
+    VBVAOnResume(pThis);
+}
+
+
+/**
  * @interface_method_impl{PDMDEVREG,pfnReset}
  */
 static DECLCALLBACK(void)  vgaR3Reset(PPDMDEVINS pDevIns)
@@ -5938,8 +5948,8 @@ static DECLCALLBACK(void)  vgaR3Reset(PPDMDEVINS pDevIns)
      * Reset the LFB mapping.
      */
     pThis->fLFBUpdated = false;
-    if (    (   pThis->fGCEnabled
-             || pThis->fR0Enabled)
+    if (    (   pDevIns->fRCEnabled
+             || pDevIns->fR0Enabled)
         &&  pThis->GCPhysVRAM
         &&  pThis->GCPhysVRAM != NIL_RTGCPHYS)
     {
@@ -5975,6 +5985,19 @@ static DECLCALLBACK(void)  vgaR3Reset(PPDMDEVINS pDevIns)
 
     /* Reset retrace emulation. */
     memset(&pThis->retrace_state, 0, sizeof(pThis->retrace_state));
+}
+
+
+/**
+ * @interface_method_impl{PDMDEVREG,pfnPowerOn}
+ */
+static DECLCALLBACK(void) vgaR3PowerOn(PPDMDEVINS pDevIns)
+{
+    PVGASTATE pThis = PDMDEVINS_2_DATA(pDevIns, PVGASTATE);
+#ifdef VBOX_WITH_VMSVGA
+    vmsvgaR3PowerOn(pDevIns);
+#endif
+    VBVAOnResume(pThis);
 }
 
 
@@ -6138,13 +6161,13 @@ static DECLCALLBACK(int) vgaR3Destruct(PPDMDEVINS pDevIns)
 
     if (pThis->pszVgaBiosFile)
     {
-        MMR3HeapFree(pThis->pszVgaBiosFile);
+        PDMDevHlpMMHeapFree(pDevIns, pThis->pszVgaBiosFile);
         pThis->pszVgaBiosFile = NULL;
     }
 
     if (pThis->pszLogoFile)
     {
-        MMR3HeapFree(pThis->pszLogoFile);
+        PDMDevHlpMMHeapFree(pDevIns, pThis->pszLogoFile);
         pThis->pszLogoFile = NULL;
     }
 
@@ -6192,19 +6215,18 @@ static void vgaAdjustModeInfo(PVGASTATE pThis, ModeInfoListItem *pMode)
  */
 static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE pCfg)
 {
-
-    static bool s_fExpandDone = false;
-    int         rc;
-    unsigned    i;
-    uint32_t    cCustomModes;
-    uint32_t    cyReduction;
-    uint32_t    cbPitch;
-    PVBEHEADER  pVBEDataHdr;
-    ModeInfoListItem *pCurMode;
-    unsigned    cb;
     PDMDEV_CHECK_VERSIONS_RETURN(pDevIns);
-    PVGASTATE   pThis = PDMDEVINS_2_DATA(pDevIns, PVGASTATE);
-    PVM         pVM   = PDMDevHlpGetVM(pDevIns);
+    PVGASTATE       pThis = PDMDEVINS_2_DATA(pDevIns, PVGASTATE);
+    PVM             pVM   = PDMDevHlpGetVM(pDevIns);
+    PCPDMDEVHLPR3   pHlp  = pDevIns->pHlpR3;
+    int             rc;
+    unsigned        i;
+    uint32_t        cCustomModes;
+    uint32_t        cyReduction;
+    uint32_t        cbPitch;
+    PVBEHEADER      pVBEDataHdr;
+    ModeInfoListItem *pCurMode;
+    unsigned        cb;
 
     Assert(iInstance == 0);
     Assert(pVM);
@@ -6212,6 +6234,7 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
     /*
      * Init static data.
      */
+    static bool s_fExpandDone = false;
     if (!s_fExpandDone)
     {
         s_fExpandDone = true;
@@ -6221,56 +6244,53 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
     /*
      * Validate configuration.
      */
-    if (!CFGMR3AreValuesValid(pCfg, "VRamSize\0"
-                                          "MonitorCount\0"
-                                          "GCEnabled\0"
-                                          "R0Enabled\0"
-                                          "FadeIn\0"
-                                          "FadeOut\0"
-                                          "LogoTime\0"
-                                          "LogoFile\0"
-                                          "ShowBootMenu\0"
-                                          "BiosRom\0"
-                                          "RealRetrace\0"
-                                          "CustomVideoModes\0"
-                                          "HeightReduction\0"
-                                          "CustomVideoMode1\0"
-                                          "CustomVideoMode2\0"
-                                          "CustomVideoMode3\0"
-                                          "CustomVideoMode4\0"
-                                          "CustomVideoMode5\0"
-                                          "CustomVideoMode6\0"
-                                          "CustomVideoMode7\0"
-                                          "CustomVideoMode8\0"
-                                          "CustomVideoMode9\0"
-                                          "CustomVideoMode10\0"
-                                          "CustomVideoMode11\0"
-                                          "CustomVideoMode12\0"
-                                          "CustomVideoMode13\0"
-                                          "CustomVideoMode14\0"
-                                          "CustomVideoMode15\0"
-                                          "CustomVideoMode16\0"
-                                          "MaxBiosXRes\0"
-                                          "MaxBiosYRes\0"
+    static const char s_szMscWorkaround[] = "VRamSize"
+                                            "|MonitorCount"
+                                            "|FadeIn"
+                                            "|FadeOut"
+                                            "|LogoTime"
+                                            "|LogoFile"
+                                            "|ShowBootMenu"
+                                            "|BiosRom"
+                                            "|RealRetrace"
+                                            "|CustomVideoModes"
+                                            "|HeightReduction"
+                                            "|CustomVideoMode1"
+                                            "|CustomVideoMode2"
+                                            "|CustomVideoMode3"
+                                            "|CustomVideoMode4"
+                                            "|CustomVideoMode5"
+                                            "|CustomVideoMode6"
+                                            "|CustomVideoMode7"
+                                            "|CustomVideoMode8"
+                                            "|CustomVideoMode9"
+                                            "|CustomVideoMode10"
+                                            "|CustomVideoMode11"
+                                            "|CustomVideoMode12"
+                                            "|CustomVideoMode13"
+                                            "|CustomVideoMode14"
+                                            "|CustomVideoMode15"
+                                            "|CustomVideoMode16"
+                                            "|MaxBiosXRes"
+                                            "|MaxBiosYRes"
 #ifdef VBOX_WITH_VMSVGA
-                                          "VMSVGAEnabled\0"
-                                          "VMSVGAPciId\0"
-                                          "VMSVGAPciBarLayout\0"
-                                          "VMSVGAFifoSize\0"
+                                            "|VMSVGAEnabled"
+                                            "|VMSVGAPciId"
+                                            "|VMSVGAPciBarLayout"
+                                            "|VMSVGAFifoSize"
 #endif
 #ifdef VBOX_WITH_VMSVGA3D
-                                          "VMSVGA3dEnabled\0"
+                                            "|VMSVGA3dEnabled"
 #endif
-                                          "SuppressNewYearSplash\0"
-                                          "3DEnabled\0"
-                                          ))
-        return PDMDEV_SET_ERROR(pDevIns, VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES,
-                                N_("Invalid configuration for vga device"));
+                                            "|SuppressNewYearSplash"
+                                            "|3DEnabled";
+
+    PDMDEV_VALIDATE_CONFIG_RETURN(pDevIns, s_szMscWorkaround, "");
 
     /*
      * Init state data.
      */
-    rc = CFGMR3QueryU32Def(pCfg, "VRamSize", &pThis->vram_size, VGA_VRAM_DEFAULT);
+    rc = pHlp->pfnCFGMQueryU32Def(pCfg, "VRamSize", &pThis->vram_size, VGA_VRAM_DEFAULT);
     AssertLogRelRCReturn(rc, rc);
     if (pThis->vram_size > VGA_VRAM_MAX)
         return PDMDevHlpVMSetError(pDevIns, VERR_INVALID_PARAMETER, RT_SRC_POS,
@@ -6282,34 +6302,29 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
         return PDMDevHlpVMSetError(pDevIns, VERR_INVALID_PARAMETER, RT_SRC_POS,
                                    "VRamSize is not a multiple of 256K (%#x)", pThis->vram_size);
 
-    rc = CFGMR3QueryU32Def(pCfg, "MonitorCount", &pThis->cMonitors, 1);
+    rc = pHlp->pfnCFGMQueryU32Def(pCfg, "MonitorCount", &pThis->cMonitors, 1);
     AssertLogRelRCReturn(rc, rc);
 
-    rc = CFGMR3QueryBoolDef(pCfg, "GCEnabled", &pThis->fGCEnabled, true);
-    AssertLogRelRCReturn(rc, rc);
+    Log(("VGA: VRamSize=%#x fGCenabled=%RTbool fR0Enabled=%RTbool\n", pThis->vram_size, pDevIns->fRCEnabled, pDevIns->fR0Enabled));
 
-    rc = CFGMR3QueryBoolDef(pCfg, "R0Enabled", &pThis->fR0Enabled, true);
-    AssertLogRelRCReturn(rc, rc);
-    Log(("VGA: VRamSize=%#x fGCenabled=%RTbool fR0Enabled=%RTbool\n", pThis->vram_size, pThis->fGCEnabled, pThis->fR0Enabled));
-
-    rc = CFGMR3QueryBoolDef(pCfg, "3DEnabled", &pThis->f3DEnabled, false);
+    rc = pHlp->pfnCFGMQueryBoolDef(pCfg, "3DEnabled", &pThis->f3DEnabled, false);
     AssertLogRelRCReturn(rc, rc);
     Log(("VGA: f3DEnabled=%RTbool\n", pThis->f3DEnabled));
 
 #ifdef VBOX_WITH_VMSVGA
-    rc = CFGMR3QueryBoolDef(pCfg, "VMSVGAEnabled", &pThis->fVMSVGAEnabled, false);
+    rc = pHlp->pfnCFGMQueryBoolDef(pCfg, "VMSVGAEnabled", &pThis->fVMSVGAEnabled, false);
     AssertLogRelRCReturn(rc, rc);
     Log(("VMSVGA: VMSVGAEnabled   = %d\n", pThis->fVMSVGAEnabled));
 
-    rc = CFGMR3QueryBoolDef(pCfg, "VMSVGAPciId", &pThis->fVMSVGAPciId, false);
+    rc = pHlp->pfnCFGMQueryBoolDef(pCfg, "VMSVGAPciId", &pThis->fVMSVGAPciId, false);
     AssertLogRelRCReturn(rc, rc);
     Log(("VMSVGA: VMSVGAPciId   = %d\n", pThis->fVMSVGAPciId));
 
-    rc = CFGMR3QueryBoolDef(pCfg, "VMSVGAPciBarLayout", &pThis->fVMSVGAPciBarLayout, pThis->fVMSVGAPciId);
+    rc = pHlp->pfnCFGMQueryBoolDef(pCfg, "VMSVGAPciBarLayout", &pThis->fVMSVGAPciBarLayout, pThis->fVMSVGAPciId);
     AssertLogRelRCReturn(rc, rc);
     Log(("VMSVGA: VMSVGAPciBarLayout = %d\n", pThis->fVMSVGAPciBarLayout));
 
-    rc = CFGMR3QueryU32Def(pCfg, "VMSVGAFifoSize", &pThis->svga.cbFIFO, VMSVGA_FIFO_SIZE);
+    rc = pHlp->pfnCFGMQueryU32Def(pCfg, "VMSVGAFifoSize", &pThis->svga.cbFIFO, VMSVGA_FIFO_SIZE);
     AssertLogRelRCReturn(rc, rc);
     AssertLogRelMsgReturn(pThis->svga.cbFIFO >= _128K, ("cbFIFO=%#x\n", pThis->svga.cbFIFO), VERR_OUT_OF_RANGE);
     AssertLogRelMsgReturn(pThis->svga.cbFIFO <=  _16M, ("cbFIFO=%#x\n", pThis->svga.cbFIFO), VERR_OUT_OF_RANGE);
@@ -6318,7 +6333,7 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
     Log(("VMSVGA: VMSVGAFifoSize  = %#x (%'u)\n", pThis->svga.cbFIFO, pThis->svga.cbFIFO));
 #endif
 #ifdef VBOX_WITH_VMSVGA3D
-    rc = CFGMR3QueryBoolDef(pCfg, "VMSVGA3dEnabled", &pThis->svga.f3DEnabled, false);
+    rc = pHlp->pfnCFGMQueryBoolDef(pCfg, "VMSVGA3dEnabled", &pThis->svga.f3DEnabled, false);
     AssertLogRelRCReturn(rc, rc);
     Log(("VMSVGA: VMSVGA3dEnabled = %d\n", pThis->svga.f3DEnabled));
 #endif
@@ -6489,7 +6504,7 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
     pThis->vram_ptrR0 = (RTR0PTR)pThis->vram_ptrR3; /** @todo @bugref{1865} Map parts into R0 or just use PGM access (Mac only). */
 
 #ifdef VBOX_WITH_RAW_MODE_KEEP
-    if (pThis->fGCEnabled)
+    if (pDevIns->fRCEnabled)
     {
         RTRCPTR pRCMapping = 0;
         rc = PDMDevHlpMMHyperMapMMIO2(pDevIns, pPciDev, pThis->pciRegions.iVRAM, 0 /* off */,  VGA_MAPPING_SIZE,
@@ -6503,7 +6518,7 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
 #endif
 
 #if defined(VBOX_WITH_2X_4GB_ADDR_SPACE)
-    if (pThis->fR0Enabled)
+    if (pDevIns->fR0Enabled)
     {
         RTR0PTR pR0Mapping = 0;
         rc = PDMDevHlpMMIO2MapKernel(pDevIns, iPCIRegionVRAM, 0 /* off */,  VGA_MAPPING_SIZE, "VGA VRam", &pR0Mapping);
@@ -6570,7 +6585,7 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
 #endif /* CONFIG_BOCHS_VBE */
 
     /* guest context extension */
-    if (pThis->fGCEnabled)
+    if (pDevIns->fRCEnabled)
     {
         rc = PDMDevHlpIOPortRegisterRC(pDevIns,  0x3c0, 16, 0, "vgaIOPortWrite",       "vgaIOPortRead", NULL, NULL,     "VGA - 3c0 (GC)");
         if (RT_FAILURE(rc))
@@ -6598,7 +6613,7 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
     }
 
     /* R0 context extension */
-    if (pThis->fR0Enabled)
+    if (pDevIns->fR0Enabled)
     {
         rc = PDMDevHlpIOPortRegisterR0(pDevIns,  0x3c0, 16, 0, "vgaIOPortWrite",       "vgaIOPortRead", NULL, NULL,     "VGA - 3c0 (GC)");
         if (RT_FAILURE(rc))
@@ -6631,14 +6646,14 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
                                  vgaMMIOWrite, vgaMMIORead, vgaMMIOFill, "VGA - VGA Video Buffer");
     if (RT_FAILURE(rc))
         return rc;
-    if (pThis->fGCEnabled)
+    if (pDevIns->fRCEnabled)
     {
         rc = PDMDevHlpMMIORegisterRCEx(pDevIns, 0x000a0000, 0x00020000, NIL_RTRCPTR /*pvUser*/,
                                        "vgaMMIOWrite", "vgaMMIORead", "vgaMMIOFill");
         if (RT_FAILURE(rc))
             return rc;
     }
-    if (pThis->fR0Enabled)
+    if (pDevIns->fR0Enabled)
     {
         rc = PDMDevHlpMMIORegisterR0Ex(pDevIns, 0x000a0000, 0x00020000, NIL_RTR0PTR /*pvUser*/,
                                        "vgaMMIOWrite", "vgaMMIORead", "vgaMMIOFill");
@@ -6650,7 +6665,7 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
     rc = PDMDevHlpIOPortRegister(pDevIns, VBE_PRINTF_PORT, 1, NULL, vgaIOPortWriteBIOS, vgaIOPortReadBIOS, NULL, NULL, "VGA BIOS debug/panic");
     if (RT_FAILURE(rc))
         return rc;
-    if (pThis->fR0Enabled)
+    if (pDevIns->fR0Enabled)
     {
         rc = PDMDevHlpIOPortRegisterR0(pDevIns, VBE_PRINTF_PORT,  1, 0, "vgaIOPortWriteBIOS", "vgaIOPortReadBIOS", NULL, NULL, "VGA BIOS debug/panic");
         if (RT_FAILURE(rc))
@@ -6660,7 +6675,7 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
     /*
      * Get the VGA BIOS ROM file name.
      */
-    rc = CFGMR3QueryStringAlloc(pCfg, "BiosRom", &pThis->pszVgaBiosFile);
+    rc = pHlp->pfnCFGMQueryStringAlloc(pCfg, "BiosRom", &pThis->pszVgaBiosFile);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
     {
         pThis->pszVgaBiosFile = NULL;
@@ -6671,7 +6686,7 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
                                 N_("Configuration error: Querying \"BiosRom\" as a string failed"));
     else if (!*pThis->pszVgaBiosFile)
     {
-        MMR3HeapFree(pThis->pszVgaBiosFile);
+        PDMDevHlpMMHeapFree(pDevIns, pThis->pszVgaBiosFile);
         pThis->pszVgaBiosFile = NULL;
     }
 
@@ -6702,7 +6717,7 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
             Log(("vgaConstruct: Failed to open VGA BIOS ROM file '%s', rc=%Rrc!\n", pThis->pszVgaBiosFile, rc));
             RTFileClose(FileVgaBios);
             FileVgaBios = NIL_RTFILE;
-            MMR3HeapFree(pThis->pszVgaBiosFile);
+            PDMDevHlpMMHeapFree(pDevIns, pThis->pszVgaBiosFile);
             pThis->pszVgaBiosFile = NULL;
         }
     }
@@ -6811,14 +6826,14 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
     /*
      * Initialize the retrace flag.
      */
-    rc = CFGMR3QueryBoolDef(pCfg, "RealRetrace", &pThis->fRealRetrace, false);
+    rc = pHlp->pfnCFGMQueryBoolDef(pCfg, "RealRetrace", &pThis->fRealRetrace, false);
     AssertLogRelRCReturn(rc, rc);
 
     uint16_t maxBiosXRes;
-    rc = CFGMR3QueryU16Def(pCfg, "MaxBiosXRes", &maxBiosXRes, UINT16_MAX);
+    rc = pHlp->pfnCFGMQueryU16Def(pCfg, "MaxBiosXRes", &maxBiosXRes, UINT16_MAX);
     AssertLogRelRCReturn(rc, rc);
     uint16_t maxBiosYRes;
-    rc = CFGMR3QueryU16Def(pCfg, "MaxBiosYRes", &maxBiosYRes, UINT16_MAX);
+    rc = pHlp->pfnCFGMQueryU16Def(pCfg, "MaxBiosYRes", &maxBiosYRes, UINT16_MAX);
     AssertLogRelRCReturn(rc, rc);
 
     /*
@@ -6826,13 +6841,13 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
      */
     cb = sizeof(mode_info_list) + sizeof(ModeInfoListItem);
 
-    rc = CFGMR3QueryU32(pCfg, "HeightReduction", &cyReduction);
+    rc = pHlp->pfnCFGMQueryU32(pCfg, "HeightReduction", &cyReduction);
     if (RT_SUCCESS(rc) && cyReduction)
         cb *= 2;                            /* Default mode list will be twice long */
     else
         cyReduction = 0;
 
-    rc = CFGMR3QueryU32(pCfg, "CustomVideoModes", &cCustomModes);
+    rc = pHlp->pfnCFGMQueryU32(pCfg, "CustomVideoModes", &cCustomModes);
     if (RT_SUCCESS(rc) && cCustomModes)
         cb += sizeof(ModeInfoListItem) * cCustomModes;
     else
@@ -6913,7 +6928,7 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
 
             /* query and decode the custom mode string. */
             RTStrPrintf(szExtraDataKey, sizeof(szExtraDataKey), "CustomVideoMode%d", i);
-            rc = CFGMR3QueryStringAlloc(pCfg, szExtraDataKey, &pszExtraData);
+            rc = pHlp->pfnCFGMQueryStringAlloc(pCfg, szExtraDataKey, &pszExtraData);
             if (RT_SUCCESS(rc))
             {
                 ModeInfoListItem *pDefMode = mode_info_list;
@@ -6934,7 +6949,7 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
                                      cx, cy, cBits, pThis->vram_size / _1M));
                     return VERR_VGA_INVALID_CUSTOM_MODE;
                 }
-                MMR3HeapFree(pszExtraData);
+                PDMDevHlpMMHeapFree(pDevIns, pszExtraData);
 
                 /* Use defaults from max@bpp mode. */
                 switch (cBits)
@@ -6980,7 +6995,7 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
             }
             else if (rc != VERR_CFGM_VALUE_NOT_FOUND)
             {
-                AssertMsgFailed(("CFGMR3QueryStringAlloc(,'%s',) -> %Rrc\n", szExtraDataKey, rc));
+                AssertMsgFailed(("pHlp->pfnCFGMQueryStringAlloc(,'%s',) -> %Rrc\n", szExtraDataKey, rc));
                 return rc;
             }
         } /* foreach custom mode key */
@@ -7024,28 +7039,28 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
      */
     LOGOHDR LogoHdr = { LOGO_HDR_MAGIC, 0, 0, 0, 0, 0, 0 };
 
-    rc = CFGMR3QueryU8(pCfg, "FadeIn", &LogoHdr.fu8FadeIn);
+    rc = pHlp->pfnCFGMQueryU8(pCfg, "FadeIn", &LogoHdr.fu8FadeIn);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
         LogoHdr.fu8FadeIn = 1;
     else if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Querying \"FadeIn\" as integer failed"));
 
-    rc = CFGMR3QueryU8(pCfg, "FadeOut", &LogoHdr.fu8FadeOut);
+    rc = pHlp->pfnCFGMQueryU8(pCfg, "FadeOut", &LogoHdr.fu8FadeOut);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
         LogoHdr.fu8FadeOut = 1;
     else if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Querying \"FadeOut\" as integer failed"));
 
-    rc = CFGMR3QueryU16(pCfg, "LogoTime", &LogoHdr.u16LogoMillies);
+    rc = pHlp->pfnCFGMQueryU16(pCfg, "LogoTime", &LogoHdr.u16LogoMillies);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
         LogoHdr.u16LogoMillies = 0;
     else if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Querying \"LogoTime\" as integer failed"));
 
-    rc = CFGMR3QueryU8(pCfg, "ShowBootMenu", &LogoHdr.fu8ShowBootMenu);
+    rc = pHlp->pfnCFGMQueryU8(pCfg, "ShowBootMenu", &LogoHdr.fu8ShowBootMenu);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
         LogoHdr.fu8ShowBootMenu = 0;
     else if (RT_FAILURE(rc))
@@ -7071,7 +7086,7 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
     /*
      * Get the Logo file name.
      */
-    rc = CFGMR3QueryStringAlloc(pCfg, "LogoFile", &pThis->pszLogoFile);
+    rc = pHlp->pfnCFGMQueryStringAlloc(pCfg, "LogoFile", &pThis->pszLogoFile);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
         pThis->pszLogoFile = NULL;
     else if (RT_FAILURE(rc))
@@ -7079,7 +7094,7 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
                                 N_("Configuration error: Querying \"LogoFile\" as a string failed"));
     else if (!*pThis->pszLogoFile)
     {
-        MMR3HeapFree(pThis->pszLogoFile);
+        PDMDevHlpMMHeapFree(pDevIns, pThis->pszLogoFile);
         pThis->pszLogoFile = NULL;
     }
 
@@ -7113,7 +7128,7 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
             if (FileLogo != NIL_RTFILE)
                 RTFileClose(FileLogo);
             FileLogo = NIL_RTFILE;
-            MMR3HeapFree(pThis->pszLogoFile);
+            PDMDevHlpMMHeapFree(pDevIns, pThis->pszLogoFile);
             pThis->pszLogoFile = NULL;
         }
     }
@@ -7170,7 +7185,7 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
             RTTIME T;
             RTTimeLocalExplode(&T, &Now);
             bool fSuppressNewYearSplash = false;
-            rc = CFGMR3QueryBoolDef(pCfg, "SuppressNewYearSplash", &fSuppressNewYearSplash, true);
+            rc = pHlp->pfnCFGMQueryBoolDef(pCfg, "SuppressNewYearSplash", &fSuppressNewYearSplash, true);
             if (   !fSuppressNewYearSplash
                 && (T.u16YearDay > 353 || T.u16YearDay < 10))
             {
@@ -7253,19 +7268,20 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
     return rc;
 }
 
-static DECLCALLBACK(void) vgaR3PowerOn(PPDMDEVINS pDevIns)
-{
-    PVGASTATE pThis = PDMDEVINS_2_DATA(pDevIns, PVGASTATE);
-#ifdef VBOX_WITH_VMSVGA
-    vmsvgaR3PowerOn(pDevIns);
-#endif
-    VBVAOnResume(pThis);
-}
+#else  /* !IN_RING3 */
 
-static DECLCALLBACK(void) vgaR3Resume(PPDMDEVINS pDevIns)
+/**
+ * @callback_method_impl{PDMDEVREGR0,pfnConstruct}
+ */
+static DECLCALLBACK(int) vgaRZConstruct(PPDMDEVINS pDevIns)
 {
+    PDMDEV_CHECK_VERSIONS_RETURN(pDevIns);
     PVGASTATE pThis = PDMDEVINS_2_DATA(pDevIns, PVGASTATE);
-    VBVAOnResume(pThis);
+
+    int rc = PDMDevHlpSetDeviceCritSect(pDevIns, &pThis->CritSect);
+    AssertRCReturn(rc, rc);
+
+    return VINF_SUCCESS;
 }
 
 #endif /* !IN_RING3 */
@@ -7315,7 +7331,7 @@ const PDMDEVREG g_DeviceVga =
     /* .pfnReserved7 = */           NULL,
 #elif defined(IN_RING0)
     /* .pfnEarlyConstruct = */      NULL,
-    /* .pfnConstruct = */           NULL,
+    /* .pfnConstruct = */           vgaRZConstruct,
     /* .pfnDestruct = */            NULL,
     /* .pfnFinalDestruct = */       NULL,
     /* .pfnRequest = */             NULL,
@@ -7328,7 +7344,7 @@ const PDMDEVREG g_DeviceVga =
     /* .pfnReserved6 = */           NULL,
     /* .pfnReserved7 = */           NULL,
 #elif defined(IN_RC)
-    /* .pfnConstruct = */           NULL,
+    /* .pfnConstruct = */           vgaRZConstruct,
     /* .pfnReserved0 = */           NULL,
     /* .pfnReserved1 = */           NULL,
     /* .pfnReserved2 = */           NULL,

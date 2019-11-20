@@ -337,10 +337,6 @@ typedef struct VGAState {
     bool                        fHasDirtyBits;
     /** LFB was updated flag. */
     bool                        fLFBUpdated;
-    /** Indicates if the GC extensions are enabled or not. */
-    bool                        fGCEnabled;
-    /** Indicates if the R0 extensions are enabled or not. */
-    bool                        fR0Enabled;
     /** Flag indicating that the VGA memory in the 0xa0000-0xbffff region has been remapped to allow direct access. */
     bool                        fRemappedVGA;
     /** Whether to render the guest VRAM to the framebuffer memory. False only for some LFB modes. */
@@ -352,9 +348,9 @@ typedef struct VGAState {
     bool                        fVMSVGAEnabled;
     bool                        fVMSVGAPciId;
     bool                        fVMSVGAPciBarLayout;
-    bool                        Padding4[0+2];
+    bool                        Padding4[4];
 # else
-    bool                        Padding4[1+4];
+    bool                        Padding4[3+4];
 # endif
 
     struct {

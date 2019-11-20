@@ -5297,14 +5297,14 @@ DECLCALLBACK(int) vmsvgaR3IORegionMap(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, ui
                                      vmsvgaIOWrite, vmsvgaIORead, NULL /* OutStr */, NULL /* InStr */, "VMSVGA");
         if (RT_FAILURE(rc))
             return rc;
-        if (pThis->fR0Enabled)
+        if (pDevIns->fR0Enabled)
         {
             rc = PDMDevHlpIOPortRegisterR0(pDevIns, (RTIOPORT)GCPhysAddress, cb, 0,
                                            "vmsvgaIOWrite", "vmsvgaIORead", NULL, NULL, "VMSVGA");
             if (RT_FAILURE(rc))
                 return rc;
         }
-        if (pThis->fGCEnabled)
+        if (pDevIns->fRCEnabled)
         {
             rc = PDMDevHlpIOPortRegisterRC(pDevIns, (RTIOPORT)GCPhysAddress, cb, 0,
                                            "vmsvgaIOWrite", "vmsvgaIORead", NULL, NULL, "VMSVGA");
