@@ -4838,7 +4838,8 @@ static DECLCALLBACK(int) vgaPortUpdateDisplayAll(PPDMIDISPLAYPORT pInterface, bo
  */
 static DECLCALLBACK(int) vgaPortSetRefreshRate(PPDMIDISPLAYPORT pInterface, uint32_t cMilliesInterval)
 {
-    PVGASTATE pThis = IDISPLAYPORT_2_VGASTATE(pInterface);
+    PVGASTATE  pThis   = IDISPLAYPORT_2_VGASTATE(pInterface);
+    PPDMDEVINS pDevIns = pThis->pDevInsR3;
 
     /*
      * Update the interval, notify the VMSVGA FIFO thread if sleeping,
@@ -4852,8 +4853,8 @@ static DECLCALLBACK(int) vgaPortSetRefreshRate(PPDMIDISPLAYPORT pInterface, uint
 #endif
 
     if (cMilliesInterval)
-        return TMTimerSetMillies(pThis->RefreshTimer, cMilliesInterval);
-    return TMTimerStop(pThis->RefreshTimer);
+        return PDMDevHlpTimerSetMillies(pDevIns, pThis->hRefreshTimer, cMilliesInterval);
+    return PDMDevHlpTimerStop(pDevIns, pThis->hRefreshTimer);
 }
 
 
@@ -5429,21 +5430,22 @@ static DECLCALLBACK(void) vgaPortReportHostCursorCapabilities(PPDMIDISPLAYPORT p
     RT_NOREF(pInterface, fSupportsRenderCursor, fSupportsMoveCursor);
 }
 
+/**
+ * @callback_method_impl{FNTMTIMERFNTMTIMERDEV, VGA Refresh Timer}
+ */
 static DECLCALLBACK(void) vgaTimerRefresh(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser)
 {
     PVGASTATE pThis = (PVGASTATE)pvUser;
-    NOREF(pDevIns);
+    RT_NOREF(pTimer);
 
     if (pThis->fScanLineCfg & VBVASCANLINECFG_ENABLE_VSYNC_IRQ)
-    {
         VBVARaiseIrq(pThis, HGSMIHOSTFLAGS_VSYNC);
-    }
 
     if (pThis->pDrv)
         pThis->pDrv->pfnRefresh(pThis->pDrv);
 
     if (pThis->cMilliesRefreshInterval)
-        TMTimerSetMillies(pTimer, pThis->cMilliesRefreshInterval);
+        PDMDevHlpTimerSetMillies(pDevIns, pThis->hRefreshTimer, pThis->cMilliesRefreshInterval);
 
 #ifdef VBOX_WITH_VIDEOHWACCEL
     vbvaTimerCb(pThis);
@@ -5763,7 +5765,7 @@ static DECLCALLBACK(int) vgaR3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 
 
 /**
- * @copydoc FNSSMDEVLOADEXEC
+ * @callback_method_impl{FNSSMDEVLOADEXEC}
  */
 static DECLCALLBACK(int) vgaR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass)
 {
@@ -5853,7 +5855,7 @@ static DECLCALLBACK(int) vgaR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint
 
 
 /**
- * @copydoc FNSSMDEVLOADDONE
+ * @@callback_method_impl{FNSSMDEVLOADDONE}
  */
 static DECLCALLBACK(int) vgaR3LoadDone(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 {
@@ -6818,9 +6820,8 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
     /*
      * Create the refresh timer.
      */
-    rc = PDMDevHlpTMTimerCreate(pDevIns, TMCLOCK_REAL, vgaTimerRefresh,
-                                pThis, TMTIMER_FLAGS_NO_CRIT_SECT,
-                                "VGA Refresh Timer", &pThis->RefreshTimer);
+    rc = PDMDevHlpTimerCreate(pDevIns, TMCLOCK_REAL, vgaTimerRefresh, pThis, TMTIMER_FLAGS_NO_CRIT_SECT,
+                              "VGA Refresh Timer", &pThis->hRefreshTimer);
     if (RT_FAILURE(rc))
         return rc;
 

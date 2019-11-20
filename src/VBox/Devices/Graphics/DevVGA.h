@@ -315,7 +315,7 @@ typedef struct VGAState {
     R3PTRTYPE(PPDMILEDCONNECTORS)   pLedsConnector;
 
     /** Refresh timer handle - HC. */
-    PTMTIMERR3                  RefreshTimer;
+    TMTIMERHANDLE               hRefreshTimer;
 
     /** Pointer to the device instance - R0 Ptr. */
     PPDMDEVINSR0                pDevInsR0;
