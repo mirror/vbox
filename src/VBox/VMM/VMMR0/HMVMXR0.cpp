@@ -4952,17 +4952,9 @@ static uint32_t hmR0VmxGetGuestIntrState(PVMCPUCC pVCpu, PCVMXTRANSIENT pVmxTran
     }
 
     /*
-     * NMIs to the guest are blocked after an NMI is injected until the guest executes an IRET. We only
-     * bother with virtual-NMI blocking when we have support for virtual NMIs in the CPU, otherwise
-     * setting this would block host-NMIs and IRET will not clear the blocking.
-     *
-     * We always set NMI-exiting so when the host receives an NMI we get a VM-exit.
-     *
-     * See Intel spec. 26.6.1 "Interruptibility state". See @bugref{7445}.
+     * Check if we should inhibit NMI delivery.
      */
-    PCVMXVMCSINFO pVmcsInfo = pVmxTransient->pVmcsInfo;
-    if (   (pVmcsInfo->u32PinCtls & VMX_PIN_CTLS_VIRT_NMI)
-        && CPUMIsGuestNmiBlocking(pVCpu))
+    if (CPUMIsGuestNmiBlocking(pVCpu))
         fIntrState |= VMX_VMCS_GUEST_INT_STATE_BLOCK_NMI;
 
     return fIntrState;
@@ -8562,6 +8554,10 @@ static VBOXSTRICTRC hmR0VmxInjectEventVmcs(PVMCPUCC pVCpu, PCVMXTRANSIENT pVmxTr
  * Evaluates the event to be delivered to the guest and sets it as the pending
  * event.
  *
+ * Toggling of interrupt force-flags here is safe since we update TRPM on premature
+ * exits to ring-3 before executing guest code, see hmR0VmxExitToRing3(). We must
+ * NOT restore these force-flags.
+ *
  * @returns Strict VBox status code (i.e. informational status codes too).
  * @param   pVCpu           The cross context virtual CPU structure.
  * @param   pVmxTransient   The VMX-transient structure.
@@ -8577,127 +8573,148 @@ static VBOXSTRICTRC hmR0VmxEvaluatePendingEvent(PVMCPUCC pVCpu, PCVMXTRANSIENT p
     bool const   fIsNestedGuest = pVmxTransient->fIsNestedGuest;
 
     /*
-     * Get the current interruptibility-state of the guest or nested-guest and
-     * then figure out what needs to be injected.
+     * Compute/update guest-interruptibility state related FFs.
      */
-    uint32_t const fIntrState  = hmR0VmxGetGuestIntrState(pVCpu, pVmxTransient);
-    bool const     fBlockMovSS = RT_BOOL(fIntrState & VMX_VMCS_GUEST_INT_STATE_BLOCK_MOVSS);
-    bool const     fBlockSti   = RT_BOOL(fIntrState & VMX_VMCS_GUEST_INT_STATE_BLOCK_STI);
-    bool const     fBlockNmi   = RT_BOOL(fIntrState & VMX_VMCS_GUEST_INT_STATE_BLOCK_NMI);
-
-    /* We don't support block-by-SMI yet.*/
-    Assert(!(fIntrState & VMX_VMCS_GUEST_INT_STATE_BLOCK_SMI));
-
-    /* Block-by-STI must not be set when interrupts are disabled. */
-    if (fBlockSti)
+    /** @todo r=ramshankar: Move this outside this function to the caller. */
     {
-        HMVMX_CPUMCTX_ASSERT(pVCpu, CPUMCTX_EXTRN_RFLAGS);
-        Assert(pCtx->eflags.Bits.u1IF);
-    }
+        /* Get the current interruptibility-state of the guest or nested-guest (this updates FFs). */
+        uint32_t const fIntrState = hmR0VmxGetGuestIntrState(pVCpu, pVmxTransient);
 
-    /* Update interruptibility state to the caller. */
-    *pfIntrState = fIntrState;
-
-    /*
-     * Toggling of interrupt force-flags here is safe since we update TRPM on
-     * premature exits to ring-3 before executing guest code, see hmR0VmxExitToRing3().
-     * We must NOT restore these force-flags.
-     */
-
-    /** @todo SMI. SMIs take priority over NMIs. */
-
-    /*
-     * Check if an NMI is pending and if the guest or nested-guest can receive them.
-     * NMIs take priority over external interrupts.
-     */
-    if (VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INTERRUPT_NMI))
-    {
-        /* On some CPUs block-by-STI also blocks NMIs. See Intel spec. 26.3.1.5 "Checks On Guest Non-Register State". */
-        if (   !pVCpu->hm.s.Event.fPending
-            && !fBlockNmi
-            && !fBlockSti
-            && !fBlockMovSS)
+#ifdef VBOX_STRICT
+        /* Validate. */
+        Assert(!(fIntrState & VMX_VMCS_GUEST_INT_STATE_BLOCK_SMI));  /* We don't support block-by-SMI yet.*/
+        if (fIntrState & VMX_VMCS_GUEST_INT_STATE_BLOCK_STI)
         {
-#ifdef VBOX_WITH_NESTED_HWVIRT_VMX
-            if (   fIsNestedGuest
-                && CPUMIsGuestVmxPinCtlsSet(pCtx, VMX_PIN_CTLS_NMI_EXIT))
-                return IEMExecVmxVmexitXcptNmi(pVCpu);
-#endif
-            hmR0VmxSetPendingXcptNmi(pVCpu);
-            VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INTERRUPT_NMI);
-            Log4Func(("Pending NMI\n"));
+            /* Block-by-STI must not be set when interrupts are disabled. */
+            HMVMX_CPUMCTX_ASSERT(pVCpu, CPUMCTX_EXTRN_RFLAGS);
+            Assert(pCtx->eflags.Bits.u1IF);
         }
-        else if (!fIsNestedGuest)
-            hmR0VmxSetNmiWindowExitVmcs(pVCpu, pVmcsInfo);
-        /* else: for nested-guests, NMI-window exiting will be picked up when merging VMCS controls. */
-    }
-    /*
-     * Check if an external interrupt (PIC/APIC) is pending and if the guest or nested-guest
-     * can receive them. Once PDMGetInterrupt() returns a valid interrupt we -must- deliver
-     * the interrupt. We can no longer re-request it from the APIC.
-     */
-    else if (    VMCPU_FF_IS_ANY_SET(pVCpu, VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC)
-             && !pVCpu->hm.s.fSingleInstruction)
-    {
-        Assert(!DBGFIsStepping(pVCpu));
-        int rc = hmR0VmxImportGuestState(pVCpu, pVmcsInfo, CPUMCTX_EXTRN_RFLAGS);
-        AssertRCReturn(rc, rc);
-
-        bool const fBlockInt = !(pCtx->eflags.u32 & X86_EFL_IF);
-        if (   !pVCpu->hm.s.Event.fPending
-            && !fBlockInt
-            && !fBlockSti
-            && !fBlockMovSS)
-        {
-#ifdef VBOX_WITH_NESTED_HWVIRT_VMX
-            if (    fIsNestedGuest
-                &&  CPUMIsGuestVmxPinCtlsSet(pCtx, VMX_PIN_CTLS_EXT_INT_EXIT)
-                && !CPUMIsGuestVmxExitCtlsSet(pCtx, VMX_EXIT_CTLS_ACK_EXT_INT))
-            {
-                VBOXSTRICTRC rcStrict = IEMExecVmxVmexitExtInt(pVCpu, 0 /* uVector */, true /* fIntPending */);
-                Assert(rcStrict != VINF_VMX_INTERCEPT_NOT_ACTIVE);
-                return rcStrict;
-            }
 #endif
-            uint8_t u8Interrupt;
-            rc = PDMGetInterrupt(pVCpu, &u8Interrupt);
-            if (RT_SUCCESS(rc))
+
+        /* Update interruptibility state to the caller. */
+        *pfIntrState = fIntrState;
+    }
+
+    /*
+     * Evaluate if a new event needs to be injected.
+     * An event that's already pending has already performed all necessary checks.
+     */
+    if (   !pVCpu->hm.s.Event.fPending
+        && !VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS))
+    {
+        /** @todo SMI. SMIs take priority over NMIs. */
+
+        /*
+         * NMIs.
+         * NMIs take priority over external interrupts.
+         */
+        if (VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INTERRUPT_NMI))
+        {
+            /*
+             * For a guest, the FF always indicates the guest's ability to receive an NMI.
+             *
+             * For a nested-guest, the FF always indicates the outer guest's ability to
+             * receive an NMI while the guest-interruptibility state bit depends on whether
+             * the nested-hypervisor is using virtual-NMIs.
+             */
+            if (!VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_BLOCK_NMIS))
             {
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX
                 if (   fIsNestedGuest
-                    && CPUMIsGuestVmxPinCtlsSet(pCtx, VMX_PIN_CTLS_EXT_INT_EXIT)
-                    && CPUMIsGuestVmxExitCtlsSet(pCtx, VMX_EXIT_CTLS_ACK_EXT_INT))
+                    && CPUMIsGuestVmxPinCtlsSet(pCtx, VMX_PIN_CTLS_NMI_EXIT))
+                    return IEMExecVmxVmexitXcptNmi(pVCpu);
+#endif
+                hmR0VmxSetPendingXcptNmi(pVCpu);
+                VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INTERRUPT_NMI);
+                Log4Func(("NMI pending injection\n"));
+
+                /* We've injected the NMI, bail. */
+                return VINF_SUCCESS;
+            }
+            else if (!fIsNestedGuest)
+                hmR0VmxSetNmiWindowExitVmcs(pVCpu, pVmcsInfo);
+        }
+
+        /*
+         * External interrupts (PIC/APIC).
+         * Once PDMGetInterrupt() returns a valid interrupt we -must- deliver it.
+         * We cannot re-request the interrupt from the controller again.
+         */
+        if (    VMCPU_FF_IS_ANY_SET(pVCpu, VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC)
+            && !pVCpu->hm.s.fSingleInstruction)
+        {
+            Assert(!DBGFIsStepping(pVCpu));
+            int rc = hmR0VmxImportGuestState(pVCpu, pVmcsInfo, CPUMCTX_EXTRN_RFLAGS);
+            AssertRC(rc);
+
+            if (pCtx->eflags.u32 & X86_EFL_IF)
+            {
+#ifdef VBOX_WITH_NESTED_HWVIRT_VMX
+                if (    fIsNestedGuest
+                    &&  CPUMIsGuestVmxPinCtlsSet(pCtx, VMX_PIN_CTLS_EXT_INT_EXIT)
+                    && !CPUMIsGuestVmxExitCtlsSet(pCtx, VMX_EXIT_CTLS_ACK_EXT_INT))
                 {
-                    VBOXSTRICTRC rcStrict = IEMExecVmxVmexitExtInt(pVCpu, u8Interrupt, false /* fIntPending */);
+                    VBOXSTRICTRC rcStrict = IEMExecVmxVmexitExtInt(pVCpu, 0 /* uVector */, true /* fIntPending */);
                     Assert(rcStrict != VINF_VMX_INTERCEPT_NOT_ACTIVE);
                     return rcStrict;
                 }
 #endif
-                hmR0VmxSetPendingExtInt(pVCpu, u8Interrupt);
-                Log4Func(("Pending external interrupt vector %#x\n", u8Interrupt));
-            }
-            else if (rc == VERR_APIC_INTR_MASKED_BY_TPR)
-            {
-                STAM_COUNTER_INC(&pVCpu->hm.s.StatSwitchTprMaskedIrq);
+                uint8_t u8Interrupt;
+                rc = PDMGetInterrupt(pVCpu, &u8Interrupt);
+                if (RT_SUCCESS(rc))
+                {
+#ifdef VBOX_WITH_NESTED_HWVIRT_VMX
+                    if (   fIsNestedGuest
+                        && CPUMIsGuestVmxPinCtlsSet(pCtx, VMX_PIN_CTLS_EXT_INT_EXIT)
+                        && CPUMIsGuestVmxExitCtlsSet(pCtx, VMX_EXIT_CTLS_ACK_EXT_INT))
+                    {
+                        VBOXSTRICTRC rcStrict = IEMExecVmxVmexitExtInt(pVCpu, u8Interrupt, false /* fIntPending */);
+                        Assert(rcStrict != VINF_VMX_INTERCEPT_NOT_ACTIVE);
+                        return rcStrict;
+                    }
+#endif
+                    hmR0VmxSetPendingExtInt(pVCpu, u8Interrupt);
+                    Log4Func(("External interrupt (%#x) pending injection\n", u8Interrupt));
+                }
+                else if (rc == VERR_APIC_INTR_MASKED_BY_TPR)
+                {
+                    STAM_COUNTER_INC(&pVCpu->hm.s.StatSwitchTprMaskedIrq);
 
-                if (   !fIsNestedGuest
-                    && (pVmcsInfo->u32ProcCtls & VMX_PROC_CTLS_USE_TPR_SHADOW))
-                    hmR0VmxApicSetTprThreshold(pVmcsInfo, u8Interrupt >> 4);
-                /* else: for nested-guests, TPR threshold is picked up while merging VMCS controls. */
+                    if (   !fIsNestedGuest
+                        && (pVmcsInfo->u32ProcCtls & VMX_PROC_CTLS_USE_TPR_SHADOW))
+                        hmR0VmxApicSetTprThreshold(pVmcsInfo, u8Interrupt >> 4);
+                    /* else: for nested-guests, TPR threshold is picked up while merging VMCS controls. */
 
-                /*
-                 * If the CPU doesn't have TPR shadowing, we will always get a VM-exit on TPR changes and
-                 * APICSetTpr() will end up setting the VMCPU_FF_INTERRUPT_APIC if required, so there is no
-                 * need to re-set this force-flag here.
-                 */
+                    /*
+                     * If the CPU doesn't have TPR shadowing, we will always get a VM-exit on TPR changes and
+                     * APICSetTpr() will end up setting the VMCPU_FF_INTERRUPT_APIC if required, so there is no
+                     * need to re-set this force-flag here.
+                     */
+                }
+                else
+                    STAM_COUNTER_INC(&pVCpu->hm.s.StatSwitchGuestIrq);
+
+                /* We've injected the interrupt or taken necessary action, bail. */
+                return VINF_SUCCESS;
             }
-            else
-                STAM_COUNTER_INC(&pVCpu->hm.s.StatSwitchGuestIrq);
+            else if (!fIsNestedGuest)
+                hmR0VmxSetIntWindowExitVmcs(pVCpu, pVmcsInfo);
         }
-        else if (!fIsNestedGuest)
-            hmR0VmxSetIntWindowExitVmcs(pVCpu, pVmcsInfo);
-        /* else: for nested-guests, interrupt-window exiting will be picked up when merging VMCS controls. */
     }
+    else if (!fIsNestedGuest)
+    {
+        /*
+         * An event is being injected or we are in an interrupt shadow. Check if another event is
+         * pending. If so, instruct VT-x to cause a VM-exit as soon as the guest is ready to accept
+         * the pending event.
+         */
+        if (VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INTERRUPT_NMI))
+            hmR0VmxSetNmiWindowExitVmcs(pVCpu, pVmcsInfo);
+        else if (   VMCPU_FF_IS_ANY_SET(pVCpu, VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC)
+                 && !pVCpu->hm.s.fSingleInstruction)
+            hmR0VmxSetIntWindowExitVmcs(pVCpu, pVmcsInfo);
+    }
+    /* else: for nested-guests, NMI/interrupt-window exiting will be picked up when merging VMCS controls. */
 
     return VINF_SUCCESS;
 }
@@ -13090,7 +13107,7 @@ static VBOXSTRICTRC hmR0VmxCheckExitDueToEventDelivery(PVMCPUCC pVCpu, PVMXTRANS
             /*
              * Execution of IRET caused a fault when NMI blocking was in effect (i.e we're in
              * the guest or nested-guest NMI handler). We need to set the block-by-NMI field so
-             * that NMIs remain blocked until the IRET execution is completed.
+             * that virtual NMIs remain blocked until the IRET execution is completed.
              *
              * See Intel spec. 31.7.1.2 "Resuming Guest Software After Handling An Exception".
              */
@@ -13105,7 +13122,7 @@ static VBOXSTRICTRC hmR0VmxCheckExitDueToEventDelivery(PVMCPUCC pVCpu, PVMXTRANS
              * Execution of IRET caused an EPT violation, page-modification log-full event or
              * SPP-related event VM-exit when NMI blocking was in effect (i.e. we're in the
              * guest or nested-guest NMI handler). We need to set the block-by-NMI field so
-             * that NMIs remain blocked until the IRET execution is completed.
+             * that virtual NMIs remain blocked until the IRET execution is completed.
              *
              * See Intel spec. 27.2.3 "Information about NMI unblocking due to IRET"
              */

@@ -1868,7 +1868,7 @@ void cpumR3InitVmxGuestFeaturesAndMsrs(PVM pVM, PCVMXMSRS pHostVmxMsrs, PVMXMSRS
     EmuFeat.fVmxInsOutInfo            = 1;
     EmuFeat.fVmxExtIntExit            = 1;
     EmuFeat.fVmxNmiExit               = 1;
-    EmuFeat.fVmxVirtNmi               = 0;
+    EmuFeat.fVmxVirtNmi               = 1;
     EmuFeat.fVmxPreemptTimer          = 0;  /* Currently disabled on purpose, see @bugref{9180#c108}. */
     EmuFeat.fVmxPostedInt             = 0;
     EmuFeat.fVmxIntWindowExit         = 1;
