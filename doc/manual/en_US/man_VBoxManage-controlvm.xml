@@ -44,7 +44,7 @@
       </group>
       <arg choice="plain">pause</arg>
     </cmdsynopsis>
-     
+
     <cmdsynopsis id="synopsis-vboxmanage-controlvm-resume">
       <command>VBoxManage controlvm</command>
       <group choice="req">
@@ -53,7 +53,7 @@
       </group>
       <arg choice="plain">resume</arg>
     </cmdsynopsis>
-     
+
     <cmdsynopsis id="synopsis-vboxmanage-controlvm-reset">
       <command>VBoxManage controlvm</command>
       <group choice="req">
@@ -62,7 +62,7 @@
       </group>
       <arg choice="plain">reset</arg>
     </cmdsynopsis>
-     
+
     <cmdsynopsis id="synopsis-vboxmanage-controlvm-poweroff">
       <command>VBoxManage controlvm</command>
       <group choice="req">
@@ -71,7 +71,7 @@
       </group>
       <arg choice="plain">poweroff</arg>
     </cmdsynopsis>
-     
+
     <cmdsynopsis id="synopsis-vboxmanage-controlvm-savestate">
       <command>VBoxManage controlvm</command>
       <group choice="req">
@@ -80,7 +80,7 @@
       </group>
       <arg choice="plain">savestate</arg>
     </cmdsynopsis>
-     
+
     <cmdsynopsis id="synopsis-vboxmanage-controlvm-acpipowerbutton">
       <command>VBoxManage controlvm</command>
       <group choice="req">
@@ -89,7 +89,7 @@
       </group>
       <arg choice="plain">acpipowerbutton</arg>
     </cmdsynopsis>
-     
+
     <cmdsynopsis id="synopsis-vboxmanage-controlvm-acpisleepbutton">
       <command>VBoxManage controlvm</command>
       <group choice="req">
@@ -98,7 +98,7 @@
       </group>
       <arg choice="plain">acpisleepbutton</arg>
     </cmdsynopsis>
-     
+
     <cmdsynopsis id="synopsis-vboxmanage-controlvm-keyboardputscancode">
       <command>VBoxManage controlvm</command>
       <group choice="req">
@@ -109,7 +109,7 @@
       <arg choice="req"><replaceable>hex</replaceable></arg>
       <arg rep="repeat"><replaceable>hex</replaceable></arg>
     </cmdsynopsis>
-     
+
     <cmdsynopsis id="synopsis-vboxmanage-controlvm-keyboardputstring">
       <command>VBoxManage controlvm</command>
       <group choice="req">
@@ -120,7 +120,7 @@
       <arg choice="req"><replaceable>string</replaceable></arg>
       <arg rep="repeat"><replaceable>string</replaceable></arg>
     </cmdsynopsis>
-     
+
     <cmdsynopsis id="synopsis-vboxmanage-controlvm-keyboardputfile">
       <command>VBoxManage controlvm</command>
       <group choice="req">
@@ -130,7 +130,7 @@
       <arg choice="plain">keyboardputfile</arg>
       <arg choice="req"><replaceable>filename</replaceable></arg>
     </cmdsynopsis>
-     
+
     <cmdsynopsis id="synopsis-vboxmanage-controlvm-setlinkstate">
       <command>VBoxManage controlvm</command>
       <group choice="req">
@@ -143,7 +143,7 @@
         <arg choice="plain">off</arg>
       </group>
     </cmdsynopsis>
-     
+
     <cmdsynopsis id="synopsis-vboxmanage-controlvm-nic">
       <command>VBoxManage controlvm</command>
       <group choice="req">
@@ -162,7 +162,7 @@
       </group>
       <arg><replaceable>device-name</replaceable></arg>
     </cmdsynopsis>
-     
+
     <cmdsynopsis id="synopsis-vboxmanage-controlvm-nictrace">
       <command>VBoxManage controlvm</command>
       <group choice="req">
@@ -175,7 +175,7 @@
         <arg choice="plain">off</arg>
       </group>
     </cmdsynopsis>
-     
+
     <cmdsynopsis id="synopsis-vboxmanage-controlvm-nictracefile">
       <command>VBoxManage controlvm</command>
       <group choice="req">
@@ -185,7 +185,7 @@
       <arg choice="plain">nictracefile<replaceable>N</replaceable></arg>
       <arg choice="req"><replaceable>filename</replaceable></arg>
     </cmdsynopsis>
-     
+
     <cmdsynopsis id="synopsis-vboxmanage-controlvm-nicproperty">
       <command>VBoxManage controlvm</command>
       <group choice="req">
@@ -195,7 +195,7 @@
       <arg choice="plain">nicproperty<replaceable>N</replaceable></arg>
       <arg choice="req"><replaceable>prop-name</replaceable>=<arg><replaceable>prop-value</replaceable></arg></arg>
     </cmdsynopsis>
-     
+
     <cmdsynopsis id="synopsis-vboxmanage-controlvm-nicpromisc">
       <command>VBoxManage controlvm</command>
       <group choice="req">
@@ -209,7 +209,7 @@
         <arg choice="plain">allow-all</arg>
       </group>
     </cmdsynopsis>
-     
+
     <cmdsynopsis id="synopsis-vboxmanage-controlvm-natpf">
       <command>VBoxManage controlvm</command>
       <group choice="req">
@@ -222,7 +222,7 @@
         <arg choice="plain">udp,<arg><replaceable>host-IP</replaceable></arg>,<arg choice="plain"><replaceable>hostport</replaceable>,</arg><arg><replaceable>guest-IP</replaceable></arg>,<arg choice="plain"><replaceable>guestport</replaceable></arg></arg>
       </group>
     </cmdsynopsis>
-     
+
     <cmdsynopsis id="synopsis-vboxmanage-controlvm-natpf-delete">
       <command>VBoxManage controlvm</command>
       <group choice="req">
@@ -230,10 +230,10 @@
         <arg choice="plain"><replaceable>vmname</replaceable></arg>
       </group>
       <arg choice="plain">natpf<replaceable>N</replaceable> delete</arg>
-       
+
       <arg choice="req"><replaceable>rulename</replaceable></arg>
     </cmdsynopsis>
-     
+
     <cmdsynopsis id="synopsis-vboxmanage-controlvm-guestmemoryballoon">
       <command>VBoxManage controlvm</command>
       <group choice="req">
@@ -243,7 +243,7 @@
       <arg choice="plain">guestmemoryballoon</arg>
       <arg choice="req"><replaceable>balloon-size</replaceable></arg>
     </cmdsynopsis>
-     
+
     <cmdsynopsis id="synopsis-vboxmanage-controlvm-usbattach">
       <command>VBoxManage controlvm</command>
       <group choice="req">
@@ -257,7 +257,7 @@
       </group>
       <arg>--capturefile=<replaceable>filename</replaceable></arg>
     </cmdsynopsis>
-     
+
     <cmdsynopsis id="synopsis-vboxmanage-controlvm-usbdetach">
       <command>VBoxManage controlvm</command>
       <group choice="req">
@@ -270,7 +270,7 @@
         <arg choice="plain"><replaceable>address</replaceable></arg>
       </group>
     </cmdsynopsis>
-     
+
     <cmdsynopsis id="synopsis-vboxmanage-controlvm-audioin">
       <command>VBoxManage controlvm</command>
       <group choice="req">
@@ -283,7 +283,7 @@
         <arg choice="plain">off</arg>
       </group>
     </cmdsynopsis>
-     
+
     <cmdsynopsis id="synopsis-vboxmanage-controlvm-audioout">
       <command>VBoxManage controlvm</command>
       <group choice="req">
@@ -296,7 +296,7 @@
         <arg choice="plain">off</arg>
       </group>
     </cmdsynopsis>
-     
+
     <cmdsynopsis id="synopsis-vboxmanage-controlvm-clipboard">
       <command>VBoxManage controlvm</command>
       <group choice="req">
@@ -311,7 +311,7 @@
         <arg choice="plain">bidirectional</arg>
       </group>
     </cmdsynopsis>
-     
+
     <cmdsynopsis id="synopsis-vboxmanage-controlvm-draganddrop">
       <command>VBoxManage controlvm</command>
       <group choice="req">
@@ -326,7 +326,7 @@
         <arg choice="plain">bidirectional</arg>
       </group>
     </cmdsynopsis>
-     
+
     <cmdsynopsis id="synopsis-vboxmanage-controlvm-vrde">
       <command>VBoxManage controlvm</command>
       <group choice="req">
@@ -339,7 +339,7 @@
         <arg choice="plain">off</arg>
       </group>
     </cmdsynopsis>
-     
+
     <cmdsynopsis id="synopsis-vboxmanage-controlvm-vrdeport">
       <command>VBoxManage controlvm</command>
       <group choice="req">
@@ -349,7 +349,7 @@
       <arg choice="plain">vrdeport</arg>
       <arg choice="req"><replaceable>port</replaceable></arg>
     </cmdsynopsis>
-     
+
     <cmdsynopsis id="synopsis-vboxmanage-controlvm-vrdeproperty">
       <command>VBoxManage controlvm</command>
       <group choice="req">
@@ -359,7 +359,7 @@
       <arg choice="plain">vrdeproperty</arg>
       <arg choice="req"><replaceable>prop-name</replaceable>=<arg><replaceable>prop-value</replaceable></arg></arg>
     </cmdsynopsis>
-     
+
     <cmdsynopsis id="synopsis-vboxmanage-controlvm-vrdevideochannelquality">
       <command>VBoxManage controlvm</command>
       <group choice="req">
@@ -369,7 +369,7 @@
       <arg choice="plain">vrdevideochannelquality</arg>
       <arg choice="req"><replaceable>percentage</replaceable></arg>
     </cmdsynopsis>
-     
+
     <cmdsynopsis id="synopsis-vboxmanage-controlvm-setvideomodehint">
       <command>VBoxManage controlvm</command>
       <group choice="req">
@@ -385,7 +385,7 @@
           <arg><replaceable>x-origin</replaceable>&nbsp;<replaceable>y-origin</replaceable></arg>
         </group></arg>
     </cmdsynopsis>
-     
+
     <cmdsynopsis id="synopsis-vboxmanage-controlvm-setscreenlayout">
       <command>VBoxManage controlvm</command>
       <group choice="req">
@@ -400,7 +400,7 @@
         <arg choice="plain">off</arg>
       </group>
     </cmdsynopsis>
-     
+
     <cmdsynopsis id="synopsis-vboxmanage-controlvm-screenshotpng">
       <command>VBoxManage controlvm</command>
       <group choice="req">
@@ -411,7 +411,7 @@
       <arg choice="req"><replaceable>filename</replaceable></arg>
       <arg><replaceable>display</replaceable></arg>
     </cmdsynopsis>
-     
+
     <cmdsynopsis id="synopsis-vboxmanage-controlvm-recording">
       <command>VBoxManage controlvm</command>
       <group choice="req">
@@ -424,7 +424,7 @@
         <arg choice="plain">off</arg>
       </group>
     </cmdsynopsis>
-     
+
     <cmdsynopsis id="synopsis-vboxmanage-controlvm-recordingscreens">
       <command>VBoxManage controlvm</command>
       <group choice="req">
@@ -438,7 +438,7 @@
         <arg choice="plain"><replaceable>screen</replaceable>,[<replaceable>screen</replaceable>...]</arg>
       </group>
     </cmdsynopsis>
-     
+
     <cmdsynopsis id="synopsis-vboxmanage-controlvm-recordingfilename">
       <command>VBoxManage controlvm</command>
       <group choice="req">
@@ -448,7 +448,7 @@
       <arg choice="plain">recording filename</arg>
       <arg choice="req">filename</arg>
     </cmdsynopsis>
-     
+
     <cmdsynopsis id="synopsis-vboxmanage-controlvm-recordingvideores">
       <command>VBoxManage controlvm</command>
       <group choice="req">
@@ -458,7 +458,7 @@
       <arg choice="plain">recording videores</arg>
       <arg choice="req"><replaceable>width</replaceable>x<replaceable>height</replaceable></arg>
     </cmdsynopsis>
-     
+
     <cmdsynopsis id="synopsis-vboxmanage-controlvm-recordingvideorate">
       <command>VBoxManage controlvm</command>
       <group choice="req">
@@ -468,7 +468,7 @@
       <arg choice="plain">recording videorate</arg>
       <arg choice="req"><replaceable>rate</replaceable></arg>
     </cmdsynopsis>
-     
+
     <cmdsynopsis id="synopsis-vboxmanage-controlvm-recordingvideofps">
       <command>VBoxManage controlvm</command>
       <group choice="req">
@@ -478,17 +478,17 @@
       <arg choice="plain">recording videofps</arg>
       <arg choice="req"><replaceable>fps</replaceable></arg>
     </cmdsynopsis>
-     
+
     <cmdsynopsis id="synopsis-vboxmanage-controlvm-recordingmaxtime">
       <command>VBoxManage controlvm</command>
       <group choice="req">
         <arg choice="plain"><replaceable>uuid</replaceable></arg>
         <arg choice="plain"><replaceable>vmname</replaceable></arg>
       </group>
-      <arg choice="plain">recording maxtime</arg>    
+      <arg choice="plain">recording maxtime</arg>
       <arg choice="req"><replaceable>sec</replaceable></arg>
     </cmdsynopsis>
-     
+
     <cmdsynopsis id="synopsis-vboxmanage-controlvm-recordingmaxfilesize">
       <command>VBoxManage controlvm</command>
       <group choice="req">
@@ -498,7 +498,7 @@
       <arg choice="plain">recording maxfilesize</arg>
       <arg choice="req"><replaceable>MB</replaceable></arg>
     </cmdsynopsis>
-     
+
     <cmdsynopsis id="synopsis-vboxmanage-controlvm-setcredentials">
       <command>VBoxManage controlvm</command>
       <group choice="req">
@@ -517,7 +517,7 @@
           <arg choice="plain">no</arg>
         </group></arg>
     </cmdsynopsis>
-     
+
     <cmdsynopsis id="synopsis-vboxmanage-controlvm-teleport">
       <command>VBoxManage controlvm</command>
       <group choice="req">
@@ -533,7 +533,7 @@
         <arg choice="plain">--password=<replaceable>password</replaceable></arg>
       </group>
     </cmdsynopsis>
-     
+
     <cmdsynopsis id="synopsis-vboxmanage-controlvm-plugcpu">
       <command>VBoxManage controlvm</command>
       <group choice="req">
@@ -543,7 +543,7 @@
       <arg choice="plain">plugcpu</arg>
       <arg choice="req"><replaceable>ID</replaceable></arg>
     </cmdsynopsis>
-     
+
     <cmdsynopsis id="synopsis-vboxmanage-controlvm-unplugcpu">
       <command>VBoxManage controlvm</command>
       <group choice="req">
@@ -553,7 +553,7 @@
       <arg choice="plain">unplugcpu</arg>
       <arg choice="req"><replaceable>ID</replaceable></arg>
     </cmdsynopsis>
-     
+
     <cmdsynopsis id="synopsis-vboxmanage-controlvm-cpuexecutioncap">
       <command>VBoxManage controlvm</command>
       <group choice="req">
@@ -563,7 +563,7 @@
       <arg choice="plain">cpuexecutioncap</arg>
       <arg choice="req"><replaceable>num</replaceable></arg>
     </cmdsynopsis>
-     
+
     <cmdsynopsis id="synopsis-vboxmanage-controlvm-vmprocesspriority">
       <command>VBoxManage controlvm</command>
       <group choice="req">
@@ -579,7 +579,7 @@
         <arg choice="plain">high</arg>
       </group>
     </cmdsynopsis>
-     
+
     <cmdsynopsis id="synopsis-vboxmanage-controlvm-webcam-attach">
       <command>VBoxManage controlvm</command>
       <group choice="req">
@@ -589,7 +589,7 @@
       <arg choice="plain">webcam attach</arg>
       <arg><replaceable>pathname</replaceable><arg><replaceable>settings</replaceable></arg></arg>
     </cmdsynopsis>
-     
+
     <cmdsynopsis id="synopsis-vboxmanage-controlvm-webcam-detach">
       <command>VBoxManage controlvm</command>
       <group choice="req">
@@ -599,7 +599,7 @@
       <arg choice="plain">webcam detach</arg>
       <arg><replaceable>pathname</replaceable></arg>
     </cmdsynopsis>
-     
+
     <cmdsynopsis id="synopsis-vboxmanage-controlvm-webcam-list">
       <command>VBoxManage controlvm</command>
       <group choice="req">
@@ -608,7 +608,7 @@
       </group>
       <arg choice="plain">webcam list</arg>
     </cmdsynopsis>
-     
+
     <cmdsynopsis id="synopsis-vboxmanage-controlvm-addencpassword">
       <command>VBoxManage controlvm</command>
       <group choice="req">
@@ -626,7 +626,7 @@
           <arg choice="plain">no</arg>
         </group></arg>
     </cmdsynopsis>
-     
+
     <cmdsynopsis id="synopsis-vboxmanage-controlvm-removeencpassword">
       <command>VBoxManage controlvm</command>
       <group choice="req">
@@ -636,7 +636,7 @@
       <arg choice="plain">removeencpassword</arg>
       <arg choice="req"><replaceable>ID</replaceable></arg>
     </cmdsynopsis>
-     
+
     <cmdsynopsis id="synopsis-vboxmanage-controlvm-removeallencpasswords">
       <command>VBoxManage controlvm</command>
       <group choice="req">
@@ -645,7 +645,7 @@
       </group>
       <arg choice="plain">removeallencpasswords</arg>
     </cmdsynopsis>
-     
+
     <cmdsynopsis id="synopsis-vboxmanage-controlvm-changeuartmode">
       <command>VBoxManage controlvm</command>
       <group choice="req">

@@ -48,7 +48,7 @@
       <arg>--readonly</arg>
       <arg>--transient</arg>
     </cmdsynopsis>
-     
+
     <cmdsynopsis id="synopsis-vboxmanage-sharedfolder-remove">
       <command>VBoxManage sharedfolder remove</command>
       <group choice="req">

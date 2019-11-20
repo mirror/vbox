@@ -46,7 +46,7 @@
       <arg>--details</arg>
       <arg>--machinereadable</arg>
     </cmdsynopsis>
-     
+
     <cmdsynopsis id="synopsis-vboxmanage-showvminfo-log">
       <command>VBoxManage showvminfo</command>
       <group choice="req">

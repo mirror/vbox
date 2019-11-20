@@ -51,7 +51,7 @@
       <arg choice="req"><replaceable>property-name</replaceable></arg>
       <arg choice="req"><replaceable>property-value</replaceable></arg>
     </cmdsynopsis>
-     
+
     <cmdsynopsis id="synopsis-vboxmanage-mediumproperty-get">
       <command>VBoxManage mediumproperty</command>
       <group>
@@ -66,7 +66,7 @@
       </group>
       <arg choice="req"><replaceable>property-name</replaceable></arg>
     </cmdsynopsis>
-     
+
     <cmdsynopsis id="synopsis-vboxmanage-mediumproperty-delete">
       <command>VBoxManage mediumproperty</command>
       <group>

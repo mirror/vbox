@@ -37,7 +37,7 @@
   <refsynopsisdiv>
     <cmdsynopsis id="synopsis-vboxmanage">
 <!-- The 'id' is mandatory and must start with 'synopsis-'. -->
-      <command>VBoxManage</command> 
+      <command>VBoxManage</command>
       <arg>--nologo</arg>
       <arg>--settingspw=[<replaceable>password</replaceable>]</arg>
       <arg>--settingspwfile=<replaceable>pw-file</replaceable></arg>

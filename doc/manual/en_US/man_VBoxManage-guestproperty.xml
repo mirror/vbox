@@ -45,7 +45,7 @@
       <arg choice="req"><replaceable>property-name</replaceable></arg>
       <arg>--verbose</arg>
     </cmdsynopsis>
-     
+
     <cmdsynopsis id="synopsis-vboxmanage-guestproperty-enumerate">
       <command>VBoxManage guestproperty enumerate</command>
       <group choice="req">
@@ -54,7 +54,7 @@
       </group>
       <arg>--patterns=<replaceable>patterns</replaceable></arg>
     </cmdsynopsis>
-     
+
     <cmdsynopsis id="synopsis-vboxmanage-guestproperty-set">
       <command>VBoxManage guestproperty set</command>
       <group choice="req">
@@ -64,7 +64,7 @@
       <arg choice="req"><replaceable>property-name</replaceable></arg>
       <arg><replaceable>property-value</replaceable><arg>--flags=<replaceable>flags</replaceable></arg></arg>
     </cmdsynopsis>
-     
+
     <cmdsynopsis id="synopsis-vboxmanage-guestproperty-unset">
       <command>VBoxManage guestproperty unset</command>
       <group choice="req">
@@ -73,7 +73,7 @@
       </group>
       <arg choice="req"><replaceable>property-name</replaceable></arg>
     </cmdsynopsis>
-     
+
     <cmdsynopsis id="synopsis-vboxmanage-guestproperty-wait">
       <command>VBoxManage guestproperty wait</command>
       <group choice="req">

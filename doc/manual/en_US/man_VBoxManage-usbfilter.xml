@@ -37,7 +37,7 @@
   <refsynopsisdiv>
 <!-- The 'id' is mandatory and must start with 'synopsis-'. -->
     <cmdsynopsis id="synopsis-vboxmanage-usbfilter-add">
-      <command>VBoxManage usbfilter add</command> 
+      <command>VBoxManage usbfilter add</command>
       <arg choice="req"><replaceable>index</replaceable>,0-<replaceable>N</replaceable></arg>
       <arg choice="req">--target=<group choice="req">
           <arg choice="plain"><replaceable>uuid</replaceable></arg>
@@ -56,9 +56,9 @@
       <arg>--serialnumber=<replaceable>string</replaceable></arg>
       <arg>--maskedinterfaces=<replaceable>XXXXXXXX</replaceable></arg>
     </cmdsynopsis>
-     
+
     <cmdsynopsis id="synopsis-vboxmanage-usbfilter-modify">
-      <command>VBoxManage usbfilter modify</command> 
+      <command>VBoxManage usbfilter modify</command>
       <arg choice="req"><replaceable>index</replaceable>,0-<replaceable>N</replaceable></arg>
       <arg choice="req">--target=<group choice="req">
           <arg choice="plain"><replaceable>uuid</replaceable></arg>
@@ -77,9 +77,9 @@
       <arg>--serialnumber=<replaceable>string</replaceable> | &ldquo;&rdquo;</arg>
       <arg>--maskedinterfaces=<replaceable>XXXXXXXX</replaceable></arg>
     </cmdsynopsis>
-     
+
     <cmdsynopsis id="synopsis-vboxmanage-usbfilter-remove">
-      <command>VBoxManage usbfilter remove</command> 
+      <command>VBoxManage usbfilter remove</command>
       <arg choice="req"><replaceable>index</replaceable>,0-<replaceable>N</replaceable></arg>
       <arg choice="req">--target=<group choice="req">
           <arg choice="plain"><replaceable>uuid</replaceable></arg>

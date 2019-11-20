@@ -37,7 +37,7 @@
   <refsynopsisdiv>
 <!-- The 'id' is mandatory and must start with 'synopsis-'. -->
     <cmdsynopsis id="synopsis-vboxmanage-convertfromraw-file">
-      <command>VBoxManage convertfromraw</command> 
+      <command>VBoxManage convertfromraw</command>
       <arg choice="req"><replaceable>inputfile</replaceable></arg>
       <arg choice="req"><replaceable>outputfile</replaceable></arg>
       <arg>--format=<group choice="plain">
@@ -48,9 +48,9 @@
       <arg>--uuid=<replaceable>uuid</replaceable></arg>
       <arg>--variant=Standard,Fixed,Split2G,Stream,ESX</arg>
     </cmdsynopsis>
-     
+
     <cmdsynopsis id="synopsis-vboxmanage-convertfromraw-stdin">
-      <command>VBoxManage convertfromraw stdin</command> 
+      <command>VBoxManage convertfromraw stdin</command>
       <arg choice="req"><replaceable>outputfile</replaceable></arg>
       <arg>--format=<group choice="plain">
           <arg choice="plain">VDI</arg>

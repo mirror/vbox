@@ -37,7 +37,7 @@
   <refsynopsisdiv>
 <!-- The 'id' is mandatory and must start with 'synopsis-'. -->
     <cmdsynopsis id="synopsis-vboxmanage-setproperty">
-      <command>VBoxManage setproperty</command> 
+      <command>VBoxManage setproperty</command>
       <arg choice="req"><replaceable>property-name</replaceable></arg>
       <arg choice="req"><replaceable>property-value</replaceable></arg>
     </cmdsynopsis>

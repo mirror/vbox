@@ -147,7 +147,7 @@
       called <filename>ol7u4-2.vdi</filename>:
     </para>
 <screen>$ VBoxManage encryptmedium "$HOME/VirtualBox VMs/ol7u4/ol7u4-2.vdi" \
-  --oldpassword=- 
+  --oldpassword=-
   Password: <replaceable>original-password</replaceable></screen>
     <para>
       The following example shows how to change the password for an

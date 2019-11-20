@@ -37,174 +37,174 @@
   <refsynopsisdiv>
     <cmdsynopsis id="synopsis-vboxmanage-list-bridgedifs">
 <!-- The 'id' is mandatory and must start with 'synopsis-'. -->
-      <command>VBoxManage list</command> 
+      <command>VBoxManage list</command>
       <arg>--long</arg>
       <arg>--sorted</arg>
       <arg choice="plain">bridgedifs</arg>
     </cmdsynopsis>
-     
+
     <cmdsynopsis id="synopsis-vboxmanage-list-cloudprofiles">
-      <command>VBoxManage list</command> 
+      <command>VBoxManage list</command>
       <arg>--long</arg>
       <arg>--sorted</arg>
       <arg choice="plain">cloudprofiles</arg>
     </cmdsynopsis>
-     
+
     <cmdsynopsis id="synopsis-vboxmanage-list-cloudproviders">
-      <command>VBoxManage list</command> 
+      <command>VBoxManage list</command>
       <arg>--long</arg>
       <arg>--sorted</arg>
       <arg choice="plain">cloudproviders</arg>
     </cmdsynopsis>
-     
+
     <cmdsynopsis id="synopsis-vboxmanage-list-dhcpservers">
-      <command>VBoxManage list</command> 
+      <command>VBoxManage list</command>
       <arg>--long</arg>
       <arg>--sorted</arg>
       <arg choice="plain">dhcpservers</arg>
     </cmdsynopsis>
-     
+
     <cmdsynopsis id="synopsis-vboxmanage-list-dvds">
-      <command>VBoxManage list</command> 
+      <command>VBoxManage list</command>
       <arg>--long</arg>
       <arg>--sorted</arg>
       <arg choice="plain">dvds</arg>
     </cmdsynopsis>
-     
+
     <cmdsynopsis id="synopsis-vboxmanage-list-extpacks">
-      <command>VBoxManage list</command> 
+      <command>VBoxManage list</command>
       <arg>--long</arg>
       <arg>--sorted</arg>
       <arg choice="plain">extpacks</arg>
     </cmdsynopsis>
     <cmdsynopsis id="synopsis-vboxmanage-list-floppies">
-      <command>VBoxManage list</command> 
+      <command>VBoxManage list</command>
       <arg>--long</arg>
       <arg>--sorted</arg>
       <arg choice="plain">floppies</arg>
     </cmdsynopsis>
-     
+
     <cmdsynopsis id="synopsis-vboxmanage-list-groups">
-      <command>VBoxManage list</command> 
+      <command>VBoxManage list</command>
       <arg>--long</arg>
       <arg>--sorted</arg>
       <arg choice="plain">groups</arg>
     </cmdsynopsis>
-     
+
     <cmdsynopsis id="synopsis-vboxmanage-list-hddbackends">
-      <command>VBoxManage list</command> 
+      <command>VBoxManage list</command>
       <arg>--long</arg>
       <arg>--sorted</arg>
       <arg choice="plain">hddbackends</arg>
     </cmdsynopsis>
-     
+
     <cmdsynopsis id="synopsis-vboxmanage-list-hdds">
-      <command>VBoxManage list</command> 
+      <command>VBoxManage list</command>
       <arg>--long</arg>
       <arg>--sorted</arg>
       <arg choice="plain">hdds</arg>
     </cmdsynopsis>
-     
+
     <cmdsynopsis id="synopsis-vboxmanage-list-hostcpuids">
-      <command>VBoxManage list</command> 
+      <command>VBoxManage list</command>
       <arg>--long</arg>
       <arg>--sorted</arg>
       <arg choice="plain">hostcpuids</arg>
     </cmdsynopsis>
-     
+
     <cmdsynopsis id="synopsis-vboxmanage-list-hostdvds">
-      <command>VBoxManage list</command> 
+      <command>VBoxManage list</command>
       <arg>--long</arg>
       <arg>--sorted</arg>
       <arg choice="plain">hostdvds</arg>
     </cmdsynopsis>
-     
+
     <cmdsynopsis id="synopsis-vboxmanage-list-hostfloppies">
-      <command>VBoxManage list</command> 
+      <command>VBoxManage list</command>
       <arg>--long</arg>
       <arg>--sorted</arg>
       <arg choice="plain">hostfloppies</arg>
     </cmdsynopsis>
-     
+
     <cmdsynopsis id="synopsis-vboxmanage-list-hostinfo">
-      <command>VBoxManage list</command> 
+      <command>VBoxManage list</command>
       <arg>--long</arg>
       <arg>--sorted</arg>
       <arg choice="plain">hostinfo</arg>
     </cmdsynopsis>
-     
+
     <cmdsynopsis id="synopsis-vboxmanage-list-hostonlyifs">
-      <command>VBoxManage list</command> 
+      <command>VBoxManage list</command>
       <arg>--long</arg>
       <arg>--sorted</arg>
       <arg choice="plain">hostonlyifs</arg>
     </cmdsynopsis>
-    
+
     <cmdsynopsis id="synopsis-vboxmanage-list-intnets">
-      <command>VBoxManage list</command> 
+      <command>VBoxManage list</command>
       <arg>--long</arg>
       <arg>--sorted</arg>
       <arg choice="plain">intnets</arg>
     </cmdsynopsis>
-     
+
     <cmdsynopsis id="synopsis-vboxmanage-list-natnets">
-      <command>VBoxManage list</command> 
+      <command>VBoxManage list</command>
       <arg>--long</arg>
       <arg>--sorted</arg>
       <arg choice="plain">natnets</arg>
     </cmdsynopsis>
-     
+
     <cmdsynopsis id="synopsis-vboxmanage-list-ostypes">
-      <command>VBoxManage list</command> 
+      <command>VBoxManage list</command>
       <arg>--long</arg>
       <arg>--sorted</arg>
       <arg choice="plain">ostypes</arg>
     </cmdsynopsis>
-     
+
     <cmdsynopsis id="synopsis-vboxmanage-list-runningvms">
-      <command>VBoxManage list</command> 
+      <command>VBoxManage list</command>
       <arg>--long</arg>
       <arg>--sorted</arg>
       <arg choice="plain">runningvms</arg>
     </cmdsynopsis>
-     
+
     <cmdsynopsis id="synopsis-vboxmanage-list-screenshotformats">
-      <command>VBoxManage list</command> 
+      <command>VBoxManage list</command>
       <arg>--long</arg>
       <arg>--sorted</arg>
       <arg choice="plain">screenshotformats</arg>
     </cmdsynopsis>
-     
+
     <cmdsynopsis id="synopsis-vboxmanage-list-systemproperties">
-      <command>VBoxManage list</command> 
+      <command>VBoxManage list</command>
       <arg>--long</arg>
       <arg>--sorted</arg>
       <arg choice="plain">systemproperties</arg>
     </cmdsynopsis>
-     
+
     <cmdsynopsis id="synopsis-vboxmanage-list-usbfilters">
-      <command>VBoxManage list</command> 
+      <command>VBoxManage list</command>
       <arg>--long</arg>
       <arg>--sorted</arg>
       <arg choice="plain">usbfilters</arg>
     </cmdsynopsis>
-     
+
     <cmdsynopsis id="synopsis-vboxmanage-list-usbhost">
-      <command>VBoxManage list</command> 
+      <command>VBoxManage list</command>
       <arg>--long</arg>
       <arg>--sorted</arg>
       <arg choice="plain">usbhost</arg>
     </cmdsynopsis>
-     
+
     <cmdsynopsis id="synopsis-vboxmanage-list-vms">
-      <command>VBoxManage list</command> 
+      <command>VBoxManage list</command>
       <arg>--long</arg>
       <arg>--sorted</arg>
       <arg choice="plain">vms</arg>
     </cmdsynopsis>
-     
+
     <cmdsynopsis id="synopsis-vboxmanage-list-webcams">
-      <command>VBoxManage list</command> 
+      <command>VBoxManage list</command>
       <arg>--long</arg>
       <arg>--sorted</arg>
       <arg choice="plain">webcams</arg>

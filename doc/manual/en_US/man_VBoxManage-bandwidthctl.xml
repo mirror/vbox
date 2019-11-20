@@ -47,7 +47,7 @@
       <arg choice="req">--limit=<replaceable>bandwidth-limit</replaceable>[k|m|g|K|M|G]</arg>
       <arg choice="req">--type=disk|network</arg>
     </cmdsynopsis>
-     
+
     <cmdsynopsis id="synopsis-vboxmanage-bandwidthctl-list">
       <command>VBoxManage bandwidthctl</command>
       <group choice="req">
@@ -57,7 +57,7 @@
       <arg choice="plain">list</arg>
       <arg>--machinereadable</arg>
     </cmdsynopsis>
-     
+
     <cmdsynopsis id="synopsis-vboxmanage-bandwidthctl-remove">
       <command>VBoxManage bandwidthctl</command>
       <group choice="req">
@@ -67,7 +67,7 @@
       <arg choice="plain">remove</arg>
       <arg choice="req"><replaceable>bandwidth-group-name</replaceable></arg>
     </cmdsynopsis>
-     
+
     <cmdsynopsis id="synopsis-vboxmanage-bandwidthctl-set">
       <command>VBoxManage bandwidthctl</command>
       <group choice="req">

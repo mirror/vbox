@@ -36,7 +36,7 @@
 
   <refsynopsisdiv>
     <cmdsynopsis id="synopsis-vboxmanage-metrics-collect">
-      <command>VBoxManage metrics collect</command> 
+      <command>VBoxManage metrics collect</command>
       <arg>--detach</arg>
       <arg>--list</arg>
       <arg>--period=<replaceable>seconds</replaceable></arg>
@@ -47,9 +47,9 @@
         <arg choice="plain"><replaceable>vmname</replaceable> <arg><replaceable>metric-list</replaceable></arg></arg>
       </group>
     </cmdsynopsis>
-     
+
     <cmdsynopsis id="synopsis-vboxmanage-metrics-disable">
-      <command>VBoxManage metrics disable</command> 
+      <command>VBoxManage metrics disable</command>
       <arg>--list</arg>
       <group>
         <arg choice="plain">*</arg>
@@ -57,9 +57,9 @@
         <arg choice="plain"><replaceable>vmname</replaceable> <arg><replaceable>metric-list</replaceable></arg></arg>
       </group>
     </cmdsynopsis>
-     
+
     <cmdsynopsis id="synopsis-vboxmanage-metrics-enable">
-      <command>VBoxManage metrics enable</command> 
+      <command>VBoxManage metrics enable</command>
       <arg>--list</arg>
       <group>
         <arg choice="plain">*</arg>
@@ -67,7 +67,7 @@
         <arg choice="plain"><replaceable>vmname</replaceable> <arg><replaceable>metric-list</replaceable></arg></arg>
       </group>
     </cmdsynopsis>
-     
+
     <cmdsynopsis id="synopsis-vboxmanage-metrics-list">
       <command>VBoxManage metrics list</command>
       <group>
@@ -76,7 +76,7 @@
         <arg choice="plain"><replaceable>vmname</replaceable> <arg><replaceable>metric-list</replaceable></arg></arg>
       </group>
     </cmdsynopsis>
-     
+
     <cmdsynopsis id="synopsis-vboxmanage-metrics-query">
       <command>VBoxManage metrics query</command>
       <group>
@@ -85,9 +85,9 @@
         <arg choice="plain"><replaceable>vmname</replaceable> <arg><replaceable>metric-list</replaceable></arg></arg>
       </group>
     </cmdsynopsis>
-     
+
     <cmdsynopsis id="synopsis-vboxmanage-metrics-setup">
-      <command>VBoxManage metrics setup</command> 
+      <command>VBoxManage metrics setup</command>
       <arg>--list</arg>
       <arg>--period <replaceable>seconds</replaceable></arg>
       <arg>--samples <replaceable>count</replaceable></arg>

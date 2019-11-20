@@ -37,7 +37,7 @@
   <refsynopsisdiv>
     <cmdsynopsis id="synopsis-vboxmanage-createvm">
 <!-- The 'id' is mandatory and must start with 'synopsis-'. -->
-      <command>VBoxManage createvm</command> 
+      <command>VBoxManage createvm</command>
       <arg choice="req">--name=<replaceable>name</replaceable></arg>
       <arg>--basefolder=<replaceable>basefolder</replaceable></arg>
       <arg>--default</arg>

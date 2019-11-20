@@ -37,7 +37,7 @@
   <refsynopsisdiv>
 <!-- The 'id' is mandatory and must start with 'synopsis-'. -->
     <cmdsynopsis id="synopsis-vboxmanage-hostonlyif-ipconfig">
-      <command>VBoxManage hostonlyif ipconfig</command> 
+      <command>VBoxManage hostonlyif ipconfig</command>
       <arg choice="req"><replaceable>ifname</replaceable></arg>
       <group>
         <arg choice="plain">--dhcp</arg>
@@ -45,13 +45,13 @@
         <arg choice="plain">--ipv6=<replaceable>IPv6-address</replaceable> <arg>--netmasklengthv6=<replaceable>length</replaceable></arg></arg>
       </group>
     </cmdsynopsis>
-     
+
     <cmdsynopsis id="synopsis-vboxmanage-hostonlyif-create">
       <command>VBoxManage hostonlyif create</command>
     </cmdsynopsis>
-     
+
     <cmdsynopsis id="synopsis-vboxmanage-hostonlyif-remove">
-      <command>VBoxManage hostonlyif remove</command> 
+      <command>VBoxManage hostonlyif remove</command>
       <arg choice="req"><replaceable>ifname</replaceable></arg>
     </cmdsynopsis>
   </refsynopsisdiv>

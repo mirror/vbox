@@ -37,8 +37,8 @@
   <refsynopsisdiv>
     <cmdsynopsis id="synopsis-vboxmanage-export-ovf">
 <!-- The 'id' is mandatory and must start with 'synopsis-'. -->
-      <command>VBoxManage export</command> 
-      <arg choice="req"><replaceable>machines</replaceable></arg>      
+      <command>VBoxManage export</command>
+      <arg choice="req"><replaceable>machines</replaceable></arg>
       <arg choice="req">--output=<replaceable>name</replaceable></arg>
       <group>
         <arg choice="plain">--legacy09</arg>
@@ -47,51 +47,51 @@
         <arg choice="plain">--ovf20</arg>
         <arg choice="plain">--opc10</arg>
       </group>
-      <arg>--manifest</arg>      
-      <arg>--iso</arg>      
+      <arg>--manifest</arg>
+      <arg>--iso</arg>
       <arg>--options=<group choice="plain">
           <arg choice="plain">manifest</arg>
           <arg choice="plain">iso</arg>
           <arg choice="plain">nomacs</arg>
           <arg choice="plain">nomacsbutnat</arg>
-        </group></arg>     
-      <arg>--vsys=<replaceable>virtual-system-number</replaceable></arg>      
-      <arg>--description=<replaceable>description-info</replaceable></arg>      
-      <arg>--eula=<replaceable>license-text</replaceable></arg>      
-      <arg>--eulafile=<replaceable>filename</replaceable></arg>     
-      <arg>--product=<replaceable>product-name</replaceable></arg>     
-      <arg>--producturl=<replaceable>product-URL</replaceable></arg>    
-      <arg>--vendor=<replaceable>vendor-name</replaceable></arg>      
-      <arg>--vendorurl=<replaceable>vendor-URL</replaceable></arg>     
-      <arg>--version=<replaceable>version-info</replaceable></arg>     
+        </group></arg>
+      <arg>--vsys=<replaceable>virtual-system-number</replaceable></arg>
+      <arg>--description=<replaceable>description-info</replaceable></arg>
+      <arg>--eula=<replaceable>license-text</replaceable></arg>
+      <arg>--eulafile=<replaceable>filename</replaceable></arg>
+      <arg>--product=<replaceable>product-name</replaceable></arg>
+      <arg>--producturl=<replaceable>product-URL</replaceable></arg>
+      <arg>--vendor=<replaceable>vendor-name</replaceable></arg>
+      <arg>--vendorurl=<replaceable>vendor-URL</replaceable></arg>
+      <arg>--version=<replaceable>version-info</replaceable></arg>
       <arg>--vmname=<replaceable>vmname</replaceable></arg>
     </cmdsynopsis>
-     
+
     <cmdsynopsis id="synopsis-vboxmanage-export-cloud">
-      <command>VBoxManage export</command> 
-      <arg choice="req"><replaceable>machine</replaceable></arg>     
-      <arg choice="req">--output=<replaceable>cloud-service-provider</replaceable></arg>     
-      <arg>--vmname=<replaceable>vmname</replaceable></arg>     
-      <arg>--cloud=<replaceable>virtual-system-number</replaceable></arg>      
-      <arg>--cloudprofile=<replaceable>cloud-profile-name</replaceable></arg>     
-      <arg>--cloudshape=<replaceable>cloud-shape-name</replaceable></arg>     
-      <arg>--clouddomain=<replaceable>cloud-domain</replaceable></arg>     
-      <arg>--clouddisksize=<replaceable>disk-size-in-GB</replaceable></arg>     
-      <arg>--cloudbucket=<replaceable>bucket-name</replaceable></arg>     
-      <arg>--cloudocivcn=<replaceable>OCI-VCN-ID</replaceable></arg>     
-      <arg>--cloudocisubnet=<replaceable>OCI-subnet-ID</replaceable></arg>      
+      <command>VBoxManage export</command>
+      <arg choice="req"><replaceable>machine</replaceable></arg>
+      <arg choice="req">--output=<replaceable>cloud-service-provider</replaceable></arg>
+      <arg>--vmname=<replaceable>vmname</replaceable></arg>
+      <arg>--cloud=<replaceable>virtual-system-number</replaceable></arg>
+      <arg>--cloudprofile=<replaceable>cloud-profile-name</replaceable></arg>
+      <arg>--cloudshape=<replaceable>cloud-shape-name</replaceable></arg>
+      <arg>--clouddomain=<replaceable>cloud-domain</replaceable></arg>
+      <arg>--clouddisksize=<replaceable>disk-size-in-GB</replaceable></arg>
+      <arg>--cloudbucket=<replaceable>bucket-name</replaceable></arg>
+      <arg>--cloudocivcn=<replaceable>OCI-VCN-ID</replaceable></arg>
+      <arg>--cloudocisubnet=<replaceable>OCI-subnet-ID</replaceable></arg>
       <arg>--cloudkeepobject=<group choice="plain">
           <arg choice="plain">true</arg>
           <arg choice="plain">false</arg>
-        </group></arg>     
+        </group></arg>
       <arg>--cloudlaunchinstance=<group choice="plain">
           <arg choice="plain">true</arg>
           <arg choice="plain">false</arg>
-        </group></arg>    
+        </group></arg>
       <arg>--cloudlaunchmode=<group choice="plain">
           <arg choice="plain">EMULATED</arg>
           <arg choice="plain">PARAVIRTUALIZED</arg>
-        </group></arg>     
+        </group></arg>
       <arg>--cloudpublicip=<group choice="plain">
           <arg choice="plain">true</arg>
           <arg choice="plain">false</arg>

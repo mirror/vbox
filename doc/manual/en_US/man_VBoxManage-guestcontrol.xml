@@ -69,7 +69,7 @@
       <arg>--verbose</arg>
       <arg choice="req">-- <replaceable>program/arg0</replaceable> <arg rep="repeat"><replaceable>argument</replaceable></arg></arg>
     </cmdsynopsis>
-     
+
     <cmdsynopsis id="synopsis-vboxmanage-guestcontrol-start">
       <command>VBoxManage guestcontrol</command>
       <group choice="req">
@@ -93,7 +93,7 @@
       <arg>--verbose</arg>
       <arg choice="req">-- <replaceable>program/arg0</replaceable> <arg rep="repeat"><replaceable>argument</replaceable></arg></arg>
     </cmdsynopsis>
-     
+
     <cmdsynopsis id="synopsis-vboxmanage-guestcontrol-copyfrom-hostdest">
       <command>VBoxManage guestcontrol</command>
       <group choice="req">
@@ -115,7 +115,7 @@
       <arg choice="plain"><replaceable>guest-source1</replaceable> [...]</arg>
       <arg choice="req"><replaceable>host-destination</replaceable></arg>
     </cmdsynopsis>
-     
+
     <cmdsynopsis id="synopsis-vboxmanage-guestcontrol-copyfrom-hostdestdir">
       <command>VBoxManage guestcontrol</command>
       <group choice="req">
@@ -137,7 +137,7 @@
       <arg choice="req"><replaceable>guest-source0</replaceable></arg>
       <arg choice="plain"><replaceable>guest-source1</replaceable> [...]</arg>
     </cmdsynopsis>
-     
+
     <cmdsynopsis id="synopsis-vboxmanage-guestcontrol-copyto-hostdest">
       <command>VBoxManage guestcontrol</command>
       <group choice="req">
@@ -159,7 +159,7 @@
       <arg choice="plain"><replaceable>host-source1</replaceable> [...]</arg>
       <arg choice="req"><replaceable>guest-destination</replaceable></arg>
     </cmdsynopsis>
-     
+
     <cmdsynopsis id="synopsis-vboxmanage-guestcontrol-copyto-hostdestdir">
       <command>VBoxManage guestcontrol</command>
       <group choice="req">
@@ -181,7 +181,7 @@
       <arg choice="req"><replaceable>host-source0</replaceable></arg>
       <arg choice="plain"><replaceable>host-source1</replaceable> [...]</arg>
     </cmdsynopsis>
-     
+
     <cmdsynopsis id="synopsis-vboxmanage-guestcontrol-mkdir">
       <command>VBoxManage guestcontrol</command>
       <group choice="req">
@@ -201,7 +201,7 @@
       <arg>--verbose</arg>
       <arg choice="req" rep="repeat"><replaceable>guest-directory</replaceable></arg>
     </cmdsynopsis>
-     
+
     <cmdsynopsis id="synopsis-vboxmanage-guestcontrol-rmdir">
       <command>VBoxManage guestcontrol</command>
       <group choice="req">
@@ -220,7 +220,7 @@
       <arg>--verbose</arg>
       <arg choice="req" rep="repeat"><replaceable>guest-directory</replaceable></arg>
     </cmdsynopsis>
-     
+
     <cmdsynopsis id="synopsis-vboxmanage-guestcontrol-rm">
       <command>VBoxManage guestcontrol</command>
       <group choice="req">
@@ -239,7 +239,7 @@
       <arg>--verbose</arg>
       <arg choice="req" rep="repeat"><replaceable>guest-directory</replaceable></arg>
     </cmdsynopsis>
-     
+
     <cmdsynopsis id="synopsis-vboxmanage-guestcontrol-mv">
       <command>VBoxManage guestcontrol</command>
       <group choice="req">
@@ -258,7 +258,7 @@
       <arg choice="req" rep="repeat"><replaceable>source</replaceable></arg>
       <arg choice="req"><replaceable>destination-directory</replaceable></arg>
     </cmdsynopsis>
-     
+
     <cmdsynopsis id="synopsis-vboxmanage-guestcontrol-mktemp">
       <command>VBoxManage guestcontrol</command>
       <group choice="req">
@@ -279,7 +279,7 @@
       <arg>--verbose</arg>
       <arg choice="req"><replaceable>template-name</replaceable></arg>
     </cmdsynopsis>
-     
+
     <cmdsynopsis id="synopsis-vboxmanage-guestcontrol-stat">
       <command>VBoxManage guestcontrol</command>
       <group choice="req">
@@ -297,7 +297,7 @@
       <arg>--verbose</arg>
       <arg choice="req"><replaceable>filename</replaceable></arg>
     </cmdsynopsis>
-     
+
     <cmdsynopsis id="synopsis-vboxmanage-guestcontrol-list">
       <command>VBoxManage guestcontrol</command>
       <group choice="req">
@@ -314,7 +314,7 @@
       <arg>--quiet</arg>
       <arg>--verbose</arg>
     </cmdsynopsis>
-     
+
     <cmdsynopsis id="synopsis-vboxmanage-guestcontrol-closeprocess">
       <command>VBoxManage guestcontrol</command>
       <group choice="req">
@@ -330,7 +330,7 @@
       <arg>--verbose</arg>
       <arg choice="req" rep="repeat"><replaceable>PID</replaceable></arg>
     </cmdsynopsis>
-     
+
     <cmdsynopsis id="synopsis-vboxmanage-guestcontrol-closesession">
       <command>VBoxManage guestcontrol</command>
       <group choice="req">
@@ -346,7 +346,7 @@
       <arg>--quiet</arg>
       <arg>--verbose</arg>
     </cmdsynopsis>
-     
+
     <cmdsynopsis id="synopsis-vboxmanage-guestcontrol-updatega">
       <command>VBoxManage guestcontrol</command>
       <group choice="req">
@@ -360,7 +360,7 @@
       <arg>--wait-start</arg>
       <arg>-- <arg rep="repeat"><replaceable>argument</replaceable></arg></arg>
     </cmdsynopsis>
-     
+
     <cmdsynopsis id="synopsis-vboxmanage-guestcontrol-watch">
       <command>VBoxManage guestcontrol</command>
       <group choice="req">

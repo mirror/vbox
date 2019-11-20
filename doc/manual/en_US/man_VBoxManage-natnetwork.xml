@@ -51,14 +51,14 @@
       <arg>--port-forward-4=<replaceable>rule</replaceable></arg>
       <arg>--port-forward-6=<replaceable>rule</replaceable></arg>
     </cmdsynopsis>
-     
+
     <cmdsynopsis id="synopsis-vboxmanage-natnetwork-list">
-      <command>VBoxManage natnetwork list</command> 
+      <command>VBoxManage natnetwork list</command>
       <arg><replaceable>filter-pattern</replaceable></arg>
     </cmdsynopsis>
-     
+
     <cmdsynopsis id="synopsis-vboxmanage-natnetwork-modify">
-      <command>VBoxManage natnetwork modify</command> 
+      <command>VBoxManage natnetwork modify</command>
       <arg>--dhcp=on|off</arg>
       <group>
         <arg choice="plain">--disable</arg>
@@ -72,19 +72,19 @@
       <arg>--port-forward-4=<replaceable>rule</replaceable></arg>
       <arg>--port-forward-6=<replaceable>rule</replaceable></arg>
     </cmdsynopsis>
-     
+
     <cmdsynopsis id="synopsis-vboxmanage-natnetwork-remove">
-      <command>VBoxManage natnetwork remove</command> 
+      <command>VBoxManage natnetwork remove</command>
       <arg choice="req">--netname=<replaceable>name</replaceable></arg>
     </cmdsynopsis>
-     
+
     <cmdsynopsis id="synopsis-vboxmanage-natnetwork-start">
-      <command>VBoxManage natnetwork start</command> 
+      <command>VBoxManage natnetwork start</command>
       <arg choice="req">--netname=<replaceable>name</replaceable></arg>
     </cmdsynopsis>
-     
+
     <cmdsynopsis id="synopsis-vboxmanage-natnetwork-stop">
-      <command>VBoxManage natnetwork stop</command> 
+      <command>VBoxManage natnetwork stop</command>
       <arg choice="req">--netname=<replaceable>name</replaceable></arg>
     </cmdsynopsis>
   </refsynopsisdiv>

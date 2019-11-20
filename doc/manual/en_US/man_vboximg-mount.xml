@@ -44,24 +44,24 @@
         <arg choice="plain">--help</arg>
       </group>
     </cmdsynopsis>
-     
+
     <cmdsynopsis id="synopsis-vboximg-mount-mount">
-      <command>vboximg-mount</command> 
-      <arg choice="req">--image=<replaceable>image-UUID</replaceable></arg>      
-      <arg>--guest-filesystem</arg>      
-      <arg>-o=<replaceable>FUSE-option</replaceable>[,<replaceable>FUSE-option</replaceable>]</arg>      
-      <arg>--root</arg>      
-      <arg>--rw</arg>      
+      <command>vboximg-mount</command>
+      <arg choice="req">--image=<replaceable>image-UUID</replaceable></arg>
+      <arg>--guest-filesystem</arg>
+      <arg>-o=<replaceable>FUSE-option</replaceable>[,<replaceable>FUSE-option</replaceable>]</arg>
+      <arg>--root</arg>
+      <arg>--rw</arg>
       <arg choice="req"><replaceable>mountpoint</replaceable></arg>
     </cmdsynopsis>
-     
+
     <cmdsynopsis id="synopsis-vboximg-mount-list">
-      <command>vboximg-mount</command> 
-      <arg choice="req">--list</arg>      
-      <arg>--image=<replaceable>image-UUID</replaceable></arg>     
-      <arg>--guest-filesystem</arg>    
-      <arg>--verbose</arg>    
-      <arg>--vm=<replaceable>vm-UUID</replaceable></arg>   
+      <command>vboximg-mount</command>
+      <arg choice="req">--list</arg>
+      <arg>--image=<replaceable>image-UUID</replaceable></arg>
+      <arg>--guest-filesystem</arg>
+      <arg>--verbose</arg>
+      <arg>--vm=<replaceable>vm-UUID</replaceable></arg>
       <arg>--wide</arg>
     </cmdsynopsis>
   </refsynopsisdiv>
@@ -306,7 +306,7 @@
 <screen>$ mkdir fuse_mount_point
 $ vboximg-mount --image=b490e578-08be-4f7d-98e9-4c0ef0952377 fuse_mount_point
 $ ls fuse_mount_point
-ubu.vdi[32256:2053029880]   vhdd 
+ubu.vdi[32256:2053029880]   vhdd
 $ sudo mount fuse_mount_point/vhdd /mnt</screen>
     <para>
       The <command>mkdir</command> command creates a mount point called

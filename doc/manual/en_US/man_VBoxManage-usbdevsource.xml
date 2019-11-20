@@ -36,14 +36,14 @@
 
   <refsynopsisdiv>
     <cmdsynopsis id="synopsis-vboxmanage-usbdevsource-add">
-      <command>VBoxManage usbdevsource add</command> 
+      <command>VBoxManage usbdevsource add</command>
       <arg choice="req"><replaceable>source-name</replaceable></arg>
       <arg choice="req">--backend=<replaceable>backend</replaceable></arg>
       <arg choice="req">--address=<replaceable>address</replaceable></arg>
     </cmdsynopsis>
-     
+
     <cmdsynopsis id="synopsis-vboxmanage-usbdevsource-remove">
-      <command>VBoxManage usbdevsource remove</command> 
+      <command>VBoxManage usbdevsource remove</command>
       <arg choice="req"><replaceable>source-name</replaceable></arg>
     </cmdsynopsis>
   </refsynopsisdiv>

@@ -37,7 +37,7 @@
   <refsynopsisdiv>
     <cmdsynopsis id="synopsis-vboxmanage-registervm">
 <!-- The 'id' is mandatory and must start with 'synopsis-'. -->
-      <command>VBoxManage registervm</command> 
+      <command>VBoxManage registervm</command>
       <arg choice="req"><replaceable>filename</replaceable></arg>
     </cmdsynopsis>
   </refsynopsisdiv>

@@ -240,7 +240,7 @@
           <arg choice="plain">high</arg>
         </group></arg>
     </cmdsynopsis>
-    
+
     <cmdsynopsis id="synopsis-vboxmanage-modifyvm-networking">
       <command>VBoxManage modifyvm</command>
       <group choice="req">
@@ -302,7 +302,7 @@
           <arg choice="plain"><replaceable>MAC-address</replaceable></arg>
         </group></arg>
     </cmdsynopsis>
-     
+
     <cmdsynopsis id="synopsis-vboxmanage-modifyvm-networking-nat">
       <command>VBoxManage modifyvm</command>
       <group choice="req">
@@ -340,7 +340,7 @@
           <arg choice="plain">[log],[proxyonly],[sameports]</arg>
         </group></arg>
     </cmdsynopsis>
-     
+
     <cmdsynopsis id="synopsis-vboxmanage-modifyvm-other-hardware">
       <command>VBoxManage modifyvm</command>
       <group choice="req">
@@ -435,7 +435,7 @@
         </group></arg>
       <arg>--usbrename=<replaceable>old-name</replaceable> <replaceable>new-name</replaceable></arg>
     </cmdsynopsis>
-     
+
     <cmdsynopsis id="synopsis-vboxmanage-modifyvm-recording">
       <command>VBoxManage modifyvm</command>
       <group choice="req">
@@ -458,7 +458,7 @@
       <arg>--recordingvideorate=<replaceable>rate</replaceable></arg>
       <arg>--recordingvideores=<replaceable>width</replaceable> <replaceable>height</replaceable></arg>
     </cmdsynopsis>
-     
+
     <cmdsynopsis id="synopsis-vboxmanage-modifyvm-vrde">
       <command>VBoxManage modifyvm</command>
       <group choice="req">
@@ -499,7 +499,7 @@
         </group></arg>
       <arg>--vrdevideochannelquality=<replaceable>percent</replaceable></arg>
     </cmdsynopsis>
-     
+
     <cmdsynopsis id="synopsis-vboxmanage-modifyvm-teleport">
       <command>VBoxManage modifyvm</command>
       <group choice="req">
@@ -525,7 +525,7 @@
       <arg>--cpuid-remove=<replaceable>leaf</replaceable> <arg>:<replaceable>subleaf</replaceable></arg></arg>
       <arg>--cpuidremoveall</arg>
     </cmdsynopsis>
-     
+
     <cmdsynopsis id="synopsis-vboxmanage-modifyvm-debugging">
       <command>VBoxManage modifyvm</command>
       <group choice="req">
@@ -542,7 +542,7 @@
           <arg choice="plain">off</arg>
         </group></arg>
     </cmdsynopsis>
-     
+
     <cmdsynopsis id="synopsis-vboxmanage-modifyvm-usbcardreader">
       <command>VBoxManage modifyvm</command>
       <group choice="req">
@@ -554,7 +554,7 @@
           <arg choice="plain">off</arg>
         </group></arg>
     </cmdsynopsis>
-     
+
     <cmdsynopsis id="synopsis-vboxmanage-modifyvm-autostart">
       <command>VBoxManage modifyvm</command>
       <group choice="req">
