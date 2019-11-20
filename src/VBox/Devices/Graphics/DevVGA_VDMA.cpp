@@ -341,20 +341,20 @@ int vboxVDMASaveStateExecDone(struct VBOXVDMAHOST *pVdma)
     return VINF_SUCCESS;
 }
 
-int vboxVDMASaveStateExecPerform(struct VBOXVDMAHOST *pVdma, PSSMHANDLE pSSM)
+int vboxVDMASaveStateExecPerform(PCPDMDEVHLPR3 pHlp, struct VBOXVDMAHOST *pVdma, PSSMHANDLE pSSM)
 {
     int rc;
     RT_NOREF(pVdma);
 
-    rc = SSMR3PutU32(pSSM, UINT32_MAX);
+    rc = pHlp->pfnSSMPutU32(pSSM, UINT32_MAX);
     AssertRCReturn(rc, rc);
     return VINF_SUCCESS;
 }
 
-int vboxVDMASaveLoadExecPerform(struct VBOXVDMAHOST *pVdma, PSSMHANDLE pSSM, uint32_t u32Version)
+int vboxVDMASaveLoadExecPerform(PCPDMDEVHLPR3 pHlp, struct VBOXVDMAHOST *pVdma, PSSMHANDLE pSSM, uint32_t u32Version)
 {
     uint32_t u32;
-    int rc = SSMR3GetU32(pSSM, &u32);
+    int rc = pHlp->pfnSSMGetU32(pSSM, &u32);
     AssertLogRelRCReturn(rc, rc);
 
     if (u32 != UINT32_MAX)

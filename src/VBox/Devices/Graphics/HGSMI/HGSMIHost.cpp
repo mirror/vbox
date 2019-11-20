@@ -69,6 +69,7 @@
 #include <VBox/AssertGuest.h>
 #include <iprt/errcore.h>
 #include <VBox/log.h>
+#include <VBox/vmm/pdmdev.h>
 #include <VBox/vmm/ssm.h>
 #include <VBox/vmm/vmm.h>
 
@@ -91,15 +92,15 @@
 # define VBOXHGSMI_STATE_FIFOSTART_MAGIC UINT32_C(0x9abcdef1)
 # define VBOXHGSMI_STATE_FIFOSTOP_MAGIC  UINT32_C(0x1fedcba9)
 
-# define VBOXHGSMI_SAVE_START(_pSSM)     do{ int rc2 = SSMR3PutU32(_pSSM, VBOXHGSMI_STATE_START_MAGIC);     AssertRC(rc2); }while(0)
-# define VBOXHGSMI_SAVE_STOP(_pSSM)      do{ int rc2 = SSMR3PutU32(_pSSM, VBOXHGSMI_STATE_STOP_MAGIC);      AssertRC(rc2); }while(0)
-# define VBOXHGSMI_SAVE_FIFOSTART(_pSSM) do{ int rc2 = SSMR3PutU32(_pSSM, VBOXHGSMI_STATE_FIFOSTART_MAGIC); AssertRC(rc2); }while(0)
-# define VBOXHGSMI_SAVE_FIFOSTOP(_pSSM)  do{ int rc2 = SSMR3PutU32(_pSSM, VBOXHGSMI_STATE_FIFOSTOP_MAGIC);  AssertRC(rc2); }while(0)
+# define VBOXHGSMI_SAVE_START(_pSSM)     do{ int rc2 = pHlp->pfnSSMPutU32(_pSSM, VBOXHGSMI_STATE_START_MAGIC);     AssertRC(rc2); }while(0)
+# define VBOXHGSMI_SAVE_STOP(_pSSM)      do{ int rc2 = pHlp->pfnSSMPutU32(_pSSM, VBOXHGSMI_STATE_STOP_MAGIC);      AssertRC(rc2); }while(0)
+# define VBOXHGSMI_SAVE_FIFOSTART(_pSSM) do{ int rc2 = pHlp->pfnSSMPutU32(_pSSM, VBOXHGSMI_STATE_FIFOSTART_MAGIC); AssertRC(rc2); }while(0)
+# define VBOXHGSMI_SAVE_FIFOSTOP(_pSSM)  do{ int rc2 = pHlp->pfnSSMPutU32(_pSSM, VBOXHGSMI_STATE_FIFOSTOP_MAGIC);  AssertRC(rc2); }while(0)
 
 # define VBOXHGSMI_LOAD_CHECK(_pSSM, _v) \
     do { \
         uint32_t u32; \
-        int rc2 = SSMR3GetU32(_pSSM, &u32); AssertRC(rc2); \
+        int rc2 = pHlp->pfnSSMGetU32(_pSSM, &u32); AssertRC(rc2); \
         Assert(u32 == (_v)); \
     } while(0)
 
@@ -959,7 +960,7 @@ int HGSMIHostHeapSetup(PHGSMIINSTANCE pIns, HGSMIOFFSET RT_UNTRUSTED_GUEST offHe
     return rc;
 }
 
-static int hgsmiHostSaveFifoLocked(RTLISTANCHOR *pList, PSSMHANDLE pSSM)
+static int hgsmiHostSaveFifoLocked(PCPDMDEVHLPR3 pHlp, RTLISTANCHOR *pList, PSSMHANDLE pSSM)
 {
     VBOXHGSMI_SAVE_FIFOSTART(pSSM);
 
@@ -971,13 +972,13 @@ static int hgsmiHostSaveFifoLocked(RTLISTANCHOR *pList, PSSMHANDLE pSSM)
         ++cEntries;
     }
 
-    int rc = SSMR3PutU32(pSSM, cEntries);
+    int rc = pHlp->pfnSSMPutU32(pSSM, cEntries);
     if (RT_SUCCESS(rc))
     {
         RTListForEach(pList, pIter, HGSMIHOSTFIFOENTRY, nodeEntry)
         {
-            SSMR3PutU32(pSSM, pIter->fl);
-            rc = SSMR3PutU32(pSSM, pIter->offBuffer);
+            pHlp->pfnSSMPutU32(pSSM, pIter->fl);
+            rc = pHlp->pfnSSMPutU32(pSSM, pIter->offBuffer);
             if (RT_FAILURE(rc))
                 break;
         }
@@ -988,7 +989,7 @@ static int hgsmiHostSaveFifoLocked(RTLISTANCHOR *pList, PSSMHANDLE pSSM)
     return rc;
 }
 
-static int hgsmiHostSaveGuestCmdCompletedFifoLocked(RTLISTANCHOR *pList, PSSMHANDLE pSSM)
+static int hgsmiHostSaveGuestCmdCompletedFifoLocked(PCPDMDEVHLPR3 pHlp, RTLISTANCHOR *pList, PSSMHANDLE pSSM)
 {
     VBOXHGSMI_SAVE_FIFOSTART(pSSM);
 
@@ -999,12 +1000,12 @@ static int hgsmiHostSaveGuestCmdCompletedFifoLocked(RTLISTANCHOR *pList, PSSMHAN
     {
         ++cEntries;
     }
-    int rc = SSMR3PutU32(pSSM, cEntries);
+    int rc = pHlp->pfnSSMPutU32(pSSM, cEntries);
     if (RT_SUCCESS(rc))
     {
         RTListForEach(pList, pIter, HGSMIGUESTCOMPLENTRY, nodeEntry)
         {
-            rc = SSMR3PutU32(pSSM, pIter->offBuffer);
+            rc = pHlp->pfnSSMPutU32(pSSM, pIter->offBuffer);
             if (RT_FAILURE(rc))
                 break;
         }
@@ -1015,7 +1016,7 @@ static int hgsmiHostSaveGuestCmdCompletedFifoLocked(RTLISTANCHOR *pList, PSSMHAN
     return rc;
 }
 
-static int hgsmiHostLoadFifoEntryLocked(PHGSMIINSTANCE pIns, HGSMIHOSTFIFOENTRY **ppEntry, PSSMHANDLE pSSM)
+static int hgsmiHostLoadFifoEntryLocked(PCPDMDEVHLPR3 pHlp, PHGSMIINSTANCE pIns, HGSMIHOSTFIFOENTRY **ppEntry, PSSMHANDLE pSSM)
 {
     HGSMIHOSTFIFOENTRY *pEntry;
     int rc = hgsmiHostFIFOAlloc(&pEntry);  AssertRC(rc);
@@ -1023,9 +1024,9 @@ static int hgsmiHostLoadFifoEntryLocked(PHGSMIINSTANCE pIns, HGSMIHOSTFIFOENTRY 
     {
         uint32_t u32;
         pEntry->pIns = pIns;
-        rc = SSMR3GetU32(pSSM, &u32); AssertRC(rc);
+        rc = pHlp->pfnSSMGetU32(pSSM, &u32); AssertRC(rc);
         pEntry->fl = u32;
-        rc = SSMR3GetU32(pSSM, &pEntry->offBuffer); AssertRC(rc);
+        rc = pHlp->pfnSSMGetU32(pSSM, &pEntry->offBuffer); AssertRC(rc);
         if (RT_SUCCESS(rc))
             *ppEntry = pEntry;
         else
@@ -1035,19 +1036,19 @@ static int hgsmiHostLoadFifoEntryLocked(PHGSMIINSTANCE pIns, HGSMIHOSTFIFOENTRY 
     return rc;
 }
 
-static int hgsmiHostLoadFifoLocked(PHGSMIINSTANCE pIns, RTLISTANCHOR *pList, PSSMHANDLE pSSM)
+static int hgsmiHostLoadFifoLocked(PCPDMDEVHLPR3 pHlp, PHGSMIINSTANCE pIns, RTLISTANCHOR *pList, PSSMHANDLE pSSM)
 {
     VBOXHGSMI_LOAD_FIFOSTART(pSSM);
 
     uint32_t cEntries = 0;
-    int rc = SSMR3GetU32(pSSM, &cEntries);
+    int rc = pHlp->pfnSSMGetU32(pSSM, &cEntries);
     if (RT_SUCCESS(rc) && cEntries)
     {
         uint32_t i;
         for (i = 0; i < cEntries; ++i)
         {
             HGSMIHOSTFIFOENTRY *pEntry = NULL;
-            rc = hgsmiHostLoadFifoEntryLocked(pIns, &pEntry, pSSM);
+            rc = hgsmiHostLoadFifoEntryLocked(pHlp, pIns, &pEntry, pSSM);
             AssertRCBreak(rc);
 
             RTListAppend(pList, &pEntry->nodeEntry);
@@ -1059,13 +1060,14 @@ static int hgsmiHostLoadFifoLocked(PHGSMIINSTANCE pIns, RTLISTANCHOR *pList, PSS
     return rc;
 }
 
-static int hgsmiHostLoadGuestCmdCompletedFifoEntryLocked (PHGSMIINSTANCE pIns, HGSMIGUESTCOMPLENTRY **ppEntry, PSSMHANDLE pSSM)
+static int hgsmiHostLoadGuestCmdCompletedFifoEntryLocked(PCPDMDEVHLPR3 pHlp, PHGSMIINSTANCE pIns,
+                                                         HGSMIGUESTCOMPLENTRY **ppEntry, PSSMHANDLE pSSM)
 {
     HGSMIGUESTCOMPLENTRY *pEntry;
     int rc = hgsmiGuestCompletionFIFOAlloc(pIns, &pEntry); AssertRC(rc);
     if (RT_SUCCESS (rc))
     {
-        rc = SSMR3GetU32(pSSM, &pEntry->offBuffer); AssertRC(rc);
+        rc = pHlp->pfnSSMGetU32(pSSM, &pEntry->offBuffer); AssertRC(rc);
         if (RT_SUCCESS(rc))
             *ppEntry = pEntry;
         else
@@ -1074,14 +1076,15 @@ static int hgsmiHostLoadGuestCmdCompletedFifoEntryLocked (PHGSMIINSTANCE pIns, H
     return rc;
 }
 
-static int hgsmiHostLoadGuestCmdCompletedFifoLocked(PHGSMIINSTANCE pIns, RTLISTANCHOR *pList, PSSMHANDLE pSSM, uint32_t u32Version)
+static int hgsmiHostLoadGuestCmdCompletedFifoLocked(PCPDMDEVHLPR3 pHlp, PHGSMIINSTANCE pIns, RTLISTANCHOR *pList,
+                                                    PSSMHANDLE pSSM, uint32_t u32Version)
 {
     VBOXHGSMI_LOAD_FIFOSTART(pSSM);
 
     uint32_t i;
 
     uint32_t cEntries = 0;
-    int rc = SSMR3GetU32(pSSM, &cEntries);
+    int rc = pHlp->pfnSSMGetU32(pSSM, &cEntries);
     if (RT_SUCCESS(rc) && cEntries)
     {
         if (u32Version > VGA_SAVEDSTATE_VERSION_INV_GCMDFIFO)
@@ -1089,7 +1092,7 @@ static int hgsmiHostLoadGuestCmdCompletedFifoLocked(PHGSMIINSTANCE pIns, RTLISTA
             for (i = 0; i < cEntries; ++i)
             {
                 HGSMIGUESTCOMPLENTRY *pEntry = NULL;
-                rc = hgsmiHostLoadGuestCmdCompletedFifoEntryLocked(pIns, &pEntry, pSSM);
+                rc = hgsmiHostLoadGuestCmdCompletedFifoEntryLocked(pHlp, pIns, &pEntry, pSSM);
                 AssertRCBreak(rc);
 
                 RTListAppend(pList, &pEntry->nodeEntry);
@@ -1104,7 +1107,7 @@ static int hgsmiHostLoadGuestCmdCompletedFifoLocked(PHGSMIINSTANCE pIns, RTLISTA
             for (i = 0; i < cEntries; ++i)
             {
                 HGSMIHOSTFIFOENTRY *pEntry = NULL;
-                rc = hgsmiHostLoadFifoEntryLocked(pIns, &pEntry, pSSM);
+                rc = hgsmiHostLoadFifoEntryLocked(pHlp, pIns, &pEntry, pSSM);
                 AssertRCBreak(rc);
 
                 hgsmiHostFIFOFree(pEntry);
@@ -1117,26 +1120,27 @@ static int hgsmiHostLoadGuestCmdCompletedFifoLocked(PHGSMIINSTANCE pIns, RTLISTA
     return rc;
 }
 
-static int hgsmiHostSaveMA(PSSMHANDLE pSSM, HGSMIMADATA *pMA)
+static int hgsmiHostSaveMA(PCPDMDEVHLPR3 pHlp, PSSMHANDLE pSSM, HGSMIMADATA *pMA)
 {
-    int rc = SSMR3PutU32(pSSM, pMA->cBlocks);
+    int rc = pHlp->pfnSSMPutU32(pSSM, pMA->cBlocks);
     if (RT_SUCCESS(rc))
     {
         HGSMIMABLOCK *pIter;
         RTListForEach(&pMA->listBlocks, pIter, HGSMIMABLOCK, nodeBlock)
         {
-            SSMR3PutU32(pSSM, pIter->descriptor);
+            pHlp->pfnSSMPutU32(pSSM, pIter->descriptor);
         }
 
-        rc = SSMR3PutU32(pSSM, pMA->cbMaxBlock);
+        rc = pHlp->pfnSSMPutU32(pSSM, pMA->cbMaxBlock);
     }
 
     return rc;
 }
 
-static int hgsmiHostLoadMA(PSSMHANDLE pSSM, uint32_t *pcBlocks, HGSMIOFFSET **ppaDescriptors, HGSMISIZE *pcbMaxBlock)
+static int hgsmiHostLoadMA(PCPDMDEVHLPR3 pHlp, PSSMHANDLE pSSM, uint32_t *pcBlocks,
+                           HGSMIOFFSET **ppaDescriptors, HGSMISIZE *pcbMaxBlock)
 {
-    int rc = SSMR3GetU32(pSSM, pcBlocks);
+    int rc = pHlp->pfnSSMGetU32(pSSM, pcBlocks);
     if (RT_SUCCESS(rc))
     {
         HGSMIOFFSET *paDescriptors = NULL;
@@ -1147,14 +1151,14 @@ static int hgsmiHostLoadMA(PSSMHANDLE pSSM, uint32_t *pcBlocks, HGSMIOFFSET **pp
             {
                 uint32_t i;
                 for (i = 0; i < *pcBlocks; ++i)
-                    SSMR3GetU32(pSSM, &paDescriptors[i]);
+                    pHlp->pfnSSMGetU32(pSSM, &paDescriptors[i]);
             }
             else
                 rc = VERR_NO_MEMORY;
         }
 
         if (RT_SUCCESS(rc))
-            rc = SSMR3GetU32(pSSM, pcbMaxBlock);
+            rc = pHlp->pfnSSMGetU32(pSSM, pcbMaxBlock);
         if (RT_SUCCESS(rc))
             *ppaDescriptors = paDescriptors;
         else
@@ -1164,34 +1168,34 @@ static int hgsmiHostLoadMA(PSSMHANDLE pSSM, uint32_t *pcBlocks, HGSMIOFFSET **pp
     return rc;
 }
 
-int HGSMIHostSaveStateExec(PHGSMIINSTANCE pIns, PSSMHANDLE pSSM)
+int HGSMIHostSaveStateExec(PCPDMDEVHLPR3 pHlp, PHGSMIINSTANCE pIns, PSSMHANDLE pSSM)
 {
     VBOXHGSMI_SAVE_START(pSSM);
 
     int rc;
 
-    SSMR3PutU32(pSSM, pIns->hostHeap.u32HeapType);
+    pHlp->pfnSSMPutU32(pSSM, pIns->hostHeap.u32HeapType);
 
     HGSMIOFFSET off = pIns->pHGFlags ? HGSMIPointerToOffset(&pIns->area, (const HGSMIBUFFERHEADER *)pIns->pHGFlags)
                                      : HGSMIOFFSET_VOID;
-    SSMR3PutU32(pSSM, off);
+    pHlp->pfnSSMPutU32(pSSM, off);
 
     off = pIns->hostHeap.u32HeapType == HGSMI_HEAP_TYPE_MA ? 0 : hgsmiHostHeapHandleLocationOffset(&pIns->hostHeap);
-    rc = SSMR3PutU32 (pSSM, off);
+    rc = pHlp->pfnSSMPutU32 (pSSM, off);
     if (off != HGSMIOFFSET_VOID)
     {
-        SSMR3PutU32(pSSM, hgsmiHostHeapOffset(&pIns->hostHeap));
-        SSMR3PutU32(pSSM, hgsmiHostHeapSize(&pIns->hostHeap));
+        pHlp->pfnSSMPutU32(pSSM, hgsmiHostHeapOffset(&pIns->hostHeap));
+        pHlp->pfnSSMPutU32(pSSM, hgsmiHostHeapSize(&pIns->hostHeap));
         /* need save mem pointer to calculate offset on restore */
-        SSMR3PutU64(pSSM, (uint64_t)(uintptr_t)pIns->area.pu8Base);
+        pHlp->pfnSSMPutU64(pSSM, (uint64_t)(uintptr_t)pIns->area.pu8Base);
         rc = hgsmiFIFOLock (pIns);
         if (RT_SUCCESS(rc))
         {
-            rc = hgsmiHostSaveFifoLocked(&pIns->hostFIFO, pSSM); AssertRC(rc);
-            rc = hgsmiHostSaveFifoLocked(&pIns->hostFIFORead, pSSM); AssertRC(rc);
-            rc = hgsmiHostSaveFifoLocked(&pIns->hostFIFOProcessed, pSSM); AssertRC(rc);
+            rc = hgsmiHostSaveFifoLocked(pHlp, &pIns->hostFIFO, pSSM); AssertRC(rc);
+            rc = hgsmiHostSaveFifoLocked(pHlp, &pIns->hostFIFORead, pSSM); AssertRC(rc);
+            rc = hgsmiHostSaveFifoLocked(pHlp, &pIns->hostFIFOProcessed, pSSM); AssertRC(rc);
 #ifdef VBOX_WITH_WDDM
-            rc = hgsmiHostSaveGuestCmdCompletedFifoLocked(&pIns->guestCmdCompleted, pSSM); AssertRC(rc);
+            rc = hgsmiHostSaveGuestCmdCompletedFifoLocked(pHlp, &pIns->guestCmdCompleted, pSSM); AssertRC(rc);
 #endif
 
             hgsmiFIFOUnlock(pIns);
@@ -1199,7 +1203,7 @@ int HGSMIHostSaveStateExec(PHGSMIINSTANCE pIns, PSSMHANDLE pSSM)
 
         if (RT_SUCCESS(rc))
             if (pIns->hostHeap.u32HeapType == HGSMI_HEAP_TYPE_MA)
-                rc = hgsmiHostSaveMA(pSSM, &pIns->hostHeap.u.ma);
+                rc = hgsmiHostSaveMA(pHlp, pSSM, &pIns->hostHeap.u.ma);
     }
 
     VBOXHGSMI_SAVE_STOP(pSSM);
@@ -1207,7 +1211,7 @@ int HGSMIHostSaveStateExec(PHGSMIINSTANCE pIns, PSSMHANDLE pSSM)
     return rc;
 }
 
-int HGSMIHostLoadStateExec(PHGSMIINSTANCE pIns, PSSMHANDLE pSSM, uint32_t u32Version)
+int HGSMIHostLoadStateExec(PCPDMDEVHLPR3 pHlp, PHGSMIINSTANCE pIns, PSSMHANDLE pSSM, uint32_t u32Version)
 {
     if (u32Version < VGA_SAVEDSTATE_VERSION_HGSMI)
         return VINF_SUCCESS;
@@ -1218,16 +1222,16 @@ int HGSMIHostLoadStateExec(PHGSMIINSTANCE pIns, PSSMHANDLE pSSM, uint32_t u32Ver
     uint32_t u32HeapType = HGSMI_HEAP_TYPE_NULL;
     if (u32Version >= VGA_SAVEDSTATE_VERSION_HGSMIMA)
     {
-        rc = SSMR3GetU32(pSSM, &u32HeapType);
+        rc = pHlp->pfnSSMGetU32(pSSM, &u32HeapType);
         AssertRCReturn(rc, rc);
     }
 
     HGSMIOFFSET off;
-    rc = SSMR3GetU32(pSSM, &off);
+    rc = pHlp->pfnSSMGetU32(pSSM, &off);
     AssertLogRelRCReturn(rc, rc);
     pIns->pHGFlags = off != HGSMIOFFSET_VOID ? (HGSMIHOSTFLAGS *)HGSMIOffsetToPointer(&pIns->area, off) : NULL;
 
-    rc = SSMR3GetU32(pSSM, &off);
+    rc = pHlp->pfnSSMGetU32(pSSM, &off);
     AssertLogRelRCReturn(rc, rc);
     if (off != HGSMIOFFSET_VOID)
     {
@@ -1237,11 +1241,11 @@ int HGSMIHostLoadStateExec(PHGSMIINSTANCE pIns, PSSMHANDLE pSSM, uint32_t u32Ver
                         ? HGSMI_HEAP_TYPE_OFFSET : HGSMI_HEAP_TYPE_POINTER;
 
         HGSMIOFFSET offHeap;
-        SSMR3GetU32(pSSM, &offHeap);
+        pHlp->pfnSSMGetU32(pSSM, &offHeap);
         uint32_t cbHeap;
-        SSMR3GetU32(pSSM, &cbHeap);
+        pHlp->pfnSSMGetU32(pSSM, &cbHeap);
         uint64_t oldMem;
-        rc = SSMR3GetU64(pSSM, &oldMem);
+        rc = pHlp->pfnSSMGetU64(pSSM, &oldMem);
         AssertLogRelRCReturn(rc, rc);
 
         if (RT_SUCCESS(rc))
@@ -1249,14 +1253,14 @@ int HGSMIHostLoadStateExec(PHGSMIINSTANCE pIns, PSSMHANDLE pSSM, uint32_t u32Ver
             rc = hgsmiFIFOLock(pIns);
             if (RT_SUCCESS(rc))
             {
-                rc = hgsmiHostLoadFifoLocked(pIns, &pIns->hostFIFO, pSSM);
+                rc = hgsmiHostLoadFifoLocked(pHlp, pIns, &pIns->hostFIFO, pSSM);
                 if (RT_SUCCESS(rc))
-                    rc = hgsmiHostLoadFifoLocked(pIns, &pIns->hostFIFORead, pSSM);
+                    rc = hgsmiHostLoadFifoLocked(pHlp, pIns, &pIns->hostFIFORead, pSSM);
                 if (RT_SUCCESS(rc))
-                    rc = hgsmiHostLoadFifoLocked(pIns, &pIns->hostFIFOProcessed, pSSM);
+                    rc = hgsmiHostLoadFifoLocked(pHlp, pIns, &pIns->hostFIFOProcessed, pSSM);
 #ifdef VBOX_WITH_WDDM
                 if (RT_SUCCESS(rc) && u32Version > VGA_SAVEDSTATE_VERSION_PRE_WDDM)
-                    rc = hgsmiHostLoadGuestCmdCompletedFifoLocked(pIns, &pIns->guestCmdCompleted, pSSM, u32Version);
+                    rc = hgsmiHostLoadGuestCmdCompletedFifoLocked(pHlp, pIns, &pIns->guestCmdCompleted, pSSM, u32Version);
 #endif
 
                 hgsmiFIFOUnlock(pIns);
@@ -1270,7 +1274,7 @@ int HGSMIHostLoadStateExec(PHGSMIINSTANCE pIns, PSSMHANDLE pSSM, uint32_t u32Ver
                 uint32_t cBlocks = 0;
                 HGSMISIZE cbMaxBlock = 0;
                 HGSMIOFFSET *paDescriptors = NULL;
-                rc = hgsmiHostLoadMA(pSSM, &cBlocks, &paDescriptors, &cbMaxBlock);
+                rc = hgsmiHostLoadMA(pHlp, pSSM, &cBlocks, &paDescriptors, &cbMaxBlock);
                 if (RT_SUCCESS(rc))
                 {
                     rc = hgsmiHostHeapRestoreMA(&pIns->hostHeap,

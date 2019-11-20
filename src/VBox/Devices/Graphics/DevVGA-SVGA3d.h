@@ -57,8 +57,8 @@ void vmsvga3dSurfaceUpdateHeapBuffersOnFifoThread(PVGASTATE pThis, uint32_t sid)
 /* DevVGA-SVGA3d-ogl.cpp & DevVGA-SVGA3d-win.cpp: */
 int vmsvga3dInit(PVGASTATE pThis);
 int vmsvga3dPowerOn(PVGASTATE pThis);
-int vmsvga3dLoadExec(PVGASTATE pThis, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass);
-int vmsvga3dSaveExec(PVGASTATE pThis, PSSMHANDLE pSSM);
+int vmsvga3dLoadExec(PPDMDEVINS pDevIns, PVGASTATE pThis, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass);
+int vmsvga3dSaveExec(PPDMDEVINS pDevIns, PVGASTATE pThis, PSSMHANDLE pSSM);
 int vmsvga3dTerminate(PVGASTATE pThis);
 int vmsvga3dReset(PVGASTATE pThis);
 void vmsvga3dUpdateHostScreenViewport(PVGASTATE pThis, uint32_t idScreen, VMSVGAVIEWPORT const *pOldViewport);

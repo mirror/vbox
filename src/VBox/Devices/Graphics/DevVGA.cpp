@@ -2729,76 +2729,76 @@ static int vga_update_display(PVGASTATE pThis, bool fUpdateAll, bool fFailOnResi
     return rc;
 }
 
-static void vga_save(PSSMHANDLE pSSM, PVGASTATE pThis)
+static void vga_save(PCPDMDEVHLPR3 pHlp, PSSMHANDLE pSSM, PVGASTATE pThis)
 {
     int i;
 
-    SSMR3PutU32(pSSM, pThis->latch);
-    SSMR3PutU8(pSSM, pThis->sr_index);
-    SSMR3PutMem(pSSM, pThis->sr, 8);
-    SSMR3PutU8(pSSM, pThis->gr_index);
-    SSMR3PutMem(pSSM, pThis->gr, 16);
-    SSMR3PutU8(pSSM, pThis->ar_index);
-    SSMR3PutMem(pSSM, pThis->ar, 21);
-    SSMR3PutU32(pSSM, pThis->ar_flip_flop);
-    SSMR3PutU8(pSSM, pThis->cr_index);
-    SSMR3PutMem(pSSM, pThis->cr, 256);
-    SSMR3PutU8(pSSM, pThis->msr);
-    SSMR3PutU8(pSSM, pThis->fcr);
-    SSMR3PutU8(pSSM, pThis->st00);
-    SSMR3PutU8(pSSM, pThis->st01);
+    pHlp->pfnSSMPutU32(pSSM, pThis->latch);
+    pHlp->pfnSSMPutU8(pSSM, pThis->sr_index);
+    pHlp->pfnSSMPutMem(pSSM, pThis->sr, 8);
+    pHlp->pfnSSMPutU8(pSSM, pThis->gr_index);
+    pHlp->pfnSSMPutMem(pSSM, pThis->gr, 16);
+    pHlp->pfnSSMPutU8(pSSM, pThis->ar_index);
+    pHlp->pfnSSMPutMem(pSSM, pThis->ar, 21);
+    pHlp->pfnSSMPutU32(pSSM, pThis->ar_flip_flop);
+    pHlp->pfnSSMPutU8(pSSM, pThis->cr_index);
+    pHlp->pfnSSMPutMem(pSSM, pThis->cr, 256);
+    pHlp->pfnSSMPutU8(pSSM, pThis->msr);
+    pHlp->pfnSSMPutU8(pSSM, pThis->fcr);
+    pHlp->pfnSSMPutU8(pSSM, pThis->st00);
+    pHlp->pfnSSMPutU8(pSSM, pThis->st01);
 
-    SSMR3PutU8(pSSM, pThis->dac_state);
-    SSMR3PutU8(pSSM, pThis->dac_sub_index);
-    SSMR3PutU8(pSSM, pThis->dac_read_index);
-    SSMR3PutU8(pSSM, pThis->dac_write_index);
-    SSMR3PutMem(pSSM, pThis->dac_cache, 3);
-    SSMR3PutMem(pSSM, pThis->palette, 768);
+    pHlp->pfnSSMPutU8(pSSM, pThis->dac_state);
+    pHlp->pfnSSMPutU8(pSSM, pThis->dac_sub_index);
+    pHlp->pfnSSMPutU8(pSSM, pThis->dac_read_index);
+    pHlp->pfnSSMPutU8(pSSM, pThis->dac_write_index);
+    pHlp->pfnSSMPutMem(pSSM, pThis->dac_cache, 3);
+    pHlp->pfnSSMPutMem(pSSM, pThis->palette, 768);
 
-    SSMR3PutU32(pSSM, pThis->bank_offset);
+    pHlp->pfnSSMPutU32(pSSM, pThis->bank_offset);
 #ifdef CONFIG_BOCHS_VBE
     AssertCompile(RT_ELEMENTS(pThis->vbe_regs) < 256);
-    SSMR3PutU8(pSSM, (uint8_t)RT_ELEMENTS(pThis->vbe_regs));
-    SSMR3PutU16(pSSM, pThis->vbe_index);
+    pHlp->pfnSSMPutU8(pSSM, (uint8_t)RT_ELEMENTS(pThis->vbe_regs));
+    pHlp->pfnSSMPutU16(pSSM, pThis->vbe_index);
     for(i = 0; i < (int)RT_ELEMENTS(pThis->vbe_regs); i++)
-        SSMR3PutU16(pSSM, pThis->vbe_regs[i]);
-    SSMR3PutU32(pSSM, pThis->vbe_start_addr);
-    SSMR3PutU32(pSSM, pThis->vbe_line_offset);
+        pHlp->pfnSSMPutU16(pSSM, pThis->vbe_regs[i]);
+    pHlp->pfnSSMPutU32(pSSM, pThis->vbe_start_addr);
+    pHlp->pfnSSMPutU32(pSSM, pThis->vbe_line_offset);
 #else
-    SSMR3PutU8(pSSM, 0);
+    pHlp->pfnSSMPutU8(pSSM, 0);
 #endif
 }
 
-static int vga_load(PSSMHANDLE pSSM, PVGASTATE pThis, int version_id)
+static int vga_load(PCPDMDEVHLPR3 pHlp, PSSMHANDLE pSSM, PVGASTATE pThis, int version_id)
 {
     int is_vbe, i;
     uint32_t u32Dummy;
     uint8_t u8;
 
-    SSMR3GetU32(pSSM, &pThis->latch);
-    SSMR3GetU8(pSSM, &pThis->sr_index);
-    SSMR3GetMem(pSSM, pThis->sr, 8);
-    SSMR3GetU8(pSSM, &pThis->gr_index);
-    SSMR3GetMem(pSSM, pThis->gr, 16);
-    SSMR3GetU8(pSSM, &pThis->ar_index);
-    SSMR3GetMem(pSSM, pThis->ar, 21);
-    SSMR3GetS32(pSSM, &pThis->ar_flip_flop);
-    SSMR3GetU8(pSSM, &pThis->cr_index);
-    SSMR3GetMem(pSSM, pThis->cr, 256);
-    SSMR3GetU8(pSSM, &pThis->msr);
-    SSMR3GetU8(pSSM, &pThis->fcr);
-    SSMR3GetU8(pSSM, &pThis->st00);
-    SSMR3GetU8(pSSM, &pThis->st01);
+    pHlp->pfnSSMGetU32(pSSM, &pThis->latch);
+    pHlp->pfnSSMGetU8(pSSM, &pThis->sr_index);
+    pHlp->pfnSSMGetMem(pSSM, pThis->sr, 8);
+    pHlp->pfnSSMGetU8(pSSM, &pThis->gr_index);
+    pHlp->pfnSSMGetMem(pSSM, pThis->gr, 16);
+    pHlp->pfnSSMGetU8(pSSM, &pThis->ar_index);
+    pHlp->pfnSSMGetMem(pSSM, pThis->ar, 21);
+    pHlp->pfnSSMGetS32(pSSM, &pThis->ar_flip_flop);
+    pHlp->pfnSSMGetU8(pSSM, &pThis->cr_index);
+    pHlp->pfnSSMGetMem(pSSM, pThis->cr, 256);
+    pHlp->pfnSSMGetU8(pSSM, &pThis->msr);
+    pHlp->pfnSSMGetU8(pSSM, &pThis->fcr);
+    pHlp->pfnSSMGetU8(pSSM, &pThis->st00);
+    pHlp->pfnSSMGetU8(pSSM, &pThis->st01);
 
-    SSMR3GetU8(pSSM, &pThis->dac_state);
-    SSMR3GetU8(pSSM, &pThis->dac_sub_index);
-    SSMR3GetU8(pSSM, &pThis->dac_read_index);
-    SSMR3GetU8(pSSM, &pThis->dac_write_index);
-    SSMR3GetMem(pSSM, pThis->dac_cache, 3);
-    SSMR3GetMem(pSSM, pThis->palette, 768);
+    pHlp->pfnSSMGetU8(pSSM, &pThis->dac_state);
+    pHlp->pfnSSMGetU8(pSSM, &pThis->dac_sub_index);
+    pHlp->pfnSSMGetU8(pSSM, &pThis->dac_read_index);
+    pHlp->pfnSSMGetU8(pSSM, &pThis->dac_write_index);
+    pHlp->pfnSSMGetMem(pSSM, pThis->dac_cache, 3);
+    pHlp->pfnSSMGetMem(pSSM, pThis->palette, 768);
 
-    SSMR3GetS32(pSSM, &pThis->bank_offset);
-    SSMR3GetU8(pSSM, &u8);
+    pHlp->pfnSSMGetS32(pSSM, &pThis->bank_offset);
+    pHlp->pfnSSMGetU8(pSSM, &u8);
     is_vbe = !!u8;
 #ifdef CONFIG_BOCHS_VBE
     if (!is_vbe)
@@ -2815,15 +2815,15 @@ static int vga_load(PSSMHANDLE pSSM, PVGASTATE pThis, int version_id)
         return VERR_SSM_DATA_UNIT_FORMAT_CHANGED;
     }
 
-    SSMR3GetU16(pSSM, &pThis->vbe_index);
+    pHlp->pfnSSMGetU16(pSSM, &pThis->vbe_index);
     for(i = 0; i < (int)u8; i++)
-        SSMR3GetU16(pSSM, &pThis->vbe_regs[i]);
+        pHlp->pfnSSMGetU16(pSSM, &pThis->vbe_regs[i]);
     if (version_id <= VGA_SAVEDSTATE_VERSION_INV_VHEIGHT)
         recalculate_data(pThis);    /* <- re-calculate the pThis->vbe_regs[VBE_DISPI_INDEX_VIRT_HEIGHT] since it might be invalid */
-    SSMR3GetU32(pSSM, &pThis->vbe_start_addr);
-    SSMR3GetU32(pSSM, &pThis->vbe_line_offset);
+    pHlp->pfnSSMGetU32(pSSM, &pThis->vbe_start_addr);
+    pHlp->pfnSSMGetU32(pSSM, &pThis->vbe_line_offset);
     if (version_id < 2)
-        SSMR3GetU32(pSSM, &u32Dummy);
+        pHlp->pfnSSMGetU32(pSSM, &u32Dummy);
     pThis->vbe_bank_max = (pThis->vram_size >> 16) - 1;
 #else
     if (is_vbe)
@@ -5653,13 +5653,14 @@ static DECLCALLBACK(int) vgaR3PciRegionLoadChangeHook(PPDMDEVINS pDevIns, PPDMPC
 /**
  * Saves a important bits of the VGA device config.
  *
+ * @param   pHlp        The device helpers (for SSM functions).
  * @param   pThis       The VGA instance data.
  * @param   pSSM        The saved state handle.
  */
-static void vgaR3SaveConfig(PVGASTATE pThis, PSSMHANDLE pSSM)
+static void vgaR3SaveConfig(PCPDMDEVHLPR3 pHlp, PVGASTATE pThis, PSSMHANDLE pSSM)
 {
-    SSMR3PutU32(pSSM, pThis->vram_size);
-    SSMR3PutU32(pSSM, pThis->cMonitors);
+    pHlp->pfnSSMPutU32(pSSM, pThis->vram_size);
+    pHlp->pfnSSMPutU32(pSSM, pThis->cMonitors);
 }
 
 
@@ -5670,7 +5671,7 @@ static DECLCALLBACK(int) vgaR3LiveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint
 {
     PVGASTATE pThis = PDMDEVINS_2_DATA(pDevIns, PVGASTATE);
     Assert(uPass == 0); NOREF(uPass);
-    vgaR3SaveConfig(pThis, pSSM);
+    vgaR3SaveConfig(pDevIns->pHlpR3, pThis, pSSM);
     return VINF_SSM_DONT_CALL_AGAIN;
 }
 
@@ -5708,32 +5709,33 @@ static DECLCALLBACK(int) vgaR3SaveDone(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
  */
 static DECLCALLBACK(int) vgaR3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 {
-    PVGASTATE pThis = PDMDEVINS_2_DATA(pDevIns, PVGASTATE);
+    PVGASTATE       pThis = PDMDEVINS_2_DATA(pDevIns, PVGASTATE);
+    PCPDMDEVHLPR3   pHlp  = pDevIns->pHlpR3;
 
 #ifdef VBOX_WITH_VDMA
     vboxVDMASaveStateExecPrep(pThis->pVdma);
 #endif
 
-    vgaR3SaveConfig(pThis, pSSM);
-    vga_save(pSSM, PDMDEVINS_2_DATA(pDevIns, PVGASTATE));
+    vgaR3SaveConfig(pHlp, pThis, pSSM);
+    vga_save(pHlp, pSSM, PDMDEVINS_2_DATA(pDevIns, PVGASTATE));
 
     VGA_SAVED_STATE_PUT_MARKER(pSSM, 1);
 #ifdef VBOX_WITH_HGSMI
-    SSMR3PutBool(pSSM, true);
+    pHlp->pfnSSMPutBool(pSSM, true);
     int rc = vboxVBVASaveStateExec(pDevIns, pSSM);
 #else
-    int rc = SSMR3PutBool(pSSM, false);
+    int rc = pHlp->pfnSSMPutBool(pSSM, false);
 #endif
 
     AssertRCReturn(rc, rc);
 
     VGA_SAVED_STATE_PUT_MARKER(pSSM, 3);
 #ifdef VBOX_WITH_VDMA
-    rc = SSMR3PutU32(pSSM, 1);
+    rc = pHlp->pfnSSMPutU32(pSSM, 1);
     AssertRCReturn(rc, rc);
-    rc = vboxVDMASaveStateExecPerform(pThis->pVdma, pSSM);
+    rc = vboxVDMASaveStateExecPerform(pHlp, pThis->pVdma, pSSM);
 #else
-    rc = SSMR3PutU32(pSSM, 0);
+    rc = pHlp->pfnSSMPutU32(pSSM, 0);
 #endif
     AssertRCReturn(rc, rc);
 
@@ -5760,8 +5762,9 @@ static DECLCALLBACK(int) vgaR3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
  */
 static DECLCALLBACK(int) vgaR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass)
 {
-    PVGASTATE   pThis = PDMDEVINS_2_DATA(pDevIns, PVGASTATE);
-    int         rc;
+    PVGASTATE       pThis = PDMDEVINS_2_DATA(pDevIns, PVGASTATE);
+    PCPDMDEVHLPR3   pHlp  = pDevIns->pHlpR3;
+    int             rc;
 
     if (uVersion < VGA_SAVEDSTATE_VERSION_ANCIENT || uVersion > VGA_SAVEDSTATE_VERSION)
         return VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
@@ -5770,21 +5773,21 @@ static DECLCALLBACK(int) vgaR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint
     {
         /* Check the config */
         uint32_t cbVRam;
-        rc = SSMR3GetU32(pSSM, &cbVRam);
+        rc = pHlp->pfnSSMGetU32(pSSM, &cbVRam);
         AssertRCReturn(rc, rc);
         if (pThis->vram_size != cbVRam)
-            return SSMR3SetCfgError(pSSM, RT_SRC_POS, N_("VRAM size changed: config=%#x state=%#x"), pThis->vram_size, cbVRam);
+            return pHlp->pfnSSMSetCfgError(pSSM, RT_SRC_POS, N_("VRAM size changed: config=%#x state=%#x"), pThis->vram_size, cbVRam);
 
         uint32_t cMonitors;
-        rc = SSMR3GetU32(pSSM, &cMonitors);
+        rc = pHlp->pfnSSMGetU32(pSSM, &cMonitors);
         AssertRCReturn(rc, rc);
         if (pThis->cMonitors != cMonitors)
-            return SSMR3SetCfgError(pSSM, RT_SRC_POS, N_("Monitor count changed: config=%u state=%u"), pThis->cMonitors, cMonitors);
+            return pHlp->pfnSSMSetCfgError(pSSM, RT_SRC_POS, N_("Monitor count changed: config=%u state=%u"), pThis->cMonitors, cMonitors);
     }
 
     if (uPass == SSM_PASS_FINAL)
     {
-        rc = vga_load(pSSM, pThis, uVersion);
+        rc = vga_load(pHlp, pSSM, pThis, uVersion);
         if (RT_FAILURE(rc))
             return rc;
 
@@ -5795,7 +5798,7 @@ static DECLCALLBACK(int) vgaR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint
         bool fWithHgsmi = uVersion == VGA_SAVEDSTATE_VERSION_HGSMI;
         if (uVersion > VGA_SAVEDSTATE_VERSION_HGSMI)
         {
-            rc = SSMR3GetBool(pSSM, &fWithHgsmi);
+            rc = pHlp->pfnSSMGetBool(pSSM, &fWithHgsmi);
             AssertRCReturn(rc, rc);
         }
         if (fWithHgsmi)
@@ -5804,7 +5807,7 @@ static DECLCALLBACK(int) vgaR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint
             rc = vboxVBVALoadStateExec(pDevIns, pSSM, uVersion);
             AssertRCReturn(rc, rc);
 #else
-            return SSMR3SetCfgError(pSSM, RT_SRC_POS, N_("HGSMI is not compiled in, but it is present in the saved state"));
+            return pHlp->pfnSSMSetCfgError(pSSM, RT_SRC_POS, N_("HGSMI is not compiled in, but it is present in the saved state"));
 #endif
         }
 
@@ -5812,13 +5815,13 @@ static DECLCALLBACK(int) vgaR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint
         if (uVersion >= VGA_SAVEDSTATE_VERSION_3D)
         {
             uint32_t u32;
-            rc = SSMR3GetU32(pSSM, &u32);
+            rc = pHlp->pfnSSMGetU32(pSSM, &u32);
             if (u32)
             {
 #ifdef VBOX_WITH_VDMA
                 if (u32 == 1)
                 {
-                    rc = vboxVDMASaveLoadExecPerform(pThis->pVdma, pSSM, uVersion);
+                    rc = vboxVDMASaveLoadExecPerform(pHlp, pThis->pVdma, pSSM, uVersion);
                     AssertRCReturn(rc, rc);
                 }
                 else

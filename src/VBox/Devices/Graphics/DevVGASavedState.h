@@ -29,7 +29,7 @@
 
 /** Puts a marker. Status code is not checked. */
 #define VGA_SAVED_STATE_PUT_MARKER(pSSM, uSub) \
-    do { SSMR3PutU64(pSSM, VGA_SAVED_STATE_MAKE_MARKER(uSub)); } while (0)
+    do { pHlp->pfnSSMPutU64(pSSM, VGA_SAVED_STATE_MAKE_MARKER(uSub)); } while (0)
 
 /** Retrieves a VGA saved state marker and checks that it matches, if it
  *  doesn't assert/LogRel and return. */
@@ -38,7 +38,7 @@
         if (uVersion >= VGA_SAVEDSTATE_VERSION_MARKERS) \
         { \
             uint64_t uMarker; \
-            int rcMarker = SSMR3GetU64(pSSM, &uMarker); \
+            int rcMarker = pHlp->pfnSSMGetU64(pSSM, &uMarker); \
             AssertLogRelRCReturn(rcMarker, rcMarker); \
             AssertLogRelMsgReturn(uMarker == VGA_SAVED_STATE_MAKE_MARKER(uSub), \
                                   ("Bad VGA marker: expected %llx, got %llx\n", VGA_SAVED_STATE_MAKE_MARKER(uSub), uMarker), \

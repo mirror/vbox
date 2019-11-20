@@ -2950,7 +2950,7 @@ static void vmsvgaR3FifoHandleExtCmd(PVGASTATE pThis)
             vmsvgaSaveExecFifo(pThis->pDevInsR3->pHlpR3, pThis, pSSM);
 # ifdef VBOX_WITH_VMSVGA3D
             if (pThis->svga.f3DEnabled)
-                vmsvga3dSaveExec(pThis, pSSM);
+                vmsvga3dSaveExec(pThis->pDevInsR3, pThis, pSSM);
 # endif
             break;
         }
@@ -2963,7 +2963,7 @@ static void vmsvgaR3FifoHandleExtCmd(PVGASTATE pThis)
             vmsvgaLoadExecFifo(pThis->pDevInsR3->pHlpR3, pThis, pLoadState->pSSM, pLoadState->uVersion, pLoadState->uPass);
 # ifdef VBOX_WITH_VMSVGA3D
             if (pThis->svga.f3DEnabled)
-                vmsvga3dLoadExec(pThis, pLoadState->pSSM, pLoadState->uVersion, pLoadState->uPass);
+                vmsvga3dLoadExec(pThis->pDevInsR3, pThis, pLoadState->pSSM, pLoadState->uVersion, pLoadState->uPass);
 # endif
             break;
         }
