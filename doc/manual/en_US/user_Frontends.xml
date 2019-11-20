@@ -310,7 +310,7 @@
             explicitly when directly starting with
             <computeroutput>VBoxHeadless</computeroutput>. The full
             documentation of the command is in
-            <xref linkend="vboxmanage-vboxheadless"/>.
+            <xref linkend="man_vboxheadless"/>.
           </para>
         </listitem>
 

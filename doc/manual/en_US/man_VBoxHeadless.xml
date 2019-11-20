@@ -17,7 +17,7 @@
 <!ENTITY % all.entities SYSTEM "all-entities.ent">
 %all.entities;
 ]>
-<refentry id="vboxmanage-vboxheadless" lang="en">
+<refentry id="man_vboxheadless" lang="en">
   <refentryinfo>
     <pubdate>August 2019</pubdate>
     <title>VBoxHeadless</title>
@@ -36,24 +36,24 @@
 
   <refsynopsisdiv>
     <cmdsynopsis id="synopsis-vboxmanage-vboxheadless">
-      <command>VBoxHeadless</command> 
+      <command>VBoxHeadless</command>
       <arg>--startvm=<group>
           <arg choice="plain"><replaceable>uuid</replaceable></arg>
           <arg choice="plain"><replaceable>vmname</replaceable></arg>
-        </group></arg>      
+        </group></arg>
       <arg>--vrde=<group choice="plain">
           <arg choice="plain">on</arg>
           <arg choice="plain">off</arg>
           <arg choice="plain">config</arg>
-        </group></arg>      
-      <arg>--vrdeproperty=<replaceable>prop-name</replaceable>=[<replaceable>prop-value</replaceable>]</arg>      
-      <arg>--settingspw=[<replaceable>password</replaceable>]</arg>      
-      <arg>--settingspwfile=<replaceable>password-file</replaceable></arg>      
-      <arg>--start-paused=<replaceable>vmname</replaceable></arg>      
-      <arg>--capture</arg>     
-      <arg>--width=<replaceable>width</replaceable></arg>      
-      <arg>--height=<replaceable>height</replaceable></arg>      
-      <arg>--bitrate=<replaceable>bit-rate</replaceable></arg>     
+        </group></arg>
+      <arg>--vrdeproperty=<replaceable>prop-name</replaceable>=[<replaceable>prop-value</replaceable>]</arg>
+      <arg>--settingspw=[<replaceable>password</replaceable>]</arg>
+      <arg>--settingspwfile=<replaceable>password-file</replaceable></arg>
+      <arg>--start-paused=<replaceable>vmname</replaceable></arg>
+      <arg>--capture</arg>
+      <arg>--width=<replaceable>width</replaceable></arg>
+      <arg>--height=<replaceable>height</replaceable></arg>
+      <arg>--bitrate=<replaceable>bit-rate</replaceable></arg>
       <arg>--filename=<replaceable>filename</replaceable></arg>
     </cmdsynopsis>
   </refsynopsisdiv>
