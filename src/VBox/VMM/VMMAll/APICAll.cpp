@@ -3033,7 +3033,7 @@ static void apicSetInterruptFF(PVMCPUCC pVCpu, PDMAPICIRQ enmType)
  * @param   pVCpu           The cross context virtual CPU structure.
  * @param   enmType         The IRQ type.
  */
-VMM_INT_DECL(void) apicClearInterruptFF(PVMCPUCC pVCpu, PDMAPICIRQ enmType)
+void apicClearInterruptFF(PVMCPUCC pVCpu, PDMAPICIRQ enmType)
 {
 #ifdef IN_RING3
     /* IRQ state should be loaded as-is by "LoadExec". Changes can be made from LoadDone. */
@@ -3068,7 +3068,7 @@ VMM_INT_DECL(void) apicClearInterruptFF(PVMCPUCC pVCpu, PDMAPICIRQ enmType)
  *
  * @thread  Any.
  */
-VMM_INT_DECL(bool) apicPostInterrupt(PVMCPUCC pVCpu, uint8_t uVector, XAPICTRIGGERMODE enmTriggerMode, uint32_t uSrcTag)
+bool apicPostInterrupt(PVMCPUCC pVCpu, uint8_t uVector, XAPICTRIGGERMODE enmTriggerMode, uint32_t uSrcTag)
 {
     Assert(pVCpu);
     Assert(uVector > XAPIC_ILLEGAL_VECTOR_END);
@@ -3156,7 +3156,7 @@ VMM_INT_DECL(bool) apicPostInterrupt(PVMCPUCC pVCpu, uint8_t uVector, XAPICTRIGG
  *                          0.
  * @thread  Any.
  */
-VMM_INT_DECL(void) apicStartTimer(PVMCPUCC pVCpu, uint32_t uInitialCount)
+void apicStartTimer(PVMCPUCC pVCpu, uint32_t uInitialCount)
 {
     Assert(pVCpu);
     PAPICCPU   pApicCpu = VMCPU_TO_APICCPU(pVCpu);
