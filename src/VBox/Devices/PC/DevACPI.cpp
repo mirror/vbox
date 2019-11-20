@@ -487,6 +487,29 @@ typedef struct ACPIState
     IOMIOPORTHANDLE     hIoPortGpe0Sts;
     /** @} */
 
+    /** SMBus I/O ports (mapped/unmapped). */
+    IOMIOPORTHANDLE     hIoPortSMBus;
+
+    /** @name Fixed I/O ports
+     * @{ */
+    /** ACPI SMI I/O port. */
+    IOMIOPORTHANDLE     hIoPortSmi;
+    /** ACPI Debug hex I/O port. */
+    IOMIOPORTHANDLE     hIoPortDebugHex;
+    /** ACPI Debug char I/O port. */
+    IOMIOPORTHANDLE     hIoPortDebugChar;
+    /** ACPI Battery status index I/O port. */
+    IOMIOPORTHANDLE     hIoPortBatteryIndex;
+    /** ACPI Battery status data I/O port. */
+    IOMIOPORTHANDLE     hIoPortBatteryData;
+    /** ACPI system info index I/O port. */
+    IOMIOPORTHANDLE     hIoPortSysInfoIndex;
+    /** ACPI system info data I/O port. */
+    IOMIOPORTHANDLE     hIoPortSysInfoData;
+    /** ACPI Reset I/O port. */
+    IOMIOPORTHANDLE     hIoPortReset;
+    /** @} */
+
 } ACPIState, ACPISTATE;
 /** Pointer to the shared ACPI device state. */
 typedef ACPISTATE *PACPISTATE;
@@ -1211,9 +1234,9 @@ static uint32_t acpiR3GetPowerSource(ACPIState *pThis)
 }
 
 /**
- * @callback_method_impl{FNIOMIOPORTOUT, Battery status index}
+ * @callback_method_impl{FNIOMIOPORTNEWOUT, Battery status index}
  */
-PDMBOTHCBDECL(int) acpiR3BatIndexWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t u32, unsigned cb)
+static DECLCALLBACK(VBOXSTRICTRC) acpiR3BatIndexWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t u32, unsigned cb)
 {
     RT_NOREF(pvUser, offPort);
     Log(("acpiR3BatIndexWrite: %#x (%#x)\n", u32, u32 >> 2));
@@ -1238,9 +1261,9 @@ PDMBOTHCBDECL(int) acpiR3BatIndexWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPOR
 }
 
 /**
- * @callback_method_impl{FNIOMIOPORTIN, Battery status data}
+ * @callback_method_impl{FNIOMIOPORTNEWIN, Battery status data}
  */
-PDMBOTHCBDECL(int) acpiR3BatDataRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t *pu32, unsigned cb)
+static DECLCALLBACK(VBOXSTRICTRC)  acpiR3BatDataRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t *pu32, unsigned cb)
 {
     RT_NOREF(pvUser, offPort);
     if (cb != 4)
@@ -1249,7 +1272,7 @@ PDMBOTHCBDECL(int) acpiR3BatDataRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT 
     PACPISTATE pThis = PDMDEVINS_2_DATA(pDevIns, PACPISTATE);
     DEVACPI_LOCK_R3(pDevIns, pThis);
 
-    int rc = VINF_SUCCESS;
+    VBOXSTRICTRC rc = VINF_SUCCESS;
     switch (pThis->uBatteryIndex)
     {
         case BAT_STATUS_STATE:
@@ -1294,9 +1317,9 @@ PDMBOTHCBDECL(int) acpiR3BatDataRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT 
 }
 
 /**
- * @callback_method_impl{FNIOMIOPORTOUT, System info index}
+ * @callback_method_impl{FNIOMIOPORTNEWOUT, System info index}
  */
-PDMBOTHCBDECL(int) acpiR3SysInfoIndexWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t u32, unsigned cb)
+static DECLCALLBACK(VBOXSTRICTRC)  acpiR3SysInfoIndexWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t u32, unsigned cb)
 {
     RT_NOREF(pvUser, offPort);
     Log(("acpiR3SysInfoIndexWrite: %#x (%#x)\n", u32, u32 >> 2));
@@ -1327,9 +1350,9 @@ PDMBOTHCBDECL(int) acpiR3SysInfoIndexWrite(PPDMDEVINS pDevIns, void *pvUser, RTI
 }
 
 /**
- * @callback_method_impl{FNIOMIOPORTIN, System info data}
+ * @callback_method_impl{FNIOMIOPORTNEWIN, System info data}
  */
-PDMBOTHCBDECL(int) acpiR3SysInfoDataRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t *pu32, unsigned cb)
+static DECLCALLBACK(VBOXSTRICTRC) acpiR3SysInfoDataRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t *pu32, unsigned cb)
 {
     RT_NOREF(pvUser, offPort);
     if (cb != 4)
@@ -1338,7 +1361,7 @@ PDMBOTHCBDECL(int) acpiR3SysInfoDataRead(PPDMDEVINS pDevIns, void *pvUser, RTIOP
     PACPISTATE pThis = PDMDEVINS_2_DATA(pDevIns, PACPISTATE);
     DEVACPI_LOCK_R3(pDevIns, pThis);
 
-    int rc = VINF_SUCCESS;
+    VBOXSTRICTRC rc = VINF_SUCCESS;
     uint32_t const uSystemInfoIndex = pThis->uSystemInfoIndex;
     switch (uSystemInfoIndex)
     {
@@ -1519,14 +1542,14 @@ PDMBOTHCBDECL(int) acpiR3SysInfoDataRead(PPDMDEVINS pDevIns, void *pvUser, RTIOP
     }
 
     DEVACPI_UNLOCK(pDevIns, pThis);
-    Log(("acpiR3SysInfoDataRead: idx=%d val=%#x (%u) rc=%Rrc\n", uSystemInfoIndex, *pu32, *pu32, rc));
+    Log(("acpiR3SysInfoDataRead: idx=%d val=%#x (%u) rc=%Rrc\n", uSystemInfoIndex, *pu32, *pu32, VBOXSTRICTRC_VAL(rc)));
     return rc;
 }
 
 /**
- * @callback_method_impl{FNIOMIOPORTOUT, System info data}
+ * @callback_method_impl{FNIOMIOPORTNEWOUT, System info data}
  */
-PDMBOTHCBDECL(int) acpiR3SysInfoDataWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t u32, unsigned cb)
+static DECLCALLBACK(VBOXSTRICTRC) acpiR3SysInfoDataWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t u32, unsigned cb)
 {
     RT_NOREF(pvUser, offPort);
     PACPISTATE pThis = PDMDEVINS_2_DATA(pDevIns, PACPISTATE);
@@ -1536,7 +1559,7 @@ PDMBOTHCBDECL(int) acpiR3SysInfoDataWrite(PPDMDEVINS pDevIns, void *pvUser, RTIO
     DEVACPI_LOCK_R3(pDevIns, pThis);
     Log(("addr=%#x cb=%d u32=%#x si=%#x\n", offPort, cb, u32, pThis->uSystemInfoIndex));
 
-    int rc = VINF_SUCCESS;
+    VBOXSTRICTRC rc = VINF_SUCCESS;
     switch (pThis->uSystemInfoIndex)
     {
         case SYSTEM_INFO_INDEX_INVALID:
@@ -1734,7 +1757,7 @@ static DECLCALLBACK(VBOXSTRICTRC) acpiR3PM1aCtlWrite(PPDMDEVINS pDevIns, void *p
     }
 
     DEVACPI_UNLOCK(pDevIns, pThis);
-    Log(("acpiR3PM1aCtlWrite: rc=%Rrc\n", rc));
+    Log(("acpiR3PM1aCtlWrite: rc=%Rrc\n", VBOXSTRICTRC_VAL(rc)));
     return rc;
 }
 
@@ -1797,7 +1820,7 @@ static DECLCALLBACK(VBOXSTRICTRC) acpiPMTmrRead(PPDMDEVINS pDevIns, void *pvUser
 #ifdef IN_RING3
 
 /**
- * @callback_method_impl{FNIOMIOPORTIN, GPE0 Status}
+ * @callback_method_impl{FNIOMIOPORTNEWIN, GPE0 Status}
  */
 static DECLCALLBACK(VBOXSTRICTRC) acpiR3Gpe0StsRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t *pu32, unsigned cb)
 {
@@ -1819,7 +1842,7 @@ static DECLCALLBACK(VBOXSTRICTRC) acpiR3Gpe0StsRead(PPDMDEVINS pDevIns, void *pv
 }
 
 /**
- * @callback_method_impl{FNIOMIOPORTOUT, GPE0 Status}
+ * @callback_method_impl{FNIOMIOPORTNEWOUT, GPE0 Status}
  */
 static DECLCALLBACK(VBOXSTRICTRC) acpiR3Gpe0StsWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t u32, unsigned cb)
 {
@@ -1839,7 +1862,7 @@ static DECLCALLBACK(VBOXSTRICTRC) acpiR3Gpe0StsWrite(PPDMDEVINS pDevIns, void *p
 }
 
 /**
- * @callback_method_impl{FNIOMIOPORTIN, GPE0 Enable}
+ * @callback_method_impl{FNIOMIOPORTNEWIN, GPE0 Enable}
  */
 static DECLCALLBACK(VBOXSTRICTRC) acpiR3Gpe0EnRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t *pu32, unsigned cb)
 {
@@ -1861,7 +1884,7 @@ static DECLCALLBACK(VBOXSTRICTRC) acpiR3Gpe0EnRead(PPDMDEVINS pDevIns, void *pvU
 }
 
 /**
- * @callback_method_impl{FNIOMIOPORTOUT, GPE0 Enable}
+ * @callback_method_impl{FNIOMIOPORTNEWOUT, GPE0 Enable}
  */
 static DECLCALLBACK(VBOXSTRICTRC) acpiR3Gpe0EnWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t u32, unsigned cb)
 {
@@ -1880,9 +1903,9 @@ static DECLCALLBACK(VBOXSTRICTRC) acpiR3Gpe0EnWrite(PPDMDEVINS pDevIns, void *pv
 }
 
 /**
- * @callback_method_impl{FNIOMIOPORTOUT, SMI_CMD}
+ * @callback_method_impl{FNIOMIOPORTNEWOUT, SMI_CMD}
  */
-PDMBOTHCBDECL(int) acpiR3SmiWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t u32, unsigned cb)
+static DECLCALLBACK(VBOXSTRICTRC) acpiR3SmiWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t u32, unsigned cb)
 {
     RT_NOREF(offPort, pvUser);
     Log(("acpiR3SmiWrite %#x\n", u32));
@@ -1904,9 +1927,9 @@ PDMBOTHCBDECL(int) acpiR3SmiWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT off
 }
 
 /**
- * @callback_method_impl{FNIOMIOPORTOUT, ACPI_RESET_BLK}
+ * @callback_method_impl{FNIOMIOPORTNEWOUT, ACPI_RESET_BLK}
  */
-PDMBOTHCBDECL(int) acpiR3ResetWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t u32, unsigned cb)
+static DECLCALLBACK(VBOXSTRICTRC) acpiR3ResetWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t u32, unsigned cb)
 {
     RT_NOREF(offPort, pvUser);
     Log(("acpiR3ResetWrite: %#x\n", u32));
@@ -1915,14 +1938,17 @@ PDMBOTHCBDECL(int) acpiR3ResetWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT o
         return PDMDevHlpDBGFStop(pDevIns, RT_SRC_POS, "cb=%d offPort=%u u32=%#x\n", cb, offPort, u32);
 
     /* No state locking required. */
-    int rc = VINF_SUCCESS;
+    VBOXSTRICTRC rc;
     if (u32 == ACPI_RESET_REG_VAL)
     {
         LogRel(("ACPI: Reset initiated by ACPI\n"));
         rc = PDMDevHlpVMReset(pDevIns, PDMVMRESET_F_ACPI);
     }
     else
+    {
         Log(("acpiR3ResetWrite: %#x <- unknown value\n", u32));
+        rc = VINF_SUCCESS;
+    }
 
     return rc;
 }
@@ -1930,9 +1956,9 @@ PDMBOTHCBDECL(int) acpiR3ResetWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT o
 # ifdef DEBUG_ACPI
 
 /**
- * @callback_method_impl{FNIOMIOPORTOUT, Debug hex value logger}
+ * @callback_method_impl{FNIOMIOPORTNEWOUT, Debug hex value logger}
  */
-PDMBOTHCBDECL(int) acpiR3DhexWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t u32, unsigned cb)
+static DECLCALLBACK(VBOXSTRICTRC) acpiR3DebugHexWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t u32, unsigned cb)
 {
     NOREF(pvUser);
     switch (cb)
@@ -1953,9 +1979,9 @@ PDMBOTHCBDECL(int) acpiR3DhexWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT of
 }
 
 /**
- * @callback_method_impl{FNIOMIOPORTOUT, Debug char logger}
+ * @callback_method_impl{FNIOMIOPORTNEWOUT, Debug char logger}
  */
-PDMBOTHCBDECL(int) acpiR3DchrWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t u32, unsigned cb)
+static DECLCALLBACK(VBOXSTRICTRC) acpiR3DebugCharWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t u32, unsigned cb)
 {
     NOREF(pvUser);
     switch (cb)
@@ -2108,9 +2134,9 @@ static int acpiR3UpdatePmHandlers(PPDMDEVINS pDevIns, ACPIState *pThis, RTIOPORT
 }
 
 /**
- * @callback_method_impl{FNIOMIOPORTOUT, SMBus}
+ * @callback_method_impl{FNIOMIOPORTNEWOUT, SMBus}
  */
-PDMBOTHCBDECL(int) acpiR3SMBusWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t u32, unsigned cb)
+static DECLCALLBACK(VBOXSTRICTRC) acpiR3SMBusWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t u32, unsigned cb)
 {
     RT_NOREF(pvUser);
     PACPISTATE pThis = PDMDEVINS_2_DATA(pDevIns, PACPISTATE);
@@ -2197,16 +2223,16 @@ PDMBOTHCBDECL(int) acpiR3SMBusWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT o
 }
 
 /**
- * @callback_method_impl{FNIOMIOPORTIN, SMBus}
+ * @callback_method_impl{FNIOMIOPORTNEWIN, SMBus}
  */
-PDMBOTHCBDECL(int) acpiR3SMBusRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t *pu32, unsigned cb)
+static DECLCALLBACK(VBOXSTRICTRC)  acpiR3SMBusRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t *pu32, unsigned cb)
 {
     RT_NOREF(pvUser);
     PACPISTATE pThis = PDMDEVINS_2_DATA(pDevIns, PACPISTATE);
 
-    int rc = VINF_SUCCESS;
+    VBOXSTRICTRC rc = VINF_SUCCESS;
     LogFunc(("offPort=%#x cb=%u\n", offPort, cb));
-    uint8_t off = offPort & 0x000f;
+    uint8_t const off = offPort & 0x000f;
     if (   (cb != 1 && off <= SMBSHDWCMD_OFF)
         || (cb != 2 && (off == SMBSLVEVT_OFF || off == SMBSLVDAT_OFF)))
         return VERR_IOM_IOPORT_UNUSED;
@@ -2257,9 +2283,9 @@ PDMBOTHCBDECL(int) acpiR3SMBusRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT of
             /* caught by the sanity check above */
             rc = VERR_IOM_IOPORT_UNUSED;
     }
-
     DEVACPI_UNLOCK(pDevIns, pThis);
-    LogFunc(("offPort=%#x u32=%#x cb=%u rc=%Rrc\n", offPort, *pu32, cb, rc));
+
+    LogFunc(("offPort=%#x u32=%#x cb=%u rc=%Rrc\n", offPort, *pu32, cb, VBOXSTRICTRC_VAL(rc)));
     return rc;
 }
 
@@ -2306,39 +2332,36 @@ static void acpiR3SMBusResetDevice(ACPIState *pThis)
 }
 
 /**
- * Called by acpiR3LoadState and acpiR3UpdateSMBusHandlers to register the SMBus ports.
+ * Called by acpiR3LoadState and acpiR3UpdateSMBusHandlers to map the SMBus ports.
  *
  * @returns VBox status code.
  * @param   pDevIns     The device instance.
  * @param   pThis       The ACPI shared instance data.
  */
-static int acpiR3RegisterSMBusHandlers(PPDMDEVINS pDevIns, ACPIState *pThis)
+static int acpiR3MapSMBusIoPorts(PPDMDEVINS pDevIns, ACPIState *pThis)
 {
-    if (pThis->uSMBusIoPortBase == 0)
-        return VINF_SUCCESS;
-
-    int rc = PDMDevHlpIOPortRegister(pDevIns, pThis->uSMBusIoPortBase, 16, pThis, acpiR3SMBusWrite, acpiR3SMBusRead, NULL, NULL, "SMBus");
-    if (RT_FAILURE(rc))
-        return rc;
-
+    if (pThis->uSMBusIoPortBase != 0)
+    {
+        int rc = PDMDevHlpIoPortMap(pDevIns, pThis->hIoPortSMBus, pThis->uSMBusIoPortBase);
+        AssertRCReturn(rc, rc);
+    }
     return VINF_SUCCESS;
 }
 
 /**
- * Called by acpiR3LoadState and acpiR3UpdateSMBusHandlers to unregister the SMBus ports.
+ * Called by acpiR3LoadState and acpiR3UpdateSMBusHandlers to unmap the SMBus ports.
  *
  * @returns VBox status code.
  * @param   pDevIns     The device instance.
  * @param   pThis       The ACPI shared instance data.
  */
-static int acpiR3UnregisterSMBusHandlers(PPDMDEVINS pDevIns, ACPIState *pThis)
+static int acpiR3UnmapSMBusPorts(PPDMDEVINS pDevIns, ACPIState *pThis)
 {
-    if (pThis->uSMBusIoPortBase == 0)
-        return VINF_SUCCESS;
-
-    int rc = PDMDevHlpIOPortDeregister(pDevIns, pThis->uSMBusIoPortBase, 16);
-    AssertRCReturn(rc, rc);
-
+    if (pThis->uSMBusIoPortBase != 0)
+    {
+        int rc = PDMDevHlpIoPortUnmap(pDevIns, pThis->hIoPortSMBus);
+        AssertRCReturn(rc, rc);
+    }
     return VINF_SUCCESS;
 }
 
@@ -2357,15 +2380,13 @@ static int acpiR3UpdateSMBusHandlers(PPDMDEVINS pDevIns, ACPIState *pThis, RTIOP
     Log(("acpi: rebasing SMBus 0x%x -> 0x%x\n", pThis->uSMBusIoPortBase, NewIoPortBase));
     if (NewIoPortBase != pThis->uSMBusIoPortBase)
     {
-        int rc = acpiR3UnregisterSMBusHandlers(pDevIns, pThis);
-        if (RT_FAILURE(rc))
-            return rc;
+        int rc = acpiR3UnmapSMBusPorts(pDevIns, pThis);
+        AssertRCReturn(rc, rc);
 
         pThis->uSMBusIoPortBase = NewIoPortBase;
 
-        rc = acpiR3RegisterSMBusHandlers(pDevIns, pThis);
-        if (RT_FAILURE(rc))
-            return rc;
+        rc = acpiR3MapSMBusIoPorts(pDevIns, pThis);
+        AssertRCReturn(rc, rc);
 
 #if 0 /* is there an FADT table entry for the SMBus base? */
         /* We have to update FADT table acccording to the new base */
@@ -2526,9 +2547,8 @@ static DECLCALLBACK(int) acpiR3LoadState(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, ui
      * Unregister SMBus handlers, will register with actual base after state
      * successfully loaded.
      */
-    rc = acpiR3UnregisterSMBusHandlers(pDevIns, pThis);
-    if (RT_FAILURE(rc))
-        return rc;
+    rc = acpiR3UnmapSMBusPorts(pDevIns, pThis);
+    AssertRCReturn(rc, rc);
     acpiR3SMBusResetDevice(pThis);
 
     switch (uVersion)
@@ -2559,7 +2579,7 @@ static DECLCALLBACK(int) acpiR3LoadState(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, ui
         rc = acpiR3MapPmIoPorts(pDevIns, pThis);
         if (RT_FAILURE(rc))
             return rc;
-        rc = acpiR3RegisterSMBusHandlers(pDevIns, pThis);
+        rc = acpiR3MapSMBusIoPorts(pDevIns, pThis);
         if (RT_FAILURE(rc))
             return rc;
         rc = acpiR3FetchBatteryStatus(pThis);
@@ -3977,7 +3997,7 @@ static DECLCALLBACK(int) acpiR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
     AssertRCReturn(rc, rc);
 
     /*
-     * Register the PM I/O ports.  These can be unmapped and remapped.
+     * Create the PM I/O ports.  These can be unmapped and remapped.
      */
     rc = PDMDevHlpIoPortCreateIsa(pDevIns,               1 /*cPorts*/,  acpiR3PM1aStsWrite, acpiR3Pm1aStsRead,  NULL /*pvUser*/,
                                   "ACPI PM1a Status",  NULL /*paExtDesc*/, &pThis->hIoPortPm1aSts);
@@ -4001,30 +4021,43 @@ static DECLCALLBACK(int) acpiR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
     AssertRCReturn(rc, rc);
 
     /*
-     * Register the .. I/O ports.
+     * Create the System Management Bus I/O ports.  These can be unmapped and remapped.
      */
-    rc = acpiR3RegisterSMBusHandlers(pDevIns, pThis);
+    rc = PDMDevHlpIoPortCreateIsa(pDevIns, 16, acpiR3SMBusWrite, acpiR3SMBusRead, NULL /*pvUser*/,
+                                  "SMBus", NULL /*paExtDesc*/, &pThis->hIoPortSMBus);
+    AssertRCReturn(rc, rc);
+    rc = acpiR3MapSMBusIoPorts(pDevIns, pThis);
     AssertRCReturn(rc, rc);
 
     /*
-     * Register the .. I/O ports.
+     * Create and map the fixed I/O ports.
      */
-#define R(a_uIoPort, a_cPorts, writer, reader, description)       \
-    do { \
-        rc = PDMDevHlpIOPortRegister(pDevIns, (a_uIoPort), (a_cPorts), pThis, writer, reader, NULL, NULL, description); \
-        AssertRCReturn(rc, rc); \
-    } while (0)
-    R(SMI_CMD,        1, acpiR3SmiWrite,          NULL,                "ACPI SMI");
+    rc = PDMDevHlpIoPortCreateAndMap(pDevIns, SMI_CMD,          1, acpiR3SmiWrite, NULL,
+                                     "ACPI SMI",                    NULL /*paExtDesc*/, &pThis->hIoPortSmi);
+    AssertRCReturn(rc, rc);
 #ifdef DEBUG_ACPI
-    R(DEBUG_HEX,      1, acpiR3DhexWrite,         NULL,                "ACPI Debug hex");
-    R(DEBUG_CHR,      1, acpiR3DchrWrite,         NULL,                "ACPI Debug char");
+    rc = PDMDevHlpIoPortCreateAndMap(pDevIns, DEBUG_HEX,        1, acpiR3DebugHexWrite, NULL,
+                                     "ACPI Debug hex",              NULL /*paExtDesc*/, &pThis->hIoPortDebugHex);
+    AssertRCReturn(rc, rc);
+    rc = PDMDevHlpIoPortCreateAndMap(pDevIns, DEBUG_CHR,        1, acpiR3DebugCharWrite, NULL,
+                                     "ACPI Debug char",             NULL /*paExtDesc*/, &pThis->hIoPortDebugChar);
+    AssertRCReturn(rc, rc);
 #endif
-    R(BAT_INDEX,      1, acpiR3BatIndexWrite,     NULL,                "ACPI Battery status index");
-    R(BAT_DATA,       1, NULL,                  acpiR3BatDataRead,     "ACPI Battery status data");
-    R(SYSI_INDEX,     1, acpiR3SysInfoIndexWrite, NULL,                "ACPI system info index");
-    R(SYSI_DATA,      1, acpiR3SysInfoDataWrite,  acpiR3SysInfoDataRead, "ACPI system info data");
-    R(ACPI_RESET_BLK, 1, acpiR3ResetWrite,        NULL,                "ACPI Reset");
-#undef R
+    rc = PDMDevHlpIoPortCreateAndMap(pDevIns, BAT_INDEX,        1, acpiR3BatIndexWrite, NULL,
+                                     "ACPI Battery status index",   NULL /*paExtDesc*/, &pThis->hIoPortBatteryIndex);
+    AssertRCReturn(rc, rc);
+    rc = PDMDevHlpIoPortCreateAndMap(pDevIns, BAT_DATA,         1, NULL, acpiR3BatDataRead,
+                                     "ACPI Battery status data",    NULL /*paExtDesc*/, &pThis->hIoPortBatteryData);
+    AssertRCReturn(rc, rc);
+    rc = PDMDevHlpIoPortCreateAndMap(pDevIns, SYSI_INDEX,       1, acpiR3SysInfoIndexWrite, NULL,
+                                     "ACPI system info index",      NULL /*paExtDesc*/, &pThis->hIoPortSysInfoIndex);
+    AssertRCReturn(rc, rc);
+    rc = PDMDevHlpIoPortCreateAndMap(pDevIns, SYSI_DATA,        1, acpiR3SysInfoDataWrite, acpiR3SysInfoDataRead,
+                                     "ACPI system info data",       NULL /*paExtDesc*/, &pThis->hIoPortSysInfoData);
+    AssertRCReturn(rc, rc);
+    rc = PDMDevHlpIoPortCreateAndMap(pDevIns, ACPI_RESET_BLK,   1, acpiR3ResetWrite, NULL,
+                                     "ACPI Reset",                  NULL /*paExtDesc*/, &pThis->hIoPortReset);
+    AssertRCReturn(rc, rc);
 
     /*
      * Create the PM timer.
@@ -4141,7 +4174,7 @@ const PDMDEVREG g_DeviceACPI =
     /* .u32Version = */             PDM_DEVREG_VERSION,
     /* .uReserved0 = */             0,
     /* .szName = */                 "acpi",
-    /* .fFlags = */                 PDM_DEVREG_FLAGS_DEFAULT_BITS | PDM_DEVREG_FLAGS_RZ,
+    /* .fFlags = */                 PDM_DEVREG_FLAGS_DEFAULT_BITS | PDM_DEVREG_FLAGS_RZ | PDM_DEVREG_FLAGS_NEW_STYLE,
     /* .fClass = */                 PDM_DEVREG_CLASS_ACPI,
     /* .cMaxInstances = */          ~0U,
     /* .uSharedVersion = */         42,
