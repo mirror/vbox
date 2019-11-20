@@ -1063,10 +1063,6 @@ static DECLCALLBACK(int) virtioScsiR3IoReqCopyToBuf(PPDMIMEDIAEXPORT pInterface,
     return VINF_SUCCESS;
 }
 
-/*********************************************************************************************************************************
-*   Worker Thread                                                                                                                *
-*********************************************************************************************************************************/
-
 /**
  * Handles request queues for/on a worker thread.
  *
