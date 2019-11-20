@@ -69,6 +69,8 @@ class UIMachineView : public QAbstractScrollArea
 
 signals:
 
+    /** Notifies about mouse pointer shape change. */
+    void sigMousePointerShapeChange();
     /** Notifies about frame-buffer resize. */
     void sigFrameBufferResize();
 

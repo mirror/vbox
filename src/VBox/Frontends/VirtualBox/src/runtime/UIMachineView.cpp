@@ -835,6 +835,8 @@ void UIMachineView::prepareConsoleConnections()
 {
     /* Machine state-change updater: */
     connect(uisession(), &UISession::sigMachineStateChange, this, &UIMachineView::sltMachineStateChanged);
+    /* Mouse pointer shape updater: */
+    connect(uisession(), &UISession::sigMousePointerShapeChange, this, &UIMachineView::sigMousePointerShapeChange);
 }
 
 void UIMachineView::cleanupFrameBuffer()
