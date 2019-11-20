@@ -1442,7 +1442,7 @@ DECLCALLBACK(int) apicR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE p
     /*
      * Register the APIC with PDM.
      */
-    rc = PDMDevHlpAPICRegister(pDevIns);
+    rc = PDMDevHlpApicRegister(pDevIns);
     AssertLogRelRCReturn(rc, rc);
 
     /*

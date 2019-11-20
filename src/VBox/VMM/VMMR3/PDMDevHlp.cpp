@@ -3713,34 +3713,33 @@ static DECLCALLBACK(int) pdmR3DevHlp_PICRegister(PPDMDEVINS pDevIns, PPDMPICREG 
 
 
 /** @interface_method_impl{PDMDEVHLPR3,pfnAPICRegister} */
-static DECLCALLBACK(int) pdmR3DevHlp_APICRegister(PPDMDEVINS pDevIns)
+static DECLCALLBACK(int) pdmR3DevHlp_ApicRegister(PPDMDEVINS pDevIns)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
-    VM_ASSERT_EMT(pDevIns->Internal.s.pVMR3);
+
+    /*
+     * Validate caller context.
+     */
+    PVM pVM = pDevIns->Internal.s.pVMR3;
+    VM_ASSERT_STATE_RETURN(pVM, VMSTATE_CREATING, VERR_WRONG_ORDER);
+    VM_ASSERT_EMT0_RETURN(pVM, VERR_VM_THREAD_NOT_EMT);
 
     /*
      * Only one APIC device. On SMP we have single logical device covering all LAPICs,
      * as they need to communicate and share state easily.
      */
-    PVM pVM = pDevIns->Internal.s.pVMR3;
-    if (pVM->pdm.s.Apic.pDevInsR3)
-    {
-        AssertMsgFailed(("Only one APIC device is supported!\n"));
-        LogFlow(("pdmR3DevHlp_APICRegister: caller='%s'/%d: returns %Rrc\n", pDevIns->pReg->szName, pDevIns->iInstance, VERR_INVALID_PARAMETER));
-        return VERR_INVALID_PARAMETER;
-    }
+    AssertMsgReturn(pVM->pdm.s.Apic.pDevInsR3 == NULL,
+                    ("%s/%u: Only one APIC device is supported!\n", pDevIns->pReg->szName, pDevIns->iInstance),
+                    VERR_ALREADY_EXISTS);
 
     /*
-     * Initialize the RC, R0 and HC bits.
+     * Set the ring-3 and raw-mode bits, leave the ring-0 to ring-0 setup.
      */
+    pVM->pdm.s.Apic.pDevInsR3 = pDevIns;
     pVM->pdm.s.Apic.pDevInsRC = PDMDEVINS_2_RCPTR(pDevIns);
     Assert(pVM->pdm.s.Apic.pDevInsRC || !VM_IS_RAW_MODE_ENABLED(pVM));
 
-    pVM->pdm.s.Apic.pDevInsR0 = PDMDEVINS_2_R0PTR(pDevIns);
-    Assert(pVM->pdm.s.Apic.pDevInsR0);
-
-    pVM->pdm.s.Apic.pDevInsR3 = pDevIns;
-    LogFlow(("pdmR3DevHlp_APICRegister: caller='%s'/%d: returns %Rrc\n", pDevIns->pReg->szName, pDevIns->iInstance, VINF_SUCCESS));
+    LogFlow(("pdmR3DevHlp_ApicRegister: caller='%s'/%d: returns %Rrc\n", pDevIns->pReg->szName, pDevIns->iInstance, VINF_SUCCESS));
     return VINF_SUCCESS;
 }
 
@@ -4550,7 +4549,7 @@ const PDMDEVHLPR3 g_pdmR3DevHlpTrusted =
     pdmR3DevHlp_RTCRegister,
     pdmR3DevHlp_PCIBusRegister,
     pdmR3DevHlp_PICRegister,
-    pdmR3DevHlp_APICRegister,
+    pdmR3DevHlp_ApicRegister,
     pdmR3DevHlp_IoApicRegister,
     pdmR3DevHlp_HpetRegister,
     pdmR3DevHlp_PciRawRegister,
@@ -5046,7 +5045,7 @@ const PDMDEVHLPR3 g_pdmR3DevHlpUnTrusted =
     pdmR3DevHlp_RTCRegister,
     pdmR3DevHlp_PCIBusRegister,
     pdmR3DevHlp_PICRegister,
-    pdmR3DevHlp_APICRegister,
+    pdmR3DevHlp_ApicRegister,
     pdmR3DevHlp_IoApicRegister,
     pdmR3DevHlp_HpetRegister,
     pdmR3DevHlp_PciRawRegister,

@@ -1143,6 +1143,39 @@ static DECLCALLBACK(int) pdmR0DevHlp_PICSetUpContext(PPDMDEVINS pDevIns, PPDMPIC
 }
 
 
+/** @interface_method_impl{PDMDEVHLPR0,pfnApicSetUpContext} */
+static DECLCALLBACK(int) pdmR0DevHlp_ApicSetUpContext(PPDMDEVINS pDevIns)
+{
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    LogFlow(("pdmR0DevHlp_ApicSetUpContext: caller='%s'/%d:\n", pDevIns->pReg->szName, pDevIns->iInstance));
+    PGVM pGVM = pDevIns->Internal.s.pGVM;
+
+    /*
+     * Validate input.
+     */
+    VM_ASSERT_STATE_RETURN(pGVM, VMSTATE_CREATING, VERR_WRONG_ORDER);
+    VM_ASSERT_EMT0_RETURN(pGVM, VERR_VM_THREAD_NOT_EMT);
+
+    /* Check that it's the same device as made the ring-3 registrations: */
+    AssertLogRelMsgReturn(pGVM->pdm.s.Apic.pDevInsR3 == pDevIns->pDevInsForR3,
+                          ("%p vs %p\n", pGVM->pdm.s.Apic.pDevInsR3, pDevIns->pDevInsForR3), VERR_NOT_OWNER);
+
+    /* Check that it isn't already registered in ring-0: */
+    AssertLogRelMsgReturn(pGVM->pdm.s.Apic.pDevInsR0 == NULL, ("%p (caller pDevIns=%p)\n", pGVM->pdm.s.Apic.pDevInsR0, pDevIns),
+                          VERR_ALREADY_EXISTS);
+
+    /*
+     * Take down the instance.
+     */
+    pGVM->pdm.s.Apic.pDevInsR0 = pDevIns;
+    Log(("PDM: Registered APIC device '%s'/%d pDevIns=%p\n", pDevIns->pReg->szName, pDevIns->iInstance, pDevIns));
+
+    /* set the helper pointer and return. */
+    LogFlow(("pdmR0DevHlp_ApicSetUpContext: caller='%s'/%d: returns %Rrc\n", pDevIns->pReg->szName, pDevIns->iInstance, VINF_SUCCESS));
+    return VINF_SUCCESS;
+}
+
+
 /** @interface_method_impl{PDMDEVHLPR0,pfnIoApicSetUpContext} */
 static DECLCALLBACK(int) pdmR0DevHlp_IoApicSetUpContext(PPDMDEVINS pDevIns, PPDMIOAPICREG pIoApicReg, PCPDMIOAPICHLP *ppIoApicHlp)
 {
@@ -1309,6 +1342,7 @@ extern DECLEXPORT(const PDMDEVHLPR0) g_pdmR0DevHlp =
     pdmR0DevHlp_DBGFTraceBuf,
     pdmR0DevHlp_PCIBusSetUpContext,
     pdmR0DevHlp_PICSetUpContext,
+    pdmR0DevHlp_ApicSetUpContext,
     pdmR0DevHlp_IoApicSetUpContext,
     pdmR0DevHlp_HpetSetUpContext,
     NULL /*pfnReserved1*/,

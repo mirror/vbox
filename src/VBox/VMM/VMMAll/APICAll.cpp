@@ -3514,12 +3514,15 @@ static DECLCALLBACK(int) apicRZConstruct(PPDMDEVINS pDevIns)
     int rc = PDMDevHlpSetDeviceCritSect(pDevIns, PDMDevHlpCritSectGetNop(pDevIns));
     AssertRCReturn(rc, rc);
 
+    rc = PDMDevHlpApicSetUpContext(pDevIns);
+    AssertRCReturn(rc, rc);
+
     rc = PDMDevHlpMmioSetUpContext(pDevIns, pThis->hMmio, apicWriteMmio, apicReadMmio, NULL /*pvUser*/);
     AssertRCReturn(rc, rc);
 
     return VINF_SUCCESS;
 }
-#endif
+#endif /* !IN_RING3 */
 
 /**
  * APIC device registration structure.

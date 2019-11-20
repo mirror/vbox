@@ -3741,7 +3741,7 @@ typedef struct PDMDEVHLPR3
      * @returns VBox status code.
      * @param   pDevIns             The device instance.
      */
-    DECLR3CALLBACKMEMBER(int, pfnAPICRegister,(PPDMDEVINS pDevIns));
+    DECLR3CALLBACKMEMBER(int, pfnApicRegister,(PPDMDEVINS pDevIns));
 
     /**
      * Register the I/O APIC device.
@@ -5174,6 +5174,17 @@ typedef struct PDMDEVHLPR0
     DECLR0CALLBACKMEMBER(int, pfnPICSetUpContext,(PPDMDEVINS pDevIns, PPDMPICREG pPicReg, PCPDMPICHLP *ppPicHlp));
 
     /**
+     * Sets up the APIC for the ring-0 context.
+     *
+     * This must be called after ring-3 has registered the APIC using
+     * PDMDevHlpApicRegister().
+     *
+     * @returns VBox status code.
+     * @param   pDevIns     The device instance.
+     */
+    DECLR0CALLBACKMEMBER(int, pfnApicSetUpContext,(PPDMDEVINS pDevIns));
+
+    /**
      * Sets up the IOAPIC for the ring-0 context.
      *
      * This must be called after ring-3 has registered the PIC using
@@ -5224,7 +5235,7 @@ typedef R0PTRTYPE(struct PDMDEVHLPR0 *) PPDMDEVHLPR0;
 typedef R0PTRTYPE(const struct PDMDEVHLPR0 *) PCPDMDEVHLPR0;
 
 /** Current PDMDEVHLP version number. */
-#define PDM_DEVHLPR0_VERSION                    PDM_VERSION_MAKE(0xffe5, 14, 0)
+#define PDM_DEVHLPR0_VERSION                    PDM_VERSION_MAKE(0xffe5, 15, 0)
 
 
 /**
@@ -7703,11 +7714,11 @@ DECLINLINE(int) PDMDevHlpPICRegister(PPDMDEVINS pDevIns, PPDMPICREG pPicReg, PCP
 }
 
 /**
- * @copydoc PDMDEVHLPR3::pfnAPICRegister
+ * @copydoc PDMDEVHLPR3::pfnApicRegister
  */
-DECLINLINE(int) PDMDevHlpAPICRegister(PPDMDEVINS pDevIns)
+DECLINLINE(int) PDMDevHlpApicRegister(PPDMDEVINS pDevIns)
 {
-    return pDevIns->pHlpR3->pfnAPICRegister(pDevIns);
+    return pDevIns->pHlpR3->pfnApicRegister(pDevIns);
 }
 
 /**
@@ -7856,6 +7867,14 @@ DECLINLINE(int) PDMDevHlpPCIBusSetUpContext(PPDMDEVINS pDevIns, CTX_SUFF(PPDMPCI
 DECLINLINE(int) PDMDevHlpPICSetUpContext(PPDMDEVINS pDevIns, PPDMPICREG pPicReg, PCPDMPICHLP *ppPicHlp)
 {
     return pDevIns->CTX_SUFF(pHlp)->pfnPICSetUpContext(pDevIns, pPicReg, ppPicHlp);
+}
+
+/**
+ * @copydoc PDMDEVHLPR0::pfnApicSetUpContext
+ */
+DECLINLINE(int) PDMDevHlpApicSetUpContext(PPDMDEVINS pDevIns)
+{
+    return pDevIns->CTX_SUFF(pHlp)->pfnApicSetUpContext(pDevIns);
 }
 
 /**
