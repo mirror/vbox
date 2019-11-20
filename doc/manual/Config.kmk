@@ -279,7 +279,7 @@ endif # VBOX_XML_CATALOG
 
 ifdef VBOX_XML_ENTITIES
 
- $(VBOX_XML_ENTITIES): $(VBOX_PATH_MANUAL_SRC)/Config.kmk | $$(dir $$@)
+ $(VBOX_XML_ENTITIES): $(VBOX_PATH_MANUAL_SRC)/Config.kmk $(VBOX_VERSION_STAMP) | $$(dir $$@)
 	$(call MSG_L1,Creating entities $@)
 	$(QUIET)$(APPEND) -tn "$@" \
 		'<!-- Entities for product names -->' \
