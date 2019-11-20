@@ -464,6 +464,7 @@ static void fd_revalidate(fdrive_t *drv)
 
 static void fdctrl_reset(fdctrl_t *fdctrl, int do_irq);
 static void fdctrl_reset_fifo(fdctrl_t *fdctrl);
+static void fdctrl_raise_irq(fdctrl_t *fdctrl, uint8_t status0);
 static fdrive_t *get_cur_drv(fdctrl_t *fdctrl);
 
 static uint32_t fdctrl_read_statusA(fdctrl_t *fdctrl);
@@ -649,15 +650,6 @@ struct fdctrl_t {
     uint16_t io_base;
     /* Controller state */
     TMTIMERHANDLE hResultTimer;
-
-    /* Interrupt delay timers. */
-    TMTIMERHANDLE hXferDelayTimer;
-    TMTIMERHANDLE hIrqDelayTimer;
-    uint16_t uIrqDelayMsec;
-    uint8_t st0;
-    uint8_t st1;
-    uint8_t st2;
-
     uint8_t sra;
     uint8_t srb;
     uint8_t dor;
@@ -777,7 +769,7 @@ static void fdctrl_reset_irq(fdctrl_t *fdctrl)
     fdctrl->sra &= ~FD_SRA_INTPEND;
 }
 
-static void fdctrl_raise_irq_now(fdctrl_t *fdctrl, uint8_t status0)
+static void fdctrl_raise_irq(fdctrl_t *fdctrl, uint8_t status0)
 {
     if (!(fdctrl->sra & FD_SRA_INTPEND)) {
         FLOPPY_DPRINTF("Raising interrupt...\n");
@@ -796,21 +788,6 @@ static void fdctrl_raise_irq_now(fdctrl_t *fdctrl, uint8_t status0)
     fdctrl->reset_sensei = 0;
     fdctrl->status0 = status0;
     FLOPPY_DPRINTF("Set interrupt status to 0x%02x\n", fdctrl->status0);
-}
-
-static void fdctrl_raise_irq(fdctrl_t *fdctrl, uint8_t status0)
-{
-    if (!fdctrl->uIrqDelayMsec)
-    {
-        /* If not IRQ delay needed, trigger the interrupt now. */
-        fdctrl_raise_irq_now(fdctrl, status0);
-    }
-    else
-    {
-        /* Otherwise schedule completion after a short while. */
-        fdctrl->st0 = status0;
-        PDMDevHlpTimerSetMillies(fdctrl->pDevIns, fdctrl->hIrqDelayTimer, fdctrl->uIrqDelayMsec);
-    }
 }
 
 /* Reset controller */
@@ -1116,8 +1093,8 @@ static int fdctrl_seek_to_next_sect(fdctrl_t *fdctrl, fdrive_t *cur_drv)
 }
 
 /* Callback for transfer end (stop or abort) */
-static void fdctrl_stop_transfer_now(fdctrl_t *fdctrl, uint8_t status0,
-                                     uint8_t status1, uint8_t status2)
+static void fdctrl_stop_transfer(fdctrl_t *fdctrl, uint8_t status0,
+                                 uint8_t status1, uint8_t status2)
 {
     fdrive_t *cur_drv;
 
@@ -1143,24 +1120,6 @@ static void fdctrl_stop_transfer_now(fdctrl_t *fdctrl, uint8_t status0,
     fdctrl->msr |= FD_MSR_RQM | FD_MSR_DIO;
     fdctrl->msr &= ~FD_MSR_NONDMA;
     fdctrl_set_fifo(fdctrl, 7, 1);
-}
-
-static void fdctrl_stop_transfer(fdctrl_t *fdctrl, uint8_t status0,
-                                 uint8_t status1, uint8_t status2)
-{
-    if (!fdctrl->uIrqDelayMsec)
-    {
-        /* If not IRQ delay needed, just stop the transfer and trigger IRQ now. */
-        fdctrl_stop_transfer_now(fdctrl, status0, status1, status2);
-    }
-    else
-    {
-        /* Otherwise schedule completion after a short while. */
-        fdctrl->st0 = status0;
-        fdctrl->st1 = status1;
-        fdctrl->st2 = status2;
-        PDMDevHlpTimerSetMillies(fdctrl->pDevIns, fdctrl->hXferDelayTimer, fdctrl->uIrqDelayMsec);
-    }
 }
 
 /* Prepare a data transfer (either DMA or FIFO) */
@@ -1282,9 +1241,9 @@ static void fdctrl_start_transfer(fdctrl_t *fdctrl, int direction)
     fdctrl->msr |= FD_MSR_NONDMA;
     if (direction != FD_DIR_WRITE)
         fdctrl->msr |= FD_MSR_DIO;
-
     /* IO based transfer: calculate len */
     fdctrl_raise_irq(fdctrl, 0x00);
+
     return;
 }
 
@@ -2208,19 +2167,19 @@ static DECLCALLBACK(void) fdcTimerCallback(PPDMDEVINS pDevIns, PTMTIMER pTimer, 
     if (!cur_drv->max_track) {
         FLOPPY_DPRINTF("read id when no disk in drive\n");
         /// @todo This is wrong! Command should not complete.
-        fdctrl_stop_transfer_now(fdctrl, FD_SR0_ABNTERM, FD_SR1_MA | FD_SR1_ND, FD_SR2_MD);
+        fdctrl_stop_transfer(fdctrl, FD_SR0_ABNTERM, FD_SR1_MA | FD_SR1_ND, FD_SR2_MD);
     } else if ((fdctrl->dsr & FD_DSR_DRATEMASK) != cur_drv->media_rate) {
         FLOPPY_DPRINTF("read id rate mismatch (fdc=%d, media=%d)\n",
                        fdctrl->dsr & FD_DSR_DRATEMASK, cur_drv->media_rate);
-        fdctrl_stop_transfer_now(fdctrl, FD_SR0_ABNTERM, FD_SR1_MA | FD_SR1_ND, FD_SR2_MD);
+        fdctrl_stop_transfer(fdctrl, FD_SR0_ABNTERM, FD_SR1_MA | FD_SR1_ND, FD_SR2_MD);
     } else if (cur_drv->track >= cur_drv->max_track) {
         FLOPPY_DPRINTF("read id past last track (%d >= %d)\n",
                        cur_drv->track, cur_drv->max_track);
         cur_drv->ltrk = 0;
-        fdctrl_stop_transfer_now(fdctrl, FD_SR0_ABNTERM, FD_SR1_MA | FD_SR1_ND, FD_SR2_MD);
+        fdctrl_stop_transfer(fdctrl, FD_SR0_ABNTERM, FD_SR1_MA | FD_SR1_ND, FD_SR2_MD);
     }
     else
-        fdctrl_stop_transfer_now(fdctrl, 0x00, 0x00, 0x00);
+        fdctrl_stop_transfer(fdctrl, 0x00, 0x00, 0x00);
 }
 
 
@@ -2272,29 +2231,6 @@ static DECLCALLBACK(VBOXSTRICTRC) fdcIoPort1Write(PPDMDEVINS pDevIns, void *pvUs
 }
 
 
-/**
- * @callback_method_impl{FNTMTIMERDEV}
- */
-static DECLCALLBACK(void) fdcTransferDelayTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser)
-{
-    RT_NOREF(pDevIns, pTimer);
-    fdctrl_t *fdctrl = (fdctrl_t *)pvUser;
-    fdctrl_stop_transfer_now(fdctrl, fdctrl->st0, fdctrl->st1, fdctrl->st2);
-}
-
-/**
- * @callback_method_impl{FNTMTIMERDEV}
- */
-static DECLCALLBACK(void) fdcIrqDelayTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser)
-{
-    RT_NOREF(pDevIns, pTimer);
-    fdctrl_t *fdctrl = (fdctrl_t *)pvUser;
-    fdctrl_raise_irq_now(fdctrl, fdctrl->st0);
-}
-
-
-
-/* -=-=-=-=-=-=-=-=- I/O Port Access Handlers -=-=-=-=-=-=-=-=- */
 /**
  * @callback_method_impl{FNIOMIOPORTNEWIN, Handling 0x3f1..0x3f5 accesses.}
  */
@@ -2354,7 +2290,6 @@ static DECLCALLBACK(int) fdcSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
     fdctrl_t     *pThis = PDMDEVINS_2_DATA(pDevIns, fdctrl_t *);
     PCPDMDEVHLPR3 pHlp = pDevIns->pHlpR3;
     unsigned int i;
-    int rc;
 
     /* Save the FDC I/O registers... */
     pHlp->pfnSSMPutU8(pSSM, pThis->sra);
@@ -2402,14 +2337,6 @@ static DECLCALLBACK(int) fdcSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
         pHlp->pfnSSMPutU8(pSSM, d->track);
         pHlp->pfnSSMPutU8(pSSM, d->sect);
     }
-    rc = pHlp->pfnTimerSave(pDevIns, pThis->hXferDelayTimer, pSSM);
-    if (RT_FAILURE(rc))
-        return rc;
-
-    rc = pHlp->pfnTimerSave(pDevIns, pThis->hIrqDelayTimer, pSSM);
-    if (RT_FAILURE(rc))
-        return rc;
-
     return pHlp->pfnTimerSave(pDevIns, pThis->hResultTimer, pSSM);
 }
 
@@ -2830,7 +2757,7 @@ static DECLCALLBACK(int) fdcConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
     /*
      * Validate configuration.
      */
-    PDMDEV_VALIDATE_CONFIG_RETURN(pDevIns, "IRQ|DMA|MemMapped|IOBase|StatusA|IRQDelay", "");
+    PDMDEV_VALIDATE_CONFIG_RETURN(pDevIns, "IRQ|DMA|MemMapped|IOBase|StatusA", "");
 
     /*
      * Read the configuration.
@@ -2847,10 +2774,6 @@ static DECLCALLBACK(int) fdcConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
     bool fMemMapped;
     rc = pHlp->pfnCFGMQueryBoolDef(pCfg, "MemMapped", &fMemMapped, false);
     AssertMsgRCReturn(rc, ("Configuration error: Failed to read bool value MemMapped rc=%Rrc\n", rc), rc);
-
-    uint16_t uIrqDelay;
-    rc = CFGMR3QueryU16Def(pCfg, "IRQDelay", &uIrqDelay, 0);
-    AssertMsgRCReturn(rc, ("Configuration error: Failed to read U16 IRQDelay, rc=%Rrc\n", rc), rc);
 
     bool fStatusA;
     rc = pHlp->pfnCFGMQueryBoolDef(pCfg, "StatusA", &fStatusA, false);
@@ -2898,24 +2821,6 @@ static DECLCALLBACK(int) fdcConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
     rc = PDMDevHlpTimerCreate(pDevIns, TMCLOCK_VIRTUAL, fdcTimerCallback, pThis,
                                 TMTIMER_FLAGS_DEFAULT_CRIT_SECT, "FDC Timer", &pThis->hResultTimer);
     AssertRCReturn(rc, rc);
-
-    /*
-     * Create the transfer delay timer.
-     */
-    rc = PDMDevHlpTimerCreate(pDevIns, TMCLOCK_VIRTUAL_SYNC, fdcTransferDelayTimer, pThis,
-                              TMTIMER_FLAGS_DEFAULT_CRIT_SECT, "FDC Transfer Delay Timer", &pThis->hXferDelayTimer);
-    if (RT_FAILURE(rc))
-        return rc;
-
-    /*
-     * Create the IRQ delay timer.
-     */
-    rc = PDMDevHlpTimerCreate(pDevIns, TMCLOCK_VIRTUAL_SYNC, fdcIrqDelayTimer, pThis,
-                              TMTIMER_FLAGS_DEFAULT_CRIT_SECT, "FDC IRQ Delay Timer", &pThis->hIrqDelayTimer);
-    if (RT_FAILURE(rc))
-        return rc;
-
-    pThis->uIrqDelayMsec = uIrqDelay;
 
     /*
      * Register DMA channel.
