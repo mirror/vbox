@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    manpage, user manual, usage: VBoxManage registervm
+
+    Copyright (C) 2006-2019 Oracle Corporation
+
+    This file is part of VirtualBox Open Source Edition (OSE), as
+    available from http://www.virtualbox.org. This file is free software;
+    you can redistribute it and/or modify it under the terms of the GNU
+    General Public License (GPL) as published by the Free Software
+    Foundation, in version 2 as it comes in the "COPYING" file of the
+    VirtualBox OSE distribution. VirtualBox OSE is distributed in the
+    hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
+ -->
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN"
+  "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd"[
+<!ENTITY % all.entities SYSTEM "all-entities.ent">
+%all.entities;
+]>
+<refentry id="vboxmanage-registervm" lang="en">
+  <refentryinfo>
+    <pubdate>August 2019</pubdate>
+    <title>VBoxManage registervm</title>
+  </refentryinfo>
+
+  <refmeta>
+    <refentrytitle>VBoxManage-registervm</refentrytitle>
+    <manvolnum>1</manvolnum>
+  </refmeta>
+
+  <refnamediv>
+    <refname>VBoxManage-registervm</refname>
+    <refpurpose>register a virtual machine</refpurpose>
+    <refclass>Oracle VM VirtualBox</refclass>
+  </refnamediv>
+
+  <refsynopsisdiv>
+    <cmdsynopsis id="synopsis-vboxmanage-registervm">
+<!-- The 'id' is mandatory and must start with 'synopsis-'. -->
+      <command>VBoxManage registervm</command> 
+      <arg choice="req"><replaceable>filename</replaceable></arg>
+    </cmdsynopsis>
+  </refsynopsisdiv>
+
+  <refsect1>
+    <title>Description</title>
+    <para>
+      The <command>VBoxManage registervm</command> command enables you
+      to create a virtual machine (VM) by importing an XML machine
+      configuration file into &product-name;. The VM cannot conflict
+      with a VM that is already registered in &product-name;. In
+      addition, the VM cannot have any hard disks or removable disks
+      attached. Ensure that the XML machine configuration file is in the
+      machines folder prior to registration.
+    </para>
+    <note>
+      <para>
+        When you use the <command>VBoxManage createvm</command> command
+        to create a VM, you can specify the <option>--register</option>
+        option to register the VM.
+      </para>
+    </note>
+    <variablelist>
+      <varlistentry>
+        <term><replaceable>filename</replaceable></term>
+        <listitem><para>
+            Specifies the XML machine configuration file. This file has
+            the <filename>.vbox</filename> file extension.
+          </para></listitem>
+      </varlistentry>
+    </variablelist>
+  </refsect1>
+
+  <refsect1>
+    <title>Examples</title>
+    <remark role="help-scope" condition="GLOBAL" />
+    <para>
+      The following command registers a VM called
+      <literal>vm2</literal>. The XML machine configuration file for the
+      VM is located in the default machines folder.
+    </para>
+<screen>$ VBoxManage registervm "/home/user/VirtualBox VMs/vm2/vm2.vbox"</screen>
+  </refsect1>
+
+  <refsect1>
+    <title>See Also</title>
+    <para>
+      <xref linkend="vboxmanage-createvm"/>,
+      <xref linkend="vboxmanage-unregistervm" />
+    </para>
+  </refsect1>
+</refentry>

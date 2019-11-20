@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    manpage, user manual, usage: VBoxManage unregistervm
+
+    Copyright (C) 2006-2019 Oracle Corporation
+
+    This file is part of VirtualBox Open Source Edition (OSE), as
+    available from http://www.virtualbox.org. This file is free software;
+    you can redistribute it and/or modify it under the terms of the GNU
+    General Public License (GPL) as published by the Free Software
+    Foundation, in version 2 as it comes in the "COPYING" file of the
+    VirtualBox OSE distribution. VirtualBox OSE is distributed in the
+    hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
+ -->
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN"
+  "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd"[
+<!ENTITY % all.entities SYSTEM "all-entities.ent">
+%all.entities;
+]>
+<refentry id="vboxmanage-unregistervm" lang="en">
+  <refentryinfo>
+    <pubdate>August 2019</pubdate>
+    <title>VBoxManage unregistervm</title>
+  </refentryinfo>
+
+  <refmeta>
+    <refentrytitle>VBoxManage-unregistervm</refentrytitle>
+    <manvolnum>1</manvolnum>
+  </refmeta>
+
+  <refnamediv>
+    <refname>VBoxManage-unregistervm</refname>
+    <refpurpose>unregister a virtual machine</refpurpose>
+    <refclass>Oracle VM VirtualBox</refclass>
+  </refnamediv>
+
+  <refsynopsisdiv>
+    <cmdsynopsis id="synopsis-vboxmanage-unregistervm">
+<!-- The 'id' is mandatory and must start with 'synopsis-'. -->
+      <command>VBoxManage unregistervm</command>
+      <group choice="req">
+        <arg choice="plain"><replaceable>uuid</replaceable></arg>
+        <arg choice="plain"><replaceable>vmname</replaceable></arg>
+      </group>
+      <arg>--delete</arg>
+    </cmdsynopsis>
+  </refsynopsisdiv>
+
+  <refsect1>
+    <title>Description</title>
+    <para>
+      The <command>VBoxManage unregistervm</command> command unregisters
+      a virtual machine (VM).
+    </para>
+    <variablelist>
+      <varlistentry>
+        <term><replaceable>uuid</replaceable>|<replaceable>vmname</replaceable></term>
+        <listitem><para>
+            Specifies the name or Universally Unique Identifier (UUID)
+            of the VM.
+          </para></listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>--delete</option></term>
+        <listitem><para>
+            Deletes the following files related to the VM automatically:
+          </para><itemizedlist>
+            <listitem><para>
+                All hard disk image files, including differencing files.
+              </para></listitem>
+            <listitem><para>
+                All saved state files that the machine created,
+                including one for each snapshot.
+              </para></listitem>
+            <listitem><para>
+                XML VM machine definition file and its backups.
+              </para></listitem>
+            <listitem><para>
+                VM log files.
+              </para></listitem>
+            <listitem><para>
+                The empty directory associated with the unregistered VM.
+              </para></listitem>
+          </itemizedlist></listitem>
+      </varlistentry>
+    </variablelist>
+  </refsect1>
+
+  <refsect1>
+    <title>Examples</title>
+    <remark role="help-scope" condition="GLOBAL" />
+    <para>
+      The following command unregisters a VM called
+      <literal>vm2</literal>.
+    </para>
+<screen>$ VBoxManage unregistervm vm2</screen>
+    <para>
+      The following command unregisters a VM called
+      <literal>vm3</literal>. All files associated with the VM are
+      deleted.
+    </para>
+<screen>$ VBoxManage unregistervm vm3 --delete
+%...10%...20%...30%...40%...50%...60%...70%...80%...90%...100%</screen>
+  </refsect1>
+
+  <refsect1>
+    <title>See Also</title>
+    <para>
+      <xref linkend="vboxmanage-registervm" />
+    </para>
+  </refsect1>
+</refentry>

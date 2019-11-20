@@ -9031,4 +9031,8 @@ VBoxManage sharedfolder     remove &lt;uuid|vmname&gt;
   <xi:include href="user_man_VBoxManage-cloudlist.xml"      xpointer="element(/1)" xmlns:xi="http://www.w3.org/2001/XInclude" />
   <xi:include href="user_man_VBoxManage-cloudinstance.xml" xpointer="element(/1)" xmlns:xi="http://www.w3.org/2001/XInclude" />
   <xi:include href="user_man_VBoxManage-cloudimage.xml" xpointer="element(/1)" xmlns:xi="http://www.w3.org/2001/XInclude" />
+
+  <!-- TODO: Figure out how we can handle other manpages. The xml is bolted to
+             sect1, so it's not possible to have them "in place" -->
+  <xi:include href="user_man_vboximg-mount.xml" xpointer="element(/1)" xmlns:xi="http://www.w3.org/2001/XInclude" />
 </chapter>

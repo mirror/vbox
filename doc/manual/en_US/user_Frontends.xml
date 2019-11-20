@@ -254,8 +254,8 @@
       <para>
         &product-name; therefore comes with a front-end called
         <computeroutput>VBoxHeadless</computeroutput>, which produces no
-        visible output on the host at all, but still can deliver VRDP
-        data. This front-end has no dependencies on the X Window system
+        visible output on the host at all, but still can optionally deliver
+        VRDP data. This front-end has no dependencies on the X Window system
         on Linux and Oracle Solaris hosts.
       </para>
 
@@ -308,7 +308,9 @@
             startvm</command> is preferred, since it runs the VM
             directly as a background process which has to be done
             explicitly when directly starting with
-            <computeroutput>VBoxHeadless</computeroutput>.
+            <computeroutput>VBoxHeadless</computeroutput>. The full
+            documentation of the command is in
+            <xref linkend="vboxmanage-vboxheadless"/>.
           </para>
         </listitem>
 
@@ -1238,5 +1240,8 @@ VBoxManage modifyvm "VM name" --vrdeproperty Client/DisableUpstreamAudio=1</scre
     </note>
 
   </sect1>
+
+  <xi:include href="user_man_VBoxHeadless.xml" xpointer="element(/1)" xmlns:xi="http://www.w3.org/2001/XInclude" />
+
 
 </chapter>

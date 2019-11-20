@@ -1560,7 +1560,8 @@ VBoxManage storageattach "VM name" --storagectl "SATA" --port 1 --device 0 --typ
 
     <para>
       Use the <option>--help</option> option to view information about
-      the <command>vboximg-mount</command> command usage.
+      the <command>vboximg-mount</command> command usage. The complete
+      command reference is described in <xref linkend="man_vboximg-mount" />.
     </para>
 
     <para>

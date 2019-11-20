@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+         manpage, user manual, usage: VBoxManage checkmediumpwd
+
+    Copyright (C) 2006-2019 Oracle Corporation
+
+    This file is part of VirtualBox Open Source Edition (OSE), as
+    available from http://www.virtualbox.org. This file is free software;
+    you can redistribute it and/or modify it under the terms of the GNU
+    General Public License (GPL) as published by the Free Software
+    Foundation, in version 2 as it comes in the "COPYING" file of the
+    VirtualBox OSE distribution. VirtualBox OSE is distributed in the
+    hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
+ -->
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN"
+  "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd"[
+<!ENTITY % all.entities SYSTEM "all-entities.ent">
+%all.entities;
+]>
+<refentry id="vboxmanage-checkmediumpwd" lang="en">
+  <refentryinfo>
+    <pubdate>August 2019</pubdate>
+    <title>VBoxManage checkmediumpwd</title>
+  </refentryinfo>
+
+  <refmeta>
+    <refentrytitle>VBoxManage-checkmediumpwd</refentrytitle>
+    <manvolnum>1</manvolnum>
+  </refmeta>
+
+  <refnamediv>
+    <refname>VBoxManage-checkmediumpwd</refname>
+    <refpurpose>check encryption password on a DEK-encrypted medium or a disk image</refpurpose>
+    <refclass>Oracle VM VirtualBox</refclass>
+  </refnamediv>
+
+  <refsynopsisdiv>
+    <cmdsynopsis id="synopsis-vboxmanage-checkmediumpwd">
+<!-- The 'id' is mandatory and must start with 'synopsis-'. -->
+      <command>VBoxManage checkmediumpwd</command>
+      <group choice="req">
+        <arg choice="plain"><replaceable>uuid</replaceable></arg>
+        <arg choice="plain"><replaceable>filename</replaceable></arg>
+      </group>
+      <arg choice="req"><replaceable>password-file</replaceable></arg>
+    </cmdsynopsis>
+  </refsynopsisdiv>
+
+  <refsect1>
+    <title>Description</title>
+    <para>
+      The <command>VBoxManage checkmediumpwd</command> command checks
+      the current encryption password on a DEK-encrypted medium or a
+      disk image. See <xref linkend="diskencryption-encryption" />.
+    </para>
+    <para>
+      The command response indicates if the specified password is
+      correct.
+    </para>
+    <variablelist>
+      <varlistentry>
+        <term><replaceable>uuid</replaceable>|<replaceable>filename</replaceable></term>
+        <listitem><para>
+            Specifies the Universally Unique Identifier (UUID) or the
+            absolute path name of the medium or image.
+          </para></listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><replaceable>password-file</replaceable></term>
+        <listitem><para>
+            Specifies the password identifier to check. The password
+            identifier can be the absolute path name of a password file
+            on the host OS or the dash character (<literal>-</literal>)
+            to prompt you for the password on the command line.
+          </para></listitem>
+      </varlistentry>
+    </variablelist>
+  </refsect1>
+
+  <refsect1>
+    <title>Examples</title>
+    <remark role="help-scope" condition="GLOBAL" />
+    <para>
+      The following example checks the encryption password for the
+      <filename>ol7u4-1.vdi</filename> disk image. The password
+      identifier is a file called <filename>pwfile</filename>.
+    </para>
+    <para>
+      The command returns a message indicating that the specified
+      password is correct.
+    </para>
+<screen>$ VBoxManage checkmediumpwd "$HOME/VirtualBox VMs/ol7u4/ol7u4-1.vdi" /home/user/pwfile
+  The given password is correct</screen>
+  </refsect1>
+
+  <refsect1>
+    <title>See Also</title>
+    <para>
+      <xref linkend="vboxmanage-encryptmedium" />
+    </para>
+  </refsect1>
+</refentry>

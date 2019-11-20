@@ -1,0 +1,218 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+         manpage, user manual, usage: VBoxManage import
+
+    Copyright (C) 2006-2019 Oracle Corporation
+
+    This file is part of VirtualBox Open Source Edition (OSE), as
+    available from http://www.virtualbox.org. This file is free software;
+    you can redistribute it and/or modify it under the terms of the GNU
+    General Public License (GPL) as published by the Free Software
+    Foundation, in version 2 as it comes in the "COPYING" file of the
+    VirtualBox OSE distribution. VirtualBox OSE is distributed in the
+    hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
+ -->
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN"
+  "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd"[
+<!ENTITY % all.entities SYSTEM "all-entities.ent">
+%all.entities;
+]>
+<refentry id="vboxmanage-import" lang="en">
+  <refentryinfo>
+    <pubdate>August 2019</pubdate>
+    <title>VBoxManage import</title>
+  </refentryinfo>
+
+  <refmeta>
+    <refentrytitle>VBoxManage-import</refentrytitle>
+    <manvolnum>1</manvolnum>
+  </refmeta>
+
+  <refnamediv>
+    <refname>VBoxManage-import</refname>
+    <refpurpose>import a virtual appliance in OVF format and create virtual machines</refpurpose>
+    <refclass>Oracle VM VirtualBox</refclass>
+  </refnamediv>
+
+  <refsynopsisdiv>
+    <cmdsynopsis id="synopsis-vboxmanage-import">
+<!-- The 'id' is mandatory and must start with 'synopsis-'. -->
+      <command>VBoxManage import</command>
+      <group choice="req">
+        <arg choice="plain"><replaceable>ovfname</replaceable></arg>
+        <arg choice="plain"><replaceable>ovaname</replaceable></arg>
+      </group>
+      <arg>--dry-run</arg>
+      <arg>--options=<group choice="plain">
+          <arg choice="plain">keepallmacs</arg>
+          <arg choice="plain">keepnatmacs</arg>
+          <arg choice="plain">keepdisknames</arg>
+          <arg choice="plain">importtovdi</arg>
+        </group></arg>
+    </cmdsynopsis>
+  </refsynopsisdiv>
+
+  <refsect1>
+    <title>Description</title>
+    <para>
+      The <command>VBoxManage import</command> command imports a virtual
+      appliance in OVF or OVA format by copying virtual disk images and
+      by creating virtual machines (VMs) in &product-name;. See
+      <xref linkend="ovf" />.
+    </para>
+    <para>
+      You must specify the path name of an OVF file or OVA archive to
+      use as input. Also, ensure that any disk images are in the same
+      directory as the OVF file or OVA archive.
+    </para>
+    <para>
+      Note that any options you specify to control the imported virtual
+      appliance or to modify the import parameters rely on the contents
+      of the OVF file.
+    </para>
+    <para>
+      Before you use the import operation to create the VM, perform a
+      dry run to verify the correctness of your configuration.
+    </para>
+    <refsect2>
+      <title>Common Options</title>
+      <variablelist>
+        <varlistentry>
+          <term><replaceable>ovfname</replaceable> | <replaceable>ovaname</replaceable></term>
+          <listitem><para>
+              Specifies the name of the OVF file or OVA archive that
+              describes the appliance.
+            </para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term><option>--dry-run</option></term>
+          <listitem><para>
+              Performs a dry run of the <command>VBoxManage
+              import</command> command before you perform the actual
+              import operation. A dry run operation does the following:
+            </para><itemizedlist>
+              <listitem><para>
+                  Outputs a description of the appliance's contents
+                  based on the specified OVF or OVA file.
+                </para></listitem>
+              <listitem><para>
+                  Shows how the appliance would be imported into
+                  &product-name;. In addition, the output shows any
+                  options that you can use to change the import
+                  behavior.
+                </para></listitem>
+            </itemizedlist><para>
+              The shortened form of this option is <option>-n</option>.
+            </para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term><option>--options keepallmacs | keepnatmacs | keepdisknames | importtovdi</option></term>
+          <listitem><para>
+              Enables you to fine tune the import operation.
+            </para><para>
+              Valid arguments are as follows:
+            </para><itemizedlist>
+              <listitem><para>
+                  <literal>keepallmacs</literal>: Specifies that the MAC
+                  addresses of every virtual network card are left
+                  unchanged.
+                </para></listitem>
+              <listitem><para>
+                  <literal>keepnatmacs</literal>: Specifies that the MAC
+                  addresses of every virtual network card are left
+                  unchanged if the network type is NAT.
+                </para></listitem>
+              <listitem><para>
+                  <literal>keepdisknames</literal>: Specifies that all
+                  new disk images are assigned the same names as the
+                  originals.
+                </para></listitem>
+              <listitem><para>
+                  <literal>importtovdi</literal>: Specifies that all new
+                  disk images are in VDI file format.
+                </para></listitem>
+            </itemizedlist></listitem>
+        </varlistentry>
+      </variablelist>
+    </refsect2>
+  </refsect1>
+
+  <refsect1>
+    <title>Examples</title>
+    <remark role="help-scope" condition="GLOBAL"/>
+    <para>
+      The following example performs the dry run of an import operation
+      for a sample appliance that contains a Windows 10 guest:
+    </para>
+<screen>$ VBoxManage import Windows10.ovf --dry-run
+Interpreting Windows10.ovf...
+OK.
+Virtual system 0:
+ 0: Suggested OS type: "Windows10_64"
+    (change with "--vsys 0 --ostype &lt;type&gt;"; use "list ostypes" to list all)
+ 1: Suggested VM name "win10-appliance"
+    (change with "--vsys 0 --vmname &lt;name&gt;")
+ 2: Suggested VM group "/"
+    (change with "--vsys 0 --group &lt;group&gt;")
+ 3: Suggested VM settings file name "/home/user1/VirtualBox VMs/win10-appliance/win10-appliance.vbox"
+    (change with "--vsys 0 --settingsfile &lt;filename&gt;")
+ 4: Suggested VM base folder "/home/user1/VirtualBox VMs"
+    (change with "--vsys 0 --basefolder &lt;path&gt;")
+ 5: End-user license agreement
+    (display with "--vsys 0 --eula show";
+    accept with "--vsys 0 --eula accept")
+ 6: Number of CPUs: 1
+    (change with "--vsys 0 --cpus &lt;n&gt;")
+ 7: Guest memory: 1024 MB (change with "--vsys 0 --memory &lt;MB&gt;")
+ 8: Sound card (appliance expects "ensoniq1371", can change on import)
+    (disable with "--vsys 0 --unit 5 --ignore")
+ 9: USB controller
+    (disable with "--vsys 0 --unit 6 --ignore")
+10: Network adapter: orig bridged, config 2, extra type=bridged
+11: Floppy
+    (disable with "--vsys 0 --unit 8 --ignore")
+12: SCSI controller, type BusLogic
+    (change with "--vsys 0 --unit 9 --scsitype {BusLogic|LsiLogic}";
+    disable with "--vsys 0 --unit 9 --ignore")
+13: IDE controller, type PIIX4
+    (disable with "--vsys 0 --unit 10 --ignore")
+14: Hard disk image: source image=Windows10.vmdk,
+      target path=/home/user1/disks/Windows10.vmdk, controller=9;channel=0
+    (change controller with "--vsys 0 --unit 11 --controller &lt;id&gt;";
+    disable with "--vsys 0 --unit 11 --ignore")</screen>
+    <para>
+      The dry run output lists and numbers the individual configuration
+      items that are described in the <filename>Windows10.ovf</filename>
+      file. Some of the items include information about how to disable
+      or change the configuration of the item.
+    </para>
+    <para>
+      You can disable many of the items by using the <option>--vsys
+      <replaceable>X</replaceable> --unit <replaceable>Y</replaceable>
+      --ignore</option> options. <replaceable>X</replaceable> is the
+      number of the virtual system. The value is <literal>0</literal>
+      unless the appliance includes several virtual system descriptions.
+      <replaceable>Y</replaceable> is the configuration item number.
+    </para>
+    <para>
+      Item 1 in the example command output specifies the name of the
+      target machine. Items 12 and 13 specify the IDE and SCSI hard disk
+      controllers, respectively.
+    </para>
+    <para>
+      Item 14 indicates the hard disk image and the
+      <option>--controller</option> option specifies the device on which
+      the image resides. The default value is specified in the OVF file.
+    </para>
+    <para>
+      You can combine several items for the same virtual system by
+      specifying the same value for the <option>--vsys</option> option.
+      For example use the following command to import a machine as
+      described in the OVF, exclude the sound card and USB controller
+      and specify that the disk image is connected to the IDE controller
+      instead of the SCSI controller.
+    </para>
+<screen>$ VBoxManage import Windows10.ovf --vsys 0 --unit 8 --ignore \
+  --unit 9 --ignore --unit 14 --controller 13</screen>
+  </refsect1>
+</refentry>
