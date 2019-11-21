@@ -519,9 +519,8 @@ static SSMFIELD const g_aVGAStateSVGAFields[] =
     SSMFIELD_ENTRY(                 VMSVGAState, u32CurrentGMRId),
     SSMFIELD_ENTRY(                 VMSVGAState, u32RegCaps),
     SSMFIELD_ENTRY(                 VMSVGAState, u32IndexReg),
-    SSMFIELD_ENTRY_IGNORE(          VMSVGAState, pSupDrvSession),
-    SSMFIELD_ENTRY_IGNORE(          VMSVGAState, FIFORequestSem),
-    SSMFIELD_ENTRY_IGNORE(          VMSVGAState, FIFOExtCmdSem),
+    SSMFIELD_ENTRY_IGNORE(          VMSVGAState, hFIFORequestSem),
+    SSMFIELD_ENTRY_IGNORE(          VMSVGAState, hFIFOExtCmdSem),
     SSMFIELD_ENTRY_IGN_HCPTR(       VMSVGAState, pFIFOIOThread),
     SSMFIELD_ENTRY_IGNORE(          VMSVGAState, uLastCursorUpdateCount),
     SSMFIELD_ENTRY_IGNORE(          VMSVGAState, fFIFOThreadSleeping),
@@ -1499,7 +1498,7 @@ DECLINLINE(void) vmsvgaUpdatePitch(PVGASTATE pThis)
  * @param   pThis       VMSVGA State
  * @param   u32         Value to write
  */
-static VBOXSTRICTRC vmsvgaWritePort(PVGASTATE pThis, uint32_t u32)
+static VBOXSTRICTRC vmsvgaWritePort(PPDMDEVINS pDevIns, PVGASTATE pThis, uint32_t u32)
 {
 #ifdef IN_RING3
     PVMSVGAR3STATE pSVGAState = pThis->svga.pSvgaR3State;
@@ -1692,7 +1691,7 @@ static VBOXSTRICTRC vmsvgaWritePort(PVGASTATE pThis, uint32_t u32)
                     vmsvgaSafeFifoBusyRegUpdate(pThis, true);
 
                 /* Kick the FIFO thread to start processing commands again. */
-                SUPSemEventSignal(pThis->svga.pSupDrvSession, pThis->svga.FIFORequestSem);
+                PDMDevHlpSUPSemEventSignal(pDevIns, pThis->svga.hFIFORequestSem);
 #else
                 rc = VINF_IOM_R3_IOPORT_WRITE;
 #endif
@@ -2005,7 +2004,7 @@ DECLCALLBACK(VBOXSTRICTRC) vmsvgaIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOP
                 break;
 
             case SVGA_VALUE_PORT:
-                return vmsvgaWritePort(pThis, u32);
+                return vmsvgaWritePort(pDevIns, pThis, u32);
 
             case SVGA_BIOS_PORT:
                 Log(("Ignoring BIOS port write (val=%x)\n", u32));
@@ -2403,7 +2402,7 @@ vmsvgaR3FIFOAccessHandler(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhys, void *pvPhys, 
     /*
      * Wake up the FIFO thread as it might have work to do now.
      */
-    int rc = SUPSemEventSignal(pThis->svga.pSupDrvSession, pThis->svga.FIFORequestSem);
+    int rc = PDMDevHlpSUPSemEventSignal(pDevIns, pThis->svga.hFIFORequestSem);
     AssertLogRelRC(rc);
 # endif
 
@@ -2951,7 +2950,7 @@ static void vmsvgaR3FifoHandleExtCmd(PVGASTATE pThis)
     pThis->svga.pvFIFOExtCmdParam = NULL;
     pThis->svga.u8FIFOExtCommand  = VMSVGA_FIFO_EXTCMD_NONE;
     ASMMemoryFence(); /* paranoia^2 */
-    int rc = RTSemEventSignal(pThis->svga.FIFOExtCmdSem);
+    int rc = RTSemEventSignal(pThis->svga.hFIFOExtCmdSem);
     AssertLogRelRC(rc);
 }
 
@@ -2996,10 +2995,10 @@ static int vmsvgaR3RunExtCmdOnFifoThread(PPDMDEVINS pDevIns, PVGASTATE pThis, ui
         if (RT_SUCCESS(rc))
         {
             /* Wait. Take care in case the semaphore was already posted (same as below). */
-            rc = RTSemEventWait(pThis->svga.FIFOExtCmdSem, cMsWait);
+            rc = RTSemEventWait(pThis->svga.hFIFOExtCmdSem, cMsWait);
             if (   rc == VINF_SUCCESS
                 && pThis->svga.u8FIFOExtCommand == uExtCmd)
-                rc = RTSemEventWait(pThis->svga.FIFOExtCmdSem, cMsWait);
+                rc = RTSemEventWait(pThis->svga.hFIFOExtCmdSem, cMsWait);
             AssertLogRelMsg(pThis->svga.u8FIFOExtCommand != uExtCmd || RT_FAILURE_NP(rc),
                             ("%#x %Rrc\n", pThis->svga.u8FIFOExtCommand, rc));
 
@@ -3026,14 +3025,14 @@ static int vmsvgaR3RunExtCmdOnFifoThread(PPDMDEVINS pDevIns, PVGASTATE pThis, ui
         pThis->svga.pvFIFOExtCmdParam = pvParam;
         pThis->svga.u8FIFOExtCommand  = uExtCmd;
         ASMMemoryFence(); /* paranoia^2 */
-        rc = SUPSemEventSignal(pThis->svga.pSupDrvSession, pThis->svga.FIFORequestSem);
+        rc = PDMDevHlpSUPSemEventSignal(pDevIns, pThis->svga.hFIFORequestSem);
         AssertLogRelRC(rc);
 
         /* Wait. Take care in case the semaphore was already posted (same as above). */
-        rc = RTSemEventWait(pThis->svga.FIFOExtCmdSem, cMsWait);
+        rc = RTSemEventWait(pThis->svga.hFIFOExtCmdSem, cMsWait);
         if (   rc == VINF_SUCCESS
             && pThis->svga.u8FIFOExtCommand == uExtCmd)
-            rc = RTSemEventWait(pThis->svga.FIFOExtCmdSem, cMsWait); /* it was already posted, retry the wait. */
+            rc = RTSemEventWait(pThis->svga.hFIFOExtCmdSem, cMsWait); /* it was already posted, retry the wait. */
         AssertLogRelMsg(pThis->svga.u8FIFOExtCommand != uExtCmd || RT_FAILURE_NP(rc),
                         ("%#x %Rrc\n", pThis->svga.u8FIFOExtCommand, rc));
 
@@ -3108,7 +3107,7 @@ static void vmsvgaFifoSetNotBusy(PVGASTATE pThis, PVMSVGAR3STATE pSVGAState, uin
 static void *vmsvgaFIFOGetCmdPayload(uint32_t cbPayloadReq, uint32_t RT_UNTRUSTED_VOLATILE_GUEST *pFIFO,
                                      uint32_t offCurrentCmd, uint32_t offFifoMin, uint32_t offFifoMax,
                                      uint8_t *pbBounceBuf, uint32_t *pcbAlreadyRead,
-                                     PPDMTHREAD pThread, PVGASTATE pThis, PVMSVGAR3STATE pSVGAState)
+                                     PPDMTHREAD pThread, PVGASTATE pThis, PVMSVGAR3STATE pSVGAState, PPDMDEVINS pDevIns)
 {
     Assert(pbBounceBuf);
     Assert(pcbAlreadyRead);
@@ -3195,7 +3194,7 @@ static void *vmsvgaFIFOGetCmdPayload(uint32_t cbPayloadReq, uint32_t RT_UNTRUSTE
             Log(("Guest still copying (%x vs %x) current %x next %x stop %x loop %u; sleep a bit\n",
                  cbPayloadReq, cbAfter + cbBefore, offCurrentCmd, offNextCmd, pFIFO[SVGA_FIFO_STOP], i));
 
-            SUPSemEventWaitNoResume(pThis->svga.pSupDrvSession, pThis->svga.FIFORequestSem, i < 16 ? 1 : 2);
+            PDMDevHlpSUPSemEventWaitNoResume(pDevIns, pThis->svga.hFIFORequestSem, i < 16 ? 1 : 2);
 
             offNextCmd = pFIFO[SVGA_FIFO_NEXT_CMD];
             RT_UNTRUSTED_NONVOLATILE_COPY_FENCE();
@@ -3339,7 +3338,7 @@ DECLINLINE(bool) vmsvgaFIFOHasWork(uint32_t RT_UNTRUSTED_VOLATILE_GUEST * const 
  *
  * @param   pThis   The VGA state.
  */
-void vmsvgaFIFOWatchdogTimer(PVGASTATE pThis)
+void vmsvgaFIFOWatchdogTimer(PPDMDEVINS pDevIns, PVGASTATE pThis)
 {
     /* Caller already checked pThis->svga.fFIFOThreadSleeping, so we only have
        to recheck it before doing the signalling. */
@@ -3348,7 +3347,7 @@ void vmsvgaFIFOWatchdogTimer(PVGASTATE pThis)
     if (   vmsvgaFIFOHasWork(pFIFO, ASMAtomicReadU32(&pThis->svga.uLastCursorUpdateCount))
         && pThis->svga.fFIFOThreadSleeping)
     {
-        int rc = SUPSemEventSignal(pThis->svga.pSupDrvSession, pThis->svga.FIFORequestSem);
+        int rc = PDMDevHlpSUPSemEventSignal(pDevIns, pThis->svga.hFIFORequestSem);
         AssertRC(rc);
         STAM_REL_COUNTER_INC(&pThis->svga.pSvgaR3State->StatFifoWatchdogWakeUps);
     }
@@ -3375,7 +3374,7 @@ static DECLCALLBACK(int) vmsvgaFIFOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
         vmsvgaR3FifoHandleExtCmd(pThis);
         while (pThread->enmState == PDMTHREADSTATE_RUNNING)
             if (pThis->svga.u8FIFOExtCommand == VMSVGA_FIFO_EXTCMD_NONE)
-                SUPSemEventWaitNoResume(pThis->svga.pSupDrvSession, pThis->svga.FIFORequestSem, RT_MS_1MIN);
+                PDMDevHlpSUPSemEventWaitNoResume(pDevIns, pThis->svga.hFIFORequestSem, RT_MS_1MIN);
             else
                 vmsvgaR3FifoHandleExtCmd(pThis);
         return VINF_SUCCESS;
@@ -3386,7 +3385,7 @@ static DECLCALLBACK(int) vmsvgaFIFOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
      * Signal the semaphore to make sure we don't wait for 250ms after a
      * suspend & resume scenario (see vmsvgaFIFOGetCmdPayload).
      */
-    SUPSemEventSignal(pThis->svga.pSupDrvSession, pThis->svga.FIFORequestSem);
+    PDMDevHlpSUPSemEventSignal(pDevIns, pThis->svga.hFIFORequestSem);
 
     /*
      * Allocate a bounce buffer for command we get from the FIFO.
@@ -3451,7 +3450,7 @@ static DECLCALLBACK(int) vmsvgaFIFOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
             ASMAtomicWriteBool(&pThis->svga.fFIFOThreadSleeping, true);
             Assert(pThis->cMilliesRefreshInterval > 0);
             if (cMsSleep < pThis->cMilliesRefreshInterval)
-                rc = SUPSemEventWaitNoResume(pThis->svga.pSupDrvSession, pThis->svga.FIFORequestSem, cMsSleep);
+                rc = PDMDevHlpSUPSemEventWaitNoResume(pDevIns, pThis->svga.hFIFORequestSem, cMsSleep);
             else
             {
 # ifdef VMSVGA_USE_FIFO_ACCESS_HANDLER
@@ -3464,7 +3463,7 @@ static DECLCALLBACK(int) vmsvgaFIFOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
                 else
                 {
                     STAM_REL_PROFILE_START(&pSVGAState->StatFifoExtendedSleep, Acc);
-                    rc = SUPSemEventWaitNoResume(pThis->svga.pSupDrvSession, pThis->svga.FIFORequestSem, cMsExtendedSleep);
+                    rc = PDMDevHlpSUPSemEventWaitNoResume(pDevIns, pThis->svga.hFIFORequestSem, cMsExtendedSleep);
                     STAM_REL_PROFILE_STOP(&pSVGAState->StatFifoExtendedSleep, Acc);
                 }
             }
@@ -3582,7 +3581,7 @@ static DECLCALLBACK(int) vmsvgaFIFOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
 # define VMSVGAFIFO_GET_CMD_BUFFER_BREAK(a_PtrVar, a_Type, a_cbPayloadReq) \
             if (1) { \
                 (a_PtrVar) = (a_Type *)vmsvgaFIFOGetCmdPayload((a_cbPayloadReq), pFIFO, offCurrentCmd, offFifoMin, offFifoMax, \
-                                                               pbBounceBuf, &cbPayload, pThread, pThis, pSVGAState); \
+                                                               pbBounceBuf, &cbPayload, pThread, pThis, pSVGAState, pDevIns); \
                 if (RT_UNLIKELY((uintptr_t)(a_PtrVar) < 2)) { if ((uintptr_t)(a_PtrVar) == 1) continue; break; } \
                 RT_UNTRUSTED_NONVOLATILE_COPY_FENCE(); \
             } else do {} while (0)
@@ -5186,7 +5185,7 @@ static DECLCALLBACK(int) vmsvgaFIFOLoopWakeUp(PPDMDEVINS pDevIns, PPDMTHREAD pTh
     RT_NOREF(pDevIns);
     PVGASTATE pThis = (PVGASTATE)pThread->pvUser;
     Log(("vmsvgaFIFOLoopWakeUp\n"));
-    return SUPSemEventSignal(pThis->svga.pSupDrvSession, pThis->svga.FIFORequestSem);
+    return PDMDevHlpSUPSemEventSignal(pDevIns, pThis->svga.hFIFORequestSem);
 }
 
 /**
@@ -6071,15 +6070,15 @@ int vmsvgaDestruct(PPDMDEVINS pDevIns)
         RTMemFree(pThis->svga.pbVgaFrameBufferR3);
         pThis->svga.pbVgaFrameBufferR3 = NULL;
     }
-    if (pThis->svga.FIFOExtCmdSem != NIL_RTSEMEVENT)
+    if (pThis->svga.hFIFOExtCmdSem != NIL_RTSEMEVENT)
     {
-        RTSemEventDestroy(pThis->svga.FIFOExtCmdSem);
-        pThis->svga.FIFOExtCmdSem = NIL_RTSEMEVENT;
+        RTSemEventDestroy(pThis->svga.hFIFOExtCmdSem);
+        pThis->svga.hFIFOExtCmdSem = NIL_RTSEMEVENT;
     }
-    if (pThis->svga.FIFORequestSem != NIL_SUPSEMEVENT)
+    if (pThis->svga.hFIFORequestSem != NIL_SUPSEMEVENT)
     {
-        SUPSemEventClose(pThis->svga.pSupDrvSession, pThis->svga.FIFORequestSem);
-        pThis->svga.FIFORequestSem = NIL_SUPSEMEVENT;
+        PDMDevHlpSUPSemEventClose(pDevIns, pThis->svga.hFIFORequestSem);
+        pThis->svga.hFIFORequestSem = NIL_SUPSEMEVENT;
     }
 
     return VINF_SUCCESS;
@@ -6107,22 +6106,12 @@ int vmsvgaInit(PPDMDEVINS pDevIns)
     AssertReturn(pThis->svga.pbVgaFrameBufferR3, VERR_NO_MEMORY);
 
     /* Create event semaphore. */
-    pThis->svga.pSupDrvSession = PDMDevHlpGetSupDrvSession(pDevIns);
-
-    rc = SUPSemEventCreate(pThis->svga.pSupDrvSession, &pThis->svga.FIFORequestSem);
-    if (RT_FAILURE(rc))
-    {
-        Log(("%s: Failed to create event semaphore for FIFO handling.\n", __FUNCTION__));
-        return rc;
-    }
+    rc = PDMDevHlpSUPSemEventCreate(pDevIns, &pThis->svga.hFIFORequestSem);
+    AssertRCReturn(rc, rc);
 
     /* Create event semaphore. */
-    rc = RTSemEventCreate(&pThis->svga.FIFOExtCmdSem);
-    if (RT_FAILURE(rc))
-    {
-        Log(("%s: Failed to create event semaphore for external fifo cmd handling.\n", __FUNCTION__));
-        return rc;
-    }
+    rc = RTSemEventCreate(&pThis->svga.hFIFOExtCmdSem);
+    AssertRCReturn(rc, rc);
 
     pThis->svga.pSvgaR3State = (PVMSVGAR3STATE)RTMemAlloc(sizeof(VMSVGAR3STATE));
     AssertReturn(pThis->svga.pSvgaR3State, VERR_NO_MEMORY);

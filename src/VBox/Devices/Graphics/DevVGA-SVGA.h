@@ -222,12 +222,10 @@ typedef struct VMSVGAState
     uint32_t                    Padding0; /* Used to be I/O port base address. */
     /** Port io index register. */
     uint32_t                    u32IndexReg;
-    /** The support driver session handle for use with FIFORequestSem. */
-    R3R0PTRTYPE(PSUPDRVSESSION) pSupDrvSession;
     /** FIFO request semaphore. */
-    SUPSEMEVENT                 FIFORequestSem;
+    SUPSEMEVENT                 hFIFORequestSem;
     /** FIFO external command semaphore. */
-    R3PTRTYPE(RTSEMEVENT)       FIFOExtCmdSem;
+    R3PTRTYPE(RTSEMEVENT)       hFIFOExtCmdSem;
     /** FIFO IO Thread. */
     R3PTRTYPE(PPDMTHREAD)       pFIFOIOThread;
     /** The last seen SVGA_FIFO_CURSOR_COUNT value.
@@ -378,7 +376,7 @@ int vmsvgaLoadDone(PPDMDEVINS pDevIns);
 int vmsvgaSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM);
 DECLCALLBACK(void) vmsvgaR3PowerOn(PPDMDEVINS pDevIns);
 DECLCALLBACK(void) vmsvgaR3PowerOff(PPDMDEVINS pDevIns);
-void vmsvgaFIFOWatchdogTimer(PVGASTATE pThis);
+void vmsvgaFIFOWatchdogTimer(PPDMDEVINS pDevIns, PVGASTATE pThis);
 
 #ifdef IN_RING3
 VMSVGASCREENOBJECT *vmsvgaGetScreenObject(PVGASTATE pThis, uint32_t idScreen);
