@@ -99,6 +99,10 @@ typedef PFNPCICONFIGWRITE *PPFNPCICONFIGWRITE;
  * unmapping is done by the PCI bus like with the new style devices.
  *
  * @returns VBox status code.
+ * @retval  VINF_PCI_MAPPING_DONE if the caller already did the mapping and the
+ *          PCI bus should not use the handle it got to do the registration
+ *          again.  (Only allowed when @a GCPhysAddress is not NIL_RTGCPHYS.)
+ *
  * @param   pDevIns         Pointer to the device instance the PCI device
  *                          belongs to.
  * @param   pPciDev         Pointer to the PCI device.

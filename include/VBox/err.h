@@ -2366,7 +2366,7 @@
 /** @} */
 
 
-/** @name PCI Passtrhough Status Codes
+/** @name PCI Bus & Passthrough Status Codes
  * @{
  */
 /** RamPreAlloc not set.
@@ -2378,6 +2378,10 @@
 /** Nested paging not active.
  * PCI passthrough currently works only if nested paging is active. */
 #define VERR_PCI_PASSTHROUGH_NO_NESTED_PAGING       (-5102)
+
+/** Special return code from a PCI I/O region mapping handler that tells the BUS
+ * that it has done the mapping already. */
+#define VINF_PCI_MAPPING_DONE                       5150
 /** @} */
 
 
