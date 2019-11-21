@@ -891,7 +891,7 @@ static void vbvaVHWACommandComplete(PVGASTATE pVGAState, VBOXVHWACMD RT_UNTRUSTE
     if (fAsyncCommand)
     {
         Assert(pCommand->Flags & VBOXVHWACMD_FLAG_HG_ASYNCH);
-        vbvaVHWACommandCompleteAsync(&pVGAState->IVBVACallbacks, pCommand);
+        vbvaR3VHWACommandCompleteAsync(&pVGAState->IVBVACallbacks, pCommand);
     }
     else
     {
@@ -1354,7 +1354,8 @@ int vboxVBVASaveStateDone(PPDMDEVINS pDevIns)
 /**
  * @interface_method_impl{PDMIDISPLAYVBVACALLBACKS,pfnVHWACommandCompleteAsync}
  */
-DECLCALLBACK(int) vbvaVHWACommandCompleteAsync(PPDMIDISPLAYVBVACALLBACKS pInterface, VBOXVHWACMD RT_UNTRUSTED_VOLATILE_GUEST *pCmd)
+DECLCALLBACK(int) vbvaR3VHWACommandCompleteAsync(PPDMIDISPLAYVBVACALLBACKS pInterface,
+                                                 VBOXVHWACMD RT_UNTRUSTED_VOLATILE_GUEST *pCmd)
 {
     PVGASTATE pVGAState = PPDMIDISPLAYVBVACALLBACKS_2_PVGASTATE(pInterface);
     int rc;
@@ -2079,7 +2080,7 @@ int vboxVBVALoadStateDone(PPDMDEVINS pDevIns)
     return VINF_SUCCESS;
 }
 
-void VBVARaiseIrq (PVGASTATE pVGAState, uint32_t fFlags)
+void VBVARaiseIrq(PVGASTATE pVGAState, uint32_t fFlags)
 {
     PPDMDEVINS pDevIns = pVGAState->pDevInsR3;
 
@@ -2786,20 +2787,18 @@ static int vbvaSendModeHintWorker(PVGASTATE pThis, uint32_t cx, uint32_t cy,
 /** Converts a display port interface pointer to a vga state pointer. */
 #define IDISPLAYPORT_2_VGASTATE(pInterface) ( (PVGASTATE)((uintptr_t)pInterface - RT_OFFSETOF(VGASTATE, IPort)) )
 
-DECLCALLBACK(int) vbvaPortSendModeHint(PPDMIDISPLAYPORT pInterface, uint32_t cx,
-                                       uint32_t cy, uint32_t cBPP,
-                                       uint32_t iDisplay, uint32_t dx,
-                                       uint32_t dy, uint32_t fEnabled,
-                                       uint32_t fNotifyGuest)
+/**
+ * @interface_method_impl{PDMIDISPLAYPORT,pfnSendModeHint}
+ */
+DECLCALLBACK(int) vbvaR3PortSendModeHint(PPDMIDISPLAYPORT pInterface,  uint32_t cx, uint32_t cy, uint32_t cBPP,
+                                         uint32_t iDisplay, uint32_t dx, uint32_t dy, uint32_t fEnabled, uint32_t fNotifyGuest)
 {
-    PVGASTATE pThis;
-    int rc;
-
-    pThis = IDISPLAYPORT_2_VGASTATE(pInterface);
-    rc = PDMDevHlpCritSectEnter(pThis->pDevInsR3, &pThis->CritSect, VERR_SEM_BUSY);
+    PVGASTATE pThis = IDISPLAYPORT_2_VGASTATE(pInterface);
+    int rc = PDMDevHlpCritSectEnter(pThis->pDevInsR3, &pThis->CritSect, VERR_SEM_BUSY);
     AssertRC(rc);
-    rc = vbvaSendModeHintWorker(pThis, cx, cy, cBPP, iDisplay, dx, dy, fEnabled,
-                                fNotifyGuest);
+
+    rc = vbvaSendModeHintWorker(pThis, cx, cy, cBPP, iDisplay, dx, dy, fEnabled, fNotifyGuest);
+
     PDMDevHlpCritSectLeave(pThis->pDevInsR3, &pThis->CritSect);
     return rc;
 }

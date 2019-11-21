@@ -706,7 +706,7 @@ static const char *vmsvgaFIFOCmdToString(uint32_t u32Cmd)
 /**
  * @interface_method_impl{PDMIDISPLAYPORT,pfnSetViewport}
  */
-DECLCALLBACK(void) vmsvgaPortSetViewport(PPDMIDISPLAYPORT pInterface, uint32_t idScreen, uint32_t x, uint32_t y, uint32_t cx, uint32_t cy)
+DECLCALLBACK(void) vmsvgaR3PortSetViewport(PPDMIDISPLAYPORT pInterface, uint32_t idScreen, uint32_t x, uint32_t y, uint32_t cx, uint32_t cy)
 {
     PVGASTATE pThis = RT_FROM_MEMBER(pInterface, VGASTATE, IPort);
 
