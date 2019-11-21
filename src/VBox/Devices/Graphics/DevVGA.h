@@ -73,6 +73,9 @@
 # define VGA_VRAM_MIN        (_1M)
 #endif
 
+
+/** @name Macros dealing with partial ring-0/raw-mode VRAM mappings.
+ * @{ */
 /** The size of the VGA ring-0 and raw-mode mapping.
  *
  * This is supposed to be all the VGA memory accessible to the guest.
@@ -85,6 +88,56 @@
 /** Enables partially mapping the VRAM into ring-0 rather than using the ring-3.
  * The VGA_MAPPING_SIZE define sets the number of bytes that will be mapped. */
 #define VGA_WITH_PARTIAL_RING0_MAPPING
+
+/**
+ * Check buffer if an VRAM offset is within the right range or not.
+ */
+#if defined(IN_RC) || defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0) || (defined(IN_RING0) && defined(VGA_WITH_PARTIAL_RING0_MAPPING))
+# define VERIFY_VRAM_WRITE_OFF_RETURN(pThis, off) \
+    do { \
+        if ((off) < VGA_MAPPING_SIZE) \
+            RT_UNTRUSTED_VALIDATED_FENCE(); \
+        else \
+        { \
+            AssertMsgReturn((off) < (pThis)->vram_size, ("%RX32 !< %RX32\n", (uint32_t)(off), (pThis)->vram_size), VINF_SUCCESS); \
+            Log2(("%Rfn[%d]: %RX32 -> R3\n", __PRETTY_FUNCTION__, __LINE__, (off))); \
+            return VINF_IOM_R3_MMIO_WRITE; \
+        } \
+    } while (0)
+#else
+# define VERIFY_VRAM_WRITE_OFF_RETURN(pThis, off) \
+    do { \
+       AssertMsgReturn((off) < (pThis)->vram_size, ("%RX32 !< %RX32\n", (uint32_t)(off), (pThis)->vram_size), VINF_SUCCESS); \
+       RT_UNTRUSTED_VALIDATED_FENCE(); \
+    } while (0)
+#endif
+
+/**
+ * Check buffer if an VRAM offset is within the right range or not.
+ */
+#if defined(IN_RC) || defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0) || (defined(IN_RING0) && defined(VGA_WITH_PARTIAL_RING0_MAPPING))
+# define VERIFY_VRAM_READ_OFF_RETURN(pThis, off, rcVar) \
+    do { \
+        if ((off) < VGA_MAPPING_SIZE) \
+            RT_UNTRUSTED_VALIDATED_FENCE(); \
+        else \
+        { \
+            AssertMsgReturn((off) < (pThis)->vram_size, ("%RX32 !< %RX32\n", (uint32_t)(off), (pThis)->vram_size), 0xff); \
+            Log2(("%Rfn[%d]: %RX32 -> R3\n", __PRETTY_FUNCTION__, __LINE__, (off))); \
+            (rcVar) = VINF_IOM_R3_MMIO_READ; \
+            return 0; \
+        } \
+    } while (0)
+#else
+# define VERIFY_VRAM_READ_OFF_RETURN(pThis, off, rcVar) \
+    do { \
+        AssertMsgReturn((off) < (pThis)->vram_size, ("%RX32 !< %RX32\n", (uint32_t)(off), (pThis)->vram_size), 0xff); \
+        RT_UNTRUSTED_VALIDATED_FENCE(); \
+        NOREF(rcVar); \
+    } while (0)
+#endif
+/** @} */
+
 
 #define MSR_COLOR_EMULATION 0x01
 #define MSR_PAGE_SELECT     0x20

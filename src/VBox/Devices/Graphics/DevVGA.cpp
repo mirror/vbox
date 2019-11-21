@@ -51,58 +51,14 @@
  */
 
 #ifdef VBOX_WITH_HGSMI
-#define PCIDEV_2_VGASTATE(pPciDev)    ((PVGASTATE)((uintptr_t)pPciDev - RT_OFFSETOF(VGASTATE, Dev)))
+#define PCIDEV_2_VGASTATE(pPciDev)      ((PVGASTATE)((uintptr_t)pPciDev - RT_OFFSETOF(VGASTATE, Dev)))
 #endif /* VBOX_WITH_HGSMI */
 /** Converts a vga adaptor state pointer to a device instance pointer. */
-#define VGASTATE2DEVINS(pVgaState)    ((pVgaState)->CTX_SUFF(pDevIns))
-
-/** Check buffer if an VRAM offset is within the right range or not. */
-#if defined(IN_RC) || defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0) || (defined(IN_RING0) && defined(VGA_WITH_PARTIAL_RING0_MAPPING))
-# define VERIFY_VRAM_WRITE_OFF_RETURN(pThis, off) \
-    do { \
-        if ((off) < VGA_MAPPING_SIZE) \
-            RT_UNTRUSTED_VALIDATED_FENCE(); \
-        else \
-        { \
-            AssertMsgReturn((off) < (pThis)->vram_size, ("%RX32 !< %RX32\n", (uint32_t)(off), (pThis)->vram_size), VINF_SUCCESS); \
-            Log2(("%Rfn[%d]: %RX32 -> R3\n", __PRETTY_FUNCTION__, __LINE__, (off))); \
-            return VINF_IOM_R3_MMIO_WRITE; \
-        } \
-    } while (0)
-#else
-# define VERIFY_VRAM_WRITE_OFF_RETURN(pThis, off) \
-    do { \
-       AssertMsgReturn((off) < (pThis)->vram_size, ("%RX32 !< %RX32\n", (uint32_t)(off), (pThis)->vram_size), VINF_SUCCESS); \
-       RT_UNTRUSTED_VALIDATED_FENCE(); \
-    } while (0)
-#endif
-
-/** Check buffer if an VRAM offset is within the right range or not. */
-#if defined(IN_RC) || defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0) || (defined(IN_RING0) && defined(VGA_WITH_PARTIAL_RING0_MAPPING))
-# define VERIFY_VRAM_READ_OFF_RETURN(pThis, off, rcVar) \
-    do { \
-        if ((off) < VGA_MAPPING_SIZE) \
-            RT_UNTRUSTED_VALIDATED_FENCE(); \
-        else \
-        { \
-            AssertMsgReturn((off) < (pThis)->vram_size, ("%RX32 !< %RX32\n", (uint32_t)(off), (pThis)->vram_size), 0xff); \
-            Log2(("%Rfn[%d]: %RX32 -> R3\n", __PRETTY_FUNCTION__, __LINE__, (off))); \
-            (rcVar) = VINF_IOM_R3_MMIO_READ; \
-            return 0; \
-        } \
-    } while (0)
-#else
-# define VERIFY_VRAM_READ_OFF_RETURN(pThis, off, rcVar) \
-    do { \
-        AssertMsgReturn((off) < (pThis)->vram_size, ("%RX32 !< %RX32\n", (uint32_t)(off), (pThis)->vram_size), 0xff); \
-        RT_UNTRUSTED_VALIDATED_FENCE(); \
-        NOREF(rcVar); \
-    } while (0)
-#endif
+#define VGASTATE2DEVINS(pVgaState)      ((pVgaState)->CTX_SUFF(pDevIns))
 
 /* VGA text mode blinking constants (cursor and blinking chars). */
-#define VGA_BLINK_PERIOD_FULL   (RT_NS_100MS * 4)   /* Blink cycle length. */
-#define VGA_BLINK_PERIOD_ON     (RT_NS_100MS * 2)   /* How long cursor/text is visible. */
+#define VGA_BLINK_PERIOD_FULL           (RT_NS_100MS * 4)   /**< Blink cycle length. */
+#define VGA_BLINK_PERIOD_ON             (RT_NS_100MS * 2)   /**< How long cursor/text is visible. */
 
 
 /*********************************************************************************************************************************
