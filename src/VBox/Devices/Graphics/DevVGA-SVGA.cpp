@@ -793,492 +793,492 @@ static int vmsvgaReadPort(PPDMDEVINS pDevIns, PVGASTATE pThis, uint32_t *pu32)
 
     switch (idxReg)
     {
-    case SVGA_REG_ID:
-        STAM_REL_COUNTER_INC(&pThis->svga.StatRegIdRd);
-        *pu32 = pThis->svga.u32SVGAId;
-        break;
+        case SVGA_REG_ID:
+            STAM_REL_COUNTER_INC(&pThis->svga.StatRegIdRd);
+            *pu32 = pThis->svga.u32SVGAId;
+            break;
 
-    case SVGA_REG_ENABLE:
-        STAM_REL_COUNTER_INC(&pThis->svga.StatRegEnableRd);
-        *pu32 = pThis->svga.fEnabled;
-        break;
+        case SVGA_REG_ENABLE:
+            STAM_REL_COUNTER_INC(&pThis->svga.StatRegEnableRd);
+            *pu32 = pThis->svga.fEnabled;
+            break;
 
-    case SVGA_REG_WIDTH:
-    {
-        STAM_REL_COUNTER_INC(&pThis->svga.StatRegWidthRd);
-        if (    pThis->svga.fEnabled
-            &&  pThis->svga.uWidth != VMSVGA_VAL_UNINITIALIZED)
+        case SVGA_REG_WIDTH:
         {
-            *pu32 = pThis->svga.uWidth;
-        }
-        else
-        {
+            STAM_REL_COUNTER_INC(&pThis->svga.StatRegWidthRd);
+            if (    pThis->svga.fEnabled
+                &&  pThis->svga.uWidth != VMSVGA_VAL_UNINITIALIZED)
+            {
+                *pu32 = pThis->svga.uWidth;
+            }
+            else
+            {
 #ifndef IN_RING3
-            rc = VINF_IOM_R3_IOPORT_READ;
+                rc = VINF_IOM_R3_IOPORT_READ;
 #else
-            *pu32 = pThis->pDrv->cx;
+                *pu32 = pThis->pDrv->cx;
 #endif
+            }
+            break;
         }
-        break;
-    }
 
-    case SVGA_REG_HEIGHT:
-    {
-        STAM_REL_COUNTER_INC(&pThis->svga.StatRegHeightRd);
-        if (    pThis->svga.fEnabled
-            &&  pThis->svga.uHeight != VMSVGA_VAL_UNINITIALIZED)
+        case SVGA_REG_HEIGHT:
         {
-            *pu32 = pThis->svga.uHeight;
-        }
-        else
-        {
+            STAM_REL_COUNTER_INC(&pThis->svga.StatRegHeightRd);
+            if (    pThis->svga.fEnabled
+                &&  pThis->svga.uHeight != VMSVGA_VAL_UNINITIALIZED)
+            {
+                *pu32 = pThis->svga.uHeight;
+            }
+            else
+            {
 #ifndef IN_RING3
-            rc = VINF_IOM_R3_IOPORT_READ;
+                rc = VINF_IOM_R3_IOPORT_READ;
 #else
-            *pu32 = pThis->pDrv->cy;
+                *pu32 = pThis->pDrv->cy;
 #endif
-        }
-        break;
-    }
-
-    case SVGA_REG_MAX_WIDTH:
-        STAM_REL_COUNTER_INC(&pThis->svga.StatRegMaxWidthRd);
-        *pu32 = pThis->svga.u32MaxWidth;
-        break;
-
-    case SVGA_REG_MAX_HEIGHT:
-        STAM_REL_COUNTER_INC(&pThis->svga.StatRegMaxHeightRd);
-        *pu32 = pThis->svga.u32MaxHeight;
-        break;
-
-    case SVGA_REG_DEPTH:
-        /* This returns the color depth of the current mode. */
-        STAM_REL_COUNTER_INC(&pThis->svga.StatRegDepthRd);
-        switch (pThis->svga.uBpp)
-        {
-        case 15:
-        case 16:
-        case 24:
-            *pu32 = pThis->svga.uBpp;
-            break;
-
-        default:
-        case 32:
-            *pu32 = 24; /* The upper 8 bits are either alpha bits or not used. */
+            }
             break;
         }
-        break;
 
-    case SVGA_REG_HOST_BITS_PER_PIXEL: /* (Deprecated) */
-        STAM_REL_COUNTER_INC(&pThis->svga.StatRegHostBitsPerPixelRd);
-        if (    pThis->svga.fEnabled
-            &&  pThis->svga.uBpp != VMSVGA_VAL_UNINITIALIZED)
-        {
-            *pu32 = pThis->svga.uBpp;
-        }
-        else
-        {
+        case SVGA_REG_MAX_WIDTH:
+            STAM_REL_COUNTER_INC(&pThis->svga.StatRegMaxWidthRd);
+            *pu32 = pThis->svga.u32MaxWidth;
+            break;
+
+        case SVGA_REG_MAX_HEIGHT:
+            STAM_REL_COUNTER_INC(&pThis->svga.StatRegMaxHeightRd);
+            *pu32 = pThis->svga.u32MaxHeight;
+            break;
+
+        case SVGA_REG_DEPTH:
+            /* This returns the color depth of the current mode. */
+            STAM_REL_COUNTER_INC(&pThis->svga.StatRegDepthRd);
+            switch (pThis->svga.uBpp)
+            {
+            case 15:
+            case 16:
+            case 24:
+                *pu32 = pThis->svga.uBpp;
+                break;
+
+            default:
+            case 32:
+                *pu32 = 24; /* The upper 8 bits are either alpha bits or not used. */
+                break;
+            }
+            break;
+
+        case SVGA_REG_HOST_BITS_PER_PIXEL: /* (Deprecated) */
+            STAM_REL_COUNTER_INC(&pThis->svga.StatRegHostBitsPerPixelRd);
+            if (    pThis->svga.fEnabled
+                &&  pThis->svga.uBpp != VMSVGA_VAL_UNINITIALIZED)
+            {
+                *pu32 = pThis->svga.uBpp;
+            }
+            else
+            {
 #ifndef IN_RING3
-            rc = VINF_IOM_R3_IOPORT_READ;
+                rc = VINF_IOM_R3_IOPORT_READ;
 #else
-            *pu32 = pThis->pDrv->cBits;
+                *pu32 = pThis->pDrv->cBits;
 #endif
-        }
-        break;
+            }
+            break;
 
-    case SVGA_REG_BITS_PER_PIXEL:      /* Current bpp in the guest */
-        STAM_REL_COUNTER_INC(&pThis->svga.StatRegBitsPerPixelRd);
-        if (    pThis->svga.fEnabled
-            &&  pThis->svga.uBpp != VMSVGA_VAL_UNINITIALIZED)
-        {
-            *pu32 = (pThis->svga.uBpp + 7) & ~7;
-        }
-        else
-        {
+        case SVGA_REG_BITS_PER_PIXEL:      /* Current bpp in the guest */
+            STAM_REL_COUNTER_INC(&pThis->svga.StatRegBitsPerPixelRd);
+            if (    pThis->svga.fEnabled
+                &&  pThis->svga.uBpp != VMSVGA_VAL_UNINITIALIZED)
+            {
+                *pu32 = (pThis->svga.uBpp + 7) & ~7;
+            }
+            else
+            {
 #ifndef IN_RING3
-            rc = VINF_IOM_R3_IOPORT_READ;
+                rc = VINF_IOM_R3_IOPORT_READ;
 #else
-            *pu32 = (pThis->pDrv->cBits + 7) & ~7;
+                *pu32 = (pThis->pDrv->cBits + 7) & ~7;
 #endif
-        }
-        break;
-
-    case SVGA_REG_PSEUDOCOLOR:
-        STAM_REL_COUNTER_INC(&pThis->svga.StatRegPsuedoColorRd);
-        *pu32 = pThis->svga.uBpp == 8; /* See section 6 "Pseudocolor" in svga_interface.txt. */
-        break;
-
-    case SVGA_REG_RED_MASK:
-    case SVGA_REG_GREEN_MASK:
-    case SVGA_REG_BLUE_MASK:
-    {
-        uint32_t uBpp;
-
-        if (    pThis->svga.fEnabled
-            &&  pThis->svga.uBpp != VMSVGA_VAL_UNINITIALIZED)
-        {
-            uBpp = pThis->svga.uBpp;
-        }
-        else
-        {
-#ifndef IN_RING3
-            rc = VINF_IOM_R3_IOPORT_READ;
-            break;
-#else
-            uBpp = pThis->pDrv->cBits;
-#endif
-        }
-        uint32_t u32RedMask, u32GreenMask, u32BlueMask;
-        switch (uBpp)
-        {
-        case 8:
-            u32RedMask   = 0x07;
-            u32GreenMask = 0x38;
-            u32BlueMask  = 0xc0;
+            }
             break;
 
-        case 15:
-            u32RedMask   = 0x0000001f;
-            u32GreenMask = 0x000003e0;
-            u32BlueMask  = 0x00007c00;
+        case SVGA_REG_PSEUDOCOLOR:
+            STAM_REL_COUNTER_INC(&pThis->svga.StatRegPsuedoColorRd);
+            *pu32 = pThis->svga.uBpp == 8; /* See section 6 "Pseudocolor" in svga_interface.txt. */
             break;
 
-        case 16:
-            u32RedMask   = 0x0000001f;
-            u32GreenMask = 0x000007e0;
-            u32BlueMask  = 0x0000f800;
-            break;
-
-        case 24:
-        case 32:
-        default:
-            u32RedMask   = 0x00ff0000;
-            u32GreenMask = 0x0000ff00;
-            u32BlueMask  = 0x000000ff;
-            break;
-        }
-        switch (idxReg)
-        {
         case SVGA_REG_RED_MASK:
-            STAM_REL_COUNTER_INC(&pThis->svga.StatRegRedMaskRd);
-            *pu32 = u32RedMask;
-            break;
-
         case SVGA_REG_GREEN_MASK:
-            STAM_REL_COUNTER_INC(&pThis->svga.StatRegGreenMaskRd);
-            *pu32 = u32GreenMask;
-            break;
-
         case SVGA_REG_BLUE_MASK:
-            STAM_REL_COUNTER_INC(&pThis->svga.StatRegBlueMaskRd);
-            *pu32 = u32BlueMask;
+        {
+            uint32_t uBpp;
+
+            if (    pThis->svga.fEnabled
+                &&  pThis->svga.uBpp != VMSVGA_VAL_UNINITIALIZED)
+            {
+                uBpp = pThis->svga.uBpp;
+            }
+            else
+            {
+#ifndef IN_RING3
+                rc = VINF_IOM_R3_IOPORT_READ;
+                break;
+#else
+                uBpp = pThis->pDrv->cBits;
+#endif
+            }
+            uint32_t u32RedMask, u32GreenMask, u32BlueMask;
+            switch (uBpp)
+            {
+                case 8:
+                    u32RedMask   = 0x07;
+                    u32GreenMask = 0x38;
+                    u32BlueMask  = 0xc0;
+                    break;
+
+                case 15:
+                    u32RedMask   = 0x0000001f;
+                    u32GreenMask = 0x000003e0;
+                    u32BlueMask  = 0x00007c00;
+                    break;
+
+                case 16:
+                    u32RedMask   = 0x0000001f;
+                    u32GreenMask = 0x000007e0;
+                    u32BlueMask  = 0x0000f800;
+                    break;
+
+                case 24:
+                case 32:
+                default:
+                    u32RedMask   = 0x00ff0000;
+                    u32GreenMask = 0x0000ff00;
+                    u32BlueMask  = 0x000000ff;
+                    break;
+            }
+            switch (idxReg)
+            {
+                case SVGA_REG_RED_MASK:
+                    STAM_REL_COUNTER_INC(&pThis->svga.StatRegRedMaskRd);
+                    *pu32 = u32RedMask;
+                    break;
+
+                case SVGA_REG_GREEN_MASK:
+                    STAM_REL_COUNTER_INC(&pThis->svga.StatRegGreenMaskRd);
+                    *pu32 = u32GreenMask;
+                    break;
+
+                case SVGA_REG_BLUE_MASK:
+                    STAM_REL_COUNTER_INC(&pThis->svga.StatRegBlueMaskRd);
+                    *pu32 = u32BlueMask;
+                    break;
+            }
             break;
         }
-        break;
-    }
 
-    case SVGA_REG_BYTES_PER_LINE:
-    {
-        STAM_REL_COUNTER_INC(&pThis->svga.StatRegBytesPerLineRd);
-        if (    pThis->svga.fEnabled
-            &&  pThis->svga.cbScanline)
+        case SVGA_REG_BYTES_PER_LINE:
         {
-            *pu32 = pThis->svga.cbScanline;
+            STAM_REL_COUNTER_INC(&pThis->svga.StatRegBytesPerLineRd);
+            if (    pThis->svga.fEnabled
+                &&  pThis->svga.cbScanline)
+            {
+                *pu32 = pThis->svga.cbScanline;
+            }
+            else
+            {
+#ifndef IN_RING3
+                rc = VINF_IOM_R3_IOPORT_READ;
+#else
+                *pu32 = pThis->pDrv->cbScanline;
+#endif
+            }
+            break;
         }
-        else
+
+        case SVGA_REG_VRAM_SIZE:            /* VRAM size */
+            STAM_REL_COUNTER_INC(&pThis->svga.StatRegVramSizeRd);
+            *pu32 = pThis->vram_size;
+            break;
+
+        case SVGA_REG_FB_START:             /* Frame buffer physical address. */
+            STAM_REL_COUNTER_INC(&pThis->svga.StatRegFbStartRd);
+            Assert(pThis->GCPhysVRAM <= 0xffffffff);
+            *pu32 = pThis->GCPhysVRAM;
+            break;
+
+        case SVGA_REG_FB_OFFSET:            /* Offset of the frame buffer in VRAM */
+            STAM_REL_COUNTER_INC(&pThis->svga.StatRegFbOffsetRd);
+            /* Always zero in our case. */
+            *pu32 = 0;
+            break;
+
+        case SVGA_REG_FB_SIZE:              /* Frame buffer size */
         {
 #ifndef IN_RING3
             rc = VINF_IOM_R3_IOPORT_READ;
 #else
-            *pu32 = pThis->pDrv->cbScanline;
+            STAM_REL_COUNTER_INC(&pThis->svga.StatRegFbSizeRd);
+
+            /* VMWare testcases want at least 4 MB in case the hardware is disabled. */
+            if (    pThis->svga.fEnabled
+                &&  pThis->svga.uHeight != VMSVGA_VAL_UNINITIALIZED)
+            {
+                /* Hardware enabled; return real framebuffer size .*/
+                *pu32 = (uint32_t)pThis->svga.uHeight * pThis->svga.cbScanline;
+            }
+            else
+                *pu32 = RT_MAX(0x100000, (uint32_t)pThis->pDrv->cy * pThis->pDrv->cbScanline);
+
+            *pu32 = RT_MIN(pThis->vram_size, *pu32);
+            Log(("h=%d w=%d bpp=%d\n", pThis->pDrv->cy, pThis->pDrv->cx, pThis->pDrv->cBits));
 #endif
-        }
-        break;
-    }
-
-    case SVGA_REG_VRAM_SIZE:            /* VRAM size */
-        STAM_REL_COUNTER_INC(&pThis->svga.StatRegVramSizeRd);
-        *pu32 = pThis->vram_size;
-        break;
-
-    case SVGA_REG_FB_START:             /* Frame buffer physical address. */
-        STAM_REL_COUNTER_INC(&pThis->svga.StatRegFbStartRd);
-        Assert(pThis->GCPhysVRAM <= 0xffffffff);
-        *pu32 = pThis->GCPhysVRAM;
-        break;
-
-    case SVGA_REG_FB_OFFSET:            /* Offset of the frame buffer in VRAM */
-        STAM_REL_COUNTER_INC(&pThis->svga.StatRegFbOffsetRd);
-        /* Always zero in our case. */
-        *pu32 = 0;
-        break;
-
-    case SVGA_REG_FB_SIZE:              /* Frame buffer size */
-    {
-#ifndef IN_RING3
-        rc = VINF_IOM_R3_IOPORT_READ;
-#else
-        STAM_REL_COUNTER_INC(&pThis->svga.StatRegFbSizeRd);
-
-        /* VMWare testcases want at least 4 MB in case the hardware is disabled. */
-        if (    pThis->svga.fEnabled
-            &&  pThis->svga.uHeight != VMSVGA_VAL_UNINITIALIZED)
-        {
-            /* Hardware enabled; return real framebuffer size .*/
-            *pu32 = (uint32_t)pThis->svga.uHeight * pThis->svga.cbScanline;
-        }
-        else
-            *pu32 = RT_MAX(0x100000, (uint32_t)pThis->pDrv->cy * pThis->pDrv->cbScanline);
-
-        *pu32 = RT_MIN(pThis->vram_size, *pu32);
-        Log(("h=%d w=%d bpp=%d\n", pThis->pDrv->cy, pThis->pDrv->cx, pThis->pDrv->cBits));
-#endif
-        break;
-    }
-
-    case SVGA_REG_CAPABILITIES:
-        STAM_REL_COUNTER_INC(&pThis->svga.StatRegCapabilitesRd);
-        *pu32 = pThis->svga.u32RegCaps;
-        break;
-
-    case SVGA_REG_MEM_START:           /* FIFO start */
-        STAM_REL_COUNTER_INC(&pThis->svga.StatRegMemStartRd);
-        Assert(pThis->svga.GCPhysFIFO <= 0xffffffff);
-        *pu32 = pThis->svga.GCPhysFIFO;
-        break;
-
-    case SVGA_REG_MEM_SIZE:            /* FIFO size */
-        STAM_REL_COUNTER_INC(&pThis->svga.StatRegMemSizeRd);
-        *pu32 = pThis->svga.cbFIFO;
-        break;
-
-    case SVGA_REG_CONFIG_DONE:         /* Set when memory area configured */
-        STAM_REL_COUNTER_INC(&pThis->svga.StatRegConfigDoneRd);
-        *pu32 = pThis->svga.fConfigured;
-        break;
-
-    case SVGA_REG_SYNC:                /* See "FIFO Synchronization Registers" */
-        STAM_REL_COUNTER_INC(&pThis->svga.StatRegSyncRd);
-        *pu32 = 0;
-        break;
-
-    case SVGA_REG_BUSY:                /* See "FIFO Synchronization Registers" */
-        STAM_REL_COUNTER_INC(&pThis->svga.StatRegBusyRd);
-        if (pThis->svga.fBusy)
-        {
-#ifndef IN_RING3
-            /* Go to ring-3 and halt the CPU. */
-            rc = VINF_IOM_R3_IOPORT_READ;
-            RT_NOREF(pDevIns);
             break;
+        }
+
+        case SVGA_REG_CAPABILITIES:
+            STAM_REL_COUNTER_INC(&pThis->svga.StatRegCapabilitesRd);
+            *pu32 = pThis->svga.u32RegCaps;
+            break;
+
+        case SVGA_REG_MEM_START:           /* FIFO start */
+            STAM_REL_COUNTER_INC(&pThis->svga.StatRegMemStartRd);
+            Assert(pThis->svga.GCPhysFIFO <= 0xffffffff);
+            *pu32 = pThis->svga.GCPhysFIFO;
+            break;
+
+        case SVGA_REG_MEM_SIZE:            /* FIFO size */
+            STAM_REL_COUNTER_INC(&pThis->svga.StatRegMemSizeRd);
+            *pu32 = pThis->svga.cbFIFO;
+            break;
+
+        case SVGA_REG_CONFIG_DONE:         /* Set when memory area configured */
+            STAM_REL_COUNTER_INC(&pThis->svga.StatRegConfigDoneRd);
+            *pu32 = pThis->svga.fConfigured;
+            break;
+
+        case SVGA_REG_SYNC:                /* See "FIFO Synchronization Registers" */
+            STAM_REL_COUNTER_INC(&pThis->svga.StatRegSyncRd);
+            *pu32 = 0;
+            break;
+
+        case SVGA_REG_BUSY:                /* See "FIFO Synchronization Registers" */
+            STAM_REL_COUNTER_INC(&pThis->svga.StatRegBusyRd);
+            if (pThis->svga.fBusy)
+            {
+#ifndef IN_RING3
+                /* Go to ring-3 and halt the CPU. */
+                rc = VINF_IOM_R3_IOPORT_READ;
+                RT_NOREF(pDevIns);
+                break;
 #else
 # if defined(VMSVGA_USE_EMT_HALT_CODE)
-            /* The guest is basically doing a HLT via the device here, but with
-               a special wake up condition on FIFO completion. */
-            PVMSVGAR3STATE pSVGAState = pThis->svga.pSvgaR3State;
-            STAM_REL_PROFILE_START(&pSVGAState->StatBusyDelayEmts, EmtDelay);
-            PVM         pVM   = PDMDevHlpGetVM(pThis->pDevInsR3);
-            VMCPUID     idCpu = PDMDevHlpGetCurrentCpuId(pThis->pDevInsR3);
-            VMCPUSET_ATOMIC_ADD(&pSVGAState->BusyDelayedEmts, idCpu);
-            ASMAtomicIncU32(&pSVGAState->cBusyDelayedEmts);
-            if (pThis->svga.fBusy)
-            {
-                PDMDevHlpCritSectLeave(pDevIns, &pThis->CritSect); /* hack around lock order issue. */
-                rc = VMR3WaitForDeviceReady(pVM, idCpu);
-                PDMDevHlpCritSectEnter(pDevIns, &pThis->CritSect, VERR_IGNORED);
-            }
-            ASMAtomicDecU32(&pSVGAState->cBusyDelayedEmts);
-            VMCPUSET_ATOMIC_DEL(&pSVGAState->BusyDelayedEmts, idCpu);
-# else
-
-            /* Delay the EMT a bit so the FIFO and others can get some work done.
-               This used to be a crude 50 ms sleep. The current code tries to be
-               more efficient, but the consept is still very crude. */
-            PVMSVGAR3STATE pSVGAState = pThis->svga.pSvgaR3State;
-            STAM_REL_PROFILE_START(&pSVGAState->StatBusyDelayEmts, EmtDelay);
-            RTThreadYield();
-            if (pThis->svga.fBusy)
-            {
-                uint32_t cRefs = ASMAtomicIncU32(&pSVGAState->cBusyDelayedEmts);
-
-                if (pThis->svga.fBusy && cRefs == 1)
-                    RTSemEventMultiReset(pSVGAState->hBusyDelayedEmts);
+                /* The guest is basically doing a HLT via the device here, but with
+                   a special wake up condition on FIFO completion. */
+                PVMSVGAR3STATE pSVGAState = pThis->svga.pSvgaR3State;
+                STAM_REL_PROFILE_START(&pSVGAState->StatBusyDelayEmts, EmtDelay);
+                PVM         pVM   = PDMDevHlpGetVM(pThis->pDevInsR3);
+                VMCPUID     idCpu = PDMDevHlpGetCurrentCpuId(pThis->pDevInsR3);
+                VMCPUSET_ATOMIC_ADD(&pSVGAState->BusyDelayedEmts, idCpu);
+                ASMAtomicIncU32(&pSVGAState->cBusyDelayedEmts);
                 if (pThis->svga.fBusy)
                 {
-                    /** @todo If this code is going to stay, we need to call into the halt/wait
-                     *        code in VMEmt.cpp here, otherwise all kind of EMT interaction will
-                     *        suffer when the guest is polling on a busy FIFO. */
-                    uint64_t cNsMaxWait = TMVirtualSyncGetNsToDeadline(PDMDevHlpGetVM(pThis->pDevInsR3));
-                    if (cNsMaxWait >= RT_NS_100US)
-                        RTSemEventMultiWaitEx(pSVGAState->hBusyDelayedEmts,
-                                              RTSEMWAIT_FLAGS_NANOSECS | RTSEMWAIT_FLAGS_RELATIVE | RTSEMWAIT_FLAGS_NORESUME,
-                                              RT_MIN(cNsMaxWait, RT_NS_10MS));
+                    PDMDevHlpCritSectLeave(pDevIns, &pThis->CritSect); /* hack around lock order issue. */
+                    rc = VMR3WaitForDeviceReady(pVM, idCpu);
+                    PDMDevHlpCritSectEnter(pDevIns, &pThis->CritSect, VERR_IGNORED);
                 }
-
                 ASMAtomicDecU32(&pSVGAState->cBusyDelayedEmts);
-            }
-            STAM_REL_PROFILE_STOP(&pSVGAState->StatBusyDelayEmts, EmtDelay);
+                VMCPUSET_ATOMIC_DEL(&pSVGAState->BusyDelayedEmts, idCpu);
+# else
+
+                /* Delay the EMT a bit so the FIFO and others can get some work done.
+                   This used to be a crude 50 ms sleep. The current code tries to be
+                   more efficient, but the consept is still very crude. */
+                PVMSVGAR3STATE pSVGAState = pThis->svga.pSvgaR3State;
+                STAM_REL_PROFILE_START(&pSVGAState->StatBusyDelayEmts, EmtDelay);
+                RTThreadYield();
+                if (pThis->svga.fBusy)
+                {
+                    uint32_t cRefs = ASMAtomicIncU32(&pSVGAState->cBusyDelayedEmts);
+
+                    if (pThis->svga.fBusy && cRefs == 1)
+                        RTSemEventMultiReset(pSVGAState->hBusyDelayedEmts);
+                    if (pThis->svga.fBusy)
+                    {
+                        /** @todo If this code is going to stay, we need to call into the halt/wait
+                         *        code in VMEmt.cpp here, otherwise all kind of EMT interaction will
+                         *        suffer when the guest is polling on a busy FIFO. */
+                        uint64_t cNsMaxWait = TMVirtualSyncGetNsToDeadline(PDMDevHlpGetVM(pThis->pDevInsR3));
+                        if (cNsMaxWait >= RT_NS_100US)
+                            RTSemEventMultiWaitEx(pSVGAState->hBusyDelayedEmts,
+                                                  RTSEMWAIT_FLAGS_NANOSECS | RTSEMWAIT_FLAGS_RELATIVE | RTSEMWAIT_FLAGS_NORESUME,
+                                                  RT_MIN(cNsMaxWait, RT_NS_10MS));
+                    }
+
+                    ASMAtomicDecU32(&pSVGAState->cBusyDelayedEmts);
+                }
+                STAM_REL_PROFILE_STOP(&pSVGAState->StatBusyDelayEmts, EmtDelay);
 # endif
-            *pu32 = pThis->svga.fBusy != 0;
+                *pu32 = pThis->svga.fBusy != 0;
 #endif
-        }
-        else
-            *pu32 = false;
-        break;
-
-    case SVGA_REG_GUEST_ID:            /* Set guest OS identifier */
-        STAM_REL_COUNTER_INC(&pThis->svga.StatRegGuestIdRd);
-        *pu32 = pThis->svga.u32GuestId;
-        break;
-
-    case SVGA_REG_SCRATCH_SIZE:        /* Number of scratch registers */
-        STAM_REL_COUNTER_INC(&pThis->svga.StatRegScratchSizeRd);
-        *pu32 = pThis->svga.cScratchRegion;
-        break;
-
-    case SVGA_REG_MEM_REGS:            /* Number of FIFO registers */
-        STAM_REL_COUNTER_INC(&pThis->svga.StatRegMemRegsRd);
-        *pu32 = SVGA_FIFO_NUM_REGS;
-        break;
-
-    case SVGA_REG_PITCHLOCK:           /* Fixed pitch for all modes */
-        STAM_REL_COUNTER_INC(&pThis->svga.StatRegPitchLockRd);
-        *pu32 = pThis->svga.u32PitchLock;
-        break;
-
-    case SVGA_REG_IRQMASK:             /* Interrupt mask */
-        STAM_REL_COUNTER_INC(&pThis->svga.StatRegIrqMaskRd);
-        *pu32 = pThis->svga.u32IrqMask;
-        break;
-
-    /* See "Guest memory regions" below. */
-    case SVGA_REG_GMR_ID:
-        STAM_REL_COUNTER_INC(&pThis->svga.StatRegGmrIdRd);
-        *pu32 = pThis->svga.u32CurrentGMRId;
-        break;
-
-    case SVGA_REG_GMR_DESCRIPTOR:
-        STAM_REL_COUNTER_INC(&pThis->svga.StatRegWriteOnlyRd);
-        /* Write only */
-        *pu32 = 0;
-        break;
-
-    case SVGA_REG_GMR_MAX_IDS:
-        STAM_REL_COUNTER_INC(&pThis->svga.StatRegGmrMaxIdsRd);
-        *pu32 = pThis->svga.cGMR;
-        break;
-
-    case SVGA_REG_GMR_MAX_DESCRIPTOR_LENGTH:
-        STAM_REL_COUNTER_INC(&pThis->svga.StatRegGmrMaxDescriptorLengthRd);
-        *pu32 = VMSVGA_MAX_GMR_PAGES;
-        break;
-
-    case SVGA_REG_TRACES:            /* Enable trace-based updates even when FIFO is on */
-        STAM_REL_COUNTER_INC(&pThis->svga.StatRegTracesRd);
-        *pu32 = pThis->svga.fTraces;
-        break;
-
-    case SVGA_REG_GMRS_MAX_PAGES:    /* Maximum number of 4KB pages for all GMRs */
-        STAM_REL_COUNTER_INC(&pThis->svga.StatRegGmrsMaxPagesRd);
-        *pu32 = VMSVGA_MAX_GMR_PAGES;
-        break;
-
-    case SVGA_REG_MEMORY_SIZE:       /* Total dedicated device memory excluding FIFO */
-        STAM_REL_COUNTER_INC(&pThis->svga.StatRegMemorySizeRd);
-        *pu32 = VMSVGA_SURFACE_SIZE;
-        break;
-
-    case SVGA_REG_TOP:               /* Must be 1 more than the last register */
-        STAM_REL_COUNTER_INC(&pThis->svga.StatRegTopRd);
-        break;
-
-    /* Mouse cursor support. */
-    case SVGA_REG_CURSOR_ID:
-    case SVGA_REG_CURSOR_X:
-    case SVGA_REG_CURSOR_Y:
-    case SVGA_REG_CURSOR_ON:
-        STAM_REL_COUNTER_INC(&pThis->svga.StatRegCursorXxxxRd);
-        break;
-
-    /* Legacy multi-monitor support */
-    case SVGA_REG_NUM_GUEST_DISPLAYS:/* Number of guest displays in X/Y direction */
-        STAM_REL_COUNTER_INC(&pThis->svga.StatRegNumGuestDisplaysRd);
-        *pu32 = 1;
-        break;
-
-    case SVGA_REG_DISPLAY_ID:        /* Display ID for the following display attributes */
-        STAM_REL_COUNTER_INC(&pThis->svga.StatRegDisplayIdRd);
-        *pu32 = 0;
-        break;
-
-    case SVGA_REG_DISPLAY_IS_PRIMARY:/* Whether this is a primary display */
-        STAM_REL_COUNTER_INC(&pThis->svga.StatRegDisplayIsPrimaryRd);
-        *pu32 = 0;
-        break;
-
-    case SVGA_REG_DISPLAY_POSITION_X:/* The display position x */
-        STAM_REL_COUNTER_INC(&pThis->svga.StatRegDisplayPositionXRd);
-        *pu32 = 0;
-        break;
-
-    case SVGA_REG_DISPLAY_POSITION_Y:/* The display position y */
-        STAM_REL_COUNTER_INC(&pThis->svga.StatRegDisplayPositionYRd);
-        *pu32 = 0;
-        break;
-
-    case SVGA_REG_DISPLAY_WIDTH:     /* The display's width */
-        STAM_REL_COUNTER_INC(&pThis->svga.StatRegDisplayWidthRd);
-        *pu32 = pThis->svga.uWidth;
-        break;
-
-    case SVGA_REG_DISPLAY_HEIGHT:    /* The display's height */
-        STAM_REL_COUNTER_INC(&pThis->svga.StatRegDisplayHeightRd);
-        *pu32 = pThis->svga.uHeight;
-        break;
-
-    case SVGA_REG_NUM_DISPLAYS:        /* (Deprecated) */
-        STAM_REL_COUNTER_INC(&pThis->svga.StatRegNumDisplaysRd);
-        /* We must return something sensible here otherwise the Linux driver
-           will take a legacy code path without 3d support.  This number also
-           limits how many screens Linux guests will allow. */
-        *pu32 = pThis->cMonitors;
-        break;
-
-    default:
-    {
-        uint32_t offReg;
-        if ((offReg = idxReg - SVGA_SCRATCH_BASE) < pThis->svga.cScratchRegion)
-        {
-            RT_UNTRUSTED_VALIDATED_FENCE();
-            *pu32 = pThis->svga.au32ScratchRegion[offReg];
-            STAM_REL_COUNTER_INC(&pThis->svga.StatRegScratchRd);
-        }
-        else if ((offReg = idxReg - SVGA_PALETTE_BASE) < (uint32_t)SVGA_NUM_PALETTE_REGS)
-        {
-            /* Note! Using last_palette rather than palette here to preserve the VGA one. */
-            STAM_REL_COUNTER_INC(&pThis->svga.StatRegPaletteRd);
-            RT_UNTRUSTED_VALIDATED_FENCE();
-            uint32_t u32 = pThis->last_palette[offReg / 3];
-            switch (offReg % 3)
-            {
-                case 0: *pu32 = (u32 >> 16) & 0xff; break; /* red */
-                case 1: *pu32 = (u32 >>  8) & 0xff; break; /* green */
-                case 2: *pu32 =  u32        & 0xff; break; /* blue */
             }
-        }
-        else
-        {
-#if !defined(IN_RING3) && defined(VBOX_STRICT)
-            rc = VINF_IOM_R3_IOPORT_READ;
-#else
-            STAM_REL_COUNTER_INC(&pThis->svga.StatRegUnknownRd);
+            else
+                *pu32 = false;
+            break;
 
-            /* Do not assert. The guest might be reading all registers. */
-            LogFunc(("Unknown reg=%#x\n", idxReg));
+        case SVGA_REG_GUEST_ID:            /* Set guest OS identifier */
+            STAM_REL_COUNTER_INC(&pThis->svga.StatRegGuestIdRd);
+            *pu32 = pThis->svga.u32GuestId;
+            break;
+
+        case SVGA_REG_SCRATCH_SIZE:        /* Number of scratch registers */
+            STAM_REL_COUNTER_INC(&pThis->svga.StatRegScratchSizeRd);
+            *pu32 = pThis->svga.cScratchRegion;
+            break;
+
+        case SVGA_REG_MEM_REGS:            /* Number of FIFO registers */
+            STAM_REL_COUNTER_INC(&pThis->svga.StatRegMemRegsRd);
+            *pu32 = SVGA_FIFO_NUM_REGS;
+            break;
+
+        case SVGA_REG_PITCHLOCK:           /* Fixed pitch for all modes */
+            STAM_REL_COUNTER_INC(&pThis->svga.StatRegPitchLockRd);
+            *pu32 = pThis->svga.u32PitchLock;
+            break;
+
+        case SVGA_REG_IRQMASK:             /* Interrupt mask */
+            STAM_REL_COUNTER_INC(&pThis->svga.StatRegIrqMaskRd);
+            *pu32 = pThis->svga.u32IrqMask;
+            break;
+
+        /* See "Guest memory regions" below. */
+        case SVGA_REG_GMR_ID:
+            STAM_REL_COUNTER_INC(&pThis->svga.StatRegGmrIdRd);
+            *pu32 = pThis->svga.u32CurrentGMRId;
+            break;
+
+        case SVGA_REG_GMR_DESCRIPTOR:
+            STAM_REL_COUNTER_INC(&pThis->svga.StatRegWriteOnlyRd);
+            /* Write only */
+            *pu32 = 0;
+            break;
+
+        case SVGA_REG_GMR_MAX_IDS:
+            STAM_REL_COUNTER_INC(&pThis->svga.StatRegGmrMaxIdsRd);
+            *pu32 = pThis->svga.cGMR;
+            break;
+
+        case SVGA_REG_GMR_MAX_DESCRIPTOR_LENGTH:
+            STAM_REL_COUNTER_INC(&pThis->svga.StatRegGmrMaxDescriptorLengthRd);
+            *pu32 = VMSVGA_MAX_GMR_PAGES;
+            break;
+
+        case SVGA_REG_TRACES:            /* Enable trace-based updates even when FIFO is on */
+            STAM_REL_COUNTER_INC(&pThis->svga.StatRegTracesRd);
+            *pu32 = pThis->svga.fTraces;
+            break;
+
+        case SVGA_REG_GMRS_MAX_PAGES:    /* Maximum number of 4KB pages for all GMRs */
+            STAM_REL_COUNTER_INC(&pThis->svga.StatRegGmrsMaxPagesRd);
+            *pu32 = VMSVGA_MAX_GMR_PAGES;
+            break;
+
+        case SVGA_REG_MEMORY_SIZE:       /* Total dedicated device memory excluding FIFO */
+            STAM_REL_COUNTER_INC(&pThis->svga.StatRegMemorySizeRd);
+            *pu32 = VMSVGA_SURFACE_SIZE;
+            break;
+
+        case SVGA_REG_TOP:               /* Must be 1 more than the last register */
+            STAM_REL_COUNTER_INC(&pThis->svga.StatRegTopRd);
+            break;
+
+        /* Mouse cursor support. */
+        case SVGA_REG_CURSOR_ID:
+        case SVGA_REG_CURSOR_X:
+        case SVGA_REG_CURSOR_Y:
+        case SVGA_REG_CURSOR_ON:
+            STAM_REL_COUNTER_INC(&pThis->svga.StatRegCursorXxxxRd);
+            break;
+
+        /* Legacy multi-monitor support */
+        case SVGA_REG_NUM_GUEST_DISPLAYS:/* Number of guest displays in X/Y direction */
+            STAM_REL_COUNTER_INC(&pThis->svga.StatRegNumGuestDisplaysRd);
+            *pu32 = 1;
+            break;
+
+        case SVGA_REG_DISPLAY_ID:        /* Display ID for the following display attributes */
+            STAM_REL_COUNTER_INC(&pThis->svga.StatRegDisplayIdRd);
+            *pu32 = 0;
+            break;
+
+        case SVGA_REG_DISPLAY_IS_PRIMARY:/* Whether this is a primary display */
+            STAM_REL_COUNTER_INC(&pThis->svga.StatRegDisplayIsPrimaryRd);
+            *pu32 = 0;
+            break;
+
+        case SVGA_REG_DISPLAY_POSITION_X:/* The display position x */
+            STAM_REL_COUNTER_INC(&pThis->svga.StatRegDisplayPositionXRd);
+            *pu32 = 0;
+            break;
+
+        case SVGA_REG_DISPLAY_POSITION_Y:/* The display position y */
+            STAM_REL_COUNTER_INC(&pThis->svga.StatRegDisplayPositionYRd);
+            *pu32 = 0;
+            break;
+
+        case SVGA_REG_DISPLAY_WIDTH:     /* The display's width */
+            STAM_REL_COUNTER_INC(&pThis->svga.StatRegDisplayWidthRd);
+            *pu32 = pThis->svga.uWidth;
+            break;
+
+        case SVGA_REG_DISPLAY_HEIGHT:    /* The display's height */
+            STAM_REL_COUNTER_INC(&pThis->svga.StatRegDisplayHeightRd);
+            *pu32 = pThis->svga.uHeight;
+            break;
+
+        case SVGA_REG_NUM_DISPLAYS:        /* (Deprecated) */
+            STAM_REL_COUNTER_INC(&pThis->svga.StatRegNumDisplaysRd);
+            /* We must return something sensible here otherwise the Linux driver
+               will take a legacy code path without 3d support.  This number also
+               limits how many screens Linux guests will allow. */
+            *pu32 = pThis->cMonitors;
+            break;
+
+        default:
+        {
+            uint32_t offReg;
+            if ((offReg = idxReg - SVGA_SCRATCH_BASE) < pThis->svga.cScratchRegion)
+            {
+                RT_UNTRUSTED_VALIDATED_FENCE();
+                *pu32 = pThis->svga.au32ScratchRegion[offReg];
+                STAM_REL_COUNTER_INC(&pThis->svga.StatRegScratchRd);
+            }
+            else if ((offReg = idxReg - SVGA_PALETTE_BASE) < (uint32_t)SVGA_NUM_PALETTE_REGS)
+            {
+                /* Note! Using last_palette rather than palette here to preserve the VGA one. */
+                STAM_REL_COUNTER_INC(&pThis->svga.StatRegPaletteRd);
+                RT_UNTRUSTED_VALIDATED_FENCE();
+                uint32_t u32 = pThis->last_palette[offReg / 3];
+                switch (offReg % 3)
+                {
+                    case 0: *pu32 = (u32 >> 16) & 0xff; break; /* red */
+                    case 1: *pu32 = (u32 >>  8) & 0xff; break; /* green */
+                    case 2: *pu32 =  u32        & 0xff; break; /* blue */
+                }
+            }
+            else
+            {
+#if !defined(IN_RING3) && defined(VBOX_STRICT)
+                rc = VINF_IOM_R3_IOPORT_READ;
+#else
+                STAM_REL_COUNTER_INC(&pThis->svga.StatRegUnknownRd);
+
+                /* Do not assert. The guest might be reading all registers. */
+                LogFunc(("Unknown reg=%#x\n", idxReg));
 #endif
+            }
+            break;
         }
-        break;
-    }
     }
     Log(("vmsvgaReadPort index=%s (%d) val=%#x rc=%x\n", vmsvgaIndexToString(pThis, idxReg), idxReg, *pu32, rc));
     return rc;
@@ -1505,16 +1505,16 @@ DECLINLINE(void) vmsvgaUpdatePitch(PVGASTATE pThis)
 /**
  * Write port register
  *
- * @returns VBox status code.
+ * @returns Strict VBox status code.
  * @param   pThis       VMSVGA State
  * @param   u32         Value to write
  */
-static int vmsvgaWritePort(PVGASTATE pThis, uint32_t u32)
+static VBOXSTRICTRC vmsvgaWritePort(PVGASTATE pThis, uint32_t u32)
 {
 #ifdef IN_RING3
     PVMSVGAR3STATE pSVGAState = pThis->svga.pSvgaR3State;
 #endif
-    int            rc = VINF_SUCCESS;
+    VBOXSTRICTRC rc = VINF_SUCCESS;
 
     /* Rough index register validation. */
     uint32_t idxReg = pThis->svga.u32IndexReg;
@@ -1551,415 +1551,405 @@ static int vmsvgaWritePort(PVGASTATE pThis, uint32_t u32)
 
     switch (idxReg)
     {
-    case SVGA_REG_ID:
-        STAM_REL_COUNTER_INC(&pThis->svga.StatRegIdWr);
-        if (   u32 == SVGA_ID_0
-            || u32 == SVGA_ID_1
-            || u32 == SVGA_ID_2)
-            pThis->svga.u32SVGAId = u32;
-        else
-            PDMDevHlpDBGFStop(pThis->CTX_SUFF(pDevIns), RT_SRC_POS, "Trying to set SVGA_REG_ID to %#x (%d)\n", u32, u32);
-        break;
-
-    case SVGA_REG_ENABLE:
-        STAM_REL_COUNTER_INC(&pThis->svga.StatRegEnableWr);
-#ifdef IN_RING3
-        if (    (u32 & SVGA_REG_ENABLE_ENABLE)
-            &&  pThis->svga.fEnabled == false)
-        {
-            /* Make a backup copy of the first 512kb in order to save font data etc. */
-            /** @todo should probably swap here, rather than copy + zero */
-            memcpy(pThis->svga.pbVgaFrameBufferR3, pThis->vram_ptrR3, VMSVGA_VGA_FB_BACKUP_SIZE);
-            memset(pThis->vram_ptrR3, 0, VMSVGA_VGA_FB_BACKUP_SIZE);
-        }
-
-        pThis->svga.fEnabled = u32;
-        if (pThis->svga.fEnabled)
-        {
-            if (    pThis->svga.uWidth  == VMSVGA_VAL_UNINITIALIZED
-                &&  pThis->svga.uHeight == VMSVGA_VAL_UNINITIALIZED
-                &&  pThis->svga.uBpp    == VMSVGA_VAL_UNINITIALIZED)
-            {
-                /* Keep the current mode. */
-                pThis->svga.uWidth  = pThis->pDrv->cx;
-                pThis->svga.uHeight = pThis->pDrv->cy;
-                pThis->svga.uBpp    = (pThis->pDrv->cBits + 7) & ~7;
-            }
-
-            if (    pThis->svga.uWidth  != VMSVGA_VAL_UNINITIALIZED
-                &&  pThis->svga.uHeight != VMSVGA_VAL_UNINITIALIZED
-                &&  pThis->svga.uBpp    != VMSVGA_VAL_UNINITIALIZED)
-            {
-                ASMAtomicOrU32(&pThis->svga.u32ActionFlags, VMSVGA_ACTION_CHANGEMODE);
-            }
-# ifdef LOG_ENABLED
-            uint32_t *pFIFO = pThis->svga.pFIFOR3;
-            Log(("configured=%d busy=%d\n", pThis->svga.fConfigured, pFIFO[SVGA_FIFO_BUSY]));
-            Log(("next %x stop %x\n", pFIFO[SVGA_FIFO_NEXT_CMD], pFIFO[SVGA_FIFO_STOP]));
-# endif
-
-            /* Disable or enable dirty page tracking according to the current fTraces value. */
-            vmsvgaSetTraces(pThis, !!pThis->svga.fTraces);
-
-            /* bird: Whatever this is was added to make screenshot work, ask sunlover should explain... */
-            for (uint32_t idScreen = 0; idScreen < pThis->cMonitors; ++idScreen)
-                pThis->pDrv->pfnVBVAEnable(pThis->pDrv, idScreen, NULL /*pHostFlags*/);
-        }
-        else
-        {
-            /* Restore the text mode backup. */
-            memcpy(pThis->vram_ptrR3, pThis->svga.pbVgaFrameBufferR3, VMSVGA_VGA_FB_BACKUP_SIZE);
-
-            pThis->pDrv->pfnLFBModeChange(pThis->pDrv, false);
-
-            /* Enable dirty page tracking again when going into legacy mode. */
-            vmsvgaSetTraces(pThis, true);
-
-            /* bird: Whatever this is was added to make screenshot work, ask sunlover should explain... */
-            for (uint32_t idScreen = 0; idScreen < pThis->cMonitors; ++idScreen)
-                pThis->pDrv->pfnVBVADisable(pThis->pDrv, idScreen);
-
-            /* Clear the pitch lock. */
-            pThis->svga.u32PitchLock = 0;
-        }
-#else  /* !IN_RING3 */
-        rc = VINF_IOM_R3_IOPORT_WRITE;
-#endif /* !IN_RING3 */
-        break;
-
-    case SVGA_REG_WIDTH:
-        STAM_REL_COUNTER_INC(&pThis->svga.StatRegWidthWr);
-        if (pThis->svga.uWidth != u32)
-        {
-#if defined(IN_RING3) || defined(IN_RING0)
-            pThis->svga.uWidth = u32;
-            vmsvgaUpdatePitch(pThis);
-            if (pThis->svga.fEnabled)
-            {
-                ASMAtomicOrU32(&pThis->svga.u32ActionFlags, VMSVGA_ACTION_CHANGEMODE);
-            }
-#else
-            rc = VINF_IOM_R3_IOPORT_WRITE;
-#endif
-        }
-        /* else: nop */
-        break;
-
-    case SVGA_REG_HEIGHT:
-        STAM_REL_COUNTER_INC(&pThis->svga.StatRegHeightWr);
-        if (pThis->svga.uHeight != u32)
-        {
-            pThis->svga.uHeight = u32;
-            if (pThis->svga.fEnabled)
-            {
-                ASMAtomicOrU32(&pThis->svga.u32ActionFlags, VMSVGA_ACTION_CHANGEMODE);
-            }
-        }
-        /* else: nop */
-        break;
-
-    case SVGA_REG_DEPTH:
-        STAM_REL_COUNTER_INC(&pThis->svga.StatRegDepthWr);
-        /** @todo read-only?? */
-        break;
-
-    case SVGA_REG_BITS_PER_PIXEL:      /* Current bpp in the guest */
-        STAM_REL_COUNTER_INC(&pThis->svga.StatRegBitsPerPixelWr);
-        if (pThis->svga.uBpp != u32)
-        {
-#if defined(IN_RING3) || defined(IN_RING0)
-            pThis->svga.uBpp = u32;
-            vmsvgaUpdatePitch(pThis);
-            if (pThis->svga.fEnabled)
-            {
-                ASMAtomicOrU32(&pThis->svga.u32ActionFlags, VMSVGA_ACTION_CHANGEMODE);
-            }
-#else
-            rc = VINF_IOM_R3_IOPORT_WRITE;
-#endif
-        }
-        /* else: nop */
-        break;
-
-    case SVGA_REG_PSEUDOCOLOR:
-        STAM_REL_COUNTER_INC(&pThis->svga.StatRegPseudoColorWr);
-        break;
-
-    case SVGA_REG_CONFIG_DONE:         /* Set when memory area configured */
-#ifdef IN_RING3
-        STAM_REL_COUNTER_INC(&pSVGAState->StatR3RegConfigDoneWr);
-        pThis->svga.fConfigured = u32;
-        /* Disabling the FIFO enables tracing (dirty page detection) by default. */
-        if (!pThis->svga.fConfigured)
-        {
-            pThis->svga.fTraces = true;
-        }
-        vmsvgaSetTraces(pThis, !!pThis->svga.fTraces);
-#else
-        rc = VINF_IOM_R3_IOPORT_WRITE;
-#endif
-        break;
-
-    case SVGA_REG_SYNC:                /* See "FIFO Synchronization Registers" */
-        STAM_REL_COUNTER_INC(&pThis->svga.StatRegSyncWr);
-        if (    pThis->svga.fEnabled
-            &&  pThis->svga.fConfigured)
-        {
-#if defined(IN_RING3) || defined(IN_RING0)
-            Log(("SVGA_REG_SYNC: SVGA_FIFO_BUSY=%d\n", pThis->svga.CTX_SUFF(pFIFO)[SVGA_FIFO_BUSY]));
-            ASMAtomicWriteU32(&pThis->svga.fBusy, VMSVGA_BUSY_F_EMT_FORCE | VMSVGA_BUSY_F_FIFO);
-            if (VMSVGA_IS_VALID_FIFO_REG(SVGA_FIFO_BUSY, pThis->svga.CTX_SUFF(pFIFO)[SVGA_FIFO_MIN]))
-                vmsvgaSafeFifoBusyRegUpdate(pThis, true);
-
-            /* Kick the FIFO thread to start processing commands again. */
-            SUPSemEventSignal(pThis->svga.pSupDrvSession, pThis->svga.FIFORequestSem);
-#else
-            rc = VINF_IOM_R3_IOPORT_WRITE;
-#endif
-        }
-        /* else nothing to do. */
-        else
-            Log(("Sync ignored enabled=%d configured=%d\n", pThis->svga.fEnabled, pThis->svga.fConfigured));
-
-        break;
-
-    case SVGA_REG_BUSY:                /* See "FIFO Synchronization Registers" (read-only) */
-        STAM_REL_COUNTER_INC(&pThis->svga.StatRegBusyWr);
-        break;
-
-    case SVGA_REG_GUEST_ID:            /* Set guest OS identifier */
-        STAM_REL_COUNTER_INC(&pThis->svga.StatRegGuestIdWr);
-        pThis->svga.u32GuestId = u32;
-        break;
-
-    case SVGA_REG_PITCHLOCK:           /* Fixed pitch for all modes */
-        STAM_REL_COUNTER_INC(&pThis->svga.StatRegPitchLockWr);
-        pThis->svga.u32PitchLock = u32;
-        /* Should this also update the FIFO pitch lock? Unclear. */
-        break;
-
-    case SVGA_REG_IRQMASK:             /* Interrupt mask */
-        STAM_REL_COUNTER_INC(&pThis->svga.StatRegIrqMaskWr);
-        pThis->svga.u32IrqMask = u32;
-
-        /* Irq pending after the above change? */
-        if (pThis->svga.u32IrqStatus & u32)
-        {
-            Log(("SVGA_REG_IRQMASK: Trigger interrupt with status %x\n", pThis->svga.u32IrqStatus));
-            PDMDevHlpPCISetIrqNoWait(pThis->CTX_SUFF(pDevIns), 0, 1);
-        }
-        else
-            PDMDevHlpPCISetIrqNoWait(pThis->CTX_SUFF(pDevIns), 0, 0);
-        break;
-
-    /* Mouse cursor support */
-    case SVGA_REG_CURSOR_ID:
-    case SVGA_REG_CURSOR_X:
-    case SVGA_REG_CURSOR_Y:
-    case SVGA_REG_CURSOR_ON:
-        STAM_REL_COUNTER_INC(&pThis->svga.StatRegCursorXxxxWr);
-        break;
-
-    /* Legacy multi-monitor support */
-    case SVGA_REG_NUM_GUEST_DISPLAYS:/* Number of guest displays in X/Y direction */
-        STAM_REL_COUNTER_INC(&pThis->svga.StatRegNumGuestDisplaysWr);
-        break;
-    case SVGA_REG_DISPLAY_ID:        /* Display ID for the following display attributes */
-        STAM_REL_COUNTER_INC(&pThis->svga.StatRegDisplayIdWr);
-        break;
-    case SVGA_REG_DISPLAY_IS_PRIMARY:/* Whether this is a primary display */
-        STAM_REL_COUNTER_INC(&pThis->svga.StatRegDisplayIsPrimaryWr);
-        break;
-    case SVGA_REG_DISPLAY_POSITION_X:/* The display position x */
-        STAM_REL_COUNTER_INC(&pThis->svga.StatRegDisplayPositionXWr);
-        break;
-    case SVGA_REG_DISPLAY_POSITION_Y:/* The display position y */
-        STAM_REL_COUNTER_INC(&pThis->svga.StatRegDisplayPositionYWr);
-        break;
-    case SVGA_REG_DISPLAY_WIDTH:     /* The display's width */
-        STAM_REL_COUNTER_INC(&pThis->svga.StatRegDisplayWidthWr);
-        break;
-    case SVGA_REG_DISPLAY_HEIGHT:    /* The display's height */
-        STAM_REL_COUNTER_INC(&pThis->svga.StatRegDisplayHeightWr);
-        break;
-#ifdef VBOX_WITH_VMSVGA3D
-    /* See "Guest memory regions" below. */
-    case SVGA_REG_GMR_ID:
-        STAM_REL_COUNTER_INC(&pThis->svga.StatRegGmrIdWr);
-        pThis->svga.u32CurrentGMRId = u32;
-        break;
-
-    case SVGA_REG_GMR_DESCRIPTOR:
-# ifndef IN_RING3
-        rc = VINF_IOM_R3_IOPORT_WRITE;
-        break;
-# else /* IN_RING3 */
-    {
-        STAM_REL_COUNTER_INC(&pSVGAState->StatR3RegGmrDescriptorWr);
-
-        /* Validate current GMR id. */
-        uint32_t idGMR = pThis->svga.u32CurrentGMRId;
-        AssertBreak(idGMR < pThis->svga.cGMR);
-        RT_UNTRUSTED_VALIDATED_FENCE();
-
-        /* Free the old GMR if present. */
-        vmsvgaGMRFree(pThis, idGMR);
-
-        /* Just undefine the GMR? */
-        RTGCPHYS GCPhys = (RTGCPHYS)u32 << PAGE_SHIFT;
-        if (GCPhys == 0)
-        {
-            STAM_REL_COUNTER_INC(&pSVGAState->StatR3RegGmrDescriptorWrFree);
+        case SVGA_REG_ID:
+            STAM_REL_COUNTER_INC(&pThis->svga.StatRegIdWr);
+            if (   u32 == SVGA_ID_0
+                || u32 == SVGA_ID_1
+                || u32 == SVGA_ID_2)
+                pThis->svga.u32SVGAId = u32;
+            else
+                PDMDevHlpDBGFStop(pThis->CTX_SUFF(pDevIns), RT_SRC_POS, "Trying to set SVGA_REG_ID to %#x (%d)\n", u32, u32);
             break;
-        }
 
-
-        /* Never cross a page boundary automatically. */
-        const uint32_t          cMaxPages   = RT_MIN(VMSVGA_MAX_GMR_PAGES, UINT32_MAX / X86_PAGE_SIZE);
-        uint32_t                cPagesTotal = 0;
-        uint32_t                iDesc       = 0;
-        PVMSVGAGMRDESCRIPTOR    paDescs     = NULL;
-        uint32_t                cLoops      = 0;
-        RTGCPHYS                GCPhysBase  = GCPhys;
-        while (PHYS_PAGE_ADDRESS(GCPhys) == PHYS_PAGE_ADDRESS(GCPhysBase))
-        {
-            /* Read descriptor. */
-            SVGAGuestMemDescriptor desc;
-            rc = PDMDevHlpPhysRead(pThis->CTX_SUFF(pDevIns), GCPhys, &desc, sizeof(desc));
-            AssertRCBreak(rc);
-
-            if (desc.numPages != 0)
+        case SVGA_REG_ENABLE:
+            STAM_REL_COUNTER_INC(&pThis->svga.StatRegEnableWr);
+#ifdef IN_RING3
+            if (    (u32 & SVGA_REG_ENABLE_ENABLE)
+                &&  pThis->svga.fEnabled == false)
             {
-                AssertBreakStmt(desc.numPages <= cMaxPages, rc = VERR_OUT_OF_RANGE);
-                cPagesTotal += desc.numPages;
-                AssertBreakStmt(cPagesTotal   <= cMaxPages, rc = VERR_OUT_OF_RANGE);
+                /* Make a backup copy of the first 512kb in order to save font data etc. */
+                /** @todo should probably swap here, rather than copy + zero */
+                memcpy(pThis->svga.pbVgaFrameBufferR3, pThis->vram_ptrR3, VMSVGA_VGA_FB_BACKUP_SIZE);
+                memset(pThis->vram_ptrR3, 0, VMSVGA_VGA_FB_BACKUP_SIZE);
+            }
 
-                if ((iDesc & 15) == 0)
+            pThis->svga.fEnabled = u32;
+            if (pThis->svga.fEnabled)
+            {
+                if (    pThis->svga.uWidth  == VMSVGA_VAL_UNINITIALIZED
+                    &&  pThis->svga.uHeight == VMSVGA_VAL_UNINITIALIZED
+                    &&  pThis->svga.uBpp    == VMSVGA_VAL_UNINITIALIZED)
                 {
-                    void *pvNew = RTMemRealloc(paDescs, (iDesc + 16) * sizeof(VMSVGAGMRDESCRIPTOR));
-                    AssertBreakStmt(pvNew, rc = VERR_NO_MEMORY);
-                    paDescs = (PVMSVGAGMRDESCRIPTOR)pvNew;
+                    /* Keep the current mode. */
+                    pThis->svga.uWidth  = pThis->pDrv->cx;
+                    pThis->svga.uHeight = pThis->pDrv->cy;
+                    pThis->svga.uBpp    = (pThis->pDrv->cBits + 7) & ~7;
                 }
 
-                paDescs[iDesc].GCPhys     = (RTGCPHYS)desc.ppn << PAGE_SHIFT;
-                paDescs[iDesc++].numPages = desc.numPages;
+                if (    pThis->svga.uWidth  != VMSVGA_VAL_UNINITIALIZED
+                    &&  pThis->svga.uHeight != VMSVGA_VAL_UNINITIALIZED
+                    &&  pThis->svga.uBpp    != VMSVGA_VAL_UNINITIALIZED)
+                    ASMAtomicOrU32(&pThis->svga.u32ActionFlags, VMSVGA_ACTION_CHANGEMODE);
+# ifdef LOG_ENABLED
+                uint32_t *pFIFO = pThis->svga.pFIFOR3;
+                Log(("configured=%d busy=%d\n", pThis->svga.fConfigured, pFIFO[SVGA_FIFO_BUSY]));
+                Log(("next %x stop %x\n", pFIFO[SVGA_FIFO_NEXT_CMD], pFIFO[SVGA_FIFO_STOP]));
+# endif
 
-                /* Continue with the next descriptor. */
-                GCPhys += sizeof(desc);
+                /* Disable or enable dirty page tracking according to the current fTraces value. */
+                vmsvgaSetTraces(pThis, !!pThis->svga.fTraces);
+
+                /* bird: Whatever this is was added to make screenshot work, ask sunlover should explain... */
+                for (uint32_t idScreen = 0; idScreen < pThis->cMonitors; ++idScreen)
+                    pThis->pDrv->pfnVBVAEnable(pThis->pDrv, idScreen, NULL /*pHostFlags*/);
             }
-            else if (desc.ppn == 0)
-                break;  /* terminator */
-            else /* Pointer to the next physical page of descriptors. */
-                GCPhys = GCPhysBase = (RTGCPHYS)desc.ppn << PAGE_SHIFT;
+            else
+            {
+                /* Restore the text mode backup. */
+                memcpy(pThis->vram_ptrR3, pThis->svga.pbVgaFrameBufferR3, VMSVGA_VGA_FB_BACKUP_SIZE);
 
-            cLoops++;
-            AssertBreakStmt(cLoops < VMSVGA_MAX_GMR_DESC_LOOP_COUNT, rc = VERR_OUT_OF_RANGE);
-        }
+                pThis->pDrv->pfnLFBModeChange(pThis->pDrv, false);
 
-        AssertStmt(iDesc > 0 || RT_FAILURE_NP(rc), rc = VERR_OUT_OF_RANGE);
-        if (RT_SUCCESS(rc))
+                /* Enable dirty page tracking again when going into legacy mode. */
+                vmsvgaSetTraces(pThis, true);
+
+                /* bird: Whatever this is was added to make screenshot work, ask sunlover should explain... */
+                for (uint32_t idScreen = 0; idScreen < pThis->cMonitors; ++idScreen)
+                    pThis->pDrv->pfnVBVADisable(pThis->pDrv, idScreen);
+
+                /* Clear the pitch lock. */
+                pThis->svga.u32PitchLock = 0;
+            }
+#else  /* !IN_RING3 */
+            rc = VINF_IOM_R3_IOPORT_WRITE;
+#endif /* !IN_RING3 */
+            break;
+
+        case SVGA_REG_WIDTH:
+            STAM_REL_COUNTER_INC(&pThis->svga.StatRegWidthWr);
+            if (pThis->svga.uWidth != u32)
+            {
+#if defined(IN_RING3) || defined(IN_RING0)
+                pThis->svga.uWidth = u32;
+                vmsvgaUpdatePitch(pThis);
+                if (pThis->svga.fEnabled)
+                    ASMAtomicOrU32(&pThis->svga.u32ActionFlags, VMSVGA_ACTION_CHANGEMODE);
+#else
+                rc = VINF_IOM_R3_IOPORT_WRITE;
+#endif
+            }
+            /* else: nop */
+            break;
+
+        case SVGA_REG_HEIGHT:
+            STAM_REL_COUNTER_INC(&pThis->svga.StatRegHeightWr);
+            if (pThis->svga.uHeight != u32)
+            {
+                pThis->svga.uHeight = u32;
+                if (pThis->svga.fEnabled)
+                    ASMAtomicOrU32(&pThis->svga.u32ActionFlags, VMSVGA_ACTION_CHANGEMODE);
+            }
+            /* else: nop */
+            break;
+
+        case SVGA_REG_DEPTH:
+            STAM_REL_COUNTER_INC(&pThis->svga.StatRegDepthWr);
+            /** @todo read-only?? */
+            break;
+
+        case SVGA_REG_BITS_PER_PIXEL:      /* Current bpp in the guest */
+            STAM_REL_COUNTER_INC(&pThis->svga.StatRegBitsPerPixelWr);
+            if (pThis->svga.uBpp != u32)
+            {
+#if defined(IN_RING3) || defined(IN_RING0)
+                pThis->svga.uBpp = u32;
+                vmsvgaUpdatePitch(pThis);
+                if (pThis->svga.fEnabled)
+                    ASMAtomicOrU32(&pThis->svga.u32ActionFlags, VMSVGA_ACTION_CHANGEMODE);
+#else
+                rc = VINF_IOM_R3_IOPORT_WRITE;
+#endif
+            }
+            /* else: nop */
+            break;
+
+        case SVGA_REG_PSEUDOCOLOR:
+            STAM_REL_COUNTER_INC(&pThis->svga.StatRegPseudoColorWr);
+            break;
+
+        case SVGA_REG_CONFIG_DONE:         /* Set when memory area configured */
+#ifdef IN_RING3
+            STAM_REL_COUNTER_INC(&pSVGAState->StatR3RegConfigDoneWr);
+            pThis->svga.fConfigured = u32;
+            /* Disabling the FIFO enables tracing (dirty page detection) by default. */
+            if (!pThis->svga.fConfigured)
+                pThis->svga.fTraces = true;
+            vmsvgaSetTraces(pThis, !!pThis->svga.fTraces);
+#else
+            rc = VINF_IOM_R3_IOPORT_WRITE;
+#endif
+            break;
+
+        case SVGA_REG_SYNC:                /* See "FIFO Synchronization Registers" */
+            STAM_REL_COUNTER_INC(&pThis->svga.StatRegSyncWr);
+            if (    pThis->svga.fEnabled
+                &&  pThis->svga.fConfigured)
+            {
+#if defined(IN_RING3) || defined(IN_RING0)
+                Log(("SVGA_REG_SYNC: SVGA_FIFO_BUSY=%d\n", pThis->svga.CTX_SUFF(pFIFO)[SVGA_FIFO_BUSY]));
+                ASMAtomicWriteU32(&pThis->svga.fBusy, VMSVGA_BUSY_F_EMT_FORCE | VMSVGA_BUSY_F_FIFO);
+                if (VMSVGA_IS_VALID_FIFO_REG(SVGA_FIFO_BUSY, pThis->svga.CTX_SUFF(pFIFO)[SVGA_FIFO_MIN]))
+                    vmsvgaSafeFifoBusyRegUpdate(pThis, true);
+
+                /* Kick the FIFO thread to start processing commands again. */
+                SUPSemEventSignal(pThis->svga.pSupDrvSession, pThis->svga.FIFORequestSem);
+#else
+                rc = VINF_IOM_R3_IOPORT_WRITE;
+#endif
+            }
+            /* else nothing to do. */
+            else
+                Log(("Sync ignored enabled=%d configured=%d\n", pThis->svga.fEnabled, pThis->svga.fConfigured));
+
+            break;
+
+        case SVGA_REG_BUSY:                /* See "FIFO Synchronization Registers" (read-only) */
+            STAM_REL_COUNTER_INC(&pThis->svga.StatRegBusyWr);
+            break;
+
+        case SVGA_REG_GUEST_ID:            /* Set guest OS identifier */
+            STAM_REL_COUNTER_INC(&pThis->svga.StatRegGuestIdWr);
+            pThis->svga.u32GuestId = u32;
+            break;
+
+        case SVGA_REG_PITCHLOCK:           /* Fixed pitch for all modes */
+            STAM_REL_COUNTER_INC(&pThis->svga.StatRegPitchLockWr);
+            pThis->svga.u32PitchLock = u32;
+            /* Should this also update the FIFO pitch lock? Unclear. */
+            break;
+
+        case SVGA_REG_IRQMASK:             /* Interrupt mask */
+            STAM_REL_COUNTER_INC(&pThis->svga.StatRegIrqMaskWr);
+            pThis->svga.u32IrqMask = u32;
+
+            /* Irq pending after the above change? */
+            if (pThis->svga.u32IrqStatus & u32)
+            {
+                Log(("SVGA_REG_IRQMASK: Trigger interrupt with status %x\n", pThis->svga.u32IrqStatus));
+                PDMDevHlpPCISetIrqNoWait(pThis->CTX_SUFF(pDevIns), 0, 1);
+            }
+            else
+                PDMDevHlpPCISetIrqNoWait(pThis->CTX_SUFF(pDevIns), 0, 0);
+            break;
+
+        /* Mouse cursor support */
+        case SVGA_REG_CURSOR_ID:
+        case SVGA_REG_CURSOR_X:
+        case SVGA_REG_CURSOR_Y:
+        case SVGA_REG_CURSOR_ON:
+            STAM_REL_COUNTER_INC(&pThis->svga.StatRegCursorXxxxWr);
+            break;
+
+        /* Legacy multi-monitor support */
+        case SVGA_REG_NUM_GUEST_DISPLAYS:/* Number of guest displays in X/Y direction */
+            STAM_REL_COUNTER_INC(&pThis->svga.StatRegNumGuestDisplaysWr);
+            break;
+        case SVGA_REG_DISPLAY_ID:        /* Display ID for the following display attributes */
+            STAM_REL_COUNTER_INC(&pThis->svga.StatRegDisplayIdWr);
+            break;
+        case SVGA_REG_DISPLAY_IS_PRIMARY:/* Whether this is a primary display */
+            STAM_REL_COUNTER_INC(&pThis->svga.StatRegDisplayIsPrimaryWr);
+            break;
+        case SVGA_REG_DISPLAY_POSITION_X:/* The display position x */
+            STAM_REL_COUNTER_INC(&pThis->svga.StatRegDisplayPositionXWr);
+            break;
+        case SVGA_REG_DISPLAY_POSITION_Y:/* The display position y */
+            STAM_REL_COUNTER_INC(&pThis->svga.StatRegDisplayPositionYWr);
+            break;
+        case SVGA_REG_DISPLAY_WIDTH:     /* The display's width */
+            STAM_REL_COUNTER_INC(&pThis->svga.StatRegDisplayWidthWr);
+            break;
+        case SVGA_REG_DISPLAY_HEIGHT:    /* The display's height */
+            STAM_REL_COUNTER_INC(&pThis->svga.StatRegDisplayHeightWr);
+            break;
+#ifdef VBOX_WITH_VMSVGA3D
+        /* See "Guest memory regions" below. */
+        case SVGA_REG_GMR_ID:
+            STAM_REL_COUNTER_INC(&pThis->svga.StatRegGmrIdWr);
+            pThis->svga.u32CurrentGMRId = u32;
+            break;
+
+        case SVGA_REG_GMR_DESCRIPTOR:
+# ifndef IN_RING3
+            rc = VINF_IOM_R3_IOPORT_WRITE;
+            break;
+# else /* IN_RING3 */
         {
-            /* Commit the GMR. */
-            pSVGAState->paGMR[idGMR].paDesc         = paDescs;
-            pSVGAState->paGMR[idGMR].numDescriptors = iDesc;
-            pSVGAState->paGMR[idGMR].cMaxPages      = cPagesTotal;
-            pSVGAState->paGMR[idGMR].cbTotal        = cPagesTotal * PAGE_SIZE;
-            Assert((pSVGAState->paGMR[idGMR].cbTotal >> PAGE_SHIFT) == cPagesTotal);
-            Log(("Defined new gmr %x numDescriptors=%d cbTotal=%x (%#x pages)\n",
-                 idGMR, iDesc, pSVGAState->paGMR[idGMR].cbTotal, cPagesTotal));
+            STAM_REL_COUNTER_INC(&pSVGAState->StatR3RegGmrDescriptorWr);
+
+            /* Validate current GMR id. */
+            uint32_t idGMR = pThis->svga.u32CurrentGMRId;
+            AssertBreak(idGMR < pThis->svga.cGMR);
+            RT_UNTRUSTED_VALIDATED_FENCE();
+
+            /* Free the old GMR if present. */
+            vmsvgaGMRFree(pThis, idGMR);
+
+            /* Just undefine the GMR? */
+            RTGCPHYS GCPhys = (RTGCPHYS)u32 << PAGE_SHIFT;
+            if (GCPhys == 0)
+            {
+                STAM_REL_COUNTER_INC(&pSVGAState->StatR3RegGmrDescriptorWrFree);
+                break;
+            }
+
+
+            /* Never cross a page boundary automatically. */
+            const uint32_t          cMaxPages   = RT_MIN(VMSVGA_MAX_GMR_PAGES, UINT32_MAX / X86_PAGE_SIZE);
+            uint32_t                cPagesTotal = 0;
+            uint32_t                iDesc       = 0;
+            PVMSVGAGMRDESCRIPTOR    paDescs     = NULL;
+            uint32_t                cLoops      = 0;
+            RTGCPHYS                GCPhysBase  = GCPhys;
+            while (PHYS_PAGE_ADDRESS(GCPhys) == PHYS_PAGE_ADDRESS(GCPhysBase))
+            {
+                /* Read descriptor. */
+                SVGAGuestMemDescriptor desc;
+                rc = PDMDevHlpPhysRead(pThis->CTX_SUFF(pDevIns), GCPhys, &desc, sizeof(desc));
+                AssertRCBreak(VBOXSTRICTRC_VAL(rc));
+
+                if (desc.numPages != 0)
+                {
+                    AssertBreakStmt(desc.numPages <= cMaxPages, rc = VERR_OUT_OF_RANGE);
+                    cPagesTotal += desc.numPages;
+                    AssertBreakStmt(cPagesTotal   <= cMaxPages, rc = VERR_OUT_OF_RANGE);
+
+                    if ((iDesc & 15) == 0)
+                    {
+                        void *pvNew = RTMemRealloc(paDescs, (iDesc + 16) * sizeof(VMSVGAGMRDESCRIPTOR));
+                        AssertBreakStmt(pvNew, rc = VERR_NO_MEMORY);
+                        paDescs = (PVMSVGAGMRDESCRIPTOR)pvNew;
+                    }
+
+                    paDescs[iDesc].GCPhys     = (RTGCPHYS)desc.ppn << PAGE_SHIFT;
+                    paDescs[iDesc++].numPages = desc.numPages;
+
+                    /* Continue with the next descriptor. */
+                    GCPhys += sizeof(desc);
+                }
+                else if (desc.ppn == 0)
+                    break;  /* terminator */
+                else /* Pointer to the next physical page of descriptors. */
+                    GCPhys = GCPhysBase = (RTGCPHYS)desc.ppn << PAGE_SHIFT;
+
+                cLoops++;
+                AssertBreakStmt(cLoops < VMSVGA_MAX_GMR_DESC_LOOP_COUNT, rc = VERR_OUT_OF_RANGE);
+            }
+
+            AssertStmt(iDesc > 0 || RT_FAILURE_NP(rc), rc = VERR_OUT_OF_RANGE);
+            if (RT_SUCCESS(rc))
+            {
+                /* Commit the GMR. */
+                pSVGAState->paGMR[idGMR].paDesc         = paDescs;
+                pSVGAState->paGMR[idGMR].numDescriptors = iDesc;
+                pSVGAState->paGMR[idGMR].cMaxPages      = cPagesTotal;
+                pSVGAState->paGMR[idGMR].cbTotal        = cPagesTotal * PAGE_SIZE;
+                Assert((pSVGAState->paGMR[idGMR].cbTotal >> PAGE_SHIFT) == cPagesTotal);
+                Log(("Defined new gmr %x numDescriptors=%d cbTotal=%x (%#x pages)\n",
+                     idGMR, iDesc, pSVGAState->paGMR[idGMR].cbTotal, cPagesTotal));
+            }
+            else
+            {
+                RTMemFree(paDescs);
+                STAM_REL_COUNTER_INC(&pSVGAState->StatR3RegGmrDescriptorWrErrors);
+            }
+            break;
         }
-        else
-        {
-            RTMemFree(paDescs);
-            STAM_REL_COUNTER_INC(&pSVGAState->StatR3RegGmrDescriptorWrErrors);
-        }
-        break;
-    }
 # endif /* IN_RING3 */
 #endif // VBOX_WITH_VMSVGA3D
 
-    case SVGA_REG_TRACES:            /* Enable trace-based updates even when FIFO is on */
-        STAM_REL_COUNTER_INC(&pThis->svga.StatRegTracesWr);
-        if (pThis->svga.fTraces == u32)
-            break; /* nothing to do */
+        case SVGA_REG_TRACES:            /* Enable trace-based updates even when FIFO is on */
+            STAM_REL_COUNTER_INC(&pThis->svga.StatRegTracesWr);
+            if (pThis->svga.fTraces == u32)
+                break; /* nothing to do */
 
 #ifdef IN_RING3
-        vmsvgaSetTraces(pThis, !!u32);
+            vmsvgaSetTraces(pThis, !!u32);
 #else
-        rc = VINF_IOM_R3_IOPORT_WRITE;
-#endif
-        break;
-
-    case SVGA_REG_TOP:               /* Must be 1 more than the last register */
-        STAM_REL_COUNTER_INC(&pThis->svga.StatRegTopWr);
-        break;
-
-    case SVGA_REG_NUM_DISPLAYS:        /* (Deprecated) */
-        STAM_REL_COUNTER_INC(&pThis->svga.StatRegNumDisplaysWr);
-        Log(("Write to deprecated register %x - val %x ignored\n", idxReg, u32));
-        break;
-
-    case SVGA_REG_FB_START:
-    case SVGA_REG_MEM_START:
-    case SVGA_REG_HOST_BITS_PER_PIXEL:
-    case SVGA_REG_MAX_WIDTH:
-    case SVGA_REG_MAX_HEIGHT:
-    case SVGA_REG_VRAM_SIZE:
-    case SVGA_REG_FB_SIZE:
-    case SVGA_REG_CAPABILITIES:
-    case SVGA_REG_MEM_SIZE:
-    case SVGA_REG_SCRATCH_SIZE:        /* Number of scratch registers */
-    case SVGA_REG_MEM_REGS:            /* Number of FIFO registers */
-    case SVGA_REG_BYTES_PER_LINE:
-    case SVGA_REG_FB_OFFSET:
-    case SVGA_REG_RED_MASK:
-    case SVGA_REG_GREEN_MASK:
-    case SVGA_REG_BLUE_MASK:
-    case SVGA_REG_GMRS_MAX_PAGES:    /* Maximum number of 4KB pages for all GMRs */
-    case SVGA_REG_MEMORY_SIZE:       /* Total dedicated device memory excluding FIFO */
-    case SVGA_REG_GMR_MAX_IDS:
-    case SVGA_REG_GMR_MAX_DESCRIPTOR_LENGTH:
-        /* Read only - ignore. */
-        Log(("Write to R/O register %x - val %x ignored\n", idxReg, u32));
-        STAM_REL_COUNTER_INC(&pThis->svga.StatRegReadOnlyWr);
-        break;
-
-    default:
-    {
-        uint32_t offReg;
-        if ((offReg = idxReg - SVGA_SCRATCH_BASE) < pThis->svga.cScratchRegion)
-        {
-            RT_UNTRUSTED_VALIDATED_FENCE();
-            pThis->svga.au32ScratchRegion[offReg] = u32;
-            STAM_REL_COUNTER_INC(&pThis->svga.StatRegScratchWr);
-        }
-        else if ((offReg = idxReg - SVGA_PALETTE_BASE) < (uint32_t)SVGA_NUM_PALETTE_REGS)
-        {
-            /* Note! Using last_palette rather than palette here to preserve the VGA one.
-                     Btw, see rgb_to_pixel32.  */
-            STAM_REL_COUNTER_INC(&pThis->svga.StatRegPaletteWr);
-            u32 &= 0xff;
-            RT_UNTRUSTED_VALIDATED_FENCE();
-            uint32_t uRgb = pThis->last_palette[offReg / 3];
-            switch (offReg % 3)
-            {
-                case 0: uRgb = (uRgb & UINT32_C(0x0000ffff)) | (u32 << 16); break; /* red */
-                case 1: uRgb = (uRgb & UINT32_C(0x00ff00ff)) | (u32 <<  8); break; /* green */
-                case 2: uRgb = (uRgb & UINT32_C(0x00ffff00)) |  u32       ; break; /* blue */
-            }
-            pThis->last_palette[offReg / 3] = uRgb;
-        }
-        else
-        {
-#if !defined(IN_RING3) && defined(VBOX_STRICT)
             rc = VINF_IOM_R3_IOPORT_WRITE;
-#else
-            STAM_REL_COUNTER_INC(&pThis->svga.StatRegUnknownWr);
-            AssertMsgFailed(("reg=%#x u32=%#x\n", idxReg, u32));
 #endif
+            break;
+
+        case SVGA_REG_TOP:               /* Must be 1 more than the last register */
+            STAM_REL_COUNTER_INC(&pThis->svga.StatRegTopWr);
+            break;
+
+        case SVGA_REG_NUM_DISPLAYS:        /* (Deprecated) */
+            STAM_REL_COUNTER_INC(&pThis->svga.StatRegNumDisplaysWr);
+            Log(("Write to deprecated register %x - val %x ignored\n", idxReg, u32));
+            break;
+
+        case SVGA_REG_FB_START:
+        case SVGA_REG_MEM_START:
+        case SVGA_REG_HOST_BITS_PER_PIXEL:
+        case SVGA_REG_MAX_WIDTH:
+        case SVGA_REG_MAX_HEIGHT:
+        case SVGA_REG_VRAM_SIZE:
+        case SVGA_REG_FB_SIZE:
+        case SVGA_REG_CAPABILITIES:
+        case SVGA_REG_MEM_SIZE:
+        case SVGA_REG_SCRATCH_SIZE:        /* Number of scratch registers */
+        case SVGA_REG_MEM_REGS:            /* Number of FIFO registers */
+        case SVGA_REG_BYTES_PER_LINE:
+        case SVGA_REG_FB_OFFSET:
+        case SVGA_REG_RED_MASK:
+        case SVGA_REG_GREEN_MASK:
+        case SVGA_REG_BLUE_MASK:
+        case SVGA_REG_GMRS_MAX_PAGES:    /* Maximum number of 4KB pages for all GMRs */
+        case SVGA_REG_MEMORY_SIZE:       /* Total dedicated device memory excluding FIFO */
+        case SVGA_REG_GMR_MAX_IDS:
+        case SVGA_REG_GMR_MAX_DESCRIPTOR_LENGTH:
+            /* Read only - ignore. */
+            Log(("Write to R/O register %x - val %x ignored\n", idxReg, u32));
+            STAM_REL_COUNTER_INC(&pThis->svga.StatRegReadOnlyWr);
+            break;
+
+        default:
+        {
+            uint32_t offReg;
+            if ((offReg = idxReg - SVGA_SCRATCH_BASE) < pThis->svga.cScratchRegion)
+            {
+                RT_UNTRUSTED_VALIDATED_FENCE();
+                pThis->svga.au32ScratchRegion[offReg] = u32;
+                STAM_REL_COUNTER_INC(&pThis->svga.StatRegScratchWr);
+            }
+            else if ((offReg = idxReg - SVGA_PALETTE_BASE) < (uint32_t)SVGA_NUM_PALETTE_REGS)
+            {
+                /* Note! Using last_palette rather than palette here to preserve the VGA one.
+                         Btw, see rgb_to_pixel32.  */
+                STAM_REL_COUNTER_INC(&pThis->svga.StatRegPaletteWr);
+                u32 &= 0xff;
+                RT_UNTRUSTED_VALIDATED_FENCE();
+                uint32_t uRgb = pThis->last_palette[offReg / 3];
+                switch (offReg % 3)
+                {
+                    case 0: uRgb = (uRgb & UINT32_C(0x0000ffff)) | (u32 << 16); break; /* red */
+                    case 1: uRgb = (uRgb & UINT32_C(0x00ff00ff)) | (u32 <<  8); break; /* green */
+                    case 2: uRgb = (uRgb & UINT32_C(0x00ffff00)) |  u32       ; break; /* blue */
+                }
+                pThis->last_palette[offReg / 3] = uRgb;
+            }
+            else
+            {
+#if !defined(IN_RING3) && defined(VBOX_STRICT)
+                rc = VINF_IOM_R3_IOPORT_WRITE;
+#else
+                STAM_REL_COUNTER_INC(&pThis->svga.StatRegUnknownWr);
+                AssertMsgFailed(("reg=%#x u32=%#x\n", idxReg, u32));
+#endif
+            }
+            break;
         }
-        break;
-    }
     }
     return rc;
 }
