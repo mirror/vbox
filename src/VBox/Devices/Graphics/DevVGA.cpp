@@ -5677,13 +5677,7 @@ static DECLCALLBACK(int) vgaR3IORegionMap(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev
     RT_NOREF(cb);
     Log(("vgaR3IORegionMap: iRegion=%d GCPhysAddress=%RGp cb=%RGp enmType=%d\n", iRegion, GCPhysAddress, cb, enmType));
 
-#ifdef VBOX_WITH_VMSVGA
-    AssertReturn(   iRegion == pThis->pciRegions.iVRAM
-                 && enmType == (pThis->fVMSVGAEnabled ? PCI_ADDRESS_SPACE_MEM : PCI_ADDRESS_SPACE_MEM_PREFETCH),
-                 VERR_INTERNAL_ERROR);
-#else
     AssertReturn(iRegion == pThis->pciRegions.iVRAM && enmType == PCI_ADDRESS_SPACE_MEM_PREFETCH, VERR_INTERNAL_ERROR);
-#endif
     Assert(pPciDev == pDevIns->apPciDevs[0]);
 
     int rc = PDMDevHlpCritSectEnter(pDevIns, &pThis->CritSect, VERR_SEM_BUSY);

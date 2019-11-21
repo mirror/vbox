@@ -5320,7 +5320,7 @@ DECLCALLBACK(int) vmsvgaR3IORegionMap(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, ui
     }
     else
     {
-        AssertReturn(iRegion == pThis->pciRegions.iFIFO && enmType == PCI_ADDRESS_SPACE_MEM, VERR_INTERNAL_ERROR);
+        AssertReturn(iRegion == pThis->pciRegions.iFIFO && enmType == PCI_ADDRESS_SPACE_MEM_PREFETCH, VERR_INTERNAL_ERROR);
         if (GCPhysAddress != NIL_RTGCPHYS)
         {
             /*
