@@ -242,7 +242,6 @@ static int getSmcDeviceKey(IVirtualBox *pVirtualBox, IMachine *pMachine, Utf8Str
         RTSystemQueryDmiString(RTSYSDMISTR_PRODUCT_NAME, szProdName, sizeof(szProdName));
         if (   (   !strncmp(szProdName, RT_STR_TUPLE("Mac"))
                 || !strncmp(szProdName, RT_STR_TUPLE("iMac"))
-                || !strncmp(szProdName, RT_STR_TUPLE("iMac"))
                 || !strncmp(szProdName, RT_STR_TUPLE("Xserve"))
                )
             && !strchr(szProdName, ' ')                             /* no spaces */
