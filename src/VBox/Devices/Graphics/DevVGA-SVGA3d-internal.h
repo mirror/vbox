@@ -1225,25 +1225,28 @@ int  vmsvga3dBackCreateTexture(PVMSVGA3DSTATE pState, PVMSVGA3DCONTEXT pContext,
 DECLINLINE(int) vmsvga3dContextFromCid(PVMSVGA3DSTATE pState, uint32_t cid, PVMSVGA3DCONTEXT *ppContext)
 {
     /** @todo stricter checks for associated context */
-    if (   cid >= pState->cContexts
-        || pState->papContexts[cid]->id != cid)
+    AssertReturn(cid < pState->cContexts, VERR_INVALID_PARAMETER);
+    PVMSVGA3DCONTEXT const pContext = pState->papContexts[cid];
+    if (RT_LIKELY(pContext && pContext->id == cid))
     {
-        Log(("vmsvga3dSurfaceCopy invalid context id!\n"));
-        return VERR_INVALID_PARAMETER;
+        *ppContext = pContext;
+        return VINF_SUCCESS;
     }
-
-    *ppContext = pState->papContexts[cid];
-    return VINF_SUCCESS;
+    LogRelMax(64, ("VMSVGA: unknown cid=%d (%s cid=%d)\n", cid, pContext ? "expected" : "null", pContext ? pContext->id : -1));
+    return VERR_INVALID_PARAMETER;
 }
 
 DECLINLINE(int) vmsvga3dSurfaceFromSid(PVMSVGA3DSTATE pState, uint32_t sid, PVMSVGA3DSURFACE *ppSurface)
 {
-    Assert(sid < SVGA3D_MAX_SURFACE_IDS);
     AssertReturn(sid < pState->cSurfaces, VERR_INVALID_PARAMETER);
-    PVMSVGA3DSURFACE pSurface = pState->papSurfaces[sid];
-    AssertReturn(pSurface && pSurface->id == sid, VERR_INVALID_PARAMETER);
-    *ppSurface = pSurface;
-    return VINF_SUCCESS;
+    PVMSVGA3DSURFACE const pSurface = pState->papSurfaces[sid];
+    if (RT_LIKELY(pSurface && pSurface->id == sid))
+    {
+        *ppSurface = pSurface;
+        return VINF_SUCCESS;
+    }
+    LogRelMax(64, ("VMSVGA: unknown sid=%d (%s sid=%d)\n", sid, pSurface ? "expected" : "null", pSurface ? pSurface->id : -1));
+    return VERR_INVALID_PARAMETER;
 }
 
 DECLINLINE(int) vmsvga3dMipmapLevel(PVMSVGA3DSURFACE pSurface, uint32_t face, uint32_t mipmap,
