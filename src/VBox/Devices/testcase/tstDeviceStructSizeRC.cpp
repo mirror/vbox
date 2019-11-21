@@ -368,9 +368,8 @@ int main()
     GEN_CHECK_OFF(VGASTATE, svga.u32CurrentGMRId);
     GEN_CHECK_OFF(VGASTATE, svga.u32RegCaps);
     GEN_CHECK_OFF(VGASTATE, svga.u32IndexReg);
-    GEN_CHECK_OFF(VGASTATE, svga.pSupDrvSession);
-    GEN_CHECK_OFF(VGASTATE, svga.FIFORequestSem);
-    GEN_CHECK_OFF(VGASTATE, svga.FIFOExtCmdSem);
+    GEN_CHECK_OFF(VGASTATE, svga.hFIFORequestSem);
+    GEN_CHECK_OFF(VGASTATE, svga.hFIFOExtCmdSem);
     GEN_CHECK_OFF(VGASTATE, svga.pFIFOIOThread);
     GEN_CHECK_OFF(VGASTATE, svga.uWidth);
     GEN_CHECK_OFF(VGASTATE, svga.uHeight);
