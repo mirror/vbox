@@ -3832,34 +3832,29 @@ PGM_ALL_CB_DECL(VBOXSTRICTRC) vgaLFBAccessHandler(PVMCC pVM, PVMCPUCC pVCpu, RTG
 /* -=-=-=-=-=- All rings: VGA BIOS I/Os -=-=-=-=-=- */
 
 /**
- * @callback_method_impl{FNIOMIOPORTIN,
+ * @callback_method_impl{FNIOMIOPORTNEWIN,
  *      Port I/O Handler for VGA BIOS IN operations.}
  */
-PDMBOTHCBDECL(int) vgaIOPortReadBIOS(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32, unsigned cb)
+static DECLCALLBACK(VBOXSTRICTRC) vgaIoPortReadBios(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t *pu32, unsigned cb)
 {
-    NOREF(pDevIns);
-    NOREF(pvUser);
-    NOREF(Port);
-    NOREF(pu32);
-    NOREF(cb);
+    RT_NOREF(pDevIns, pvUser, offPort, pu32, cb);
     return VERR_IOM_IOPORT_UNUSED;
 }
 
 /**
- * @callback_method_impl{FNIOMIOPORTOUT,
+ * @callback_method_impl{FNIOMIOPORTNEWOUT,
  *      Port I/O Handler for VGA BIOS IN operations.}
  */
-PDMBOTHCBDECL(int) vgaIOPortWriteBIOS(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb)
+static DECLCALLBACK(VBOXSTRICTRC) vgaIoPortWriteBios(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t u32, unsigned cb)
 {
-    static int lastWasNotNewline = 0;  /* We are only called in a single-threaded way */
     RT_NOREF2(pDevIns, pvUser);
     Assert(PDMDevHlpCritSectIsOwner(pDevIns, pDevIns->CTX_SUFF(pCritSectRo)));
+    Assert(offPort == 0); RT_NOREF(offPort);
 
     /*
      * VGA BIOS char printing.
      */
-    if (    cb == 1
-        &&  Port == VBE_PRINTF_PORT)
+    if (cb == 1)
     {
 #if 0
         switch (u32)
@@ -3871,14 +3866,15 @@ PDMBOTHCBDECL(int) vgaIOPortWriteBIOS(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT
                 Log(("vgabios: %c\n", u32));
         }
 #else
-        if (lastWasNotNewline == 0)
+        static int s_fLastWasNotNewline = 0;  /* We are only called in a single-threaded way */
+        if (s_fLastWasNotNewline == 0)
             Log(("vgabios: "));
         if (u32 != '\r')  /* return - is only sent in conjunction with '\n' */
             Log(("%c", u32));
         if (u32 == '\n')
-            lastWasNotNewline = 0;
+            s_fLastWasNotNewline = 0;
         else
-            lastWasNotNewline = 1;
+            s_fLastWasNotNewline = 1;
 #endif
         return VINF_SUCCESS;
     }
@@ -6795,14 +6791,9 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
     }
 
     /* vga bios */
-    rc = PDMDevHlpIOPortRegister(pDevIns, VBE_PRINTF_PORT, 1, NULL, vgaIOPortWriteBIOS, vgaIOPortReadBIOS, NULL, NULL, "VGA BIOS debug/panic");
+    rc = PDMDevHlpIoPortCreateAndMap(pDevIns, VBE_PRINTF_PORT, 1 /*cPorts*/, vgaIoPortWriteBios, vgaIoPortReadBios,
+                                     "VGA BIOS debug/panic", NULL /*paExtDescs*/, &pThis->hIoPortBios);
     AssertRCReturn(rc, rc);
-    if (pDevIns->fR0Enabled)
-    {
-        rc = PDMDevHlpIOPortRegisterR0(pDevIns, VBE_PRINTF_PORT,  1, 0, "vgaIOPortWriteBIOS", "vgaIOPortReadBIOS", NULL, NULL, "VGA BIOS debug/panic");
-        if (RT_FAILURE(rc))
-            return rc;
-    }
 
     /*
      * Get the VGA BIOS ROM file name.
@@ -6814,8 +6805,7 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
         rc = VINF_SUCCESS;
     }
     else if (RT_FAILURE(rc))
-        return PDMDEV_SET_ERROR(pDevIns, rc,
-                                N_("Configuration error: Querying \"BiosRom\" as a string failed"));
+        return PDMDEV_SET_ERROR(pDevIns, rc, N_("Configuration error: Querying \"BiosRom\" as a string failed"));
     else if (!*pThis->pszVgaBiosFile)
     {
         PDMDevHlpMMHeapFree(pDevIns, pThis->pszVgaBiosFile);
@@ -7439,6 +7429,11 @@ static DECLCALLBACK(int) vgaRZConstruct(PPDMDEVINS pDevIns)
 # endif /* CONFIG_BOCHS_VBE */
 
 #undef REG_PORT
+
+    /* BIOS port: */
+    rc = PDMDevHlpIoPortSetUpContext(pDevIns, pThis->hIoPortBios, vgaIoPortWriteBios, vgaIoPortReadBios, NULL /*pvUser*/);
+    AssertRCReturn(rc, rc);
+
     return VINF_SUCCESS;
 }
 

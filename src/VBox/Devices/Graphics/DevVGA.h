@@ -532,6 +532,8 @@ typedef struct VGAState
     IOMIOPORTHANDLE             hIoPortVbeData;
     /** @} */
 
+    /** The BIOS printf I/O port. */
+    IOMIOPORTHANDLE             hIoPortBios;
     /** The VBE extra data I/O port. */
     IOMIOPORTHANDLE             hIoPortVbeExtra;
     /** The logo command I/O port. */
