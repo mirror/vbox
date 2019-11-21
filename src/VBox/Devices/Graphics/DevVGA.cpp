@@ -3258,20 +3258,20 @@ vgaIoPortReadVbeIndex(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32
 #ifdef VBOX_WITH_HGSMI
 # ifdef IN_RING3
 /**
- * @callback_method_impl{FNIOMIOPORTOUT,HGSMI OUT handler.}
+ * @callback_method_impl{FNIOMIOPORTNEWOUT,HGSMI OUT handler.}
  */
-static DECLCALLBACK(int) vgaR3IOPortHGSMIWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb)
+static DECLCALLBACK(VBOXSTRICTRC)
+vgaR3IOPortHgsmiWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t u32, unsigned cb)
 {
     PVGASTATE pThis = PDMDEVINS_2_DATA(pDevIns, PVGASTATE);
     Assert(PDMDevHlpCritSectIsOwner(pDevIns, pDevIns->CTX_SUFF(pCritSectRo)));
-    LogFlowFunc(("Port 0x%x, u32 0x%x, cb %d\n", Port, u32, cb));
-
+    LogFlowFunc(("offPort=0x%x u32=0x%x cb=%u\n", offPort, u32, cb));
 
     NOREF(pvUser);
 
     if (cb == 4)
     {
-        switch (Port)
+        switch (offPort)
         {
             case VGA_PORT_HGSMI_HOST: /* Host */
             {
@@ -3313,16 +3313,21 @@ static DECLCALLBACK(int) vgaR3IOPortHGSMIWrite(PPDMDEVINS pDevIns, void *pvUser,
 
             default:
 # ifdef DEBUG_sunlover
-                AssertMsgFailed(("vgaR3IOPortHGSMIWrite: Port=%#x cb=%d u32=%#x\n", Port, cb, u32));
+                AssertMsgFailed(("vgaR3IOPortHgsmiWrite: offPort=%#x cb=%d u32=%#x\n", offPort, cb, u32));
 # endif
                 break;
         }
     }
     else
     {
+        /** @todo r=bird: According to Ralf Brown, one and two byte accesses to the
+         *        0x3b0-0x3b1 and 0x3b2-0x3b3 I/O port pairs should work the same as
+         *        0x3b4-0x3b5 (MDA CRT control). */
+        Log(("vgaR3IOPortHgsmiWrite: offPort=%#x cb=%d u32=%#x - possible valid MDA CRT access\n", offPort, cb, u32));
 # ifdef DEBUG_sunlover
-        AssertMsgFailed(("vgaR3IOPortHGSMIWrite: Port=%#x cb=%d u32=%#x\n", Port, cb, u32));
+        AssertMsgFailed(("vgaR3IOPortHgsmiWrite: offPort=%#x cb=%d u32=%#x\n", offPort, cb, u32));
 # endif
+        STAM_REL_COUNTER_INC(&pThis->StatHgsmiMdaCgaAccesses);
     }
 
     return VINF_SUCCESS;
@@ -3330,20 +3335,21 @@ static DECLCALLBACK(int) vgaR3IOPortHGSMIWrite(PPDMDEVINS pDevIns, void *pvUser,
 
 
 /**
- * @callback_method_impl{FNIOMIOPORTOUT,HGSMI IN handler.}
+ * @callback_method_impl{FNIOMIOPORTNEWOUT,HGSMI IN handler.}
  */
-static DECLCALLBACK(int) vgaR3IOPortHGSMIRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32, unsigned cb)
+static DECLCALLBACK(VBOXSTRICTRC)
+vgaR3IOPortHgmsiRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t *pu32, unsigned cb)
 {
     PVGASTATE pThis = PDMDEVINS_2_DATA(pDevIns, PVGASTATE);
     Assert(PDMDevHlpCritSectIsOwner(pDevIns, pDevIns->CTX_SUFF(pCritSectRo)));
-    LogFlowFunc(("Port 0x%x, cb %d\n", Port, cb));
+    LogFlowFunc(("offPort=0x%x cb=%d\n", offPort, cb));
 
     NOREF(pvUser);
 
-    int rc = VINF_SUCCESS;
+    VBOXSTRICTRC rc = VINF_SUCCESS;
     if (cb == 4)
     {
-        switch (Port)
+        switch (offPort)
         {
             case VGA_PORT_HGSMI_HOST: /* Host */
                 *pu32 = HGSMIHostRead(pThis->pHGSMI);
@@ -3353,7 +3359,7 @@ static DECLCALLBACK(int) vgaR3IOPortHGSMIRead(PPDMDEVINS pDevIns, void *pvUser, 
                 break;
             default:
 # ifdef DEBUG_sunlover
-                AssertMsgFailed(("vgaR3IOPortHGSMIRead: Port=%#x cb=%d\n", Port, cb));
+                AssertMsgFailed(("vgaR3IOPortHgmsiRead: Port=%#x cb=%d\n", Port, cb));
 # endif
                 rc = VERR_IOM_IOPORT_UNUSED;
                 break;
@@ -3361,9 +3367,11 @@ static DECLCALLBACK(int) vgaR3IOPortHGSMIRead(PPDMDEVINS pDevIns, void *pvUser, 
     }
     else
     {
-# ifdef DEBUG_sunlover
-        Log(("vgaR3IOPortHGSMIRead: Port=%#x cb=%d\n", Port, cb));
-# endif
+        /** @todo r=bird: According to Ralf Brown, one and two byte accesses to the
+         *        0x3b0-0x3b1 and 0x3b2-0x3b3 I/O port pairs should work the same as
+         *        0x3b4-0x3b5 (MDA CRT control). */
+        Log(("vgaR3IOPortHgmsiRead: offPort=%#x cb=%d - possible valid MDA CRT access\n", offPort, cb));
+        STAM_REL_COUNTER_INC(&pThis->StatHgsmiMdaCgaAccesses);
         rc = VERR_IOM_IOPORT_UNUSED;
     }
 
@@ -6760,10 +6768,8 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
 
 #ifdef VBOX_WITH_HGSMI
     /* Use reserved VGA IO ports for HGSMI. */
-    rc = PDMDevHlpIOPortRegister(pDevIns,  VGA_PORT_HGSMI_HOST,  4, NULL, vgaR3IOPortHGSMIWrite, vgaR3IOPortHGSMIRead, NULL, NULL, "VGA - 3b0 (HGSMI host)");
-    AssertRCReturn(rc, rc);
-    rc = PDMDevHlpIOPortRegister(pDevIns,  VGA_PORT_HGSMI_GUEST,  4, NULL, vgaR3IOPortHGSMIWrite, vgaR3IOPortHGSMIRead, NULL, NULL, "VGA - 3d0 (HGSMI guest)");
-    AssertRCReturn(rc, rc);
+    REG_PORT(VGA_PORT_HGSMI_HOST,  4, vgaR3IOPortHgsmiWrite, vgaR3IOPortHgmsiRead, "HGSMI host (3b0-3b3)",  &pThis->hIoPortHgsmiHost);
+    REG_PORT(VGA_PORT_HGSMI_GUEST, 4, vgaR3IOPortHgsmiWrite, vgaR3IOPortHgmsiRead, "HGSMI guest (3d0-3d3)", &pThis->hIoPortHgsmiGuest);
 #endif /* VBOX_WITH_HGSMI */
 
 #undef REG_PORT
@@ -7361,6 +7367,9 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
     PDMDevHlpSTAMRegister(pDevIns, &pThis->StatR3MemoryWrite, STAMTYPE_PROFILE, "R3/MMIO-Write", STAMUNIT_TICKS_PER_CALL, "Profiling of the VGAGCMemoryWrite() body.");
     PDMDevHlpSTAMRegister(pDevIns, &pThis->StatMapPage,       STAMTYPE_COUNTER, "MapPageCalls",  STAMUNIT_OCCURENCES,     "Calls to IOMMMIOMapMMIO2Page.");
     PDMDevHlpSTAMRegister(pDevIns, &pThis->StatUpdateDisp,    STAMTYPE_COUNTER, "UpdateDisplay", STAMUNIT_OCCURENCES,     "Calls to vgaPortUpdateDisplay().");
+#endif
+#ifdef VBOX_WITH_HGSMI
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatHgsmiMdaCgaAccesses, STAMTYPE_COUNTER, "HgmsiMdaCgaAccesses", STAMUNIT_OCCURENCES, "Number of non-HGMSI accesses for 03b0-3b3 and 03d0-3d3.");
 #endif
 
     /* Init latched access mask. */

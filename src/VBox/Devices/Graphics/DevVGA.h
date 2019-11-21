@@ -377,6 +377,9 @@ typedef struct VGAState
     STAMPROFILE                 StatR3MemoryWrite;
     STAMCOUNTER                 StatMapPage;            /**< Counts IOMMMIOMapMMIO2Page calls.  */
     STAMCOUNTER                 StatUpdateDisp;         /**< Counts vgaPortUpdateDisplay calls.  */
+# ifdef VBOX_WITH_HGSMI
+    STAMCOUNTER                 StatHgsmiMdaCgaAccesses;
+# endif
 
     /* Keep track of ring 0 latched accesses to the VGA MMIO memory. */
     uint64_t                    u64LastLatchedAccess;
@@ -514,6 +517,14 @@ typedef struct VGAState
     IOMIOPORTHANDLE             hIoPortCgaCrt;
     IOMIOPORTHANDLE             hIoPortCgaFcrSt;
     /** @} */
+
+# ifdef VBOX_WITH_HGSMI
+    /** @name I/O ports for HGSMI 0x3b0-03b3 and 0x3d0-03d3 (ring-3 only)
+     * @{ */
+    IOMIOPORTHANDLE             hIoPortHgsmiHost;
+    IOMIOPORTHANDLE             hIoPortHgsmiGuest;
+    /** @} */
+# endif
 
     /** @name I/O ports for Boch VBE 0x1ce-0x1cf
      *  @{ */
