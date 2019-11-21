@@ -5262,15 +5262,15 @@ static void vmsvgaSetTraces(PVGASTATE pThis, bool fTraces)
 /**
  * @callback_method_impl{FNPCIIOREGIONMAP}
  */
-DECLCALLBACK(int) vmsvgaR3IORegionMap(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t iRegion,
-                                      RTGCPHYS GCPhysAddress, RTGCPHYS cb, PCIADDRESSSPACE enmType)
+DECLCALLBACK(int) vmsvgaR3PciIORegionFifoMapUnmap(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t iRegion,
+                                                  RTGCPHYS GCPhysAddress, RTGCPHYS cb, PCIADDRESSSPACE enmType)
 {
     PVGASTATE   pThis = PDMINS_2_DATA(pDevIns, PVGASTATE);
     int         rc;
     RT_NOREF(pPciDev);
     Assert(pPciDev == pDevIns->apPciDevs[0]);
 
-    Log(("vgasvgaR3IORegionMap: iRegion=%d GCPhysAddress=%RGp cb=%RGp enmType=%d\n", iRegion, GCPhysAddress, cb, enmType));
+    Log(("vmsvgaR3PciIORegionFifoMapUnmap: iRegion=%d GCPhysAddress=%RGp cb=%RGp enmType=%d\n", iRegion, GCPhysAddress, cb, enmType));
     AssertReturn(iRegion == pThis->pciRegions.iFIFO && enmType == PCI_ADDRESS_SPACE_MEM_PREFETCH, VERR_INTERNAL_ERROR);
     if (GCPhysAddress != NIL_RTGCPHYS)
     {
@@ -5278,7 +5278,7 @@ DECLCALLBACK(int) vmsvgaR3IORegionMap(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, ui
          * Mapping the FIFO RAM.
          */
         AssertLogRelMsg(cb == pThis->svga.cbFIFO, ("cb=%#RGp cbFIFO=%#x\n", cb, pThis->svga.cbFIFO));
-        rc = PDMDevHlpMMIOExMap(pDevIns, pPciDev, iRegion, GCPhysAddress);
+        rc = PDMDevHlpMmio2Map(pDevIns, pThis->hMmio2VmSvgaFifo, GCPhysAddress);
         AssertRC(rc);
 
 # if defined(VMSVGA_USE_FIFO_ACCESS_HANDLER) || defined(DEBUG_FIFO_ACCESS)
@@ -5300,6 +5300,7 @@ DECLCALLBACK(int) vmsvgaR3IORegionMap(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, ui
             pThis->svga.GCPhysFIFO = GCPhysAddress;
             Log(("vmsvgaR3IORegionMap: GCPhysFIFO=%RGp cbFIFO=%#x\n", GCPhysAddress, pThis->svga.cbFIFO));
         }
+        rc = VINF_PCI_MAPPING_DONE; /* caller only cares about this status, so it is okay that we overwrite erros here. */
     }
     else
     {
@@ -5307,10 +5308,12 @@ DECLCALLBACK(int) vmsvgaR3IORegionMap(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, ui
 # if defined(VMSVGA_USE_FIFO_ACCESS_HANDLER) || defined(DEBUG_FIFO_ACCESS)
         rc = PGMHandlerPhysicalDeregister(PDMDevHlpGetVM(pDevIns), pThis->svga.GCPhysFIFO);
         AssertRC(rc);
+# else
+        rc = VINF_SUCCESS;
 # endif
         pThis->svga.GCPhysFIFO = 0;
     }
-    return VINF_SUCCESS;
+    return rc;
 }
 
 # ifdef VBOX_WITH_VMSVGA3D

@@ -5761,9 +5761,12 @@ static DECLCALLBACK(int) vgaR3PciRegionLoadChangeHook(PPDMDEVINS pDevIns, PPDMPC
             pThis->pciRegions.iVRAM = 1;
 
             /* Update PGM on the region number change so it won't barf when restoring state. */
-            AssertLogRelReturn(pDevIns->CTX_SUFF(pHlp)->pfnMMIOExChangeRegionNo, VERR_VERSION_MISMATCH);
-            int rc = pDevIns->CTX_SUFF(pHlp)->pfnMMIOExChangeRegionNo(pDevIns, pPciDev, 0, 1);
+            AssertLogRelReturn(pDevIns->CTX_SUFF(pHlp)->pfnMmio2ChangeRegionNo, VERR_VERSION_MISMATCH);
+            int rc = pDevIns->CTX_SUFF(pHlp)->pfnMmio2ChangeRegionNo(pDevIns, pThis->hMmio2VRam, 1);
             AssertLogRelRCReturn(rc, rc);
+            /** @todo Update the I/O port too, only currently we don't give a hoot about
+             *        the region number in the I/O port registrations so it can wait...
+             *        (Only visible in the 'info ioport' output IIRC).   */
 
             /* Update the calling PCI device. */
             AssertLogRelReturn(pfnSwapRegions, VERR_INTERNAL_ERROR_2);
@@ -5793,7 +5796,7 @@ static DECLCALLBACK(int) vgaR3PciRegionLoadChangeHook(PPDMDEVINS pDevIns, PPDMPC
                                   VERR_SSM_LOAD_CONFIG_MISMATCH);
 
             /* Adjust the size down. */
-            int rc = PDMDevHlpMMIOExReduce(pDevIns, pPciDev, iRegion, cbRegion);
+            int rc = PDMDevHlpMmio2Reduce(pDevIns, pThis->hMmio2VmSvgaFifo, cbRegion);
             AssertLogRelMsgRCReturn(rc,
                                     ("cbRegion=%#RGp cbFIFOConfig=%#x cbFIFO=%#x: %Rrc\n",
                                      cbRegion, pThis->svga.cbFIFOConfig, pThis->svga.cbFIFO, rc),
@@ -6631,7 +6634,8 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
         Log(("!!WARNING!!: pThis->dev.uDevFn=%d (ignore if testcase or not started by Main)\n", pPciDev->uDevFn));
 
 #ifdef VBOX_WITH_VMSVGA
-    pThis->hIoPortVmSvga = NIL_IOMIOPORTHANDLE;
+    pThis->hIoPortVmSvga    = NIL_IOMIOPORTHANDLE;
+    pThis->hMmio2VmSvgaFifo = NIL_PGMMMIO2HANDLE;
     if (pThis->fVMSVGAEnabled)
     {
         /* Register the io command ports. */
@@ -6639,9 +6643,13 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
                                           "VMSVGA", NULL /*paExtDescs*/, &pThis->hIoPortVmSvga);
         AssertRCReturn(rc, rc);
 
-        rc = PDMDevHlpPCIIORegionRegister(pDevIns, pThis->pciRegions.iFIFO, pThis->svga.cbFIFO,
-                                          PCI_ADDRESS_SPACE_MEM_PREFETCH, vmsvgaR3IORegionMap);
-        AssertRCReturn(rc, rc);
+        rc = PDMDevHlpPCIIORegionCreateMmio2Ex(pDevIns, pThis->pciRegions.iFIFO, pThis->svga.cbFIFO,
+                                               PCI_ADDRESS_SPACE_MEM_PREFETCH, 0 /*fFlags*/, vmsvgaR3PciIORegionFifoMapUnmap,
+                                               "VMSVGA-FIFO", (void **)&pThis->svga.pFIFOR3, &pThis->hMmio2VmSvgaFifo);
+        AssertRCReturn(rc, PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS,
+                                               N_("Failed to create VMSVGA FIFO (%u bytes)"), pThis->svga.cbFIFO));
+        pThis->svga.pFIFOR0 = (RTR0PTR)pThis->svga.pFIFOR3;
+
         pPciDev->pfnRegionLoadChangeHookR3 = vgaR3PciRegionLoadChangeHook;
     }
 #endif /* VBOX_WITH_VMSVGA */
@@ -6665,37 +6673,6 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
                                           g_DeviceVga.pszRCMod, "vgaLFBAccessHandler", "vgaLbfAccessPfHandler",
                                           "VGA LFB", &pThis->hLfbAccessHandlerType);
     AssertRCReturn(rc, rc);
-
-    /*
-     * Allocate VMSVGA FIFO.
-     */
-#ifdef VBOX_WITH_VMSVGA
-    if (pThis->fVMSVGAEnabled)
-    {
-        /*
-         * Allocate and initialize the FIFO MMIO2 memory.
-         */
-        rc = PDMDevHlpMMIO2Register(pDevIns, pPciDev, pThis->pciRegions.iFIFO, pThis->svga.cbFIFO,
-                                    0 /*fFlags*/, (void **)&pThis->svga.pFIFOR3, "VMSVGA-FIFO");
-        if (RT_FAILURE(rc))
-            return PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS,
-                                        N_("Failed to allocate %u bytes of memory for the VMSVGA device"), pThis->svga.cbFIFO);
-        pThis->svga.pFIFOR0 = (RTR0PTR)pThis->svga.pFIFOR3;
-
-# ifdef VBOX_WITH_RAW_MODE_KEEP
-        /* Don't need a mapping in RC */
-# endif
-# if defined(VBOX_WITH_2X_4GB_ADDR_SPACE)
-        if (pDevIns->fR0Enabled)
-        {
-            RTR0PTR pR0Mapping = 0;
-            rc = PDMDevHlpMMIO2MapKernel(pDevIns, pThis->pciRegions.iFIFO, 0 /* off */,  pThis->svga.cbFIFO, "VMSVGA-FIFO", &pR0Mapping);
-            AssertLogRelMsgRCReturn(rc, ("PDMDevHlpMapMMIO2IntoR0(%#x,) -> %Rrc\n", pThis->svga.cbFIFO, rc), rc);
-            pThis->svga.pFIFOR0 = pR0Mapping;
-        }
-# endif
-    }
-#endif
 
     /*
      * Register I/O ports.
@@ -7399,9 +7376,12 @@ static DECLCALLBACK(int) vgaRZConstruct(PPDMDEVINS pDevIns)
 # ifdef VBOX_WITH_VMSVGA
     if (pThis->hIoPortVmSvga != NIL_IOMIOPORTHANDLE)
     {
+        AssertReturn(pThis->fVMSVGAEnabled, VERR_INVALID_STATE);
         rc = PDMDevHlpIoPortSetUpContext(pDevIns, pThis->hIoPortVmSvga, vmsvgaIOWrite, vmsvgaIORead, NULL /*pvUser*/);
         AssertRCReturn(rc, rc);
     }
+    else
+        AssertReturn(!pThis->fVMSVGAEnabled, VERR_INVALID_STATE);
 # endif
 
     /*
@@ -7411,6 +7391,20 @@ static DECLCALLBACK(int) vgaRZConstruct(PPDMDEVINS pDevIns)
     rc = PDMDevHlpMmio2SetUpContext(pDevIns, pThis->hMmio2VRam, 0 /* off */, VGA_MAPPING_SIZE, (void **)&pThis->CTX_SUFF(vram_ptr));
     AssertLogRelMsgRCReturn(rc, ("PDMDevHlpMmio2SetUpContext(,VRAM,0,%#x,) -> %Rrc\n", VGA_MAPPING_SIZE, rc), rc);
 # endif
+
+    /*
+     * Map the VMSVGA FIFO into this context (only ring-0).
+     */
+# if defined(VBOX_WITH_VMSVGA) && !defined(IN_RC)
+#  if defined(VBOX_WITH_2X_4GB_ADDR_SPACE)
+    if (pThis->fVMSVGAEnabled)
+    {
+        rc = PDMDevHlpMmio2SetUpContext(pDevIns, pThis->hMmio2VmSvgaFifo, 0 /* off */,  pThis->svga.cbFIFO,
+                                        (void **)&pThis->svga.CTX_SUFF(pFIFO));
+        AssertLogRelMsgRCReturn(rc, ("PDMDevHlpMapMMIO2IntoR0(%#x,) -> %Rrc\n", pThis->svga.cbFIFO, rc), rc);
+    }
+# endif
+#endif
 
     return VINF_SUCCESS;
 }
