@@ -51,7 +51,7 @@
 
 
 /* DevVGA-SVGA.cpp: */
-void vmsvga3dSurfaceUpdateHeapBuffersOnFifoThread(PPDMDEVINS pDevIns, PVGASTATE pThis, uint32_t sid);
+void vmsvgaR33dSurfaceUpdateHeapBuffersOnFifoThread(PPDMDEVINS pDevIns, PVGASTATE pThis, uint32_t sid);
 
 
 /* DevVGA-SVGA3d-ogl.cpp & DevVGA-SVGA3d-win.cpp: */

@@ -1547,7 +1547,7 @@ int vmsvga3dSurfaceCopy(PVGASTATE pThis, SVGA3dSurfaceImageId dest, SVGA3dSurfac
         for (uint32_t i = 0; i < cCopyBoxes; ++i)
         {
             SVGA3dCopyBox clipBox = pBox[i];
-            vmsvgaClipCopyBox(&pMipmapLevelSrc->mipmapSize, &pMipmapLevelDest->mipmapSize, &clipBox);
+            vmsvgaR3ClipCopyBox(&pMipmapLevelSrc->mipmapSize, &pMipmapLevelDest->mipmapSize, &clipBox);
             if (   !clipBox.w
                 || !clipBox.h
                 || !clipBox.d)
@@ -1702,7 +1702,7 @@ int vmsvga3dSurfaceCopy(PVGASTATE pThis, SVGA3dSurfaceImageId dest, SVGA3dSurfac
             HRESULT        hr;
 
             SVGA3dCopyBox clipBox = pBox[i];
-            vmsvgaClipCopyBox(&pMipmapLevelSrc->mipmapSize, &pMipmapLevelDest->mipmapSize, &clipBox);
+            vmsvgaR3ClipCopyBox(&pMipmapLevelSrc->mipmapSize, &pMipmapLevelDest->mipmapSize, &clipBox);
             if (   !clipBox.w
                 || !clipBox.h
                 || !clipBox.d)
@@ -2383,7 +2383,7 @@ int vmsvga3dBackSurfaceDMACopyBox(PVGASTATE pThis, PVMSVGA3DSTATE pState, PVMSVG
         uint32_t const cBlocksY = (pBox->h + pSurface->cyBlock - 1) / pSurface->cyBlock;
         AssertMsgReturn(cBlocksX && cBlocksY, ("Empty box %dx%d\n", pBox->w, pBox->h), VERR_INTERNAL_ERROR);
 
-        /* vmsvgaGMRTransfer verifies uGuestOffset.
+        /* vmsvgaR3GmrTransfer verifies uGuestOffset.
          * srcx(u32GuestBlockX) and srcy(u32GuestBlockY) have been verified in vmsvga3dSurfaceDMA
          * to not cause 32 bit overflow when multiplied by cbBlock and cbGuestPitch.
          */
@@ -2404,7 +2404,7 @@ int vmsvga3dBackSurfaceDMACopyBox(PVGASTATE pThis, PVMSVGA3DSTATE pState, PVMSVG
                  pSurface->id, fTexture ? "TEXTURE " : "", RT_BOOL(pSurface->bounce.pTexture),
                  Rect.left, Rect.top, Rect.right, Rect.bottom));
 
-        /* Prepare parameters for vmsvgaGMRTransfer, which needs the host buffer address, size
+        /* Prepare parameters for vmsvgaR3GmrTransfer, which needs the host buffer address, size
          * and offset of the first scanline.
          */
         uint32_t const cbLockedBuf = RT_ABS(LockedRect.Pitch) * cBlocksY;
@@ -2413,17 +2413,17 @@ int vmsvga3dBackSurfaceDMACopyBox(PVGASTATE pThis, PVMSVGA3DSTATE pState, PVMSVG
             pu8LockedBuf -= cbLockedBuf + LockedRect.Pitch;
         uint32_t const offLockedBuf = (uint32_t)((uintptr_t)LockedRect.pBits - (uintptr_t)pu8LockedBuf);
 
-        rc = vmsvgaGMRTransfer(pThis,
-                               transfer,
-                               pu8LockedBuf,
-                               cbLockedBuf,
-                               offLockedBuf,
-                               LockedRect.Pitch,
-                               GuestPtr,
-                               (uint32_t)uGuestOffset,
-                               cbGuestPitch,
-                               cBlocksX * pSurface->cbBlock,
-                               cBlocksY);
+        rc = vmsvgaR3GmrTransfer(pThis,
+                                 transfer,
+                                 pu8LockedBuf,
+                                 cbLockedBuf,
+                                 offLockedBuf,
+                                 LockedRect.Pitch,
+                                 GuestPtr,
+                                 (uint32_t)uGuestOffset,
+                                 cbGuestPitch,
+                                 cBlocksX * pSurface->cbBlock,
+                                 cBlocksY);
         AssertRC(rc);
 
         Log4(("first line:\n%.*Rhxd\n", cBlocksX * pSurface->cbBlock, LockedRect.pBits));
@@ -2471,7 +2471,7 @@ int vmsvga3dBackSurfaceDMACopyBox(PVGASTATE pThis, PVMSVGA3DSTATE pState, PVMSVG
         /* Caller already clipped pBox and buffers are 1-dimensional. */
         Assert(pBox->y == 0 && pBox->h == 1 && pBox->z == 0 && pBox->d == 1);
 
-        /* vmsvgaGMRTransfer verifies input parameters except for the host buffer addres and size.
+        /* vmsvgaR3GmrTransfer verifies input parameters except for the host buffer addres and size.
          * srcx has been verified in vmsvga3dSurfaceDMA to not cause 32 bit overflow when multiplied by cbBlock.
          */
         uint32_t const offHst = pBox->x * pSurface->cbBlock;
@@ -2480,17 +2480,17 @@ int vmsvga3dBackSurfaceDMACopyBox(PVGASTATE pThis, PVMSVGA3DSTATE pState, PVMSVG
         uint32_t const offGst = pBox->srcx * pSurface->cbBlock;
 
         /* Copy data between the guest and the host buffer. */
-        rc = vmsvgaGMRTransfer(pThis,
-                               transfer,
-                               (uint8_t *)pMipLevel->pSurfaceData,
-                               pMipLevel->cbSurface,
-                               offHst,
-                               pMipLevel->cbSurfacePitch,
-                               GuestPtr,
-                               offGst,
-                               cbGuestPitch,
-                               cbWidth,
-                               1); /* Buffers are 1-dimensional */
+        rc = vmsvgaR3GmrTransfer(pThis,
+                                 transfer,
+                                 (uint8_t *)pMipLevel->pSurfaceData,
+                                 pMipLevel->cbSurface,
+                                 offHst,
+                                 pMipLevel->cbSurfacePitch,
+                                 GuestPtr,
+                                 offGst,
+                                 cbGuestPitch,
+                                 cbWidth,
+                                 1); /* Buffers are 1-dimensional */
         AssertRC(rc);
 
         Log4(("Buffer updated at [0x%x;0x%x):\n%.*Rhxd\n", offHst, offHst + cbWidth, cbWidth, (uint8_t *)pMipLevel->pSurfaceData + offHst));

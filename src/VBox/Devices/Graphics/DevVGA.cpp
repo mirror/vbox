@@ -5535,7 +5535,7 @@ static DECLCALLBACK(void) vgaTimerRefresh(PPDMDEVINS pDevIns, PTMTIMER pTimer, v
      * there is work to be done.
      */
     if (pThis->svga.fFIFOThreadSleeping && pThis->svga.fEnabled && pThis->svga.fConfigured)
-        vmsvgaFIFOWatchdogTimer(pDevIns, pThis);
+        vmsvgaR3FifoWatchdogTimer(pDevIns, pThis);
 # endif
 }
 
@@ -5840,7 +5840,7 @@ static DECLCALLBACK(int) vgaR3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 # ifdef VBOX_WITH_VMSVGA
     if (pThis->fVMSVGAEnabled)
     {
-        rc = vmsvgaSaveExec(pDevIns, pSSM);
+        rc = vmsvgaR3SaveExec(pDevIns, pSSM);
         AssertRCReturn(rc, rc);
     }
 # endif
@@ -5930,7 +5930,7 @@ static DECLCALLBACK(int) vgaR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint
 # ifdef VBOX_WITH_VMSVGA
         if (pThis->fVMSVGAEnabled)
         {
-            rc = vmsvgaLoadExec(pDevIns, pSSM, uVersion, uPass);
+            rc = vmsvgaR3LoadExec(pDevIns, pSSM, uVersion, uPass);
             AssertRCReturn(rc, rc);
         }
 # endif
@@ -5962,7 +5962,7 @@ static DECLCALLBACK(int) vgaR3LoadDone(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 # ifdef VBOX_WITH_VMSVGA
     if (pThis->fVMSVGAEnabled)
     {
-        rc = vmsvgaLoadDone(pDevIns);
+        rc = vmsvgaR3LoadDone(pDevIns);
         AssertRCReturn(rc, rc);
     }
 # endif
@@ -5997,7 +5997,7 @@ static DECLCALLBACK(void)  vgaR3Reset(PPDMDEVINS pDevIns)
 
 # ifdef VBOX_WITH_VMSVGA
     if (pThis->fVMSVGAEnabled)
-        vmsvgaReset(pDevIns);
+        vmsvgaR3Reset(pDevIns);
 # endif
 
 # ifdef VBOX_WITH_HGSMI
@@ -6234,7 +6234,7 @@ static DECLCALLBACK(int) vgaR3Destruct(PPDMDEVINS pDevIns)
 
 # ifdef VBOX_WITH_VMSVGA
     if (pThis->fVMSVGAEnabled)
-        vmsvgaDestruct(pDevIns);
+        vmsvgaR3Destruct(pDevIns);
 # endif
 
 # ifdef VBOX_WITH_HGSMI
@@ -7197,7 +7197,7 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
 # ifdef VBOX_WITH_VMSVGA
     if (    rc == VINF_SUCCESS
         &&  pThis->fVMSVGAEnabled)
-        rc = vmsvgaInit(pDevIns);
+        rc = vmsvgaR3Init(pDevIns);
 # endif
 
     /*

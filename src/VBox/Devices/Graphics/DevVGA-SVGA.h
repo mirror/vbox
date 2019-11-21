@@ -368,34 +368,30 @@ DECLCALLBACK(VBOXSTRICTRC) vmsvgaIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOP
 DECLCALLBACK(void) vmsvgaR3PortSetViewport(PPDMIDISPLAYPORT pInterface, uint32_t uScreenId,
                                          uint32_t x, uint32_t y, uint32_t cx, uint32_t cy);
 
-int vmsvgaInit(PPDMDEVINS pDevIns);
-int vmsvgaReset(PPDMDEVINS pDevIns);
-int vmsvgaDestruct(PPDMDEVINS pDevIns);
-int vmsvgaLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass);
-int vmsvgaLoadDone(PPDMDEVINS pDevIns);
-int vmsvgaSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM);
+int vmsvgaR3Init(PPDMDEVINS pDevIns);
+int vmsvgaR3Reset(PPDMDEVINS pDevIns);
+int vmsvgaR3Destruct(PPDMDEVINS pDevIns);
+int vmsvgaR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass);
+int vmsvgaR3LoadDone(PPDMDEVINS pDevIns);
+int vmsvgaR3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM);
 DECLCALLBACK(void) vmsvgaR3PowerOn(PPDMDEVINS pDevIns);
 DECLCALLBACK(void) vmsvgaR3PowerOff(PPDMDEVINS pDevIns);
-void vmsvgaFIFOWatchdogTimer(PPDMDEVINS pDevIns, PVGASTATE pThis);
+void vmsvgaR3FifoWatchdogTimer(PPDMDEVINS pDevIns, PVGASTATE pThis);
 
 #ifdef IN_RING3
-VMSVGASCREENOBJECT *vmsvgaGetScreenObject(PVGASTATE pThis, uint32_t idScreen);
-int vmsvgaUpdateScreen(PVGASTATE pThis, VMSVGASCREENOBJECT *pScreen, int x, int y, int w, int h);
+VMSVGASCREENOBJECT *vmsvgaR3GetScreenObject(PVGASTATE pThis, uint32_t idScreen);
+int vmsvgaR3UpdateScreen(PVGASTATE pThis, VMSVGASCREENOBJECT *pScreen, int x, int y, int w, int h);
 #endif
 
-void vmsvgaGMRFree(PVGASTATE pThis, uint32_t idGMR);
-int vmsvgaGMRTransfer(PVGASTATE pThis, const SVGA3dTransferType enmTransferType,
-                      uint8_t *pbHstBuf, uint32_t cbHstBuf, uint32_t offHst, int32_t cbHstPitch,
-                      SVGAGuestPtr gstPtr, uint32_t offGst, int32_t cbGstPitch,
-                      uint32_t cbWidth, uint32_t cHeight);
+void vmsvgaR3GmrFree(PVGASTATE pThis, uint32_t idGMR);
+int vmsvgaR3GmrTransfer(PVGASTATE pThis, const SVGA3dTransferType enmTransferType,
+                        uint8_t *pbHstBuf, uint32_t cbHstBuf, uint32_t offHst, int32_t cbHstPitch,
+                        SVGAGuestPtr gstPtr, uint32_t offGst, int32_t cbGstPitch,
+                        uint32_t cbWidth, uint32_t cHeight);
 
-void vmsvgaClipCopyBox(const SVGA3dSize *pSizeSrc,
-                       const SVGA3dSize *pSizeDest,
-                       SVGA3dCopyBox *pBox);
-void vmsvgaClipBox(const SVGA3dSize *pSize,
-                   SVGA3dBox *pBox);
-void vmsvgaClipRect(SVGASignedRect const *pBound,
-                    SVGASignedRect *pRect);
+void vmsvgaR3ClipCopyBox(const SVGA3dSize *pSizeSrc, const SVGA3dSize *pSizeDest, SVGA3dCopyBox *pBox);
+void vmsvgaR3ClipBox(const SVGA3dSize *pSize, SVGA3dBox *pBox);
+void vmsvgaR3ClipRect(SVGASignedRect const *pBound, SVGASignedRect *pRect);
 
 #endif /* !VBOX_INCLUDED_SRC_Graphics_DevVGA_SVGA_h */
 

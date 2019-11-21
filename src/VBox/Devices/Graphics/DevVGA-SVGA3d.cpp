@@ -458,8 +458,8 @@ int vmsvga3dSurfaceStretchBlt(PVGASTATE pThis, SVGA3dSurfaceImageId const *pDstS
 
     SVGA3dBox clipSrcBox = *pSrcBox;
     SVGA3dBox clipDstBox = *pDstBox;
-    vmsvgaClipBox(&pSrcMipmapLevel->mipmapSize, &clipSrcBox);
-    vmsvgaClipBox(&pDstMipmapLevel->mipmapSize, &clipDstBox);
+    vmsvgaR3ClipBox(&pSrcMipmapLevel->mipmapSize, &clipSrcBox);
+    vmsvgaR3ClipBox(&pDstMipmapLevel->mipmapSize, &clipDstBox);
 
     return vmsvga3dBackSurfaceStretchBlt(pThis, pState,
                                          pDstSurface, pDstSfcImg->face, pDstSfcImg->mipmap, &clipDstBox,
@@ -538,7 +538,7 @@ int vmsvga3dSurfaceDMA(PVGASTATE pThis, SVGA3dGuestImage guest, SVGA3dSurfaceIma
         hostBox.w = paBoxes[i].w;
         hostBox.h = paBoxes[i].h;
         hostBox.d = paBoxes[i].d;
-        vmsvgaClipBox(&pMipLevel->mipmapSize, &hostBox);
+        vmsvgaR3ClipBox(&pMipLevel->mipmapSize, &hostBox);
 
         if (   !hostBox.w
             || !hostBox.h
@@ -550,7 +550,7 @@ int vmsvga3dSurfaceDMA(PVGASTATE pThis, SVGA3dGuestImage guest, SVGA3dSurfaceIma
         RT_UNTRUSTED_VALIDATED_FENCE();
 
         /* Adjust the guest, i.e. "src", point.
-         * Do not try to verify them here because vmsvgaGMRTransfer takes care of this.
+         * Do not try to verify them here because vmsvgaR3GmrTransfer takes care of this.
          */
         uint32_t const srcx = paBoxes[i].srcx + (hostBox.x - paBoxes[i].x);
         uint32_t const srcy = paBoxes[i].srcy + (hostBox.y - paBoxes[i].y);
@@ -599,13 +599,13 @@ int vmsvga3dSurfaceDMA(PVGASTATE pThis, SVGA3dGuestImage guest, SVGA3dSurfaceIma
         }
         else
         {
-            /* vmsvgaGMRTransfer will verify the value, just check it is sane. */
+            /* vmsvgaR3GmrTransfer will verify the value, just check it is sane. */
             AssertReturn(cbGuestPitch <= SVGA3D_MAX_SURFACE_MEM_SIZE, VERR_INVALID_PARAMETER);
             RT_UNTRUSTED_VALIDATED_FENCE();
         }
 
         /* srcx, srcy and srcz values are used to calculate the guest offset.
-         * The offset will be verified by vmsvgaGMRTransfer, so just check for overflows here.
+         * The offset will be verified by vmsvgaR3GmrTransfer, so just check for overflows here.
          */
         AssertReturn(srcz < UINT32_MAX / pMipLevel->mipmapSize.height / cbGuestPitch, VERR_INVALID_PARAMETER);
         AssertReturn(u32GuestBlockY < UINT32_MAX / cbGuestPitch, VERR_INVALID_PARAMETER);
@@ -627,17 +627,17 @@ int vmsvga3dSurfaceDMA(PVGASTATE pThis, SVGA3dGuestImage guest, SVGA3dSurfaceIma
 
             for (uint32_t z = 0; z < hostBox.d; ++z)
             {
-                rc = vmsvgaGMRTransfer(pThis,
-                                       transfer,
-                                       (uint8_t *)pMipLevel->pSurfaceData,
-                                       pMipLevel->cbSurface,
-                                       uHostOffset,
-                                       (int32_t)pMipLevel->cbSurfacePitch,
-                                       guest.ptr,
-                                       (uint32_t)uGuestOffset,
-                                       cbGuestPitch,
-                                       cBlocksX * pSurface->cbBlock,
-                                       cBlocksY);
+                rc = vmsvgaR3GmrTransfer(pThis,
+                                         transfer,
+                                         (uint8_t *)pMipLevel->pSurfaceData,
+                                         pMipLevel->cbSurface,
+                                         uHostOffset,
+                                         (int32_t)pMipLevel->cbSurfacePitch,
+                                         guest.ptr,
+                                         (uint32_t)uGuestOffset,
+                                         cbGuestPitch,
+                                         cBlocksX * pSurface->cbBlock,
+                                         cBlocksY);
                 AssertRC(rc);
 
                 Log4(("first line [z=%d]:\n%.*Rhxd\n",
@@ -683,9 +683,9 @@ static int vmsvga3dQueryWriteResult(PVGASTATE pThis, SVGAGuestPtr guestResult, S
     queryResult.state = enmState;                   /* Set by host or guest. See SVGA3dQueryState. */
     queryResult.result32 = u32Result;
 
-    int rc = vmsvgaGMRTransfer(pThis, SVGA3D_READ_HOST_VRAM,
-                               (uint8_t *)&queryResult, sizeof(queryResult), 0, sizeof(queryResult),
-                               guestResult, 0, sizeof(queryResult), sizeof(queryResult), 1);
+    int rc = vmsvgaR3GmrTransfer(pThis, SVGA3D_READ_HOST_VRAM,
+                                 (uint8_t *)&queryResult, sizeof(queryResult), 0, sizeof(queryResult),
+                                 guestResult, 0, sizeof(queryResult), sizeof(queryResult), 1);
     AssertRC(rc);
     return rc;
 }
@@ -819,7 +819,7 @@ int vmsvga3dSurfaceBlitToScreen(PVGASTATE pThis, uint32_t idDstScreen, SVGASigne
         LogFunc(("clipping rect %d (%d,%d)(%d,%d)\n", i, pRect[i].left, pRect[i].top, pRect[i].right, pRect[i].bottom));
     }
 
-    VMSVGASCREENOBJECT *pScreen = vmsvgaGetScreenObject(pThis, idDstScreen);
+    VMSVGASCREENOBJECT *pScreen = vmsvgaR3GetScreenObject(pThis, idDstScreen);
     AssertReturn(pScreen, VERR_INTERNAL_ERROR);
 
     AssertReturn(src.mipmap == 0 && src.face == 0, VERR_INVALID_PARAMETER);
@@ -862,7 +862,7 @@ int vmsvga3dSurfaceBlitToScreen(PVGASTATE pThis, uint32_t idDstScreen, SVGASigne
         AssertRCReturn(rc, rc);
 
         /* Update the guest image, which is at box.src. */
-        vmsvgaUpdateScreen(pThis, pScreen, box.srcx, box.srcy, box.w, box.h);
+        vmsvgaR3UpdateScreen(pThis, pScreen, box.srcx, box.srcy, box.w, box.h);
     }
     else
     {
@@ -887,7 +887,7 @@ int vmsvga3dSurfaceBlitToScreen(PVGASTATE pThis, uint32_t idDstScreen, SVGASigne
             AssertRCReturn(rc, rc);
 
             /* Update the guest image, which is at box.src. */
-            vmsvgaUpdateScreen(pThis, pScreen, box.srcx, box.srcy, box.w, box.h);
+            vmsvgaR3UpdateScreen(pThis, pScreen, box.srcx, box.srcy, box.w, box.h);
         }
     }
 
@@ -905,7 +905,7 @@ int vmsvga3dCommandPresent(PVGASTATE pThis, uint32_t sid, uint32_t cRects, SVGA3
     AssertRCReturn(rc, rc);
 
     /** @todo Detect screen from coords? Or split rect to screens? */
-    VMSVGASCREENOBJECT *pScreen = vmsvgaGetScreenObject(pThis, 0);
+    VMSVGASCREENOBJECT *pScreen = vmsvgaR3GetScreenObject(pThis, 0);
     AssertReturn(pScreen, VERR_INTERNAL_ERROR);
 
     /* If there are no recangles specified, just grab a screenful. */

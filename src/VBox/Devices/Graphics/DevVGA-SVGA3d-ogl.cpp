@@ -2765,17 +2765,17 @@ int vmsvga3dBackSurfaceDMACopyBox(PVGASTATE pThis, PVMSVGA3DSTATE pState, PVMSVG
 
         uint32_t const offGst = u32GuestBlockX * pSurface->cbBlock + u32GuestBlockY * cbGuestPitch;
 
-        rc = vmsvgaGMRTransfer(pThis,
-                               transfer,
-                               pDoubleBuffer,
-                               pMipLevel->cbSurface,
-                               offHst,
-                               cbSurfacePitch,
-                               GuestPtr,
-                               offGst,
-                               cbGuestPitch,
-                               cBlocksX * pSurface->cbBlock,
-                               cBlocksY);
+        rc = vmsvgaR3GmrTransfer(pThis,
+                                 transfer,
+                                 pDoubleBuffer,
+                                 pMipLevel->cbSurface,
+                                 offHst,
+                                 cbSurfacePitch,
+                                 GuestPtr,
+                                 offGst,
+                                 cbGuestPitch,
+                                 cBlocksX * pSurface->cbBlock,
+                                 cBlocksY);
         AssertRC(rc);
 
         /* Update the opengl surface data. */
@@ -2912,17 +2912,17 @@ int vmsvga3dBackSurfaceDMACopyBox(PVGASTATE pThis, PVMSVGA3DSTATE pState, PVMSVG
                 uint32_t const offHst = pBox->x * pSurface->cbBlock;
                 uint32_t const cbWidth = pBox->w * pSurface->cbBlock;
 
-                rc = vmsvgaGMRTransfer(pThis,
-                                       transfer,
-                                       pbData,
-                                       pMipLevel->cbSurface,
-                                       offHst,
-                                       pMipLevel->cbSurfacePitch,
-                                       GuestPtr,
-                                       pBox->srcx * pSurface->cbBlock,
-                                       cbGuestPitch,
-                                       cbWidth,
-                                       pBox->h);
+                rc = vmsvgaR3GmrTransfer(pThis,
+                                         transfer,
+                                         pbData,
+                                         pMipLevel->cbSurface,
+                                         offHst,
+                                         pMipLevel->cbSurfacePitch,
+                                         GuestPtr,
+                                         pBox->srcx * pSurface->cbBlock,
+                                         cbGuestPitch,
+                                         cbWidth,
+                                         pBox->h);
                 AssertRC(rc);
 
                 Log4(("Buffer updated at [0x%x;0x%x):\n%.*Rhxd\n", offHst, offHst + cbWidth, cbWidth, (uint8_t *)pbData + offHst));

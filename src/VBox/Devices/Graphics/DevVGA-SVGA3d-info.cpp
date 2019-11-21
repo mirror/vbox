@@ -2098,7 +2098,7 @@ void vmsvga3dInfoSurfaceWorker(PPDMDEVINS pDevIns, PVGASTATE pThis, PCDBGFINFOHL
                 if (pSurface && pSurface->id == sid)
                 {
                     if (fVerbose)
-                        vmsvga3dSurfaceUpdateHeapBuffersOnFifoThread(pDevIns, pThis, sid);
+                        vmsvgaR33dSurfaceUpdateHeapBuffersOnFifoThread(pDevIns, pThis, sid);
                     vmsvga3dInfoSurfaceWorkerOne(pHlp, pSurface, fVerbose, cxAscii, fInvY);
                     if (pszBitmapPath && *pszBitmapPath)
                         vmsvga3dInfoSurfaceToBitmap(pHlp, pSurface, pszBitmapPath, "info", "");
@@ -2113,7 +2113,7 @@ void vmsvga3dInfoSurfaceWorker(PPDMDEVINS pDevIns, PVGASTATE pThis, PCDBGFINFOHL
              * Dump all.
              */
             if (fVerbose)
-                vmsvga3dSurfaceUpdateHeapBuffersOnFifoThread(pDevIns, pThis, UINT32_MAX);
+                vmsvgaR33dSurfaceUpdateHeapBuffersOnFifoThread(pDevIns, pThis, UINT32_MAX);
             uint32_t cSurfaces = pState->cSurfaces;
             pHlp->pfnPrintf(pHlp, "cSurfaces=%d\n", cSurfaces);
             for (sid = 0; sid < cSurfaces; sid++)
