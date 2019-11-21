@@ -3104,6 +3104,7 @@ static void acpiR3SetupHpet(PPDMDEVINS pDevIns, PACPISTATE pThis, RTGCPHYS32 add
  * Used by acpiR3PlantTables to plant a MMCONFIG PCI config space access (MCFG)
  * descriptor.
  *
+ * @param   pDevIns     The device instance.
  * @param   pThis       The ACPI shared instance data.
  * @param   GCPhysDst   Where to plant it.
  */
