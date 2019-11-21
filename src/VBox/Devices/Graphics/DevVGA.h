@@ -539,6 +539,11 @@ typedef struct VGAState
     /** The logo command I/O port. */
     IOMIOPORTHANDLE             hIoPortCmdLogo;
 
+# ifdef VBOX_WITH_VMSVGA
+    /** VMSVGA: I/O port PCI region. */
+    IOMIOPORTHANDLE             hIoPortVmSvga;
+# endif
+
 #endif /* VBOX */
 } VGAState;
 #ifdef VBOX

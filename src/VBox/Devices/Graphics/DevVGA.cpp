@@ -6638,12 +6638,14 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
         Log(("!!WARNING!!: pThis->dev.uDevFn=%d (ignore if testcase or not started by Main)\n", pPciDev->uDevFn));
 
 #ifdef VBOX_WITH_VMSVGA
+    pThis->hIoPortVmSvga = NIL_IOMIOPORTHANDLE;
     if (pThis->fVMSVGAEnabled)
     {
         /* Register the io command ports. */
-        rc = PDMDevHlpPCIIORegionRegister(pDevIns, pThis->pciRegions.iIO, 0x10, PCI_ADDRESS_SPACE_IO, vmsvgaR3IORegionMap);
-        if (RT_FAILURE (rc))
-            return rc;
+        rc = PDMDevHlpPCIIORegionCreateIo(pDevIns, pThis->pciRegions.iIO, 0x10, vmsvgaIOWrite, vmsvgaIORead, NULL /*pvUser*/,
+                                          "VMSVGA", NULL /*paExtDescs*/, &pThis->hIoPortVmSvga);
+        AssertRCReturn(rc, rc);
+
         rc = PDMDevHlpPCIIORegionRegister(pDevIns, pThis->pciRegions.iVRAM, pThis->vram_size,
                                           PCI_ADDRESS_SPACE_MEM_PREFETCH, vgaR3IORegionMap);
         if (RT_FAILURE(rc))
@@ -7426,6 +7428,14 @@ static DECLCALLBACK(int) vgaRZConstruct(PPDMDEVINS pDevIns)
     /* BIOS port: */
     rc = PDMDevHlpIoPortSetUpContext(pDevIns, pThis->hIoPortBios, vgaIoPortWriteBios, vgaIoPortReadBios, NULL /*pvUser*/);
     AssertRCReturn(rc, rc);
+
+# ifdef VBOX_WITH_VMSVGA
+    if (pThis->hIoPortVmSvga != NIL_IOMIOPORTHANDLE)
+    {
+        rc = PDMDevHlpIoPortSetUpContext(pDevIns, pThis->hIoPortVmSvga, vmsvgaIOWrite, vmsvgaIORead, NULL /*pvUser*/);
+        AssertRCReturn(rc, rc);
+    }
+# endif
 
     return VINF_SUCCESS;
 }

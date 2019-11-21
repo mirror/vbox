@@ -218,9 +218,7 @@ typedef struct VMSVGAState
     uint32_t                    u32CurrentGMRId;
     /** Register caps. */
     uint32_t                    u32RegCaps;
-    /** Physical address of command mmio range. */
-    RTIOPORT                    BasePort;
-    RTIOPORT                    Padding0;
+    uint32_t                    Padding0; /* Used to be I/O port base address. */
     /** Port io index register. */
     uint32_t                    u32IndexReg;
     /** The support driver session handle for use with FIFORequestSem. */
@@ -365,6 +363,8 @@ typedef struct VGAState *PVGASTATE;
 
 DECLCALLBACK(int) vmsvgaR3IORegionMap(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t iRegion,
                                       RTGCPHYS GCPhysAddress, RTGCPHYS cb, PCIADDRESSSPACE enmType);
+DECLCALLBACK(VBOXSTRICTRC) vmsvgaIORead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t *pu32, unsigned cb);
+DECLCALLBACK(VBOXSTRICTRC) vmsvgaIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t u32, unsigned cb);
 
 DECLCALLBACK(void) vmsvgaPortSetViewport(PPDMIDISPLAYPORT pInterface, uint32_t uScreenId,
                                          uint32_t x, uint32_t y, uint32_t cx, uint32_t cy);

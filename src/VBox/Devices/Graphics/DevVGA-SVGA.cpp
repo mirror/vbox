@@ -518,7 +518,6 @@ static SSMFIELD const g_aVGAStateSVGAFields[] =
     SSMFIELD_ENTRY(                 VMSVGAState, u32PitchLock),
     SSMFIELD_ENTRY(                 VMSVGAState, u32CurrentGMRId),
     SSMFIELD_ENTRY(                 VMSVGAState, u32RegCaps),
-    SSMFIELD_ENTRY_IGNORE(          VMSVGAState, BasePort),
     SSMFIELD_ENTRY(                 VMSVGAState, u32IndexReg),
     SSMFIELD_ENTRY_IGNORE(          VMSVGAState, pSupDrvSession),
     SSMFIELD_ENTRY_IGNORE(          VMSVGAState, FIFORequestSem),
@@ -1509,7 +1508,7 @@ DECLINLINE(void) vmsvgaUpdatePitch(PVGASTATE pThis)
  * @param   pThis       VMSVGA State
  * @param   u32         Value to write
  */
-PDMBOTHCBDECL(int) vmsvgaWritePort(PVGASTATE pThis, uint32_t u32)
+static int vmsvgaWritePort(PVGASTATE pThis, uint32_t u32)
 {
 #ifdef IN_RING3
     PVMSVGAR3STATE pSVGAState = pThis->svga.pSvgaR3State;
@@ -1965,111 +1964,90 @@ PDMBOTHCBDECL(int) vmsvgaWritePort(PVGASTATE pThis, uint32_t u32)
 }
 
 /**
- * Port I/O Handler for IN operations.
- *
- * @returns VINF_SUCCESS or VINF_EM_*.
- * @returns VERR_IOM_IOPORT_UNUSED if the port is really unused and a ~0 value should be returned.
- *
- * @param   pDevIns     The device instance.
- * @param   pvUser      User argument.
- * @param   uPort       Port number used for the IN operation.
- * @param   pu32        Where to store the result.  This is always a 32-bit
- *                      variable regardless of what @a cb might say.
- * @param   cb          Number of bytes read.
+ * @callback_method_impl{FNIOMIOPORTNEWIN}
  */
-PDMBOTHCBDECL(int) vmsvgaIORead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT uPort, uint32_t *pu32, unsigned cb)
+DECLCALLBACK(VBOXSTRICTRC) vmsvgaIORead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t *pu32, unsigned cb)
 {
     PVGASTATE   pThis = PDMINS_2_DATA(pDevIns, PVGASTATE);
     RT_NOREF_PV(pvUser);
 
-    /* Ignore non-dword accesses. */
-    if (cb != 4)
+    /* Only dword accesses. */
+    if (cb == 4)
     {
-        Log(("Ignoring non-dword read at %x cb=%d\n", uPort, cb));
-        *pu32 = UINT32_MAX;
-        return VINF_SUCCESS;
-    }
+        switch (offPort)
+        {
+            case SVGA_INDEX_PORT:
+                *pu32 = pThis->svga.u32IndexReg;
+                break;
 
-    switch (uPort - pThis->svga.BasePort)
+            case SVGA_VALUE_PORT:
+                return vmsvgaReadPort(pDevIns, pThis, pu32);
+
+            case SVGA_BIOS_PORT:
+                Log(("Ignoring BIOS port read\n"));
+                *pu32 = 0;
+                break;
+
+            case SVGA_IRQSTATUS_PORT:
+                LogFlow(("vmsvgaIORead: SVGA_IRQSTATUS_PORT %x\n", pThis->svga.u32IrqStatus));
+                *pu32 = pThis->svga.u32IrqStatus;
+                break;
+
+            default:
+                ASSERT_GUEST_MSG_FAILED(("vmsvgaIORead: Unknown register %u was read from.\n", offPort));
+                *pu32 = UINT32_MAX;
+                break;
+        }
+    }
+    else
     {
-    case SVGA_INDEX_PORT:
-        *pu32 = pThis->svga.u32IndexReg;
-        break;
-
-    case SVGA_VALUE_PORT:
-        return vmsvgaReadPort(pDevIns, pThis, pu32);
-
-    case SVGA_BIOS_PORT:
-        Log(("Ignoring BIOS port read\n"));
-        *pu32 = 0;
-        break;
-
-    case SVGA_IRQSTATUS_PORT:
-        LogFlow(("vmsvgaIORead: SVGA_IRQSTATUS_PORT %x\n", pThis->svga.u32IrqStatus));
-        *pu32 = pThis->svga.u32IrqStatus;
-        break;
-
-    default:
-        ASSERT_GUEST_MSG_FAILED(("vmsvgaIORead: Unknown register %u (%#x) was read from.\n", uPort - pThis->svga.BasePort, uPort));
+        Log(("Ignoring non-dword I/O port read at %x cb=%d\n", offPort, cb));
         *pu32 = UINT32_MAX;
-        break;
     }
-
     return VINF_SUCCESS;
 }
 
 /**
- * Port I/O Handler for OUT operations.
- *
- * @returns VINF_SUCCESS or VINF_EM_*.
- *
- * @param   pDevIns     The device instance.
- * @param   pvUser      User argument.
- * @param   uPort       Port number used for the OUT operation.
- * @param   u32         The value to output.
- * @param   cb          The value size in bytes.
+ * @callback_method_impl{FNIOMIOPORTNEWOUT}
  */
-PDMBOTHCBDECL(int) vmsvgaIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT uPort, uint32_t u32, unsigned cb)
+DECLCALLBACK(VBOXSTRICTRC) vmsvgaIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t u32, unsigned cb)
 {
     PVGASTATE   pThis = PDMINS_2_DATA(pDevIns, PVGASTATE);
     RT_NOREF_PV(pvUser);
 
-    /* Ignore non-dword accesses. */
-    if (cb != 4)
-    {
-        Log(("Ignoring non-dword write at %x val=%x cb=%d\n", uPort, u32, cb));
-        return VINF_SUCCESS;
-    }
-
-    switch (uPort - pThis->svga.BasePort)
-    {
-    case SVGA_INDEX_PORT:
-        pThis->svga.u32IndexReg = u32;
-        break;
-
-    case SVGA_VALUE_PORT:
-        return vmsvgaWritePort(pThis, u32);
-
-    case SVGA_BIOS_PORT:
-        Log(("Ignoring BIOS port write (val=%x)\n", u32));
-        break;
-
-    case SVGA_IRQSTATUS_PORT:
-        Log(("vmsvgaIOWrite SVGA_IRQSTATUS_PORT %x: status %x -> %x\n", u32, pThis->svga.u32IrqStatus, pThis->svga.u32IrqStatus & ~u32));
-        ASMAtomicAndU32(&pThis->svga.u32IrqStatus, ~u32);
-        /* Clear the irq in case all events have been cleared. */
-        if (!(pThis->svga.u32IrqStatus & pThis->svga.u32IrqMask))
+    /* Only dword accesses. */
+    if (cb == 4)
+        switch (offPort)
         {
-            Log(("vmsvgaIOWrite SVGA_IRQSTATUS_PORT: clearing IRQ\n"));
-            PDMDevHlpPCISetIrqNoWait(pDevIns, 0, 0);
-        }
-        break;
+            case SVGA_INDEX_PORT:
+                pThis->svga.u32IndexReg = u32;
+                break;
 
-    default:
-        ASSERT_GUEST_MSG_FAILED(("vmsvgaIOWrite: Unknown register %u (%#x) was written to, value %#x LB %u.\n",
-                                 uPort - pThis->svga.BasePort, uPort, u32, cb));
-        break;
-    }
+            case SVGA_VALUE_PORT:
+                return vmsvgaWritePort(pThis, u32);
+
+            case SVGA_BIOS_PORT:
+                Log(("Ignoring BIOS port write (val=%x)\n", u32));
+                break;
+
+            case SVGA_IRQSTATUS_PORT:
+                Log(("vmsvgaIOWrite SVGA_IRQSTATUS_PORT %x: status %x -> %x\n", u32, pThis->svga.u32IrqStatus, pThis->svga.u32IrqStatus & ~u32));
+                ASMAtomicAndU32(&pThis->svga.u32IrqStatus, ~u32);
+                /* Clear the irq in case all events have been cleared. */
+                if (!(pThis->svga.u32IrqStatus & pThis->svga.u32IrqMask))
+                {
+                    Log(("vmsvgaIOWrite SVGA_IRQSTATUS_PORT: clearing IRQ\n"));
+                    PDMDevHlpPCISetIrqNoWait(pDevIns, 0, 0);
+                }
+                break;
+
+            default:
+                ASSERT_GUEST_MSG_FAILED(("vmsvgaIOWrite: Unknown register %u was written to, value %#x LB %u.\n", offPort, u32, cb));
+                break;
+        }
+    else
+        Log(("Ignoring non-dword write at %x val=%x cb=%d\n", offPort, u32, cb));
+
     return VINF_SUCCESS;
 }
 
@@ -5293,72 +5271,44 @@ DECLCALLBACK(int) vmsvgaR3IORegionMap(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, ui
     Assert(pPciDev == pDevIns->apPciDevs[0]);
 
     Log(("vgasvgaR3IORegionMap: iRegion=%d GCPhysAddress=%RGp cb=%RGp enmType=%d\n", iRegion, GCPhysAddress, cb, enmType));
-    if (enmType == PCI_ADDRESS_SPACE_IO)
+    AssertReturn(iRegion == pThis->pciRegions.iFIFO && enmType == PCI_ADDRESS_SPACE_MEM_PREFETCH, VERR_INTERNAL_ERROR);
+    if (GCPhysAddress != NIL_RTGCPHYS)
     {
-        AssertReturn(iRegion == pThis->pciRegions.iIO, VERR_INTERNAL_ERROR);
-        rc = PDMDevHlpIOPortRegister(pDevIns, (RTIOPORT)GCPhysAddress, cb, 0,
-                                     vmsvgaIOWrite, vmsvgaIORead, NULL /* OutStr */, NULL /* InStr */, "VMSVGA");
-        if (RT_FAILURE(rc))
-            return rc;
-        if (pDevIns->fR0Enabled)
-        {
-            rc = PDMDevHlpIOPortRegisterR0(pDevIns, (RTIOPORT)GCPhysAddress, cb, 0,
-                                           "vmsvgaIOWrite", "vmsvgaIORead", NULL, NULL, "VMSVGA");
-            if (RT_FAILURE(rc))
-                return rc;
-        }
-        if (pDevIns->fRCEnabled)
-        {
-            rc = PDMDevHlpIOPortRegisterRC(pDevIns, (RTIOPORT)GCPhysAddress, cb, 0,
-                                           "vmsvgaIOWrite", "vmsvgaIORead", NULL, NULL, "VMSVGA");
-            if (RT_FAILURE(rc))
-                return rc;
-        }
+        /*
+         * Mapping the FIFO RAM.
+         */
+        AssertLogRelMsg(cb == pThis->svga.cbFIFO, ("cb=%#RGp cbFIFO=%#x\n", cb, pThis->svga.cbFIFO));
+        rc = PDMDevHlpMMIOExMap(pDevIns, pPciDev, iRegion, GCPhysAddress);
+        AssertRC(rc);
 
-        pThis->svga.BasePort = GCPhysAddress;
-        Log(("vmsvgaR3IORegionMap: base port = %x\n", pThis->svga.BasePort));
+# if defined(VMSVGA_USE_FIFO_ACCESS_HANDLER) || defined(DEBUG_FIFO_ACCESS)
+        if (RT_SUCCESS(rc))
+        {
+            rc = PGMHandlerPhysicalRegister(PDMDevHlpGetVM(pDevIns), GCPhysAddress,
+#  ifdef DEBUG_FIFO_ACCESS
+                                            GCPhysAddress + (pThis->svga.cbFIFO - 1),
+#  else
+                                            GCPhysAddress + PAGE_SIZE - 1,
+#  endif
+                                            pThis->svga.hFifoAccessHandlerType, pThis, NIL_RTR0PTR, NIL_RTRCPTR,
+                                            "VMSVGA FIFO");
+            AssertRC(rc);
+        }
+# endif
+        if (RT_SUCCESS(rc))
+        {
+            pThis->svga.GCPhysFIFO = GCPhysAddress;
+            Log(("vmsvgaR3IORegionMap: GCPhysFIFO=%RGp cbFIFO=%#x\n", GCPhysAddress, pThis->svga.cbFIFO));
+        }
     }
     else
     {
-        AssertReturn(iRegion == pThis->pciRegions.iFIFO && enmType == PCI_ADDRESS_SPACE_MEM_PREFETCH, VERR_INTERNAL_ERROR);
-        if (GCPhysAddress != NIL_RTGCPHYS)
-        {
-            /*
-             * Mapping the FIFO RAM.
-             */
-            AssertLogRelMsg(cb == pThis->svga.cbFIFO, ("cb=%#RGp cbFIFO=%#x\n", cb, pThis->svga.cbFIFO));
-            rc = PDMDevHlpMMIOExMap(pDevIns, pPciDev, iRegion, GCPhysAddress);
-            AssertRC(rc);
-
+        Assert(pThis->svga.GCPhysFIFO);
 # if defined(VMSVGA_USE_FIFO_ACCESS_HANDLER) || defined(DEBUG_FIFO_ACCESS)
-            if (RT_SUCCESS(rc))
-            {
-                rc = PGMHandlerPhysicalRegister(PDMDevHlpGetVM(pDevIns), GCPhysAddress,
-#  ifdef DEBUG_FIFO_ACCESS
-                                                GCPhysAddress + (pThis->svga.cbFIFO - 1),
-#  else
-                                                GCPhysAddress + PAGE_SIZE - 1,
-#  endif
-                                                pThis->svga.hFifoAccessHandlerType, pThis, NIL_RTR0PTR, NIL_RTRCPTR,
-                                                "VMSVGA FIFO");
-                AssertRC(rc);
-            }
+        rc = PGMHandlerPhysicalDeregister(PDMDevHlpGetVM(pDevIns), pThis->svga.GCPhysFIFO);
+        AssertRC(rc);
 # endif
-            if (RT_SUCCESS(rc))
-            {
-                pThis->svga.GCPhysFIFO = GCPhysAddress;
-                Log(("vmsvgaR3IORegionMap: GCPhysFIFO=%RGp cbFIFO=%#x\n", GCPhysAddress, pThis->svga.cbFIFO));
-            }
-        }
-        else
-        {
-            Assert(pThis->svga.GCPhysFIFO);
-# if defined(VMSVGA_USE_FIFO_ACCESS_HANDLER) || defined(DEBUG_FIFO_ACCESS)
-            rc = PGMHandlerPhysicalDeregister(PDMDevHlpGetVM(pDevIns), pThis->svga.GCPhysFIFO);
-            AssertRC(rc);
-# endif
-            pThis->svga.GCPhysFIFO = 0;
-        }
+        pThis->svga.GCPhysFIFO = 0;
     }
     return VINF_SUCCESS;
 }
@@ -5486,7 +5436,9 @@ static DECLCALLBACK(void) vmsvgaR3Info(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, c
 
     pHlp->pfnPrintf(pHlp, "Extension enabled:  %RTbool\n", pThis->svga.fEnabled);
     pHlp->pfnPrintf(pHlp, "Configured:         %RTbool\n", pThis->svga.fConfigured);
-    pHlp->pfnPrintf(pHlp, "Base I/O port:      %#x\n", pThis->svga.BasePort);
+    pHlp->pfnPrintf(pHlp, "Base I/O port:      %#x\n",
+                    pThis->hIoPortVmSvga != NIL_IOMIOPORTHANDLE
+                    ? PDMDevHlpIoPortGetMappingAddress(pDevIns, pThis->hIoPortVmSvga) : UINT32_MAX);
     pHlp->pfnPrintf(pHlp, "FIFO address:       %RGp\n", pThis->svga.GCPhysFIFO);
     pHlp->pfnPrintf(pHlp, "FIFO size:          %u (%#x)\n", pThis->svga.cbFIFO, pThis->svga.cbFIFO);
     pHlp->pfnPrintf(pHlp, "FIFO external cmd:  %#x\n", pThis->svga.u8FIFOExtCommand);

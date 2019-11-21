@@ -367,7 +367,6 @@ int main()
     GEN_CHECK_OFF(VGASTATE, svga.u32PitchLock);
     GEN_CHECK_OFF(VGASTATE, svga.u32CurrentGMRId);
     GEN_CHECK_OFF(VGASTATE, svga.u32RegCaps);
-    GEN_CHECK_OFF(VGASTATE, svga.BasePort);
     GEN_CHECK_OFF(VGASTATE, svga.u32IndexReg);
     GEN_CHECK_OFF(VGASTATE, svga.pSupDrvSession);
     GEN_CHECK_OFF(VGASTATE, svga.FIFORequestSem);
