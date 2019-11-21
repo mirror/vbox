@@ -46,18 +46,6 @@
 # pragma once
 #endif
 
-/** Use VBE bytewise I/O. Only needed for Windows Longhorn/Vista betas and backwards compatibility. */
-#define VBE_BYTEWISE_IO
-
-#ifdef VBOX
-/** The default amount of VRAM. */
-# define VGA_VRAM_DEFAULT    (_4M)
-/** The maximum amount of VRAM. Limited by VBOX_MAX_ALLOC_PAGE_COUNT. */
-# define VGA_VRAM_MAX        (256 * _1M)
-/** The minimum amount of VRAM. */
-# define VGA_VRAM_MIN        (_1M)
-#endif
-
 #include <VBoxVideoVBE.h>
 #include <VBoxVideoVBEPrivate.h>
 
@@ -71,6 +59,29 @@
 #endif
 
 #include <iprt/list.h>
+
+
+/** Use VBE bytewise I/O. Only needed for Windows Longhorn/Vista betas and backwards compatibility. */
+#define VBE_BYTEWISE_IO
+
+#ifdef VBOX
+/** The default amount of VRAM. */
+# define VGA_VRAM_DEFAULT    (_4M)
+/** The maximum amount of VRAM. Limited by VBOX_MAX_ALLOC_PAGE_COUNT. */
+# define VGA_VRAM_MAX        (256 * _1M)
+/** The minimum amount of VRAM. */
+# define VGA_VRAM_MIN        (_1M)
+#endif
+
+/** The size of the VGA GC mapping.
+ * This is supposed to be all the VGA memory accessible to the guest.
+ * The initial value was 256KB but NTAllInOne.iso appears to access more
+ * thus the limit was upped to 512KB.
+ *
+ * @todo Someone with some VGA knowhow should make a better guess at this value.
+ */
+#define VGA_MAPPING_SIZE    _512K
+
 
 #define MSR_COLOR_EMULATION 0x01
 #define MSR_PAGE_SELECT     0x20
@@ -543,7 +554,8 @@ typedef struct VGAState
     /** VMSVGA: I/O port PCI region. */
     IOMIOPORTHANDLE             hIoPortVmSvga;
 # endif
-
+    /** The MMIO2 handle of the VRAM. */
+    PGMMMIO2HANDLE              hMmio2VRam;
 #endif /* VBOX */
 } VGAState;
 #ifdef VBOX

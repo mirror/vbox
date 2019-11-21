@@ -49,14 +49,6 @@
  *            NEVER place them here as this would lead to VGASTATE inconsistency
  *            across different .cpp files !!!
  */
-/** The size of the VGA GC mapping.
- * This is supposed to be all the VGA memory accessible to the guest.
- * The initial value was 256KB but NTAllInOne.iso appears to access more
- * thus the limit was upped to 512KB.
- *
- * @todo Someone with some VGA knowhow should make a better guess at this value.
- */
-#define VGA_MAPPING_SIZE    _512K
 
 #ifdef VBOX_WITH_HGSMI
 #define PCIDEV_2_VGASTATE(pPciDev)    ((PVGASTATE)((uintptr_t)pPciDev - RT_OFFSETOF(VGASTATE, Dev)))
@@ -5670,12 +5662,12 @@ int vgaR3UnregisterVRAMHandler(PVGASTATE pVGAState)
 /**
  * @callback_method_impl{FNPCIIOREGIONMAP, Mapping/unmapping the VRAM MMI2 region}
  */
-static DECLCALLBACK(int) vgaR3IORegionMap(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t iRegion,
-                                          RTGCPHYS GCPhysAddress, RTGCPHYS cb, PCIADDRESSSPACE enmType)
+static DECLCALLBACK(int) vgaR3PciIORegionVRamMapUnmap(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t iRegion,
+                                                      RTGCPHYS GCPhysAddress, RTGCPHYS cb, PCIADDRESSSPACE enmType)
 {
     PVGASTATE pThis = PDMDEVINS_2_DATA(pDevIns, PVGASTATE);
-    RT_NOREF(cb);
-    Log(("vgaR3IORegionMap: iRegion=%d GCPhysAddress=%RGp cb=%RGp enmType=%d\n", iRegion, GCPhysAddress, cb, enmType));
+    Log(("vgaR3PciIORegionVRamMapUnmap: iRegion=%d GCPhysAddress=%RGp cb=%RGp enmType=%d\n", iRegion, GCPhysAddress, cb, enmType));
+    RT_NOREF(pPciDev, cb);
 
     AssertReturn(iRegion == pThis->pciRegions.iVRAM && enmType == PCI_ADDRESS_SPACE_MEM_PREFETCH, VERR_INTERNAL_ERROR);
     Assert(pPciDev == pDevIns->apPciDevs[0]);
@@ -5688,44 +5680,45 @@ static DECLCALLBACK(int) vgaR3IORegionMap(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev
         /*
          * Mapping the VRAM.
          */
-        rc = PDMDevHlpMMIOExMap(pDevIns, pPciDev, iRegion, GCPhysAddress);
-        AssertRC(rc);
+        rc = PDMDevHlpMmio2Map(pDevIns, pThis->hMmio2VRam, GCPhysAddress);
+        AssertLogRelRC(rc);
         if (RT_SUCCESS(rc))
         {
             rc = PGMHandlerPhysicalRegister(PDMDevHlpGetVM(pDevIns), GCPhysAddress, GCPhysAddress + (pThis->vram_size - 1),
                                             pThis->hLfbAccessHandlerType, pThis, pDevIns->pvInstanceDataR0,
                                             pDevIns->pvInstanceDataRC, "VGA LFB");
-            AssertRC(rc);
+            AssertLogRelRC(rc);
             if (RT_SUCCESS(rc))
             {
                 pThis->GCPhysVRAM = GCPhysAddress;
                 pThis->vbe_regs[VBE_DISPI_INDEX_FB_BASE_HI] = GCPhysAddress >> 16;
             }
+            rc = VINF_PCI_MAPPING_DONE; /* caller doesn't care about any other status, so no problem overwriting error here */
         }
     }
     else
     {
         /*
-         * Unmapping of the VRAM in progress.
+         * Unmapping of the VRAM in progress (caller will do that).
          * Deregister the access handler so PGM doesn't get upset.
          */
         Assert(pThis->GCPhysVRAM);
-#ifdef VBOX_WITH_VMSVGA
+# ifdef VBOX_WITH_VMSVGA
         Assert(!pThis->svga.fEnabled || !pThis->svga.fVRAMTracking);
         if (    !pThis->svga.fEnabled
             ||  (   pThis->svga.fEnabled
                  && pThis->svga.fVRAMTracking
                 )
            )
+# endif
         {
-#endif
             rc = PGMHandlerPhysicalDeregister(PDMDevHlpGetVM(pDevIns), pThis->GCPhysVRAM);
             AssertRC(rc);
-#ifdef VBOX_WITH_VMSVGA
         }
+# ifdef VBOX_WITH_VMSVGA
         else
             rc = VINF_SUCCESS;
-#endif
+# endif
         pThis->GCPhysVRAM = 0;
         /* NB: VBE_DISPI_INDEX_FB_BASE_HI is left unchanged here. */
     }
@@ -6646,27 +6639,35 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
                                           "VMSVGA", NULL /*paExtDescs*/, &pThis->hIoPortVmSvga);
         AssertRCReturn(rc, rc);
 
-        rc = PDMDevHlpPCIIORegionRegister(pDevIns, pThis->pciRegions.iVRAM, pThis->vram_size,
-                                          PCI_ADDRESS_SPACE_MEM_PREFETCH, vgaR3IORegionMap);
-        if (RT_FAILURE(rc))
-            return rc;
         rc = PDMDevHlpPCIIORegionRegister(pDevIns, pThis->pciRegions.iFIFO, pThis->svga.cbFIFO,
                                           PCI_ADDRESS_SPACE_MEM_PREFETCH, vmsvgaR3IORegionMap);
-        if (RT_FAILURE(rc))
-            return rc;
+        AssertRCReturn(rc, rc);
         pPciDev->pfnRegionLoadChangeHookR3 = vgaR3PciRegionLoadChangeHook;
     }
-    else
 #endif /* VBOX_WITH_VMSVGA */
-    {
-        rc = PDMDevHlpPCIIORegionRegister(pDevIns, pThis->pciRegions.iVRAM, pThis->vram_size,
-                                          PCI_ADDRESS_SPACE_MEM_PREFETCH, vgaR3IORegionMap);
-        if (RT_FAILURE(rc))
-            return rc;
-    }
 
     /*
-     * Allocate the VRAM and map the first 512KB of it into GC so we can speed up VGA support.
+     * Allocate VRAM and create a PCI region for it.
+     */
+    rc = PDMDevHlpPCIIORegionCreateMmio2Ex(pDevIns, pThis->pciRegions.iVRAM, pThis->vram_size,
+                                           PCI_ADDRESS_SPACE_MEM_PREFETCH, 0 /*fFlags*/, vgaR3PciIORegionVRamMapUnmap,
+                                           "VRam", (void **)&pThis->vram_ptrR3, &pThis->hMmio2VRam);
+    AssertLogRelRCReturn(rc, PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS,
+                                                 N_("Failed to allocate %u bytes of VRAM"), pThis->vram_size));
+    pThis->vram_ptrR0 = (RTR0PTR)pThis->vram_ptrR3; /** @todo @bugref{1865} Map parts into R0 or just use PGM access (Mac only). */
+
+    /*
+     * Register access handler types for tracking dirty VRAM pages.
+     */
+    rc = PGMR3HandlerPhysicalTypeRegister(pVM, PGMPHYSHANDLERKIND_WRITE,
+                                          vgaLFBAccessHandler,
+                                          g_DeviceVga.pszR0Mod, "vgaLFBAccessHandler", "vgaLbfAccessPfHandler",
+                                          g_DeviceVga.pszRCMod, "vgaLFBAccessHandler", "vgaLbfAccessPfHandler",
+                                          "VGA LFB", &pThis->hLfbAccessHandlerType);
+    AssertRCReturn(rc, rc);
+
+    /*
+     * Allocate VMSVGA FIFO.
      */
 #ifdef VBOX_WITH_VMSVGA
     if (pThis->fVMSVGAEnabled)
@@ -6680,35 +6681,12 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
             return PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS,
                                         N_("Failed to allocate %u bytes of memory for the VMSVGA device"), pThis->svga.cbFIFO);
         pThis->svga.pFIFOR0 = (RTR0PTR)pThis->svga.pFIFOR3;
-    }
-#endif
-    rc = PDMDevHlpMMIO2Register(pDevIns, pPciDev, pThis->pciRegions.iVRAM, pThis->vram_size, 0, (void **)&pThis->vram_ptrR3, "VRam");
-    AssertLogRelMsgRCReturn(rc, ("PDMDevHlpMMIO2Register(%#x,) -> %Rrc\n", pThis->vram_size, rc), rc);
-    pThis->vram_ptrR0 = (RTR0PTR)pThis->vram_ptrR3; /** @todo @bugref{1865} Map parts into R0 or just use PGM access (Mac only). */
 
-#ifdef VBOX_WITH_RAW_MODE_KEEP
-    if (pDevIns->fRCEnabled)
-    {
-        RTRCPTR pRCMapping = 0;
-        rc = PDMDevHlpMMHyperMapMMIO2(pDevIns, pPciDev, pThis->pciRegions.iVRAM, 0 /* off */,  VGA_MAPPING_SIZE,
-                                      "VGA VRam", &pRCMapping);
-        AssertLogRelMsgRCReturn(rc, ("PDMDevHlpMMHyperMapMMIO2(%#x,) -> %Rrc\n", VGA_MAPPING_SIZE, rc), rc);
-        pThis->vram_ptrRC = pRCMapping;
-# ifdef VBOX_WITH_VMSVGA
+# ifdef VBOX_WITH_RAW_MODE_KEEP
         /* Don't need a mapping in RC */
 # endif
-    }
-#endif
-
-#if defined(VBOX_WITH_2X_4GB_ADDR_SPACE)
-    if (pDevIns->fR0Enabled)
-    {
-        RTR0PTR pR0Mapping = 0;
-        rc = PDMDevHlpMMIO2MapKernel(pDevIns, iPCIRegionVRAM, 0 /* off */,  VGA_MAPPING_SIZE, "VGA VRam", &pR0Mapping);
-        AssertLogRelMsgRCReturn(rc, ("PDMDevHlpMapMMIO2IntoR0(%#x,) -> %Rrc\n", VGA_MAPPING_SIZE, rc), rc);
-        pThis->vram_ptrR0 = pR0Mapping;
-# ifdef VBOX_WITH_VMSVGA
-        if (pThis->fVMSVGAEnabled)
+# if defined(VBOX_WITH_2X_4GB_ADDR_SPACE)
+        if (pDevIns->fR0Enabled)
         {
             RTR0PTR pR0Mapping = 0;
             rc = PDMDevHlpMMIO2MapKernel(pDevIns, pThis->pciRegions.iFIFO, 0 /* off */,  pThis->svga.cbFIFO, "VMSVGA-FIFO", &pR0Mapping);
@@ -6718,17 +6696,6 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
 # endif
     }
 #endif
-
-    /*
-     * Register access handler types.
-     */
-    rc = PGMR3HandlerPhysicalTypeRegister(pVM, PGMPHYSHANDLERKIND_WRITE,
-                                          vgaLFBAccessHandler,
-                                          g_DeviceVga.pszR0Mod, "vgaLFBAccessHandler", "vgaLbfAccessPfHandler",
-                                          g_DeviceVga.pszRCMod, "vgaLFBAccessHandler", "vgaLbfAccessPfHandler",
-                                          "VGA LFB", &pThis->hLfbAccessHandlerType);
-    AssertRCReturn(rc, rc);
-
 
     /*
      * Register I/O ports.
@@ -7435,6 +7402,14 @@ static DECLCALLBACK(int) vgaRZConstruct(PPDMDEVINS pDevIns)
         rc = PDMDevHlpIoPortSetUpContext(pDevIns, pThis->hIoPortVmSvga, vmsvgaIOWrite, vmsvgaIORead, NULL /*pvUser*/);
         AssertRCReturn(rc, rc);
     }
+# endif
+
+    /*
+     * Map the start of the VRAM into this context.
+     */
+# if defined(VBOX_WITH_2X_4GB_ADDR_SPACE)
+    rc = PDMDevHlpMmio2SetUpContext(pDevIns, pThis->hMmio2VRam, 0 /* off */, VGA_MAPPING_SIZE, (void **)&pThis->CTX_SUFF(vram_ptr));
+    AssertLogRelMsgRCReturn(rc, ("PDMDevHlpMmio2SetUpContext(,VRAM,0,%#x,) -> %Rrc\n", VGA_MAPPING_SIZE, rc), rc);
 # endif
 
     return VINF_SUCCESS;
