@@ -44,7 +44,122 @@ technical terms if no non-technical ones are clear enough.
     <itemizedlist>
 
       <listitem>
+        <para>
+          GUI: Some issues related to mouse integration cursor scaling were
+          addressed (bug #14366), more to go
+        </para>
+      </listitem>
+
+      <listitem>
+        <para>
+          GUI: Few usability related fixes for export appliance wizard
+        </para>
+      </listitem>
+
+      <listitem>
+        <para>
+          GUI: Fixed/improved mouse pointer scaling
+        </para>
+      </listitem>
+
+      <listitem>
+        <para>
+          GUI: Fixed crash in cloud related wizards when accessibility
+          functionality was enabled
+        </para>
+      </listitem>
+
+      <listitem>
+        <para>
+          GUI: Soft keyboard visual improvements, and fix crash for first use
+        </para>
+      </listitem>
+
+      <listitem>
+        <para>
+          GUI: Added the missing restriction options for disabling new
+          functionality such as the VISO creator
+        </para>
+      </listitem>
+
+      <listitem>
+        <para>
+          GUI: More consistent medium selection (both showing known images
+          and allowing to select using the file picker)
+        </para>
+      </listitem>
+
+      <listitem>
+        <para>
+          Documentation: updated supported host operating systems, added few
+          new manual pages (more to come later)
+        </para>
+      </listitem>
+
+      <listitem>
+        <para>
+          Virtualization core: Improvements for nested hardware-virtualization
+          on Intel CPUs
+        </para>
+      </listitem>
+
+      <listitem>
+        <para>
+          VBoxSVGA/VMSVGA: Support YUV2 and related texture formats with hosts
+          using OpenGL (macOS and Linux), which accelerates video playback
+          when 3D is enabled by delegating the color space conversion to the
+          host GPU
+        </para>
+      </listitem>
+
+      <listitem>
+        <para>
+          VBoxSVGA/VMSVGA: Several drawing fixes for the 3D case
+        </para>
+      </listitem>
+
+      <listitem>
+        <para>
+          USB: Improvements for EHCI controller implementation
+        </para>
+      </listitem>
+
+      <listitem>
+        <para>
+          USB: Filter can now specify port path, uniquely identifying a port
+          in a system
+        </para>
+      </listitem>
+
+      <listitem>
+        <para>
+          NAT Network: Use non-blocking sockets on Linux for accepted
+          incoming connections (port forwarding)
+        </para>
+      </listitem>
+
+      <listitem>
+        <para>
+          PCnet-ISA: Added new network adapter type, currently CLI only
+        </para>
+      </listitem>
+
+      <listitem>
+        <para>
+          SMBIOS: Store system UUID in little endian format which is the
+          default for new VMs, while existing VMs stick to the old VirtualBox
+          behavior of storing them in big endian format for backwards
+          compatibility to avoid breaking the activation status of Windows VMs
+        </para>
+      </listitem>
+
+      <listitem>
         <para>VBoxSDL frontend: Fixed running on Windows hosts</para>
+      </listitem>
+
+      <listitem>
+        <para>VBoxManage: show "unrestricted guest" and "nested HW
+        virtualization" CPU features when listing the host information</para>
       </listitem>
 
       <listitem>
@@ -55,22 +170,31 @@ technical terms if no non-technical ones are clear enough.
       </listitem>
 
       <listitem>
+        <para>Linux host and guest: Support Linux 5.4 (bug #18945)</para>
+      </listitem>
+
+      <listitem>
+        <para>Linux host and guest: Force disabling of kernel module signing
+        during build (user can do it afterwards)</para>
+      </listitem>
+
+      <listitem>
         <para>
-          GUI: some of issues related to mouse integration cursor scaling were
-          addressed (bug #14366), more to go
+          Windows Guest Additions: Many fixes for drawing problems in the
+          driver for VBoxSVGA
         </para>
       </listitem>
 
       <listitem>
         <para>
-          GUI: a bit of usability related fixes for export appliance wizard
+          Windows Guest Additions: Fixes for legacy VBoxVGA adapter, restore
+          previously working cases
         </para>
       </listitem>
 
       <listitem>
         <para>
-          GUI: fixed crash in cloud related wizards happened with accessibility
-          stuff enabled
+          Windows Guest Additions: Restore VHWA functionality for VBoxSVGA
         </para>
       </listitem>
 
