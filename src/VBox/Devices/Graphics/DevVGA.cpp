@@ -2873,44 +2873,233 @@ static void vga_init_expand(void)
 
 /* -=-=-=-=-=- all contexts -=-=-=-=-=- */
 
-/**
- * @callback_method_impl{FNIOMIOPORTOUT,Generic VGA OUT dispatcher.}
- */
-PDMBOTHCBDECL(int) vgaIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb)
-{
-    PVGASTATE pThis = PDMDEVINS_2_DATA(pDevIns, PVGASTATE);
-    Assert(PDMDevHlpCritSectIsOwner(pDevIns, pDevIns->CTX_SUFF(pCritSectRo)));
+#define VGA_IOPORT_WRITE_PLACEHOLDER(a_uPort, a_cPorts) do {\
+        PVGASTATE pThis = PDMDEVINS_2_DATA(pDevIns, PVGASTATE); \
+        Assert(PDMDevHlpCritSectIsOwner(pDevIns, pDevIns->CTX_SUFF(pCritSectRo))); \
+        AssertCompile(RT_IS_POWER_OF_TWO(a_cPorts)); \
+        Assert((unsigned)offPort - (unsigned)(a_uPort) < (unsigned)(a_cPorts)); \
+        NOREF(pvUser); \
+        if (cb == 1) \
+            vga_ioport_write(pThis, offPort, u32); \
+        else if (cb == 2) \
+        { \
+            vga_ioport_write(pThis, offPort, u32 & 0xff); \
+            vga_ioport_write(pThis, offPort + 1, u32 >> 8); \
+        } \
+        return VINF_SUCCESS; \
+    } while (0)
 
-    NOREF(pvUser);
-    if (cb == 1)
-        vga_ioport_write(pThis, Port, u32);
-    else if (cb == 2)
-    {
-        vga_ioport_write(pThis, Port, u32 & 0xff);
-        vga_ioport_write(pThis, Port + 1, u32 >> 8);
-    }
-    return VINF_SUCCESS;
+#define VGA_IOPORT_READ_PLACEHOLDER(a_uPort, a_cPorts) do {\
+        PVGASTATE pThis = PDMDEVINS_2_DATA(pDevIns, PVGASTATE); \
+        Assert(PDMDevHlpCritSectIsOwner(pDevIns, pDevIns->CTX_SUFF(pCritSectRo))); \
+        AssertCompile(RT_IS_POWER_OF_TWO(a_cPorts)); \
+        Assert((unsigned)offPort - (unsigned)(a_uPort) < (unsigned)(a_cPorts)); \
+        NOREF(pvUser); \
+        if (cb == 1) \
+            *pu32 = vga_ioport_read(pThis, offPort); \
+        else if (cb == 2) \
+        { \
+            uint32_t u32 = vga_ioport_read(pThis, offPort); \
+            u32 |= vga_ioport_read(pThis, offPort + 1) << 8; \
+            *pu32 = u32; \
+        } \
+        else \
+            return VERR_IOM_IOPORT_UNUSED; \
+        return VINF_SUCCESS; \
+    } while (0)
+
+/**
+ * @callback_method_impl{FNIOMIOPORTNEWOUT,0x3c0-0x3c1 Attribute Controller.}
+ */
+static DECLCALLBACK(VBOXSTRICTRC) vgaIoPortArWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t u32, unsigned cb)
+{
+    VGA_IOPORT_WRITE_PLACEHOLDER(0x3c0, 2);
+}
+
+/**
+ * @callback_method_impl{FNIOMIOPORTNEWIN,0x3c0-0x3c1 Attribute Controller.}
+ */
+static DECLCALLBACK(VBOXSTRICTRC) vgaIoPortArRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t *pu32, unsigned cb)
+{
+    VGA_IOPORT_READ_PLACEHOLDER(0x3c0, 2);
 }
 
 
 /**
- * @callback_method_impl{FNIOMIOPORTOUT,Generic VGA IN dispatcher.}
+ * @callback_method_impl{FNIOMIOPORTNEWOUT,0x3c2 Miscellaneous Register.}
  */
-PDMBOTHCBDECL(int) vgaIOPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32, unsigned cb)
+static DECLCALLBACK(VBOXSTRICTRC) vgaIoPortMsrWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t u32, unsigned cb)
 {
-    PVGASTATE pThis = PDMDEVINS_2_DATA(pDevIns, PVGASTATE);
-    Assert(PDMDevHlpCritSectIsOwner(pDevIns, pDevIns->CTX_SUFF(pCritSectRo)));
-    NOREF(pvUser);
+    VGA_IOPORT_WRITE_PLACEHOLDER(0x3c2, 1);
+}
 
-    int rc = VINF_SUCCESS;
-    if (cb == 1)
-        *pu32 = vga_ioport_read(pThis, Port);
-    else if (cb == 2)
-        *pu32 = vga_ioport_read(pThis, Port)
-             | (vga_ioport_read(pThis, Port + 1) << 8);
-    else
-        rc = VERR_IOM_IOPORT_UNUSED;
-    return rc;
+/**
+ * @callback_method_impl{FNIOMIOPORTNEWIN,0x3c2 Status register 0.}
+ */
+static DECLCALLBACK(VBOXSTRICTRC) vgaIoPortSt00Read(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t *pu32, unsigned cb)
+{
+    VGA_IOPORT_READ_PLACEHOLDER(0x3c2, 1);
+}
+
+
+/**
+ * @callback_method_impl{FNIOMIOPORTNEWOUT,0x3c3 Unused.}
+ */
+static DECLCALLBACK(VBOXSTRICTRC) vgaIoPortUnusedWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t u32, unsigned cb)
+{
+    VGA_IOPORT_WRITE_PLACEHOLDER(0x3c3, 1);
+}
+
+/**
+ * @callback_method_impl{FNIOMIOPORTNEWIN,0x3c3 Unused.}
+ */
+static DECLCALLBACK(VBOXSTRICTRC) vgaIoPortUnusedRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t *pu32, unsigned cb)
+{
+    VGA_IOPORT_READ_PLACEHOLDER(0x3c3, 1);
+}
+
+
+/**
+ * @callback_method_impl{FNIOMIOPORTNEWOUT,0x3c4-0x3c5 Sequencer.}
+ */
+static DECLCALLBACK(VBOXSTRICTRC) vgaIoPortSrWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t u32, unsigned cb)
+{
+    VGA_IOPORT_WRITE_PLACEHOLDER(0x3c4, 2);
+}
+
+/**
+ * @callback_method_impl{FNIOMIOPORTNEWIN,0x3c4-0x3c5 Sequencer.}
+ */
+static DECLCALLBACK(VBOXSTRICTRC) vgaIoPortSrRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t *pu32, unsigned cb)
+{
+    VGA_IOPORT_READ_PLACEHOLDER(0x3c4, 2);
+}
+
+
+/**
+ * @callback_method_impl{FNIOMIOPORTNEWOUT,0x3c6-0x3c9 DAC.}
+ */
+static DECLCALLBACK(VBOXSTRICTRC) vgaIoPortDacWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t u32, unsigned cb)
+{
+    VGA_IOPORT_WRITE_PLACEHOLDER(0x3c6, 4);
+}
+
+/**
+ * @callback_method_impl{FNIOMIOPORTNEWIN,0x3c6-0x3c9 DAC.}
+ */
+static DECLCALLBACK(VBOXSTRICTRC) vgaIoPortDacRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t *pu32, unsigned cb)
+{
+    VGA_IOPORT_READ_PLACEHOLDER(0x3c6, 4);
+}
+
+
+/**
+ * @callback_method_impl{FNIOMIOPORTNEWOUT,0x3ca-0x3cd Graphics Position?}
+ */
+static DECLCALLBACK(VBOXSTRICTRC) vgaIoPortPosWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t u32, unsigned cb)
+{
+    VGA_IOPORT_WRITE_PLACEHOLDER(0x3ca, 4);
+}
+
+/**
+ * @callback_method_impl{FNIOMIOPORTNEWIN,0x3ca-0x3cd Graphics Position?}
+ */
+static DECLCALLBACK(VBOXSTRICTRC) vgaIoPortPosRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t *pu32, unsigned cb)
+{
+    VGA_IOPORT_READ_PLACEHOLDER(0x3ca, 4);
+}
+
+
+/**
+ * @callback_method_impl{FNIOMIOPORTNEWOUT,0x3ce-0x3cf Graphics Controller.}
+ */
+static DECLCALLBACK(VBOXSTRICTRC) vgaIoPortGrWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t u32, unsigned cb)
+{
+    VGA_IOPORT_WRITE_PLACEHOLDER(0x3ce, 2);
+}
+
+/**
+ * @callback_method_impl{FNIOMIOPORTNEWIN,0x3ca-0x3cf Graphics Controller.}
+ */
+static DECLCALLBACK(VBOXSTRICTRC) vgaIoPortGrRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t *pu32, unsigned cb)
+{
+    VGA_IOPORT_READ_PLACEHOLDER(0x3ce, 2);
+}
+
+
+/**
+ * @callback_method_impl{FNIOMIOPORTNEWOUT,0x3b4-0x3b5 MDA CRT control.}
+ */
+static DECLCALLBACK(VBOXSTRICTRC) vgaIoPortMdaCrtWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t u32, unsigned cb)
+{
+    /** @todo do vga_ioport_invalid here   */
+    VGA_IOPORT_WRITE_PLACEHOLDER(0x3b4, 2);
+}
+
+/**
+ * @callback_method_impl{FNIOMIOPORTNEWIN,0x3b4-0x3b5 MDA CRT control.}
+ */
+static DECLCALLBACK(VBOXSTRICTRC) vgaIoPortMdaCrtRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t *pu32, unsigned cb)
+{
+    /** @todo do vga_ioport_invalid here */
+    VGA_IOPORT_READ_PLACEHOLDER(0x3b4, 2);
+}
+
+
+/**
+ * @callback_method_impl{FNIOMIOPORTNEWOUT,0x3ba MDA feature/status.}
+ */
+static DECLCALLBACK(VBOXSTRICTRC) vgaIoPortMdaFcrWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t u32, unsigned cb)
+{
+    /** @todo do vga_ioport_invalid here   */
+    VGA_IOPORT_WRITE_PLACEHOLDER(0x3ba, 1);
+}
+
+/**
+ * @callback_method_impl{FNIOMIOPORTNEWIN,0x3ba MDA feature/status.}
+ */
+static DECLCALLBACK(VBOXSTRICTRC) vgaIoPortMdaStRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t *pu32, unsigned cb)
+{
+    /** @todo do vga_ioport_invalid here */
+    VGA_IOPORT_READ_PLACEHOLDER(0x3ba, 1);
+}
+
+
+/**
+ * @callback_method_impl{FNIOMIOPORTNEWOUT,0x3d4-0x3d5 CGA CRT control.}
+ */
+static DECLCALLBACK(VBOXSTRICTRC) vgaIoPortCgaCrtWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t u32, unsigned cb)
+{
+    /** @todo do vga_ioport_invalid here   */
+    VGA_IOPORT_WRITE_PLACEHOLDER(0x3d4, 2);
+}
+
+/**
+ * @callback_method_impl{FNIOMIOPORTNEWIN,0x3d4-0x3d5 CGA CRT control.}
+ */
+static DECLCALLBACK(VBOXSTRICTRC) vgaIoPortCgaCrtRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t *pu32, unsigned cb)
+{
+    /** @todo do vga_ioport_invalid here */
+    VGA_IOPORT_READ_PLACEHOLDER(0x3d4, 2);
+}
+
+
+/**
+ * @callback_method_impl{FNIOMIOPORTNEWOUT,0x3da CGA feature/status.}
+ */
+static DECLCALLBACK(VBOXSTRICTRC) vgaIoPortCgaFcrWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t u32, unsigned cb)
+{
+    /** @todo do vga_ioport_invalid here   */
+    VGA_IOPORT_WRITE_PLACEHOLDER(0x3da, 1);
+}
+
+/**
+ * @callback_method_impl{FNIOMIOPORTNEWIN,0x3da CGA feature/status.}
+ */
+static DECLCALLBACK(VBOXSTRICTRC) vgaIoPortCgaStRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t *pu32, unsigned cb)
+{
+    /** @todo do vga_ioport_invalid here */
+    VGA_IOPORT_READ_PLACEHOLDER(0x3da, 1);
 }
 
 
@@ -6562,16 +6751,25 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
     /*
      * Register I/O ports.
      */
-    rc = PDMDevHlpIOPortRegister(pDevIns,  0x3c0, 16, NULL, vgaIOPortWrite,       vgaIOPortRead, NULL, NULL,      "VGA - 3c0");
-    AssertRCReturn(rc, rc);
-    rc = PDMDevHlpIOPortRegister(pDevIns,  0x3b4,  2, NULL, vgaIOPortWrite,       vgaIOPortRead, NULL, NULL,      "VGA - 3b4");
-    AssertRCReturn(rc, rc);
-    rc = PDMDevHlpIOPortRegister(pDevIns,  0x3ba,  1, NULL, vgaIOPortWrite,       vgaIOPortRead, NULL, NULL,      "VGA - 3ba");
-    AssertRCReturn(rc, rc);
-    rc = PDMDevHlpIOPortRegister(pDevIns,  0x3d4,  2, NULL, vgaIOPortWrite,       vgaIOPortRead, NULL, NULL,      "VGA - 3d4");
-    AssertRCReturn(rc, rc);
-    rc = PDMDevHlpIOPortRegister(pDevIns,  0x3da,  1, NULL, vgaIOPortWrite,       vgaIOPortRead, NULL, NULL,      "VGA - 3da");
-    AssertRCReturn(rc, rc);
+#define REG_PORT(a_uPort, a_cPorts, a_pfnWrite, a_pfnRead, a_szDesc, a_phIoPort) do { \
+            rc = PDMDevHlpIoPortCreateFlagsAndMap(pDevIns, a_uPort, a_cPorts, IOM_IOPORT_F_ABS, \
+                                                  a_pfnWrite, a_pfnRead, "VGA - " a_szDesc, NULL /*paExtDescs*/, a_phIoPort); \
+            AssertRCReturn(rc, rc); \
+        } while (0)
+    REG_PORT(0x3c0,  2, vgaIoPortArWrite,       vgaIoPortArRead,        "Attribute Controller",     &pThis->hIoPortAr);
+    REG_PORT(0x3c2,  1, vgaIoPortMsrWrite,      vgaIoPortSt00Read,      "MSR / ST00",               &pThis->hIoPortMsrSt00);
+    REG_PORT(0x3c3,  1, vgaIoPortUnusedWrite,   vgaIoPortUnusedRead,    "0x3c3",                    &pThis->hIoPort3c3);
+    REG_PORT(0x3c4,  2, vgaIoPortSrWrite,       vgaIoPortSrRead,        "Sequencer",                &pThis->hIoPortSr);
+    REG_PORT(0x3c6,  4, vgaIoPortDacWrite,      vgaIoPortDacRead,       "DAC",                      &pThis->hIoPortDac);
+    REG_PORT(0x3ca,  4, vgaIoPortPosWrite,      vgaIoPortPosRead,       "Graphics Position", /*?*/  &pThis->hIoPortPos);
+    REG_PORT(0x3ce,  2, vgaIoPortGrWrite,       vgaIoPortGrRead,        "Graphics Controller",      &pThis->hIoPortGr);
+
+    /* Note! Ralf Brown lists 0x3b0-0x3b1, 0x3b2-0x3b3 and 0x3b6-0x3b7 as "the same as" 0x3b4-0x3b5. */
+    REG_PORT(0x3b4,  2, vgaIoPortMdaCrtWrite,   vgaIoPortMdaCrtRead,    "MDA CRT control",          &pThis->hIoPortMdaCrt);
+    REG_PORT(0x3ba,  1, vgaIoPortMdaFcrWrite,   vgaIoPortMdaStRead,     "MDA feature/status",       &pThis->hIoPortMdaFcrSt);
+    REG_PORT(0x3d4,  2, vgaIoPortCgaCrtWrite,   vgaIoPortCgaCrtRead,    "CGA CRT control",          &pThis->hIoPortCgaCrt);
+    REG_PORT(0x3da,  1, vgaIoPortCgaFcrWrite,   vgaIoPortCgaStRead,     "CGA Feature / status",     &pThis->hIoPortCgaFcrSt);
+
 #ifdef VBOX_WITH_HGSMI
     /* Use reserved VGA IO ports for HGSMI. */
     rc = PDMDevHlpIOPortRegister(pDevIns,  VGA_PORT_HGSMI_HOST,  4, NULL, vgaR3IOPortHGSMIWrite, vgaR3IOPortHGSMIRead, NULL, NULL, "VGA - 3b0 (HGSMI host)");
@@ -6587,24 +6785,11 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
     AssertRCReturn(rc, rc);
 #endif /* CONFIG_BOCHS_VBE */
 
+#undef REG_PORT
+
     /* guest context extension */
     if (pDevIns->fRCEnabled)
     {
-        rc = PDMDevHlpIOPortRegisterRC(pDevIns,  0x3c0, 16, 0, "vgaIOPortWrite",       "vgaIOPortRead", NULL, NULL,     "VGA - 3c0 (GC)");
-        if (RT_FAILURE(rc))
-            return rc;
-        rc = PDMDevHlpIOPortRegisterRC(pDevIns,  0x3b4,  2, 0, "vgaIOPortWrite",       "vgaIOPortRead", NULL, NULL,     "VGA - 3b4 (GC)");
-        if (RT_FAILURE(rc))
-            return rc;
-        rc = PDMDevHlpIOPortRegisterRC(pDevIns,  0x3ba,  1, 0, "vgaIOPortWrite",       "vgaIOPortRead", NULL, NULL,     "VGA - 3ba (GC)");
-        if (RT_FAILURE(rc))
-            return rc;
-        rc = PDMDevHlpIOPortRegisterRC(pDevIns,  0x3d4,  2, 0, "vgaIOPortWrite",       "vgaIOPortRead", NULL, NULL,     "VGA - 3d4 (GC)");
-        if (RT_FAILURE(rc))
-            return rc;
-        rc = PDMDevHlpIOPortRegisterRC(pDevIns,  0x3da,  1, 0, "vgaIOPortWrite",       "vgaIOPortRead", NULL, NULL,     "VGA - 3da (GC)");
-        if (RT_FAILURE(rc))
-            return rc;
 #ifdef CONFIG_BOCHS_VBE
         rc = PDMDevHlpIOPortRegisterRC(pDevIns,  0x1ce,  1, 0, "vgaIOPortWriteVBEIndex", "vgaIOPortReadVBEIndex", NULL, NULL, "VGA/VBE - Index (GC)");
         if (RT_FAILURE(rc))
@@ -6618,21 +6803,6 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
     /* R0 context extension */
     if (pDevIns->fR0Enabled)
     {
-        rc = PDMDevHlpIOPortRegisterR0(pDevIns,  0x3c0, 16, 0, "vgaIOPortWrite",       "vgaIOPortRead", NULL, NULL,     "VGA - 3c0 (GC)");
-        if (RT_FAILURE(rc))
-            return rc;
-        rc = PDMDevHlpIOPortRegisterR0(pDevIns,  0x3b4,  2, 0, "vgaIOPortWrite",       "vgaIOPortRead", NULL, NULL,     "VGA - 3b4 (GC)");
-        if (RT_FAILURE(rc))
-            return rc;
-        rc = PDMDevHlpIOPortRegisterR0(pDevIns,  0x3ba,  1, 0, "vgaIOPortWrite",       "vgaIOPortRead", NULL, NULL,     "VGA - 3ba (GC)");
-        if (RT_FAILURE(rc))
-            return rc;
-        rc = PDMDevHlpIOPortRegisterR0(pDevIns,  0x3d4,  2, 0, "vgaIOPortWrite",       "vgaIOPortRead", NULL, NULL,     "VGA - 3d4 (GC)");
-        if (RT_FAILURE(rc))
-            return rc;
-        rc = PDMDevHlpIOPortRegisterR0(pDevIns,  0x3da,  1, 0, "vgaIOPortWrite",       "vgaIOPortRead", NULL, NULL,     "VGA - 3da (GC)");
-        if (RT_FAILURE(rc))
-            return rc;
 #ifdef CONFIG_BOCHS_VBE
         rc = PDMDevHlpIOPortRegisterR0(pDevIns,  0x1ce,  1, 0, "vgaIOPortWriteVBEIndex", "vgaIOPortReadVBEIndex", NULL, NULL, "VGA/VBE - Index (GC)");
         if (RT_FAILURE(rc))
@@ -6817,8 +6987,7 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
      * Attach to the display.
      */
     rc = vgaAttach(pDevIns, 0 /* display LUN # */, PDM_TACH_FLAGS_NOT_HOT_PLUG);
-    if (RT_FAILURE(rc))
-        return rc;
+    AssertRCReturn(rc, rc);
 
     /*
      * Initialize the retrace flag.
@@ -7278,6 +7447,25 @@ static DECLCALLBACK(int) vgaRZConstruct(PPDMDEVINS pDevIns)
     int rc = PDMDevHlpSetDeviceCritSect(pDevIns, &pThis->CritSect);
     AssertRCReturn(rc, rc);
 
+#define REG_PORT(a_uPort, a_cPorts, a_pfnWrite, a_pfnRead, a_szDesc, a_hIoPort) do { \
+            rc = PDMDevHlpIoPortSetUpContext(pDevIns, a_hIoPort, a_pfnWrite, a_pfnRead, NULL /*pvUser*/); \
+            AssertRCReturn(rc, rc); \
+        } while (0)
+
+    REG_PORT(0x3c0,  2, vgaIoPortArWrite,       vgaIoPortArRead,        "Attribute Controller",     pThis->hIoPortAr);
+    REG_PORT(0x3c2,  1, vgaIoPortMsrWrite,      vgaIoPortSt00Read,      "MSR / ST00",               pThis->hIoPortMsrSt00);
+    REG_PORT(0x3c3,  1, vgaIoPortUnusedWrite,   vgaIoPortUnusedRead,    "0x3c3",                    pThis->hIoPort3c3);
+    REG_PORT(0x3c4,  2, vgaIoPortSrWrite,       vgaIoPortSrRead,        "Sequencer",                pThis->hIoPortSr);
+    REG_PORT(0x3c6,  4, vgaIoPortDacWrite,      vgaIoPortDacRead,       "DAC",                      pThis->hIoPortDac);
+    REG_PORT(0x3ca,  4, vgaIoPortPosWrite,      vgaIoPortPosRead,       "Graphics Position", /*?*/  pThis->hIoPortPos);
+    REG_PORT(0x3ce,  2, vgaIoPortGrWrite,       vgaIoPortGrRead,        "Graphics Controller",      pThis->hIoPortGr);
+
+    REG_PORT(0x3b4,  2, vgaIoPortMdaCrtWrite,   vgaIoPortMdaCrtRead,    "MDA CRT control",          pThis->hIoPortMdaCrt);
+    REG_PORT(0x3ba,  1, vgaIoPortMdaFcrWrite,   vgaIoPortMdaStRead,     "MDA feature/status",       pThis->hIoPortMdaFcrSt);
+    REG_PORT(0x3d4,  2, vgaIoPortCgaCrtWrite,   vgaIoPortCgaCrtRead,    "CGA CRT control",          pThis->hIoPortCgaCrt);
+    REG_PORT(0x3da,  1, vgaIoPortCgaFcrWrite,   vgaIoPortCgaStRead,     "CGA Feature / status",     pThis->hIoPortCgaFcrSt);
+
+#undef REG_PORT
     return VINF_SUCCESS;
 }
 

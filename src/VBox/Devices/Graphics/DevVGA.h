@@ -492,10 +492,34 @@ typedef struct VGAState
         };
     } pendingVhwaCommands;
 
+    /** @name I/O ports for range 0x3c0-3cf.
+     * @{ */
+    IOMIOPORTHANDLE             hIoPortAr;
+    IOMIOPORTHANDLE             hIoPortMsrSt00;
+    IOMIOPORTHANDLE             hIoPort3c3;
+    IOMIOPORTHANDLE             hIoPortSr;
+    IOMIOPORTHANDLE             hIoPortDac;
+    IOMIOPORTHANDLE             hIoPortPos;
+    IOMIOPORTHANDLE             hIoPortGr;
+    /** @} */
+
+    /** @name I/O ports for MDA 0x3b0-0x3bf (sparse)
+     * @{ */
+    IOMIOPORTHANDLE             hIoPortMdaCrt;
+    IOMIOPORTHANDLE             hIoPortMdaFcrSt;
+    /** @} */
+
+    /** @name I/O ports for CGA 0x3d0-0x3df (sparse)
+     * @{ */
+    IOMIOPORTHANDLE             hIoPortCgaCrt;
+    IOMIOPORTHANDLE             hIoPortCgaFcrSt;
+    /** @} */
+
     /** The VBE extra data I/O port. */
     IOMIOPORTHANDLE             hIoPortVbeExtra;
     /** The logo command I/O port. */
     IOMIOPORTHANDLE             hIoPortCmdLogo;
+
 #endif /* VBOX */
 } VGAState;
 #ifdef VBOX
