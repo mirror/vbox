@@ -1435,8 +1435,8 @@ int vmsvgaUpdateScreen(PVGASTATE pThis, VMSVGASCREENOBJECT *pScreen, int x, int 
 }
 
 #endif /* IN_RING3 */
-
 #if defined(IN_RING0) || defined(IN_RING3)
+
 /**
  * Safely updates the SVGA_FIFO_BUSY register (in shared memory).
  *
@@ -1498,7 +1498,8 @@ DECLINLINE(void) vmsvgaUpdatePitch(PVGASTATE pThis)
     if ((uFifoMin / sizeof(uint32_t)) <= SVGA_FIFO_PITCHLOCK)
         pThis->svga.u32PitchLock = pThis->svga.cbScanline;
 }
-#endif
+
+#endif /* IN_RING0 || IN_RING3 */
 
 
 /**

@@ -6649,7 +6649,6 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
                                                "VMSVGA-FIFO", (void **)&pThis->svga.pFIFOR3, &pThis->hMmio2VmSvgaFifo);
         AssertRCReturn(rc, PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS,
                                                N_("Failed to create VMSVGA FIFO (%u bytes)"), pThis->svga.cbFIFO));
-        pThis->svga.pFIFOR0 = (RTR0PTR)pThis->svga.pFIFOR3;
 
         pPciDev->pfnRegionLoadChangeHookR3 = vgaR3PciRegionLoadChangeHook;
     }
@@ -7396,17 +7395,19 @@ static DECLCALLBACK(int) vgaRZConstruct(PPDMDEVINS pDevIns)
 # endif
 
     /*
-     * Map the VMSVGA FIFO into this context (only ring-0).
+     * Map the first page of the VMSVGA FIFO into this context (not raw-mode).
+     * We currently only access SVGA_FIFO_MIN, SVGA_FIFO_PITCHLOCK, and SVGA_FIFO_BUSY.
      */
+    AssertCompile((RT_MAX(SVGA_FIFO_MIN, RT_MAX(SVGA_FIFO_PITCHLOCK, SVGA_FIFO_BUSY)) + 1) * sizeof(uint32_t) < PAGE_SIZE);
 # if defined(VBOX_WITH_VMSVGA) && !defined(IN_RC)
-#  if defined(VBOX_WITH_2X_4GB_ADDR_SPACE)
     if (pThis->fVMSVGAEnabled)
     {
-        rc = PDMDevHlpMmio2SetUpContext(pDevIns, pThis->hMmio2VmSvgaFifo, 0 /* off */,  pThis->svga.cbFIFO,
+        rc = PDMDevHlpMmio2SetUpContext(pDevIns, pThis->hMmio2VmSvgaFifo, 0 /* off */, PAGE_SIZE,
                                         (void **)&pThis->svga.CTX_SUFF(pFIFO));
         AssertLogRelMsgRCReturn(rc, ("PDMDevHlpMapMMIO2IntoR0(%#x,) -> %Rrc\n", pThis->svga.cbFIFO, rc), rc);
     }
-# endif
+    else
+        AssertReturn(pThis->hMmio2VmSvgaFifo == NIL_PGMMMIO2HANDLE, VERR_INVALID_STATE);
 #endif
 
     return VINF_SUCCESS;
