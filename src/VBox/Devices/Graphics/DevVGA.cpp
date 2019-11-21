@@ -119,6 +119,7 @@
 #define LOG_GROUP LOG_GROUP_DEV_VGA
 #include <VBox/vmm/pdmdev.h>
 #include <VBox/vmm/pgm.h>
+#include <VBox/AssertGuest.h>
 #ifdef IN_RING3
 # include <VBox/vmm/cpum.h>
 # include <iprt/mem.h>
@@ -1011,7 +1012,7 @@ static void vbe_ioport_write_index(PVGASTATE pThis, uint32_t addr, uint32_t val)
     NOREF(addr);
 }
 
-static int vbe_ioport_write_data(PVGASTATE pThis, uint32_t addr, uint32_t val)
+static VBOXSTRICTRC vbe_ioport_write_data(PVGASTATE pThis, uint32_t addr, uint32_t val)
 {
     uint32_t max_bank;
     NOREF(addr);
@@ -1179,9 +1180,9 @@ static int vbe_ioport_write_data(PVGASTATE pThis, uint32_t addr, uint32_t val)
              * and reset VBVA.
              */
             pThis->pDrv->pfnLFBModeChange(pThis->pDrv, (val & VBE_DISPI_ENABLED) != 0);
-#ifdef VBOX_WITH_HGSMI
+# ifdef VBOX_WITH_HGSMI
             VBVAOnVBEChanged(pThis);
-#endif /* VBOX_WITH_HGSMI */
+# endif
 
             /* The VGA region is (could be) affected by this change; reset all aliases we've created. */
             if (pThis->fRemappedVGA)
@@ -1206,17 +1207,11 @@ static int vbe_ioport_write_data(PVGASTATE pThis, uint32_t addr, uint32_t val)
 #else
             /* Changes in the VGA device are minimal. The device is bypassed. The driver does all work. */
             if (val == VBOX_VIDEO_DISABLE_ADAPTER_MEMORY)
-            {
                 pThis->pDrv->pfnProcessAdapterData(pThis->pDrv, NULL, 0);
-            }
             else if (val == VBOX_VIDEO_INTERPRET_ADAPTER_MEMORY)
-            {
                 pThis->pDrv->pfnProcessAdapterData(pThis->pDrv, pThis->CTX_SUFF(vram_ptr), pThis->vram_size);
-            }
             else if ((val & 0xFFFF0000) == VBOX_VIDEO_INTERPRET_DISPLAY_MEMORY_BASE)
-            {
                 pThis->pDrv->pfnProcessDisplayData(pThis->pDrv, pThis->CTX_SUFF(vram_ptr), val & 0xFFFF);
-            }
 #endif /* IN_RING3 */
             break;
         case VBE_DISPI_INDEX_CFG:
@@ -1225,10 +1220,9 @@ static int vbe_ioport_write_data(PVGASTATE pThis, uint32_t addr, uint32_t val)
         default:
             break;
         }
+
         if (fRecalculate)
-        {
             recalculate_data(pThis);
-        }
     }
     return VINF_SUCCESS;
 }
@@ -3104,9 +3098,10 @@ static DECLCALLBACK(VBOXSTRICTRC) vgaIoPortCgaStRead(PPDMDEVINS pDevIns, void *p
 
 
 /**
- * @callback_method_impl{FNIOMIOPORTOUT,VBE Data Port OUT handler.}
+ * @callback_method_impl{FNIOMIOPORTNEWOUT,VBE Data Port OUT handler (0x1ce).}
  */
-PDMBOTHCBDECL(int) vgaIOPortWriteVBEData(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb)
+static DECLCALLBACK(VBOXSTRICTRC)
+vgaIoPortWriteVbeData(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t u32, unsigned cb)
 {
     PVGASTATE pThis = PDMDEVINS_2_DATA(pDevIns, PVGASTATE);
     Assert(PDMDevHlpCritSectIsOwner(pDevIns, pDevIns->CTX_SUFF(pCritSectRo)));
@@ -3120,7 +3115,7 @@ PDMBOTHCBDECL(int) vgaIOPortWriteVBEData(PPDMDEVINS pDevIns, void *pvUser, RTIOP
     if (    pThis->vbe_index == VBE_DISPI_INDEX_ENABLE
         ||  pThis->vbe_index == VBE_DISPI_INDEX_VBOX_VIDEO)
     {
-        Log(("vgaIOPortWriteVBEData: VBE_DISPI_INDEX_ENABLE - Switching to host...\n"));
+        Log(("vgaIoPortWriteVbeData: VBE_DISPI_INDEX_ENABLE - Switching to host...\n"));
         return VINF_IOM_R3_IOPORT_WRITE;
     }
 #endif
@@ -3133,7 +3128,7 @@ PDMBOTHCBDECL(int) vgaIOPortWriteVBEData(PPDMDEVINS pDevIns, void *pvUser, RTIOP
                 &&  (u32 & VBE_DISPI_ENABLED))
             {
                 pThis->fWriteVBEData = false;
-                return vbe_ioport_write_data(pThis, Port, u32 & 0xFF);
+                return vbe_ioport_write_data(pThis, offPort, u32 & 0xFF);
             }
 
             pThis->cbWriteVBEData = u32 & 0xFF;
@@ -3147,32 +3142,18 @@ PDMBOTHCBDECL(int) vgaIOPortWriteVBEData(PPDMDEVINS pDevIns, void *pvUser, RTIOP
     }
 #endif
     if (cb == 2 || cb == 4)
-    {
-//#ifdef IN_RC
-//        /*
-//         * The VBE_DISPI_INDEX_ENABLE memsets the entire frame buffer.
-//         * Since we're not mapping the entire framebuffer any longer that
-//         * has to be done on the host.
-//         */
-//        if (    (pThis->vbe_index == VBE_DISPI_INDEX_ENABLE)
-//            &&  (u32 & VBE_DISPI_ENABLED))
-//        {
-//            Log(("vgaIOPortWriteVBEData: VBE_DISPI_INDEX_ENABLE & VBE_DISPI_ENABLED - Switching to host...\n"));
-//            return VINF_IOM_R3_IOPORT_WRITE;
-//        }
-//#endif
-        return vbe_ioport_write_data(pThis, Port, u32);
-    }
-    AssertMsgFailed(("vgaIOPortWriteVBEData: Port=%#x cb=%d u32=%#x\n", Port, cb, u32));
+        return vbe_ioport_write_data(pThis, offPort, u32);
+    AssertMsgFailed(("vgaIoPortWriteVbeData: offPort=%#x cb=%d u32=%#x\n", offPort, cb, u32));
 
     return VINF_SUCCESS;
 }
 
 
 /**
- * @callback_method_impl{FNIOMIOPORTOUT,VBE Index Port OUT handler.}
+ * @callback_method_impl{FNIOMIOPORTNEWOUT,VBE Index Port OUT handler (0x1ce).}
  */
-PDMBOTHCBDECL(int) vgaIOPortWriteVBEIndex(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb)
+static DECLCALLBACK(VBOXSTRICTRC)
+vgaIoPortWriteVbeIndex(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t u32, unsigned cb)
 {
     PVGASTATE pThis = PDMDEVINS_2_DATA(pDevIns, PVGASTATE); NOREF(pvUser);
     Assert(PDMDevHlpCritSectIsOwner(pDevIns, pDevIns->CTX_SUFF(pCritSectRo)));
@@ -3187,23 +3168,24 @@ PDMBOTHCBDECL(int) vgaIOPortWriteVBEIndex(PPDMDEVINS pDevIns, void *pvUser, RTIO
             return VINF_SUCCESS;
         }
         pThis->fWriteVBEIndex = false;
-        vbe_ioport_write_index(pThis, Port, (pThis->cbWriteVBEIndex << 8) | (u32 & 0x00FF));
+        vbe_ioport_write_index(pThis, offPort, (pThis->cbWriteVBEIndex << 8) | (u32 & 0x00FF));
         return VINF_SUCCESS;
     }
 #endif
 
     if (cb == 2)
-        vbe_ioport_write_index(pThis, Port, u32);
+        vbe_ioport_write_index(pThis, offPort, u32);
     else
-        AssertMsgFailed(("vgaIOPortWriteVBEIndex: Port=%#x cb=%d u32=%#x\n", Port, cb, u32));
+        ASSERT_GUEST_MSG_FAILED(("vgaIoPortWriteVbeIndex: offPort=%#x cb=%d u32=%#x\n", offPort, cb, u32));
     return VINF_SUCCESS;
 }
 
 
 /**
- * @callback_method_impl{FNIOMIOPORTOUT,VBE Data Port IN handler.}
+ * @callback_method_impl{FNIOMIOPORTNEWOUT,VBE Data Port IN handler (0x1cf).}
  */
-PDMBOTHCBDECL(int) vgaIOPortReadVBEData(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32, unsigned cb)
+static DECLCALLBACK(VBOXSTRICTRC)
+vgaIoPortReadVbeData(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t *pu32, unsigned cb)
 {
     PVGASTATE pThis = PDMDEVINS_2_DATA(pDevIns, PVGASTATE); NOREF(pvUser);
     Assert(PDMDevHlpCritSectIsOwner(pDevIns, pDevIns->CTX_SUFF(pCritSectRo)));
@@ -3213,37 +3195,38 @@ PDMBOTHCBDECL(int) vgaIOPortReadVBEData(PPDMDEVINS pDevIns, void *pvUser, RTIOPO
     {
         if (!pThis->fReadVBEData)
         {
-            *pu32 = (vbe_ioport_read_data(pThis, Port) >> 8) & 0xFF;
+            *pu32 = (vbe_ioport_read_data(pThis, offPort) >> 8) & 0xFF;
             pThis->fReadVBEData = true;
             return VINF_SUCCESS;
         }
-        *pu32 = vbe_ioport_read_data(pThis, Port) & 0xFF;
+        *pu32 = vbe_ioport_read_data(pThis, offPort) & 0xFF;
         pThis->fReadVBEData = false;
         return VINF_SUCCESS;
     }
 #endif
     if (cb == 2)
     {
-        *pu32 = vbe_ioport_read_data(pThis, Port);
+        *pu32 = vbe_ioport_read_data(pThis, offPort);
         return VINF_SUCCESS;
     }
     if (cb == 4)
     {
         if (pThis->vbe_regs[VBE_DISPI_INDEX_ID] == VBE_DISPI_ID_CFG)
-            *pu32 = vbe_ioport_read_data(pThis, Port); /* New interface. */
+            *pu32 = vbe_ioport_read_data(pThis, offPort); /* New interface. */
         else
             *pu32 = pThis->vram_size; /* Quick hack for getting the vram size. */
         return VINF_SUCCESS;
     }
-    AssertMsgFailed(("vgaIOPortReadVBEData: Port=%#x cb=%d\n", Port, cb));
+    AssertMsgFailed(("vgaIoPortReadVbeData: offPort=%#x cb=%d\n", offPort, cb));
     return VERR_IOM_IOPORT_UNUSED;
 }
 
 
 /**
- * @callback_method_impl{FNIOMIOPORTOUT,VBE Index Port IN handler.}
+ * @callback_method_impl{FNIOMIOPORTNEWOUT,VBE Index Port IN handler (0x1cf).}
  */
-PDMBOTHCBDECL(int) vgaIOPortReadVBEIndex(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32, unsigned cb)
+static DECLCALLBACK(VBOXSTRICTRC)
+vgaIoPortReadVbeIndex(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t *pu32, unsigned cb)
 {
     NOREF(pvUser);
     PVGASTATE pThis = PDMDEVINS_2_DATA(pDevIns, PVGASTATE);
@@ -3254,21 +3237,21 @@ PDMBOTHCBDECL(int) vgaIOPortReadVBEIndex(PPDMDEVINS pDevIns, void *pvUser, RTIOP
     {
         if (!pThis->fReadVBEIndex)
         {
-            *pu32 = (vbe_ioport_read_index(pThis, Port) >> 8) & 0xFF;
+            *pu32 = (vbe_ioport_read_index(pThis, offPort) >> 8) & 0xFF;
             pThis->fReadVBEIndex = true;
             return VINF_SUCCESS;
         }
-        *pu32 = vbe_ioport_read_index(pThis, Port) & 0xFF;
+        *pu32 = vbe_ioport_read_index(pThis, offPort) & 0xFF;
         pThis->fReadVBEIndex = false;
         return VINF_SUCCESS;
     }
 #endif
     if (cb == 2)
     {
-        *pu32 = vbe_ioport_read_index(pThis, Port);
+        *pu32 = vbe_ioport_read_index(pThis, offPort);
         return VINF_SUCCESS;
     }
-    AssertMsgFailed(("vgaIOPortReadVBEIndex: Port=%#x cb=%d\n", Port, cb));
+    AssertMsgFailed(("vgaIoPortReadVbeIndex: offPort=%#x cb=%d\n", offPort, cb));
     return VERR_IOM_IOPORT_UNUSED;
 }
 
@@ -6770,6 +6753,11 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
     REG_PORT(0x3d4,  2, vgaIoPortCgaCrtWrite,   vgaIoPortCgaCrtRead,    "CGA CRT control",          &pThis->hIoPortCgaCrt);
     REG_PORT(0x3da,  1, vgaIoPortCgaFcrWrite,   vgaIoPortCgaStRead,     "CGA Feature / status",     &pThis->hIoPortCgaFcrSt);
 
+#ifdef CONFIG_BOCHS_VBE
+    REG_PORT(0x1ce,  1, vgaIoPortWriteVbeIndex, vgaIoPortReadVbeIndex,  "VBE Index",                &pThis->hIoPortVbeIndex);
+    REG_PORT(0x1cf,  1, vgaIoPortWriteVbeData,  vgaIoPortReadVbeData,   "VBE Data",                 &pThis->hIoPortVbeData);
+#endif /* CONFIG_BOCHS_VBE */
+
 #ifdef VBOX_WITH_HGSMI
     /* Use reserved VGA IO ports for HGSMI. */
     rc = PDMDevHlpIOPortRegister(pDevIns,  VGA_PORT_HGSMI_HOST,  4, NULL, vgaR3IOPortHGSMIWrite, vgaR3IOPortHGSMIRead, NULL, NULL, "VGA - 3b0 (HGSMI host)");
@@ -6778,40 +6766,7 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
     AssertRCReturn(rc, rc);
 #endif /* VBOX_WITH_HGSMI */
 
-#ifdef CONFIG_BOCHS_VBE
-    rc = PDMDevHlpIOPortRegister(pDevIns,  0x1ce,  1, NULL, vgaIOPortWriteVBEIndex, vgaIOPortReadVBEIndex, NULL, NULL, "VGA/VBE - Index");
-    AssertRCReturn(rc, rc);
-    rc = PDMDevHlpIOPortRegister(pDevIns,  0x1cf,  1, NULL, vgaIOPortWriteVBEData, vgaIOPortReadVBEData, NULL, NULL, "VGA/VBE - Data");
-    AssertRCReturn(rc, rc);
-#endif /* CONFIG_BOCHS_VBE */
-
 #undef REG_PORT
-
-    /* guest context extension */
-    if (pDevIns->fRCEnabled)
-    {
-#ifdef CONFIG_BOCHS_VBE
-        rc = PDMDevHlpIOPortRegisterRC(pDevIns,  0x1ce,  1, 0, "vgaIOPortWriteVBEIndex", "vgaIOPortReadVBEIndex", NULL, NULL, "VGA/VBE - Index (GC)");
-        if (RT_FAILURE(rc))
-            return rc;
-        rc = PDMDevHlpIOPortRegisterRC(pDevIns,  0x1cf,  1, 0, "vgaIOPortWriteVBEData", "vgaIOPortReadVBEData", NULL, NULL, "VGA/VBE - Data (GC)");
-        if (RT_FAILURE(rc))
-            return rc;
-#endif /* CONFIG_BOCHS_VBE */
-    }
-
-    /* R0 context extension */
-    if (pDevIns->fR0Enabled)
-    {
-#ifdef CONFIG_BOCHS_VBE
-        rc = PDMDevHlpIOPortRegisterR0(pDevIns,  0x1ce,  1, 0, "vgaIOPortWriteVBEIndex", "vgaIOPortReadVBEIndex", NULL, NULL, "VGA/VBE - Index (GC)");
-        if (RT_FAILURE(rc))
-            return rc;
-        rc = PDMDevHlpIOPortRegisterR0(pDevIns,  0x1cf,  1, 0, "vgaIOPortWriteVBEData", "vgaIOPortReadVBEData", NULL, NULL, "VGA/VBE - Data (GC)");
-        if (RT_FAILURE(rc))
-            return rc;
-#endif /* CONFIG_BOCHS_VBE */
-    }
 
     /* vga mmio */
     rc = PDMDevHlpMMIORegisterEx(pDevIns, 0x000a0000, 0x00020000, NULL /*pvUser*/,
@@ -7447,6 +7402,10 @@ static DECLCALLBACK(int) vgaRZConstruct(PPDMDEVINS pDevIns)
     int rc = PDMDevHlpSetDeviceCritSect(pDevIns, &pThis->CritSect);
     AssertRCReturn(rc, rc);
 
+    /*
+     * Set I/O port callbacks for this context.
+     * We just copy the ring-3 registration bits and remove the '&' before the handle.
+     */
 #define REG_PORT(a_uPort, a_cPorts, a_pfnWrite, a_pfnRead, a_szDesc, a_hIoPort) do { \
             rc = PDMDevHlpIoPortSetUpContext(pDevIns, a_hIoPort, a_pfnWrite, a_pfnRead, NULL /*pvUser*/); \
             AssertRCReturn(rc, rc); \
@@ -7464,6 +7423,11 @@ static DECLCALLBACK(int) vgaRZConstruct(PPDMDEVINS pDevIns)
     REG_PORT(0x3ba,  1, vgaIoPortMdaFcrWrite,   vgaIoPortMdaStRead,     "MDA feature/status",       pThis->hIoPortMdaFcrSt);
     REG_PORT(0x3d4,  2, vgaIoPortCgaCrtWrite,   vgaIoPortCgaCrtRead,    "CGA CRT control",          pThis->hIoPortCgaCrt);
     REG_PORT(0x3da,  1, vgaIoPortCgaFcrWrite,   vgaIoPortCgaStRead,     "CGA Feature / status",     pThis->hIoPortCgaFcrSt);
+
+# ifdef CONFIG_BOCHS_VBE
+    REG_PORT(0x1ce,  1, vgaIoPortWriteVbeIndex, vgaIoPortReadVbeIndex,  "VBE Index",                pThis->hIoPortVbeIndex);
+    REG_PORT(0x1cf,  1, vgaIoPortWriteVbeData,  vgaIoPortReadVbeData,   "VBE Data",                 pThis->hIoPortVbeData);
+# endif /* CONFIG_BOCHS_VBE */
 
 #undef REG_PORT
     return VINF_SUCCESS;

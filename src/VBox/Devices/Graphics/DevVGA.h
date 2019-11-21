@@ -515,6 +515,12 @@ typedef struct VGAState
     IOMIOPORTHANDLE             hIoPortCgaFcrSt;
     /** @} */
 
+    /** @name I/O ports for Boch VBE 0x1ce-0x1cf
+     *  @{ */
+    IOMIOPORTHANDLE             hIoPortVbeIndex;
+    IOMIOPORTHANDLE             hIoPortVbeData;
+    /** @} */
+
     /** The VBE extra data I/O port. */
     IOMIOPORTHANDLE             hIoPortVbeExtra;
     /** The logo command I/O port. */
