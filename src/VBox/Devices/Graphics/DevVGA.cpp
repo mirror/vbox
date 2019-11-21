@@ -5613,7 +5613,7 @@ static DECLCALLBACK(void) vgaPortReportHostCursorCapabilities(PPDMIDISPLAYPORT p
 }
 
 /**
- * @callback_method_impl{FNTMTIMERFNTMTIMERDEV, VGA Refresh Timer}
+ * @callback_method_impl{FNTMTIMERDEV, VGA Refresh Timer}
  */
 static DECLCALLBACK(void) vgaTimerRefresh(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser)
 {
