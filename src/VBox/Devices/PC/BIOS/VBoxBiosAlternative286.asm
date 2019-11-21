@@ -9706,89 +9706,89 @@ int15_function:                              ; 0xf659f LB 0x318
     jmp short 0683ah                          ; eb 83                       ; 0xf68b5
   ; disGetNextSymbol 0xf68b7 LB 0x36c1 -> off=0x0 cb=0000000000000167 uValue=00000000000f52b7 'int15_blkmove'
 int15_blkmove:                               ; 0xf68b7 LB 0x167
-    push bp                                   ; 55                          ; 0xf68b7 system.c:858
+    push bp                                   ; 55                          ; 0xf68b7 system.c:818
     mov bp, sp                                ; 89 e5                       ; 0xf68b8
     push si                                   ; 56                          ; 0xf68ba
     push di                                   ; 57                          ; 0xf68bb
-    cli                                       ; fa                          ; 0xf68bc system.c:868
-    mov ax, strict word 00001h                ; b8 01 00                    ; 0xf68bd system.c:870
+    cli                                       ; fa                          ; 0xf68bc system.c:828
+    mov ax, strict word 00001h                ; b8 01 00                    ; 0xf68bd system.c:830
     call 06534h                               ; e8 71 fc                    ; 0xf68c0
-    mov cx, word [bp+006h]                    ; 8b 4e 06                    ; 0xf68c3 system.c:893
+    mov cx, word [bp+006h]                    ; 8b 4e 06                    ; 0xf68c3 system.c:853
     sal cx, 004h                              ; c1 e1 04                    ; 0xf68c6
     mov ax, word [bp+00ah]                    ; 8b 46 0a                    ; 0xf68c9
     add ax, cx                                ; 01 c8                       ; 0xf68cc
-    mov bx, word [bp+006h]                    ; 8b 5e 06                    ; 0xf68ce system.c:894
+    mov bx, word [bp+006h]                    ; 8b 5e 06                    ; 0xf68ce system.c:854
     shr bx, 00ch                              ; c1 eb 0c                    ; 0xf68d1
     mov dl, bl                                ; 88 da                       ; 0xf68d4
-    cmp ax, cx                                ; 39 c8                       ; 0xf68d6 system.c:895
+    cmp ax, cx                                ; 39 c8                       ; 0xf68d6 system.c:855
     jnc short 068dch                          ; 73 02                       ; 0xf68d8
     db  0feh, 0c2h
-    ; inc dl                                    ; fe c2                     ; 0xf68da system.c:896
-    mov bx, word [bp+00ah]                    ; 8b 5e 0a                    ; 0xf68dc system.c:897
+    ; inc dl                                    ; fe c2                     ; 0xf68da system.c:856
+    mov bx, word [bp+00ah]                    ; 8b 5e 0a                    ; 0xf68dc system.c:857
     add bx, strict byte 00008h                ; 83 c3 08                    ; 0xf68df
     mov es, [bp+006h]                         ; 8e 46 06                    ; 0xf68e2 system.c:51
     mov word [es:bx], strict word 0002fh      ; 26 c7 07 2f 00              ; 0xf68e5
-    mov bx, word [bp+00ah]                    ; 8b 5e 0a                    ; 0xf68ea system.c:898
+    mov bx, word [bp+00ah]                    ; 8b 5e 0a                    ; 0xf68ea system.c:858
     add bx, strict byte 0000ah                ; 83 c3 0a                    ; 0xf68ed
     mov es, [bp+006h]                         ; 8e 46 06                    ; 0xf68f0 system.c:51
     mov word [es:bx], ax                      ; 26 89 07                    ; 0xf68f3
-    mov bx, word [bp+00ah]                    ; 8b 5e 0a                    ; 0xf68f6 system.c:899
+    mov bx, word [bp+00ah]                    ; 8b 5e 0a                    ; 0xf68f6 system.c:859
     add bx, strict byte 0000ch                ; 83 c3 0c                    ; 0xf68f9
     mov es, [bp+006h]                         ; 8e 46 06                    ; 0xf68fc system.c:41
     mov byte [es:bx], dl                      ; 26 88 17                    ; 0xf68ff system.c:43
-    mov bx, word [bp+00ah]                    ; 8b 5e 0a                    ; 0xf6902 system.c:900
+    mov bx, word [bp+00ah]                    ; 8b 5e 0a                    ; 0xf6902 system.c:860
     add bx, strict byte 0000dh                ; 83 c3 0d                    ; 0xf6905
     mov es, [bp+006h]                         ; 8e 46 06                    ; 0xf6908 system.c:41
     mov byte [es:bx], 093h                    ; 26 c6 07 93                 ; 0xf690b system.c:43
-    mov bx, word [bp+00ah]                    ; 8b 5e 0a                    ; 0xf690f system.c:901
+    mov bx, word [bp+00ah]                    ; 8b 5e 0a                    ; 0xf690f system.c:861
     add bx, strict byte 0000eh                ; 83 c3 0e                    ; 0xf6912
     mov es, [bp+006h]                         ; 8e 46 06                    ; 0xf6915 system.c:51
     mov word [es:bx], strict word 00000h      ; 26 c7 07 00 00              ; 0xf6918
-    mov bx, word [bp+00ah]                    ; 8b 5e 0a                    ; 0xf691d system.c:904
+    mov bx, word [bp+00ah]                    ; 8b 5e 0a                    ; 0xf691d system.c:864
     add bx, strict byte 00020h                ; 83 c3 20                    ; 0xf6920
     mov es, [bp+006h]                         ; 8e 46 06                    ; 0xf6923 system.c:51
     mov word [es:bx], strict word 0ffffh      ; 26 c7 07 ff ff              ; 0xf6926
-    mov bx, word [bp+00ah]                    ; 8b 5e 0a                    ; 0xf692b system.c:905
+    mov bx, word [bp+00ah]                    ; 8b 5e 0a                    ; 0xf692b system.c:865
     add bx, strict byte 00022h                ; 83 c3 22                    ; 0xf692e
     mov es, [bp+006h]                         ; 8e 46 06                    ; 0xf6931 system.c:51
     mov word [es:bx], strict word 00000h      ; 26 c7 07 00 00              ; 0xf6934
-    mov bx, word [bp+00ah]                    ; 8b 5e 0a                    ; 0xf6939 system.c:906
+    mov bx, word [bp+00ah]                    ; 8b 5e 0a                    ; 0xf6939 system.c:866
     add bx, strict byte 00024h                ; 83 c3 24                    ; 0xf693c
     mov es, [bp+006h]                         ; 8e 46 06                    ; 0xf693f system.c:41
     mov byte [es:bx], 00fh                    ; 26 c6 07 0f                 ; 0xf6942
-    mov bx, word [bp+00ah]                    ; 8b 5e 0a                    ; 0xf6946 system.c:907
+    mov bx, word [bp+00ah]                    ; 8b 5e 0a                    ; 0xf6946 system.c:867
     add bx, strict byte 00025h                ; 83 c3 25                    ; 0xf6949
     mov es, [bp+006h]                         ; 8e 46 06                    ; 0xf694c system.c:41
     mov byte [es:bx], 09bh                    ; 26 c6 07 9b                 ; 0xf694f
-    mov bx, word [bp+00ah]                    ; 8b 5e 0a                    ; 0xf6953 system.c:908
+    mov bx, word [bp+00ah]                    ; 8b 5e 0a                    ; 0xf6953 system.c:868
     add bx, strict byte 00026h                ; 83 c3 26                    ; 0xf6956
     mov es, [bp+006h]                         ; 8e 46 06                    ; 0xf6959 system.c:51
     mov word [es:bx], strict word 00000h      ; 26 c7 07 00 00              ; 0xf695c
-    mov ax, ss                                ; 8c d0                       ; 0xf6961 system.c:911
+    mov ax, ss                                ; 8c d0                       ; 0xf6961 system.c:871
     mov dx, ax                                ; 89 c2                       ; 0xf6963
-    sal ax, 004h                              ; c1 e0 04                    ; 0xf6965 system.c:912
+    sal ax, 004h                              ; c1 e0 04                    ; 0xf6965 system.c:872
     shr dx, 00ch                              ; c1 ea 0c                    ; 0xf6968
-    mov bx, word [bp+00ah]                    ; 8b 5e 0a                    ; 0xf696b system.c:914
+    mov bx, word [bp+00ah]                    ; 8b 5e 0a                    ; 0xf696b system.c:874
     add bx, strict byte 00028h                ; 83 c3 28                    ; 0xf696e
     mov es, [bp+006h]                         ; 8e 46 06                    ; 0xf6971 system.c:51
     mov word [es:bx], strict word 0ffffh      ; 26 c7 07 ff ff              ; 0xf6974
-    mov bx, word [bp+00ah]                    ; 8b 5e 0a                    ; 0xf6979 system.c:915
+    mov bx, word [bp+00ah]                    ; 8b 5e 0a                    ; 0xf6979 system.c:875
     add bx, strict byte 0002ah                ; 83 c3 2a                    ; 0xf697c
     mov es, [bp+006h]                         ; 8e 46 06                    ; 0xf697f system.c:51
     mov word [es:bx], ax                      ; 26 89 07                    ; 0xf6982
-    mov bx, word [bp+00ah]                    ; 8b 5e 0a                    ; 0xf6985 system.c:916
+    mov bx, word [bp+00ah]                    ; 8b 5e 0a                    ; 0xf6985 system.c:876
     add bx, strict byte 0002ch                ; 83 c3 2c                    ; 0xf6988
     mov es, [bp+006h]                         ; 8e 46 06                    ; 0xf698b system.c:41
     mov byte [es:bx], dl                      ; 26 88 17                    ; 0xf698e
-    mov bx, word [bp+00ah]                    ; 8b 5e 0a                    ; 0xf6991 system.c:917
+    mov bx, word [bp+00ah]                    ; 8b 5e 0a                    ; 0xf6991 system.c:877
     add bx, strict byte 0002dh                ; 83 c3 2d                    ; 0xf6994
     mov es, [bp+006h]                         ; 8e 46 06                    ; 0xf6997 system.c:41
     mov byte [es:bx], 093h                    ; 26 c6 07 93                 ; 0xf699a system.c:43
-    mov bx, word [bp+00ah]                    ; 8b 5e 0a                    ; 0xf699e system.c:918
+    mov bx, word [bp+00ah]                    ; 8b 5e 0a                    ; 0xf699e system.c:878
     add bx, strict byte 0002eh                ; 83 c3 2e                    ; 0xf69a1
     mov es, [bp+006h]                         ; 8e 46 06                    ; 0xf69a4 system.c:51
     mov word [es:bx], strict word 00000h      ; 26 c7 07 00 00              ; 0xf69a7
-    lea bx, [bp+004h]                         ; 8d 5e 04                    ; 0xf69ac system.c:926
+    lea bx, [bp+004h]                         ; 8d 5e 04                    ; 0xf69ac system.c:886
     mov si, word [bp+00ah]                    ; 8b 76 0a                    ; 0xf69af
     mov es, [bp+006h]                         ; 8e 46 06                    ; 0xf69b2
     mov cx, word [bp+014h]                    ; 8b 4e 14                    ; 0xf69b5
@@ -9797,7 +9797,7 @@ int15_blkmove:                               ; 0xf68b7 LB 0x167
     mov ds, ax                                ; 8e d8                       ; 0xf69ba
     mov word [00467h], bx                     ; 89 1e 67 04                 ; 0xf69bc
     mov [00469h], ss                          ; 8c 16 69 04                 ; 0xf69c0
-    lgdt [es:si+008h]                         ; 26 0f 01 54 08              ; 0xf69c4 system.c:928
+    lgdt [es:si+008h]                         ; 26 0f 01 54 08              ; 0xf69c4 system.c:888
     lidt [cs:0efe1h]                          ; 2e 0f 01 1e e1 ef           ; 0xf69c9
     push strict byte 00020h                   ; 6a 20                       ; 0xf69cf
     call 069d4h                               ; e8 00 00                    ; 0xf69d1
@@ -9815,13 +9815,13 @@ int15_blkmove:                               ; 0xf68b7 LB 0x167
     add AL, strict byte 010h                  ; 04 10                       ; 0xf69eb
     mov ss, ax                                ; 8e d0                       ; 0xf69ed
     db  033h, 0f6h
-    ; xor si, si                                ; 33 f6                     ; 0xf69ef system.c:929
+    ; xor si, si                                ; 33 f6                     ; 0xf69ef system.c:889
     db  033h, 0ffh
     ; xor di, di                                ; 33 ff                     ; 0xf69f1
     cld                                       ; fc                          ; 0xf69f3
     rep movsw                                 ; f3 a5                       ; 0xf69f4
     db  033h, 0c0h
-    ; xor ax, ax                                ; 33 c0                     ; 0xf69f6 system.c:930
+    ; xor ax, ax                                ; 33 c0                     ; 0xf69f6 system.c:890
     out strict byte 080h, AL                  ; e6 80                       ; 0xf69f8
     mov AL, strict byte 00fh                  ; b0 0f                       ; 0xf69fa
     out strict byte 070h, AL                  ; e6 70                       ; 0xf69fc
@@ -9829,12 +9829,12 @@ int15_blkmove:                               ; 0xf68b7 LB 0x167
     out strict byte 071h, AL                  ; e6 71                       ; 0xf6a00
     lidt [cs:0efe1h]                          ; 2e 0f 01 1e e1 ef           ; 0xf6a02
     int3                                      ; cc                          ; 0xf6a08
-    xor ax, ax                                ; 31 c0                       ; 0xf6a09 system.c:931
+    xor ax, ax                                ; 31 c0                       ; 0xf6a09 system.c:891
     call 06534h                               ; e8 26 fb                    ; 0xf6a0b
-    sti                                       ; fb                          ; 0xf6a0e system.c:936
-    mov byte [bp+017h], 000h                  ; c6 46 17 00                 ; 0xf6a0f system.c:938
-    and byte [bp+01ch], 0feh                  ; 80 66 1c fe                 ; 0xf6a13 system.c:939
-    lea sp, [bp-004h]                         ; 8d 66 fc                    ; 0xf6a17 system.c:940
+    sti                                       ; fb                          ; 0xf6a0e system.c:896
+    mov byte [bp+017h], 000h                  ; c6 46 17 00                 ; 0xf6a0f system.c:898
+    and byte [bp+01ch], 0feh                  ; 80 66 1c fe                 ; 0xf6a13 system.c:899
+    lea sp, [bp-004h]                         ; 8d 66 fc                    ; 0xf6a17 system.c:900
     pop di                                    ; 5f                          ; 0xf6a1a
     pop si                                    ; 5e                          ; 0xf6a1b
     pop bp                                    ; 5d                          ; 0xf6a1c
