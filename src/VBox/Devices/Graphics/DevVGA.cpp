@@ -6650,13 +6650,12 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
         rc = PDMDevHlpPCIIORegionRegister(pDevIns, pThis->pciRegions.iIO, 0x10, PCI_ADDRESS_SPACE_IO, vmsvgaR3IORegionMap);
         if (RT_FAILURE (rc))
             return rc;
-        /* VMware's MetalKit doesn't like PCI_ADDRESS_SPACE_MEM_PREFETCH */
         rc = PDMDevHlpPCIIORegionRegister(pDevIns, pThis->pciRegions.iVRAM, pThis->vram_size,
-                                          PCI_ADDRESS_SPACE_MEM /* PCI_ADDRESS_SPACE_MEM_PREFETCH */, vgaR3IORegionMap);
+                                          PCI_ADDRESS_SPACE_MEM_PREFETCH, vgaR3IORegionMap);
         if (RT_FAILURE(rc))
             return rc;
         rc = PDMDevHlpPCIIORegionRegister(pDevIns, pThis->pciRegions.iFIFO, pThis->svga.cbFIFO,
-                                          PCI_ADDRESS_SPACE_MEM /* PCI_ADDRESS_SPACE_MEM_PREFETCH */, vmsvgaR3IORegionMap);
+                                          PCI_ADDRESS_SPACE_MEM_PREFETCH, vmsvgaR3IORegionMap);
         if (RT_FAILURE(rc))
             return rc;
         pPciDev->pfnRegionLoadChangeHookR3 = vgaR3PciRegionLoadChangeHook;
