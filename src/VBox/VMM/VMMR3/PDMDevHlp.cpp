@@ -3712,7 +3712,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_PICRegister(PPDMDEVINS pDevIns, PPDMPICREG 
 }
 
 
-/** @interface_method_impl{PDMDEVHLPR3,pfnAPICRegister} */
+/** @interface_method_impl{PDMDEVHLPR3,pfnApicRegister} */
 static DECLCALLBACK(int) pdmR3DevHlp_ApicRegister(PPDMDEVINS pDevIns)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);

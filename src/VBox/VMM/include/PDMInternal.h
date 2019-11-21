@@ -667,29 +667,29 @@ typedef struct PDMIOAPIC
 {
     /** Pointer to the APIC device instance - R3 Ptr. */
     PPDMDEVINSR3                    pDevInsR3;
-    /** @copydoc PDMIOAPICREG::pfnSetIrqR3 */
+    /** @copydoc PDMIOAPICREG::pfnSetIrq */
     DECLR3CALLBACKMEMBER(void,      pfnSetIrqR3,(PPDMDEVINS pDevIns, int iIrq, int iLevel, uint32_t uTagSrc));
-    /** @copydoc PDMIOAPICREG::pfnSendMsiR3 */
+    /** @copydoc PDMIOAPICREG::pfnSendMsi */
     DECLR3CALLBACKMEMBER(void,      pfnSendMsiR3,(PPDMDEVINS pDevIns, RTGCPHYS GCAddr, uint32_t uValue, uint32_t uTagSrc));
-    /** @copydoc PDMIOAPICREG::pfnSetEoiR3 */
+    /** @copydoc PDMIOAPICREG::pfnSetEoi */
     DECLR3CALLBACKMEMBER(VBOXSTRICTRC, pfnSetEoiR3,(PPDMDEVINS pDevIns, uint8_t u8Vector));
 
     /** Pointer to the PIC device instance - R0. */
     PPDMDEVINSR0                    pDevInsR0;
-    /** @copydoc PDMIOAPICREG::pfnSetIrqR3 */
+    /** @copydoc PDMIOAPICREG::pfnSetIrq */
     DECLR0CALLBACKMEMBER(void,      pfnSetIrqR0,(PPDMDEVINS pDevIns, int iIrq, int iLevel, uint32_t uTagSrc));
-    /** @copydoc PDMIOAPICREG::pfnSendMsiR3 */
+    /** @copydoc PDMIOAPICREG::pfnSendMsi */
     DECLR0CALLBACKMEMBER(void,      pfnSendMsiR0,(PPDMDEVINS pDevIns, RTGCPHYS GCAddr, uint32_t uValue, uint32_t uTagSrc));
-    /** @copydoc PDMIOAPICREG::pfnSetEoiR3 */
+    /** @copydoc PDMIOAPICREG::pfnSetEoi */
     DECLR0CALLBACKMEMBER(VBOXSTRICTRC, pfnSetEoiR0,(PPDMDEVINS pDevIns, uint8_t u8Vector));
 
     /** Pointer to the APIC device instance - RC Ptr. */
     PPDMDEVINSRC                    pDevInsRC;
-    /** @copydoc PDMIOAPICREG::pfnSetIrqR3 */
+    /** @copydoc PDMIOAPICREG::pfnSetIrq */
     DECLRCCALLBACKMEMBER(void,      pfnSetIrqRC,(PPDMDEVINS pDevIns, int iIrq, int iLevel, uint32_t uTagSrc));
-     /** @copydoc PDMIOAPICREG::pfnSendMsiR3 */
+     /** @copydoc PDMIOAPICREG::pfnSendMsi */
     DECLRCCALLBACKMEMBER(void,      pfnSendMsiRC,(PPDMDEVINS pDevIns, RTGCPHYS GCAddr, uint32_t uValue, uint32_t uTagSrc));
-     /** @copydoc PDMIOAPICREG::pfnSendMsiR3 */
+     /** @copydoc PDMIOAPICREG::pfnSendMsi */
     DECLRCCALLBACKMEMBER(VBOXSTRICTRC, pfnSetEoiRC,(PPDMDEVINS pDevIns, uint8_t u8Vector));
 } PDMIOAPIC;
 
