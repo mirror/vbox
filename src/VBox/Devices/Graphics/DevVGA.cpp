@@ -57,7 +57,7 @@
 #define VGASTATE2DEVINS(pVgaState)    ((pVgaState)->CTX_SUFF(pDevIns))
 
 /** Check buffer if an VRAM offset is within the right range or not. */
-#if defined(IN_RC) || defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0)
+#if defined(IN_RC) || defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0) || (defined(IN_RING0) && defined(VGA_WITH_PARTIAL_RING0_MAPPING))
 # define VERIFY_VRAM_WRITE_OFF_RETURN(pThis, off) \
     do { \
         if ((off) < VGA_MAPPING_SIZE) \
@@ -78,7 +78,7 @@
 #endif
 
 /** Check buffer if an VRAM offset is within the right range or not. */
-#if defined(IN_RC) || defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0)
+#if defined(IN_RC) || defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0) || (defined(IN_RING0) && defined(VGA_WITH_PARTIAL_RING0_MAPPING))
 # define VERIFY_VRAM_READ_OFF_RETURN(pThis, off, rcVar) \
     do { \
         if ((off) < VGA_MAPPING_SIZE) \
@@ -1218,7 +1218,8 @@ static VBOXSTRICTRC vbe_ioport_write_data(PVGASTATE pThis, uint32_t addr, uint32
     }
     return VINF_SUCCESS;
 }
-#endif
+
+#endif /* CONFIG_BOCHS_VBE */
 
 /* called for accesses between 0xa0000 and 0xc0000 */
 static uint32_t vga_mem_readb(PVGASTATE pThis, RTGCPHYS addr, int *prc)
@@ -6633,7 +6634,7 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
     if (pPciDev->uDevFn != 16 && iInstance == 0)
         Log(("!!WARNING!!: pThis->dev.uDevFn=%d (ignore if testcase or not started by Main)\n", pPciDev->uDevFn));
 
-#ifdef VBOX_WITH_VMSVGA
+# ifdef VBOX_WITH_VMSVGA
     pThis->hIoPortVmSvga    = NIL_IOMIOPORTHANDLE;
     pThis->hMmio2VmSvgaFifo = NIL_PGMMMIO2HANDLE;
     if (pThis->fVMSVGAEnabled)
@@ -6652,7 +6653,7 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
 
         pPciDev->pfnRegionLoadChangeHookR3 = vgaR3PciRegionLoadChangeHook;
     }
-#endif /* VBOX_WITH_VMSVGA */
+# endif /* VBOX_WITH_VMSVGA */
 
     /*
      * Allocate VRAM and create a PCI region for it.
@@ -6662,7 +6663,9 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
                                            "VRam", (void **)&pThis->vram_ptrR3, &pThis->hMmio2VRam);
     AssertLogRelRCReturn(rc, PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS,
                                                  N_("Failed to allocate %u bytes of VRAM"), pThis->vram_size));
-    pThis->vram_ptrR0 = (RTR0PTR)pThis->vram_ptrR3; /** @todo @bugref{1865} Map parts into R0 or just use PGM access (Mac only). */
+# ifndef VGA_WITH_PARTIAL_RING0_MAPPING
+    pThis->vram_ptrR0 = (RTR0PTR)pThis->vram_ptrR3;
+# endif
 
     /*
      * Register access handler types for tracking dirty VRAM pages.
@@ -6677,7 +6680,7 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
     /*
      * Register I/O ports.
      */
-#define REG_PORT(a_uPort, a_cPorts, a_pfnWrite, a_pfnRead, a_szDesc, a_phIoPort) do { \
+# define REG_PORT(a_uPort, a_cPorts, a_pfnWrite, a_pfnRead, a_szDesc, a_phIoPort) do { \
             rc = PDMDevHlpIoPortCreateFlagsAndMap(pDevIns, a_uPort, a_cPorts, IOM_IOPORT_F_ABS, \
                                                   a_pfnWrite, a_pfnRead, "VGA - " a_szDesc, NULL /*paExtDescs*/, a_phIoPort); \
             AssertRCReturn(rc, rc); \
@@ -6696,18 +6699,18 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
     REG_PORT(0x3d4,  2, vgaIoPortCgaCrtWrite,   vgaIoPortCgaCrtRead,    "CGA CRT control",          &pThis->hIoPortCgaCrt);
     REG_PORT(0x3da,  1, vgaIoPortCgaFcrWrite,   vgaIoPortCgaStRead,     "CGA Feature / status",     &pThis->hIoPortCgaFcrSt);
 
-#ifdef CONFIG_BOCHS_VBE
+# ifdef CONFIG_BOCHS_VBE
     REG_PORT(0x1ce,  1, vgaIoPortWriteVbeIndex, vgaIoPortReadVbeIndex,  "VBE Index",                &pThis->hIoPortVbeIndex);
     REG_PORT(0x1cf,  1, vgaIoPortWriteVbeData,  vgaIoPortReadVbeData,   "VBE Data",                 &pThis->hIoPortVbeData);
-#endif /* CONFIG_BOCHS_VBE */
+# endif /* CONFIG_BOCHS_VBE */
 
-#ifdef VBOX_WITH_HGSMI
+# ifdef VBOX_WITH_HGSMI
     /* Use reserved VGA IO ports for HGSMI. */
     REG_PORT(VGA_PORT_HGSMI_HOST,  4, vgaR3IOPortHgsmiWrite, vgaR3IOPortHgmsiRead, "HGSMI host (3b0-3b3)",  &pThis->hIoPortHgsmiHost);
     REG_PORT(VGA_PORT_HGSMI_GUEST, 4, vgaR3IOPortHgsmiWrite, vgaR3IOPortHgmsiRead, "HGSMI guest (3d0-3d3)", &pThis->hIoPortHgsmiGuest);
-#endif /* VBOX_WITH_HGSMI */
+# endif /* VBOX_WITH_HGSMI */
 
-#undef REG_PORT
+# undef REG_PORT
 
     /* vga mmio */
     rc = PDMDevHlpMMIORegisterEx(pDevIns, 0x000a0000, 0x00020000, NULL /*pvUser*/,
@@ -7387,7 +7390,7 @@ static DECLCALLBACK(int) vgaRZConstruct(PPDMDEVINS pDevIns)
     /*
      * Map the start of the VRAM into this context.
      */
-# if defined(VBOX_WITH_2X_4GB_ADDR_SPACE)
+# if defined(VBOX_WITH_2X_4GB_ADDR_SPACE) || (defined(IN_RING0) && defined(VGA_WITH_PARTIAL_RING0_MAPPING))
     rc = PDMDevHlpMmio2SetUpContext(pDevIns, pThis->hMmio2VRam, 0 /* off */, VGA_MAPPING_SIZE, (void **)&pThis->CTX_SUFF(vram_ptr));
     AssertLogRelMsgRCReturn(rc, ("PDMDevHlpMmio2SetUpContext(,VRAM,0,%#x,) -> %Rrc\n", VGA_MAPPING_SIZE, rc), rc);
 # endif

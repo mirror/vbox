@@ -73,7 +73,8 @@
 # define VGA_VRAM_MIN        (_1M)
 #endif
 
-/** The size of the VGA GC mapping.
+/** The size of the VGA ring-0 and raw-mode mapping.
+ *
  * This is supposed to be all the VGA memory accessible to the guest.
  * The initial value was 256KB but NTAllInOne.iso appears to access more
  * thus the limit was upped to 512KB.
@@ -81,7 +82,9 @@
  * @todo Someone with some VGA knowhow should make a better guess at this value.
  */
 #define VGA_MAPPING_SIZE    _512K
-
+/** Enables partially mapping the VRAM into ring-0 rather than using the ring-3.
+ * The VGA_MAPPING_SIZE define sets the number of bytes that will be mapped. */
+#define VGA_WITH_PARTIAL_RING0_MAPPING
 
 #define MSR_COLOR_EMULATION 0x01
 #define MSR_PAGE_SELECT     0x20
