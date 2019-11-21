@@ -54,6 +54,26 @@ technical terms if no non-technical ones are clear enough.
         </para>
       </listitem>
 
+      <listitem>
+        <para>
+          GUI: some of issues related to mouse integration cursor scaling were
+          addressed (bug #14366), more to go
+        </para>
+      </listitem>
+
+      <listitem>
+        <para>
+          GUI: a bit of usability related fixes for export appliance wizard
+        </para>
+      </listitem>
+
+      <listitem>
+        <para>
+          GUI: fixed crash in cloud related wizards happened with accessibility
+          stuff enabled
+        </para>
+      </listitem>
+
     </itemizedlist>
   </sect1>
 
