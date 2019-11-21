@@ -457,7 +457,7 @@ int vmsvga3dLoadExec(PPDMDEVINS pDevIns, PVGASTATE pThis, PSSMHANDLE pSSM, uint3
                 rc = pHlp->pfnSSMGetBool(pSSM, &fDataPresent);
                 AssertRCReturn(rc, rc);
 
-                Log(("Surface sid=%x: load mipmap level %d with %x bytes data (present=%d).\n", sid, j, pMipmapLevel->cbSurface, fDataPresent));
+                Log(("Surface sid=%u: load mipmap level %d with %x bytes data (present=%d).\n", sid, j, pMipmapLevel->cbSurface, fDataPresent));
 
                 if (fDataPresent)
                 {
@@ -700,7 +700,7 @@ int vmsvga3dSaveExec(PPDMDEVINS pDevIns, PVGASTATE pThis, PSSMHANDLE pSSM)
                     uint32_t idx = i + face * pSurface->faces[0].numMipLevels;
                     PVMSVGA3DMIPMAPLEVEL pMipmapLevel = &pSurface->pMipmapLevels[idx];
 
-                    Log(("Surface sid=%d: save mipmap level %d with %x bytes data.\n", sid, i, pMipmapLevel->cbSurface));
+                    Log(("Surface sid=%u: save mipmap level %d with %x bytes data.\n", sid, i, pMipmapLevel->cbSurface));
 
                     if (!VMSVGA3DSURFACE_HAS_HW_SURFACE(pSurface))
                     {
@@ -768,13 +768,10 @@ int vmsvga3dSaveExec(PPDMDEVINS pDevIns, PVGASTATE pThis, PSSMHANDLE pSSM)
 
                                         /** @todo stricter checks for associated context */
                                         uint32_t cid = pSurface->idAssociatedContext;
-                                        if (    cid >= pState->cContexts
-                                            ||  pState->papContexts[cid]->id != cid)
-                                        {
-                                            Log(("vmsvga3dSaveExec invalid context id (%x - %x)!\n", cid, (cid >= pState->cContexts) ? -1 : pState->papContexts[cid]->id));
-                                            AssertFailedReturn(VERR_INVALID_PARAMETER);
-                                        }
-                                        PVMSVGA3DCONTEXT pContext = pState->papContexts[cid];
+
+                                        PVMSVGA3DCONTEXT pContext;
+                                        rc = vmsvga3dContextFromCid(pState, cid, &pContext);
+                                        AssertRCReturn(rc, rc);
 
                                         hr = pSurface->bounce.pTexture->GetSurfaceLevel(i, &pDest);
                                         AssertMsgReturn(hr == D3D_OK, ("vmsvga3dSaveExec: GetSurfaceLevel failed with %x\n", hr), VERR_INTERNAL_ERROR);

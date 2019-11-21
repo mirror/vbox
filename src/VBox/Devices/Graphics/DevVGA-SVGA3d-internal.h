@@ -1224,7 +1224,6 @@ int  vmsvga3dBackCreateTexture(PVMSVGA3DSTATE pState, PVMSVGA3DCONTEXT pContext,
 
 DECLINLINE(int) vmsvga3dContextFromCid(PVMSVGA3DSTATE pState, uint32_t cid, PVMSVGA3DCONTEXT *ppContext)
 {
-    /** @todo stricter checks for associated context */
     AssertReturn(cid < pState->cContexts, VERR_INVALID_PARAMETER);
     PVMSVGA3DCONTEXT const pContext = pState->papContexts[cid];
     if (RT_LIKELY(pContext && pContext->id == cid))
@@ -1232,7 +1231,7 @@ DECLINLINE(int) vmsvga3dContextFromCid(PVMSVGA3DSTATE pState, uint32_t cid, PVMS
         *ppContext = pContext;
         return VINF_SUCCESS;
     }
-    LogRelMax(64, ("VMSVGA: unknown cid=%d (%s cid=%d)\n", cid, pContext ? "expected" : "null", pContext ? pContext->id : -1));
+    LogRelMax(64, ("VMSVGA: unknown cid=%u (%s cid=%u)\n", cid, pContext ? "expected" : "null", pContext ? pContext->id : -1));
     return VERR_INVALID_PARAMETER;
 }
 
@@ -1245,7 +1244,7 @@ DECLINLINE(int) vmsvga3dSurfaceFromSid(PVMSVGA3DSTATE pState, uint32_t sid, PVMS
         *ppSurface = pSurface;
         return VINF_SUCCESS;
     }
-    LogRelMax(64, ("VMSVGA: unknown sid=%d (%s sid=%d)\n", sid, pSurface ? "expected" : "null", pSurface ? pSurface->id : -1));
+    LogRelMax(64, ("VMSVGA: unknown sid=%u (%s sid=%u)\n", sid, pSurface ? "expected" : "null", pSurface ? pSurface->id : -1));
     return VERR_INVALID_PARAMETER;
 }
 

@@ -344,13 +344,9 @@ static int vmsvga3dSurfaceUpdateHeapBuffers(PVMSVGA3DSTATE pState, PVMSVGA3DSURF
                                     {
                                         /** @todo stricter checks for associated context */
                                         uint32_t cid = pSurface->idAssociatedContext;
-                                        if (   cid >= pState->cContexts
-                                            || pState->papContexts[cid]->id != cid)
-                                        {
-                                            Log(("vmsvga3dSurfaceUpdateHeapBuffers: invalid context id (%x - %x)!\n", cid, (cid >= pState->cContexts) ? -1 : pState->papContexts[cid]->id));
-                                            AssertFailedReturn(VERR_INVALID_PARAMETER);
-                                        }
-                                        PVMSVGA3DCONTEXT pContext = pState->papContexts[cid];
+                                        PVMSVGA3DCONTEXT pContext;
+                                        int rc = vmsvga3dContextFromCid(pState, cid, &pContext);
+                                        AssertRCReturn(rc, rc);
 
                                         IDirect3DSurface9 *pDst = NULL;
                                         hr = pSurface->bounce.pTexture->GetSurfaceLevel(i, &pDst);
