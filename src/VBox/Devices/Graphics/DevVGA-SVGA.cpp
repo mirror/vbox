@@ -808,9 +808,7 @@ static int vmsvgaReadPort(PPDMDEVINS pDevIns, PVGASTATE pThis, uint32_t *pu32)
             STAM_REL_COUNTER_INC(&pThis->svga.StatRegWidthRd);
             if (    pThis->svga.fEnabled
                 &&  pThis->svga.uWidth != VMSVGA_VAL_UNINITIALIZED)
-            {
                 *pu32 = pThis->svga.uWidth;
-            }
             else
             {
 #ifndef IN_RING3
@@ -827,9 +825,7 @@ static int vmsvgaReadPort(PPDMDEVINS pDevIns, PVGASTATE pThis, uint32_t *pu32)
             STAM_REL_COUNTER_INC(&pThis->svga.StatRegHeightRd);
             if (    pThis->svga.fEnabled
                 &&  pThis->svga.uHeight != VMSVGA_VAL_UNINITIALIZED)
-            {
                 *pu32 = pThis->svga.uHeight;
-            }
             else
             {
 #ifndef IN_RING3
@@ -856,16 +852,16 @@ static int vmsvgaReadPort(PPDMDEVINS pDevIns, PVGASTATE pThis, uint32_t *pu32)
             STAM_REL_COUNTER_INC(&pThis->svga.StatRegDepthRd);
             switch (pThis->svga.uBpp)
             {
-            case 15:
-            case 16:
-            case 24:
-                *pu32 = pThis->svga.uBpp;
-                break;
+                case 15:
+                case 16:
+                case 24:
+                    *pu32 = pThis->svga.uBpp;
+                    break;
 
-            default:
-            case 32:
-                *pu32 = 24; /* The upper 8 bits are either alpha bits or not used. */
-                break;
+                default:
+                case 32:
+                    *pu32 = 24; /* The upper 8 bits are either alpha bits or not used. */
+                    break;
             }
             break;
 
@@ -873,9 +869,7 @@ static int vmsvgaReadPort(PPDMDEVINS pDevIns, PVGASTATE pThis, uint32_t *pu32)
             STAM_REL_COUNTER_INC(&pThis->svga.StatRegHostBitsPerPixelRd);
             if (    pThis->svga.fEnabled
                 &&  pThis->svga.uBpp != VMSVGA_VAL_UNINITIALIZED)
-            {
                 *pu32 = pThis->svga.uBpp;
-            }
             else
             {
 #ifndef IN_RING3
@@ -890,9 +884,7 @@ static int vmsvgaReadPort(PPDMDEVINS pDevIns, PVGASTATE pThis, uint32_t *pu32)
             STAM_REL_COUNTER_INC(&pThis->svga.StatRegBitsPerPixelRd);
             if (    pThis->svga.fEnabled
                 &&  pThis->svga.uBpp != VMSVGA_VAL_UNINITIALIZED)
-            {
                 *pu32 = (pThis->svga.uBpp + 7) & ~7;
-            }
             else
             {
 #ifndef IN_RING3
@@ -982,9 +974,7 @@ static int vmsvgaReadPort(PPDMDEVINS pDevIns, PVGASTATE pThis, uint32_t *pu32)
             STAM_REL_COUNTER_INC(&pThis->svga.StatRegBytesPerLineRd);
             if (    pThis->svga.fEnabled
                 &&  pThis->svga.cbScanline)
-            {
                 *pu32 = pThis->svga.cbScanline;
-            }
             else
             {
 #ifndef IN_RING3
@@ -5814,16 +5804,16 @@ static int vmsvgaR3StateInit(PVGASTATE pThis, PVMSVGAR3STATE pSVGAState)
 static void vmsvgaInitCaps(PVGASTATE pThis)
 {
     /* Register caps. */
-    pThis->svga.u32RegCaps =  SVGA_CAP_GMR
-                            | SVGA_CAP_GMR2
-                            | SVGA_CAP_CURSOR
-                            | SVGA_CAP_CURSOR_BYPASS_2
-                            | SVGA_CAP_EXTENDED_FIFO
-                            | SVGA_CAP_IRQMASK
-                            | SVGA_CAP_PITCHLOCK
-                            | SVGA_CAP_TRACES
-                            | SVGA_CAP_SCREEN_OBJECT_2
-                            | SVGA_CAP_ALPHA_CURSOR;
+    pThis->svga.u32RegCaps = SVGA_CAP_GMR
+                           | SVGA_CAP_GMR2
+                           | SVGA_CAP_CURSOR
+                           | SVGA_CAP_CURSOR_BYPASS_2
+                           | SVGA_CAP_EXTENDED_FIFO
+                           | SVGA_CAP_IRQMASK
+                           | SVGA_CAP_PITCHLOCK
+                           | SVGA_CAP_TRACES
+                           | SVGA_CAP_SCREEN_OBJECT_2
+                           | SVGA_CAP_ALPHA_CURSOR;
 # ifdef VBOX_WITH_VMSVGA3D
     pThis->svga.u32RegCaps |= SVGA_CAP_3D;
 # endif
@@ -5832,13 +5822,13 @@ static void vmsvgaInitCaps(PVGASTATE pThis)
     RT_BZERO(pThis->svga.pFIFOR3, pThis->svga.cbFIFO);
 
     /* Setup FIFO capabilities. */
-    pThis->svga.pFIFOR3[SVGA_FIFO_CAPABILITIES] =   SVGA_FIFO_CAP_FENCE
-                                                  | SVGA_FIFO_CAP_CURSOR_BYPASS_3
-                                                  | SVGA_FIFO_CAP_GMR2
-                                                  | SVGA_FIFO_CAP_3D_HWVERSION_REVISED
-                                                  | SVGA_FIFO_CAP_SCREEN_OBJECT_2
-                                                  | SVGA_FIFO_CAP_RESERVE
-                                                  | SVGA_FIFO_CAP_PITCHLOCK;
+    pThis->svga.pFIFOR3[SVGA_FIFO_CAPABILITIES] = SVGA_FIFO_CAP_FENCE
+                                                | SVGA_FIFO_CAP_CURSOR_BYPASS_3
+                                                | SVGA_FIFO_CAP_GMR2
+                                                | SVGA_FIFO_CAP_3D_HWVERSION_REVISED
+                                                | SVGA_FIFO_CAP_SCREEN_OBJECT_2
+                                                | SVGA_FIFO_CAP_RESERVE
+                                                | SVGA_FIFO_CAP_PITCHLOCK;
 
     /* Valid with SVGA_FIFO_CAP_SCREEN_OBJECT_2 */
     pThis->svga.pFIFOR3[SVGA_FIFO_CURSOR_SCREEN_ID] = SVGA_ID_INVALID;
