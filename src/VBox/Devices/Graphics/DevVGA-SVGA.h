@@ -165,26 +165,6 @@ typedef struct VMSVGA3DSTATE *PVMSVGA3DSTATE;
  */
 typedef struct VMSVGAState
 {
-    /** The R3 FIFO pointer. */
-    R3PTRTYPE(uint32_t *)       pFIFOR3;
-    /** The R0 FIFO pointer.
-     * @note This only points to the _first_ _page_ of the FIFO!  */
-    R0PTRTYPE(uint32_t *)       pFIFOR0;
-    /** R3 Opaque pointer to svga state. */
-    R3PTRTYPE(PVMSVGAR3STATE)   pSvgaR3State;
-    /** R3 Opaque pointer to 3d state. */
-    R3PTRTYPE(PVMSVGA3DSTATE)   p3dState;
-    /** The separate VGA frame buffer in svga mode.
-     * Unlike the the boch-based VGA device implementation, VMSVGA seems to have a
-     * separate frame buffer for VGA and allows concurrent use of both.  The SVGA
-     * SDK is making use of this to do VGA text output while testing other things in
-     * SVGA mode, displaying the result by switching back to VGA text mode.  So,
-     * when entering SVGA mode we copy the first part of the frame buffer here and
-     * direct VGA accesses here instead.  It is copied back when leaving SVGA mode. */
-    R3PTRTYPE(uint8_t *)        pbVgaFrameBufferR3;
-    /** R3 Opaque pointer to an external fifo cmd parameter. */
-    R3PTRTYPE(void * volatile)  pvFIFOExtCmdParam;
-
     /** Guest physical address of the FIFO memory range. */
     RTGCPHYS                    GCPhysFIFO;
     /** Size in bytes of the FIFO memory range.
@@ -224,10 +204,6 @@ typedef struct VMSVGAState
     uint32_t                    u32IndexReg;
     /** FIFO request semaphore. */
     SUPSEMEVENT                 hFIFORequestSem;
-    /** FIFO external command semaphore. */
-    R3PTRTYPE(RTSEMEVENT)       hFIFOExtCmdSem;
-    /** FIFO IO Thread. */
-    R3PTRTYPE(PPDMTHREAD)       pFIFOIOThread;
     /** The last seen SVGA_FIFO_CURSOR_COUNT value.
      * Used by the FIFO thread and its watchdog. */
     uint32_t                    uLastCursorUpdateCount;
@@ -356,7 +332,52 @@ typedef struct VMSVGAState
     STAMCOUNTER                 StatRegVramSizeRd;
     STAMCOUNTER                 StatRegWidthRd;
     STAMCOUNTER                 StatRegWriteOnlyRd;
-} VMSVGAState;
+} VMSVGAState, VMSVGASTATE;
+
+
+/**
+ * The VMSVGA device state for ring-3
+ *
+ * This instantatiated as VGASTATER3::svga.
+ */
+typedef struct VMSVGASTATER3
+{
+    /** The R3 FIFO pointer. */
+    R3PTRTYPE(uint32_t *)       pau32FIFO;
+    /** R3 Opaque pointer to svga state. */
+    R3PTRTYPE(PVMSVGAR3STATE)   pSvgaR3State;
+    /** R3 Opaque pointer to 3d state. */
+    R3PTRTYPE(PVMSVGA3DSTATE)   p3dState;
+    /** The separate VGA frame buffer in svga mode.
+     * Unlike the the boch-based VGA device implementation, VMSVGA seems to have a
+     * separate frame buffer for VGA and allows concurrent use of both.  The SVGA
+     * SDK is making use of this to do VGA text output while testing other things in
+     * SVGA mode, displaying the result by switching back to VGA text mode.  So,
+     * when entering SVGA mode we copy the first part of the frame buffer here and
+     * direct VGA accesses here instead.  It is copied back when leaving SVGA mode. */
+    R3PTRTYPE(uint8_t *)        pbVgaFrameBufferR3;
+    /** R3 Opaque pointer to an external fifo cmd parameter. */
+    R3PTRTYPE(void * volatile)  pvFIFOExtCmdParam;
+
+    /** FIFO external command semaphore. */
+    R3PTRTYPE(RTSEMEVENT)       hFIFOExtCmdSem;
+    /** FIFO IO Thread. */
+    R3PTRTYPE(PPDMTHREAD)       pFIFOIOThread;
+} VMSVGASTATER3;
+
+
+/**
+ * The VMSVGA device state for ring-0
+ *
+ * This instantatiated as VGASTATER0::svga.
+ */
+typedef struct VMSVGASTATER0
+{
+    /** The R0 FIFO pointer.
+     * @note This only points to the _first_ _page_ of the FIFO!  */
+    R0PTRTYPE(uint32_t *)       pau32FIFO;
+} VMSVGASTATER0;
+
 
 typedef struct VGAState   *PVGASTATE;
 typedef struct VGASTATER3 *PVGASTATER3;
@@ -380,14 +401,13 @@ int vmsvgaR3LoadDone(PPDMDEVINS pDevIns);
 int vmsvgaR3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM);
 DECLCALLBACK(void) vmsvgaR3PowerOn(PPDMDEVINS pDevIns);
 DECLCALLBACK(void) vmsvgaR3PowerOff(PPDMDEVINS pDevIns);
-void vmsvgaR3FifoWatchdogTimer(PPDMDEVINS pDevIns, PVGASTATE pThis);
+void vmsvgaR3FifoWatchdogTimer(PPDMDEVINS pDevIns, PVGASTATE pThis, PVGASTATECC pThisCC);
 
 #ifdef IN_RING3
-VMSVGASCREENOBJECT *vmsvgaR3GetScreenObject(PVGASTATE pThis, uint32_t idScreen);
+VMSVGASCREENOBJECT *vmsvgaR3GetScreenObject(PVGASTATECC pThisCC, uint32_t idScreen);
 int vmsvgaR3UpdateScreen(PVGASTATECC pThisCC, VMSVGASCREENOBJECT *pScreen, int x, int y, int w, int h);
 #endif
 
-void vmsvgaR3GmrFree(PVGASTATE pThis, uint32_t idGMR);
 int vmsvgaR3GmrTransfer(PVGASTATE pThis, PVGASTATECC pThisCC, const SVGA3dTransferType enmTransferType,
                         uint8_t *pbHstBuf, uint32_t cbHstBuf, uint32_t offHst, int32_t cbHstPitch,
                         SVGAGuestPtr gstPtr, uint32_t offGst, int32_t cbGstPitch,

@@ -1242,7 +1242,7 @@ static uint32_t vga_mem_readb(PPDMDEVINS pDevIns, PVGASTATE pThis, PVGASTATECC p
         VERIFY_VRAM_READ_OFF_RETURN(pThis, addr, *prc);
 #ifdef VMSVGA_WITH_VGA_FB_BACKUP_AND_IN_RING3
         ret = !pThis->svga.fEnabled            ? pThisCC->pbVRam[addr]
-            : addr < VMSVGA_VGA_FB_BACKUP_SIZE ? pThis->svga.pbVgaFrameBufferR3[addr] : 0xff;
+            : addr < VMSVGA_VGA_FB_BACKUP_SIZE ? pThisCC->svga.pbVgaFrameBufferR3[addr] : 0xff;
 #else
         ret = pThisCC->pbVRam[addr];
 #endif
@@ -1254,7 +1254,7 @@ static uint32_t vga_mem_readb(PPDMDEVINS pDevIns, PVGASTATE pThis, PVGASTATECC p
         VERIFY_VRAM_READ_OFF_RETURN(pThis, off, *prc);
 #ifdef VMSVGA_WITH_VGA_FB_BACKUP_AND_IN_RING3
         ret = !pThis->svga.fEnabled           ? pThisCC->pbVRam[off]
-            : off < VMSVGA_VGA_FB_BACKUP_SIZE ? pThis->svga.pbVgaFrameBufferR3[off] : 0xff;
+            : off < VMSVGA_VGA_FB_BACKUP_SIZE ? pThisCC->svga.pbVgaFrameBufferR3[off] : 0xff;
 #else
         ret = pThisCC->pbVRam[off];
 #endif
@@ -1263,7 +1263,7 @@ static uint32_t vga_mem_readb(PPDMDEVINS pDevIns, PVGASTATE pThis, PVGASTATECC p
         VERIFY_VRAM_READ_OFF_RETURN(pThis, addr * 4 + 3, *prc);
 #ifdef VMSVGA_WITH_VGA_FB_BACKUP_AND_IN_RING3
         pThis->latch = !pThis->svga.fEnabled            ? ((uint32_t *)pThisCC->pbVRam)[addr]
-                     : addr < VMSVGA_VGA_FB_BACKUP_SIZE ? ((uint32_t *)pThis->svga.pbVgaFrameBufferR3)[addr] : UINT32_MAX;
+                     : addr < VMSVGA_VGA_FB_BACKUP_SIZE ? ((uint32_t *)pThisCC->svga.pbVgaFrameBufferR3)[addr] : UINT32_MAX;
 #else
         pThis->latch = ((uint32_t *)pThisCC->pbVRam)[addr];
 #endif
@@ -1351,7 +1351,7 @@ static VBOXSTRICTRC vga_mem_writeb(PPDMDEVINS pDevIns, PVGASTATE pThis, PVGASTAT
             if (!pThis->svga.fEnabled)
                 pThisCC->pbVRam[addr]      = val;
             else if (addr < VMSVGA_VGA_FB_BACKUP_SIZE)
-                pThis->svga.pbVgaFrameBufferR3[addr] = val;
+                pThisCC->svga.pbVgaFrameBufferR3[addr] = val;
             else
             {
                 Log(("vga: chain4: out of vmsvga VGA framebuffer bounds! addr=%#x\n", addr));
@@ -1380,7 +1380,7 @@ static VBOXSTRICTRC vga_mem_writeb(PPDMDEVINS pDevIns, PVGASTATE pThis, PVGASTAT
             if (!pThis->svga.fEnabled)
                 pThisCC->pbVRam[addr]      = val;
             else if (addr < VMSVGA_VGA_FB_BACKUP_SIZE)
-                pThis->svga.pbVgaFrameBufferR3[addr] = val;
+                pThisCC->svga.pbVgaFrameBufferR3[addr] = val;
             else
             {
                 Log(("vga: odd/even: out of vmsvga VGA framebuffer bounds! addr=%#x\n", addr));
@@ -1465,7 +1465,7 @@ static VBOXSTRICTRC vga_mem_writeb(PPDMDEVINS pDevIns, PVGASTATE pThis, PVGASTAT
         if (!pThis->svga.fEnabled)
             pu32Dst = &((uint32_t *)pThisCC->pbVRam)[addr];
         else if (addr * 4 + 3 < VMSVGA_VGA_FB_BACKUP_SIZE)
-            pu32Dst = &((uint32_t *)pThis->svga.pbVgaFrameBufferR3)[addr];
+            pu32Dst = &((uint32_t *)pThisCC->svga.pbVgaFrameBufferR3)[addr];
         else
         {
             Log(("vga: latch: out of vmsvga VGA framebuffer bounds! addr=%#x\n", addr));
@@ -5563,7 +5563,7 @@ static DECLCALLBACK(void) vgaTimerRefresh(PPDMDEVINS pDevIns, PTMTIMER pTimer, v
      * there is work to be done.
      */
     if (pThis->svga.fFIFOThreadSleeping && pThis->svga.fEnabled && pThis->svga.fConfigured)
-        vmsvgaR3FifoWatchdogTimer(pDevIns, pThis);
+        vmsvgaR3FifoWatchdogTimer(pDevIns, pThis, pThisCC);
 # endif
 }
 
@@ -6586,7 +6586,7 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
 
         rc = PDMDevHlpPCIIORegionCreateMmio2Ex(pDevIns, pThis->pciRegions.iFIFO, pThis->svga.cbFIFO,
                                                PCI_ADDRESS_SPACE_MEM_PREFETCH, 0 /*fFlags*/, vmsvgaR3PciIORegionFifoMapUnmap,
-                                               "VMSVGA-FIFO", (void **)&pThis->svga.pFIFOR3, &pThis->hMmio2VmSvgaFifo);
+                                               "VMSVGA-FIFO", (void **)&pThisCC->svga.pau32FIFO, &pThis->hMmio2VmSvgaFifo);
         AssertRCReturn(rc, PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS,
                                                N_("Failed to create VMSVGA FIFO (%u bytes)"), pThis->svga.cbFIFO));
 
@@ -7334,7 +7334,7 @@ static DECLCALLBACK(int) vgaRZConstruct(PPDMDEVINS pDevIns)
     if (pThis->fVMSVGAEnabled)
     {
         rc = PDMDevHlpMmio2SetUpContext(pDevIns, pThis->hMmio2VmSvgaFifo, 0 /* off */, PAGE_SIZE,
-                                        (void **)&pThis->svga.CTX_SUFF(pFIFO));
+                                        (void **)&pThisCC->svga.pau32FIFO);
         AssertLogRelMsgRCReturn(rc, ("PDMDevHlpMapMMIO2IntoR0(%#x,) -> %Rrc\n", pThis->svga.cbFIFO, rc), rc);
     }
     else

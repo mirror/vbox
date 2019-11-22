@@ -511,13 +511,13 @@ static int vmsvga3dSurfaceUpdateHeapBuffers(PVMSVGA3DSTATE pState, PVMSVGA3DSURF
 /**
  * Updates the heap buffers for all surfaces or one specific one.
  *
- * @param   pThis               The shared VGA instance data.
- * @param   sid                 The surface ID, UINT32_MAX if all.
+ * @param   pThisCC     The VGA/VMSVGA state for ring-3.
+ * @param   sid         The surface ID, UINT32_MAX if all.
  * @thread  VMSVGAFIFO
  */
-void vmsvga3dUpdateHeapBuffersForSurfaces(PVGASTATE pThis, uint32_t sid)
+void vmsvga3dUpdateHeapBuffersForSurfaces(PVGASTATECC pThisCC, uint32_t sid)
 {
-    PVMSVGA3DSTATE pState = pThis->svga.p3dState;
+    PVMSVGA3DSTATE pState = pThisCC->svga.p3dState;
     AssertReturnVoid(pState);
 
     if (sid == UINT32_MAX)
@@ -1714,12 +1714,12 @@ static void vmsvga3dInfoContextWorkerOne(PCDBGFINFOHLP pHlp, PVMSVGA3DCONTEXT pC
 }
 
 
-void vmsvga3dInfoContextWorker(PVGASTATE pThis, PCDBGFINFOHLP pHlp, uint32_t cid, bool fVerbose)
+void vmsvga3dInfoContextWorker(PVGASTATECC pThisCC, PCDBGFINFOHLP pHlp, uint32_t cid, bool fVerbose)
 {
     /* Warning! This code is currently racing papContexts reallocation! */
     /* Warning! This code is currently racing papContexts reallocation! */
     /* Warning! This code is currently racing papContexts reallocation! */
-    VMSVGA3DSTATE volatile *pState = pThis->svga.p3dState;
+    VMSVGA3DSTATE volatile *pState = pThisCC->svga.p3dState;
     if (pState)
     {
         /*
@@ -2103,13 +2103,13 @@ static void vmsvga3dInfoSurfaceWorkerOne(PCDBGFINFOHLP pHlp, PVMSVGA3DSURFACE pS
 }
 
 
-void vmsvga3dInfoSurfaceWorker(PPDMDEVINS pDevIns, PVGASTATE pThis, PCDBGFINFOHLP pHlp, uint32_t sid, bool fVerbose,
-                               uint32_t cxAscii, bool fInvY, const char *pszBitmapPath)
+void vmsvga3dInfoSurfaceWorker(PPDMDEVINS pDevIns, PVGASTATE pThis, PVGASTATECC pThisCC, PCDBGFINFOHLP pHlp, uint32_t sid,
+                               bool fVerbose, uint32_t cxAscii, bool fInvY, const char *pszBitmapPath)
 {
     /* Warning! This code is currently racing papSurfaces reallocation! */
     /* Warning! This code is currently racing papSurfaces reallocation! */
     /* Warning! This code is currently racing papSurfaces reallocation! */
-    VMSVGA3DSTATE volatile *pState = pThis->svga.p3dState;
+    VMSVGA3DSTATE volatile *pState = pThisCC->svga.p3dState;
     if (pState)
     {
         /*
@@ -2123,7 +2123,7 @@ void vmsvga3dInfoSurfaceWorker(PPDMDEVINS pDevIns, PVGASTATE pThis, PCDBGFINFOHL
                 if (pSurface && pSurface->id == sid)
                 {
                     if (fVerbose)
-                        vmsvgaR33dSurfaceUpdateHeapBuffersOnFifoThread(pDevIns, pThis, sid);
+                        vmsvgaR33dSurfaceUpdateHeapBuffersOnFifoThread(pDevIns, pThis, pThisCC, sid);
                     vmsvga3dInfoSurfaceWorkerOne(pHlp, pSurface, fVerbose, cxAscii, fInvY);
                     if (pszBitmapPath && *pszBitmapPath)
                         vmsvga3dInfoSurfaceToBitmap(pHlp, pSurface, pszBitmapPath, "info", "");
@@ -2138,7 +2138,7 @@ void vmsvga3dInfoSurfaceWorker(PPDMDEVINS pDevIns, PVGASTATE pThis, PCDBGFINFOHL
              * Dump all.
              */
             if (fVerbose)
-                vmsvgaR33dSurfaceUpdateHeapBuffersOnFifoThread(pDevIns, pThis, UINT32_MAX);
+                vmsvgaR33dSurfaceUpdateHeapBuffersOnFifoThread(pDevIns, pThis, pThisCC, UINT32_MAX);
             uint32_t cSurfaces = pState->cSurfaces;
             pHlp->pfnPrintf(pHlp, "cSurfaces=%d\n", cSurfaces);
             for (sid = 0; sid < cSurfaces; sid++)

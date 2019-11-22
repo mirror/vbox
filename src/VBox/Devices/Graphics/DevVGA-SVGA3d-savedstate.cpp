@@ -44,10 +44,10 @@
  * Reinitializes an active context.
  *
  * @returns VBox status code.
- * @param   pThis               The VMSVGA device state.
- * @param   pContext            The freshly loaded context to reinitialize.
+ * @param   pThisCC         The VGA/VMSVGA state for ring-3.
+ * @param   pContext        The freshly loaded context to reinitialize.
  */
-static int vmsvga3dLoadReinitContext(PVGASTATE pThis, PVMSVGA3DCONTEXT pContext)
+static int vmsvga3dLoadReinitContext(PVGASTATECC pThisCC, PVMSVGA3DCONTEXT pContext)
 {
     int      rc;
     uint32_t cid = pContext->id;
@@ -64,7 +64,7 @@ static int vmsvga3dLoadReinitContext(PVGASTATE pThis, PVMSVGA3DCONTEXT pContext)
             target.sid      = pContext->state.aRenderTargets[j];
             target.face     = 0;
             target.mipmap   = 0;
-            rc = vmsvga3dSetRenderTarget(pThis, cid, (SVGA3dRenderTargetType)j, target);
+            rc = vmsvga3dSetRenderTarget(pThisCC, cid, (SVGA3dRenderTargetType)j, target);
             AssertRCReturn(rc, rc);
         }
     }
@@ -77,7 +77,7 @@ static int vmsvga3dLoadReinitContext(PVGASTATE pThis, PVMSVGA3DCONTEXT pContext)
         SVGA3dRenderState *pRenderState = &pContext->state.aRenderState[j];
 
         if (pRenderState->state != SVGA3D_RS_INVALID)
-            vmsvga3dSetRenderState(pThis, pContext->id, 1, pRenderState);
+            vmsvga3dSetRenderState(pThisCC, pContext->id, 1, pRenderState);
     }
     Log(("vmsvga3dLoadReinitContext: Recreate render state END\n"));
 
@@ -90,7 +90,7 @@ static int vmsvga3dLoadReinitContext(PVGASTATE pThis, PVMSVGA3DCONTEXT pContext)
             SVGA3dTextureState *pTextureState = &pContext->state.aTextureStates[iStage][j];
 
             if (pTextureState->name != SVGA3D_TS_INVALID)
-                vmsvga3dSetTextureState(pThis, pContext->id, 1, pTextureState);
+                vmsvga3dSetTextureState(pThisCC, pContext->id, 1, pTextureState);
         }
     }
     Log(("vmsvga3dLoadReinitContext: Recreate texture state END\n"));
@@ -99,16 +99,16 @@ static int vmsvga3dLoadReinitContext(PVGASTATE pThis, PVMSVGA3DCONTEXT pContext)
     for (uint32_t j = 0; j < RT_ELEMENTS(pContext->state.aClipPlane); j++)
     {
         if (pContext->state.aClipPlane[j].fValid == true)
-            vmsvga3dSetClipPlane(pThis, cid, j, pContext->state.aClipPlane[j].plane);
+            vmsvga3dSetClipPlane(pThisCC, cid, j, pContext->state.aClipPlane[j].plane);
     }
 
     /* Reprogram the light data. */
     for (uint32_t j = 0; j < RT_ELEMENTS(pContext->state.aLightData); j++)
     {
         if (pContext->state.aLightData[j].fValidData == true)
-            vmsvga3dSetLightData(pThis, cid, j, &pContext->state.aLightData[j].data);
+            vmsvga3dSetLightData(pThisCC, cid, j, &pContext->state.aLightData[j].data);
         if (pContext->state.aLightData[j].fEnabled)
-            vmsvga3dSetLightEnabled(pThis, cid, j, true);
+            vmsvga3dSetLightEnabled(pThisCC, cid, j, true);
     }
 
     /* Recreate the transform state. */
@@ -117,7 +117,7 @@ static int vmsvga3dLoadReinitContext(PVGASTATE pThis, PVMSVGA3DCONTEXT pContext)
         for (uint32_t j = 0; j < RT_ELEMENTS(pContext->state.aTransformState); j++)
         {
             if (pContext->state.aTransformState[j].fValid == true)
-                vmsvga3dSetTransform(pThis, cid, (SVGA3dTransformType)j, pContext->state.aTransformState[j].matrix);
+                vmsvga3dSetTransform(pThisCC, cid, (SVGA3dTransformType)j, pContext->state.aTransformState[j].matrix);
         }
     }
 
@@ -127,20 +127,20 @@ static int vmsvga3dLoadReinitContext(PVGASTATE pThis, PVMSVGA3DCONTEXT pContext)
         for (uint32_t j = 0; j < RT_ELEMENTS(pContext->state.aMaterial); j++)
         {
             if (pContext->state.aMaterial[j].fValid == true)
-                vmsvga3dSetMaterial(pThis, cid, (SVGA3dFace)j, &pContext->state.aMaterial[j].material);
+                vmsvga3dSetMaterial(pThisCC, cid, (SVGA3dFace)j, &pContext->state.aMaterial[j].material);
         }
     }
 
     if (pContext->state.u32UpdateFlags & VMSVGA3D_UPDATE_SCISSORRECT)
-        vmsvga3dSetScissorRect(pThis, cid, &pContext->state.RectScissor);
+        vmsvga3dSetScissorRect(pThisCC, cid, &pContext->state.RectScissor);
     if (pContext->state.u32UpdateFlags & VMSVGA3D_UPDATE_ZRANGE)
-        vmsvga3dSetZRange(pThis, cid, pContext->state.zRange);
+        vmsvga3dSetZRange(pThisCC, cid, pContext->state.zRange);
     if (pContext->state.u32UpdateFlags & VMSVGA3D_UPDATE_VIEWPORT)
-        vmsvga3dSetViewPort(pThis, cid, &pContext->state.RectViewPort);
+        vmsvga3dSetViewPort(pThisCC, cid, &pContext->state.RectViewPort);
     if (pContext->state.u32UpdateFlags & VMSVGA3D_UPDATE_VERTEXSHADER)
-        vmsvga3dShaderSet(pThis, pContext, cid, SVGA3D_SHADERTYPE_VS, pContext->state.shidVertex);
+        vmsvga3dShaderSet(pThisCC, pContext, cid, SVGA3D_SHADERTYPE_VS, pContext->state.shidVertex);
     if (pContext->state.u32UpdateFlags & VMSVGA3D_UPDATE_PIXELSHADER)
-        vmsvga3dShaderSet(pThis, pContext, cid, SVGA3D_SHADERTYPE_PS, pContext->state.shidPixel);
+        vmsvga3dShaderSet(pThisCC, pContext, cid, SVGA3D_SHADERTYPE_PS, pContext->state.shidPixel);
 
     Log(("vmsvga3dLoadReinitContext: returns [cid=%#x]\n", cid));
     return VINF_SUCCESS;
@@ -149,7 +149,7 @@ static int vmsvga3dLoadReinitContext(PVGASTATE pThis, PVMSVGA3DCONTEXT pContext)
 int vmsvga3dLoadExec(PPDMDEVINS pDevIns, PVGASTATE pThis, PVGASTATECC pThisCC, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass)
 {
     RT_NOREF(pDevIns, pThisCC, uPass);
-    PVMSVGA3DSTATE  pState = pThis->svga.p3dState;
+    PVMSVGA3DSTATE  pState = pThisCC->svga.p3dState;
     AssertReturn(pState, VERR_NO_MEMORY);
     PCPDMDEVHLPR3   pHlp = pDevIns->pHlpR3;
     int             rc;
@@ -192,14 +192,14 @@ int vmsvga3dLoadExec(PPDMDEVINS pDevIns, PVGASTATE pThis, PVGASTATECC pThisCC, P
                 pContext = &pState->SharedCtx;
                 if (pContext->id != VMSVGA3D_SHARED_CTX_ID)
                 {
-                    rc = vmsvga3dContextDefineOgl(pThis, VMSVGA3D_SHARED_CTX_ID, VMSVGA3D_DEF_CTX_F_SHARED_CTX);
+                    rc = vmsvga3dContextDefineOgl(pThisCC, VMSVGA3D_SHARED_CTX_ID, VMSVGA3D_DEF_CTX_F_SHARED_CTX);
                     AssertRCReturn(rc, rc);
                 }
             }
             else
 #endif
             {
-                rc = vmsvga3dContextDefine(pThis, cid);
+                rc = vmsvga3dContextDefine(pThisCC, cid);
                 AssertRCReturn(rc, rc);
 
                 pContext = pState->papContexts[i];
@@ -242,7 +242,7 @@ int vmsvga3dLoadExec(PPDMDEVINS pDevIns, PVGASTATE pThis, PVGASTATECC pThisCC, P
                     rc = pHlp->pfnSSMGetMem(pSSM, pData, shader.cbData);
                     AssertRCReturn(rc, rc);
 
-                    rc = vmsvga3dShaderDefine(pThis, cid, shid, shader.type, shader.cbData, pData);
+                    rc = vmsvga3dShaderDefine(pThisCC, cid, shid, shader.type, shader.cbData, pData);
                     AssertRCReturn(rc, rc);
 
                     RTMemFree(pData);
@@ -273,7 +273,7 @@ int vmsvga3dLoadExec(PPDMDEVINS pDevIns, PVGASTATE pThis, PVGASTATECC pThisCC, P
                     rc = pHlp->pfnSSMGetMem(pSSM, pData, shader.cbData);
                     AssertRCReturn(rc, rc);
 
-                    rc = vmsvga3dShaderDefine(pThis, cid, shid, shader.type, shader.cbData, pData);
+                    rc = vmsvga3dShaderDefine(pThisCC, cid, shid, shader.type, shader.cbData, pData);
                     AssertRCReturn(rc, rc);
 
                     RTMemFree(pData);
@@ -290,7 +290,7 @@ int vmsvga3dLoadExec(PPDMDEVINS pDevIns, PVGASTATE pThis, PVGASTATECC pThisCC, P
 
                 if (ShaderConst.fValid)
                 {
-                    rc = vmsvga3dShaderSetConst(pThis, cid, j, SVGA3D_SHADERTYPE_PS, ShaderConst.ctype, 1, ShaderConst.value);
+                    rc = vmsvga3dShaderSetConst(pThisCC, cid, j, SVGA3D_SHADERTYPE_PS, ShaderConst.ctype, 1, ShaderConst.value);
                     AssertRCReturn(rc, rc);
                 }
             }
@@ -305,7 +305,7 @@ int vmsvga3dLoadExec(PPDMDEVINS pDevIns, PVGASTATE pThis, PVGASTATECC pThisCC, P
 
                 if (ShaderConst.fValid)
                 {
-                    rc = vmsvga3dShaderSetConst(pThis, cid, j, SVGA3D_SHADERTYPE_VS, ShaderConst.ctype, 1, ShaderConst.value);
+                    rc = vmsvga3dShaderSetConst(pThisCC, cid, j, SVGA3D_SHADERTYPE_VS, ShaderConst.ctype, 1, ShaderConst.value);
                     AssertRCReturn(rc, rc);
                 }
             }
@@ -357,7 +357,7 @@ int vmsvga3dLoadExec(PPDMDEVINS pDevIns, PVGASTATE pThis, PVGASTATECC pThisCC, P
                 {
                     case VMSVGA3DQUERYSTATE_BUILDING:
                         /* Start collecting data. */
-                        vmsvga3dQueryBegin(pThis, cid, SVGA3D_QUERYTYPE_OCCLUSION);
+                        vmsvga3dQueryBegin(pThisCC, cid, SVGA3D_QUERYTYPE_OCCLUSION);
                         /* Partial result. */
                         pContext->occlusion.u32QueryResult = query.u32QueryResult;
                         break;
@@ -424,14 +424,16 @@ int vmsvga3dLoadExec(PPDMDEVINS pDevIns, PVGASTATE pThis, PVGASTATECC pThisCC, P
                     {
                         uint32_t idx = j + face * surface.faces[0].numMipLevels;
                         /* Load the mip map level struct. */
-                        rc = pHlp->pfnSSMGetStructEx(pSSM, &pMipmapLevel[idx], sizeof(pMipmapLevel[idx]), 0, g_aVMSVGA3DMIPMAPLEVELFields, NULL);
+                        rc = pHlp->pfnSSMGetStructEx(pSSM, &pMipmapLevel[idx], sizeof(pMipmapLevel[idx]), 0,
+                                                     g_aVMSVGA3DMIPMAPLEVELFields, NULL);
                         AssertRCReturn(rc, rc);
 
                         pMipmapLevelSize[idx] = pMipmapLevel[idx].mipmapSize;
                     }
                 }
 
-                rc = vmsvga3dSurfaceDefine(pThis, sid, surface.surfaceFlags, surface.format, surface.faces, surface.multiSampleCount, surface.autogenFilter, cMipLevels, pMipmapLevelSize);
+                rc = vmsvga3dSurfaceDefine(pThisCC, sid, surface.surfaceFlags, surface.format, surface.faces,
+                                           surface.multiSampleCount, surface.autogenFilter, cMipLevels, pMipmapLevelSize);
                 AssertRCReturn(rc, rc);
 
                 RTMemFree(pMipmapLevelSize);
@@ -479,7 +481,7 @@ int vmsvga3dLoadExec(PPDMDEVINS pDevIns, PVGASTATE pThis, PVGASTATECC pThisCC, P
     LogFlow(("vmsvga3dLoadExec: pState->SharedCtx.id=%#x\n", pState->SharedCtx.id));
     if (pState->SharedCtx.id == VMSVGA3D_SHARED_CTX_ID)
     {
-        rc = vmsvga3dLoadReinitContext(pThis, &pState->SharedCtx);
+        rc = vmsvga3dLoadReinitContext(pThisCC, &pState->SharedCtx);
         AssertRCReturn(rc, rc);
     }
 #endif
@@ -490,7 +492,7 @@ int vmsvga3dLoadExec(PPDMDEVINS pDevIns, PVGASTATE pThis, PVGASTATECC pThisCC, P
         PVMSVGA3DCONTEXT pContext = pState->papContexts[i];
         if (pContext->id != SVGA3D_INVALID_ID)
         {
-            rc = vmsvga3dLoadReinitContext(pThis, pContext);
+            rc = vmsvga3dLoadReinitContext(pThisCC, pContext);
             AssertRCReturn(rc, rc);
         }
     }
@@ -500,9 +502,9 @@ int vmsvga3dLoadExec(PPDMDEVINS pDevIns, PVGASTATE pThis, PVGASTATECC pThisCC, P
 }
 
 
-static int vmsvga3dSaveContext(PCPDMDEVHLPR3 pHlp, PVGASTATE pThis, PSSMHANDLE pSSM, PVMSVGA3DCONTEXT pContext)
+static int vmsvga3dSaveContext(PCPDMDEVHLPR3 pHlp, PVGASTATECC pThisCC, PSSMHANDLE pSSM, PVMSVGA3DCONTEXT pContext)
 {
-    PVMSVGA3DSTATE pState = pThis->svga.p3dState;
+    PVMSVGA3DSTATE pState = pThisCC->svga.p3dState;
     uint32_t cid = pContext->id;
 
     /* Save the id first. */
@@ -636,9 +638,9 @@ static int vmsvga3dSaveContext(PCPDMDEVHLPR3 pHlp, PVGASTATE pThis, PSSMHANDLE p
     return VINF_SUCCESS;
 }
 
-int vmsvga3dSaveExec(PPDMDEVINS pDevIns, PVGASTATE pThis, PSSMHANDLE pSSM)
+int vmsvga3dSaveExec(PPDMDEVINS pDevIns, PVGASTATECC pThisCC, PSSMHANDLE pSSM)
 {
-    PVMSVGA3DSTATE  pState = pThis->svga.p3dState;
+    PVMSVGA3DSTATE  pState = pThisCC->svga.p3dState;
     AssertReturn(pState, VERR_NO_MEMORY);
     PCPDMDEVHLPR3   pHlp   = pDevIns->pHlpR3;
     int             rc;
@@ -651,7 +653,7 @@ int vmsvga3dSaveExec(PPDMDEVINS pDevIns, PVGASTATE pThis, PSSMHANDLE pSSM)
     /* Save the shared context. */
     if (pState->SharedCtx.id == VMSVGA3D_SHARED_CTX_ID)
     {
-        rc = vmsvga3dSaveContext(pHlp, pThis, pSSM, &pState->SharedCtx);
+        rc = vmsvga3dSaveContext(pHlp, pThisCC, pSSM, &pState->SharedCtx);
         AssertRCReturn(rc, rc);
     }
 #endif
@@ -659,7 +661,7 @@ int vmsvga3dSaveExec(PPDMDEVINS pDevIns, PVGASTATE pThis, PSSMHANDLE pSSM)
     /* Save all active contexts. */
     for (uint32_t i = 0; i < pState->cContexts; i++)
     {
-        rc = vmsvga3dSaveContext(pHlp, pThis, pSSM, pState->papContexts[i]);
+        rc = vmsvga3dSaveContext(pHlp, pThisCC, pSSM, pState->papContexts[i]);
         AssertRCReturn(rc, rc);
     }
 

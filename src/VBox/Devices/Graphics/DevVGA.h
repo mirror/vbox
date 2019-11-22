@@ -341,7 +341,7 @@ typedef struct VGAState
     TMTIMERHANDLE               hRefreshTimer;
 
 #ifdef VBOX_WITH_VMSVGA
-    VMSVGAState                 svga;
+    VMSVGASTATE                 svga;
 #endif
 
     /** The number of monitors. */
@@ -571,6 +571,11 @@ typedef struct VGASTATER3
     /** Status LUN: Partner of ILeds. */
     R3PTRTYPE(PPDMILEDCONNECTORS) pLedsConnector;
 
+#ifdef VBOX_WITH_VMSVGA
+    /** The VMSVGA ring-3 state. */
+    VMSVGASTATER3               svga;
+#endif
+
     /** The VGA BIOS ROM data. */
     R3PTRTYPE(uint8_t *)        pbVgaBios;
     /** The size of the VGA BIOS ROM. */
@@ -635,8 +640,12 @@ typedef VGASTATER3 *PVGASTATER3;
  */
 typedef struct VGASTATER0
 {
-    /** The R0 vram pointer... */
+    /** The R0 vram pointer. */
     R0PTRTYPE(uint8_t *)        pbVRam;
+#ifdef VBOX_WITH_VMSVGA
+    /** The VMSVGA ring-0 state. */
+    VMSVGASTATER0               svga;
+#endif
 } VGASTATER0;
 /** Pointer to the ring-0 VGA state. */
 typedef VGASTATER0 *PVGASTATER0;
@@ -647,7 +656,7 @@ typedef VGASTATER0 *PVGASTATER0;
  */
 typedef struct VGASTATERC
 {
-    /** Pointer to the GC vram mapping. */
+    /** Pointer to the RC vram mapping. */
     RCPTRTYPE(uint8_t *)        pbVRam;
 } VGASTATERC;
 /** Pointer to the raw-mode VGA state. */
