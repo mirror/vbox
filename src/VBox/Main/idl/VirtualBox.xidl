@@ -26636,13 +26636,21 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     </const>
 </enum>
 
+  <interface name="ICloudNetworkGatewayInfo" extends="$unknown"
+             uuid="89a63ace-0c65-11ea-ad23-0ff257c71a7f"
+             wsmap="managed"
+             reservedAttributes="8">
+    <attribute name="publicIP" type="wstring" readonly="yes"/>
+  </interface>
+
+
   <!--
   // ICloudClient
   //////////////////////////////////////////////////////////////////////////
   -->
   <interface
     name="ICloudClient" extends="$unknown"
-    uuid="52a6bbf0-a80d-11e9-8df6-a3cb09336ce8"
+    uuid="435b66a2-0c60-11ea-a0ea-07eb0d1c4ead"
     wsmap="managed" reservedMethods="16" reservedAttributes="8"
     >
 
@@ -26919,6 +26927,20 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </param>
     </method>
 
+    <method name="startCloudNetworkGateway">
+      <param name="network" type="ICloudNetwork" dir="in">
+        <desc>The id of image in the Cloud.</desc>
+      </param>
+      <param name="sshPublicKey" type="wstring" dir="in">
+        <desc>The id of image in the Cloud.</desc>
+      </param>
+      <param name="gatewayInfo" type="ICloudNetworkGatewayInfo" dir="out">
+        <desc>Information about the started gateway.</desc>
+      </param>
+      <param name="progress" type="IProgress" dir="return">
+        <desc>Progress object to track the operation completion.</desc>
+      </param>
+    </method>
   </interface>
 
   <!--
