@@ -3743,8 +3743,8 @@ static VBOXSTRICTRC vgaLFBAccess(PVMCC pVM, PPDMDEVINS pDevIns, PVGASTATE pThis,
                             /* In the SMP case the page table might be removed while we wait for the PGM lock in the trap handler. */
                             ||  rc == VERR_PAGE_TABLE_NOT_PRESENT
                             ||  rc == VERR_PAGE_NOT_PRESENT,
-                            ("PGMShwModifyPage -> GCPtr=%RGv rc=%d\n", GCPtr, rc),
-                            VBOXSTRICTRC_VAL(rc));
+                            ("PGMShwModifyPage -> GCPtr=%RGv rc=%d\n", GCPtr, VBOXSTRICTRC_VAL(rc)),
+                            rc);
 #else  /* IN_RING3 - We don't have any virtual page address of the access here. */
             PDMDevHlpCritSectLeave(pDevIns, &pThis->CritSect);
             Assert(GCPtr == 0);
