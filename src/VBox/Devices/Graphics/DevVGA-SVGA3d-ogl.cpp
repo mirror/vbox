@@ -590,7 +590,7 @@ static DECLCALLBACK(bool) vmsvga3dShaderIfGetNextExtension(PVBOXVMSVGASHADERIF p
 int vmsvga3dInit(PPDMDEVINS pDevIns, PVGASTATE pThis, PVGASTATECC pThisCC)
 {
     int rc;
-    RT_NOREF(pThisCC);
+    RT_NOREF(pDevIns, pThisCC);
 
     AssertCompile(GL_TRUE == 1);
     AssertCompile(GL_FALSE == 0);
