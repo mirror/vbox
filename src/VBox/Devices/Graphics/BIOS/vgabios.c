@@ -1791,13 +1791,13 @@ uint16_t biosfn_read_video_state_size2(uint16_t state)
     if (state & 4)
         size += 3 + 256 * 3 + 1;
 
-    /// @todo Is this supposed to be in 1-byte or 64-byte units?
     return size;
 }
 
 static void vga_get_video_state_size(uint16_t state, uint16_t STACK_BASED *size)
 {
-    *size = biosfn_read_video_state_size2(state);
+    /* The size is the number of 64-byte blocks required to save the state. */
+    *size = (biosfn_read_video_state_size2(state) + 63) / 64;
 }
 
 uint16_t biosfn_save_video_state(uint16_t CX, uint16_t ES, uint16_t BX)
