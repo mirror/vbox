@@ -89,7 +89,7 @@
 *   Structures and Typedefs                                                                                                      *
 *********************************************************************************************************************************/
 /**
- * Parallel device state.
+ * The shared parallel device state.
  *
  * @implements  PDMIBASE
  * @implements  PDMIHOSTPARALLELPORT
@@ -97,56 +97,55 @@
 typedef struct PARALLELPORT
 {
     /** Pointer to the device instance - R3 Ptr */
-    PPDMDEVINSR3                          pDevInsR3;
+    PPDMDEVINSR3                            pDevInsR3;
     /** Pointer to the device instance - R0 Ptr */
-    PPDMDEVINSR0                          pDevInsR0;
+    PPDMDEVINSR0                            pDevInsR0;
     /** Pointer to the device instance - RC Ptr */
-    PPDMDEVINSRC                          pDevInsRC;
+    PPDMDEVINSRC                            pDevInsRC;
     /** Alignment. */
-    RTRCPTR                               Alignment0;
+    RTRCPTR                                 RCPtrAlignment0;
     /** LUN\#0: The base interface. */
-    PDMIBASE                              IBase;
+    PDMIBASE                                IBase;
     /** LUN\#0: The host device port interface. */
-    PDMIHOSTPARALLELPORT                  IHostParallelPort;
+    PDMIHOSTPARALLELPORT                    IHostParallelPort;
     /** Pointer to the attached base driver. */
-    R3PTRTYPE(PPDMIBASE)                  pDrvBase;
+    R3PTRTYPE(PPDMIBASE)                    pDrvBase;
     /** Pointer to the attached host device. */
-    R3PTRTYPE(PPDMIHOSTPARALLELCONNECTOR) pDrvHostParallelConnector;
-    /** Flag whether the device has its RC component enabled. */
-    bool                                  fGCEnabled;
-    /** Flag whether the device has its R0 component enabled. */
-    bool                                  fR0Enabled;
+    R3PTRTYPE(PPDMIHOSTPARALLELCONNECTOR)   pDrvHostParallelConnector;
     /** Flag whether an EPP timeout occurred (error handling). */
-    bool                                  fEppTimeout;
+    bool                fEppTimeout;
+    bool                fAlignment1;
     /** Base I/O port of the parallel port. */
-    RTIOPORT                              IOBase;
+    RTIOPORT            IOBase;
     /** IRQ number assigned ot the parallel port. */
-    int                                   iIrq;
+    int32_t             iIrq;
     /** Data register. */
-    uint8_t                               regData;
+    uint8_t             regData;
     /** Status register. */
-    uint8_t                               regStatus;
+    uint8_t             regStatus;
     /** Control register. */
-    uint8_t                               regControl;
+    uint8_t             regControl;
     /** EPP address register. */
-    uint8_t                               regEppAddr;
+    uint8_t             regEppAddr;
     /** EPP data register. */
-    uint8_t                               regEppData;
+    uint8_t             regEppData;
     /** More alignment. */
-    uint32_t                              u32Alignment;
+    uint8_t             abAlignment2[3];
 
 #if 0 /* Data for ECP implementation, currently unused. */
-    uint8_t                               reg_ecp_ecr;
-    uint8_t                               reg_ecp_base_plus_400h; /* has different meanings */
-    uint8_t                               reg_ecp_config_b;
+    uint8_t             reg_ecp_ecr;
+    uint8_t             reg_ecp_base_plus_400h; /* has different meanings */
+    uint8_t             reg_ecp_config_b;
 
     /** The ECP FIFO implementation*/
-    uint8_t                             ecp_fifo[LPT_ECP_FIFO_DEPTH];
-    uint8_t                             abAlignemnt[2];
-    int                                 act_fifo_pos_write;
-    int                                 act_fifo_pos_read;
+    uint8_t             ecp_fifo[LPT_ECP_FIFO_DEPTH];
+    uint8_t             abAlignemnt[3];
+    int32_t             act_fifo_pos_write;
+    int32_t             act_fifo_pos_read;
 #endif
-} PARALLELPORT, *PPARALLELPORT;
+} PARALLELPORT;
+/** Pointer to the shared parallel device state. */
+typedef PARALLELPORT *PPARALLELPORT;
 
 #ifndef VBOX_DEVICE_STRUCT_TESTCASE
 
@@ -427,7 +426,7 @@ PDMBOTHCBDECL(int) parallelIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPOR
  */
 PDMBOTHCBDECL(int) parallelIOPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT uPort, uint32_t *pu32, unsigned cb)
 {
-    PARALLELPORT *pThis = PDMDEVINS_2_DATA(pDevIns, PARALLELPORT *);
+    PPARALLELPORT pThis = PDMDEVINS_2_DATA(pDevIns, PPARALLELPORT);
     int           rc = VINF_SUCCESS;
     RT_NOREF_PV(pvUser);
 
@@ -530,7 +529,7 @@ PDMBOTHCBDECL(int) parallelIOPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT
  */
 PDMBOTHCBDECL(int) parallelIOPortWriteECP(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb)
 {
-    PARALLELPORT *pThis = PDMDEVINS_2_DATA(pDevIns, PARALLELPORT *);
+    PPARALLELPORT pThis = PDMDEVINS_2_DATA(pDevIns, PPARALLELPORT);
     int            rc = VINF_SUCCESS;
 
     if (cb == 1)
@@ -549,7 +548,7 @@ PDMBOTHCBDECL(int) parallelIOPortWriteECP(PPDMDEVINS pDevIns, void *pvUser, RTIO
  */
 PDMBOTHCBDECL(int) parallelIOPortReadECP(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32, unsigned cb)
 {
-    PARALLELPORT *pThis = PDMDEVINS_2_DATA(pDevIns, PARALLELPORT *);
+    PPARALLELPORT pThis = PDMDEVINS_2_DATA(pDevIns, PPARALLELPORT);
     int           rc = VINF_SUCCESS;
 
     if (cb == 1)
@@ -571,12 +570,13 @@ PDMBOTHCBDECL(int) parallelIOPortReadECP(PPDMDEVINS pDevIns, void *pvUser, RTIOP
  */
 static DECLCALLBACK(int) parallelR3LiveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uPass)
 {
+    PPARALLELPORT   pThis = PDMDEVINS_2_DATA(pDevIns, PPARALLELPORT);
+    PCPDMDEVHLPR3   pHlp  = pDevIns->pHlpR3;
     RT_NOREF(uPass);
-    PARALLELPORT *pThis = PDMDEVINS_2_DATA(pDevIns, PARALLELPORT *);
 
-    SSMR3PutS32(pSSM, pThis->iIrq);
-    SSMR3PutU32(pSSM, pThis->IOBase);
-    SSMR3PutU32(pSSM, UINT32_MAX); /* sanity/terminator */
+    pHlp->pfnSSMPutS32(pSSM, pThis->iIrq);
+    pHlp->pfnSSMPutU32(pSSM, pThis->IOBase);
+    pHlp->pfnSSMPutU32(pSSM, UINT32_MAX); /* sanity/terminator */
     return VINF_SSM_DONT_CALL_AGAIN;
 }
 
@@ -586,11 +586,12 @@ static DECLCALLBACK(int) parallelR3LiveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM,
  */
 static DECLCALLBACK(int) parallelR3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 {
-    PARALLELPORT *pThis = PDMDEVINS_2_DATA(pDevIns, PARALLELPORT *);
+    PPARALLELPORT   pThis = PDMDEVINS_2_DATA(pDevIns, PPARALLELPORT);
+    PCPDMDEVHLPR3   pHlp  = pDevIns->pHlpR3;
 
-    SSMR3PutU8(pSSM, pThis->regData);
-    SSMR3PutU8(pSSM, pThis->regStatus);
-    SSMR3PutU8(pSSM, pThis->regControl);
+    pHlp->pfnSSMPutU8(pSSM, pThis->regData);
+    pHlp->pfnSSMPutU8(pSSM, pThis->regStatus);
+    pHlp->pfnSSMPutU8(pSSM, pThis->regControl);
 
     parallelR3LiveExec(pDevIns, pSSM, 0);
     return VINF_SUCCESS;
@@ -602,33 +603,34 @@ static DECLCALLBACK(int) parallelR3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
  */
 static DECLCALLBACK(int) parallelR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass)
 {
-    PARALLELPORT *pThis = PDMDEVINS_2_DATA(pDevIns, PARALLELPORT *);
+    PPARALLELPORT   pThis = PDMDEVINS_2_DATA(pDevIns, PPARALLELPORT);
+    PCPDMDEVHLPR3   pHlp  = pDevIns->pHlpR3;
 
     AssertMsgReturn(uVersion == PARALLEL_SAVED_STATE_VERSION, ("%d\n", uVersion), VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION);
     Assert(uPass == SSM_PASS_FINAL); NOREF(uPass);
     if (uPass == SSM_PASS_FINAL)
     {
-        SSMR3GetU8(pSSM, &pThis->regData);
-        SSMR3GetU8(pSSM, &pThis->regStatus);
-        SSMR3GetU8(pSSM, &pThis->regControl);
+        pHlp->pfnSSMGetU8(pSSM, &pThis->regData);
+        pHlp->pfnSSMGetU8(pSSM, &pThis->regStatus);
+        pHlp->pfnSSMGetU8(pSSM, &pThis->regControl);
     }
 
     /* the config */
     int32_t  iIrq;
-    SSMR3GetS32(pSSM, &iIrq);
+    pHlp->pfnSSMGetS32(pSSM, &iIrq);
     uint32_t uIoBase;
-    SSMR3GetU32(pSSM, &uIoBase);
+    pHlp->pfnSSMGetU32(pSSM, &uIoBase);
     uint32_t u32;
-    int rc = SSMR3GetU32(pSSM, &u32);
+    int rc = pHlp->pfnSSMGetU32(pSSM, &u32);
     if (RT_FAILURE(rc))
         return rc;
     AssertMsgReturn(u32 == UINT32_MAX, ("%#x\n", u32), VERR_SSM_DATA_UNIT_FORMAT_CHANGED);
 
     if (pThis->iIrq != iIrq)
-        return SSMR3SetCfgError(pSSM, RT_SRC_POS, N_("IRQ changed: config=%#x state=%#x"), pThis->iIrq, iIrq);
+        return pHlp->pfnSSMSetCfgError(pSSM, RT_SRC_POS, N_("IRQ changed: config=%#x state=%#x"), pThis->iIrq, iIrq);
 
     if (pThis->IOBase != uIoBase)
-        return SSMR3SetCfgError(pSSM, RT_SRC_POS, N_("IOBase changed: config=%#x state=%#x"), pThis->IOBase, uIoBase);
+        return pHlp->pfnSSMSetCfgError(pSSM, RT_SRC_POS, N_("IOBase changed: config=%#x state=%#x"), pThis->IOBase, uIoBase);
 
     /* not necessary... but it doesn't harm. */
     pThis->pDevInsR3 = pDevIns;
@@ -655,7 +657,7 @@ static DECLCALLBACK(void *) parallelR3QueryInterface(PPDMIBASE pInterface, const
  */
 static DECLCALLBACK(void) parallelR3Relocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta)
 {
-    PARALLELPORT *pThis = PDMDEVINS_2_DATA(pDevIns, PARALLELPORT *);
+    PPARALLELPORT pThis = PDMDEVINS_2_DATA(pDevIns, PPARALLELPORT);
     pThis->pDevInsRC += offDelta;
 }
 
@@ -666,8 +668,9 @@ static DECLCALLBACK(void) parallelR3Relocate(PPDMDEVINS pDevIns, RTGCINTPTR offD
 static DECLCALLBACK(int) parallelR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE pCfg)
 {
     PDMDEV_CHECK_VERSIONS_RETURN(pDevIns);
-    int            rc;
-    PARALLELPORT *pThis = PDMDEVINS_2_DATA(pDevIns, PARALLELPORT*);
+    PPARALLELPORT   pThis = PDMDEVINS_2_DATA(pDevIns, PPARALLELPORT);
+    PCPDMDEVHLPR3   pHlp  = pDevIns->pHlpR3;
+    int             rc;
 
     Assert(iInstance < 4);
 
@@ -695,65 +698,51 @@ static DECLCALLBACK(int) parallelR3Construct(PPDMDEVINS pDevIns, int iInstance, 
     /*
      * Validate and read the configuration.
      */
-    if (!CFGMR3AreValuesValid(pCfg, "IRQ\0" "IOBase\0" "GCEnabled\0" "R0Enabled\0"))
-        return PDMDEV_SET_ERROR(pDevIns, VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES,
-                                N_("Configuration error: Unknown config key"));
+    PDMDEV_VALIDATE_CONFIG_RETURN(pDevIns, "IRQ|IOBase", "");
 
-    rc = CFGMR3QueryBoolDef(pCfg, "GCEnabled", &pThis->fGCEnabled, false);
+    rc = pHlp->pfnCFGMQueryS32Def(pCfg, "IRQ", &pThis->iIrq, 7);
     if (RT_FAILURE(rc))
-        return PDMDEV_SET_ERROR(pDevIns, rc,
-                                N_("Configuration error: Failed to get the \"GCEnabled\" value"));
+        return PDMDEV_SET_ERROR(pDevIns, rc, N_("Configuration error: Failed to get the \"IRQ\" value"));
 
-    rc = CFGMR3QueryBoolDef(pCfg, "R0Enabled", &pThis->fR0Enabled, false);
+    rc = pHlp->pfnCFGMQueryU16Def(pCfg, "IOBase", &pThis->IOBase, 0x378);
     if (RT_FAILURE(rc))
-        return PDMDEV_SET_ERROR(pDevIns, rc,
-                                N_("Configuration error: Failed to get the \"R0Enabled\" value"));
-    rc = CFGMR3QueryS32Def(pCfg, "IRQ", &pThis->iIrq, 7);
-    if (RT_FAILURE(rc))
-        return PDMDEV_SET_ERROR(pDevIns, rc,
-                                N_("Configuration error: Failed to get the \"IRQ\" value"));
-    rc = CFGMR3QueryU16Def(pCfg, "IOBase", &pThis->IOBase, 0x378);
-    if (RT_FAILURE(rc))
-        return PDMDEV_SET_ERROR(pDevIns, rc,
-                                N_("Configuration error: Failed to get the \"IOBase\" value"));
+        return PDMDEV_SET_ERROR(pDevIns, rc, N_("Configuration error: Failed to get the \"IOBase\" value"));
 
-    int port_count = (pThis->IOBase == 0x3BC) ? 4 : 8;
+    int cPorts = (pThis->IOBase == 0x3BC) ? 4 : 8;
     /*
      * Register the I/O ports and saved state.
      */
-    rc = PDMDevHlpIOPortRegister(pDevIns, pThis->IOBase, port_count, 0,
+    rc = PDMDevHlpIOPortRegister(pDevIns, pThis->IOBase, cPorts, 0,
                                  parallelIOPortWrite, parallelIOPortRead,
                                  NULL, NULL, "Parallel");
-    if (RT_FAILURE(rc))
-        return rc;
+    AssertRCReturn(rc, rc);
 
 #if 0
     /* register ecp registers */
     rc = PDMDevHlpIOPortRegister(pDevIns, io_base+0x400, 8, 0,
                                  parallelIOPortWriteECP, parallelIOPortReadECP,
                                  NULL, NULL, "PARALLEL ECP");
-    if (RT_FAILURE(rc))
-        return rc;
+    AssertRCReturn(rc, rc);
 #endif
 
-    if (pThis->fGCEnabled)
+    if (pDevIns->fRCEnabled)
     {
-        rc = PDMDevHlpIOPortRegisterRC(pDevIns, pThis->IOBase, port_count, 0, "parallelIOPortWrite",
+        rc = PDMDevHlpIOPortRegisterRC(pDevIns, pThis->IOBase, cPorts, 0, "parallelIOPortWrite",
                                        "parallelIOPortRead", NULL, NULL, "Parallel");
         if (RT_FAILURE(rc))
             return rc;
 
 #if 0
-        rc = PDMDevHlpIOPortRegisterGC(pDevIns, io_base+0x400, port_count, 0, "parallelIOPortWriteECP",
+        rc = PDMDevHlpIOPortRegisterGC(pDevIns, io_base+0x400, cPorts, 0, "parallelIOPortWriteECP",
                                        "parallelIOPortReadECP", NULL, NULL, "Parallel Ecp");
         if (RT_FAILURE(rc))
             return rc;
 #endif
     }
 
-    if (pThis->fR0Enabled)
+    if (pDevIns->fR0Enabled)
     {
-        rc = PDMDevHlpIOPortRegisterR0(pDevIns, pThis->IOBase, port_count, 0, "parallelIOPortWrite",
+        rc = PDMDevHlpIOPortRegisterR0(pDevIns, pThis->IOBase, cPorts, 0, "parallelIOPortWrite",
                                        "parallelIOPortRead", NULL, NULL, "Parallel");
         if (RT_FAILURE(rc))
             return rc;
@@ -768,8 +757,7 @@ static DECLCALLBACK(int) parallelR3Construct(PPDMDEVINS pDevIns, int iInstance, 
 
     rc = PDMDevHlpSSMRegister3(pDevIns, PARALLEL_SAVED_STATE_VERSION, sizeof(*pThis),
                                parallelR3LiveExec, parallelR3SaveExec, parallelR3LoadExec);
-    if (RT_FAILURE(rc))
-        return rc;
+    AssertRCReturn(rc, rc);
 
 
     /*
