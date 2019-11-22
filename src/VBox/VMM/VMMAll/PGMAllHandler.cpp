@@ -1331,6 +1331,7 @@ static PPGMPAGE pgmPhysResolveMmio2PageLocked(PVMCC pVM, PPDMDEVINS pDevIns, PGM
     }
 }
 
+
 /**
  * Replaces an MMIO page with an MMIO2 page.
  *
