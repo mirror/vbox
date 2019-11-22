@@ -760,6 +760,9 @@ InitializePlatform (
   )
 {
   EFI_STATUS    Status;
+#ifdef VBOX
+  EFI_PHYSICAL_ADDRESS Memory;
+#endif
 
   DEBUG ((DEBUG_INFO, "Platform PEIM Loaded\n"));
 
@@ -804,6 +807,31 @@ InitializePlatform (
     DEBUG ((EFI_D_INFO, "Xen was detected\n"));
     InitializeXen ();
   }
+
+#ifdef VBOX
+  /*
+   * This seemingly useless allocation is required to protect the memory against
+   * a bug present in Apples boot.efi bootloader for OS X Tiger, Leopard and Snow Leopard
+   * causing a triple fault before the kernel is started because the stack got trashed.
+   *
+   * Before handing control to the kernel it goes over the memory map acquired with gRT->GetMemoryMap()
+   * and relocates all EfiRuntimeServicesData and EfiRuntimeServicesCode to another memory location.
+   * Every entry not having the EfiRuntimeServicesData/EfiRuntimeServicesCode type gets removed and the
+   * memory location is zeroed. However the size of the region is not taken from the memory descriptor
+   * but calculated before by just using the last EfiRuntimeServices* regions size (which is the bug).
+   *
+   * In our case this is the variable store memory allocated in ReserveEmuVariableNvStore() which spans
+   * 0x84 pages or 528KB which causes the stack to get trashed when boot.efi comes to the zero out the
+   * EfiBootServicesData range covering the stack.
+   * To prevent merging adjacent memory regions with the same properties in CoreGetMemoryMap() a
+   * EfiRuntimeServicesCode region with exactly one page gets allocated as the first region here so it
+   * ends up last in the memory map. This prevents boot.efi from zeroing too much memory.
+   *
+   * This worked with 6.0 and earlier firmware because the variable store was much smaller (only 128KB)
+   * which happened to work by accident.
+   */
+  PeiServicesAllocatePages (EfiRuntimeServicesCode, 1, &Memory);
+#endif
 
   if (mBootMode != BOOT_ON_S3_RESUME) {
     if (!FeaturePcdGet (PcdSmmSmramRequire)) {
