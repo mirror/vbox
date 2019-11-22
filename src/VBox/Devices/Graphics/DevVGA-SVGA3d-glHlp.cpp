@@ -696,7 +696,7 @@ static void doRender(PVMSVGA3DSTATE pState,
     glBindTexture(GL_TEXTURE_2D, 0);
     GL_CHECK_ERROR();
 
-    unsetRenderTarget(pState, pSurface->oglId.texture);
+    unsetRenderTarget(pState, targetTexture);
 
     pState->ext.glUseProgram(0);
     GL_CHECK_ERROR();
