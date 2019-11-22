@@ -3378,7 +3378,8 @@ vgaR3IOPortHgmsiRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_
  * This is the advanced version of vga_mem_writeb function.
  *
  * @returns VBox status code.
- * @param   pThis       VGA device structure
+ * @param   pThis       The shared VGA instance data.
+ * @param   pThisCC     The VGA instance data for the current context.
  * @param   pvUser      User argument - ignored.
  * @param   GCPhysAddr  Physical address of memory to write.
  * @param   u32Item     Data to write, up to 4 bytes.
@@ -3943,7 +3944,7 @@ vbeR3IoPortReadVbeExtra(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint
  *
  * @returns VBox status code.
  *
- * @param   pThis       The VGA instance data.
+ * @param   pThisCC     The VGA instance data for ring-3.
  */
 static int vbeR3ParseBitmap(PVGASTATECC pThisCC)
 {
@@ -4795,10 +4796,10 @@ static DECLCALLBACK(int) vgaR3PortQueryStatusLed(PPDMILEDPORTS pInterface, unsig
 /**
  * @interface_method_impl{PDMIDISPLAYCONNECTOR,pfnResize}
  */
-static DECLCALLBACK(int) vgaR3DummyResize(PPDMIDISPLAYCONNECTOR pInterface, uint32_t bpp, void *pvVRAM,
+static DECLCALLBACK(int) vgaR3DummyResize(PPDMIDISPLAYCONNECTOR pInterface, uint32_t cBits, void *pvVRAM,
                                           uint32_t cbLine, uint32_t cx, uint32_t cy)
 {
-    RT_NOREF(pInterface, bpp, pvVRAM, cbLine, cx, cy);
+    RT_NOREF(pInterface, cBits, pvVRAM, cbLine, cx, cy);
     return VINF_SUCCESS;
 }
 
@@ -5771,7 +5772,7 @@ static DECLCALLBACK(int) vgaR3PciRegionLoadChangeHook(PPDMDEVINS pDevIns, PPDMPC
  * Saves a important bits of the VGA device config.
  *
  * @param   pHlp        The device helpers (for SSM functions).
- * @param   pThis       The VGA instance data.
+ * @param   pThis       The shared VGA instance data.
  * @param   pSSM        The saved state handle.
  */
 static void vgaR3SaveConfig(PCPDMDEVHLPR3 pHlp, PVGASTATE pThis, PSSMHANDLE pSSM)

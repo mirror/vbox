@@ -1507,7 +1507,7 @@ DECLINLINE(void) vmsvgaHCUpdatePitch(PVGASTATE pThis, PVGASTATECC pThisCC)
  * @returns Strict VBox status code.
  * @param   pDevIns     The device instance.
  * @param   pThis       The shared VGA/VMSVGA state.
- * @param   pThisC      The VGA/VMSVGA state for the current context.
+ * @param   pThisCC     The VGA/VMSVGA state for the current context.
  * @param   u32         Value to write
  */
 static VBOXSTRICTRC vmsvgaWritePort(PPDMDEVINS pDevIns, PVGASTATE pThis, PVGASTATECC pThisCC, uint32_t u32)
@@ -3125,6 +3125,7 @@ static void vmsvgaR3FifoSetNotBusy(PPDMDEVINS pDevIns, PVGASTATE pThis, PVGASTAT
  * @param   pThis           The shared VGA/VMSVGA instance data.
  * @param   pSVGAState      Pointer to the ring-3 only SVGA state data. For
  *                          statistics collection.
+ * @param   pDevIns         The device instance.
  */
 static void *vmsvgaR3FifoGetCmdPayload(uint32_t cbPayloadReq, uint32_t RT_UNTRUSTED_VOLATILE_GUEST *pFIFO,
                                        uint32_t offCurrentCmd, uint32_t offFifoMin, uint32_t offFifoMax,
@@ -5831,6 +5832,7 @@ static int vmsvgaR3StateInit(PVGASTATE pThis, PVMSVGAR3STATE pSVGAState)
  *
  * @returns VBox status code.
  * @param   pThis     The shared VGA/VMSVGA instance data.
+ * @param   pThisCC   The VGA/VMSVGA state for ring-3.
  */
 static void vmsvgaR3InitCaps(PVGASTATE pThis, PVGASTATECC pThisCC)
 {
