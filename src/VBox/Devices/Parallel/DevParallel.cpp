@@ -24,6 +24,7 @@
 *********************************************************************************************************************************/
 #define LOG_GROUP LOG_GROUP_DEV_PARALLEL
 #include <VBox/vmm/pdmdev.h>
+#include <VBox/AssertGuest.h>
 #include <iprt/assert.h>
 #include <iprt/uuid.h>
 #include <iprt/string.h>
@@ -143,6 +144,10 @@ typedef struct PARALLELPORT
     int32_t             act_fifo_pos_write;
     int32_t             act_fifo_pos_read;
 #endif
+    /** Handle to the regular I/O ports. */
+    IOMIOPORTHANDLE     hIoPorts;
+    /** Handle to the ECP I/O ports. */
+    IOMIOPORTHANDLE     hIoPortsEcp;
 } PARALLELPORT;
 /** Pointer to the shared parallel device state. */
 typedef PARALLELPORT *PPARALLELPORT;
@@ -152,19 +157,6 @@ typedef PARALLELPORT *PPARALLELPORT;
 #define PDMIHOSTPARALLELPORT_2_PARALLELPORT(pInstance) ( (PARALLELPORT *)((uintptr_t)(pInterface) - RT_UOFFSETOF(PARALLELPORT, IHostParallelPort)) )
 #define PDMIHOSTDEVICEPORT_2_PARALLELPORT(pInstance)   ( (PARALLELPORT *)((uintptr_t)(pInterface) - RT_UOFFSETOF(PARALLELPORT, IHostDevicePort)) )
 #define PDMIBASE_2_PARALLELPORT(pInstance)             ( (PARALLELPORT *)((uintptr_t)(pInterface) - RT_UOFFSETOF(PARALLELPORT, IBase)) )
-
-
-/*********************************************************************************************************************************
-*   Internal Functions                                                                                                           *
-*********************************************************************************************************************************/
-RT_C_DECLS_BEGIN
-PDMBOTHCBDECL(int) parallelIOPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT uPort, uint32_t *pu32, unsigned cb);
-PDMBOTHCBDECL(int) parallelIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT uPort, uint32_t u32, unsigned cb);
-#if 0
-PDMBOTHCBDECL(int) parallelIOPortReadECP(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32, unsigned cb);
-PDMBOTHCBDECL(int) parallelIOPortWriteECP(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb);
-#endif
-RT_C_DECLS_END
 
 
 #ifdef IN_RING3
@@ -315,22 +307,23 @@ static DECLCALLBACK(int) parallelR3NotifyInterrupt(PPDMIHOSTPARALLELPORT pInterf
 
 
 /**
- * @callback_method_impl{FNIOMIOPORTOUT}
+ * @callback_method_impl{FNIOMIOPORTNEWOUT}
  */
-PDMBOTHCBDECL(int) parallelIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT uPort, uint32_t u32, unsigned cb)
+static DECLCALLBACK(VBOXSTRICTRC)
+parallelIoPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t u32, unsigned cb)
 {
     PARALLELPORT *pThis = PDMDEVINS_2_DATA(pDevIns, PPARALLELPORT);
-    int           rc = VINF_SUCCESS;
+    VBOXSTRICTRC  rc    = VINF_SUCCESS;
     RT_NOREF_PV(pvUser);
 
     if (cb == 1)
     {
         uint8_t u8 = u32;
 
-        Log2(("%s: port %#06x val %#04x\n", __FUNCTION__, uPort, u32));
+        Log2(("%s: Port=%#06x+%x val %#04x\n", __FUNCTION__, pThis->IOBase, offPort, u32));
 
-        uPort &= 7;
-        switch (uPort)
+        offPort &= 7;
+        switch (offPort)
         {
             case 0:
 #ifndef IN_RING3
@@ -415,25 +408,26 @@ PDMBOTHCBDECL(int) parallelIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPOR
         }
     }
     else
-        AssertMsgFailed(("Port=%#x cb=%d u32=%#x\n", uPort, cb, u32));
+        ASSERT_GUEST_MSG_FAILED(("Port=%#x+%x cb=%d u32=%#x\n", pThis->IOBase, offPort, cb, u32));
 
     return rc;
 }
 
 
 /**
- * @callback_method_impl{FNIOMIOPORTIN}
+ * @callback_method_impl{FNIOMIOPORTNEWIN}
  */
-PDMBOTHCBDECL(int) parallelIOPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT uPort, uint32_t *pu32, unsigned cb)
+static DECLCALLBACK(VBOXSTRICTRC)
+parallelIoPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t *pu32, unsigned cb)
 {
     PPARALLELPORT pThis = PDMDEVINS_2_DATA(pDevIns, PPARALLELPORT);
-    int           rc = VINF_SUCCESS;
+    VBOXSTRICTRC  rc    = VINF_SUCCESS;
     RT_NOREF_PV(pvUser);
 
     if (cb == 1)
     {
-        uPort &= 7;
-        switch (uPort)
+        offPort &= 7;
+        switch (offPort)
         {
             case 0:
                 if (!(pThis->regControl & LPT_CONTROL_ENABLE_BIDIRECT))
@@ -448,7 +442,7 @@ PDMBOTHCBDECL(int) parallelIOPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT
                         rc = pThis->pDrvHostParallelConnector->pfnRead(pThis->pDrvHostParallelConnector, &pThis->regData,
                                                                        1, PDM_PARALLEL_PORT_MODE_SPP);
                         Log(("Read data lines 0x%X\n", pThis->regData));
-                        AssertRC(rc);
+                        AssertRC(VBOXSTRICTRC_VAL(rc));
                     }
                     *pu32 = pThis->regData;
 #endif
@@ -461,7 +455,7 @@ PDMBOTHCBDECL(int) parallelIOPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT
                 if (RT_LIKELY(pThis->pDrvHostParallelConnector))
                 {
                     rc = pThis->pDrvHostParallelConnector->pfnReadStatus(pThis->pDrvHostParallelConnector, &pThis->regStatus);
-                    AssertRC(rc);
+                    AssertRC(VBOXSTRICTRC_VAL(rc));
                 }
                 *pu32 = pThis->regStatus;
                 parallelR3IrqClear(pThis);
@@ -474,7 +468,7 @@ PDMBOTHCBDECL(int) parallelIOPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT
                 if (RT_LIKELY(pThis->pDrvHostParallelConnector))
                 {
                     rc = pThis->pDrvHostParallelConnector->pfnReadControl(pThis->pDrvHostParallelConnector, &pThis->regControl);
-                    AssertRC(rc);
+                    AssertRC(VBOXSTRICTRC_VAL(rc));
                     pThis->regControl |= LPT_CONTROL_BIT6 | LPT_CONTROL_BIT7;
                 }
 
@@ -490,7 +484,7 @@ PDMBOTHCBDECL(int) parallelIOPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT
                     rc = pThis->pDrvHostParallelConnector->pfnRead(pThis->pDrvHostParallelConnector, &pThis->regEppAddr,
                                                                    1, PDM_PARALLEL_PORT_MODE_EPP_ADDR);
                     Log(("Read EPP address 0x%X\n", pThis->regEppAddr));
-                    AssertRC(rc);
+                    AssertRC(VBOXSTRICTRC_VAL(rc));
                 }
                 *pu32 = pThis->regEppAddr;
 #endif
@@ -504,7 +498,7 @@ PDMBOTHCBDECL(int) parallelIOPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT
                     rc = pThis->pDrvHostParallelConnector->pfnRead(pThis->pDrvHostParallelConnector, &pThis->regEppData,
                                                                    1, PDM_PARALLEL_PORT_MODE_EPP_DATA);
                     Log(("Read EPP data 0x%X\n", pThis->regEppData));
-                    AssertRC(rc);
+                    AssertRC(VBOXSTRICTRC_VAL(rc));
                 }
                 *pu32 = pThis->regEppData;
 #endif
@@ -525,36 +519,38 @@ PDMBOTHCBDECL(int) parallelIOPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT
 
 #if 0
 /**
- * @callback_method_impl{FNIOMIOPORTOUT, ECP registers.}
+ * @callback_method_impl{FNIOMIOPORTNEWOUT, ECP registers.}
  */
-PDMBOTHCBDECL(int) parallelIOPortWriteECP(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb)
+static DECLCALLBACK(VBOXSTRICTRC)
+parallelIoPortWriteECP(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t u32, unsigned cb)
 {
-    PPARALLELPORT pThis = PDMDEVINS_2_DATA(pDevIns, PPARALLELPORT);
-    int            rc = VINF_SUCCESS;
+    PPARALLELPORT  pThis = PDMDEVINS_2_DATA(pDevIns, PPARALLELPORT);
+    VBOXSTRICTRC   rc    = VINF_SUCCESS;
 
     if (cb == 1)
     {
-        Log2(("%s: ecp port %#06x val %#04x\n", __FUNCTION__, Port, u32));
-        rc = parallel_ioport_write_ecp (pThis, Port, u32);
+        Log2(("%s: ecp port %#06x+%x val %#04x\n", __FUNCTION__, pThis->IOBase + 0x400, offPort, u32));
+        rc = parallel_ioport_write_ecp(pThis, Port, u32);
     }
     else
-        AssertMsgFailed(("Port=%#x cb=%d u32=%#x\n", Port, cb, u32));
+        ASSERT_GUEST_MSG_FAILED(("Port=%#x cb=%d u32=%#x\n", Port, cb, u32));
 
     return rc;
 }
 
 /**
- * @callback_method_impl{FNIOMIOPORTOUT, ECP registers.}
+ * @callback_method_impl{FNIOMIOPORTNEWOUT, ECP registers.}
  */
-PDMBOTHCBDECL(int) parallelIOPortReadECP(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32, unsigned cb)
+static DECLCALLBACK(VBOXSTRICTRC)
+parallelIoPortReadECP(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t *pu32, unsigned cb)
 {
-    PPARALLELPORT pThis = PDMDEVINS_2_DATA(pDevIns, PPARALLELPORT);
-    int           rc = VINF_SUCCESS;
+    PPARALLELPORT  pThis = PDMDEVINS_2_DATA(pDevIns, PPARALLELPORT);
+    VBOXSTRICTRC   rc    = VINF_SUCCESS;
 
     if (cb == 1)
     {
-        *pu32 = parallel_ioport_read_ecp (pThis, Port, &rc);
-        Log2(("%s: ecp port %#06x val %#04x\n", __FUNCTION__, Port, *pu32));
+        *pu32 = parallel_ioport_read_ecp(pThis, Port, &rc);
+        Log2(("%s: ecp port %#06x+%x val %#04x\n", __FUNCTION__, pThis->IOBase + 0x400, offPort, *pu32));
     }
     else
         rc = VERR_IOM_IOPORT_UNUSED;
@@ -622,8 +618,7 @@ static DECLCALLBACK(int) parallelR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM,
     pHlp->pfnSSMGetU32(pSSM, &uIoBase);
     uint32_t u32;
     int rc = pHlp->pfnSSMGetU32(pSSM, &u32);
-    if (RT_FAILURE(rc))
-        return rc;
+    AssertRCReturn(rc, rc);
     AssertMsgReturn(u32 == UINT32_MAX, ("%#x\n", u32), VERR_SSM_DATA_UNIT_FORMAT_CHANGED);
 
     if (pThis->iIrq != iIrq)
@@ -712,48 +707,17 @@ static DECLCALLBACK(int) parallelR3Construct(PPDMDEVINS pDevIns, int iInstance, 
     /*
      * Register the I/O ports and saved state.
      */
-    rc = PDMDevHlpIOPortRegister(pDevIns, pThis->IOBase, cPorts, 0,
-                                 parallelIOPortWrite, parallelIOPortRead,
-                                 NULL, NULL, "Parallel");
+    rc = PDMDevHlpIoPortCreateAndMap(pDevIns, pThis->IOBase, cPorts, parallelIoPortWrite, parallelIoPortRead,
+                                     "Parallel", NULL /*paExtDesc*/, &pThis->hIoPorts);
     AssertRCReturn(rc, rc);
 
 #if 0
     /* register ecp registers */
-    rc = PDMDevHlpIOPortRegister(pDevIns, io_base+0x400, 8, 0,
-                                 parallelIOPortWriteECP, parallelIOPortReadECP,
-                                 NULL, NULL, "PARALLEL ECP");
+    rc = PDMDevHlpIoPortCreateAndMap(pDevIns, pThis->IOBase + 0x400, 8, parallelIoPortWriteECP, parallelIoPortReadECP,
+                                     "Parallel ECP", NULL /*paExtDesc*/, &pThis->hIoPortsEcp);
     AssertRCReturn(rc, rc);
 #endif
 
-    if (pDevIns->fRCEnabled)
-    {
-        rc = PDMDevHlpIOPortRegisterRC(pDevIns, pThis->IOBase, cPorts, 0, "parallelIOPortWrite",
-                                       "parallelIOPortRead", NULL, NULL, "Parallel");
-        if (RT_FAILURE(rc))
-            return rc;
-
-#if 0
-        rc = PDMDevHlpIOPortRegisterGC(pDevIns, io_base+0x400, cPorts, 0, "parallelIOPortWriteECP",
-                                       "parallelIOPortReadECP", NULL, NULL, "Parallel Ecp");
-        if (RT_FAILURE(rc))
-            return rc;
-#endif
-    }
-
-    if (pDevIns->fR0Enabled)
-    {
-        rc = PDMDevHlpIOPortRegisterR0(pDevIns, pThis->IOBase, cPorts, 0, "parallelIOPortWrite",
-                                       "parallelIOPortRead", NULL, NULL, "Parallel");
-        if (RT_FAILURE(rc))
-            return rc;
-
-#if 0
-        rc = PDMDevHlpIOPortRegisterR0(pDevIns, io_base+0x400, 8, 0, "parallelIOPortWriteECP",
-                                       "parallelIOPortReadECP", NULL, NULL, "Parallel Ecp");
-        if (RT_FAILURE(rc))
-            return rc;
-#endif
-    }
 
     rc = PDMDevHlpSSMRegister3(pDevIns, PARALLEL_SAVED_STATE_VERSION, sizeof(*pThis),
                                parallelR3LiveExec, parallelR3SaveExec, parallelR3LoadExec);
@@ -794,7 +758,28 @@ static DECLCALLBACK(int) parallelR3Construct(PPDMDEVINS pDevIns, int iInstance, 
     return VINF_SUCCESS;
 }
 
-#endif /* IN_RING3 */
+#else  /* !IN_RING3 */
+
+/**
+ * @callback_method_impl{PDMDEVREGR0,pfnConstruct}
+ */
+static DECLCALLBACK(int) parallelRZConstruct(PPDMDEVINS pDevIns)
+{
+    PDMDEV_CHECK_VERSIONS_RETURN(pDevIns);
+    PPARALLELPORT pThis = PDMDEVINS_2_DATA(pDevIns, PPARALLELPORT);
+
+    int rc = PDMDevHlpIoPortSetUpContext(pDevIns, pThis->hIoPorts, parallelIoPortWrite, parallelIoPortRead, NULL /*pvUser*/);
+    AssertRCReturn(rc, rc);
+
+# if 0
+    rc = PDMDevHlpIoPortSetUpContext(pDevIns, pThis->hIoPortsEcp, parallelIoPortWriteECP, parallelIoPortReadECP, NULL /*pvUser*/);
+    AssertRCReturn(rc, rc);
+# endif
+
+    return VINF_SUCCESS;
+}
+
+#endif /* !IN_RING3 */
 
 /**
  * The device registration structure.
@@ -841,7 +826,7 @@ const PDMDEVREG g_DeviceParallelPort =
     /* .pfnReserved7 = */           NULL,
 #elif defined(IN_RING0)
     /* .pfnEarlyConstruct = */      NULL,
-    /* .pfnConstruct = */           NULL,
+    /* .pfnConstruct = */           parallelRZConstruct,
     /* .pfnDestruct = */            NULL,
     /* .pfnFinalDestruct = */       NULL,
     /* .pfnRequest = */             NULL,
@@ -854,7 +839,7 @@ const PDMDEVREG g_DeviceParallelPort =
     /* .pfnReserved6 = */           NULL,
     /* .pfnReserved7 = */           NULL,
 #elif defined(IN_RC)
-    /* .pfnConstruct = */           NULL,
+    /* .pfnConstruct = */           parallelRZConstruct,
     /* .pfnReserved0 = */           NULL,
     /* .pfnReserved1 = */           NULL,
     /* .pfnReserved2 = */           NULL,
