@@ -175,10 +175,11 @@ typedef struct VBEHeader
 /** The extra port which is used for debug printf. */
 #define VBE_PRINTF_PORT      0x3b7
 
-/*
+/**
  * This one is for compactly storing a list of mode info blocks
  */
-#pragma pack(1) /* pack(1) is important! (you'll get a byte extra for each of the u8 fields elsewise...) */
+#pragma pack(1) /* pack(1) is important! (you'll get a byte extra for each of the u8 fields elsewise...)
+                 * bird: Load of non-sense. You'll get two extra bytes before MaxPixelClock if you don't pack it.  */
 typedef struct ModeInfoBlockCompact
 {
     /* Mandatory information for all VBE revisions */
