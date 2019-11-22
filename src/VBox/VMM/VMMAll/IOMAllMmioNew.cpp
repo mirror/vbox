@@ -1055,8 +1055,8 @@ PGM_ALL_CB2_DECL(VBOXSTRICTRC) iomMmioHandlerNew(PVMCC pVM, PVMCPUCC pVCpu, RTGC
  * @param   fPageFlags      Page flags to set. Must be (X86_PTE_RW | X86_PTE_P)
  *                          for the time being.
  */
-VMM_INT_DECL(int) IOMMmioMapMmio2Page(PVMCC pVM, PPDMDEVINS pDevIns, IOMMMIOHANDLE hRegion, RTGCPHYS offRegion,
-                                      uint64_t hMmio2, RTGCPHYS offMmio2, uint64_t fPageFlags)
+VMMDECL(int) IOMMmioMapMmio2Page(PVMCC pVM, PPDMDEVINS pDevIns, IOMMMIOHANDLE hRegion, RTGCPHYS offRegion,
+                                 uint64_t hMmio2, RTGCPHYS offMmio2, uint64_t fPageFlags)
 {
     /* Currently only called from the VGA device during MMIO. */
     Log(("IOMMmioMapMmio2Page %#RX64/%RGp -> %#RX64/%RGp flags=%RX64\n", hRegion, offRegion, hMmio2, offMmio2, fPageFlags));
@@ -1108,14 +1108,8 @@ VMM_INT_DECL(int) IOMMmioMapMmio2Page(PVMCC pVM, PPDMDEVINS pDevIns, IOMMMIOHAND
             /*
              * Do the aliasing; page align the addresses since PGM is picky.
              */
-#if 0 /** @todo fix when DevVGA is converted to new model.  */
-            rc = PGMHandlerPhysicalPageAlias(pVM, GCPhys, GCPhys + (offRange & ~(RTGCPHYS)PAGE_OFFSET_MASK),
-                                             pDevIns, hMmio2, offMmio2);
-#else
-            AssertFailed();
-            rc = VERR_NOT_IMPLEMENTED;
-            RT_NOREF(offMmio2, hMmio2);
-#endif
+            rc = PGMHandlerPhysicalPageAliasMmio2(pVM, GCPhys, GCPhys + (offRegion & ~(RTGCPHYS)PAGE_OFFSET_MASK),
+                                                  pDevIns, hMmio2, offMmio2);
         }
         else
             AssertFailedStmt(rc = VERR_IOM_MMIO_REGION_NOT_MAPPED);
@@ -1229,7 +1223,7 @@ VMMR0_INT_DECL(int) IOMR0MmioMapMmioHCPage(PVMCC pVM, PVMCPUCC pVCpu, RTGCPHYS G
  * @param   pDevIns         The device instance @a hRegion is associated with.
  * @param   hRegion         The handle to the MMIO region.
  */
-VMM_INT_DECL(int) IOMMmioResetRegion(PVMCC pVM, PPDMDEVINS pDevIns, IOMMMIOHANDLE hRegion)
+VMMDECL(int) IOMMmioResetRegion(PVMCC pVM, PPDMDEVINS pDevIns, IOMMMIOHANDLE hRegion)
 {
     Log(("IOMMMIOResetRegion %#RX64\n", hRegion));
     AssertReturn(pDevIns, VERR_INVALID_POINTER);

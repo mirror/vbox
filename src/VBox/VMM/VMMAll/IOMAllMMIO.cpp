@@ -812,6 +812,7 @@ PGM_ALL_CB2_DECL(VBOXSTRICTRC) iomMmioHandler(PVMCC pVM, PVMCPUCC pVCpu, RTGCPHY
 }
 
 
+#if 0  /* not used any more */
 /**
  * Mapping an MMIO2 page in place of an MMIO page for direct access.
  *
@@ -883,6 +884,7 @@ VMMDECL(int) IOMMMIOMapMMIO2Page(PVMCC pVM, RTGCPHYS GCPhys, RTGCPHYS GCPhysRema
     Assert(rc == VINF_SUCCESS || rc == VERR_PAGE_NOT_PRESENT || rc == VERR_PAGE_TABLE_NOT_PRESENT);
     return VINF_SUCCESS;
 }
+#endif /* unused */
 
 #if 0  /* not used any more */
 /**
@@ -941,7 +943,7 @@ VMMDECL(int) IOMMMIOMapMMIOHCPage(PVMCC pVM, PVMCPUCC pVCpu, RTGCPHYS GCPhys, RT
 }
 #endif
 
-
+#if 0 /* unused */
 /**
  * Reset a previously modified MMIO region; restore the access flags.
  *
@@ -1002,4 +1004,4 @@ VMMDECL(int) IOMMMIOResetRegion(PVMCC pVM, RTGCPHYS GCPhys)
 # endif
     return rc;
 }
-
+#endif /*unused */

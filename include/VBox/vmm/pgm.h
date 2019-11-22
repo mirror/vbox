@@ -384,7 +384,8 @@ VMMDECL(int)        PGMHandlerPhysicalChangeUserArgs(PVMCC pVM, RTGCPHYS GCPhys,
 VMMDECL(int)        PGMHandlerPhysicalSplit(PVMCC pVM, RTGCPHYS GCPhys, RTGCPHYS GCPhysSplit);
 VMMDECL(int)        PGMHandlerPhysicalJoin(PVMCC pVM, RTGCPHYS GCPhys1, RTGCPHYS GCPhys2);
 VMMDECL(int)        PGMHandlerPhysicalPageTempOff(PVMCC pVM, RTGCPHYS GCPhys, RTGCPHYS GCPhysPage);
-VMMDECL(int)        PGMHandlerPhysicalPageAlias(PVMCC pVM, RTGCPHYS GCPhys, RTGCPHYS GCPhysPage, RTGCPHYS GCPhysPageRemap);
+VMMDECL(int)        PGMHandlerPhysicalPageAliasMmio2(PVMCC pVM, RTGCPHYS GCPhys, RTGCPHYS GCPhysPage,
+                                                     PPDMDEVINS pDevIns, PGMMMIO2HANDLE hMmio2, RTGCPHYS offMMio2PageRemap);
 VMMDECL(int)        PGMHandlerPhysicalPageAliasHC(PVMCC pVM, RTGCPHYS GCPhys, RTGCPHYS GCPhysPage, RTHCPHYS HCPhysPageRemap);
 VMMDECL(int)        PGMHandlerPhysicalReset(PVMCC pVM, RTGCPHYS GCPhys);
 VMMDECL(bool)       PGMHandlerPhysicalIsRegistered(PVMCC pVM, RTGCPHYS GCPhys);

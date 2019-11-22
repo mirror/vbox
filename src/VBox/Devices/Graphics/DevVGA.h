@@ -562,6 +562,9 @@ typedef struct VGAState
         };
     } pendingVhwaCommands;
 
+    /** The MMIO handle of the legacy graphics buffer/regs at 0xa0000-0xbffff. */
+    PGMMMIO2HANDLE              hMmioLegacy;
+
     /** @name I/O ports for range 0x3c0-3cf.
      * @{ */
     IOMIOPORTHANDLE             hIoPortAr;

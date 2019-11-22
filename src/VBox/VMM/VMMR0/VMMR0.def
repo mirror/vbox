@@ -38,8 +38,8 @@ EXPORTS
     PGMPhysSimpleDirtyWriteGCPtr
     PDMR0DeviceRegisterModule
     PDMR0DeviceDeregisterModule
-    IOMMMIOResetRegion
-    IOMMMIOMapMMIO2Page
+    IOMMmioResetRegion
+    IOMMmioMapMmio2Page
     RTLogDefaultInstance
     RTLogDefaultInstanceEx
     RTLogRelGetDefaultInstance

@@ -28,6 +28,9 @@
 #include <VBox/vmm/nem.h>
 #include <VBox/vmm/stam.h>
 #include <VBox/vmm/dbgf.h>
+#ifdef IN_RING0
+# include <VBox/vmm/pdmdev.h>
+#endif
 #include "PGMInternal.h"
 #include <VBox/vmm/vmcc.h>
 #include "PGMInline.h"
@@ -1102,7 +1105,7 @@ VMMDECL(int) PGMHandlerPhysicalJoin(PVMCC pVM, RTGCPHYS GCPhys1, RTGCPHYS GCPhys
  * handler region.
  *
  * This is used in pair with PGMHandlerPhysicalPageTempOff(),
- * PGMHandlerPhysicalPageAlias() or PGMHandlerPhysicalPageAliasHC().
+ * PGMHandlerPhysicalPageAliasMmio2() or PGMHandlerPhysicalPageAliasHC().
  *
  * @returns VBox status code.
  * @param   pVM         The cross context VM structure.
@@ -1282,6 +1285,53 @@ VMMDECL(int)  PGMHandlerPhysicalPageTempOff(PVMCC pVM, RTGCPHYS GCPhys, RTGCPHYS
 
 
 /**
+ * Resolves an MMIO2 page.
+ *
+ * Caller as taken the PGM lock.
+ *
+ * @returns Pointer to the page if valid, NULL otherwise
+ * @param   pVM             The cross context VM structure.
+ * @param   pDevIns         The device owning it.
+ * @param   hMmio2          The MMIO2 region.
+ * @param   offMmio2Page    The offset into the region.
+ */
+static PPGMPAGE pgmPhysResolveMmio2PageLocked(PVMCC pVM, PPDMDEVINS pDevIns, PGMMMIO2HANDLE hMmio2, RTGCPHYS offMmio2Page)
+{
+    /* Only works if the handle is in the handle table! */
+    AssertReturn(hMmio2 != 0, NULL);
+    hMmio2--;
+
+    /* Must check the first one for PGMREGMMIO2RANGE_F_FIRST_CHUNK. */
+    AssertReturn(hMmio2 < RT_ELEMENTS(pVM->pgm.s.apMmio2RangesR3), NULL);
+    PPGMREGMMIO2RANGE pCur = pVM->pgm.s.CTX_SUFF(apMmio2Ranges)[hMmio2];
+    AssertReturn(pCur, NULL);
+    AssertReturn(pCur->fFlags & PGMREGMMIO2RANGE_F_FIRST_CHUNK, NULL);
+
+    /* Loop thru the sub-ranges till we find the one covering offMmio2. */
+    for (;;)
+    {
+        AssertReturn(pCur->fFlags & PGMREGMMIO2RANGE_F_MMIO2, NULL);
+#ifdef IN_RING3
+        AssertReturn(pCur->pDevInsR3 == pDevIns, NULL);
+#else
+        AssertReturn(pCur->pDevInsR3 == pDevIns->pDevInsForR3, NULL);
+#endif
+
+        /* Does it match the offset? */
+        if (offMmio2Page < pCur->cbReal)
+            return &pCur->RamRange.aPages[offMmio2Page >> PAGE_SHIFT];
+
+        /* Advance if we can. */
+        AssertReturn(!(pCur->fFlags & PGMREGMMIO2RANGE_F_LAST_CHUNK), NULL);
+        offMmio2Page -= pCur->cbReal;
+        hMmio2++;
+        AssertReturn(hMmio2 < RT_ELEMENTS(pVM->pgm.s.apMmio2RangesR3), NULL);
+        pCur = pVM->pgm.s.CTX_SUFF(apMmio2Ranges)[hMmio2];
+        AssertReturn(pCur, NULL);
+    }
+}
+
+/**
  * Replaces an MMIO page with an MMIO2 page.
  *
  * This is a worker for IOMMMIOMapMMIO2Page that works in a similar way to
@@ -1308,7 +1358,8 @@ VMMDECL(int)  PGMHandlerPhysicalPageTempOff(PVMCC pVM, RTGCPHYS GCPhys, RTGCPHYS
  *                              messing up other handlers installed for the
  *                              start and end pages.
  * @param   GCPhysPage          The physical address of the page to turn off
- *                              access monitoring for.
+ *                              access monitoring for and replace with the MMIO2
+ *                              page.
  * @param   GCPhysPageRemap     The physical address of the MMIO2 page that
  *                              serves as backing memory.
  *
@@ -1321,10 +1372,24 @@ VMMDECL(int)  PGMHandlerPhysicalPageTempOff(PVMCC pVM, RTGCPHYS GCPhys, RTGCPHYS
  *          of zero page aliasing mentioned in #3170.
  *
  */
-VMMDECL(int)  PGMHandlerPhysicalPageAlias(PVMCC pVM, RTGCPHYS GCPhys, RTGCPHYS GCPhysPage, RTGCPHYS GCPhysPageRemap)
+VMMDECL(int)  PGMHandlerPhysicalPageAliasMmio2(PVMCC pVM, RTGCPHYS GCPhys, RTGCPHYS GCPhysPage,
+                                               PPDMDEVINS pDevIns, PGMMMIO2HANDLE hMmio2, RTGCPHYS offMMio2PageRemap)
 {
-///    Assert(!IOMIsLockOwner(pVM)); /* We mustn't own any other locks when calling this */
     pgmLock(pVM);
+
+    /*
+     * Resolve the MMIO2 reference.
+     */
+    PPGMPAGE pPageRemap = pgmPhysResolveMmio2PageLocked(pVM, pDevIns, hMmio2, offMMio2PageRemap);
+    if (RT_LIKELY(pPageRemap))
+        AssertMsgReturnStmt(PGM_PAGE_GET_TYPE(pPageRemap) == PGMPAGETYPE_MMIO2,
+                            ("hMmio2=%RU64 offMMio2PageRemap=%RGp %R[pgmpage]\n", hMmio2, offMMio2PageRemap, pPageRemap),
+                            pgmUnlock(pVM), VERR_PGM_PHYS_NOT_MMIO2);
+    else
+    {
+        pgmUnlock(pVM);
+        return VERR_OUT_OF_RANGE;
+    }
 
     /*
      * Lookup and validate the range.
@@ -1341,17 +1406,10 @@ VMMDECL(int)  PGMHandlerPhysicalPageAlias(PVMCC pVM, RTGCPHYS GCPhys, RTGCPHYS G
             AssertReturnStmt((pCur->Core.KeyLast & PAGE_OFFSET_MASK) == PAGE_OFFSET_MASK, pgmUnlock(pVM), VERR_INVALID_PARAMETER);
 
             /*
-             * Get and validate the two pages.
+             * Validate the page.
              */
-            PPGMPAGE pPageRemap;
-            int rc = pgmPhysGetPageEx(pVM, GCPhysPageRemap, &pPageRemap);
-            AssertReturnStmt(RT_SUCCESS_NP(rc), pgmUnlock(pVM), rc);
-            AssertMsgReturnStmt(PGM_PAGE_GET_TYPE(pPageRemap) == PGMPAGETYPE_MMIO2,
-                            ("GCPhysPageRemap=%RGp %R[pgmpage]\n", GCPhysPageRemap, pPageRemap),
-                            pgmUnlock(pVM), VERR_PGM_PHYS_NOT_MMIO2);
-
             PPGMPAGE pPage;
-            rc = pgmPhysGetPageEx(pVM, GCPhysPage, &pPage);
+            int rc = pgmPhysGetPageEx(pVM, GCPhysPage, &pPage);
             AssertReturnStmt(RT_SUCCESS_NP(rc), pgmUnlock(pVM), rc);
             if (PGM_PAGE_GET_TYPE(pPage) != PGMPAGETYPE_MMIO)
             {
@@ -1368,7 +1426,7 @@ VMMDECL(int)  PGMHandlerPhysicalPageAlias(PVMCC pVM, RTGCPHYS GCPhys, RTGCPHYS G
                  * The page is already mapped as some other page, reset it
                  * to an MMIO/ZERO page before doing the new mapping.
                  */
-                Log(("PGMHandlerPhysicalPageAlias: GCPhysPage=%RGp (%R[pgmpage]; %RHp -> %RHp\n",
+                Log(("PGMHandlerPhysicalPageAliasMmio2: GCPhysPage=%RGp (%R[pgmpage]; %RHp -> %RHp\n",
                      GCPhysPage, pPage, PGM_PAGE_GET_HCPHYS(pPage), PGM_PAGE_GET_HCPHYS(pPageRemap)));
                 pgmHandlerPhysicalResetAliasedPage(pVM, pPage, GCPhysPage, false /*fDoAccounting*/);
                 pCur->cAliasedPages--;
@@ -1379,8 +1437,8 @@ VMMDECL(int)  PGMHandlerPhysicalPageAlias(PVMCC pVM, RTGCPHYS GCPhys, RTGCPHYS G
              * Do the actual remapping here.
              * This page now serves as an alias for the backing memory specified.
              */
-            LogFlow(("PGMHandlerPhysicalPageAlias: %RGp (%R[pgmpage]) alias for %RGp (%R[pgmpage])\n",
-                     GCPhysPage, pPage, GCPhysPageRemap, pPageRemap ));
+            LogFlow(("PGMHandlerPhysicalPageAliasMmio2: %RGp (%R[pgmpage]) alias for %RU64/%RGp (%R[pgmpage])\n",
+                     GCPhysPage, pPage, hMmio2, offMMio2PageRemap, pPageRemap ));
             PGM_PAGE_SET_HCPHYS(pVM, pPage, PGM_PAGE_GET_HCPHYS(pPageRemap));
             PGM_PAGE_SET_TYPE(pVM, pPage, PGMPAGETYPE_MMIO2_ALIAS_MMIO);
             PGM_PAGE_SET_STATE(pVM, pPage, PGM_PAGE_STATE_ALLOCATED);
@@ -1401,7 +1459,7 @@ VMMDECL(int)  PGMHandlerPhysicalPageAlias(PVMCC pVM, RTGCPHYS GCPhys, RTGCPHYS G
                                            PGMPAGETYPE_MMIO2_ALIAS_MMIO, &u2State);
                 PGM_PAGE_SET_NEM_STATE(pPage, u2State);
             }
-            LogFlow(("PGMHandlerPhysicalPageAlias: => %R[pgmpage]\n", pPage));
+            LogFlow(("PGMHandlerPhysicalPageAliasMmio2: => %R[pgmpage]\n", pPage));
             pgmUnlock(pVM);
             return VINF_SUCCESS;
         }
@@ -1421,12 +1479,12 @@ VMMDECL(int)  PGMHandlerPhysicalPageAlias(PVMCC pVM, RTGCPHYS GCPhys, RTGCPHYS G
 /**
  * Replaces an MMIO page with an arbitrary HC page in the shadow page tables.
  *
- * This differs from PGMHandlerPhysicalPageAlias in that the page doesn't need
- * to be a known MMIO2 page and that only shadow paging may access the page.
- * The latter distinction is important because the only use for this feature is
- * for mapping the special APIC access page that VT-x uses to detect APIC MMIO
- * operations, the page is shared between all guest CPUs and actually not
- * written to. At least at the moment.
+ * This differs from PGMHandlerPhysicalPageAliasMmio2 in that the page doesn't
+ * need to be a known MMIO2 page and that only shadow paging may access the
+ * page. The latter distinction is important because the only use for this
+ * feature is for mapping the special APIC access page that VT-x uses to detect
+ * APIC MMIO operations, the page is shared between all guest CPUs and actually
+ * not written to. At least at the moment.
  *
  * The caller must do required page table modifications. You can get away
  * without making any modifications since it's an MMIO page, the cost is an extra
@@ -1489,7 +1547,7 @@ VMMDECL(int)  PGMHandlerPhysicalPageAliasHC(PVMCC pVM, RTGCPHYS GCPhys, RTGCPHYS
              * This page now serves as an alias for the backing memory
              * specified as far as shadow paging is concerned.
              */
-            LogFlow(("PGMHandlerPhysicalPageAlias: %RGp (%R[pgmpage]) alias for %RHp\n",
+            LogFlow(("PGMHandlerPhysicalPageAliasHC: %RGp (%R[pgmpage]) alias for %RHp\n",
                      GCPhysPage, pPage, HCPhysPageRemap));
             PGM_PAGE_SET_HCPHYS(pVM, pPage, HCPhysPageRemap);
             PGM_PAGE_SET_TYPE(pVM, pPage, PGMPAGETYPE_SPECIAL_ALIAS_MMIO);
