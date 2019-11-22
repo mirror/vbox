@@ -27,6 +27,7 @@
 
 #include <iprt/assert.h>
 #include <iprt/mem.h>
+#include <iprt/path.h>
 
 #include <VBox/vmm/pgm.h> /* required by DevVGA.h */
 #include <VBoxVideo.h> /* required by DevVGA.h */
@@ -1797,10 +1798,40 @@ static DECLCALLBACK(int) vmsvga3dInfoSharedObjectCallback(PAVLU32NODECORE pNode,
 }
 #endif /* VMSVGA3D_DIRECT3D */
 
+#ifndef RT_OS_WINDOWS
+typedef uint16_t WORD;
+typedef uint32_t DWORD;
+typedef int32_t LONG;
+
+#pragma pack(2)
+typedef struct
+{
+    WORD    bfType;
+    DWORD   bfSize;
+    WORD    bfReserved1;
+    WORD    bfReserved2;
+    DWORD   bfOffBits;
+} BITMAPFILEHEADER, *PBITMAPFILEHEADER, *LPBITMAPFILEHEADER;
+
+typedef struct
+{
+    DWORD 	biSize;
+    LONG  	biWidth;
+    LONG  	biHeight;
+    WORD 	biPlanes;
+    WORD 	biBitCount;
+    DWORD 	biCompression;
+    DWORD 	biSizeImage;
+    LONG  	biXPelsPerMeter;
+    LONG  	biYPelsPerMeter;
+    DWORD 	biClrUsed;
+    DWORD 	biClrImportant;
+} BITMAPINFOHEADER, *PBITMAPINFOHEADER, *LPBITMAPINFOHEADER;
+#pragma pack()
+#endif
 
 static int vmsvga3dInfoBmpWrite(const char *pszFilename, const void *pvBits, int w, int h, uint32_t cbPixel, uint32_t u32Mask)
 {
-#ifdef RT_OS_WINDOWS
     if (   cbPixel != 4
         && cbPixel != 2
         && cbPixel != 1)
@@ -1813,6 +1844,7 @@ static int vmsvga3dInfoBmpWrite(const char *pszFilename, const void *pvBits, int
     if (!f)
         return VERR_FILE_NOT_FOUND;
 
+#ifdef RT_OS_WINDOWS
     if (cbPixel == 4)
     {
         BITMAPV4HEADER bh;
@@ -1849,9 +1881,10 @@ static int vmsvga3dInfoBmpWrite(const char *pszFilename, const void *pvBits, int
         fwrite(&bh, 1, sizeof(bh), f);
     }
     else
+#endif
     {
         BITMAPFILEHEADER bf;
-        bf.bfType = 'MB';
+        bf.bfType = 0x4D42; //'MB'
         bf.bfSize = sizeof(BITMAPFILEHEADER) + sizeof(BITMAPINFOHEADER) + cbBitmap;
         bf.bfReserved1 = 0;
         bf.bfReserved2 = 0;
@@ -1913,10 +1946,6 @@ static int vmsvga3dInfoBmpWrite(const char *pszFilename, const void *pvBits, int
     fclose(f);
 
     return VINF_SUCCESS;
-#else /* !RT_OS_WINDOWS */
-    RT_NOREF6(pszFilename, pvBits, w, h, cbPixel, u32Mask);
-    return VERR_NOT_SUPPORTED;
-#endif
 }
 
 void vmsvga3dInfoSurfaceToBitmap(PCDBGFINFOHLP pHlp, PVMSVGA3DSURFACE pSurface,
@@ -1932,7 +1961,7 @@ void vmsvga3dInfoSurfaceToBitmap(PCDBGFINFOHLP pHlp, PVMSVGA3DSURFACE pSurface,
 
         char szFilepath[4096];
         RTStrPrintf(szFilepath, sizeof(szFilepath),
-                    "%s\\%s-%u-sid%u-%u%s.bmp",
+                    "%s" RTPATH_SLASH_STR "%s-%u-sid%u-%u%s.bmp",
                     pszPath, pszNamePrefix, u32Seq, pSurface->id, i, pszNameSuffix);
 
         const uint32_t cbPixel = vmsvga3dSurfaceFormatSize(pSurface->format, NULL, NULL);
