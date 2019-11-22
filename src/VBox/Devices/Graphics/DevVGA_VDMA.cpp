@@ -171,7 +171,7 @@ typedef enum
 typedef struct VBOXVDMAHOST
 {
     PHGSMIINSTANCE pHgsmi; /**< Same as VGASTATE::pHgsmi. */
-    PVGASTATE pVGAState;
+    PVGASTATE pThis;
 } VBOXVDMAHOST, *PVBOXVDMAHOST;
 
 
@@ -185,9 +185,6 @@ typedef enum
 } VBVAEXHOSTCTL_SOURCE;
 
 
-/*********************************************************************************************************************************
-*   Internal Functions                                                                                                           *
-*********************************************************************************************************************************/
 
 
 /**
@@ -195,30 +192,20 @@ typedef enum
  *
  * @returns VBox status code.
  */
-int vboxVDMAConstruct(PVGASTATE pVGAState, uint32_t cPipeElements)
+int vboxVDMAConstruct(PVGASTATE pThis, PVGASTATECC pThisCC, uint32_t cPipeElements)
 {
     RT_NOREF(cPipeElements);
-    int rc;
     PVBOXVDMAHOST pVdma = (PVBOXVDMAHOST)RTMemAllocZ(sizeof(*pVdma));
     Assert(pVdma);
     if (pVdma)
     {
-        pVdma->pHgsmi    = pVGAState->pHGSMI;
-        pVdma->pVGAState = pVGAState;
+        pVdma->pHgsmi = pThisCC->pHGSMI;
+        pVdma->pThis  = pThis;
 
-        rc = VINF_SUCCESS;
-        if (RT_SUCCESS(rc))
-        {
-                        pVGAState->pVdma = pVdma;
-
-                        return VINF_SUCCESS;
-            /* the timer is cleaned up automatically */
-        }
-        RTMemFree(pVdma);
+        pThisCC->pVdma = pVdma;
+        return VINF_SUCCESS;
     }
-    else
-        rc = VERR_OUT_OF_RESOURCES;
-    return rc;
+    return VERR_NO_MEMORY;
 }
 
 /**

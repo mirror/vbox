@@ -146,7 +146,7 @@ static int vmsvga3dLoadReinitContext(PVGASTATE pThis, PVMSVGA3DCONTEXT pContext)
     return VINF_SUCCESS;
 }
 
-int vmsvga3dLoadExec(PPDMDEVINS pDevIns, PVGASTATE pThis, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass)
+int vmsvga3dLoadExec(PPDMDEVINS pDevIns, PVGASTATE pThis, PVGASTATECC pThisCC, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass)
 {
     RT_NOREF(uPass);
     PVMSVGA3DSTATE  pState = pThis->svga.p3dState;
@@ -158,7 +158,7 @@ int vmsvga3dLoadExec(PPDMDEVINS pDevIns, PVGASTATE pThis, PSSMHANDLE pSSM, uint3
 
 #ifndef RT_OS_DARWIN /** @todo r=bird: this is normally done on the EMT, so for DARWIN we do that when loading saved state too now. See DevVGA-SVGA.cpp */
     /* Must initialize now as the recreation calls below rely on an initialized 3d subsystem. */
-    vmsvga3dPowerOn(pThis);
+    vmsvga3dPowerOn(pDevIns, pThis, pThisCC);
 #endif
 
     /* Get the generic 3d state first. */

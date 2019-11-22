@@ -180,11 +180,12 @@ static void RT_CONCAT(vga_draw_glyph9_, DEPTH)(uint8_t *d, int linesize,
 /*
  * 4 color mode
  */
-static void RT_CONCAT(vga_draw_line2_, DEPTH)(VGAState *s1, uint8_t *d,
+static void RT_CONCAT(vga_draw_line2_, DEPTH)(VGAState *s1, PVGASTATER3 pThisCC, uint8_t *d,
                                               const uint8_t *s, int width)
 {
     uint32_t plane_mask, *palette, data, v, src_inc, dwb_mode;
     int x;
+    RT_NOREF(pThisCC);
 
     palette = s1->last_palette;
     plane_mask = mask16[s1->ar[0x12] & 0xf];
@@ -224,11 +225,12 @@ static void RT_CONCAT(vga_draw_line2_, DEPTH)(VGAState *s1, uint8_t *d,
 /*
  * 4 color mode, dup2 horizontal
  */
-static void RT_CONCAT(vga_draw_line2d2_, DEPTH)(VGAState *s1, uint8_t *d,
+static void RT_CONCAT(vga_draw_line2d2_, DEPTH)(VGAState *s1, PVGASTATER3 pThisCC, uint8_t *d,
                                                 const uint8_t *s, int width)
 {
     uint32_t plane_mask, *palette, data, v, src_inc, dwb_mode;
     int x;
+    RT_NOREF(pThisCC);
 
     palette = s1->last_palette;
     plane_mask = mask16[s1->ar[0x12] & 0xf];
@@ -259,18 +261,19 @@ static void RT_CONCAT(vga_draw_line2d2_, DEPTH)(VGAState *s1, uint8_t *d,
 /*
  * 16 color mode
  */
-static void RT_CONCAT(vga_draw_line4_, DEPTH)(VGAState *s1, uint8_t *d,
+static void RT_CONCAT(vga_draw_line4_, DEPTH)(VGAState *s1, PVGASTATER3 pThisCC, uint8_t *d,
                                               const uint8_t *s, int width)
 {
     uint32_t plane_mask, data, v, *palette, vram_ofs;
     int x;
+    RT_NOREF(pThisCC);
 
-    vram_ofs = s - s1->vram_ptrR3;
+    vram_ofs = s - pThisCC->pbVRam;
     palette = s1->last_palette;
     plane_mask = mask16[s1->ar[0x12] & 0xf];
     width >>= 3;
     for(x = 0; x < width; x++) {
-        s = s1->vram_ptrR3 + (vram_ofs & s1->vga_addr_mask);
+        s = pThisCC->pbVRam + (vram_ofs & s1->vga_addr_mask);
         data = ((uint32_t *)s)[0];
         data &= plane_mask;
         v = expand4[GET_PLANE(data, 0)];
@@ -293,11 +296,12 @@ static void RT_CONCAT(vga_draw_line4_, DEPTH)(VGAState *s1, uint8_t *d,
 /*
  * 16 color mode, dup2 horizontal
  */
-static void RT_CONCAT(vga_draw_line4d2_, DEPTH)(VGAState *s1, uint8_t *d,
+static void RT_CONCAT(vga_draw_line4d2_, DEPTH)(VGAState *s1, PVGASTATER3 pThisCC, uint8_t *d,
                                                 const uint8_t *s, int width)
 {
     uint32_t plane_mask, data, v, *palette;
     int x;
+    RT_NOREF(pThisCC);
 
     palette = s1->last_palette;
     plane_mask = mask16[s1->ar[0x12] & 0xf];
@@ -327,11 +331,12 @@ static void RT_CONCAT(vga_draw_line4d2_, DEPTH)(VGAState *s1, uint8_t *d,
  *
  * XXX: add plane_mask support (never used in standard VGA modes)
  */
-static void RT_CONCAT(vga_draw_line8d2_, DEPTH)(VGAState *s1, uint8_t *d,
+static void RT_CONCAT(vga_draw_line8d2_, DEPTH)(VGAState *s1, PVGASTATER3 pThisCC, uint8_t *d,
                                                 const uint8_t *s, int width)
 {
     uint32_t *palette;
     int x;
+    RT_NOREF(pThisCC);
 
     palette = s1->last_palette;
     width >>= 3;
@@ -350,11 +355,12 @@ static void RT_CONCAT(vga_draw_line8d2_, DEPTH)(VGAState *s1, uint8_t *d,
  *
  * XXX: add plane_mask support (never used in standard VGA modes)
  */
-static void RT_CONCAT(vga_draw_line8_, DEPTH)(VGAState *s1, uint8_t *d,
+static void RT_CONCAT(vga_draw_line8_, DEPTH)(VGAState *s1, PVGASTATER3 pThisCC, uint8_t *d,
                                               const uint8_t *s, int width)
 {
     uint32_t *palette;
     int x;
+    RT_NOREF(pThisCC);
 
     palette = s1->last_palette;
     width >>= 3;
@@ -380,9 +386,10 @@ static void RT_CONCAT(vga_draw_line8_, DEPTH)(VGAState *s1, uint8_t *d,
 /*
  * 15 bit color
  */
-static void RT_CONCAT(vga_draw_line15_, DEPTH)(VGAState *s1, uint8_t *d,
+static void RT_CONCAT(vga_draw_line15_, DEPTH)(VGAState *s1, PVGASTATER3 pThisCC, uint8_t *d,
                                                const uint8_t *s, int width)
 {
+    RT_NOREF(s1, pThisCC);
 #if DEPTH == 15 && defined(WORDS_BIGENDIAN) == defined(TARGET_WORDS_BIGENDIAN)
     memcpy(d, s, width * 2);
 #else
@@ -400,15 +407,15 @@ static void RT_CONCAT(vga_draw_line15_, DEPTH)(VGAState *s1, uint8_t *d,
         d += BPP;
     } while (--w != 0);
 #endif
-    NOREF(s1);
 }
 
 /*
  * 16 bit color
  */
-static void RT_CONCAT(vga_draw_line16_, DEPTH)(VGAState *s1, uint8_t *d,
+static void RT_CONCAT(vga_draw_line16_, DEPTH)(VGAState *s1, PVGASTATER3 pThisCC, uint8_t *d,
                                                const uint8_t *s, int width)
 {
+    RT_NOREF(s1, pThisCC);
 #if DEPTH == 16 && defined(WORDS_BIGENDIAN) == defined(TARGET_WORDS_BIGENDIAN)
     memcpy(d, s, width * 2);
 #else
@@ -426,18 +433,17 @@ static void RT_CONCAT(vga_draw_line16_, DEPTH)(VGAState *s1, uint8_t *d,
         d += BPP;
     } while (--w != 0);
 #endif
-    NOREF(s1);
 }
 
 /*
  * 24 bit color
  */
-static void RT_CONCAT(vga_draw_line24_, DEPTH)(VGAState *s1, uint8_t *d,
+static void RT_CONCAT(vga_draw_line24_, DEPTH)(VGAState *s1, PVGASTATER3 pThisCC, uint8_t *d,
                                                const uint8_t *s, int width)
 {
     int w;
     uint32_t r, g, b;
-    NOREF(s1);
+    RT_NOREF(s1, pThisCC);
 
     w = width;
     do {
@@ -459,9 +465,10 @@ static void RT_CONCAT(vga_draw_line24_, DEPTH)(VGAState *s1, uint8_t *d,
 /*
  * 32 bit color
  */
-static void RT_CONCAT(vga_draw_line32_, DEPTH)(VGAState *s1, uint8_t *d,
+static void RT_CONCAT(vga_draw_line32_, DEPTH)(VGAState *s1, PVGASTATER3 pThisCC, uint8_t *d,
                                                const uint8_t *s, int width)
 {
+    RT_NOREF(s1, pThisCC);
 #if DEPTH == 32 && defined(WORDS_BIGENDIAN) == defined(TARGET_WORDS_BIGENDIAN)
     memcpy(d, s, width * 4);
 #else
@@ -484,7 +491,6 @@ static void RT_CONCAT(vga_draw_line32_, DEPTH)(VGAState *s1, uint8_t *d,
         d += BPP;
     } while (--w != 0);
 #endif
-    NOREF(s1);
 }
 
 #if DEPTH != 15

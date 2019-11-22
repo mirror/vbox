@@ -582,17 +582,21 @@ static DECLCALLBACK(bool) vmsvga3dShaderIfGetNextExtension(PVBOXVMSVGASHADERIF p
  * Failure are generally not fatal, 3D support will just be disabled.
  *
  * @returns VBox status code.
- * @param   pThis   The VGA device state where svga.p3dState will be modified.
+ * @param   pDevIns     The device instance.
+ * @param   pThis       The shared VGA/VMSVGA state where svga.p3dState will be
+ *                      modified.
+ * @param   pThisCC     The VGA/VMSVGA state for ring-3.
  */
-int vmsvga3dInit(PVGASTATE pThis)
+int vmsvga3dInit(PPDMDEVINS pDevIns, PVGASTATE pThis, PVGASTATECC pThisCC)
 {
     int rc;
+    RT_NOREF(pThisCC);
 
     AssertCompile(GL_TRUE == 1);
     AssertCompile(GL_FALSE == 0);
 
 #ifdef VMSVGA3D_DYNAMIC_LOAD
-    rc = glLdrInit(pThis->pDevInsR3);
+    rc = glLdrInit(pDevIns);
     if (RT_FAILURE(rc))
     {
         LogRel(("VMSVGA3d: Error loading OpenGL library and resolving necessary functions: %Rrc\n", rc));
@@ -808,7 +812,7 @@ static int vmsvga3dLoadGLFunctions(PVMSVGA3DSTATE pState)
 
 
 /* We must delay window creation until the PowerOn phase. Init is too early and will cause failures. */
-int vmsvga3dPowerOn(PVGASTATE pThis)
+int vmsvga3dPowerOn(PPDMDEVINS pDevIns, PVGASTATE pThis, PVGASTATECC pThisCC)
 {
     PVMSVGA3DSTATE pState = pThis->svga.p3dState;
     AssertReturn(pThis->svga.p3dState, VERR_NO_MEMORY);
@@ -817,6 +821,7 @@ int vmsvga3dPowerOn(PVGASTATE pThis)
     PVMSVGA3DCONTEXT pOtherCtx;
 #endif
     int              rc;
+    RT_NOREF(pDevIns, pThisCC);
 
     if (pState->rsGLVersion != 0.0)
         return VINF_SUCCESS;    /* already initialized (load state) */
@@ -832,7 +837,7 @@ int vmsvga3dPowerOn(PVGASTATE pThis)
 
 #ifdef VMSVGA3D_DYNAMIC_LOAD
     /* Context is set and it is possible now to resolve extension functions. */
-    rc = glLdrGetExtFunctions(pThis->pDevInsR3);
+    rc = glLdrGetExtFunctions(pDevIns);
     if (RT_FAILURE(rc))
     {
         LogRel(("VMSVGA3d: Error resolving extension functions: %Rrc\n", rc));
@@ -2811,7 +2816,8 @@ void vmsvga3dOglRestorePackParams(PVMSVGA3DSTATE pState, PVMSVGA3DCONTEXT pConte
  * Backend worker for implementing SVGA_3D_CMD_SURFACE_DMA that copies one box.
  *
  * @returns Failure status code or @a rc.
- * @param   pThis               The VGA device instance data.
+ * @param   pThis               The shared VGA instance data.
+ * @param   pThisCC             The VGA/VMSVGA state for ring-3.
  * @param   pState              The VMSVGA3d state.
  * @param   pSurface            The host surface.
  * @param   pMipLevel           Mipmap level. The caller knows it already.
@@ -2825,7 +2831,7 @@ void vmsvga3dOglRestorePackParams(PVMSVGA3DSTATE pState, PVMSVGA3DCONTEXT pConte
  * @param   rc                  The current rc for all boxes.
  * @param   iBox                The current box number (for Direct 3D).
  */
-int vmsvga3dBackSurfaceDMACopyBox(PVGASTATE pThis, PVMSVGA3DSTATE pState, PVMSVGA3DSURFACE pSurface,
+int vmsvga3dBackSurfaceDMACopyBox(PVGASTATE pThis, PVGASTATECC pThisCC, PVMSVGA3DSTATE pState, PVMSVGA3DSURFACE pSurface,
                                   PVMSVGA3DMIPMAPLEVEL pMipLevel, uint32_t uHostFace, uint32_t uHostMipmap,
                                   SVGAGuestPtr GuestPtr, uint32_t cbGuestPitch, SVGA3dTransferType transfer,
                                   SVGA3dCopyBox const *pBox, PVMSVGA3DCONTEXT pContext, int rc, int iBox)
@@ -2923,6 +2929,7 @@ int vmsvga3dBackSurfaceDMACopyBox(PVGASTATE pThis, PVMSVGA3DSTATE pState, PVMSVG
         uint32_t const offGst = u32GuestBlockX * pSurface->cbBlock + u32GuestBlockY * cbGuestPitch;
 
         rc = vmsvgaR3GmrTransfer(pThis,
+                                 pThisCC,
                                  transfer,
                                  pDoubleBuffer,
                                  pMipLevel->cbSurface,
@@ -3071,6 +3078,7 @@ int vmsvga3dBackSurfaceDMACopyBox(PVGASTATE pThis, PVMSVGA3DSTATE pState, PVMSVG
                 uint32_t const cbWidth = pBox->w * pSurface->cbBlock;
 
                 rc = vmsvgaR3GmrTransfer(pThis,
+                                         pThisCC,
                                          transfer,
                                          pbData,
                                          pMipLevel->cbSurface,
@@ -3199,7 +3207,7 @@ DECLCALLBACK(int) vmsvga3dXEventThread(RTTHREAD hThreadSelf, void *pvUser)
  * Create a new 3d context
  *
  * @returns VBox status code.
- * @param   pThis           VGA device instance data.
+ * @param   pThis           The shared VGA instance data.
  * @param   cid             Context id
  * @param   fFlags          VMSVGA3D_DEF_CTX_F_XXX.
  */
@@ -3434,7 +3442,7 @@ int vmsvga3dContextDefineOgl(PVGASTATE pThis, uint32_t cid, uint32_t fFlags)
  * Create a new 3d context
  *
  * @returns VBox status code.
- * @param   pThis           VGA device instance data.
+ * @param   pThis           The shared VGA instance data.
  * @param   cid             Context id
  */
 int vmsvga3dContextDefine(PVGASTATE pThis, uint32_t cid)
@@ -3446,7 +3454,7 @@ int vmsvga3dContextDefine(PVGASTATE pThis, uint32_t cid)
  * Destroys a 3d context.
  *
  * @returns VBox status code.
- * @param   pThis           VGA device instance data.
+ * @param   pThis           The shared VGA instance data.
  * @param   pContext        The context to destroy.
  * @param   cid             Context id
  */
@@ -3544,7 +3552,7 @@ static int vmsvga3dContextDestroyOgl(PVGASTATE pThis, PVMSVGA3DCONTEXT pContext,
  * Destroy an existing 3d context
  *
  * @returns VBox status code.
- * @param   pThis           VGA device instance data.
+ * @param   pThis           The shared VGA instance data.
  * @param   cid             Context id
  */
 int vmsvga3dContextDestroy(PVGASTATE pThis, uint32_t cid)
@@ -3566,7 +3574,7 @@ int vmsvga3dContextDestroy(PVGASTATE pThis, uint32_t cid)
 /**
  * Worker for vmsvga3dChangeMode that resizes a context.
  *
- * @param   pThis               The VGA device instance data.
+ * @param   pThis               The shared VGA instance data.
  * @param   pState              The VMSVGA3d state.
  * @param   pContext            The context.
  */

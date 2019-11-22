@@ -358,7 +358,11 @@ typedef struct VMSVGAState
     STAMCOUNTER                 StatRegWriteOnlyRd;
 } VMSVGAState;
 
-typedef struct VGAState *PVGASTATE;
+typedef struct VGAState   *PVGASTATE;
+typedef struct VGASTATER3 *PVGASTATER3;
+typedef struct VGASTATER0 *PVGASTATER0;
+typedef struct VGASTATERC *PVGASTATERC;
+typedef CTX_SUFF(PVGASTATE) PVGASTATECC;
 
 DECLCALLBACK(int) vmsvgaR3PciIORegionFifoMapUnmap(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t iRegion,
                                                   RTGCPHYS GCPhysAddress, RTGCPHYS cb, PCIADDRESSSPACE enmType);
@@ -380,11 +384,11 @@ void vmsvgaR3FifoWatchdogTimer(PPDMDEVINS pDevIns, PVGASTATE pThis);
 
 #ifdef IN_RING3
 VMSVGASCREENOBJECT *vmsvgaR3GetScreenObject(PVGASTATE pThis, uint32_t idScreen);
-int vmsvgaR3UpdateScreen(PVGASTATE pThis, VMSVGASCREENOBJECT *pScreen, int x, int y, int w, int h);
+int vmsvgaR3UpdateScreen(PVGASTATECC pThisCC, VMSVGASCREENOBJECT *pScreen, int x, int y, int w, int h);
 #endif
 
 void vmsvgaR3GmrFree(PVGASTATE pThis, uint32_t idGMR);
-int vmsvgaR3GmrTransfer(PVGASTATE pThis, const SVGA3dTransferType enmTransferType,
+int vmsvgaR3GmrTransfer(PVGASTATE pThis, PVGASTATECC pThisCC, const SVGA3dTransferType enmTransferType,
                         uint8_t *pbHstBuf, uint32_t cbHstBuf, uint32_t offHst, int32_t cbHstPitch,
                         SVGAGuestPtr gstPtr, uint32_t offGst, int32_t cbGstPitch,
                         uint32_t cbWidth, uint32_t cHeight);

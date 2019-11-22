@@ -160,16 +160,16 @@ static VMSVGA3DFORMATSUPPORT const  g_aFeatureReject[] =
 static void vmsvgaDumpD3DCaps(D3DCAPS9 *pCaps, D3DADAPTER_IDENTIFIER9 const *pai9);
 
 
-int vmsvga3dInit(PVGASTATE pThis)
+int vmsvga3dInit(PPDMDEVINS pDevIns, PVGASTATE pThis, PVGASTATECC pThisCC)
 {
-    PVMSVGA3DSTATE pState;
-    int rc;
+    RT_NOREF(pDevIns, pThisCC);
 
+    PVMSVGA3DSTATE pState;
     pThis->svga.p3dState = pState = (PVMSVGA3DSTATE)RTMemAllocZ(sizeof(VMSVGA3DSTATE));
     AssertReturn(pThis->svga.p3dState, VERR_NO_MEMORY);
 
     /* Create event semaphore. */
-    rc = RTSemEventCreate(&pState->WndRequestSem);
+    int rc = RTSemEventCreate(&pState->WndRequestSem);
     if (RT_FAILURE(rc))
     {
         Log(("%s: Failed to create event semaphore for window handling.\n", __FUNCTION__));
@@ -187,11 +187,12 @@ int vmsvga3dInit(PVGASTATE pThis)
     return VINF_SUCCESS;
 }
 
-int vmsvga3dPowerOn(PVGASTATE pThis)
+int vmsvga3dPowerOn(PPDMDEVINS pDevIns, PVGASTATE pThis, PVGASTATECC pThisCC)
 {
     PVMSVGA3DSTATE pState = pThis->svga.p3dState;
     AssertReturn(pThis->svga.p3dState, VERR_NO_MEMORY);
     HRESULT hr;
+    RT_NOREF(pDevIns, pThisCC);
 
     if (pState->pD3D9)
         return VINF_SUCCESS;    /* already initialized (load state) */
@@ -204,7 +205,7 @@ int vmsvga3dPowerOn(PVGASTATE pThis)
     typedef HRESULT (WINAPI *PFNDIRECT3DCREATE9EX)(UINT, IDirect3D9Ex **);
     PFNDIRECT3DCREATE9EX pfnDirect3dCreate9Ex = (PFNDIRECT3DCREATE9EX)RTLdrGetSystemSymbol("d3d9.dll", "Direct3DCreate9Ex");
     if (!pfnDirect3dCreate9Ex)
-        return PDMDevHlpVMSetError(pThis->CTX_SUFF(pDevIns), VERR_SYMBOL_NOT_FOUND, RT_SRC_POS,
+        return PDMDevHlpVMSetError(pDevIns, VERR_SYMBOL_NOT_FOUND, RT_SRC_POS,
                                    "vmsvga3d: Unable to locate Direct3DCreate9Ex. This feature requires Vista and later.");
     hr = pfnDirect3dCreate9Ex(D3D_SDK_VERSION, &pState->pD3D9);
     AssertReturn(hr == D3D_OK, VERR_INTERNAL_ERROR);
@@ -2318,7 +2319,8 @@ int vmsvga3dBackSurfaceStretchBlt(PVGASTATE pThis, PVMSVGA3DSTATE pState,
  * Backend worker for implementing SVGA_3D_CMD_SURFACE_DMA that copies one box.
  *
  * @returns Failure status code or @a rc.
- * @param   pThis               The VGA device instance data.
+ * @param   pThis               The shared VGA instance data.
+ * @param   pThisCC             The VGA/VMSVGA state for ring-3.
  * @param   pState              The VMSVGA3d state.
  * @param   pSurface            The host surface.
  * @param   pMipLevel           Mipmap level. The caller knows it already.
@@ -2332,7 +2334,7 @@ int vmsvga3dBackSurfaceStretchBlt(PVGASTATE pThis, PVMSVGA3DSTATE pState,
  * @param   rc                  The current rc for all boxes.
  * @param   iBox                The current box number (for Direct 3D).
  */
-int vmsvga3dBackSurfaceDMACopyBox(PVGASTATE pThis, PVMSVGA3DSTATE pState, PVMSVGA3DSURFACE pSurface,
+int vmsvga3dBackSurfaceDMACopyBox(PVGASTATE pThis, PVGASTATECC pThisCC, PVMSVGA3DSTATE pState, PVMSVGA3DSURFACE pSurface,
                                   PVMSVGA3DMIPMAPLEVEL pMipLevel, uint32_t uHostFace, uint32_t uHostMipmap,
                                   SVGAGuestPtr GuestPtr, uint32_t cbGuestPitch, SVGA3dTransferType transfer,
                                   SVGA3dCopyBox const *pBox, PVMSVGA3DCONTEXT pContext, int rc, int iBox)
@@ -2413,6 +2415,7 @@ int vmsvga3dBackSurfaceDMACopyBox(PVGASTATE pThis, PVMSVGA3DSTATE pState, PVMSVG
         uint32_t const offLockedBuf = (uint32_t)((uintptr_t)LockedRect.pBits - (uintptr_t)pu8LockedBuf);
 
         rc = vmsvgaR3GmrTransfer(pThis,
+                                 pThisCC,
                                  transfer,
                                  pu8LockedBuf,
                                  cbLockedBuf,
@@ -2480,6 +2483,7 @@ int vmsvga3dBackSurfaceDMACopyBox(PVGASTATE pThis, PVMSVGA3DSTATE pState, PVMSVG
 
         /* Copy data between the guest and the host buffer. */
         rc = vmsvgaR3GmrTransfer(pThis,
+                                 pThisCC,
                                  transfer,
                                  (uint8_t *)pMipLevel->pSurfaceData,
                                  pMipLevel->cbSurface,
@@ -2557,7 +2561,7 @@ int vmsvga3dGenerateMipmaps(PVGASTATE pThis, uint32_t sid, SVGA3dTextureFilter f
  * Create a new 3d context
  *
  * @returns VBox status code.
- * @param   pThis           VGA device instance data.
+ * @param   pThis           The shared VGA instance data.
  * @param   cid             Context id
  */
 int vmsvga3dContextDefine(PVGASTATE pThis, uint32_t cid)
@@ -2655,7 +2659,7 @@ int vmsvga3dContextDefine(PVGASTATE pThis, uint32_t cid)
  * Destroy an existing 3d context
  *
  * @returns VBox status code.
- * @param   pThis           VGA device instance data.
+ * @param   pThis           The shared VGA instance data.
  * @param   cid             Context id
  */
 int vmsvga3dContextDestroy(PVGASTATE pThis, uint32_t cid)
