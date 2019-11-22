@@ -1360,8 +1360,11 @@ static PPGMPAGE pgmPhysResolveMmio2PageLocked(PVMCC pVM, PPDMDEVINS pDevIns, PGM
  * @param   GCPhysPage          The physical address of the page to turn off
  *                              access monitoring for and replace with the MMIO2
  *                              page.
- * @param   GCPhysPageRemap     The physical address of the MMIO2 page that
- *                              serves as backing memory.
+ * @param   pDevIns             The device instance owning @a hMmio2.
+ * @param   hMmio2              Handle to the MMIO2 region containing the page
+ *                              to remap in the the MMIO page at @a GCPhys.
+ * @param   offMmio2PageRemap   The offset into @a hMmio2 of the MMIO2 page that
+ *                              should serve as backing memory.
  *
  * @remark  May cause a page pool flush if used on a page that is already
  *          aliased.
