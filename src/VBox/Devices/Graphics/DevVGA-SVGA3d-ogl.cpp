@@ -2028,6 +2028,142 @@ void vmsvga3dBackSurfaceDestroy(PVMSVGA3DSTATE pState, PVMSVGA3DSURFACE pSurface
 
 int vmsvga3dSurfaceCopy(PVGASTATE pThis, SVGA3dSurfaceImageId dest, SVGA3dSurfaceImageId src, uint32_t cCopyBoxes, SVGA3dCopyBox *pBox)
 {
+    int rc;
+
+    LogFunc(("Copy %d boxes from sid=%u face=%u mipmap=%u to sid=%u face=%u mipmap=%u\n",
+             cCopyBoxes, src.sid, src.face, src.mipmap, dest.sid, dest.face, dest.mipmap));
+
+    PVMSVGA3DSTATE pState = pThis->svga.p3dState;
+    AssertReturn(pState, VERR_INVALID_STATE);
+
+    PVMSVGA3DSURFACE pSurfaceSrc;
+    rc = vmsvga3dSurfaceFromSid(pState, src.sid, &pSurfaceSrc);
+    AssertRCReturn(rc, rc);
+
+    PVMSVGA3DSURFACE pSurfaceDst;
+    rc = vmsvga3dSurfaceFromSid(pState, dest.sid, &pSurfaceDst);
+    AssertRCReturn(rc, rc);
+
+    if (!VMSVGA3DSURFACE_HAS_HW_SURFACE(pSurfaceSrc))
+    {
+        /* The source surface is still in memory. */
+        PVMSVGA3DMIPMAPLEVEL pMipmapLevelSrc;
+        rc = vmsvga3dMipmapLevel(pSurfaceSrc, src.face, src.mipmap, &pMipmapLevelSrc);
+        AssertRCReturn(rc, rc);
+
+        PVMSVGA3DMIPMAPLEVEL pMipmapLevelDst;
+        rc = vmsvga3dMipmapLevel(pSurfaceDst, dest.face, dest.mipmap, &pMipmapLevelDst);
+        AssertRCReturn(rc, rc);
+
+        /* The copy operation is performed on the shared context. */
+        PVMSVGA3DCONTEXT pContext = &pState->SharedCtx;
+        VMSVGA3D_SET_CURRENT_CONTEXT(pState, pContext);
+
+        /* Use glTexSubImage to upload the data to the destination texture.
+         * The latter must be an OpenGL texture.
+         */
+        if (!VMSVGA3DSURFACE_HAS_HW_SURFACE(pSurfaceDst))
+        {
+            LogFunc(("dest sid=%u type=0x%x format=%d -> create texture\n", dest.sid, pSurfaceDst->surfaceFlags, pSurfaceDst->format));
+            rc = vmsvga3dBackCreateTexture(pState, pContext, pContext->id, pSurfaceDst);
+            AssertRCReturn(rc, rc);
+        }
+
+        GLenum target;
+        if (pSurfaceDst->targetGL == GL_TEXTURE_CUBE_MAP)
+            target = vmsvga3dCubemapFaceFromIndex(dest.face);
+        else
+        {
+            AssertMsg(pSurfaceDst->targetGL == GL_TEXTURE_2D, ("Test %#x\n", pSurfaceDst->targetGL));
+            target = pSurfaceDst->targetGL;
+        }
+
+        /* Save the unpacking parameters and set what we need here. */
+        VMSVGAPACKPARAMS SavedParams;
+        vmsvga3dOglSetUnpackParams(pState, pContext,
+                                   pMipmapLevelSrc->mipmapSize.width,
+                                   target == GL_TEXTURE_3D ? pMipmapLevelSrc->mipmapSize.height : 0,
+                                   &SavedParams);
+
+        glBindTexture(pSurfaceDst->targetGL, pSurfaceDst->oglId.texture);
+        VMSVGA3D_CHECK_LAST_ERROR_WARN(pState, pContext);
+
+        for (uint32_t i = 0; i < cCopyBoxes; ++i)
+        {
+            SVGA3dCopyBox clipBox = pBox[i];
+            vmsvgaR3ClipCopyBox(&pMipmapLevelSrc->mipmapSize, &pMipmapLevelDst->mipmapSize, &clipBox);
+            if (   !clipBox.w
+                || !clipBox.h
+                || !clipBox.d)
+            {
+                LogFunc(("Skipped empty box.\n"));
+                continue;
+            }
+
+            LogFunc(("copy box %d,%d,%d %dx%d to %d,%d,%d\n",
+                     clipBox.srcx, clipBox.srcy, clipBox.srcz, clipBox.w, clipBox.h, clipBox.x, clipBox.y, clipBox.z));
+
+            uint32_t const u32BlockX = clipBox.srcx / pSurfaceSrc->cxBlock;
+            uint32_t const u32BlockY = clipBox.srcy / pSurfaceSrc->cyBlock;
+            uint32_t const u32BlockZ = clipBox.srcz;
+            Assert(u32BlockX * pSurfaceSrc->cxBlock == clipBox.srcx);
+            Assert(u32BlockY * pSurfaceSrc->cyBlock == clipBox.srcy);
+
+            uint8_t const *pSrcBits = (uint8_t *)pMipmapLevelSrc->pSurfaceData
+                + pMipmapLevelSrc->cbSurfacePlane * u32BlockZ
+                + pMipmapLevelSrc->cbSurfacePitch * u32BlockY
+                + pSurfaceSrc->cbBlock * u32BlockX;
+
+            if (target == GL_TEXTURE_3D)
+            {
+                if (   pSurfaceDst->internalFormatGL == GL_COMPRESSED_RGBA_S3TC_DXT1_EXT
+                    || pSurfaceDst->internalFormatGL == GL_COMPRESSED_RGBA_S3TC_DXT3_EXT
+                    || pSurfaceDst->internalFormatGL == GL_COMPRESSED_RGBA_S3TC_DXT5_EXT)
+                {
+                    pState->ext.glCompressedTexSubImage3D(target, dest.mipmap,
+                                                          clipBox.x, clipBox.y, clipBox.z,
+                                                          clipBox.w, clipBox.h, clipBox.d,
+                                                          pSurfaceSrc->formatGL, pSurfaceSrc->typeGL, pSrcBits);
+                    VMSVGA3D_CHECK_LAST_ERROR_WARN(pState, pContext);
+                }
+                else
+                {
+                    pState->ext.glTexSubImage3D(target, dest.mipmap,
+                                                clipBox.x, clipBox.y, clipBox.z,
+                                                clipBox.w, clipBox.h, clipBox.d,
+                                                pSurfaceSrc->formatGL, pSurfaceSrc->typeGL, pSrcBits);
+                    VMSVGA3D_CHECK_LAST_ERROR_WARN(pState, pContext);
+                }
+            }
+            else
+            {
+                if (   pSurfaceDst->internalFormatGL == GL_COMPRESSED_RGBA_S3TC_DXT1_EXT
+                    || pSurfaceDst->internalFormatGL == GL_COMPRESSED_RGBA_S3TC_DXT3_EXT
+                    || pSurfaceDst->internalFormatGL == GL_COMPRESSED_RGBA_S3TC_DXT5_EXT)
+                {
+                    pState->ext.glCompressedTexSubImage2D(target, dest.mipmap,
+                                                          clipBox.x, clipBox.y, clipBox.w, clipBox.h,
+                                                          pSurfaceSrc->formatGL, pSurfaceSrc->typeGL, pSrcBits);
+                    VMSVGA3D_CHECK_LAST_ERROR_WARN(pState, pContext);
+                }
+                else
+                {
+                    glTexSubImage2D(target, dest.mipmap,
+                                    clipBox.x, clipBox.y, clipBox.w, clipBox.h,
+                                    pSurfaceSrc->formatGL, pSurfaceSrc->typeGL, pSrcBits);
+                    VMSVGA3D_CHECK_LAST_ERROR_WARN(pState, pContext);
+                }
+            }
+        }
+
+        glBindTexture(pSurfaceDst->targetGL, 0);
+        VMSVGA3D_CHECK_LAST_ERROR_WARN(pState, pContext);
+
+        vmsvga3dOglRestoreUnpackParams(pState, pContext, &SavedParams);
+
+        return VINF_SUCCESS;
+    }
+
     for (uint32_t i = 0; i < cCopyBoxes; i++)
     {
         SVGA3dBox destBox, srcBox;
@@ -2047,7 +2183,7 @@ int vmsvga3dSurfaceCopy(PVGASTATE pThis, SVGA3dSurfaceImageId dest, SVGA3dSurfac
         destBox.d = pBox[i].d;
 
         /* No stretching is required, therefore use SVGA3D_STRETCH_BLT_POINT which translated to GL_NEAREST. */
-        int rc = vmsvga3dSurfaceStretchBlt(pThis, &dest, &destBox, &src, &srcBox, SVGA3D_STRETCH_BLT_POINT);
+        rc = vmsvga3dSurfaceStretchBlt(pThis, &dest, &destBox, &src, &srcBox, SVGA3D_STRETCH_BLT_POINT);
         AssertRCReturn(rc, rc);
     }
     return VINF_SUCCESS;
@@ -2055,15 +2191,15 @@ int vmsvga3dSurfaceCopy(PVGASTATE pThis, SVGA3dSurfaceImageId dest, SVGA3dSurfac
 
 
 /**
- * Save texture unpacking parameters and loads those appropriate for the given
- * surface.
+ * Saves texture unpacking parameters and loads the specified ones.
  *
  * @param   pState              The VMSVGA3D state structure.
  * @param   pContext            The active context.
- * @param   pSurface            The surface.
+ * @param   cxRow               The number of pixels in a row. 0 for the entire width.
+ * @param   cyImage             The height of the image in pixels. 0 for the entire height.
  * @param   pSave               Where to save stuff.
  */
-void vmsvga3dOglSetUnpackParams(PVMSVGA3DSTATE pState, PVMSVGA3DCONTEXT pContext, PVMSVGA3DSURFACE pSurface,
+void vmsvga3dOglSetUnpackParams(PVMSVGA3DSTATE pState, PVMSVGA3DCONTEXT pContext, GLint cxRow, GLint cyImage,
                                 PVMSVGAPACKPARAMS pSave)
 {
     RT_NOREF(pState);
@@ -2075,12 +2211,10 @@ void vmsvga3dOglSetUnpackParams(PVMSVGA3DSTATE pState, PVMSVGA3DCONTEXT pContext
     VMSVGA3D_ASSERT_GL_CALL(glGetIntegerv(GL_UNPACK_ALIGNMENT, &pSave->iAlignment), pState, pContext);
     pSave->cxRow = 0;
     VMSVGA3D_ASSERT_GL_CALL(glGetIntegerv(GL_UNPACK_ROW_LENGTH, &pSave->cxRow), pState, pContext);
+    pSave->cyImage = 0;
+    VMSVGA3D_ASSERT_GL_CALL(glGetIntegerv(GL_UNPACK_IMAGE_HEIGHT, &pSave->cyImage), pState, pContext);
 
 #ifdef VMSVGA3D_PARANOID_TEXTURE_PACKING
-    pSave->cyImage = 0;
-    glGetIntegerv(GL_UNPACK_IMAGE_HEIGHT, &pSave->cyImage);
-    Assert(pSave->cyImage == 0);
-
     pSave->fSwapBytes = GL_FALSE;
     glGetBooleanv(GL_UNPACK_SWAP_BYTES, &pSave->fSwapBytes);
     Assert(pSave->fSwapBytes == GL_FALSE);
@@ -2110,24 +2244,48 @@ void vmsvga3dOglSetUnpackParams(PVMSVGA3DSTATE pState, PVMSVGA3DCONTEXT pContext
      * Note! We use 1 as alignment here because we currently don't do any
      *       aligning of line pitches anywhere.
      */
-    NOREF(pSurface);
+    pSave->fChanged = 0;
     if (pSave->iAlignment != 1)
+    {
         VMSVGA3D_ASSERT_GL_CALL(glPixelStorei(GL_UNPACK_ALIGNMENT, 1), pState, pContext);
-    if (pSave->cxRow != 0)
-        VMSVGA3D_ASSERT_GL_CALL(glPixelStorei(GL_UNPACK_ROW_LENGTH, 0), pState, pContext);
+        pSave->fChanged |= VMSVGAPACKPARAMS_ALIGNMENT;
+    }
+    if (pSave->cxRow != cxRow)
+    {
+        VMSVGA3D_ASSERT_GL_CALL(glPixelStorei(GL_UNPACK_ROW_LENGTH, cxRow), pState, pContext);
+        pSave->fChanged |= VMSVGAPACKPARAMS_ROW_LENGTH;
+    }
+    if (pSave->cyImage != cyImage)
+    {
+        VMSVGA3D_ASSERT_GL_CALL(glPixelStorei(GL_UNPACK_IMAGE_HEIGHT, cyImage), pState, pContext);
+        pSave->fChanged |= VMSVGAPACKPARAMS_IMAGE_HEIGHT;
+    }
 #ifdef VMSVGA3D_PARANOID_TEXTURE_PACKING
-    if (pSave->cyImage != 0)
-        VMSVGA3D_ASSERT_GL_CALL(glPixelStorei(GL_UNPACK_IMAGE_HEIGHT, 0), pState, pContext);
     if (pSave->fSwapBytes != 0)
+    {
         VMSVGA3D_ASSERT_GL_CALL(glPixelStorei(GL_UNPACK_SWAP_BYTES, GL_FALSE), pState, pContext);
+        pSave->fChanged |= VMSVGAPACKPARAMS_SWAP_BYTES;
+    }
     if (pSave->fLsbFirst != 0)
+    {
         VMSVGA3D_ASSERT_GL_CALL(glPixelStorei(GL_UNPACK_LSB_FIRST, GL_FALSE), pState, pContext);
+        pSave->fChanged |= VMSVGAPACKPARAMS_LSB_FIRST;
+    }
     if (pSave->cSkipRows != 0)
+    {
         VMSVGA3D_ASSERT_GL_CALL(glPixelStorei(GL_UNPACK_SKIP_ROWS, 0), pState, pContext);
+        pSave->fChanged |= VMSVGAPACKPARAMS_SKIP_ROWS;
+    }
     if (pSave->cSkipPixels != 0)
+    {
         VMSVGA3D_ASSERT_GL_CALL(glPixelStorei(GL_UNPACK_SKIP_PIXELS, 0), pState, pContext);
+        pSave->fChanged |= VMSVGAPACKPARAMS_SKIP_PIXELS;
+    }
     if (pSave->cSkipImages != 0)
+    {
         VMSVGA3D_ASSERT_GL_CALL(glPixelStorei(GL_UNPACK_SKIP_IMAGES, 0), pState, pContext);
+        pSave->fChanged |= VMSVGAPACKPARAMS_SKIP_IMAGES;
+    }
 #endif
 }
 
@@ -2137,30 +2295,29 @@ void vmsvga3dOglSetUnpackParams(PVMSVGA3DSTATE pState, PVMSVGA3DCONTEXT pContext
  *
  * @param   pState              The VMSVGA3D state structure.
  * @param   pContext            The active context.
- * @param   pSurface            The surface.
  * @param   pSave               Where stuff was saved.
  */
-void vmsvga3dOglRestoreUnpackParams(PVMSVGA3DSTATE pState, PVMSVGA3DCONTEXT pContext, PVMSVGA3DSURFACE pSurface,
+void vmsvga3dOglRestoreUnpackParams(PVMSVGA3DSTATE pState, PVMSVGA3DCONTEXT pContext,
                                     PCVMSVGAPACKPARAMS pSave)
 {
-    RT_NOREF(pState, pSurface);
+    RT_NOREF(pState);
 
-    if (pSave->iAlignment != 1)
+    if (pSave->fChanged & VMSVGAPACKPARAMS_ALIGNMENT)
         VMSVGA3D_ASSERT_GL_CALL(glPixelStorei(GL_UNPACK_ALIGNMENT, pSave->iAlignment), pState, pContext);
-    if (pSave->cxRow != 0)
+    if (pSave->fChanged & VMSVGAPACKPARAMS_ROW_LENGTH)
         VMSVGA3D_ASSERT_GL_CALL(glPixelStorei(GL_UNPACK_ROW_LENGTH, pSave->cxRow), pState, pContext);
-#ifdef VMSVGA3D_PARANOID_TEXTURE_PACKING
-    if (pSave->cyImage != 0)
+    if (pSave->fChanged & VMSVGAPACKPARAMS_IMAGE_HEIGHT)
         VMSVGA3D_ASSERT_GL_CALL(glPixelStorei(GL_UNPACK_IMAGE_HEIGHT, pSave->cyImage), pState, pContext);
-    if (pSave->fSwapBytes != 0)
+#ifdef VMSVGA3D_PARANOID_TEXTURE_PACKING
+    if (pSave->fChanged & VMSVGAPACKPARAMS_SWAP_BYTES)
         VMSVGA3D_ASSERT_GL_CALL(glPixelStorei(GL_UNPACK_SWAP_BYTES, pSave->fSwapBytes), pState, pContext);
-    if (pSave->fLsbFirst != 0)
+    if (pSave->fChanged & VMSVGAPACKPARAMS_LSB_FIRST)
         VMSVGA3D_ASSERT_GL_CALL(glPixelStorei(GL_UNPACK_LSB_FIRST, pSave->fLsbFirst), pState, pContext);
-    if (pSave->cSkipRows != 0)
+    if (pSave->fChanged & VMSVGAPACKPARAMS_SKIP_ROWS)
         VMSVGA3D_ASSERT_GL_CALL(glPixelStorei(GL_UNPACK_SKIP_ROWS, pSave->cSkipRows), pState, pContext);
-    if (pSave->cSkipPixels != 0)
+    if (pSave->fChanged & VMSVGAPACKPARAMS_SKIP_PIXELS)
         VMSVGA3D_ASSERT_GL_CALL(glPixelStorei(GL_UNPACK_SKIP_PIXELS, pSave->cSkipPixels), pState, pContext);
-    if (pSave->cSkipImages != 0)
+    if (pSave->fChanged & VMSVGAPACKPARAMS_SKIP_IMAGES)
         VMSVGA3D_ASSERT_GL_CALL(glPixelStorei(GL_UNPACK_SKIP_IMAGES, pSave->cSkipImages), pState, pContext);
 #endif
 }
@@ -2234,7 +2391,7 @@ int vmsvga3dBackCreateTexture(PVMSVGA3DSTATE pState, PVMSVGA3DCONTEXT pContext, 
 
     /* Set the unpacking parameters. */
     VMSVGAPACKPARAMS SavedParams;
-    vmsvga3dOglSetUnpackParams(pState, pContext, pSurface, &SavedParams);
+    vmsvga3dOglSetUnpackParams(pState, pContext, 0, 0, &SavedParams);
 
     /** @todo Set the mip map generation filter settings. */
 
@@ -2433,7 +2590,7 @@ int vmsvga3dBackCreateTexture(PVMSVGA3DSTATE pState, PVMSVGA3DCONTEXT pContext, 
     pSurface->fDirty = false;
 
     /* Restore unpacking parameters. */
-    vmsvga3dOglRestoreUnpackParams(pState, pContext, pSurface, &SavedParams);
+    vmsvga3dOglRestoreUnpackParams(pState, pContext, &SavedParams);
 
     /* Restore the old active texture. */
     glBindTexture(target, activeTexture);
@@ -2792,8 +2949,9 @@ int vmsvga3dBackSurfaceDMACopyBox(PVGASTATE pThis, PVMSVGA3DSTATE pState, PVMSVG
             LogFunc(("copy texture mipmap level %d (pitch %x)\n", uHostMipmap, pMipLevel->cbSurfacePitch));
 
             /* Set row length and alignment of the input data. */
+            /* We do not need to set ROW_LENGTH to w here, because the image in pDoubleBuffer is tightly packed. */
             VMSVGAPACKPARAMS SavedParams;
-            vmsvga3dOglSetUnpackParams(pState, pContext, pSurface, &SavedParams); /** @todo do we need to set ROW_LENGTH to w here? */
+            vmsvga3dOglSetUnpackParams(pState, pContext, 0, 0, &SavedParams);
 
             if (texImageTarget == GL_TEXTURE_3D)
             {
@@ -2867,7 +3025,7 @@ int vmsvga3dBackSurfaceDMACopyBox(PVGASTATE pThis, PVMSVGA3DSTATE pState, PVMSVG
             VMSVGA3D_CHECK_LAST_ERROR_WARN(pState, pContext);
 
             /* Restore old values. */
-            vmsvga3dOglRestoreUnpackParams(pState, pContext, pSurface, &SavedParams);
+            vmsvga3dOglRestoreUnpackParams(pState, pContext, &SavedParams);
 
             /* Restore the old active texture. */
             glBindTexture(pSurface->targetGL, activeTexture);

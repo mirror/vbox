@@ -1155,15 +1155,28 @@ int vmsvga3dSurfaceFlush(PVMSVGA3DSURFACE pSurface);
 /** Save and setup everything. */
 # define VMSVGA3D_PARANOID_TEXTURE_PACKING
 
+/** @name VMSVGAPACKPARAMS_* - which packing parameters were set.
+ * @{ */
+# define VMSVGAPACKPARAMS_ALIGNMENT    RT_BIT_32(0)
+# define VMSVGAPACKPARAMS_ROW_LENGTH   RT_BIT_32(1)
+# define VMSVGAPACKPARAMS_IMAGE_HEIGHT RT_BIT_32(2)
+# define VMSVGAPACKPARAMS_SWAP_BYTES   RT_BIT_32(3)
+# define VMSVGAPACKPARAMS_LSB_FIRST    RT_BIT_32(4)
+# define VMSVGAPACKPARAMS_SKIP_ROWS    RT_BIT_32(5)
+# define VMSVGAPACKPARAMS_SKIP_PIXELS  RT_BIT_32(6)
+# define VMSVGAPACKPARAMS_SKIP_IMAGES  RT_BIT_32(7)
+/** @} */
+
 /**
  * Saved texture packing parameters (shared by both pack and unpack).
  */
 typedef struct VMSVGAPACKPARAMS
 {
+    uint32_t    fChanged;
     GLint       iAlignment;
     GLint       cxRow;
-# ifdef VMSVGA3D_PARANOID_TEXTURE_PACKING
     GLint       cyImage;
+# ifdef VMSVGA3D_PARANOID_TEXTURE_PACKING
     GLboolean   fSwapBytes;
     GLboolean   fLsbFirst;
     GLint       cSkipRows;
@@ -1180,9 +1193,9 @@ void vmsvga3dOglSetPackParams(PVMSVGA3DSTATE pState, PVMSVGA3DCONTEXT pContext, 
                               PVMSVGAPACKPARAMS pSave);
 void vmsvga3dOglRestorePackParams(PVMSVGA3DSTATE pState, PVMSVGA3DCONTEXT pContext, PVMSVGA3DSURFACE pSurface,
                                PCVMSVGAPACKPARAMS pSave);
-void vmsvga3dOglSetUnpackParams(PVMSVGA3DSTATE pState, PVMSVGA3DCONTEXT pContext, PVMSVGA3DSURFACE pSurface,
+void vmsvga3dOglSetUnpackParams(PVMSVGA3DSTATE pState, PVMSVGA3DCONTEXT pContext, GLint cxRow, GLint cyImage,
                                 PVMSVGAPACKPARAMS pSave);
-void vmsvga3dOglRestoreUnpackParams(PVMSVGA3DSTATE pState, PVMSVGA3DCONTEXT pContext, PVMSVGA3DSURFACE pSurface,
+void vmsvga3dOglRestoreUnpackParams(PVMSVGA3DSTATE pState, PVMSVGA3DCONTEXT pContext,
                                     PCVMSVGAPACKPARAMS pSave);
 
 /** @name VMSVGA3D_DEF_CTX_F_XXX - vmsvga3dContextDefineOgl flags.
