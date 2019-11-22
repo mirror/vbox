@@ -568,7 +568,7 @@ typedef struct VMSVGA3DSURFACE
     SVGA3dSurfaceFace       faces[SVGA3D_MAX_SURFACE_FACES];
     uint32_t                cFaces;
     uint32_t                cMipmapLevels;
-    PVMSVGA3DMIPMAPLEVEL    pMipmapLevels;
+    PVMSVGA3DMIPMAPLEVEL    paMipmapLevels;
     uint32_t                multiSampleCount;
     SVGA3dTextureFilter     autogenFilter;
 #ifdef VMSVGA3D_DIRECT3D
@@ -646,7 +646,7 @@ static SSMFIELD const g_aVMSVGA3DSURFACEFields[] =
 # endif
     SSMFIELD_ENTRY(                 VMSVGA3DSURFACE, faces),
     SSMFIELD_ENTRY(                 VMSVGA3DSURFACE, cFaces),
-    SSMFIELD_ENTRY_IGN_HCPTR(       VMSVGA3DSURFACE, pMipmapLevels),
+    SSMFIELD_ENTRY_IGN_HCPTR(       VMSVGA3DSURFACE, paMipmapLevels),
     SSMFIELD_ENTRY(                 VMSVGA3DSURFACE, multiSampleCount),
     SSMFIELD_ENTRY(                 VMSVGA3DSURFACE, autogenFilter),
 # ifdef VMSVGA3D_DIRECT3D
@@ -1261,7 +1261,7 @@ DECLINLINE(int) vmsvga3dMipmapLevel(PVMSVGA3DSURFACE pSurface, uint32_t face, ui
                     ("numMipLevels %d, mipmap %d", numMipLevels, mipmap),
                     VERR_INVALID_PARAMETER);
 
-    *ppMipmapLevel = &pSurface->pMipmapLevels[face * numMipLevels + mipmap];
+    *ppMipmapLevel = &pSurface->paMipmapLevels[face * numMipLevels + mipmap];
     return VINF_SUCCESS;
 }
 

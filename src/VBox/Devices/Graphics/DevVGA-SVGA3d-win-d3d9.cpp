@@ -1020,8 +1020,8 @@ HRESULT D3D9Conversion::ConvertTexture(PVMSVGA3DCONTEXT pContext,
         hr = initConversion();
         if (hr == D3D_OK)
         {
-            uint32_t const cWidth = pSurface->pMipmapLevels[0].mipmapSize.width;
-            uint32_t const cHeight = pSurface->pMipmapLevels[0].mipmapSize.height;
+            uint32_t const cWidth = pSurface->paMipmapLevels[0].mipmapSize.width;
+            uint32_t const cHeight = pSurface->paMipmapLevels[0].mipmapSize.height;
 
             hr = setConversionState(pSourceTexture, cWidth, cHeight);
             if (hr == D3D_OK)

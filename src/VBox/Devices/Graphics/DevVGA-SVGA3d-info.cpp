@@ -288,7 +288,7 @@ static int vmsvga3dSurfaceUpdateHeapBuffers(PVMSVGA3DSTATE pState, PVMSVGA3DSURF
         for (uint32_t iFace = 0; iFace < pSurface->cFaces; iFace++)
         {
             Assert(pSurface->faces[iFace].numMipLevels <= pSurface->faces[0].numMipLevels);
-            PVMSVGA3DMIPMAPLEVEL pMipmapLevel = &pSurface->pMipmapLevels[iFace * pSurface->faces[0].numMipLevels];
+            PVMSVGA3DMIPMAPLEVEL pMipmapLevel = &pSurface->paMipmapLevels[iFace * pSurface->faces[0].numMipLevels];
             for (uint32_t i = 0; i < pSurface->faces[iFace].numMipLevels; i++, pMipmapLevel++)
             {
                 if (VMSVGA3DSURFACE_HAS_HW_SURFACE(pSurface))
@@ -1927,7 +1927,7 @@ void vmsvga3dInfoSurfaceToBitmap(PCDBGFINFOHLP pHlp, PVMSVGA3DSURFACE pSurface,
 
     for (uint32_t i = 0; i < pSurface->faces[0].numMipLevels; ++i)
     {
-        if (!pSurface->pMipmapLevels[i].pSurfaceData)
+        if (!pSurface->paMipmapLevels[i].pSurfaceData)
             continue;
 
         char szFilepath[4096];
@@ -1937,9 +1937,9 @@ void vmsvga3dInfoSurfaceToBitmap(PCDBGFINFOHLP pHlp, PVMSVGA3DSURFACE pSurface,
 
         const uint32_t cbPixel = vmsvga3dSurfaceFormatSize(pSurface->format, NULL, NULL);
         int rc = vmsvga3dInfoBmpWrite(szFilepath,
-                                      pSurface->pMipmapLevels[i].pSurfaceData,
-                                      pSurface->pMipmapLevels[i].mipmapSize.width,
-                                      pSurface->pMipmapLevels[i].mipmapSize.height,
+                                      pSurface->paMipmapLevels[i].pSurfaceData,
+                                      pSurface->paMipmapLevels[i].mipmapSize.width,
+                                      pSurface->paMipmapLevels[i].mipmapSize.height,
                                       cbPixel, 0xFFFFFFFF);
         if (RT_SUCCESS(rc))
         {
@@ -1961,9 +1961,9 @@ void vmsvga3dInfoSurfaceToBitmap(PCDBGFINFOHLP pHlp, PVMSVGA3DSURFACE pSurface,
                 "%s\\%s-%u-sid%u%s-a.bmp",
                 pszPath, pszNamePrefix, u32Seq, pSurface->id, pszNameSuffix);
     vmsvga3dInfoBmpWrite(szFilepath,
-                         pSurface->pMipmapLevels[0].pSurfaceData,
-                         pSurface->pMipmapLevels[0].mipmapSize.width,
-                         pSurface->pMipmapLevels[0].mipmapSize.height,
+                         pSurface->paMipmapLevels[0].pSurfaceData,
+                         pSurface->paMipmapLevels[0].mipmapSize.width,
+                         pSurface->paMipmapLevels[0].mipmapSize.height,
                          cbPixel, 0xFF000000);
 #endif
 }
@@ -1997,14 +1997,14 @@ static void vmsvga3dInfoSurfaceWorkerOne(PCDBGFINFOHLP pHlp, PVMSVGA3DSURFACE pS
         {
             pHlp->pfnPrintf(pHlp, "Face #%u, mipmap #%u[%u]:%s  cx=%u, cy=%u, cz=%u, cbSurface=%#x, cbPitch=%#x",
                             iFace, iLevel, iMipmap, iMipmap < 10 ? " " : "",
-                            pSurface->pMipmapLevels[iMipmap].mipmapSize.width,
-                            pSurface->pMipmapLevels[iMipmap].mipmapSize.height,
-                            pSurface->pMipmapLevels[iMipmap].mipmapSize.depth,
-                            pSurface->pMipmapLevels[iMipmap].cbSurface,
-                            pSurface->pMipmapLevels[iMipmap].cbSurfacePitch);
-            if (pSurface->pMipmapLevels[iMipmap].pSurfaceData)
-                pHlp->pfnPrintf(pHlp, " pvData=%p", pSurface->pMipmapLevels[iMipmap].pSurfaceData);
-            if (pSurface->pMipmapLevels[iMipmap].fDirty)
+                            pSurface->paMipmapLevels[iMipmap].mipmapSize.width,
+                            pSurface->paMipmapLevels[iMipmap].mipmapSize.height,
+                            pSurface->paMipmapLevels[iMipmap].mipmapSize.depth,
+                            pSurface->paMipmapLevels[iMipmap].cbSurface,
+                            pSurface->paMipmapLevels[iMipmap].cbSurfacePitch);
+            if (pSurface->paMipmapLevels[iMipmap].pSurfaceData)
+                pHlp->pfnPrintf(pHlp, " pvData=%p", pSurface->paMipmapLevels[iMipmap].pSurfaceData);
+            if (pSurface->paMipmapLevels[iMipmap].fDirty)
                 pHlp->pfnPrintf(pHlp, " dirty");
             pHlp->pfnPrintf(pHlp, "\n");
         }
@@ -2047,24 +2047,24 @@ static void vmsvga3dInfoSurfaceWorkerOne(PCDBGFINFOHLP pHlp, PVMSVGA3DSURFACE pS
         {
             uint32_t iMipmap = iFace * pSurface->faces[0].numMipLevels;
             for (uint32_t iLevel = 0; iLevel < pSurface->faces[iFace].numMipLevels; iLevel++, iMipmap++)
-                if (pSurface->pMipmapLevels[iMipmap].pSurfaceData)
+                if (pSurface->paMipmapLevels[iMipmap].pSurfaceData)
                 {
-                    if (ASMMemIsZero(pSurface->pMipmapLevels[iMipmap].pSurfaceData,
-                                     pSurface->pMipmapLevels[iMipmap].cbSurface))
+                    if (ASMMemIsZero(pSurface->paMipmapLevels[iMipmap].pSurfaceData,
+                                     pSurface->paMipmapLevels[iMipmap].cbSurface))
                         pHlp->pfnPrintf(pHlp, "--- Face #%u, mipmap #%u[%u]: all zeros ---\n", iFace, iLevel, iMipmap);
                     else
                     {
                         pHlp->pfnPrintf(pHlp, "--- Face #%u, mipmap #%u[%u]: cx=%u, cy=%u, cz=%u ---\n",
                                         iFace, iLevel, iMipmap,
-                                        pSurface->pMipmapLevels[iMipmap].mipmapSize.width,
-                                        pSurface->pMipmapLevels[iMipmap].mipmapSize.height,
-                                        pSurface->pMipmapLevels[iMipmap].mipmapSize.depth);
+                                        pSurface->paMipmapLevels[iMipmap].mipmapSize.width,
+                                        pSurface->paMipmapLevels[iMipmap].mipmapSize.height,
+                                        pSurface->paMipmapLevels[iMipmap].mipmapSize.depth);
                         vmsvga3dAsciiPrint(vmsvga3dAsciiPrintlnInfo, (void *)pHlp,
-                                           pSurface->pMipmapLevels[iMipmap].pSurfaceData,
-                                           pSurface->pMipmapLevels[iMipmap].cbSurface,
-                                           pSurface->pMipmapLevels[iMipmap].mipmapSize.width,
-                                           pSurface->pMipmapLevels[iMipmap].mipmapSize.height,
-                                           pSurface->pMipmapLevels[iMipmap].cbSurfacePitch,
+                                           pSurface->paMipmapLevels[iMipmap].pSurfaceData,
+                                           pSurface->paMipmapLevels[iMipmap].cbSurface,
+                                           pSurface->paMipmapLevels[iMipmap].mipmapSize.width,
+                                           pSurface->paMipmapLevels[iMipmap].mipmapSize.height,
+                                           pSurface->paMipmapLevels[iMipmap].cbSurfacePitch,
                                            pSurface->format,
                                            fInvY,
                                            cxAscii, cxAscii * 3 / 4);

@@ -1189,9 +1189,9 @@ static PVMSVGA3DSHAREDSURFACE vmsvga3dSurfaceGetSharedCopy(PVMSVGA3DSTATE pState
     PVMSVGA3DSHAREDSURFACE pSharedSurface = (PVMSVGA3DSHAREDSURFACE)RTAvlU32Get(&pSurface->pSharedObjectTree, pContext->id);
     if (!pSharedSurface)
     {
-        const uint32_t cWidth = pSurface->pMipmapLevels[0].mipmapSize.width;
-        const uint32_t cHeight = pSurface->pMipmapLevels[0].mipmapSize.height;
-        const uint32_t cDepth = pSurface->pMipmapLevels[0].mipmapSize.depth;
+        const uint32_t cWidth = pSurface->paMipmapLevels[0].mipmapSize.width;
+        const uint32_t cHeight = pSurface->paMipmapLevels[0].mipmapSize.height;
+        const uint32_t cDepth = pSurface->paMipmapLevels[0].mipmapSize.depth;
         const uint32_t numMipLevels = pSurface->faces[0].numMipLevels;
 
         LogFunc(("Create shared %stexture copy d3d (%d,%d,%d) cMip=%d usage %x format %x.\n",
@@ -1840,9 +1840,9 @@ int vmsvga3dBackCreateTexture(PVMSVGA3DSTATE pState, PVMSVGA3DCONTEXT pContext, 
     Assert(pSurface->bounce.pTexture == NULL);
     Assert(pSurface->enmD3DResType == VMSVGA3D_D3DRESTYPE_NONE);
 
-    const uint32_t cWidth = pSurface->pMipmapLevels[0].mipmapSize.width;
-    const uint32_t cHeight = pSurface->pMipmapLevels[0].mipmapSize.height;
-    const uint32_t cDepth = pSurface->pMipmapLevels[0].mipmapSize.depth;
+    const uint32_t cWidth = pSurface->paMipmapLevels[0].mipmapSize.width;
+    const uint32_t cHeight = pSurface->paMipmapLevels[0].mipmapSize.height;
+    const uint32_t cDepth = pSurface->paMipmapLevels[0].mipmapSize.depth;
     const uint32_t numMipLevels = pSurface->faces[0].numMipLevels;
 
     /*
@@ -2073,7 +2073,7 @@ int vmsvga3dBackCreateTexture(PVMSVGA3DSTATE pState, PVMSVGA3DCONTEXT pContext, 
             hr = pVolumeTexture->LockBox(i, &LockedVolume, NULL, D3DLOCK_DISCARD);
             AssertMsgBreak(hr == D3D_OK, ("LockBox failed with %x\n", hr));
 
-            PVMSVGA3DMIPMAPLEVEL pMipLevel = &pSurface->pMipmapLevels[i];
+            PVMSVGA3DMIPMAPLEVEL pMipLevel = &pSurface->paMipmapLevels[i];
 
             LogFunc(("sync volume texture mipmap level %d (pitch row %x vs %x, slice %x vs %x)\n",
                       i, LockedVolume.RowPitch, pMipLevel->cbSurfacePitch, LockedVolume.SlicePitch, pMipLevel->cbSurfacePlane));
@@ -2121,7 +2121,7 @@ int vmsvga3dBackCreateTexture(PVMSVGA3DSTATE pState, PVMSVGA3DCONTEXT pContext, 
                                             0);
                 AssertMsgBreak(hr == D3D_OK, ("LockRect failed with %x\n", hr));
 
-                PVMSVGA3DMIPMAPLEVEL pMipLevel = &pSurface->pMipmapLevels[iFace * numMipLevels + i];
+                PVMSVGA3DMIPMAPLEVEL pMipLevel = &pSurface->paMipmapLevels[iFace * numMipLevels + i];
 
                 LogFunc(("sync texture face %d mipmap level %d (pitch %x vs %x)\n",
                           iFace, i, LockedRect.Pitch, pMipLevel->cbSurfacePitch));
@@ -2174,22 +2174,22 @@ int vmsvga3dBackCreateTexture(PVMSVGA3DSTATE pState, PVMSVGA3DCONTEXT pContext, 
 
             AssertMsgReturn(hr == D3D_OK, ("vmsvga3dBackCreateTexture: LockRect failed with %x\n", hr), VERR_INTERNAL_ERROR);
 
-            LogFunc(("sync texture mipmap level %d (pitch %x vs %x)\n", i, LockedRect.Pitch, pSurface->pMipmapLevels[i].cbSurfacePitch));
+            LogFunc(("sync texture mipmap level %d (pitch %x vs %x)\n", i, LockedRect.Pitch, pSurface->paMipmapLevels[i].cbSurfacePitch));
 
             uint8_t *pDest = (uint8_t *)LockedRect.pBits;
-            const uint8_t *pSrc = (uint8_t *)pSurface->pMipmapLevels[i].pSurfaceData;
-            for (uint32_t j = 0; j < pSurface->pMipmapLevels[i].cBlocksY; ++j)
+            const uint8_t *pSrc = (uint8_t *)pSurface->paMipmapLevels[i].pSurfaceData;
+            for (uint32_t j = 0; j < pSurface->paMipmapLevels[i].cBlocksY; ++j)
             {
-                memcpy(pDest, pSrc, pSurface->pMipmapLevels[i].cbSurfacePitch);
+                memcpy(pDest, pSrc, pSurface->paMipmapLevels[i].cbSurfacePitch);
 
                 pDest += LockedRect.Pitch;
-                pSrc  += pSurface->pMipmapLevels[i].cbSurfacePitch;
+                pSrc  += pSurface->paMipmapLevels[i].cbSurfacePitch;
             }
 
             hr = pTexture->UnlockRect(i /* texture level */);
             AssertMsgReturn(hr == D3D_OK, ("vmsvga3dBackCreateTexture: UnlockRect failed with %x\n", hr), VERR_INTERNAL_ERROR);
 
-            pSurface->pMipmapLevels[i].fDirty = false;
+            pSurface->paMipmapLevels[i].fDirty = false;
         }
     }
     else
@@ -2209,8 +2209,8 @@ int vmsvga3dBackCreateTexture(PVMSVGA3DSTATE pState, PVMSVGA3DCONTEXT pContext, 
         /* We will now use the bounce texture for all memory accesses, so free our surface memory buffer. */
         for (uint32_t i = 0; i < pSurface->faces[0].numMipLevels; i++)
         {
-            RTMemFree(pSurface->pMipmapLevels[i].pSurfaceData);
-            pSurface->pMipmapLevels[i].pSurfaceData = NULL;
+            RTMemFree(pSurface->paMipmapLevels[i].pSurfaceData);
+            pSurface->paMipmapLevels[i].pSurfaceData = NULL;
         }
 
         /* Track the UpdateTexture operation. */
@@ -2460,7 +2460,7 @@ int vmsvga3dBackSurfaceDMACopyBox(PVGASTATE pThis, PVMSVGA3DSTATE pState, PVMSVG
          * But D3D distinguishes between index and vertex buffer objects.
          * Therefore it should be possible to switch the buffer type on the fly.
          *
-         * Always save the data to the memory buffer in pSurface->pMipmapLevels and,
+         * Always save the data to the memory buffer in pSurface->paMipmapLevels and,
          * if necessary, recreate the corresponding D3D object with the data.
          */
 
@@ -2702,7 +2702,7 @@ int vmsvga3dContextDestroy(PVGASTATE pThis, uint32_t cid)
                     for (uint32_t i = 0; i < pSurface->faces[0].numMipLevels; i++)
                     {
                         uint32_t idx = i + face * pSurface->faces[0].numMipLevels;
-                        memcpy(&pMipLevelSize[idx], &pSurface->pMipmapLevels[idx].mipmapSize, sizeof(SVGA3dSize));
+                        memcpy(&pMipLevelSize[idx], &pSurface->paMipmapLevels[idx].mipmapSize, sizeof(SVGA3dSize));
                     }
                 }
                 memcpy(face, pSurface->faces, sizeof(pSurface->faces));
@@ -2848,7 +2848,7 @@ int vmsvga3dChangeMode(PVGASTATE pThis)
                     /* Reallocate our surface memory buffers. */
                     for (uint32_t i = 0; i < pSurface->cMipLevels; i++)
                     {
-                        PVMSVGA3DMIPMAPLEVEL pMipmapLevel = &pSurface->pMipmapLevels[i];
+                        PVMSVGA3DMIPMAPLEVEL pMipmapLevel = &pSurface->paMipmapLevels[i];
 
                         pMipmapLevel->pSurfaceData   = RTMemAllocZ(pMipmapLevel->cbSurface);
                         AssertReturn(pMipmapLevel->pSurfaceData, VERR_NO_MEMORY);
@@ -3997,8 +3997,8 @@ int vmsvga3dSetRenderTarget(PVGASTATE pThis, uint32_t cid, SVGA3dRenderTargetTyp
                 Assert(!pRenderTarget->u.pSurface);
 
                 LogFunc(("DEPTH/STENCIL; cQualityLevels=%d\n", cQualityLevels));
-                hr = pContext->pDevice->CreateDepthStencilSurface(pRenderTarget->pMipmapLevels[0].mipmapSize.width,
-                                                                  pRenderTarget->pMipmapLevels[0].mipmapSize.height,
+                hr = pContext->pDevice->CreateDepthStencilSurface(pRenderTarget->paMipmapLevels[0].mipmapSize.width,
+                                                                  pRenderTarget->paMipmapLevels[0].mipmapSize.height,
                                                                   pRenderTarget->formatD3D,
                                                                   pRenderTarget->multiSampleTypeD3D,
                                                                   ((cQualityLevels >= 1) ? cQualityLevels - 1 : 0),   /* 0 - (levels-1) */
@@ -4020,7 +4020,7 @@ int vmsvga3dSetRenderTarget(PVGASTATE pThis, uint32_t cid, SVGA3dRenderTargetTyp
 
                 for (uint32_t i = 0; i < pRenderTarget->faces[0].numMipLevels; i++)
                 {
-                    if (pRenderTarget->pMipmapLevels[i].fDirty)
+                    if (pRenderTarget->paMipmapLevels[i].fDirty)
                     {
                         D3DLOCKED_RECT LockedRect;
 
@@ -4030,22 +4030,22 @@ int vmsvga3dSetRenderTarget(PVGASTATE pThis, uint32_t cid, SVGA3dRenderTargetTyp
 
                         AssertMsgReturn(hr == D3D_OK, ("vmsvga3dSetRenderTarget: LockRect failed with %x\n", hr), VERR_INTERNAL_ERROR);
 
-                        Log(("vmsvga3dSetRenderTarget: sync dirty texture mipmap level %d (pitch %x vs %x)\n", i, LockedRect.Pitch, pRenderTarget->pMipmapLevels[i].cbSurfacePitch));
+                        Log(("vmsvga3dSetRenderTarget: sync dirty texture mipmap level %d (pitch %x vs %x)\n", i, LockedRect.Pitch, pRenderTarget->paMipmapLevels[i].cbSurfacePitch));
 
                         uint8_t *pDest = (uint8_t *)LockedRect.pBits;
-                        uint8_t *pSrc  = (uint8_t *)pRenderTarget->pMipmapLevels[i].pSurfaceData;
-                        for (uint32_t j = 0; j < pRenderTarget->pMipmapLevels[i].size.height; j++)
+                        uint8_t *pSrc  = (uint8_t *)pRenderTarget->paMipmapLevels[i].pSurfaceData;
+                        for (uint32_t j = 0; j < pRenderTarget->paMipmapLevels[i].size.height; j++)
                         {
-                            memcpy(pDest, pSrc, pRenderTarget->pMipmapLevels[i].cbSurfacePitch);
+                            memcpy(pDest, pSrc, pRenderTarget->paMipmapLevels[i].cbSurfacePitch);
 
                             pDest += LockedRect.Pitch;
-                            pSrc  += pRenderTarget->pMipmapLevels[i].cbSurfacePitch;
+                            pSrc  += pRenderTarget->paMipmapLevels[i].cbSurfacePitch;
                         }
 
                         hr = pRenderTarget->u.pSurface->UnlockRect();
                         AssertMsgReturn(hr == D3D_OK, ("vmsvga3dSetRenderTarget: UnlockRect failed with %x\n", hr), VERR_INTERNAL_ERROR);
 
-                        pRenderTarget->pMipmapLevels[i].fDirty = false;
+                        pRenderTarget->paMipmapLevels[i].fDirty = false;
                     }
                 }
             }
@@ -4129,10 +4129,10 @@ int vmsvga3dSetRenderTarget(PVGASTATE pThis, uint32_t cid, SVGA3dRenderTargetTyp
 
                 LogFunc(("COLOR; cQualityLevels=%d\n", cQualityLevels));
                 LogFunc(("Create rendertarget (%d,%d) formatD3D=%x multisample=%x\n",
-                         pRenderTarget->pMipmapLevels[0].mipmapSize.width, pRenderTarget->pMipmapLevels[0].mipmapSize.height, pRenderTarget->formatD3D, pRenderTarget->multiSampleTypeD3D));
+                         pRenderTarget->paMipmapLevels[0].mipmapSize.width, pRenderTarget->paMipmapLevels[0].mipmapSize.height, pRenderTarget->formatD3D, pRenderTarget->multiSampleTypeD3D));
 
-                hr = pContext->pDevice->CreateRenderTarget(pRenderTarget->pMipmapLevels[0].mipmapSize.width,
-                                                           pRenderTarget->pMipmapLevels[0].mipmapSize.height,
+                hr = pContext->pDevice->CreateRenderTarget(pRenderTarget->paMipmapLevels[0].mipmapSize.width,
+                                                           pRenderTarget->paMipmapLevels[0].mipmapSize.height,
                                                            pRenderTarget->formatD3D,
                                                            pRenderTarget->multiSampleTypeD3D,
                                                            ((cQualityLevels >= 1) ? cQualityLevels - 1 : 0),   /* 0 - (levels-1) */
@@ -4349,12 +4349,12 @@ int vmsvga3dSetTextureState(PVGASTATE pThis, uint32_t cid, uint32_t cTextureStat
                 rc = vmsvga3dSurfaceFromSid(pState, sid, &pSurface);
                 AssertRCReturn(rc, rc);
 
-                LogFunc(("SVGA3D_TS_BIND_TEXTURE: bind idxSampler=%d, texture sid=%u (%d,%d)\n", idxSampler, sid, pSurface->pMipmapLevels[0].mipmapSize.width, pSurface->pMipmapLevels[0].mipmapSize.height));
+                LogFunc(("SVGA3D_TS_BIND_TEXTURE: bind idxSampler=%d, texture sid=%u (%d,%d)\n", idxSampler, sid, pSurface->paMipmapLevels[0].mipmapSize.width, pSurface->paMipmapLevels[0].mipmapSize.height));
 
                 if (!pSurface->u.pTexture)
                 {
                     Assert(pSurface->idAssociatedContext == SVGA3D_INVALID_ID);
-                    LogFunc(("CreateTexture (%d,%d) level=%d fUsage=%x format=%x\n", pSurface->pMipmapLevels[0].mipmapSize.width, pSurface->pMipmapLevels[0].mipmapSize.height, pSurface->faces[0].numMipLevels, pSurface->fUsageD3D, pSurface->formatD3D));
+                    LogFunc(("CreateTexture (%d,%d) level=%d fUsage=%x format=%x\n", pSurface->paMipmapLevels[0].mipmapSize.width, pSurface->paMipmapLevels[0].mipmapSize.height, pSurface->faces[0].numMipLevels, pSurface->fUsageD3D, pSurface->formatD3D));
                     rc = vmsvga3dBackCreateTexture(pState, pContext, cid, pSurface);
                     AssertRCReturn(rc, rc);
                 }
@@ -4912,7 +4912,7 @@ static int vmsvga3dDrawPrimitivesSyncVertexBuffer(PVMSVGA3DCONTEXT pContext,
         LogFunc(("Create vertex buffer sid=%u fDirty=%d\n", pVertexSurface->id, pVertexSurface->fDirty));
 
         const DWORD Usage = D3DUSAGE_DYNAMIC | D3DUSAGE_WRITEONLY; /* possible severe performance penalty otherwise (according to d3d debug output */
-        hr = pContext->pDevice->CreateVertexBuffer(pVertexSurface->pMipmapLevels[0].cbSurface,
+        hr = pContext->pDevice->CreateVertexBuffer(pVertexSurface->paMipmapLevels[0].cbSurface,
                                                    Usage,
                                                    0, /* non-FVF */
                                                    D3DPOOL_DEFAULT,
@@ -4935,7 +4935,7 @@ static int vmsvga3dDrawPrimitivesSyncVertexBuffer(PVMSVGA3DCONTEXT pContext,
         hr = pVertexSurface->u.pVertexBuffer->Lock(0, 0, &pvData, D3DLOCK_DISCARD);
         AssertMsgReturn(hr == D3D_OK, ("Lock vertex failed with %x\n", hr), VERR_INTERNAL_ERROR);
 
-        memcpy(pvData, pVertexSurface->pMipmapLevels[0].pSurfaceData, pVertexSurface->pMipmapLevels[0].cbSurface);
+        memcpy(pvData, pVertexSurface->paMipmapLevels[0].pSurfaceData, pVertexSurface->paMipmapLevels[0].cbSurface);
 
         hr = pVertexSurface->u.pVertexBuffer->Unlock();
         AssertMsgReturn(hr == D3D_OK, ("Unlock vertex failed with %x\n", hr), VERR_INTERNAL_ERROR);
@@ -4968,7 +4968,7 @@ static int vmsvga3dDrawPrimitivesSyncIndexBuffer(PVMSVGA3DCONTEXT pContext,
 
         const DWORD Usage = D3DUSAGE_DYNAMIC | D3DUSAGE_WRITEONLY; /* possible severe performance penalty otherwise (according to d3d debug output */
         const D3DFORMAT Format = (indexWidth == sizeof(uint16_t)) ? D3DFMT_INDEX16 : D3DFMT_INDEX32;
-        hr = pContext->pDevice->CreateIndexBuffer(pIndexSurface->pMipmapLevels[0].cbSurface,
+        hr = pContext->pDevice->CreateIndexBuffer(pIndexSurface->paMipmapLevels[0].cbSurface,
                                                   Usage,
                                                   Format,
                                                   D3DPOOL_DEFAULT,
@@ -4991,7 +4991,7 @@ static int vmsvga3dDrawPrimitivesSyncIndexBuffer(PVMSVGA3DCONTEXT pContext,
         hr = pIndexSurface->u.pIndexBuffer->Lock(0, 0, &pvData, D3DLOCK_DISCARD);
         AssertMsgReturn(hr == D3D_OK, ("Lock index failed with %x\n", hr), VERR_INTERNAL_ERROR);
 
-        memcpy(pvData, pIndexSurface->pMipmapLevels[0].pSurfaceData, pIndexSurface->pMipmapLevels[0].cbSurface);
+        memcpy(pvData, pIndexSurface->paMipmapLevels[0].pSurfaceData, pIndexSurface->paMipmapLevels[0].cbSurface);
 
         hr = pIndexSurface->u.pIndexBuffer->Unlock();
         AssertMsgReturn(hr == D3D_OK, ("Unlock index failed with %x\n", hr), VERR_INTERNAL_ERROR);
@@ -5256,7 +5256,7 @@ int vmsvga3dDrawPrimitives(PVGASTATE pThis, uint32_t cid, uint32_t numVertexDecl
             {
                 /* Range hint is not provided. */
                 PVMSVGA3DSURFACE pVertexSurface = aVertexSurfaces[0];
-                numVertices =   pVertexSurface->pMipmapLevels[0].cbSurface / strideVertex
+                numVertices =   pVertexSurface->paMipmapLevels[0].cbSurface / strideVertex
                               - pVertexDecl[0].array.offset / strideVertex
                               - pVertexDecl[0].rangeHint.first
                               - pRange[iPrimitive].indexBias;
@@ -5309,7 +5309,7 @@ int vmsvga3dDrawPrimitives(PVGASTATE pThis, uint32_t cid, uint32_t numVertexDecl
         {
             if (aVertexSurfaces[i])
             {
-                aVertexSurfaces[i]->pMipmapLevels[0].fDirty = false;
+                aVertexSurfaces[i]->paMipmapLevels[0].fDirty = false;
                 aVertexSurfaces[i]->fDirty = false;
             }
         }
@@ -5318,7 +5318,7 @@ int vmsvga3dDrawPrimitives(PVGASTATE pThis, uint32_t cid, uint32_t numVertexDecl
         {
             if (aIndexSurfaces[i])
             {
-                aIndexSurfaces[i]->pMipmapLevels[0].fDirty = false;
+                aIndexSurfaces[i]->paMipmapLevels[0].fDirty = false;
                 aIndexSurfaces[i]->fDirty = false;
             }
         }

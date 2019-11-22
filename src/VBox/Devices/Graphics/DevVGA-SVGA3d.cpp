@@ -217,11 +217,11 @@ int vmsvga3dSurfaceDefine(PVGASTATE pThis, uint32_t sid, uint32_t surfaceFlags, 
     Assert(autogenFilter != SVGA3D_TEX_FILTER_FLATCUBIC);
     Assert(autogenFilter != SVGA3D_TEX_FILTER_GAUSSIANCUBIC);
     pSurface->cMipmapLevels     = cMipLevels;
-    pSurface->pMipmapLevels     = (PVMSVGA3DMIPMAPLEVEL)RTMemAllocZ(cMipLevels * sizeof(VMSVGA3DMIPMAPLEVEL));
-    AssertReturn(pSurface->pMipmapLevels, VERR_NO_MEMORY);
+    pSurface->paMipmapLevels    = (PVMSVGA3DMIPMAPLEVEL)RTMemAllocZ(cMipLevels * sizeof(VMSVGA3DMIPMAPLEVEL));
+    AssertReturn(pSurface->paMipmapLevels, VERR_NO_MEMORY);
 
     for (uint32_t i=0; i < cMipLevels; i++)
-        pSurface->pMipmapLevels[i].mipmapSize = paMipLevelSizes[i];
+        pSurface->paMipmapLevels[i].mipmapSize = paMipLevelSizes[i];
 
     pSurface->cbBlock = vmsvga3dSurfaceFormatSize(format, &pSurface->cxBlock, &pSurface->cyBlock);
     AssertReturn(pSurface->cbBlock, VERR_INVALID_PARAMETER);
@@ -267,7 +267,7 @@ int vmsvga3dSurfaceDefine(PVGASTATE pThis, uint32_t sid, uint32_t surfaceFlags, 
     uint32_t cbMemRemaining = SVGA3D_MAX_SURFACE_MEM_SIZE; /* Do not allow more than this for a surface. */
     for (uint32_t i = 0; i < cMipLevels; ++i)
     {
-        PVMSVGA3DMIPMAPLEVEL pMipmapLevel = &pSurface->pMipmapLevels[i];
+        PVMSVGA3DMIPMAPLEVEL pMipmapLevel = &pSurface->paMipmapLevels[i];
         LogFunc(("[%d] face %d mip level %d (%d,%d,%d) cbBlock=0x%x block %dx%d\n",
                  i, i / pSurface->faces[0].numMipLevels, i % pSurface->faces[0].numMipLevels,
                  pMipmapLevel->mipmapSize.width, pMipmapLevel->mipmapSize.height, pMipmapLevel->mipmapSize.depth,
@@ -360,11 +360,11 @@ int vmsvga3dSurfaceDestroy(PVGASTATE pThis, uint32_t sid)
 
     vmsvga3dBackSurfaceDestroy(pState, pSurface);
 
-    if (pSurface->pMipmapLevels)
+    if (pSurface->paMipmapLevels)
     {
         for (uint32_t i = 0; i < pSurface->cMipmapLevels; ++i)
-            RTMemFree(pSurface->pMipmapLevels[i].pSurfaceData);
-        RTMemFree(pSurface->pMipmapLevels);
+            RTMemFree(pSurface->paMipmapLevels[i].pSurfaceData);
+        RTMemFree(pSurface->paMipmapLevels);
     }
 
     memset(pSurface, 0, sizeof(*pSurface));

@@ -446,7 +446,7 @@ int vmsvga3dLoadExec(PPDMDEVINS pDevIns, PVGASTATE pThis, PSSMHANDLE pSSM, uint3
             /* Load the mip map level data. */
             for (uint32_t j = 0; j < pSurface->faces[0].numMipLevels * pSurface->cFaces; j++)
             {
-                PVMSVGA3DMIPMAPLEVEL pMipmapLevel = &pSurface->pMipmapLevels[j];
+                PVMSVGA3DMIPMAPLEVEL pMipmapLevel = &pSurface->paMipmapLevels[j];
                 bool fDataPresent = false;
 
                 /* vmsvga3dSurfaceDefine already allocated the surface data buffer. */
@@ -684,7 +684,7 @@ int vmsvga3dSaveExec(PPDMDEVINS pDevIns, PVGASTATE pThis, PSSMHANDLE pSSM)
                 for (uint32_t i = 0; i < pSurface->faces[0].numMipLevels; i++)
                 {
                     uint32_t idx = i + face * pSurface->faces[0].numMipLevels;
-                    PVMSVGA3DMIPMAPLEVEL pMipmapLevel = &pSurface->pMipmapLevels[idx];
+                    PVMSVGA3DMIPMAPLEVEL pMipmapLevel = &pSurface->paMipmapLevels[idx];
 
                     /* Save a copy of the mip map level struct. */
                     rc = pHlp->pfnSSMPutStructEx(pSSM, pMipmapLevel, sizeof(*pMipmapLevel), 0, g_aVMSVGA3DMIPMAPLEVELFields, NULL);
@@ -698,7 +698,7 @@ int vmsvga3dSaveExec(PPDMDEVINS pDevIns, PVGASTATE pThis, PSSMHANDLE pSSM)
                 for (uint32_t i = 0; i < pSurface->faces[0].numMipLevels; i++)
                 {
                     uint32_t idx = i + face * pSurface->faces[0].numMipLevels;
-                    PVMSVGA3DMIPMAPLEVEL pMipmapLevel = &pSurface->pMipmapLevels[idx];
+                    PVMSVGA3DMIPMAPLEVEL pMipmapLevel = &pSurface->paMipmapLevels[idx];
 
                     Log(("Surface sid=%u: save mipmap level %d with %x bytes data.\n", sid, i, pMipmapLevel->cbSurface));
 

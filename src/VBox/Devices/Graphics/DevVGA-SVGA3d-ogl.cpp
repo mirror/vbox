@@ -96,7 +96,7 @@ static void *MyNSGLGetProcAddress(const char *pszSymbol)
 #endif
 
 /* Invert y-coordinate for OpenGL's bottom left origin. */
-#define D3D_TO_OGL_Y_COORD(ptrSurface, y_coordinate)                (ptrSurface->pMipmapLevels[0].mipmapSize.height - (y_coordinate))
+#define D3D_TO_OGL_Y_COORD(ptrSurface, y_coordinate)                (ptrSurface->paMipmapLevels[0].mipmapSize.height - (y_coordinate))
 #define D3D_TO_OGL_Y_COORD_MIPLEVEL(ptrMipLevel, y_coordinate)      (ptrMipLevel->size.height - (y_coordinate))
 
 /**
@@ -2196,7 +2196,7 @@ int vmsvga3dBackCreateTexture(PVMSVGA3DSTATE pState, PVMSVGA3DCONTEXT pContext, 
     }
     else
     {
-        if (pSurface->pMipmapLevels[0].mipmapSize.depth > 1)
+        if (pSurface->paMipmapLevels[0].mipmapSize.depth > 1)
         {
             binding = GL_TEXTURE_BINDING_3D;
             target = GL_TEXTURE_3D;
@@ -2256,7 +2256,7 @@ int vmsvga3dBackCreateTexture(PVMSVGA3DSTATE pState, PVMSVGA3DCONTEXT pContext, 
              * exposing random host memory to the guest and helps a with the fedora 21 surface
              * corruption issues (launchpad, background, search field, login).
              */
-            PVMSVGA3DMIPMAPLEVEL pMipLevel = &pSurface->pMipmapLevels[i];
+            PVMSVGA3DMIPMAPLEVEL pMipLevel = &pSurface->paMipmapLevels[i];
 
             LogFunc(("sync dirty 3D texture mipmap level %d (pitch %x) (dirty %d)\n",
                      i, pMipLevel->cbSurfacePitch, pMipLevel->fDirty));
@@ -2301,7 +2301,7 @@ int vmsvga3dBackCreateTexture(PVMSVGA3DSTATE pState, PVMSVGA3DCONTEXT pContext, 
 
             for (uint32_t i = 0; i < numMipLevels; ++i)
             {
-                PVMSVGA3DMIPMAPLEVEL pMipLevel = &pSurface->pMipmapLevels[iFace * numMipLevels + i];
+                PVMSVGA3DMIPMAPLEVEL pMipLevel = &pSurface->paMipmapLevels[iFace * numMipLevels + i];
                 Assert(pMipLevel->mipmapSize.width == pMipLevel->mipmapSize.height);
                 Assert(pMipLevel->mipmapSize.depth == 1);
 
@@ -2347,7 +2347,7 @@ int vmsvga3dBackCreateTexture(PVMSVGA3DSTATE pState, PVMSVGA3DCONTEXT pContext, 
              * exposing random host memory to the guest and helps a with the fedora 21 surface
              * corruption issues (launchpad, background, search field, login).
              */
-            PVMSVGA3DMIPMAPLEVEL pMipLevel = &pSurface->pMipmapLevels[i];
+            PVMSVGA3DMIPMAPLEVEL pMipLevel = &pSurface->paMipmapLevels[i];
             Assert(pMipLevel->mipmapSize.depth == 1);
 
             LogFunc(("sync dirty texture mipmap level %d (pitch %x) (dirty %d)\n",
@@ -4640,8 +4640,8 @@ int vmsvga3dSetRenderTarget(PVGASTATE pThis, uint32_t cid, SVGA3dRenderTargetTyp
 
             pState->ext.glRenderbufferStorage(GL_RENDERBUFFER,
                                               pRenderTarget->internalFormatGL,
-                                              pRenderTarget->pMipmapLevels[0].mipmapSize.width,
-                                              pRenderTarget->pMipmapLevels[0].mipmapSize.height);
+                                              pRenderTarget->paMipmapLevels[0].mipmapSize.width,
+                                              pRenderTarget->paMipmapLevels[0].mipmapSize.height);
             VMSVGA3D_CHECK_LAST_ERROR(pState, pContext);
 
             pState->ext.glBindRenderbuffer(GL_RENDERBUFFER, OPENGL_INVALID_ID);
@@ -5014,13 +5014,13 @@ int vmsvga3dSetTextureState(PVGASTATE pThis, uint32_t cid, uint32_t cTextureStat
                     AssertRCReturn(rc, rc);
 
                     Log(("SVGA3D_TS_BIND_TEXTURE: stage %d, texture sid=%u (%d,%d) replacing sid=%u\n",
-                         currentStage, sid, pSurface->pMipmapLevels[0].mipmapSize.width,
-                         pSurface->pMipmapLevels[0].mipmapSize.height, pContext->aSidActiveTextures[currentStage]));
+                         currentStage, sid, pSurface->paMipmapLevels[0].mipmapSize.width,
+                         pSurface->paMipmapLevels[0].mipmapSize.height, pContext->aSidActiveTextures[currentStage]));
 
                     if (pSurface->oglId.texture == OPENGL_INVALID_ID)
                     {
                         Log(("CreateTexture (%d,%d) levels=%d\n",
-                              pSurface->pMipmapLevels[0].mipmapSize.width, pSurface->pMipmapLevels[0].mipmapSize.height, pSurface->faces[0].numMipLevels));
+                              pSurface->paMipmapLevels[0].mipmapSize.width, pSurface->paMipmapLevels[0].mipmapSize.height, pSurface->faces[0].numMipLevels));
                         rc = vmsvga3dBackCreateTexture(pState, pContext, cid, pSurface);
                         AssertRCReturn(rc, rc);
                     }
@@ -5846,7 +5846,7 @@ int vmsvga3dDrawPrimitivesProcessVertexDecls(PVGASTATE pThis, PVMSVGA3DCONTEXT p
     /* Create and/or bind the vertex buffer. */
     if (pVertexSurface->oglId.buffer == OPENGL_INVALID_ID)
     {
-        Log(("vmsvga3dDrawPrimitives: create vertex buffer fDirty=%d size=%x bytes\n", pVertexSurface->fDirty, pVertexSurface->pMipmapLevels[0].cbSurface));
+        Log(("vmsvga3dDrawPrimitives: create vertex buffer fDirty=%d size=%x bytes\n", pVertexSurface->fDirty, pVertexSurface->paMipmapLevels[0].cbSurface));
         PVMSVGA3DCONTEXT pSavedCtx = pContext;
         pContext = &pState->SharedCtx;
         VMSVGA3D_SET_CURRENT_CONTEXT(pState, pContext);
@@ -5860,10 +5860,10 @@ int vmsvga3dDrawPrimitivesProcessVertexDecls(PVGASTATE pThis, PVMSVGA3DCONTEXT p
 
         Assert(pVertexSurface->fDirty);
         /** @todo rethink usage dynamic/static */
-        pState->ext.glBufferData(GL_ARRAY_BUFFER, pVertexSurface->pMipmapLevels[0].cbSurface, pVertexSurface->pMipmapLevels[0].pSurfaceData, GL_DYNAMIC_DRAW);
+        pState->ext.glBufferData(GL_ARRAY_BUFFER, pVertexSurface->paMipmapLevels[0].cbSurface, pVertexSurface->paMipmapLevels[0].pSurfaceData, GL_DYNAMIC_DRAW);
         VMSVGA3D_CHECK_LAST_ERROR(pState, pContext);
 
-        pVertexSurface->pMipmapLevels[0].fDirty = false;
+        pVertexSurface->paMipmapLevels[0].fDirty = false;
         pVertexSurface->fDirty = false;
 
         pVertexSurface->surfaceFlags |= SVGA3D_SURFACE_HINT_VERTEXBUFFER;
@@ -6214,7 +6214,7 @@ int vmsvga3dDrawPrimitives(PVGASTATE pThis, uint32_t cid, uint32_t numVertexDecl
         if (pContext->state.aRenderTargets[SVGA3D_RT_COLOR0] != SVGA_ID_INVALID)
         {
             PVMSVGA3DSURFACE pRenderTarget = pState->papSurfaces[pContext->state.aRenderTargets[SVGA3D_RT_COLOR0]];
-            rtHeight = pRenderTarget->pMipmapLevels[0].mipmapSize.height;
+            rtHeight = pRenderTarget->paMipmapLevels[0].mipmapSize.height;
         }
 
         ShaderUpdateState(pContext->pShaderContext, rtHeight);
@@ -6274,7 +6274,7 @@ int vmsvga3dDrawPrimitives(PVGASTATE pThis, uint32_t cid, uint32_t numVertexDecl
 
             if (pIndexSurface->oglId.buffer == OPENGL_INVALID_ID)
             {
-                Log(("vmsvga3dDrawPrimitives: create index buffer fDirty=%d size=%x bytes\n", pIndexSurface->fDirty, pIndexSurface->pMipmapLevels[0].cbSurface));
+                Log(("vmsvga3dDrawPrimitives: create index buffer fDirty=%d size=%x bytes\n", pIndexSurface->fDirty, pIndexSurface->paMipmapLevels[0].cbSurface));
                 pContext = &pState->SharedCtx;
                 VMSVGA3D_SET_CURRENT_CONTEXT(pState, pContext);
 
@@ -6288,10 +6288,10 @@ int vmsvga3dDrawPrimitives(PVGASTATE pThis, uint32_t cid, uint32_t numVertexDecl
                 Assert(pIndexSurface->fDirty);
 
                 /** @todo rethink usage dynamic/static */
-                pState->ext.glBufferData(GL_ELEMENT_ARRAY_BUFFER, pIndexSurface->pMipmapLevels[0].cbSurface, pIndexSurface->pMipmapLevels[0].pSurfaceData, GL_DYNAMIC_DRAW);
+                pState->ext.glBufferData(GL_ELEMENT_ARRAY_BUFFER, pIndexSurface->paMipmapLevels[0].cbSurface, pIndexSurface->paMipmapLevels[0].pSurfaceData, GL_DYNAMIC_DRAW);
                 VMSVGA3D_CHECK_LAST_ERROR(pState, pContext);
 
-                pIndexSurface->pMipmapLevels[0].fDirty = false;
+                pIndexSurface->paMipmapLevels[0].fDirty = false;
                 pIndexSurface->fDirty = false;
 
                 pIndexSurface->surfaceFlags |= SVGA3D_SURFACE_HINT_INDEXBUFFER;
