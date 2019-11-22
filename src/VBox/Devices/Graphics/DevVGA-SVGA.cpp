@@ -244,7 +244,7 @@ typedef struct VMSVGAR3STATE
 # endif
 
     /** Information obout screens. */
-    VMSVGASCREENOBJECT aScreens[64];
+    VMSVGASCREENOBJECT      aScreens[64];
 
     /** Tracks how much time we waste reading SVGA_REG_BUSY with a busy FIFO. */
     STAMPROFILE             StatBusyDelayEmts;
