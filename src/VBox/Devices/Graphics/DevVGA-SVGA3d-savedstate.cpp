@@ -148,7 +148,7 @@ static int vmsvga3dLoadReinitContext(PVGASTATECC pThisCC, PVMSVGA3DCONTEXT pCont
 
 int vmsvga3dLoadExec(PPDMDEVINS pDevIns, PVGASTATE pThis, PVGASTATECC pThisCC, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass)
 {
-    RT_NOREF(pDevIns, pThisCC, uPass);
+    RT_NOREF(pDevIns, pThis, uPass);
     PVMSVGA3DSTATE  pState = pThisCC->svga.p3dState;
     AssertReturn(pState, VERR_NO_MEMORY);
     PCPDMDEVHLPR3   pHlp = pDevIns->pHlpR3;
