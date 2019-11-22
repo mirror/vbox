@@ -3324,9 +3324,6 @@ vgaR3IOPortHgmsiRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_
                 *pu32 = HGSMIGuestRead(pThis->pHGSMI);
                 break;
             default:
-# ifdef DEBUG_sunlover
-                AssertMsgFailed(("vgaR3IOPortHgmsiRead: Port=%#x cb=%d\n", Port, cb));
-# endif
                 rc = VERR_IOM_IOPORT_UNUSED;
                 break;
         }
