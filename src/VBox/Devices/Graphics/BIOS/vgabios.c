@@ -445,7 +445,7 @@ static void vga_read_pixel(uint8_t page, uint16_t col, uint16_t row, uint16_t ST
         }
         break;
     case CGA:
-        addr = (col >> 2) + (row >> 1) * 80;
+        addr = (col >> (4 - vga_modes[line].pixbits)) + (row >> 1) * 80;
         if (row & 1)
             addr += 0x2000;
         data = read_byte(0xb800, addr);
