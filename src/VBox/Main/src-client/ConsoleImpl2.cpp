@@ -2461,10 +2461,10 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
         InsertConfigNode(pDevices, "virtio-net", &pDevVirtioNet);
 #endif /* VBOX_WITH_VIRTIO */
         std::list<BootNic> llBootNics;
-        for (ULONG ulInstance = 0; ulInstance < maxNetworkAdapters; ++ulInstance)
+        for (ULONG uInstance = 0; uInstance < maxNetworkAdapters; ++uInstance)
         {
             ComPtr<INetworkAdapter> networkAdapter;
-            hrc = pMachine->GetNetworkAdapter(ulInstance, networkAdapter.asOutParam());     H();
+            hrc = pMachine->GetNetworkAdapter(uInstance, networkAdapter.asOutParam());      H();
             BOOL fEnabledNetAdapter = FALSE;
             hrc = networkAdapter->COMGETTER(Enabled)(&fEnabledNetAdapter);                  H();
             if (!fEnabledNetAdapter)
@@ -2498,28 +2498,26 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
                     break;
 #endif /* VBOX_WITH_VIRTIO */
                 default:
-                    AssertMsgFailed(("Invalid network adapter type '%d' for slot '%d'",
-                                    adapterType, ulInstance));
+                    AssertMsgFailed(("Invalid network adapter type '%d' for slot '%d'", adapterType, uInstance));
                     return VMR3SetError(pUVM, VERR_INVALID_PARAMETER, RT_SRC_POS,
-                                        N_("Invalid network adapter type '%d' for slot '%d'"),
-                                        adapterType, ulInstance);
+                                        N_("Invalid network adapter type '%d' for slot '%d'"), adapterType, uInstance);
             }
 
-            InsertConfigNode(pDev, Utf8StrFmt("%u", ulInstance).c_str(), &pInst);
+            InsertConfigNode(pDev, Utf8StrFmt("%u", uInstance).c_str(), &pInst);
             InsertConfigInteger(pInst, "Trusted",              1); /* boolean */
             /* the first network card gets the PCI ID 3, the next 3 gets 8..10,
              * next 4 get 16..19. */
             int iPCIDeviceNo;
-            switch (ulInstance)
+            switch (uInstance)
             {
                 case 0:
                     iPCIDeviceNo = 3;
                     break;
                 case 1: case 2: case 3:
-                    iPCIDeviceNo = ulInstance - 1 + 8;
+                    iPCIDeviceNo = uInstance - 1 + 8;
                     break;
                 case 4: case 5: case 6: case 7:
-                    iPCIDeviceNo = ulInstance - 4 + 16;
+                    iPCIDeviceNo = uInstance - 4 + 16;
                     break;
                 default:
                     /* auto assignment */
@@ -2545,16 +2543,14 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
             InsertConfigNode(pInst, "Config", &pCfg);
 #ifdef VBOX_WITH_2X_4GB_ADDR_SPACE   /* not safe here yet. */ /** @todo Make PCNet ring-0 safe on 32-bit mac kernels! */
             if (pDev == pDevPCNet)
-            {
                 InsertConfigInteger(pCfg, "R0Enabled",    false);
-            }
 #endif
             /*
              * Collect information needed for network booting and add it to the list.
              */
             BootNic     nic;
 
-            nic.mInstance    = ulInstance;
+            nic.mInstance    = uInstance;
             /* Could be updated by reference, if auto assigned */
             nic.mPCIAddress  = PCIAddr;
 
@@ -2635,14 +2631,14 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
             /*
              * Attach the status driver.
              */
-            i_attachStatusDriver(pInst, &mapNetworkLeds[ulInstance], 0, 0, NULL, NULL, 0);
+            i_attachStatusDriver(pInst, &mapNetworkLeds[uInstance], 0, 0, NULL, NULL, 0);
 
             /*
              * Configure the network card now
              */
             bool fIgnoreConnectFailure = mMachineState == MachineState_Restoring;
             rc = i_configNetwork(pszAdapterName,
-                                 ulInstance,
+                                 uInstance,
                                  0,
                                  networkAdapter,
                                  pCfg,
