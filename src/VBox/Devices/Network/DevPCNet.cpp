@@ -315,8 +315,6 @@ typedef struct PCNETSTATE
     PPDMDEVINSR3                        pDevInsR3;
     /** Transmit signaller - R3. */
     R3PTRTYPE(PPDMQUEUE)                pXmitQueueR3;
-    /** Receive signaller - R3. */
-    R3PTRTYPE(PPDMQUEUE)                pCanRxQueueR3;
     /** Pointer to the connector of the attached network driver - R3. */
     PPDMINETWORKUPR3                    pDrvR3;
     /** Pointer to the attached network driver. */
@@ -330,8 +328,6 @@ typedef struct PCNETSTATE
 
     /** Pointer to the device instance - R0. */
     PPDMDEVINSR0                        pDevInsR0;
-    /** Receive signaller - R0. */
-    R0PTRTYPE(PPDMQUEUE)                pCanRxQueueR0;
     /** Transmit signaller - R0. */
     R0PTRTYPE(PPDMQUEUE)                pXmitQueueR0;
     /** Pointer to the connector of the attached network driver - R0. */
@@ -339,12 +335,11 @@ typedef struct PCNETSTATE
 
     /** Pointer to the device instance - RC. */
     PPDMDEVINSRC                        pDevInsRC;
-    /** Receive signaller - RC. */
-    RCPTRTYPE(PPDMQUEUE)                pCanRxQueueRC;
     /** Transmit signaller - RC. */
     RCPTRTYPE(PPDMQUEUE)                pXmitQueueRC;
     /** Pointer to the connector of the attached network driver - RC. */
     PPDMINETWORKUPRC                    pDrvRC;
+    RTRCPTR                             RCPtrAlignment;
 
     /** Software Interrupt timer - R3. */
     TMTIMERHANDLE                       hTimerSoftInt;
@@ -420,7 +415,7 @@ typedef struct PCNETSTATE
     /** Access critical section. */
     PDMCRITSECT                         CritSect;
     /** Event semaphore for blocking on receive. */
-    RTSEMEVENT                          hEventOutOfRxSpace;
+    SUPSEMEVENT                         hEventOutOfRxSpace;
     /** We are waiting/about to start waiting for more receive buffers. */
     bool volatile                       fMaybeOutOfSpace;
     /** True if we signal the guest that RX packets are missing. */
@@ -1632,15 +1627,21 @@ static void pcnetStop(PPDMDEVINS pDevIns, PPCNETSTATE pThis)
     pcnetPollTimer(pDevIns, pThis);
 }
 
-#ifdef IN_RING3
-
-static DECLCALLBACK(void) pcnetWakeupReceive(PPDMDEVINS pDevIns)
+/**
+ * Wakes up a receive thread stuck waiting for buffers.
+ */
+static void pcnetWakeupReceive(PPDMDEVINS pDevIns)
 {
     PPCNETSTATE pThis = PDMDEVINS_2_DATA(pDevIns, PPCNETSTATE);
     STAM_COUNTER_INC(&pThis->StatRxOverflowWakeup);
-    if (pThis->hEventOutOfRxSpace != NIL_RTSEMEVENT)
-        RTSemEventSignal(pThis->hEventOutOfRxSpace);
+    if (pThis->hEventOutOfRxSpace != NIL_SUPSEMEVENT)
+    {
+        int rc = PDMDevHlpSUPSemEventSignal(pDevIns, pThis->hEventOutOfRxSpace);
+        AssertRC(rc);
+    }
 }
+
+#ifdef IN_RING3
 
 static DECLCALLBACK(bool) pcnetCanRxQueueConsumer(PPDMDEVINS pDevIns, PPDMQUEUEITEMCORE pItem)
 {
@@ -1694,15 +1695,7 @@ static void pcnetRdtePoll(PPCNETSTATE pThis, bool fSkipCurrent=false)
                 CSR_CRBC(pThis) = rmd.rmd1.bcnt;               /* Receive Byte Count */
                 CSR_CRST(pThis) = ((uint32_t *)&rmd)[1] >> 16; /* Receive Status */
                 if (pThis->fMaybeOutOfSpace)
-                {
-#ifdef IN_RING3
                     pcnetWakeupReceive(PCNETSTATE_2_DEVINS(pThis));
-#else
-                    PPDMQUEUEITEMCORE pItem = PDMQueueAlloc(pThis->CTX_SUFF(pCanRxQueue));
-                    if (pItem)
-                        PDMQueueInsert(pThis->CTX_SUFF(pCanRxQueue), pItem);
-#endif
-                }
             }
             else
             {
@@ -4744,7 +4737,7 @@ static DECLCALLBACK(int) pcnetNetworkDown_WaitReceiveAvail(PPDMINETWORKDOWN pInt
         pcnetPollTimerStart(pDevIns, pThis);
 #endif
         PDMCritSectLeave(&pThis->CritSect);
-        RTSemEventWait(pThis->hEventOutOfRxSpace, cMillies);
+        PDMDevHlpSUPSemEventWaitNoResume(pDevIns, pThis->hEventOutOfRxSpace, cMillies);
     }
     STAM_PROFILE_STOP(&pThis->StatRxOverflow, a);
     ASMAtomicXchgBool(&pThis->fMaybeOutOfSpace, false);
@@ -5061,7 +5054,6 @@ static DECLCALLBACK(void) pcnetRelocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta)
     PPCNETSTATE pThis = PDMDEVINS_2_DATA(pDevIns, PPCNETSTATE);
     pThis->pDevInsRC     = PDMDEVINS_2_RCPTR(pDevIns);
     pThis->pXmitQueueRC  = PDMQueueRCPtr(pThis->pXmitQueueR3);
-    pThis->pCanRxQueueRC = PDMQueueRCPtr(pThis->pCanRxQueueR3);
 #ifdef PCNET_NO_POLLING
     pThis->pfnEMInterpretInstructionRC += offDelta;
 #endif
@@ -5076,13 +5068,15 @@ static DECLCALLBACK(int) pcnetDestruct(PPDMDEVINS pDevIns)
     PDMDEV_CHECK_VERSIONS_RETURN_QUIET(pDevIns);
     PPCNETSTATE pThis = PDMDEVINS_2_DATA(pDevIns, PPCNETSTATE);
 
-    if (PDMCritSectIsInitialized(&pThis->CritSect))
+    if (pThis->hEventOutOfRxSpace == NIL_SUPSEMEVENT)
     {
-        RTSemEventSignal(pThis->hEventOutOfRxSpace);
-        RTSemEventDestroy(pThis->hEventOutOfRxSpace);
-        pThis->hEventOutOfRxSpace = NIL_RTSEMEVENT;
-        PDMR3CritSectDelete(&pThis->CritSect);
+        PDMDevHlpSUPSemEventSignal(pDevIns, pThis->hEventOutOfRxSpace);
+        PDMDevHlpSUPSemEventClose(pDevIns, pThis->hEventOutOfRxSpace);
+        pThis->hEventOutOfRxSpace = NIL_SUPSEMEVENT;
     }
+
+    if (PDMCritSectIsInitialized(&pThis->CritSect))
+        PDMR3CritSectDelete(&pThis->CritSect);
     return VINF_SUCCESS;
 }
 
@@ -5106,7 +5100,7 @@ static DECLCALLBACK(int) pcnetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     /*
      * Init what's required to make the destructor safe.
      */
-    pThis->hEventOutOfRxSpace = NIL_RTSEMEVENT;
+    pThis->hEventOutOfRxSpace = NIL_SUPSEMEVENT;
 
     /*
      * Validate configuration.
@@ -5252,9 +5246,6 @@ static DECLCALLBACK(int) pcnetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     rc = PDMDevHlpSetDeviceCritSect(pDevIns, &pThis->CritSect);
     AssertRCReturn(rc, rc);
 
-    rc = RTSemEventCreate(&pThis->hEventOutOfRxSpace);
-    AssertRCReturn(rc, rc);
-
     /*
      * Register the PCI device, its I/O regions, the timer and the saved state item.
      */
@@ -5361,13 +5352,10 @@ static DECLCALLBACK(int) pcnetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     pThis->pXmitQueueRC = PDMQueueRCPtr(pThis->pXmitQueueR3);
 
     /*
-     * Create the RX notifier signaller.
+     * Create the RX notifier semaphore.
      */
-    rc = PDMDevHlpQueueCreate(pDevIns, sizeof(PDMQUEUEITEMCORE), 1, 0,
-                              pcnetCanRxQueueConsumer, true, "PCnet-Rcv", &pThis->pCanRxQueueR3);
+    rc = PDMDevHlpSUPSemEventCreate(pDevIns, &pThis->hEventOutOfRxSpace);
     AssertRCReturn(rc, rc);
-    pThis->pCanRxQueueR0 = PDMQueueR0Ptr(pThis->pCanRxQueueR3);
-    pThis->pCanRxQueueRC = PDMQueueRCPtr(pThis->pCanRxQueueR3);
 
     /*
      * Attach status driver (optional).
