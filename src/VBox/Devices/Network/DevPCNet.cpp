@@ -4428,7 +4428,7 @@ static void pcnetSaveConfig(PCPDMDEVHLPR3 pHlp, PPCNETSTATE pThis, PSSMHANDLE pS
 /**
  * @callback_method_impl{FNSSMDEVLIVEEXEC, Pass 0 only.}
  */
-static DECLCALLBACK(int) pcnetLiveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uPass)
+static DECLCALLBACK(int) pcnetR3LiveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uPass)
 {
     RT_NOREF(uPass);
     PPCNETSTATE pThis = PDMDEVINS_2_DATA(pDevIns, PPCNETSTATE);
@@ -4441,7 +4441,7 @@ static DECLCALLBACK(int) pcnetLiveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint
  * @callback_method_impl{FNSSMDEVSAVEPREP,
  *      Serializes the receive thread, it may be working inside the critsect.}
  */
-static DECLCALLBACK(int) pcnetSavePrep(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
+static DECLCALLBACK(int) pcnetR3SavePrep(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 {
     RT_NOREF(pSSM);
     PPCNETSTATE pThis = PDMDEVINS_2_DATA(pDevIns, PPCNETSTATE);
@@ -4457,7 +4457,7 @@ static DECLCALLBACK(int) pcnetSavePrep(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 /**
  * @callback_method_impl{FNSSMDEVSAVEEXEC}
  */
-static DECLCALLBACK(int) pcnetSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
+static DECLCALLBACK(int) pcnetR3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 {
     PPCNETSTATE     pThis = PDMDEVINS_2_DATA(pDevIns, PPCNETSTATE);
     PCPDMDEVHLPR3   pHlp  = pDevIns->pHlpR3;
@@ -4494,7 +4494,7 @@ static DECLCALLBACK(int) pcnetSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
  * @callback_method_impl{FNSSMDEVLOADPREP},
  *      Serializes the receive thread, it may be working inside the critsect.}
  */
-static DECLCALLBACK(int) pcnetLoadPrep(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
+static DECLCALLBACK(int) pcnetR3LoadPrep(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 {
     PPCNETSTATE     pThis = PDMDEVINS_2_DATA(pDevIns, PPCNETSTATE);
     PCPDMDEVHLPR3   pHlp  = pDevIns->pHlpR3;
@@ -4524,7 +4524,7 @@ static DECLCALLBACK(int) pcnetLoadPrep(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 /**
  * @callback_method_impl{FNSSMDEVLOADEXEC}
  */
-static DECLCALLBACK(int) pcnetLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass)
+static DECLCALLBACK(int) pcnetR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass)
 {
     PPCNETSTATE     pThis = PDMDEVINS_2_DATA(pDevIns, PPCNETSTATE);
     PCPDMDEVHLPR3   pHlp  = pDevIns->pHlpR3;
@@ -4628,7 +4628,7 @@ static DECLCALLBACK(int) pcnetLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint
 /**
  * @callback_method_impl{FNSSMDEVLOADDONE}
  */
-static DECLCALLBACK(int) pcnetLoadDone(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
+static DECLCALLBACK(int) pcnetR3LoadDone(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 {
     RT_NOREF(pSSM);
     PPCNETSTATE pThis = PDMDEVINS_2_DATA(pDevIns, PPCNETSTATE);
@@ -4910,7 +4910,7 @@ static DECLCALLBACK(void *) pcnetQueryInterface(struct PDMIBASE *pInterface, con
 /**
  * @interface_method_impl{PDMDEVREG,pfnPowerOff}
  */
-static DECLCALLBACK(void) pcnetPowerOff(PPDMDEVINS pDevIns)
+static DECLCALLBACK(void) pcnetR3PowerOff(PPDMDEVINS pDevIns)
 {
     /* Poke thread waiting for buffer space. */
     pcnetWakeupReceive(pDevIns);
@@ -4922,11 +4922,11 @@ static DECLCALLBACK(void) pcnetPowerOff(PPDMDEVINS pDevIns)
  *
  * One port on the network card has been disconnected from the network.
  */
-static DECLCALLBACK(void) pcnetDetach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t fFlags)
+static DECLCALLBACK(void) pcnetR3Detach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t fFlags)
 {
     RT_NOREF(fFlags);
     PPCNETSTATE pThis = PDMDEVINS_2_DATA(pDevIns, PPCNETSTATE);
-    Log(("#%d pcnetDetach:\n", PCNET_INST_NR));
+    Log(("#%d pcnetR3Detach:\n", PCNET_INST_NR));
 
     AssertLogRelReturnVoid(iLUN == 0);
 
@@ -4952,11 +4952,11 @@ static DECLCALLBACK(void) pcnetDetach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_
  * @interface_method_impl{PDMDEVREG,pfnAttach}
  * One port on the network card has been connected to a network.
  */
-static DECLCALLBACK(int) pcnetAttach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t fFlags)
+static DECLCALLBACK(int) pcnetR3Attach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t fFlags)
 {
     RT_NOREF(fFlags);
     PPCNETSTATE pThis = PDMDEVINS_2_DATA(pDevIns, PPCNETSTATE);
-    LogFlow(("#%d pcnetAttach:\n", PCNET_INST_NR));
+    LogFlow(("#%d pcnetR3Attach:\n", PCNET_INST_NR));
 
     AssertLogRelReturn(iLUN == 0, VERR_PDM_NO_SUCH_LUN);
 
@@ -4999,7 +4999,7 @@ static DECLCALLBACK(int) pcnetAttach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t
 /**
  * @interface_method_impl{PDMDEVREG,pfnSuspend}
  */
-static DECLCALLBACK(void) pcnetSuspend(PPDMDEVINS pDevIns)
+static DECLCALLBACK(void) pcnetR3Suspend(PPDMDEVINS pDevIns)
 {
     /* Poke thread waiting for buffer space. */
     pcnetWakeupReceive(pDevIns);
@@ -5009,7 +5009,7 @@ static DECLCALLBACK(void) pcnetSuspend(PPDMDEVINS pDevIns)
 /**
  * @interface_method_impl{PDMDEVREG,pfnReset}
  */
-static DECLCALLBACK(void) pcnetReset(PPDMDEVINS pDevIns)
+static DECLCALLBACK(void) pcnetR3Reset(PPDMDEVINS pDevIns)
 {
     PPCNETSTATE pThis = PDMDEVINS_2_DATA(pDevIns, PPCNETSTATE);
     if (pThis->fLinkTempDown)
@@ -5027,7 +5027,7 @@ static DECLCALLBACK(void) pcnetReset(PPDMDEVINS pDevIns)
 /**
  * @interface_method_impl{PDMDEVREG,pfnRelocate}
  */
-static DECLCALLBACK(void) pcnetRelocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta)
+static DECLCALLBACK(void) pcnetR3Relocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta)
 {
     RT_NOREF(offDelta);
     PPCNETSTATE pThis = PDMDEVINS_2_DATA(pDevIns, PPCNETSTATE);
@@ -5041,7 +5041,7 @@ static DECLCALLBACK(void) pcnetRelocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta)
 /**
  * @interface_method_impl{PDMDEVREG,pfnDestruct}
  */
-static DECLCALLBACK(int) pcnetDestruct(PPDMDEVINS pDevIns)
+static DECLCALLBACK(int) pcnetR3Destruct(PPDMDEVINS pDevIns)
 {
     PDMDEV_CHECK_VERSIONS_RETURN_QUIET(pDevIns);
     PPCNETSTATE pThis = PDMDEVINS_2_DATA(pDevIns, PPCNETSTATE);
@@ -5062,7 +5062,7 @@ static DECLCALLBACK(int) pcnetDestruct(PPDMDEVINS pDevIns)
 /**
  * @interface_method_impl{PDMDEVREG,pfnConstruct}
  */
-static DECLCALLBACK(int) pcnetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE pCfg)
+static DECLCALLBACK(int) pcnetR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE pCfg)
 {
     PDMDEV_CHECK_VERSIONS_RETURN(pDevIns);
     PPCNETSTATE     pThis = PDMDEVINS_2_DATA(pDevIns, PPCNETSTATE);
@@ -5315,9 +5315,9 @@ static DECLCALLBACK(int) pcnetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     AssertRCReturn(rc, rc);
 
     rc = PDMDevHlpSSMRegisterEx(pDevIns, PCNET_SAVEDSTATE_VERSION, sizeof(*pThis), NULL,
-                                NULL,          pcnetLiveExec, NULL,
-                                pcnetSavePrep, pcnetSaveExec, NULL,
-                                pcnetLoadPrep, pcnetLoadExec, pcnetLoadDone);
+                                NULL,            pcnetR3LiveExec, NULL,
+                                pcnetR3SavePrep, pcnetR3SaveExec, NULL,
+                                pcnetR3LoadPrep, pcnetR3LoadExec, pcnetR3LoadDone);
     AssertRCReturn(rc, rc);
 
     /*
@@ -5456,7 +5456,23 @@ static DECLCALLBACK(int) pcnetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     return VINF_SUCCESS;
 }
 
-#endif /* IN_RING3 */
+#else  /* !IN_RING3 */
+
+/**
+ * @callback_method_impl{PDMDEVREGR0,pfnConstruct}
+ */
+static DECLCALLBACK(int) pcnetRZConstruct(PPDMDEVINS pDevIns)
+{
+    PDMDEV_CHECK_VERSIONS_RETURN(pDevIns);
+    PPCNETSTATE pThis = PDMDEVINS_2_DATA(pDevIns, PPCNETSTATE);
+
+    int rc = PDMDevHlpSetDeviceCritSect(pDevIns, &pThis->CritSect);
+    AssertRCReturn(rc, rc);
+
+    return VINF_SUCCESS;
+}
+
+#endif /* !IN_RING3 */
 
 /**
  * The device registration structure.
@@ -5483,19 +5499,19 @@ const PDMDEVREG g_DevicePCNet =
 #if defined(IN_RING3)
     /* .pszRCMod = */               "VBoxDDRC.rc",
     /* .pszR0Mod = */               "VBoxDDR0.r0",
-    /* .pfnConstruct = */           pcnetConstruct,
-    /* .pfnDestruct = */            pcnetDestruct,
-    /* .pfnRelocate = */            pcnetRelocate,
+    /* .pfnConstruct = */           pcnetR3Construct,
+    /* .pfnDestruct = */            pcnetR3Destruct,
+    /* .pfnRelocate = */            pcnetR3Relocate,
     /* .pfnMemSetup = */            NULL,
     /* .pfnPowerOn = */             NULL,
-    /* .pfnReset = */               pcnetReset,
-    /* .pfnSuspend = */             pcnetSuspend,
+    /* .pfnReset = */               pcnetR3Reset,
+    /* .pfnSuspend = */             pcnetR3Suspend,
     /* .pfnResume = */              NULL,
-    /* .pfnAttach = */              pcnetAttach,
-    /* .pfnDetach = */              pcnetDetach,
+    /* .pfnAttach = */              pcnetR3Attach,
+    /* .pfnDetach = */              pcnetR3Detach,
     /* .pfnQueryInterface = */      NULL,
     /* .pfnInitComplete = */        NULL,
-    /* .pfnPowerOff = */            pcnetPowerOff,
+    /* .pfnPowerOff = */            pcnetR3PowerOff,
     /* .pfnSoftReset = */           NULL,
     /* .pfnReserved0 = */           NULL,
     /* .pfnReserved1 = */           NULL,
