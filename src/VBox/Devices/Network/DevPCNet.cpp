@@ -5123,7 +5123,7 @@ static DECLCALLBACK(int) pcnetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
      * Validate configuration.
      */
     PDMDEV_VALIDATE_CONFIG_RETURN(pDevIns,
-                                  "MAC|CableConnected|Am79C973|ChipType|Port|IRQ|LineSpeed|PrivIfEnabled|LinkUpDelay",
+                                  "MAC|CableConnected|Am79C973|ChipType|Port|IRQ|LineSpeed|PrivIfEnabled|LinkUpDelay|StatNo",
                                   "");
     /*
      * Read the configuration.
@@ -5197,6 +5197,10 @@ static DECLCALLBACK(int) pcnetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
         LogRel(("PCnet#%d WARNING! Link up delay is set to %u seconds!\n", iInstance, pThis->cMsLinkUpDelay / 1000));
     Log(("#%d Link up delay is set to %u seconds\n", iInstance, pThis->cMsLinkUpDelay / 1000));
 
+    uint32_t uStatNo = iInstance;
+    rc = pHlp->pfnCFGMQueryU32Def(pCfg, "StatNo", &uStatNo, iInstance);
+    if (RT_FAILURE(rc))
+        return PDMDEV_SET_ERROR(pDevIns, rc, N_("Configuration error: Failed to get the \"StatNo\" value"));
 
     /*
      * Initialize data (most of it anyway).
@@ -5425,11 +5429,14 @@ static DECLCALLBACK(int) pcnetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
 
     /*
      * Register statistics.
+     * The /Public/ bits are official and used by session info in the GUI.
      */
     PDMDevHlpSTAMRegisterF(pDevIns, &pThis->StatReceiveBytes,      STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_BYTES,
-                           "Amount of data received",     "/Public/Net/PCnet%u/BytesReceived", iInstance);
+                           "Amount of data received",     "/Public/NetAdapter/%u/BytesReceived", uStatNo);
     PDMDevHlpSTAMRegisterF(pDevIns, &pThis->StatTransmitBytes,     STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_BYTES,
-                           "Amount of data transmitted",  "/Public/Net/PCnet%u/BytesTransmitted", iInstance);
+                           "Amount of data transmitted",  "/Public/NetAdapter/%u/BytesTransmitted", uStatNo);
+    PDMDevHlpSTAMRegisterF(pDevIns, &pDevIns->iInstance,           STAMTYPE_U32,     STAMVISIBILITY_ALWAYS, STAMUNIT_NONE,
+                           "Device instance number",      "/Public/NetAdapter/%u/%s", uStatNo, pDevIns->pReg->szName);
 
     PDMDevHlpSTAMRegister(pDevIns, &pThis->StatReceiveBytes,       STAMTYPE_COUNTER, "ReceiveBytes",       STAMUNIT_BYTES,               "Amount of data received");
     PDMDevHlpSTAMRegister(pDevIns, &pThis->StatTransmitBytes,      STAMTYPE_COUNTER, "TransmitBytes",      STAMUNIT_BYTES,               "Amount of data transmitted");
