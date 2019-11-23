@@ -837,6 +837,12 @@ void UIMetric::composeQueryString()
     {
         foreach (const QString &strSubString, m_metricDataSubString)
         {
+            /** @todo r=bird: It is much more efficient to (1) start a query with '/' and
+             *        (2) not use multiple expressions.  If you don't start with '/',
+             *        STAM must search all the statistics.  If you have multiple
+             *        expressions it is not yet clever enough to optimize the search and
+             *        will search all the statistics.  There are several thousand in a
+             *        debug builds, some 400-600 in a typical release build (config dep). */
             m_strQueryString += QString("*%1*%2*%3*|").arg(m_strQueryPrefix).arg(strDeviceName).arg(strSubString);
         }
     }
@@ -1062,53 +1068,59 @@ void UIInformationPerformanceMonitor::sltTimeout()
         updateCPUGraphsAndMetric(aPctExecuting, aPctOther);
     }
 
-    /* Collect the data from IMachineDebugger::getStats(..): */
-    quint64 uNetworkTotalReceive = 0;
-    quint64 uNetworkTotalTransmit = 0;
-    quint64 uDiskIOTotalWritten = 0;
-    quint64 uDiskIOTotalRead = 0;
-    quint64 uTotalVMExits = 0;
-
-    QVector<UIDebuggerMetricData> xmlData = getTotalCounterFromDegugger(m_strQueryString);
-    for (QMap<QString, UIMetric>::iterator iterator =  m_metrics.begin();
-         iterator != m_metrics.end(); ++iterator)
+    /* Update the network load chart with values we find under /Public/NetAdapter/: */
     {
-        UIMetric &metric = iterator.value();
-        const QStringList &deviceTypeList = metric.deviceTypeList();
-        foreach (const QString &strDeviceType, deviceTypeList)
+        quint64 cbNetworkTotalReceived = 0;
+        quint64 cbNetworkTotalTransmitted = 0;
+        QVector<UIDebuggerMetricData> xmlData = getAndParseStatsFromDebugger("/Public/NetAdapter/*/Bytes*");
+        foreach (const UIDebuggerMetricData &data, xmlData)
         {
-            foreach (const UIDebuggerMetricData &data, xmlData)
-            {
-                if (data.m_strName.contains(strDeviceType, Qt::CaseInsensitive))
-                {
-                    if (metric.name() == m_strNetworkMetricName)
-                    {
-                        if (data.m_strName.contains("receive", Qt::CaseInsensitive))
-                            uNetworkTotalReceive += data.m_counter;
-                        else if (data.m_strName.contains("transmit", Qt::CaseInsensitive))
-                            uNetworkTotalTransmit += data.m_counter;
-                    }
-                    else if (metric.name() == m_strDiskIOMetricName)
-                    {
-                        if (data.m_strName.contains("written", Qt::CaseInsensitive))
-                            uDiskIOTotalWritten += data.m_counter;
-                        else if (data.m_strName.contains("read", Qt::CaseInsensitive))
-                            uDiskIOTotalRead += data.m_counter;
-                    }
-                    else if (metric.name() == m_strVMExitMetricName)
-                    {
-                        if (data.m_strName.contains("RecordedExits", Qt::CaseInsensitive))
-                            uTotalVMExits += data.m_counter;
-                    }
-                }
-            }
+            if (data.m_strName.endsWith("BytesReceived"))
+                cbNetworkTotalReceived += data.m_counter;
+            else if (data.m_strName.endsWith("BytesTransmitted"))
+                cbNetworkTotalTransmitted += data.m_counter;
+            else
+                AssertMsgFailed(("name=%s\n", data.m_strName.toLocal8Bit().data()));
         }
+        updateNetworkGraphsAndMetric(cbNetworkTotalReceived, cbNetworkTotalTransmitted);
     }
-    updateNetworkGraphsAndMetric(uNetworkTotalReceive, uNetworkTotalTransmit);
-    updateDiskIOGraphsAndMetric(uDiskIOTotalWritten, uDiskIOTotalRead);
-    updateVMExitMetric(uTotalVMExits);
+
+    /* Update the Disk I/O chart with values we find under /Public/Storage/?/Port?/Bytes*: */
+    {
+        quint64 cbDiskIOTotalWritten = 0;
+        quint64 cbDiskIOTotalRead = 0;
+        QVector<UIDebuggerMetricData> xmlData = getAndParseStatsFromDebugger("/Public/Storage/*/Port*/Bytes*");
+        foreach (const UIDebuggerMetricData &data, xmlData)
+        {
+            if (data.m_strName.endsWith("BytesWritten"))
+                cbDiskIOTotalWritten += data.m_counter;
+            else if (data.m_strName.endsWith("BytesRead"))
+                cbDiskIOTotalRead += data.m_counter;
+            else
+                AssertMsgFailed(("name=%s\n", data.m_strName.toLocal8Bit().data()));
+        }
+        updateDiskIOGraphsAndMetric(cbDiskIOTotalWritten, cbDiskIOTotalRead);
+    }
+
+    /* Update the VM exit chart with values we find as /PROF/CPU?/EM/RecordedExits: */
+    {
+        quint64 cTotalVMExits = 0;
+        QVector<UIDebuggerMetricData> xmlData = getAndParseStatsFromDebugger("/PROF/CPU*/EM/RecordedExits");
+        foreach (const UIDebuggerMetricData &data, xmlData)
+        {
+            if (data.m_strName.endsWith("RecordedExits"))
+                cTotalVMExits += data.m_counter;
+            else
+                AssertMsgFailed(("name=%s\n", data.m_strName.toLocal8Bit().data()));
+        }
+        updateVMExitMetric(cTotalVMExits);
+    }
 }
 
+/**
+ *
+ * @returns
+ */
 void UIInformationPerformanceMonitor::sltGuestAdditionsStateChange()
 {
     bool fGuestAdditionsAvailable = guestAdditionsAvailable(6 /* minimum major version */);
@@ -1146,12 +1158,16 @@ void UIInformationPerformanceMonitor::prepareMetrics()
     }
 
     m_metrics.insert(m_strCPUMetricName, UIMetric(m_strCPUMetricName, "%", iMaximumQueueSize));
+/** @todo r=bird: This way of constructing queries is inefficient, see
+ *        comment in query composer.  Also, both the network and disk bits
+ *        have moved now.  The update timer method has been updated and no
+ *        longer makes use of this for the statistics querying. */
     {
         /* Network metric: */
         UIMetric networkMetric(m_strNetworkMetricName, "B", iMaximumQueueSize);
         networkMetric.setQueryPrefix("Public");
         QStringList networkDeviceList;
-        networkDeviceList << "E1k" <<"VNet" << "PCNet";
+        networkDeviceList << "E1k" << "VNet" << "PCNet";
         networkMetric.setDeviceTypeList(networkDeviceList);
         QStringList networkMetricDataSubStringList;
         networkMetricDataSubStringList << "BytesReceived" << "BytesTransmitted";
@@ -1409,16 +1425,14 @@ QString UIInformationPerformanceMonitor::dataColorString(const QString &strChart
     return pChart->dataSeriesColor(iDataIndex).name(QColor::HexRgb);
 }
 
-QVector<UIDebuggerMetricData> UIInformationPerformanceMonitor::getTotalCounterFromDegugger(const QString &strQuery)
+QVector<UIDebuggerMetricData> UIInformationPerformanceMonitor::getAndParseStatsFromDebugger(const QString &strQuery)
 {
     QVector<UIDebuggerMetricData> xmlData;
     if (strQuery.isEmpty())
         return xmlData;
-    CMachineDebugger debugger = m_console.GetDebugger();
-    QString strStats = debugger.GetStats(strQuery, false);
+    QString strStats = m_machineDebugger.GetStats(strQuery, false);
     QXmlStreamReader xmlReader;
     xmlReader.addData(strStats);
-    quint64 iTotal = 0;
     if (xmlReader.readNextStartElement())
     {
         while (xmlReader.readNextStartElement())
@@ -1427,20 +1441,15 @@ QVector<UIDebuggerMetricData> UIInformationPerformanceMonitor::getTotalCounterFr
             {
                 QXmlStreamAttributes attributes = xmlReader.attributes();
                 quint64 iCounter = attributes.value("c").toULongLong();
-                iTotal += iCounter;
-                xmlReader.skipCurrentElement();
-                xmlData.push_back(UIDebuggerMetricData(*(attributes.value("name").string()), iCounter));
+                xmlData.push_back(UIDebuggerMetricData(attributes.value("name"), iCounter));
             }
             else if (xmlReader.name() == "U64")
             {
                 QXmlStreamAttributes attributes = xmlReader.attributes();
                 quint64 iCounter = attributes.value("val").toULongLong();
-                iTotal += iCounter;
-                xmlReader.skipCurrentElement();
-                xmlData.push_back(UIDebuggerMetricData(*(attributes.value("name").string()), iCounter));
+                xmlData.push_back(UIDebuggerMetricData(attributes.value("name"), iCounter));
             }
-            else
-                xmlReader.skipCurrentElement();
+            xmlReader.skipCurrentElement();
         }
     }
     return xmlData;

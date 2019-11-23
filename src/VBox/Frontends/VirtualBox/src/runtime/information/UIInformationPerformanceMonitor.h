@@ -52,8 +52,8 @@ struct UIDebuggerMetricData
 {
     UIDebuggerMetricData()
         : m_counter(0){}
-    UIDebuggerMetricData(const QString & strName, quint64 counter)
-        :m_strName(strName)
+    UIDebuggerMetricData(const QStringRef & strName, quint64 counter)
+        : m_strName(strName.toString())
         , m_counter(counter){}
     QString m_strName;
     quint64 m_counter;
@@ -180,7 +180,7 @@ private:
     /** Returns a QColor for the chart with @p strChartName and data series with @p iDataIndex. */
     QString dataColorString(const QString &strChartName, int iDataIndex);
     /** Parses the xml string we get from the IMachineDebugger and returns an array of UIDebuggerMetricData. */
-    QVector<UIDebuggerMetricData> getTotalCounterFromDegugger(const QString &strQuery);
+    QVector<UIDebuggerMetricData> getAndParseStatsFromDebugger(const QString &strQuery);
 
     bool m_fGuestAdditionsAvailable;
     CMachine m_machine;
