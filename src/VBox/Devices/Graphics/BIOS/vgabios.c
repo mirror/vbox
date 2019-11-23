@@ -172,7 +172,7 @@ void init_bios_area(void)
     /* The default char height. */
     bda[BIOSMEM_CHAR_HEIGHT] = 16;
     /* Clear the screen. */
-    bda[BIOSMEM_VIDEO_CTL]   = 0x60;
+    bda[BIOSMEM_VIDEO_CTL]   = 0x68;
     /* Set the basic screen we have. */
     bda[BIOSMEM_SWITCHES]    = 0xf9;
     /* Set the basic mode set options. */
@@ -509,36 +509,72 @@ static void vga_read_pixel(uint8_t page, uint16_t col, uint16_t row, uint16_t ST
 
 // --------------------------------------------------------------------------------------------
 static void biosfn_set_cursor_shape(uint8_t CH, uint8_t CL)
-{uint16_t cheight,curs,crtc_addr;
- uint8_t modeset_ctl;
+{
+  uint16_t cheight, curs, crtc_addr;
+  int cga_emu;
 
- CH&=0x3f;
- CL&=0x1f;
+  /* Unmodified input is stored in the BDA. */
+  curs = (CH << 8) + CL;
+  write_word(BIOSMEM_SEG, BIOSMEM_CURSOR_TYPE, curs);
 
- curs=(CH<<8)+CL;
- write_word(BIOSMEM_SEG,BIOSMEM_CURSOR_TYPE,curs);
+  /* Check if VGA is active. If not, just write the input to the CRTC. */
+  if (read_byte(BIOSMEM_SEG, BIOSMEM_VIDEO_CTL) & 8) {
+    /* Trying to disable the cursor? */
+    if ((CH & 0x60) == 0x20) {
+      /* Special IBM-compatible value to turn off cursor. */
+      CH = 0x1E;
+      CL = 0;
+    } else {
+      cga_emu = !(read_byte(BIOSMEM_SEG, BIOSMEM_VIDEO_CTL) & 1);
 
- modeset_ctl=read_byte(BIOSMEM_SEG,BIOSMEM_MODESET_CTL);
- cheight = read_word(BIOSMEM_SEG,BIOSMEM_CHAR_HEIGHT);
- if((modeset_ctl&0x01) && (cheight>8) && (CL<8) && (CH<0x20))
-  {
-   if(CL!=(CH+1))
-    {
-     CH = ((CH+1) * cheight / 8) -1;
+      /* If CGA cursor emulation is on and this is a text mode, adjust.
+       * But if cursor star or end is bigger than 31, don't adjust.
+       */
+      // @todo: Figure out if this is a text mode
+      if (cga_emu /* && text mode*/ && (CH < 32) && (CL < 32)) {
+        cheight = read_word(BIOSMEM_SEG, BIOSMEM_CHAR_HEIGHT);
+
+        /* Is the end lower than start? VGA does not wrap around.*/
+        if (CL < CH) {
+          /* For zero CL (end), leave values unchanged. */
+          if (CL) {
+            CH = 0;
+            CL = cheight - 1;
+          }
+        } else {
+          if (((CL | CH) >= cheight) || ((CL != cheight - 1) && (CH != cheight - 2))) {
+            /* If it's an overbar cursor, don't adjust. */
+            if (CL > 3) {
+              if (CL <= CH + 2) {
+                /* It's it a normal underline style cursor. */
+                CH = CH - CL + cheight - 1;
+                CL = cheight - 1;
+                if (cheight >= 14) {
+                  /* Shift up one pixel for normal EGA/VGA fonts. */
+                  CL--;
+                  CH--;
+                }
+              } else if (CH <= 2) {
+                /* It's a full block cursor. */
+                CL = cheight - 1;
+              } else {
+                /* It's a half block cursor. */
+                CH = cheight / 2;
+                CL = cheight - 1;
+              }
+            }
+          }
+        }
+      }
     }
-   else
-    {
-     CH = ((CL+1) * cheight / 8) - 2;
-    }
-   CL = ((CL+1) * cheight / 8) - 1;
   }
 
- // CTRC regs 0x0a and 0x0b
- crtc_addr=read_word(BIOSMEM_SEG,BIOSMEM_CRTC_ADDRESS);
- outb(crtc_addr,0x0a);
- outb(crtc_addr+1,CH);
- outb(crtc_addr,0x0b);
- outb(crtc_addr+1,CL);
+  // CTRC regs 0x0a and 0x0b
+  crtc_addr = read_word(BIOSMEM_SEG, BIOSMEM_CRTC_ADDRESS);
+  outb(crtc_addr, 0x0a);
+  outb(crtc_addr + 1, CH);
+  outb(crtc_addr, 0x0b);
+  outb(crtc_addr + 1 ,CL);
 }
 
 // --------------------------------------------------------------------------------------------
@@ -814,7 +850,7 @@ void biosfn_set_video_mode(uint8_t mode)
  write_word(BIOSMEM_SEG,BIOSMEM_CRTC_ADDRESS,crtc_addr);
  write_byte(BIOSMEM_SEG,BIOSMEM_NB_ROWS,theightm1);
  write_word(BIOSMEM_SEG,BIOSMEM_CHAR_HEIGHT,cheight);
- write_byte(BIOSMEM_SEG,BIOSMEM_VIDEO_CTL,(0x60|noclearmem));
+ write_byte(BIOSMEM_SEG,BIOSMEM_VIDEO_CTL,(0x68|noclearmem));
  write_byte(BIOSMEM_SEG,BIOSMEM_SWITCHES,0xF9);
  write_byte(BIOSMEM_SEG,BIOSMEM_MODESET_CTL,read_byte(BIOSMEM_SEG,BIOSMEM_MODESET_CTL)&0x7f);
 
@@ -2245,6 +2281,15 @@ void __cdecl int10_func(uint16_t DI, uint16_t SI, uint16_t BP, uint16_t SP, uint
       {
        case 0x20:
         biosfn_alternate_prtsc();
+        break;
+       case 0x34:   /* CGA text cursor emulation control. */
+        if (GET_AL() < 2) {
+            write_byte(BIOSMEM_SEG,BIOSMEM_VIDEO_CTL,
+              (read_byte(BIOSMEM_SEG,BIOSMEM_VIDEO_CTL) & ~1) | GET_AL());
+            SET_AL(0x12);
+        }
+        else
+         SET_AL(0); /* Invalid argument. */
         break;
        case 0x35:
         biosfn_switch_video_interface(GET_AL(),ES,DX);
