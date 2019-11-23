@@ -4059,56 +4059,60 @@ static VDTYPE drvvdGetVDFromMediaType(PDMMEDIATYPE enmType)
 static int drvvdStatsRegister(PVBOXDISK pThis)
 {
     PPDMDRVINS pDrvIns = pThis->pDrvIns;
-    uint32_t iInstance, iLUN;
-    const char *pcszController;
 
-    int rc = pThis->pDrvMediaPort->pfnQueryDeviceLocation(pThis->pDrvMediaPort, &pcszController,
-                                                          &iInstance, &iLUN);
-    if (RT_SUCCESS(rc))
-    {
-        char *pszCtrlUpper = RTStrDup(pcszController);
-        if (pszCtrlUpper)
-        {
-            RTStrToUpper(pszCtrlUpper);
+    /*
+     * Figure out where to place the stats.
+     */
+    uint32_t iInstance = 0;
+    uint32_t iLUN = 0;
+    const char *pcszController = NULL;
+    int rc = pThis->pDrvMediaPort->pfnQueryDeviceLocation(pThis->pDrvMediaPort, &pcszController, &iInstance, &iLUN);
+    AssertRCReturn(rc, rc);
 
-            PDMDrvHlpSTAMRegisterF(pDrvIns, &pThis->StatQueryBufAttempts, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS,
-                                   STAMUNIT_COUNT, "Number of attempts to query a direct buffer.",
-                                   "/Devices/%s%u/Port%u/QueryBufAttempts", pszCtrlUpper, iInstance, iLUN);
-            PDMDrvHlpSTAMRegisterF(pDrvIns, &pThis->StatQueryBufSuccess, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS,
-                                   STAMUNIT_COUNT, "Number of succeeded attempts to query a direct buffer.",
-                                   "/Devices/%s%u/Port%u/QueryBufSuccess", pszCtrlUpper, iInstance, iLUN);
+    /*
+     * Compose the prefix for the statistics to reduce the amount of repetition below.
+     * The /Public/ bits are official and used by session info in the GUI.
+     */
+    char szCtrlUpper[32];
+    rc = RTStrCopy(szCtrlUpper, sizeof(szCtrlUpper), pcszController);
+    AssertRCReturn(rc, rc);
 
-            PDMDrvHlpSTAMRegisterF(pDrvIns, &pThis->StatBytesRead, STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_BYTES,
-                                   "Amount of data read.", "/Devices/%s%u/Port%u/ReadBytes", pszCtrlUpper, iInstance, iLUN);
-            PDMDrvHlpSTAMRegisterF(pDrvIns, &pThis->StatBytesWritten, STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_BYTES,
-                                   "Amount of data written.", "/Devices/%s%u/Port%u/WrittenBytes", pszCtrlUpper, iInstance, iLUN);
+    RTStrToUpper(szCtrlUpper);
+    char szPrefix[128];
+    RTStrPrintf(szPrefix, sizeof(szPrefix), "/Public/Storage/%s%u/Port%u", szCtrlUpper, iInstance, iLUN);
 
-            PDMDrvHlpSTAMRegisterF(pDrvIns, &pThis->StatReqsSubmitted, STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_COUNT,
-                                   "Number of I/O requests submitted.", "/Devices/%s%u/Port%u/ReqsSubmitted", pszCtrlUpper, iInstance, iLUN);
-            PDMDrvHlpSTAMRegisterF(pDrvIns, &pThis->StatReqsFailed, STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_COUNT,
-                                   "Number of I/O requests failed.", "/Devices/%s%u/Port%u/ReqsFailed", pszCtrlUpper, iInstance, iLUN);
-            PDMDrvHlpSTAMRegisterF(pDrvIns, &pThis->StatReqsSucceeded, STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_COUNT,
-                                   "Number of I/O requests succeeded.", "/Devices/%s%u/Port%u/ReqsSucceeded", pszCtrlUpper, iInstance, iLUN);
-            PDMDrvHlpSTAMRegisterF(pDrvIns, &pThis->StatReqsFlush, STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_COUNT,
-                                   "Number of flush I/O requests submitted.", "/Devices/%s%u/Port%u/ReqsFlush", pszCtrlUpper, iInstance, iLUN);
-            PDMDrvHlpSTAMRegisterF(pDrvIns, &pThis->StatReqsWrite, STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_COUNT,
-                                   "Number of write I/O requests submitted.", "/Devices/%s%u/Port%u/ReqsWrite", pszCtrlUpper, iInstance, iLUN);
-            PDMDrvHlpSTAMRegisterF(pDrvIns, &pThis->StatReqsRead, STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_COUNT,
-                                   "Number of read I/O requests submitted.", "/Devices/%s%u/Port%u/ReqsRead", pszCtrlUpper, iInstance, iLUN);
-            PDMDrvHlpSTAMRegisterF(pDrvIns, &pThis->StatReqsDiscard, STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_COUNT,
-                                   "Number of discard I/O requests submitted.", "/Devices/%s%u/Port%u/ReqsDiscard", pszCtrlUpper, iInstance, iLUN);
+    /*
+     * Do the registrations.
+     */
+    PDMDrvHlpSTAMRegisterF(pDrvIns, &pThis->StatQueryBufAttempts,   STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
+                           "Number of attempts to query a direct buffer.",              "%s/QueryBufAttempts", szPrefix);
+    PDMDrvHlpSTAMRegisterF(pDrvIns, &pThis->StatQueryBufSuccess,    STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
+                           "Number of succeeded attempts to query a direct buffer.",    "%s/QueryBufSuccess", szPrefix);
 
-            PDMDrvHlpSTAMRegisterF(pDrvIns, &pThis->StatReqsPerSec, STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_OCCURENCES,
-                                   "Number of processed I/O requests per second.", "/Devices/%s%u/Port%u/ReqsPerSec",
-                                   pszCtrlUpper, iInstance, iLUN);
+    PDMDrvHlpSTAMRegisterF(pDrvIns, &pThis->StatBytesRead,          STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_BYTES,
+                           "Amount of data read.",                          "%s/BytesRead", szPrefix);
+    PDMDrvHlpSTAMRegisterF(pDrvIns, &pThis->StatBytesWritten,       STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_BYTES,
+                           "Amount of data written.",                       "%s/BytesWritten", szPrefix);
 
-            RTStrFree(pszCtrlUpper);
-        }
-        else
-            rc = VERR_NO_STR_MEMORY;
-    }
+    PDMDrvHlpSTAMRegisterF(pDrvIns, &pThis->StatReqsSubmitted,      STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_COUNT,
+                           "Number of I/O requests submitted.",             "%s/ReqsSubmitted", szPrefix);
+    PDMDrvHlpSTAMRegisterF(pDrvIns, &pThis->StatReqsFailed,         STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_COUNT,
+                           "Number of I/O requests failed.",                "%s/ReqsFailed", szPrefix);
+    PDMDrvHlpSTAMRegisterF(pDrvIns, &pThis->StatReqsSucceeded,      STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_COUNT,
+                           "Number of I/O requests succeeded.",             "%s/ReqsSucceeded", szPrefix);
+    PDMDrvHlpSTAMRegisterF(pDrvIns, &pThis->StatReqsFlush,          STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_COUNT,
+                           "Number of flush I/O requests submitted.",       "%s/ReqsFlush", szPrefix);
+    PDMDrvHlpSTAMRegisterF(pDrvIns, &pThis->StatReqsWrite,          STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_COUNT,
+                           "Number of write I/O requests submitted.",       "%s/ReqsWrite", szPrefix);
+    PDMDrvHlpSTAMRegisterF(pDrvIns, &pThis->StatReqsRead,           STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_COUNT,
+                           "Number of read I/O requests submitted.",        "%s/ReqsRead", szPrefix);
+    PDMDrvHlpSTAMRegisterF(pDrvIns, &pThis->StatReqsDiscard,        STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_COUNT,
+                           "Number of discard I/O requests submitted.",     "%s/ReqsDiscard", szPrefix);
 
-    return rc;
+    PDMDrvHlpSTAMRegisterF(pDrvIns, &pThis->StatReqsPerSec,         STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_OCCURENCES,
+                           "Number of processed I/O requests per second.",  "%s/ReqsPerSec", szPrefix);
+
+    return VINF_SUCCESS;
 }
 
 /**
