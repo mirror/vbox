@@ -313,8 +313,6 @@ typedef struct PCNETSTATE
 {
     /** Pointer to the device instance - R3. */
     PPDMDEVINSR3                        pDevInsR3;
-    /** Transmit signaller - R3. */
-    R3PTRTYPE(PPDMQUEUE)                pXmitQueueR3;
     /** Pointer to the connector of the attached network driver - R3. */
     PPDMINETWORKUPR3                    pDrvR3;
     /** Pointer to the attached network driver. */
@@ -328,18 +326,13 @@ typedef struct PCNETSTATE
 
     /** Pointer to the device instance - R0. */
     PPDMDEVINSR0                        pDevInsR0;
-    /** Transmit signaller - R0. */
-    R0PTRTYPE(PPDMQUEUE)                pXmitQueueR0;
     /** Pointer to the connector of the attached network driver - R0. */
     PPDMINETWORKUPR0                    pDrvR0;
 
     /** Pointer to the device instance - RC. */
     PPDMDEVINSRC                        pDevInsRC;
-    /** Transmit signaller - RC. */
-    RCPTRTYPE(PPDMQUEUE)                pXmitQueueRC;
     /** Pointer to the connector of the attached network driver - RC. */
     PPDMINETWORKUPRC                    pDrvRC;
-    RTRCPTR                             RCPtrAlignment;
 
     /** Software Interrupt timer - R3. */
     TMTIMERHANDLE                       hTimerSoftInt;
@@ -350,6 +343,9 @@ typedef struct PCNETSTATE
     /** Restore timer.
      *  This is used to disconnect and reconnect the link after a restore. */
     TMTIMERHANDLE                       hTimerRestore;
+
+    /** Transmit signaller. */
+    PDMTASKHANDLE                       hXmitTask;
 
     /** Register Address Pointer */
     uint32_t                            u32RAP;
@@ -1643,10 +1639,13 @@ static void pcnetWakeupReceive(PPDMDEVINS pDevIns)
 
 /**
  * Poll Receive Descriptor Table Entry and cache the results in the appropriate registers.
- * Note: Once a descriptor belongs to the network card (this driver), it cannot be changed
- * by the host (the guest driver) anymore. Well, it could but the results are undefined by
- * definition.
- * @param  fSkipCurrent       if true, don't scan the current RDTE.
+ *
+ * @note    Once a descriptor belongs to the network card (this driver), it
+ *          cannot be changed by the host (the guest driver) anymore. Well, it
+ *          could but the results are undefined by definition.
+ *
+ * @param   pDevIns         The device instance.
+ * @param   fSkipCurrent    if true, don't scan the current RDTE.
  */
 static void pcnetRdtePoll(PPCNETSTATE pThis, bool fSkipCurrent=false)
 {
@@ -2096,25 +2095,18 @@ static void pcnetReceiveNoSync(PPCNETSTATE pThis, const uint8_t *buf, size_t cbT
 
 #ifdef IN_RING3
 /**
- * Transmit queue consumer
- * This is just a very simple way of delaying sending to R3.
- *
- * @returns Success indicator.
- *          If false the item will not be removed and the flushing will stop.
- * @param   pDevIns     The device instance.
- * @param   pItem       The item to consume. Upon return this item will be freed.
+ * @callback_method_impl{FNPDMTASKDEV,
+ * This is just a very simple way of delaying sending to R3.}
  */
-static DECLCALLBACK(bool) pcnetXmitQueueConsumer(PPDMDEVINS pDevIns, PPDMQUEUEITEMCORE pItem)
+static DECLCALLBACK(void) pcnetR3XmitTaskCallback(PPDMDEVINS pDevIns, void *pvUser)
 {
     PPCNETSTATE pThis = PDMDEVINS_2_DATA(pDevIns, PPCNETSTATE);
-    NOREF(pItem);
+    NOREF(pvUser);
 
     /*
      * Transmit as much as we can.
      */
     pcnetXmitPending(pThis, true /*fOnWorkerThread*/);
-
-    return true;
 }
 #endif /* IN_RING3 */
 
@@ -2415,9 +2407,8 @@ static void pcnetTransmit(PPCNETSTATE pThis)
 #if defined(IN_RING0) || defined(IN_RC)
     if (!pThis->CTX_SUFF(pDrv))
     {
-        PPDMQUEUEITEMCORE pItem = PDMQueueAlloc(pThis->CTX_SUFF(pXmitQueue));
-        if (RT_UNLIKELY(pItem))
-            PDMQueueInsert(pThis->CTX_SUFF(pXmitQueue), pItem);
+        int rc = PDMDevHlpTaskTrigger(pThis->CTX_SUFF(pDevIns), pThis->hXmitTask);
+        AssertRC(rc);
     }
     else
 #endif
@@ -5041,7 +5032,6 @@ static DECLCALLBACK(void) pcnetRelocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta)
     RT_NOREF(offDelta);
     PPCNETSTATE pThis = PDMDEVINS_2_DATA(pDevIns, PPCNETSTATE);
     pThis->pDevInsRC     = PDMDEVINS_2_RCPTR(pDevIns);
-    pThis->pXmitQueueRC  = PDMQueueRCPtr(pThis->pXmitQueueR3);
 #ifdef PCNET_NO_POLLING
     pThis->pfnEMInterpretInstructionRC += offDelta;
 #endif
@@ -5333,11 +5323,8 @@ static DECLCALLBACK(int) pcnetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     /*
      * Create the transmit queue.
      */
-    rc = PDMDevHlpQueueCreate(pDevIns, sizeof(PDMQUEUEITEMCORE), 1, 0,
-                              pcnetXmitQueueConsumer, true, "PCnet-Xmit", &pThis->pXmitQueueR3);
+    rc = PDMDevHlpTaskCreate(pDevIns, PDMTASK_F_RZ, "PCnet-Xmit", pcnetR3XmitTaskCallback, NULL /*pvUser*/, &pThis->hXmitTask);
     AssertRCReturn(rc, rc);
-    pThis->pXmitQueueR0 = PDMQueueR0Ptr(pThis->pXmitQueueR3);
-    pThis->pXmitQueueRC = PDMQueueRCPtr(pThis->pXmitQueueR3);
 
     /*
      * Create the RX notifier semaphore.
