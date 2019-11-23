@@ -1641,18 +1641,6 @@ static void pcnetWakeupReceive(PPDMDEVINS pDevIns)
     }
 }
 
-#ifdef IN_RING3
-
-static DECLCALLBACK(bool) pcnetCanRxQueueConsumer(PPDMDEVINS pDevIns, PPDMQUEUEITEMCORE pItem)
-{
-    RT_NOREF(pItem);
-    pcnetWakeupReceive(pDevIns);
-    return true;
-}
-
-#endif /* IN_RING3 */
-
-
 /**
  * Poll Receive Descriptor Table Entry and cache the results in the appropriate registers.
  * Note: Once a descriptor belongs to the network card (this driver), it cannot be changed
