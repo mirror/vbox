@@ -344,7 +344,7 @@ parallelIoPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t
                 {
                     LogFlowFunc(("Set data lines 0x%X\n", u8));
                     rc = pThisCC->pDrvHostParallelConnector->pfnWrite(pThisCC->pDrvHostParallelConnector, &u8, 1, PDM_PARALLEL_PORT_MODE_SPP);
-                    AssertRC(rc);
+                    AssertRC(VBOXSTRICRC_VAL(rc));
                 }
 #endif
                 break;
@@ -365,12 +365,12 @@ parallelIoPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t
                             rc = pThisCC->pDrvHostParallelConnector->pfnSetPortDirection(pThisCC->pDrvHostParallelConnector, false /* fForward */);
                         else
                             rc = pThisCC->pDrvHostParallelConnector->pfnSetPortDirection(pThisCC->pDrvHostParallelConnector, true /* fForward */);
-                        AssertRC(rc);
+                        AssertRC(VBOXSTRICRC_VAL(rc));
 
                         u8 &= ~LPT_CONTROL_ENABLE_BIDIRECT; /* Clear bit. */
 
                         rc = pThisCC->pDrvHostParallelConnector->pfnWriteControl(pThisCC->pDrvHostParallelConnector, u8);
-                        AssertRC(rc);
+                        AssertRC(VBOXSTRICRC_VAL(rc));
                     }
                     else
                         u8 &= ~LPT_CONTROL_ENABLE_BIDIRECT; /* Clear bit. */
@@ -389,7 +389,7 @@ parallelIoPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t
                 {
                     LogFlowFunc(("Write EPP address 0x%X\n", u8));
                     rc = pThisCC->pDrvHostParallelConnector->pfnWrite(pThisCC->pDrvHostParallelConnector, &u8, 1, PDM_PARALLEL_PORT_MODE_EPP_ADDR);
-                    AssertRC(rc);
+                    AssertRC(VBOXSTRICRC_VAL(rc));
                 }
 #endif
                 break;
@@ -403,7 +403,7 @@ parallelIoPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t
                 {
                     LogFlowFunc(("Write EPP data 0x%X\n", u8));
                     rc = pThisCC->pDrvHostParallelConnector->pfnWrite(pThisCC->pDrvHostParallelConnector, &u8, 1, PDM_PARALLEL_PORT_MODE_EPP_DATA);
-                    AssertRC(rc);
+                    AssertRC(VBOXSTRICRC_VAL(rc));
                 }
 #endif
                 break;
