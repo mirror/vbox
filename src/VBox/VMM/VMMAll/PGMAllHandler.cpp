@@ -1377,17 +1377,17 @@ static PPGMPAGE pgmPhysResolveMmio2PageLocked(PVMCC pVM, PPDMDEVINS pDevIns, PGM
  *
  */
 VMMDECL(int)  PGMHandlerPhysicalPageAliasMmio2(PVMCC pVM, RTGCPHYS GCPhys, RTGCPHYS GCPhysPage,
-                                               PPDMDEVINS pDevIns, PGMMMIO2HANDLE hMmio2, RTGCPHYS offMMio2PageRemap)
+                                               PPDMDEVINS pDevIns, PGMMMIO2HANDLE hMmio2, RTGCPHYS offMmio2PageRemap)
 {
     pgmLock(pVM);
 
     /*
      * Resolve the MMIO2 reference.
      */
-    PPGMPAGE pPageRemap = pgmPhysResolveMmio2PageLocked(pVM, pDevIns, hMmio2, offMMio2PageRemap);
+    PPGMPAGE pPageRemap = pgmPhysResolveMmio2PageLocked(pVM, pDevIns, hMmio2, offMmio2PageRemap);
     if (RT_LIKELY(pPageRemap))
         AssertMsgReturnStmt(PGM_PAGE_GET_TYPE(pPageRemap) == PGMPAGETYPE_MMIO2,
-                            ("hMmio2=%RU64 offMMio2PageRemap=%RGp %R[pgmpage]\n", hMmio2, offMMio2PageRemap, pPageRemap),
+                            ("hMmio2=%RU64 offMmio2PageRemap=%RGp %R[pgmpage]\n", hMmio2, offMmio2PageRemap, pPageRemap),
                             pgmUnlock(pVM), VERR_PGM_PHYS_NOT_MMIO2);
     else
     {
@@ -1442,7 +1442,7 @@ VMMDECL(int)  PGMHandlerPhysicalPageAliasMmio2(PVMCC pVM, RTGCPHYS GCPhys, RTGCP
              * This page now serves as an alias for the backing memory specified.
              */
             LogFlow(("PGMHandlerPhysicalPageAliasMmio2: %RGp (%R[pgmpage]) alias for %RU64/%RGp (%R[pgmpage])\n",
-                     GCPhysPage, pPage, hMmio2, offMMio2PageRemap, pPageRemap ));
+                     GCPhysPage, pPage, hMmio2, offMmio2PageRemap, pPageRemap ));
             PGM_PAGE_SET_HCPHYS(pVM, pPage, PGM_PAGE_GET_HCPHYS(pPageRemap));
             PGM_PAGE_SET_TYPE(pVM, pPage, PGMPAGETYPE_MMIO2_ALIAS_MMIO);
             PGM_PAGE_SET_STATE(pVM, pPage, PGM_PAGE_STATE_ALLOCATED);
