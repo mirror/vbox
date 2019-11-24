@@ -445,6 +445,16 @@ typedef struct PCNETSTATE
     /** Alignment padding. */
     uint32_t                            Alignment6;
 
+    /** PCI Region \#0: I/O ports offset 0x10-0x1f. */
+    IOMIOPORTHANDLE                     hIoPortsPci;
+    /** PCI Region \#0: I/O ports offset 0x00-0x0f. */
+    IOMIOPORTHANDLE                     hIoPortsPciAProm;
+
+    /** ISA I/O ports offset 0x10-0x1f. */
+    IOMIOPORTHANDLE                     hIoPortsIsa;
+    /** ISA I/O ports offset 0x00-0x0f. */
+    IOMIOPORTHANDLE                     hIoPortsIsaAProm;
+
     STAMCOUNTER                         StatReceiveBytes;
     STAMCOUNTER                         StatTransmitBytes;
 #ifdef VBOX_WITH_STATISTICS
@@ -1145,7 +1155,7 @@ static void     pcnetPollRxTx(PPCNETSTATE pThis);
 static void     pcnetPollTimer(PPDMDEVINS pDevIns, PPCNETSTATE pThis);
 static void     pcnetUpdateIrq(PPCNETSTATE pThis);
 static uint32_t pcnetBCRReadU16(PPCNETSTATE pThis, uint32_t u32RAP);
-static int      pcnetBCRWriteU16(PPDMDEVINS pDevIns, PPCNETSTATE pThis, uint32_t u32RAP, uint32_t val);
+static VBOXSTRICTRC pcnetBCRWriteU16(PPDMDEVINS pDevIns, PPCNETSTATE pThis, uint32_t u32RAP, uint32_t val);
 
 
 #ifdef PCNET_NO_POLLING
@@ -2850,9 +2860,9 @@ static void pcnetPollTimer(PPDMDEVINS pDevIns, PPCNETSTATE pThis)
 }
 
 
-static int pcnetCSRWriteU16(PPDMDEVINS pDevIns, PPCNETSTATE pThis, uint32_t u32RAP, uint32_t val)
+static VBOXSTRICTRC pcnetCSRWriteU16(PPDMDEVINS pDevIns, PPCNETSTATE pThis, uint32_t u32RAP, uint32_t val)
 {
-    int      rc  = VINF_SUCCESS;
+    VBOXSTRICTRC rc  = VINF_SUCCESS;
 #ifdef PCNET_DEBUG_CSR
     Log(("#%d pcnetCSRWriteU16: rap=%d val=%#06x\n", PCNET_INST_NR, u32RAP, val));
 #endif
@@ -3107,9 +3117,8 @@ static uint32_t pcnetCSRReadU16(PPCNETSTATE pThis, uint32_t u32RAP)
     return val;
 }
 
-static int pcnetBCRWriteU16(PPDMDEVINS pDevIns, PPCNETSTATE pThis, uint32_t u32RAP, uint32_t val)
+static VBOXSTRICTRC pcnetBCRWriteU16(PPDMDEVINS pDevIns, PPCNETSTATE pThis, uint32_t u32RAP, uint32_t val)
 {
-    int rc = VINF_SUCCESS;
     u32RAP &= 0x7f;
 #ifdef PCNET_DEBUG_BCR
     Log2(("#%d pcnetBCRWriteU16: rap=%d val=%#06x\n", PCNET_INST_NR, u32RAP, val));
@@ -3118,7 +3127,7 @@ static int pcnetBCRWriteU16(PPDMDEVINS pDevIns, PPCNETSTATE pThis, uint32_t u32R
     {
         case BCR_SWS:
             if (!(CSR_STOP(pThis) || CSR_SPND(pThis)))
-                return rc;
+                return VINF_SUCCESS;
             val &= ~0x0300;
             switch (val & 0x00ff)
             {
@@ -3176,7 +3185,7 @@ static int pcnetBCRWriteU16(PPDMDEVINS pDevIns, PPCNETSTATE pThis, uint32_t u32R
         default:
             break;
     }
-    return rc;
+    return VINF_SUCCESS;
 }
 
 static uint32_t pcnetMIIReadU16(PPCNETSTATE pThis, uint32_t miiaddr)
@@ -3477,33 +3486,34 @@ static uint32_t pcnetAPROMReadU8(PPCNETSTATE pThis, uint32_t addr)
 /**
  * @callback_method_impl{FNIOMIOPORTIN, APROM}
  */
-PDMBOTHCBDECL(int) pcnetIOPortAPromRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32, unsigned cb)
+static DECLCALLBACK(VBOXSTRICTRC)
+pcnetIOPortAPromRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t *pu32, unsigned cb)
 {
-    PPCNETSTATE pThis = PDMDEVINS_2_DATA(pDevIns, PPCNETSTATE);
-    int         rc    = VINF_SUCCESS;
+    PPCNETSTATE     pThis = PDMDEVINS_2_DATA(pDevIns, PPCNETSTATE);
+    VBOXSTRICTRC    rc    = VINF_SUCCESS;
     STAM_PROFILE_ADV_START(&pThis->StatAPROMRead, a);
     Assert(PDMCritSectIsOwner(&pThis->CritSect));
     RT_NOREF_PV(pvUser);
 
     /* FreeBSD is accessing in dwords. */
     if (cb == 1)
-        *pu32 = pcnetAPROMReadU8(pThis, Port);
+        *pu32 = pcnetAPROMReadU8(pThis, offPort);
     else if (cb == 2 && !BCR_DWIO(pThis))
-        *pu32 = pcnetAPROMReadU8(pThis, Port)
-              | (pcnetAPROMReadU8(pThis, Port + 1) << 8);
+        *pu32 = pcnetAPROMReadU8(pThis, offPort)
+              | (pcnetAPROMReadU8(pThis, offPort + 1) << 8);
     else if (cb == 4 && BCR_DWIO(pThis))
-        *pu32 = pcnetAPROMReadU8(pThis, Port)
-              | (pcnetAPROMReadU8(pThis, Port + 1) << 8)
-              | (pcnetAPROMReadU8(pThis, Port + 2) << 16)
-              | (pcnetAPROMReadU8(pThis, Port + 3) << 24);
+        *pu32 = pcnetAPROMReadU8(pThis, offPort)
+              | (pcnetAPROMReadU8(pThis, offPort + 1) << 8)
+              | (pcnetAPROMReadU8(pThis, offPort + 2) << 16)
+              | (pcnetAPROMReadU8(pThis, offPort + 3) << 24);
     else
     {
-        Log(("#%d pcnetIOPortAPromRead: Port=%RTiop cb=%d BCR_DWIO !!\n", PCNET_INST_NR, Port, cb));
+        Log(("#%d pcnetIOPortAPromRead: offPort=%RTiop cb=%d BCR_DWIO !!\n", PCNET_INST_NR, offPort, cb));
         rc = VERR_IOM_IOPORT_UNUSED;
     }
 
     STAM_PROFILE_ADV_STOP(&pThis->StatAPROMRead, a);
-    LogFlow(("#%d pcnetIOPortAPromRead: Port=%RTiop *pu32=%#RX32 cb=%d rc=%Rrc\n", PCNET_INST_NR, Port, *pu32, cb, rc));
+    LogFlow(("#%d pcnetIOPortAPromRead: offPort=%RTiop *pu32=%#RX32 cb=%d rc=%Rrc\n", PCNET_INST_NR, offPort, *pu32, cb, rc));
     return rc;
 }
 
@@ -3511,23 +3521,24 @@ PDMBOTHCBDECL(int) pcnetIOPortAPromRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPO
 /**
  * @callback_method_impl{FNIOMIOPORTOUT, APROM}
  */
-PDMBOTHCBDECL(int) pcnetIOPortAPromWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb)
+static DECLCALLBACK(VBOXSTRICTRC)
+pcnetIoPortAPromWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t u32, unsigned cb)
 {
-    PPCNETSTATE pThis = PDMDEVINS_2_DATA(pDevIns, PPCNETSTATE);
-    int         rc    = VINF_SUCCESS;
+    PPCNETSTATE     pThis = PDMDEVINS_2_DATA(pDevIns, PPCNETSTATE);
+    VBOXSTRICTRC    rc    = VINF_SUCCESS;
     Assert(PDMCritSectIsOwner(&pThis->CritSect));
     RT_NOREF_PV(pvUser);
 
     if (cb == 1)
     {
         STAM_PROFILE_ADV_START(&pThis->StatAPROMWrite, a);
-        pcnetAPROMWriteU8(pThis, Port, u32);
+        pcnetAPROMWriteU8(pThis, offPort, u32);
         STAM_PROFILE_ADV_STOP(&pThis->StatAPROMWrite, a);
     }
     else
-        rc = PDMDevHlpDBGFStop(pDevIns, RT_SRC_POS, "Port=%#x cb=%d u32=%#x\n", Port, cb, u32);
+        rc = PDMDevHlpDBGFStop(pDevIns, RT_SRC_POS, "offPort=%#x cb=%d u32=%#x\n", offPort, cb, u32);
 
-    LogFlow(("#%d pcnetIOPortAPromWrite: Port=%RTiop u32=%#RX32 cb=%d rc=%Rrc\n", PCNET_INST_NR, Port, u32, cb, rc));
+    LogFlow(("#%d pcnetIoPortAPromWrite: offPort=%RTiop u32=%#RX32 cb=%d rc=%Rrc\n", PCNET_INST_NR, offPort, u32, cb, rc));
     return rc;
 }
 
@@ -3535,7 +3546,7 @@ PDMBOTHCBDECL(int) pcnetIOPortAPromWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOP
 /* -=-=-=-=-=- I/O Port access -=-=-=-=-=- */
 
 
-static int pcnetIoPortWriteU8(PPCNETSTATE pThis, uint32_t addr, uint32_t val)
+static VBOXSTRICTRC pcnetIoPortWriteU8(PPCNETSTATE pThis, uint32_t addr, uint32_t val)
 {
     RT_NOREF1(val);
 #ifdef PCNET_DEBUG_IO
@@ -3555,11 +3566,9 @@ static int pcnetIoPortWriteU8(PPCNETSTATE pThis, uint32_t addr, uint32_t val)
     return VINF_SUCCESS;
 }
 
-static uint32_t pcnetIoPortReadU8(PPCNETSTATE pThis, uint32_t addr, int *pRC)
+static uint32_t pcnetIoPortReadU8(PPCNETSTATE pThis, uint32_t addr)
 {
     uint32_t val = UINT32_MAX;
-
-    *pRC = VINF_SUCCESS;
 
     if (RT_LIKELY(!BCR_DWIO(pThis)))
     {
@@ -3582,9 +3591,9 @@ static uint32_t pcnetIoPortReadU8(PPCNETSTATE pThis, uint32_t addr, int *pRC)
     return val;
 }
 
-static int pcnetIoPortWriteU16(PPDMDEVINS pDevIns, PPCNETSTATE pThis, uint32_t addr, uint32_t val)
+static VBOXSTRICTRC pcnetIoPortWriteU16(PPDMDEVINS pDevIns, PPCNETSTATE pThis, uint32_t addr, uint32_t val)
 {
-    int rc = VINF_SUCCESS;
+    VBOXSTRICTRC rc = VINF_SUCCESS;
 
 #ifdef PCNET_DEBUG_IO
     Log2(("#%d pcnetIoPortWriteU16: addr=%#010x val=%#06x\n", PCNET_INST_NR, addr, val));
@@ -3612,11 +3621,9 @@ static int pcnetIoPortWriteU16(PPDMDEVINS pDevIns, PPCNETSTATE pThis, uint32_t a
     return rc;
 }
 
-static uint32_t pcnetIoPortReadU16(PPDMDEVINS pDevIns, PPCNETSTATE pThis, uint32_t addr, int *pRC)
+static uint32_t pcnetIoPortReadU16(PPDMDEVINS pDevIns, PPCNETSTATE pThis, uint32_t addr)
 {
     uint32_t val = ~0U;
-
-    *pRC = VINF_SUCCESS;
 
     if (RT_LIKELY(!BCR_DWIO(pThis)))
     {
@@ -3656,9 +3663,9 @@ skip_update_irq:
     return val;
 }
 
-static int pcnetIoPortWriteU32(PPDMDEVINS pDevIns, PPCNETSTATE pThis, uint32_t addr, uint32_t val)
+static VBOXSTRICTRC pcnetIoPortWriteU32(PPDMDEVINS pDevIns, PPCNETSTATE pThis, uint32_t addr, uint32_t val)
 {
-    int rc = VINF_SUCCESS;
+    VBOXSTRICTRC rc = VINF_SUCCESS;
 
 #ifdef PCNET_DEBUG_IO
     Log2(("#%d pcnetIoPortWriteU32: addr=%#010x val=%#010x\n", PCNET_INST_NR,
@@ -3695,11 +3702,9 @@ static int pcnetIoPortWriteU32(PPDMDEVINS pDevIns, PPCNETSTATE pThis, uint32_t a
     return rc;
 }
 
-static uint32_t pcnetIoPortReadU32(PPDMDEVINS pDevIns, PPCNETSTATE pThis, uint32_t addr, int *pRC)
+static uint32_t pcnetIoPortReadU32(PPDMDEVINS pDevIns, PPCNETSTATE pThis, uint32_t addr)
 {
     uint32_t val = ~0U;
-
-    *pRC = VINF_SUCCESS;
 
     if (RT_LIKELY(BCR_DWIO(pThis)))
     {
@@ -3742,26 +3747,25 @@ skip_update_irq:
 /**
  * @callback_method_impl{FNIOMIOPORTIN}
  */
-PDMBOTHCBDECL(int) pcnetIOPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32, unsigned cb)
+static DECLCALLBACK(VBOXSTRICTRC) pcnetIoPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t *pu32, unsigned cb)
 {
-    PPCNETSTATE pThis = PDMDEVINS_2_DATA(pDevIns, PPCNETSTATE);
-    int         rc    = VINF_SUCCESS;
+    PPCNETSTATE     pThis = PDMDEVINS_2_DATA(pDevIns, PPCNETSTATE);
+    VBOXSTRICTRC    rc    = VINF_SUCCESS;
     STAM_PROFILE_ADV_START(&pThis->CTX_SUFF_Z(StatIORead), a);
     Assert(PDMCritSectIsOwner(&pThis->CritSect));
     RT_NOREF_PV(pvUser);
 
     switch (cb)
     {
-        case 1: *pu32 = pcnetIoPortReadU8(pThis, Port, &rc); break;
-        case 2: *pu32 = pcnetIoPortReadU16(pDevIns, pThis, Port, &rc); break;
-        case 4: *pu32 = pcnetIoPortReadU32(pDevIns, pThis, Port, &rc); break;
+        case 1: *pu32 = pcnetIoPortReadU8(pThis, offPort); break;
+        case 2: *pu32 = pcnetIoPortReadU16(pDevIns, pThis, offPort); break;
+        case 4: *pu32 = pcnetIoPortReadU32(pDevIns, pThis, offPort); break;
         default:
             rc = PDMDevHlpDBGFStop(pThis->CTX_SUFF(pDevIns), RT_SRC_POS,
-                                   "pcnetIOPortRead: unsupported op size: offset=%#10x cb=%u\n",
-                                   Port, cb);
+                                   "pcnetIoPortRead: unsupported op size: offset=%#10x cb=%u\n", offPort, cb);
     }
 
-    Log2(("#%d pcnetIOPortRead: Port=%RTiop *pu32=%#RX32 cb=%d rc=%Rrc\n", PCNET_INST_NR, Port, *pu32, cb, rc));
+    Log2(("#%d pcnetIoPortRead: offPort=%RTiop *pu32=%#RX32 cb=%d rc=%Rrc\n", PCNET_INST_NR, offPort, *pu32, cb, VBOXSTRICTRC_VAL(rc)));
     STAM_PROFILE_ADV_STOP(&pThis->CTX_SUFF_Z(StatIORead), a);
     return rc;
 }
@@ -3770,26 +3774,25 @@ PDMBOTHCBDECL(int) pcnetIOPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Po
 /**
  * @callback_method_impl{FNIOMIOPORTOUT}
  */
-PDMBOTHCBDECL(int) pcnetIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb)
+static DECLCALLBACK(VBOXSTRICTRC) pcnetIoPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t u32, unsigned cb)
 {
     PPCNETSTATE pThis = PDMDEVINS_2_DATA(pDevIns, PPCNETSTATE);
-    int         rc    = VINF_SUCCESS;
+    VBOXSTRICTRC    rc    = VINF_SUCCESS;
     STAM_PROFILE_ADV_START(&pThis->CTX_SUFF_Z(StatIOWrite), a);
     Assert(PDMCritSectIsOwner(&pThis->CritSect));
     RT_NOREF_PV(pvUser);
 
     switch (cb)
     {
-        case 1: rc = pcnetIoPortWriteU8(pThis, Port, u32); break;
-        case 2: rc = pcnetIoPortWriteU16(pDevIns, pThis, Port, u32); break;
-        case 4: rc = pcnetIoPortWriteU32(pDevIns, pThis, Port, u32); break;
+        case 1: rc = pcnetIoPortWriteU8(pThis, offPort, u32); break;
+        case 2: rc = pcnetIoPortWriteU16(pDevIns, pThis, offPort, u32); break;
+        case 4: rc = pcnetIoPortWriteU32(pDevIns, pThis, offPort, u32); break;
         default:
             rc = PDMDevHlpDBGFStop(pThis->CTX_SUFF(pDevIns), RT_SRC_POS,
-                                   "pcnetIOPortWrite: unsupported op size: offset=%#10x cb=%u\n",
-                                   Port, cb);
+                                   "pcnetIoPortWrite: unsupported op size: offset=%#10x cb=%u\n", offPort, cb);
     }
 
-    Log2(("#%d pcnetIOPortWrite: Port=%RTiop u32=%#RX32 cb=%d rc=%Rrc\n", PCNET_INST_NR, Port, u32, cb, rc));
+    Log2(("#%d pcnetIoPortWrite: offPort=%RTiop u32=%#RX32 cb=%d rc=%Rrc\n", PCNET_INST_NR, offPort, u32, cb, VBOXSTRICTRC_VAL(rc)));
     STAM_PROFILE_ADV_STOP(&pThis->CTX_SUFF_Z(StatIOWrite), a);
     return rc;
 }
@@ -3834,10 +3837,9 @@ static void pcnetMMIOWriteU16(PPDMDEVINS pDevIns, PPCNETSTATE pThis, RTGCPHYS ad
 static uint32_t pcnetMMIOReadU16(PPDMDEVINS pDevIns, PPCNETSTATE pThis, RTGCPHYS addr)
 {
     uint32_t val = ~0U;
-    int      rc;
 
     if (addr & 0x10)
-        val = pcnetIoPortReadU16(pDevIns, pThis, addr & 0x0f, &rc);
+        val = pcnetIoPortReadU16(pDevIns, pThis, addr & 0x0f);
     else
     {
         val = pcnetAPROMReadU8(pThis, addr+1);
@@ -3869,10 +3871,9 @@ static void pcnetMMIOWriteU32(PPDMDEVINS pDevIns, PPCNETSTATE pThis, RTGCPHYS ad
 static uint32_t pcnetMMIOReadU32(PPDMDEVINS pDevIns, PPCNETSTATE pThis, RTGCPHYS addr)
 {
     uint32_t val;
-    int      rc;
 
     if (addr & 0x10)
-        val = pcnetIoPortReadU32(pDevIns, pThis, addr & 0x0f, &rc);
+        val = pcnetIoPortReadU32(pDevIns, pThis, addr & 0x0f);
     else
     {
         val  = pcnetAPROMReadU8(pThis, addr+3);
@@ -4043,50 +4044,35 @@ static DECLCALLBACK(void) pcnetR3TimerRestore(PPDMDEVINS pDevIns, PTMTIMER pTime
 /**
  * @callback_method_impl{FNPCIIOREGIONMAP, For the PCnet I/O Ports.}
  */
-static DECLCALLBACK(int) pcnetIOPortMap(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t iRegion,
-                                        RTGCPHYS GCPhysAddress, RTGCPHYS cb, PCIADDRESSSPACE enmType)
+static DECLCALLBACK(int) pcnetR3PciMapUnmapIoPorts(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t iRegion,
+                                                   RTGCPHYS GCPhysAddress, RTGCPHYS cb, PCIADDRESSSPACE enmType)
 {
     PPCNETSTATE pThis = PDMDEVINS_2_DATA(pDevIns, PPCNETSTATE);
-    RTIOPORT    Port  = (RTIOPORT)GCPhysAddress;
+    int         rc;
     RT_NOREF(iRegion, cb, enmType, pPciDev);
 
     Assert(pDevIns->apPciDevs[0] == pPciDev);
     Assert(enmType == PCI_ADDRESS_SPACE_IO);
     Assert(cb >= 0x20);
 
-    int rc = PDMDevHlpIOPortRegister(pDevIns, Port, 0x10, 0, pcnetIOPortAPromWrite,
-                                     pcnetIOPortAPromRead, NULL, NULL, "PCnet APROM");
-    if (RT_FAILURE(rc))
-        return rc;
-    rc = PDMDevHlpIOPortRegister(pDevIns, Port + 0x10, 0x10, 0, pcnetIOPortWrite,
-                                 pcnetIOPortRead, NULL, NULL, "PCnet");
-    if (RT_FAILURE(rc))
-        return rc;
-
-    if (pDevIns->fRCEnabled)
+    if (GCPhysAddress != NIL_RTGCPHYS)
     {
-        rc = PDMDevHlpIOPortRegisterRC(pDevIns, Port, 0x10, 0, "pcnetIOPortAPromWrite",
-                                       "pcnetIOPortAPromRead", NULL, NULL, "PCnet APROM");
-        if (RT_FAILURE(rc))
-            return rc;
-        rc = PDMDevHlpIOPortRegisterRC(pDevIns, Port + 0x10, 0x10, 0, "pcnetIOPortWrite",
-                                       "pcnetIOPortRead", NULL, NULL, "PCnet");
-        if (RT_FAILURE(rc))
-            return rc;
+        RTIOPORT Port = (RTIOPORT)GCPhysAddress;
+        rc = PDMDevHlpIoPortMap(pDevIns, pThis->hIoPortsPciAProm, Port);
+        AssertRCReturn(rc, rc);
+        rc = PDMDevHlpIoPortMap(pDevIns, pThis->hIoPortsPci, Port + 0x10);
+        AssertRCReturn(rc, rc);
+        pThis->IOPortBase = Port;
     }
-    if (pDevIns->fR0Enabled)
+    else
     {
-        rc = PDMDevHlpIOPortRegisterR0(pDevIns, Port, 0x10, 0, "pcnetIOPortAPromWrite",
-                                       "pcnetIOPortAPromRead", NULL, NULL, "PCnet APROM");
-        if (RT_FAILURE(rc))
-            return rc;
-        rc = PDMDevHlpIOPortRegisterR0(pDevIns, Port + 0x10, 0x10, 0, "pcnetIOPortWrite",
-                                       "pcnetIOPortRead", NULL, NULL, "PCnet");
-        if (RT_FAILURE(rc))
-            return rc;
+        rc = PDMDevHlpIoPortUnmap(pDevIns, pThis->hIoPortsPciAProm);
+        AssertRCReturn(rc, rc);
+        rc = PDMDevHlpIoPortUnmap(pDevIns, pThis->hIoPortsPci);
+        AssertRCReturn(rc, rc);
+        pThis->IOPortBase = 0;
     }
 
-    pThis->IOPortBase = Port;
     return VINF_SUCCESS;
 }
 
@@ -5078,7 +5064,11 @@ static DECLCALLBACK(int) pcnetR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
     /*
      * Init what's required to make the destructor safe.
      */
-    pThis->hEventOutOfRxSpace = NIL_SUPSEMEVENT;
+    pThis->hEventOutOfRxSpace   = NIL_SUPSEMEVENT;
+    pThis->hIoPortsPci          = NIL_IOMIOPORTHANDLE;
+    pThis->hIoPortsPciAProm     = NIL_IOMIOPORTHANDLE;
+    pThis->hIoPortsIsa          = NIL_IOMIOPORTHANDLE;
+    pThis->hIoPortsIsaAProm     = NIL_IOMIOPORTHANDLE;
 
     /*
      * Validate configuration.
@@ -5231,8 +5221,20 @@ static DECLCALLBACK(int) pcnetR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
     {
         rc = PDMDevHlpPCIRegister(pDevIns, pPciDev);
         AssertRCReturn(rc, rc);
-        rc = PDMDevHlpPCIIORegionRegister(pDevIns, 0, PCNET_IOPORT_SIZE,  PCI_ADDRESS_SPACE_IO,  pcnetIOPortMap);
+
+        /* Region #0: I/O ports - two handlers: */
+        rc = PDMDevHlpIoPortCreate(pDevIns, 0x10 /*cPorts*/, pPciDev, 0 /*iPciRegion*/,
+                                   pcnetIoPortAPromWrite, pcnetIOPortAPromRead, NULL /*pvUser*/,
+                                   "PCnet APROM",  NULL /*paExtDescs*/, &pThis->hIoPortsPciAProm);
         AssertRCReturn(rc, rc);
+        rc = PDMDevHlpIoPortCreate(pDevIns, 0x10 /*cPorts*/, pPciDev, 0 /*iPciRegion*/,
+                                   pcnetIoPortWrite, pcnetIoPortRead, NULL /*pvUser*/,
+                                   "PCnet",        NULL /*paExtDescs*/, &pThis->hIoPortsPci);
+        AssertRCReturn(rc, rc);
+        rc = PDMDevHlpPCIIORegionRegisterIoCustom(pDevIns, 0, PCNET_IOPORT_SIZE, pcnetR3PciMapUnmapIoPorts);
+        AssertRCReturn(rc, rc);
+
+        /* Region #1: MMIO */
         rc = PDMDevHlpPCIIORegionRegister(pDevIns, 1, PCNET_PNPMMIO_SIZE, PCI_ADDRESS_SPACE_MEM, pcnetMMIOMap);
         AssertRCReturn(rc, rc);
     }
@@ -5242,38 +5244,12 @@ static DECLCALLBACK(int) pcnetR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
      */
     if (PCNET_IS_ISA(pThis))
     {
-        rc = PDMDevHlpIOPortRegister(pDevIns, pThis->IOPortBase, 0x10, 0, pcnetIOPortAPromWrite,
-                                     pcnetIOPortAPromRead, NULL, NULL, "PCnet APROM");
-        if (RT_FAILURE(rc))
-            return rc;
-        rc = PDMDevHlpIOPortRegister(pDevIns, pThis->IOPortBase + 0x10, 0x10, 0, pcnetIOPortWrite,
-                                     pcnetIOPortRead, NULL, NULL, "PCnet");
-        if (RT_FAILURE(rc))
-            return rc;
-
-        if (pDevIns->fRCEnabled)
-        {
-            rc = PDMDevHlpIOPortRegisterRC(pDevIns, pThis->IOPortBase, 0x10, 0, "pcnetIOPortAPromWrite",
-                                           "pcnetIOPortAPromRead", NULL, NULL, "PCnet APROM");
-            if (RT_FAILURE(rc))
-                return rc;
-            rc = PDMDevHlpIOPortRegisterRC(pDevIns, pThis->IOPortBase + 0x10, 0x10, 0, "pcnetIOPortWrite",
-                                           "pcnetIOPortRead", NULL, NULL, "PCnet");
-            if (RT_FAILURE(rc))
-                return rc;
-        }
-        if (pDevIns->fR0Enabled)
-        {
-            rc = PDMDevHlpIOPortRegisterR0(pDevIns, pThis->IOPortBase, 0x10, 0, "pcnetIOPortAPromWrite",
-                                           "pcnetIOPortAPromRead", NULL, NULL, "PCnet APROM");
-            if (RT_FAILURE(rc))
-                return rc;
-            rc = PDMDevHlpIOPortRegisterR0(pDevIns, pThis->IOPortBase + 0x10, 0x10, 0, "pcnetIOPortWrite",
-                                           "pcnetIOPortRead", NULL, NULL, "PCnet");
-            if (RT_FAILURE(rc))
-                return rc;
-        }
-
+        rc = PDMDevHlpIoPortCreateAndMap(pDevIns, pThis->IOPortBase, 0x10 /*cPorts*/, pcnetIoPortAPromWrite, pcnetIOPortAPromRead,
+                                         "PCnet APROM", NULL /*paExtDesc*/, &pThis->hIoPortsIsaAProm);
+        AssertRCReturn(rc, rc);
+        rc = PDMDevHlpIoPortCreateAndMap(pDevIns, pThis->IOPortBase + 0x10, 0x10 /*cPorts*/, pcnetIoPortWrite, pcnetIoPortRead,
+                                         "PCnet",       NULL /*paExtDesc*/, &pThis->hIoPortsIsa);
+        AssertRCReturn(rc, rc);
     }
 
 
@@ -5466,8 +5442,31 @@ static DECLCALLBACK(int) pcnetRZConstruct(PPDMDEVINS pDevIns)
     PDMDEV_CHECK_VERSIONS_RETURN(pDevIns);
     PPCNETSTATE pThis = PDMDEVINS_2_DATA(pDevIns, PPCNETSTATE);
 
+    /* Critical section setup: */
     int rc = PDMDevHlpSetDeviceCritSect(pDevIns, &pThis->CritSect);
     AssertRCReturn(rc, rc);
+
+    /* PCI I/O ports: */
+    if (pThis->hIoPortsPciAProm != NIL_IOMIOPORTHANDLE)
+    {
+        rc = PDMDevHlpIoPortSetUpContext(pDevIns, pThis->hIoPortsPciAProm, pcnetIoPortAPromWrite, pcnetIOPortAPromRead, NULL /*pvUser*/);
+        AssertRCReturn(rc, rc);
+        rc = PDMDevHlpIoPortSetUpContext(pDevIns, pThis->hIoPortsPci, pcnetIoPortWrite, pcnetIoPortRead, NULL /*pvUser*/);
+        AssertRCReturn(rc, rc);
+    }
+    else
+        Assert(pThis->hIoPortsPci == NIL_IOMIOPORTHANDLE);
+
+    /* ISA I/O ports: */
+    if (pThis->hIoPortsIsaAProm != NIL_IOMIOPORTHANDLE)
+    {
+        rc = PDMDevHlpIoPortSetUpContext(pDevIns, pThis->hIoPortsIsaAProm, pcnetIoPortAPromWrite, pcnetIOPortAPromRead, NULL /*pvUser*/);
+        AssertRCReturn(rc, rc);
+        rc = PDMDevHlpIoPortSetUpContext(pDevIns, pThis->hIoPortsIsa, pcnetIoPortWrite, pcnetIoPortRead, NULL /*pvUser*/);
+        AssertRCReturn(rc, rc);
+    }
+    else
+        Assert(pThis->hIoPortsIsa == NIL_IOMIOPORTHANDLE);
 
     return VINF_SUCCESS;
 }
@@ -5523,7 +5522,7 @@ const PDMDEVREG g_DevicePCNet =
     /* .pfnReserved7 = */           NULL,
 #elif defined(IN_RING0)
     /* .pfnEarlyConstruct = */      NULL,
-    /* .pfnConstruct = */           NULL,
+    /* .pfnConstruct = */           pcnetRZConstruct,
     /* .pfnDestruct = */            NULL,
     /* .pfnFinalDestruct = */       NULL,
     /* .pfnRequest = */             NULL,
@@ -5536,7 +5535,7 @@ const PDMDEVREG g_DevicePCNet =
     /* .pfnReserved6 = */           NULL,
     /* .pfnReserved7 = */           NULL,
 #elif defined(IN_RC)
-    /* .pfnConstruct = */           NULL,
+    /* .pfnConstruct = */           pcnetRZConstruct,
     /* .pfnReserved0 = */           NULL,
     /* .pfnReserved1 = */           NULL,
     /* .pfnReserved2 = */           NULL,
