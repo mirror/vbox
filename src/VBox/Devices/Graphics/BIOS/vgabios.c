@@ -435,6 +435,7 @@ static void vga_read_pixel(uint8_t page, uint16_t col, uint16_t row, uint16_t ST
     case PLANAR4:
     case PLANAR1:
         addr = col / 8 + row * read_word(BIOSMEM_SEG, BIOSMEM_NB_COLS);
+        addr += read_word(BIOSMEM_SEG, BIOSMEM_PAGE_SIZE) * page;
         mask = 0x80 >> (col & 0x07);
         attr = 0x00;
         for (i = 0; i < 4; i++) {
@@ -1118,7 +1119,7 @@ static void biosfn_scroll(uint8_t nblines, uint8_t attr, uint8_t rul, uint8_t cu
 
 // --------------------------------------------------------------------------------------------
 static void write_gfx_char_pl4(uint8_t car, uint8_t attr, uint8_t xcurs,
-                               uint8_t ycurs, uint8_t nbcols, uint8_t cheight)
+                               uint8_t ycurs, uint8_t nbcols, uint8_t cheight, uint8_t page)
 {
  uint8_t i,j,mask;
  uint8_t *fdata;
@@ -1135,6 +1136,7 @@ static void write_gfx_char_pl4(uint8_t car, uint8_t attr, uint8_t xcurs,
     fdata = &vgafont8;
   }
  addr=xcurs+ycurs*cheight*nbcols;
+ addr+=read_word(BIOSMEM_SEG,BIOSMEM_PAGE_SIZE)*page;
  src = car * cheight;
  outw(VGAREG_SEQU_ADDRESS, 0x0f02);
  outw(VGAREG_GRDC_ADDRESS, 0x0205);
@@ -1313,7 +1315,7 @@ static void biosfn_write_char_attr(uint8_t car, uint8_t page, uint8_t attr, uint
       {
        case PLANAR4:
        case PLANAR1:
-         write_gfx_char_pl4(car,attr,xcurs,ycurs,nbcols,cheight);
+         write_gfx_char_pl4(car,attr,xcurs,ycurs,nbcols,cheight,page);
          break;
        case CGA:
          write_gfx_char_cga(car,attr,xcurs,ycurs,nbcols,bpp);
@@ -1372,7 +1374,7 @@ static void biosfn_write_char_only(uint8_t car, uint8_t page, uint8_t attr, uint
       {
        case PLANAR4:
        case PLANAR1:
-         write_gfx_char_pl4(car,attr,xcurs,ycurs,nbcols,cheight);
+         write_gfx_char_pl4(car,attr,xcurs,ycurs,nbcols,cheight,page);
          break;
        case CGA:
          write_gfx_char_cga(car,attr,xcurs,ycurs,nbcols,bpp);
@@ -1407,6 +1409,7 @@ static void biosfn_write_pixel(uint8_t BH, uint8_t AL, uint16_t CX, uint16_t DX)
    case PLANAR4:
    case PLANAR1:
      addr = CX/8+DX*read_word(BIOSMEM_SEG,BIOSMEM_NB_COLS);
+     addr += read_word(BIOSMEM_SEG,BIOSMEM_PAGE_SIZE) * BH;
      mask = 0x80 >> (CX & 0x07);
      outw(VGAREG_GRDC_ADDRESS, (mask << 8) | 0x08);
      outw(VGAREG_GRDC_ADDRESS, 0x0205);
@@ -1528,7 +1531,7 @@ static void biosfn_write_teletype(uint8_t car, uint8_t page, uint8_t attr, uint8
        {
         case PLANAR4:
         case PLANAR1:
-          write_gfx_char_pl4(car,attr,xcurs,ycurs,nbcols,cheight);
+          write_gfx_char_pl4(car,attr,xcurs,ycurs,nbcols,cheight,page);
           break;
         case CGA:
           write_gfx_char_cga(car,attr,xcurs,ycurs,nbcols,bpp);
