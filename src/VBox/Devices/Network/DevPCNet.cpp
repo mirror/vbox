@@ -106,8 +106,7 @@
 /** Maximum frame size we handle */
 #define MAX_FRAME                       1536
 
-#define PCNETSTATE_2_DEVINS(pPCnet)            ((pPCnet)->CTX_SUFF(pDevIns))
-#define PCNET_INST_NR                          (PCNETSTATE_2_DEVINS(pThis)->iInstance)
+#define PCNET_INST_NR                   (pThis->iInstance)
 
 /** @name Bus configuration registers
  * @{ */
@@ -308,29 +307,6 @@ enum PCNET_DEVICE_TYPE
  */
 typedef struct PCNETSTATE
 {
-    /** Pointer to the device instance - R3. */
-    PPDMDEVINSR3                        pDevInsR3;
-    /** Pointer to the connector of the attached network driver - R3. */
-    PPDMINETWORKUPR3                    pDrvR3;
-    /** Pointer to the attached network driver. */
-    R3PTRTYPE(PPDMIBASE)                pDrvBase;
-    /** LUN\#0 + status LUN: The base interface. */
-    PDMIBASE                            IBase;
-    /** LUN\#0: The network port interface. */
-    PDMINETWORKDOWN                     INetworkDown;
-    /** LUN\#0: The network config port interface. */
-    PDMINETWORKCONFIG                   INetworkConfig;
-
-    /** Pointer to the device instance - R0. */
-    PPDMDEVINSR0                        pDevInsR0;
-    /** Pointer to the connector of the attached network driver - R0. */
-    PPDMINETWORKUPR0                    pDrvR0;
-
-    /** Pointer to the device instance - RC. */
-    PPDMDEVINSRC                        pDevInsRC;
-    /** Pointer to the connector of the attached network driver - RC. */
-    PPDMINETWORKUPRC                    pDrvRC;
-
     /** Software Interrupt timer - R3. */
     TMTIMERHANDLE                       hTimerSoftInt;
 #ifndef PCNET_NO_POLLING
@@ -358,23 +334,19 @@ typedef struct PCNETSTATE
     uint16_t                            aCSR[CSR_MAX_REG];
     uint16_t                            aBCR[BCR_MAX_RAP];
     uint16_t                            aMII[MII_MAX_REG];
+
     /** Holds the bits which were really seen by the guest. Relevant are bits
      * 8..14 (IDON, TINT, RINT, MERR, MISS, CERR, BABL). We don't allow the
      * guest to clear any of these bits (by writing a ONE) before a bit was
      * seen by the guest. */
     uint16_t                            u16CSR0LastSeenByGuest;
-    /** Last time we polled the queues */
-    uint64_t                            u64LastPoll;
-
-    /** The loopback transmit buffer (avoid stack allocations). */
-    uint8_t                             abLoopBuf[4096];
-    /** The recv buffer. */
-    uint8_t                             abRecvBuf[4096];
-
     /** The configured IRQ for ISA operation. */
     uint8_t                             uIsaIrq;
     /** Alignment padding. */
-    uint8_t                             Alignment2[3];
+    uint8_t                             Alignment2[1+4];
+
+    /** Last time we polled the queues */
+    uint64_t                            u64LastPoll;
 
     /** Size of a RX/TX descriptor (8 or 16 bytes according to SWSTYLE */
     int32_t                             iLog2DescSize;
@@ -389,18 +361,16 @@ typedef struct PCNETSTATE
     bool                                fLinkTempDown;
 
     /** Number of times we've reported the link down. */
-    RTUINT                              cLinkDownReported;
+    uint32_t                            cLinkDownReported;
     /** The configured MAC address. */
     RTMAC                               MacConfigured;
+    /** Set if PCNETSTATER3::pDrvR3 is not NULL. */
+    bool                                fDriverAttached;
     /** Alignment padding. */
-    uint8_t                             Alignment3[2];
+    uint8_t                             bAlignment3;
 
     /** The LED. */
     PDMLED                              Led;
-    /** Status LUN: The LED ports. */
-    PDMILEDPORTS                        ILeds;
-    /** Partner of ILeds. */
-    R3PTRTYPE(PPDMILEDCONNECTORS)       pLedsConnector;
 
     /** Access critical section. */
     PDMCRITSECT                         CritSect;
@@ -420,9 +390,6 @@ typedef struct PCNETSTATE
 
     RTGCPHYS32                          RDRAPhysOld;
     uint32_t                            cbRDRAOld;
-
-    DECLRCCALLBACKMEMBER(int, pfnEMInterpretInstructionRC, (PVM pVM, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, uint32_t *pcbSize));
-    DECLR0CALLBACKMEMBER(int, pfnEMInterpretInstructionR0, (PVM pVM, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, uint32_t *pcbSize));
 #endif
 
     /** Error counter for bad receive descriptors. */
@@ -436,8 +403,8 @@ typedef struct PCNETSTATE
     uint32_t                            u32LinkSpeed;
     /** MS to wait before we enable the link. */
     uint32_t                            cMsLinkUpDelay;
-    /** Alignment padding. */
-    uint32_t                            Alignment6;
+    /** The device instance number (for logging). */
+    uint32_t                            iInstance;
 
     /** PCI Region \#0: I/O ports offset 0x10-0x1f. */
     IOMIOPORTHANDLE                     hIoPortsPci;
@@ -450,6 +417,11 @@ typedef struct PCNETSTATE
     IOMIOPORTHANDLE                     hIoPortsIsa;
     /** ISA I/O ports offset 0x00-0x0f. */
     IOMIOPORTHANDLE                     hIoPortsIsaAProm;
+
+    /** The loopback transmit buffer (avoid stack allocations). */
+    uint8_t                             abLoopBuf[4096];
+    /** The recv buffer. */
+    uint8_t                             abRecvBuf[4096];
 
     STAMCOUNTER                         StatReceiveBytes;
     STAMCOUNTER                         StatTransmitBytes;
@@ -505,9 +477,77 @@ typedef struct PCNETSTATE
 # endif
 #endif /* VBOX_WITH_STATISTICS */
 } PCNETSTATE;
-//AssertCompileMemberAlignment(PCNETSTATE, StatReceiveBytes, 8);
-/** Pointer to a PCnet state structure. */
+/** Pointer to a shared PCnet state structure. */
 typedef PCNETSTATE *PPCNETSTATE;
+
+
+/**
+ * PCNET state for ring-3.
+ *
+ * @implements  PDMIBASE
+ * @implements  PDMINETWORKDOWN
+ * @implements  PDMINETWORKCONFIG
+ * @implements  PDMILEDPORTS
+ */
+typedef struct PCNETSTATER3
+{
+    /** Pointer to the device instance. */
+    PPDMDEVINSR3                        pDevIns;
+    /** Pointer to the connector of the attached network driver. */
+    PPDMINETWORKUPR3                    pDrv;
+    /** Pointer to the attached network driver. */
+    R3PTRTYPE(PPDMIBASE)                pDrvBase;
+    /** LUN\#0 + status LUN: The base interface. */
+    PDMIBASE                            IBase;
+    /** LUN\#0: The network port interface. */
+    PDMINETWORKDOWN                     INetworkDown;
+    /** LUN\#0: The network config port interface. */
+    PDMINETWORKCONFIG                   INetworkConfig;
+
+    /** Status LUN: The LED ports. */
+    PDMILEDPORTS                        ILeds;
+    /** Partner of ILeds. */
+    R3PTRTYPE(PPDMILEDCONNECTORS)       pLedsConnector;
+} PCNETSTATER3;
+/** Pointer to a PCnet state structure for ring-3. */
+typedef PCNETSTATER3 *PPCNETSTATER3;
+
+
+/**
+ * PCNET state for ring-0.
+ */
+typedef struct PCNETSTATER0
+{
+    /** Pointer to the connector of the attached network driver. */
+    PPDMINETWORKUPR0                    pDrv;
+#ifdef PCNET_NO_POLLING
+    DECLR0CALLBACKMEMBER(int, pfnEMInterpretInstructionR0, (PVM pVM, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, uint32_t *pcbSize));
+#endif
+} PCNETSTATER0;
+/** Pointer to a PCnet state structure for ring-0. */
+typedef PCNETSTATER0 *PPCNETSTATER0;
+
+
+/**
+ * PCNET state for raw-mode.
+ */
+typedef struct PCNETSTATERC
+{
+    /** Pointer to the connector of the attached network driver. */
+    PPDMINETWORKUPRC                    pDrv;
+#ifdef PCNET_NO_POLLING
+    DECLRCCALLBACKMEMBER(int, pfnEMInterpretInstructionRC, (PVM pVM, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, uint32_t *pcbSize));
+#endif
+} PCNETSTATERC;
+/** Pointer to a PCnet state structure for raw-mode. */
+typedef PCNETSTATERC *PPCNETSTATERC;
+
+
+/** The PCnet state structure for the current context. */
+typedef CTX_SUFF(PCNETSTATE) PCNETSTATECC;
+/** Pointer to a PCnet state structure for the current context. */
+typedef CTX_SUFF(PPCNETSTATE) PPCNETSTATECC;
+
 
 /** @todo All structs: big endian? */
 
@@ -640,6 +680,23 @@ AssertCompileSize(RMD, 16);
 /*********************************************************************************************************************************
 *   Internal Functions                                                                                                           *
 *********************************************************************************************************************************/
+static void     pcnetPollRxTx(PPDMDEVINS pDevIns, PPCNETSTATE pThis, PPCNETSTATECC pThisCC);
+static void     pcnetPollTimer(PPDMDEVINS pDevIns, PPCNETSTATE pThis, PPCNETSTATECC pThisCC);
+static void     pcnetUpdateIrq(PPDMDEVINS pDevIns, PPCNETSTATE pThis);
+static uint32_t pcnetBCRReadU16(PPCNETSTATE pThis, uint32_t u32RAP);
+static VBOXSTRICTRC pcnetBCRWriteU16(PPDMDEVINS pDevIns, PPCNETSTATE pThis, uint32_t u32RAP, uint32_t val);
+#ifndef PCNET_NO_POLLING
+static void     pcnetPollTimerStart(PPDMDEVINS pDevIns, PPCNETSTATE pThis);
+#endif
+static int      pcnetXmitPending(PPDMDEVINS pDevIns, PPCNETSTATE pThis, PPCNETSTATECC pThisCC, bool fOnWorkerThread);
+#ifdef PCNET_NO_POLLING
+# ifndef IN_RING3
+RT_C_DECLS_BEGIN
+DECLEXPORT(FNPGMRZPHYSPFHANDLER)    pcnetHandleRingWritePf;
+RT_C_DECLS_END
+# endif
+#endif
+
 #define PRINT_TMD(T) Log10((    \
         "TMD0 : TBADR=%#010x\n" \
         "TMD1 : OWN=%d, ERR=%d, FCS=%d, LTI=%d, "       \
@@ -672,18 +729,6 @@ AssertCompileSize(RMD, 16);
         (R)->rmd2.rcc, (R)->rmd2.rpc, (R)->rmd2.mcnt,   \
         (R)->rmd2.zeros))
 
-#ifndef PCNET_NO_POLLING
-static void pcnetPollTimerStart(PPDMDEVINS pDevIns, PPCNETSTATE pThis);
-#endif
-static int  pcnetXmitPending(PPCNETSTATE pThis, bool fOnWorkerThread);
-#ifdef PCNET_NO_POLLING
-# ifndef IN_RING3
-RT_C_DECLS_BEGIN
-DECLEXPORT(FNPGMRZPHYSPFHANDLER)    pcnetHandleRingWritePf;
-RT_C_DECLS_END
-# endif
-#endif
-
 
 
 /**
@@ -693,38 +738,39 @@ RT_C_DECLS_END
  */
 DECLINLINE(bool) pcnetIsLinkUp(PPCNETSTATE pThis)
 {
-    return pThis->pDrvR3 && !pThis->fLinkTempDown && pThis->fLinkUp;
+    return pThis->fDriverAttached && !pThis->fLinkTempDown && pThis->fLinkUp;
 }
 
 /**
  * Memory write helper to handle PCI/ISA differences.
  *
  * @returns nothing.
- * @param   pThis       Pointer to the BusLogic device instance
+ * @param   pDevIns     The device instance.
+ * @param   pThis       Pointer to the PCNet device instance
  * @param   GCPhys      Guest physical memory address
  * @param   pvBuf       Host side buffer address
  * @param   cbWrite     Number of bytes to write
  */
-static void pcnetPhysWrite(PPCNETSTATE pThis, RTGCPHYS GCPhys, const void *pvBuf, size_t cbWrite)
+static void pcnetPhysWrite(PPDMDEVINS pDevIns, PPCNETSTATE pThis, RTGCPHYS GCPhys, const void *pvBuf, size_t cbWrite)
 {
     if (!PCNET_IS_ISA(pThis))
-        PDMDevHlpPCIPhysWrite(pThis->CTX_SUFF(pDevIns), GCPhys, pvBuf, cbWrite);
+        PDMDevHlpPCIPhysWrite(pDevIns, GCPhys, pvBuf, cbWrite);
     else
-        PDMDevHlpPhysWrite(pThis->CTX_SUFF(pDevIns), GCPhys, pvBuf, cbWrite);
+        PDMDevHlpPhysWrite(pDevIns, GCPhys, pvBuf, cbWrite);
 }
 
 /**
  * Load transmit message descriptor
  * Make sure we read the own flag first.
  *
+ * @param   pDevIns     The device instance.
  * @param pThis         adapter private data
  * @param addr          physical address of the descriptor
  * @param fRetIfNotOwn  return immediately after reading the own flag if we don't own the descriptor
  * @return              true if we own the descriptor, false otherwise
  */
-DECLINLINE(bool) pcnetTmdLoad(PPCNETSTATE pThis, TMD *tmd, RTGCPHYS32 addr, bool fRetIfNotOwn)
+DECLINLINE(bool) pcnetTmdLoad(PPDMDEVINS pDevIns, PPCNETSTATE pThis, TMD *tmd, RTGCPHYS32 addr, bool fRetIfNotOwn)
 {
-    PPDMDEVINS pDevIns = PCNETSTATE_2_DEVINS(pThis);
     uint8_t    ownbyte;
 
     if (RT_UNLIKELY(BCR_SWSTYLE(pThis) == 0))
@@ -774,7 +820,7 @@ DECLINLINE(bool) pcnetTmdLoad(PPCNETSTATE pThis, TMD *tmd, RTGCPHYS32 addr, bool
  * Store transmit message descriptor and hand it over to the host (the VM guest).
  * Make sure that all data are transmitted before we clear the own flag.
  */
-DECLINLINE(void) pcnetTmdStorePassHost(PPCNETSTATE pThis, TMD *tmd, RTGCPHYS32 addr)
+DECLINLINE(void) pcnetTmdStorePassHost(PPDMDEVINS pDevIns, PPCNETSTATE pThis, TMD *tmd, RTGCPHYS32 addr)
 {
     STAM_PROFILE_ADV_START(&pThis->CTX_SUFF_Z(StatTmdStore), a);
     if (RT_UNLIKELY(BCR_SWSTYLE(pThis) == 0))
@@ -785,16 +831,16 @@ DECLINLINE(void) pcnetTmdStorePassHost(PPCNETSTATE pThis, TMD *tmd, RTGCPHYS32 a
         xda[2] =   ((uint32_t *)tmd)[1]        & 0xffff;
         xda[3] =   ((uint32_t *)tmd)[2] >> 16;
         xda[1] |=  0x8000;
-        pcnetPhysWrite(pThis, addr, (void*)&xda[0], sizeof(xda));
+        pcnetPhysWrite(pDevIns, pThis, addr, (void*)&xda[0], sizeof(xda));
         xda[1] &= ~0x8000;
-        pcnetPhysWrite(pThis, addr+3, (uint8_t*)xda + 3, 1);
+        pcnetPhysWrite(pDevIns, pThis, addr+3, (uint8_t*)xda + 3, 1);
     }
     else if (RT_LIKELY(BCR_SWSTYLE(pThis) != 3))
     {
         ((uint32_t*)tmd)[1] |=  0x80000000;
-        pcnetPhysWrite(pThis, addr, (void*)tmd, 12);
+        pcnetPhysWrite(pDevIns, pThis, addr, (void*)tmd, 12);
         ((uint32_t*)tmd)[1] &= ~0x80000000;
-        pcnetPhysWrite(pThis, addr+7, (uint8_t*)tmd + 7, 1);
+        pcnetPhysWrite(pDevIns, pThis, addr+7, (uint8_t*)tmd + 7, 1);
     }
     else
     {
@@ -803,25 +849,27 @@ DECLINLINE(void) pcnetTmdStorePassHost(PPCNETSTATE pThis, TMD *tmd, RTGCPHYS32 a
         xda[1] = ((uint32_t *)tmd)[1];
         xda[2] = ((uint32_t *)tmd)[0];
         xda[1] |=  0x80000000;
-        pcnetPhysWrite(pThis, addr, (void*)&xda[0], sizeof(xda));
+        pcnetPhysWrite(pDevIns, pThis, addr, (void*)&xda[0], sizeof(xda));
         xda[1] &= ~0x80000000;
-        pcnetPhysWrite(pThis, addr+7, (uint8_t*)xda + 7, 1);
+        pcnetPhysWrite(pDevIns, pThis, addr+7, (uint8_t*)xda + 7, 1);
     }
     STAM_PROFILE_ADV_STOP(&pThis->CTX_SUFF_Z(StatTmdStore), a);
 }
 
 /**
  * Load receive message descriptor
+ *
  * Make sure we read the own flag first.
  *
- * @param pThis         adapter private data
- * @param addr          physical address of the descriptor
- * @param fRetIfNotOwn  return immediately after reading the own flag if we don't own the descriptor
- * @return              true if we own the descriptor, false otherwise
+ * @param   pDevIns         The device instance.
+ * @param   pThis           Adapter private data.
+ * @param   addr            Physical address of the descriptor.
+ * @param   fRetIfNotOwn    Return immediately after reading the own flag if we
+ *                          don't own the descriptor.
+ * @returns true if we own the descriptor, false otherwise
  */
-DECLINLINE(bool) pcnetRmdLoad(PPCNETSTATE pThis, RMD *rmd, RTGCPHYS32 addr, bool fRetIfNotOwn)
+DECLINLINE(bool) pcnetRmdLoad(PPDMDEVINS pDevIns, PPCNETSTATE pThis, RMD *rmd, RTGCPHYS32 addr, bool fRetIfNotOwn)
 {
-    PPDMDEVINS pDevIns = PCNETSTATE_2_DEVINS(pThis);
     uint8_t    ownbyte;
 
     if (RT_UNLIKELY(BCR_SWSTYLE(pThis) == 0))
@@ -871,7 +919,7 @@ DECLINLINE(bool) pcnetRmdLoad(PPCNETSTATE pThis, RMD *rmd, RTGCPHYS32 addr, bool
  * Store receive message descriptor and hand it over to the host (the VM guest).
  * Make sure that all data are transmitted before we clear the own flag.
  */
-DECLINLINE(void) pcnetRmdStorePassHost(PPCNETSTATE pThis, RMD *rmd, RTGCPHYS32 addr)
+DECLINLINE(void) pcnetRmdStorePassHost(PPDMDEVINS pDevIns, PPCNETSTATE pThis, RMD *rmd, RTGCPHYS32 addr)
 {
     if (RT_UNLIKELY(BCR_SWSTYLE(pThis) == 0))
     {
@@ -881,16 +929,16 @@ DECLINLINE(void) pcnetRmdStorePassHost(PPCNETSTATE pThis, RMD *rmd, RTGCPHYS32 a
         rda[2] =   ((uint32_t *)rmd)[1]      & 0xffff;
         rda[3] =   ((uint32_t *)rmd)[2]      & 0xffff;
         rda[1] |=  0x8000;
-        pcnetPhysWrite(pThis, addr, (void*)&rda[0], sizeof(rda));
+        pcnetPhysWrite(pDevIns, pThis, addr, (void*)&rda[0], sizeof(rda));
         rda[1] &= ~0x8000;
-        pcnetPhysWrite(pThis, addr+3, (uint8_t*)rda + 3, 1);
+        pcnetPhysWrite(pDevIns, pThis, addr+3, (uint8_t*)rda + 3, 1);
     }
     else if (RT_LIKELY(BCR_SWSTYLE(pThis) != 3))
     {
         ((uint32_t*)rmd)[1] |=  0x80000000;
-        pcnetPhysWrite(pThis, addr, (void*)rmd, 12);
+        pcnetPhysWrite(pDevIns, pThis, addr, (void*)rmd, 12);
         ((uint32_t*)rmd)[1] &= ~0x80000000;
-        pcnetPhysWrite(pThis, addr+7, (uint8_t*)rmd + 7, 1);
+        pcnetPhysWrite(pDevIns, pThis, addr+7, (uint8_t*)rmd + 7, 1);
     }
     else
     {
@@ -899,9 +947,9 @@ DECLINLINE(void) pcnetRmdStorePassHost(PPCNETSTATE pThis, RMD *rmd, RTGCPHYS32 a
         rda[1] = ((uint32_t *)rmd)[1];
         rda[2] = ((uint32_t *)rmd)[0];
         rda[1] |=  0x80000000;
-        pcnetPhysWrite(pThis, addr, (void*)&rda[0], sizeof(rda));
+        pcnetPhysWrite(pDevIns, pThis, addr, (void*)&rda[0], sizeof(rda));
         rda[1] &= ~0x80000000;
-        pcnetPhysWrite(pThis, addr+7, (uint8_t*)rda + 7, 1);
+        pcnetPhysWrite(pDevIns, pThis, addr+7, (uint8_t*)rda + 7, 1);
     }
 }
 
@@ -910,9 +958,8 @@ DECLINLINE(void) pcnetRmdStorePassHost(PPCNETSTATE pThis, RMD *rmd, RTGCPHYS32 a
  * Read+Write a TX/RX descriptor to prevent PDMDevHlpPCIPhysWrite() allocating
  * pages later when we shouldn't schedule to EMT. Temporarily hack.
  */
-static void pcnetDescTouch(PPCNETSTATE pThis, RTGCPHYS32 addr)
+static void pcnetDescTouch(PPDMDEVINS pDevIns, PPCNETSTATE pThis, RTGCPHYS32 addr)
 {
-    PPDMDEVINS pDevIns = PCNETSTATE_2_DEVINS(pThis);
     uint8_t aBuf[16];
     size_t cbDesc;
     if (RT_UNLIKELY(BCR_SWSTYLE(pThis) == 0))
@@ -920,7 +967,7 @@ static void pcnetDescTouch(PPCNETSTATE pThis, RTGCPHYS32 addr)
     else
         cbDesc = 16;
     PDMDevHlpPhysRead(pDevIns, addr, aBuf, cbDesc);
-    pcnetPhysWrite(pThis, addr, aBuf, cbDesc);
+    pcnetPhysWrite(pDevIns, pThis, addr, aBuf, cbDesc);
 }
 #endif /* IN_RING3 */
 
@@ -1143,11 +1190,6 @@ DECLINLINE(RTGCPHYS32) pcnetTdraAddr(PPCNETSTATE pThis, int idx)
 #undef htons
 #define htons(x)    ( (((x) & 0xff00) >> 8) | (((x) & 0x00ff) << 8) )
 
-static void     pcnetPollRxTx(PPCNETSTATE pThis);
-static void     pcnetPollTimer(PPDMDEVINS pDevIns, PPCNETSTATE pThis);
-static void     pcnetUpdateIrq(PPCNETSTATE pThis);
-static uint32_t pcnetBCRReadU16(PPCNETSTATE pThis, uint32_t u32RAP);
-static VBOXSTRICTRC pcnetBCRWriteU16(PPDMDEVINS pDevIns, PPCNETSTATE pThis, uint32_t u32RAP, uint32_t val);
 
 
 #ifdef PCNET_NO_POLLING
@@ -1184,8 +1226,8 @@ DECLEXPORT(int) pcnetHandleRingWritePf(PVM pVM, PVMCPU pVCpu, RTGCUINT uErrorCod
                 STAM_COUNTER_INC(&pThis->CTX_SUFF(StatRingWrite));
 
                 /* Check if we can do something now */
-                pcnetPollRxTx(pThis);
-                pcnetUpdateIrq(pThis);
+                pcnetPollRxTx(pDevIns, pThis, pThisCC);
+                pcnetUpdateIrq(pDevIns, pThis);
 
                 PDMCritSectLeave(&pThis->CritSect);
                 return VINF_SUCCESS;
@@ -1236,8 +1278,8 @@ pcnetHandleRingWrite(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhys, void *pvPhys, void 
             int rc = PDMCritSectEnter(&pThis->CritSect, VERR_SEM_BUSY);
             AssertReleaseRC(rc);
             /* Check if we can do something now */
-            pcnetPollRxTx(pThis);
-            pcnetUpdateIrq(pThis);
+            pcnetPollRxTx(pDevIns, pThis, pThisCC);
+            pcnetUpdateIrq(pDevIns, pThis);
             PDMCritSectLeave(&pThis->CritSect);
         }
     }
@@ -1305,7 +1347,7 @@ static void pcnetSoftReset(PPCNETSTATE pThis)
  * - csr4 (only written by pcnetSoftReset(), pcnetStop() or by the guest driver)
  * - csr5 (only written by pcnetSoftReset(), pcnetStop or by the driver guest)
  */
-static void pcnetUpdateIrq(PPCNETSTATE pThis)
+static void pcnetUpdateIrq(PPDMDEVINS pDevIns, PPCNETSTATE pThis)
 {
     int      iISR = 0;
     uint16_t csr0 = pThis->aCSR[0];
@@ -1387,12 +1429,12 @@ static void pcnetUpdateIrq(PPCNETSTATE pThis)
         if (!PCNET_IS_ISA(pThis))
         {
             Log(("#%d INTA=%d\n", PCNET_INST_NR, iISR));
-            PDMDevHlpPCISetIrq(PCNETSTATE_2_DEVINS(pThis), 0, iISR);
+            PDMDevHlpPCISetIrq(pDevIns, 0, iISR);
         }
         else
         {
             Log(("#%d IRQ=%d, state=%d\n", PCNET_INST_NR, pThis->uIsaIrq, iISR));
-            PDMDevHlpISASetIrq(PCNETSTATE_2_DEVINS(pThis), pThis->uIsaIrq, iISR);
+            PDMDevHlpISASetIrq(pDevIns, pThis->uIsaIrq, iISR);
         }
         pThis->iISR = iISR;
     }
@@ -1404,7 +1446,7 @@ static void pcnetUpdateIrq(PPCNETSTATE pThis)
 # ifdef PCNET_NO_POLLING
 static void pcnetR3UpdateRingHandlers(PPCNETSTATE pThis)
 {
-    PPDMDEVINS pDevIns = PCNETSTATE_2_DEVINS(pThis);
+    PPDMDEVINS pDevIns = pDevIns;
     int rc;
 
     Log(("pcnetR3UpdateRingHandlers TD %RX32 size %#x -> %RX32 ?size? %#x\n", pThis->TDRAPhysOld, pThis->cbTDRAOld, pThis->GCTDRA, pcnetTdraAddr(pThis, 0)));
@@ -1459,9 +1501,9 @@ static void pcnetR3UpdateRingHandlers(PPCNETSTATE pThis)
                                             pThis->GCTDRA & ~PAGE_OFFSET_MASK,
                                             RT_ALIGN(pcnetTdraAddr(pThis, 0), PAGE_SIZE) - 1,
                                             pThis->hNoPollingHandlerType,
-                                            pThis->CTX_SUFF(pDevIns)->pvInstanceDataR3,
-                                            pThis->CTX_SUFF(pDevIns)->pvInstanceDataR0,
-                                            pThis->CTX_SUFF(pDevIns)->pvInstanceDataRC,
+                                            pDevIns->pvInstanceDataR3,
+                                            pDevIns->pvInstanceDataR0,
+                                            pDevIns->pvInstanceDataRC,
                                             "PCnet transmit ring write access handler");
             AssertRC(rc);
 
@@ -1485,9 +1527,8 @@ static void pcnetR3UpdateRingHandlers(PPCNETSTATE pThis)
 }
 # endif /* PCNET_NO_POLLING */
 
-static void pcnetR3Init(PPCNETSTATE pThis)
+static void pcnetR3Init(PPDMDEVINS pDevIns, PPCNETSTATE pThis, PPCNETSTATECC pThisCC)
 {
-    PPDMDEVINS pDevIns = PCNETSTATE_2_DEVINS(pThis);
     Log(("#%d pcnetR3Init: init_addr=%#010x\n", PCNET_INST_NR, PHYSADDR(pThis, CSR_IADR(pThis))));
 
     /** @todo Documentation says that RCVRL and XMTRL are stored as two's complement!
@@ -1535,9 +1576,9 @@ static void pcnetR3Init(PPCNETSTATE pThis)
         RMD rmd;
         RTGCPHYS32 rdaddr = PHYSADDR(pThis, pcnetRdraAddr(pThis, i));
 
-        pcnetDescTouch(pThis, rdaddr);
+        pcnetDescTouch(pDevIns,  pThis, rdaddr);
         /* At this time it is not guaranteed that the buffers are already initialized. */
-        if (pcnetRmdLoad(pThis, &rmd, rdaddr, false))
+        if (pcnetRmdLoad(pDevIns, pThis, &rmd, rdaddr, false))
         {
             uint32_t cbBuf = 4096U-rmd.rmd1.bcnt;
             cbRxBuffers += cbBuf;
@@ -1548,7 +1589,7 @@ static void pcnetR3Init(PPCNETSTATE pThis)
     {
         RTGCPHYS32 tdaddr = PHYSADDR(pThis, pcnetTdraAddr(pThis, i));
 
-        pcnetDescTouch(pThis, tdaddr);
+        pcnetDescTouch(pDevIns, pThis, tdaddr);
     }
 
     /*
@@ -1561,8 +1602,8 @@ static void pcnetR3Init(PPCNETSTATE pThis)
      */
     pThis->fSignalRxMiss = (cbRxBuffers == 0 || cbRxBuffers >= 32*_1K);
 
-    if (pThis->pDrvR3)
-        pThis->pDrvR3->pfnSetPromiscuousMode(pThis->pDrvR3, CSR_PROM(pThis));
+    if (pThisCC->pDrv)
+        pThisCC->pDrv->pfnSetPromiscuousMode(pThisCC->pDrv, CSR_PROM(pThis));
 
     CSR_RCVRC(pThis) = CSR_RCVRL(pThis);
     CSR_XMTRC(pThis) = CSR_XMTRL(pThis);
@@ -1616,13 +1657,13 @@ static void pcnetStart(PPDMDEVINS pDevIns, PPCNETSTATE pThis)
 /**
  * Stop RX/TX operation.
  */
-static void pcnetStop(PPDMDEVINS pDevIns, PPCNETSTATE pThis)
+static void pcnetStop(PPDMDEVINS pDevIns, PPCNETSTATE pThis, PPCNETSTATECC pThisCC)
 {
     Log(("#%d pcnetStop:\n", PCNET_INST_NR));
     pThis->aCSR[0]  =  0x0004;
     pThis->aCSR[4] &= ~0x02c2;
     pThis->aCSR[5] &= ~0x0011;
-    pcnetPollTimer(pDevIns, pThis);
+    pcnetPollTimer(pDevIns, pThis, pThisCC);
 }
 
 /**
@@ -1647,9 +1688,10 @@ static void pcnetWakeupReceive(PPDMDEVINS pDevIns)
  *          could but the results are undefined by definition.
  *
  * @param   pDevIns         The device instance.
+ * @param   pThis           The shared PCnet state data.
  * @param   fSkipCurrent    if true, don't scan the current RDTE.
  */
-static void pcnetRdtePoll(PPCNETSTATE pThis, bool fSkipCurrent=false)
+static void pcnetRdtePoll(PPDMDEVINS pDevIns, PPCNETSTATE pThis, bool fSkipCurrent=false)
 {
     STAM_PROFILE_ADV_START(&pThis->CTX_SUFF_Z(StatRdtePoll), a);
     /* assume lack of a next receive descriptor */
@@ -1672,7 +1714,7 @@ static void pcnetRdtePoll(PPCNETSTATE pThis, bool fSkipCurrent=false)
             addr = pcnetRdraAddr(pThis, i);
             CSR_CRDA(pThis) = CSR_CRBA(pThis) = 0;
             CSR_CRBC(pThis) = CSR_CRST(pThis) = 0;
-            if (!pcnetRmdLoad(pThis, &rmd, PHYSADDR(pThis, addr), true))
+            if (!pcnetRmdLoad(pDevIns, pThis, &rmd, PHYSADDR(pThis, addr), true))
             {
                 STAM_PROFILE_ADV_STOP(&pThis->CTX_SUFF_Z(StatRdtePoll), a);
                 return;
@@ -1684,7 +1726,7 @@ static void pcnetRdtePoll(PPCNETSTATE pThis, bool fSkipCurrent=false)
                 CSR_CRBC(pThis) = rmd.rmd1.bcnt;               /* Receive Byte Count */
                 CSR_CRST(pThis) = ((uint32_t *)&rmd)[1] >> 16; /* Receive Status */
                 if (pThis->fMaybeOutOfSpace)
-                    pcnetWakeupReceive(PCNETSTATE_2_DEVINS(pThis));
+                    pcnetWakeupReceive(pDevIns);
             }
             else
             {
@@ -1708,7 +1750,7 @@ static void pcnetRdtePoll(PPCNETSTATE pThis, bool fSkipCurrent=false)
         addr = pcnetRdraAddr(pThis, i);
         CSR_NRDA(pThis) = CSR_NRBA(pThis) = 0;
         CSR_NRBC(pThis) = 0;
-        if (!pcnetRmdLoad(pThis, &rmd, PHYSADDR(pThis, addr), true))
+        if (!pcnetRmdLoad(pDevIns, pThis, &rmd, PHYSADDR(pThis, addr), true))
         {
             STAM_PROFILE_ADV_STOP(&pThis->CTX_SUFF_Z(StatRdtePoll), a);
             return;
@@ -1749,14 +1791,14 @@ static void pcnetRdtePoll(PPCNETSTATE pThis, bool fSkipCurrent=false)
  * Poll Transmit Descriptor Table Entry
  * @return true if transmit descriptors available
  */
-static int pcnetTdtePoll(PPCNETSTATE pThis, TMD *tmd)
+static int pcnetTdtePoll(PPDMDEVINS pDevIns, PPCNETSTATE pThis, TMD *tmd)
 {
     STAM_PROFILE_ADV_START(&pThis->CTX_SUFF_Z(StatTdtePoll), a);
     if (RT_LIKELY(pThis->GCTDRA))
     {
         RTGCPHYS32 cxda = pcnetTdraAddr(pThis, CSR_XMTRC(pThis));
 
-        if (!pcnetTmdLoad(pThis, tmd, PHYSADDR(pThis, cxda), true))
+        if (!pcnetTmdLoad(pDevIns, pThis, tmd, PHYSADDR(pThis, cxda), true))
         {
             STAM_PROFILE_ADV_STOP(&pThis->CTX_SUFF_Z(StatTdtePoll), a);
             return 0;
@@ -1797,7 +1839,7 @@ static int pcnetTdtePoll(PPCNETSTATE pThis, TMD *tmd)
  * Poll Transmit Descriptor Table Entry
  * @return true if transmit descriptors available
  */
-static int pcnetCalcPacketLen(PPCNETSTATE pThis, unsigned cb)
+static int pcnetCalcPacketLen(PPDMDEVINS pDevIns, PPCNETSTATE pThis, unsigned cb)
 {
     TMD tmd;
     unsigned cbPacket = cb;
@@ -1818,7 +1860,7 @@ static int pcnetCalcPacketLen(PPCNETSTATE pThis, unsigned cb)
 
         RTGCPHYS32 addrDesc = pcnetTdraAddr(pThis, iDesc);
 
-        if (!pcnetTmdLoad(pThis, &tmd, PHYSADDR(pThis, addrDesc), true))
+        if (!pcnetTmdLoad(pDevIns, pThis, &tmd, PHYSADDR(pThis, addrDesc), true))
         {
             STAM_PROFILE_ADV_STOP(&pThis->CTX_SUFF_Z(StatTxLenCalc), a);
             /*
@@ -1849,10 +1891,12 @@ static int pcnetCalcPacketLen(PPCNETSTATE pThis, unsigned cb)
 /**
  * Write data into guest receive buffers.
  */
-static void pcnetReceiveNoSync(PPCNETSTATE pThis, const uint8_t *buf, size_t cbToRecv, bool fAddFCS, bool fLoopback)
+static void pcnetReceiveNoSync(PPDMDEVINS pDevIns, PPCNETSTATE pThis, PPCNETSTATECC pThisCC,
+                               const uint8_t *buf, size_t cbToRecv, bool fAddFCS, bool fLoopback)
 {
-    PPDMDEVINS pDevIns = PCNETSTATE_2_DEVINS(pThis);
-    int is_padr = 0, is_bcast = 0, is_ladr = 0;
+    int is_padr  = 0;
+    int is_bcast = 0;
+    int is_ladr  = 0;
     unsigned iRxDesc;
     int cbPacket;
 
@@ -1884,7 +1928,7 @@ static void pcnetReceiveNoSync(PPCNETSTATE pThis, const uint8_t *buf, size_t cbT
         || (is_ladr  = ladr_match(pThis, buf, cbToRecv)))
     {
         if (HOST_IS_OWNER(CSR_CRST(pThis)))
-            pcnetRdtePoll(pThis);
+            pcnetRdtePoll(pDevIns, pThis);
         if (RT_UNLIKELY(HOST_IS_OWNER(CSR_CRST(pThis))))
         {
             /* Not owned by controller. This should not be possible as
@@ -1897,7 +1941,7 @@ static void pcnetReceiveNoSync(PPCNETSTATE pThis, const uint8_t *buf, size_t cbT
             while (iRxDesc-- > 0)
             {
                 RMD rmd;
-                pcnetRmdLoad(pThis, &rmd, PHYSADDR(pThis, GCPhys), false);
+                pcnetRmdLoad(pDevIns, pThis, &rmd, PHYSADDR(pThis, GCPhys), false);
                 LogRel(("  %#010x\n", rmd.rmd1));
                 GCPhys += cb;
             }
@@ -1961,7 +2005,7 @@ static void pcnetReceiveNoSync(PPCNETSTATE pThis, const uint8_t *buf, size_t cbT
             PRINT_PKTHDR(buf);
 #endif
 
-            pcnetRmdLoad(pThis, &rmd, PHYSADDR(pThis, crda), false);
+            pcnetRmdLoad(pDevIns, pThis, &rmd, PHYSADDR(pThis, crda), false);
             /*if (!CSR_LAPPEN(pThis))*/
                 rmd.rmd1.stp = 1;
 
@@ -1982,7 +2026,7 @@ static void pcnetReceiveNoSync(PPCNETSTATE pThis, const uint8_t *buf, size_t cbT
              *  - we don't cache any register state beyond this point
              */
             PDMCritSectLeave(&pThis->CritSect);
-            pcnetPhysWrite(pThis, rbadr, src, cbBuf);
+            pcnetPhysWrite(pDevIns, pThis, rbadr, src, cbBuf);
             int rc = PDMCritSectEnter(&pThis->CritSect, VERR_SEM_BUSY);
             AssertReleaseRC(rc);
 
@@ -2012,11 +2056,11 @@ static void pcnetReceiveNoSync(PPCNETSTATE pThis, const uint8_t *buf, size_t cbT
                 /* Check next descriptor's own bit. If we don't own it, we have
                  * to quit and write error status into the last descriptor we own.
                  */
-                if (!pcnetRmdLoad(pThis, &next_rmd, PHYSADDR(pThis, next_crda), true))
+                if (!pcnetRmdLoad(pDevIns, pThis, &next_rmd, PHYSADDR(pThis, next_crda), true))
                     break;
 
                 /* Write back current descriptor, clear the own bit. */
-                pcnetRmdStorePassHost(pThis, &rmd, PHYSADDR(pThis, crda));
+                pcnetRmdStorePassHost(pDevIns, pThis, &rmd, PHYSADDR(pThis, crda));
 
                 /* Switch to the next descriptor */
                 crda = next_crda;
@@ -2029,7 +2073,7 @@ static void pcnetReceiveNoSync(PPCNETSTATE pThis, const uint8_t *buf, size_t cbT
                  * with EMT when the write is to an unallocated page or has an access
                  * handler associated with it. See above for additional comments. */
                 PDMCritSectLeave(&pThis->CritSect);
-                pcnetPhysWrite(pThis, rbadr2, src, cbBuf);
+                pcnetPhysWrite(pDevIns, pThis, rbadr2, src, cbBuf);
                 rc = PDMCritSectEnter(&pThis->CritSect, VERR_SEM_BUSY);
                 AssertReleaseRC(rc);
 
@@ -2072,12 +2116,11 @@ static void pcnetReceiveNoSync(PPCNETSTATE pThis, const uint8_t *buf, size_t cbT
             }
 
             /* write back, clear the own bit */
-            pcnetRmdStorePassHost(pThis, &rmd, PHYSADDR(pThis, crda));
+            pcnetRmdStorePassHost(pDevIns, pThis, &rmd, PHYSADDR(pThis, crda));
 
             pThis->aCSR[0] |= 0x0400;
 
-            Log(("#%d RCVRC=%d CRDA=%#010x\n", PCNET_INST_NR,
-                 CSR_RCVRC(pThis), PHYSADDR(pThis, CSR_CRDA(pThis))));
+            Log(("#%d RCVRC=%d CRDA=%#010x\n", PCNET_INST_NR, CSR_RCVRC(pThis), PHYSADDR(pThis, CSR_CRDA(pThis))));
 #ifdef LOG_ENABLED
             PRINT_RMD(&rmd);
 #endif
@@ -2090,8 +2133,8 @@ static void pcnetReceiveNoSync(PPCNETSTATE pThis, const uint8_t *buf, size_t cbT
     /* see description of TXDPOLL:
      * ``transmit polling will take place following receive activities'' */
     if (!fLoopback)
-        pcnetPollRxTx(pThis);
-    pcnetUpdateIrq(pThis);
+        pcnetPollRxTx(pDevIns, pThis, pThisCC);
+    pcnetUpdateIrq(pDevIns, pThis);
 }
 
 
@@ -2102,13 +2145,14 @@ static void pcnetReceiveNoSync(PPCNETSTATE pThis, const uint8_t *buf, size_t cbT
  */
 static DECLCALLBACK(void) pcnetR3XmitTaskCallback(PPDMDEVINS pDevIns, void *pvUser)
 {
-    PPCNETSTATE pThis = PDMDEVINS_2_DATA(pDevIns, PPCNETSTATE);
+    PPCNETSTATE   pThis   = PDMDEVINS_2_DATA(pDevIns, PPCNETSTATE);
+    PPCNETSTATECC pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PPCNETSTATECC);
     NOREF(pvUser);
 
     /*
      * Transmit as much as we can.
      */
-    pcnetXmitPending(pThis, true /*fOnWorkerThread*/);
+    pcnetXmitPending(pDevIns, pThis, pThisCC, true /*fOnWorkerThread*/);
 }
 #endif /* IN_RING3 */
 
@@ -2117,14 +2161,14 @@ static DECLCALLBACK(void) pcnetR3XmitTaskCallback(PPDMDEVINS pDevIns, void *pvUs
  * Allocates a scatter/gather buffer for a transfer.
  *
  * @returns See PPDMINETWORKUP::pfnAllocBuf.
- * @param   pThis       The device instance.
+ * @param   pThis       The shared PCNet state data.
  * @param   cbMin       The minimum buffer size.
  * @param   fLoopback   Set if we're in loopback mode.
  * @param   pSgLoop     Pointer to stack storage for the loopback SG.
  * @param   ppSgBuf     Where to return the SG buffer descriptor on success.
  *                      Always set.
  */
-DECLINLINE(int) pcnetXmitAllocBuf(PPCNETSTATE pThis, size_t cbMin, bool fLoopback,
+DECLINLINE(int) pcnetXmitAllocBuf(PPCNETSTATE pThis, PPCNETSTATECC pThisCC, size_t cbMin, bool fLoopback,
                                   PPDMSCATTERGATHER pSgLoop, PPPDMSCATTERGATHER ppSgBuf)
 {
     int rc;
@@ -2144,7 +2188,7 @@ DECLINLINE(int) pcnetXmitAllocBuf(PPCNETSTATE pThis, size_t cbMin, bool fLoopbac
     }
     else
     {
-        PPDMINETWORKUP pDrv = pThis->CTX_SUFF(pDrv);
+        PPDMINETWORKUP pDrv = pThisCC->pDrv;
         if (RT_LIKELY(pDrv))
         {
             rc = pDrv->pfnAllocBuf(pDrv, cbMin, NULL /*pGso*/, ppSgBuf);
@@ -2165,11 +2209,11 @@ DECLINLINE(int) pcnetXmitAllocBuf(PPCNETSTATE pThis, size_t cbMin, bool fLoopbac
 /**
  * Frees an unsent buffer.
  *
- * @param   pThis           The device instance.
+ * @param   pThisCC         The PCNet state data for the current context.
  * @param   fLoopback       Set if we're in loopback mode.
  * @param   pSgBuf          The SG to free.  Can be NULL.
  */
-DECLINLINE(void) pcnetXmitFreeBuf(PPCNETSTATE pThis, bool fLoopback, PPDMSCATTERGATHER pSgBuf)
+DECLINLINE(void) pcnetXmitFreeBuf(PPCNETSTATECC pThisCC, bool fLoopback, PPDMSCATTERGATHER pSgBuf)
 {
     if (pSgBuf)
     {
@@ -2177,7 +2221,7 @@ DECLINLINE(void) pcnetXmitFreeBuf(PPCNETSTATE pThis, bool fLoopback, PPDMSCATTER
             pSgBuf->pvAllocator = NULL;
         else
         {
-            PPDMINETWORKUP pDrv = pThis->CTX_SUFF(pDrv);
+            PPDMINETWORKUP pDrv = pThisCC->pDrv;
             if (RT_LIKELY(pDrv))
                 pDrv->pfnFreeBuf(pDrv, pSgBuf);
         }
@@ -2191,13 +2235,16 @@ DECLINLINE(void) pcnetXmitFreeBuf(PPCNETSTATE pThis, bool fLoopback, PPDMSCATTER
  * Wrapper around PDMINETWORKUP::pfnSendBuf, so check it out for the fine print.
  *
  * @returns See PDMINETWORKUP::pfnSendBuf.
- * @param   pThis           The device instance.
+ * @param   pDevIns         The device instance.
+ * @param   pThis           The shared PCNet state data.
+ * @param   pThisCC         The PCNet state data for the current context.
  * @param   fLoopback       Set if we're in loopback mode.
  * @param   pSgBuf          The SG to send.
  * @param   fOnWorkerThread Set if we're being called on a work thread.  Clear
  *                          if an EMT.
  */
-DECLINLINE(int) pcnetXmitSendBuf(PPCNETSTATE pThis, bool fLoopback, PPDMSCATTERGATHER pSgBuf, bool fOnWorkerThread)
+DECLINLINE(int) pcnetXmitSendBuf(PPDMDEVINS pDevIns, PPCNETSTATE pThis, PPCNETSTATECC pThisCC, bool fLoopback,
+                                 PPDMSCATTERGATHER pSgBuf, bool fOnWorkerThread)
 {
     int rc;
     STAM_REL_COUNTER_ADD(&pThis->StatTransmitBytes, pSgBuf->cbUsed);
@@ -2206,9 +2253,9 @@ DECLINLINE(int) pcnetXmitSendBuf(PPCNETSTATE pThis, bool fLoopback, PPDMSCATTERG
         Assert(pSgBuf->pvAllocator == (void *)pThis);
         pThis->Led.Asserted.s.fReading = pThis->Led.Actual.s.fReading = 1;
         if (HOST_IS_OWNER(CSR_CRST(pThis)))
-            pcnetRdtePoll(pThis);
+            pcnetRdtePoll(pDevIns, pThis);
 
-        pcnetReceiveNoSync(pThis, pThis->abLoopBuf, pSgBuf->cbUsed, true /* fAddFCS */, fLoopback);
+        pcnetReceiveNoSync(pDevIns, pThis, pThisCC, pThis->abLoopBuf, pSgBuf->cbUsed, true /* fAddFCS */, fLoopback);
         pThis->Led.Actual.s.fReading = 0;
         rc = VINF_SUCCESS;
     }
@@ -2222,7 +2269,7 @@ DECLINLINE(int) pcnetXmitSendBuf(PPCNETSTATE pThis, bool fLoopback, PPDMSCATTERG
         if (pSgBuf->cbUsed > 70) /* unqualified guess */
             pThis->Led.Asserted.s.fWriting = pThis->Led.Actual.s.fWriting = 1;
 
-        PPDMINETWORKUP pDrv = pThis->CTX_SUFF(pDrv);
+        PPDMINETWORKUP pDrv = pThisCC->pDrv;
         if (RT_LIKELY(pDrv))
         {
             rc = pDrv->pfnSendBuf(pDrv, pSgBuf, fOnWorkerThread);
@@ -2242,8 +2289,7 @@ DECLINLINE(int) pcnetXmitSendBuf(PPCNETSTATE pThis, bool fLoopback, PPDMSCATTERG
  * pcnetXmitRead1st worker that handles the unlikely + slower segmented code
  * path.
  */
-static void pcnetXmitRead1stSlow(PPCNETSTATE pThis, RTGCPHYS32 GCPhysFrame, unsigned cbFrame,
-                                 PPDMSCATTERGATHER pSgBuf)
+static void pcnetXmitRead1stSlow(PPDMDEVINS pDevIns, RTGCPHYS32 GCPhysFrame, unsigned cbFrame, PPDMSCATTERGATHER pSgBuf)
 {
     AssertFailed(); /* This path is not supposed to be taken atm */
 
@@ -2252,7 +2298,7 @@ static void pcnetXmitRead1stSlow(PPCNETSTATE pThis, RTGCPHYS32 GCPhysFrame, unsi
     {
         Assert(iSeg < pSgBuf->cSegs);
         uint32_t cbRead = (uint32_t)RT_MIN(cbFrame, pSgBuf->aSegs[iSeg].cbSeg);
-        PDMDevHlpPhysRead(pThis->CTX_SUFF(pDevIns), GCPhysFrame, pSgBuf->aSegs[iSeg].pvSeg, cbRead);
+        PDMDevHlpPhysRead(pDevIns, GCPhysFrame, pSgBuf->aSegs[iSeg].pvSeg, cbRead);
         cbFrame -= cbRead;
         if (!cbFrame)
             return;
@@ -2265,8 +2311,7 @@ static void pcnetXmitRead1stSlow(PPCNETSTATE pThis, RTGCPHYS32 GCPhysFrame, unsi
  * pcnetXmitSgReadMore worker that handles the unlikely + slower segmented code
  * path.
  */
-static void pcnetXmitReadMoreSlow(PPCNETSTATE pThis, RTGCPHYS32 GCPhysFrame, unsigned cbFrame,
-                                  PPDMSCATTERGATHER pSgBuf)
+static void pcnetXmitReadMoreSlow(PPDMDEVINS pDevIns, RTGCPHYS32 GCPhysFrame, unsigned cbFrame, PPDMSCATTERGATHER pSgBuf)
 {
     AssertFailed(); /* This path is not supposed to be taken atm */
 
@@ -2289,7 +2334,7 @@ static void pcnetXmitReadMoreSlow(PPCNETSTATE pThis, RTGCPHYS32 GCPhysFrame, uns
     {
         size_t   offIntoSeg = off - offSeg;
         uint32_t cbRead     = (uint32_t)RT_MIN(pSgBuf->aSegs[iSeg].cbSeg - offIntoSeg, cbFrame);
-        PDMDevHlpPhysRead(pThis->CTX_SUFF(pDevIns), GCPhysFrame,
+        PDMDevHlpPhysRead(pDevIns, GCPhysFrame,
                           (uint8_t *)pSgBuf->aSegs[iSeg].pvSeg + offIntoSeg, cbRead);
         cbFrame -= cbRead;
         if (!cbFrame)
@@ -2304,7 +2349,7 @@ static void pcnetXmitReadMoreSlow(PPCNETSTATE pThis, RTGCPHYS32 GCPhysFrame, uns
         Assert(iSeg < pSgBuf->cSegs);
 
         uint32_t cbRead = (uint32_t)RT_MIN(pSgBuf->aSegs[iSeg].cbSeg, cbFrame);
-        PDMDevHlpPhysRead(pThis->CTX_SUFF(pDevIns), GCPhysFrame, pSgBuf->aSegs[iSeg].pvSeg, cbRead);
+        PDMDevHlpPhysRead(pDevIns, GCPhysFrame, pSgBuf->aSegs[iSeg].pvSeg, cbRead);
         cbFrame -= cbRead;
         if (!cbFrame)
             return;
@@ -2316,26 +2361,25 @@ static void pcnetXmitReadMoreSlow(PPCNETSTATE pThis, RTGCPHYS32 GCPhysFrame, uns
 /**
  * Reads the first part of a frame into the scatter gather buffer.
  */
-DECLINLINE(void) pcnetXmitRead1st(PPCNETSTATE pThis, RTGCPHYS32 GCPhysFrame, const unsigned cbFrame,
+DECLINLINE(void) pcnetXmitRead1st(PPDMDEVINS pDevIns, PPCNETSTATE pThis, RTGCPHYS32 GCPhysFrame, const unsigned cbFrame,
                                   PPDMSCATTERGATHER pSgBuf)
 {
-    Assert(PDMCritSectIsOwner(&pThis->CritSect));
+    Assert(PDMCritSectIsOwner(&pThis->CritSect)); RT_NOREF(pThis);
     Assert(pSgBuf->cbAvailable >= cbFrame);
 
     if (RT_LIKELY(pSgBuf->aSegs[0].cbSeg >= cbFrame)) /* justification: all drivers returns a single segment atm. */
     {
         pSgBuf->cbUsed = cbFrame;
-        PDMDevHlpPhysRead(pThis->CTX_SUFF(pDevIns), GCPhysFrame, pSgBuf->aSegs[0].pvSeg, cbFrame);
+        PDMDevHlpPhysRead(pDevIns, GCPhysFrame, pSgBuf->aSegs[0].pvSeg, cbFrame);
     }
     else
-        pcnetXmitRead1stSlow(pThis, GCPhysFrame, cbFrame, pSgBuf);
+        pcnetXmitRead1stSlow(pDevIns, GCPhysFrame, cbFrame, pSgBuf);
 }
 
 /**
  * Reads more into the current frame.
  */
-DECLINLINE(void) pcnetXmitReadMore(PPCNETSTATE pThis, RTGCPHYS32 GCPhysFrame, const unsigned cbFrame,
-                                   PPDMSCATTERGATHER pSgBuf)
+DECLINLINE(void) pcnetXmitReadMore(PPDMDEVINS pDevIns, RTGCPHYS32 GCPhysFrame, const unsigned cbFrame, PPDMSCATTERGATHER pSgBuf)
 {
     size_t off = pSgBuf->cbUsed;
     Assert(pSgBuf->cbAvailable >= cbFrame + off);
@@ -2343,11 +2387,10 @@ DECLINLINE(void) pcnetXmitReadMore(PPCNETSTATE pThis, RTGCPHYS32 GCPhysFrame, co
     if (RT_LIKELY(pSgBuf->aSegs[0].cbSeg >= cbFrame + off))
     {
         pSgBuf->cbUsed = cbFrame + off;
-        PDMDevHlpPhysRead(pThis->CTX_SUFF(pDevIns), GCPhysFrame,
-                          (uint8_t *)pSgBuf->aSegs[0].pvSeg + off, cbFrame);
+        PDMDevHlpPhysRead(pDevIns, GCPhysFrame, (uint8_t *)pSgBuf->aSegs[0].pvSeg + off, cbFrame);
     }
     else
-        pcnetXmitReadMoreSlow(pThis, GCPhysFrame, cbFrame, pSgBuf);
+        pcnetXmitReadMoreSlow(pDevIns, GCPhysFrame, cbFrame, pSgBuf);
 }
 
 
@@ -2382,7 +2425,7 @@ static void pcnetXmitFailTMDGeneric(PPCNETSTATE pThis, TMD *pTmd)
 /**
  * Try to transmit frames
  */
-static void pcnetTransmit(PPCNETSTATE pThis)
+static void pcnetTransmit(PPDMDEVINS pDevIns, PPCNETSTATE pThis, PPCNETSTATECC pThisCC)
 {
     if (RT_UNLIKELY(!CSR_TXON(pThis)))
     {
@@ -2394,7 +2437,7 @@ static void pcnetTransmit(PPCNETSTATE pThis)
      * Check the current transmit descriptors.
      */
     TMD tmd;
-    if (!pcnetTdtePoll(pThis, &tmd))
+    if (!pcnetTdtePoll(pDevIns, pThis, &tmd))
         return;
 
     /*
@@ -2407,15 +2450,15 @@ static void pcnetTransmit(PPCNETSTATE pThis)
      * in the current context.
      */
 #if defined(IN_RING0) || defined(IN_RC)
-    if (!pThis->CTX_SUFF(pDrv))
+    if (!pThisCC->pDrv)
     {
-        int rc = PDMDevHlpTaskTrigger(pThis->CTX_SUFF(pDevIns), pThis->hXmitTask);
+        int rc = PDMDevHlpTaskTrigger(pDevIns, pThis->hXmitTask);
         AssertRC(rc);
     }
     else
 #endif
     {
-        int rc = pcnetXmitPending(pThis, false /*fOnWorkerThread*/);
+        int rc = pcnetXmitPending(pDevIns, pThis, pThisCC, false /*fOnWorkerThread*/);
         if (rc == VERR_TRY_AGAIN)
             rc = VINF_SUCCESS;
         AssertRC(rc);
@@ -2428,7 +2471,7 @@ static void pcnetTransmit(PPCNETSTATE pThis)
  *
  * @threads TX or EMT.
  */
-static int pcnetAsyncTransmit(PPCNETSTATE pThis, bool fOnWorkerThread)
+static int pcnetAsyncTransmit(PPDMDEVINS pDevIns, PPCNETSTATE pThis, PPCNETSTATECC pThisCC, bool fOnWorkerThread)
 {
     Assert(PDMCritSectIsOwner(&pThis->CritSect));
 
@@ -2454,7 +2497,7 @@ static int pcnetAsyncTransmit(PPCNETSTATE pThis, bool fOnWorkerThread)
         unsigned cBuffers = 1;
 #endif
         TMD tmd;
-        if (!pcnetTdtePoll(pThis, &tmd))
+        if (!pcnetTdtePoll(pDevIns, pThis, &tmd))
             break;
 
         /* Don't continue sending packets when the link is down. */
@@ -2488,11 +2531,11 @@ static int pcnetAsyncTransmit(PPCNETSTATE pThis, bool fOnWorkerThread)
                  * zero length if it is not the last one in the chain. */
                 if (RT_LIKELY(cb <= MAX_FRAME))
                 {
-                    rc = pcnetXmitAllocBuf(pThis, cb, fLoopback, &SgLoop, &pSgBuf);
+                    rc = pcnetXmitAllocBuf(pThis, pThisCC, cb, fLoopback, &SgLoop, &pSgBuf);
                     if (RT_SUCCESS(rc))
                     {
-                        pcnetXmitRead1st(pThis, PHYSADDR(pThis, tmd.tmd0.tbadr), cb, pSgBuf);
-                        rc = pcnetXmitSendBuf(pThis, fLoopback, pSgBuf, fOnWorkerThread);
+                        pcnetXmitRead1st(pDevIns, pThis, PHYSADDR(pThis, tmd.tmd0.tbadr), cb, pSgBuf);
+                        rc = pcnetXmitSendBuf(pDevIns, pThis, pThisCC, fLoopback, pSgBuf, fOnWorkerThread);
                     }
                     else if (rc == VERR_TRY_AGAIN)
                     {
@@ -2528,7 +2571,7 @@ static int pcnetAsyncTransmit(PPCNETSTATE pThis, bool fOnWorkerThread)
                      * two's complement numbers between 0 and 4096. AMD's drivers
                      * in fact generally treat the length as a 16-bit quantity. */
                     LogRel(("PCnet#%d: pcnetAsyncTransmit: illegal 4kb frame -> ignoring\n", PCNET_INST_NR));
-                    pcnetTmdStorePassHost(pThis, &tmd, PHYSADDR(pThis, CSR_CXDA(pThis)));
+                    pcnetTmdStorePassHost(pDevIns, pThis, &tmd, PHYSADDR(pThis, CSR_CXDA(pThis)));
                     break;
                 }
                 else
@@ -2544,7 +2587,7 @@ static int pcnetAsyncTransmit(PPCNETSTATE pThis, bool fOnWorkerThread)
                 pcnetXmitFailTMDLinkDown(pThis, &tmd);
 
             /* Write back the TMD and pass it to the host (clear own bit). */
-            pcnetTmdStorePassHost(pThis, &tmd, PHYSADDR(pThis, CSR_CXDA(pThis)));
+            pcnetTmdStorePassHost(pDevIns, pThis, &tmd, PHYSADDR(pThis, CSR_CXDA(pThis)));
 
             /* advance the ring counter register */
             if (CSR_XMTRC(pThis) < 2)
@@ -2564,7 +2607,7 @@ static int pcnetAsyncTransmit(PPCNETSTATE pThis, bool fOnWorkerThread)
              * we could reliably do that on SMP guests.
              */
             unsigned cb = 4096 - tmd.tmd1.bcnt;
-            rc = pcnetXmitAllocBuf(pThis, pcnetCalcPacketLen(pThis, cb), fLoopback, &SgLoop, &pSgBuf);
+            rc = pcnetXmitAllocBuf(pThis, pThisCC, pcnetCalcPacketLen(pDevIns, pThis, cb), fLoopback, &SgLoop, &pSgBuf);
             if (rc == VERR_TRY_AGAIN)
             {
                 STAM_PROFILE_ADV_STOP(&pThis->CTX_SUFF_Z(StatTransmit), a);
@@ -2573,7 +2616,7 @@ static int pcnetAsyncTransmit(PPCNETSTATE pThis, bool fOnWorkerThread)
 
             bool fDropFrame = RT_FAILURE(rc);
             if (!fDropFrame)
-                pcnetXmitRead1st(pThis, PHYSADDR(pThis, tmd.tmd0.tbadr), cb, pSgBuf);
+                pcnetXmitRead1st(pDevIns, pThis, PHYSADDR(pThis, tmd.tmd0.tbadr), cb, pSgBuf);
 
             for (;;)
             {
@@ -2590,7 +2633,7 @@ static int pcnetAsyncTransmit(PPCNETSTATE pThis, bool fOnWorkerThread)
                     CSR_XMTRC(pThis)--;
 
                 TMD dummy;
-                if (!pcnetTdtePoll(pThis, &dummy))
+                if (!pcnetTdtePoll(pDevIns, pThis, &dummy))
                 {
                     /*
                      * Underflow!
@@ -2601,14 +2644,14 @@ static int pcnetAsyncTransmit(PPCNETSTATE pThis, bool fOnWorkerThread)
                     pThis->u16CSR0LastSeenByGuest &= ~0x0200;
                     if (!CSR_DXSUFLO(pThis))         /* stop on xmit underflow */
                         pThis->aCSR[0] &= ~0x0010;   /* clear TXON */
-                    pcnetTmdStorePassHost(pThis, &tmd, GCPhysPrevTmd);
+                    pcnetTmdStorePassHost(pDevIns, pThis, &tmd, GCPhysPrevTmd);
                     AssertMsgFailed(("pcnetAsyncTransmit: Underflow!!!\n"));
-                    pcnetXmitFreeBuf(pThis, fLoopback, pSgBuf);
+                    pcnetXmitFreeBuf(pThisCC, fLoopback, pSgBuf);
                     break;
                 }
 
                 /* release & save the previous tmd, pass it to the host */
-                pcnetTmdStorePassHost(pThis, &tmd, GCPhysPrevTmd);
+                pcnetTmdStorePassHost(pDevIns, pThis, &tmd, GCPhysPrevTmd);
 
                 /*
                  * The next tmd.
@@ -2616,11 +2659,11 @@ static int pcnetAsyncTransmit(PPCNETSTATE pThis, bool fOnWorkerThread)
 #ifdef VBOX_WITH_STATISTICS
                 cBuffers++;
 #endif
-                pcnetTmdLoad(pThis, &tmd, PHYSADDR(pThis, CSR_CXDA(pThis)), false);
+                pcnetTmdLoad(pDevIns, pThis, &tmd, PHYSADDR(pThis, CSR_CXDA(pThis)), false);
                 cb = 4096 - tmd.tmd1.bcnt;
                 if (   !fDropFrame
                     && pSgBuf->cbUsed + cb <= MAX_FRAME) /** @todo this used to be ... + cb < MAX_FRAME. */
-                    pcnetXmitReadMore(pThis, PHYSADDR(pThis, tmd.tmd0.tbadr), cb, pSgBuf);
+                    pcnetXmitReadMore(pDevIns, PHYSADDR(pThis, tmd.tmd0.tbadr), cb, pSgBuf);
                 else
                 {
                     AssertMsg(fDropFrame, ("pcnetAsyncTransmit: Frame is too big!!! %d bytes\n", pSgBuf->cbUsed + cb));
@@ -2636,16 +2679,16 @@ static int pcnetAsyncTransmit(PPCNETSTATE pThis, bool fOnWorkerThread)
                          pSgBuf ? pSgBuf->cbUsed : 0, iStart, CSR_XMTRC(pThis)));
                     if (!fDropFrame && (pcnetIsLinkUp(pThis) || fLoopback))
                     {
-                        rc = pcnetXmitSendBuf(pThis, fLoopback, pSgBuf, fOnWorkerThread);
+                        rc = pcnetXmitSendBuf(pDevIns, pThis, pThisCC, fLoopback, pSgBuf, fOnWorkerThread);
                         fDropFrame = RT_FAILURE(rc);
                     }
                     else
-                        pcnetXmitFreeBuf(pThis, fLoopback, pSgBuf);
+                        pcnetXmitFreeBuf(pThisCC, fLoopback, pSgBuf);
                     if (fDropFrame)
                         pcnetXmitFailTMDLinkDown(pThis, &tmd);
 
                     /* Write back the TMD, pass it to the host */
-                    pcnetTmdStorePassHost(pThis, &tmd, PHYSADDR(pThis, CSR_CXDA(pThis)));
+                    pcnetTmdStorePassHost(pDevIns, pThis, &tmd, PHYSADDR(pThis, CSR_CXDA(pThis)));
 
                     /* advance the ring counter register */
                     if (CSR_XMTRC(pThis) < 2)
@@ -2696,7 +2739,7 @@ static int pcnetAsyncTransmit(PPCNETSTATE pThis, bool fOnWorkerThread)
         pThis->aCSR[0] |= 0x0200;    /* set TINT */
         /* Don't allow the guest to clear TINT before reading it */
         pThis->u16CSR0LastSeenByGuest &= ~0x0200;
-        pcnetUpdateIrq(pThis);
+        pcnetUpdateIrq(pDevIns, pThis);
     }
 
     STAM_PROFILE_ADV_STOP(&pThis->CTX_SUFF_Z(StatTransmit), a);
@@ -2710,10 +2753,12 @@ static int pcnetAsyncTransmit(PPCNETSTATE pThis, bool fOnWorkerThread)
  *
  * @returns VBox status code.  VERR_TRY_AGAIN is returned if we're busy.
  *
+ * @param   pDevIns             The device instance.
  * @param   pThis               The PCnet shared instance data.
+ * @param   pThisCC             The PCNet state data for the current context.
  * @param   fOnWorkerThread     Whether we're on a worker thread or on an EMT.
  */
-static int pcnetXmitPending(PPCNETSTATE pThis, bool fOnWorkerThread)
+static int pcnetXmitPending(PPDMDEVINS pDevIns, PPCNETSTATE pThis, PPCNETSTATECC pThisCC, bool fOnWorkerThread)
 {
     RT_NOREF_PV(fOnWorkerThread);
     int rc;
@@ -2721,7 +2766,7 @@ static int pcnetXmitPending(PPCNETSTATE pThis, bool fOnWorkerThread)
     /*
      * Grab the xmit lock of the driver as well as the E1K device state.
      */
-    PPDMINETWORKUP pDrv = pThis->CTX_SUFF(pDrv);
+    PPDMINETWORKUP pDrv = pThisCC->pDrv;
     if (pDrv)
     {
         rc = pDrv->pfnBeginXmit(pDrv, false /*fOnWorkerThread*/);
@@ -2735,7 +2780,7 @@ static int pcnetXmitPending(PPCNETSTATE pThis, bool fOnWorkerThread)
         /*
          * Do the transmitting.
          */
-        int rc2 = pcnetAsyncTransmit(pThis, false /*fOnWorkerThread*/);
+        int rc2 = pcnetAsyncTransmit(pDevIns, pThis, pThisCC, false /*fOnWorkerThread*/);
         AssertReleaseRC(rc2);
 
         /*
@@ -2755,7 +2800,7 @@ static int pcnetXmitPending(PPCNETSTATE pThis, bool fOnWorkerThread)
 /**
  * Poll for changes in RX and TX descriptor rings.
  */
-static void pcnetPollRxTx(PPCNETSTATE pThis)
+static void pcnetPollRxTx(PPDMDEVINS pDevIns, PPCNETSTATE pThis, PPCNETSTATECC pThisCC)
 {
     if (CSR_RXON(pThis))
     {
@@ -2766,11 +2811,11 @@ static void pcnetPollRxTx(PPCNETSTATE pThis)
          */
         if (   HOST_IS_OWNER(CSR_CRST(pThis))  /* only poll RDTEs if none available or ... */
             || pThis->fMaybeOutOfSpace)        /* ... for waking up pcnetWaitReceiveAvail() */
-            pcnetRdtePoll(pThis);
+            pcnetRdtePoll(pDevIns, pThis);
     }
 
     if (CSR_TDMD(pThis) || (CSR_TXON(pThis) && !CSR_DPOLL(pThis)))
-        pcnetTransmit(pThis);
+        pcnetTransmit(pDevIns, pThis, pThisCC);
 }
 
 
@@ -2791,7 +2836,7 @@ static void pcnetPollTimerStart(PPDMDEVINS pDevIns, PPCNETSTATE pThis)
  * Update the poller timer.
  * @thread EMT.
  */
-static void pcnetPollTimer(PPDMDEVINS pDevIns, PPCNETSTATE pThis)
+static void pcnetPollTimer(PPDMDEVINS pDevIns, PPCNETSTATE pThis, PPCNETSTATECC pThisCC)
 {
     STAM_PROFILE_ADV_START(&pThis->StatPollTimer, a);
 
@@ -2803,7 +2848,7 @@ static void pcnetPollTimer(PPDMDEVINS pDevIns, PPCNETSTATE pThis)
     else
         Log2(("#%d pcnetPollTimer time=%#010llx TDMD=%d TXON=%d POLL=%d TDTE=%d TDRA=%#x\n",
              PCNET_INST_NR, RTTimeMilliTS(), CSR_TDMD(pThis), CSR_TXON(pThis),
-             !CSR_DPOLL(pThis), pcnetTdtePoll(pThis, &dummy), pThis->GCTDRA));
+             !CSR_DPOLL(pThis), pcnetTdtePoll(pDevIns, pThis, &dummy), pThis->GCTDRA));
     Log2(("#%d pcnetPollTimer: CSR_CXDA=%#x CSR_XMTRL=%d CSR_XMTRC=%d\n",
           PCNET_INST_NR, CSR_CXDA(pThis), CSR_XMTRL(pThis), CSR_XMTRC(pThis)));
 #endif
@@ -2811,15 +2856,15 @@ static void pcnetPollTimer(PPDMDEVINS pDevIns, PPCNETSTATE pThis)
     if (CSR_CXDA(pThis))
     {
         TMD tmd;
-        pcnetTmdLoad(pThis, &tmd, PHYSADDR(pThis, CSR_CXDA(pThis)), false);
+        pcnetTmdLoad(pDevIns, pThis, &tmd, PHYSADDR(pThis, CSR_CXDA(pThis)), false);
         Log10(("#%d pcnetPollTimer: TMDLOAD %#010x\n", PCNET_INST_NR, PHYSADDR(pThis, CSR_CXDA(pThis))));
         PRINT_TMD(&tmd);
     }
 #endif
     if (CSR_TDMD(pThis))
-        pcnetTransmit(pThis);
+        pcnetTransmit(pDevIns, pThis, pThisCC);
 
-    pcnetUpdateIrq(pThis);
+    pcnetUpdateIrq(pDevIns, pThis);
 
     /* If the receive thread is waiting for new descriptors, poll TX/RX even if polling
      * disabled. We wouldn't need to poll for new TX descriptors in that case but it will
@@ -2836,13 +2881,13 @@ static void pcnetPollTimer(PPDMDEVINS pDevIns, PPCNETSTATE pThis)
          * but so far I have not seen any guest depending on these values. The 2ms
          * interval is the default polling interval of the PCnet card (65536/33MHz). */
 #ifdef PCNET_NO_POLLING
-        pcnetPollRxTx(pThis);
+        pcnetPollRxTx(pDevIns, pThis, pThisCC);
 #else
         uint64_t u64Now = PDMDevHlpTimerGet(pDevIns, pThis->hTimerPoll);
         if (RT_UNLIKELY(u64Now - pThis->u64LastPoll > 200000))
         {
             pThis->u64LastPoll = u64Now;
-            pcnetPollRxTx(pThis);
+            pcnetPollRxTx(pDevIns, pThis, pThisCC);
         }
         if (!PDMDevHlpTimerIsActive(pDevIns, pThis->hTimerPoll))
             pcnetPollTimerStart(pDevIns, pThis);
@@ -2852,7 +2897,7 @@ static void pcnetPollTimer(PPDMDEVINS pDevIns, PPCNETSTATE pThis)
 }
 
 
-static VBOXSTRICTRC pcnetCSRWriteU16(PPDMDEVINS pDevIns, PPCNETSTATE pThis, uint32_t u32RAP, uint32_t val)
+static VBOXSTRICTRC pcnetCSRWriteU16(PPDMDEVINS pDevIns, PPCNETSTATE pThis, PPCNETSTATECC pThisCC, uint32_t u32RAP, uint32_t val)
 {
     VBOXSTRICTRC rc  = VINF_SUCCESS;
     Log8(("#%d pcnetCSRWriteU16: rap=%d val=%#06x\n", PCNET_INST_NR, u32RAP, val));
@@ -2883,18 +2928,18 @@ static VBOXSTRICTRC pcnetCSRWriteU16(PPDMDEVINS pDevIns, PPCNETSTATE pThis, uint
                 pThis->aCSR[0] = csr0;
 
                 if (!CSR_STOP(pThis) && (val & 4))
-                    pcnetStop(pDevIns, pThis);
+                    pcnetStop(pDevIns, pThis, pThisCC);
 
 #ifdef IN_RING3
                 if (!CSR_INIT(pThis) && (val & 1))
-                    pcnetR3Init(pThis);
+                    pcnetR3Init(pDevIns, pThis, pThisCC);
 #endif
 
                 if (!CSR_STRT(pThis) && (val & 2))
                     pcnetStart(pDevIns, pThis);
 
                 if (CSR_TDMD(pThis))
-                    pcnetTransmit(pThis);
+                    pcnetTransmit(pDevIns, pThis, pThisCC);
 
                 return rc;
             }
@@ -2968,22 +3013,22 @@ static VBOXSTRICTRC pcnetCSRWriteU16(PPDMDEVINS pDevIns, PPCNETSTATE pThis, uint
                 return rc;
             }
         case 15: /* Mode */
-            if ((pThis->aCSR[15] & 0x8000) != (uint16_t)(val & 0x8000) && pThis->pDrvR3)
+            if ((pThis->aCSR[15] & 0x8000) != (uint16_t)(val & 0x8000) && pThis->fDriverAttached)
             {
                 Log(("#%d: promiscuous mode changed to %d\n", PCNET_INST_NR, !!(val & 0x8000)));
 #ifndef IN_RING3
                 return VINF_IOM_R3_IOPORT_WRITE;
 #else
                 /* check for promiscuous mode change */
-                if (pThis->pDrvR3)
-                    pThis->pDrvR3->pfnSetPromiscuousMode(pThis->pDrvR3, !!(val & 0x8000));
+                if (pThisCC->pDrv)
+                    pThisCC->pDrv->pfnSetPromiscuousMode(pThisCC->pDrv, !!(val & 0x8000));
 #endif
             }
             break;
         case 16: /* IADRL */
-            return pcnetCSRWriteU16(pDevIns, pThis, 1, val);
+            return pcnetCSRWriteU16(pDevIns, pThis, pThisCC, 1, val);
         case 17: /* IADRH */
-            return pcnetCSRWriteU16(pDevIns, pThis, 2, val);
+            return pcnetCSRWriteU16(pDevIns, pThis, pThisCC, 2, val);
 
         /*
          * 24 and 25 are the Base Address of Receive Descriptor.
@@ -3074,21 +3119,21 @@ static uint32_t pcnetLinkSpd(uint32_t speed)
     return (exp << 13) | speed;
 }
 
-static uint32_t pcnetCSRReadU16(PPCNETSTATE pThis, uint32_t u32RAP)
+static uint32_t pcnetCSRReadU16(PPDMDEVINS pDevIns, PPCNETSTATE pThis, uint32_t u32RAP)
 {
     uint32_t val;
     switch (u32RAP)
     {
         case 0:
-            pcnetUpdateIrq(pThis);
+            pcnetUpdateIrq(pDevIns, pThis);
             val = pThis->aCSR[0];
             val |= (val & 0x7800) ? 0x8000 : 0;
             pThis->u16CSR0LastSeenByGuest = val;
             break;
         case 16:
-            return pcnetCSRReadU16(pThis, 1);
+            return pcnetCSRReadU16(pDevIns, pThis, 1);
         case 17:
-            return pcnetCSRReadU16(pThis, 2);
+            return pcnetCSRReadU16(pDevIns, pThis, 2);
         case 58:
             return pcnetBCRReadU16(pThis, BCR_SWS);
         case 68:    /* Custom register to pass link speed to driver */
@@ -3341,7 +3386,7 @@ static uint32_t pcnetBCRReadU16(PPCNETSTATE pThis, uint32_t u32RAP)
         case BCR_LED3:
             val = pThis->aBCR[u32RAP] & ~0x8000;
             /* Clear LNKSTE if we're not connected or if we've just loaded a VM state. */
-            if (!pThis->pDrvR3 || pThis->fLinkTempDown || !pThis->fLinkUp)
+            if (!pThis->fDriverAttached || pThis->fLinkTempDown || !pThis->fLinkUp)
             {
                 if (u32RAP == 4)
                     pThis->cLinkDownReported++;
@@ -3546,7 +3591,7 @@ static VBOXSTRICTRC pcnetIoPortWriteU8(PPCNETSTATE pThis, uint32_t addr, uint32_
     return VINF_SUCCESS;
 }
 
-static uint32_t pcnetIoPortReadU8(PPCNETSTATE pThis, uint32_t addr)
+static uint32_t pcnetIoPortReadU8(PPDMDEVINS pDevIns, PPCNETSTATE pThis, uint32_t addr)
 {
     uint32_t val = UINT32_MAX;
 
@@ -3563,13 +3608,13 @@ static uint32_t pcnetIoPortReadU8(PPCNETSTATE pThis, uint32_t addr)
     else
         Log(("#%d pcnetIoPortReadU8: addr=%#010x val=%#06x BCR_DWIO !!\n", PCNET_INST_NR, addr, val & 0xff));
 
-    pcnetUpdateIrq(pThis);
+    pcnetUpdateIrq(pDevIns, pThis);
 
     Log6(("#%d pcnetIoPortReadU8: addr=%#010x val=%#06x\n", PCNET_INST_NR, addr, val & 0xff));
     return val;
 }
 
-static VBOXSTRICTRC pcnetIoPortWriteU16(PPDMDEVINS pDevIns, PPCNETSTATE pThis, uint32_t addr, uint32_t val)
+static VBOXSTRICTRC pcnetIoPortWriteU16(PPDMDEVINS pDevIns, PPCNETSTATE pThis, PPCNETSTATECC pThisCC, uint32_t addr, uint32_t val)
 {
     VBOXSTRICTRC rc = VINF_SUCCESS;
 
@@ -3579,9 +3624,9 @@ static VBOXSTRICTRC pcnetIoPortWriteU16(PPDMDEVINS pDevIns, PPCNETSTATE pThis, u
         switch (addr & 0x0f)
         {
             case 0x00: /* RDP */
-                pcnetPollTimer(pDevIns, pThis);
-                rc = pcnetCSRWriteU16(pDevIns, pThis, pThis->u32RAP, val);
-                pcnetUpdateIrq(pThis);
+                pcnetPollTimer(pDevIns, pThis, pThisCC);
+                rc = pcnetCSRWriteU16(pDevIns, pThis, pThisCC, pThis->u32RAP, val);
+                pcnetUpdateIrq(pDevIns, pThis);
                 break;
             case 0x02: /* RAP */
                 pThis->u32RAP = val & 0x7f;
@@ -3597,7 +3642,7 @@ static VBOXSTRICTRC pcnetIoPortWriteU16(PPDMDEVINS pDevIns, PPCNETSTATE pThis, u
     return rc;
 }
 
-static uint32_t pcnetIoPortReadU16(PPDMDEVINS pDevIns, PPCNETSTATE pThis, uint32_t addr)
+static uint32_t pcnetIoPortReadU16(PPDMDEVINS pDevIns, PPCNETSTATE pThis, PPCNETSTATECC pThisCC, uint32_t addr)
 {
     uint32_t val = ~0U;
 
@@ -3609,9 +3654,9 @@ static uint32_t pcnetIoPortReadU16(PPDMDEVINS pDevIns, PPCNETSTATE pThis, uint32
                 /** @note if we're not polling, then the guest will tell us when to poll by setting TDMD in CSR0 */
                 /** Polling is then useless here and possibly expensive. */
                 if (!CSR_DPOLL(pThis))
-                    pcnetPollTimer(pDevIns, pThis);
+                    pcnetPollTimer(pDevIns, pThis, pThisCC);
 
-                val = pcnetCSRReadU16(pThis, pThis->u32RAP);
+                val = pcnetCSRReadU16(pDevIns, pThis, pThis->u32RAP);
                 if (pThis->u32RAP == 0)  // pcnetUpdateIrq() already called by pcnetCSRReadU16()
                     goto skip_update_irq;
                 break;
@@ -3630,14 +3675,14 @@ static uint32_t pcnetIoPortReadU16(PPDMDEVINS pDevIns, PPCNETSTATE pThis, uint32
     else
         Log(("#%d pcnetIoPortReadU16: addr=%#010x val=%#06x BCR_DWIO !!\n", PCNET_INST_NR, addr, val & 0xffff));
 
-    pcnetUpdateIrq(pThis);
+    pcnetUpdateIrq(pDevIns, pThis);
 
 skip_update_irq:
     Log6(("#%d pcnetIoPortReadU16: addr=%#010x val=%#06x\n", PCNET_INST_NR, addr, val & 0xffff));
     return val;
 }
 
-static VBOXSTRICTRC pcnetIoPortWriteU32(PPDMDEVINS pDevIns, PPCNETSTATE pThis, uint32_t addr, uint32_t val)
+static VBOXSTRICTRC pcnetIoPortWriteU32(PPDMDEVINS pDevIns, PPCNETSTATE pThis, PPCNETSTATECC pThisCC, uint32_t addr, uint32_t val)
 {
     VBOXSTRICTRC rc = VINF_SUCCESS;
 
@@ -3647,9 +3692,9 @@ static VBOXSTRICTRC pcnetIoPortWriteU32(PPDMDEVINS pDevIns, PPCNETSTATE pThis, u
         switch (addr & 0x0f)
         {
             case 0x00: /* RDP */
-                pcnetPollTimer(pDevIns, pThis);
-                rc = pcnetCSRWriteU16(pDevIns, pThis, pThis->u32RAP, val & 0xffff);
-                pcnetUpdateIrq(pThis);
+                pcnetPollTimer(pDevIns, pThis, pThisCC);
+                rc = pcnetCSRWriteU16(pDevIns, pThis, pThisCC, pThis->u32RAP, val & 0xffff);
+                pcnetUpdateIrq(pDevIns, pThis);
                 break;
             case 0x04: /* RAP */
                 pThis->u32RAP = val & 0x7f;
@@ -3671,7 +3716,7 @@ static VBOXSTRICTRC pcnetIoPortWriteU32(PPDMDEVINS pDevIns, PPCNETSTATE pThis, u
     return rc;
 }
 
-static uint32_t pcnetIoPortReadU32(PPDMDEVINS pDevIns, PPCNETSTATE pThis, uint32_t addr)
+static uint32_t pcnetIoPortReadU32(PPDMDEVINS pDevIns, PPCNETSTATE pThis, PPCNETSTATECC pThisCC, uint32_t addr)
 {
     uint32_t val = ~0U;
 
@@ -3683,9 +3728,9 @@ static uint32_t pcnetIoPortReadU32(PPDMDEVINS pDevIns, PPCNETSTATE pThis, uint32
                 /** @note if we're not polling, then the guest will tell us when to poll by setting TDMD in CSR0 */
                 /** Polling is then useless here and possibly expensive. */
                 if (!CSR_DPOLL(pThis))
-                    pcnetPollTimer(pDevIns, pThis);
+                    pcnetPollTimer(pDevIns, pThis, pThisCC);
 
-                val = pcnetCSRReadU16(pThis, pThis->u32RAP);
+                val = pcnetCSRReadU16(pDevIns, pThis, pThis->u32RAP);
                 if (pThis->u32RAP == 0)  // pcnetUpdateIrq() already called by pcnetCSRReadU16()
                     goto skip_update_irq;
                 break;
@@ -3703,7 +3748,7 @@ static uint32_t pcnetIoPortReadU32(PPDMDEVINS pDevIns, PPCNETSTATE pThis, uint32
     }
     else
         Log(("#%d pcnetIoPortReadU32: addr=%#010x val=%#010x !BCR_DWIO !!\n", PCNET_INST_NR, addr, val));
-    pcnetUpdateIrq(pThis);
+    pcnetUpdateIrq(pDevIns, pThis);
 
 skip_update_irq:
     Log6(("#%d pcnetIoPortReadU32: addr=%#010x val=%#010x\n", PCNET_INST_NR, addr, val));
@@ -3716,17 +3761,18 @@ skip_update_irq:
  */
 static DECLCALLBACK(VBOXSTRICTRC) pcnetIoPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t *pu32, unsigned cb)
 {
-    PPCNETSTATE     pThis = PDMDEVINS_2_DATA(pDevIns, PPCNETSTATE);
-    VBOXSTRICTRC    rc    = VINF_SUCCESS;
+    PPCNETSTATE     pThis   = PDMDEVINS_2_DATA(pDevIns, PPCNETSTATE);
+    PPCNETSTATECC   pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PPCNETSTATECC);
+    VBOXSTRICTRC    rc      = VINF_SUCCESS;
     STAM_PROFILE_ADV_START(&pThis->CTX_SUFF_Z(StatIORead), a);
     Assert(PDMCritSectIsOwner(&pThis->CritSect));
     RT_NOREF_PV(pvUser);
 
     switch (cb)
     {
-        case 1: *pu32 = pcnetIoPortReadU8(pThis, offPort); break;
-        case 2: *pu32 = pcnetIoPortReadU16(pDevIns, pThis, offPort); break;
-        case 4: *pu32 = pcnetIoPortReadU32(pDevIns, pThis, offPort); break;
+        case 1: *pu32 = pcnetIoPortReadU8(pDevIns, pThis, offPort); break;
+        case 2: *pu32 = pcnetIoPortReadU16(pDevIns, pThis, pThisCC, offPort); break;
+        case 4: *pu32 = pcnetIoPortReadU32(pDevIns, pThis, pThisCC, offPort); break;
         default:
             rc = PDMDevHlpDBGFStop(pDevIns, RT_SRC_POS, "pcnetIoPortRead: unsupported op size: offset=%#10x cb=%u\n", offPort, cb);
     }
@@ -3742,8 +3788,9 @@ static DECLCALLBACK(VBOXSTRICTRC) pcnetIoPortRead(PPDMDEVINS pDevIns, void *pvUs
  */
 static DECLCALLBACK(VBOXSTRICTRC) pcnetIoPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t u32, unsigned cb)
 {
-    PPCNETSTATE     pThis = PDMDEVINS_2_DATA(pDevIns, PPCNETSTATE);
-    VBOXSTRICTRC    rc    = VINF_SUCCESS;
+    PPCNETSTATE     pThis   = PDMDEVINS_2_DATA(pDevIns, PPCNETSTATE);
+    PPCNETSTATECC   pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PPCNETSTATECC);
+    VBOXSTRICTRC    rc;
     STAM_PROFILE_ADV_START(&pThis->CTX_SUFF_Z(StatIOWrite), a);
     Assert(PDMCritSectIsOwner(&pThis->CritSect));
     RT_NOREF_PV(pvUser);
@@ -3751,8 +3798,8 @@ static DECLCALLBACK(VBOXSTRICTRC) pcnetIoPortWrite(PPDMDEVINS pDevIns, void *pvU
     switch (cb)
     {
         case 1: rc = pcnetIoPortWriteU8(pThis, offPort, u32); break;
-        case 2: rc = pcnetIoPortWriteU16(pDevIns, pThis, offPort, u32); break;
-        case 4: rc = pcnetIoPortWriteU32(pDevIns, pThis, offPort, u32); break;
+        case 2: rc = pcnetIoPortWriteU16(pDevIns, pThis, pThisCC, offPort, u32); break;
+        case 4: rc = pcnetIoPortWriteU32(pDevIns, pThis, pThisCC, offPort, u32); break;
         default:
             rc = PDMDevHlpDBGFStop(pDevIns, RT_SRC_POS, "pcnetIoPortWrite: unsupported op size: offset=%#10x cb=%u\n", offPort, cb);
     }
@@ -3783,13 +3830,13 @@ static uint32_t pcnetR3MmioReadU8(PPCNETSTATE pThis, RTGCPHYS addr)
     return val;
 }
 
-static VBOXSTRICTRC pcnetR3MmioWriteU16(PPDMDEVINS pDevIns, PPCNETSTATE pThis, RTGCPHYS off, uint32_t val)
+static VBOXSTRICTRC pcnetR3MmioWriteU16(PPDMDEVINS pDevIns, PPCNETSTATE pThis, PPCNETSTATECC pThisCC, RTGCPHYS off, uint32_t val)
 {
     VBOXSTRICTRC rcStrict;
     Log6(("#%d pcnetR3MmioWriteU16: off=%#010x val=%#06x\n", PCNET_INST_NR, off, val));
     if (off & 0x10)
     {
-        rcStrict = pcnetIoPortWriteU16(pDevIns, pThis, off & 0x0f, val);
+        rcStrict = pcnetIoPortWriteU16(pDevIns, pThis, pThisCC, off & 0x0f, val);
         if (rcStrict == VINF_IOM_R3_IOPORT_WRITE)
             rcStrict = VINF_IOM_R3_MMIO_WRITE;
     }
@@ -3802,12 +3849,12 @@ static VBOXSTRICTRC pcnetR3MmioWriteU16(PPDMDEVINS pDevIns, PPCNETSTATE pThis, R
     return rcStrict;
 }
 
-static uint32_t pcnetR3MmioReadU16(PPDMDEVINS pDevIns, PPCNETSTATE pThis, RTGCPHYS addr)
+static uint32_t pcnetR3MmioReadU16(PPDMDEVINS pDevIns, PPCNETSTATE pThis, PPCNETSTATECC pThisCC, RTGCPHYS addr)
 {
     uint32_t val = ~0U;
 
     if (addr & 0x10)
-        val = pcnetIoPortReadU16(pDevIns, pThis, addr & 0x0f);
+        val = pcnetIoPortReadU16(pDevIns, pThis, pThisCC, addr & 0x0f);
     else
     {
         val = pcnetAPROMReadU8(pThis, addr+1);
@@ -3818,13 +3865,13 @@ static uint32_t pcnetR3MmioReadU16(PPDMDEVINS pDevIns, PPCNETSTATE pThis, RTGCPH
     return val;
 }
 
-static VBOXSTRICTRC pcnetR3MmioWriteU32(PPDMDEVINS pDevIns, PPCNETSTATE pThis, RTGCPHYS off, uint32_t val)
+static VBOXSTRICTRC pcnetR3MmioWriteU32(PPDMDEVINS pDevIns, PPCNETSTATE pThis, PPCNETSTATECC pThisCC, RTGCPHYS off, uint32_t val)
 {
     VBOXSTRICTRC rcStrict;
     Log6(("#%d pcnetR3MmioWriteU32: off=%#010x val=%#010x\n", PCNET_INST_NR, off, val));
     if (off & 0x10)
     {
-        rcStrict = pcnetIoPortWriteU32(pDevIns, pThis, off & 0x0f, val);
+        rcStrict = pcnetIoPortWriteU32(pDevIns, pThis, pThisCC, off & 0x0f, val);
         if (rcStrict == VINF_IOM_R3_IOPORT_WRITE)
             rcStrict = VINF_IOM_R3_MMIO_WRITE;
     }
@@ -3839,12 +3886,12 @@ static VBOXSTRICTRC pcnetR3MmioWriteU32(PPDMDEVINS pDevIns, PPCNETSTATE pThis, R
     return rcStrict;
 }
 
-static uint32_t pcnetR3MmioReadU32(PPDMDEVINS pDevIns, PPCNETSTATE pThis, RTGCPHYS addr)
+static uint32_t pcnetR3MmioReadU32(PPDMDEVINS pDevIns, PPCNETSTATE pThis, PPCNETSTATECC pThisCC, RTGCPHYS addr)
 {
     uint32_t val;
 
     if (addr & 0x10)
-        val = pcnetIoPortReadU32(pDevIns, pThis, addr & 0x0f);
+        val = pcnetIoPortReadU32(pDevIns, pThis, pThisCC, addr & 0x0f);
     else
     {
         val  = pcnetAPROMReadU8(pThis, addr+3);
@@ -3865,8 +3912,9 @@ static uint32_t pcnetR3MmioReadU32(PPDMDEVINS pDevIns, PPCNETSTATE pThis, RTGCPH
  */
 static DECLCALLBACK(VBOXSTRICTRC) pcnetR3MmioRead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS off, void *pv, unsigned cb)
 {
-    PPCNETSTATE     pThis = PDMDEVINS_2_DATA(pDevIns, PPCNETSTATE);
-    VBOXSTRICTRC    rc    = VINF_SUCCESS;
+    PPCNETSTATE     pThis   = PDMDEVINS_2_DATA(pDevIns, PPCNETSTATE);
+    PPCNETSTATECC   pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PPCNETSTATECC);
+    VBOXSTRICTRC    rc      = VINF_SUCCESS;
     Assert(PDMCritSectIsOwner(&pThis->CritSect));
     RT_NOREF_PV(pvUser);
 
@@ -3879,8 +3927,8 @@ static DECLCALLBACK(VBOXSTRICTRC) pcnetR3MmioRead(PPDMDEVINS pDevIns, void *pvUs
         switch (cb)
         {
             case 1:  *(uint8_t  *)pv = pcnetR3MmioReadU8 (pThis, off); break;
-            case 2:  *(uint16_t *)pv = pcnetR3MmioReadU16(pDevIns, pThis, off); break;
-            case 4:  *(uint32_t *)pv = pcnetR3MmioReadU32(pDevIns, pThis, off); break;
+            case 2:  *(uint16_t *)pv = pcnetR3MmioReadU16(pDevIns, pThis, pThisCC, off); break;
+            case 4:  *(uint32_t *)pv = pcnetR3MmioReadU32(pDevIns, pThis, pThisCC, off); break;
             default:
                 rc = PDMDevHlpDBGFStop(pDevIns, RT_SRC_POS, "pcnetR3MmioRead: unsupported op size: address=%RGp cb=%u\n", off, cb);
         }
@@ -3900,8 +3948,9 @@ static DECLCALLBACK(VBOXSTRICTRC) pcnetR3MmioRead(PPDMDEVINS pDevIns, void *pvUs
  */
 static DECLCALLBACK(VBOXSTRICTRC) pcnetR3MmioWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS off, void const *pv, unsigned cb)
 {
-    PPCNETSTATE     pThis = PDMDEVINS_2_DATA(pDevIns, PPCNETSTATE);
-    VBOXSTRICTRC    rc    = VINF_SUCCESS;
+    PPCNETSTATE     pThis   = PDMDEVINS_2_DATA(pDevIns, PPCNETSTATE);
+    PPCNETSTATECC   pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PPCNETSTATECC);
+    VBOXSTRICTRC    rc      = VINF_SUCCESS;
     Assert(PDMCritSectIsOwner(&pThis->CritSect));
     RT_NOREF_PV(pvUser);
 
@@ -3914,8 +3963,8 @@ static DECLCALLBACK(VBOXSTRICTRC) pcnetR3MmioWrite(PPDMDEVINS pDevIns, void *pvU
         switch (cb)
         {
             case 1:  pcnetR3MmioWriteU8(pThis, off, *(uint8_t  *)pv); break;
-            case 2:  rc = pcnetR3MmioWriteU16(pDevIns, pThis, off, *(uint16_t *)pv); break;
-            case 4:  rc = pcnetR3MmioWriteU32(pDevIns, pThis, off, *(uint32_t *)pv); break;
+            case 2:  rc = pcnetR3MmioWriteU16(pDevIns, pThis, pThisCC, off, *(uint16_t *)pv); break;
+            case 4:  rc = pcnetR3MmioWriteU32(pDevIns, pThis, pThisCC, off, *(uint32_t *)pv); break;
             default:
                 rc = PDMDevHlpDBGFStop(pDevIns, RT_SRC_POS, "pcnetR3MmioWrite: unsupported op size: address=%RGp cb=%u\n", off, cb);
         }
@@ -3936,12 +3985,13 @@ static DECLCALLBACK(VBOXSTRICTRC) pcnetR3MmioWrite(PPDMDEVINS pDevIns, void *pvU
  */
 static DECLCALLBACK(void) pcnetR3Timer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser)
 {
-    PPCNETSTATE pThis = PDMDEVINS_2_DATA(pDevIns, PPCNETSTATE);
+    PPCNETSTATE   pThis   = PDMDEVINS_2_DATA(pDevIns, PPCNETSTATE);
+    PPCNETSTATECC pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PPCNETSTATECC);
     Assert(PDMCritSectIsOwner(&pThis->CritSect));
     RT_NOREF(pvUser, pTimer);
 
     STAM_PROFILE_ADV_START(&pThis->StatTimer, a);
-    pcnetPollTimer(pDevIns, pThis);
+    pcnetPollTimer(pDevIns, pThis, pThisCC);
     STAM_PROFILE_ADV_STOP(&pThis->StatTimer, a);
 }
 
@@ -3957,7 +4007,7 @@ static DECLCALLBACK(void) pcnetR3TimerSoftInt(PPDMDEVINS pDevIns, PTMTIMER pTime
     RT_NOREF(pvUser, pTimer);
 
     pThis->aCSR[7] |= 0x0800; /* STINT */
-    pcnetUpdateIrq(pThis);
+    pcnetUpdateIrq(pDevIns, pThis);
     PDMDevHlpTimerSetNano(pDevIns, pThis->hTimerSoftInt, 12800U * (pThis->aBCR[BCR_STVAL] & 0xffff));
 }
 
@@ -4218,7 +4268,7 @@ static DECLCALLBACK(void) pcnetR3Info(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, co
         while (i-- > 0)
         {
             RMD rmd;
-            pcnetRmdLoad(pThis, &rmd, PHYSADDR(pThis, GCPhys), false);
+            pcnetRmdLoad(pDevIns, pThis, &rmd, PHYSADDR(pThis, GCPhys), false);
             pHlp->pfnPrintf(pHlp,
                             "%04x %RX32:%c%c RBADR=%08RX32 BCNT=%03x MCNT=%03x "
                             "OWN=%d ERR=%d FRAM=%d OFLO=%d CRC=%d BUFF=%d STP=%d ENP=%d BPE=%d "
@@ -4258,7 +4308,7 @@ static DECLCALLBACK(void) pcnetR3Info(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, co
         while (i-- > 0)
         {
             TMD tmd;
-            pcnetTmdLoad(pThis, &tmd, PHYSADDR(pThis, GCPhys), false);
+            pcnetTmdLoad(pDevIns, pThis, &tmd, PHYSADDR(pThis, GCPhys), false);
             pHlp->pfnPrintf(pHlp,
                             "%04x %RX32:%c%c TBADR=%08RX32 BCNT=%03x OWN=%d "
                             "ERR=%d NOFCS=%d LTINT=%d ONE=%d DEF=%d STP=%d ENP=%d BPE=%d "
@@ -4451,8 +4501,9 @@ static DECLCALLBACK(int) pcnetR3LoadPrep(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
  */
 static DECLCALLBACK(int) pcnetR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass)
 {
-    PPCNETSTATE     pThis = PDMDEVINS_2_DATA(pDevIns, PPCNETSTATE);
-    PCPDMDEVHLPR3   pHlp  = pDevIns->pHlpR3;
+    PPCNETSTATE     pThis   = PDMDEVINS_2_DATA(pDevIns, PPCNETSTATE);
+    PPCNETSTATECC   pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PPCNETSTATECC);
+    PCPDMDEVHLPR3   pHlp    = pDevIns->pHlpR3;
 
     if (   SSM_VERSION_MAJOR_CHANGED(uVersion, PCNET_SAVEDSTATE_VERSION)
         || SSM_VERSION_MINOR(uVersion) < 7)
@@ -4534,8 +4585,8 @@ static DECLCALLBACK(int) pcnetR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, ui
                              : (0xff00 & (uint32_t)pThis->aCSR[2]) << 16;
 
         /* update promiscuous mode. */
-        if (pThis->pDrvR3)
-            pThis->pDrvR3->pfnSetPromiscuousMode(pThis->pDrvR3, CSR_PROM(pThis));
+        if (pThisCC->pDrv)
+            pThisCC->pDrv->pfnSetPromiscuousMode(pThisCC->pDrv, CSR_PROM(pThis));
 
 #ifdef PCNET_NO_POLLING
         /* Enable physical monitoring again (!) */
@@ -4576,9 +4627,10 @@ static DECLCALLBACK(int) pcnetR3LoadDone(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
  * the pfnRecieve() method is called.
  *
  * @returns VBox status code.
- * @param   pThis           The PCnet shared instance data.
+ * @param   pDevIns     The device instance.
+ * @param   pThis       The PCnet shared instance data.
  */
-static int pcnetR3CanReceive(PPCNETSTATE pThis)
+static int pcnetR3CanReceive(PPDMDEVINS pDevIns, PPCNETSTATE pThis)
 {
     int rc = PDMCritSectEnter(&pThis->CritSect, VERR_SEM_BUSY);
     AssertReleaseRC(rc);
@@ -4588,7 +4640,7 @@ static int pcnetR3CanReceive(PPCNETSTATE pThis)
     if (RT_LIKELY(!CSR_DRX(pThis) && !CSR_STOP(pThis) && !CSR_SPND(pThis)))
     {
         if (HOST_IS_OWNER(CSR_CRST(pThis)) && pThis->GCRDRA)
-            pcnetRdtePoll(pThis);
+            pcnetRdtePoll(pDevIns, pThis);
 
         if (RT_UNLIKELY(HOST_IS_OWNER(CSR_CRST(pThis))))
         {
@@ -4610,10 +4662,11 @@ static int pcnetR3CanReceive(PPCNETSTATE pThis)
  */
 static DECLCALLBACK(int) pcnetR3NetworkDown_WaitReceiveAvail(PPDMINETWORKDOWN pInterface, RTMSINTERVAL cMillies)
 {
-    PPCNETSTATE pThis = RT_FROM_MEMBER(pInterface, PCNETSTATE, INetworkDown);
-    PPDMDEVINS  pDevIns = pThis->pDevInsR3;
+    PPCNETSTATECC pThisCC = RT_FROM_MEMBER(pInterface, PCNETSTATECC, INetworkDown);
+    PPDMDEVINS    pDevIns = pThisCC->pDevIns;
+    PPCNETSTATE   pThis   = PDMDEVINS_2_DATA(pDevIns, PPCNETSTATE);
 
-    int rc = pcnetR3CanReceive(pThis);
+    int rc = pcnetR3CanReceive(pDevIns, pThis);
     if (RT_SUCCESS(rc))
         return VINF_SUCCESS;
     if (RT_UNLIKELY(cMillies == 0))
@@ -4623,10 +4676,10 @@ static DECLCALLBACK(int) pcnetR3NetworkDown_WaitReceiveAvail(PPDMINETWORKDOWN pI
     ASMAtomicXchgBool(&pThis->fMaybeOutOfSpace, true);
     STAM_PROFILE_START(&pThis->StatRxOverflow, a);
     VMSTATE enmVMState;
-    while (RT_LIKELY(   (enmVMState = PDMDevHlpVMState(pThis->CTX_SUFF(pDevIns))) == VMSTATE_RUNNING
+    while (RT_LIKELY(   (enmVMState = PDMDevHlpVMState(pDevIns)) == VMSTATE_RUNNING
                      || enmVMState == VMSTATE_RUNNING_LS))
     {
-        int rc2 = pcnetR3CanReceive(pThis);
+        int rc2 = pcnetR3CanReceive(pDevIns, pThis);
         if (RT_SUCCESS(rc2))
         {
             rc = VINF_SUCCESS;
@@ -4655,11 +4708,12 @@ static DECLCALLBACK(int) pcnetR3NetworkDown_WaitReceiveAvail(PPDMINETWORKDOWN pI
  */
 static DECLCALLBACK(int) pcnetR3NetworkDown_Receive(PPDMINETWORKDOWN pInterface, const void *pvBuf, size_t cb)
 {
-    PPCNETSTATE pThis = RT_FROM_MEMBER(pInterface, PCNETSTATE, INetworkDown);
-    int         rc;
+    PPCNETSTATECC pThisCC = RT_FROM_MEMBER(pInterface, PCNETSTATECC, INetworkDown);
+    PPDMDEVINS    pDevIns = pThisCC->pDevIns;
+    PPCNETSTATE   pThis   = PDMDEVINS_2_DATA(pDevIns, PPCNETSTATE);
 
     STAM_PROFILE_ADV_START(&pThis->StatReceive, a);
-    rc = PDMCritSectEnter(&pThis->CritSect, VERR_SEM_BUSY);
+    int rc = PDMCritSectEnter(&pThis->CritSect, VERR_SEM_BUSY);
     AssertReleaseRC(rc);
 
     /*
@@ -4676,7 +4730,7 @@ static DECLCALLBACK(int) pcnetR3NetworkDown_Receive(PPDMINETWORKDOWN pInterface,
                           && ((PCRTNETETHERHDR)pvBuf)->EtherType == RT_H2BE_U16_C(RTNET_ETHERTYPE_VLAN));
         if (cb > 70) /* unqualified guess */
             pThis->Led.Asserted.s.fReading = pThis->Led.Actual.s.fReading = 1;
-        pcnetReceiveNoSync(pThis, (const uint8_t *)pvBuf, cb, fAddFCS, false);
+        pcnetReceiveNoSync(pDevIns, pThis, pThisCC, (const uint8_t *)pvBuf, cb, fAddFCS, false);
         pThis->Led.Actual.s.fReading = 0;
     }
 #ifdef LOG_ENABLED
@@ -4709,8 +4763,10 @@ static DECLCALLBACK(int) pcnetR3NetworkDown_Receive(PPDMINETWORKDOWN pInterface,
  */
 static DECLCALLBACK(void) pcnetR3NetworkDown_XmitPending(PPDMINETWORKDOWN pInterface)
 {
-    PPCNETSTATE pThis = RT_FROM_MEMBER(pInterface, PCNETSTATE, INetworkDown);
-    pcnetXmitPending(pThis, true /*fOnWorkerThread*/);
+    PPCNETSTATECC pThisCC = RT_FROM_MEMBER(pInterface, PCNETSTATECC, INetworkDown);
+    PPDMDEVINS    pDevIns = pThisCC->pDevIns;
+    PPCNETSTATE   pThis   = PDMDEVINS_2_DATA(pDevIns, PPCNETSTATE);
+    pcnetXmitPending(pDevIns, pThis, pThisCC, true /*fOnWorkerThread*/);
 }
 
 
@@ -4721,7 +4777,9 @@ static DECLCALLBACK(void) pcnetR3NetworkDown_XmitPending(PPDMINETWORKDOWN pInter
  */
 static DECLCALLBACK(int) pcnetR3NetworkConfig_GetMac(PPDMINETWORKCONFIG pInterface, PRTMAC pMac)
 {
-    PPCNETSTATE pThis = RT_FROM_MEMBER(pInterface, PCNETSTATE, INetworkConfig);
+    PPCNETSTATECC pThisCC = RT_FROM_MEMBER(pInterface, PCNETSTATECC, INetworkConfig);
+    PPDMDEVINS    pDevIns = pThisCC->pDevIns;
+    PPCNETSTATE   pThis   = PDMDEVINS_2_DATA(pDevIns, PPCNETSTATE);
     memcpy(pMac, pThis->aPROM, sizeof(*pMac));
     return VINF_SUCCESS;
 }
@@ -4732,7 +4790,9 @@ static DECLCALLBACK(int) pcnetR3NetworkConfig_GetMac(PPDMINETWORKCONFIG pInterfa
  */
 static DECLCALLBACK(PDMNETWORKLINKSTATE) pcnetR3NetworkConfig_GetLinkState(PPDMINETWORKCONFIG pInterface)
 {
-    PPCNETSTATE pThis = RT_FROM_MEMBER(pInterface, PCNETSTATE, INetworkConfig);
+    PPCNETSTATECC pThisCC = RT_FROM_MEMBER(pInterface, PCNETSTATECC, INetworkConfig);
+    PPDMDEVINS    pDevIns = pThisCC->pDevIns;
+    PPCNETSTATE   pThis   = PDMDEVINS_2_DATA(pDevIns, PPCNETSTATE);
     if (pThis->fLinkUp && !pThis->fLinkTempDown)
         return PDMNETWORKLINKSTATE_UP;
     if (!pThis->fLinkUp)
@@ -4749,8 +4809,9 @@ static DECLCALLBACK(PDMNETWORKLINKSTATE) pcnetR3NetworkConfig_GetLinkState(PPDMI
  */
 static DECLCALLBACK(int) pcnetR3NetworkConfig_SetLinkState(PPDMINETWORKCONFIG pInterface, PDMNETWORKLINKSTATE enmState)
 {
-    PPCNETSTATE     pThis   = RT_FROM_MEMBER(pInterface, PCNETSTATE, INetworkConfig);
-    PPDMDEVINS      pDevIns = pThis->pDevInsR3;
+    PPCNETSTATECC pThisCC = RT_FROM_MEMBER(pInterface, PCNETSTATECC, INetworkConfig);
+    PPDMDEVINS    pDevIns = pThisCC->pDevIns;
+    PPCNETSTATE   pThis   = PDMDEVINS_2_DATA(pDevIns, PPCNETSTATE);
     bool fLinkUp;
 
     AssertMsgReturn(enmState > PDMNETWORKLINKSTATE_INVALID && enmState <= PDMNETWORKLINKSTATE_DOWN_RESUME,
@@ -4789,8 +4850,8 @@ static DECLCALLBACK(int) pcnetR3NetworkConfig_SetLinkState(PPDMINETWORKCONFIG pI
             pThis->Led.Asserted.s.fError = pThis->Led.Actual.s.fError = 1;
         }
         Assert(!PDMCritSectIsOwner(&pThis->CritSect));
-        if (pThis->pDrvR3)
-            pThis->pDrvR3->pfnNotifyLinkChanged(pThis->pDrvR3, enmState);
+        if (pThisCC->pDrv)
+            pThisCC->pDrv->pfnNotifyLinkChanged(pThisCC->pDrv, enmState);
     }
     return VINF_SUCCESS;
 }
@@ -4803,7 +4864,9 @@ static DECLCALLBACK(int) pcnetR3NetworkConfig_SetLinkState(PPDMINETWORKCONFIG pI
  */
 static DECLCALLBACK(int) pcnetQueryStatusLed(PPDMILEDPORTS pInterface, unsigned iLUN, PPDMLED *ppLed)
 {
-    PPCNETSTATE pThis = RT_FROM_MEMBER(pInterface, PCNETSTATE, ILeds);
+    PPCNETSTATECC pThisCC = RT_FROM_MEMBER(pInterface, PCNETSTATECC, ILeds);
+    PPDMDEVINS    pDevIns = pThisCC->pDevIns;
+    PPCNETSTATE   pThis   = PDMDEVINS_2_DATA(pDevIns, PPCNETSTATE);
     if (iLUN == 0)
     {
         *ppLed = &pThis->Led;
@@ -4820,12 +4883,12 @@ static DECLCALLBACK(int) pcnetQueryStatusLed(PPDMILEDPORTS pInterface, unsigned 
  */
 static DECLCALLBACK(void *) pcnetQueryInterface(struct PDMIBASE *pInterface, const char *pszIID)
 {
-    PPCNETSTATE pThis = RT_FROM_MEMBER(pInterface, PCNETSTATE, IBase);
-    Assert(&pThis->IBase == pInterface);
-    PDMIBASE_RETURN_INTERFACE(pszIID, PDMIBASE, &pThis->IBase);
-    PDMIBASE_RETURN_INTERFACE(pszIID, PDMINETWORKDOWN, &pThis->INetworkDown);
-    PDMIBASE_RETURN_INTERFACE(pszIID, PDMINETWORKCONFIG, &pThis->INetworkConfig);
-    PDMIBASE_RETURN_INTERFACE(pszIID, PDMILEDPORTS, &pThis->ILeds);
+    PPCNETSTATECC pThisCC = RT_FROM_MEMBER(pInterface, PCNETSTATECC, IBase);
+    Assert(&pThisCC->IBase == pInterface);
+    PDMIBASE_RETURN_INTERFACE(pszIID, PDMIBASE, &pThisCC->IBase);
+    PDMIBASE_RETURN_INTERFACE(pszIID, PDMINETWORKDOWN, &pThisCC->INetworkDown);
+    PDMIBASE_RETURN_INTERFACE(pszIID, PDMINETWORKCONFIG, &pThisCC->INetworkConfig);
+    PDMIBASE_RETURN_INTERFACE(pszIID, PDMILEDPORTS, &pThisCC->ILeds);
     return NULL;
 }
 
@@ -4849,9 +4912,10 @@ static DECLCALLBACK(void) pcnetR3PowerOff(PPDMDEVINS pDevIns)
  */
 static DECLCALLBACK(void) pcnetR3Detach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t fFlags)
 {
-    RT_NOREF(fFlags);
-    PPCNETSTATE pThis = PDMDEVINS_2_DATA(pDevIns, PPCNETSTATE);
+    PPCNETSTATE     pThis   = PDMDEVINS_2_DATA(pDevIns, PPCNETSTATE);
+    PPCNETSTATECC   pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PPCNETSTATECC);
     Log(("#%d pcnetR3Detach:\n", PCNET_INST_NR));
+    RT_NOREF(fFlags);
 
     AssertLogRelReturnVoid(iLUN == 0);
 
@@ -4864,10 +4928,12 @@ static DECLCALLBACK(void) pcnetR3Detach(PPDMDEVINS pDevIns, unsigned iLUN, uint3
     /*
      * Zero some important members.
      */
-    pThis->pDrvBase = NULL;
-    pThis->pDrvR3 = NULL;
-    pThis->pDrvR0 = NIL_RTR0PTR;
-    pThis->pDrvRC = NIL_RTRCPTR;
+    pThis->fDriverAttached = false;
+    pThisCC->pDrvBase = NULL;
+    pThisCC->pDrv = NULL;
+    /// @todo figure this out
+    //pThis->pDrvR0 = NIL_RTR0PTR;
+    //pThis->pDrvRC = NIL_RTRCPTR;
 
     PDMCritSectLeave(&pThis->CritSect);
 }
@@ -4879,9 +4945,10 @@ static DECLCALLBACK(void) pcnetR3Detach(PPDMDEVINS pDevIns, unsigned iLUN, uint3
  */
 static DECLCALLBACK(int) pcnetR3Attach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t fFlags)
 {
-    RT_NOREF(fFlags);
-    PPCNETSTATE pThis = PDMDEVINS_2_DATA(pDevIns, PPCNETSTATE);
+    PPCNETSTATE     pThis   = PDMDEVINS_2_DATA(pDevIns, PPCNETSTATE);
+    PPCNETSTATECC   pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PPCNETSTATECC);
     LogFlow(("#%d pcnetR3Attach:\n", PCNET_INST_NR));
+    RT_NOREF(fFlags);
 
     AssertLogRelReturn(iLUN == 0, VERR_PDM_NO_SUCH_LUN);
 
@@ -4890,14 +4957,16 @@ static DECLCALLBACK(int) pcnetR3Attach(PPDMDEVINS pDevIns, unsigned iLUN, uint32
     /*
      * Attach the driver.
      */
-    int rc = PDMDevHlpDriverAttach(pDevIns, 0, &pThis->IBase, &pThis->pDrvBase, "Network Port");
+    int rc = PDMDevHlpDriverAttach(pDevIns, 0, &pThisCC->IBase, &pThisCC->pDrvBase, "Network Port");
     if (RT_SUCCESS(rc))
     {
-        pThis->pDrvR3 = PDMIBASE_QUERY_INTERFACE(pThis->pDrvBase, PDMINETWORKUP);
-        AssertMsgStmt(pThis->pDrvR3, ("Failed to obtain the PDMINETWORKUP interface!\n"),
+        pThisCC->pDrv = PDMIBASE_QUERY_INTERFACE(pThisCC->pDrvBase, PDMINETWORKUP);
+        AssertMsgStmt(pThisCC->pDrv, ("Failed to obtain the PDMINETWORKUP interface!\n"),
                       rc = VERR_PDM_MISSING_INTERFACE_BELOW);
-        pThis->pDrvR0 = PDMIBASER0_QUERY_INTERFACE(PDMIBASE_QUERY_INTERFACE(pThis->pDrvBase, PDMIBASER0), PDMINETWORKUP);
-        pThis->pDrvRC = PDMIBASERC_QUERY_INTERFACE(PDMIBASE_QUERY_INTERFACE(pThis->pDrvBase, PDMIBASERC), PDMINETWORKUP);
+        pThis->fDriverAttached = true;
+        /// @todo figoure out this
+        //pThis->pDrvR0 = PDMIBASER0_QUERY_INTERFACE(PDMIBASE_QUERY_INTERFACE(pThis->pDrvBase, PDMIBASER0), PDMINETWORKUP);
+        //pThis->pDrvRC = PDMIBASERC_QUERY_INTERFACE(PDMIBASE_QUERY_INTERFACE(pThis->pDrvBase, PDMIBASERC), PDMINETWORKUP);
     }
     else if (   rc == VERR_PDM_NO_ATTACHED_DRIVER
              || rc == VERR_PDM_CFG_MISSING_DRIVER_NAME)
@@ -4954,11 +5023,10 @@ static DECLCALLBACK(void) pcnetR3Reset(PPDMDEVINS pDevIns)
  */
 static DECLCALLBACK(void) pcnetR3Relocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta)
 {
-    RT_NOREF(offDelta);
-    PPCNETSTATE pThis = PDMDEVINS_2_DATA(pDevIns, PPCNETSTATE);
-    pThis->pDevInsRC     = PDMDEVINS_2_RCPTR(pDevIns);
+    PPCNETSTATERC pThisRC = PDMINS_2_DATA_RC(pDevIns, PPCNETSTATERC);
+    pThisRC->pDrv += offDelta;
 #ifdef PCNET_NO_POLLING
-    pThis->pfnEMInterpretInstructionRC += offDelta;
+    pThisRC->pfnEMInterpretInstructionRC += offDelta;
 #endif
 }
 
@@ -4990,8 +5058,9 @@ static DECLCALLBACK(int) pcnetR3Destruct(PPDMDEVINS pDevIns)
 static DECLCALLBACK(int) pcnetR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE pCfg)
 {
     PDMDEV_CHECK_VERSIONS_RETURN(pDevIns);
-    PPCNETSTATE     pThis = PDMDEVINS_2_DATA(pDevIns, PPCNETSTATE);
-    PCPDMDEVHLPR3   pHlp  = pDevIns->pHlpR3;
+    PPCNETSTATE     pThis   = PDMDEVINS_2_DATA(pDevIns, PPCNETSTATE);
+    PPCNETSTATECC   pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PPCNETSTATECC);
+    PCPDMDEVHLPR3   pHlp    = pDevIns->pHlpR3;
     PPDMIBASE       pBase;
     char            szTmp[128];
     int             rc;
@@ -5003,11 +5072,13 @@ static DECLCALLBACK(int) pcnetR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
     /*
      * Init what's required to make the destructor safe.
      */
+    pThis->iInstance            = iInstance;
     pThis->hEventOutOfRxSpace   = NIL_SUPSEMEVENT;
     pThis->hIoPortsPci          = NIL_IOMIOPORTHANDLE;
     pThis->hIoPortsPciAProm     = NIL_IOMIOPORTHANDLE;
     pThis->hIoPortsIsa          = NIL_IOMIOPORTHANDLE;
     pThis->hIoPortsIsaAProm     = NIL_IOMIOPORTHANDLE;
+    pThisCC->pDevIns            = pDevIns;
 
     /*
      * Validate configuration.
@@ -5095,22 +5166,19 @@ static DECLCALLBACK(int) pcnetR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
     /*
      * Initialize data (most of it anyway).
      */
-    pThis->pDevInsR3                        = pDevIns;
-    pThis->pDevInsR0                        = PDMDEVINS_2_R0PTR(pDevIns);
-    pThis->pDevInsRC                        = PDMDEVINS_2_RCPTR(pDevIns);
-    pThis->Led.u32Magic                     = PDMLED_MAGIC;
+    pThis->Led.u32Magic                         = PDMLED_MAGIC;
     /* IBase */
-    pThis->IBase.pfnQueryInterface          = pcnetQueryInterface;
+    pThisCC->IBase.pfnQueryInterface            = pcnetQueryInterface;
     /* INeworkPort */
-    pThis->INetworkDown.pfnWaitReceiveAvail = pcnetR3NetworkDown_WaitReceiveAvail;
-    pThis->INetworkDown.pfnReceive          = pcnetR3NetworkDown_Receive;
-    pThis->INetworkDown.pfnXmitPending      = pcnetR3NetworkDown_XmitPending;
+    pThisCC->INetworkDown.pfnWaitReceiveAvail   = pcnetR3NetworkDown_WaitReceiveAvail;
+    pThisCC->INetworkDown.pfnReceive            = pcnetR3NetworkDown_Receive;
+    pThisCC->INetworkDown.pfnXmitPending        = pcnetR3NetworkDown_XmitPending;
     /* INetworkConfig */
-    pThis->INetworkConfig.pfnGetMac         = pcnetR3NetworkConfig_GetMac;
-    pThis->INetworkConfig.pfnGetLinkState   = pcnetR3NetworkConfig_GetLinkState;
-    pThis->INetworkConfig.pfnSetLinkState   = pcnetR3NetworkConfig_SetLinkState;
+    pThisCC->INetworkConfig.pfnGetMac           = pcnetR3NetworkConfig_GetMac;
+    pThisCC->INetworkConfig.pfnGetLinkState     = pcnetR3NetworkConfig_GetLinkState;
+    pThisCC->INetworkConfig.pfnSetLinkState     = pcnetR3NetworkConfig_SetLinkState;
     /* ILeds */
-    pThis->ILeds.pfnQueryStatusLed          = pcnetQueryStatusLed;
+    pThisCC->ILeds.pfnQueryStatusLed            = pcnetQueryStatusLed;
 
     /* PCI Device */
     PPDMPCIDEV pPciDev = pDevIns->apPciDevs[0];
@@ -5255,9 +5323,9 @@ static DECLCALLBACK(int) pcnetR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
     /*
      * Attach status driver (optional).
      */
-    rc = PDMDevHlpDriverAttach(pDevIns, PDM_STATUS_LUN, &pThis->IBase, &pBase, "Status Port");
+    rc = PDMDevHlpDriverAttach(pDevIns, PDM_STATUS_LUN, &pThisCC->IBase, &pBase, "Status Port");
     if (RT_SUCCESS(rc))
-        pThis->pLedsConnector = PDMIBASE_QUERY_INTERFACE(pBase, PDMILEDCONNECTORS);
+        pThisCC->pLedsConnector = PDMIBASE_QUERY_INTERFACE(pBase, PDMILEDCONNECTORS);
     else
         AssertMsgReturn(   rc == VERR_PDM_NO_ATTACHED_DRIVER
                         || rc == VERR_PDM_CFG_MISSING_DRIVER_NAME,
@@ -5267,14 +5335,16 @@ static DECLCALLBACK(int) pcnetR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
     /*
      * Attach driver.
      */
-    rc = PDMDevHlpDriverAttach(pDevIns, 0, &pThis->IBase, &pThis->pDrvBase, "Network Port");
+    rc = PDMDevHlpDriverAttach(pDevIns, 0, &pThisCC->IBase, &pThisCC->pDrvBase, "Network Port");
     if (RT_SUCCESS(rc))
     {
-        pThis->pDrvR3 = PDMIBASE_QUERY_INTERFACE(pThis->pDrvBase, PDMINETWORKUP);
-        AssertMsgReturn(pThis->pDrvR3, ("Failed to obtain the PDMINETWORKUP interface!\n"),
+        pThisCC->pDrv = PDMIBASE_QUERY_INTERFACE(pThisCC->pDrvBase, PDMINETWORKUP);
+        AssertMsgReturn(pThisCC->pDrv, ("Failed to obtain the PDMINETWORKUP interface!\n"),
                         VERR_PDM_MISSING_INTERFACE_BELOW);
-        pThis->pDrvR0 = PDMIBASER0_QUERY_INTERFACE(PDMIBASE_QUERY_INTERFACE(pThis->pDrvBase, PDMIBASER0), PDMINETWORKUP);
-        pThis->pDrvRC = PDMIBASERC_QUERY_INTERFACE(PDMIBASE_QUERY_INTERFACE(pThis->pDrvBase, PDMIBASERC), PDMINETWORKUP);
+        pThis->fDriverAttached = true;
+        /// @todo figure out this!
+        //pThis->pDrvR0 = PDMIBASER0_QUERY_INTERFACE(PDMIBASE_QUERY_INTERFACE(pThis->pDrvBase, PDMIBASER0), PDMINETWORKUP);
+        //pThis->pDrvRC = PDMIBASERC_QUERY_INTERFACE(PDMIBASE_QUERY_INTERFACE(pThis->pDrvBase, PDMIBASERC), PDMINETWORKUP);
     }
     else if (   rc == VERR_PDM_NO_ATTACHED_DRIVER
              || rc == VERR_PDM_CFG_MISSING_DRIVER_NAME)
@@ -5428,7 +5498,7 @@ const PDMDEVREG g_DevicePCNet =
     /* .uReserved0 = */             0,
     /* .szName = */                 "pcnet",
 #ifdef PCNET_GC_ENABLED
-    /* .fFlags = */                 PDM_DEVREG_FLAGS_DEFAULT_BITS | PDM_DEVREG_FLAGS_RZ,
+    /* .fFlags = */                 PDM_DEVREG_FLAGS_DEFAULT_BITS | PDM_DEVREG_FLAGS_RZ | PDM_DEVREG_FLAGS_NEW_STYLE,
 #else
     /* .fFlags = */                 PDM_DEVREG_FLAGS_DEFAULT_BITS,
 #endif
@@ -5436,8 +5506,8 @@ const PDMDEVREG g_DevicePCNet =
     /* .cMaxInstances = */          ~0U,
     /* .uSharedVersion = */         42,
     /* .cbInstanceShared = */       sizeof(PCNETSTATE),
-    /* .cbInstanceCC = */           0,
-    /* .cbInstanceRC = */           0,
+    /* .cbInstanceCC = */           sizeof(PCNETSTATECC),
+    /* .cbInstanceRC = */           sizeof(PCNETSTATERC),
     /* .cMaxPciDevices = */         1,
     /* .cMaxMsixVectors = */        0,
     /* .pszDescription = */         "AMD PCnet Ethernet controller.\n",
