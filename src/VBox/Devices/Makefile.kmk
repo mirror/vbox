@@ -772,7 +772,7 @@ VBOX_WITH_VMSVGA3D_DYNAMIC_LOAD = 1
  ifdef VBOX_WITH_VIRTUALKD
   VBoxDD_DEFS.win     += VBOX_WITH_VIRTUALKD
   VBoxDD_SOURCES.win  += \
-	Misc/VirtualKD.cpp
+	Misc/DevVirtualKD.cpp
  endif
 
  if defined(VBOX_WITH_NETFLT)
