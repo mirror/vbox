@@ -83,15 +83,13 @@
 /* Enable to handle frequent io reads in the guest context (recommended) */
 #define PCNET_GC_ENABLED
 
-#if defined(LOG_ENABLED)
-#define PCNET_DEBUG_IO
-#define PCNET_DEBUG_BCR
-#define PCNET_DEBUG_CSR
-#define PCNET_DEBUG_RMD
-#define PCNET_DEBUG_TMD
-#define PCNET_DEBUG_MATCH
-#define PCNET_DEBUG_MII
-#endif
+/* PCNET_DEBUG_IO     - Log6 */
+/* PCNET_DEBUG_BCR    - Log7 */
+/* PCNET_DEBUG_CSR    - Log8 */
+/* PCNET_DEBUG_RMD    - Log9 */
+/* PCNET_DEBUG_TMD    - Log10 */
+/* PCNET_DEBUG_MATCH  - Log11 */
+/* PCNET_DEBUG_MII    - Log12 */
 
 #define PCNET_IOPORT_SIZE               0x20
 #define PCNET_PNPMMIO_SIZE              0x20
@@ -643,7 +641,7 @@ AssertCompileSize(RMD, 16);
 /*********************************************************************************************************************************
 *   Internal Functions                                                                                                           *
 *********************************************************************************************************************************/
-#define PRINT_TMD(T) Log2((    \
+#define PRINT_TMD(T) Log10((    \
         "TMD0 : TBADR=%#010x\n" \
         "TMD1 : OWN=%d, ERR=%d, FCS=%d, LTI=%d, "       \
         "ONE=%d, DEF=%d, STP=%d, ENP=%d,\n"             \
@@ -660,7 +658,7 @@ AssertCompileSize(RMD, 16);
         (T)->tmd2.lcol, (T)->tmd2.lcar, (T)->tmd2.rtry, \
         (T)->tmd2.tdr, (T)->tmd2.trc))
 
-#define PRINT_RMD(R) Log2((    \
+#define PRINT_RMD(R) Log9((    \
         "RMD0 : RBADR=%#010x\n" \
         "RMD1 : OWN=%d, ERR=%d, FRAM=%d, OFLO=%d, "     \
         "CRC=%d, BUFF=%d, STP=%d, ENP=%d,\n       "     \
@@ -951,17 +949,16 @@ struct ether_header /** @todo Use RTNETETHERHDR */
 };
 #pragma pack()
 
-#define PRINT_PKTHDR(BUF) do {                                        \
-    struct ether_header *hdr = (struct ether_header *)(BUF);          \
-    Log(("#%d packet dhost=%02x:%02x:%02x:%02x:%02x:%02x, "          \
-         "shost=%02x:%02x:%02x:%02x:%02x:%02x, "                      \
-         "type=%#06x (bcast=%d)\n", PCNET_INST_NR,                    \
-         hdr->ether_dhost[0],hdr->ether_dhost[1],hdr->ether_dhost[2], \
-         hdr->ether_dhost[3],hdr->ether_dhost[4],hdr->ether_dhost[5], \
-         hdr->ether_shost[0],hdr->ether_shost[1],hdr->ether_shost[2], \
-         hdr->ether_shost[3],hdr->ether_shost[4],hdr->ether_shost[5], \
-         htons(hdr->ether_type),                                      \
-         !!ETHER_IS_MULTICAST(hdr->ether_dhost)));                    \
+#define PRINT_PKTHDR(BUF) do { \
+    struct ether_header *hdr = (struct ether_header *)(BUF); \
+    Log12(("#%d packet dhost=%02x:%02x:%02x:%02x:%02x:%02x, shost=%02x:%02x:%02x:%02x:%02x:%02x, type=%#06x (bcast=%d)\n", \
+           PCNET_INST_NR, \
+           hdr->ether_dhost[0],hdr->ether_dhost[1],hdr->ether_dhost[2], \
+           hdr->ether_dhost[3],hdr->ether_dhost[4],hdr->ether_dhost[5], \
+           hdr->ether_shost[0],hdr->ether_shost[1],hdr->ether_shost[2], \
+           hdr->ether_shost[3],hdr->ether_shost[4],hdr->ether_shost[5], \
+           htons(hdr->ether_type),                                      \
+           !!ETHER_IS_MULTICAST(hdr->ether_dhost)));                    \
 } while (0)
 
 
@@ -1064,7 +1061,7 @@ DECLINLINE(int) padr_match(PPCNETSTATE pThis, const uint8_t *buf, size_t size)
 {
     struct ether_header *hdr = (struct ether_header *)buf;
     int     result;
-#if (defined(RT_ARCH_X86) || defined(RT_ARCH_AMD64)) && !defined(PCNET_DEBUG_MATCH)
+#if defined(RT_ARCH_X86) || defined(RT_ARCH_AMD64)
     result = !CSR_DRCVPA(pThis) && !memcmp(hdr->ether_dhost, pThis->aCSR + 12, 6);
 #else
     uint8_t padr[6];
@@ -1077,13 +1074,12 @@ DECLINLINE(int) padr_match(PPCNETSTATE pThis, const uint8_t *buf, size_t size)
     result = !CSR_DRCVPA(pThis) && !memcmp(hdr->ether_dhost, padr, 6);
 #endif
 
-#ifdef PCNET_DEBUG_MATCH
-    Log(("#%d packet dhost=%02x:%02x:%02x:%02x:%02x:%02x, "
-         "padr=%02x:%02x:%02x:%02x:%02x:%02x => %d\n", PCNET_INST_NR,
-         hdr->ether_dhost[0],hdr->ether_dhost[1],hdr->ether_dhost[2],
-         hdr->ether_dhost[3],hdr->ether_dhost[4],hdr->ether_dhost[5],
-         padr[0],padr[1],padr[2],padr[3],padr[4],padr[5], result));
-#endif
+    Log11(("#%d packet dhost=%02x:%02x:%02x:%02x:%02x:%02x, padr=%02x:%02x:%02x:%02x:%02x:%02x => %d\n", PCNET_INST_NR,
+           hdr->ether_dhost[0],hdr->ether_dhost[1],hdr->ether_dhost[2],
+           hdr->ether_dhost[3],hdr->ether_dhost[4],hdr->ether_dhost[5],
+           pThis->aCSR[12] & 0xff, pThis->aCSR[12] >> 8,
+           pThis->aCSR[13] & 0xff, pThis->aCSR[13] >> 8,
+           pThis->aCSR[14] & 0xff, pThis->aCSR[14] >> 8, result));
     RT_NOREF_PV(size);
     return result;
 }
@@ -1093,9 +1089,7 @@ DECLINLINE(int) padr_bcast(PPCNETSTATE pThis, const uint8_t *buf, size_t size)
     static uint8_t aBCAST[6] = { 0xff, 0xff, 0xff, 0xff, 0xff, 0xff };
     struct ether_header *hdr = (struct ether_header *)buf;
     int result = !CSR_DRCVBC(pThis) && !memcmp(hdr->ether_dhost, aBCAST, 6);
-#ifdef PCNET_DEBUG_MATCH
-    Log(("#%d padr_bcast result=%d\n", PCNET_INST_NR, result));
-#endif
+    Log11(("#%d padr_bcast result=%d\n", PCNET_INST_NR, result));
     RT_NOREF_PV(size);
    return result;
 }
@@ -1964,7 +1958,7 @@ static void pcnetReceiveNoSync(PPCNETSTATE pThis, const uint8_t *buf, size_t cbT
 
             cbPacket = (int)cbToRecv;                           Assert((size_t)cbPacket == cbToRecv);
 
-#ifdef PCNET_DEBUG_MATCH
+#ifdef LOG_ENABLED
             PRINT_PKTHDR(buf);
 #endif
 
@@ -2085,7 +2079,7 @@ static void pcnetReceiveNoSync(PPCNETSTATE pThis, const uint8_t *buf, size_t cbT
 
             Log(("#%d RCVRC=%d CRDA=%#010x\n", PCNET_INST_NR,
                  CSR_RCVRC(pThis), PHYSADDR(pThis, CSR_CRDA(pThis))));
-#ifdef PCNET_DEBUG_RMD
+#ifdef LOG_ENABLED
             PRINT_RMD(&rmd);
 #endif
 
@@ -2470,8 +2464,8 @@ static int pcnetAsyncTransmit(PPCNETSTATE pThis, bool fOnWorkerThread)
             )
             break;
 
-#ifdef PCNET_DEBUG_TMD
-        Log2(("#%d TMDLOAD %#010x\n", PCNET_INST_NR, PHYSADDR(pThis, CSR_CXDA(pThis))));
+#ifdef LOG_ENABLED
+        Log10(("#%d TMDLOAD %#010x\n", PCNET_INST_NR, PHYSADDR(pThis, CSR_CXDA(pThis))));
         PRINT_TMD(&tmd);
 #endif
         bool const          fLoopback = CSR_LOOP(pThis);
@@ -2814,12 +2808,12 @@ static void pcnetPollTimer(PPDMDEVINS pDevIns, PPCNETSTATE pThis)
     Log2(("#%d pcnetPollTimer: CSR_CXDA=%#x CSR_XMTRL=%d CSR_XMTRC=%d\n",
           PCNET_INST_NR, CSR_CXDA(pThis), CSR_XMTRL(pThis), CSR_XMTRC(pThis)));
 #endif
-#ifdef PCNET_DEBUG_TMD
+#ifdef LOG_ENABLED
     if (CSR_CXDA(pThis))
     {
         TMD tmd;
         pcnetTmdLoad(pThis, &tmd, PHYSADDR(pThis, CSR_CXDA(pThis)), false);
-        Log2(("#%d pcnetPollTimer: TMDLOAD %#010x\n", PCNET_INST_NR, PHYSADDR(pThis, CSR_CXDA(pThis))));
+        Log10(("#%d pcnetPollTimer: TMDLOAD %#010x\n", PCNET_INST_NR, PHYSADDR(pThis, CSR_CXDA(pThis))));
         PRINT_TMD(&tmd);
     }
 #endif
@@ -2862,9 +2856,7 @@ static void pcnetPollTimer(PPDMDEVINS pDevIns, PPCNETSTATE pThis)
 static VBOXSTRICTRC pcnetCSRWriteU16(PPDMDEVINS pDevIns, PPCNETSTATE pThis, uint32_t u32RAP, uint32_t val)
 {
     VBOXSTRICTRC rc  = VINF_SUCCESS;
-#ifdef PCNET_DEBUG_CSR
-    Log(("#%d pcnetCSRWriteU16: rap=%d val=%#06x\n", PCNET_INST_NR, u32RAP, val));
-#endif
+    Log8(("#%d pcnetCSRWriteU16: rap=%d val=%#06x\n", PCNET_INST_NR, u32RAP, val));
     switch (u32RAP)
     {
         case 0:
@@ -3110,18 +3102,14 @@ static uint32_t pcnetCSRReadU16(PPCNETSTATE pThis, uint32_t u32RAP)
         default:
             val = pThis->aCSR[u32RAP];
     }
-#ifdef PCNET_DEBUG_CSR
-    Log(("#%d pcnetCSRReadU16: rap=%d val=%#06x\n", PCNET_INST_NR, u32RAP, val));
-#endif
+    Log8(("#%d pcnetCSRReadU16: rap=%d val=%#06x\n", PCNET_INST_NR, u32RAP, val));
     return val;
 }
 
 static VBOXSTRICTRC pcnetBCRWriteU16(PPDMDEVINS pDevIns, PPCNETSTATE pThis, uint32_t u32RAP, uint32_t val)
 {
     u32RAP &= 0x7f;
-#ifdef PCNET_DEBUG_BCR
-    Log2(("#%d pcnetBCRWriteU16: rap=%d val=%#06x\n", PCNET_INST_NR, u32RAP, val));
-#endif
+    Log7(("#%d pcnetBCRWriteU16: rap=%d val=%#06x\n", PCNET_INST_NR, u32RAP, val));
     switch (u32RAP)
     {
         case BCR_SWS:
@@ -3176,9 +3164,7 @@ static VBOXSTRICTRC pcnetBCRWriteU16(PPDMDEVINS pDevIns, PPCNETSTATE pThis, uint
 
         case BCR_MIIMDR:
             pThis->aMII[pThis->aBCR[BCR_MIIADDR] & 0x1f] = val;
-#ifdef PCNET_DEBUG_MII
-            Log(("#%d pcnet: mii write %d <- %#x\n", PCNET_INST_NR, pThis->aBCR[BCR_MIIADDR] & 0x1f, val));
-#endif
+            Log12(("#%d pcnet: mii write %d <- %#x\n", PCNET_INST_NR, pThis->aBCR[BCR_MIIADDR] & 0x1f, val));
             break;
 
         default:
@@ -3340,9 +3326,7 @@ static uint32_t pcnetMIIReadU16(PPCNETSTATE pThis, uint32_t miiaddr)
             break;
     }
 
-#ifdef PCNET_DEBUG_MII
-    Log(("#%d pcnet: mii read %d -> %#x\n", PCNET_INST_NR, miiaddr, val));
-#endif
+    Log12(("#%d pcnet: mii read %d -> %#x\n", PCNET_INST_NR, miiaddr, val));
     return val;
 }
 
@@ -3381,9 +3365,7 @@ static uint32_t pcnetBCRReadU16(PPCNETSTATE pThis, uint32_t u32RAP)
             val = u32RAP < BCR_MAX_RAP ? pThis->aBCR[u32RAP] : 0;
             break;
     }
-#ifdef PCNET_DEBUG_BCR
-    Log2(("#%d pcnetBCRReadU16: rap=%d val=%#06x\n", PCNET_INST_NR, u32RAP, val));
-#endif
+    Log7(("#%d pcnetBCRReadU16: rap=%d val=%#06x\n", PCNET_INST_NR, u32RAP, val));
     return val;
 }
 
@@ -3548,9 +3530,7 @@ pcnetIoPortAPromWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32
 static VBOXSTRICTRC pcnetIoPortWriteU8(PPCNETSTATE pThis, uint32_t addr, uint32_t val)
 {
     RT_NOREF1(val);
-#ifdef PCNET_DEBUG_IO
-    Log2(("#%d pcnetIoPortWriteU8: addr=%#010x val=%#06x\n", PCNET_INST_NR, addr, val));
-#endif
+    Log6(("#%d pcnetIoPortWriteU8: addr=%#010x val=%#06x\n", PCNET_INST_NR, addr, val));
     if (RT_LIKELY(!BCR_DWIO(pThis)))
     {
         switch (addr & 0x0f)
@@ -3584,9 +3564,7 @@ static uint32_t pcnetIoPortReadU8(PPCNETSTATE pThis, uint32_t addr)
 
     pcnetUpdateIrq(pThis);
 
-#ifdef PCNET_DEBUG_IO
-    Log2(("#%d pcnetIoPortReadU8: addr=%#010x val=%#06x\n", PCNET_INST_NR, addr, val & 0xff));
-#endif
+    Log6(("#%d pcnetIoPortReadU8: addr=%#010x val=%#06x\n", PCNET_INST_NR, addr, val & 0xff));
     return val;
 }
 
@@ -3594,9 +3572,7 @@ static VBOXSTRICTRC pcnetIoPortWriteU16(PPDMDEVINS pDevIns, PPCNETSTATE pThis, u
 {
     VBOXSTRICTRC rc = VINF_SUCCESS;
 
-#ifdef PCNET_DEBUG_IO
-    Log2(("#%d pcnetIoPortWriteU16: addr=%#010x val=%#06x\n", PCNET_INST_NR, addr, val));
-#endif
+    Log6(("#%d pcnetIoPortWriteU16: addr=%#010x val=%#06x\n", PCNET_INST_NR, addr, val));
     if (RT_LIKELY(!BCR_DWIO(pThis)))
     {
         switch (addr & 0x0f)
@@ -3656,9 +3632,7 @@ static uint32_t pcnetIoPortReadU16(PPDMDEVINS pDevIns, PPCNETSTATE pThis, uint32
     pcnetUpdateIrq(pThis);
 
 skip_update_irq:
-#ifdef PCNET_DEBUG_IO
-    Log2(("#%d pcnetIoPortReadU16: addr=%#010x val=%#06x\n", PCNET_INST_NR, addr, val & 0xffff));
-#endif
+    Log6(("#%d pcnetIoPortReadU16: addr=%#010x val=%#06x\n", PCNET_INST_NR, addr, val & 0xffff));
     return val;
 }
 
@@ -3666,10 +3640,7 @@ static VBOXSTRICTRC pcnetIoPortWriteU32(PPDMDEVINS pDevIns, PPCNETSTATE pThis, u
 {
     VBOXSTRICTRC rc = VINF_SUCCESS;
 
-#ifdef PCNET_DEBUG_IO
-    Log2(("#%d pcnetIoPortWriteU32: addr=%#010x val=%#010x\n", PCNET_INST_NR,
-         addr, val));
-#endif
+    Log6(("#%d pcnetIoPortWriteU32: addr=%#010x val=%#010x\n", PCNET_INST_NR, addr, val));
     if (RT_LIKELY(BCR_DWIO(pThis)))
     {
         switch (addr & 0x0f)
@@ -3691,9 +3662,7 @@ static VBOXSTRICTRC pcnetIoPortWriteU32(PPDMDEVINS pDevIns, PPCNETSTATE pThis, u
     {
         /* switch device to dword I/O mode */
         pcnetBCRWriteU16(pDevIns, pThis, BCR_BSBC, pcnetBCRReadU16(pThis, BCR_BSBC) | 0x0080);
-#ifdef PCNET_DEBUG_IO
-        Log2(("device switched into dword i/o mode\n"));
-#endif
+        Log6(("device switched into dword i/o mode\n"));
     }
     else
         Log(("#%d pcnetIoPortWriteU32: addr=%#010x val=%#010x !BCR_DWIO !!\n", PCNET_INST_NR, addr, val));
@@ -3736,9 +3705,7 @@ static uint32_t pcnetIoPortReadU32(PPDMDEVINS pDevIns, PPCNETSTATE pThis, uint32
     pcnetUpdateIrq(pThis);
 
 skip_update_irq:
-#ifdef PCNET_DEBUG_IO
-    Log2(("#%d pcnetIoPortReadU32: addr=%#010x val=%#010x\n", PCNET_INST_NR, addr, val));
-#endif
+    Log6(("#%d pcnetIoPortReadU32: addr=%#010x val=%#010x\n", PCNET_INST_NR, addr, val));
     return val;
 }
 
@@ -3801,9 +3768,7 @@ static DECLCALLBACK(VBOXSTRICTRC) pcnetIoPortWrite(PPDMDEVINS pDevIns, void *pvU
 
 static void pcnetR3MmioWriteU8(PPCNETSTATE pThis, RTGCPHYS off, uint32_t val)
 {
-#ifdef PCNET_DEBUG_IO
-    Log2(("#%d pcnetR3MmioWriteU8: off=%#010x val=%#04x\n", PCNET_INST_NR, off, val));
-#endif
+    Log6(("#%d pcnetR3MmioWriteU8: off=%#010x val=%#04x\n", PCNET_INST_NR, off, val));
     if (!(off & 0x10))
         pcnetAPROMWriteU8(pThis, off, val);
 }
@@ -3813,18 +3778,14 @@ static uint32_t pcnetR3MmioReadU8(PPCNETSTATE pThis, RTGCPHYS addr)
     uint32_t val = ~0U;
     if (!(addr & 0x10))
         val = pcnetAPROMReadU8(pThis, addr);
-#ifdef PCNET_DEBUG_IO
-    Log2(("#%d pcnetR3MmioReadU8: addr=%#010x val=%#04x\n", PCNET_INST_NR, addr, val & 0xff));
-#endif
+    Log6(("#%d pcnetR3MmioReadU8: addr=%#010x val=%#04x\n", PCNET_INST_NR, addr, val & 0xff));
     return val;
 }
 
 static VBOXSTRICTRC pcnetR3MmioWriteU16(PPDMDEVINS pDevIns, PPCNETSTATE pThis, RTGCPHYS off, uint32_t val)
 {
     VBOXSTRICTRC rcStrict;
-#ifdef PCNET_DEBUG_IO
-    Log2(("#%d pcnetR3MmioWriteU16: off=%#010x val=%#06x\n", PCNET_INST_NR, off, val));
-#endif
+    Log6(("#%d pcnetR3MmioWriteU16: off=%#010x val=%#06x\n", PCNET_INST_NR, off, val));
     if (off & 0x10)
     {
         rcStrict = pcnetIoPortWriteU16(pDevIns, pThis, off & 0x0f, val);
@@ -3852,18 +3813,14 @@ static uint32_t pcnetR3MmioReadU16(PPDMDEVINS pDevIns, PPCNETSTATE pThis, RTGCPH
         val <<= 8;
         val |= pcnetAPROMReadU8(pThis, addr);
     }
-#ifdef PCNET_DEBUG_IO
-    Log2(("#%d pcnetR3MmioReadU16: addr=%#010x val = %#06x\n", PCNET_INST_NR, addr, val & 0xffff));
-#endif
+    Log6(("#%d pcnetR3MmioReadU16: addr=%#010x val = %#06x\n", PCNET_INST_NR, addr, val & 0xffff));
     return val;
 }
 
 static VBOXSTRICTRC pcnetR3MmioWriteU32(PPDMDEVINS pDevIns, PPCNETSTATE pThis, RTGCPHYS off, uint32_t val)
 {
     VBOXSTRICTRC rcStrict;
-#ifdef PCNET_DEBUG_IO
-    Log2(("#%d pcnetR3MmioWriteU32: off=%#010x val=%#010x\n", PCNET_INST_NR, off, val));
-#endif
+    Log6(("#%d pcnetR3MmioWriteU32: off=%#010x val=%#010x\n", PCNET_INST_NR, off, val));
     if (off & 0x10)
     {
         rcStrict = pcnetIoPortWriteU32(pDevIns, pThis, off & 0x0f, val);
@@ -3897,9 +3854,7 @@ static uint32_t pcnetR3MmioReadU32(PPDMDEVINS pDevIns, PPCNETSTATE pThis, RTGCPH
         val <<= 8;
         val |= pcnetAPROMReadU8(pThis, addr  );
     }
-#ifdef PCNET_DEBUG_IO
-    Log2(("#%d pcnetR3MmioReadU32: addr=%#010x val=%#010x\n", PCNET_INST_NR, addr, val));
-#endif
+    Log6(("#%d pcnetR3MmioReadU32: addr=%#010x val=%#010x\n", PCNET_INST_NR, addr, val));
     return val;
 }
 
