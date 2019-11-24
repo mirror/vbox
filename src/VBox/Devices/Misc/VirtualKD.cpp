@@ -40,7 +40,6 @@
 /*********************************************************************************************************************************
 *   Structures and Typedefs                                                                                                      *
 *********************************************************************************************************************************/
-
 typedef struct VKDREQUESTHDR
 {
     unsigned cbData;
@@ -76,13 +75,11 @@ typedef struct VIRTUALKD
 } VIRTUALKD;
 
 
-/*********************************************************************************************************************************
-*   Internal Functions                                                                                                           *
-*********************************************************************************************************************************/
 
-static DECLCALLBACK(int) vkdPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32, unsigned cb)
+
+static DECLCALLBACK(VBOXSTRICTRC) vkdPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t *pu32, unsigned cb)
 {
-    RT_NOREF(pvUser, Port, cb);
+    RT_NOREF(pvUser, offPort, cb);
     VIRTUALKD *pThis = PDMDEVINS_2_DATA(pDevIns, VIRTUALKD *);
 
     if (pThis->fOpenChannelDetected)
@@ -97,21 +94,22 @@ static DECLCALLBACK(int) vkdPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT 
     return VINF_SUCCESS;
 }
 
-static DECLCALLBACK(int) vkdPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb)
+static DECLCALLBACK(VBOXSTRICTRC) vkdPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t u32, unsigned cb)
 {
     RT_NOREF(pvUser, cb);
     VIRTUALKD *pThis = PDMDEVINS_2_DATA(pDevIns, VIRTUALKD *);
 
-    if (Port == 0x5659)
+    if (offPort == 1)
     {
+        RTGCPHYS GCPhys = u32;
         VKDREQUESTHDR RequestHeader = {0, };
-        int rc = PDMDevHlpPhysRead(pDevIns, (RTGCPHYS)u32, &RequestHeader, sizeof(RequestHeader));
+        int rc = PDMDevHlpPhysRead(pDevIns, GCPhys, &RequestHeader, sizeof(RequestHeader));
         if (   !RT_SUCCESS(rc)
             || !RequestHeader.cbData)
             return VINF_SUCCESS;
 
         unsigned cbData = RT_MIN(RequestHeader.cbData, sizeof(pThis->abCmdBody));
-        rc = PDMDevHlpPhysRead(pDevIns, (RTGCPHYS)(u32 + sizeof(RequestHeader)), pThis->abCmdBody, cbData);
+        rc = PDMDevHlpPhysRead(pDevIns, GCPhys + sizeof(RequestHeader), pThis->abCmdBody, cbData);
         if (!RT_SUCCESS(rc))
             return VINF_SUCCESS;
 
@@ -121,22 +119,24 @@ static DECLCALLBACK(int) vkdPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT
         if (!pReply)
             cbReply = 0;
 
+        /** @todo r=bird: RequestHeader.cbReplyMax is not taking into account here. */
         VKDREPLYHDR ReplyHeader;
         ReplyHeader.cbData = cbReply + 2;
         ReplyHeader.chOne = '1';
         ReplyHeader.chSpace = ' ';
-        rc = PDMDevHlpPhysWrite(pDevIns, (RTGCPHYS)u32, &ReplyHeader, sizeof(ReplyHeader));
+        rc = PDMDevHlpPhysWrite(pDevIns, GCPhys, &ReplyHeader, sizeof(ReplyHeader));
         if (!RT_SUCCESS(rc))
             return VINF_SUCCESS;
         if (cbReply)
         {
-            rc = PDMDevHlpPhysWrite(pDevIns, (RTGCPHYS)(u32 + sizeof(ReplyHeader)), pReply, cbReply);
+            rc = PDMDevHlpPhysWrite(pDevIns, GCPhys + sizeof(ReplyHeader), pReply, cbReply);
             if (!RT_SUCCESS(rc))
                 return VINF_SUCCESS;
         }
     }
-    else if (Port == 0x5658)
+    else
     {
+        Assert(offPort == 0);
         if (u32 == 0x564D5868)
             pThis->fOpenChannelDetected = true;
         else
@@ -155,9 +155,17 @@ static DECLCALLBACK(int) vkdDestruct(PPDMDEVINS pDevIns)
     PDMDEV_CHECK_VERSIONS_RETURN(pDevIns);
     VIRTUALKD *pThis = PDMDEVINS_2_DATA(pDevIns, VIRTUALKD *);
 
-    delete pThis->pKDClient;
+    if (pThis->pKDClient)
+    {
+        delete pThis->pKDClient;
+        pThis->pKDClient = NULL;
+    }
+
     if (pThis->hLib != NIL_RTLDRMOD)
+    {
         RTLdrClose(pThis->hLib);
+        pThis->hLib = NIL_RTLDRMOD;
+    }
 
     return VINF_SUCCESS;
 }
@@ -168,56 +176,55 @@ static DECLCALLBACK(int) vkdDestruct(PPDMDEVINS pDevIns)
  */
 static DECLCALLBACK(int) vkdConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE pCfg)
 {
-    RT_NOREF(iInstance);
     PDMDEV_CHECK_VERSIONS_RETURN(pDevIns);
     VIRTUALKD *pThis = PDMDEVINS_2_DATA(pDevIns, VIRTUALKD *);
+    RT_NOREF(iInstance);
 
     pThis->fOpenChannelDetected = false;
     pThis->fChannelDetectSuccessful = false;
     pThis->hLib = NIL_RTLDRMOD;
     pThis->pKDClient = NULL;
 
-    if (!CFGMR3AreValuesValid(pCfg,
-                              "Path\0"))
-        return VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES;
+
+    PDMDEV_VALIDATE_CONFIG_RETURN(pDevIns, "Path", "");
 
     /* This device is a bit unusual, after this point it will not fail to be
      * constructed, but there will be a warning and it will not work. */
 
-    char szPath[RTPATH_MAX] = "";
-    CFGMR3QueryString(pCfg, "Path", szPath, sizeof(szPath));
-
-    RTPathAppend(szPath, sizeof(szPath), HC_ARCH_BITS == 64 ?  "kdclient64.dll" : "kdclient.dll");
-    int rc = RTLdrLoad(szPath, &pThis->hLib);
+    char szPath[RTPATH_MAX];
+    int rc = CFGMR3QueryStringDef(pCfg, "Path", szPath, sizeof(szPath) - sizeof("kdclient64.dll"), "");
     if (RT_FAILURE(rc))
+        return PDMDEV_SET_ERROR(pDevIns, rc, N_("Configuration error: Failed to get the \"Path\" value"));
+
+    rc = RTPathAppend(szPath, sizeof(szPath), HC_ARCH_BITS == 64 ?  "kdclient64.dll" : "kdclient.dll");
+    AssertRCReturn(rc, rc);
+    rc = RTLdrLoad(szPath, &pThis->hLib);
+    if (RT_SUCCESS(rc))
     {
+        PFNCreateVBoxKDClientEx pfnInit;
+        rc = RTLdrGetSymbol(pThis->hLib, "CreateVBoxKDClientEx", (void **)&pfnInit);
+        if (RT_SUCCESS(rc))
+        {
+            pThis->pKDClient = pfnInit(IKDClient_InterfaceVersion);
+            if (pThis->pKDClient)
+            {
+                IOMIOPORTHANDLE hIoPorts;
+                rc = PDMDevHlpIoPortCreateAndMap(pDevIns, 0x5658 /*uPort*/, 2 /*cPorts*/, vkdPortWrite, vkdPortRead,
+                                                 "VirtualKD",  NULL /*paExtDescs*/, &hIoPorts);
+                AssertRCReturn(rc, rc);
+            }
+            else
+                PDMDevHlpVMSetRuntimeError(pDevIns, 0 /* fFlags */, "VirtualKD_INIT",
+                                           N_("Failed to initialize VirtualKD library '%s'. Fast kernel-mode debugging will not work"), szPath);
+        }
+        else
+            PDMDevHlpVMSetRuntimeError(pDevIns, 0 /* fFlags */, "VirtualKD_SYMBOL",
+                                       N_("Failed to find entry point for VirtualKD library '%s'. Fast kernel-mode debugging will not work"), szPath);
+    }
+    else
         PDMDevHlpVMSetRuntimeError(pDevIns, 0 /* fFlags */, "VirtualKD_LOAD",
                                    N_("Failed to load VirtualKD library '%s'. Fast kernel-mode debugging will not work"), szPath);
-        return VINF_SUCCESS;
-    }
-
-    PFNCreateVBoxKDClientEx pfnInit;
-    rc = RTLdrGetSymbol(pThis->hLib, "CreateVBoxKDClientEx", (void **)&pfnInit);
-    if (RT_FAILURE(rc))
-    {
-        RTLdrClose(pThis->hLib);
-        pThis->hLib = NIL_RTLDRMOD;
-        PDMDevHlpVMSetRuntimeError(pDevIns, 0 /* fFlags */, "VirtualKD_SYMBOL",
-                                   N_("Failed to find entry point for VirtualKD library '%s'. Fast kernel-mode debugging will not work"), szPath);
-        return VINF_SUCCESS;
-    }
-
-    pThis->pKDClient = pfnInit(IKDClient_InterfaceVersion);
-    if (!pThis->pKDClient)
-    {
-        RTLdrClose(pThis->hLib);
-        pThis->hLib = NIL_RTLDRMOD;
-        PDMDevHlpVMSetRuntimeError(pDevIns, 0 /* fFlags */, "VirtualKD_INIT",
-                                   N_("Failed to initialize VirtualKD library '%s'. Fast kernel-mode debugging will not work"), szPath);
-        return VINF_SUCCESS;
-    }
-
-    return PDMDevHlpIOPortRegister(pDevIns, 0x5658, 2, NULL, vkdPortWrite, vkdPortRead, NULL, NULL, "VirtualKD");
+    return VINF_SUCCESS;
 }
 
 
@@ -229,7 +236,7 @@ const PDMDEVREG g_DeviceVirtualKD =
     /* .u32Version = */             PDM_DEVREG_VERSION,
     /* .uReserved0 = */             0,
     /* .szName = */                 "VirtualKD",
-    /* .fFlags = */                 PDM_DEVREG_FLAGS_DEFAULT_BITS,
+    /* .fFlags = */                 PDM_DEVREG_FLAGS_DEFAULT_BITS | PDM_DEVREG_FLAGS_NEW_STYLE,
     /* .fClass = */                 PDM_DEVREG_CLASS_MISC,
     /* .cMaxInstances = */          1,
     /* .uSharedVersion = */         42,
