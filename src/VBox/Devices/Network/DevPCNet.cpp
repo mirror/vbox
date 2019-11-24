@@ -107,7 +107,6 @@
 #define MAX_FRAME                       1536
 
 #define PCNETSTATE_2_DEVINS(pPCnet)            ((pPCnet)->CTX_SUFF(pDevIns))
-#define PCIDEV_2_PCNETSTATE(pPciDev)           RT_FROM_MEMBER((pPciDev), PCNETSTATE, PciDev)
 #define PCNET_INST_NR                          (PCNETSTATE_2_DEVINS(pThis)->iInstance)
 
 /** @name Bus configuration registers
@@ -3494,7 +3493,8 @@ pcnetIOPortAPromRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_
     }
 
     STAM_PROFILE_ADV_STOP(&pThis->StatAPROMRead, a);
-    LogFlow(("#%d pcnetIOPortAPromRead: offPort=%RTiop *pu32=%#RX32 cb=%d rc=%Rrc\n", PCNET_INST_NR, offPort, *pu32, cb, rc));
+    LogFlow(("#%d pcnetIOPortAPromRead: offPort=%RTiop *pu32=%#RX32 cb=%d rc=%Rrc\n",
+             PCNET_INST_NR, offPort, *pu32, cb, VBOXSTRICTRC_VAL(rc)));
     return rc;
 }
 
@@ -3519,7 +3519,8 @@ pcnetIoPortAPromWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32
     else
         rc = PDMDevHlpDBGFStop(pDevIns, RT_SRC_POS, "offPort=%#x cb=%d u32=%#x\n", offPort, cb, u32);
 
-    LogFlow(("#%d pcnetIoPortAPromWrite: offPort=%RTiop u32=%#RX32 cb=%d rc=%Rrc\n", PCNET_INST_NR, offPort, u32, cb, rc));
+    LogFlow(("#%d pcnetIoPortAPromWrite: offPort=%RTiop u32=%#RX32 cb=%d rc=%Rrc\n",
+             PCNET_INST_NR, offPort, u32, cb, VBOXSTRICTRC_VAL(rc)));
     return rc;
 }
 
