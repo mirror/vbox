@@ -380,12 +380,9 @@ typedef struct PCNETSTATE
     uint8_t                             Alignment2[3];
 
     /** Size of a RX/TX descriptor (8 or 16 bytes according to SWSTYLE */
-    int                                 iLog2DescSize;
+    int32_t                             iLog2DescSize;
     /** Bits 16..23 in 16-bit mode */
     RTGCPHYS32                          GCUpperPhys;
-
-    /** Base address of the MMIO region. */
-    RTGCPHYS32                          MMIOBase;
 
     /** Base port of the I/O space region. */
     RTIOPORT                            IOPortBase;
@@ -449,6 +446,8 @@ typedef struct PCNETSTATE
     IOMIOPORTHANDLE                     hIoPortsPci;
     /** PCI Region \#0: I/O ports offset 0x00-0x0f. */
     IOMIOPORTHANDLE                     hIoPortsPciAProm;
+    /** PCI Region \#1: MMIO alternative to the I/O ports in region \#0. */
+    IOMMMIOHANDLE                       hMmioPci;
 
     /** ISA I/O ports offset 0x10-0x1f. */
     IOMIOPORTHANDLE                     hIoPortsIsa;
@@ -3761,8 +3760,7 @@ static DECLCALLBACK(VBOXSTRICTRC) pcnetIoPortRead(PPDMDEVINS pDevIns, void *pvUs
         case 2: *pu32 = pcnetIoPortReadU16(pDevIns, pThis, offPort); break;
         case 4: *pu32 = pcnetIoPortReadU32(pDevIns, pThis, offPort); break;
         default:
-            rc = PDMDevHlpDBGFStop(pThis->CTX_SUFF(pDevIns), RT_SRC_POS,
-                                   "pcnetIoPortRead: unsupported op size: offset=%#10x cb=%u\n", offPort, cb);
+            rc = PDMDevHlpDBGFStop(pDevIns, RT_SRC_POS, "pcnetIoPortRead: unsupported op size: offset=%#10x cb=%u\n", offPort, cb);
     }
 
     Log2(("#%d pcnetIoPortRead: offPort=%RTiop *pu32=%#RX32 cb=%d rc=%Rrc\n", PCNET_INST_NR, offPort, *pu32, cb, VBOXSTRICTRC_VAL(rc)));
@@ -3776,7 +3774,7 @@ static DECLCALLBACK(VBOXSTRICTRC) pcnetIoPortRead(PPDMDEVINS pDevIns, void *pvUs
  */
 static DECLCALLBACK(VBOXSTRICTRC) pcnetIoPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t u32, unsigned cb)
 {
-    PPCNETSTATE pThis = PDMDEVINS_2_DATA(pDevIns, PPCNETSTATE);
+    PPCNETSTATE     pThis = PDMDEVINS_2_DATA(pDevIns, PPCNETSTATE);
     VBOXSTRICTRC    rc    = VINF_SUCCESS;
     STAM_PROFILE_ADV_START(&pThis->CTX_SUFF_Z(StatIOWrite), a);
     Assert(PDMCritSectIsOwner(&pThis->CritSect));
@@ -3788,8 +3786,7 @@ static DECLCALLBACK(VBOXSTRICTRC) pcnetIoPortWrite(PPDMDEVINS pDevIns, void *pvU
         case 2: rc = pcnetIoPortWriteU16(pDevIns, pThis, offPort, u32); break;
         case 4: rc = pcnetIoPortWriteU32(pDevIns, pThis, offPort, u32); break;
         default:
-            rc = PDMDevHlpDBGFStop(pThis->CTX_SUFF(pDevIns), RT_SRC_POS,
-                                   "pcnetIoPortWrite: unsupported op size: offset=%#10x cb=%u\n", offPort, cb);
+            rc = PDMDevHlpDBGFStop(pDevIns, RT_SRC_POS, "pcnetIoPortWrite: unsupported op size: offset=%#10x cb=%u\n", offPort, cb);
     }
 
     Log2(("#%d pcnetIoPortWrite: offPort=%RTiop u32=%#RX32 cb=%d rc=%Rrc\n", PCNET_INST_NR, offPort, u32, cb, VBOXSTRICTRC_VAL(rc)));
@@ -3800,13 +3797,13 @@ static DECLCALLBACK(VBOXSTRICTRC) pcnetIoPortWrite(PPDMDEVINS pDevIns, void *pvU
 
 /* -=-=-=-=-=- MMIO -=-=-=-=-=- */
 
-static void pcnetMMIOWriteU8(PPCNETSTATE pThis, RTGCPHYS addr, uint32_t val)
+static void pcnetMMIOWriteU8(PPCNETSTATE pThis, RTGCPHYS off, uint32_t val)
 {
 #ifdef PCNET_DEBUG_IO
-    Log2(("#%d pcnetMMIOWriteU8: addr=%#010x val=%#04x\n", PCNET_INST_NR, addr, val));
+    Log2(("#%d pcnetMMIOWriteU8: off=%#010x val=%#04x\n", PCNET_INST_NR, off, val));
 #endif
-    if (!(addr & 0x10))
-        pcnetAPROMWriteU8(pThis, addr, val);
+    if (!(off & 0x10))
+        pcnetAPROMWriteU8(pThis, off, val);
 }
 
 static uint32_t pcnetMMIOReadU8(PPCNETSTATE pThis, RTGCPHYS addr)
@@ -3820,18 +3817,25 @@ static uint32_t pcnetMMIOReadU8(PPCNETSTATE pThis, RTGCPHYS addr)
     return val;
 }
 
-static void pcnetMMIOWriteU16(PPDMDEVINS pDevIns, PPCNETSTATE pThis, RTGCPHYS addr, uint32_t val)
+static VBOXSTRICTRC pcnetMMIOWriteU16(PPDMDEVINS pDevIns, PPCNETSTATE pThis, RTGCPHYS off, uint32_t val)
 {
+    VBOXSTRICTRC rcStrict;
 #ifdef PCNET_DEBUG_IO
-    Log2(("#%d pcnetMMIOWriteU16: addr=%#010x val=%#06x\n", PCNET_INST_NR, addr, val));
+    Log2(("#%d pcnetMMIOWriteU16: off=%#010x val=%#06x\n", PCNET_INST_NR, off, val));
 #endif
-    if (addr & 0x10)
-        pcnetIoPortWriteU16(pDevIns, pThis, addr & 0x0f, val);
+    if (off & 0x10)
+    {
+        rcStrict = pcnetIoPortWriteU16(pDevIns, pThis, off & 0x0f, val);
+        if (rcStrict == VINF_IOM_R3_IOPORT_WRITE)
+            rcStrict = VINF_IOM_R3_MMIO_WRITE;
+    }
     else
     {
-        pcnetAPROMWriteU8(pThis, addr,   val     );
-        pcnetAPROMWriteU8(pThis, addr+1, val >> 8);
+        pcnetAPROMWriteU8(pThis, off,   val     );
+        pcnetAPROMWriteU8(pThis, off + 1, val >> 8);
+        rcStrict = VINF_SUCCESS;
     }
+    return rcStrict;
 }
 
 static uint32_t pcnetMMIOReadU16(PPDMDEVINS pDevIns, PPCNETSTATE pThis, RTGCPHYS addr)
@@ -3852,20 +3856,27 @@ static uint32_t pcnetMMIOReadU16(PPDMDEVINS pDevIns, PPCNETSTATE pThis, RTGCPHYS
     return val;
 }
 
-static void pcnetMMIOWriteU32(PPDMDEVINS pDevIns, PPCNETSTATE pThis, RTGCPHYS addr, uint32_t val)
+static VBOXSTRICTRC pcnetMMIOWriteU32(PPDMDEVINS pDevIns, PPCNETSTATE pThis, RTGCPHYS off, uint32_t val)
 {
+    VBOXSTRICTRC rcStrict;
 #ifdef PCNET_DEBUG_IO
-    Log2(("#%d pcnetMMIOWriteU32: addr=%#010x val=%#010x\n", PCNET_INST_NR, addr, val));
+    Log2(("#%d pcnetMMIOWriteU32: off=%#010x val=%#010x\n", PCNET_INST_NR, off, val));
 #endif
-    if (addr & 0x10)
-        pcnetIoPortWriteU32(pDevIns, pThis, addr & 0x0f, val);
+    if (off & 0x10)
+    {
+        rcStrict = pcnetIoPortWriteU32(pDevIns, pThis, off & 0x0f, val);
+        if (rcStrict == VINF_IOM_R3_IOPORT_WRITE)
+            rcStrict = VINF_IOM_R3_MMIO_WRITE;
+    }
     else
     {
-        pcnetAPROMWriteU8(pThis, addr,   val      );
-        pcnetAPROMWriteU8(pThis, addr+1, val >>  8);
-        pcnetAPROMWriteU8(pThis, addr+2, val >> 16);
-        pcnetAPROMWriteU8(pThis, addr+3, val >> 24);
+        pcnetAPROMWriteU8(pThis, off,     val      );
+        pcnetAPROMWriteU8(pThis, off + 1, val >>  8);
+        pcnetAPROMWriteU8(pThis, off + 2, val >> 16);
+        pcnetAPROMWriteU8(pThis, off + 3, val >> 24);
+        rcStrict = VINF_SUCCESS;
     }
+    return rcStrict;
 }
 
 static uint32_t pcnetMMIOReadU32(PPDMDEVINS pDevIns, PPCNETSTATE pThis, RTGCPHYS addr)
@@ -3890,80 +3901,76 @@ static uint32_t pcnetMMIOReadU32(PPDMDEVINS pDevIns, PPCNETSTATE pThis, RTGCPHYS
     return val;
 }
 
+#ifdef IN_RING3
 
 /**
- * @callback_method_impl{FNIOMMMIOREAD}
+ * @callback_method_impl{FNIOMMMIONEWREAD}
  */
-PDMBOTHCBDECL(int) pcnetMMIORead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr, void *pv, unsigned cb)
+static DECLCALLBACK(VBOXSTRICTRC) pcnetR3MmioRead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS off, void *pv, unsigned cb)
 {
-    PPCNETSTATE pThis = (PPCNETSTATE)pvUser;
-    int         rc    = VINF_SUCCESS;
+    PPCNETSTATE     pThis = PDMDEVINS_2_DATA(pDevIns, PPCNETSTATE);
+    VBOXSTRICTRC    rc    = VINF_SUCCESS;
     Assert(PDMCritSectIsOwner(&pThis->CritSect));
-    RT_NOREF_PV(pDevIns);
+    RT_NOREF_PV(pvUser);
 
     /*
      * We have to check the range, because we're page aligning the MMIO.
      */
-    if (GCPhysAddr - pThis->MMIOBase < PCNET_PNPMMIO_SIZE)
+    if (off < PCNET_PNPMMIO_SIZE)
     {
         STAM_PROFILE_ADV_START(&pThis->CTX_SUFF_Z(StatMMIORead), a);
         switch (cb)
         {
-            case 1:  *(uint8_t  *)pv = pcnetMMIOReadU8 (pThis, GCPhysAddr); break;
-            case 2:  *(uint16_t *)pv = pcnetMMIOReadU16(pDevIns, pThis, GCPhysAddr); break;
-            case 4:  *(uint32_t *)pv = pcnetMMIOReadU32(pDevIns, pThis, GCPhysAddr); break;
+            case 1:  *(uint8_t  *)pv = pcnetMMIOReadU8 (pThis, off); break;
+            case 2:  *(uint16_t *)pv = pcnetMMIOReadU16(pDevIns, pThis, off); break;
+            case 4:  *(uint32_t *)pv = pcnetMMIOReadU32(pDevIns, pThis, off); break;
             default:
-                rc = PDMDevHlpDBGFStop(pThis->CTX_SUFF(pDevIns), RT_SRC_POS,
-                                       "pcnetMMIORead: unsupported op size: address=%RGp cb=%u\n",
-                                       GCPhysAddr, cb);
+                rc = PDMDevHlpDBGFStop(pDevIns, RT_SRC_POS, "pcnetR3MmioRead: unsupported op size: address=%RGp cb=%u\n", off, cb);
         }
         STAM_PROFILE_ADV_STOP(&pThis->CTX_SUFF_Z(StatMMIORead), a);
     }
     else
         memset(pv, 0, cb);
 
-    LogFlow(("#%d pcnetMMIORead: pvUser=%p:{%.*Rhxs} cb=%d GCPhysAddr=%RGp rc=%Rrc\n",
-             PCNET_INST_NR, pv, cb, pv, cb, GCPhysAddr, rc));
+    LogFlow(("#%d pcnetR3MmioRead: pvUser=%p:{%.*Rhxs} cb=%d off=%RGp rc=%Rrc\n",
+             PCNET_INST_NR, pv, cb, pv, cb, off, VBOXSTRICTRC_VAL(rc)));
     return rc;
 }
 
 
 /**
- * @callback_method_impl{FNIOMMMIOWRITE}
+ * @callback_method_impl{FNIOMMMIONEWWRITE}
  */
-PDMBOTHCBDECL(int) pcnetMMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr, void const *pv, unsigned cb)
+static DECLCALLBACK(VBOXSTRICTRC) pcnetR3MmioWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS off, void const *pv, unsigned cb)
 {
-    PPCNETSTATE pThis = (PPCNETSTATE)pvUser;
-    int         rc    = VINF_SUCCESS;
+    PPCNETSTATE     pThis = PDMDEVINS_2_DATA(pDevIns, PPCNETSTATE);
+    VBOXSTRICTRC    rc    = VINF_SUCCESS;
     Assert(PDMCritSectIsOwner(&pThis->CritSect));
-    RT_NOREF_PV(pDevIns);
+    RT_NOREF_PV(pvUser);
 
     /*
      * We have to check the range, because we're page aligning the MMIO stuff presently.
      */
-    if (GCPhysAddr - pThis->MMIOBase < PCNET_PNPMMIO_SIZE)
+    if (off < PCNET_PNPMMIO_SIZE)
     {
         STAM_PROFILE_ADV_START(&pThis->CTX_SUFF_Z(StatMMIOWrite), a);
         switch (cb)
         {
-            case 1:  pcnetMMIOWriteU8 (pThis, GCPhysAddr, *(uint8_t  *)pv); break;
-            case 2:  pcnetMMIOWriteU16(pDevIns, pThis, GCPhysAddr, *(uint16_t *)pv); break;
-            case 4:  pcnetMMIOWriteU32(pDevIns, pThis, GCPhysAddr, *(uint32_t *)pv); break;
+            case 1:  pcnetMMIOWriteU8(pThis, off, *(uint8_t  *)pv); break;
+            case 2:  rc = pcnetMMIOWriteU16(pDevIns, pThis, off, *(uint16_t *)pv); break;
+            case 4:  rc = pcnetMMIOWriteU32(pDevIns, pThis, off, *(uint32_t *)pv); break;
             default:
-                rc = PDMDevHlpDBGFStop(pThis->CTX_SUFF(pDevIns), RT_SRC_POS,
-                                       "pcnetMMIOWrite: unsupported op size: address=%RGp cb=%u\n",
-                                       GCPhysAddr, cb);
+                rc = PDMDevHlpDBGFStop(pDevIns, RT_SRC_POS, "pcnetR3MmioWrite: unsupported op size: address=%RGp cb=%u\n", off, cb);
         }
 
         STAM_PROFILE_ADV_STOP(&pThis->CTX_SUFF_Z(StatMMIOWrite), a);
     }
-    LogFlow(("#%d pcnetMMIOWrite: pvUser=%p:{%.*Rhxs} cb=%d GCPhysAddr=%RGp rc=%Rrc\n",
-             PCNET_INST_NR, pv, cb, pv, cb, GCPhysAddr, rc));
+    LogFlow(("#%d pcnetR3MmioWrite: pvUser=%p:{%.*Rhxs} cb=%d off=%RGp rc=%Rrc\n",
+             PCNET_INST_NR, pv, cb, pv, cb, off, VBOXSTRICTRC_VAL(rc)));
     return rc;
 }
 
 
-#ifdef IN_RING3
 
 /* -=-=-=-=-=- Timer Callbacks -=-=-=-=-=- */
 
@@ -4077,30 +4084,6 @@ static DECLCALLBACK(int) pcnetR3PciMapUnmapIoPorts(PPDMDEVINS pDevIns, PPDMPCIDE
 }
 
 
-/**
- * @callback_method_impl{FNPCIIOREGIONMAP, For the PCnet MMIO region.}
- */
-static DECLCALLBACK(int) pcnetMMIOMap(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t iRegion,
-                                      RTGCPHYS GCPhysAddress, RTGCPHYS cb, PCIADDRESSSPACE enmType)
-{
-    PPCNETSTATE pThis = PDMDEVINS_2_DATA(pDevIns, PPCNETSTATE);
-    RT_NOREF(iRegion, cb, enmType, pPciDev);
-
-    Assert(pDevIns->apPciDevs[0] == pPciDev);
-    Assert(enmType == PCI_ADDRESS_SPACE_MEM);
-    Assert(cb >= PCNET_PNPMMIO_SIZE);
-
-    /* We use the assigned size here, because we only support page aligned MMIO ranges. */
-    int rc = PDMDevHlpMMIORegister(pDevIns, GCPhysAddress, cb, pThis,
-                                   IOMMMIO_FLAGS_READ_PASSTHRU | IOMMMIO_FLAGS_WRITE_PASSTHRU,
-                                   pcnetMMIOWrite, pcnetMMIORead, "PCnet");
-    if (RT_FAILURE(rc))
-        return rc;
-    pThis->MMIOBase = GCPhysAddress;
-    return rc;
-}
-
-
 /* -=-=-=-=-=- Debug Info Handler -=-=-=-=-=- */
 
 /**
@@ -4136,10 +4119,9 @@ static DECLCALLBACK(void) pcnetInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, cons
         default:                pcszModel = "Unknown";                  break;
     }
     pHlp->pfnPrintf(pHlp,
-                    "pcnet #%d: port=%RTiop mmio=%RX32 mac-cfg=%RTmac %s%s%s\n",
-                    pDevIns->iInstance,
-                    pThis->IOPortBase, pThis->MMIOBase, &pThis->MacConfigured,
-                    pcszModel, pDevIns->fRCEnabled ? " RC" : "", pDevIns->fR0Enabled ? " R0" : "");
+                    "pcnet #%d: port=%RTiop mmio=%RX32 mac-cfg=%RTmac %s%s%s\n", pDevIns->iInstance,
+                    pThis->IOPortBase, PDMDevHlpMmioGetMappingAddress(pDevIns, pThis->hMmioPci),
+                    &pThis->MacConfigured, pcszModel, pDevIns->fRCEnabled ? " RC" : "", pDevIns->fR0Enabled ? " R0" : "");
 
     PDMCritSectEnter(&pThis->CritSect, VERR_INTERNAL_ERROR); /* Take it here so we know why we're hanging... */
 
@@ -5217,6 +5199,8 @@ static DECLCALLBACK(int) pcnetR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
     /*
      * Register the PCI device, its I/O regions, the timer and the saved state item.
      */
+    Assert(PCNET_IS_PCI(pThis) != PCNET_IS_ISA(pThis)); /* IOPortBase is shared, so it's either one or the other! */
+
     if (PCNET_IS_PCI(pThis))
     {
         rc = PDMDevHlpPCIRegister(pDevIns, pPciDev);
@@ -5235,7 +5219,10 @@ static DECLCALLBACK(int) pcnetR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
         AssertRCReturn(rc, rc);
 
         /* Region #1: MMIO */
-        rc = PDMDevHlpPCIIORegionRegister(pDevIns, 1, PCNET_PNPMMIO_SIZE, PCI_ADDRESS_SPACE_MEM, pcnetMMIOMap);
+        rc = PDMDevHlpPCIIORegionCreateMmio(pDevIns, 1 /*iPciRegion*/, PCNET_PNPMMIO_SIZE, PCI_ADDRESS_SPACE_MEM,
+                                            pcnetR3MmioWrite, pcnetR3MmioRead, NULL /*pvUser*/,
+                                            IOMMMIO_FLAGS_READ_PASSTHRU | IOMMMIO_FLAGS_WRITE_PASSTHRU,
+                                            "PCnet", &pThis->hMmioPci);
         AssertRCReturn(rc, rc);
     }
 
@@ -5456,6 +5443,8 @@ static DECLCALLBACK(int) pcnetRZConstruct(PPDMDEVINS pDevIns)
     }
     else
         Assert(pThis->hIoPortsPci == NIL_IOMIOPORTHANDLE);
+
+    /** @todo PCI MMIO   */
 
     /* ISA I/O ports: */
     if (pThis->hIoPortsIsaAProm != NIL_IOMIOPORTHANDLE)
