@@ -1126,41 +1126,41 @@ static int virtioScsiR3ReqSubmit(PPDMDEVINS pDevIns, PVIRTIOSCSI pThis, PVIRTIOS
      * Handle submission errors
      */
 
-    if (RT_LIKELY(!fBadLUNFormat
-                  && (uTarget < pThis->cTargets
-                  &&  pThisCC->paTargetInstances[uTarget].fPresent
-                  &&  pThisCC->paTargetInstances[uTarget].pDrvMediaEx)))
+    if (RT_LIKELY(!fBadLUNFormat))
     { /*  likely */ }
     else
     {
-        Log2Func(("Error submitting request, target not present!!\n"));
+        Log2Func(("Error submitting request, bad LUN format\n"));
+        REQ_RESP_HDR_T respHdr = { 0 };
+        respHdr.cbSenseLen = 0;
+        respHdr.uStatus    = 0;
+        respHdr.uResponse  = VIRTIOSCSI_S_FAILURE;
+        respHdr.uResidual  = cbDataIn + cbDataOut;
+        virtioScsiR3ReqErr(pDevIns, pThis, pThisCC, qIdx, pDescChain, &respHdr , NULL);
+        RTMemFree(pVirtqReq);
+        return VINF_SUCCESS;
+    }
+
+    if (RT_LIKELY(uTarget < pThis->cTargets
+                  &&  pThisCC->paTargetInstances[uTarget].fPresent
+                  &&  pThisCC->paTargetInstances[uTarget].pDrvMediaEx))
+    { /*  likely */ }
+    else
+    {
+        Log2Func(("Error submitting request to bad target (%d) or bad LUN (%d)\n", uTarget, uScsiLun));
         uint8_t abSense[] = { RT_BIT(7) | SCSI_SENSE_RESPONSE_CODE_CURR_FIXED,
-                              0, SCSI_SENSE_NOT_READY, 0, 0, 0, 0, 10, 0, 0, 0 };
+                              0, SCSI_SENSE_ILLEGAL_REQUEST,
+                              0, 0, 0, 0, 10, SCSI_ASC_LOGICAL_UNIT_NOT_SUPPORTED, 0, 0 };
         REQ_RESP_HDR_T respHdr = { 0 };
         respHdr.cbSenseLen = sizeof(abSense);
         respHdr.uStatus    = SCSI_STATUS_CHECK_CONDITION;
         respHdr.uResponse  = VIRTIOSCSI_S_BAD_TARGET;
-        respHdr.uResidual  = cbDataIn + cbDataOut;
-        virtioScsiR3ReqErr(pDevIns, pThis, pThisCC, qIdx, pDescChain, &respHdr , abSense);
+        respHdr.uResidual  = cbDataOut + cbDataIn;
+        virtioScsiR3ReqErr(pDevIns, pThis, pThisCC, qIdx, pDescChain, &respHdr, abSense);
         RTMemFree(pVirtqReq);
         return VINF_SUCCESS;
-    }
 
-    if (RT_LIKELY(!pThis->fResetting))
-    { /*  likely */ }
-    else
-    {
-        Log2Func(("Aborting req submission because reset is in progress\n"));
-        REQ_RESP_HDR_T respHdr = { 0 };
-        respHdr.cbSenseLen = 0;
-        respHdr.uStatus    = SCSI_STATUS_OK;
-        respHdr.uResponse  = VIRTIOSCSI_S_RESET;
-        respHdr.uResidual  = cbDataIn + cbDataOut;
-        virtioScsiR3ReqErr(pDevIns, pThis, pThisCC, qIdx, pDescChain, &respHdr, NULL);
-        RTMemFree(pVirtqReq);
-        return VINF_SUCCESS;
     }
-
     if (RT_LIKELY(uScsiLun == 0))
     { /*  likely */ }
     else
@@ -1175,6 +1175,20 @@ static int virtioScsiR3ReqSubmit(PPDMDEVINS pDevIns, PVIRTIOSCSI pThis, PVIRTIOS
         respHdr.uResponse  = VIRTIOSCSI_S_OK;
         respHdr.uResidual  = cbDataOut + cbDataIn;
         virtioScsiR3ReqErr(pDevIns, pThis, pThisCC, qIdx, pDescChain, &respHdr, abSense);
+        RTMemFree(pVirtqReq);
+        return VINF_SUCCESS;
+    }
+    if (RT_LIKELY(!pThis->fResetting))
+    { /*  likely */ }
+    else
+    {
+        Log2Func(("Aborting req submission because reset is in progress\n"));
+        REQ_RESP_HDR_T respHdr = { 0 };
+        respHdr.cbSenseLen = 0;
+        respHdr.uStatus    = SCSI_STATUS_OK;
+        respHdr.uResponse  = VIRTIOSCSI_S_RESET;
+        respHdr.uResidual  = cbDataIn + cbDataOut;
+        virtioScsiR3ReqErr(pDevIns, pThis, pThisCC, qIdx, pDescChain, &respHdr, NULL);
         RTMemFree(pVirtqReq);
         return VINF_SUCCESS;
     }
@@ -1961,6 +1975,7 @@ static DECLCALLBACK(int) virtioScsiR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSS
     PVIRTIOSCSI     pThis   = PDMDEVINS_2_DATA(pDevIns, PVIRTIOSCSI);
     PVIRTIOSCSICC   pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PVIRTIOSCSICC);
     PCPDMDEVHLPR3   pHlp    = pDevIns->pHlpR3;
+
     LogFunc(("LOAD EXEC!!\n"));
 
     AssertReturn(uPass == SSM_PASS_FINAL, VERR_SSM_UNEXPECTED_PASS);
@@ -1970,7 +1985,6 @@ static DECLCALLBACK(int) virtioScsiR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSS
     virtioScsiSetVirtqNames(pThis);
     for (int qIdx = 0; qIdx < VIRTIOSCSI_QUEUE_CNT; qIdx++)
         pHlp->pfnSSMGetBool(pSSM, &pThis->afQueueAttached[qIdx]);
-
 
     pHlp->pfnSSMGetU32(pSSM,  &pThis->virtioScsiConfig.uNumQueues);
     pHlp->pfnSSMGetU32(pSSM,  &pThis->virtioScsiConfig.uSegMax);
@@ -1995,29 +2009,28 @@ static DECLCALLBACK(int) virtioScsiR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSS
 
     pHlp->pfnSSMGetU32(pSSM, &pThis->cTargets);
 
-
-    uint16_t cReqsRedo;
-    pHlp->pfnSSMGetU16(pSSM, &cReqsRedo);
-
-    for (uint16_t qIdx = VIRTQ_REQ_BASE; qIdx < VIRTIOSCSI_QUEUE_CNT; qIdx++)
+    for (uint16_t uTarget = 0; uTarget < pThis->cTargets; uTarget++)
     {
-        PVIRTIOSCSIWORKERR3 pWorkerR3 = &pThisCC->aWorkers[qIdx];
-        pWorkerR3->cRedoDescs = 0;
-    }
+        uint16_t cReqsRedo;
+        pHlp->pfnSSMGetU16(pSSM, &cReqsRedo);
 
-LogFunc(("Have %d redo reqs to load\n", cReqsRedo));
+        for (uint16_t qIdx = VIRTQ_REQ_BASE; qIdx < VIRTIOSCSI_QUEUE_CNT; qIdx++)
+        {
+            PVIRTIOSCSIWORKERR3 pWorkerR3 = &pThisCC->aWorkers[qIdx];
+            pWorkerR3->cRedoDescs = 0;
+        }
 
-    for (int i = 0; i < cReqsRedo; i++)
-    {
-        uint16_t qIdx, uHeadIdx;
+        for (int i = 0; i < cReqsRedo; i++)
+        {
+            uint16_t qIdx, uHeadIdx;
 
-        pHlp->pfnSSMGetU16(pSSM, &qIdx);
-        pHlp->pfnSSMGetU16(pSSM, &uHeadIdx);
-LogFunc(("    loaded redo req: qIdx=%d, headIdx=%d\n", qIdx, uHeadIdx));
+            pHlp->pfnSSMGetU16(pSSM, &qIdx);
+            pHlp->pfnSSMGetU16(pSSM, &uHeadIdx);
 
-        PVIRTIOSCSIWORKERR3 pWorkerR3 = &pThisCC->aWorkers[qIdx];
-        pWorkerR3->auRedoDescs[pWorkerR3->cRedoDescs++] = uHeadIdx;
-        pWorkerR3->cRedoDescs %= VIRTQ_MAX_SIZE;
+            PVIRTIOSCSIWORKERR3 pWorkerR3 = &pThisCC->aWorkers[qIdx];
+            pWorkerR3->auRedoDescs[pWorkerR3->cRedoDescs++] = uHeadIdx;
+            pWorkerR3->cRedoDescs %= VIRTQ_MAX_SIZE;
+        }
     }
 
     /*
@@ -2048,6 +2061,7 @@ static DECLCALLBACK(int) virtioScsiR3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSS
     PVIRTIOSCSI     pThis   = PDMDEVINS_2_DATA(pDevIns, PVIRTIOSCSI);
     PVIRTIOSCSICC   pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PVIRTIOSCSICC);
     PCPDMDEVHLPR3   pHlp    = pDevIns->pHlpR3;
+
     LogFunc(("SAVE EXEC!!\n"));
 
     for (int qIdx = 0; qIdx < VIRTIOSCSI_QUEUE_CNT; qIdx++)
@@ -2072,9 +2086,6 @@ static DECLCALLBACK(int) virtioScsiR3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSS
     pHlp->pfnSSMPutU32(pSSM,  pThis->fHasLunChange);
     pHlp->pfnSSMPutU32(pSSM,  pThis->fResetting);
 
-    /* Save suspended I/O requests */
-
-
     /** @todo Ask aeichner about BIOS-related changes */
 
     AssertMsg(!pThis->cActiveReqs, ("There are still outstanding requests on this device\n"));
@@ -2083,14 +2094,12 @@ static DECLCALLBACK(int) virtioScsiR3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSS
 
      for (uint16_t uTarget = 0; uTarget < pThis->cTargets; uTarget++)
      {
-
         PVIRTIOSCSITARGET pTarget = &pThisCC->paTargetInstances[uTarget];
 
          /* Query all suspended requests and store them in the request queue. */
          if (pTarget->pDrvMediaEx)
          {
              uint32_t cReqsRedo = pTarget->pDrvMediaEx->pfnIoReqGetSuspendedCount(pTarget->pDrvMediaEx);
-LogFunc(("Saving redo reqs target=%d, cReqsRedo=%d\n", uTarget, cReqsRedo));
 
              pHlp->pfnSSMPutU16(pSSM, cReqsRedo);
 
@@ -2105,8 +2114,6 @@ LogFunc(("Saving redo reqs target=%d, cReqsRedo=%d\n", uTarget, cReqsRedo));
 
                  while(--cReqsRedo)
                  {
-LogFunc(("     redo req: qIdx=%d, headIdx=%d\n", pReq->qIdx, pReq->pDescChain->uHeadIdx));
-
                     pHlp->pfnSSMPutU16(pSSM, pReq->qIdx);
                     pHlp->pfnSSMPutU16(pSSM, pReq->pDescChain->uHeadIdx);
 
@@ -2235,7 +2242,7 @@ static DECLCALLBACK(bool) virtioScsiR3DeviceQuiesced(PPDMDEVINS pDevIns)
     LogFunc(("Device I/O activity quiesced: %s\n",
         virtioCoreGetStateChangeText(pThisCC->enmQuiescingFor)));
 
-    virtioCoreR3VmStateChanged(pDevIns, &pThis->Virtio, pThisCC->enmQuiescingFor);
+    virtioCoreR3VmStateChanged(&pThis->Virtio, pThisCC->enmQuiescingFor);
 
     pThis->fResetting = false;
     pThisCC->fQuiescing = false;
@@ -2283,8 +2290,6 @@ static DECLCALLBACK(void) virtioScsiR3SuspendOrPowerOff(PPDMDEVINS pDevIns, VIRT
     PVIRTIOSCSI     pThis   = PDMDEVINS_2_DATA(pDevIns, PVIRTIOSCSI);
     PVIRTIOSCSICC   pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PVIRTIOSCSICC);
 
-    virtioScsiR3QuiesceDevice(pDevIns, enmType);
-
     /* VM is halted, thus no new I/O being dumped into queues by the guest.
      * Workers have been flagged to stop pulling stuff already queued-up by the guest.
      * Now tell lower-level to to suspend reqs (for example, DrvVD suspends all reqs
@@ -2297,6 +2302,8 @@ static DECLCALLBACK(void) virtioScsiR3SuspendOrPowerOff(PPDMDEVINS pDevIns, VIRT
         if (pTarget->pDrvMediaEx)
             pTarget->pDrvMediaEx->pfnNotifySuspend(pTarget->pDrvMediaEx);
     }
+
+    virtioScsiR3QuiesceDevice(pDevIns, enmType);
 }
 
 /**
@@ -2342,7 +2349,7 @@ static DECLCALLBACK(void) virtioScsiR3Resume(PPDMDEVINS pDevIns)
         }
     }
     /* Ensure guest is working the queues too. */
-    virtioCoreR3VmStateChanged(pDevIns, &pThis->Virtio, kvirtIoVmStateChangedResume);
+    virtioCoreR3VmStateChanged(&pThis->Virtio, kvirtIoVmStateChangedResume);
 }
 
 /**

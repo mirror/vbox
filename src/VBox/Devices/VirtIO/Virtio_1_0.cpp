@@ -1597,19 +1597,19 @@ int virtioCoreR3LoadExec(PVIRTIOCORE pVirtio, PCPDMDEVHLPR3 pHlp, PSSMHANDLE pSS
     pHlp->pfnSSMGetU32(pSSM,  &pVirtio->uDriverFeaturesSelect);
     pHlp->pfnSSMGetU64(pSSM,  &pVirtio->uDriverFeatures);
 
-    for (uint32_t idxQueue = 0; idxQueue < VIRTQ_MAX_CNT; idxQueue++)
+    for (uint32_t i = 0; i < VIRTQ_MAX_CNT; i++)
     {
-        pHlp->pfnSSMGetGCPhys64(pSSM, &pVirtio->aGCPhysQueueDesc[idxQueue]);
-        pHlp->pfnSSMGetGCPhys64(pSSM, &pVirtio->aGCPhysQueueAvail[idxQueue]);
-        pHlp->pfnSSMGetGCPhys64(pSSM, &pVirtio->aGCPhysQueueUsed[idxQueue]);
-        pHlp->pfnSSMGetU16(pSSM, &pVirtio->uQueueNotifyOff[idxQueue]);
-        pHlp->pfnSSMGetU16(pSSM, &pVirtio->uQueueMsixVector[idxQueue]);
-        pHlp->pfnSSMGetU16(pSSM, &pVirtio->uQueueEnable[idxQueue]);
-        pHlp->pfnSSMGetU16(pSSM, &pVirtio->uQueueSize[idxQueue]);
-        pHlp->pfnSSMGetU16(pSSM, &pVirtio->virtqState[idxQueue].uAvailIdx);
-        pHlp->pfnSSMGetU16(pSSM, &pVirtio->virtqState[idxQueue].uUsedIdx);
-        rc = pHlp->pfnSSMGetMem(pSSM, pVirtio->virtqState[idxQueue].szVirtqName,
-                                sizeof(pVirtio->virtqState[idxQueue].szVirtqName));
+        pHlp->pfnSSMGetGCPhys64(pSSM, &pVirtio->aGCPhysQueueDesc[i]);
+        pHlp->pfnSSMGetGCPhys64(pSSM, &pVirtio->aGCPhysQueueAvail[i]);
+        pHlp->pfnSSMGetGCPhys64(pSSM, &pVirtio->aGCPhysQueueUsed[i]);
+        pHlp->pfnSSMGetU16(pSSM, &pVirtio->uQueueNotifyOff[i]);
+        pHlp->pfnSSMGetU16(pSSM, &pVirtio->uQueueMsixVector[i]);
+        pHlp->pfnSSMGetU16(pSSM, &pVirtio->uQueueEnable[i]);
+        pHlp->pfnSSMGetU16(pSSM, &pVirtio->uQueueSize[i]);
+        pHlp->pfnSSMGetU16(pSSM, &pVirtio->virtqState[i].uAvailIdx);
+        pHlp->pfnSSMGetU16(pSSM, &pVirtio->virtqState[i].uUsedIdx);
+        rc = pHlp->pfnSSMGetMem(pSSM, pVirtio->virtqState[i].szVirtqName,
+                                sizeof(pVirtio->virtqState[i].szVirtqName));
         AssertRCReturn(rc, rc);
     }
 
@@ -1622,14 +1622,15 @@ int virtioCoreR3LoadExec(PVIRTIOCORE pVirtio, PCPDMDEVHLPR3 pHlp, PSSMHANDLE pSS
 *********************************************************************************************************************************/
 
 /**
- * This should be called from PDMDEVREGR3::pfnReset.
+ * This must be called by the client to handle VM state changes
+ * after the client takes care of its device-specific tasks for the state change.
+ * (i.e. Reset, suspend, power-off, resume)
  *
  * @param   pDevIns     The device instance.
  * @param   pVirtio     Pointer to the shared virtio state.
  */
-void virtioCoreR3VmStateChanged(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, VIRTIOVMSTATECHANGED enmState)
+void virtioCoreR3VmStateChanged(PVIRTIOCORE pVirtio, VIRTIOVMSTATECHANGED enmState)
 {
-
     LogFunc(("State changing to %s\n",
         virtioCoreGetStateChangeText(enmState)));
 
@@ -1649,7 +1650,6 @@ void virtioCoreR3VmStateChanged(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, VIRTIOV
             LogRelFunc(("Bad enum value"));
             return;
     }
-    RT_NOREF(pDevIns, pVirtio);
 }
 
 /**
