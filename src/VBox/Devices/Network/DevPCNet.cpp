@@ -1220,7 +1220,7 @@ DECLEXPORT(int) pcnetHandleRingWritePf(PVM pVM, PVMCPU pVCpu, RTGCUINT uErrorCod
         {
             uint32_t offsetTDRA = (GCPhysFault - pThis->GCTDRA);
 
-            int rc = PDMCritSectEnter(&pThis->CritSect, VERR_SEM_BUSY);
+            int rc = PDMDevHlpCritSectEnter(pDevIns, &pThis->CritSect, VERR_SEM_BUSY);
             if (RT_SUCCESS(rc))
             {
                 STAM_COUNTER_INC(&pThis->CTX_SUFF(StatRingWrite));
@@ -1229,7 +1229,7 @@ DECLEXPORT(int) pcnetHandleRingWritePf(PVM pVM, PVMCPU pVCpu, RTGCUINT uErrorCod
                 pcnetPollRxTx(pDevIns, pThis, pThisCC);
                 pcnetUpdateIrq(pDevIns, pThis);
 
-                PDMCritSectLeave(&pThis->CritSect);
+                PDMDevHlpCritSectLeave(pDevIns, &pThis->CritSect);
                 return VINF_SUCCESS;
             }
         }
@@ -1267,7 +1267,7 @@ pcnetHandleRingWrite(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhys, void *pvPhys, void 
     memcpy((char *)pvPhys, pvBuf, cbBuf);
 
     /* Writes done by our code don't require polling of course */
-    if (PDMCritSectIsOwner(&pThis->CritSect) == false)
+    if (PDMDevHlpCritSectIsOwner(pDevIns, &pThis->CritSect) == false)
     {
         if (    (GCPhys >= pThis->GCTDRA && GCPhys + cbBuf < pcnetTdraAddr(pThis, 0))
 # ifdef PCNET_MONITOR_RECEIVE_RING
@@ -1275,12 +1275,12 @@ pcnetHandleRingWrite(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhys, void *pvPhys, void 
 # endif
            )
         {
-            int rc = PDMCritSectEnter(&pThis->CritSect, VERR_SEM_BUSY);
+            int rc = PDMDevHlpCritSectEnter(pDevIns, &pThis->CritSect, VERR_SEM_BUSY);
             AssertReleaseRC(rc);
             /* Check if we can do something now */
             pcnetPollRxTx(pDevIns, pThis, pThisCC);
             pcnetUpdateIrq(pDevIns, pThis);
-            PDMCritSectLeave(&pThis->CritSect);
+            PDMDevHlpCritSectLeave(pDevIns, &pThis->CritSect);
         }
     }
     return VINF_SUCCESS;
@@ -2025,9 +2025,9 @@ static void pcnetReceiveNoSync(PPDMDEVINS pDevIns, PPCNETSTATE pThis, PPCNETSTAT
              *    forbidden as long as it is owned by the device
              *  - we don't cache any register state beyond this point
              */
-            PDMCritSectLeave(&pThis->CritSect);
+            PDMDevHlpCritSectLeave(pDevIns, &pThis->CritSect);
             pcnetPhysWrite(pDevIns, pThis, rbadr, src, cbBuf);
-            int rc = PDMCritSectEnter(&pThis->CritSect, VERR_SEM_BUSY);
+            int rc = PDMDevHlpCritSectEnter(pDevIns, &pThis->CritSect, VERR_SEM_BUSY);
             AssertReleaseRC(rc);
 
             /* RX disabled in the meantime? If so, abort RX. */
@@ -2072,9 +2072,9 @@ static void pcnetReceiveNoSync(PPDMDEVINS pDevIns, PPCNETSTATE pThis, PPCNETSTAT
                 /* We have to leave the critical section here or we risk deadlocking
                  * with EMT when the write is to an unallocated page or has an access
                  * handler associated with it. See above for additional comments. */
-                PDMCritSectLeave(&pThis->CritSect);
+                PDMDevHlpCritSectLeave(pDevIns, &pThis->CritSect);
                 pcnetPhysWrite(pDevIns, pThis, rbadr2, src, cbBuf);
-                rc = PDMCritSectEnter(&pThis->CritSect, VERR_SEM_BUSY);
+                rc = PDMDevHlpCritSectEnter(pDevIns, &pThis->CritSect, VERR_SEM_BUSY);
                 AssertReleaseRC(rc);
 
                 /* RX disabled in the meantime? If so, abort RX. */
@@ -2364,7 +2364,7 @@ static void pcnetXmitReadMoreSlow(PPDMDEVINS pDevIns, RTGCPHYS32 GCPhysFrame, un
 DECLINLINE(void) pcnetXmitRead1st(PPDMDEVINS pDevIns, PPCNETSTATE pThis, RTGCPHYS32 GCPhysFrame, const unsigned cbFrame,
                                   PPDMSCATTERGATHER pSgBuf)
 {
-    Assert(PDMCritSectIsOwner(&pThis->CritSect)); RT_NOREF(pThis);
+    Assert(PDMDevHlpCritSectIsOwner(pDevIns, &pThis->CritSect)); RT_NOREF(pThis);
     Assert(pSgBuf->cbAvailable >= cbFrame);
 
     if (RT_LIKELY(pSgBuf->aSegs[0].cbSeg >= cbFrame)) /* justification: all drivers returns a single segment atm. */
@@ -2473,7 +2473,7 @@ static void pcnetTransmit(PPDMDEVINS pDevIns, PPCNETSTATE pThis, PPCNETSTATECC p
  */
 static int pcnetAsyncTransmit(PPDMDEVINS pDevIns, PPCNETSTATE pThis, PPCNETSTATECC pThisCC, bool fOnWorkerThread)
 {
-    Assert(PDMCritSectIsOwner(&pThis->CritSect));
+    Assert(PDMDevHlpCritSectIsOwner(pDevIns, &pThis->CritSect));
 
     /*
      * Just cleared transmit demand if the transmitter is off.
@@ -2773,7 +2773,7 @@ static int pcnetXmitPending(PPDMDEVINS pDevIns, PPCNETSTATE pThis, PPCNETSTATECC
         if (RT_FAILURE(rc))
             return rc;
     }
-    rc = PDMCritSectEnter(&pThis->CritSect, VERR_SEM_BUSY);
+    rc = PDMDevHlpCritSectEnter(pDevIns, &pThis->CritSect, VERR_SEM_BUSY);
     if (RT_SUCCESS(rc))
     {
         /** @todo check if we're supposed to suspend now. */
@@ -2786,7 +2786,7 @@ static int pcnetXmitPending(PPDMDEVINS pDevIns, PPCNETSTATE pThis, PPCNETSTATECC
         /*
          * Release the locks.
          */
-        PDMCritSectLeave(&pThis->CritSect);
+        PDMDevHlpCritSectLeave(pDevIns, &pThis->CritSect);
     }
     else
         AssertLogRelRC(rc);
@@ -3517,7 +3517,7 @@ pcnetIOPortAPromRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_
     PPCNETSTATE     pThis = PDMDEVINS_2_DATA(pDevIns, PPCNETSTATE);
     VBOXSTRICTRC    rc    = VINF_SUCCESS;
     STAM_PROFILE_ADV_START(&pThis->StatAPROMRead, a);
-    Assert(PDMCritSectIsOwner(&pThis->CritSect));
+    Assert(PDMDevHlpCritSectIsOwner(pDevIns, &pThis->CritSect));
     RT_NOREF_PV(pvUser);
 
     /* FreeBSD is accessing in dwords. */
@@ -3552,7 +3552,7 @@ pcnetIoPortAPromWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32
 {
     PPCNETSTATE     pThis = PDMDEVINS_2_DATA(pDevIns, PPCNETSTATE);
     VBOXSTRICTRC    rc    = VINF_SUCCESS;
-    Assert(PDMCritSectIsOwner(&pThis->CritSect));
+    Assert(PDMDevHlpCritSectIsOwner(pDevIns, &pThis->CritSect));
     RT_NOREF_PV(pvUser);
 
     if (cb == 1)
@@ -3765,7 +3765,7 @@ static DECLCALLBACK(VBOXSTRICTRC) pcnetIoPortRead(PPDMDEVINS pDevIns, void *pvUs
     PPCNETSTATECC   pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PPCNETSTATECC);
     VBOXSTRICTRC    rc      = VINF_SUCCESS;
     STAM_PROFILE_ADV_START(&pThis->CTX_SUFF_Z(StatIORead), a);
-    Assert(PDMCritSectIsOwner(&pThis->CritSect));
+    Assert(PDMDevHlpCritSectIsOwner(pDevIns, &pThis->CritSect));
     RT_NOREF_PV(pvUser);
 
     switch (cb)
@@ -3792,7 +3792,7 @@ static DECLCALLBACK(VBOXSTRICTRC) pcnetIoPortWrite(PPDMDEVINS pDevIns, void *pvU
     PPCNETSTATECC   pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PPCNETSTATECC);
     VBOXSTRICTRC    rc;
     STAM_PROFILE_ADV_START(&pThis->CTX_SUFF_Z(StatIOWrite), a);
-    Assert(PDMCritSectIsOwner(&pThis->CritSect));
+    Assert(PDMDevHlpCritSectIsOwner(pDevIns, &pThis->CritSect));
     RT_NOREF_PV(pvUser);
 
     switch (cb)
@@ -3915,7 +3915,7 @@ static DECLCALLBACK(VBOXSTRICTRC) pcnetR3MmioRead(PPDMDEVINS pDevIns, void *pvUs
     PPCNETSTATE     pThis   = PDMDEVINS_2_DATA(pDevIns, PPCNETSTATE);
     PPCNETSTATECC   pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PPCNETSTATECC);
     VBOXSTRICTRC    rc      = VINF_SUCCESS;
-    Assert(PDMCritSectIsOwner(&pThis->CritSect));
+    Assert(PDMDevHlpCritSectIsOwner(pDevIns, &pThis->CritSect));
     RT_NOREF_PV(pvUser);
 
     /*
@@ -3951,7 +3951,7 @@ static DECLCALLBACK(VBOXSTRICTRC) pcnetR3MmioWrite(PPDMDEVINS pDevIns, void *pvU
     PPCNETSTATE     pThis   = PDMDEVINS_2_DATA(pDevIns, PPCNETSTATE);
     PPCNETSTATECC   pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PPCNETSTATECC);
     VBOXSTRICTRC    rc      = VINF_SUCCESS;
-    Assert(PDMCritSectIsOwner(&pThis->CritSect));
+    Assert(PDMDevHlpCritSectIsOwner(pDevIns, &pThis->CritSect));
     RT_NOREF_PV(pvUser);
 
     /*
@@ -3987,7 +3987,7 @@ static DECLCALLBACK(void) pcnetR3Timer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void
 {
     PPCNETSTATE   pThis   = PDMDEVINS_2_DATA(pDevIns, PPCNETSTATE);
     PPCNETSTATECC pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PPCNETSTATECC);
-    Assert(PDMCritSectIsOwner(&pThis->CritSect));
+    Assert(PDMDevHlpCritSectIsOwner(pDevIns, &pThis->CritSect));
     RT_NOREF(pvUser, pTimer);
 
     STAM_PROFILE_ADV_START(&pThis->StatTimer, a);
@@ -4003,7 +4003,7 @@ static DECLCALLBACK(void) pcnetR3Timer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void
 static DECLCALLBACK(void) pcnetR3TimerSoftInt(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser)
 {
     PPCNETSTATE pThis = PDMDEVINS_2_DATA(pDevIns, PPCNETSTATE);
-    Assert(PDMCritSectIsOwner(&pThis->CritSect));
+    Assert(PDMDevHlpCritSectIsOwner(pDevIns, &pThis->CritSect));
     RT_NOREF(pvUser, pTimer);
 
     pThis->aCSR[7] |= 0x0800; /* STINT */
@@ -4024,7 +4024,7 @@ static DECLCALLBACK(void) pcnetR3TimerRestore(PPDMDEVINS pDevIns, PTMTIMER pTime
     PPCNETSTATE pThis = PDMDEVINS_2_DATA(pDevIns, PPCNETSTATE);
     RT_NOREF(pTimer, pvUser);
 
-    int rc = PDMCritSectEnter(&pThis->CritSect, VERR_SEM_BUSY);
+    int rc = PDMDevHlpCritSectEnter(pDevIns, &pThis->CritSect, VERR_SEM_BUSY);
     AssertReleaseRC(rc);
 
     rc = VERR_GENERAL_FAILURE;
@@ -4049,7 +4049,7 @@ static DECLCALLBACK(void) pcnetR3TimerRestore(PPDMDEVINS pDevIns, PTMTIMER pTime
         Log(("#%d pcnetR3TimerRestore: cLinkDownReported=%d, wait another 1500ms...\n",
              pDevIns->iInstance, pThis->cLinkDownReported));
 
-    PDMCritSectLeave(&pThis->CritSect);
+    PDMDevHlpCritSectLeave(pDevIns, &pThis->CritSect);
 }
 
 
@@ -4130,7 +4130,7 @@ static DECLCALLBACK(void) pcnetR3Info(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, co
                     pThis->IOPortBase, PDMDevHlpMmioGetMappingAddress(pDevIns, pThis->hMmioPci),
                     &pThis->MacConfigured, pcszModel, pDevIns->fRCEnabled ? " RC" : "", pDevIns->fR0Enabled ? " R0" : "");
 
-    PDMCritSectEnter(&pThis->CritSect, VERR_INTERNAL_ERROR); /* Take it here so we know why we're hanging... */
+    PDMDevHlpCritSectEnter(pDevIns, &pThis->CritSect, VERR_INTERNAL_ERROR); /* Take it here so we know why we're hanging... */
 
     pHlp->pfnPrintf(pHlp,
                     "CSR0=%#06x: INIT=%d STRT=%d STOP=%d TDMD=%d TXON=%d RXON=%d IENA=%d INTR=%d IDON=%d TINT=%d RINT=%d MERR=%d\n"
@@ -4352,7 +4352,7 @@ static DECLCALLBACK(void) pcnetR3Info(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, co
 
     }
 
-    PDMCritSectLeave(&pThis->CritSect);
+    PDMDevHlpCritSectLeave(pDevIns, &pThis->CritSect);
 }
 
 
@@ -4421,9 +4421,9 @@ static DECLCALLBACK(int) pcnetR3SavePrep(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
     RT_NOREF(pSSM);
     PPCNETSTATE pThis = PDMDEVINS_2_DATA(pDevIns, PPCNETSTATE);
 
-    int rc = PDMCritSectEnter(&pThis->CritSect, VERR_SEM_BUSY);
+    int rc = PDMDevHlpCritSectEnter(pDevIns, &pThis->CritSect, VERR_SEM_BUSY);
     AssertRC(rc);
-    PDMCritSectLeave(&pThis->CritSect);
+    PDMDevHlpCritSectLeave(pDevIns, &pThis->CritSect);
 
     return VINF_SUCCESS;
 }
@@ -4474,7 +4474,7 @@ static DECLCALLBACK(int) pcnetR3LoadPrep(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
     PPCNETSTATE     pThis = PDMDEVINS_2_DATA(pDevIns, PPCNETSTATE);
     PCPDMDEVHLPR3   pHlp  = pDevIns->pHlpR3;
 
-    int rc = PDMCritSectEnter(&pThis->CritSect, VERR_SEM_BUSY);
+    int rc = PDMDevHlpCritSectEnter(pDevIns, &pThis->CritSect, VERR_SEM_BUSY);
     AssertRC(rc);
 
     uint32_t uVer = pHlp->pfnSSMHandleVersion(pSSM);
@@ -4490,7 +4490,7 @@ static DECLCALLBACK(int) pcnetR3LoadPrep(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
                                      N_("Failed to allocate the dummy shmem region for the PCnet device"));
         pThis->fSharedRegion = true;
     }
-    PDMCritSectLeave(&pThis->CritSect);
+    PDMDevHlpCritSectLeave(pDevIns, &pThis->CritSect);
 
     return rc;
 }
@@ -4632,7 +4632,7 @@ static DECLCALLBACK(int) pcnetR3LoadDone(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
  */
 static int pcnetR3CanReceive(PPDMDEVINS pDevIns, PPCNETSTATE pThis)
 {
-    int rc = PDMCritSectEnter(&pThis->CritSect, VERR_SEM_BUSY);
+    int rc = PDMDevHlpCritSectEnter(pDevIns, &pThis->CritSect, VERR_SEM_BUSY);
     AssertReleaseRC(rc);
 
     rc = VERR_NET_NO_BUFFER_SPACE;
@@ -4652,7 +4652,7 @@ static int pcnetR3CanReceive(PPDMDEVINS pDevIns, PPCNETSTATE pThis)
             rc = VINF_SUCCESS;
     }
 
-    PDMCritSectLeave(&pThis->CritSect);
+    PDMDevHlpCritSectLeave(pDevIns, &pThis->CritSect);
     return rc;
 }
 
@@ -4688,12 +4688,12 @@ static DECLCALLBACK(int) pcnetR3NetworkDown_WaitReceiveAvail(PPDMINETWORKDOWN pI
         LogFlow(("pcnetR3NetworkDown_WaitReceiveAvail: waiting cMillies=%u...\n", cMillies));
         /* Start the poll timer once which will remain active as long fMaybeOutOfSpace
          * is true -- even if (transmit) polling is disabled (CSR_DPOLL). */
-        rc2 = PDMCritSectEnter(&pThis->CritSect, VERR_SEM_BUSY);
+        rc2 = PDMDevHlpCritSectEnter(pDevIns, &pThis->CritSect, VERR_SEM_BUSY);
         AssertReleaseRC(rc2);
 #ifndef PCNET_NO_POLLING
         pcnetPollTimerStart(pDevIns, pThis);
 #endif
-        PDMCritSectLeave(&pThis->CritSect);
+        PDMDevHlpCritSectLeave(pDevIns, &pThis->CritSect);
         PDMDevHlpSUPSemEventWaitNoResume(pDevIns, pThis->hEventOutOfRxSpace, cMillies);
     }
     STAM_PROFILE_STOP(&pThis->StatRxOverflow, a);
@@ -4713,7 +4713,7 @@ static DECLCALLBACK(int) pcnetR3NetworkDown_Receive(PPDMINETWORKDOWN pInterface,
     PPCNETSTATE   pThis   = PDMDEVINS_2_DATA(pDevIns, PPCNETSTATE);
 
     STAM_PROFILE_ADV_START(&pThis->StatReceive, a);
-    int rc = PDMCritSectEnter(&pThis->CritSect, VERR_SEM_BUSY);
+    int rc = PDMDevHlpCritSectEnter(pDevIns, &pThis->CritSect, VERR_SEM_BUSY);
     AssertReleaseRC(rc);
 
     /*
@@ -4751,7 +4751,7 @@ static DECLCALLBACK(int) pcnetR3NetworkDown_Receive(PPDMINETWORKDOWN pInterface,
     }
 #endif /* LOG_ENABLED */
 
-    PDMCritSectLeave(&pThis->CritSect);
+    PDMDevHlpCritSectLeave(pDevIns, &pThis->CritSect);
     STAM_PROFILE_ADV_STOP(&pThis->StatReceive, a);
 
     return VINF_SUCCESS;
@@ -4849,7 +4849,7 @@ static DECLCALLBACK(int) pcnetR3NetworkConfig_SetLinkState(PPDMINETWORKCONFIG pI
             pThis->aCSR[0] |= RT_BIT(15) | RT_BIT(13); /* ERR | CERR (this is probably wrong) */
             pThis->Led.Asserted.s.fError = pThis->Led.Actual.s.fError = 1;
         }
-        Assert(!PDMCritSectIsOwner(&pThis->CritSect));
+        Assert(!PDMDevHlpCritSectIsOwner(pDevIns, &pThis->CritSect));
         if (pThisCC->pDrv)
             pThisCC->pDrv->pfnNotifyLinkChanged(pThisCC->pDrv, enmState);
     }
@@ -4919,7 +4919,7 @@ static DECLCALLBACK(void) pcnetR3Detach(PPDMDEVINS pDevIns, unsigned iLUN, uint3
 
     AssertLogRelReturnVoid(iLUN == 0);
 
-    PDMCritSectEnter(&pThis->CritSect, VERR_SEM_BUSY);
+    PDMDevHlpCritSectEnter(pDevIns, &pThis->CritSect, VERR_SEM_BUSY);
 
     /** @todo r=pritesh still need to check if i missed
      * to clean something in this function
@@ -4935,7 +4935,7 @@ static DECLCALLBACK(void) pcnetR3Detach(PPDMDEVINS pDevIns, unsigned iLUN, uint3
     //pThis->pDrvR0 = NIL_RTR0PTR;
     //pThis->pDrvRC = NIL_RTRCPTR;
 
-    PDMCritSectLeave(&pThis->CritSect);
+    PDMDevHlpCritSectLeave(pDevIns, &pThis->CritSect);
 }
 
 
@@ -4952,7 +4952,7 @@ static DECLCALLBACK(int) pcnetR3Attach(PPDMDEVINS pDevIns, unsigned iLUN, uint32
 
     AssertLogRelReturn(iLUN == 0, VERR_PDM_NO_SUCH_LUN);
 
-    PDMCritSectEnter(&pThis->CritSect, VERR_SEM_BUSY);
+    PDMDevHlpCritSectEnter(pDevIns, &pThis->CritSect, VERR_SEM_BUSY);
 
     /*
      * Attach the driver.
@@ -4984,7 +4984,7 @@ static DECLCALLBACK(int) pcnetR3Attach(PPDMDEVINS pDevIns, unsigned iLUN, uint32
     if (RT_SUCCESS(rc))
         pcnetR3TempLinkDown(pDevIns, pThis);
 
-    PDMCritSectLeave(&pThis->CritSect);
+    PDMDevHlpCritSectLeave(pDevIns, &pThis->CritSect);
     return rc;
 
 }
@@ -5046,8 +5046,8 @@ static DECLCALLBACK(int) pcnetR3Destruct(PPDMDEVINS pDevIns)
         pThis->hEventOutOfRxSpace = NIL_SUPSEMEVENT;
     }
 
-    if (PDMCritSectIsInitialized(&pThis->CritSect))
-        PDMR3CritSectDelete(&pThis->CritSect);
+    if (PDMDevHlpCritSectIsInitialized(pDevIns, &pThis->CritSect))
+        PDMDevHlpCritSectDelete(pDevIns, &pThis->CritSect);
     return VINF_SUCCESS;
 }
 
