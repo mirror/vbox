@@ -530,7 +530,7 @@ static void biosfn_set_cursor_shape(uint8_t CH, uint8_t CL)
       /* If CGA cursor emulation is on and this is a text mode, adjust.
        * But if cursor star or end is bigger than 31, don't adjust.
        */
-      // @todo: Figure out if this is a text mode
+      /// @todo Figure out if this is a text mode
       if (cga_emu /* && text mode*/ && (CH < 32) && (CL < 32)) {
         cheight = read_word(BIOSMEM_SEG, BIOSMEM_CHAR_HEIGHT);
 
