@@ -258,7 +258,14 @@ HRESULT RecordingSettings::getScreens(std::vector<ComPtr<IRecordingScreenSetting
 {
     LogFlowThisFuncEnter();
 
-    i_syncToMachineDisplays();
+    AssertPtr(m->pMachine);
+    ComPtr<IGraphicsAdapter> pGraphicsAdapter;
+    m->pMachine->COMGETTER(GraphicsAdapter)(pGraphicsAdapter.asOutParam());
+    ULONG cMonitors = 0;
+    if (!pGraphicsAdapter.isNull())
+        pGraphicsAdapter->COMGETTER(MonitorCount)(&cMonitors);
+
+    i_syncToMachineDisplays(cMonitors);
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -284,7 +291,14 @@ HRESULT RecordingSettings::getScreenSettings(ULONG uScreenId, ComPtr<IRecordingS
 {
     LogFlowThisFuncEnter();
 
-    i_syncToMachineDisplays();
+    AssertPtr(m->pMachine);
+    ComPtr<IGraphicsAdapter> pGraphicsAdapter;
+    m->pMachine->COMGETTER(GraphicsAdapter)(pGraphicsAdapter.asOutParam());
+    ULONG cMonitors = 0;
+    if (!pGraphicsAdapter.isNull())
+        pGraphicsAdapter->COMGETTER(MonitorCount)(&cMonitors);
+
+    i_syncToMachineDisplays(cMonitors);
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -483,7 +497,14 @@ HRESULT RecordingSettings::i_saveSettings(settings::RecordingSettings &data)
     AutoCaller autoCaller(this);
     AssertComRCReturnRC(autoCaller.rc());
 
-    int rc2 = i_syncToMachineDisplays();
+    AssertPtr(m->pMachine);
+    ComPtr<IGraphicsAdapter> pGraphicsAdapter;
+    m->pMachine->COMGETTER(GraphicsAdapter)(pGraphicsAdapter.asOutParam());
+    ULONG cMonitors = 0;
+    if (!pGraphicsAdapter.isNull())
+        pGraphicsAdapter->COMGETTER(MonitorCount)(&cMonitors);
+
+    int rc2 = i_syncToMachineDisplays(cMonitors);
     AssertRC(rc2);
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
@@ -565,6 +586,13 @@ void RecordingSettings::i_applyDefaults(void)
     AutoCaller autoCaller(this);
     AssertComRCReturnVoid(autoCaller.rc());
 
+    AssertPtr(m->pMachine);
+    ComPtr<IGraphicsAdapter> pGraphicsAdapter;
+    m->pMachine->COMGETTER(GraphicsAdapter)(pGraphicsAdapter.asOutParam());
+    ULONG cMonitors = 0;
+    if (!pGraphicsAdapter.isNull())
+        pGraphicsAdapter->COMGETTER(MonitorCount)(&cMonitors);
+
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     /* Initialize default capturing settings here. */
@@ -573,7 +601,7 @@ void RecordingSettings::i_applyDefaults(void)
     /* First, do a reset so that all internal screen settings objects are destroyed. */
     i_reset();
     /* Second, sync (again) to configured machine displays to (re-)create screen settings objects. */
-    i_syncToMachineDisplays();
+    i_syncToMachineDisplays(cMonitors);
 }
 
 /**
@@ -633,15 +661,8 @@ void RecordingSettings::i_onSettingsChanged(void)
  * Synchronizes the screen settings (COM) objects and configuration data
  * to the number of the machine's configured displays.
  */
-int RecordingSettings::i_syncToMachineDisplays(void)
+int RecordingSettings::i_syncToMachineDisplays(uint32_t cMonitors)
 {
-    AssertPtr(m->pMachine);
-    ComPtr<IGraphicsAdapter> pGraphicsAdapter;
-    m->pMachine->COMGETTER(GraphicsAdapter)(pGraphicsAdapter.asOutParam());
-    ULONG cMonitors = 0;
-    if (!pGraphicsAdapter.isNull())
-        pGraphicsAdapter->COMGETTER(MonitorCount)(&cMonitors);
-
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     LogFlowThisFunc(("cMonitors=%RU32\n", cMonitors));
