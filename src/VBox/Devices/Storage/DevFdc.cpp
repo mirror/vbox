@@ -61,7 +61,7 @@
 *********************************************************************************************************************************/
 /** @name FDC saved state versions
  * @{ */
-#define FDC_SAVESTATE_CURRENT   2       /**< Current version. */
+#define FDC_SAVESTATE_CURRENT   3       /**< Current version. */
 #define FDC_SAVESTATE_PRE_DELAY 2       /**< Pre IRQDelay. */
 #define FDC_SAVESTATE_OLD       1       /**< The original saved state. */
 /** @}*/
