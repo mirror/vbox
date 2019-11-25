@@ -23,8 +23,8 @@
  * terms and conditions of either the GPL or the CDDL or both.
  */
 
-#ifndef VBOX_INCLUDED_GuestHost_SharedClipboard_X11_h
-#define VBOX_INCLUDED_GuestHost_SharedClipboard_X11_h
+#ifndef VBOX_INCLUDED_GuestHost_SharedClipboard_x11_h
+#define VBOX_INCLUDED_GuestHost_SharedClipboard_x11_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -127,5 +127,5 @@ DECLCALLBACK(void) ShClX11ReportFormatsCallback(SHCLCONTEXT *pCtx, SHCLFORMATS F
 DECLCALLBACK(void) ShClRequestFromX11CompleteCallback(SHCLCONTEXT *pCtx, int rc, CLIPREADCBREQ *pReq, void *pv, uint32_t cb);
 /** @} */
 
-#endif /* !VBOX_INCLUDED_GuestHost_SharedClipboard_X11_h */
+#endif /* !VBOX_INCLUDED_GuestHost_SharedClipboard_x11_h */
 
