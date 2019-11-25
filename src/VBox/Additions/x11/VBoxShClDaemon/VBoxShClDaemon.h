@@ -1,6 +1,26 @@
+/** $Id$ */
+/** @file
+ * Guest Additions - X11 Shared Clipboard - Custom GVFS backend which registers
+ * an own protocol handler to provide handling of clipboard file / directoriy entries, header file.
+ */
 
-#ifndef __G_VFS_BACKEND_VBOXSC_H__
-#define __G_VFS_BACKEND_VBOXSC_H__
+/*
+ * Copyright (C) 2019 Oracle Corporation
+ *
+ * This file is part of VirtualBox Open Source Edition (OSE), as
+ * available from http://www.virtualbox.org. This file is free software;
+ * you can redistribute it and/or modify it under the terms of the GNU
+ * General Public License (GPL) as published by the Free Software
+ * Foundation, in version 2 as it comes in the "COPYING" file of the
+ * VirtualBox OSE distribution. VirtualBox OSE is distributed in the
+ * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
+ */
+
+#ifndef GA_INCLUDED_SRC_x11_VBoxShClDaemon_VBoxShClDaemon_h
+#define GA_INCLUDED_SRC_x11_VBoxShClDaemon_VBoxShClDaemon_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include "gvfsbackend.h"
 #include "gmountspec.h"
@@ -66,5 +86,5 @@ GType g_vfs_backend_vboxsc_get_type(void) G_GNUC_CONST;
 
 G_END_DECLS
 
-#endif /* __G_VFS_BACKEND_VBOXSC_H__ */
+#endif /* !GA_INCLUDED_SRC_x11_VBoxShClDaemon_VBoxShClDaemon_h */
 
