@@ -33,6 +33,7 @@ ifdef VBOX_WITH_OPEN_WATCOM
  	VBOX_LANBOOT_SEG=0xE200 \
  	VBOX_WITH_SCSI \
  	VBOX_WITH_AHCI \
+ 	VBOX_WITH_VIRTIO_SCSI \
 	VBOX_BIOS_CPU=80386
  #VBoxPcBios386_DEFS.debug = DEBUG_ATA DEBUG_POST DEBUG_INT13
  VBoxPcBios386_LDFLAGS = \
@@ -64,6 +65,7 @@ ifdef VBOX_WITH_OPEN_WATCOM
  	logo.c \
  	scsi.c \
  	ahci.c \
+ 	virtio.c \
  	apm.c \
  	pcibios.c \
  	pciutil.c \
@@ -78,13 +80,6 @@ ifdef VBOX_WITH_OPEN_WATCOM
  	apm_pm.asm \
  	$(VBoxPcBios32_0_OUTDIR)/VBoxPcBios32.lib \
  	orgs.asm
-
- ifdef VBOX_WITH_VIRTIO_SCSI_BIOS
-  VBoxPcBios386_DEFS += \
-  	VBOX_WITH_VIRTIO_SCSI
-  VBoxPcBios386_SOURCES += \
- 	virtio.c
- endif
 
  #$(VBoxPcBios32_1_TARGET) - reference is lost when extending the target. weird.
 
