@@ -644,7 +644,7 @@ static void biosfn_set_active_page(uint8_t page)
   }
  else
   {
-   address = page * (*(uint16_t *)&video_param_table[line_to_vpti[line]].slength_l);
+   address = page * video_param_table[line_to_vpti[line]].slength;
   }
 
  // CRTC regs 0x0c and 0x0d
@@ -847,7 +847,7 @@ void biosfn_set_video_mode(uint8_t mode)
  // Set the BIOS mem
  write_byte(BIOSMEM_SEG,BIOSMEM_CURRENT_MODE,mode);
  write_word(BIOSMEM_SEG,BIOSMEM_NB_COLS,twidth);
- write_word(BIOSMEM_SEG,BIOSMEM_PAGE_SIZE,*(uint16_t *)&video_param_table[vpti].slength_l);
+ write_word(BIOSMEM_SEG,BIOSMEM_PAGE_SIZE,video_param_table[vpti].slength);
  write_word(BIOSMEM_SEG,BIOSMEM_CRTC_ADDRESS,crtc_addr);
  write_byte(BIOSMEM_SEG,BIOSMEM_NB_ROWS,theightm1);
  write_word(BIOSMEM_SEG,BIOSMEM_CHAR_HEIGHT,cheight);
