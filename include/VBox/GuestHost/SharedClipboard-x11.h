@@ -31,6 +31,10 @@
 
 #include <X11/Intrinsic.h>
 
+#include <iprt/thread.h>
+
+#include <VBox/GuestHost/SharedClipboard.h>
+
 /** The different clipboard formats which we support. */
 enum CLIPFORMAT
 {
@@ -47,6 +51,10 @@ enum CLIPFORMAT
 
 /** Defines a single X11 clipboad format. */
 typedef unsigned CLIPX11FORMAT;
+
+/** Prototype for the implementation-specfic Shared Clipboard context. */
+struct _SHCLCONTEXT;
+typedef SHCLCONTEXT _SHCLCONTEXT;
 
 /**
  * Structure for maintaining a Shared Clipboard context on X11 platforms.
