@@ -682,7 +682,7 @@ static DECLCALLBACK(void) ps2mR3ThrottleTimer(PPDMDEVINS pDevIns, PTMTIMER pTime
     uint32_t    uHaveEvents;
 
     /* Grab the lock to avoid races with PutEvent(). */
-    int rc = PDMCritSectEnter(pThis->pCritSectR3, VERR_SEM_BUSY);
+    int rc = PDMDevHlpCritSectEnter(pDevIns, pDevIns->pCritSectRoR3, VERR_SEM_BUSY);
     AssertReleaseRC(rc);
 
     /* If more movement is accumulated, report it and restart the timer. */
@@ -699,7 +699,7 @@ static DECLCALLBACK(void) ps2mR3ThrottleTimer(PPDMDEVINS pDevIns, PTMTIMER pTime
     else
         pThis->fThrottleActive = false;
 
-    PDMCritSectLeave(pThis->pCritSectR3);
+    PDMDevHlpCritSectLeave(pDevIns, pDevIns->pCritSectRoR3);
 }
 
 /**
@@ -756,6 +756,7 @@ static DECLCALLBACK(void) ps2mR3InfoState(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp
     pHlp->pfnPrintf(pHlp, "Event queue  : %d items (%d max)\n",
                     pThis->evtQ.cUsed, pThis->evtQ.cSize);
 }
+
 
 /* -=-=-=-=-=- Mouse: IBase  -=-=-=-=-=- */
 
@@ -823,6 +824,7 @@ static int ps2mR3PutEventWorker(PPDMDEVINS pDevIns, PPS2M pThis, int32_t dx, int
     return VINF_SUCCESS;
 }
 
+
 /* -=-=-=-=-=- Mouse: IMousePort  -=-=-=-=-=- */
 
 /**
@@ -865,6 +867,7 @@ static DECLCALLBACK(int) ps2mR3MousePort_PutEventMT(PPDMIMOUSEPORT pInterface, u
 }
 
 
+/* -=-=-=-=-=- Device management -=-=-=-=-=- */
 
 /**
  * Attach command.
@@ -1024,11 +1027,6 @@ int PS2MR3Construct(PPS2M pThis, PPDMDEVINS pDevIns, PKBDSTATE pParent, unsigned
     pThis->Mouse.IPort.pfnPutEvent           = ps2mR3MousePort_PutEvent;
     pThis->Mouse.IPort.pfnPutEventAbs        = ps2mR3MousePort_PutEventAbs;
     pThis->Mouse.IPort.pfnPutEventMultiTouch = ps2mR3MousePort_PutEventMT;
-
-    /*
-     * Initialize the critical section pointer(s).
-     */
-    pThis->pCritSectR3 = pDevIns->pCritSectRoR3;
 
     /*
      * Create the input rate throttling timer. Does not use virtual time!

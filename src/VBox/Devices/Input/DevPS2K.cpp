@@ -941,7 +941,7 @@ static DECLCALLBACK(void) ps2kR3ThrottleTimer(PPDMDEVINS pDevIns, PTMTIMER pTime
     unsigned    uHaveData;
 
     /* Grab the lock to avoid races with event delivery or EMTs. */
-    int rc = PDMCritSectEnter(pThis->pCritSectR3, VERR_SEM_BUSY);
+    int rc = PDMDevHlpCritSectEnter(pDevIns, pDevIns->pCritSectRoR3, VERR_SEM_BUSY);
     AssertReleaseRC(rc);
 
     /* If data is available, poke the KBC. Once the data
@@ -953,7 +953,7 @@ static DECLCALLBACK(void) ps2kR3ThrottleTimer(PPDMDEVINS pDevIns, PTMTIMER pTime
     if (uHaveData)
         KBCUpdateInterrupts(pDevIns);
 
-    PDMCritSectLeave(pThis->pCritSectR3);
+    PDMDevHlpCritSectLeave(pDevIns, pDevIns->pCritSectRoR3);
 }
 
 /**
@@ -1115,12 +1115,8 @@ static int ps2kR3PutEventWorker(PPDMDEVINS pDevIns, PPS2K pThis, uint32_t u32Usa
     /* Unless this is a new key press/release, don't even bother. */
     if (fHaveEvent)
     {
-        rc = PDMCritSectEnter(pThis->pCritSectR3, VERR_SEM_BUSY);
-        AssertReleaseRC(rc);
-
+        Assert(PDMDevHlpCritSectIsOwner(pDevIns, pDevIns->pCritSectRoR3));
         rc = ps2kR3ProcessKeyEvent(pDevIns, pThis, u32HidCode, fKeyDown);
-
-        PDMCritSectLeave(pThis->pCritSectR3);
     }
 
     return rc;
@@ -1138,7 +1134,7 @@ static DECLCALLBACK(int) ps2kR3KeyboardPort_PutEventHid(PPDMIKEYBOARDPORT pInter
 
     LogRelFlowFunc(("key code %08X\n", u32UsageCode));
 
-    rc = PDMCritSectEnter(pThis->pCritSectR3, VERR_SEM_BUSY);
+    rc = PDMDevHlpCritSectEnter(pDevIns, pDevIns->pCritSectRoR3, VERR_SEM_BUSY);
     AssertReleaseRC(rc);
 
     /* The 'BAT fail' scancode is reused as a signal to release keys. No actual
@@ -1149,11 +1145,13 @@ static DECLCALLBACK(int) ps2kR3KeyboardPort_PutEventHid(PPDMIKEYBOARDPORT pInter
     else
         ps2kR3ReleaseKeys(pDevIns, pThis);
 
-    PDMCritSectLeave(pThis->pCritSectR3);
+    PDMDevHlpCritSectLeave(pDevIns, pDevIns->pCritSectRoR3);
 
     return VINF_SUCCESS;
 }
 
+
+/* -=-=-=-=-=- Device management -=-=-=-=-=- */
 
 /**
  * Attach command.
@@ -1369,11 +1367,6 @@ int PS2KR3Construct(PPS2K pThis, PPDMDEVINS pDevIns, PKBDSTATE pParent, unsigned
 
     pThis->Keyboard.IBase.pfnQueryInterface = ps2kR3QueryInterface;
     pThis->Keyboard.IPort.pfnPutEventHid    = ps2kR3KeyboardPort_PutEventHid;
-
-    /*
-     * Initialize the critical section pointer(s).
-     */
-    pThis->pCritSectR3 = pDevIns->pCritSectRoR3;
 
     /*
      * Create the input rate throttling timer.
