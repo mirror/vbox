@@ -149,34 +149,34 @@ void UIAction::setName(const QString &strName)
     updateText();
 }
 
-void UIAction::setShortcut(const QKeySequence &shortcut)
+void UIAction::setShortcuts(const QList<QKeySequence> &shortcuts)
 {
     /* Only for manager's action-pool: */
     if (m_enmActionPoolType == UIActionPoolType_Manager)
     {
-        /* If shortcut is visible: */
+        /* If primary shortcut should be visible: */
         if (!m_fShortcutHidden)
             /* Call to base-class: */
-            QAction::setShortcut(shortcut);
-        /* Remember shortcut: */
-        m_shortcut = shortcut;
+            QAction::setShortcuts(shortcuts);
+        /* Remember shortcuts: */
+        m_shortcuts = shortcuts;
     }
-    /* Update text according new shortcut: */
+    /* Update text according to new primary shortcut: */
     updateText();
 }
 
 void UIAction::showShortcut()
 {
     m_fShortcutHidden = false;
-    if (!m_shortcut.isEmpty())
-        QAction::setShortcut(m_shortcut);
+    if (!m_shortcuts.isEmpty())
+        QAction::setShortcuts(m_shortcuts);
 }
 
 void UIAction::hideShortcut()
 {
     m_fShortcutHidden = true;
     if (!shortcut().isEmpty())
-        QAction::setShortcut(QKeySequence());
+        QAction::setShortcuts(QList<QKeySequence>());
 }
 
 QString UIAction::nameInMenu() const
@@ -214,7 +214,7 @@ void UIAction::updateText()
         {
             if (machineMenuAction())
                 setText(uiCommon().insertKeyToActionText(nameInMenu(),
-                                                           gShortcutPool->shortcut(actionPool(), this).toString()));
+                                                         gShortcutPool->shortcut(actionPool(), this).primaryToPortableText()));
             else
                 setText(nameInMenu());
             break;
@@ -2577,7 +2577,7 @@ bool UIActionPool::processHotKey(const QKeySequence &key)
         if (pAction->type() == UIActionType_Menu)
             continue;
         /* Get the hot-key of the current action: */
-        const QString strHotKey = gShortcutPool->shortcut(this, pAction).toString();
+        const QString strHotKey = gShortcutPool->shortcut(this, pAction).primaryToPortableText();
         if (pAction->isEnabled() && pAction->isAllowed() && !strHotKey.isEmpty())
         {
             if (key.matches(QKeySequence(strHotKey)) == QKeySequence::ExactMatch)

@@ -53,7 +53,7 @@ bool UIMachineLogicScale::checkAvailability()
     const UIShortcut &shortcut =
             gShortcutPool->shortcut(actionPool()->shortcutsExtraDataID(),
                                     actionPool()->action(UIActionIndexRT_M_View_T_Scale)->shortcutExtraDataID());
-    const QString strHotKey = QString("Host+%1").arg(shortcut.toString());
+    const QString strHotKey = QString("Host+%1").arg(shortcut.primaryToPortableText());
     if (!msgCenter().confirmGoingScale(strHotKey))
         return false;
 

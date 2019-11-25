@@ -926,7 +926,7 @@ void UIGlobalSettingsInput::loadToCacheFrom(QVariant &data)
                                                       strShortcutKey,
                                                       shortcut.scope(),
                                                       UICommon::removeAccelMark(shortcut.description()),
-                                                      shortcut.sequence().toString(QKeySequence::NativeText),
+                                                      shortcut.primaryToNativeText(),
                                                       shortcut.defaultSequence().toString(QKeySequence::NativeText));
     }
     oldInputData.setAutoCapture(gEDataManager->autoCaptureEnabled());

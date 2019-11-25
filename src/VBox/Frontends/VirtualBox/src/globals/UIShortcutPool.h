@@ -44,21 +44,21 @@ public:
     UIShortcut()
         : m_strScope(QString())
         , m_strDescription(QString())
-        , m_sequence(QKeySequence())
+        , m_sequences(QList<QKeySequence>())
         , m_defaultSequence(QKeySequence())
     {}
     /** Constructs shortcut descriptor.
-      * @param  strScope         Brings the shortcut scope.
-      * @param  strDescription   Brings the shortcut description.
-      * @param  sequence         Brings the shortcut sequence.
-      * @param  defaultSequence  Brings the default shortcut sequence. */
+      * @param  strScope          Brings the shortcut scope.
+      * @param  strDescription    Brings the shortcut description.
+      * @param  sequences         Brings the shortcut sequences.
+      * @param  defaultSequence   Brings the default shortcut sequence. */
     UIShortcut(const QString &strScope,
                const QString &strDescription,
-               const QKeySequence &sequence,
+               const QList<QKeySequence> &sequences,
                const QKeySequence &defaultSequence)
         : m_strScope(strScope)
         , m_strDescription(strDescription)
-        , m_sequence(sequence)
+        , m_sequences(sequences)
         , m_defaultSequence(defaultSequence)
     {}
 
@@ -72,29 +72,31 @@ public:
     /** Returns the shortcut description. */
     const QString &description() const;
 
-    /** Defines the shortcut @a sequence. */
-    void setSequence(const QKeySequence &sequence);
-    /** Returns the shortcut sequence. */
-    const QKeySequence &sequence() const;
+    /** Defines the shortcut @a sequences. */
+    void setSequences(const QList<QKeySequence> &sequences);
+    /** Returns the shortcut sequences. */
+    const QList<QKeySequence> &sequences() const;
 
     /** Defines the default shortcut @a sequence. */
     void setDefaultSequence(const QKeySequence &sequence);
     /** Returns the default shortcut sequence. */
     const QKeySequence &defaultSequence() const;
 
-    /** Converts shortcut sequence to string. */
-    QString toString() const;
+    /** Converts primary shortcut sequence to native text. */
+    QString primaryToNativeText() const;
+    /** Converts primary shortcut sequence to portable text. */
+    QString primaryToPortableText() const;
 
 private:
 
     /** Holds the shortcut scope. */
-    QString      m_strScope;
+    QString              m_strScope;
     /** Holds the shortcut description. */
-    QString      m_strDescription;
-    /** Holds the shortcut sequence. */
-    QKeySequence m_sequence;
+    QString              m_strDescription;
+    /** Holds the shortcut sequences. */
+    QList<QKeySequence>  m_sequences;
     /** Holds the default shortcut sequence. */
-    QKeySequence m_defaultSequence;
+    QKeySequence         m_defaultSequence;
 };
 
 

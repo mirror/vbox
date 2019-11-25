@@ -247,8 +247,8 @@ public:
     /** Returns default keyboard shortcut for this action. */
     virtual QKeySequence defaultShortcut(UIActionPoolType) const { return QKeySequence(); }
 
-    /** Defines current keyboard shortcut for this action. */
-    void setShortcut(const QKeySequence &shortcut);
+    /** Defines current keyboard shortcuts for this action. */
+    void setShortcuts(const QList<QKeySequence> &shortcuts);
     /** Make action show keyboard shortcut. */
     void showShortcut();
     /** Make action hide keyboard shortcut. */
@@ -291,17 +291,17 @@ private:
     UIActionPoolType  m_enmActionPoolType;
 
     /** Holds current action state. */
-    int             m_iState;
+    int                  m_iState;
     /** Holds action icons. */
-    QVector<QIcon>  m_icons;
+    QVector<QIcon>       m_icons;
     /** Holds the action name. */
-    QString         m_strName;
+    QString              m_strName;
     /** Holds the action shortcut scope. */
-    QString         m_strShortcutScope;
-    /** Holds the action shortcut. */
-    QKeySequence    m_shortcut;
+    QString              m_strShortcutScope;
+    /** Holds the action shortcuts. */
+    QList<QKeySequence>  m_shortcuts;
     /** Holds whether action shortcut hidden. */
-    bool            m_fShortcutHidden;
+    bool                 m_fShortcutHidden;
 };
 
 

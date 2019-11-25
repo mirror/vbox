@@ -65,7 +65,8 @@ bool UIKeyboardHandlerNormal::eventFilter(QObject *pWatchedObject, QEvent *pEven
                 /* Get key-event: */
                 QKeyEvent *pKeyEvent = static_cast<QKeyEvent*>(pEvent);
                 /* Process Host+Home as menu-bar activator: */
-                if (isHostKeyPressed() && QKeySequence(pKeyEvent->key()) == gShortcutPool->shortcut(GUI_Input_MachineShortcuts, QString("PopupMenu")).sequence())
+                if (   isHostKeyPressed()
+                    && gShortcutPool->shortcut(GUI_Input_MachineShortcuts, QString("PopupMenu")).sequences().contains(QKeySequence(pKeyEvent->key())))
                 {
                     /* Trying to get menu-bar: */
                     QMenuBar *pMenuBar = qobject_cast<QMainWindow*>(m_windows[uScreenId])->menuBar();

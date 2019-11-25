@@ -77,7 +77,7 @@ bool UIMachineLogicFullscreen::checkAvailability()
     const UIShortcut &shortcut =
             gShortcutPool->shortcut(actionPool()->shortcutsExtraDataID(),
                                     actionPool()->action(UIActionIndexRT_M_View_T_Fullscreen)->shortcutExtraDataID());
-    const QString strHotKey = QString("Host+%1").arg(shortcut.toString());
+    const QString strHotKey = QString("Host+%1").arg(shortcut.primaryToPortableText());
     if (!msgCenter().confirmGoingFullscreen(strHotKey))
         return false;
 

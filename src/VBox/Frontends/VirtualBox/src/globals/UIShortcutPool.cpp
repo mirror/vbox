@@ -50,14 +50,14 @@ const QString &UIShortcut::description() const
     return m_strDescription;
 }
 
-void UIShortcut::setSequence(const QKeySequence &sequence)
+void UIShortcut::setSequences(const QList<QKeySequence> &sequences)
 {
-    m_sequence = sequence;
+    m_sequences = sequences;
 }
 
-const QKeySequence &UIShortcut::sequence() const
+const QList<QKeySequence> &UIShortcut::sequences() const
 {
-    return m_sequence;
+    return m_sequences;
 }
 
 void UIShortcut::setDefaultSequence(const QKeySequence &defaultSequence)
@@ -70,9 +70,14 @@ const QKeySequence &UIShortcut::defaultSequence() const
     return m_defaultSequence;
 }
 
-QString UIShortcut::toString() const
+QString UIShortcut::primaryToNativeText() const
 {
-    return m_sequence.toString();
+    return m_sequences.isEmpty() ? QString() : m_sequences.first().toString(QKeySequence::NativeText);
+}
+
+QString UIShortcut::primaryToPortableText() const
+{
+    return m_sequences.isEmpty() ? QString() : m_sequences.first().toString(QKeySequence::PortableText);
 }
 
 
@@ -123,8 +128,9 @@ UIShortcut &UIShortcutPool::shortcut(UIActionPool *pActionPool, UIAction *pActio
     UIShortcut &newShortcut = m_shortcuts[strShortcutKey];
     newShortcut.setScope(pAction->shortcutScope());
     newShortcut.setDescription(pAction->name());
-    newShortcut.setSequence(pAction->defaultShortcut(pActionPool->type()));
-    newShortcut.setDefaultSequence(pAction->defaultShortcut(pActionPool->type()));
+    const QKeySequence &defaultSequence = pAction->defaultShortcut(pActionPool->type());
+    newShortcut.setSequences(QList<QKeySequence>() << defaultSequence);
+    newShortcut.setDefaultSequence(defaultSequence);
     return newShortcut;
 }
 
@@ -143,8 +149,8 @@ void UIShortcutPool::setOverrides(const QMap<QString, QString> &overrides)
         /* Make no changes if there is no such shortcut: */
         if (!m_shortcuts.contains(strShortcutKey))
             continue;
-        /* Assign overridden sequence to the shortcut: */
-        m_shortcuts[strShortcutKey].setSequence(overrides[strShortcutKey]);
+        /* Assign overridden sequences to the shortcut: */
+        m_shortcuts[strShortcutKey].setSequences(QList<QKeySequence>() << overrides[strShortcutKey]);
     }
     /* Save overrides: */
     saveOverrides();
@@ -171,10 +177,10 @@ void UIShortcutPool::applyShortcuts(UIActionPool *pActionPool)
             existingShortcut.setScope(pAction->shortcutScope());
             /* Copy the description from the action to the shortcut: */
             existingShortcut.setDescription(pAction->name());
-            /* Copy the sequence from the shortcut to the action: */
-            pAction->setShortcut(existingShortcut.sequence());
+            /* Copy the sequences from the shortcut to the action: */
+            pAction->setShortcuts(existingShortcut.sequences());
             pAction->retranslateUi();
-            /* Copy the default sequence from the action to the shortcut: */
+            /* Copy default sequence from the action to the shortcut: */
             existingShortcut.setDefaultSequence(pAction->defaultShortcut(pActionPool->type()));
         }
         /* If shortcut key is NOT known yet: */
@@ -182,10 +188,11 @@ void UIShortcutPool::applyShortcuts(UIActionPool *pActionPool)
         {
             /* Create corresponding shortcut: */
             UIShortcut &newShortcut = m_shortcuts[strShortcutKey];
-            /* Copy the action's default to both the shortcut & the action: */
-            newShortcut.setSequence(pAction->defaultShortcut(pActionPool->type()));
-            newShortcut.setDefaultSequence(pAction->defaultShortcut(pActionPool->type()));
-            pAction->setShortcut(newShortcut.sequence());
+            /* Copy the action's default sequence to both the shortcut & the action: */
+            const QKeySequence &defaultSequence = pAction->defaultShortcut(pActionPool->type());
+            newShortcut.setSequences(QList<QKeySequence>() << defaultSequence);
+            newShortcut.setDefaultSequence(defaultSequence);
+            pAction->setShortcuts(newShortcut.sequences());
             pAction->retranslateUi();
             /* Copy the description from the action to the shortcut: */
             newShortcut.setScope(pAction->shortcutScope());
@@ -290,7 +297,8 @@ void UIShortcutPool::loadDefaultsFor(const QString &strPoolExtraDataID)
         m_shortcuts.insert(s_strShortcutKeyTemplateRuntime.arg("PopupMenu"),
                            UIShortcut(QString(),
                                       QApplication::translate("UIActionPool", "Popup Menu"),
-                                      QString("Home"), QString("Home")));
+                                      QList<QKeySequence>() << QString("Home"),
+                                      QString("Home")));
     }
 }
 
@@ -327,20 +335,24 @@ void UIShortcutPool::loadOverridesFor(const QString &strPoolExtraDataID)
         const QString strShortcutKey(strShortcutKeyTemplate.arg(strShortcutExtraDataID));
         /* Modify map with composed key/value: */
         if (!m_shortcuts.contains(strShortcutKey))
-            m_shortcuts.insert(strShortcutKey, UIShortcut(QString(), QString(), strShortcutSequence, QString()));
+            m_shortcuts.insert(strShortcutKey,
+                               UIShortcut(QString(),
+                                          QString(),
+                                          QList<QKeySequence>() << strShortcutSequence,
+                                          QString()));
         else
         {
             /* Get corresponding value: */
             UIShortcut &shortcut = m_shortcuts[strShortcutKey];
             /* Check if corresponding shortcut overridden by value: */
-            if (shortcut.toString().compare(strShortcutSequence, Qt::CaseInsensitive) != 0)
+            if (shortcut.primaryToPortableText().compare(strShortcutSequence, Qt::CaseInsensitive) != 0)
             {
                 /* Shortcut unassigned? */
                 if (strShortcutSequence.compare("None", Qt::CaseInsensitive) == 0)
-                    shortcut.setSequence(QKeySequence());
+                    shortcut.setSequences(QList<QKeySequence>());
                 /* Or reassigned? */
                 else
-                    shortcut.setSequence(QKeySequence(strShortcutSequence));
+                    shortcut.setSequences(QList<QKeySequence>() << strShortcutSequence);
             }
         }
     }
@@ -369,11 +381,11 @@ void UIShortcutPool::saveOverridesFor(const QString &strPoolExtraDataID)
         /* Get corresponding shortcut: */
         const UIShortcut &shortcut = m_shortcuts[strShortcutKey];
         /* Check if the sequence for that shortcut differs from default: */
-        if (shortcut.sequence() == shortcut.defaultSequence())
+        if (shortcut.sequences().contains(shortcut.defaultSequence()))
             continue;
         /* Add the shortcut sequence into overrides list: */
         overrides << QString("%1=%2").arg(QString(strShortcutKey).remove(strShortcutPrefix),
-                                          shortcut.sequence().toString());
+                                          shortcut.primaryToPortableText());
     }
     /* Save overrides into the extra-data: */
     uiCommon().virtualBox().SetExtraDataStringList(strPoolExtraDataID, overrides);
