@@ -744,6 +744,37 @@ void PS2CmnInsertQueue(GeneriQ *pQ, uint8_t val)
     LogRelFlowFunc(("inserted 0x%02X into queue %p\n", val, pQ));
 }
 
+/**
+ * Retrieve a byte from a queue.
+ *
+ * @param   pQ                  Pointer to the queue.
+ * @param   pVal                Pointer to storage for the byte.
+ *
+ * @retval  VINF_TRY_AGAIN if queue is empty,
+ * @retval  VINF_SUCCESS if a byte was read.
+ */
+int PS2CmnRemoveQueue(GeneriQ *pQ, uint8_t *pVal)
+{
+    int rc;
+
+    Assert(pVal);
+    if (pQ->cUsed)
+    {
+        *pVal = pQ->abQueue[pQ->rpos];
+        if (++pQ->rpos == pQ->cSize)
+            pQ->rpos = 0;   /* Roll over. */
+        --pQ->cUsed;
+        LogFlowFunc(("removed 0x%02X from queue %p\n", *pVal, pQ));
+        rc = VINF_SUCCESS;
+    }
+    else
+    {
+        LogFlowFunc(("queue %p empty\n", pQ));
+        rc = VINF_TRY_AGAIN;
+    }
+    return rc;
+}
+
 #ifdef IN_RING3
 
 /**
@@ -777,7 +808,7 @@ void PS2CmnR3SaveQueue(PCPDMDEVHLPR3 pHlp, PSSMHANDLE pSSM, GeneriQ *pQ)
  * @param   pSSM                SSM handle to read the state from.
  * @param   pQ                  Pointer to the queue.
  *
- * @return  int                 VBox status/error code.
+ * @returns VBox status/error code.
  */
 int PS2CmnR3LoadQueue(PCPDMDEVHLPR3 pHlp, PSSMHANDLE pSSM, GeneriQ *pQ)
 {

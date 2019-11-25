@@ -449,34 +449,7 @@ static uint32_t ps2R3kInQueue(GeneriQ *pQ)
 
 #endif /* IN_RING3 */
 
-/**
- * Retrieve a byte from a queue.
- *
- * @param   pQ                  Pointer to the queue.
- * @param   pVal                Pointer to storage for the byte.
- *
- * @return  int                 VINF_TRY_AGAIN if queue is empty,
- *                              VINF_SUCCESS if a byte was read.
- */
-static int ps2kRemoveQueue(GeneriQ *pQ, uint8_t *pVal)
-{
-    int     rc = VINF_TRY_AGAIN;
-
-    Assert(pVal);
-    if (pQ->cUsed)
-    {
-        *pVal = pQ->abQueue[pQ->rpos];
-        if (++pQ->rpos == pQ->cSize)
-            pQ->rpos = 0;   /* Roll over. */
-        --pQ->cUsed;
-        rc = VINF_SUCCESS;
-        LogFlowFunc(("removed 0x%02X from queue %p\n", *pVal, pQ));
-    } else
-        LogFlowFunc(("queue %p empty\n", pQ));
-    return rc;
-}
-
-/* Clears the currently active typematic key, if any. */
+/** Clears the currently active typematic key, if any. */
 static void ps2kStopTypematicRepeat(PPS2K pThis)
 {
     if (pThis->u32TypematicKey)
@@ -488,7 +461,7 @@ static void ps2kStopTypematicRepeat(PPS2K pThis)
     }
 }
 
-/* Convert encoded typematic value to milliseconds. Note that the values are rated
+/** Convert encoded typematic value to milliseconds. Note that the values are rated
  * with +/- 20% accuracy, so there's no need for high precision.
  */
 static void ps2kSetupTypematic(PPS2K pThis, uint8_t val)
@@ -667,11 +640,11 @@ int PS2KByteFromKbd(PPS2K pThis, uint8_t *pb)
      * blocked if a command is currently in progress, even if
      * the command queue is empty.
      */
-    rc = ps2kRemoveQueue((GeneriQ *)&pThis->cmdQ, pb);
+    rc = PS2CmnRemoveQueue((GeneriQ *)&pThis->cmdQ, pb);
     if (rc != VINF_SUCCESS && !pThis->u8CurrCmd && pThis->fScanning)
         if (!pThis->fThrottleActive)
         {
-            rc = ps2kRemoveQueue((GeneriQ *)&pThis->keyQ, pb);
+            rc = PS2CmnRemoveQueue((GeneriQ *)&pThis->keyQ, pb);
             if (pThis->fThrottleEnabled) {
                 pThis->fThrottleActive = true;
                 TMTimerSetMillies(pThis->CTX_SUFF(pThrottleTimer), KBD_THROTTLE_DELAY);

@@ -41,6 +41,7 @@ typedef struct KBDSTATE *PKBDSTATE;
 DEF_PS2Q_TYPE(GeneriQ, 1);
 void PS2CmnClearQueue(GeneriQ *pQ);
 void PS2CmnInsertQueue(GeneriQ *pQ, uint8_t val);
+int  PS2CmnRemoveQueue(GeneriQ *pQ, uint8_t *pVal);
 void PS2CmnR3SaveQueue(PCPDMDEVHLPR3 pHlp, PSSMHANDLE pSSM, GeneriQ *pQ);
 int  PS2CmnR3LoadQueue(PCPDMDEVHLPR3 pHlp, PSSMHANDLE pSSM, GeneriQ *pQ);
 

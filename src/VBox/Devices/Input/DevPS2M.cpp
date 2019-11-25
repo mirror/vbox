@@ -232,33 +232,6 @@ static void ps2mR3Reset(PPS2M pThis)
 
 #endif /* IN_RING3 */
 
-/**
- * Retrieve a byte from a queue.
- *
- * @param   pQ                  Pointer to the queue.
- * @param   pVal                Pointer to storage for the byte.
- *
- * @return  int                 VINF_TRY_AGAIN if queue is empty,
- *                              VINF_SUCCESS if a byte was read.
- */
-static int ps2kRemoveQueue(GeneriQ *pQ, uint8_t *pVal)
-{
-    int     rc = VINF_TRY_AGAIN;
-
-    Assert(pVal);
-    if (pQ->cUsed)
-    {
-        *pVal = pQ->abQueue[pQ->rpos];
-        if (++pQ->rpos == pQ->cSize)
-            pQ->rpos = 0;   /* Roll over. */
-        --pQ->cUsed;
-        rc = VINF_SUCCESS;
-        LogFlowFunc(("removed 0x%02X from queue %p\n", *pVal, pQ));
-    } else
-        LogFlowFunc(("queue %p empty\n", pQ));
-    return rc;
-}
-
 static void ps2mSetRate(PPS2M pThis, uint8_t rate)
 {
     Assert(rate);
@@ -682,9 +655,9 @@ int PS2MByteFromAux(PPS2M pThis, uint8_t *pb)
      * the command queue is empty.
      */
     /// @todo Probably should flush/not fill queue if stream mode reporting disabled?!
-    rc = ps2kRemoveQueue((GeneriQ *)&pThis->cmdQ, pb);
+    rc = PS2CmnRemoveQueue((GeneriQ *)&pThis->cmdQ, pb);
     if (rc != VINF_SUCCESS && !pThis->u8CurrCmd && (pThis->u8State & AUX_STATE_ENABLED))
-        rc = ps2kRemoveQueue((GeneriQ *)&pThis->evtQ, pb);
+        rc = PS2CmnRemoveQueue((GeneriQ *)&pThis->evtQ, pb);
 
     LogFlowFunc(("mouse sends 0x%02x (%svalid data)\n", *pb, rc == VINF_SUCCESS ? "" : "not "));
 
