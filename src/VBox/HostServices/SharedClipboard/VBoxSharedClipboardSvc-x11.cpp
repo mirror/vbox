@@ -28,6 +28,7 @@
 #include <iprt/string.h>
 
 #include <VBox/GuestHost/SharedClipboard.h>
+#include <VBox/GuestHost/SharedClipboard-x11.h>
 #include <VBox/HostServices/VBoxClipboardSvc.h>
 #include <iprt/errcore.h>
 
@@ -46,8 +47,8 @@ struct _SHCLCONTEXT
     /** This mutex is grabbed during any critical operations on the clipboard
      * which might clash with others. */
     RTCRITSECT           CritSect;
-    /** Pointer to the opaque X11 backend structure */
-    CLIPBACKEND         *pBackend;
+    /** X11 context data. */
+    SHCLX11CTX           X11;
     /** Pointer to the VBox host client data structure. */
     PSHCLCLIENT          pClient;
     /** We set this when we start shutting down as a hint not to post any new
@@ -73,33 +74,30 @@ void ShClSvcImplDestroy(void)
  */
 int ShClSvcImplConnect(PSHCLCLIENT pClient, bool fHeadless)
 {
-    int rc = VINF_SUCCESS;
+    int rc;
 
     PSHCLCONTEXT pCtx = (PSHCLCONTEXT)RTMemAllocZ(sizeof(SHCLCONTEXT));
     if (pCtx)
     {
-        RTCritSectInit(&pCtx->CritSect);
-        CLIPBACKEND *pBackend = ClipConstructX11(pCtx, fHeadless);
-        if (!pBackend)
+        rc = RTCritSectInit(&pCtx->CritSect);
+        if (RT_SUCCESS(rc))
         {
-            rc = VERR_NO_MEMORY;
+            rc = ShClX11Init(&pCtx->X11, pCtx, fHeadless);
+            if (RT_SUCCESS(rc))
+            {
+                pClient->State.pCtx = pCtx;
+                pCtx->pClient = pClient;
+
+                rc = ShClX11ThreadStart(&pCtx->X11, true /* grab shared clipboard */);
+                if (RT_FAILURE(rc))
+                    ShClX11Destroy(&pCtx->X11);
+            }
+
+            if (RT_FAILURE(rc))
+                RTCritSectDelete(&pCtx->CritSect);
         }
         else
-        {
-            pCtx->pBackend = pBackend;
-            pClient->State.pCtx = pCtx;
-            pCtx->pClient = pClient;
-
-            rc = ClipStartX11(pBackend, true /* grab shared clipboard */);
-            if (RT_FAILURE(rc))
-                ClipDestructX11(pBackend);
-        }
-
-        if (RT_FAILURE(rc))
-        {
-            RTCritSectDelete(&pCtx->CritSect);
             RTMemFree(pCtx);
-        }
     }
     else
         rc = VERR_NO_MEMORY;
@@ -139,17 +137,15 @@ int ShClSvcImplDisconnect(PSHCLCLIENT pClient)
      * immediately. */
     pCtx->fShuttingDown = true;
 
-    int rc = ClipStopX11(pCtx->pBackend);
+    int rc = ShClX11ThreadStop(&pCtx->X11);
     /** @todo handle this slightly more reasonably, or be really sure
      *        it won't go wrong. */
     AssertRC(rc);
 
-    if (RT_SUCCESS(rc))  /* And if not? */
-    {
-        ClipDestructX11(pCtx->pBackend);
-        RTCritSectDelete(&pCtx->CritSect);
-        RTMemFree(pCtx);
-    }
+    ShClX11Destroy(&pCtx->X11);
+    RTCritSectDelete(&pCtx->CritSect);
+
+    RTMemFree(pCtx);
 
     LogFlowFuncLeaveRC(rc);
     return rc;
@@ -160,7 +156,7 @@ int ShClSvcImplFormatAnnounce(PSHCLCLIENT pClient, PSHCLCLIENTCMDCTX pCmdCtx,
 {
     RT_NOREF(pCmdCtx);
 
-    int rc = ClipAnnounceFormatToX11(pClient->State.pCtx->pBackend, pFormats->Formats);
+    int rc = ShClX11ReportFormatsToX11(&pClient->State.pCtx->X11, pFormats->Formats);
 
     LogFlowFuncLeaveRC(rc);
     return rc;
@@ -208,7 +204,7 @@ int ShClSvcImplReadData(PSHCLCLIENT pClient,
         rc = ShClEventRegister(&pClient->Events, uEvent);
         if (RT_SUCCESS(rc))
         {
-            rc = ClipReadDataFromX11(pClient->State.pCtx->pBackend, pData->uFormat, pReq);
+            rc = ShClX11ReadDataFromX11(&pClient->State.pCtx->X11, pData->uFormat, pReq);
             if (RT_SUCCESS(rc))
             {
                 PSHCLEVENTPAYLOAD pPayload;
@@ -256,7 +252,7 @@ int ShClSvcImplWriteData(PSHCLCLIENT pClient,
  * @param  pCtx                 Opaque context pointer for the glue code.
  * @param  Formats              The formats available.
  */
-DECLCALLBACK(void) ClipReportX11FormatsCallback(PSHCLCONTEXT pCtx, uint32_t Formats)
+DECLCALLBACK(void) ShClX11ReportFormatsCallback(PSHCLCONTEXT pCtx, uint32_t Formats)
 {
     LogFlowFunc(("pCtx=%p, Formats=%02X\n", pCtx, Formats));
 
@@ -288,7 +284,7 @@ DECLCALLBACK(void) ClipReportX11FormatsCallback(PSHCLCONTEXT pCtx, uint32_t Form
  *
  * @todo   Change this to deal with the buffer issues rather than offloading them onto the caller.
  */
-DECLCALLBACK(void) ClipRequestFromX11CompleteCallback(PSHCLCONTEXT pCtx, int rcCompletion,
+DECLCALLBACK(void) ShClRequestFromX11CompleteCallback(PSHCLCONTEXT pCtx, int rcCompletion,
                                                       CLIPREADCBREQ *pReq, void *pv, uint32_t cb)
 {
     RT_NOREF(rcCompletion);
@@ -327,7 +323,7 @@ DECLCALLBACK(void) ClipRequestFromX11CompleteCallback(PSHCLCONTEXT pCtx, int rcC
  * @param  pcb       On success, this contains the number of bytes of data
  *                   returned.
  */
-DECLCALLBACK(int) ClipRequestDataForX11Callback(PSHCLCONTEXT pCtx, SHCLFORMAT Format, void **ppv, uint32_t *pcb)
+DECLCALLBACK(int) ShClX11RequestDataForX11Callback(PSHCLCONTEXT pCtx, SHCLFORMAT Format, void **ppv, uint32_t *pcb)
 {
     LogFlowFunc(("pCtx=%p, Format=0x%x\n", pCtx, Format));
 
@@ -413,7 +409,7 @@ int ShClSvcImplTransferGetRoots(PSHCLCLIENT pClient, PSHCLTRANSFER pTransfer)
         {
             pReq->uEvent = uEvent;
 
-            rc = ClipReadDataFromX11(pClient->State.pCtx->pBackend, VBOX_SHCL_FMT_URI_LIST, pReq);
+            rc = ShClX11ReadDataFromX11(&pClient->State.pCtx->X11, VBOX_SHCL_FMT_URI_LIST, pReq);
             if (RT_SUCCESS(rc))
             {
                 /* X supplies the data asynchronously, so we need to wait for data to arrive first. */

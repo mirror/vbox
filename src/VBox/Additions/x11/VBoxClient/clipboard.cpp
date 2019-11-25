@@ -32,6 +32,7 @@
 #include <VBox/VBoxGuestLib.h>
 #include <VBox/HostServices/VBoxClipboardSvc.h>
 #include <VBox/GuestHost/SharedClipboard.h>
+#include <VBox/GuestHost/SharedClipboard-x11.h>
 
 #include "VBoxClient.h"
 
@@ -51,8 +52,8 @@ struct _SHCLCONTEXT
     /** Associated transfer data. */
     SHCLTRANSFERCTX  TransferCtx;
 #endif
-    /** Pointer to the X11 clipboard backend. */
-    CLIPBACKEND     *pBackend;
+    /** X11 clipboard context. */
+    SHCLX11CTX       X11;
 };
 
 /** Only one client is supported. There seems to be no need for more clients. */
@@ -70,7 +71,7 @@ static SHCLCONTEXT g_Ctx;
  * @param   pcb                 On success, this contains the number of bytes of data
  *                              returned.
  */
-DECLCALLBACK(int) ClipRequestDataForX11Callback(SHCLCONTEXT *pCtx, SHCLFORMAT Format, void **ppv, uint32_t *pcb)
+DECLCALLBACK(int) ShClX11RequestDataForX11Callback(PSHCLCONTEXT pCtx, SHCLFORMAT Format, void **ppv, uint32_t *pcb)
 {
     RT_NOREF(pCtx);
 
@@ -159,7 +160,7 @@ struct _CLIPREADCBREQ
  * @param pCtx                  Our context information.
  * @param Formats               The formats to report.
  */
-DECLCALLBACK(void) ClipReportX11FormatsCallback(SHCLCONTEXT *pCtx, SHCLFORMATS Formats)
+DECLCALLBACK(void) ShClX11ReportFormatsCallback(PSHCLCONTEXT pCtx, SHCLFORMATS Formats)
 {
     RT_NOREF(pCtx);
 
@@ -186,7 +187,7 @@ DECLCALLBACK(void) ClipReportX11FormatsCallback(SHCLCONTEXT *pCtx, SHCLFORMATS F
  * @param  pv                   The clipboard data returned from X11 if the request succeeded (see @a rc).
  * @param  cb                   The size of the data in @a pv.
  */
-DECLCALLBACK(void) ClipRequestFromX11CompleteCallback(SHCLCONTEXT *pCtx, int rc, CLIPREADCBREQ *pReq, void *pv, uint32_t cb)
+DECLCALLBACK(void) ShClRequestFromX11CompleteCallback(PSHCLCONTEXT pCtx, int rc, CLIPREADCBREQ *pReq, void *pv, uint32_t cb)
 {
     RT_NOREF(pCtx);
 
@@ -220,12 +221,10 @@ static int vboxClipboardConnect(void)
 {
     LogFlowFuncEnter();
 
-    int rc;
-
-    g_Ctx.pBackend = ClipConstructX11(&g_Ctx, false);
-    if (g_Ctx.pBackend)
+    int rc = ShClX11Init(&g_Ctx.X11, &g_Ctx, false /* fHeadless */);
+    if (RT_SUCCESS(rc))
     {
-        rc = ClipStartX11(g_Ctx.pBackend, false /* grab */);
+        rc = ShClX11ThreadStart(&g_Ctx.X11, false /* grab */);
         if (RT_SUCCESS(rc))
         {
             rc = VbglR3ClipboardConnectEx(&g_Ctx.CmdCtx);
@@ -234,7 +233,7 @@ static int vboxClipboardConnect(void)
                 rc = ShClTransferCtxInit(&g_Ctx.TransferCtx);
 #endif
             if (RT_FAILURE(rc))
-                ClipStopX11(g_Ctx.pBackend);
+                ShClX11ThreadStop(&g_Ctx.X11);
         }
     }
     else
@@ -245,7 +244,7 @@ static int vboxClipboardConnect(void)
         VBClLogError("Error connecting to host service, rc=%Rrc\n", rc);
 
         VbglR3ClipboardDisconnectEx(&g_Ctx.CmdCtx);
-        ClipDestructX11(g_Ctx.pBackend);
+        ShClX11Destroy(&g_Ctx.X11);
     }
 
     LogFlowFuncLeaveRC(rc);
@@ -261,7 +260,7 @@ int vboxClipboardMain(void)
 
     int rc;
 
-    SHCLCONTEXT *pCtx = &g_Ctx;
+    PSHCLCONTEXT pCtx = &g_Ctx;
 
     bool fShutdown = false;
 
@@ -366,7 +365,7 @@ int vboxClipboardMain(void)
             {
                 case VBGLR3CLIPBOARDEVENTTYPE_REPORT_FORMATS:
                 {
-                    ClipAnnounceFormatToX11(g_Ctx.pBackend, pEvent->u.ReportedFormats.Formats);
+                    ShClX11ReportFormatsToX11(&g_Ctx.X11, pEvent->u.ReportedFormats.Formats);
                     break;
                 }
 
@@ -378,7 +377,7 @@ int vboxClipboardMain(void)
                     if (pReq)
                     {
                         pReq->Format = pEvent->u.ReadData.uFmt;
-                        ClipReadDataFromX11(g_Ctx.pBackend, pReq->Format, pReq);
+                        ShClX11ReadDataFromX11(&g_Ctx.X11, pReq->Format, pReq);
                     }
                     else
                         rc = VERR_NO_MEMORY;
