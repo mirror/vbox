@@ -260,6 +260,8 @@ extern uint16_t scsi_cmd_packet(uint16_t device, uint8_t cmdlen, char __far *cmd
                                 uint16_t header, uint32_t length, uint8_t inout, char __far *buffer);
 extern uint16_t ata_cmd_packet(uint16_t device, uint8_t cmdlen, char __far *cmdbuf,
                                uint16_t header, uint32_t length, uint8_t inout, char __far *buffer);
+extern uint16_t virtio_scsi_cmd_packet(uint16_t device, uint8_t cmdlen, char __far *cmdbuf,
+                                       uint16_t skip_b, uint32_t length, uint8_t inout, char __far *buffer);
 
 extern uint16_t ata_soft_reset(uint16_t device);
 

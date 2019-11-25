@@ -104,8 +104,8 @@ typedef struct
  */
 typedef struct
 {
-    /** The descriptor table, using 4 max. */
-    virtio_q_desc_t      aDescTbl[4];
+    /** The descriptor table, using 5 max. */
+    virtio_q_desc_t      aDescTbl[5];
     /** Available ring. */
     virtio_q_avail_t     AvailRing;
     /** Used ring. */
@@ -488,9 +488,11 @@ int virtio_scsi_cmd_data_out(virtio_t __far *virtio, uint8_t idTgt, uint8_t __fa
 }
 
 int virtio_scsi_cmd_data_in(virtio_t __far *virtio, uint8_t idTgt, uint8_t __far *aCDB,
-                            uint8_t cbCDB, uint8_t __far *buffer, uint32_t length)
+                            uint8_t cbCDB, uint8_t __far *buffer, uint32_t length, uint16_t skip_a,
+                            uint16_t skip_b)
 {
     uint16_t idxUsedOld = virtio->Queue.UsedRing.idxNextUsed;
+    uint8_t idxDesc = 0;
 
     _fmemset(&virtio->ScsiReqHdr, 0, sizeof(virtio->ScsiReqHdr));
     _fmemset(&virtio->ScsiReqSts, 0, sizeof(virtio->ScsiReqSts));
@@ -502,24 +504,51 @@ int virtio_scsi_cmd_data_in(virtio_t __far *virtio, uint8_t idTgt, uint8_t __far
     _fmemcpy(&virtio->ScsiReqHdr.abCdb[0], aCDB, cbCDB);
 
     /* Fill in the descriptors. */
-    virtio->Queue.aDescTbl[0].GCPhysBufLow  = virtio_addr_to_phys(&virtio->ScsiReqHdr);
-    virtio->Queue.aDescTbl[0].GCPhysBufHigh = 0;
-    virtio->Queue.aDescTbl[0].cbBuf         = sizeof(virtio->ScsiReqHdr);
-    virtio->Queue.aDescTbl[0].fFlags        = VIRTIO_Q_DESC_F_NEXT;
-    virtio->Queue.aDescTbl[0].idxNext       = 1;
+    virtio->Queue.aDescTbl[idxDesc].GCPhysBufLow  = virtio_addr_to_phys(&virtio->ScsiReqHdr);
+    virtio->Queue.aDescTbl[idxDesc].GCPhysBufHigh = 0;
+    virtio->Queue.aDescTbl[idxDesc].cbBuf         = sizeof(virtio->ScsiReqHdr);
+    virtio->Queue.aDescTbl[idxDesc].fFlags        = VIRTIO_Q_DESC_F_NEXT;
+    virtio->Queue.aDescTbl[idxDesc].idxNext       = 1;
+    idxDesc++;
 
     /* No data out buffer, the status comes right after this in the next descriptor. */
-    virtio->Queue.aDescTbl[1].GCPhysBufLow  = virtio_addr_to_phys(&virtio->ScsiReqSts);
-    virtio->Queue.aDescTbl[1].GCPhysBufHigh = 0;
-    virtio->Queue.aDescTbl[1].cbBuf         = sizeof(virtio->ScsiReqSts);
-    virtio->Queue.aDescTbl[1].fFlags        = VIRTIO_Q_DESC_F_WRITE | VIRTIO_Q_DESC_F_NEXT;
-    virtio->Queue.aDescTbl[1].idxNext       = 2;
+    virtio->Queue.aDescTbl[idxDesc].GCPhysBufLow  = virtio_addr_to_phys(&virtio->ScsiReqSts);
+    virtio->Queue.aDescTbl[idxDesc].GCPhysBufHigh = 0;
+    virtio->Queue.aDescTbl[idxDesc].cbBuf         = sizeof(virtio->ScsiReqSts);
+    virtio->Queue.aDescTbl[idxDesc].fFlags        = VIRTIO_Q_DESC_F_WRITE | VIRTIO_Q_DESC_F_NEXT;
+    virtio->Queue.aDescTbl[idxDesc].idxNext       = 2;
+    idxDesc++;
 
-    virtio->Queue.aDescTbl[2].GCPhysBufLow  = virtio_addr_to_phys(buffer);
-    virtio->Queue.aDescTbl[2].GCPhysBufHigh = 0;
-    virtio->Queue.aDescTbl[2].cbBuf         = length;
-    virtio->Queue.aDescTbl[2].fFlags        = VIRTIO_Q_DESC_F_WRITE; /* End of chain. */
-    virtio->Queue.aDescTbl[2].idxNext       = 0;
+    /* Prepend a sinkhole if data is skipped upfront. */
+    if (skip_b)
+    {
+        virtio->Queue.aDescTbl[idxDesc].GCPhysBufLow  = 0; /* See ahci.c:sink_buf_phys */
+        virtio->Queue.aDescTbl[idxDesc].GCPhysBufHigh = 0;
+        virtio->Queue.aDescTbl[idxDesc].cbBuf         = skip_b;
+        virtio->Queue.aDescTbl[idxDesc].fFlags        = VIRTIO_Q_DESC_F_WRITE | VIRTIO_Q_DESC_F_NEXT;
+        virtio->Queue.aDescTbl[idxDesc].idxNext       = idxDesc + 1;
+        idxDesc++;
+    }
+
+    virtio->Queue.aDescTbl[idxDesc].GCPhysBufLow  = virtio_addr_to_phys(buffer);
+    virtio->Queue.aDescTbl[idxDesc].GCPhysBufHigh = 0;
+    virtio->Queue.aDescTbl[idxDesc].cbBuf         = length;
+    virtio->Queue.aDescTbl[idxDesc].fFlags        = VIRTIO_Q_DESC_F_WRITE; /* End of chain. */
+    virtio->Queue.aDescTbl[idxDesc].idxNext       = skip_a ? idxDesc + 1 : 0;
+    idxDesc++;
+
+    /* Append a sinkhole if data is skipped at the end. */
+    if (skip_a)
+    {
+        virtio->Queue.aDescTbl[idxDesc - 1].fFlags  |= VIRTIO_Q_DESC_F_NEXT;
+        virtio->Queue.aDescTbl[idxDesc - 1].idxNext = idxDesc;
+
+        virtio->Queue.aDescTbl[idxDesc].GCPhysBufLow  = 0; /* See ahci.c:sink_buf_phys */
+        virtio->Queue.aDescTbl[idxDesc].GCPhysBufHigh = 0;
+        virtio->Queue.aDescTbl[idxDesc].cbBuf         = skip_a;
+        virtio->Queue.aDescTbl[idxDesc].fFlags        = VIRTIO_Q_DESC_F_WRITE; /* End of chain. */
+        virtio->Queue.aDescTbl[idxDesc].idxNext       = 0;
+    }
 
     /* Put it into the queue, the index is supposed to be free-running and clipped to the ring size
      * internally. The free running index is what the driver sees. */
@@ -580,7 +609,7 @@ int virtio_scsi_read_sectors(bio_dsk_t __far *bios_dsk)
              count, device_id, bios_dsk->scsidev[device_id].target_id);
 
     rc = virtio_scsi_cmd_data_in(bios_dsk->virtio_seg :> 0, target_id, (void __far *)&cdb, 16,
-                                 bios_dsk->drqp.buffer, (count * 512L));
+                                 bios_dsk->drqp.buffer, (count * 512L), 0, 0);
 
     if (!rc)
     {
@@ -642,7 +671,6 @@ int virtio_scsi_write_sectors(bio_dsk_t __far *bios_dsk)
     return rc;
 }
 
-#if 0
 #define ATA_DATA_OUT     0x02
 
 /**
@@ -652,24 +680,27 @@ int virtio_scsi_write_sectors(bio_dsk_t __far *bios_dsk)
  * @param   device_id   ID of the device to access.
  * @param   cmdlen      Length of the CDB.
  * @param   cmdbuf      The CDB buffer.
- * @param   before      How much to skip before reading into the provided data buffer.
+ * @param   skip_b      How much to skip before reading into the provided data buffer.
  * @param   length      How much to transfer.
  * @param   inout       Read/Write direction indicator.
  * @param   buffer      Data buffer to store the data from the device in.
  */
-uint16_t scsi_cmd_packet(uint16_t device_id, uint8_t cmdlen, char __far *cmdbuf,
-                         uint16_t before, uint32_t length, uint8_t inout, char __far *buffer)
+uint16_t virtio_scsi_cmd_packet(uint16_t device_id, uint8_t cmdlen, char __far *cmdbuf,
+                                uint16_t skip_b, uint32_t length, uint8_t inout, char __far *buffer)
 {
     bio_dsk_t __far *bios_dsk = read_word(0x0040, 0x000E) :> &EbdaData->bdisk;
-    uint32_t        read_len;
-    uint8_t         status, sizes;
-    uint16_t        i;
-    uint16_t        io_base;
+    uint8_t         rc;
     uint8_t         target_id;
 
     /* Data out is currently not supported. */
     if (inout == ATA_DATA_OUT) {
         BX_INFO("%s: DATA_OUT not supported yet\n", __func__);
+        return 1;
+    }
+
+    /* The skip length must be even. */
+    if (skip_b & 1) {
+        DBG_VIRTIO("%s: skip must be even (%04x)\n", __func__, skip_b);
         return 1;
     }
 
@@ -682,71 +713,26 @@ uint16_t scsi_cmd_packet(uint16_t device_id, uint8_t cmdlen, char __far *cmdbuf,
     DBG_VIRTIO("%s: reading %u %u-byte sectors\n", __func__,
                bios_dsk->drqp.nsect, bios_dsk->drqp.sect_sz);
 
-    cmdlen -= 2; /* ATAPI uses 12-byte command packets for a READ 10. */
-
-    io_base   = bios_dsk->scsidev[device_id].io_base;
+    high_bits_save(bios_dsk->virtio_seg :> 0);
     target_id = bios_dsk->scsidev[device_id].target_id;
 
-    /* Wait until the adapter is ready. */
-    do
-        status = inb(io_base + VBSCSI_REGISTER_STATUS);
-    while (status & VBSCSI_BUSY);
+    bios_dsk->drqp.lba     = length << 8;     /// @todo xfer length limit
+    bios_dsk->drqp.buffer  = buffer;
+    bios_dsk->drqp.nsect   = length / bios_dsk->drqp.sect_sz;
 
-    /* On the SCSI level, we have to transfer whole sectors. */
-    /* NB: With proper residual length support, this should not be necessary; we should
-     * be able to avoid transferring the 'after' part of the sector.
-     */
-    read_len = length + before + bios_dsk->drqp.skip_a;
+    DBG_VIRTIO("%s: reading %u bytes, device %d, target %d\n", __func__,
+               length, device_id, bios_dsk->scsidev[device_id].target_id);
 
-    sizes = (((read_len) >> 12) & 0xF0) | cmdlen;
-    outb(io_base + VBSCSI_REGISTER_COMMAND, target_id);                 /* Write the target ID. */
-    outb(io_base + VBSCSI_REGISTER_COMMAND, SCSI_TXDIR_FROM_DEVICE);    /* Write the transfer direction. */
-    outb(io_base + VBSCSI_REGISTER_COMMAND, sizes);                     /* Write the CDB size. */
-    outb(io_base + VBSCSI_REGISTER_COMMAND, read_len);                  /* Write the buffer size. */
-    outb(io_base + VBSCSI_REGISTER_COMMAND, (read_len) >> 8);
-    for (i = 0; i < cmdlen; i++)                                        /* Write the CDB. */
-        outb(io_base + VBSCSI_REGISTER_COMMAND, cmdbuf[i]);
+    rc = virtio_scsi_cmd_data_in(bios_dsk->virtio_seg :> 0, target_id, (void __far *)cmdbuf, cmdlen,
+                                 bios_dsk->drqp.buffer, length, skip_b, bios_dsk->drqp.skip_a);
+    if (!rc)
+        bios_dsk->drqp.trsfbytes = length;
 
-    /* Now wait for the command to complete. */
-    do
-        status = inb(io_base + VBSCSI_REGISTER_STATUS);
-    while (status & VBSCSI_BUSY);
+    DBG_VIRTIO("%s: transferred %u bytes\n", __func__, length);
+    high_bits_restore(bios_dsk->virtio_seg :> 0);
 
-    /* If any error occurred, inform the caller and don't bother reading the data. */
-    if (status & VBSCSI_ERROR) {
-        outb(io_base + VBSCSI_REGISTER_RESET, 0);
-
-        status = inb(io_base + VBSCSI_REGISTER_DEVSTAT);
-        DBG_SCSI("%s: read failed, device status %02X\n", __func__, status);
-        return 3;
-    }
-
-    /* Transfer the data read from the device. */
-
-    if (before)     /* If necessary, throw away data which needs to be skipped. */
-        insb_discard(before, io_base + VBSCSI_REGISTER_DATA_IN);
-
-    bios_dsk->drqp.trsfbytes = length;
-
-    /* The requested length may be exactly 64K or more, which needs
-     * a bit of care when we're using 16-bit 'rep ins'.
-     */
-    while (length > 32768) {
-        DBG_SCSI("%s: reading 32K to %X:%X\n", __func__, FP_SEG(buffer), FP_OFF(buffer));
-        rep_insb(buffer, 32768, io_base + VBSCSI_REGISTER_DATA_IN);
-        length -= 32768;
-        buffer = (FP_SEG(buffer) + (32768 >> 4)) :> FP_OFF(buffer);
-    }
-
-    DBG_SCSI("%s: reading %ld bytes to %X:%X\n", __func__, length, FP_SEG(buffer), FP_OFF(buffer));
-    rep_insb(buffer, length, io_base + VBSCSI_REGISTER_DATA_IN);
-
-    if (bios_dsk->drqp.skip_a)  /* If necessary, throw away more data. */
-        insb_discard(bios_dsk->drqp.skip_a, io_base + VBSCSI_REGISTER_DATA_IN);
-
-    return 0;
+    return rc;
 }
-#endif
 
 static int virtio_scsi_detect_devices(virtio_t __far *virtio)
 {
@@ -770,7 +756,9 @@ static int virtio_scsi_detect_devices(virtio_t __far *virtio)
         aCDB[4] = 5; /* Allocation length. */
         aCDB[5] = 0;
 
-        rc = virtio_scsi_cmd_data_in(virtio, i, aCDB, 6, buffer, 5);
+        _fmemset(buffer, 0, sizeof(buffer));
+
+        rc = virtio_scsi_cmd_data_in(virtio, i, aCDB, 6, buffer, 5, 0, 0);
         if (rc != 0)
             BX_PANIC("%s: SCSI_INQUIRY failed\n", __func__);
 
@@ -797,7 +785,7 @@ static int virtio_scsi_detect_devices(virtio_t __far *virtio)
                 aCDB[1] = SCSI_READ_CAP_16;
                 aCDB[13] = 32; /* Allocation length. */
 
-                rc = virtio_scsi_cmd_data_in(virtio, i, aCDB, 16, buffer, 32);
+                rc = virtio_scsi_cmd_data_in(virtio, i, aCDB, 16, buffer, 32, 0, 0);
                 if (rc != 0)
                     BX_PANIC("%s: SCSI_READ_CAPACITY failed\n", __func__);
 
@@ -921,7 +909,6 @@ static int virtio_scsi_detect_devices(virtio_t __far *virtio)
                 break;
             }
         }
-#if 0
         else if (   ((buffer[0] & 0xe0) == 0)
                  && ((buffer[0] & 0x1f) == 0x05))
         {
@@ -950,7 +937,6 @@ static int virtio_scsi_detect_devices(virtio_t __far *virtio)
 
             devcount_scsi++;
         }
-#endif
         else
             DBG_VIRTIO("%s: No supported device detected at %d\n", __func__, i);
 

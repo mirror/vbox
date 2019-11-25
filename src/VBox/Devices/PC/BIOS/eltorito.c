@@ -120,6 +120,9 @@ cd_pkt_func     pktacc[DSKTYP_CNT] = {
 #ifdef VBOX_WITH_SCSI
     [DSK_TYPE_SCSI]   = { scsi_cmd_packet },
 #endif
+#ifdef VBOX_WITH_VIRTIO_SCSI
+    [DSK_TYPE_VIRTIO_SCSI] = { virtio_scsi_cmd_packet },
+#endif
 };
 
 #if defined(VBOX_WITH_AHCI) || defined(VBOX_WITH_SCSI)
