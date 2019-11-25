@@ -124,44 +124,6 @@ RT_C_DECLS_END
 #define KBD_MODE_RFU            0x80
 
 
-/**
- * The keyboard controller/device state.
- *
- * @note We use the default critical section for serialize data access.
- */
-typedef struct KBDState
-{
-    uint8_t write_cmd; /* if non zero, write data to port 60 is expected */
-    uint8_t status;
-    uint8_t mode;
-    uint8_t dbbout;    /* data buffer byte */
-    /* keyboard state */
-    int32_t translate;
-    int32_t xlat_state;
-
-    /** Pointer to the device instance - RC. */
-    PPDMDEVINSRC                pDevInsRC;
-    /** Pointer to the device instance - R3 . */
-    PPDMDEVINSR3                pDevInsR3;
-    /** Pointer to the device instance. */
-    PPDMDEVINSR0                pDevInsR0;
-
-    /** Keyboard state (implemented in separate PS2K module). */
-#ifdef VBOX_DEVICE_STRUCT_TESTCASE
-    uint8_t                     KbdFiller[PS2K_STRUCT_FILLER];
-#else
-    PS2K                        Kbd;
-#endif
-
-    /** Mouse state (implemented in separate PS2M module). */
-#ifdef VBOX_DEVICE_STRUCT_TESTCASE
-    uint8_t                     AuxFiller[PS2M_STRUCT_FILLER];
-#else
-    PS2M                        Aux;
-#endif
-} KBDState;
-
-#ifndef VBOX_DEVICE_STRUCT_TESTCASE
 
 /* update irq and KBD_STAT_[MOUSE_]OBF */
 static void kbd_update_irq(KBDState *s)
@@ -1116,6 +1078,4 @@ const PDMDEVREG g_DevicePS2KeyboardMouse =
 #endif
     /* .u32VersionEnd = */          PDM_DEVREG_VERSION
 };
-
-#endif /* !VBOX_DEVICE_STRUCT_TESTCASE */
 

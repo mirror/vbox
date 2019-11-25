@@ -57,11 +57,7 @@
 #undef LOG_GROUP
 #include "../Graphics/DevVGA.cpp"
 #undef LOG_GROUP
-#include "../Input/DevPS2.cpp"
-#undef LOG_GROUP
-#include "../Input/DevPS2K.cpp"
-#undef LOG_GROUP
-#include "../Input/DevPS2M.cpp"
+#include "../Input/DevPS2.h"
 #ifdef VBOX_WITH_E1000
 # undef LOG_GROUP
 # include "../Network/DevE1000.cpp"

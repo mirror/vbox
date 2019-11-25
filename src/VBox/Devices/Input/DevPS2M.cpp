@@ -196,154 +196,6 @@
 #define ARSP_RESEND         0xFE    /* Requesting resend. */
 /** @} */
 
-/** Define a simple PS/2 input device queue. */
-#define DEF_PS2Q_TYPE(name, size)   \
-     typedef struct {               \
-        uint32_t    rpos;           \
-        uint32_t    wpos;           \
-        uint32_t    cUsed;          \
-        uint32_t    cSize;          \
-        uint8_t     abQueue[size];  \
-     } name
-
-/* Internal mouse queue sizes. The input queue is relatively large,
- * but the command queue only needs to handle a few bytes.
- */
-#define AUX_EVT_QUEUE_SIZE        256
-#define AUX_CMD_QUEUE_SIZE          8
-
-
-/*********************************************************************************************************************************
-*   Structures and Typedefs                                                                                                      *
-*********************************************************************************************************************************/
-
-DEF_PS2Q_TYPE(AuxEvtQ, AUX_EVT_QUEUE_SIZE);
-DEF_PS2Q_TYPE(AuxCmdQ, AUX_CMD_QUEUE_SIZE);
-#ifndef VBOX_DEVICE_STRUCT_TESTCASE /// @todo hack
-DEF_PS2Q_TYPE(GeneriQ, 1);
-#endif
-
-/* Auxiliary device special modes of operation. */
-typedef enum {
-    AUX_MODE_STD,           /* Standard operation. */
-    AUX_MODE_RESET,         /* Currently in reset. */
-    AUX_MODE_WRAP           /* Wrap mode (echoing input). */
-} PS2M_MODE;
-
-/* Auxiliary device operational state. */
-typedef enum {
-    AUX_STATE_RATE_ERR  = RT_BIT(0),    /* Invalid rate received. */
-    AUX_STATE_RES_ERR   = RT_BIT(1),    /* Invalid resolution received. */
-    AUX_STATE_SCALING   = RT_BIT(4),    /* 2:1 scaling in effect. */
-    AUX_STATE_ENABLED   = RT_BIT(5),    /* Reporting enabled in stream mode. */
-    AUX_STATE_REMOTE    = RT_BIT(6)     /* Remote mode (reports on request). */
-} PS2M_STATE;
-
-/* Externally visible state bits. */
-#define AUX_STATE_EXTERNAL  (AUX_STATE_SCALING | AUX_STATE_ENABLED | AUX_STATE_REMOTE)
-
-/* Protocols supported by the PS/2 mouse. */
-typedef enum {
-    PS2M_PROTO_PS2STD      = 0,  /* Standard PS/2 mouse protocol. */
-    PS2M_PROTO_IMPS2       = 3,  /* IntelliMouse PS/2 protocol. */
-    PS2M_PROTO_IMEX        = 4,  /* IntelliMouse Explorer protocol. */
-    PS2M_PROTO_IMEX_HORZ   = 5   /* IntelliMouse Explorer with horizontal reports. */
-} PS2M_PROTO;
-
-/* Protocol selection 'knock' states. */
-typedef enum {
-    PS2M_KNOCK_INITIAL,
-    PS2M_KNOCK_1ST,
-    PS2M_KNOCK_IMPS2_2ND,
-    PS2M_KNOCK_IMEX_2ND,
-    PS2M_KNOCK_IMEX_HORZ_2ND
-} PS2M_KNOCK_STATE;
-
-/**
- * The PS/2 auxiliary device instance data.
- */
-typedef struct PS2M
-{
-    /** Pointer to parent device (keyboard controller). */
-    R3PTRTYPE(void *)   pParent;
-    /** Operational state. */
-    uint8_t             u8State;
-    /** Configured sampling rate. */
-    uint8_t             u8SampleRate;
-    /** Configured resolution. */
-    uint8_t             u8Resolution;
-    /** Currently processed command (if any). */
-    uint8_t             u8CurrCmd;
-    /** Set if the throttle delay is active. */
-    bool                fThrottleActive;
-    /** Set if the throttle delay is active. */
-    bool                fDelayReset;
-    /** Operational mode. */
-    PS2M_MODE           enmMode;
-    /** Currently used protocol. */
-    PS2M_PROTO          enmProtocol;
-    /** Currently used protocol. */
-    PS2M_KNOCK_STATE    enmKnockState;
-    /** Buffer holding mouse events to be sent to the host. */
-    AuxEvtQ             evtQ;
-    /** Command response queue (priority). */
-    AuxCmdQ             cmdQ;
-    /** Accumulated horizontal movement. */
-    int32_t             iAccumX;
-    /** Accumulated vertical movement. */
-    int32_t             iAccumY;
-    /** Accumulated Z axis (vertical scroll) movement. */
-    int32_t             iAccumZ;
-    /** Accumulated W axis (horizontal scroll) movement. */
-    int32_t             iAccumW;
-    /** Accumulated button presses. */
-    uint32_t            fAccumB;
-    /** Instantaneous button data. */
-    uint32_t            fCurrB;
-    /** Button state last sent to the guest. */
-    uint32_t            fReportedB;
-    /** Throttling delay in milliseconds. */
-    uint32_t            uThrottleDelay;
-
-    /** The device critical section protecting everything - R3 Ptr */
-    R3PTRTYPE(PPDMCRITSECT) pCritSectR3;
-    /** Command delay timer - R3 Ptr. */
-    PTMTIMERR3          pDelayTimerR3;
-    /** Interrupt throttling timer - R3 Ptr. */
-    PTMTIMERR3          pThrottleTimerR3;
-    RTR3PTR             Alignment1;
-
-    /** Command delay timer - RC Ptr. */
-    PTMTIMERRC          pDelayTimerRC;
-    /** Interrupt throttling timer - RC Ptr. */
-    PTMTIMERRC          pThrottleTimerRC;
-
-    /** Command delay timer - R0 Ptr. */
-    PTMTIMERR0          pDelayTimerR0;
-    /** Interrupt throttling timer - R0 Ptr. */
-    PTMTIMERR0          pThrottleTimerR0;
-
-    /**
-     * Mouse port - LUN#1.
-     *
-     * @implements  PDMIBASE
-     * @implements  PDMIMOUSEPORT
-     */
-    struct
-    {
-        /** The base interface for the mouse port. */
-        PDMIBASE                            IBase;
-        /** The keyboard port base interface. */
-        PDMIMOUSEPORT                       IPort;
-
-        /** The base interface of the attached mouse driver. */
-        R3PTRTYPE(PPDMIBASE)                pDrvBase;
-        /** The keyboard interface of the attached mouse driver. */
-        R3PTRTYPE(PPDMIMOUSECONNECTOR)      pDrv;
-    } Mouse;
-} PS2M, *PPS2M;
-
-AssertCompile(PS2M_STRUCT_FILLER >= sizeof(PS2M));
 
 #ifndef VBOX_DEVICE_STRUCT_TESTCASE
 
@@ -354,16 +206,6 @@ AssertCompile(PS2M_STRUCT_FILLER >= sizeof(PS2M));
 #if defined(RT_STRICT) && defined(IN_RING3)
 static void ps2mTestAccumulation(void);
 #endif
-
-
-/*********************************************************************************************************************************
-*   Global Variables                                                                                                             *
-*********************************************************************************************************************************/
-
-
-/*********************************************************************************************************************************
-*   Internal Functions                                                                                                           *
-*********************************************************************************************************************************/
 
 
 /**
@@ -951,7 +793,7 @@ static uint32_t ps2mHaveEvents(PPS2M pThis)
  */
 static DECLCALLBACK(void) ps2mThrottleTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser)
 {
-    RT_NOREF2(pDevIns, pTimer);
+    RT_NOREF(pDevIns, pTimer);
     PPS2M       pThis = (PS2M *)pvUser;
     uint32_t    uHaveEvents;
 
@@ -981,7 +823,7 @@ static DECLCALLBACK(void) ps2mThrottleTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer,
  */
 static DECLCALLBACK(void) ps2mDelayTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser)
 {
-    RT_NOREF2(pDevIns, pTimer);
+    RT_NOREF(pDevIns, pTimer);
     PPS2M pThis = (PS2M *)pvUser;
 
     LogFlowFunc(("Delay timer: cmd %02X\n", pThis->u8CurrCmd));
@@ -1274,17 +1116,17 @@ void PS2MReset(PPS2M pThis)
 
 void PS2MRelocate(PPS2M pThis, RTGCINTPTR offDelta, PPDMDEVINS pDevIns)
 {
-    RT_NOREF2(pDevIns, offDelta);
+    RT_NOREF(pDevIns, offDelta);
     LogFlowFunc(("Relocating PS2M\n"));
     pThis->pDelayTimerRC    = TMTimerRCPtr(pThis->pDelayTimerR3);
     pThis->pThrottleTimerRC = TMTimerRCPtr(pThis->pThrottleTimerR3);
 }
 
-int PS2MConstruct(PPS2M pThis, PPDMDEVINS pDevIns, void *pParent, int iInstance)
+int PS2MConstruct(PPS2M pThis, PPDMDEVINS pDevIns, PKBDSTATE pParent, unsigned iInstance)
 {
-    RT_NOREF1(iInstance);
+    RT_NOREF(iInstance);
 
-    LogFlowFunc(("iInstance=%d\n", iInstance));
+    LogFlowFunc(("iInstance=%u\n", iInstance));
 
 #ifdef RT_STRICT
     ps2mTestAccumulation();

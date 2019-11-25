@@ -85,24 +85,6 @@
 #define KRSP_RESEND         0xFE
 /** @} */
 
-/** @name HID modifier range.
- * @{ */
-#define HID_MODIFIER_FIRST  0xE0
-#define HID_MODIFIER_LAST   0xE8
-/** @} */
-
-/** @name USB HID additional constants
- * @{ */
-/** The highest USB usage code reported by VirtualBox. */
-#define VBOX_USB_MAX_USAGE_CODE     0xE7
-/** The size of an array needed to store all USB usage codes */
-#define VBOX_USB_USAGE_ARRAY_SIZE   (VBOX_USB_MAX_USAGE_CODE + 1)
-/** USB HID Keyboard Usage Page. */
-#define USB_HID_KB_PAGE             7
-/** USB HID Consumer Control Usage Page. */
-#define USB_HID_CC_PAGE             12
-/** @} */
-
 /** @name Modifier key states. Sorted in USB HID code order.
  * @{ */
 #define MOD_LCTRL           0x01
@@ -121,128 +103,10 @@
 /* Input throttling delay in milliseconds. */
 #define KBD_THROTTLE_DELAY  1
 
-/** Define a simple PS/2 input device queue. */
-#define DEF_PS2Q_TYPE(name, size)   \
-     typedef struct {               \
-        uint32_t    rpos;           \
-        uint32_t    wpos;           \
-        uint32_t    cUsed;          \
-        uint32_t    cSize;          \
-        uint8_t     abQueue[size];  \
-     } name
-
-/* Internal keyboard queue sizes. The input queue doesn't need to be
- * extra huge and the command queue only needs to handle a few bytes.
- */
-#define KBD_KEY_QUEUE_SIZE         64
-#define KBD_CMD_QUEUE_SIZE          4
-
 
 /*********************************************************************************************************************************
 *   Structures and Typedefs                                                                                                      *
 *********************************************************************************************************************************/
-
-/** Typematic state. */
-typedef enum {
-    KBD_TMS_IDLE    = 0,    /* No typematic key active. */
-    KBD_TMS_DELAY   = 1,    /* In the initial delay period. */
-    KBD_TMS_REPEAT  = 2,    /* Key repeating at set rate. */
-    KBD_TMS_32BIT_HACK = 0x7fffffff
-} tmatic_state_t;
-
-
-DEF_PS2Q_TYPE(KbdKeyQ, KBD_KEY_QUEUE_SIZE);
-DEF_PS2Q_TYPE(KbdCmdQ, KBD_CMD_QUEUE_SIZE);
-DEF_PS2Q_TYPE(GeneriQ, 1);
-
-/**
- * The PS/2 keyboard instance data.
- */
-typedef struct PS2K
-{
-    /** Pointer to parent device (keyboard controller). */
-    R3PTRTYPE(void *)   pParent;
-    /** Set if keyboard is enabled ('scans' for input). */
-    bool                fScanning;
-    /** Set NumLock is on. */
-    bool                fNumLockOn;
-    /** Selected scan set. */
-    uint8_t             u8ScanSet;
-    /** Modifier key state. */
-    uint8_t             u8Modifiers;
-    /** Currently processed command (if any). */
-    uint8_t             u8CurrCmd;
-    /** Status indicator (LED) state. */
-    uint8_t             u8LEDs;
-    /** Selected typematic delay/rate. */
-    uint8_t             u8TypematicCfg;
-    /** Usage code of current typematic key, if any. */
-    uint32_t            u32TypematicKey;
-    /** Current typematic repeat state. */
-    tmatic_state_t      enmTypematicState;
-    /** Buffer holding scan codes to be sent to the host. */
-    KbdKeyQ             keyQ;
-    /** Command response queue (priority). */
-    KbdCmdQ             cmdQ;
-    /** Currently depressed keys. */
-    uint8_t             abDepressedKeys[VBOX_USB_USAGE_ARRAY_SIZE];
-    /** Typematic delay in milliseconds. */
-    unsigned            uTypematicDelay;
-    /** Typematic repeat period in milliseconds. */
-    unsigned            uTypematicRepeat;
-    /** Set if the throttle delay is currently active. */
-    bool                fThrottleActive;
-    /** Set if the input rate should be throttled. */
-    bool                fThrottleEnabled;
-
-    uint8_t             Alignment0[2];
-
-    /** Command delay timer - RC Ptr. */
-    PTMTIMERRC          pKbdDelayTimerRC;
-    /** Typematic timer - RC Ptr. */
-    PTMTIMERRC          pKbdTypematicTimerRC;
-    /** Input throttle timer - RC Ptr. */
-    PTMTIMERRC          pThrottleTimerRC;
-
-    /** The device critical section protecting everything - R3 Ptr */
-    R3PTRTYPE(PPDMCRITSECT) pCritSectR3;
-
-    /** Command delay timer - R3 Ptr. */
-    PTMTIMERR3          pKbdDelayTimerR3;
-    /** Typematic timer - R3 Ptr. */
-    PTMTIMERR3          pKbdTypematicTimerR3;
-    /** Input throttle timer - R3 Ptr. */
-    PTMTIMERR3          pThrottleTimerR3;
-
-    /** Command delay timer - R0 Ptr. */
-    PTMTIMERR0          pKbdDelayTimerR0;
-    /** Typematic timer - R0 Ptr. */
-    PTMTIMERR0          pKbdTypematicTimerR0;
-    /** Input throttle timer - R0 Ptr. */
-    PTMTIMERR0          pThrottleTimerR0;
-
-    /**
-     * Keyboard port - LUN#0.
-     *
-     * @implements  PDMIBASE
-     * @implements  PDMIKEYBOARDPORT
-     */
-    struct
-    {
-        /** The base interface for the keyboard port. */
-        PDMIBASE                            IBase;
-        /** The keyboard port base interface. */
-        PDMIKEYBOARDPORT                    IPort;
-
-        /** The base interface of the attached keyboard driver. */
-        R3PTRTYPE(PPDMIBASE)                pDrvBase;
-        /** The keyboard interface of the attached keyboard driver. */
-        R3PTRTYPE(PPDMIKEYBOARDCONNECTOR)   pDrv;
-    } Keyboard;
-} PS2K, *PPS2K;
-
-AssertCompile(PS2K_STRUCT_FILLER >= sizeof(PS2K));
-
 #ifndef VBOX_DEVICE_STRUCT_TESTCASE
 
 /* Key type flags. */
@@ -1180,7 +1044,7 @@ static int ps2kProcessKeyEvent(PPS2K pThis, uint32_t u32HidCode, bool fKeyDown)
  */
 static DECLCALLBACK(void) ps2kThrottleTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser)
 {
-    RT_NOREF2(pDevIns, pTimer);
+    RT_NOREF(pDevIns, pTimer);
     PPS2K       pThis = (PS2K *)pvUser;
     unsigned    uHaveData;
 
@@ -1205,7 +1069,7 @@ static DECLCALLBACK(void) ps2kThrottleTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer,
  */
 static DECLCALLBACK(void) ps2kTypematicTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser)
 {
-    RT_NOREF2(pDevIns, pTimer);
+    RT_NOREF(pDevIns, pTimer);
     PPS2K pThis = (PS2K *)pvUser;
     LogFlowFunc(("Typematic state=%d, key %08X\n", pThis->enmTypematicState, pThis->u32TypematicKey));
 
@@ -1230,7 +1094,7 @@ static DECLCALLBACK(void) ps2kTypematicTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer
  */
 static DECLCALLBACK(void) ps2kDelayTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser)
 {
-    RT_NOREF2(pDevIns, pTimer);
+    RT_NOREF(pDevIns, pTimer);
     PPS2K pThis = (PS2K *)pvUser;
 
     LogFlowFunc(("Delay timer: cmd %02X\n", pThis->u8CurrCmd));
@@ -1552,7 +1416,7 @@ int PS2KLoadState(PPS2K pThis, PSSMHANDLE pSSM, uint32_t uVersion)
 
 int PS2KLoadDone(PPS2K pThis, PSSMHANDLE pSSM)
 {
-    RT_NOREF1(pSSM);
+    RT_NOREF(pSSM);
 
     /* This *must* be done after the inital load because it may trigger
      * interrupts and change the interrupt controller state.
@@ -1586,7 +1450,7 @@ void PS2KReset(PPS2K pThis)
 
 void PS2KRelocate(PPS2K pThis, RTGCINTPTR offDelta, PPDMDEVINS pDevIns)
 {
-    RT_NOREF1(pDevIns);
+    RT_NOREF(pDevIns);
     LogFlowFunc(("Relocating PS2K\n"));
     pThis->pKbdDelayTimerRC     = TMTimerRCPtr(pThis->pKbdDelayTimerR3);
     pThis->pKbdTypematicTimerRC = TMTimerRCPtr(pThis->pKbdTypematicTimerR3);
@@ -1594,10 +1458,10 @@ void PS2KRelocate(PPS2K pThis, RTGCINTPTR offDelta, PPDMDEVINS pDevIns)
     NOREF(offDelta);
 }
 
-int PS2KConstruct(PPS2K pThis, PPDMDEVINS pDevIns, void *pParent, int iInstance, PCFGMNODE pCfg)
+int PS2KConstruct(PPS2K pThis, PPDMDEVINS pDevIns, PKBDSTATE pParent, unsigned iInstance, PCFGMNODE pCfg)
 {
-    RT_NOREF2(pDevIns, iInstance);
-    LogFlowFunc(("iInstance=%d\n", iInstance));
+    RT_NOREF(pDevIns, iInstance);
+    LogFlowFunc(("iInstance=%u\n", iInstance));
 
     pThis->pParent = pParent;
 
