@@ -166,7 +166,11 @@ update_tss_binding(struct svga_context *svga,
    svga->state.hw_draw.num_views = svga->curr.num_sampler_views[shader];
 
    /* Polygon stipple */
+#ifndef VBOX_WITH_MESA3D_NINE_SVGA
    if (svga->curr.rast->templ.poly_stipple_enable) {
+#else
+   if (svga->curr.rast && svga->curr.rast->templ.poly_stipple_enable) {
+#endif
       const unsigned unit = svga->state.hw_draw.fs->pstipple_sampler_unit;
       emit_tex_binding_unit(svga, unit,
                             svga->polygon_stipple.sampler,
@@ -257,7 +261,11 @@ svga_reemit_tss_bindings(struct svga_context *svga)
    }
 
    /* Polygon stipple */
+#ifndef VBOX_WITH_MESA3D_NINE_SVGA
    if (svga->curr.rast->templ.poly_stipple_enable) {
+#else
+   if (svga->curr.rast && svga->curr.rast->templ.poly_stipple_enable) {
+#endif
       const unsigned unit = svga->state.hw_draw.fs->pstipple_sampler_unit;
       struct svga_hw_view_state *view = &svga->state.hw_draw.views[unit];
 
