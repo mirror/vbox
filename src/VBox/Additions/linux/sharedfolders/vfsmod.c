@@ -364,19 +364,19 @@ static int vbsf_init_backing_dev(struct super_block *sb, struct vbsf_super_info 
 # endif
     struct backing_dev_info *bdi;
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 0, 0) && LINUX_VERSION_CODE < KERNEL_VERSION(4, 2, 0)
+# if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 0, 0) && LINUX_VERSION_CODE < KERNEL_VERSION(4, 2, 0)
     pSuperInfo->bdi_org = sb->s_bdi;
-#endif
+# endif
 
-#  if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 12, 0)
+# if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 12, 0)
     rc = super_setup_bdi_name(sb, "vboxsf-%llu", (unsigned long long)idSeqMine);
     if (!rc)
         bdi = sb->s_bdi;
     else
         return rc;
-#  else
+# else
     bdi = &pSuperInfo->bdi;
-#  endif
+# endif
 
     bdi->ra_pages = 0;                      /* No readahead */
 
