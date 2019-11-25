@@ -55,8 +55,16 @@
 
 #include "VBoxDD.h"
 
-#define FDC_SAVESTATE_CURRENT   2       /* The new and improved saved state. */
-#define FDC_SAVESTATE_OLD       1       /* The original saved state. */
+
+/*********************************************************************************************************************************
+*   Defined Constants And Macros                                                                                                 *
+*********************************************************************************************************************************/
+/** @name FDC saved state versions
+ * @{ */
+#define FDC_SAVESTATE_CURRENT   2       /**< Current version. */
+#define FDC_SAVESTATE_PRE_DELAY 2       /**< Pre IRQDelay. */
+#define FDC_SAVESTATE_OLD       1       /**< The original saved state. */
+/** @}*/
 
 #define MAX_FD 2
 
@@ -2277,18 +2285,19 @@ static DECLCALLBACK(VBOXSTRICTRC) fdcIoPort1Write(PPDMDEVINS pDevIns, void *pvUs
  */
 static DECLCALLBACK(void) fdcTransferDelayTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser)
 {
-    RT_NOREF(pDevIns, pTimer);
-    fdctrl_t *fdctrl = (fdctrl_t *)pvUser;
+    fdctrl_t *fdctrl = PDMDEVINS_2_DATA(pDevIns, fdctrl_t *);
+    RT_NOREF(pvUser, pTimer);
     fdctrl_stop_transfer_now(fdctrl, fdctrl->st0, fdctrl->st1, fdctrl->st2);
 }
+
 
 /**
  * @callback_method_impl{FNTMTIMERDEV}
  */
 static DECLCALLBACK(void) fdcIrqDelayTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser)
 {
-    RT_NOREF(pDevIns, pTimer);
-    fdctrl_t *fdctrl = (fdctrl_t *)pvUser;
+    fdctrl_t *fdctrl = PDMDEVINS_2_DATA(pDevIns, fdctrl_t *);
+    RT_NOREF(pvUser, pTimer);
     fdctrl_raise_irq_now(fdctrl, fdctrl->st0);
 }
 
@@ -2403,13 +2412,9 @@ static DECLCALLBACK(int) fdcSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
         pHlp->pfnSSMPutU8(pSSM, d->sect);
     }
     rc = pHlp->pfnTimerSave(pDevIns, pThis->hXferDelayTimer, pSSM);
-    if (RT_FAILURE(rc))
-        return rc;
-
+    AssertRCReturn(rc, rc);
     rc = pHlp->pfnTimerSave(pDevIns, pThis->hIrqDelayTimer, pSSM);
-    if (RT_FAILURE(rc))
-        return rc;
-
+    AssertRCReturn(rc, rc);
     return pHlp->pfnTimerSave(pDevIns, pThis->hResultTimer, pSSM);
 }
 
@@ -2430,13 +2435,78 @@ static DECLCALLBACK(int) fdcLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32
         return VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
     Assert(uPass == SSM_PASS_FINAL); NOREF(uPass);
 
-    /* The old saved state was significantly different. However, we can get
-     * back most of the controller state and fix the rest by pretending the
-     * disk in the drive (if any) has been replaced. At any rate there should
-     * be no difficulty unless the state was saved during a floppy operation.
-     */
-    if (uVersion == FDC_SAVESTATE_OLD)
+    if (uVersion > FDC_SAVESTATE_OLD)
     {
+        /* Load the FDC I/O registers... */
+        pHlp->pfnSSMGetU8(pSSM, &pThis->sra);
+        pHlp->pfnSSMGetU8(pSSM, &pThis->srb);
+        pHlp->pfnSSMGetU8(pSSM, &pThis->dor);
+        pHlp->pfnSSMGetU8(pSSM, &pThis->tdr);
+        pHlp->pfnSSMGetU8(pSSM, &pThis->dsr);
+        pHlp->pfnSSMGetU8(pSSM, &pThis->msr);
+        /* ...the status registers... */
+        pHlp->pfnSSMGetU8(pSSM, &pThis->status0);
+        pHlp->pfnSSMGetU8(pSSM, &pThis->status1);
+        pHlp->pfnSSMGetU8(pSSM, &pThis->status2);
+        /* ...the command FIFO, if the size matches... */
+        rc = pHlp->pfnSSMGetU32(pSSM, &val32);
+        AssertRCReturn(rc, rc);
+        AssertMsgReturn(sizeof(pThis->fifo) == val32,
+                        ("The size of FIFO in saved state doesn't match!\n"),
+                        VERR_SSM_DATA_UNIT_FORMAT_CHANGED);
+        pHlp->pfnSSMGetMem(pSSM, &pThis->fifo, sizeof(pThis->fifo));
+        pHlp->pfnSSMGetU32(pSSM, &pThis->data_pos);
+        pHlp->pfnSSMGetU32(pSSM, &pThis->data_len);
+        pHlp->pfnSSMGetU8(pSSM, &pThis->data_state);
+        pHlp->pfnSSMGetU8(pSSM, &pThis->data_dir);
+        /* ...and miscellaneous internal FDC state. */
+        pHlp->pfnSSMGetU8(pSSM, &pThis->reset_sensei);
+        pHlp->pfnSSMGetU8(pSSM, &pThis->eot);
+        pHlp->pfnSSMGetU8(pSSM, &pThis->timer0);
+        pHlp->pfnSSMGetU8(pSSM, &pThis->timer1);
+        pHlp->pfnSSMGetU8(pSSM, &pThis->precomp_trk);
+        pHlp->pfnSSMGetU8(pSSM, &pThis->config);
+        pHlp->pfnSSMGetU8(pSSM, &pThis->lock);
+        pHlp->pfnSSMGetU8(pSSM, &pThis->pwrd);
+        pHlp->pfnSSMGetU8(pSSM, &pThis->version);
+
+        /* Validate the number of drives. */
+        rc = pHlp->pfnSSMGetU8(pSSM, &pThis->num_floppies);
+        AssertRCReturn(rc, rc);
+        AssertMsgReturn(RT_ELEMENTS(pThis->drives) == pThis->num_floppies,
+                        ("The number of drives in saved state doesn't match!\n"),
+                        VERR_SSM_DATA_UNIT_FORMAT_CHANGED);
+
+        /* Load the per-drive state. */
+        for (i = 0; i < pThis->num_floppies; ++i)
+        {
+            fdrive_t *d = &pThis->drives[i];
+
+            pHlp->pfnSSMGetMem(pSSM, &d->Led, sizeof(d->Led));
+            rc = pHlp->pfnSSMGetU32(pSSM, &val32);
+            AssertRCReturn(rc, rc);
+            d->drive = (fdrive_type_t)val32;
+            pHlp->pfnSSMGetU8(pSSM, &d->dsk_chg);
+            pHlp->pfnSSMGetU8(pSSM, &d->perpendicular);
+            pHlp->pfnSSMGetU8(pSSM, &d->head);
+            pHlp->pfnSSMGetU8(pSSM, &d->track);
+            pHlp->pfnSSMGetU8(pSSM, &d->sect);
+        }
+
+        if (uVersion > FDC_SAVESTATE_PRE_DELAY)
+        {
+            pHlp->pfnTimerLoad(pDevIns, pThis->hXferDelayTimer, pSSM);
+            pHlp->pfnTimerLoad(pDevIns, pThis->hIrqDelayTimer, pSSM);
+        }
+    }
+    else if (uVersion == FDC_SAVESTATE_OLD)
+    {
+        /* The old saved state was significantly different. However, we can get
+         * back most of the controller state and fix the rest by pretending the
+         * disk in the drive (if any) has been replaced. At any rate there should
+         * be no difficulty unless the state was saved during a floppy operation.
+         */
+
         /* First verify a few assumptions. */
         AssertMsgReturn(sizeof(pThis->fifo) == FD_SECTOR_LEN,
                         ("The size of FIFO in saved state doesn't match!\n"),
@@ -2499,65 +2569,8 @@ static DECLCALLBACK(int) fdcLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32
             pHlp->pfnSSMGetU8(pSSM, &d->ro);
         }
     }
-    else    /* New state - straightforward. */
-    {
-        Assert(uVersion == FDC_SAVESTATE_CURRENT);
-        /* Load the FDC I/O registers... */
-        pHlp->pfnSSMGetU8(pSSM, &pThis->sra);
-        pHlp->pfnSSMGetU8(pSSM, &pThis->srb);
-        pHlp->pfnSSMGetU8(pSSM, &pThis->dor);
-        pHlp->pfnSSMGetU8(pSSM, &pThis->tdr);
-        pHlp->pfnSSMGetU8(pSSM, &pThis->dsr);
-        pHlp->pfnSSMGetU8(pSSM, &pThis->msr);
-        /* ...the status registers... */
-        pHlp->pfnSSMGetU8(pSSM, &pThis->status0);
-        pHlp->pfnSSMGetU8(pSSM, &pThis->status1);
-        pHlp->pfnSSMGetU8(pSSM, &pThis->status2);
-        /* ...the command FIFO, if the size matches... */
-        rc = pHlp->pfnSSMGetU32(pSSM, &val32);
-        AssertRCReturn(rc, rc);
-        AssertMsgReturn(sizeof(pThis->fifo) == val32,
-                        ("The size of FIFO in saved state doesn't match!\n"),
-                        VERR_SSM_DATA_UNIT_FORMAT_CHANGED);
-        pHlp->pfnSSMGetMem(pSSM, &pThis->fifo, sizeof(pThis->fifo));
-        pHlp->pfnSSMGetU32(pSSM, &pThis->data_pos);
-        pHlp->pfnSSMGetU32(pSSM, &pThis->data_len);
-        pHlp->pfnSSMGetU8(pSSM, &pThis->data_state);
-        pHlp->pfnSSMGetU8(pSSM, &pThis->data_dir);
-        /* ...and miscellaneous internal FDC state. */
-        pHlp->pfnSSMGetU8(pSSM, &pThis->reset_sensei);
-        pHlp->pfnSSMGetU8(pSSM, &pThis->eot);
-        pHlp->pfnSSMGetU8(pSSM, &pThis->timer0);
-        pHlp->pfnSSMGetU8(pSSM, &pThis->timer1);
-        pHlp->pfnSSMGetU8(pSSM, &pThis->precomp_trk);
-        pHlp->pfnSSMGetU8(pSSM, &pThis->config);
-        pHlp->pfnSSMGetU8(pSSM, &pThis->lock);
-        pHlp->pfnSSMGetU8(pSSM, &pThis->pwrd);
-        pHlp->pfnSSMGetU8(pSSM, &pThis->version);
-
-        /* Validate the number of drives. */
-        rc = pHlp->pfnSSMGetU8(pSSM, &pThis->num_floppies);
-        AssertRCReturn(rc, rc);
-        AssertMsgReturn(RT_ELEMENTS(pThis->drives) == pThis->num_floppies,
-                        ("The number of drives in saved state doesn't match!\n"),
-                        VERR_SSM_DATA_UNIT_FORMAT_CHANGED);
-
-        /* Load the per-drive state. */
-        for (i = 0; i < pThis->num_floppies; ++i)
-        {
-            fdrive_t *d = &pThis->drives[i];
-
-            pHlp->pfnSSMGetMem(pSSM, &d->Led, sizeof(d->Led));
-            rc = pHlp->pfnSSMGetU32(pSSM, &val32);
-            AssertRCReturn(rc, rc);
-            d->drive = (fdrive_type_t)val32;
-            pHlp->pfnSSMGetU8(pSSM, &d->dsk_chg);
-            pHlp->pfnSSMGetU8(pSSM, &d->perpendicular);
-            pHlp->pfnSSMGetU8(pSSM, &d->head);
-            pHlp->pfnSSMGetU8(pSSM, &d->track);
-            pHlp->pfnSSMGetU8(pSSM, &d->sect);
-        }
-    }
+    else
+        AssertFailedReturn(VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION);
     return pHlp->pfnTimerLoad(pDevIns, pThis->hResultTimer, pSSM);
 }
 
@@ -2849,7 +2862,7 @@ static DECLCALLBACK(int) fdcConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
     AssertMsgRCReturn(rc, ("Configuration error: Failed to read bool value MemMapped rc=%Rrc\n", rc), rc);
 
     uint16_t uIrqDelay;
-    rc = CFGMR3QueryU16Def(pCfg, "IRQDelay", &uIrqDelay, 0);
+    rc = pHlp->pfnCFGMQueryU16Def(pCfg, "IRQDelay", &uIrqDelay, 0);
     AssertMsgRCReturn(rc, ("Configuration error: Failed to read U16 IRQDelay, rc=%Rrc\n", rc), rc);
 
     bool fStatusA;
@@ -2896,7 +2909,7 @@ static DECLCALLBACK(int) fdcConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
      * Create the FDC timer.
      */
     rc = PDMDevHlpTimerCreate(pDevIns, TMCLOCK_VIRTUAL, fdcTimerCallback, pThis,
-                                TMTIMER_FLAGS_DEFAULT_CRIT_SECT, "FDC Timer", &pThis->hResultTimer);
+                              TMTIMER_FLAGS_DEFAULT_CRIT_SECT, "FDC Timer", &pThis->hResultTimer);
     AssertRCReturn(rc, rc);
 
     /*
@@ -2904,16 +2917,14 @@ static DECLCALLBACK(int) fdcConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
      */
     rc = PDMDevHlpTimerCreate(pDevIns, TMCLOCK_VIRTUAL_SYNC, fdcTransferDelayTimer, pThis,
                               TMTIMER_FLAGS_DEFAULT_CRIT_SECT, "FDC Transfer Delay Timer", &pThis->hXferDelayTimer);
-    if (RT_FAILURE(rc))
-        return rc;
+    AssertRCReturn(rc, rc);
 
     /*
      * Create the IRQ delay timer.
      */
     rc = PDMDevHlpTimerCreate(pDevIns, TMCLOCK_VIRTUAL_SYNC, fdcIrqDelayTimer, pThis,
                               TMTIMER_FLAGS_DEFAULT_CRIT_SECT, "FDC IRQ Delay Timer", &pThis->hIrqDelayTimer);
-    if (RT_FAILURE(rc))
-        return rc;
+    AssertRCReturn(rc, rc);
 
     pThis->uIrqDelayMsec = uIrqDelay;
 
