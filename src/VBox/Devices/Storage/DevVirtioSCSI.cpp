@@ -774,7 +774,8 @@ static int virtioScsiR3ReqErr(PPDMDEVINS pDevIns, PVIRTIOSCSI pThis, PVIRTIOSCSI
     uint8_t *pabSenseBuf = (uint8_t *)RTMemAllocZ(pThis->virtioScsiConfig.uSenseSize);
     AssertReturn(pabSenseBuf, VERR_NO_MEMORY);
 
-    Log2Func(("   status: %s    response: %s\n", SCSIStatusText(pRespHdr->uStatus), virtioGetReqRespText(pRespHdr->uResponse)));
+    Log2Func(("   status: %s    response: %s\n",
+        SCSIStatusText(pRespHdr->uStatus), virtioGetReqRespText(pRespHdr->uResponse)));
 
     PRTSGBUF pReqSegBuf = (PRTSGBUF)RTMemAllocZ(sizeof(RTSGBUF));
     AssertReturn(pReqSegBuf, VERR_NO_MEMORY);
@@ -782,7 +783,7 @@ static int virtioScsiR3ReqErr(PPDMDEVINS pDevIns, PVIRTIOSCSI pThis, PVIRTIOSCSI
     PRTSGSEG paReqSegs  = (PRTSGSEG)RTMemAllocZ(sizeof(RTSGSEG) * 2);
     AssertReturn(paReqSegs, VERR_NO_MEMORY);
 
-    paReqSegs[0].cbSeg = sizeof(pRespHdr);
+    paReqSegs[0].cbSeg = sizeof(*pRespHdr);
     paReqSegs[0].pvSeg = pRespHdr;
     paReqSegs[1].cbSeg = pThis->virtioScsiConfig.uSenseSize;
     paReqSegs[1].pvSeg = pabSenseBuf;
@@ -841,7 +842,9 @@ static void virtioScsiR3SenseKeyToVirtioResp(REQ_RESP_HDR_T *respHdr, uint8_t uS
             respHdr->uResponse = VIRTIOSCSI_S_TARGET_FAILURE;
             break;
         case SCSI_SENSE_NOT_READY:
-            respHdr->uResponse = VIRTIOSCSI_S_BUSY; /* e.g. re-tryable */
+            /* Not sure what to return for this. See choices at VirtIO 1.0,  5.6.6.1.1 */
+            respHdr->uResponse = VIRTIOSCSI_S_FAILURE;
+            /* respHdr->uResponse = VIRTIOSCSI_S_BUSY; */ /* BUSY is VirtIO's 'retryable' response */
             break;
         default:
             respHdr->uResponse = VIRTIOSCSI_S_FAILURE;
@@ -870,7 +873,8 @@ static DECLCALLBACK(int) virtioScsiR3IoReqFinish(PPDMIMEDIAEXPORT pInterface, PD
     rc = pIMediaEx->pfnIoReqQueryXferSize(pIMediaEx, hIoReq, &cbXfer);
     AssertRC(rc);
 
-    /* Masking used to deal with datatype size differences between APIs (Windows complains otherwise) */
+    /* Masking deals with data type size discrepancies between
+     * The APIs (virtio and VBox). Windows C-compiler complains otherwise */
     Assert(!(cbXfer & 0xffffffff00000000));
     uint32_t cbXfer32 = cbXfer & 0xffffffff;
     REQ_RESP_HDR_T respHdr = { 0 };
@@ -1125,7 +1129,13 @@ static int virtioScsiR3ReqSubmit(PPDMDEVINS pDevIns, PVIRTIOSCSI pThis, PVIRTIOS
     if (uType == 0xc1 && uTarget == 0x01)
     {
         LogRel(("* * * REPORT LUNS LU ACCESSED * * * "));
-        uScsiLun = 0xff; /* Force rejection. todo: figure out right way to handle, r=paul */
+        /* Force rejection. todo: figure out right way to handle. Note this is a very
+         * vague and confusing part of the VirtIO spec which deviates from the SCSI standard
+         * as Klaus has pointed out on numerous occasions. I have not been able to determine
+         * how to implement this properly. Nor do I see any of the guest drivers at this
+         * point making use of it, hence the loud log message so we can catch it if/when a guest
+         * does access it and can resume the investigation at that point.  r=paul */
+        uScsiLun = 0xff;
     }
     else
     if (uType != 1)
@@ -1165,9 +1175,9 @@ static int virtioScsiR3ReqSubmit(PPDMDEVINS pDevIns, PVIRTIOSCSI pThis, PVIRTIOS
         return VINF_SUCCESS;
     }
 
-    if (RT_LIKELY(uTarget < pThis->cTargets
-                  &&  pThisCC->paTargetInstances[uTarget].fPresent
-                  &&  pThisCC->paTargetInstances[uTarget].pDrvMediaEx))
+    if (RT_LIKELY(   uTarget < pThis->cTargets
+                  && pThisCC->paTargetInstances[uTarget].fPresent
+                  && pThisCC->paTargetInstances[uTarget].pDrvMediaEx))
     { /*  likely */ }
     else
     {
@@ -1550,6 +1560,8 @@ static DECLCALLBACK(int) virtioScsiR3WorkerThread(PPDMDEVINS pDevIns, PPDMTHREAD
                 AssertLogRelMsgReturn(RT_SUCCESS(rc) || rc == VERR_INTERRUPTED, ("%Rrc\n", rc), rc);
                 if (RT_UNLIKELY(pThread->enmState != PDMTHREADSTATE_RUNNING))
                     return VINF_SUCCESS;
+                if (rc == VERR_INTERRUPTED)
+                    continue;
                 Log6Func(("%s worker woken\n", VIRTQNAME(qIdx)));
                 ASMAtomicWriteBool(&pWorkerR3->fNotified, false);
             }
@@ -1997,8 +2009,6 @@ static DECLCALLBACK(int) virtioScsiR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSS
     pHlp->pfnSSMGetU32(pSSM,  &pThis->fHasLunChange);
     pHlp->pfnSSMGetU32(pSSM,  &pThis->fResetting);
 
-    /** @todo Ask aeichner about BIOS-related changes */
-
     pHlp->pfnSSMGetU32(pSSM, &pThis->cTargets);
 
     for (uint16_t uTarget = 0; uTarget < pThis->cTargets; uTarget++)
@@ -2077,8 +2087,6 @@ static DECLCALLBACK(int) virtioScsiR3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSS
     pHlp->pfnSSMPutU32(pSSM,  pThis->fHasInOutBufs);
     pHlp->pfnSSMPutU32(pSSM,  pThis->fHasLunChange);
     pHlp->pfnSSMPutU32(pSSM,  pThis->fResetting);
-
-    /** @todo Ask aeichner about BIOS-related changes */
 
     AssertMsg(!pThis->cActiveReqs, ("There are still outstanding requests on this device\n"));
 
