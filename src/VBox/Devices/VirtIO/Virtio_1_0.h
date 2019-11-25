@@ -449,6 +449,11 @@ DECLINLINE(uint64_t) virtioCoreGetAcceptedFeatures(PVIRTIOCORE pVirtio)
     return pVirtio->uDriverFeatures;
 }
 
+/**
+ * Calculate the length of a GCPhys s/g buffer by tallying the size of each segment.
+ *
+ * @param   pGcSgBuf        GC S/G buffer to calculate length of
+ */
 DECLINLINE(size_t) virtioCoreSgBufCalcTotalLength(PCVIRTIOSGBUF pGcSgBuf)
 {
     size_t   cb = 0;

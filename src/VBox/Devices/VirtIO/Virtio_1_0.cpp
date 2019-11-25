@@ -135,7 +135,6 @@ DECLINLINE(int) virtqIsEventNeeded(uint16_t uEventIdx, uint16_t uDescIdxNew, uin
 DECLINLINE(void) virtioReadDesc(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t idxQueue,
                                 uint32_t idxDesc, PVIRTQ_DESC_T pDesc)
 {
-    //Log(("%s virtioQueueReadDesc: ring=%p idx=%u\n", INSTANCE(pState), pVirtQ, idx));
     AssertMsg(pVirtio->uDeviceStatus & VIRTIO_STATUS_DRIVER_OK, ("Called with guest driver not ready\n"));
     uint16_t const cQueueItems = RT_MAX(pVirtio->uQueueSize[idxQueue], 1); /* Make sure to avoid div-by-zero. */
     PDMDevHlpPCIPhysRead(pDevIns,
@@ -845,12 +844,8 @@ static void virtioR3QueueNotified(PVIRTIOCORE pVirtio, PVIRTIOCORECC pVirtioCC, 
      * which was queue was intended for wake-up if the two parameters disagree. */
 
     AssertMsg(uNotifyIdx == idxQueue,
-              ("Notification param disagreement. Guest kicked virtq %d's notify addr w/non-corresponding virtq idx %d\n",
-               idxQueue, uNotifyIdx));
-
-//    AssertMsgReturn(uNotifyIdx == idxQueue,
-//                    ("Notification param disagreement. Guest kicked virtq %d's notify addr w/non-corresponding virtq idx %d\n",
-//                     idxQueue, uNotifyIdx));
+                    ("Guest kicked virtq %d's notify addr w/non-corresponding virtq idx %d\n",
+                     idxQueue, uNotifyIdx));
     RT_NOREF(uNotifyIdx);
 
     AssertReturnVoid(idxQueue < RT_ELEMENTS(pVirtio->virtqState));
@@ -937,7 +932,7 @@ static int virtioKick(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint8_t uCause, u
 }
 
 /**
- * Lower interrupt. (Called when guest reads ISR)
+ * Lower interrupt (Called when guest reads ISR and when resetting)
  *
  * @param   pDevIns     The device instance.
  */
@@ -959,10 +954,12 @@ static void virtioResetQueue(PVIRTIOCORE pVirtio, uint16_t idxQueue)
     pVirtio->uQueueEnable[idxQueue] = false;
     pVirtio->uQueueSize[idxQueue] = VIRTQ_MAX_SIZE;
     pVirtio->uQueueNotifyOff[idxQueue] = idxQueue;
-
     pVirtio->uQueueMsixVector[idxQueue] = idxQueue + 2;
+
     if (!pVirtio->fMsiSupport) /* VirtIO 1.0, 4.1.4.3 and 4.1.5.1.2 */
         pVirtio->uQueueMsixVector[idxQueue] = VIRTIO_MSI_NO_VECTOR;
+
+    virtioLowerInterrupt(pVirtio->pDevIns, pVirtio->uQueueMsixVector[idxQueue]);
 }
 
 static void virtioResetDevice(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio)
@@ -1792,7 +1789,8 @@ int virtioCoreR3Init(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, PVIRTIOCORECC pVir
     /*
      * Notify capability (VirtIO 1.0 spec, section 4.1.4.4). Note: uLength is based the choice
      * of this implementation that each queue's uQueueNotifyOff is set equal to (QueueSelect) ordinal
-     * value of the queue */
+     * value of the queue
+     */
     pCfg = (PVIRTIO_PCI_CAP_T)&pPciDev->abConfig[pCfg->uCapNext];
     pCfg->uCfgType = VIRTIO_PCI_CAP_NOTIFY_CFG;
     pCfg->uCapVndr = VIRTIO_PCI_CAP_ID_VENDOR;
@@ -1832,9 +1830,9 @@ int virtioCoreR3Init(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, PVIRTIOCORECC pVir
      *  This capability doesn't get page-MMIO mapped. Instead uBar, uOffset and uLength are intercepted
      *  by trapping PCI configuration I/O and get modulated by consumers to locate fetch and read/write
      *  values from any region. NOTE: The linux driver not only doesn't use this feature, it will not
-     *  even list it as present if uLength isn't non-zero and 4-byte-aligned as the linux driver is
-     *  initializing. */
-
+     *  even list it as present if uLength isn't non-zero and also 4-byte-aligned as the linux driver is
+     *  initializing.
+     */
     pVirtio->uPciCfgDataOff = pCfg->uCapNext + RT_OFFSETOF(VIRTIO_PCI_CFG_CAP_T, uPciCfgData);
     pCfg = (PVIRTIO_PCI_CAP_T)&pPciDev->abConfig[pCfg->uCapNext];
     pCfg->uCfgType = VIRTIO_PCI_CAP_PCI_CFG;
@@ -1889,15 +1887,14 @@ int virtioCoreR3Init(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, PVIRTIOCORECC pVir
     else
         LogFunc(("MSI-X not available for VBox, using INTx notification\n"));
 
-
     /* Set offset to first capability and enable PCI dev capabilities */
     PDMPciDevSetCapabilityList(pPciDev, 0x40);
     PDMPciDevSetStatus(pPciDev,         VBOX_PCI_STATUS_CAP_LIST);
 
     /* Linux drivers/virtio/virtio_pci_modern.c tries to map at least a page for the
      * 'unknown' device-specific capability without querying the capability to figure
-     *  out size, so pad with an extra page */
-
+     *  out size, so pad with an extra page
+     */
     rc = PDMDevHlpPCIIORegionCreateMmio(pDevIns, VIRTIO_REGION_PCI_CAP, RT_ALIGN_32(cbRegion + PAGE_SIZE, PAGE_SIZE),
                                         PCI_ADDRESS_SPACE_MEM, virtioMmioWrite, virtioMmioRead, pVirtio,
                                         IOMMMIO_FLAGS_READ_PASSTHRU | IOMMMIO_FLAGS_WRITE_PASSTHRU, "virtio-scsi MMIO",
