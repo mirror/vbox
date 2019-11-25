@@ -2647,84 +2647,38 @@ HRESULT APIENTRY GaDdiDrawIndexedPrimitive2(HANDLE hDevice, const D3DDDIARG_DRAW
 
     if (SUCCEEDED(hr))
     {
-        /* Convert input data to appropriate DrawIndexedPrimitiveUP parameters.
-         * In particular prepare zero based vertex array becuase wine does not
-         * handle MinVertexIndex correctly.
-         */
+        hr = pDevice9If->DrawIndexedPrimitiveUP(pData->PrimitiveType,
+                                                pData->MinIndex,
+                                                pData->NumVertices,
+                                                pData->PrimitiveCount,
+                                                (uint8_t *)pIndexBuffer + pData->StartIndexOffset,
+                                                dwIndicesSize == 2 ? D3DFMT_INDEX16 : D3DFMT_INDEX32,
+                                                pu8VertexBuffer + pData->BaseVertexOffset,
+                                                cbVertexStride);
 
-        /* Take the offset, which corresponds to the index == 0, into account. */
-        const uint8_t *pu8VertexStart = pu8VertexBuffer + pData->BaseVertexOffset;
-
-        /* Where the pData->MinIndex starts. */
-        pu8VertexStart += pData->MinIndex * cbVertexStride;
-
-        /* Convert indexes to zero based relative to pData->MinIndex. */
-        const uint8_t *pu8IndicesStartSrc = (uint8_t *)pIndexBuffer + pData->StartIndexOffset;
-        UINT cIndices = vboxWddmVertexCountFromPrimitive(pData->PrimitiveType, pData->PrimitiveCount);
-
-        /* Allocate memory for converted indices. */
-        uint8_t *pu8IndicesStartConv = (uint8_t *)RTMemAlloc(cIndices * dwIndicesSize);
-        if (pu8IndicesStartConv != NULL)
-        {
-            UINT i;
-            if (dwIndicesSize == 2)
-            {
-                uint16_t *pu16Src = (uint16_t *)pu8IndicesStartSrc;
-                uint16_t *pu16Dst = (uint16_t *)pu8IndicesStartConv;
-                for (i = 0; i < cIndices; ++i, ++pu16Dst, ++pu16Src)
-                {
-                    *pu16Dst = *pu16Src - pData->MinIndex;
-                }
-            }
-            else
-            {
-                uint32_t *pu32Src = (uint32_t *)pu8IndicesStartSrc;
-                uint32_t *pu32Dst = (uint32_t *)pu8IndicesStartConv;
-                for (i = 0; i < cIndices; ++i, ++pu32Dst, ++pu32Src)
-                {
-                    *pu32Dst = *pu32Src - pData->MinIndex;
-                }
-            }
-
-            hr = pDevice9If->DrawIndexedPrimitiveUP(pData->PrimitiveType,
-                                                    0,
-                                                    pData->NumVertices,
-                                                    pData->PrimitiveCount,
-                                                    pu8IndicesStartConv,
-                                                    dwIndicesSize == 2 ? D3DFMT_INDEX16 : D3DFMT_INDEX32,
-                                                    pu8VertexStart,
-                                                    cbVertexStride);
-
-            if (SUCCEEDED(hr))
-                hr = S_OK;
-            else
-                WARN(("DrawIndexedPrimitiveUP failed hr = 0x%x", hr));
-
-            RTMemFree(pu8IndicesStartConv);
-
-            /* Following any IDirect3DDevice9::DrawIndexedPrimitiveUP call, the stream 0 settings,
-             * referenced by IDirect3DDevice9::GetStreamSource, are set to NULL. Also, the index
-             * buffer setting for IDirect3DDevice9::SetIndices is set to NULL.
-             */
-            if (pDevice->aStreamSource[0])
-            {
-                HRESULT tmpHr = pDevice9If->SetStreamSource(0, (IDirect3DVertexBuffer9*)pDevice->aStreamSource[0]->pD3DIf,
-                                                            pDevice->StreamSourceInfo[0].uiOffset,
-                                                            pDevice->StreamSourceInfo[0].uiStride);
-                if(!SUCCEEDED(tmpHr))
-                    WARN(("SetStreamSource failed hr = 0x%x", tmpHr));
-            }
-
-            if (pDevice->IndiciesInfo.pIndicesAlloc)
-            {
-                HRESULT tmpHr = pDevice9If->SetIndices((IDirect3DIndexBuffer9*)pDevice->IndiciesInfo.pIndicesAlloc->pD3DIf);
-                if(!SUCCEEDED(tmpHr))
-                    WARN(("SetIndices failed hr = 0x%x", tmpHr));
-            }
-        }
+        if (SUCCEEDED(hr))
+            hr = S_OK;
         else
+            WARN(("DrawIndexedPrimitiveUP failed hr = 0x%x", hr));
+
+        /* Following any IDirect3DDevice9::DrawIndexedPrimitiveUP call, the stream 0 settings,
+         * referenced by IDirect3DDevice9::GetStreamSource, are set to NULL. Also, the index
+         * buffer setting for IDirect3DDevice9::SetIndices is set to NULL.
+         */
+        if (pDevice->aStreamSource[0])
         {
-            hr = E_OUTOFMEMORY;
+            HRESULT tmpHr = pDevice9If->SetStreamSource(0, (IDirect3DVertexBuffer9*)pDevice->aStreamSource[0]->pD3DIf,
+                                                        pDevice->StreamSourceInfo[0].uiOffset,
+                                                        pDevice->StreamSourceInfo[0].uiStride);
+            if(!SUCCEEDED(tmpHr))
+                WARN(("SetStreamSource failed hr = 0x%x", tmpHr));
+        }
+
+        if (pDevice->IndiciesInfo.pIndicesAlloc)
+        {
+            HRESULT tmpHr = pDevice9If->SetIndices((IDirect3DIndexBuffer9*)pDevice->IndiciesInfo.pIndicesAlloc->pD3DIf);
+            if(!SUCCEEDED(tmpHr))
+                WARN(("SetIndices failed hr = 0x%x", tmpHr));
         }
     }
 
