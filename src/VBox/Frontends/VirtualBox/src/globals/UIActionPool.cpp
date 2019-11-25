@@ -1407,6 +1407,12 @@ protected:
         return QKeySequence("Ctrl+Shift+R");
     }
 
+    /** Returns standard shortcut. */
+    virtual QKeySequence standardShortcut(UIActionPoolType) const /* override */
+    {
+        return QKeySequence(QKeySequence::Refresh);
+    }
+
     /** Handles translation event. */
     virtual void retranslateUi() /* override */
     {
