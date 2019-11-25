@@ -81,16 +81,16 @@ VBoxBusMouseMainVM_DEFS =
 #
 DLLS += VBoxBusMouseR3
 VBoxBusMouseR3_TEMPLATE = VBoxR3ExtPackBusMouse
-VBoxBusMouseR3_SOURCES  = BusMouse.cpp
+VBoxBusMouseR3_SOURCES  = DevBusMouse.cpp
 
 SYSMODS += VBoxBusMouseR0
 VBoxBusMouseR0_TEMPLATE = VBoxR0ExtPackBusMouse
-VBoxBusMouseR0_SOURCES  = BusMouse.cpp
+VBoxBusMouseR0_SOURCES  = DevBusMouse.cpp
 
 ifdef VBOX_WITH_RAW_MODE
  SYSMODS += VBoxBusMouseRC
  VBoxBusMouseRC_TEMPLATE = VBoxRcExtPackBusMouse
- VBoxBusMouseRC_SOURCES  = BusMouse.cpp
+ VBoxBusMouseRC_SOURCES  = DevBusMouse.cpp
 endif
 
 
