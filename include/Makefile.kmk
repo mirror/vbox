@@ -71,8 +71,9 @@ VBOX_HDRS_R3_ONLY := \
 	VBox/vmm/uvm.h \
 	VBox/vscsi.h \
 	VBox/ExtPack/% \
-	VBox/GuestHost/SharedClipboard-win.h \
 	VBox/GuestHost/SharedClipboard-transfers.h \
+	VBox/GuestHost/SharedClipboard-win.h \
+	VBox/GuestHost/SharedClipboard-x11.h \
 	VBox/GuestHost/DragAndDrop.h \
 	VBox/HostServices/Service.h \
 	iprt/win/% \
@@ -83,7 +84,7 @@ VBOX_HDRS_R3_ONLY := \
 	iprt/socket.h \
 	iprt/udp.h \
 	iprt/fuzz.h \
-       iprt/linux/symvers.h
+	iprt/linux/symvers.h
 
 # Ring-0 driver only headers.
 VBOX_HDRS_R0DRV_ONLY := \
@@ -101,6 +102,9 @@ VBOX_HDRS_OMIT := \
 	VBox/HostServices/glxext.h \
 	VBox/HostServices/wglext.h \
 	VBox/VBoxGL2D.h \
+	$(if-expr "$(KBUILD_TARGET)" != "linux", \
+		VBox/GuestHost/SharedClipboard-x11.h \
+	,)\
 	$(if-expr "$(KBUILD_TARGET)" != "solaris", \
 		VBox/usblib-solaris.h \
 	,)\
@@ -254,4 +258,3 @@ BLDDIRS += $(addprefix $(PATH_OBJ)/include/c/,$(VBOX_HDR_DIRS)) $(addprefix $(PA
 
 
 include $(FILE_KBUILD_SUB_FOOTER)
-
