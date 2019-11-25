@@ -46,20 +46,24 @@ public:
         , m_strDescription(QString())
         , m_sequences(QList<QKeySequence>())
         , m_defaultSequence(QKeySequence())
+        , m_standardSequence(QKeySequence())
     {}
     /** Constructs shortcut descriptor.
       * @param  strScope          Brings the shortcut scope.
       * @param  strDescription    Brings the shortcut description.
       * @param  sequences         Brings the shortcut sequences.
-      * @param  defaultSequence   Brings the default shortcut sequence. */
+      * @param  defaultSequence   Brings the default shortcut sequence.
+      * @param  standardSequence  Brings the standard shortcut sequence. */
     UIShortcut(const QString &strScope,
                const QString &strDescription,
                const QList<QKeySequence> &sequences,
-               const QKeySequence &defaultSequence)
+               const QKeySequence &defaultSequence,
+               const QKeySequence &standardSequence)
         : m_strScope(strScope)
         , m_strDescription(strDescription)
         , m_sequences(sequences)
         , m_defaultSequence(defaultSequence)
+        , m_standardSequence(standardSequence)
     {}
 
     /** Defines the shortcut @a strScope. */
@@ -82,6 +86,11 @@ public:
     /** Returns the default shortcut sequence. */
     const QKeySequence &defaultSequence() const;
 
+    /** Defines the standard shortcut @a sequence. */
+    void setStandardSequence(const QKeySequence &sequence);
+    /** Returns the standard shortcut sequence. */
+    const QKeySequence &standardSequence() const;
+
     /** Converts primary shortcut sequence to native text. */
     QString primaryToNativeText() const;
     /** Converts primary shortcut sequence to portable text. */
@@ -97,6 +106,8 @@ private:
     QList<QKeySequence>  m_sequences;
     /** Holds the default shortcut sequence. */
     QKeySequence         m_defaultSequence;
+    /** Holds the standard shortcut sequence. */
+    QKeySequence         m_standardSequence;
 };
 
 

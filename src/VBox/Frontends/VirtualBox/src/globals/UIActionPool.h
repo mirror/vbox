@@ -246,6 +246,8 @@ public:
     virtual QString shortcutExtraDataID() const { return QString(); }
     /** Returns default keyboard shortcut for this action. */
     virtual QKeySequence defaultShortcut(UIActionPoolType) const { return QKeySequence(); }
+    /** Returns standard keyboard shortcut for this action. */
+    virtual QKeySequence standardShortcut(UIActionPoolType) const { return QKeySequence(); }
 
     /** Defines current keyboard shortcuts for this action. */
     void setShortcuts(const QList<QKeySequence> &shortcuts);

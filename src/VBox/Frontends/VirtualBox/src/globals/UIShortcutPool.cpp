@@ -70,6 +70,16 @@ const QKeySequence &UIShortcut::defaultSequence() const
     return m_defaultSequence;
 }
 
+void UIShortcut::setStandardSequence(const QKeySequence &standardSequence)
+{
+    m_standardSequence = standardSequence;
+}
+
+const QKeySequence &UIShortcut::standardSequence() const
+{
+    return m_standardSequence;
+}
+
 QString UIShortcut::primaryToNativeText() const
 {
     return m_sequences.isEmpty() ? QString() : m_sequences.first().toString(QKeySequence::NativeText);
@@ -129,8 +139,10 @@ UIShortcut &UIShortcutPool::shortcut(UIActionPool *pActionPool, UIAction *pActio
     newShortcut.setScope(pAction->shortcutScope());
     newShortcut.setDescription(pAction->name());
     const QKeySequence &defaultSequence = pAction->defaultShortcut(pActionPool->type());
-    newShortcut.setSequences(QList<QKeySequence>() << defaultSequence);
+    const QKeySequence &standardSequence = pAction->standardShortcut(pActionPool->type());
+    newShortcut.setSequences(QList<QKeySequence>() << defaultSequence << standardSequence);
     newShortcut.setDefaultSequence(defaultSequence);
+    newShortcut.setStandardSequence(standardSequence);
     return newShortcut;
 }
 
@@ -180,8 +192,9 @@ void UIShortcutPool::applyShortcuts(UIActionPool *pActionPool)
             /* Copy the sequences from the shortcut to the action: */
             pAction->setShortcuts(existingShortcut.sequences());
             pAction->retranslateUi();
-            /* Copy default sequence from the action to the shortcut: */
+            /* Copy default and standard sequences from the action to the shortcut: */
             existingShortcut.setDefaultSequence(pAction->defaultShortcut(pActionPool->type()));
+            existingShortcut.setStandardSequence(pAction->standardShortcut(pActionPool->type()));
         }
         /* If shortcut key is NOT known yet: */
         else
@@ -190,8 +203,10 @@ void UIShortcutPool::applyShortcuts(UIActionPool *pActionPool)
             UIShortcut &newShortcut = m_shortcuts[strShortcutKey];
             /* Copy the action's default sequence to both the shortcut & the action: */
             const QKeySequence &defaultSequence = pAction->defaultShortcut(pActionPool->type());
-            newShortcut.setSequences(QList<QKeySequence>() << defaultSequence);
+            const QKeySequence &standardSequence = pAction->standardShortcut(pActionPool->type());
+            newShortcut.setSequences(QList<QKeySequence>() << defaultSequence << standardSequence);
             newShortcut.setDefaultSequence(defaultSequence);
+            newShortcut.setStandardSequence(standardSequence);
             pAction->setShortcuts(newShortcut.sequences());
             pAction->retranslateUi();
             /* Copy the description from the action to the shortcut: */
@@ -298,7 +313,8 @@ void UIShortcutPool::loadDefaultsFor(const QString &strPoolExtraDataID)
                            UIShortcut(QString(),
                                       QApplication::translate("UIActionPool", "Popup Menu"),
                                       QList<QKeySequence>() << QString("Home"),
-                                      QString("Home")));
+                                      QString("Home"),
+                                      QString()));
     }
 }
 
@@ -339,6 +355,7 @@ void UIShortcutPool::loadOverridesFor(const QString &strPoolExtraDataID)
                                UIShortcut(QString(),
                                           QString(),
                                           QList<QKeySequence>() << strShortcutSequence,
+                                          QString(),
                                           QString()));
         else
         {
@@ -380,8 +397,9 @@ void UIShortcutPool::saveOverridesFor(const QString &strPoolExtraDataID)
             continue;
         /* Get corresponding shortcut: */
         const UIShortcut &shortcut = m_shortcuts[strShortcutKey];
-        /* Check if the sequence for that shortcut differs from default: */
-        if (shortcut.sequences().contains(shortcut.defaultSequence()))
+        /* Check if the sequence for that shortcut differs from default or standard: */
+        if (   shortcut.sequences().contains(shortcut.defaultSequence())
+            || shortcut.sequences().contains(shortcut.standardSequence()))
             continue;
         /* Add the shortcut sequence into overrides list: */
         overrides << QString("%1=%2").arg(QString(strShortcutKey).remove(strShortcutPrefix),
