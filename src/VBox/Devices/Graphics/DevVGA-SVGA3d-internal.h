@@ -409,6 +409,8 @@ typedef struct VMSVGA3DMIPMAPLEVEL
     uint32_t                cBlocksX;
     /** Height in blocks: (height + cyBlock - 1) / cyBlock. SSM: not saved, recalculated on load. */
     uint32_t                cBlocksY;
+    /** Number of blocks: cBlocksX * cBlocksY * mipmapSize.depth. SSM: not saved, recalculated on load. */
+    uint32_t                cBlocks;
     /** The scanline/pitch size in bytes: at least cBlocksX * cbBlock. */
     uint32_t                cbSurfacePitch;
     /** The size (in bytes) of the mipmap plane: cbSurfacePitch * cBlocksY */
@@ -581,6 +583,9 @@ typedef struct VMSVGA3DSURFACE
     /* Dimensions of the surface block, usually 1x1 except for compressed formats. */
     uint32_t                cxBlock;        /* Block width in pixels. SSM: not saved, recalculated on load. */
     uint32_t                cyBlock;        /* Block height in pixels. SSM: not saved, recalculated on load. */
+#ifdef VMSVGA3D_OPENGL
+    uint32_t                cbBlockGL;      /* Block size of the OpenGL texture, same as cbBlock for not-emulated formats. */
+#endif
 
     /* Dirty state; surface was manually updated. */
     bool                    fDirty;
@@ -1055,6 +1060,7 @@ typedef struct VMSVGA3DSTATE
         PFNGLVERTEXATTRIBDIVISORPROC                    glVertexAttribDivisor;
         PFNGLDRAWARRAYSINSTANCEDPROC                    glDrawArraysInstanced;
         PFNGLDRAWELEMENTSINSTANCEDPROC                  glDrawElementsInstanced;
+        PFNGLGETCOMPRESSEDTEXIMAGEPROC                  glGetCompressedTexImage;
         PFNGLCOMPRESSEDTEXIMAGE2DPROC                   glCompressedTexImage2D;
         PFNGLCOMPRESSEDTEXIMAGE3DPROC                   glCompressedTexImage3D;
         PFNGLCOMPRESSEDTEXSUBIMAGE2DPROC                glCompressedTexSubImage2D;

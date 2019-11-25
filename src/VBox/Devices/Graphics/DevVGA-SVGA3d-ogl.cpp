@@ -685,6 +685,7 @@ static int vmsvga3dLoadGLFunctions(PVMSVGA3DSTATE pState)
     GLGETPROC_(PFNGLGETQUERYOBJECTUIVPROC                , glGetQueryObjectuiv, "");
     GLGETPROC_(PFNGLTEXIMAGE3DPROC                       , glTexImage3D, "");
     GLGETPROC_(PFNGLTEXSUBIMAGE3DPROC                    , glTexSubImage3D, "");
+    GLGETPROC_(PFNGLGETCOMPRESSEDTEXIMAGEPROC            , glGetCompressedTexImage, "");
     GLGETPROC_(PFNGLCOMPRESSEDTEXIMAGE2DPROC             , glCompressedTexImage2D, "");
     GLGETPROC_(PFNGLCOMPRESSEDTEXIMAGE3DPROC             , glCompressedTexImage3D, "");
     GLGETPROC_(PFNGLCOMPRESSEDTEXSUBIMAGE2DPROC          , glCompressedTexSubImage2D, "");
@@ -1644,6 +1645,9 @@ void vmsvga3dSurfaceFormat2OGL(PVMSVGA3DSURFACE pSurface, SVGA3dSurfaceFormat fo
 #else
 #define AssertTestFmt(f) do {} while(0)
 #endif
+    /* Init cbBlockGL for non-emulated formats. */
+    pSurface->cbBlockGL = pSurface->cbBlock;
+
     switch (format)
     {
     case SVGA3D_X8R8G8B8:               /* D3DFMT_X8R8G8B8 - WINED3DFMT_B8G8R8X8_UNORM */
@@ -1938,6 +1942,7 @@ void vmsvga3dSurfaceFormat2OGL(PVMSVGA3DSURFACE pSurface, SVGA3dSurfaceFormat fo
         pSurface->internalFormatGL = GL_RGBA8;
         pSurface->formatGL = GL_BGRA;
         pSurface->typeGL = GL_UNSIGNED_INT_8_8_8_8_REV;
+        pSurface->cbBlockGL = 4 * pSurface->cxBlock * pSurface->cyBlock;
         break;
 
 #if 0
@@ -2126,10 +2131,13 @@ int vmsvga3dSurfaceCopy(PVGASTATECC pThisCC, SVGA3dSurfaceImageId dest, SVGA3dSu
                     || pSurfaceDst->internalFormatGL == GL_COMPRESSED_RGBA_S3TC_DXT3_EXT
                     || pSurfaceDst->internalFormatGL == GL_COMPRESSED_RGBA_S3TC_DXT5_EXT)
                 {
+                    uint32_t const cBlocksX = (clipBox.w + pSurfaceSrc->cxBlock - 1) / pSurfaceSrc->cxBlock;
+                    uint32_t const cBlocksY = (clipBox.h + pSurfaceSrc->cyBlock - 1) / pSurfaceSrc->cyBlock;
+                    uint32_t const imageSize = cBlocksX * cBlocksY * clipBox.d * pSurfaceSrc->cbBlock;
                     pState->ext.glCompressedTexSubImage3D(target, dest.mipmap,
                                                           clipBox.x, clipBox.y, clipBox.z,
                                                           clipBox.w, clipBox.h, clipBox.d,
-                                                          pSurfaceSrc->formatGL, pSurfaceSrc->typeGL, pSrcBits);
+                                                          pSurfaceSrc->internalFormatGL, (GLsizei)imageSize, pSrcBits);
                     VMSVGA3D_CHECK_LAST_ERROR_WARN(pState, pContext);
                 }
                 else
@@ -2147,9 +2155,12 @@ int vmsvga3dSurfaceCopy(PVGASTATECC pThisCC, SVGA3dSurfaceImageId dest, SVGA3dSu
                     || pSurfaceDst->internalFormatGL == GL_COMPRESSED_RGBA_S3TC_DXT3_EXT
                     || pSurfaceDst->internalFormatGL == GL_COMPRESSED_RGBA_S3TC_DXT5_EXT)
                 {
+                    uint32_t const cBlocksX = (clipBox.w + pSurfaceSrc->cxBlock - 1) / pSurfaceSrc->cxBlock;
+                    uint32_t const cBlocksY = (clipBox.h + pSurfaceSrc->cyBlock - 1) / pSurfaceSrc->cyBlock;
+                    uint32_t const imageSize = cBlocksX * cBlocksY * pSurfaceSrc->cbBlock;
                     pState->ext.glCompressedTexSubImage2D(target, dest.mipmap,
                                                           clipBox.x, clipBox.y, clipBox.w, clipBox.h,
-                                                          pSurfaceSrc->formatGL, pSurfaceSrc->typeGL, pSrcBits);
+                                                          pSurfaceSrc->internalFormatGL, (GLsizei)imageSize, pSrcBits);
                     VMSVGA3D_CHECK_LAST_ERROR_WARN(pState, pContext);
                 }
                 else
@@ -2846,15 +2857,17 @@ int vmsvga3dBackSurfaceDMACopyBox(PVGASTATE pThis, PVGASTATECC pThisCC, PVMSVGA3
     {
         uint32_t cbSurfacePitch;
         uint8_t *pDoubleBuffer;
-        uint32_t offHst;
+        uint64_t offHst;
 
         uint32_t const u32HostBlockX = pBox->x / pSurface->cxBlock;
         uint32_t const u32HostBlockY = pBox->y / pSurface->cyBlock;
+        uint32_t const u32HostZ      = pBox->z;
         Assert(u32HostBlockX * pSurface->cxBlock == pBox->x);
         Assert(u32HostBlockY * pSurface->cyBlock == pBox->y);
 
         uint32_t const u32GuestBlockX = pBox->srcx / pSurface->cxBlock;
         uint32_t const u32GuestBlockY = pBox->srcy / pSurface->cyBlock;
+        uint32_t const u32GuestZ      = pBox->srcz / pSurface->cyBlock;
         Assert(u32GuestBlockX * pSurface->cxBlock == pBox->srcx);
         Assert(u32GuestBlockY * pSurface->cyBlock == pBox->srcy);
 
@@ -2877,16 +2890,13 @@ int vmsvga3dBackSurfaceDMACopyBox(PVGASTATE pThis, PVGASTATECC pThisCC, PVMSVGA3
             texImageTarget = GL_TEXTURE_2D;
         }
 
-        /* The buffer must be large enough to hold entire texture in the OpenGL format.
-         * Multiply by the width and height "reduction" factors.
-         * This can allocate more memory than required, but it is simpler for now.
-         * Actually cbBuf = cbGLPixel * pMipmapLevel->mipmapSize.width * pMipmapLevel->mipmapSize.height
-         */
-        pDoubleBuffer = (uint8_t *)RTMemAlloc(pMipLevel->cbSurface * pSurface->cxBlock * pSurface->cyBlock);
+        /* The buffer must be large enough to hold entire texture in the OpenGL format. */
+        pDoubleBuffer = (uint8_t *)RTMemAlloc(pSurface->cbBlockGL * pMipLevel->cBlocks);
         AssertReturn(pDoubleBuffer, VERR_NO_MEMORY);
 
         if (transfer == SVGA3D_READ_HOST_VRAM)
         {
+            /* Read the entire texture to the double buffer. */
             GLint activeTexture;
 
             /* Must bind texture to the current context in order to read it. */
@@ -2905,12 +2915,18 @@ int vmsvga3dBackSurfaceDMACopyBox(PVGASTATE pThis, PVGASTATECC pThisCC, PVMSVGA3
             VMSVGAPACKPARAMS SavedParams;
             vmsvga3dOglSetPackParams(pState, pContext, pSurface, &SavedParams);
 
-            glGetTexImage(texImageTarget,
-                          uHostMipmap,
-                          pSurface->formatGL,
-                          pSurface->typeGL,
-                          pDoubleBuffer);
-            VMSVGA3D_CHECK_LAST_ERROR_WARN(pState, pContext);
+            if (   pSurface->internalFormatGL == GL_COMPRESSED_RGBA_S3TC_DXT1_EXT
+                || pSurface->internalFormatGL == GL_COMPRESSED_RGBA_S3TC_DXT3_EXT
+                || pSurface->internalFormatGL == GL_COMPRESSED_RGBA_S3TC_DXT5_EXT)
+            {
+                pState->ext.glGetCompressedTexImage(texImageTarget, uHostMipmap, pDoubleBuffer);
+                VMSVGA3D_CHECK_LAST_ERROR_WARN(pState, pContext);
+            }
+            else
+            {
+                glGetTexImage(texImageTarget, uHostMipmap, pSurface->formatGL, pSurface->typeGL, pDoubleBuffer);
+                VMSVGA3D_CHECK_LAST_ERROR_WARN(pState, pContext);
+            }
 
             vmsvga3dOglRestorePackParams(pState, pContext, pSurface, &SavedParams);
 
@@ -2918,7 +2934,7 @@ int vmsvga3dBackSurfaceDMACopyBox(PVGASTATE pThis, PVGASTATECC pThisCC, PVMSVGA3
             glBindTexture(pSurface->targetGL, activeTexture);
             VMSVGA3D_CHECK_LAST_ERROR_WARN(pState, pContext);
 
-            offHst = u32HostBlockX * pSurface->cbBlock + u32HostBlockY * pMipLevel->cbSurfacePitch;
+            offHst = u32HostBlockX * pSurface->cbBlock + u32HostBlockY * pMipLevel->cbSurfacePitch + u32HostZ * pMipLevel->cbSurfacePlane;
             cbSurfacePitch = pMipLevel->cbSurfacePitch;
         }
         else
@@ -2928,21 +2944,30 @@ int vmsvga3dBackSurfaceDMACopyBox(PVGASTATE pThis, PVGASTATECC pThisCC, PVMSVGA3
             cbSurfacePitch = cBlocksX * pSurface->cbBlock;
         }
 
-        uint32_t const offGst = u32GuestBlockX * pSurface->cbBlock + u32GuestBlockY * cbGuestPitch;
+        uint64_t offGst = u32GuestBlockX * pSurface->cbBlock + u32GuestBlockY * cbGuestPitch + u32GuestZ * cbGuestPitch * pMipLevel->mipmapSize.height;
 
-        rc = vmsvgaR3GmrTransfer(pThis,
-                                 pThisCC,
-                                 transfer,
-                                 pDoubleBuffer,
-                                 pMipLevel->cbSurface,
-                                 offHst,
-                                 cbSurfacePitch,
-                                 GuestPtr,
-                                 offGst,
-                                 cbGuestPitch,
-                                 cBlocksX * pSurface->cbBlock,
-                                 cBlocksY);
-        AssertRC(rc);
+        for (uint32_t iPlane = 0; iPlane < pBox->d; ++iPlane)
+        {
+            AssertBreak(offHst < UINT32_MAX);
+            AssertBreak(offGst < UINT32_MAX);
+
+            rc = vmsvgaR3GmrTransfer(pThis,
+                                     pThisCC,
+                                     transfer,
+                                     pDoubleBuffer,
+                                     pMipLevel->cbSurface,
+                                     (uint32_t)offHst,
+                                     cbSurfacePitch,
+                                     GuestPtr,
+                                     (uint32_t)offGst,
+                                     cbGuestPitch,
+                                     cBlocksX * pSurface->cbBlock,
+                                     cBlocksY);
+            AssertRC(rc);
+
+            offHst += pMipLevel->cbSurfacePlane;
+            offGst += pMipLevel->mipmapSize.height * cbGuestPitch;
+        }
 
         /* Update the opengl surface data. */
         if (transfer == SVGA3D_WRITE_HOST_VRAM)
@@ -2976,8 +3001,8 @@ int vmsvga3dBackSurfaceDMACopyBox(PVGASTATE pThis, PVGASTATECC pThisCC, PVMSVGA3
                                                           pBox->w,
                                                           pBox->h,
                                                           pBox->d,
-                                                          pSurface->formatGL,
-                                                          pSurface->typeGL,
+                                                          pSurface->internalFormatGL,
+                                                          cbSurfacePitch * cBlocksY * pBox->d,
                                                           pDoubleBuffer);
                 }
                 else

@@ -313,6 +313,7 @@ int vmsvga3dSurfaceDefine(PVGASTATECC pThisCC, uint32_t sid, uint32_t surfaceFla
 
         pMipmapLevel->cBlocksX       = cBlocksX;
         pMipmapLevel->cBlocksY       = cBlocksY;
+        pMipmapLevel->cBlocks        = cBlocksX * cBlocksY * pMipmapLevel->mipmapSize.depth;
         pMipmapLevel->cbSurfacePitch = cbSurfacePitch;
         pMipmapLevel->cbSurfacePlane = cbSurfacePlane;
         pMipmapLevel->cbSurface      = cbSurface;
