@@ -159,6 +159,11 @@ struct vbsf_super_info {
     int32_t                 msDirCacheTTL;
     /** The time to live for inode information in milliseconds, for /proc/mounts. */
     int32_t                 msInodeTTL;
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 0, 0) && LINUX_VERSION_CODE < KERNEL_VERSION(4, 2, 0)
+    /** 4.0 and 4.1 are missing noop_backing_dev_info export, so take down the
+     *  initial value so we can restore it in vbsf_done_backing_dev(). (paranoia) */
+    struct backing_dev_info *bdi_org;
+#endif
 };
 
 /* Following casts are here to prevent assignment of void * to
