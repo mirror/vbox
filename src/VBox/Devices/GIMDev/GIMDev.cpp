@@ -28,21 +28,24 @@
 #include <iprt/semaphore.h>
 #include <iprt/uuid.h>
 
+
+/*********************************************************************************************************************************
+*   Defined Constants And Macros                                                                                                 *
+*********************************************************************************************************************************/
 #define GIMDEV_DEBUG_LUN                998
 
+
+/*********************************************************************************************************************************
+*   Structures and Typedefs                                                                                                      *
+*********************************************************************************************************************************/
 /**
  * GIM device.
  */
 typedef struct GIMDEV
 {
-    /** Pointer to the device instance - R3 Ptr. */
-    PPDMDEVINSR3                    pDevInsR3;
-    /** Pointer to the device instance - R0 Ptr. */
-    PPDMDEVINSR0                    pDevInsR0;
-    /** Pointer to the device instance - RC Ptr. */
-    PPDMDEVINSRC                    pDevInsRC;
-    /** Alignment. */
-    RTRCPTR                         Alignment0;
+    /** Pointer to the device instance.
+     * @note Only for getting our bearings when arriving in an interface method. */
+    PPDMDEVINSR3                    pDevIns;
 
     /** LUN\#998: The debug interface. */
     PDMIBASE                        IDbgBase;
@@ -54,6 +57,7 @@ typedef struct GIMDEV
     RTTHREAD                        hDbgRecvThread;
     /** Flag to indicate shutdown of the debug receive thread. */
     bool volatile                   fDbgRecvThreadShutdown;
+    bool                            afAlignment1[ARCH_BITS / 8 - 1];
     /** The debug setup parameters. */
     GIMDEBUGSETUP                   DbgSetup;
     /** The debug transfer struct. */
@@ -195,6 +199,61 @@ static DECLCALLBACK(void) gimdevR3Relocate(PPDMDEVINS pDevIns, RTGCINTPTR offDel
 
 
 /**
+ * @interface_method_impl{PDMDEVREG,pfnDestruct}
+ */
+static DECLCALLBACK(int) gimdevR3Destruct(PPDMDEVINS pDevIns)
+{
+    PDMDEV_CHECK_VERSIONS_RETURN_QUIET(pDevIns);
+    PGIMDEV  pThis    = PDMDEVINS_2_DATA(pDevIns, PGIMDEV);
+    PVM      pVM      = PDMDevHlpGetVM(pDevIns);
+
+    uint32_t cRegions = 0;
+    PGIMMMIO2REGION pCur = GIMR3GetMmio2Regions(pVM, &cRegions);
+    for (uint32_t i = 0; i < cRegions; i++, pCur++)
+    {
+        int rc = PDMDevHlpMMIOExDeregister(pDevIns, NULL, pCur->iRegion);
+        if (RT_FAILURE(rc))
+            return rc;
+    }
+
+    /*
+     * Signal and wait for the debug thread to terminate.
+     */
+    if (pThis->hDbgRecvThread != NIL_RTTHREAD)
+    {
+        pThis->fDbgRecvThreadShutdown = true;
+        if (pThis->Dbg.hDbgRecvThreadSem != NIL_RTSEMEVENT)
+            RTSemEventMultiSignal(pThis->Dbg.hDbgRecvThreadSem);
+
+        int rc = RTThreadWait(pThis->hDbgRecvThread, 20000, NULL /*prc*/);
+        if (RT_SUCCESS(rc))
+            pThis->hDbgRecvThread = NIL_RTTHREAD;
+        else
+        {
+            LogRel(("GIMDev: Debug thread did not terminate, rc=%Rrc!\n", rc));
+            return VERR_RESOURCE_BUSY;
+        }
+    }
+
+    /*
+     * Now clean up the semaphore & buffer now that the thread is gone.
+     */
+    if (pThis->Dbg.hDbgRecvThreadSem != NIL_RTSEMEVENT)
+    {
+        RTSemEventMultiDestroy(pThis->Dbg.hDbgRecvThreadSem);
+        pThis->Dbg.hDbgRecvThreadSem = NIL_RTSEMEVENTMULTI;
+    }
+    if (pThis->Dbg.pvDbgRecvBuf)
+    {
+        RTMemFree(pThis->Dbg.pvDbgRecvBuf);
+        pThis->Dbg.pvDbgRecvBuf = NULL;
+    }
+
+    return VINF_SUCCESS;
+}
+
+
+/**
  * @interface_method_impl{PDMDEVREG,pfnConstruct}
  */
 static DECLCALLBACK(int) gimdevR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE pCfg)
@@ -207,9 +266,9 @@ static DECLCALLBACK(int) gimdevR3Construct(PPDMDEVINS pDevIns, int iInstance, PC
     /*
      * Initialize relevant state bits.
      */
-    pThis->pDevInsR3  = pDevIns;
-    pThis->pDevInsR0  = PDMDEVINS_2_R0PTR(pDevIns);
-    pThis->pDevInsRC  = PDMDEVINS_2_RCPTR(pDevIns);
+    pThis->pDevIns                  = pDevIns;
+    pThis->hDbgRecvThread           = NIL_RTTHREAD;
+    pThis->Dbg.hDbgRecvThreadSem    = NIL_RTSEMEVENT;
 
     /*
      * Get debug setup requirements from GIM.
@@ -265,25 +324,21 @@ static DECLCALLBACK(int) gimdevR3Construct(PPDMDEVINS pDevIns, int iInstance, PC
         pThis->Dbg.fDbgRecvBufRead  = false;
 
         /*
-         * Create the sempahore and the debug receive thread itself.
+         * Create the semaphore and the debug receive thread itself.
          */
         rc = RTSemEventMultiCreate(&pThis->Dbg.hDbgRecvThreadSem);
-        if (RT_SUCCESS(rc))
+        AssertRCReturn(rc, rc);
+        rc = RTThreadCreate(&pThis->hDbgRecvThread, gimDevR3DbgRecvThread, pDevIns, 0 /*cbStack*/, RTTHREADTYPE_IO,
+                            RTTHREADFLAGS_WAITABLE, "GIMDebugRecv");
+        if (RT_FAILURE(rc))
         {
-            rc = RTThreadCreate(&pThis->hDbgRecvThread, gimDevR3DbgRecvThread, pDevIns, 0 /*cbStack*/, RTTHREADTYPE_IO,
-                                RTTHREADFLAGS_WAITABLE, "GIMDebugRecv");
-            if (RT_FAILURE(rc))
-            {
-                RTSemEventMultiDestroy(pThis->Dbg.hDbgRecvThreadSem);
-                pThis->Dbg.hDbgRecvThreadSem = NIL_RTSEMEVENTMULTI;
+            RTSemEventMultiDestroy(pThis->Dbg.hDbgRecvThreadSem);
+            pThis->Dbg.hDbgRecvThreadSem = NIL_RTSEMEVENTMULTI;
 
-                RTMemFree(pThis->Dbg.pvDbgRecvBuf);
-                pThis->Dbg.pvDbgRecvBuf = NULL;
-                return rc;
-            }
-        }
-        else
+            RTMemFree(pThis->Dbg.pvDbgRecvBuf);
+            pThis->Dbg.pvDbgRecvBuf = NULL;
             return rc;
+        }
     }
 
     /*
@@ -350,59 +405,6 @@ static DECLCALLBACK(int) gimdevR3Construct(PPDMDEVINS pDevIns, int iInstance, PC
     return VINF_SUCCESS;
 }
 
-
-/**
- * @interface_method_impl{PDMDEVREG,pfnDestruct}
- */
-static DECLCALLBACK(int) gimdevR3Destruct(PPDMDEVINS pDevIns)
-{
-    PGIMDEV  pThis    = PDMDEVINS_2_DATA(pDevIns, PGIMDEV);
-    PVM      pVM      = PDMDevHlpGetVM(pDevIns);
-    uint32_t cRegions = 0;
-
-    PGIMMMIO2REGION pCur = GIMR3GetMmio2Regions(pVM, &cRegions);
-    for (uint32_t i = 0; i < cRegions; i++, pCur++)
-    {
-        int rc = PDMDevHlpMMIOExDeregister(pDevIns, NULL, pCur->iRegion);
-        if (RT_FAILURE(rc))
-            return rc;
-    }
-
-    /*
-     * Signal and wait for the debug thread to terminate.
-     */
-    if (pThis->hDbgRecvThread != NIL_RTTHREAD)
-    {
-        pThis->fDbgRecvThreadShutdown = true;
-        if (pThis->Dbg.hDbgRecvThreadSem != NIL_RTSEMEVENT)
-            RTSemEventMultiSignal(pThis->Dbg.hDbgRecvThreadSem);
-
-        int rc = RTThreadWait(pThis->hDbgRecvThread, 20000, NULL /*prc*/);
-        if (RT_SUCCESS(rc))
-            pThis->hDbgRecvThread = NIL_RTTHREAD;
-        else
-        {
-            LogRel(("GIMDev: Debug thread did not terminate, rc=%Rrc!\n", rc));
-            return VERR_RESOURCE_BUSY;
-        }
-    }
-
-    /*
-     * Now clean up the semaphore & buffer now that the thread is gone.
-     */
-    if (pThis->Dbg.hDbgRecvThreadSem != NIL_RTSEMEVENT)
-    {
-        RTSemEventMultiDestroy(pThis->Dbg.hDbgRecvThreadSem);
-        pThis->Dbg.hDbgRecvThreadSem = NIL_RTSEMEVENTMULTI;
-    }
-    if (pThis->Dbg.pvDbgRecvBuf)
-    {
-        RTMemFree(pThis->Dbg.pvDbgRecvBuf);
-        pThis->Dbg.pvDbgRecvBuf = NULL;
-    }
-
-    return VINF_SUCCESS;
-}
 
 #endif /* IN_RING3 */
 
