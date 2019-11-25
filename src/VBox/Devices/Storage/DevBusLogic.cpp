@@ -4105,6 +4105,9 @@ static DECLCALLBACK(int) buslogicR3Construct(PPDMDEVINS pDevIns, int iInstance, 
     /*
      * Init instance data (do early because of constructor).
      */
+    pThis->hMmio       = NIL_IOMMMIOHANDLE;
+    pThis->hIoPortsIsa = NIL_IOMIOPORTHANDLE;
+    pThis->hIoPortsPci = NIL_IOMIOPORTHANDLE;
     pThisCC->pDevIns = pDevIns;
     pThisCC->IBase.pfnQueryInterface = buslogicR3StatusQueryInterface;
     pThisCC->ILeds.pfnQueryStatusLed = buslogicR3StatusQueryStatusLed;
@@ -4355,7 +4358,10 @@ static DECLCALLBACK(int) buslogicRZConstruct(PPDMDEVINS pDevIns)
     PDMDEV_CHECK_VERSIONS_RETURN(pDevIns);
     PBUSLOGIC pThis = PDMDEVINS_2_DATA(pDevIns, PBUSLOGIC);
 
-    if (!pThis->uIsaIrq) {
+    if (!pThis->uIsaIrq)
+    {
+        Assert(pThis->hIoPortsIsa == NIL_IOMIOPORTHANDLE);
+
         int rc = PDMDevHlpIoPortSetUpContext(pDevIns, pThis->hIoPortsPci, buslogicIOPortWrite, buslogicIOPortRead, NULL /*pvUser*/);
         AssertRCReturn(rc, rc);
 
@@ -4364,6 +4370,9 @@ static DECLCALLBACK(int) buslogicRZConstruct(PPDMDEVINS pDevIns)
     }
     else
     {
+        Assert(pThis->hIoPortsPci == NIL_IOMIOPORTHANDLE);
+        Assert(pThis->hMmio       == NIL_IOMMMIOHANDLE);
+
         int rc = PDMDevHlpIoPortSetUpContext(pDevIns, pThis->hIoPortsIsa, buslogicIOPortWrite, buslogicIOPortRead, NULL /*pvUser*/);
         AssertRCReturn(rc, rc);
     }
