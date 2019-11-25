@@ -966,6 +966,39 @@ static void vgamem_fill_cga(uint8_t xstart, uint8_t ystart, uint8_t cols,
 }
 
 // --------------------------------------------------------------------------------------------
+static void vgamem_copy_linear(uint8_t xstart, uint8_t ysrc, uint8_t ydest,
+                               uint16_t cols, uint16_t nbcols, uint8_t cheight)
+{
+ uint16_t src,dest;
+ uint8_t i;
+
+ src=((ysrc*cheight*nbcols)+xstart)*8;
+ dest=((ydest*cheight*nbcols)+xstart)*8;
+ cols*=8;
+ nbcols*=8;
+ for(i=0;i<cheight;i++)
+  {
+   memcpyb(0xa000,dest+i*nbcols,0xa000,src+i*nbcols,cols);
+  }
+}
+
+// --------------------------------------------------------------------------------------------
+static void vgamem_fill_linear(uint8_t xstart, uint8_t ystart, uint16_t cols,
+                               uint16_t nbcols, uint8_t cheight, uint8_t attr)
+{
+ uint16_t dest;
+ uint8_t i;
+
+ dest=((ystart*cheight*nbcols)+xstart)*8;
+ cols*=8;
+ nbcols*=8;
+ for(i=0;i<cheight;i++)
+  {
+   memsetb(0xa000,dest+i*nbcols,attr,cols);
+  }
+}
+
+// --------------------------------------------------------------------------------------------
 static void biosfn_scroll(uint8_t nblines, uint8_t attr, uint8_t rul, uint8_t cul,
                           uint8_t rlr, uint8_t clr, uint8_t page, uint8_t dir)
 {
@@ -1033,7 +1066,6 @@ static void biosfn_scroll(uint8_t nblines, uint8_t attr, uint8_t rul, uint8_t cu
   }
  else
   {
-   // FIXME gfx mode not complete
    cheight=video_param_table[line_to_vpti[line]].cheight;
    switch(vga_modes[line].memmodel)
     {
@@ -1099,6 +1131,35 @@ static void biosfn_scroll(uint8_t nblines, uint8_t attr, uint8_t rul, uint8_t cu
               vgamem_fill_cga(cul,i,cols,nbcols,cheight,attr);
              else
               vgamem_copy_cga(cul,i-nblines,i,cols,nbcols,cheight);
+             if (i>rlr) break;
+            }
+          }
+        }
+       break;
+     case LINEAR8:
+       if(nblines==0&&rul==0&&cul==0&&rlr==nbrows-1&&clr==nbcols-1)
+        {
+         memsetb(vga_modes[line].sstart,0,attr,nbrows*nbcols*cheight*8);
+        }
+       else
+        {
+         // if Scroll up
+         if(dir==SCROLL_UP)
+          {for(i=rul;i<=rlr;i++)
+            {
+             if((i+nblines>rlr)||(nblines==0))
+              vgamem_fill_linear(cul,i,cols,nbcols,cheight,attr);
+             else
+              vgamem_copy_linear(cul,i+nblines,i,cols,nbcols,cheight);
+            }
+          }
+         else
+          {for(i=rlr;i>=rul;i--)
+            {
+             if((i<rul+nblines)||(nblines==0))
+              vgamem_fill_linear(cul,i,cols,nbcols,cheight,attr);
+             else
+              vgamem_copy_linear(cul,i-nblines,i,cols,nbcols,cheight);
              if (i>rlr) break;
             }
           }
