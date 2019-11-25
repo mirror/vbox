@@ -207,7 +207,7 @@ static int32_t kbcXlateAT2PC(int32_t state, uint8_t scanIn, uint8_t *pScanOut)
 
 
 /** update irq and KBD_STAT_[MOUSE_]OBF */
-static void kbd_update_irq(PPDMDEVINS pDevIns, KBDState *s)
+static void kbd_update_irq(PPDMDEVINS pDevIns, PKBDSTATE s)
 {
     int irq12_level, irq1_level;
     uint8_t val;
@@ -443,13 +443,13 @@ static uint32_t kbd_read_data(PPDMDEVINS pDevIns, PKBDSTATE s)
 
 PS2K *KBDGetPS2KFromDevIns(PPDMDEVINS pDevIns)
 {
-    KBDState *pThis = PDMDEVINS_2_DATA(pDevIns, PKBDSTATE);
+    PKBDSTATE pThis = PDMDEVINS_2_DATA(pDevIns, PKBDSTATE);
     return &pThis->Kbd;
 }
 
 PS2M *KBDGetPS2MFromDevIns(PPDMDEVINS pDevIns)
 {
-    KBDState *pThis = PDMDEVINS_2_DATA(pDevIns, PKBDSTATE);
+    PKBDSTATE pThis = PDMDEVINS_2_DATA(pDevIns, PKBDSTATE);
     return &pThis->Aux;
 }
 
@@ -514,7 +514,7 @@ static VBOXSTRICTRC kbd_write_data(PPDMDEVINS pDevIns, PKBDSTATE s, uint32_t val
 
 #ifdef IN_RING3
 
-static int kbd_load(PCPDMDEVHLPR3 pHlp, PSSMHANDLE pSSM, KBDState *s, uint32_t version_id)
+static int kbd_load(PCPDMDEVHLPR3 pHlp, PSSMHANDLE pSSM, PKBDSTATE s, uint32_t version_id)
 {
     uint32_t    u32, i;
     uint8_t u8Dummy;
@@ -1092,7 +1092,7 @@ const PDMDEVREG g_DevicePS2KeyboardMouse =
     /* .fClass = */                 PDM_DEVREG_CLASS_INPUT,
     /* .cMaxInstances = */          1,
     /* .uSharedVersion = */         42,
-    /* .cbInstanceShared = */       sizeof(KBDState),
+    /* .cbInstanceShared = */       sizeof(KBDSTATE),
     /* .cbInstanceCC = */           0,
     /* .cbInstanceRC = */           0,
     /* .cMaxPciDevices = */         0,

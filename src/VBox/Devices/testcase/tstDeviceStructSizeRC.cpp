@@ -447,13 +447,13 @@ int main()
 #endif
 
     /* Input/pckbd.c */
-    GEN_CHECK_SIZE(KBDState);
-    GEN_CHECK_OFF(KBDState, write_cmd);
-    GEN_CHECK_OFF(KBDState, status);
-    GEN_CHECK_OFF(KBDState, mode);
-    GEN_CHECK_OFF(KBDState, pDevInsR3);
-    GEN_CHECK_OFF(KBDState, pDevInsR0);
-    GEN_CHECK_OFF(KBDState, pDevInsRC);
+    GEN_CHECK_SIZE(KBDSTATE);
+    GEN_CHECK_OFF(KBDSTATE, write_cmd);
+    GEN_CHECK_OFF(KBDSTATE, status);
+    GEN_CHECK_OFF(KBDSTATE, mode);
+    GEN_CHECK_OFF(KBDSTATE, pDevInsR3);
+    GEN_CHECK_OFF(KBDSTATE, pDevInsR0);
+    GEN_CHECK_OFF(KBDSTATE, pDevInsRC);
     GEN_CHECK_SIZE(KbdKeyQ);
     GEN_CHECK_OFF(KbdCmdQ, rpos);
     GEN_CHECK_OFF(KbdCmdQ, wpos);

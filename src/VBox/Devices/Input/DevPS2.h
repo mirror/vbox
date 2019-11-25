@@ -343,7 +343,7 @@ typedef struct KBDSTATE
 
     /** Mouse state (implemented in separate PS2M module). */
     PS2M                        Aux;
-} KBDSTATE, KBDState;
+} KBDSTATE;
 
 
 /* Shared keyboard/aux internal interface. */
