@@ -39,6 +39,10 @@ typedef struct KBDSTATE *PKBDSTATE;
      } name
 
 DEF_PS2Q_TYPE(GeneriQ, 1);
+void PS2CmnClearQueue(GeneriQ *pQ);
+void PS2CmnInsertQueue(GeneriQ *pQ, uint8_t val);
+void PS2CmnR3SaveQueue(PCPDMDEVHLPR3 pHlp, PSSMHANDLE pSSM, GeneriQ *pQ);
+int  PS2CmnR3LoadQueue(PCPDMDEVHLPR3 pHlp, PSSMHANDLE pSSM, GeneriQ *pQ);
 
 
 /** @defgroup grp_devps2k   DevPS2K - Keyboard
@@ -173,13 +177,13 @@ typedef PS2K *PPS2K;
 int  PS2KByteToKbd(PPS2K pThis, uint8_t cmd);
 int  PS2KByteFromKbd(PPS2K pThis, uint8_t *pVal);
 
-int  PS2KConstruct(PPS2K pThis, PPDMDEVINS pDevIns, PKBDSTATE pParent, unsigned iInstance, PCFGMNODE pCfg);
-int  PS2KAttach(PPS2K pThis, PPDMDEVINS pDevIns, unsigned iLUN, uint32_t fFlags);
-void PS2KReset(PPS2K pThis);
-void PS2KRelocate(PPS2K pThis, RTGCINTPTR offDelta, PPDMDEVINS pDevIns);
-void PS2KSaveState(PPS2K pThis, PSSMHANDLE pSSM);
-int  PS2KLoadState(PPS2K pThis, PSSMHANDLE pSSM, uint32_t uVersion);
-int  PS2KLoadDone(PPS2K pThis, PSSMHANDLE pSSM);
+int  PS2KR3Construct(PPS2K pThis, PPDMDEVINS pDevIns, PKBDSTATE pParent, unsigned iInstance, PCFGMNODE pCfg);
+int  PS2KR3Attach(PPS2K pThis, PPDMDEVINS pDevIns, unsigned iLUN, uint32_t fFlags);
+void PS2KR3Reset(PPS2K pThis);
+void PS2KR3Relocate(PPS2K pThis, RTGCINTPTR offDelta, PPDMDEVINS pDevIns);
+void PS2KR3SaveState(PPDMDEVINS pDevIns, PPS2K pThis, PSSMHANDLE pSSM);
+int  PS2KR3LoadState(PPDMDEVINS pDevIns, PPS2K pThis, PSSMHANDLE pSSM, uint32_t uVersion);
+int  PS2KR3LoadDone(PPS2K pThis, PSSMHANDLE pSSM);
 
 PS2K *KBDGetPS2KFromDevIns(PPDMDEVINS pDevIns);
 
@@ -324,13 +328,13 @@ typedef PS2M *PPS2M;
 int  PS2MByteToAux(PPS2M pThis, uint8_t cmd);
 int  PS2MByteFromAux(PPS2M pThis, uint8_t *pVal);
 
-int  PS2MConstruct(PPS2M pThis, PPDMDEVINS pDevIns, PKBDSTATE pParent, unsigned iInstance);
-int  PS2MAttach(PPS2M pThis, PPDMDEVINS pDevIns, unsigned iLUN, uint32_t fFlags);
-void PS2MReset(PPS2M pThis);
-void PS2MRelocate(PPS2M pThis, RTGCINTPTR offDelta, PPDMDEVINS pDevIns);
-void PS2MSaveState(PPS2M pThis, PSSMHANDLE pSSM);
-int  PS2MLoadState(PPS2M pThis, PSSMHANDLE pSSM, uint32_t uVersion);
-void PS2MFixupState(PPS2M pThis, uint8_t u8State, uint8_t u8Rate, uint8_t u8Proto);
+int  PS2MR3Construct(PPS2M pThis, PPDMDEVINS pDevIns, PKBDSTATE pParent, unsigned iInstance);
+int  PS2MR3Attach(PPS2M pThis, PPDMDEVINS pDevIns, unsigned iLUN, uint32_t fFlags);
+void PS2MR3Reset(PPS2M pThis);
+void PS2MR3Relocate(PPS2M pThis, RTGCINTPTR offDelta, PPDMDEVINS pDevIns);
+void PS2MR3SaveState(PPDMDEVINS pDevIns, PPS2M pThis, PSSMHANDLE pSSM);
+int  PS2MR3LoadState(PPDMDEVINS pDevIns, PPS2M pThis, PSSMHANDLE pSSM, uint32_t uVersion);
+void PS2MR3FixupState(PPS2M pThis, uint8_t u8State, uint8_t u8Rate, uint8_t u8Proto);
 
 PS2M *KBDGetPS2MFromDevIns(PPDMDEVINS pDevIns);
 

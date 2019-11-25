@@ -204,103 +204,14 @@
 *   Test code function declarations                                                                                              *
 *********************************************************************************************************************************/
 #if defined(RT_STRICT) && defined(IN_RING3)
-static void ps2mTestAccumulation(void);
+static void ps2mR3TestAccumulation(void);
 #endif
 
 
-/**
- * Clear a queue.
- *
- * @param   pQ                  Pointer to the queue.
- */
-static void ps2kClearQueue(GeneriQ *pQ)
-{
-    LogFlowFunc(("Clearing queue %p\n", pQ));
-    pQ->wpos  = pQ->rpos;
-    pQ->cUsed = 0;
-}
-
-
-/**
- * Add a byte to a queue.
- *
- * @param   pQ                  Pointer to the queue.
- * @param   val                 The byte to store.
- */
-static void ps2kInsertQueue(GeneriQ *pQ, uint8_t val)
-{
-    /* Check if queue is full. */
-    if (pQ->cUsed >= pQ->cSize)
-    {
-        LogRelFlowFunc(("queue %p full (%d entries)\n", pQ, pQ->cUsed));
-        return;
-    }
-    /* Insert data and update circular buffer write position. */
-    pQ->abQueue[pQ->wpos] = val;
-    if (++pQ->wpos == pQ->cSize)
-        pQ->wpos = 0;   /* Roll over. */
-    ++pQ->cUsed;
-    LogRelFlowFunc(("inserted 0x%02X into queue %p\n", val, pQ));
-}
-
 #ifdef IN_RING3
 
-/**
- * Save a queue state.
- *
- * @param   pSSM                SSM handle to write the state to.
- * @param   pQ                  Pointer to the queue.
- */
-static void ps2kSaveQueue(PSSMHANDLE pSSM, GeneriQ *pQ)
-{
-    uint32_t    cItems = pQ->cUsed;
-    int         i;
-
-    /* Only save the number of items. Note that the read/write
-     * positions aren't saved as they will be rebuilt on load.
-     */
-    SSMR3PutU32(pSSM, cItems);
-
-    LogFlow(("Storing %d items from queue %p\n", cItems, pQ));
-
-    /* Save queue data - only the bytes actually used (typically zero). */
-    for (i = pQ->rpos; cItems-- > 0; i = (i + 1) % pQ->cSize)
-        SSMR3PutU8(pSSM, pQ->abQueue[i]);
-}
-
-/**
- * Load a queue state.
- *
- * @param   pSSM                SSM handle to read the state from.
- * @param   pQ                  Pointer to the queue.
- *
- * @return  int                 VBox status/error code.
- */
-static int ps2kLoadQueue(PSSMHANDLE pSSM, GeneriQ *pQ)
-{
-    int         rc;
-
-    /* On load, always put the read pointer at zero. */
-    SSMR3GetU32(pSSM, &pQ->cUsed);
-
-    LogFlow(("Loading %d items to queue %p\n", pQ->cUsed, pQ));
-
-    if (pQ->cUsed > pQ->cSize)
-    {
-        AssertMsgFailed(("Saved size=%u, actual=%u\n", pQ->cUsed, pQ->cSize));
-        return VERR_SSM_DATA_UNIT_FORMAT_CHANGED;
-    }
-
-    /* Recalculate queue positions and load data in one go. */
-    pQ->rpos = 0;
-    pQ->wpos = pQ->cUsed;
-    rc = SSMR3GetMem(pSSM, pQ->abQueue, pQ->cUsed);
-
-    return rc;
-}
-
 /* Report a change in status down (or is it up?) the driver chain. */
-static void ps2mSetDriverState(PPS2M pThis, bool fEnabled)
+static void ps2mR3SetDriverState(PPS2M pThis, bool fEnabled)
 {
     PPDMIMOUSECONNECTOR pDrv = pThis->Mouse.pDrv;
     if (pDrv)
@@ -308,15 +219,15 @@ static void ps2mSetDriverState(PPS2M pThis, bool fEnabled)
 }
 
 /* Reset the pointing device. */
-static void ps2mReset(PPS2M pThis)
+static void ps2mR3Reset(PPS2M pThis)
 {
-    ps2kInsertQueue((GeneriQ *)&pThis->cmdQ, ARSP_BAT_OK);
-    ps2kInsertQueue((GeneriQ *)&pThis->cmdQ, 0);
+    PS2CmnInsertQueue((GeneriQ *)&pThis->cmdQ, ARSP_BAT_OK);
+    PS2CmnInsertQueue((GeneriQ *)&pThis->cmdQ, 0);
     pThis->enmMode   = AUX_MODE_STD;
     pThis->u8CurrCmd = 0;
 
     /// @todo move to its proper home!
-    ps2mSetDriverState(pThis, true);
+    ps2mR3SetDriverState(pThis, true);
 }
 
 #endif /* IN_RING3 */
@@ -368,7 +279,7 @@ static void ps2mSetDefaults(PPS2M pThis)
     ps2mSetRate(pThis, 100);
 
     /* Event queue, eccumulators, and button status bits are cleared. */
-    ps2kClearQueue((GeneriQ *)&pThis->evtQ);
+    PS2CmnClearQueue((GeneriQ *)&pThis->evtQ);
     pThis->iAccumX = pThis->iAccumY = pThis->iAccumZ = pThis->iAccumW = pThis->fAccumB = 0;
 }
 
@@ -444,9 +355,9 @@ static void ps2mReportAccumulatedEvents(PPS2M pThis, GeneriQ *pQueue, bool fAccu
         val |= RT_BIT(5);
 
     /* Send the standard 3-byte packet (always the same). */
-    ps2kInsertQueue(pQueue, val);
-    ps2kInsertQueue(pQueue, dX);
-    ps2kInsertQueue(pQueue, dY);
+    PS2CmnInsertQueue(pQueue, val);
+    PS2CmnInsertQueue(pQueue, dX);
+    PS2CmnInsertQueue(pQueue, dY);
 
     /* Add fourth byte if an extended protocol is in use. */
     if (pThis->enmProtocol > PS2M_PROTO_PS2STD)
@@ -457,7 +368,7 @@ static void ps2mReportAccumulatedEvents(PPS2M pThis, GeneriQ *pQueue, bool fAccu
         if (pThis->enmProtocol == PS2M_PROTO_IMPS2)
         {
             /* NB: Only uses 4-bit dZ range, despite using a full byte. */
-            ps2kInsertQueue(pQueue, dZ);
+            PS2CmnInsertQueue(pQueue, dZ);
             pThis->iAccumZ -= dZ;
         }
         else if (pThis->enmProtocol == PS2M_PROTO_IMEX)
@@ -466,7 +377,7 @@ static void ps2mReportAccumulatedEvents(PPS2M pThis, GeneriQ *pQueue, bool fAccu
            val  = (fBtnState & PS2M_IMEX_BTN_MASK) << 1;
            val |= dZ & 0x0f;
            pThis->iAccumZ -= dZ;
-           ps2kInsertQueue(pQueue, val);
+           PS2CmnInsertQueue(pQueue, val);
         }
         else
         {
@@ -498,7 +409,7 @@ static void ps2mReportAccumulatedEvents(PPS2M pThis, GeneriQ *pQueue, bool fAccu
                /* Just Buttons 4/5 in bits 4 and 5. No scrolling. */
                val = (fBtnState & PS2M_IMEX_BTN_MASK) << 1;
             }
-            ps2kInsertQueue(pQueue, val);
+            PS2CmnInsertQueue(pQueue, val);
         }
     }
 
@@ -548,7 +459,7 @@ int PS2MByteToAux(PPS2M pThis, uint8_t cmd)
         return VINF_SUCCESS;
 
     /* If there's anything left in the command response queue, trash it. */
-    ps2kClearQueue((GeneriQ *)&pThis->cmdQ);
+    PS2CmnClearQueue((GeneriQ *)&pThis->cmdQ);
 
     if (pThis->enmMode == AUX_MODE_WRAP)
     {
@@ -557,7 +468,7 @@ int PS2MByteToAux(PPS2M pThis, uint8_t cmd)
             ;   /* Handle as regular commands. */
         else
         {
-            ps2kInsertQueue((GeneriQ *)&pThis->cmdQ, cmd);
+            PS2CmnInsertQueue((GeneriQ *)&pThis->cmdQ, cmd);
             return VINF_SUCCESS;
         }
     }
@@ -572,76 +483,76 @@ int PS2MByteToAux(PPS2M pThis, uint8_t cmd)
     {
         case ACMD_SET_SCALE_11:
             pThis->u8State &= ~AUX_STATE_SCALING;
-            ps2kInsertQueue((GeneriQ *)&pThis->cmdQ, ARSP_ACK);
+            PS2CmnInsertQueue((GeneriQ *)&pThis->cmdQ, ARSP_ACK);
             pThis->u8CurrCmd = 0;
             break;
         case ACMD_SET_SCALE_21:
             pThis->u8State |= AUX_STATE_SCALING;
-            ps2kInsertQueue((GeneriQ *)&pThis->cmdQ, ARSP_ACK);
+            PS2CmnInsertQueue((GeneriQ *)&pThis->cmdQ, ARSP_ACK);
             pThis->u8CurrCmd = 0;
             break;
         case ACMD_REQ_STATUS:
             /* Report current status, sample rate, and resolution. */
             u8Val  = (pThis->u8State & AUX_STATE_EXTERNAL) | (pThis->fCurrB & PS2M_STD_BTN_MASK);
-            ps2kInsertQueue((GeneriQ *)&pThis->cmdQ, ARSP_ACK);
-            ps2kInsertQueue((GeneriQ *)&pThis->cmdQ, u8Val);
-            ps2kInsertQueue((GeneriQ *)&pThis->cmdQ, pThis->u8Resolution);
-            ps2kInsertQueue((GeneriQ *)&pThis->cmdQ, pThis->u8SampleRate);
+            PS2CmnInsertQueue((GeneriQ *)&pThis->cmdQ, ARSP_ACK);
+            PS2CmnInsertQueue((GeneriQ *)&pThis->cmdQ, u8Val);
+            PS2CmnInsertQueue((GeneriQ *)&pThis->cmdQ, pThis->u8Resolution);
+            PS2CmnInsertQueue((GeneriQ *)&pThis->cmdQ, pThis->u8SampleRate);
             pThis->u8CurrCmd = 0;
             break;
         case ACMD_SET_STREAM:
             pThis->u8State &= ~AUX_STATE_REMOTE;
-            ps2kInsertQueue((GeneriQ *)&pThis->cmdQ, ARSP_ACK);
+            PS2CmnInsertQueue((GeneriQ *)&pThis->cmdQ, ARSP_ACK);
             pThis->u8CurrCmd = 0;
             break;
         case ACMD_READ_REMOTE:
-            ps2kInsertQueue((GeneriQ *)&pThis->cmdQ, ARSP_ACK);
+            PS2CmnInsertQueue((GeneriQ *)&pThis->cmdQ, ARSP_ACK);
             ps2mReportAccumulatedEvents(pThis, (GeneriQ *)&pThis->cmdQ, false);
             pThis->u8CurrCmd = 0;
             break;
         case ACMD_RESET_WRAP:
             pThis->enmMode = AUX_MODE_STD;
             /* NB: Stream mode reporting remains disabled! */
-            ps2kInsertQueue((GeneriQ *)&pThis->cmdQ, ARSP_ACK);
+            PS2CmnInsertQueue((GeneriQ *)&pThis->cmdQ, ARSP_ACK);
             pThis->u8CurrCmd = 0;
             break;
         case ACMD_SET_WRAP:
             pThis->enmMode = AUX_MODE_WRAP;
             pThis->u8State &= ~AUX_STATE_ENABLED;
-            ps2kInsertQueue((GeneriQ *)&pThis->cmdQ, ARSP_ACK);
+            PS2CmnInsertQueue((GeneriQ *)&pThis->cmdQ, ARSP_ACK);
             pThis->u8CurrCmd = 0;
             break;
         case ACMD_SET_REMOTE:
             pThis->u8State |= AUX_STATE_REMOTE;
-            ps2kInsertQueue((GeneriQ *)&pThis->cmdQ, ARSP_ACK);
+            PS2CmnInsertQueue((GeneriQ *)&pThis->cmdQ, ARSP_ACK);
             pThis->u8CurrCmd = 0;
             break;
         case ACMD_READ_ID:
-            ps2kInsertQueue((GeneriQ *)&pThis->cmdQ, ARSP_ACK);
+            PS2CmnInsertQueue((GeneriQ *)&pThis->cmdQ, ARSP_ACK);
             /* ImEx + horizontal is protocol 4, just like plain ImEx. */
             u8Val = pThis->enmProtocol == PS2M_PROTO_IMEX_HORZ ? PS2M_PROTO_IMEX : pThis->enmProtocol;
-            ps2kInsertQueue((GeneriQ *)&pThis->cmdQ, u8Val);
+            PS2CmnInsertQueue((GeneriQ *)&pThis->cmdQ, u8Val);
             pThis->u8CurrCmd = 0;
             break;
         case ACMD_ENABLE:
             pThis->u8State |= AUX_STATE_ENABLED;
 #ifdef IN_RING3
-            ps2mSetDriverState(pThis, true);
+            ps2mR3SetDriverState(pThis, true);
 #else
             AssertLogRelMsgFailed(("Invalid ACMD_ENABLE outside R3!\n"));
 #endif
-            ps2kClearQueue((GeneriQ *)&pThis->evtQ);
-            ps2kInsertQueue((GeneriQ *)&pThis->cmdQ, ARSP_ACK);
+            PS2CmnClearQueue((GeneriQ *)&pThis->evtQ);
+            PS2CmnInsertQueue((GeneriQ *)&pThis->cmdQ, ARSP_ACK);
             pThis->u8CurrCmd = 0;
             break;
         case ACMD_DISABLE:
             pThis->u8State &= ~AUX_STATE_ENABLED;
-            ps2kInsertQueue((GeneriQ *)&pThis->cmdQ, ARSP_ACK);
+            PS2CmnInsertQueue((GeneriQ *)&pThis->cmdQ, ARSP_ACK);
             pThis->u8CurrCmd = 0;
             break;
         case ACMD_SET_DEFAULT:
             ps2mSetDefaults(pThis);
-            ps2kInsertQueue((GeneriQ *)&pThis->cmdQ, ARSP_ACK);
+            PS2CmnInsertQueue((GeneriQ *)&pThis->cmdQ, ARSP_ACK);
             pThis->u8CurrCmd = 0;
             break;
         case ACMD_RESEND:
@@ -652,13 +563,13 @@ int PS2MByteToAux(PPS2M pThis, uint8_t cmd)
             /// @todo reset more?
             pThis->u8CurrCmd = cmd;
             pThis->enmMode   = AUX_MODE_RESET;
-            ps2kInsertQueue((GeneriQ *)&pThis->cmdQ, ARSP_ACK);
+            PS2CmnInsertQueue((GeneriQ *)&pThis->cmdQ, ARSP_ACK);
             if (pThis->fDelayReset)
                 /* Slightly delay reset completion; it might take hundreds of ms. */
                 TMTimerSetMillies(pThis->CTX_SUFF(pDelayTimer), 1);
             else
 #ifdef IN_RING3
-                ps2mReset(pThis);
+                ps2mR3Reset(pThis);
 #else
                 AssertLogRelMsgFailed(("Invalid ACMD_RESET outside R3!\n"));
 #endif
@@ -666,7 +577,7 @@ int PS2MByteToAux(PPS2M pThis, uint8_t cmd)
         /* The following commands need a parameter. */
         case ACMD_SET_RES:
         case ACMD_SET_SAMP_RATE:
-            ps2kInsertQueue((GeneriQ *)&pThis->cmdQ, ARSP_ACK);
+            PS2CmnInsertQueue((GeneriQ *)&pThis->cmdQ, ARSP_ACK);
             pThis->u8CurrCmd = cmd;
             break;
         default:
@@ -678,7 +589,7 @@ int PS2MByteToAux(PPS2M pThis, uint8_t cmd)
                     {
                         pThis->u8Resolution = cmd;
                         pThis->u8State &= ~AUX_STATE_RES_ERR;
-                        ps2kInsertQueue((GeneriQ *)&pThis->cmdQ, ARSP_ACK);
+                        PS2CmnInsertQueue((GeneriQ *)&pThis->cmdQ, ARSP_ACK);
                         pThis->u8CurrCmd = 0;
                     }
                     else
@@ -687,13 +598,13 @@ int PS2MByteToAux(PPS2M pThis, uint8_t cmd)
                         if (pThis->u8State & AUX_STATE_RES_ERR)
                         {
                             pThis->u8State &= ~AUX_STATE_RES_ERR;
-                            ps2kInsertQueue((GeneriQ *)&pThis->cmdQ, ARSP_ERROR);
+                            PS2CmnInsertQueue((GeneriQ *)&pThis->cmdQ, ARSP_ERROR);
                             pThis->u8CurrCmd = 0;
                         }
                         else
                         {
                             pThis->u8State |= AUX_STATE_RES_ERR;
-                            ps2kInsertQueue((GeneriQ *)&pThis->cmdQ, ARSP_RESEND);
+                            PS2CmnInsertQueue((GeneriQ *)&pThis->cmdQ, ARSP_RESEND);
                             /* NB: Current command remains unchanged. */
                         }
                     }
@@ -704,7 +615,7 @@ int PS2MByteToAux(PPS2M pThis, uint8_t cmd)
                         pThis->u8State &= ~AUX_STATE_RATE_ERR;
                         ps2mSetRate(pThis, cmd);
                         ps2mRateProtocolKnock(pThis, cmd);
-                        ps2kInsertQueue((GeneriQ *)&pThis->cmdQ, ARSP_ACK);
+                        PS2CmnInsertQueue((GeneriQ *)&pThis->cmdQ, ARSP_ACK);
                         pThis->u8CurrCmd = 0;
                     }
                     else
@@ -713,13 +624,13 @@ int PS2MByteToAux(PPS2M pThis, uint8_t cmd)
                         if (pThis->u8State & AUX_STATE_RATE_ERR)
                         {
                             pThis->u8State &= ~AUX_STATE_RATE_ERR;
-                            ps2kInsertQueue((GeneriQ *)&pThis->cmdQ, ARSP_ERROR);
+                            PS2CmnInsertQueue((GeneriQ *)&pThis->cmdQ, ARSP_ERROR);
                             pThis->u8CurrCmd = 0;
                         }
                         else
                         {
                             pThis->u8State |= AUX_STATE_RATE_ERR;
-                            ps2kInsertQueue((GeneriQ *)&pThis->cmdQ, ARSP_RESEND);
+                            PS2CmnInsertQueue((GeneriQ *)&pThis->cmdQ, ARSP_RESEND);
                             /* NB: Current command remains unchanged. */
                         }
                     }
@@ -743,7 +654,7 @@ int PS2MByteToAux(PPS2M pThis, uint8_t cmd)
         case ACMD_INVALID_9:
         case ACMD_INVALID_10:
             Log(("Unsupported command 0x%02X!\n", cmd));
-            ps2kInsertQueue((GeneriQ *)&pThis->cmdQ, ARSP_RESEND);
+            PS2CmnInsertQueue((GeneriQ *)&pThis->cmdQ, ARSP_RESEND);
             pThis->u8CurrCmd = 0;
             break;
     }
@@ -789,9 +700,11 @@ static uint32_t ps2mHaveEvents(PPS2M pThis)
            || ((pThis->fCurrB | pThis->fAccumB) != pThis->fReportedB);
 }
 
-/* Event rate throttling timer to emulate the auxiliary device sampling rate.
+/**
+ * @callback_function_impl{FNTMTIMERDEV,
+ * Event rate throttling timer to emulate the auxiliary device sampling rate.}
  */
-static DECLCALLBACK(void) ps2mThrottleTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser)
+static DECLCALLBACK(void) ps2mR3ThrottleTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser)
 {
     RT_NOREF(pDevIns, pTimer);
     PPS2M       pThis = (PS2M *)pvUser;
@@ -818,10 +731,14 @@ static DECLCALLBACK(void) ps2mThrottleTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer,
     PDMCritSectLeave(pThis->pCritSectR3);
 }
 
-/* The auxiliary device reset is specified to take up to about 500 milliseconds. We need
- * to delay sending the result to the host for at least a tiny little while.
+/**
+ * @callback_function_impl{FNTMTIMERDEV}
+ *
+ * The auxiliary device reset is specified to take up to about 500 milliseconds.
+ * We need to delay sending the result to the host for at least a tiny little
+ * while.
  */
-static DECLCALLBACK(void) ps2mDelayTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser)
+static DECLCALLBACK(void) ps2mR3DelayTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser)
 {
     RT_NOREF(pDevIns, pTimer);
     PPS2M pThis = (PS2M *)pvUser;
@@ -829,7 +746,7 @@ static DECLCALLBACK(void) ps2mDelayTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, vo
     LogFlowFunc(("Delay timer: cmd %02X\n", pThis->u8CurrCmd));
 
     Assert(pThis->u8CurrCmd == ACMD_RESET);
-    ps2mReset(pThis);
+    ps2mR3Reset(pThis);
 
     /// @todo Might want a PS2MCompleteCommand() to push last response, clear command, and kick the KBC...
     /* Give the KBC a kick. */
@@ -844,7 +761,7 @@ static DECLCALLBACK(void) ps2mDelayTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, vo
  * @param   pHlp        Callback functions for doing output.
  * @param   pszArgs     Argument string. Optional and specific to the handler.
  */
-static DECLCALLBACK(void) ps2mInfoState(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *pszArgs)
+static DECLCALLBACK(void) ps2mR3InfoState(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *pszArgs)
 {
     static const char   *pcszModes[] = { "normal", "reset", "wrap" };
     static const char   *pcszProtocols[] = { "PS/2", NULL, NULL, "ImPS/2", "ImEx", "ImEx+horizontal" };
@@ -874,7 +791,7 @@ static DECLCALLBACK(void) ps2mInfoState(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, 
 /**
  * @interface_method_impl{PDMIBASE,pfnQueryInterface}
  */
-static DECLCALLBACK(void *) ps2mQueryInterface(PPDMIBASE pInterface, const char *pszIID)
+static DECLCALLBACK(void *) ps2mR3QueryInterface(PPDMIBASE pInterface, const char *pszIID)
 {
     PPS2M pThis = RT_FROM_MEMBER(pInterface, PS2M, Mouse.IBase);
     PDMIBASE_RETURN_INTERFACE(pszIID, PDMIBASE, &pThis->Mouse.IBase);
@@ -896,11 +813,8 @@ static DECLCALLBACK(void *) ps2mQueryInterface(PPDMIBASE pInterface, const char 
  * @param   dw              W (horizontal scroll) movement delta.
  * @param   fButtons        Depressed button mask.
  */
-static int ps2mPutEventWorker(PPS2M pThis, int32_t dx, int32_t dy,
-                              int32_t dz, int32_t dw, uint32_t fButtons)
+static int ps2mR3PutEventWorker(PPS2M pThis, int32_t dx, int32_t dy, int32_t dz, int32_t dw, uint32_t fButtons)
 {
-    int             rc = VINF_SUCCESS;
-
     /* Update internal accumulators and button state. Ignore any buttons beyond 5. */
     pThis->iAccumX += dx;
     pThis->iAccumY += dy;
@@ -914,16 +828,16 @@ static int ps2mPutEventWorker(PPS2M pThis, int32_t dx, int32_t dy,
      * are received.
      */
     if (pThis->enmProtocol < PS2M_PROTO_IMEX_HORZ)
-       pThis->iAccumW = 0; /* No horizontal scroll. */
+        pThis->iAccumW = 0; /* No horizontal scroll. */
 
     if (pThis->enmProtocol < PS2M_PROTO_IMEX)
     {
-       pThis->fAccumB &= PS2M_STD_BTN_MASK;   /* Only buttons 1-3. */
-       pThis->fCurrB  &= PS2M_STD_BTN_MASK;
+        pThis->fAccumB &= PS2M_STD_BTN_MASK;   /* Only buttons 1-3. */
+        pThis->fCurrB  &= PS2M_STD_BTN_MASK;
     }
 
     if (pThis->enmProtocol < PS2M_PROTO_IMPS2)
-       pThis->iAccumZ = 0; /* No vertical scroll. */
+        pThis->iAccumZ = 0; /* No vertical scroll. */
 
     /* Report the event (if any) and start the throttle timer unless it's already running. */
     if (!pThis->fThrottleActive && ps2mHaveEvents(pThis))
@@ -934,7 +848,7 @@ static int ps2mPutEventWorker(PPS2M pThis, int32_t dx, int32_t dy,
         TMTimerSetMillies(pThis->CTX_SUFF(pThrottleTimer), pThis->uThrottleDelay);
     }
 
-    return rc;
+    return VINF_SUCCESS;
 }
 
 /* -=-=-=-=-=- Mouse: IMousePort  -=-=-=-=-=- */
@@ -942,8 +856,8 @@ static int ps2mPutEventWorker(PPS2M pThis, int32_t dx, int32_t dy,
 /**
  * @interface_method_impl{PDMIMOUSEPORT,pfnPutEvent}
  */
-static DECLCALLBACK(int) ps2mPutEvent(PPDMIMOUSEPORT pInterface, int32_t dx, int32_t dy,
-                                      int32_t dz, int32_t dw, uint32_t fButtons)
+static DECLCALLBACK(int) ps2mR3MousePort_PutEvent(PPDMIMOUSEPORT pInterface, int32_t dx, int32_t dy,
+                                                  int32_t dz, int32_t dw, uint32_t fButtons)
 {
     PPS2M       pThis = RT_FROM_MEMBER(pInterface, PS2M, Mouse.IPort);
     int rc = PDMCritSectEnter(pThis->pCritSectR3, VERR_SEM_BUSY);
@@ -951,7 +865,7 @@ static DECLCALLBACK(int) ps2mPutEvent(PPDMIMOUSEPORT pInterface, int32_t dx, int
 
     LogRelFlowFunc(("dX=%d dY=%d dZ=%d dW=%d buttons=%02X\n", dx, dy, dz, dw, fButtons));
     /* NB: The PS/2 Y axis direction is inverted relative to ours. */
-    ps2mPutEventWorker(pThis, dx, -dy, dz, dw, fButtons);
+    ps2mR3PutEventWorker(pThis, dx, -dy, dz, dw, fButtons);
 
     PDMCritSectLeave(pThis->pCritSectR3);
     return VINF_SUCCESS;
@@ -960,8 +874,8 @@ static DECLCALLBACK(int) ps2mPutEvent(PPDMIMOUSEPORT pInterface, int32_t dx, int
 /**
  * @interface_method_impl{PDMIMOUSEPORT,pfnPutEventAbs}
  */
-static DECLCALLBACK(int) ps2mPutEventAbs(PPDMIMOUSEPORT pInterface, uint32_t x, uint32_t y,
-                                         int32_t dz, int32_t dw, uint32_t fButtons)
+static DECLCALLBACK(int) ps2mR3MousePort_PutEventAbs(PPDMIMOUSEPORT pInterface, uint32_t x, uint32_t y,
+                                                     int32_t dz, int32_t dw, uint32_t fButtons)
 {
     AssertFailedReturn(VERR_NOT_SUPPORTED);
     NOREF(pInterface); NOREF(x); NOREF(y); NOREF(dz); NOREF(dw); NOREF(fButtons);
@@ -970,8 +884,8 @@ static DECLCALLBACK(int) ps2mPutEventAbs(PPDMIMOUSEPORT pInterface, uint32_t x, 
 /**
  * @interface_method_impl{PDMIMOUSEPORT,pfnPutEventMultiTouch}
  */
-static DECLCALLBACK(int) ps2mPutEventMT(PPDMIMOUSEPORT pInterface, uint8_t cContacts,
-                                        const uint64_t *pau64Contacts, uint32_t u32ScanTime)
+static DECLCALLBACK(int) ps2mR3MousePort_PutEventMT(PPDMIMOUSEPORT pInterface, uint8_t cContacts,
+                                                    const uint64_t *pau64Contacts, uint32_t u32ScanTime)
 {
     AssertFailedReturn(VERR_NOT_SUPPORTED);
     NOREF(pInterface); NOREF(cContacts); NOREF(pau64Contacts); NOREF(u32ScanTime);
@@ -994,7 +908,7 @@ static DECLCALLBACK(int) ps2mPutEventMT(PPDMIMOUSEPORT pInterface, uint8_t cCont
  * @param   iLUN        The logical unit which is being detached.
  * @param   fFlags      Flags, combination of the PDMDEVATT_FLAGS_* \#defines.
  */
-int PS2MAttach(PPS2M pThis, PPDMDEVINS pDevIns, unsigned iLUN, uint32_t fFlags)
+int PS2MR3Attach(PPS2M pThis, PPDMDEVINS pDevIns, unsigned iLUN, uint32_t fFlags)
 {
     int         rc;
 
@@ -1027,22 +941,23 @@ int PS2MAttach(PPS2M pThis, PPDMDEVINS pDevIns, unsigned iLUN, uint32_t fFlags)
     return rc;
 }
 
-void PS2MSaveState(PPS2M pThis, PSSMHANDLE pSSM)
+void PS2MR3SaveState(PPDMDEVINS pDevIns, PPS2M pThis, PSSMHANDLE pSSM)
 {
+    PCPDMDEVHLPR3 pHlp = pDevIns->pHlpR3;
     LogFlowFunc(("Saving PS2M state\n"));
 
     /* Save the core auxiliary device state. */
-    SSMR3PutU8(pSSM, pThis->u8State);
-    SSMR3PutU8(pSSM, pThis->u8SampleRate);
-    SSMR3PutU8(pSSM, pThis->u8Resolution);
-    SSMR3PutU8(pSSM, pThis->u8CurrCmd);
-    SSMR3PutU8(pSSM, pThis->enmMode);
-    SSMR3PutU8(pSSM, pThis->enmProtocol);
-    SSMR3PutU8(pSSM, pThis->enmKnockState);
+    pHlp->pfnSSMPutU8(pSSM, pThis->u8State);
+    pHlp->pfnSSMPutU8(pSSM, pThis->u8SampleRate);
+    pHlp->pfnSSMPutU8(pSSM, pThis->u8Resolution);
+    pHlp->pfnSSMPutU8(pSSM, pThis->u8CurrCmd);
+    pHlp->pfnSSMPutU8(pSSM, pThis->enmMode);
+    pHlp->pfnSSMPutU8(pSSM, pThis->enmProtocol);
+    pHlp->pfnSSMPutU8(pSSM, pThis->enmKnockState);
 
     /* Save the command and event queues. */
-    ps2kSaveQueue(pSSM, (GeneriQ *)&pThis->cmdQ);
-    ps2kSaveQueue(pSSM, (GeneriQ *)&pThis->evtQ);
+    PS2CmnR3SaveQueue(pHlp, pSSM, (GeneriQ *)&pThis->cmdQ);
+    PS2CmnR3SaveQueue(pHlp, pSSM, (GeneriQ *)&pThis->evtQ);
 
     /* Save the command delay timer. Note that the rate throttling
      * timer is *not* saved.
@@ -1050,30 +965,31 @@ void PS2MSaveState(PPS2M pThis, PSSMHANDLE pSSM)
     TMR3TimerSave(pThis->CTX_SUFF(pDelayTimer), pSSM);
 }
 
-int PS2MLoadState(PPS2M pThis, PSSMHANDLE pSSM, uint32_t uVersion)
+int PS2MR3LoadState(PPDMDEVINS pDevIns, PPS2M pThis, PSSMHANDLE pSSM, uint32_t uVersion)
 {
-    uint8_t     u8;
-    int         rc;
+    PCPDMDEVHLPR3   pHlp = pDevIns->pHlpR3;
+    uint8_t         u8;
+    int             rc;
 
     NOREF(uVersion);
     LogFlowFunc(("Loading PS2M state version %u\n", uVersion));
 
     /* Load the basic auxiliary device state. */
-    SSMR3GetU8(pSSM, &pThis->u8State);
-    SSMR3GetU8(pSSM, &pThis->u8SampleRate);
-    SSMR3GetU8(pSSM, &pThis->u8Resolution);
-    SSMR3GetU8(pSSM, &pThis->u8CurrCmd);
-    SSMR3GetU8(pSSM, &u8);
+    pHlp->pfnSSMGetU8(pSSM, &pThis->u8State);
+    pHlp->pfnSSMGetU8(pSSM, &pThis->u8SampleRate);
+    pHlp->pfnSSMGetU8(pSSM, &pThis->u8Resolution);
+    pHlp->pfnSSMGetU8(pSSM, &pThis->u8CurrCmd);
+    pHlp->pfnSSMGetU8(pSSM, &u8);
     pThis->enmMode       = (PS2M_MODE)u8;
-    SSMR3GetU8(pSSM, &u8);
+    pHlp->pfnSSMGetU8(pSSM, &u8);
     pThis->enmProtocol   = (PS2M_PROTO)u8;
-    SSMR3GetU8(pSSM, &u8);
+    pHlp->pfnSSMGetU8(pSSM, &u8);
     pThis->enmKnockState = (PS2M_KNOCK_STATE)u8;
 
     /* Load the command and event queues. */
-    rc = ps2kLoadQueue(pSSM, (GeneriQ *)&pThis->cmdQ);
+    rc = PS2CmnR3LoadQueue(pHlp, pSSM, (GeneriQ *)&pThis->cmdQ);
     AssertRCReturn(rc, rc);
-    rc = ps2kLoadQueue(pSSM, (GeneriQ *)&pThis->evtQ);
+    rc = PS2CmnR3LoadQueue(pHlp, pSSM, (GeneriQ *)&pThis->evtQ);
     AssertRCReturn(rc, rc);
 
     /* Load the command delay timer, just in case. */
@@ -1083,12 +999,12 @@ int PS2MLoadState(PPS2M pThis, PSSMHANDLE pSSM, uint32_t uVersion)
     /* Recalculate the throttling delay. */
     ps2mSetRate(pThis, pThis->u8SampleRate);
 
-    ps2mSetDriverState(pThis, !!(pThis->u8State & AUX_STATE_ENABLED));
+    ps2mR3SetDriverState(pThis, !!(pThis->u8State & AUX_STATE_ENABLED));
 
-    return rc;
+    return VINF_SUCCESS;
 }
 
-void PS2MFixupState(PPS2M pThis, uint8_t u8State, uint8_t u8Rate, uint8_t u8Proto)
+void PS2MR3FixupState(PPS2M pThis, uint8_t u8State, uint8_t u8Rate, uint8_t u8Proto)
 {
     LogFlowFunc(("Fixing up old PS2M state version\n"));
 
@@ -1100,21 +1016,21 @@ void PS2MFixupState(PPS2M pThis, uint8_t u8State, uint8_t u8Rate, uint8_t u8Prot
     /* Recalculate the throttling delay. */
     ps2mSetRate(pThis, pThis->u8SampleRate);
 
-    ps2mSetDriverState(pThis, !!(pThis->u8State & AUX_STATE_ENABLED));
+    ps2mR3SetDriverState(pThis, !!(pThis->u8State & AUX_STATE_ENABLED));
 }
 
-void PS2MReset(PPS2M pThis)
+void PS2MR3Reset(PPS2M pThis)
 {
     LogFlowFunc(("Resetting PS2M\n"));
 
     pThis->u8CurrCmd         = 0;
 
     /* Clear the queues. */
-    ps2kClearQueue((GeneriQ *)&pThis->cmdQ);
+    PS2CmnClearQueue((GeneriQ *)&pThis->cmdQ);
     ps2mSetDefaults(pThis);     /* Also clears event queue. */
 }
 
-void PS2MRelocate(PPS2M pThis, RTGCINTPTR offDelta, PPDMDEVINS pDevIns)
+void PS2MR3Relocate(PPS2M pThis, RTGCINTPTR offDelta, PPDMDEVINS pDevIns)
 {
     RT_NOREF(pDevIns, offDelta);
     LogFlowFunc(("Relocating PS2M\n"));
@@ -1122,14 +1038,14 @@ void PS2MRelocate(PPS2M pThis, RTGCINTPTR offDelta, PPDMDEVINS pDevIns)
     pThis->pThrottleTimerRC = TMTimerRCPtr(pThis->pThrottleTimerR3);
 }
 
-int PS2MConstruct(PPS2M pThis, PPDMDEVINS pDevIns, PKBDSTATE pParent, unsigned iInstance)
+int PS2MR3Construct(PPS2M pThis, PPDMDEVINS pDevIns, PKBDSTATE pParent, unsigned iInstance)
 {
     RT_NOREF(iInstance);
 
     LogFlowFunc(("iInstance=%u\n", iInstance));
 
 #ifdef RT_STRICT
-    ps2mTestAccumulation();
+    ps2mR3TestAccumulation();
 #endif
 
     pThis->pParent = pParent;
@@ -1138,10 +1054,10 @@ int PS2MConstruct(PPS2M pThis, PPDMDEVINS pDevIns, PKBDSTATE pParent, unsigned i
     pThis->evtQ.cSize = AUX_EVT_QUEUE_SIZE;
     pThis->cmdQ.cSize = AUX_CMD_QUEUE_SIZE;
 
-    pThis->Mouse.IBase.pfnQueryInterface     = ps2mQueryInterface;
-    pThis->Mouse.IPort.pfnPutEvent           = ps2mPutEvent;
-    pThis->Mouse.IPort.pfnPutEventAbs        = ps2mPutEventAbs;
-    pThis->Mouse.IPort.pfnPutEventMultiTouch = ps2mPutEventMT;
+    pThis->Mouse.IBase.pfnQueryInterface     = ps2mR3QueryInterface;
+    pThis->Mouse.IPort.pfnPutEvent           = ps2mR3MousePort_PutEvent;
+    pThis->Mouse.IPort.pfnPutEventAbs        = ps2mR3MousePort_PutEventAbs;
+    pThis->Mouse.IPort.pfnPutEventMultiTouch = ps2mR3MousePort_PutEventMT;
 
     /*
      * Initialize the critical section pointer(s).
@@ -1152,10 +1068,9 @@ int PS2MConstruct(PPS2M pThis, PPDMDEVINS pDevIns, PKBDSTATE pParent, unsigned i
      * Create the input rate throttling timer. Does not use virtual time!
      */
     PTMTIMER pTimer;
-    int rc = PDMDevHlpTMTimerCreate(pDevIns, TMCLOCK_REAL, ps2mThrottleTimer, pThis,
+    int rc = PDMDevHlpTMTimerCreate(pDevIns, TMCLOCK_REAL, ps2mR3ThrottleTimer, pThis,
                                     TMTIMER_FLAGS_DEFAULT_CRIT_SECT, "PS2M Throttle Timer", &pTimer);
-    if (RT_FAILURE(rc))
-        return rc;
+    AssertRCReturn(rc, rc);
 
     pThis->pThrottleTimerR3 = pTimer;
     pThis->pThrottleTimerR0 = TMTimerR0Ptr(pTimer);
@@ -1164,10 +1079,9 @@ int PS2MConstruct(PPS2M pThis, PPDMDEVINS pDevIns, PKBDSTATE pParent, unsigned i
     /*
      * Create the command delay timer.
      */
-    rc = PDMDevHlpTMTimerCreate(pDevIns, TMCLOCK_VIRTUAL, ps2mDelayTimer, pThis,
+    rc = PDMDevHlpTMTimerCreate(pDevIns, TMCLOCK_VIRTUAL, ps2mR3DelayTimer, pThis,
                                 TMTIMER_FLAGS_DEFAULT_CRIT_SECT, "PS2M Delay Timer", &pTimer);
-    if (RT_FAILURE(rc))
-        return rc;
+    AssertRCReturn(rc, rc);
 
     pThis->pDelayTimerR3 = pTimer;
     pThis->pDelayTimerR0 = TMTimerR0Ptr(pTimer);
@@ -1176,10 +1090,10 @@ int PS2MConstruct(PPS2M pThis, PPDMDEVINS pDevIns, PKBDSTATE pParent, unsigned i
     /*
      * Register debugger info callbacks.
      */
-    PDMDevHlpDBGFInfoRegister(pDevIns, "ps2m", "Display PS/2 mouse state.", ps2mInfoState);
+    PDMDevHlpDBGFInfoRegister(pDevIns, "ps2m", "Display PS/2 mouse state.", ps2mR3InfoState);
 
     /// @todo Where should we do this?
-    ps2mSetDriverState(pThis, true);
+    ps2mR3SetDriverState(pThis, true);
     pThis->u8State = 0;
     pThis->enmMode = AUX_MODE_STD;
 
@@ -1193,11 +1107,11 @@ int PS2MConstruct(PPS2M pThis, PPDMDEVINS pDevIns, PKBDSTATE pParent, unsigned i
 
 /** Test the event accumulation mechanism which we use to delay events going
  * to the guest to one per 10ms (the default PS/2 mouse event rate).  This
- * test depends on ps2mPutEventWorker() not touching the timer if
+ * test depends on ps2mR3PutEventWorker() not touching the timer if
  * This.fThrottleActive is true. */
 /** @todo if we add any more tests it might be worth using a table of test
  * operations and checks. */
-static void ps2mTestAccumulation(void)
+static void ps2mR3TestAccumulation(void)
 {
     PS2M This;
     unsigned i;
@@ -1211,14 +1125,14 @@ static void ps2mTestAccumulation(void)
     /* Certain Windows touch pad drivers report a double tap as a press, then
      * a release-press-release all within a single 10ms interval.  Simulate
      * this to check that it is handled right. */
-    ps2mPutEventWorker(&This, 0, 0, 0, 0, 1);
+    ps2mR3PutEventWorker(&This, 0, 0, 0, 0, 1);
     if (ps2mHaveEvents(&This))
         ps2mReportAccumulatedEvents(&This, (GeneriQ *)&This.evtQ, true);
-    ps2mPutEventWorker(&This, 0, 0, 0, 0, 0);
+    ps2mR3PutEventWorker(&This, 0, 0, 0, 0, 0);
     if (ps2mHaveEvents(&This))
         ps2mReportAccumulatedEvents(&This, (GeneriQ *)&This.evtQ, true);
-    ps2mPutEventWorker(&This, 0, 0, 0, 0, 1);
-    ps2mPutEventWorker(&This, 0, 0, 0, 0, 0);
+    ps2mR3PutEventWorker(&This, 0, 0, 0, 0, 1);
+    ps2mR3PutEventWorker(&This, 0, 0, 0, 0, 0);
     if (ps2mHaveEvents(&This))
         ps2mReportAccumulatedEvents(&This, (GeneriQ *)&This.evtQ, true);
     if (ps2mHaveEvents(&This))
@@ -1235,7 +1149,7 @@ static void ps2mTestAccumulation(void)
     Assert(rc != VINF_SUCCESS);
     /* Button hold down during mouse drags was broken at some point during
      * testing fixes for the previous issue.  Test that that works. */
-    ps2mPutEventWorker(&This, 0, 0, 0, 0, 1);
+    ps2mR3PutEventWorker(&This, 0, 0, 0, 0, 1);
     if (ps2mHaveEvents(&This))
         ps2mReportAccumulatedEvents(&This, (GeneriQ *)&This.evtQ, true);
     if (ps2mHaveEvents(&This))
