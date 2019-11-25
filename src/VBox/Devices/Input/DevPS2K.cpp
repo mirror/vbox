@@ -379,35 +379,40 @@ static const   ext_key_def  aPS2CCKeys[] = {
 /**
  * Add a null-terminated byte sequence to a queue if there is enough room.
  *
- * @param   pQ                  Pointer to the queue.
- * @param   pStr                Pointer to the bytes to store.
- * @param   uReserve            Number of bytes that must still remain
- *                              available in queue.
- * @return  int                 VBox status/error code.
+ * @param   pQueue      Pointer to the queue.
+ * @param   pStr        Pointer to the bytes to store.
+ * @param   cbReserve   Number of bytes that must still remain available in
+ *                      queue.
+ * @return  VBox status/error code.
  */
-static int ps2kR3InsertStrQueue(GeneriQ *pQ, const uint8_t *pStr, uint32_t uReserve)
+static int ps2kR3InsertStrQueue(KbdKeyQ *pQueue, const uint8_t *pStr, uint32_t cbReserve)
 {
-    uint32_t    cbStr;
-    unsigned    i;
-
-    cbStr = (uint32_t)strlen((const char *)pStr);
-
     /* Check if queue has enough room. */
-    if (pQ->cUsed + uReserve + cbStr >= pQ->cSize)
+    size_t const cbStr = (uint32_t)strlen((const char *)pStr);
+    uint32_t     cUsed = RT_MIN(pQueue->Hdr.cUsed, RT_ELEMENTS(pQueue->abQueue));
+    if (cUsed + cbReserve + cbStr >= RT_ELEMENTS(pQueue->abQueue))
     {
-        LogRelFlowFunc(("queue %p full (%u entries, want room for %u), cannot insert %u entries\n",
-                        pQ, pQ->cUsed, uReserve, cbStr));
+        LogRelFlowFunc(("queue %p (KbdKeyQ) full (%u entries, want room for %u), cannot insert %zu entries\n",
+                        pQueue, cUsed, cbReserve, cbStr));
         return VERR_BUFFER_OVERFLOW;
     }
 
     /* Insert byte sequence and update circular buffer write position. */
-    for (i = 0; i < cbStr; ++i) {
-        pQ->abQueue[pQ->wpos] = pStr[i];
-        if (++pQ->wpos == pQ->cSize)
-            pQ->wpos = 0;   /* Roll over. */
+    uint32_t wpos = pQueue->Hdr.wpos % RT_ELEMENTS(pQueue->abQueue);
+    for (size_t i = 0; i < cbStr; i++)
+    {
+        pQueue->abQueue[wpos] = pStr[i];
+        wpos += 1;
+        if (wpos < RT_ELEMENTS(pQueue->abQueue))
+        { /* likely */ }
+        else
+            wpos = 0; /* Roll over. */
     }
-    pQ->cUsed += cbStr;
-    LogRelFlowFunc(("inserted %u bytes into queue %p\n", cbStr, pQ));
+
+    pQueue->Hdr.wpos  = wpos;
+    pQueue->Hdr.cUsed = cUsed + (uint32_t)cbStr;
+
+    LogRelFlowFunc(("inserted %u bytes into queue %p (KbdKeyQ)\n", cbStr, pQueue));
     return VINF_SUCCESS;
 }
 
@@ -429,18 +434,6 @@ static void ps2kR3NotifyLedsState(PPS2KR3 pThisCC, uint8_t u8State)
         enmLeds = (PDMKEYBLEDS)(enmLeds | PDMKEYBLEDS_CAPSLOCK);
 
     pThisCC->Keyboard.pDrv->pfnLedStatusChange(pThisCC->Keyboard.pDrv, enmLeds);
-}
-
-/**
- * Query the number of items currently in a queue.
- *
- * @param   pQ                  Pointer to the queue.
- *
- * @return  uint32_t            Number of items in queue.
- */
-static uint32_t ps2R3kInQueue(GeneriQ *pQ)
-{
-    return pQ->cUsed;
 }
 
 #endif /* IN_RING3 */
@@ -480,7 +473,7 @@ static void ps2kSetupTypematic(PPS2K pThis, uint8_t val)
 static void ps2kSetDefaults(PPDMDEVINS pDevIns, PPS2K pThis)
 {
     LogFlowFunc(("Set keyboard defaults\n"));
-    PS2CmnClearQueue((GeneriQ *)&pThis->keyQ);
+    PS2Q_CLEAR(&pThis->keyQ);
     /* Set default Scan Set 3 typematic values. */
     /* Set default typematic rate/delay. */
     ps2kSetupTypematic(pThis, KBD_DFL_RATE_DELAY);
@@ -508,31 +501,31 @@ int PS2KByteToKbd(PPDMDEVINS pDevIns, PPS2K pThis, uint8_t cmd)
     switch (cmd)
     {
         case KCMD_ECHO:
-            PS2CmnInsertQueue((GeneriQ *)&pThis->cmdQ, KRSP_ECHO);
+            PS2Q_INSERT(&pThis->cmdQ, KRSP_ECHO);
             pThis->u8CurrCmd = 0;
             break;
         case KCMD_READ_ID:
-            PS2CmnInsertQueue((GeneriQ *)&pThis->cmdQ, KRSP_ACK);
-            PS2CmnInsertQueue((GeneriQ *)&pThis->cmdQ, KRSP_ID1);
-            PS2CmnInsertQueue((GeneriQ *)&pThis->cmdQ, KRSP_ID2);
+            PS2Q_INSERT(&pThis->cmdQ, KRSP_ACK);
+            PS2Q_INSERT(&pThis->cmdQ, KRSP_ID1);
+            PS2Q_INSERT(&pThis->cmdQ, KRSP_ID2);
             pThis->u8CurrCmd = 0;
             break;
         case KCMD_ENABLE:
             pThis->fScanning = true;
-            PS2CmnClearQueue((GeneriQ *)&pThis->keyQ);
+            PS2Q_CLEAR(&pThis->keyQ);
             ps2kStopTypematicRepeat(pDevIns, pThis);
-            PS2CmnInsertQueue((GeneriQ *)&pThis->cmdQ, KRSP_ACK);
+            PS2Q_INSERT(&pThis->cmdQ, KRSP_ACK);
             pThis->u8CurrCmd = 0;
             break;
         case KCMD_DFLT_DISABLE:
             pThis->fScanning = false;
             ps2kSetDefaults(pDevIns, pThis); /* Also clears buffer/typematic state. */
-            PS2CmnInsertQueue((GeneriQ *)&pThis->cmdQ, KRSP_ACK);
+            PS2Q_INSERT(&pThis->cmdQ, KRSP_ACK);
             pThis->u8CurrCmd = 0;
             break;
         case KCMD_SET_DEFAULT:
             ps2kSetDefaults(pDevIns, pThis);
-            PS2CmnInsertQueue((GeneriQ *)&pThis->cmdQ, KRSP_ACK);
+            PS2Q_INSERT(&pThis->cmdQ, KRSP_ACK);
             pThis->u8CurrCmd = 0;
             break;
         case KCMD_ALL_TYPEMATIC:
@@ -540,7 +533,7 @@ int PS2KByteToKbd(PPDMDEVINS pDevIns, PPS2K pThis, uint8_t cmd)
         case KCMD_ALL_MAKE:
         case KCMD_ALL_TMB:
             /// @todo Set the key types here.
-            PS2CmnInsertQueue((GeneriQ *)&pThis->cmdQ, KRSP_ACK);
+            PS2Q_INSERT(&pThis->cmdQ, KRSP_ACK);
             pThis->u8CurrCmd = 0;
             break;
         case KCMD_RESEND:
@@ -550,7 +543,7 @@ int PS2KByteToKbd(PPDMDEVINS pDevIns, PPS2K pThis, uint8_t cmd)
             pThis->u8ScanSet = 2;
             ps2kSetDefaults(pDevIns, pThis);
             /// @todo reset more?
-            PS2CmnInsertQueue((GeneriQ *)&pThis->cmdQ, KRSP_ACK);
+            PS2Q_INSERT(&pThis->cmdQ, KRSP_ACK);
             pThis->u8CurrCmd = cmd;
             /* Delay BAT completion; the test may take hundreds of ms. */
             PDMDevHlpTimerSetMillies(pDevIns, pThis->hKbdDelayTimer, 2);
@@ -562,7 +555,7 @@ int PS2KByteToKbd(PPDMDEVINS pDevIns, PPS2K pThis, uint8_t cmd)
         case KCMD_TYPE_MATIC:
         case KCMD_TYPE_MK_BRK:
         case KCMD_TYPE_MAKE:
-            PS2CmnInsertQueue((GeneriQ *)&pThis->cmdQ, KRSP_ACK);
+            PS2Q_INSERT(&pThis->cmdQ, KRSP_ACK);
             pThis->u8CurrCmd = cmd;
             break;
         default:
@@ -577,16 +570,16 @@ int PS2KByteToKbd(PPDMDEVINS pDevIns, PPS2K pThis, uint8_t cmd)
                         PPS2KR3 pThisCC = &PDMDEVINS_2_DATA_CC(pDevIns, PKBDSTATER3)->Kbd;
                         ps2kR3NotifyLedsState(pThisCC, cmd);
                         pThis->fNumLockOn = !!(cmd & 0x02); /* Sync internal Num Lock state. */
-                        PS2CmnInsertQueue((GeneriQ *)&pThis->cmdQ, KRSP_ACK);
+                        PS2Q_INSERT(&pThis->cmdQ, KRSP_ACK);
                         pThis->u8LEDs = cmd;
                         pThis->u8CurrCmd = 0;
                     }
 #endif
                     break;
                 case KCMD_SCANSET:
-                    PS2CmnInsertQueue((GeneriQ *)&pThis->cmdQ, KRSP_ACK);
+                    PS2Q_INSERT(&pThis->cmdQ, KRSP_ACK);
                     if (cmd == 0)
-                        PS2CmnInsertQueue((GeneriQ *)&pThis->cmdQ, pThis->u8ScanSet);
+                        PS2Q_INSERT(&pThis->cmdQ, pThis->u8ScanSet);
                     else if (cmd < 4)
                     {
                         pThis->u8ScanSet = cmd;
@@ -597,7 +590,7 @@ int PS2KByteToKbd(PPDMDEVINS pDevIns, PPS2K pThis, uint8_t cmd)
                     break;
                 case KCMD_RATE_DELAY:
                     ps2kSetupTypematic(pThis, cmd);
-                    PS2CmnInsertQueue((GeneriQ *)&pThis->cmdQ, KRSP_ACK);
+                    PS2Q_INSERT(&pThis->cmdQ, KRSP_ACK);
                     pThis->u8CurrCmd = 0;
                     break;
                 default:
@@ -610,7 +603,7 @@ int PS2KByteToKbd(PPDMDEVINS pDevIns, PPS2K pThis, uint8_t cmd)
 
         case KCMD_INVALID_1:
         case KCMD_INVALID_2:
-            PS2CmnInsertQueue((GeneriQ *)&pThis->cmdQ, KRSP_RESEND);
+            PS2Q_INSERT(&pThis->cmdQ, KRSP_RESEND);
             pThis->u8CurrCmd = 0;
             break;
     }
@@ -639,11 +632,11 @@ int PS2KByteFromKbd(PPDMDEVINS pDevIns, PPS2K pThis, uint8_t *pb)
      * blocked if a command is currently in progress, even if
      * the command queue is empty.
      */
-    rc = PS2CmnRemoveQueue((GeneriQ *)&pThis->cmdQ, pb);
+    rc = PS2Q_REMOVE(&pThis->cmdQ, pb);
     if (rc != VINF_SUCCESS && !pThis->u8CurrCmd && pThis->fScanning)
         if (!pThis->fThrottleActive)
         {
-            rc = PS2CmnRemoveQueue((GeneriQ *)&pThis->keyQ, pb);
+            rc = PS2Q_REMOVE(&pThis->keyQ, pb);
             if (pThis->fThrottleEnabled)
             {
                 pThis->fThrottleActive = true;
@@ -799,7 +792,7 @@ static int ps2kR3ProcessKeyEvent(PPDMDEVINS pDevIns, PPS2K pThis, uint32_t u32Hi
 
             /* Feed the bytes to the queue if there is room. */
             /// @todo Send overrun code if sequence won't fit?
-            ps2kR3InsertStrQueue((GeneriQ *)&pThis->keyQ, abCodes, 0);
+            ps2kR3InsertStrQueue(&pThis->keyQ, abCodes, 0);
         }
         else if (!(pKeyDef->keyFlags & (KF_NB | KF_PB)))
         {
@@ -854,7 +847,7 @@ static int ps2kR3ProcessKeyEvent(PPDMDEVINS pDevIns, PPS2K pThis, uint32_t u32Hi
 
             /* Feed the bytes to the queue if there is room. */
             /// @todo Send overrun code if sequence won't fit?
-            ps2kR3InsertStrQueue((GeneriQ *)&pThis->keyQ, abCodes, 0);
+            ps2kR3InsertStrQueue(&pThis->keyQ, abCodes, 0);
         }
     }
     else
@@ -879,7 +872,7 @@ static int ps2kR3ProcessKeyEvent(PPDMDEVINS pDevIns, PPS2K pThis, uint32_t u32Hi
         }
         /* Feed the bytes to the queue if there is room. */
         /// @todo Send overrun code if sequence won't fit?
-        ps2kR3InsertStrQueue((GeneriQ *)&pThis->keyQ, abCodes, 0);
+        ps2kR3InsertStrQueue(&pThis->keyQ, abCodes, 0);
     }
 
     /* Set up or cancel typematic key repeat. For keyboard usage page only. */
@@ -947,7 +940,7 @@ static DECLCALLBACK(void) ps2kR3ThrottleTimer(PPDMDEVINS pDevIns, PTMTIMER pTime
      * is actually read, the timer may be re-triggered.
      */
     pThis->fThrottleActive = false;
-    uHaveData = ps2R3kInQueue((GeneriQ *)&pThis->keyQ);
+    uHaveData = PS2Q_COUNT(&pThis->keyQ);
     LogFlowFunc(("Have%s bytes\n", uHaveData ? "" : " no"));
     if (uHaveData)
         KBCUpdateInterrupts(pDevIns);
@@ -997,7 +990,7 @@ static DECLCALLBACK(void) ps2kR3DelayTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, 
     LogFlowFunc(("Delay timer: cmd %02X\n", pThis->u8CurrCmd));
 
     AssertMsg(pThis->u8CurrCmd == KCMD_RESET, ("u8CurrCmd=%02x\n", pThis->u8CurrCmd));
-    PS2CmnInsertQueue((GeneriQ *)&pThis->cmdQ, KRSP_BAT_OK);
+    PS2Q_INSERT(&pThis->cmdQ, KRSP_BAT_OK);
     pThis->fScanning = true;    /* BAT completion enables scanning! */
     pThis->u8CurrCmd = 0;
 
@@ -1045,9 +1038,9 @@ static DECLCALLBACK(void) ps2kR3InfoState(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp
     pHlp->pfnPrintf(pHlp, "Typematic delay %ums, repeat period %ums\n",
                     pThis->uTypematicDelay, pThis->uTypematicRepeat);
     pHlp->pfnPrintf(pHlp, "Command queue: %d items (%d max)\n",
-                    pThis->cmdQ.cUsed, pThis->cmdQ.cSize);
+                    PS2Q_COUNT(&pThis->cmdQ), PS2Q_SIZE(&pThis->cmdQ));
     pHlp->pfnPrintf(pHlp, "Input queue  : %d items (%d max)\n",
-                    pThis->keyQ.cUsed, pThis->keyQ.cSize);
+                    PS2Q_COUNT(&pThis->keyQ), PS2Q_SIZE(&pThis->keyQ));
     if (pThis->enmTypematicState != KBD_TMS_IDLE)
         pHlp->pfnPrintf(pHlp, "Active typematic key %08X (%s)\n", pThis->u32TypematicKey,
                         pThis->enmTypematicState == KBD_TMS_DELAY ? "delay" : "repeat");
@@ -1223,8 +1216,8 @@ void PS2KR3SaveState(PPDMDEVINS pDevIns, PPS2K pThis, PSSMHANDLE pSSM)
     pHlp->pfnSSMPutBool(pSSM, pThis->fScanning);
 
     /* Save the command and keystroke queues. */
-    PS2CmnR3SaveQueue(pHlp, pSSM, (GeneriQ *)&pThis->cmdQ);
-    PS2CmnR3SaveQueue(pHlp, pSSM, (GeneriQ *)&pThis->keyQ);
+    PS2Q_SAVE(pHlp, pSSM, &pThis->cmdQ);
+    PS2Q_SAVE(pHlp, pSSM, &pThis->keyQ);
 
     /* Save the command delay timer. Note that the typematic repeat
      * timer is *not* saved.
@@ -1275,9 +1268,9 @@ int PS2KR3LoadState(PPDMDEVINS pDevIns, PPS2K pThis, PSSMHANDLE pSSM, uint32_t u
     pHlp->pfnSSMGetBool(pSSM, &pThis->fScanning);
 
     /* Load the command and keystroke queues. */
-    rc = PS2CmnR3LoadQueue(pHlp, pSSM, (GeneriQ *)&pThis->cmdQ);
+    rc = PS2Q_LOAD(pHlp, pSSM, &pThis->cmdQ);
     AssertRCReturn(rc, rc);
-    rc = PS2CmnR3LoadQueue(pHlp, pSSM, (GeneriQ *)&pThis->keyQ);
+    rc = PS2Q_LOAD(pHlp, pSSM, &pThis->keyQ);
     AssertRCReturn(rc, rc);
 
     /* Load the command delay timer, just in case. */
@@ -1339,7 +1332,7 @@ void PS2KR3Reset(PPDMDEVINS pDevIns, PPS2K pThis, PPS2KR3 pThisCC)
 
     /* Clear queues and any pressed keys. */
     memset(pThis->abDepressedKeys, 0, sizeof(pThis->abDepressedKeys));
-    PS2CmnClearQueue((GeneriQ *)&pThis->cmdQ);
+    PS2Q_CLEAR(&pThis->cmdQ);
     ps2kSetDefaults(pDevIns, pThis);     /* Also clears keystroke queue. */
 
     /* Activate the PS/2 keyboard by default. */
@@ -1347,14 +1340,14 @@ void PS2KR3Reset(PPDMDEVINS pDevIns, PPS2K pThis, PPS2KR3 pThisCC)
         pThisCC->Keyboard.pDrv->pfnSetActive(pThisCC->Keyboard.pDrv, true /*fActive*/);
 }
 
-int PS2KR3Construct(PPDMDEVINS pDevIns, PPS2K pThis, PPS2KR3 pThisCC, unsigned iInstance, PCFGMNODE pCfg)
+int PS2KR3Construct(PPDMDEVINS pDevIns, PPS2K pThis, PPS2KR3 pThisCC, PCFGMNODE pCfg)
 {
+    LogFlowFunc(("\n"));
     PCPDMDEVHLPR3 pHlp = pDevIns->pHlpR3;
-    RT_NOREF(pDevIns, iInstance);
-    LogFlowFunc(("iInstance=%u\n", iInstance));
 
-    pThisCC->pDevIns = pDevIns;
-
+    /*
+     * Read configuration.
+     */
     bool fThrottleEnabled;
     int rc = pHlp->pfnCFGMQueryBoolDef(pCfg, "KbdThrottleEnabled", &fThrottleEnabled, true);
     if (RT_FAILURE(rc))
@@ -1362,10 +1355,10 @@ int PS2KR3Construct(PPDMDEVINS pDevIns, PPS2K pThis, PPS2KR3 pThisCC, unsigned i
     Log(("KbdThrottleEnabled=%RTbool\n", fThrottleEnabled));
     pThis->fThrottleEnabled = fThrottleEnabled;
 
-    /* Initialize the queues. */
-    pThis->keyQ.cSize = KBD_KEY_QUEUE_SIZE;
-    pThis->cmdQ.cSize = KBD_CMD_QUEUE_SIZE;
-
+    /*
+     * Initialize state.
+     */
+    pThisCC->pDevIns                          = pDevIns;
     pThisCC->Keyboard.IBase.pfnQueryInterface = ps2kR3QueryInterface;
     pThisCC->Keyboard.IPort.pfnPutEventHid    = ps2kR3KeyboardPort_PutEventHid;
 
@@ -1373,7 +1366,7 @@ int PS2KR3Construct(PPDMDEVINS pDevIns, PPS2K pThis, PPS2KR3 pThisCC, unsigned i
      * Create the input rate throttling timer.
      */
     rc = PDMDevHlpTimerCreate(pDevIns, TMCLOCK_VIRTUAL, ps2kR3ThrottleTimer, pThis,
-                                TMTIMER_FLAGS_DEFAULT_CRIT_SECT, "PS2K Throttle Timer", &pThis->hThrottleTimer);
+                              TMTIMER_FLAGS_DEFAULT_CRIT_SECT, "PS2K Throttle Timer", &pThis->hThrottleTimer);
     AssertRCReturn(rc, rc);
 
     /*

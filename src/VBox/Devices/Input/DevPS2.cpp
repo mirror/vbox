@@ -717,64 +717,91 @@ static DECLCALLBACK(VBOXSTRICTRC) kbdIOPortCommandWrite(PPDMDEVINS pDevIns, void
 /**
  * Clear a queue.
  *
- * @param   pQ                  Pointer to the queue.
+ * @param   pQHdr       The queue header.
+ * @param   cElements   The queue size.
  */
-void PS2CmnClearQueue(GeneriQ *pQ)
+void PS2CmnClearQueue(PPS2QHDR pQHdr, size_t cElements)
 {
-    LogFlowFunc(("Clearing queue %p\n", pQ));
-    pQ->wpos  = pQ->rpos;
-    pQ->cUsed = 0;
+    Assert(cElements > 0);
+    LogFlowFunc(("Clearing queue %p\n", pQHdr));
+    pQHdr->wpos  = pQHdr->rpos = pQHdr->rpos % cElements;
+    pQHdr->cUsed = 0;
 }
 
 
 /**
  * Add a byte to a queue.
  *
- * @param   pQ                  Pointer to the queue.
- * @param   val                 The byte to store.
+ * @param   pQHdr       The queue header.
+ * @param   cElements   The queue size.
+ * @param   abElements  The queue element array.
+ * @param   bValue      The byte to store.
  */
-void PS2CmnInsertQueue(GeneriQ *pQ, uint8_t val)
+void PS2CmnInsertQueue(PPS2QHDR pQHdr, size_t cElements, uint8_t *pbElements, uint8_t bValue)
 {
-    /* Check if queue is full. */
-    if (pQ->cUsed >= pQ->cSize)
+    Assert(cElements > 0);
+
+    /* Check that the queue is not full. */
+    uint32_t cUsed = pQHdr->cUsed;
+    if (cUsed < cElements)
     {
-        LogRelFlowFunc(("queue %p full (%d entries)\n", pQ, pQ->cUsed));
-        return;
+        /* Insert data and update circular buffer write position. */
+        uint32_t wpos = pQHdr->wpos % cElements;
+        pbElements[wpos] = bValue;
+
+        wpos += 1;
+        if (wpos < cElements)
+            pQHdr->wpos = wpos;
+        else
+            pQHdr->wpos = 0; /* Roll over. */
+        pQHdr->cUsed = cUsed + 1;
+
+        LogRelFlowFunc(("inserted %#04x into queue %p\n", bValue, pQHdr));
     }
-    /* Insert data and update circular buffer write position. */
-    pQ->abQueue[pQ->wpos] = val;
-    if (++pQ->wpos == pQ->cSize)
-        pQ->wpos = 0;   /* Roll over. */
-    ++pQ->cUsed;
-    LogRelFlowFunc(("inserted 0x%02X into queue %p\n", val, pQ));
+    else
+    {
+        Assert(cUsed == cElements);
+        LogRelFlowFunc(("queue %p full (%zu entries)\n", pQHdr, cElements));
+    }
 }
 
 /**
  * Retrieve a byte from a queue.
  *
- * @param   pQ                  Pointer to the queue.
- * @param   pVal                Pointer to storage for the byte.
+ * @param   pQHdr       The queue header.
+ * @param   cElements   The queue size.
+ * @param   abElements  The queue element array.
+ * @param   pbValue     Where to return the byte on success.
  *
  * @retval  VINF_TRY_AGAIN if queue is empty,
  * @retval  VINF_SUCCESS if a byte was read.
  */
-int PS2CmnRemoveQueue(GeneriQ *pQ, uint8_t *pVal)
+int PS2CmnRemoveQueue(PPS2QHDR pQHdr, size_t cElements, uint8_t const *pbElements, uint8_t *pbValue)
 {
     int rc;
 
-    Assert(pVal);
-    if (pQ->cUsed)
+    Assert(cElements > 0);
+    Assert(pbValue);
+
+    uint32_t cUsed = (uint32_t)RT_MIN(pQHdr->cUsed, cElements);
+    if (cUsed > 0)
     {
-        *pVal = pQ->abQueue[pQ->rpos];
-        if (++pQ->rpos == pQ->cSize)
-            pQ->rpos = 0;   /* Roll over. */
-        --pQ->cUsed;
-        LogFlowFunc(("removed 0x%02X from queue %p\n", *pVal, pQ));
+        uint32_t rpos = pQHdr->rpos % cElements;
+        *pbValue = pbElements[rpos];
+
+        rpos += 1;
+        if (rpos < cElements)
+            pQHdr->rpos = rpos;
+        else
+            pQHdr->rpos = 0;   /* Roll over. */
+        pQHdr->cUsed = cUsed - 1;
+
+        LogFlowFunc(("removed 0x%02X from queue %p\n", *pbValue, pQHdr));
         rc = VINF_SUCCESS;
     }
     else
     {
-        LogFlowFunc(("queue %p empty\n", pQ));
+        LogFlowFunc(("queue %p empty\n", pQHdr));
         rc = VINF_TRY_AGAIN;
     }
     return rc;
@@ -785,53 +812,56 @@ int PS2CmnRemoveQueue(GeneriQ *pQ, uint8_t *pVal)
 /**
  * Save a queue state.
  *
- * @param   pHlp                The device helpers.
- * @param   pSSM                SSM handle to write the state to.
- * @param   pQ                  Pointer to the queue.
+ * @param   pHlp        The device helpers.
+ * @param   pSSM        SSM handle to write the state to.
+ * @param   pQHdr       The queue header.
+ * @param   cElements   The queue size.
+ * @param   abElements  The queue element array.
  */
-void PS2CmnR3SaveQueue(PCPDMDEVHLPR3 pHlp, PSSMHANDLE pSSM, GeneriQ *pQ)
+void PS2CmnR3SaveQueue(PCPDMDEVHLPR3 pHlp, PSSMHANDLE pSSM, PPS2QHDR pQHdr, size_t cElements, uint8_t const *pbElements)
 {
-    uint32_t    cItems = pQ->cUsed;
-    uint32_t    i;
+    uint32_t cItems = (uint32_t)RT_MIN(pQHdr->cUsed, cElements);
 
     /* Only save the number of items. Note that the read/write
      * positions aren't saved as they will be rebuilt on load.
      */
     pHlp->pfnSSMPutU32(pSSM, cItems);
 
-    LogFlow(("Storing %d items from queue %p\n", cItems, pQ));
+    LogFlow(("Storing %u items from queue %p\n", cItems, pQHdr));
 
     /* Save queue data - only the bytes actually used (typically zero). */
-    for (i = pQ->rpos % pQ->cSize; cItems-- > 0; i = (i + 1) % pQ->cSize)
-        pHlp->pfnSSMPutU8(pSSM, pQ->abQueue[i]);
+    for (uint32_t i = pQHdr->rpos % cElements; cItems-- > 0; i = (i + 1) % cElements)
+        pHlp->pfnSSMPutU8(pSSM, pbElements[i]);
 }
 
 /**
  * Load a queue state.
  *
- * @param   pHlp                The device helpers.
- * @param   pSSM                SSM handle to read the state from.
- * @param   pQ                  Pointer to the queue.
+ * @param   pHlp        The device helpers.
+ * @param   pSSM        SSM handle to read the state from.
+ * @param   pQHdr       The queue header.
+ * @param   cElements   The queue size.
+ * @param   abElements  The queue element array.
  *
  * @returns VBox status/error code.
  */
-int PS2CmnR3LoadQueue(PCPDMDEVHLPR3 pHlp, PSSMHANDLE pSSM, GeneriQ *pQ)
+int PS2CmnR3LoadQueue(PCPDMDEVHLPR3 pHlp, PSSMHANDLE pSSM, PPS2QHDR pQHdr, size_t cElements, uint8_t *pbElements)
 {
-    int         rc;
-
     /* On load, always put the read pointer at zero. */
-    rc = pHlp->pfnSSMGetU32(pSSM, &pQ->cUsed);
+    uint32_t cUsed;
+    int rc = pHlp->pfnSSMGetU32(pSSM, &cUsed);
     AssertRCReturn(rc, rc);
 
-    LogFlow(("Loading %d items to queue %p\n", pQ->cUsed, pQ));
+    LogFlow(("Loading %u items to queue %p\n", cUsed, pQHdr));
 
-    AssertMsgReturn(pQ->cUsed <= pQ->cSize, ("Saved size=%u, actual=%u\n", pQ->cUsed, pQ->cSize),
+    AssertMsgReturn(cUsed <= cElements, ("Saved size=%u, actual=%zu\n", cUsed, cElements),
                     VERR_SSM_DATA_UNIT_FORMAT_CHANGED);
 
     /* Recalculate queue positions and load data in one go. */
-    pQ->rpos = 0;
-    pQ->wpos = pQ->cUsed;
-    return pHlp->pfnSSMGetMem(pSSM, pQ->abQueue, pQ->cUsed);
+    pQHdr->rpos  = 0;
+    pQHdr->wpos  = cUsed;
+    pQHdr->cUsed = cUsed;
+    return pHlp->pfnSSMGetMem(pSSM, pbElements, cUsed);
 }
 
 
@@ -1000,6 +1030,8 @@ static DECLCALLBACK(int) kbdR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     PKBDSTATE   pThis   = PDMDEVINS_2_DATA(pDevIns, PKBDSTATE);
     PKBDSTATER3 pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PKBDSTATER3);
     int         rc;
+    RT_NOREF(iInstance);
+
     Assert(iInstance == 0);
 
     /*
@@ -1011,10 +1043,10 @@ static DECLCALLBACK(int) kbdR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     /*
      * Initialize the sub-components.
      */
-    rc = PS2KR3Construct(pDevIns, &pThis->Kbd, &pThisCC->Kbd, iInstance, pCfg);
+    rc = PS2KR3Construct(pDevIns, &pThis->Kbd, &pThisCC->Kbd, pCfg);
     AssertRCReturn(rc, rc);
 
-    rc = PS2MR3Construct(pDevIns, &pThis->Aux, &pThisCC->Aux, iInstance);
+    rc = PS2MR3Construct(pDevIns, &pThis->Aux, &pThisCC->Aux);
     AssertRCReturn(rc, rc);
 
     /*

@@ -28,22 +28,46 @@
 /** Pointer to the shared keyboard (PS/2) controller / device state. */
 typedef struct KBDSTATE *PKBDSTATE;
 
+
+/** @name PS/2 Input Queue Primitive
+ * @{ */
+typedef struct PS2QHDR
+{
+    uint32_t volatile   rpos;
+    uint32_t volatile   wpos;
+    uint32_t volatile   cUsed;
+} PS2QHDR;
+/** Pointer to a queue header. */
+typedef PS2QHDR *PPS2QHDR;
+
 /** Define a simple PS/2 input device queue. */
-#define DEF_PS2Q_TYPE(name, size)   \
-     typedef struct {               \
-        uint32_t    rpos;           \
-        uint32_t    wpos;           \
-        uint32_t    cUsed;          \
-        uint32_t    cSize;          \
+#define DEF_PS2Q_TYPE(name, size) \
+     typedef struct { \
+        PS2QHDR     Hdr; \
         uint8_t     abQueue[size];  \
      } name
 
-DEF_PS2Q_TYPE(GeneriQ, 1);
-void PS2CmnClearQueue(GeneriQ *pQ);
-void PS2CmnInsertQueue(GeneriQ *pQ, uint8_t val);
-int  PS2CmnRemoveQueue(GeneriQ *pQ, uint8_t *pVal);
-void PS2CmnR3SaveQueue(PCPDMDEVHLPR3 pHlp, PSSMHANDLE pSSM, GeneriQ *pQ);
-int  PS2CmnR3LoadQueue(PCPDMDEVHLPR3 pHlp, PSSMHANDLE pSSM, GeneriQ *pQ);
+void PS2CmnClearQueue(PPS2QHDR pQHdr, size_t cElements);
+void PS2CmnInsertQueue(PPS2QHDR pQHdr, size_t cElements, uint8_t *pbElements, uint8_t bValue);
+int  PS2CmnRemoveQueue(PPS2QHDR pQHdr, size_t cElements, uint8_t const *pbElements, uint8_t *pbValue);
+void PS2CmnR3SaveQueue(PCPDMDEVHLPR3 pHlp, PSSMHANDLE pSSM, PPS2QHDR pQHdr, size_t cElements, uint8_t const *pbElements);
+int  PS2CmnR3LoadQueue(PCPDMDEVHLPR3 pHlp, PSSMHANDLE pSSM, PPS2QHDR pQHdr, size_t cElements, uint8_t *pbElements);
+
+#define PS2Q_CLEAR(a_pQueue) \
+    PS2CmnClearQueue(&(a_pQueue)->Hdr, RT_ELEMENTS((a_pQueue)->abQueue))
+#define PS2Q_INSERT(a_pQueue, a_bValue) \
+    PS2CmnInsertQueue(&(a_pQueue)->Hdr, RT_ELEMENTS((a_pQueue)->abQueue), (a_pQueue)->abQueue, (a_bValue))
+#define PS2Q_REMOVE(a_pQueue, a_pbValue) \
+    PS2CmnRemoveQueue(&(a_pQueue)->Hdr, RT_ELEMENTS((a_pQueue)->abQueue), (a_pQueue)->abQueue, (a_pbValue))
+#define PS2Q_SAVE(a_pHlp, a_pSSM, a_pQueue) \
+    PS2CmnR3SaveQueue((a_pHlp), (a_pSSM), &(a_pQueue)->Hdr, RT_ELEMENTS((a_pQueue)->abQueue), (a_pQueue)->abQueue)
+#define PS2Q_LOAD(a_pHlp, a_pSSM, a_pQueue) \
+    PS2CmnR3LoadQueue((a_pHlp), (a_pSSM), &(a_pQueue)->Hdr, RT_ELEMENTS((a_pQueue)->abQueue), (a_pQueue)->abQueue)
+#define PS2Q_SIZE(a_pQueue)     RT_ELEMENTS((a_pQueue)->abQueue)
+#define PS2Q_COUNT(a_pQueue)    ((a_pQueue)->Hdr.cUsed)
+#define PS2Q_RD_POS(a_pQueue)   ((a_pQueue)->Hdr.rpos)
+#define PS2Q_WR_POS(a_pQueue)   ((a_pQueue)->Hdr.wpos)
+/** @} */
 
 
 /** @defgroup grp_devps2k   DevPS2K - Keyboard
@@ -172,7 +196,7 @@ typedef PS2KR3 *PPS2KR3;
 int  PS2KByteToKbd(PPDMDEVINS pDevIns, PPS2K pThis, uint8_t cmd);
 int  PS2KByteFromKbd(PPDMDEVINS pDevIns, PPS2K pThis, uint8_t *pVal);
 
-int  PS2KR3Construct(PPDMDEVINS pDevIns, PPS2K pThis, PPS2KR3 pThisCC, unsigned iInstance, PCFGMNODE pCfg);
+int  PS2KR3Construct(PPDMDEVINS pDevIns, PPS2K pThis, PPS2KR3 pThisCC, PCFGMNODE pCfg);
 int  PS2KR3Attach(PPDMDEVINS pDevIns, PPS2KR3 pThisCC, unsigned iLUN, uint32_t fFlags);
 void PS2KR3Reset(PPDMDEVINS pDevIns, PPS2K pThis, PPS2KR3 pThisCC);
 void PS2KR3SaveState(PPDMDEVINS pDevIns, PPS2K pThis, PSSMHANDLE pSSM);
@@ -316,7 +340,7 @@ typedef PS2MR3 *PPS2MR3;
 int  PS2MByteToAux(PPDMDEVINS pDevIns, PPS2M pThis, uint8_t cmd);
 int  PS2MByteFromAux(PPS2M pThis, uint8_t *pVal);
 
-int  PS2MR3Construct(PPDMDEVINS pDevIns, PPS2M pThis, PPS2MR3 pThisCC, unsigned iInstance);
+int  PS2MR3Construct(PPDMDEVINS pDevIns, PPS2M pThis, PPS2MR3 pThisCC);
 int  PS2MR3Attach(PPDMDEVINS pDevIns, PPS2MR3 pThisCC, unsigned iLUN, uint32_t fFlags);
 void PS2MR3Reset(PPS2M pThis);
 void PS2MR3SaveState(PPDMDEVINS pDevIns, PPS2M pThis, PSSMHANDLE pSSM);
