@@ -31,5 +31,30 @@
 #define SCSI_READ_16       0x88
 #define SCSI_WRITE_16      0x8a
 
+#pragma pack(1)
+
+/* READ_10/WRITE_10 CDB layout. */
+typedef struct {
+    uint16_t    command;    /* Command. */
+    uint32_t    lba;        /* LBA, MSB first! */
+    uint8_t     pad1;       /* Unused. */
+    uint16_t    nsect;      /* Sector count, MSB first! */
+    uint8_t     pad2;       /* Unused. */
+} cdb_rw10;
+
+/* READ_16/WRITE_16 CDB layout. */
+typedef struct {
+    uint16_t    command;    /* Command. */
+    uint64_t    lba;        /* LBA, MSB first! */
+    uint32_t    nsect32;    /* Sector count, MSB first! */
+    uint8_t     pad1;       /* Unused. */
+    uint8_t     pad2;       /* Unused. */
+} cdb_rw16;
+
+#pragma pack()
+
+ct_assert(sizeof(cdb_rw10) == 10);
+ct_assert(sizeof(cdb_rw16) == 16);
+
 #endif /* !VBOX_INCLUDED_SRC_PC_BIOS_scsi_h */
 
