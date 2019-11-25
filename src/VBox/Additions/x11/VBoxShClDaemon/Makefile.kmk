@@ -1,0 +1,160 @@
+# $Id$
+## @file
+# Sub-Makefile for the VirtualBox Guest Additions Shared Clipboard Gvfs daemon.
+#
+
+#
+# Copyright (C) 2006-2019 Oracle Corporation
+#
+# This file is part of VirtualBox Open Source Edition (OSE), as
+# available from http://www.virtualbox.org. This file is free software;
+# you can redistribute it and/or modify it under the terms of the GNU
+# General Public License (GPL) as published by the Free Software
+# Foundation, in version 2 as it comes in the "COPYING" file of the
+# VirtualBox OSE distribution. VirtualBox OSE is distributed in the
+# hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
+#
+
+SUB_DEPTH = ../../../../..
+include $(KBUILD_PATH)/subheader.kmk
+
+#
+# VBoxShClDaemon - Shared Clipboard Gvfs daemon.
+#
+PROGRAMS += VBoxShClDaemon
+
+VBoxShClDaemon_TEMPLATE = NewVBoxGuestR3Exe
+VBoxShClDaemon_DEFS += VBOX_X11_CLIPBOARD VBOX_WITH_HGCM
+VBoxShClDaemon_DEFS += VBOX_BUILD_TARGET=\"$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)\"
+ifdef VBOX_WITH_DBUS
+ VBoxShClDaemon_DEFS += VBOX_WITH_DBUS
+endif
+#VBoxShClDaemon_DEFS.linux += _GNU_SOURCE
+
+VBoxShClDaemon_LIBPATH = \
+	$(VBOX_LIBPATH32_X11)
+VBoxShClDaemon_LIBS.freebsd = \
+	iconv
+VBoxShClDaemon_LIBS.linux = \
+	dl
+VBoxShClDaemon_LIBS.netbsd = \
+	crypt
+VBoxShClDaemon_LIBS.solaris = \
+	dl
+VBoxShClDaemon_LIBS = \
+	X11 Xrandr Xt Xext Xmu
+
+# XXX: -L comes from the template, but not rpath
+VBoxShClDaemon_LDFLAGS.netbsd = \
+	-Wl,-rpath /usr/X11R7/lib
+
+# This forces the memcpy references in the static libraries to go to
+# __wrap_memcpy, which we can wrap around memcpy@GLIBC_2.2.5.  I do not know
+# how else to do that without recompiling or implementing our own memcpy.
+ifeq ($(KBUILD_TARGET),linux)
+VBoxShClDaemon_LDFLAGS.amd64 += \
+	-Wl,--wrap=memcpy
+endif
+
+VBoxShClDaemon_DEFS += \
+	VBOX_WITH_SHARED_CLIPBOARD \
+	VBOX_WITH_SHARED_CLIPBOARD_GUEST \
+	VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
+
+VBoxShClDaemon_SOURCES += \
+	VBoxShClDaemon.c \
+	$(PATH_ROOT)/src/VBox/GuestHost/SharedClipboard/clipboard-common.cpp \
+	$(PATH_ROOT)/src/VBox/GuestHost/SharedClipboard/clipboard-transfers.cpp \
+	$(PATH_ROOT)/src/VBox/GuestHost/SharedClipboard/ClipboardPath.cpp
+
+VBOX_VBoxShClDaemon_GVFS_PATH := gvfs-1.43.1
+
+VBoxShClDaemon_SOURCES += \
+	${VBOX_VBoxShClDaemon_GVFS_PATH}/daemon/gvfsbackend.c \
+	${VBOX_VBoxShClDaemon_GVFS_PATH}/daemon/daemon-main.c \
+	${VBOX_VBoxShClDaemon_GVFS_PATH}/daemon/daemon-main-generic.c \
+	${VBOX_VBoxShClDaemon_GVFS_PATH}/daemon/gvfsdaemonutils.c \
+	${VBOX_VBoxShClDaemon_GVFS_PATH}/daemon/gvfsjobcopy.c \
+	${VBOX_VBoxShClDaemon_GVFS_PATH}/daemon/gvfsjobpush.c \
+	${VBOX_VBoxShClDaemon_GVFS_PATH}/daemon/gvfsjobunmountmountable.c \
+	${VBOX_VBoxShClDaemon_GVFS_PATH}/daemon/gvfschannel.c \
+	${VBOX_VBoxShClDaemon_GVFS_PATH}/daemon/gvfsdaemon.c \
+	${VBOX_VBoxShClDaemon_GVFS_PATH}/daemon/gvfsjob.c \
+	${VBOX_VBoxShClDaemon_GVFS_PATH}/daemon/gvfsjobcloseread.c \
+	${VBOX_VBoxShClDaemon_GVFS_PATH}/daemon/gvfsjobclosewrite.c \
+	${VBOX_VBoxShClDaemon_GVFS_PATH}/daemon/gvfsjobcreatemonitor.c \
+	${VBOX_VBoxShClDaemon_GVFS_PATH}/daemon/gvfsjobdbus.c \
+	${VBOX_VBoxShClDaemon_GVFS_PATH}/daemon/gvfsjobdelete.c \
+	${VBOX_VBoxShClDaemon_GVFS_PATH}/daemon/gvfsjobenumerate.c \
+	${VBOX_VBoxShClDaemon_GVFS_PATH}/daemon/gvfsjoberror.c \
+	${VBOX_VBoxShClDaemon_GVFS_PATH}/daemon/gvfsjobmakedirectory.c \
+	${VBOX_VBoxShClDaemon_GVFS_PATH}/daemon/gvfsjobmakesymlink.c \
+	${VBOX_VBoxShClDaemon_GVFS_PATH}/daemon/gvfsjobmount.c \
+	${VBOX_VBoxShClDaemon_GVFS_PATH}/daemon/gvfsjobmountmountable.c \
+	${VBOX_VBoxShClDaemon_GVFS_PATH}/daemon/gvfsjobmove.c \
+	${VBOX_VBoxShClDaemon_GVFS_PATH}/daemon/gvfsjobopenforread.c \
+	${VBOX_VBoxShClDaemon_GVFS_PATH}/daemon/gvfsjobopenforwrite.c \
+	${VBOX_VBoxShClDaemon_GVFS_PATH}/daemon/gvfsjobopeniconforread.c \
+	${VBOX_VBoxShClDaemon_GVFS_PATH}/daemon/gvfsjobpollmountable.c \
+	${VBOX_VBoxShClDaemon_GVFS_PATH}/daemon/gvfsjobprogress.c \
+	${VBOX_VBoxShClDaemon_GVFS_PATH}/daemon/gvfsjobpull.c \
+	${VBOX_VBoxShClDaemon_GVFS_PATH}/daemon/gvfsjobqueryattributes.c \
+	${VBOX_VBoxShClDaemon_GVFS_PATH}/daemon/gvfsjobqueryfsinfo.c \
+	${VBOX_VBoxShClDaemon_GVFS_PATH}/daemon/gvfsjobqueryinfo.c \
+	${VBOX_VBoxShClDaemon_GVFS_PATH}/daemon/gvfsjobqueryinforead.c \
+	${VBOX_VBoxShClDaemon_GVFS_PATH}/daemon/gvfsjobqueryinfowrite.c \
+	${VBOX_VBoxShClDaemon_GVFS_PATH}/daemon/gvfsjobread.c \
+	${VBOX_VBoxShClDaemon_GVFS_PATH}/daemon/gvfsjobseekread.c \
+	${VBOX_VBoxShClDaemon_GVFS_PATH}/daemon/gvfsjobseekwrite.c \
+	${VBOX_VBoxShClDaemon_GVFS_PATH}/daemon/gvfsjobsetattribute.c \
+	${VBOX_VBoxShClDaemon_GVFS_PATH}/daemon/gvfsjobsetdisplayname.c \
+	${VBOX_VBoxShClDaemon_GVFS_PATH}/daemon/gvfsjobsource.c \
+	${VBOX_VBoxShClDaemon_GVFS_PATH}/daemon/gvfsjobstartmountable.c \
+	${VBOX_VBoxShClDaemon_GVFS_PATH}/daemon/gvfsjobstopmountable.c \
+	${VBOX_VBoxShClDaemon_GVFS_PATH}/daemon/gvfsjobtrash.c \
+	${VBOX_VBoxShClDaemon_GVFS_PATH}/daemon/gvfsjobtruncate.c \
+	${VBOX_VBoxShClDaemon_GVFS_PATH}/daemon/gvfsjobunmount.c \
+	${VBOX_VBoxShClDaemon_GVFS_PATH}/daemon/gvfsjobwrite.c \
+	${VBOX_VBoxShClDaemon_GVFS_PATH}/daemon/gvfskeyring.c \
+	${VBOX_VBoxShClDaemon_GVFS_PATH}/daemon/gvfsmonitor.c \
+	${VBOX_VBoxShClDaemon_GVFS_PATH}/daemon/gvfsreadchannel.c \
+	${VBOX_VBoxShClDaemon_GVFS_PATH}/daemon/gvfswritechannel.c \
+	${VBOX_VBoxShClDaemon_GVFS_PATH}/common/gvfsmonitorimpl.c \
+	${VBOX_VBoxShClDaemon_GVFS_PATH}/common/gmountoperationdbus.c \
+	${VBOX_VBoxShClDaemon_GVFS_PATH}/common/gmountsource.c \
+	${VBOX_VBoxShClDaemon_GVFS_PATH}/common/gmountspec.c \
+	${VBOX_VBoxShClDaemon_GVFS_PATH}/common/gmounttracker.c \
+	${VBOX_VBoxShClDaemon_GVFS_PATH}/common/gvfsdaemonprotocol.c \
+	${VBOX_VBoxShClDaemon_GVFS_PATH}/common/gvfsfileinfo.c \
+	${VBOX_VBoxShClDaemon_GVFS_PATH}/common/gvfsicon.c \
+	${VBOX_VBoxShClDaemon_GVFS_PATH}/common/gvfsmountinfo.c \
+	${VBOX_VBoxShClDaemon_GVFS_PATH}/common/gvfsutils.c
+
+VBoxShClDaemon_SOURCES += \
+	${VBOX_VBoxShClDaemon_GVFS_PATH}/out/common/gvfsdbus.c
+
+# Flags to make libgvfs compile w/o modifications.
+## @todo Improve this by supplying some own fixes.
+VBoxShClDaemon_CFLAGS  += -Wno-shadow -Wno-sign-compare -Wno-unused-parameter -Wno-pedantic -Wno-strict-prototypes -Wno-missing-prototypes
+VBoxShClDaemon_CFLAGS  += -DGVFS_LOCALEDIR=\"/usr/local/share/locale\"
+VBoxShClDaemon_CFLAGS  += -DREMOTE_VOLUME_MONITORS_DIR=\".\" ## @BUGBUG This probably needs fixing.
+VBoxShClDaemon_CFLAGS  += -DBACKEND_HEADER=../../VBoxShClDaemon.h
+VBoxShClDaemon_CFLAGS  += -DBACKEND_USES_GVFS
+VBoxShClDaemon_CFLAGS  += -DDEFAULT_BACKEND_TYPE=vboxsc '-DBACKEND_TYPES="vboxsc",$ G_VFS_TYPE_BACKEND_VBOXSC,'
+
+VBoxShClDaemon_INCS    += \
+ 	${VBOX_VBoxShClDaemon_GVFS_PATH}/common \
+ 	${VBOX_VBoxShClDaemon_GVFS_PATH}/daemon \
+ 	${VBOX_VBoxShClDaemon_GVFS_PATH}/out \
+ 	${VBOX_VBoxShClDaemon_GVFS_PATH}/out/common \
+ 	/usr/include/glib-2.0 \
+ 	/usr/lib/x86_64-linux-gnu/glib-2.0/include \
+ 	/usr/include/gio-unix-2.0
+
+VBoxShClDaemon_LIBS += \
+	gio-2.0 \
+	glib-2.0 \
+	gobject-2.0
+
+include $(FILE_KBUILD_SUB_FOOTER)
+
