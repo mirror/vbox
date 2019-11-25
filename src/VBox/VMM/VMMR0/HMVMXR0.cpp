@@ -5804,6 +5804,7 @@ static int hmR0VmxExportSharedDebugState(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTrans
          * If the guest has enabled debug registers, we need to load them prior to
          * executing guest code so they'll trigger at the right time.
          */
+        HMVMX_CPUMCTX_ASSERT(pVCpu, CPUMCTX_EXTRN_DR7);
         if (pVCpu->cpum.GstCtx.dr[7] & (X86_DR7_ENABLED_MASK | X86_DR7_GD))
         {
             if (!CPUMIsGuestDebugStateActive(pVCpu))
@@ -8819,14 +8820,15 @@ static VBOXSTRICTRC hmR0VmxInjectPendingEvent(PVMCPUCC pVCpu, PCVMXTRANSIENT pVm
             int rc = VMXWriteVmcsNw(VMX_VMCS_GUEST_PENDING_DEBUG_XCPTS, fTrapFlag << VMX_BF_VMCS_PENDING_DBG_XCPT_BS_SHIFT);
             AssertRC(rc);
         }
-        else if (pVCpu->cpum.GstCtx.eflags.u32 & X86_EFL_TF)
+        else
         {
             /*
-             * We must not deliver a debug exception when single-stepping in the hypervisor debugger
-             * using EFLAGS.T. Instead, clear interrupt inhibition.
+             * We must not deliver a debug exception when single-stepping over STI/Mov-SS in the
+             * hypervisor debugger using EFLAGS.TF but rather clear interrupt inhibition. However,
+             * we take care of this case in hmR0VmxExportSharedDebugState and also the case if
+             * we use MTF, so just make sure it's called before executing guest-code.
              */
-            Assert(!(pVCpu->CTX_SUFF(pVM)->hm.s.vmx.Msrs.ProcCtls.n.allowed1 & VMX_PROC_CTLS_MONITOR_TRAP_FLAG));
-            fIntrState = 0;
+            ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_GUEST_DR_MASK);
         }
     }
     /* else: for nested-guest currently handling while merging controls. */
@@ -10827,13 +10829,7 @@ static void hmR0VmxPostRunGuest(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransient, int
 #ifdef HMVMX_ALWAYS_SAVE_RO_GUEST_STATE
             hmR0VmxReadAllRoFieldsVmcs(pVmxTransient);
 #endif
-#if defined(HMVMX_ALWAYS_SYNC_FULL_GUEST_STATE) || defined(HMVMX_ALWAYS_SAVE_FULL_GUEST_STATE)
-            rc = hmR0VmxImportGuestState(pVCpu, pVmcsInfo, HMVMX_CPUMCTX_EXTRN_ALL);
-            AssertRC(rc);
-#elif defined(HMVMX_ALWAYS_SAVE_GUEST_RFLAGS)
-            rc = hmR0VmxImportGuestState(pVCpu, pVmcsInfo, HMVMX_CPUMCTX_EXTRN_RFLAGS);
-            AssertRC(rc);
-#else
+
             /*
              * Import the guest-interruptibility state always as we need it while evaluating
              * injecting events on re-entry.
@@ -10842,9 +10838,15 @@ static void hmR0VmxPostRunGuest(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransient, int
              * checking for real-mode while exporting the state because all bits that cause
              * mode changes wrt CR0 are intercepted.
              */
-            rc = hmR0VmxImportGuestState(pVCpu, pVmcsInfo, CPUMCTX_EXTRN_HM_VMX_INT_STATE);
-            AssertRC(rc);
+            uint64_t const fImportMask = CPUMCTX_EXTRN_HM_VMX_INT_STATE
+#if defined(HMVMX_ALWAYS_SYNC_FULL_GUEST_STATE) || defined(HMVMX_ALWAYS_SAVE_FULL_GUEST_STATE)
+                                       | HMVMX_CPUMCTX_EXTRN_ALL
+#elif defined(HMVMX_ALWAYS_SAVE_GUEST_RFLAGS)
+                                       | CPUMCTX_EXTRN_RFLAGS
 #endif
+                                       ;
+            rc = hmR0VmxImportGuestState(pVCpu, pVmcsInfo, fImportMask);
+            AssertRC(rc);
 
             /*
              * Sync the TPR shadow with our APIC state.
@@ -13739,7 +13741,21 @@ static VBOXSTRICTRC hmR0VmxExitXcptDB(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransien
     int rc;
     PCPUMCTX pCtx = &pVCpu->cpum.GstCtx;
     if (!pVmxTransient->fIsNestedGuest)
+    {
         rc = DBGFRZTrap01Handler(pVCpu->CTX_SUFF(pVM), pVCpu, CPUMCTX2CORE(pCtx), uDR6, pVCpu->hm.s.fSingleInstruction);
+
+        /*
+         * Prevents stepping twice over the same instruction when the guest is stepping using
+         * EFLAGS.TF and the hypervisor debugger is stepping using MTF.
+         * Testcase: DOSQEMM, break (using "ba x 1") at cs:rip 0x70:0x774 and step (using "t").
+         */
+        if (   rc == VINF_EM_DBG_STEPPED
+            && (pVmxTransient->pVmcsInfo->u32ProcCtls & VMX_PROC_CTLS_MONITOR_TRAP_FLAG))
+        {
+            Assert(pVCpu->hm.s.fSingleInstruction);
+            rc = VINF_EM_RAW_GUEST_TRAP;
+        }
+    }
     else
         rc = VINF_EM_RAW_GUEST_TRAP;
     Log6Func(("rc=%Rrc\n", rc));
