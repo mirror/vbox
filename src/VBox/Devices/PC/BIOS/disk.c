@@ -90,6 +90,9 @@ dsk_acc_t   dskacc[DSKTYP_CNT] = {
 #ifdef VBOX_WITH_SCSI
     [DSK_TYPE_SCSI] = { scsi_read_sectors, scsi_write_sectors },
 #endif
+#ifdef VBOX_WITH_VIRTIO_SCSI
+    [DSK_TYPE_VIRTIO_SCSI] = { virtio_scsi_read_sectors, virtio_scsi_write_sectors },
+#endif
 };
 
 

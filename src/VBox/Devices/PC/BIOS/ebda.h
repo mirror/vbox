@@ -105,13 +105,14 @@
  * determine which device access routines should be called.
  */
 enum dsk_type_enm {
-    DSK_TYPE_NONE,      /* Unknown device. */
-    DSK_TYPE_UNKNOWN,   /* Unknown ATA device. */
-    DSK_TYPE_ATA,       /* ATA disk. */
-    DSK_TYPE_ATAPI,     /* ATAPI device. */
-    DSK_TYPE_SCSI,      /* SCSI disk. */
-    DSK_TYPE_AHCI,      /* SATA disk via AHCI. */
-    DSKTYP_CNT          /* Number of disk types. */
+    DSK_TYPE_NONE,        /* Unknown device. */
+    DSK_TYPE_UNKNOWN,     /* Unknown ATA device. */
+    DSK_TYPE_ATA,         /* ATA disk. */
+    DSK_TYPE_ATAPI,       /* ATAPI device. */
+    DSK_TYPE_SCSI,        /* SCSI disk. */
+    DSK_TYPE_AHCI,        /* SATA disk via AHCI. */
+    DSK_TYPE_VIRTIO_SCSI, /* SCSI disk. */
+    DSKTYP_CNT            /* Number of disk types. */
 };
 
 /* Disk device types. */
@@ -286,6 +287,9 @@ typedef struct {
     /* SCSI bus-specific device information. */
     scsi_dev_t  scsidev[BX_MAX_SCSI_DEVICES];
     uint8_t     scsi_devcount;      /* Number of SCSI devices. */
+# ifdef VBOX_WITH_VIRTIO_SCSI
+    uint16_t    virtio_seg;         /* Segment of VirtIO data block. */
+# endif
 #endif
 
 #ifdef VBOX_WITH_AHCI
@@ -293,13 +297,6 @@ typedef struct {
     ahci_dev_t  ahcidev[BX_MAX_AHCI_DEVICES];
     uint8_t     ahci_devcnt;        /* Number of SATA devices. */
     uint16_t    ahci_seg;           /* Segment of AHCI data block. */
-#endif
-
-#ifdef VBOX_WITH_VIRTIO_SCSI
-    /* VirtIO SCSI bus-specific device information. */
-    virtio_scsi_dev_t  virtiodev[BX_MAX_VIRTIO_SCSI_DEVICES];
-    uint8_t            virtio_devcnt;        /* Number of VirtIO devices. */
-    uint16_t           virtio_seg;           /* Segment of VirtIO data block. */
 #endif
 
     dpte_t      dpte;               /* Buffer for building a DPTE. */
@@ -399,6 +396,9 @@ int __fastcall scsi_write_sectors(bio_dsk_t __far *bios_dsk);
 
 int __fastcall ahci_read_sectors(bio_dsk_t __far *bios_dsk);
 int __fastcall ahci_write_sectors(bio_dsk_t __far *bios_dsk);
+
+int __fastcall virtio_scsi_read_sectors(bio_dsk_t __far *bios_dsk);
+int __fastcall virtio_scsi_write_sectors(bio_dsk_t __far *bios_dsk);
 
 extern void set_geom_lba(chs_t __far *lgeo, uint64_t nsectors);
 extern int edd_fill_dpt(dpt_t __far *dpt, bio_dsk_t __far *bios_dsk, uint8_t device);
