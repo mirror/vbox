@@ -197,9 +197,6 @@
 /** @} */
 
 
-#ifndef VBOX_DEVICE_STRUCT_TESTCASE
-
-
 /*********************************************************************************************************************************
 *   Test code function declarations                                                                                              *
 *********************************************************************************************************************************/
@@ -667,7 +664,7 @@ int PS2MByteFromAux(PPS2M pThis, uint8_t *pb)
 #ifdef IN_RING3
 
 /** Is there any state change to send as events to the guest? */
-static uint32_t ps2mHaveEvents(PPS2M pThis)
+static uint32_t ps2mR3HaveEvents(PPS2M pThis)
 {
     return   pThis->iAccumX || pThis->iAccumY || pThis->iAccumZ || pThis->iAccumW
            || ((pThis->fCurrB | pThis->fAccumB) != pThis->fReportedB);
@@ -688,7 +685,7 @@ static DECLCALLBACK(void) ps2mR3ThrottleTimer(PPDMDEVINS pDevIns, PTMTIMER pTime
     AssertReleaseRC(rc);
 
     /* If more movement is accumulated, report it and restart the timer. */
-    uHaveEvents = ps2mHaveEvents(pThis);
+    uHaveEvents = ps2mR3HaveEvents(pThis);
     LogFlowFunc(("Have%s events\n", uHaveEvents ? "" : " no"));
 
     if (uHaveEvents)
@@ -813,7 +810,7 @@ static int ps2mR3PutEventWorker(PPS2M pThis, int32_t dx, int32_t dy, int32_t dz,
         pThis->iAccumZ = 0; /* No vertical scroll. */
 
     /* Report the event (if any) and start the throttle timer unless it's already running. */
-    if (!pThis->fThrottleActive && ps2mHaveEvents(pThis))
+    if (!pThis->fThrottleActive && ps2mR3HaveEvents(pThis))
     {
         ps2mReportAccumulatedEvents(pThis, (GeneriQ *)&pThis->evtQ, true);
         KBCUpdateInterrupts(pThis->pParent);
@@ -1099,16 +1096,16 @@ static void ps2mR3TestAccumulation(void)
      * a release-press-release all within a single 10ms interval.  Simulate
      * this to check that it is handled right. */
     ps2mR3PutEventWorker(&This, 0, 0, 0, 0, 1);
-    if (ps2mHaveEvents(&This))
+    if (ps2mR3HaveEvents(&This))
         ps2mReportAccumulatedEvents(&This, (GeneriQ *)&This.evtQ, true);
     ps2mR3PutEventWorker(&This, 0, 0, 0, 0, 0);
-    if (ps2mHaveEvents(&This))
+    if (ps2mR3HaveEvents(&This))
         ps2mReportAccumulatedEvents(&This, (GeneriQ *)&This.evtQ, true);
     ps2mR3PutEventWorker(&This, 0, 0, 0, 0, 1);
     ps2mR3PutEventWorker(&This, 0, 0, 0, 0, 0);
-    if (ps2mHaveEvents(&This))
+    if (ps2mR3HaveEvents(&This))
         ps2mReportAccumulatedEvents(&This, (GeneriQ *)&This.evtQ, true);
-    if (ps2mHaveEvents(&This))
+    if (ps2mR3HaveEvents(&This))
         ps2mReportAccumulatedEvents(&This, (GeneriQ *)&This.evtQ, true);
     for (i = 0; i < 12; ++i)
     {
@@ -1123,9 +1120,9 @@ static void ps2mR3TestAccumulation(void)
     /* Button hold down during mouse drags was broken at some point during
      * testing fixes for the previous issue.  Test that that works. */
     ps2mR3PutEventWorker(&This, 0, 0, 0, 0, 1);
-    if (ps2mHaveEvents(&This))
+    if (ps2mR3HaveEvents(&This))
         ps2mReportAccumulatedEvents(&This, (GeneriQ *)&This.evtQ, true);
-    if (ps2mHaveEvents(&This))
+    if (ps2mR3HaveEvents(&This))
         ps2mReportAccumulatedEvents(&This, (GeneriQ *)&This.evtQ, true);
     for (i = 0; i < 3; ++i)
     {
@@ -1140,4 +1137,3 @@ static void ps2mR3TestAccumulation(void)
 }
 #endif /* RT_STRICT && IN_RING3 */
 
-#endif /* !VBOX_DEVICE_STRUCT_TESTCASE */

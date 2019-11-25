@@ -53,25 +53,15 @@
 #include "VBoxDD.h"
 #include "DevPS2.h"
 
+
+/*********************************************************************************************************************************
+*   Defined Constants And Macros                                                                                                 *
+*********************************************************************************************************************************/
 /* Do not remove this (unless eliminating the corresponding ifdefs), it will
  * cause instant triple faults when booting Windows VMs. */
 #define TARGET_I386
 
 #define PCKBD_SAVED_STATE_VERSION 8
-
-#ifndef VBOX_DEVICE_STRUCT_TESTCASE
-
-
-/*********************************************************************************************************************************
-*   Internal Functions                                                                                                           *
-*********************************************************************************************************************************/
-RT_C_DECLS_BEGIN
-PDMBOTHCBDECL(int) kbdIOPortDataRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32, unsigned cb);
-PDMBOTHCBDECL(int) kbdIOPortDataWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb);
-PDMBOTHCBDECL(int) kbdIOPortStatusRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32, unsigned cb);
-PDMBOTHCBDECL(int) kbdIOPortCommandWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb);
-RT_C_DECLS_END
-#endif /* !VBOX_DEVICE_STRUCT_TESTCASE */
 
 /* debug PC keyboard */
 #define DEBUG_KBD
@@ -124,6 +114,107 @@ RT_C_DECLS_END
 #define KBD_MODE_RFU            0x80
 
 
+/*********************************************************************************************************************************
+*   Structures and Typedefs                                                                                                      *
+*********************************************************************************************************************************/
+/** AT to PC scancode translator state.  */
+typedef enum
+{
+    XS_IDLE,    /**< Starting state. */
+    XS_BREAK,   /**< F0 break byte was received. */
+    XS_HIBIT    /**< Break code still active. */
+} xlat_state_t;
+
+
+/*********************************************************************************************************************************
+*   Global Variables                                                                                                             *
+*********************************************************************************************************************************/
+/* Table used by the keyboard controller to optionally translate the incoming
+ * keyboard data. Note that the translation is designed for essentially taking
+ * Scan Set 2 input and producing Scan Set 1 output, but can be turned on and
+ * off regardless of what the keyboard is sending.
+ */
+static uint8_t const g_aAT2PC[128] =
+{
+    0xff,0x43,0x41,0x3f,0x3d,0x3b,0x3c,0x58,0x64,0x44,0x42,0x40,0x3e,0x0f,0x29,0x59,
+    0x65,0x38,0x2a,0x70,0x1d,0x10,0x02,0x5a,0x66,0x71,0x2c,0x1f,0x1e,0x11,0x03,0x5b,
+    0x67,0x2e,0x2d,0x20,0x12,0x05,0x04,0x5c,0x68,0x39,0x2f,0x21,0x14,0x13,0x06,0x5d,
+    0x69,0x31,0x30,0x23,0x22,0x15,0x07,0x5e,0x6a,0x72,0x32,0x24,0x16,0x08,0x09,0x5f,
+    0x6b,0x33,0x25,0x17,0x18,0x0b,0x0a,0x60,0x6c,0x34,0x35,0x26,0x27,0x19,0x0c,0x61,
+    0x6d,0x73,0x28,0x74,0x1a,0x0d,0x62,0x6e,0x3a,0x36,0x1c,0x1b,0x75,0x2b,0x63,0x76,
+    0x55,0x56,0x77,0x78,0x79,0x7a,0x0e,0x7b,0x7c,0x4f,0x7d,0x4b,0x47,0x7e,0x7f,0x6f,
+    0x52,0x53,0x50,0x4c,0x4d,0x48,0x01,0x45,0x57,0x4e,0x51,0x4a,0x37,0x49,0x46,0x54
+};
+
+
+
+/*********************************************************************************************************************************
+*   Internal Functions                                                                                                           *
+*********************************************************************************************************************************/
+RT_C_DECLS_BEGIN
+PDMBOTHCBDECL(int) kbdIOPortDataRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32, unsigned cb);
+PDMBOTHCBDECL(int) kbdIOPortDataWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb);
+PDMBOTHCBDECL(int) kbdIOPortStatusRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32, unsigned cb);
+PDMBOTHCBDECL(int) kbdIOPortCommandWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb);
+RT_C_DECLS_END
+
+
+/**
+ * Convert an AT (Scan Set 2) scancode to PC (Scan Set 1).
+ *
+ * @param state         Current state of the translator
+ *                      (xlat_state_t).
+ * @param scanIn        Incoming scan code.
+ * @param pScanOut      Pointer to outgoing scan code. The
+ *                      contents are only valid if returned
+ *                      state is not XS_BREAK.
+ *
+ * @return xlat_state_t New state of the translator.
+ */
+static int32_t kbcXlateAT2PC(int32_t state, uint8_t scanIn, uint8_t *pScanOut)
+{
+    uint8_t     scan_in;
+    uint8_t     scan_out;
+
+    Assert(pScanOut);
+    Assert(state == XS_IDLE || state == XS_BREAK || state == XS_HIBIT);
+
+    /* Preprocess the scan code for a 128-entry translation table. */
+    if (scanIn == 0x83)         /* Check for F7 key. */
+        scan_in = 0x02;
+    else if (scanIn == 0x84)    /* Check for SysRq key. */
+        scan_in = 0x7f;
+    else
+        scan_in = scanIn;
+
+    /* Values 0x80 and above are passed through, except for 0xF0
+     * which indicates a key release.
+     */
+    if (scan_in < 0x80)
+    {
+        scan_out = g_aAT2PC[scan_in];
+        /* Turn into break code if required. */
+        if (state == XS_BREAK || state == XS_HIBIT)
+            scan_out |= 0x80;
+
+        state = XS_IDLE;
+    }
+    else
+    {
+        /* NB: F0 E0 10 will be translated to E0 E5 (high bit set on last byte)! */
+        if (scan_in == 0xF0)        /* Check for break code. */
+            state = XS_BREAK;
+        else if (state == XS_BREAK)
+            state = XS_HIBIT;       /* Remember the break bit. */
+        scan_out = scan_in;
+    }
+    LogFlowFunc(("scan code %02X translated to %02X; new state is %d\n",
+                 scanIn, scan_out, state));
+
+    *pScanOut = scan_out;
+    return state;
+}
+
 
 /* update irq and KBD_STAT_[MOUSE_]OBF */
 static void kbd_update_irq(KBDState *s)
@@ -150,7 +241,7 @@ static void kbd_update_irq(KBDState *s)
             {
                 uint8_t     xlated_val;
 
-                s->xlat_state = XlateAT2PC(s->xlat_state, val, &xlated_val);
+                s->xlat_state = kbcXlateAT2PC(s->xlat_state, val, &xlated_val);
                 val = xlated_val;
 
                 /* If the translation state is XS_BREAK, there's nothing to report
@@ -158,7 +249,7 @@ static void kbd_update_irq(KBDState *s)
                  */
                 while (s->xlat_state == XS_BREAK && PS2KByteFromKbd(&s->Kbd, &val) == VINF_SUCCESS)
                 {
-                    s->xlat_state = XlateAT2PC(s->xlat_state, val, &xlated_val);
+                    s->xlat_state = kbcXlateAT2PC(s->xlat_state, val, &xlated_val);
                     val = xlated_val;
                 }
                 /* This can happen if the last byte in the queue is F0... */

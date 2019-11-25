@@ -375,18 +375,6 @@ typedef struct KBDSTATE
 /* Shared keyboard/aux internal interface. */
 void KBCUpdateInterrupts(void *pKbc);
 
-
-///@todo: This should live with the KBC implementation.
-/** AT to PC scancode translator state.  */
-typedef enum
-{
-    XS_IDLE,    /**< Starting state. */
-    XS_BREAK,   /**< F0 break byte was received. */
-    XS_HIBIT    /**< Break code still active. */
-} xlat_state_t;
-
-int32_t XlateAT2PC(int32_t state, uint8_t scanIn, uint8_t *pScanOut);
-
 /** @}  */
 
 #endif /* !VBOX_INCLUDED_SRC_Input_DevPS2_h */
