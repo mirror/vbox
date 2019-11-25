@@ -47,6 +47,7 @@
 *********************************************************************************************************************************/
 #define LOG_GROUP LOG_GROUP_DEV_KBD
 #include <VBox/vmm/pdmdev.h>
+#include <VBox/AssertGuest.h>
 #include <iprt/assert.h>
 #include <iprt/uuid.h>
 
@@ -146,17 +147,6 @@ static uint8_t const g_aAT2PC[128] =
     0x52,0x53,0x50,0x4c,0x4d,0x48,0x01,0x45,0x57,0x4e,0x51,0x4a,0x37,0x49,0x46,0x54
 };
 
-
-
-/*********************************************************************************************************************************
-*   Internal Functions                                                                                                           *
-*********************************************************************************************************************************/
-RT_C_DECLS_BEGIN
-PDMBOTHCBDECL(int) kbdIOPortDataRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32, unsigned cb);
-PDMBOTHCBDECL(int) kbdIOPortDataWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb);
-PDMBOTHCBDECL(int) kbdIOPortStatusRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32, unsigned cb);
-PDMBOTHCBDECL(int) kbdIOPortCommandWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb);
-RT_C_DECLS_END
 
 
 /**
@@ -309,22 +299,8 @@ static void kbc_dbb_out_aux(PKBDSTATE s, uint8_t val)
         PDMDevHlpISASetIrq(s->CTX_SUFF(pDevIns), 12, PDM_IRQ_LEVEL_HIGH);
 }
 
-static uint32_t kbd_read_status(PKBDSTATE s, uint32_t addr)
+static VBOXSTRICTRC kbd_write_command(PPDMDEVINS pDevIns, PKBDSTATE s, uint32_t val)
 {
-    int val = s->status;
-    NOREF(addr);
-
-#if defined(DEBUG_KBD)
-    Log(("kbd: read status=0x%02x\n", val));
-#endif
-    return val;
-}
-
-static int kbd_write_command(PPDMDEVINS pDevIns, PKBDSTATE s, uint32_t addr, uint32_t val)
-{
-    int rc = VINF_SUCCESS;
-    NOREF(addr);
-
 #ifdef DEBUG_KBD
     Log(("kbd: write cmd=0x%02x\n", val));
 #endif
@@ -354,11 +330,8 @@ static int kbd_write_command(PPDMDEVINS pDevIns, PKBDSTATE s, uint32_t addr, uin
         /* Enable the A20 line - that is the power-on state(!). */
 # ifndef IN_RING3
         if (!PDMDevHlpA20IsEnabled(s->CTX_SUFF(pDevIns)))
-        {
-            rc = VINF_IOM_R3_IOPORT_WRITE;
-            break;
-        }
-# else /* IN_RING3 */
+            return VINF_IOM_R3_IOPORT_WRITE;
+# else  /* IN_RING3 */
         PDMDevHlpA20Set(s->CTX_SUFF(pDevIns), true);
 # endif /* IN_RING3 */
         s->status |= KBD_STAT_SELFTEST;
@@ -396,18 +369,18 @@ static int kbd_write_command(PPDMDEVINS pDevIns, PKBDSTATE s, uint32_t addr, uin
     case KBD_CCMD_ENABLE_A20:
 # ifndef IN_RING3
         if (!PDMDevHlpA20IsEnabled(s->CTX_SUFF(pDevIns)))
-            rc = VINF_IOM_R3_IOPORT_WRITE;
-# else /* IN_RING3 */
+            return VINF_IOM_R3_IOPORT_WRITE;
+# else  /* IN_RING3 */
         PDMDevHlpA20Set(s->CTX_SUFF(pDevIns), true);
 # endif /* IN_RING3 */
         break;
     case KBD_CCMD_DISABLE_A20:
 # ifndef IN_RING3
         if (PDMDevHlpA20IsEnabled(s->CTX_SUFF(pDevIns)))
-            rc = VINF_IOM_R3_IOPORT_WRITE;
-# else /* IN_RING3 */
+            return VINF_IOM_R3_IOPORT_WRITE;
+# else  /* IN_RING3 */
         PDMDevHlpA20Set(s->CTX_SUFF(pDevIns), false);
-# endif /* !IN_RING3 */
+# endif /* IN_RING3 */
         break;
 #endif
     case KBD_CCMD_READ_TSTINP:
@@ -418,12 +391,11 @@ static int kbd_write_command(PPDMDEVINS pDevIns, PKBDSTATE s, uint32_t addr, uin
     case KBD_CCMD_RESET:
     case KBD_CCMD_RESET_ALT:
 #ifndef IN_RING3
-        rc = VINF_IOM_R3_IOPORT_WRITE;
-#else /* IN_RING3 */
+        return VINF_IOM_R3_IOPORT_WRITE;
+#else  /* IN_RING3 */
         LogRel(("Reset initiated by keyboard controller\n"));
-        rc = PDMDevHlpVMReset(s->CTX_SUFF(pDevIns), PDMVMRESET_F_KBD);
-#endif /* !IN_RING3 */
-        break;
+        return PDMDevHlpVMReset(s->CTX_SUFF(pDevIns), PDMVMRESET_F_KBD);
+#endif /* IN_RING3 */
     case 0xff:
         /* ignore that - I don't know what is its use */
         break;
@@ -443,13 +415,12 @@ static int kbd_write_command(PPDMDEVINS pDevIns, PKBDSTATE s, uint32_t addr, uin
         Log(("kbd: unsupported keyboard cmd=0x%02x\n", val));
         break;
     }
-    return rc;
+    return VINF_SUCCESS;
 }
 
-static uint32_t kbd_read_data(PPDMDEVINS pDevIns, PKBDSTATE s, uint32_t addr)
+static uint32_t kbd_read_data(PPDMDEVINS pDevIns, PKBDSTATE s)
 {
     uint32_t val;
-    NOREF(addr);
 
     /* Return the current DBB contents. */
     val = s->dbbout;
@@ -482,10 +453,9 @@ PS2M *KBDGetPS2MFromDevIns(PPDMDEVINS pDevIns)
     return &pThis->Aux;
 }
 
-static int kbd_write_data(PPDMDEVINS pDevIns, PKBDSTATE s, uint32_t addr, uint32_t val)
+static int kbd_write_data(PPDMDEVINS pDevIns, PKBDSTATE s, uint32_t val)
 {
     int rc = VINF_SUCCESS;
-    NOREF(addr);
 
 #ifdef DEBUG_KBD
     Log(("kbd: write data=0x%02x\n", val));
@@ -673,123 +643,110 @@ static int kbd_load(PCPDMDEVHLPR3 pHlp, PSSMHANDLE pSSM, KBDState *s, uint32_t v
 /* -=-=-=-=-=- wrappers -=-=-=-=-=- */
 
 /**
- * Port I/O Handler for keyboard data IN operations.
- *
- * @returns VBox status code.
- *
- * @param   pDevIns     The device instance.
- * @param   pvUser      User argument - ignored.
- * @param   Port        Port number used for the IN operation.
- * @param   pu32        Where to store the result.
- * @param   cb          Number of bytes read.
+ * @callback_method_impl{FNIOMIOPORTNEWIN,
+ * Port I/O Handler for keyboard data IN operations.}
  */
-PDMBOTHCBDECL(int) kbdIOPortDataRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32, unsigned cb)
+static DECLCALLBACK(VBOXSTRICTRC) kbdIOPortDataRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t *pu32, unsigned cb)
 {
-    uint32_t    fluff = 0;
-    PKBDSTATE    pThis = PDMDEVINS_2_DATA(pDevIns, PKBDSTATE);
+    PKBDSTATE   pThis = PDMDEVINS_2_DATA(pDevIns, PKBDSTATE);
+    RT_NOREF(pvUser, offPort);
+    Assert(offPort == 0);
 
-    NOREF(pvUser);
-    switch (cb) {
-    case 4:
-        fluff |= 0xffff0000;    /* Crazy Apple (Darwin 6.0.2 and earlier). */
-        RT_FALL_THRU();
-    case 2:
-        fluff |= 0x0000ff00;
-        RT_FALL_THRU();
-    case 1:
-        *pu32 = fluff | kbd_read_data(pDevIns, pThis, Port);
-        Log2(("kbdIOPortDataRead: Port=%#x cb=%d *pu32=%#x\n", Port, cb, *pu32));
-        return VINF_SUCCESS;
-    default:
-        AssertMsgFailed(("Port=%#x cb=%d\n", Port, cb));
-        return VERR_IOM_IOPORT_UNUSED;
+    switch (cb)
+    {
+        case 1:
+            *pu32 = kbd_read_data(pDevIns, pThis);
+            Log2(("kbdIOPortDataRead: *pu32=%#x\n", *pu32));
+            return VINF_SUCCESS;
+
+        case 4:
+        case 2:
+        {
+            uint32_t const uFluff = cb == 2 ? UINT32_C(0x0000ff00)
+                                 :            UINT32_C(0xffffff00) /* Crazy Apple (Darwin 6.0.2 and earlier). */;
+            *pu32 = uFluff | kbd_read_data(pDevIns, pThis);
+            Log2(("kbdIOPortDataRead: cb=%u *pu32=%#x\n", cb, *pu32));
+            return VINF_SUCCESS;
+        }
+
+        default:
+            ASSERT_GUEST_MSG_FAILED(("Port=0x60+%x cb=%d\n", offPort, cb));
+            return VERR_IOM_IOPORT_UNUSED;
     }
 }
 
 /**
- * Port I/O Handler for keyboard data OUT operations.
- *
- * @returns VBox status code.
- *
- * @param   pDevIns     The device instance.
- * @param   pvUser      User argument - ignored.
- * @param   Port        Port number used for the IN operation.
- * @param   u32         The value to output.
- * @param   cb          The value size in bytes.
+ * @callback_method_impl{FNIOMIOPORTNEWOUT,
+ * Port I/O Handler for keyboard data OUT operations.}
  */
-PDMBOTHCBDECL(int) kbdIOPortDataWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb)
+static DECLCALLBACK(VBOXSTRICTRC) kbdIOPortDataWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t u32, unsigned cb)
 {
-    int rc = VINF_SUCCESS;
-    NOREF(pvUser);
+    VBOXSTRICTRC rc = VINF_SUCCESS;
+    RT_NOREF(offPort, pvUser);
+    Assert(offPort == 0);
+
     if (cb == 1 || cb == 2)
     {
         PKBDSTATE pThis = PDMDEVINS_2_DATA(pDevIns, PKBDSTATE);
-        rc = kbd_write_data(pDevIns, pThis, Port, (uint8_t)u32);
-        Log2(("kbdIOPortDataWrite: Port=%#x cb=%d u32=%#x\n", Port, cb, u32));
+        rc = kbd_write_data(pDevIns, pThis, (uint8_t)u32);
+        Log2(("kbdIOPortDataWrite: Port=0x60+%x cb=%d u32=%#x\n", offPort, cb, u32));
     }
     else
-        AssertMsgFailed(("Port=%#x cb=%d\n", Port, cb));
+        ASSERT_GUEST_MSG_FAILED(("Port=0x60+%x cb=%d\n", offPort, cb));
     return rc;
 }
 
 /**
- * Port I/O Handler for keyboard status IN operations.
- *
- * @returns VBox status code.
- *
- * @param   pDevIns     The device instance.
- * @param   pvUser      User argument - ignored.
- * @param   Port        Port number used for the IN operation.
- * @param   pu32        Where to store the result.
- * @param   cb          Number of bytes read.
+ * @callback_method_impl{FNIOMIOPORTNEWIN,
+ * Port I/O Handler for keyboard status IN operations.}
  */
-PDMBOTHCBDECL(int) kbdIOPortStatusRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32, unsigned cb)
+static DECLCALLBACK(VBOXSTRICTRC) kbdIOPortStatusRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t *pu32, unsigned cb)
 {
-    uint32_t    fluff = 0;
-    PKBDSTATE    pThis = PDMDEVINS_2_DATA(pDevIns, PKBDSTATE);
+    PKBDSTATE pThis = PDMDEVINS_2_DATA(pDevIns, PKBDSTATE);
+    RT_NOREF(offPort, pvUser);
+    Assert(offPort == 0);
 
-    NOREF(pvUser);
-    switch (cb) {
-    case 4:
-        fluff |= 0xffff0000;    /* Crazy Apple (Darwin 6.0.2 and earlier). */
-        RT_FALL_THRU();
-    case 2:
-        fluff |= 0x0000ff00;
-        RT_FALL_THRU();
-    case 1:
-        *pu32 = fluff | kbd_read_status(pThis, Port);
-        Log2(("kbdIOPortStatusRead: Port=%#x cb=%d -> *pu32=%#x\n", Port, cb, *pu32));
-        return VINF_SUCCESS;
-    default:
-        AssertMsgFailed(("Port=%#x cb=%d\n", Port, cb));
-        return VERR_IOM_IOPORT_UNUSED;
+    switch (cb)
+    {
+        case 1:
+            *pu32 = pThis->status;
+            Log2(("kbdIOPortStatusRead: -> *pu32=%#x\n", *pu32));
+            return VINF_SUCCESS;
+
+        case 2:
+        case 4:
+        {
+            uint32_t const uFluff = cb == 2 ? UINT32_C(0x0000ff00)
+                                 :            UINT32_C(0xffffff00) /* Crazy Apple (Darwin 6.0.2 and earlier). */;
+            *pu32 = uFluff | pThis->status;
+            Log2(("kbdIOPortStatusRead: cb=%u -> *pu32=%#x\n", cb, *pu32));
+            return VINF_SUCCESS;
+        }
+
+        default:
+            ASSERT_GUEST_MSG_FAILED(("Port=0x64+%x cb=%d\n", offPort, cb));
+            return VERR_IOM_IOPORT_UNUSED;
     }
 }
 
 /**
- * Port I/O Handler for keyboard command OUT operations.
- *
- * @returns VBox status code.
- *
- * @param   pDevIns     The device instance.
- * @param   pvUser      User argument - ignored.
- * @param   Port        Port number used for the IN operation.
- * @param   u32         The value to output.
- * @param   cb          The value size in bytes.
+ * @callback_method_impl{FNIOMIOPORTNEWIN,
+ * Port I/O Handler for keyboard command OUT operations.}
  */
-PDMBOTHCBDECL(int) kbdIOPortCommandWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb)
+static DECLCALLBACK(VBOXSTRICTRC) kbdIOPortCommandWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t u32, unsigned cb)
 {
-    int rc = VINF_SUCCESS;
-    NOREF(pvUser);
+    RT_NOREF(offPort, pvUser);
+    Assert(offPort == 0);
+
     if (cb == 1 || cb == 2)
     {
-        KBDState *pThis = PDMDEVINS_2_DATA(pDevIns, PKBDSTATE);
-        rc = kbd_write_command(pDevIns, pThis, Port, (uint8_t)u32);
-        Log2(("kbdIOPortCommandWrite: Port=%#x cb=%d u32=%#x rc=%Rrc\n", Port, cb, u32, rc));
+        PKBDSTATE pThis = PDMDEVINS_2_DATA(pDevIns, PKBDSTATE);
+        VBOXSTRICTRC rc = kbd_write_command(pDevIns, pThis, (uint8_t)u32);
+        Log2(("kbdIOPortCommandWrite: cb=%d u32=%#x rc=%Rrc\n", cb, u32, VBOXSTRICTRC_VAL(rc)));
+        return rc;
     }
-    else
-        AssertMsgFailed(("Port=%#x cb=%d\n", Port, cb));
-    return rc;
+    ASSERT_GUEST_MSG_FAILED(("offPort=0x64+%x cb=%d\n", offPort, cb));
+    return VINF_SUCCESS;
 }
 
 /**
@@ -1098,28 +1055,12 @@ static DECLCALLBACK(int) kbdR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     /*
      * Register I/O ports.
      */
-    rc = PDMDevHlpIOPortRegister(pDevIns, 0x60, 1, NULL, kbdIOPortDataWrite,    kbdIOPortDataRead, NULL, NULL,   "PC Keyboard - Data");
+    rc = PDMDevHlpIoPortCreateAndMap(pDevIns, 0x60 /*uPort*/, 1 /*cPorts*/, kbdIOPortDataWrite, kbdIOPortDataRead,
+                                     "PC Keyboard - Data", NULL /*pExtDescs*/, &pThis->hIoPortData);
     AssertRCReturn(rc, rc);
-    rc = PDMDevHlpIOPortRegister(pDevIns, 0x64, 1, NULL, kbdIOPortCommandWrite, kbdIOPortStatusRead, NULL, NULL, "PC Keyboard - Command / Status");
+    rc = PDMDevHlpIoPortCreateAndMap(pDevIns, 0x64 /*uPort*/, 1 /*cPorts*/, kbdIOPortCommandWrite, kbdIOPortStatusRead,
+                                     "PC Keyboard - Command / Status", NULL /*pExtDescs*/, &pThis->hIoPortCmdStatus);
     AssertRCReturn(rc, rc);
-    if (pDevIns->fRCEnabled)
-    {
-        rc = PDMDevHlpIOPortRegisterRC(pDevIns, 0x60, 1, 0, "kbdIOPortDataWrite",    "kbdIOPortDataRead", NULL, NULL,   "PC Keyboard - Data");
-        if (RT_FAILURE(rc))
-            return rc;
-        rc = PDMDevHlpIOPortRegisterRC(pDevIns, 0x64, 1, 0, "kbdIOPortCommandWrite", "kbdIOPortStatusRead", NULL, NULL, "PC Keyboard - Command / Status");
-        if (RT_FAILURE(rc))
-            return rc;
-    }
-    if (pDevIns->fR0Enabled)
-    {
-        rc = PDMDevHlpIOPortRegisterR0(pDevIns, 0x60, 1, 0, "kbdIOPortDataWrite",    "kbdIOPortDataRead", NULL, NULL,   "PC Keyboard - Data");
-        if (RT_FAILURE(rc))
-            return rc;
-        rc = PDMDevHlpIOPortRegisterR0(pDevIns, 0x64, 1, 0, "kbdIOPortCommandWrite", "kbdIOPortStatusRead", NULL, NULL, "PC Keyboard - Command / Status");
-        if (RT_FAILURE(rc))
-            return rc;
-    }
 
     /*
      * Saved state.
@@ -1146,7 +1087,25 @@ static DECLCALLBACK(int) kbdR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     return VINF_SUCCESS;
 }
 
-#endif /* IN_RING3 */
+#else  /* !IN_RING3 */
+
+/**
+ * @callback_method_impl{PDMDEVREGR0,pfnConstruct}
+ */
+static DECLCALLBACK(int) kbdRZConstruct(PPDMDEVINS pDevIns)
+{
+    PDMDEV_CHECK_VERSIONS_RETURN(pDevIns);
+    PKBDSTATE pThis = PDMDEVINS_2_DATA(pDevIns, PKBDSTATE);
+
+    int rc = PDMDevHlpIoPortSetUpContext(pDevIns, pThis->hIoPortData, kbdIOPortDataWrite, kbdIOPortDataRead, NULL /*pvUser*/);
+    AssertRCReturn(rc, rc);
+    rc = PDMDevHlpIoPortSetUpContext(pDevIns, pThis->hIoPortCmdStatus, kbdIOPortCommandWrite, kbdIOPortStatusRead, NULL /*pvUser*/);
+    AssertRCReturn(rc, rc);
+
+    return VINF_SUCCESS;
+}
+
+#endif /* !IN_RING3 */
 
 /**
  * The device registration structure.
@@ -1195,7 +1154,7 @@ const PDMDEVREG g_DevicePS2KeyboardMouse =
     /* .pfnReserved7 = */           NULL,
 #elif defined(IN_RING0)
     /* .pfnEarlyConstruct = */      NULL,
-    /* .pfnConstruct = */           NULL,
+    /* .pfnConstruct = */           kbdRZConstruct,
     /* .pfnDestruct = */            NULL,
     /* .pfnFinalDestruct = */       NULL,
     /* .pfnRequest = */             NULL,
@@ -1208,7 +1167,7 @@ const PDMDEVREG g_DevicePS2KeyboardMouse =
     /* .pfnReserved6 = */           NULL,
     /* .pfnReserved7 = */           NULL,
 #elif defined(IN_RC)
-    /* .pfnConstruct = */           NULL,
+    /* .pfnConstruct = */           kbdRZConstruct,
     /* .pfnReserved0 = */           NULL,
     /* .pfnReserved1 = */           NULL,
     /* .pfnReserved2 = */           NULL,
