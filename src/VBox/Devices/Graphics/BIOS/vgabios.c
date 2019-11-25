@@ -943,12 +943,10 @@ static void vgamem_copy_cga(uint8_t xstart, uint8_t ysrc, uint8_t ydest,
 
  src=((ysrc*cheight*nbcols)>>1)+xstart;
  dest=((ydest*cheight*nbcols)>>1)+xstart;
- for(i=0;i<cheight;i++)
+ for(i=0;i<cheight/2;i++)
   {
-   if (i & 1)
-     memcpyb(0xb800,0x2000+dest+(i>>1)*nbcols,0xb800,0x2000+src+(i>>1)*nbcols,cols);
-   else
-     memcpyb(0xb800,dest+(i>>1)*nbcols,0xb800,src+(i>>1)*nbcols,cols);
+   memcpyb(0xb800,dest+i*nbcols,0xb800,src+i*nbcols,cols);
+   memcpyb(0xb800,0x2000+dest+i*nbcols,0xb800,0x2000+src+i*nbcols,cols);
   }
 }
 
@@ -960,12 +958,10 @@ static void vgamem_fill_cga(uint8_t xstart, uint8_t ystart, uint8_t cols,
  uint8_t i;
 
  dest=((ystart*cheight*nbcols)>>1)+xstart;
- for(i=0;i<cheight;i++)
+ for(i=0;i<cheight/2;i++)
   {
-   if (i & 1)
-     memsetb(0xb800,0x2000+dest+(i>>1)*nbcols,attr,cols);
-   else
-     memsetb(0xb800,dest+(i>>1)*nbcols,attr,cols);
+   memsetb(0xb800,dest+i*nbcols,attr,cols);
+   memsetb(0xb800,0x2000+dest+i*nbcols,attr,cols);
   }
 }
 
@@ -1066,7 +1062,7 @@ static void biosfn_scroll(uint8_t nblines, uint8_t attr, uint8_t rul, uint8_t cu
              if((i<rul+nblines)||(nblines==0))
               vgamem_fill_pl4(cul,i,cols,nbcols,cheight,attr);
              else
-              vgamem_copy_pl4(cul,i,i-nblines,cols,nbcols,cheight);
+              vgamem_copy_pl4(cul,i-nblines,i,cols,nbcols,cheight);
              if (i>rlr) break;
             }
           }
@@ -1102,7 +1098,7 @@ static void biosfn_scroll(uint8_t nblines, uint8_t attr, uint8_t rul, uint8_t cu
              if((i<rul+nblines)||(nblines==0))
               vgamem_fill_cga(cul,i,cols,nbcols,cheight,attr);
              else
-              vgamem_copy_cga(cul,i,i-nblines,cols,nbcols,cheight);
+              vgamem_copy_cga(cul,i-nblines,i,cols,nbcols,cheight);
              if (i>rlr) break;
             }
           }
