@@ -453,9 +453,9 @@ PS2M *KBDGetPS2MFromDevIns(PPDMDEVINS pDevIns)
     return &pThis->Aux;
 }
 
-static int kbd_write_data(PPDMDEVINS pDevIns, PKBDSTATE s, uint32_t val)
+static VBOXSTRICTRC kbd_write_data(PPDMDEVINS pDevIns, PKBDSTATE s, uint32_t val)
 {
-    int rc = VINF_SUCCESS;
+    VBOXSTRICTRC rc = VINF_SUCCESS;
 
 #ifdef DEBUG_KBD
     Log(("kbd: write data=0x%02x\n", val));
@@ -487,7 +487,7 @@ static int kbd_write_data(PPDMDEVINS pDevIns, PKBDSTATE s, uint32_t val)
             rc = VINF_IOM_R3_IOPORT_WRITE;
 #  else /* IN_RING3 */
         PDMDevHlpA20Set(s->CTX_SUFF(pDevIns), !!(val & 2));
-#  endif /* !IN_RING3 */
+#  endif /* IN_RING3 */
 #endif
         if (!(val & 1)) {
 # ifndef IN_RING3
@@ -642,6 +642,16 @@ static int kbd_load(PCPDMDEVHLPR3 pHlp, PSSMHANDLE pSSM, KBDState *s, uint32_t v
 
 /* -=-=-=-=-=- wrappers -=-=-=-=-=- */
 
+/** Fluff bits indexed by size (1,2,4). */
+static uint32_t const g_afFluff[5] =
+{
+    /* [0] = */ 0,
+    /* [1] = */ 0,
+    /* [2] = */ UINT32_C(0xff00),
+    /* [3] = */ 0,
+    /* [4] = */ UINT32_C(0xffffff00) /* Crazy Apple (Darwin 6.0.2 and earlier). */
+};
+
 /**
  * @callback_method_impl{FNIOMIOPORTNEWIN,
  * Port I/O Handler for keyboard data IN operations.}
@@ -651,28 +661,11 @@ static DECLCALLBACK(VBOXSTRICTRC) kbdIOPortDataRead(PPDMDEVINS pDevIns, void *pv
     PKBDSTATE   pThis = PDMDEVINS_2_DATA(pDevIns, PKBDSTATE);
     RT_NOREF(pvUser, offPort);
     Assert(offPort == 0);
+    Assert(cb == 1 || cb == 2 || cb == 4);
 
-    switch (cb)
-    {
-        case 1:
-            *pu32 = kbd_read_data(pDevIns, pThis);
-            Log2(("kbdIOPortDataRead: *pu32=%#x\n", *pu32));
-            return VINF_SUCCESS;
-
-        case 4:
-        case 2:
-        {
-            uint32_t const uFluff = cb == 2 ? UINT32_C(0x0000ff00)
-                                 :            UINT32_C(0xffffff00) /* Crazy Apple (Darwin 6.0.2 and earlier). */;
-            *pu32 = uFluff | kbd_read_data(pDevIns, pThis);
-            Log2(("kbdIOPortDataRead: cb=%u *pu32=%#x\n", cb, *pu32));
-            return VINF_SUCCESS;
-        }
-
-        default:
-            ASSERT_GUEST_MSG_FAILED(("Port=0x60+%x cb=%d\n", offPort, cb));
-            return VERR_IOM_IOPORT_UNUSED;
-    }
+    *pu32 = kbd_read_data(pDevIns, pThis) | g_afFluff[cb];
+    Log2(("kbdIOPortDataRead: cb=%u *pu32=%#x\n", cb, *pu32));
+    return VINF_SUCCESS;
 }
 
 /**
@@ -681,19 +674,19 @@ static DECLCALLBACK(VBOXSTRICTRC) kbdIOPortDataRead(PPDMDEVINS pDevIns, void *pv
  */
 static DECLCALLBACK(VBOXSTRICTRC) kbdIOPortDataWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t u32, unsigned cb)
 {
-    VBOXSTRICTRC rc = VINF_SUCCESS;
     RT_NOREF(offPort, pvUser);
     Assert(offPort == 0);
 
     if (cb == 1 || cb == 2)
     {
         PKBDSTATE pThis = PDMDEVINS_2_DATA(pDevIns, PKBDSTATE);
-        rc = kbd_write_data(pDevIns, pThis, (uint8_t)u32);
-        Log2(("kbdIOPortDataWrite: Port=0x60+%x cb=%d u32=%#x\n", offPort, cb, u32));
+        VBOXSTRICTRC rc = kbd_write_data(pDevIns, pThis, (uint8_t)u32);
+        Log2(("kbdIOPortDataWrite: Port=0x60+%x cb=%d u32=%#x rc=%Rrc\n", offPort, cb, u32, VBOXSTRICTRC_VAL(rc)));
+        return rc;
     }
-    else
-        ASSERT_GUEST_MSG_FAILED(("Port=0x60+%x cb=%d\n", offPort, cb));
-    return rc;
+    Assert(cb == 4);
+    ASSERT_GUEST_MSG_FAILED(("Port=0x60+%x cb=%d\n", offPort, cb));
+    return VINF_SUCCESS;
 }
 
 /**
@@ -705,28 +698,11 @@ static DECLCALLBACK(VBOXSTRICTRC) kbdIOPortStatusRead(PPDMDEVINS pDevIns, void *
     PKBDSTATE pThis = PDMDEVINS_2_DATA(pDevIns, PKBDSTATE);
     RT_NOREF(offPort, pvUser);
     Assert(offPort == 0);
+    Assert(cb == 1 || cb == 2 || cb == 4);
 
-    switch (cb)
-    {
-        case 1:
-            *pu32 = pThis->status;
-            Log2(("kbdIOPortStatusRead: -> *pu32=%#x\n", *pu32));
-            return VINF_SUCCESS;
-
-        case 2:
-        case 4:
-        {
-            uint32_t const uFluff = cb == 2 ? UINT32_C(0x0000ff00)
-                                 :            UINT32_C(0xffffff00) /* Crazy Apple (Darwin 6.0.2 and earlier). */;
-            *pu32 = uFluff | pThis->status;
-            Log2(("kbdIOPortStatusRead: cb=%u -> *pu32=%#x\n", cb, *pu32));
-            return VINF_SUCCESS;
-        }
-
-        default:
-            ASSERT_GUEST_MSG_FAILED(("Port=0x64+%x cb=%d\n", offPort, cb));
-            return VERR_IOM_IOPORT_UNUSED;
-    }
+    *pu32 = pThis->status | g_afFluff[cb];
+    Log2(("kbdIOPortStatusRead: cb=%u -> *pu32=%#x\n", cb, *pu32));
+    return VINF_SUCCESS;
 }
 
 /**
@@ -745,6 +721,7 @@ static DECLCALLBACK(VBOXSTRICTRC) kbdIOPortCommandWrite(PPDMDEVINS pDevIns, void
         Log2(("kbdIOPortCommandWrite: cb=%d u32=%#x rc=%Rrc\n", cb, u32, VBOXSTRICTRC_VAL(rc)));
         return rc;
     }
+    Assert(cb == 4);
     ASSERT_GUEST_MSG_FAILED(("offPort=0x64+%x cb=%d\n", offPort, cb));
     return VINF_SUCCESS;
 }
