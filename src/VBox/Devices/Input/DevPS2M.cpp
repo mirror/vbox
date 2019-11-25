@@ -414,10 +414,11 @@ bool ps2mIsRateSupported(uint8_t rate)
 /**
  * Receive and process a byte sent by the keyboard controller.
  *
- * @param   pThis               The PS/2 auxiliary device instance data.
- * @param   cmd                 The command (or data) byte.
+ * @param   pDevIns The device instance.
+ * @param   pThis   The PS/2 auxiliary device instance data.
+ * @param   cmd     The command (or data) byte.
  */
-int PS2MByteToAux(PPS2M pThis, uint8_t cmd)
+int PS2MByteToAux(PPDMDEVINS pDevIns, PPS2M pThis, uint8_t cmd)
 {
     uint8_t u8Val;
     bool    fHandled = true;
@@ -536,7 +537,7 @@ int PS2MByteToAux(PPS2M pThis, uint8_t cmd)
             PS2CmnInsertQueue((GeneriQ *)&pThis->cmdQ, ARSP_ACK);
             if (pThis->fDelayReset)
                 /* Slightly delay reset completion; it might take hundreds of ms. */
-                TMTimerSetMillies(pThis->CTX_SUFF(pDelayTimer), 1);
+                PDMDevHlpTimerSetMillies(pDevIns, pThis->hDelayTimer, 1);
             else
 #ifdef IN_RING3
                 ps2mR3Reset(pThis);
@@ -692,8 +693,8 @@ static DECLCALLBACK(void) ps2mR3ThrottleTimer(PPDMDEVINS pDevIns, PTMTIMER pTime
     {
         /* Report accumulated data, poke the KBC, and start the timer. */
         ps2mReportAccumulatedEvents(pThis, (GeneriQ *)&pThis->evtQ, true);
-        KBCUpdateInterrupts(pThis->pParent);
-        TMTimerSetMillies(pThis->CTX_SUFF(pThrottleTimer), pThis->uThrottleDelay);
+        KBCUpdateInterrupts(pDevIns);
+        PDMDevHlpTimerSetMillies(pDevIns, pThis->hThrottleTimer, pThis->uThrottleDelay);
     }
     else
         pThis->fThrottleActive = false;
@@ -720,7 +721,7 @@ static DECLCALLBACK(void) ps2mR3DelayTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, 
 
     /// @todo Might want a PS2MCompleteCommand() to push last response, clear command, and kick the KBC...
     /* Give the KBC a kick. */
-    KBCUpdateInterrupts(pThis->pParent);
+    KBCUpdateInterrupts(pDevIns);
 }
 
 
@@ -776,14 +777,15 @@ static DECLCALLBACK(void *) ps2mR3QueryInterface(PPDMIBASE pInterface, const cha
  * Mouse event handler.
  *
  * @returns VBox status code.
- * @param   pThis           The PS/2 auxiliary device instance data.
- * @param   dx              X direction movement delta.
- * @param   dy              Y direction movement delta.
- * @param   dz              Z (vertical scroll) movement delta.
- * @param   dw              W (horizontal scroll) movement delta.
- * @param   fButtons        Depressed button mask.
+ * @param   pDevIns     The device instance.
+ * @param   pThis       The PS/2 auxiliary device instance data.
+ * @param   dx          X direction movement delta.
+ * @param   dy          Y direction movement delta.
+ * @param   dz          Z (vertical scroll) movement delta.
+ * @param   dw          W (horizontal scroll) movement delta.
+ * @param   fButtons    Depressed button mask.
  */
-static int ps2mR3PutEventWorker(PPS2M pThis, int32_t dx, int32_t dy, int32_t dz, int32_t dw, uint32_t fButtons)
+static int ps2mR3PutEventWorker(PPDMDEVINS pDevIns, PPS2M pThis, int32_t dx, int32_t dy, int32_t dz, int32_t dw, uint32_t fButtons)
 {
     /* Update internal accumulators and button state. Ignore any buttons beyond 5. */
     pThis->iAccumX += dx;
@@ -813,9 +815,9 @@ static int ps2mR3PutEventWorker(PPS2M pThis, int32_t dx, int32_t dy, int32_t dz,
     if (!pThis->fThrottleActive && ps2mR3HaveEvents(pThis))
     {
         ps2mReportAccumulatedEvents(pThis, (GeneriQ *)&pThis->evtQ, true);
-        KBCUpdateInterrupts(pThis->pParent);
+        KBCUpdateInterrupts(pDevIns);
         pThis->fThrottleActive = true;
-        TMTimerSetMillies(pThis->CTX_SUFF(pThrottleTimer), pThis->uThrottleDelay);
+        PDMDevHlpTimerSetMillies(pDevIns, pThis->hThrottleTimer, pThis->uThrottleDelay);
     }
 
     return VINF_SUCCESS;
@@ -830,14 +832,15 @@ static DECLCALLBACK(int) ps2mR3MousePort_PutEvent(PPDMIMOUSEPORT pInterface, int
                                                   int32_t dz, int32_t dw, uint32_t fButtons)
 {
     PPS2M       pThis = RT_FROM_MEMBER(pInterface, PS2M, Mouse.IPort);
-    int rc = PDMCritSectEnter(pThis->pCritSectR3, VERR_SEM_BUSY);
+    PPDMDEVINS  pDevIns = pThis->pDevIns;
+    int rc = PDMDevHlpCritSectEnter(pDevIns, pDevIns->pCritSectRoR3, VERR_SEM_BUSY);
     AssertReleaseRC(rc);
 
     LogRelFlowFunc(("dX=%d dY=%d dZ=%d dW=%d buttons=%02X\n", dx, dy, dz, dw, fButtons));
     /* NB: The PS/2 Y axis direction is inverted relative to ours. */
-    ps2mR3PutEventWorker(pThis, dx, -dy, dz, dw, fButtons);
+    ps2mR3PutEventWorker(pDevIns, pThis, dx, -dy, dz, dw, fButtons);
 
-    PDMCritSectLeave(pThis->pCritSectR3);
+    PDMDevHlpCritSectLeave(pDevIns, pDevIns->pCritSectRoR3);
     return VINF_SUCCESS;
 }
 
@@ -932,7 +935,7 @@ void PS2MR3SaveState(PPDMDEVINS pDevIns, PPS2M pThis, PSSMHANDLE pSSM)
     /* Save the command delay timer. Note that the rate throttling
      * timer is *not* saved.
      */
-    TMR3TimerSave(pThis->CTX_SUFF(pDelayTimer), pSSM);
+    PDMDevHlpTimerSave(pDevIns, pThis->hDelayTimer, pSSM);
 }
 
 int PS2MR3LoadState(PPDMDEVINS pDevIns, PPS2M pThis, PSSMHANDLE pSSM, uint32_t uVersion)
@@ -963,7 +966,7 @@ int PS2MR3LoadState(PPDMDEVINS pDevIns, PPS2M pThis, PSSMHANDLE pSSM, uint32_t u
     AssertRCReturn(rc, rc);
 
     /* Load the command delay timer, just in case. */
-    rc = TMR3TimerLoad(pThis->CTX_SUFF(pDelayTimer), pSSM);
+    rc = PDMDevHlpTimerLoad(pDevIns, pThis->hDelayTimer, pSSM);
     AssertRCReturn(rc, rc);
 
     /* Recalculate the throttling delay. */
@@ -1000,14 +1003,6 @@ void PS2MR3Reset(PPS2M pThis)
     ps2mSetDefaults(pThis);     /* Also clears event queue. */
 }
 
-void PS2MR3Relocate(PPS2M pThis, RTGCINTPTR offDelta, PPDMDEVINS pDevIns)
-{
-    RT_NOREF(pDevIns, offDelta);
-    LogFlowFunc(("Relocating PS2M\n"));
-    pThis->pDelayTimerRC    = TMTimerRCPtr(pThis->pDelayTimerR3);
-    pThis->pThrottleTimerRC = TMTimerRCPtr(pThis->pThrottleTimerR3);
-}
-
 int PS2MR3Construct(PPS2M pThis, PPDMDEVINS pDevIns, PKBDSTATE pParent, unsigned iInstance)
 {
     RT_NOREF(iInstance);
@@ -1019,6 +1014,7 @@ int PS2MR3Construct(PPS2M pThis, PPDMDEVINS pDevIns, PKBDSTATE pParent, unsigned
 #endif
 
     pThis->pParent = pParent;
+    pThis->pDevIns = pDevIns;
 
     /* Initialize the queues. */
     pThis->evtQ.cSize = AUX_EVT_QUEUE_SIZE;
@@ -1037,25 +1033,16 @@ int PS2MR3Construct(PPS2M pThis, PPDMDEVINS pDevIns, PKBDSTATE pParent, unsigned
     /*
      * Create the input rate throttling timer. Does not use virtual time!
      */
-    PTMTIMER pTimer;
-    int rc = PDMDevHlpTMTimerCreate(pDevIns, TMCLOCK_REAL, ps2mR3ThrottleTimer, pThis,
-                                    TMTIMER_FLAGS_DEFAULT_CRIT_SECT, "PS2M Throttle Timer", &pTimer);
+    int rc = PDMDevHlpTimerCreate(pDevIns, TMCLOCK_REAL, ps2mR3ThrottleTimer, pThis,
+                                  TMTIMER_FLAGS_DEFAULT_CRIT_SECT, "PS2M Throttle Timer", &pThis->hThrottleTimer);
     AssertRCReturn(rc, rc);
-
-    pThis->pThrottleTimerR3 = pTimer;
-    pThis->pThrottleTimerR0 = TMTimerR0Ptr(pTimer);
-    pThis->pThrottleTimerRC = TMTimerRCPtr(pTimer);
 
     /*
      * Create the command delay timer.
      */
-    rc = PDMDevHlpTMTimerCreate(pDevIns, TMCLOCK_VIRTUAL, ps2mR3DelayTimer, pThis,
-                                TMTIMER_FLAGS_DEFAULT_CRIT_SECT, "PS2M Delay Timer", &pTimer);
+    rc = PDMDevHlpTimerCreate(pDevIns, TMCLOCK_VIRTUAL, ps2mR3DelayTimer, pThis,
+                              TMTIMER_FLAGS_DEFAULT_CRIT_SECT, "PS2M Delay Timer", &pThis->hDelayTimer);
     AssertRCReturn(rc, rc);
-
-    pThis->pDelayTimerR3 = pTimer;
-    pThis->pDelayTimerR0 = TMTimerR0Ptr(pTimer);
-    pThis->pDelayTimerRC = TMTimerRCPtr(pTimer);
 
     /*
      * Register debugger info callbacks.
@@ -1095,14 +1082,14 @@ static void ps2mR3TestAccumulation(void)
     /* Certain Windows touch pad drivers report a double tap as a press, then
      * a release-press-release all within a single 10ms interval.  Simulate
      * this to check that it is handled right. */
-    ps2mR3PutEventWorker(&This, 0, 0, 0, 0, 1);
+    ps2mR3PutEventWorker(NULL, &This, 0, 0, 0, 0, 1);
     if (ps2mR3HaveEvents(&This))
         ps2mReportAccumulatedEvents(&This, (GeneriQ *)&This.evtQ, true);
-    ps2mR3PutEventWorker(&This, 0, 0, 0, 0, 0);
+    ps2mR3PutEventWorker(NULL, &This, 0, 0, 0, 0, 0);
     if (ps2mR3HaveEvents(&This))
         ps2mReportAccumulatedEvents(&This, (GeneriQ *)&This.evtQ, true);
-    ps2mR3PutEventWorker(&This, 0, 0, 0, 0, 1);
-    ps2mR3PutEventWorker(&This, 0, 0, 0, 0, 0);
+    ps2mR3PutEventWorker(NULL, &This, 0, 0, 0, 0, 1);
+    ps2mR3PutEventWorker(NULL, &This, 0, 0, 0, 0, 0);
     if (ps2mR3HaveEvents(&This))
         ps2mReportAccumulatedEvents(&This, (GeneriQ *)&This.evtQ, true);
     if (ps2mR3HaveEvents(&This))
@@ -1119,7 +1106,7 @@ static void ps2mR3TestAccumulation(void)
     Assert(rc != VINF_SUCCESS);
     /* Button hold down during mouse drags was broken at some point during
      * testing fixes for the previous issue.  Test that that works. */
-    ps2mR3PutEventWorker(&This, 0, 0, 0, 0, 1);
+    ps2mR3PutEventWorker(NULL, &This, 0, 0, 0, 0, 1);
     if (ps2mR3HaveEvents(&This))
         ps2mReportAccumulatedEvents(&This, (GeneriQ *)&This.evtQ, true);
     if (ps2mR3HaveEvents(&This))

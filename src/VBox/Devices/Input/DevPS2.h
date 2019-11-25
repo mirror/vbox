@@ -107,6 +107,7 @@ typedef struct PS2K
     uint8_t             u8LEDs;
     /** Selected typematic delay/rate. */
     uint8_t             u8TypematicCfg;
+    uint8_t             bAlignment1;
     /** Usage code of current typematic key, if any. */
     uint32_t            u32TypematicKey;
     /** Current typematic repeat state. */
@@ -118,39 +119,27 @@ typedef struct PS2K
     /** Currently depressed keys. */
     uint8_t             abDepressedKeys[VBOX_USB_USAGE_ARRAY_SIZE];
     /** Typematic delay in milliseconds. */
-    unsigned            uTypematicDelay;
+    uint32_t            uTypematicDelay;
     /** Typematic repeat period in milliseconds. */
-    unsigned            uTypematicRepeat;
+    uint32_t            uTypematicRepeat;
     /** Set if the throttle delay is currently active. */
     bool                fThrottleActive;
     /** Set if the input rate should be throttled. */
     bool                fThrottleEnabled;
+    uint8_t             abAlignment2[2];
 
-    uint8_t             Alignment0[2];
-
-    /** Command delay timer - RC Ptr. */
-    PTMTIMERRC          pKbdDelayTimerRC;
-    /** Typematic timer - RC Ptr. */
-    PTMTIMERRC          pKbdTypematicTimerRC;
-    /** Input throttle timer - RC Ptr. */
-    PTMTIMERRC          pThrottleTimerRC;
+    /** Command delay timer - R3 Ptr. */
+    TMTIMERHANDLE       hKbdDelayTimer;
+    /** Typematic timer - R3 Ptr. */
+    TMTIMERHANDLE       hKbdTypematicTimer;
+    /** Input throttle timer. */
+    TMTIMERHANDLE       hThrottleTimer;
 
     /** The device critical section protecting everything - R3 Ptr */
     R3PTRTYPE(PPDMCRITSECT) pCritSectR3;
-
-    /** Command delay timer - R3 Ptr. */
-    PTMTIMERR3          pKbdDelayTimerR3;
-    /** Typematic timer - R3 Ptr. */
-    PTMTIMERR3          pKbdTypematicTimerR3;
-    /** Input throttle timer - R3 Ptr. */
-    PTMTIMERR3          pThrottleTimerR3;
-
-    /** Command delay timer - R0 Ptr. */
-    PTMTIMERR0          pKbdDelayTimerR0;
-    /** Typematic timer - R0 Ptr. */
-    PTMTIMERR0          pKbdTypematicTimerR0;
-    /** Input throttle timer - R0 Ptr. */
-    PTMTIMERR0          pThrottleTimerR0;
+    /** The device instance.
+     * @note Only for getting our bearings in interface methods. */
+    PPDMDEVINSR3        pDevIns;
 
     /**
      * Keyboard port - LUN#0.
@@ -175,16 +164,15 @@ typedef struct PS2K
 typedef PS2K *PPS2K;
 
 
-int  PS2KByteToKbd(PPS2K pThis, uint8_t cmd);
-int  PS2KByteFromKbd(PPS2K pThis, uint8_t *pVal);
+int  PS2KByteToKbd(PPDMDEVINS pDevIns, PPS2K pThis, uint8_t cmd);
+int  PS2KByteFromKbd(PPDMDEVINS pDevIns, PPS2K pThis, uint8_t *pVal);
 
 int  PS2KR3Construct(PPS2K pThis, PPDMDEVINS pDevIns, PKBDSTATE pParent, unsigned iInstance, PCFGMNODE pCfg);
 int  PS2KR3Attach(PPS2K pThis, PPDMDEVINS pDevIns, unsigned iLUN, uint32_t fFlags);
-void PS2KR3Reset(PPS2K pThis);
-void PS2KR3Relocate(PPS2K pThis, RTGCINTPTR offDelta, PPDMDEVINS pDevIns);
+void PS2KR3Reset(PPDMDEVINS pDevIns, PPS2K pThis);
 void PS2KR3SaveState(PPDMDEVINS pDevIns, PPS2K pThis, PSSMHANDLE pSSM);
 int  PS2KR3LoadState(PPDMDEVINS pDevIns, PPS2K pThis, PSSMHANDLE pSSM, uint32_t uVersion);
-int  PS2KR3LoadDone(PPS2K pThis, PSSMHANDLE pSSM);
+int  PS2KR3LoadDone(PPDMDEVINS pDevIns, PPS2K pThis);
 
 PS2K *KBDGetPS2KFromDevIns(PPDMDEVINS pDevIns);
 
@@ -288,21 +276,14 @@ typedef struct PS2M
 
     /** The device critical section protecting everything - R3 Ptr */
     R3PTRTYPE(PPDMCRITSECT) pCritSectR3;
-    /** Command delay timer - R3 Ptr. */
-    PTMTIMERR3          pDelayTimerR3;
-    /** Interrupt throttling timer - R3 Ptr. */
-    PTMTIMERR3          pThrottleTimerR3;
-    RTR3PTR             Alignment1;
+    /** The device instance.
+     * @note Only for getting our bearings in interface methods. */
+    PPDMDEVINSR3        pDevIns;
 
-    /** Command delay timer - RC Ptr. */
-    PTMTIMERRC          pDelayTimerRC;
-    /** Interrupt throttling timer - RC Ptr. */
-    PTMTIMERRC          pThrottleTimerRC;
-
-    /** Command delay timer - R0 Ptr. */
-    PTMTIMERR0          pDelayTimerR0;
-    /** Interrupt throttling timer - R0 Ptr. */
-    PTMTIMERR0          pThrottleTimerR0;
+    /** Command delay timer. */
+    TMTIMERHANDLE       hDelayTimer;
+    /** Interrupt throttling timer. */
+    TMTIMERHANDLE       hThrottleTimer;
 
     /**
      * Mouse port - LUN#1.
@@ -326,13 +307,12 @@ typedef struct PS2M
 /** Pointer to the PS/2 auxiliary device instance data. */
 typedef PS2M *PPS2M;
 
-int  PS2MByteToAux(PPS2M pThis, uint8_t cmd);
+int  PS2MByteToAux(PPDMDEVINS pDevIns, PPS2M pThis, uint8_t cmd);
 int  PS2MByteFromAux(PPS2M pThis, uint8_t *pVal);
 
 int  PS2MR3Construct(PPS2M pThis, PPDMDEVINS pDevIns, PKBDSTATE pParent, unsigned iInstance);
 int  PS2MR3Attach(PPS2M pThis, PPDMDEVINS pDevIns, unsigned iLUN, uint32_t fFlags);
 void PS2MR3Reset(PPS2M pThis);
-void PS2MR3Relocate(PPS2M pThis, RTGCINTPTR offDelta, PPDMDEVINS pDevIns);
 void PS2MR3SaveState(PPDMDEVINS pDevIns, PPS2M pThis, PSSMHANDLE pSSM);
 int  PS2MR3LoadState(PPDMDEVINS pDevIns, PPS2M pThis, PSSMHANDLE pSSM, uint32_t uVersion);
 void PS2MR3FixupState(PPS2M pThis, uint8_t u8State, uint8_t u8Rate, uint8_t u8Proto);
@@ -373,7 +353,7 @@ typedef struct KBDSTATE
 
 
 /* Shared keyboard/aux internal interface. */
-void KBCUpdateInterrupts(void *pKbc);
+void KBCUpdateInterrupts(PPDMDEVINS pDevIns);
 
 /** @}  */
 

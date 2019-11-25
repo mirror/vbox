@@ -448,14 +448,14 @@ static uint32_t ps2R3kInQueue(GeneriQ *pQ)
 #endif /* IN_RING3 */
 
 /** Clears the currently active typematic key, if any. */
-static void ps2kStopTypematicRepeat(PPS2K pThis)
+static void ps2kStopTypematicRepeat(PPDMDEVINS pDevIns, PPS2K pThis)
 {
     if (pThis->u32TypematicKey)
     {
         LogFunc(("Typematic key %08X\n", pThis->u32TypematicKey));
         pThis->enmTypematicState = KBD_TMS_IDLE;
         pThis->u32TypematicKey = 0;
-        TMTimerStop(pThis->CTX_SUFF(pKbdTypematicTimer));
+        PDMDevHlpTimerStop(pDevIns, pThis->hKbdTypematicTimer);
     }
 }
 
@@ -479,7 +479,7 @@ static void ps2kSetupTypematic(PPS2K pThis, uint8_t val)
          pThis->uTypematicDelay, pThis->uTypematicRepeat));
 }
 
-static void ps2kSetDefaults(PPS2K pThis)
+static void ps2kSetDefaults(PPDMDEVINS pDevIns, PPS2K pThis)
 {
     LogFlowFunc(("Set keyboard defaults\n"));
     PS2CmnClearQueue((GeneriQ *)&pThis->keyQ);
@@ -487,16 +487,17 @@ static void ps2kSetDefaults(PPS2K pThis)
     /* Set default typematic rate/delay. */
     ps2kSetupTypematic(pThis, KBD_DFL_RATE_DELAY);
     /* Clear last typematic key?? */
-    ps2kStopTypematicRepeat(pThis);
+    ps2kStopTypematicRepeat(pDevIns, pThis);
 }
 
 /**
  * Receive and process a byte sent by the keyboard controller.
  *
- * @param   pThis               The PS/2 keyboard instance data.
- * @param   cmd                 The command (or data) byte.
+ * @param   pDevIns The device instance.
+ * @param   pThis   The PS/2 keyboard instance data.
+ * @param   cmd     The command (or data) byte.
  */
-int PS2KByteToKbd(PPS2K pThis, uint8_t cmd)
+int PS2KByteToKbd(PPDMDEVINS pDevIns, PPS2K pThis, uint8_t cmd)
 {
     bool    fHandled = true;
 
@@ -521,18 +522,18 @@ int PS2KByteToKbd(PPS2K pThis, uint8_t cmd)
         case KCMD_ENABLE:
             pThis->fScanning = true;
             PS2CmnClearQueue((GeneriQ *)&pThis->keyQ);
-            ps2kStopTypematicRepeat(pThis);
+            ps2kStopTypematicRepeat(pDevIns, pThis);
             PS2CmnInsertQueue((GeneriQ *)&pThis->cmdQ, KRSP_ACK);
             pThis->u8CurrCmd = 0;
             break;
         case KCMD_DFLT_DISABLE:
             pThis->fScanning = false;
-            ps2kSetDefaults(pThis); /* Also clears buffer/typematic state. */
+            ps2kSetDefaults(pDevIns, pThis); /* Also clears buffer/typematic state. */
             PS2CmnInsertQueue((GeneriQ *)&pThis->cmdQ, KRSP_ACK);
             pThis->u8CurrCmd = 0;
             break;
         case KCMD_SET_DEFAULT:
-            ps2kSetDefaults(pThis);
+            ps2kSetDefaults(pDevIns, pThis);
             PS2CmnInsertQueue((GeneriQ *)&pThis->cmdQ, KRSP_ACK);
             pThis->u8CurrCmd = 0;
             break;
@@ -549,12 +550,12 @@ int PS2KByteToKbd(PPS2K pThis, uint8_t cmd)
             break;
         case KCMD_RESET:
             pThis->u8ScanSet = 2;
-            ps2kSetDefaults(pThis);
+            ps2kSetDefaults(pDevIns, pThis);
             /// @todo reset more?
             PS2CmnInsertQueue((GeneriQ *)&pThis->cmdQ, KRSP_ACK);
             pThis->u8CurrCmd = cmd;
             /* Delay BAT completion; the test may take hundreds of ms. */
-            TMTimerSetMillies(pThis->CTX_SUFF(pKbdDelayTimer), 2);
+            PDMDevHlpTimerSetMillies(pDevIns, pThis->hKbdDelayTimer, 2);
             break;
         /* The following commands need a parameter. */
         case KCMD_LEDS:
@@ -615,7 +616,7 @@ int PS2KByteToKbd(PPS2K pThis, uint8_t cmd)
             break;
     }
     LogFlowFunc(("Active cmd now 0x%02X; updating interrupts\n", pThis->u8CurrCmd));
-//    KBCUpdateInterrupts(pThis->pParent);
+//    KBCUpdateInterrupts(pDevIns);
     return VINF_SUCCESS;
 }
 
@@ -623,11 +624,12 @@ int PS2KByteToKbd(PPS2K pThis, uint8_t cmd)
  * Send a byte (keystroke or command response) to the keyboard controller.
  *
  * @returns VINF_SUCCESS or VINF_TRY_AGAIN.
- * @param   pThis               The PS/2 keyboard instance data.
- * @param   pb                  Where to return the byte we've read.
+ * @param   pDevIns The device instance.
+ * @param   pThis   The PS/2 keyboard instance data.
+ * @param   pb      Where to return the byte we've read.
  * @remarks Caller must have entered the device critical section.
  */
-int PS2KByteFromKbd(PPS2K pThis, uint8_t *pb)
+int PS2KByteFromKbd(PPDMDEVINS pDevIns, PPS2K pThis, uint8_t *pb)
 {
     int         rc;
 
@@ -643,9 +645,10 @@ int PS2KByteFromKbd(PPS2K pThis, uint8_t *pb)
         if (!pThis->fThrottleActive)
         {
             rc = PS2CmnRemoveQueue((GeneriQ *)&pThis->keyQ, pb);
-            if (pThis->fThrottleEnabled) {
+            if (pThis->fThrottleEnabled)
+            {
                 pThis->fThrottleActive = true;
-                TMTimerSetMillies(pThis->CTX_SUFF(pThrottleTimer), KBD_THROTTLE_DELAY);
+                PDMDevHlpTimerSetMillies(pDevIns, pThis->hThrottleTimer, KBD_THROTTLE_DELAY);
             }
         }
 
@@ -655,7 +658,7 @@ int PS2KByteFromKbd(PPS2K pThis, uint8_t *pb)
 
 #ifdef IN_RING3
 
-static int ps2kR3ProcessKeyEvent(PPS2K pThis, uint32_t u32HidCode, bool fKeyDown)
+static int ps2kR3ProcessKeyEvent(PPDMDEVINS pDevIns, PPS2K pThis, uint32_t u32HidCode, bool fKeyDown)
 {
     key_def const   *pKeyDef;
     uint8_t         abCodes[16];
@@ -889,7 +892,7 @@ static int ps2kR3ProcessKeyEvent(PPS2K pThis, uint32_t u32HidCode, bool fKeyDown
             {
                 pThis->enmTypematicState = KBD_TMS_DELAY;
                 pThis->u32TypematicKey   = u32HidCode;
-                TMTimerSetMillies(pThis->CTX_SUFF(pKbdTypematicTimer), pThis->uTypematicDelay);
+                PDMDevHlpTimerSetMillies(pDevIns, pThis->hKbdTypematicTimer, pThis->uTypematicDelay);
                 Log(("Typematic delay %u ms, key %08X\n", pThis->uTypematicDelay, u32HidCode));
             }
         }
@@ -905,14 +908,14 @@ static int ps2kR3ProcessKeyEvent(PPS2K pThis, uint32_t u32HidCode, bool fKeyDown
                 pThis->u32TypematicKey   = 0;
                 pThis->enmTypematicState = KBD_TMS_IDLE;
                 /* For good measure, we cancel the timer, too. */
-                TMTimerStop(pThis->CTX_SUFF(pKbdTypematicTimer));
+                PDMDevHlpTimerStop(pDevIns, pThis->hKbdTypematicTimer);
                 Log(("Typematic action cleared for key %08X\n", u32HidCode));
             }
         }
     }
 
     /* Poke the KBC to update its state. */
-    KBCUpdateInterrupts(pThis->pParent);
+    KBCUpdateInterrupts(pDevIns);
 
     return VINF_SUCCESS;
 }
@@ -948,7 +951,7 @@ static DECLCALLBACK(void) ps2kR3ThrottleTimer(PPDMDEVINS pDevIns, PTMTIMER pTime
     uHaveData = ps2R3kInQueue((GeneriQ *)&pThis->keyQ);
     LogFlowFunc(("Have%s bytes\n", uHaveData ? "" : " no"));
     if (uHaveData)
-        KBCUpdateInterrupts(pThis->pParent);
+        KBCUpdateInterrupts(pDevIns);
 
     PDMCritSectLeave(pThis->pCritSectR3);
 }
@@ -975,8 +978,8 @@ static DECLCALLBACK(void) ps2kR3TypematicTimer(PPDMDEVINS pDevIns, PTMTIMER pTim
 
         if (pThis->enmTypematicState == KBD_TMS_REPEAT)
         {
-            ps2kR3ProcessKeyEvent(pThis, pThis->u32TypematicKey, true /* Key down */ );
-            TMTimerSetMillies(pThis->CTX_SUFF(pKbdTypematicTimer), pThis->uTypematicRepeat);
+            ps2kR3ProcessKeyEvent(pDevIns, pThis, pThis->u32TypematicKey, true /* Key down */ );
+            PDMDevHlpTimerSetMillies(pDevIns, pThis->hKbdTypematicTimer, pThis->uTypematicRepeat);
         }
     }
 }
@@ -1001,21 +1004,21 @@ static DECLCALLBACK(void) ps2kR3DelayTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, 
 
     /// @todo Might want a PS2KCompleteCommand() to push last response, clear command, and kick the KBC...
     /* Give the KBC a kick. */
-    KBCUpdateInterrupts(pThis->pParent);
+    KBCUpdateInterrupts(pDevIns);
 }
 
 /* Release any and all currently depressed keys. Used whenever the guest keyboard
  * is likely to be out of sync with the host, such as when loading a saved state
  * or resuming a suspended host.
  */
-static void ps2kR3ReleaseKeys(PPS2K pThis)
+static void ps2kR3ReleaseKeys(PPDMDEVINS pDevIns, PPS2K pThis)
 {
     LogFlowFunc(("Releasing keys...\n"));
 
     for (unsigned uKey = 0; uKey < sizeof(pThis->abDepressedKeys); ++uKey)
         if (pThis->abDepressedKeys[uKey])
         {
-            ps2kR3ProcessKeyEvent(pThis, RT_MAKE_U32(USB_HID_KB_PAGE, uKey), false /* key up */);
+            ps2kR3ProcessKeyEvent(pDevIns, pThis, RT_MAKE_U32(USB_HID_KB_PAGE, uKey), false /* key up */);
             pThis->abDepressedKeys[uKey] = 0;
         }
     LogFlowFunc(("Done releasing keys\n"));
@@ -1070,11 +1073,11 @@ static DECLCALLBACK(void *) ps2kR3QueryInterface(PPDMIBASE pInterface, const cha
  * Keyboard event handler.
  *
  * @returns VBox status code.
- * @param   pThis           The PS2 keyboard instance data.
- * @param   u32Usage        USB HID usage code with key
- *                          press/release flag.
+ * @param   pDevIns     The device instance.
+ * @param   pThis       The PS2 keyboard instance data.
+ * @param   u32Usage    USB HID usage code with key press/release flag.
  */
-static int ps2kR3PutEventWorker(PPS2K pThis, uint32_t u32Usage)
+static int ps2kR3PutEventWorker(PPDMDEVINS pDevIns, PPS2K pThis, uint32_t u32Usage)
 {
     uint32_t        u32HidCode;
     uint8_t         u8KeyCode;
@@ -1115,7 +1118,7 @@ static int ps2kR3PutEventWorker(PPS2K pThis, uint32_t u32Usage)
         rc = PDMCritSectEnter(pThis->pCritSectR3, VERR_SEM_BUSY);
         AssertReleaseRC(rc);
 
-        rc = ps2kR3ProcessKeyEvent(pThis, u32HidCode, fKeyDown);
+        rc = ps2kR3ProcessKeyEvent(pDevIns, pThis, u32HidCode, fKeyDown);
 
         PDMCritSectLeave(pThis->pCritSectR3);
     }
@@ -1130,6 +1133,7 @@ static int ps2kR3PutEventWorker(PPS2K pThis, uint32_t u32Usage)
 static DECLCALLBACK(int) ps2kR3KeyboardPort_PutEventHid(PPDMIKEYBOARDPORT pInterface, uint32_t u32UsageCode)
 {
     PPS2K       pThis = RT_FROM_MEMBER(pInterface, PS2K, Keyboard.IPort);
+    PPDMDEVINS  pDevIns = pThis->pDevIns;
     int         rc;
 
     LogRelFlowFunc(("key code %08X\n", u32UsageCode));
@@ -1140,14 +1144,10 @@ static DECLCALLBACK(int) ps2kR3KeyboardPort_PutEventHid(PPDMIKEYBOARDPORT pInter
     /* The 'BAT fail' scancode is reused as a signal to release keys. No actual
      * key is allowed to use this scancode.
      */
-    if (RT_UNLIKELY(u32UsageCode == KRSP_BAT_FAIL))
-    {
-        ps2kR3ReleaseKeys(pThis);
-    }
+    if (RT_LIKELY(u32UsageCode != KRSP_BAT_FAIL))
+        ps2kR3PutEventWorker(pDevIns, pThis, u32UsageCode);
     else
-    {
-        ps2kR3PutEventWorker(pThis, u32UsageCode);
-    }
+        ps2kR3ReleaseKeys(pDevIns, pThis);
 
     PDMCritSectLeave(pThis->pCritSectR3);
 
@@ -1229,7 +1229,7 @@ void PS2KR3SaveState(PPDMDEVINS pDevIns, PPS2K pThis, PSSMHANDLE pSSM)
     /* Save the command delay timer. Note that the typematic repeat
      * timer is *not* saved.
      */
-    TMR3TimerSave(pThis->CTX_SUFF(pKbdDelayTimer), pSSM);
+    PDMDevHlpTimerSave(pDevIns, pThis->hKbdDelayTimer, pSSM);
 
     /* Save any pressed keys. This is necessary to avoid "stuck"
      * keys after a restore. Needs two passes.
@@ -1281,7 +1281,7 @@ int PS2KR3LoadState(PPDMDEVINS pDevIns, PPS2K pThis, PSSMHANDLE pSSM, uint32_t u
     AssertRCReturn(rc, rc);
 
     /* Load the command delay timer, just in case. */
-    rc = TMR3TimerLoad(pThis->CTX_SUFF(pKbdDelayTimer), pSSM);
+    rc = PDMDevHlpTimerLoad(pDevIns, pThis->hKbdDelayTimer, pSSM);
     AssertRCReturn(rc, rc);
 
     /* Recalculate the typematic delay/rate. */
@@ -1315,19 +1315,17 @@ int PS2KR3LoadState(PPDMDEVINS pDevIns, PPS2K pThis, PSSMHANDLE pSSM, uint32_t u
     return rc;
 }
 
-int PS2KR3LoadDone(PPS2K pThis, PSSMHANDLE pSSM)
+int PS2KR3LoadDone(PPDMDEVINS pDevIns, PPS2K pThis)
 {
-    RT_NOREF(pSSM);
-
     /* This *must* be done after the inital load because it may trigger
      * interrupts and change the interrupt controller state.
      */
-    ps2kR3ReleaseKeys(pThis);
+    ps2kR3ReleaseKeys(pDevIns, pThis);
     ps2kR3NotifyLedsState(pThis, pThis->u8LEDs);
     return VINF_SUCCESS;
 }
 
-void PS2KR3Reset(PPS2K pThis)
+void PS2KR3Reset(PPDMDEVINS pDevIns, PPS2K pThis)
 {
     LogFlowFunc(("Resetting PS2K\n"));
 
@@ -1342,21 +1340,11 @@ void PS2KR3Reset(PPS2K pThis)
     /* Clear queues and any pressed keys. */
     memset(pThis->abDepressedKeys, 0, sizeof(pThis->abDepressedKeys));
     PS2CmnClearQueue((GeneriQ *)&pThis->cmdQ);
-    ps2kSetDefaults(pThis);     /* Also clears keystroke queue. */
+    ps2kSetDefaults(pDevIns, pThis);     /* Also clears keystroke queue. */
 
     /* Activate the PS/2 keyboard by default. */
     if (pThis->Keyboard.pDrv)
         pThis->Keyboard.pDrv->pfnSetActive(pThis->Keyboard.pDrv, true);
-}
-
-void PS2KR3Relocate(PPS2K pThis, RTGCINTPTR offDelta, PPDMDEVINS pDevIns)
-{
-    RT_NOREF(pDevIns);
-    LogFlowFunc(("Relocating PS2K\n"));
-    pThis->pKbdDelayTimerRC     = TMTimerRCPtr(pThis->pKbdDelayTimerR3);
-    pThis->pKbdTypematicTimerRC = TMTimerRCPtr(pThis->pKbdTypematicTimerR3);
-    pThis->pThrottleTimerRC     = TMTimerRCPtr(pThis->pThrottleTimerR3);
-    NOREF(offDelta);
 }
 
 int PS2KR3Construct(PPS2K pThis, PPDMDEVINS pDevIns, PKBDSTATE pParent, unsigned iInstance, PCFGMNODE pCfg)
@@ -1366,6 +1354,7 @@ int PS2KR3Construct(PPS2K pThis, PPDMDEVINS pDevIns, PKBDSTATE pParent, unsigned
     LogFlowFunc(("iInstance=%u\n", iInstance));
 
     pThis->pParent = pParent;
+    pThis->pDevIns = pDevIns;
 
     bool fThrottleEnabled;
     int rc = pHlp->pfnCFGMQueryBoolDef(pCfg, "KbdThrottleEnabled", &fThrottleEnabled, true);
@@ -1389,36 +1378,23 @@ int PS2KR3Construct(PPS2K pThis, PPDMDEVINS pDevIns, PKBDSTATE pParent, unsigned
     /*
      * Create the input rate throttling timer.
      */
-    PTMTIMER pTimer;
-    rc = PDMDevHlpTMTimerCreate(pDevIns, TMCLOCK_VIRTUAL, ps2kR3ThrottleTimer, pThis,
-                                TMTIMER_FLAGS_DEFAULT_CRIT_SECT, "PS2K Throttle Timer", &pTimer);
+    rc = PDMDevHlpTimerCreate(pDevIns, TMCLOCK_VIRTUAL, ps2kR3ThrottleTimer, pThis,
+                                TMTIMER_FLAGS_DEFAULT_CRIT_SECT, "PS2K Throttle Timer", &pThis->hThrottleTimer);
     AssertRCReturn(rc, rc);
-
-    pThis->pThrottleTimerR3 = pTimer;
-    pThis->pThrottleTimerR0 = TMTimerR0Ptr(pTimer);
-    pThis->pThrottleTimerRC = TMTimerRCPtr(pTimer);
 
     /*
      * Create the typematic delay/repeat timer.
      */
-    rc = PDMDevHlpTMTimerCreate(pDevIns, TMCLOCK_VIRTUAL, ps2kR3TypematicTimer, pThis,
-                                TMTIMER_FLAGS_DEFAULT_CRIT_SECT, "PS2K Typematic Timer", &pTimer);
+    rc = PDMDevHlpTimerCreate(pDevIns, TMCLOCK_VIRTUAL, ps2kR3TypematicTimer, pThis,
+                              TMTIMER_FLAGS_DEFAULT_CRIT_SECT, "PS2K Typematic Timer", &pThis->hKbdTypematicTimer);
     AssertRCReturn(rc, rc);
-
-    pThis->pKbdTypematicTimerR3 = pTimer;
-    pThis->pKbdTypematicTimerR0 = TMTimerR0Ptr(pTimer);
-    pThis->pKbdTypematicTimerRC = TMTimerRCPtr(pTimer);
 
     /*
      * Create the command delay timer.
      */
-    rc = PDMDevHlpTMTimerCreate(pDevIns, TMCLOCK_VIRTUAL, ps2kR3DelayTimer, pThis,
-                                TMTIMER_FLAGS_DEFAULT_CRIT_SECT, "PS2K Delay Timer", &pTimer);
+    rc = PDMDevHlpTimerCreate(pDevIns, TMCLOCK_VIRTUAL, ps2kR3DelayTimer, pThis,
+                              TMTIMER_FLAGS_DEFAULT_CRIT_SECT, "PS2K Delay Timer", &pThis->hKbdDelayTimer);
     AssertRCReturn(rc, rc);
-
-    pThis->pKbdDelayTimerR3 = pTimer;
-    pThis->pKbdDelayTimerR0 = TMTimerR0Ptr(pTimer);
-    pThis->pKbdDelayTimerRC = TMTimerRCPtr(pTimer);
 
     /*
      * Register debugger info callbacks.

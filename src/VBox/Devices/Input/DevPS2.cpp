@@ -216,8 +216,8 @@ static int32_t kbcXlateAT2PC(int32_t state, uint8_t scanIn, uint8_t *pScanOut)
 }
 
 
-/* update irq and KBD_STAT_[MOUSE_]OBF */
-static void kbd_update_irq(KBDState *s)
+/** update irq and KBD_STAT_[MOUSE_]OBF */
+static void kbd_update_irq(PPDMDEVINS pDevIns, KBDState *s)
 {
     int irq12_level, irq1_level;
     uint8_t val;
@@ -232,7 +232,7 @@ static void kbd_update_irq(KBDState *s)
     if (!(s->status & KBD_STAT_OBF)) {
         s->status &= ~KBD_STAT_MOUSE_OBF;
         /* Keyboard data has priority if both kbd and aux data is available. */
-        if (!(s->mode & KBD_MODE_DISABLE_KBD) && PS2KByteFromKbd(&s->Kbd, &val) == VINF_SUCCESS)
+        if (!(s->mode & KBD_MODE_DISABLE_KBD) && PS2KByteFromKbd(pDevIns, &s->Kbd, &val) == VINF_SUCCESS)
         {
             bool    fHaveData = true;
 
@@ -247,7 +247,7 @@ static void kbd_update_irq(KBDState *s)
                 /* If the translation state is XS_BREAK, there's nothing to report
                  * and we keep going until the state changes or there's no more data.
                  */
-                while (s->xlat_state == XS_BREAK && PS2KByteFromKbd(&s->Kbd, &val) == VINF_SUCCESS)
+                while (s->xlat_state == XS_BREAK && PS2KByteFromKbd(pDevIns, &s->Kbd, &val) == VINF_SUCCESS)
                 {
                     s->xlat_state = kbcXlateAT2PC(s->xlat_state, val, &xlated_val);
                     val = xlated_val;
@@ -285,16 +285,14 @@ static void kbd_update_irq(KBDState *s)
     PDMDevHlpISASetIrq(s->CTX_SUFF(pDevIns), 12, irq12_level);
 }
 
-void KBCUpdateInterrupts(void *pKbc)
+void KBCUpdateInterrupts(PPDMDEVINS pDevIns)
 {
-    KBDState    *s = (KBDState *)pKbc;
-    kbd_update_irq(s);
+    PKBDSTATE pThis = PDMDEVINS_2_DATA(pDevIns, PKBDSTATE);
+    kbd_update_irq(pDevIns, pThis);
 }
 
-static void kbc_dbb_out(void *opaque, uint8_t val)
+static void kbc_dbb_out(PKBDSTATE s, uint8_t val)
 {
-    KBDState *s = (KBDState*)opaque;
-
     s->dbbout = val;
     /* Set the OBF and raise IRQ. */
     s->status |= KBD_STAT_OBF;
@@ -302,10 +300,8 @@ static void kbc_dbb_out(void *opaque, uint8_t val)
         PDMDevHlpISASetIrq(s->CTX_SUFF(pDevIns), 1, 1);
 }
 
-static void kbc_dbb_out_aux(void *opaque, uint8_t val)
+static void kbc_dbb_out_aux(PKBDSTATE s, uint8_t val)
 {
-    KBDState *s = (KBDState*)opaque;
-
     s->dbbout = val;
     /* Set the aux OBF and raise IRQ. */
     s->status |= KBD_STAT_OBF | KBD_STAT_MOUSE_OBF;
@@ -313,9 +309,8 @@ static void kbc_dbb_out_aux(void *opaque, uint8_t val)
         PDMDevHlpISASetIrq(s->CTX_SUFF(pDevIns), 12, PDM_IRQ_LEVEL_HIGH);
 }
 
-static uint32_t kbd_read_status(void *opaque, uint32_t addr)
+static uint32_t kbd_read_status(PKBDSTATE s, uint32_t addr)
 {
-    KBDState *s = (KBDState*)opaque;
     int val = s->status;
     NOREF(addr);
 
@@ -325,10 +320,9 @@ static uint32_t kbd_read_status(void *opaque, uint32_t addr)
     return val;
 }
 
-static int kbd_write_command(void *opaque, uint32_t addr, uint32_t val)
+static int kbd_write_command(PPDMDEVINS pDevIns, PKBDSTATE s, uint32_t addr, uint32_t val)
 {
     int rc = VINF_SUCCESS;
-    KBDState *s = (KBDState*)opaque;
     NOREF(addr);
 
 #ifdef DEBUG_KBD
@@ -351,7 +345,7 @@ static int kbd_write_command(void *opaque, uint32_t addr, uint32_t val)
     case KBD_CCMD_MOUSE_ENABLE:
         s->mode &= ~KBD_MODE_DISABLE_MOUSE;
         /* Check for queued input. */
-        kbd_update_irq(s);
+        kbd_update_irq(pDevIns, s);
         break;
     case KBD_CCMD_TEST_MOUSE:
         kbc_dbb_out(s, 0x00);
@@ -380,7 +374,7 @@ static int kbd_write_command(void *opaque, uint32_t addr, uint32_t val)
     case KBD_CCMD_KBD_ENABLE:
         s->mode &= ~KBD_MODE_DISABLE_KBD;
         /* Check for queued input. */
-        kbd_update_irq(s);
+        kbd_update_irq(pDevIns, s);
         break;
     case KBD_CCMD_READ_INPORT:
         kbc_dbb_out(s, 0xBF);
@@ -452,9 +446,8 @@ static int kbd_write_command(void *opaque, uint32_t addr, uint32_t val)
     return rc;
 }
 
-static uint32_t kbd_read_data(void *opaque, uint32_t addr)
+static uint32_t kbd_read_data(PPDMDEVINS pDevIns, PKBDSTATE s, uint32_t addr)
 {
-    KBDState *s = (KBDState*)opaque;
     uint32_t val;
     NOREF(addr);
 
@@ -470,7 +463,7 @@ static uint32_t kbd_read_data(void *opaque, uint32_t addr)
     s->status &= ~(KBD_STAT_OBF | KBD_STAT_MOUSE_OBF);
 
     /* Check if more data is available. */
-    kbd_update_irq(s);
+    kbd_update_irq(pDevIns, s);
 #ifdef DEBUG_KBD
     Log(("kbd: read data=0x%02x\n", val));
 #endif
@@ -479,20 +472,19 @@ static uint32_t kbd_read_data(void *opaque, uint32_t addr)
 
 PS2K *KBDGetPS2KFromDevIns(PPDMDEVINS pDevIns)
 {
-    KBDState *pThis = PDMDEVINS_2_DATA(pDevIns, KBDState *);
+    KBDState *pThis = PDMDEVINS_2_DATA(pDevIns, PKBDSTATE);
     return &pThis->Kbd;
 }
 
 PS2M *KBDGetPS2MFromDevIns(PPDMDEVINS pDevIns)
 {
-    KBDState *pThis = PDMDEVINS_2_DATA(pDevIns, KBDState *);
+    KBDState *pThis = PDMDEVINS_2_DATA(pDevIns, PKBDSTATE);
     return &pThis->Aux;
 }
 
-static int kbd_write_data(void *opaque, uint32_t addr, uint32_t val)
+static int kbd_write_data(PPDMDEVINS pDevIns, PKBDSTATE s, uint32_t addr, uint32_t val)
 {
     int rc = VINF_SUCCESS;
-    KBDState *s = (KBDState*)opaque;
     NOREF(addr);
 
 #ifdef DEBUG_KBD
@@ -503,14 +495,14 @@ static int kbd_write_data(void *opaque, uint32_t addr, uint32_t val)
     case 0:
         /* Automatically enables keyboard interface. */
         s->mode &= ~KBD_MODE_DISABLE_KBD;
-        rc = PS2KByteToKbd(&s->Kbd, val);
+        rc = PS2KByteToKbd(pDevIns, &s->Kbd, val);
         if (rc == VINF_SUCCESS)
-            kbd_update_irq(s);
+            kbd_update_irq(pDevIns, s);
         break;
     case KBD_CCMD_WRITE_MODE:
         s->mode = val;
         s->translate = (s->mode & KBD_MODE_KCC) == KBD_MODE_KCC;
-        kbd_update_irq(s);
+        kbd_update_irq(pDevIns, s);
         break;
     case KBD_CCMD_WRITE_OBUF:
         kbc_dbb_out(s, val);
@@ -538,9 +530,9 @@ static int kbd_write_data(void *opaque, uint32_t addr, uint32_t val)
     case KBD_CCMD_WRITE_MOUSE:
         /* Automatically enables aux interface. */
         s->mode &= ~KBD_MODE_DISABLE_MOUSE;
-        rc = PS2MByteToAux(&s->Aux, val);
+        rc = PS2MByteToAux(pDevIns, &s->Aux, val);
         if (rc == VINF_SUCCESS)
-            kbd_update_irq(s);
+            kbd_update_irq(pDevIns, s);
         break;
     default:
         break;
@@ -705,7 +697,7 @@ PDMBOTHCBDECL(int) kbdIOPortDataRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT 
         fluff |= 0x0000ff00;
         RT_FALL_THRU();
     case 1:
-        *pu32 = fluff | kbd_read_data(pThis, Port);
+        *pu32 = fluff | kbd_read_data(pDevIns, pThis, Port);
         Log2(("kbdIOPortDataRead: Port=%#x cb=%d *pu32=%#x\n", Port, cb, *pu32));
         return VINF_SUCCESS;
     default:
@@ -731,8 +723,8 @@ PDMBOTHCBDECL(int) kbdIOPortDataWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT
     NOREF(pvUser);
     if (cb == 1 || cb == 2)
     {
-        KBDState *pThis = PDMDEVINS_2_DATA(pDevIns, KBDState *);
-        rc = kbd_write_data(pThis, Port, (uint8_t)u32);
+        PKBDSTATE pThis = PDMDEVINS_2_DATA(pDevIns, PKBDSTATE);
+        rc = kbd_write_data(pDevIns, pThis, Port, (uint8_t)u32);
         Log2(("kbdIOPortDataWrite: Port=%#x cb=%d u32=%#x\n", Port, cb, u32));
     }
     else
@@ -791,8 +783,8 @@ PDMBOTHCBDECL(int) kbdIOPortCommandWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOP
     NOREF(pvUser);
     if (cb == 1 || cb == 2)
     {
-        KBDState *pThis = PDMDEVINS_2_DATA(pDevIns, KBDState *);
-        rc = kbd_write_command(pThis, Port, (uint8_t)u32);
+        KBDState *pThis = PDMDEVINS_2_DATA(pDevIns, PKBDSTATE);
+        rc = kbd_write_command(pDevIns, pThis, Port, (uint8_t)u32);
         Log2(("kbdIOPortCommandWrite: Port=%#x cb=%d u32=%#x rc=%Rrc\n", Port, cb, u32, rc));
     }
     else
@@ -974,7 +966,8 @@ static DECLCALLBACK(int) kbdR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint
 static DECLCALLBACK(int) kbdR3LoadDone(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 {
     PKBDSTATE pThis = PDMDEVINS_2_DATA(pDevIns, PKBDSTATE);
-    return PS2KR3LoadDone(&pThis->Kbd, pSSM);
+    RT_NOREF(pSSM);
+    return PS2KR3LoadDone(pDevIns, &pThis->Kbd);
 }
 
 /**
@@ -993,7 +986,7 @@ static DECLCALLBACK(void)  kbdR3Reset(PPDMDEVINS pDevIns)
     pThis->write_cmd = 0;
     pThis->translate = 0;
 
-    PS2KR3Reset(&pThis->Kbd);
+    PS2KR3Reset(pDevIns, &pThis->Kbd);
     PS2MR3Reset(&pThis->Aux);
 }
 
@@ -1070,18 +1063,6 @@ static DECLCALLBACK(void)  kbdR3Detach(PPDMDEVINS pDevIns, unsigned iLUN, uint32
 #else
     NOREF(pDevIns); NOREF(iLUN); NOREF(fFlags);
 #endif
-}
-
-
-/**
- * @interface_method_impl{PDMDEVREGR3,pfnRelocate}
- */
-static DECLCALLBACK(void) kbdR3Relocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta)
-{
-    PKBDSTATE pThis = PDMDEVINS_2_DATA(pDevIns, PKBDSTATE);
-    pThis->pDevInsRC = PDMDEVINS_2_RCPTR(pDevIns);
-    PS2KR3Relocate(&pThis->Kbd, offDelta, pDevIns);
-    PS2MR3Relocate(&pThis->Aux, offDelta, pDevIns);
 }
 
 
@@ -1192,7 +1173,7 @@ const PDMDEVREG g_DevicePS2KeyboardMouse =
     /* .pszR0Mod = */               "VBoxDDR0.r0",
     /* .pfnConstruct = */           kbdR3Construct,
     /* .pfnDestruct = */            NULL,
-    /* .pfnRelocate = */            kbdR3Relocate,
+    /* .pfnRelocate = */            NULL,
     /* .pfnMemSetup = */            NULL,
     /* .pfnPowerOn = */             NULL,
     /* .pfnReset = */               kbdR3Reset,
