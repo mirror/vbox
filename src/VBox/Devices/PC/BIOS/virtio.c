@@ -759,186 +759,188 @@ static int virtio_scsi_detect_devices(virtio_t __far *virtio)
         _fmemset(buffer, 0, sizeof(buffer));
 
         rc = virtio_scsi_cmd_data_in(virtio, i, aCDB, 6, buffer, 5, 0, 0);
-        if (rc != 0)
-            BX_PANIC("%s: SCSI_INQUIRY failed\n", __func__);
-
-        devcount_scsi = bios_dsk->scsi_devcount;
-
-        /* Check the attached device. */
-        if (   ((buffer[0] & 0xe0) == 0)
-            && ((buffer[0] & 0x1f) == 0x00))
+        if (!rc)
         {
-            DBG_VIRTIO("%s: Disk detected at %d\n", __func__, i);
+            devcount_scsi = bios_dsk->scsi_devcount;
 
-            /* We add the disk only if the maximum is not reached yet. */
-            if (devcount_scsi < BX_MAX_SCSI_DEVICES)
+            /* Check the attached device. */
+            if (   ((buffer[0] & 0xe0) == 0)
+                && ((buffer[0] & 0x1f) == 0x00))
             {
-                uint64_t    sectors, t;
-                uint32_t    sector_size, cylinders;
-                uint16_t    heads, sectors_per_track;
-                uint8_t     hdcount;
-                uint8_t     cmos_base;
+                DBG_VIRTIO("%s: Disk detected at %d\n", __func__, i);
 
-                /* Issue a read capacity command now. */
-                _fmemset(aCDB, 0, sizeof(aCDB));
-                aCDB[0] = SCSI_SERVICE_ACT;
-                aCDB[1] = SCSI_READ_CAP_16;
-                aCDB[13] = 32; /* Allocation length. */
-
-                rc = virtio_scsi_cmd_data_in(virtio, i, aCDB, 16, buffer, 32, 0, 0);
-                if (rc != 0)
-                    BX_PANIC("%s: SCSI_READ_CAPACITY failed\n", __func__);
-
-                /* The value returned is the last addressable LBA, not
-                 * the size, which what "+ 1" is for.
-                 */
-                sectors = swap_64(*(uint64_t *)buffer) + 1;
-
-                sector_size =   ((uint32_t)buffer[8] << 24)
-                              | ((uint32_t)buffer[9] << 16)
-                              | ((uint32_t)buffer[10] << 8)
-                              | ((uint32_t)buffer[11]);
-
-                /* We only support the disk if sector size is 512 bytes. */
-                if (sector_size != 512)
+                /* We add the disk only if the maximum is not reached yet. */
+                if (devcount_scsi < BX_MAX_SCSI_DEVICES)
                 {
-                    /* Leave a log entry. */
-                    BX_INFO("Disk %d has an unsupported sector size of %u\n", i, sector_size);
-                    continue;
-                }
+                    uint64_t    sectors, t;
+                    uint32_t    sector_size, cylinders;
+                    uint16_t    heads, sectors_per_track;
+                    uint8_t     hdcount;
+                    uint8_t     cmos_base;
 
-                /* Get logical CHS geometry. */
-                switch (devcount_scsi)
-                {
-                    case 0:
-                        cmos_base = 0x90;
-                        break;
-                    case 1:
-                        cmos_base = 0x98;
-                        break;
-                    case 2:
-                        cmos_base = 0xA0;
-                        break;
-                    case 3:
-                        cmos_base = 0xA8;
-                        break;
-                    default:
-                        cmos_base = 0;
-                }
+                    /* Issue a read capacity command now. */
+                    _fmemset(aCDB, 0, sizeof(aCDB));
+                    aCDB[0] = SCSI_SERVICE_ACT;
+                    aCDB[1] = SCSI_READ_CAP_16;
+                    aCDB[13] = 32; /* Allocation length. */
 
-                if (cmos_base && inb_cmos(cmos_base + 7))
-                {
-                    /* If provided, grab the logical geometry from CMOS. */
-                    cylinders         = inb_cmos(cmos_base + 0) + (inb_cmos(cmos_base + 1) << 8);
-                    heads             = inb_cmos(cmos_base + 2);
-                    sectors_per_track = inb_cmos(cmos_base + 7);
-                }
-                else
-                {
-                    /* Calculate default logical geometry. NB: Very different
-                     * from default ATA/SATA logical geometry!
+                    rc = virtio_scsi_cmd_data_in(virtio, i, aCDB, 16, buffer, 32, 0, 0);
+                    if (rc != 0)
+                        BX_PANIC("%s: SCSI_READ_CAPACITY failed\n", __func__);
+
+                    /* The value returned is the last addressable LBA, not
+                     * the size, which what "+ 1" is for.
                      */
-                    if (sectors >= (uint32_t)4 * 1024 * 1024)
+                    sectors = swap_64(*(uint64_t *)buffer) + 1;
+
+                    sector_size =   ((uint32_t)buffer[8] << 24)
+                                  | ((uint32_t)buffer[9] << 16)
+                                  | ((uint32_t)buffer[10] << 8)
+                                  | ((uint32_t)buffer[11]);
+
+                    /* We only support the disk if sector size is 512 bytes. */
+                    if (sector_size != 512)
                     {
-                        heads = 255;
-                        sectors_per_track = 63;
-                        /* Approximate x / (255 * 63) using shifts */
-                        t = (sectors >> 6) + (sectors >> 12);
-                        cylinders = (t >> 8) + (t >> 16);
+                        /* Leave a log entry. */
+                        BX_INFO("Disk %d has an unsupported sector size of %u\n", i, sector_size);
+                        continue;
                     }
-                    else if (sectors >= (uint32_t)2 * 1024 * 1024)
+
+                    /* Get logical CHS geometry. */
+                    switch (devcount_scsi)
                     {
-                        heads = 128;
-                        sectors_per_track = 32;
-                        cylinders = sectors >> 12;
+                        case 0:
+                            cmos_base = 0x90;
+                            break;
+                        case 1:
+                            cmos_base = 0x98;
+                            break;
+                        case 2:
+                            cmos_base = 0xA0;
+                            break;
+                        case 3:
+                            cmos_base = 0xA8;
+                            break;
+                        default:
+                            cmos_base = 0;
+                    }
+
+                    if (cmos_base && inb_cmos(cmos_base + 7))
+                    {
+                        /* If provided, grab the logical geometry from CMOS. */
+                        cylinders         = inb_cmos(cmos_base + 0) + (inb_cmos(cmos_base + 1) << 8);
+                        heads             = inb_cmos(cmos_base + 2);
+                        sectors_per_track = inb_cmos(cmos_base + 7);
                     }
                     else
                     {
-                        heads = 64;
-                        sectors_per_track = 32;
-                        cylinders = sectors >> 11;
+                        /* Calculate default logical geometry. NB: Very different
+                         * from default ATA/SATA logical geometry!
+                         */
+                        if (sectors >= (uint32_t)4 * 1024 * 1024)
+                        {
+                            heads = 255;
+                            sectors_per_track = 63;
+                            /* Approximate x / (255 * 63) using shifts */
+                            t = (sectors >> 6) + (sectors >> 12);
+                            cylinders = (t >> 8) + (t >> 16);
+                        }
+                        else if (sectors >= (uint32_t)2 * 1024 * 1024)
+                        {
+                            heads = 128;
+                            sectors_per_track = 32;
+                            cylinders = sectors >> 12;
+                        }
+                        else
+                        {
+                            heads = 64;
+                            sectors_per_track = 32;
+                            cylinders = sectors >> 11;
+                        }
                     }
-                }
 
-                /* Calculate index into the generic disk table. */
+                    /* Calculate index into the generic disk table. */
+                    hd_index = devcount_scsi + BX_MAX_ATA_DEVICES;
+
+                    bios_dsk->scsidev[devcount_scsi].target_id = i;
+                    bios_dsk->devices[hd_index].type        = DSK_TYPE_VIRTIO_SCSI;
+                    bios_dsk->devices[hd_index].device      = DSK_DEVICE_HD;
+                    bios_dsk->devices[hd_index].removable   = 0;
+                    bios_dsk->devices[hd_index].lock        = 0;
+                    bios_dsk->devices[hd_index].blksize     = sector_size;
+                    bios_dsk->devices[hd_index].translation = GEO_TRANSLATION_LBA;
+
+                    /* Write LCHS/PCHS values. */
+                    bios_dsk->devices[hd_index].lchs.heads = heads;
+                    bios_dsk->devices[hd_index].lchs.spt   = sectors_per_track;
+                    bios_dsk->devices[hd_index].pchs.heads = heads;
+                    bios_dsk->devices[hd_index].pchs.spt   = sectors_per_track;
+
+                    if (cylinders > 1024) {
+                        bios_dsk->devices[hd_index].lchs.cylinders = 1024;
+                        bios_dsk->devices[hd_index].pchs.cylinders = 1024;
+                    } else {
+                        bios_dsk->devices[hd_index].lchs.cylinders = (uint16_t)cylinders;
+                        bios_dsk->devices[hd_index].pchs.cylinders = (uint16_t)cylinders;
+                    }
+
+                    BX_INFO("SCSI %d-ID#%d: LCHS=%lu/%u/%u 0x%llx sectors\n", devcount_scsi,
+                            i, (uint32_t)cylinders, heads, sectors_per_track, sectors);
+
+                    bios_dsk->devices[hd_index].sectors = sectors;
+
+                    /* Store the id of the disk in the ata hdidmap. */
+                    hdcount = bios_dsk->hdcount;
+                    bios_dsk->hdidmap[hdcount] = devcount_scsi + BX_MAX_ATA_DEVICES;
+                    hdcount++;
+                    bios_dsk->hdcount = hdcount;
+
+                    /* Update hdcount in the BDA. */
+                    hdcount = read_byte(0x40, 0x75);
+                    hdcount++;
+                    write_byte(0x40, 0x75, hdcount);
+
+                    devcount_scsi++;
+                }
+                else
+                {
+                    /* We reached the maximum of SCSI disks we can boot from. We can quit detecting. */
+                    break;
+                }
+            }
+            else if (   ((buffer[0] & 0xe0) == 0)
+                     && ((buffer[0] & 0x1f) == 0x05))
+            {
+                uint8_t     cdcount;
+                uint8_t     removable;
+
+                BX_INFO("SCSI %d-ID#%d: CD/DVD-ROM\n", devcount_scsi, i);
+
+                /* Calculate index into the generic device table. */
                 hd_index = devcount_scsi + BX_MAX_ATA_DEVICES;
+
+                removable = buffer[1] & 0x80 ? 1 : 0;
 
                 bios_dsk->scsidev[devcount_scsi].target_id = i;
                 bios_dsk->devices[hd_index].type        = DSK_TYPE_VIRTIO_SCSI;
-                bios_dsk->devices[hd_index].device      = DSK_DEVICE_HD;
-                bios_dsk->devices[hd_index].removable   = 0;
-                bios_dsk->devices[hd_index].lock        = 0;
-                bios_dsk->devices[hd_index].blksize     = sector_size;
-                bios_dsk->devices[hd_index].translation = GEO_TRANSLATION_LBA;
+                bios_dsk->devices[hd_index].device      = DSK_DEVICE_CDROM;
+                bios_dsk->devices[hd_index].removable   = removable;
+                bios_dsk->devices[hd_index].blksize     = 2048;
+                bios_dsk->devices[hd_index].translation = GEO_TRANSLATION_NONE;
 
-                /* Write LCHS/PCHS values. */
-                bios_dsk->devices[hd_index].lchs.heads = heads;
-                bios_dsk->devices[hd_index].lchs.spt   = sectors_per_track;
-                bios_dsk->devices[hd_index].pchs.heads = heads;
-                bios_dsk->devices[hd_index].pchs.spt   = sectors_per_track;
-
-                if (cylinders > 1024) {
-                    bios_dsk->devices[hd_index].lchs.cylinders = 1024;
-                    bios_dsk->devices[hd_index].pchs.cylinders = 1024;
-                } else {
-                    bios_dsk->devices[hd_index].lchs.cylinders = (uint16_t)cylinders;
-                    bios_dsk->devices[hd_index].pchs.cylinders = (uint16_t)cylinders;
-                }
-
-                BX_INFO("SCSI %d-ID#%d: LCHS=%lu/%u/%u 0x%llx sectors\n", devcount_scsi,
-                        i, (uint32_t)cylinders, heads, sectors_per_track, sectors);
-
-                bios_dsk->devices[hd_index].sectors = sectors;
-
-                /* Store the id of the disk in the ata hdidmap. */
-                hdcount = bios_dsk->hdcount;
-                bios_dsk->hdidmap[hdcount] = devcount_scsi + BX_MAX_ATA_DEVICES;
-                hdcount++;
-                bios_dsk->hdcount = hdcount;
-
-                /* Update hdcount in the BDA. */
-                hdcount = read_byte(0x40, 0x75);
-                hdcount++;
-                write_byte(0x40, 0x75, hdcount);
+                /* Store the ID of the device in the BIOS cdidmap. */
+                cdcount = bios_dsk->cdcount;
+                bios_dsk->cdidmap[cdcount] = devcount_scsi + BX_MAX_ATA_DEVICES;
+                cdcount++;
+                bios_dsk->cdcount = cdcount;
 
                 devcount_scsi++;
             }
             else
-            {
-                /* We reached the maximum of SCSI disks we can boot from. We can quit detecting. */
-                break;
-            }
-        }
-        else if (   ((buffer[0] & 0xe0) == 0)
-                 && ((buffer[0] & 0x1f) == 0x05))
-        {
-            uint8_t     cdcount;
-            uint8_t     removable;
-
-            BX_INFO("SCSI %d-ID#%d: CD/DVD-ROM\n", devcount_scsi, i);
-
-            /* Calculate index into the generic device table. */
-            hd_index = devcount_scsi + BX_MAX_ATA_DEVICES;
-
-            removable = buffer[1] & 0x80 ? 1 : 0;
-
-            bios_dsk->scsidev[devcount_scsi].target_id = i;
-            bios_dsk->devices[hd_index].type        = DSK_TYPE_VIRTIO_SCSI;
-            bios_dsk->devices[hd_index].device      = DSK_DEVICE_CDROM;
-            bios_dsk->devices[hd_index].removable   = removable;
-            bios_dsk->devices[hd_index].blksize     = 2048;
-            bios_dsk->devices[hd_index].translation = GEO_TRANSLATION_NONE;
-
-            /* Store the ID of the device in the BIOS cdidmap. */
-            cdcount = bios_dsk->cdcount;
-            bios_dsk->cdidmap[cdcount] = devcount_scsi + BX_MAX_ATA_DEVICES;
-            cdcount++;
-            bios_dsk->cdcount = cdcount;
-
-            devcount_scsi++;
+                DBG_VIRTIO("%s: No supported device detected at %d\n", __func__, i);
         }
         else
-            DBG_VIRTIO("%s: No supported device detected at %d\n", __func__, i);
+            DBG_VIRTIO("%s: INQUIRY failed with %u\n", __func__, rc);
 
         bios_dsk->scsi_devcount = devcount_scsi;
     }
