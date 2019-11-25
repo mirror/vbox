@@ -1794,23 +1794,75 @@ static void biosfn_write_string(uint8_t flag, uint8_t page, uint8_t attr, uint16
 // --------------------------------------------------------------------------------------------
 static void biosfn_read_state_info(uint16_t BX, uint16_t ES, uint16_t DI)
 {
+ uint16_t   pg_sz;
+ uint16_t   scans;
+ uint8_t    mode;
+ uint8_t    mctl;
+ uint8_t    temp;
+
+ mode  = read_byte(BIOSMEM_SEG,BIOSMEM_CURRENT_MODE);
+ pg_sz = read_word(BIOSMEM_SEG,BIOSMEM_PAGE_SIZE);
  // Address of static functionality table
  write_dword(ES,DI+0x00, (uint32_t)(void __far *)static_functionality);
 
- // Hard coded copy from BIOS area. Should it be cleaner ?
- memcpyb(ES,DI+0x04,BIOSMEM_SEG,0x49,30);
- memcpyb(ES,DI+0x22,BIOSMEM_SEG,0x84,3);
+ // A lot is a straight copy from the BDA. Note that the number
+ // of character rows in the BDA is zero-based but one-based in
+ // the dynamic state area
+ memcpyb(ES,DI+0x04,BIOSMEM_SEG,BIOSMEM_CURRENT_MODE,30);
+ write_byte(ES,DI+0x22,read_byte(BIOSMEM_SEG,BIOSMEM_NB_ROWS)+1);
+ memcpyb(ES,DI+0x23,BIOSMEM_SEG,BIOSMEM_CHAR_HEIGHT,2);
 
  write_byte(ES,DI+0x25,read_byte(BIOSMEM_SEG,BIOSMEM_DCC_INDEX));
- write_byte(ES,DI+0x26,0);
- write_byte(ES,DI+0x27,16);
- write_byte(ES,DI+0x28,0);
- write_byte(ES,DI+0x29,8);
- write_byte(ES,DI+0x2a,2);
- write_byte(ES,DI+0x2b,0);
- write_byte(ES,DI+0x2c,0);
- write_byte(ES,DI+0x31,3);
- write_byte(ES,DI+0x32,0);
+ write_byte(ES,DI+0x26,0);  // Alternate display code
+ write_word(ES,DI+0x27,16); // Number of colors
+ write_byte(ES,DI+0x29,8);  // Number of pages
+ write_byte(ES,DI+0x2a,2);  // Vertical resolution specifier
+ write_byte(ES,DI+0x2b,0);  // Primary font block
+ write_byte(ES,DI+0x2c,0);  // Secondary font block
+ write_byte(ES,DI+0x2d,0x21);
+ write_byte(ES,DI+0x31,3);  // 256K video RAM
+ write_byte(ES,DI+0x32,0);  // Save pointer state information
+
+ mctl = read_byte(BIOSMEM_SEG,BIOSMEM_MODESET_CTL);
+
+ /* Extract and write the vertical resolution specifier bits. */
+ scans = ((mctl & 0x80) >> 6) | ((mctl & 0x10) >> 4);
+ switch (scans) {
+ case 0:    temp = 1;   break;  /* 350 lines */
+ case 1:    temp = 2;   break;  /* 400 lines */
+ default:
+ case 2:    temp = 0;   break;  /* 200 lines */
+ }
+ write_byte(ES,DI+0x2a,temp);
+
+ /* Patch up the data for graphics modes. */
+ if (mode >= 0x0E && mode <= 0x12) {
+     if (pg_sz)
+         write_byte(ES,DI+0x29,16384/(pg_sz >> 2));
+ } else if (mode == 0x13) {
+     write_byte(ES,DI+0x29,1);      /* Just one page due to chaining */
+     write_word(ES,DI+0x27,256);    /* But 256!! colors!!! */
+ } else if (mode >= 4 && mode <= 6) {
+     /* CGA modes. */
+     if (pg_sz)
+         write_byte(ES,DI+0x29,16384/pg_sz);
+     write_word(ES,DI+0x27,4);
+ }
+ if (mode == 6 || mode == 0x11)
+     write_word(ES,DI+0x27,2);  /* 2-color modes. */
+
+ if ((mode >= 4) && (mode != 7)) {
+     write_byte(ES,DI+0x2d,0x01);
+     scans = (read_byte(BIOSMEM_SEG,BIOSMEM_NB_ROWS)+1) * read_byte(BIOSMEM_SEG,BIOSMEM_CHAR_HEIGHT);
+     switch (scans) {
+     case 200:  temp = 0;   break;
+     case 350:  temp = 1;   break;
+     case 400:  temp = 2;   break;
+     default:
+     case 480:  temp = 3;   break;
+     }
+     write_byte(ES,DI+0x2a,temp);
+ }
 
  memsetb(ES,DI+0x33,0,13);
 }
