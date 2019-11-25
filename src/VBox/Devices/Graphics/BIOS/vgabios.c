@@ -172,7 +172,7 @@ void init_bios_area(void)
     /* The default char height. */
     bda[BIOSMEM_CHAR_HEIGHT] = 16;
     /* Clear the screen. */
-    bda[BIOSMEM_VIDEO_CTL]   = 0x68;
+    bda[BIOSMEM_VIDEO_CTL]   = 0x60;
     /* Set the basic screen we have. */
     bda[BIOSMEM_SWITCHES]    = 0xf9;
     /* Set the basic mode set options. */
@@ -519,7 +519,7 @@ static void biosfn_set_cursor_shape(uint8_t CH, uint8_t CL)
   write_word(BIOSMEM_SEG, BIOSMEM_CURSOR_TYPE, curs);
 
   /* Check if VGA is active. If not, just write the input to the CRTC. */
-  if (read_byte(BIOSMEM_SEG, BIOSMEM_VIDEO_CTL) & 8) {
+  if (!(read_byte(BIOSMEM_SEG, BIOSMEM_VIDEO_CTL) & 8)) {
     /* Trying to disable the cursor? */
     if ((CH & 0x60) == 0x20) {
       /* Special IBM-compatible value to turn off cursor. */
@@ -851,7 +851,7 @@ void biosfn_set_video_mode(uint8_t mode)
  write_word(BIOSMEM_SEG,BIOSMEM_CRTC_ADDRESS,crtc_addr);
  write_byte(BIOSMEM_SEG,BIOSMEM_NB_ROWS,theightm1);
  write_word(BIOSMEM_SEG,BIOSMEM_CHAR_HEIGHT,cheight);
- write_byte(BIOSMEM_SEG,BIOSMEM_VIDEO_CTL,(0x68|noclearmem));
+ write_byte(BIOSMEM_SEG,BIOSMEM_VIDEO_CTL,(0x60|noclearmem));
  write_byte(BIOSMEM_SEG,BIOSMEM_SWITCHES,0xF9);
  write_byte(BIOSMEM_SEG,BIOSMEM_MODESET_CTL,read_byte(BIOSMEM_SEG,BIOSMEM_MODESET_CTL)&0x7f);
 
