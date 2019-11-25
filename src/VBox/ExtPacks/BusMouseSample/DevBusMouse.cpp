@@ -34,6 +34,10 @@
 *********************************************************************************************************************************/
 #define LOG_GROUP LOG_GROUP_DEV_KBD
 #include <VBox/vmm/pdmdev.h>
+#ifndef IN_RING3
+# include <VBox/vmm/pdmapi.h>
+#endif
+#include <VBox/AssertGuest.h>
 #include <VBox/version.h>
 #include <iprt/assert.h>
 #include <iprt/uuid.h>
@@ -120,7 +124,7 @@
 *   Structures and Typedefs                                                                                                      *
 *********************************************************************************************************************************/
 /**
- * The device state.
+ * The shared Bus Mouse device state.
  */
 typedef struct MouState
 {
@@ -135,28 +139,39 @@ typedef struct MouState
     uint8_t         held_dy;
     uint8_t         irq;        /**< The "jumpered" IRQ level. */
     int32_t         irq_toggle_counter;
-    /** Mouse timer handle - HC. */
-    PTMTIMERR3      MouseTimer;
     /** Timer period in milliseconds. */
     uint32_t        cTimerPeriodMs;
+    /** Mouse timer handle. */
+    TMTIMERHANDLE   hMouseTimer;
     /** @} */
 
     /** @name mouse state
      * @{ */
     int32_t         disable_counter;
-    uint8_t         mouse_enabled;
     int32_t         mouse_dx; /* current values, needed for 'poll' mode */
     int32_t         mouse_dy;
+    uint8_t         mouse_enabled;
     uint8_t         mouse_buttons;
     uint8_t         mouse_buttons_reported;
+    uint8_t         bAlignment;
     /** @}  */
 
-    /** Pointer to the device instance - RC. */
-    PPDMDEVINSRC    pDevInsRC;
-    /** Pointer to the device instance - R3 . */
-    PPDMDEVINSR3    pDevInsR3;
-    /** Pointer to the device instance. */
-    PPDMDEVINSR0    pDevInsR0;
+    /** The I/O ports registration. */
+    IOMIOPORTHANDLE hIoPorts;
+
+} MouState, BMSSTATE;
+/** Pointer to the shared Bus Mouse device state.  */
+typedef BMSSTATE *PBMSSTATE;
+
+
+/**
+ * The ring-3 Bus Mouse device state.
+ */
+typedef struct BMSSTATER3
+{
+    /** Pointer to the device instance.
+     * @note Only for getting our bearings in an interface method. */
+    PPDMDEVINSR3    pDevIns;
 
     /**
      * Mouse port - LUN#0.
@@ -176,8 +191,9 @@ typedef struct MouState
         /** The mouse interface of the attached mouse driver. */
         R3PTRTYPE(PPDMIMOUSECONNECTOR)      pDrv;
     } Mouse;
-} MouState;
-
+} BMSSTATER3;
+/** Pointer to the ring-3 Bus Mouse device state.  */
+typedef BMSSTATER3 *PBMSSTATER3;
 
 
 #ifndef VBOX_DEVICE_STRUCT_TESTCASE
@@ -196,41 +212,17 @@ typedef struct MouState
  * we do not want to toggle the enabled/disabled state more often than
  * necessary.
  */
-static void bms_update_downstream_status(MouState *pThis)
+static void bmsR3UpdateDownstreamStatus(PBMSSTATE pThis, PBMSSTATER3 pThisCC)
 {
-    PPDMIMOUSECONNECTOR pDrv = pThis->Mouse.pDrv;
+    PPDMIMOUSECONNECTOR pDrv = pThisCC->Mouse.pDrv;
     bool fEnabled = !!pThis->mouse_enabled;
     pDrv->pfnReportModes(pDrv, fEnabled, false, false);
 }
 
 /**
- * Set the emulated hardware to a known initial state.
+ * Process a mouse event coming from the host.
  */
-static void bms_reset(MouState *pThis)
-{
-    /* Clear the device setup. */
-    pThis->port_a = pThis->port_b = 0;
-    pThis->port_c = BMS_CTL_INT_DIS;    /* Interrupts disabled. */
-    pThis->ctrl_port = 0x91;            /* Default 8255A setup. */
-
-    /* Clear motion/button state. */
-    pThis->cnt_held = false;
-    pThis->mouse_dx = pThis->mouse_dy = 0;
-    pThis->mouse_buttons = 0;
-    pThis->mouse_buttons_reported = 0;
-    pThis->disable_counter = 0;
-    pThis->irq_toggle_counter = 1000;
-
-    if (pThis->mouse_enabled)
-    {
-        pThis->mouse_enabled = false;
-        bms_update_downstream_status(pThis);
-    }
-}
-
-/* Process a mouse event coming from the host. */
-static void bms_mouse_event(MouState *pThis, int dx, int dy, int dz, int dw,
-                            int buttons_state)
+static void bmsR3MouseEvent(PBMSSTATE pThis, int dx, int dy, int dz, int dw, int buttons_state)
 {
     LogRel3(("%s: dx=%d, dy=%d, dz=%d, dw=%d, buttons_state=0x%x\n",
              __PRETTY_FUNCTION__, dx, dy, dz, dw, buttons_state));
@@ -241,11 +233,15 @@ static void bms_mouse_event(MouState *pThis, int dx, int dy, int dz, int dw,
     pThis->mouse_buttons = buttons_state;
 }
 
-static DECLCALLBACK(void) bmsTimerCallback(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser)
+/**
+ * @callback_method_impl{FNTMTIMERDEV}
+ */
+static DECLCALLBACK(void) bmsR3TimerCallback(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser)
 {
-    RT_NOREF(pvUser);
-    MouState   *pThis = PDMDEVINS_2_DATA(pDevIns, MouState *);
+    PBMSSTATE   pThis   = PDMDEVINS_2_DATA(pDevIns, PBMSSTATE);
+    PBMSSTATER3 pThisCC = PDMDEVINS_2_DATA(pDevIns, PBMSSTATER3);
     uint8_t     irq_bit;
+    RT_NOREF(pvUser, pTimer);
 
     /* Toggle the IRQ line if interrupts are enabled. */
     irq_bit = BMS_IRQ_BIT(pThis->irq);
@@ -253,14 +249,14 @@ static DECLCALLBACK(void) bmsTimerCallback(PPDMDEVINS pDevIns, PTMTIMER pTimer, 
     if (pThis->port_c & irq_bit)
     {
         if (!(pThis->port_c & BMS_CTL_INT_DIS))
-            PDMDevHlpISASetIrq(pThis->CTX_SUFF(pDevIns), pThis->irq, PDM_IRQ_LEVEL_LOW);
+            PDMDevHlpISASetIrq(pDevIns, pThis->irq, PDM_IRQ_LEVEL_LOW);
         pThis->port_c &= ~irq_bit;
     }
     else
     {
         pThis->port_c |= irq_bit;
         if (!(pThis->port_c & BMS_CTL_INT_DIS))
-            PDMDevHlpISASetIrq(pThis->CTX_SUFF(pDevIns), pThis->irq, PDM_IRQ_LEVEL_HIGH);
+            PDMDevHlpISASetIrq(pDevIns, pThis->irq, PDM_IRQ_LEVEL_HIGH);
     }
 
     /* Handle enabling/disabling of the mouse interface. */
@@ -272,7 +268,7 @@ static DECLCALLBACK(void) bmsTimerCallback(PPDMDEVINS pDevIns, PTMTIMER pTimer, 
         if (pThis->disable_counter == 0 && pThis->mouse_enabled)
         {
             pThis->mouse_enabled = false;
-            bms_update_downstream_status(pThis);
+            bmsR3UpdateDownstreamStatus(pThis, pThisCC);
         }
     }
     else
@@ -281,24 +277,26 @@ static DECLCALLBACK(void) bmsTimerCallback(PPDMDEVINS pDevIns, PTMTIMER pTimer, 
         if (!pThis->mouse_enabled)
         {
             pThis->mouse_enabled = true;
-            bms_update_downstream_status(pThis);
+            bmsR3UpdateDownstreamStatus(pThis, pThisCC);
         }
     }
 
     /* Re-arm the timer. */
-    TMTimerSetMillies(pTimer, pThis->cTimerPeriodMs);
+    PDMDevHlpTimerSetMillies(pDevIns, pThis->hMouseTimer, pThis->cTimerPeriodMs);
 }
 
 # endif /* IN_RING3 */
 
-static void bms_set_reported_buttons(MouState *pThis, unsigned fButtons, unsigned fButtonMask)
+static void bmsSetReportedButtons(PBMSSTATE pThis, unsigned fButtons, unsigned fButtonMask)
 {
     pThis->mouse_buttons_reported |= (fButtons & fButtonMask);
     pThis->mouse_buttons_reported &= (fButtons | ~fButtonMask);
 }
 
-/* Update the internal state after a write to port C. */
-static void bms_update_ctrl(MouState *pThis)
+/**
+ * Update the internal state after a write to port C.
+ */
+static void bmsUpdateCtrl(PPDMDEVINS pDevIns, PBMSSTATE pThis)
 {
     int32_t     dx, dy;
 
@@ -314,7 +312,7 @@ static void bms_update_ctrl(MouState *pThis)
                                      : RT_MIN(pThis->mouse_dy, 127);
             pThis->mouse_dx -= dx;
             pThis->mouse_dy -= dy;
-            bms_set_reported_buttons(pThis, pThis->mouse_buttons & 0x07, 0x07);
+            bmsSetReportedButtons(pThis, pThis->mouse_buttons & 0x07, 0x07);
 
             /* Force type conversion. */
             pThis->held_dx = dx;
@@ -349,180 +347,143 @@ static void bms_update_ctrl(MouState *pThis)
     /* Immediately clear the IRQ if necessary. */
     if (pThis->port_c & BMS_CTL_INT_DIS)
     {
-        PDMDevHlpISASetIrq(pThis->CTX_SUFF(pDevIns), pThis->irq, PDM_IRQ_LEVEL_LOW);
-        pThis->port_c &= ~(BMS_IRQ_BIT(pThis->irq));
+        PDMDevHlpISASetIrq(pDevIns, pThis->irq, PDM_IRQ_LEVEL_LOW);
+        pThis->port_c &= ~BMS_IRQ_BIT(pThis->irq);
     }
-}
-
-static int bms_write_port(MouState *pThis, uint32_t offPort, uint32_t uValue)
-{
-    int rc = VINF_SUCCESS;
-
-    LogRel3(("%s: write port %d: 0x%02x\n", __PRETTY_FUNCTION__, offPort, uValue));
-
-    switch (offPort)
-    {
-        case BMS_PORT_SIG:
-            /* Update port B. */
-            pThis->port_b = uValue;
-            break;
-        case BMS_PORT_DATA:
-            /* Do nothing, port A is not writable. */
-            break;
-        case BMS_PORT_INIT:
-            pThis->ctrl_port = uValue;
-            break;
-        case BMS_PORT_CTRL:
-            /* Update the high nibble of port C. */
-            pThis->port_c = (uValue & 0xF0) | (pThis->port_c & 0x0F);
-            bms_update_ctrl(pThis);
-            break;
-        default:
-            AssertMsgFailed(("invalid port %#x\n", offPort));
-            break;
-    }
-    return rc;
-}
-
-static uint32_t bms_read_port(MouState *pThis, uint32_t offPort)
-{
-    uint32_t uValue;
-
-    switch (offPort)
-    {
-        case BMS_PORT_DATA:
-            /* Read port A. */
-            uValue = pThis->port_a;
-            break;
-        case BMS_PORT_SIG:
-            /* Read port B. */
-            uValue = pThis->port_b;
-            break;
-        case BMS_PORT_CTRL:
-            /* Read port C. */
-            uValue = pThis->port_c;
-            /* Some Microsoft driver code reads the control port 10,000 times when
-             * determining the IRQ level. This can occur faster than the IRQ line
-             * transitions and the detection fails. To work around this, we force
-             * the IRQ bit to toggle every once in a while.
-             */
-            if (pThis->irq_toggle_counter)
-                pThis->irq_toggle_counter--;
-            else
-            {
-                pThis->irq_toggle_counter = 1000;
-                uValue ^= BMS_IRQ_BIT(pThis->irq);
-            }
-            break;
-        case BMS_PORT_INIT:
-            /* Read the 8255A control port. */
-            uValue = pThis->ctrl_port;
-            break;
-        default:
-            AssertMsgFailed(("invalid port %#x\n", offPort));
-            uValue = 0xff;
-            break;
-    }
-    LogRel3(("%s: read port %d: 0x%02x\n", __PRETTY_FUNCTION__, offPort, uValue));
-    return uValue;
 }
 
 /**
- * Port I/O Handler for port IN operations.
- *
- * @returns VBox status code.
- *
- * @param   pDevIns     The device instance.
- * @param   pvUser      User argument - ignored.
- * @param   Port        Port number used for the IN operation.
- * @param   pu32        Where to store the result.
- * @param   cb          Number of bytes read.
+ * @callback_method_impl{FNIOMIOPORTNEWIN}
  */
-PDMBOTHCBDECL(int) mouIOPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32, unsigned cb)
+static DECLCALLBACK(VBOXSTRICTRC) bmsIoPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t *pu32, unsigned cb)
 {
-    NOREF(pvUser);
+    RT_NOREF(pvUser);
     if (cb == 1)
     {
-        MouState *pThis = PDMDEVINS_2_DATA(pDevIns, MouState *);
-        *pu32 = bms_read_port(pThis, Port & 3);
-        Log2(("mouIOPortRead: Port=%#x cb=%d *pu32=%#x\n", Port, cb, *pu32));
+        PBMSSTATE pThis = PDMDEVINS_2_DATA(pDevIns, PBMSSTATE);
+        uint32_t uValue;
+
+        switch (offPort)
+        {
+            case BMS_PORT_DATA:
+                /* Read port A. */
+                uValue = pThis->port_a;
+                break;
+            case BMS_PORT_SIG:
+                /* Read port B. */
+                uValue = pThis->port_b;
+                break;
+            case BMS_PORT_CTRL:
+                /* Read port C. */
+                uValue = pThis->port_c;
+                /* Some Microsoft driver code reads the control port 10,000 times when
+                 * determining the IRQ level. This can occur faster than the IRQ line
+                 * transitions and the detection fails. To work around this, we force
+                 * the IRQ bit to toggle every once in a while.
+                 */
+                if (pThis->irq_toggle_counter)
+                    pThis->irq_toggle_counter--;
+                else
+                {
+                    pThis->irq_toggle_counter = 1000;
+                    uValue ^= BMS_IRQ_BIT(pThis->irq);
+                }
+                break;
+            case BMS_PORT_INIT:
+                /* Read the 8255A control port. */
+                uValue = pThis->ctrl_port;
+                break;
+            default:
+                ASSERT_GUEST_MSG_FAILED(("invalid port %#x\n", offPort));
+                uValue = 0xff;
+                break;
+        }
+
+        *pu32 = uValue;
+        Log2(("mouIoPortRead: offPort=%#x+%x cb=%d *pu32=%#x\n", BMS_IO_BASE, offPort, cb, uValue));
+        LogRel3(("mouIoPortRead: read port %u: %#04x\n", offPort, uValue));
         return VINF_SUCCESS;
     }
-    AssertMsgFailed(("Port=%#x cb=%d\n", Port, cb));
+    ASSERT_GUEST_MSG_FAILED(("offPort=%#x cb=%d\n", offPort, cb));
     return VERR_IOM_IOPORT_UNUSED;
 }
 
 /**
- * Port I/O Handler for port OUT operations.
- *
- * @returns VBox status code.
- *
- * @param   pDevIns     The device instance.
- * @param   pvUser      User argument - ignored.
- * @param   Port        Port number used for the IN operation.
- * @param   u32         The value to output.
- * @param   cb          The value size in bytes.
+ * @callback_method_impl{FNIOMIOPORTNEWOUT}
  */
-PDMBOTHCBDECL(int) mouIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb)
+static DECLCALLBACK(VBOXSTRICTRC) bmsIoPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t u32, unsigned cb)
 {
-    int rc = VINF_SUCCESS;
-    NOREF(pvUser);
+    RT_NOREF(pvUser);
     if (cb == 1)
     {
-        MouState *pThis = PDMDEVINS_2_DATA(pDevIns, MouState *);
-        rc = bms_write_port(pThis, Port & 3, u32);
-        Log2(("mouIOPortWrite: Port=%#x cb=%d u32=%#x\n", Port, cb, u32));
+        PBMSSTATE pThis = PDMDEVINS_2_DATA(pDevIns, PBMSSTATE);
+        LogRel3(("mouIoPortWrite: write port %u: %#04x\n", offPort, u32));
+
+        switch (offPort)
+        {
+            case BMS_PORT_SIG:
+                /* Update port B. */
+                pThis->port_b = u32;
+                break;
+            case BMS_PORT_DATA:
+                /* Do nothing, port A is not writable. */
+                break;
+            case BMS_PORT_INIT:
+                pThis->ctrl_port = u32;
+                break;
+            case BMS_PORT_CTRL:
+                /* Update the high nibble of port C. */
+                pThis->port_c = (u32 & 0xF0) | (pThis->port_c & 0x0F);
+                bmsUpdateCtrl(pDevIns, pThis);
+                break;
+            default:
+                ASSERT_GUEST_MSG_FAILED(("invalid port %#x\n", offPort));
+                break;
+        }
+
+        Log2(("mouIoPortWrite: offPort=%#x+%u cb=%d u32=%#x\n", BMS_IO_BASE+offPort, cb, u32));
     }
     else
-        AssertMsgFailed(("Port=%#x cb=%d\n", Port, cb));
-    return rc;
+        ASSERT_GUEST_MSG_FAILED(("offPort=%#x cb=%d\n", offPort, cb));
+    return VINF_SUCCESS;
 }
 
 # ifdef IN_RING3
 
 /**
- * Saves the state of the device.
- *
- * @returns VBox status code.
- * @param   pDevIns     The device instance.
- * @param   pSSMHandle  The handle to save the state to.
+ * @callback_method_impl{FNSSMDEVSAVEEXEC}
  */
-static DECLCALLBACK(int) mouSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle)
+static DECLCALLBACK(int) bmsR3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle)
 {
-    MouState    *pThis = PDMDEVINS_2_DATA(pDevIns, MouState *);
+    PBMSSTATE       pThis = PDMDEVINS_2_DATA(pDevIns, PBMSSTATE);
+    PCPDMDEVHLPR3   pHlp  = pDevIns->pHlpR3;
 
     /* 8255A state. */
-    SSMR3PutU8(pSSMHandle, pThis->port_a);
-    SSMR3PutU8(pSSMHandle, pThis->port_b);
-    SSMR3PutU8(pSSMHandle, pThis->port_c);
-    SSMR3PutU8(pSSMHandle, pThis->ctrl_port);
+    pHlp->pfnSSMPutU8(pSSMHandle, pThis->port_a);
+    pHlp->pfnSSMPutU8(pSSMHandle, pThis->port_b);
+    pHlp->pfnSSMPutU8(pSSMHandle, pThis->port_c);
+    pHlp->pfnSSMPutU8(pSSMHandle, pThis->ctrl_port);
     /* Other device state. */
-    SSMR3PutU8(pSSMHandle, pThis->cnt_held);
-    SSMR3PutU8(pSSMHandle, pThis->held_dx);
-    SSMR3PutU8(pSSMHandle, pThis->held_dy);
-    SSMR3PutU8(pSSMHandle, pThis->irq);
-    SSMR3PutU32(pSSMHandle, pThis->cTimerPeriodMs);
+    pHlp->pfnSSMPutU8(pSSMHandle, pThis->cnt_held);
+    pHlp->pfnSSMPutU8(pSSMHandle, pThis->held_dx);
+    pHlp->pfnSSMPutU8(pSSMHandle, pThis->held_dy);
+    pHlp->pfnSSMPutU8(pSSMHandle, pThis->irq);
+    pHlp->pfnSSMPutU32(pSSMHandle, pThis->cTimerPeriodMs);
     /* Current mouse state deltas. */
-    SSMR3PutS32(pSSMHandle, pThis->mouse_dx);
-    SSMR3PutS32(pSSMHandle, pThis->mouse_dy);
-    SSMR3PutU8(pSSMHandle, pThis->mouse_buttons_reported);
+    pHlp->pfnSSMPutS32(pSSMHandle, pThis->mouse_dx);
+    pHlp->pfnSSMPutS32(pSSMHandle, pThis->mouse_dy);
+    pHlp->pfnSSMPutU8(pSSMHandle, pThis->mouse_buttons_reported);
     /* Timer. */
-    return TMR3TimerSave(pThis->MouseTimer, pSSMHandle);
+    return PDMDevHlpTimerSave(pDevIns, pThis->hMouseTimer, pSSMHandle);
 }
 
 /**
- * Loads a saved device state.
- *
- * @returns VBox status code.
- * @param   pDevIns     The device instance.
- * @param   pSSMHandle  The handle to the saved state.
- * @param   uVersion    The data unit version number.
- * @param   uPass       The data pass.
+ * @callback_method_impl{FNSSMDEVLOADEXEC}
  */
-static DECLCALLBACK(int) mouLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle, uint32_t uVersion, uint32_t uPass)
+static DECLCALLBACK(int) bmsR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle, uint32_t uVersion, uint32_t uPass)
 {
-    int         rc;
-    MouState    *pThis = PDMDEVINS_2_DATA(pDevIns, MouState *);
+    PBMSSTATE       pThis = PDMDEVINS_2_DATA(pDevIns, PBMSSTATE);
+    PCPDMDEVHLPR3   pHlp  = pDevIns->pHlpR3;
 
     Assert(uPass == SSM_PASS_FINAL); NOREF(uPass);
 
@@ -530,23 +491,22 @@ static DECLCALLBACK(int) mouLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle, 
         return VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
 
     /* 8255A state. */
-    SSMR3GetU8(pSSMHandle, &pThis->port_a);
-    SSMR3GetU8(pSSMHandle, &pThis->port_b);
-    SSMR3GetU8(pSSMHandle, &pThis->port_c);
-    SSMR3GetU8(pSSMHandle, &pThis->ctrl_port);
+    pHlp->pfnSSMGetU8(pSSMHandle, &pThis->port_a);
+    pHlp->pfnSSMGetU8(pSSMHandle, &pThis->port_b);
+    pHlp->pfnSSMGetU8(pSSMHandle, &pThis->port_c);
+    pHlp->pfnSSMGetU8(pSSMHandle, &pThis->ctrl_port);
     /* Other device state. */
-    SSMR3GetU8(pSSMHandle, &pThis->cnt_held);
-    SSMR3GetU8(pSSMHandle, &pThis->held_dx);
-    SSMR3GetU8(pSSMHandle, &pThis->held_dy);
-    SSMR3GetU8(pSSMHandle, &pThis->irq);
-    SSMR3GetU32(pSSMHandle, &pThis->cTimerPeriodMs);
+    pHlp->pfnSSMGetU8(pSSMHandle, &pThis->cnt_held);
+    pHlp->pfnSSMGetU8(pSSMHandle, &pThis->held_dx);
+    pHlp->pfnSSMGetU8(pSSMHandle, &pThis->held_dy);
+    pHlp->pfnSSMGetU8(pSSMHandle, &pThis->irq);
+    pHlp->pfnSSMGetU32(pSSMHandle, &pThis->cTimerPeriodMs);
     /* Current mouse state deltas. */
-    SSMR3GetS32(pSSMHandle, &pThis->mouse_dx);
-    SSMR3GetS32(pSSMHandle, &pThis->mouse_dy);
-    SSMR3GetU8(pSSMHandle, &pThis->mouse_buttons_reported);
+    pHlp->pfnSSMGetS32(pSSMHandle, &pThis->mouse_dx);
+    pHlp->pfnSSMGetS32(pSSMHandle, &pThis->mouse_dy);
+    pHlp->pfnSSMGetU8(pSSMHandle, &pThis->mouse_buttons_reported);
     /* Timer. */
-    rc = TMR3TimerLoad(pThis->MouseTimer, pSSMHandle);
-    return rc;
+    return PDMDevHlpTimerLoad(pDevIns, pThis->hMouseTimer, pSSMHandle);
 }
 
 /**
@@ -555,15 +515,33 @@ static DECLCALLBACK(int) mouLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle, 
  * @returns VBox status code.
  * @param   pDevIns     The device instance data.
  */
-static DECLCALLBACK(void) mouReset(PPDMDEVINS pDevIns)
+static DECLCALLBACK(void) bmsR3Reset(PPDMDEVINS pDevIns)
 {
-    MouState   *pThis = PDMDEVINS_2_DATA(pDevIns, MouState *);
+    PBMSSTATE   pThis   = PDMDEVINS_2_DATA(pDevIns, PBMSSTATE);
+    PBMSSTATER3 pThisCC = PDMDEVINS_2_DATA(pDevIns, PBMSSTATER3);
 
     /* Reinitialize the timer. */
     pThis->cTimerPeriodMs = BMS_IRQ_PERIOD_MS / 2;
-    TMTimerSetMillies(pThis->MouseTimer, pThis->cTimerPeriodMs);
+    PDMDevHlpTimerSetMillies(pDevIns, pThis->hMouseTimer, pThis->cTimerPeriodMs);
 
-    bms_reset(pThis);
+    /* Clear the device setup. */
+    pThis->port_a = pThis->port_b = 0;
+    pThis->port_c = BMS_CTL_INT_DIS;    /* Interrupts disabled. */
+    pThis->ctrl_port = 0x91;            /* Default 8255A setup. */
+
+    /* Clear motion/button state. */
+    pThis->cnt_held = false;
+    pThis->mouse_dx = pThis->mouse_dy = 0;
+    pThis->mouse_buttons = 0;
+    pThis->mouse_buttons_reported = 0;
+    pThis->disable_counter = 0;
+    pThis->irq_toggle_counter = 1000;
+
+    if (pThis->mouse_enabled)
+    {
+        pThis->mouse_enabled = false;
+        bmsR3UpdateDownstreamStatus(pThis, pThisCC);
+    }
 }
 
 
@@ -572,11 +550,11 @@ static DECLCALLBACK(void) mouReset(PPDMDEVINS pDevIns)
 /**
  * @interface_method_impl{PDMIBASE,pfnQueryInterface}
  */
-static DECLCALLBACK(void *) mouQueryMouseInterface(PPDMIBASE pInterface, const char *pszIID)
+static DECLCALLBACK(void *) bmsR3Base_QueryMouseInterface(PPDMIBASE pInterface, const char *pszIID)
 {
-    MouState *pThis = RT_FROM_MEMBER(pInterface, MouState, Mouse.IBase);
-    PDMIBASE_RETURN_INTERFACE(pszIID, PDMIBASE, &pThis->Mouse.IBase);
-    PDMIBASE_RETURN_INTERFACE(pszIID, PDMIMOUSEPORT, &pThis->Mouse.IPort);
+    PBMSSTATER3 pThisCC = RT_FROM_MEMBER(pInterface, BMSSTATER3, Mouse.IBase);
+    PDMIBASE_RETURN_INTERFACE(pszIID, PDMIBASE, &pThisCC->Mouse.IBase);
+    PDMIBASE_RETURN_INTERFACE(pszIID, PDMIMOUSEPORT, &pThisCC->Mouse.IPort);
     return NULL;
 }
 
@@ -586,25 +564,27 @@ static DECLCALLBACK(void *) mouQueryMouseInterface(PPDMIBASE pInterface, const c
 /**
  * @interface_method_impl{PDMIMOUSEPORT,pfnPutEvent}
  */
-static DECLCALLBACK(int) mouPutEvent(PPDMIMOUSEPORT pInterface, int32_t dx,
-                                     int32_t dy, int32_t dz, int32_t dw,
-                                     uint32_t fButtons)
+static DECLCALLBACK(int) bmsR3MousePort_PutEvent(PPDMIMOUSEPORT pInterface, int32_t dx,
+                                                 int32_t dy, int32_t dz, int32_t dw,
+                                                 uint32_t fButtons)
 {
-    MouState *pThis = RT_FROM_MEMBER(pInterface, MouState, Mouse.IPort);
-    int rc = PDMCritSectEnter(pThis->CTX_SUFF(pDevIns)->CTX_SUFF(pCritSectRo), VERR_SEM_BUSY);
+    PBMSSTATER3 pThisCC = RT_FROM_MEMBER(pInterface, BMSSTATER3, Mouse.IPort);
+    PPDMDEVINS  pDevIns = pThisCC->pDevIns;
+    PBMSSTATE   pThis   = PDMDEVINS_2_DATA(pDevIns, PBMSSTATE);
+    int rc = PDMDevHlpCritSectEnter(pDevIns, pDevIns->CTX_SUFF(pCritSectRo), VERR_SEM_BUSY);
     AssertReleaseRC(rc);
 
-    bms_mouse_event(pThis, dx, dy, dz, dw, fButtons);
+    bmsR3MouseEvent(pThis, dx, dy, dz, dw, fButtons);
 
-    PDMCritSectLeave(pThis->CTX_SUFF(pDevIns)->CTX_SUFF(pCritSectRo));
+    PDMDevHlpCritSectLeave(pDevIns, pDevIns->CTX_SUFF(pCritSectRo));
     return VINF_SUCCESS;
 }
 
 /**
  * @interface_method_impl{PDMIMOUSEPORT,pfnPutEventAbs}
  */
-static DECLCALLBACK(int) mouPutEventAbs(PPDMIMOUSEPORT pInterface, uint32_t x, uint32_t y,
-                                        int32_t dz, int32_t dw, uint32_t fButtons)
+static DECLCALLBACK(int) bmsR3MousePort_PutEventAbs(PPDMIMOUSEPORT pInterface, uint32_t x, uint32_t y,
+                                                    int32_t dz, int32_t dw, uint32_t fButtons)
 {
     RT_NOREF(pInterface, x, y, dz, dw, fButtons);
     AssertFailedReturn(VERR_NOT_SUPPORTED);
@@ -613,8 +593,8 @@ static DECLCALLBACK(int) mouPutEventAbs(PPDMIMOUSEPORT pInterface, uint32_t x, u
 /**
  * @interface_method_impl{PDMIMOUSEPORT,pfnPutEventMultiTouch}
  */
-static DECLCALLBACK(int) mouPutEventMultiTouch(PPDMIMOUSEPORT pInterface, uint8_t cContacts,
-                                               const uint64_t *pau64Contacts, uint32_t u32ScanTime)
+static DECLCALLBACK(int) bmsR3MousePort_PutEventMultiTouch(PPDMIMOUSEPORT pInterface, uint8_t cContacts,
+                                                           const uint64_t *pau64Contacts, uint32_t u32ScanTime)
 {
     RT_NOREF(pInterface, cContacts, pau64Contacts, u32ScanTime);
     AssertFailedReturn(VERR_NOT_SUPPORTED);
@@ -624,25 +604,12 @@ static DECLCALLBACK(int) mouPutEventMultiTouch(PPDMIMOUSEPORT pInterface, uint8_
 
 
 /**
- * Attach command.
- *
- * This is called to let the device attach to a driver for a specified LUN
- * during runtime. This is not called during VM construction, the device
- * constructor have to attach to all the available drivers.
- *
- * This is like plugging in the mouse after turning on the PC.
- *
- * @returns VBox status code.
- * @param   pDevIns     The device instance.
- * @param   iLUN        The logical unit which is being detached.
- * @param   fFlags      Flags, combination of the PDMDEVATT_FLAGS_* \#defines.
- * @remark  The controller doesn't support this action, this is just
- *          implemented to try out the driver<->device structure.
+ * @interface_method_impl{PDMDEVREGR3,pfnAttach}
  */
-static DECLCALLBACK(int) mouAttach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t fFlags)
+static DECLCALLBACK(int) bmsR3Attach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t fFlags)
 {
+    PBMSSTATER3 pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PBMSSTATER3);
     int         rc;
-    MouState   *pThis = PDMDEVINS_2_DATA(pDevIns, MouState *);
 
     AssertMsgReturn(fFlags & PDM_TACH_FLAGS_NOT_HOT_PLUG,
                     ("Bus mouse device does not support hotplugging\n"),
@@ -652,11 +619,11 @@ static DECLCALLBACK(int) mouAttach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t f
     {
         /* LUN #0: mouse */
         case 0:
-            rc = PDMDevHlpDriverAttach(pDevIns, iLUN, &pThis->Mouse.IBase, &pThis->Mouse.pDrvBase, "Bus Mouse Port");
+            rc = PDMDevHlpDriverAttach(pDevIns, iLUN, &pThisCC->Mouse.IBase, &pThisCC->Mouse.pDrvBase, "Bus Mouse Port");
             if (RT_SUCCESS(rc))
             {
-                pThis->Mouse.pDrv = PDMIBASE_QUERY_INTERFACE(pThis->Mouse.pDrvBase, PDMIMOUSECONNECTOR);
-                if (!pThis->Mouse.pDrv)
+                pThisCC->Mouse.pDrv = PDMIBASE_QUERY_INTERFACE(pThisCC->Mouse.pDrvBase, PDMIMOUSECONNECTOR);
+                if (!pThisCC->Mouse.pDrv)
                 {
                     AssertLogRelMsgFailed(("LUN #0 doesn't have a mouse interface! rc=%Rrc\n", rc));
                     rc = VERR_PDM_MISSING_INTERFACE;
@@ -681,27 +648,15 @@ static DECLCALLBACK(int) mouAttach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t f
 
 
 /**
- * Detach notification.
- *
- * This is called when a driver is detaching itself from a LUN of the device.
- * The device should adjust it's state to reflect this.
- *
- * This is like unplugging the network cable to use it for the laptop or
- * something while the PC is still running.
- *
- * @param   pDevIns     The device instance.
- * @param   iLUN        The logical unit which is being detached.
- * @param   fFlags      Flags, combination of the PDMDEVATT_FLAGS_* \#defines.
- * @remark  The controller doesn't support this action, this is just
- *          implemented to try out the driver<->device structure.
+ * @interface_method_impl{PDMDEVREGR3,pfnDetach}
  */
-static DECLCALLBACK(void) mouDetach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t fFlags)
+static DECLCALLBACK(void) bmsR3Detach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t fFlags)
 {
-#if 0
+#  if 0
     /*
      * Reset the interfaces and update the controller state.
      */
-    MouState   *pThis = PDMDEVINS_2_DATA(pDevIns, MouState *);
+    PBMSSTATE   pThis = PDMDEVINS_2_DATA(pDevIns, PBMSSTATE);
     switch (iLUN)
     {
         /* LUN #0: mouse */
@@ -714,134 +669,123 @@ static DECLCALLBACK(void) mouDetach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t 
             AssertMsgFailed(("Invalid LUN #%d\n", iLUN));
             break;
     }
-#else
+#  else
     RT_NOREF(pDevIns, iLUN, fFlags);
-#endif
-}
-
-
-/**
- * @copydoc FNPDMDEVRELOCATE
- */
-static DECLCALLBACK(void) mouRelocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta)
-{
-    RT_NOREF(offDelta);
-    MouState *pThis = PDMDEVINS_2_DATA(pDevIns, MouState *);
-    pThis->pDevInsRC = PDMDEVINS_2_RCPTR(pDevIns);
+#  endif
 }
 
 
 /**
  * @interface_method_impl{PDMDEVREG,pfnConstruct}
  */
-static DECLCALLBACK(int) mouConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE pCfg)
+static DECLCALLBACK(int) bmsR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE pCfg)
 {
-    RT_NOREF(iInstance);
     PDMDEV_CHECK_VERSIONS_RETURN(pDevIns);
-    MouState   *pThis = PDMDEVINS_2_DATA(pDevIns, MouState *);
-    int         rc;
-    bool        fGCEnabled;
-    bool        fR0Enabled;
-    uint8_t     irq_lvl;
-    Assert(iInstance == 0);
+    PBMSSTATE       pThis   = PDMDEVINS_2_DATA(pDevIns, PBMSSTATE);
+    PBMSSTATER3     pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PBMSSTATER3);
+    PCPDMDEVHLPR3   pHlp    = pDevIns->pHlpR3;
+    int             rc;
+    RT_NOREF(iInstance);
 
+    Assert(iInstance == 0);
 
     /*
      * Validate and read the configuration.
      */
-    if (!CFGMR3AreValuesValid(pCfg, "IRQ\0GCEnabled\0R0Enabled\0"))
-        return VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES;
-    rc = CFGMR3QueryBoolDef(pCfg, "GCEnabled", &fGCEnabled, true);
-    if (RT_FAILURE(rc))
-        return PDMDEV_SET_ERROR(pDevIns, rc, N_("Failed to query \"GCEnabled\" from the config"));
-    rc = CFGMR3QueryBoolDef(pCfg, "R0Enabled", &fR0Enabled, true);
-    if (RT_FAILURE(rc))
-        return PDMDEV_SET_ERROR(pDevIns, rc, N_("Failed to query \"R0Enabled\" from the config"));
-    rc = CFGMR3QueryU8Def(pCfg, "IRQ", &irq_lvl, BMS_DEFAULT_IRQ);
+    PDMDEV_VALIDATE_CONFIG_RETURN(pDevIns, "IRQ", "");
+
+    rc = pHlp->pfnCFGMQueryU8Def(pCfg, "IRQ", &pThis->irq, BMS_DEFAULT_IRQ);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc, N_("Failed to query \"IRQ\" from the config"));
-    if ((irq_lvl < 2) || (irq_lvl > 5))
+    if (pThis->irq < 2 || pThis->irq > 5)
         return PDMDEV_SET_ERROR(pDevIns, rc, N_("Invalid \"IRQ\" config setting"));
 
-    pThis->irq = irq_lvl;
-    /// @todo remove after properly enabling RC/GC support
-    fGCEnabled = fR0Enabled = false;
-    Log(("busmouse: IRQ=%d fGCEnabled=%RTbool fR0Enabled=%RTbool\n", irq_lvl, fGCEnabled, fR0Enabled));
+    Log(("busmouse: IRQ=%u fRCEnabled=%RTbool fR0Enabled=%RTbool\n", pThis->irq, pDevIns->fRCEnabled, pDevIns->fR0Enabled));
 
     /*
      * Initialize the interfaces.
      */
-    pThis->pDevInsR3 = pDevIns;
-    pThis->pDevInsR0 = PDMDEVINS_2_R0PTR(pDevIns);
-    pThis->pDevInsRC = PDMDEVINS_2_RCPTR(pDevIns);
-    pThis->Mouse.IBase.pfnQueryInterface     = mouQueryMouseInterface;
-    pThis->Mouse.IPort.pfnPutEvent           = mouPutEvent;
-    pThis->Mouse.IPort.pfnPutEventAbs        = mouPutEventAbs;
-    pThis->Mouse.IPort.pfnPutEventMultiTouch = mouPutEventMultiTouch;
+    pThisCC->pDevIns                            = pDevIns;
+    pThisCC->Mouse.IBase.pfnQueryInterface      = bmsR3Base_QueryMouseInterface;
+    pThisCC->Mouse.IPort.pfnPutEvent            = bmsR3MousePort_PutEvent;
+    pThisCC->Mouse.IPort.pfnPutEventAbs         = bmsR3MousePort_PutEventAbs;
+    pThisCC->Mouse.IPort.pfnPutEventMultiTouch  = bmsR3MousePort_PutEventMultiTouch;
 
     /*
      * Create the interrupt timer.
      */
-    rc = PDMDevHlpTMTimerCreate(pDevIns, TMCLOCK_VIRTUAL, bmsTimerCallback,
-                                pThis, TMTIMER_FLAGS_DEFAULT_CRIT_SECT,
-                                "Bus Mouse Timer", &pThis->MouseTimer);
-    if (RT_FAILURE(rc))
-        return rc;
+    rc = PDMDevHlpTimerCreate(pDevIns, TMCLOCK_VIRTUAL, bmsR3TimerCallback, pThis,
+                              TMTIMER_FLAGS_DEFAULT_CRIT_SECT, "Bus Mouse Timer", &pThis->hMouseTimer);
+    AssertRCReturn(rc, rc);
 
     /*
-     * Register I/O ports, saved state, and mouse event handlers.
+     * Register I/O ports.
      */
-    rc = PDMDevHlpIOPortRegister(pDevIns, BMS_IO_BASE, BMS_IO_SIZE, NULL, mouIOPortWrite, mouIOPortRead, NULL, NULL, "Bus Mouse");
-    if (RT_FAILURE(rc))
-        return rc;
-    if (fGCEnabled)
+    static const IOMIOPORTDESC s_aDescs[] =
     {
-        rc = PDMDevHlpIOPortRegisterRC(pDevIns, BMS_IO_BASE, BMS_IO_SIZE, 0, "mouIOPortWrite", "mouIOPortRead", NULL, NULL, "Bus Mouse");
-        if (RT_FAILURE(rc))
-            return rc;
-    }
-    if (fR0Enabled)
-    {
-        rc = PDMDevHlpIOPortRegisterR0(pDevIns, BMS_IO_BASE, BMS_IO_SIZE, 0, "mouIOPortWrite", "mouIOPortRead", NULL, NULL, "Bus Mouse");
-        if (RT_FAILURE(rc))
-            return rc;
-    }
-    rc = PDMDevHlpSSMRegister(pDevIns, BMS_SAVED_STATE_VERSION, sizeof(*pThis), mouSaveExec, mouLoadExec);
-    if (RT_FAILURE(rc))
-        return rc;
+        { "DATA", "DATA", NULL, NULL },
+        { "SIG",  "SIG",  NULL, NULL },
+        { "CTRL", "CTRL", NULL, NULL },
+        { "INIT", "INIT", NULL, NULL },
+        { NULL,   NULL,   NULL, NULL }
+    };
+    rc = PDMDevHlpIoPortCreateAndMap(pDevIns, BMS_IO_BASE, BMS_IO_SIZE, bmsIoPortWrite, bmsIoPortRead,
+                                     "Bus Mouse", s_aDescs, &pThis->hIoPorts);
+    AssertRCReturn(rc, rc);
+
+    /*
+     * Register saved state.
+     */
+    rc = PDMDevHlpSSMRegister(pDevIns, BMS_SAVED_STATE_VERSION, sizeof(*pThis), bmsR3SaveExec, bmsR3LoadExec);
+    AssertRCReturn(rc, rc);
 
     /*
      * Attach to the mouse driver.
      */
-    rc = mouAttach(pDevIns, 0, PDM_TACH_FLAGS_NOT_HOT_PLUG);
-    if (RT_FAILURE(rc))
-        return rc;
+    rc = bmsR3Attach(pDevIns, 0, PDM_TACH_FLAGS_NOT_HOT_PLUG);
+    AssertRCReturn(rc, rc);
 
     /*
      * Initialize the device state.
      */
-    mouReset(pDevIns);
+    bmsR3Reset(pDevIns);
 
     return VINF_SUCCESS;
 }
 
-# endif /* IN_RING3 */
+# else /* !IN_RING3 */
+
+/**
+ * @callback_method_impl{PDMDEVREGR0,pfnConstruct}
+ */
+static DECLCALLBACK(int) bmsRZConstruct(PPDMDEVINS pDevIns)
+{
+    PDMDEV_CHECK_VERSIONS_RETURN(pDevIns);
+    PBMSSTATE   pThis = PDMDEVINS_2_DATA(pDevIns, PBMSSTATE);
+
+    int rc = PDMDevHlpIoPortSetUpContext(pDevIns, pThis->hIoPorts, bmsIoPortWrite, bmsIoPortRead, NULL /*pvUser*/);
+    AssertRCReturn(rc, rc);
+
+    return VINF_SUCCESS;
+}
+
+# endif /* !IN_RING3 */
 
 
 /**
  * The device registration structure.
  */
-const PDMDEVREG g_DeviceBusMouse =
+static const PDMDEVREG g_DeviceBusMouse =
 {
     /* .u32Version = */             PDM_DEVREG_VERSION,
     /* .uReserved0 = */             0,
     /* .szName = */                 "busmouse",
-    /* .fFlags = */                 PDM_DEVREG_FLAGS_DEFAULT_BITS | PDM_DEVREG_FLAGS_RZ,
+    /* .fFlags = */                 PDM_DEVREG_FLAGS_DEFAULT_BITS /** @todo | PDM_DEVREG_FLAGS_RZ */ | PDM_DEVREG_FLAGS_NEW_STYLE,
     /* .fClass = */                 PDM_DEVREG_CLASS_INPUT,
     /* .cMaxInstances = */          1,
     /* .uSharedVersion = */         42,
-    /* .cbInstanceShared = */       sizeof(MouState),
-    /* .cbInstanceCC = */           0,
+    /* .cbInstanceShared = */       sizeof(BMSSTATE),
+    /* .cbInstanceCC = */           CTX_EXPR(sizeof(BMSSTATER3), 0, 0),
     /* .cbInstanceRC = */           0,
     /* .cMaxPciDevices = */         0,
     /* .cMaxMsixVectors = */        0,
@@ -849,16 +793,16 @@ const PDMDEVREG g_DeviceBusMouse =
 # if defined(IN_RING3)
     /* .pszRCMod = */               "VBoxDDRC.rc",
     /* .pszR0Mod = */               "VBoxDDR0.r0",
-    /* .pfnConstruct = */           mouConstruct,
+    /* .pfnConstruct = */           bmsR3Construct,
     /* .pfnDestruct = */            NULL,
-    /* .pfnRelocate = */            mouRelocate,
+    /* .pfnRelocate = */            NULL,
     /* .pfnMemSetup = */            NULL,
     /* .pfnPowerOn = */             NULL,
-    /* .pfnReset = */               mouReset,
+    /* .pfnReset = */               bmsR3Reset,
     /* .pfnSuspend = */             NULL,
     /* .pfnResume = */              NULL,
-    /* .pfnAttach = */              mouAttach,
-    /* .pfnDetach = */              mouDetach,
+    /* .pfnAttach = */              bmsR3Attach,
+    /* .pfnDetach = */              bmsR3Detach,
     /* .pfnQueryInterface = */      NULL,
     /* .pfnInitComplete = */        NULL,
     /* .pfnPowerOff = */            NULL,
@@ -901,7 +845,8 @@ const PDMDEVREG g_DeviceBusMouse =
     /* .u32VersionEnd = */          PDM_DEVREG_VERSION
 };
 
-#if defined(VBOX_IN_EXTPACK_R3) && defined(IN_RING3)
+# ifdef VBOX_IN_EXTPACK_R3
+
 /**
  * @callback_method_impl{FNPDMVBOXDEVICESREGISTER}
  */
@@ -916,7 +861,38 @@ extern "C" DECLEXPORT(int) VBoxDevicesRegister(PPDMDEVREGCB pCallbacks, uint32_t
 
     return pCallbacks->pfnRegister(pCallbacks, &g_DeviceBusMouse);
 }
-#endif
+
+# else  /* !VBOX_IN_EXTPACK_R3 */
+
+/** Pointer to the ring-0 device registrations for the Bus Mouse. */
+static PCPDMDEVREGR0 g_apDevRegs[] =
+{
+    &g_DeviceBusMouse,
+};
+
+/** Module device registration record for the Bus Mouse. */
+static PDMDEVMODREGR0 g_ModDevReg =
+{
+    /* .u32Version = */ PDM_DEVMODREGR0_VERSION,
+    /* .cDevRegs = */   RT_ELEMENTS(g_apDevRegs),
+    /* .papDevRegs = */ &g_apDevRegs[0],
+    /* .hMod = */       NULL,
+    /* .ListEntry = */  { NULL, NULL },
+};
+
+DECLEXPORT(int)  ModuleInit(void *hMod)
+{
+    LogFlow(("VBoxBusMouseRZ/ModuleInit: %p\n", hMod));
+    return PDMR0DeviceRegisterModule(hMod, &g_ModDevReg);
+}
+
+DECLEXPORT(void) ModuleTerm(void *hMod)
+{
+    LogFlow(("VBoxBusMouseRZ/ModuleTerm: %p\n", hMod));
+    PDMR0DeviceDeregisterModule(hMod, &g_ModDevReg);
+}
+
+# endif  /* !VBOX_IN_EXTPACK_R3 */
 
 #endif /* !VBOX_DEVICE_STRUCT_TESTCASE */
 
