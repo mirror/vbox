@@ -59,9 +59,9 @@
 #undef LOG_GROUP
 #include "../Input/DevPS2.cpp"
 #undef LOG_GROUP
-#include "../Input/PS2K.cpp"
+#include "../Input/DevPS2K.cpp"
 #undef LOG_GROUP
-#include "../Input/PS2M.cpp"
+#include "../Input/DevPS2M.cpp"
 #ifdef VBOX_WITH_E1000
 # undef LOG_GROUP
 # include "../Network/DevE1000.cpp"

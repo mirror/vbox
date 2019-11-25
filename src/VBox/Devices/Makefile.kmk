@@ -145,8 +145,8 @@ if !defined(VBOX_ONLY_EXTPACKS) && "$(intersects $(KBUILD_TARGET_ARCH),$(VBOX_SU
  	build/VBoxDD.cpp \
 	\
  	Input/DevPS2.cpp \
- 	Input/PS2K.cpp \
- 	Input/PS2M.cpp \
+ 	Input/DevPS2K.cpp \
+ 	Input/DevPS2M.cpp \
  	Input/UsbKbd.cpp \
  	Input/UsbMouse.cpp \
  	Bus/DevPCI.cpp \
@@ -917,8 +917,8 @@ VBOX_WITH_VMSVGA3D_DYNAMIC_LOAD = 1
   	EFI/DevSmc.cpp \
   	Graphics/DevVGA.cpp \
   	Input/DevPS2.cpp \
-  	Input/PS2K.cpp \
-  	Input/PS2M.cpp \
+  	Input/DevPS2K.cpp \
+  	Input/DevPS2M.cpp \
   	PC/DevACPI.cpp \
   	PC/DevIoApic.cpp \
   	PC/DevPit-i8254.cpp \
@@ -1096,8 +1096,8 @@ VBOX_WITH_VMSVGA3D_DYNAMIC_LOAD = 1
 	EFI/FlashCore.cpp \
  	Graphics/DevVGA.cpp \
  	Input/DevPS2.cpp \
- 	Input/PS2K.cpp \
- 	Input/PS2M.cpp \
+ 	Input/DevPS2K.cpp \
+ 	Input/DevPS2M.cpp \
  	PC/DevACPI.cpp \
  	PC/DevIoApic.cpp \
  	PC/DevPit-i8254.cpp \

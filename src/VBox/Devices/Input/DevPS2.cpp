@@ -51,7 +51,7 @@
 #include <iprt/uuid.h>
 
 #include "VBoxDD.h"
-#include "PS2Dev.h"
+#include "DevPS2.h"
 
 /* Do not remove this (unless eliminating the corresponding ifdefs), it will
  * cause instant triple faults when booting Windows VMs. */
