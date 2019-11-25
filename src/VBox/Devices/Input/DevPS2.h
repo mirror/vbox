@@ -333,13 +333,6 @@ typedef struct KBDSTATE
     int32_t translate;
     int32_t xlat_state;
 
-    /** Pointer to the device instance - RC. */
-    PPDMDEVINSRC                pDevInsRC;
-    /** Pointer to the device instance - R3 . */
-    PPDMDEVINSR3                pDevInsR3;
-    /** Pointer to the device instance. */
-    PPDMDEVINSR0                pDevInsR0;
-
     /** I/O port 60h. */
     IOMIOPORTHANDLE             hIoPortData;
     /** I/O port 64h. */

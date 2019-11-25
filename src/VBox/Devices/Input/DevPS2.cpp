@@ -271,8 +271,8 @@ static void kbd_update_irq(PPDMDEVINS pDevIns, KBDState *s)
                 irq1_level = 1;
         }
     }
-    PDMDevHlpISASetIrq(s->CTX_SUFF(pDevIns), 1, irq1_level);
-    PDMDevHlpISASetIrq(s->CTX_SUFF(pDevIns), 12, irq12_level);
+    PDMDevHlpISASetIrq(pDevIns, 1, irq1_level);
+    PDMDevHlpISASetIrq(pDevIns, 12, irq12_level);
 }
 
 void KBCUpdateInterrupts(PPDMDEVINS pDevIns)
@@ -281,22 +281,22 @@ void KBCUpdateInterrupts(PPDMDEVINS pDevIns)
     kbd_update_irq(pDevIns, pThis);
 }
 
-static void kbc_dbb_out(PKBDSTATE s, uint8_t val)
+static void kbc_dbb_out(PPDMDEVINS pDevIns, PKBDSTATE s, uint8_t val)
 {
     s->dbbout = val;
     /* Set the OBF and raise IRQ. */
     s->status |= KBD_STAT_OBF;
     if (s->mode & KBD_MODE_KBD_INT)
-        PDMDevHlpISASetIrq(s->CTX_SUFF(pDevIns), 1, 1);
+        PDMDevHlpISASetIrq(pDevIns, 1, 1);
 }
 
-static void kbc_dbb_out_aux(PKBDSTATE s, uint8_t val)
+static void kbc_dbb_out_aux(PPDMDEVINS pDevIns, PKBDSTATE s, uint8_t val)
 {
     s->dbbout = val;
     /* Set the aux OBF and raise IRQ. */
     s->status |= KBD_STAT_OBF | KBD_STAT_MOUSE_OBF;
     if (s->mode & KBD_MODE_MOUSE_INT)
-        PDMDevHlpISASetIrq(s->CTX_SUFF(pDevIns), 12, PDM_IRQ_LEVEL_HIGH);
+        PDMDevHlpISASetIrq(pDevIns, 12, PDM_IRQ_LEVEL_HIGH);
 }
 
 static VBOXSTRICTRC kbd_write_command(PPDMDEVINS pDevIns, PKBDSTATE s, uint32_t val)
@@ -306,7 +306,7 @@ static VBOXSTRICTRC kbd_write_command(PPDMDEVINS pDevIns, PKBDSTATE s, uint32_t 
 #endif
     switch(val) {
     case KBD_CCMD_READ_MODE:
-        kbc_dbb_out(s, s->mode);
+        kbc_dbb_out(pDevIns, s, s->mode);
         break;
     case KBD_CCMD_WRITE_MODE:
     case KBD_CCMD_WRITE_OBUF:
@@ -324,22 +324,22 @@ static VBOXSTRICTRC kbd_write_command(PPDMDEVINS pDevIns, PKBDSTATE s, uint32_t 
         kbd_update_irq(pDevIns, s);
         break;
     case KBD_CCMD_TEST_MOUSE:
-        kbc_dbb_out(s, 0x00);
+        kbc_dbb_out(pDevIns, s, 0x00);
         break;
     case KBD_CCMD_SELF_TEST:
         /* Enable the A20 line - that is the power-on state(!). */
 # ifndef IN_RING3
-        if (!PDMDevHlpA20IsEnabled(s->CTX_SUFF(pDevIns)))
+        if (!PDMDevHlpA20IsEnabled(pDevIns))
             return VINF_IOM_R3_IOPORT_WRITE;
 # else  /* IN_RING3 */
-        PDMDevHlpA20Set(s->CTX_SUFF(pDevIns), true);
+        PDMDevHlpA20Set(pDevIns, true);
 # endif /* IN_RING3 */
         s->status |= KBD_STAT_SELFTEST;
         s->mode |= KBD_MODE_DISABLE_KBD;
-        kbc_dbb_out(s, 0x55);
+        kbc_dbb_out(pDevIns, s, 0x55);
         break;
     case KBD_CCMD_KBD_TEST:
-        kbc_dbb_out(s, 0x00);
+        kbc_dbb_out(pDevIns, s, 0x00);
         break;
     case KBD_CCMD_KBD_DISABLE:
         s->mode |= KBD_MODE_DISABLE_KBD;
@@ -350,12 +350,12 @@ static VBOXSTRICTRC kbd_write_command(PPDMDEVINS pDevIns, PKBDSTATE s, uint32_t 
         kbd_update_irq(pDevIns, s);
         break;
     case KBD_CCMD_READ_INPORT:
-        kbc_dbb_out(s, 0xBF);
+        kbc_dbb_out(pDevIns, s, 0xBF);
         break;
     case KBD_CCMD_READ_OUTPORT:
         /* XXX: check that */
 #ifdef TARGET_I386
-        val = 0x01 | (PDMDevHlpA20IsEnabled(s->CTX_SUFF(pDevIns)) << 1);
+        val = 0x01 | (PDMDevHlpA20IsEnabled(pDevIns) << 1);
 #else
         val = 0x01;
 #endif
@@ -363,30 +363,30 @@ static VBOXSTRICTRC kbd_write_command(PPDMDEVINS pDevIns, PKBDSTATE s, uint32_t 
             val |= 0x10;
         if (s->status & KBD_STAT_MOUSE_OBF)
             val |= 0x20;
-        kbc_dbb_out(s, val);
+        kbc_dbb_out(pDevIns, s, val);
         break;
 #ifdef TARGET_I386
     case KBD_CCMD_ENABLE_A20:
 # ifndef IN_RING3
-        if (!PDMDevHlpA20IsEnabled(s->CTX_SUFF(pDevIns)))
+        if (!PDMDevHlpA20IsEnabled(pDevIns))
             return VINF_IOM_R3_IOPORT_WRITE;
 # else  /* IN_RING3 */
-        PDMDevHlpA20Set(s->CTX_SUFF(pDevIns), true);
+        PDMDevHlpA20Set(pDevIns, true);
 # endif /* IN_RING3 */
         break;
     case KBD_CCMD_DISABLE_A20:
 # ifndef IN_RING3
-        if (PDMDevHlpA20IsEnabled(s->CTX_SUFF(pDevIns)))
+        if (PDMDevHlpA20IsEnabled(pDevIns))
             return VINF_IOM_R3_IOPORT_WRITE;
 # else  /* IN_RING3 */
-        PDMDevHlpA20Set(s->CTX_SUFF(pDevIns), false);
+        PDMDevHlpA20Set(pDevIns, false);
 # endif /* IN_RING3 */
         break;
 #endif
     case KBD_CCMD_READ_TSTINP:
         /* Keyboard clock line is zero IFF keyboard is disabled */
         val = (s->mode & KBD_MODE_DISABLE_KBD) ? 0 : 1;
-        kbc_dbb_out(s, val);
+        kbc_dbb_out(pDevIns, s, val);
         break;
     case KBD_CCMD_RESET:
     case KBD_CCMD_RESET_ALT:
@@ -394,7 +394,7 @@ static VBOXSTRICTRC kbd_write_command(PPDMDEVINS pDevIns, PKBDSTATE s, uint32_t 
         return VINF_IOM_R3_IOPORT_WRITE;
 #else  /* IN_RING3 */
         LogRel(("Reset initiated by keyboard controller\n"));
-        return PDMDevHlpVMReset(s->CTX_SUFF(pDevIns), PDMVMRESET_F_KBD);
+        return PDMDevHlpVMReset(pDevIns, PDMVMRESET_F_KBD);
 #endif /* IN_RING3 */
     case 0xff:
         /* ignore that - I don't know what is its use */
@@ -408,7 +408,7 @@ static VBOXSTRICTRC kbd_write_command(PPDMDEVINS pDevIns, PKBDSTATE s, uint32_t 
     case 0x28: case 0x29: case 0x2a: case 0x2b: case 0x2c: case 0x2d: case 0x2e: case 0x2f:
     case 0x30: case 0x31: case 0x32: case 0x33: case 0x34: case 0x35: case 0x36: case 0x37:
     case 0x38: case 0x39: case 0x3a: case 0x3b: case 0x3c: case 0x3d: case 0x3e: case 0x3f:
-        kbc_dbb_out(s, 0);
+        kbc_dbb_out(pDevIns, s, 0);
         Log(("kbd: reading non-standard RAM addr %#x\n", val & 0x1f));
         break;
     default:
@@ -427,9 +427,9 @@ static uint32_t kbd_read_data(PPDMDEVINS pDevIns, PKBDSTATE s)
 
     /* Reading the DBB deasserts IRQs... */
     if (s->status & KBD_STAT_MOUSE_OBF)
-        PDMDevHlpISASetIrq(s->CTX_SUFF(pDevIns), 12, 0);
+        PDMDevHlpISASetIrq(pDevIns, 12, 0);
     else
-        PDMDevHlpISASetIrq(s->CTX_SUFF(pDevIns), 1, 0);
+        PDMDevHlpISASetIrq(pDevIns, 1, 0);
     /* ...and clears the OBF bits. */
     s->status &= ~(KBD_STAT_OBF | KBD_STAT_MOUSE_OBF);
 
@@ -475,25 +475,25 @@ static VBOXSTRICTRC kbd_write_data(PPDMDEVINS pDevIns, PKBDSTATE s, uint32_t val
         kbd_update_irq(pDevIns, s);
         break;
     case KBD_CCMD_WRITE_OBUF:
-        kbc_dbb_out(s, val);
+        kbc_dbb_out(pDevIns, s, val);
         break;
     case KBD_CCMD_WRITE_AUX_OBUF:
-        kbc_dbb_out_aux(s, val);
+        kbc_dbb_out_aux(pDevIns, s, val);
         break;
     case KBD_CCMD_WRITE_OUTPORT:
 #ifdef TARGET_I386
 #  ifndef IN_RING3
-        if (PDMDevHlpA20IsEnabled(s->CTX_SUFF(pDevIns)) != !!(val & 2))
+        if (PDMDevHlpA20IsEnabled(pDevIns) != !!(val & 2))
             rc = VINF_IOM_R3_IOPORT_WRITE;
 #  else /* IN_RING3 */
-        PDMDevHlpA20Set(s->CTX_SUFF(pDevIns), !!(val & 2));
+        PDMDevHlpA20Set(pDevIns, !!(val & 2));
 #  endif /* IN_RING3 */
 #endif
         if (!(val & 1)) {
 # ifndef IN_RING3
             rc = VINF_IOM_R3_IOPORT_WRITE;
 # else
-            rc = PDMDevHlpVMReset(s->CTX_SUFF(pDevIns), PDMVMRESET_F_KBD);
+            rc = PDMDevHlpVMReset(pDevIns, PDMVMRESET_F_KBD);
 # endif
         }
         break;
@@ -1017,12 +1017,8 @@ static DECLCALLBACK(int) kbdR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     Log(("pckbd: fRCEnabled=%RTbool fR0Enabled=%RTbool\n", pDevIns->fRCEnabled, pDevIns->fR0Enabled));
 
     /*
-     * Initialize the interfaces.
+     * Initialize the sub-components.
      */
-    pThis->pDevInsR3 = pDevIns;
-    pThis->pDevInsR0 = PDMDEVINS_2_R0PTR(pDevIns);
-    pThis->pDevInsRC = PDMDEVINS_2_RCPTR(pDevIns);
-
     rc = PS2KR3Construct(&pThis->Kbd, pDevIns, pThis, iInstance, pCfg);
     AssertRCReturn(rc, rc);
 
