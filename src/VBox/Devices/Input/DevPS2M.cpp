@@ -208,15 +208,15 @@ static void ps2mR3TestAccumulation(void);
 #ifdef IN_RING3
 
 /* Report a change in status down (or is it up?) the driver chain. */
-static void ps2mR3SetDriverState(PPS2M pThis, bool fEnabled)
+static void ps2mR3SetDriverState(PPS2MR3 pThisCC, bool fEnabled)
 {
-    PPDMIMOUSECONNECTOR pDrv = pThis->Mouse.pDrv;
+    PPDMIMOUSECONNECTOR pDrv = pThisCC->Mouse.pDrv;
     if (pDrv)
         pDrv->pfnReportModes(pDrv, fEnabled, false, false);
 }
 
 /* Reset the pointing device. */
-static void ps2mR3Reset(PPS2M pThis)
+static void ps2mR3Reset(PPS2M pThis, PPS2MR3 pThisCC)
 {
     PS2CmnInsertQueue((GeneriQ *)&pThis->cmdQ, ARSP_BAT_OK);
     PS2CmnInsertQueue((GeneriQ *)&pThis->cmdQ, 0);
@@ -224,7 +224,7 @@ static void ps2mR3Reset(PPS2M pThis)
     pThis->u8CurrCmd = 0;
 
     /// @todo move to its proper home!
-    ps2mR3SetDriverState(pThis, true);
+    ps2mR3SetDriverState(pThisCC, true);
 }
 
 #endif /* IN_RING3 */
@@ -508,7 +508,7 @@ int PS2MByteToAux(PPDMDEVINS pDevIns, PPS2M pThis, uint8_t cmd)
         case ACMD_ENABLE:
             pThis->u8State |= AUX_STATE_ENABLED;
 #ifdef IN_RING3
-            ps2mR3SetDriverState(pThis, true);
+            ps2mR3SetDriverState(&PDMDEVINS_2_DATA_CC(pDevIns, PKBDSTATER3)->Aux, true);
 #else
             AssertLogRelMsgFailed(("Invalid ACMD_ENABLE outside R3!\n"));
 #endif
@@ -540,7 +540,7 @@ int PS2MByteToAux(PPDMDEVINS pDevIns, PPS2M pThis, uint8_t cmd)
                 PDMDevHlpTimerSetMillies(pDevIns, pThis->hDelayTimer, 1);
             else
 #ifdef IN_RING3
-                ps2mR3Reset(pThis);
+                ps2mR3Reset(pThis, &PDMDEVINS_2_DATA_CC(pDevIns, PKBDSTATER3)->Aux);
 #else
                 AssertLogRelMsgFailed(("Invalid ACMD_RESET outside R3!\n"));
 #endif
@@ -711,13 +711,14 @@ static DECLCALLBACK(void) ps2mR3ThrottleTimer(PPDMDEVINS pDevIns, PTMTIMER pTime
  */
 static DECLCALLBACK(void) ps2mR3DelayTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser)
 {
-    RT_NOREF(pDevIns, pTimer);
-    PPS2M pThis = (PS2M *)pvUser;
+    PPS2M   pThis   = &PDMDEVINS_2_DATA(pDevIns, PKBDSTATE)->Aux;
+    PPS2MR3 pThisCC = &PDMDEVINS_2_DATA_CC(pDevIns, PKBDSTATER3)->Aux;
+    RT_NOREF(pvUser, pTimer);
 
     LogFlowFunc(("Delay timer: cmd %02X\n", pThis->u8CurrCmd));
 
     Assert(pThis->u8CurrCmd == ACMD_RESET);
-    ps2mR3Reset(pThis);
+    ps2mR3Reset(pThis, pThisCC);
 
     /// @todo Might want a PS2MCompleteCommand() to push last response, clear command, and kick the KBC...
     /* Give the KBC a kick. */
@@ -734,19 +735,20 @@ static DECLCALLBACK(void) ps2mR3DelayTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, 
  */
 static DECLCALLBACK(void) ps2mR3InfoState(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *pszArgs)
 {
-    static const char   *pcszModes[] = { "normal", "reset", "wrap" };
-    static const char   *pcszProtocols[] = { "PS/2", NULL, NULL, "ImPS/2", "ImEx", "ImEx+horizontal" };
-    PPS2M   pThis = KBDGetPS2MFromDevIns(pDevIns);
+    static const char * const s_apcszModes[] = { "normal", "reset", "wrap" };
+    static const char * const s_apcszProtocols[] = { "PS/2", NULL, NULL, "ImPS/2", "ImEx", "ImEx+horizontal" };
+    PKBDSTATE   pParent = PDMDEVINS_2_DATA(pDevIns, PKBDSTATE);
+    PPS2M       pThis   = &pParent->Aux;
     NOREF(pszArgs);
 
-    Assert(pThis->enmMode <= RT_ELEMENTS(pcszModes));
-    Assert(pThis->enmProtocol <= RT_ELEMENTS(pcszProtocols));
+    Assert(pThis->enmMode < RT_ELEMENTS(s_apcszModes));
     pHlp->pfnPrintf(pHlp, "PS/2 mouse state: %s, %s mode, reporting %s\n",
-                    pcszModes[pThis->enmMode],
+                    s_apcszModes[pThis->enmMode],
                     pThis->u8State & AUX_STATE_REMOTE  ? "remote"  : "stream",
                     pThis->u8State & AUX_STATE_ENABLED ? "enabled" : "disabled");
+    Assert(pThis->enmProtocol < RT_ELEMENTS(s_apcszProtocols));
     pHlp->pfnPrintf(pHlp, "Protocol: %s, scaling %u:1\n",
-                    pcszProtocols[pThis->enmProtocol],
+                    s_apcszProtocols[pThis->enmProtocol],
                     pThis->u8State & AUX_STATE_SCALING ? 2 : 1);
     pHlp->pfnPrintf(pHlp, "Active command %02X\n", pThis->u8CurrCmd);
     pHlp->pfnPrintf(pHlp, "Sampling rate %u reports/sec, resolution %u counts/mm\n",
@@ -755,20 +757,6 @@ static DECLCALLBACK(void) ps2mR3InfoState(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp
                     pThis->cmdQ.cUsed, pThis->cmdQ.cSize);
     pHlp->pfnPrintf(pHlp, "Event queue  : %d items (%d max)\n",
                     pThis->evtQ.cUsed, pThis->evtQ.cSize);
-}
-
-
-/* -=-=-=-=-=- Mouse: IBase  -=-=-=-=-=- */
-
-/**
- * @interface_method_impl{PDMIBASE,pfnQueryInterface}
- */
-static DECLCALLBACK(void *) ps2mR3QueryInterface(PPDMIBASE pInterface, const char *pszIID)
-{
-    PPS2M pThis = RT_FROM_MEMBER(pInterface, PS2M, Mouse.IBase);
-    PDMIBASE_RETURN_INTERFACE(pszIID, PDMIBASE, &pThis->Mouse.IBase);
-    PDMIBASE_RETURN_INTERFACE(pszIID, PDMIMOUSEPORT, &pThis->Mouse.IPort);
-    return NULL;
 }
 
 
@@ -833,8 +821,9 @@ static int ps2mR3PutEventWorker(PPDMDEVINS pDevIns, PPS2M pThis, int32_t dx, int
 static DECLCALLBACK(int) ps2mR3MousePort_PutEvent(PPDMIMOUSEPORT pInterface, int32_t dx, int32_t dy,
                                                   int32_t dz, int32_t dw, uint32_t fButtons)
 {
-    PPS2M       pThis = RT_FROM_MEMBER(pInterface, PS2M, Mouse.IPort);
-    PPDMDEVINS  pDevIns = pThis->pDevIns;
+    PPS2MR3     pThisCC = RT_FROM_MEMBER(pInterface, PS2MR3, Mouse.IPort);
+    PPDMDEVINS  pDevIns = pThisCC->pDevIns;
+    PPS2M       pThis   = &PDMDEVINS_2_DATA(pDevIns, PKBDSTATE)->Aux;
     int rc = PDMDevHlpCritSectEnter(pDevIns, pDevIns->pCritSectRoR3, VERR_SEM_BUSY);
     AssertReleaseRC(rc);
 
@@ -867,6 +856,20 @@ static DECLCALLBACK(int) ps2mR3MousePort_PutEventMT(PPDMIMOUSEPORT pInterface, u
 }
 
 
+/* -=-=-=-=-=- Mouse: IBase  -=-=-=-=-=- */
+
+/**
+ * @interface_method_impl{PDMIBASE,pfnQueryInterface}
+ */
+static DECLCALLBACK(void *) ps2mR3QueryInterface(PPDMIBASE pInterface, const char *pszIID)
+{
+    PPS2MR3 pThisCC = RT_FROM_MEMBER(pInterface, PS2MR3, Mouse.IBase);
+    PDMIBASE_RETURN_INTERFACE(pszIID, PDMIBASE, &pThisCC->Mouse.IBase);
+    PDMIBASE_RETURN_INTERFACE(pszIID, PDMIMOUSEPORT, &pThisCC->Mouse.IPort);
+    return NULL;
+}
+
+
 /* -=-=-=-=-=- Device management -=-=-=-=-=- */
 
 /**
@@ -884,7 +887,7 @@ static DECLCALLBACK(int) ps2mR3MousePort_PutEventMT(PPDMIMOUSEPORT pInterface, u
  * @param   iLUN        The logical unit which is being detached.
  * @param   fFlags      Flags, combination of the PDMDEVATT_FLAGS_* \#defines.
  */
-int PS2MR3Attach(PPS2M pThis, PPDMDEVINS pDevIns, unsigned iLUN, uint32_t fFlags)
+int PS2MR3Attach(PPDMDEVINS pDevIns, PPS2MR3 pThisCC, unsigned iLUN, uint32_t fFlags)
 {
     int         rc;
 
@@ -896,11 +899,11 @@ int PS2MR3Attach(PPS2M pThis, PPDMDEVINS pDevIns, unsigned iLUN, uint32_t fFlags
 
     LogFlowFunc(("iLUN=%d\n", iLUN));
 
-    rc = PDMDevHlpDriverAttach(pDevIns, iLUN, &pThis->Mouse.IBase, &pThis->Mouse.pDrvBase, "Mouse Port");
+    rc = PDMDevHlpDriverAttach(pDevIns, iLUN, &pThisCC->Mouse.IBase, &pThisCC->Mouse.pDrvBase, "Mouse Port");
     if (RT_SUCCESS(rc))
     {
-        pThis->Mouse.pDrv = PDMIBASE_QUERY_INTERFACE(pThis->Mouse.pDrvBase, PDMIMOUSECONNECTOR);
-        if (!pThis->Mouse.pDrv)
+        pThisCC->Mouse.pDrv = PDMIBASE_QUERY_INTERFACE(pThisCC->Mouse.pDrvBase, PDMIMOUSECONNECTOR);
+        if (!pThisCC->Mouse.pDrv)
         {
             AssertLogRelMsgFailed(("LUN #1 doesn't have a mouse interface! rc=%Rrc\n", rc));
             rc = VERR_PDM_MISSING_INTERFACE;
@@ -941,7 +944,7 @@ void PS2MR3SaveState(PPDMDEVINS pDevIns, PPS2M pThis, PSSMHANDLE pSSM)
     PDMDevHlpTimerSave(pDevIns, pThis->hDelayTimer, pSSM);
 }
 
-int PS2MR3LoadState(PPDMDEVINS pDevIns, PPS2M pThis, PSSMHANDLE pSSM, uint32_t uVersion)
+int PS2MR3LoadState(PPDMDEVINS pDevIns, PPS2M pThis, PPS2MR3 pThisCC, PSSMHANDLE pSSM, uint32_t uVersion)
 {
     PCPDMDEVHLPR3   pHlp = pDevIns->pHlpR3;
     uint8_t         u8;
@@ -975,12 +978,12 @@ int PS2MR3LoadState(PPDMDEVINS pDevIns, PPS2M pThis, PSSMHANDLE pSSM, uint32_t u
     /* Recalculate the throttling delay. */
     ps2mSetRate(pThis, pThis->u8SampleRate);
 
-    ps2mR3SetDriverState(pThis, !!(pThis->u8State & AUX_STATE_ENABLED));
+    ps2mR3SetDriverState(pThisCC, !!(pThis->u8State & AUX_STATE_ENABLED));
 
     return VINF_SUCCESS;
 }
 
-void PS2MR3FixupState(PPS2M pThis, uint8_t u8State, uint8_t u8Rate, uint8_t u8Proto)
+void PS2MR3FixupState(PPS2M pThis, PPS2MR3 pThisCC, uint8_t u8State, uint8_t u8Rate, uint8_t u8Proto)
 {
     LogFlowFunc(("Fixing up old PS2M state version\n"));
 
@@ -992,7 +995,7 @@ void PS2MR3FixupState(PPS2M pThis, uint8_t u8State, uint8_t u8Rate, uint8_t u8Pr
     /* Recalculate the throttling delay. */
     ps2mSetRate(pThis, pThis->u8SampleRate);
 
-    ps2mR3SetDriverState(pThis, !!(pThis->u8State & AUX_STATE_ENABLED));
+    ps2mR3SetDriverState(pThisCC, !!(pThis->u8State & AUX_STATE_ENABLED));
 }
 
 void PS2MR3Reset(PPS2M pThis)
@@ -1006,7 +1009,7 @@ void PS2MR3Reset(PPS2M pThis)
     ps2mSetDefaults(pThis);     /* Also clears event queue. */
 }
 
-int PS2MR3Construct(PPS2M pThis, PPDMDEVINS pDevIns, PKBDSTATE pParent, unsigned iInstance)
+int PS2MR3Construct(PPDMDEVINS pDevIns, PPS2M pThis, PPS2MR3 pThisCC, unsigned iInstance)
 {
     RT_NOREF(iInstance);
 
@@ -1016,17 +1019,16 @@ int PS2MR3Construct(PPS2M pThis, PPDMDEVINS pDevIns, PKBDSTATE pParent, unsigned
     ps2mR3TestAccumulation();
 #endif
 
-    pThis->pParent = pParent;
-    pThis->pDevIns = pDevIns;
+    pThisCC->pDevIns = pDevIns;
 
     /* Initialize the queues. */
     pThis->evtQ.cSize = AUX_EVT_QUEUE_SIZE;
     pThis->cmdQ.cSize = AUX_CMD_QUEUE_SIZE;
 
-    pThis->Mouse.IBase.pfnQueryInterface     = ps2mR3QueryInterface;
-    pThis->Mouse.IPort.pfnPutEvent           = ps2mR3MousePort_PutEvent;
-    pThis->Mouse.IPort.pfnPutEventAbs        = ps2mR3MousePort_PutEventAbs;
-    pThis->Mouse.IPort.pfnPutEventMultiTouch = ps2mR3MousePort_PutEventMT;
+    pThisCC->Mouse.IBase.pfnQueryInterface     = ps2mR3QueryInterface;
+    pThisCC->Mouse.IPort.pfnPutEvent           = ps2mR3MousePort_PutEvent;
+    pThisCC->Mouse.IPort.pfnPutEventAbs        = ps2mR3MousePort_PutEventAbs;
+    pThisCC->Mouse.IPort.pfnPutEventMultiTouch = ps2mR3MousePort_PutEventMT;
 
     /*
      * Create the input rate throttling timer. Does not use virtual time!
@@ -1048,7 +1050,7 @@ int PS2MR3Construct(PPS2M pThis, PPDMDEVINS pDevIns, PKBDSTATE pParent, unsigned
     PDMDevHlpDBGFInfoRegister(pDevIns, "ps2m", "Display PS/2 mouse state.", ps2mR3InfoState);
 
     /// @todo Where should we do this?
-    ps2mR3SetDriverState(pThis, true);
+    ps2mR3SetDriverState(pThisCC, true);
     pThis->u8State = 0;
     pThis->enmMode = AUX_MODE_STD;
 

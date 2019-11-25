@@ -91,8 +91,6 @@ typedef enum {
  */
 typedef struct PS2K
 {
-    /** Pointer to parent device (keyboard controller). */
-    R3PTRTYPE(PKBDSTATE) pParent;
     /** Set if keyboard is enabled ('scans' for input). */
     bool                fScanning;
     /** Set NumLock is on. */
@@ -128,13 +126,22 @@ typedef struct PS2K
     bool                fThrottleEnabled;
     uint8_t             abAlignment2[2];
 
-    /** Command delay timer - R3 Ptr. */
+    /** Command delay timer. */
     TMTIMERHANDLE       hKbdDelayTimer;
-    /** Typematic timer - R3 Ptr. */
+    /** Typematic timer. */
     TMTIMERHANDLE       hKbdTypematicTimer;
     /** Input throttle timer. */
     TMTIMERHANDLE       hThrottleTimer;
+} PS2K;
+/** Pointer to the shared PS/2 keyboard instance data. */
+typedef PS2K *PPS2K;
 
+
+/**
+ * The PS/2 keyboard instance data for ring-3.
+ */
+typedef struct PS2KR3
+{
     /** The device instance.
      * @note Only for getting our bearings in interface methods. */
     PPDMDEVINSR3        pDevIns;
@@ -157,23 +164,20 @@ typedef struct PS2K
         /** The keyboard interface of the attached keyboard driver. */
         R3PTRTYPE(PPDMIKEYBOARDCONNECTOR)   pDrv;
     } Keyboard;
-} PS2K;
-/** Pointer to the PS/2 keyboard instance data. */
-typedef PS2K *PPS2K;
+} PS2KR3;
+/** Pointer to the PS/2 keyboard instance data for ring-3. */
+typedef PS2KR3 *PPS2KR3;
 
 
 int  PS2KByteToKbd(PPDMDEVINS pDevIns, PPS2K pThis, uint8_t cmd);
 int  PS2KByteFromKbd(PPDMDEVINS pDevIns, PPS2K pThis, uint8_t *pVal);
 
-int  PS2KR3Construct(PPS2K pThis, PPDMDEVINS pDevIns, PKBDSTATE pParent, unsigned iInstance, PCFGMNODE pCfg);
-int  PS2KR3Attach(PPS2K pThis, PPDMDEVINS pDevIns, unsigned iLUN, uint32_t fFlags);
-void PS2KR3Reset(PPDMDEVINS pDevIns, PPS2K pThis);
+int  PS2KR3Construct(PPDMDEVINS pDevIns, PPS2K pThis, PPS2KR3 pThisCC, unsigned iInstance, PCFGMNODE pCfg);
+int  PS2KR3Attach(PPDMDEVINS pDevIns, PPS2KR3 pThisCC, unsigned iLUN, uint32_t fFlags);
+void PS2KR3Reset(PPDMDEVINS pDevIns, PPS2K pThis, PPS2KR3 pThisCC);
 void PS2KR3SaveState(PPDMDEVINS pDevIns, PPS2K pThis, PSSMHANDLE pSSM);
 int  PS2KR3LoadState(PPDMDEVINS pDevIns, PPS2K pThis, PSSMHANDLE pSSM, uint32_t uVersion);
-int  PS2KR3LoadDone(PPDMDEVINS pDevIns, PPS2K pThis);
-
-PS2K *KBDGetPS2KFromDevIns(PPDMDEVINS pDevIns);
-
+int  PS2KR3LoadDone(PPDMDEVINS pDevIns, PPS2K pThis, PPS2KR3 pThisCC);
 /** @} */
 
 
@@ -227,12 +231,10 @@ typedef enum {
 } PS2M_KNOCK_STATE;
 
 /**
- * The PS/2 auxiliary device instance data.
+ * The shared PS/2 auxiliary device instance data.
  */
 typedef struct PS2M
 {
-    /** Pointer to parent device (keyboard controller). */
-    R3PTRTYPE(PKBDSTATE) pParent;
     /** Operational state. */
     uint8_t             u8State;
     /** Configured sampling rate. */
@@ -272,14 +274,22 @@ typedef struct PS2M
     /** Throttling delay in milliseconds. */
     uint32_t            uThrottleDelay;
 
-    /** The device instance.
-     * @note Only for getting our bearings in interface methods. */
-    PPDMDEVINSR3        pDevIns;
-
     /** Command delay timer. */
     TMTIMERHANDLE       hDelayTimer;
     /** Interrupt throttling timer. */
     TMTIMERHANDLE       hThrottleTimer;
+} PS2M;
+/** Pointer to the shared PS/2 auxiliary device instance data. */
+typedef PS2M *PPS2M;
+
+/**
+ * The PS/2 auxiliary device instance data for ring-3.
+ */
+typedef struct PS2MR3
+{
+    /** The device instance.
+     * @note Only for getting our bearings in interface methods. */
+    PPDMDEVINSR3        pDevIns;
 
     /**
      * Mouse port - LUN#1.
@@ -299,22 +309,19 @@ typedef struct PS2M
         /** The keyboard interface of the attached mouse driver. */
         R3PTRTYPE(PPDMIMOUSECONNECTOR)      pDrv;
     } Mouse;
-} PS2M;
-/** Pointer to the PS/2 auxiliary device instance data. */
-typedef PS2M *PPS2M;
+} PS2MR3;
+/** Pointer to the PS/2 auxiliary device instance data for ring-3. */
+typedef PS2MR3 *PPS2MR3;
 
 int  PS2MByteToAux(PPDMDEVINS pDevIns, PPS2M pThis, uint8_t cmd);
 int  PS2MByteFromAux(PPS2M pThis, uint8_t *pVal);
 
-int  PS2MR3Construct(PPS2M pThis, PPDMDEVINS pDevIns, PKBDSTATE pParent, unsigned iInstance);
-int  PS2MR3Attach(PPS2M pThis, PPDMDEVINS pDevIns, unsigned iLUN, uint32_t fFlags);
+int  PS2MR3Construct(PPDMDEVINS pDevIns, PPS2M pThis, PPS2MR3 pThisCC, unsigned iInstance);
+int  PS2MR3Attach(PPDMDEVINS pDevIns, PPS2MR3 pThisCC, unsigned iLUN, uint32_t fFlags);
 void PS2MR3Reset(PPS2M pThis);
 void PS2MR3SaveState(PPDMDEVINS pDevIns, PPS2M pThis, PSSMHANDLE pSSM);
-int  PS2MR3LoadState(PPDMDEVINS pDevIns, PPS2M pThis, PSSMHANDLE pSSM, uint32_t uVersion);
-void PS2MR3FixupState(PPS2M pThis, uint8_t u8State, uint8_t u8Rate, uint8_t u8Proto);
-
-PS2M *KBDGetPS2MFromDevIns(PPDMDEVINS pDevIns);
-
+int  PS2MR3LoadState(PPDMDEVINS pDevIns, PPS2M pThis, PPS2MR3 pThisCC, PSSMHANDLE pSSM, uint32_t uVersion);
+void PS2MR3FixupState(PPS2M pThis, PPS2MR3 pThisCC, uint8_t u8State, uint8_t u8Rate, uint8_t u8Proto);
 /** @} */
 
 
@@ -334,16 +341,29 @@ typedef struct KBDSTATE
     int32_t xlat_state;
 
     /** I/O port 60h. */
-    IOMIOPORTHANDLE             hIoPortData;
+    IOMIOPORTHANDLE     hIoPortData;
     /** I/O port 64h. */
-    IOMIOPORTHANDLE             hIoPortCmdStatus;
+    IOMIOPORTHANDLE     hIoPortCmdStatus;
 
-    /** Keyboard state (implemented in separate PS2K module). */
-    PS2K                        Kbd;
-
-    /** Mouse state (implemented in separate PS2M module). */
-    PS2M                        Aux;
+    /** Shared keyboard state (implemented in separate PS2K module). */
+    PS2K                Kbd;
+    /** Shared mouse state (implemented in separate PS2M module). */
+    PS2M                Aux;
 } KBDSTATE;
+
+
+/**
+ * The ring-3 keyboard controller/device state.
+ */
+typedef struct KBDSTATER3
+{
+    /** Keyboard state for ring-3 (implemented in separate PS2K module). */
+    PS2KR3  Kbd;
+    /** Mouse state for ring-3 (implemented in separate PS2M module). */
+    PS2MR3  Aux;
+} KBDSTATER3;
+/** Pointer to the keyboard (PS/2) controller / device state for ring-3. */
+typedef KBDSTATER3 *PKBDSTATER3;
 
 
 /* Shared keyboard/aux internal interface. */

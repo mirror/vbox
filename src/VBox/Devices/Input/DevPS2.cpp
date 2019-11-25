@@ -441,18 +441,6 @@ static uint32_t kbd_read_data(PPDMDEVINS pDevIns, PKBDSTATE s)
     return val;
 }
 
-PS2K *KBDGetPS2KFromDevIns(PPDMDEVINS pDevIns)
-{
-    PKBDSTATE pThis = PDMDEVINS_2_DATA(pDevIns, PKBDSTATE);
-    return &pThis->Kbd;
-}
-
-PS2M *KBDGetPS2MFromDevIns(PPDMDEVINS pDevIns)
-{
-    PKBDSTATE pThis = PDMDEVINS_2_DATA(pDevIns, PKBDSTATE);
-    return &pThis->Aux;
-}
-
 static VBOXSTRICTRC kbd_write_data(PPDMDEVINS pDevIns, PKBDSTATE s, uint32_t val)
 {
     VBOXSTRICTRC rc = VINF_SUCCESS;
@@ -514,11 +502,11 @@ static VBOXSTRICTRC kbd_write_data(PPDMDEVINS pDevIns, PKBDSTATE s, uint32_t val
 
 #ifdef IN_RING3
 
-static int kbd_load(PCPDMDEVHLPR3 pHlp, PSSMHANDLE pSSM, PKBDSTATE s, uint32_t version_id)
+static int kbd_load(PCPDMDEVHLPR3 pHlp, PSSMHANDLE pSSM, PKBDSTATE s, PKBDSTATER3 pThisCC, uint32_t version_id)
 {
     uint32_t    u32, i;
-    uint8_t u8Dummy;
-    uint32_t u32Dummy;
+    uint8_t     u8Dummy;
+    uint32_t    u32Dummy;
     int         rc;
 
 #if 0
@@ -575,7 +563,7 @@ static int kbd_load(PCPDMDEVHLPR3 pHlp, PSSMHANDLE pSSM, PKBDSTATE s, uint32_t v
             rc = pHlp->pfnSSMGetU8(pSSM, &u8Dummy);
         AssertLogRelRCReturn(rc, rc);
 
-        PS2MR3FixupState(&s->Aux, u8State, u8Rate, u8Proto);
+        PS2MR3FixupState(&s->Aux, &pThisCC->Aux, u8State, u8Rate, u8Proto);
     }
 
     /* Determine the translation state. */
@@ -877,11 +865,12 @@ static DECLCALLBACK(int) kbdR3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
  */
 static DECLCALLBACK(int) kbdR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass)
 {
-    PKBDSTATE    pThis = PDMDEVINS_2_DATA(pDevIns, PKBDSTATE);
+    PKBDSTATE    pThis   = PDMDEVINS_2_DATA(pDevIns, PKBDSTATE);
+    PKBDSTATER3  pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PKBDSTATER3);
     int rc;
 
     Assert(uPass == SSM_PASS_FINAL); NOREF(uPass);
-    rc = kbd_load(pDevIns->pHlpR3, pSSM, pThis, uVersion);
+    rc = kbd_load(pDevIns->pHlpR3, pSSM, pThis, pThisCC, uVersion);
     AssertRCReturn(rc, rc);
 
     if (uVersion >= 6)
@@ -889,7 +878,7 @@ static DECLCALLBACK(int) kbdR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint
     AssertRCReturn(rc, rc);
 
     if (uVersion >= 8)
-        rc = PS2MR3LoadState(pDevIns, &pThis->Aux, pSSM, uVersion);
+        rc = PS2MR3LoadState(pDevIns, &pThis->Aux, &pThisCC->Aux, pSSM, uVersion);
     AssertRCReturn(rc, rc);
     return rc;
 }
@@ -899,9 +888,10 @@ static DECLCALLBACK(int) kbdR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint
  */
 static DECLCALLBACK(int) kbdR3LoadDone(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 {
-    PKBDSTATE pThis = PDMDEVINS_2_DATA(pDevIns, PKBDSTATE);
+    PKBDSTATE    pThis   = PDMDEVINS_2_DATA(pDevIns, PKBDSTATE);
+    PKBDSTATER3  pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PKBDSTATER3);
     RT_NOREF(pSSM);
-    return PS2KR3LoadDone(pDevIns, &pThis->Kbd);
+    return PS2KR3LoadDone(pDevIns, &pThis->Kbd, &pThisCC->Kbd);
 }
 
 /**
@@ -912,7 +902,8 @@ static DECLCALLBACK(int) kbdR3LoadDone(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
  */
 static DECLCALLBACK(void)  kbdR3Reset(PPDMDEVINS pDevIns)
 {
-    PKBDSTATE    pThis = PDMDEVINS_2_DATA(pDevIns, PKBDSTATE);
+    PKBDSTATE    pThis   = PDMDEVINS_2_DATA(pDevIns, PKBDSTATE);
+    PKBDSTATER3  pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PKBDSTATER3);
 
     pThis->mode = KBD_MODE_KBD_INT | KBD_MODE_MOUSE_INT;
     pThis->status = KBD_STAT_CMD | KBD_STAT_UNLOCKED;
@@ -920,7 +911,7 @@ static DECLCALLBACK(void)  kbdR3Reset(PPDMDEVINS pDevIns)
     pThis->write_cmd = 0;
     pThis->translate = 0;
 
-    PS2KR3Reset(pDevIns, &pThis->Kbd);
+    PS2KR3Reset(pDevIns, &pThis->Kbd, &pThisCC->Kbd);
     PS2MR3Reset(&pThis->Aux);
 }
 
@@ -936,8 +927,8 @@ static DECLCALLBACK(void)  kbdR3Reset(PPDMDEVINS pDevIns)
  */
 static DECLCALLBACK(int)  kbdR3Attach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t fFlags)
 {
+    PKBDSTATER3 pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PKBDSTATER3);
     int         rc;
-    PKBDSTATE   pThis = PDMDEVINS_2_DATA(pDevIns, PKBDSTATE);
 
     AssertMsgReturn(fFlags & PDM_TACH_FLAGS_NOT_HOT_PLUG,
                     ("PS/2 device does not support hotplugging\n"),
@@ -947,12 +938,12 @@ static DECLCALLBACK(int)  kbdR3Attach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_
     {
         /* LUN #0: keyboard */
         case 0:
-            rc = PS2KR3Attach(&pThis->Kbd, pDevIns, iLUN, fFlags);
+            rc = PS2KR3Attach(pDevIns, &pThisCC->Kbd, iLUN, fFlags);
             break;
 
         /* LUN #1: aux/mouse */
         case 1:
-            rc = PS2MR3Attach(&pThis->Aux, pDevIns, iLUN, fFlags);
+            rc = PS2MR3Attach(pDevIns, &pThisCC->Aux, iLUN, fFlags);
             break;
 
         default:
@@ -980,14 +971,14 @@ static DECLCALLBACK(void)  kbdR3Detach(PPDMDEVINS pDevIns, unsigned iLUN, uint32
     {
         /* LUN #0: keyboard */
         case 0:
-            pThis->Keyboard.pDrv = NULL;
-            pThis->Keyboard.pDrvBase = NULL;
+            pThisCC->Keyboard.pDrv = NULL;
+            pThisCC->Keyboard.pDrvBase = NULL;
             break;
 
         /* LUN #1: aux/mouse */
         case 1:
-            pThis->Mouse.pDrv = NULL;
-            pThis->Mouse.pDrvBase = NULL;
+            pThisCC->Mouse.pDrv = NULL;
+            pThisCC->Mouse.pDrvBase = NULL;
             break;
 
         default:
@@ -1006,7 +997,8 @@ static DECLCALLBACK(void)  kbdR3Detach(PPDMDEVINS pDevIns, unsigned iLUN, uint32
 static DECLCALLBACK(int) kbdR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE pCfg)
 {
     PDMDEV_CHECK_VERSIONS_RETURN(pDevIns);
-    PKBDSTATE   pThis = PDMDEVINS_2_DATA(pDevIns, PKBDSTATE);
+    PKBDSTATE   pThis   = PDMDEVINS_2_DATA(pDevIns, PKBDSTATE);
+    PKBDSTATER3 pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PKBDSTATER3);
     int         rc;
     Assert(iInstance == 0);
 
@@ -1019,10 +1011,10 @@ static DECLCALLBACK(int) kbdR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     /*
      * Initialize the sub-components.
      */
-    rc = PS2KR3Construct(&pThis->Kbd, pDevIns, pThis, iInstance, pCfg);
+    rc = PS2KR3Construct(pDevIns, &pThis->Kbd, &pThisCC->Kbd, iInstance, pCfg);
     AssertRCReturn(rc, rc);
 
-    rc = PS2MR3Construct(&pThis->Aux, pDevIns, pThis, iInstance);
+    rc = PS2MR3Construct(pDevIns, &pThis->Aux, &pThisCC->Aux, iInstance);
     AssertRCReturn(rc, rc);
 
     /*
@@ -1088,12 +1080,12 @@ const PDMDEVREG g_DevicePS2KeyboardMouse =
     /* .u32Version = */             PDM_DEVREG_VERSION,
     /* .uReserved0 = */             0,
     /* .szName = */                 "pckbd",
-    /* .fFlags = */                 PDM_DEVREG_FLAGS_DEFAULT_BITS | PDM_DEVREG_FLAGS_RZ,
+    /* .fFlags = */                 PDM_DEVREG_FLAGS_DEFAULT_BITS | PDM_DEVREG_FLAGS_RZ | PDM_DEVREG_FLAGS_NEW_STYLE,
     /* .fClass = */                 PDM_DEVREG_CLASS_INPUT,
     /* .cMaxInstances = */          1,
     /* .uSharedVersion = */         42,
     /* .cbInstanceShared = */       sizeof(KBDSTATE),
-    /* .cbInstanceCC = */           0,
+    /* .cbInstanceCC = */           CTX_EXPR(sizeof(KBDSTATER3), 0, 0),
     /* .cbInstanceRC = */           0,
     /* .cMaxPciDevices = */         0,
     /* .cMaxMsixVectors = */        0,

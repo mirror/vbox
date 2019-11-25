@@ -414,12 +414,11 @@ static int ps2kR3InsertStrQueue(GeneriQ *pQ, const uint8_t *pStr, uint32_t uRese
 /**
  * Notify listener about LEDs state change.
  *
- * @param   pThis           The PS/2 keyboard instance data.
+ * @param   pThisCC         The PS/2 keyboard instance data for ring-3.
  * @param   u8State         Bitfield which reflects LEDs state.
  */
-static void ps2kR3NotifyLedsState(PPS2K pThis, uint8_t u8State)
+static void ps2kR3NotifyLedsState(PPS2KR3 pThisCC, uint8_t u8State)
 {
-
     PDMKEYBLEDS enmLeds = PDMKEYBLEDS_NONE;
 
     if (u8State & 0x01)
@@ -429,8 +428,7 @@ static void ps2kR3NotifyLedsState(PPS2K pThis, uint8_t u8State)
     if (u8State & 0x04)
         enmLeds = (PDMKEYBLEDS)(enmLeds | PDMKEYBLEDS_CAPSLOCK);
 
-    pThis->Keyboard.pDrv->pfnLedStatusChange(pThis->Keyboard.pDrv, enmLeds);
-
+    pThisCC->Keyboard.pDrv->pfnLedStatusChange(pThisCC->Keyboard.pDrv, enmLeds);
 }
 
 /**
@@ -494,7 +492,7 @@ static void ps2kSetDefaults(PPDMDEVINS pDevIns, PPS2K pThis)
  * Receive and process a byte sent by the keyboard controller.
  *
  * @param   pDevIns The device instance.
- * @param   pThis   The PS/2 keyboard instance data.
+ * @param   pThis   The shared PS/2 keyboard instance data.
  * @param   cmd     The command (or data) byte.
  */
 int PS2KByteToKbd(PPDMDEVINS pDevIns, PPS2K pThis, uint8_t cmd)
@@ -576,7 +574,8 @@ int PS2KByteToKbd(PPDMDEVINS pDevIns, PPS2K pThis, uint8_t cmd)
                     return VINF_IOM_R3_IOPORT_WRITE;
 #else
                     {
-                        ps2kR3NotifyLedsState(pThis, cmd);
+                        PPS2KR3 pThisCC = &PDMDEVINS_2_DATA_CC(pDevIns, PKBDSTATER3)->Kbd;
+                        ps2kR3NotifyLedsState(pThisCC, cmd);
                         pThis->fNumLockOn = !!(cmd & 0x02); /* Sync internal Num Lock state. */
                         PS2CmnInsertQueue((GeneriQ *)&pThis->cmdQ, KRSP_ACK);
                         pThis->u8LEDs = cmd;
@@ -625,7 +624,7 @@ int PS2KByteToKbd(PPDMDEVINS pDevIns, PPS2K pThis, uint8_t cmd)
  *
  * @returns VINF_SUCCESS or VINF_TRY_AGAIN.
  * @param   pDevIns The device instance.
- * @param   pThis   The PS/2 keyboard instance data.
+ * @param   pThis   The shared PS/2 keyboard instance data.
  * @param   pb      Where to return the byte we've read.
  * @remarks Caller must have entered the device critical section.
  */
@@ -1034,7 +1033,8 @@ static void ps2kR3ReleaseKeys(PPDMDEVINS pDevIns, PPS2K pThis)
  */
 static DECLCALLBACK(void) ps2kR3InfoState(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *pszArgs)
 {
-    PPS2K   pThis = KBDGetPS2KFromDevIns(pDevIns);
+    PKBDSTATE   pParent = PDMDEVINS_2_DATA(pDevIns, PKBDSTATE);
+    PPS2K       pThis   = &pParent->Kbd;
     NOREF(pszArgs);
 
     pHlp->pfnPrintf(pHlp, "PS/2 Keyboard: scan set %d, scanning %s\n",
@@ -1051,19 +1051,6 @@ static DECLCALLBACK(void) ps2kR3InfoState(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp
     if (pThis->enmTypematicState != KBD_TMS_IDLE)
         pHlp->pfnPrintf(pHlp, "Active typematic key %08X (%s)\n", pThis->u32TypematicKey,
                         pThis->enmTypematicState == KBD_TMS_DELAY ? "delay" : "repeat");
-}
-
-/* -=-=-=-=-=- Keyboard: IBase  -=-=-=-=-=- */
-
-/**
- * @interface_method_impl{PDMIBASE,pfnQueryInterface}
- */
-static DECLCALLBACK(void *) ps2kR3QueryInterface(PPDMIBASE pInterface, const char *pszIID)
-{
-    PPS2K pThis = RT_FROM_MEMBER(pInterface, PS2K, Keyboard.IBase);
-    PDMIBASE_RETURN_INTERFACE(pszIID, PDMIBASE, &pThis->Keyboard.IBase);
-    PDMIBASE_RETURN_INTERFACE(pszIID, PDMIKEYBOARDPORT, &pThis->Keyboard.IPort);
-    return NULL;
 }
 
 
@@ -1128,8 +1115,9 @@ static int ps2kR3PutEventWorker(PPDMDEVINS pDevIns, PPS2K pThis, uint32_t u32Usa
  */
 static DECLCALLBACK(int) ps2kR3KeyboardPort_PutEventHid(PPDMIKEYBOARDPORT pInterface, uint32_t u32UsageCode)
 {
-    PPS2K       pThis = RT_FROM_MEMBER(pInterface, PS2K, Keyboard.IPort);
-    PPDMDEVINS  pDevIns = pThis->pDevIns;
+    PPS2KR3     pThisCC = RT_FROM_MEMBER(pInterface, PS2KR3, Keyboard.IPort);
+    PPDMDEVINS  pDevIns = pThisCC->pDevIns;
+    PPS2K       pThis   = &PDMDEVINS_2_DATA(pDevIns, PKBDSTATE)->Kbd;
     int         rc;
 
     LogRelFlowFunc(("key code %08X\n", u32UsageCode));
@@ -1151,6 +1139,20 @@ static DECLCALLBACK(int) ps2kR3KeyboardPort_PutEventHid(PPDMIKEYBOARDPORT pInter
 }
 
 
+/* -=-=-=-=-=- Keyboard: IBase  -=-=-=-=-=- */
+
+/**
+ * @interface_method_impl{PDMIBASE,pfnQueryInterface}
+ */
+static DECLCALLBACK(void *) ps2kR3QueryInterface(PPDMIBASE pInterface, const char *pszIID)
+{
+    PPS2KR3 pThisCC = RT_FROM_MEMBER(pInterface, PS2KR3, Keyboard.IBase);
+    PDMIBASE_RETURN_INTERFACE(pszIID, PDMIBASE, &pThisCC->Keyboard.IBase);
+    PDMIBASE_RETURN_INTERFACE(pszIID, PDMIKEYBOARDPORT, &pThisCC->Keyboard.IPort);
+    return NULL;
+}
+
+
 /* -=-=-=-=-=- Device management -=-=-=-=-=- */
 
 /**
@@ -1163,12 +1165,12 @@ static DECLCALLBACK(int) ps2kR3KeyboardPort_PutEventHid(PPDMIKEYBOARDPORT pInter
  * system.
  *
  * @returns VBox status code.
- * @param   pThis       The PS/2 keyboard instance data.
  * @param   pDevIns     The device instance.
+ * @param   pThisCC     The PS/2 keyboard instance data for ring-3.
  * @param   iLUN        The logical unit which is being detached.
  * @param   fFlags      Flags, combination of the PDMDEVATT_FLAGS_* \#defines.
  */
-int PS2KR3Attach(PPS2K pThis, PPDMDEVINS pDevIns, unsigned iLUN, uint32_t fFlags)
+int PS2KR3Attach(PPDMDEVINS pDevIns, PPS2KR3 pThisCC, unsigned iLUN, uint32_t fFlags)
 {
     int         rc;
 
@@ -1180,11 +1182,11 @@ int PS2KR3Attach(PPS2K pThis, PPDMDEVINS pDevIns, unsigned iLUN, uint32_t fFlags
 
     LogFlowFunc(("iLUN=%d\n", iLUN));
 
-    rc = PDMDevHlpDriverAttach(pDevIns, iLUN, &pThis->Keyboard.IBase, &pThis->Keyboard.pDrvBase, "Keyboard Port");
+    rc = PDMDevHlpDriverAttach(pDevIns, iLUN, &pThisCC->Keyboard.IBase, &pThisCC->Keyboard.pDrvBase, "Keyboard Port");
     if (RT_SUCCESS(rc))
     {
-        pThis->Keyboard.pDrv = PDMIBASE_QUERY_INTERFACE(pThis->Keyboard.pDrvBase, PDMIKEYBOARDCONNECTOR);
-        if (!pThis->Keyboard.pDrv)
+        pThisCC->Keyboard.pDrv = PDMIBASE_QUERY_INTERFACE(pThisCC->Keyboard.pDrvBase, PDMIKEYBOARDCONNECTOR);
+        if (!pThisCC->Keyboard.pDrv)
         {
             AssertLogRelMsgFailed(("LUN #0 doesn't have a keyboard interface! rc=%Rrc\n", rc));
             rc = VERR_PDM_MISSING_INTERFACE;
@@ -1313,17 +1315,17 @@ int PS2KR3LoadState(PPDMDEVINS pDevIns, PPS2K pThis, PSSMHANDLE pSSM, uint32_t u
     return rc;
 }
 
-int PS2KR3LoadDone(PPDMDEVINS pDevIns, PPS2K pThis)
+int PS2KR3LoadDone(PPDMDEVINS pDevIns, PPS2K pThis, PPS2KR3 pThisCC)
 {
     /* This *must* be done after the inital load because it may trigger
      * interrupts and change the interrupt controller state.
      */
     ps2kR3ReleaseKeys(pDevIns, pThis);
-    ps2kR3NotifyLedsState(pThis, pThis->u8LEDs);
+    ps2kR3NotifyLedsState(pThisCC, pThis->u8LEDs);
     return VINF_SUCCESS;
 }
 
-void PS2KR3Reset(PPDMDEVINS pDevIns, PPS2K pThis)
+void PS2KR3Reset(PPDMDEVINS pDevIns, PPS2K pThis, PPS2KR3 pThisCC)
 {
     LogFlowFunc(("Resetting PS2K\n"));
 
@@ -1341,18 +1343,17 @@ void PS2KR3Reset(PPDMDEVINS pDevIns, PPS2K pThis)
     ps2kSetDefaults(pDevIns, pThis);     /* Also clears keystroke queue. */
 
     /* Activate the PS/2 keyboard by default. */
-    if (pThis->Keyboard.pDrv)
-        pThis->Keyboard.pDrv->pfnSetActive(pThis->Keyboard.pDrv, true);
+    if (pThisCC->Keyboard.pDrv)
+        pThisCC->Keyboard.pDrv->pfnSetActive(pThisCC->Keyboard.pDrv, true /*fActive*/);
 }
 
-int PS2KR3Construct(PPS2K pThis, PPDMDEVINS pDevIns, PKBDSTATE pParent, unsigned iInstance, PCFGMNODE pCfg)
+int PS2KR3Construct(PPDMDEVINS pDevIns, PPS2K pThis, PPS2KR3 pThisCC, unsigned iInstance, PCFGMNODE pCfg)
 {
     PCPDMDEVHLPR3 pHlp = pDevIns->pHlpR3;
     RT_NOREF(pDevIns, iInstance);
     LogFlowFunc(("iInstance=%u\n", iInstance));
 
-    pThis->pParent = pParent;
-    pThis->pDevIns = pDevIns;
+    pThisCC->pDevIns = pDevIns;
 
     bool fThrottleEnabled;
     int rc = pHlp->pfnCFGMQueryBoolDef(pCfg, "KbdThrottleEnabled", &fThrottleEnabled, true);
@@ -1365,8 +1366,8 @@ int PS2KR3Construct(PPS2K pThis, PPDMDEVINS pDevIns, PKBDSTATE pParent, unsigned
     pThis->keyQ.cSize = KBD_KEY_QUEUE_SIZE;
     pThis->cmdQ.cSize = KBD_CMD_QUEUE_SIZE;
 
-    pThis->Keyboard.IBase.pfnQueryInterface = ps2kR3QueryInterface;
-    pThis->Keyboard.IPort.pfnPutEventHid    = ps2kR3KeyboardPort_PutEventHid;
+    pThisCC->Keyboard.IBase.pfnQueryInterface = ps2kR3QueryInterface;
+    pThisCC->Keyboard.IPort.pfnPutEventHid    = ps2kR3KeyboardPort_PutEventHid;
 
     /*
      * Create the input rate throttling timer.
