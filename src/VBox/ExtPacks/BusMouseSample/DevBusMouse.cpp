@@ -441,7 +441,7 @@ static DECLCALLBACK(VBOXSTRICTRC) bmsIoPortWrite(PPDMDEVINS pDevIns, void *pvUse
                 break;
         }
 
-        Log2(("mouIoPortWrite: offPort=%#x+%u cb=%d u32=%#x\n", BMS_IO_BASE+offPort, cb, u32));
+        Log2(("mouIoPortWrite: offPort=%#x+%u cb=%d u32=%#x\n", BMS_IO_BASE, offPort, cb, u32));
     }
     else
         ASSERT_GUEST_MSG_FAILED(("offPort=%#x cb=%d\n", offPort, cb));
@@ -817,7 +817,7 @@ static const PDMDEVREG g_DeviceBusMouse =
     /* .pfnReserved7 = */           NULL,
 # elif defined(IN_RING0)
     /* .pfnEarlyConstruct = */      NULL,
-    /* .pfnConstruct = */           NULL,
+    /* .pfnConstruct = */           bmsRZConstruct,
     /* .pfnDestruct = */            NULL,
     /* .pfnFinalDestruct = */       NULL,
     /* .pfnRequest = */             NULL,
@@ -830,7 +830,7 @@ static const PDMDEVREG g_DeviceBusMouse =
     /* .pfnReserved6 = */           NULL,
     /* .pfnReserved7 = */           NULL,
 # elif defined(IN_RC)
-    /* .pfnConstruct = */           NULL,
+    /* .pfnConstruct = */           bmsRZConstruct,
     /* .pfnReserved0 = */           NULL,
     /* .pfnReserved1 = */           NULL,
     /* .pfnReserved2 = */           NULL,
