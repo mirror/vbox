@@ -5611,7 +5611,10 @@ static DECLCALLBACK(int) vgaR3PciIORegionVRamMapUnmap(PPDMDEVINS pDevIns, PPDMPC
     Log(("vgaR3PciIORegionVRamMapUnmap: iRegion=%d GCPhysAddress=%RGp cb=%RGp enmType=%d\n", iRegion, GCPhysAddress, cb, enmType));
     RT_NOREF(pPciDev, cb);
 
-    AssertReturn(iRegion == pThis->pciRegions.iVRAM && enmType == PCI_ADDRESS_SPACE_MEM_PREFETCH, VERR_INTERNAL_ERROR);
+    AssertReturn(   iRegion == pThis->pciRegions.iVRAM
+                 && (   enmType == PCI_ADDRESS_SPACE_MEM_PREFETCH
+                     || (enmType == PCI_ADDRESS_SPACE_MEM && pThis->fVMSVGAEnabled && pThis->fStateLoaded))
+                 , VERR_INTERNAL_ERROR);
     Assert(pPciDev == pDevIns->apPciDevs[0]);
 
     int rc = PDMDevHlpCritSectEnter(pDevIns, &pThis->CritSect, VERR_SEM_BUSY);
@@ -5723,7 +5726,7 @@ static DECLCALLBACK(int) vgaR3PciRegionLoadChangeHook(PPDMDEVINS pDevIns, PPDMPC
          */
         if (iRegion == pThis->pciRegions.iFIFO)
         {
-            /* Make sure it's still 32-bit memory.  Ignore fluxtuations in the prefetch flag */
+            /* Make sure it's still 32-bit memory.  Ignore fluxtuations in the prefetch flag. */
             AssertLogRelMsgReturn(!(enmType & (PCI_ADDRESS_SPACE_IO | PCI_ADDRESS_SPACE_BAR64)), ("enmType=%#x\n", enmType),
                                   VERR_VGA_UNEXPECTED_PCI_REGION_LOAD_CHANGE);
 
@@ -5746,6 +5749,23 @@ static DECLCALLBACK(int) vgaR3PciRegionLoadChangeHook(PPDMDEVINS pDevIns, PPDMPC
             pThis->svga.cbFIFO = cbRegion;
             return rc;
 
+        }
+
+        /*
+         * VRAM used to be non-prefetchable till 6.1.0, so we end up here when restoring
+         * states older than that with 6.1.0 and later.  We just have to check that
+         * the size and basic type matches, then return VINF_SUCCESS to ACK it.
+         */
+        if (iRegion == pThis->pciRegions.iVRAM)
+        {
+            /* Make sure it's still 32-bit memory.  Ignore fluxtuations in the prefetch flag. */
+            AssertLogRelMsgReturn(!(enmType & (PCI_ADDRESS_SPACE_IO | PCI_ADDRESS_SPACE_BAR64)), ("enmType=%#x\n", enmType),
+                                  VERR_VGA_UNEXPECTED_PCI_REGION_LOAD_CHANGE);
+            /* The size must be the same. */
+            AssertLogRelMsgReturn(cbRegion == pThis->vram_size,
+                                  ("cbRegion=%#RGp vram_size=%#x\n", cbRegion, pThis->vram_size),
+                                  VERR_SSM_LOAD_CONFIG_MISMATCH);
+            return VINF_SUCCESS;
         }
 
         /* Emulate callbacks for 5.1 and older saved states by recursion. */
@@ -5807,6 +5827,7 @@ static DECLCALLBACK(int) vgaR3SavePrep(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 # endif
 }
 
+
 /**
  * @callback_method_impl{FNSSMDEVSAVEDONE}
  */
@@ -5820,6 +5841,7 @@ static DECLCALLBACK(int) vgaR3SaveDone(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
     return VINF_SUCCESS;
 # endif
 }
+
 
 /**
  * @callback_method_impl{FNSSMDEVSAVEEXEC}
@@ -5876,6 +5898,18 @@ static DECLCALLBACK(int) vgaR3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 
 
 /**
+ * @callback_method_impl{FNSSMDEVLOADPREP}
+ */
+static DECLCALLBACK(int) vgaR3LoadPrep(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
+{
+    PVGASTATE pThis = PDMDEVINS_2_DATA(pDevIns, PVGASTATE);
+    RT_NOREF(pSSM);
+    pThis->fStateLoaded = true;
+    return VINF_SUCCESS;
+}
+
+
+/**
  * @callback_method_impl{FNSSMDEVLOADEXEC}
  */
 static DECLCALLBACK(int) vgaR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass)
@@ -5884,6 +5918,8 @@ static DECLCALLBACK(int) vgaR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint
     PVGASTATECC     pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PVGASTATECC);
     PCPDMDEVHLPR3   pHlp    = pDevIns->pHlpR3;
     int             rc;
+
+    pThis->fStateLoaded = true;
 
     if (uVersion < VGA_SAVEDSTATE_VERSION_ANCIENT || uVersion > VGA_SAVEDSTATE_VERSION)
         return VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
@@ -6586,7 +6622,7 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
         AssertRCReturn(rc, rc);
 
         rc = PDMDevHlpPCIIORegionCreateMmio2Ex(pDevIns, pThis->pciRegions.iFIFO, pThis->svga.cbFIFO,
-                                               PCI_ADDRESS_SPACE_MEM_PREFETCH, 0 /*fFlags*/, vmsvgaR3PciIORegionFifoMapUnmap,
+                                               PCI_ADDRESS_SPACE_MEM, 0 /*fFlags*/, vmsvgaR3PciIORegionFifoMapUnmap,
                                                "VMSVGA-FIFO", (void **)&pThisCC->svga.pau32FIFO, &pThis->hMmio2VmSvgaFifo);
         AssertRCReturn(rc, PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS,
                                                N_("Failed to create VMSVGA FIFO (%u bytes)"), pThis->svga.cbFIFO));
@@ -6795,7 +6831,7 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
     rc = PDMDevHlpSSMRegisterEx(pDevIns, VGA_SAVEDSTATE_VERSION, sizeof(*pThis), NULL,
                                 NULL,          vgaR3LiveExec, NULL,
                                 vgaR3SavePrep, vgaR3SaveExec, vgaR3SaveDone,
-                                NULL,          vgaR3LoadExec, vgaR3LoadDone);
+                                vgaR3LoadPrep, vgaR3LoadExec, vgaR3LoadDone);
     AssertRCReturn(rc, rc);
 
     /*
