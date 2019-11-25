@@ -66,13 +66,13 @@ typedef struct
 typedef struct
 {
     /** Flags. */
-    uint16_t        fFlags;
+    volatile uint16_t        fFlags;
     /** Next index to write an available buffer by the driver. */
-    uint16_t        idxNextFree;
+    volatile uint16_t        idxNextFree;
     /** The ring - we only provide one entry. */
-    uint16_t        au16Ring[VIRTIO_SCSI_RING_ELEM];
+    volatile uint16_t        au16Ring[VIRTIO_SCSI_RING_ELEM];
     /** Used event index. */
-    uint16_t        u16EvtUsed;
+    volatile uint16_t        u16EvtUsed;
 } virtio_q_avail_t;
 
 /**
@@ -436,7 +436,6 @@ int virtio_scsi_cmd_data_out(virtio_t __far *virtio, uint8_t idTgt, uint8_t __fa
                             uint8_t cbCDB, uint8_t __far *buffer, uint32_t length)
 {
     uint16_t idxUsedOld = virtio->Queue.UsedRing.idxNextUsed;
-    uint64_t idxNext = virtio->Queue.AvailRing.idxNextFree;
 
     _fmemset(&virtio->ScsiReqHdr, 0, sizeof(virtio->ScsiReqHdr));
     _fmemset(&virtio->ScsiReqSts, 0, sizeof(virtio->ScsiReqSts));
@@ -458,13 +457,13 @@ int virtio_scsi_cmd_data_out(virtio_t __far *virtio, uint8_t idTgt, uint8_t __fa
     virtio->Queue.aDescTbl[1].GCPhysBufHigh = 0;
     virtio->Queue.aDescTbl[1].cbBuf         = length;
     virtio->Queue.aDescTbl[1].fFlags        = VIRTIO_Q_DESC_F_NEXT;
-    virtio->Queue.aDescTbl[1].idxNext       = 1;
+    virtio->Queue.aDescTbl[1].idxNext       = 2;
 
-    virtio->Queue.aDescTbl[1].GCPhysBufLow  = virtio_addr_to_phys(&virtio->ScsiReqSts);
-    virtio->Queue.aDescTbl[1].GCPhysBufHigh = 0;
-    virtio->Queue.aDescTbl[1].cbBuf         = sizeof(virtio->ScsiReqSts);
-    virtio->Queue.aDescTbl[1].fFlags        = VIRTIO_Q_DESC_F_WRITE; /* End of chain. */
-    virtio->Queue.aDescTbl[1].idxNext       = 0;
+    virtio->Queue.aDescTbl[2].GCPhysBufLow  = virtio_addr_to_phys(&virtio->ScsiReqSts);
+    virtio->Queue.aDescTbl[2].GCPhysBufHigh = 0;
+    virtio->Queue.aDescTbl[2].cbBuf         = sizeof(virtio->ScsiReqSts);
+    virtio->Queue.aDescTbl[2].fFlags        = VIRTIO_Q_DESC_F_WRITE; /* End of chain. */
+    virtio->Queue.aDescTbl[2].idxNext       = 0;
 
     /* Put it into the queue. */
     virtio->Queue.AvailRing.au16Ring[virtio->Queue.AvailRing.idxNextFree] = 0;
@@ -473,14 +472,14 @@ int virtio_scsi_cmd_data_out(virtio_t __far *virtio, uint8_t idTgt, uint8_t __fa
 
     /* Notify the device about the new command. */
     DBG_VIRTIO("VirtIO: Submitting new request, Queue.offNotify=0x%x\n", virtio->Queue.offNotify);
-    virtio_reg_notify_write_u16(virtio, virtio->Queue.offNotify, idxNext);
+    virtio_reg_notify_write_u16(virtio, virtio->Queue.offNotify, VIRTIO_SCSI_Q_REQUEST);
 
     /* Wait for it to complete. */
     while (idxUsedOld == virtio->Queue.UsedRing.idxNextUsed);
 
     DBG_VIRTIO("VirtIO: Request complete u8Response=%u\n", virtio->ScsiReqSts.u8Response);
 
-    /* Read ISR register to de-assert the interrupt, don't need to do anything with out. */
+    /* Read ISR register to de-assert the interrupt, don't need to do anything with it. */
     virtio_reg_isr_read_u8(virtio);
 
     if (virtio->ScsiReqSts.u8Response != VIRTIO_SCSI_STS_RESPONSE_OK)
@@ -493,7 +492,6 @@ int virtio_scsi_cmd_data_in(virtio_t __far *virtio, uint8_t idTgt, uint8_t __far
                             uint8_t cbCDB, uint8_t __far *buffer, uint32_t length)
 {
     uint16_t idxUsedOld = virtio->Queue.UsedRing.idxNextUsed;
-    uint64_t idxNext = virtio->Queue.AvailRing.idxNextFree;
 
     _fmemset(&virtio->ScsiReqHdr, 0, sizeof(virtio->ScsiReqHdr));
     _fmemset(&virtio->ScsiReqSts, 0, sizeof(virtio->ScsiReqSts));
@@ -531,14 +529,14 @@ int virtio_scsi_cmd_data_in(virtio_t __far *virtio, uint8_t idTgt, uint8_t __far
 
     /* Notify the device about the new command. */
     DBG_VIRTIO("VirtIO: Submitting new request, Queue.offNotify=0x%x\n", virtio->Queue.offNotify);
-    virtio_reg_notify_write_u16(virtio, virtio->Queue.offNotify, idxNext);
+    virtio_reg_notify_write_u16(virtio, virtio->Queue.offNotify, VIRTIO_SCSI_Q_REQUEST);
 
     /* Wait for it to complete. */
     while (idxUsedOld == virtio->Queue.UsedRing.idxNextUsed);
 
     DBG_VIRTIO("VirtIO: Request complete u8Response=%u\n", virtio->ScsiReqSts.u8Response);
 
-    /* Read ISR register to de-assert the interrupt, don't need to do anything with out. */
+    /* Read ISR register to de-assert the interrupt, don't need to do anything with it. */
     virtio_reg_isr_read_u8(virtio);
 
     if (virtio->ScsiReqSts.u8Response != VIRTIO_SCSI_STS_RESPONSE_OK)
@@ -1038,6 +1036,7 @@ static int virtio_scsi_hba_init(uint8_t u8Bus, uint8_t u8DevFn, uint8_t u8PciCap
                     break;
                 default:
                     DBG_VIRTIO("VirtIO SCSI HBA with unknown PCI capability type 0x%x\n", u8PciVirtioCfg);
+                    break;
             }
         }
 
