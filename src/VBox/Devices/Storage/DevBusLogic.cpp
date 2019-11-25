@@ -4355,11 +4355,18 @@ static DECLCALLBACK(int) buslogicRZConstruct(PPDMDEVINS pDevIns)
     PDMDEV_CHECK_VERSIONS_RETURN(pDevIns);
     PBUSLOGIC pThis = PDMDEVINS_2_DATA(pDevIns, PBUSLOGIC);
 
-    int rc = PDMDevHlpIoPortSetUpContext(pDevIns, pThis->hIoPortsPci, buslogicIOPortWrite, buslogicIOPortRead, NULL /*pvUser*/);
-    AssertRCReturn(rc, rc);
+    if (!pThis->uIsaIrq) {
+        int rc = PDMDevHlpIoPortSetUpContext(pDevIns, pThis->hIoPortsPci, buslogicIOPortWrite, buslogicIOPortRead, NULL /*pvUser*/);
+        AssertRCReturn(rc, rc);
 
-    rc = PDMDevHlpMmioSetUpContext(pDevIns, pThis->hMmio, buslogicMMIOWrite, buslogicMMIORead, NULL /*pvUser*/);
-    AssertRCReturn(rc, rc);
+        rc = PDMDevHlpMmioSetUpContext(pDevIns, pThis->hMmio, buslogicMMIOWrite, buslogicMMIORead, NULL /*pvUser*/);
+        AssertRCReturn(rc, rc);
+    }
+    else
+    {
+        int rc = PDMDevHlpIoPortSetUpContext(pDevIns, pThis->hIoPortsIsa, buslogicIOPortWrite, buslogicIOPortRead, NULL /*pvUser*/);
+        AssertRCReturn(rc, rc);
+    }
 
     return VINF_SUCCESS;
 }
