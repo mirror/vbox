@@ -196,6 +196,10 @@
           <arg choice="plain">on</arg>
           <arg choice="plain">off</arg>
         </group></arg>
+      <arg>--system-uuid-le=<group choice="plain">
+          <arg choice="plain">on</arg>
+          <arg choice="plain">off</arg>
+        </group></arg>
       <arg>--boot<replaceable>X</replaceable>=<group choice="plain">
           <arg choice="plain">none</arg>
           <arg choice="plain">floppy</arg>
@@ -1093,10 +1097,20 @@
         <varlistentry>
           <term><option>--biospxedebug=on | off</option></term>
           <listitem><para>
-              Enables or disable additional debugging output when using
+              Enables or disables additional debugging output when using
               the Intel PXE boot ROM. The debug output is written to the
               release log file. See
               <xref linkend="collect-debug-info" />.
+            </para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term><option>--system-uuid-le=on | off</option></term>
+          <listitem><para>
+              Enables or disables representing the system UUID in little
+              endian form. The default value is <literal>on</literal> for
+              new VMs. For old VMs the setting is <literal>off</literal> to
+              keep the content of the DMI/SMBIOS table unchanged, which can
+              be important for Windows license activation.
             </para></listitem>
         </varlistentry>
         <varlistentry>
