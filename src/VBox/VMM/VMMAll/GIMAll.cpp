@@ -61,6 +61,37 @@ VMMDECL(GIMPROVIDERID) GIMGetProvider(PVM pVM)
 
 
 /**
+ * Returns the array of MMIO2 regions that are expected to be registered and
+ * later mapped into the guest-physical address space for the GIM provider
+ * configured for the VM.
+ *
+ * @returns Pointer to an array of GIM MMIO2 regions, may return NULL.
+ * @param   pVM         The cross context VM structure.
+ * @param   pcRegions   Where to store the number of items in the array.
+ *
+ * @remarks The caller does not own and therefore must -NOT- try to free the
+ *          returned pointer.
+ */
+VMMDECL(PGIMMMIO2REGION) GIMGetMmio2Regions(PVMCC pVM, uint32_t *pcRegions)
+{
+    Assert(pVM);
+    Assert(pcRegions);
+
+    *pcRegions = 0;
+    switch (pVM->gim.s.enmProviderId)
+    {
+        case GIMPROVIDERID_HYPERV:
+            return gimHvGetMmio2Regions(pVM, pcRegions);
+
+        default:
+            break;
+    }
+
+    return NULL;
+}
+
+
+/**
  * Returns whether the guest has configured and enabled calls to the hypervisor.
  *
  * @returns true if hypercalls are enabled and usable, false otherwise.

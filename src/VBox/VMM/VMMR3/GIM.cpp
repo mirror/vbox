@@ -527,37 +527,6 @@ VMMR3_INT_DECL(int) gimR3DebugWrite(PVM pVM, void *pvWrite, size_t *pcbWrite)
     return VERR_GIM_NO_DEBUG_CONNECTION;
 }
 
-
-/**
- * Returns the array of MMIO2 regions that are expected to be registered and
- * later mapped into the guest-physical address space for the GIM provider
- * configured for the VM.
- *
- * @returns Pointer to an array of GIM MMIO2 regions, may return NULL.
- * @param   pVM         The cross context VM structure.
- * @param   pcRegions   Where to store the number of items in the array.
- *
- * @remarks The caller does not own and therefore must -NOT- try to free the
- *          returned pointer.
- */
-VMMR3DECL(PGIMMMIO2REGION) GIMR3GetMmio2Regions(PVM pVM, uint32_t *pcRegions)
-{
-    Assert(pVM);
-    Assert(pcRegions);
-
-    *pcRegions = 0;
-    switch (pVM->gim.s.enmProviderId)
-    {
-        case GIMPROVIDERID_HYPERV:
-            return gimR3HvGetMmio2Regions(pVM, pcRegions);
-
-        default:
-            break;
-    }
-
-    return NULL;
-}
-
 #if 0 /* ??? */
 
 /**

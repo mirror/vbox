@@ -19,6 +19,7 @@ EXPORTS
     ; data
 
     ; code
+    GIMGetMmio2Regions
     PDMCritSectEnter
     PDMCritSectEnterDebug
     PDMCritSectIsOwner

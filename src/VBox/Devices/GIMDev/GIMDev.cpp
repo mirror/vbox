@@ -205,16 +205,6 @@ static DECLCALLBACK(int) gimdevR3Destruct(PPDMDEVINS pDevIns)
 {
     PDMDEV_CHECK_VERSIONS_RETURN_QUIET(pDevIns);
     PGIMDEV  pThis    = PDMDEVINS_2_DATA(pDevIns, PGIMDEV);
-    PVM      pVM      = PDMDevHlpGetVM(pDevIns);
-
-    uint32_t cRegions = 0;
-    PGIMMMIO2REGION pCur = GIMR3GetMmio2Regions(pVM, &cRegions);
-    for (uint32_t i = 0; i < cRegions; i++, pCur++)
-    {
-        int rc = PDMDevHlpMMIOExDeregister(pDevIns, NULL, pCur->iRegion);
-        if (RT_FAILURE(rc))
-            return rc;
-    }
 
     /*
      * Signal and wait for the debug thread to terminate.
@@ -259,9 +249,10 @@ static DECLCALLBACK(int) gimdevR3Destruct(PPDMDEVINS pDevIns)
 static DECLCALLBACK(int) gimdevR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE pCfg)
 {
     PDMDEV_CHECK_VERSIONS_RETURN(pDevIns);
-    RT_NOREF2(iInstance, pCfg);
-    Assert(iInstance == 0);
     PGIMDEV pThis = PDMDEVINS_2_DATA(pDevIns, PGIMDEV);
+    RT_NOREF2(iInstance, pCfg);
+
+    Assert(iInstance == 0);
 
     /*
      * Initialize relevant state bits.
@@ -273,7 +264,7 @@ static DECLCALLBACK(int) gimdevR3Construct(PPDMDEVINS pDevIns, int iInstance, PC
     /*
      * Get debug setup requirements from GIM.
      */
-    PVM pVM = PDMDevHlpGetVM(pDevIns);
+    PVMCC pVM = PDMDevHlpGetVM(pDevIns);
     int rc = GIMR3GetDebugSetup(pVM, &pThis->DbgSetup);
     if (   RT_SUCCESS(rc)
         && pThis->DbgSetup.cbDbgRecvBuf > 0)
@@ -347,56 +338,34 @@ static DECLCALLBACK(int) gimdevR3Construct(PPDMDEVINS pDevIns, int iInstance, PC
     GIMR3GimDeviceRegister(pVM, pDevIns, pThis->DbgSetup.cbDbgRecvBuf ? &pThis->Dbg : NULL);
 
     /*
-     * Get the MMIO2 regions from the GIM provider.
+     * Get the MMIO2 regions from the GIM provider and make the registrations.
      */
-    uint32_t cRegions = 0;
-    PGIMMMIO2REGION pRegionsR3 = GIMR3GetMmio2Regions(pVM, &cRegions);
+/** @todo r=bird: consider ditching this as GIM doesn't actually make use of it */
+    uint32_t        cRegions  = 0;
+    PGIMMMIO2REGION paRegions = GIMGetMmio2Regions(pVM, &cRegions);
     if (   cRegions
-        && pRegionsR3)
+        && paRegions)
     {
-        /*
-         * Register the MMIO2 regions.
-         */
-        PGIMMMIO2REGION pCur = pRegionsR3;
-        for (uint32_t i = 0; i < cRegions; i++, pCur++)
+        for (uint32_t i = 0; i < cRegions; i++)
         {
-            Assert(!pCur->fRegistered);
-            rc = PDMDevHlpMMIO2Register(pDevIns, NULL, pCur->iRegion, pCur->cbRegion, 0 /* fFlags */, &pCur->pvPageR3,
-                                        pCur->szDescription);
-            if (RT_FAILURE(rc))
-                return rc;
-
+            PGIMMMIO2REGION pCur = &paRegions[i];
+            Assert(pCur->iRegion < 8);
+            rc = PDMDevHlpMmio2Create(pDevIns, NULL, pCur->iRegion << 16, pCur->cbRegion, 0 /* fFlags */, pCur->szDescription,
+                                      &pCur->pvPageR3, &pCur->hMmio2);
+            AssertLogRelMsgRCReturn(rc, ("rc=%Rrc iRegion=%u cbRegion=%#x %s\n",
+                                         rc, pCur->iRegion, pCur->cbRegion, pCur->szDescription),
+                                    rc);
             pCur->fRegistered = true;
-
-#if defined(VBOX_WITH_2X_4GB_ADDR_SPACE)
-            RTR0PTR pR0Mapping = 0;
-            rc = PDMDevHlpMMIO2MapKernel(pDevIns, NULL, pCur->iRegion, 0 /* off */, pCur->cbRegion, pCur->szDescription,
-                                         &pR0Mapping);
-            AssertLogRelMsgRCReturn(rc, ("PDMDevHlpMapMMIO2IntoR0(%#x,) -> %Rrc\n", pCur->cbRegion, rc), rc);
-            pCur->pvPageR0 = pR0Mapping;
-#else
-            pCur->pvPageR0 = (RTR0PTR)pCur->pvPageR3;
-#endif
-
-#ifdef VBOX_WITH_RAW_MODE_KEEP
-            /*
-             * Map into RC if required.
-             */
-            if (pCur->fRCMapping)
-            {
-                RTRCPTR pRCMapping = 0;
-                rc = PDMDevHlpMMHyperMapMMIO2(pDevIns, NULL, pCur->iRegion, 0 /* off */, pCur->cbRegion, pCur->szDescription,
-                                              &pRCMapping);
-                AssertLogRelMsgRCReturn(rc, ("PDMDevHlpMMHyperMapMMIO2(%#x,) -> %Rrc\n", pCur->cbRegion, rc), rc);
-                pCur->pvPageRC = pRCMapping;
-            }
-            else
-                pCur->pvPageRC = NIL_RTRCPTR;
-#endif
+            pCur->pvPageR0 = NIL_RTR0PTR;
+# ifdef VBOX_WITH_RAW_MODE_KEEP
+            pCur->pvPageRC = NIL_RTRCPTR;
+# endif
 
             LogRel(("GIMDev: Registered %s\n", pCur->szDescription));
         }
     }
+    else
+        Assert(cRegions == 0);
 
     /** @todo Register SSM: PDMDevHlpSSMRegister(). */
     /** @todo Register statistics: STAM_REG(). */
@@ -406,7 +375,43 @@ static DECLCALLBACK(int) gimdevR3Construct(PPDMDEVINS pDevIns, int iInstance, PC
 }
 
 
-#endif /* IN_RING3 */
+#else  /* !IN_RING3 */
+
+/**
+ * @callback_method_impl{PDMDEVREGR0,pfnConstruct}
+ */
+static DECLCALLBACK(int) gimdevRZConstruct(PPDMDEVINS pDevIns)
+{
+    PDMDEV_CHECK_VERSIONS_RETURN(pDevIns);
+    //PGIMDEV pThis = PDMDEVINS_2_DATA(pDevIns, PGIMDEV);
+
+    /*
+     * Map the MMIO2 regions into the context.
+     */
+/** @todo r=bird: consider ditching this as GIM doesn't actually make use of it */
+    PVMCC           pVM       = PDMDevHlpGetVM(pDevIns);
+    uint32_t        cRegions  = 0;
+    PGIMMMIO2REGION paRegions = GIMGetMmio2Regions(pVM, &cRegions);
+    if (   cRegions
+        && paRegions)
+    {
+        for (uint32_t i = 0; i < cRegions; i++)
+        {
+            PGIMMMIO2REGION pCur = &paRegions[i];
+            int rc = PDMDevHlpMmio2SetUpContext(pDevIns, pCur->hMmio2, 0,  0, &pCur->CTX_SUFF(pvPage));
+            AssertLogRelMsgRCReturn(rc, ("rc=%Rrc iRegion=%u cbRegion=%#x %s\n",
+                                         rc, pCur->iRegion, pCur->cbRegion, pCur->szDescription),
+                                    rc);
+            Assert(pCur->fRegistered);
+        }
+    }
+    else
+        Assert(cRegions == 0);
+
+    return VINF_SUCCESS;
+}
+
+#endif /* !IN_RING3 */
 
 /**
  * The device registration structure.
@@ -416,7 +421,8 @@ const PDMDEVREG g_DeviceGIMDev =
     /* .u32Version = */             PDM_DEVREG_VERSION,
     /* .uReserved0 = */             0,
     /* .szName = */                 "GIMDev",
-    /* .fFlags = */                 PDM_DEVREG_FLAGS_DEFAULT_BITS | PDM_DEVREG_FLAGS_RZ,
+    /* .fFlags = */                 PDM_DEVREG_FLAGS_DEFAULT_BITS | PDM_DEVREG_FLAGS_RZ | PDM_DEVREG_FLAGS_REQUIRE_R0
+                                    | PDM_DEVREG_FLAGS_NEW_STYLE,
     /* .fClass = */                 PDM_DEVREG_CLASS_MISC,
     /* .cMaxInstances = */          1,
     /* .uSharedVersion = */         42,
@@ -453,7 +459,7 @@ const PDMDEVREG g_DeviceGIMDev =
     /* .pfnReserved7 = */           NULL,
 #elif defined(IN_RING0)
     /* .pfnEarlyConstruct = */      NULL,
-    /* .pfnConstruct = */           NULL,
+    /* .pfnConstruct = */           gimdevRZConstruct,
     /* .pfnDestruct = */            NULL,
     /* .pfnFinalDestruct = */       NULL,
     /* .pfnRequest = */             NULL,
@@ -466,7 +472,7 @@ const PDMDEVREG g_DeviceGIMDev =
     /* .pfnReserved6 = */           NULL,
     /* .pfnReserved7 = */           NULL,
 #elif defined(IN_RC)
-    /* .pfnConstruct = */           NULL,
+    /* .pfnConstruct = */           gimdevRZConstruct,
     /* .pfnReserved0 = */           NULL,
     /* .pfnReserved1 = */           NULL,
     /* .pfnReserved2 = */           NULL,

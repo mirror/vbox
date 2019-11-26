@@ -1331,7 +1331,6 @@ VMMR3_INT_DECL(int)             gimR3HvInitCompleted(PVM pVM);
 VMMR3_INT_DECL(int)             gimR3HvTerm(PVM pVM);
 VMMR3_INT_DECL(void)            gimR3HvRelocate(PVM pVM, RTGCINTPTR offDelta);
 VMMR3_INT_DECL(void)            gimR3HvReset(PVM pVM);
-VMMR3_INT_DECL(PGIMMMIO2REGION) gimR3HvGetMmio2Regions(PVM pVM, uint32_t *pcRegions);
 VMMR3_INT_DECL(int)             gimR3HvSave(PVM pVM, PSSMHANDLE pSSM);
 VMMR3_INT_DECL(int)             gimR3HvLoad(PVM pVM, PSSMHANDLE pSSM);
 VMMR3_INT_DECL(int)             gimR3HvLoadDone(PVM pVM, PSSMHANDLE pSSM);
@@ -1358,6 +1357,7 @@ VMMR3_INT_DECL(int)             gimR3HvHypercallExtGetBootZeroedMem(PVM pVM, int
 
 #endif /* IN_RING3 */
 
+VMM_INT_DECL(PGIMMMIO2REGION)   gimHvGetMmio2Regions(PVM pVM, uint32_t *pcRegions);
 VMM_INT_DECL(bool)              gimHvIsParavirtTscEnabled(PVM pVM);
 VMM_INT_DECL(bool)              gimHvAreHypercallsEnabled(PCVM pVM);
 VMM_INT_DECL(bool)              gimHvShouldTrapXcptUD(PVMCPU pVCpu);

@@ -303,6 +303,9 @@ VMMR3_INT_DECL(int) gimR3HvInit(PVM pVM, PCFGMNODE pGimCfg)
     /*
      * Populate the required fields in MMIO2 region records for registering.
      */
+    for (size_t i = 0; i < RT_ELEMENTS(pHv->aMmio2Regions); i++)
+        pHv->aMmio2Regions[i].hMmio2 = NIL_PGMMMIO2HANDLE;
+
     AssertCompile(GIM_HV_PAGE_SIZE == PAGE_SIZE);
     PGIMMMIO2REGION pRegion = &pHv->aMmio2Regions[GIM_HV_HYPERCALL_PAGE_REGION_IDX];
     pRegion->iRegion    = GIM_HV_HYPERCALL_PAGE_REGION_IDX;
@@ -687,24 +690,6 @@ VMMR3_INT_DECL(void) gimR3HvReset(PVM pVM)
             pHvStimer->uStimerCountMsr  = 0;
         }
     }
-}
-
-
-/**
- * Returns a pointer to the MMIO2 regions supported by Hyper-V.
- *
- * @returns Pointer to an array of MMIO2 regions.
- * @param   pVM         The cross context VM structure.
- * @param   pcRegions   Where to store the number of regions in the array.
- */
-VMMR3_INT_DECL(PGIMMMIO2REGION) gimR3HvGetMmio2Regions(PVM pVM, uint32_t *pcRegions)
-{
-    Assert(GIMIsEnabled(pVM));
-    PGIMHV pHv = &pVM->gim.s.u.Hv;
-
-    *pcRegions = RT_ELEMENTS(pHv->aMmio2Regions);
-    Assert(*pcRegions <= UINT8_MAX);    /* See PGMR3PhysMMIO2Register(). */
-    return pHv->aMmio2Regions;
 }
 
 

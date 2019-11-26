@@ -405,6 +405,24 @@ VMM_INT_DECL(VBOXSTRICTRC) gimHvHypercall(PVMCPUCC pVCpu, PCPUMCTX pCtx)
 
 
 /**
+ * Returns a pointer to the MMIO2 regions supported by Hyper-V.
+ *
+ * @returns Pointer to an array of MMIO2 regions.
+ * @param   pVM         The cross context VM structure.
+ * @param   pcRegions   Where to store the number of regions in the array.
+ */
+VMM_INT_DECL(PGIMMMIO2REGION) gimHvGetMmio2Regions(PVM pVM, uint32_t *pcRegions)
+{
+    Assert(GIMIsEnabled(pVM));
+    PGIMHV pHv = &pVM->gim.s.u.Hv;
+
+    AssertCompile(RT_ELEMENTS(pHv->aMmio2Regions) <= 8);
+    *pcRegions = RT_ELEMENTS(pHv->aMmio2Regions);
+    return pHv->aMmio2Regions;
+}
+
+
+/**
  * Returns whether the guest has configured and enabled the use of Hyper-V's
  * hypercall interface.
  *

@@ -91,6 +91,8 @@ typedef struct GIMMMIO2REGION
 # endif
     /** The guest-physical address of the first page in the region. */
     RTGCPHYS            GCPhysPage;
+    /** The MMIO2 handle. */
+    PGMMMIO2HANDLE      hMmio2;
     /** The description of the region. */
     char                szDescription[32];
 } GIMMMIO2REGION;
@@ -181,12 +183,12 @@ VMMR3_INT_DECL(int)         GIMR3Term(PVM pVM);
 VMMR3_INT_DECL(void)        GIMR3Reset(PVM pVM);
 VMMR3DECL(void)             GIMR3GimDeviceRegister(PVM pVM, PPDMDEVINS pDevInsR3, PGIMDEBUG pDbg);
 VMMR3DECL(int)              GIMR3GetDebugSetup(PVM pVM, PGIMDEBUGSETUP pDbgSetup);
-VMMR3DECL(PGIMMMIO2REGION)  GIMR3GetMmio2Regions(PVM pVM, uint32_t *pcRegions);
 /** @} */
 #endif /* IN_RING3 */
 
 VMMDECL(bool)               GIMIsEnabled(PVM pVM);
 VMMDECL(GIMPROVIDERID)      GIMGetProvider(PVM pVM);
+VMMDECL(PGIMMMIO2REGION)    GIMGetMmio2Regions(PVMCC pVM, uint32_t *pcRegions);
 VMM_INT_DECL(bool)          GIMIsParavirtTscEnabled(PVMCC pVM);
 VMM_INT_DECL(bool)          GIMAreHypercallsEnabled(PVMCPUCC pVCpu);
 VMM_INT_DECL(VBOXSTRICTRC)  GIMHypercall(PVMCPUCC pVCpu, PCPUMCTX pCtx);
