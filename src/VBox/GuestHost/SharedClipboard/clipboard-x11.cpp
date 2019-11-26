@@ -639,6 +639,24 @@ static void clipConvertX11TargetsCallback(Widget widget, XtPointer pClient,
 
     PSHCLX11CTX pCtx = reinterpret_cast<SHCLX11CTX *>(pClient);
 
+    LogFlowFunc(("fXtNeedsUpdate=%RTbool, fXtBusy=%RTbool\n", pCtx->fXtNeedsUpdate, pCtx->fXtBusy));
+
+    if (pCtx->fXtNeedsUpdate)
+    {
+        // The data from this callback is already out of date.  Refresh it.
+        pCtx->fXtNeedsUpdate = false;
+        XtGetSelectionValue(pCtx->widget,
+                            clipGetAtom(pCtx, "CLIPBOARD"),
+                            clipGetAtom(pCtx, "TARGETS"),
+                            clipConvertX11TargetsCallback, pCtx,
+                            CurrentTime);
+        return;
+    }
+    else
+    {
+        pCtx->fXtBusy = false;
+    }
+
     Atom *pAtoms = (Atom *)pValue;
     unsigned i, j;
 
@@ -710,11 +728,21 @@ static DECLCALLBACK(void) clipQueryX11FormatsCallback(PSHCLX11CTX pCtx)
     LogFlowFuncEnter();
 
 #ifndef TESTCASE
-    XtGetSelectionValue(pCtx->widget,
-                        clipGetAtom(pCtx, "CLIPBOARD"),
-                        clipGetAtom(pCtx, "TARGETS"),
-                        clipConvertX11TargetsCallback, pCtx,
-                        CurrentTime);
+    LogFlowFunc(("fXtBusy=%RTbool\n", pCtx->fXtBusy));
+
+    if (pCtx->fXtBusy)
+    {
+        pCtx->fXtNeedsUpdate = true;
+    }
+    else
+    {
+        pCtx->fXtBusy = true;
+        XtGetSelectionValue(pCtx->widget,
+                            clipGetAtom(pCtx, "CLIPBOARD"),
+                            clipGetAtom(pCtx, "TARGETS"),
+                            clipConvertX11TargetsCallback, pCtx,
+                            CurrentTime);
+    }
 #else
     tstRequestTargets(pCtx);
 #endif
@@ -1024,8 +1052,11 @@ int ShClX11Init(PSHCLX11CTX pCtx, PSHCLCONTEXT pParent, bool fHeadless)
         LogRel(("Shared Clipboard: X11 DISPLAY variable not set -- disabling clipboard sharing\n"));
     }
 
-    pCtx->fHaveX11  = !fHeadless;
-    pCtx->pFrontend = pParent;
+    pCtx->fHaveX11       = !fHeadless;
+    pCtx->pFrontend      = pParent;
+
+    pCtx->fXtBusy        = false;
+    pCtx->fXtNeedsUpdate = false;
 
     LogFlowFuncLeaveRC(VINF_SUCCESS);
     return VINF_SUCCESS;

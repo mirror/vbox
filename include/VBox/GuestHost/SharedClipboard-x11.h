@@ -76,36 +76,39 @@ typedef struct _SHCLX11CTX
     /** Should we try to grab the clipboard on startup? */
     bool fGrabClipboardOnStart;
 
-    /** The best text format X11 has to offer, as an index into the formats
-     * table */
+    /** The best text format X11 has to offer, as an index into the formats table. */
     CLIPX11FORMAT X11TextFormat;
-    /** The best bitmap format X11 has to offer, as an index into the formats
-     * table */
+    /** The best bitmap format X11 has to offer, as an index into the formats table. */
     CLIPX11FORMAT X11BitmapFormat;
-    /** The best HTML format X11 has to offer, as an index into the formats
-     * table */
+    /** The best HTML format X11 has to offer, as an index into the formats table. */
     CLIPX11FORMAT X11HTMLFormat;
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
-    /** The best HTML format X11 has to offer, as an index into the formats
-     * table */
+    /** The best HTML format X11 has to offer, as an index into the formats table. */
     CLIPX11FORMAT X11URIListFormat;
 #endif
     /** What kind of formats does VBox have to offer? */
     SHCLFORMATS vboxFormats;
-    /** Cache of the last unicode data that we received */
+    /** Cache of the last unicode data that we received. */
     void *pvUnicodeCache;
-    /** Size of the unicode data in the cache */
+    /** Size of the unicode data in the cache. */
     uint32_t cbUnicodeCache;
     /** When we wish the clipboard to exit, we have to wake up the event
      * loop.  We do this by writing into a pipe.  This end of the pipe is
      * the end that another thread can write to. */
     int wakeupPipeWrite;
-    /** The reader end of the pipe */
+    /** The reader end of the pipe. */
     int wakeupPipeRead;
-    /** A pointer to the XFixesSelectSelectionInput function */
+    /** A pointer to the XFixesSelectSelectionInput function. */
     void (*fixesSelectInput)(Display *, Window, Atom, unsigned long);
-    /** The first XFixes event number */
+    /** The first XFixes event number. */
     int fixesEventBase;
+    /** XtGetSelectionValue on some versions of libXt isn't re-entrant
+     * so block overlapping requests on this flag. */
+    bool fXtBusy;
+    /** If a request is blocked on the previous flag, set this flag to request
+     * an update later - the first callback should check and clear this flag
+     * before processing the callback event. */
+    bool fXtNeedsUpdate;
 } SHCLX11CTX, *PSHCLX11CTX;
 
 /** @name Shared Clipboard APIs for X11.
