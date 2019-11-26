@@ -4656,72 +4656,19 @@ static DECLCALLBACK(void) hdaR3PowerOff(PPDMDEVINS pDevIns)
     DEVHDA_UNLOCK(pDevIns, pThis);
 }
 
-
 /**
- * Re-attaches (replaces) a driver with a new driver.
- *
- * This is only used by to attach the Null driver when it failed to attach the
- * one that was configured.
+ * Replaces a driver with a the NullAudio drivers.
  *
  * @returns VBox status code.
- * @param   pThis       Device instance to re-attach driver to.
- * @param   pDrv        Driver instance used for attaching to.
- *                      If NULL is specified, a new driver will be created and appended
- *                      to the driver list.
- * @param   uLUN        The logical unit which is being re-detached.
- * @param   pszDriver   New driver name to attach.
+ * @param   pThis       Device instance.
+ * @param   iLun        The logical unit which is being replaced.
  */
-static int hdaR3ReattachInternal(PHDASTATE pThis, PHDADRIVER pDrv, uint8_t uLUN, const char *pszDriver)
+static int hdaR3ReconfigLunWithNullAudio(PHDASTATE pThis, unsigned iLun)
 {
-    AssertPtrReturn(pThis,     VERR_INVALID_POINTER);
-    AssertPtrReturn(pszDriver, VERR_INVALID_POINTER);
-
-    int rc;
-
-    if (pDrv)
-    {
-        rc = hdaR3DetachInternal(pThis, pDrv, 0 /* fFlags */);
-        if (RT_SUCCESS(rc))
-            rc = PDMDevHlpDriverDetach(pThis->pDevInsR3, PDMIBASE_2_PDMDRV(pDrv->pDrvBase), 0 /* fFlags */);
-
-        if (RT_FAILURE(rc))
-            return rc;
-
-        pDrv = NULL;
-    }
-
-    PVM pVM = PDMDevHlpGetVM(pThis->pDevInsR3);
-    PCFGMNODE pRoot = CFGMR3GetRoot(pVM);
-    PCFGMNODE pDev0 = CFGMR3GetChild(pRoot, "Devices/hda/0/");
-
-    /* Remove LUN branch. */
-    CFGMR3RemoveNode(CFGMR3GetChildF(pDev0, "LUN#%u/", uLUN));
-
-#define RC_CHECK() if (RT_FAILURE(rc)) { AssertReleaseRC(rc); break; }
-
-    do
-    {
-        PCFGMNODE pLunL0;
-        rc = CFGMR3InsertNodeF(pDev0, &pLunL0, "LUN#%u/", uLUN);        RC_CHECK();
-        rc = CFGMR3InsertString(pLunL0, "Driver",       "AUDIO");       RC_CHECK();
-        rc = CFGMR3InsertNode(pLunL0,   "Config/",       NULL);         RC_CHECK();
-
-        PCFGMNODE pLunL1, pLunL2;
-        rc = CFGMR3InsertNode  (pLunL0, "AttachedDriver/", &pLunL1);    RC_CHECK();
-        rc = CFGMR3InsertNode  (pLunL1,  "Config/",        &pLunL2);    RC_CHECK();
-        rc = CFGMR3InsertString(pLunL1,  "Driver",          pszDriver); RC_CHECK();
-
-        rc = CFGMR3InsertString(pLunL2, "AudioDriver", pszDriver);      RC_CHECK();
-
-    } while (0);
-
+    int rc = PDMDevHlpDriverReconfigure2(pThis->pDevInsR3, iLun, "AUDIO", "NullAudio");
     if (RT_SUCCESS(rc))
-        rc = hdaR3AttachInternal(pThis, uLUN, 0 /* fFlags */, NULL /* ppDrv */);
-
-    LogFunc(("pThis=%p, uLUN=%u, pszDriver=%s, rc=%Rrc\n", pThis, uLUN, pszDriver, rc));
-
-#undef RC_CHECK
-
+        rc = hdaR3AttachInternal(pThis, iLun, 0 /* fFlags */, NULL /* ppDrv */);
+    LogFunc(("pThis=%p, iLun=%u, rc=%Rrc\n", pThis, iLun, rc));
     return rc;
 }
 
@@ -5000,32 +4947,33 @@ static DECLCALLBACK(int) hdaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     LogRel(("HDA: Asynchronous I/O enabled\n"));
 #endif
 
-    uint8_t uLUN;
-    for (uLUN = 0; uLUN < UINT8_MAX; ++uLUN)
+    /*
+     * Attach drivers.  We ASSUME they are configured consecutively without any
+     * gaps, so we stop when we hit the first LUN w/o a driver configured.
+     */
+    for (unsigned iLun = 0; ; iLun++)
     {
-        LogFunc(("Trying to attach driver for LUN #%RU32 ...\n", uLUN));
-        rc = hdaR3AttachInternal(pThis, uLUN, 0 /* fFlags */, NULL /* ppDrv */);
-        if (RT_FAILURE(rc))
+        AssertBreak(iLun < UINT8_MAX);
+        LogFunc(("Trying to attach driver for LUN#%u ...\n", iLun));
+        rc = hdaR3AttachInternal(pThis, iLun, 0 /* fFlags */, NULL /* ppDrv */);
+        if (rc == VERR_PDM_NO_ATTACHED_DRIVER)
         {
-            if (rc == VERR_PDM_NO_ATTACHED_DRIVER)
-                rc = VINF_SUCCESS;
-            else if (rc == VERR_AUDIO_BACKEND_INIT_FAILED)
-            {
-                hdaR3ReattachInternal(pThis, NULL /* pDrv */, uLUN, "NullAudio");
-                PDMDevHlpVMSetRuntimeError(pDevIns, 0 /*fFlags*/, "HostAudioNotResponding",
-                                           N_("Host audio backend initialization has failed. "
-                                              "Selecting the NULL audio backend with the consequence that no sound is audible"));
-                /* Attaching to the NULL audio backend will never fail. */
-                rc = VINF_SUCCESS;
-            }
-            else
-                AssertRCReturn(rc, rc);
+            LogFunc(("cLUNs=%u\n", iLun));
             break;
         }
+        if (rc == VERR_AUDIO_BACKEND_INIT_FAILED)
+        {
+            hdaR3ReconfigLunWithNullAudio(pThis, iLun); /* Pretend attaching to the NULL audio backend will never fail. */
+            PDMDevHlpVMSetRuntimeError(pDevIns, 0 /*fFlags*/, "HostAudioNotResponding",
+                                       N_("Host audio backend initialization has failed. Selecting the NULL audio backend with the consequence that no sound is audible"));
+        }
+        else
+            AssertLogRelMsgReturn(RT_SUCCESS(rc),  ("LUN#%u: rc=%Rrc\n", iLun, rc), rc);
     }
 
-    LogFunc(("cLUNs=%RU8, rc=%Rrc\n", uLUN, rc));
-
+    /*
+     * Create the mixer.
+     */
     rc = AudioMixerCreate("HDA Mixer", 0 /* uFlags */, &pThis->pMixer);
     AssertRCReturn(rc, rc);
 
@@ -5155,10 +5103,8 @@ static DECLCALLBACK(int) hdaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
              && !fValidOut)
         {
             LogRel(("HDA: Falling back to NULL backend (no sound audible)\n"));
-
             hdaR3Reset(pDevIns);
-            hdaR3ReattachInternal(pThis, pDrv, pDrv->uLUN, "NullAudio");
-
+            hdaR3ReconfigLunWithNullAudio(pThis, pDrv->uLUN);
             PDMDevHlpVMSetRuntimeError(pDevIns, 0 /*fFlags*/, "HostAudioNotResponding",
                                        N_("No audio devices could be opened. "
                                           "Selecting the NULL audio backend with the consequence that no sound is audible"));

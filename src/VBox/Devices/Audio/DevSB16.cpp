@@ -106,12 +106,11 @@ typedef struct SB16DRIVER
     R3PTRTYPE(PSB16STATE)              pSB16State;
     /** Driver flags. */
     PDMAUDIODRVFLAGS                   fFlags;
-    uint32_t                           PaddingFlags;
     /** LUN # to which this driver has been assigned. */
     uint8_t                            uLUN;
     /** Whether this driver is in an attached state or not. */
     bool                               fAttached;
-    uint8_t                            Padding[4];
+    uint8_t                            Padding[2];
     /** Pointer to attached driver base interface. */
     R3PTRTYPE(PPDMIBASE)               pDrvBase;
     /** Audio connector interface to the underlying host backend. */
@@ -2163,7 +2162,7 @@ static int sb16AttachInternal(PSB16STATE pThis, unsigned uLUN, uint32_t fFlags, 
             if (pDrv->uLUN == 0)
                 pDrv->fFlags |= PDMAUDIODRVFLAGS_PRIMARY;
 
-            LogFunc(("LUN#%RU8: pCon=%p, drvFlags=0x%x\n", uLUN, pDrv->pConnector, pDrv->fFlags));
+            LogFunc(("LUN#%u: pCon=%p, drvFlags=0x%x\n", uLUN, pDrv->pConnector, pDrv->fFlags));
 
             /* Attach to driver list if not attached yet. */
             if (!pDrv->fAttached)
@@ -2218,14 +2217,14 @@ static int sb16DetachInternal(PSB16STATE pThis, PSB16DRIVER pDrv, uint32_t fFlag
 /**
  * @interface_method_impl{PDMDEVREG,pfnAttach}
  */
-static DECLCALLBACK(int) sb16Attach(PPDMDEVINS pDevIns, unsigned uLUN, uint32_t fFlags)
+static DECLCALLBACK(int) sb16Attach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t fFlags)
 {
     PSB16STATE pThis = PDMDEVINS_2_DATA(pDevIns, PSB16STATE);
 
-    LogFunc(("uLUN=%u, fFlags=0x%x\n", uLUN, fFlags));
+    LogFunc(("iLUN=%u, fFlags=0x%x\n", iLUN, fFlags));
 
     PSB16DRIVER pDrv;
-    int rc2 = sb16AttachInternal(pThis, uLUN, fFlags, &pDrv);
+    int rc2 = sb16AttachInternal(pThis, iLUN, fFlags, &pDrv);
     if (RT_SUCCESS(rc2))
         rc2 = sb16CreateDrvStream(pThis, &pThis->Out.Cfg, pDrv);
 
@@ -2235,16 +2234,16 @@ static DECLCALLBACK(int) sb16Attach(PPDMDEVINS pDevIns, unsigned uLUN, uint32_t 
 /**
  * @interface_method_impl{PDMDEVREG,pfnDetach}
  */
-static DECLCALLBACK(void) sb16Detach(PPDMDEVINS pDevIns, unsigned uLUN, uint32_t fFlags)
+static DECLCALLBACK(void) sb16Detach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t fFlags)
 {
     PSB16STATE pThis = PDMDEVINS_2_DATA(pDevIns, PSB16STATE);
 
-    LogFunc(("uLUN=%u, fFlags=0x%x\n", uLUN, fFlags));
+    LogFunc(("iLUN=%u, fFlags=0x%x\n", iLUN, fFlags));
 
     PSB16DRIVER pDrv, pDrvNext;
     RTListForEachSafe(&pThis->lstDrv, pDrv, pDrvNext, SB16DRIVER, Node)
     {
-        if (pDrv->uLUN == uLUN)
+        if (pDrv->uLUN == iLUN)
         {
             int rc2 = sb16DetachInternal(pThis, pDrv, fFlags);
             if (RT_SUCCESS(rc2))
@@ -2252,30 +2251,24 @@ static DECLCALLBACK(void) sb16Detach(PPDMDEVINS pDevIns, unsigned uLUN, uint32_t
                 RTMemFree(pDrv);
                 pDrv = NULL;
             }
-
             break;
         }
     }
 }
 
 /**
- * Re-attaches (replaces) a driver with a new driver.
+ * Replaces a driver with a the NullAudio drivers.
  *
  * @returns VBox status code.
  * @param   pThis       Device instance.
- * @param   uLUN        The logical unit which is being re-detached.
- * @param   pszDriver   New driver name to attach.
+ * @param   iLun        The logical unit which is being replaced.
  */
-static int sb16Reattach(PSB16STATE pThis, uint8_t uLUN, const char *pszDriver)
+static int sb16ReconfigLunWithNullAudio(PSB16STATE pThis, unsigned iLun)
 {
-    AssertPtr(pThis);
-
-    int rc = PDMDevHlpDriverReconfigure2(pThis->pDevInsR3, uLUN, "AUDIO", pszDriver);
+    int rc = PDMDevHlpDriverReconfigure2(pThis->pDevInsR3, iLun, "AUDIO", "NullAudio");
     if (RT_SUCCESS(rc))
-        rc = sb16AttachInternal(pThis, uLUN, 0 /* fFlags */, NULL /* ppDrv */);
-
-    LogFunc(("pThis=%p, uLUN=%u, pszDriver=%s, rc=%Rrc\n", pThis, uLUN, pszDriver, rc));
-
+        rc = sb16AttachInternal(pThis, iLun, 0 /* fFlags */, NULL /* ppDrv */);
+    LogFunc(("pThis=%p, iLun=%u, rc=%Rrc\n", pThis, iLun, rc));
     return rc;
 }
 
@@ -2422,58 +2415,63 @@ static DECLCALLBACK(int) sb16Construct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
     sb16MixerReset(pThis);
 
     /*
-     * Create timer(s), register & attach stuff.
+     * Create timers.
      */
     rc = PDMDevHlpTMTimerCreate(pDevIns, TMCLOCK_VIRTUAL, sb16TimerIRQ, pThis,
                                 TMTIMER_FLAGS_DEFAULT_CRIT_SECT, "SB16 IRQ timer", &pThis->pTimerIRQ);
-    if (RT_FAILURE(rc))
-        AssertMsgFailedReturn(("Error creating IRQ timer, rc=%Rrc\n", rc), rc);
+    AssertRCReturn(rc, rc);
+    rc = PDMDevHlpTMTimerCreate(pDevIns, TMCLOCK_VIRTUAL, sb16TimerIO, pThis,
+                                TMTIMER_FLAGS_DEFAULT_CRIT_SECT, "SB16 IO timer", &pThis->pTimerIO);
+    AssertRCReturn(rc, rc);
+    pThis->cTimerTicksIO = TMTimerGetFreq(pThis->pTimerIO) / uTimerHz;
+    pThis->uTimerTSIO    = TMTimerGet(pThis->pTimerIO);
+    LogFunc(("Timer ticks=%RU64 (%RU16 Hz)\n", pThis->cTimerTicksIO, uTimerHz));
 
+    /*
+     * Register I/O and DMA.
+     */
     rc = PDMDevHlpIOPortRegister(pDevIns, pThis->port + 0x04,  2, pThis, mixer_write, mixer_read, NULL, NULL, "SB16");
-    if (RT_FAILURE(rc))
-        return rc;
+    AssertRCReturn(rc, rc);
     rc = PDMDevHlpIOPortRegister(pDevIns, pThis->port + 0x06, 10, pThis, dsp_write,   dsp_read,   NULL, NULL, "SB16");
-    if (RT_FAILURE(rc))
-        return rc;
+    AssertRCReturn(rc, rc);
 
     rc = PDMDevHlpDMARegister(pDevIns, pThis->hdma, sb16DMARead, pThis);
-    if (RT_FAILURE(rc))
-        return rc;
+    AssertRCReturn(rc, rc);
     rc = PDMDevHlpDMARegister(pDevIns, pThis->dma, sb16DMARead, pThis);
-    if (RT_FAILURE(rc))
-        return rc;
+    AssertRCReturn(rc, rc);
 
     pThis->can_write = 1;
 
+    /*
+     * Register Saved state.
+     */
     rc = PDMDevHlpSSMRegister3(pDevIns, SB16_SAVE_STATE_VERSION, sizeof(SB16STATE), sb16LiveExec, sb16SaveExec, sb16LoadExec);
-    if (RT_FAILURE(rc))
-        return rc;
+    AssertRCReturn(rc, rc);
 
     /*
-     * Attach driver.
+     * Attach drivers.  We ASSUME they are configured consecutively without any
+     * gaps, so we stop when we hit the first LUN w/o a driver configured.
      */
-    uint8_t uLUN;
-    for (uLUN = 0; uLUN < UINT8_MAX; ++uLUN)
+    for (unsigned iLun = 0; ; iLun++)
     {
-        LogFunc(("Trying to attach driver for LUN #%RU8 ...\n", uLUN));
-        rc = sb16AttachInternal(pThis, uLUN, 0 /* fFlags */, NULL /* ppDrv */);
-        if (RT_FAILURE(rc))
+        AssertBreak(iLun < UINT8_MAX);
+        LogFunc(("Trying to attach driver for LUN#%u ...\n", iLun));
+        rc = sb16AttachInternal(pThis, iLun, 0 /* fFlags */, NULL /* ppDrv */);
+        if (rc == VERR_PDM_NO_ATTACHED_DRIVER)
         {
-            if (rc == VERR_PDM_NO_ATTACHED_DRIVER)
-                rc = VINF_SUCCESS;
-            else if (rc == VERR_AUDIO_BACKEND_INIT_FAILED)
-            {
-                sb16Reattach(pThis, uLUN, "NullAudio");
-                PDMDevHlpVMSetRuntimeError(pDevIns, 0 /*fFlags*/, "HostAudioNotResponding",
-                                           N_("Host audio backend initialization has failed. Selecting the NULL audio backend with the consequence that no sound is audible"));
-                /* Attaching to the NULL audio backend will never fail. */
-                rc = VINF_SUCCESS;
-            }
+            LogFunc(("cLUNs=%u\n", iLun));
             break;
         }
+        if (rc == VERR_AUDIO_BACKEND_INIT_FAILED)
+        {
+            sb16ReconfigLunWithNullAudio(pThis, iLun); /* Pretend attaching to the NULL audio backend will never fail. */
+            PDMDevHlpVMSetRuntimeError(pDevIns, 0 /*fFlags*/, "HostAudioNotResponding",
+                                       N_("Host audio backend initialization has failed. "
+                                          "Selecting the NULL audio backend with the consequence that no sound is audible"));
+        }
+        else
+            AssertLogRelMsgReturn(RT_SUCCESS(rc),  ("LUN#%u: rc=%Rrc\n", iLun, rc), rc);
     }
-
-    LogFunc(("cLUNs=%RU8, rc=%Rrc\n", uLUN, rc));
 
     sb16CmdResetLegacy(pThis);
 
@@ -2488,43 +2486,31 @@ static DECLCALLBACK(int) sb16Construct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
         if (!(pDrv->fFlags & PDMAUDIODRVFLAGS_PRIMARY))
             continue;
 
-        PPDMIAUDIOCONNECTOR pCon = pDrv->pConnector;
-        AssertPtr(pCon);
-
         /** @todo No input streams available for SB16 yet. */
-
         if (!pDrv->Out.pStream)
             continue;
 
-        bool fValidOut = pCon->pfnStreamGetStatus(pCon, pDrv->Out.pStream) & PDMAUDIOSTREAMSTS_FLAG_INITIALIZED;
-        if (!fValidOut)
+        PPDMIAUDIOCONNECTOR pCon = pDrv->pConnector;
+        AssertPtr(pCon);
+        if (   pCon == NULL /* paranoia */
+            || !(pCon->pfnStreamGetStatus(pCon, pDrv->Out.pStream) & PDMAUDIOSTREAMSTS_FLAG_INITIALIZED))
         {
             LogRel(("SB16: Falling back to NULL backend (no sound audible)\n"));
 
             sb16CmdResetLegacy(pThis);
-            sb16Reattach(pThis, pDrv->uLUN, "NullAudio");
+            sb16ReconfigLunWithNullAudio(pThis, pDrv->uLUN);
             pDrv = NULL; /* no longer valid */
 
             PDMDevHlpVMSetRuntimeError(pDevIns, 0 /*fFlags*/, "HostAudioNotResponding",
-                                       N_("No audio devices could be opened. Selecting the NULL audio backend with the consequence that no sound is audible"));
+                                       N_("No audio devices could be opened. "
+                                          "Selecting the NULL audio backend with the consequence that no sound is audible"));
         }
     }
 #endif
 
-    if (RT_SUCCESS(rc))
-    {
-        rc = PDMDevHlpTMTimerCreate(pDevIns, TMCLOCK_VIRTUAL, sb16TimerIO, pThis,
-                                    TMTIMER_FLAGS_DEFAULT_CRIT_SECT, "SB16 IO timer", &pThis->pTimerIO);
-        if (RT_SUCCESS(rc))
-        {
-            pThis->cTimerTicksIO = TMTimerGetFreq(pThis->pTimerIO) / uTimerHz;
-            pThis->uTimerTSIO    = TMTimerGet(pThis->pTimerIO);
-            LogFunc(("Timer ticks=%RU64 (%RU16 Hz)\n", pThis->cTimerTicksIO, uTimerHz));
-        }
-        else
-            AssertMsgFailedReturn(("Error creating I/O timer, rc=%Rrc\n", rc), rc);
-    }
-
+    /*
+     * Delete debug file.
+     */
 #ifdef VBOX_AUDIO_DEBUG_DUMP_PCM_DATA
     RTFileDelete(VBOX_AUDIO_DEBUG_DUMP_PCM_DATA_PATH "sb16WriteAudio.pcm");
 #endif

@@ -450,12 +450,11 @@ typedef struct AC97DRIVER
     R3PTRTYPE(PAC97STATE)              pAC97State;
     /** Driver flags. */
     PDMAUDIODRVFLAGS                   fFlags;
-    uint32_t                           PaddingFlags;
     /** LUN # to which this driver has been assigned. */
     uint8_t                            uLUN;
     /** Whether this driver is in an attached state or not. */
     bool                               fAttached;
-    uint8_t                            Padding[4];
+    uint8_t                            abPadding[2];
     /** Pointer to the description string passed to PDMDevHlpDriverAttach(). */
     R3PTRTYPE(char *)                  pszDesc;
     /** Pointer to attached driver base interface. */
@@ -3900,11 +3899,11 @@ static DECLCALLBACK(void) ichac97R3Reset(PPDMDEVINS pDevIns)
  *
  * @returns VBox status code.
  * @param   pThis       AC'97 state.
- * @param   uLUN        The logical unit which is being attached.
+ * @param   iLun        The logical unit which is being attached.
  * @param   fFlags      Flags, combination of the PDMDEVATT_FLAGS_* \#defines.
  * @param   ppDrv       Attached driver instance on success. Optional.
  */
-static int ichac97R3AttachInternal(PAC97STATE pThis, unsigned uLUN, uint32_t fFlags, PAC97DRIVER *ppDrv)
+static int ichac97R3AttachInternal(PAC97STATE pThis, unsigned iLun, uint32_t fFlags, PAC97DRIVER *ppDrv)
 {
     RT_NOREF(fFlags);
 
@@ -3912,12 +3911,11 @@ static int ichac97R3AttachInternal(PAC97STATE pThis, unsigned uLUN, uint32_t fFl
      * Attach driver.
      */
     char *pszDesc;
-    if (RTStrAPrintf(&pszDesc, "Audio driver port (AC'97) for LUN #%u", uLUN) <= 0)
+    if (RTStrAPrintf(&pszDesc, "Audio driver port (AC'97) for LUN #%u", iLun) <= 0)
         AssertLogRelFailedReturn(VERR_NO_MEMORY);
 
     PPDMIBASE pDrvBase;
-    int rc = PDMDevHlpDriverAttach(pThis->pDevInsR3, uLUN,
-                                   &pThis->IBase, &pDrvBase, pszDesc);
+    int rc = PDMDevHlpDriverAttach(pThis->pDevInsR3, iLun, &pThis->IBase, &pDrvBase, pszDesc);
     if (RT_SUCCESS(rc))
     {
         PAC97DRIVER pDrv = (PAC97DRIVER)RTMemAllocZ(sizeof(AC97DRIVER));
@@ -3925,19 +3923,19 @@ static int ichac97R3AttachInternal(PAC97STATE pThis, unsigned uLUN, uint32_t fFl
         {
             pDrv->pDrvBase   = pDrvBase;
             pDrv->pConnector = PDMIBASE_QUERY_INTERFACE(pDrvBase, PDMIAUDIOCONNECTOR);
-            AssertMsg(pDrv->pConnector != NULL, ("Configuration error: LUN #%u has no host audio interface, rc=%Rrc\n", uLUN, rc));
+            AssertMsg(pDrv->pConnector != NULL, ("Configuration error: LUN #%u has no host audio interface, rc=%Rrc\n", iLun, rc));
             pDrv->pAC97State = pThis;
-            pDrv->uLUN       = uLUN;
+            pDrv->uLUN       = iLun;
             pDrv->pszDesc    = pszDesc;
 
             /*
              * For now we always set the driver at LUN 0 as our primary
              * host backend. This might change in the future.
              */
-            if (pDrv->uLUN == 0)
+            if (iLun == 0)
                 pDrv->fFlags |= PDMAUDIODRVFLAGS_PRIMARY;
 
-            LogFunc(("LUN#%RU8: pCon=%p, drvFlags=0x%x\n", uLUN, pDrv->pConnector, pDrv->fFlags));
+            LogFunc(("LUN#%u: pCon=%p, drvFlags=0x%x\n", iLun, pDrv->pConnector, pDrv->fFlags));
 
             /* Attach to driver list if not attached yet. */
             if (!pDrv->fAttached)
@@ -3953,7 +3951,7 @@ static int ichac97R3AttachInternal(PAC97STATE pThis, unsigned uLUN, uint32_t fFl
             rc = VERR_NO_MEMORY;
     }
     else if (rc == VERR_PDM_NO_ATTACHED_DRIVER)
-        LogFunc(("No attached driver for LUN #%u\n", uLUN));
+        LogFunc(("No attached driver for LUN #%u\n", iLun));
 
     if (RT_FAILURE(rc))
     {
@@ -3962,7 +3960,7 @@ static int ichac97R3AttachInternal(PAC97STATE pThis, unsigned uLUN, uint32_t fFl
         RTStrFree(pszDesc);
     }
 
-    LogFunc(("uLUN=%u, fFlags=0x%x, rc=%Rrc\n", uLUN, fFlags, rc));
+    LogFunc(("iLun=%u, fFlags=0x%x, rc=%Rrc\n", iLun, fFlags, rc));
     return rc;
 }
 
@@ -4025,18 +4023,18 @@ static int ichac97R3DetachInternal(PAC97STATE pThis, PAC97DRIVER pDrv, uint32_t 
 }
 
 /**
- * @interface_method_impl{PDMDEVREG,pfnAttach}
+ * @interface_method_impl{PDMDEVREGR3,pfnAttach}
  */
-static DECLCALLBACK(int) ichac97R3Attach(PPDMDEVINS pDevIns, unsigned uLUN, uint32_t fFlags)
+static DECLCALLBACK(int) ichac97R3Attach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t fFlags)
 {
     PAC97STATE pThis = PDMDEVINS_2_DATA(pDevIns, PAC97STATE);
 
-    LogFunc(("uLUN=%u, fFlags=0x%x\n", uLUN, fFlags));
+    LogFunc(("iLUN=%u, fFlags=0x%x\n", iLUN, fFlags));
 
     DEVAC97_LOCK(pThis);
 
     PAC97DRIVER pDrv;
-    int rc2 = ichac97R3AttachInternal(pThis, uLUN, fFlags, &pDrv);
+    int rc2 = ichac97R3AttachInternal(pThis, iLUN, fFlags, &pDrv);
     if (RT_SUCCESS(rc2))
         rc2 = ichac97R3MixerAddDrv(pThis, pDrv);
 
@@ -4051,18 +4049,18 @@ static DECLCALLBACK(int) ichac97R3Attach(PPDMDEVINS pDevIns, unsigned uLUN, uint
 /**
  * @interface_method_impl{PDMDEVREG,pfnDetach}
  */
-static DECLCALLBACK(void) ichac97R3Detach(PPDMDEVINS pDevIns, unsigned uLUN, uint32_t fFlags)
+static DECLCALLBACK(void) ichac97R3Detach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t fFlags)
 {
     PAC97STATE pThis = PDMDEVINS_2_DATA(pDevIns, PAC97STATE);
 
-    LogFunc(("uLUN=%u, fFlags=0x%x\n", uLUN, fFlags));
+    LogFunc(("iLUN=%u, fFlags=0x%x\n", iLUN, fFlags));
 
     DEVAC97_LOCK(pThis);
 
     PAC97DRIVER pDrv, pDrvNext;
     RTListForEachSafe(&pThis->lstDrv, pDrv, pDrvNext, AC97DRIVER, Node)
     {
-        if (pDrv->uLUN == uLUN)
+        if (pDrv->uLUN == iLUN)
         {
             int rc2 = ichac97R3DetachInternal(pThis, pDrv, fFlags);
             if (RT_SUCCESS(rc2))
@@ -4080,69 +4078,18 @@ static DECLCALLBACK(void) ichac97R3Detach(PPDMDEVINS pDevIns, unsigned uLUN, uin
 }
 
 /**
- * Re-attaches (replaces) a driver with a new driver.
+ * Replaces a driver with a the NullAudio drivers.
  *
  * @returns VBox status code.
  * @param   pThis       Device instance.
- * @param   pDrv        Driver instance used for attaching to.
- *                      If NULL is specified, a new driver will be created and appended
- *                      to the driver list.
- * @param   uLUN        The logical unit which is being re-detached.
- * @param   pszDriver   New driver name to attach.
+ * @param   iLun        The logical unit which is being replaced.
  */
-static int ichac97R3ReattachInternal(PAC97STATE pThis, PAC97DRIVER pDrv, uint8_t uLUN, const char *pszDriver)
+static int ichac97R3ReconfigLunWithNullAudio(PAC97STATE pThis, unsigned iLun)
 {
-    AssertPtrReturn(pThis,     VERR_INVALID_POINTER);
-    AssertPtrReturn(pszDriver, VERR_INVALID_POINTER);
-
-    int rc;
-
-    if (pDrv)
-    {
-        rc = ichac97R3DetachInternal(pThis, pDrv, 0 /* fFlags */);
-        if (RT_SUCCESS(rc))
-            rc = PDMDevHlpDriverDetach(pThis->pDevInsR3, PDMIBASE_2_PDMDRV(pDrv->pDrvBase), 0 /* fFlags */);
-
-        if (RT_FAILURE(rc))
-            return rc;
-
-        RTStrFree(pDrv->pszDesc);
-        RTMemFree(pDrv);
-        pDrv = NULL;
-    }
-
-    PVM pVM = PDMDevHlpGetVM(pThis->pDevInsR3);
-    PCFGMNODE pRoot = CFGMR3GetRoot(pVM);
-    PCFGMNODE pDev0 = CFGMR3GetChild(pRoot, "Devices/ichac97/0/");
-
-    /* Remove LUN branch. */
-    CFGMR3RemoveNode(CFGMR3GetChildF(pDev0, "LUN#%u/", uLUN));
-
-# define RC_CHECK() if (RT_FAILURE(rc)) { AssertReleaseRC(rc); break; }
-
-    do
-    {
-        PCFGMNODE pLunL0;
-        rc = CFGMR3InsertNodeF(pDev0, &pLunL0, "LUN#%u/", uLUN);        RC_CHECK();
-        rc = CFGMR3InsertString(pLunL0, "Driver",       "AUDIO");       RC_CHECK();
-        rc = CFGMR3InsertNode(pLunL0,   "Config/",       NULL);         RC_CHECK();
-
-        PCFGMNODE pLunL1, pLunL2;
-        rc = CFGMR3InsertNode  (pLunL0, "AttachedDriver/", &pLunL1);    RC_CHECK();
-        rc = CFGMR3InsertNode  (pLunL1,  "Config/",        &pLunL2);    RC_CHECK();
-        rc = CFGMR3InsertString(pLunL1,  "Driver",          pszDriver); RC_CHECK();
-
-        rc = CFGMR3InsertString(pLunL2, "AudioDriver", pszDriver);      RC_CHECK();
-
-    } while (0);
-
+    int rc = PDMDevHlpDriverReconfigure2(pThis->pDevInsR3, iLun, "AUDIO", "NullAudio");
     if (RT_SUCCESS(rc))
-        rc = ichac97R3AttachInternal(pThis, uLUN, 0 /* fFlags */, NULL /* ppDrv */);
-
-    LogFunc(("pThis=%p, uLUN=%u, pszDriver=%s, rc=%Rrc\n", pThis, uLUN, pszDriver, rc));
-
-# undef RC_CHECK
-
+        rc = ichac97R3AttachInternal(pThis, iLun, 0 /* fFlags */, NULL /* ppDrv */);
+    LogFunc(("pThis=%p, iLun=%u, rc=%Rrc\n", pThis, iLun, rc));
     return rc;
 }
 
@@ -4341,205 +4288,186 @@ static DECLCALLBACK(int) ichac97R3Construct(PPDMDEVINS pDevIns, int iInstance, P
 # endif
 
     /*
-     * Attach driver.
+     * Attach drivers.  We ASSUME they are configured consecutively without any
+     * gaps, so we stop when we hit the first LUN w/o a driver configured.
      */
-    uint8_t uLUN;
-    for (uLUN = 0; uLUN < UINT8_MAX; ++uLUN)
+    for (unsigned iLun = 0; ; iLun++)
     {
-        LogFunc(("Trying to attach driver for LUN #%RU8 ...\n", uLUN));
-        rc = ichac97R3AttachInternal(pThis, uLUN, 0 /* fFlags */, NULL /* ppDrv */);
-        if (RT_FAILURE(rc))
+        AssertBreak(iLun < UINT8_MAX);
+        LogFunc(("Trying to attach driver for LUN#%u ...\n", iLun));
+        rc = ichac97R3AttachInternal(pThis, iLun, 0 /* fFlags */, NULL /* ppDrv */);
+        if (rc == VERR_PDM_NO_ATTACHED_DRIVER)
         {
-            if (rc == VERR_PDM_NO_ATTACHED_DRIVER)
-                rc = VINF_SUCCESS;
-            else if (rc == VERR_AUDIO_BACKEND_INIT_FAILED)
-            {
-                ichac97R3ReattachInternal(pThis, NULL /* pDrv */, uLUN, "NullAudio");
-                PDMDevHlpVMSetRuntimeError(pDevIns, 0 /*fFlags*/, "HostAudioNotResponding",
-                        N_("Host audio backend initialization has failed. Selecting the NULL audio backend "
-                            "with the consequence that no sound is audible"));
-                /* Attaching to the NULL audio backend will never fail. */
-                rc = VINF_SUCCESS;
-            }
+            LogFunc(("cLUNs=%u\n", iLun));
             break;
         }
+        if (rc == VERR_AUDIO_BACKEND_INIT_FAILED)
+        {
+            ichac97R3ReconfigLunWithNullAudio(pThis, iLun); /* Pretend attaching to the NULL audio backend will never fail. */
+            PDMDevHlpVMSetRuntimeError(pDevIns, 0 /*fFlags*/, "HostAudioNotResponding",
+                                       N_("Host audio backend initialization has failed. "
+                                          "Selecting the NULL audio backend with the consequence that no sound is audible"));
+        }
+        else
+            AssertLogRelMsgReturn(RT_SUCCESS(rc),  ("LUN#%u: rc=%Rrc\n", iLun, rc), rc);
     }
 
-    LogFunc(("cLUNs=%RU8, rc=%Rrc\n", uLUN, rc));
+    rc = AudioMixerCreate("AC'97 Mixer", 0 /* uFlags */, &pThis->pMixer);
+    AssertRCReturn(rc, rc);
+    rc = AudioMixerCreateSink(pThis->pMixer, "[Recording] Line In", AUDMIXSINKDIR_INPUT, &pThis->pSinkLineIn);
+    AssertRCReturn(rc, rc);
+    rc = AudioMixerCreateSink(pThis->pMixer, "[Recording] Microphone In", AUDMIXSINKDIR_INPUT, &pThis->pSinkMicIn);
+    AssertRCReturn(rc, rc);
+    rc = AudioMixerCreateSink(pThis->pMixer, "[Playback] PCM Output", AUDMIXSINKDIR_OUTPUT, &pThis->pSinkOut);
+    AssertRCReturn(rc, rc);
 
-    if (RT_SUCCESS(rc))
+    /*
+     * Create all hardware streams.
+     */
+    for (unsigned i = 0; i < AC97_MAX_STREAMS; i++)
     {
-        rc = AudioMixerCreate("AC'97 Mixer", 0 /* uFlags */, &pThis->pMixer);
+        int rc2 = ichac97R3StreamCreate(pThis, &pThis->aStreams[i], i /* SD# */);
+        AssertRC(rc2);
         if (RT_SUCCESS(rc))
-        {
-            rc = AudioMixerCreateSink(pThis->pMixer, "[Recording] Line In", AUDMIXSINKDIR_INPUT, &pThis->pSinkLineIn);
-            AssertRC(rc);
-            rc = AudioMixerCreateSink(pThis->pMixer, "[Recording] Microphone In", AUDMIXSINKDIR_INPUT, &pThis->pSinkMicIn);
-            AssertRC(rc);
-            rc = AudioMixerCreateSink(pThis->pMixer, "[Playback] PCM Output", AUDMIXSINKDIR_OUTPUT, &pThis->pSinkOut);
-            AssertRC(rc);
-        }
+            rc = rc2;
     }
-
-    if (RT_SUCCESS(rc))
-    {
-        /*
-         * Create all hardware streams.
-         */
-        for (unsigned i = 0; i < AC97_MAX_STREAMS; i++)
-        {
-            int rc2 = ichac97R3StreamCreate(pThis, &pThis->aStreams[i], i /* SD# */);
-            AssertRC(rc2);
-            if (RT_SUCCESS(rc))
-                rc = rc2;
-        }
 
 # ifdef VBOX_WITH_AUDIO_AC97_ONETIME_INIT
-        PAC97DRIVER pDrv;
-        RTListForEach(&pThis->lstDrv, pDrv, AC97DRIVER, Node)
+    PAC97DRIVER pDrv;
+    RTListForEach(&pThis->lstDrv, pDrv, AC97DRIVER, Node)
+    {
+        /*
+         * Only primary drivers are critical for the VM to run. Everything else
+         * might not worth showing an own error message box in the GUI.
+         */
+        if (!(pDrv->fFlags & PDMAUDIODRVFLAGS_PRIMARY))
+            continue;
+
+        PPDMIAUDIOCONNECTOR pCon = pDrv->pConnector;
+        AssertPtr(pCon);
+
+        bool fValidLineIn = AudioMixerStreamIsValid(pDrv->LineIn.pMixStrm);
+        bool fValidMicIn  = AudioMixerStreamIsValid(pDrv->MicIn.pMixStrm);
+        bool fValidOut    = AudioMixerStreamIsValid(pDrv->Out.pMixStrm);
+
+        if (    !fValidLineIn
+             && !fValidMicIn
+             && !fValidOut)
         {
-            /*
-             * Only primary drivers are critical for the VM to run. Everything else
-             * might not worth showing an own error message box in the GUI.
-             */
-            if (!(pDrv->fFlags & PDMAUDIODRVFLAGS_PRIMARY))
-                continue;
+            LogRel(("AC97: Falling back to NULL backend (no sound audible)\n"));
+            ichac97R3Reset(pDevIns);
+            ichac97R3ReconfigLunWithNullAudio(pThis, iLun);
+            PDMDevHlpVMSetRuntimeError(pDevIns, 0 /*fFlags*/, "HostAudioNotResponding",
+                                       N_("No audio devices could be opened. "
+                                          "Selecting the NULL audio backend with the consequence that no sound is audible"));
+        }
+        else
+        {
+            bool fWarn = false;
 
-            PPDMIAUDIOCONNECTOR pCon = pDrv->pConnector;
-            AssertPtr(pCon);
-
-            bool fValidLineIn = AudioMixerStreamIsValid(pDrv->LineIn.pMixStrm);
-            bool fValidMicIn  = AudioMixerStreamIsValid(pDrv->MicIn.pMixStrm);
-            bool fValidOut    = AudioMixerStreamIsValid(pDrv->Out.pMixStrm);
-
-            if (    !fValidLineIn
-                 && !fValidMicIn
-                 && !fValidOut)
+            PDMAUDIOBACKENDCFG backendCfg;
+            int rc2 = pCon->pfnGetConfig(pCon, &backendCfg);
+            if (RT_SUCCESS(rc2))
             {
-                LogRel(("AC97: Falling back to NULL backend (no sound audible)\n"));
+                if (backendCfg.cMaxStreamsIn)
+                {
+                    /* If the audio backend supports two or more input streams at once,
+                     * warn if one of our two inputs (microphone-in and line-in) failed to initialize. */
+                    if (backendCfg.cMaxStreamsIn >= 2)
+                        fWarn = !fValidLineIn || !fValidMicIn;
+                    /* If the audio backend only supports one input stream at once (e.g. pure ALSA, and
+                     * *not* ALSA via PulseAudio plugin!), only warn if both of our inputs failed to initialize.
+                     * One of the two simply is not in use then. */
+                    else if (backendCfg.cMaxStreamsIn == 1)
+                        fWarn = !fValidLineIn && !fValidMicIn;
+                    /* Don't warn if our backend is not able of supporting any input streams at all. */
+                }
 
-                ichac97R3Reset(pDevIns);
-                ichac97R3ReattachInternal(pThis, pDrv, pDrv->uLUN, "NullAudio");
-
-                PDMDevHlpVMSetRuntimeError(pDevIns, 0 /*fFlags*/, "HostAudioNotResponding",
-                    N_("No audio devices could be opened. Selecting the NULL audio backend "
-                       "with the consequence that no sound is audible"));
+                if (   !fWarn
+                    && backendCfg.cMaxStreamsOut)
+                {
+                    fWarn = !fValidOut;
+                }
             }
             else
             {
-                bool fWarn = false;
+                LogRel(("AC97: Unable to retrieve audio backend configuration for LUN #%RU8, rc=%Rrc\n", pDrv->uLUN, rc2));
+                fWarn = true;
+            }
 
-                PDMAUDIOBACKENDCFG backendCfg;
-                int rc2 = pCon->pfnGetConfig(pCon, &backendCfg);
-                if (RT_SUCCESS(rc2))
+            if (fWarn)
+            {
+                char   szMissingStreams[255] = "";
+                size_t len = 0;
+                if (!fValidLineIn)
                 {
-                    if (backendCfg.cMaxStreamsIn)
-                    {
-                        /* If the audio backend supports two or more input streams at once,
-                         * warn if one of our two inputs (microphone-in and line-in) failed to initialize. */
-                        if (backendCfg.cMaxStreamsIn >= 2)
-                            fWarn = !fValidLineIn || !fValidMicIn;
-                        /* If the audio backend only supports one input stream at once (e.g. pure ALSA, and
-                         * *not* ALSA via PulseAudio plugin!), only warn if both of our inputs failed to initialize.
-                         * One of the two simply is not in use then. */
-                        else if (backendCfg.cMaxStreamsIn == 1)
-                            fWarn = !fValidLineIn && !fValidMicIn;
-                        /* Don't warn if our backend is not able of supporting any input streams at all. */
-                    }
-
-                    if (   !fWarn
-                        && backendCfg.cMaxStreamsOut)
-                    {
-                        fWarn = !fValidOut;
-                    }
+                    LogRel(("AC97: WARNING: Unable to open PCM line input for LUN #%RU8!\n", pDrv->uLUN));
+                    len = RTStrPrintf(szMissingStreams, sizeof(szMissingStreams), "PCM Input");
                 }
-                else
+                if (!fValidMicIn)
                 {
-                    LogRel(("AC97: Unable to retrieve audio backend configuration for LUN #%RU8, rc=%Rrc\n", pDrv->uLUN, rc2));
-                    fWarn = true;
+                    LogRel(("AC97: WARNING: Unable to open PCM microphone input for LUN #%RU8!\n", pDrv->uLUN));
+                    len += RTStrPrintf(szMissingStreams + len,
+                                       sizeof(szMissingStreams) - len, len ? ", PCM Microphone" : "PCM Microphone");
+                }
+                if (!fValidOut)
+                {
+                    LogRel(("AC97: WARNING: Unable to open PCM output for LUN #%RU8!\n", pDrv->uLUN));
+                    len += RTStrPrintf(szMissingStreams + len,
+                                       sizeof(szMissingStreams) - len, len ? ", PCM Output" : "PCM Output");
                 }
 
-                if (fWarn)
-                {
-                    char   szMissingStreams[255] = "";
-                    size_t len = 0;
-                    if (!fValidLineIn)
-                    {
-                        LogRel(("AC97: WARNING: Unable to open PCM line input for LUN #%RU8!\n", pDrv->uLUN));
-                        len = RTStrPrintf(szMissingStreams, sizeof(szMissingStreams), "PCM Input");
-                    }
-                    if (!fValidMicIn)
-                    {
-                        LogRel(("AC97: WARNING: Unable to open PCM microphone input for LUN #%RU8!\n", pDrv->uLUN));
-                        len += RTStrPrintf(szMissingStreams + len,
-                                           sizeof(szMissingStreams) - len, len ? ", PCM Microphone" : "PCM Microphone");
-                    }
-                    if (!fValidOut)
-                    {
-                        LogRel(("AC97: WARNING: Unable to open PCM output for LUN #%RU8!\n", pDrv->uLUN));
-                        len += RTStrPrintf(szMissingStreams + len,
-                                           sizeof(szMissingStreams) - len, len ? ", PCM Output" : "PCM Output");
-                    }
-
-                    PDMDevHlpVMSetRuntimeError(pDevIns, 0 /*fFlags*/, "HostAudioNotResponding",
-                                               N_("Some AC'97 audio streams (%s) could not be opened. Guest applications generating audio "
-                                                  "output or depending on audio input may hang. Make sure your host audio device "
-                                                  "is working properly. Check the logfile for error messages of the audio "
-                                                  "subsystem"), szMissingStreams);
-                }
+                PDMDevHlpVMSetRuntimeError(pDevIns, 0 /*fFlags*/, "HostAudioNotResponding",
+                                           N_("Some AC'97 audio streams (%s) could not be opened. Guest applications generating audio "
+                                              "output or depending on audio input may hang. Make sure your host audio device "
+                                              "is working properly. Check the logfile for error messages of the audio "
+                                              "subsystem"), szMissingStreams);
             }
         }
+    }
 # endif /* VBOX_WITH_AUDIO_AC97_ONETIME_INIT */
-    }
 
-    if (RT_SUCCESS(rc))
-        ichac97R3Reset(pDevIns);
+    ichac97R3Reset(pDevIns);
 
-    if (RT_SUCCESS(rc))
+    static const char * const s_apszNames[] =
     {
-        static const char * const s_apszNames[] =
-        {
-            "AC97 PI", "AC97 PO", "AC97 MC"
-        };
-        AssertCompile(RT_ELEMENTS(s_apszNames) == AC97_MAX_STREAMS);
+        "AC97 PI", "AC97 PO", "AC97 MC"
+    };
+    AssertCompile(RT_ELEMENTS(s_apszNames) == AC97_MAX_STREAMS);
 
-        for (unsigned i = 0; i < AC97_MAX_STREAMS; i++)
-        {
-            /* Create the emulation timer (per stream).
-             *
-             * Note:  Use TMCLOCK_VIRTUAL_SYNC here, as the guest's AC'97 driver
-             *        relies on exact (virtual) DMA timing and uses DMA Position Buffers
-             *        instead of the LPIB registers.
-             */
-            rc = PDMDevHlpTMTimerCreate(pDevIns, TMCLOCK_VIRTUAL_SYNC, ichac97R3Timer, &pThis->aStreams[i],
-                                        TMTIMER_FLAGS_NO_CRIT_SECT, s_apszNames[i], &pThis->pTimerR3[i]);
-            AssertRCReturn(rc, rc);
-            pThis->pTimerR0[i] = TMTimerR0Ptr(pThis->pTimerR3[i]);
-            pThis->pTimerRC[i] = TMTimerRCPtr(pThis->pTimerR3[i]);
-
-            /* Use our own critcal section for the device timer.
-             * That way we can control more fine-grained when to lock what. */
-            rc = TMR3TimerSetCritSect(pThis->pTimerR3[i], &pThis->CritSect);
-            AssertRCReturn(rc, rc);
-        }
-    }
-
-# ifdef VBOX_WITH_STATISTICS
-    if (RT_SUCCESS(rc))
+    for (unsigned i = 0; i < AC97_MAX_STREAMS; i++)
     {
-        /*
-         * Register statistics.
+        /* Create the emulation timer (per stream).
+         *
+         * Note:  Use TMCLOCK_VIRTUAL_SYNC here, as the guest's AC'97 driver
+         *        relies on exact (virtual) DMA timing and uses DMA Position Buffers
+         *        instead of the LPIB registers.
          */
-        PDMDevHlpSTAMRegister(pDevIns, &pThis->StatTimer,        STAMTYPE_PROFILE, "/Devices/AC97/Timer",        STAMUNIT_TICKS_PER_CALL, "Profiling ichac97Timer.");
-        PDMDevHlpSTAMRegister(pDevIns, &pThis->StatIn,           STAMTYPE_PROFILE, "/Devices/AC97/Input",        STAMUNIT_TICKS_PER_CALL, "Profiling input.");
-        PDMDevHlpSTAMRegister(pDevIns, &pThis->StatOut,          STAMTYPE_PROFILE, "/Devices/AC97/Output",       STAMUNIT_TICKS_PER_CALL, "Profiling output.");
-        PDMDevHlpSTAMRegister(pDevIns, &pThis->StatBytesRead,    STAMTYPE_COUNTER, "/Devices/AC97/BytesRead"   , STAMUNIT_BYTES,          "Bytes read from AC97 emulation.");
-        PDMDevHlpSTAMRegister(pDevIns, &pThis->StatBytesWritten, STAMTYPE_COUNTER, "/Devices/AC97/BytesWritten", STAMUNIT_BYTES,          "Bytes written to AC97 emulation.");
+        rc = PDMDevHlpTMTimerCreate(pDevIns, TMCLOCK_VIRTUAL_SYNC, ichac97R3Timer, &pThis->aStreams[i],
+                                    TMTIMER_FLAGS_NO_CRIT_SECT, s_apszNames[i], &pThis->pTimerR3[i]);
+        AssertRCReturn(rc, rc);
+        pThis->pTimerR0[i] = TMTimerR0Ptr(pThis->pTimerR3[i]);
+        pThis->pTimerRC[i] = TMTimerRCPtr(pThis->pTimerR3[i]);
+
+        /* Use our own critcal section for the device timer.
+         * That way we can control more fine-grained when to lock what. */
+        rc = TMR3TimerSetCritSect(pThis->pTimerR3[i], &pThis->CritSect);
+        AssertRCReturn(rc, rc);
     }
+
+    /*
+     * Register statistics.
+     */
+# ifdef VBOX_WITH_STATISTICS
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatTimer,        STAMTYPE_PROFILE, "Timer",        STAMUNIT_TICKS_PER_CALL, "Profiling ichac97Timer.");
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatIn,           STAMTYPE_PROFILE, "Input",        STAMUNIT_TICKS_PER_CALL, "Profiling input.");
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatOut,          STAMTYPE_PROFILE, "Output",       STAMUNIT_TICKS_PER_CALL, "Profiling output.");
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatBytesRead,    STAMTYPE_COUNTER, "BytesRead"   , STAMUNIT_BYTES,          "Bytes read from AC97 emulation.");
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatBytesWritten, STAMTYPE_COUNTER, "BytesWritten", STAMUNIT_BYTES,          "Bytes written to AC97 emulation.");
 # endif
 
-    LogFlowFuncLeaveRC(rc);
-    return rc;
+    LogFlowFuncLeaveRC(VINF_SUCCESS);
+    return VINF_SUCCESS;
 }
 
 #endif /* !IN_RING3 */
