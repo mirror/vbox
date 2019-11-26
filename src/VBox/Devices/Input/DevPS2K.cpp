@@ -913,7 +913,7 @@ static int ps2kR3ProcessKeyEvent(PPDMDEVINS pDevIns, PPS2K pThis, uint32_t u32Hi
 }
 
 /**
- * @callback_function_impl{FNTMTIMERDEV}
+ * @callback_method_impl{FNTMTIMERDEV}
  *
  * Throttling timer to emulate the finite keyboard communication speed. A PS/2 keyboard is
  * limited by the serial link speed and cannot send much more than 1,000 bytes per second.
@@ -949,7 +949,7 @@ static DECLCALLBACK(void) ps2kR3ThrottleTimer(PPDMDEVINS pDevIns, PTMTIMER pTime
 }
 
 /**
- * @callback_function_impl{FNTMTIMERDEV,
+ * @callback_method_impl{FNTMTIMERDEV,
  * Timer handler for emulating typematic keys.}
  *
  * @note    Note that only the last key held down repeats (if typematic).
@@ -977,7 +977,7 @@ static DECLCALLBACK(void) ps2kR3TypematicTimer(PPDMDEVINS pDevIns, PTMTIMER pTim
 }
 
 /**
- * @callback_function_impl{FNTMTIMERDEV}
+ * @callback_method_impl{FNTMTIMERDEV}
  *
  * The keyboard BAT is specified to take several hundred milliseconds. We need
  * to delay sending the result to the host for at least a tiny little while.
@@ -1055,9 +1055,9 @@ static DECLCALLBACK(void) ps2kR3InfoState(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp
  * @returns VBox status code.
  * @param   pDevIns     The device instance.
  * @param   pThis       The PS2 keyboard instance data.
- * @param   u32Usage    USB HID usage code with key press/release flag.
+ * @param   idUsage     USB HID usage code with key press/release flag.
  */
-static int ps2kR3PutEventWorker(PPDMDEVINS pDevIns, PPS2K pThis, uint32_t u32Usage)
+static int ps2kR3PutEventWorker(PPDMDEVINS pDevIns, PPS2K pThis, uint32_t idUsage)
 {
     uint32_t        u32HidCode;
     uint8_t         u8KeyCode;
@@ -1067,10 +1067,10 @@ static int ps2kR3PutEventWorker(PPDMDEVINS pDevIns, PPS2K pThis, uint32_t u32Usa
     int             rc = VINF_SUCCESS;
 
     /* Extract the usage page and ID and ensure it's valid. */
-    fKeyDown   = !(u32Usage & 0x80000000);
-    u32HidCode = u32Usage & 0xFFFFFF;
-    u8HidPage  = RT_LOBYTE(RT_HIWORD(u32Usage));
-    u8KeyCode  = RT_LOBYTE(u32Usage);
+    fKeyDown   = !(idUsage & UINT32_C(0x80000000));
+    u32HidCode = idUsage & 0xFFFFFF;
+    u8HidPage  = RT_LOBYTE(RT_HIWORD(idUsage));
+    u8KeyCode  = RT_LOBYTE(idUsage);
     if (u8HidPage == USB_HID_KB_PAGE)
         AssertReturn(u8KeyCode <= VBOX_USB_MAX_USAGE_CODE, VERR_INTERNAL_ERROR);
     else
@@ -1106,14 +1106,14 @@ static int ps2kR3PutEventWorker(PPDMDEVINS pDevIns, PPS2K pThis, uint32_t u32Usa
 /**
  * @interface_method_impl{PDMIKEYBOARDPORT,pfnPutEventHid}
  */
-static DECLCALLBACK(int) ps2kR3KeyboardPort_PutEventHid(PPDMIKEYBOARDPORT pInterface, uint32_t u32UsageCode)
+static DECLCALLBACK(int) ps2kR3KeyboardPort_PutEventHid(PPDMIKEYBOARDPORT pInterface, uint32_t idUsage)
 {
     PPS2KR3     pThisCC = RT_FROM_MEMBER(pInterface, PS2KR3, Keyboard.IPort);
     PPDMDEVINS  pDevIns = pThisCC->pDevIns;
     PPS2K       pThis   = &PDMDEVINS_2_DATA(pDevIns, PKBDSTATE)->Kbd;
     int         rc;
 
-    LogRelFlowFunc(("key code %08X\n", u32UsageCode));
+    LogRelFlowFunc(("key code %08X\n", idUsage));
 
     rc = PDMDevHlpCritSectEnter(pDevIns, pDevIns->pCritSectRoR3, VERR_SEM_BUSY);
     AssertReleaseRC(rc);
@@ -1121,8 +1121,8 @@ static DECLCALLBACK(int) ps2kR3KeyboardPort_PutEventHid(PPDMIKEYBOARDPORT pInter
     /* The 'BAT fail' scancode is reused as a signal to release keys. No actual
      * key is allowed to use this scancode.
      */
-    if (RT_LIKELY(u32UsageCode != KRSP_BAT_FAIL))
-        ps2kR3PutEventWorker(pDevIns, pThis, u32UsageCode);
+    if (RT_LIKELY(idUsage != KRSP_BAT_FAIL))
+        ps2kR3PutEventWorker(pDevIns, pThis, idUsage);
     else
         ps2kR3ReleaseKeys(pDevIns, pThis);
 

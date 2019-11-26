@@ -699,13 +699,9 @@ static DECLCALLBACK(void *) usbHidKeyboardQueryInterface(PPDMIBASE pInterface, c
 #define KRSP_BAT_FAIL       0xFC    /* Also a 'release keys' signal. */
 
 /**
- * Keyboard event handler.
- *
- * @returns VBox status code.
- * @param   pInterface      Pointer to the keyboard port interface (KBDState::Keyboard.IPort).
- * @param   u32UsageCode    The key usage ID.
+ * @interface_method_impl{PDMIKEYBOARDPORT,pfnPutEventHid}
  */
-static DECLCALLBACK(int) usbHidKeyboardPutEvent(PPDMIKEYBOARDPORT pInterface, uint32_t u32UsageCode)
+static DECLCALLBACK(int) usbHidKeyboardPutEvent(PPDMIKEYBOARDPORT pInterface, uint32_t idUsage)
 {
     PUSBHID pThis = RT_FROM_MEMBER(pInterface, USBHID, Lun0.IPort);
     uint8_t     u8HidCode;
@@ -713,12 +709,12 @@ static DECLCALLBACK(int) usbHidKeyboardPutEvent(PPDMIKEYBOARDPORT pInterface, ui
     bool        fHaveEvent = true;
     int         rc = VINF_SUCCESS;
 
-    RTCritSectEnter(&pThis->CritSect);
-
     /* Let's see what we got... */
-    fKeyDown  = !(u32UsageCode & 0x80000000);
-    u8HidCode = u32UsageCode & 0xFF;
+    fKeyDown  = !(idUsage & UINT32_C(0x80000000));
+    u8HidCode = idUsage & 0xFF;
     AssertReturn(u8HidCode <= VBOX_USB_MAX_USAGE_CODE, VERR_INTERNAL_ERROR);
+
+    RTCritSectEnter(&pThis->CritSect);
 
     LogFlowFunc(("key %s: 0x%x\n", fKeyDown ? "down" : "up", u8HidCode));
 
@@ -736,18 +732,18 @@ static DECLCALLBACK(int) usbHidKeyboardPutEvent(PPDMIKEYBOARDPORT pInterface, ui
     }
     else if (fHaveEvent)
     {
-        if (RT_UNLIKELY(u32UsageCode == KRSP_BAT_FAIL))
-        {
-            /* Clear all currently depressed and unreported keys. */
-            RT_ZERO(pThis->abDepressedKeys);
-        }
-        else
+        if (RT_LIKELY(idUsage != KRSP_BAT_FAIL))
         {
             /* Regular key event - update keyboard state. */
             if (fKeyDown)
                 pThis->abDepressedKeys[u8HidCode] = 1;
             else
                 pThis->abDepressedKeys[u8HidCode] = 0;
+        }
+        else
+        {
+            /* Clear all currently depressed and unreported keys. */
+            RT_ZERO(pThis->abDepressedKeys);
         }
 
         /*

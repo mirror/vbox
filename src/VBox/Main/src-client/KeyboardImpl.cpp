@@ -254,10 +254,8 @@ HRESULT Keyboard::putUsageCode(LONG aUsageCode, LONG aUsagePage, BOOL fKeyReleas
     if (!pUpPort)
         return S_OK;
 
-    int vrc = VINF_SUCCESS;
-    uint32_t u32Usage;
-    u32Usage = (uint16_t)aUsageCode | ((uint32_t)(uint8_t)aUsagePage << 16) | (fKeyRelease ? 0x80000000 : 0);
-    vrc = pUpPort->pfnPutEventHid(pUpPort, u32Usage);
+    uint32_t idUsage = (uint16_t)aUsageCode | ((uint32_t)(uint8_t)aUsagePage << 16) | (fKeyRelease ? UINT32_C(0x80000000) : 0);
+    int vrc = pUpPort->pfnPutEventHid(pUpPort, idUsage);
     if (RT_FAILURE(vrc))
         return setErrorBoth(VBOX_E_IPRT_ERROR, vrc,
                             tr("Could not send usage code to the virtual keyboard (%Rrc)"),

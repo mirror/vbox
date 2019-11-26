@@ -82,7 +82,7 @@ typedef struct DRVKBDQUEUEITEM
     /** The core part owned by the queue manager. */
     PDMQUEUEITEMCORE    Core;
     /** The keycode. */
-    uint32_t            u32UsageCode;
+    uint32_t            idUsage;
 } DRVKBDQUEUEITEM, *PDRVKBDQUEUEITEM;
 
 
@@ -211,12 +211,9 @@ static DECLCALLBACK(void *)  drvKbdQueueQueryInterface(PPDMIBASE pInterface, con
 
 
 /**
- * Queues a scancode-based keyboard event.
- * Because of the event queueing the EMT context requirement is lifted.
+ * @interface_method_impl{PDMIKEYBOARDPORT,pfnPutEventScan}
  *
- * @returns VBox status code.
- * @param   pInterface          Pointer to this interface structure.
- * @param   u8ScanCode          The scan code to translate/queue.
+ * Because of the event queueing the EMT context requirement is lifted.
  * @thread  Any thread.
  */
 static DECLCALLBACK(int) drvKbdQueuePutEventScan(PPDMIKEYBOARDPORT pInterface, uint8_t u8ScanCode)
@@ -226,10 +223,11 @@ static DECLCALLBACK(int) drvKbdQueuePutEventScan(PPDMIKEYBOARDPORT pInterface, u
     if (pDrv->fInactive)
         return VINF_SUCCESS;
 
-    uint32_t    u32Usage = 0;
-    pDrv->XlatState = ScancodeToHidUsage(pDrv->XlatState, u8ScanCode, &u32Usage);
+    uint32_t idUsage = 0;
+    pDrv->XlatState = ScancodeToHidUsage(pDrv->XlatState, u8ScanCode, &idUsage);
 
-    if (pDrv->XlatState == SS_IDLE) {
+    if (pDrv->XlatState == SS_IDLE)
+    {
         PDRVKBDQUEUEITEM pItem = (PDRVKBDQUEUEITEM)PDMQueueAlloc(pDrv->pQueue);
         if (pItem)
         {
@@ -238,7 +236,7 @@ static DECLCALLBACK(int) drvKbdQueuePutEventScan(PPDMIKEYBOARDPORT pInterface, u
              * only send break events for Hangul/Hanja keys -- convert a lone
              * key up into a key up/key down sequence.
              */
-            if (u32Usage == 0x80000090 || u32Usage == 0x80000091)
+            if (idUsage == UINT32_C(0x80000090) || idUsage == UINT32_C(0x80000091))
             {
                 PDRVKBDQUEUEITEM pItem2 = (PDRVKBDQUEUEITEM)PDMQueueAlloc(pDrv->pQueue);
                 /*
@@ -248,12 +246,12 @@ static DECLCALLBACK(int) drvKbdQueuePutEventScan(PPDMIKEYBOARDPORT pInterface, u
                 if (pItem2)
                 {
                     /* Manufacture a key down event. */
-                    pItem2->u32UsageCode = u32Usage & ~0x80000000;
+                    pItem2->idUsage = idUsage & ~UINT32_C(0x80000000);
                     PDMQueueInsert(pDrv->pQueue, &pItem2->Core);
                 }
             }
 
-            pItem->u32UsageCode = u32Usage;
+            pItem->idUsage = idUsage;
             PDMQueueInsert(pDrv->pQueue, &pItem->Core);
 
             return VINF_SUCCESS;
@@ -268,15 +266,12 @@ static DECLCALLBACK(int) drvKbdQueuePutEventScan(PPDMIKEYBOARDPORT pInterface, u
 
 
 /**
- * Queues a HID-usage-based keyboard event.
- * Because of the event queueing the EMT context requirement is lifted.
+ * @interface_method_impl{PDMIKEYBOARDPORT,pfnPutEventHid}
  *
- * @returns VBox status code.
- * @param   pInterface          Pointer to this interface structure.
- * @param   u32UsageCode        The HID usage code to queue.
+ * Because of the event queueing the EMT context requirement is lifted.
  * @thread  Any thread.
  */
-static DECLCALLBACK(int) drvKbdQueuePutEventHid(PPDMIKEYBOARDPORT pInterface, uint32_t u32UsageCode)
+static DECLCALLBACK(int) drvKbdQueuePutEventHid(PPDMIKEYBOARDPORT pInterface, uint32_t idUsage)
 {
     PDRVKBDQUEUE pDrv = IKEYBOARDPORT_2_DRVKBDQUEUE(pInterface);
     /* Ignore any attempt to send events if queue is inactive. */
@@ -286,7 +281,7 @@ static DECLCALLBACK(int) drvKbdQueuePutEventHid(PPDMIKEYBOARDPORT pInterface, ui
     PDRVKBDQUEUEITEM pItem = (PDRVKBDQUEUEITEM)PDMQueueAlloc(pDrv->pQueue);
     if (pItem)
     {
-        pItem->u32UsageCode = u32UsageCode;
+        pItem->idUsage = idUsage;
         PDMQueueInsert(pDrv->pQueue, &pItem->Core);
 
         return VINF_SUCCESS;
@@ -356,7 +351,7 @@ static DECLCALLBACK(bool) drvKbdQueueConsumer(PPDMDRVINS pDrvIns, PPDMQUEUEITEMC
 {
     PDRVKBDQUEUE        pThis = PDMINS_2_DATA(pDrvIns, PDRVKBDQUEUE);
     PDRVKBDQUEUEITEM    pItem = (PDRVKBDQUEUEITEM)pItemCore;
-    int rc = pThis->pUpPort->pfnPutEventHid(pThis->pUpPort, pItem->u32UsageCode);
+    int rc = pThis->pUpPort->pfnPutEventHid(pThis->pUpPort, pItem->idUsage);
     return RT_SUCCESS(rc);
 }
 

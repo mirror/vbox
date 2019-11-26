@@ -430,9 +430,9 @@ typedef struct PDMIKEYBOARDPORT
      *          event now and want it to be repeated at a later point.
      *
      * @param   pInterface          Pointer to this interface structure.
-     * @param   u32UsageID          The HID usage code event to queue.
+     * @param   idUsage             The HID usage code event to queue.
      */
-    DECLR3CALLBACKMEMBER(int, pfnPutEventHid,(PPDMIKEYBOARDPORT pInterface, uint32_t u32UsageID));
+    DECLR3CALLBACKMEMBER(int, pfnPutEventHid,(PPDMIKEYBOARDPORT pInterface, uint32_t idUsage));
 } PDMIKEYBOARDPORT;
 /** PDMIKEYBOARDPORT interface ID. */
 #define PDMIKEYBOARDPORT_IID                    "2a0844f0-410b-40ab-a6ed-6575f3aa3e29"

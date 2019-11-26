@@ -415,7 +415,7 @@ bool ps2mIsRateSupported(uint8_t rate)
  * Receive and process a byte sent by the keyboard controller.
  *
  * @param   pDevIns The device instance.
- * @param   pThis   The PS/2 auxiliary device instance data.
+ * @param   pThis   The PS/2 auxiliary device shared instance data.
  * @param   cmd     The command (or data) byte.
  */
 int PS2MByteToAux(PPDMDEVINS pDevIns, PPS2M pThis, uint8_t cmd)
@@ -637,8 +637,8 @@ int PS2MByteToAux(PPDMDEVINS pDevIns, PPS2M pThis, uint8_t cmd)
  * Send a byte (packet data or command response) to the keyboard controller.
  *
  * @returns VINF_SUCCESS or VINF_TRY_AGAIN.
- * @param   pThis               The PS/2 auxiliary device instance data.
- * @param   pb                  Where to return the byte we've read.
+ * @param   pThis   The PS/2 auxiliary device shared instance data.
+ * @param   pb      Where to return the byte we've read.
  * @remarks Caller must have entered the device critical section.
  */
 int PS2MByteFromAux(PPS2M pThis, uint8_t *pb)
@@ -672,7 +672,7 @@ static uint32_t ps2mR3HaveEvents(PPS2M pThis)
 }
 
 /**
- * @callback_function_impl{FNTMTIMERDEV,
+ * @callback_method_impl{FNTMTIMERDEV,
  * Event rate throttling timer to emulate the auxiliary device sampling rate.}
  */
 static DECLCALLBACK(void) ps2mR3ThrottleTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser)
@@ -703,7 +703,7 @@ static DECLCALLBACK(void) ps2mR3ThrottleTimer(PPDMDEVINS pDevIns, PTMTIMER pTime
 }
 
 /**
- * @callback_function_impl{FNTMTIMERDEV}
+ * @callback_method_impl{FNTMTIMERDEV}
  *
  * The auxiliary device reset is specified to take up to about 500 milliseconds.
  * We need to delay sending the result to the host for at least a tiny little
@@ -767,7 +767,7 @@ static DECLCALLBACK(void) ps2mR3InfoState(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp
  *
  * @returns VBox status code.
  * @param   pDevIns     The device instance.
- * @param   pThis       The PS/2 auxiliary device instance data.
+ * @param   pThis       The PS/2 auxiliary device shared instance data.
  * @param   dx          X direction movement delta.
  * @param   dy          Y direction movement delta.
  * @param   dz          Z (vertical scroll) movement delta.
@@ -882,8 +882,8 @@ static DECLCALLBACK(void *) ps2mR3QueryInterface(PPDMIBASE pInterface, const cha
  * system.
  *
  * @returns VBox status code.
- * @param   pThis       The PS/2 auxiliary device instance data.
  * @param   pDevIns     The device instance.
+ * @param   pThisCC     The PS/2 auxiliary device instance data for ring-3.
  * @param   iLUN        The logical unit which is being detached.
  * @param   fFlags      Flags, combination of the PDMDEVATT_FLAGS_* \#defines.
  */

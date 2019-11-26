@@ -734,7 +734,7 @@ void PS2CmnClearQueue(PPS2QHDR pQHdr, size_t cElements)
  *
  * @param   pQHdr       The queue header.
  * @param   cElements   The queue size.
- * @param   abElements  The queue element array.
+ * @param   pbElements  The queue element array.
  * @param   bValue      The byte to store.
  */
 void PS2CmnInsertQueue(PPS2QHDR pQHdr, size_t cElements, uint8_t *pbElements, uint8_t bValue)
@@ -770,7 +770,7 @@ void PS2CmnInsertQueue(PPS2QHDR pQHdr, size_t cElements, uint8_t *pbElements, ui
  *
  * @param   pQHdr       The queue header.
  * @param   cElements   The queue size.
- * @param   abElements  The queue element array.
+ * @param   pbElements  The queue element array.
  * @param   pbValue     Where to return the byte on success.
  *
  * @retval  VINF_TRY_AGAIN if queue is empty,
@@ -816,7 +816,7 @@ int PS2CmnRemoveQueue(PPS2QHDR pQHdr, size_t cElements, uint8_t const *pbElement
  * @param   pSSM        SSM handle to write the state to.
  * @param   pQHdr       The queue header.
  * @param   cElements   The queue size.
- * @param   abElements  The queue element array.
+ * @param   pbElements  The queue element array.
  */
 void PS2CmnR3SaveQueue(PCPDMDEVHLPR3 pHlp, PSSMHANDLE pSSM, PPS2QHDR pQHdr, size_t cElements, uint8_t const *pbElements)
 {
@@ -841,7 +841,7 @@ void PS2CmnR3SaveQueue(PCPDMDEVHLPR3 pHlp, PSSMHANDLE pSSM, PPS2QHDR pQHdr, size
  * @param   pSSM        SSM handle to read the state from.
  * @param   pQHdr       The queue header.
  * @param   cElements   The queue size.
- * @param   abElements  The queue element array.
+ * @param   pbElements  The queue element array.
  *
  * @returns VBox status/error code.
  */
