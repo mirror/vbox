@@ -979,6 +979,7 @@ static int devpciR3CommonRegisterDeviceOnBus(PPDMDEVINS pDevIns, PDEVPCIBUS pBus
     Assert(pBus == PDMINS_2_DATA(pDevIns, PDEVPCIBUS));
     pPciDev->Int.s.pfnConfigRead    = NULL;
     pPciDev->Int.s.pfnConfigWrite   = NULL;
+    pPciDev->Int.s.hMmioMsix        = NIL_IOMMMIOHANDLE;
     if (pBus->fTypePiix3 && pPciDev->cbConfig > 256)
         pPciDev->cbConfig = 256;
 
