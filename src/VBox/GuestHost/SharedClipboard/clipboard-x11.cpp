@@ -639,6 +639,7 @@ static void clipConvertX11TargetsCallback(Widget widget, XtPointer pClient,
 
     PSHCLX11CTX pCtx = reinterpret_cast<SHCLX11CTX *>(pClient);
 
+#ifndef TESTCASE
     LogFlowFunc(("fXtNeedsUpdate=%RTbool, fXtBusy=%RTbool\n", pCtx->fXtNeedsUpdate, pCtx->fXtBusy));
 
     if (pCtx->fXtNeedsUpdate)
@@ -656,6 +657,7 @@ static void clipConvertX11TargetsCallback(Widget widget, XtPointer pClient,
     {
         pCtx->fXtBusy = false;
     }
+#endif
 
     Atom *pAtoms = (Atom *)pValue;
     unsigned i, j;
