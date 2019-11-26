@@ -142,6 +142,8 @@ typedef struct DEVEFI
 {
     /** The flash device containing the NVRAM. */
     FLASHCORE               Flash;
+    /** The 8 I/O ports at 0xEF10 (EFI_PORT_BASE). */
+    IOMIOPORTHANDLE         hIoPorts;
     /** The flash MMIO handle. */
     IOMMMIOHANDLE           hMmioFlash;
 } DEVEFI;
@@ -1337,7 +1339,7 @@ static int efiPortImageEventWrite(PDEVEFIR3 pThisCC, uint32_t u32, unsigned cb)
 
         case EFI_IMAGE_EVT_CMD_COMPLETE:
         {
-#ifdef IN_RING3
+# ifdef IN_RING3
             AssertBreak(EFI_IMAGE_EVT_GET_PAYLOAD(u32) == 0);
 
             /* For now, just log it. */
@@ -1385,9 +1387,9 @@ static int efiPortImageEventWrite(PDEVEFIR3 pThisCC, uint32_t u32, unsigned cb)
                 }
             }
             return VINF_SUCCESS;
-#else
+# else
             return VINF_IOM_R3_IOPORT_WRITE;
-#endif
+# endif
         }
 
         case EFI_IMAGE_EVT_CMD_ADDR0:
@@ -1430,23 +1432,17 @@ static int efiPortImageEventWrite(PDEVEFIR3 pThisCC, uint32_t u32, unsigned cb)
 
 
 /**
- * Port I/O Handler for IN operations.
+ * @callback_method_impl{FNIOMIOPORTNEWIN}
  *
- * @returns VBox status code.
- *
- * @param   pDevIns     The device instance.
- * @param   pvUser      User argument - ignored.
- * @param   Port        Port number used for the IN operation.
- * @param   pu32        Where to store the result.
- * @param   cb          Number of bytes read.
+ * @note The @a offPort parameter is absolute!
  */
-static DECLCALLBACK(int) efiIOPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32, unsigned cb)
+static DECLCALLBACK(VBOXSTRICTRC) efiR3IoPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t *pu32, unsigned cb)
 {
     RT_NOREF(pvUser);
     PDEVEFIR3 pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PDEVEFIR3);
-    Log4(("EFI in: %x %x\n", Port, cb));
+    Log4(("EFI in: %x %x\n", offPort, cb));
 
-    switch (Port)
+    switch (offPort)
     {
         case EFI_INFO_PORT:
             if (pThisCC->offInfo == -1 && cb == 4)
@@ -1467,14 +1463,14 @@ static DECLCALLBACK(int) efiIOPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPOR
             return VINF_SUCCESS;
 
         case EFI_PANIC_PORT:
-#ifdef IN_RING3
+# ifdef IN_RING3
            LogRel(("EFI panic port read!\n"));
            /* Insert special code here on panic reads */
            return PDMDevHlpDBGFStop(pDevIns, RT_SRC_POS, "EFI Panic: panic port read!\n");
-#else
+# else
            /* Reschedule to R3 */
            return VINF_IOM_R3_IOPORT_READ;
-#endif
+# endif
 
         case EFI_PORT_VARIABLE_OP:
             return nvramReadVariableOp(pThisCC, pu32, cb);
@@ -1516,24 +1512,18 @@ static const char *efiDbgPointName(EFIDBGPOINT enmDbgPoint)
 
 
 /**
- * Port I/O Handler for OUT operations.
+ * @callback_method_impl{FNIOMIOPORTNEWOUT}
  *
- * @returns VBox status code.
- *
- * @param   pDevIns     The device instance.
- * @param   pvUser      User argument - ignored.
- * @param   Port        Port number used for the IN operation.
- * @param   u32         The value to output.
- * @param   cb          The value size in bytes.
+ * @note The @a offPort parameter is absolute!
  */
-static DECLCALLBACK(int) efiIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb)
+static DECLCALLBACK(VBOXSTRICTRC) efiR3IoPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t u32, unsigned cb)
 {
     RT_NOREF(pvUser);
     PDEVEFIR3 pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PDEVEFIR3);
-    int     rc    = VINF_SUCCESS;
-    Log4(("efi: out %x %x %d\n", Port, u32, cb));
+    VBOXSTRICTRC rc   = VINF_SUCCESS;
+    Log4(("efi: out %x %x %d\n", offPort, u32, cb));
 
-    switch (Port)
+    switch (offPort)
     {
         case EFI_INFO_PORT:
             Log2(("EFI_INFO_PORT: iInfoSelector=%#x\n", u32));
@@ -1655,7 +1645,7 @@ static DECLCALLBACK(int) efiIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPO
             break;
 
         case EFI_PORT_DEBUG_POINT:
-#ifdef IN_RING3
+# ifdef IN_RING3
             if (u32 > EFIDBGPOINT_INVALID && u32 < EFIDBGPOINT_END)
             {
                 /* For now, just log it. */
@@ -1665,16 +1655,16 @@ static DECLCALLBACK(int) efiIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPO
             else
                 rc = PDMDevHlpDBGFStop(pDevIns, RT_SRC_POS, "Invalid debug point %#x\n", u32);
             break;
-#else
+# else
             return VINF_IOM_R3_IOPORT_WRITE;
-#endif
+# endif
 
         case EFI_PORT_IMAGE_EVENT:
             rc = efiPortImageEventWrite(pThisCC, u32, cb);
             break;
 
         default:
-            Log(("EFI: Write to reserved port %RTiop: %#x (cb=%d)\n", Port, u32, cb));
+            Log(("EFI: Write to reserved port %RTiop: %#x (cb=%d)\n", offPort, u32, cb));
             break;
     }
     return rc;
@@ -2639,11 +2629,10 @@ static DECLCALLBACK(int)  efiConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
     /*
      * Register our I/O ports.
      */
-    rc = PDMDevHlpIOPortRegister(pDevIns, EFI_PORT_BASE, EFI_PORT_COUNT, NULL,
-                                 efiIOPortWrite, efiIOPortRead,
-                                 NULL, NULL, "EFI communication ports");
-    if (RT_FAILURE(rc))
-        return rc;
+    rc = PDMDevHlpIoPortCreateFlagsAndMap(pDevIns, EFI_PORT_BASE, EFI_PORT_COUNT, IOM_IOPORT_F_ABS,
+                                          efiR3IoPortWrite, efiR3IoPortRead,
+                                          "EFI communication ports", NULL /*paExtDescs*/, &pThis->hIoPorts);
+    AssertRCReturn(rc, rc);
 
     /*
      * Plant DMI and MPS tables in the ROM region.
