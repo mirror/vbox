@@ -396,9 +396,7 @@ typedef struct PCNETSTATE
     uint32_t                            uCntBadRMD;
     /** Emulated device type. */
     uint8_t                             uDevType;
-    /** Backwards compatible shared memory region during state loading. */
-    bool                                fSharedRegion;
-    bool                                afAlignment5[2];
+    bool                                afAlignment5[3];
     /** Link speed to be reported through CSR68. */
     uint32_t                            u32LinkSpeed;
     /** MS to wait before we enable the link. */
@@ -417,6 +415,9 @@ typedef struct PCNETSTATE
     IOMIOPORTHANDLE                     hIoPortsIsa;
     /** ISA I/O ports offset 0x00-0x0f. */
     IOMIOPORTHANDLE                     hIoPortsIsaAProm;
+
+    /** Backwards compatible shared memory region during state loading (before 4.3.6). */
+    PGMMMIO2HANDLE                      hMmio2Shared;
 
     /** The loopback transmit buffer (avoid stack allocations). */
     uint8_t                             abLoopBuf[4096];
@@ -4484,14 +4485,13 @@ static DECLCALLBACK(int) pcnetR3LoadPrep(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
     {
         /* older saved states contain the shared memory region which was never used for ages. */
         void *pvSharedMMIOR3;
-        rc = PDMDevHlpMMIO2Register(pDevIns, pDevIns->apPciDevs[0], 2, _512K, 0, (void **)&pvSharedMMIOR3, "PCnetSh");
+        rc = PDMDevHlpMmio2Create(pDevIns, pDevIns->apPciDevs[0], 2, _512K, 0, "PCnetSh", &pvSharedMMIOR3, &pThis->hMmio2Shared);
         if (RT_FAILURE(rc))
             rc = PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS,
                                      N_("Failed to allocate the dummy shmem region for the PCnet device"));
-        pThis->fSharedRegion = true;
     }
-    PDMDevHlpCritSectLeave(pDevIns, &pThis->CritSect);
 
+    PDMDevHlpCritSectLeave(pDevIns, &pThis->CritSect);
     return rc;
 }
 
@@ -4609,11 +4609,12 @@ static DECLCALLBACK(int) pcnetR3LoadDone(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
     RT_NOREF(pSSM);
     PPCNETSTATE pThis = PDMDEVINS_2_DATA(pDevIns, PPCNETSTATE);
     int rc = VINF_SUCCESS;
-    if (pThis->fSharedRegion)
+    if (pThis->hMmio2Shared != NIL_PGMMMIO2HANDLE)
     {
         /* drop this dummy region */
-        rc = PDMDevHlpMMIOExDeregister(pDevIns, NULL, 2);
-        pThis->fSharedRegion = false;
+        rc = pDevIns->pHlpR3->pfnMmio2Destroy(pDevIns, pThis->hMmio2Shared);
+        AssertLogRelRC(rc);
+        pThis->hMmio2Shared = NIL_PGMMMIO2HANDLE;
     }
     return rc;
 }
@@ -5078,6 +5079,7 @@ static DECLCALLBACK(int) pcnetR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
     pThis->hIoPortsPciAProm     = NIL_IOMIOPORTHANDLE;
     pThis->hIoPortsIsa          = NIL_IOMIOPORTHANDLE;
     pThis->hIoPortsIsaAProm     = NIL_IOMIOPORTHANDLE;
+    pThis->hMmio2Shared         = NIL_PGMMMIO2HANDLE;
     pThisCC->pDevIns            = pDevIns;
 
     /*
