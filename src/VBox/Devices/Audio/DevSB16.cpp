@@ -192,16 +192,17 @@ typedef struct SB16STATE
     /** Number of active (running) SDn streams. */
     uint8_t                        cStreamsActive;
     /** The timer for pumping data thru the attached LUN drivers. */
-    PTMTIMERR3                     pTimerIO;
+    TMTIMERHANDLE                  hTimerIO;
     /** Flag indicating whether the timer is active or not. */
     bool                           fTimerActive;
     uint8_t                        u8Padding1[7];
     /** The timer interval for pumping data thru the LUN drivers in timer ticks. */
-    uint64_t                       cTimerTicksIO;
+    uint64_t                       cTicksTimerIOInterval;
     /** Timestamp of the last timer callback (sb16TimerIO).
      * Used to calculate the time actually elapsed between two timer callbacks. */
-    uint64_t                       uTimerTSIO;
-    PTMTIMER                       pTimerIRQ;
+    uint64_t                       tsTimerIO;
+    /** IRQ timer   */
+    TMTIMERHANDLE                  hTimerIRQ;
     /** The base interface for LUN\#0. */
     PDMIBASE                       IBase;
     /** Output stream. */
@@ -216,10 +217,10 @@ typedef struct SB16STATE
 /*********************************************************************************************************************************
 *   Internal Functions                                                                                                           *
 *********************************************************************************************************************************/
-static int sb16CheckAndReOpenOut(PSB16STATE pThis);
-static int sb16OpenOut(PSB16STATE pThis, PPDMAUDIOSTREAMCFG pCfg);
+static int sb16CheckAndReOpenOut(PPDMDEVINS pDevIns, PSB16STATE pThis);
+static int sb16OpenOut(PPDMDEVINS pDevIns, PSB16STATE pThis, PPDMAUDIOSTREAMCFG pCfg);
 static void sb16CloseOut(PSB16STATE pThis);
-static void sb16TimerMaybeStart(PSB16STATE pThis);
+static void sb16TimerMaybeStart(PPDMDEVINS pDevIns, PSB16STATE pThis);
 static void sb16TimerMaybeStop(PSB16STATE pThis);
 
 
@@ -285,7 +286,7 @@ static void sb16SpeakerControl(PSB16STATE pThis, int on)
     /* AUD_enable (pThis->voice, on); */
 }
 
-static void sb16Control(PSB16STATE pThis, int hold)
+static void sb16Control(PPDMDEVINS pDevIns, PSB16STATE pThis, int hold)
 {
     int dma = pThis->use_hdma ? pThis->hdma : pThis->dma;
     pThis->dma_running = hold;
@@ -308,7 +309,7 @@ static void sb16Control(PSB16STATE pThis, int hold)
     if (hold)
     {
         pThis->cStreamsActive++;
-        sb16TimerMaybeStart(pThis);
+        sb16TimerMaybeStart(pDevIns, pThis);
         PDMDevHlpDMASchedule(pThis->pDevInsR3);
     }
     else
@@ -322,24 +323,25 @@ static void sb16Control(PSB16STATE pThis, int hold)
 /**
  * @callback_method_impl{PFNTMTIMERDEV}
  */
-static DECLCALLBACK(void) sb16TimerIRQ(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvThis)
+static DECLCALLBACK(void) sb16TimerIRQ(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser)
 {
-    RT_NOREF(pDevIns, pTimer);
-    PSB16STATE pThis = (PSB16STATE)pvThis;
+    PSB16STATE pThis = PDMDEVINS_2_DATA(pDevIns, PSB16STATE);
+    RT_NOREF(pvUser, pTimer);
+
     pThis->can_write = 1;
-    PDMDevHlpISASetIrq(pThis->pDevInsR3, pThis->irq, 1);
+    PDMDevHlpISASetIrq(pDevIns, pThis->irq, 1);
 }
 
 #define DMA8_AUTO 1
 #define DMA8_HIGH 2
 
-static void continue_dma8(PSB16STATE pThis)
+static void continue_dma8(PPDMDEVINS pDevIns, PSB16STATE pThis)
 {
-    sb16CheckAndReOpenOut(pThis);
-    sb16Control(pThis, 1);
+    sb16CheckAndReOpenOut(pDevIns, pThis);
+    sb16Control(pDevIns, pThis, 1);
 }
 
-static void dma_cmd8(PSB16STATE pThis, int mask, int dma_len)
+static void dma_cmd8(PPDMDEVINS pDevIns, PSB16STATE pThis, int mask, int dma_len)
 {
     pThis->fmt        = PDMAUDIOFMT_U8;
     pThis->use_hdma   = 0;
@@ -391,11 +393,11 @@ static void dma_cmd8(PSB16STATE pThis, int mask, int dma_len)
                  pThis->freq, pThis->fmt_stereo, pThis->fmt_signed, pThis->fmt_bits,
                  pThis->block_size, pThis->dma_auto, pThis->fifo, pThis->highspeed));
 
-    continue_dma8(pThis);
+    continue_dma8(pDevIns, pThis);
     sb16SpeakerControl(pThis, 1);
 }
 
-static void dma_cmd(PSB16STATE pThis, uint8_t cmd, uint8_t d0, int dma_len)
+static void dma_cmd(PPDMDEVINS pDevIns, PSB16STATE pThis, uint8_t cmd, uint8_t d0, int dma_len)
 {
     pThis->use_hdma   = cmd < 0xc0;
     pThis->fifo       = (cmd >> 1) & 1;
@@ -459,8 +461,8 @@ static void dma_cmd(PSB16STATE pThis, uint8_t cmd, uint8_t d0, int dma_len)
                      pThis->block_size, pThis->align + 1));
     }
 
-    sb16CheckAndReOpenOut(pThis);
-    sb16Control(pThis, 1);
+    sb16CheckAndReOpenOut(pDevIns, pThis);
+    sb16Control(pDevIns, pThis, 1);
     sb16SpeakerControl(pThis, 1);
 }
 
@@ -483,7 +485,7 @@ static inline uint8_t dsp_get_data (PSB16STATE pThis)
     }
 }
 
-static void sb16HandleCommand(PSB16STATE pThis, uint8_t cmd)
+static void sb16HandleCommand(PPDMDEVINS pDevIns, PSB16STATE pThis, uint8_t cmd)
 {
     LogFlowFunc(("command %#x\n", cmd));
 
@@ -547,7 +549,7 @@ static void sb16HandleCommand(PSB16STATE pThis, uint8_t cmd)
                 break;
 
             case 0x1c:              /* Auto-Initialize DMA DAC, 8-bit */
-                dma_cmd8(pThis, DMA8_AUTO, -1);
+                dma_cmd8(pDevIns, pThis, DMA8_AUTO, -1);
                 break;
 
             case 0x20:              /* Direct ADC, Juice/PL */
@@ -623,11 +625,11 @@ static void sb16HandleCommand(PSB16STATE pThis, uint8_t cmd)
 
             case 0x90:
             case 0x91:
-                dma_cmd8(pThis, (((cmd & 1) == 0) ? 1 : 0) | DMA8_HIGH, -1);
+                dma_cmd8(pDevIns, pThis, (((cmd & 1) == 0) ? 1 : 0) | DMA8_HIGH, -1);
                 break;
 
             case 0xd0:              /* halt DMA operation. 8bit */
-                sb16Control(pThis, 0);
+                sb16Control(pDevIns, pThis, 0);
                 break;
 
             case 0xd1:              /* speaker on */
@@ -641,15 +643,15 @@ static void sb16HandleCommand(PSB16STATE pThis, uint8_t cmd)
             case 0xd4:              /* continue DMA operation. 8bit */
                 /* KQ6 (or maybe Sierras audblst.drv in general) resets
                    the frequency between halt/continue */
-                continue_dma8(pThis);
+                continue_dma8(pDevIns, pThis);
                 break;
 
             case 0xd5:              /* halt DMA operation. 16bit */
-                sb16Control(pThis, 0);
+                sb16Control(pDevIns, pThis, 0);
                 break;
 
             case 0xd6:              /* continue DMA operation. 16bit */
-                sb16Control(pThis, 1);
+                sb16Control(pDevIns, pThis, 1);
                 break;
 
             case 0xd9:              /* exit auto-init DMA after this block. 16bit */
@@ -755,7 +757,7 @@ static uint16_t dsp_get_hilo (PSB16STATE pThis)
     return (hi << 8) | lo;
 }
 
-static void complete(PSB16STATE pThis)
+static void complete(PPDMDEVINS pDevIns, PSB16STATE pThis)
 {
     int d0, d1, d2;
     LogFlowFunc(("complete command %#x, in_index %d, needed_bytes %d\n",
@@ -772,7 +774,7 @@ static void complete(PSB16STATE pThis)
         else
         {
             LogFlowFunc(("cmd = %#x d0 = %d, d1 = %d, d2 = %d\n", pThis->cmd, d0, d1, d2));
-            dma_cmd(pThis, pThis->cmd, d0, d1 + (d2 << 8));
+            dma_cmd(pDevIns, pThis, pThis->cmd, d0, d1 + (d2 << 8));
         }
     }
     else
@@ -831,7 +833,7 @@ static void complete(PSB16STATE pThis)
             break;
 
         case 0x14:
-            dma_cmd8(pThis, 0, dsp_get_lohi (pThis) + 1);
+            dma_cmd8(pDevIns, pThis, 0, dsp_get_lohi (pThis) + 1);
             break;
 
         case 0x40:
@@ -862,18 +864,16 @@ static void complete(PSB16STATE pThis)
 
         case 0x80:
         {
-            int freq, samples, bytes;
-            uint64_t ticks;
-
-            freq = pThis->freq > 0 ? pThis->freq : 11025;
-            samples = dsp_get_lohi (pThis) + 1;
-            bytes = samples << pThis->fmt_stereo << ((pThis->fmt_bits == 16) ? 1 : 0);
-            ticks = (bytes * TMTimerGetFreq(pThis->pTimerIRQ)) / freq;
-            if (ticks < TMTimerGetFreq(pThis->pTimerIRQ) / 1024)
-                PDMDevHlpISASetIrq(pThis->pDevInsR3, pThis->irq, 1);
+            uint32_t const freq     = pThis->freq > 0 ? pThis->freq : 11025;
+            uint32_t const samples  = dsp_get_lohi(pThis) + 1;
+            uint32_t const bytes    = samples << pThis->fmt_stereo << (pThis->fmt_bits == 16 ? 1 : 0);
+            uint64_t const uTimerHz = PDMDevHlpTimerGetFreq(pDevIns, pThis->hTimerIRQ);
+            uint64_t const cTicks   = (bytes * uTimerHz) / freq;
+            if (cTicks < uTimerHz / 1024)
+                PDMDevHlpISASetIrq(pDevIns, pThis->irq, 1);
             else
-                TMTimerSet(pThis->pTimerIRQ, TMTimerGet(pThis->pTimerIRQ) + ticks);
-            LogFlowFunc(("mix silence: %d samples, %d bytes, %RU64 ticks\n", samples, bytes, ticks));
+                PDMDevHlpTimerSetRelative(pDevIns, pThis->hTimerIRQ, cTicks, NULL);
+            LogFlowFunc(("mix silence: %d samples, %d bytes, %RU64 ticks\n", samples, bytes, cTicks));
             break;
         }
 
@@ -1032,13 +1032,13 @@ static void sb16CmdResetLegacy(PSB16STATE pThis)
     sb16CloseOut(pThis);
 }
 
-static void sb16CmdReset(PSB16STATE pThis)
+static void sb16CmdReset(PPDMDEVINS pDevIns, PSB16STATE pThis)
 {
-    PDMDevHlpISASetIrq(pThis->pDevInsR3, pThis->irq, 0);
+    PDMDevHlpISASetIrq(pDevIns, pThis->irq, 0);
     if (pThis->dma_auto)
     {
-        PDMDevHlpISASetIrq(pThis->pDevInsR3, pThis->irq, 1);
-        PDMDevHlpISASetIrq(pThis->pDevInsR3, pThis->irq, 0);
+        PDMDevHlpISASetIrq(pDevIns, pThis->irq, 1);
+        PDMDevHlpISASetIrq(pDevIns, pThis->irq, 0);
     }
 
     pThis->mixer_regs[0x82] = 0;
@@ -1056,7 +1056,7 @@ static void sb16CmdReset(PSB16STATE pThis)
     dsp_out_data(pThis, 0xaa);
     sb16SpeakerControl(pThis, 0);
 
-    sb16Control(pThis, 0);
+    sb16Control(pDevIns, pThis, 0);
     sb16CmdResetLegacy(pThis);
 }
 
@@ -1083,10 +1083,10 @@ static DECLCALLBACK(int) dsp_write(PPDMDEVINS pDevIns, void *opaque, RTIOPORT np
                         {
                             pThis->highspeed = 0;
                             PDMDevHlpISASetIrq(pThis->pDevInsR3, pThis->irq, 0);
-                            sb16Control(pThis, 0);
+                            sb16Control(pDevIns, pThis, 0);
                         }
                         else
-                            sb16CmdReset(pThis);
+                            sb16CmdReset(pDevIns, pThis);
                     }
                     pThis->v2x6 = 0;
                     break;
@@ -1102,12 +1102,12 @@ static DECLCALLBACK(int) dsp_write(PPDMDEVINS pDevIns, void *opaque, RTIOPORT np
                     break;
 
                 case 0xb8:              /* Panic */
-                    sb16CmdReset(pThis);
+                    sb16CmdReset(pDevIns, pThis);
                     break;
 
                 case 0x39:
                     dsp_out_data(pThis, 0x38);
-                    sb16CmdReset(pThis);
+                    sb16CmdReset(pDevIns, pThis);
                     pThis->v2x6 = 0x39;
                     break;
 
@@ -1124,7 +1124,7 @@ static DECLCALLBACK(int) dsp_write(PPDMDEVINS pDevIns, void *opaque, RTIOPORT np
 #endif
             if (0 == pThis->needed_bytes)
             {
-                sb16HandleCommand(pThis, val);
+                sb16HandleCommand(pDevIns, pThis, val);
 #if 0
                 if (0 == pThis->needed_bytes) {
                     log_dsp (pThis);
@@ -1143,7 +1143,7 @@ static DECLCALLBACK(int) dsp_write(PPDMDEVINS pDevIns, void *opaque, RTIOPORT np
                     if (pThis->in_index == pThis->needed_bytes)
                     {
                         pThis->needed_bytes = 0;
-                        complete (pThis);
+                        complete(pDevIns, pThis);
 #if 0
                         log_dsp (pThis);
 #endif
@@ -1619,7 +1619,7 @@ static DECLCALLBACK(uint32_t) sb16DMARead(PPDMDEVINS pDevIns, void *opaque, unsi
         PDMDevHlpISASetIrq(pThis->pDevInsR3, pThis->irq, 1);
         if (0 == pThis->dma_auto)
         {
-            sb16Control(pThis, 0);
+            sb16Control(pDevIns, pThis, 0);
             sb16SpeakerControl(pThis, 0);
         }
     }
@@ -1634,26 +1634,28 @@ static DECLCALLBACK(uint32_t) sb16DMARead(PPDMDEVINS pDevIns, void *opaque, unsi
     return dma_pos;
 }
 
-static void sb16TimerMaybeStart(PSB16STATE pThis)
+static void sb16TimerMaybeStart(PPDMDEVINS pDevIns, PSB16STATE pThis)
 {
     LogFlowFunc(("cStreamsActive=%RU8\n", pThis->cStreamsActive));
 
     if (pThis->cStreamsActive == 0) /* Only start the timer if there are no active streams. */
         return;
 
-    if (!pThis->pTimerIO)
-        return;
-
     /* Set timer flag. */
-    ASMAtomicXchgBool(&pThis->fTimerActive, true);
+    ASMAtomicWriteBool(&pThis->fTimerActive, true);
 
     /* Update current time timestamp. */
-    pThis->uTimerTSIO = TMTimerGet(pThis->pTimerIO);
+    uint64_t tsNow = PDMDevHlpTimerGet(pDevIns, pThis->hTimerIO);
+    pThis->tsTimerIO = tsNow;
 
-    /* Fire off timer. */
-    TMTimerSet(pThis->pTimerIO, TMTimerGet(pThis->pTimerIO) + pThis->cTimerTicksIO);
+    /* Arm the timer. */
+    PDMDevHlpTimerSet(pDevIns, pThis->hTimerIO, tsNow + pThis->cTicksTimerIOInterval);
 }
 
+/**
+ * This clears fTimerActive if no streams are active, so that the timer won't be
+ * rearmed then next time it fires.
+ */
 static void sb16TimerMaybeStop(PSB16STATE pThis)
 {
     LogFlowFunc(("cStreamsActive=%RU8\n", pThis->cStreamsActive));
@@ -1661,11 +1663,8 @@ static void sb16TimerMaybeStop(PSB16STATE pThis)
     if (pThis->cStreamsActive) /* Some streams still active? Bail out. */
         return;
 
-    if (!pThis->pTimerIO)
-        return;
-
-    /* Set timer flag. */
-    ASMAtomicXchgBool(&pThis->fTimerActive, false);
+    /* Clear the timer flag. */
+    ASMAtomicWriteBool(&pThis->fTimerActive, false);
 }
 
 /**
@@ -1673,16 +1672,14 @@ static void sb16TimerMaybeStop(PSB16STATE pThis)
  */
 static DECLCALLBACK(void) sb16TimerIO(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser)
 {
-    RT_NOREF(pDevIns);
-    PSB16STATE pThis = (PSB16STATE)pvUser;
-    Assert(pThis == PDMDEVINS_2_DATA(pDevIns, PSB16STATE));
-    AssertPtr(pThis);
+    PSB16STATE pThis = PDMDEVINS_2_DATA(pDevIns, PSB16STATE);
+    RT_NOREF(pTimer, pvUser);
 
-    uint64_t cTicksNow     = TMTimerGet(pTimer);
+    uint64_t cTicksNow     = PDMDevHlpTimerGet(pDevIns, pThis->hTimerIO);
     bool     fIsPlaying    = false; /* Whether one or more streams are still playing. */
     bool     fDoTransfer   = false;
 
-    pThis->uTimerTSIO = cTicksNow;
+    pThis->tsTimerIO = cTicksNow;
 
     PSB16DRIVER pDrv;
     RTListForEach(&pThis->lstDrv, pDrv, SB16DRIVER, Node)
@@ -1736,9 +1733,9 @@ static DECLCALLBACK(void) sb16TimerIO(PPDMDEVINS pDevIns, PTMTIMER pTimer, void 
     if (fKickTimer)
     {
         /* Kick the timer again. */
-        uint64_t cTicks = pThis->cTimerTicksIO;
+        uint64_t cTicks = pThis->cTicksTimerIOInterval;
         /** @todo adjust cTicks down by now much cbOutMin represents. */
-        TMTimerSet(pThis->pTimerIO, cTicksNow + cTicks);
+        PDMDevHlpTimerSet(pDevIns, pThis->hTimerIO, cTicksNow + cTicks);
     }
 }
 
@@ -1747,9 +1744,9 @@ static DECLCALLBACK(void) sb16TimerIO(PPDMDEVINS pDevIns, PTMTIMER pTimer, void 
  */
 static DECLCALLBACK(int) sb16LiveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uPass)
 {
-    RT_NOREF(uPass);
     PSB16STATE    pThis = PDMDEVINS_2_DATA(pDevIns, PSB16STATE);
-    PCPDMDEVHLPR3 pHlp = pDevIns->pHlpR3;
+    PCPDMDEVHLPR3 pHlp  = pDevIns->pHlpR3;
+    RT_NOREF(uPass);
 
     pHlp->pfnSSMPutS32(pSSM, pThis->irqCfg);
     pHlp->pfnSSMPutS32(pSSM, pThis->dmaCfg);
@@ -1830,8 +1827,10 @@ static DECLCALLBACK(int) sb16SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 /**
  * Worker for sb16LoadExec.
  */
-static int sb16Load(PCPDMDEVHLPR3 pHlp, PSSMHANDLE pSSM, PSB16STATE pThis)
+static int sb16Load(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, PSB16STATE pThis)
 {
+    PCPDMDEVHLPR3 pHlp  = pDevIns->pHlpR3;
+
     pHlp->pfnSSMGetS32(pSSM, &pThis->irq);
     pHlp->pfnSSMGetS32(pSSM, &pThis->dma);
     pHlp->pfnSSMGetS32(pSSM, &pThis->hdma);
@@ -1888,8 +1887,8 @@ static int sb16Load(PCPDMDEVHLPR3 pHlp, PSSMHANDLE pSSM, PSB16STATE pThis)
 
     if (pThis->dma_running)
     {
-        sb16CheckAndReOpenOut(pThis);
-        sb16Control(pThis, 1);
+        sb16CheckAndReOpenOut(pDevIns, pThis);
+        sb16Control(pDevIns, pThis, 1);
         sb16SpeakerControl(pThis, pThis->speaker);
     }
 
@@ -1944,7 +1943,7 @@ static DECLCALLBACK(int) sb16LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint3
     if (uPass != SSM_PASS_FINAL)
         return VINF_SUCCESS;
 
-    return sb16Load(pHlp, pSSM, pThis);
+    return sb16Load(pDevIns, pSSM, pThis);
 }
 
 /**
@@ -2013,10 +2012,11 @@ static void sb16DestroyDrvStream(PSB16STATE pThis, PSB16DRIVER pDrv)
 /**
  * Checks if the output stream needs to be (re-)created and does so if needed.
  *
- * @return VBox status code.
- * @param  pThis                SB16 state.
+ * @return  VBox status code.
+ * @param   pDevIns         The device instance.
+ * @param   pThis           SB16 state.
  */
-static int sb16CheckAndReOpenOut(PSB16STATE pThis)
+static int sb16CheckAndReOpenOut(PPDMDEVINS pDevIns, PSB16STATE pThis)
 {
     AssertPtrReturn(pThis, VERR_INVALID_POINTER);
 
@@ -2044,7 +2044,7 @@ static int sb16CheckAndReOpenOut(PSB16STATE pThis)
 
             sb16CloseOut(pThis);
 
-            rc = sb16OpenOut(pThis, &Cfg);
+            rc = sb16OpenOut(pDevIns, pThis, &Cfg);
             AssertRC(rc);
         }
     }
@@ -2055,11 +2055,10 @@ static int sb16CheckAndReOpenOut(PSB16STATE pThis)
     return rc;
 }
 
-static int sb16OpenOut(PSB16STATE pThis, PPDMAUDIOSTREAMCFG pCfg)
+static int sb16OpenOut(PPDMDEVINS pDevIns, PSB16STATE pThis, PPDMAUDIOSTREAMCFG pCfg)
 {
-    AssertPtrReturn(pThis, VERR_INVALID_POINTER);
-    AssertPtrReturn(pCfg,  VERR_INVALID_POINTER);
-
+    AssertPtrReturn(pThis, VERR_INVALID_POINTER);  /// @todo r=bird: Too paranoiad here.
+    AssertPtrReturn(pCfg,  VERR_INVALID_POINTER);  /// @todo r=bird: This is certifiable, only caller sends us a stack object...
     LogFlowFuncEnter();
 
     if (!DrvAudioHlpStreamCfgIsValid(pCfg))
@@ -2070,8 +2069,10 @@ static int sb16OpenOut(PSB16STATE pThis, PPDMAUDIOSTREAMCFG pCfg)
         return rc;
 
     /* Set scheduling hint (if available). */
-    if (pThis->cTimerTicksIO)
-        pThis->Out.Cfg.Device.uSchedulingHintMs = 1000 /* ms */ / (TMTimerGetFreq(pThis->pTimerIO) / pThis->cTimerTicksIO);
+    if (pThis->cTicksTimerIOInterval)
+        pThis->Out.Cfg.Device.uSchedulingHintMs = 1000 /* ms */
+                                                / (  PDMDevHlpTimerGetFreq(pDevIns, pThis->hTimerIO)
+                                                   / RT_MIN(pThis->cTicksTimerIOInterval, 1));
 
     PSB16DRIVER pDrv;
     RTListForEach(&pThis->lstDrv, pDrv, SB16DRIVER, Node)
@@ -2092,13 +2093,14 @@ static int sb16OpenOut(PSB16STATE pThis, PPDMAUDIOSTREAMCFG pCfg)
 
 static void sb16CloseOut(PSB16STATE pThis)
 {
-    AssertPtrReturnVoid(pThis);
-
+    AssertPtrReturnVoid(pThis); /// @todo r=bird: too much panaoia here!
     LogFlowFuncEnter();
 
     PSB16DRIVER pDrv;
     RTListForEach(&pThis->lstDrv, pDrv, SB16DRIVER, Node)
+    {
         sb16DestroyDrvStream(pThis, pDrv);
+    }
 
     LogFlowFuncLeave();
 }
@@ -2301,7 +2303,7 @@ static DECLCALLBACK(void) sb16DevReset(PPDMDEVINS pDevIns)
 
     sb16MixerReset(pThis);
     sb16SpeakerControl(pThis, 0);
-    sb16Control(pThis, 0);
+    sb16Control(pDevIns, pThis, 0);
     sb16CmdResetLegacy(pThis);
 }
 
@@ -2404,6 +2406,10 @@ static DECLCALLBACK(int) sb16Construct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
     rc = pHlp->pfnCFGMQueryU16Def(pCfg, "TimerHz", &uTimerHz, 100 /* Hz */);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc, N_("SB16 configuration error: failed to read Hertz (Hz) rate as unsigned integer"));
+    if (uTimerHz == 0)
+        return PDMDEV_SET_ERROR(pDevIns, rc, N_("SB16 configuration error: TimerHz is zero"));
+    if (uTimerHz > 2048)
+        return PDMDEV_SET_ERROR(pDevIns, rc, N_("SB16 configuration error: Max TimerHz value is 2048."));
 
     /*
      * Setup the mixer now that we've got the irq and dma channel numbers.
@@ -2417,15 +2423,15 @@ static DECLCALLBACK(int) sb16Construct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
     /*
      * Create timers.
      */
-    rc = PDMDevHlpTMTimerCreate(pDevIns, TMCLOCK_VIRTUAL, sb16TimerIRQ, pThis,
-                                TMTIMER_FLAGS_DEFAULT_CRIT_SECT, "SB16 IRQ timer", &pThis->pTimerIRQ);
+    rc = PDMDevHlpTimerCreate(pDevIns, TMCLOCK_VIRTUAL, sb16TimerIRQ, pThis,
+                              TMTIMER_FLAGS_DEFAULT_CRIT_SECT, "SB16 IRQ timer", &pThis->hTimerIRQ);
     AssertRCReturn(rc, rc);
-    rc = PDMDevHlpTMTimerCreate(pDevIns, TMCLOCK_VIRTUAL, sb16TimerIO, pThis,
-                                TMTIMER_FLAGS_DEFAULT_CRIT_SECT, "SB16 IO timer", &pThis->pTimerIO);
+    rc = PDMDevHlpTimerCreate(pDevIns, TMCLOCK_VIRTUAL, sb16TimerIO, pThis,
+                              TMTIMER_FLAGS_DEFAULT_CRIT_SECT, "SB16 IO timer", &pThis->hTimerIO);
     AssertRCReturn(rc, rc);
-    pThis->cTimerTicksIO = TMTimerGetFreq(pThis->pTimerIO) / uTimerHz;
-    pThis->uTimerTSIO    = TMTimerGet(pThis->pTimerIO);
-    LogFunc(("Timer ticks=%RU64 (%RU16 Hz)\n", pThis->cTimerTicksIO, uTimerHz));
+    pThis->cTicksTimerIOInterval = PDMDevHlpTimerGetFreq(pDevIns, pThis->hTimerIO) / uTimerHz;
+    pThis->tsTimerIO            = PDMDevHlpTimerGet(pDevIns, pThis->hTimerIO);
+    LogFunc(("Timer ticks=%RU64 (%RU16 Hz)\n", pThis->cTicksTimerIOInterval, uTimerHz));
 
     /*
      * Register I/O and DMA.
