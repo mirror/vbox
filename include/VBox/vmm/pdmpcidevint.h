@@ -202,7 +202,9 @@ typedef struct PDMPCIDEVINT
     /** Offset to the PBA for MSI-X.   */
     uint16_t                        offMsixPba;
     /** Add padding to align aIORegions to an 16 byte boundary. */
-    uint8_t                         abPadding2[HC_ARCH_BITS == 32 ? 0x14 : 0x10];
+    uint8_t                         abPadding2[HC_ARCH_BITS == 32 ? 12 : 8];
+    /** The MMIO handle for the MSI-X MMIO bar. */
+    IOMMMIOHANDLE                   hMmioMsix;
 
     /** Pointer to bus specific data. (R3 ptr) */
     R3PTRTYPE(const void *)         pvPciBusPtrR3;
