@@ -2263,71 +2263,18 @@ static DECLCALLBACK(void) sb16Detach(PPDMDEVINS pDevIns, unsigned uLUN, uint32_t
  *
  * @returns VBox status code.
  * @param   pThis       Device instance.
- * @param   pDrv        Driver instance used for attaching to.
- *                      If NULL is specified, a new driver will be created and appended
- *                      to the driver list.
  * @param   uLUN        The logical unit which is being re-detached.
  * @param   pszDriver   New driver name to attach.
  */
-static int sb16Reattach(PSB16STATE pThis, PSB16DRIVER pDrv, uint8_t uLUN, const char *pszDriver)
+static int sb16Reattach(PSB16STATE pThis, uint8_t uLUN, const char *pszDriver)
 {
-    AssertPtrReturn(pThis,     VERR_INVALID_POINTER);
-    AssertPtrReturn(pszDriver, VERR_INVALID_POINTER);
+    AssertPtr(pThis);
 
-    int rc;
-
-    if (pDrv)
-    {
-        rc = sb16DetachInternal(pThis, pDrv, 0 /* fFlags */);
-        if (RT_SUCCESS(rc))
-            rc = PDMDevHlpDriverDetach(pThis->pDevInsR3, PDMIBASE_2_PDMDRV(pDrv->pDrvBase), 0 /* fFlags */);
-
-        if (RT_FAILURE(rc))
-            return rc;
-
-        pDrv = NULL;
-    }
-
-    PCPDMDEVHLPR3 pHlp  = pThis->pDevInsR3->pHlpR3;
-    PVM           pVM   = PDMDevHlpGetVM(pThis->pDevInsR3);
-    PCFGMNODE     pRoot = CFGMR3GetRoot(pVM);
-    PCFGMNODE     pDev0 = pHlp->pfnCFGMGetChild(pRoot, "Devices/sb16/0/");
-
-    /* Remove LUN branch. */
-    CFGMR3RemoveNode(pHlp->pfnCFGMGetChildF(pDev0, "LUN#%u/", uLUN));
-
-    if (pDrv)
-    {
-        /* Re-use the driver instance so detach it before. */
-        rc = PDMDevHlpDriverDetach(pThis->pDevInsR3, PDMIBASE_2_PDMDRV(pDrv->pDrvBase), 0 /* fFlags */);
-        if (RT_FAILURE(rc))
-            return rc;
-    }
-
-#define RC_CHECK() if (RT_FAILURE(rc)) { AssertReleaseRC(rc); break; }
-
-    do
-    {
-        PCFGMNODE pLunL0;
-        rc = CFGMR3InsertNodeF(pDev0, &pLunL0, "LUN#%u/", uLUN);        RC_CHECK();
-        rc = CFGMR3InsertString(pLunL0, "Driver",       "AUDIO");       RC_CHECK();
-        rc = CFGMR3InsertNode(pLunL0,   "Config/",       NULL);         RC_CHECK();
-
-        PCFGMNODE pLunL1, pLunL2;
-        rc = CFGMR3InsertNode  (pLunL0, "AttachedDriver/", &pLunL1);    RC_CHECK();
-        rc = CFGMR3InsertNode  (pLunL1,  "Config/",        &pLunL2);    RC_CHECK();
-        rc = CFGMR3InsertString(pLunL1,  "Driver",          pszDriver); RC_CHECK();
-
-        rc = CFGMR3InsertString(pLunL2, "AudioDriver", pszDriver);      RC_CHECK();
-
-    } while (0);
-
+    int rc = PDMDevHlpDriverReconfigure2(pThis->pDevInsR3, uLUN, "AUDIO", pszDriver);
     if (RT_SUCCESS(rc))
         rc = sb16AttachInternal(pThis, uLUN, 0 /* fFlags */, NULL /* ppDrv */);
 
     LogFunc(("pThis=%p, uLUN=%u, pszDriver=%s, rc=%Rrc\n", pThis, uLUN, pszDriver, rc));
-
-#undef RC_CHECK
 
     return rc;
 }
@@ -2516,10 +2463,9 @@ static DECLCALLBACK(int) sb16Construct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
                 rc = VINF_SUCCESS;
             else if (rc == VERR_AUDIO_BACKEND_INIT_FAILED)
             {
-                sb16Reattach(pThis, NULL /* pDrv */, uLUN, "NullAudio");
+                sb16Reattach(pThis, uLUN, "NullAudio");
                 PDMDevHlpVMSetRuntimeError(pDevIns, 0 /*fFlags*/, "HostAudioNotResponding",
-                        N_("Host audio backend initialization has failed. Selecting the NULL audio backend "
-                           "with the consequence that no sound is audible"));
+                                           N_("Host audio backend initialization has failed. Selecting the NULL audio backend with the consequence that no sound is audible"));
                 /* Attaching to the NULL audio backend will never fail. */
                 rc = VINF_SUCCESS;
             }
@@ -2532,8 +2478,8 @@ static DECLCALLBACK(int) sb16Construct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
     sb16CmdResetLegacy(pThis);
 
 #ifdef VBOX_WITH_AUDIO_SB16_ONETIME_INIT
-    PSB16DRIVER pDrv;
-    RTListForEach(&pThis->lstDrv, pDrv, SB16DRIVER, Node)
+    PSB16DRIVER pDrv, pNext;
+    RTListForEachSafe(&pThis->lstDrv, pDrv, pNext, SB16DRIVER, Node)
     {
         /*
          * Only primary drivers are critical for the VM to run. Everything else
@@ -2556,7 +2502,8 @@ static DECLCALLBACK(int) sb16Construct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
             LogRel(("SB16: Falling back to NULL backend (no sound audible)\n"));
 
             sb16CmdResetLegacy(pThis);
-            sb16Reattach(pThis, pDrv, pDrv->uLUN, "NullAudio");
+            sb16Reattach(pThis, pDrv->uLUN, "NullAudio");
+            pDrv = NULL; /* no longer valid */
 
             PDMDevHlpVMSetRuntimeError(pDevIns, 0 /*fFlags*/, "HostAudioNotResponding",
                                        N_("No audio devices could be opened. Selecting the NULL audio backend with the consequence that no sound is audible"));
