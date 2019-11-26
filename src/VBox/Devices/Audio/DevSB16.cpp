@@ -2285,12 +2285,13 @@ static int sb16Reattach(PSB16STATE pThis, PSB16DRIVER pDrv, uint8_t uLUN, const 
         pDrv = NULL;
     }
 
-    PVM pVM = PDMDevHlpGetVM(pThis->pDevInsR3);
-    PCFGMNODE pRoot = CFGMR3GetRoot(pVM);
-    PCFGMNODE pDev0 = CFGMR3GetChild(pRoot, "Devices/sb16/0/");
+    PCPDMDEVHLPR3 pHlp  = pThis->pDevInsR3->pHlpR3;
+    PVM           pVM   = PDMDevHlpGetVM(pThis->pDevInsR3);
+    PCFGMNODE     pRoot = CFGMR3GetRoot(pVM);
+    PCFGMNODE     pDev0 = pHlp->pfnCFGMGetChild(pRoot, "Devices/sb16/0/");
 
     /* Remove LUN branch. */
-    CFGMR3RemoveNode(CFGMR3GetChildF(pDev0, "LUN#%u/", uLUN));
+    CFGMR3RemoveNode(pHlp->pfnCFGMGetChildF(pDev0, "LUN#%u/", uLUN));
 
     if (pDrv)
     {
@@ -2401,9 +2402,12 @@ static DECLCALLBACK(int) sb16Destruct(PPDMDEVINS pDevIns)
 
 static DECLCALLBACK(int) sb16Construct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE pCfg)
 {
-    RT_NOREF(iInstance);
     PDMDEV_CHECK_VERSIONS_RETURN(pDevIns); /* this shall come first */
-    PSB16STATE pThis = PDMDEVINS_2_DATA(pDevIns, PSB16STATE);
+    PSB16STATE      pThis = PDMDEVINS_2_DATA(pDevIns, PSB16STATE);
+    PCPDMDEVHLPR3   pHlp  = pDevIns->pHlpR3;
+    RT_NOREF(iInstance);
+
+    Assert(iInstance == 0);
 
     /*
      * Initialize the data so sb16Destruct runs without a hitch if we return early.
@@ -2418,61 +2422,43 @@ static DECLCALLBACK(int) sb16Construct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
     RTListInit(&pThis->lstDrv);
 
     /*
-     * Validations.
+     * Validate and read config data.
      */
-    Assert(iInstance == 0);
-    if (!CFGMR3AreValuesValid(pCfg,
-                              "IRQ\0"
-                              "DMA\0"
-                              "DMA16\0"
-                              "Port\0"
-                              "Version\0"
-                              "TimerHz\0"))
-        return PDMDEV_SET_ERROR(pDevIns, VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES,
-                                N_("Invalid configuration for SB16 device"));
-
-    /*
-     * Read config data.
-     */
-    int rc = CFGMR3QuerySIntDef(pCfg, "IRQ", &pThis->irq, 5);
+    PDMDEV_VALIDATE_CONFIG_RETURN(pDevIns, "IRQ|DMA|DMA16|Port|Version|TimerHz", "");
+    int rc = pHlp->pfnCFGMQuerySIntDef(pCfg, "IRQ", &pThis->irq, 5);
     if (RT_FAILURE(rc))
-        return PDMDEV_SET_ERROR(pDevIns, rc,
-                                N_("SB16 configuration error: Failed to get the \"IRQ\" value"));
+        return PDMDEV_SET_ERROR(pDevIns, rc, N_("SB16 configuration error: Failed to get the \"IRQ\" value"));
     pThis->irqCfg  = pThis->irq;
 
-    rc = CFGMR3QuerySIntDef(pCfg, "DMA", &pThis->dma, 1);
+    rc = pHlp->pfnCFGMQuerySIntDef(pCfg, "DMA", &pThis->dma, 1);
     if (RT_FAILURE(rc))
-        return PDMDEV_SET_ERROR(pDevIns, rc,
-                                N_("SB16 configuration error: Failed to get the \"DMA\" value"));
+        return PDMDEV_SET_ERROR(pDevIns, rc, N_("SB16 configuration error: Failed to get the \"DMA\" value"));
     pThis->dmaCfg  = pThis->dma;
 
-    rc = CFGMR3QuerySIntDef(pCfg, "DMA16", &pThis->hdma, 5);
+    rc = pHlp->pfnCFGMQuerySIntDef(pCfg, "DMA16", &pThis->hdma, 5);
     if (RT_FAILURE(rc))
-        return PDMDEV_SET_ERROR(pDevIns, rc,
-                                N_("SB16 configuration error: Failed to get the \"DMA16\" value"));
+        return PDMDEV_SET_ERROR(pDevIns, rc, N_("SB16 configuration error: Failed to get the \"DMA16\" value"));
     pThis->hdmaCfg = pThis->hdma;
 
     RTIOPORT Port;
-    rc = CFGMR3QueryPortDef(pCfg, "Port", &Port, 0x220);
+    rc = pHlp->pfnCFGMQueryPortDef(pCfg, "Port", &Port, 0x220);
     if (RT_FAILURE(rc))
-        return PDMDEV_SET_ERROR(pDevIns, rc,
-                                N_("SB16 configuration error: Failed to get the \"Port\" value"));
+        return PDMDEV_SET_ERROR(pDevIns, rc, N_("SB16 configuration error: Failed to get the \"Port\" value"));
     pThis->port    = Port;
     pThis->portCfg = Port;
 
     uint16_t u16Version;
-    rc = CFGMR3QueryU16Def(pCfg, "Version", &u16Version, 0x0405);
+    rc = pHlp->pfnCFGMQueryU16Def(pCfg, "Version", &u16Version, 0x0405);
     if (RT_FAILURE(rc))
-        return PDMDEV_SET_ERROR(pDevIns, rc,
-                                N_("SB16 configuration error: Failed to get the \"Version\" value"));
+        return PDMDEV_SET_ERROR(pDevIns, rc, N_("SB16 configuration error: Failed to get the \"Version\" value"));
     pThis->ver     = u16Version;
     pThis->verCfg  = u16Version;
 
     uint16_t uTimerHz;
-    rc = CFGMR3QueryU16Def(pCfg, "TimerHz", &uTimerHz, 100 /* Hz */);
+    rc = pHlp->pfnCFGMQueryU16Def(pCfg, "TimerHz", &uTimerHz, 100 /* Hz */);
     if (RT_FAILURE(rc))
-        return PDMDEV_SET_ERROR(pDevIns, rc,
-                                N_("SB16 configuration error: failed to read Hertz (Hz) rate as unsigned integer"));
+        return PDMDEV_SET_ERROR(pDevIns, rc, N_("SB16 configuration error: failed to read Hertz (Hz) rate as unsigned integer"));
+
     /*
      * Setup the mixer now that we've got the irq and dma channel numbers.
      */
@@ -2567,8 +2553,7 @@ static DECLCALLBACK(int) sb16Construct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
             sb16Reattach(pThis, pDrv, pDrv->uLUN, "NullAudio");
 
             PDMDevHlpVMSetRuntimeError(pDevIns, 0 /*fFlags*/, "HostAudioNotResponding",
-                N_("No audio devices could be opened. Selecting the NULL audio backend "
-                   "with the consequence that no sound is audible"));
+                                       N_("No audio devices could be opened. Selecting the NULL audio backend with the consequence that no sound is audible"));
         }
     }
 #endif
