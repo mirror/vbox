@@ -3042,6 +3042,9 @@ VBoxDbgStats::VBoxDbgStats(VBoxDbgGui *a_pDbgGui, const char *pszPat/* = NULL*/,
     : VBoxDbgBaseWindow(a_pDbgGui, pParent, "Statistics")
     , m_PatStr(pszPat), m_pPatCB(NULL), m_uRefreshRate(0), m_pTimer(NULL), m_pView(NULL)
 {
+    /* Delete dialog on close: */
+    setAttribute(Qt::WA_DeleteOnClose);
+
     /*
      * On top, a horizontal box with the pattern field, buttons and refresh interval.
      */
@@ -3148,7 +3151,6 @@ void
 VBoxDbgStats::closeEvent(QCloseEvent *a_pCloseEvt)
 {
     a_pCloseEvt->accept();
-    delete this; /** @todo This is wrong! We get more events after this one and end up using memory after freeing it in vPolishSizeAndPos().  (Qt3 holdover?) */
 }
 
 
