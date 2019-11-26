@@ -2506,6 +2506,89 @@ static DECLCALLBACK(int) pdmR3DevHlp_DriverDetach(PPDMDEVINS pDevIns, PPDMDRVINS
 }
 
 
+/** @interface_method_impl{PDMDEVHLPR3,pfnDriverReconfigure} */
+static DECLCALLBACK(int) pdmR3DevHlp_DriverReconfigure(PPDMDEVINS pDevIns, uint32_t iLun, uint32_t cDepth,
+                                                       const char * const *papszDrivers, PCFGMNODE *papConfigs, uint32_t fFlags)
+{
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    PVM pVM = pDevIns->Internal.s.pVMR3;
+    VM_ASSERT_EMT(pVM);
+    LogFlow(("pdmR3DevHlp_DriverReconfigure: caller='%s'/%d: iLun=%u cDepth=%u fFlags=%#x\n",
+             pDevIns->pReg->szName, pDevIns->iInstance, iLun, cDepth, fFlags));
+
+    /*
+     * Validate input.
+     */
+    AssertReturn(cDepth <= 8, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(papszDrivers, VERR_INVALID_POINTER);
+    AssertPtrNullReturn(papConfigs, VERR_INVALID_POINTER);
+    for (uint32_t i = 0; i < cDepth; i++)
+    {
+        AssertPtrReturn(papszDrivers[i], VERR_INVALID_POINTER);
+        size_t cchDriver = strlen(papszDrivers[i]);
+        AssertPtrReturn(cchDriver > 0 && cchDriver < RT_SIZEOFMEMB(PDMDRVREG, szName), VERR_OUT_OF_RANGE);
+
+        if (papConfigs)
+            AssertPtrNullReturn(papConfigs[i], VERR_INVALID_POINTER);
+    }
+    AssertReturn(fFlags == 0, VERR_INVALID_FLAGS);
+
+    /*
+     * Do we have to detach an existing driver first?
+     */
+    for (PPDMLUN pLun = pDevIns->Internal.s.pLunsR3; pLun; pLun = pLun->pNext)
+        if (pLun->iLun == iLun)
+        {
+            if (pLun->pTop)
+            {
+                int rc = pdmR3DrvDetach(pLun->pTop, 0);
+                AssertRCReturn(rc, rc);
+            }
+            break;
+        }
+
+    /*
+     * Remove the old tree.
+     */
+    PCFGMNODE pCfgDev = CFGMR3GetChildF(CFGMR3GetRoot(pVM), "Devices/%s/%u/", pDevIns->pReg->szName, pDevIns->iInstance);
+    AssertReturn(pCfgDev, VERR_INTERNAL_ERROR_2);
+    PCFGMNODE pCfgLun = CFGMR3GetChildF(pCfgDev, "LUN#%u", iLun);
+    if (pCfgLun)
+        CFGMR3RemoveNode(pCfgLun);
+
+    /*
+     * Construct a new tree.
+     */
+    int rc = CFGMR3InsertNodeF(pCfgDev, &pCfgLun, "LUN#%u", iLun);
+    AssertRCReturn(rc, rc);
+    PCFGMNODE pCfgDrv = pCfgLun;
+    for (uint32_t i = 0; i < cDepth; i++)
+    {
+        rc = CFGMR3InsertString(pCfgDrv, "Driver", papszDrivers[i]);
+        AssertRCReturn(rc, rc);
+        if (papConfigs && papConfigs[i])
+        {
+            rc = CFGMR3InsertSubTree(pCfgDrv, "Config", papConfigs[i], NULL);
+            AssertRCReturn(rc, rc);
+            papConfigs[i] = NULL;
+        }
+        else
+        {
+            rc = CFGMR3InsertNode(pCfgDrv, "Config", NULL);
+            AssertRCReturn(rc, rc);
+        }
+
+        if (i + 1 >= cDepth)
+            break;
+        rc = CFGMR3InsertNode(pCfgDrv, "AttachedDriver", &pCfgDrv);
+        AssertRCReturn(rc, rc);
+    }
+
+    LogFlow(("pdmR3DevHlp_DriverReconfigure: caller='%s'/%d: returns %Rrc\n", pDevIns->pReg->szName, pDevIns->iInstance, rc));
+    return rc;
+}
+
+
 /** @interface_method_impl{PDMDEVHLPR3,pfnQueueCreatePtr} */
 static DECLCALLBACK(int) pdmR3DevHlp_QueueCreatePtr(PPDMDEVINS pDevIns, size_t cbItem, uint32_t cItems, uint32_t cMilliesInterval,
                                                     PFNPDMQUEUEDEV pfnCallback, bool fRZEnabled, const char *pszName, PPDMQUEUE *ppQueue)
@@ -4497,6 +4580,7 @@ const PDMDEVHLPR3 g_pdmR3DevHlpTrusted =
     pdmR3DevHlp_IoApicSendMsi,
     pdmR3DevHlp_DriverAttach,
     pdmR3DevHlp_DriverDetach,
+    pdmR3DevHlp_DriverReconfigure,
     pdmR3DevHlp_QueueCreatePtr,
     pdmR3DevHlp_QueueCreate,
     pdmR3DevHlp_QueueToPtr,
@@ -4994,6 +5078,7 @@ const PDMDEVHLPR3 g_pdmR3DevHlpUnTrusted =
     pdmR3DevHlp_IoApicSendMsi,
     pdmR3DevHlp_DriverAttach,
     pdmR3DevHlp_DriverDetach,
+    pdmR3DevHlp_DriverReconfigure,
     pdmR3DevHlp_QueueCreatePtr,
     pdmR3DevHlp_QueueCreate,
     pdmR3DevHlp_QueueToPtr,

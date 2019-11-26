@@ -1974,7 +1974,7 @@ typedef const PDMRTCHLP *PCPDMRTCHLP;
 /** @} */
 
 /** Current PDMDEVHLPR3 version number. */
-#define PDM_DEVHLPR3_VERSION                    PDM_VERSION_MAKE_PP(0xffe7, 37, 0)
+#define PDM_DEVHLPR3_VERSION                    PDM_VERSION_MAKE_PP(0xffe7, 38, 0)
 
 /**
  * PDM Device API.
@@ -3442,6 +3442,32 @@ typedef struct PDMDEVHLPR3
      * @param   fFlags              Flags, combination of the PDMDEVATT_FLAGS_* \#defines.
      */
     DECLR3CALLBACKMEMBER(int, pfnDriverDetach,(PPDMDEVINS pDevIns, PPDMDRVINS pDrvIns, uint32_t fFlags));
+
+    /**
+     * Reconfigures the driver chain for a LUN, detaching any driver currently
+     * present there.
+     *
+     * Caller will have attach it, of course.
+     *
+     * @returns VBox status code.
+     * @param   pDevIns             The device instance.
+     * @param   iLun                The logical unit to reconfigure.
+     * @param   cDepth              The depth of the driver chain. Determins the
+     *                              size of @a papszDrivers and @a papConfigs.
+     * @param   papszDrivers        The names of the drivers to configure in the
+     *                              chain, first entry is the one immediately
+     *                              below the device/LUN
+     * @param   papConfigs          The configurations for each of the drivers
+     *                              in @a papszDrivers array.  NULL entries
+     *                              corresponds to empty 'Config' nodes.  This
+     *                              function will take ownership of non-NULL
+     *                              CFGM sub-trees and set the array member to
+     *                              NULL, so the caller can do cleanups on
+     *                              failure.  This parameter is optional.
+     * @param   fFlags              Reserved, MBZ.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnDriverReconfigure,(PPDMDEVINS pDevIns, uint32_t iLun, uint32_t cDepth,
+                                                    const char * const *papszDrivers, PCFGMNODE *papConfigs, uint32_t fFlags));
 
     /** @name Exported PDM Queue Functions
      * @{ */
@@ -7234,6 +7260,36 @@ DECLINLINE(int) PDMDevHlpDriverAttach(PPDMDEVINS pDevIns, uint32_t iLun, PPDMIBA
 DECLINLINE(int) PDMDevHlpDriverDetach(PPDMDEVINS pDevIns, PPDMDRVINS pDrvIns, uint32_t fFlags)
 {
     return pDevIns->pHlpR3->pfnDriverDetach(pDevIns, pDrvIns, fFlags);
+}
+
+/**
+ * @copydoc PDMDEVHLPR3::pfnDriverReconfigure
+ */
+DECLINLINE(int) PDMDevHlpDriverReconfigure(PPDMDEVINS pDevIns, uint32_t iLun, uint32_t cDepth,
+                                           const char * const *papszDrivers, PCFGMNODE *papConfigs, uint32_t fFlags)
+{
+    return pDevIns->pHlpR3->pfnDriverReconfigure(pDevIns, iLun, cDepth, papszDrivers, papConfigs, fFlags);
+}
+
+/**
+ * Reconfigures with a single driver reattachement, no config, noflags.
+ * @sa PDMDevHlpDriverReconfigure
+ */
+DECLINLINE(int) PDMDevHlpDriverReconfigure1(PPDMDEVINS pDevIns, uint32_t iLun, const char *pszDriver0)
+{
+    return pDevIns->pHlpR3->pfnDriverReconfigure(pDevIns, iLun, 1, &pszDriver0, NULL, 0);
+}
+
+/**
+ * Reconfigures with a two drivers reattachement, no config, noflags.
+ * @sa PDMDevHlpDriverReconfigure
+ */
+DECLINLINE(int) PDMDevHlpDriverReconfigure2(PPDMDEVINS pDevIns, uint32_t iLun, const char *pszDriver0, const char *pszDriver1)
+{
+    char const * apszDrivers[2];
+    apszDrivers[0] = pszDriver0;
+    apszDrivers[1] = pszDriver1;
+    return pDevIns->pHlpR3->pfnDriverReconfigure(pDevIns, iLun, 2, apszDrivers, NULL, 0);
 }
 
 /**
