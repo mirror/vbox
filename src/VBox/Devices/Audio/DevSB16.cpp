@@ -1749,70 +1749,71 @@ static DECLCALLBACK(void) sb16TimerIO(PPDMDEVINS pDevIns, PTMTIMER pTimer, void 
 static DECLCALLBACK(int) sb16LiveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uPass)
 {
     RT_NOREF(uPass);
-    PSB16STATE pThis = PDMDEVINS_2_DATA(pDevIns, PSB16STATE);
+    PSB16STATE    pThis = PDMDEVINS_2_DATA(pDevIns, PSB16STATE);
+    PCPDMDEVHLPR3 pHlp = pDevIns->pHlpR3;
 
-    SSMR3PutS32(pSSM, pThis->irqCfg);
-    SSMR3PutS32(pSSM, pThis->dmaCfg);
-    SSMR3PutS32(pSSM, pThis->hdmaCfg);
-    SSMR3PutS32(pSSM, pThis->portCfg);
-    SSMR3PutS32(pSSM, pThis->verCfg);
+    pHlp->pfnSSMPutS32(pSSM, pThis->irqCfg);
+    pHlp->pfnSSMPutS32(pSSM, pThis->dmaCfg);
+    pHlp->pfnSSMPutS32(pSSM, pThis->hdmaCfg);
+    pHlp->pfnSSMPutS32(pSSM, pThis->portCfg);
+    pHlp->pfnSSMPutS32(pSSM, pThis->verCfg);
     return VINF_SSM_DONT_CALL_AGAIN;
 }
 
 /**
  * Worker for sb16SaveExec.
  */
-static int sb16Save(PSSMHANDLE pSSM, PSB16STATE pThis)
+static int sb16Save(PCPDMDEVHLPR3 pHlp, PSSMHANDLE pSSM, PSB16STATE pThis)
 {
-    SSMR3PutS32(pSSM, pThis->irq);
-    SSMR3PutS32(pSSM, pThis->dma);
-    SSMR3PutS32(pSSM, pThis->hdma);
-    SSMR3PutS32(pSSM, pThis->port);
-    SSMR3PutS32(pSSM, pThis->ver);
-    SSMR3PutS32(pSSM, pThis->in_index);
-    SSMR3PutS32(pSSM, pThis->out_data_len);
-    SSMR3PutS32(pSSM, pThis->fmt_stereo);
-    SSMR3PutS32(pSSM, pThis->fmt_signed);
-    SSMR3PutS32(pSSM, pThis->fmt_bits);
+    pHlp->pfnSSMPutS32(pSSM, pThis->irq);
+    pHlp->pfnSSMPutS32(pSSM, pThis->dma);
+    pHlp->pfnSSMPutS32(pSSM, pThis->hdma);
+    pHlp->pfnSSMPutS32(pSSM, pThis->port);
+    pHlp->pfnSSMPutS32(pSSM, pThis->ver);
+    pHlp->pfnSSMPutS32(pSSM, pThis->in_index);
+    pHlp->pfnSSMPutS32(pSSM, pThis->out_data_len);
+    pHlp->pfnSSMPutS32(pSSM, pThis->fmt_stereo);
+    pHlp->pfnSSMPutS32(pSSM, pThis->fmt_signed);
+    pHlp->pfnSSMPutS32(pSSM, pThis->fmt_bits);
 
-    SSMR3PutU32(pSSM, pThis->fmt);
+    pHlp->pfnSSMPutU32(pSSM, pThis->fmt);
 
-    SSMR3PutS32(pSSM, pThis->dma_auto);
-    SSMR3PutS32(pSSM, pThis->block_size);
-    SSMR3PutS32(pSSM, pThis->fifo);
-    SSMR3PutS32(pSSM, pThis->freq);
-    SSMR3PutS32(pSSM, pThis->time_const);
-    SSMR3PutS32(pSSM, pThis->speaker);
-    SSMR3PutS32(pSSM, pThis->needed_bytes);
-    SSMR3PutS32(pSSM, pThis->cmd);
-    SSMR3PutS32(pSSM, pThis->use_hdma);
-    SSMR3PutS32(pSSM, pThis->highspeed);
-    SSMR3PutS32(pSSM, pThis->can_write);
-    SSMR3PutS32(pSSM, pThis->v2x6);
+    pHlp->pfnSSMPutS32(pSSM, pThis->dma_auto);
+    pHlp->pfnSSMPutS32(pSSM, pThis->block_size);
+    pHlp->pfnSSMPutS32(pSSM, pThis->fifo);
+    pHlp->pfnSSMPutS32(pSSM, pThis->freq);
+    pHlp->pfnSSMPutS32(pSSM, pThis->time_const);
+    pHlp->pfnSSMPutS32(pSSM, pThis->speaker);
+    pHlp->pfnSSMPutS32(pSSM, pThis->needed_bytes);
+    pHlp->pfnSSMPutS32(pSSM, pThis->cmd);
+    pHlp->pfnSSMPutS32(pSSM, pThis->use_hdma);
+    pHlp->pfnSSMPutS32(pSSM, pThis->highspeed);
+    pHlp->pfnSSMPutS32(pSSM, pThis->can_write);
+    pHlp->pfnSSMPutS32(pSSM, pThis->v2x6);
 
-    SSMR3PutU8 (pSSM, pThis->csp_param);
-    SSMR3PutU8 (pSSM, pThis->csp_value);
-    SSMR3PutU8 (pSSM, pThis->csp_mode);
-    SSMR3PutU8 (pSSM, pThis->csp_param); /* Bug compatible! */
-    SSMR3PutMem(pSSM, pThis->csp_regs, 256);
-    SSMR3PutU8 (pSSM, pThis->csp_index);
-    SSMR3PutMem(pSSM, pThis->csp_reg83, 4);
-    SSMR3PutS32(pSSM, pThis->csp_reg83r);
-    SSMR3PutS32(pSSM, pThis->csp_reg83w);
+    pHlp->pfnSSMPutU8 (pSSM, pThis->csp_param);
+    pHlp->pfnSSMPutU8 (pSSM, pThis->csp_value);
+    pHlp->pfnSSMPutU8 (pSSM, pThis->csp_mode);
+    pHlp->pfnSSMPutU8 (pSSM, pThis->csp_param); /* Bug compatible! */
+    pHlp->pfnSSMPutMem(pSSM, pThis->csp_regs, 256);
+    pHlp->pfnSSMPutU8 (pSSM, pThis->csp_index);
+    pHlp->pfnSSMPutMem(pSSM, pThis->csp_reg83, 4);
+    pHlp->pfnSSMPutS32(pSSM, pThis->csp_reg83r);
+    pHlp->pfnSSMPutS32(pSSM, pThis->csp_reg83w);
 
-    SSMR3PutMem(pSSM, pThis->in2_data, sizeof(pThis->in2_data));
-    SSMR3PutMem(pSSM, pThis->out_data, sizeof(pThis->out_data));
-    SSMR3PutU8 (pSSM, pThis->test_reg);
-    SSMR3PutU8 (pSSM, pThis->last_read_byte);
+    pHlp->pfnSSMPutMem(pSSM, pThis->in2_data, sizeof(pThis->in2_data));
+    pHlp->pfnSSMPutMem(pSSM, pThis->out_data, sizeof(pThis->out_data));
+    pHlp->pfnSSMPutU8 (pSSM, pThis->test_reg);
+    pHlp->pfnSSMPutU8 (pSSM, pThis->last_read_byte);
 
-    SSMR3PutS32(pSSM, pThis->nzero);
-    SSMR3PutS32(pSSM, pThis->left_till_irq);
-    SSMR3PutS32(pSSM, pThis->dma_running);
-    SSMR3PutS32(pSSM, pThis->bytes_per_second);
-    SSMR3PutS32(pSSM, pThis->align);
+    pHlp->pfnSSMPutS32(pSSM, pThis->nzero);
+    pHlp->pfnSSMPutS32(pSSM, pThis->left_till_irq);
+    pHlp->pfnSSMPutS32(pSSM, pThis->dma_running);
+    pHlp->pfnSSMPutS32(pSSM, pThis->bytes_per_second);
+    pHlp->pfnSSMPutS32(pSSM, pThis->align);
 
-    SSMR3PutS32(pSSM, pThis->mixer_nreg);
-    return SSMR3PutMem(pSSM, pThis->mixer_regs, 256);
+    pHlp->pfnSSMPutS32(pSSM, pThis->mixer_nreg);
+    return pHlp->pfnSSMPutMem(pSSM, pThis->mixer_regs, 256);
 }
 
 /**
@@ -1821,9 +1822,10 @@ static int sb16Save(PSSMHANDLE pSSM, PSB16STATE pThis)
 static DECLCALLBACK(int) sb16SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 {
     PSB16STATE pThis = PDMDEVINS_2_DATA(pDevIns, PSB16STATE);
+    PCPDMDEVHLPR3 pHlp = pDevIns->pHlpR3;
 
     sb16LiveExec(pDevIns, pSSM, 0);
-    return sb16Save(pSSM, pThis);
+    return sb16Save(pHlp, pSSM, pThis);
 }
 
 /**
@@ -1831,58 +1833,58 @@ static DECLCALLBACK(int) sb16SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
  */
 static int sb16Load(PCPDMDEVHLPR3 pHlp, PSSMHANDLE pSSM, PSB16STATE pThis)
 {
-    SSMR3GetS32(pSSM, &pThis->irq);
-    SSMR3GetS32(pSSM, &pThis->dma);
-    SSMR3GetS32(pSSM, &pThis->hdma);
-    SSMR3GetS32(pSSM, &pThis->port);
-    SSMR3GetS32(pSSM, &pThis->ver);
-    SSMR3GetS32(pSSM, &pThis->in_index);
-    SSMR3GetS32(pSSM, &pThis->out_data_len);
-    SSMR3GetS32(pSSM, &pThis->fmt_stereo);
-    SSMR3GetS32(pSSM, &pThis->fmt_signed);
-    SSMR3GetS32(pSSM, &pThis->fmt_bits);
+    pHlp->pfnSSMGetS32(pSSM, &pThis->irq);
+    pHlp->pfnSSMGetS32(pSSM, &pThis->dma);
+    pHlp->pfnSSMGetS32(pSSM, &pThis->hdma);
+    pHlp->pfnSSMGetS32(pSSM, &pThis->port);
+    pHlp->pfnSSMGetS32(pSSM, &pThis->ver);
+    pHlp->pfnSSMGetS32(pSSM, &pThis->in_index);
+    pHlp->pfnSSMGetS32(pSSM, &pThis->out_data_len);
+    pHlp->pfnSSMGetS32(pSSM, &pThis->fmt_stereo);
+    pHlp->pfnSSMGetS32(pSSM, &pThis->fmt_signed);
+    pHlp->pfnSSMGetS32(pSSM, &pThis->fmt_bits);
 
     PDMDEVHLP_SSM_GET_ENUM32_RET(pHlp, pSSM, pThis->fmt, PDMAUDIOFMT);
 
-    SSMR3GetS32(pSSM, &pThis->dma_auto);
-    SSMR3GetS32(pSSM, &pThis->block_size);
-    SSMR3GetS32(pSSM, &pThis->fifo);
-    SSMR3GetS32(pSSM, &pThis->freq);
-    SSMR3GetS32(pSSM, &pThis->time_const);
-    SSMR3GetS32(pSSM, &pThis->speaker);
-    SSMR3GetS32(pSSM, &pThis->needed_bytes);
-    SSMR3GetS32(pSSM, &pThis->cmd);
-    SSMR3GetS32(pSSM, &pThis->use_hdma);
-    SSMR3GetS32(pSSM, &pThis->highspeed);
-    SSMR3GetS32(pSSM, &pThis->can_write);
-    SSMR3GetS32(pSSM, &pThis->v2x6);
+    pHlp->pfnSSMGetS32(pSSM, &pThis->dma_auto);
+    pHlp->pfnSSMGetS32(pSSM, &pThis->block_size);
+    pHlp->pfnSSMGetS32(pSSM, &pThis->fifo);
+    pHlp->pfnSSMGetS32(pSSM, &pThis->freq);
+    pHlp->pfnSSMGetS32(pSSM, &pThis->time_const);
+    pHlp->pfnSSMGetS32(pSSM, &pThis->speaker);
+    pHlp->pfnSSMGetS32(pSSM, &pThis->needed_bytes);
+    pHlp->pfnSSMGetS32(pSSM, &pThis->cmd);
+    pHlp->pfnSSMGetS32(pSSM, &pThis->use_hdma);
+    pHlp->pfnSSMGetS32(pSSM, &pThis->highspeed);
+    pHlp->pfnSSMGetS32(pSSM, &pThis->can_write);
+    pHlp->pfnSSMGetS32(pSSM, &pThis->v2x6);
 
-    SSMR3GetU8 (pSSM, &pThis->csp_param);
-    SSMR3GetU8 (pSSM, &pThis->csp_value);
-    SSMR3GetU8 (pSSM, &pThis->csp_mode);
-    SSMR3GetU8 (pSSM, &pThis->csp_param);   /* Bug compatible! */
-    SSMR3GetMem(pSSM, pThis->csp_regs, 256);
-    SSMR3GetU8 (pSSM, &pThis->csp_index);
-    SSMR3GetMem(pSSM, pThis->csp_reg83, 4);
-    SSMR3GetS32(pSSM, &pThis->csp_reg83r);
-    SSMR3GetS32(pSSM, &pThis->csp_reg83w);
+    pHlp->pfnSSMGetU8 (pSSM, &pThis->csp_param);
+    pHlp->pfnSSMGetU8 (pSSM, &pThis->csp_value);
+    pHlp->pfnSSMGetU8 (pSSM, &pThis->csp_mode);
+    pHlp->pfnSSMGetU8 (pSSM, &pThis->csp_param);   /* Bug compatible! */
+    pHlp->pfnSSMGetMem(pSSM, pThis->csp_regs, 256);
+    pHlp->pfnSSMGetU8 (pSSM, &pThis->csp_index);
+    pHlp->pfnSSMGetMem(pSSM, pThis->csp_reg83, 4);
+    pHlp->pfnSSMGetS32(pSSM, &pThis->csp_reg83r);
+    pHlp->pfnSSMGetS32(pSSM, &pThis->csp_reg83w);
 
-    SSMR3GetMem(pSSM, pThis->in2_data, sizeof(pThis->in2_data));
-    SSMR3GetMem(pSSM, pThis->out_data, sizeof(pThis->out_data));
-    SSMR3GetU8 (pSSM, &pThis->test_reg);
-    SSMR3GetU8 (pSSM, &pThis->last_read_byte);
+    pHlp->pfnSSMGetMem(pSSM, pThis->in2_data, sizeof(pThis->in2_data));
+    pHlp->pfnSSMGetMem(pSSM, pThis->out_data, sizeof(pThis->out_data));
+    pHlp->pfnSSMGetU8 (pSSM, &pThis->test_reg);
+    pHlp->pfnSSMGetU8 (pSSM, &pThis->last_read_byte);
 
-    SSMR3GetS32(pSSM, &pThis->nzero);
-    SSMR3GetS32(pSSM, &pThis->left_till_irq);
-    SSMR3GetS32(pSSM, &pThis->dma_running);
-    SSMR3GetS32(pSSM, &pThis->bytes_per_second);
-    SSMR3GetS32(pSSM, &pThis->align);
+    pHlp->pfnSSMGetS32(pSSM, &pThis->nzero);
+    pHlp->pfnSSMGetS32(pSSM, &pThis->left_till_irq);
+    pHlp->pfnSSMGetS32(pSSM, &pThis->dma_running);
+    pHlp->pfnSSMGetS32(pSSM, &pThis->bytes_per_second);
+    pHlp->pfnSSMGetS32(pSSM, &pThis->align);
 
     int32_t mixer_nreg = 0;
-    int rc = SSMR3GetS32(pSSM, &mixer_nreg);
+    int rc = pHlp->pfnSSMGetS32(pSSM, &mixer_nreg);
     AssertRCReturn(rc, rc);
     pThis->mixer_nreg = (uint8_t)mixer_nreg;
-    rc = SSMR3GetMem(pSSM, pThis->mixer_regs, 256);
+    rc = pHlp->pfnSSMGetMem(pSSM, pThis->mixer_regs, 256);
     AssertRCReturn(rc, rc);
 
     if (pThis->dma_running)
@@ -1903,7 +1905,8 @@ static int sb16Load(PCPDMDEVHLPR3 pHlp, PSSMHANDLE pSSM, PSB16STATE pThis)
  */
 static DECLCALLBACK(int) sb16LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass)
 {
-    PSB16STATE pThis = PDMDEVINS_2_DATA(pDevIns, PSB16STATE);
+    PSB16STATE    pThis = PDMDEVINS_2_DATA(pDevIns, PSB16STATE);
+    PCPDMDEVHLPR3 pHlp  = pDevIns->pHlpR3;
 
     AssertMsgReturn(    uVersion == SB16_SAVE_STATE_VERSION
                     ||  uVersion == SB16_SAVE_STATE_VERSION_VBOX_30,
@@ -1912,15 +1915,15 @@ static DECLCALLBACK(int) sb16LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint3
     if (uVersion > SB16_SAVE_STATE_VERSION_VBOX_30)
     {
         int32_t irq;
-        SSMR3GetS32 (pSSM, &irq);
+        pHlp->pfnSSMGetS32 (pSSM, &irq);
         int32_t dma;
-        SSMR3GetS32 (pSSM, &dma);
+        pHlp->pfnSSMGetS32 (pSSM, &dma);
         int32_t hdma;
-        SSMR3GetS32 (pSSM, &hdma);
+        pHlp->pfnSSMGetS32 (pSSM, &hdma);
         int32_t port;
-        SSMR3GetS32 (pSSM, &port);
+        pHlp->pfnSSMGetS32 (pSSM, &port);
         int32_t ver;
-        int rc = SSMR3GetS32 (pSSM, &ver);
+        int rc = pHlp->pfnSSMGetS32 (pSSM, &ver);
         AssertRCReturn (rc, rc);
 
         if (   irq  != pThis->irqCfg
@@ -1929,7 +1932,7 @@ static DECLCALLBACK(int) sb16LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint3
             || port != pThis->portCfg
             || ver  != pThis->verCfg)
         {
-            return SSMR3SetCfgError(pSSM, RT_SRC_POS,
+            return pHlp->pfnSSMSetCfgError(pSSM, RT_SRC_POS,
                                     N_("config changed: irq=%x/%x dma=%x/%x hdma=%x/%x port=%x/%x ver=%x/%x (saved/config)"),
                                     irq,  pThis->irqCfg,
                                     dma,  pThis->dmaCfg,
@@ -1942,7 +1945,7 @@ static DECLCALLBACK(int) sb16LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint3
     if (uPass != SSM_PASS_FINAL)
         return VINF_SUCCESS;
 
-    return sb16Load(pDevIns->pHlpR3, pSSM, pThis);
+    return sb16Load(pHlp, pSSM, pThis);
 }
 
 /**
@@ -2400,6 +2403,9 @@ static DECLCALLBACK(int) sb16Destruct(PPDMDEVINS pDevIns)
     return VINF_SUCCESS;
 }
 
+/**
+ * @interface_method_impl{PDMDEVREGR3,pfnConstruct}
+ */
 static DECLCALLBACK(int) sb16Construct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE pCfg)
 {
     PDMDEV_CHECK_VERSIONS_RETURN(pDevIns); /* this shall come first */
