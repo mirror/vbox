@@ -40,6 +40,7 @@
 #define PDMPCIDEV_INCLUDE_PRIVATE  /* Hack to get pdmpcidevint.h included at the right point. */
 #include <VBox/vmm/pdmpcidev.h>
 
+#include <VBox/AssertGuest.h>
 #include <VBox/msi.h>
 #include <VBox/vmm/pdmdev.h>
 #include <VBox/vmm/mm.h>
@@ -108,12 +109,12 @@ static bool ich9pciBiosInitAllDevicesPrefetchableOnBus(PPDMDEVINS pDevIns, PDEVP
  * See 7.2.2. PCI Express Enhanced Configuration Mechanism for details of address
  * mapping, we take n=6 approach
  */
-DECLINLINE(void) ich9pciPhysToPciAddr(PDEVPCIROOT pPciRoot, RTGCPHYS GCPhysAddr, PciAddress *pPciAddr)
+DECLINLINE(void) ich9pciPhysToPciAddr(PDEVPCIROOT pPciRoot, RTGCPHYS off, PciAddress *pPciAddr)
 {
     NOREF(pPciRoot);
-    pPciAddr->iBus          = (GCPhysAddr >> 20) & ((1<<6)       - 1);
-    pPciAddr->iDeviceFunc   = (GCPhysAddr >> 12) & ((1<<(5+3))   - 1); // 5 bits - device, 3 bits - function
-    pPciAddr->iRegister     = (GCPhysAddr >>  0) & ((1<<(6+4+2)) - 1); // 6 bits - register, 4 bits - extended register, 2 bits -Byte Enable
+    pPciAddr->iBus          = (off >> 20) & ((1<<6)       - 1);
+    pPciAddr->iDeviceFunc   = (off >> 12) & ((1<<(5+3))   - 1); // 5 bits - device, 3 bits - function
+    pPciAddr->iRegister     = (off >>  0) & ((1<<(6+4+2)) - 1); // 6 bits - register, 4 bits - extended register, 2 bits -Byte Enable
     RT_UNTRUSTED_VALIDATED_FENCE(); /* paranoia */
 }
 
@@ -636,87 +637,67 @@ static void ich9pciSetIrqInternal(PPDMDEVINS pDevIns, PDEVPCIROOT pPciRoot, PDEV
 
 
 /**
- * Memory mapped I/O Handler for write operations.
- *
- * Emulates writes to configuration space.
- *
- * @returns VBox status code.
- *
- * @param   pDevIns     The device instance.
- * @param   pvUser      User argument.
- * @param   GCPhysAddr  Physical address (in GC) where the read starts.
- * @param   pv          Where to fetch the result.
- * @param   cb          Number of bytes to write.
- * @remarks Caller enters the device critical section.
+ * @callback_method_impl{FNIOMMMIONEWWRITE,
+ * Emulates writes to configuration space.}
  */
-PDMBOTHCBDECL(int) ich9pciMcfgMMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr, void const *pv, unsigned cb)
+static DECLCALLBACK(VBOXSTRICTRC) ich9pciMcfgMMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS off, void const *pv, unsigned cb)
 {
     PDEVPCIROOT pPciRoot = PDMINS_2_DATA(pDevIns, PDEVPCIROOT);
-    uint32_t u32 = 0;
+    Log2Func(("%RGp LB %d\n", off, cb));
     NOREF(pvUser);
-
-    Log2Func(("%RGp(%d) \n", GCPhysAddr, cb));
-
-    PCI_LOCK(pDevIns, VINF_IOM_R3_MMIO_WRITE);
 
     /* Decode target device and configuration space register */
     PciAddress aDest;
-    ich9pciPhysToPciAddr(pPciRoot, GCPhysAddr, &aDest);
+    ich9pciPhysToPciAddr(pPciRoot, off, &aDest);
 
+    /* Get the value. */
+    uint32_t u32;
     switch (cb)
     {
         case 1:
-            u32 = *(uint8_t*)pv;
+            u32 = *(uint8_t const *)pv;
             break;
         case 2:
-            u32 = *(uint16_t*)pv;
+            u32 = *(uint16_t const *)pv;
             break;
         case 4:
-            u32 = *(uint32_t*)pv;
+            u32 = *(uint32_t const *)pv;
             break;
         default:
-            Assert(false);
+            ASSERT_GUEST_MSG_FAILED(("cb=%u off=%RGp\n", cb, off)); /** @todo how the heck should this work? Split it, right? */
+            u32 = 0;
             break;
     }
 
     /* Perform configuration space write */
+    PCI_LOCK(pDevIns, VINF_IOM_R3_MMIO_WRITE);
     VBOXSTRICTRC rcStrict = ich9pciConfigWrite(pDevIns, pPciRoot, &aDest, u32, cb, VINF_IOM_R3_MMIO_WRITE);
     PCI_UNLOCK(pDevIns);
 
-    return VBOXSTRICTRC_TODO(rcStrict);
+    return rcStrict;
 }
 
 
 /**
- * Memory mapped I/O Handler for read operations.
- *
- * Emulates reads from configuration space.
- *
- * @returns VBox status code.
- *
- * @param   pDevIns     The device instance.
- * @param   pvUser      User argument.
- * @param   GCPhysAddr  Physical address (in GC) where the read starts.
- * @param   pv          Where to store the result.
- * @param   cb          Number of bytes read.
- * @remarks Caller enters the device critical section.
+ * @callback_method_impl{FNIOMMMIONEWWRITE,
+ * Emulates reads from configuration space.}
  */
-PDMBOTHCBDECL(int) ich9pciMcfgMMIORead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr, void *pv, unsigned cb)
+static DECLCALLBACK(VBOXSTRICTRC) ich9pciMcfgMMIORead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS off, void *pv, unsigned cb)
 {
     PDEVPCIROOT pPciRoot = PDMINS_2_DATA(pDevIns, PDEVPCIROOT);
+    LogFlowFunc(("%RGp LB %u\n", off, cb));
     NOREF(pvUser);
-
-    LogFlowFunc(("%RGp(%d) \n", GCPhysAddr, cb));
-
-    PCI_LOCK(pDevIns, VINF_IOM_R3_MMIO_READ);
 
     /* Decode target device and configuration space register */
     PciAddress aDest;
-    ich9pciPhysToPciAddr(pPciRoot, GCPhysAddr, &aDest);
+    ich9pciPhysToPciAddr(pPciRoot, off, &aDest);
 
     /* Perform configuration space read */
-    uint32_t     u32Value;
+    uint32_t     u32Value = 0;
+    PCI_LOCK(pDevIns, VINF_IOM_R3_MMIO_READ);
     VBOXSTRICTRC rcStrict = ich9pciConfigRead(pPciRoot, &aDest, cb, &u32Value, VINF_IOM_R3_MMIO_READ);
+    PCI_UNLOCK(pDevIns);
+
     if (RT_SUCCESS(rcStrict)) /** @todo this is wrong, though it probably works fine due to double buffering... */
     {
         switch (cb)
@@ -731,12 +712,11 @@ PDMBOTHCBDECL(int) ich9pciMcfgMMIORead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHY
                 *(uint32_t *)pv  = u32Value;
                 break;
             default:
-                AssertFailed();
+                ASSERT_GUEST_MSG_FAILED(("cb=%u off=%RGp\n", cb, off)); /** @todo how the heck should this work? Split it, right? */
                 break;
         }
     }
 
-    PCI_UNLOCK(pDevIns);
     return VBOXSTRICTRC_TODO(rcStrict);
 }
 
@@ -3374,11 +3354,15 @@ static DECLCALLBACK(int) ich9pciR3Construct(PPDMDEVINS pDevIns, int iInstance, P
      * Init data.
      */
     /* And fill values */
-    pBusCC->pDevInsR3             = pDevIns;
-    pPciRoot->PciBus.fTypePiix3   = false;
-    pPciRoot->PciBus.fTypeIch9    = true;
-    pPciRoot->PciBus.fPureBridge  = false;
-    pPciRoot->PciBus.papBridgesR3 = (PPDMPCIDEV *)PDMDevHlpMMHeapAllocZ(pDevIns, sizeof(PPDMPCIDEV) * RT_ELEMENTS(pPciRoot->PciBus.apDevices));
+    pBusCC->pDevInsR3               = pDevIns;
+    pPciRoot->hIoPortAddress        = NIL_IOMIOPORTHANDLE;
+    pPciRoot->hIoPortData           = NIL_IOMIOPORTHANDLE;
+    pPciRoot->hIoPortMagic          = NIL_IOMIOPORTHANDLE;
+    pPciRoot->hMmioMcfg             = NIL_IOMMMIOHANDLE;
+    pPciRoot->PciBus.fTypePiix3     = false;
+    pPciRoot->PciBus.fTypeIch9      = true;
+    pPciRoot->PciBus.fPureBridge    = false;
+    pPciRoot->PciBus.papBridgesR3   = (PPDMPCIDEV *)PDMDevHlpMMHeapAllocZ(pDevIns, sizeof(PPDMPCIDEV) * RT_ELEMENTS(pPciRoot->PciBus.apDevices));
     AssertLogRelReturn(pPciRoot->PciBus.papBridgesR3, VERR_NO_MEMORY);
 
     /*
@@ -3456,26 +3440,11 @@ static DECLCALLBACK(int) ich9pciR3Construct(PPDMDEVINS pDevIns, int iInstance, P
      */
     if (pPciRoot->u64PciConfigMMioAddress != 0)
     {
-/** @todo implement new-style MMIO   */
-        rc = PDMDevHlpMMIORegister(pDevIns, pPciRoot->u64PciConfigMMioAddress, pPciRoot->u64PciConfigMMioLength, NULL /*pvUser*/,
-                                   IOMMMIO_FLAGS_READ_PASSTHRU | IOMMMIO_FLAGS_WRITE_PASSTHRU,
-                                   ich9pciMcfgMMIOWrite, ich9pciMcfgMMIORead, "MCFG ranges");
-        AssertMsgRCReturn(rc, ("rc=%Rrc %#llx/%#llx\n", rc,  pPciRoot->u64PciConfigMMioAddress, pPciRoot->u64PciConfigMMioLength), rc);
-
-        if (pDevIns->fRCEnabled)
-        {
-            rc = PDMDevHlpMMIORegisterRC(pDevIns, pPciRoot->u64PciConfigMMioAddress, pPciRoot->u64PciConfigMMioLength,
-                                         NIL_RTRCPTR /*pvUser*/, "ich9pciMcfgMMIOWrite", "ich9pciMcfgMMIORead");
-            AssertRCReturn(rc, rc);
-        }
-
-
-        if (pDevIns->fR0Enabled)
-        {
-            rc = PDMDevHlpMMIORegisterR0(pDevIns, pPciRoot->u64PciConfigMMioAddress, pPciRoot->u64PciConfigMMioLength,
-                                         NIL_RTR0PTR /*pvUser*/, "ich9pciMcfgMMIOWrite", "ich9pciMcfgMMIORead");
-            AssertRCReturn(rc, rc);
-        }
+        rc = PDMDevHlpMmioCreateAndMap(pDevIns, pPciRoot->u64PciConfigMMioAddress, pPciRoot->u64PciConfigMMioLength,
+                                       ich9pciMcfgMMIOWrite, ich9pciMcfgMMIORead,
+                                       IOMMMIO_FLAGS_READ_PASSTHRU | IOMMMIO_FLAGS_WRITE_PASSTHRU,
+                                       "MCFG ranges", &pPciRoot->hMmioMcfg);
+        AssertMsgRCReturn(rc, ("rc=%Rrc %#RX64/%#RX64\n", rc,  pPciRoot->u64PciConfigMMioAddress, pPciRoot->u64PciConfigMMioLength), rc);
     }
 
     /*
@@ -3887,7 +3856,11 @@ DECLCALLBACK(int) ich9pciRZConstruct(PPDMDEVINS pDevIns)
     AssertLogRelRCReturn(rc, rc);
 
     /* Set up MMIO callbacks: */
-    /** @todo new-style MMIO */
+    if (pPciRoot->hMmioMcfg != NIL_IOMMMIOHANDLE)
+    {
+        rc = PDMDevHlpMmioSetUpContext(pDevIns, pPciRoot->hMmioMcfg, ich9pciMcfgMMIOWrite, ich9pciMcfgMMIORead, NULL /*pvUser*/);
+        AssertLogRelRCReturn(rc, rc);
+    }
 
     return rc;
 }

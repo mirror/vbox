@@ -163,6 +163,8 @@ typedef struct DEVPCIROOT
     IOMIOPORTHANDLE         hIoPortData;
     /** The magic I/O port handle. */
     IOMIOPORTHANDLE         hIoPortMagic;
+    /** The MCFG MMIO region. */
+    IOMMMIOHANDLE           hMmioMcfg;
 
 #if 1 /* Will be moved into the BIOS "soon". */
     /** Current bus number - obsolete (still used by DevPCI, but merge will fix that). */
