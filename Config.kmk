@@ -481,9 +481,8 @@ ifdef VBOX_WITH_VALIDATIONKIT ## @todo r=bird: test is too early!
 endif
 # Enables the audio endpoint detection on Windows hosts.
 VBOX_WITH_AUDIO_MMNOTIFICATION_CLIENT = 1
-## Enable PCI passthrough support.
-## @bugref{9218}: Disabled awaiting conversion of the device to new PDM device style.
-#VBOX_WITH_PCI_PASSTHROUGH = 1
+# Enable PCI passthrough support.
+VBOX_WITH_PCI_PASSTHROUGH = 1
 # Enable statically linked dbus support.
 if1of ($(KBUILD_TARGET), linux solaris)
  VBOX_WITH_DBUS = 1
@@ -550,7 +549,8 @@ ifdef VBOX_WITH_EHCI
  VBOX_WITH_EHCI_IMPL = 1
 endif
 ifdef VBOX_WITH_PCI_PASSTHROUGH
- VBOX_WITH_PCI_PASSTHROUGH_IMPL = 1
+ ## @bugref{9218}: Disabled awaiting conversion of the device to new PDM device style.
+ #VBOX_WITH_PCI_PASSTHROUGH_IMPL = 1
 endif
 ifndef VBOX_WITHOUT_HOSTWEBCAM
  VBOX_WITH_USB_VIDEO_IMPL = 1
