@@ -271,28 +271,9 @@ private:
     QAction *m_pActionAddController;
     /** Holds the 'Remove Controller' action instance. */
     QAction *m_pActionRemoveController;
-    /** Holds the 'Add PIIX3 Controller' action instance. */
-    QAction *m_pActionAddControllerPIIX3;
-    /** Holds the 'Add PIIX4 Controller' action instance. */
-    QAction *m_pActionAddControllerPIIX4;
-    /** Holds the 'Add ICH6 Controller' action instance. */
-    QAction *m_pActionAddControllerICH6;
-    /** Holds the 'Add AHCI Controller' action instance. */
-    QAction *m_pActionAddControllerAHCI;
-    /** Holds the 'Add LsiLogic Controller' action instance. */
-    QAction *m_pActionAddControllerLsiLogic;
-    /** Holds the 'Add BusLogic Controller' action instance. */
-    QAction *m_pActionAddControllerBusLogic;
-    /** Holds the 'Add LsiLogic SAS Controller' action instance. */
-    QAction *m_pActionAddControllerLsiLogicSAS;
-    /** Holds the 'Add Floppy Controller' action instance. */
-    QAction *m_pActionAddControllerFloppy;
-    /** Holds the 'Add USB Controller' action instance. */
-    QAction *m_pActionAddControllerUSB;
-    /** Holds the 'Add NVMe Controller' action instance. */
-    QAction *m_pActionAddControllerNVMe;
-    /** Holds the 'Add virtio-scsi Controller' action instance. */
-    QAction *m_pActionAddControllerVirtioSCSI;
+    /** Holds the map of add controller action instances. */
+    QMap<KStorageControllerType, QAction*> m_addControllerActions;
+
     /** Holds the 'Add Attachment' action instance. */
     QAction *m_pActionAddAttachment;
     /** Holds the 'Remove Attachment' action instance. */

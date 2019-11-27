@@ -2921,14 +2921,6 @@ const QString UIMachineSettingsStorage::s_strAttachmentMimeType = QString("appli
 UIMachineSettingsStorage::UIMachineSettingsStorage()
     : m_pModelStorage(0)
     , m_pActionAddController(0), m_pActionRemoveController(0)
-    , m_pActionAddControllerPIIX3(0), m_pActionAddControllerPIIX4(0), m_pActionAddControllerICH6(0)
-    , m_pActionAddControllerAHCI(0)
-    , m_pActionAddControllerLsiLogic(0), m_pActionAddControllerBusLogic(0)
-    , m_pActionAddControllerLsiLogicSAS(0)
-    , m_pActionAddControllerFloppy(0)
-    , m_pActionAddControllerUSB(0)
-    , m_pActionAddControllerNVMe(0)
-    , m_pActionAddControllerVirtioSCSI(0)
     , m_pActionAddAttachment(0), m_pActionRemoveAttachment(0)
     , m_pActionAddAttachmentHD(0), m_pActionAddAttachmentCD(0), m_pActionAddAttachmentFD(0)
     , m_pMediumIdHolder(new UIMediumIDHolder(this))
@@ -3300,17 +3292,17 @@ void UIMachineSettingsStorage::retranslateUi()
     m_pActionRemoveAttachment->setShortcut(QKeySequence("-"));
 
     m_pActionAddController->setText(tr("Add Controller"));
-    m_pActionAddControllerPIIX3->setText(tr("PIIX3 (IDE)"));
-    m_pActionAddControllerPIIX4->setText(tr("PIIX4 (Default IDE)"));
-    m_pActionAddControllerICH6->setText(tr("ICH6 (IDE)"));
-    m_pActionAddControllerAHCI->setText(tr("AHCI (SATA)"));
-    m_pActionAddControllerLsiLogic->setText(tr("LsiLogic (Default SCSI)"));
-    m_pActionAddControllerBusLogic->setText(tr("BusLogic (SCSI)"));
-    m_pActionAddControllerLsiLogicSAS->setText(tr("LsiLogic SAS (SAS)"));
-    m_pActionAddControllerFloppy->setText(tr("I82078 (Floppy)"));
-    m_pActionAddControllerUSB->setText(tr("USB"));
-    m_pActionAddControllerNVMe->setText(tr("NVMe (PCIe)"));
-    m_pActionAddControllerVirtioSCSI->setText(tr("virtio-scsi"));
+    m_addControllerActions.value(KStorageControllerType_PIIX3)->setText(tr("PIIX3 (IDE)"));
+    m_addControllerActions.value(KStorageControllerType_PIIX4)->setText(tr("PIIX4 (Default IDE)"));
+    m_addControllerActions.value(KStorageControllerType_ICH6)->setText(tr("ICH6 (IDE)"));
+    m_addControllerActions.value(KStorageControllerType_IntelAhci)->setText(tr("AHCI (SATA)"));
+    m_addControllerActions.value(KStorageControllerType_LsiLogic)->setText(tr("LsiLogic (Default SCSI)"));
+    m_addControllerActions.value(KStorageControllerType_BusLogic)->setText(tr("BusLogic (SCSI)"));
+    m_addControllerActions.value(KStorageControllerType_LsiLogicSas)->setText(tr("LsiLogic SAS (SAS)"));
+    m_addControllerActions.value(KStorageControllerType_I82078)->setText(tr("I82078 (Floppy)"));
+    m_addControllerActions.value(KStorageControllerType_USB)->setText(tr("USB"));
+    m_addControllerActions.value(KStorageControllerType_NVMe)->setText(tr("NVMe (PCIe)"));
+    m_addControllerActions.value(KStorageControllerType_VirtioSCSI)->setText(tr("virtio-scsi"));
     m_pActionRemoveController->setText(tr("Remove Controller"));
     m_pActionAddAttachment->setText(tr("Add Attachment"));
     m_pActionAddAttachmentHD->setText(tr("Hard Disk"));
@@ -3465,17 +3457,17 @@ void UIMachineSettingsStorage::sltHandleMediumDeleted(const QUuid &uMediumId)
 void UIMachineSettingsStorage::sltAddController()
 {
     QMenu menu;
-    menu.addAction(m_pActionAddControllerPIIX3);
-    menu.addAction(m_pActionAddControllerPIIX4);
-    menu.addAction(m_pActionAddControllerICH6);
-    menu.addAction(m_pActionAddControllerAHCI);
-    menu.addAction(m_pActionAddControllerLsiLogic);
-    menu.addAction(m_pActionAddControllerBusLogic);
-    menu.addAction(m_pActionAddControllerLsiLogicSAS);
-    menu.addAction(m_pActionAddControllerFloppy);
-    menu.addAction(m_pActionAddControllerUSB);
-    menu.addAction(m_pActionAddControllerNVMe);
-    menu.addAction(m_pActionAddControllerVirtioSCSI);
+    menu.addAction(m_addControllerActions.value(KStorageControllerType_PIIX3));
+    menu.addAction(m_addControllerActions.value(KStorageControllerType_PIIX4));
+    menu.addAction(m_addControllerActions.value(KStorageControllerType_ICH6));
+    menu.addAction(m_addControllerActions.value(KStorageControllerType_IntelAhci));
+    menu.addAction(m_addControllerActions.value(KStorageControllerType_LsiLogic));
+    menu.addAction(m_addControllerActions.value(KStorageControllerType_BusLogic));
+    menu.addAction(m_addControllerActions.value(KStorageControllerType_LsiLogicSas));
+    menu.addAction(m_addControllerActions.value(KStorageControllerType_I82078));
+    menu.addAction(m_addControllerActions.value(KStorageControllerType_USB));
+    menu.addAction(m_addControllerActions.value(KStorageControllerType_NVMe));
+    menu.addAction(m_addControllerActions.value(KStorageControllerType_VirtioSCSI));
     menu.exec(QCursor::pos());
 }
 
@@ -4004,17 +3996,17 @@ void UIMachineSettingsStorage::sltUpdateActionStates()
 
     /* Configure "add controller" actions: */
     m_pActionAddController->setEnabled(fIDEPossible || fSATAPossible || fSCSIPossible || fFloppyPossible || fSASPossible || fUSBPossible || fNVMePossible || fVirtioSCSIPossible);
-    m_pActionAddControllerPIIX3->setEnabled(fIDEPossible);
-    m_pActionAddControllerPIIX4->setEnabled(fIDEPossible);
-    m_pActionAddControllerICH6->setEnabled(fIDEPossible);
-    m_pActionAddControllerAHCI->setEnabled(fSATAPossible);
-    m_pActionAddControllerLsiLogic->setEnabled(fSCSIPossible);
-    m_pActionAddControllerBusLogic->setEnabled(fSCSIPossible);
-    m_pActionAddControllerFloppy->setEnabled(fFloppyPossible);
-    m_pActionAddControllerLsiLogicSAS->setEnabled(fSASPossible);
-    m_pActionAddControllerUSB->setEnabled(fUSBPossible);
-    m_pActionAddControllerNVMe->setEnabled(fNVMePossible);
-    m_pActionAddControllerVirtioSCSI->setEnabled(fVirtioSCSIPossible);
+    m_addControllerActions.value(KStorageControllerType_PIIX3)->setEnabled(fIDEPossible);
+    m_addControllerActions.value(KStorageControllerType_PIIX4)->setEnabled(fIDEPossible);
+    m_addControllerActions.value(KStorageControllerType_ICH6)->setEnabled(fIDEPossible);
+    m_addControllerActions.value(KStorageControllerType_IntelAhci)->setEnabled(fSATAPossible);
+    m_addControllerActions.value(KStorageControllerType_LsiLogic)->setEnabled(fSCSIPossible);
+    m_addControllerActions.value(KStorageControllerType_BusLogic)->setEnabled(fSCSIPossible);
+    m_addControllerActions.value(KStorageControllerType_I82078)->setEnabled(fFloppyPossible);
+    m_addControllerActions.value(KStorageControllerType_LsiLogicSas)->setEnabled(fSASPossible);
+    m_addControllerActions.value(KStorageControllerType_USB)->setEnabled(fUSBPossible);
+    m_addControllerActions.value(KStorageControllerType_NVMe)->setEnabled(fNVMePossible);
+    m_addControllerActions.value(KStorageControllerType_VirtioSCSI)->setEnabled(fVirtioSCSIPossible);
 
     /* Configure "add attachment" actions: */
     m_pActionAddAttachment->setEnabled(fController && fAttachmentsPossible);
@@ -4511,91 +4503,91 @@ void UIMachineSettingsStorage::prepareStorageToolbar()
         }
 
         /* Create 'Add PIIX3 Controller' action: */
-        m_pActionAddControllerPIIX3 = new QAction(this);
-        AssertPtrReturnVoid(m_pActionAddControllerPIIX3);
+        m_addControllerActions[KStorageControllerType_PIIX3] = new QAction(this);
+        AssertPtrReturnVoid(m_addControllerActions.value(KStorageControllerType_PIIX3));
         {
             /* Configure action: */
-            m_pActionAddControllerPIIX3->setIcon(iconPool()->icon(IDEControllerAddEn, IDEControllerAddDis));
+            m_addControllerActions.value(KStorageControllerType_PIIX3)->setIcon(iconPool()->icon(IDEControllerAddEn, IDEControllerAddDis));
         }
 
         /* Create 'Add PIIX4 Controller' action: */
-        m_pActionAddControllerPIIX4 = new QAction(this);
-        AssertPtrReturnVoid(m_pActionAddControllerPIIX4);
+        m_addControllerActions[KStorageControllerType_PIIX4] = new QAction(this);
+        AssertPtrReturnVoid(m_addControllerActions.value(KStorageControllerType_PIIX4));
         {
             /* Configure action: */
-            m_pActionAddControllerPIIX4->setIcon(iconPool()->icon(IDEControllerAddEn, IDEControllerAddDis));
+            m_addControllerActions.value(KStorageControllerType_PIIX4)->setIcon(iconPool()->icon(IDEControllerAddEn, IDEControllerAddDis));
         }
 
         /* Create 'Add ICH6 Controller' action: */
-        m_pActionAddControllerICH6 = new QAction(this);
-        AssertPtrReturnVoid(m_pActionAddControllerICH6);
+        m_addControllerActions[KStorageControllerType_ICH6] = new QAction(this);
+        AssertPtrReturnVoid(m_addControllerActions.value(KStorageControllerType_ICH6));
         {
             /* Configure action: */
-            m_pActionAddControllerICH6->setIcon(iconPool()->icon(IDEControllerAddEn, IDEControllerAddDis));
+            m_addControllerActions.value(KStorageControllerType_ICH6)->setIcon(iconPool()->icon(IDEControllerAddEn, IDEControllerAddDis));
         }
 
         /* Create 'Add AHCI Controller' action: */
-        m_pActionAddControllerAHCI = new QAction(this);
-        AssertPtrReturnVoid(m_pActionAddControllerAHCI);
+        m_addControllerActions[KStorageControllerType_IntelAhci] = new QAction(this);
+        AssertPtrReturnVoid(m_addControllerActions.value(KStorageControllerType_IntelAhci));
         {
             /* Configure action: */
-            m_pActionAddControllerAHCI->setIcon(iconPool()->icon(SATAControllerAddEn, SATAControllerAddDis));
+            m_addControllerActions.value(KStorageControllerType_IntelAhci)->setIcon(iconPool()->icon(SATAControllerAddEn, SATAControllerAddDis));
         }
 
         /* Create 'Add LsiLogic Controller' action: */
-        m_pActionAddControllerLsiLogic = new QAction(this);
-        AssertPtrReturnVoid(m_pActionAddControllerLsiLogic);
+        m_addControllerActions[KStorageControllerType_LsiLogic] = new QAction(this);
+        AssertPtrReturnVoid(m_addControllerActions.value(KStorageControllerType_LsiLogic));
         {
             /* Configure action: */
-            m_pActionAddControllerLsiLogic->setIcon(iconPool()->icon(SCSIControllerAddEn, SCSIControllerAddDis));
+            m_addControllerActions.value(KStorageControllerType_LsiLogic)->setIcon(iconPool()->icon(SCSIControllerAddEn, SCSIControllerAddDis));
         }
 
         /* Create 'Add BusLogic Controller' action: */
-        m_pActionAddControllerBusLogic = new QAction(this);
-        AssertPtrReturnVoid(m_pActionAddControllerBusLogic);
+        m_addControllerActions[KStorageControllerType_BusLogic] = new QAction(this);
+        AssertPtrReturnVoid(m_addControllerActions.value(KStorageControllerType_BusLogic));
         {
             /* Configure action: */
-            m_pActionAddControllerBusLogic->setIcon(iconPool()->icon(SCSIControllerAddEn, SCSIControllerAddDis));
+            m_addControllerActions.value(KStorageControllerType_BusLogic)->setIcon(iconPool()->icon(SCSIControllerAddEn, SCSIControllerAddDis));
         }
 
         /* Create 'Add Floppy Controller' action: */
-        m_pActionAddControllerFloppy = new QAction(this);
-        AssertPtrReturnVoid(m_pActionAddControllerFloppy);
+        m_addControllerActions[KStorageControllerType_I82078] = new QAction(this);
+        AssertPtrReturnVoid(m_addControllerActions.value(KStorageControllerType_I82078));
         {
             /* Configure action: */
-            m_pActionAddControllerFloppy->setIcon(iconPool()->icon(FloppyControllerAddEn, FloppyControllerAddDis));
+            m_addControllerActions.value(KStorageControllerType_I82078)->setIcon(iconPool()->icon(FloppyControllerAddEn, FloppyControllerAddDis));
         }
 
         /* Create 'Add LsiLogic SAS Controller' action: */
-        m_pActionAddControllerLsiLogicSAS = new QAction(this);
-        AssertPtrReturnVoid(m_pActionAddControllerLsiLogicSAS);
+        m_addControllerActions[KStorageControllerType_LsiLogicSas] = new QAction(this);
+        AssertPtrReturnVoid(m_addControllerActions.value(KStorageControllerType_LsiLogicSas));
         {
             /* Configure action: */
-            m_pActionAddControllerLsiLogicSAS->setIcon(iconPool()->icon(SASControllerAddEn, SASControllerAddDis));
+            m_addControllerActions.value(KStorageControllerType_LsiLogicSas)->setIcon(iconPool()->icon(SASControllerAddEn, SASControllerAddDis));
         }
 
         /* Create 'Add USB Controller' action: */
-        m_pActionAddControllerUSB = new QAction(this);
-        AssertPtrReturnVoid(m_pActionAddControllerUSB);
+        m_addControllerActions[KStorageControllerType_USB] = new QAction(this);
+        AssertPtrReturnVoid(m_addControllerActions.value(KStorageControllerType_USB));
         {
             /* Configure action: */
-            m_pActionAddControllerUSB->setIcon(iconPool()->icon(USBControllerAddEn, USBControllerAddDis));
+            m_addControllerActions.value(KStorageControllerType_USB)->setIcon(iconPool()->icon(USBControllerAddEn, USBControllerAddDis));
         }
 
         /* Create 'Add NVMe Controller' action: */
-        m_pActionAddControllerNVMe = new QAction(this);
-        AssertPtrReturnVoid(m_pActionAddControllerNVMe);
+        m_addControllerActions[KStorageControllerType_NVMe] = new QAction(this);
+        AssertPtrReturnVoid(m_addControllerActions.value(KStorageControllerType_NVMe));
         {
             /* Configure action: */
-            m_pActionAddControllerNVMe->setIcon(iconPool()->icon(NVMeControllerAddEn, NVMeControllerAddDis));
+            m_addControllerActions.value(KStorageControllerType_NVMe)->setIcon(iconPool()->icon(NVMeControllerAddEn, NVMeControllerAddDis));
         }
 
         /* Create 'Add virtio-scsi Controller' action: */
-        m_pActionAddControllerVirtioSCSI = new QAction(this);
-        AssertPtrReturnVoid(m_pActionAddControllerVirtioSCSI);
+        m_addControllerActions[KStorageControllerType_VirtioSCSI] = new QAction(this);
+        AssertPtrReturnVoid(m_addControllerActions.value(KStorageControllerType_VirtioSCSI));
         {
             /* Configure action: */
-            m_pActionAddControllerVirtioSCSI->setIcon(iconPool()->icon(VirtioSCSIControllerAddEn, VirtioSCSIControllerAddDis));
+            m_addControllerActions.value(KStorageControllerType_VirtioSCSI)->setIcon(iconPool()->icon(VirtioSCSIControllerAddEn, VirtioSCSIControllerAddDis));
         }
 
         /* Create 'Remove Controller' action: */
@@ -4735,17 +4727,17 @@ void UIMachineSettingsStorage::prepareConnections()
 
     /* Configure actions: */
     connect(m_pActionAddController, &QAction::triggered, this, &UIMachineSettingsStorage::sltAddController);
-    connect(m_pActionAddControllerPIIX3, &QAction::triggered, this, &UIMachineSettingsStorage::sltAddControllerPIIX3);
-    connect(m_pActionAddControllerPIIX4, &QAction::triggered, this, &UIMachineSettingsStorage::sltAddControllerPIIX4);
-    connect(m_pActionAddControllerICH6, &QAction::triggered, this, &UIMachineSettingsStorage::sltAddControllerICH6);
-    connect(m_pActionAddControllerAHCI, &QAction::triggered, this, &UIMachineSettingsStorage::sltAddControllerAHCI);
-    connect(m_pActionAddControllerLsiLogic, &QAction::triggered, this, &UIMachineSettingsStorage::sltAddControllerLsiLogic);
-    connect(m_pActionAddControllerBusLogic, &QAction::triggered, this, &UIMachineSettingsStorage::sltAddControllerBusLogic);
-    connect(m_pActionAddControllerFloppy, &QAction::triggered, this, &UIMachineSettingsStorage::sltAddControllerFloppy);
-    connect(m_pActionAddControllerLsiLogicSAS, &QAction::triggered, this, &UIMachineSettingsStorage::sltAddControllerLsiLogicSAS);
-    connect(m_pActionAddControllerUSB, &QAction::triggered, this, &UIMachineSettingsStorage::sltAddControllerUSB);
-    connect(m_pActionAddControllerNVMe, &QAction::triggered, this, &UIMachineSettingsStorage::sltAddControllerNVMe);
-    connect(m_pActionAddControllerVirtioSCSI, &QAction::triggered, this, &UIMachineSettingsStorage::sltAddControllerVirtioSCSI);
+    connect(m_addControllerActions.value(KStorageControllerType_PIIX3), &QAction::triggered, this, &UIMachineSettingsStorage::sltAddControllerPIIX3);
+    connect(m_addControllerActions.value(KStorageControllerType_PIIX4), &QAction::triggered, this, &UIMachineSettingsStorage::sltAddControllerPIIX4);
+    connect(m_addControllerActions.value(KStorageControllerType_ICH6), &QAction::triggered, this, &UIMachineSettingsStorage::sltAddControllerICH6);
+    connect(m_addControllerActions.value(KStorageControllerType_IntelAhci), &QAction::triggered, this, &UIMachineSettingsStorage::sltAddControllerAHCI);
+    connect(m_addControllerActions.value(KStorageControllerType_LsiLogic), &QAction::triggered, this, &UIMachineSettingsStorage::sltAddControllerLsiLogic);
+    connect(m_addControllerActions.value(KStorageControllerType_BusLogic), &QAction::triggered, this, &UIMachineSettingsStorage::sltAddControllerBusLogic);
+    connect(m_addControllerActions.value(KStorageControllerType_I82078), &QAction::triggered, this, &UIMachineSettingsStorage::sltAddControllerFloppy);
+    connect(m_addControllerActions.value(KStorageControllerType_LsiLogicSas), &QAction::triggered, this, &UIMachineSettingsStorage::sltAddControllerLsiLogicSAS);
+    connect(m_addControllerActions.value(KStorageControllerType_USB), &QAction::triggered, this, &UIMachineSettingsStorage::sltAddControllerUSB);
+    connect(m_addControllerActions.value(KStorageControllerType_NVMe), &QAction::triggered, this, &UIMachineSettingsStorage::sltAddControllerNVMe);
+    connect(m_addControllerActions.value(KStorageControllerType_VirtioSCSI), &QAction::triggered, this, &UIMachineSettingsStorage::sltAddControllerVirtioSCSI);
     connect(m_pActionRemoveController, &QAction::triggered, this, &UIMachineSettingsStorage::sltRemoveController);
     connect(m_pActionAddAttachment, &QAction::triggered, this, &UIMachineSettingsStorage::sltAddAttachment);
     connect(m_pActionAddAttachmentHD, &QAction::triggered, this, &UIMachineSettingsStorage::sltAddAttachmentHD);
