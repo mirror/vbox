@@ -2242,6 +2242,7 @@ static DECLCALLBACK(int) sb16Attach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t 
 static DECLCALLBACK(void) sb16Detach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t fFlags)
 {
     PSB16STATE pThis = PDMDEVINS_2_DATA(pDevIns, PSB16STATE);
+    RT_NOREF(fFlags);
 
     LogFunc(("iLUN=%u, fFlags=0x%x\n", iLUN, fFlags));
 
