@@ -336,12 +336,179 @@ static void vga_get_cursor_pos(uint8_t page, uint16_t STACK_BASED *scans, uint16
     }
 }
 
+/* Look for a glyph bitmap in a given font. */
+static uint16_t vga_find_glyph(uint8_t __far *font, uint8_t STACK_BASED *glyph, uint8_t cp, uint16_t n_glyphs, uint8_t cheight)
+{
+    uint16_t    codepoint = 0;  /* Zero returned when glyph not found. */
+
+    while (n_glyphs--) {
+        if (!repe_cmpsb(font, glyph, cheight)) {
+            codepoint = cp | 0x8000;    /* Found matching glyph! */
+            break;
+        }
+        font += cheight;
+        ++cp;   /* Increment code point number. */
+    }
+    return codepoint;
+}
+
+static void vga_read_glyph_planar(uint8_t __far *vptr, uint16_t stride, uint8_t STACK_BASED *glyph, uint8_t cheight)
+{
+    /* Set Mode Register (GR5) to Read Mode 1. Assuming default register
+     * state from our mode set, this does all the hard work for us such that
+     * reading a byte from video memory gives us a bit mask for all eight
+     * pixels, for both 16-color and monochrome modes.
+     */
+    outw(VGAREG_GRDC_ADDRESS, 0x0805);
+
+    while (cheight--) {
+        *glyph++ = ~*vptr;
+        vptr += stride;
+    }
+
+    /* Put GR5 back to Read Mode 0. */
+    outw(VGAREG_GRDC_ADDRESS, 0x0005);
+}
+
+static uint16_t vga_char_ofs_planar(uint8_t xcurs, uint8_t ycurs, uint16_t nbcols, uint8_t page, uint8_t cheight)
+{
+    uint16_t    ofs;
+
+    ofs = ycurs * nbcols * cheight + xcurs;
+    ofs += page * read_word(BIOSMEM_SEG, BIOSMEM_PAGE_SIZE);
+
+    return ofs;
+}
+
+static uint8_t vga_read_char_planar(uint16_t nbcols, uint16_t ofs, uint8_t cheight)
+{
+    uint8_t     glyph[16];  /* NB: Don't try taller characters! */
+
+    vga_read_glyph_planar(0xA000 :> (uint8_t *)ofs, nbcols, &glyph, cheight);
+
+    /* Look through font pointed to by INT 43h. */
+    return vga_find_glyph((void __far *)read_dword(0, 0x43 * 4), &glyph, 0, 256, cheight);
+}
+
+static uint16_t vga_char_ofs_linear(uint8_t xcurs, uint8_t ycurs, uint16_t nbcols, uint8_t page, uint8_t cheight)
+{
+    uint16_t    ofs;
+
+    ofs = ycurs * nbcols * cheight + xcurs;
+    ofs *= 8;
+    return ofs;
+}
+
+static void vga_read_glyph_linear(uint8_t __far *vptr, uint16_t stride, uint8_t STACK_BASED *glyph, uint8_t cheight)
+{
+    uint8_t bmap, cbit;
+    int     i;
+
+    /* Zero pixels are background, everything else foreground. */
+    while (cheight--) {
+        bmap = 0;
+        cbit = 0x80;
+        for (i = 0; i < 8; ++i) {
+            if (vptr[i])
+                bmap |= cbit;
+            cbit >>= 1;
+        }
+        *glyph++ = bmap;
+        vptr += stride;
+    }
+}
+
+static uint8_t vga_read_char_linear(uint16_t nbcols, uint16_t ofs, uint8_t cheight)
+{
+    uint8_t     glyph[16];  /* NB: Don't try taller characters! */
+
+    vga_read_glyph_linear(0xA000 :> (uint8_t *)ofs, nbcols * 8, &glyph, cheight);
+
+    /* Look through font pointed to by INT 43h. */
+    return vga_find_glyph((void __far *)read_dword(0, 0x43 * 4), &glyph, 0, 256, cheight);
+}
+
+static uint8_t vga_read_2bpp_char(uint8_t __far *vptr)
+{
+    uint16_t    mask, pixb;
+    uint8_t     bmap, cbit;
+    int         i;
+
+    mask = 0xC000;  /* Check two bits at a time to see if they're zero. */
+    cbit = 0x80;    /* Go from left to right. */
+    bmap = 0;
+    pixb = swap_16(*((uint16_t __far *)vptr));
+    /* Go through 8 lines/words. */
+    for (i = 0; i < 8; ++i) {
+        if (pixb & mask)
+            bmap |= cbit;
+        cbit >>= 1;
+        mask >>= 2;
+    }
+    return bmap;
+}
+
+static void vga_read_glyph_cga(uint16_t ofs, uint8_t STACK_BASED *glyph, uint8_t mode)
+{
+    int             i;
+    uint8_t __far   *vptr;
+
+    /* The font size is fixed at 8x8. Stride is always 80 bytes because the
+     * mode is either 80 characters wide at 1bpp or 40 characters at 2bpp.
+     */
+    if (mode != 6) {
+        /* Adjust offset for 2bpp. */
+        vptr = 0xB800 :> (uint8_t *)(ofs * 2);
+        /* For 2bpp modes, we have to extract the bits by hand. */
+        for (i = 0; i < 4; ++i) {
+            *glyph++ = vga_read_2bpp_char(vptr);
+            *glyph++ = vga_read_2bpp_char(vptr + 0x2000);
+            vptr += 80;
+        }
+    } else {
+        vptr = 0xB800 :> (uint8_t *)ofs;
+        for (i = 0; i < 4; ++i) {
+            *glyph++ = vptr[0];
+            *glyph++ = vptr[0x2000];
+            vptr += 80;
+        }
+    }
+}
+
+static uint16_t vga_char_ofs_cga(uint8_t xcurs, uint8_t ycurs, uint16_t nbcols)
+{
+    /* Multiply ony by 8 due to line interleaving. NB: Caller
+     * has to multiply the result for two for 2bpp mode.
+     */
+    return ycurs * nbcols * 4 + xcurs;
+}
+
+static uint8_t vga_read_char_cga(uint16_t ofs, uint8_t mode)
+{
+    uint8_t     glyph[8];   /* Char height is hardcoded to 8. */
+    uint16_t    found;
+
+    /* Segment would be B000h for mono modes; we don't do those. */
+    vga_read_glyph_cga(ofs, &glyph, mode);
+
+    /* Look through the first half of the font pointed to by INT 43h. */
+    found = vga_find_glyph((void __far *)read_dword(0, 0x43 * 4), &glyph, 0, 128, 8);
+    /* If not found, look for the second half pointed to by INT 1Fh */
+    if (!(found & 0x8000)) {
+        void __far *int1f;
+
+        int1f = (void __far *)read_dword(0, 0x1f * 4);
+        if (int1f)  /* If null pointer, skip. */
+            found = vga_find_glyph(int1f, &glyph, 128, 128, 8);
+    }
+    return found;
+}
 
 static void vga_read_char_attr(uint8_t page, uint16_t STACK_BASED *chr_atr)
 {
-    uint8_t     xcurs, ycurs, mode, line;
+    uint8_t     xcurs, ycurs, mode, line, cheight;
     uint16_t    nbcols, nbrows, address;
-    uint16_t    cursor, dummy;
+    uint16_t    cursor, dummy, ofs;
 
     // Get the mode
     mode = read_byte(BIOSMEM_SEG, BIOSMEM_CURRENT_MODE);
@@ -363,10 +530,29 @@ static void vga_read_char_attr(uint8_t page, uint16_t STACK_BASED *chr_atr)
         address  = SCREEN_MEM_START(nbcols, nbrows, page) + (xcurs + ycurs * nbcols) * 2;
         *chr_atr = read_word(vga_modes[line].sstart, address);
     } else {
-        /// @todo graphics modes (not so easy - or useful!)
+        switch (vga_modes[line].memmodel) {
+        case CGA:
+            /* For CGA graphics, font size is hardcoded at 8x8. */
+            ofs = vga_char_ofs_cga(xcurs, ycurs, nbcols);
+            *chr_atr = vga_read_char_cga(ofs, mode);
+            break;
+        case PLANAR1:
+        case PLANAR4:
+            cheight = read_word(BIOSMEM_SEG, BIOSMEM_CHAR_HEIGHT);
+            ofs = vga_char_ofs_planar(xcurs, ycurs, nbcols, page, cheight);
+            *chr_atr = vga_read_char_planar(nbcols, ofs, cheight);
+            break;
+        case LINEAR8:
+            cheight = read_word(BIOSMEM_SEG, BIOSMEM_CHAR_HEIGHT);
+            ofs = vga_char_ofs_linear(xcurs, ycurs, nbcols, page, cheight);
+            *chr_atr = vga_read_char_linear(nbcols, ofs, cheight);
+            break;
+        default:
 #ifdef VGA_DEBUG
-        unimplemented();
+            unimplemented();
 #endif
+            break;
+        }
     }
 }
 
@@ -1179,19 +1365,11 @@ static void write_gfx_char_pl4(uint8_t car, uint8_t attr, uint8_t xcurs,
                                uint8_t ycurs, uint8_t nbcols, uint8_t cheight, uint8_t page)
 {
  uint8_t i,j,mask;
- uint8_t *fdata;
+ uint8_t __far *fdata;
  uint16_t addr,dest,src;
 
- switch(cheight)
-  {case 14:
-    fdata = &vgafont14;
-    break;
-   case 16:
-    fdata = &vgafont16;
-    break;
-   default:
-    fdata = &vgafont8;
-  }
+ fdata = (void __far *)read_dword(0x00, 0x43 * 4);
+
  addr=xcurs+ycurs*cheight*nbcols;
  addr+=read_word(BIOSMEM_SEG,BIOSMEM_PAGE_SIZE)*page;
  src = car * cheight;
@@ -1244,30 +1422,17 @@ static void write_gfx_char_cga(uint8_t car, uint8_t attr, uint8_t xcurs,
    dest=addr+(i>>1)*80;
    if (i & 1) dest += 0x2000;
    mask = 0x80;
+   /* NB: In 1bpp modes, the attribute is ignored, only the XOR flag has meaning. */
    if (bpp == 1)
     {
      if (attr & 0x80)
       {
        data = read_byte(0xb800,dest);
+       data ^= fdata[src+i];
       }
      else
       {
-       data = 0x00;
-      }
-     for(j=0;j<8;j++)
-      {
-       if (fdata[src+i] & mask)
-        {
-         if (attr & 0x80)
-          {
-           data ^= (attr & 0x01) << (7-j);
-          }
-         else
-          {
-           data |= (attr & 0x01) << (7-j);
-          }
-        }
-       mask >>= 1;
+       data = fdata[src+i];
       }
      write_byte(0xb800,dest,data);
     }
@@ -1366,12 +1531,13 @@ static void biosfn_write_char_attr(uint8_t car, uint8_t page, uint8_t attr, uint
    // FIXME gfx mode not complete
    cheight=video_param_table[line_to_vpti[line]].cheight;
    bpp=vga_modes[line].pixbits;
-   while((count-->0) && (xcurs<nbcols))
+   while(count-->0)
     {
      switch(vga_modes[line].memmodel)
       {
-       case PLANAR4:
        case PLANAR1:
+         attr |= 0x01;  /* Color is ignored in 1bpp modes, always foreground. */
+       case PLANAR4:
          write_gfx_char_pl4(car,attr,xcurs,ycurs,nbcols,cheight,page);
          break;
        case CGA:
@@ -1425,12 +1591,13 @@ static void biosfn_write_char_only(uint8_t car, uint8_t page, uint8_t attr, uint
    // FIXME gfx mode not complete
    cheight=video_param_table[line_to_vpti[line]].cheight;
    bpp=vga_modes[line].pixbits;
-   while((count-->0) && (xcurs<nbcols))
+   while(count-->0)
     {
      switch(vga_modes[line].memmodel)
       {
-       case PLANAR4:
        case PLANAR1:
+         attr |= 0x01;  /* Color is ignored in 1bpp modes, always foreground. */
+       case PLANAR4:
          write_gfx_char_pl4(car,attr,xcurs,ycurs,nbcols,cheight,page);
          break;
        case CGA:
@@ -1586,8 +1753,9 @@ static void biosfn_write_teletype(uint8_t car, uint8_t page, uint8_t attr, uint8
       bpp=vga_modes[line].pixbits;
       switch(vga_modes[line].memmodel)
        {
-        case PLANAR4:
         case PLANAR1:
+          attr |= 0x01;  /* Color is ignored in 1bpp modes, always foreground. */
+        case PLANAR4:
           write_gfx_char_pl4(car,attr,xcurs,ycurs,nbcols,cheight,page);
           break;
         case CGA:

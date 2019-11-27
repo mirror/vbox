@@ -40,10 +40,10 @@ ifdef VBOX_WITH_OPEN_WATCOM
  	order \
  	 clname CODE  \
 	  segment VGAROM segaddr=0xC000 \
- 	  segment _TEXT  segaddr=0xC000 offset=0xA00 \
- 	  segment VBE32  segaddr=0xC000 offset=0x4400 \
+ 	  segment _TEXT  segaddr=0xC000 offset=0x980 \
+ 	  segment VBE32  segaddr=0xC000 offset=0x4600 \
  	 clname DATA \
- 	  segment _DATA  segaddr=0xC000 offset=0x4600 \
+ 	  segment _DATA  segaddr=0xC000 offset=0x4780 \
 
  MISCBINS += VBoxVgaBios286
  VBoxVgaBios286_EXTENDS = VBoxVgaBios386

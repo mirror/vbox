@@ -73,6 +73,18 @@ void rep_movsw(void __far *d, void __far *s, int nwords);
     "pop    ds"             \
     parm [es di] [dx si] [cx];
 
+int repe_cmpsb(void __far *d, void __far *s, int nbytes);
+#pragma aux repe_cmpsb =    \
+    "push   ds"             \
+    "mov    ds, dx"         \
+    "repe   cmpsb"          \
+    "pop    ds"             \
+    "mov    ax, 0"          \
+    "jz     match"          \
+    "inc    al"             \
+    "match:"                \
+    parm [es di] [dx si] [cx] value [ax] modify nomemory;
+
 char __far *rep_insb(char __far *buffer, unsigned nbytes, unsigned port);
 #pragma aux rep_insb = ".286" "rep insb" parm [es di] [cx] [dx] value [es di] modify exact [cx di];
 
