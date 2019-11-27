@@ -252,6 +252,7 @@ typedef struct VMSVGAR3STATE
     STAMPROFILE             StatR3Cmd3dPresentProf;
     STAMPROFILE             StatR3Cmd3dDrawPrimitivesProf;
     STAMPROFILE             StatR3Cmd3dSurfaceDmaProf;
+    STAMPROFILE             StatR3Cmd3dBlitSurfaceToScreenProf;
     STAMCOUNTER             StatR3CmdDefineGmr2;
     STAMCOUNTER             StatR3CmdDefineGmr2Free;
     STAMCOUNTER             StatR3CmdDefineGmr2Modify;
@@ -414,6 +415,7 @@ static SSMFIELD const g_aVMSVGAR3STATEFields[] =
     SSMFIELD_ENTRY_IGNORE(      VMSVGAR3STATE, StatR3Cmd3dPresentProf),
     SSMFIELD_ENTRY_IGNORE(      VMSVGAR3STATE, StatR3Cmd3dDrawPrimitivesProf),
     SSMFIELD_ENTRY_IGNORE(      VMSVGAR3STATE, StatR3Cmd3dSurfaceDmaProf),
+    SSMFIELD_ENTRY_IGNORE(      VMSVGAR3STATE, StatR3Cmd3dBlitSurfaceToScreenProf),
     SSMFIELD_ENTRY_IGNORE(      VMSVGAR3STATE, StatR3CmdDefineGmr2),
     SSMFIELD_ENTRY_IGNORE(      VMSVGAR3STATE, StatR3CmdDefineGmr2Free),
     SSMFIELD_ENTRY_IGNORE(      VMSVGAR3STATE, StatR3CmdDefineGmr2Modify),
@@ -4429,8 +4431,10 @@ static DECLCALLBACK(int) vmsvgaR3FifoLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread
                         STAM_REL_COUNTER_INC(&pSVGAState->StatR3Cmd3dSurfaceScreen);
 
                         cRects = (pHdr->size - sizeof(*pCmd)) / sizeof(SVGASignedRect);
+                        STAM_REL_PROFILE_START(&pSVGAState->StatR3Cmd3dBlitSurfaceToScreenProf, a);
                         rc = vmsvga3dSurfaceBlitToScreen(pThis, pThisCC, pCmd->destScreenId, pCmd->destRect, pCmd->srcImage,
                                                          pCmd->srcRect, cRects, (SVGASignedRect *)(pCmd + 1));
+                        STAM_REL_PROFILE_STOP(&pSVGAState->StatR3Cmd3dBlitSurfaceToScreenProf, a);
                         break;
                     }
 
@@ -6251,6 +6255,7 @@ int vmsvgaR3Init(PPDMDEVINS pDevIns)
     REG_PRF(&pSVGAState->StatR3Cmd3dPresentProf,          "VMSVGA/Cmd/3dPresentProfBoth",          "Profiling of SVGA_3D_CMD_PRESENT and SVGA_3D_CMD_PRESENT_READBACK.");
     REG_PRF(&pSVGAState->StatR3Cmd3dSurfaceDmaProf,       "VMSVGA/Cmd/3dSurfaceDmaProf",           "Profiling of SVGA_3D_CMD_SURFACE_DMA.");
 # endif
+    REG_PRF(&pSVGAState->StatR3Cmd3dBlitSurfaceToScreenProf, "VMSVGA/Cmd/3dBlitSurfaceToScreenProf", "Profiling of SVGA_3D_CMD_BLIT_SURFACE_TO_SCREEN.");
     REG_CNT(&pSVGAState->StatR3Cmd3dActivateSurface,      "VMSVGA/Cmd/3dActivateSurface",          "SVGA_3D_CMD_ACTIVATE_SURFACE");
     REG_CNT(&pSVGAState->StatR3Cmd3dBeginQuery,           "VMSVGA/Cmd/3dBeginQuery",               "SVGA_3D_CMD_BEGIN_QUERY");
     REG_CNT(&pSVGAState->StatR3Cmd3dClear,                "VMSVGA/Cmd/3dClear",                    "SVGA_3D_CMD_CLEAR");
