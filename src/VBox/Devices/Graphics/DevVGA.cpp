@@ -45,7 +45,7 @@
 *   Defined Constants And Macros                                                                                                 *
 *********************************************************************************************************************************/
 
-/* WARNING!!! All defines that affect VGAState should be placed to DevVGA.h !!!
+/* WARNING!!! All defines that affect VGAState should be placed in DevVGA.h !!!
  *            NEVER place them here as this would lead to VGASTATE inconsistency
  *            across different .cpp files !!!
  */
@@ -62,6 +62,7 @@
  * XENIX 2.1.x/2.2.x is known to rely on the switch values.
  */
 #define EGA_SWITCHES    0x90    /* Off-on-on-off, high-res color EGA display. */
+
 
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
