@@ -273,7 +273,7 @@ int hdaR3StreamInit(PHDASTREAM pStream, uint8_t uSD)
         LogRel2(("HDA: More than stereo (2) channels are not supported (%RU8 requested), "
                  "falling back to stereo channels for stream #%RU8\n", Props.cChannels, uSD));
         Props.cChannels = 2;
-        Props.cShift    = PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(Props.cBytes, Props.cChannels);
+        Props.cShift    = PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(Props.cbSample, Props.cChannels);
     }
 #endif
 
@@ -325,8 +325,8 @@ int hdaR3StreamInit(PHDASTREAM pStream, uint8_t uSD)
 # ifdef VBOX_WITH_AUDIO_HDA_MIC_IN
 #  error "Implement me!"
 # else
-            pCfg->DestSource.Source = PDMAUDIORECSOURCE_LINE;
-            pCfg->enmLayout         = PDMAUDIOSTREAMLAYOUT_NON_INTERLEAVED;
+            pCfg->u.enmSrc  = PDMAUDIORECSRC_LINE;
+            pCfg->enmLayout = PDMAUDIOSTREAMLAYOUT_NON_INTERLEAVED;
             RTStrCopy(pCfg->szName, sizeof(pCfg->szName), "Line In");
 # endif
             break;
@@ -1120,24 +1120,24 @@ int hdaR3StreamTransfer(PHDASTREAM pStream, uint32_t cbToProcessMax)
                         PPDMAUDIOSTREAMMAP pMap = &pStream->State.Mapping.paMappings[m];
                         AssertPtr(pMap);
 
-                        Log3Func(("Mapping #%u: Start (cbDMA=%RU32, cbFrame=%RU32, cbOff=%RU32)\n",
-                                  m, cbDMA, cbFrame, pMap->cbOff));
+                        Log3Func(("Mapping #%u: Start (cbDMA=%RU32, cbFrame=%RU32, offNext=%RU32)\n",
+                                  m, cbDMA, cbFrame, pMap->offNext));
 
                         uint8_t *pbSrcBuf = abChunk;
-                        size_t cbSrcOff   = pMap->cbOff;
+                        size_t cbSrcOff   = pMap->offNext;
                         Assert(cbChunk >= cbSrcOff);
 
                         for (unsigned i = 0; i < cbDMA / cbFrame; i++)
                         {
                             void *pvDstBuf; size_t cbDstBuf;
-                            RTCircBufAcquireWriteBlock(pCircBuf, pMap->cbSize, &pvDstBuf, &cbDstBuf);
+                            RTCircBufAcquireWriteBlock(pCircBuf, pMap->cbStep, &pvDstBuf, &cbDstBuf);
 
-                            Assert(cbDstBuf >= pMap->cbSize);
+                            Assert(cbDstBuf >= pMap->cbStep);
 
                             if (cbDstBuf)
                             {
-                                Log3Func(("Mapping #%u: Frame #%02u:    cbSize=%zu, cbFirst=%zu, cbOff=%zu, cbDstBuf=%zu, cbSrcOff=%zu\n",
-                                          m, i, pMap->cbSize, pMap->cbFirst, pMap->cbOff, cbDstBuf, cbSrcOff));
+                                Log3Func(("Mapping #%u: Frame #%02u:    cbStep=%u, offFirst=%u, offNext=%u, cbDstBuf=%u, cbSrcOff=%u\n",
+                                          m, i, pMap->cbStep, pMap->offFirst, pMap->offNext, cbDstBuf, cbSrcOff));
 
                                 memcpy(pvDstBuf, pbSrcBuf + cbSrcOff, cbDstBuf);
 
@@ -1147,8 +1147,8 @@ int hdaR3StreamTransfer(PHDASTREAM pStream, uint32_t cbToProcessMax)
                                                          0 /* fFlags */);
 #endif
                                 Assert(cbSrcOff <= cbDMA);
-                                if (cbSrcOff + cbFrame + pMap->cbFirst <= cbDMA)
-                                    cbSrcOff += cbFrame + pMap->cbFirst;
+                                if (cbSrcOff + cbFrame + pMap->offFirst<= cbDMA)
+                                    cbSrcOff += cbFrame + pMap->offFirst;
 
                                 Log3Func(("Mapping #%u: Frame #%02u:    -> cbSrcOff=%zu\n", m, i, cbSrcOff));
                             }
@@ -1156,8 +1156,8 @@ int hdaR3StreamTransfer(PHDASTREAM pStream, uint32_t cbToProcessMax)
                             RTCircBufReleaseWriteBlock(pCircBuf, cbDstBuf);
                         }
 
-                        Log3Func(("Mapping #%u: End cbSize=%zu, cbDMA=%RU32, cbSrcOff=%zu\n",
-                                  m, pMap->cbSize, cbDMA, cbSrcOff));
+                        Log3Func(("Mapping #%u: End cbSize=%u, cbDMA=%RU32, cbSrcOff=%zu\n",
+                                  m, pMap->cbStep, cbDMA, cbSrcOff));
 
                         Assert(cbSrcOff <= cbDMA);
 
@@ -1166,12 +1166,12 @@ int hdaR3StreamTransfer(PHDASTREAM pStream, uint32_t cbToProcessMax)
                         {
                             Log3Func(("Mapping #%u: cbSrcLeft=%RU32\n", m, cbSrcLeft));
 
-                            if (cbSrcLeft >= pMap->cbSize)
+                            if (cbSrcLeft >= pMap->cbStep)
                             {
                                 void *pvDstBuf; size_t cbDstBuf;
-                                RTCircBufAcquireWriteBlock(pCircBuf, pMap->cbSize, &pvDstBuf, &cbDstBuf);
+                                RTCircBufAcquireWriteBlock(pCircBuf, pMap->cbStep, &pvDstBuf, &cbDstBuf);
 
-                                Assert(cbDstBuf >= pMap->cbSize);
+                                Assert(cbDstBuf >= pMap->cbStep);
 
                                 if (cbDstBuf)
                                 {
@@ -1182,12 +1182,12 @@ int hdaR3StreamTransfer(PHDASTREAM pStream, uint32_t cbToProcessMax)
                             }
 
                             Assert(pMap->cbFrame >= cbSrcLeft);
-                            pMap->cbOff = pMap->cbFrame - cbSrcLeft;
+                            pMap->offNext = pMap->cbFrame - cbSrcLeft;
                         }
                         else
-                            pMap->cbOff = 0;
+                            pMap->offNext = 0;
 
-                        Log3Func(("Mapping #%u finish (cbSrcOff=%zu, cbOff=%zu)\n", m, cbSrcOff, pMap->cbOff));
+                        Log3Func(("Mapping #%u finish (cbSrcOff=%zu, offNext=%zu)\n", m, cbSrcOff, pMap->offNext));
                     }
                 }
             }

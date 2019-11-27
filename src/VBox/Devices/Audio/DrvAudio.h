@@ -262,10 +262,10 @@ void DrvAudioHlpDeviceEnumPrint(const char *pszDesc, const PPDMAUDIODEVICEENUM p
 /** @name Audio string-ify methods.
  * @{ */
 const char *DrvAudioHlpAudMixerCtlToStr(PDMAUDIOMIXERCTL enmMixerCtl);
-const char *DrvAudioHlpPlaybackDstToStr(const PDMAUDIOPLAYBACKDEST enmPlaybackDst);
-const char *DrvAudioHlpRecSrcToStr(const PDMAUDIORECSOURCE enmRecSource);
+const char *DrvAudioHlpPlaybackDstToStr(const PDMAUDIOPLAYBACKDST enmPlaybackDst);
+const char *DrvAudioHlpRecSrcToStr(const PDMAUDIORECSRC enmRecSource);
 PDMAUDIOFMT DrvAudioHlpStrToAudFmt(const char *pszFmt);
-char *DrvAudioHlpAudDevFlagsToStrA(PDMAUDIODEVFLAG fFlags);
+char *DrvAudioHlpAudDevFlagsToStrA(uint32_t fFlags);
 /** @}  */
 
 /** @name Audio file methods.

@@ -1405,7 +1405,7 @@ static int hdaRegWriteSDCTL(PPDMDEVINS pDevIns, PHDASTATE pThis, uint32_t iReg, 
                 rc2 = hdaR3SDFMTToPCMProps(HDA_STREAM_REG(pThis, FMT, pStream->u8SD), &Props);
                 AssertRC(rc2);
                 LogFunc(("[SD%RU8] %RU32Hz, %RU8bit, %RU8 channel(s)\n",
-                         pStream->u8SD, Props.uHz, Props.cBytes * 8 /* Bit */, Props.cChannels));
+                         pStream->u8SD, Props.uHz, Props.cbSample * 8 /* Bit */, Props.cChannels));
 # endif
                 /* (Re-)initialize the stream with current values. */
                 rc2 = hdaR3StreamInit(pStream, pStream->u8SD);
@@ -1813,10 +1813,10 @@ static int hdaR3AddStreamOut(PHDASTATE pThis, PPDMAUDIOSTREAMCFG pCfg)
         {
             RTStrPrintf(pCfg->szName, RT_ELEMENTS(pCfg->szName), "Front");
 
-            pCfg->DestSource.Dest = PDMAUDIOPLAYBACKDEST_FRONT;
-            pCfg->enmLayout       = PDMAUDIOSTREAMLAYOUT_NON_INTERLEAVED;
+            pCfg->u.enmDst          = PDMAUDIOPLAYBACKDST_FRONT;
+            pCfg->enmLayout         = PDMAUDIOSTREAMLAYOUT_NON_INTERLEAVED;
 
-            pCfg->Props.cShift    = PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(pCfg->Props.cBytes, pCfg->Props.cChannels);
+            pCfg->Props.cShift      = PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(pCfg->Props.cbSample, pCfg->Props.cChannels);
 
             rc = hdaCodecAddStream(pThis->pCodec, PDMAUDIOMIXERCTL_FRONT, pCfg);
         }
@@ -1827,11 +1827,11 @@ static int hdaR3AddStreamOut(PHDASTATE pThis, PPDMAUDIOSTREAMCFG pCfg)
         {
             RTStrPrintf(pCfg->szName, RT_ELEMENTS(pCfg->szName), "Center/LFE");
 
-            pCfg->DestSource.Dest = PDMAUDIOPLAYBACKDEST_CENTER_LFE;
-            pCfg->enmLayout       = PDMAUDIOSTREAMLAYOUT_NON_INTERLEAVED;
+            pCfg->u.enmDst          = PDMAUDIOPLAYBACKDST_CENTER_LFE;
+            pCfg->enmLayout         = PDMAUDIOSTREAMLAYOUT_NON_INTERLEAVED;
 
-            pCfg->Props.cChannels = (fUseCenter && fUseLFE) ? 2 : 1;
-            pCfg->Props.cShift    = PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(pCfg->Props.cBytes, pCfg->Props.cChannels);
+            pCfg->Props.cChannels   = (fUseCenter && fUseLFE) ? 2 : 1;
+            pCfg->Props.cShift      = PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(pCfg->Props.cbSample, pCfg->Props.cChannels);
 
             rc = hdaCodecAddStream(pThis->pCodec, PDMAUDIOMIXERCTL_CENTER_LFE, pCfg);
         }
@@ -1841,11 +1841,11 @@ static int hdaR3AddStreamOut(PHDASTATE pThis, PPDMAUDIOSTREAMCFG pCfg)
         {
             RTStrPrintf(pCfg->szName, RT_ELEMENTS(pCfg->szName), "Rear");
 
-            pCfg->DestSource.Dest = PDMAUDIOPLAYBACKDEST_REAR;
-            pCfg->enmLayout       = PDMAUDIOSTREAMLAYOUT_NON_INTERLEAVED;
+            pCfg->u.enmDst          = PDMAUDIOPLAYBACKDST_REAR;
+            pCfg->enmLayout         = PDMAUDIOSTREAMLAYOUT_NON_INTERLEAVED;
 
-            pCfg->Props.cChannels = 2;
-            pCfg->Props.cShift    = PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(pCfg->Props.cBytes, pCfg->Props.cChannels);
+            pCfg->Props.cChannels   = 2;
+            pCfg->Props.cShift      = PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(pCfg->Props.cbSample, pCfg->Props.cChannels);
 
             rc = hdaCodecAddStream(pThis->pCodec, PDMAUDIOMIXERCTL_REAR, pCfg);
         }
@@ -1871,19 +1871,19 @@ static int hdaR3AddStreamIn(PHDASTATE pThis, PPDMAUDIOSTREAMCFG pCfg)
 
     AssertReturn(pCfg->enmDir == PDMAUDIODIR_IN, VERR_INVALID_PARAMETER);
 
-    LogFlowFunc(("Stream=%s, Source=%ld\n", pCfg->szName, pCfg->DestSource.Source));
+    LogFlowFunc(("Stream=%s, Source=%ld\n", pCfg->szName, pCfg->u.enmSrc));
 
     int rc;
 
-    switch (pCfg->DestSource.Source)
+    switch (pCfg->u.enmSrc)
     {
-        case PDMAUDIORECSOURCE_LINE:
+        case PDMAUDIORECSRC_LINE:
         {
             rc = hdaCodecAddStream(pThis->pCodec, PDMAUDIOMIXERCTL_LINE_IN, pCfg);
             break;
         }
 # ifdef VBOX_WITH_AUDIO_HDA_MIC_IN
-        case PDMAUDIORECSOURCE_MIC:
+        case PDMAUDIORECSRC_MIC:
         {
             rc = hdaCodecAddStream(pThis->pCodec, PDMAUDIOMIXERCTL_MIC_IN, pCfg);
             break;
@@ -1954,14 +1954,14 @@ static int hdaR3RemoveStream(PHDASTATE pThis, PPDMAUDIOSTREAMCFG pCfg)
     {
         case PDMAUDIODIR_IN:
         {
-            LogFlowFunc(("Stream=%s, Source=%ld\n", pCfg->szName, pCfg->DestSource.Source));
+            LogFlowFunc(("Stream=%s, Source=%ld\n", pCfg->szName, pCfg->u.enmSrc));
 
-            switch (pCfg->DestSource.Source)
+            switch (pCfg->u.enmSrc)
             {
-                case PDMAUDIORECSOURCE_UNKNOWN: break;
-                case PDMAUDIORECSOURCE_LINE:    enmMixerCtl = PDMAUDIOMIXERCTL_LINE_IN; break;
+                case PDMAUDIORECSRC_UNKNOWN: break;
+                case PDMAUDIORECSRC_LINE:    enmMixerCtl = PDMAUDIOMIXERCTL_LINE_IN; break;
 # ifdef VBOX_WITH_AUDIO_HDA_MIC_IN
-                case PDMAUDIORECSOURCE_MIC:     enmMixerCtl = PDMAUDIOMIXERCTL_MIC_IN;  break;
+                case PDMAUDIORECSRC_MIC:     enmMixerCtl = PDMAUDIOMIXERCTL_MIC_IN;  break;
 # endif
                 default:
                     rc = VERR_NOT_SUPPORTED;
@@ -1973,15 +1973,15 @@ static int hdaR3RemoveStream(PHDASTATE pThis, PPDMAUDIOSTREAMCFG pCfg)
 
         case PDMAUDIODIR_OUT:
         {
-            LogFlowFunc(("Stream=%s, Source=%ld\n", pCfg->szName, pCfg->DestSource.Dest));
+            LogFlowFunc(("Stream=%s, Source=%ld\n", pCfg->szName, pCfg->u.enmDst));
 
-            switch (pCfg->DestSource.Dest)
+            switch (pCfg->u.enmDst)
             {
-                case PDMAUDIOPLAYBACKDEST_UNKNOWN:    break;
-                case PDMAUDIOPLAYBACKDEST_FRONT:      enmMixerCtl = PDMAUDIOMIXERCTL_FRONT;      break;
+                case PDMAUDIOPLAYBACKDST_UNKNOWN:    break;
+                case PDMAUDIOPLAYBACKDST_FRONT:      enmMixerCtl = PDMAUDIOMIXERCTL_FRONT;      break;
 # ifdef VBOX_WITH_AUDIO_HDA_51_SURROUND
-                case PDMAUDIOPLAYBACKDEST_CENTER_LFE: enmMixerCtl = PDMAUDIOMIXERCTL_CENTER_LFE; break;
-                case PDMAUDIOPLAYBACKDEST_REAR:       enmMixerCtl = PDMAUDIOMIXERCTL_REAR;       break;
+                case PDMAUDIOPLAYBACKDST_CENTER_LFE: enmMixerCtl = PDMAUDIOMIXERCTL_CENTER_LFE; break;
+                case PDMAUDIOPLAYBACKDST_REAR:       enmMixerCtl = PDMAUDIOMIXERCTL_REAR;       break;
 # endif
                 default:
                     rc = VERR_NOT_SUPPORTED;
@@ -2458,15 +2458,15 @@ static int hdaR3MixerAddDrvStream(PHDASTATE pThis, PAUDMIXSINK pMixSink, PPDMAUD
 
     if (pStreamCfg->enmDir == PDMAUDIODIR_IN)
     {
-        LogFunc(("enmRecSource=%d\n", pStreamCfg->DestSource.Source));
+        LogFunc(("enmRecSource=%d\n", pStreamCfg->u.enmSrc));
 
-        switch (pStreamCfg->DestSource.Source)
+        switch (pStreamCfg->u.enmSrc)
         {
-            case PDMAUDIORECSOURCE_LINE:
+            case PDMAUDIORECSRC_LINE:
                 pDrvStream = &pDrv->LineIn;
                 break;
 # ifdef VBOX_WITH_AUDIO_HDA_MIC_IN
-            case PDMAUDIORECSOURCE_MIC:
+            case PDMAUDIORECSRC_MIC:
                 pDrvStream = &pDrv->MicIn;
                 break;
 # endif
@@ -2477,18 +2477,18 @@ static int hdaR3MixerAddDrvStream(PHDASTATE pThis, PAUDMIXSINK pMixSink, PPDMAUD
     }
     else if (pStreamCfg->enmDir == PDMAUDIODIR_OUT)
     {
-        LogFunc(("enmPlaybackDest=%d\n", pStreamCfg->DestSource.Dest));
+        LogFunc(("enmPlaybackDest=%d\n", pStreamCfg->u.enmDst));
 
-        switch (pStreamCfg->DestSource.Dest)
+        switch (pStreamCfg->u.enmDst)
         {
-            case PDMAUDIOPLAYBACKDEST_FRONT:
+            case PDMAUDIOPLAYBACKDST_FRONT:
                 pDrvStream = &pDrv->Front;
                 break;
 # ifdef VBOX_WITH_AUDIO_HDA_51_SURROUND
-            case PDMAUDIOPLAYBACKDEST_CENTER_LFE:
+            case PDMAUDIOPLAYBACKDST_CENTER_LFE:
                 pDrvStream = &pDrv->CenterLFE;
                 break;
-            case PDMAUDIOPLAYBACKDEST_REAR:
+            case PDMAUDIOPLAYBACKDST_REAR:
                 pDrvStream = &pDrv->Rear;
                 break;
 # endif
@@ -3522,16 +3522,13 @@ static int hdaR3SaveStream(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, PHDASTREAM pStre
     rc = SSMR3PutStructEx(pSSM, &pStream->State, sizeof(HDASTREAMSTATE), 0 /*fFlags*/, g_aSSMStreamStateFields7, NULL);
     AssertRCReturn(rc, rc);
 
-    rc = SSMR3PutStructEx(pSSM, &pStream->State.BDLE.Desc, sizeof(HDABDLEDESC),
-                          0 /*fFlags*/, g_aSSMBDLEDescFields7, NULL);
+    rc = SSMR3PutStructEx(pSSM, &pStream->State.BDLE.Desc, sizeof(HDABDLEDESC), 0 /*fFlags*/, g_aSSMBDLEDescFields7, NULL);
     AssertRCReturn(rc, rc);
 
-    rc = SSMR3PutStructEx(pSSM, &pStream->State.BDLE.State, sizeof(HDABDLESTATE),
-                          0 /*fFlags*/, g_aSSMBDLEStateFields7, NULL);
+    rc = SSMR3PutStructEx(pSSM, &pStream->State.BDLE.State, sizeof(HDABDLESTATE), 0 /*fFlags*/, g_aSSMBDLEStateFields7, NULL);
     AssertRCReturn(rc, rc);
 
-    rc = SSMR3PutStructEx(pSSM, &pStream->State.Period, sizeof(HDASTREAMPERIOD),
-                          0 /* fFlags */, g_aSSMStreamPeriodFields7, NULL);
+    rc = SSMR3PutStructEx(pSSM, &pStream->State.Period, sizeof(HDASTREAMPERIOD), 0 /* fFlags */, g_aSSMStreamPeriodFields7, NULL);
     AssertRCReturn(rc, rc);
 
     uint32_t cbCircBufSize = 0;

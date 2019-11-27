@@ -138,7 +138,7 @@ typedef struct ALSAAUDIOSTREAMCFG
 
 static snd_pcm_format_t alsaAudioPropsToALSA(PPDMAUDIOPCMPROPS pProps)
 {
-    switch (pProps->cBytes)
+    switch (pProps->cbSample)
     {
         case 1:
             return pProps->fSigned ? SND_PCM_FORMAT_S8 : SND_PCM_FORMAT_U8;
@@ -153,85 +153,86 @@ static snd_pcm_format_t alsaAudioPropsToALSA(PPDMAUDIOPCMPROPS pProps)
             break;
     }
 
-    AssertMsgFailed(("%RU8 bytes not supported\n", pProps->cBytes));
+    AssertMsgFailed(("%RU8 bytes not supported\n", pProps->cbSample));
     return SND_PCM_FORMAT_U8;
 }
 
 
 static int alsaALSAToAudioProps(snd_pcm_format_t fmt, PPDMAUDIOPCMPROPS pProps)
 {
+    /** @todo r=bird: Why isn't this code setting fSwapEndian for every case? It
+     *        seems to make some UNDOCUMENT ASSUMPTIONS about pProps. */
     switch (fmt)
     {
         case SND_PCM_FORMAT_S8:
-            pProps->cBytes  = 1;
-            pProps->fSigned = true;
+            pProps->cbSample    = 1;
+            pProps->fSigned     = true;
             break;
 
         case SND_PCM_FORMAT_U8:
-            pProps->cBytes  = 1;
-            pProps->fSigned = false;
+            pProps->cbSample    = 1;
+            pProps->fSigned     = false;
             break;
 
         case SND_PCM_FORMAT_S16_LE:
-            pProps->cBytes  = 2;
-            pProps->fSigned = true;
+            pProps->cbSample    = 2;
+            pProps->fSigned     = true;
             break;
 
         case SND_PCM_FORMAT_U16_LE:
-            pProps->cBytes  = 2;
-            pProps->fSigned = false;
+            pProps->cbSample    = 2;
+            pProps->fSigned     = false;
             break;
 
         case SND_PCM_FORMAT_S16_BE:
-            pProps->cBytes  = 2;
-            pProps->fSigned = true;
+            pProps->cbSample    = 2;
+            pProps->fSigned     = true;
 #ifdef RT_LITTLE_ENDIAN
             pProps->fSwapEndian = true;
 #endif
             break;
 
         case SND_PCM_FORMAT_U16_BE:
-            pProps->cBytes  = 2;
-            pProps->fSigned = false;
+            pProps->cbSample    = 2;
+            pProps->fSigned     = false;
 #ifdef RT_LITTLE_ENDIAN
             pProps->fSwapEndian = true;
 #endif
             break;
 
         case SND_PCM_FORMAT_S32_LE:
-            pProps->cBytes  = 4;
-            pProps->fSigned = true;
+            pProps->cbSample    = 4;
+            pProps->fSigned     = true;
             break;
 
         case SND_PCM_FORMAT_U32_LE:
-            pProps->cBytes  = 4;
-            pProps->fSigned = false;
+            pProps->cbSample    = 4;
+            pProps->fSigned     = false;
             break;
 
         case SND_PCM_FORMAT_S32_BE:
-            pProps->cBytes  = 4;
-            pProps->fSigned = true;
+            pProps->cbSample    = 4;
+            pProps->fSigned     = true;
 #ifdef RT_LITTLE_ENDIAN
             pProps->fSwapEndian = true;
 #endif
             break;
 
         case SND_PCM_FORMAT_U32_BE:
-            pProps->cBytes  = 4;
-            pProps->fSigned = false;
+            pProps->cbSample    = 4;
+            pProps->fSigned     = false;
 #ifdef RT_LITTLE_ENDIAN
             pProps->fSwapEndian = true;
 #endif
             break;
 
         default:
-            AssertMsgFailed(("Format %ld not supported\n", fmt));
-            return VERR_NOT_SUPPORTED;
+            AssertMsgFailedReturn(("Format %d not supported\n", fmt), VERR_NOT_SUPPORTED);
     }
 
-    Assert(pProps->cBytes);
-    Assert(pProps->cChannels);
-    pProps->cShift = PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(pProps->cBytes, pProps->cChannels);
+    Assert(pProps->cbSample > 0);
+    Assert(pProps->cChannels > 0);
+    pProps->cShift = PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(pProps->cbSample, pProps->cChannels);
 
     return VINF_SUCCESS;
 }
@@ -1265,7 +1266,7 @@ static DECLCALLBACK(int) drvHostALSAAudioStreamCreate(PPDMIHOSTAUDIO pInterface,
 
     int rc;
     if (pCfgReq->enmDir == PDMAUDIODIR_IN)
-        rc = alsaCreateStreamIn (pStreamALSA, pCfgReq, pCfgAcq);
+        rc = alsaCreateStreamIn( pStreamALSA, pCfgReq, pCfgAcq);
     else
         rc = alsaCreateStreamOut(pStreamALSA, pCfgReq, pCfgAcq);
 

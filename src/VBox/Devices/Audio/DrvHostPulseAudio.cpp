@@ -199,7 +199,7 @@ static void paSignalWaiter(PDRVHOSTPULSEAUDIO pThis)
 
 static pa_sample_format_t paAudioPropsToPulse(PPDMAUDIOPCMPROPS pProps)
 {
-    switch (pProps->cBytes)
+    switch (pProps->cbSample)
     {
         case 1:
             if (!pProps->fSigned)
@@ -222,42 +222,44 @@ static pa_sample_format_t paAudioPropsToPulse(PPDMAUDIOPCMPROPS pProps)
             break;
     }
 
-    AssertMsgFailed(("%RU8%s not supported\n", pProps->cBytes, pProps->fSigned ? "S" : "U"));
+    AssertMsgFailed(("%RU8%s not supported\n", pProps->cbSample, pProps->fSigned ? "S" : "U"));
     return PA_SAMPLE_INVALID;
 }
 
 
 static int paPulseToAudioProps(pa_sample_format_t pulsefmt, PPDMAUDIOPCMPROPS pProps)
 {
+    /** @todo r=bird: You are assuming undocumented stuff about
+     *        pProps->fSwapEndian. */
     switch (pulsefmt)
     {
         case PA_SAMPLE_U8:
-            pProps->cBytes  = 1;
-            pProps->fSigned = false;
+            pProps->cbSample    = 1;
+            pProps->fSigned     = false;
             break;
 
         case PA_SAMPLE_S16LE:
-            pProps->cBytes  = 2;
-            pProps->fSigned = true;
+            pProps->cbSample    = 2;
+            pProps->fSigned     = true;
             break;
 
         case PA_SAMPLE_S16BE:
-            pProps->cBytes  = 2;
-            pProps->fSigned = true;
+            pProps->cbSample    = 2;
+            pProps->fSigned     = true;
             /** @todo Handle Endianess. */
             break;
 
 #ifdef PA_SAMPLE_S32LE
         case PA_SAMPLE_S32LE:
-            pProps->cBytes  = 4;
-            pProps->fSigned = true;
+            pProps->cbSample    = 4;
+            pProps->fSigned     = true;
             break;
 #endif
 
 #ifdef PA_SAMPLE_S32BE
         case PA_SAMPLE_S32BE:
-            pProps->cBytes  = 4;
-            pProps->fSigned = true;
+            pProps->cbSample    = 4;
+            pProps->fSigned     = true;
             /** @todo Handle Endianess. */
             break;
 #endif
@@ -747,8 +749,7 @@ static int paCreateStreamOut(PDRVHOSTPULSEAUDIO pThis, PPULSEAUDIOSTREAM pStream
     Assert(pCfgReq->enmDir == PDMAUDIODIR_OUT);
 
     char szName[256];
-    RTStrPrintf2(szName, sizeof(szName), "VirtualBox %s [%s]",
-                 DrvAudioHlpPlaybackDstToStr(pCfgReq->DestSource.Dest), pThis->szStreamName);
+    RTStrPrintf(szName, sizeof(szName), "VirtualBox %s [%s]", DrvAudioHlpPlaybackDstToStr(pCfgReq->u.enmDst), pThis->szStreamName);
 
     /* Note that the struct BufAttr is updated to the obtained values after this call! */
     int rc = paStreamOpen(pThis, pStreamPA, false /* fIn */, szName);
@@ -764,7 +765,7 @@ static int paCreateStreamOut(PDRVHOSTPULSEAUDIO pThis, PPULSEAUDIOSTREAM pStream
 
     pCfgAcq->Props.uHz       = pStreamPA->SampleSpec.rate;
     pCfgAcq->Props.cChannels = pStreamPA->SampleSpec.channels;
-    pCfgAcq->Props.cShift    = PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(pCfgAcq->Props.cBytes, pCfgAcq->Props.cChannels);
+    pCfgAcq->Props.cShift    = PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(pCfgAcq->Props.cbSample, pCfgAcq->Props.cChannels);
 
     LogFunc(("Acquired: BufAttr tlength=%RU32, maxLength=%RU32, minReq=%RU32\n",
              pStreamPA->BufAttr.tlength, pStreamPA->BufAttr.maxlength, pStreamPA->BufAttr.minreq));
@@ -792,8 +793,7 @@ static int paCreateStreamIn(PDRVHOSTPULSEAUDIO pThis, PPULSEAUDIOSTREAM  pStream
     Assert(pCfgReq->enmDir == PDMAUDIODIR_IN);
 
     char szName[256];
-    RTStrPrintf2(szName, sizeof(szName), "VirtualBox %s [%s]",
-                 DrvAudioHlpRecSrcToStr(pCfgReq->DestSource.Source), pThis->szStreamName);
+    RTStrPrintf(szName, sizeof(szName), "VirtualBox %s [%s]", DrvAudioHlpRecSrcToStr(pCfgReq->u.enmSrc), pThis->szStreamName);
 
     /* Note: Other members of BufAttr are ignored for record streams. */
     int rc = paStreamOpen(pThis, pStreamPA, true /* fIn */, szName);

@@ -179,8 +179,8 @@ static int vakitCreateStreamOut(PDRVHOSTVAKITAUDIO pDrv, PVAKITAUDIOSTREAM pStre
             {
                 size_t cch;
                 char szTimingInfo[128];
-                cch = RTStrPrintf(szTimingInfo, sizeof(szTimingInfo), "# %dHz %dch %dbit\n",
-                                  pCfgReq->Props.uHz, pCfgReq->Props.cChannels, pCfgReq->Props.cBytes * 8);
+                cch = RTStrPrintf(szTimingInfo, sizeof(szTimingInfo), "# %uHz %uch %ubit\n",
+                                  pCfgReq->Props.uHz, pCfgReq->Props.cChannels, pCfgReq->Props.cbSample * 8);
 
                 RTFileWrite(pStreamDbg->hFileTiming, szTimingInfo, cch, NULL);
             }

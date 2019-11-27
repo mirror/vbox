@@ -61,7 +61,7 @@ void hdaR3StreamChannelDataDestroy(PPDMAUDIOSTREAMCHANNELDATA pChanData)
         pChanData->pCircBuf = NULL;
     }
 
-    pChanData->fFlags = PDMAUDIOSTREAMCHANNELDATA_FLAG_NONE;
+    pChanData->fFlags = PDMAUDIOSTREAMCHANNELDATA_FLAGS_NONE;
 }
 
 /**

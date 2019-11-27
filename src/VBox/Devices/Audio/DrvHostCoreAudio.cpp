@@ -128,6 +128,7 @@ typedef struct COREAUDIOUNIT
     AudioStreamBasicDescription streamFmt;
 } COREAUDIOUNIT, *PCOREAUDIOUNIT;
 
+
 /*******************************************************************************
  *
  * Helper function section
@@ -182,7 +183,7 @@ static void coreAudioPCMPropsToASBD(PDMAUDIOPCMPROPS *pPCMProps, AudioStreamBasi
     pASBD->mFramesPerPacket  = 1; /* For uncompressed audio, set this to 1. */
     pASBD->mSampleRate       = (Float64)pPCMProps->uHz;
     pASBD->mChannelsPerFrame = pPCMProps->cChannels;
-    pASBD->mBitsPerChannel   = pPCMProps->cBytes * 8;
+    pASBD->mBitsPerChannel   = pPCMProps->cbSample * 8;
     if (pPCMProps->fSigned)
         pASBD->mFormatFlags |= kAudioFormatFlagIsSignedInteger;
     pASBD->mBytesPerFrame    = pASBD->mChannelsPerFrame * (pASBD->mBitsPerChannel / 8);
@@ -197,9 +198,11 @@ static int coreAudioASBDToStreamCfg(AudioStreamBasicDescription *pASBD, PPDMAUDI
 
     pCfg->Props.cChannels = pASBD->mChannelsPerFrame;
     pCfg->Props.uHz       = (uint32_t)pASBD->mSampleRate;
-    pCfg->Props.cBytes    = pASBD->mBitsPerChannel / 8;
+    AssertMsg(!(pASBD->mBitsPerChannel & 7), ("%u\n", pASBD->mBitsPerChannel));
+    pCfg->Props.cbSample  = pASBD->mBitsPerChannel / 8;
     pCfg->Props.fSigned   = RT_BOOL(pASBD->mFormatFlags & kAudioFormatFlagIsSignedInteger);
-    pCfg->Props.cShift    = PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(pCfg->Props.cBytes, pCfg->Props.cChannels);
+    pCfg->Props.cShift    = PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(pCfg->Props.cbSample, pCfg->Props.cChannels);
+    /** @todo r=bird: pCfg->Props.fSwapEndian is not initialized here!  */
 
     return VINF_SUCCESS;
 }
@@ -581,14 +584,10 @@ static int coreAudioDevicesEnumerate(PDRVHOSTCOREAUDIO pThis, PDMAUDIODIR enmUsa
             /* Check if the device is valid, e.g. has any input/output channels according to its usage. */
             if (   enmUsage == PDMAUDIODIR_IN
                 && !pDev->cMaxInputChannels)
-            {
                 continue;
-            }
-            else if (   enmUsage == PDMAUDIODIR_OUT
-                     && !pDev->cMaxOutputChannels)
-            {
+            if (   enmUsage == PDMAUDIODIR_OUT
+                && !pDev->cMaxOutputChannels)
                 continue;
-            }
 
             /* Resolve the device's name. */
             AudioObjectPropertyAddress propAddrName = { kAudioObjectPropertyName,
@@ -602,15 +601,13 @@ static int coreAudioDevicesEnumerate(PDRVHOSTCOREAUDIO pThis, PDMAUDIODIR enmUsa
             if (err != kAudioHardwareNoError)
                 continue;
 
-            CFIndex uMax = CFStringGetMaximumSizeForEncoding(CFStringGetLength(pcfstrName), kCFStringEncodingUTF8) + 1;
-            if (uMax)
+            CFIndex cbName = CFStringGetMaximumSizeForEncoding(CFStringGetLength(pcfstrName), kCFStringEncodingUTF8) + 1;
+            if (cbName)
             {
-                char *pszName = (char *)RTStrAlloc(uMax);
+                char *pszName = (char *)RTStrAlloc(cbName);
                 if (   pszName
-                    && CFStringGetCString(pcfstrName, pszName, uMax, kCFStringEncodingUTF8))
-                {
-                    RTStrPrintf(pDev->szName, sizeof(pDev->szName), "%s", pszName);
-                }
+                    && CFStringGetCString(pcfstrName, pszName, cbName, kCFStringEncodingUTF8))
+                    RTStrCopy(pDev->szName, sizeof(pDev->szName), pszName);
 
                 LogFunc(("Device '%s': %RU32\n", pszName, curDevID));
 
@@ -1253,8 +1250,9 @@ static int coreAudioStreamInit(PCOREAUDIOSTREAM pCAStream, PDRVHOSTCOREAUDIO pTh
 
 /**
  * Thread for a Core Audio stream's audio queue handling.
- * This thread is required per audio queue to pump data to/from the Core Audio stream and
- * handling its callbacks.
+ *
+ * This thread is required per audio queue to pump data to/from the Core Audio
+ * stream and handling its callbacks.
  *
  * @returns IPRT status code.
  * @param   hThreadSelf         Thread handle.

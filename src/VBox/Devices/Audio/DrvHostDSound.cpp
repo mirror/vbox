@@ -263,7 +263,7 @@ static int dsoundWaveFmtFromCfg(PPDMAUDIOSTREAMCFG pCfg, PWAVEFORMATEX pFmt)
 
     pFmt->wFormatTag      = WAVE_FORMAT_PCM;
     pFmt->nChannels       = pCfg->Props.cChannels;
-    pFmt->wBitsPerSample  = pCfg->Props.cBytes * 8;
+    pFmt->wBitsPerSample  = pCfg->Props.cbSample * 8;
     pFmt->nSamplesPerSec  = pCfg->Props.uHz;
     pFmt->nBlockAlign     = pFmt->nChannels * pFmt->wBitsPerSample / 8;
     pFmt->nAvgBytesPerSec = pFmt->nSamplesPerSec * pFmt->nBlockAlign;
@@ -611,11 +611,8 @@ static HRESULT directSoundPlayOpen(PDRVHOSTDSOUND pThis, PDSOUNDSTREAM pStreamDS
 
     Assert(pStreamDS->Out.pDSB == NULL);
 
-    DSLOG(("DSound: Opening playback stream (uHz=%RU32, cChannels=%RU8, cBits=%RU8, fSigned=%RTbool)\n",
-           pCfgReq->Props.uHz,
-           pCfgReq->Props.cChannels,
-           pCfgReq->Props.cBytes * 8,
-           pCfgReq->Props.fSigned));
+    DSLOG(("DSound: Opening playback stream (uHz=%RU32, cChannels=%RU8, cBits=%u, fSigned=%RTbool)\n",
+           pCfgReq->Props.uHz, pCfgReq->Props.cChannels, pCfgReq->Props.cbSample * 8, pCfgReq->Props.fSigned));
 
     WAVEFORMATEX wfx;
     int rc = dsoundWaveFmtFromCfg(pCfgReq, &wfx);
@@ -1139,9 +1136,9 @@ static LPCGUID dsoundCaptureSelectDevice(PDRVHOSTDSOUND pThis, PPDMAUDIOSTREAMCF
     {
         PPDMAUDIODEVICE pDev = NULL;
 
-        switch (pCfg->DestSource.Source)
+        switch (pCfg->u.enmSrc)
         {
-            case PDMAUDIORECSOURCE_LINE:
+            case PDMAUDIORECSRC_LINE:
                 /*
                  * At the moment we're only supporting line-in in the HDA emulation,
                  * and line-in + mic-in in the AC'97 emulation both are expected
@@ -1149,7 +1146,7 @@ static LPCGUID dsoundCaptureSelectDevice(PDRVHOSTDSOUND pThis, PPDMAUDIOSTREAMCF
                  *
                  * So the fall through here is intentional for now.
                  */
-            case PDMAUDIORECSOURCE_MIC:
+            case PDMAUDIORECSRC_MIC:
             {
                 pDev = DrvAudioHlpDeviceEnumGetDefaultDevice(&pThis->DeviceEnum, PDMAUDIODIR_IN);
                 break;
@@ -1164,9 +1161,9 @@ static LPCGUID dsoundCaptureSelectDevice(PDRVHOSTDSOUND pThis, PPDMAUDIOSTREAMCF
             && pDev)
         {
             DSLOG(("DSound: Guest source '%s' is using host recording device '%s'\n",
-                   DrvAudioHlpRecSrcToStr(pCfg->DestSource.Source), pDev->szName));
+                   DrvAudioHlpRecSrcToStr(pCfg->u.enmSrc), pDev->szName));
 
-            PDSOUNDDEV pDSoundDev = (PDSOUNDDEV )pDev->pvData;
+            PDSOUNDDEV pDSoundDev = (PDSOUNDDEV)pDev->pvData;
             AssertPtr(pDSoundDev);
 
             pGUID = &pDSoundDev->Guid;
@@ -1183,7 +1180,7 @@ static LPCGUID dsoundCaptureSelectDevice(PDRVHOSTDSOUND pThis, PPDMAUDIOSTREAMCF
 
     /* This always has to be in the release log. */
     LogRel(("DSound: Guest source '%s' is using host recording device with GUID '%s'\n",
-            DrvAudioHlpRecSrcToStr(pCfg->DestSource.Source), pszGUID ? pszGUID: "{?}"));
+            DrvAudioHlpRecSrcToStr(pCfg->u.enmSrc), pszGUID ? pszGUID: "{?}"));
 
     if (pszGUID)
     {
@@ -1381,11 +1378,8 @@ static HRESULT directSoundCaptureOpen(PDRVHOSTDSOUND pThis, PDSOUNDSTREAM pStrea
 
     Assert(pStreamDS->In.pDSCB == NULL);
 
-    DSLOG(("DSound: Opening capturing stream (uHz=%RU32, cChannels=%RU8, cBits=%RU8, fSigned=%RTbool)\n",
-           pCfgReq->Props.uHz,
-           pCfgReq->Props.cChannels,
-           pCfgReq->Props.cBytes * 8,
-           pCfgReq->Props.fSigned));
+    DSLOG(("DSound: Opening capturing stream (uHz=%RU32, cChannels=%RU8, cBits=%u, fSigned=%RTbool)\n",
+           pCfgReq->Props.uHz, pCfgReq->Props.cChannels, pCfgReq->Props.cbSample * 8, pCfgReq->Props.fSigned));
 
     WAVEFORMATEX wfx;
     int rc = dsoundWaveFmtFromCfg(pCfgReq, &wfx);
@@ -2033,7 +2027,7 @@ static int dsoundCreateStreamIn(PDRVHOSTDSOUND pThis, PDSOUNDSTREAM pStreamDS,
                                 PPDMAUDIOSTREAMCFG pCfgReq, PPDMAUDIOSTREAMCFG pCfgAcq)
 {
     LogFunc(("pStreamDS=%p, pCfgReq=%p, enmRecSource=%s\n",
-             pStreamDS, pCfgReq, DrvAudioHlpRecSrcToStr(pCfgReq->DestSource.Source)));
+             pStreamDS, pCfgReq, DrvAudioHlpRecSrcToStr(pCfgReq->u.enmSrc)));
 
     int rc = VINF_SUCCESS;
 

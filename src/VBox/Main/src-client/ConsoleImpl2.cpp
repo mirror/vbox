@@ -393,6 +393,27 @@ static void InsertConfigNode(PCFGMNODE pNode,
 }
 
 /**
+ * Helper that calls CFGMR3InsertNodeF and throws an RTCError if that fails.
+ *
+ * @param   pNode           See CFGMR3InsertNodeF.
+ * @param   ppChild         See CFGMR3InsertNodeF.
+ * @param   pszNameFormat   Name format string, see CFGMR3InsertNodeF.
+ * @param   ...             Format arguments.
+ */
+static void InsertConfigNodeF(PCFGMNODE pNode,
+                              PCFGMNODE *ppChild,
+                              const char *pszNameFormat,
+                              ...)
+{
+    va_list va;
+    va_start(va, pszNameFormat);
+    int vrc = CFGMR3InsertNodeF(pNode, ppChild, "%N", pszNameFormat, &va);
+    va_end(va);
+    if (RT_FAILURE(vrc))
+        throw ConfigError("CFGMR3InsertNodeF", vrc, pszNameFormat);
+}
+
+/**
  * Helper that calls CFGMR3RemoveValue and throws an RTCError if that fails.
  *
  * @param   pNode           See CFGMR3RemoveValue.
@@ -2985,16 +3006,15 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
 
             unsigned uAudioLUN = 0;
 
-            CFGMR3InsertNodeF(pInst, &pLunL0, "LUN#%RU8", uAudioLUN);
-            rc = i_configAudioDriver(audioAdapter, virtualBox, pMachine, pLunL0,
-                                     strAudioDriver.c_str());
+            InsertConfigNodeF(pInst, &pLunL0, "LUN#%u", uAudioLUN);
+            rc = i_configAudioDriver(audioAdapter, virtualBox, pMachine, pLunL0, strAudioDriver.c_str());
             if (RT_SUCCESS(rc))
                 uAudioLUN++;
 
 #ifdef VBOX_WITH_AUDIO_VRDE
             /* Insert dummy audio driver to have the LUN configured. */
-            CFGMR3InsertNodeF(pInst, &pLunL0, "LUN#%RU8", uAudioLUN);
-                InsertConfigString(pLunL0, "Driver", "AUDIO");
+            InsertConfigNodeF(pInst, &pLunL0, "LUN#%u", uAudioLUN);
+            InsertConfigString(pLunL0, "Driver", "AUDIO");
             AudioDriverCfg DrvCfgVRDE(strAudioDevice, 0 /* Instance */, uAudioLUN, "AudioVRDE");
             rc = mAudioVRDE->InitializeConfig(&DrvCfgVRDE);
             if (RT_SUCCESS(rc))
@@ -3003,8 +3023,8 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
 
 #ifdef VBOX_WITH_AUDIO_RECORDING
             /* Insert dummy audio driver to have the LUN configured. */
-            CFGMR3InsertNodeF(pInst, &pLunL0, "LUN#%RU8", uAudioLUN);
-                InsertConfigString(pLunL0, "Driver", "AUDIO");
+            InsertConfigNodeF(pInst, &pLunL0, "LUN#%u", uAudioLUN);
+            InsertConfigString(pLunL0, "Driver", "AUDIO");
             AudioDriverCfg DrvCfgVideoRec(strAudioDevice, 0 /* Instance */, uAudioLUN, "AudioVideoRec");
             rc = Recording.mAudioRec->InitializeConfig(&DrvCfgVideoRec);
             if (RT_SUCCESS(rc))
@@ -3014,9 +3034,8 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
             if (fDebugEnabled)
             {
 #ifdef VBOX_WITH_AUDIO_DEBUG
-                CFGMR3InsertNodeF(pInst, &pLunL0, "LUN#%RU8", uAudioLUN);
-                rc = i_configAudioDriver(audioAdapter, virtualBox, pMachine, pLunL0,
-                                         "DebugAudio");
+                InsertConfigNodeF(pInst, &pLunL0, "LUN#%u", uAudioLUN);
+                rc = i_configAudioDriver(audioAdapter, virtualBox, pMachine, pLunL0, "DebugAudio");
                 if (RT_SUCCESS(rc))
                     uAudioLUN++;
 #endif /* VBOX_WITH_AUDIO_DEBUG */
@@ -3043,9 +3062,8 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
             /*
              * The ValidationKit backend.
              */
-            CFGMR3InsertNodeF(pInst, &pLunL0, "LUN#%RU8", uAudioLUN);
-            rc = i_configAudioDriver(audioAdapter, virtualBox, pMachine, pLunL0,
-                                     "ValidationKitAudio");
+            InsertConfigNodeF(pInst, &pLunL0, "LUN#%u", uAudioLUN);
+            rc = i_configAudioDriver(audioAdapter, virtualBox, pMachine, pLunL0, "ValidationKitAudio");
             if (RT_SUCCESS(rc))
                 uAudioLUN++;
 #endif /* VBOX_WITH_AUDIO_VALIDATIONKIT */
@@ -5032,7 +5050,7 @@ int Console::i_configNetwork(const char *pszDevice,
 #endif /* VBOX_WITH_NETSHAPER */
 
         AssertMsg(uLun == 0, ("Network attachments with LUN > 0 are not supported yet\n"));
-        CFGMR3InsertNodeF(pInst, &pLunL0, "LUN#%u", uLun);
+        InsertConfigNodeF(pInst, &pLunL0, "LUN#%u", uLun);
 
 #ifdef VBOX_WITH_NETSHAPER
         if (!strBwGroup.isEmpty())

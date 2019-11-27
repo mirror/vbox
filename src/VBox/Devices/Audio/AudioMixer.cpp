@@ -586,8 +586,8 @@ int AudioMixerSinkCreateStream(PAUDMIXSINK pSink,
     if (RT_FAILURE(rc))
         return rc;
 
-    LogFlowFunc(("[%s] fFlags=0x%x (enmDir=%ld, %RU8 bits, %RU8 channels, %RU32Hz)\n",
-                 pSink->pszName, fFlags, pCfg->enmDir, pCfg->Props.cBytes * 8, pCfg->Props.cChannels, pCfg->Props.uHz));
+    LogFlowFunc(("[%s] fFlags=0x%x (enmDir=%ld, %u bits, %RU8 channels, %RU32Hz)\n",
+                 pSink->pszName, fFlags, pCfg->enmDir, pCfg->Props.cbSample * 8, pCfg->Props.cChannels, pCfg->Props.uHz));
 
     /*
      * Initialize the host-side configuration for the stream to be created.
@@ -604,15 +604,15 @@ int AudioMixerSinkCreateStream(PAUDMIXSINK pSink,
      * create the stream. */
     if (pSink->enmDir == AUDMIXSINKDIR_INPUT)
     {
-        CfgHost.DestSource.Source = pCfg->DestSource.Source;
-        CfgHost.enmDir            = PDMAUDIODIR_IN;
-        CfgHost.enmLayout         = pCfg->enmLayout;
+        CfgHost.enmDir      = PDMAUDIODIR_IN;
+        CfgHost.u.enmSrc    = pCfg->u.enmSrc;
+        CfgHost.enmLayout   = pCfg->enmLayout;
     }
     else
     {
-        CfgHost.DestSource.Dest = pCfg->DestSource.Dest;
-        CfgHost.enmDir          = PDMAUDIODIR_OUT;
-        CfgHost.enmLayout       = pCfg->enmLayout;
+        CfgHost.enmDir      = PDMAUDIODIR_OUT;
+        CfgHost.u.enmDst    = pCfg->u.enmDst;
+        CfgHost.enmLayout   = pCfg->enmLayout;
     }
 
     RTStrPrintf(CfgHost.szName, sizeof(CfgHost.szName), "%s", pCfg->szName);
@@ -1409,13 +1409,13 @@ int AudioMixerSinkSetFormat(PAUDMIXSINK pSink, PPDMAUDIOPCMPROPS pPCMProps)
     }
 
     if (pSink->PCMProps.uHz)
-        LogFlowFunc(("[%s] Old format: %RU8 bit, %RU8 channels, %RU32Hz\n",
-                     pSink->pszName, pSink->PCMProps.cBytes * 8, pSink->PCMProps.cChannels, pSink->PCMProps.uHz));
+        LogFlowFunc(("[%s] Old format: %u bit, %RU8 channels, %RU32Hz\n",
+                     pSink->pszName, pSink->PCMProps.cbSample * 8, pSink->PCMProps.cChannels, pSink->PCMProps.uHz));
 
     memcpy(&pSink->PCMProps, pPCMProps, sizeof(PDMAUDIOPCMPROPS));
 
-    LogFlowFunc(("[%s] New format %RU8 bit, %RU8 channels, %RU32Hz\n",
-                 pSink->pszName, pSink->PCMProps.cBytes * 8, pSink->PCMProps.cChannels, pSink->PCMProps.uHz));
+    LogFlowFunc(("[%s] New format %u bit, %RU8 channels, %RU32Hz\n",
+                 pSink->pszName, pSink->PCMProps.cbSample * 8, pSink->PCMProps.cChannels, pSink->PCMProps.uHz));
 
     /* Also update the sink's mixing buffer format. */
     AudioMixBufDestroy(&pSink->MixBuf);

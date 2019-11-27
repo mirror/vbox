@@ -154,47 +154,49 @@ static int ossOSSToAudioProps(int fmt, PPDMAUDIOPCMPROPS pProps)
 {
     RT_BZERO(pProps, sizeof(PDMAUDIOPCMPROPS));
 
+    /** @todo r=bird: What's the assumption about the incoming pProps?  Code is
+     *        clearly ASSUMING something about how it's initialized, but even so,
+     *        the fSwapEndian isn't correct in a portable way. */
     switch (fmt)
     {
         case AFMT_S8:
-            pProps->cBytes  = 1;
-            pProps->fSigned = true;
+            pProps->cbSample    = 1;
+            pProps->fSigned     = true;
             break;
 
         case AFMT_U8:
-            pProps->cBytes  = 1;
-            pProps->fSigned = false;
+            pProps->cbSample    = 1;
+            pProps->fSigned     = false;
             break;
 
         case AFMT_S16_LE:
-            pProps->cBytes  = 2;
-            pProps->fSigned = true;
+            pProps->cbSample    = 2;
+            pProps->fSigned     = true;
             break;
 
         case AFMT_U16_LE:
-            pProps->cBytes  = 2;
-            pProps->fSigned = false;
+            pProps->cbSample    = 2;
+            pProps->fSigned     = false;
             break;
 
        case AFMT_S16_BE:
-           pProps->cBytes  = 2;
-            pProps->fSigned = true;
+            pProps->cbSample    = 2;
+            pProps->fSigned     = true;
 #ifdef RT_LITTLE_ENDIAN
             pProps->fSwapEndian = true;
 #endif
             break;
 
         case AFMT_U16_BE:
-            pProps->cBytes  = 2;
-            pProps->fSigned = false;
+            pProps->cbSample    = 2;
+            pProps->fSigned     = false;
 #ifdef RT_LITTLE_ENDIAN
             pProps->fSwapEndian = true;
 #endif
             break;
 
         default:
-            AssertMsgFailed(("Format %ld not supported\n", fmt));
-            return VERR_NOT_SUPPORTED;
+            AssertMsgFailedReturn(("Format %d not supported\n", fmt), VERR_NOT_SUPPORTED);
     }
 
     return VINF_SUCCESS;
@@ -226,24 +228,26 @@ static int ossStreamOpen(const char *pszDev, int fOpen, POSSAUDIOSTREAMCFG pOSSR
 {
     int rc = VERR_AUDIO_STREAM_COULD_NOT_CREATE;
 
-    int hFile = -1;
+    int fdFile = -1;
     do
     {
-        hFile = open(pszDev, fOpen);
-        if (hFile == -1)
+        fdFile = open(pszDev, fOpen);
+        if (fdFile == -1)
         {
             LogRel(("OSS: Failed to open %s: %s (%d)\n", pszDev, strerror(errno), errno));
             break;
         }
 
         int iFormat;
-        switch (pOSSReq->Props.cBytes)
+        switch (pOSSReq->Props.cbSample)
         {
             case 1:
                 iFormat = pOSSReq->Props.fSigned ? AFMT_S8 : AFMT_U8;
                 break;
 
             case 2:
+                /** @todo r=bird: You're ASSUMING stuff about pOSSReq->Props.fSwapEndian and
+                 *        the host endian here. */
                 iFormat = pOSSReq->Props.fSigned ? AFMT_S16_LE : AFMT_U16_LE;
                 break;
 
@@ -255,14 +259,14 @@ static int ossStreamOpen(const char *pszDev, int fOpen, POSSAUDIOSTREAMCFG pOSSR
         if (RT_FAILURE(rc))
             break;
 
-        if (ioctl(hFile, SNDCTL_DSP_SAMPLESIZE, &iFormat))
+        if (ioctl(fdFile, SNDCTL_DSP_SAMPLESIZE, &iFormat))
         {
             LogRel(("OSS: Failed to set audio format to %ld: %s (%d)\n", iFormat, strerror(errno), errno));
             break;
         }
 
         int cChannels = pOSSReq->Props.cChannels;
-        if (ioctl(hFile, SNDCTL_DSP_CHANNELS, &cChannels))
+        if (ioctl(fdFile, SNDCTL_DSP_CHANNELS, &cChannels))
         {
             LogRel(("OSS: Failed to set number of audio channels (%RU8): %s (%d)\n",
                     pOSSReq->Props.cChannels, strerror(errno), errno));
@@ -270,7 +274,7 @@ static int ossStreamOpen(const char *pszDev, int fOpen, POSSAUDIOSTREAMCFG pOSSR
         }
 
         int freq = pOSSReq->Props.uHz;
-        if (ioctl(hFile, SNDCTL_DSP_SPEED, &freq))
+        if (ioctl(fdFile, SNDCTL_DSP_SPEED, &freq))
         {
             LogRel(("OSS: Failed to set audio frequency (%dHZ): %s (%d)\n", pOSSReq->Props.uHz, strerror(errno), errno));
             break;
@@ -278,7 +282,7 @@ static int ossStreamOpen(const char *pszDev, int fOpen, POSSAUDIOSTREAMCFG pOSSR
 
         /* Obsolete on Solaris (using O_NONBLOCK is sufficient). */
 #if !(defined(VBOX) && defined(RT_OS_SOLARIS))
-        if (ioctl(hFile, SNDCTL_DSP_NONBLOCK))
+        if (ioctl(fdFile, SNDCTL_DSP_NONBLOCK))
         {
             LogRel(("OSS: Failed to set non-blocking mode: %s (%d)\n", strerror(errno), errno));
             break;
@@ -292,7 +296,7 @@ static int ossStreamOpen(const char *pszDev, int fOpen, POSSAUDIOSTREAMCFG pOSSR
                  pOSSReq->cFragments, fIn ? "input" : "output", pOSSReq->cbFragmentSize));
 
         int mmmmssss = (pOSSReq->cFragments << 16) | lsbindex(pOSSReq->cbFragmentSize);
-        if (ioctl(hFile, SNDCTL_DSP_SETFRAGMENT, &mmmmssss))
+        if (ioctl(fdFile, SNDCTL_DSP_SETFRAGMENT, &mmmmssss))
         {
             LogRel(("OSS: Failed to set %RU16 fragments to %RU32 bytes each: %s (%d)\n",
                     pOSSReq->cFragments, pOSSReq->cbFragmentSize, strerror(errno), errno));
@@ -300,7 +304,7 @@ static int ossStreamOpen(const char *pszDev, int fOpen, POSSAUDIOSTREAMCFG pOSSR
         }
 
         audio_buf_info abinfo;
-        if (ioctl(hFile, fIn ? SNDCTL_DSP_GETISPACE : SNDCTL_DSP_GETOSPACE, &abinfo))
+        if (ioctl(fdFile, fIn ? SNDCTL_DSP_GETISPACE : SNDCTL_DSP_GETOSPACE, &abinfo))
         {
             LogRel(("OSS: Failed to retrieve %s buffer length: %s (%d)\n", fIn ? "input" : "output", strerror(errno), errno));
             break;
@@ -311,7 +315,7 @@ static int ossStreamOpen(const char *pszDev, int fOpen, POSSAUDIOSTREAMCFG pOSSR
         {
             pOSSAcq->Props.cChannels = cChannels;
             pOSSAcq->Props.uHz       = freq;
-            pOSSAcq->Props.cShift    = PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(pOSSAcq->Props.cBytes, pOSSAcq->Props.cChannels);
+            pOSSAcq->Props.cShift    = PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(pOSSAcq->Props.cbSample, pOSSAcq->Props.cChannels);
 
             pOSSAcq->cFragments      = abinfo.fragstotal;
             pOSSAcq->cbFragmentSize  = abinfo.fragsize;
@@ -319,13 +323,13 @@ static int ossStreamOpen(const char *pszDev, int fOpen, POSSAUDIOSTREAMCFG pOSSR
             LogRel2(("OSS: Got %RU16 %s fragments, %RU32 bytes each\n",
                      pOSSAcq->cFragments, fIn ? "input" : "output", pOSSAcq->cbFragmentSize));
 
-            *phFile = hFile;
+            *phFile = fdFile;
         }
     }
     while (0);
 
     if (RT_FAILURE(rc))
-        ossStreamClose(&hFile);
+        ossStreamClose(&fdFile);
 
     LogFlowFuncLeaveRC(rc);
     return rc;

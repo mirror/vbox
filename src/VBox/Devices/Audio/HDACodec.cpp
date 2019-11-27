@@ -3126,8 +3126,6 @@ int hdaCodecSaveState(PHDACODEC pThis, PSSMHANDLE pSSM)
 
 int hdaCodecLoadState(PHDACODEC pThis, PSSMHANDLE pSSM, uint32_t uVersion)
 {
-    int rc = VINF_SUCCESS;
-
     PCSSMFIELD pFields = NULL;
     uint32_t   fFlags  = 0;
     switch (uVersion)
@@ -3153,8 +3151,7 @@ int hdaCodecLoadState(PHDACODEC pThis, PSSMHANDLE pSSM, uint32_t uVersion)
             uint32_t cNodes;
             int rc2 = SSMR3GetU32(pSSM, &cNodes);
             AssertRCReturn(rc2, rc2);
-            if (cNodes != 0x1c)
-                return VERR_SSM_DATA_UNIT_FORMAT_CHANGED;
+            AssertReturn(cNodes == 0x1c, VERR_SSM_DATA_UNIT_FORMAT_CHANGED);
             AssertReturn(pThis->cTotalNodes == 0x1c, VERR_INTERNAL_ERROR);
 
             pFields = g_aCodecNodeFields;
@@ -3163,53 +3160,41 @@ int hdaCodecLoadState(PHDACODEC pThis, PSSMHANDLE pSSM, uint32_t uVersion)
         }
 
         default:
-            rc = VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
-            break;
+            AssertFailedReturn(VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION);
     }
 
-    if (RT_SUCCESS(rc))
+    for (unsigned idxNode = 0; idxNode < pThis->cTotalNodes; ++idxNode)
     {
-        for (unsigned idxNode = 0; idxNode < pThis->cTotalNodes; ++idxNode)
-        {
-            uint8_t idOld = pThis->paNodes[idxNode].SavedState.Core.uID;
-            int rc2 = SSMR3GetStructEx(pSSM, &pThis->paNodes[idxNode].SavedState,
-                                       sizeof(pThis->paNodes[idxNode].SavedState),
-                                       fFlags, pFields, NULL);
-            if (RT_SUCCESS(rc))
-                rc = rc2;
-
-            if (RT_FAILURE(rc))
-                break;
-
-            AssertLogRelMsgReturn(idOld == pThis->paNodes[idxNode].SavedState.Core.uID,
-                                  ("loaded %#x, expected %#x\n", pThis->paNodes[idxNode].SavedState.Core.uID, idOld),
-                                  VERR_SSM_DATA_UNIT_FORMAT_CHANGED);
-        }
-
-        if (RT_SUCCESS(rc))
-        {
-            /*
-             * Update stuff after changing the state.
-             */
-            PCODECNODE pNode;
-            if (hdaCodecIsDacNode(pThis, pThis->u8DacLineOut))
-            {
-                pNode = &pThis->paNodes[pThis->u8DacLineOut];
-                hdaCodecToAudVolume(pThis, pNode, &pNode->dac.B_params, PDMAUDIOMIXERCTL_FRONT);
-            }
-            else if (hdaCodecIsSpdifOutNode(pThis, pThis->u8DacLineOut))
-            {
-                pNode = &pThis->paNodes[pThis->u8DacLineOut];
-                hdaCodecToAudVolume(pThis, pNode, &pNode->spdifout.B_params, PDMAUDIOMIXERCTL_FRONT);
-            }
-
-            pNode = &pThis->paNodes[pThis->u8AdcVolsLineIn];
-            hdaCodecToAudVolume(pThis, pNode, &pNode->adcvol.B_params, PDMAUDIOMIXERCTL_LINE_IN);
-        }
+        uint8_t idOld = pThis->paNodes[idxNode].SavedState.Core.uID;
+        int rc = SSMR3GetStructEx(pSSM, &pThis->paNodes[idxNode].SavedState,
+                                  sizeof(pThis->paNodes[idxNode].SavedState),
+                                  fFlags, pFields, NULL);
+        AssertRCReturn(rc, rc);
+        AssertLogRelMsgReturn(idOld == pThis->paNodes[idxNode].SavedState.Core.uID,
+                              ("loaded %#x, expected %#x\n", pThis->paNodes[idxNode].SavedState.Core.uID, idOld),
+                              VERR_SSM_DATA_UNIT_FORMAT_CHANGED);
     }
 
-    LogFlowFuncLeaveRC(rc);
-    return rc;
+    /*
+     * Update stuff after changing the state.
+     */
+    PCODECNODE pNode;
+    if (hdaCodecIsDacNode(pThis, pThis->u8DacLineOut))
+    {
+        pNode = &pThis->paNodes[pThis->u8DacLineOut];
+        hdaCodecToAudVolume(pThis, pNode, &pNode->dac.B_params, PDMAUDIOMIXERCTL_FRONT);
+    }
+    else if (hdaCodecIsSpdifOutNode(pThis, pThis->u8DacLineOut))
+    {
+        pNode = &pThis->paNodes[pThis->u8DacLineOut];
+        hdaCodecToAudVolume(pThis, pNode, &pNode->spdifout.B_params, PDMAUDIOMIXERCTL_FRONT);
+    }
+
+    pNode = &pThis->paNodes[pThis->u8AdcVolsLineIn];
+    hdaCodecToAudVolume(pThis, pNode, &pNode->adcvol.B_params, PDMAUDIOMIXERCTL_LINE_IN);
+
+    LogFlowFuncLeaveRC(VINF_SUCCESS);
+    return VINF_SUCCESS;
 }
 
 /**

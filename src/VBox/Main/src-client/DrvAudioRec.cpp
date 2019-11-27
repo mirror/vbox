@@ -307,7 +307,7 @@ typedef struct DRVAUDIORECORDING
 static int avRecSinkInit(PDRVAUDIORECORDING pThis, PAVRECSINK pSink, PAVRECCONTAINERPARMS pConParms, PAVRECCODECPARMS pCodecParms)
 {
     uint32_t uHz       = pCodecParms->PCMProps.uHz;
-    uint8_t  cBytes    = pCodecParms->PCMProps.cBytes;
+    uint8_t  cBytes    = pCodecParms->PCMProps.cbSample;
     uint8_t  cChannels = pCodecParms->PCMProps.cChannels;
     uint32_t uBitrate  = pCodecParms->uBitrate;
 
@@ -426,8 +426,8 @@ static int avRecSinkInit(PDRVAUDIORECORDING pThis, PAVRECSINK pSink, PAVRECCONTA
 
         pCodec->Parms.PCMProps.uHz       = uHz;
         pCodec->Parms.PCMProps.cChannels = cChannels;
-        pCodec->Parms.PCMProps.cBytes    = cBytes;
-        pCodec->Parms.PCMProps.cShift    = PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(pSink->Codec.Parms.PCMProps.cBytes,
+        pCodec->Parms.PCMProps.cbSample  = cBytes;
+        pCodec->Parms.PCMProps.cShift    = PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(pSink->Codec.Parms.PCMProps.cbSample,
                                                                              pSink->Codec.Parms.PCMProps.cChannels);
         pCodec->Parms.uBitrate           = uBitrate;
 
@@ -521,18 +521,15 @@ static int avRecCreateStreamOut(PDRVAUDIORECORDING pThis, PAVRECSTREAM pStreamAV
     AssertPtrReturn(pCfgReq,   VERR_INVALID_POINTER);
     AssertPtrReturn(pCfgAcq,   VERR_INVALID_POINTER);
 
-    if (pCfgReq->DestSource.Dest != PDMAUDIOPLAYBACKDEST_FRONT)
+    if (pCfgReq->u.enmDst != PDMAUDIOPLAYBACKDST_FRONT)
     {
-        AssertFailed();
-
         LogRel2(("Recording: Support for surround audio not implemented yet\n"));
+        AssertFailed();
         return VERR_NOT_SUPPORTED;
     }
 
-    int rc = VINF_SUCCESS;
-
 #ifdef VBOX_WITH_LIBOPUS
-    rc = RTCircBufCreate(&pStreamAV->pCircBuf, pSink->Codec.Opus.cbFrame * 2 /* Use "double buffering" */);
+    int rc = RTCircBufCreate(&pStreamAV->pCircBuf, pSink->Codec.Opus.cbFrame * 2 /* Use "double buffering" */);
     if (RT_SUCCESS(rc))
     {
         size_t cbScratchBuf = pSink->Codec.Opus.cbFrame;
@@ -553,7 +550,7 @@ static int avRecCreateStreamOut(PDRVAUDIORECORDING pThis, PAVRECSTREAM pStreamAV
                     /* Make sure to let the driver backend know that we need the audio data in
                      * a specific sampling rate Opus is optimized for. */
                     pCfgAcq->Props.uHz         = pSink->Codec.Parms.PCMProps.uHz;
-                    pCfgAcq->Props.cShift      = PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(pCfgAcq->Props.cBytes, pCfgAcq->Props.cChannels);
+                    pCfgAcq->Props.cShift      = PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(pCfgAcq->Props.cbSample, pCfgAcq->Props.cChannels);
 
                     /* Every Opus frame marks a period for now. Optimize this later. */
                     pCfgAcq->Backend.cfPeriod     = DrvAudioHlpMilliToFrames(pSink->Codec.Opus.msFrame, &pCfgAcq->Props);
@@ -569,7 +566,7 @@ static int avRecCreateStreamOut(PDRVAUDIORECORDING pThis, PAVRECSTREAM pStreamAV
     }
 #else
     RT_NOREF(pThis, pSink, pStreamAV, pCfgReq, pCfgAcq);
-    rc = VERR_NOT_SUPPORTED;
+    int rc = VERR_NOT_SUPPORTED;
 #endif /* VBOX_WITH_LIBOPUS */
 
     LogFlowFuncLeaveRC(rc);
@@ -598,6 +595,7 @@ static int avRecDestroyStreamOut(PDRVAUDIORECORDING pThis, PAVRECSTREAM pStreamA
     {
         Assert(pStreamAV->cbSrcBuf);
         RTMemFree(pStreamAV->pvSrcBuf);
+        pStreamAV->pvSrcBuf = NULL;
         pStreamAV->cbSrcBuf = 0;
     }
 
@@ -605,6 +603,7 @@ static int avRecDestroyStreamOut(PDRVAUDIORECORDING pThis, PAVRECSTREAM pStreamA
     {
         Assert(pStreamAV->cbDstBuf);
         RTMemFree(pStreamAV->pvDstBuf);
+        pStreamAV->pvDstBuf = NULL;
         pStreamAV->cbDstBuf = 0;
     }
 
@@ -656,7 +655,7 @@ static DECLCALLBACK(int) drvAudioVideoRecInit(PPDMIHOSTAUDIO pInterface)
     PDRVAUDIORECORDING pThis = PDMIHOSTAUDIO_2_DRVAUDIORECORDING(pInterface);
 
     LogRel(("Recording: Audio driver is using %RU32Hz, %RU16bit, %RU8 %s\n",
-            pThis->CodecParms.PCMProps.uHz, pThis->CodecParms.PCMProps.cBytes * 8,
+            pThis->CodecParms.PCMProps.uHz, pThis->CodecParms.PCMProps.cbSample * 8,
             pThis->CodecParms.PCMProps.cChannels, pThis->CodecParms.PCMProps.cChannels == 1 ? "channel" : "channels"));
 
     int rc = avRecSinkInit(pThis, &pThis->Sink, &pThis->ContainerParms, &pThis->CodecParms);
@@ -1203,15 +1202,15 @@ DECLCALLBACK(int) AudioVideoRec::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg
 
     rc = CFGMR3QueryU32(pCfg, "CodecHz", &pPCMProps->uHz);
     AssertRCReturn(rc, rc);
-    rc = CFGMR3QueryU8(pCfg,  "CodecBits", &pPCMProps->cBytes);
+    rc = CFGMR3QueryU8(pCfg,  "CodecBits", &pPCMProps->cbSample); /** @todo CodecBits != CodecBytes */
     AssertRCReturn(rc, rc);
+    pPCMProps->cbSample /= 8; /* Bits to bytes. */
     rc = CFGMR3QueryU8(pCfg,  "CodecChannels", &pPCMProps->cChannels);
     AssertRCReturn(rc, rc);
     rc = CFGMR3QueryU32(pCfg, "CodecBitrate", &pCodecParms->uBitrate);
     AssertRCReturn(rc, rc);
 
-    pPCMProps->cBytes      = pPCMProps->cBytes / 8; /* Bits to bytes. */
-    pPCMProps->cShift      = PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(pPCMProps->cBytes, pPCMProps->cChannels);
+    pPCMProps->cShift      = PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(pPCMProps->cbSample, pPCMProps->cChannels);
     pPCMProps->fSigned     = true;
     pPCMProps->fSwapEndian = false;
 

@@ -68,10 +68,10 @@ int hdaR3StreamMapInit(PHDASTREAMMAP pMap, PPDMAUDIOPCMPROPS pProps)
 
     if (RT_SUCCESS(rc))
     {
-        pMap->cbFrameSize = pProps->cChannels * pProps->cBytes;
+        pMap->cbFrameSize = pProps->cChannels * pProps->cbSample;
 
         LogFunc(("cChannels=%RU8, cBytes=%RU8 -> cbFrameSize=%RU32\n",
-                 pProps->cChannels, pProps->cBytes, pMap->cbFrameSize));
+                 pProps->cChannels, pProps->cbSample, pMap->cbFrameSize));
 
         Assert(pMap->cbFrameSize); /* Frame size must not be 0. */
 
@@ -155,14 +155,14 @@ static int hdaR3StreamMapSetup(PHDASTREAMMAP pMap, PPDMAUDIOPCMPROPS pProps)
 
         PPDMAUDIOSTREAMMAP pMapLR = &pMap->paMappings[0];
 
-        pMapLR->aID[0]  = PDMAUDIOSTREAMCHANNELID_FRONT_LEFT;
-        pMapLR->aID[1]  = PDMAUDIOSTREAMCHANNELID_FRONT_RIGHT;
-        pMapLR->cbFrame = pProps->cBytes * pProps->cChannels;
-        pMapLR->cbSize  = pProps->cBytes * 2 /* Front left + Front right channels */;
-        pMapLR->cbFirst = 0;
-        pMapLR->cbOff   = pMapLR->cbFirst;
+        pMapLR->aID[0]   = PDMAUDIOSTREAMCHANNELID_FRONT_LEFT;
+        pMapLR->aID[1]   = PDMAUDIOSTREAMCHANNELID_FRONT_RIGHT;
+        pMapLR->cbFrame  = pProps->cbSample * pProps->cChannels;
+        pMapLR->cbStep   = pProps->cbSample * 2 /* Front left + Front right channels */;
+        pMapLR->offFirst = 0;
+        pMapLR->offNext  = pMapLR->offFirst;
 
-        rc = hdaR3StreamChannelDataInit(&pMapLR->Data, PDMAUDIOSTREAMCHANNELDATA_FLAG_NONE);
+        rc = hdaR3StreamChannelDataInit(&pMapLR->Data, PDMAUDIOSTREAMCHANNELDATA_FLAGS_NONE);
         AssertRC(rc);
     }
     else
