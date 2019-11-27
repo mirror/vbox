@@ -58,6 +58,10 @@
 #define VGA_BLINK_PERIOD_FULL           (RT_NS_100MS * 4)   /**< Blink cycle length. */
 #define VGA_BLINK_PERIOD_ON             (RT_NS_100MS * 2)   /**< How long cursor/text is visible. */
 
+/* EGA compatible switch values (in high nibble).
+ * XENIX 2.1.x/2.2.x is known to rely on the switch values.
+ */
+#define EGA_SWITCHES    0x90    /* Off-on-on-off, high-res color EGA display. */
 
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
@@ -689,6 +693,11 @@ static void vga_ioport_write(PPDMDEVINS pDevIns, PVGASTATE pThis, uint32_t addr,
         pThis->msr = val & ~0x10;
         if (pThis->fRealRetrace)
             vga_update_retrace_state(pThis);
+        /* The two clock select bits also determine which of the four switches
+         * is reflected in bit 4 of Input Status Register 0.
+         * This is EGA compatible behavior. See the IBM EGA Tech Ref.
+         */
+        pThis->st00 = (pThis->st00 & ~0x10) | ((EGA_SWITCHES >> ((val >> 2) & 0x3) & 0x10));
         break;
     case 0x3c4:
         pThis->sr_index = val & 7;
@@ -6104,7 +6113,7 @@ static DECLCALLBACK(void)  vgaR3Reset(PPDMDEVINS pDevIns)
     pThis->vbe_regs[VBE_DISPI_INDEX_FB_BASE_HI] = pThis->GCPhysVRAM >> 16;
     pThis->vbe_bank_max   = (pThis->vram_size >> 16) - 1;
 # endif /* CONFIG_BOCHS_VBE */
-    pThis->st00 = 0x70; /* Effectively static. */
+    pThis->st00 = 0x70; /* Static except for bit 4. */
 
     /*
      * Reset the LFB mapping.
