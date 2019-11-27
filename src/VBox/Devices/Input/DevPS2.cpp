@@ -913,6 +913,7 @@ static DECLCALLBACK(int) kbdR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint
     return rc;
 }
 
+
 /**
  * @callback_method_impl{FNSSMDEVLOADDONE, Key state fix-up after loading}
  */
@@ -923,6 +924,9 @@ static DECLCALLBACK(int) kbdR3LoadDone(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
     RT_NOREF(pSSM);
     return PS2KR3LoadDone(pDevIns, &pThis->Kbd, &pThisCC->Kbd);
 }
+
+
+/* -=-=-=-=-=- real code -=-=-=-=-=- */
 
 /**
  * Reset notification.
@@ -944,9 +948,6 @@ static DECLCALLBACK(void)  kbdR3Reset(PPDMDEVINS pDevIns)
     PS2KR3Reset(pDevIns, &pThis->Kbd, &pThisCC->Kbd);
     PS2MR3Reset(&pThis->Aux);
 }
-
-
-/* -=-=-=-=-=- real code -=-=-=-=-=- */
 
 
 /**
