@@ -1720,9 +1720,8 @@ static DECLCALLBACK(void) sb16TimerIO(PPDMDEVINS pDevIns, PTMTIMER pTimer, void 
                 fDoTransfer = pConn->pfnStreamGetWritable(pConn, pStream) > (unsigned)pThis->left_till_irq;
             }
 
-            PDMAUDIOSTREAMSTS strmSts = pConn->pfnStreamGetStatus(pConn, pStream);
-            fIsPlaying |= (   (strmSts & PDMAUDIOSTREAMSTS_FLAG_ENABLED)
-                           || (strmSts & PDMAUDIOSTREAMSTS_FLAG_PENDING_DISABLE));
+            PDMAUDIOSTREAMSTS fStrmSts = pConn->pfnStreamGetStatus(pConn, pStream);
+            fIsPlaying |= RT_BOOL(fStrmSts & (PDMAUDIOSTREAMSTS_FLAGS_ENABLED | PDMAUDIOSTREAMSTS_FLAGS_PENDING_DISABLE));
         }
     }
 
@@ -2534,7 +2533,7 @@ static DECLCALLBACK(int) sb16Construct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
         PPDMIAUDIOCONNECTOR pCon = pDrv->pConnector;
         AssertPtr(pCon);
         if (   pCon == NULL /* paranoia */
-            || !(pCon->pfnStreamGetStatus(pCon, pDrv->Out.pStream) & PDMAUDIOSTREAMSTS_FLAG_INITIALIZED))
+            || !(pCon->pfnStreamGetStatus(pCon, pDrv->Out.pStream) & PDMAUDIOSTREAMSTS_FLAGS_INITIALIZED))
         {
             LogRel(("SB16: Falling back to NULL backend (no sound audible)\n"));
 

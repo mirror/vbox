@@ -1003,9 +1003,9 @@ static int ichac97R3StreamCreate(PAC97STATE pThis, PAC97STREAM pStream, uint8_t 
 
         char szPath[RTPATH_MAX + 1];
         int rc2 = DrvAudioHlpFileNameGet(szPath, sizeof(szPath), pThis->Dbg.szOutPath, szFile,
-                                         0 /* uInst */, PDMAUDIOFILETYPE_WAV, PDMAUDIOFILENAME_FLAG_NONE);
+                                         0 /* uInst */, PDMAUDIOFILETYPE_WAV, PDMAUDIOFILENAME_FLAGS_NONE);
         AssertRC(rc2);
-        rc2 = DrvAudioHlpFileCreate(PDMAUDIOFILETYPE_WAV, szPath, PDMAUDIOFILE_FLAG_NONE, &pStream->Dbg.Runtime.pFileStream);
+        rc2 = DrvAudioHlpFileCreate(PDMAUDIOFILETYPE_WAV, szPath, PDMAUDIOFILE_FLAGS_NONE, &pStream->Dbg.Runtime.pFileStream);
         AssertRC(rc2);
 
         if (ichac97GetDirFromSD(pStream->u8SD) == PDMAUDIODIR_IN)
@@ -1014,10 +1014,10 @@ static int ichac97R3StreamCreate(PAC97STATE pThis, PAC97STREAM pStream, uint8_t 
             RTStrPrintf(szFile, sizeof(szFile), "ac97DMAReadSD%RU8", pStream->u8SD);
 
         rc2 = DrvAudioHlpFileNameGet(szPath, sizeof(szPath), pThis->Dbg.szOutPath, szFile,
-                                     0 /* uInst */, PDMAUDIOFILETYPE_WAV, PDMAUDIOFILENAME_FLAG_NONE);
+                                     0 /* uInst */, PDMAUDIOFILETYPE_WAV, PDMAUDIOFILENAME_FLAGS_NONE);
         AssertRC(rc2);
 
-        rc2 = DrvAudioHlpFileCreate(PDMAUDIOFILETYPE_WAV, szPath, PDMAUDIOFILE_FLAG_NONE, &pStream->Dbg.Runtime.pFileDMA);
+        rc2 = DrvAudioHlpFileCreate(PDMAUDIOFILETYPE_WAV, szPath, PDMAUDIOFILE_FLAGS_NONE, &pStream->Dbg.Runtime.pFileDMA);
         AssertRC(rc2);
 
         /* Delete stale debugging files from a former run. */

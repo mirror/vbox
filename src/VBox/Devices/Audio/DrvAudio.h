@@ -226,15 +226,16 @@ const char *DrvAudioHlpStreamCmdToStr(PDMAUDIOSTREAMCMD enmCmd);
 
 /** @name Audio stream status helper methods.
  * @{ */
-bool DrvAudioHlpStreamStatusCanRead(PDMAUDIOSTREAMSTS enmStatus);
-bool DrvAudioHlpStreamStatusCanWrite(PDMAUDIOSTREAMSTS enmStatus);
-bool DrvAudioHlpStreamStatusIsReady(PDMAUDIOSTREAMSTS enmStatus);
+bool DrvAudioHlpStreamStatusCanRead(PDMAUDIOSTREAMSTS fStatus);
+bool DrvAudioHlpStreamStatusCanWrite(PDMAUDIOSTREAMSTS fStatus);
+bool DrvAudioHlpStreamStatusIsReady(PDMAUDIOSTREAMSTS fStatus);
 /** @}  */
 
 /** @name Audio file (name) helper methods.
  * @{ */
 int DrvAudioHlpFileNameSanitize(char *pszPath, size_t cbPath);
-int DrvAudioHlpFileNameGet(char *pszFile, size_t cchFile, const char *pszPath, const char *pszName, uint32_t uInstance, PDMAUDIOFILETYPE enmType, PDMAUDIOFILENAMEFLAGS fFlags);
+int DrvAudioHlpFileNameGet(char *pszFile, size_t cchFile, const char *pszPath, const char *pszName, uint32_t uInstance,
+                           PDMAUDIOFILETYPE enmType, uint32_t fFlags);
 /** @}  */
 
 /** @name Audio device methods.
@@ -270,7 +271,7 @@ char *DrvAudioHlpAudDevFlagsToStrA(uint32_t fFlags);
 
 /** @name Audio file methods.
  * @{ */
-int DrvAudioHlpFileCreate(PDMAUDIOFILETYPE enmType, const char *pszFile, PDMAUDIOFILEFLAGS fFlags, PPDMAUDIOFILE *ppFile);
+int DrvAudioHlpFileCreate(PDMAUDIOFILETYPE enmType, const char *pszFile, uint32_t fFlags, PPDMAUDIOFILE *ppFile);
 void DrvAudioHlpFileDestroy(PPDMAUDIOFILE pFile);
 int DrvAudioHlpFileOpen(PPDMAUDIOFILE pFile, uint32_t fOpen, const PPDMAUDIOPCMPROPS pProps);
 int DrvAudioHlpFileClose(PPDMAUDIOFILE pFile);

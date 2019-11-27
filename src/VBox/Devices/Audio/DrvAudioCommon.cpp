@@ -1095,16 +1095,16 @@ const char *DrvAudioHlpStreamCmdToStr(PDMAUDIOSTREAMCMD enmCmd)
  * @c false if not.
  *
  * @returns @c true if ready to be read from, @c if not.
- * @param   enmStatus           Stream status to evaluate.
+ * @param   fStatus     Stream status to evaluate, PDMAUDIOSTREAMSTS_FLAGS_XXX.
  */
-bool DrvAudioHlpStreamStatusCanRead(PDMAUDIOSTREAMSTS enmStatus)
+bool DrvAudioHlpStreamStatusCanRead(PDMAUDIOSTREAMSTS fStatus)
 {
-    AssertReturn(enmStatus & PDMAUDIOSTREAMSTS_VALID_MASK, false);
+    AssertReturn(fStatus & PDMAUDIOSTREAMSTS_VALID_MASK, false);
 
-    return      enmStatus & PDMAUDIOSTREAMSTS_FLAG_INITIALIZED
-           &&   enmStatus & PDMAUDIOSTREAMSTS_FLAG_ENABLED
-           && !(enmStatus & PDMAUDIOSTREAMSTS_FLAG_PAUSED)
-           && !(enmStatus & PDMAUDIOSTREAMSTS_FLAG_PENDING_REINIT);
+    return      fStatus & PDMAUDIOSTREAMSTS_FLAGS_INITIALIZED
+           &&   fStatus & PDMAUDIOSTREAMSTS_FLAGS_ENABLED
+           && !(fStatus & PDMAUDIOSTREAMSTS_FLAGS_PAUSED)
+           && !(fStatus & PDMAUDIOSTREAMSTS_FLAGS_PENDING_REINIT);
 }
 
 /**
@@ -1112,17 +1112,17 @@ bool DrvAudioHlpStreamStatusCanRead(PDMAUDIOSTREAMSTS enmStatus)
  * @c false if not.
  *
  * @returns @c true if ready to be written to, @c if not.
- * @param   enmStatus           Stream status to evaluate.
+ * @param   fStatus     Stream status to evaluate, PDMAUDIOSTREAMSTS_FLAGS_XXX.
  */
-bool DrvAudioHlpStreamStatusCanWrite(PDMAUDIOSTREAMSTS enmStatus)
+bool DrvAudioHlpStreamStatusCanWrite(PDMAUDIOSTREAMSTS fStatus)
 {
-    AssertReturn(enmStatus & PDMAUDIOSTREAMSTS_VALID_MASK, false);
+    AssertReturn(fStatus & PDMAUDIOSTREAMSTS_VALID_MASK, false);
 
-    return      enmStatus & PDMAUDIOSTREAMSTS_FLAG_INITIALIZED
-           &&   enmStatus & PDMAUDIOSTREAMSTS_FLAG_ENABLED
-           && !(enmStatus & PDMAUDIOSTREAMSTS_FLAG_PAUSED)
-           && !(enmStatus & PDMAUDIOSTREAMSTS_FLAG_PENDING_DISABLE)
-           && !(enmStatus & PDMAUDIOSTREAMSTS_FLAG_PENDING_REINIT);
+    return      fStatus & PDMAUDIOSTREAMSTS_FLAGS_INITIALIZED
+           &&   fStatus & PDMAUDIOSTREAMSTS_FLAGS_ENABLED
+           && !(fStatus & PDMAUDIOSTREAMSTS_FLAGS_PAUSED)
+           && !(fStatus & PDMAUDIOSTREAMSTS_FLAGS_PENDING_DISABLE)
+           && !(fStatus & PDMAUDIOSTREAMSTS_FLAGS_PENDING_REINIT);
 }
 
 /**
@@ -1132,13 +1132,13 @@ bool DrvAudioHlpStreamStatusCanWrite(PDMAUDIOSTREAMSTS enmStatus)
  * @returns @c true if ready to operate, @c if not.
  * @param   enmStatus           Stream status to evaluate.
  */
-bool DrvAudioHlpStreamStatusIsReady(PDMAUDIOSTREAMSTS enmStatus)
+bool DrvAudioHlpStreamStatusIsReady(PDMAUDIOSTREAMSTS fStatus)
 {
-    AssertReturn(enmStatus & PDMAUDIOSTREAMSTS_VALID_MASK, false);
+    AssertReturn(fStatus & PDMAUDIOSTREAMSTS_VALID_MASK, false);
 
-    return      enmStatus & PDMAUDIOSTREAMSTS_FLAG_INITIALIZED
-           &&   enmStatus & PDMAUDIOSTREAMSTS_FLAG_ENABLED
-           && !(enmStatus & PDMAUDIOSTREAMSTS_FLAG_PENDING_REINIT);
+    return      fStatus & PDMAUDIOSTREAMSTS_FLAGS_INITIALIZED
+           &&   fStatus & PDMAUDIOSTREAMSTS_FLAGS_ENABLED
+           && !(fStatus & PDMAUDIOSTREAMSTS_FLAGS_PENDING_REINIT);
 }
 
 /**
@@ -1504,10 +1504,10 @@ int DrvAudioHlpFileNameSanitize(char *pszPath, size_t cbPath)
  * @param   pszName             A name for better identifying the file.
  * @param   uInstance           Device / driver instance which is using this file.
  * @param   enmType             Audio file type to construct file name for.
- * @param   fFlags              File naming flags.
+ * @param   fFlags              File naming flags, PDMAUDIOFILENAME_FLAGS_XXX.
  */
 int DrvAudioHlpFileNameGet(char *pszFile, size_t cchFile, const char *pszPath, const char *pszName,
-                           uint32_t uInstance, PDMAUDIOFILETYPE enmType, PDMAUDIOFILENAMEFLAGS fFlags)
+                           uint32_t uInstance, PDMAUDIOFILETYPE enmType, uint32_t fFlags)
 {
     AssertPtrReturn(pszFile, VERR_INVALID_POINTER);
     AssertReturn(cchFile,    VERR_INVALID_PARAMETER);
@@ -1533,7 +1533,7 @@ int DrvAudioHlpFileNameGet(char *pszFile, size_t cchFile, const char *pszPath, c
         char szFileName[RTPATH_MAX + 1];
         szFileName[0] = '\0';
 
-        if (fFlags & PDMAUDIOFILENAME_FLAG_TS)
+        if (fFlags & PDMAUDIOFILENAME_FLAGS_TS)
         {
             RTTIMESPEC time;
             if (!RTTimeSpecToString(RTTimeNow(&time), szFileName, sizeof(szFileName)))
@@ -1601,11 +1601,11 @@ int DrvAudioHlpFileNameGet(char *pszFile, size_t cchFile, const char *pszPath, c
  * @returns IPRT status code.
  * @param   enmType             Audio file type to open / create.
  * @param   pszFile             File path of file to open or create.
- * @param   fFlags              Audio file flags.
+ * @param   fFlags              Audio file flags, PDMAUDIOFILE_FLAGS_XXX.
  * @param   ppFile              Where to store the created audio file handle.
  *                              Needs to be destroyed with DrvAudioHlpFileDestroy().
  */
-int DrvAudioHlpFileCreate(PDMAUDIOFILETYPE enmType, const char *pszFile, PDMAUDIOFILEFLAGS fFlags, PPDMAUDIOFILE *ppFile)
+int DrvAudioHlpFileCreate(PDMAUDIOFILETYPE enmType, const char *pszFile, uint32_t fFlags, PPDMAUDIOFILE *ppFile)
 {
     AssertPtrReturn(pszFile, VERR_INVALID_POINTER);
     /** @todo Validate fFlags. */
@@ -1796,7 +1796,7 @@ int DrvAudioHlpFileClose(PPDMAUDIOFILE pFile)
 
     if (   RT_SUCCESS(rc)
         && !cbSize
-        && !(pFile->fFlags & PDMAUDIOFILE_FLAG_KEEP_IF_EMPTY))
+        && !(pFile->fFlags & PDMAUDIOFILE_FLAGS_KEEP_IF_EMPTY))
     {
         rc = DrvAudioHlpFileDelete(pFile);
     }

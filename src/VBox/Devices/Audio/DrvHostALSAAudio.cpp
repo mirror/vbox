@@ -584,7 +584,7 @@ static int alsaStreamResume(snd_pcm_t *phPCM)
 /**
  * @interface_method_impl{PDMIHOSTAUDIO,pfnInit}
  */
-static DECLCALLBACK(int) drvHostALSAAudioInit(PPDMIHOSTAUDIO pInterface)
+static DECLCALLBACK(int) drvHostAlsaAudioHA_Init(PPDMIHOSTAUDIO pInterface)
 {
     RT_NOREF(pInterface);
 
@@ -607,8 +607,8 @@ static DECLCALLBACK(int) drvHostALSAAudioInit(PPDMIHOSTAUDIO pInterface)
 /**
  * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamCapture}
  */
-static DECLCALLBACK(int) drvHostALSAAudioStreamCapture(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream,
-                                                       void *pvBuf, uint32_t uBufSize, uint32_t *puRead)
+static DECLCALLBACK(int) drvHostAlsaAudioHA_StreamCapture(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream,
+                                                          void *pvBuf, uint32_t uBufSize, uint32_t *puRead)
 {
     AssertPtrReturn(pInterface, VERR_INVALID_POINTER);
     AssertPtrReturn(pStream,    VERR_INVALID_POINTER);
@@ -750,8 +750,8 @@ static DECLCALLBACK(int) drvHostALSAAudioStreamCapture(PPDMIHOSTAUDIO pInterface
 /**
  * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamPlay}
  */
-static DECLCALLBACK(int) drvHostALSAAudioStreamPlay(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream,
-                                                    const void *pvBuf, uint32_t uBufSize, uint32_t *puWritten)
+static DECLCALLBACK(int) drvHostAlsaAudioHA_StreamPlay(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream,
+                                                       const void *pvBuf, uint32_t uBufSize, uint32_t *puWritten)
 {
     AssertPtrReturn(pInterface, VERR_INVALID_POINTER);
     AssertPtrReturn(pStream,    VERR_INVALID_POINTER);
@@ -1158,7 +1158,7 @@ static int alsaControlStreamOut(PALSAAUDIOSTREAM pStreamALSA, PDMAUDIOSTREAMCMD 
 /**
  * @interface_method_impl{PDMIHOSTAUDIO,pfnGetConfig}
  */
-static DECLCALLBACK(int) drvHostALSAAudioGetConfig(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDCFG pBackendCfg)
+static DECLCALLBACK(int) drvHostAlsaAudioHA_GetConfig(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDCFG pBackendCfg)
 {
     RT_NOREF(pInterface);
     AssertPtrReturn(pBackendCfg, VERR_INVALID_POINTER);
@@ -1233,7 +1233,7 @@ static DECLCALLBACK(int) drvHostALSAAudioGetConfig(PPDMIHOSTAUDIO pInterface, PP
 /**
  * @interface_method_impl{PDMIHOSTAUDIO,pfnShutdown}
  */
-static DECLCALLBACK(void) drvHostALSAAudioShutdown(PPDMIHOSTAUDIO pInterface)
+static DECLCALLBACK(void) drvHostAlsaAudioHA_Shutdown(PPDMIHOSTAUDIO pInterface)
 {
     RT_NOREF(pInterface);
 }
@@ -1242,7 +1242,7 @@ static DECLCALLBACK(void) drvHostALSAAudioShutdown(PPDMIHOSTAUDIO pInterface)
 /**
  * @interface_method_impl{PDMIHOSTAUDIO,pfnGetStatus}
  */
-static DECLCALLBACK(PDMAUDIOBACKENDSTS) drvHostALSAAudioGetStatus(PPDMIHOSTAUDIO pInterface, PDMAUDIODIR enmDir)
+static DECLCALLBACK(PDMAUDIOBACKENDSTS) drvHostAlsaAudioHA_GetStatus(PPDMIHOSTAUDIO pInterface, PDMAUDIODIR enmDir)
 {
     RT_NOREF(enmDir);
     AssertPtrReturn(pInterface, PDMAUDIOBACKENDSTS_UNKNOWN);
@@ -1254,8 +1254,8 @@ static DECLCALLBACK(PDMAUDIOBACKENDSTS) drvHostALSAAudioGetStatus(PPDMIHOSTAUDIO
 /**
  * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamCreate}
  */
-static DECLCALLBACK(int) drvHostALSAAudioStreamCreate(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream,
-                                                      PPDMAUDIOSTREAMCFG pCfgReq, PPDMAUDIOSTREAMCFG pCfgAcq)
+static DECLCALLBACK(int) drvHostAlsaAudioHA_StreamCreate(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream,
+                                                         PPDMAUDIOSTREAMCFG pCfgReq, PPDMAUDIOSTREAMCFG pCfgAcq)
 {
     AssertPtrReturn(pInterface, VERR_INVALID_POINTER);
     AssertPtrReturn(pStream,    VERR_INVALID_POINTER);
@@ -1284,7 +1284,7 @@ static DECLCALLBACK(int) drvHostALSAAudioStreamCreate(PPDMIHOSTAUDIO pInterface,
 /**
  * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamDestroy}
  */
-static DECLCALLBACK(int) drvHostALSAAudioStreamDestroy(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream)
+static DECLCALLBACK(int) drvHostAlsaAudioHA_StreamDestroy(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream)
 {
     AssertPtrReturn(pInterface, VERR_INVALID_POINTER);
     AssertPtrReturn(pStream,    VERR_INVALID_POINTER);
@@ -1313,8 +1313,8 @@ static DECLCALLBACK(int) drvHostALSAAudioStreamDestroy(PPDMIHOSTAUDIO pInterface
 /**
  * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamControl}
  */
-static DECLCALLBACK(int) drvHostALSAAudioStreamControl(PPDMIHOSTAUDIO pInterface,
-                                                       PPDMAUDIOBACKENDSTREAM pStream, PDMAUDIOSTREAMCMD enmStreamCmd)
+static DECLCALLBACK(int) drvHostAlsaAudioHA_StreamControl(PPDMIHOSTAUDIO pInterface,
+                                                          PPDMAUDIOBACKENDSTREAM pStream, PDMAUDIOSTREAMCMD enmStreamCmd)
 {
     AssertPtrReturn(pInterface, VERR_INVALID_POINTER);
     AssertPtrReturn(pStream,    VERR_INVALID_POINTER);
@@ -1337,7 +1337,7 @@ static DECLCALLBACK(int) drvHostALSAAudioStreamControl(PPDMIHOSTAUDIO pInterface
 /**
  * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamGetReadable}
  */
-static DECLCALLBACK(uint32_t) drvHostALSAAudioStreamGetReadable(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream)
+static DECLCALLBACK(uint32_t) drvHostAlsaAudioHA_StreamGetReadable(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream)
 {
     RT_NOREF(pInterface);
 
@@ -1357,7 +1357,7 @@ static DECLCALLBACK(uint32_t) drvHostALSAAudioStreamGetReadable(PPDMIHOSTAUDIO p
 /**
  * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamGetWritable}
  */
-static DECLCALLBACK(uint32_t) drvHostALSAAudioStreamGetWritable(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream)
+static DECLCALLBACK(uint32_t) drvHostAlsaAudioHA_StreamGetWritable(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream)
 {
     RT_NOREF(pInterface);
 
@@ -1415,18 +1415,18 @@ static DECLCALLBACK(uint32_t) drvHostALSAStreamGetPending(PPDMIHOSTAUDIO pInterf
 /**
  * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamGetStatus}
  */
-static DECLCALLBACK(PDMAUDIOSTREAMSTS) drvHostALSAAudioStreamGetStatus(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream)
+static DECLCALLBACK(PDMAUDIOSTREAMSTS) drvHostAlsaAudioHA_StreamGetStatus(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream)
 {
     RT_NOREF(pInterface, pStream);
 
-    return (PDMAUDIOSTREAMSTS_FLAG_INITIALIZED | PDMAUDIOSTREAMSTS_FLAG_ENABLED);
+    return PDMAUDIOSTREAMSTS_FLAGS_INITIALIZED | PDMAUDIOSTREAMSTS_FLAGS_ENABLED;
 }
 
 
 /**
  * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamIterate}
  */
-static DECLCALLBACK(int) drvHostALSAAudioStreamIterate(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream)
+static DECLCALLBACK(int) drvHostAlsaAudioHA_StreamIterate(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream)
 {
     AssertPtrReturn(pInterface, VERR_INVALID_POINTER);
     AssertPtrReturn(pStream,    VERR_INVALID_POINTER);
@@ -1441,7 +1441,7 @@ static DECLCALLBACK(int) drvHostALSAAudioStreamIterate(PPDMIHOSTAUDIO pInterface
 /**
  * @interface_method_impl{PDMIBASE,pfnQueryInterface}
  */
-static DECLCALLBACK(void *) drvHostALSAAudioQueryInterface(PPDMIBASE pInterface, const char *pszIID)
+static DECLCALLBACK(void *) drvHostAlsaAudioQueryInterface(PPDMIBASE pInterface, const char *pszIID)
 {
     PPDMDRVINS        pDrvIns = PDMIBASE_2_PDMDRV(pInterface);
     PDRVHOSTALSAAUDIO pThis   = PDMINS_2_DATA(pDrvIns, PDRVHOSTALSAAUDIO);
@@ -1469,10 +1469,29 @@ static DECLCALLBACK(int) drvHostAlsaAudioConstruct(PPDMDRVINS pDrvIns, PCFGMNODE
      */
     pThis->pDrvIns                   = pDrvIns;
     /* IBase */
-    pDrvIns->IBase.pfnQueryInterface = drvHostALSAAudioQueryInterface;
+    pDrvIns->IBase.pfnQueryInterface = drvHostAlsaAudioQueryInterface;
     /* IHostAudio */
-    PDMAUDIO_IHOSTAUDIO_CALLBACKS(drvHostALSAAudio);
-    pThis->IHostAudio.pfnStreamGetPending = drvHostALSAStreamGetPending;
+    pThis->IHostAudio.pfnInit               = drvHostAlsaAudioHA_Init;
+    pThis->IHostAudio.pfnShutdown           = drvHostAlsaAudioHA_Shutdown;
+    pThis->IHostAudio.pfnGetConfig          = drvHostAlsaAudioHA_GetConfig;
+    pThis->IHostAudio.pfnGetStatus          = drvHostAlsaAudioHA_GetStatus;
+    pThis->IHostAudio.pfnStreamCreate       = drvHostAlsaAudioHA_StreamCreate;
+    pThis->IHostAudio.pfnStreamDestroy      = drvHostAlsaAudioHA_StreamDestroy;
+    pThis->IHostAudio.pfnStreamControl      = drvHostAlsaAudioHA_StreamControl;
+    pThis->IHostAudio.pfnStreamGetReadable  = drvHostAlsaAudioHA_StreamGetReadable;
+    pThis->IHostAudio.pfnStreamGetWritable  = drvHostAlsaAudioHA_StreamGetWritable;
+    pThis->IHostAudio.pfnStreamGetStatus    = drvHostAlsaAudioHA_StreamGetStatus;
+    pThis->IHostAudio.pfnStreamIterate      = drvHostAlsaAudioHA_StreamIterate;
+    pThis->IHostAudio.pfnStreamPlay         = drvHostAlsaAudioHA_StreamPlay;
+    pThis->IHostAudio.pfnStreamCapture      = drvHostAlsaAudioHA_StreamCapture;
+    pThis->IHostAudio.pfnSetCallback        = NULL;
+    pThis->IHostAudio.pfnGetDevices         = NULL;
+    pThis->IHostAudio.pfnStreamGetPending   = drvHostALSAStreamGetPending;
+    pThis->IHostAudio.pfnStreamPlayBegin    = NULL;
+    pThis->IHostAudio.pfnStreamPlayEnd      = NULL;
+    pThis->IHostAudio.pfnStreamCaptureBegin = NULL;
+    pThis->IHostAudio.pfnStreamCaptureEnd   = NULL;
+
 
     return VINF_SUCCESS;
 }

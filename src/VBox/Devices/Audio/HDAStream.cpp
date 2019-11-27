@@ -88,9 +88,9 @@ int hdaR3StreamCreate(PHDASTREAM pStream, PHDASTATE pThis, uint8_t u8SD)
 
         char szPath[RTPATH_MAX + 1];
         int rc2 = DrvAudioHlpFileNameGet(szPath, sizeof(szPath), pThis->Dbg.szOutPath, szFile,
-                                         0 /* uInst */, PDMAUDIOFILETYPE_WAV, PDMAUDIOFILENAME_FLAG_NONE);
+                                         0 /* uInst */, PDMAUDIOFILETYPE_WAV, PDMAUDIOFILENAME_FLAGS_NONE);
         AssertRC(rc2);
-        rc2 = DrvAudioHlpFileCreate(PDMAUDIOFILETYPE_WAV, szPath, PDMAUDIOFILE_FLAG_NONE, &pStream->Dbg.Runtime.pFileStream);
+        rc2 = DrvAudioHlpFileCreate(PDMAUDIOFILETYPE_WAV, szPath, PDMAUDIOFILE_FLAGS_NONE, &pStream->Dbg.Runtime.pFileStream);
         AssertRC(rc2);
 
         if (hdaGetDirFromSD(pStream->u8SD) == PDMAUDIODIR_IN)
@@ -99,10 +99,10 @@ int hdaR3StreamCreate(PHDASTREAM pStream, PHDASTATE pThis, uint8_t u8SD)
             RTStrPrintf(szFile, sizeof(szFile), "hdaDMARawReadSD%RU8", pStream->u8SD);
 
         rc2 = DrvAudioHlpFileNameGet(szPath, sizeof(szPath), pThis->Dbg.szOutPath, szFile,
-                                     0 /* uInst */, PDMAUDIOFILETYPE_WAV, PDMAUDIOFILENAME_FLAG_NONE);
+                                     0 /* uInst */, PDMAUDIOFILETYPE_WAV, PDMAUDIOFILENAME_FLAGS_NONE);
         AssertRC(rc2);
 
-        rc2 = DrvAudioHlpFileCreate(PDMAUDIOFILETYPE_WAV, szPath, PDMAUDIOFILE_FLAG_NONE, &pStream->Dbg.Runtime.pFileDMARaw);
+        rc2 = DrvAudioHlpFileCreate(PDMAUDIOFILETYPE_WAV, szPath, PDMAUDIOFILE_FLAGS_NONE, &pStream->Dbg.Runtime.pFileDMARaw);
         AssertRC(rc2);
 
         if (hdaGetDirFromSD(pStream->u8SD) == PDMAUDIODIR_IN)
@@ -111,10 +111,10 @@ int hdaR3StreamCreate(PHDASTREAM pStream, PHDASTATE pThis, uint8_t u8SD)
             RTStrPrintf(szFile, sizeof(szFile), "hdaDMAReadMappedSD%RU8", pStream->u8SD);
 
         rc2 = DrvAudioHlpFileNameGet(szPath, sizeof(szPath), pThis->Dbg.szOutPath, szFile,
-                                     0 /* uInst */, PDMAUDIOFILETYPE_WAV, PDMAUDIOFILENAME_FLAG_NONE);
+                                     0 /* uInst */, PDMAUDIOFILETYPE_WAV, PDMAUDIOFILENAME_FLAGS_NONE);
         AssertRC(rc2);
 
-        rc2 = DrvAudioHlpFileCreate(PDMAUDIOFILETYPE_WAV, szPath, PDMAUDIOFILE_FLAG_NONE, &pStream->Dbg.Runtime.pFileDMAMapped);
+        rc2 = DrvAudioHlpFileCreate(PDMAUDIOFILETYPE_WAV, szPath, PDMAUDIOFILE_FLAGS_NONE, &pStream->Dbg.Runtime.pFileDMAMapped);
         AssertRC(rc2);
 
         /* Delete stale debugging files from a former run. */
