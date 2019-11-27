@@ -2515,8 +2515,8 @@ static int hdaR3MixerAddDrvStream(PHDASTATE pThis, PAUDMIXSINK pMixSink, PPDMAUD
             if (RT_SUCCESS(rc))
             {
                 /* If this is an input stream, always set the latest (added) stream
-                 * as the recording source.
-                 * @todo Make the recording source dynamic (CFGM?). */
+                 * as the recording source. */
+                /** @todo Make the recording source dynamic (CFGM?). */
                 if (pStreamCfg->enmDir == PDMAUDIODIR_IN)
                 {
                     PDMAUDIOBACKENDCFG Cfg;
