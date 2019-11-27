@@ -38,6 +38,7 @@ typedef struct VertexAttribDesc
     GLenum    type;
     GLboolean normalized;
     GLsizei   stride;
+    GLsizei   offset;
 } VertexAttribDesc;
 
 /* Information about a shader program. */
@@ -65,32 +66,24 @@ typedef struct VMSVGA3DFORMATCONVERTER
 
     GLuint framebuffer;                     /* Framebuffer object name. */
 
-    GLuint aVertexBuffers[2];               /* Vertex attribute buffers. Position + texcoord. */
+    GLuint vertexBuffer;                    /* Vertex attribute buffer. Position + texcoord. */
 } VMSVGA3DFORMATCONVERTER;
 
 /* Parameters for glVertexAttribPointer. */
 static const VertexAttribDesc aVertexAttribs[] =
 {
-    {2, GL_FLOAT, GL_FALSE, 8 }, /* Position. */
-    {2, GL_FLOAT, GL_FALSE, 8 }  /* Texcoord. */
+    {2, GL_FLOAT, GL_FALSE, 16, 0 }, /* Position. */
+    {2, GL_FLOAT, GL_FALSE, 16, 8 }  /* Texcoord. */
 };
 
-/* Triangle fan positions. */
-static float const aAttrib0[] =
+/* Triangle fan */
+static float const aAttribData[] =
 {
-    -1.0f,  -1.0f,
-     1.0f,  -1.0f,
-     1.0f,   1.0f,
-    -1.0f,   1.0f
-};
-
-/* Triangle fan texcoords. */
-static float const aAttrib1[] =
-{
-    0.0f,   0.0f,
-    1.0f,   0.0f,
-    1.0f,   1.0f,
-    0.0f,   1.0f
+    /* positions      texcoords */
+    -1.0f,  -1.0f,    0.0f,   0.0f,
+     1.0f,  -1.0f,    1.0f,   0.0f,
+     1.0f,   1.0f,    1.0f,   1.0f,
+    -1.0f,   1.0f,    0.0f,   1.0f
 };
 
 static const GLchar shaderHeaderSource[] =
@@ -431,38 +424,27 @@ static void formatConversionInit(PVMSVGA3DSTATE pState)
     pState->ext.glGenFramebuffers(1, &pConv->framebuffer);
     GL_CHECK_ERROR();
 
-    /*
-     * Vertex attribute arrays.
-     */
-    pState->ext.glGenBuffers(RT_ELEMENTS(pConv->aVertexBuffers), pConv->aVertexBuffers);
+    pState->ext.glBindFramebuffer(GL_DRAW_FRAMEBUFFER, pConv->framebuffer);
     GL_CHECK_ERROR();
 
-    struct AttribData
-    {
-        GLsizeiptr size;
-        const GLvoid * data;
-    };
+    static GLenum aDrawBuffers[] = { GL_COLOR_ATTACHMENT0 };
+    pState->ext.glDrawBuffers(RT_ELEMENTS(aDrawBuffers), aDrawBuffers);
+    GL_CHECK_ERROR();
 
-    static struct AttribData attribData[RT_ELEMENTS(pConv->aVertexBuffers)] =
-    {
-        { sizeof(aAttrib0), aAttrib0 },
-        { sizeof(aAttrib1), aAttrib1 },
-    };
+    pState->ext.glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+    GL_CHECK_ERROR();
 
-    GLuint index;
-    for (index = 0; index < RT_ELEMENTS(pConv->aVertexBuffers); ++index)
-    {
-        pState->ext.glBindBuffer(GL_ARRAY_BUFFER, pConv->aVertexBuffers[index]);
-        GL_CHECK_ERROR();
+    /*
+     * Vertex attribute array.
+     */
+    pState->ext.glGenBuffers(1, &pConv->vertexBuffer);
+    GL_CHECK_ERROR();
 
-        pState->ext.glBufferData(GL_ARRAY_BUFFER, attribData[index].size, attribData[index].data, GL_STATIC_DRAW);
-        GL_CHECK_ERROR();
+    pState->ext.glBindBuffer(GL_ARRAY_BUFFER, pConv->vertexBuffer);
+    GL_CHECK_ERROR();
 
-        pState->ext.glVertexAttribPointer(index, aVertexAttribs[index].size, aVertexAttribs[index].type,
-                                          aVertexAttribs[index].normalized, aVertexAttribs[index].stride,
-                                          (const GLvoid *)(uintptr_t)0);
-        GL_CHECK_ERROR();
-    }
+    pState->ext.glBufferData(GL_ARRAY_BUFFER, sizeof(aAttribData), aAttribData, GL_STATIC_DRAW);
+    GL_CHECK_ERROR();
 
     pState->ext.glBindBuffer(GL_ARRAY_BUFFER, 0);
     GL_CHECK_ERROR();
@@ -505,12 +487,13 @@ static void formatConversionDestroy(PVMSVGA3DSTATE pState)
     deleteShaderProgram(pState, &pConv->programUYVYToRGB);
     deleteShaderProgram(pState, &pConv->programYUY2ToRGB);
 
-    if (pConv->aVertexBuffers[0])
+    if (pConv->vertexBuffer)
     {
-        pState->ext.glDeleteBuffers(RT_ELEMENTS(pConv->aVertexBuffers), pConv->aVertexBuffers);
+        pState->ext.glDeleteBuffers(1, &pConv->vertexBuffer);
         GL_CHECK_ERROR();
+
+        pConv->vertexBuffer = 0;
     }
-    RT_ZERO(pConv->aVertexBuffers);
 
     pConv->pState = 0;
 }
@@ -569,10 +552,6 @@ static void setRenderTarget(PVMSVGA3DSTATE pState,
     glBindTexture(GL_TEXTURE_2D, 0);
     GL_CHECK_ERROR();
 
-    static GLenum aDrawBuffers[] = { GL_COLOR_ATTACHMENT0 };
-    pState->ext.glDrawBuffers(RT_ELEMENTS(aDrawBuffers), aDrawBuffers);
-    GL_CHECK_ERROR();
-
     Assert(pState->ext.glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE);
 }
 
@@ -585,13 +564,9 @@ static void unsetRenderTarget(PVMSVGA3DSTATE pState,
     /* Everything is done on the shared context. The pState and pContext are for GL_CHECK_ERROR macro. */
     PVMSVGA3DCONTEXT pContext = &pState->SharedCtx;
 
-    glBindTexture(GL_TEXTURE_2D, texture);
-    GL_CHECK_ERROR();
+    RT_NOREF(texture);
 
     pState->ext.glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, 0, 0);
-    GL_CHECK_ERROR();
-
-    glBindTexture(GL_TEXTURE_2D, 0);
     GL_CHECK_ERROR();
 
     pState->ext.glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
@@ -614,6 +589,18 @@ static void doRender(PVMSVGA3DSTATE pState,
                      uint32_t iMipmap,
                      bool fToRGB)
 {
+    if (!fToRGB)
+    {
+        /** @todo Disable readback transfers for now. They cause crash in glDrawArrays with Mesa 19.2 after
+         * a previously converted texture is deleted and another texture is being converted.
+         * Such transfer are useless anyway for the emulated YUV formats and the guest should not need them usually.
+         */
+        return;
+    }
+
+    LogFunc(("formatConversion: idActiveContext %u, pConv %p, sid=%u, oglid=%u, oglidEmul=%u, mm=%u, %s\n",
+             pState->idActiveContext, pState->pConv, pSurface->id, pSurface->oglId.texture, pSurface->idEmulated, iMipmap, fToRGB ? "ToRGB" : "FromRGB"));
+
     PVMSVGA3DFORMATCONVERTER pConv = pState->pConv;
     AssertReturnVoid(pConv);
 
@@ -660,13 +647,6 @@ static void doRender(PVMSVGA3DSTATE pState,
     PVMSVGA3DCONTEXT pContext = &pState->SharedCtx;
     VMSVGA3D_SET_CURRENT_CONTEXT(pState, pContext);
 
-    GLuint index;
-    for (index = 0; index < RT_ELEMENTS(pConv->aVertexBuffers); ++index)
-    {
-        pState->ext.glEnableVertexAttribArray(index);
-        GL_CHECK_ERROR();
-    }
-
     setShaderProgram(pState, pProgram, cWidth, cHeight);
 
     setRenderTarget(pState, targetTexture, iMipmap);
@@ -690,7 +670,25 @@ static void doRender(PVMSVGA3DSTATE pState,
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     GL_CHECK_ERROR();
 
+    pState->ext.glBindBuffer(GL_ARRAY_BUFFER, pConv->vertexBuffer);
+    GL_CHECK_ERROR();
+
+    GLuint index;
+    for (index = 0; index < RT_ELEMENTS(aVertexAttribs); ++index)
+    {
+        pState->ext.glEnableVertexAttribArray(index);
+        GL_CHECK_ERROR();
+
+        pState->ext.glVertexAttribPointer(index, aVertexAttribs[index].size, aVertexAttribs[index].type,
+                                          aVertexAttribs[index].normalized, aVertexAttribs[index].stride,
+                                          (const GLvoid *)(uintptr_t)aVertexAttribs[index].offset);
+        GL_CHECK_ERROR();
+    }
+
     glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+    GL_CHECK_ERROR();
+
+    pState->ext.glBindBuffer(GL_ARRAY_BUFFER, 0);
     GL_CHECK_ERROR();
 
     glBindTexture(GL_TEXTURE_2D, 0);
@@ -701,7 +699,7 @@ static void doRender(PVMSVGA3DSTATE pState,
     pState->ext.glUseProgram(0);
     GL_CHECK_ERROR();
 
-    for (index = 0; index < RT_ELEMENTS(pConv->aVertexBuffers); ++index)
+    for (index = 0; index < RT_ELEMENTS(aVertexAttribs); ++index)
     {
         pState->ext.glDisableVertexAttribArray(index);
         GL_CHECK_ERROR();
