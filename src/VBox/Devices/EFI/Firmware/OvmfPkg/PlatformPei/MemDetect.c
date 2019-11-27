@@ -881,6 +881,11 @@ InitializeRamRegions (
   }
 
   if (mBootMode != BOOT_ON_S3_RESUME) {
+#ifndef VBOX
+    /*
+     * This is currently no required and interferes with older OS X bootloaders trying to
+     * allocate memory in that area. Needs to be revisited once we need this.
+     */
     if (!FeaturePcdGet (PcdSmmSmramRequire)) {
       //
       // Reserve the lock box storage area
@@ -902,6 +907,7 @@ InitializeRamRegions (
         mS3Supported ? EfiACPIMemoryNVS : EfiBootServicesData
         );
     }
+#endif
 
     if (FeaturePcdGet (PcdSmmSmramRequire)) {
       UINT32 TsegSize;
