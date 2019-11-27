@@ -1777,7 +1777,7 @@ static int sb16CreateDrvStream(PPDMAUDIOSTREAMCFG pCfg, PSB16DRIVER pDrv)
     AssertMsg(pDrv->Out.pStream == NULL, ("[LUN#%RU8] Driver stream already present when it must not\n", pDrv->uLUN));
 
     /* Disable pre-buffering for SB16; not needed for that bit of data. */
-    pCfgHost->Backend.cfPreBuf = 0;
+    pCfgHost->Backend.cFramesPreBuffering = 0;
 
     int rc = pDrv->pConnector->pfnStreamCreate(pDrv->pConnector, pCfgHost, pCfg /* pCfgGuest */, &pDrv->Out.pStream);
     if (RT_SUCCESS(rc))
@@ -1874,7 +1874,7 @@ static int sb16OpenOut(PPDMDEVINS pDevIns, PSB16STATE pThis, PPDMAUDIOSTREAMCFG 
     {
         /* Set scheduling hint (if available). */
         if (pThis->cTicksTimerIOInterval)
-            pThis->Out.Cfg.Device.uSchedulingHintMs = 1000 /* ms */
+            pThis->Out.Cfg.Device.cMsSchedulingHint = 1000 /* ms */
                                                     / (  PDMDevHlpTimerGetFreq(pDevIns, pThis->hTimerIO)
                                                        / RT_MIN(pThis->cTicksTimerIOInterval, 1));
 

@@ -137,19 +137,19 @@ static DECLCALLBACK(PDMAUDIOBACKENDSTS) drvHostNullAudioGetStatus(PPDMIHOSTAUDIO
  * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamPlay}
  */
 static DECLCALLBACK(int) drvHostNullAudioStreamPlay(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream,
-                                                    const void *pvBuf, uint32_t cxBuf, uint32_t *pcxWritten)
+                                                    const void *pvBuf, uint32_t uBufSize, uint32_t *puWritten)
 {
     AssertPtrReturn(pInterface, VERR_INVALID_POINTER);
     AssertPtrReturn(pStream,    VERR_INVALID_POINTER);
     AssertPtrReturn(pvBuf,      VERR_INVALID_POINTER);
-    AssertReturn(cxBuf,         VERR_INVALID_PARAMETER);
+    AssertReturn(uBufSize,         VERR_INVALID_PARAMETER);
 
     RT_NOREF(pInterface, pStream, pvBuf);
 
     /* Note: No copying of samples needed here, as this a NULL backend. */
 
-    if (pcxWritten)
-        *pcxWritten = cxBuf; /* Return all bytes as written. */
+    if (puWritten)
+        *puWritten = uBufSize; /* Return all bytes as written. */
 
     return VINF_SUCCESS;
 }
@@ -159,7 +159,7 @@ static DECLCALLBACK(int) drvHostNullAudioStreamPlay(PPDMIHOSTAUDIO pInterface, P
  * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamCapture}
  */
 static DECLCALLBACK(int) drvHostNullAudioStreamCapture(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream,
-                                                       void *pvBuf, uint32_t cxBuf, uint32_t *pcxRead)
+                                                       void *pvBuf, uint32_t uBufSize, uint32_t *puRead)
 {
     RT_NOREF(pInterface, pStream);
 
@@ -167,10 +167,10 @@ static DECLCALLBACK(int) drvHostNullAudioStreamCapture(PPDMIHOSTAUDIO pInterface
 
     /* Return silence. */
     Assert(pStreamNull->pCfg);
-    DrvAudioHlpClearBuf(&pStreamNull->pCfg->Props, pvBuf, cxBuf, PDMAUDIOPCMPROPS_B2F(&pStreamNull->pCfg->Props, cxBuf));
+    DrvAudioHlpClearBuf(&pStreamNull->pCfg->Props, pvBuf, uBufSize, PDMAUDIOPCMPROPS_B2F(&pStreamNull->pCfg->Props, uBufSize));
 
-    if (pcxRead)
-        *pcxRead = cxBuf;
+    if (puRead)
+        *puRead = uBufSize;
 
     return VINF_SUCCESS;
 }

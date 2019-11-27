@@ -343,7 +343,7 @@ int hdaR3StreamInit(PHDASTREAM pStream, uint8_t uSD)
 
     /* Set scheduling hint (if available). */
     if (pStream->State.uTimerHz)
-        pCfg->Device.uSchedulingHintMs = 1000 /* ms */ / pStream->State.uTimerHz;
+        pCfg->Device.cMsSchedulingHint = 1000 /* ms */ / pStream->State.uTimerHz;
 
     LogFunc(("[SD%RU8] DMA @ 0x%x (%RU32 bytes), LVI=%RU16, FIFOS=%RU16\n",
              pStream->u8SD, pStream->u64BDLBase, pStream->u32CBL, pStream->u16LVI, pStream->u16FIFOS));
@@ -1455,7 +1455,7 @@ void hdaR3StreamUpdate(PHDASTREAM pStream, bool fInTimer)
 
             /* Only read from the HDA stream at the given scheduling rate. */
             const uint64_t tsNowNs = RTTimeNanoTS();
-            if (tsNowNs - pStream->State.tsLastUpdateNs >= pStream->State.Cfg.Device.uSchedulingHintMs * RT_NS_1MS)
+            if (tsNowNs - pStream->State.tsLastUpdateNs >= pStream->State.Cfg.Device.cMsSchedulingHint * RT_NS_1MS)
             {
                 fDoRead = true;
                 pStream->State.tsLastUpdateNs = tsNowNs;
@@ -1559,7 +1559,7 @@ void hdaR3StreamUpdate(PHDASTREAM pStream, bool fInTimer)
 
 # ifdef VBOX_WITH_AUDIO_HDA_ASYNC_IO
             const uint64_t tsNowNs = RTTimeNanoTS();
-            if (tsNowNs - pStream->State.tsLastUpdateNs >= pStream->State.Cfg.Device.uSchedulingHintMs * RT_NS_1MS)
+            if (tsNowNs - pStream->State.tsLastUpdateNs >= pStream->State.Cfg.Device.cMsSchedulingHint * RT_NS_1MS)
             {
                 rc2 = hdaR3StreamAsyncIONotify(pStream);
                 AssertRC(rc2);

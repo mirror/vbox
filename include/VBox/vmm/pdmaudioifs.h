@@ -676,7 +676,7 @@ typedef struct PDMAUDIOSTREAMCFG
     {
         /** Scheduling hint set by the device emulation about when this stream is being served on average (in ms).
          *  Can be 0 if not hint given or some other mechanism (e.g. callbacks) is being used. */
-        uint32_t            uSchedulingHintMs;
+        uint32_t            cMsSchedulingHint;
     } Device;
     /**
      * Backend-specific data for the stream.
@@ -689,14 +689,14 @@ typedef struct PDMAUDIOSTREAMCFG
         /** Period size of the stream (in audio frames).
          *  This value reflects the number of audio frames in between each hardware interrupt on the
          *  backend (host) side. 0 if not set / available by the backend. */
-        uint32_t            cfPeriod;
-        /** (Ring) buffer size (in audio frames). Often is a multiple of cfPeriod.
+        uint32_t            cFramesPeriod;
+        /** (Ring) buffer size (in audio frames). Often is a multiple of cFramesPeriod.
          *  0 if not set / available by the backend. */
-        uint32_t            cfBufferSize;
+        uint32_t            cFramesBufferSize;
         /** Pre-buffering size (in audio frames). Frames needed in buffer before the stream becomes active (pre buffering).
          *  The bigger this value is, the more latency for the stream will occur.
          *  0 if not set / available by the backend. UINT32_MAX if not defined (yet). */
-        uint32_t            cfPreBuf;
+        uint32_t            cFramesPreBuffering;
     } Backend;
     /** Friendly name of the stream. */
     char                    szName[64];
@@ -1677,15 +1677,16 @@ typedef struct PDMIHOSTAUDIO
      * Plays (writes to) an audio (output) stream.
      *
      * @returns VBox status code.
-     * @param   pInterface          Pointer to the interface structure containing the called function pointer.
-     * @param   pStream             Pointer to audio stream.
-     * @param   pvBuf               Pointer to audio data buffer to play.
-     * @param   cxBuf               For non-raw layout streams: Size (in bytes) of audio data buffer,
-     *                              for raw layout streams    : Size (in audio frames) of audio data buffer.
-     * @param   pcxWritten          For non-raw layout streams: Returns number of bytes written.   Optional.
-     *                              for raw layout streams    : Returns number of frames written.  Optional.
+     * @param   pInterface  Pointer to the interface structure containing the called function pointer.
+     * @param   pStream     Pointer to audio stream.
+     * @param   pvBuf       Pointer to audio data buffer to play.
+     * @param   uBufSize    The audio data buffer size (see note below for unit).
+     * @param   puWritten   Number of unit written.
+     * @note    The @a uBufSize and @a puWritten values are in bytes for non-raw
+     *          layout streams and in frames for raw layout ones.
      */
-    DECLR3CALLBACKMEMBER(int, pfnStreamPlay, (PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream, const void *pvBuf, uint32_t cxBuf, uint32_t *pcxWritten));
+    DECLR3CALLBACKMEMBER(int, pfnStreamPlay, (PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream,
+                                              const void *pvBuf, uint32_t uBufSize, uint32_t *puWritten));
 
     /**
      * Signals the backend that the host finished playing for this iteration. Optional.
@@ -1707,15 +1708,16 @@ typedef struct PDMIHOSTAUDIO
      * Captures (reads from) an audio (input) stream.
      *
      * @returns VBox status code.
-     * @param   pInterface          Pointer to the interface structure containing the called function pointer.
-     * @param   pStream             Pointer to audio stream.
-     * @param   pvBuf               Buffer where to store read audio data.
-     * @param   cxBuf               For non-raw layout streams: Size (in bytes) of audio data buffer,
-     *                              for raw layout streams    : Size (in audio frames) of audio data buffer.
-     * @param   pcxRead             For non-raw layout streams: Returns number of bytes read.   Optional.
-     *                              for raw layout streams    : Returns number of frames read.  Optional.
+     * @param   pInterface  Pointer to the interface structure containing the called function pointer.
+     * @param   pStream     Pointer to audio stream.
+     * @param   pvBuf       Buffer where to store read audio data.
+     * @param   uBufSize    Size of the audio data buffer (see note below for unit).
+     * @param   puRead      Returns number of units read.
+     * @note    The @a uBufSize and @a puRead values are in bytes for non-raw
+     *          layout streams and in frames for raw layout ones.
      */
-    DECLR3CALLBACKMEMBER(int, pfnStreamCapture, (PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream, void *pvBuf, uint32_t cxBuf, uint32_t *pcxRead));
+    DECLR3CALLBACKMEMBER(int, pfnStreamCapture, (PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream,
+                                                 void *pvBuf, uint32_t uBufSize, uint32_t *puRead));
 
     /**
      * Signals the backend that the host finished capturing for this iteration. Optional.

@@ -608,12 +608,12 @@ static DECLCALLBACK(int) drvHostALSAAudioInit(PPDMIHOSTAUDIO pInterface)
  * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamCapture}
  */
 static DECLCALLBACK(int) drvHostALSAAudioStreamCapture(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream,
-                                                       void *pvBuf, uint32_t cxBuf, uint32_t *pcxRead)
+                                                       void *pvBuf, uint32_t uBufSize, uint32_t *puRead)
 {
     AssertPtrReturn(pInterface, VERR_INVALID_POINTER);
     AssertPtrReturn(pStream,    VERR_INVALID_POINTER);
     AssertPtrReturn(pvBuf,      VERR_INVALID_POINTER);
-    AssertReturn(cxBuf,         VERR_INVALID_PARAMETER);
+    AssertReturn(uBufSize,         VERR_INVALID_PARAMETER);
     /* pcbRead is optional. */
 
     PALSAAUDIOSTREAM pStreamALSA = (PALSAAUDIOSTREAM)pStream;
@@ -635,7 +635,7 @@ static DECLCALLBACK(int) drvHostALSAAudioStreamCapture(PPDMIHOSTAUDIO pInterface
         switch (state)
         {
             case SND_PCM_STATE_PREPARED:
-                cAvail = PDMAUDIOSTREAMCFG_B2F(pCfg, cxBuf);
+                cAvail = PDMAUDIOSTREAMCFG_B2F(pCfg, uBufSize);
                 break;
 
             case SND_PCM_STATE_SUSPENDED:
@@ -655,8 +655,8 @@ static DECLCALLBACK(int) drvHostALSAAudioStreamCapture(PPDMIHOSTAUDIO pInterface
 
         if (!cAvail)
         {
-            if (pcxRead)
-                *pcxRead = 0;
+            if (puRead)
+                *puRead = 0;
             return VINF_SUCCESS;
         }
     }
@@ -665,7 +665,7 @@ static DECLCALLBACK(int) drvHostALSAAudioStreamCapture(PPDMIHOSTAUDIO pInterface
      * Check how much we can read from the capture device without overflowing
      * the mixer buffer.
      */
-    size_t cbToRead = RT_MIN((size_t)PDMAUDIOSTREAMCFG_F2B(pCfg, cAvail), cxBuf);
+    size_t cbToRead = RT_MIN((size_t)PDMAUDIOSTREAMCFG_F2B(pCfg, cAvail), uBufSize);
 
     LogFlowFunc(("cbToRead=%zu, cAvail=%RI32\n", cbToRead, cAvail));
 
@@ -740,8 +740,8 @@ static DECLCALLBACK(int) drvHostALSAAudioStreamCapture(PPDMIHOSTAUDIO pInterface
 
     if (RT_SUCCESS(rc))
     {
-        if (pcxRead)
-            *pcxRead = cbReadTotal;
+        if (puRead)
+            *puRead = cbReadTotal;
     }
 
     return rc;
@@ -751,13 +751,13 @@ static DECLCALLBACK(int) drvHostALSAAudioStreamCapture(PPDMIHOSTAUDIO pInterface
  * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamPlay}
  */
 static DECLCALLBACK(int) drvHostALSAAudioStreamPlay(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream,
-                                                    const void *pvBuf, uint32_t cxBuf, uint32_t *pcxWritten)
+                                                    const void *pvBuf, uint32_t uBufSize, uint32_t *puWritten)
 {
     AssertPtrReturn(pInterface, VERR_INVALID_POINTER);
     AssertPtrReturn(pStream,    VERR_INVALID_POINTER);
     AssertPtrReturn(pvBuf,      VERR_INVALID_POINTER);
-    AssertReturn(cxBuf,         VERR_INVALID_PARAMETER);
-    /* pcxWritten is optional. */
+    AssertReturn(uBufSize,         VERR_INVALID_PARAMETER);
+    /* puWritten is optional. */
 
     PALSAAUDIOSTREAM pStreamALSA = (PALSAAUDIOSTREAM)pStream;
 
@@ -786,8 +786,8 @@ static DECLCALLBACK(int) drvHostALSAAudioStreamPlay(PPDMIHOSTAUDIO pInterface, P
             break;
 
         /* Do not write more than available. */
-        if (cbToWrite > cxBuf)
-            cbToWrite = cxBuf;
+        if (cbToWrite > uBufSize)
+            cbToWrite = uBufSize;
 
         memcpy(pStreamALSA->pvBuf, pvBuf, cbToWrite);
 
@@ -857,8 +857,8 @@ static DECLCALLBACK(int) drvHostALSAAudioStreamPlay(PPDMIHOSTAUDIO pInterface, P
 
     if (RT_SUCCESS(rc))
     {
-        if (pcxWritten)
-            *pcxWritten = cbWrittenTotal;
+        if (puWritten)
+            *puWritten = cbWrittenTotal;
     }
 
     return rc;
@@ -905,9 +905,9 @@ static int alsaCreateStreamOut(PALSAAUDIOSTREAM pStreamALSA, PPDMAUDIOSTREAMCFG 
         req.fmt         = alsaAudioPropsToALSA(&pCfgReq->Props);
         req.freq        = pCfgReq->Props.uHz;
         req.nchannels   = pCfgReq->Props.cChannels;
-        req.period_size = pCfgReq->Backend.cfPeriod;
-        req.buffer_size = pCfgReq->Backend.cfBufferSize;
-        req.threshold   = pCfgReq->Backend.cfPreBuf;
+        req.period_size = pCfgReq->Backend.cFramesPeriod;
+        req.buffer_size = pCfgReq->Backend.cFramesBufferSize;
+        req.threshold   = pCfgReq->Backend.cFramesPreBuffering;
 
         ALSAAUDIOSTREAMCFG obt;
         rc = alsaStreamOpen(false /* fIn */, &req, &obt, &phPCM);
@@ -921,15 +921,15 @@ static int alsaCreateStreamOut(PALSAAUDIOSTREAM pStreamALSA, PPDMAUDIOSTREAMCFG 
         if (RT_FAILURE(rc))
             break;
 
-        pCfgAcq->Backend.cfPeriod     = obt.period_size;
-        pCfgAcq->Backend.cfBufferSize = obt.buffer_size;
-        pCfgAcq->Backend.cfPreBuf     = obt.threshold;
+        pCfgAcq->Backend.cFramesPeriod     = obt.period_size;
+        pCfgAcq->Backend.cFramesBufferSize = obt.buffer_size;
+        pCfgAcq->Backend.cFramesPreBuffering     = obt.threshold;
 
-        pStreamALSA->cbBuf = pCfgAcq->Backend.cfBufferSize * DrvAudioHlpPCMPropsBytesPerFrame(&pCfgAcq->Props);
+        pStreamALSA->cbBuf = pCfgAcq->Backend.cFramesBufferSize * DrvAudioHlpPCMPropsBytesPerFrame(&pCfgAcq->Props);
         pStreamALSA->pvBuf = RTMemAllocZ(pStreamALSA->cbBuf);
         if (!pStreamALSA->pvBuf)
         {
-            LogRel(("ALSA: Not enough memory for output DAC buffer (%zu frames)\n", pCfgAcq->Backend.cfBufferSize));
+            LogRel(("ALSA: Not enough memory for output DAC buffer (%zu frames)\n", pCfgAcq->Backend.cFramesBufferSize));
             rc = VERR_NO_MEMORY;
             break;
         }
@@ -974,15 +974,15 @@ static int alsaCreateStreamIn(PALSAAUDIOSTREAM pStreamALSA, PPDMAUDIOSTREAMCFG p
         if (RT_FAILURE(rc))
             break;
 
-        pCfgAcq->Backend.cfPeriod     = obt.period_size;
-        pCfgAcq->Backend.cfBufferSize = obt.buffer_size;
+        pCfgAcq->Backend.cFramesPeriod     = obt.period_size;
+        pCfgAcq->Backend.cFramesBufferSize = obt.buffer_size;
         /* No pre-buffering. */
 
-        pStreamALSA->cbBuf = pCfgAcq->Backend.cfBufferSize * DrvAudioHlpPCMPropsBytesPerFrame(&pCfgAcq->Props);
+        pStreamALSA->cbBuf = pCfgAcq->Backend.cFramesBufferSize * DrvAudioHlpPCMPropsBytesPerFrame(&pCfgAcq->Props);
         pStreamALSA->pvBuf = RTMemAlloc(pStreamALSA->cbBuf);
         if (!pStreamALSA->pvBuf)
         {
-            LogRel(("ALSA: Not enough memory for input ADC buffer (%zu frames)\n", pCfgAcq->Backend.cfBufferSize));
+            LogRel(("ALSA: Not enough memory for input ADC buffer (%zu frames)\n", pCfgAcq->Backend.cFramesBufferSize));
             rc = VERR_NO_MEMORY;
             break;
         }
@@ -1384,7 +1384,7 @@ static DECLCALLBACK(uint32_t) drvHostALSAStreamGetPending(PPDMIHOSTAUDIO pInterf
 
     PALSAAUDIOSTREAM pStreamALSA = (PALSAAUDIOSTREAM)pStream;
 
-    snd_pcm_sframes_t cfDelay  = 0;
+    snd_pcm_sframes_t cFramesDelay  = 0;
     snd_pcm_state_t   enmState = snd_pcm_state(pStreamALSA->phPCM);
 
     int rc = VINF_SUCCESS;
@@ -1394,21 +1394,21 @@ static DECLCALLBACK(uint32_t) drvHostALSAStreamGetPending(PPDMIHOSTAUDIO pInterf
     {
         /* Getting the delay (in audio frames) reports the time it will take
          * to hear a new sample after all queued samples have been played out. */
-        int rc2 = snd_pcm_delay(pStreamALSA->phPCM, &cfDelay);
+        int rc2 = snd_pcm_delay(pStreamALSA->phPCM, &cFramesDelay);
         if (RT_SUCCESS(rc))
             rc = rc2;
 
         /* Make sure to check the stream's status.
          * If it's anything but SND_PCM_STATE_RUNNING, the delay is meaningless and therefore 0. */
         if (enmState != SND_PCM_STATE_RUNNING)
-            cfDelay = 0;
+            cFramesDelay = 0;
     }
 
     /* Note: For input streams we never have pending data left. */
 
-    Log2Func(("cfDelay=%RI32, enmState=%d, rc=%d\n", cfDelay, enmState, rc));
+    Log2Func(("cFramesDelay=%RI32, enmState=%d, rc=%d\n", cFramesDelay, enmState, rc));
 
-    return DrvAudioHlpFramesToBytes(cfDelay, &pStreamALSA->pCfg->Props);
+    return DrvAudioHlpFramesToBytes(cFramesDelay, &pStreamALSA->pCfg->Props);
 }
 
 

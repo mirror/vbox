@@ -553,9 +553,9 @@ static int avRecCreateStreamOut(PDRVAUDIORECORDING pThis, PAVRECSTREAM pStreamAV
                     pCfgAcq->Props.cShift      = PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(pCfgAcq->Props.cbSample, pCfgAcq->Props.cChannels);
 
                     /* Every Opus frame marks a period for now. Optimize this later. */
-                    pCfgAcq->Backend.cfPeriod     = DrvAudioHlpMilliToFrames(pSink->Codec.Opus.msFrame, &pCfgAcq->Props);
-                    pCfgAcq->Backend.cfBufferSize = DrvAudioHlpMilliToFrames(100 /* ms */, &pCfgAcq->Props); /** @todo Make this configurable. */
-                    pCfgAcq->Backend.cfPreBuf     = pCfgAcq->Backend.cfPeriod * 2;
+                    pCfgAcq->Backend.cFramesPeriod     = DrvAudioHlpMilliToFrames(pSink->Codec.Opus.msFrame, &pCfgAcq->Props);
+                    pCfgAcq->Backend.cFramesBufferSize = DrvAudioHlpMilliToFrames(100 /* ms */, &pCfgAcq->Props); /** @todo Make this configurable. */
+                    pCfgAcq->Backend.cFramesPreBuffering     = pCfgAcq->Backend.cFramesPeriod * 2;
                 }
             }
             else
@@ -674,12 +674,12 @@ static DECLCALLBACK(int) drvAudioVideoRecInit(PPDMIHOSTAUDIO pInterface)
  * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamCapture}
  */
 static DECLCALLBACK(int) drvAudioVideoRecStreamCapture(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream,
-                                                       void *pvBuf, uint32_t cxBuf, uint32_t *pcxRead)
+                                                       void *pvBuf, uint32_t uBufSize, uint32_t *puRead)
 {
-    RT_NOREF(pInterface, pStream, pvBuf, cxBuf);
+    RT_NOREF(pInterface, pStream, pvBuf, uBufSize);
 
-    if (pcxRead)
-        *pcxRead = 0;
+    if (puRead)
+        *puRead = 0;
 
     return VINF_SUCCESS;
 }
@@ -689,13 +689,13 @@ static DECLCALLBACK(int) drvAudioVideoRecStreamCapture(PPDMIHOSTAUDIO pInterface
  * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamPlay}
  */
 static DECLCALLBACK(int) drvAudioVideoRecStreamPlay(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream,
-                                                    const void *pvBuf, uint32_t cxBuf, uint32_t *pcxWritten)
+                                                    const void *pvBuf, uint32_t uBufSize, uint32_t *puWritten)
 {
     AssertPtrReturn(pInterface, VERR_INVALID_POINTER);
     AssertPtrReturn(pStream,    VERR_INVALID_POINTER);
     AssertPtrReturn(pvBuf,      VERR_INVALID_POINTER);
-    AssertReturn(cxBuf,         VERR_INVALID_PARAMETER);
-    /* pcxWritten is optional. */
+    AssertReturn(uBufSize,         VERR_INVALID_PARAMETER);
+    /* puWritten is optional. */
 
     PDRVAUDIORECORDING pThis     = PDMIHOSTAUDIO_2_DRVAUDIORECORDING(pInterface);
     RT_NOREF(pThis);
@@ -719,7 +719,7 @@ static DECLCALLBACK(int) drvAudioVideoRecStreamPlay(PPDMIHOSTAUDIO pInterface, P
     void  *pvCircBuf;
     size_t cbCircBuf;
 
-    uint32_t cbToWrite = cxBuf;
+    uint32_t cbToWrite = uBufSize;
 
     /*
      * Fetch as much as we can into our internal ring buffer.
@@ -857,12 +857,12 @@ static DECLCALLBACK(int) drvAudioVideoRecStreamPlay(PPDMIHOSTAUDIO pInterface, P
             break;
     }
 
-    if (pcxWritten)
-        *pcxWritten = cbWrittenTotal;
+    if (puWritten)
+        *puWritten = cbWrittenTotal;
 #else
     /* Report back all data as being processed. */
-    if (pcxWritten)
-        *pcxWritten = cxBuf;
+    if (puWritten)
+        *puWritten = uBufSize;
 
     rc = VERR_NOT_SUPPORTED;
 #endif /* VBOX_WITH_LIBOPUS */

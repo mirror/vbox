@@ -193,22 +193,21 @@ static DECLCALLBACK(int) drvHostDebugAudioStreamCreate(PPDMIHOSTAUDIO pInterface
 /**
  * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamPlay}
  */
-static DECLCALLBACK(int) drvHostDebugAudioStreamPlay(PPDMIHOSTAUDIO pInterface,
-                                                     PPDMAUDIOBACKENDSTREAM pStream, const void *pvBuf, uint32_t cxBuf,
-                                                     uint32_t *pcxWritten)
+static DECLCALLBACK(int) drvHostDebugAudioStreamPlay(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream,
+                                                     const void *pvBuf, uint32_t uBufSize, uint32_t *puWritten)
 {
     RT_NOREF(pInterface);
     PDEBUGAUDIOSTREAM  pStreamDbg = (PDEBUGAUDIOSTREAM)pStream;
 
-    int rc = DrvAudioHlpFileWrite(pStreamDbg->pFile, pvBuf, cxBuf, 0 /* fFlags */);
+    int rc = DrvAudioHlpFileWrite(pStreamDbg->pFile, pvBuf, uBufSize, 0 /* fFlags */);
     if (RT_FAILURE(rc))
     {
         LogRel(("DebugAudio: Writing output failed with %Rrc\n", rc));
         return rc;
     }
 
-    if (pcxWritten)
-        *pcxWritten = cxBuf;
+    if (puWritten)
+        *puWritten = uBufSize;
 
     return VINF_SUCCESS;
 }
@@ -218,13 +217,13 @@ static DECLCALLBACK(int) drvHostDebugAudioStreamPlay(PPDMIHOSTAUDIO pInterface,
  * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamCapture}
  */
 static DECLCALLBACK(int) drvHostDebugAudioStreamCapture(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream,
-                                                        void *pvBuf, uint32_t cxBuf, uint32_t *pcxRead)
+                                                        void *pvBuf, uint32_t uBufSize, uint32_t *puRead)
 {
-    RT_NOREF(pInterface, pStream, pvBuf, cxBuf);
+    RT_NOREF(pInterface, pStream, pvBuf, uBufSize);
 
     /* Never capture anything. */
-    if (pcxRead)
-        *pcxRead = 0;
+    if (puRead)
+        *puRead = 0;
 
     return VINF_SUCCESS;
 }

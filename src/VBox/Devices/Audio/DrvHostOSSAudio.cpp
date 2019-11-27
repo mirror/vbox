@@ -405,7 +405,7 @@ static DECLCALLBACK(int) drvHostOSSAudioInit(PPDMIHOSTAUDIO pInterface)
  * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamCapture}
  */
 static DECLCALLBACK(int) drvHostOSSAudioStreamCapture(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream,
-                                                      void *pvBuf, uint32_t cxBuf, uint32_t *pcxRead)
+                                                      void *pvBuf, uint32_t uBufSize, uint32_t *puRead)
 {
     RT_NOREF(pInterface);
     AssertPtrReturn(pStream, VERR_INVALID_POINTER);
@@ -414,7 +414,7 @@ static DECLCALLBACK(int) drvHostOSSAudioStreamCapture(PPDMIHOSTAUDIO pInterface,
 
     int rc = VINF_SUCCESS;
 
-    size_t cbToRead = RT_MIN(pStreamOSS->cbBuf, cxBuf);
+    size_t cbToRead = RT_MIN(pStreamOSS->cbBuf, uBufSize);
 
     LogFlowFunc(("cbToRead=%zi\n", cbToRead));
 
@@ -474,8 +474,8 @@ static DECLCALLBACK(int) drvHostOSSAudioStreamCapture(PPDMIHOSTAUDIO pInterface,
 
     if (RT_SUCCESS(rc))
     {
-        if (pcxRead)
-            *pcxRead = cbReadTotal;
+        if (puRead)
+            *puRead = cbReadTotal;
     }
 
     return rc;
@@ -662,8 +662,8 @@ static int ossCreateStreamIn(POSSAUDIOSTREAM pStreamOSS, PPDMAUDIOSTREAMCFG pCfg
                 pStreamOSS->pvBuf = pvBuf;
                 pStreamOSS->cbBuf = cbBuf;
 
-                pCfgAcq->Backend.cfPeriod     = PDMAUDIOSTREAMCFG_B2F(pCfgAcq, ossAcq.cbFragmentSize);
-                pCfgAcq->Backend.cfBufferSize = pCfgAcq->Backend.cfPeriod * 2; /* Use "double buffering". */
+                pCfgAcq->Backend.cFramesPeriod     = PDMAUDIOSTREAMCFG_B2F(pCfgAcq, ossAcq.cbFragmentSize);
+                pCfgAcq->Backend.cFramesBufferSize = pCfgAcq->Backend.cFramesPeriod * 2; /* Use "double buffering". */
                 /** @todo Pre-buffering required? */
             }
         }
@@ -780,8 +780,8 @@ static int ossCreateStreamOut(POSSAUDIOSTREAM pStreamOSS, PPDMAUDIOSTREAMCFG pCf
 #ifndef RT_OS_L4
             }
 #endif
-            pCfgAcq->Backend.cfPeriod     = PDMAUDIOSTREAMCFG_B2F(pCfgAcq, obtStream.cbFragmentSize);
-            pCfgAcq->Backend.cfBufferSize = pCfgAcq->Backend.cfPeriod * 2; /* Use "double buffering" */
+            pCfgAcq->Backend.cFramesPeriod     = PDMAUDIOSTREAMCFG_B2F(pCfgAcq, obtStream.cbFragmentSize);
+            pCfgAcq->Backend.cFramesBufferSize = pCfgAcq->Backend.cFramesPeriod * 2; /* Use "double buffering" */
         }
 
     } while (0);
@@ -797,9 +797,8 @@ static int ossCreateStreamOut(POSSAUDIOSTREAM pStreamOSS, PPDMAUDIOSTREAMCFG pCf
 /**
  * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamPlay}
  */
-static DECLCALLBACK(int) drvHostOSSAudioStreamPlay(PPDMIHOSTAUDIO pInterface,
-                                                   PPDMAUDIOBACKENDSTREAM pStream, const void *pvBuf, uint32_t cxBuf,
-                                                   uint32_t *pcxWritten)
+static DECLCALLBACK(int) drvHostOSSAudioStreamPlay(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream,
+                                                   const void *pvBuf, uint32_t uBufSize, uint32_t *puWritten)
 {
     RT_NOREF(pInterface);
     AssertPtrReturn(pStream, VERR_INVALID_POINTER);
@@ -815,7 +814,7 @@ static DECLCALLBACK(int) drvHostOSSAudioStreamPlay(PPDMIHOSTAUDIO pInterface,
 
     do
     {
-        uint32_t cbAvail = cxBuf;
+        uint32_t cbAvail = uBufSize;
         uint32_t cbToWrite;
 
 #ifndef RT_OS_L4
@@ -838,7 +837,7 @@ static DECLCALLBACK(int) drvHostOSSAudioStreamPlay(PPDMIHOSTAUDIO pInterface,
             if (cntinfo.ptr > pStreamOSS->old_optr)
                 cbData = cntinfo.ptr - pStreamOSS->old_optr;
             else
-                cbData = cxBuf + cntinfo.ptr - pStreamOSS->old_optr;
+                cbData = uBufSize + cntinfo.ptr - pStreamOSS->old_optr;
             Assert(cbData >= 0);
 
             cbToWrite = RT_MIN((unsigned)cbData, cbAvail);
@@ -855,16 +854,16 @@ static DECLCALLBACK(int) drvHostOSSAudioStreamPlay(PPDMIHOSTAUDIO pInterface,
                 break;
             }
 
-            if ((size_t)abinfo.bytes > cxBuf)
+            if ((size_t)abinfo.bytes > uBufSize)
             {
-                LogRel2(("OSS: Warning: Too big output size (%d > %RU32), limiting to %RU32\n", abinfo.bytes, cxBuf, cxBuf));
-                abinfo.bytes = cxBuf;
+                LogRel2(("OSS: Warning: Too big output size (%d > %RU32), limiting to %RU32\n", abinfo.bytes, uBufSize, uBufSize));
+                abinfo.bytes = uBufSize;
                 /* Keep going. */
             }
 
             if (abinfo.bytes < 0)
             {
-                LogRel2(("OSS: Warning: Invalid available size (%d vs. %RU32)\n", abinfo.bytes, cxBuf));
+                LogRel2(("OSS: Warning: Invalid available size (%d vs. %RU32)\n", abinfo.bytes, uBufSize));
                 rc = VERR_INVALID_PARAMETER;
                 break;
             }
@@ -921,8 +920,8 @@ static DECLCALLBACK(int) drvHostOSSAudioStreamPlay(PPDMIHOSTAUDIO pInterface,
 
     if (RT_SUCCESS(rc))
     {
-        if (pcxWritten)
-            *pcxWritten = cbWrittenTotal;
+        if (puWritten)
+            *puWritten = cbWrittenTotal;
     }
 
     return rc;

@@ -146,7 +146,7 @@ static int vakitCreateStreamOut(PDRVHOSTVAKITAUDIO pDrv, PVAKITAUDIOSTREAM pStre
     pStreamDbg->tsStarted = 0;
     pStreamDbg->uSamplesSinceStarted = 0;
     pStreamDbg->Out.tsLastPlayed  = 0;
-    pStreamDbg->Out.cbPlayBuffer  = DrvAudioHlpFramesToBytes(pCfgReq->Backend.cfBufferSize, &pCfgReq->Props);
+    pStreamDbg->Out.cbPlayBuffer  = DrvAudioHlpFramesToBytes(pCfgReq->Backend.cFramesBufferSize, &pCfgReq->Props);
     pStreamDbg->Out.pu8PlayBuffer = (uint8_t *)RTMemAlloc(pStreamDbg->Out.cbPlayBuffer);
     if (!pStreamDbg->Out.pu8PlayBuffer)
         rc = VERR_NO_MEMORY;
@@ -229,8 +229,8 @@ static DECLCALLBACK(int) drvHostVaKitAudioStreamCreate(PPDMIHOSTAUDIO pInterface
  * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamPlay}
  */
 static DECLCALLBACK(int) drvHostVaKitAudioStreamPlay(PPDMIHOSTAUDIO pInterface,
-                                                     PPDMAUDIOBACKENDSTREAM pStream, const void *pvBuf, uint32_t cxBuf,
-                                                     uint32_t *pcxWritten)
+                                                     PPDMAUDIOBACKENDSTREAM pStream, const void *pvBuf, uint32_t uBufSize,
+                                                     uint32_t *puWritten)
 {
     PDRVHOSTVAKITAUDIO pDrv       = RT_FROM_MEMBER(pInterface, DRVHOSTVAKITAUDIO, IHostAudio);
     PVAKITAUDIOSTREAM  pStreamDbg = (PVAKITAUDIOSTREAM)pStream;
@@ -251,7 +251,7 @@ static DECLCALLBACK(int) drvHostVaKitAudioStreamPlay(PPDMIHOSTAUDIO pInterface,
     }
 
     // Microseconds are used everythere below
-    uint32_t sBuf = cxBuf >> pStreamDbg->pCfg->Props.cShift;
+    uint32_t sBuf = uBufSize >> pStreamDbg->pCfg->Props.cShift;
     cch = RTStrPrintf(szTimingInfo, sizeof(szTimingInfo), "%d %d %d %d\n",
         (uint32_t)(tsSinceStart / 1000), // Host time elapsed since Guest submitted the first buffer for playback
         (uint32_t)(pStreamDbg->uSamplesSinceStarted * 1.0E6 / pStreamDbg->pCfg->Props.uHz), // how long all the samples submitted previously were played
@@ -263,11 +263,11 @@ static DECLCALLBACK(int) drvHostVaKitAudioStreamPlay(PPDMIHOSTAUDIO pInterface,
     /* Remember when samples were consumed. */
    // pStreamDbg->Out.tsLastPlayed = PDMDrvHlpTMGetVirtualTime(pDrv->pDrvIns);;
 
-    int rc2 = DrvAudioHlpFileWrite(pStreamDbg->pFile, pvBuf, cxBuf, 0 /* fFlags */);
+    int rc2 = DrvAudioHlpFileWrite(pStreamDbg->pFile, pvBuf, uBufSize, 0 /* fFlags */);
     if (RT_FAILURE(rc2))
         LogRel(("VaKitAudio: Writing output failed with %Rrc\n", rc2));
 
-    *pcxWritten = cxBuf;
+    *puWritten = uBufSize;
 
     return VINF_SUCCESS;
 }
@@ -277,14 +277,14 @@ static DECLCALLBACK(int) drvHostVaKitAudioStreamPlay(PPDMIHOSTAUDIO pInterface,
  * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamCapture}
  */
 static DECLCALLBACK(int) drvHostVaKitAudioStreamCapture(PPDMIHOSTAUDIO pInterface,
-                                                        PPDMAUDIOBACKENDSTREAM pStream, void *pvBuf, uint32_t cxBuf,
-                                                        uint32_t *pcxRead)
+                                                        PPDMAUDIOBACKENDSTREAM pStream, void *pvBuf, uint32_t uBufSize,
+                                                        uint32_t *puRead)
 {
-    RT_NOREF(pInterface, pStream, pvBuf, cxBuf);
+    RT_NOREF(pInterface, pStream, pvBuf, uBufSize);
 
     /* Never capture anything. */
-    if (pcxRead)
-        *pcxRead = 0;
+    if (puRead)
+        *puRead = 0;
 
     return VINF_SUCCESS;
 }

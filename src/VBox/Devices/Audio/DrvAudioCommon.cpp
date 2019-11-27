@@ -952,7 +952,7 @@ void DrvAudioHlpStreamCfgInit(PPDMAUDIOSTREAMCFG pCfg)
 
     RT_BZERO(pCfg, sizeof(PDMAUDIOSTREAMCFG));
 
-    pCfg->Backend.cfPreBuf = UINT32_MAX; /* Explicitly set to "undefined". */
+    pCfg->Backend.cFramesPreBuffering = UINT32_MAX; /* Explicitly set to "undefined". */
 }
 
 /**

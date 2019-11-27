@@ -664,7 +664,7 @@ static HRESULT directSoundPlayOpen(PDRVHOSTDSOUND pThis, PDSOUNDSTREAM pStreamDS
          * of copying own buffer data to our secondary's Direct Sound buffer.
          */
         bd.dwFlags       = DSBCAPS_GLOBALFOCUS | DSBCAPS_GETCURRENTPOSITION2 | DSBCAPS_LOCSOFTWARE;
-        bd.dwBufferBytes = DrvAudioHlpFramesToBytes(pCfgReq->Backend.cfBufferSize, &pCfgReq->Props);
+        bd.dwBufferBytes = DrvAudioHlpFramesToBytes(pCfgReq->Backend.cFramesBufferSize, &pCfgReq->Props);
 
         DSLOG(("DSound: Requested playback buffer is %RU64ms (%ld bytes)\n",
                DrvAudioHlpBytesToMilli(bd.dwBufferBytes, &pCfgReq->Props), bd.dwBufferBytes));
@@ -749,9 +749,9 @@ static HRESULT directSoundPlayOpen(PDRVHOSTDSOUND pThis, PDSOUNDSTREAM pStreamDS
 
         const uint32_t cfBufSize = PDMAUDIOSTREAMCFG_B2F(pCfgAcq, pStreamDS->cbBufSize);
 
-        pCfgAcq->Backend.cfBufferSize = cfBufSize;
-        pCfgAcq->Backend.cfPeriod     = cfBufSize / 4;
-        pCfgAcq->Backend.cfPreBuf     = pCfgAcq->Backend.cfPeriod * 2;
+        pCfgAcq->Backend.cFramesBufferSize = cfBufSize;
+        pCfgAcq->Backend.cFramesPeriod     = cfBufSize / 4;
+        pCfgAcq->Backend.cFramesPreBuffering     = pCfgAcq->Backend.cFramesPeriod * 2;
 
     } while (0);
 
@@ -893,7 +893,7 @@ static int dsoundPlayTransfer(PDRVHOSTDSOUND pThis, PDSOUNDSTREAM pStreamDS)
     pStreamDS->Out.cbTransferred += cbTransferred;
 
     if (   pStreamDS->Out.fFirstTransfer
-        && pStreamDS->Out.cbTransferred >= DrvAudioHlpFramesToBytes(pStreamDS->Cfg.Backend.cfPreBuf, &pStreamDS->Cfg.Props))
+        && pStreamDS->Out.cbTransferred >= DrvAudioHlpFramesToBytes(pStreamDS->Cfg.Backend.cFramesPreBuffering, &pStreamDS->Cfg.Props))
     {
         hr = directSoundPlayStart(pThis, pStreamDS);
         if (SUCCEEDED(hr))
@@ -1399,7 +1399,7 @@ static HRESULT directSoundCaptureOpen(PDRVHOSTDSOUND pThis, PDSOUNDSTREAM pStrea
 
         bd.dwSize        = sizeof(bd);
         bd.lpwfxFormat   = &wfx;
-        bd.dwBufferBytes = DrvAudioHlpFramesToBytes(pCfgReq->Backend.cfBufferSize, &pCfgReq->Props);
+        bd.dwBufferBytes = DrvAudioHlpFramesToBytes(pCfgReq->Backend.cFramesBufferSize, &pCfgReq->Props);
 
         DSLOG(("DSound: Requested capture buffer is %RU64ms (%ld bytes)\n",
                DrvAudioHlpBytesToMilli(bd.dwBufferBytes, &pCfgReq->Props), bd.dwBufferBytes));
@@ -1490,7 +1490,7 @@ static HRESULT directSoundCaptureOpen(PDRVHOSTDSOUND pThis, PDSOUNDSTREAM pStrea
 
         pThis->pDSStrmIn = pStreamDS;
 
-        pCfgAcq->Backend.cfBufferSize = PDMAUDIOSTREAMCFG_B2F(pCfgAcq, pStreamDS->cbBufSize);
+        pCfgAcq->Backend.cFramesBufferSize = PDMAUDIOSTREAMCFG_B2F(pCfgAcq, pStreamDS->cbBufSize);
 
     } while (0);
 
@@ -1951,13 +1951,13 @@ static int dsoundControlStreamOut(PDRVHOSTDSOUND pThis, PDSOUNDSTREAM pStreamDS,
  * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamPlay}
  */
 int drvHostDSoundStreamPlay(PPDMIHOSTAUDIO pInterface,
-                            PPDMAUDIOBACKENDSTREAM pStream, const void *pvBuf, uint32_t cxBuf, uint32_t *pcxWritten)
+                            PPDMAUDIOBACKENDSTREAM pStream, const void *pvBuf, uint32_t uBufSize, uint32_t *puWritten)
 {
     AssertPtrReturn(pInterface, VERR_INVALID_POINTER);
     AssertPtrReturn(pStream,    VERR_INVALID_POINTER);
     AssertPtrReturn(pvBuf,      VERR_INVALID_POINTER);
-    AssertReturn(cxBuf,         VERR_INVALID_PARAMETER);
-    /* pcxWritten is optional. */
+    AssertReturn(uBufSize,         VERR_INVALID_PARAMETER);
+    /* puWritten is optional. */
 
     PDRVHOSTDSOUND pThis     = PDMIHOSTAUDIO_2_DRVHOSTDSOUND(pInterface);
     PDSOUNDSTREAM  pStreamDS = (PDSOUNDSTREAM)pStream;
@@ -1969,7 +1969,7 @@ int drvHostDSoundStreamPlay(PPDMIHOSTAUDIO pInterface,
     uint8_t   *pbBuf    = (uint8_t *)pvBuf;
     PRTCIRCBUF pCircBuf = pStreamDS->pCircBuf;
 
-    uint32_t cbToPlay = RT_MIN(cxBuf, (uint32_t)RTCircBufFree(pCircBuf));
+    uint32_t cbToPlay = RT_MIN(uBufSize, (uint32_t)RTCircBufFree(pCircBuf));
     while (cbToPlay)
     {
         void *pvChunk;
@@ -1990,15 +1990,15 @@ int drvHostDSoundStreamPlay(PPDMIHOSTAUDIO pInterface,
         RTCircBufReleaseWriteBlock(pCircBuf, cbChunk);
     }
 
-    Assert(cbWrittenTotal <= cxBuf);
-    Assert(cbWrittenTotal == cxBuf);
+    Assert(cbWrittenTotal <= uBufSize);
+    Assert(cbWrittenTotal == uBufSize);
 
     pStreamDS->Out.cbWritten += cbWrittenTotal;
 
     if (RT_SUCCESS(rc))
     {
-        if (pcxWritten)
-            *pcxWritten = cbWrittenTotal;
+        if (puWritten)
+            *puWritten = cbWrittenTotal;
     }
     else
         dsoundUpdateStatusInternal(pThis);
@@ -2114,13 +2114,13 @@ static int dsoundControlStreamIn(PDRVHOSTDSOUND pThis, PDSOUNDSTREAM pStreamDS, 
  * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamCapture}
  */
 int drvHostDSoundStreamCapture(PPDMIHOSTAUDIO pInterface,
-                               PPDMAUDIOBACKENDSTREAM pStream, void *pvBuf, uint32_t cxBuf, uint32_t *pcxRead)
+                               PPDMAUDIOBACKENDSTREAM pStream, void *pvBuf, uint32_t uBufSize, uint32_t *puRead)
 {
 
     AssertPtrReturn(pInterface, VERR_INVALID_POINTER);
     AssertPtrReturn(pStream,    VERR_INVALID_POINTER);
     AssertPtrReturn(pvBuf,      VERR_INVALID_POINTER);
-    AssertReturn(cxBuf,         VERR_INVALID_PARAMETER);
+    AssertReturn(uBufSize,         VERR_INVALID_PARAMETER);
 
     PDRVHOSTDSOUND pThis     = PDMIHOSTAUDIO_2_DRVHOSTDSOUND(pInterface);
     PDSOUNDSTREAM  pStreamDS = (PDSOUNDSTREAM)pStream;
@@ -2129,7 +2129,7 @@ int drvHostDSoundStreamCapture(PPDMIHOSTAUDIO pInterface,
 
     uint32_t cbReadTotal = 0;
 
-    uint32_t cbToRead = RT_MIN((uint32_t)RTCircBufUsed(pStreamDS->pCircBuf), cxBuf);
+    uint32_t cbToRead = RT_MIN((uint32_t)RTCircBufUsed(pStreamDS->pCircBuf), uBufSize);
     while (cbToRead)
     {
         void   *pvChunk;
@@ -2149,8 +2149,8 @@ int drvHostDSoundStreamCapture(PPDMIHOSTAUDIO pInterface,
 
     if (RT_SUCCESS(rc))
     {
-        if (pcxRead)
-            *pcxRead = cbReadTotal;
+        if (puRead)
+            *puRead = cbReadTotal;
     }
     else
         dsoundUpdateStatusInternal(pThis);

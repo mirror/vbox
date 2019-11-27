@@ -1596,7 +1596,7 @@ static void ichac97R3StreamUpdate(PAC97STATE pThis, PAC97STREAM pStream, bool fI
 
 # ifdef VBOX_WITH_AUDIO_AC97_ASYNC_IO
             const uint64_t tsNowNs = RTTimeNanoTS();
-            if (tsNowNs - pStream->State.tsLastUpdateNs >= pStream->State.Cfg.Device.uSchedulingHintMs * RT_NS_1MS)
+            if (tsNowNs - pStream->State.tsLastUpdateNs >= pStream->State.Cfg.Device.cMsSchedulingHint * RT_NS_1MS)
             {
                 rc2 = ichac97R3StreamAsyncIONotify(pThis, pStream);
                 AssertRC(rc2);
@@ -2103,7 +2103,7 @@ static int ichac97R3StreamOpen(PAC97STATE pThis, PAC97STREAM pStream, bool fForc
 
                 /* Set scheduling hint (if available). */
                 if (pStream->State.uTimerHz)
-                    Cfg.Device.uSchedulingHintMs = 1000 /* ms */ / pStream->State.uTimerHz;
+                    Cfg.Device.cMsSchedulingHint = 1000 /* ms */ / pStream->State.uTimerHz;
 
                 if (pStream->State.pCircBuf)
                 {
