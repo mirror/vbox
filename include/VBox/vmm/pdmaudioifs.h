@@ -23,152 +23,204 @@
  * terms and conditions of either the GPL or the CDDL or both.
  */
 
-/**
- * == Audio architecture overview
+/** @page pg_pdm_audio  PDM Audio
  *
- * The audio architecture mainly consists of two PDM interfaces, PDMAUDIOCONNECTOR
- * and PDMIHOSTAUDIO.
+ * @section sec_pdm_audio_overview  Audio architecture overview
  *
- * The PDMAUDIOCONNECTOR interface is responsible of connecting a device emulation, such
- * as SB16, AC'97 and HDA to one or multiple audio backend(s). Its API abstracts audio
- * stream handling and I/O functions, device enumeration and so on.
+ * The audio architecture mainly consists of two PDM interfaces,
+ * PDMAUDIOCONNECTOR and PDMIHOSTAUDIO.
  *
- * The PDMIHOSTAUDIO interface must be implemented by all audio backends to provide an
- * abstract and common way of accessing needed functions, such as transferring output audio
- * data for playing audio or recording input from the host.
+ * The PDMAUDIOCONNECTOR interface is responsible of connecting a device
+ * emulation, such as SB16, AC'97 and HDA to one or multiple audio backend(s).
+ * Its API abstracts audio stream handling and I/O functions, device enumeration
+ * and so on.
  *
- * A device emulation can have one or more LUNs attached to it, whereas these LUNs in turn
- * then all have their own PDMIAUDIOCONNECTOR, making it possible to connect multiple backends
- * to a certain device emulation stream (multiplexing).
+ * The PDMIHOSTAUDIO interface must be implemented by all audio backends to
+ * provide an abstract and common way of accessing needed functions, such as
+ * transferring output audio data for playing audio or recording input from the
+ * host.
  *
- * An audio backend's job is to record and/or play audio data (depending on its capabilities).
- * It highly depends on the host it's running on and needs very specific (host-OS-dependent) code.
- * The backend itself only has very limited ways of accessing and/or communicating with the
- * PDMIAUDIOCONNECTOR interface via callbacks, but never directly with the device emulation or
- * other parts of the audio sub system.
+ * A device emulation can have one or more LUNs attached to it, whereas these
+ * LUNs in turn then all have their own PDMIAUDIOCONNECTOR, making it possible
+ * to connect multiple backends to a certain device emulation stream
+ * (multiplexing).
+ *
+ * An audio backend's job is to record and/or play audio data (depending on its
+ * capabilities). It highly depends on the host it's running on and needs very
+ * specific (host-OS-dependent) code. The backend itself only has very limited
+ * ways of accessing and/or communicating with the PDMIAUDIOCONNECTOR interface
+ * via callbacks, but never directly with the device emulation or other parts of
+ * the audio sub system.
  *
  *
- * == Mixing
+ * @section sec_pdm_audio_mixing    Mixing
  *
- * The AUDIOMIXER API is optionally available to create and manage virtual audio mixers.
- * Such an audio mixer in turn then can be used by the device emulation code to manage all
- * the multiplexing to/from the connected LUN audio streams.
+ * The AUDIOMIXER API is optionally available to create and manage virtual audio
+ * mixers. Such an audio mixer in turn then can be used by the device emulation
+ * code to manage all the multiplexing to/from the connected LUN audio streams.
  *
- * Currently only input and output stream are supported. Duplex stream are not supported yet.
+ * Currently only input and output stream are supported. Duplex stream are not
+ * supported yet.
  *
- * This also is handy if certain LUN audio streams should be added or removed during runtime.
+ * This also is handy if certain LUN audio streams should be added or removed
+ * during runtime.
  *
- * To create a group of either input or output streams the AUDMIXSINK API can be used.
+ * To create a group of either input or output streams the AUDMIXSINK API can be
+ * used.
  *
- * For example: The device emulation has one hardware output stream (HW0), and that output
- *              stream shall be available to all connected LUN backends. For that to happen,
- *              an AUDMIXSINK sink has to be created and attached to the device's AUDIOMIXER object.
+ * For example: The device emulation has one hardware output stream (HW0), and
+ * that output stream shall be available to all connected LUN backends. For that
+ * to happen, an AUDMIXSINK sink has to be created and attached to the device's
+ * AUDIOMIXER object.
  *
- *              As every LUN has its own AUDMIXSTREAM object, adding all those objects to the
- *              just created audio mixer sink will do the job.
+ * As every LUN has its own AUDMIXSTREAM object, adding all those
+ * objects to the just created audio mixer sink will do the job.
  *
  * @note The AUDIOMIXER API is purely optional and is not used by all currently
  *       implemented device emulations (e.g. SB16).
  *
  *
- * == Data processing
+ * @section sec_pdm_audio_data_processing   Data processing
  *
- * Audio input / output data gets handed-off to/from the device emulation in an unmodified
- * - that is, raw - way. The actual audio frame / sample conversion is done via the PDMAUDIOMIXBUF API.
+ * Audio input / output data gets handed off to/from the device emulation in an
+ * unmodified (raw) way. The actual audio frame / sample conversion is done via
+ * the PDMAUDIOMIXBUF API.
  *
- * This concentrates the audio data processing in one place and makes it easier to test / benchmark
- * such code.
+ * This concentrates the audio data processing in one place and makes it easier
+ * to test / benchmark such code.
  *
- * A PDMAUDIOFRAME is the internal representation of a single audio frame, which consists of a single left
- * and right audio sample in time. Only mono (1) and stereo (2) channel(s) currently are supported.
- *
- *
- * == Timing
- *
- * Handling audio data in a virtual environment is hard, as the human perception is very sensitive
- * to the slightest cracks and stutters in the audible data. This can happen if the VM's timing is
- * lagging behind or not within the expected time frame.
- *
- * The two main components which unfortunately contradict each other is a) the audio device emulation
- * and b) the audio backend(s) on the host. Those need to be served in a timely manner to function correctly.
- * To make e.g. the device emulation rely on the pace the host backend(s) set - or vice versa - will not work,
- * as the guest's audio system / drivers then will not be able to compensate this accordingly.
- *
- * So each component, the device emulation, the audio connector(s) and the backend(s) must do its thing
- * *when* it needs to do it, independently of the others. For that we use various (small) ring buffers to
- * (hopefully) serve all components with the amount of data *when* they need it.
- *
- * Additionally, the device emulation can run with a different audio frame size, while the backends(s) may
- * require a different frame size (16 bit stereo -> 8 bit mono, for example).
- *
- * The device emulation can give the audio connector(s) a scheduling hint (optional), e.g. in which interval
- * it expects any data processing.
- *
- * A data transfer for playing audio data from the guest on the host looks like this:
- * (RB = Ring Buffer, MB = Mixing Buffer)
- *
- * (A) Device DMA -> (B) Device RB -> (C) Audio Connector Guest MB -> (D) Audio Connector Host MB -> \
- * (E) Backend RB (optional, up to the backend) > (F) Backend audio framework
- *
- * For capturing audio data the above chain is similar, just in a different direction, of course.
- *
- * The audio connector hereby plays a key role when it comes to (pre-) buffering data to minimize any audio stutters
- * and/or cracks. The following values, which also can be tweaked via CFGM / extra-data are available:
- *
- * - The pre-buffering time (in ms): Audio data which needs to be buffered before any playback (or capturing) can happen.
- * - The actual buffer size (in ms): How big the mixing buffer (for C and D) will be.
- * - The period size (in ms): How big a chunk of audio (often called period or fragment) for F must be to get handled correctly.
- *
- * The above values can be set on a per-driver level, whereas input and output streams for a driver also can be handled
- * set independently. The verbose audio (release) log will tell about the (final) state of each audio stream.
+ * A PDMAUDIOFRAME is the internal representation of a single audio frame, which
+ * consists of a single left and right audio sample in time. Only mono (1) and
+ * stereo (2) channel(s) currently are supported.
  *
  *
- * == Diagram
+ * @section sec_pdm_audio_timing    Timing
  *
- * +-------------------------+
- * +-------------------------+        +-------------------------+        +-------------------+
- * |PDMAUDIOSTREAM           |        |PDMAUDIOCONNECTOR        |    + ++|LUN                |
- * |-------------------------|        |-------------------------|    | |||-------------------|
- * |PDMAUDIOMIXBUF           |+------>|PDMAUDIOSTREAM Host      |+---|-|||PDMIAUDIOCONNECTOR |
- * |PDMAUDIOSTREAMCFG        |+------>|PDMAUDIOSTREAM Guest     |    | |||AUDMIXSTREAM       |
- * |                         |        |Device capabilities      |    | |||                   |
- * |                         |        |Device configuration     |    | |||                   |
- * |                         |        |                         |    | |||                   |
- * |                         |       +|PDMIHOSTAUDIO            |    | |||                   |
- * |                         |       ||+-----------------------+|    | ||+-------------------+
- * +-------------------------+       |||Backend storage space  ||    | ||
- *                                   ||+-----------------------+|    | ||
- *                                   |+-------------------------+    | ||
- *                                   |                               | ||
- * +---------------------+           |                               | ||
- * |PDMIHOSTAUDIO        |           |                               | ||
- * |+--------------+     |           |      +-------------------+    | ||      +-------------+
- * ||DirectSound   |     |           |      |AUDMIXSINK         |    | ||      |AUDIOMIXER   |
- * |+--------------+     |           |      |-------------------|    | ||      |-------------|
- * |                     |           |      |AUDMIXSTREAM0      |+---|-||----->|AUDMIXSINK0  |
- * |+--------------+     |           |      |AUDMIXSTREAM1      |+---|-||----->|AUDMIXSINK1  |
- * ||PulseAudio    |     |           |      |AUDMIXSTREAMn      |+---|-||----->|AUDMIXSINKn  |
- * |+--------------+     |+----------+      +-------------------+    | ||      +-------------+
- * |                     |                                           | ||
- * |+--------------+     |                                           | ||
- * ||Core Audio    |     |                                           | ||
- * |+--------------+     |                                           | ||
- * |                     |                                           | ||
- * |                     |                                           | ||+----------------------------------+
- * |                     |                                           | |||Device (SB16 / AC'97 / HDA)       |
- * |                     |                                           | |||----------------------------------|
- * +---------------------+                                           | |||AUDIOMIXER (Optional)             |
- *                                                                   | |||AUDMIXSINK0 (Optional)            |
- *                                                                   | |||AUDMIXSINK1 (Optional)            |
- *                                                                   | |||AUDMIXSINKn (Optional)            |
- *                                                                   | |||                                  |
- *                                                                   | |+|LUN0                              |
- *                                                                   | ++|LUN1                              |
- *                                                                   +--+|LUNn                              |
- *                                                                       |                                  |
- *                                                                       |                                  |
- *                                                                       |                                  |
- *                                                                       +----------------------------------+
+ * Handling audio data in a virtual environment is hard, as the human perception
+ * is very sensitive to the slightest cracks and stutters in the audible data.
+ * This can happen if the VM's timing is lagging behind or not within the
+ * expected time frame.
+ *
+ * The two main components which unfortunately contradict each other is a) the
+ * audio device emulation and b) the audio backend(s) on the host. Those need to
+ * be served in a timely manner to function correctly. To make e.g. the device
+ * emulation rely on the pace the host backend(s) set - or vice versa - will not
+ * work, as the guest's audio system / drivers then will not be able to
+ * compensate this accordingly.
+ *
+ * So each component, the device emulation, the audio connector(s) and the
+ * backend(s) must do its thing *when* it needs to do it, independently of the
+ * others. For that we use various (small) ring buffers to (hopefully) serve all
+ * components with the amount of data *when* they need it.
+ *
+ * Additionally, the device emulation can run with a different audio frame size,
+ * while the backends(s) may require a different frame size (16 bit stereo
+ * -> 8 bit mono, for example).
+ *
+ * The device emulation can give the audio connector(s) a scheduling hint
+ * (optional), e.g. in which interval it expects any data processing.
+ *
+ * A data transfer for playing audio data from the guest on the host looks like
+ * this: (RB = Ring Buffer, MB = Mixing Buffer)
+ *
+ * (A) Device DMA -> (B) Device RB -> (C) Audio Connector Guest MB -> (D) Audio
+ * Connector Host MB -> (E) Backend RB (optional, up to the backend) -> (F)
+ * Backend audio framework.
+ *
+ * When capturing audio data the chain is similar to the above one, just in a
+ * different direction, of course.
+ *
+ * The audio connector hereby plays a key role when it comes to (pre-)buffering
+ * data to minimize any audio stutters and/or cracks. The following values,
+ * which also can be tweaked via CFGM / extra-data are available:
+ *
+ * - The pre-buffering time (in ms): Audio data which needs to be buffered
+ *   before any playback (or capturing) can happen.
+ * - The actual buffer size (in ms): How big the mixing buffer (for C and D)
+ *   will be.
+ * - The period size (in ms): How big a chunk of audio (often called period or
+ *   fragment) for F must be to get handled correctly.
+ *
+ * The above values can be set on a per-driver level, whereas input and output
+ * streams for a driver also can be handled set independently. The verbose audio
+ * (release) log will tell about the (final) state of each audio stream.
+ *
+ *
+ * @section sec_pdm_audio_diagram Diagram
+ *
+ * @todo r=bird: Not quite able to make sense of this, esp. the
+ *       AUDMIXSINK/AUDIOMIXER bits crossing the LUN connections.
+ *
+ * @verbatim
+               +----------------------------------+
+               |Device (SB16 / AC'97 / HDA)       |
+               |----------------------------------|
+               |AUDIOMIXER (Optional)             |
+               |AUDMIXSINK0 (Optional)            |
+               |AUDMIXSINK1 (Optional)            |
+               |AUDMIXSINKn (Optional)            |
+               |                                  |
+               |     L    L    L                  |
+               |     U    U    U                  |
+               |     N    N    N                  |
+               |     0    1    n                  |
+               +-----+----+----+------------------+
+                     |    |    |
+                     |    |    |
+   +--------------+  |    |    |   +-------------+
+   |AUDMIXSINK    |  |    |    |   |AUDIOMIXER   |
+   |--------------|  |    |    |   |-------------|
+   |AUDMIXSTREAM0 |+-|----|----|-->|AUDMIXSINK0  |
+   |AUDMIXSTREAM1 |+-|----|----|-->|AUDMIXSINK1  |
+   |AUDMIXSTREAMn |+-|----|----|-->|AUDMIXSINKn  |
+   +--------------+  |    |    |   +-------------+
+                     |    |    |
+                     |    |    |
+                +----+----+----+----+
+                |LUN                |
+                |-------------------|
+                |PDMIAUDIOCONNECTOR |
+                |AUDMIXSTREAM       |
+                |                   +------+
+                |                   |      |
+                |                   |      |
+                |                   |      |
+                +-------------------+      |
+                                           |
+   +-------------------------+             |
+   +-------------------------+        +----+--------------------+
+   |PDMAUDIOSTREAM           |        |PDMIAUDIOCONNECTOR       |
+   |-------------------------|        |-------------------------|
+   |PDMAUDIOMIXBUF           |+------>|PDMAUDIOSTREAM Host      |
+   |PDMAUDIOSTREAMCFG        |+------>|PDMAUDIOSTREAM Guest     |
+   |                         |        |Device capabilities      |
+   |                         |        |Device configuration     |
+   |                         |        |                         |
+   |                         |    +--+|PDMIHOSTAUDIO            |
+   |                         |    |   |+-----------------------+|
+   +-------------------------+    |   ||Backend storage space  ||
+                                  |   |+-----------------------+|
+                                  |   +-------------------------+
+                                  |
+   +---------------------+        |
+   |PDMIHOSTAUDIO        |        |
+   |+--------------+     |        |
+   ||DirectSound   |     |        |
+   |+--------------+     |        |
+   |                     |        |
+   |+--------------+     |        |
+   ||PulseAudio    |     |        |
+   |+--------------+     |+-------+
+   |                     |
+   |+--------------+     |
+   ||Core Audio    |     |
+   |+--------------+     |
+   |                     |
+   |                     |
+   |                     |
+   |                     |
+   +---------------------+
+   @endverbatim
  */
 
 #ifndef VBOX_INCLUDED_vmm_pdmaudioifs_h
