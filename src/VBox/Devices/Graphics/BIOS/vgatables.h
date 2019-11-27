@@ -75,6 +75,7 @@ static uint8_t dac_regs[DAC_MAX_MODEL+1]=
 {0x3f,0x3f,0x3f,0xff};
 
 /* standard BIOS Video Parameter Table */
+#pragma pack(push, 1)
 typedef struct {
     uint8_t     twidth;
     uint8_t     theightm1;
@@ -86,6 +87,7 @@ typedef struct {
     uint8_t     actl_regs[20];
     uint8_t     grdc_regs[9];
 } VideoParamTableEntry;
+#pragma pack(pop)
 
 static VideoParamTableEntry video_param_table[30] = {
 {
