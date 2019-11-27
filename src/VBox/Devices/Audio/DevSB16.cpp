@@ -1093,7 +1093,7 @@ static DECLCALLBACK(VBOXSTRICTRC) sb16IoPortDspRead(PPDMDEVINS pDevIns, void *pv
             retval = 0;
             break;
 
-        case 0x0e:                  /* data available status | irq 8 ack */
+        case 8:                     /* data available status | irq 8 ack */
             retval = (!pThis->out_data_len || pThis->highspeed) ? 0 : 0x80;
             if (pThis->mixer_regs[0x82] & 1)
             {
