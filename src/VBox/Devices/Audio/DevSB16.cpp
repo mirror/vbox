@@ -1757,7 +1757,7 @@ static DECLCALLBACK(void) sb16TimerIO(PPDMDEVINS pDevIns, PTMTIMER pTimer, void 
 /* -=-=-=-=-=- Streams? -=-=-=-=-=- */
 
 /**
- * Creates a PDM audio stream for a specific driver.
+ * Creates the output PDM audio stream for a specific driver.
  *
  * @returns IPRT status code.
  * @param   pCfg                Stream configuration to use.
@@ -1792,14 +1792,12 @@ static int sb16CreateDrvStream(PPDMAUDIOSTREAMCFG pCfg, PSB16DRIVER pDrv)
 }
 
 /**
- * Destroys a PDM audio stream of a specific driver.
+ * Destroys the output PDM audio stream of a specific driver.
  *
- * @param   pThis               SB16 state.
  * @param   pDrv                Driver stream to destroy PDM stream for.
  */
-static void sb16DestroyDrvStream(PSB16STATE pThis, PSB16DRIVER pDrv)
+static void sb16DestroyDrvStreamOut(PSB16DRIVER pDrv)
 {
-    AssertPtr(pThis);
     AssertPtr(pDrv);
 
     if (pDrv->Out.pStream)
@@ -1906,7 +1904,7 @@ static void sb16CloseOut(PSB16STATE pThis)
     PSB16DRIVER pDrv;
     RTListForEach(&pThis->lstDrv, pDrv, SB16DRIVER, Node)
     {
-        sb16DestroyDrvStream(pThis, pDrv);
+        sb16DestroyDrvStreamOut(pDrv);
     }
 
     LogFlowFuncLeave();
@@ -2211,19 +2209,13 @@ static int sb16AttachInternal(PSB16STATE pThis, unsigned uLUN, uint32_t fFlags, 
  * during runtime.
  *
  * @returns VBox status code.
- * @param   pThis       SB16 state.
  * @param   pDrv        Driver to detach device from.
- * @param   fFlags      Flags, combination of the PDMDEVATT_FLAGS_* \#defines.
  */
-static int sb16DetachInternal(PSB16STATE pThis, PSB16DRIVER pDrv, uint32_t fFlags)
+static int sb16DetachInternal(PSB16DRIVER pDrv)
 {
-    RT_NOREF(fFlags);
-
-    sb16DestroyDrvStream(pThis, pDrv);
-
+    sb16DestroyDrvStreamOut(pDrv);
     RTListNodeRemove(&pDrv->Node);
-
-    LogFunc(("uLUN=%u, fFlags=0x%x\n", pDrv->uLUN, fFlags));
+    LogFunc(("uLUN=%u\n", pDrv->uLUN));
     return VINF_SUCCESS;
 }
 
@@ -2258,7 +2250,7 @@ static DECLCALLBACK(void) sb16Detach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t
     {
         if (pDrv->uLUN == iLUN)
         {
-            int rc2 = sb16DetachInternal(pThis, pDrv, fFlags);
+            int rc2 = sb16DetachInternal(pDrv);
             if (RT_SUCCESS(rc2))
             {
                 RTMemFree(pDrv);
@@ -2332,7 +2324,7 @@ static DECLCALLBACK(void) sb16PowerOff(PPDMDEVINS pDevIns)
     PSB16DRIVER pDrv;
     RTListForEach(&pThis->lstDrv, pDrv, SB16DRIVER, Node)
     {
-        sb16DestroyDrvStream(pThis, pDrv);
+        sb16DestroyDrvStreamOut(pDrv);
     }
 }
 
