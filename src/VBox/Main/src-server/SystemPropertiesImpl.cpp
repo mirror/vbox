@@ -1500,12 +1500,12 @@ HRESULT SystemProperties::getSupportedStorageControllerTypes(std::vector<Storage
 {
     static const StorageControllerType_T aStorageControllerTypes[] =
     {
-        StorageControllerType_LsiLogic,
-        StorageControllerType_BusLogic,
-        StorageControllerType_IntelAhci,
         StorageControllerType_PIIX3,
         StorageControllerType_PIIX4,
         StorageControllerType_ICH6,
+        StorageControllerType_IntelAhci,
+        StorageControllerType_LsiLogic,
+        StorageControllerType_BusLogic,
         StorageControllerType_I82078,
         StorageControllerType_LsiLogicSas,
         StorageControllerType_USB,
