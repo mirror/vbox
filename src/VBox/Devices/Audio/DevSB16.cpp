@@ -55,6 +55,7 @@
 
 #include <VBox/vmm/pdmdev.h>
 #include <VBox/vmm/pdmaudioifs.h>
+#include <VBox/AssertGuest.h>
 
 #include "VBoxDD.h"
 
@@ -198,26 +199,31 @@ typedef struct SB16STATE
     int bytes_per_second;
     int align;
 
-    RTLISTANCHOR                   lstDrv;
+    RTLISTANCHOR        lstDrv;
     /** IRQ timer   */
-    TMTIMERHANDLE                  hTimerIRQ;
+    TMTIMERHANDLE       hTimerIRQ;
     /** The base interface for LUN\#0. */
-    PDMIBASE                       IBase;
+    PDMIBASE            IBase;
     /** Output stream. */
-    SB16STREAM                     Out;
+    SB16STREAM          Out;
 
     /** The timer for pumping data thru the attached LUN drivers. */
-    TMTIMERHANDLE                  hTimerIO;
+    TMTIMERHANDLE       hTimerIO;
     /** The timer interval for pumping data thru the LUN drivers in timer ticks. */
-    uint64_t                       cTicksTimerIOInterval;
+    uint64_t            cTicksTimerIOInterval;
     /** Timestamp of the last timer callback (sb16TimerIO).
      * Used to calculate the time actually elapsed between two timer callbacks. */
-    uint64_t                       tsTimerIO;
+    uint64_t            tsTimerIO;
     /** Number of active (running) SDn streams. */
-    uint8_t                        cStreamsActive;
+    uint8_t             cStreamsActive;
     /** Flag indicating whether the timer is active or not. */
-    bool volatile                  fTimerActive;
-    uint8_t                        u8Padding1[5];
+    bool volatile       fTimerActive;
+    uint8_t             u8Padding1[5];
+
+    /** The two mixer I/O ports (port + 4). */
+    IOMIOPORTHANDLE     hIoPortsMixer;
+    /** The 10 DSP I/O ports (port + 6). */
+    IOMIOPORTHANDLE     hIoPortsDsp;
 
     /* mixer state */
     uint8_t mixer_nreg;
@@ -944,19 +950,18 @@ static void sb16CmdReset(PPDMDEVINS pDevIns, PSB16STATE pThis)
 }
 
 /**
- * @callback_method_impl{PFNIOMIOPORTOUT}
+ * @callback_method_impl{PFNIOMIOPORTNEWOUT}
  */
-static DECLCALLBACK(int) dsp_write(PPDMDEVINS pDevIns, void *opaque, RTIOPORT nport, uint32_t val, unsigned cb)
+static DECLCALLBACK(VBOXSTRICTRC) sb16IoPortDspWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t u32, unsigned cb)
 {
-    RT_NOREF(pDevIns, cb);
-    PSB16STATE pThis = (PSB16STATE)opaque;
-    int iport = nport - pThis->port;
+    PSB16STATE pThis = PDMDEVINS_2_DATA(pDevIns, PSB16STATE);
+    RT_NOREF(pvUser, cb);
 
-    LogFlowFunc(("write %#x <- %#x\n", nport, val));
-    switch (iport)
+    LogFlowFunc(("write %#x <- %#x\n", offPort, u32));
+    switch (offPort)
     {
-        case 0x06:
-            switch (val)
+        case 0:
+            switch (u32)
             {
                 case 0x00:
                 {
@@ -995,19 +1000,19 @@ static DECLCALLBACK(int) dsp_write(PPDMDEVINS pDevIns, void *opaque, RTIOPORT np
                     break;
 
                 default:
-                    pThis->v2x6 = val;
+                    pThis->v2x6 = u32;
                     break;
             }
             break;
 
-        case 0x0c:                      /* Write data or command | write status */
+        case 6:                        /* Write data or command | write status */
 #if 0
             if (pThis->highspeed)
                 break;
 #endif
             if (0 == pThis->needed_bytes)
             {
-                sb16HandleCommand(pDevIns, pThis, val);
+                sb16HandleCommand(pDevIns, pThis, u32);
 #if 0
                 if (0 == pThis->needed_bytes) {
                     log_dsp (pThis);
@@ -1022,7 +1027,7 @@ static DECLCALLBACK(int) dsp_write(PPDMDEVINS pDevIns, void *opaque, RTIOPORT np
                 }
                 else
                 {
-                    pThis->in2_data[pThis->in_index++] = val;
+                    pThis->in2_data[pThis->in_index++] = u32;
                     if (pThis->in_index == pThis->needed_bytes)
                     {
                         pThis->needed_bytes = 0;
@@ -1036,7 +1041,7 @@ static DECLCALLBACK(int) dsp_write(PPDMDEVINS pDevIns, void *opaque, RTIOPORT np
             break;
 
         default:
-            LogFlowFunc(("nport=%#x, val=%#x)\n", nport, val));
+            LogFlowFunc(("offPort=%#x, u32=%#x)\n", offPort, u32));
             break;
     }
 
@@ -1045,26 +1050,26 @@ static DECLCALLBACK(int) dsp_write(PPDMDEVINS pDevIns, void *opaque, RTIOPORT np
 
 
 /**
- * @callback_method_impl{PFNIOMIOPORTIN}
+ * @callback_method_impl{PFNIOMIOPORTNEWIN}
  */
-static DECLCALLBACK(int) dsp_read(PPDMDEVINS pDevIns, void *opaque, RTIOPORT nport, uint32_t *pu32, unsigned cb)
+static DECLCALLBACK(VBOXSTRICTRC) sb16IoPortDspRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t *pu32, unsigned cb)
 {
-    RT_NOREF(pDevIns, cb);
-    PSB16STATE pThis = (PSB16STATE)opaque;
-    int iport, retval, ack = 0;
+    PSB16STATE pThis = PDMDEVINS_2_DATA(pDevIns, PSB16STATE);
+    uint32_t retval;
+    int ack = 0;
+    RT_NOREF(pvUser, cb);
 
-    iport = nport - pThis->port;
 
     /** @todo reject non-byte access?
      *  The spec does not mention a non-byte access so we should check how real hardware behaves. */
 
-    switch (iport)
+    switch (offPort)
     {
-        case 0x06:                  /* reset */
+        case 0:                     /* reset */
             retval = 0xff;
             break;
 
-        case 0x0a:                  /* read data */
+        case 4:                     /* read data */
             if (pThis->out_data_len)
             {
                 retval = pThis->out_data[--pThis->out_data_len];
@@ -1079,11 +1084,11 @@ static DECLCALLBACK(int) dsp_read(PPDMDEVINS pDevIns, void *opaque, RTIOPORT npo
             }
             break;
 
-        case 0x0c:                  /* 0 can write */
+        case 6:                     /* 0 can write */
             retval = pThis->can_write ? 0 : 0x80;
             break;
 
-        case 0x0d:                  /* timer interrupt clear */
+        case 7:                     /* timer interrupt clear */
             /* LogFlowFunc(("timer interrupt clear\n")); */
             retval = 0;
             break;
@@ -1098,7 +1103,7 @@ static DECLCALLBACK(int) dsp_read(PPDMDEVINS pDevIns, void *opaque, RTIOPORT npo
             }
             break;
 
-        case 0x0f:                  /* irq 16 ack */
+        case 9:                     /* irq 16 ack */
             retval = 0xff;
             if (pThis->mixer_regs[0x82] & 2)
             {
@@ -1109,18 +1114,15 @@ static DECLCALLBACK(int) dsp_read(PPDMDEVINS pDevIns, void *opaque, RTIOPORT npo
             break;
 
         default:
-            goto error;
+            LogFlowFunc(("warning: sb16IoPortDspRead %#x error\n", offPort));
+            return VERR_IOM_IOPORT_UNUSED;
     }
 
     if (!ack)
-        LogFlowFunc(("read %#x -> %#x\n", nport, retval));
+        LogFlowFunc(("read %#x -> %#x\n", offPort, retval));
 
     *pu32 = retval;
     return VINF_SUCCESS;
-
- error:
-    LogFlowFunc(("warning: dsp_read %#x error\n", nport));
-    return VERR_IOM_IOPORT_UNUSED;
 }
 
 
@@ -1336,7 +1338,7 @@ static int mixer_write_datab(PSB16STATE pThis, uint8_t val)
     bool        fUpdateMaster = false;
     bool        fUpdateStream = false;
 
-    LogFlowFunc(("mixer_write [%#x] <- %#x\n", pThis->mixer_nreg, val));
+    LogFlowFunc(("sb16IoPortMixerWrite [%#x] <- %#x\n", pThis->mixer_nreg, val));
 
     switch (pThis->mixer_nreg)
     {
@@ -1461,50 +1463,52 @@ static int mixer_write_datab(PSB16STATE pThis, uint8_t val)
 }
 
 /**
- * @callback_method_impl{PFNIOMIOPORTOUT}
+ * @callback_method_impl{PFNIOMIOPORTNEWOUT}
  */
-static DECLCALLBACK(int) mixer_write(PPDMDEVINS pDevIns, void *opaque, RTIOPORT nport, uint32_t val, unsigned cb)
+static DECLCALLBACK(VBOXSTRICTRC) sb16IoPortMixerWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t u32, unsigned cb)
 {
-    RT_NOREF(pDevIns);
-    PSB16STATE pThis = (PSB16STATE)opaque;
-    int iport = nport - pThis->port;
+    PSB16STATE pThis = PDMDEVINS_2_DATA(pDevIns, PSB16STATE);
+    RT_NOREF(pvUser);
+
     switch (cb)
     {
         case 1:
-            switch (iport)
+            switch (offPort)
             {
-                case 4:
-                    mixer_write_indexb(pThis, val);
+                case 0:
+                    mixer_write_indexb(pThis, u32);
                     break;
-                case 5:
-                    mixer_write_datab(pThis, val);
+                case 1:
+                    mixer_write_datab(pThis, u32);
                     break;
+                default:
+                    AssertFailed();
             }
             break;
         case 2:
-            mixer_write_indexb(pThis, val & 0xff);
-            mixer_write_datab(pThis, (val >> 8) & 0xff);
+            mixer_write_indexb(pThis, u32 & 0xff);
+            mixer_write_datab(pThis, (u32 >> 8) & 0xff);
             break;
         default:
-            AssertMsgFailed(("Port=%#x cb=%d u32=%#x\n", nport, cb, val));
+            ASSERT_GUEST_MSG_FAILED(("offPort=%#x cb=%d u32=%#x\n", offPort, cb, u32));
             break;
     }
     return VINF_SUCCESS;
 }
 
 /**
- * @callback_method_impl{PFNIOMIOPORTIN}
+ * @callback_method_impl{PFNIOMIOPORTNEWIN}
  */
-static DECLCALLBACK(int) mixer_read(PPDMDEVINS pDevIns, void *opaque, RTIOPORT nport, uint32_t *pu32, unsigned cb)
+static DECLCALLBACK(VBOXSTRICTRC) sb16IoPortMixerRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t *pu32, unsigned cb)
 {
-    RT_NOREF(pDevIns, cb, nport);
-    PSB16STATE pThis = (PSB16STATE)opaque;
+    PSB16STATE pThis = PDMDEVINS_2_DATA(pDevIns, PSB16STATE);
+    RT_NOREF(pvUser, cb, offPort);
 
 #ifndef DEBUG_SB16_MOST
     if (pThis->mixer_nreg != 0x82)
-        LogFlowFunc(("mixer_read[%#x] -> %#x\n", pThis->mixer_nreg, pThis->mixer_regs[pThis->mixer_nreg]));
+        LogFlowFunc(("sb16IoPortMixerRead[%#x] -> %#x\n", pThis->mixer_nreg, pThis->mixer_regs[pThis->mixer_nreg]));
 #else
-    LogFlowFunc(("mixer_read[%#x] -> %#x\n", pThis->mixer_nreg, pThis->mixer_regs[pThis->mixer_nreg]));
+    LogFlowFunc(("sb16IoPortMixerRead[%#x] -> %#x\n", pThis->mixer_nreg, pThis->mixer_regs[pThis->mixer_nreg]));
 #endif
     *pu32 = pThis->mixer_regs[pThis->mixer_nreg];
     return VINF_SUCCESS;
@@ -2445,9 +2449,38 @@ static DECLCALLBACK(int) sb16Construct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
     /*
      * Register I/O and DMA.
      */
-    rc = PDMDevHlpIOPortRegister(pDevIns, pThis->port + 0x04,  2, pThis, mixer_write, mixer_read, NULL, NULL, "SB16");
+    static const IOMIOPORTDESC s_aAllDescs[] =
+    {
+        { "FM Music Status Port",           "FM Music Register Address Port",           NULL, NULL },   // 00h
+        { NULL,                             "FM Music Data Port",                       NULL, NULL },   // 01h
+        { "Advanced FM Music Status Port",  "Advanced FM Music Register Address Port",  NULL, NULL },   // 02h
+        { NULL,                             "Advanced FM Music Data Port",              NULL, NULL },   // 03h
+        { NULL,                             "Mixer chip Register Address Port",         NULL, NULL },   // 04h
+        { "Mixer chip Data Port",           NULL,                                       NULL, NULL },   // 05h
+        { NULL,                             "DSP Reset",                                NULL, NULL },   // 06h
+        { "Unused7",                        "Unused7",                                  NULL, NULL },   // 07h
+        { "FM Music Status Port",           "FM Music Register Port",                   NULL, NULL },   // 08h
+        { NULL,                             "FM Music Data Port",                       NULL, NULL },   // 09h
+        { "DSP Read Data Port",             NULL,                                       NULL, NULL },   // 0Ah
+        { "UnusedB",                        "UnusedB",                                  NULL, NULL },   // 0Bh
+        { "DSP Write-Buffer Status",        "DSP Write Command/Data",                   NULL, NULL },   // 0Ch
+        { "UnusedD",                        "UnusedD",                                  NULL, NULL },   // 0Dh
+        { "DSP Read-Buffer Status",         NULL,                                       NULL, NULL },   // 0Eh
+        { "IRQ16ACK",                       NULL,                                       NULL, NULL },   // 0Fh
+        { "CD-ROM Data Register",           "CD-ROM Command Register",                  NULL, NULL },   // 10h
+        { "CD-ROM Status Register",         NULL,                                       NULL, NULL },   // 11h
+        { NULL,                             "CD-ROM Reset Register",                    NULL, NULL },   // 12h
+        { NULL,                             "CD-ROM Enable Register",                   NULL, NULL },   // 13h
+        { NULL,                             NULL,                                       NULL, NULL },
+    };
+
+    rc = PDMDevHlpIoPortCreateAndMap(pDevIns, pThis->port + 0x04 /*uPort*/, 2 /*cPorts*/,
+                                     sb16IoPortMixerWrite, sb16IoPortMixerRead,
+                                     "SB16 - Mixer", &s_aAllDescs[4], &pThis->hIoPortsMixer);
     AssertRCReturn(rc, rc);
-    rc = PDMDevHlpIOPortRegister(pDevIns, pThis->port + 0x06, 10, pThis, dsp_write,   dsp_read,   NULL, NULL, "SB16");
+    rc = PDMDevHlpIoPortCreateAndMap(pDevIns, pThis->port + 0x06 /*uPort*/, 10 /*cPorts*/,
+                                     sb16IoPortDspWrite, sb16IoPortDspRead,
+                                     "SB16 - DSP", &s_aAllDescs[6], &pThis->hIoPortsDsp);
     AssertRCReturn(rc, rc);
 
     rc = PDMDevHlpDMARegister(pDevIns, pThis->hdma, sb16DMARead, pThis);
