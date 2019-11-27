@@ -1256,7 +1256,12 @@ static DECLCALLBACK(int) vscsiLunMmcReqProcess(PVSCSILUNINT pVScsiLun, PVSCSIREQ
                 rc = vscsiLunMediumQueryRegionPropertiesForLba(pVScsiLun, uLbaStart,
                                                                NULL, NULL, &cbSectorRegion,
                                                                &enmDataForm);
-                AssertRC(rc);
+                if (RT_FAILURE(rc))
+                {
+                    rcReq = vscsiLunReqSenseErrorSet(pVScsiLun, pVScsiReq, SCSI_SENSE_ILLEGAL_REQUEST,
+                                                     SCSI_ASC_LOGICAL_BLOCK_OOR, 0x00);
+                    break;
+                }
 
                 if (enmDataForm == VDREGIONDATAFORM_CDDA)
                 {
