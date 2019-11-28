@@ -33,6 +33,7 @@
  *
  * @sa  @ref grp_pdm
  *      @subpage pg_pdm_block_cache
+ *      @subpage pg_pdm_audio
  *
  *
  * @section sec_pdm_dev     The Pluggable Devices

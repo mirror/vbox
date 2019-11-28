@@ -28,9 +28,9 @@
  * @section sec_pdm_audio_overview  Audio architecture overview
  *
  * The audio architecture mainly consists of two PDM interfaces,
- * PDMAUDIOCONNECTOR and PDMIHOSTAUDIO.
+ * PDMIAUDIOCONNECTOR and PDMIHOSTAUDIO.
  *
- * The PDMAUDIOCONNECTOR interface is responsible of connecting a device
+ * The PDMIAUDIOCONNECTOR interface is responsible of connecting a device
  * emulation, such as SB16, AC'97 and HDA to one or multiple audio backend(s).
  * Its API abstracts audio stream handling and I/O functions, device enumeration
  * and so on.
@@ -123,8 +123,8 @@
  * A data transfer for playing audio data from the guest on the host looks like
  * this: (RB = Ring Buffer, MB = Mixing Buffer)
  *
- * (A) Device DMA -> (B) Device RB -> (C) Audio Connector Guest MB -> (D) Audio
- * Connector Host MB -> (E) Backend RB (optional, up to the backend) -> (F)
+ * (A) Device DMA -> (B) Device RB -> (C) Audio Connector %Guest MB -> (D) Audio
+ * Connector %Host MB -> (E) Backend RB (optional, up to the backend) -> (F)
  * Backend audio framework.
  *
  * When capturing audio data the chain is similar to the above one, just in a
