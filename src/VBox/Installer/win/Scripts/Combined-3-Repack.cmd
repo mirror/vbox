@@ -6,6 +6,8 @@ rem
 
 rem
 rem Copyright (C) 2018-2019 Oracle Corporation
+rem
+rem Oracle Corporation confidential
 rem All rights reserved
 rem
 
