@@ -9259,7 +9259,7 @@ static VBOXSTRICTRC hmR0VmxExportGuestStateOptimal(PVMCPUCC pVCpu, PVMXTRANSIENT
  * @param   pVmcsInfo   The VMCS info. object.
  *
  * @remarks This function assumes our cache of the VMCS controls
- *          are valid, i.e. hmR0VmxCheckVmcsCtls() succeeded.
+ *          are valid, i.e. hmR0VmxCheckCachedVmcsCtls() succeeded.
  */
 static uint32_t hmR0VmxCheckGuestState(PVMCPUCC pVCpu, PCVMXVMCSINFO pVmcsInfo)
 {
