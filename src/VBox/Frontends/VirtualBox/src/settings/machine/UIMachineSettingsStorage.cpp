@@ -1487,29 +1487,10 @@ void ControllerItem::updateTypeInfo()
     /* Enumerate possible buses: */
     foreach (const KStorageBus &enmBus, possibleBuses)
     {
-        /* This is hardcoded hell, we will get rid of it one day .. */
-        KStorageControllerType enmFirstType = KStorageControllerType_Null;
-        uint cAmount = 0;
-        switch (enmBus)
-        {
-            case KStorageBus_IDE:        enmFirstType = KStorageControllerType_PIIX3; cAmount = 3; break;
-            case KStorageBus_SATA:       enmFirstType = KStorageControllerType_IntelAhci; cAmount = 1; break;
-            case KStorageBus_SCSI:       enmFirstType = KStorageControllerType_LsiLogic; cAmount = 2; break;
-            case KStorageBus_Floppy:     enmFirstType = KStorageControllerType_I82078; cAmount = 1; break;
-            case KStorageBus_SAS:        enmFirstType = KStorageControllerType_LsiLogicSas; cAmount = 1; break;
-            case KStorageBus_USB:        enmFirstType = KStorageControllerType_USB; cAmount = 1; break;
-            case KStorageBus_PCIe:       enmFirstType = KStorageControllerType_NVMe; cAmount = 1; break;
-            case KStorageBus_VirtioSCSI: enmFirstType = KStorageControllerType_VirtioSCSI; cAmount = 1; break;
-            default:                     break;
-        }
-
-        /* Check whether type is supported or already selected before adding it: */
-        for (uint i = enmFirstType; i < enmFirstType + cAmount; ++i)
-        {
-            const KStorageControllerType enmType = static_cast<KStorageControllerType>(i);
+        /* Enumerate possible types and check whether type is supported or already selected before adding it: */
+        foreach (const KStorageControllerType &enmType, comProperties.GetStorageControllerTypesForStorageBus(enmBus))
             if (supportedTypes.contains(enmType) || enmType == m_enmType)
                 m_types[enmBus] << enmType;
-        }
     }
 }
 
@@ -3500,7 +3481,7 @@ void UIMachineSettingsStorage::sltAddController()
     foreach (const KStorageControllerType &enmType, supportedTypes)
     {
         QAction *pAction = m_addControllerActions.value(enmType);
-        if (supportedBuses.contains(pAction->property("bus").value<KStorageBus>()))
+        if (supportedBuses.contains(comProperties.GetStorageBusForStorageControllerType(enmType)))
             menu.addAction(pAction);
     }
 
@@ -4545,7 +4526,6 @@ void UIMachineSettingsStorage::prepareStorageToolbar()
         {
             /* Configure action: */
             m_addControllerActions.value(KStorageControllerType_PIIX3)->setIcon(iconPool()->icon(IDEControllerAddEn, IDEControllerAddDis));
-            m_addControllerActions.value(KStorageControllerType_PIIX3)->setProperty("bus", QVariant::fromValue(KStorageBus_IDE));
         }
 
         /* Create 'Add PIIX4 Controller' action: */
@@ -4554,7 +4534,6 @@ void UIMachineSettingsStorage::prepareStorageToolbar()
         {
             /* Configure action: */
             m_addControllerActions.value(KStorageControllerType_PIIX4)->setIcon(iconPool()->icon(IDEControllerAddEn, IDEControllerAddDis));
-            m_addControllerActions.value(KStorageControllerType_PIIX4)->setProperty("bus", QVariant::fromValue(KStorageBus_IDE));
         }
 
         /* Create 'Add ICH6 Controller' action: */
@@ -4563,7 +4542,6 @@ void UIMachineSettingsStorage::prepareStorageToolbar()
         {
             /* Configure action: */
             m_addControllerActions.value(KStorageControllerType_ICH6)->setIcon(iconPool()->icon(IDEControllerAddEn, IDEControllerAddDis));
-            m_addControllerActions.value(KStorageControllerType_ICH6)->setProperty("bus", QVariant::fromValue(KStorageBus_IDE));
         }
 
         /* Create 'Add AHCI Controller' action: */
@@ -4572,7 +4550,6 @@ void UIMachineSettingsStorage::prepareStorageToolbar()
         {
             /* Configure action: */
             m_addControllerActions.value(KStorageControllerType_IntelAhci)->setIcon(iconPool()->icon(SATAControllerAddEn, SATAControllerAddDis));
-            m_addControllerActions.value(KStorageControllerType_IntelAhci)->setProperty("bus", QVariant::fromValue(KStorageBus_SATA));
         }
 
         /* Create 'Add LsiLogic Controller' action: */
@@ -4581,7 +4558,6 @@ void UIMachineSettingsStorage::prepareStorageToolbar()
         {
             /* Configure action: */
             m_addControllerActions.value(KStorageControllerType_LsiLogic)->setIcon(iconPool()->icon(SCSIControllerAddEn, SCSIControllerAddDis));
-            m_addControllerActions.value(KStorageControllerType_LsiLogic)->setProperty("bus", QVariant::fromValue(KStorageBus_SCSI));
         }
 
         /* Create 'Add BusLogic Controller' action: */
@@ -4590,7 +4566,6 @@ void UIMachineSettingsStorage::prepareStorageToolbar()
         {
             /* Configure action: */
             m_addControllerActions.value(KStorageControllerType_BusLogic)->setIcon(iconPool()->icon(SCSIControllerAddEn, SCSIControllerAddDis));
-            m_addControllerActions.value(KStorageControllerType_BusLogic)->setProperty("bus", QVariant::fromValue(KStorageBus_SCSI));
         }
 
         /* Create 'Add Floppy Controller' action: */
@@ -4599,7 +4574,6 @@ void UIMachineSettingsStorage::prepareStorageToolbar()
         {
             /* Configure action: */
             m_addControllerActions.value(KStorageControllerType_I82078)->setIcon(iconPool()->icon(FloppyControllerAddEn, FloppyControllerAddDis));
-            m_addControllerActions.value(KStorageControllerType_I82078)->setProperty("bus", QVariant::fromValue(KStorageBus_Floppy));
         }
 
         /* Create 'Add LsiLogic SAS Controller' action: */
@@ -4608,7 +4582,6 @@ void UIMachineSettingsStorage::prepareStorageToolbar()
         {
             /* Configure action: */
             m_addControllerActions.value(KStorageControllerType_LsiLogicSas)->setIcon(iconPool()->icon(SASControllerAddEn, SASControllerAddDis));
-            m_addControllerActions.value(KStorageControllerType_LsiLogicSas)->setProperty("bus", QVariant::fromValue(KStorageBus_SAS));
         }
 
         /* Create 'Add USB Controller' action: */
@@ -4617,7 +4590,6 @@ void UIMachineSettingsStorage::prepareStorageToolbar()
         {
             /* Configure action: */
             m_addControllerActions.value(KStorageControllerType_USB)->setIcon(iconPool()->icon(USBControllerAddEn, USBControllerAddDis));
-            m_addControllerActions.value(KStorageControllerType_USB)->setProperty("bus", QVariant::fromValue(KStorageBus_USB));
         }
 
         /* Create 'Add NVMe Controller' action: */
@@ -4626,7 +4598,6 @@ void UIMachineSettingsStorage::prepareStorageToolbar()
         {
             /* Configure action: */
             m_addControllerActions.value(KStorageControllerType_NVMe)->setIcon(iconPool()->icon(NVMeControllerAddEn, NVMeControllerAddDis));
-            m_addControllerActions.value(KStorageControllerType_NVMe)->setProperty("bus", QVariant::fromValue(KStorageBus_PCIe));
         }
 
         /* Create 'Add virtio-scsi Controller' action: */
@@ -4635,7 +4606,6 @@ void UIMachineSettingsStorage::prepareStorageToolbar()
         {
             /* Configure action: */
             m_addControllerActions.value(KStorageControllerType_VirtioSCSI)->setIcon(iconPool()->icon(VirtioSCSIControllerAddEn, VirtioSCSIControllerAddDis));
-            m_addControllerActions.value(KStorageControllerType_VirtioSCSI)->setProperty("bus", QVariant::fromValue(KStorageBus_VirtioSCSI));
         }
 
         /* Create 'Remove Controller' action: */
