@@ -77,6 +77,8 @@ void __cdecl          unknown(void);
 
 static uint8_t find_vga_entry();
 
+extern uint8_t xread_byte(uint16_t seg, uint16_t offset);
+
 #ifdef VBE
 extern uint16_t __cdecl vbe_has_vbe_display(void);
 extern void             vbe_init(void);
@@ -1390,7 +1392,7 @@ static void write_gfx_char_pl4(uint8_t car, uint8_t attr, uint8_t xcurs,
     {
      mask=0x80>>j;
      outw(VGAREG_GRDC_ADDRESS, (mask << 8) | 0x08);
-     read_byte(0xa000,dest);
+     xread_byte(0xa000,dest);
      if(fdata[src+i]&mask)
       {
        write_byte(0xa000,dest,attr&0x0f);
@@ -1637,7 +1639,7 @@ static void biosfn_write_pixel(uint8_t BH, uint8_t AL, uint16_t CX, uint16_t DX)
      mask = 0x80 >> (CX & 0x07);
      outw(VGAREG_GRDC_ADDRESS, (mask << 8) | 0x08);
      outw(VGAREG_GRDC_ADDRESS, 0x0205);
-     data = read_byte(0xa000,addr);
+     data = xread_byte(0xa000,addr);
      if (AL & 0x80)
       {
        outw(VGAREG_GRDC_ADDRESS, 0x1803);
@@ -2324,34 +2326,13 @@ static uint8_t find_vga_entry(uint8_t mode)
 */
 /* =========================================================== */
 
-uint8_t read_byte(uint16_t seg, uint16_t offset)
+/* This function is used for planar VGA memory reads to defeat the
+ * optimizer. We must read exactly one byte, otherwise the screen
+ * may be corrupted.
+ */
+uint8_t xread_byte(uint16_t seg, uint16_t offset)
 {
     return( *(seg:>(uint8_t *)offset) );
-}
-
-void write_byte(uint16_t seg, uint16_t offset, uint8_t data)
-{
-    *(seg:>(uint8_t *)offset) = data;
-}
-
-uint16_t read_word(uint16_t seg, uint16_t offset)
-{
-    return( *(seg:>(uint16_t *)offset) );
-}
-
-void write_word(uint16_t seg, uint16_t offset, uint16_t data)
-{
-    *(seg:>(uint16_t *)offset) = data;
-}
-
-uint32_t read_dword(uint16_t seg, uint16_t offset)
-{
-    return( *(seg:>(uint32_t *)offset) );
-}
-
-void write_dword(uint16_t seg, uint16_t offset, uint32_t data)
-{
-    *(seg:>(uint32_t *)offset) = data;
 }
 
 #ifdef VGA_DEBUG
@@ -2565,7 +2546,7 @@ void __cdecl int10_func(uint16_t DI, uint16_t SI, uint16_t BP, uint16_t SP, uint
        case 0x34:   /* CGA text cursor emulation control. */
         if (GET_AL() < 2) {
             write_byte(BIOSMEM_SEG,BIOSMEM_VIDEO_CTL,
-              (read_byte(BIOSMEM_SEG,BIOSMEM_VIDEO_CTL) & ~1) | GET_AL());
+              (xread_byte(BIOSMEM_SEG,BIOSMEM_VIDEO_CTL) & ~1) | GET_AL());
             SET_AL(0x12);
         }
         else
