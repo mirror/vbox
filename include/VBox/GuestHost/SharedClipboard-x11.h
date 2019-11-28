@@ -35,22 +35,24 @@
 
 #include <VBox/GuestHost/SharedClipboard.h>
 
-/** The different clipboard formats which we support. */
-enum CLIPFORMAT
+/**
+ * Enumeration for all clipboard formats which we support on X11.
+ */
+typedef enum _SHCLX11FMT
 {
-    INVALID = 0,
-    TARGETS,
-    TEXT,  /* Treat this as UTF-8, but it may really be ascii */
-    UTF8,
-    BMP,
-    HTML
+    SHCLX11FMT_INVALID = 0,
+    SHCLX11FMT_TARGETS,
+    SHCLX11FMT_TEXT,  /* Treat this as UTF-8, but it may really be ascii */
+    SHCLX11FMT_UTF8,
+    SHCLX11FMT_BMP,
+    SHCLX11FMT_HTML
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
-    , URI_LIST
+    , SHCLX11FMT_URI_LIST
 #endif
-};
+} SHCLX11FMT;
 
-/** Defines a single X11 clipboad format. */
-typedef unsigned CLIPX11FORMAT;
+/** Defines an index of the X11 clipboad format table. */
+typedef unsigned SHCLX11FMTIDX;
 
 /** Prototype for the implementation-specfic Shared Clipboard context. */
 struct _SHCLCONTEXT;
@@ -68,8 +70,8 @@ typedef struct _SHCLX11CTX
     /** The X Toolkit application context structure */
     XtAppContext appContext;
 
-    /** We have a separate thread to wait for Window and Clipboard events */
-    RTTHREAD thread;
+    /** We have a separate thread to wait for window and clipboard events. */
+    RTTHREAD Thread;
     /** The X Toolkit widget which we use as our clipboard client.  It is never made visible. */
     Widget widget;
 
@@ -77,14 +79,14 @@ typedef struct _SHCLX11CTX
     bool fGrabClipboardOnStart;
 
     /** The best text format X11 has to offer, as an index into the formats table. */
-    CLIPX11FORMAT X11TextFormat;
+    SHCLX11FMTIDX X11TextFormat;
     /** The best bitmap format X11 has to offer, as an index into the formats table. */
-    CLIPX11FORMAT X11BitmapFormat;
+    SHCLX11FMTIDX X11BitmapFormat;
     /** The best HTML format X11 has to offer, as an index into the formats table. */
-    CLIPX11FORMAT X11HTMLFormat;
+    SHCLX11FMTIDX X11HTMLFormat;
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
     /** The best HTML format X11 has to offer, as an index into the formats table. */
-    CLIPX11FORMAT X11URIListFormat;
+    SHCLX11FMTIDX X11URIListFormat;
 #endif
     /** What kind of formats does VBox have to offer? */
     SHCLFORMATS vboxFormats;

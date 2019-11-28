@@ -1,7 +1,5 @@
 /** @file
- *
- * Shared Clipboard:
- * X11 backend code.
+ * Shared Clipboard: Common X11 code.
  */
 
 /*
@@ -68,16 +66,6 @@
 
 
 /*********************************************************************************************************************************
-*   Defined Constants And Macros                                                                                                 *
-*********************************************************************************************************************************/
-
-
-/*********************************************************************************************************************************
-*   Structures and Typedefs                                                                                                      *
-*********************************************************************************************************************************/
-
-
-/*********************************************************************************************************************************
 *   Internal Functions                                                                                                           *
 *********************************************************************************************************************************/
 class formats;
@@ -92,35 +80,38 @@ static Atom clipGetAtom(PSHCLX11CTX pCtx, const char *pszName);
  * The table maps X11 names to data formats
  * and to the corresponding VBox clipboard formats.
  */
-static struct _CLIPFORMATTABLE
+static struct _SHCLX11FMTTABLE
 {
-    /** The X11 atom name of the format (several names can match one format)
-     */
-    const char *pcszAtom;
-    /** The format corresponding to the name */
-    CLIPFORMAT  enmFormat;
-    /** The corresponding VBox clipboard format */
-    uint32_t    u32VBoxFormat;
+    /** The X11 atom name of the format (several names can match one format). */
+    const char     *pcszAtom;
+    /** The format corresponding to the name. */
+    SHCLX11FMT      enmFmtX11;
+    /** The corresponding VBox clipboard format. */
+    SHCLFORMAT      uFmtVBox;
 } g_aFormats[] =
 {
-    { "INVALID", INVALID, 0 },
-    { "UTF8_STRING", UTF8, VBOX_SHCL_FMT_UNICODETEXT },
-    { "text/plain;charset=UTF-8", UTF8, VBOX_SHCL_FMT_UNICODETEXT },
-    { "text/plain;charset=utf-8", UTF8, VBOX_SHCL_FMT_UNICODETEXT },
-    { "STRING", TEXT, VBOX_SHCL_FMT_UNICODETEXT },
-    { "TEXT", TEXT, VBOX_SHCL_FMT_UNICODETEXT },
-    { "text/plain", TEXT, VBOX_SHCL_FMT_UNICODETEXT },
-    { "text/html", HTML, VBOX_SHCL_FMT_HTML },
-    { "text/html;charset=utf-8", HTML, VBOX_SHCL_FMT_HTML },
-    { "image/bmp", BMP, VBOX_SHCL_FMT_BITMAP },
-    { "image/x-bmp", BMP, VBOX_SHCL_FMT_BITMAP },
-    { "image/x-MS-bmp", BMP, VBOX_SHCL_FMT_BITMAP },
+    { "INVALID",                            SHCLX11FMT_INVALID,     VBOX_SHCL_FMT_NONE },
+
+    { "UTF8_STRING",                        SHCLX11FMT_UTF8,        VBOX_SHCL_FMT_UNICODETEXT },
+    { "text/plain;charset=UTF-8",           SHCLX11FMT_UTF8,        VBOX_SHCL_FMT_UNICODETEXT },
+    { "text/plain;charset=utf-8",           SHCLX11FMT_UTF8,        VBOX_SHCL_FMT_UNICODETEXT },
+    { "STRING",                             SHCLX11FMT_TEXT,        VBOX_SHCL_FMT_UNICODETEXT },
+    { "TEXT",                               SHCLX11FMT_TEXT,        VBOX_SHCL_FMT_UNICODETEXT },
+    { "text/plain",                         SHCLX11FMT_TEXT,        VBOX_SHCL_FMT_UNICODETEXT },
+
+    { "text/html",                          SHCLX11FMT_HTML,        VBOX_SHCL_FMT_HTML },
+    { "text/html;charset=utf-8",            SHCLX11FMT_HTML,        VBOX_SHCL_FMT_HTML },
+
+    { "image/bmp",                          SHCLX11FMT_BMP,         VBOX_SHCL_FMT_BITMAP },
+    { "image/x-bmp",                        SHCLX11FMT_BMP,         VBOX_SHCL_FMT_BITMAP },
+    { "image/x-MS-bmp",                     SHCLX11FMT_BMP,         VBOX_SHCL_FMT_BITMAP },
     /** @todo Inkscape exports image/png but not bmp... */
+
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
-    { "text/uri-list", URI_LIST, VBOX_SHCL_FMT_URI_LIST },
-    { "x-special/gnome-copied-files", URI_LIST, VBOX_SHCL_FMT_URI_LIST },
-    { "x-special/nautilus-clipboard", URI_LIST, VBOX_SHCL_FMT_URI_LIST },
-    { "application/x-kde-cutselection", URI_LIST, VBOX_SHCL_FMT_URI_LIST },
+    { "text/uri-list",                      SHCLX11FMT_URI_LIST,    VBOX_SHCL_FMT_URI_LIST },
+    { "x-special/gnome-copied-files",       SHCLX11FMT_URI_LIST,    VBOX_SHCL_FMT_URI_LIST },
+    { "x-special/nautilus-clipboard",       SHCLX11FMT_URI_LIST,    VBOX_SHCL_FMT_URI_LIST },
+    { "application/x-kde-cutselection",     SHCLX11FMT_URI_LIST,    VBOX_SHCL_FMT_URI_LIST },
     /** @todo Anything else we need to add here? */
     /** @todo Add Wayland / Weston support. */
 #endif
@@ -135,38 +126,50 @@ enum
 
 /**
  * Returns the atom corresponding to a supported X11 format.
- * @param widget a valid Xt widget
+ *
+ * @returns Found atom to the corresponding X11 format.
+ * @param   pCtx                The X11 clipboard context to use.
+ * @param   uFmtIdx             Format index to look up atom for.
  */
-static Atom clipAtomForX11Format(PSHCLX11CTX pCtx, CLIPX11FORMAT format)
+static Atom clipAtomForX11Format(PSHCLX11CTX pCtx, SHCLX11FMTIDX uFmtIdx)
 {
-    LogFlowFunc(("format=%u -> pcszAtom=%s\n", format, g_aFormats[format].pcszAtom));
-    AssertReturn(format <= RT_ELEMENTS(g_aFormats), 0);
-    return clipGetAtom(pCtx, g_aFormats[format].pcszAtom);
+    LogFlowFunc(("format=%u -> pcszAtom=%s\n", uFmtIdx, g_aFormats[uFmtIdx].pcszAtom));
+    AssertReturn(uFmtIdx <= RT_ELEMENTS(g_aFormats), 0);
+    return clipGetAtom(pCtx, g_aFormats[uFmtIdx].pcszAtom);
 }
 
 /**
- * Returns the CLIPFORMAT corresponding to a supported X11 format.
+ * Returns the SHCLX11FMT corresponding to a supported X11 format.
+ *
+ * @return  SHCLX11FMT for a specific format index.
+ * @param   uFmtIdx             Format index to look up SHCLX11CLIPFMT for.
  */
-static CLIPFORMAT clipRealFormatForX11Format(CLIPX11FORMAT format)
+static SHCLX11FMT clipRealFormatForX11Format(SHCLX11FMTIDX uFmtIdx)
 {
-    AssertReturn(format <= RT_ELEMENTS(g_aFormats), INVALID);
-    return g_aFormats[format].enmFormat;
+    AssertReturn(uFmtIdx <= RT_ELEMENTS(g_aFormats), SHCLX11FMT_INVALID);
+    return g_aFormats[uFmtIdx].enmFmtX11;
 }
 
-/** Returns the atom corresponding to a supported X11 format. */
-static uint32_t clipVBoxFormatForX11Format(CLIPX11FORMAT format)
+/**
+ * Returns the VBox format corresponding to a supported X11 format.
+ *
+ * @return  SHCLFORMAT for a specific format index.
+ * @param   uFmtIdx             Format index to look up VBox format for.
+ */
+static SHCLFORMAT clipVBoxFormatForX11Format(SHCLX11FMTIDX uFmtIdx)
 {
-    AssertReturn(format <= RT_ELEMENTS(g_aFormats), VBOX_SHCL_FMT_NONE);
-    return g_aFormats[format].u32VBoxFormat;
+    AssertReturn(uFmtIdx <= RT_ELEMENTS(g_aFormats), VBOX_SHCL_FMT_NONE);
+    return g_aFormats[uFmtIdx].uFmtVBox;
 }
 
 /**
  * Looks up the X11 format matching a given X11 atom.
  *
  * @returns The format on success, NIL_CLIPX11FORMAT on failure.
- * @param                       Widget a valid Xt widget.
+ * @param   pCtx                The X11 clipboard context to use.
+ * @param   atomFormat          Atom to look up X11 format for.
  */
-static CLIPX11FORMAT clipFindX11FormatByAtom(PSHCLX11CTX pCtx, Atom atomFormat)
+static SHCLX11FMTIDX clipFindX11FormatByAtom(PSHCLX11CTX pCtx, Atom atomFormat)
 {
     for (unsigned i = 0; i < RT_ELEMENTS(g_aFormats); ++i)
         if (clipAtomForX11Format(pCtx, i) == atomFormat)
@@ -179,32 +182,34 @@ static CLIPX11FORMAT clipFindX11FormatByAtom(PSHCLX11CTX pCtx, Atom atomFormat)
  * Looks up the X11 format matching a given X11 atom text.
  *
  * @returns the format on success, NIL_CLIPX11FORMAT on failure
- * @param                       Widget a valid Xt widget.
+ * @param   pcszAtom                Atom text to look up format for.
  */
-static CLIPX11FORMAT clipFindX11FormatByAtomText(const char *pcsz)
+static SHCLX11FMTIDX clipFindX11FormatByAtomText(const char *pcszAtom)
 {
     for (unsigned i = 0; i < RT_ELEMENTS(g_aFormats); ++i)
-        if (!strcmp(g_aFormats[i].pcszAtom, pcsz))
+        if (!strcmp(g_aFormats[i].pcszAtom, pcszAtom))
             return i;
     return NIL_CLIPX11FORMAT;
 }
 #endif
 
 /**
- * Enumerates supported X11 clipboard formats corresponding to a given VBox
- * format.
+ * Enumerates supported X11 clipboard formats corresponding to given VBox formats.
  *
- * @returns The next matching X11 format in the list, or NIL_CLIPX11FORMAT if
- *          there are no more.
- * @param lastFormat  The value returned from the last call of this function.
- *                    Use NIL_CLIPX11FORMAT to start the enumeration.
+ * @returns The next matching X11 format index in the list, or NIL_CLIPX11FORMAT if there are no more.
+ * @param   uFormatsVBox            VBox formats to enumerate supported X11 clipboard formats for.
+ * @param   lastFmtIdx              The value returned from the last call of this function.
+ *                                  Use NIL_CLIPX11FORMAT to start the enumeration.
  */
-static CLIPX11FORMAT clipEnumX11Formats(uint32_t u32VBoxFormats,
-                                        CLIPX11FORMAT lastFormat)
+static SHCLX11FMTIDX clipEnumX11Formats(SHCLFORMATS uFormatsVBox,
+                                        SHCLX11FMTIDX lastFmtIdx)
 {
-    for (unsigned i = lastFormat + 1; i < RT_ELEMENTS(g_aFormats); ++i)
-        if (u32VBoxFormats & clipVBoxFormatForX11Format(i))
+    for (unsigned i = lastFmtIdx + 1; i < RT_ELEMENTS(g_aFormats); ++i)
+    {
+        if (uFormatsVBox & clipVBoxFormatForX11Format(i))
             return i;
+    }
+
     return NIL_CLIPX11FORMAT;
 }
 
@@ -222,16 +227,17 @@ enum { CLIP_MAX_CONTEXTS = 20 };
  */
 static struct
 {
-    /** The widget we want to associate the context with */
-    Widget widget;
-    /** The context associated with the widget */
+    /** Pointer to widget we want to associate the context with. */
+    Widget      pWidget;
+    /** Pointer to X11 context associated with the widget. */
     PSHCLX11CTX pCtx;
 } g_contexts[CLIP_MAX_CONTEXTS];
 
 /**
  * Registers a new X11 clipboard context.
  *
- * @param   pCtx                The clipboard backend context to use.
+ * @returns VBox status code.
+ * @param   pCtx                The X11 clipboard context to use.
  */
 static int clipRegisterContext(PSHCLX11CTX pCtx)
 {
@@ -242,12 +248,12 @@ static int clipRegisterContext(PSHCLX11CTX pCtx)
     AssertReturn(widget != NULL, VERR_INVALID_PARAMETER);
     for (unsigned i = 0; i < RT_ELEMENTS(g_contexts); ++i)
     {
-        AssertReturn(   (g_contexts[i].widget != widget)
+        AssertReturn(   (g_contexts[i].pWidget != widget)
                      && (g_contexts[i].pCtx != pCtx), VERR_WRONG_ORDER);
-        if (g_contexts[i].widget == NULL && !fFound)
+        if (g_contexts[i].pWidget == NULL && !fFound)
         {
             AssertReturn(g_contexts[i].pCtx == NULL, VERR_INTERNAL_ERROR);
-            g_contexts[i].widget = widget;
+            g_contexts[i].pWidget = widget;
             g_contexts[i].pCtx = pCtx;
             fFound = true;
         }
@@ -259,7 +265,7 @@ static int clipRegisterContext(PSHCLX11CTX pCtx)
 /**
  * Unregister an X11 clipboard context.
  *
- * @param   pCtx                The clipboard backend context to use.
+ * @param   pCtx                The X11 clipboard context to use.
  */
 static void clipUnregisterContext(PSHCLX11CTX pCtx)
 {
@@ -271,41 +277,50 @@ static void clipUnregisterContext(PSHCLX11CTX pCtx)
     bool fFound = false;
     for (unsigned i = 0; i < RT_ELEMENTS(g_contexts); ++i)
     {
-        Assert(!fFound || g_contexts[i].widget != widget);
-        if (g_contexts[i].widget == widget)
+        Assert(!fFound || g_contexts[i].pWidget != widget);
+        if (g_contexts[i].pWidget == widget)
         {
             Assert(g_contexts[i].pCtx != NULL);
-            g_contexts[i].widget = NULL;
+            g_contexts[i].pWidget = NULL;
             g_contexts[i].pCtx = NULL;
             fFound = true;
         }
     }
 }
 
-/** Finds an X11 clipboard context. */
-static SHCLX11CTX *clipLookupContext(Widget widget)
+/**
+ * Finds a X11 clipboard context for a specific X11 widget.
+ *
+ * @returns Pointer to associated X11 clipboard context if found, or NULL if not found.
+ * @param   pWidget                 X11 widget to return X11 clipboard context for.
+ */
+static PSHCLX11CTX clipLookupContext(Widget pWidget)
 {
-    AssertPtrReturn(widget, NULL);
+    AssertPtrReturn(pWidget, NULL);
 
     for (unsigned i = 0; i < RT_ELEMENTS(g_contexts); ++i)
     {
-        if (g_contexts[i].widget == widget)
+        if (g_contexts[i].pWidget == pWidget)
         {
             Assert(g_contexts[i].pCtx != NULL);
             return g_contexts[i].pCtx;
         }
     }
+
     return NULL;
 }
 
 /**
- * Converts an atom name string to an X11 atom, looking it up in a cache
- * before asking the server.
+ * Converts an atom name string to an X11 atom, looking it up in a cache before asking the server.
+ *
+ * @returns Found X11 atom.
+ * @param   pCtx                The X11 clipboard context to use.
+ * @param   pcszName            Name of atom to return atom for.
  */
-static Atom clipGetAtom(PSHCLX11CTX pCtx, const char *pszName)
+static Atom clipGetAtom(PSHCLX11CTX pCtx, const char *pcszName)
 {
-    AssertPtrReturn(pszName, None);
-    return XInternAtom(XtDisplay(pCtx->widget), pszName, False);
+    AssertPtrReturn(pcszName, None);
+    return XInternAtom(XtDisplay(pCtx->widget), pcszName, False);
 }
 
 #ifdef TESTCASE
@@ -350,7 +365,7 @@ static int clipQueueToEventThread(PSHCLX11CTX pCtx,
  *
  * @note    Runs in Xt event thread.
  *
- * @param   pCtx                The clipboard backend context to use.
+ * @param   pCtx                The X11 clipboard context to use.
  */
 static void clipReportFormatsToVBox(PSHCLX11CTX pCtx)
 {
@@ -377,24 +392,24 @@ static void clipReportFormatsToVBox(PSHCLX11CTX pCtx)
  * Forgets which formats were previously in the X11 clipboard.  Called when we
  * grab the clipboard.
  *
- * @param   pCtx                The clipboard backend context to use.
+ * @param   pCtx                The X11 clipboard context to use.
  */
 static void clipResetX11Formats(PSHCLX11CTX pCtx)
 {
     LogFlowFuncEnter();
 
-    pCtx->X11TextFormat    = INVALID;
-    pCtx->X11BitmapFormat  = INVALID;
-    pCtx->X11HTMLFormat    = INVALID;
+    pCtx->X11TextFormat    = SHCLX11FMT_INVALID;
+    pCtx->X11BitmapFormat  = SHCLX11FMT_INVALID;
+    pCtx->X11HTMLFormat    = SHCLX11FMT_INVALID;
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
-    pCtx->X11URIListFormat = INVALID;
+    pCtx->X11URIListFormat = SHCLX11FMT_INVALID;
 #endif
 }
 
 /**
  * Tells VBox that X11 currently has nothing in its clipboard.
  *
- * @param  pCtx                 The clipboard backend context to use.
+ * @param  pCtx                 The X11 clipboard context to use.
  */
 static void clipReportEmptyX11CB(PSHCLX11CTX pCtx)
 {
@@ -408,22 +423,22 @@ static void clipReportEmptyX11CB(PSHCLX11CTX pCtx)
  * UTF-8 better than plain text).
  *
  * @return Supported X clipboard format.
- * @param  pCtx                 The clipboard backend context to use.
+ * @param  pCtx                 The X11 clipboard context to use.
  * @param  pTargets             The list of targets.
  * @param  cTargets             The size of the list in @a pTargets.
  */
-static CLIPX11FORMAT clipGetTextFormatFromTargets(PSHCLX11CTX pCtx,
-                                                  CLIPX11FORMAT *pTargets,
+static SHCLX11FMTIDX clipGetTextFormatFromTargets(PSHCLX11CTX pCtx,
+                                                  SHCLX11FMTIDX *pTargets,
                                                   size_t cTargets)
 {
     AssertPtrReturn(pCtx, NIL_CLIPX11FORMAT);
     AssertReturn(VALID_PTR(pTargets) || cTargets == 0, NIL_CLIPX11FORMAT);
 
-    CLIPX11FORMAT bestTextFormat = NIL_CLIPX11FORMAT;
-    CLIPFORMAT enmBestTextTarget = INVALID;
+    SHCLX11FMTIDX bestTextFormat = NIL_CLIPX11FORMAT;
+    SHCLX11FMT enmBestTextTarget = SHCLX11FMT_INVALID;
     for (unsigned i = 0; i < cTargets; ++i)
     {
-        CLIPX11FORMAT format = pTargets[i];
+        SHCLX11FMTIDX format = pTargets[i];
         if (format != NIL_CLIPX11FORMAT)
         {
             if (   (clipVBoxFormatForX11Format(format) == VBOX_SHCL_FMT_UNICODETEXT)
@@ -441,17 +456,17 @@ static CLIPX11FORMAT clipGetTextFormatFromTargets(PSHCLX11CTX pCtx,
 static bool tstClipTextFormatConversion(PSHCLX11CTX pCtx)
 {
     bool fSuccess = true;
-    CLIPX11FORMAT targets[2];
-    CLIPX11FORMAT x11Format;
+    SHCLX11FMTIDX targets[2];
+    SHCLX11FMTIDX x11Format;
     targets[0] = clipFindX11FormatByAtomText("text/plain");
     targets[1] = clipFindX11FormatByAtomText("image/bmp");
     x11Format = clipGetTextFormatFromTargets(pCtx, targets, 2);
-    if (clipRealFormatForX11Format(x11Format) != TEXT)
+    if (clipRealFormatForX11Format(x11Format) != SHCLX11FMT_TEXT)
         fSuccess = false;
     targets[0] = clipFindX11FormatByAtomText("UTF8_STRING");
     targets[1] = clipFindX11FormatByAtomText("text/plain");
     x11Format = clipGetTextFormatFromTargets(pCtx, targets, 2);
-    if (clipRealFormatForX11Format(x11Format) != UTF8)
+    if (clipRealFormatForX11Format(x11Format) != SHCLX11FMT_UTF8)
         fSuccess = false;
     return fSuccess;
 }
@@ -463,22 +478,22 @@ static bool tstClipTextFormatConversion(PSHCLX11CTX pCtx)
  * BMP better than PNG because we don't have to convert).
  *
  * @return Supported X clipboard format.
- * @param  pCtx                 The clipboard backend context to use.
+ * @param  pCtx                 The X11 clipboard context to use.
  * @param  pTargets             The list of targets.
  * @param  cTargets             The size of the list in @a pTargets.
  */
-static CLIPX11FORMAT clipGetBitmapFormatFromTargets(PSHCLX11CTX pCtx,
-                                                    CLIPX11FORMAT *pTargets,
+static SHCLX11FMTIDX clipGetBitmapFormatFromTargets(PSHCLX11CTX pCtx,
+                                                    SHCLX11FMTIDX *pTargets,
                                                     size_t cTargets)
 {
     AssertPtrReturn(pCtx, NIL_CLIPX11FORMAT);
     AssertReturn(VALID_PTR(pTargets) || cTargets == 0, NIL_CLIPX11FORMAT);
 
-    CLIPX11FORMAT bestBitmapFormat = NIL_CLIPX11FORMAT;
-    CLIPFORMAT enmBestBitmapTarget = INVALID;
+    SHCLX11FMTIDX bestBitmapFormat = NIL_CLIPX11FORMAT;
+    SHCLX11FMT enmBestBitmapTarget = SHCLX11FMT_INVALID;
     for (unsigned i = 0; i < cTargets; ++i)
     {
-        CLIPX11FORMAT format = pTargets[i];
+        SHCLX11FMTIDX format = pTargets[i];
         if (format != NIL_CLIPX11FORMAT)
         {
             if (   (clipVBoxFormatForX11Format(format) == VBOX_SHCL_FMT_BITMAP)
@@ -497,22 +512,22 @@ static CLIPX11FORMAT clipGetBitmapFormatFromTargets(PSHCLX11CTX pCtx,
  * format we can support, and if so choose the ones we prefer.
  *
  * @return Supported X clipboard format.
- * @param   pCtx                The clipboard backend context to use.
+ * @param   pCtx                The X11 clipboard context to use.
  * @param  pTargets             The list of targets.
  * @param  cTargets             The size of the list in @a pTargets.
  */
-static CLIPX11FORMAT clipGetHtmlFormatFromTargets(PSHCLX11CTX pCtx,
-                                                  CLIPX11FORMAT *pTargets,
+static SHCLX11FMTIDX clipGetHtmlFormatFromTargets(PSHCLX11CTX pCtx,
+                                                  SHCLX11FMTIDX *pTargets,
                                                   size_t cTargets)
 {
     AssertPtrReturn(pCtx, NIL_CLIPX11FORMAT);
     AssertReturn(VALID_PTR(pTargets) || cTargets == 0, NIL_CLIPX11FORMAT);
 
-    CLIPX11FORMAT bestHTMLFormat = NIL_CLIPX11FORMAT;
-    CLIPFORMAT enmBestHtmlTarget = INVALID;
+    SHCLX11FMTIDX bestHTMLFormat = NIL_CLIPX11FORMAT;
+    SHCLX11FMT enmBestHtmlTarget = SHCLX11FMT_INVALID;
     for (unsigned i = 0; i < cTargets; ++i)
     {
-        CLIPX11FORMAT format = pTargets[i];
+        SHCLX11FMTIDX format = pTargets[i];
         if (format != NIL_CLIPX11FORMAT)
         {
             if (   (clipVBoxFormatForX11Format(format) == VBOX_SHCL_FMT_HTML)
@@ -532,22 +547,22 @@ static CLIPX11FORMAT clipGetHtmlFormatFromTargets(PSHCLX11CTX pCtx,
  * format we can support, and if so choose the ones we prefer.
  *
  * @return Supported X clipboard format.
- * @param  pCtx                 The clipboard backend context to use.
+ * @param  pCtx                 The X11 clipboard context to use.
  * @param  pTargets             The list of targets.
  * @param  cTargets             The size of the list in @a pTargets.
  */
-static CLIPX11FORMAT clipGetURIListFormatFromTargets(PSHCLX11CTX pCtx,
-                                                     CLIPX11FORMAT *pTargets,
+static SHCLX11FMTIDX clipGetURIListFormatFromTargets(PSHCLX11CTX pCtx,
+                                                     SHCLX11FMTIDX *pTargets,
                                                      size_t cTargets)
 {
     AssertPtrReturn(pCtx, NIL_CLIPX11FORMAT);
     AssertReturn(VALID_PTR(pTargets) || cTargets == 0, NIL_CLIPX11FORMAT);
 
-    CLIPX11FORMAT bestURIListFormat = NIL_CLIPX11FORMAT;
-    CLIPFORMAT enmBestURIListTarget = INVALID;
+    SHCLX11FMTIDX bestURIListFormat = NIL_CLIPX11FORMAT;
+    SHCLX11FMT enmBestURIListTarget = SHCLX11FMT_INVALID;
     for (unsigned i = 0; i < cTargets; ++i)
     {
-        CLIPX11FORMAT format = pTargets[i];
+        SHCLX11FMTIDX format = pTargets[i];
         if (format != NIL_CLIPX11FORMAT)
         {
             if (   (clipVBoxFormatForX11Format(format) == VBOX_SHCL_FMT_URI_LIST)
@@ -567,31 +582,31 @@ static CLIPX11FORMAT clipGetURIListFormatFromTargets(PSHCLX11CTX pCtx,
  * of them and if relevant to choose the ones we prefer (e.g. we like Utf8
  * better than plain text).
  *
- * @param  pCtx                 The clipboard backend context to use.
+ * @param  pCtx                 The X11 clipboard context to use.
  * @param  pTargets             The list of targets.
  * @param  cTargets             The size of the list in @a pTargets.
  */
 static void clipGetFormatsFromTargets(PSHCLX11CTX pCtx,
-                                      CLIPX11FORMAT *pTargets, size_t cTargets)
+                                      SHCLX11FMTIDX *pTargets, size_t cTargets)
 {
     AssertPtrReturnVoid(pCtx);
     AssertPtrReturnVoid(pTargets);
 
-    CLIPX11FORMAT bestTextFormat = clipGetTextFormatFromTargets(pCtx, pTargets, cTargets);
+    SHCLX11FMTIDX bestTextFormat = clipGetTextFormatFromTargets(pCtx, pTargets, cTargets);
     if (pCtx->X11TextFormat != bestTextFormat)
         pCtx->X11TextFormat = bestTextFormat;
 
-    pCtx->X11BitmapFormat = INVALID; /* not yet supported */
-    CLIPX11FORMAT bestBitmapFormat = clipGetBitmapFormatFromTargets(pCtx, pTargets, cTargets);
+    pCtx->X11BitmapFormat = SHCLX11FMT_INVALID; /* not yet supported */ /** @todo r=andy Check this. */
+    SHCLX11FMTIDX bestBitmapFormat = clipGetBitmapFormatFromTargets(pCtx, pTargets, cTargets);
     if (pCtx->X11BitmapFormat != bestBitmapFormat)
         pCtx->X11BitmapFormat = bestBitmapFormat;
 
-    CLIPX11FORMAT bestHtmlFormat = clipGetHtmlFormatFromTargets(pCtx, pTargets, cTargets);
+    SHCLX11FMTIDX bestHtmlFormat = clipGetHtmlFormatFromTargets(pCtx, pTargets, cTargets);
     if (pCtx->X11HTMLFormat != bestHtmlFormat)
         pCtx->X11HTMLFormat = bestHtmlFormat;
 
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
-    CLIPX11FORMAT bestURIListFormat = clipGetURIListFormatFromTargets(pCtx, pTargets, cTargets);
+    SHCLX11FMTIDX bestURIListFormat = clipGetURIListFormatFromTargets(pCtx, pTargets, cTargets);
     if (pCtx->X11URIListFormat != bestURIListFormat)
         pCtx->X11URIListFormat = bestURIListFormat;
 #endif
@@ -603,11 +618,11 @@ static DECLCALLBACK(void) clipQueryX11FormatsCallback(PSHCLX11CTX pCtx);
  * Updates the context's information about targets currently supported by X11,
  * based on an array of X11 atoms.
  *
- * @param   pCtx                The clipboard backend context to use.
+ * @param   pCtx                The X11 clipboard context to use.
  * @param  pTargets             The array of atoms describing the targets supported.
  * @param  cTargets             The size of the array @a pTargets.
  */
-static void clipUpdateX11Targets(PSHCLX11CTX pCtx, CLIPX11FORMAT *pTargets, size_t cTargets)
+static void clipUpdateX11Targets(PSHCLX11CTX pCtx, SHCLX11FMTIDX *pTargets, size_t cTargets)
 {
     LogFlowFuncEnter();
 
@@ -665,12 +680,12 @@ static void clipConvertX11TargetsCallback(Widget widget, XtPointer pClient,
     LogFlowFunc(("pValue=%p, *pcLen=%u, *atomType=%d%s\n",
                  pValue, *pcLen, *atomType, *atomType == XT_CONVERT_FAIL ? " (XT_CONVERT_FAIL)" : ""));
 
-    CLIPX11FORMAT *pFormats = NULL;
+    SHCLX11FMTIDX *pFormats = NULL;
     if (   *pcLen
         && pValue
         && (*atomType != XT_CONVERT_FAIL /* time out */))
     {
-       pFormats = (CLIPX11FORMAT *)RTMemAllocZ(*pcLen * sizeof(CLIPX11FORMAT));
+       pFormats = (SHCLX11FMTIDX *)RTMemAllocZ(*pcLen * sizeof(SHCLX11FMTIDX));
     }
 
 #if !defined(TESTCASE)
@@ -723,7 +738,7 @@ static void clipConvertX11TargetsCallback(Widget widget, XtPointer pClient,
 /**
  * Callback to notify us when the contents of the X11 clipboard change.
  *
- * @param   pCtx                The clipboard backend context to use.
+ * @param   pCtx                The X11 clipboard context to use.
  */
 static DECLCALLBACK(void) clipQueryX11FormatsCallback(PSHCLX11CTX pCtx)
 {
@@ -770,7 +785,7 @@ typedef struct
  * Waits until an event arrives and handle it if it is an XFIXES selection
  * event, which Xt doesn't know about.
  *
- * @param   pCtx                The clipboard backend context to use.
+ * @param   pCtx                The X11 clipboard context to use.
  */
 void clipPeekEventAndDoXFixesHandling(PSHCLX11CTX pCtx)
 {
@@ -797,7 +812,9 @@ void clipPeekEventAndDoXFixesHandling(PSHCLX11CTX pCtx)
 /**
  * The main loop of our X11 event thread.
  *
- * @note  X11 backend code.
+ * @returns VBox status code.
+ * @param   hThreadSelf             Associated thread handle.
+ * @param   pvUser                  Pointer to user-provided thread data.
  */
 static DECLCALLBACK(int) clipEventThread(RTTHREAD hThreadSelf, void *pvUser)
 {
@@ -824,9 +841,7 @@ static DECLCALLBACK(int) clipEventThread(RTTHREAD hThreadSelf, void *pvUser)
 /**
  * X11 specific uninitialisation for the shared clipboard.
  *
- * @note  X11 backend code.
- *
- * @param   pCtx                The clipboard backend context to use.
+ * @param   pCtx                The X11 clipboard context to use.
  */
 static void clipUninit(PSHCLX11CTX pCtx)
 {
@@ -940,10 +955,8 @@ static void clipDrainWakeupPipe(XtPointer pUserData, int *, XtInputId *)
 /**
  * X11 specific initialisation for the shared clipboard.
  *
- * @note  X11 backend code.
- *
  * @returns VBox status code.
- * @param   pCtx                The clipboard backend context to use.
+ * @param   pCtx                The X11 clipboard context to use.
  */
 static int clipInit(PSHCLX11CTX pCtx)
 {
@@ -1067,7 +1080,7 @@ int ShClX11Init(PSHCLX11CTX pCtx, PSHCLCONTEXT pParent, bool fHeadless)
 /**
  * Destructs the Shared Clipboard X11 context.
  *
- * @param   pCtx                The clipboard backend context to destroy.
+ * @param   pCtx                The X11 clipboard context to destroy.
  */
 void ShClX11Destroy(PSHCLX11CTX pCtx)
 {
@@ -1087,7 +1100,7 @@ void ShClX11Destroy(PSHCLX11CTX pCtx)
  * Announces to the X11 backend that we are ready to start.
  *
  * @returns VBox status code.
- * @param   pCtx                The clipboard backend context to use.
+ * @param   pCtx                The X11 clipboard context to use.
  * @param   fGrab               Whether we should try to grab the shared clipboard at once.
  */
 int ShClX11ThreadStart(PSHCLX11CTX pCtx, bool fGrab)
@@ -1109,7 +1122,9 @@ int ShClX11ThreadStart(PSHCLX11CTX pCtx, bool fGrab)
 #ifndef TESTCASE
     if (RT_SUCCESS(rc))
     {
-        rc = RTThreadCreate(&pCtx->thread, clipEventThread, pCtx, 0,
+        LogRel2(("Shared Clipboard: Starting X11 event thread ...\n"));
+
+        rc = RTThreadCreate(&pCtx->Thread, clipEventThread, pCtx, 0,
                             RTTHREADTYPE_IO, RTTHREADFLAGS_WAITABLE, "SHCLX11");
         if (RT_FAILURE(rc))
         {
@@ -1124,14 +1139,13 @@ int ShClX11ThreadStart(PSHCLX11CTX pCtx, bool fGrab)
 /**
  * Shuts down the shared clipboard X11 backend.
  *
- * @note  X11 backend code.
  * @note  Any requests from this object to get clipboard data from VBox
  *        *must* have completed or aborted before we are called, as
  *        otherwise the X11 event loop will still be waiting for the request
  *        to return and will not be able to terminate.
  *
  * @returns VBox status code.
- * @param   pCtx                The clipboard backend context to use.
+ * @param   pCtx                The X11 clipboard context to use.
  */
 int ShClX11ThreadStop(PSHCLX11CTX pCtx)
 {
@@ -1143,15 +1157,15 @@ int ShClX11ThreadStop(PSHCLX11CTX pCtx)
     if (!pCtx->fHaveX11)
         return VINF_SUCCESS;
 
-    LogRel(("Shared Clipboard: Stopping X11 backend\n"));
+    LogRel(("Shared Clipboard: Stopping X11 event thread ...\n"));
 
-    /* Write to the "stop" pipe */
-    clipQueueToEventThread(pCtx, clipStopEventThreadWorker, (XtPointer) pCtx);
+    /* Write to the "stop" pipe. */
+    clipQueueToEventThread(pCtx, clipStopEventThreadWorker, (XtPointer)pCtx);
 
 #ifndef TESTCASE
     do
     {
-        rc = RTThreadWait(pCtx->thread, 1000, &rcThread);
+        rc = RTThreadWait(pCtx->Thread, 1000, &rcThread);
         ++count;
         Assert(RT_SUCCESS(rc) || ((VERR_TIMEOUT == rc) && (count != 5)));
     } while ((VERR_TIMEOUT == rc) && (count < 300));
@@ -1165,7 +1179,7 @@ int ShClX11ThreadStop(PSHCLX11CTX pCtx)
         AssertRC(rcThread);
     }
     else
-        LogRel(("Shared Clipboard: Stopping X11 backend failed with %Rrc\n", rc));
+        LogRel(("Shared Clipboard: Stopping X11 event thread failed with %Rrc\n", rc));
 
     clipUninit(pCtx);
 
@@ -1177,7 +1191,7 @@ int ShClX11ThreadStop(PSHCLX11CTX pCtx)
  * Satisfies a request from X11 for clipboard targets supported by VBox.
  *
  * @returns VBox status code.
- * @param  pCtx                 The clipboard backend context to use.
+ * @param  pCtx                 The X11 clipboard context to use.
  * @param  atomTypeReturn       The type of the data we are returning.
  * @param  pValReturn           A pointer to the data we are returning. This
  *                              should be set to memory allocated by XtMalloc,
@@ -1198,7 +1212,7 @@ static int clipCreateX11Targets(PSHCLX11CTX pCtx, Atom *atomTypeReturn,
 
     Atom *atomTargets = (Atom *)XtMalloc((MAX_CLIP_X11_FORMATS + cFixedTargets) * sizeof(Atom));
     unsigned cTargets = 0;
-    CLIPX11FORMAT format = NIL_CLIPX11FORMAT;
+    SHCLX11FMTIDX format = NIL_CLIPX11FORMAT;
     do
     {
         format = clipEnumX11Formats(pCtx->vboxFormats, format);
@@ -1431,7 +1445,7 @@ static int clipWinHTMLToUtf8ForX11CB(Display *pDisplay, const char *pszSrc,
 /**
  * Does this atom correspond to one of the two selection types we support?
  *
- * @param  pCtx                 The clipboard backend context to use.
+ * @param  pCtx                 The X11 clipboard context to use.
  * @param  selType              The atom in question.
  */
 static bool clipIsSupportedSelectionType(PSHCLX11CTX pCtx, Atom selType)
@@ -1449,11 +1463,11 @@ static bool clipIsSupportedSelectionType(PSHCLX11CTX pCtx, Atom selType)
  * @param  format               The format of the text.
  */
 static void clipTrimTrailingNul(XtPointer pText, unsigned long *pcText,
-                                CLIPFORMAT format)
+                                SHCLX11FMT format)
 {
     AssertPtrReturnVoid(pText);
     AssertPtrReturnVoid(pcText);
-    AssertReturnVoid((format == UTF8) || (format == TEXT) || (format == HTML));
+    AssertReturnVoid((format == SHCLX11FMT_UTF8) || (format == SHCLX11FMT_TEXT) || (format == SHCLX11FMT_HTML));
 
     if (((char *)pText)[*pcText - 1] == '\0')
        --(*pcText);
@@ -1467,12 +1481,12 @@ static int clipConvertVBoxCBForX11(PSHCLX11CTX pCtx, Atom *atomTarget,
 {
     int rc = VINF_SUCCESS;
 
-    CLIPX11FORMAT x11Format = clipFindX11FormatByAtom(pCtx, *atomTarget);
-    CLIPFORMAT clipFormat = clipRealFormatForX11Format(x11Format);
+    SHCLX11FMTIDX x11Format = clipFindX11FormatByAtom(pCtx, *atomTarget);
+    SHCLX11FMT clipFormat = clipRealFormatForX11Format(x11Format);
 
     LogFlowFunc(("fFormats=0x%x, x11Format=%u, clipFormat=%u\n", pCtx->vboxFormats, x11Format, clipFormat));
 
-    if (   ((clipFormat == UTF8) || (clipFormat == TEXT))
+    if (   ((clipFormat == SHCLX11FMT_UTF8) || (clipFormat == SHCLX11FMT_TEXT))
         && (pCtx->vboxFormats & VBOX_SHCL_FMT_UNICODETEXT))
     {
         void    *pv = NULL;
@@ -1480,7 +1494,7 @@ static int clipConvertVBoxCBForX11(PSHCLX11CTX pCtx, Atom *atomTarget,
         rc = clipReadVBoxShCl(pCtx, VBOX_SHCL_FMT_UNICODETEXT, &pv, &cb);
         if (RT_SUCCESS(rc) && (cb == 0))
             rc = VERR_NO_DATA;
-        if (RT_SUCCESS(rc) && ((clipFormat == UTF8) || (clipFormat == TEXT)))
+        if (RT_SUCCESS(rc) && ((clipFormat == SHCLX11FMT_UTF8) || (clipFormat == SHCLX11FMT_TEXT)))
             rc = clipWinTxtToUtf8ForX11CB(XtDisplay(pCtx->widget),
                                           (PRTUTF16)pv, cb, atomTarget,
                                           atomTypeReturn, pValReturn,
@@ -1490,7 +1504,7 @@ static int clipConvertVBoxCBForX11(PSHCLX11CTX pCtx, Atom *atomTarget,
 
         RTMemFree(pv);
     }
-    else if (   (clipFormat == BMP)
+    else if (   (clipFormat == SHCLX11FMT_BMP)
              && (pCtx->vboxFormats & VBOX_SHCL_FMT_BITMAP))
     {
         void    *pv = NULL;
@@ -1498,7 +1512,7 @@ static int clipConvertVBoxCBForX11(PSHCLX11CTX pCtx, Atom *atomTarget,
         rc = clipReadVBoxShCl(pCtx, VBOX_SHCL_FMT_BITMAP, &pv, &cb);
         if (RT_SUCCESS(rc) && (cb == 0))
             rc = VERR_NO_DATA;
-        if (RT_SUCCESS(rc) && (clipFormat == BMP))
+        if (RT_SUCCESS(rc) && (clipFormat == SHCLX11FMT_BMP))
         {
             /* Create a full BMP from it */
             rc = ShClDibToBmp(pv, cb, (void **)pValReturn,
@@ -1515,7 +1529,7 @@ static int clipConvertVBoxCBForX11(PSHCLX11CTX pCtx, Atom *atomTarget,
 
         RTMemFree(pv);
     }
-    else if (  (clipFormat == HTML)
+    else if (  (clipFormat == SHCLX11FMT_HTML)
             && (pCtx->vboxFormats & VBOX_SHCL_FMT_HTML))
     {
         void    *pv = NULL;
@@ -1548,11 +1562,11 @@ static int clipConvertVBoxCBForX11(PSHCLX11CTX pCtx, Atom *atomTarget,
     {
         switch (clipFormat)
         {
-            case TEXT:
+            case SHCLX11FMT_TEXT:
                 RT_FALL_THROUGH();
-            case UTF8:
+            case SHCLX11FMT_UTF8:
                 RT_FALL_THROUGH();
-            case URI_LIST:
+            case SHCLX11FMT_URI_LIST:
             {
                 break;
             }
@@ -1584,7 +1598,7 @@ static int clipConvertVBoxCBForX11(PSHCLX11CTX pCtx, Atom *atomTarget,
 /**
  * Returns VBox's clipboard data for an X11 client.
  *
- * @note  X11 backend code, callback for XtOwnSelection
+ * @note Callback for XtOwnSelection.
  */
 static Boolean clipXtConvertSelectionProc(Widget widget, Atom *atomSelection,
                                           Atom *atomTarget,
@@ -1966,7 +1980,7 @@ typedef struct _CLIPREADX11CBREQ
     /** The format VBox would like the data in. */
     SHCLFORMAT       mFormat;
     /** The format we requested from X11. */
-    CLIPX11FORMAT    mX11Format;
+    SHCLX11FMTIDX    mX11Format;
     /** The clipboard context this request is associated with. */
     SHCLX11CTX      *mpCtx;
     /** The request structure passed in from the backend. */
@@ -1980,7 +1994,7 @@ typedef struct _CLIPREADX11CBREQ
  * Converts the text obtained UTF-16LE with Windows EOLs.
  * Converts full BMP data to DIB format.
  *
- * @note  X11 backend code, callback for XtGetSelectionValue, for use when
+ * @note  Callback for XtGetSelectionValue, for use when
  *        the X11 clipboard contains a format we understand.
  */
 static void clipConvertDataFromX11CallbackWorker(void *pClient, void *pvSrc, unsigned cbSrc)
@@ -2007,9 +2021,9 @@ static void clipConvertDataFromX11CallbackWorker(void *pClient, void *pvSrc, uns
         /* In which format is the clipboard data? */
         switch (clipRealFormatForX11Format(pReq->mX11Format))
         {
-            case UTF8:
+            case SHCLX11FMT_UTF8:
                 RT_FALL_THROUGH();
-            case TEXT:
+            case SHCLX11FMT_TEXT:
             {
                 /* If we are given broken UTF-8, we treat it as Latin1. */ /** @todo Is this acceptable? */
                 if (RT_SUCCESS(RTStrValidateEncodingEx((char *)pvSrc, cbSrc, 0)))
@@ -2037,7 +2051,7 @@ static void clipConvertDataFromX11CallbackWorker(void *pClient, void *pvSrc, uns
         /* In which format is the clipboard data? */
         switch (clipRealFormatForX11Format(pReq->mX11Format))
         {
-            case BMP:
+            case SHCLX11FMT_BMP:
             {
                 const void *pDib;
                 size_t cbDibSize;
@@ -2069,7 +2083,7 @@ static void clipConvertDataFromX11CallbackWorker(void *pClient, void *pvSrc, uns
         /* In which format is the clipboard data? */
         switch (clipRealFormatForX11Format(pReq->mX11Format))
         {
-            case HTML:
+            case SHCLX11FMT_HTML:
             {
                 /*
                  * The common VBox HTML encoding will be - UTF-8
@@ -2127,7 +2141,7 @@ static void clipConvertDataFromX11CallbackWorker(void *pClient, void *pvSrc, uns
         /* In which format is the clipboard data? */
         switch (clipRealFormatForX11Format(pReq->mX11Format))
         {
-            case URI_LIST:
+            case SHCLX11FMT_URI_LIST:
             {
                 /* For URI lists we only accept valid UTF-8 encodings. */
                 if (RT_SUCCESS(RTStrValidateEncodingEx((char *)pvSrc, cbSrc, 0)))
@@ -2189,7 +2203,7 @@ static void clipConvertDataFromX11CallbackWorker(void *pClient, void *pvSrc, uns
  * Converts the text obtained UTF-16LE with Windows EOLs.
  * Converts full BMP data to DIB format.
  *
- * @note  X11 backend code, callback for XtGetSelectionValue(), for use when
+ * @note  Callback for XtGetSelectionValue(), for use when
  *        the X11 clipboard contains a format we understand.
  */
 static void clipConvertDataFromX11Callback(Widget widget, XtPointer pClient,
@@ -2208,11 +2222,11 @@ static void clipConvertDataFromX11Callback(Widget widget, XtPointer pClient,
 #endif
 
 #ifdef TESTCASE
-static void tstClipRequestData(SHCLX11CTX* pCtx, CLIPX11FORMAT target,
+static void tstClipRequestData(SHCLX11CTX* pCtx, SHCLX11FMTIDX target,
                                void *closure);
 #endif
 
-static int clipGetSelectionValue(PSHCLX11CTX pCtx, CLIPX11FORMAT format,
+static int clipGetSelectionValue(PSHCLX11CTX pCtx, SHCLX11FMTIDX format,
                                  CLIPREADX11CBREQ *pReq)
 {
 #ifndef TESTCASE
@@ -2245,7 +2259,7 @@ static void ShClX11ReadDataFromX11Worker(void *pvUserData, void * /* interval */
     if (pReq->mFormat == VBOX_SHCL_FMT_UNICODETEXT)
     {
         pReq->mX11Format = pCtx->X11TextFormat;
-        if (pReq->mX11Format != INVALID)
+        if (pReq->mX11Format != SHCLX11FMT_INVALID)
         {
             /* Send out a request for the data to the current clipboard owner. */
             rc = clipGetSelectionValue(pCtx, pCtx->X11TextFormat, pReq);
@@ -2254,7 +2268,7 @@ static void ShClX11ReadDataFromX11Worker(void *pvUserData, void * /* interval */
     else if (pReq->mFormat == VBOX_SHCL_FMT_BITMAP)
     {
         pReq->mX11Format = pCtx->X11BitmapFormat;
-        if (pReq->mX11Format != INVALID)
+        if (pReq->mX11Format != SHCLX11FMT_INVALID)
         {
             /* Send out a request for the data to the current clipboard owner. */
             rc = clipGetSelectionValue(pCtx, pCtx->X11BitmapFormat, pReq);
@@ -2263,7 +2277,7 @@ static void ShClX11ReadDataFromX11Worker(void *pvUserData, void * /* interval */
     else if (pReq->mFormat == VBOX_SHCL_FMT_HTML)
     {
         pReq->mX11Format = pCtx->X11HTMLFormat;
-        if (pReq->mX11Format != INVALID)
+        if (pReq->mX11Format != SHCLX11FMT_INVALID)
         {
             /* Send out a request for the data to the current clipboard owner. */
             rc = clipGetSelectionValue(pCtx, pCtx->X11HTMLFormat, pReq);
@@ -2273,7 +2287,7 @@ static void ShClX11ReadDataFromX11Worker(void *pvUserData, void * /* interval */
     else if (pReq->mFormat == VBOX_SHCL_FMT_URI_LIST)
     {
         pReq->mX11Format = pCtx->X11URIListFormat;
-        if (pReq->mX11Format != INVALID)
+        if (pReq->mX11Format != SHCLX11FMT_INVALID)
         {
             /* Send out a request for the data to the current clipboard owner. */
             rc = clipGetSelectionValue(pCtx, pCtx->X11URIListFormat, pReq);
@@ -2477,7 +2491,7 @@ Atom XInternAtom(Display *, const char *pcsz, int)
 }
 
 /* Take a request for the targets we are currently offering. */
-static CLIPX11FORMAT g_selTargets[10] = { 0 };
+static SHCLX11FMTIDX g_selTargets[10] = { 0 };
 static size_t g_cTargets = 0;
 
 void tstRequestTargets(SHCLX11CTX* pCtx)
@@ -2492,7 +2506,7 @@ static const void *g_pSelData = NULL;
 static unsigned long g_cSelData = 0;
 static int g_selFormat = 0;
 
-void tstClipRequestData(PSHCLX11CTX pCtx, CLIPX11FORMAT target, void *closure)
+void tstClipRequestData(PSHCLX11CTX pCtx, SHCLX11FMTIDX target, void *closure)
 {
     RT_NOREF(pCtx);
     unsigned long count = 0;
