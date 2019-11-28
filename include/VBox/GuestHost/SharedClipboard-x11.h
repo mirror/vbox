@@ -64,7 +64,7 @@ typedef SHCLCONTEXT _SHCLCONTEXT;
 typedef struct _SHCLX11CTX
 {
     /** Opaque data structure describing the front-end. */
-    SHCLCONTEXT *pFrontend;
+    PSHCLCONTEXT pFrontend;
     /** Is an X server actually available? */
     bool fHaveX11;
     /** The X Toolkit application context structure */
@@ -73,7 +73,7 @@ typedef struct _SHCLX11CTX
     /** We have a separate thread to wait for window and clipboard events. */
     RTTHREAD Thread;
     /** The X Toolkit widget which we use as our clipboard client.  It is never made visible. */
-    Widget widget;
+    Widget pWidget;
 
     /** Should we try to grab the clipboard on startup? */
     bool fGrabClipboardOnStart;
@@ -129,7 +129,7 @@ int ShClX11ReadDataFromX11(PSHCLX11CTX pCtx, SHCLFORMATS vboxFormat, CLIPREADCBR
  */
 DECLCALLBACK(int)  ShClX11RequestDataForX11Callback(SHCLCONTEXT *pCtx, SHCLFORMAT Format, void **ppv, uint32_t *pcb);
 DECLCALLBACK(void) ShClX11ReportFormatsCallback(SHCLCONTEXT *pCtx, SHCLFORMATS Formats);
-DECLCALLBACK(void) ShClRequestFromX11CompleteCallback(SHCLCONTEXT *pCtx, int rc, CLIPREADCBREQ *pReq, void *pv, uint32_t cb);
+DECLCALLBACK(void) ShClX11RequestFromX11CompleteCallback(SHCLCONTEXT *pCtx, int rc, CLIPREADCBREQ *pReq, void *pv, uint32_t cb);
 /** @} */
 
 #endif /* !VBOX_INCLUDED_GuestHost_SharedClipboard_x11_h */

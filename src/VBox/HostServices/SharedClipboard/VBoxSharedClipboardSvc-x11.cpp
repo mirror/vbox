@@ -284,8 +284,8 @@ DECLCALLBACK(void) ShClX11ReportFormatsCallback(PSHCLCONTEXT pCtx, uint32_t Form
  *
  * @todo   Change this to deal with the buffer issues rather than offloading them onto the caller.
  */
-DECLCALLBACK(void) ShClRequestFromX11CompleteCallback(PSHCLCONTEXT pCtx, int rcCompletion,
-                                                      CLIPREADCBREQ *pReq, void *pv, uint32_t cb)
+DECLCALLBACK(void) ShClX11RequestFromX11CompleteCallback(PSHCLCONTEXT pCtx, int rcCompletion,
+                                                         CLIPREADCBREQ *pReq, void *pv, uint32_t cb)
 {
     RT_NOREF(rcCompletion);
 

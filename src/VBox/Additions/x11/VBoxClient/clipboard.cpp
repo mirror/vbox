@@ -187,7 +187,7 @@ DECLCALLBACK(void) ShClX11ReportFormatsCallback(PSHCLCONTEXT pCtx, SHCLFORMATS F
  * @param  pv                   The clipboard data returned from X11 if the request succeeded (see @a rc).
  * @param  cb                   The size of the data in @a pv.
  */
-DECLCALLBACK(void) ShClRequestFromX11CompleteCallback(PSHCLCONTEXT pCtx, int rc, CLIPREADCBREQ *pReq, void *pv, uint32_t cb)
+DECLCALLBACK(void) ShClX11RequestFromX11CompleteCallback(PSHCLCONTEXT pCtx, int rc, CLIPREADCBREQ *pReq, void *pv, uint32_t cb)
 {
     RT_NOREF(pCtx);
 

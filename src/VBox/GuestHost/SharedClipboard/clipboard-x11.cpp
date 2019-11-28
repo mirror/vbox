@@ -231,7 +231,7 @@ static struct
     Widget      pWidget;
     /** Pointer to X11 context associated with the widget. */
     PSHCLX11CTX pCtx;
-} g_contexts[CLIP_MAX_CONTEXTS];
+} g_aContexts[CLIP_MAX_CONTEXTS];
 
 /**
  * Registers a new X11 clipboard context.
@@ -244,17 +244,19 @@ static int clipRegisterContext(PSHCLX11CTX pCtx)
     AssertPtrReturn(pCtx, VERR_INVALID_PARAMETER);
 
     bool fFound = false;
-    Widget widget = pCtx->widget;
-    AssertReturn(widget != NULL, VERR_INVALID_PARAMETER);
-    for (unsigned i = 0; i < RT_ELEMENTS(g_contexts); ++i)
+
+    Widget pWidget = pCtx->pWidget;
+    AssertReturn(pWidget != NULL, VERR_INVALID_PARAMETER);
+
+    for (unsigned i = 0; i < RT_ELEMENTS(g_aContexts); ++i)
     {
-        AssertReturn(   (g_contexts[i].pWidget != widget)
-                     && (g_contexts[i].pCtx != pCtx), VERR_WRONG_ORDER);
-        if (g_contexts[i].pWidget == NULL && !fFound)
+        AssertReturn(   (g_aContexts[i].pWidget != pWidget)
+                     && (g_aContexts[i].pCtx != pCtx), VERR_WRONG_ORDER);
+        if (g_aContexts[i].pWidget == NULL && !fFound)
         {
-            AssertReturn(g_contexts[i].pCtx == NULL, VERR_INTERNAL_ERROR);
-            g_contexts[i].pWidget = widget;
-            g_contexts[i].pCtx = pCtx;
+            AssertReturn(g_aContexts[i].pCtx == NULL, VERR_INTERNAL_ERROR);
+            g_aContexts[i].pWidget = pWidget;
+            g_aContexts[i].pCtx = pCtx;
             fFound = true;
         }
     }
@@ -271,18 +273,18 @@ static void clipUnregisterContext(PSHCLX11CTX pCtx)
 {
     AssertPtrReturnVoid(pCtx);
 
-    Widget widget = pCtx->widget;
+    Widget widget = pCtx->pWidget;
     AssertPtrReturnVoid(widget);
 
     bool fFound = false;
-    for (unsigned i = 0; i < RT_ELEMENTS(g_contexts); ++i)
+    for (unsigned i = 0; i < RT_ELEMENTS(g_aContexts); ++i)
     {
-        Assert(!fFound || g_contexts[i].pWidget != widget);
-        if (g_contexts[i].pWidget == widget)
+        Assert(!fFound || g_aContexts[i].pWidget != widget);
+        if (g_aContexts[i].pWidget == widget)
         {
-            Assert(g_contexts[i].pCtx != NULL);
-            g_contexts[i].pWidget = NULL;
-            g_contexts[i].pCtx = NULL;
+            Assert(g_aContexts[i].pCtx != NULL);
+            g_aContexts[i].pWidget = NULL;
+            g_aContexts[i].pCtx = NULL;
             fFound = true;
         }
     }
@@ -298,12 +300,12 @@ static PSHCLX11CTX clipLookupContext(Widget pWidget)
 {
     AssertPtrReturn(pWidget, NULL);
 
-    for (unsigned i = 0; i < RT_ELEMENTS(g_contexts); ++i)
+    for (unsigned i = 0; i < RT_ELEMENTS(g_aContexts); ++i)
     {
-        if (g_contexts[i].pWidget == pWidget)
+        if (g_aContexts[i].pWidget == pWidget)
         {
-            Assert(g_contexts[i].pCtx != NULL);
-            return g_contexts[i].pCtx;
+            Assert(g_aContexts[i].pCtx != NULL);
+            return g_aContexts[i].pCtx;
         }
     }
 
@@ -320,7 +322,7 @@ static PSHCLX11CTX clipLookupContext(Widget pWidget)
 static Atom clipGetAtom(PSHCLX11CTX pCtx, const char *pcszName)
 {
     AssertPtrReturn(pcszName, None);
-    return XInternAtom(XtDisplay(pCtx->widget), pcszName, False);
+    return XInternAtom(XtDisplay(pCtx->pWidget), pcszName, False);
 }
 
 #ifdef TESTCASE
@@ -422,7 +424,7 @@ static void clipReportEmptyX11CB(PSHCLX11CTX pCtx)
  * format we can support, and if so choose the ones we prefer (e.g. we like
  * UTF-8 better than plain text).
  *
- * @return Supported X clipboard format.
+ * @return Index to supported X clipboard format.
  * @param  pCtx                 The X11 clipboard context to use.
  * @param  pTargets             The list of targets.
  * @param  cTargets             The size of the list in @a pTargets.
@@ -661,7 +663,7 @@ static void clipConvertX11TargetsCallback(Widget widget, XtPointer pClient,
     {
         // The data from this callback is already out of date.  Refresh it.
         pCtx->fXtNeedsUpdate = false;
-        XtGetSelectionValue(pCtx->widget,
+        XtGetSelectionValue(pCtx->pWidget,
                             clipGetAtom(pCtx, "CLIPBOARD"),
                             clipGetAtom(pCtx, "TARGETS"),
                             clipConvertX11TargetsCallback, pCtx,
@@ -754,7 +756,7 @@ static DECLCALLBACK(void) clipQueryX11FormatsCallback(PSHCLX11CTX pCtx)
     else
     {
         pCtx->fXtBusy = true;
-        XtGetSelectionValue(pCtx->widget,
+        XtGetSelectionValue(pCtx->pWidget,
                             clipGetAtom(pCtx, "CLIPBOARD"),
                             clipGetAtom(pCtx, "TARGETS"),
                             clipConvertX11TargetsCallback, pCtx,
@@ -798,7 +800,7 @@ void clipPeekEventAndDoXFixesHandling(PSHCLX11CTX pCtx)
     if (XtAppPeekEvent(pCtx->appContext, &event.event))
     {
         if (   (event.event.type == pCtx->fixesEventBase)
-            && (event.fixes.owner != XtWindow(pCtx->widget)))
+            && (event.fixes.owner != XtWindow(pCtx->pWidget)))
         {
             if (   (event.fixes.subtype == 0  /* XFixesSetSelectionOwnerNotify */)
                 && (event.fixes.owner != 0))
@@ -846,14 +848,14 @@ static DECLCALLBACK(int) clipEventThread(RTTHREAD hThreadSelf, void *pvUser)
 static void clipUninit(PSHCLX11CTX pCtx)
 {
     AssertPtrReturnVoid(pCtx);
-    if (pCtx->widget)
+    if (pCtx->pWidget)
     {
         /* Valid widget + invalid appcontext = bug.  But don't return yet. */
         AssertPtr(pCtx->appContext);
         clipUnregisterContext(pCtx);
-        XtDestroyWidget(pCtx->widget);
+        XtDestroyWidget(pCtx->pWidget);
     }
-    pCtx->widget = NULL;
+    pCtx->pWidget = NULL;
     if (pCtx->appContext)
         XtDestroyApplicationContext(pCtx->appContext);
     pCtx->appContext = NULL;
@@ -873,7 +875,7 @@ static void clipStopEventThreadWorker(void *pUserData, void *)
     PSHCLX11CTX pCtx = (SHCLX11CTX *)pUserData;
 
     /* This might mean that we are getting stopped twice. */
-    Assert(pCtx->widget != NULL);
+    Assert(pCtx->pWidget != NULL);
 
     /* Set the termination flag to tell the Xt event loop to exit.  We
      * reiterate that any outstanding requests from the X11 event loop to
@@ -992,11 +994,11 @@ static int clipInit(PSHCLX11CTX pCtx)
 #endif
     if (RT_SUCCESS(rc))
     {
-        pCtx->widget = XtVaAppCreateShell(0, "VBoxShCl",
-                                          applicationShellWidgetClass,
-                                          pDisplay, XtNwidth, 1, XtNheight,
-                                          1, NULL);
-        if (NULL == pCtx->widget)
+        pCtx->pWidget = XtVaAppCreateShell(0, "VBoxShCl",
+                                           applicationShellWidgetClass,
+                                           pDisplay, XtNwidth, 1, XtNheight,
+                                           1, NULL);
+        if (NULL == pCtx->pWidget)
         {
             LogRel(("Shared Clipboard: Failed to construct the X11 window for the shared clipboard manager\n"));
             rc = VERR_NO_MEMORY;
@@ -1006,11 +1008,11 @@ static int clipInit(PSHCLX11CTX pCtx)
     }
     if (RT_SUCCESS(rc))
     {
-        XtSetMappedWhenManaged(pCtx->widget, false);
-        XtRealizeWidget(pCtx->widget);
+        XtSetMappedWhenManaged(pCtx->pWidget, false);
+        XtRealizeWidget(pCtx->pWidget);
 #ifndef TESTCASE
         /* Enable clipboard update notification. */
-        pCtx->fixesSelectInput(pDisplay, XtWindow(pCtx->widget),
+        pCtx->fixesSelectInput(pDisplay, XtWindow(pCtx->pWidget),
                                clipGetAtom(pCtx, "CLIPBOARD"),
                                7 /* All XFixes*Selection*NotifyMask flags */);
 #endif
@@ -1092,7 +1094,7 @@ void ShClX11Destroy(PSHCLX11CTX pCtx)
         /* We set this to NULL when the event thread exits.  It really should
          * have exited at this point, when we are about to unload the code from
          * memory. */
-        Assert(pCtx->widget == NULL);
+        Assert(pCtx->pWidget == NULL);
     }
 }
 
@@ -1495,7 +1497,7 @@ static int clipConvertVBoxCBForX11(PSHCLX11CTX pCtx, Atom *atomTarget,
         if (RT_SUCCESS(rc) && (cb == 0))
             rc = VERR_NO_DATA;
         if (RT_SUCCESS(rc) && ((clipFormat == SHCLX11FMT_UTF8) || (clipFormat == SHCLX11FMT_TEXT)))
-            rc = clipWinTxtToUtf8ForX11CB(XtDisplay(pCtx->widget),
+            rc = clipWinTxtToUtf8ForX11CB(XtDisplay(pCtx->pWidget),
                                           (PRTUTF16)pv, cb, atomTarget,
                                           atomTypeReturn, pValReturn,
                                           pcLenReturn, piFormatReturn);
@@ -1547,7 +1549,7 @@ static int clipConvertVBoxCBForX11(PSHCLX11CTX pCtx, Atom *atomTarget,
              * It's very strange but here we get UTF-16 from x11 clipboard
              * in same time we send UTF-8 to x11 clipboard and it's work.
              */
-            rc = clipWinHTMLToUtf8ForX11CB(XtDisplay(pCtx->widget),
+            rc = clipWinHTMLToUtf8ForX11CB(XtDisplay(pCtx->pWidget),
                                            (const char*)pv, cb, atomTarget,
                                            atomTypeReturn, pValReturn,
                                            pcLenReturn, piFormatReturn);
@@ -1657,22 +1659,22 @@ static void clipGrabX11CB(PSHCLX11CTX pCtx, SHCLFORMATS Formats)
 {
     LogFlowFuncEnter();
 
-    if (XtOwnSelection(pCtx->widget, clipGetAtom(pCtx, "CLIPBOARD"),
+    if (XtOwnSelection(pCtx->pWidget, clipGetAtom(pCtx, "CLIPBOARD"),
                        CurrentTime, clipXtConvertSelectionProc, NULL, 0))
     {
         pCtx->vboxFormats = Formats;
         /* Grab the middle-button paste selection too. */
-        XtOwnSelection(pCtx->widget, clipGetAtom(pCtx, "PRIMARY"),
+        XtOwnSelection(pCtx->pWidget, clipGetAtom(pCtx, "PRIMARY"),
                        CurrentTime, clipXtConvertSelectionProc, NULL, 0);
 #ifndef TESTCASE
         /* Xt suppresses these if we already own the clipboard, so send them
          * ourselves. */
-        XSetSelectionOwner(XtDisplay(pCtx->widget),
+        XSetSelectionOwner(XtDisplay(pCtx->pWidget),
                            clipGetAtom(pCtx, "CLIPBOARD"),
-                           XtWindow(pCtx->widget), CurrentTime);
-        XSetSelectionOwner(XtDisplay(pCtx->widget),
+                           XtWindow(pCtx->pWidget), CurrentTime);
+        XSetSelectionOwner(XtDisplay(pCtx->pWidget),
                            clipGetAtom(pCtx, "PRIMARY"),
-                           XtWindow(pCtx->widget), CurrentTime);
+                           XtWindow(pCtx->pWidget), CurrentTime);
 #endif
     }
 }
@@ -2187,8 +2189,8 @@ static void clipConvertDataFromX11CallbackWorker(void *pClient, void *pvSrc, uns
     else
         rc = VERR_NOT_SUPPORTED;
 
-    ShClRequestFromX11CompleteCallback(pReq->mpCtx->pFrontend, rc, pReq->mpReq,
-                                       pvDst, cbDst);
+    ShClX11RequestFromX11CompleteCallback(pReq->mpCtx->pFrontend, rc, pReq->mpReq,
+                                          pvDst, cbDst);
     RTMemFree(pvDst);
     RTMemFree(pReq);
 
@@ -2230,7 +2232,7 @@ static int clipGetSelectionValue(PSHCLX11CTX pCtx, SHCLX11FMTIDX format,
                                  CLIPREADX11CBREQ *pReq)
 {
 #ifndef TESTCASE
-    XtGetSelectionValue(pCtx->widget, clipGetAtom(pCtx, "CLIPBOARD"),
+    XtGetSelectionValue(pCtx->pWidget, clipGetAtom(pCtx, "CLIPBOARD"),
                         clipAtomForX11Format(pCtx, format),
                         clipConvertDataFromX11Callback,
                         reinterpret_cast<XtPointer>(pReq),
@@ -2303,8 +2305,8 @@ static void ShClX11ReadDataFromX11Worker(void *pvUserData, void * /* interval */
     {
         /* The clipboard callback was never scheduled, so we must signal
          * that the request processing is finished and clean up ourselves. */
-        ShClRequestFromX11CompleteCallback(pReq->mpCtx->pFrontend, rc, pReq->mpReq,
-                                           NULL /* pv */ ,0 /* cb */);
+        ShClX11RequestFromX11CompleteCallback(pReq->mpCtx->pFrontend, rc, pReq->mpReq,
+                                              NULL /* pv */ ,0 /* cb */);
         RTMemFree(pReq);
     }
 
@@ -2359,7 +2361,7 @@ int ShClX11ReadDataFromX11(PSHCLX11CTX pCtx, SHCLFORMAT Format, CLIPREADCBREQ *p
 #include <iprt/test.h>
 #include <poll.h>
 
-#define TEST_WIDGET (Widget)0xffff
+#define TESTCASE_WIDGET_ID (Widget)0xffff
 
 /* For the purpose of the test case, we just execute the procedure to be
  * scheduled, as we are running single threaded. */
@@ -2375,17 +2377,17 @@ void XtFree(char *ptr)
 }
 
 /* The data in the simulated VBox clipboard. */
-static int g_tstVBoxDataRC = VINF_SUCCESS;
-static void *g_tstVBoxDataPv = NULL;
-static uint32_t g_tstVBoxDataCb = 0;
+static int g_tst_rcDataVBox = VINF_SUCCESS;
+static void *g_tst_pvDataVBox = NULL;
+static uint32_t g_tst_cbDataVBox = 0;
 
 /* Set empty data in the simulated VBox clipboard. */
 static void tstClipEmptyVBox(PSHCLX11CTX pCtx, int retval)
 {
-    g_tstVBoxDataRC = retval;
-    RTMemFree(g_tstVBoxDataPv);
-    g_tstVBoxDataPv = NULL;
-    g_tstVBoxDataCb = 0;
+    g_tst_rcDataVBox = retval;
+    RTMemFree(g_tst_pvDataVBox);
+    g_tst_pvDataVBox = NULL;
+    g_tst_cbDataVBox = 0;
     ShClX11ReportFormatsToX11(pCtx, 0);
 }
 
@@ -2403,11 +2405,11 @@ static int tstClipSetVBoxUtf16(PSHCLX11CTX pCtx, int retval,
     RTUtf16Free(pwszData);
     if (pv == NULL)
         return VERR_NO_MEMORY;
-    if (g_tstVBoxDataPv)
-        RTMemFree(g_tstVBoxDataPv);
-    g_tstVBoxDataRC = retval;
-    g_tstVBoxDataPv = pv;
-    g_tstVBoxDataCb = cb;
+    if (g_tst_pvDataVBox)
+        RTMemFree(g_tst_pvDataVBox);
+    g_tst_rcDataVBox = retval;
+    g_tst_pvDataVBox = pv;
+    g_tst_cbDataVBox = cb;
     ShClX11ReportFormatsToX11(pCtx, VBOX_SHCL_FMT_UNICODETEXT);
     return VINF_SUCCESS;
 }
@@ -2416,15 +2418,15 @@ static int tstClipSetVBoxUtf16(PSHCLX11CTX pCtx, int retval,
 DECLCALLBACK(int) ShClX11RequestDataForX11Callback(PSHCLCONTEXT pCtx, uint32_t Format, void **ppv, uint32_t *pcb)
 {
     RT_NOREF(pCtx, Format);
-    *pcb = g_tstVBoxDataCb;
-    if (g_tstVBoxDataPv != NULL)
+    *pcb = g_tst_cbDataVBox;
+    if (g_tst_pvDataVBox != NULL)
     {
-        void *pv = RTMemDup(g_tstVBoxDataPv, g_tstVBoxDataCb);
+        void *pv = RTMemDup(g_tst_pvDataVBox, g_tst_cbDataVBox);
         *ppv = pv;
-        return pv != NULL ? g_tstVBoxDataRC : VERR_NO_MEMORY;
+        return pv != NULL ? g_tst_rcDataVBox : VERR_NO_MEMORY;
     }
     *ppv = NULL;
-    return g_tstVBoxDataRC;
+    return g_tst_rcDataVBox;
 }
 
 Display *XtDisplay(Widget w) { NOREF(w); return (Display *) 0xffff; }
@@ -2456,7 +2458,7 @@ Widget XtVaAppCreateShell(_Xconst _XtString application_name,  _Xconst _XtString
                           WidgetClass widget_class, Display *display, ...)
 {
     RT_NOREF(application_name, application_class, widget_class, display);
-    return TEST_WIDGET;
+    return TESTCASE_WIDGET_ID;
 }
 
 void XtSetMappedWhenManaged(Widget widget, _XtBoolean mapped_when_managed) { RT_NOREF(widget, mapped_when_managed); }
@@ -2470,7 +2472,7 @@ XtInputId XtAppAddInput(XtAppContext app_context, int source, XtPointer conditio
 }
 
 /* Atoms we need other than the formats we support. */
-static const char *g_tstapszSupAtoms[] =
+static const char *g_tst_apszSupAtoms[] =
 {
     "PRIMARY", "CLIPBOARD", "TARGETS", "MULTIPLE", "TIMESTAMP"
 };
@@ -2483,43 +2485,43 @@ Atom XInternAtom(Display *, const char *pcsz, int)
     for (unsigned i = 0; i < RT_ELEMENTS(g_aFormats); ++i)
         if (!strcmp(pcsz, g_aFormats[i].pcszAtom))
             atom = (Atom) (i + 0x1000);
-    for (unsigned i = 0; i < RT_ELEMENTS(g_tstapszSupAtoms); ++i)
-        if (!strcmp(pcsz, g_tstapszSupAtoms[i]))
+    for (unsigned i = 0; i < RT_ELEMENTS(g_tst_apszSupAtoms); ++i)
+        if (!strcmp(pcsz, g_tst_apszSupAtoms[i]))
             atom = (Atom) (i + 0x2000);
     Assert(atom);  /* Have we missed any atoms? */
     return atom;
 }
 
 /* Take a request for the targets we are currently offering. */
-static SHCLX11FMTIDX g_selTargets[10] = { 0 };
-static size_t g_cTargets = 0;
+static SHCLX11FMTIDX g_tst_aSelTargetsIdx[10] = { 0 };
+static size_t g_tst_cTargets = 0;
 
 void tstRequestTargets(SHCLX11CTX* pCtx)
 {
-    clipUpdateX11Targets(pCtx, g_selTargets, g_cTargets);
+    clipUpdateX11Targets(pCtx, g_tst_aSelTargetsIdx, g_tst_cTargets);
 }
 
 /* The current values of the X selection, which will be returned to the
  * XtGetSelectionValue callback. */
-static Atom g_selType = 0;
-static const void *g_pSelData = NULL;
-static unsigned long g_cSelData = 0;
-static int g_selFormat = 0;
+static Atom g_tst_atmSelType = 0;
+static const void *g_tst_pSelData = NULL;
+static unsigned long g_tst_cSelData = 0;
+static int g_tst_selFormat = 0;
 
 void tstClipRequestData(PSHCLX11CTX pCtx, SHCLX11FMTIDX target, void *closure)
 {
     RT_NOREF(pCtx);
     unsigned long count = 0;
     int format = 0;
-    if (target != g_selTargets[0])
+    if (target != g_tst_aSelTargetsIdx[0])
     {
         clipConvertDataFromX11CallbackWorker(closure, NULL, 0); /* Could not convert to target. */
         return;
     }
     void *pValue = NULL;
-    pValue = g_pSelData ? RTMemDup(g_pSelData, g_cSelData) : NULL;
-    count = g_pSelData ? g_cSelData : 0;
-    format = g_selFormat;
+    pValue = g_tst_pSelData ? RTMemDup(g_tst_pSelData, g_tst_cSelData) : NULL;
+    count = g_tst_pSelData ? g_tst_cSelData : 0;
+    format = g_tst_selFormat;
     if (!pValue)
     {
         count = 0;
@@ -2531,33 +2533,33 @@ void tstClipRequestData(PSHCLX11CTX pCtx, SHCLX11FMTIDX target, void *closure)
 }
 
 /* The formats currently on offer from X11 via the shared clipboard. */
-static uint32_t g_fX11Formats = 0;
+static uint32_t g_tst_uX11Formats = 0;
 
 DECLCALLBACK(void) ShClX11ReportFormatsCallback(PSHCLCONTEXT pCtx, SHCLFORMATS Formats)
 {
     RT_NOREF(pCtx);
-    g_fX11Formats = Formats;
+    g_tst_uX11Formats = Formats;
 }
 
 static uint32_t tstClipQueryFormats(void)
 {
-    return g_fX11Formats;
+    return g_tst_uX11Formats;
 }
 
 static void tstClipInvalidateFormats(void)
 {
-    g_fX11Formats = ~0;
+    g_tst_uX11Formats = ~0;
 }
 
 /* Does our clipboard code currently own the selection? */
-static bool g_ownsSel = false;
+static bool g_tst_fOwnsSel = false;
 /* The procedure that is called when we should convert the selection to a
  * given format. */
-static XtConvertSelectionProc g_pfnSelConvert = NULL;
+static XtConvertSelectionProc g_tst_pfnSelConvert = NULL;
 /* The procedure which is called when we lose the selection. */
-static XtLoseSelectionProc g_pfnSelLose = NULL;
+static XtLoseSelectionProc g_tst_pfnSelLose = NULL;
 /* The procedure which is called when the selection transfer has completed. */
-static XtSelectionDoneProc g_pfnSelDone = NULL;
+static XtSelectionDoneProc g_tst_pfnSelDone = NULL;
 
 Boolean XtOwnSelection(Widget widget, Atom selection, Time time,
                        XtConvertSelectionProc convert,
@@ -2567,20 +2569,20 @@ Boolean XtOwnSelection(Widget widget, Atom selection, Time time,
     RT_NOREF(widget, time);
     if (selection != XInternAtom(NULL, "CLIPBOARD", 0))
         return True;  /* We don't really care about this. */
-    g_ownsSel = true;  /* Always succeed. */
-    g_pfnSelConvert = convert;
-    g_pfnSelLose = lose;
-    g_pfnSelDone = done;
+    g_tst_fOwnsSel = true;  /* Always succeed. */
+    g_tst_pfnSelConvert = convert;
+    g_tst_pfnSelLose = lose;
+    g_tst_pfnSelDone = done;
     return True;
 }
 
 void XtDisownSelection(Widget widget, Atom selection, Time time)
 {
     RT_NOREF(widget, time, selection);
-    g_ownsSel = false;
-    g_pfnSelConvert = NULL;
-    g_pfnSelLose = NULL;
-    g_pfnSelDone = NULL;
+    g_tst_fOwnsSel = false;
+    g_tst_pfnSelConvert = NULL;
+    g_tst_pfnSelLose = NULL;
+    g_tst_pfnSelDone = NULL;
 }
 
 /* Request the shared clipboard to convert its data to a given format. */
@@ -2596,16 +2598,16 @@ static bool tstClipConvertSelection(const char *pcszTarget, Atom *type,
     *value = NULL;
     *length = 0;
     *format = 0;
-    if (!g_ownsSel)
+    if (!g_tst_fOwnsSel)
         return false;
-    if (!g_pfnSelConvert)
+    if (!g_tst_pfnSelConvert)
         return false;
     Atom clipAtom = XInternAtom(NULL, "CLIPBOARD", 0);
-    if (!g_pfnSelConvert(TEST_WIDGET, &clipAtom, &target, type,
-                         value, length, format))
+    if (!g_tst_pfnSelConvert(TESTCASE_WIDGET_ID, &clipAtom, &target, type,
+                             value, length, format))
         return false;
-    if (g_pfnSelDone)
-        g_pfnSelDone(TEST_WIDGET, &clipAtom, &target);
+    if (g_tst_pfnSelDone)
+        g_tst_pfnSelDone(TESTCASE_WIDGET_ID, &clipAtom, &target);
     return true;
 }
 
@@ -2615,15 +2617,15 @@ static void tstClipSetSelectionValues(const char *pcszTarget, Atom type,
                                       unsigned long count, int format)
 {
     Atom clipAtom = XInternAtom(NULL, "CLIPBOARD", 0);
-    g_selTargets[0] = clipFindX11FormatByAtomText(pcszTarget);
-    g_cTargets = 1;
-    g_selType = type;
-    g_pSelData = data;
-    g_cSelData = count;
-    g_selFormat = format;
-    if (g_pfnSelLose)
-        g_pfnSelLose(TEST_WIDGET, &clipAtom);
-    g_ownsSel = false;
+    g_tst_aSelTargetsIdx[0] = clipFindX11FormatByAtomText(pcszTarget);
+    g_tst_cTargets = 1;
+    g_tst_atmSelType = type;
+    g_tst_pSelData = data;
+    g_tst_cSelData = count;
+    g_tst_selFormat = format;
+    if (g_tst_pfnSelLose)
+        g_tst_pfnSelLose(TESTCASE_WIDGET_ID, &clipAtom);
+    g_tst_fOwnsSel = false;
 }
 
 static void tstClipSendTargetUpdate(PSHCLX11CTX pCtx)
@@ -2634,7 +2636,7 @@ static void tstClipSendTargetUpdate(PSHCLX11CTX pCtx)
 /* Configure if and how the X11 TARGETS clipboard target will fail. */
 static void tstClipSetTargetsFailure(void)
 {
-    g_cTargets = 0;
+    g_tst_cTargets = 0;
 }
 
 char *XtMalloc(Cardinal size) { return (char *) RTMemAlloc(size); }
@@ -2655,8 +2657,8 @@ char *XGetAtomName(Display *display, Atom atom)
     else
     {
         unsigned index = atom - 0x2000;
-        AssertReturn(index < RT_ELEMENTS(g_tstapszSupAtoms), NULL);
-        pcszName = g_tstapszSupAtoms[index];
+        AssertReturn(index < RT_ELEMENTS(g_tst_apszSupAtoms), NULL);
+        pcszName = g_tst_apszSupAtoms[index];
     }
     return (char *)RTMemDup(pcszName, sizeof(pcszName) + 1);
 }
@@ -2674,34 +2676,34 @@ void XFreeStringList(char **list)
     RTMemFree(list);
 }
 
-#define MAX_BUF_SIZE 256
+#define TESTCASE_MAX_BUF_SIZE 256
 
-static int g_completedRC = VINF_SUCCESS;
-static int g_completedCB = 0;
-static CLIPREADCBREQ *g_completedReq = NULL;
-static char g_completedBuf[MAX_BUF_SIZE];
+static int g_tst_rcCompleted = VINF_SUCCESS;
+static int g_tst_cbCompleted = 0;
+static CLIPREADCBREQ *g_tst_pCompletedReq = NULL;
+static char g_tst_abCompletedBuf[TESTCASE_MAX_BUF_SIZE];
 
-void ShClRequestFromX11CompleteCallback(PSHCLCONTEXT pCtx, int rc, CLIPREADCBREQ *pReq, void *pv, uint32_t cb)
+void ShClX11RequestFromX11CompleteCallback(PSHCLCONTEXT pCtx, int rc, CLIPREADCBREQ *pReq, void *pv, uint32_t cb)
 {
     RT_NOREF(pCtx);
-    if (cb <= MAX_BUF_SIZE)
+    if (cb <= TESTCASE_MAX_BUF_SIZE)
     {
-        g_completedRC = rc;
+        g_tst_rcCompleted = rc;
         if (cb != 0)
-            memcpy(g_completedBuf, pv, cb);
+            memcpy(g_tst_abCompletedBuf, pv, cb);
     }
     else
-        g_completedRC = VERR_BUFFER_OVERFLOW;
-    g_completedCB = cb;
-    g_completedReq = pReq;
+        g_tst_rcCompleted = VERR_BUFFER_OVERFLOW;
+    g_tst_cbCompleted = cb;
+    g_tst_pCompletedReq = pReq;
 }
 
 static void tstClipGetCompletedRequest(int *prc, char ** ppc, uint32_t *pcb, CLIPREADCBREQ **ppReq)
 {
-    *prc = g_completedRC;
-    *ppc = g_completedBuf;
-    *pcb = g_completedCB;
-    *ppReq = g_completedReq;
+    *prc = g_tst_rcCompleted;
+    *ppc = g_tst_abCompletedBuf;
+    *pcb = g_tst_cbCompleted;
+    *ppReq = g_tst_pCompletedReq;
 }
 #ifdef RT_OS_SOLARIS_10
 char XtStrings [] = "";
@@ -2748,7 +2750,7 @@ static void tstStringFromX11(RTTEST hTest, PSHCLX11CTX pCtx,
             retval = true;
         else
         {
-            RTUTF16 wcExp[MAX_BUF_SIZE / 2];
+            RTUTF16 wcExp[TESTCASE_MAX_BUF_SIZE / 2];
             RTUTF16 *pwcExp = wcExp;
             size_t cwc = 0;
             rc = RTStrToUtf16Ex(pcszExp, RTSTR_MAX, &pwcExp,
@@ -2760,7 +2762,7 @@ static void tstStringFromX11(RTTEST hTest, PSHCLX11CTX pCtx,
                 if (cbActual != cbExp)
                 {
                     RTTestFailed(hTest, "Returned string is the wrong size, string \"%.*ls\", size %u, expected \"%s\", size %u\n",
-                                 RT_MIN(MAX_BUF_SIZE, cbActual), pc, cbActual,
+                                 RT_MIN(TESTCASE_MAX_BUF_SIZE, cbActual), pc, cbActual,
                                  pcszExp, cbExp);
                 }
                 else
@@ -2769,7 +2771,7 @@ static void tstStringFromX11(RTTEST hTest, PSHCLX11CTX pCtx,
                         retval = true;
                     else
                         RTTestFailed(hTest, "Returned string \"%.*ls\" does not match expected string \"%s\"\n",
-                                     MAX_BUF_SIZE, pc, pcszExp);
+                                     TESTCASE_MAX_BUF_SIZE, pc, pcszExp);
                 }
             }
         }
@@ -2805,7 +2807,7 @@ static void tstLatin1FromX11(RTTEST hTest, PSHCLX11CTX pCtx,
             retval = true;
         else
         {
-            RTUTF16 wcExp[MAX_BUF_SIZE / 2];
+            RTUTF16 wcExp[TESTCASE_MAX_BUF_SIZE / 2];
             //RTUTF16 *pwcExp = wcExp; - unused
             size_t cwc;
             for (cwc = 0; cwc == 0 || pcszExp[cwc - 1] != '\0'; ++cwc)
@@ -2814,7 +2816,7 @@ static void tstLatin1FromX11(RTTEST hTest, PSHCLX11CTX pCtx,
             if (cbActual != cbExp)
             {
                 RTTestFailed(hTest, "Returned string is the wrong size, string \"%.*ls\", size %u, expected \"%s\", size %u\n",
-                             RT_MIN(MAX_BUF_SIZE, cbActual), pc, cbActual,
+                             RT_MIN(TESTCASE_MAX_BUF_SIZE, cbActual), pc, cbActual,
                              pcszExp, cbExp);
             }
             else
@@ -2823,7 +2825,7 @@ static void tstLatin1FromX11(RTTEST hTest, PSHCLX11CTX pCtx,
                     retval = true;
                 else
                     RTTestFailed(hTest, "Returned string \"%.*ls\" does not match expected string \"%s\"\n",
-                                 MAX_BUF_SIZE, pc, pcszExp);
+                                 TESTCASE_MAX_BUF_SIZE, pc, pcszExp);
             }
         }
     }
@@ -2889,7 +2891,7 @@ static void tstStringFromVBoxFailed(RTTEST hTest, PSHCLX11CTX pCtx, const char *
 static void tstNoSelectionOwnership(PSHCLX11CTX pCtx, const char *pcszTestCtx)
 {
     RT_NOREF(pCtx);
-    RTTESTI_CHECK_MSG(!g_ownsSel, ("context: %s\n", pcszTestCtx));
+    RTTESTI_CHECK_MSG(!g_tst_fOwnsSel, ("context: %s\n", pcszTestCtx));
 }
 
 static void tstBadFormatRequestFromHost(RTTEST hTest, PSHCLX11CTX pCtx)
@@ -3110,7 +3112,7 @@ int main()
     RTTestSub(hTest, "an empty VBox clipboard");
     tstClipSetSelectionValues("TEXT", XA_STRING, "", sizeof(""), 8);
     tstClipEmptyVBox(&X11Ctx, VINF_SUCCESS);
-    RTTEST_CHECK_MSG(hTest, g_ownsSel,
+    RTTEST_CHECK_MSG(hTest, g_tst_fOwnsSel,
                      (hTest, "VBox grabbed the clipboard with no data and we ignored it\n"));
     tstStringFromVBoxFailed(hTest, &X11Ctx, "UTF8_STRING");
 
@@ -3119,7 +3121,7 @@ int main()
     tstClipSetSelectionValues("TEXT", XA_STRING, "", sizeof(""), 8);
     tstClipSetVBoxUtf16(&X11Ctx, VINF_SUCCESS, "", 2);
     ShClX11ReportFormatsToX11(&X11Ctx, 0xa0000);
-    RTTEST_CHECK_MSG(hTest, g_ownsSel,
+    RTTEST_CHECK_MSG(hTest, g_tst_fOwnsSel,
                      (hTest, "VBox grabbed the clipboard with unknown data and we ignored it\n"));
     tstStringFromVBoxFailed(hTest, &X11Ctx, "UTF8_STRING");
 
@@ -3188,7 +3190,7 @@ DECLCALLBACK(void) ShClX11ReportFormatsCallback(PSHCLCONTEXT pCtx, SHCLFORMATS F
     RT_NOREF(pCtx, Formats);
 }
 
-DECLCALLBACK(void) ShClRequestFromX11CompleteCallback(PSHCLCONTEXT pCtx, int rc, CLIPREADCBREQ *pReq, void *pv, uint32_t cb)
+DECLCALLBACK(void) ShClX11RequestFromX11CompleteCallback(PSHCLCONTEXT pCtx, int rc, CLIPREADCBREQ *pReq, void *pv, uint32_t cb)
 {
     RT_NOREF(pCtx, rc, pReq, pv, cb);
 }
