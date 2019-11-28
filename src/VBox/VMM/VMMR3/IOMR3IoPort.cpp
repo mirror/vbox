@@ -294,6 +294,7 @@ VMMR3_INT_DECL(int)  IOMR3IoPortCreate(PVM pVM, PPDMDEVINS pDevIns, RTIOPORT cPo
     pVM->iom.s.cIoPortStats = cNewIoPortStats;
 #endif
     *phIoPorts = idx;
+    LogFlow(("IOMR3IoPortCreate: idx=%#x cPorts=%u %s\n", idx, cPorts, pszDesc));
     return VINF_SUCCESS;
 }
 
@@ -315,6 +316,7 @@ VMMR3_INT_DECL(int)  IOMR3IoPortMap(PVM pVM, PPDMDEVINS pDevIns, IOMIOPORTHANDLE
     AssertMsgReturn(cPorts > 0 && cPorts <= _8K, ("cPorts=%s\n", cPorts), VERR_IOM_IOPORT_IPE_1);
     AssertReturn((uint32_t)uPort + cPorts <= _64K, VERR_OUT_OF_RANGE);
     RTIOPORT const uLastPort = uPort + cPorts - 1;
+    LogFlow(("IOMR3IoPortMap: hIoPorts=%#RX64 %RTiop..%RTiop (%u ports)\n", hIoPorts, uPort, uLastPort, cPorts));
 
     /*
      * Do the mapping.
@@ -410,6 +412,9 @@ VMMR3_INT_DECL(int)  IOMR3IoPortMap(PVM pVM, PPDMDEVINS pDevIns, IOMIOPORTHANDLE
             AssertMsg(paEntries[i].uLastPort >= paEntries[i].uFirstPort, ("%u: %#x %#x\n", i, paEntries[i].uLastPort, paEntries[i].uFirstPort));
             AssertMsg(paEntries[i].idx < pVM->iom.s.cIoPortRegs, ("%u: %#x %#x\n", i, paEntries[i].idx, pVM->iom.s.cIoPortRegs));
             AssertMsg(uPortPrev < paEntries[i].uFirstPort, ("%u: %#x %#x\n", i, uPortPrev, paEntries[i].uFirstPort));
+            AssertMsg(paEntries[i].uLastPort - paEntries[i].uFirstPort + 1 == pVM->iom.s.paIoPortRegs[paEntries[i].idx].cPorts,
+                      ("%u: %#x %#x..%#x -> %u, expected %u\n", i, uPortPrev, paEntries[i].uFirstPort, paEntries[i].uLastPort,
+                       paEntries[i].uLastPort - paEntries[i].uFirstPort + 1, pVM->iom.s.paIoPortRegs[paEntries[i].idx].cPorts));
             uPortPrev = paEntries[i].uLastPort;
         }
 #endif
@@ -451,6 +456,7 @@ VMMR3_INT_DECL(int)  IOMR3IoPortUnmap(PVM pVM, PPDMDEVINS pDevIns, IOMIOPORTHAND
         uint32_t const cEntries  = RT_MIN(pVM->iom.s.cIoPortLookupEntries, pVM->iom.s.cIoPortRegs);
         Assert(pVM->iom.s.cIoPortLookupEntries == cEntries);
         Assert(cEntries > 0);
+        LogFlow(("IOMR3IoPortUnmap: hIoPorts=%#RX64 %RTiop..%RTiop (%u ports)\n", hIoPorts, uPort, uLastPort, pRegEntry->cPorts));
 
         PIOMIOPORTLOOKUPENTRY paEntries = pVM->iom.s.paIoPortLookup;
         uint32_t iFirst = 0;
@@ -520,6 +526,9 @@ VMMR3_INT_DECL(int)  IOMR3IoPortUnmap(PVM pVM, PPDMDEVINS pDevIns, IOMIOPORTHAND
             AssertMsg(paEntries[i].uLastPort >= paEntries[i].uFirstPort, ("%u: %#x %#x\n", i, paEntries[i].uLastPort, paEntries[i].uFirstPort));
             AssertMsg(paEntries[i].idx < pVM->iom.s.cIoPortRegs, ("%u: %#x %#x\n", i, paEntries[i].idx, pVM->iom.s.cIoPortRegs));
             AssertMsg(uPortPrev < paEntries[i].uFirstPort, ("%u: %#x %#x\n", i, uPortPrev, paEntries[i].uFirstPort));
+            AssertMsg(paEntries[i].uLastPort - paEntries[i].uFirstPort + 1 == pVM->iom.s.paIoPortRegs[paEntries[i].idx].cPorts,
+                      ("%u: %#x %#x..%#x -> %u, expected %u\n", i, uPortPrev, paEntries[i].uFirstPort, paEntries[i].uLastPort,
+                       paEntries[i].uLastPort - paEntries[i].uFirstPort + 1, pVM->iom.s.paIoPortRegs[paEntries[i].idx].cPorts));
             uPortPrev = paEntries[i].uLastPort;
         }
 #endif

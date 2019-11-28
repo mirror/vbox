@@ -202,6 +202,10 @@ VMMR0_INT_DECL(int) IOMR0MmioGrowRegistrationTables(PGVM pGVM, uint64_t cReqMinE
             {
                 paRing0[i].idxSelf  = (uint16_t)i;
                 paRing0[i].idxStats = UINT16_MAX;
+            }
+            i = cbRing3 / sizeof(*paRing3);
+            while (i-- > cOldEntries)
+            {
                 paRing3[i].idxSelf  = (uint16_t)i;
                 paRing3[i].idxStats = UINT16_MAX;
             }
