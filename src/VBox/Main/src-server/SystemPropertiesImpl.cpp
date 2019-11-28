@@ -1570,8 +1570,8 @@ HRESULT SystemProperties::getSupportedStorageBuses(std::vector<StorageBus_T> &aS
 {
     static const StorageBus_T aStorageBuses[] =
     {
-        StorageBus_IDE,
         StorageBus_SATA,
+        StorageBus_IDE,
         StorageBus_SCSI,
         StorageBus_Floppy,
         StorageBus_SAS,
@@ -1590,10 +1590,10 @@ HRESULT SystemProperties::getSupportedStorageControllerTypes(std::vector<Storage
 {
     static const StorageControllerType_T aStorageControllerTypes[] =
     {
-        StorageControllerType_PIIX3,
-        StorageControllerType_PIIX4,
-        StorageControllerType_ICH6,
         StorageControllerType_IntelAhci,
+        StorageControllerType_PIIX4,
+        StorageControllerType_PIIX3,
+        StorageControllerType_ICH6,
         StorageControllerType_LsiLogic,
         StorageControllerType_BusLogic,
         StorageControllerType_I82078,
