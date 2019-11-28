@@ -496,6 +496,8 @@ private:
 
     /** Updates possible buses. */
     void updateBusInfo();
+    /** Updates possible types. */
+    void updateTypeInfo();
     /** Updates pixmaps of possible buses. */
     void updatePixmaps();
 
@@ -510,9 +512,11 @@ private:
     KStorageControllerType  m_enmType;
 
     /** Holds the possible buses. */
-    ControllerBusList   m_buses;
+    ControllerBusList                      m_buses;
+    /** Holds the possible types on per bus basis. */
+    QMap<KStorageBus, ControllerTypeList>  m_types;
     /** Holds the pixmaps of possible buses. */
-    QList<PixmapType>   m_pixmaps;
+    QList<PixmapType>                      m_pixmaps;
 
     /** Holds the current port count. */
     uint  m_uPortCount;
@@ -1250,6 +1254,7 @@ ControllerItem::ControllerItem(AbstractItem *pParentItem, const QString &strName
     AssertMsg(m_enmType != KStorageControllerType_Null, ("Wrong Controller Type {%d}!\n", m_enmType));
 
     updateBusInfo();
+    updateTypeInfo();
     updatePixmaps();
 
     m_fUseIoCache = uiCommon().virtualBox().GetSystemProperties().GetDefaultIoCacheSettingForStorageController(enmType);
@@ -1281,6 +1286,7 @@ void ControllerItem::setBus(KStorageBus enmBus)
     m_enmBus = enmBus;
 
     updateBusInfo();
+    updateTypeInfo();
     updatePixmaps();
 }
 
@@ -1297,6 +1303,8 @@ ControllerBusList ControllerItem::buses() const
 void ControllerItem::setType(KStorageControllerType enmType)
 {
     m_enmType = enmType;
+
+    updateTypeInfo();
 }
 
 KStorageControllerType ControllerItem::type() const
@@ -1306,28 +1314,7 @@ KStorageControllerType ControllerItem::type() const
 
 ControllerTypeList ControllerItem::types(KStorageBus enmBus) const
 {
-    ControllerTypeList types;
-
-    KStorageControllerType enmFirstType = KStorageControllerType_Null;
-    uint cAmount = 0;
-    switch (enmBus)
-    {
-        case KStorageBus_IDE:        enmFirstType = KStorageControllerType_PIIX3; cAmount = 3; break;
-        case KStorageBus_SATA:       enmFirstType = KStorageControllerType_IntelAhci; cAmount = 1; break;
-        case KStorageBus_SCSI:       enmFirstType = KStorageControllerType_LsiLogic; cAmount = 2; break;
-        case KStorageBus_Floppy:     enmFirstType = KStorageControllerType_I82078; cAmount = 1; break;
-        case KStorageBus_SAS:        enmFirstType = KStorageControllerType_LsiLogicSas; cAmount = 1; break;
-        case KStorageBus_USB:        enmFirstType = KStorageControllerType_USB; cAmount = 1; break;
-        case KStorageBus_PCIe:       enmFirstType = KStorageControllerType_NVMe; cAmount = 1; break;
-        case KStorageBus_VirtioSCSI: enmFirstType = KStorageControllerType_VirtioSCSI; cAmount = 1; break;
-        default:                     break;
-    }
-    AssertMsgReturn(enmFirstType != KStorageControllerType_Null, ("Invalid bus: %d!\n", (int)enmBus), types);
-
-    for (uint i = enmFirstType; i < enmFirstType + cAmount; ++i)
-        types << static_cast<KStorageControllerType>(i);
-
-    return types;
+    return m_types.value(enmBus);
 }
 
 void ControllerItem::setPortCount(uint uPortCount)
@@ -1477,6 +1464,53 @@ void ControllerItem::updateBusInfo()
 
     /* And prepend current bus finally: */
     m_buses.prepend(m_enmBus);
+}
+
+void ControllerItem::updateTypeInfo()
+{
+    /* Clear the types initially: */
+    m_types.clear();
+
+    /* Load currently supported storage buses & types: */
+    CSystemProperties comProperties = uiCommon().virtualBox().GetSystemProperties();
+    const QVector<KStorageBus> supportedBuses = comProperties.GetSupportedStorageBuses();
+    const QVector<KStorageControllerType> supportedTypes = comProperties.GetSupportedStorageControllerTypes();
+
+    /* We update the list with all supported buses
+     * and remove the current one from that list. */
+    ControllerBusList possibleBuses = supportedBuses.toList();
+    possibleBuses.removeAll(m_enmBus);
+
+    /* And prepend current bus finally: */
+    possibleBuses.prepend(m_enmBus);
+
+    /* Enumerate possible buses: */
+    foreach (const KStorageBus &enmBus, possibleBuses)
+    {
+        /* This is hardcoded hell, we will get rid of it one day .. */
+        KStorageControllerType enmFirstType = KStorageControllerType_Null;
+        uint cAmount = 0;
+        switch (enmBus)
+        {
+            case KStorageBus_IDE:        enmFirstType = KStorageControllerType_PIIX3; cAmount = 3; break;
+            case KStorageBus_SATA:       enmFirstType = KStorageControllerType_IntelAhci; cAmount = 1; break;
+            case KStorageBus_SCSI:       enmFirstType = KStorageControllerType_LsiLogic; cAmount = 2; break;
+            case KStorageBus_Floppy:     enmFirstType = KStorageControllerType_I82078; cAmount = 1; break;
+            case KStorageBus_SAS:        enmFirstType = KStorageControllerType_LsiLogicSas; cAmount = 1; break;
+            case KStorageBus_USB:        enmFirstType = KStorageControllerType_USB; cAmount = 1; break;
+            case KStorageBus_PCIe:       enmFirstType = KStorageControllerType_NVMe; cAmount = 1; break;
+            case KStorageBus_VirtioSCSI: enmFirstType = KStorageControllerType_VirtioSCSI; cAmount = 1; break;
+            default:                     break;
+        }
+
+        /* Check whether type is supported or already selected before adding it: */
+        for (uint i = enmFirstType; i < enmFirstType + cAmount; ++i)
+        {
+            const KStorageControllerType enmType = static_cast<KStorageControllerType>(i);
+            if (supportedTypes.contains(enmType) || enmType == m_enmType)
+                m_types[enmBus] << enmType;
+        }
+    }
 }
 
 void ControllerItem::updatePixmaps()
