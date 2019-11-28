@@ -151,7 +151,7 @@ systemd_wrap_init_script()
     test -z "${servicetype}" && servicetype="forking"
     targets=`for i in ${runlevels}; do printf "runlevel${i}.target "; done`
     before=`for i in ${startbefore}; do printf "${i}.service "; done`
-    after=`for i in ${required_target}; do printf "${i}.target "; done` `for i in ${required}; do printf "${i}.service "; done`
+    after=`for i in ${required_target}; do printf "${i}.target "; done; for i in ${required}; do printf "${i}.service "; done`
     cat > "${unit_path}/${name}.service" << EOF
 [Unit]
 SourcePath=${script}
