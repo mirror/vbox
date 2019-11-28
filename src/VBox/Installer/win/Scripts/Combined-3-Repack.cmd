@@ -6,14 +6,7 @@ rem
 
 rem
 rem Copyright (C) 2018-2019 Oracle Corporation
-rem
-rem This file is part of VirtualBox Open Source Edition (OSE), as
-rem available from http://www.virtualbox.org. This file is free software;
-rem you can redistribute it and/or modify it under the terms of the GNU
-rem General Public License (GPL) as published by the Free Software
-rem Foundation, in version 2 as it comes in the "COPYING" file of the
-rem VirtualBox OSE distribution. VirtualBox OSE is distributed in the
-rem hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
+rem All rights reserved
 rem
 
 
