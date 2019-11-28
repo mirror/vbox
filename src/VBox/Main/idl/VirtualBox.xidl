@@ -10746,7 +10746,7 @@
   <interface
     name="ISystemProperties"
     extends="$unknown"
-    uuid="297ea744-607e-4b8b-841f-23a6eb749a67"
+    uuid="027bc463-929c-40e8-bf16-fea557cd8e7e"
     wsmap="managed"
     reservedMethods="4" reservedAttributes="16"
     >
@@ -11382,6 +11382,33 @@
 
       <param name="deviceTypes" type="DeviceType" safearray="yes" dir="return">
         <desc>The list of all supported device types for the given storage bus.</desc>
+      </param>
+    </method>
+
+    <method name="getStorageBusForStorageControllerType">
+      <desc>Returns the <link to="StorageBus"/> enum value
+        for a given storage controller type.</desc>
+
+      <param name="storageControllerType" type="StorageControllerType" dir="in">
+        <desc>The storage controller type to get the value for.</desc>
+      </param>
+
+      <param name="storageBus" type="StorageBus" dir="return">
+        <desc>The storage bus which is applicable.</desc>
+      </param>
+    </method>
+
+    <method name="getStorageControllerTypesForStorageBus">
+      <desc>Returns the possible <link to="StorageControllerType"/> enum values
+        for a given storage bus.</desc>
+
+      <param name="storageBus" type="StorageBus" dir="in">
+        <desc>The storage bus type to get the values for.</desc>
+      </param>
+
+      <param name="storageControllerType" type="StorageControllerType" safearray="yes" dir="return">
+        <desc>The enum values (sorted by what should be a sensible decreasing
+        importance of the type) which are valid.</desc>
       </param>
     </method>
 

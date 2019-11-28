@@ -540,6 +540,96 @@ HRESULT SystemProperties::getDeviceTypesForStorageBus(StorageBus_T aBus,
     return S_OK;
 }
 
+HRESULT SystemProperties::getStorageBusForStorageControllerType(StorageControllerType_T aStorageControllerType,
+                                                                StorageBus_T *aStorageBus)
+{
+    /* no need to lock, this is const */
+    switch (aStorageControllerType)
+    {
+        case StorageControllerType_LsiLogic:
+        case StorageControllerType_BusLogic:
+            *aStorageBus = StorageBus_SCSI;
+            break;
+        case StorageControllerType_IntelAhci:
+            *aStorageBus = StorageBus_SATA;
+            break;
+        case StorageControllerType_PIIX3:
+        case StorageControllerType_PIIX4:
+        case StorageControllerType_ICH6:
+            *aStorageBus = StorageBus_IDE;
+            break;
+        case StorageControllerType_I82078:
+            *aStorageBus = StorageBus_Floppy;
+            break;
+        case StorageControllerType_LsiLogicSas:
+            *aStorageBus = StorageBus_SAS;
+            break;
+        case StorageControllerType_USB:
+            *aStorageBus = StorageBus_USB;
+            break;
+        case StorageControllerType_NVMe:
+            *aStorageBus = StorageBus_PCIe;
+            break;
+        case StorageControllerType_VirtioSCSI:
+            *aStorageBus = StorageBus_VirtioSCSI;
+            break;
+        default:
+            return setError(E_FAIL, tr("Invalid storage controller type %d\n"), aStorageBus);
+    }
+
+    return S_OK;
+}
+
+HRESULT SystemProperties::getStorageControllerTypesForStorageBus(StorageBus_T aStorageBus,
+                                                                 std::vector<StorageControllerType_T> &aStorageControllerTypes)
+{
+    aStorageControllerTypes.resize(0);
+
+    /* no need to lock, this is const */
+    switch (aStorageBus)
+    {
+        case StorageBus_IDE:
+            aStorageControllerTypes.resize(3);
+            aStorageControllerTypes[0] = StorageControllerType_PIIX4;
+            aStorageControllerTypes[1] = StorageControllerType_PIIX3;
+            aStorageControllerTypes[2] = StorageControllerType_ICH6;
+            break;
+        case StorageBus_SATA:
+            aStorageControllerTypes.resize(1);
+            aStorageControllerTypes[0] = StorageControllerType_IntelAhci;
+            break;
+        case StorageBus_SCSI:
+            aStorageControllerTypes.resize(2);
+            aStorageControllerTypes[0] = StorageControllerType_LsiLogic;
+            aStorageControllerTypes[1] = StorageControllerType_BusLogic;
+            break;
+        case StorageBus_Floppy:
+            aStorageControllerTypes.resize(1);
+            aStorageControllerTypes[0] = StorageControllerType_I82078;
+            break;
+        case StorageBus_SAS:
+            aStorageControllerTypes.resize(1);
+            aStorageControllerTypes[0] = StorageControllerType_LsiLogicSas;
+            break;
+        case StorageBus_USB:
+            aStorageControllerTypes.resize(1);
+            aStorageControllerTypes[0] = StorageControllerType_USB;
+            break;
+        case StorageBus_PCIe:
+            aStorageControllerTypes.resize(1);
+            aStorageControllerTypes[0] = StorageControllerType_NVMe;
+            break;
+        case StorageBus_VirtioSCSI:
+            aStorageControllerTypes.resize(1);
+            aStorageControllerTypes[0] = StorageControllerType_VirtioSCSI;
+            break;
+        default:
+            return setError(E_FAIL, tr("Invalid storage bus %d\n"), aStorageBus);
+    }
+
+    return S_OK;
+}
+
 HRESULT SystemProperties::getDefaultIoCacheSettingForStorageController(StorageControllerType_T aControllerType,
                                                                        BOOL *aEnabled)
 {
