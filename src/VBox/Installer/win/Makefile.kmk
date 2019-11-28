@@ -1160,12 +1160,14 @@ ifdef VBOX_WITH_COMBINED_PACKAGE
  if "$(KBUILD_TARGET_ARCH)" == "x86"
  RePackScripts_SOURCES += \
  	$(RePackScripts_0_OUTDIR)/Combined-1-Prepare.cmd \
- 	$(RePackScripts_0_OUTDIR)/Combined-3-Repack.cmd
+ 	$(RePackScripts_0_OUTDIR)/Combined-3-Repack.cmd \
+ 	$(RePackScripts_0_OUTDIR)/Combined-3-RepackAdditions.cmd
  endif
 else
  RePackScripts_SOURCES += \
  	$(RePackScripts_0_OUTDIR)/Single-1-Prepare.cmd \
- 	$(RePackScripts_0_OUTDIR)/Single-3-Repack.cmd
+ 	$(RePackScripts_0_OUTDIR)/Single-3-Repack.cmd \
+ 	$(RePackScripts_0_OUTDIR)/Combined-3-RepackAdditions.cmd
 endif
 RePackScripts_CLEAN = \
 	$(RePackScripts_0_OUTDIR)/PackDriversForSubmission.cmd \
@@ -1180,6 +1182,7 @@ $(call VBOX_EDIT_VERSION_AND_BUILD_RULE_FN,RePackScripts,Scripts/RepackExtPack.c
 ifdef VBOX_WITH_COMBINED_PACKAGE
 $(call VBOX_EDIT_VERSION_AND_BUILD_RULE_FN,RePackScripts,Scripts/Combined-1-Prepare.cmd,Combined-1-Prepare.cmd)
 $(call VBOX_EDIT_VERSION_AND_BUILD_RULE_FN,RePackScripts,Scripts/Combined-3-Repack.cmd,Combined-3-Repack.cmd)
+$(call VBOX_EDIT_VERSION_AND_BUILD_RULE_FN,RePackScripts,Scripts/Combined-3-RepackAdditions.cmd,Combined-3-RepackAdditions.cmd)
 else
 $(call VBOX_EDIT_VERSION_AND_BUILD_RULE_FN,RePackScripts,Scripts/Single-1-Prepare.cmd,Single-1-Prepare.cmd)
 $(call VBOX_EDIT_VERSION_AND_BUILD_RULE_FN,RePackScripts,Scripts/Single-3-Repack.cmd,Single-3-Repack.cmd)
