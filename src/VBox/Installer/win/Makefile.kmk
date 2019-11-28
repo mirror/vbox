@@ -1166,8 +1166,7 @@ ifdef VBOX_WITH_COMBINED_PACKAGE
 else
  RePackScripts_SOURCES += \
  	$(RePackScripts_0_OUTDIR)/Single-1-Prepare.cmd \
- 	$(RePackScripts_0_OUTDIR)/Single-3-Repack.cmd \
- 	$(RePackScripts_0_OUTDIR)/Combined-3-RepackAdditions.cmd
+ 	$(RePackScripts_0_OUTDIR)/Single-3-Repack.cmd
 endif
 RePackScripts_CLEAN = \
 	$(RePackScripts_0_OUTDIR)/PackDriversForSubmission.cmd \
