@@ -110,6 +110,9 @@ private:
     /** Cleanups all. */
     void cleanup();
 
+    /** Repopulates Clipboard mode combo-box. */
+    void repopulateComboClipboardMode();
+
     /** Saves existing general data from the cache. */
     bool saveGeneralData();
     /** Saves existing 'Basic' data from the cache. */

@@ -240,6 +240,10 @@ void UIMachineSettingsGeneral::getFromCache()
     /* Get old general data from the cache: */
     const UIDataSettingsMachineGeneral &oldGeneralData = m_pCache->base();
 
+    /* We are doing that *now* because these combos have
+     * dynamical content which depends on cashed value: */
+    repopulateComboClipboardMode();
+
     /* Load old 'Basic' data from the cache: */
     AssertPtrReturnVoid(m_pNameAndSystemEditor);
     m_pNameAndSystemEditor->setName(oldGeneralData.m_strName);
@@ -251,7 +255,8 @@ void UIMachineSettingsGeneral::getFromCache()
     AssertPtrReturnVoid(mCbDragAndDrop);
     mPsSnapshot->setPath(oldGeneralData.m_strSnapshotsFolder);
     mPsSnapshot->setHomeDir(oldGeneralData.m_strSnapshotsHomeDir);
-    mCbClipboard->setCurrentIndex(oldGeneralData.m_clipboardMode);
+    const int iClipboardModePosition = mCbClipboard->findData(oldGeneralData.m_clipboardMode);
+    mCbClipboard->setCurrentIndex(iClipboardModePosition == -1 ? 0 : iClipboardModePosition);
     mCbDragAndDrop->setCurrentIndex(oldGeneralData.m_dndMode);
 
     /* Load old 'Description' data from the cache: */
@@ -288,7 +293,7 @@ void UIMachineSettingsGeneral::putToCache()
     AssertPtrReturnVoid(mCbClipboard);
     AssertPtrReturnVoid(mCbDragAndDrop);
     newGeneralData.m_strSnapshotsFolder = mPsSnapshot->path();
-    newGeneralData.m_clipboardMode = (KClipboardMode)mCbClipboard->currentIndex();
+    newGeneralData.m_clipboardMode = mCbClipboard->currentData().value<KClipboardMode>();
     newGeneralData.m_dndMode = (KDnDMode)mCbDragAndDrop->currentIndex();
 
     /* Gather new 'Description' data: */
@@ -465,12 +470,15 @@ void UIMachineSettingsGeneral::retranslateUi()
     mPsSnapshot->setWhatsThis(tr("Holds the path where snapshots of this "
                                  "virtual machine will be stored. Be aware that "
                                  "snapshots can take quite a lot of storage space."));
+
     /* Translate Shared Clipboard mode combo: */
     AssertPtrReturnVoid(mCbClipboard);
-    mCbClipboard->setItemText(0, gpConverter->toString(KClipboardMode_Disabled));
-    mCbClipboard->setItemText(1, gpConverter->toString(KClipboardMode_HostToGuest));
-    mCbClipboard->setItemText(2, gpConverter->toString(KClipboardMode_GuestToHost));
-    mCbClipboard->setItemText(3, gpConverter->toString(KClipboardMode_Bidirectional));
+    for (int iIndex = 0; iIndex < mCbClipboard->count(); ++iIndex)
+    {
+        const KClipboardMode enmType = mCbClipboard->currentData().value<KClipboardMode>();
+        mCbClipboard->setItemText(iIndex, gpConverter->toString(enmType));
+    }
+
     /* Translate Drag'n'drop mode combo: */
     AssertPtrReturnVoid(mCbDragAndDrop);
     mCbDragAndDrop->setItemText(0, gpConverter->toString(KDnDMode_Disabled));
@@ -558,16 +566,6 @@ void UIMachineSettingsGeneral::prepareTabAdvanced()
 {
     /* Tab and it's layout created in the .ui file. */
     {
-        /* Shared Clipboard Mode combo-box created in the .ui file. */
-        AssertPtrReturnVoid(mCbClipboard);
-        {
-            /* Configure combo-box: */
-            mCbClipboard->addItem(""); /* KClipboardMode_Disabled */
-            mCbClipboard->addItem(""); /* KClipboardMode_HostToGuest */
-            mCbClipboard->addItem(""); /* KClipboardMode_GuestToHost */
-            mCbClipboard->addItem(""); /* KClipboardMode_Bidirectional */
-        }
-
         /* Drag&drop Mode combo-box created in the .ui file. */
         AssertPtrReturnVoid(mCbDragAndDrop);
         {
@@ -655,6 +653,28 @@ void UIMachineSettingsGeneral::cleanup()
     /* Cleanup cache: */
     delete m_pCache;
     m_pCache = 0;
+}
+
+void UIMachineSettingsGeneral::repopulateComboClipboardMode()
+{
+    /* Shared Clipboard mode combo-box created in the .ui file. */
+    AssertPtrReturnVoid(mCbClipboard);
+    {
+        /* Clear combo first of all: */
+        mCbClipboard->clear();
+
+        /* Load currently supported Shared Clipboard modes: */
+        CSystemProperties comProperties = uiCommon().virtualBox().GetSystemProperties();
+        QVector<KClipboardMode> clipboardModes = comProperties.GetSupportedClipboardModes();
+        /* Take into account currently cached value: */
+        const KClipboardMode enmCachedValue = m_pCache->base().m_clipboardMode;
+        if (!clipboardModes.contains(enmCachedValue))
+            clipboardModes.prepend(enmCachedValue);
+
+        /* Populate combo finally: */
+        foreach (const KClipboardMode &enmMode, clipboardModes)
+            mCbClipboard->addItem(gpConverter->toString(enmMode), QVariant::fromValue(enmMode));
+    }
 }
 
 bool UIMachineSettingsGeneral::saveGeneralData()
