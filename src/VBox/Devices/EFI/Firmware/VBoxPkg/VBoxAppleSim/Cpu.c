@@ -103,6 +103,7 @@ CpuUpdateDataHub(EFI_BOOT_SERVICES * bs,
     EFI_STATUS                  Status;
     EFI_DATA_HUB_PROTOCOL       *DataHub;
     MAGIC_HUB_DATA              *MagicData;
+    UINT32                      Supported = 1;
     //
     // Locate DataHub protocol.
     //
@@ -122,6 +123,12 @@ CpuUpdateDataHub(EFI_BOOT_SERVICES * bs,
     LogData(DataHub, MagicData, L"FSBFrequency", &FSBFrequency, sizeof(FSBFrequency));
     LogData(DataHub, MagicData, L"TSCFrequency", &TSCFrequency, sizeof(TSCFrequency));
     LogData(DataHub, MagicData, L"CPUFrequency", &CPUFrequency, sizeof(CPUFrequency));
+
+    // The following is required for OS X to construct a SATA boot path. UEFI 2.0 (published
+    // in Jan 2006, same time as the first Intel Macs) did not standardize SATA device paths;
+    // if DevicePathsSupported is not set, OS X will create ATA boot paths which will fail
+    // to boot
+    LogData(DataHub, MagicData, L"DevicePathsSupported", &Supported, sizeof(Supported));
 
     FreePool (MagicData);
 
