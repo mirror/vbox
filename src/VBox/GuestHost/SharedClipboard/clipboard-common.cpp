@@ -447,14 +447,14 @@ void ShClEventPayloadDetach(PSHCLEVENTSOURCE pSource, SHCLEVENTID uID)
 #endif
 }
 
-/** @todo use const where appropriate; delinuxify the code (*Lin* -> *Host*); use AssertLogRel*. */
+/** @todo Delinuxify the code (*Lin* -> *Host*); use AssertLogRel*. */
 
-int ShClUtf16GetWinSize(PRTUTF16 pwszSrc, size_t cwSrc, size_t *pcwDest)
+int ShClUtf16GetWinSize(PCRTUTF16 pcwszSrc, size_t cwSrc, size_t *pcwDest)
 {
     size_t cwDest, i;
 
-    LogFlowFunc(("pwszSrc=%.*ls, cwSrc=%u\n", cwSrc, pwszSrc, cwSrc));
-    AssertLogRelMsgReturn(pwszSrc != NULL, ("vboxClipboardUtf16GetWinSize: received a null Utf16 string, returning VERR_INVALID_PARAMETER\n"), VERR_INVALID_PARAMETER);
+    LogFlowFunc(("pcwszSrc=%.*ls, cwSrc=%u\n", cwSrc, pcwszSrc, cwSrc));
+    AssertLogRelMsgReturn(pcwszSrc != NULL, ("vboxClipboardUtf16GetWinSize: received a null Utf16 string, returning VERR_INVALID_PARAMETER\n"), VERR_INVALID_PARAMETER);
     if (cwSrc == 0)
     {
         *pcwDest = 0;
@@ -463,25 +463,25 @@ int ShClUtf16GetWinSize(PRTUTF16 pwszSrc, size_t cwSrc, size_t *pcwDest)
     }
 /** @todo convert the remainder of the Assert stuff to AssertLogRel. */
     /* We only take little endian Utf16 */
-    if (pwszSrc[0] == VBOX_SHCL_UTF16BEMARKER)
+    if (pcwszSrc[0] == VBOX_SHCL_UTF16BEMARKER)
     {
         LogRel(("Shared Clipboard: vboxClipboardUtf16GetWinSize: received a big endian Utf16 string, returning VERR_INVALID_PARAMETER\n"));
-        AssertReturn(pwszSrc[0] != VBOX_SHCL_UTF16BEMARKER, VERR_INVALID_PARAMETER);
+        AssertReturn(pcwszSrc[0] != VBOX_SHCL_UTF16BEMARKER, VERR_INVALID_PARAMETER);
     }
     cwDest = 0;
     /* Calculate the size of the destination text string. */
     /* Is this Utf16 or Utf16-LE? */
-    for (i = (pwszSrc[0] == VBOX_SHCL_UTF16LEMARKER ? 1 : 0); i < cwSrc; ++i, ++cwDest)
+    for (i = (pcwszSrc[0] == VBOX_SHCL_UTF16LEMARKER ? 1 : 0); i < cwSrc; ++i, ++cwDest)
     {
         /* Check for a single line feed */
-        if (pwszSrc[i] == VBOX_SHCL_LINEFEED)
+        if (pcwszSrc[i] == VBOX_SHCL_LINEFEED)
             ++cwDest;
 #ifdef RT_OS_DARWIN
         /* Check for a single carriage return (MacOS) */
-        if (pwszSrc[i] == VBOX_SHCL_CARRIAGERETURN)
+        if (pcwszSrc[i] == VBOX_SHCL_CARRIAGERETURN)
             ++cwDest;
 #endif
-        if (pwszSrc[i] == 0)
+        if (pcwszSrc[i] == 0)
         {
             /* Don't count this, as we do so below. */
             break;
@@ -494,14 +494,14 @@ int ShClUtf16GetWinSize(PRTUTF16 pwszSrc, size_t cwSrc, size_t *pcwDest)
     return VINF_SUCCESS;
 }
 
-int ShClUtf16LinToWin(PRTUTF16 pwszSrc, size_t cwSrc, PRTUTF16 pu16Dest, size_t cwDest)
+int ShClUtf16LinToWin(PCRTUTF16 pcwszSrc, size_t cwSrc, PRTUTF16 pu16Dest, size_t cwDest)
 {
     size_t i, j;
-    LogFlowFunc(("pwszSrc=%.*ls, cwSrc=%u\n", cwSrc, pwszSrc, cwSrc));
-    if (!VALID_PTR(pwszSrc) || !VALID_PTR(pu16Dest))
+    LogFlowFunc(("pcwszSrc=%.*ls, cwSrc=%u\n", cwSrc, pcwszSrc, cwSrc));
+    if (!VALID_PTR(pcwszSrc) || !VALID_PTR(pu16Dest))
     {
         LogRel(("Shared Clipboard: vboxClipboardUtf16LinToWin: received an invalid pointer, returning VERR_INVALID_PARAMETER\n"));
-        AssertReturn(VALID_PTR(pwszSrc) && VALID_PTR(pu16Dest), VERR_INVALID_PARAMETER);
+        AssertReturn(VALID_PTR(pcwszSrc) && VALID_PTR(pu16Dest), VERR_INVALID_PARAMETER);
     }
     if (cwSrc == 0)
     {
@@ -515,23 +515,23 @@ int ShClUtf16LinToWin(PRTUTF16 pwszSrc, size_t cwSrc, PRTUTF16 pu16Dest, size_t 
         return VINF_SUCCESS;
     }
     /* We only take little endian Utf16 */
-    if (pwszSrc[0] == VBOX_SHCL_UTF16BEMARKER)
+    if (pcwszSrc[0] == VBOX_SHCL_UTF16BEMARKER)
     {
         LogRel(("Shared Clipboard: vboxClipboardUtf16LinToWin: received a big endian Utf16 string, returning VERR_INVALID_PARAMETER\n"));
-        AssertReturn(pwszSrc[0] != VBOX_SHCL_UTF16BEMARKER, VERR_INVALID_PARAMETER);
+        AssertReturn(pcwszSrc[0] != VBOX_SHCL_UTF16BEMARKER, VERR_INVALID_PARAMETER);
     }
     /* Don't copy the endian marker. */
-    for (i = (pwszSrc[0] == VBOX_SHCL_UTF16LEMARKER ? 1 : 0), j = 0; i < cwSrc; ++i, ++j)
+    for (i = (pcwszSrc[0] == VBOX_SHCL_UTF16LEMARKER ? 1 : 0), j = 0; i < cwSrc; ++i, ++j)
     {
         /* Don't copy the null byte, as we add it below. */
-        if (pwszSrc[i] == 0)
+        if (pcwszSrc[i] == 0)
             break;
         if (j == cwDest)
         {
             LogFlowFunc(("returning VERR_BUFFER_OVERFLOW\n"));
             return VERR_BUFFER_OVERFLOW;
         }
-        if (pwszSrc[i] == VBOX_SHCL_LINEFEED)
+        if (pcwszSrc[i] == VBOX_SHCL_LINEFEED)
         {
             pu16Dest[j] = VBOX_SHCL_CARRIAGERETURN;
             ++j;
@@ -543,7 +543,7 @@ int ShClUtf16LinToWin(PRTUTF16 pwszSrc, size_t cwSrc, PRTUTF16 pu16Dest, size_t 
         }
 #ifdef RT_OS_DARWIN
         /* Check for a single carriage return (MacOS) */
-        else if (pwszSrc[i] == VBOX_SHCL_CARRIAGERETURN)
+        else if (pcwszSrc[i] == VBOX_SHCL_CARRIAGERETURN)
         {
             /* set cr */
             pu16Dest[j] = VBOX_SHCL_CARRIAGERETURN;
@@ -558,7 +558,7 @@ int ShClUtf16LinToWin(PRTUTF16 pwszSrc, size_t cwSrc, PRTUTF16 pu16Dest, size_t 
             continue;
         }
 #endif
-        pu16Dest[j] = pwszSrc[i];
+        pu16Dest[j] = pcwszSrc[i];
     }
     /* Add the trailing null. */
     if (j == cwDest)
@@ -571,15 +571,15 @@ int ShClUtf16LinToWin(PRTUTF16 pwszSrc, size_t cwSrc, PRTUTF16 pu16Dest, size_t 
     return VINF_SUCCESS;
 }
 
-int ShClUtf16GetLinSize(PRTUTF16 pwszSrc, size_t cwSrc, size_t *pcwDest)
+int ShClUtf16GetLinSize(PCRTUTF16 pcwszSrc, size_t cwSrc, size_t *pcwDest)
 {
     size_t cwDest;
 
-    LogFlowFunc(("pwszSrc=%.*ls, cwSrc=%u\n", cwSrc, pwszSrc, cwSrc));
-    if (!VALID_PTR(pwszSrc))
+    LogFlowFunc(("pcwszSrc=%.*ls, cwSrc=%u\n", cwSrc, pcwszSrc, cwSrc));
+    if (!VALID_PTR(pcwszSrc))
     {
         LogRel(("Shared Clipboard: vboxClipboardUtf16GetLinSize: received an invalid Utf16 string, returning VERR_INVALID_PARAMETER\n"));
-        AssertReturn(VALID_PTR(pwszSrc), VERR_INVALID_PARAMETER);
+        AssertReturn(VALID_PTR(pcwszSrc), VERR_INVALID_PARAMETER);
     }
     if (cwSrc == 0)
     {
@@ -588,26 +588,26 @@ int ShClUtf16GetLinSize(PRTUTF16 pwszSrc, size_t cwSrc, size_t *pcwDest)
         return VINF_SUCCESS;
     }
     /* We only take little endian Utf16 */
-    if (pwszSrc[0] == VBOX_SHCL_UTF16BEMARKER)
+    if (pcwszSrc[0] == VBOX_SHCL_UTF16BEMARKER)
     {
         LogRel(("Shared Clipboard: vboxClipboardUtf16GetLinSize: received a big endian Utf16 string, returning VERR_INVALID_PARAMETER\n"));
-        AssertReturn(pwszSrc[0] != VBOX_SHCL_UTF16BEMARKER, VERR_INVALID_PARAMETER);
+        AssertReturn(pcwszSrc[0] != VBOX_SHCL_UTF16BEMARKER, VERR_INVALID_PARAMETER);
     }
     /* Calculate the size of the destination text string. */
     /* Is this Utf16 or Utf16-LE? */
-    if (pwszSrc[0] == VBOX_SHCL_UTF16LEMARKER)
+    if (pcwszSrc[0] == VBOX_SHCL_UTF16LEMARKER)
         cwDest = 0;
     else
         cwDest = 1;
     for (size_t i = 0; i < cwSrc; ++i, ++cwDest)
     {
         if (   (i + 1 < cwSrc)
-            && (pwszSrc[i] == VBOX_SHCL_CARRIAGERETURN)
-            && (pwszSrc[i + 1] == VBOX_SHCL_LINEFEED))
+            && (pcwszSrc[i] == VBOX_SHCL_CARRIAGERETURN)
+            && (pcwszSrc[i + 1] == VBOX_SHCL_LINEFEED))
         {
             ++i;
         }
-        if (pwszSrc[i] == 0)
+        if (pcwszSrc[i] == 0)
         {
             break;
         }
@@ -619,21 +619,21 @@ int ShClUtf16GetLinSize(PRTUTF16 pwszSrc, size_t cwSrc, size_t *pcwDest)
     return VINF_SUCCESS;
 }
 
-int ShClUtf16WinToLin(PRTUTF16 pwszSrc, size_t cwSrc, PRTUTF16 pu16Dest, size_t cwDest)
+int ShClUtf16WinToLin(PCRTUTF16 pcwszSrc, size_t cwSrc, PRTUTF16 pu16Dest, size_t cwDest)
 {
     size_t cwDestPos;
 
-    LogFlowFunc(("pwszSrc=%.*ls, cwSrc=%u, pu16Dest=%p, cwDest=%u\n",
-                 cwSrc, pwszSrc, cwSrc, pu16Dest, cwDest));
+    LogFlowFunc(("pcwszSrc=%.*ls, cwSrc=%u, pu16Dest=%p, cwDest=%u\n",
+                 cwSrc, pcwszSrc, cwSrc, pu16Dest, cwDest));
     /* A buffer of size 0 may not be an error, but it is not a good idea either. */
     Assert(cwDest > 0);
-    if (!VALID_PTR(pwszSrc) || !VALID_PTR(pu16Dest))
+    if (!VALID_PTR(pcwszSrc) || !VALID_PTR(pu16Dest))
     {
         LogRel(("Shared Clipboard: vboxClipboardUtf16WinToLin: received an invalid pointer, returning VERR_INVALID_PARAMETER\n"));
-        AssertReturn(VALID_PTR(pwszSrc) && VALID_PTR(pu16Dest), VERR_INVALID_PARAMETER);
+        AssertReturn(VALID_PTR(pcwszSrc) && VALID_PTR(pu16Dest), VERR_INVALID_PARAMETER);
     }
     /* We only take little endian Utf16 */
-    if (pwszSrc[0] == VBOX_SHCL_UTF16BEMARKER)
+    if (pcwszSrc[0] == VBOX_SHCL_UTF16BEMARKER)
     {
         LogRel(("Shared Clipboard: vboxClipboardUtf16WinToLin: received a big endian Utf16 string, returning VERR_INVALID_PARAMETER\n"));
         AssertMsgFailedReturn(("received a big endian string\n"), VERR_INVALID_PARAMETER);
@@ -650,7 +650,7 @@ int ShClUtf16WinToLin(PRTUTF16 pwszSrc, size_t cwSrc, PRTUTF16 pu16Dest, size_t 
         return VINF_SUCCESS;
     }
     /* Prepend the Utf16 byte order marker if it is missing. */
-    if (pwszSrc[0] == VBOX_SHCL_UTF16LEMARKER)
+    if (pcwszSrc[0] == VBOX_SHCL_UTF16LEMARKER)
     {
         cwDestPos = 0;
     }
@@ -661,7 +661,7 @@ int ShClUtf16WinToLin(PRTUTF16 pwszSrc, size_t cwSrc, PRTUTF16 pu16Dest, size_t 
     }
     for (size_t i = 0; i < cwSrc; ++i, ++cwDestPos)
     {
-        if (pwszSrc[i] == 0)
+        if (pcwszSrc[i] == 0)
         {
             break;
         }
@@ -671,12 +671,12 @@ int ShClUtf16WinToLin(PRTUTF16 pwszSrc, size_t cwSrc, PRTUTF16 pu16Dest, size_t 
             return VERR_BUFFER_OVERFLOW;
         }
         if (   (i + 1 < cwSrc)
-            && (pwszSrc[i] == VBOX_SHCL_CARRIAGERETURN)
-            && (pwszSrc[i + 1] == VBOX_SHCL_LINEFEED))
+            && (pcwszSrc[i] == VBOX_SHCL_CARRIAGERETURN)
+            && (pcwszSrc[i + 1] == VBOX_SHCL_LINEFEED))
         {
             ++i;
         }
-        pu16Dest[cwDestPos] = pwszSrc[i];
+        pu16Dest[cwDestPos] = pcwszSrc[i];
     }
     /* Terminating zero */
     if (cwDestPos == cwDest)
@@ -758,16 +758,16 @@ int ShClBmpGetDib(const void *pvSrc, size_t cbSrc, const void **ppvDest, size_t 
 }
 
 #ifdef LOG_ENABLED
-int ShClDbgDumpHtml(const char *pszSrc, size_t cbSrc)
+int ShClDbgDumpHtml(const char *pcszSrc, size_t cbSrc)
 {
     size_t cchIgnored = 0;
-    int rc = RTStrNLenEx(pszSrc, cbSrc, &cchIgnored);
+    int rc = RTStrNLenEx(pcszSrc, cbSrc, &cchIgnored);
     if (RT_SUCCESS(rc))
     {
         char *pszBuf = (char *)RTMemAllocZ(cbSrc + 1);
         if (pszBuf)
         {
-            rc = RTStrCopy(pszBuf, cbSrc + 1, (const char *)pszSrc);
+            rc = RTStrCopy(pszBuf, cbSrc + 1, (const char *)pcszSrc);
             if (RT_SUCCESS(rc))
             {
                 for (size_t i = 0; i < cbSrc; ++i)

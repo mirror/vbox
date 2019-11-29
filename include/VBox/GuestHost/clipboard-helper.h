@@ -53,11 +53,11 @@ enum
  *
  * @returns VBox status code.
  *
- * @param   pwszSrc  The source UTF-16 string.
+ * @param   pcwszSrc The source UTF-16 string.
  * @param   cwcSrc   The length of the source string in RTUTF16 units.
  * @param   pcwcDst  The length of the destination string in RTUTF16 units.
  */
-int ShClUtf16GetWinSize(PRTUTF16 pwszSrc, size_t cwcSrc, size_t *pcwcDst);
+int ShClUtf16GetWinSize(PCRTUTF16 pwszSrc, size_t cwcSrc, size_t *pcwcDst);
 
 /**
  * Convert a UTF-16 text with Linux EOLs to null-terminated UTF-16-LE with
@@ -67,12 +67,12 @@ int ShClUtf16GetWinSize(PRTUTF16 pwszSrc, size_t cwcSrc, size_t *pcwcDst);
  *
  * @returns VBox status code
  *
- * @param   pwszSrc  Source UTF-16 text to convert.
- * @param   cwcSrc   Size of the source text int RTUTF16 units
+ * @param   pcwszSrc Source UTF-16 text to convert.
+ * @param   cwcSrc   Size of the source text int RTUTF16 units.
  * @param   pwszDst  Buffer to store the converted text to.
  * @param   cwcDst   Size of the buffer for the converted text in RTUTF16 units.
  */
-int ShClUtf16LinToWin(PRTUTF16 pwszSrc, size_t cwcSrc, PRTUTF16 pwszDst, size_t cwcDst);
+int ShClUtf16LinToWin(PCRTUTF16 pcwszSrc, size_t cwcSrc, PRTUTF16 pwszDst, size_t cwcDst);
 
 /**
  * Get the size of the buffer needed to hold a zero-terminated UTF-16 string
@@ -80,11 +80,11 @@ int ShClUtf16LinToWin(PRTUTF16 pwszSrc, size_t cwcSrc, PRTUTF16 pwszDst, size_t 
  *
  * @returns RT status code
  *
- * @param   pwszSrc  The source UTF-16 string
+ * @param   pcwszSrc The source UTF-16 string.
  * @param   cwcSrc   The length of the source string in RTUTF16 units.
  * @param   pcwcDst  The length of the destination string in RTUTF16 units.
  */
-int ShClUtf16GetLinSize(PRTUTF16 pwszSrc, size_t cwcSrc, size_t *pcwcDst);
+int ShClUtf16GetLinSize(PCRTUTF16 pcwszSrc, size_t cwcSrc, size_t *pcwcDst);
 
 /**
  * Convert UTF-16-LE text with Windows EOLs to zero-terminated UTF-16 with Linux
@@ -92,13 +92,12 @@ int ShClUtf16GetLinSize(PRTUTF16 pwszSrc, size_t cwcSrc, size_t *pcwcDst);
  *
  * @returns VBox status code
  *
- * @param   pwszSrc  Text to convert
+ * @param   pcwszSrc Text to convert.
  * @param   cwcSrc   Size of the source text in RTUTF16 units.
- * @param   pwszDst  The buffer to store the converted text to
- * @param   cwcDst   The size of the buffer for the destination text in RTUTF16
- *                   chars.
+ * @param   pwszDst  The buffer to store the converted text to.
+ * @param   cwcDst   The size of the buffer for the destination text in RTUTF16 chars.
  */
-int ShClUtf16WinToLin(PRTUTF16 pwszSrc, size_t cwcSrc, PRTUTF16 pwszDst, size_t cwcDst);
+int ShClUtf16WinToLin(PCRTUTF16 pcwszSrc, size_t cwcSrc, PRTUTF16 pwszDst, size_t cwcDst);
 
 #pragma pack(1)
 /** @todo r=bird: Why duplicate these structures here, we've got them in
