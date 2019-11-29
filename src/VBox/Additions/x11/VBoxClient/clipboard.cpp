@@ -22,6 +22,9 @@
 #include <iprt/alloc.h>
 #include <iprt/asm.h>
 #include <iprt/assert.h>
+#ifdef VBOX_WITH_SHARED_CLIPBOARD_FUSE
+# include <iprt/dir.h>
+#endif
 #include <iprt/initterm.h>
 #include <iprt/mem.h>
 #include <iprt/string.h>
@@ -36,10 +39,20 @@
 
 #include "VBoxClient.h"
 
+#ifdef VBOX_WITH_SHARED_CLIPBOARD_FUSE
+# include "clipboard-fuse.h"
+#endif
 
 /*********************************************************************************************************************************
 *   Global Variables                                                                                                             *
 *********************************************************************************************************************************/
+
+#ifdef VBOX_WITH_SHARED_CLIPBOARD_FUSE
+typedef struct _SHCLCTXFUSE
+{
+    RTTHREAD Thread;
+} SHCLCTXFUSE;
+#endif /* VBOX_WITH_SHARED_CLIPBOARD_FUSE */
 
 /**
  * Global clipboard context information.
@@ -51,6 +64,9 @@ struct _SHCLCONTEXT
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
     /** Associated transfer data. */
     SHCLTRANSFERCTX  TransferCtx;
+# ifdef VBOX_WITH_SHARED_CLIPBOARD_FUSE
+    SHCLCTXFUSE      FUSE;
+# endif
 #endif
     /** X11 clipboard context. */
     SHCLX11CTX       X11;
@@ -429,6 +445,66 @@ int vboxClipboardMain(void)
     return rc;
 }
 
+#ifdef VBOX_WITH_SHARED_CLIPBOARD_FUSE
+static DECLCALLBACK(int) vboxClipoardFUSEThread(RTTHREAD hThreadSelf, void *pvUser)
+{
+    RT_NOREF(hThreadSelf, pvUser);
+
+    VbglR3Init();
+
+    LogFlowFuncEnter();
+
+    RTThreadUserSignal(hThreadSelf);
+
+    char szExecPath[RTPATH_MAX];
+    RTProcGetExecutablePath(szExecPath, sizeof(szExecPath));
+
+    char szTempDir[RTPATH_MAX];
+    RTStrPrintf(szTempDir, sizeof(szTempDir), "VBoxSharedClipboard-XXXXXXXX");
+
+    int rc = RTDirCreateTemp(szTempDir, 0700);
+    if (RT_SUCCESS(rc))
+    {
+        char *paArgs[2];
+        paArgs[0] = szExecPath;
+        paArgs[1] = szTempDir;
+
+        rc = ShClFuseMain(2 /* argc */, paArgs);
+    }
+
+    LogFlowFuncLeaveRC(rc);
+    return rc;
+}
+
+static int vboxClipboardFUSEStart()
+{
+    LogFlowFuncEnter();
+
+    PSHCLCONTEXT pCtx = &g_Ctx;
+
+    int rc = RTThreadCreate(&pCtx->FUSE.Thread, vboxClipoardFUSEThread, &pCtx->FUSE, 0,
+                            RTTHREADTYPE_IO, RTTHREADFLAGS_WAITABLE, "SHCLFUSE");
+    if (RT_SUCCESS(rc))
+        rc = RTThreadUserWait(pCtx->FUSE.Thread, 30 * 1000);
+
+    LogFlowFuncLeaveRC(rc);
+    return rc;
+}
+
+static int vboxClipboardFUSEStop()
+{
+    LogFlowFuncEnter();
+
+    PSHCLCONTEXT pCtx = &g_Ctx;
+
+    int rcThread;
+    int rc = RTThreadWait(pCtx->FUSE.Thread, 1000, &rcThread);
+
+    LogFlowFuncLeaveRC(rc);
+    return rc;
+}
+#endif /* VBOX_WITH_SHARED_CLIPBOARD_FUSE */
+
 static const char *getName()
 {
     return "Shared Clipboard";
@@ -447,7 +523,19 @@ static int run(struct VBCLSERVICE **ppInterface, bool fDaemonised)
     int rc = vboxClipboardConnect();
     if (RT_SUCCESS(rc))
     {
-        rc = vboxClipboardMain();
+#ifdef VBOX_WITH_SHARED_CLIPBOARD_FUSE
+        rc = vboxClipboardFUSEStart();
+        if (RT_SUCCESS(rc))
+        {
+#endif
+            rc = vboxClipboardMain();
+
+#ifdef VBOX_WITH_SHARED_CLIPBOARD_FUSE
+            int rc2 = vboxClipboardFUSEStop();
+            if (RT_SUCCESS(rc))
+                rc = rc2;
+        }
+#endif
     }
 
     if (RT_FAILURE(rc))

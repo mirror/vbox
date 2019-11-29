@@ -103,11 +103,15 @@ ifdef VBOX_WITH_SHARED_CLIPBOARD
   VBoxClient_SOURCES += \
 	$(PATH_ROOT)/src/VBox/GuestHost/SharedClipboard/clipboard-transfers.cpp \
 	$(PATH_ROOT)/src/VBox/GuestHost/SharedClipboard/ClipboardPath.cpp
-  ifdef VBOX_WITH_LIBFUSE_DISABLED
+  ifdef VBOX_WITH_SHARED_CLIPBOARD_FUSE
+   VBoxClient_DEFS    += VBOX_WITH_SHARED_CLIPBOARD_FUSE
+   # @todo Make this dynamic loading more generic.
    VBoxClient_SOURCES += \
+	$(PATH_ROOT)/src/VBox/ImageMounter/vboximg-mount/fuse.cpp \
 	clipboard-fuse.cpp
-   VBoxClient_LIBS += \
-	libfuse
+   # @todo Ditto.
+   VBoxClient_INCS    += \
+	$(PATH_ROOT)/src/VBox/ImageMounter/vboximg-mount
   endif
   ifdef VBOX_WITH_LIBGVFS
    VBOX_VBOXCLIENT_GVFS_PATH := gvfs-1.43.1
