@@ -2569,25 +2569,13 @@ static int devpciR3UnmapRegion(PPDMDEVINS pDevIns, PPDMPCIDEV pDev, int iRegion)
              * Old style device, no handle here and only MMIOEx gets callouts.
              */
             if (pRegion->type & PCI_ADDRESS_SPACE_IO)
-            {
-                /* Port IO */
-                rc = PDMDevHlpIOPortDeregister(pDev->Int.s.pDevInsR3, pRegion->addr, pRegion->size);
-                AssertRC(rc);
-            }
+                AssertFailed();
             else
             {
                 PDEVPCIBUSCC pBusCC     = PDMINS_2_DATA_CC(pDevIns, PDEVPCIBUSCC);
                 RTGCPHYS     GCPhysBase = pRegion->addr;
-                if (pBusCC->pPciHlpR3->pfnIsMMIOExBase(pDevIns, pDev->Int.s.pDevInsR3, GCPhysBase))
-                {
-                    /* unmap it. */
-                    rc = pRegion->pfnMap(pDev->Int.s.pDevInsR3, pDev, iRegion,
-                                         NIL_RTGCPHYS, pRegion->size, (PCIADDRESSSPACE)(pRegion->type));
-                    AssertRC(rc);
-                    rc = PDMDevHlpMMIOExUnmap(pDev->Int.s.pDevInsR3, pDev, iRegion, GCPhysBase);
-                }
-                else
-                    rc = PDMDevHlpMMIODeregister(pDev->Int.s.pDevInsR3, GCPhysBase, pRegion->size);
+                Assert(!pBusCC->pPciHlpR3->pfnIsMMIOExBase(pDevIns, pDev->Int.s.pDevInsR3, GCPhysBase));
+                rc = PDMDevHlpMMIODeregister(pDev->Int.s.pDevInsR3, GCPhysBase, pRegion->size);
                 AssertRC(rc);
             }
         }
