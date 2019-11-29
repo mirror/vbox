@@ -243,6 +243,7 @@ void UIMachineSettingsGeneral::getFromCache()
     /* We are doing that *now* because these combos have
      * dynamical content which depends on cashed value: */
     repopulateComboClipboardMode();
+    repopulateComboDnDMode();
 
     /* Load old 'Basic' data from the cache: */
     AssertPtrReturnVoid(m_pNameAndSystemEditor);
@@ -257,7 +258,8 @@ void UIMachineSettingsGeneral::getFromCache()
     mPsSnapshot->setHomeDir(oldGeneralData.m_strSnapshotsHomeDir);
     const int iClipboardModePosition = mCbClipboard->findData(oldGeneralData.m_clipboardMode);
     mCbClipboard->setCurrentIndex(iClipboardModePosition == -1 ? 0 : iClipboardModePosition);
-    mCbDragAndDrop->setCurrentIndex(oldGeneralData.m_dndMode);
+    const int iDnDModePosition = mCbDragAndDrop->findData(oldGeneralData.m_dndMode);
+    mCbDragAndDrop->setCurrentIndex(iDnDModePosition == -1 ? 0 : iDnDModePosition);
 
     /* Load old 'Description' data from the cache: */
     AssertPtrReturnVoid(mTeDescription);
@@ -294,7 +296,7 @@ void UIMachineSettingsGeneral::putToCache()
     AssertPtrReturnVoid(mCbDragAndDrop);
     newGeneralData.m_strSnapshotsFolder = mPsSnapshot->path();
     newGeneralData.m_clipboardMode = mCbClipboard->currentData().value<KClipboardMode>();
-    newGeneralData.m_dndMode = (KDnDMode)mCbDragAndDrop->currentIndex();
+    newGeneralData.m_dndMode = mCbDragAndDrop->currentData().value<KDnDMode>();
 
     /* Gather new 'Description' data: */
     AssertPtrReturnVoid(mTeDescription);
@@ -481,10 +483,11 @@ void UIMachineSettingsGeneral::retranslateUi()
 
     /* Translate Drag'n'drop mode combo: */
     AssertPtrReturnVoid(mCbDragAndDrop);
-    mCbDragAndDrop->setItemText(0, gpConverter->toString(KDnDMode_Disabled));
-    mCbDragAndDrop->setItemText(1, gpConverter->toString(KDnDMode_HostToGuest));
-    mCbDragAndDrop->setItemText(2, gpConverter->toString(KDnDMode_GuestToHost));
-    mCbDragAndDrop->setItemText(3, gpConverter->toString(KDnDMode_Bidirectional));
+    for (int iIndex = 0; iIndex < mCbDragAndDrop->count(); ++iIndex)
+    {
+        const KDnDMode enmType = mCbDragAndDrop->currentData().value<KDnDMode>();
+        mCbDragAndDrop->setItemText(iIndex, gpConverter->toString(enmType));
+    }
 
     /* Translate Cipher type combo: */
     AssertPtrReturnVoid(m_pComboCipher);
@@ -535,8 +538,6 @@ void UIMachineSettingsGeneral::prepare()
     {
         /* Prepare 'Basic' tab: */
         prepareTabBasic();
-        /* Prepare 'Advanced' tab: */
-        prepareTabAdvanced();
         /* Prepare 'Description' tab: */
         prepareTabDescription();
         /* Prepare 'Encryption' tab: */
@@ -558,22 +559,6 @@ void UIMachineSettingsGeneral::prepareTabBasic()
         {
             /* Configure widget: */
             m_pNameAndSystemEditor->setNameFieldValidator(".+");
-        }
-    }
-}
-
-void UIMachineSettingsGeneral::prepareTabAdvanced()
-{
-    /* Tab and it's layout created in the .ui file. */
-    {
-        /* Drag&drop Mode combo-box created in the .ui file. */
-        AssertPtrReturnVoid(mCbDragAndDrop);
-        {
-            /* Configure combo-box: */
-            mCbDragAndDrop->addItem(""); /* KDnDMode_Disabled */
-            mCbDragAndDrop->addItem(""); /* KDnDMode_HostToGuest */
-            mCbDragAndDrop->addItem(""); /* KDnDMode_GuestToHost */
-            mCbDragAndDrop->addItem(""); /* KDnDMode_Bidirectional */
         }
     }
 }
@@ -674,6 +659,28 @@ void UIMachineSettingsGeneral::repopulateComboClipboardMode()
         /* Populate combo finally: */
         foreach (const KClipboardMode &enmMode, clipboardModes)
             mCbClipboard->addItem(gpConverter->toString(enmMode), QVariant::fromValue(enmMode));
+    }
+}
+
+void UIMachineSettingsGeneral::repopulateComboDnDMode()
+{
+    /* DnD mode combo-box created in the .ui file. */
+    AssertPtrReturnVoid(mCbDragAndDrop);
+    {
+        /* Clear combo first of all: */
+        mCbDragAndDrop->clear();
+
+        /* Load currently supported DnD modes: */
+        CSystemProperties comProperties = uiCommon().virtualBox().GetSystemProperties();
+        QVector<KDnDMode> dndModes = comProperties.GetSupportedDnDModes();
+        /* Take into account currently cached value: */
+        const KDnDMode enmCachedValue = m_pCache->base().m_dndMode;
+        if (!dndModes.contains(enmCachedValue))
+            dndModes.prepend(enmCachedValue);
+
+        /* Populate combo finally: */
+        foreach (const KDnDMode &enmMode, dndModes)
+            mCbDragAndDrop->addItem(gpConverter->toString(enmMode), QVariant::fromValue(enmMode));
     }
 }
 
