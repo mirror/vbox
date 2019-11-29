@@ -4375,6 +4375,24 @@ static DECLCALLBACK(int) ichac97R3Construct(PPDMDEVINS pDevIns, int iInstance, P
     return VINF_SUCCESS;
 }
 
+#else /* !IN_RING3 */
+
+/**
+ * @callback_method_impl{PDMDEVREGR0,pfnConstruct}
+ */
+static DECLCALLBACK(int) ichac97RZConstruct(PPDMDEVINS pDevIns)
+{
+    PDMDEV_CHECK_VERSIONS_RETURN(pDevIns);
+    PAC97STATE pThis = PDMDEVINS_2_DATA(pDevIns, PAC97STATE);
+
+    int rc = PDMDevHlpIoPortSetUpContext(pDevIns, pThis->hIoPortsNam, ichac97IoPortNamWrite, ichac97IoPortNamRead, NULL /*pvUser*/);
+    AssertRCReturn(rc, rc);
+    rc = PDMDevHlpIoPortSetUpContext(pDevIns, pThis->hIoPortsNabm, ichac97IoPortNabmWrite, ichac97IoPortNabmRead, NULL /*pvUser*/);
+    AssertRCReturn(rc, rc);
+
+    return VINF_SUCCESS;
+}
+
 #endif /* !IN_RING3 */
 
 /**
