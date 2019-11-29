@@ -35,15 +35,16 @@
 #include <VBox/GuestHost/SharedClipboard.h>
 
 /** Constants needed for string conversions done by the Linux/Mac clipboard code. */
-enum {
+enum
+{
     /** In Linux, lines end with a linefeed character. */
-    LINEFEED = 0xa,
+    VBOX_SHCL_LINEFEED = 0xa,
     /** In Windows, lines end with a carriage return and a linefeed character. */
-    CARRIAGERETURN = 0xd,
+    VBOX_SHCL_CARRIAGERETURN = 0xd,
     /** Little endian "real" UTF-16 strings start with this marker. */
-    UTF16LEMARKER = 0xfeff,
+    VBOX_SHCL_UTF16LEMARKER = 0xfeff,
     /** Big endian "real" UTF-16 strings start with this marker. */
-    UTF16BEMARKER = 0xfffe
+    VBOX_SHCL_UTF16BEMARKER = 0xfffe
 };
 
 /**
@@ -108,13 +109,14 @@ int ShClUtf16WinToLin(PRTUTF16 pwszSrc, size_t cwcSrc, PRTUTF16 pwszDst, size_t 
  */
 typedef struct BMFILEHEADER
 {
-/** @todo r=bird: this type centric prefixing is what give hungarian notation a bad name... */
-    uint16_t    u16Type;
-    uint32_t    u32Size;
-    uint16_t    u16Reserved1;
-    uint16_t    u16Reserved2;
-    uint32_t    u32OffBits;
+    uint16_t uType;
+    uint32_t uSize;
+    uint16_t uReserved1;
+    uint16_t uReserved2;
+    uint32_t uOffBits;
 } BMFILEHEADER;
+#pragma pack()
+
 /** Pointer to a BMFILEHEADER structure. */
 typedef BMFILEHEADER *PBMFILEHEADER;
 /** BMP file magic number */
@@ -126,22 +128,20 @@ typedef BMFILEHEADER *PBMFILEHEADER;
  */
 typedef struct BMINFOHEADER
 {
-/** @todo r=bird: this type centric prefixing is what give hungarian notation a bad name... */
-    uint32_t    u32Size;
-    uint32_t    u32Width;
-    uint32_t    u32Height;
-    uint16_t    u16Planes;
-    uint16_t    u16BitCount;
-    uint32_t    u32Compression;
-    uint32_t    u32SizeImage;
-    uint32_t    u32XBitsPerMeter;
-    uint32_t    u32YBitsPerMeter;
-    uint32_t    u32ClrUsed;
-    uint32_t    u32ClrImportant;
+    uint32_t uSize;
+    uint32_t uWidth;
+    uint32_t uHeight;
+    uint16_t uPlanes;
+    uint16_t uBitCount;
+    uint32_t uCompression;
+    uint32_t uSizeImage;
+    uint32_t uXBitsPerMeter;
+    uint32_t uYBitsPerMeter;
+    uint32_t uClrUsed;
+    uint32_t uClrImportant;
 } BMINFOHEADER;
 /** Pointer to a BMINFOHEADER structure. */
 typedef BMINFOHEADER *PBMINFOHEADER;
-#pragma pack() /** @todo r=bird: Only BMFILEHEADER needs packing. The BMINFOHEADER is perfectly aligned. */
 
 /**
  * Convert CF_DIB data to full BMP data by prepending the BM header.

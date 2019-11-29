@@ -1853,7 +1853,7 @@ static int clipLatin1ToWinTxt(char *pcSrc, unsigned cbSrc,
     unsigned cwcDest = 0;
     for (unsigned i = 0; i < cbSrc && pcSrc[i] != '\0'; ++i)
     {
-        if (pcSrc[i] == LINEFEED)
+        if (pcSrc[i] == VBOX_SHCL_LINEFEED)
             cwcDest += 2;
         else
             ++cwcDest;
@@ -1874,12 +1874,12 @@ static int clipLatin1ToWinTxt(char *pcSrc, unsigned cbSrc,
     {
         for (unsigned i = 0, j = 0; i < cbSrc; ++i, ++j)
         {
-            if (pcSrc[i] != LINEFEED)
+            if (pcSrc[i] != VBOX_SHCL_LINEFEED)
                 pwszDest[j] = pcSrc[i];
             else
             {
-                pwszDest[j] = CARRIAGERETURN;
-                pwszDest[j + 1] = LINEFEED;
+                pwszDest[j] = VBOX_SHCL_CARRIAGERETURN;
+                pwszDest[j + 1] = VBOX_SHCL_LINEFEED;
                 ++j;
             }
         }
