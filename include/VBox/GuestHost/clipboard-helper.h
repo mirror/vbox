@@ -52,7 +52,6 @@ enum
  * with Windows EOLs converted from a UTF-16 string with Linux EOLs.
  *
  * @returns VBox status code.
- *
  * @param   pcwszSrc The source UTF-16 string.
  * @param   cwcSrc   The length of the source string in RTUTF16 units.
  * @param   pcwcDst  The length of the destination string in RTUTF16 units.
@@ -65,8 +64,7 @@ int ShClUtf16GetWinSize(PCRTUTF16 pwszSrc, size_t cwcSrc, size_t *pcwcDst);
  *
  * Does no checking for validity.
  *
- * @returns VBox status code
- *
+ * @returns VBox status code.
  * @param   pcwszSrc Source UTF-16 text to convert.
  * @param   cwcSrc   Size of the source text int RTUTF16 units.
  * @param   pwszDst  Buffer to store the converted text to.
@@ -78,8 +76,7 @@ int ShClUtf16LinToWin(PCRTUTF16 pcwszSrc, size_t cwcSrc, PRTUTF16 pwszDst, size_
  * Get the size of the buffer needed to hold a zero-terminated UTF-16 string
  * with Linux EOLs converted from a UTF-16 string with Windows EOLs.
  *
- * @returns RT status code
- *
+ * @returns VBox status code.
  * @param   pcwszSrc The source UTF-16 string.
  * @param   cwcSrc   The length of the source string in RTUTF16 units.
  * @param   pcwcDst  The length of the destination string in RTUTF16 units.
@@ -90,8 +87,7 @@ int ShClUtf16GetLinSize(PCRTUTF16 pcwszSrc, size_t cwcSrc, size_t *pcwcDst);
  * Convert UTF-16-LE text with Windows EOLs to zero-terminated UTF-16 with Linux
  * EOLs.  This function does not verify that the UTF-16 is valid.
  *
- * @returns VBox status code
- *
+ * @returns VBox status code.
  * @param   pcwszSrc Text to convert.
  * @param   cwcSrc   Size of the source text in RTUTF16 units.
  * @param   pwszDst  The buffer to store the converted text to.
@@ -146,8 +142,7 @@ typedef BMINFOHEADER *PBMINFOHEADER;
  * Convert CF_DIB data to full BMP data by prepending the BM header.
  * Allocates with RTMemAlloc.
  *
- * @returns VBox status code
- *
+ * @returns VBox status code.
  * @param   pvSrc         DIB data to convert
  * @param   cbSrc         Size of the DIB data to convert in bytes
  * @param   ppvDst        Where to store the pointer to the buffer for the
@@ -161,8 +156,7 @@ int ShClDibToBmp(const void *pvSrc, size_t cbSrc, void **ppvDst, size_t *pcbDst)
  * Get the address and size of CF_DIB data in a full BMP data in the input buffer.
  * Does not do any allocation.
  *
- * @returns VBox status code
- *
+ * @returns VBox status code.
  * @param   pvSrc         BMP data to convert
  * @param   cbSrc         Size of the BMP data to convert in bytes
  * @param   ppvDst        Where to store the pointer to the destination data
