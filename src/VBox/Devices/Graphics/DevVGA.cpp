@@ -5587,7 +5587,7 @@ int vgaR3RegisterVRAMHandler(PPDMDEVINS pDevIns, PVGASTATE pThis, uint64_t cbFra
     Assert(pThis->GCPhysVRAM);
     int rc = PGMHandlerPhysicalRegister(PDMDevHlpGetVM(pDevIns),
                                         pThis->GCPhysVRAM, pThis->GCPhysVRAM + (cbFrameBuffer - 1),
-                                        pThis->hLfbAccessHandlerType, pThis, pDevIns->pvInstanceDataR0,
+                                        pThis->hLfbAccessHandlerType, pDevIns, pDevIns->pvInstanceDataR0,
                                         pDevIns->pvInstanceDataRC, "VGA LFB");
 
     AssertRC(rc);
