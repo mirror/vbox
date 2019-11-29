@@ -86,7 +86,7 @@ struct UIDataSettingsMachineGeneral
     QString         m_strSnapshotsFolder;
     /** Holds the default VM snapshot folder. */
     QString         m_strSnapshotsHomeDir;
-    /** Holds the VM shared clipboard mode. */
+    /** Holds the VM clipboard mode. */
     KClipboardMode  m_clipboardMode;
     /** Holds the VM drag&drop mode. */
     KDnDMode        m_dndMode;
@@ -471,7 +471,7 @@ void UIMachineSettingsGeneral::retranslateUi()
                                  "virtual machine will be stored. Be aware that "
                                  "snapshots can take quite a lot of storage space."));
 
-    /* Translate Shared Clipboard mode combo: */
+    /* Translate Clipboard mode combo: */
     AssertPtrReturnVoid(mCbClipboard);
     for (int iIndex = 0; iIndex < mCbClipboard->count(); ++iIndex)
     {
@@ -657,13 +657,13 @@ void UIMachineSettingsGeneral::cleanup()
 
 void UIMachineSettingsGeneral::repopulateComboClipboardMode()
 {
-    /* Shared Clipboard mode combo-box created in the .ui file. */
+    /* Clipboard mode combo-box created in the .ui file. */
     AssertPtrReturnVoid(mCbClipboard);
     {
         /* Clear combo first of all: */
         mCbClipboard->clear();
 
-        /* Load currently supported Shared Clipboard modes: */
+        /* Load currently supported Clipboard modes: */
         CSystemProperties comProperties = uiCommon().virtualBox().GetSystemProperties();
         QVector<KClipboardMode> clipboardModes = comProperties.GetSupportedClipboardModes();
         /* Take into account currently cached value: */
