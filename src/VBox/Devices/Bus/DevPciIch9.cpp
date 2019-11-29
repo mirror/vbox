@@ -2576,6 +2576,8 @@ static int devpciR3UnmapRegion(PPDMDEVINS pDevIns, PPDMPCIDEV pDev, int iRegion)
 #ifdef VBOX_STRICT
                 PDEVPCIBUSCC pBusCC     = PDMINS_2_DATA_CC(pDevIns, PDEVPCIBUSCC);
                 Assert(!pBusCC->pPciHlpR3->pfnIsMMIOExBase(pDevIns, pDev->Int.s.pDevInsR3, GCPhysBase));
+#else
+                RT_NOREF(pDevIns);
 #endif
                 rc = PDMDevHlpMMIODeregister(pDev->Int.s.pDevInsR3, GCPhysBase, pRegion->size);
                 AssertRC(rc);
