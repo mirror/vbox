@@ -129,6 +129,8 @@ private:
 
     /** Repopulates Pointing HID type combo-box. */
     void repopulateComboPointingHIDType();
+    /** Repopulates Paravirtualization Provider type combo-box. */
+    void repopulateComboParavirtualizationProviderType();
 
     /** Retranslates Chipset type combo-box. */
     void retranslateComboChipsetType();

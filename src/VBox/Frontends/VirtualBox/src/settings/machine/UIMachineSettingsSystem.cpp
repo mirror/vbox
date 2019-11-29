@@ -264,10 +264,10 @@ void UIMachineSettingsSystem::getFromCache()
     /* Get old system data from the cache: */
     const UIDataSettingsMachineSystem &oldSystemData = m_pCache->base();
 
-    /* Repopulate 'pointing HID type' combo.
-     * We are doing that *now* because it has
+    /* We are doing that *now* because these combos have
      * dynamical content which depends on cashed value: */
     repopulateComboPointingHIDType();
+    repopulateComboParavirtualizationProviderType();
 
     /* Load old 'Motherboard' data from the cache: */
     m_pBaseMemoryEditor->setValue(oldSystemData.m_iMemorySize);
@@ -327,7 +327,7 @@ void UIMachineSettingsSystem::putToCache()
     newSystemData.m_fEnabledNestedHwVirtEx = isNestedHWVirtExEnabled();
 
     /* Gather 'Acceleration' data: */
-    newSystemData.m_paravirtProvider = (KParavirtProvider)m_pComboParavirtProvider->itemData(m_pComboParavirtProvider->currentIndex()).toInt();
+    newSystemData.m_paravirtProvider = m_pComboParavirtProvider->currentData().value<KParavirtProvider>();
     /* Enable HW Virt Ex automatically if it's supported and
      * 1. multiple CPUs, 2. Nested Paging or 3. Nested HW Virt Ex is requested. */
     newSystemData.m_fEnabledHwVirtEx =    isHWVirtExEnabled()
@@ -816,18 +816,6 @@ void UIMachineSettingsSystem::prepareTabAcceleration()
 {
     /* Tab and it's layout created in the .ui file. */
     {
-        /* Paravirtualization Provider combo-box created in the .ui file. */
-        AssertPtrReturnVoid(m_pComboParavirtProvider);
-        {
-            /* Configure combo-box: */
-            m_pComboParavirtProvider->addItem(gpConverter->toString(KParavirtProvider_None), QVariant(KParavirtProvider_None));
-            m_pComboParavirtProvider->addItem(gpConverter->toString(KParavirtProvider_Default), QVariant(KParavirtProvider_Default));
-            m_pComboParavirtProvider->addItem(gpConverter->toString(KParavirtProvider_Legacy), QVariant(KParavirtProvider_Legacy));
-            m_pComboParavirtProvider->addItem(gpConverter->toString(KParavirtProvider_Minimal), QVariant(KParavirtProvider_Minimal));
-            m_pComboParavirtProvider->addItem(gpConverter->toString(KParavirtProvider_HyperV), QVariant(KParavirtProvider_HyperV));
-            m_pComboParavirtProvider->addItem(gpConverter->toString(KParavirtProvider_KVM), QVariant(KParavirtProvider_KVM));
-        }
-
         /* Other widgets created in the .ui file. */
         AssertPtrReturnVoid(m_pWidgetPlaceholder);
         AssertPtrReturnVoid(m_pCheckBoxVirtualization);
@@ -918,6 +906,28 @@ void UIMachineSettingsSystem::repopulateComboPointingHIDType()
     }
 }
 
+void UIMachineSettingsSystem::repopulateComboParavirtualizationProviderType()
+{
+    /* Paravirtualization Provider combo-box created in the .ui file. */
+    AssertPtrReturnVoid(m_pComboParavirtProvider);
+    {
+        /* Clear combo first of all: */
+        m_pComboParavirtProvider->clear();
+
+        /* Load currently supported paravirtualization providers: */
+        CSystemProperties comProperties = uiCommon().virtualBox().GetSystemProperties();
+        QVector<KParavirtProvider> supportedProviders = comProperties.GetSupportedParavirtProviders();
+        /* Take into account currently cached value: */
+        const KParavirtProvider enmCachedValue = m_pCache->base().m_paravirtProvider;
+        if (!supportedProviders.contains(enmCachedValue))
+            supportedProviders.prepend(enmCachedValue);
+
+        /* Populate combo finally: */
+        foreach (const KParavirtProvider &enmProvider, supportedProviders)
+            m_pComboParavirtProvider->addItem(gpConverter->toString(enmProvider), QVariant::fromValue(enmProvider));
+    }
+}
+
 void UIMachineSettingsSystem::retranslateComboChipsetType()
 {
     /* For each the element in KChipsetType enum: */
@@ -950,16 +960,12 @@ void UIMachineSettingsSystem::retranslateComboPointingHIDType()
 
 void UIMachineSettingsSystem::retranslateComboParavirtProvider()
 {
-    /* For each the element in KParavirtProvider enum: */
-    for (int iIndex = (int)KParavirtProvider_None; iIndex < (int)KParavirtProvider_Max; ++iIndex)
+    /* For each the element in m_pComboParavirtProvider: */
+    for (int iIndex = 0; iIndex < m_pComboParavirtProvider->count(); ++iIndex)
     {
-        /* Cast to the corresponding type: */
-        const KParavirtProvider enmType = (KParavirtProvider)iIndex;
-        /* Look for the corresponding item: */
-        const int iCorrespondingIndex = m_pComboParavirtProvider->findData((int)enmType);
-        /* Re-translate if corresponding item was found: */
-        if (iCorrespondingIndex != -1)
-            m_pComboParavirtProvider->setItemText(iCorrespondingIndex, gpConverter->toString(enmType));
+        /* Apply retranslated text: */
+        const KParavirtProvider enmType = m_pComboParavirtProvider->currentData().value<KParavirtProvider>();
+        m_pComboParavirtProvider->setItemText(iIndex, gpConverter->toString(enmType));
     }
 }
 
