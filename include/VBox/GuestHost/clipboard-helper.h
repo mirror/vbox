@@ -56,7 +56,7 @@ enum
  * @param   cwcSrc   The length of the source string in RTUTF16 units.
  * @param   pcwcDst  The length of the destination string in RTUTF16 units.
  */
-int ShClUtf16GetWinSize(PCRTUTF16 pwszSrc, size_t cwcSrc, size_t *pcwcDst);
+int ShClUtf16GetWinSize(PCRTUTF16 pcwszSrc, size_t cwcSrc, size_t *pcwcDst);
 
 /**
  * Convert a UTF-16 text with Linux EOLs to null-terminated UTF-16-LE with
