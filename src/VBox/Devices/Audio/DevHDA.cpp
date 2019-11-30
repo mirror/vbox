@@ -5212,7 +5212,7 @@ static DECLCALLBACK(int) hdaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
 /**
  * @callback_method_impl{PDMDEVREGR0,pfnConstruct}
  */
-static DECLCALLBACK(int) ohciRZConstruct(PPDMDEVINS pDevIns)
+static DECLCALLBACK(int) hdaRZConstruct(PPDMDEVINS pDevIns)
 {
     PDMDEV_CHECK_VERSIONS_RETURN(pDevIns); /* this shall come first */
     PHDASTATE pThis = PDMDEVINS_2_DATA(pDevIns, PHDASTATE);
@@ -5270,7 +5270,7 @@ const PDMDEVREG g_DeviceHDA =
     /* .pfnReserved7 = */           NULL,
 #elif defined(IN_RING0)
     /* .pfnEarlyConstruct = */      NULL,
-    /* .pfnConstruct = */           NULL,
+    /* .pfnConstruct = */           hdaRZConstruct,
     /* .pfnDestruct = */            NULL,
     /* .pfnFinalDestruct = */       NULL,
     /* .pfnRequest = */             NULL,
@@ -5283,7 +5283,7 @@ const PDMDEVREG g_DeviceHDA =
     /* .pfnReserved6 = */           NULL,
     /* .pfnReserved7 = */           NULL,
 #elif defined(IN_RC)
-    /* .pfnConstruct = */           NULL,
+    /* .pfnConstruct = */           hdaRZConstruct,
     /* .pfnReserved0 = */           NULL,
     /* .pfnReserved1 = */           NULL,
     /* .pfnReserved2 = */           NULL,
