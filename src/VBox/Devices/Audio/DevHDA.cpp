@@ -3451,7 +3451,7 @@ static DECLCALLBACK(VBOXSTRICTRC) hdaMMIOWrite(PPDMDEVINS pDevIns, void *pvUser,
 
 static int hdaR3SaveStream(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, PHDASTREAM pStream)
 {
-    RT_NOREF(pDevIns);
+    PCPDMDEVHLPR3 pHlp = pDevIns->pHlpR3;
 # ifdef LOG_ENABLED
     PHDASTATE pThis = PDMDEVINS_2_DATA(pDevIns, PHDASTATE);
 # endif
@@ -3459,20 +3459,20 @@ static int hdaR3SaveStream(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, PHDASTREAM pStre
     Log2Func(("[SD%RU8]\n", pStream->u8SD));
 
     /* Save stream ID. */
-    int rc = SSMR3PutU8(pSSM, pStream->u8SD);
+    int rc = pHlp->pfnSSMPutU8(pSSM, pStream->u8SD);
     AssertRCReturn(rc, rc);
     Assert(pStream->u8SD < HDA_MAX_STREAMS);
 
-    rc = SSMR3PutStructEx(pSSM, &pStream->State, sizeof(HDASTREAMSTATE), 0 /*fFlags*/, g_aSSMStreamStateFields7, NULL);
+    rc = pHlp->pfnSSMPutStructEx(pSSM, &pStream->State, sizeof(HDASTREAMSTATE), 0 /*fFlags*/, g_aSSMStreamStateFields7, NULL);
     AssertRCReturn(rc, rc);
 
-    rc = SSMR3PutStructEx(pSSM, &pStream->State.BDLE.Desc, sizeof(HDABDLEDESC), 0 /*fFlags*/, g_aSSMBDLEDescFields7, NULL);
+    rc = pHlp->pfnSSMPutStructEx(pSSM, &pStream->State.BDLE.Desc, sizeof(HDABDLEDESC), 0 /*fFlags*/, g_aSSMBDLEDescFields7, NULL);
     AssertRCReturn(rc, rc);
 
-    rc = SSMR3PutStructEx(pSSM, &pStream->State.BDLE.State, sizeof(HDABDLESTATE), 0 /*fFlags*/, g_aSSMBDLEStateFields7, NULL);
+    rc = pHlp->pfnSSMPutStructEx(pSSM, &pStream->State.BDLE.State, sizeof(HDABDLESTATE), 0 /*fFlags*/, g_aSSMBDLEStateFields7, NULL);
     AssertRCReturn(rc, rc);
 
-    rc = SSMR3PutStructEx(pSSM, &pStream->State.Period, sizeof(HDASTREAMPERIOD), 0 /* fFlags */, g_aSSMStreamPeriodFields7, NULL);
+    rc = pHlp->pfnSSMPutStructEx(pSSM, &pStream->State.Period, sizeof(HDASTREAMPERIOD), 0 /* fFlags */, g_aSSMStreamPeriodFields7, NULL);
     AssertRCReturn(rc, rc);
 
     uint32_t cbCircBufSize = 0;
@@ -3484,10 +3484,10 @@ static int hdaR3SaveStream(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, PHDASTREAM pStre
         cbCircBufUsed = (uint32_t)RTCircBufUsed(pStream->State.pCircBuf);
     }
 
-    rc = SSMR3PutU32(pSSM, cbCircBufSize);
+    rc = pHlp->pfnSSMPutU32(pSSM, cbCircBufSize);
     AssertRCReturn(rc, rc);
 
-    rc = SSMR3PutU32(pSSM, cbCircBufUsed);
+    rc = pHlp->pfnSSMPutU32(pSSM, cbCircBufUsed);
     AssertRCReturn(rc, rc);
 
     if (cbCircBufUsed)
@@ -3506,12 +3506,12 @@ static int hdaR3SaveStream(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, PHDASTREAM pStre
         Assert(cbBuf);
         if (cbBuf)
         {
-            rc = SSMR3PutMem(pSSM, pvBuf, cbBuf);
+            rc = pHlp->pfnSSMPutMem(pSSM, pvBuf, cbBuf);
             AssertRC(rc);
             if (   RT_SUCCESS(rc)
                 && cbBuf < cbCircBufUsed)
             {
-                rc = SSMR3PutMem(pSSM, (uint8_t *)pvBuf - offBuf, cbCircBufUsed - cbBuf);
+                rc = pHlp->pfnSSMPutMem(pSSM, (uint8_t *)pvBuf - offBuf, cbCircBufUsed - cbBuf);
             }
         }
         RTCircBufReleaseReadBlock(pStream->State.pCircBuf, 0 /* Don't advance read pointer -- see comment above */);
@@ -3533,21 +3533,22 @@ static int hdaR3SaveStream(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, PHDASTREAM pStre
  */
 static DECLCALLBACK(int) hdaR3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 {
-    PHDASTATE pThis = PDMDEVINS_2_DATA(pDevIns, PHDASTATE);
+    PHDASTATE     pThis = PDMDEVINS_2_DATA(pDevIns, PHDASTATE);
+    PCPDMDEVHLPR3 pHlp  = pDevIns->pHlpR3;
 
     /* Save Codec nodes states. */
     hdaCodecSaveState(pThis->pCodec, pSSM);
 
     /* Save MMIO registers. */
-    SSMR3PutU32(pSSM, RT_ELEMENTS(pThis->au32Regs));
-    SSMR3PutMem(pSSM, pThis->au32Regs, sizeof(pThis->au32Regs));
+    pHlp->pfnSSMPutU32(pSSM, RT_ELEMENTS(pThis->au32Regs));
+    pHlp->pfnSSMPutMem(pSSM, pThis->au32Regs, sizeof(pThis->au32Regs));
 
     /* Save controller-specifc internals. */
-    SSMR3PutU64(pSSM, pThis->u64WalClk);
-    SSMR3PutU8(pSSM, pThis->u8IRQL);
+    pHlp->pfnSSMPutU64(pSSM, pThis->u64WalClk);
+    pHlp->pfnSSMPutU8(pSSM, pThis->u8IRQL);
 
     /* Save number of streams. */
-    SSMR3PutU32(pSSM, HDA_MAX_STREAMS);
+    pHlp->pfnSSMPutU32(pSSM, HDA_MAX_STREAMS);
 
     /* Save stream states. */
     for (uint8_t i = 0; i < HDA_MAX_STREAMS; i++)
@@ -3621,16 +3622,15 @@ static int hdaR3LoadExecPost(PHDASTATE pThis)
 /**
  * Handles loading of all saved state versions older than the current one.
  *
- * @param   pThis               Pointer to HDA state.
- * @param   pSSM                Pointer to SSM handle.
- * @param   uVersion            Saved state version to load.
- * @param   uPass               Loading stage to handle.
+ * @param   pDevIns     The device instance.
+ * @param   pThis       Pointer to HDA state.
+ * @param   pSSM        Pointer to SSM handle.
+ * @param   uVersion    Saved state version to load.
  */
-static int hdaR3LoadExecLegacy(PHDASTATE pThis, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass)
+static int hdaR3LoadExecLegacy(PPDMDEVINS pDevIns, PHDASTATE pThis, PSSMHANDLE pSSM, uint32_t uVersion)
 {
-    RT_NOREF(uPass);
-
-    int rc = VINF_SUCCESS;
+    PCPDMDEVHLPR3 pHlp = pDevIns->pHlpR3;
+    int           rc;
 
     /*
      * Load MMIO registers.
@@ -3643,9 +3643,9 @@ static int hdaR3LoadExecLegacy(PHDASTATE pThis, PSSMHANDLE pSSM, uint32_t uVersi
                registers due to some code cleanups.  This only affected trunk
                builds in the 4.1 development period. */
             cRegs = 113;
-            if (SSMR3HandleRevision(pSSM) >= 71199)
+            if (pHlp->pfnSSMHandleRevision(pSSM) >= 71199)
             {
-                uint32_t uVer = SSMR3HandleVersion(pSSM);
+                uint32_t uVer = pHlp->pfnSSMHandleVersion(pSSM);
                 if (   VBOX_FULL_VERSION_GET_MAJOR(uVer) == 4
                     && VBOX_FULL_VERSION_GET_MINOR(uVer) == 0
                     && VBOX_FULL_VERSION_GET_BUILD(uVer) >= 51)
@@ -3663,7 +3663,7 @@ static int hdaR3LoadExecLegacy(PHDASTATE pThis, PSSMHANDLE pSSM, uint32_t uVersi
         case HDA_SSM_VERSION_4:
         case HDA_SSM_VERSION_5:
         case HDA_SSM_VERSION_6:
-            rc = SSMR3GetU32(pSSM, &cRegs); AssertRCReturn(rc, rc);
+            rc = pHlp->pfnSSMGetU32(pSSM, &cRegs); AssertRCReturn(rc, rc);
             if (cRegs != RT_ELEMENTS(pThis->au32Regs))
                 LogRel(("HDA: SSM version cRegs is %RU32, expected %RU32\n", cRegs, RT_ELEMENTS(pThis->au32Regs)));
             break;
@@ -3675,11 +3675,11 @@ static int hdaR3LoadExecLegacy(PHDASTATE pThis, PSSMHANDLE pSSM, uint32_t uVersi
 
     if (cRegs >= RT_ELEMENTS(pThis->au32Regs))
     {
-        SSMR3GetMem(pSSM, pThis->au32Regs, sizeof(pThis->au32Regs));
-        SSMR3Skip(pSSM, sizeof(uint32_t) * (cRegs - RT_ELEMENTS(pThis->au32Regs)));
+        pHlp->pfnSSMGetMem(pSSM, pThis->au32Regs, sizeof(pThis->au32Regs));
+        pHlp->pfnSSMSkip(pSSM, sizeof(uint32_t) * (cRegs - RT_ELEMENTS(pThis->au32Regs)));
     }
     else
-        SSMR3GetMem(pSSM, pThis->au32Regs, sizeof(uint32_t) * cRegs);
+        pHlp->pfnSSMGetMem(pSSM, pThis->au32Regs, sizeof(uint32_t) * cRegs);
 
     /* Make sure to update the base addresses first before initializing any streams down below. */
     pThis->u64CORBBase  = RT_MAKE_U64(HDA_REG(pThis, CORBLBASE), HDA_REG(pThis, CORBUBASE));
@@ -3699,30 +3699,22 @@ static int hdaR3LoadExecLegacy(PHDASTATE pThis, PSSMHANDLE pSSM, uint32_t uVersi
      *       there were more than one (and there are at least two entries,
      *       according to the spec).
      */
-#define HDA_SSM_LOAD_BDLE_STATE_PRE_V5(v, x)                                \
-    {                                                                       \
-        rc = SSMR3Skip(pSSM, sizeof(uint32_t));        /* Begin marker */   \
-        AssertRCReturn(rc, rc);                                             \
-        rc = SSMR3GetU64(pSSM, &x.Desc.u64BufAddr);     /* u64BdleCviAddr */ \
-        AssertRCReturn(rc, rc);                                             \
-        rc = SSMR3Skip(pSSM, sizeof(uint32_t));        /* u32BdleMaxCvi */  \
-        AssertRCReturn(rc, rc);                                             \
-        rc = SSMR3GetU32(pSSM, &x.State.u32BDLIndex);  /* u32BdleCvi */     \
-        AssertRCReturn(rc, rc);                                             \
-        rc = SSMR3GetU32(pSSM, &x.Desc.u32BufSize);    /* u32BdleCviLen */  \
-        AssertRCReturn(rc, rc);                                             \
-        rc = SSMR3GetU32(pSSM, &x.State.u32BufOff);    /* u32BdleCviPos */  \
-        AssertRCReturn(rc, rc);                                             \
-        bool fIOC;                                                          \
-        rc = SSMR3GetBool(pSSM, &fIOC);                /* fBdleCviIoc */    \
-        AssertRCReturn(rc, rc);                                             \
-        x.Desc.fFlags = fIOC ? HDA_BDLE_FLAG_IOC : 0;                       \
-        rc = SSMR3GetU32(pSSM, &x.State.cbBelowFIFOW); /* cbUnderFifoW */   \
-        AssertRCReturn(rc, rc);                                             \
-        rc = SSMR3Skip(pSSM, sizeof(uint8_t) * 256);   /* FIFO */           \
-        AssertRCReturn(rc, rc);                                             \
-        rc = SSMR3Skip(pSSM, sizeof(uint32_t));        /* End marker */     \
-        AssertRCReturn(rc, rc);                                             \
+#define HDA_SSM_LOAD_BDLE_STATE_PRE_V5(v, x) \
+    { \
+        pHlp->pfnSSMSkip(pSSM, sizeof(uint32_t));        /* Begin marker */  \
+        pHlp->pfnSSMGetU64(pSSM, &x.Desc.u64BufAddr);    /* u64BdleCviAddr */ \
+        pHlp->pfnSSMSkip(pSSM, sizeof(uint32_t));        /* u32BdleMaxCvi */ \
+        pHlp->pfnSSMGetU32(pSSM, &x.State.u32BDLIndex);  /* u32BdleCvi */ \
+        pHlp->pfnSSMGetU32(pSSM, &x.Desc.u32BufSize);    /* u32BdleCviLen */ \
+        pHlp->pfnSSMGetU32(pSSM, &x.State.u32BufOff);    /* u32BdleCviPos */ \
+        bool fIOC; \
+        rc = pHlp->pfnSSMGetBool(pSSM, &fIOC);           /* fBdleCviIoc */ \
+        AssertRCReturn(rc, rc); \
+        x.Desc.fFlags = fIOC ? HDA_BDLE_FLAG_IOC : 0; \
+        pHlp->pfnSSMGetU32(pSSM, &x.State.cbBelowFIFOW); /* cbUnderFifoW */ \
+        pHlp->pfnSSMSkip(pSSM, sizeof(uint8_t) * 256);   /* FIFO */ \
+        rc = pHlp->pfnSSMSkip(pSSM, sizeof(uint32_t));   /* End marker */ \
+        AssertRCReturn(rc, rc); \
     }
 
     /*
@@ -3744,24 +3736,21 @@ static int hdaR3LoadExecLegacy(PHDASTATE pThis, PSSMHANDLE pSSM, uint32_t uVersi
             /* Output */
             PHDASTREAM pStream = &pThis->aStreams[4];
             rc = hdaR3StreamInit(pStream, 4 /* Stream descriptor, hardcoded */);
-            if (RT_FAILURE(rc))
-                break;
+            AssertRCReturn(rc, rc);
             HDA_SSM_LOAD_BDLE_STATE_PRE_V5(uVersion, pStream->State.BDLE);
             pStream->State.uCurBDLE = pStream->State.BDLE.State.u32BDLIndex;
 
             /* Microphone-In */
             pStream = &pThis->aStreams[2];
             rc = hdaR3StreamInit(pStream, 2 /* Stream descriptor, hardcoded */);
-            if (RT_FAILURE(rc))
-                break;
+            AssertRCReturn(rc, rc);
             HDA_SSM_LOAD_BDLE_STATE_PRE_V5(uVersion, pStream->State.BDLE);
             pStream->State.uCurBDLE = pStream->State.BDLE.State.u32BDLIndex;
 
             /* Line-In */
             pStream = &pThis->aStreams[0];
             rc = hdaR3StreamInit(pStream, 0 /* Stream descriptor, hardcoded */);
-            if (RT_FAILURE(rc))
-                break;
+            AssertRCReturn(rc, rc);
             HDA_SSM_LOAD_BDLE_STATE_PRE_V5(uVersion, pStream->State.BDLE);
             pStream->State.uCurBDLE = pStream->State.BDLE.State.u32BDLIndex;
             break;
@@ -3772,9 +3761,8 @@ static int hdaR3LoadExecLegacy(PHDASTATE pThis, PSSMHANDLE pSSM, uint32_t uVersi
         default: /* Since v5 we support flexible stream and BDLE counts. */
         {
             uint32_t cStreams;
-            rc = SSMR3GetU32(pSSM, &cStreams);
-            if (RT_FAILURE(rc))
-                break;
+            rc = pHlp->pfnSSMGetU32(pSSM, &cStreams);
+            AssertRCReturn(rc, rc);
 
             if (cStreams > HDA_MAX_STREAMS)
                 cStreams = HDA_MAX_STREAMS; /* Sanity. */
@@ -3783,9 +3771,8 @@ static int hdaR3LoadExecLegacy(PHDASTATE pThis, PSSMHANDLE pSSM, uint32_t uVersi
             for (uint32_t i = 0; i < cStreams; i++)
             {
                 uint8_t uStreamID;
-                rc = SSMR3GetU8(pSSM, &uStreamID);
-                if (RT_FAILURE(rc))
-                    break;
+                rc = pHlp->pfnSSMGetU8(pSSM, &uStreamID);
+                AssertRCReturn(rc, rc);
 
                 PHDASTREAM pStream = hdaGetStreamFromSD(pThis, uStreamID);
                 HDASTREAM  StreamDummy;
@@ -3806,83 +3793,78 @@ static int hdaR3LoadExecLegacy(PHDASTATE pThis, PSSMHANDLE pSSM, uint32_t uVersi
                 /*
                  * Load BDLEs (Buffer Descriptor List Entries) and DMA counters.
                  */
-
                 if (uVersion == HDA_SSM_VERSION_5)
                 {
                     /* Get the current BDLE entry and skip the rest. */
+                    pHlp->pfnSSMSkip(pSSM, sizeof(uint32_t));       /* Begin marker */
                     uint16_t cBDLE;
+                    pHlp->pfnSSMGetU16(pSSM, &cBDLE);                      /* cBDLE */
+                    pHlp->pfnSSMGetU16(pSSM, &pStream->State.uCurBDLE);    /* uCurBDLE */
+                    rc = pHlp->pfnSSMSkip(pSSM, sizeof(uint32_t));         /* End marker */
+                    AssertRCReturn(rc, rc);
 
-                    rc = SSMR3Skip(pSSM, sizeof(uint32_t));         /* Begin marker */
-                    AssertRC(rc);
-                    rc = SSMR3GetU16(pSSM, &cBDLE);                 /* cBDLE */
-                    AssertRC(rc);
-                    rc = SSMR3GetU16(pSSM, &pStream->State.uCurBDLE); /* uCurBDLE */
-                    AssertRC(rc);
-                    rc = SSMR3Skip(pSSM, sizeof(uint32_t));         /* End marker */
-                    AssertRC(rc);
-
-                    uint32_t u32BDLEIndex;
                     for (uint16_t a = 0; a < cBDLE; a++)
                     {
-                        rc = SSMR3Skip(pSSM, sizeof(uint32_t));     /* Begin marker */
-                        AssertRC(rc);
-                        rc = SSMR3GetU32(pSSM, &u32BDLEIndex);      /* u32BDLIndex */
-                        AssertRC(rc);
+                        pHlp->pfnSSMSkip(pSSM, sizeof(uint32_t));          /* Begin marker */
+                        uint32_t u32BDLEIndex;
+                        rc = pHlp->pfnSSMGetU32(pSSM, &u32BDLEIndex);      /* u32BDLIndex */
+                        AssertRCReturn(rc, rc);
 
                         /* Does the current BDLE index match the current BDLE to process? */
                         if (u32BDLEIndex == pStream->State.uCurBDLE)
                         {
-                            rc = SSMR3GetU32(pSSM, &pStream->State.BDLE.State.cbBelowFIFOW); /* cbBelowFIFOW */
-                            AssertRC(rc);
-                            rc = SSMR3Skip(pSSM, sizeof(uint8_t) * 256);                   /* FIFO, deprecated */
-                            AssertRC(rc);
-                            rc = SSMR3GetU32(pSSM, &pStream->State.BDLE.State.u32BufOff);    /* u32BufOff */
-                            AssertRC(rc);
-                            rc = SSMR3Skip(pSSM, sizeof(uint32_t));                        /* End marker */
-                            AssertRC(rc);
+                            pHlp->pfnSSMGetU32(pSSM, &pStream->State.BDLE.State.cbBelowFIFOW);  /* cbBelowFIFOW */
+                            pHlp->pfnSSMSkip(pSSM, sizeof(uint8_t) * 256);                      /* FIFO, deprecated */
+                            pHlp->pfnSSMGetU32(pSSM, &pStream->State.BDLE.State.u32BufOff);     /* u32BufOff */
+                            rc = pHlp->pfnSSMSkip(pSSM, sizeof(uint32_t));                      /* End marker */
+                            AssertRCReturn(rc, rc);
                         }
                         else /* Skip not current BDLEs. */
                         {
-                            rc = SSMR3Skip(pSSM,   sizeof(uint32_t)      /* cbBelowFIFOW */
-                                                 + sizeof(uint8_t) * 256 /* au8FIFO */
-                                                 + sizeof(uint32_t)      /* u32BufOff */
-                                                 + sizeof(uint32_t));    /* End marker */
-                            AssertRC(rc);
+                            rc = pHlp->pfnSSMSkip(pSSM,   sizeof(uint32_t)      /* cbBelowFIFOW */
+                                                        + sizeof(uint8_t) * 256 /* au8FIFO */
+                                                        + sizeof(uint32_t)      /* u32BufOff */
+                                                        + sizeof(uint32_t));    /* End marker */
+                            AssertRCReturn(rc, rc);
                         }
                     }
                 }
                 else
                 {
-                    rc = SSMR3GetStructEx(pSSM, &pStream->State, sizeof(HDASTREAMSTATE),
-                                          0 /* fFlags */, g_aSSMStreamStateFields6, NULL);
-                    if (RT_FAILURE(rc))
-                        break;
+                    rc = pHlp->pfnSSMGetStructEx(pSSM, &pStream->State, sizeof(HDASTREAMSTATE),
+                                                 0 /* fFlags */, g_aSSMStreamStateFields6, NULL);
+                    AssertRCReturn(rc, rc);
 
                     /* Get HDABDLEDESC. */
+                    /**
+                     *
+                     * @todo r=bird: This is all wrong. Appalling. There is no reason for anyone to
+                     * mess around with SSM internal magic values ever!  Define a structure and(/or)
+                     * associated SSM descriptor and let SSM keep its internals to itself.
+                     * struct { uint32_t cbBuf; bool fIoc; }
+                     *
+                     */
                     uint32_t uMarker;
-                    rc = SSMR3GetU32(pSSM, &uMarker);      /* Begin marker. */
-                    AssertRC(rc);
-                    Assert(uMarker == UINT32_C(0x19200102) /* SSMR3STRUCT_BEGIN */);
-                    rc = SSMR3GetU64(pSSM, &pStream->State.BDLE.Desc.u64BufAddr);
-                    AssertRC(rc);
-                    rc = SSMR3GetU32(pSSM, &pStream->State.BDLE.Desc.u32BufSize);
-                    AssertRC(rc);
+                    rc = pHlp->pfnSSMGetU32(pSSM, &uMarker);      /* Begin marker. */
+                    AssertRCReturn(rc, rc);
+                    AssertReturn(uMarker == UINT32_C(0x19200102) /* SSMR3STRUCT_BEGIN */, VERR_SSM_DATA_UNIT_FORMAT_CHANGED);
+                    pHlp->pfnSSMGetU64(pSSM, &pStream->State.BDLE.Desc.u64BufAddr);
+                    rc = pHlp->pfnSSMGetU32(pSSM, &pStream->State.BDLE.Desc.u32BufSize);
+                    AssertRCReturn(rc, rc);
                     bool fFlags = false;
-                    rc = SSMR3GetBool(pSSM, &fFlags);      /* Saved states < v7 only stored the IOC as boolean flag. */
-                    AssertRC(rc);
+                    rc = pHlp->pfnSSMGetBool(pSSM, &fFlags);      /* Saved states < v7 only stored the IOC as boolean flag. */
+                    AssertRCReturn(rc, rc);
                     pStream->State.BDLE.Desc.fFlags = fFlags ? HDA_BDLE_FLAG_IOC : 0;
-                    rc = SSMR3GetU32(pSSM, &uMarker);      /* End marker. */
-                    AssertRC(rc);
-                    Assert(uMarker == UINT32_C(0x19920406) /* SSMR3STRUCT_END */);
+                    rc = pHlp->pfnSSMGetU32(pSSM, &uMarker);      /* End marker. */
+                    AssertRCReturn(rc, rc);
+                    AssertReturn(uMarker == UINT32_C(0x19920406) /* SSMR3STRUCT_END */, VERR_SSM_DATA_UNIT_FORMAT_CHANGED);
 
-                    rc = SSMR3GetStructEx(pSSM, &pStream->State.BDLE.State, sizeof(HDABDLESTATE),
-                                          0 /* fFlags */, g_aSSMBDLEStateFields6, NULL);
-                    if (RT_FAILURE(rc))
-                        break;
+                    rc = pHlp->pfnSSMGetStructEx(pSSM, &pStream->State.BDLE.State, sizeof(HDABDLESTATE),
+                                                 0 /* fFlags */, g_aSSMBDLEStateFields6, NULL);
+                    AssertRCReturn(rc, rc);
 
-                    Log2Func(("[SD%RU8] LPIB=%RU32, CBL=%RU32, LVI=%RU32\n",
-                              uStreamID,
-                              HDA_STREAM_REG(pThis, LPIB, uStreamID), HDA_STREAM_REG(pThis, CBL, uStreamID), HDA_STREAM_REG(pThis, LVI, uStreamID)));
+                    Log2Func(("[SD%RU8] LPIB=%RU32, CBL=%RU32, LVI=%RU32\n", uStreamID, HDA_STREAM_REG(pThis, LPIB, uStreamID),
+                              HDA_STREAM_REG(pThis, CBL, uStreamID), HDA_STREAM_REG(pThis, LVI, uStreamID)));
 #ifdef LOG_ENABLED
                     hdaR3BDLEDumpAll(pThis, pStream->u64BDLBase, pStream->u16LVI + 1);
 #endif
@@ -3901,7 +3883,8 @@ static int hdaR3LoadExecLegacy(PHDASTATE pThis, PSSMHANDLE pSSM, uint32_t uVersi
  */
 static DECLCALLBACK(int) hdaR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass)
 {
-    PHDASTATE pThis = PDMDEVINS_2_DATA(pDevIns, PHDASTATE);
+    PHDASTATE     pThis = PDMDEVINS_2_DATA(pDevIns, PHDASTATE);
+    PCPDMDEVHLPR3 pHlp  = pDevIns->pHlpR3;
 
     Assert(uPass == SSM_PASS_FINAL); NOREF(uPass);
 
@@ -3919,10 +3902,9 @@ static DECLCALLBACK(int) hdaR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint
 
     if (uVersion < HDA_SSM_VERSION) /* Handle older saved states? */
     {
-        rc = hdaR3LoadExecLegacy(pThis, pSSM, uVersion, uPass);
+        rc = hdaR3LoadExecLegacy(pDevIns, pThis, pSSM, uVersion);
         if (RT_SUCCESS(rc))
             rc = hdaR3LoadExecPost(pThis);
-
         return rc;
     }
 
@@ -3930,17 +3912,17 @@ static DECLCALLBACK(int) hdaR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint
      * Load MMIO registers.
      */
     uint32_t cRegs;
-    rc = SSMR3GetU32(pSSM, &cRegs); AssertRCReturn(rc, rc);
+    rc = pHlp->pfnSSMGetU32(pSSM, &cRegs); AssertRCReturn(rc, rc);
     if (cRegs != RT_ELEMENTS(pThis->au32Regs))
         LogRel(("HDA: SSM version cRegs is %RU32, expected %RU32\n", cRegs, RT_ELEMENTS(pThis->au32Regs)));
 
     if (cRegs >= RT_ELEMENTS(pThis->au32Regs))
     {
-        SSMR3GetMem(pSSM, pThis->au32Regs, sizeof(pThis->au32Regs));
-        SSMR3Skip(pSSM, sizeof(uint32_t) * (cRegs - RT_ELEMENTS(pThis->au32Regs)));
+        pHlp->pfnSSMGetMem(pSSM, pThis->au32Regs, sizeof(pThis->au32Regs));
+        pHlp->pfnSSMSkip(pSSM, sizeof(uint32_t) * (cRegs - RT_ELEMENTS(pThis->au32Regs)));
     }
     else
-        SSMR3GetMem(pSSM, pThis->au32Regs, sizeof(uint32_t) * cRegs);
+        pHlp->pfnSSMGetMem(pSSM, pThis->au32Regs, sizeof(uint32_t) * cRegs);
 
     /* Make sure to update the base addresses first before initializing any streams down below. */
     pThis->u64CORBBase  = RT_MAKE_U64(HDA_REG(pThis, CORBLBASE), HDA_REG(pThis, CORBUBASE));
@@ -3954,23 +3936,25 @@ static DECLCALLBACK(int) hdaR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint
      * Load controller-specifc internals.
      * Don't annoy other team mates (forgot this for state v7).
      */
-    if (   SSMR3HandleRevision(pSSM) >= 116273
-        || SSMR3HandleVersion(pSSM)  >= VBOX_FULL_VERSION_MAKE(5, 2, 0))
+    if (   pHlp->pfnSSMHandleRevision(pSSM) >= 116273
+        || pHlp->pfnSSMHandleVersion(pSSM)  >= VBOX_FULL_VERSION_MAKE(5, 2, 0))
     {
-        rc = SSMR3GetU64(pSSM, &pThis->u64WalClk);
-        AssertRC(rc);
-
-        rc = SSMR3GetU8(pSSM, &pThis->u8IRQL);
-        AssertRC(rc);
+        rc = pHlp->pfnSSMGetU64(pSSM, &pThis->u64WalClk);
+        AssertRCReturn(rc, rc);
+        rc = pHlp->pfnSSMGetU8(pSSM, &pThis->u8IRQL);
+        AssertRCReturn(rc, rc);
     }
 
     /*
      * Load streams.
      */
     uint32_t cStreams;
-    rc = SSMR3GetU32(pSSM, &cStreams);
-    AssertRC(rc);
+    rc = pHlp->pfnSSMGetU32(pSSM, &cStreams);
+    AssertRCReturn(rc, rc);
 
+    /** @todo r=bird: Sanity? No, insanity. You'll end up failing later on
+     *        because you don't load all your state, so what's the point.  Just
+     *        admit to a problem immediately, there is no hiding it! */
     if (cStreams > HDA_MAX_STREAMS)
         cStreams = HDA_MAX_STREAMS; /* Sanity. */
 
@@ -3979,40 +3963,41 @@ static DECLCALLBACK(int) hdaR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint
     /* Load stream states. */
     for (uint32_t i = 0; i < cStreams; i++)
     {
-        uint8_t uStreamID;
-        rc = SSMR3GetU8(pSSM, &uStreamID);
-        AssertRC(rc);
+        uint8_t idStream;
+        rc = pHlp->pfnSSMGetU8(pSSM, &idStream);
+        AssertRCReturn(rc, rc);
 
-        PHDASTREAM pStream = hdaGetStreamFromSD(pThis, uStreamID);
+        PHDASTREAM pStream = hdaGetStreamFromSD(pThis, idStream);
         HDASTREAM  StreamDummy;
 
         if (!pStream)
         {
+            RT_ZERO(StreamDummy);
             pStream = &StreamDummy;
-            LogRel2(("HDA: Warning: Loading of stream #%RU8 not supported, skipping to load ...\n", uStreamID));
+            LogRel2(("HDA: Warning: Loading of stream #%RU8 not supported, skipping to load ...\n", idStream));
         }
 
-        rc = hdaR3StreamInit(pStream, uStreamID);
+        rc = hdaR3StreamInit(pStream, idStream);
         if (RT_FAILURE(rc))
         {
-            LogRel(("HDA: Stream #%RU8: Loading initialization failed, rc=%Rrc\n", uStreamID, rc));
+            LogRel(("HDA: Stream #%RU8: Loading initialization failed, rc=%Rrc\n", idStream, rc));
             /* Continue. */
         }
 
-        rc = SSMR3GetStructEx(pSSM, &pStream->State, sizeof(HDASTREAMSTATE),
-                              0 /* fFlags */, g_aSSMStreamStateFields7, NULL);
-        AssertRC(rc);
+        rc = pHlp->pfnSSMGetStructEx(pSSM, &pStream->State, sizeof(HDASTREAMSTATE),
+                                     0 /* fFlags */, g_aSSMStreamStateFields7, NULL);
+        AssertRCReturn(rc, rc);
 
         /*
          * Load BDLEs (Buffer Descriptor List Entries) and DMA counters.
          */
-        rc = SSMR3GetStructEx(pSSM, &pStream->State.BDLE.Desc, sizeof(HDABDLEDESC),
-                              0 /* fFlags */, g_aSSMBDLEDescFields7, NULL);
-        AssertRC(rc);
+        rc = pHlp->pfnSSMGetStructEx(pSSM, &pStream->State.BDLE.Desc, sizeof(HDABDLEDESC),
+                                     0 /* fFlags */, g_aSSMBDLEDescFields7, NULL);
+        AssertRCReturn(rc, rc);
 
-        rc = SSMR3GetStructEx(pSSM, &pStream->State.BDLE.State, sizeof(HDABDLESTATE),
-                              0 /* fFlags */, g_aSSMBDLEStateFields7, NULL);
-        AssertRC(rc);
+        rc = pHlp->pfnSSMGetStructEx(pSSM, &pStream->State.BDLE.State, sizeof(HDABDLESTATE),
+                                     0 /* fFlags */, g_aSSMBDLEStateFields7, NULL);
+        AssertRCReturn(rc, rc);
 
         Log2Func(("[SD%RU8] %R[bdle]\n", pStream->u8SD, &pStream->State.BDLE));
 
@@ -4022,30 +4007,30 @@ static DECLCALLBACK(int) hdaR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint
         hdaR3StreamPeriodInit(&pStream->State.Period,
                               pStream->u8SD, pStream->u16LVI, pStream->u32CBL, &pStream->State.Cfg);
 
-        rc = SSMR3GetStructEx(pSSM, &pStream->State.Period, sizeof(HDASTREAMPERIOD),
-                              0 /* fFlags */, g_aSSMStreamPeriodFields7, NULL);
-        AssertRC(rc);
+        rc = pHlp->pfnSSMGetStructEx(pSSM, &pStream->State.Period, sizeof(HDASTREAMPERIOD),
+                                     0 /* fFlags */, g_aSSMStreamPeriodFields7, NULL);
+        AssertRCReturn(rc, rc);
 
         /*
          * Load internal (FIFO) buffer.
          */
         uint32_t cbCircBufSize = 0;
-        rc = SSMR3GetU32(pSSM, &cbCircBufSize); /* cbCircBuf */
-        AssertRC(rc);
-
+        rc = pHlp->pfnSSMGetU32(pSSM, &cbCircBufSize); /* cbCircBuf */
         uint32_t cbCircBufUsed = 0;
-        rc = SSMR3GetU32(pSSM, &cbCircBufUsed); /* cbCircBuf */
-        AssertRC(rc);
+        rc = pHlp->pfnSSMGetU32(pSSM, &cbCircBufUsed); /* cbCircBuf */
+        AssertRCReturn(rc, rc);
 
         if (cbCircBufSize) /* If 0, skip the buffer. */
         {
             /* Paranoia. */
-            AssertReleaseMsg(cbCircBufSize <= _1M,
-                             ("HDA: Saved state contains bogus DMA buffer size (%RU32) for stream #%RU8",
-                              cbCircBufSize, uStreamID));
-            AssertReleaseMsg(cbCircBufUsed <= cbCircBufSize,
-                             ("HDA: Saved state contains invalid DMA buffer usage (%RU32/%RU32) for stream #%RU8",
-                              cbCircBufUsed, cbCircBufSize, uStreamID));
+            AssertLogRelMsgReturn(cbCircBufSize <= _1M,
+                                  ("HDA: Saved state contains bogus DMA buffer size (%RU32) for stream #%RU8",
+                                   cbCircBufSize, idStream),
+                                  VERR_SSM_DATA_UNIT_FORMAT_CHANGED);
+            AssertLogRelMsgReturn(cbCircBufUsed <= cbCircBufSize,
+                                  ("HDA: Saved state contains invalid DMA buffer usage (%RU32/%RU32) for stream #%RU8",
+                                   cbCircBufUsed, cbCircBufSize, idStream),
+                                  VERR_SSM_DATA_UNIT_FORMAT_CHANGED);
 
             /* Do we need to cre-create the circular buffer do fit the data size? */
             if (   pStream->State.pCircBuf
@@ -4056,21 +4041,18 @@ static DECLCALLBACK(int) hdaR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint
             }
 
             rc = RTCircBufCreate(&pStream->State.pCircBuf, cbCircBufSize);
-            AssertRC(rc);
+            AssertRCReturn(rc, rc);
 
-            if (   RT_SUCCESS(rc)
-                && cbCircBufUsed)
+            if (cbCircBufUsed)
             {
                 void  *pvBuf;
                 size_t cbBuf;
-
                 RTCircBufAcquireWriteBlock(pStream->State.pCircBuf, cbCircBufUsed, &pvBuf, &cbBuf);
 
-                if (cbBuf)
-                {
-                    rc = SSMR3GetMem(pSSM, pvBuf, cbBuf);
-                    AssertRC(rc);
-                }
+                AssertLogRelMsgReturn(cbBuf == cbCircBufUsed, ("cbBuf=%zu cbCircBufUsed=%zu\n", cbBuf, cbCircBufUsed),
+                                      VERR_INTERNAL_ERROR_3);
+                rc = pHlp->pfnSSMGetMem(pSSM, pvBuf, cbBuf);
+                AssertRCReturn(rc, rc);
 
                 RTCircBufReleaseWriteBlock(pStream->State.pCircBuf, cbBuf);
 
@@ -4078,9 +4060,8 @@ static DECLCALLBACK(int) hdaR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint
             }
         }
 
-        Log2Func(("[SD%RU8] LPIB=%RU32, CBL=%RU32, LVI=%RU32\n",
-                  uStreamID,
-                  HDA_STREAM_REG(pThis, LPIB, uStreamID), HDA_STREAM_REG(pThis, CBL, uStreamID), HDA_STREAM_REG(pThis, LVI, uStreamID)));
+        Log2Func(("[SD%RU8] LPIB=%RU32, CBL=%RU32, LVI=%RU32\n", idStream, HDA_STREAM_REG(pThis, LPIB, idStream),
+                  HDA_STREAM_REG(pThis, CBL, idStream), HDA_STREAM_REG(pThis, LVI, idStream)));
 #ifdef LOG_ENABLED
         hdaR3BDLEDumpAll(pThis, pStream->u64BDLBase, pStream->u16LVI + 1);
 #endif
