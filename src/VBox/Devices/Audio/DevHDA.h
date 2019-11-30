@@ -108,7 +108,6 @@ typedef struct HDASTATE
     PPDMDEVINSR3            pDevInsR3;
     /** The base interface for LUN\#0. */
     PDMIBASE                IBase;
-    RTGCPHYS                MMIOBaseAddr;
     /** The HDA's register set. */
     uint32_t                au32Regs[HDA_NUM_REGS];
     /** Internal stream states. */
@@ -195,6 +194,10 @@ typedef struct HDASTATE
     /** Padding for alignment. */
     uint8_t                 au8Padding3[3];
     HDASTATEDBGINFO         Dbg;
+
+    /** PCI Region \#0: 16KB of MMIO stuff. */
+    IOMMMIOHANDLE           hMmio;
+
 #ifdef VBOX_WITH_STATISTICS
     STAMPROFILE             StatTimer;
     STAMPROFILE             StatIn;

@@ -3140,13 +3140,13 @@ static void hdaR3GCTLReset(PHDASTATE pThis)
 /* MMIO callbacks */
 
 /**
- * @callback_method_impl{FNIOMMMIOREAD, Looks up and calls the appropriate handler.}
+ * @callback_method_impl{FNIOMMMIONEWREAD, Looks up and calls the appropriate handler.}
  *
  * @note During implementation, we discovered so-called "forgotten" or "hole"
  *       registers whose description is not listed in the RPM, datasheet, or
  *       spec.
  */
-PDMBOTHCBDECL(int) hdaMMIORead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr, void *pv, unsigned cb)
+static DECLCALLBACK(VBOXSTRICTRC) hdaMMIORead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS off, void *pv, unsigned cb)
 {
     PHDASTATE   pThis  = PDMDEVINS_2_DATA(pDevIns, PHDASTATE);
     int         rc;
@@ -3156,15 +3156,14 @@ PDMBOTHCBDECL(int) hdaMMIORead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhys
     /*
      * Look up and log.
      */
-    uint32_t        offReg = GCPhysAddr - pThis->MMIOBaseAddr;
-    int             idxRegDsc = hdaRegLookup(offReg);    /* Register descriptor index. */
+    int             idxRegDsc = hdaRegLookup(off);    /* Register descriptor index. */
 #ifdef LOG_ENABLED
     unsigned const  cbLog     = cb;
-    uint32_t        offRegLog = offReg;
+    uint32_t        offRegLog = (uint32_t)off;
 #endif
 
-    Log3Func(("offReg=%#x cb=%#x\n", offReg, cb));
-    Assert(cb == 4); Assert((offReg & 3) == 0);
+    Log3Func(("off=%#x cb=%#x\n", offRegLog, cb));
+    Assert(cb == 4); Assert((off & 3) == 0);
 
     DEVHDA_LOCK_RETURN(pDevIns, pThis, VINF_IOM_R3_MMIO_READ);
 
@@ -3172,7 +3171,7 @@ PDMBOTHCBDECL(int) hdaMMIORead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhys
         LogFunc(("Access to registers except GCTL is blocked while reset\n"));
 
     if (idxRegDsc == -1)
-        LogRel(("HDA: Invalid read access @0x%x (bytes=%u)\n", offReg, cb));
+        LogRel(("HDA: Invalid read access @0x%x (bytes=%u)\n", (uint32_t)off, cb));
 
     if (idxRegDsc != -1)
     {
@@ -3209,9 +3208,9 @@ PDMBOTHCBDECL(int) hdaMMIORead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhys
                 u32Value |= (u32Tmp & g_afMasks[cbReg]) << ((4 - cbLeft) * 8);
 
                 cbLeft -= cbReg;
-                offReg += cbReg;
+                off    += cbReg;
                 idxRegDsc++;
-            } while (cbLeft > 0 && g_aHdaRegMap[idxRegDsc].offset == offReg);
+            } while (cbLeft > 0 && g_aHdaRegMap[idxRegDsc].offset == off);
 
             if (rc == VINF_SUCCESS)
                 *(uint32_t *)pv = u32Value;
@@ -3228,7 +3227,7 @@ PDMBOTHCBDECL(int) hdaMMIORead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhys
         DEVHDA_UNLOCK(pDevIns, pThis);
 
         rc = VINF_IOM_MMIO_UNUSED_FF;
-        Log3Func(("\tHole at %x is accessed for read\n", offReg));
+        Log3Func(("\tHole at %x is accessed for read\n", offRegLog));
     }
 
     /*
@@ -3313,9 +3312,10 @@ DECLINLINE(int) hdaWriteReg(PPDMDEVINS pDevIns, PHDASTATE pThis, int idxRegDsc, 
 
 
 /**
- * @callback_method_impl{FNIOMMMIOWRITE, Looks up and calls the appropriate handler.}
+ * @callback_method_impl{FNIOMMMIOWNEWRITE,
+ *      Looks up and calls the appropriate handler.}
  */
-PDMBOTHCBDECL(int) hdaMMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr, void const *pv, unsigned cb)
+static DECLCALLBACK(VBOXSTRICTRC) hdaMMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS off, void const *pv, unsigned cb)
 {
     PHDASTATE pThis  = PDMDEVINS_2_DATA(pDevIns, PHDASTATE);
     int       rc;
@@ -3323,19 +3323,9 @@ PDMBOTHCBDECL(int) hdaMMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhy
     Assert(pThis->uAlignmentCheckMagic == HDASTATE_ALIGNMENT_CHECK_MAGIC);
 
     /*
-     * The behavior of accesses that aren't aligned on natural boundraries is
-     * undefined. Just reject them outright.
-     */
-    /** @todo IOM could check this, it could also split the 8 byte accesses for us. */
-    Assert(cb == 1 || cb == 2 || cb == 4 || cb == 8);
-    if (GCPhysAddr & (cb - 1))
-        return PDMDevHlpDBGFStop(pDevIns, RT_SRC_POS, "misaligned write access: GCPhysAddr=%RGp cb=%u\n", GCPhysAddr, cb);
-
-    /*
      * Look up and log the access.
      */
-    uint32_t    offReg = GCPhysAddr - pThis->MMIOBaseAddr;
-    int         idxRegDsc = hdaRegLookup(offReg);
+    int         idxRegDsc = hdaRegLookup(off);
 #if defined(IN_RING3) || defined(LOG_ENABLED)
     uint32_t    idxRegMem = idxRegDsc != -1 ? g_aHdaRegMap[idxRegDsc].mem_idx : UINT32_MAX;
 #endif
@@ -3345,30 +3335,28 @@ PDMBOTHCBDECL(int) hdaMMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhy
     else if (cb == 1)   u64Value = *(uint8_t const *)pv;
     else if (cb == 8)   u64Value = *(uint64_t const *)pv;
     else
-    {
-        u64Value = 0;   /* shut up gcc. */
-        AssertReleaseMsgFailed(("%u\n", cb));
-    }
+        ASSERT_GUEST_MSG_FAILED_RETURN(("cb=%u %.*Rhxs\n", cb, cb, pv),
+                                       PDMDevHlpDBGFStop(pDevIns, RT_SRC_POS, "odd write size: off=%RGp cb=%u\n", off, cb));
+
+    /*
+     * The behavior of accesses that aren't aligned on natural boundraries is
+     * undefined. Just reject them outright.
+     */
+    ASSERT_GUEST_MSG_RETURN((off & (cb - 1)) == 0, ("off=%RGp cb=%u %.*Rhxs\n", off, cb, cb, pv),
+                            PDMDevHlpDBGFStop(pDevIns, RT_SRC_POS, "misaligned write access: off=%RGp cb=%u\n", off, cb));
 
 #ifdef LOG_ENABLED
     uint32_t const u32LogOldValue = idxRegDsc >= 0 ? pThis->au32Regs[idxRegMem] : UINT32_MAX;
     if (idxRegDsc == -1)
-        Log3Func(("@%#05x u32=%#010x cb=%d\n", offReg, *(uint32_t const *)pv, cb));
-    else if (cb == 4)
-        Log3Func(("@%#05x u32=%#010x %s\n", offReg, *(uint32_t *)pv, g_aHdaRegMap[idxRegDsc].abbrev));
-    else if (cb == 2)
-        Log3Func(("@%#05x u16=%#06x (%#010x) %s\n", offReg, *(uint16_t *)pv, *(uint32_t *)pv, g_aHdaRegMap[idxRegDsc].abbrev));
-    else if (cb == 1)
-        Log3Func(("@%#05x u8=%#04x (%#010x) %s\n", offReg, *(uint8_t *)pv, *(uint32_t *)pv, g_aHdaRegMap[idxRegDsc].abbrev));
-
-    if (idxRegDsc >= 0 && g_aHdaRegMap[idxRegDsc].size != cb)
-        Log3Func(("\tsize=%RU32 != cb=%u!!\n", g_aHdaRegMap[idxRegDsc].size, cb));
+        Log3Func(("@%#05x u32=%#010x cb=%d\n", (uint32_t)off, *(uint32_t const *)pv, cb));
+    else
+        Log3Func(("@%#05x u%u=%#0*RX64 %s\n", (uint32_t)off, cb * 8, 2 + cb * 2, u64Value, g_aHdaRegMap[idxRegDsc].abbrev));
 #endif
 
     /*
      * Try for a direct hit first.
      */
-    if (idxRegDsc != -1 && g_aHdaRegMap[idxRegDsc].size == cb)
+    if (idxRegDsc >= 0 && g_aHdaRegMap[idxRegDsc].size == cb)
     {
         rc = hdaWriteReg(pDevIns, pThis, idxRegDsc, u64Value, "");
         Log3Func(("\t%#x -> %#x\n", u32LogOldValue, idxRegMem != UINT32_MAX ? pThis->au32Regs[idxRegMem] : UINT32_MAX));
@@ -3379,16 +3367,19 @@ PDMBOTHCBDECL(int) hdaMMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhy
     else
     {
 #ifdef IN_RING3
+        if (idxRegDsc >= 0 && g_aHdaRegMap[idxRegDsc].size != cb)
+            Log3Func(("\tSize mismatch: %RU32 (reg) vs %u (access)!!\n", g_aHdaRegMap[idxRegDsc].size, cb));
+
         /*
          * If it's an access beyond the start of the register, shift the input
          * value and fill in missing bits. Natural alignment rules means we
          * will only see 1 or 2 byte accesses of this kind, so no risk of
          * shifting out input values.
          */
-        if (idxRegDsc == -1 && (idxRegDsc = hdaR3RegLookupWithin(offReg)) != -1)
+        if (idxRegDsc < 0 && (idxRegDsc = hdaR3RegLookupWithin(off)) != -1)
         {
-            uint32_t const cbBefore = offReg - g_aHdaRegMap[idxRegDsc].offset; Assert(cbBefore > 0 && cbBefore < 4);
-            offReg    -= cbBefore;
+            uint32_t const cbBefore = (uint32_t)off - g_aHdaRegMap[idxRegDsc].offset; Assert(cbBefore > 0 && cbBefore < 4);
+            off      -= cbBefore;
             idxRegMem = g_aHdaRegMap[idxRegDsc].mem_idx;
             u64Value <<= cbBefore * 8;
             u64Value  |= pThis->au32Regs[idxRegMem] & g_afMasks[cbBefore];
@@ -3401,10 +3392,10 @@ PDMBOTHCBDECL(int) hdaMMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhy
         for (;;)
         {
             uint32_t cbReg;
-            if (idxRegDsc != -1)
+            if (idxRegDsc >= 0)
             {
                 idxRegMem = g_aHdaRegMap[idxRegDsc].mem_idx;
-                cbReg = g_aHdaRegMap[idxRegDsc].size;
+                cbReg     = g_aHdaRegMap[idxRegDsc].size;
                 if (cb < cbReg)
                 {
                     u64Value |= pThis->au32Regs[idxRegMem] & g_afMasks[cbReg] & ~g_afMasks[cb];
@@ -3419,7 +3410,7 @@ PDMBOTHCBDECL(int) hdaMMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhy
             }
             else
             {
-                LogRel(("HDA: Invalid write access @0x%x\n", offReg));
+                LogRel(("HDA: Invalid write access @0x%x\n", (uint32_t)off));
                 cbReg = 1;
             }
             if (rc != VINF_SUCCESS)
@@ -3428,19 +3419,17 @@ PDMBOTHCBDECL(int) hdaMMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhy
                 break;
 
             /* Advance. */
-            offReg += cbReg;
-            cb     -= cbReg;
+            off += cbReg;
+            cb  -= cbReg;
             u64Value >>= cbReg * 8;
             if (idxRegDsc == -1)
-                idxRegDsc = hdaRegLookup(offReg);
+                idxRegDsc = hdaRegLookup(off);
             else
             {
                 idxRegDsc++;
                 if (   (unsigned)idxRegDsc >= RT_ELEMENTS(g_aHdaRegMap)
-                    || g_aHdaRegMap[idxRegDsc].offset != offReg)
-                {
+                    || g_aHdaRegMap[idxRegDsc].offset != off)
                     idxRegDsc = -1;
-                }
             }
         }
 
@@ -3457,60 +3446,15 @@ PDMBOTHCBDECL(int) hdaMMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhy
 /* PCI callback. */
 
 #ifdef IN_RING3
-/**
- * @callback_method_impl{FNPCIIOREGIONMAP}
- */
-static DECLCALLBACK(int) hdaR3PciIoRegionMap(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t iRegion,
-                                             RTGCPHYS GCPhysAddress, RTGCPHYS cb, PCIADDRESSSPACE enmType)
-{
-    PHDASTATE pThis = PDMDEVINS_2_DATA(pDevIns, PHDASTATE);
-    RT_NOREF(pPciDev, iRegion, enmType);
-
-    Assert(enmType == PCI_ADDRESS_SPACE_MEM);
-    Assert(iRegion == 0);
-    Assert(pPciDev == pDevIns->apPciDevs[0]);
-
-    /*
-     * 18.2 of the ICH6 datasheet defines the valid access widths as byte, word, and double word.
-     *
-     * Let IOM talk DWORDs when reading, saves a lot of complications. On
-     * writing though, we have to do it all ourselves because of sideeffects.
-     */
-    Assert(enmType == PCI_ADDRESS_SPACE_MEM);
-    int rc = PDMDevHlpMMIORegister(pDevIns, GCPhysAddress, cb, NULL /*pvUser*/,
-                                     IOMMMIO_FLAGS_READ_DWORD
-                                   | IOMMMIO_FLAGS_WRITE_PASSTHRU,
-                                   hdaMMIOWrite, hdaMMIORead, "HDA");
-
-    if (RT_FAILURE(rc))
-        return rc;
-
-    if (pThis->fRZEnabled)
-    {
-        rc = PDMDevHlpMMIORegisterR0(pDevIns, GCPhysAddress, cb, NIL_RTR0PTR /*pvUser*/,
-                                     "hdaMMIOWrite", "hdaMMIORead");
-        if (RT_FAILURE(rc))
-            return rc;
-
-        rc = PDMDevHlpMMIORegisterRC(pDevIns, GCPhysAddress, cb, NIL_RTRCPTR /*pvUser*/,
-                                     "hdaMMIOWrite", "hdaMMIORead");
-        if (RT_FAILURE(rc))
-            return rc;
-    }
-
-    pThis->MMIOBaseAddr = GCPhysAddress;
-    return VINF_SUCCESS;
-}
-
 
 /* Saved state workers and callbacks. */
 
 static int hdaR3SaveStream(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, PHDASTREAM pStream)
 {
     RT_NOREF(pDevIns);
-#if defined(LOG_ENABLED)
+# ifdef LOG_ENABLED
     PHDASTATE pThis = PDMDEVINS_2_DATA(pDevIns, PHDASTATE);
-#endif
+# endif
 
     Log2Func(("[SD%RU8]\n", pStream->u8SD));
 
@@ -4920,7 +4864,8 @@ static DECLCALLBACK(int) hdaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     rc = PDMDevHlpPCIRegister(pDevIns, pPciDev);
     AssertRCReturn(rc, rc);
 
-    rc = PDMDevHlpPCIIORegionRegister(pDevIns, 0, 0x4000, PCI_ADDRESS_SPACE_MEM, hdaR3PciIoRegionMap);
+    rc = PDMDevHlpPCIIORegionCreateMmio(pDevIns, 0, 0x4000, PCI_ADDRESS_SPACE_MEM, hdaMMIOWrite, hdaMMIORead, NULL /*pvUser*/,
+                                        IOMMMIO_FLAGS_READ_DWORD | IOMMMIO_FLAGS_WRITE_PASSTHRU, "HDA", &pThis->hMmio);
     AssertRCReturn(rc, rc);
 
 #ifdef VBOX_WITH_MSI_DEVICES
@@ -5262,7 +5207,23 @@ static DECLCALLBACK(int) hdaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     return VINF_SUCCESS;
 }
 
-#endif /* IN_RING3 */
+#else  /* !IN_RING3 */
+
+/**
+ * @callback_method_impl{PDMDEVREGR0,pfnConstruct}
+ */
+static DECLCALLBACK(int) ohciRZConstruct(PPDMDEVINS pDevIns)
+{
+    PDMDEV_CHECK_VERSIONS_RETURN(pDevIns); /* this shall come first */
+    PHDASTATE pThis = PDMDEVINS_2_DATA(pDevIns, PHDASTATE);
+
+    int rc = PDMDevHlpMmioSetUpContext(pDevIns, pThis->hMmio, hdaMMIOWrite, hdaMMIORead, NULL /*pvUser*/);
+    AssertRCReturn(rc, rc);
+
+    return VINF_SUCCESS;
+}
+
+#endif /* !IN_RING3 */
 
 /**
  * The device registration structure.
