@@ -3944,7 +3944,7 @@ static DECLCALLBACK(int) hdaR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint
     if (   pHlp->pfnSSMHandleRevision(pSSM) >= 116273
         || pHlp->pfnSSMHandleVersion(pSSM)  >= VBOX_FULL_VERSION_MAKE(5, 2, 0))
     {
-        rc = pHlp->pfnSSMGetU64(pSSM, &pThis->u64WalClk);
+        pHlp->pfnSSMGetU64(pSSM, &pThis->u64WalClk);
         rc = pHlp->pfnSSMGetU8(pSSM, &pThis->u8IRQL);
         AssertRCReturn(rc, rc);
     }
@@ -3955,13 +3955,10 @@ static DECLCALLBACK(int) hdaR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint
     uint32_t cStreams;
     rc = pHlp->pfnSSMGetU32(pSSM, &cStreams);
     AssertRCReturn(rc, rc);
-
-    /** @todo r=bird: Sanity? No, insanity. You'll end up failing later on
-     *        because you don't load all your state, so what's the point.  Just
-     *        admit to a problem immediately, there is no hiding it! */
     if (cStreams > HDA_MAX_STREAMS)
-        cStreams = HDA_MAX_STREAMS; /* Sanity. */
-
+        return pHlp->pfnSSMSetLoadError(pSSM, VERR_SSM_DATA_UNIT_FORMAT_CHANGED, RT_SRC_POS,
+                                        N_("State contains %u streams while %u is the maximum supported"),
+                                        cStreams, HDA_MAX_STREAMS);
     Log2Func(("cStreams=%RU32\n", cStreams));
 
     /* Load stream states. */
