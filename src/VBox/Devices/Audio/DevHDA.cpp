@@ -3913,16 +3913,21 @@ static DECLCALLBACK(int) hdaR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint
      */
     uint32_t cRegs;
     rc = pHlp->pfnSSMGetU32(pSSM, &cRegs); AssertRCReturn(rc, rc);
+    AssertRCReturn(rc, rc);
     if (cRegs != RT_ELEMENTS(pThis->au32Regs))
         LogRel(("HDA: SSM version cRegs is %RU32, expected %RU32\n", cRegs, RT_ELEMENTS(pThis->au32Regs)));
 
     if (cRegs >= RT_ELEMENTS(pThis->au32Regs))
     {
         pHlp->pfnSSMGetMem(pSSM, pThis->au32Regs, sizeof(pThis->au32Regs));
-        pHlp->pfnSSMSkip(pSSM, sizeof(uint32_t) * (cRegs - RT_ELEMENTS(pThis->au32Regs)));
+        rc = pHlp->pfnSSMSkip(pSSM, sizeof(uint32_t) * (cRegs - RT_ELEMENTS(pThis->au32Regs)));
+        AssertRCReturn(rc, rc);
     }
     else
-        pHlp->pfnSSMGetMem(pSSM, pThis->au32Regs, sizeof(uint32_t) * cRegs);
+    {
+        rc = pHlp->pfnSSMGetMem(pSSM, pThis->au32Regs, sizeof(uint32_t) * cRegs);
+        AssertRCReturn(rc, rc);
+    }
 
     /* Make sure to update the base addresses first before initializing any streams down below. */
     pThis->u64CORBBase  = RT_MAKE_U64(HDA_REG(pThis, CORBLBASE), HDA_REG(pThis, CORBUBASE));
@@ -3940,7 +3945,6 @@ static DECLCALLBACK(int) hdaR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint
         || pHlp->pfnSSMHandleVersion(pSSM)  >= VBOX_FULL_VERSION_MAKE(5, 2, 0))
     {
         rc = pHlp->pfnSSMGetU64(pSSM, &pThis->u64WalClk);
-        AssertRCReturn(rc, rc);
         rc = pHlp->pfnSSMGetU8(pSSM, &pThis->u8IRQL);
         AssertRCReturn(rc, rc);
     }
@@ -4004,8 +4008,7 @@ static DECLCALLBACK(int) hdaR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint
         /*
          * Load period state.
          */
-        hdaR3StreamPeriodInit(&pStream->State.Period,
-                              pStream->u8SD, pStream->u16LVI, pStream->u32CBL, &pStream->State.Cfg);
+        hdaR3StreamPeriodInit(&pStream->State.Period, pStream->u8SD, pStream->u16LVI, pStream->u32CBL, &pStream->State.Cfg);
 
         rc = pHlp->pfnSSMGetStructEx(pSSM, &pStream->State.Period, sizeof(HDASTREAMPERIOD),
                                      0 /* fFlags */, g_aSSMStreamPeriodFields7, NULL);
@@ -4015,7 +4018,7 @@ static DECLCALLBACK(int) hdaR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint
          * Load internal (FIFO) buffer.
          */
         uint32_t cbCircBufSize = 0;
-        rc = pHlp->pfnSSMGetU32(pSSM, &cbCircBufSize); /* cbCircBuf */
+        pHlp->pfnSSMGetU32(pSSM, &cbCircBufSize); /* cbCircBuf */
         uint32_t cbCircBufUsed = 0;
         rc = pHlp->pfnSSMGetU32(pSSM, &cbCircBufUsed); /* cbCircBuf */
         AssertRCReturn(rc, rc);
