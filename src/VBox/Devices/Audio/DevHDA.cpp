@@ -3760,33 +3760,35 @@ static int hdaR3LoadExecLegacy(PPDMDEVINS pDevIns, PHDASTATE pThis, PSSMHANDLE p
 
         default: /* Since v5 we support flexible stream and BDLE counts. */
         {
+            /* Stream count. */
             uint32_t cStreams;
             rc = pHlp->pfnSSMGetU32(pSSM, &cStreams);
             AssertRCReturn(rc, rc);
-
             if (cStreams > HDA_MAX_STREAMS)
-                cStreams = HDA_MAX_STREAMS; /* Sanity. */
+                return pHlp->pfnSSMSetLoadError(pSSM, VERR_SSM_DATA_UNIT_FORMAT_CHANGED, RT_SRC_POS,
+                                                N_("State contains %u streams while %u is the maximum supported"),
+                                                cStreams, HDA_MAX_STREAMS);
 
             /* Load stream states. */
             for (uint32_t i = 0; i < cStreams; i++)
             {
-                uint8_t uStreamID;
-                rc = pHlp->pfnSSMGetU8(pSSM, &uStreamID);
+                uint8_t idStream;
+                rc = pHlp->pfnSSMGetU8(pSSM, &idStream);
                 AssertRCReturn(rc, rc);
 
-                PHDASTREAM pStream = hdaGetStreamFromSD(pThis, uStreamID);
+                PHDASTREAM pStream = hdaGetStreamFromSD(pThis, idStream);
                 HDASTREAM  StreamDummy;
 
                 if (!pStream)
                 {
                     pStream = &StreamDummy;
-                    LogRel2(("HDA: Warning: Stream ID=%RU32 not supported, skipping to load ...\n", uStreamID));
+                    LogRel2(("HDA: Warning: Stream ID=%RU32 not supported, skipping to load ...\n", idStream));
                 }
 
-                rc = hdaR3StreamInit(pStream, uStreamID);
+                rc = hdaR3StreamInit(pStream, idStream);
                 if (RT_FAILURE(rc))
                 {
-                    LogRel(("HDA: Stream #%RU32: Initialization of stream %RU8 failed, rc=%Rrc\n", i, uStreamID, rc));
+                    LogRel(("HDA: Stream #%RU32: Initialization of stream %RU8 failed, rc=%Rrc\n", i, idStream, rc));
                     break;
                 }
 
@@ -3863,8 +3865,8 @@ static int hdaR3LoadExecLegacy(PPDMDEVINS pDevIns, PHDASTATE pThis, PSSMHANDLE p
                                                  0 /* fFlags */, g_aSSMBDLEStateFields6, NULL);
                     AssertRCReturn(rc, rc);
 
-                    Log2Func(("[SD%RU8] LPIB=%RU32, CBL=%RU32, LVI=%RU32\n", uStreamID, HDA_STREAM_REG(pThis, LPIB, uStreamID),
-                              HDA_STREAM_REG(pThis, CBL, uStreamID), HDA_STREAM_REG(pThis, LVI, uStreamID)));
+                    Log2Func(("[SD%RU8] LPIB=%RU32, CBL=%RU32, LVI=%RU32\n", idStream, HDA_STREAM_REG(pThis, LPIB, idStream),
+                              HDA_STREAM_REG(pThis, CBL, idStream), HDA_STREAM_REG(pThis, LVI, idStream)));
 #ifdef LOG_ENABLED
                     hdaR3BDLEDumpAll(pThis, pStream->u64BDLBase, pStream->u16LVI + 1);
 #endif
