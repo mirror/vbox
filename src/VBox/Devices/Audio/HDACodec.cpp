@@ -3130,23 +3130,23 @@ int hdaCodecLoadState(PHDACODEC pThis, PSSMHANDLE pSSM, uint32_t uVersion)
     uint32_t   fFlags  = 0;
     switch (uVersion)
     {
-        case HDA_SSM_VERSION_1:
+        case HDA_SAVED_STATE_VERSION_1:
             AssertReturn(pThis->cTotalNodes == 0x1c, VERR_INTERNAL_ERROR);
             pFields = g_aCodecNodeFieldsV1;
             fFlags  = SSMSTRUCT_FLAGS_MEM_BAND_AID_RELAXED;
             break;
 
-        case HDA_SSM_VERSION_2:
-        case HDA_SSM_VERSION_3:
+        case HDA_SAVED_STATE_VERSION_2:
+        case HDA_SAVED_STATE_VERSION_3:
             AssertReturn(pThis->cTotalNodes == 0x1c, VERR_INTERNAL_ERROR);
             pFields = g_aCodecNodeFields;
             fFlags  = SSMSTRUCT_FLAGS_MEM_BAND_AID_RELAXED;
             break;
 
         /* Since version 4 a flexible node count is supported. */
-        case HDA_SSM_VERSION_4:
-        case HDA_SSM_VERSION_5:
-        case HDA_SSM_VERSION:
+        case HDA_SAVED_STATE_VERSION_4:
+        case HDA_SAVED_STATE_VERSION_5:
+        case HDA_SAVED_STATE_VERSION:
         {
             uint32_t cNodes;
             int rc2 = SSMR3GetU32(pSSM, &cNodes);

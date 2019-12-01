@@ -131,8 +131,7 @@ int hdaCodecLoadState(PHDACODEC pThis, PSSMHANDLE pSSM, uint32_t uVersion);
 int hdaCodecAddStream(PHDACODEC pThis, PDMAUDIOMIXERCTL enmMixerCtl, PPDMAUDIOSTREAMCFG pCfg);
 int hdaCodecRemoveStream(PHDACODEC pThis, PDMAUDIOMIXERCTL enmMixerCtl);
 
-/** @name Dev HDA saved state verions
- * @todo r=bird: s/HDA_SSM_/HDA_SAVED_STATE_/g - SSM = saved state manager, duh!
+/** @name DevHDA saved state versions
  * @{ */
 /** Added (Controller):              Current wall clock value (this independent from WALCLK register value).
   * Added (Controller):              Current IRQ level.
@@ -141,18 +140,20 @@ int hdaCodecRemoveStream(PHDACODEC pThis, PDMAUDIOMIXERCTL enmMixerCtl);
   * Added (Per stream):              Struct g_aSSMStreamPeriodFields7.
   * Added (Current BDLE per stream): Struct g_aSSMBDLEDescFields7.
   * Added (Current BDLE per stream): Struct g_aSSMBDLEStateFields7. */
-#define HDA_SSM_VERSION   7
-/** Saves the current BDLE state. */
-#define HDA_SSM_VERSION_6 6
+#define HDA_SAVED_STATE_VERSION   7
+/** Saves the current BDLE state.
+ * @since 5.0.14 (r104839) */
+#define HDA_SAVED_STATE_VERSION_6 6
 /** Introduced dynamic number of streams + stream identifiers for serialization.
  *  Bug: Did not save the BDLE states correctly.
- *  Those will be skipped on load then. */
-#define HDA_SSM_VERSION_5 5
+ *  Those will be skipped on load then.
+ * @since 5.0.12 (r104520)  */
+#define HDA_SAVED_STATE_VERSION_5 5
 /** Since this version the number of MMIO registers can be flexible. */
-#define HDA_SSM_VERSION_4 4
-#define HDA_SSM_VERSION_3 3
-#define HDA_SSM_VERSION_2 2
-#define HDA_SSM_VERSION_1 1
+#define HDA_SAVED_STATE_VERSION_4 4
+#define HDA_SAVED_STATE_VERSION_3 3
+#define HDA_SAVED_STATE_VERSION_2 2
+#define HDA_SAVED_STATE_VERSION_1 1
 /** @} */
 
 #endif /* !VBOX_INCLUDED_SRC_Audio_HDACodec_h */

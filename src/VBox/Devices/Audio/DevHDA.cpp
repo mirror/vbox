@@ -3470,12 +3470,12 @@ static DECLCALLBACK(VBOXSTRICTRC) hdaMMIOWrite(PPDMDEVINS pDevIns, void *pvUser,
     return rc;
 }
 
-
-/* PCI callback. */
-
 #ifdef IN_RING3
 
-/* Saved state workers and callbacks. */
+
+/*********************************************************************************************************************************
+*   Saved state                                                                                                                  *
+*********************************************************************************************************************************/
 
 /**
  * @callback_method_impl{FNSSMFIELDGETPUT,
@@ -3710,7 +3710,7 @@ static int hdaR3LoadExecLegacy(PPDMDEVINS pDevIns, PHDASTATE pThis, PSSMHANDLE p
     uint32_t cRegs;
     switch (uVersion)
     {
-        case HDA_SSM_VERSION_1:
+        case HDA_SAVED_STATE_VERSION_1:
             /* Starting with r71199, we would save 112 instead of 113
                registers due to some code cleanups.  This only affected trunk
                builds in the 4.1 development period. */
@@ -3725,16 +3725,16 @@ static int hdaR3LoadExecLegacy(PPDMDEVINS pDevIns, PHDASTATE pThis, PSSMHANDLE p
             }
             break;
 
-        case HDA_SSM_VERSION_2:
-        case HDA_SSM_VERSION_3:
+        case HDA_SAVED_STATE_VERSION_2:
+        case HDA_SAVED_STATE_VERSION_3:
             cRegs = 112;
             AssertCompile(RT_ELEMENTS(pThis->au32Regs) >= 112);
             break;
 
         /* Since version 4 we store the register count to stay flexible. */
-        case HDA_SSM_VERSION_4:
-        case HDA_SSM_VERSION_5:
-        case HDA_SSM_VERSION_6:
+        case HDA_SAVED_STATE_VERSION_4:
+        case HDA_SAVED_STATE_VERSION_5:
+        case HDA_SAVED_STATE_VERSION_6:
             rc = pHlp->pfnSSMGetU32(pSSM, &cRegs);
             AssertRCReturn(rc, rc);
             if (cRegs != RT_ELEMENTS(pThis->au32Regs))
@@ -3776,10 +3776,10 @@ static int hdaR3LoadExecLegacy(PPDMDEVINS pDevIns, PHDASTATE pThis, PSSMHANDLE p
      */
     switch (uVersion)
     {
-        case HDA_SSM_VERSION_1:
-        case HDA_SSM_VERSION_2:
-        case HDA_SSM_VERSION_3:
-        case HDA_SSM_VERSION_4:
+        case HDA_SAVED_STATE_VERSION_1:
+        case HDA_SAVED_STATE_VERSION_2:
+        case HDA_SAVED_STATE_VERSION_3:
+        case HDA_SAVED_STATE_VERSION_4:
         {
             /* Only load the internal states.
              * The rest will be initialized from the saved registers later. */
@@ -3855,7 +3855,7 @@ static int hdaR3LoadExecLegacy(PPDMDEVINS pDevIns, PHDASTATE pThis, PSSMHANDLE p
                 /*
                  * Load BDLEs (Buffer Descriptor List Entries) and DMA counters.
                  */
-                if (uVersion == HDA_SSM_VERSION_5)
+                if (uVersion == HDA_SAVED_STATE_VERSION_5)
                 {
                     struct V5HDASTREAMSTATE /* HDASTREAMSTATE + HDABDLE */
                     {
@@ -3944,7 +3944,7 @@ static DECLCALLBACK(int) hdaR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint
         return rc;
     }
 
-    if (uVersion <= HDA_SSM_VERSION_6) /* Handle older saved states? */
+    if (uVersion <= HDA_SAVED_STATE_VERSION_6) /* Handle older saved states? */
     {
         rc = hdaR3LoadExecLegacy(pDevIns, pThis, pSSM, uVersion);
         if (RT_SUCCESS(rc))
@@ -4120,7 +4120,10 @@ static DECLCALLBACK(int) hdaR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint
     return rc;
 }
 
-/* IPRT format type handlers. */
+
+/*********************************************************************************************************************************
+*   IPRT format type handlers                                                                                                    *
+*********************************************************************************************************************************/
 
 /**
  * @callback_method_impl{FNRTSTRFORMATTYPE}
@@ -4206,7 +4209,10 @@ static DECLCALLBACK(size_t) hdaR3StrFmtSDSTS(PFNRTSTROUTPUT pfnOutput, void *pvA
                        RT_BOOL(uSdSts & HDA_SDSTS_BCIS));
 }
 
-/* Debug info dumpers */
+
+/*********************************************************************************************************************************
+*   Debug Info Item Handlers                                                                                                     *
+*********************************************************************************************************************************/
 
 static int hdaR3DbgLookupRegByName(const char *pszArgs)
 {
@@ -4390,7 +4396,9 @@ static DECLCALLBACK(void) hdaR3DbgInfoMixer(PPDMDEVINS pDevIns, PCDBGFINFOHLP pH
 }
 
 
-/* PDMIBASE */
+/*********************************************************************************************************************************
+*   PDMIBASE                                                                                                                     *
+*********************************************************************************************************************************/
 
 /**
  * @interface_method_impl{PDMIBASE,pfnQueryInterface}
@@ -4405,7 +4413,9 @@ static DECLCALLBACK(void *) hdaR3QueryInterface(struct PDMIBASE *pInterface, con
 }
 
 
-/* PDMDEVREG */
+/*********************************************************************************************************************************
+*   PDMDEVREGR3                                                                                                                  *
+*********************************************************************************************************************************/
 
 /**
  * Attach command, internal version.
@@ -4907,7 +4917,7 @@ static DECLCALLBACK(int) hdaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     }
 #endif
 
-    rc = PDMDevHlpSSMRegister(pDevIns, HDA_SSM_VERSION, sizeof(*pThis), hdaR3SaveExec, hdaR3LoadExec);
+    rc = PDMDevHlpSSMRegister(pDevIns, HDA_SAVED_STATE_VERSION, sizeof(*pThis), hdaR3SaveExec, hdaR3LoadExec);
     AssertRCReturn(rc, rc);
 
 #ifdef VBOX_WITH_AUDIO_HDA_ASYNC_IO
