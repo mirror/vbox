@@ -15761,6 +15761,15 @@ HMVMX_EXIT_DECL hmR0VmxExitEptMisconfig(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransi
          */
         PVMCC    pVM  = pVCpu->CTX_SUFF(pVM);
         PCPUMCTX pCtx = &pVCpu->cpum.GstCtx;
+/** @todo bird: We can probably just go straight to IOM here and assume that
+ *        it's MMIO, then fall back on PGM if that hunch didn't work out so
+ *        well.  However, we need to address that aliasing workarounds that
+ *        PGMR0Trap0eHandlerNPMisconfig implements.  So, some care is needed.
+ *
+ *        Might also be interesting to see if we can get this done more or
+ *        less locklessly inside IOM.  Need to consider the lookup table
+ *        updating and use a bit more carefully first (or do all updates via
+ *        rendezvous) */
         rcStrict = PGMR0Trap0eHandlerNPMisconfig(pVM, pVCpu, PGMMODE_EPT, CPUMCTX2CORE(pCtx), GCPhys, UINT32_MAX);
         Log4Func(("At %#RGp RIP=%#RX64 rc=%Rrc\n", GCPhys, pCtx->rip, VBOXSTRICTRC_VAL(rcStrict)));
         if (   rcStrict == VINF_SUCCESS
