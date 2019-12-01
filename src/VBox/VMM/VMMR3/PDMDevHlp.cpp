@@ -141,190 +141,6 @@ static DECLCALLBACK(uint32_t) pdmR3DevHlp_IoPortGetMappingAddress(PPDMDEVINS pDe
 }
 
 
-/** @interface_method_impl{PDMDEVHLPR3,pfnIOPortRegister} */
-static DECLCALLBACK(int) pdmR3DevHlp_IOPortRegister(PPDMDEVINS pDevIns, RTIOPORT Port, RTIOPORT cPorts, RTHCPTR pvUser, PFNIOMIOPORTOUT pfnOut, PFNIOMIOPORTIN pfnIn,
-                                                    PFNIOMIOPORTOUTSTRING pfnOutStr, PFNIOMIOPORTINSTRING pfnInStr, const char *pszDesc)
-{
-    PDMDEV_ASSERT_DEVINS(pDevIns);
-    LogFlow(("pdmR3DevHlp_IOPortRegister: caller='%s'/%d: Port=%#x cPorts=%#x pvUser=%p pfnOut=%p pfnIn=%p pfnOutStr=%p pfnInStr=%p pszDesc=%p:{%s}\n", pDevIns->pReg->szName, pDevIns->iInstance,
-             Port, cPorts, pvUser, pfnOut, pfnIn, pfnOutStr, pfnInStr, pszDesc, pszDesc));
-    VM_ASSERT_EMT(pDevIns->Internal.s.pVMR3);
-
-#if 0 /** @todo needs a real string cache for this */
-    if (pDevIns->iInstance > 0)
-    {
-         char *pszDesc2 = MMR3HeapAPrintf(pVM, MM_TAG_PDM_DEVICE_DESC, "%s [%u]", pszDesc, pDevIns->iInstance);
-         if (pszDesc2)
-             pszDesc = pszDesc2;
-    }
-#endif
-
-    int rc = IOMR3IOPortRegisterR3(pDevIns->Internal.s.pVMR3, pDevIns, Port, cPorts, pvUser,
-                                   pfnOut, pfnIn, pfnOutStr, pfnInStr, pszDesc);
-
-    LogFlow(("pdmR3DevHlp_IOPortRegister: caller='%s'/%d: returns %Rrc\n", pDevIns->pReg->szName, pDevIns->iInstance, rc));
-    return rc;
-}
-
-
-/** @interface_method_impl{PDMDEVHLPR3,pfnIOPortRegisterRC} */
-static DECLCALLBACK(int) pdmR3DevHlp_IOPortRegisterRC(PPDMDEVINS pDevIns, RTIOPORT Port, RTIOPORT cPorts, RTRCPTR pvUser,
-                                                      const char *pszOut, const char *pszIn,
-                                                      const char *pszOutStr, const char *pszInStr, const char *pszDesc)
-{
-    PDMDEV_ASSERT_DEVINS(pDevIns);
-    Assert(pDevIns->pReg->pszRCMod[0]);
-    Assert(pDevIns->pReg->fFlags & PDM_DEVREG_FLAGS_RC);
-    LogFlow(("pdmR3DevHlp_IOPortRegisterRC: caller='%s'/%d: Port=%#x cPorts=%#x pvUser=%p pszOut=%p:{%s} pszIn=%p:{%s} pszOutStr=%p:{%s} pszInStr=%p:{%s} pszDesc=%p:{%s}\n", pDevIns->pReg->szName, pDevIns->iInstance,
-             Port, cPorts, pvUser, pszOut, pszOut, pszIn, pszIn, pszOutStr, pszOutStr, pszInStr, pszInStr, pszDesc, pszDesc));
-
-#if 0
-    /*
-     * Resolve the functions (one of the can be NULL).
-     */
-    PVM pVM = pDevIns->Internal.s.pVMR3;
-    VM_ASSERT_EMT(pVM);
-    int rc = VINF_SUCCESS;
-    if (   pDevIns->pReg->pszRCMod[0]
-        && (pDevIns->pReg->fFlags & PDM_DEVREG_FLAGS_RC)
-        && VM_IS_RAW_MODE_ENABLED(pVM))
-    {
-        RTRCPTR RCPtrIn = NIL_RTRCPTR;
-        if (pszIn)
-        {
-            rc = pdmR3DevGetSymbolRCLazy(pDevIns, pszIn, &RCPtrIn);
-            AssertMsgRC(rc, ("Failed to resolve %s.%s (pszIn)\n", pDevIns->pReg->pszRCMod, pszIn));
-        }
-        RTRCPTR RCPtrOut = NIL_RTRCPTR;
-        if (pszOut && RT_SUCCESS(rc))
-        {
-            rc = pdmR3DevGetSymbolRCLazy(pDevIns, pszOut, &RCPtrOut);
-            AssertMsgRC(rc, ("Failed to resolve %s.%s (pszOut)\n", pDevIns->pReg->pszRCMod, pszOut));
-        }
-        RTRCPTR RCPtrInStr = NIL_RTRCPTR;
-        if (pszInStr && RT_SUCCESS(rc))
-        {
-            rc = pdmR3DevGetSymbolRCLazy(pDevIns, pszInStr, &RCPtrInStr);
-            AssertMsgRC(rc, ("Failed to resolve %s.%s (pszInStr)\n", pDevIns->pReg->pszRCMod, pszInStr));
-        }
-        RTRCPTR RCPtrOutStr = NIL_RTRCPTR;
-        if (pszOutStr && RT_SUCCESS(rc))
-        {
-            rc = pdmR3DevGetSymbolRCLazy(pDevIns, pszOutStr, &RCPtrOutStr);
-            AssertMsgRC(rc, ("Failed to resolve %s.%s (pszOutStr)\n", pDevIns->pReg->pszRCMod, pszOutStr));
-        }
-
-        if (RT_SUCCESS(rc))
-        {
-#if 0 /** @todo needs a real string cache for this */
-            if (pDevIns->iInstance > 0)
-            {
-                 char *pszDesc2 = MMR3HeapAPrintf(pVM, MM_TAG_PDM_DEVICE_DESC, "%s [%u]", pszDesc, pDevIns->iInstance);
-                 if (pszDesc2)
-                     pszDesc = pszDesc2;
-            }
-#endif
-
-            rc = IOMR3IOPortRegisterRC(pVM, pDevIns, Port, cPorts, pvUser, RCPtrOut, RCPtrIn, RCPtrOutStr, RCPtrInStr, pszDesc);
-        }
-    }
-    else if (VM_IS_RAW_MODE_ENABLED(pVM))
-    {
-        AssertMsgFailed(("No RC module for this driver!\n"));
-        rc = VERR_INVALID_PARAMETER;
-    }
-#else
-    RT_NOREF(pDevIns, Port, cPorts, pvUser, pszOut, pszIn, pszOutStr, pszInStr, pszDesc);
-    int rc = VINF_SUCCESS;
-#endif
-
-    LogFlow(("pdmR3DevHlp_IOPortRegisterRC: caller='%s'/%d: returns %Rrc\n", pDevIns->pReg->szName, pDevIns->iInstance, rc));
-    return rc;
-}
-
-
-/** @interface_method_impl{PDMDEVHLPR3,pfnIOPortRegisterR0} */
-static DECLCALLBACK(int) pdmR3DevHlp_IOPortRegisterR0(PPDMDEVINS pDevIns, RTIOPORT Port, RTIOPORT cPorts, RTR0PTR pvUser,
-                                                      const char *pszOut, const char *pszIn,
-                                                      const char *pszOutStr, const char *pszInStr, const char *pszDesc)
-{
-    PDMDEV_ASSERT_DEVINS(pDevIns);
-    VM_ASSERT_EMT(pDevIns->Internal.s.pVMR3);
-    LogFlow(("pdmR3DevHlp_IOPortRegisterR0: caller='%s'/%d: Port=%#x cPorts=%#x pvUser=%p pszOut=%p:{%s} pszIn=%p:{%s} pszOutStr=%p:{%s} pszInStr=%p:{%s} pszDesc=%p:{%s}\n", pDevIns->pReg->szName, pDevIns->iInstance,
-             Port, cPorts, pvUser, pszOut, pszOut, pszIn, pszIn, pszOutStr, pszOutStr, pszInStr, pszInStr, pszDesc, pszDesc));
-
-    /*
-     * Resolve the functions (one of the can be NULL).
-     */
-    int rc = VINF_SUCCESS;
-    if (    pDevIns->pReg->pszR0Mod[0]
-        &&  (pDevIns->pReg->fFlags & PDM_DEVREG_FLAGS_R0))
-    {
-        R0PTRTYPE(PFNIOMIOPORTIN) pfnR0PtrIn = 0;
-        if (pszIn)
-        {
-            rc = pdmR3DevGetSymbolR0Lazy(pDevIns, pszIn, &pfnR0PtrIn);
-            AssertMsgRC(rc, ("Failed to resolve %s.%s (pszIn)\n", pDevIns->pReg->pszR0Mod, pszIn));
-        }
-        R0PTRTYPE(PFNIOMIOPORTOUT) pfnR0PtrOut = 0;
-        if (pszOut && RT_SUCCESS(rc))
-        {
-            rc = pdmR3DevGetSymbolR0Lazy(pDevIns, pszOut, &pfnR0PtrOut);
-            AssertMsgRC(rc, ("Failed to resolve %s.%s (pszOut)\n", pDevIns->pReg->pszR0Mod, pszOut));
-        }
-        R0PTRTYPE(PFNIOMIOPORTINSTRING) pfnR0PtrInStr = 0;
-        if (pszInStr && RT_SUCCESS(rc))
-        {
-            rc = pdmR3DevGetSymbolR0Lazy(pDevIns, pszInStr, &pfnR0PtrInStr);
-            AssertMsgRC(rc, ("Failed to resolve %s.%s (pszInStr)\n", pDevIns->pReg->pszR0Mod, pszInStr));
-        }
-        R0PTRTYPE(PFNIOMIOPORTOUTSTRING) pfnR0PtrOutStr = 0;
-        if (pszOutStr && RT_SUCCESS(rc))
-        {
-            rc = pdmR3DevGetSymbolR0Lazy(pDevIns, pszOutStr, &pfnR0PtrOutStr);
-            AssertMsgRC(rc, ("Failed to resolve %s.%s (pszOutStr)\n", pDevIns->pReg->pszR0Mod, pszOutStr));
-        }
-
-        if (RT_SUCCESS(rc))
-        {
-#if 0 /** @todo needs a real string cache for this */
-            if (pDevIns->iInstance > 0)
-            {
-                 char *pszDesc2 = MMR3HeapAPrintf(pVM, MM_TAG_PDM_DEVICE_DESC, "%s [%u]", pszDesc, pDevIns->iInstance);
-                 if (pszDesc2)
-                     pszDesc = pszDesc2;
-            }
-#endif
-
-            rc = IOMR3IOPortRegisterR0(pDevIns->Internal.s.pVMR3, pDevIns, Port, cPorts, pvUser, pfnR0PtrOut, pfnR0PtrIn, pfnR0PtrOutStr, pfnR0PtrInStr, pszDesc);
-        }
-    }
-    else
-    {
-        AssertMsgFailed(("No R0 module for this driver!\n"));
-        rc = VERR_INVALID_PARAMETER;
-    }
-
-    LogFlow(("pdmR3DevHlp_IOPortRegisterR0: caller='%s'/%d: returns %Rrc\n", pDevIns->pReg->szName, pDevIns->iInstance, rc));
-    return rc;
-}
-
-
-/** @interface_method_impl{PDMDEVHLPR3,pfnIOPortDeregister} */
-static DECLCALLBACK(int) pdmR3DevHlp_IOPortDeregister(PPDMDEVINS pDevIns, RTIOPORT Port, RTIOPORT cPorts)
-{
-    PDMDEV_ASSERT_DEVINS(pDevIns);
-    VM_ASSERT_EMT(pDevIns->Internal.s.pVMR3);
-    LogFlow(("pdmR3DevHlp_IOPortDeregister: caller='%s'/%d: Port=%#x cPorts=%#x\n", pDevIns->pReg->szName, pDevIns->iInstance,
-             Port, cPorts));
-
-    int rc = IOMR3IOPortDeregister(pDevIns->Internal.s.pVMR3, pDevIns, Port, cPorts);
-
-    LogFlow(("pdmR3DevHlp_IOPortDeregister: caller='%s'/%d: returns %Rrc\n", pDevIns->pReg->szName, pDevIns->iInstance, rc));
-    return rc;
-}
-
-
 /** @interface_method_impl{PDMDEVHLPR3,pfnMmioCreateEx} */
 static DECLCALLBACK(int) pdmR3DevHlp_MmioCreateEx(PPDMDEVINS pDevIns, RTGCPHYS cbRegion,
                                                   uint32_t fFlags, PPDMPCIDEV pPciDev, uint32_t iPciRegion,
@@ -696,188 +512,6 @@ static DECLCALLBACK(int) pdmR3DevHlp_Mmio2ChangeRegionNo(PPDMDEVINS pDevIns, PGM
     int rc = PGMR3PhysMMIOExChangeRegionNo(pVM, pDevIns, UINT32_MAX, UINT32_MAX, hRegion, iNewRegion);
 
     LogFlow(("pdmR3DevHlp_Mmio2ChangeRegionNo: caller='%s'/%d: returns %Rrc\n", pDevIns->pReg->szName, pDevIns->iInstance, rc));
-    return rc;
-}
-
-
-/**
- * @copydoc PDMDEVHLPR3::pfnMMIO2Register
- */
-static DECLCALLBACK(int) pdmR3DevHlp_MMIO2Register(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t iRegion, RTGCPHYS cb,
-                                                   uint32_t fFlags, void **ppv, const char *pszDesc)
-{
-    PDMDEV_ASSERT_DEVINS(pDevIns);
-    VM_ASSERT_EMT(pDevIns->Internal.s.pVMR3);
-    LogFlow(("pdmR3DevHlp_MMIO2Register: caller='%s'/%d: pPciDev=%p (%#x) iRegion=%#x cb=%#RGp fFlags=%RX32 ppv=%p pszDescp=%p:{%s}\n",
-             pDevIns->pReg->szName, pDevIns->iInstance, pPciDev, pPciDev ? pPciDev->uDevFn : UINT32_MAX, iRegion,
-             cb, fFlags, ppv, pszDesc, pszDesc));
-    AssertReturn(!pPciDev || pPciDev->Int.s.pDevInsR3 == pDevIns, VERR_INVALID_PARAMETER);
-
-/** @todo PGMR3PhysMMIO2Register mangles the description, move it here and
- *        use a real string cache. */
-    int rc = PGMR3PhysMMIO2Register(pDevIns->Internal.s.pVMR3, pDevIns, pPciDev ? pPciDev->Int.s.idxDevCfg : 254, iRegion,
-                                    cb, fFlags, pszDesc, ppv, NULL);
-
-    LogFlow(("pdmR3DevHlp_MMIO2Register: caller='%s'/%d: returns %Rrc\n", pDevIns->pReg->szName, pDevIns->iInstance, rc));
-    return rc;
-}
-
-
-/**
- * @copydoc PDMDEVHLPR3::pfnMMIOExDeregister
- */
-static DECLCALLBACK(int) pdmR3DevHlp_MMIOExDeregister(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t iRegion)
-{
-    PDMDEV_ASSERT_DEVINS(pDevIns);
-    VM_ASSERT_EMT(pDevIns->Internal.s.pVMR3);
-    LogFlow(("pdmR3DevHlp_MMIOExDeregister: caller='%s'/%d: pPciDev=%p:{%#x} iRegion=%#x\n",
-             pDevIns->pReg->szName, pDevIns->iInstance, pPciDev, pPciDev ? pPciDev->uDevFn : UINT32_MAX, iRegion));
-
-    AssertReturn(iRegion <= UINT8_MAX || iRegion == UINT32_MAX, VERR_INVALID_PARAMETER);
-    AssertReturn(!pPciDev || pPciDev->Int.s.pDevInsR3 == pDevIns, VERR_INVALID_PARAMETER);
-
-    int rc = PGMR3PhysMMIOExDeregister(pDevIns->Internal.s.pVMR3, pDevIns, pPciDev ? pPciDev->Int.s.idxDevCfg : 254,
-                                       iRegion, NIL_PGMMMIO2HANDLE);
-
-    LogFlow(("pdmR3DevHlp_MMIOExDeregister: caller='%s'/%d: returns %Rrc\n", pDevIns->pReg->szName, pDevIns->iInstance, rc));
-    return rc;
-}
-
-
-/**
- * @copydoc PDMDEVHLPR3::pfnMMIOExMap
- */
-static DECLCALLBACK(int) pdmR3DevHlp_MMIOExMap(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t iRegion, RTGCPHYS GCPhys)
-{
-    PDMDEV_ASSERT_DEVINS(pDevIns);
-    VM_ASSERT_EMT(pDevIns->Internal.s.pVMR3);
-    LogFlow(("pdmR3DevHlp_MMIOExMap: caller='%s'/%d: pPciDev=%p:{%#x} iRegion=%#x GCPhys=%#RGp\n",
-             pDevIns->pReg->szName, pDevIns->iInstance, pPciDev, pPciDev ? pPciDev->uDevFn : UINT32_MAX, iRegion, GCPhys));
-    AssertReturn(!pPciDev || pPciDev->Int.s.pDevInsR3 != NULL, VERR_INVALID_PARAMETER);
-
-    int rc = PGMR3PhysMMIOExMap(pDevIns->Internal.s.pVMR3, pDevIns, pPciDev ? pPciDev->Int.s.idxDevCfg : 254, iRegion,
-                                NIL_PGMMMIO2HANDLE, GCPhys);
-
-    LogFlow(("pdmR3DevHlp_MMIOExMap: caller='%s'/%d: returns %Rrc\n", pDevIns->pReg->szName, pDevIns->iInstance, rc));
-    return rc;
-}
-
-
-/**
- * @copydoc PDMDEVHLPR3::pfnMMIOExUnmap
- */
-static DECLCALLBACK(int) pdmR3DevHlp_MMIOExUnmap(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t iRegion, RTGCPHYS GCPhys)
-{
-    PDMDEV_ASSERT_DEVINS(pDevIns);
-    VM_ASSERT_EMT(pDevIns->Internal.s.pVMR3);
-    LogFlow(("pdmR3DevHlp_MMIOExUnmap: caller='%s'/%d: pPciDev=%p:{%#x} iRegion=%#x GCPhys=%#RGp\n",
-             pDevIns->pReg->szName, pDevIns->iInstance, pPciDev, pPciDev ? pPciDev->uDevFn : UINT32_MAX, iRegion, GCPhys));
-    AssertReturn(!pPciDev || pPciDev->Int.s.pDevInsR3 != NULL, VERR_INVALID_PARAMETER);
-
-    int rc = PGMR3PhysMMIOExUnmap(pDevIns->Internal.s.pVMR3, pDevIns, pPciDev ? pPciDev->Int.s.idxDevCfg : 254, iRegion,
-                                  NIL_PGMMMIO2HANDLE, GCPhys);
-
-    LogFlow(("pdmR3DevHlp_MMIOExUnmap: caller='%s'/%d: returns %Rrc\n", pDevIns->pReg->szName, pDevIns->iInstance, rc));
-    return rc;
-}
-
-
-/**
- * @copydoc PDMDEVHLPR3::pfnMMIOExReduce
- */
-static DECLCALLBACK(int) pdmR3DevHlp_MMIOExReduce(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t iRegion, RTGCPHYS cbRegion)
-{
-    PDMDEV_ASSERT_DEVINS(pDevIns);
-    VM_ASSERT_EMT(pDevIns->Internal.s.pVMR3);
-    LogFlow(("pdmR3DevHlp_MMIOExReduce: caller='%s'/%d: pPciDev=%p:{%#x} iRegion=%#x cbRegion=%RGp\n",
-             pDevIns->pReg->szName, pDevIns->iInstance, pPciDev, pPciDev ? pPciDev->uDevFn : UINT32_MAX, iRegion, cbRegion));
-    AssertReturn(!pPciDev || pPciDev->Int.s.pDevInsR3 != NULL, VERR_INVALID_PARAMETER);
-
-    int rc = PGMR3PhysMMIOExReduce(pDevIns->Internal.s.pVMR3, pDevIns, pPciDev ? pPciDev->Int.s.idxDevCfg : 254, iRegion,
-                                   NIL_PGMMMIO2HANDLE, cbRegion);
-
-    LogFlow(("pdmR3DevHlp_MMIOExReduce: caller='%s'/%d: returns %Rrc\n", pDevIns->pReg->szName, pDevIns->iInstance, rc));
-    return rc;
-}
-
-
-/**
- * @copydoc PDMDEVHLPR3::pfnMMHyperMapMMIO2
- */
-static DECLCALLBACK(int) pdmR3DevHlp_MMHyperMapMMIO2(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t iRegion, RTGCPHYS off,
-                                                     RTGCPHYS cb, const char *pszDesc, PRTRCPTR pRCPtr)
-{
-    PDMDEV_ASSERT_DEVINS(pDevIns);
-#ifndef PGM_WITHOUT_MAPPINGS
-    PVM pVM = pDevIns->Internal.s.pVMR3;
-    VM_ASSERT_EMT(pVM);
-    LogFlow(("pdmR3DevHlp_MMHyperMapMMIO2: caller='%s'/%d: pPciDev=%p:{%#x} iRegion=%#x off=%RGp cb=%RGp pszDesc=%p:{%s} pRCPtr=%p\n",
-             pDevIns->pReg->szName, pDevIns->iInstance, pPciDev, pPciDev ? pPciDev->uDevFn : UINT32_MAX, iRegion, off, cb, pszDesc, pszDesc, pRCPtr));
-    AssertReturn(!pPciDev || pPciDev->Int.s.pDevInsR3 == pDevIns, VERR_INVALID_PARAMETER);
-
-    if (pDevIns->iInstance > 0)
-    {
-         char *pszDesc2 = MMR3HeapAPrintf(pVM, MM_TAG_PDM_DEVICE_DESC, "%s [%u]", pszDesc, pDevIns->iInstance);
-         if (pszDesc2)
-             pszDesc = pszDesc2;
-    }
-
-    int rc = MMR3HyperMapMMIO2(pVM, pDevIns, pPciDev ? pPciDev->Int.s.idxDevCfg : 254, iRegion, off, cb, pszDesc, pRCPtr);
-
-#else
-    RT_NOREF(pDevIns, pPciDev, iRegion, off, cb, pszDesc, pRCPtr);
-    AssertFailed();
-    int rc = VERR_RAW_MODE_NOT_SUPPORTED;
-#endif
-    LogFlow(("pdmR3DevHlp_MMHyperMapMMIO2: caller='%s'/%d: returns %Rrc *pRCPtr=%RRv\n", pDevIns->pReg->szName, pDevIns->iInstance, rc, *pRCPtr));
-    return rc;
-}
-
-
-/**
- * @copydoc PDMDEVHLPR3::pfnMMIO2MapKernel
- */
-static DECLCALLBACK(int) pdmR3DevHlp_MMIO2MapKernel(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t iRegion, RTGCPHYS off,
-                                                    RTGCPHYS cb,const char *pszDesc, PRTR0PTR pR0Ptr)
-{
-    PDMDEV_ASSERT_DEVINS(pDevIns);
-    PVM pVM = pDevIns->Internal.s.pVMR3;
-    VM_ASSERT_EMT(pVM);
-    LogFlow(("pdmR3DevHlp_MMIO2MapKernel: caller='%s'/%d: pPciDev=%p:{%#x} iRegion=%#x off=%RGp cb=%RGp pszDesc=%p:{%s} pR0Ptr=%p\n",
-             pDevIns->pReg->szName, pDevIns->iInstance, pPciDev, pPciDev ? pPciDev->uDevFn : UINT32_MAX, iRegion, off, cb, pszDesc, pszDesc, pR0Ptr));
-    AssertReturn(!pPciDev || pPciDev->Int.s.pDevInsR3 == pDevIns, VERR_INVALID_PARAMETER);
-
-    if (pDevIns->iInstance > 0)
-    {
-         char *pszDesc2 = MMR3HeapAPrintf(pVM, MM_TAG_PDM_DEVICE_DESC, "%s [%u]", pszDesc, pDevIns->iInstance);
-         if (pszDesc2)
-             pszDesc = pszDesc2;
-    }
-
-    int rc = PGMR3PhysMMIO2MapKernel(pVM, pDevIns, pPciDev ? pPciDev->Int.s.idxDevCfg : 254, iRegion, off, cb, pszDesc, pR0Ptr);
-
-    LogFlow(("pdmR3DevHlp_MMIO2MapKernel: caller='%s'/%d: returns %Rrc *pR0Ptr=%RHv\n", pDevIns->pReg->szName, pDevIns->iInstance, rc, *pR0Ptr));
-    return rc;
-}
-
-
-/**
- * @copydoc PDMDEVHLPR3::pfnMMIOExChangeRegionNo
- */
-static DECLCALLBACK(int) pdmR3DevHlp_MMIOExChangeRegionNo(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t iRegion,
-                                                          uint32_t iNewRegion)
-{
-    PDMDEV_ASSERT_DEVINS(pDevIns);
-    PVM pVM = pDevIns->Internal.s.pVMR3;
-    VM_ASSERT_EMT(pVM);
-    LogFlow(("pdmR3DevHlp_MMIOExChangeRegionNo: caller='%s'/%d: pPciDev=%p:{%#x} iRegion=%#x iNewRegion=%#x\n",
-             pDevIns->pReg->szName, pDevIns->iInstance, pPciDev, pPciDev ? pPciDev->uDevFn : UINT32_MAX, iRegion, iNewRegion));
-    AssertReturn(!pPciDev || pPciDev->Int.s.pDevInsR3 == pDevIns, VERR_INVALID_PARAMETER);
-
-    int rc = PGMR3PhysMMIOExChangeRegionNo(pVM, pDevIns, pPciDev ? pPciDev->Int.s.idxDevCfg : 254, iRegion,
-                                           NIL_PGMMMIO2HANDLE, iNewRegion);
-
-    LogFlow(("pdmR3DevHlp_MMIOExChangeRegionNo: caller='%s'/%d: returns %Rrc\n", pDevIns->pReg->szName, pDevIns->iInstance, rc));
     return rc;
 }
 
@@ -2094,6 +1728,11 @@ static DECLCALLBACK(int) pdmR3DevHlp_PCIIORegionRegister(PPDMDEVINS pDevIns, PPD
             AssertFailedReturn(VERR_IPE_NOT_REACHED_DEFAULT_CASE);
             break;
     }
+
+    /* This flag is required now. */
+    AssertLogRelMsgReturn(fFlags & PDMPCIDEV_IORGN_F_NEW_STYLE,
+                          ("'%s'/%d: Invalid flags: %#x\n", pDevIns->pReg->szName, pDevIns->iInstance, fFlags),
+                          VERR_INVALID_FLAGS);
 
     /*
      * We're currently restricted to page aligned MMIO regions.
@@ -4344,10 +3983,6 @@ const PDMDEVHLPR3 g_pdmR3DevHlpTrusted =
     pdmR3DevHlp_IoPortMap,
     pdmR3DevHlp_IoPortUnmap,
     pdmR3DevHlp_IoPortGetMappingAddress,
-    pdmR3DevHlp_IOPortRegister,
-    pdmR3DevHlp_IOPortRegisterRC,
-    pdmR3DevHlp_IOPortRegisterR0,
-    pdmR3DevHlp_IOPortDeregister,
     pdmR3DevHlp_MmioCreateEx,
     pdmR3DevHlp_MmioMap,
     pdmR3DevHlp_MmioUnmap,
@@ -4364,13 +3999,6 @@ const PDMDEVHLPR3 g_pdmR3DevHlpTrusted =
     pdmR3DevHlp_Mmio2Reduce,
     pdmR3DevHlp_Mmio2GetMappingAddress,
     pdmR3DevHlp_Mmio2ChangeRegionNo,
-    pdmR3DevHlp_MMIO2Register,
-    pdmR3DevHlp_MMIOExDeregister,
-    pdmR3DevHlp_MMIOExMap,
-    pdmR3DevHlp_MMIOExUnmap,
-    pdmR3DevHlp_MMIOExReduce,
-    pdmR3DevHlp_MMHyperMapMMIO2,
-    pdmR3DevHlp_MMIO2MapKernel,
     pdmR3DevHlp_ROMRegister,
     pdmR3DevHlp_ROMProtectShadow,
     pdmR3DevHlp_SSMRegister,
@@ -4657,7 +4285,6 @@ const PDMDEVHLPR3 g_pdmR3DevHlpTrusted =
     pdmR3DevHlp_PhysBulkGCPhys2CCPtr,
     pdmR3DevHlp_PhysBulkGCPhys2CCPtrReadOnly,
     pdmR3DevHlp_PhysBulkReleasePageMappingLocks,
-    pdmR3DevHlp_MMIOExChangeRegionNo,
     0,
     0,
     0,
@@ -4842,10 +4469,6 @@ const PDMDEVHLPR3 g_pdmR3DevHlpUnTrusted =
     pdmR3DevHlp_IoPortMap,
     pdmR3DevHlp_IoPortUnmap,
     pdmR3DevHlp_IoPortGetMappingAddress,
-    pdmR3DevHlp_IOPortRegister,
-    pdmR3DevHlp_IOPortRegisterRC,
-    pdmR3DevHlp_IOPortRegisterR0,
-    pdmR3DevHlp_IOPortDeregister,
     pdmR3DevHlp_MmioCreateEx,
     pdmR3DevHlp_MmioMap,
     pdmR3DevHlp_MmioUnmap,
@@ -4862,13 +4485,6 @@ const PDMDEVHLPR3 g_pdmR3DevHlpUnTrusted =
     pdmR3DevHlp_Mmio2Reduce,
     pdmR3DevHlp_Mmio2GetMappingAddress,
     pdmR3DevHlp_Mmio2ChangeRegionNo,
-    pdmR3DevHlp_MMIO2Register,
-    pdmR3DevHlp_MMIOExDeregister,
-    pdmR3DevHlp_MMIOExMap,
-    pdmR3DevHlp_MMIOExUnmap,
-    pdmR3DevHlp_MMIOExReduce,
-    pdmR3DevHlp_MMHyperMapMMIO2,
-    pdmR3DevHlp_MMIO2MapKernel,
     pdmR3DevHlp_ROMRegister,
     pdmR3DevHlp_ROMProtectShadow,
     pdmR3DevHlp_SSMRegister,
@@ -5155,7 +4771,6 @@ const PDMDEVHLPR3 g_pdmR3DevHlpUnTrusted =
     pdmR3DevHlp_PhysBulkGCPhys2CCPtr,
     pdmR3DevHlp_PhysBulkGCPhys2CCPtrReadOnly,
     pdmR3DevHlp_PhysBulkReleasePageMappingLocks,
-    pdmR3DevHlp_MMIOExChangeRegionNo,
     0,
     0,
     0,

@@ -591,30 +591,6 @@ VMMR3_INT_DECL(uint32_t) IOMR3IoPortGetMappingAddress(PVM pVM, PPDMDEVINS pDevIn
 
 
 /**
- * Display a single I/O port ring-3 range.
- *
- * @returns 0
- * @param   pNode   Pointer to I/O port HC range.
- * @param   pvUser  Pointer to info output callback structure.
- */
-static DECLCALLBACK(int) iomR3IOPortInfoOneR3(PAVLROIOPORTNODECORE pNode, void *pvUser)
-{
-    PIOMIOPORTRANGER3 pRange = (PIOMIOPORTRANGER3)pNode;
-    PCDBGFINFOHLP pHlp = (PCDBGFINFOHLP)pvUser;
-    pHlp->pfnPrintf(pHlp,
-                    "%04x-%04x %p %p %p %p %s\n",
-                    pRange->Core.Key,
-                    pRange->Core.KeyLast,
-                    pRange->pDevIns,
-                    pRange->pfnInCallback,
-                    pRange->pfnOutCallback,
-                    pRange->pvUser,
-                    pRange->pszDesc);
-    return 0;
-}
-
-
-/**
  * Display all registered I/O port ranges.
  *
  * @param   pVM         The cross context VM structure.
@@ -623,6 +599,8 @@ static DECLCALLBACK(int) iomR3IOPortInfoOneR3(PAVLROIOPORTNODECORE pNode, void *
  */
 DECLCALLBACK(void) iomR3IoPortInfo(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszArgs)
 {
+    RT_NOREF(pszArgs);
+
     /* No locking needed here as registerations are only happening during VMSTATE_CREATING. */
     pHlp->pfnPrintf(pHlp,
                     "I/O port registrations: %u (%u allocated)\n"
@@ -647,31 +625,5 @@ DECLCALLBACK(void) iomR3IoPortInfo(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszA
             pHlp->pfnPrintf(pHlp, "%3u R3%s %04x  unmapped         %s\n",
                             paRegs[i].idxSelf, pszRing, paRegs[i].cPorts, paRegs[i].pszDesc);
     }
-
-    /* Legacy registration: */
-    NOREF(pszArgs);
-    pHlp->pfnPrintf(pHlp,
-                    "I/O Port R3 ranges (pVM=%p)\n"
-                    "Range     %.*s %.*s %.*s %.*s Description\n",
-                    pVM,
-                    sizeof(RTHCPTR) * 2,      "pDevIns         ",
-                    sizeof(RTHCPTR) * 2,      "In              ",
-                    sizeof(RTHCPTR) * 2,      "Out             ",
-                    sizeof(RTHCPTR) * 2,      "pvUser          ");
-    IOM_LOCK_SHARED(pVM);
-    RTAvlroIOPortDoWithAll(&pVM->iom.s.pTreesR3->IOPortTreeR3, true, iomR3IOPortInfoOneR3, (void *)pHlp);
-    IOM_UNLOCK_SHARED(pVM);
-
-    pHlp->pfnPrintf(pHlp,
-                    "I/O Port R0 ranges (pVM=%p)\n"
-                    "Range     %.*s %.*s %.*s %.*s Description\n",
-                    pVM,
-                    sizeof(RTHCPTR) * 2,      "pDevIns         ",
-                    sizeof(RTHCPTR) * 2,      "In              ",
-                    sizeof(RTHCPTR) * 2,      "Out             ",
-                    sizeof(RTHCPTR) * 2,      "pvUser          ");
-    IOM_LOCK_SHARED(pVM);
-    RTAvlroIOPortDoWithAll(&pVM->iom.s.pTreesR3->IOPortTreeR0, true, iomR3IOPortInfoOneR3, (void *)pHlp);
-    IOM_UNLOCK_SHARED(pVM);
 }
 

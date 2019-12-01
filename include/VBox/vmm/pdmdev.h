@@ -1974,7 +1974,7 @@ typedef const PDMRTCHLP *PCPDMRTCHLP;
 /** @} */
 
 /** Current PDMDEVHLPR3 version number. */
-#define PDM_DEVHLPR3_VERSION                    PDM_VERSION_MAKE_PP(0xffe7, 38, 0)
+#define PDM_DEVHLPR3_VERSION                    PDM_VERSION_MAKE_PP(0xffe7, 39, 0)
 
 /**
  * PDM Device API.
@@ -2059,94 +2059,6 @@ typedef struct PDMDEVHLPR3
      */
     DECLR3CALLBACKMEMBER(uint32_t, pfnIoPortGetMappingAddress,(PPDMDEVINS pDevIns, IOMIOPORTHANDLE hIoPorts));
     /** @}  */
-
-    /**
-     * Register a number of I/O ports with a device.
-     *
-     * These callbacks are of course for the host context (HC).
-     * Register HC handlers before guest context (GC) handlers! There must be a
-     * HC handler for every GC handler!
-     *
-     * @returns VBox status.
-     * @param   pDevIns             The device instance to register the ports with.
-     * @param   Port                First port number in the range.
-     * @param   cPorts              Number of ports to register.
-     * @param   pvUser              User argument.
-     * @param   pfnOut              Pointer to function which is gonna handle OUT operations.
-     * @param   pfnIn               Pointer to function which is gonna handle IN operations.
-     * @param   pfnOutStr           Pointer to function which is gonna handle string OUT operations.
-     * @param   pfnInStr            Pointer to function which is gonna handle string IN operations.
-     * @param   pszDesc             Pointer to description string. This must not be freed.
-     * @remarks Caller enters the device critical section prior to invoking the
-     *          registered callback methods.
-     * @deprecated
-     */
-    DECLR3CALLBACKMEMBER(int, pfnIOPortRegister,(PPDMDEVINS pDevIns, RTIOPORT Port, RTIOPORT cPorts, RTHCPTR pvUser,
-                                                 PFNIOMIOPORTOUT pfnOut, PFNIOMIOPORTIN pfnIn,
-                                                 PFNIOMIOPORTOUTSTRING pfnOutStr, PFNIOMIOPORTINSTRING pfnInStr, const char *pszDesc));
-
-    /**
-     * Register a number of I/O ports with a device for RC.
-     *
-     * These callbacks are for the raw-mode context (RC).  Register ring-3 context
-     * (R3) handlers before raw-mode context handlers!  There must be a R3 handler
-     * for every RC handler!
-     *
-     * @returns VBox status.
-     * @param   pDevIns             The device instance to register the ports with
-     *                              and which RC module to resolve the names
-     *                              against.
-     * @param   Port                First port number in the range.
-     * @param   cPorts              Number of ports to register.
-     * @param   pvUser              User argument.
-     * @param   pszOut              Name of the RC function which is gonna handle OUT operations.
-     * @param   pszIn               Name of the RC function which is gonna handle IN operations.
-     * @param   pszOutStr           Name of the RC function which is gonna handle string OUT operations.
-     * @param   pszInStr            Name of the RC function which is gonna handle string IN operations.
-     * @param   pszDesc             Pointer to description string. This must not be freed.
-     * @remarks Caller enters the device critical section prior to invoking the
-     *          registered callback methods.
-     * @deprecated
-     */
-    DECLR3CALLBACKMEMBER(int, pfnIOPortRegisterRC,(PPDMDEVINS pDevIns, RTIOPORT Port, RTIOPORT cPorts, RTRCPTR pvUser,
-                                                   const char *pszOut, const char *pszIn,
-                                                   const char *pszOutStr, const char *pszInStr, const char *pszDesc));
-
-    /**
-     * Register a number of I/O ports with a device.
-     *
-     * These callbacks are of course for the ring-0 host context (R0).
-     * Register R3 (HC) handlers before R0 (R0) handlers! There must be a R3 (HC) handler for every R0 handler!
-     *
-     * @returns VBox status.
-     * @param   pDevIns             The device instance to register the ports with.
-     * @param   Port                First port number in the range.
-     * @param   cPorts              Number of ports to register.
-     * @param   pvUser              User argument. (if pointer, then it must be in locked memory!)
-     * @param   pszOut              Name of the R0 function which is gonna handle OUT operations.
-     * @param   pszIn               Name of the R0 function which is gonna handle IN operations.
-     * @param   pszOutStr           Name of the R0 function which is gonna handle string OUT operations.
-     * @param   pszInStr            Name of the R0 function which is gonna handle string IN operations.
-     * @param   pszDesc             Pointer to description string. This must not be freed.
-     * @remarks Caller enters the device critical section prior to invoking the
-     *          registered callback methods.
-     * @deprecated
-     */
-    DECLR3CALLBACKMEMBER(int, pfnIOPortRegisterR0,(PPDMDEVINS pDevIns, RTIOPORT Port, RTIOPORT cPorts, RTR0PTR pvUser,
-                                                   const char *pszOut, const char *pszIn,
-                                                   const char *pszOutStr, const char *pszInStr, const char *pszDesc));
-
-    /**
-     * Deregister I/O ports.
-     *
-     * This naturally affects both guest context (GC), ring-0 (R0) and ring-3 (R3/HC) handlers.
-     *
-     * @returns VBox status.
-     * @param   pDevIns             The device instance owning the ports.
-     * @param   Port                First port number in the range.
-     * @param   cPorts              Number of ports to deregister.
-     */
-    DECLR3CALLBACKMEMBER(int, pfnIOPortDeregister,(PPDMDEVINS pDevIns, RTIOPORT Port, RTIOPORT cPorts));
 
     /** @name MMIO
      * @{ */
@@ -2436,145 +2348,6 @@ typedef struct PDMDEVHLPR3
      */
     DECLR3CALLBACKMEMBER(int, pfnMmio2ChangeRegionNo,(PPDMDEVINS pDevIns, PGMMMIO2HANDLE hRegion, uint32_t iNewRegion));
     /** @} */
-
-    /**
-     * Allocate and register a MMIO2 region.
-     *
-     * As mentioned elsewhere, MMIO2 is just RAM spelled differently.  It's RAM
-     * associated with a device.  It is also non-shared memory with a permanent
-     * ring-3 mapping and page backing (presently).
-     *
-     * @returns VBox status.
-     * @param   pDevIns             The device instance.
-     * @param   pPciDev             The PCI device the region is associated with, or
-     *                              NULL if no PCI device association.
-     * @param   iRegion             The region number. Use the PCI region number as
-     *                              this must be known to the PCI bus device too. If
-     *                              it's not associated with the PCI device, then
-     *                              any number up to UINT8_MAX is fine.
-     * @param   cb                  The size (in bytes) of the region.
-     * @param   fFlags              Reserved for future use, must be zero.
-     * @param   ppv                 Where to store the address of the ring-3 mapping
-     *                              of the memory.
-     * @param   pszDesc             Pointer to description string. This must not be
-     *                              freed.
-     * @thread  EMT.
-     * @deprecated
-     */
-    DECLR3CALLBACKMEMBER(int, pfnMMIO2Register,(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t iRegion, RTGCPHYS cb,
-                                                uint32_t fFlags, void **ppv, const char *pszDesc));
-
-    /**
-     * Deregisters and frees a MMIO or MMIO2 region.
-     *
-     * Any physical (and virtual) access handlers registered for the region must
-     * be deregistered before calling this function (MMIO2 only).
-     *
-     * @returns VBox status code.
-     * @param   pDevIns             The device instance.
-     * @param   pPciDev             The PCI device the region is associated with, or
-     *                              NULL if not associated with any.
-     * @param   iRegion             The region number used during registration.
-     * @thread  EMT.
-     * @deprecated
-     */
-    DECLR3CALLBACKMEMBER(int, pfnMMIOExDeregister,(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t iRegion));
-
-    /**
-     * Maps a MMIO or MMIO2 region into the physical memory space.
-     *
-     * A MMIO2 range or a pre-registered MMIO range may overlap with base memory if
-     * a lot of RAM is configured for the VM, in  which case we'll drop the base
-     * memory pages.  Presently we will make no attempt to preserve anything that
-     * happens to be present in the base memory that is replaced, this is of course
-     * incorrect but it's too much effort.
-     *
-     * @returns VBox status code.
-     * @param   pDevIns             The device instance.
-     * @param   pPciDev             The PCI device the region is associated with, or
-     *                              NULL if not associated with any.
-     * @param   iRegion             The region number used during registration.
-     * @param   GCPhys              The physical address to map it at.
-     * @thread  EMT.
-     * @deprecated for MMIO
-     */
-    DECLR3CALLBACKMEMBER(int, pfnMMIOExMap,(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t iRegion, RTGCPHYS GCPhys));
-
-    /**
-     * Unmaps a MMIO or MMIO2 region previously mapped using pfnMMIOExMap.
-     *
-     * @returns VBox status code.
-     * @param   pDevIns             The device instance.
-     * @param   pPciDev             The PCI device the region is associated with, or
-     *                              NULL if not associated with any.
-     * @param   iRegion             The region number used during registration.
-     * @param   GCPhys              The physical address it's currently mapped at.
-     * @thread  EMT.
-     * @deprecated for MMIO
-     */
-    DECLR3CALLBACKMEMBER(int, pfnMMIOExUnmap,(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t iRegion, RTGCPHYS GCPhys));
-
-    /**
-     * Reduces the length of a MMIO2 or pre-registered MMIO range.
-     *
-     * This is for implementations of PDMPCIDEV::pfnRegionLoadChangeHookR3 and will
-     * only work during saved state restore.  It will not call the PCI bus code, as
-     * that is expected to restore the saved resource configuration.
-     *
-     * It just adjusts the mapping length of the region so that when pfnMMIOExMap is
-     * called it will only map @a cbRegion bytes and not the value set during
-     * registration.
-     *
-     * @return VBox status code.
-     * @param   pDevIns             The device owning the range.
-     * @param   pPciDev             The PCI device the region is associated with, or
-     *                              NULL if not associated with any.
-     * @param   iRegion             The region.
-     * @param   cbRegion            The new size, must be smaller.
-     */
-    DECLR3CALLBACKMEMBER(int, pfnMMIOExReduce,(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t iRegion, RTGCPHYS cbRegion));
-
-    /**
-     * Maps a portion of an MMIO2 region into the hypervisor region.
-     *
-     * Callers of this API must never deregister the MMIO2 region before the
-     * VM is powered off.
-     *
-     * @return VBox status code.
-     * @param   pDevIns             The device owning the MMIO2 memory.
-     * @param   pPciDev             The PCI device the region is associated with, or
-     *                              NULL if not associated with any.
-     * @param   iRegion             The region.
-     * @param   off                 The offset into the region. Will be rounded down
-     *                              to closest page boundary.
-     * @param   cb                  The number of bytes to map. Will be rounded up
-     *                              to the closest page boundary.
-     * @param   pszDesc             Mapping description.
-     * @param   pRCPtr              Where to store the RC address.
-     */
-    DECLR3CALLBACKMEMBER(int, pfnMMHyperMapMMIO2,(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t iRegion, RTGCPHYS off,
-                                                  RTGCPHYS cb, const char *pszDesc, PRTRCPTR pRCPtr));
-
-    /**
-     * Maps a portion of an MMIO2 region into kernel space (host).
-     *
-     * The kernel mapping will become invalid when the MMIO2 memory is deregistered
-     * or the VM is terminated.
-     *
-     * @return VBox status code.
-     * @param   pDevIns             The device owning the MMIO2 memory.
-     * @param   pPciDev             The PCI device the region is associated with, or
-     *                              NULL if not associated with any.
-     * @param   iRegion             The region.
-     * @param   off                 The offset into the region. Must be page
-     *                              aligned.
-     * @param   cb                  The number of bytes to map. Must be page
-     *                              aligned.
-     * @param   pszDesc             Mapping description.
-     * @param   pR0Ptr              Where to store the R0 address.
-     */
-    DECLR3CALLBACKMEMBER(int, pfnMMIO2MapKernel,(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t iRegion, RTGCPHYS off,
-                                                 RTGCPHYS cb, const char *pszDesc, PRTR0PTR pR0Ptr));
 
     /**
      * Register a ROM (BIOS) region.
@@ -3226,7 +2999,8 @@ typedef struct PDMDEVHLPR3
      * @param   pPciDev             The PCI device structure.
      *                              This must be kept in the instance data.
      *                              The PCI configuration must be initialized before registration.
-     * @param   fFlags              Reserved for future use, PDMPCIDEVREG_F_MBZ.
+     * @param   fFlags              0, PDMPCIDEVREG_F_PCI_BRIDGE or
+     *                              PDMPCIDEVREG_F_NOT_MANDATORY_NO.
      * @param   uPciDevNo           PDMPCIDEVREG_DEV_NO_FIRST_UNUSED,
      *                              PDMPCIDEVREG_DEV_NO_SAME_AS_PREV, or a specific
      *                              device number (0-31).  This will be ignored if
@@ -4086,24 +3860,6 @@ typedef struct PDMDEVHLPR3
      * @since   6.0.6
      */
     DECLR3CALLBACKMEMBER(void, pfnPhysBulkReleasePageMappingLocks,(PPDMDEVINS pDevIns, uint32_t cPages, PPGMPAGEMAPLOCK paLocks));
-
-    /**
-     * Changes the number of an MMIO2 or pre-registered MMIO region.
-     *
-     * This should only be used to deal with saved state problems, so there is no
-     * convenience inline wrapper for this method.
-     *
-     * @returns VBox status code.
-     * @param   pDevIns             The device instance.
-     * @param   pPciDev             The PCI device the region is associated with, or
-     *                              NULL if not associated with any.
-     * @param   iRegion             The region.
-     * @param   iNewRegion          The new region index.
-     *
-     * @sa      @bugref{9359}
-     */
-    DECLR3CALLBACKMEMBER(int, pfnMMIOExChangeRegionNo,(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t iRegion,
-                                                       uint32_t iNewRegion));
 
     /** Space reserved for future members.
      * @{ */
@@ -5726,44 +5482,6 @@ typedef PDMDEVINSRC                 PDMDEVINS;
 #ifdef IN_RING3
 
 /**
- * @copydoc PDMDEVHLPR3::pfnIOPortRegister
- */
-DECLINLINE(int) PDMDevHlpIOPortRegister(PPDMDEVINS pDevIns, RTIOPORT Port, RTIOPORT cPorts, RTHCPTR pvUser,
-                                        PFNIOMIOPORTOUT pfnOut, PFNIOMIOPORTIN pfnIn,
-                                        PFNIOMIOPORTOUTSTRING pfnOutStr, PFNIOMIOPORTINSTRING pfnInStr, const char *pszDesc)
-{
-    return pDevIns->pHlpR3->pfnIOPortRegister(pDevIns, Port, cPorts, pvUser, pfnOut, pfnIn, pfnOutStr, pfnInStr, pszDesc);
-}
-
-/**
- * @copydoc PDMDEVHLPR3::pfnIOPortRegisterRC
- */
-DECLINLINE(int) PDMDevHlpIOPortRegisterRC(PPDMDEVINS pDevIns, RTIOPORT Port, RTIOPORT cPorts, RTRCPTR pvUser,
-                                          const char *pszOut, const char *pszIn, const char *pszOutStr,
-                                          const char *pszInStr, const char *pszDesc)
-{
-    return pDevIns->pHlpR3->pfnIOPortRegisterRC(pDevIns, Port, cPorts, pvUser, pszOut, pszIn, pszOutStr, pszInStr, pszDesc);
-}
-
-/**
- * @copydoc PDMDEVHLPR3::pfnIOPortRegisterR0
- */
-DECLINLINE(int) PDMDevHlpIOPortRegisterR0(PPDMDEVINS pDevIns, RTIOPORT Port, RTIOPORT cPorts, RTR0PTR pvUser,
-                                          const char *pszOut, const char *pszIn, const char *pszOutStr,
-                                          const char *pszInStr, const char *pszDesc)
-{
-    return pDevIns->pHlpR3->pfnIOPortRegisterR0(pDevIns, Port, cPorts, pvUser, pszOut, pszIn, pszOutStr, pszInStr, pszDesc);
-}
-
-/**
- * @copydoc PDMDEVHLPR3::pfnIOPortDeregister
- */
-DECLINLINE(int) PDMDevHlpIOPortDeregister(PPDMDEVINS pDevIns, RTIOPORT Port, RTIOPORT cPorts)
-{
-    return pDevIns->pHlpR3->pfnIOPortDeregister(pDevIns, Port, cPorts);
-}
-
-/**
  * Combines PDMDevHlpIoPortCreate() & PDMDevHlpIoPortMap().
  */
 DECLINLINE(int) PDMDevHlpIoPortCreateAndMap(PPDMDEVINS pDevIns, RTIOPORT Port, RTIOPORT cPorts, PFNIOMIOPORTNEWOUT pfnOut,
@@ -6173,73 +5891,6 @@ DECLINLINE(int) PDMDevHlpMmio2SetUpContext(PPDMDEVINS pDevIns, PGMMMIO2HANDLE hR
 
 #endif /* !IN_RING3 || DOXYGEN_RUNNING */
 #ifdef IN_RING3
-
-/**
- * @copydoc PDMDEVHLPR3::pfnMMIO2Register
- */
-DECLINLINE(int) PDMDevHlpMMIO2Register(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t iRegion, RTGCPHYS cb,
-                                       uint32_t fFlags, void **ppv, const char *pszDesc)
-{
-    return pDevIns->pHlpR3->pfnMMIO2Register(pDevIns, pPciDev, iRegion, cb, fFlags, ppv, pszDesc);
-}
-
-/**
- * @copydoc PDMDEVHLPR3::pfnMMIOExDeregister
- * @param   pPciDev             The PCI device the region is associated with, use
- *                              NULL to indicate it is not associated with a device.
- */
-DECLINLINE(int) PDMDevHlpMMIOExDeregister(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t iRegion)
-{
-    return pDevIns->pHlpR3->pfnMMIOExDeregister(pDevIns, pPciDev, iRegion);
-}
-
-/**
- * @copydoc PDMDEVHLPR3::pfnMMIOExMap
- * @param   pPciDev             The PCI device the region is associated with, use
- *                              NULL to indicate it is not associated with a device.
- */
-DECLINLINE(int) PDMDevHlpMMIOExMap(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t iRegion, RTGCPHYS GCPhys)
-{
-    return pDevIns->pHlpR3->pfnMMIOExMap(pDevIns, pPciDev, iRegion, GCPhys);
-}
-
-/**
- * @copydoc PDMDEVHLPR3::pfnMMIOExUnmap
- * @param   pPciDev             The PCI device the region is associated with, use
- *                              NULL to indicate it is not associated with a device.
- */
-DECLINLINE(int) PDMDevHlpMMIOExUnmap(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t iRegion, RTGCPHYS GCPhys)
-{
-    return pDevIns->pHlpR3->pfnMMIOExUnmap(pDevIns, pPciDev, iRegion, GCPhys);
-}
-
-/**
- * @copydoc PDMDEVHLPR3::pfnMMIOExReduce
- */
-DECLINLINE(int) PDMDevHlpMMIOExReduce(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t iRegion, RTGCPHYS cbRegion)
-{
-    return pDevIns->pHlpR3->pfnMMIOExReduce(pDevIns, pPciDev, iRegion, cbRegion);
-}
-
-#ifdef VBOX_WITH_RAW_MODE_KEEP
-/**
- * @copydoc PDMDEVHLPR3::pfnMMHyperMapMMIO2
- */
-DECLINLINE(int) PDMDevHlpMMHyperMapMMIO2(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t iRegion, RTGCPHYS off, RTGCPHYS cb,
-                                         const char *pszDesc, PRTRCPTR pRCPtr)
-{
-    return pDevIns->pHlpR3->pfnMMHyperMapMMIO2(pDevIns, pPciDev, iRegion, off, cb, pszDesc, pRCPtr);
-}
-#endif
-
-/**
- * @copydoc PDMDEVHLPR3::pfnMMIO2MapKernel
- */
-DECLINLINE(int) PDMDevHlpMMIO2MapKernel(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t iRegion, RTGCPHYS off, RTGCPHYS cb,
-                                         const char *pszDesc, PRTR0PTR pR0Ptr)
-{
-    return pDevIns->pHlpR3->pfnMMIO2MapKernel(pDevIns, pPciDev, iRegion, off, cb, pszDesc, pR0Ptr);
-}
 
 /**
  * @copydoc PDMDEVHLPR3::pfnROMRegister
@@ -6830,38 +6481,6 @@ DECLINLINE(int) PDMDevHlpPCIRegisterMsiEx(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev
 }
 
 /**
- * Registers a I/O region (memory mapped or I/O ports) for the default PCI
- * device.
- *
- * @returns VBox status code.
- * @param   pDevIns             The device instance.
- * @param   iRegion             The region number.
- * @param   cbRegion            Size of the region.
- * @param   enmType             PCI_ADDRESS_SPACE_MEM, PCI_ADDRESS_SPACE_IO or PCI_ADDRESS_SPACE_MEM_PREFETCH.
- * @param   pfnMapUnmap         Callback for doing the mapping.
- * @remarks The callback will be invoked holding the PDM lock. The device lock
- *          is NOT take because that is very likely be a lock order violation.
- * @remarks Old callback style, won't get unmap calls.
- */
-DECLINLINE(int) PDMDevHlpPCIIORegionRegister(PPDMDEVINS pDevIns, uint32_t iRegion, RTGCPHYS cbRegion,
-                                             PCIADDRESSSPACE enmType, PFNPCIIOREGIONMAP pfnMapUnmap)
-{
-    return pDevIns->pHlpR3->pfnPCIIORegionRegister(pDevIns, NULL, iRegion, cbRegion, enmType,
-                                                   PDMPCIDEV_IORGN_F_NO_HANDLE, UINT64_MAX, pfnMapUnmap);
-}
-
-/**
- * @sa PDMDEVHLPR3::pfnPCIIORegionRegister
- * @remarks Old callback style, won't get unmap calls.
- */
-DECLINLINE(int) PDMDevHlpPCIIORegionRegisterEx(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t iRegion, RTGCPHYS cbRegion,
-                                               PCIADDRESSSPACE enmType, PFNPCIIOREGIONMAP pfnMapUnmap)
-{
-    return pDevIns->pHlpR3->pfnPCIIORegionRegister(pDevIns, pPciDev, iRegion, cbRegion, enmType,
-                                                   PDMPCIDEV_IORGN_F_NO_HANDLE, UINT64_MAX, pfnMapUnmap);
-}
-
-/**
  * Registers a I/O port region for the default PCI device.
  *
  * @returns VBox status code.
@@ -7061,7 +6680,8 @@ DECLINLINE(int) PDMDevHlpPCIIORegionCreateMmio2(PPDMDEVINS pDevIns, uint32_t iPc
                                              pszDesc, ppvMapping, phRegion);
     if (RT_SUCCESS(rc))
         rc = pDevIns->pHlpR3->pfnPCIIORegionRegister(pDevIns, pDevIns->apPciDevs[0], iPciRegion, cbRegion, enmType,
-                                                     PDMPCIDEV_IORGN_F_MMIO2_HANDLE, *phRegion, NULL /*pfnCallback*/);
+                                                     PDMPCIDEV_IORGN_F_MMIO2_HANDLE | PDMPCIDEV_IORGN_F_NEW_STYLE,
+                                                     *phRegion, NULL /*pfnCallback*/);
     return rc;
 }
 
@@ -7096,7 +6716,8 @@ DECLINLINE(int) PDMDevHlpPCIIORegionCreateMmio2Ex(PPDMDEVINS pDevIns, uint32_t i
                                              pszDesc, ppvMapping, phRegion);
     if (RT_SUCCESS(rc))
         rc = pDevIns->pHlpR3->pfnPCIIORegionRegister(pDevIns, pDevIns->apPciDevs[0], iPciRegion, cbRegion, enmType,
-                                                     PDMPCIDEV_IORGN_F_MMIO2_HANDLE, *phRegion, pfnMapUnmap);
+                                                     PDMPCIDEV_IORGN_F_MMIO2_HANDLE | PDMPCIDEV_IORGN_F_NEW_STYLE,
+                                                     *phRegion, pfnMapUnmap);
     return rc;
 }
 

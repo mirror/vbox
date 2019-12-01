@@ -256,38 +256,6 @@ DECLINLINE(PIOMMMIOSTATSENTRY) iomMmioGetStats(PVMCC pVM, CTX_SUFF(PIOMMMIOENTRY
 
 
 /**
- * Gets the I/O port range for the specified I/O port in the current context.
- *
- * @returns Pointer to I/O port range.
- * @returns NULL if no port registered.
- *
- * @param   pVM     The cross context VM structure.
- * @param   Port    The I/O port lookup.
- */
-DECLINLINE(CTX_SUFF(PIOMIOPORTRANGE)) iomIOPortGetRange(PVM pVM, RTIOPORT Port)
-{
-    Assert(IOM_IS_SHARED_LOCK_OWNER(pVM));
-    return (CTX_SUFF(PIOMIOPORTRANGE))RTAvlroIOPortRangeGet(&pVM->iom.s.CTX_SUFF(pTrees)->CTX_SUFF(IOPortTree), Port);
-}
-
-
-/**
- * Gets the I/O port range for the specified I/O port in the HC.
- *
- * @returns Pointer to I/O port range.
- * @returns NULL if no port registered.
- *
- * @param   pVM     The cross context VM structure.
- * @param   Port    The I/O port to lookup.
- */
-DECLINLINE(PIOMIOPORTRANGER3) iomIOPortGetRangeR3(PVM pVM, RTIOPORT Port)
-{
-    Assert(IOM_IS_SHARED_LOCK_OWNER(pVM));
-    return (PIOMIOPORTRANGER3)RTAvlroIOPortRangeGet(&pVM->iom.s.CTX_SUFF(pTrees)->IOPortTreeR3, Port);
-}
-
-
-/**
  * Gets the MMIO range for the specified physical address in the current context.
  *
  * @returns Pointer to MMIO range.

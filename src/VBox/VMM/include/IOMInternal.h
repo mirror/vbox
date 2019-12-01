@@ -406,144 +406,6 @@ typedef IOMMMIOSTATSENTRY *PIOMMMIOSTATSENTRY;
 
 
 /**
- * I/O port range descriptor, R3 version.
- */
-typedef struct IOMIOPORTRANGER3
-{
-    /** Avl node core with Port as Key and Port + cPorts - 1 as KeyLast. */
-    AVLROIOPORTNODECORE         Core;
-#if HC_ARCH_BITS == 64 && !defined(RT_OS_WINDOWS)
-    uint32_t                    u32Alignment; /**< The sizeof(Core) differs. */
-#endif
-    /** Start I/O port address. */
-    RTIOPORT                    Port;
-    /** Size of the range. */
-    uint16_t                    cPorts;
-    /** Pointer to user argument. */
-    RTR3PTR                     pvUser;
-    /** Pointer to the associated device instance. */
-    R3PTRTYPE(PPDMDEVINS)       pDevIns;
-    /** Pointer to OUT callback function. */
-    R3PTRTYPE(PFNIOMIOPORTOUT)  pfnOutCallback;
-    /** Pointer to IN callback function. */
-    R3PTRTYPE(PFNIOMIOPORTIN)   pfnInCallback;
-    /** Pointer to string OUT callback function. */
-    R3PTRTYPE(PFNIOMIOPORTOUTSTRING) pfnOutStrCallback;
-    /** Pointer to string IN callback function. */
-    R3PTRTYPE(PFNIOMIOPORTINSTRING) pfnInStrCallback;
-    /** Description / Name. For easing debugging. */
-    R3PTRTYPE(const char *)     pszDesc;
-} IOMIOPORTRANGER3;
-/** Pointer to I/O port range descriptor, R3 version. */
-typedef IOMIOPORTRANGER3 *PIOMIOPORTRANGER3;
-
-/**
- * I/O port range descriptor, R0 version.
- */
-typedef struct IOMIOPORTRANGER0
-{
-    /** Avl node core with Port as Key and Port + cPorts - 1 as KeyLast. */
-    AVLROIOPORTNODECORE         Core;
-#if HC_ARCH_BITS == 64 && !defined(RT_OS_WINDOWS)
-    uint32_t                    u32Alignment; /**< The sizeof(Core) differs. */
-#endif
-    /** Start I/O port address. */
-    RTIOPORT                    Port;
-    /** Size of the range. */
-    uint16_t                    cPorts;
-    /** Pointer to user argument. */
-    RTR0PTR                     pvUser;
-    /** Pointer to the associated device instance. */
-    R0PTRTYPE(PPDMDEVINS)       pDevIns;
-    /** Pointer to OUT callback function. */
-    R0PTRTYPE(PFNIOMIOPORTOUT)  pfnOutCallback;
-    /** Pointer to IN callback function. */
-    R0PTRTYPE(PFNIOMIOPORTIN)   pfnInCallback;
-    /** Pointer to string OUT callback function. */
-    R0PTRTYPE(PFNIOMIOPORTOUTSTRING) pfnOutStrCallback;
-    /** Pointer to string IN callback function. */
-    R0PTRTYPE(PFNIOMIOPORTINSTRING) pfnInStrCallback;
-    /** Description / Name. For easing debugging. */
-    R3PTRTYPE(const char *)     pszDesc;
-} IOMIOPORTRANGER0;
-/** Pointer to I/O port range descriptor, R0 version. */
-typedef IOMIOPORTRANGER0 *PIOMIOPORTRANGER0;
-
-/**
- * I/O port range descriptor, RC version.
- */
-typedef struct IOMIOPORTRANGERC
-{
-    /** Avl node core with Port as Key and Port + cPorts - 1 as KeyLast. */
-    AVLROIOPORTNODECORE         Core;
-    /** Start I/O port address. */
-    RTIOPORT                    Port;
-    /** Size of the range. */
-    uint16_t                    cPorts;
-    /** Pointer to user argument. */
-    RTRCPTR                     pvUser;
-    /** Pointer to the associated device instance. */
-    RCPTRTYPE(PPDMDEVINS)       pDevIns;
-    /** Pointer to OUT callback function. */
-    RCPTRTYPE(PFNIOMIOPORTOUT)  pfnOutCallback;
-    /** Pointer to IN callback function. */
-    RCPTRTYPE(PFNIOMIOPORTIN)   pfnInCallback;
-    /** Pointer to string OUT callback function. */
-    RCPTRTYPE(PFNIOMIOPORTOUTSTRING) pfnOutStrCallback;
-    /** Pointer to string IN callback function. */
-    RCPTRTYPE(PFNIOMIOPORTINSTRING) pfnInStrCallback;
-#if HC_ARCH_BITS == 64
-    RTRCPTR                     RCPtrAlignment; /**< pszDesc is 8 byte aligned. */
-#endif
-    /** Description / Name. For easing debugging. */
-    R3PTRTYPE(const char *)     pszDesc;
-} IOMIOPORTRANGERC;
-/** Pointer to I/O port range descriptor, RC version. */
-typedef IOMIOPORTRANGERC *PIOMIOPORTRANGERC;
-
-
-/**
- * I/O port statistics. (one I/O port)
- *
- * This is a simple way of making on demand statistics, however it's a
- * bit free with the hypervisor heap memory.
- */
-typedef struct IOMIOPORTSTATS
-{
-    /** Avl node core with the port as Key. */
-    AVLOIOPORTNODECORE          Core;
-#if HC_ARCH_BITS != 64 || !defined(RT_OS_WINDOWS)
-    uint32_t                    u32Alignment; /**< The sizeof(Core) differs. */
-#endif
-    /** Number of INs to this port from R3. */
-    STAMCOUNTER                 InR3;
-    /** Profiling IN handler overhead in R3. */
-    STAMPROFILE                 ProfInR3;
-    /** Number of OUTs to this port from R3. */
-    STAMCOUNTER                 OutR3;
-    /** Profiling OUT handler overhead in R3. */
-    STAMPROFILE                 ProfOutR3;
-
-    /** Number of INs to this port from R0/RC. */
-    STAMCOUNTER                 InRZ;
-    /** Profiling IN handler overhead in R0/RC. */
-    STAMPROFILE                 ProfInRZ;
-    /** Number of INs to this port from R0/RC which was serviced in R3. */
-    STAMCOUNTER                 InRZToR3;
-
-    /** Number of OUTs to this port from R0/RC. */
-    STAMCOUNTER                 OutRZ;
-    /** Profiling OUT handler overhead in R0/RC. */
-    STAMPROFILE                 ProfOutRZ;
-    /** Number of OUTs to this port from R0/RC which was serviced in R3. */
-    STAMCOUNTER                 OutRZToR3;
-} IOMIOPORTSTATS;
-AssertCompileMemberAlignment(IOMIOPORTSTATS, InR3, 8);
-/** Pointer to I/O port statistics. */
-typedef IOMIOPORTSTATS *PIOMIOPORTSTATS;
-
-
-/**
  * The IOM trees.
  *
  * These are offset based the nodes and root must be in the same
@@ -552,20 +414,8 @@ typedef IOMIOPORTSTATS *PIOMIOPORTSTATS;
  */
 typedef struct IOMTREES
 {
-    /** Tree containing I/O port range descriptors registered for HC (IOMIOPORTRANGEHC). */
-    AVLROIOPORTTREE         IOPortTreeR3;
-    /** Tree containing I/O port range descriptors registered for R0 (IOMIOPORTRANGER0). */
-    AVLROIOPORTTREE         IOPortTreeR0;
-#if 0
-    /** Tree containing I/O port range descriptors registered for RC (IOMIOPORTRANGERC). */
-    AVLROIOPORTTREE         IOPortTreeRC;
-#endif
-
     /** Tree containing the MMIO range descriptors (IOMMMIORANGE). */
     AVLROGCPHYSTREE         MMIOTree;
-
-    /** Tree containing I/O port statistics (IOMIOPORTSTATS). */
-    AVLOIOPORTTREE          IOPortStatTree;
     /** Tree containing MMIO statistics (IOMMMIOSTATS). */
     AVLOGCPHYSTREE          MmioStatTree;
 } IOMTREES;
@@ -638,17 +488,9 @@ typedef struct IOMCPU
     uint16_t                            idxMmioLastPhysHandler;
     uint16_t                            u16Padding;
 
-    R3PTRTYPE(PIOMIOPORTRANGER3)    pRangeLastReadR3;
-    R3PTRTYPE(PIOMIOPORTRANGER3)    pRangeLastWriteR3;
-    R3PTRTYPE(PIOMIOPORTSTATS)      pStatsLastReadR3;
-    R3PTRTYPE(PIOMIOPORTSTATS)      pStatsLastWriteR3;
     R3PTRTYPE(PIOMMMIORANGE)        pMMIORangeLastR3;
     R3PTRTYPE(PIOMMMIOSTATS)        pMMIOStatsLastR3;
 
-    R0PTRTYPE(PIOMIOPORTRANGER0)    pRangeLastReadR0;
-    R0PTRTYPE(PIOMIOPORTRANGER0)    pRangeLastWriteR0;
-    R0PTRTYPE(PIOMIOPORTSTATS)      pStatsLastReadR0;
-    R0PTRTYPE(PIOMIOPORTSTATS)      pStatsLastWriteR0;
     R0PTRTYPE(PIOMMMIORANGE)        pMMIORangeLastR0;
     R0PTRTYPE(PIOMMMIOSTATS)        pMMIOStatsLastR0;
     /** @} */
