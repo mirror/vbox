@@ -3565,19 +3565,19 @@ ichac97IoPortNamWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32
  */
 static int ichac97R3SaveStream(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, PAC97STREAM pStream)
 {
-    RT_NOREF(pDevIns);
-    PAC97BMREGS pRegs = &pStream->Regs;
+    PAC97BMREGS   pRegs = &pStream->Regs;
+    PCPDMDEVHLPR3 pHlp  = pDevIns->pHlpR3;
 
-    SSMR3PutU32(pSSM, pRegs->bdbar);
-    SSMR3PutU8( pSSM, pRegs->civ);
-    SSMR3PutU8( pSSM, pRegs->lvi);
-    SSMR3PutU16(pSSM, pRegs->sr);
-    SSMR3PutU16(pSSM, pRegs->picb);
-    SSMR3PutU8( pSSM, pRegs->piv);
-    SSMR3PutU8( pSSM, pRegs->cr);
-    SSMR3PutS32(pSSM, pRegs->bd_valid);
-    SSMR3PutU32(pSSM, pRegs->bd.addr);
-    SSMR3PutU32(pSSM, pRegs->bd.ctl_len);
+    pHlp->pfnSSMPutU32(pSSM, pRegs->bdbar);
+    pHlp->pfnSSMPutU8( pSSM, pRegs->civ);
+    pHlp->pfnSSMPutU8( pSSM, pRegs->lvi);
+    pHlp->pfnSSMPutU16(pSSM, pRegs->sr);
+    pHlp->pfnSSMPutU16(pSSM, pRegs->picb);
+    pHlp->pfnSSMPutU8( pSSM, pRegs->piv);
+    pHlp->pfnSSMPutU8( pSSM, pRegs->cr);
+    pHlp->pfnSSMPutS32(pSSM, pRegs->bd_valid);
+    pHlp->pfnSSMPutU32(pSSM, pRegs->bd.addr);
+    pHlp->pfnSSMPutU32(pSSM, pRegs->bd.ctl_len);
 
     return VINF_SUCCESS;
 }
@@ -3587,13 +3587,14 @@ static int ichac97R3SaveStream(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, PAC97STREAM 
  */
 static DECLCALLBACK(int) ichac97R3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 {
-    PAC97STATE pThis = PDMDEVINS_2_DATA(pDevIns, PAC97STATE);
+    PAC97STATE    pThis = PDMDEVINS_2_DATA(pDevIns, PAC97STATE);
+    PCPDMDEVHLPR3 pHlp  = pDevIns->pHlpR3;
 
     LogFlowFuncEnter();
 
-    SSMR3PutU32(pSSM, pThis->glob_cnt);
-    SSMR3PutU32(pSSM, pThis->glob_sta);
-    SSMR3PutU32(pSSM, pThis->cas);
+    pHlp->pfnSSMPutU32(pSSM, pThis->glob_cnt);
+    pHlp->pfnSSMPutU32(pSSM, pThis->glob_sta);
+    pHlp->pfnSSMPutU32(pSSM, pThis->cas);
 
     /** @todo r=andy For the next saved state version, add unique stream identifiers and a stream count. */
     /* Note: The order the streams are loaded here is critical, so don't touch. */
@@ -3603,7 +3604,7 @@ static DECLCALLBACK(int) ichac97R3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
         AssertRC(rc2);
     }
 
-    SSMR3PutMem(pSSM, pThis->mixer_data, sizeof(pThis->mixer_data));
+    pHlp->pfnSSMPutMem(pSSM, pThis->mixer_data, sizeof(pThis->mixer_data));
 
     uint8_t active[AC97SOUNDSOURCE_END_INDEX];
 
@@ -3611,7 +3612,7 @@ static DECLCALLBACK(int) ichac97R3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
     active[AC97SOUNDSOURCE_PO_INDEX] = ichac97R3StreamIsEnabled(pThis, &pThis->aStreams[AC97SOUNDSOURCE_PO_INDEX]) ? 1 : 0;
     active[AC97SOUNDSOURCE_MC_INDEX] = ichac97R3StreamIsEnabled(pThis, &pThis->aStreams[AC97SOUNDSOURCE_MC_INDEX]) ? 1 : 0;
 
-    SSMR3PutMem(pSSM, active, sizeof(active));
+    pHlp->pfnSSMPutMem(pSSM, active, sizeof(active));
 
     LogFlowFuncLeaveRC(VINF_SUCCESS);
     return VINF_SUCCESS;
@@ -3624,20 +3625,21 @@ static DECLCALLBACK(int) ichac97R3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
  * @param   pSSM                Saved state manager (SSM) handle to use.
  * @param   pStream             AC'97 stream to load.
  */
-static int ichac97R3LoadStream(PSSMHANDLE pSSM, PAC97STREAM pStream)
+static int ichac97R3LoadStream(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, PAC97STREAM pStream)
 {
-    PAC97BMREGS pRegs = &pStream->Regs;
+    PAC97BMREGS   pRegs = &pStream->Regs;
+    PCPDMDEVHLPR3 pHlp  = pDevIns->pHlpR3;
 
-    SSMR3GetU32(pSSM, &pRegs->bdbar);
-    SSMR3GetU8( pSSM, &pRegs->civ);
-    SSMR3GetU8( pSSM, &pRegs->lvi);
-    SSMR3GetU16(pSSM, &pRegs->sr);
-    SSMR3GetU16(pSSM, &pRegs->picb);
-    SSMR3GetU8( pSSM, &pRegs->piv);
-    SSMR3GetU8( pSSM, &pRegs->cr);
-    SSMR3GetS32(pSSM, &pRegs->bd_valid);
-    SSMR3GetU32(pSSM, &pRegs->bd.addr);
-    return SSMR3GetU32(pSSM, &pRegs->bd.ctl_len);
+    pHlp->pfnSSMGetU32(pSSM, &pRegs->bdbar);
+    pHlp->pfnSSMGetU8( pSSM, &pRegs->civ);
+    pHlp->pfnSSMGetU8( pSSM, &pRegs->lvi);
+    pHlp->pfnSSMGetU16(pSSM, &pRegs->sr);
+    pHlp->pfnSSMGetU16(pSSM, &pRegs->picb);
+    pHlp->pfnSSMGetU8( pSSM, &pRegs->piv);
+    pHlp->pfnSSMGetU8( pSSM, &pRegs->cr);
+    pHlp->pfnSSMGetS32(pSSM, &pRegs->bd_valid);
+    pHlp->pfnSSMGetU32(pSSM, &pRegs->bd.addr);
+    return pHlp->pfnSSMGetU32(pSSM, &pRegs->bd.ctl_len);
 }
 
 /**
@@ -3645,30 +3647,31 @@ static int ichac97R3LoadStream(PSSMHANDLE pSSM, PAC97STREAM pStream)
  */
 static DECLCALLBACK(int) ichac97R3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass)
 {
-    PAC97STATE pThis = PDMDEVINS_2_DATA(pDevIns, PAC97STATE);
+    PAC97STATE    pThis = PDMDEVINS_2_DATA(pDevIns, PAC97STATE);
+    PCPDMDEVHLPR3 pHlp  = pDevIns->pHlpR3;
 
     LogRel2(("ichac97LoadExec: uVersion=%RU32, uPass=0x%x\n", uVersion, uPass));
 
     AssertMsgReturn (uVersion == AC97_SSM_VERSION, ("%RU32\n", uVersion), VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION);
     Assert(uPass == SSM_PASS_FINAL); NOREF(uPass);
 
-    SSMR3GetU32(pSSM, &pThis->glob_cnt);
-    SSMR3GetU32(pSSM, &pThis->glob_sta);
-    SSMR3GetU32(pSSM, &pThis->cas);
+    pHlp->pfnSSMGetU32(pSSM, &pThis->glob_cnt);
+    pHlp->pfnSSMGetU32(pSSM, &pThis->glob_sta);
+    pHlp->pfnSSMGetU32(pSSM, &pThis->cas);
 
     /** @todo r=andy For the next saved state version, add unique stream identifiers and a stream count. */
     /* Note: The order the streams are loaded here is critical, so don't touch. */
     for (unsigned i = 0; i < AC97_MAX_STREAMS; i++)
     {
-        int rc2 = ichac97R3LoadStream(pSSM, &pThis->aStreams[i]);
+        int rc2 = ichac97R3LoadStream(pDevIns, pSSM, &pThis->aStreams[i]);
         AssertRCReturn(rc2, rc2);
     }
 
-    SSMR3GetMem(pSSM, pThis->mixer_data, sizeof(pThis->mixer_data));
+    pHlp->pfnSSMGetMem(pSSM, pThis->mixer_data, sizeof(pThis->mixer_data));
 
     /** @todo r=andy Stream IDs are hardcoded to certain streams. */
     uint8_t uaStrmsActive[AC97SOUNDSOURCE_END_INDEX];
-    int rc2 = SSMR3GetMem(pSSM, uaStrmsActive, sizeof(uaStrmsActive));
+    int rc2 = pHlp->pfnSSMGetMem(pSSM, uaStrmsActive, sizeof(uaStrmsActive));
     AssertRCReturn(rc2, rc2);
 
     ichac97R3MixerRecordSelect(pThis, ichac97MixerGet(pThis, AC97_Record_Select));
