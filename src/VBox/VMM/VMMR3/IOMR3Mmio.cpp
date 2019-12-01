@@ -513,49 +513,6 @@ VMMR3_INT_DECL(RTGCPHYS) IOMR3MmioGetMappingAddress(PVM pVM, PPDMDEVINS pDevIns,
 
 
 /**
- * Display a single MMIO range.
- *
- * @returns 0
- * @param   pNode   Pointer to MMIO R3 range.
- * @param   pvUser  Pointer to info output callback structure.
- */
-static DECLCALLBACK(int) iomR3MmioInfoOne(PAVLROGCPHYSNODECORE pNode, void *pvUser)
-{
-    PIOMMMIORANGE pRange = (PIOMMMIORANGE)pNode;
-    PCDBGFINFOHLP pHlp = (PCDBGFINFOHLP)pvUser;
-    pHlp->pfnPrintf(pHlp,
-                    "%RGp-%RGp %RHv %RHv %RHv %RHv %RHv %s\n",
-                    pRange->Core.Key,
-                    pRange->Core.KeyLast,
-                    pRange->pDevInsR3,
-                    pRange->pfnReadCallbackR3,
-                    pRange->pfnWriteCallbackR3,
-                    pRange->pfnFillCallbackR3,
-                    pRange->pvUserR3,
-                    pRange->pszDesc);
-    pHlp->pfnPrintf(pHlp,
-                    "%*s %RHv %RHv %RHv %RHv %RHv\n",
-                    sizeof(RTGCPHYS) * 2 * 2 + 1, "R0",
-                    pRange->pDevInsR0,
-                    pRange->pfnReadCallbackR0,
-                    pRange->pfnWriteCallbackR0,
-                    pRange->pfnFillCallbackR0,
-                    pRange->pvUserR0);
-#if 0
-    pHlp->pfnPrintf(pHlp,
-                    "%*s %RRv %RRv %RRv %RRv %RRv\n",
-                    sizeof(RTGCPHYS) * 2 * 2 + 1, "RC",
-                    pRange->pDevInsRC,
-                    pRange->pfnReadCallbackRC,
-                    pRange->pfnWriteCallbackRC,
-                    pRange->pfnFillCallbackRC,
-                    pRange->pvUserRC);
-#endif
-    return 0;
-}
-
-
-/**
  * Display all registered MMIO ranges.
  *
  * @param   pVM         The cross context VM structure.
@@ -564,6 +521,8 @@ static DECLCALLBACK(int) iomR3MmioInfoOne(PAVLROGCPHYSNODECORE pNode, void *pvUs
  */
 DECLCALLBACK(void) iomR3MmioInfo(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszArgs)
 {
+    RT_NOREF(pszArgs);
+
     /* No locking needed here as registerations are only happening during VMSTATE_CREATING. */
     pHlp->pfnPrintf(pHlp,
                     "MMIO registrations: %u (%u allocated)\n"
@@ -590,22 +549,5 @@ DECLCALLBACK(void) iomR3MmioInfo(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszArg
             pHlp->pfnPrintf(pHlp, "%3u R3%s %RGp  %.*s        %s\n", paRegs[i].idxSelf, pszRing, paRegs[i].cbRegion,
                             sizeof(RTGCPHYS) * 2, "unmapped", paRegs[i].pszDesc);
     }
-
-    /* Legacy registration: */
-    NOREF(pszArgs);
-    pHlp->pfnPrintf(pHlp,
-                    "MMIO ranges (pVM=%p)\n"
-                    "%.*s %.*s %.*s %.*s %.*s %.*s %s\n",
-                    pVM,
-                    sizeof(RTGCPHYS) * 4 + 1, "GC Phys Range                    ",
-                    sizeof(RTHCPTR) * 2,      "pDevIns         ",
-                    sizeof(RTHCPTR) * 2,      "Read            ",
-                    sizeof(RTHCPTR) * 2,      "Write           ",
-                    sizeof(RTHCPTR) * 2,      "Fill            ",
-                    sizeof(RTHCPTR) * 2,      "pvUser          ",
-                                              "Description");
-    IOM_LOCK_SHARED(pVM);
-    RTAvlroGCPhysDoWithAll(&pVM->iom.s.pTreesR3->MMIOTree, true, iomR3MmioInfoOne, (void *)pHlp);
-    IOM_UNLOCK_SHARED(pVM);
 }
 

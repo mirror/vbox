@@ -575,15 +575,3 @@ VMM_INT_DECL(VBOXSTRICTRC) IOMIOPortWriteString(PVMCC pVM, PVMCPU pVCpu, RTIOPOR
     return VINF_SUCCESS;
 }
 
-
-/**
- * Fress an MMIO range after the reference counter has become zero.
- *
- * @param   pVM                 The cross context VM structure.
- * @param   pRange              The range to free.
- */
-void iomMmioFreeRange(PVMCC pVM, PIOMMMIORANGE pRange)
-{
-    MMHyperFree(pVM, pRange);
-}
-

@@ -45,101 +45,6 @@
  */
 
 /**
- * MMIO range descriptor.
- */
-typedef struct IOMMMIORANGE
-{
-    /** Avl node core with GCPhys as Key and GCPhys + cbSize - 1 as KeyLast. */
-    AVLROGCPHYSNODECORE         Core;
-    /** Start physical address. */
-    RTGCPHYS                    GCPhys;
-    /** Size of the range. */
-    RTGCPHYS                    cb;
-    /** The reference counter. */
-    uint32_t volatile           cRefs;
-    /** Flags, see IOMMMIO_FLAGS_XXX. */
-    uint32_t                    fFlags;
-
-    /** Pointer to user argument - R0. */
-    RTR0PTR                     pvUserR0;
-    /** Pointer to device instance - R0. */
-    PPDMDEVINSR0                pDevInsR0;
-    /** Pointer to write callback function - R0. */
-    R0PTRTYPE(PFNIOMMMIOWRITE)  pfnWriteCallbackR0;
-    /** Pointer to read callback function - R0. */
-    R0PTRTYPE(PFNIOMMMIOREAD)   pfnReadCallbackR0;
-    /** Pointer to fill (memset) callback function - R0. */
-    R0PTRTYPE(PFNIOMMMIOFILL)   pfnFillCallbackR0;
-
-    /** Pointer to user argument - R3. */
-    RTR3PTR                     pvUserR3;
-    /** Pointer to device instance - R3. */
-    PPDMDEVINSR3                pDevInsR3;
-    /** Pointer to write callback function - R3. */
-    R3PTRTYPE(PFNIOMMMIOWRITE)  pfnWriteCallbackR3;
-    /** Pointer to read callback function - R3. */
-    R3PTRTYPE(PFNIOMMMIOREAD)   pfnReadCallbackR3;
-    /** Pointer to fill (memset) callback function - R3. */
-    R3PTRTYPE(PFNIOMMMIOFILL)   pfnFillCallbackR3;
-
-    /** Description / Name. For easing debugging. */
-    R3PTRTYPE(const char *)     pszDesc;
-
-#if 0
-    /** Pointer to user argument - RC. */
-    RTRCPTR                     pvUserRC;
-    /** Pointer to device instance - RC. */
-    PPDMDEVINSRC                pDevInsRC;
-    /** Pointer to write callback function - RC. */
-    RCPTRTYPE(PFNIOMMMIOWRITE)  pfnWriteCallbackRC;
-    /** Pointer to read callback function - RC. */
-    RCPTRTYPE(PFNIOMMMIOREAD)   pfnReadCallbackRC;
-    /** Pointer to fill (memset) callback function - RC. */
-    RCPTRTYPE(PFNIOMMMIOFILL)   pfnFillCallbackRC;
-#if HC_ARCH_BITS == 64
-    /** Padding structure length to multiple of 8 bytes. */
-    RTRCPTR                     RCPtrPadding;
-#endif
-#endif
-} IOMMMIORANGE;
-/** Pointer to a MMIO range descriptor, R3 version. */
-typedef struct IOMMMIORANGE *PIOMMMIORANGE;
-
-
-/**
- * MMIO address statistics. (one address)
- *
- * This is a simple way of making on demand statistics, however it's a
- * bit free with the hypervisor heap memory.
- */
-typedef struct IOMMMIOSTATS
-{
-    /** Avl node core with the address as Key. */
-    AVLOGCPHYSNODECORE          Core;
-
-    /** Number of accesses (subtract ReadRZToR3 and WriteRZToR3 to get the right
-     *  number). */
-    STAMCOUNTER                 Accesses;
-
-    /** Profiling read handler overhead in R3. */
-    STAMPROFILE                 ProfReadR3;
-    /** Profiling write handler overhead in R3. */
-    STAMPROFILE                 ProfWriteR3;
-    /** Counting and profiling reads in R0/RC. */
-    STAMPROFILE                 ProfReadRZ;
-    /** Counting and profiling writes in R0/RC. */
-    STAMPROFILE                 ProfWriteRZ;
-
-    /** Number of reads to this address from R0/RC which was serviced in R3. */
-    STAMCOUNTER                 ReadRZToR3;
-    /** Number of writes to this address from R0/RC which was serviced in R3. */
-    STAMCOUNTER                 WriteRZToR3;
-} IOMMMIOSTATS;
-AssertCompileMemberAlignment(IOMMMIOSTATS, Accesses, 8);
-/** Pointer to I/O port statistics. */
-typedef IOMMMIOSTATS *PIOMMMIOSTATS;
-
-/**
  * I/O port lookup table entry.
  */
 typedef struct IOMIOPORTLOOKUPENTRY
@@ -404,25 +309,6 @@ typedef struct IOMMMIOSTATSENTRY
 typedef IOMMMIOSTATSENTRY *PIOMMMIOSTATSENTRY;
 
 
-
-/**
- * The IOM trees.
- *
- * These are offset based the nodes and root must be in the same
- * memory block in HC. The locations of IOM structure and the hypervisor heap
- * are quite different in R3, R0 and RC.
- */
-typedef struct IOMTREES
-{
-    /** Tree containing the MMIO range descriptors (IOMMMIORANGE). */
-    AVLROGCPHYSTREE         MMIOTree;
-    /** Tree containing MMIO statistics (IOMMMIOSTATS). */
-    AVLOGCPHYSTREE          MmioStatTree;
-} IOMTREES;
-/** Pointer to the IOM trees. */
-typedef IOMTREES *PIOMTREES;
-
-
 /**
  * IOM per virtual CPU instance data.
  */
@@ -486,13 +372,7 @@ typedef struct IOMCPU
     /** MMIO port registration index for the last IOMR3MmioPhysHandler call.
      * @note pretty static as only used by APIC on AMD-V.  */
     uint16_t                            idxMmioLastPhysHandler;
-    uint16_t                            u16Padding;
-
-    R3PTRTYPE(PIOMMMIORANGE)        pMMIORangeLastR3;
-    R3PTRTYPE(PIOMMMIOSTATS)        pMMIOStatsLastR3;
-
-    R0PTRTYPE(PIOMMMIORANGE)        pMMIORangeLastR0;
-    R0PTRTYPE(PIOMMMIOSTATS)        pMMIOStatsLastR0;
+    uint16_t                            au16Padding[3];
     /** @} */
 } IOMCPU;
 /** Pointer to IOM per virtual CPU instance data. */
@@ -504,16 +384,6 @@ typedef IOMCPU *PIOMCPU;
  */
 typedef struct IOM
 {
-    /** Pointer to the trees - R3 ptr. */
-    R3PTRTYPE(PIOMTREES)            pTreesR3;
-    /** Pointer to the trees - R0 ptr. */
-    R0PTRTYPE(PIOMTREES)            pTreesR0;
-
-    /** MMIO physical access handler type.   */
-    PGMPHYSHANDLERTYPE              hMmioHandlerType;
-    /** MMIO physical access handler type, new style.   */
-    PGMPHYSHANDLERTYPE              hNewMmioHandlerType;
-
     /** @name I/O ports
      * @note The updating of these variables is done exclusively from EMT(0).
      * @{ */
@@ -543,6 +413,8 @@ typedef struct IOM
     /** @name MMIO ports
      * @note The updating of these variables is done exclusively from EMT(0).
      * @{ */
+    /** MMIO physical access handler type, new style.   */
+    PGMPHYSHANDLERTYPE              hNewMmioHandlerType;
     /** Number of MMIO registrations. */
     uint32_t                        cMmioRegs;
     /** The size of the paMmioRegs allocation (in entries). */
@@ -691,9 +563,7 @@ typedef struct IOMR0PERVM
 
 RT_C_DECLS_BEGIN
 
-void                iomMmioFreeRange(PVMCC pVM, PIOMMMIORANGE pRange);
 #ifdef IN_RING3
-PIOMMMIOSTATS       iomR3MMIOStatsCreate(PVM pVM, RTGCPHYS GCPhys, const char *pszDesc);
 DECLCALLBACK(void)  iomR3IoPortInfo(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszArgs);
 void                iomR3IoPortRegStats(PVM pVM, PIOMIOPORTENTRYR3 pRegEntry);
 DECLCALLBACK(void)  iomR3MmioInfo(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszArgs);
@@ -706,14 +576,10 @@ void                iomR0IoPortInitPerVMData(PGVM pGVM);
 void                iomR0MmioCleanupVM(PGVM pGVM);
 void                iomR0MmioInitPerVMData(PGVM pGVM);
 #endif
-VBOXSTRICTRC        iomMmioCommonPfHandlerOld(PVMCC pVM, PVMCPUCC pVCpu, uint32_t uErrorCode, PCPUMCTXCORE pCtxCore,
-                                              RTGCPHYS GCPhysFault, void *pvUser);
 
 #ifndef IN_RING3
-DECLEXPORT(FNPGMRZPHYSPFHANDLER)    iomMmioPfHandler;
 DECLEXPORT(FNPGMRZPHYSPFHANDLER)    iomMmioPfHandlerNew;
 #endif
-PGM_ALL_CB2_PROTO(FNPGMPHYSHANDLER) iomMmioHandler;
 PGM_ALL_CB2_PROTO(FNPGMPHYSHANDLER) iomMmioHandlerNew;
 
 /* IOM locking helpers. */

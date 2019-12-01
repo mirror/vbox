@@ -3171,12 +3171,6 @@ VMMR3_INT_DECL(int) PGMR3PhysMMIOExDeregister(PVM pVM, PPDMDEVINS pDevIns, uint3
             }
 
             /*
-             * Must tell IOM about MMIO (first one only).
-             */
-            if ((fFlags & (PGMREGMMIO2RANGE_F_MMIO2 | PGMREGMMIO2RANGE_F_FIRST_CHUNK)) == PGMREGMMIO2RANGE_F_FIRST_CHUNK)
-                IOMR3MmioExNotifyDeregistered(pVM, pCur->pPhysHandlerR3->pvUserR3);
-
-            /*
              * Unlink it
              */
             PPGMREGMMIO2RANGE pNext = pCur->pNextR3;
@@ -3499,6 +3493,7 @@ VMMR3_INT_DECL(int) PGMR3PhysMMIOExMap(PVM pVM, PPDMDEVINS pDevIns, uint32_t iSu
      */
     if (!(pFirstMmio->fFlags & PGMREGMMIO2RANGE_F_MMIO2))
     {
+        AssertFailed();
         int rc = VINF_SUCCESS;
         for (PPGMREGMMIO2RANGE pCurMmio = pFirstMmio; ; pCurMmio = pCurMmio->pNextR3)
         {
@@ -3509,10 +3504,7 @@ VMMR3_INT_DECL(int) PGMR3PhysMMIOExMap(PVM pVM, PPDMDEVINS pDevIns, uint32_t iSu
                 break;
             pCurMmio->fFlags |= PGMREGMMIO2RANGE_F_MAPPED; /* Use this to mark that the handler is registered. */
             if (pCurMmio->fFlags & PGMREGMMIO2RANGE_F_LAST_CHUNK)
-            {
-                rc = IOMR3MmioExNotifyMapped(pVM, pFirstMmio->pPhysHandlerR3->pvUserR3, GCPhys);
                 break;
-            }
         }
         if (RT_FAILURE(rc))
         {
@@ -3643,6 +3635,8 @@ VMMR3_INT_DECL(int) PGMR3PhysMMIOExUnmap(PVM pVM, PPDMDEVINS pDevIns, uint32_t i
      */
     if (!(fOldFlags & PGMREGMMIO2RANGE_F_MMIO2))
     {
+        AssertFailed();
+
         PPGMREGMMIO2RANGE pCurMmio = pFirstMmio;
         rc = pgmHandlerPhysicalExDeregister(pVM, pFirstMmio->pPhysHandlerR3, RT_BOOL(fOldFlags & PGMREGMMIO2RANGE_F_OVERLAPPING));
         AssertRCReturnStmt(rc, pgmUnlock(pVM), rc);
@@ -3652,8 +3646,6 @@ VMMR3_INT_DECL(int) PGMR3PhysMMIOExUnmap(PVM pVM, PPDMDEVINS pDevIns, uint32_t i
             rc = pgmHandlerPhysicalExDeregister(pVM, pCurMmio->pPhysHandlerR3, RT_BOOL(fOldFlags & PGMREGMMIO2RANGE_F_OVERLAPPING));
             AssertRCReturnStmt(rc, pgmUnlock(pVM), VERR_PGM_PHYS_MMIO_EX_IPE);
         }
-
-        IOMR3MmioExNotifyUnmapped(pVM, pFirstMmio->pPhysHandlerR3->pvUserR3, pFirstMmio->RamRange.GCPhys);
     }
 
     /*

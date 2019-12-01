@@ -1974,7 +1974,7 @@ typedef const PDMRTCHLP *PCPDMRTCHLP;
 /** @} */
 
 /** Current PDMDEVHLPR3 version number. */
-#define PDM_DEVHLPR3_VERSION                    PDM_VERSION_MAKE_PP(0xffe7, 39, 0)
+#define PDM_DEVHLPR3_VERSION                    PDM_VERSION_MAKE_PP(0xffe7, 40, 0)
 
 /**
  * PDM Device API.
@@ -2153,88 +2153,6 @@ typedef struct PDMDEVHLPR3
      */
     DECLR3CALLBACKMEMBER(RTGCPHYS, pfnMmioGetMappingAddress,(PPDMDEVINS pDevIns, IOMMMIOHANDLE hRegion));
     /** @} */
-
-    /**
-     * Register a Memory Mapped I/O (MMIO) region.
-     *
-     * These callbacks are of course for the ring-3 context (R3). Register HC
-     * handlers before raw-mode context (RC) and ring-0 context (R0) handlers! There
-     * must be a R3 handler for every RC and R0 handler!
-     *
-     * @returns VBox status.
-     * @param   pDevIns             The device instance to register the MMIO with.
-     * @param   GCPhysStart         First physical address in the range.
-     * @param   cbRange             The size of the range (in bytes).
-     * @param   pvUser              User argument.
-     * @param   pfnWrite            Pointer to function which is gonna handle Write operations.
-     * @param   pfnRead             Pointer to function which is gonna handle Read operations.
-     * @param   pfnFill             Pointer to function which is gonna handle Fill/memset operations. (optional)
-     * @param   fFlags              Flags, IOMMMIO_FLAGS_XXX.
-     * @param   pszDesc             Pointer to description string. This must not be freed.
-     * @remarks Caller enters the device critical section prior to invoking the
-     *          registered callback methods.
-     * @deprecated
-     */
-    DECLR3CALLBACKMEMBER(int, pfnMMIORegister,(PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, RTGCPHYS cbRange, RTHCPTR pvUser,
-                                               PFNIOMMMIOWRITE pfnWrite, PFNIOMMMIOREAD pfnRead, PFNIOMMMIOFILL pfnFill,
-                                               uint32_t fFlags, const char *pszDesc));
-
-    /**
-     * Register a Memory Mapped I/O (MMIO) region for RC.
-     *
-     * These callbacks are for the raw-mode context (RC). Register ring-3 context
-     * (R3) handlers before guest context handlers! There must be a R3 handler for
-     * every RC handler!
-     *
-     * @returns VBox status.
-     * @param   pDevIns             The device instance to register the MMIO with.
-     * @param   GCPhysStart         First physical address in the range.
-     * @param   cbRange             The size of the range (in bytes).
-     * @param   pvUser              User argument.
-     * @param   pszWrite            Name of the RC function which is gonna handle Write operations.
-     * @param   pszRead             Name of the RC function which is gonna handle Read operations.
-     * @param   pszFill             Name of the RC function which is gonna handle Fill/memset operations. (optional)
-     * @remarks Caller enters the device critical section prior to invoking the
-     *          registered callback methods.
-     * @deprecated
-     */
-    DECLR3CALLBACKMEMBER(int, pfnMMIORegisterRC,(PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, RTGCPHYS cbRange, RTRCPTR pvUser,
-                                                 const char *pszWrite, const char *pszRead, const char *pszFill));
-
-    /**
-     * Register a Memory Mapped I/O (MMIO) region for R0.
-     *
-     * These callbacks are for the ring-0 host context (R0).  Register ring-3
-     * constext (R3) handlers before R0 handlers!  There must be a R3 handler for
-     * every R0 handler!
-     *
-     * @returns VBox status.
-     * @param   pDevIns             The device instance to register the MMIO with.
-     * @param   GCPhysStart         First physical address in the range.
-     * @param   cbRange             The size of the range (in bytes).
-     * @param   pvUser              User argument. (if pointer, then it must be in locked memory!)
-     * @param   pszWrite            Name of the RC function which is gonna handle Write operations.
-     * @param   pszRead             Name of the RC function which is gonna handle Read operations.
-     * @param   pszFill             Name of the RC function which is gonna handle Fill/memset operations. (optional)
-     * @remarks Caller enters the device critical section prior to invoking the
-     *          registered callback methods.
-     * @deprecated
-     */
-    DECLR3CALLBACKMEMBER(int, pfnMMIORegisterR0,(PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, RTGCPHYS cbRange, RTR0PTR pvUser,
-                                                 const char *pszWrite, const char *pszRead, const char *pszFill));
-
-    /**
-     * Deregister a Memory Mapped I/O (MMIO) region.
-     *
-     * This naturally affects both guest context (GC), ring-0 (R0) and ring-3 (R3/HC) handlers.
-     *
-     * @returns VBox status.
-     * @param   pDevIns             The device instance owning the MMIO region(s).
-     * @param   GCPhysStart         First physical address in the range.
-     * @param   cbRange             The size of the range (in bytes).
-     * @deprecated
-     */
-    DECLR3CALLBACKMEMBER(int, pfnMMIODeregister,(PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, RTGCPHYS cbRange));
 
     /** @name MMIO2
      * @{ */
@@ -5730,111 +5648,6 @@ DECLINLINE(int) PDMDevHlpMmioSetUpContextEx(PPDMDEVINS pDevIns, IOMMMIOHANDLE hR
 
 #endif /* !IN_RING3 || DOXYGEN_RUNNING */
 #ifdef IN_RING3
-
-/**
- * Register a Memory Mapped I/O (MMIO) region.
- *
- * These callbacks are of course for the ring-3 context (R3). Register HC
- * handlers before raw-mode context (RC) and ring-0 context (R0) handlers! There
- * must be a R3 handler for every RC and R0 handler!
- *
- * @returns VBox status.
- * @param   pDevIns             The device instance to register the MMIO with.
- * @param   GCPhysStart         First physical address in the range.
- * @param   cbRange             The size of the range (in bytes).
- * @param   pvUser              User argument.
- * @param   fFlags              Flags, IOMMMIO_FLAGS_XXX.
- * @param   pfnWrite            Pointer to function which is gonna handle Write operations.
- * @param   pfnRead             Pointer to function which is gonna handle Read operations.
- * @param   pszDesc             Pointer to description string. This must not be freed.
- */
-DECLINLINE(int) PDMDevHlpMMIORegister(PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, RTGCPHYS cbRange, RTHCPTR pvUser,
-                                      uint32_t fFlags, PFNIOMMMIOWRITE pfnWrite, PFNIOMMMIOREAD pfnRead, const char *pszDesc)
-{
-    return pDevIns->pHlpR3->pfnMMIORegister(pDevIns, GCPhysStart, cbRange, pvUser, pfnWrite, pfnRead, NULL /*pfnFill*/,
-                                            fFlags, pszDesc);
-}
-
-/**
- * Register a Memory Mapped I/O (MMIO) region for RC.
- *
- * These callbacks are for the raw-mode context (RC). Register ring-3 context
- * (R3) handlers before guest context handlers! There must be a R3 handler for
- * every RC handler!
- *
- * @returns VBox status.
- * @param   pDevIns             The device instance to register the MMIO with.
- * @param   GCPhysStart         First physical address in the range.
- * @param   cbRange             The size of the range (in bytes).
- * @param   pvUser              User argument.
- * @param   pszWrite            Name of the RC function which is gonna handle Write operations.
- * @param   pszRead             Name of the RC function which is gonna handle Read operations.
- */
-DECLINLINE(int) PDMDevHlpMMIORegisterRC(PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, RTGCPHYS cbRange, RTRCPTR pvUser,
-                                        const char *pszWrite, const char *pszRead)
-{
-    return pDevIns->pHlpR3->pfnMMIORegisterRC(pDevIns, GCPhysStart, cbRange, pvUser, pszWrite, pszRead, NULL /*pszFill*/);
-}
-
-/**
- * Register a Memory Mapped I/O (MMIO) region for R0.
- *
- * These callbacks are for the ring-0 host context (R0).  Register ring-3
- * constext (R3) handlers before R0 handlers!  There must be a R3 handler for
- * every R0 handler!
- *
- * @returns VBox status.
- * @param   pDevIns             The device instance to register the MMIO with.
- * @param   GCPhysStart         First physical address in the range.
- * @param   cbRange             The size of the range (in bytes).
- * @param   pvUser              User argument. (if pointer, then it must be in locked memory!)
- * @param   pszWrite            Name of the RC function which is gonna handle Write operations.
- * @param   pszRead             Name of the RC function which is gonna handle Read operations.
- * @remarks Caller enters the device critical section prior to invoking the
- *          registered callback methods.
- */
-DECLINLINE(int) PDMDevHlpMMIORegisterR0(PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, RTGCPHYS cbRange, RTR0PTR pvUser,
-                                        const char *pszWrite, const char *pszRead)
-{
-    return pDevIns->pHlpR3->pfnMMIORegisterR0(pDevIns, GCPhysStart, cbRange, pvUser, pszWrite, pszRead, NULL /*pszFill*/);
-}
-
-/**
- * @copydoc PDMDEVHLPR3::pfnMMIORegister
- */
-DECLINLINE(int) PDMDevHlpMMIORegisterEx(PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, RTGCPHYS cbRange, RTHCPTR pvUser,
-                                        uint32_t fFlags, PFNIOMMMIOWRITE pfnWrite, PFNIOMMMIOREAD pfnRead,
-                                        PFNIOMMMIOFILL pfnFill, const char *pszDesc)
-{
-    return pDevIns->pHlpR3->pfnMMIORegister(pDevIns, GCPhysStart, cbRange, pvUser, pfnWrite, pfnRead, pfnFill,
-                                            fFlags, pszDesc);
-}
-
-/**
- * @copydoc PDMDEVHLPR3::pfnMMIORegisterRC
- */
-DECLINLINE(int) PDMDevHlpMMIORegisterRCEx(PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, RTGCPHYS cbRange, RTRCPTR pvUser,
-                                          const char *pszWrite, const char *pszRead, const char *pszFill)
-{
-    return pDevIns->pHlpR3->pfnMMIORegisterRC(pDevIns, GCPhysStart, cbRange, pvUser, pszWrite, pszRead, pszFill);
-}
-
-/**
- * @copydoc PDMDEVHLPR3::pfnMMIORegisterR0
- */
-DECLINLINE(int) PDMDevHlpMMIORegisterR0Ex(PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, RTGCPHYS cbRange, RTR0PTR pvUser,
-                                          const char *pszWrite, const char *pszRead, const char *pszFill)
-{
-    return pDevIns->pHlpR3->pfnMMIORegisterR0(pDevIns, GCPhysStart, cbRange, pvUser, pszWrite, pszRead, pszFill);
-}
-
-/**
- * @copydoc PDMDEVHLPR3::pfnMMIODeregister
- */
-DECLINLINE(int) PDMDevHlpMMIODeregister(PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, RTGCPHYS cbRange)
-{
-    return pDevIns->pHlpR3->pfnMMIODeregister(pDevIns, GCPhysStart, cbRange);
-}
 
 /**
  * @copydoc PDMDEVHLPR3::pfnMmio2Create

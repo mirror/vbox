@@ -2511,11 +2511,10 @@ DECLCALLBACK(VBOXSTRICTRC) devpciR3CommonConfigRead(PPDMDEVINS pDevIns, PPDMPCID
  * Worker for devpciR3ResetDevice and devpciR3UpdateMappings that unmaps a region.
  *
  * @returns VBox status code.
- * @param   pDevIns             The PCI bus device instance.
  * @param   pDev                The PCI device.
  * @param   iRegion             The region to unmap.
  */
-static int devpciR3UnmapRegion(PPDMDEVINS pDevIns, PPDMPCIDEV pDev, int iRegion)
+static int devpciR3UnmapRegion(PPDMPCIDEV pDev, int iRegion)
 {
     PPCIIOREGION pRegion = &pDev->Int.s.aIORegions[iRegion];
     AssertReturn(pRegion->size != 0, VINF_SUCCESS);
@@ -2523,65 +2522,40 @@ static int devpciR3UnmapRegion(PPDMDEVINS pDevIns, PPDMPCIDEV pDev, int iRegion)
     int rc = VINF_SUCCESS;
     if (pRegion->addr != INVALID_PCI_ADDRESS)
     {
-        if (   (pRegion->hHandle != UINT64_MAX)
-            || (pRegion->fFlags & PDMPCIDEV_IORGN_F_NEW_STYLE))
+        /*
+         * Do callout first (optional), then do the unmapping via handle if we've been handed one.
+         */
+        if (pRegion->pfnMap)
         {
-            /*
-             * New style device with a IOM handle.  Do callout first (optional),
-             * then do the unmapping via handle.
-             */
-            if (pRegion->pfnMap)
-            {
-                rc = pRegion->pfnMap(pDev->Int.s.pDevInsR3, pDev, iRegion,
-                                     NIL_RTGCPHYS, pRegion->size, (PCIADDRESSSPACE)(pRegion->type));
-                AssertRC(rc);
-            }
-
-            switch (pRegion->fFlags & PDMPCIDEV_IORGN_F_HANDLE_MASK)
-            {
-                case PDMPCIDEV_IORGN_F_IOPORT_HANDLE:
-                    rc = PDMDevHlpIoPortUnmap(pDev->Int.s.pDevInsR3, (IOMIOPORTHANDLE)pRegion->hHandle);
-                    AssertRC(rc);
-                    break;
-
-                case PDMPCIDEV_IORGN_F_MMIO_HANDLE:
-                    rc = PDMDevHlpMmioUnmap(pDev->Int.s.pDevInsR3, (IOMMMIOHANDLE)pRegion->hHandle);
-                    AssertRC(rc);
-                    break;
-
-                case PDMPCIDEV_IORGN_F_MMIO2_HANDLE:
-                    rc = PDMDevHlpMmio2Unmap(pDev->Int.s.pDevInsR3, (PGMMMIO2HANDLE)pRegion->hHandle);
-                    AssertRC(rc);
-                    break;
-
-                case PDMPCIDEV_IORGN_F_NO_HANDLE:
-                    Assert(pRegion->fFlags & PDMPCIDEV_IORGN_F_NEW_STYLE);
-                    Assert(pRegion->hHandle == UINT64_MAX);
-                    break;
-
-                default:
-                    AssertLogRelFailed();
-            }
+            rc = pRegion->pfnMap(pDev->Int.s.pDevInsR3, pDev, iRegion,
+                                 NIL_RTGCPHYS, pRegion->size, (PCIADDRESSSPACE)(pRegion->type));
+            AssertRC(rc);
         }
-        else
+
+        switch (pRegion->fFlags & PDMPCIDEV_IORGN_F_HANDLE_MASK)
         {
-            /*
-             * Old style device, no handle here and only MMIOEx gets callouts.
-             */
-            if (pRegion->type & PCI_ADDRESS_SPACE_IO)
-                AssertFailed();
-            else
-            {
-                RTGCPHYS     GCPhysBase = pRegion->addr;
-#ifdef VBOX_STRICT
-                PDEVPCIBUSCC pBusCC     = PDMINS_2_DATA_CC(pDevIns, PDEVPCIBUSCC);
-                Assert(!pBusCC->pPciHlpR3->pfnIsMMIOExBase(pDevIns, pDev->Int.s.pDevInsR3, GCPhysBase));
-#else
-                RT_NOREF(pDevIns);
-#endif
-                rc = PDMDevHlpMMIODeregister(pDev->Int.s.pDevInsR3, GCPhysBase, pRegion->size);
+            case PDMPCIDEV_IORGN_F_IOPORT_HANDLE:
+                rc = PDMDevHlpIoPortUnmap(pDev->Int.s.pDevInsR3, (IOMIOPORTHANDLE)pRegion->hHandle);
                 AssertRC(rc);
-            }
+                break;
+
+            case PDMPCIDEV_IORGN_F_MMIO_HANDLE:
+                rc = PDMDevHlpMmioUnmap(pDev->Int.s.pDevInsR3, (IOMMMIOHANDLE)pRegion->hHandle);
+                AssertRC(rc);
+                break;
+
+            case PDMPCIDEV_IORGN_F_MMIO2_HANDLE:
+                rc = PDMDevHlpMmio2Unmap(pDev->Int.s.pDevInsR3, (PGMMMIO2HANDLE)pRegion->hHandle);
+                AssertRC(rc);
+                break;
+
+            case PDMPCIDEV_IORGN_F_NO_HANDLE:
+                Assert(pRegion->fFlags & PDMPCIDEV_IORGN_F_NEW_STYLE);
+                Assert(pRegion->hHandle == UINT64_MAX);
+                break;
+
+            default:
+                AssertLogRelFailed();
         }
         pRegion->addr = INVALID_PCI_ADDRESS;
     }
@@ -2593,11 +2567,10 @@ static int devpciR3UnmapRegion(PPDMDEVINS pDevIns, PPDMPCIDEV pDev, int iRegion)
  * Worker for devpciR3CommonDefaultConfigWrite that updates BAR and ROM mappings.
  *
  * @returns VINF_SUCCESS of DBGFSTOP result.
- * @param   pDevIns             The PCI bus device instance.
  * @param   pPciDev             The PCI device to update the mappings for.
  * @param   fP2PBridge          Whether this is a PCI to PCI bridge or not.
  */
-static VBOXSTRICTRC devpciR3UpdateMappings(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, bool fP2PBridge)
+static VBOXSTRICTRC devpciR3UpdateMappings(PPDMPCIDEV pPciDev, bool fP2PBridge)
 {
     /* safe, only needs to go to the config space array */
     uint16_t const u16Cmd = PDMPciDevGetWord(pPciDev, VBOX_PCI_COMMAND);
@@ -2691,9 +2664,6 @@ static VBOXSTRICTRC devpciR3UpdateMappings(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDe
 
             /*
              * Do real unmapping and/or mapping if the address change.
-             *
-             * For new style device we'll do the actual mapping, whereas old ones
-             * are expected to do it themselves via the callback.
              */
             Log4(("devpciR3UpdateMappings: dev %u/%u (%s): iRegion=%u addr=%#RX64 uNew=%#RX64\n",
                   pPciDev->uDevFn >> VBOX_PCI_DEVFN_DEV_SHIFT, pPciDev->uDevFn & VBOX_PCI_DEVFN_FUN_MASK, pPciDev->pszNameR3,
@@ -2704,12 +2674,12 @@ static VBOXSTRICTRC devpciR3UpdateMappings(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDe
                          pPciDev->uDevFn >> VBOX_PCI_DEVFN_DEV_SHIFT, pPciDev->uDevFn & VBOX_PCI_DEVFN_FUN_MASK,
                          pPciDev->pszNameR3, iRegion, pRegion->addr, uNew, cbRegion, cbRegion));
 
-                int rc = devpciR3UnmapRegion(pDevIns, pPciDev, iRegion);
+                int rc = devpciR3UnmapRegion(pPciDev, iRegion);
                 AssertLogRelRC(rc);
                 pRegion->addr = uNew;
                 if (uNew != INVALID_PCI_ADDRESS)
                 {
-                    /* The callout is optional with new style devices: */
+                    /* The callout is optional (typically not used): */
                     if (!pRegion->pfnMap)
                         rc = VINF_SUCCESS;
                     else
@@ -2719,7 +2689,7 @@ static VBOXSTRICTRC devpciR3UpdateMappings(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDe
                         AssertLogRelRC(rc);
                     }
 
-                    /* We do the mapping for new-style devices: */
+                    /* We do the mapping for most devices: */
                     if (pRegion->hHandle != UINT64_MAX && rc != VINF_PCI_MAPPING_DONE)
                     {
                         switch (pRegion->fFlags & PDMPCIDEV_IORGN_F_HANDLE_MASK)
@@ -3008,7 +2978,7 @@ DECLHIDDEN(VBOXSTRICTRC) devpciR3CommonConfigWriteWorker(PPDMDEVINS pDevIns, PDE
              * Update the region mappings if anything changed related to them (command, BARs, ROM).
              */
             if (fUpdateMappings)
-                rcStrict = devpciR3UpdateMappings(pDevIns, pPciDev, fP2PBridge);
+                rcStrict = devpciR3UpdateMappings(pPciDev, fP2PBridge);
         }
     }
     else
@@ -3490,7 +3460,7 @@ void devpciR3ResetDevice(PPDMDEVINS pDevIns, PPDMPCIDEV pDev)
         bool const f64Bit =    (pRegion->type & ((uint8_t)(PCI_ADDRESS_SPACE_BAR64 | PCI_ADDRESS_SPACE_IO)))
                             == PCI_ADDRESS_SPACE_BAR64;
 
-        devpciR3UnmapRegion(pDevIns, pDev, iRegion);
+        devpciR3UnmapRegion(pDev, iRegion);
 
         if (f64Bit)
             iRegion++;

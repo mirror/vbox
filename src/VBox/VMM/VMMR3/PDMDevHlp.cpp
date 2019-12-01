@@ -58,18 +58,6 @@
 
 
 
-/**
- * Wrapper around PDMR3LdrGetSymbolR0Lazy.
- */
-DECLINLINE(int) pdmR3DevGetSymbolR0Lazy(PPDMDEVINS pDevIns, const char *pszSymbol, PRTR0PTR ppvValue)
-{
-    return PDMR3LdrGetSymbolR0Lazy(pDevIns->Internal.s.pVMR3,
-                                   pDevIns->Internal.s.pDevR3->pReg->pszR0Mod,
-                                   pDevIns->Internal.s.pDevR3->pszR0SearchPath,
-                                   pszSymbol, ppvValue);
-}
-
-
 /** @name R3 DevHlp
  * @{
  */
@@ -224,164 +212,6 @@ static DECLCALLBACK(RTGCPHYS) pdmR3DevHlp_MmioGetMappingAddress(PPDMDEVINS pDevI
 
     LogFlow(("pdmR3DevHlp_MmioGetMappingAddress: caller='%s'/%d: returns %RGp\n", pDevIns->pReg->szName, pDevIns->iInstance, GCPhys));
     return GCPhys;
-}
-
-
-/** @interface_method_impl{PDMDEVHLPR3,pfnMMIORegister} */
-static DECLCALLBACK(int) pdmR3DevHlp_MMIORegister(PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, RTGCPHYS cbRange, RTHCPTR pvUser,
-                                                  PFNIOMMMIOWRITE pfnWrite, PFNIOMMMIOREAD pfnRead, PFNIOMMMIOFILL pfnFill,
-                                                  uint32_t fFlags, const char *pszDesc)
-{
-    PDMDEV_ASSERT_DEVINS(pDevIns);
-    PVM pVM = pDevIns->Internal.s.pVMR3;
-    VM_ASSERT_EMT(pVM);
-    LogFlow(("pdmR3DevHlp_MMIORegister: caller='%s'/%d: GCPhysStart=%RGp cbRange=%RGp pvUser=%p pfnWrite=%p pfnRead=%p pfnFill=%p fFlags=%#x pszDesc=%p:{%s}\n",
-             pDevIns->pReg->szName, pDevIns->iInstance, GCPhysStart, cbRange, pvUser, pfnWrite, pfnRead, pfnFill, pszDesc, fFlags, pszDesc));
-
-    if (pDevIns->iInstance > 0)
-    {
-        char *pszDesc2 = MMR3HeapAPrintf(pVM, MM_TAG_PDM_DEVICE_DESC, "%s [%u]", pszDesc, pDevIns->iInstance);
-        if (pszDesc2)
-            pszDesc = pszDesc2;
-    }
-
-    int rc = IOMR3MmioRegisterR3(pVM, pDevIns, GCPhysStart, cbRange, pvUser,
-                                 pfnWrite, pfnRead, pfnFill, fFlags, pszDesc);
-
-    LogFlow(("pdmR3DevHlp_MMIORegister: caller='%s'/%d: returns %Rrc\n", pDevIns->pReg->szName, pDevIns->iInstance, rc));
-    return rc;
-}
-
-
-/** @interface_method_impl{PDMDEVHLPR3,pfnMMIORegisterRC} */
-static DECLCALLBACK(int) pdmR3DevHlp_MMIORegisterRC(PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, RTGCPHYS cbRange, RTRCPTR pvUser,
-                                                    const char *pszWrite, const char *pszRead, const char *pszFill)
-{
-    PDMDEV_ASSERT_DEVINS(pDevIns);
-    VM_ASSERT_EMT(pDevIns->Internal.s.pVMR3);
-    Assert(pDevIns->pReg->pszR0Mod[0]);
-    Assert(pDevIns->pReg->fFlags & PDM_DEVREG_FLAGS_R0);
-    LogFlow(("pdmR3DevHlp_MMIORegisterRC: caller='%s'/%d: GCPhysStart=%RGp cbRange=%RGp pvUser=%p pszWrite=%p:{%s} pszRead=%p:{%s} pszFill=%p:{%s}\n",
-             pDevIns->pReg->szName, pDevIns->iInstance, GCPhysStart, cbRange, pvUser, pszWrite, pszWrite, pszRead, pszRead, pszFill, pszFill));
-
-#if 0
-    /*
-     * Resolve the functions.
-     * Not all function have to present, leave it to IOM to enforce this.
-     */
-    int rc = VINF_SUCCESS;
-    if (   pDevIns->pReg->pszRCMod[0]
-        && (pDevIns->pReg->fFlags & PDM_DEVREG_FLAGS_RC)
-        && VM_IS_RAW_MODE_ENABLED(pDevIns->Internal.s.pVMR3))
-    {
-        RTRCPTR RCPtrWrite = NIL_RTRCPTR;
-        if (pszWrite)
-            rc = pdmR3DevGetSymbolRCLazy(pDevIns, pszWrite, &RCPtrWrite);
-
-        RTRCPTR RCPtrRead = NIL_RTRCPTR;
-        int rc2 = VINF_SUCCESS;
-        if (pszRead)
-            rc2 = pdmR3DevGetSymbolRCLazy(pDevIns, pszRead, &RCPtrRead);
-
-        RTRCPTR RCPtrFill = NIL_RTRCPTR;
-        int rc3 = VINF_SUCCESS;
-        if (pszFill)
-            rc3 = pdmR3DevGetSymbolRCLazy(pDevIns, pszFill, &RCPtrFill);
-
-        if (RT_SUCCESS(rc) && RT_SUCCESS(rc2) && RT_SUCCESS(rc3))
-            rc = IOMR3MmioRegisterRC(pDevIns->Internal.s.pVMR3, pDevIns, GCPhysStart, cbRange, pvUser, RCPtrWrite, RCPtrRead, RCPtrFill);
-        else
-        {
-            AssertMsgRC(rc,  ("Failed to resolve %s.%s (pszWrite)\n", pDevIns->pReg->pszRCMod, pszWrite));
-            AssertMsgRC(rc2, ("Failed to resolve %s.%s (pszRead)\n",  pDevIns->pReg->pszRCMod, pszRead));
-            AssertMsgRC(rc3, ("Failed to resolve %s.%s (pszFill)\n",  pDevIns->pReg->pszRCMod, pszFill));
-            if (RT_FAILURE(rc2) && RT_SUCCESS(rc))
-                rc = rc2;
-            if (RT_FAILURE(rc3) && RT_SUCCESS(rc))
-                rc = rc3;
-        }
-    }
-    else if (VM_IS_RAW_MODE_ENABLED(pDevIns->Internal.s.pVMR3))
-    {
-        AssertMsgFailed(("No RC module for this driver!\n"));
-        rc = VERR_INVALID_PARAMETER;
-    }
-#else
-    int rc = VINF_SUCCESS;
-    RT_NOREF(pDevIns, GCPhysStart, cbRange, pvUser, pszWrite, pszRead, pszFill);
-#endif
-
-    LogFlow(("pdmR3DevHlp_MMIORegisterRC: caller='%s'/%d: returns %Rrc\n", pDevIns->pReg->szName, pDevIns->iInstance, rc));
-    return rc;
-}
-
-/** @interface_method_impl{PDMDEVHLPR3,pfnMMIORegisterR0} */
-static DECLCALLBACK(int) pdmR3DevHlp_MMIORegisterR0(PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, RTGCPHYS cbRange, RTR0PTR pvUser,
-                                                    const char *pszWrite, const char *pszRead, const char *pszFill)
-{
-    PDMDEV_ASSERT_DEVINS(pDevIns);
-    VM_ASSERT_EMT(pDevIns->Internal.s.pVMR3);
-    Assert(pDevIns->pReg->pszR0Mod[0]);
-    Assert(pDevIns->pReg->fFlags & PDM_DEVREG_FLAGS_R0);
-    LogFlow(("pdmR3DevHlp_MMIORegisterHC: caller='%s'/%d: GCPhysStart=%RGp cbRange=%RGp pvUser=%p pszWrite=%p:{%s} pszRead=%p:{%s} pszFill=%p:{%s}\n",
-             pDevIns->pReg->szName, pDevIns->iInstance, GCPhysStart, cbRange, pvUser, pszWrite, pszWrite, pszRead, pszRead, pszFill, pszFill));
-
-    /*
-     * Resolve the functions.
-     * Not all function have to present, leave it to IOM to enforce this.
-     */
-    int rc = VINF_SUCCESS;
-    if (   pDevIns->pReg->pszR0Mod[0]
-        && (pDevIns->pReg->fFlags & PDM_DEVREG_FLAGS_R0))
-    {
-        R0PTRTYPE(PFNIOMMMIOWRITE) pfnR0PtrWrite = 0;
-        if (pszWrite)
-            rc = pdmR3DevGetSymbolR0Lazy(pDevIns, pszWrite, &pfnR0PtrWrite);
-        R0PTRTYPE(PFNIOMMMIOREAD) pfnR0PtrRead = 0;
-        int rc2 = VINF_SUCCESS;
-        if (pszRead)
-            rc2 = pdmR3DevGetSymbolR0Lazy(pDevIns, pszRead, &pfnR0PtrRead);
-        R0PTRTYPE(PFNIOMMMIOFILL) pfnR0PtrFill = 0;
-        int rc3 = VINF_SUCCESS;
-        if (pszFill)
-            rc3 = pdmR3DevGetSymbolR0Lazy(pDevIns, pszFill, &pfnR0PtrFill);
-        if (RT_SUCCESS(rc) && RT_SUCCESS(rc2) && RT_SUCCESS(rc3))
-            rc = IOMR3MmioRegisterR0(pDevIns->Internal.s.pVMR3, pDevIns, GCPhysStart, cbRange, pvUser,
-                                     pfnR0PtrWrite, pfnR0PtrRead, pfnR0PtrFill);
-        else
-        {
-            AssertMsgRC(rc,  ("Failed to resolve %s.%s (pszWrite)\n", pDevIns->pReg->pszR0Mod, pszWrite));
-            AssertMsgRC(rc2, ("Failed to resolve %s.%s (pszRead)\n",  pDevIns->pReg->pszR0Mod, pszRead));
-            AssertMsgRC(rc3, ("Failed to resolve %s.%s (pszFill)\n",  pDevIns->pReg->pszR0Mod, pszFill));
-            if (RT_FAILURE(rc2) && RT_SUCCESS(rc))
-                rc = rc2;
-            if (RT_FAILURE(rc3) && RT_SUCCESS(rc))
-                rc = rc3;
-        }
-    }
-    else
-    {
-        AssertMsgFailed(("No R0 module for this driver!\n"));
-        rc = VERR_INVALID_PARAMETER;
-    }
-
-    LogFlow(("pdmR3DevHlp_MMIORegisterR0: caller='%s'/%d: returns %Rrc\n", pDevIns->pReg->szName, pDevIns->iInstance, rc));
-    return rc;
-}
-
-
-/** @interface_method_impl{PDMDEVHLPR3,pfnMMIODeregister} */
-static DECLCALLBACK(int) pdmR3DevHlp_MMIODeregister(PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, RTGCPHYS cbRange)
-{
-    PDMDEV_ASSERT_DEVINS(pDevIns);
-    VM_ASSERT_EMT(pDevIns->Internal.s.pVMR3);
-    LogFlow(("pdmR3DevHlp_MMIODeregister: caller='%s'/%d: GCPhysStart=%RGp cbRange=%RGp\n",
-             pDevIns->pReg->szName, pDevIns->iInstance, GCPhysStart, cbRange));
-
-    int rc = IOMR3MmioDeregister(pDevIns->Internal.s.pVMR3, pDevIns, GCPhysStart, cbRange);
-
-    LogFlow(("pdmR3DevHlp_MMIODeregister: caller='%s'/%d: returns %Rrc\n", pDevIns->pReg->szName, pDevIns->iInstance, rc));
-    return rc;
 }
 
 
@@ -3988,10 +3818,6 @@ const PDMDEVHLPR3 g_pdmR3DevHlpTrusted =
     pdmR3DevHlp_MmioUnmap,
     pdmR3DevHlp_MmioReduce,
     pdmR3DevHlp_MmioGetMappingAddress,
-    pdmR3DevHlp_MMIORegister,
-    pdmR3DevHlp_MMIORegisterRC,
-    pdmR3DevHlp_MMIORegisterR0,
-    pdmR3DevHlp_MMIODeregister,
     pdmR3DevHlp_Mmio2Create,
     pdmR3DevHlp_Mmio2Destroy,
     pdmR3DevHlp_Mmio2Map,
@@ -4474,10 +4300,6 @@ const PDMDEVHLPR3 g_pdmR3DevHlpUnTrusted =
     pdmR3DevHlp_MmioUnmap,
     pdmR3DevHlp_MmioReduce,
     pdmR3DevHlp_MmioGetMappingAddress,
-    pdmR3DevHlp_MMIORegister,
-    pdmR3DevHlp_MMIORegisterRC,
-    pdmR3DevHlp_MMIORegisterR0,
-    pdmR3DevHlp_MMIODeregister,
     pdmR3DevHlp_Mmio2Create,
     pdmR3DevHlp_Mmio2Destroy,
     pdmR3DevHlp_Mmio2Map,

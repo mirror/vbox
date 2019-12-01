@@ -778,33 +778,11 @@ VMM_INT_DECL(VBOXSTRICTRC) IOMR0MmioPhysHandler(PVMCC pVM, PVMCPUCC pVCpu, uint3
     {
         RTGCPHYS offRegion;
         CTX_SUFF(PIOMMMIOENTRY) pRegEntry = iomMmioGetEntry(pVM, GCPhysFault, &offRegion, &pVCpu->iom.s.idxMmioLastPhysHandler);
+        IOM_UNLOCK_SHARED(pVM);
         if (RT_LIKELY(pRegEntry))
-        {
-            IOM_UNLOCK_SHARED(pVM);
             rcStrict = iomMmioCommonPfHandlerNew(pVM, pVCpu, (uint32_t)uErrorCode, GCPhysFault, pRegEntry);
-        }
         else
-        {
-            /*
-             * Old style registrations.
-             */
-            PIOMMMIORANGE pRange = iomMmioGetRange(pVM, pVCpu, GCPhysFault);
-            if (pRange)
-            {
-                iomMmioRetainRange(pRange);
-                IOM_UNLOCK_SHARED(pVM);
-
-                rcStrict = iomMmioCommonPfHandlerOld(pVM, pVCpu, (uint32_t)uErrorCode,
-                                                     CPUMCTX2CORE(&pVCpu->cpum.GstCtx), GCPhysFault, pRange);
-
-                iomMmioReleaseRange(pVM, pRange);
-            }
-            else
-            {
-                IOM_UNLOCK_SHARED(pVM);
-                rcStrict = VERR_IOM_MMIO_RANGE_NOT_FOUND;
-            }
-        }
+            rcStrict = VERR_IOM_MMIO_RANGE_NOT_FOUND;
     }
     else if (rcStrict == VERR_SEM_BUSY)
         rcStrict = VINF_IOM_R3_MMIO_READ_WRITE;

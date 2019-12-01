@@ -456,10 +456,6 @@ VMM_INT_DECL(VBOXSTRICTRC) IOMIOPortWriteString(PVMCC pVM, PVMCPU pVCpu, RTIOPOR
                                                 uint32_t *pcTransfers, unsigned cb);
 VMMDECL(VBOXSTRICTRC)   IOMMMIORead(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhys, uint32_t *pu32Value, size_t cbValue);
 VMMDECL(VBOXSTRICTRC)   IOMMMIOWrite(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhys, uint32_t u32Value, size_t cbValue);
-/*VMMDECL(int)            IOMMMIOMapMMIO2Page(PVMCC pVM, RTGCPHYS GCPhys, RTGCPHYS GCPhysRemapped, uint64_t fPageFlags);*/
-/*VMMDECL(int)            IOMMMIOMapMMIOHCPage(PVMCC pVM, PVMCPUCC pVCpu, RTGCPHYS GCPhys, RTHCPHYS HCPhys, uint64_t fPageFlags); - not used any more */
-/*VMMDECL(int)            IOMMMIOResetRegion(PVMCC pVM, RTGCPHYS GCPhys);*/
-
 VMM_INT_DECL(VBOXSTRICTRC) IOMR0MmioPhysHandler(PVMCC pVM, PVMCPUCC pVCpu, uint32_t uErrorCode, RTGCPHYS GCPhysFault);
 VMMDECL(int)            IOMMmioMapMmio2Page(PVMCC pVM, PPDMDEVINS pDevIns, IOMMMIOHANDLE hRegion, RTGCPHYS offRegion,
                                             uint64_t hMmio2, RTGCPHYS offMmio2, uint64_t fPageFlags);
@@ -503,36 +499,10 @@ VMMR3_INT_DECL(int)  IOMR3MmioReduce(PVM pVM, PPDMDEVINS pDevIns, IOMMMIOHANDLE 
 VMMR3_INT_DECL(int)  IOMR3MmioValidateHandle(PVM pVM, PPDMDEVINS pDevIns, IOMMMIOHANDLE hRegion);
 VMMR3_INT_DECL(RTGCPHYS) IOMR3MmioGetMappingAddress(PVM pVM, PPDMDEVINS pDevIns, IOMMMIOHANDLE hRegion);
 
-/** @name obsolete
- * @deprecated
- * @{ */
-VMMR3_INT_DECL(int)  IOMR3MmioRegisterR3(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, RTGCPHYS cbRange, RTHCPTR pvUser,
-                                         R3PTRTYPE(PFNIOMMMIOWRITE) pfnWriteCallback,
-                                         R3PTRTYPE(PFNIOMMMIOREAD)  pfnReadCallback,
-                                         R3PTRTYPE(PFNIOMMMIOFILL)  pfnFillCallback,
-                                         uint32_t fFlags, const char *pszDesc);
-VMMR3_INT_DECL(int)  IOMR3MmioRegisterR0(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, RTGCPHYS cbRange, RTR0PTR pvUser,
-                                         R0PTRTYPE(PFNIOMMMIOWRITE) pfnWriteCallback,
-                                         R0PTRTYPE(PFNIOMMMIOREAD)  pfnReadCallback,
-                                         R0PTRTYPE(PFNIOMMMIOFILL)  pfnFillCallback);
-#if 0
-VMMR3_INT_DECL(int)  IOMR3MmioRegisterRC(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, RTGCPHYS cbRange, RTGCPTR pvUser,
-                                         RCPTRTYPE(PFNIOMMMIOWRITE) pfnWriteCallback,
-                                         RCPTRTYPE(PFNIOMMMIOREAD)  pfnReadCallback,
-                                         RCPTRTYPE(PFNIOMMMIOFILL)  pfnFillCallback);
-#endif
-VMMR3_INT_DECL(int)  IOMR3MmioDeregister(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, RTGCPHYS cbRange);
-VMMR3_INT_DECL(int)  IOMR3MmioExNotifyMapped(PVM pVM, void *pvUser, RTGCPHYS GCPhys);
-VMMR3_INT_DECL(void) IOMR3MmioExNotifyUnmapped(PVM pVM, void *pvUser, RTGCPHYS GCPhys);
-VMMR3_INT_DECL(void) IOMR3MmioExNotifyDeregistered(PVM pVM, void *pvUser);
-
-/** @} */
-
 VMMR3_INT_DECL(VBOXSTRICTRC) IOMR3ProcessForceFlag(PVM pVM, PVMCPU pVCpu, VBOXSTRICTRC rcStrict);
 
 VMMR3_INT_DECL(void) IOMR3NotifyBreakpointCountChange(PVM pVM, bool fPortIo, bool fMmio);
 VMMR3_INT_DECL(void) IOMR3NotifyDebugEventChange(PVM pVM, DBGFEVENT enmEvent, bool fEnabled);
-
 /** @} */
 #endif /* IN_RING3 */
 
