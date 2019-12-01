@@ -3742,8 +3742,8 @@ static int hdaR3LoadExecLegacy(PPDMDEVINS pDevIns, PHDASTATE pThis, PSSMHANDLE p
             break;
 
         default:
-            LogRel(("HDA: Warning: Unsupported / too new saved state version (%RU32)\n", uVersion));
-            return VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
+            AssertLogRelMsgFailedReturn(("HDA: Internal Error! Didn't expect saved state version %RU32 ending up in hdaR3LoadExecLegacy!\n",
+                                         uVersion), VERR_INTERNAL_ERROR_5);
     }
 
     if (cRegs >= RT_ELEMENTS(pThis->au32Regs))

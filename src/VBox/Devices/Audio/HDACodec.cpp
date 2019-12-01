@@ -3128,40 +3128,32 @@ int hdaCodecLoadState(PHDACODEC pThis, PSSMHANDLE pSSM, uint32_t uVersion)
 {
     PCSSMFIELD pFields = NULL;
     uint32_t   fFlags  = 0;
-    switch (uVersion)
+    if (uVersion >= HDA_SAVED_STATE_VERSION_4)
     {
-        case HDA_SAVED_STATE_VERSION_1:
-            AssertReturn(pThis->cTotalNodes == 0x1c, VERR_INTERNAL_ERROR);
-            pFields = g_aCodecNodeFieldsV1;
-            fFlags  = SSMSTRUCT_FLAGS_MEM_BAND_AID_RELAXED;
-            break;
-
-        case HDA_SAVED_STATE_VERSION_2:
-        case HDA_SAVED_STATE_VERSION_3:
-            AssertReturn(pThis->cTotalNodes == 0x1c, VERR_INTERNAL_ERROR);
-            pFields = g_aCodecNodeFields;
-            fFlags  = SSMSTRUCT_FLAGS_MEM_BAND_AID_RELAXED;
-            break;
-
         /* Since version 4 a flexible node count is supported. */
-        case HDA_SAVED_STATE_VERSION_4:
-        case HDA_SAVED_STATE_VERSION_5:
-        case HDA_SAVED_STATE_VERSION:
-        {
-            uint32_t cNodes;
-            int rc2 = SSMR3GetU32(pSSM, &cNodes);
-            AssertRCReturn(rc2, rc2);
-            AssertReturn(cNodes == 0x1c, VERR_SSM_DATA_UNIT_FORMAT_CHANGED);
-            AssertReturn(pThis->cTotalNodes == 0x1c, VERR_INTERNAL_ERROR);
+        uint32_t cNodes;
+        int rc2 = SSMR3GetU32(pSSM, &cNodes);
+        AssertRCReturn(rc2, rc2);
+        AssertReturn(cNodes == 0x1c, VERR_SSM_DATA_UNIT_FORMAT_CHANGED);
+        AssertReturn(pThis->cTotalNodes == 0x1c, VERR_INTERNAL_ERROR);
 
-            pFields = g_aCodecNodeFields;
-            fFlags  = 0;
-            break;
-        }
-
-        default:
-            AssertFailedReturn(VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION);
+        pFields = g_aCodecNodeFields;
+        fFlags  = 0;
     }
+    else if (uVersion >= HDA_SAVED_STATE_VERSION_2)
+    {
+        AssertReturn(pThis->cTotalNodes == 0x1c, VERR_INTERNAL_ERROR);
+        pFields = g_aCodecNodeFields;
+        fFlags  = SSMSTRUCT_FLAGS_MEM_BAND_AID_RELAXED;
+    }
+    else if (uVersion >= HDA_SAVED_STATE_VERSION_1)
+    {
+        AssertReturn(pThis->cTotalNodes == 0x1c, VERR_INTERNAL_ERROR);
+        pFields = g_aCodecNodeFieldsV1;
+        fFlags  = SSMSTRUCT_FLAGS_MEM_BAND_AID_RELAXED;
+    }
+    else
+        AssertFailedReturn(VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION);
 
     for (unsigned idxNode = 0; idxNode < pThis->cTotalNodes; ++idxNode)
     {
