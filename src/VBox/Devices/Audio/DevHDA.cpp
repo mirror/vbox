@@ -3609,7 +3609,7 @@ static DECLCALLBACK(int) hdaR3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
     PCPDMDEVHLPR3 pHlp  = pDevIns->pHlpR3;
 
     /* Save Codec nodes states. */
-    hdaCodecSaveState(pThis->pCodec, pSSM);
+    hdaCodecSaveState(pDevIns, pThis->pCodec, pSSM);
 
     /* Save MMIO registers. */
     pHlp->pfnSSMPutU32(pSSM, RT_ELEMENTS(pThis->au32Regs));
@@ -3937,7 +3937,7 @@ static DECLCALLBACK(int) hdaR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint
     /*
      * Load Codec nodes states.
      */
-    int rc = hdaCodecLoadState(pThis->pCodec, pSSM, uVersion);
+    int rc = hdaCodecLoadState(pDevIns, pThis->pCodec, pSSM, uVersion);
     if (RT_FAILURE(rc))
     {
         LogRel(("HDA: Failed loading codec state (version %RU32, pass 0x%x), rc=%Rrc\n", uVersion, uPass, rc));

@@ -126,8 +126,8 @@ typedef struct HDACODEC
 int hdaCodecConstruct(PPDMDEVINS pDevIns, PHDACODEC pThis, uint16_t uLUN, PCFGMNODE pCfg);
 void hdaCodecDestruct(PHDACODEC pThis);
 void hdaCodecPowerOff(PHDACODEC pThis);
-int hdaCodecSaveState(PHDACODEC pThis, PSSMHANDLE pSSM);
-int hdaCodecLoadState(PHDACODEC pThis, PSSMHANDLE pSSM, uint32_t uVersion);
+int hdaCodecSaveState(PPDMDEVINS pDevIns, PHDACODEC pThis, PSSMHANDLE pSSM);
+int hdaCodecLoadState(PPDMDEVINS pDevIns, PHDACODEC pThis, PSSMHANDLE pSSM, uint32_t uVersion);
 int hdaCodecAddStream(PHDACODEC pThis, PDMAUDIOMIXERCTL enmMixerCtl, PPDMAUDIOSTREAMCFG pCfg);
 int hdaCodecRemoveStream(PHDACODEC pThis, PDMAUDIOMIXERCTL enmMixerCtl);
 

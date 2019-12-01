@@ -3113,26 +3113,28 @@ int hdaCodecRemoveStream(PHDACODEC pThis, PDMAUDIOMIXERCTL enmMixerCtl)
     return rc;
 }
 
-int hdaCodecSaveState(PHDACODEC pThis, PSSMHANDLE pSSM)
+int hdaCodecSaveState(PPDMDEVINS pDevIns, PHDACODEC pThis, PSSMHANDLE pSSM)
 {
+    PCPDMDEVHLPR3 pHlp = pDevIns->pHlpR3;
     AssertLogRelMsgReturn(pThis->cTotalNodes == STAC9221_NUM_NODES, ("cTotalNodes=%#x, should be 0x1c", pThis->cTotalNodes),
                           VERR_INTERNAL_ERROR);
-    SSMR3PutU32(pSSM, pThis->cTotalNodes);
+    pHlp->pfnSSMPutU32(pSSM, pThis->cTotalNodes);
     for (unsigned idxNode = 0; idxNode < pThis->cTotalNodes; ++idxNode)
-        SSMR3PutStructEx(pSSM, &pThis->paNodes[idxNode].SavedState, sizeof(pThis->paNodes[idxNode].SavedState),
-                         0 /*fFlags*/, g_aCodecNodeFields, NULL /*pvUser*/);
+        pHlp->pfnSSMPutStructEx(pSSM, &pThis->paNodes[idxNode].SavedState, sizeof(pThis->paNodes[idxNode].SavedState),
+                                0 /*fFlags*/, g_aCodecNodeFields, NULL /*pvUser*/);
     return VINF_SUCCESS;
 }
 
-int hdaCodecLoadState(PHDACODEC pThis, PSSMHANDLE pSSM, uint32_t uVersion)
+int hdaCodecLoadState(PPDMDEVINS pDevIns, PHDACODEC pThis, PSSMHANDLE pSSM, uint32_t uVersion)
 {
+    PCPDMDEVHLPR3 pHlp = pDevIns->pHlpR3;
     PCSSMFIELD pFields = NULL;
     uint32_t   fFlags  = 0;
     if (uVersion >= HDA_SAVED_STATE_VERSION_4)
     {
         /* Since version 4 a flexible node count is supported. */
         uint32_t cNodes;
-        int rc2 = SSMR3GetU32(pSSM, &cNodes);
+        int rc2 = pHlp->pfnSSMGetU32(pSSM, &cNodes);
         AssertRCReturn(rc2, rc2);
         AssertReturn(cNodes == 0x1c, VERR_SSM_DATA_UNIT_FORMAT_CHANGED);
         AssertReturn(pThis->cTotalNodes == 0x1c, VERR_INTERNAL_ERROR);
@@ -3158,9 +3160,8 @@ int hdaCodecLoadState(PHDACODEC pThis, PSSMHANDLE pSSM, uint32_t uVersion)
     for (unsigned idxNode = 0; idxNode < pThis->cTotalNodes; ++idxNode)
     {
         uint8_t idOld = pThis->paNodes[idxNode].SavedState.Core.uID;
-        int rc = SSMR3GetStructEx(pSSM, &pThis->paNodes[idxNode].SavedState,
-                                  sizeof(pThis->paNodes[idxNode].SavedState),
-                                  fFlags, pFields, NULL);
+        int rc = pHlp->pfnSSMGetStructEx(pSSM, &pThis->paNodes[idxNode].SavedState, sizeof(pThis->paNodes[idxNode].SavedState),
+                                         fFlags, pFields, NULL);
         AssertRCReturn(rc, rc);
         AssertLogRelMsgReturn(idOld == pThis->paNodes[idxNode].SavedState.Core.uID,
                               ("loaded %#x, expected %#x\n", pThis->paNodes[idxNode].SavedState.Core.uID, idOld),
