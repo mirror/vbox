@@ -131,6 +131,9 @@ int hdaCodecLoadState(PHDACODEC pThis, PSSMHANDLE pSSM, uint32_t uVersion);
 int hdaCodecAddStream(PHDACODEC pThis, PDMAUDIOMIXERCTL enmMixerCtl, PPDMAUDIOSTREAMCFG pCfg);
 int hdaCodecRemoveStream(PHDACODEC pThis, PDMAUDIOMIXERCTL enmMixerCtl);
 
+/** @name Dev HDA saved state verions
+ * @todo r=bird: s/HDA_SSM_/HDA_SAVED_STATE_/g - SSM = saved state manager, duh!
+ * @{ */
 /** Added (Controller):              Current wall clock value (this independent from WALCLK register value).
   * Added (Controller):              Current IRQ level.
   * Added (Per stream):              Ring buffer. This is optional and can be skipped if (not) needed.
@@ -150,6 +153,7 @@ int hdaCodecRemoveStream(PHDACODEC pThis, PDMAUDIOMIXERCTL enmMixerCtl);
 #define HDA_SSM_VERSION_3 3
 #define HDA_SSM_VERSION_2 2
 #define HDA_SSM_VERSION_1 1
+/** @} */
 
 #endif /* !VBOX_INCLUDED_SRC_Audio_HDACodec_h */
 
