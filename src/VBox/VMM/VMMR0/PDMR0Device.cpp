@@ -604,10 +604,29 @@ static DECLCALLBACK(bool) pdmR0DevHlp_TimerIsLockOwner(PPDMDEVINS pDevIns, TMTIM
 }
 
 
-/** @interface_method_impl{PDMDEVHLPR0,pfnTimerLock} */
-static DECLCALLBACK(int) pdmR0DevHlp_TimerLock(PPDMDEVINS pDevIns, TMTIMERHANDLE hTimer, int rcBusy)
+/** @interface_method_impl{PDMDEVHLPR0,pfnTimerLockClock} */
+static DECLCALLBACK(VBOXSTRICTRC) pdmR0DevHlp_TimerLockClock(PPDMDEVINS pDevIns, TMTIMERHANDLE hTimer, int rcBusy)
 {
     return TMTimerLock(pdmR0DevHlp_TimerToPtr(pDevIns, hTimer), rcBusy);
+}
+
+
+/** @interface_method_impl{PDMDEVHLPR0,pfnTimerLockClock2} */
+static DECLCALLBACK(VBOXSTRICTRC) pdmR0DevHlp_TimerLockClock2(PPDMDEVINS pDevIns, TMTIMERHANDLE hTimer,
+                                                              PPDMCRITSECT pCritSect, int rcBusy)
+{
+    VBOXSTRICTRC rc = TMTimerLock(pdmR0DevHlp_TimerToPtr(pDevIns, hTimer), rcBusy);
+    if (rc == VINF_SUCCESS)
+    {
+        rc = PDMCritSectEnter(pCritSect, rcBusy);
+        if (rc == VINF_SUCCESS)
+            return rc;
+        AssertRC(VBOXSTRICTRC_VAL(rc));
+        TMTimerUnlock(pdmR0DevHlp_TimerToPtr(pDevIns, hTimer));
+    }
+    else
+        AssertRC(VBOXSTRICTRC_VAL(rc));
+    return rc;
 }
 
 
@@ -660,10 +679,19 @@ static DECLCALLBACK(int) pdmR0DevHlp_TimerStop(PPDMDEVINS pDevIns, TMTIMERHANDLE
 }
 
 
-/** @interface_method_impl{PDMDEVHLPR0,pfnTimerUnlock} */
-static DECLCALLBACK(void) pdmR0DevHlp_TimerUnlock(PPDMDEVINS pDevIns, TMTIMERHANDLE hTimer)
+/** @interface_method_impl{PDMDEVHLPR0,pfnTimerUnlockClock} */
+static DECLCALLBACK(void) pdmR0DevHlp_TimerUnlockClock(PPDMDEVINS pDevIns, TMTIMERHANDLE hTimer)
 {
     TMTimerUnlock(pdmR0DevHlp_TimerToPtr(pDevIns, hTimer));
+}
+
+
+/** @interface_method_impl{PDMDEVHLPR0,pfnTimerUnlockClock2} */
+static DECLCALLBACK(void) pdmR0DevHlp_TimerUnlockClock2(PPDMDEVINS pDevIns, TMTIMERHANDLE hTimer, PPDMCRITSECT pCritSect)
+{
+    TMTimerUnlock(pdmR0DevHlp_TimerToPtr(pDevIns, hTimer));
+    int rc = PDMCritSectLeave(pCritSect);
+    AssertRC(rc);
 }
 
 
@@ -1298,7 +1326,8 @@ extern DECLEXPORT(const PDMDEVHLPR0) g_pdmR0DevHlp =
     pdmR0DevHlp_TimerGetNano,
     pdmR0DevHlp_TimerIsActive,
     pdmR0DevHlp_TimerIsLockOwner,
-    pdmR0DevHlp_TimerLock,
+    pdmR0DevHlp_TimerLockClock,
+    pdmR0DevHlp_TimerLockClock2,
     pdmR0DevHlp_TimerSet,
     pdmR0DevHlp_TimerSetFrequencyHint,
     pdmR0DevHlp_TimerSetMicro,
@@ -1306,7 +1335,8 @@ extern DECLEXPORT(const PDMDEVHLPR0) g_pdmR0DevHlp =
     pdmR0DevHlp_TimerSetNano,
     pdmR0DevHlp_TimerSetRelative,
     pdmR0DevHlp_TimerStop,
-    pdmR0DevHlp_TimerUnlock,
+    pdmR0DevHlp_TimerUnlockClock,
+    pdmR0DevHlp_TimerUnlockClock2,
     pdmR0DevHlp_TMTimeVirtGet,
     pdmR0DevHlp_TMTimeVirtGetFreq,
     pdmR0DevHlp_TMTimeVirtGetNano,

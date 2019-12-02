@@ -1963,7 +1963,7 @@ typedef const PDMRTCHLP *PCPDMRTCHLP;
 /** @} */
 
 /** Current PDMDEVHLPR3 version number. */
-#define PDM_DEVHLPR3_VERSION                    PDM_VERSION_MAKE_PP(0xffe7, 40, 0)
+#define PDM_DEVHLPR3_VERSION                    PDM_VERSION_MAKE_PP(0xffe7, 41, 0)
 
 /**
  * PDM Device API.
@@ -2466,7 +2466,9 @@ typedef struct PDMDEVHLPR3
     DECLR3CALLBACKMEMBER(uint64_t, pfnTimerGetNano,(PPDMDEVINS pDevIns, TMTIMERHANDLE hTimer));
     DECLR3CALLBACKMEMBER(bool,     pfnTimerIsActive,(PPDMDEVINS pDevIns, TMTIMERHANDLE hTimer));
     DECLR3CALLBACKMEMBER(bool,     pfnTimerIsLockOwner,(PPDMDEVINS pDevIns, TMTIMERHANDLE hTimer));
-    DECLR3CALLBACKMEMBER(int,      pfnTimerLock,(PPDMDEVINS pDevIns, TMTIMERHANDLE hTimer, int rcBusy));
+    DECLR3CALLBACKMEMBER(VBOXSTRICTRC, pfnTimerLockClock,(PPDMDEVINS pDevIns, TMTIMERHANDLE hTimer, int rcBusy));
+    /** Takes the clock lock then enters the specified critical section. */
+    DECLR3CALLBACKMEMBER(VBOXSTRICTRC, pfnTimerLockClock2,(PPDMDEVINS pDevIns, TMTIMERHANDLE hTimer, PPDMCRITSECT pCritSect, int rcBusy));
     DECLR3CALLBACKMEMBER(int,      pfnTimerSet,(PPDMDEVINS pDevIns, TMTIMERHANDLE hTimer, uint64_t uExpire));
     DECLR3CALLBACKMEMBER(int,      pfnTimerSetFrequencyHint,(PPDMDEVINS pDevIns, TMTIMERHANDLE hTimer, uint32_t uHz));
     DECLR3CALLBACKMEMBER(int,      pfnTimerSetMicro,(PPDMDEVINS pDevIns, TMTIMERHANDLE hTimer, uint64_t cMicrosToNext));
@@ -2474,7 +2476,8 @@ typedef struct PDMDEVHLPR3
     DECLR3CALLBACKMEMBER(int,      pfnTimerSetNano,(PPDMDEVINS pDevIns, TMTIMERHANDLE hTimer, uint64_t cNanosToNext));
     DECLR3CALLBACKMEMBER(int,      pfnTimerSetRelative,(PPDMDEVINS pDevIns, TMTIMERHANDLE hTimer, uint64_t cTicksToNext, uint64_t *pu64Now));
     DECLR3CALLBACKMEMBER(int,      pfnTimerStop,(PPDMDEVINS pDevIns, TMTIMERHANDLE hTimer));
-    DECLR3CALLBACKMEMBER(void,     pfnTimerUnlock,(PPDMDEVINS pDevIns, TMTIMERHANDLE hTimer));
+    DECLR3CALLBACKMEMBER(void,     pfnTimerUnlockClock,(PPDMDEVINS pDevIns, TMTIMERHANDLE hTimer));
+    DECLR3CALLBACKMEMBER(void,     pfnTimerUnlockClock2,(PPDMDEVINS pDevIns, TMTIMERHANDLE hTimer, PPDMCRITSECT pCritSect));
     DECLR3CALLBACKMEMBER(int,      pfnTimerSetCritSect,(PPDMDEVINS pDevIns, TMTIMERHANDLE hTimer, PPDMCRITSECT pCritSect));
     DECLR3CALLBACKMEMBER(int,      pfnTimerSave,(PPDMDEVINS pDevIns, TMTIMERHANDLE hTimer, PSSMHANDLE pSSM));
     DECLR3CALLBACKMEMBER(int,      pfnTimerLoad,(PPDMDEVINS pDevIns, TMTIMERHANDLE hTimer, PSSMHANDLE pSSM));
@@ -4708,7 +4711,9 @@ typedef struct PDMDEVHLPR0
     DECLR0CALLBACKMEMBER(uint64_t, pfnTimerGetNano,(PPDMDEVINS pDevIns, TMTIMERHANDLE hTimer));
     DECLR0CALLBACKMEMBER(bool,     pfnTimerIsActive,(PPDMDEVINS pDevIns, TMTIMERHANDLE hTimer));
     DECLR0CALLBACKMEMBER(bool,     pfnTimerIsLockOwner,(PPDMDEVINS pDevIns, TMTIMERHANDLE hTimer));
-    DECLR0CALLBACKMEMBER(int,      pfnTimerLock,(PPDMDEVINS pDevIns, TMTIMERHANDLE hTimer, int rcBusy));
+    DECLR0CALLBACKMEMBER(VBOXSTRICTRC, pfnTimerLockClock,(PPDMDEVINS pDevIns, TMTIMERHANDLE hTimer, int rcBusy));
+    /** Takes the clock lock then enters the specified critical section. */
+    DECLR0CALLBACKMEMBER(VBOXSTRICTRC, pfnTimerLockClock2,(PPDMDEVINS pDevIns, TMTIMERHANDLE hTimer, PPDMCRITSECT pCritSect, int rcBusy));
     DECLR0CALLBACKMEMBER(int,      pfnTimerSet,(PPDMDEVINS pDevIns, TMTIMERHANDLE hTimer, uint64_t uExpire));
     DECLR0CALLBACKMEMBER(int,      pfnTimerSetFrequencyHint,(PPDMDEVINS pDevIns, TMTIMERHANDLE hTimer, uint32_t uHz));
     DECLR0CALLBACKMEMBER(int,      pfnTimerSetMicro,(PPDMDEVINS pDevIns, TMTIMERHANDLE hTimer, uint64_t cMicrosToNext));
@@ -4716,7 +4721,8 @@ typedef struct PDMDEVHLPR0
     DECLR0CALLBACKMEMBER(int,      pfnTimerSetNano,(PPDMDEVINS pDevIns, TMTIMERHANDLE hTimer, uint64_t cNanosToNext));
     DECLR0CALLBACKMEMBER(int,      pfnTimerSetRelative,(PPDMDEVINS pDevIns, TMTIMERHANDLE hTimer, uint64_t cTicksToNext, uint64_t *pu64Now));
     DECLR0CALLBACKMEMBER(int,      pfnTimerStop,(PPDMDEVINS pDevIns, TMTIMERHANDLE hTimer));
-    DECLR0CALLBACKMEMBER(void,     pfnTimerUnlock,(PPDMDEVINS pDevIns, TMTIMERHANDLE hTimer));
+    DECLR0CALLBACKMEMBER(void,     pfnTimerUnlockClock,(PPDMDEVINS pDevIns, TMTIMERHANDLE hTimer));
+    DECLR0CALLBACKMEMBER(void,     pfnTimerUnlockClock2,(PPDMDEVINS pDevIns, TMTIMERHANDLE hTimer, PPDMCRITSECT pCritSect));
     /** @} */
 
     /**
@@ -4936,7 +4942,7 @@ typedef R0PTRTYPE(struct PDMDEVHLPR0 *) PPDMDEVHLPR0;
 typedef R0PTRTYPE(const struct PDMDEVHLPR0 *) PCPDMDEVHLPR0;
 
 /** Current PDMDEVHLP version number. */
-#define PDM_DEVHLPR0_VERSION                    PDM_VERSION_MAKE(0xffe5, 15, 0)
+#define PDM_DEVHLPR0_VERSION                    PDM_VERSION_MAKE(0xffe5, 16, 0)
 
 
 /**
@@ -5861,9 +5867,17 @@ DECLINLINE(bool)     PDMDevHlpTimerIsLockOwner(PPDMDEVINS pDevIns, TMTIMERHANDLE
 /**
  * @copydoc PDMDEVHLPR3::pfnTimerLock
  */
-DECLINLINE(int)      PDMDevHlpTimerLock(PPDMDEVINS pDevIns, TMTIMERHANDLE hTimer, int rcBusy)
+DECLINLINE(VBOXSTRICTRC) PDMDevHlpTimerLockClock(PPDMDEVINS pDevIns, TMTIMERHANDLE hTimer, int rcBusy)
 {
-    return pDevIns->CTX_SUFF(pHlp)->pfnTimerLock(pDevIns, hTimer, rcBusy);
+    return pDevIns->CTX_SUFF(pHlp)->pfnTimerLockClock(pDevIns, hTimer, rcBusy);
+}
+
+/**
+ * @copydoc PDMDEVHLPR3::pfnTimerLock2
+ */
+DECLINLINE(VBOXSTRICTRC) PDMDevHlpTimerLockClock2(PPDMDEVINS pDevIns, TMTIMERHANDLE hTimer, PPDMCRITSECT pCritSect, int rcBusy)
+{
+    return pDevIns->CTX_SUFF(pHlp)->pfnTimerLockClock2(pDevIns, hTimer, pCritSect, rcBusy);
 }
 
 /**
@@ -5923,11 +5937,19 @@ DECLINLINE(int)      PDMDevHlpTimerStop(PPDMDEVINS pDevIns, TMTIMERHANDLE hTimer
 }
 
 /**
- * @copydoc PDMDEVHLPR3::pfnTimerUnlock
+ * @copydoc PDMDEVHLPR3::pfnTimerUnlockClock
  */
-DECLINLINE(void)     PDMDevHlpTimerUnlock(PPDMDEVINS pDevIns, TMTIMERHANDLE hTimer)
+DECLINLINE(void)     PDMDevHlpTimerUnlockClock(PPDMDEVINS pDevIns, TMTIMERHANDLE hTimer)
 {
-    pDevIns->CTX_SUFF(pHlp)->pfnTimerUnlock(pDevIns, hTimer);
+    pDevIns->CTX_SUFF(pHlp)->pfnTimerUnlockClock(pDevIns, hTimer);
+}
+
+/**
+ * @copydoc PDMDEVHLPR3::pfnTimerUnlockClock2
+ */
+DECLINLINE(void)     PDMDevHlpTimerUnlockClock2(PPDMDEVINS pDevIns, TMTIMERHANDLE hTimer, PPDMCRITSECT pCritSect)
+{
+    pDevIns->CTX_SUFF(pHlp)->pfnTimerUnlockClock2(pDevIns, hTimer, pCritSect);
 }
 
 #ifdef IN_RING3

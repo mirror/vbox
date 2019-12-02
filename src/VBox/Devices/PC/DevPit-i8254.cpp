@@ -123,36 +123,27 @@
  */
 #define DEVPIT_LOCK_BOTH_RETURN(a_pDevIns, a_pThis, a_rcBusy)  \
     do { \
-        int rcLock = PDMDevHlpTimerLock((a_pDevIns), (a_pThis)->channels[0].hTimer, (a_rcBusy)); \
-        if (rcLock != VINF_SUCCESS) \
+        VBOXSTRICTRC rcLock = PDMDevHlpTimerLockClock2((a_pDevIns), (a_pThis)->channels[0].hTimer, \
+                                                       &(a_pThis)->CritSect, (a_rcBusy)); \
+        if (RT_LIKELY(rcLock == VINF_SUCCESS)) \
+        { /* likely */ } \
+        else \
             return rcLock; \
-        rcLock = PDMDevHlpCritSectEnter((a_pDevIns), &(a_pThis)->CritSect, (a_rcBusy)); \
-        if (rcLock != VINF_SUCCESS) \
-        { \
-            PDMDevHlpTimerUnlock((a_pDevIns), (a_pThis)->channels[0].hTimer); \
-            return rcLock; \
-        } \
     } while (0)
 
 #ifdef IN_RING3
 /**
  * Acquires the TM lock and PIT lock, ignores failures.
  */
-# define DEVPIT_R3_LOCK_BOTH(a_pDevIns, a_pThis)  \
-    do { \
-        PDMDevHlpTimerLock((a_pDevIns), (a_pThis)->channels[0].hTimer, VERR_IGNORED); \
-        PDMDevHlpCritSectEnter((a_pDevIns), &(a_pThis)->CritSect, VERR_IGNORED); \
-    } while (0)
+# define DEVPIT_R3_LOCK_BOTH(a_pDevIns, a_pThis) \
+    PDMDevHlpTimerLockClock2((a_pDevIns), (a_pThis)->channels[0].hTimer, &(a_pThis)->CritSect, VERR_IGNORED)
 #endif /* IN_RING3 */
 
 /**
  * Releases the PIT lock and TM lock.
  */
 #define DEVPIT_UNLOCK_BOTH(a_pDevIns, a_pThis) \
-    do { \
-        PDMDevHlpCritSectLeave((a_pDevIns), &(a_pThis)->CritSect); \
-        PDMDevHlpTimerUnlock((a_pDevIns), (a_pThis)->channels[0].hTimer); \
-    } while (0)
+    PDMDevHlpTimerUnlockClock2((a_pDevIns), (a_pThis)->channels[0].hTimer, &(a_pThis)->CritSect)
 
 
 

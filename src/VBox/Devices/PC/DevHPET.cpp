@@ -174,15 +174,11 @@
  */
 #define DEVHPET_LOCK_BOTH_RETURN(a_pDevIns, a_pThis, a_rcBusy)  \
     do { \
-        int rcLock = PDMDevHlpTimerLock((a_pDevIns), (a_pThis)->aTimers[0].hTimer, (a_rcBusy)); \
+        VBOXSTRICTRC rcLock = PDMDevHlpTimerLockClock2((a_pDevIns), (a_pThis)->aTimers[0].hTimer, &(a_pThis)->CritSect, (a_rcBusy)); \
         if (RT_LIKELY(rcLock == VINF_SUCCESS)) \
-        { \
-            rcLock = PDMDevHlpCritSectEnter((a_pDevIns), &(a_pThis)->CritSect, (a_rcBusy)); \
-            if (RT_LIKELY(rcLock == VINF_SUCCESS)) \
-                break; /* likely */ \
-            PDMDevHlpTimerUnlock((a_pDevIns), (a_pThis)->aTimers[0].hTimer); \
-        } \
-        return rcLock; \
+        { /* likely */ } \
+        else \
+            return rcLock; \
     } while (0)
 
 
@@ -190,10 +186,7 @@
  * Releases the HPET lock and TM lock.
  */
 #define DEVHPET_UNLOCK_BOTH(a_pDevIns, a_pThis) \
-    do { \
-        PDMDevHlpCritSectLeave((a_pDevIns), &(a_pThis)->CritSect); \
-        PDMDevHlpTimerUnlock((a_pDevIns), (a_pThis)->aTimers[0].hTimer); \
-    } while (0)
+        PDMDevHlpTimerUnlockClock2((a_pDevIns), (a_pThis)->aTimers[0].hTimer, &(a_pThis)->CritSect)
 
 
 /*********************************************************************************************************************************
@@ -684,7 +677,7 @@ static VBOXSTRICTRC hpetTimerRegWrite32(PPDMDEVINS pDevIns, PHPET pThis, uint32_
  *
  * @remarks The caller must not own the device lock if HPET_COUNTER is read.
  */
-static int hpetConfigRegRead32(PPDMDEVINS pDevIns, PHPET pThis, uint32_t idxReg, uint32_t *pu32Value)
+static VBOXSTRICTRC hpetConfigRegRead32(PPDMDEVINS pDevIns, PHPET pThis, uint32_t idxReg, uint32_t *pu32Value)
 {
     Assert(!PDMDevHlpCritSectIsOwner(pDevIns, &pThis->CritSect) || (idxReg != HPET_COUNTER && idxReg != HPET_COUNTER + 4));
 
@@ -1341,7 +1334,7 @@ static DECLCALLBACK(void) hpetR3Reset(PPDMDEVINS pDevIns)
     /*
      * The timers first.
      */
-    PDMDevHlpTimerLock(pDevIns, pThis->aTimers[0].hTimer, VERR_IGNORED);
+    PDMDevHlpTimerLockClock(pDevIns, pThis->aTimers[0].hTimer, VERR_IGNORED);
     for (unsigned i = 0; i < RT_ELEMENTS(pThis->aTimers); i++)
     {
         PHPETTIMER pHpetTimer = &pThis->aTimers[i];
@@ -1363,7 +1356,7 @@ static DECLCALLBACK(void) hpetR3Reset(PPDMDEVINS pDevIns)
         pHpetTimer->u8Wrap     = 0;
         pHpetTimer->u64Cmp     = hpetInvalidValue(pHpetTimer);
     }
-    PDMDevHlpTimerUnlock(pDevIns, pThis->aTimers[0].hTimer);
+    PDMDevHlpTimerUnlockClock(pDevIns, pThis->aTimers[0].hTimer);
 
     /*
      * The shared HPET state.

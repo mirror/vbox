@@ -517,10 +517,29 @@ static DECLCALLBACK(bool) pdmR3DevHlp_TimerIsLockOwner(PPDMDEVINS pDevIns, TMTIM
 }
 
 
-/** @interface_method_impl{PDMDEVHLPR3,pfnTimerLock} */
-static DECLCALLBACK(int) pdmR3DevHlp_TimerLock(PPDMDEVINS pDevIns, TMTIMERHANDLE hTimer, int rcBusy)
+/** @interface_method_impl{PDMDEVHLPR3,pfnTimerLockClock} */
+static DECLCALLBACK(VBOXSTRICTRC) pdmR3DevHlp_TimerLockClock(PPDMDEVINS pDevIns, TMTIMERHANDLE hTimer, int rcBusy)
 {
     return TMTimerLock(pdmR3DevHlp_TimerToPtr(pDevIns, hTimer), rcBusy);
+}
+
+
+/** @interface_method_impl{PDMDEVHLPR3,pfnTimerLock} */
+static DECLCALLBACK(VBOXSTRICTRC) pdmR3DevHlp_TimerLockClock2(PPDMDEVINS pDevIns, TMTIMERHANDLE hTimer,
+                                                              PPDMCRITSECT pCritSect, int rcBusy)
+{
+    VBOXSTRICTRC rc = TMTimerLock(pdmR3DevHlp_TimerToPtr(pDevIns, hTimer), rcBusy);
+    if (rc == VINF_SUCCESS)
+    {
+        rc = PDMCritSectEnter(pCritSect, rcBusy);
+        if (rc == VINF_SUCCESS)
+            return rc;
+        AssertRC(VBOXSTRICTRC_VAL(rc));
+        TMTimerUnlock(pdmR3DevHlp_TimerToPtr(pDevIns, hTimer));
+    }
+    else
+        AssertRC(VBOXSTRICTRC_VAL(rc));
+    return rc;
 }
 
 
@@ -573,10 +592,19 @@ static DECLCALLBACK(int) pdmR3DevHlp_TimerStop(PPDMDEVINS pDevIns, TMTIMERHANDLE
 }
 
 
-/** @interface_method_impl{PDMDEVHLPR3,pfnTimerUnlock} */
-static DECLCALLBACK(void) pdmR3DevHlp_TimerUnlock(PPDMDEVINS pDevIns, TMTIMERHANDLE hTimer)
+/** @interface_method_impl{PDMDEVHLPR3,pfnTimerUnlockClock} */
+static DECLCALLBACK(void) pdmR3DevHlp_TimerUnlockClock(PPDMDEVINS pDevIns, TMTIMERHANDLE hTimer)
 {
     TMTimerUnlock(pdmR3DevHlp_TimerToPtr(pDevIns, hTimer));
+}
+
+
+/** @interface_method_impl{PDMDEVHLPR3,pfnTimerUnlock} */
+static DECLCALLBACK(void) pdmR3DevHlp_TimerUnlockClock2(PPDMDEVINS pDevIns, TMTIMERHANDLE hTimer, PPDMCRITSECT pCritSect)
+{
+    TMTimerUnlock(pdmR3DevHlp_TimerToPtr(pDevIns, hTimer));
+    int rc = PDMCritSectLeave(pCritSect);
+    AssertRC(rc);
 }
 
 
@@ -3922,7 +3950,8 @@ const PDMDEVHLPR3 g_pdmR3DevHlpTrusted =
     pdmR3DevHlp_TimerGetNano,
     pdmR3DevHlp_TimerIsActive,
     pdmR3DevHlp_TimerIsLockOwner,
-    pdmR3DevHlp_TimerLock,
+    pdmR3DevHlp_TimerLockClock,
+    pdmR3DevHlp_TimerLockClock2,
     pdmR3DevHlp_TimerSet,
     pdmR3DevHlp_TimerSetFrequencyHint,
     pdmR3DevHlp_TimerSetMicro,
@@ -3930,7 +3959,8 @@ const PDMDEVHLPR3 g_pdmR3DevHlpTrusted =
     pdmR3DevHlp_TimerSetNano,
     pdmR3DevHlp_TimerSetRelative,
     pdmR3DevHlp_TimerStop,
-    pdmR3DevHlp_TimerUnlock,
+    pdmR3DevHlp_TimerUnlockClock,
+    pdmR3DevHlp_TimerUnlockClock2,
     pdmR3DevHlp_TimerSetCritSect,
     pdmR3DevHlp_TimerSave,
     pdmR3DevHlp_TimerLoad,
@@ -4404,7 +4434,8 @@ const PDMDEVHLPR3 g_pdmR3DevHlpUnTrusted =
     pdmR3DevHlp_TimerGetNano,
     pdmR3DevHlp_TimerIsActive,
     pdmR3DevHlp_TimerIsLockOwner,
-    pdmR3DevHlp_TimerLock,
+    pdmR3DevHlp_TimerLockClock,
+    pdmR3DevHlp_TimerLockClock2,
     pdmR3DevHlp_TimerSet,
     pdmR3DevHlp_TimerSetFrequencyHint,
     pdmR3DevHlp_TimerSetMicro,
@@ -4412,7 +4443,8 @@ const PDMDEVHLPR3 g_pdmR3DevHlpUnTrusted =
     pdmR3DevHlp_TimerSetNano,
     pdmR3DevHlp_TimerSetRelative,
     pdmR3DevHlp_TimerStop,
-    pdmR3DevHlp_TimerUnlock,
+    pdmR3DevHlp_TimerUnlockClock,
+    pdmR3DevHlp_TimerUnlockClock2,
     pdmR3DevHlp_TimerSetCritSect,
     pdmR3DevHlp_TimerSave,
     pdmR3DevHlp_TimerLoad,

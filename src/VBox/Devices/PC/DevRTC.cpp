@@ -449,10 +449,9 @@ PDMBOTHCBDECL(VBOXSTRICTRC) rtcIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTI
                    we're letting IOM do the locking, we must not return without
                    holding the device lock.*/
                 PDMDevHlpCritSectLeave(pDevIns, pDevIns->CTX_SUFF(pCritSectRo));
-                int rc1 = PDMDevHlpTimerLock(pDevIns, pThis->hPeriodicTimer, VINF_SUCCESS /* must get it */);
-                int rc2 = PDMDevHlpCritSectEnter(pDevIns, pDevIns->CTX_SUFF(pCritSectRo), VINF_SUCCESS /* must get it */);
-                AssertRCReturn(rc1, rc1);
-                AssertRCReturnStmt(rc2, PDMDevHlpTimerUnlock(pDevIns, pThis->hPeriodicTimer), rc2);
+                VBOXSTRICTRC rc1 = PDMDevHlpTimerLockClock2(pDevIns, pThis->hPeriodicTimer, pDevIns->CTX_SUFF(pCritSectRo),
+                                                            VINF_SUCCESS /* must get it */);
+                AssertRCReturn(VBOXSTRICTRC_VAL(rc1), rc1);
 
                 if (idx == RTC_REG_A)
                 {
@@ -481,7 +480,7 @@ PDMBOTHCBDECL(VBOXSTRICTRC) rtcIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTI
 
                 rtc_timer_update(pDevIns, pThis, PDMDevHlpTimerGet(pDevIns, pThis->hPeriodicTimer));
 
-                PDMDevHlpTimerUnlock(pDevIns, pThis->hPeriodicTimer);
+                PDMDevHlpTimerUnlockClock(pDevIns, pThis->hPeriodicTimer);
                 /* the caller leaves the other lock. */
                 break;
             }
@@ -1174,10 +1173,9 @@ static DECLCALLBACK(int)  rtcConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
 
     pThis->next_second_time = PDMDevHlpTimerGet(pDevIns, pThis->hSecondTimer2)
                             + (PDMDevHlpTimerGetFreq(pDevIns, pThis->hSecondTimer2) * 99) / 100;
-    rc = PDMDevHlpTimerLock(pDevIns, pThis->hSecondTimer2, VERR_IGNORED);
-    AssertRCReturn(rc, rc);
+    PDMDevHlpTimerLockClock(pDevIns, pThis->hSecondTimer2, VERR_IGNORED);
     rc = PDMDevHlpTimerSet(pDevIns, pThis->hSecondTimer2, pThis->next_second_time);
-    PDMDevHlpTimerUnlock(pDevIns, pThis->hSecondTimer2);
+    PDMDevHlpTimerUnlockClock(pDevIns, pThis->hSecondTimer2);
     AssertRCReturn(rc, rc);
 
     /*

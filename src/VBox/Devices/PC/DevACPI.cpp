@@ -1800,39 +1800,32 @@ static DECLCALLBACK(VBOXSTRICTRC) acpiPMTmrRead(PPDMDEVINS pDevIns, void *pvUser
      * as well as and to prevent uPmTimerVal from being updated during read.
      */
     PACPISTATE pThis = PDMDEVINS_2_DATA(pDevIns, PACPISTATE);
-    VBOXSTRICTRC rc = PDMDevHlpTimerLock(pDevIns, pThis->hPmTimer, VINF_IOM_R3_IOPORT_READ);
+    VBOXSTRICTRC rc = PDMDevHlpTimerLockClock2(pDevIns, pThis->hPmTimer, &pThis->CritSect, VINF_IOM_R3_IOPORT_READ);
     if (rc == VINF_SUCCESS)
     {
-        rc = PDMDevHlpCritSectEnter(pDevIns, &pThis->CritSect, VINF_IOM_R3_IOPORT_READ);
-        if (rc == VINF_SUCCESS)
-        {
-            uint64_t u64Now = PDMDevHlpTimerGet(pDevIns, pThis->hPmTimer);
-            acpiPmTimerUpdate(pDevIns, pThis, u64Now);
-            *pu32 = pThis->uPmTimerVal;
+        uint64_t u64Now = PDMDevHlpTimerGet(pDevIns, pThis->hPmTimer);
+        acpiPmTimerUpdate(pDevIns, pThis, u64Now);
+        *pu32 = pThis->uPmTimerVal;
 
-            DEVACPI_UNLOCK(pDevIns, pThis);
-            PDMDevHlpTimerUnlock(pDevIns, pThis->hPmTimer);
+        PDMDevHlpTimerUnlockClock2(pDevIns, pThis->hPmTimer, &pThis->CritSect);
 
-            DBGFTRACE_PDM_U64_TAG(pDevIns, u64Now, "acpi");
-            Log(("acpi: acpiPMTmrRead -> %#x\n", *pu32));
+        DBGFTRACE_PDM_U64_TAG(pDevIns, u64Now, "acpi");
+        Log(("acpi: acpiPMTmrRead -> %#x\n", *pu32));
 
 #if 0
-            /** @todo temporary: sanity check against running backwards */
-            uint32_t uOld = ASMAtomicXchgU32(&pThis->uPmTimeOld, *pu32);
-            if (*pu32 - uOld >= 0x10000000)
-            {
+        /** @todo temporary: sanity check against running backwards */
+        uint32_t uOld = ASMAtomicXchgU32(&pThis->uPmTimeOld, *pu32);
+        if (*pu32 - uOld >= 0x10000000)
+        {
 # if defined(IN_RING0)
-                pThis->uPmTimeA = uOld;
-                pThis->uPmTimeB = *pu32;
-                return VERR_TM_TIMER_BAD_CLOCK;
+            pThis->uPmTimeA = uOld;
+            pThis->uPmTimeB = *pu32;
+            return VERR_TM_TIMER_BAD_CLOCK;
 # elif defined(IN_RING3)
-                AssertReleaseMsgFailed(("acpiPMTmrRead: old=%08RX32, current=%08RX32\n", uOld, *pu32));
+            AssertReleaseMsgFailed(("acpiPMTmrRead: old=%08RX32, current=%08RX32\n", uOld, *pu32));
 # endif
-            }
-#endif
         }
-        else
-            PDMDevHlpTimerUnlock(pDevIns, pThis->hPmTimer);
+#endif
     }
     return rc;
 }
@@ -2606,14 +2599,14 @@ static DECLCALLBACK(int) acpiR3LoadState(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, ui
         rc = acpiR3FetchBatteryInfo(pThis);
         AssertRCReturn(rc, rc);
 
-        PDMDevHlpTimerLock(pDevIns, pThis->hPmTimer, VERR_IGNORED);
+        PDMDevHlpTimerLockClock(pDevIns, pThis->hPmTimer, VERR_IGNORED);
         DEVACPI_LOCK_R3(pDevIns, pThis);
         uint64_t u64Now = PDMDevHlpTimerGet(pDevIns, pThis->hPmTimer);
         /* The interrupt may be incorrectly re-generated if the state is restored from versions < 7. */
         acpiPmTimerUpdate(pDevIns, pThis, u64Now);
         acpiR3PmTimerReset(pDevIns, pThis, u64Now);
         DEVACPI_UNLOCK(pDevIns, pThis);
-        PDMDevHlpTimerUnlock(pDevIns, pThis->hPmTimer);
+        PDMDevHlpTimerUnlockClock(pDevIns, pThis->hPmTimer);
     }
     return rc;
 }
@@ -3584,7 +3577,7 @@ static DECLCALLBACK(void) acpiR3Reset(PPDMDEVINS pDevIns)
     /* Play safe: make sure that the IRQ isn't stuck after a reset. */
     acpiSetIrq(pDevIns, 0);
 
-    PDMDevHlpTimerLock(pDevIns, pThis->hPmTimer, VERR_IGNORED);
+    PDMDevHlpTimerLockClock(pDevIns, pThis->hPmTimer, VERR_IGNORED);
     pThis->pm1a_en           = 0;
     pThis->pm1a_sts          = 0;
     pThis->pm1a_ctl          = 0;
@@ -3597,7 +3590,7 @@ static DECLCALLBACK(void) acpiR3Reset(PPDMDEVINS pDevIns)
     pThis->gpe0_en           = 0;
     pThis->gpe0_sts          = 0;
     pThis->uSleepState       = 0;
-    PDMDevHlpTimerUnlock(pDevIns, pThis->hPmTimer);
+    PDMDevHlpTimerUnlockClock(pDevIns, pThis->hPmTimer);
 
     /* Real device behavior is resetting only the PM controller state,
      * but we're additionally doing the job of the BIOS. */
@@ -4092,11 +4085,10 @@ static DECLCALLBACK(int) acpiR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
                               TMTIMER_FLAGS_NO_CRIT_SECT, "ACPI PM Timer", &pThis->hPmTimer);
     AssertRCReturn(rc, rc);
 
-    rc = PDMDevHlpTimerLock(pDevIns, pThis->hPmTimer, VERR_IGNORED);
-    AssertRCReturn(rc, rc);
+    PDMDevHlpTimerLockClock(pDevIns, pThis->hPmTimer, VERR_IGNORED);
     pThis->u64PmTimerInitial = PDMDevHlpTimerGet(pDevIns, pThis->hPmTimer);
     acpiR3PmTimerReset(pDevIns, pThis, pThis->u64PmTimerInitial);
-    PDMDevHlpTimerUnlock(pDevIns, pThis->hPmTimer);
+    PDMDevHlpTimerUnlockClock(pDevIns, pThis->hPmTimer);
 
     /*
      * Set up the PCI device.

@@ -577,26 +577,22 @@ typedef AC97STATE *PAC97STATE;
  */
 #define DEVAC97_LOCK_BOTH_RETURN(a_pDevIns, a_pThis, a_SD, a_rcBusy) \
     do { \
-        int rcLock = PDMDevHlpTimerLock((a_pDevIns), RT_SAFE_SUBSCRIPT8((a_pThis)->ahTimers, (a_SD)), (a_rcBusy)); \
-        if (rcLock == VINF_SUCCESS) \
+        VBOXSTRICTRC rcLock = PDMDevHlpTimerLockClock2((a_pDevIns), RT_SAFE_SUBSCRIPT8((a_pThis)->ahTimers, (a_SD)), \
+                                                       &(a_pThis)->CritSect, (a_rcBusy)); \
+        if (RT_LIKELY(rcLock == VINF_SUCCESS)) \
+        { /* likely */ } \
+        else \
         { \
-            rcLock = PDMDevHlpCritSectEnter((a_pDevIns), &(a_pThis)->CritSect, (a_rcBusy)); \
-            if (rcLock == VINF_SUCCESS) \
-                break; \
-            PDMDevHlpTimerUnlock((a_pDevIns), RT_SAFE_SUBSCRIPT8((a_pThis)->ahTimers, (a_SD))); \
+            AssertRC(VBOXSTRICTRC_VAL(rcLock)); \
+            return rcLock; \
         } \
-        AssertRC(rcLock); \
-        return rcLock; \
     } while (0)
 
 /**
  * Releases the AC'97 lock and TM lock.
  */
 #define DEVAC97_UNLOCK_BOTH(a_pDevIns, a_pThis, a_SD) \
-    do { \
-        PDMDevHlpCritSectLeave((a_pDevIns), &(a_pThis)->CritSect); \
-        PDMDevHlpTimerUnlock((a_pDevIns), RT_SAFE_SUBSCRIPT8((a_pThis)->ahTimers, (a_SD))); \
-    } while (0)
+    PDMDevHlpTimerUnlockClock2((a_pDevIns), RT_SAFE_SUBSCRIPT8((a_pThis)->ahTimers, (a_SD)), &(a_pThis)->CritSect)
 
 #ifdef VBOX_WITH_STATISTICS
 AssertCompileMemberAlignment(AC97STATE, StatTimer,        8);
