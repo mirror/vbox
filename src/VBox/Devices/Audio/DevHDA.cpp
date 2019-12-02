@@ -3340,7 +3340,7 @@ DECLINLINE(int) hdaWriteReg(PPDMDEVINS pDevIns, PHDASTATE pThis, int idxRegDsc, 
 
 
 /**
- * @callback_method_impl{FNIOMMMIOWNEWRITE,
+ * @callback_method_impl{FNIOMMMIOWNEWWRITE,
  *      Looks up and calls the appropriate handler.}
  */
 static DECLCALLBACK(VBOXSTRICTRC) hdaMMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS off, void const *pv, unsigned cb)
