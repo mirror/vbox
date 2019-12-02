@@ -504,12 +504,9 @@ typedef struct AC97STATE
     AC97STREAM              aStreams[AC97_MAX_STREAMS];
     /** The device timer Hz rate. Defaults to AC97_TIMER_HZ_DEFAULT_DEFAULT. */
     uint16_t                uTimerHz;
-    /** The timer for pumping data thru the attached LUN drivers - RCPtr. */
-    PTMTIMERRC              pTimerRC[AC97_MAX_STREAMS];
-    /** The timer for pumping data thru the attached LUN drivers - R3Ptr. */
-    PTMTIMERR3              pTimerR3[AC97_MAX_STREAMS];
-    /** The timer for pumping data thru the attached LUN drivers - R0Ptr. */
-    PTMTIMERR0              pTimerR0[AC97_MAX_STREAMS];
+    uint16_t                au16Padding1[3];
+    /** The timer for pumping data thru the attached LUN drivers. */
+    TMTIMERHANDLE           ahTimers[AC97_MAX_STREAMS];
     /** List of associated LUN drivers (AC97DRIVER). */
     RTLISTANCHORR3          lstDrv;
     /** The device's software mixer. */
@@ -580,13 +577,13 @@ typedef AC97STATE *PAC97STATE;
  */
 #define DEVAC97_LOCK_BOTH_RETURN(a_pDevIns, a_pThis, a_SD, a_rcBusy) \
     do { \
-        int rcLock = TMTimerLock((a_pThis)->DEVAC97_CTX_SUFF_SD(pTimer, a_SD), (a_rcBusy)); \
+        int rcLock = PDMDevHlpTimerLock((a_pDevIns), RT_SAFE_SUBSCRIPT8((a_pThis)->ahTimers, (a_SD)), (a_rcBusy)); \
         if (rcLock == VINF_SUCCESS) \
         { \
             rcLock = PDMDevHlpCritSectEnter((a_pDevIns), &(a_pThis)->CritSect, (a_rcBusy)); \
             if (rcLock == VINF_SUCCESS) \
                 break; \
-            TMTimerUnlock((a_pThis)->DEVAC97_CTX_SUFF_SD(pTimer, a_SD)); \
+            PDMDevHlpTimerUnlock((a_pDevIns), RT_SAFE_SUBSCRIPT8((a_pThis)->ahTimers, (a_SD))); \
         } \
         AssertRC(rcLock); \
         return rcLock; \
@@ -598,7 +595,7 @@ typedef AC97STATE *PAC97STATE;
 #define DEVAC97_UNLOCK_BOTH(a_pDevIns, a_pThis, a_SD) \
     do { \
         PDMDevHlpCritSectLeave((a_pDevIns), &(a_pThis)->CritSect); \
-        TMTimerUnlock((a_pThis)->DEVAC97_CTX_SUFF_SD(pTimer, a_SD)); \
+        PDMDevHlpTimerUnlock((a_pDevIns), RT_SAFE_SUBSCRIPT8((a_pThis)->ahTimers, (a_SD))); \
     } while (0)
 
 #ifdef VBOX_WITH_STATISTICS
@@ -654,7 +651,7 @@ DECLINLINE(PDMAUDIODIR)   ichac97GetDirFromSD(uint8_t uSD);
 static void               ichac97R3BDLEDumpAll(PAC97STATE pThis, uint64_t u64BDLBase, uint16_t cBDLE);
 # endif
 #endif /* IN_RING3 */
-bool                      ichac97TimerSet(PAC97STATE pThis, PAC97STREAM pStream, uint64_t tsExpire, bool fForce);
+static bool               ichac97TimerSet(PPDMDEVINS pDevIns, PAC97STATE pThis, PAC97STREAM pStream, uint64_t tsExpire, bool fForce);
 
 static void ichac97WarmReset(PAC97STATE pThis)
 {
@@ -1921,17 +1918,18 @@ static void ichac97R3MixerRemoveDrvStreams(PAC97STATE pThis, PAUDMIXSINK pMixSin
  * Calculates and returns the ticks for a specified amount of bytes.
  *
  * @returns Calculated ticks
+ * @param   pDevIns             The device instance.
  * @param   pThis               AC'97 device state.
  * @param   pStream             AC'97 stream to calculate ticks for.
  * @param   cbBytes             Bytes to calculate ticks for.
  */
-static uint64_t ichac97R3StreamTransferCalcNext(PAC97STATE pThis, PAC97STREAM pStream, uint32_t cbBytes)
+static uint64_t ichac97R3StreamTransferCalcNext(PPDMDEVINS pDevIns, PAC97STATE pThis, PAC97STREAM pStream, uint32_t cbBytes)
 {
     if (!cbBytes)
         return 0;
 
     const uint64_t usBytes        = DrvAudioHlpBytesToMicro(cbBytes, &pStream->State.Cfg.Props);
-    const uint64_t cTransferTicks = TMTimerFromMicro((pThis)->DEVAC97_CTX_SUFF_SD(pTimer, pStream->u8SD), usBytes);
+    const uint64_t cTransferTicks = PDMDevHlpTimerFromMicro(pDevIns, RT_SAFE_SUBSCRIPT8(pThis->ahTimers, pStream->u8SD), usBytes);
 
     Log3Func(("[SD%RU8] Timer %uHz, cbBytes=%RU32 -> usBytes=%RU64, cTransferTicks=%RU64\n",
               pStream->u8SD, pStream->State.uTimerHz, cbBytes, usBytes, cTransferTicks));
@@ -1942,11 +1940,12 @@ static uint64_t ichac97R3StreamTransferCalcNext(PAC97STATE pThis, PAC97STREAM pS
 /**
  * Updates the next transfer based on a specific amount of bytes.
  *
+ * @param   pDevIns             The device instance.
  * @param   pThis               AC'97 device state.
  * @param   pStream             AC'97 stream to update.
  * @param   cbBytes             Bytes to update next transfer for.
  */
-static void ichac97R3StreamTransferUpdate(PAC97STATE pThis, PAC97STREAM pStream, uint32_t cbBytes)
+static void ichac97R3StreamTransferUpdate(PPDMDEVINS pDevIns, PAC97STATE pThis, PAC97STREAM pStream, uint32_t cbBytes)
 {
     if (!cbBytes)
         return;
@@ -1956,7 +1955,7 @@ static void ichac97R3StreamTransferUpdate(PAC97STATE pThis, PAC97STREAM pStream,
     pStream->State.cbTransferChunk = cbBytes;
 
     /* Update the transfer ticks. */
-    pStream->State.cTransferTicks = ichac97R3StreamTransferCalcNext(pThis, pStream, pStream->State.cbTransferChunk);
+    pStream->State.cTransferTicks = ichac97R3StreamTransferCalcNext(pDevIns, pThis, pStream, pStream->State.cbTransferChunk);
     Assert(pStream->State.cTransferTicks); /* Paranoia. */
 }
 
@@ -2598,17 +2597,18 @@ static DECLCALLBACK(void) ichac97R3Timer(PPDMDEVINS pDevIns, PTMTIMER pTimer, vo
 
     AssertPtr(pStream);
     Assert(PDMDevHlpCritSectIsOwner(pDevIns, &pThis->CritSect));
-    Assert(TMTimerIsLockOwner((pThis)->DEVAC97_CTX_SUFF_SD(pTimer, pStream->u8SD)));
+    Assert(PDMDevHlpTimerIsLockOwner(pDevIns, RT_SAFE_SUBSCRIPT8(pThis->ahTimers, pStream->u8SD)));
 
     ichac97R3StreamUpdate(pThis, pStream, true /* fInTimer */);
 
     PAUDMIXSINK pSink = ichac97R3IndexToSink(pThis, pStream->u8SD);
     if (pSink && AudioMixerSinkIsActive(pSink))
     {
-        ichac97R3StreamTransferUpdate(pThis, pStream, pStream->Regs.picb << 1); /** @todo r=andy Assumes 16-bit samples. */
+        ichac97R3StreamTransferUpdate(pDevIns, pThis, pStream, pStream->Regs.picb << 1); /** @todo r=andy Assumes 16-bit samples. */
 
-        ichac97TimerSet(pThis, pStream,
-                        TMTimerGet((pThis)->DEVAC97_CTX_SUFF_SD(pTimer, pStream->u8SD)) + pStream->State.cTransferTicks,
+        ichac97TimerSet(pDevIns, pThis, pStream,
+                          PDMDevHlpTimerGet(pDevIns, RT_SAFE_SUBSCRIPT8(pThis->ahTimers, pStream->u8SD))
+                        + pStream->State.cTransferTicks,
                         false /* fForce */);
     }
 
@@ -2621,6 +2621,7 @@ static DECLCALLBACK(void) ichac97R3Timer(PPDMDEVINS pDevIns, PTMTIMER pTimer, vo
  * Sets the virtual device timer to a new expiration time.
  *
  * @returns Whether the new expiration time was set or not.
+ * @param   pDevIns             The device instance.
  * @param   pThis               AC'97 state.
  * @param   pStream             AC'97 stream to set timer for.
  * @param   tsExpire            New (virtual) expiration time to set.
@@ -2635,7 +2636,7 @@ static DECLCALLBACK(void) ichac97R3Timer(PPDMDEVINS pDevIns, PTMTIMER pTimer, vo
  *
  *          Forcing a new expiration time will override the above mechanism.
  */
-bool ichac97TimerSet(PAC97STATE pThis, PAC97STREAM pStream, uint64_t tsExpire, bool fForce)
+static bool ichac97TimerSet(PPDMDEVINS pDevIns, PAC97STATE pThis, PAC97STREAM pStream, uint64_t tsExpire, bool fForce)
 {
     AssertPtrReturn(pThis, false);
     AssertPtrReturn(pStream, false);
@@ -2644,18 +2645,19 @@ bool ichac97TimerSet(PAC97STATE pThis, PAC97STREAM pStream, uint64_t tsExpire, b
 
     uint64_t tsExpireMin = tsExpire;
 
-    AssertPtr((pThis)->DEVAC97_CTX_SUFF_SD(pTimer, pStream->u8SD));
-
-    const uint64_t tsNow = TMTimerGet((pThis)->DEVAC97_CTX_SUFF_SD(pTimer, pStream->u8SD));
+    TMTIMERHANDLE const hTimer = RT_SAFE_SUBSCRIPT8(pThis->ahTimers, pStream->u8SD);
+    /** @todo r=bird: This is rather silly given that all three callers just did
+     *        TimerGet + interval. */
+    const uint64_t tsNow = PDMDevHlpTimerGet(pDevIns, hTimer);
 
     /* Make sure to not go backwards in time, as this will assert in TMTimerSet(). */
     if (tsExpireMin < tsNow)
         tsExpireMin = tsNow;
 
-    int rc = TMTimerSet((pThis)->DEVAC97_CTX_SUFF_SD(pTimer, pStream->u8SD), tsExpireMin);
-    AssertRC(rc);
+    int rc = PDMDevHlpTimerSet(pDevIns, hTimer, tsExpireMin);
+    AssertRCReturn(rc, false);
 
-    return RT_SUCCESS(rc);
+    return true;
 }
 
 #ifdef IN_RING3
@@ -3145,8 +3147,11 @@ ichac97IoPortNabmWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint3
                             ichac97R3StreamEnable(pThis, pStream, true /* fEnable */);
 
                             /* Arm the timer for this stream. */
-                            int rc2 = ichac97TimerSet(pThis, pStream,
-                                                      TMTimerGet((pThis)->DEVAC97_CTX_SUFF_SD(pTimer, pStream->u8SD)) + pStream->State.cTransferTicks,
+                            /** @todo r=bird: This function returns bool, not VBox status! */
+                            int rc2 = ichac97TimerSet(pDevIns, pThis, pStream,
+                                                        PDMDevHlpTimerGet(pDevIns, RT_SAFE_SUBSCRIPT8(pThis->ahTimers,
+                                                                                                      pStream->u8SD))
+                                                      + pStream->State.cTransferTicks,
                                                       false /* fForce */);
                             AssertRC(rc2);
                         }
@@ -3640,8 +3645,10 @@ static DECLCALLBACK(int) ichac97R3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, 
             && RT_SUCCESS(rc2))
         {
             /* Re-arm the timer for this stream. */
-            rc2 = ichac97TimerSet(pThis, pStream,
-                                  TMTimerGet((pThis)->DEVAC97_CTX_SUFF_SD(pTimer, pStream->u8SD)) + pStream->State.cTransferTicks,
+            /** @todo r=bird: This function returns bool, not VBox status! */
+            rc2 = ichac97TimerSet(pDevIns, pThis, pStream,
+                                    PDMDevHlpTimerGet(pDevIns, RT_SAFE_SUBSCRIPT8(pThis->ahTimers, pStream->u8SD))
+                                  + pStream->State.cTransferTicks,
                                   false /* fForce */);
         }
 
@@ -3948,9 +3955,6 @@ static DECLCALLBACK(void) ichac97R3Relocate(PPDMDEVINS pDevIns, RTGCINTPTR offDe
     NOREF(offDelta);
     PAC97STATE pThis = PDMDEVINS_2_DATA(pDevIns, PAC97STATE);
     pThis->pDevInsRC = PDMDEVINS_2_RCPTR(pDevIns);
-
-    for (unsigned i = 0; i < AC97_MAX_STREAMS; i++)
-        pThis->pTimerRC[i] = TMTimerRCPtr(pThis->pTimerR3[i]);
 }
 
 /**
@@ -4264,29 +4268,26 @@ static DECLCALLBACK(int) ichac97R3Construct(PPDMDEVINS pDevIns, int iInstance, P
 
     ichac97R3Reset(pDevIns);
 
-    static const char * const s_apszNames[] =
-    {
-        "AC97 PI", "AC97 PO", "AC97 MC"
-    };
+    /*
+     * Create the emulation timers (one per stream).
+     *
+     * We must the critical section for the timers as the device has a
+     * noop section associated with it.
+     *
+     * Note:  Use TMCLOCK_VIRTUAL_SYNC here, as the guest's AC'97 driver
+     *        relies on exact (virtual) DMA timing and uses DMA Position Buffers
+     *        instead of the LPIB registers.
+     */
+    static const char * const s_apszNames[] = { "AC97 PI", "AC97 PO", "AC97 MC" };
     AssertCompile(RT_ELEMENTS(s_apszNames) == AC97_MAX_STREAMS);
-
+    AssertCompile(RT_ELEMENTS(pThis->ahTimers) == AC97_MAX_STREAMS);
     for (unsigned i = 0; i < AC97_MAX_STREAMS; i++)
     {
-        /* Create the emulation timer (per stream).
-         *
-         * Note:  Use TMCLOCK_VIRTUAL_SYNC here, as the guest's AC'97 driver
-         *        relies on exact (virtual) DMA timing and uses DMA Position Buffers
-         *        instead of the LPIB registers.
-         */
-        rc = PDMDevHlpTMTimerCreate(pDevIns, TMCLOCK_VIRTUAL_SYNC, ichac97R3Timer, &pThis->aStreams[i],
-                                    TMTIMER_FLAGS_NO_CRIT_SECT, s_apszNames[i], &pThis->pTimerR3[i]);
+        rc = PDMDevHlpTimerCreate(pDevIns, TMCLOCK_VIRTUAL_SYNC, ichac97R3Timer, &pThis->aStreams[i],
+                                  TMTIMER_FLAGS_NO_CRIT_SECT, s_apszNames[i], &pThis->ahTimers[i]);
         AssertRCReturn(rc, rc);
-        pThis->pTimerR0[i] = TMTimerR0Ptr(pThis->pTimerR3[i]);
-        pThis->pTimerRC[i] = TMTimerRCPtr(pThis->pTimerR3[i]);
 
-        /* Use our own critcal section for the device timer.
-         * That way we can control more fine-grained when to lock what. */
-        rc = TMR3TimerSetCritSect(pThis->pTimerR3[i], &pThis->CritSect);
+        rc = PDMDevHlpTimerSetCritSect(pDevIns, pThis->ahTimers[i], &pThis->CritSect);
         AssertRCReturn(rc, rc);
     }
 
