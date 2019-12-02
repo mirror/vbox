@@ -2276,7 +2276,11 @@ GLOBAL_REMOVE_IF_UNREFERENCED const DEVICE_PATH_TO_TEXT_TABLE mUefiDevicePathLib
   {MESSAGING_DEVICE_PATH, MSG_SCSI_DP,                      DevPathToTextScsi           },
   {MESSAGING_DEVICE_PATH, MSG_FIBRECHANNEL_DP,              DevPathToTextFibre          },
   {MESSAGING_DEVICE_PATH, MSG_FIBRECHANNELEX_DP,            DevPathToTextFibreEx        },
+#ifndef VBOX
   {MESSAGING_DEVICE_PATH, MSG_SASEX_DP,                     DevPathToTextSasEx          },
+#else
+  {MESSAGING_DEVICE_PATH, MSG_SASEX_DP,                     DevPathToTextNVMe           },
+#endif
   {MESSAGING_DEVICE_PATH, MSG_NVME_NAMESPACE_DP,            DevPathToTextNVMe           },
   {MESSAGING_DEVICE_PATH, MSG_UFS_DP,                       DevPathToTextUfs            },
   {MESSAGING_DEVICE_PATH, MSG_SD_DP,                        DevPathToTextSd             },

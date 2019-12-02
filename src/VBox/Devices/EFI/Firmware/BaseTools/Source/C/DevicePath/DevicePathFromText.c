@@ -3337,7 +3337,11 @@ DEVICE_PATH_FROM_TEXT_TABLE mUefiDevicePathLibDevPathFromTextTable[] = {
   {L"VenUtf8",                 DevPathFromTextVenUtf8                 },
   {L"UartFlowCtrl",            DevPathFromTextUartFlowCtrl            },
   {L"SAS",                     DevPathFromTextSAS                     },
+#ifndef VBOX
   {L"SasEx",                   DevPathFromTextSasEx                   },
+#else
+  {L"NVMe",                    DevPathFromTextNVMe                    },
+#endif
   {L"NVMe",                    DevPathFromTextNVMe                    },
   {L"UFS",                     DevPathFromTextUfs                     },
   {L"SD",                      DevPathFromTextSd                      },

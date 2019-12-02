@@ -399,6 +399,83 @@ CoreGetNextLocateByProtocol (
 }
 
 
+#ifdef VBOX
+/**
+ * This works around several issues with device paths created by macOS AppleACPIPlatform.kext.
+ *
+ * See @bugref{6930} comment 84 and following for an in depth explanation.
+ */
+BOOLEAN
+EFIAPI
+vboxDevicePathCompareMacOsHacks(IN EFI_DEVICE_PATH_PROTOCOL *LocateDevicePath,
+                                IN EFI_DEVICE_PATH_PROTOCOL *HandleDevicePath,
+                                UINTN Size)
+{
+    EFI_DEVICE_PATH_PROTOCOL *AlteredDevicePath = NULL;
+    EFI_DEVICE_PATH_PROTOCOL *TmpDevicePath = LocateDevicePath;
+
+    /* First check whether the device path to be located contains a NVMe or SATA node where we have to employ the hacks. */
+    while (!IsDevicePathEnd(TmpDevicePath)) {
+        if (IsDevicePathEndInstance(TmpDevicePath)) {
+          //
+          // If DevicePath is a multi-instance device path,
+          // the function will operate on the first instance
+          //
+          break;
+        }
+
+        if (   DevicePathType(TmpDevicePath) == MESSAGING_DEVICE_PATH
+            && DevicePathSubType(TmpDevicePath) == MSG_SASEX_DP)
+        {
+            /*
+             * macOS uses the SasEx path sub type for NVMe entries (the node is actually an
+             * NVMe one). So we alter the device path to contain a proper NVMe sub type for
+             * matching against the devices device path.
+             */
+            AlteredDevicePath = DuplicateDevicePath(LocateDevicePath);
+            if (AlteredDevicePath != NULL)
+            {
+                UINTN offNode = (UINTN)TmpDevicePath - (UINTN)LocateDevicePath;
+                EFI_DEVICE_PATH_PROTOCOL *NvmeNode = (EFI_DEVICE_PATH_PROTOCOL *)((UINTN)AlteredDevicePath + offNode);
+
+                NvmeNode->SubType = MSG_NVME_NAMESPACE_DP;
+            }
+            break;
+        }
+        else if (   DevicePathType(TmpDevicePath) == MESSAGING_DEVICE_PATH
+                 && DevicePathSubType(TmpDevicePath) == MSG_SATA_DP)
+        {
+            /*
+             * macOS uses a 0 port multiplier number for devices directly attached
+             * to the HBA while it should be 0xffff according to the UEFI spec.
+             * We alter this here and try to match against the devices device path.
+             */
+            AlteredDevicePath = DuplicateDevicePath(LocateDevicePath);
+            if (AlteredDevicePath != NULL)
+            {
+                UINTN offNode = (UINTN)TmpDevicePath - (UINTN)LocateDevicePath;
+                SATA_DEVICE_PATH *SataNode = (SATA_DEVICE_PATH *)((UINTN)AlteredDevicePath + offNode);
+
+                SataNode->PortMultiplierPortNumber = 0xffff;
+            }
+            break;
+        }
+
+        TmpDevicePath = NextDevicePathNode(TmpDevicePath);
+    }
+
+    if (AlteredDevicePath != NULL)
+    {
+        BOOLEAN fMatch = CompareMem(AlteredDevicePath, HandleDevicePath, Size) == 0;
+        FreePool(AlteredDevicePath);
+        return fMatch;
+    }
+
+    return FALSE;
+}
+#endif
+
+
 /**
   Locates the handle to a device on the device path that supports the specified protocol.
 
@@ -484,7 +561,13 @@ CoreLocateDevicePath (
     //
     Size = GetDevicePathSize (TmpDevicePath) - sizeof(EFI_DEVICE_PATH_PROTOCOL);
     ASSERT (Size >= 0);
+#ifndef VBOX
     if ((Size <= SourceSize) && CompareMem (SourcePath, TmpDevicePath, (UINTN) Size) == 0) {
+#else
+    if (   (Size <= SourceSize)
+        && (   CompareMem (SourcePath, TmpDevicePath, (UINTN) Size) == 0
+            || vboxDevicePathCompareMacOsHacks(SourcePath, TmpDevicePath, (UINTN)Size))) {
+#endif
       //
       // If the size is equal to the best match, then we
       // have a duplicate device path for 2 different device
