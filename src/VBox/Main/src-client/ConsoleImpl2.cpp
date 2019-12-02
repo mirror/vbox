@@ -2915,7 +2915,9 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
                         InsertConfigString(pCfg,    "DebugPathOut",         strDebugPathOut);
                     break;
                 }
-                default: AssertFailedBreak();
+                default:
+                    pszAudioDevice = "oops";
+                    AssertFailedBreak();
             }
 
             PCFGMNODE pCfgAudioAdapter = NULL;
@@ -2936,79 +2938,64 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
             /*
              * The audio driver.
              */
-            Utf8Str strAudioDriver;
-
-            AudioDriverType_T audioDriver;
-            hrc = audioAdapter->COMGETTER(AudioDriver)(&audioDriver);                       H();
-            switch (audioDriver)
+            AudioDriverType_T enmAudioDriver;
+            hrc = audioAdapter->COMGETTER(AudioDriver)(&enmAudioDriver);                    H();
+            const char *pszAudioDriver;
+            switch (enmAudioDriver)
             {
                 case AudioDriverType_Null:
-                {
-                    strAudioDriver = "NullAudio";
+                    pszAudioDriver = "NullAudio";
                     break;
-                }
 #ifdef RT_OS_WINDOWS
 # ifdef VBOX_WITH_WINMM
                 case AudioDriverType_WinMM:
-                {
-                    #error "Port WinMM audio backend!" /** @todo Still needed? */
+#  error "Port WinMM audio backend!" /** @todo Still needed? */
                     break;
-                }
 # endif
                 case AudioDriverType_DirectSound:
-                {
-                    strAudioDriver = "DSoundAudio";
+                    pszAudioDriver = "DSoundAudio";
                     break;
-                }
 #endif /* RT_OS_WINDOWS */
 #ifdef RT_OS_SOLARIS
                 case AudioDriverType_SolAudio:
-                {
                     /* Should not happen, as the Solaris Audio backend is not around anymore.
                      * Remove this sometime later. */
                     LogRel(("Audio: WARNING: Solaris Audio is deprecated, please switch to OSS!\n"));
                     LogRel(("Audio: Automatically setting host audio backend to OSS\n"));
 
                     /* Manually set backend to OSS for now. */
-                    strAudioDriver = "OSSAudio";
+                    pszAudioDriver = "OSSAudio";
                     break;
-                }
 #endif
 #ifdef VBOX_WITH_AUDIO_OSS
                 case AudioDriverType_OSS:
-                {
-                    strAudioDriver = "OSSAudio";
+                    pszAudioDriver = "OSSAudio";
                     break;
-                }
 #endif
 #ifdef VBOX_WITH_AUDIO_ALSA
                 case AudioDriverType_ALSA:
-                {
-                    strAudioDriver = "ALSAAudio";
+                    pszAudioDriver = "ALSAAudio";
                     break;
-                }
 #endif
 #ifdef VBOX_WITH_AUDIO_PULSE
                 case AudioDriverType_Pulse:
-                {
-                    strAudioDriver = "PulseAudio";
+                    pszAudioDriver = "PulseAudio";
                     break;
-                }
 #endif
 #ifdef RT_OS_DARWIN
                 case AudioDriverType_CoreAudio:
-                {
-                    strAudioDriver = "CoreAudio";
+                    pszAudioDriver = "CoreAudio";
                     break;
-                }
 #endif
-                default: AssertFailedBreak();
+                default:
+                    pszAudioDriver = "oops";
+                    AssertFailedBreak();
             }
 
             unsigned uAudioLUN = 0;
 
             InsertConfigNodeF(pInst, &pLunL0, "LUN#%u", uAudioLUN);
-            rc = i_configAudioDriver(audioAdapter, virtualBox, pMachine, pLunL0, strAudioDriver.c_str());
+            rc = i_configAudioDriver(audioAdapter, virtualBox, pMachine, pLunL0, pszAudioDriver);
             if (RT_SUCCESS(rc))
                 uAudioLUN++;
 
