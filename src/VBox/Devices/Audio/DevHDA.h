@@ -137,8 +137,9 @@ typedef struct HDASTATE
     bool                    afPadding1b[2];
     /** Number of active (running) SDn streams. */
     uint8_t                 cStreamsActive;
-    /** The stream timers for pumping data thru the attached LUN drivers. */
-    PTMTIMERR3              pTimer[HDA_MAX_STREAMS];
+    /** The stream timers for pumping data thru the attached LUN drivers.
+     * Duplicated in HDASTREAM::hTimer. */
+    TMTIMERHANDLE           ahTimers[HDA_MAX_STREAMS];
     /** Pointer to HDA codec to use. */
     R3PTRTYPE(PHDACODEC)    pCodec;
     /** List of associated LUN drivers (HDADRIVER). */

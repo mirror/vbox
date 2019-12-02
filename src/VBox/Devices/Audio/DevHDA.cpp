@@ -156,26 +156,18 @@
  */
 #define DEVHDA_LOCK_BOTH_RETURN(a_pDevIns, a_pThis, a_SD, a_rcBusy) \
     do { \
-        int rcLock = TMTimerLock((a_pThis)->pTimer[a_SD], (a_rcBusy)); \
-        if (rcLock == VINF_SUCCESS) \
-        { \
-            rcLock = PDMDevHlpCritSectEnter((a_pDevIns), &(a_pThis)->CritSect, (a_rcBusy)); \
-            if (rcLock == VINF_SUCCESS) \
-                break; \
-            TMTimerUnlock((a_pThis)->pTimer[a_SD]); \
-        } \
-        AssertRC(rcLock); \
-        return rcLock; \
+        VBOXSTRICTRC rcLock = PDMDevHlpTimerLockClock2(pDevIns, (a_pThis)->ahTimers[a_SD], &(a_pThis)->CritSect,  (a_rcBusy)); \
+        if (RT_LIKELY(rcLock == VINF_SUCCESS)) \
+        {  /* likely */ } \
+        else \
+            return VBOXSTRICTRC_TODO(rcLock); \
     } while (0)
 
 /**
  * Releases the HDA lock and TM lock.
  */
 #define DEVHDA_UNLOCK_BOTH(a_pDevIns, a_pThis, a_SD) \
-    do { \
-        PDMDevHlpCritSectLeave((a_pDevIns), &(a_pThis)->CritSect); \
-        TMTimerUnlock((a_pThis)->pTimer[a_SD]); \
-    } while (0)
+    PDMDevHlpTimerUnlockClock2(pDevIns, (a_pThis)->ahTimers[a_SD], &(a_pThis)->CritSect)
 
 
 /*********************************************************************************************************************************
@@ -1399,7 +1391,7 @@ static int hdaRegWriteSDCTL(PPDMDEVINS pDevIns, PHDASTATE pThis, uint32_t iReg, 
                          pStream->u8SD, Props.uHz, Props.cbSample * 8 /* Bit */, Props.cChannels));
 # endif
                 /* (Re-)initialize the stream with current values. */
-                rc2 = hdaR3StreamInit(pStream, pStream->u8SD);
+                rc2 = hdaR3StreamInit(pDevIns, pStream, pStream->u8SD);
                 if (   RT_SUCCESS(rc2)
                     /* Any vital stream change occurred so that we need to (re-)add the stream to our setup?
                      * Otherwise just skip this, as this costs a lot of performance. */
@@ -1434,7 +1426,9 @@ static int hdaRegWriteSDCTL(PPDMDEVINS pDevIns, PHDASTATE pThis, uint32_t iReg, 
                     rc2 = hdaR3StreamPeriodBegin(&pStream->State.Period, hdaWalClkGetCurrent(pThis)/* Use current wall clock time */);
                     AssertRC(rc2);
 
-                    rc2 = hdaR3TimerSet(pThis, pStream, TMTimerGet(pThis->pTimer[pStream->u8SD]) + pStream->State.cTransferTicks,
+                    rc2 = hdaR3TimerSet(pDevIns, pThis, pStream,
+                                          PDMDevHlpTimerGet(pDevIns, pThis->ahTimers[pStream->u8SD])
+                                        + pStream->State.cTransferTicks,
                                         false /* fForce */);
                     AssertRC(rc2);
                 }
@@ -1526,7 +1520,7 @@ static int hdaRegWriteSDSTS(PPDMDEVINS pDevIns, PHDASTATE pThis, uint32_t iReg, 
 
     HDA_PROCESS_INTERRUPT(pDevIns, pThis);
 
-    const uint64_t tsNow = TMTimerGet(pThis->pTimer[uSD]);
+    const uint64_t tsNow = PDMDevHlpTimerGet(pDevIns, pThis->ahTimers[uSD]);
     Assert(tsNow >= pStream->State.tsTransferLast);
 
     const uint64_t cTicksElapsed     = tsNow - pStream->State.tsTransferLast;
@@ -1544,9 +1538,7 @@ static int hdaRegWriteSDSTS(PPDMDEVINS pDevIns, PHDASTATE pThis, uint32_t iReg, 
                   pStream->u8SD, pStream->State.cbTransferProcessed, pStream->State.cbTransferChunk, pStream->State.cbTransferSize));
 
         if (cTicksElapsed <= cTicksToNext)
-        {
             cTicksToNext = cTicksToNext - cTicksElapsed;
-        }
         else /* Catch up. */
         {
             Log3Func(("[SD%RU8] Warning: Lagging behind (%RU64 ticks elapsed, maximum allowed is %RU64)\n",
@@ -1554,7 +1546,8 @@ static int hdaRegWriteSDSTS(PPDMDEVINS pDevIns, PHDASTATE pThis, uint32_t iReg, 
 
             LogRelMax2(64, ("HDA: Stream #%RU8 interrupt lagging behind (expected %uus, got %uus), trying to catch up ...\n",
                             pStream->u8SD,
-                            (TMTimerGetFreq(pThis->pTimer[pStream->u8SD]) / pThis->uTimerHz) / 1000,(tsNow - pStream->State.tsTransferLast) / 1000));
+                            (PDMDevHlpTimerGetFreq(pDevIns, pThis->ahTimers[pStream->u8SD]) / pThis->uTimerHz) / 1000,
+                            (tsNow - pStream->State.tsTransferLast) / 1000));
 
             cTicksToNext = 0;
         }
@@ -1574,7 +1567,7 @@ static int hdaRegWriteSDSTS(PPDMDEVINS pDevIns, PHDASTATE pThis, uint32_t iReg, 
 
             /* Re-arm the timer. */
             LogFunc(("Timer set SD%RU8\n", pStream->u8SD));
-            hdaR3TimerSet(pThis, pStream, tsNow + cTicksToNext, false /* fForce */);
+            hdaR3TimerSet(pDevIns, pThis, pStream, tsNow + cTicksToNext, false /* fForce */);
         }
     }
 
@@ -2844,23 +2837,20 @@ static DECLCALLBACK(int) hdaR3MixerSetVolume(PHDASTATE pThis, PDMAUDIOMIXERCTL e
 }
 
 /**
- * Main routine for the stream's timer.
- *
- * @param   pDevIns             Device instance.
- * @param   pTimer              Timer this callback was called for.
- * @param   pvUser              Pointer to associated HDASTREAM.
+ * @callback_method_impl{FNTMTIMERDEV, Main routine for the stream's timer.}
  */
 static DECLCALLBACK(void) hdaR3Timer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser)
 {
-    PHDASTATE  pThis   = PDMDEVINS_2_DATA(pDevIns, PHDASTATE);
-    PHDASTREAM pStream = (PHDASTREAM)pvUser;
+    PHDASTATE       pThis   = PDMDEVINS_2_DATA(pDevIns, PHDASTATE);
+    PHDASTREAM      pStream = (PHDASTREAM)pvUser;
+    TMTIMERHANDLE   hTimer  = RT_SAFE_SUBSCRIPT8(pThis->ahTimers, pStream->u8SD);
     RT_NOREF(pTimer);
 
     AssertPtr(pStream);
     Assert(PDMDevHlpCritSectIsOwner(pDevIns, &pThis->CritSect));
-    Assert(TMTimerIsLockOwner(pStream->pTimer));
+    Assert(PDMDevHlpTimerIsLockOwner(pDevIns, hTimer));
 
-    hdaR3StreamUpdate(pStream, true /* fInTimer */);
+    hdaR3StreamUpdate(pDevIns, pStream, true /* fInTimer */);
 
     /* Flag indicating whether to kick the timer again for a new data processing round. */
     bool fSinkActive = false;
@@ -2869,12 +2859,12 @@ static DECLCALLBACK(void) hdaR3Timer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *
 
     if (fSinkActive)
     {
-        const bool fTimerScheduled = hdaR3StreamTransferIsScheduled(pStream);
+        const bool fTimerScheduled = hdaR3StreamTransferIsScheduled(pDevIns, pStream);
         Log3Func(("fSinksActive=%RTbool, fTimerScheduled=%RTbool\n", fSinkActive, fTimerScheduled));
         if (!fTimerScheduled)
-            hdaR3TimerSet(pThis, pStream,
-                            TMTimerGet(pThis->pTimer[pStream->u8SD])
-                          + TMTimerGetFreq(pThis->pTimer[pStream->u8SD]) / pStream->pHDAState->uTimerHz,
+            hdaR3TimerSet(pDevIns, pThis, pStream,
+                            PDMDevHlpTimerGet(pDevIns, hTimer)
+                          + PDMDevHlpTimerGetFreq(pDevIns, hTimer) / pStream->pHDAState->uTimerHz,
                           true /* fForce */);
     }
     else
@@ -3594,9 +3584,10 @@ static DECLCALLBACK(int) hdaR3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 /**
  * Does required post processing when loading a saved state.
  *
+ * @param   pDevIns             The device instance.
  * @param   pThis               Pointer to HDA state.
  */
-static int hdaR3LoadExecPost(PHDASTATE pThis)
+static int hdaR3LoadExecPost(PPDMDEVINS pDevIns, PHDASTATE pThis)
 {
     int rc = VINF_SUCCESS;
 
@@ -3636,8 +3627,8 @@ static int hdaR3LoadExecPost(PHDASTATE pThis)
                 /* (Re-)install the DMA handler. */
                 hdaR3StreamRegisterDMAHandlers(pThis, pStream);
 #endif
-                if (hdaR3StreamTransferIsScheduled(pStream))
-                    hdaR3TimerSet(pThis, pStream, hdaR3StreamTransferGetNext(pStream), true /* fForce */);
+                if (hdaR3StreamTransferIsScheduled(pDevIns, pStream))
+                    hdaR3TimerSet(pDevIns, pThis, pStream, hdaR3StreamTransferGetNext(pStream), true /* fForce */);
 
                 /* Also keep track of the currently active streams. */
                 pThis->cStreamsActive++;
@@ -3748,7 +3739,7 @@ static int hdaR3LoadExecLegacy(PPDMDEVINS pDevIns, PHDASTATE pThis, PSSMHANDLE p
 
             /* Output */
             PHDASTREAM pStream = &pThis->aStreams[4];
-            rc = hdaR3StreamInit(pStream, 4 /* Stream descriptor, hardcoded */);
+            rc = hdaR3StreamInit(pDevIns, pStream, 4 /* Stream descriptor, hardcoded */);
             AssertRCReturn(rc, rc);
             rc = pHlp->pfnSSMGetStructEx(pSSM, &pStream->State.BDLE, sizeof(pStream->State.BDLE),
                                          0 /* fFlags */, g_aSSMStreamBdleFields1234, pDevIns);
@@ -3757,7 +3748,7 @@ static int hdaR3LoadExecLegacy(PPDMDEVINS pDevIns, PHDASTATE pThis, PSSMHANDLE p
 
             /* Microphone-In */
             pStream = &pThis->aStreams[2];
-            rc = hdaR3StreamInit(pStream, 2 /* Stream descriptor, hardcoded */);
+            rc = hdaR3StreamInit(pDevIns, pStream, 2 /* Stream descriptor, hardcoded */);
             AssertRCReturn(rc, rc);
             rc = pHlp->pfnSSMGetStructEx(pSSM, &pStream->State.BDLE, sizeof(pStream->State.BDLE),
                                          0 /* fFlags */, g_aSSMStreamBdleFields1234, pDevIns);
@@ -3766,7 +3757,7 @@ static int hdaR3LoadExecLegacy(PPDMDEVINS pDevIns, PHDASTATE pThis, PSSMHANDLE p
 
             /* Line-In */
             pStream = &pThis->aStreams[0];
-            rc = hdaR3StreamInit(pStream, 0 /* Stream descriptor, hardcoded */);
+            rc = hdaR3StreamInit(pDevIns, pStream, 0 /* Stream descriptor, hardcoded */);
             AssertRCReturn(rc, rc);
             rc = pHlp->pfnSSMGetStructEx(pSSM, &pStream->State.BDLE, sizeof(pStream->State.BDLE),
                                          0 /* fFlags */, g_aSSMStreamBdleFields1234, pDevIns);
@@ -3804,7 +3795,7 @@ static int hdaR3LoadExecLegacy(PPDMDEVINS pDevIns, PHDASTATE pThis, PSSMHANDLE p
                     LogRel2(("HDA: Warning: Stream ID=%RU32 not supported, skipping loading it ...\n", idStream));
                 }
 
-                rc = hdaR3StreamInit(pStream, idStream);
+                rc = hdaR3StreamInit(pDevIns, pStream, idStream);
                 if (RT_FAILURE(rc))
                 {
                     LogRel(("HDA: Stream #%RU32: Initialization of stream %RU8 failed, rc=%Rrc\n", i, idStream, rc));
@@ -3907,7 +3898,7 @@ static DECLCALLBACK(int) hdaR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint
     {
         rc = hdaR3LoadExecLegacy(pDevIns, pThis, pSSM, uVersion);
         if (RT_SUCCESS(rc))
-            rc = hdaR3LoadExecPost(pThis);
+            rc = hdaR3LoadExecPost(pDevIns, pThis);
         return rc;
     }
 
@@ -3981,7 +3972,7 @@ static DECLCALLBACK(int) hdaR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint
             LogRel2(("HDA: Warning: Loading of stream #%RU8 not supported, skipping to load ...\n", idStream));
         }
 
-        rc = hdaR3StreamInit(pStream, idStream);
+        rc = hdaR3StreamInit(pDevIns, pStream, idStream);
         if (RT_FAILURE(rc))
         {
             LogRel(("HDA: Stream #%RU8: Loading initialization failed, rc=%Rrc\n", idStream, rc));
@@ -4072,7 +4063,7 @@ static DECLCALLBACK(int) hdaR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint
 
     } /* for cStreams */
 
-    rc = hdaR3LoadExecPost(pThis);
+    rc = hdaR3LoadExecPost(pDevIns, pThis);
     AssertRC(rc);
 
     LogFlowFuncLeaveRC(rc);
@@ -4960,7 +4951,14 @@ static DECLCALLBACK(int) hdaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     PDMPciDevSetSubSystemId(      pPciDev, pThis->pCodec->u16DeviceId); /* 2e ro. */
 
     /*
-     * Create all hardware streams.
+     * Create the per stream timers and the asso.
+     *
+     * We must the critical section for the timers as the device has a
+     * noop section associated with it.
+     *
+     * Note:  Use TMCLOCK_VIRTUAL_SYNC here, as the guest's HDA driver relies
+     *        on exact (virtual) DMA timing and uses DMA Position Buffers
+     *        instead of the LPIB registers.
      */
     static const char * const s_apszNames[] =
     {
@@ -4968,23 +4966,21 @@ static DECLCALLBACK(int) hdaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
         "HDA SD4", "HDA SD5", "HDA SD6", "HDA SD7",
     };
     AssertCompile(RT_ELEMENTS(s_apszNames) == HDA_MAX_STREAMS);
+    for (size_t i = 0; i < HDA_MAX_STREAMS; i++)
+    {
+        rc = PDMDevHlpTimerCreate(pDevIns, TMCLOCK_VIRTUAL_SYNC, hdaR3Timer, &pThis->aStreams[i],
+                                  TMTIMER_FLAGS_NO_CRIT_SECT, s_apszNames[i], &pThis->ahTimers[i]);
+        AssertRCReturn(rc, rc);
+
+        rc = PDMDevHlpTimerSetCritSect(pDevIns, pThis->ahTimers[i], &pThis->CritSect);
+        AssertRCReturn(rc, rc);
+    }
+
+    /*
+     * Create all hardware streams.
+     */
     for (uint8_t i = 0; i < HDA_MAX_STREAMS; ++i)
     {
-        /* Create the emulation timer (per stream).
-         *
-         * Note:  Use TMCLOCK_VIRTUAL_SYNC here, as the guest's HDA driver
-         *        relies on exact (virtual) DMA timing and uses DMA Position Buffers
-         *        instead of the LPIB registers.
-         */
-        rc = PDMDevHlpTMTimerCreate(pDevIns, TMCLOCK_VIRTUAL_SYNC, hdaR3Timer, &pThis->aStreams[i],
-                                    TMTIMER_FLAGS_NO_CRIT_SECT, s_apszNames[i], &pThis->pTimer[i]);
-        AssertRCReturn(rc, rc);
-
-        /* Use our own critcal section for the device timer.
-         * That way we can control more fine-grained when to lock what. */
-        rc = TMR3TimerSetCritSect(pThis->pTimer[i], &pThis->CritSect);
-        AssertRCReturn(rc, rc);
-
         rc = hdaR3StreamCreate(&pThis->aStreams[i], pThis, i /* u8SD */);
         AssertRCReturn(rc, rc);
     }

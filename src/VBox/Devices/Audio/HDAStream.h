@@ -187,18 +187,18 @@ AssertCompileSizeAlignment(HDASTREAMSTATE, 8);
 typedef HDASTREAMSTATE *PHDASTREAMSTATE;
 
 /**
- * Structure for keeping a HDA stream (SDI / SDO).
+ * An HDA stream (SDI / SDO).
  *
- * Note: This HDA stream has nothing to do with a regular audio stream handled
- * by the audio connector or the audio mixer. This HDA stream is a serial data in/out
- * stream (SDI/SDO) defined in hardware and can contain multiple audio streams
- * in one single SDI/SDO (interleaving streams).
+ * @note This HDA stream has nothing to do with a regular audio stream handled
+ *       by the audio connector or the audio mixer. This HDA stream is a serial
+ *       data in/out stream (SDI/SDO) defined in hardware and can contain
+ *       multiple audio streams in one single SDI/SDO (interleaving streams).
  *
  * How a specific SDI/SDO is mapped to our internal audio streams relies on the
  * stream channel mappings.
  *
- * Contains only register values which do *not* change until a
- * stream reset occurs.
+ * Contains only register values which do *not* change until a stream reset
+ * occurs.
  */
 typedef struct HDASTREAM
 {
@@ -234,15 +234,17 @@ typedef struct HDASTREAM
     R3PTRTYPE(PHDASTATE)     pHDAState;
     /** Pointer to HDA sink this stream is attached to. */
     R3PTRTYPE(PHDAMIXERSINK) pMixSink;
+    /** Stream's timer (copy of HDASTATE::ahTimers[u8SD]). */
+    TMTIMERHANDLE            hTimer;
     /** The stream'S critical section to serialize access. */
     RTCRITSECT               CritSect;
-    /** Pointer to the stream's timer. */
-    PTMTIMERR3               pTimer;
     /** Internal state of this stream. */
     HDASTREAMSTATE           State;
     /** Debug information. */
     HDASTREAMDBGINFO         Dbg;
-} HDASTREAM, *PHDASTREAM;
+} HDASTREAM;
+/** Pointer to an HDA stream (SDI / SDO).  */
+typedef HDASTREAM *PHDASTREAM;
 
 #ifdef VBOX_WITH_AUDIO_HDA_ASYNC_IO
 /**
@@ -262,21 +264,21 @@ typedef struct HDASTREAMTHREADCTX
  */
 int               hdaR3StreamCreate(PHDASTREAM pStream, PHDASTATE pThis, uint8_t u8SD);
 void              hdaR3StreamDestroy(PHDASTREAM pStream);
-int               hdaR3StreamInit(PHDASTREAM pStream, uint8_t uSD);
+int               hdaR3StreamInit(PPDMDEVINS pDevIns, PHDASTREAM pStream, uint8_t uSD);
 void              hdaR3StreamReset(PHDASTATE pThis, PHDASTREAM pStream, uint8_t uSD);
 int               hdaR3StreamEnable(PHDASTREAM pStream, bool fEnable);
 uint32_t          hdaR3StreamGetPosition(PHDASTATE pThis, PHDASTREAM pStream);
 void              hdaR3StreamSetPosition(PHDASTREAM pStream, uint32_t u32LPIB);
 uint32_t          hdaR3StreamGetFree(PHDASTREAM pStream);
 uint32_t          hdaR3StreamGetUsed(PHDASTREAM pStream);
-bool              hdaR3StreamTransferIsScheduled(PHDASTREAM pStream);
+bool              hdaR3StreamTransferIsScheduled(PPDMDEVINS pDevIns, PHDASTREAM pStream);
 uint64_t          hdaR3StreamTransferGetNext(PHDASTREAM pStream);
-int               hdaR3StreamTransfer(PHDASTREAM pStream, uint32_t cbToProcessMax);
+int               hdaR3StreamTransfer(PPDMDEVINS pDevIns, PHDASTREAM pStream, uint32_t cbToProcessMax);
 void              hdaR3StreamLock(PHDASTREAM pStream);
 void              hdaR3StreamUnlock(PHDASTREAM pStream);
 int               hdaR3StreamRead(PHDASTREAM pStream, uint32_t cbToRead, uint32_t *pcbRead);
 int               hdaR3StreamWrite(PHDASTREAM pStream, const void *pvBuf, uint32_t cbBuf, uint32_t *pcbWritten);
-void              hdaR3StreamUpdate(PHDASTREAM pStream, bool fAsync);
+void              hdaR3StreamUpdate(PPDMDEVINS pDevIns, PHDASTREAM pStream, bool fAsync);
 # ifdef HDA_USE_DMA_ACCESS_HANDLER
 bool              hdaR3StreamRegisterDMAHandlers(PHDASTREAM pStream);
 void              hdaR3StreamUnregisterDMAHandlers(PHDASTREAM pStream);

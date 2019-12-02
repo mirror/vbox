@@ -53,8 +53,7 @@ int hdaR3StreamCreate(PHDASTREAM pStream, PHDASTATE pThis, uint8_t u8SD)
     pStream->u8SD           = u8SD;
     pStream->pMixSink       = NULL;
     pStream->pHDAState      = pThis;
-    pStream->pTimer         = pThis->pTimer[u8SD];
-    AssertPtr(pStream->pTimer);
+    pStream->hTimer         = pThis->ahTimers[u8SD];
 
     pStream->State.fInReset = false;
     pStream->State.fRunning = false;
@@ -188,10 +187,11 @@ void hdaR3StreamDestroy(PHDASTREAM pStream)
  *
  * @returns IPRT status code. VINF_NO_CHANGE if the stream does not need (re-)initialization because the stream's (hardware)
  *          parameters did not change.
- * @param   pStream             HDA stream to initialize.
- * @param   uSD                 SD (stream descriptor) number to assign the HDA stream to.
+ * @param   pDevIns The device instance.
+ * @param   pStream HDA stream to initialize.
+ * @param   uSD     SD (stream descriptor) number to assign the HDA stream to.
  */
-int hdaR3StreamInit(PHDASTREAM pStream, uint8_t uSD)
+int hdaR3StreamInit(PPDMDEVINS pDevIns, PHDASTREAM pStream, uint8_t uSD)
 {
     AssertPtrReturn(pStream, VERR_INVALID_POINTER);
 
@@ -463,7 +463,7 @@ int hdaR3StreamInit(PHDASTREAM pStream, uint8_t uSD)
                 if (pStream->State.cbTransferChunk > pStream->State.cbTransferSize)
                     pStream->State.cbTransferChunk = pStream->State.cbTransferSize;
 
-                const uint64_t cTicksPerHz = TMTimerGetFreq(pStream->pTimer) / pStream->State.uTimerHz;
+                const uint64_t cTicksPerHz = PDMDevHlpTimerGetFreq(pDevIns, pStream->hTimer) / pStream->State.uTimerHz;
 
                 /* Calculate the timer ticks per byte for this stream. */
                 pStream->State.cTicksPerByte = cTicksPerHz / pStream->State.cbTransferChunk;
@@ -714,13 +714,15 @@ uint32_t hdaR3StreamGetFree(PHDASTREAM pStream)
 
 /**
  * Returns whether a next transfer for a given stream is scheduled or not.
+ *
  * This takes pending stream interrupts into account as well as the next scheduled
  * transfer timestamp.
  *
  * @returns True if a next transfer is scheduled, false if not.
+ * @param   pDevIns             The device instance.
  * @param   pStream             HDA stream to retrieve schedule status for.
  */
-bool hdaR3StreamTransferIsScheduled(PHDASTREAM pStream)
+bool hdaR3StreamTransferIsScheduled(PPDMDEVINS pDevIns, PHDASTREAM pStream)
 {
     if (pStream)
     {
@@ -734,7 +736,7 @@ bool hdaR3StreamTransferIsScheduled(PHDASTREAM pStream)
                 return true;
             }
 
-            const uint64_t tsNow = TMTimerGet(pStream->pTimer);
+            const uint64_t tsNow = PDMDevHlpTimerGet(pDevIns, pStream->hTimer);
             if (pStream->State.tsTransferNext > tsNow)
             {
                 Log3Func(("[SD%RU8] Scheduled in %RU64\n", pStream->u8SD, pStream->State.tsTransferNext - tsNow));
@@ -907,10 +909,11 @@ int hdaR3StreamRead(PHDASTREAM pStream, uint32_t cbToRead, uint32_t *pcbRead)
  * internal FIFO buffer and writing it as DMA data to the device.
  *
  * @returns IPRT status code.
+ * @param   pDevIns             The device instance.
  * @param   pStream             HDA stream to update.
  * @param   cbToProcessMax      How much data (in bytes) to process as maximum.
  */
-int hdaR3StreamTransfer(PHDASTREAM pStream, uint32_t cbToProcessMax)
+int hdaR3StreamTransfer(PPDMDEVINS pDevIns, PHDASTREAM pStream, uint32_t cbToProcessMax)
 {
     AssertPtrReturn(pStream, VERR_INVALID_POINTER);
 
@@ -944,7 +947,7 @@ int hdaR3StreamTransfer(PHDASTREAM pStream, uint32_t cbToProcessMax)
         return VINF_SUCCESS;
     }
 
-    const uint64_t tsNow = TMTimerGet(pStream->pTimer);
+    const uint64_t tsNow = PDMDevHlpTimerGet(pDevIns, pStream->hTimer);
 
     if (!pStream->State.tsTransferLast)
         pStream->State.tsTransferLast = tsNow;
@@ -1375,7 +1378,7 @@ int hdaR3StreamTransfer(PHDASTREAM pStream, uint32_t cbToProcessMax)
         Log3Func(("[SD%RU8] Scheduling timer\n", pStream->u8SD));
 
         LogFunc(("Timer set SD%RU8\n", pStream->u8SD));
-        hdaR3TimerSet(pStream->pHDAState, pStream, tsTransferNext, false /* fForce */);
+        hdaR3TimerSet(pDevIns, pStream->pHDAState, pStream, tsTransferNext, false /* fForce */);
 
         pStream->State.tsTransferNext = tsTransferNext;
     }
@@ -1412,11 +1415,12 @@ int hdaR3StreamTransfer(PHDASTREAM pStream, uint32_t cbToProcessMax)
  * own async I/O thread. This thread also will call this function
  * (with fInTimer set to @c false).
  *
- * @param   pStream             HDA stream to update.
- * @param   fInTimer            Whether to this function was called from the timer
- *                              context or an asynchronous I/O stream thread (if supported).
+ * @param   pDevIns     The device instance.
+ * @param   pStream     HDA stream to update.
+ * @param   fInTimer    Whether to this function was called from the timer
+ *                      context or an asynchronous I/O stream thread (if supported).
  */
-void hdaR3StreamUpdate(PHDASTREAM pStream, bool fInTimer)
+void hdaR3StreamUpdate(PPDMDEVINS pDevIns, PHDASTREAM pStream, bool fInTimer)
 {
     if (!pStream)
         return;
@@ -1445,7 +1449,7 @@ void hdaR3StreamUpdate(PHDASTREAM pStream, bool fInTimer)
             if (cbStreamFree)
             {
                 /* Do the DMA transfer. */
-                rc2 = hdaR3StreamTransfer(pStream, cbStreamFree);
+                rc2 = hdaR3StreamTransfer(pDevIns, pStream, cbStreamFree);
                 AssertRC(rc2);
             }
 
@@ -1566,7 +1570,7 @@ void hdaR3StreamUpdate(PHDASTREAM pStream, bool fInTimer)
             const uint32_t cbStreamUsed = hdaR3StreamGetUsed(pStream);
             if (cbStreamUsed)
             {
-                rc2 = hdaR3StreamTransfer(pStream, cbStreamUsed);
+                rc2 = hdaR3StreamTransfer(pDevIns, pStream, cbStreamUsed);
                 AssertRC(rc2);
             }
 # ifdef VBOX_WITH_AUDIO_HDA_ASYNC_IO
@@ -1822,11 +1826,12 @@ DECLCALLBACK(int) hdaR3StreamAsyncIOThread(RTTHREAD hThreadSelf, void *pvUser)
 {
     PHDASTREAMTHREADCTX pCtx = (PHDASTREAMTHREADCTX)pvUser;
     AssertPtr(pCtx);
-
     PHDASTREAM pStream = pCtx->pStream;
-    AssertPtr(pStream);
 
-    PHDASTREAMSTATEAIO pAIO = &pCtx->pStream->State.AIO;
+    AssertPtr(pStream);
+    PHDASTREAMSTATEAIO pAIO = &pStream->State.AIO;
+
+    PPDMDEVINS pDevIns = pCtx->pThis->pDevInsR3;
 
     ASMAtomicXchgBool(&pAIO->fStarted, true);
 
@@ -1852,7 +1857,7 @@ DECLCALLBACK(int) hdaR3StreamAsyncIOThread(RTTHREAD hThreadSelf, void *pvUser)
                 continue;
             }
 
-            hdaR3StreamUpdate(pStream, false /* fInTimer */);
+            hdaR3StreamUpdate(pDevIns, pStream, false /* fInTimer */);
 
             int rc3 = RTCritSectLeave(&pAIO->CritSect);
             AssertRC(rc3);

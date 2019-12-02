@@ -652,8 +652,8 @@ bool          hdaR3BDLENeedsInterrupt(PHDABDLE pBDLE);
  * @{
  */
 #ifdef IN_RING3
-bool          hdaR3TimerSet(PHDASTATE pThis, PHDASTREAM pStream, uint64_t u64Expire, bool fForce);
-#endif /* IN_RING3 */
+bool          hdaR3TimerSet(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTREAM pStream, uint64_t u64Expire, bool fForce);
+#endif
 /** @} */
 
 #endif /* !VBOX_INCLUDED_SRC_Audio_DevHDACommon_h */

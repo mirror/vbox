@@ -1,6 +1,8 @@
 /* $Id$ */
 /** @file
  * DevHDACommon.cpp - Shared HDA device functions.
+ *
+ * @todo r=bird: Shared with whom exactly?
  */
 
 /*
@@ -661,10 +663,11 @@ bool hdaR3BDLENeedsInterrupt(PHDABDLE pBDLE)
  * Sets the virtual device timer to a new expiration time.
  *
  * @returns Whether the new expiration time was set or not.
- * @param   pThis               HDA state.
- * @param   pStream             HDA stream to set timer for.
- * @param   tsExpire            New (virtual) expiration time to set.
- * @param   fForce              Whether to force setting the expiration time or not.
+ * @param   pDevIns     The device instance.
+ * @param   pThis       HDA state.
+ * @param   pStream     HDA stream to set timer for.
+ * @param   tsExpire    New (virtual) expiration time to set.
+ * @param   fForce      Whether to force setting the expiration time or not.
  *
  * @remark  This function takes all active HDA streams and their
  *          current timing into account. This is needed to make sure
@@ -675,22 +678,27 @@ bool hdaR3BDLENeedsInterrupt(PHDABDLE pBDLE)
  *
  *          Forcing a new expiration time will override the above mechanism.
  */
-bool hdaR3TimerSet(PHDASTATE pThis, PHDASTREAM pStream, uint64_t tsExpire, bool fForce)
+bool hdaR3TimerSet(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTREAM pStream, uint64_t tsExpire, bool fForce)
 {
-    AssertPtrReturn(pThis, false);
-    AssertPtrReturn(pStream, false);
+    AssertPtr(pThis);
+    AssertPtr(pStream);
 
     uint64_t tsExpireMin = tsExpire;
 
     if (!fForce)
     {
-        if (hdaR3StreamTransferIsScheduled(pStream))
-            tsExpireMin = RT_MIN(tsExpireMin, hdaR3StreamTransferGetNext(pStream));
+        /** @todo r=bird: hdaR3StreamTransferIsScheduled() also does a
+         * PDMDevHlpTimerGet(), so, some callers does one, this does, and then we do
+         * right afterwards == very inefficient! */
+        if (hdaR3StreamTransferIsScheduled(pDevIns, pStream))
+        {
+            uint64_t const tsNext = hdaR3StreamTransferGetNext(pStream);
+            if (tsExpireMin > tsNext)
+                tsExpireMin = tsNext;
+        }
     }
 
-    AssertPtr(pThis->pTimer[pStream->u8SD]);
-
-    const uint64_t tsNow = TMTimerGet(pThis->pTimer[pStream->u8SD]);
+    const uint64_t tsNow = PDMDevHlpTimerGet(pDevIns, pStream->hTimer);
 
     /*
      * Make sure to not go backwards in time, as this will assert in TMTimerSet().
@@ -699,10 +707,10 @@ bool hdaR3TimerSet(PHDASTATE pThis, PHDASTREAM pStream, uint64_t tsExpire, bool 
     if (tsExpireMin < tsNow)
         tsExpireMin = tsNow;
 
-    int rc = TMTimerSet(pThis->pTimer[pStream->u8SD], tsExpireMin);
-    AssertRC(rc);
+    int rc = PDMDevHlpTimerSet(pDevIns, pStream->hTimer, tsExpireMin);
+    AssertRCReturn(rc, false);
 
-    return RT_SUCCESS(rc);
+    return true;
 }
 
 #endif /* IN_RING3 */
