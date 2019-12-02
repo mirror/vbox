@@ -650,7 +650,7 @@ DECLINLINE(PDMAUDIODIR)   ichac97GetDirFromSD(uint8_t uSD);
 # ifdef LOG_ENABLED
 static void               ichac97R3BDLEDumpAll(PAC97STATE pThis, uint64_t u64BDLBase, uint16_t cBDLE);
 # endif
-static bool               ichac97R3TimerSet(PPDMDEVINS pDevIns, PAC97STATE pThis, PAC97STREAM pStream, uint64_t tsExpire, bool fForce);
+DECLINLINE(void)          ichac97R3TimerSet(PPDMDEVINS pDevIns, PAC97STATE pThis, PAC97STREAM pStream, uint64_t cTicksToDeadline);
 #endif /* IN_RING3 */
 
 static void ichac97WarmReset(PAC97STATE pThis)
@@ -2605,11 +2605,7 @@ static DECLCALLBACK(void) ichac97R3Timer(PPDMDEVINS pDevIns, PTMTIMER pTimer, vo
     if (pSink && AudioMixerSinkIsActive(pSink))
     {
         ichac97R3StreamTransferUpdate(pDevIns, pThis, pStream, pStream->Regs.picb << 1); /** @todo r=andy Assumes 16-bit samples. */
-
-        ichac97R3TimerSet(pDevIns, pThis, pStream,
-                          PDMDevHlpTimerGet(pDevIns, RT_SAFE_SUBSCRIPT8(pThis->ahTimers, pStream->u8SD))
-                        + pStream->State.cTransferTicks,
-                        false /* fForce */);
+        ichac97R3TimerSet(pDevIns, pThis, pStream, pStream->State.cTransferTicks);
     }
 
     STAM_PROFILE_STOP(&pThis->StatTimer, a);
@@ -2619,44 +2615,18 @@ static DECLCALLBACK(void) ichac97R3Timer(PPDMDEVINS pDevIns, PTMTIMER pTimer, vo
 /**
  * Sets the virtual device timer to a new expiration time.
  *
- * @returns Whether the new expiration time was set or not.
  * @param   pDevIns             The device instance.
  * @param   pThis               AC'97 state.
  * @param   pStream             AC'97 stream to set timer for.
- * @param   tsExpire            New (virtual) expiration time to set.
- * @param   fForce              Whether to force setting the expiration time or not.
+ * @param   cTicksToDeadline    The number of ticks to the new deadline.
  *
- * @remark  This function takes all active AC'97 streams and their
- *          current timing into account. This is needed to make sure
- *          that all streams can match their needed timing.
- *
- *          To achieve this, the earliest (lowest) timestamp of all
- *          active streams found will be used for the next scheduling slot.
- *
- *          Forcing a new expiration time will override the above mechanism.
+ * @remarks This used to be more complicated a long time ago...
  */
-static bool ichac97R3TimerSet(PPDMDEVINS pDevIns, PAC97STATE pThis, PAC97STREAM pStream, uint64_t tsExpire, bool fForce)
+DECLINLINE(void) ichac97R3TimerSet(PPDMDEVINS pDevIns, PAC97STATE pThis, PAC97STREAM pStream, uint64_t cTicksToDeadline)
 {
-    AssertPtrReturn(pThis, false);
-    AssertPtrReturn(pStream, false);
-
-    RT_NOREF(fForce);
-
-    uint64_t tsExpireMin = tsExpire;
-
-    TMTIMERHANDLE const hTimer = RT_SAFE_SUBSCRIPT8(pThis->ahTimers, pStream->u8SD);
-    /** @todo r=bird: This is rather silly given that all three callers just did
-     *        TimerGet + interval. */
-    const uint64_t tsNow = PDMDevHlpTimerGet(pDevIns, hTimer);
-
-    /* Make sure to not go backwards in time, as this will assert in TMTimerSet(). */
-    if (tsExpireMin < tsNow)
-        tsExpireMin = tsNow;
-
-    int rc = PDMDevHlpTimerSet(pDevIns, hTimer, tsExpireMin);
-    AssertRCReturn(rc, false);
-
-    return true;
+    int rc = PDMDevHlpTimerSetRelative(pDevIns, RT_SAFE_SUBSCRIPT8(pThis->ahTimers, pStream->u8SD),
+                                       cTicksToDeadline, NULL /*pu64Now*/);
+    AssertRC(rc);
 }
 
 
@@ -3146,12 +3116,7 @@ ichac97IoPortNabmWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint3
 
                             /* Arm the timer for this stream. */
                             /** @todo r=bird: This function returns bool, not VBox status! */
-                            int rc2 = ichac97R3TimerSet(pDevIns, pThis, pStream,
-                                                        PDMDevHlpTimerGet(pDevIns, RT_SAFE_SUBSCRIPT8(pThis->ahTimers,
-                                                                                                      pStream->u8SD))
-                                                      + pStream->State.cTransferTicks,
-                                                      false /* fForce */);
-                            AssertRC(rc2);
+                            ichac97R3TimerSet(pDevIns, pThis, pStream, pStream->State.cTransferTicks);
                         }
                     }
 #else /* !IN_RING3 */
@@ -3639,18 +3604,15 @@ static DECLCALLBACK(int) ichac97R3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, 
         const PAC97STREAM pStream = &pThis->aStreams[i];
 
         rc2 = ichac97R3StreamEnable(pThis, pStream, fEnable);
+        AssertRC(rc2);
         if (   fEnable
             && RT_SUCCESS(rc2))
         {
             /* Re-arm the timer for this stream. */
             /** @todo r=bird: This function returns bool, not VBox status! */
-            rc2 = ichac97R3TimerSet(pDevIns, pThis, pStream,
-                                    PDMDevHlpTimerGet(pDevIns, RT_SAFE_SUBSCRIPT8(pThis->ahTimers, pStream->u8SD))
-                                  + pStream->State.cTransferTicks,
-                                  false /* fForce */);
+            ichac97R3TimerSet(pDevIns, pThis, pStream, pStream->State.cTransferTicks);
         }
 
-        AssertRC(rc2);
         /* Keep going. */
     }
 
