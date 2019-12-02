@@ -245,10 +245,6 @@ static int vboxClipboardConnect(void)
         if (RT_SUCCESS(rc))
         {
             rc = VbglR3ClipboardConnectEx(&g_Ctx.CmdCtx);
-#ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
-            if (RT_SUCCESS(rc))
-                rc = ShClTransferCtxInit(&g_Ctx.TransferCtx);
-#endif
             if (RT_FAILURE(rc))
                 ShClX11ThreadStop(&g_Ctx.X11);
         }
@@ -516,6 +512,22 @@ static const char *getPidFilePath()
     return ".vboxclient-clipboard.pid";
 }
 
+static int init(struct VBCLSERVICE **pSelf)
+{
+    RT_NOREF(pSelf);
+
+    int rc;
+
+#ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
+    rc = ShClTransferCtxInit(&g_Ctx.TransferCtx);
+#else
+    rc = VINF_SUCCESS;
+#endif
+
+    LogFlowFuncLeaveRC(rc);
+    return rc;
+}
+
 static int run(struct VBCLSERVICE **ppInterface, bool fDaemonised)
 {
     RT_NOREF(ppInterface, fDaemonised);
@@ -555,15 +567,13 @@ static void cleanup(struct VBCLSERVICE **ppInterface)
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
     ShClTransferCtxDestroy(&g_Ctx.TransferCtx);
 #endif
-
-    VbglR3Term();
 }
 
 struct VBCLSERVICE vbclClipboardInterface =
 {
     getName,
     getPidFilePath,
-    VBClServiceDefaultHandler, /* init */
+    init,
     run,
     cleanup
 };
