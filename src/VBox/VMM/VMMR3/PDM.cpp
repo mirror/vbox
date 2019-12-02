@@ -836,7 +836,7 @@ VMMR3_INT_DECL(int) PDMR3Term(PVM pVM)
         pdmR3CritSectBothDeleteDevice(pVM, pDevIns);
         pdmR3ThreadDestroyDevice(pVM, pDevIns);
         PDMR3QueueDestroyDevice(pVM, pDevIns);
-        PGMR3PhysMMIOExDeregister(pVM, pDevIns, UINT32_MAX, UINT32_MAX, NIL_PGMMMIO2HANDLE);
+        PGMR3PhysMmio2Deregister(pVM, pDevIns, NIL_PGMMMIO2HANDLE);
 #ifdef VBOX_WITH_PDM_ASYNC_COMPLETION
         pdmR3AsyncCompletionTemplateDestroyDevice(pVM, pDevIns);
 #endif

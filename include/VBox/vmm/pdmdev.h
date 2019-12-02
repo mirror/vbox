@@ -1163,7 +1163,7 @@ typedef R0PTRTYPE(PDMPCIHLPR0 *) PPDMPCIHLPR0;
 typedef R0PTRTYPE(const PDMPCIHLPR0 *) PCPDMPCIHLPR0;
 
 /** Current PDMPCIHLPR0 version number. */
-#define PDM_PCIHLPR0_VERSION                    PDM_VERSION_MAKE(0xfffc, 4, 0)
+#define PDM_PCIHLPR0_VERSION                    PDM_VERSION_MAKE(0xfffc, 5, 0)
 
 /**
  * PCI device helpers.
@@ -1202,17 +1202,6 @@ typedef struct PDMPCIHLPR3
      * @param   uTagSrc         The IRQ tag and source (for tracing).
      */
     DECLR3CALLBACKMEMBER(void,  pfnIoApicSendMsi,(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, uint32_t uValue, uint32_t uTagSrc));
-
-    /**
-     * Checks if the given address is an MMIO2 or pre-registered MMIO base address.
-     *
-     * @returns true/false accordingly.
-     * @param   pDevIns         The PCI device instance.
-     * @param   pOwner          The owner of the memory, optional.
-     * @param   GCPhys          The address to check.
-     * @sa      PGMR3PhysMMIOExIsBase
-     */
-    DECLR3CALLBACKMEMBER(bool,  pfnIsMMIOExBase,(PPDMDEVINS pDevIns, PPDMDEVINS pOwner, RTGCPHYS GCPhys));
 
     /**
      * Acquires the PDM lock.
