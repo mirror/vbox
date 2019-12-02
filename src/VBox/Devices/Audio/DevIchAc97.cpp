@@ -650,8 +650,8 @@ DECLINLINE(PDMAUDIODIR)   ichac97GetDirFromSD(uint8_t uSD);
 # ifdef LOG_ENABLED
 static void               ichac97R3BDLEDumpAll(PAC97STATE pThis, uint64_t u64BDLBase, uint16_t cBDLE);
 # endif
+static bool               ichac97R3TimerSet(PPDMDEVINS pDevIns, PAC97STATE pThis, PAC97STREAM pStream, uint64_t tsExpire, bool fForce);
 #endif /* IN_RING3 */
-static bool               ichac97TimerSet(PPDMDEVINS pDevIns, PAC97STATE pThis, PAC97STREAM pStream, uint64_t tsExpire, bool fForce);
 
 static void ichac97WarmReset(PAC97STATE pThis)
 {
@@ -2606,7 +2606,7 @@ static DECLCALLBACK(void) ichac97R3Timer(PPDMDEVINS pDevIns, PTMTIMER pTimer, vo
     {
         ichac97R3StreamTransferUpdate(pDevIns, pThis, pStream, pStream->Regs.picb << 1); /** @todo r=andy Assumes 16-bit samples. */
 
-        ichac97TimerSet(pDevIns, pThis, pStream,
+        ichac97R3TimerSet(pDevIns, pThis, pStream,
                           PDMDevHlpTimerGet(pDevIns, RT_SAFE_SUBSCRIPT8(pThis->ahTimers, pStream->u8SD))
                         + pStream->State.cTransferTicks,
                         false /* fForce */);
@@ -2615,7 +2615,6 @@ static DECLCALLBACK(void) ichac97R3Timer(PPDMDEVINS pDevIns, PTMTIMER pTimer, vo
     STAM_PROFILE_STOP(&pThis->StatTimer, a);
 }
 
-#endif /* IN_RING3 */
 
 /**
  * Sets the virtual device timer to a new expiration time.
@@ -2636,7 +2635,7 @@ static DECLCALLBACK(void) ichac97R3Timer(PPDMDEVINS pDevIns, PTMTIMER pTimer, vo
  *
  *          Forcing a new expiration time will override the above mechanism.
  */
-static bool ichac97TimerSet(PPDMDEVINS pDevIns, PAC97STATE pThis, PAC97STREAM pStream, uint64_t tsExpire, bool fForce)
+static bool ichac97R3TimerSet(PPDMDEVINS pDevIns, PAC97STATE pThis, PAC97STREAM pStream, uint64_t tsExpire, bool fForce)
 {
     AssertPtrReturn(pThis, false);
     AssertPtrReturn(pStream, false);
@@ -2660,7 +2659,6 @@ static bool ichac97TimerSet(PPDMDEVINS pDevIns, PAC97STATE pThis, PAC97STREAM pS
     return true;
 }
 
-#ifdef IN_RING3
 
 /**
  * Transfers data of an AC'97 stream according to its usage (input / output).
@@ -3148,7 +3146,7 @@ ichac97IoPortNabmWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint3
 
                             /* Arm the timer for this stream. */
                             /** @todo r=bird: This function returns bool, not VBox status! */
-                            int rc2 = ichac97TimerSet(pDevIns, pThis, pStream,
+                            int rc2 = ichac97R3TimerSet(pDevIns, pThis, pStream,
                                                         PDMDevHlpTimerGet(pDevIns, RT_SAFE_SUBSCRIPT8(pThis->ahTimers,
                                                                                                       pStream->u8SD))
                                                       + pStream->State.cTransferTicks,
@@ -3646,7 +3644,7 @@ static DECLCALLBACK(int) ichac97R3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, 
         {
             /* Re-arm the timer for this stream. */
             /** @todo r=bird: This function returns bool, not VBox status! */
-            rc2 = ichac97TimerSet(pDevIns, pThis, pStream,
+            rc2 = ichac97R3TimerSet(pDevIns, pThis, pStream,
                                     PDMDevHlpTimerGet(pDevIns, RT_SAFE_SUBSCRIPT8(pThis->ahTimers, pStream->u8SD))
                                   + pStream->State.cTransferTicks,
                                   false /* fForce */);
