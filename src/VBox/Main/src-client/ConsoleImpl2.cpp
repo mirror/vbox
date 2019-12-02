@@ -3044,15 +3044,14 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
                 /*
                  * Tweak the logging groups.
                  */
-                Utf8Str strLogGroups = "drv_host_audio.e.l.l2.l3.f+"
-                                       "drv_audio.e.l.l2.l3.f+"
-                                       "audio_mixer.e.l.l2.l3.f+"
-                                       "dev_hda_codec.e.l.l2.l3.f+"
-                                       "dev_hda.e.l.l2.l3.f+"
-                                       "dev_ac97.e.l.l2.l3.f+"
-                                       "dev_sb16.e.l.l2.l3.f";
-
-                rc = RTLogGroupSettings(RTLogRelGetDefaultInstance(), strLogGroups.c_str());
+                rc = RTLogGroupSettings(RTLogRelGetDefaultInstance(),
+                                        "drv_host_audio.e.l.l2.l3.f"
+                                        " drv_audio.e.l.l2.l3.f"
+                                        " audio_mixer.e.l.l2.l3.f"
+                                        " dev_hda_codec.e.l.l2.l3.f"
+                                        " dev_hda.e.l.l2.l3.f"
+                                        " dev_ac97.e.l.l2.l3.f"
+                                        " dev_sb16.e.l.l2.l3.f");
                 if (RT_FAILURE(rc))
                     LogRel(("Audio: Setting debug logging failed, rc=%Rrc\n", rc));
             }
