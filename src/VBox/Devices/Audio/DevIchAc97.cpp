@@ -2933,7 +2933,7 @@ static int ichac97R3StreamTransfer(PAC97STATE pThis, PAC97STREAM pStream, uint32
 
 
 /**
- * @callback_method_impl{FNIOMIOPORTNEWOUT}
+ * @callback_method_impl{FNIOMIOPORTNEWIN}
  */
 static DECLCALLBACK(VBOXSTRICTRC)
 ichac97IoPortNabmRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t *pu32, unsigned cb)
@@ -3622,6 +3622,7 @@ static DECLCALLBACK(int) ichac97R3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
  * Loads an AC'97 stream from SSM.
  *
  * @returns IPRT status code.
+ * @param   pDevIns             The device instance.
  * @param   pSSM                Saved state manager (SSM) handle to use.
  * @param   pStream             AC'97 stream to load.
  */
