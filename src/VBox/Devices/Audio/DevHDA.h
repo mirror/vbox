@@ -133,10 +133,8 @@ typedef struct HDASTATE
     uint32_t                cbRirbBuf;
     /** DMA position buffer enable bit. */
     bool                    fDMAPosition;
-    /** Flag whether the R0 and RC parts are enabled. */
-    bool                    fRZEnabled;
     /** Reserved. */
-    bool                    fPadding1b;
+    bool                    afPadding1b[2];
     /** Number of active (running) SDn streams. */
     uint8_t                 cStreamsActive;
     /** The stream timers for pumping data thru the attached LUN drivers. */

@@ -3340,7 +3340,7 @@ DECLINLINE(int) hdaWriteReg(PPDMDEVINS pDevIns, PHDASTATE pThis, int idxRegDsc, 
 
 
 /**
- * @callback_method_impl{FNIOMMMIOWNEWWRITE,
+ * @callback_method_impl{FNIOMMMIONEWWRITE,
  *      Looks up and calls the appropriate handler.}
  */
 static DECLCALLBACK(VBOXSTRICTRC) hdaMMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS off, void const *pv, unsigned cb)
@@ -4723,7 +4723,8 @@ static DECLCALLBACK(int) hdaR3Destruct(PPDMDEVINS pDevIns)
 static DECLCALLBACK(int) hdaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE pCfg)
 {
     PDMDEV_CHECK_VERSIONS_RETURN(pDevIns); /* this shall come first */
-    PHDASTATE pThis = PDMDEVINS_2_DATA(pDevIns, PHDASTATE);
+    PHDASTATE       pThis   = PDMDEVINS_2_DATA(pDevIns, PHDASTATE);
+    PCPDMDEVHLPR3   pHlp    = pDevIns->pHlpR3;
     Assert(iInstance == 0); RT_NOREF(iInstance);
 
     /*
@@ -4735,26 +4736,11 @@ static DECLCALLBACK(int) hdaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
      *        initialized here before we start failing. */
 
     /*
-     * Validations.
+     * Validate and read configuration.
      */
-    if (!CFGMR3AreValuesValid(pCfg, "RZEnabled\0"
-                                    "TimerHz\0"
-                                    "PosAdjustEnabled\0"
-                                    "PosAdjustFrames\0"
-                                    "DebugEnabled\0"
-                                    "DebugPathOut\0"))
-    {
-        return PDMDEV_SET_ERROR(pDevIns, VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES,
-                                N_ ("Invalid configuration for the Intel HDA device"));
-    }
+    PDMDEV_VALIDATE_CONFIG_RETURN(pDevIns, "TimerHz|PosAdjustEnabled|PosAdjustFrames|DebugEnabled|DebugPathOut", "");
 
-    int rc = CFGMR3QueryBoolDef(pCfg, "RZEnabled", &pThis->fRZEnabled, true);
-    if (RT_FAILURE(rc))
-        return PDMDEV_SET_ERROR(pDevIns, rc,
-                                N_("HDA configuration error: failed to read RCEnabled as boolean"));
-
-
-    rc = CFGMR3QueryU16Def(pCfg, "TimerHz", &pThis->uTimerHz, HDA_TIMER_HZ_DEFAULT /* Default value, if not set. */);
+    int rc = pHlp->pfnCFGMQueryU16Def(pCfg, "TimerHz", &pThis->uTimerHz, HDA_TIMER_HZ_DEFAULT /* Default value, if not set. */);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("HDA configuration error: failed to read Hertz (Hz) rate as unsigned integer"));
@@ -4762,7 +4748,7 @@ static DECLCALLBACK(int) hdaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     if (pThis->uTimerHz != HDA_TIMER_HZ_DEFAULT)
         LogRel(("HDA: Using custom device timer rate (%RU16Hz)\n", pThis->uTimerHz));
 
-    rc = CFGMR3QueryBoolDef(pCfg, "PosAdjustEnabled", &pThis->fPosAdjustEnabled, true);
+    rc = pHlp->pfnCFGMQueryBoolDef(pCfg, "PosAdjustEnabled", &pThis->fPosAdjustEnabled, true);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("HDA configuration error: failed to read position adjustment enabled as boolean"));
@@ -4770,7 +4756,7 @@ static DECLCALLBACK(int) hdaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     if (!pThis->fPosAdjustEnabled)
         LogRel(("HDA: Position adjustment is disabled\n"));
 
-    rc = CFGMR3QueryU16Def(pCfg, "PosAdjustFrames", &pThis->cPosAdjustFrames, HDA_POS_ADJUST_DEFAULT);
+    rc = pHlp->pfnCFGMQueryU16Def(pCfg, "PosAdjustFrames", &pThis->cPosAdjustFrames, HDA_POS_ADJUST_DEFAULT);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("HDA configuration error: failed to read position adjustment frames as unsigned integer"));
@@ -4778,19 +4764,16 @@ static DECLCALLBACK(int) hdaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     if (pThis->cPosAdjustFrames)
         LogRel(("HDA: Using custom position adjustment (%RU16 audio frames)\n", pThis->cPosAdjustFrames));
 
-    rc = CFGMR3QueryBoolDef(pCfg, "DebugEnabled", &pThis->Dbg.fEnabled, false);
+    rc = pHlp->pfnCFGMQueryBoolDef(pCfg, "DebugEnabled", &pThis->Dbg.fEnabled, false);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("HDA configuration error: failed to read debugging enabled flag as boolean"));
 
-    rc = CFGMR3QueryStringDef(pCfg, "DebugPathOut", pThis->Dbg.szOutPath, sizeof(pThis->Dbg.szOutPath),
-                              VBOX_AUDIO_DEBUG_DUMP_PCM_DATA_PATH);
+    rc = pHlp->pfnCFGMQueryStringDef(pCfg, "DebugPathOut", pThis->Dbg.szOutPath, sizeof(pThis->Dbg.szOutPath),
+                                     VBOX_AUDIO_DEBUG_DUMP_PCM_DATA_PATH);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("HDA configuration error: failed to read debugging output path flag as string"));
-
-    if (!strlen(pThis->Dbg.szOutPath))
-        RTStrPrintf(pThis->Dbg.szOutPath, sizeof(pThis->Dbg.szOutPath), VBOX_AUDIO_DEBUG_DUMP_PCM_DATA_PATH);
 
     if (pThis->Dbg.fEnabled)
         LogRel2(("HDA: Debug output will be saved to '%s'\n", pThis->Dbg.szOutPath));

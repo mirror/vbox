@@ -491,9 +491,7 @@ typedef struct AC97STATE
     PPDMDEVINSR0            pDevInsR0;
     /** RC pointer to the device instance. */
     PPDMDEVINSRC            pDevInsRC;
-    /** Set if R0/RC is enabled. */
-    bool                    fRZEnabled;
-    bool                    afPadding0[3];
+    bool                    afPadding0[4];
     /** Global Control (Bus Master Control Register). */
     uint32_t                glob_cnt;
     /** Global Status (Bus Master Control Register). */
@@ -4041,7 +4039,8 @@ static DECLCALLBACK(int) ichac97R3Destruct(PPDMDEVINS pDevIns)
 static DECLCALLBACK(int) ichac97R3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE pCfg)
 {
     PDMDEV_CHECK_VERSIONS_RETURN(pDevIns); /* this shall come first */
-    PAC97STATE pThis = PDMDEVINS_2_DATA(pDevIns, PAC97STATE);
+    PAC97STATE      pThis   = PDMDEVINS_2_DATA(pDevIns, PAC97STATE);
+    PCPDMDEVHLPR3   pHlp    = pDevIns->pHlpR3;
     Assert(iInstance == 0); RT_NOREF(iInstance);
 
     /*
@@ -4054,31 +4053,17 @@ static DECLCALLBACK(int) ichac97R3Construct(PPDMDEVINS pDevIns, int iInstance, P
     RTListInit(&pThis->lstDrv);
 
     /*
-     * Validations.
+     * Validate and read configuration.
      */
-    if (!CFGMR3AreValuesValid(pCfg, "RZEnabled\0"
-                                    "Codec\0"
-                                    "TimerHz\0"
-                                    "DebugEnabled\0"
-                                    "DebugPathOut\0"))
-        return PDMDEV_SET_ERROR(pDevIns, VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES,
-                                N_("Invalid configuration for the AC'97 device"));
-
-    /*
-     * Read config data.
-     */
-    int rc = CFGMR3QueryBoolDef(pCfg, "RZEnabled", &pThis->fRZEnabled, true);
-    if (RT_FAILURE(rc))
-        return PDMDEV_SET_ERROR(pDevIns, rc,
-                                N_("AC'97 configuration error: failed to read RCEnabled as boolean"));
+    PDMDEV_VALIDATE_CONFIG_RETURN(pDevIns, "Codec|TimerHz|DebugEnabled|DebugPathOut", "");
 
     char szCodec[20];
-    rc = CFGMR3QueryStringDef(pCfg, "Codec", &szCodec[0], sizeof(szCodec), "STAC9700");
+    int rc = pHlp->pfnCFGMQueryStringDef(pCfg, "Codec", &szCodec[0], sizeof(szCodec), "STAC9700");
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES,
                                 N_("AC'97 configuration error: Querying \"Codec\" as string failed"));
 
-    rc = CFGMR3QueryU16Def(pCfg, "TimerHz", &pThis->uTimerHz, AC97_TIMER_HZ_DEFAULT /* Default value, if not set. */);
+    rc = pHlp->pfnCFGMQueryU16Def(pCfg, "TimerHz", &pThis->uTimerHz, AC97_TIMER_HZ_DEFAULT /* Default value, if not set. */);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("AC'97 configuration error: failed to read Hertz (Hz) rate as unsigned integer"));
@@ -4086,19 +4071,16 @@ static DECLCALLBACK(int) ichac97R3Construct(PPDMDEVINS pDevIns, int iInstance, P
     if (pThis->uTimerHz != AC97_TIMER_HZ_DEFAULT)
         LogRel(("AC97: Using custom device timer rate (%RU16Hz)\n", pThis->uTimerHz));
 
-    rc = CFGMR3QueryBoolDef(pCfg, "DebugEnabled", &pThis->Dbg.fEnabled, false);
+    rc = pHlp->pfnCFGMQueryBoolDef(pCfg, "DebugEnabled", &pThis->Dbg.fEnabled, false);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("AC97 configuration error: failed to read debugging enabled flag as boolean"));
 
-    rc = CFGMR3QueryStringDef(pCfg, "DebugPathOut", pThis->Dbg.szOutPath, sizeof(pThis->Dbg.szOutPath),
-                              VBOX_AUDIO_DEBUG_DUMP_PCM_DATA_PATH);
+    rc = pHlp->pfnCFGMQueryStringDef(pCfg, "DebugPathOut", pThis->Dbg.szOutPath, sizeof(pThis->Dbg.szOutPath),
+                                     VBOX_AUDIO_DEBUG_DUMP_PCM_DATA_PATH);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("AC97 configuration error: failed to read debugging output path flag as string"));
-
-    if (!strlen(pThis->Dbg.szOutPath))
-        RTStrPrintf(pThis->Dbg.szOutPath, sizeof(pThis->Dbg.szOutPath), VBOX_AUDIO_DEBUG_DUMP_PCM_DATA_PATH);
 
     if (pThis->Dbg.fEnabled)
         LogRel2(("AC97: Debug output will be saved to '%s'\n", pThis->Dbg.szOutPath));
