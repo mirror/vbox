@@ -255,15 +255,8 @@ PDMAUDIODIR hdaGetDirFromSD(uint8_t uSD)
  */
 PHDASTREAM hdaGetStreamFromSD(PHDASTATE pThis, uint8_t uSD)
 {
-    AssertPtrReturn(pThis, NULL);
-    AssertReturn(uSD < HDA_MAX_STREAMS, NULL);
-
-    if (uSD >= HDA_MAX_STREAMS)
-    {
-        ASSERT_GUEST_LOGREL_MSG_FAILED(("Stream #%RU8 is invalid\n", uSD));
-        return NULL;
-    }
-
+    AssertPtr(pThis);
+    ASSERT_GUEST_MSG_RETURN(uSD < HDA_MAX_STREAMS, ("uSD=%u (%#x)\n", uSD, uSD), NULL);
     return &pThis->aStreams[uSD];
 }
 

@@ -548,98 +548,56 @@ typedef AC97STATE *PAC97STATE;
 /**
  * Acquires the AC'97 lock.
  */
-#define DEVAC97_LOCK(a_pThis) \
+#define DEVAC97_LOCK(a_pDevIns, a_pThis) \
     do { \
-        int rcLock = PDMCritSectEnter(&(a_pThis)->CritSect, VERR_IGNORED); \
+        int rcLock = PDMDevHlpCritSectEnter((a_pDevIns), &(a_pThis)->CritSect, VERR_IGNORED); \
         AssertRC(rcLock); \
     } while (0)
 
 /**
  * Acquires the AC'97 lock or returns.
  */
-# define DEVAC97_LOCK_RETURN(a_pThis, a_rcBusy) \
+# define DEVAC97_LOCK_RETURN(a_pDevIns, a_pThis, a_rcBusy) \
     do { \
-        int rcLock = PDMCritSectEnter(&(a_pThis)->CritSect, a_rcBusy); \
-        if (rcLock != VINF_SUCCESS) \
-        { \
-            AssertRC(rcLock); \
-            return rcLock; \
-        } \
+        int rcLock = PDMDevHlpCritSectEnter((a_pDevIns), &(a_pThis)->CritSect, a_rcBusy); \
+        if (rcLock == VINF_SUCCESS) \
+            break; \
+        AssertRC(rcLock); \
+        return rcLock; \
     } while (0)
 
-/**
- * Acquires the AC'97 lock or returns.
- */
-# define DEVAC97_LOCK_RETURN_VOID(a_pThis) \
-    do { \
-        int rcLock = PDMCritSectEnter(&(a_pThis)->CritSect, VERR_IGNORED); \
-        if (rcLock != VINF_SUCCESS) \
-        { \
-            AssertRC(rcLock); \
-            return; \
-        } \
-    } while (0)
-
-#ifdef IN_RC
 /** Retrieves an attribute from a specific audio stream in RC. */
-# define DEVAC97_CTX_SUFF_SD(a_Var, a_SD)      a_Var##RC[a_SD]
-#elif defined(IN_RING0)
-/** Retrieves an attribute from a specific audio stream in R0. */
-# define DEVAC97_CTX_SUFF_SD(a_Var, a_SD)      a_Var##R0[a_SD]
-#else
-/** Retrieves an attribute from a specific audio stream in R3. */
-# define DEVAC97_CTX_SUFF_SD(a_Var, a_SD)      a_Var##R3[a_SD]
-#endif
+#define DEVAC97_CTX_SUFF_SD(a_Var, a_SD)      CTX_SUFF(a_Var)[a_SD]
 
 /**
  * Releases the AC'97 lock.
  */
-#define DEVAC97_UNLOCK(a_pThis) \
-    do { PDMCritSectLeave(&(a_pThis)->CritSect); } while (0)
+#define DEVAC97_UNLOCK(a_pDevIns, a_pThis) \
+    do { PDMDevHlpCritSectLeave((a_pDevIns), &(a_pThis)->CritSect); } while (0)
 
 /**
  * Acquires the TM lock and AC'97 lock, returns on failure.
  */
-#define DEVAC97_LOCK_BOTH_RETURN_VOID(a_pThis, a_SD) \
-    do { \
-        int rcLock = TMTimerLock((a_pThis)->DEVAC97_CTX_SUFF_SD(pTimer, a_SD), VERR_IGNORED); \
-        if (rcLock != VINF_SUCCESS) \
-        { \
-            AssertRC(rcLock); \
-            return; \
-        } \
-        rcLock = PDMCritSectEnter(&(a_pThis)->CritSect, VERR_IGNORED); \
-        if (rcLock != VINF_SUCCESS) \
-        { \
-            AssertRC(rcLock); \
-            TMTimerUnlock((a_pThis)->DEVAC97_CTX_SUFF_SD(pTimer, a_SD)); \
-            return; \
-        } \
-    } while (0)
-
-/**
- * Acquires the TM lock and AC'97 lock, returns on failure.
- */
-#define DEVAC97_LOCK_BOTH_RETURN(a_pThis, a_SD, a_rcBusy) \
+#define DEVAC97_LOCK_BOTH_RETURN(a_pDevIns, a_pThis, a_SD, a_rcBusy) \
     do { \
         int rcLock = TMTimerLock((a_pThis)->DEVAC97_CTX_SUFF_SD(pTimer, a_SD), (a_rcBusy)); \
-        if (rcLock != VINF_SUCCESS) \
-            return rcLock; \
-        rcLock = PDMCritSectEnter(&(a_pThis)->CritSect, (a_rcBusy)); \
-        if (rcLock != VINF_SUCCESS) \
+        if (rcLock == VINF_SUCCESS) \
         { \
-            AssertRC(rcLock); \
+            rcLock = PDMDevHlpCritSectEnter((a_pDevIns), &(a_pThis)->CritSect, (a_rcBusy)); \
+            if (rcLock == VINF_SUCCESS) \
+                break; \
             TMTimerUnlock((a_pThis)->DEVAC97_CTX_SUFF_SD(pTimer, a_SD)); \
-            return rcLock; \
         } \
+        AssertRC(rcLock); \
+        return rcLock; \
     } while (0)
 
 /**
  * Releases the AC'97 lock and TM lock.
  */
-#define DEVAC97_UNLOCK_BOTH(a_pThis, a_SD) \
+#define DEVAC97_UNLOCK_BOTH(a_pDevIns, a_pThis, a_SD) \
     do { \
-        PDMCritSectLeave(&(a_pThis)->CritSect); \
+        PDMDevHlpCritSectLeave((a_pDevIns), &(a_pThis)->CritSect); \
         TMTimerUnlock((a_pThis)->DEVAC97_CTX_SUFF_SD(pTimer, a_SD)); \
     } while (0)
 
@@ -2628,47 +2586,35 @@ static void ichac97R3WriteBUP(PAC97STATE pThis, uint32_t cbElapsed)
 # endif /* Unused */
 
 /**
- * Timer callback which handles the audio data transfers on a periodic basis.
- *
- * @param   pDevIns             Device instance.
- * @param   pTimer              Timer which was used when calling this.
- * @param   pvUser              User argument as PAC97STATE.
+ * @callback_method_impl{FNTMTIMERDEV,
+ * Timer callback which handles the audio data transfers on a periodic basis.}
  */
 static DECLCALLBACK(void) ichac97R3Timer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser)
 {
-    RT_NOREF(pDevIns, pTimer);
-
-    PAC97STREAM pStream = (PAC97STREAM)pvUser;
-    AssertPtr(pStream);
-
-    PAC97STATE  pThis   = pStream->pAC97State;
-    AssertPtr(pThis);
-
+    PAC97STATE  pThis   = PDMDEVINS_2_DATA(pDevIns, PAC97STATE);
     STAM_PROFILE_START(&pThis->StatTimer, a);
+    PAC97STREAM pStream = (PAC97STREAM)pvUser;
+    RT_NOREF(pTimer);
 
-    DEVAC97_LOCK_BOTH_RETURN_VOID(pThis, pStream->u8SD);
+    AssertPtr(pStream);
+    Assert(PDMDevHlpCritSectIsOwner(pDevIns, &pThis->CritSect));
+    Assert(TMTimerIsLockOwner((pThis)->DEVAC97_CTX_SUFF_SD(pTimer, pStream->u8SD)));
 
     ichac97R3StreamUpdate(pThis, pStream, true /* fInTimer */);
 
     PAUDMIXSINK pSink = ichac97R3IndexToSink(pThis, pStream->u8SD);
-
-    bool fSinkActive = false;
-    if (pSink)
-        fSinkActive = AudioMixerSinkIsActive(pSink);
-
-    if (fSinkActive)
+    if (pSink && AudioMixerSinkIsActive(pSink))
     {
         ichac97R3StreamTransferUpdate(pThis, pStream, pStream->Regs.picb << 1); /** @todo r=andy Assumes 16-bit samples. */
 
-        ichac97TimerSet(pThis,pStream,
+        ichac97TimerSet(pThis, pStream,
                         TMTimerGet((pThis)->DEVAC97_CTX_SUFF_SD(pTimer, pStream->u8SD)) + pStream->State.cTransferTicks,
                         false /* fForce */);
     }
 
-    DEVAC97_UNLOCK_BOTH(pThis, pStream->u8SD);
-
     STAM_PROFILE_STOP(&pThis->StatTimer, a);
 }
+
 #endif /* IN_RING3 */
 
 /**
@@ -2939,7 +2885,7 @@ ichac97IoPortNabmRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32
     PAC97STATE pThis = PDMDEVINS_2_DATA(pDevIns, PAC97STATE);
     RT_NOREF(pvUser);
 
-    DEVAC97_LOCK_RETURN(pThis, VINF_IOM_R3_IOPORT_READ);
+    DEVAC97_LOCK_RETURN(pDevIns, pThis, VINF_IOM_R3_IOPORT_READ);
 
     /* Get the index of the NABMBAR port. */
     PAC97STREAM pStream = NULL;
@@ -3090,7 +3036,7 @@ ichac97IoPortNabmRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32
         }
     }
 
-    DEVAC97_UNLOCK(pThis);
+    DEVAC97_UNLOCK(pDevIns, pThis);
 
     return rc;
 }
@@ -3112,7 +3058,7 @@ ichac97IoPortNabmWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint3
         AssertPtr(pStream);
         pRegs = &pStream->Regs;
 
-        DEVAC97_LOCK_BOTH_RETURN(pThis, pStream->u8SD, VINF_IOM_R3_IOPORT_WRITE);
+        DEVAC97_LOCK_BOTH_RETURN(pDevIns, pThis, pStream->u8SD, VINF_IOM_R3_IOPORT_WRITE);
     }
 
     VBOXSTRICTRC rc = VINF_SUCCESS;
@@ -3287,7 +3233,7 @@ ichac97IoPortNabmWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint3
     }
 
     if (pStream)
-        DEVAC97_UNLOCK_BOTH(pThis, pStream->u8SD);
+        DEVAC97_UNLOCK_BOTH(pDevIns, pThis, pStream->u8SD);
 
     return rc;
 }
@@ -3300,13 +3246,11 @@ ichac97IoPortNamRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_
 {
     PAC97STATE pThis = PDMDEVINS_2_DATA(pDevIns, PAC97STATE);
     RT_NOREF(pvUser);
-
-    DEVAC97_LOCK_RETURN(pThis, VINF_IOM_R3_IOPORT_READ);
-
-    VBOXSTRICTRC rc = VINF_SUCCESS;
-
     Assert(offPort < 256);
 
+    DEVAC97_LOCK_RETURN(pDevIns, pThis, VINF_IOM_R3_IOPORT_READ);
+
+    VBOXSTRICTRC rc = VINF_SUCCESS;
     switch (cb)
     {
         case 1:
@@ -3339,7 +3283,7 @@ ichac97IoPortNamRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_
         }
     }
 
-    DEVAC97_UNLOCK(pThis);
+    DEVAC97_UNLOCK(pDevIns, pThis);
     return rc;
 }
 
@@ -3352,7 +3296,7 @@ ichac97IoPortNamWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32
     PAC97STATE pThis = PDMDEVINS_2_DATA(pDevIns, PAC97STATE);
     RT_NOREF(pvUser);
 
-    DEVAC97_LOCK_RETURN(pThis, VINF_IOM_R3_IOPORT_WRITE);
+    DEVAC97_LOCK_RETURN(pDevIns, pThis, VINF_IOM_R3_IOPORT_WRITE);
 
     VBOXSTRICTRC rc = VINF_SUCCESS;
     switch (cb)
@@ -3547,7 +3491,7 @@ ichac97IoPortNamWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32
             break;
     }
 
-    DEVAC97_UNLOCK(pThis);
+    DEVAC97_UNLOCK(pDevIns, pThis);
     return rc;
 }
 
@@ -3934,7 +3878,7 @@ static DECLCALLBACK(int) ichac97R3Attach(PPDMDEVINS pDevIns, unsigned iLUN, uint
 
     LogFunc(("iLUN=%u, fFlags=0x%x\n", iLUN, fFlags));
 
-    DEVAC97_LOCK(pThis);
+    DEVAC97_LOCK(pDevIns, pThis);
 
     PAC97DRIVER pDrv;
     int rc2 = ichac97R3AttachInternal(pThis, iLUN, fFlags, &pDrv);
@@ -3944,7 +3888,7 @@ static DECLCALLBACK(int) ichac97R3Attach(PPDMDEVINS pDevIns, unsigned iLUN, uint
     if (RT_FAILURE(rc2))
         LogFunc(("Failed with %Rrc\n", rc2));
 
-    DEVAC97_UNLOCK(pThis);
+    DEVAC97_UNLOCK(pDevIns, pThis);
 
     return VINF_SUCCESS;
 }
@@ -3958,7 +3902,7 @@ static DECLCALLBACK(void) ichac97R3Detach(PPDMDEVINS pDevIns, unsigned iLUN, uin
 
     LogFunc(("iLUN=%u, fFlags=0x%x\n", iLUN, fFlags));
 
-    DEVAC97_LOCK(pThis);
+    DEVAC97_LOCK(pDevIns, pThis);
 
     PAC97DRIVER pDrv, pDrvNext;
     RTListForEachSafe(&pThis->lstDrv, pDrv, pDrvNext, AC97DRIVER, Node)
@@ -3977,7 +3921,7 @@ static DECLCALLBACK(void) ichac97R3Detach(PPDMDEVINS pDevIns, unsigned iLUN, uin
         }
     }
 
-    DEVAC97_UNLOCK(pThis);
+    DEVAC97_UNLOCK(pDevIns, pThis);
 }
 
 /**
@@ -4371,7 +4315,10 @@ static DECLCALLBACK(int) ichac97RZConstruct(PPDMDEVINS pDevIns)
     PDMDEV_CHECK_VERSIONS_RETURN(pDevIns);
     PAC97STATE pThis = PDMDEVINS_2_DATA(pDevIns, PAC97STATE);
 
-    int rc = PDMDevHlpIoPortSetUpContext(pDevIns, pThis->hIoPortsNam, ichac97IoPortNamWrite, ichac97IoPortNamRead, NULL /*pvUser*/);
+    int rc = PDMDevHlpSetDeviceCritSect(pDevIns, PDMDevHlpCritSectGetNop(pDevIns));
+    AssertRCReturn(rc, rc);
+
+    rc = PDMDevHlpIoPortSetUpContext(pDevIns, pThis->hIoPortsNam, ichac97IoPortNamWrite, ichac97IoPortNamRead, NULL /*pvUser*/);
     AssertRCReturn(rc, rc);
     rc = PDMDevHlpIoPortSetUpContext(pDevIns, pThis->hIoPortsNabm, ichac97IoPortNabmWrite, ichac97IoPortNabmRead, NULL /*pvUser*/);
     AssertRCReturn(rc, rc);

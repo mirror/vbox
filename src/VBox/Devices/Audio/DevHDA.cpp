@@ -154,49 +154,18 @@
 /**
  * Acquires the TM lock and HDA lock, returns on failure.
  */
-#define DEVHDA_LOCK_BOTH_RETURN_VOID(a_pDevIns, a_pThis, a_SD) \
-    do { \
-        int rcLock = TMTimerLock((a_pThis)->pTimer[a_SD], VERR_IGNORED); \
-        if (rcLock == VINF_SUCCESS) \
-        { /* likely */ } \
-        else \
-        { \
-            AssertRC(rcLock); \
-            return; \
-        } \
-        rcLock = PDMDevHlpCritSectEnter((a_pDevIns), &(a_pThis)->CritSect, VERR_IGNORED); \
-        if (rcLock == VINF_SUCCESS) \
-        { /* likely */ } \
-        else \
-        { \
-            AssertRC(rcLock); \
-            TMTimerUnlock((a_pThis)->pTimer[a_SD]); \
-            return; \
-        } \
-    } while (0)
-
-/**
- * Acquires the TM lock and HDA lock, returns on failure.
- */
 #define DEVHDA_LOCK_BOTH_RETURN(a_pDevIns, a_pThis, a_SD, a_rcBusy) \
     do { \
         int rcLock = TMTimerLock((a_pThis)->pTimer[a_SD], (a_rcBusy)); \
         if (rcLock == VINF_SUCCESS) \
-        { /* likely */ } \
-        else \
         { \
-            AssertRC(rcLock); \
-            return rcLock; \
-        } \
-        rcLock = PDMDevHlpCritSectEnter((a_pDevIns), &(a_pThis)->CritSect, (a_rcBusy)); \
-        if (rcLock == VINF_SUCCESS) \
-        { /* likely */ } \
-        else \
-        { \
-            AssertRC(rcLock); \
+            rcLock = PDMDevHlpCritSectEnter((a_pDevIns), &(a_pThis)->CritSect, (a_rcBusy)); \
+            if (rcLock == VINF_SUCCESS) \
+                break; \
             TMTimerUnlock((a_pThis)->pTimer[a_SD]); \
-            return rcLock; \
         } \
+        AssertRC(rcLock); \
+        return rcLock; \
     } while (0)
 
 /**
@@ -1311,22 +1280,11 @@ static int hdaRegWriteSDCTL(PPDMDEVINS pDevIns, PHDASTATE pThis, uint32_t iReg, 
     /* Get the stream descriptor. */
     const uint8_t uSD = HDA_SD_NUM_FROM_REG(pThis, CTL, iReg);
 
-    DEVHDA_LOCK_BOTH_RETURN(pDevIns, pThis, uSD, VINF_IOM_R3_MMIO_WRITE);
-
     /*
      * Some guests write too much (that is, 32-bit with the top 8 bit being junk)
      * instead of 24-bit required for SDCTL. So just mask this here to be safe.
      */
     u32Value &= 0x00ffffff;
-
-    const bool fRun      = RT_BOOL(u32Value & HDA_SDCTL_RUN);
-    const bool fInRun    = RT_BOOL(HDA_REG_IND(pThis, iReg) & HDA_SDCTL_RUN);
-
-    const bool fReset    = RT_BOOL(u32Value & HDA_SDCTL_SRST);
-    const bool fInReset  = RT_BOOL(HDA_REG_IND(pThis, iReg) & HDA_SDCTL_SRST);
-
-    /*LogFunc(("[SD%RU8] fRun=%RTbool, fInRun=%RTbool, fReset=%RTbool, fInReset=%RTbool, %R[sdctl]\n",
-               uSD, fRun, fInRun, fReset, fInReset, u32Value));*/
 
     /*
      * Extract the stream tag the guest wants to use for this specific
@@ -1336,23 +1294,28 @@ static int hdaRegWriteSDCTL(PPDMDEVINS pDevIns, PHDASTATE pThis, uint32_t iReg, 
      * So depending on the guest OS, SD3 can use stream tag 4, for example.
      */
     uint8_t uTag = (u32Value >> HDA_SDCTL_NUM_SHIFT) & HDA_SDCTL_NUM_MASK;
-    if (uTag > HDA_MAX_TAGS)
-    {
-        LogFunc(("[SD%RU8] Warning: Invalid stream tag %RU8 specified!\n", uSD, uTag));
-
-        DEVHDA_UNLOCK_BOTH(pDevIns, pThis, uSD);
-        return VINF_SUCCESS; /* Always return success to the MMIO handler. */
-    }
+    ASSERT_GUEST_MSG_RETURN(uTag < RT_ELEMENTS(pThis->aTags),
+                            ("SD%RU8: Invalid stream tag %RU8 (u32Value=%#x)!\n", uSD, uTag, u32Value),
+                            VINF_SUCCESS /* Always return success to the MMIO handler. */);
 
     PHDASTREAM pStream = hdaGetStreamFromSD(pThis, uSD);
-    if (!pStream)
-    {
-        ASSERT_GUEST_LOGREL_MSG_FAILED(("Guest tried writing SDCTL (0x%x) to unhandled stream #%RU8\n", u32Value, uSD));
+    ASSERT_GUEST_LOGREL_MSG_RETURN(pStream, ("Guest tried writing SDCTL (0x%x) to unhandled stream #%RU8\n", u32Value, uSD),
+                                   VINF_SUCCESS /* Always return success to the MMIO handler. */);
 
-        DEVHDA_UNLOCK_BOTH(pDevIns, pThis, uSD);
-        return VINF_SUCCESS; /* Always return success to the MMIO handler. */
-    }
+    const bool fRun      = RT_BOOL(u32Value & HDA_SDCTL_RUN);
+    const bool fReset    = RT_BOOL(u32Value & HDA_SDCTL_SRST);
 
+    /**
+     * @todo r=bird: Must reduce the time we holding the virtual sync
+     *               clock lock here!
+     */
+    DEVHDA_LOCK_BOTH_RETURN(pDevIns, pThis, uSD, VINF_IOM_R3_MMIO_WRITE);
+
+    const bool fInRun    = RT_BOOL(HDA_REG_IND(pThis, iReg) & HDA_SDCTL_RUN);
+    const bool fInReset  = RT_BOOL(HDA_REG_IND(pThis, iReg) & HDA_SDCTL_SRST);
+
+    /*LogFunc(("[SD%RU8] fRun=%RTbool, fInRun=%RTbool, fReset=%RTbool, fInReset=%RTbool, %R[sdctl]\n",
+               uSD, fRun, fInRun, fReset, fInReset, u32Value));*/
     if (fInReset)
     {
         Assert(!fReset);
@@ -1513,16 +1476,15 @@ static int hdaRegWriteSDSTS(PPDMDEVINS pDevIns, PHDASTATE pThis, uint32_t iReg, 
 {
 #ifdef IN_RING3
     const uint8_t uSD = HDA_SD_NUM_FROM_REG(pThis, STS, iReg);
-
-    DEVHDA_LOCK_BOTH_RETURN(pDevIns, pThis, uSD, VINF_IOM_R3_MMIO_WRITE);
-
     PHDASTREAM pStream = hdaGetStreamFromSD(pThis, uSD);
-    if (!pStream)
-    {
-        ASSERT_GUEST_LOGREL_MSG_FAILED(("Guest tried writing SDSTS (0x%x) to unhandled stream #%RU8\n", u32Value, uSD));
-        DEVHDA_UNLOCK_BOTH(pDevIns, pThis, uSD);
-        return VINF_SUCCESS; /* Always return success to the MMIO handler. */
-    }
+    ASSERT_GUEST_LOGREL_MSG_RETURN(pStream, ("Guest tried writing SDSTS (0x%x) to unhandled stream #%RU8\n", u32Value, uSD),
+                                   VINF_SUCCESS);
+
+    /**
+     * @todo r=bird: Must reduce the time we holding the virtual sync
+     *               clock lock here!
+     */
+    DEVHDA_LOCK_BOTH_RETURN(pDevIns, pThis, uSD, VINF_IOM_R3_MMIO_WRITE);
 
     hdaR3StreamLock(pStream);
 
@@ -2890,14 +2852,13 @@ static DECLCALLBACK(int) hdaR3MixerSetVolume(PHDASTATE pThis, PDMAUDIOMIXERCTL e
  */
 static DECLCALLBACK(void) hdaR3Timer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser)
 {
+    PHDASTATE  pThis   = PDMDEVINS_2_DATA(pDevIns, PHDASTATE);
+    PHDASTREAM pStream = (PHDASTREAM)pvUser;
     RT_NOREF(pTimer);
 
-    PHDASTREAM pStream = (PHDASTREAM)pvUser;
     AssertPtr(pStream);
-
-    PHDASTATE  pThis   = pStream->pHDAState;
-
-    DEVHDA_LOCK_BOTH_RETURN_VOID(pDevIns, pStream->pHDAState, pStream->u8SD);
+    Assert(PDMDevHlpCritSectIsOwner(pDevIns, &pThis->CritSect));
+    Assert(TMTimerIsLockOwner(pStream->pTimer));
 
     hdaR3StreamUpdate(pStream, true /* fInTimer */);
 
@@ -2918,8 +2879,6 @@ static DECLCALLBACK(void) hdaR3Timer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *
     }
     else
         Log3Func(("fSinksActive=%RTbool\n", fSinkActive));
-
-    DEVHDA_UNLOCK_BOTH(pDevIns, pThis, pStream->u8SD);
 }
 
 # ifdef HDA_USE_DMA_ACCESS_HANDLER
@@ -5235,7 +5194,10 @@ static DECLCALLBACK(int) hdaRZConstruct(PPDMDEVINS pDevIns)
     PDMDEV_CHECK_VERSIONS_RETURN(pDevIns); /* this shall come first */
     PHDASTATE pThis = PDMDEVINS_2_DATA(pDevIns, PHDASTATE);
 
-    int rc = PDMDevHlpMmioSetUpContext(pDevIns, pThis->hMmio, hdaMMIOWrite, hdaMMIORead, NULL /*pvUser*/);
+    int rc = PDMDevHlpSetDeviceCritSect(pDevIns, PDMDevHlpCritSectGetNop(pDevIns));
+    AssertRCReturn(rc, rc);
+
+    rc = PDMDevHlpMmioSetUpContext(pDevIns, pThis->hMmio, hdaMMIOWrite, hdaMMIORead, NULL /*pvUser*/);
     AssertRCReturn(rc, rc);
 
     return VINF_SUCCESS;

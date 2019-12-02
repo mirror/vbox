@@ -1374,12 +1374,8 @@ int hdaR3StreamTransfer(PHDASTREAM pStream, uint32_t cbToProcessMax)
     {
         Log3Func(("[SD%RU8] Scheduling timer\n", pStream->u8SD));
 
-        TMTimerUnlock(pStream->pTimer);
-
         LogFunc(("Timer set SD%RU8\n", pStream->u8SD));
         hdaR3TimerSet(pStream->pHDAState, pStream, tsTransferNext, false /* fForce */);
-
-        TMTimerLock(pStream->pTimer, VINF_SUCCESS);
 
         pStream->State.tsTransferNext = tsTransferNext;
     }
