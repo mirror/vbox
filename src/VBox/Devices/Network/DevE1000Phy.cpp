@@ -258,7 +258,7 @@ uint16_t Phy::readRegister(PPHY pPhy, uint32_t u32Address, PPDMDEVINS pDevIns)
     int      index = Phy::lookupRegister(u32Address);
     uint16_t u16   = 0;
 
-    if (index > 0)
+    if (index >= 0)
     {
         u16 = s_regMap[index].pfnRead(pPhy, (uint32_t)index, pDevIns);
         PhyLog(("PHY#%d At %02d read  %04X      from %s (%s)\n",
@@ -283,7 +283,7 @@ void Phy::writeRegister(PPHY pPhy, uint32_t u32Address, uint16_t u16Value, PPDMD
 {
     int index = Phy::lookupRegister(u32Address);
 
-    if (index > 0)
+    if (index >= 0)
     {
         PhyLog(("PHY#%d At %02d write      %04X  to  %s (%s)\n",
                 pPhy->iInstance, s_regMap[index].u32Address, u16Value,

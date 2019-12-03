@@ -6014,7 +6014,7 @@ static int e1kRegReadUnaligned(PPDMDEVINS pDevIns, PE1KSTATE pThis, uint32_t off
         default:
             return PDMDevHlpDBGFStop(pDevIns, RT_SRC_POS, "unsupported op size: offset=%#10x cb=%#10x\n", offReg, cb);
     }
-    if (index > 0)
+    if (index >= 0)
     {
         RT_UNTRUSTED_VALIDATED_FENCE(); /* paranoia because of port I/O. */
         if (g_aE1kRegMap[index].readable)
@@ -6080,7 +6080,7 @@ static VBOXSTRICTRC e1kRegReadAlignedU32(PPDMDEVINS pDevIns, PE1KSTATE pThis, ui
      */
     VBOXSTRICTRC rc     = VINF_SUCCESS;
     int          idxReg = e1kRegLookup(offReg);
-    if (RT_LIKELY(idxReg > 0))
+    if (RT_LIKELY(idxReg >= 0))
     {
         RT_UNTRUSTED_VALIDATED_FENCE(); /* paranoia because of port I/O. */
         if (RT_UNLIKELY(g_aE1kRegMap[idxReg].readable))
@@ -6128,7 +6128,7 @@ static VBOXSTRICTRC e1kRegWriteAlignedU32(PPDMDEVINS pDevIns, PE1KSTATE pThis, u
 {
     VBOXSTRICTRC rc    = VINF_SUCCESS;
     int          index = e1kRegLookup(offReg);
-    if (RT_LIKELY(index > 0))
+    if (RT_LIKELY(index >= 0))
     {
         RT_UNTRUSTED_VALIDATED_FENCE(); /* paranoia because of port I/O. */
         if (RT_LIKELY(g_aE1kRegMap[index].writable))
