@@ -2400,8 +2400,8 @@ void UIMachineLogic::sltToggleNetworkAdapterConnection()
 void UIMachineLogic::sltChangeDragAndDropType(QAction *pAction)
 {
     /* Assign new mode (without save): */
-    KDnDMode mode = pAction->data().value<KDnDMode>();
-    machine().SetDnDMode(mode);
+    KDnDMode enmMode = pAction->data().value<KDnDMode>();
+    machine().SetDnDMode(enmMode);
 }
 
 void UIMachineLogic::sltInstallGuestAdditions()
@@ -2949,25 +2949,36 @@ void UIMachineLogic::updateMenuDevicesSharedClipboard(QMenu *pMenu)
 
 void UIMachineLogic::updateMenuDevicesDragAndDrop(QMenu *pMenu)
 {
+    /* Acquire current DnD mode: */
+    const KDnDMode enmCurrentMode = machine().GetDnDMode();
+
     /* First run: */
     if (!m_pDragAndDropActions)
     {
+        /* Prepare action-group: */
         m_pDragAndDropActions = new QActionGroup(this);
-        for (int i = KDnDMode_Disabled; i < KDnDMode_Max; ++i)
+        /* Load currently supported DnD modes: */
+        CSystemProperties comProperties = uiCommon().virtualBox().GetSystemProperties();
+        QVector<KDnDMode> dndModes = comProperties.GetSupportedDnDModes();
+        /* Take current DnD mode into account: */
+        if (!dndModes.contains(enmCurrentMode))
+            dndModes.prepend(enmCurrentMode);
+        /* Create action for all clipboard modes: */
+        foreach (const KDnDMode &enmMode, dndModes)
         {
-            KDnDMode mode = (KDnDMode)i;
-            QAction *pAction = new QAction(gpConverter->toString(mode), m_pDragAndDropActions);
+            QAction *pAction = new QAction(gpConverter->toString(enmMode), m_pDragAndDropActions);
             pMenu->addAction(pAction);
-            pAction->setData(QVariant::fromValue(mode));
+            pAction->setData(QVariant::fromValue(enmMode));
             pAction->setCheckable(true);
-            pAction->setChecked(machine().GetDnDMode() == mode);
+            pAction->setChecked(enmMode == enmCurrentMode);
         }
+        /* Connect action-group trigger: */
         connect(m_pDragAndDropActions, &QActionGroup::triggered, this, &UIMachineLogic::sltChangeDragAndDropType);
     }
     /* Subsequent runs: */
     else
         foreach (QAction *pAction, m_pDragAndDropActions->actions())
-            if (pAction->data().value<KDnDMode>() == machine().GetDnDMode())
+            if (pAction->data().value<KDnDMode>() == enmCurrentMode)
                 pAction->setChecked(true);
 }
 
