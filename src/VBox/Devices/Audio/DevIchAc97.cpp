@@ -58,58 +58,58 @@
 /** Maximum FIFO size (in bytes). */
 #define AC97_FIFO_MAX       256
 
-#define AC97_SR_FIFOE RT_BIT(4)          /**< rwc, FIFO error. */
-#define AC97_SR_BCIS  RT_BIT(3)          /**< rwc, Buffer completion interrupt status. */
-#define AC97_SR_LVBCI RT_BIT(2)          /**< rwc, Last valid buffer completion interrupt. */
-#define AC97_SR_CELV  RT_BIT(1)          /**< ro,  Current equals last valid. */
-#define AC97_SR_DCH   RT_BIT(0)          /**< ro,  Controller halted. */
-#define AC97_SR_VALID_MASK  (RT_BIT(5) - 1)
-#define AC97_SR_WCLEAR_MASK (AC97_SR_FIFOE | AC97_SR_BCIS | AC97_SR_LVBCI)
-#define AC97_SR_RO_MASK     (AC97_SR_DCH | AC97_SR_CELV)
-#define AC97_SR_INT_MASK    (AC97_SR_FIFOE | AC97_SR_BCIS | AC97_SR_LVBCI)
+#define AC97_SR_FIFOE           RT_BIT(4)           /**< rwc, FIFO error. */
+#define AC97_SR_BCIS            RT_BIT(3)           /**< rwc, Buffer completion interrupt status. */
+#define AC97_SR_LVBCI           RT_BIT(2)           /**< rwc, Last valid buffer completion interrupt. */
+#define AC97_SR_CELV            RT_BIT(1)           /**< ro,  Current equals last valid. */
+#define AC97_SR_DCH             RT_BIT(0)           /**< ro,  Controller halted. */
+#define AC97_SR_VALID_MASK      (RT_BIT(5) - 1)
+#define AC97_SR_WCLEAR_MASK     (AC97_SR_FIFOE | AC97_SR_BCIS | AC97_SR_LVBCI)
+#define AC97_SR_RO_MASK         (AC97_SR_DCH | AC97_SR_CELV)
+#define AC97_SR_INT_MASK        (AC97_SR_FIFOE | AC97_SR_BCIS | AC97_SR_LVBCI)
 
-#define AC97_CR_IOCE  RT_BIT(4)         /**< rw,   Interrupt On Completion Enable. */
-#define AC97_CR_FEIE  RT_BIT(3)         /**< rw    FIFO Error Interrupt Enable. */
-#define AC97_CR_LVBIE RT_BIT(2)         /**< rw    Last Valid Buffer Interrupt Enable. */
-#define AC97_CR_RR    RT_BIT(1)         /**< rw    Reset Registers. */
-#define AC97_CR_RPBM  RT_BIT(0)         /**< rw    Run/Pause Bus Master. */
-#define AC97_CR_VALID_MASK (RT_BIT(5) - 1)
+#define AC97_CR_IOCE            RT_BIT(4)           /**< rw,   Interrupt On Completion Enable. */
+#define AC97_CR_FEIE            RT_BIT(3)           /**< rw    FIFO Error Interrupt Enable. */
+#define AC97_CR_LVBIE           RT_BIT(2)           /**< rw    Last Valid Buffer Interrupt Enable. */
+#define AC97_CR_RR              RT_BIT(1)           /**< rw    Reset Registers. */
+#define AC97_CR_RPBM            RT_BIT(0)           /**< rw    Run/Pause Bus Master. */
+#define AC97_CR_VALID_MASK      (RT_BIT(5) - 1)
 #define AC97_CR_DONT_CLEAR_MASK (AC97_CR_IOCE | AC97_CR_FEIE | AC97_CR_LVBIE)
 
-#define AC97_GC_WR    4                 /**< rw    Warm reset. */
-#define AC97_GC_CR    2                 /**< rw    Cold reset. */
-#define AC97_GC_VALID_MASK (RT_BIT(6) - 1)
+#define AC97_GC_WR              4                   /**< rw    Warm reset. */
+#define AC97_GC_CR              2                   /**< rw    Cold reset. */
+#define AC97_GC_VALID_MASK      (RT_BIT(6) - 1)
 
-#define AC97_GS_MD3   RT_BIT(17)        /**< rw */
-#define AC97_GS_AD3   RT_BIT(16)        /**< rw */
-#define AC97_GS_RCS   RT_BIT(15)        /**< rwc */
-#define AC97_GS_B3S12 RT_BIT(14)        /**< ro */
-#define AC97_GS_B2S12 RT_BIT(13)        /**< ro */
-#define AC97_GS_B1S12 RT_BIT(12)        /**< ro */
-#define AC97_GS_S1R1  RT_BIT(11)        /**< rwc */
-#define AC97_GS_S0R1  RT_BIT(10)        /**< rwc */
-#define AC97_GS_S1CR  RT_BIT(9)         /**< ro */
-#define AC97_GS_S0CR  RT_BIT(8)         /**< ro */
-#define AC97_GS_MINT  RT_BIT(7)         /**< ro */
-#define AC97_GS_POINT RT_BIT(6)         /**< ro */
-#define AC97_GS_PIINT RT_BIT(5)         /**< ro */
-#define AC97_GS_RSRVD (RT_BIT(4) | RT_BIT(3))
-#define AC97_GS_MOINT RT_BIT(2)         /**< ro */
-#define AC97_GS_MIINT RT_BIT(1)         /**< ro */
-#define AC97_GS_GSCI  RT_BIT(0)         /**< rwc */
-#define AC97_GS_RO_MASK (  AC97_GS_B3S12 \
-                         | AC97_GS_B2S12 \
-                         | AC97_GS_B1S12 \
-                         | AC97_GS_S1CR \
-                         | AC97_GS_S0CR \
-                         | AC97_GS_MINT \
-                         | AC97_GS_POINT \
-                         | AC97_GS_PIINT \
-                         | AC97_GS_RSRVD \
-                         | AC97_GS_MOINT \
-                         | AC97_GS_MIINT)
-#define AC97_GS_VALID_MASK (RT_BIT(18) - 1)
-#define AC97_GS_WCLEAR_MASK (AC97_GS_RCS | AC97_GS_S1R1 | AC97_GS_S0R1 | AC97_GS_GSCI)
+#define AC97_GS_MD3             RT_BIT(17)          /**< rw */
+#define AC97_GS_AD3             RT_BIT(16)          /**< rw */
+#define AC97_GS_RCS             RT_BIT(15)          /**< rwc */
+#define AC97_GS_B3S12           RT_BIT(14)          /**< ro */
+#define AC97_GS_B2S12           RT_BIT(13)          /**< ro */
+#define AC97_GS_B1S12           RT_BIT(12)          /**< ro */
+#define AC97_GS_S1R1            RT_BIT(11)          /**< rwc */
+#define AC97_GS_S0R1            RT_BIT(10)          /**< rwc */
+#define AC97_GS_S1CR            RT_BIT(9)           /**< ro */
+#define AC97_GS_S0CR            RT_BIT(8)           /**< ro */
+#define AC97_GS_MINT            RT_BIT(7)           /**< ro */
+#define AC97_GS_POINT           RT_BIT(6)           /**< ro */
+#define AC97_GS_PIINT           RT_BIT(5)           /**< ro */
+#define AC97_GS_RSRVD           (RT_BIT(4) | RT_BIT(3))
+#define AC97_GS_MOINT           RT_BIT(2)           /**< ro */
+#define AC97_GS_MIINT           RT_BIT(1)           /**< ro */
+#define AC97_GS_GSCI            RT_BIT(0)           /**< rwc */
+#define AC97_GS_RO_MASK         (  AC97_GS_B3S12 \
+                                 | AC97_GS_B2S12 \
+                                 | AC97_GS_B1S12 \
+                                 | AC97_GS_S1CR \
+                                 | AC97_GS_S0CR \
+                                 | AC97_GS_MINT \
+                                 | AC97_GS_POINT \
+                                 | AC97_GS_PIINT \
+                                 | AC97_GS_RSRVD \
+                                 | AC97_GS_MOINT \
+                                 | AC97_GS_MIINT)
+#define AC97_GS_VALID_MASK      (RT_BIT(18) - 1)
+#define AC97_GS_WCLEAR_MASK     (AC97_GS_RCS | AC97_GS_S1R1 | AC97_GS_S0R1 | AC97_GS_GSCI)
 
 /** @name Buffer Descriptor (BD).
  * @{ */
@@ -123,27 +123,27 @@
 
 /** @name Extended Audio ID Register (EAID).
  * @{ */
-#define AC97_EAID_VRA          RT_BIT(0)            /**< Variable Rate Audio. */
-#define AC97_EAID_VRM          RT_BIT(3)            /**< Variable Rate Mic Audio. */
-#define AC97_EAID_REV0         RT_BIT(10)           /**< AC'97 revision compliance. */
-#define AC97_EAID_REV1         RT_BIT(11)           /**< AC'97 revision compliance. */
+#define AC97_EAID_VRA           RT_BIT(0)            /**< Variable Rate Audio. */
+#define AC97_EAID_VRM           RT_BIT(3)            /**< Variable Rate Mic Audio. */
+#define AC97_EAID_REV0          RT_BIT(10)           /**< AC'97 revision compliance. */
+#define AC97_EAID_REV1          RT_BIT(11)           /**< AC'97 revision compliance. */
 /** @} */
 
 /** @name Extended Audio Control and Status Register (EACS).
  * @{ */
-#define AC97_EACS_VRA          RT_BIT(0)            /**< Variable Rate Audio (4.2.1.1). */
-#define AC97_EACS_VRM          RT_BIT(3)            /**< Variable Rate Mic Audio (4.2.1.1). */
+#define AC97_EACS_VRA           RT_BIT(0)            /**< Variable Rate Audio (4.2.1.1). */
+#define AC97_EACS_VRM           RT_BIT(3)            /**< Variable Rate Mic Audio (4.2.1.1). */
 /** @} */
 
 /** @name Baseline Audio Register Set (BARS).
  * @{ */
-#define AC97_BARS_VOL_MASK              0x1f   /**< Volume mask for the Baseline Audio Register Set (5.7.2). */
-#define AC97_BARS_GAIN_MASK             0x0f   /**< Gain mask for the Baseline Audio Register Set. */
-#define AC97_BARS_VOL_MUTE_SHIFT        15     /**< Mute bit shift for the Baseline Audio Register Set (5.7.2). */
+#define AC97_BARS_VOL_MASK      0x1f                 /**< Volume mask for the Baseline Audio Register Set (5.7.2). */
+#define AC97_BARS_GAIN_MASK     0x0f                 /**< Gain mask for the Baseline Audio Register Set. */
+#define AC97_BARS_VOL_MUTE_SHIFT 15                  /**< Mute bit shift for the Baseline Audio Register Set (5.7.2). */
 /** @} */
 
 /** AC'97 uses 1.5dB steps, we use 0.375dB steps: 1 AC'97 step equals 4 PDM steps. */
-#define AC97_DB_FACTOR                  4
+#define AC97_DB_FACTOR          4
 
 #define AC97_REC_MASK 7
 enum
@@ -162,28 +162,28 @@ enum
 {
     AC97_Reset                     = 0x00,
     AC97_Master_Volume_Mute        = 0x02,
-    AC97_Headphone_Volume_Mute     = 0x04, /** Also known as AUX, see table 16, section 5.7. */
+    AC97_Headphone_Volume_Mute     = 0x04, /**< Also known as AUX, see table 16, section 5.7. */
     AC97_Master_Volume_Mono_Mute   = 0x06,
     AC97_Master_Tone_RL            = 0x08,
-    AC97_PC_BEEP_Volume_Mute       = 0x0A,
-    AC97_Phone_Volume_Mute         = 0x0C,
-    AC97_Mic_Volume_Mute           = 0x0E,
+    AC97_PC_BEEP_Volume_Mute       = 0x0a,
+    AC97_Phone_Volume_Mute         = 0x0c,
+    AC97_Mic_Volume_Mute           = 0x0e,
     AC97_Line_In_Volume_Mute       = 0x10,
     AC97_CD_Volume_Mute            = 0x12,
     AC97_Video_Volume_Mute         = 0x14,
     AC97_Aux_Volume_Mute           = 0x16,
     AC97_PCM_Out_Volume_Mute       = 0x18,
-    AC97_Record_Select             = 0x1A,
-    AC97_Record_Gain_Mute          = 0x1C,
-    AC97_Record_Gain_Mic_Mute      = 0x1E,
+    AC97_Record_Select             = 0x1a,
+    AC97_Record_Gain_Mute          = 0x1c,
+    AC97_Record_Gain_Mic_Mute      = 0x1e,
     AC97_General_Purpose           = 0x20,
     AC97_3D_Control                = 0x22,
     AC97_AC_97_RESERVED            = 0x24,
     AC97_Powerdown_Ctrl_Stat       = 0x26,
     AC97_Extended_Audio_ID         = 0x28,
-    AC97_Extended_Audio_Ctrl_Stat  = 0x2A,
-    AC97_PCM_Front_DAC_Rate        = 0x2C,
-    AC97_PCM_Surround_DAC_Rate     = 0x2E,
+    AC97_Extended_Audio_Ctrl_Stat  = 0x2a,
+    AC97_PCM_Front_DAC_Rate        = 0x2c,
+    AC97_PCM_Surround_DAC_Rate     = 0x2e,
     AC97_PCM_LFE_DAC_Rate          = 0x30,
     AC97_PCM_LR_ADC_Rate           = 0x32,
     AC97_MIC_ADC_Rate              = 0x34,
@@ -198,7 +198,7 @@ enum
 /* Codec models. */
 typedef enum
 {
-    AC97_CODEC_STAC9700 = 0,     /**< SigmaTel STAC9700 */
+    AC97_CODEC_STAC9700 = 1,     /**< SigmaTel STAC9700 */
     AC97_CODEC_AD1980,           /**< Analog Devices AD1980 */
     AC97_CODEC_AD1981B           /**< Analog Devices AD1981B */
 } AC97CODEC;
