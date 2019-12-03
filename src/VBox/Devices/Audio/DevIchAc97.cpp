@@ -1601,7 +1601,7 @@ static void ichac97MixerSet(PAC97STATE pThis, uint8_t uMixerIdx, uint16_t uVal)
 static uint16_t ichac97MixerGet(PAC97STATE pThis, uint32_t uMixerIdx)
 {
     AssertMsgReturn(uMixerIdx + 2U <= sizeof(pThis->mixer_data),
-                         ("Index %RU8 out of bounds (%zu)\n", uMixerIdx, sizeof(pThis->mixer_data)),
+                    ("Index %RU8 out of bounds (%zu)\n", uMixerIdx, sizeof(pThis->mixer_data)),
                     UINT16_MAX);
     return RT_MAKE_U16(pThis->mixer_data[uMixerIdx + 0], pThis->mixer_data[uMixerIdx + 1]);
 }
@@ -2859,7 +2859,6 @@ ichac97IoPortNabmRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32
     if (AC97_PORT2IDX(offPort) < AC97_MAX_STREAMS)
     {
         pStream = &pThis->aStreams[AC97_PORT2IDX(offPort)];
-        AssertPtr(pStream);
         pRegs   = &pStream->Regs;
     }
 
@@ -3021,8 +3020,7 @@ ichac97IoPortNabmWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint3
     if (AC97_PORT2IDX(offPort) < AC97_MAX_STREAMS)
     {
         pStream = &pThis->aStreams[AC97_PORT2IDX(offPort)];
-        AssertPtr(pStream);
-        pRegs = &pStream->Regs;
+        pRegs   = &pStream->Regs;
 
         DEVAC97_LOCK_BOTH_RETURN(pDevIns, pThis, pStream->u8SD, VINF_IOM_R3_IOPORT_WRITE);
     }
