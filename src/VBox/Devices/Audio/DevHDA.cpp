@@ -1426,10 +1426,8 @@ static int hdaRegWriteSDCTL(PPDMDEVINS pDevIns, PHDASTATE pThis, uint32_t iReg, 
                     rc2 = hdaR3StreamPeriodBegin(&pStream->State.Period, hdaWalClkGetCurrent(pThis)/* Use current wall clock time */);
                     AssertRC(rc2);
 
-                    rc2 = hdaR3TimerSet(pDevIns, pThis, pStream,
-                                          PDMDevHlpTimerGet(pDevIns, pThis->ahTimers[pStream->u8SD])
-                                        + pStream->State.cTransferTicks,
-                                        false /* fForce */);
+                    uint64_t const tsNow = PDMDevHlpTimerGet(pDevIns, pStream->hTimer);
+                    rc2 = hdaR3TimerSet(pDevIns, pStream, tsNow + pStream->State.cTransferTicks, false /* fForce */, tsNow);
                     AssertRC(rc2);
                 }
                 else
@@ -1520,7 +1518,7 @@ static int hdaRegWriteSDSTS(PPDMDEVINS pDevIns, PHDASTATE pThis, uint32_t iReg, 
 
     HDA_PROCESS_INTERRUPT(pDevIns, pThis);
 
-    const uint64_t tsNow = PDMDevHlpTimerGet(pDevIns, pThis->ahTimers[uSD]);
+    const uint64_t tsNow = PDMDevHlpTimerGet(pDevIns, pStream->hTimer);
     Assert(tsNow >= pStream->State.tsTransferLast);
 
     const uint64_t cTicksElapsed     = tsNow - pStream->State.tsTransferLast;
@@ -1546,7 +1544,7 @@ static int hdaRegWriteSDSTS(PPDMDEVINS pDevIns, PHDASTATE pThis, uint32_t iReg, 
 
             LogRelMax2(64, ("HDA: Stream #%RU8 interrupt lagging behind (expected %uus, got %uus), trying to catch up ...\n",
                             pStream->u8SD,
-                            (PDMDevHlpTimerGetFreq(pDevIns, pThis->ahTimers[pStream->u8SD]) / pThis->uTimerHz) / 1000,
+                            (PDMDevHlpTimerGetFreq(pDevIns, pStream->hTimer) / pThis->uTimerHz) / 1000,
                             (tsNow - pStream->State.tsTransferLast) / 1000));
 
             cTicksToNext = 0;
@@ -1567,7 +1565,7 @@ static int hdaRegWriteSDSTS(PPDMDEVINS pDevIns, PHDASTATE pThis, uint32_t iReg, 
 
             /* Re-arm the timer. */
             LogFunc(("Timer set SD%RU8\n", pStream->u8SD));
-            hdaR3TimerSet(pDevIns, pThis, pStream, tsNow + cTicksToNext, false /* fForce */);
+            hdaR3TimerSet(pDevIns, pStream, tsNow + cTicksToNext, true /* fForce - we just set tsTransferNext*/, 0 /*tsNow*/);
         }
     }
 
@@ -2859,13 +2857,12 @@ static DECLCALLBACK(void) hdaR3Timer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *
 
     if (fSinkActive)
     {
-        const bool fTimerScheduled = hdaR3StreamTransferIsScheduled(pDevIns, pStream);
+        uint64_t const tsNow = PDMDevHlpTimerGet(pDevIns, hTimer); /* (For virtual sync this remains the same for the whole callout IIRC) */
+        const bool fTimerScheduled = hdaR3StreamTransferIsScheduled(pStream, tsNow);
         Log3Func(("fSinksActive=%RTbool, fTimerScheduled=%RTbool\n", fSinkActive, fTimerScheduled));
         if (!fTimerScheduled)
-            hdaR3TimerSet(pDevIns, pThis, pStream,
-                            PDMDevHlpTimerGet(pDevIns, hTimer)
-                          + PDMDevHlpTimerGetFreq(pDevIns, hTimer) / pStream->pHDAState->uTimerHz,
-                          true /* fForce */);
+            hdaR3TimerSet(pDevIns, pStream, tsNow + PDMDevHlpTimerGetFreq(pDevIns, hTimer) / pThis->uTimerHz,
+                          true /*fForce*/, tsNow /*fixed*/ );
     }
     else
         Log3Func(("fSinksActive=%RTbool\n", fSinkActive));
@@ -2910,7 +2907,7 @@ static DECLCALLBACK(VBOXSTRICTRC) hdaR3DMAAccessHandler(PVM pVM, PVMCPU pVCpu, R
         return VINF_PGM_HANDLER_DO_DEFAULT;
     }
 
-    switch(enmAccessType)
+    switch (enmAccessType)
     {
         case PGMACCESSTYPE_WRITE:
         {
@@ -3627,8 +3624,8 @@ static int hdaR3LoadExecPost(PPDMDEVINS pDevIns, PHDASTATE pThis)
                 /* (Re-)install the DMA handler. */
                 hdaR3StreamRegisterDMAHandlers(pThis, pStream);
 #endif
-                if (hdaR3StreamTransferIsScheduled(pDevIns, pStream))
-                    hdaR3TimerSet(pDevIns, pThis, pStream, hdaR3StreamTransferGetNext(pStream), true /* fForce */);
+                if (hdaR3StreamTransferIsScheduled(pStream, PDMDevHlpTimerGet(pDevIns, pStream->hTimer)))
+                    hdaR3TimerSet(pDevIns, pStream, hdaR3StreamTransferGetNext(pStream), true /*fForce*/, 0 /*tsNow*/);
 
                 /* Also keep track of the currently active streams. */
                 pThis->cStreamsActive++;

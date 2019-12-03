@@ -652,7 +652,7 @@ bool          hdaR3BDLENeedsInterrupt(PHDABDLE pBDLE);
  * @{
  */
 #ifdef IN_RING3
-bool          hdaR3TimerSet(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTREAM pStream, uint64_t u64Expire, bool fForce);
+bool          hdaR3TimerSet(PPDMDEVINS pDevIns, PHDASTREAM pStream, uint64_t u64Expire, bool fForce, uint64_t tsNow);
 #endif
 /** @} */
 

@@ -664,10 +664,10 @@ bool hdaR3BDLENeedsInterrupt(PHDABDLE pBDLE)
  *
  * @returns Whether the new expiration time was set or not.
  * @param   pDevIns     The device instance.
- * @param   pThis       HDA state.
  * @param   pStream     HDA stream to set timer for.
  * @param   tsExpire    New (virtual) expiration time to set.
  * @param   fForce      Whether to force setting the expiration time or not.
+ * @param   tsNow       The current clock timestamp if available, 0 if not.
  *
  * @remark  This function takes all active HDA streams and their
  *          current timing into account. This is needed to make sure
@@ -678,36 +678,34 @@ bool hdaR3BDLENeedsInterrupt(PHDABDLE pBDLE)
  *
  *          Forcing a new expiration time will override the above mechanism.
  */
-bool hdaR3TimerSet(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTREAM pStream, uint64_t tsExpire, bool fForce)
+bool hdaR3TimerSet(PPDMDEVINS pDevIns, PHDASTREAM pStream, uint64_t tsExpire, bool fForce, uint64_t tsNow)
 {
-    AssertPtr(pThis);
     AssertPtr(pStream);
 
-    uint64_t tsExpireMin = tsExpire;
+    if (!tsNow)
+        tsNow = PDMDevHlpTimerGet(pDevIns, pStream->hTimer);
 
     if (!fForce)
     {
         /** @todo r=bird: hdaR3StreamTransferIsScheduled() also does a
          * PDMDevHlpTimerGet(), so, some callers does one, this does, and then we do
          * right afterwards == very inefficient! */
-        if (hdaR3StreamTransferIsScheduled(pDevIns, pStream))
+        if (hdaR3StreamTransferIsScheduled(pStream, tsNow))
         {
             uint64_t const tsNext = hdaR3StreamTransferGetNext(pStream);
-            if (tsExpireMin > tsNext)
-                tsExpireMin = tsNext;
+            if (tsExpire > tsNext)
+                tsExpire = tsNext;
         }
     }
-
-    const uint64_t tsNow = PDMDevHlpTimerGet(pDevIns, pStream->hTimer);
 
     /*
      * Make sure to not go backwards in time, as this will assert in TMTimerSet().
      * This in theory could happen in hdaR3StreamTransferGetNext() from above.
      */
-    if (tsExpireMin < tsNow)
-        tsExpireMin = tsNow;
+    if (tsExpire < tsNow)
+        tsExpire = tsNow;
 
-    int rc = PDMDevHlpTimerSet(pDevIns, pStream->hTimer, tsExpireMin);
+    int rc = PDMDevHlpTimerSet(pDevIns, pStream->hTimer, tsExpire);
     AssertRCReturn(rc, false);
 
     return true;

@@ -719,10 +719,10 @@ uint32_t hdaR3StreamGetFree(PHDASTREAM pStream)
  * transfer timestamp.
  *
  * @returns True if a next transfer is scheduled, false if not.
- * @param   pDevIns             The device instance.
  * @param   pStream             HDA stream to retrieve schedule status for.
+ * @param   tsNow               The current time.
  */
-bool hdaR3StreamTransferIsScheduled(PPDMDEVINS pDevIns, PHDASTREAM pStream)
+bool hdaR3StreamTransferIsScheduled(PHDASTREAM pStream, uint64_t tsNow)
 {
     if (pStream)
     {
@@ -736,7 +736,6 @@ bool hdaR3StreamTransferIsScheduled(PPDMDEVINS pDevIns, PHDASTREAM pStream)
                 return true;
             }
 
-            const uint64_t tsNow = PDMDevHlpTimerGet(pDevIns, pStream->hTimer);
             if (pStream->State.tsTransferNext > tsNow)
             {
                 Log3Func(("[SD%RU8] Scheduled in %RU64\n", pStream->u8SD, pStream->State.tsTransferNext - tsNow));
@@ -912,8 +911,9 @@ int hdaR3StreamRead(PHDASTREAM pStream, uint32_t cbToRead, uint32_t *pcbRead)
  * @param   pDevIns             The device instance.
  * @param   pStream             HDA stream to update.
  * @param   cbToProcessMax      How much data (in bytes) to process as maximum.
+ * @param   fInTimer            Set if we're in the timer callout.
  */
-int hdaR3StreamTransfer(PPDMDEVINS pDevIns, PHDASTREAM pStream, uint32_t cbToProcessMax)
+static int hdaR3StreamTransfer(PPDMDEVINS pDevIns, PHDASTREAM pStream, uint32_t cbToProcessMax, bool fInTimer)
 {
     AssertPtrReturn(pStream, VERR_INVALID_POINTER);
 
@@ -1378,7 +1378,8 @@ int hdaR3StreamTransfer(PPDMDEVINS pDevIns, PHDASTREAM pStream, uint32_t cbToPro
         Log3Func(("[SD%RU8] Scheduling timer\n", pStream->u8SD));
 
         LogFunc(("Timer set SD%RU8\n", pStream->u8SD));
-        hdaR3TimerSet(pDevIns, pStream->pHDAState, pStream, tsTransferNext, false /* fForce */);
+        Assert(!fInTimer || tsNow == PDMDevHlpTimerGet(pDevIns, pStream->hTimer));
+        hdaR3TimerSet(pDevIns, pStream, tsTransferNext, true /* fForce - skip tsTransferNext check */, fInTimer ? tsNow : 0);
 
         pStream->State.tsTransferNext = tsTransferNext;
     }
@@ -1449,7 +1450,7 @@ void hdaR3StreamUpdate(PPDMDEVINS pDevIns, PHDASTREAM pStream, bool fInTimer)
             if (cbStreamFree)
             {
                 /* Do the DMA transfer. */
-                rc2 = hdaR3StreamTransfer(pDevIns, pStream, cbStreamFree);
+                rc2 = hdaR3StreamTransfer(pDevIns, pStream, cbStreamFree, fInTimer);
                 AssertRC(rc2);
             }
 
@@ -1570,7 +1571,7 @@ void hdaR3StreamUpdate(PPDMDEVINS pDevIns, PHDASTREAM pStream, bool fInTimer)
             const uint32_t cbStreamUsed = hdaR3StreamGetUsed(pStream);
             if (cbStreamUsed)
             {
-                rc2 = hdaR3StreamTransfer(pDevIns, pStream, cbStreamUsed);
+                rc2 = hdaR3StreamTransfer(pDevIns, pStream, cbStreamUsed, fInTimer);
                 AssertRC(rc2);
             }
 # ifdef VBOX_WITH_AUDIO_HDA_ASYNC_IO
