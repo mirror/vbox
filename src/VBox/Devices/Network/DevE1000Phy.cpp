@@ -51,10 +51,6 @@
 #define REG(x) pPhy->au16Regs[x##_IDX]
 
 
-/* External callback declaration */
-void e1kPhyLinkResetCallback(PPDMDEVINS pDevIns);
-
-
 /* Internals */
 namespace Phy {
 #if defined(LOG_ENABLED) && !defined(PHY_UNIT_TEST)
@@ -243,7 +239,7 @@ static int Phy::lookupRegister(uint32_t u32Address)
     {
         if (s_regMap[index].u32Address == u32Address)
         {
-            return index;
+            return (int)index;
         }
     }
 
@@ -262,9 +258,9 @@ uint16_t Phy::readRegister(PPHY pPhy, uint32_t u32Address, PPDMDEVINS pDevIns)
     int      index = Phy::lookupRegister(u32Address);
     uint16_t u16   = 0;
 
-    if (index != -1)
+    if (index > 0)
     {
-        u16 = s_regMap[index].pfnRead(pPhy, index, pDevIns);
+        u16 = s_regMap[index].pfnRead(pPhy, (uint32_t)index, pDevIns);
         PhyLog(("PHY#%d At %02d read  %04X      from %s (%s)\n",
                 pPhy->iInstance, s_regMap[index].u32Address, u16,
                 s_regMap[index].pszAbbrev, s_regMap[index].pszName));
@@ -287,12 +283,12 @@ void Phy::writeRegister(PPHY pPhy, uint32_t u32Address, uint16_t u16Value, PPDMD
 {
     int index = Phy::lookupRegister(u32Address);
 
-    if (index != -1)
+    if (index > 0)
     {
         PhyLog(("PHY#%d At %02d write      %04X  to  %s (%s)\n",
                 pPhy->iInstance, s_regMap[index].u32Address, u16Value,
                 s_regMap[index].pszAbbrev, s_regMap[index].pszName));
-        s_regMap[index].pfnWrite(pPhy, index, u16Value, pDevIns);
+        s_regMap[index].pfnWrite(pPhy, (uint32_t)index, u16Value, pDevIns);
     }
     else
     {

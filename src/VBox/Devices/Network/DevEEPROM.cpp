@@ -114,7 +114,7 @@ EEPROM93C46::State EEPROM93C46::opWrite()
  */
 EEPROM93C46::State EEPROM93C46::opWriteAll()
 {
-    for (int i = 0; i < SIZE; i++)
+    for (unsigned i = 0; i < SIZE; i++)
         storeWord(i, m_u16Word);
     return WAITING_CS_FALL;
 }
@@ -263,9 +263,9 @@ void EEPROM93C46::save(PCPDMDEVHLPR3 pHlp, PSSMHANDLE pSSM)
 {
     pHlp->pfnSSMPutU8(  pSSM, EEPROM93C46_SAVEDSTATE_VERSION);
     Assert((uint32_t)m_eState < UINT32_C(256));
-    pHlp->pfnSSMPutU8(  pSSM, m_eState);
+    pHlp->pfnSSMPutU8(  pSSM, (uint8_t)m_eState);
     Assert((uint32_t)m_eOp < UINT32_C(256));
-    pHlp->pfnSSMPutU8(  pSSM, m_eOp);
+    pHlp->pfnSSMPutU8(  pSSM, (uint8_t)m_eOp);
     pHlp->pfnSSMPutBool(pSSM, m_fWriteEnabled);
     pHlp->pfnSSMPutU32( pSSM, m_u32InternalWires);
     pHlp->pfnSSMPutU16( pSSM, m_u16Word);

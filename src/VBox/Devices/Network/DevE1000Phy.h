@@ -107,6 +107,10 @@ namespace Phy
 #define MDIO_READ_OP  2
 #define MDIO_WRITE_OP 1
 
+/* External callback declaration */
+void e1kPhyLinkResetCallback(PPDMDEVINS pDevIns);
+
+
 typedef struct Phy::Phy_st PHY;
 typedef PHY *PPHY;
 

@@ -1779,7 +1779,8 @@ static uint16_t e1kCSum16(const void *pvBuf, size_t cb)
         csum += *(uint8_t*)pu16;
     while (csum >> 16)
         csum = (csum >> 16) + (csum & 0xFFFF);
-    return ~csum;
+    Assert(csum < 65536);
+    return (uint16_t)~csum;
 }
 
 /**
@@ -2916,7 +2917,7 @@ static int e1kRegWriteEECD(PPDMDEVINS pDevIns, PE1KSTATE pThis, uint32_t offset,
 static int e1kRegReadEECD(PPDMDEVINS pDevIns, PE1KSTATE pThis, uint32_t offset, uint32_t index, uint32_t *pu32Value)
 {
 #ifdef IN_RING3
-    uint32_t value;
+    uint32_t value = 0; /* Get rid of false positive in parfait. */
     int      rc = e1kRegReadDefault(pDevIns, pThis, offset, index, &value);
     if (RT_SUCCESS(rc))
     {
@@ -3242,7 +3243,8 @@ static int e1kRegWriteRCTL(PPDMDEVINS pDevIns, PE1KSTATE pThis, uint32_t offset,
     if (cbRxBuf != pThis->u16RxBSize)
         E1kLog2(("%s e1kRegWriteRCTL: Setting receive buffer size to %d (old %d)\n",
                  pThis->szPrf, cbRxBuf, pThis->u16RxBSize));
-    pThis->u16RxBSize = cbRxBuf;
+    Assert(cbRxBuf < 65536);
+    pThis->u16RxBSize = (uint16_t)cbRxBuf;
 
     /* Update the register */
     return e1kRegWriteDefault(pDevIns, pThis, offset, index, value);
@@ -4040,9 +4042,9 @@ static void e1kTransmitFrame(PPDMDEVINS pDevIns, PE1KSTATE pThis, PE1KSTATECC pT
     if (cbFrame > 12 && pThis->fVTag)
     {
         E1kLog3(("%s Inserting VLAN tag %08x\n",
-            pThis->szPrf, RT_BE2H_U16(VET) | (RT_BE2H_U16(pThis->u16VTagTCI) << 16)));
+            pThis->szPrf, RT_BE2H_U16((uint16_t)VET) | (RT_BE2H_U16(pThis->u16VTagTCI) << 16)));
         memmove((uint8_t*)pSg->aSegs[0].pvSeg + 16, (uint8_t*)pSg->aSegs[0].pvSeg + 12, cbFrame - 12);
-        *((uint32_t*)pSg->aSegs[0].pvSeg + 3) = RT_BE2H_U16(VET) | (RT_BE2H_U16(pThis->u16VTagTCI) << 16);
+        *((uint32_t*)pSg->aSegs[0].pvSeg + 3) = RT_BE2H_U16((uint16_t)VET) | (RT_BE2H_U16(pThis->u16VTagTCI) << 16);
         pSg->cbUsed += 4;
         cbFrame     += 4;
         Assert(pSg->cbUsed == cbFrame);
@@ -4377,7 +4379,8 @@ static int e1kFallbackAddSegment(PPDMDEVINS pDevIns, PE1KSTATE pThis, RTGCPHYS P
                       + htons(pThis->u16TxPktLen - pThis->contextTSE.tu.u8CSS);
         while (csum >> 16)
             csum = (csum >> 16) + (csum & 0xFFFF);
-        pTcpHdr->chksum = csum;
+        Assert(csum < 65536);
+        pTcpHdr->chksum = (uint16_t)csum;
         /* Compute final checksum */
         e1kInsertChecksum(pThis, pThis->aTxPacketFallback, pThis->u16TxPktLen,
                           pThis->contextTSE.tu.u8CSO,
@@ -5953,7 +5956,7 @@ static int e1kRegLookup(uint32_t offReg)
 
     for (unsigned i = E1K_NUM_OF_BINARY_SEARCHABLE; i < RT_ELEMENTS(g_aE1kRegMap); i++)
         if (offReg - g_aE1kRegMap[i].offset < g_aE1kRegMap[i].size)
-            return i;
+            return (int)i;
 
 # ifdef VBOX_STRICT
     for (unsigned i = 0; i < RT_ELEMENTS(g_aE1kRegMap); i++)
@@ -6011,7 +6014,7 @@ static int e1kRegReadUnaligned(PPDMDEVINS pDevIns, PE1KSTATE pThis, uint32_t off
         default:
             return PDMDevHlpDBGFStop(pDevIns, RT_SRC_POS, "unsupported op size: offset=%#10x cb=%#10x\n", offReg, cb);
     }
-    if (index != -1)
+    if (index > 0)
     {
         RT_UNTRUSTED_VALIDATED_FENCE(); /* paranoia because of port I/O. */
         if (g_aE1kRegMap[index].readable)
@@ -6031,7 +6034,7 @@ static int e1kRegReadUnaligned(PPDMDEVINS pDevIns, PE1KSTATE pThis, uint32_t off
             //pThis->fDelayInts = false;
             //pThis->iStatIntLost += pThis->iStatIntLostOne;
             //pThis->iStatIntLostOne = 0;
-            rc = g_aE1kRegMap[index].pfnRead(pDevIns, pThis, offReg & 0xFFFFFFFC, index, &u32);
+            rc = g_aE1kRegMap[index].pfnRead(pDevIns, pThis, offReg & 0xFFFFFFFC, (uint32_t)index, &u32);
             u32 &= mask;
             //e1kCsLeave(pThis);
             E1kLog2(("%s At %08X read  %s          from %s (%s)\n",
@@ -6077,7 +6080,7 @@ static VBOXSTRICTRC e1kRegReadAlignedU32(PPDMDEVINS pDevIns, PE1KSTATE pThis, ui
      */
     VBOXSTRICTRC rc     = VINF_SUCCESS;
     int          idxReg = e1kRegLookup(offReg);
-    if (RT_LIKELY(idxReg != -1))
+    if (RT_LIKELY(idxReg > 0))
     {
         RT_UNTRUSTED_VALIDATED_FENCE(); /* paranoia because of port I/O. */
         if (RT_UNLIKELY(g_aE1kRegMap[idxReg].readable))
@@ -6092,7 +6095,7 @@ static VBOXSTRICTRC e1kRegReadAlignedU32(PPDMDEVINS pDevIns, PE1KSTATE pThis, ui
             //pThis->fDelayInts = false;
             //pThis->iStatIntLost += pThis->iStatIntLostOne;
             //pThis->iStatIntLostOne = 0;
-            rc = g_aE1kRegMap[idxReg].pfnRead(pDevIns, pThis, offReg & 0xFFFFFFFC, idxReg, pu32);
+            rc = g_aE1kRegMap[idxReg].pfnRead(pDevIns, pThis, offReg & 0xFFFFFFFC, (uint32_t)idxReg, pu32);
             //e1kCsLeave(pThis);
             Log6(("%s At %08X read  %08X          from %s (%s)\n",
                   pThis->szPrf, offReg, *pu32, g_aE1kRegMap[idxReg].abbrev, g_aE1kRegMap[idxReg].name));
@@ -6125,7 +6128,7 @@ static VBOXSTRICTRC e1kRegWriteAlignedU32(PPDMDEVINS pDevIns, PE1KSTATE pThis, u
 {
     VBOXSTRICTRC rc    = VINF_SUCCESS;
     int          index = e1kRegLookup(offReg);
-    if (RT_LIKELY(index != -1))
+    if (RT_LIKELY(index > 0))
     {
         RT_UNTRUSTED_VALIDATED_FENCE(); /* paranoia because of port I/O. */
         if (RT_LIKELY(g_aE1kRegMap[index].writable))
@@ -6142,7 +6145,7 @@ static VBOXSTRICTRC e1kRegWriteAlignedU32(PPDMDEVINS pDevIns, PE1KSTATE pThis, u
             //pThis->fDelayInts = false;
             //pThis->iStatIntLost += pThis->iStatIntLostOne;
             //pThis->iStatIntLostOne = 0;
-            rc = g_aE1kRegMap[index].pfnWrite(pDevIns, pThis, offReg, index, u32Value);
+            rc = g_aE1kRegMap[index].pfnWrite(pDevIns, pThis, offReg, (uint32_t)index, u32Value);
             //e1kCsLeave(pThis);
         }
         else
@@ -7789,8 +7792,8 @@ static DECLCALLBACK(int) e1kR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     else if (pThis->cMsLinkUpDelay == 0)
         LogRel(("%s: WARNING! Link up delay is disabled!\n", pThis->szPrf));
 
-    uint32_t uStatNo = iInstance;
-    rc = pHlp->pfnCFGMQueryU32Def(pCfg, "StatNo", &uStatNo, iInstance);
+    uint32_t uStatNo = (uint32_t)iInstance;
+    rc = pHlp->pfnCFGMQueryU32Def(pCfg, "StatNo", &uStatNo, (uint32_t)iInstance);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc, N_("Configuration error: Failed to get the \"StatNo\" value"));
 
