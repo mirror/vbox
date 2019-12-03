@@ -634,7 +634,6 @@ AssertCompileMemberAlignment(AC97STATE, StatBytesWritten, 8);
 *   Internal Functions                                                                                                           *
 *********************************************************************************************************************************/
 #ifdef IN_RING3
-static int                ichac97R3StreamCreate(PAC97STATE pThis, PAC97STREAM pStream, uint8_t u8Strm);
 static int                ichac97R3StreamOpen(PAC97STATE pThis, PAC97STATER3 pThisCC, PAC97STREAM pStream, PAC97STREAMR3 pStreamCC, bool fForce);
 static int                ichac97R3StreamClose(PAC97STREAM pStream);
 static void               ichac97R3StreamLock(PAC97STREAMR3 pStreamCC);
