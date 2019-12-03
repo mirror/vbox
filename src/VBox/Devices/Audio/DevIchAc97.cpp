@@ -215,48 +215,60 @@ enum
     BUP_LAST = RT_BIT(1)
 };
 
-/** Emits registers for a specific (Native Audio Bus Master BAR) NABMBAR.
- * @todo This totally messes with grepping for identifiers and tagging.  */
-#define AC97_NABMBAR_REGS(prefix, off)                                    \
-    enum {                                                                \
-        prefix ## _BDBAR = off,      /* Buffer Descriptor Base Address */ \
-        prefix ## _CIV   = off + 4,  /* Current Index Value */            \
-        prefix ## _LVI   = off + 5,  /* Last Valid Index */               \
-        prefix ## _SR    = off + 6,  /* Status Register */                \
-        prefix ## _PICB  = off + 8,  /* Position in Current Buffer */     \
-        prefix ## _PIV   = off + 10, /* Prefetched Index Value */         \
-        prefix ## _CR    = off + 11  /* Control Register */               \
-    }
-
-#ifndef VBOX_DEVICE_STRUCT_TESTCASE
-/**
- * Enumeration of AC'97 source indices.
- *
- * @note The order of this indices is fixed (also applies for saved states) for
+/** @name AC'97 source indices.
+ * @note The order of these indices is fixed (also applies for saved states) for
  *       the moment.  So make sure you know what you're done when altering this!
+ * @{
  */
-typedef enum
-{
-    AC97SOUNDSOURCE_PI_INDEX = 0, /**< PCM in */
-    AC97SOUNDSOURCE_PO_INDEX,     /**< PCM out */
-    AC97SOUNDSOURCE_MC_INDEX,     /**< Mic in */
-    AC97SOUNDSOURCE_END_INDEX
-} AC97SOUNDSOURCE;
+#define AC97SOUNDSOURCE_PI_INDEX 0      /**< PCM in */
+#define AC97SOUNDSOURCE_PO_INDEX 1      /**< PCM out */
+#define AC97SOUNDSOURCE_MC_INDEX 2      /**< Mic in */
+#define AC97SOUNDSOURCE_MAX      3      /**< Max sound sources. */
+/** @} */
 
-AC97_NABMBAR_REGS(PI, AC97SOUNDSOURCE_PI_INDEX * 16);
-AC97_NABMBAR_REGS(PO, AC97SOUNDSOURCE_PO_INDEX * 16);
-AC97_NABMBAR_REGS(MC, AC97SOUNDSOURCE_MC_INDEX * 16);
-#endif
 
-enum
-{
-    /** NABMBAR: Global Control Register. */
-    AC97_GLOB_CNT = 0x2c,
-    /** NABMBAR Global Status. */
-    AC97_GLOB_STA = 0x30,
-    /** Codec Access Semaphore Register. */
-    AC97_CAS      = 0x34
-};
+/** @name PCM in NABM BAR registers (0x00..0x0f).
+ * @{ */
+#define PI_BDBAR (AC97SOUNDSOURCE_PI_INDEX * 0x10 + 0x0) /**< PCM in: Buffer Descriptor Base Address */
+#define PI_CIV   (AC97SOUNDSOURCE_PI_INDEX * 0x10 + 0x4) /**< PCM in: Current Index Value */
+#define PI_LVI   (AC97SOUNDSOURCE_PI_INDEX * 0x10 + 0x5) /**< PCM in: Last Valid Index */
+#define PI_SR    (AC97SOUNDSOURCE_PI_INDEX * 0x10 + 0x6) /**< PCM in: Status Register */
+#define PI_PICB  (AC97SOUNDSOURCE_PI_INDEX * 0x10 + 0x8) /**< PCM in: Position in Current Buffer */
+#define PI_PIV   (AC97SOUNDSOURCE_PI_INDEX * 0x10 + 0xa) /**< PCM in: Prefetched Index Value */
+#define PI_CR    (AC97SOUNDSOURCE_PI_INDEX * 0x10 + 0xb) /**< PCM in: Control Register */
+/** @} */
+
+/** @name PCM out NABM BAR registers (0x10..0x1f).
+ * @{ */
+#define PO_BDBAR (AC97SOUNDSOURCE_PO_INDEX * 0x10 + 0x0) /**< PCM out: Buffer Descriptor Base Address */
+#define PO_CIV   (AC97SOUNDSOURCE_PO_INDEX * 0x10 + 0x4) /**< PCM out: Current Index Value */
+#define PO_LVI   (AC97SOUNDSOURCE_PO_INDEX * 0x10 + 0x5) /**< PCM out: Last Valid Index */
+#define PO_SR    (AC97SOUNDSOURCE_PO_INDEX * 0x10 + 0x6) /**< PCM out: Status Register */
+#define PO_PICB  (AC97SOUNDSOURCE_PO_INDEX * 0x10 + 0x8) /**< PCM out: Position in Current Buffer */
+#define PO_PIV   (AC97SOUNDSOURCE_PO_INDEX * 0x10 + 0xa) /**< PCM out: Prefetched Index Value */
+#define PO_CR    (AC97SOUNDSOURCE_PO_INDEX * 0x10 + 0xb) /**< PCM out: Control Register */
+/** @} */
+
+/** @name Mic in NABM BAR registers (0x20..0x2f).
+ * @{ */
+#define MC_BDBAR (AC97SOUNDSOURCE_MC_INDEX * 0x10 + 0x0) /**< PCM in: Buffer Descriptor Base Address */
+#define MC_CIV   (AC97SOUNDSOURCE_MC_INDEX * 0x10 + 0x4) /**< PCM in: Current Index Value */
+#define MC_LVI   (AC97SOUNDSOURCE_MC_INDEX * 0x10 + 0x5) /**< PCM in: Last Valid Index */
+#define MC_SR    (AC97SOUNDSOURCE_MC_INDEX * 0x10 + 0x6) /**< PCM in: Status Register */
+#define MC_PICB  (AC97SOUNDSOURCE_MC_INDEX * 0x10 + 0x8) /**< PCM in: Position in Current Buffer */
+#define MC_PIV   (AC97SOUNDSOURCE_MC_INDEX * 0x10 + 0xa) /**< PCM in: Prefetched Index Value */
+#define MC_CR    (AC97SOUNDSOURCE_MC_INDEX * 0x10 + 0xb) /**< PCM in: Control Register */
+/** @} */
+
+/** @name Misc NABM BAR registers.
+ * @{  */
+/** NABMBAR: Global Control Register. */
+#define AC97_GLOB_CNT 0x2c
+/** NABMBAR: Global Status. */
+#define AC97_GLOB_STA 0x30
+/** Codec Access Semaphore Register. */
+#define AC97_CAS      0x34
+/** @} */
 
 #define AC97_PORT2IDX(a_idx)   ( ((a_idx) >> 4) & 3 )
 
@@ -3536,7 +3548,7 @@ static DECLCALLBACK(int) ichac97R3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 
     pHlp->pfnSSMPutMem(pSSM, pThis->mixer_data, sizeof(pThis->mixer_data));
 
-    uint8_t active[AC97SOUNDSOURCE_END_INDEX];
+    uint8_t active[AC97SOUNDSOURCE_MAX];
 
     active[AC97SOUNDSOURCE_PI_INDEX] = ichac97R3StreamIsEnabled(pThisCC, &pThis->aStreams[AC97SOUNDSOURCE_PI_INDEX]) ? 1 : 0;
     active[AC97SOUNDSOURCE_PO_INDEX] = ichac97R3StreamIsEnabled(pThisCC, &pThis->aStreams[AC97SOUNDSOURCE_PO_INDEX]) ? 1 : 0;
@@ -3602,7 +3614,7 @@ static DECLCALLBACK(int) ichac97R3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, 
     pHlp->pfnSSMGetMem(pSSM, pThis->mixer_data, sizeof(pThis->mixer_data));
 
     /** @todo r=andy Stream IDs are hardcoded to certain streams. */
-    uint8_t uaStrmsActive[AC97SOUNDSOURCE_END_INDEX];
+    uint8_t uaStrmsActive[AC97SOUNDSOURCE_MAX];
     int rc2 = pHlp->pfnSSMGetMem(pSSM, uaStrmsActive, sizeof(uaStrmsActive));
     AssertRCReturn(rc2, rc2);
 
