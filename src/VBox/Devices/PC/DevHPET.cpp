@@ -1433,12 +1433,15 @@ static DECLCALLBACK(int) hpetR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
     AssertRCReturn(rc, rc);
 
     /* Init the HPET timers (init all regardless of how many we expose). */
+    static const char * const s_apszTimerNames[] =
+    { "HPET Timer 0", "HPET Timer 1", "HPET Timer 2", "HPET Timer 3" };
+    AssertCompile(RT_ELEMENTS(pThis->aTimers) == RT_ELEMENTS(s_apszTimerNames));
     for (unsigned i = 0; i < RT_ELEMENTS(pThis->aTimers); i++)
     {
         PHPETTIMER pHpetTimer = &pThis->aTimers[i];
 
         rc = PDMDevHlpTimerCreate(pDevIns, TMCLOCK_VIRTUAL_SYNC, hpetR3Timer, pHpetTimer,
-                                  TMTIMER_FLAGS_NO_CRIT_SECT, "HPET Timer", &pThis->aTimers[i].hTimer);
+                                  TMTIMER_FLAGS_NO_CRIT_SECT, s_apszTimerNames[i], &pThis->aTimers[i].hTimer);
         AssertRCReturn(rc, rc);
         /** @todo r=bird: This is TOTALLY MESSED UP!  Why do we need
          *        DEVHPET_LOCK_BOTH_RETURN() when the timers use the same critsect as
