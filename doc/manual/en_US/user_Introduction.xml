@@ -183,7 +183,7 @@
           <emphasis role="strong">Guest operating system (guest
           OS).</emphasis> This is the OS that is running inside the
           virtual machine. Theoretically, &product-name; can run any x86
-          OS. such as DOS, Windows, OS/2, FreeBSD, and OpenBSD. But to
+          OS such as DOS, Windows, OS/2, FreeBSD, and OpenBSD. But to
           achieve near-native performance of the guest code on your
           machine, we had to go through a lot of optimizations that are
           specific to certain OSes. So while your favorite OS
@@ -202,26 +202,26 @@
           <emphasis role="strong">Virtual machine (VM).</emphasis> This
           is the special environment that &product-name; creates for
           your guest OS while it is running. In other words, you run
-          your guest OS <emphasis>in</emphasis> a VM. Normally, a VM
-          will be shown as a window on your computer's desktop, but
-          depending on which of the various frontends of &product-name;
-          you use, it can be displayed in full screen mode or remotely
-          on another computer.
+          your guest OS <emphasis>in</emphasis> a VM. Normally, a VM is
+          shown as a window on your computer's desktop. Depending on
+          which of the various frontends of &product-name; you use, the
+          VM might be shown in full screen mode or remotely on another
+          computer.
         </para>
 
         <para>
-          In a more abstract way, internally, &product-name; thinks of a
-          VM as a set of parameters that determine its behavior. They
-          include hardware settings, such as: how much memory the VM
-          should have, what hard disks &product-name; should virtualize
-          through which container files, what CDs are mounted. They also
-          include state information, such as: whether the VM is
-          currently running, saved, if the VM has snapshots. These
-          settings are mirrored in the VirtualBox Manager window, as
-          well as the <command>VBoxManage</command> command. See
-          <xref linkend="vboxmanage" />. In other words, a VM is also
-          what you can see in its
-          <emphasis role="bold">Settings</emphasis> dialog.
+          Internally, &product-name; treats a VM as a set of parameters
+          that specify its behavior. Some parameters describe hardware
+          settings, such as the amount of memory and number of CPUs
+          assigned. Other parameters describe the state information,
+          such as whether the VM is running or saved.
+        </para>
+
+        <para>
+          You can view these VM settings in the VirtualBox Manager
+          window, the <emphasis role="bold">Settings</emphasis> dialog,
+          and by running the <command>VBoxManage</command> command. See
+          <xref linkend="vboxmanage" />.
         </para>
       </listitem>
 
@@ -286,10 +286,10 @@
         </para>
 
         <para>
-          For users of &oci; the functionality extends to exporting
-          and importing virtial machines to and from the cloud. This
-          simplifies development of applications and deployment to
-          the production environment. See
+          For users of &oci; the functionality extends to exporting and
+          importing virtual machines to and from the cloud. This
+          simplifies development of applications and deployment to the
+          production environment. See
           <xref linkend="cloud-export-oci"/>.
         </para>
       </listitem>
@@ -309,16 +309,17 @@
         </para>
 
         <para>
-          In particular, Guest Additions provide for "shared folders",
-          which let you access files from the host system from within a
-          guest machine. See <xref linkend="sharedfolders" />.
+          In particular, Guest Additions provide for <emphasis>shared
+          folders</emphasis>, which let you access files on the host
+          system from within a guest machine. See
+          <xref linkend="sharedfolders" />.
         </para>
       </listitem>
 
       <listitem>
         <para>
           <emphasis role="bold">Great hardware support.</emphasis> Among
-          others, &product-name; supports the following:
+          other features, &product-name; supports the following:
         </para>
 
         <itemizedlist>
@@ -349,13 +350,13 @@
               &product-name; virtualizes a vast array of virtual
               devices, among them many devices that are typically
               provided by other virtualization platforms. That includes
-              IDE, SCSI and SATA hard disk controllers, several virtual
+              IDE, SCSI, and SATA hard disk controllers, several virtual
               network cards and sound cards, virtual serial and parallel
               ports and an Input/Output Advanced Programmable Interrupt
-              Controller (I/O APIC), which is found in many modern PC
-              systems. This eases cloning of PC images from real
-              machines and importing of third-party virtual machines
-              into &product-name;.
+              Controller (I/O APIC), which is found in many computer
+              systems. This enables easy cloning of disk images from
+              real machines and importing of third-party virtual
+              machines into &product-name;.
             </para>
           </listitem>
 
@@ -363,14 +364,15 @@
             <para>
               <emphasis role="bold">Full ACPI support.</emphasis> The
               Advanced Configuration and Power Interface (ACPI) is fully
-              supported by &product-name;. This eases cloning of PC
-              images from real machines or third-party virtual machines
-              into &product-name;. With its unique <emphasis>ACPI power
-              status support</emphasis>, &product-name; can even report
-              to ACPI-aware guest OSes the power status of the host. For
-              mobile systems running on battery, the guest can thus
-              enable energy saving and notify the user of the remaining
-              power, for example in full screen modes.
+              supported by &product-name;. This enables easy cloning of
+              disk images from real machines or third-party virtual
+              machines into &product-name;. With its unique
+              <emphasis>ACPI power status support</emphasis>,
+              &product-name; can even report to ACPI-aware guest OSes
+              the power status of the host. For mobile systems running
+              on battery, the guest can thus enable energy saving and
+              notify the user of the remaining power, for example in
+              full screen modes.
             </para>
           </listitem>
 
@@ -502,7 +504,7 @@
               <emphasis role="bold">USB over RDP.</emphasis> Using RDP
               virtual channel support, &product-name; also enables you
               to connect arbitrary USB devices locally to a virtual
-              machine which is running remotely on a &product-name; RDP
+              machine which is running remotely on an &product-name; RDP
               server. See <xref linkend="usb-over-rdp" />.
             </para>
           </listitem>
@@ -545,7 +547,8 @@
 
           <listitem>
             <para>
-              Windows 10 Anniversary Update (1607 / 2016 LTSB) build 14393
+              Windows 10 Anniversary Update (1607 / 2016 LTSB) build
+              14393
             </para>
           </listitem>
 
@@ -563,7 +566,8 @@
 
           <listitem>
             <para>
-              Windows 10 October 2018 Update (1809 / 2019 LTSC) build 17763
+              Windows 10 October 2018 Update (1809 / 2019 LTSC) build
+              17763
             </para>
           </listitem>
 
@@ -667,7 +671,7 @@
 
           <listitem>
             <para>
-              Redhat Enterprise Linux 6, 7 and 8
+              Red Hat Enterprise Linux 6, 7 and 8
             </para>
           </listitem>
 
@@ -739,16 +743,16 @@
       suggestions about such features are welcome.
     </para>
 
-  </sect1>
+    <sect2 id="hostcpurequirements">
 
-  <sect1 id="hostcpurequirements">
+      <title>Host CPU Requirements</title>
 
-    <title>Host CPU Requirements</title>
+      <para>
+        SSE2 (Streaming SIMD Extensions 2) support is required for host
+        CPUs.
+      </para>
 
-    <para>
-      SSE2 is required, starting with &product-name; version 5.2.10 and
-      version 5.1.24.
-    </para>
+    </sect2>
 
   </sect1>
 
@@ -787,8 +791,8 @@
           functionality of the &product-name; base package. Currently,
           Oracle provides a single extension pack, available from:
           <ulink
-          url="http://www.virtualbox.org">http://www.virtualbox.org</ulink>.
-          The extension pack provides the following added functionality:
+          url="http://www.virtualbox.org" />. The
+          extension pack provides the following added functionality:
         </para>
 
         <orderedlist>
@@ -828,12 +832,12 @@
             </para>
           </listitem>
 
-          <listitem>
+<!--   <listitem>
             <para>
               Experimental support for PCI passthrough on Linux hosts.
               See <xref linkend="pcipassthrough" />.
             </para>
-          </listitem>
+          </listitem>-->
 
           <listitem>
             <para>
@@ -846,9 +850,9 @@
 
         <para>
           &product-name; extension packages have a
-          <computeroutput>.vbox-extpack</computeroutput> file name
-          extension. To install an extension, simply double-click on the
-          package file and a <emphasis role="bold">Network Operations
+          <filename>.vbox-extpack</filename> file name extension. To
+          install an extension, simply double-click on the package file
+          and a <emphasis role="bold">Network Operations
           Manager</emphasis> window is shown to guide you through the
           required steps.
         </para>
@@ -890,9 +894,9 @@
           On a Windows host, in the
           <emphasis role="bold">Programs</emphasis> menu, click on the
           item in the <emphasis role="bold">VirtualBox</emphasis> group.
-          On Vista or Windows 7, you can also enter
-          <computeroutput>VirtualBox</computeroutput> in the search box
-          of the <emphasis role="bold">Start</emphasis> menu.
+          On some Windows platforms, you can also enter
+          <command>VirtualBox</command> in the search box of the
+          <emphasis role="bold">Start</emphasis> menu.
         </para>
       </listitem>
 
@@ -911,9 +915,8 @@
           environment, an &product-name; item may have been placed in
           either the System or System Tools group of your
           <emphasis role="bold">Applications</emphasis> menu.
-          Alternatively, you can enter
-          <computeroutput>VirtualBox</computeroutput> in a terminal
-          window.
+          Alternatively, you can enter <command>VirtualBox</command> in
+          a terminal window.
         </para>
       </listitem>
 
@@ -1001,13 +1004,15 @@
 
       <listitem>
         <para>
-          The <emphasis role="bold">Name</emphasis> of the VM will later
-          be shown in the machine list of the VirtualBox Manager window,
-          and it will be used for the VM's files on disk. Even though
-          any name can be used, bear in mind that if you create a few
-          VMs, you will appreciate if you have given your VMs rather
-          informative names."My VM" would thus be less useful than
-          "Windows XP SP2 with OpenOffice", for example.
+          The <emphasis role="bold">Name</emphasis> of the VM you choose
+          is shown in the machine list of the VirtualBox Manager window
+          and is also used for the VM's files on disk.
+        </para>
+
+        <para>
+          Be sure to assign each VM an informative name that describes
+          the OS and software running on the VM. For example,
+          <literal>Windows 10 with Visio</literal>.
         </para>
       </listitem>
 
@@ -1021,14 +1026,13 @@
 
       <listitem>
         <para>
-          For <emphasis role="bold">Operating System Type</emphasis>
-          select the OS that you want to install later. The supported
-          OSes are grouped. If you want to install something very
-          unusual that is not listed, select
-          <emphasis role="bold">Other</emphasis>. Depending on your
-          selection, &product-name; will enable or disable certain VM
-          settings that your guest OS may require. This is particularly
-          important for 64-bit guests. See
+          For <emphasis role="bold">Operating System Type</emphasis>,
+          select the OS that you want to install. The supported OSes are
+          grouped. If you want to install something very unusual that is
+          not listed, select <emphasis role="bold">Other</emphasis>.
+          Depending on your selection, &product-name; will enable or
+          disable certain VM settings that your guest OS may require.
+          This is particularly important for 64-bit guests. See
           <xref linkend="intro-64bitguests" />. It is therefore
           recommended to always set it to the correct value.
         </para>
@@ -1048,33 +1052,33 @@
           <para>
             Choose this setting carefully. The memory you give to the VM
             will not be available to your host OS while the VM is
-            running, so do not specify more than you can spare. For
-            example, if your host machine has 1 GB of RAM and you enter
-            512 MB as the amount of RAM for a particular virtual
-            machine, while that VM is running, you will only have 512 MB
-            left for all the other software on your host. If you run two
-            VMs at the same time, even more memory will be allocated for
-            the second VM, which may not even be able to start if that
-            memory is not available. On the other hand, you should
-            specify as much as your guest OS and your applications will
-            require to run properly.
+            running, so do not specify more than you can spare.
+          </para>
+
+          <para>
+            For example, if your host machine has 4 GB of RAM and you
+            enter 2048 MB as the amount of RAM for a particular virtual
+            machine, you will only have 2 GB left for all the other
+            software on your host while the VM is running. If you run
+            two VMs at the same time, even more memory will be allocated
+            for the second VM, which may not even be able to start if
+            that memory is not available.
+          </para>
+
+          <para>
+            On the other hand, you should specify as much as your guest
+            OS and your applications will require to run properly. A
+            guest OS may require at least 1 or 2 GB of memory to install
+            and boot up. For best performance, more memory than that may
+            be required.
           </para>
         </caution>
 
         <para>
-          A Windows XP guest will require at least a few hundred MB of
-          RAM to run properly, and Windows Vista will not install with
-          less than 512 MB. If you want to run graphics-intensive
-          applications in your VM, you may require even more RAM.
-        </para>
-
-        <para>
-          As a rule of thumb, if you have 1 GB of RAM or more in your
-          host computer, it is usually safe to allocate 512 MB to each
-          VM. In any case, make sure you always have at least 256 to 512
-          MB of RAM left on your host OS. Otherwise you may cause your
-          host OS to excessively swap out memory to your hard disk,
-          effectively bringing your host system to a standstill.
+          Always ensure that the host OS has enough RAM remaining. If
+          insufficient RAM remains, the system might excessively swap
+          memory to the hard disk, which effectively brings the host
+          system to a standstill.
         </para>
 
         <para>
@@ -1093,9 +1097,9 @@
           There are many and potentially complicated ways in which
           &product-name; can provide hard disk space to a VM, see
           <xref linkend="storage" />, but the most common way is to use
-          a large image file on your "real" hard disk, whose contents
+          a large image file on your physical hard disk, whose contents
           &product-name; presents to your VM as if it were a complete
-          hard disk. This file represents an entire hard disk then, so
+          hard disk. This file then represents an entire hard disk, so
           you can even copy it to another host and use it with another
           &product-name; installation.
         </para>
@@ -1106,7 +1110,7 @@
 
         <figure id="fig-new-vm-hard-disk">
           <title>Creating a New Virtual Machine: Hard Disk</title>
-          <mediaobject>
+         <mediaobject>
             <imageobject>
               <imagedata align="center" fileref="images/create-vm-2.png"
                            width="10cm" />
@@ -1173,19 +1177,18 @@
           <listitem>
             <para>
               A <emphasis role="bold">dynamically allocated
-              file</emphasis> will only grow in size when the guest
-              actually stores data on its virtual hard disk. It will
-              therefore initially be small on the host hard drive and
-              only later grow to the size specified as it is filled with
-              data.
+              file</emphasis> only grows in size when the guest actually
+              stores data on its virtual hard disk. Therefore, this file
+              is small initially. As the drive is filled with data, the
+              file grows to the specified size.
             </para>
           </listitem>
 
           <listitem>
             <para>
-              A <emphasis role="bold">fixed-size file</emphasis> will
-              immediately occupy the file specified, even if only a
-              fraction of the virtual hard disk space is actually in
+              A <emphasis role="bold">fixed-size file</emphasis>
+              immediately occupies the file specified, even if only a
+              fraction of that virtual hard disk space is actually in
               use. While occupying much more space, a fixed-size file
               incurs less overhead and is therefore slightly faster than
               a dynamically allocated file.
@@ -1200,13 +1203,14 @@
         </para>
 
         <para>
-          To prevent your physical hard disk from running full,
-          &product-name; limits the size of the image file. Still, it
-          needs to be large enough to hold the contents of your OS and
-          the applications you want to install. For a modern Windows or
-          Linux guest, you will probably need several gigabytes for any
-          serious use. The limit of the image file size can be changed
-          later, see <xref linkend="vboxmanage-modifyvdi"/>.
+          To prevent your physical hard disk (host OS) from filling up,
+          &product-name; limits the size of the image file. But the
+          image file must be large enough to hold the contents of the
+          guest OS and the applications you want to install. For a
+          Windows or Linux guest, you will probably need several
+          gigabytes for any serious use. The limit of the image file
+          size can be changed later, see
+          <xref linkend="vboxmanage-modifymedium"/>.
         </para>
 
         <figure id="fig-new-vm-vdi">
@@ -1274,11 +1278,11 @@
 
       <listitem>
         <para>
-          Go to the <computeroutput>VirtualBox VMs</computeroutput>
-          folder in your system user's home directory. Find the
-          subdirectory of the machine you want to start and double-click
-          on the machine settings file. This file has a
-          <computeroutput>.vbox</computeroutput> file extension.
+          Go to the <filename>VirtualBox VMs</filename> folder in your
+          system user's home directory. Find the subdirectory of the
+          machine you want to start and double-click on the machine
+          settings file. This file has a <filename>.vbox</filename> file
+          extension.
         </para>
       </listitem>
 
@@ -1385,13 +1389,13 @@
       </para>
 
       <para>
-        Otherwise, if the virtual machine only sees standard PS/2 mouse
-        and keyboard devices, since the OS in the virtual machine does
-        not know that it is not running on a real computer, it expects
-        to have exclusive control over your keyboard and mouse. But
-        unless you are running the VM in full screen mode, your VM needs
-        to share keyboard and mouse with other applications and possibly
-        other VMs on your host.
+        Otherwise, if the virtual machine detects only standard PS/2
+        mouse and keyboard devices, since the OS in the virtual machine
+        does not know that it is not running on a real computer, it
+        expects to have exclusive control over your keyboard and mouse.
+        But unless you are running the VM in full screen mode, your VM
+        needs to share keyboard and mouse with other applications and
+        possibly other VMs on your host.
       </para>
 
       <para>
@@ -1449,17 +1453,16 @@
 
           <para>
             Note that while the VM owns the keyboard, some key
-            sequences, such as Alt-Tab, will no longer be seen by the
+            sequences, such as Alt+Tab, will no longer be seen by the
             host, but will go to the guest instead. After you press the
             Host key to reenable the host keyboard, all key presses will
-            go through the host again, so that sequences such as Alt-Tab
+            go through the host again, so that sequences such as Alt+Tab
             will no longer reach the guest. For technical reasons it may
             not be possible for the VM to get all keyboard input even
             when it does own the keyboard. Examples of this are the
-            Ctrl-Alt-Del sequence on Windows hosts or single keys
-            grabbed by other applications on X11 hosts like the GNOME
-            desktop's "Control key highlights mouse pointer"
-            functionality.
+            Ctrl+Alt+Del sequence on Windows hosts or single keys
+            grabbed by other applications on X11 hosts such as the GNOME
+            desktop Locate Pointer feature.
           </para>
         </listitem>
 
@@ -1487,12 +1490,12 @@
       </itemizedlist>
 
       <para>
-        As this behavior can be inconvenient, &product-name; provides a
-        set of tools and device drivers for guest systems called the
-        &product-name; Guest Additions which make VM keyboard and mouse
-        operation a lot more seamless. Most importantly, the Additions
-        will get rid of the second "guest" mouse pointer and make your
-        host mouse pointer work directly in the guest. See
+        As this behavior is inconvenient, &product-name; provides a set
+        of tools and device drivers for guest systems called the
+        &product-name; Guest Additions. These tools make VM keyboard and
+        mouse operations much more seamless. Most importantly, the Guest
+        Additions suppress the second "guest" mouse pointer and make
+        your host mouse pointer work directly in the guest. See
         <xref linkend="guestadditions" />.
       </para>
 
@@ -1503,12 +1506,11 @@
       <title>Typing Special Characters</title>
 
       <para>
-        OSes expect certain key combinations to initiate certain
-        procedures. Some of these key combinations may be difficult to
-        enter into a virtual machine, as there are three candidates as
-        to who receives keyboard input: the host OS, &product-name;, or
-        the guest OS. Which of these three receives keypresses depends
-        on a number of factors, including the key itself.
+        Some OSes expect certain key combinations to initiate certain
+        procedures. The key combinations that you type into a VM might
+        target the host OS, the &product-name; software, or the guest
+        OS. The recipient of these keypresses depends on a number of
+        factors, including the key combination itself.
       </para>
 
       <itemizedlist>
@@ -1516,13 +1518,12 @@
         <listitem>
           <para>
             Host OSes reserve certain key combinations for themselves.
-            For example, it is impossible to enter the
+            For example, you cannot use the
             <emphasis role="bold">Ctrl+Alt+Delete</emphasis> combination
-            if you want to reboot the guest OS in your virtual machine,
-            because this key combination is usually hard-wired into the
-            host OS, both Windows and Linux intercept this, and pressing
-            this key combination will therefore reboot your
-            <emphasis>host</emphasis>.
+            to reboot the guest OS in your VM because this key
+            combination is usually hard-wired into the host OS. So, even
+            though both the Windows and Linux OSes intercept this key
+            combination, only the host OS would be rebooted.
           </para>
 
           <para>
@@ -1542,9 +1543,9 @@
             combination <emphasis role="bold">Ctrl+Alt+Fx</emphasis>,
             where Fx is one of the function keys from F1 to F12,
             normally enables you to switch between virtual terminals. As
-            with Ctrl+Alt+Delete, these combinations are intercepted by
-            the host OS and therefore always switch terminals on the
-            <emphasis>host</emphasis>.
+            with <emphasis role="bold">Ctrl+Alt+Delete</emphasis>, these
+            combinations are intercepted by the host OS and therefore
+            always switch terminals on the <emphasis>host</emphasis>.
           </para>
 
           <para>
@@ -1562,9 +1563,10 @@
                 <emphasis role="bold">Keyboard</emphasis> menu of the
                 virtual machine window. This menu includes the settings
                 <emphasis role="bold">Insert Ctrl+Alt+Delete</emphasis>
-                and <emphasis role="bold">Ctrl+Alt+Backspace</emphasis>.
-                The latter will only have an effect with Linux or Oracle
-                Solaris guests, however.
+                and <emphasis role="bold">Insert
+                Ctrl+Alt+Backspace</emphasis>. However, the latter
+                setting affects only Linux guests or Oracle Solaris
+                guests.
               </para>
 
               <para>
@@ -1575,36 +1577,38 @@
 
             <listitem>
               <para>
-                Use special key combinations with the Host key, normally
-                the right Control key. &product-name; will then
-                translate these key combinations for the virtual
-                machine:
+                Use special key combinations with the Host key, which is
+                normally the right Control key. &product-name; then
+                translates the following key combinations for the VM:
               </para>
 
               <itemizedlist>
 
                 <listitem>
                   <para>
-                    <emphasis role="bold">Host key + Del</emphasis> to
-                    send Ctrl+Alt+Del to reboot the guest.
+                    <emphasis role="bold">Host key + Del</emphasis>
+                    sends <emphasis role="bold">Ctrl+Alt+Del</emphasis>
+                    to reboot the guest OS.
                   </para>
                 </listitem>
 
                 <listitem>
                   <para>
                     <emphasis role="bold">Host key +
-                    Backspace</emphasis> to send Ctrl+Alt+Backspace to
-                    restart the graphical user interface of a Linux or
-                    Oracle Solaris guest.
+                    Backspace</emphasis> sends
+                    <emphasis role="bold">Ctrl+Alt+Backspace</emphasis>
+                    to restart the graphical user interface of a Linux
+                    or Oracle Solaris guest.
                   </para>
                 </listitem>
 
                 <listitem>
                   <para>
                     <emphasis role="bold">Host key + Function
-                    key</emphasis>. For example, to simulate Ctrl+Alt+Fx
-                    to switch between virtual terminals in a Linux
-                    guest.
+                    key</emphasis>. For example, use this key
+                    combination to simulate
+                    <emphasis role="bold">Ctrl+Alt+Fx</emphasis> to
+                    switch between virtual terminals in a Linux guest.
                   </para>
                 </listitem>
 
@@ -1617,7 +1621,7 @@
         <listitem>
           <para>
             For some other keyboard combinations such as
-            <emphasis role="bold">Alt-Tab</emphasis> to switch between
+            <emphasis role="bold">Alt+Tab</emphasis> to switch between
             open windows, &product-name; enables you to configure
             whether these combinations will affect the host or the
             guest, if a virtual machine currently has the focus. This is
@@ -1625,6 +1629,13 @@
             under <emphasis role="bold">File</emphasis>,
             <emphasis role="bold">Preferences</emphasis>,
             <emphasis role="bold">Input</emphasis>.
+          </para>
+        </listitem>
+
+        <listitem>
+          <para>
+            A soft keyboard can be used to input key combinations in the
+            guest. See <xref linkend="soft-keyb"/>.
           </para>
         </listitem>
 
@@ -1674,8 +1685,8 @@
       <title>Resizing the Machine's Window</title>
 
       <para>
-        You can resize the virtual machine's window when it is running.
-        In that case, one of the following things will happen:
+        You can resize the VM's window while that VM is running. When
+        you do, the window is scaled as follows:
       </para>
 
       <orderedlist>
@@ -1794,9 +1805,8 @@
             <emphasis role="bold">Send the shutdown signal.</emphasis>
             This will send an ACPI shutdown signal to the virtual
             machine, which has the same effect as if you had pressed the
-            power button on a real computer. So long as the VM is
-            running a fairly modern OS, this should trigger a proper
-            shutdown mechanism from within the VM.
+            power button on a real computer. This should trigger a
+            proper shutdown mechanism from within the VM.
           </para>
         </listitem>
 
@@ -2084,7 +2094,7 @@
 
           <figure id="fig-snapshots-list">
             <title>Snapshots List For a Virtual Machine</title>
-            <mediaobject>
+           <mediaobject>
               <imageobject>
                 <imagedata align="center" fileref="images/snapshots-1.png"
                              width="10cm" />
@@ -2257,8 +2267,7 @@
 
           <para>
             The memory state file can be as large as the memory size of
-            the virtual machine and will therefore occupy quite some
-            disk space as well.
+            the VM and will therefore occupy considerable disk space.
           </para>
         </listitem>
 
@@ -2556,8 +2565,36 @@
       <listitem>
         <para>
           <emphasis role="bold">Cloud service formats.</emphasis> Export
-          to cloud services such as &oci; is supported. Import is not
-          supported. See <xref linkend="cloud-export-oci"/>.
+          to and import from cloud services such as &oci; is supported.
+          See the following topics:
+        </para>
+
+        <itemizedlist>
+
+          <listitem>
+            <para>
+              <xref linkend="cloud-export-oci"/>
+            </para>
+          </listitem>
+
+          <listitem>
+            <para>
+              <xref linkend="cloud-import-oci"/>
+            </para>
+          </listitem>
+
+        </itemizedlist>
+
+        <para>
+          Before using &product-name; with &oci; there are some initial
+          configuration steps you need to consider. See
+          <xref linkend="cloud-integration-steps"/>.
+        </para>
+
+        <para>
+          &product-name; can also be used to create new instances from a
+          custom image stored on &oci;. See
+          <xref linkend="cloud-new-vm"/>
         </para>
       </listitem>
 
@@ -2591,8 +2628,7 @@
           an ongoing process. In particular, no guarantee is made that
           &product-name; supports all appliances created by other
           virtualization software. For a list of known limitations, see
-          <xref
-        linkend="KnownIssues" />.
+          <xref linkend="KnownIssues" />.
         </para>
       </note>
 
@@ -2608,9 +2644,9 @@
             images, typically in the widely-used VMDK format. See
             <xref linkend="vdidetails" />. They also include a textual
             description file in an XML dialect with an
-            <computeroutput>.ovf</computeroutput> extension. These files
-            must then reside in the same directory for &product-name; to
-            be able to import them.
+            <filename>.ovf</filename> extension. These files must then
+            reside in the same directory for &product-name; to be able
+            to import them.
           </para>
         </listitem>
 
@@ -2618,10 +2654,10 @@
           <para>
             Alternatively, the above files can be packed together into a
             single archive file, typically with an
-            <computeroutput>.ova</computeroutput> extension. Such
-            archive files use a variant of the TAR archive format and
-            can therefore be unpacked outside of &product-name; with any
-            utility that can unpack standard TAR files.
+            <filename>.ova</filename> extension. Such archive files use
+            a variant of the TAR archive format and can therefore be
+            unpacked outside of &product-name; with any utility that can
+            unpack standard TAR files.
           </para>
         </listitem>
 
@@ -2665,15 +2701,14 @@
         <listitem>
           <para>
             Select <emphasis role="bold">File</emphasis>,
-            <emphasis
-            role="bold">Import
-            Appliance</emphasis> from the VirtualBox Manager window.
+            <emphasis role="bold">Import Appliance</emphasis> from the
+            VirtualBox Manager window.
           </para>
 
           <para>
             From the file dialog, go to the file with either the
-            <computeroutput>.ovf</computeroutput> or the
-            <computeroutput>.ova</computeroutput> file extension.
+            <filename>.ovf</filename> or the <filename>.ova</filename>
+            file extension.
           </para>
 
           <para>
@@ -2741,7 +2776,7 @@
               <para>
                 <emphasis role="bold">Import Hard Drives as
                 VDI:</emphasis> Imports hard drives in the VDI format
-                rather that in the defalut VMDK format.
+                rather than in the default VMDK format.
               </para>
             </listitem>
 
@@ -2827,7 +2862,8 @@
 
               <para>
                 The <emphasis role="bold">&oci;</emphasis> value exports
-                export to &oci;. See <xref linkend="cloud-export-oci"/>.
+                the appliance to &oci;. See
+                <xref linkend="cloud-export-oci"/>.
               </para>
             </listitem>
 
@@ -2901,25 +2937,23 @@
 
     </sect2>
 
-    <sect2 id="cloud-export-oci">
+    <sect2 id="cloud-integration-steps">
 
-      <title>Exporting an Appliance to &oci;</title>
-
-      <para>
-        &product-name; supports the export of VMs to an &oci; service.
-      </para>
+      <title>Preparing for &oci; Integration</title>
 
       <para>
-        Before you can export a VM to &oci;, ensure that you perform the
-        following configuration steps:
+        There are some common configuration steps you need to take
+        before using &product-name; to integrate with your &oci;
+        account.
       </para>
 
       <itemizedlist>
 
         <listitem>
           <para>
-            Generate an API signing key pair that is used for API
-            requests to &oci;.
+            <emphasis role="bold">Create a key pair.</emphasis> Generate
+            an API signing key pair that is used for API requests to
+            &oci;.
           </para>
 
           <itemizedlist>
@@ -2927,9 +2961,8 @@
             <listitem>
               <para>
                 The key pair is usually installed in the
-                <computeroutput>.oci</computeroutput> folder in your
-                home directory. For example,
-                <computeroutput>~/.oci</computeroutput> on a Linux
+                <filename>.oci</filename> folder in your home directory.
+                For example, <filename>~/.oci</filename> on a Linux
                 system.
               </para>
             </listitem>
@@ -2949,19 +2982,16 @@
           </para>
 
           <para>
-            <ulink url="https://docs.cloud.oracle.com/iaas/Content/API/Concepts/apisigningkey.htm#How">https://docs.cloud.oracle.com/iaas/Content/API/Concepts/apisigningkey.htm#How</ulink>
+            <ulink url="https://docs.cloud.oracle.com/iaas/Content/API/Concepts/apisigningkey.htm#How" />
           </para>
         </listitem>
 
         <listitem>
           <para>
-            Create a profile for your cloud account.
-          </para>
-
-          <para>
-            The cloud profile contains resource identifiers for your
-            cloud account, such as your user OCID, and the fingerprint
-            for your public key. You can create a cloud profile in the
+            <emphasis role="bold">Create a cloud profile.</emphasis> The
+            cloud profile contains resource identifiers for your cloud
+            account, such as your user OCID, and the fingerprint for
+            your public key. You can create a cloud profile in the
             following ways:
           </para>
 
@@ -2969,7 +2999,7 @@
 
             <listitem>
               <para>
-                Automatically by using the <emphasis role="bold">Cloud
+                Automatically, by using the <emphasis role="bold">Cloud
                 Profile Manager</emphasis>. See
                 <xref linkend="ovf-cloud-profile-manager"/>.
               </para>
@@ -2977,22 +3007,28 @@
 
             <listitem>
               <para>
-                Manually by creating an
-                <computeroutput>oci_config</computeroutput> file in your
-                &product-name; global configuration directory. For
-                example, this is
-                <computeroutput>$HOME/.config/VirtualBox/oci_config</computeroutput>
+                Automatically, by using the <command>VBoxManage
+                cloudprofile</command> command. See
+                <xref linkend="vboxmanage-cloudprofile"/>.
+              </para>
+            </listitem>
+
+            <listitem>
+              <para>
+                Manually, by creating an <filename>oci_config</filename>
+                file in your &product-name; global configuration
+                directory. For example, this is
+                <filename>$HOME/.config/VirtualBox/oci_config</filename>
                 on a Linux host.
               </para>
             </listitem>
 
             <listitem>
               <para>
-                Manually by creating a
-                <computeroutput>config</computeroutput> file in your
-                &oci; configuration directory. For example, this is
-                <computeroutput>$HOME/.oci/config</computeroutput> on a
-                Linux host.
+                Manually, by creating a <filename>config</filename> file
+                in your &oci; configuration directory. For example, this
+                is <filename>$HOME/.oci/config</filename> on a Linux
+                host.
               </para>
 
               <para>
@@ -3002,10 +3038,10 @@
 
               <para>
                 &product-name; automatically uses the
-                <computeroutput>config</computeroutput> file if no cloud
-                profile file is present in your global configuration
-                directory. Alternatively, you can import this file
-                manually into the Cloud Profile Manager.
+                <filename>config</filename> file if no cloud profile
+                file is present in your global configuration directory.
+                Alternatively, you can import this file manually into
+                the Cloud Profile Manager.
               </para>
             </listitem>
 
@@ -3017,18 +3053,51 @@
           </para>
 
           <para>
-            <ulink url="https://docs.cloud.oracle.com/iaas/Content/API/Concepts/sdkconfig.htm">https://docs.cloud.oracle.com/iaas/Content/API/Concepts/sdkconfig.htm</ulink>
+            <ulink url="https://docs.cloud.oracle.com/iaas/Content/API/Concepts/sdkconfig.htm" />
           </para>
         </listitem>
 
         <listitem>
           <para>
-            Ensure that the subnets that are used by source VMs are
-            available in the target compartment on the cloud service.
+            <emphasis role="bold">Custom Linux images.</emphasis> To
+            export a custom Linux image, prepare the VM as described
+            here:
+          </para>
+
+          <para>
+            <ulink url="https://docs.cloud.oracle.com/iaas/Content/Compute/Tasks/importingcustomimagelinux.htm" />
+          </para>
+        </listitem>
+
+        <listitem>
+          <para>
+            <emphasis role="bold">Subnets.</emphasis> When exporting a
+            VM to cloud, ensure that the subnets that are used by source
+            VMs are available in the target compartment on the cloud
+            service.
           </para>
         </listitem>
 
       </itemizedlist>
+
+    </sect2>
+
+    <sect2 id="cloud-export-oci">
+
+      <title>Exporting an Appliance to &oci;</title>
+
+      <para>
+        &product-name; supports the export of VMs to an &oci; service.
+        The exported VM is stored on &oci; as a custom image. You can
+        configure whether a cloud instance is created and started after
+        the export process has completed.
+      </para>
+
+      <para>
+        Before you can export a VM to &oci; ensure that you have done
+        the required preconfiguration tasks, as described in
+        <xref linkend="cloud-integration-steps"/>.
+      </para>
 
       <para>
         Perform the following steps to export a VM to &oci;:
@@ -3073,51 +3142,126 @@
           </para>
 
           <figure id="fig-export-appliance-oci">
-            <title>Appliance Settings Screen, Showing Cloud Profile Settings</title>
+            <title>Appliance Settings Screen, Showing Cloud Profile and Machine Creation
+              Settings</title>
             <mediaobject>
               <imageobject>
                 <imagedata align="center" fileref="images/export-appliance-oci.png"
                   width="12cm" />
               </imageobject>
             </mediaobject>
+
           </figure>
+
+          <para>
+            In the <emphasis role="bold">Machine Creation</emphasis>
+            field, select an option to configure settings for a cloud
+            instance created when you export to &oci;. The options
+            enable you to do one of the following:
+          </para>
+
+          <itemizedlist>
+
+            <listitem>
+              <para>
+                Configure settings for the cloud instance
+                <emphasis>after</emphasis> you have finished exporting
+                the VM.
+              </para>
+            </listitem>
+
+            <listitem>
+              <para>
+                Configure settings for the cloud instance
+                <emphasis>before</emphasis> you start to export the VM.
+              </para>
+            </listitem>
+
+            <listitem>
+              <para>
+                Do not create a cloud instance when you export the VM.
+              </para>
+            </listitem>
+
+          </itemizedlist>
 
           <para>
             Click <emphasis role="bold">Next</emphasis> to make an API
             request to the &oci; service and open the
-            <emphasis
-            role="bold">Virtual System
-            Settings</emphasis> screen.
+            <emphasis role="bold">Virtual System Settings</emphasis>
+            screen.
           </para>
         </listitem>
 
         <listitem>
           <para>
-            Optionally edit settings used for the virtual machine on
-            &oci;.
+            Optionally edit storage settings used for the exported
+            virtual machine in &oci;. You can change the following
+            settings:
           </para>
 
-          <para>
-            For example, you can edit the Disk Size and Shape used for
-            the VM instance.
-          </para>
+          <itemizedlist>
+
+            <listitem>
+              <para>
+                The name of the bucket used to store the exported files.
+              </para>
+            </listitem>
+
+            <listitem>
+              <para>
+                Whether to store the custom image in &oci;.
+              </para>
+            </listitem>
+
+            <listitem>
+              <para>
+                The name for the custom image in &oci;.
+              </para>
+            </listitem>
+
+            <listitem>
+              <para>
+                The launch mode for the custom image.
+              </para>
+
+              <para>
+                <emphasis role="bold">Paravirtualized</emphasis> mode
+                gives improved performance and should be suitable for
+                most &product-name; VMs.
+              </para>
+
+              <para>
+                <emphasis role="bold">Emulated</emphasis> mode is
+                suitable for legacy OS images.
+              </para>
+            </listitem>
+
+          </itemizedlist>
 
           <para>
             Click <emphasis role="bold">Export</emphasis> to export the
-            VMs to the cloud service.
+            VM to &oci;.
           </para>
 
           <para>
-            The VMs are uploaded to &oci;.
+            Depending on the selection in the
+            <emphasis role="bold">Machine Creation</emphasis> field, the
+            <emphasis role="bold">Cloud Virtual Machine
+            Settings</emphasis> screen may be displayed before or after
+            export. This screen enables you to configure settings for
+            the cloud instance, such as Shape and Disk Size.
           </para>
 
           <para>
-            Instances are created for the uploaded VMs.
+            Click <emphasis role="bold">Create</emphasis>. The VM is
+            exported to &oci;.
           </para>
 
           <para>
-            By default, the VM instance is started after upload to
-            &oci;.
+            Depending on the <emphasis role="bold">Machine
+            Creation</emphasis> setting, a cloud instance may be started
+            after upload to &oci; is completed.
           </para>
         </listitem>
 
@@ -3139,125 +3283,18 @@
 
     <sect2 id="cloud-import-oci">
 
-      <title>Importing an instance from &oci;</title>
+      <title>Importing an Instance from &oci;</title>
 
       <para>
-        &product-name; supports the import of cloud instance from an &oci; service.
+        &product-name; supports the import of cloud instances from an
+        &oci; service.
       </para>
 
       <para>
-        Before you can import an instance from &oci;, ensure that you perform the
-        following configuration steps:
+        Before you can import an instance from &oci; ensure that you
+        have done the required preconfiguration tasks, as described in
+        <xref linkend="cloud-integration-steps"/>.
       </para>
-
-      <itemizedlist>
-
-        <listitem>
-          <para>
-            Generate an API signing key pair that is used for API
-            requests to &oci;.
-          </para>
-
-          <itemizedlist>
-
-            <listitem>
-              <para>
-                The key pair is usually installed in the
-                <computeroutput>.oci</computeroutput> folder in your
-                home directory. For example,
-                <computeroutput>~/.oci</computeroutput> on a Linux
-                system.
-              </para>
-            </listitem>
-
-            <listitem>
-              <para>
-                Upload the public key of the key pair to the cloud
-                service.
-              </para>
-            </listitem>
-
-          </itemizedlist>
-
-          <para>
-            For step-by-step instructions for creating and uploading an
-            API signing key for &oci;, see:
-          </para>
-
-          <para>
-            <ulink url="https://docs.cloud.oracle.com/iaas/Content/API/Concepts/apisigningkey.htm#How">https://docs.cloud.oracle.com/iaas/Content/API/Concepts/apisigningkey.htm#How</ulink>
-          </para>
-        </listitem>
-
-        <listitem>
-          <para>
-            Create a profile for your cloud account.
-          </para>
-
-          <para>
-            The cloud profile contains resource identifiers for your
-            cloud account, such as your user OCID, and the fingerprint
-            for your public key. You can create a cloud profile in the
-            following ways:
-          </para>
-
-          <itemizedlist>
-
-            <listitem>
-              <para>
-                Automatically by using the <emphasis role="bold">Cloud
-                Profile Manager</emphasis>. See
-                <xref linkend="ovf-cloud-profile-manager"/>.
-              </para>
-            </listitem>
-
-            <listitem>
-              <para>
-                Manually by creating an
-                <computeroutput>oci_config</computeroutput> file in your
-                &product-name; global configuration directory. For
-                example, this is
-                <computeroutput>$HOME/.config/VirtualBox/oci_config</computeroutput>
-                on a Linux host.
-              </para>
-            </listitem>
-
-            <listitem>
-              <para>
-                Manually by creating a
-                <computeroutput>config</computeroutput> file in your
-                &oci; configuration directory. For example, this is
-                <computeroutput>$HOME/.oci/config</computeroutput> on a
-                Linux host.
-              </para>
-
-              <para>
-                This is the same file that is used by the &oci; command
-                line interface.
-              </para>
-
-              <para>
-                &product-name; automatically uses the
-                <computeroutput>config</computeroutput> file if no cloud
-                profile file is present in your global configuration
-                directory. Alternatively, you can import this file
-                manually into the Cloud Profile Manager.
-              </para>
-            </listitem>
-
-          </itemizedlist>
-
-          <para>
-            For more information about the cloud profile settings used
-            by &oci; see:
-          </para>
-
-          <para>
-            <ulink url="https://docs.cloud.oracle.com/iaas/Content/API/Concepts/sdkconfig.htm">https://docs.cloud.oracle.com/iaas/Content/API/Concepts/sdkconfig.htm</ulink>
-          </para>
-        </listitem>
-
-      </itemizedlist>
 
       <para>
         Perform the following steps to import an instance from &oci;:
@@ -3269,7 +3306,13 @@
           <para>
             Select <emphasis role="bold">File</emphasis>,
             <emphasis role="bold">Import Appliance</emphasis> to open
-            the <emphasis role="bold">Import Virtual Appliance</emphasis> wizard.
+            the <emphasis role="bold">Import Virtual
+            Appliance</emphasis> wizard.
+          </para>
+
+          <para>
+            In the <emphasis role="bold">Source</emphasis> drop-down
+            list, select <emphasis role="bold">&oci;</emphasis>.
           </para>
 
           <para>
@@ -3288,26 +3331,39 @@
           </para>
 
           <para>
-            Choose the interesting cloud instance from the list <emphasis role="bold">Machines</emphasis>.
+            Choose the required cloud instance from the list in the
+            <emphasis role="bold">Machines</emphasis> field.
           </para>
 
           <para>
-            Click <emphasis role="bold">Next</emphasis>
-            to make an API request to the &oci; service and open the <emphasis role="bold">Appliance Settings</emphasis> screen.
+            Click <emphasis role="bold">Next</emphasis> to make an API
+            request to the &oci; service and open the
+            <emphasis role="bold">Appliance Settings</emphasis> screen.
           </para>
         </listitem>
 
         <listitem>
           <para>
-            Optionally edit settings used for new local virtual machine.
+            Optionally edit settings for the new local virtual machine.
           </para>
 
           <para>
-            For example, you can edit the VM name, CPUs, RAM memory, OS type, OS version.
+            For example, you can edit the VM name and description.
           </para>
 
+          <figure id="fig-import-instance-oci">
+            <title>Import Cloud Instance Screen, Showing Profile Settings and VM Settings</title>
+           <mediaobject>
+              <imageobject>
+                <imagedata align="center" fileref="images/import-instance.png"
+                  width="12cm" />
+              </imageobject>
+           </mediaobject>
+          </figure>
+
           <para>
-            Click <emphasis role="bold">Import</emphasis> to import the instance from the cloud service.
+            Click <emphasis role="bold">Import</emphasis> to import the
+            instance from the cloud service.
           </para>
         </listitem>
 
@@ -3320,51 +3376,77 @@
       </orderedlist>
 
       <para>
-        General OCI import logic:
-      </para>
-      <orderedlist>
-        <listitem>
-          <para>
-            A custom image created from the boot volume of the instance.
-          </para>
-        </listitem>
-        <listitem>
-          <para>
-            The custom image exported into OCI object and stored in the OCI Object Storage in the bucket pointed by user.
-          </para>
-        </listitem>
-        <listitem>
-          <para>
-            The OCI object is downloaded to the local host. OCI object is a TAR archive which contains a boot volume of instance
-            in QCOW2 format and JSON file with some meta-data related to the instance.
-          </para>
-        </listitem>
-        <listitem>
-          <para>
-            The boot volume of instance is extracted from the archive and new VMDK image is created by conversion the boot volume
-            into the VMDK format. The VMDK image is registered in the VirtualBox.
-          </para>
-        </listitem>
-        <listitem>
-          <para>
-            New VM is created with the VMDK image created on the previous step.
-          </para>
-        </listitem>
-        <listitem>
-          <para>
-            The downloaded OCI object (TAR archive) is deleted after successful import.
-          </para>
-        </listitem>
-      </orderedlist>
-      <para>
-        By default, the VM isn't launched after import from &oci;.
-      </para>
-
-      <para>
         You can also use the <command>VBoxManage import</command>
         command to import an instance from &oci;. See
         <xref linkend="vboxmanage-import-cloud"/>.
       </para>
+
+      <simplesect id="import-instance-sequence">
+
+        <title>Importing an Instance: Overview of Events</title>
+
+        <para>
+          The following describes the sequence of events when you import
+          an instance from &oci;.
+        </para>
+
+        <itemizedlist>
+
+          <listitem>
+            <para>
+              A custom image is created from the boot volume of the
+              instance.
+            </para>
+          </listitem>
+
+          <listitem>
+            <para>
+              The custom image is exported to an &oci; object and is
+              stored using Object Storage in the bucket specified by the
+              user.
+            </para>
+          </listitem>
+
+          <listitem>
+            <para>
+              The &oci; object is downloaded to the local host. The
+              object is a TAR archive which contains a boot volume of
+              the instance in QCOW2 format and a JSON file containing
+              metadata related to the instance.
+            </para>
+          </listitem>
+
+          <listitem>
+            <para>
+              The boot volume of the instance is extracted from the
+              archive and a new VMDK image is created by converting the
+              boot volume into the VMDK format. The VMDK image is
+              registered with &product-name;.
+            </para>
+          </listitem>
+
+          <listitem>
+            <para>
+              A new VM is created using the VMDK image for the cloud
+              instance.
+            </para>
+
+            <para>
+              By default, the new VM is not started after import from
+              &oci;.
+            </para>
+          </listitem>
+
+          <listitem>
+            <para>
+              The downloaded TAR archive is deleted after a successful
+              import.
+            </para>
+          </listitem>
+
+        </itemizedlist>
+
+      </simplesect>
 
     </sect2>
 
@@ -3396,14 +3478,14 @@
       </para>
 
       <para>
-        Use the Cloud Profile Manager to create a new cloud profile
-        automatically. Or, create a cloud profile by importing settings
-        from your &oci; configuration file into the Cloud Profile
-        Manager.
+        You can use the Cloud Profile Manager to create a new cloud
+        profile automatically or to create a cloud profile by importing
+        settings from your &oci; configuration file.
       </para>
 
       <para>
-        Perform the following steps to create a new cloud profile:
+        Perform the following steps to create a new cloud profile
+        automatically:
       </para>
 
       <orderedlist>
@@ -3483,8 +3565,8 @@
 
           <para>
             The cloud profile settings are saved in the
-            <computeroutput>oci_config</computeroutput> file in your
-            &product-name; global settings directory.
+            <filename>oci_config</filename> file in your &product-name;
+            global settings directory.
           </para>
         </listitem>
 
@@ -3499,11 +3581,9 @@
 
         <listitem>
           <para>
-            Ensure that a <computeroutput>config</computeroutput> file
-            is present in your &oci; configuration directory. For
-            example, this is
-            <computeroutput>$HOME/.oci/config</computeroutput> on a
-            Linux host.
+            Ensure that a <filename>config</filename> file is present in
+            your &oci; configuration directory. For example, this is
+            <filename>$HOME/.oci/config</filename> on a Linux host.
           </para>
         </listitem>
 
@@ -3529,8 +3609,8 @@
 
           <para>
             Your cloud profile settings are saved to the
-            <computeroutput>oci_config</computeroutput> file in your
-            &product-name; global settings directory.
+            <filename>oci_config</filename> file in your &product-name;
+            global settings directory.
           </para>
         </listitem>
 
@@ -3553,6 +3633,123 @@
         </listitem>
 
       </orderedlist>
+
+    </sect2>
+
+    <sect2 id="cloud-new-vm">
+
+      <title>Creating New Cloud Instances from a Custom Image</title>
+
+      <para>
+        You can use &product-name; to create new instances from a custom
+        image on your cloud service.
+      </para>
+
+      <para>
+        <xref linkend="cloud-export-oci"/> describes how to create a
+        custom image when you are exporting a VM to &oci;. Using a
+        custom image means that you can quickly create cloud instances
+        without having to upload your image to the cloud service every
+        time.
+      </para>
+
+      <para>
+        Before you can create a new cloud instance in &oci; ensure that
+        you have done the required preconfiguration tasks, as described
+        in <xref linkend="cloud-integration-steps"/>.
+      </para>
+
+      <para>
+        Perform the following steps to create a new cloud instance on
+        &oci;:
+      </para>
+
+      <orderedlist>
+
+        <listitem>
+          <para>
+            Select <emphasis role="bold">File</emphasis>,
+            <emphasis role="bold">New Cloud VM</emphasis> to open the
+            <emphasis role="bold">Create Cloud Virtual
+            Machine</emphasis> wizard.
+          </para>
+        </listitem>
+
+        <listitem>
+          <para>
+            From the <emphasis role="bold">Destination</emphasis>
+            drop-down list, select
+            <emphasis role="bold">&oci;</emphasis>.
+          </para>
+
+          <para>
+            In the <emphasis role="bold">Account</emphasis> drop-down
+            list, select your &oci; account.
+          </para>
+
+          <para>
+            You can set up &oci; accounts by using the Cloud Profile
+            Manager.
+          </para>
+
+          <para>
+            The list after the <emphasis role="bold">Account</emphasis>
+            field shows the profile settings for your cloud account.
+          </para>
+
+          <para>
+            In the <emphasis role="bold">Images</emphasis> list, select
+            from the custom images available on &oci;.
+          </para>
+
+          <figure id="fig-newcloudvm">
+            <title>New Cloud VM Wizard, Showing List of Custom Images</title>
+           <mediaobject>
+              <imageobject>
+                <imagedata align="center" fileref="images/newcloudvm.png"
+                  width="12cm" />
+              </imageobject>
+            </mediaobject>
+          </figure>
+
+          <para>
+            Click <emphasis role="bold">Next</emphasis> to make an API
+            request to the &oci; service and open the
+            <emphasis role="bold">Cloud Virtual Machine
+            Settings</emphasis> screen.
+          </para>
+        </listitem>
+
+        <listitem>
+          <para>
+            Optionally edit settings used for the instance on &oci;.
+          </para>
+
+          <para>
+            For example, you can edit the Disk Size and Shape used for
+            the VM instance and the networking configuration.
+          </para>
+
+          <para>
+            Click <emphasis role="bold">Create</emphasis> to create the
+            new cloud instance.
+          </para>
+        </listitem>
+
+        <listitem>
+          <para>
+            Monitor the instance creation process by using the &oci;
+            Console.
+          </para>
+        </listitem>
+
+      </orderedlist>
+
+      <para>
+        You can also use the <command>VBoxManage cloud
+        instance</command> command to create and manage instances on a
+        cloud service. See <xref linkend="vboxmanage-cloudinstance"/>.
+      </para>
 
     </sect2>
 
@@ -3581,7 +3778,7 @@
       <listitem>
         <para>
           <emphasis role="bold">General.</emphasis> Enables the user to
-          specify the default folder/directory for VM files, and the
+          specify the default folder or directory for VM files, and the
           VRDP Authentication Library.
         </para>
       </listitem>
@@ -3589,10 +3786,10 @@
       <listitem>
         <para>
           <emphasis role="bold">Input.</emphasis> Enables the user to
-          specify the Host key. It identifies the key that toggles
-          whether the cursor is in the focus of the VM or the Host OS
-          windows, see <xref linkend="keyb_mouse_normal"/>, and which is
-          also used to trigger certain VM actions, see
+          specify the Host key. This is the key that toggles whether the
+          cursor is in the focus of the VM or the Host OS windows, see
+          <xref linkend="keyb_mouse_normal"/>. The Host key is also used
+          to trigger certain VM actions, see
           <xref linkend="specialcharacters"/>.
         </para>
       </listitem>
@@ -3711,6 +3908,280 @@
       as the &product-name; core neatly exposes all of its features in a
       clean API. See <xref linkend="VirtualBoxAPI" />.
     </para>
+
+  </sect1>
+
+  <sect1 id="soft-keyb">
+
+    <title>Soft Keyboard</title>
+
+    <para>
+      &product-name; provides a <emphasis>soft keyboard</emphasis> that
+      enables you to input keyboard characters on the guest. A soft
+      keyboard is an on-screen keyboard that can be used as an
+      alternative to a physical keyboard. See
+      <xref linkend="soft-keyb-using"/> for details of how to use the
+      soft keyboard.
+    </para>
+
+    <caution>
+      <para>
+        For best results, ensure that the keyboard layout configured on
+        the guest OS matches the keyboard layout used by the soft
+        keyboard. &product-name; does not do this automatically.
+      </para>
+    </caution>
+
+    <figure id="fig-soft-keyb">
+      <title>Soft Keyboard in a Guest Virtual Machine</title>
+    <mediaobject>
+      <imageobject>
+        <imagedata align="center" fileref="images/softkeybd.png"
+                   width="14cm" />
+      </imageobject>
+    </mediaobject>
+    </figure>
+
+    <para>
+      The soft keyboard can be used in the following scenarios:
+    </para>
+
+    <itemizedlist>
+
+      <listitem>
+        <para>
+          When the physical keyboard on the host is not the same as the
+          keyboard layout configured on the guest. For example, if the
+          guest is configured to use an international keyboard, but the
+          host keyboard is US English.
+        </para>
+      </listitem>
+
+      <listitem>
+        <para>
+          To send special key combinations to the guest. Note that some
+          common key combinations are also available in the
+          <emphasis role="bold">Input</emphasis>,
+          <emphasis role="bold">Keyboard</emphasis> menu of the guest VM
+          window. See <xref linkend="specialcharacters"/>.
+        </para>
+      </listitem>
+
+      <listitem>
+        <para>
+          For guests in kiosk mode, where a physical keyboard is not
+          present.
+        </para>
+      </listitem>
+
+      <listitem>
+        <para>
+          When using nested virtualization, the soft keyboard provides a
+          method of sending key presses to a guest.
+        </para>
+      </listitem>
+
+    </itemizedlist>
+
+    <para>
+      By default, the soft keyboard includes some common international
+      keyboard layouts. You can copy and modify these to meet your own
+      requirements. See <xref linkend="soft-keyb-custom"/>.
+    </para>
+
+    <sect2 id="soft-keyb-using">
+
+      <title>Using the Soft Keyboard</title>
+
+      <orderedlist>
+
+        <listitem>
+          <para>
+            Display the soft keyboard.
+          </para>
+
+          <para>
+            In the guest VM window, select
+            <emphasis role="bold">Input</emphasis>,
+            <emphasis role="bold">Keyboard</emphasis>,
+            <emphasis role="bold">Soft Keyboard</emphasis>.
+          </para>
+        </listitem>
+
+        <listitem>
+          <para>
+            Select the required keyboard layout.
+          </para>
+
+          <para>
+            The name of the current keyboard layout is displayed in the
+            task bar of the soft keyboard window. This is the previous
+            keyboard layout that was used.
+          </para>
+
+          <para>
+            Click the <emphasis role="bold">Layout List</emphasis> icon
+            in the task bar of the soft keyboard window. The
+            <emphasis role="bold">Layout List</emphasis> window is
+            displayed.
+          </para>
+
+          <para>
+            Select the required keyboard layout from the entries in the
+            <emphasis role="bold">Layout List</emphasis> window.
+          </para>
+
+          <para>
+            The keyboard display graphic is updated to show the
+            available input keys.
+          </para>
+        </listitem>
+
+        <listitem>
+          <para>
+            Use the soft keyboard to enter keyboard characters on the
+            guest.
+          </para>
+
+          <itemizedlist>
+
+            <listitem>
+              <para>
+                Modifier keys such as Shift, Ctrl, and Alt are available
+                on the soft keyboard. Click once to select the modifier
+                key, click twice to lock the modifier key.
+              </para>
+
+              <para>
+                The <emphasis role="bold">Reset the Keyboard and Release
+                All Keys</emphasis> icon can be used to release all
+                pressed modifier keys, both on the host and the guest.
+              </para>
+            </listitem>
+
+            <listitem>
+              <para>
+                To change the look of the soft keyboard, click the
+                <emphasis role="bold">Settings</emphasis> icon in the
+                task bar. You can change colors used in the keyboard
+                graphic, and can hide or show sections of the keyboard,
+                such as the NumPad or multimedia keys.
+              </para>
+            </listitem>
+
+          </itemizedlist>
+        </listitem>
+
+      </orderedlist>
+
+    </sect2>
+
+    <sect2 id="soft-keyb-custom">
+
+      <title>Creating a Custom Keyboard Layout</title>
+
+      <para>
+        You can use one of the supplied default keyboard layouts as the
+        starting point to create a custom keyboard layout.
+      </para>
+
+      <note>
+        <para>
+          To permananently save a custom keyboard layout, you must save
+          it to file. Otherwise, any changes you make are discarded when
+          you close down the <emphasis role="bold">Soft
+          Keyboard</emphasis> window.
+        </para>
+
+        <para>
+          Custom keyboard layouts that you save are stored as an XML
+          file on the host, in the <filename>keyboardLayouts</filename>
+          folder in the global configuration data directory. For
+          example, in
+          <filename>$HOME/.config/VirtualBox/keyboardLayouts</filename>
+          on a Linux host.
+        </para>
+      </note>
+
+      <orderedlist>
+
+        <listitem>
+          <para>
+            Display the <emphasis role="bold">Layout List</emphasis>.
+          </para>
+
+          <para>
+            Click the <emphasis role="bold">Layout List</emphasis> icon
+            in the task bar of the soft keyboard window.
+          </para>
+        </listitem>
+
+        <listitem>
+          <para>
+            Make a copy of an existing keyboard layout.
+          </para>
+
+          <para>
+            Highlight the required layout and click the
+            <emphasis role="bold">Copy the Selected Layout</emphasis>
+            icon.
+          </para>
+
+          <para>
+            A new layout entry with a name suffix of
+            <literal>-Copy</literal> is created.
+          </para>
+        </listitem>
+
+        <listitem>
+          <para>
+            Edit the new keyboard layout.
+          </para>
+
+          <para>
+            Highlight the new layout in the <emphasis role="bold">Layout
+            List</emphasis> and click the <emphasis role="bold">Edit the
+            Selected Layout</emphasis> icon.
+          </para>
+
+          <para>
+            Enter a new name for the layout.
+          </para>
+
+          <para>
+            Edit keys in the new layout. Click on the key that you want
+            to edit and enter new key captions in the
+            <emphasis role="bold">Captions</emphasis> fields.
+          </para>
+
+          <para>
+            The keyboard graphic is updated with the new captions.
+          </para>
+        </listitem>
+
+        <listitem>
+          <para>
+            (Optional) Save the layout to file. This means that your
+            custom keyboard layout will be available for future use.
+          </para>
+
+          <para>
+            Highlight the new layout in the <emphasis role="bold">Layout
+            List</emphasis> and click the <emphasis role="bold">Save the
+            Selected Layout into File</emphasis> icon.
+          </para>
+
+          <para>
+            Any custom layouts that you create can later be removed from
+            the Layout List, by highlighting and clicking the
+            <emphasis role="bold">Delete the Selected Layout</emphasis>
+            icon.
+          </para>
+        </listitem>
+
+      </orderedlist>
+
+    </sect2>
 
   </sect1>
 

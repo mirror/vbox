@@ -137,8 +137,8 @@
           for modular software. COM enables applications to provide
           application programming interfaces which can be accessed from
           various other programming languages and applications.
-          &product-name; makes use of COM both internally and externally to
-          provide a comprehensive API to 3rd party developers.
+          &product-name; makes use of COM both internally and externally
+          to provide a comprehensive API to 3rd party developers.
         </para>
 
       </glossdef>
@@ -220,9 +220,9 @@
           Graphical User Interface. Commonly used as an antonym to a
           "command line interface". In the context of &product-name;, we
           sometimes refer to the main graphical
-          <computeroutput>VirtualBox</computeroutput> program as the
-          "GUI", to differentiate it from the
-          <command>VBoxManage</command> interface.
+          <command>VirtualBox</command> program as the "GUI", to
+          differentiate it from the <command>VBoxManage</command>
+          interface.
         </para>
 
       </glossdef>
@@ -299,7 +299,7 @@
           MAC address is a 6-byte number which identifies a network
           card. It is typically written in hexadecimal notation where
           the bytes are separated by colons, such as
-          <computeroutput>00:17:3A:5E:CB:08</computeroutput>.
+          <literal>00:17:3A:5E:CB:08</literal>.
         </para>
 
       </glossdef>
@@ -338,8 +338,8 @@
           interfaces by which an interface modifies the source and/or
           target IP addresses of network packets according to specific
           rules. Commonly employed by routers and firewalls to shield an
-          internal network from the Internet, &product-name; can use NAT to
-          easily share a host's physical networking hardware with its
+          internal network from the Internet, &product-name; can use NAT
+          to easily share a host's physical networking hardware with its
           virtual machines. See <xref
         linkend="network_nat" />.
         </para>
@@ -381,8 +381,7 @@
         <para>
           Physical Address Extension. This enables access to more than 4
           GB of RAM, even in 32-bit environments. See
-          <xref
-        linkend="settings-general-advanced" />.
+          <xref linkend="settings-general-advanced" />.
         </para>
 
       </glossdef>
@@ -434,11 +433,11 @@
           remote location using a network connection over which data is
           transferred in both directions. Typically graphics updates and
           audio are sent from the remote machine and keyboard and mouse
-          input events are sent from the client. An &product-name; extension
-          package by Oracle provides VRDP, an enhanced implementation of
-          the relevant standards which is largely compatible with
-          Microsoft's RDP implementation. See <xref linkend="vrde" />
-          for details.
+          input events are sent from the client. An &product-name;
+          extension package by Oracle provides VRDP, an enhanced
+          implementation of the relevant standards which is largely
+          compatible with Microsoft's RDP implementation. See
+          <xref linkend="vrde" /> for details.
         </para>
 
       </glossdef>
@@ -536,7 +535,7 @@
           stood for Tape ARchive and was already supported by very early
           UNIX versions for backing up data on tape. The file format is
           still widely used today. For example, with OVF archives using
-          an <computeroutput>.ova</computeroutput> file extension. See
+          an <filename>.ova</filename> file extension. See
           <xref
         linkend="ovf" />.
         </para>
@@ -560,8 +559,8 @@
           (Globally Unique Identifier). A UUID is a string of numbers
           and letters which can be computed dynamically and is
           guaranteed to be unique. Generally, it is used as a global
-          handle to identify entities. &product-name; makes use of UUIDs to
-          identify VMs, Virtual Disk Images (VDI files), and other
+          handle to identify entities. &product-name; makes use of UUIDs
+          to identify VMs, Virtual Disk Images (VDI files), and other
           entities.
         </para>
 
@@ -580,8 +579,8 @@
       <glossdef>
 
         <para>
-          Virtual Machine. A virtual computer that &product-name; enables
-          you to run on top of your actual hardware. See
+          Virtual Machine. A virtual computer that &product-name;
+          enables you to run on top of your actual hardware. See
           <xref
         linkend="virtintro" /> for details.
         </para>
@@ -611,8 +610,8 @@
 
         <para>
           VirtualBox Remote Desktop Extension. This interface is built
-          into &product-name; to allow &product-name; extension packages to
-          supply remote access to virtual machines. An &product-name;
+          into &product-name; to allow &product-name; extension packages
+          to supply remote access to virtual machines. An &product-name;
           extension package by Oracle provides VRDP support. See
           <xref linkend="vrde" />.
         </para>
@@ -688,9 +687,9 @@
           Mozilla Cross Platform Component Object Model, a programming
           infrastructure developed by the Mozilla browser project which
           is similar to Microsoft COM and enables applications to
-          provide a modular programming interface. &product-name; makes use
-          of XPCOM on Linux both internally and externally to provide a
-          comprehensive API to third-party developers.
+          provide a modular programming interface. &product-name; makes
+          use of XPCOM on Linux both internally and externally to
+          provide a comprehensive API to third-party developers.
         </para>
 
       </glossdef>

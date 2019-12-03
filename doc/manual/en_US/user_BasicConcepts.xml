@@ -458,47 +458,6 @@
 
       <title>64-bit Guests</title>
 
-      <para>
-        &product-name; enables you to run 64-bit guest OSes even on a
-        32-bit host OS. To run a 64-bit guest OS on a 32-bit host
-        system, ensure that you meet the following conditions:
-      </para>
-
-      <itemizedlist>
-
-        <listitem>
-          <para>
-            You need a 64-bit processor that has hardware virtualization
-            support. See <xref linkend="hwvirt" />.
-          </para>
-        </listitem>
-
-        <listitem>
-          <para>
-            You must enable hardware virtualization for the particular
-            VM that requires 64-bit support. Software virtualization is
-            not supported for 64-bit VMs.
-          </para>
-        </listitem>
-
-        <listitem>
-          <para>
-            To use 64-bit guest support on a 32-bit host OS, you must
-            select a 64-bit OS for the particular VM. Since supporting
-            64 bits on 32-bit hosts incurs additional overhead,
-            &product-name; only enables this support only upon explicit
-            request.
-          </para>
-
-          <para>
-            64-bit hosts typically come with hardware virtualization
-            support. So, you can install a 64-bit guest OS in the guest
-            regardless of the settings.
-          </para>
-        </listitem>
-
-      </itemizedlist>
-
       <warning>
         <para>
           Be sure to enable <emphasis role="bold">I/O APIC</emphasis>
@@ -514,9 +473,9 @@
 
       <para>
         If you use the <emphasis role="bold">Create VM</emphasis> wizard
-        of the &product-name; graphical user interface (GUI),
-        &product-name; automatically uses the correct settings for each
-        selected 64-bit OS type. See <xref linkend="gui-createvm" />.
+        of the VirtualBox Manager, &product-name; automatically uses the
+        correct settings for each selected 64-bit OS type. See
+        <xref linkend="gui-createvm" />.
       </para>
 
     </sect2>
@@ -867,66 +826,66 @@
 
       <listitem>
         <para>
-          <emphasis role="bold">Input devices.</emphasis> By default,
-          &product-name; emulates a standard PS/2 keyboard and mouse.
-          These devices are supported by almost all past and present
-          OSes.
+          <emphasis role="bold">Input devices.</emphasis> &product-name;
+          can emulate a standard PS/2 keyboard and mouse. These devices
+          are supported by most guest OSes.
         </para>
 
         <para>
           In addition, &product-name; can provide virtual USB input
           devices to avoid having to capture mouse and keyboard, as
-          described in <xref
-          linkend="keyb_mouse_normal" />.
+          described in <xref linkend="keyb_mouse_normal" />.
         </para>
       </listitem>
 
       <listitem>
         <para>
-          <emphasis role="bold">Graphics.</emphasis> The &product-name;
-          graphics device, sometimes referred to as a VGA device, is not
-          based on any physical counterpart. This is unlike nearly all
-          other emulated devices. It is a simple, synthetic device which
-          provides compatibility with standard VGA and several extended
-          registers used by the VESA BIOS Extensions (VBE).
+          <emphasis role="bold">Graphics.</emphasis> The default
+          &product-name; graphics device for Windows guests is an SVGA
+          device. For Linux guests, the default graphics device emulates
+          a VMware SVGA graphics device. See
+          <xref linkend="settings-screen"/>.
+        </para>
+
+        <para>
+          For legacy guest OSes, a VGA-compatible graphics device is
+          available.
         </para>
       </listitem>
 
       <listitem>
         <para>
           <emphasis role="bold">Storage.</emphasis> &product-name;
-          currently emulates the standard ATA interface found on Intel
-          PIIX3/PIIX4 chips, the SATA (AHCI) interface, and two SCSI
-          adapters (LSI Logic and BusLogic). See
-          <xref linkend="harddiskcontrollers" /> for details. Whereas
-          providing one of these would be enough for &product-name; by
-          itself, this multitude of storage adapters is required for
-          compatibility with other hypervisors. Windows is particularly
-          picky about its boot devices, and migrating VMs between
-          hypervisors is very difficult or impossible if the storage
-          controllers are different.
+          emulates the most common types of hard disk controllers. See
+          <xref linkend="harddiskcontrollers" />. Whereas supporting
+          only one of these controllers would be enough for
+          &product-name; by itself, this multitude of storage adapters
+          is required for compatibility with other hypervisors. Windows
+          is very selective about its boot devices, and migrating VMs
+          between hypervisors is very difficult or impossible if the
+          storage controllers are different.
         </para>
       </listitem>
 
       <listitem>
         <para>
           <emphasis role="bold">Networking.</emphasis> See
-          <xref
-          linkend="nichardware" />.
+          <xref linkend="nichardware" />.
         </para>
       </listitem>
 
       <listitem>
         <para>
           <emphasis role="bold">USB.</emphasis> &product-name; emulates
-          three USB host controllers: xHCI, EHCI, and OHCI. While xHCI
-          handles all USB transfer speeds, only guest OSes released
-          approximately after 2011 support xHCI. Note that for Windows 7
-          guests, 3rd party drivers must be installed for xHCI support.
+          these types of USB host controllers: xHCI, EHCI, and OHCI.
+          While xHCI handles all USB transfer speeds, some legacy guest
+          OSes may not support xHCI. Note that for some legacy Windows
+          guests, third party drivers must be installed for xHCI
+          support.
         </para>
 
         <para>
-          Older OSes typically support OHCI and EHCI. The two
+          Legacy guest OSes typically support OHCI and EHCI. These two
           controllers are needed because OHCI only handles USB low-speed
           and full-speed devices (both USB 1.x and 2.0), while EHCI only
           handles high-speed devices (USB 2.0 only).
@@ -934,9 +893,9 @@
 
         <para>
           The emulated USB controllers do not communicate directly with
-          devices on the host but rather with a virtual USB layer which
-          abstracts the USB protocol and enables the use of remote USB
-          devices.
+          devices on the host. Instead they communicate with a virtual
+          USB layer which abstracts the USB protocol and enables the use
+          of remote USB devices.
         </para>
       </listitem>
 
@@ -976,18 +935,19 @@
 
         <listitem>
           <para>
-            <emphasis role="bold">Name:</emphasis> The name under which
-            the VM is shown in the list of VMs in the main window. Under
-            this name, &product-name; also saves the VM's configuration
-            files. By changing the name, &product-name; renames these
-            files as well. As a result, you can only use characters
-            which are allowed in your host OS's file names.
+            <emphasis role="bold">Name:</emphasis> The name of the the
+            VM, as shown in the list of VMs in the main VirtualBox
+            Manager window. Using this name, &product-name; also saves
+            the VM's configuration files. If you change the name,
+            &product-name; renames these files as well. As a result, you
+            can only use characters which are allowed for file names on
+            your host OS.
           </para>
 
           <para>
             Note that internally, &product-name; uses unique identifiers
             (UUIDs) to identify virtual machines. You can display these
-            with <command>VBoxManage</command>.
+            using the <command>VBoxManage</command> commands.
           </para>
         </listitem>
 
@@ -1076,8 +1036,8 @@
             <emphasis role="bold">Drag and Drop:</emphasis> This setting
             enables support for drag and drop. Select an object, such as
             a file, from the host or guest and directly copy or open it
-            on the guest or host. Multiple per-VM drag and drop modes
-            allow restricting access in either direction.
+            on the guest or host. Multiple drag and drop modes for a VM
+            enable restricting of access in either direction.
           </para>
 
           <para>
@@ -1147,8 +1107,8 @@
 
       <note>
         <para>
-          All files related to the virtual machine except disk images are
-          stored unencrypted.
+          All files related to the virtual machine except disk images
+          are stored unencrypted.
         </para>
       </note>
 
@@ -1233,32 +1193,32 @@
         <listitem>
           <para>
             <emphasis role="bold">Chipset:</emphasis> You can select
-            which chipset will be presented to the virtual machine. In
-            legacy versions of &product-name;, PIIX3 was the only
-            available option. For modern guest OSes such as Mac OS X,
-            that old chipset is no longer well supported. As a result,
-            &product-name; supports an emulation of the more modern ICH9
-            chipset, which supports PCI express, three PCI buses,
-            PCI-to-PCI bridges and Message Signaled Interrupts (MSI).
-            This enables modern OSes to address more PCI devices and no
-            longer requires IRQ sharing. Using the ICH9 chipset it is
-            also possible to configure up to 36 network cards, up to 8
-            network adapters with PIIX3. Note that the ICH9 support is
-            experimental and not recommended for guest OSes which do not
-            require it.
+            which chipset will be presented to the virtual machine.
+            PIIX3 is the default chipset for most guests. For some guest
+            OSes such as Mac OS X, the PIIX3 chipset is not well
+            supported. As a result, &product-name; supports an emulation
+            of the ICH9 chipset, which supports PCI express, three PCI
+            buses, PCI-to-PCI bridges and Message Signaled Interrupts
+            (MSI). This enables modern OSes to address more PCI devices
+            and no longer requires IRQ sharing. Using the ICH9 chipset
+            it is also possible to configure up to 36 network cards,
+            compared to a maximum of eight network adapters with PIIX3.
+            Note that ICH9 support is experimental and not recommended
+            for guest OSes which do not require it.
           </para>
         </listitem>
 
         <listitem>
           <para>
             <emphasis role="bold">Pointing Device:</emphasis> The
-            default virtual pointing devices for older guests is the
-            traditional PS/2 mouse. If set to <emphasis>USB
-            tablet</emphasis>, &product-name; reports to the virtual
+            default virtual pointing device for some guest OSes is the
+            traditional PS/2 mouse. If set to <emphasis role="bold">USB
+            Tablet</emphasis>, &product-name; reports to the virtual
             machine that a USB tablet device is present and communicates
-            mouse events to the virtual machine through this device. The
-            third setting is a <emphasis>USB Multi-Touch
-            Tablet</emphasis> which is suited for recent Windows guests.
+            mouse events to the virtual machine through this device.
+            Another setting is <emphasis role="bold">USB Multi-Touch
+            Tablet</emphasis>, which is suitable for guests running
+            Windows 8 or later.
           </para>
 
           <para>
@@ -1276,17 +1236,17 @@
         <listitem>
           <para>
             <emphasis role="bold">Enable I/O APIC:</emphasis> Advanced
-            Programmable Interrupt Controllers (APICs) are a newer x86
-            hardware feature that have replaced old-style Programmable
-            Interrupt Controllers (PICs) in recent years. With an I/O
-            APIC, OSes can use more than 16 interrupt requests (IRQs)
-            and therefore avoid IRQ sharing for improved reliability.
+            Programmable Interrupt Controllers (APICs) are an x86
+            hardware feature that have replaced Programmable Interrupt
+            Controllers (PICs). With an I/O APIC, OSes can use more than
+            16 interrupt requests (IRQs) and therefore avoid IRQ sharing
+            for improved reliability.
           </para>
 
           <note>
             <para>
-              Enabling the I/O APIC is <emphasis>required</emphasis> for
-              64-bit guest OSes, especially Windows Vista. It is also
+              Enabling the I/O APIC is <emphasis>required</emphasis>,
+              especially for 64-bit Windows guest OSes. It is also
               required if you want to use more than one virtual CPU in a
               virtual machine.
             </para>
@@ -1301,10 +1261,9 @@
 
           <warning>
             <para>
-              All Windows OSes starting with Windows 2000 install
-              different kernels, depending on whether an I/O APIC is
-              available. As with ACPI, the I/O APIC therefore
-              <emphasis>must not be turned off after
+              All Windows OSes install different kernels, depending on
+              whether an I/O APIC is available. As with ACPI, the I/O
+              APIC therefore <emphasis>must not be turned off after
               installation</emphasis> of a Windows guest OS. Turning it
               on after installation will have no effect however.
             </para>
@@ -1342,19 +1301,19 @@
       <para>
         ACPI is the current industry standard to allow OSes to recognize
         hardware, configure motherboards and other devices and manage
-        power. As all modern PCs contain this feature and Windows and
-        Linux have been supporting it for years, it is also enabled by
-        default in &product-name;. ACPI can only be turned off using the
-        command line. See <xref linkend="vboxmanage-modifyvm" />.
+        power. As most computers contain this feature and Windows and
+        Linux support ACPI, it is also enabled by default in
+        &product-name;. ACPI can only be turned off using the command
+        line. See <xref linkend="vboxmanage-modifyvm" />.
       </para>
 
       <warning>
         <para>
-          All Windows OSes starting with Windows 2000 install different
-          kernels, depending on whether ACPI is available. This means
-          that ACPI <emphasis>must not be turned off</emphasis> after
-          installation of a Windows guest OS. However, turning it on
-          after installation will have no effect.
+          All Windows OSes install different kernels, depending on
+          whether ACPI is available. This means that ACPI <emphasis>must
+          not be turned off</emphasis> after installation of a Windows
+          guest OS. However, turning it on after installation will have
+          no effect.
         </para>
       </warning>
 
@@ -1459,7 +1418,7 @@
             paravirtualization interfaces to improve time-keeping
             accuracy and performance of guest OSes. The options
             available are documented under the
-            <computeroutput>paravirtprovider</computeroutput> option in
+            <option>--paravirtprovider</option> option in
             <xref linkend="vboxmanage-modifyvm" />. For further details
             on the paravirtualization providers, see
             <xref linkend="gimproviders" />.
@@ -1469,20 +1428,11 @@
         <listitem>
           <para>
             <emphasis role="bold">Hardware Virtualization:</emphasis>
-            You can select for each virtual machine individually whether
-            &product-name; should use software or hardware
-            virtualization.
+            You can configure hardware virtualization features for each
+            virtual machine.
           </para>
 
           <itemizedlist>
-
-            <listitem>
-              <para>
-                <emphasis role="bold">Enable VT-x/AMD-V:</emphasis>
-                Enables Intel VT-x and AMD-V hardware extensions if the
-                host CPU supports them.
-              </para>
-            </listitem>
 
             <listitem>
               <para>
@@ -1501,8 +1451,7 @@
 
           <para>
             Advanced users may be interested in technical details about
-            software versus hardware virtualization. See
-            <xref linkend="hwvirt" />.
+            hardware virtualization. See <xref linkend="hwvirt" />.
           </para>
         </listitem>
 
@@ -1613,25 +1562,6 @@
 
         <listitem>
           <para>
-            <emphasis role="bold">Enable 3D Acceleration:</emphasis> If
-            a virtual machine has Guest Additions installed, you can
-            select here whether the guest should support accelerated 3D
-            graphics. See <xref linkend="guestadd-3d" />.
-          </para>
-        </listitem>
-
-        <listitem>
-          <para>
-            <emphasis role="bold">Enable 2D Video
-            Acceleration:</emphasis> If a virtual machine with Microsoft
-            Windows has Guest Additions installed, you can select here
-            whether the guest should support accelerated 2D video
-            graphics. See <xref linkend="guestadd-2d" />.
-          </para>
-        </listitem>
-
-        <listitem>
-          <para>
             <emphasis role="bold">Graphics Controller:</emphasis>
             Specifies the graphics adapter type used by the guest VM.
             Note that you must install the Guest Additions on the guest
@@ -1661,6 +1591,11 @@
                 default graphics controller for Windows versions before
                 Windows 7 and for Oracle Solaris.
               </para>
+
+              <para>
+                3D acceleration is not supported for this graphics
+                controller.
+              </para>
             </listitem>
 
             <listitem>
@@ -1680,6 +1615,25 @@
             </listitem>
 
           </itemizedlist>
+        </listitem>
+
+        <listitem>
+          <para>
+            <emphasis role="bold">Enable 3D Acceleration:</emphasis> If
+            a virtual machine has Guest Additions installed, you can
+            select here whether the guest should support accelerated 3D
+            graphics. See <xref linkend="guestadd-3d" />.
+          </para>
+        </listitem>
+
+        <listitem>
+          <para>
+            <emphasis role="bold">Enable 2D Video
+            Acceleration:</emphasis> If a virtual machine with Microsoft
+            Windows has Guest Additions installed, you can select here
+            whether the guest should support accelerated 2D video
+            graphics. See <xref linkend="guestadd-2d" />.
+          </para>
         </listitem>
 
       </itemizedlist>
@@ -1778,10 +1732,10 @@
 
         <listitem>
           <para>
-            <emphasis role="bold">Quality:</emphasis> Use the slider to
-            set the the bit rate of the video in kilobits per second.
-            Increasing this value improves the appearance of the video
-            at the cost of an increased file size.
+            <emphasis role="bold">Video Quality:</emphasis> Use the
+            slider to set the the bit rate of the video in kilobits per
+            second. Increasing this value improves the appearance of the
+            video at the cost of an increased file size.
           </para>
         </listitem>
 
@@ -1824,12 +1778,12 @@
     </para>
 
     <para>
-      In a real PC, so-called <emphasis>storage controllers</emphasis>
-      connect physical disk drives to the rest of the computer.
-      Similarly, &product-name; presents virtual storage controllers to
-      a virtual machine. Under each controller, the virtual devices,
-      such as hard disks, CD/DVD or floppy drives, attached to the
-      controller are shown.
+      In a real computer, so-called <emphasis>storage
+      controllers</emphasis> connect physical disk drives to the rest of
+      the computer. Similarly, &product-name; presents virtual storage
+      controllers to a virtual machine. Under each controller, the
+      virtual devices, such as hard disks, CD/DVD or floppy drives,
+      attached to the controller are shown.
     </para>
 
     <note>
@@ -1848,13 +1802,13 @@
 
     <figure id="fig-storage-settings">
       <title>Storage Settings for a Virtual Machine</title>
-      <mediaobject>
+     <mediaobject>
         <imageobject>
           <imagedata align="center" fileref="images/vm-settings-harddisk.png"
                      width="10cm" />
         </imageobject>
       </mediaobject>
-    </figure>
+      </figure>
 
     <para>
       Depending on the guest OS type that you selected when you created
@@ -1920,22 +1874,45 @@
         <para>
           To <emphasis role="bold">add another virtual hard disk, or a
           CD/DVD or floppy drive</emphasis>, select the storage
-          controller to which it should be added (IDE, SATA, SCSI, SAS,
-          floppy controller) and then click the
+          controller to which it should be added (such as IDE, SATA,
+          SCSI, SAS, floppy controller) and then click the
           <emphasis role="bold">Add Disk</emphasis> button below the
-          tree. You can then either select <emphasis role="bold">Add
-          CD/DVD Device</emphasis> or <emphasis role="bold">Add Hard
+          tree. You can then either select <emphasis role="bold">Optical
+          Drive</emphasis> or <emphasis role="bold">Hard
           Disk</emphasis>. If you clicked on a floppy controller, you
           can add a floppy drive instead. Alternatively, right-click on
           the storage controller and select a menu item there.
         </para>
 
         <para>
-          On the right part of the window, you can then set the
-          following:
+          A dialog is displayed, enabling you to select an existing disk
+          image file or to create a new disk image file. Depending on
+          the type of disk image, the dialog is called
+          <emphasis role="bold">Hard Disk Selector</emphasis>,
+          <emphasis role="bold">Optical Disk Selector</emphasis>, or
+          <emphasis role="bold">Floppy Disk Selector</emphasis>.
         </para>
 
-        <orderedlist>
+        <para>
+          See <xref linkend="vdidetails"/> for information on the image
+          file types that are supported by &product-name;.
+        </para>
+
+        <para>
+          For virtual CD/DVD drives, the image files will typically be
+          in the standard ISO format instead. Most commonly, you will
+          select this option when installing an OS from an ISO file that
+          you have obtained from the Internet. For example, most Linux
+          distributions are available in this way.
+        </para>
+
+        <para>
+          Depending on the type of disk image, you can set the following
+          <emphasis role="bold">Attributes</emphasis> for the disk image
+          in the right part of the Storage settings page:
+        </para>
+
+        <itemizedlist>
 
           <listitem>
             <para>
@@ -1951,89 +1928,29 @@
 
           <listitem>
             <para>
-              The <emphasis role="bold">image file</emphasis> to use.
+              <emphasis role="bold">Solid-state Drive</emphasis>
+              presents a virtual disk to the guest as a solid-state
+              device.
             </para>
-
-            <itemizedlist>
-
-              <listitem>
-                <para>
-                  For virtual hard disks, a button with a drop-down list
-                  appears on the right, offering you to either select a
-                  <emphasis role="bold">virtual hard disk
-                  file</emphasis> using a standard file dialog or to
-                  <emphasis role="bold">create a new hard
-                  disk</emphasis> (image file). The latter option
-                  displays the <emphasis role="bold">Create New
-                  Disk</emphasis> wizard, described in
-                  <xref linkend="gui-createvm" />.
-                </para>
-
-                <para>
-                  For virtual floppy drives, a dialog enables you to
-                  create and format a new floppy disk image
-                  automatically.
-                </para>
-
-                <para>
-                  For details on the image file types that are
-                  supported, see <xref linkend="vdidetails" />.
-                </para>
-              </listitem>
-
-              <listitem>
-                <para>
-                  For virtual CD/DVD drives, the image files will
-                  typically be in the standard ISO format instead. Most
-                  commonly, you will select this option when installing
-                  an OS from an ISO file that you have obtained from the
-                  Internet. For example, most Linux distributions are
-                  available in this way.
-                </para>
-
-                <para>
-                  For virtual CD/DVD drives, the following additional
-                  options are available:
-                </para>
-
-                <itemizedlist>
-
-                  <listitem>
-                    <para>
-                      If you select <emphasis role="bold">Host
-                      Drive</emphasis> from the list, then the physical
-                      device of the host computer is connected to the
-                      VM, so that the guest OS can read from and write
-                      to your physical device. This is, for instance,
-                      useful if you want to install Windows from a real
-                      installation CD. In this case, select your host
-                      drive from the drop-down list presented.
-                    </para>
-
-                    <para>
-                      If you want to write, or burn, CDs or DVDs using
-                      the host drive, you need to also enable the
-                      <emphasis role="bold">Passthrough</emphasis>
-                      option. See <xref linkend="storage-cds" />.
-                    </para>
-                  </listitem>
-
-                  <listitem>
-                    <para>
-                      If you select <emphasis role="bold">Remove Disk
-                      from Virtual Drive</emphasis>, &product-name; will
-                      present an empty CD/DVD drive to the guest into
-                      which no media has been inserted.
-                    </para>
-                  </listitem>
-
-                </itemizedlist>
-              </listitem>
-
-            </itemizedlist>
           </listitem>
 
-        </orderedlist>
+          <listitem>
+            <para>
+              <emphasis role="bold">Hot-pluggable</emphasis> presents a
+              virtual disk to the guest as a hot-pluggable device.
+            </para>
+          </listitem>
+
+          <listitem>
+            <para>
+              For virtual CD/DVD drives, you can select
+              <emphasis role="bold">Live CD/DVD</emphasis>. This means
+              that the virtual optical disk is not removed from when the
+              guest system ejects it.
+            </para>
+          </listitem>
+
+        </itemizedlist>
       </listitem>
 
       <listitem>
@@ -2198,9 +2115,9 @@
       You can use either the Settings tabs or the
       <command>VBoxManage</command> command to set up virtual serial
       ports. For the latter, see <xref linkend="vboxmanage-modifyvm" />
-      for information on the <computeroutput>--uart</computeroutput>,
-      <computeroutput>--uartmode</computeroutput> and
-      <computeroutput>--uarttype</computeroutput> options.
+      for information on the <option>--uart</option>,
+      <option>--uartmode</option> and <option>--uarttype</option>
+      options.
     </para>
 
     <para>
@@ -2249,12 +2166,6 @@
           You can also configure a user-defined serial port. Enter an
           I/O base address and interrupt (IRQ).
         </para>
-
-        <para>
-          See also
-          <ulink
-              url="http://en.wikipedia.org/wiki/COM_(hardware_interface)">http://en.wikipedia.org/wiki/COM_(hardware_interface)</ulink>.
-        </para>
       </listitem>
 
       <listitem>
@@ -2279,12 +2190,11 @@
               <emphasis role="bold">Host Device:</emphasis> Connects the
               virtual serial port to a physical serial port on your
               host. On a Windows host, this will be a name like
-              <computeroutput>COM1</computeroutput>. On Linux or Oracle
-              Solaris hosts, it will be a device node like
-              <computeroutput>/dev/ttyS0</computeroutput>.
-              &product-name; will then simply redirect all data received
-              from and sent to the virtual serial port to the physical
-              device.
+              <literal>COM1</literal>. On Linux or Oracle Solaris hosts,
+              it will be a device node like
+              <filename>/dev/ttyS0</filename>. &product-name; will then
+              simply redirect all data received from and sent to the
+              virtual serial port to the physical device.
             </para>
           </listitem>
 
@@ -2303,29 +2213,27 @@
                   On a Windows host, data will be sent and received
                   through a named pipe. The pipe name must be in the
                   format
-                  <computeroutput>\\.\pipe\&lt;name&gt;</computeroutput>
-                  where <computeroutput>&lt;name&gt;</computeroutput>
-                  should identify the virtual machine but may be freely
-                  chosen.
+                  <filename>\\.\pipe\<replaceable>name</replaceable></filename>
+                  where <replaceable>name</replaceable> should identify
+                  the virtual machine but may be freely chosen.
                 </para>
               </listitem>
 
               <listitem>
                 <para>
-                  On a Mac, Linux, or Oracle Solaris host, a local
+                  On a Mac OS, Linux, or Oracle Solaris host, a local
                   domain socket is used instead. The socket filename
                   must be chosen such that the user running
                   &product-name; has sufficient privileges to create and
-                  write to it. The <computeroutput>/tmp</computeroutput>
-                  directory is often a good candidate.
+                  write to it. The <filename>/tmp</filename> directory
+                  is often a good candidate.
                 </para>
 
                 <para>
                   On Linux there are various tools which can connect to
                   a local domain socket or create one in server mode.
-                  The most flexible tool is
-                  <computeroutput>socat</computeroutput> and is
-                  available as part of many distributions.
+                  The most flexible tool is <command>socat</command> and
+                  is available as part of many distributions.
                 </para>
               </listitem>
 
@@ -2395,10 +2303,10 @@
                   <emphasis role="bold">TCP Client:</emphasis> To create
                   a virtual null-modem cable over the Internet or LAN,
                   the other side can connect using TCP by specifying
-                  <computeroutput>hostname:port</computeroutput> in the
-                  <emphasis role="bold">Path/Address</emphasis> field.
-                  The TCP socket will act in client mode if you select
-                  the <emphasis role="bold">Connect to Existing
+                  <literal><replaceable>hostname</replaceable>:<replaceable>port</replaceable></literal>
+                  in the <emphasis role="bold">Path/Address</emphasis>
+                  field. The TCP socket will act in client mode if you
+                  select the <emphasis role="bold">Connect to Existing
                   Pipe/Socket</emphasis> check box.
                 </para>
               </listitem>
@@ -2566,9 +2474,8 @@
                 ID</emphasis> number. Both numbers are commonly written
                 in hexadecimal, and a colon separates the vendor from
                 the product ID. For example,
-                <computeroutput>046d:c016</computeroutput> stands for
-                Logitech as a vendor, and the M-UV69a Optical Wheel
-                Mouse product.
+                <literal>046d:c016</literal> stands for Logitech as a
+                vendor, and the M-UV69a Optical Wheel Mouse product.
               </para>
 
               <para>
@@ -2650,36 +2557,18 @@
         support. It implements both a USB monitor, which enables
         &product-name; to capture devices when they are plugged in, and
         a USB device driver to claim USB devices for a particular
-        virtual machine. As opposed to &product-name; versions before
-        1.4.0, system reboots are no longer necessary after installing
-        the driver. Also, you no longer need to replug devices for
-        &product-name; to claim them.
+        virtual machine. System reboots are not necessary after
+        installing the driver. Also, you do not need to replug devices
+        for &product-name; to claim them.
       </para>
 
       <para>
-        On newer Linux hosts, &product-name; accesses USB devices
+        On supported Linux hosts, &product-name; accesses USB devices
         through special files in the file system. When &product-name; is
         installed, these are made available to all users in the
-        <computeroutput>vboxusers</computeroutput> system group. In
-        order to be able to access USB from guest systems, make sure
-        that you are a member of this group.
-      </para>
-
-      <para>
-        On older Linux hosts, USB devices are accessed using the
-        <computeroutput>usbfs</computeroutput> file system. Therefore,
-        the user executing &product-name; needs read and write
-        permission to the USB file system. Most distributions provide a
-        group, such as <computeroutput>usbusers</computeroutput>, which
-        the &product-name; user needs to be added to. Also,
-        &product-name; can only proxy to virtual machines USB devices
-        which are not claimed by a Linux host USB driver. The
-        <computeroutput>Driver=</computeroutput> entry in
-        <computeroutput>/proc/bus/usb/devices</computeroutput> will show
-        you which devices are currently claimed. See also
-        <xref
-      linkend="ts_usb-linux" /> for details about
-        <computeroutput>usbfs</computeroutput>.
+        <literal>vboxusers</literal> system group. In order to be able
+        to access USB from guest systems, make sure that you are a
+        member of this group.
       </para>
 
     </sect2>
@@ -2759,10 +2648,9 @@
 
     <para>
       &product-name; includes experimental support for the Extensible
-      Firmware Interface (EFI), which is a new industry standard
-      intended to eventually replace the legacy BIOS as the primary
-      interface for bootstrapping computers and certain system services
-      later.
+      Firmware Interface (EFI), which is an industry standard intended
+      to replace the legacy BIOS as the primary interface for
+      bootstrapping computers and certain system services later.
     </para>
 
     <para>
@@ -3224,12 +3112,14 @@
 
       <para>
         It is currently not possible to manipulate EFI variables from
-        within a running guest. For example, setting the "boot-args"
-        variable by running the <computeroutput>nvram</computeroutput>
-        tool in a Mac OS X guest will not work. As an alternative way,
-        "VBoxInternal2/EfiBootArgs" extradata can be passed to a VM in
-        order to set the "boot-args" variable. To change the "boot-args"
-        EFI variable, use the following command:
+        within a running guest. For example, setting the
+        <literal>boot-args</literal> variable by running the
+        <command>nvram</command> tool in a Mac OS X guest will not work.
+        As an alternative method,
+        <literal>VBoxInternal2/EfiBootArgs</literal> extradata can be
+        passed to a VM in order to set the <literal>boot-args</literal>
+        variable. To change the <literal>boot-args</literal> EFI
+        variable, use the following command:
       </para>
 
 <screen>VBoxManage setextradata "VM name" VBoxInternal2/EfiBootArgs &lt;value&gt;</screen>

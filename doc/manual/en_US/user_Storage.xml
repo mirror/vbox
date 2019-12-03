@@ -51,14 +51,14 @@
 
   <sect1 id="harddiskcontrollers">
 
-    <title>Hard Disk Controllers: IDE, SATA (AHCI), SCSI, SAS, USB MSD, NVMe</title>
+    <title>Hard Disk Controllers</title>
 
     <para>
-      In a real PC, hard disks and CD/DVD drives are connected to a
-      device called hard disk controller which drives hard disk
-      operation and data transfers. &product-name; can emulate the five
-      most common types of hard disk controllers typically found in
-      today's PCs: IDE, SATA (AHCI), SCSI, SAS, USB-based, and NVMe mass
+      In a computing device, hard disks and CD/DVD drives are connected
+      to a device called hard disk controller which drives hard disk
+      operation and data transfers. &product-name; can emulate the most
+      common types of hard disk controllers typically found in computing
+      devices: IDE, SATA (AHCI), SCSI, SAS, USB-based, and NVMe mass
       storage devices.
     </para>
 
@@ -67,7 +67,7 @@
       <listitem>
         <para>
           <emphasis role="bold">IDE (ATA)</emphasis> controllers are a
-          backwards compatible yet very advanced extension of the disk
+          backwards-compatible yet very advanced extension of the disk
           controller in the IBM PC/AT (1984). Initially, this interface
           worked only with hard disks, but was later extended to also
           support CD-ROM drives and other types of removable media. In
@@ -115,8 +115,8 @@
 
       <listitem>
         <para>
-          <emphasis role="bold">Serial ATA (SATA)</emphasis> is a newer
-          standard introduced in 2003. Compared to IDE, it supports both
+          <emphasis role="bold">Serial ATA (SATA)</emphasis> is a more
+          recent standard than IDE. Compared to IDE, it supports both
           much higher speeds and more devices per controller. Also, with
           physical hardware, devices can be added and removed while the
           system is running. The standard interface for SATA controllers
@@ -146,19 +146,19 @@
             it, including those in IDE compatibility mode, will not be
             seen by OSes that do not have device support for AHCI. In
             particular, <emphasis>there is no support for AHCI in
-            Windows before Windows Vista</emphasis>. So Windows XP, even
-            SP3, will not see such disks unless you install additional
-            drivers. It is possible to switch from IDE to SATA after
-            installation by installing the SATA drivers and changing the
-            controller type in the VM
+            Windows versions before Windows Vista</emphasis>. Legacy
+            Windows versions such as Windows XP, even with SP3
+            installed, will not see such disks unless you install
+            additional drivers. It is possible to switch from IDE to
+            SATA after installation by installing the SATA drivers and
+            changing the controller type in the VM
             <emphasis role="bold">Settings</emphasis> dialog.
           </para>
 
           <para>
             &product-name; recommends the Intel Matrix Storage drivers,
             which can be downloaded from
-            <ulink
-                  url="http://downloadcenter.intel.com/Product_Filter.aspx?ProductID=2101">http://downloadcenter.intel.com/Product_Filter.aspx?ProductID=2101</ulink>.
+            <ulink url="http://downloadcenter.intel.com/Product_Filter.aspx?ProductID=2101" />.
           </para>
         </warning>
 
@@ -187,19 +187,19 @@
         <para>
           <emphasis role="bold">SCSI</emphasis> is another established
           industry standard, standing for Small Computer System
-          Interface. SCSI was standardized as early as 1986 as a generic
-          interface for data transfer between all kinds of devices,
-          including storage devices. Today SCSI is still used for
-          connecting hard disks and tape devices, but it has mostly been
-          displaced in commodity hardware. It is still in common use in
-          high-performance workstations and servers.
+          Interface. SCSI is as a generic interface for data transfer
+          between all kinds of devices, including storage devices. SCSI
+          is still used for connecting some hard disks and tape devices,
+          but it has mostly been displaced in commodity hardware. It is
+          still in common use in high-performance workstations and
+          servers.
         </para>
 
         <para>
           Primarily for compatibility with other virtualization
           software, &product-name; optionally supports LSI Logic and
-          BusLogic SCSI controllers, to each of which up to 15 virtual
-          hard disks can be attached.
+          BusLogic SCSI controllers, to each of which up to fifteen
+          virtual hard disks can be attached.
         </para>
 
         <para>
@@ -228,11 +228,10 @@
         <para>
           <emphasis role="bold">Serial Attached SCSI (SAS)</emphasis> is
           another bus standard which uses the SCSI command set. As
-          opposed to SCSI, however, with physical devices, serial cables
-          are used instead of parallel ones, which simplifies physical
-          device connections. In some ways, therefore, SAS is to SCSI
-          what SATA is to IDE: it enables more reliable and faster
-          connections.
+          opposed to SCSI physical devices, serial cables are used
+          instead of parallel cables. This simplifies physical device
+          connections. In some ways, therefore, SAS is to SCSI what SATA
+          is to IDE: it enables more reliable and faster connections.
         </para>
 
         <para>
@@ -259,10 +258,10 @@
           The <emphasis role="bold">USB mass storage device
           class</emphasis> is a standard to connect external storage
           devices like hard disks or flash drives to a host through USB.
-          All major OSes support these devices for a long time and ship
-          generic drivers making third-party drivers superfluous. In
-          particular, legacy OSes without support for SATA controllers
-          may benefit from USB mass storage devices.
+          All major OSes support these devices and ship generic drivers
+          making third-party drivers superfluous. In particular, legacy
+          OSes without support for SATA controllers may benefit from USB
+          mass storage devices.
         </para>
 
         <para>
@@ -286,11 +285,11 @@
       <listitem>
         <para>
           <emphasis role="bold">Non volatile memory express
-          (NVMe)</emphasis> is a standard which emerged in 2011 for
-          connecting non volatile memory (NVM) directly over PCI express
-          to lift the bandwidth limitation of the previously used SATA
-          protocol for SSDs. Unlike other standards the command set is
-          very simple to achieve maximum throughput and is not
+          (NVMe)</emphasis> is a standard for connecting non volatile
+          memory (NVM) directly over PCI Express to lift the bandwidth
+          limitation of the previously used SATA protocol for
+          solid-state devices. Unlike other standards the command set is
+          very simple in order to achieve maximum throughput and is not
           compatible with ATA or SCSI. OSes need to support NVMe devices
           to make use of them. For example, Windows 8.1 added native
           NVMe support. For Windows 7, native support was added with an
@@ -390,7 +389,7 @@
       which must be specified when the image file is created. As opposed
       to a physical disk however, &product-name; enables you to expand
       an image file after creation, even if it has data already. See
-      <xref linkend="vboxmanage-modifyvdi" />.
+      <xref linkend="vboxmanage-modifymedium" />.
     </para>
 
     <para>
@@ -502,10 +501,8 @@
 
       <listitem>
         <para>
-          Registered media, for compatibility with &product-name;
-          versions older than version 4.0. For details about how media
-          registration has changed with version 4.0, see
-          <xref linkend="vboxconfigdata" />.
+          Registered media, for compatibility with legacy &product-name;
+          versions.
         </para>
       </listitem>
 
@@ -571,26 +568,59 @@
 
       <listitem>
         <para>
-          <emphasis role="bold">Add</emphasis> an image to the registry.
+          <emphasis role="bold">Add</emphasis> an image to the known
+          media.
         </para>
       </listitem>
 
       <listitem>
         <para>
-          <emphasis role="bold">Copy</emphasis> a virtual hard disk to
-          create another one.
+          <emphasis role="bold">Create</emphasis> a new disk image.
+        </para>
+
+        <itemizedlist>
+
+          <listitem>
+            <para>
+              For virtual hard disks, the <emphasis role="bold">Create
+              Virtual Hard Disk</emphasis> wizard is shown.
+            </para>
+          </listitem>
+
+          <listitem>
+            <para>
+              For optical disks, the <emphasis role="bold">VISO
+              Creator</emphasis> screen is shown. This enables you to
+              create a virtual ISO from selected files on the host.
+            </para>
+          </listitem>
+
+          <listitem>
+            <para>
+              For floppy disks, the <emphasis role="bold">Floppy Disk
+              Creator</emphasis> screen is shown.
+            </para>
+          </listitem>
+
+        </itemizedlist>
+      </listitem>
+
+      <listitem>
+        <para>
+          <emphasis role="bold">Copy</emphasis> an image to create
+          another one.
         </para>
 
         <para>
-          You can specify one of the following target types: VDI, VHD,
-          or VMDK.
+          For virtual hard disks, you can specify one of the following
+          target types: VDI, VHD, or VMDK.
         </para>
       </listitem>
 
       <listitem>
         <para>
-          <emphasis role="bold">Move</emphasis> an image that is
-          currently in the registry to another location.
+          <emphasis role="bold">Move</emphasis> an image to another
+          location.
         </para>
 
         <para>
@@ -624,7 +654,7 @@
       <listitem>
         <para>
           <emphasis role="bold">Remove</emphasis> an image from the
-          registry. You can optionally delete the image file when
+          known media. You can optionally delete the image file when
           removing the image.
         </para>
       </listitem>
@@ -634,6 +664,13 @@
           <emphasis role="bold">Release</emphasis> an image to detach it
           from a VM. This action only applies if the image is currently
           attached to a VM as a virtual hard disk.
+        </para>
+      </listitem>
+
+      <listitem>
+        <para>
+          <emphasis role="bold">Search</emphasis> for an image by name
+          or UUID.
         </para>
       </listitem>
 
@@ -728,10 +765,10 @@
     </para>
 
     <para>
-      You can copy hard disk image files to other host systems and
-      import them in to VMs from the host system. However, certain guest
-      OSes, such as Windows 2000 and Windows XP, require that you
-      configure the new VM in a similar way to the old one.
+      You can copy hard disk image files to other host systems and then
+      import them in to VMs from the host system. However, some Windows
+      guest OSes may require that you configure the new VM in a similar
+      way to the old one.
     </para>
 
     <note>
@@ -764,10 +801,10 @@
     <para>
       By default, images are in <emphasis>normal</emphasis> mode. To
       mark an existing image with one of the non-standard modes listed
-      below, use <command>VBoxManage modifyhd</command>. See
-      <xref linkend="vboxmanage-modifyvdi" />. Alternatively, use
-      <command>VBoxManage</command> to attach the image to a VM and use
-      the <option>--mtype</option> argument. See
+      below, use <command>VBoxManage modifymedium</command>. See
+      <xref linkend="vboxmanage-modifymedium" />. Alternatively, use
+      <command>VBoxManage storageattach</command> to attach the image to
+      a VM and specify the <option>--mtype</option> argument. See
       <xref linkend="vboxmanage-storageattach" />.
     </para>
 
@@ -793,11 +830,12 @@
 
         <para>
           The image file itself is not reset. Instead, when a snapshot
-          is taken, &product-name; "freezes" the image file and no
-          longer writes to it. For the write operations from the VM, a
-          second, <emphasis>differencing</emphasis> image file is
-          created which receives only the changes to the original image.
-          See <xref linkend="diffimages"/>.
+          is taken, &product-name; <emphasis>freezes</emphasis> the
+          image file and no longer writes to it. For the write
+          operations from the VM, a second,
+          <emphasis>differencing</emphasis> image file is created which
+          receives only the changes to the original image. See
+          <xref linkend="diffimages"/>.
         </para>
 
         <para>
@@ -902,8 +940,8 @@
           If the automatic discarding of the differencing image on VM
           startup does not fit your needs, you can turn it off using the
           <option>autoreset</option> parameter of <command>VBoxManage
-          modifyhd</command>. See
-          <xref linkend="vboxmanage-modifyvdi"/>.
+          modifymedium</command>. See
+          <xref linkend="vboxmanage-modifymedium"/>.
         </para>
       </listitem>
 
@@ -1061,14 +1099,14 @@
         <para>
           <emphasis role="bold">Snapshots.</emphasis> When you create a
           snapshot, as explained in the previous section, &product-name;
-          "freezes" the images attached to the virtual machine and
-          creates differencing images for each image that is not in
-          "write-through" mode. From the point of view of the virtual
-          machine, the virtual disks continue to operate before, but all
-          write operations go into the differencing images. Each time
-          you create another snapshot, for each hard disk attachment,
-          another differencing image is created and attached, forming a
-          chain or tree.
+          <emphasis>freezes</emphasis> the images attached to the
+          virtual machine and creates differencing images for each image
+          that is not in <emphasis>write-through</emphasis> mode. From
+          the point of view of the virtual machine, the virtual disks
+          continue to operate before, but all write operations go into
+          the differencing images. Each time you create another
+          snapshot, for each hard disk attachment, another differencing
+          image is created and attached, forming a chain or tree.
         </para>
 
         <para>
@@ -1163,25 +1201,25 @@
       quickly produce a second virtual machine with the same OS setup.
       However, you should <emphasis>only</emphasis> make copies of
       virtual disk images using the utility supplied with
-      &product-name;. See <xref linkend="vboxmanage-clonevdi" />. This
-      is because &product-name; assigns a UUID to each disk image, which
-      is also stored inside the image, and &product-name; will refuse to
-      work with two images that use the same number. If you do
+      &product-name;. See <xref linkend="vboxmanage-clonemedium" />.
+      This is because &product-name; assigns a UUID to each disk image,
+      which is also stored inside the image, and &product-name; will
+      refuse to work with two images that use the same number. If you do
       accidentally try to reimport a disk image which you copied
       normally, you can make a second copy using the <command>VBoxManage
       clonevm</command> command and import that instead.
     </para>
 
     <para>
-      Note that newer Linux distributions identify the boot hard disk
-      from the ID of the drive. The ID &product-name; reports for a
-      drive is determined from the UUID of the virtual disk image. So if
-      you clone a disk image and try to boot the copied image the guest
+      Note that Linux distributions identify the boot hard disk from the
+      ID of the drive. The ID &product-name; reports for a drive is
+      determined from the UUID of the virtual disk image. So if you
+      clone a disk image and try to boot the copied image the guest
       might not be able to determine its own boot disk as the UUID
       changed. In this case you have to adapt the disk ID in your boot
       loader script, for example
-      <computeroutput>/boot/grub/menu.lst</computeroutput>. The disk ID
-      looks like the following:
+      <filename>/boot/grub/menu.lst</filename>. The disk ID looks like
+      the following:
     </para>
 
 <screen>scsi-SATA_VBOX_HARDDISK_VB5cfdb1e2-c251e503</screen>
@@ -1299,7 +1337,7 @@
     </para>
 
     <para>
-      For the above reasons, &product-name; now uses SATA controllers by
+      For the above reasons, &product-name; uses SATA controllers by
       default for new virtual machines.
     </para>
 
@@ -1394,13 +1432,12 @@ VBoxManage storageattach "VM name" --storagectl "SATA" --port 1 --device 0 --typ
     <para>
       Medium changes can be prevented by the guest, and &product-name;
       reflects that by locking the host drive if appropriate. You can
-      force a medium removal in such situations by using the
-      &product-name; GUI or the <command>VBoxManage</command> command
-      line tool. Effectively this is the equivalent of the emergency
-      eject which many CD/DVD drives provide, with all associated side
-      effects. The guest OS can issue error messages, just like on real
-      hardware, and guest applications may misbehave. Use this with
-      caution.
+      force a medium removal in such situations by using the VirtualBox
+      Manager or the <command>VBoxManage</command> command line tool.
+      Effectively this is the equivalent of the emergency eject which
+      many CD/DVD drives provide, with all associated side effects. The
+      guest OS can issue error messages, just like on real hardware, and
+      guest applications may misbehave. Use this with caution.
     </para>
 
     <note>
@@ -1447,10 +1484,9 @@ VBoxManage storageattach "VM name" --storagectl "SATA" --port 1 --device 0 --typ
     </itemizedlist>
 
     <para>
-      There is a <emphasis role="bold">Passthrough</emphasis> check box
-      in the GUI dialog for configuring the media attached to a storage
-      controller, or you can use the <option>--passthrough</option>
-      option with <command>VBoxManage storageattach</command>. See
+      To enable host drive passthrough you can use the
+      <option>--passthrough</option> option of the <command>VBoxManage
+      storageattach</command> command. See
       <xref linkend="vboxmanage-storageattach" />.
     </para>
 
@@ -1474,15 +1510,15 @@ VBoxManage storageattach "VM name" --storagectl "SATA" --port 1 --device 0 --typ
     <title>iSCSI Servers</title>
 
     <para>
-      iSCSI stands for "Internet SCSI" and is a standard that supports
-      use of the SCSI protocol over Internet (TCP/IP) connections.
-      Especially with the advent of Gigabit Ethernet, it has become
-      affordable to attach iSCSI storage servers simply as remote hard
-      disks to a computer network. In iSCSI terminology, the server
-      providing storage resources is called an <emphasis>iSCSI
-      target</emphasis>, while the client connecting to the server and
-      accessing its resources is called an <emphasis>iSCSI
-      initiator</emphasis>.
+      iSCSI stands for <emphasis>Internet SCSI</emphasis> and is a
+      standard that supports use of the SCSI protocol over Internet
+      (TCP/IP) connections. Especially with the advent of Gigabit
+      Ethernet, it has become affordable to attach iSCSI storage servers
+      simply as remote hard disks to a computer network. In iSCSI
+      terminology, the server providing storage resources is called an
+      <emphasis>iSCSI target</emphasis>, while the client connecting to
+      the server and accessing its resources is called an
+      <emphasis>iSCSI initiator</emphasis>.
     </para>
 
     <para>
@@ -1508,9 +1544,9 @@ VBoxManage storageattach "VM name" --storagectl "SATA" --port 1 --device 0 --typ
 
     <para>
       <command>vboximg-mount</command> is a command line utility for Mac
-      OS X hosts that provides raw access to an &product-name; virtual
-      disk image on the host system. Use this utility to mount, view,
-      and optionally modify the disk image contents.
+      OS and Linux hosts that provides raw access to an &product-name;
+      virtual disk image on the host system. Use this utility to mount,
+      view, and optionally modify the disk image contents.
     </para>
 
     <para>
@@ -1559,9 +1595,19 @@ VBoxManage storageattach "VM name" --storagectl "SATA" --port 1 --device 0 --typ
     </para>
 
     <para>
+      The <command>vboximg-mount </command>command includes experimental
+      read-only access to file systems inside a VM disk image. This
+      feature enables you to extract some files from the disk image
+      without starting the VM and without requiring third-party file
+      system drivers on the host system. FAT, NTFS, ext2, ext3, and ext4
+      file systems are supported.
+    </para>
+
+    <para>
       Use the <option>--help</option> option to view information about
       the <command>vboximg-mount</command> command usage. The complete
-      command reference is described in <xref linkend="man_vboximg-mount" />.
+      command reference is described in
+      <xref linkend="man_vboximg-mount" />.
     </para>
 
     <para>
@@ -1702,16 +1748,16 @@ VBoxManage storageattach "VM name" --storagectl "SATA" --port 1 --device 0 --typ
 
           <para>
             In this example, partition 2 is mounted on the
-            <computeroutput>macos_sysdisk</computeroutput> mount point.
-            The mount includes all snapshots for the disk image.
+            <filename>macos_sysdisk</filename> mount point. The mount
+            includes all snapshots for the disk image.
           </para>
         </listitem>
 
         <listitem>
           <para>
-            Use the host OS to mount the
-            <computeroutput>vhdd</computeroutput> device node. The
-            FUSE-mounted device node represents the virtual disk image.
+            Use the host OS to mount the <literal>vhdd</literal> device
+            node. The FUSE-mounted device node represents the virtual
+            disk image.
           </para>
 
 <screen>$ ls macos_sysdisk

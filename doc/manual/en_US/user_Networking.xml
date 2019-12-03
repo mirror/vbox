@@ -149,7 +149,7 @@
 
         <para>
           <ulink
-            url="http://www.linux-kvm.org/page/WindowsGuestDrivers">http://www.linux-kvm.org/page/WindowsGuestDrivers</ulink>.
+            url="http://www.linux-kvm.org/page/WindowsGuestDrivers" />.
         </para>
       </listitem>
 
@@ -188,10 +188,10 @@
           &product-name; reports to the guest that a network card is
           present, but that there is no connection. This is as if no
           Ethernet cable was plugged into the card. Using this mode, it
-          is possible to "pull" the virtual Ethernet cable and disrupt
-          the connection, which can be useful to inform a guest
-          operating system that no network connection is available and
-          enforce a reconfiguration.
+          is possible to <emphasis>pull</emphasis> the virtual Ethernet
+          cable and disrupt the connection, which can be useful to
+          inform a guest operating system that no network connection is
+          available and enforce a reconfiguration.
         </para>
       </listitem>
 
@@ -533,8 +533,8 @@
         use the same ports on the guest and on the host. You can use any
         ports on the host which are not already in use by a service. For
         example, to set up incoming NAT connections to an
-        <computeroutput>ssh</computeroutput> server in the guest, use
-        the following command:
+        <command>ssh</command> server in the guest, use the following
+        command:
       </para>
 
 <screen>VBoxManage modifyvm "VM name" --natpf1 "guestssh,tcp,,2222,,22"</screen>
@@ -542,13 +542,13 @@
       <para>
         In the above example, all TCP traffic arriving on port 2222 on
         any host interface will be forwarded to port 22 in the guest.
-        The protocol name <computeroutput>tcp</computeroutput> is a
-        mandatory attribute defining which protocol should be used for
-        forwarding, <computeroutput>udp</computeroutput> could also be
-        used. The name <computeroutput>guestssh</computeroutput> is
-        purely descriptive and will be auto-generated if omitted. The
-        number after <option>--natpf</option> denotes the network card,
-        as with other <command>VBoxManage</command> commands.
+        The protocol name <literal>tcp</literal> is a mandatory
+        attribute defining which protocol should be used for forwarding,
+        <literal>udp</literal> could also be used. The name
+        <literal>guestssh</literal> is purely descriptive and will be
+        auto-generated if omitted. The number after
+        <option>--natpf</option> denotes the network card, as with other
+        <command>VBoxManage</command> commands.
       </para>
 
       <para>
@@ -600,11 +600,11 @@
       <para>
         PXE booting is now supported in NAT mode. The NAT DHCP server
         provides a boot file name of the form
-        <computeroutput>vmname.pxe</computeroutput> if the directory
-        <computeroutput>TFTP</computeroutput> exists in the directory
-        where the user's <computeroutput>VirtualBox.xml</computeroutput>
-        file is kept. It is the responsibility of the user to provide
-        <computeroutput>vmname.pxe</computeroutput>.
+        <filename><replaceable>vmname</replaceable>.pxe</filename> if
+        the directory <literal>TFTP</literal> exists in the directory
+        where the user's <filename>VirtualBox.xml</filename> file is
+        kept. It is the responsibility of the user to provide
+        <filename><replaceable>vmname</replaceable>.pxe</filename>.
       </para>
 
     </sect2>
@@ -624,11 +624,11 @@
           <para>
             <emphasis role="bold">ICMP protocol limitations.</emphasis>
             Some frequently used network debugging tools, such as
-            <computeroutput>ping</computeroutput> or tracerouting, rely
-            on the ICMP protocol for sending and receiving messages.
-            While ICMP support has been improved with &product-name;
-            2.1, meaning <computeroutput>ping</computeroutput> should
-            now work, some other tools may not work reliably.
+            <command>ping</command> or <command>traceroute</command>,
+            rely on the ICMP protocol for sending and receiving
+            messages. &product-name; ICMP support has some limitations,
+            meaning <command>ping</command> should work but some other
+            tools may not work reliably.
           </para>
         </listitem>
 
@@ -642,7 +642,8 @@
             resolution based on broadcasts does not always work, but
             WINS always works. As a workaround, you can use the numeric
             IP of the desired server in the
-            <computeroutput>\\server\share</computeroutput> notation.
+            <filename>\\<replaceable>server</replaceable>\<replaceable>share</replaceable></filename>
+            notation.
           </para>
         </listitem>
 
@@ -662,9 +663,9 @@
             1024.</emphasis> On UNIX-based hosts, such as Linux, Oracle
             Solaris, and Mac OS X, it is not possible to bind to ports
             below 1024 from applications that are not run by
-            <computeroutput>root</computeroutput>. As a result, if you
-            try to configure such a port forwarding, the VM will refuse
-            to start.
+            <literal>root</literal>. As a result, if you try to
+            configure such a port forwarding, the VM will refuse to
+            start.
           </para>
         </listitem>
 
@@ -767,9 +768,8 @@
 
     <para>
       Port-forwarding is supported, using the
-      <computeroutput>--port-forward-4</computeroutput> switch for IPv4
-      and <computeroutput>--port-forward-6</computeroutput> for IPv6.
-      For example:
+      <option>--port-forward-4</option> switch for IPv4 and
+      <option>--port-forward-6</option> for IPv6. For example:
     </para>
 
 <screen>VBoxManage natnetwork modify \
@@ -1001,8 +1001,7 @@
 
         <para>
           If you do not specify a network name, the network card will be
-          attached to the network
-          <computeroutput>intnet</computeroutput> by default.
+          attached to the network <literal>intnet</literal> by default.
         </para>
       </listitem>
 
@@ -1031,15 +1030,14 @@
     <title>Host-Only Networking</title>
 
     <para>
-      Host-only networking is another networking mode that was added
-      with version 2.2 of &product-name;. It can be thought of as a
-      hybrid between the bridged and internal networking modes. As with
-      bridged networking, the virtual machines can talk to each other
-      and the host as if they were connected through a physical Ethernet
-      switch. As with internal networking, a physical networking
-      interface need not be present, and the virtual machines cannot
-      talk to the world outside the host since they are not connected to
-      a physical networking interface.
+      Host-only networking can be thought of as a hybrid between the
+      bridged and internal networking modes. As with bridged networking,
+      the virtual machines can talk to each other and the host as if
+      they were connected through a physical Ethernet switch. As with
+      internal networking, a physical networking interface need not be
+      present, and the virtual machines cannot talk to the world outside
+      the host since they are not connected to a physical networking
+      interface.
     </para>
 
     <para>
@@ -1084,8 +1082,9 @@
 
       <listitem>
         <para>
-          On the command line, enter <computeroutput>VBoxManage modifyvm
-          "VM name" --nic&lt;x&gt; hostonly</computeroutput>. See
+          On the command line, enter <command>VBoxManage modifyvm
+          <replaceable>"vmname</replaceable>
+          --nic<replaceable>x</replaceable> hostonly</command>. See
           <xref
           linkend="vboxmanage-modifyvm" />.
         </para>
@@ -1095,8 +1094,9 @@
 
     <para>
       Before you can attach a VM to a host-only network you have to
-      create at least one host-only interface. You can use the GUI for
-      this. Choose <emphasis role="bold">File</emphasis>,
+      create at least one host-only interface. You can use the
+      VirtualBox Manager for this. Choose
+      <emphasis role="bold">File</emphasis>,
       <emphasis role="bold">Preferences</emphasis>,
       <emphasis role="bold">Network</emphasis>,
       <emphasis role="bold">Host-Only Network</emphasis>,
@@ -1240,10 +1240,9 @@
       <para>
         On UNIX-based hosts, such as Linux, Oracle Solaris, and Mac OS
         X, it is not possible to bind to ports below 1024 from
-        applications that are not run by
-        <computeroutput>root</computeroutput>. As a result, if you try
-        to configure such a source UDP port, the VM will refuse to
-        start.
+        applications that are not run by <literal>root</literal>. As a
+        result, if you try to configure such a source UDP port, the VM
+        will refuse to start.
       </para>
     </note>
 
@@ -1352,7 +1351,7 @@
       For more information on setting up VDE networks, please see the
       documentation accompanying the software. See also
       <ulink
-        url="http://wiki.virtualsquare.org/wiki/index.php/VDE_Basic_Networking">http://wiki.virtualsquare.org/wiki/index.php/VDE_Basic_Networking</ulink>.
+        url="http://wiki.virtualsquare.org/wiki/index.php/VDE_Basic_Networking" />.
     </para>
 
   </sect1>
@@ -1519,25 +1518,24 @@ VBoxManage modifyvm "VM name" --nicbandwidthgroup2 Limit</screen>
 
           <listitem>
             <para>
-              <computeroutput>deny</computeroutput>, which hides any
-              traffic not intended for the VM's network adaptor. This is
-              the default setting.
+              <literal>deny</literal>, which hides any traffic not
+              intended for the VM's network adaptor. This is the default
+              setting.
             </para>
           </listitem>
 
           <listitem>
             <para>
-              <computeroutput>allow-vms</computeroutput>, which hides
-              all host traffic from the VM's network adaptor, but allows
-              it to see traffic from and to other VMs.
+              <literal>allow-vms</literal>, which hides all host traffic
+              from the VM's network adaptor, but allows it to see
+              traffic from and to other VMs.
             </para>
           </listitem>
 
           <listitem>
             <para>
-              <computeroutput>allow-all</computeroutput>, which removes
-              all restrictions. The VM's network adaptor sees all
-              traffic.
+              <literal>allow-all</literal>, which removes all
+              restrictions. The VM's network adaptor sees all traffic.
             </para>
           </listitem>
 

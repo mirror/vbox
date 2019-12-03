@@ -10,7 +10,7 @@
   <title>Preface</title>
 
   <para>
-    The <emphasis>&product-name; User Manual</emphasis> provides an
+    The <citetitle>&product-name; User Manual</citetitle> provides an
     introduction to using &product-name;. The manual provides
     information on how to install &product-name; and use it to create
     and configure virtual machines.
@@ -38,7 +38,7 @@
     </para>
 
     <para>
-      <ulink url="&otn-doc-tab;" />
+      <ulink url="&ohc-doc-page;" />
     </para>
 
   </simplesect>
@@ -71,9 +71,9 @@
 
       <listitem>
         <para>
-          <computeroutput>monospace</computeroutput>: Monospace type
-          indicates commands within a paragraph, URLs, code in examples,
-          text that appears on the screen, or text that you enter.
+          <literal>monospace</literal>: Monospace type indicates
+          commands within a paragraph, URLs, code in examples, text that
+          appears on the screen, or text that you enter.
         </para>
       </listitem>
 
@@ -81,7 +81,10 @@
 
   </simplesect>
 
-  <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="../common/oracle-accessibility-en.xml"/>
-  <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="../common/oracle-support-en.xml"/>
+  <xi:include xmlns:xi="http://www.w3.org/2001/XInclude"
+    href="../common/oracle-accessibility-en.xml" />
+
+  <xi:include xmlns:xi="http://www.w3.org/2001/XInclude"
+    href="../common/oracle-support-en.xml" />
 
 </preface>

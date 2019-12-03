@@ -8,9 +8,9 @@
 
 <!-- VBox bookinfo section -->
 
-<bookinfo>
+  <bookinfo>
 
- <title>&VBOX_PRODUCT;</title>
+    <title>&VBOX_PRODUCT;</title>
 
     <subtitle>User Manual</subtitle>
 

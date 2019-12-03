@@ -33,10 +33,7 @@
 
     <para>
       Oracle provides support for the VirtualBox Remote Display Protocol
-      (VRDP) in such an &product-name; extension package. When this
-      package is installed, &product-name; versions 4.0 and later
-      support VRDP the same way as binary, non-open source, versions of
-      &product-name; before 4.0 did.
+      (VRDP) in such an &product-name; extension package.
     </para>
 
     <para>
@@ -54,17 +51,16 @@
       <command>VBoxManage</command> command, as follows:
     </para>
 
-<screen>VBoxManage modifyvm "VM name" --vrde on</screen>
+<screen>$ VBoxManage modifyvm <replaceable>VM-name</replaceable> --vrde on</screen>
 
     <para>
-      By default, the VRDP server uses TCP port
-      <computeroutput>3389</computeroutput>. You will need to change the
-      default port if you run more than one VRDP server, since the port
-      can only be used by one server at a time. You might also need to
-      change it on Windows hosts since the default port might already be
-      used by the RDP server that is built into Windows itself. Ports
-      5000 through 5050 are typically not used and might be a good
-      choice.
+      By default, the VRDP server uses TCP port <literal>3389</literal>.
+      You will need to change the default port if you run more than one
+      VRDP server, since the port can only be used by one server at a
+      time. You might also need to change it on Windows hosts since the
+      default port might already be used by the RDP server that is built
+      into Windows itself. Ports 5000 through 5050 are typically not
+      used and might be a good choice.
     </para>
 
     <para>
@@ -75,10 +71,11 @@
       specify a comma-separated list of ports or ranges of ports. Use a
       dash between two port numbers to specify a range. The VRDP server
       will bind to <emphasis>one</emphasis> of the available ports from
-      the specified list. For example, <computeroutput>VBoxManage
-      modifyvm "VM name" --vrdeport 5000,5010-5012</computeroutput> will
-      configure the server to bind to one of the ports 5000, 5010, 5011,
-      or 5012. See <xref linkend="vboxmanage-modifyvm-vrde" />.
+      the specified list. For example, <command>VBoxManage modifyvm
+      <replaceable>VM-name</replaceable> --vrdeport
+      5000,5010-5012</command> configures the server to bind to one of
+      the ports 5000, 5010, 5011, or 5012. See
+      <xref linkend="vboxmanage-modifyvm" />.
     </para>
 
     <para>
@@ -91,9 +88,9 @@
     </para>
 
     <para>
-      Support for IPv6 has been implemented in &product-name; 4.3. If
-      the host OS supports IPv6 the VRDP server will automatically
-      listen for IPv6 connections in addition to IPv4.
+      &product-name; supports IPv6. If the host OS supports IPv6 the
+      VRDP server will automatically listen for IPv6 connections in
+      addition to IPv4.
     </para>
 
     <sect2 id="rdp-viewers">
@@ -133,9 +130,9 @@
 <screen>mstsc 1.2.3.4:3389</screen>
 
           <para>
-            Replace <computeroutput>1.2.3.4</computeroutput> with the
-            host IP address, and <computeroutput>3389</computeroutput>
-            with a different port, if necessary.
+            Replace <literal>1.2.3.4</literal> with the host IP address,
+            and <literal>3389</literal> with a different port, if
+            necessary.
           </para>
 
           <note>
@@ -144,21 +141,18 @@
               <listitem>
                 <para>
                   IPv6 addresses must be enclosed in square brackets to
-                  specify a port. For example: <computeroutput>mstsc
-                  [fe80::1:2:3:4]:3389</computeroutput>
+                  specify a port. For example: <literal>mstsc
+                  [fe80::1:2:3:4]:3389</literal>
                 </para>
               </listitem>
 
               <listitem>
                 <para>
                   When connecting to localhost in order to test the
-                  connection, the addresses
-                  <computeroutput>localhost</computeroutput> and
-                  <computeroutput>127.0.0.1</computeroutput> might not
-                  work using <command>mstsc.exe</command>. Instead, the
-                  address
-                  <computeroutput>127.0.0.2[:3389]</computeroutput> has
-                  to be used.
+                  connection, the addresses <literal>localhost</literal>
+                  and <literal>127.0.0.1</literal> might not work using
+                  <command>mstsc.exe</command>. Instead, the address
+                  <literal>127.0.0.2[:3389]</literal> has to be used.
                 </para>
               </listitem>
 
@@ -180,18 +174,17 @@
             the following:
           </para>
 
-<screen>rdesktop -a 16 -N 1.2.3.4:3389</screen>
+<screen>$ rdesktop -a 16 -N 1.2.3.4:3389</screen>
 
           <para>
-            Replace <computeroutput>1.2.3.4</computeroutput> with the
-            host IP address, and <computeroutput>3389</computeroutput>
-            with a different port, if necessary. The <computeroutput>-a
-            16</computeroutput> option requests a color depth of 16 bits
-            per pixel, which we recommend. For best performance, after
-            installation of the guest operating system, you should set
-            its display color depth to the same value. The
-            <computeroutput>-N</computeroutput> option enables use of
-            the NumPad keys.
+            Replace <literal>1.2.3.4</literal> with the host IP address,
+            and <literal>3389</literal> with a different port, if
+            necessary. The <option>-a 16</option> option requests a
+            color depth of 16 bits per pixel, which we recommend. For
+            best performance, after installation of the guest operating
+            system, you should set its display color depth to the same
+            value. The <option>-N</option> option enables use of the
+            NumPad keys.
           </para>
         </listitem>
 
@@ -206,17 +199,17 @@
         <listitem>
           <para>
             If you run the KDE desktop, you can use
-            <computeroutput>krdc</computeroutput>, the KDE RDP viewer. A
-            typical command line is as follows:
+            <command>krdc</command>, the KDE RDP viewer. A typical
+            command line is as follows:
           </para>
 
-<screen>krdc rdp://1.2.3.4:3389</screen>
+<screen>$ krdc rdp://1.2.3.4:3389</screen>
 
           <para>
-            Replace <computeroutput>1.2.3.4</computeroutput> with the
-            host IP address, and <computeroutput>3389</computeroutput>
-            with a different port, if necessary. The "rdp://" prefix is
-            required with krdc to switch it into RDP mode.
+            Replace <literal>1.2.3.4</literal> with the host IP address,
+            and <literal>3389</literal> with a different port, if
+            necessary. The <literal>rdp:// </literal> prefix is required
+            with <command>krdc</command> to switch it into RDP mode.
           </para>
         </listitem>
 
@@ -240,38 +233,37 @@
       <para>
         While any VM started from the VirtualBox Manager is capable of
         running virtual machines remotely, it is not convenient to have
-        to run the full-fledged GUI if you never want to have VMs
-        displayed locally in the first place. In particular, if you are
-        running server hardware whose only purpose is to host VMs, and
-        all your VMs are supposed to run remotely over VRDP, then it is
-        pointless to have a graphical user interface on the server at
-        all. This is especially true for Linux or Oracle Solaris hosts,
-        as the VirtualBox Manager comes with dependencies on the Qt and
-        SDL libraries. This is inconvenient if you would rather not have
-        the X Window system on your server at all.
+        to run the full GUI if you never want to have VMs displayed
+        locally in the first place. In particular, if you are running
+        server hardware whose only purpose is to host VMs, and all your
+        VMs are supposed to run remotely over VRDP, then it is pointless
+        to have a graphical user interface on the server at all. This is
+        especially true for Linux or Oracle Solaris hosts, as the
+        VirtualBox Manager comes with dependencies on the Qt and SDL
+        libraries. This is inconvenient if you would rather not have the
+        X Window system on your server at all.
       </para>
 
       <para>
         &product-name; therefore comes with a front-end called
-        <computeroutput>VBoxHeadless</computeroutput>, which produces no
-        visible output on the host at all, but still can optionally deliver
-        VRDP data. This front-end has no dependencies on the X Window system
+        <command>VBoxHeadless</command>, which produces no visible
+        output on the host at all, but still can optionally deliver VRDP
+        data. This front-end has no dependencies on the X Window system
         on Linux and Oracle Solaris hosts.
       </para>
 
       <note>
         <para>
-          Before &product-name; 1.6, the headless server was called
-          <computeroutput>VBoxVRDP</computeroutput>. For the sake of
-          backwards compatibility, the &product-name; installation still
-          installs an executable with that name as well.
+          In legacy releases of &product-name;, the headless server was
+          called <command>VBoxVRDP</command>. For backwards
+          compatibility, the &product-name; installation still includes
+          an executable with that name.
         </para>
       </note>
 
       <para>
-        To start a virtual machine with
-        <computeroutput>VBoxHeadless</computeroutput>, you have the
-        following options:
+        To start a virtual machine with <command>VBoxHeadless</command>,
+        you have the following options:
       </para>
 
       <itemizedlist>
@@ -281,14 +273,12 @@
             Use the <command>VBoxManage</command> command, as follows:
           </para>
 
-<screen>VBoxManage startvm "VM name" --type headless</screen>
+<screen>$ VBoxManage startvm <replaceable>VM-name</replaceable> --type headless</screen>
 
           <para>
-            The <computeroutput>--type</computeroutput> option causes
-            &product-name; to use
-            <computeroutput>VBoxHeadless</computeroutput> as the
-            front-end to the internal virtualization engine, instead of
-            the Qt front-end.
+            The <option>--type</option> option causes &product-name; to
+            use <command>VBoxHeadless</command> as the front-end to the
+            internal virtualization engine, instead of the Qt front-end.
           </para>
         </listitem>
 
@@ -297,7 +287,7 @@
             Use the <command>VBoxHeadless</command> command, as follows:
           </para>
 
-<screen>VBoxHeadless --startvm &lt;uuid|name&gt;</screen>
+<screen>VBoxHeadless --startvm <replaceable>uuid</replaceable>|<replaceable>vmname</replaceable></screen>
 
           <para>
             This way of starting the VM helps troubleshooting problems
@@ -308,17 +298,16 @@
             startvm</command> is preferred, since it runs the VM
             directly as a background process which has to be done
             explicitly when directly starting with
-            <computeroutput>VBoxHeadless</computeroutput>. The full
-            documentation of the command is in
-            <xref linkend="man_vboxheadless"/>.
+            <command>VBoxHeadless</command>. The full documentation of
+            the command is in <xref linkend="man_vboxheadless"/>.
           </para>
         </listitem>
 
         <listitem>
           <para>
-            Start <computeroutput>VBoxHeadless</computeroutput> from the
-            VirtualBox Manager GUI, by pressing the Shift key when
-            starting a virtual machine or by selecting
+            Start <command>VBoxHeadless</command> from the VirtualBox
+            Manager GUI, by pressing the Shift key when starting a
+            virtual machine or by selecting
             <emphasis role="bold">Headless Start</emphasis> from the
             <emphasis role="bold">Machine</emphasis> menu.
           </para>
@@ -327,33 +316,33 @@
       </itemizedlist>
 
       <para>
-        When you use the <computeroutput>VBoxHeadless</computeroutput>
-        command to start a VM, the VRDP server will be enabled according
-        to the VM configuration. You can override the VM's setting using
-        <computeroutput>--vrde</computeroutput> command line parameter.
-        To enable the VRDP server, start the VM as follows:
+        When you use the <command>VBoxHeadless</command> command to
+        start a VM, the VRDP server will be enabled according to the VM
+        configuration. You can override the VM's setting using
+        <option>--vrde</option> command line parameter. To enable the
+        VRDP server, start the VM as follows:
       </para>
 
-<screen>VBoxHeadless --startvm &lt;uuid|name&gt; --vrde on</screen>
+<screen>VBoxHeadless --startvm <replaceable>uuid</replaceable>|<replaceable>vmname</replaceable> --vrde on</screen>
 
       <para>
         To disable the VRDP server:
       </para>
 
-<screen>VBoxHeadless --startvm &lt;uuid|name&gt; --vrde off</screen>
+<screen>VBoxHeadless --startvm <replaceable>uuid</replaceable>|<replaceable>vmname</replaceable> --vrde off</screen>
 
       <para>
         To have the VRDP server enabled depending on the VM
         configuration, as for other front-ends:
       </para>
 
-<screen>VBoxHeadless --startvm &lt;uuid|name&gt; --vrde config</screen>
+<screen>VBoxHeadless --startvm <replaceable>uuid</replaceable>|<replaceable>vmname</replaceable> --vrde config</screen>
 
       <para>
         This command is the same as the following:
       </para>
 
-<screen>VBoxHeadless --startvm &lt;uuid|name&gt;</screen>
+<screen>VBoxHeadless --startvm <replaceable>uuid</replaceable>|<replaceable>vmname</replaceable></screen>
 
       <para>
         If you start the VM with <command>VBoxManage startvm</command>
@@ -397,8 +386,7 @@
         <listitem>
           <para>
             A terminal connection to that host through which you can
-            access a command line, such as
-            <computeroutput>ssh</computeroutput>.
+            access a command line, such as <command>ssh</command>.
           </para>
         </listitem>
 
@@ -427,16 +415,14 @@
 <screen>VBoxManage createvm --name "Windows XP" --ostype WindowsXP --register</screen>
 
           <para>
-            If you do not specify
-            <computeroutput>--register</computeroutput>, you will have
-            to manually use the <command>registervm</command> command
-            later.
+            If you do not specify <option>--register</option>, you will
+            have to manually use the <command>registervm</command>
+            command later.
           </para>
 
           <para>
-            You do not need to specify
-            <computeroutput>--ostype</computeroutput>, but doing so
-            selects some sensible default values for certain VM
+            You do not need to specify <option>--ostype</option>, but
+            doing so selects some sensible default values for certain VM
             parameters. For example, the RAM size and the type of the
             virtual network device. To get a complete list of supported
             operating systems you can use the following command:
@@ -563,7 +549,7 @@
         Accessing remote USB devices is only possible if the RDP client
         supports this extension. On Linux and Oracle Solaris hosts, the
         &product-name; installation provides a suitable VRDP client
-        called <command>rdesktop-vrdp</command>. Recent versions of
+        called <command>rdesktop-vrdp</command>. Some versions of
         <command>uttsc</command>, a client tailored for the use with Sun
         Ray thin clients, also support accessing remote USB devices. RDP
         clients for other platforms will be provided in future
@@ -627,25 +613,23 @@
             <listitem>
               <para>
                 The default authentication library,
-                <computeroutput>VBoxAuth</computeroutput>, authenticates
-                against user credentials of the hosts. Depending on the
-                host platform, this means the following:
+                <command>VBoxAuth</command>, authenticates against user
+                credentials of the hosts. Depending on the host
+                platform, this means the following:
               </para>
 
               <itemizedlist>
 
                 <listitem>
                   <para>
-                    On Linux hosts,
-                    <computeroutput>VBoxAuth.so</computeroutput>
+                    On Linux hosts, <command>VBoxAuth.so</command>
                     authenticates users against the host's PAM system.
                   </para>
                 </listitem>
 
                 <listitem>
                   <para>
-                    On Windows hosts,
-                    <computeroutput>VBoxAuth.dll</computeroutput>
+                    On Windows hosts, <command>VBoxAuth.dll</command>
                     authenticates users against the host's WinLogon
                     system.
                   </para>
@@ -653,8 +637,7 @@
 
                 <listitem>
                   <para>
-                    On Mac OS X hosts,
-                    <computeroutput>VBoxAuth.dylib</computeroutput>
+                    On Mac OS X hosts, <command>VBoxAuth.dylib</command>
                     authenticates users against the host's directory
                     service.
                   </para>
@@ -674,21 +657,21 @@
             <listitem>
               <para>
                 An additional library called
-                <computeroutput>VBoxAuthSimple</computeroutput> performs
+                <command>VBoxAuthSimple</command> performs
                 authentication against credentials configured in the
-                "extradata" section of a virtual machine's XML settings
-                file. This is probably the simplest way to get
-                authentication that does not depend on a running and
-                supported guest. The following steps are required:
+                <literal>extradata</literal> section of a virtual
+                machine's XML settings file. This is probably the
+                simplest way to get authentication that does not depend
+                on a running and supported guest. The following steps
+                are required:
               </para>
 
               <orderedlist>
 
                 <listitem>
                   <para>
-                    Enable
-                    <computeroutput>VBoxAuthSimple</computeroutput> with
-                    the following command:
+                    Enable <command>VBoxAuthSimple</command> with the
+                    following command:
                   </para>
 
 <screen>VBoxManage setproperty vrdeauthlibrary "VBoxAuthSimple"</screen>
@@ -700,11 +683,11 @@
                     switch authentication to external, as follows:
                   </para>
 
-<screen>VBoxManage modifyvm "VM name" --vrdeauthtype external</screen>
+<screen>VBoxManage modifyvm <replaceable>VM-name</replaceable> --vrdeauthtype external</screen>
 
                   <para>
-                    Replace <computeroutput>&lt;vm&gt;</computeroutput>
-                    with the VM name or UUID.
+                    Replace <replaceable>VM-name</replaceable> with the
+                    VM name or UUID.
                   </para>
                 </listitem>
 
@@ -713,48 +696,38 @@
                     You then need to configure users and passwords by
                     writing items into the machine's extradata. Since
                     the XML machine settings file, into whose
-                    <computeroutput>extradata</computeroutput> section
-                    the password needs to be written, is a plain text
-                    file, &product-name; uses hashes to encrypt
-                    passwords. The following command must be used:
+                    <literal>extradata</literal> section the password
+                    needs to be written, is a plain text file,
+                    &product-name; uses hashes to encrypt passwords. The
+                    following command must be used:
                   </para>
 
-<screen>VBoxManage setextradata "VM name" "VBoxAuthSimple/users/&lt;user&gt;" &lt;hash&gt;</screen>
+<screen>VBoxManage setextradata <replaceable>VM-name</replaceable> "VBoxAuthSimple/users/<replaceable>user</replaceable>" <replaceable>hash</replaceable></screen>
 
                   <para>
-                    Replace <computeroutput>&lt;vm&gt;</computeroutput>
-                    with the VM name or UUID,
-                    <computeroutput>&lt;user&gt;</computeroutput> with
-                    the user name who should be allowed to log in and
-                    <computeroutput>&lt;hash&gt;</computeroutput> with
-                    the encrypted password. As an example, to obtain the
-                    hash value for the password
-                    <computeroutput>secret</computeroutput>, you can use
-                    the following command:
+                    Replace <replaceable>VM-name</replaceable> with the
+                    VM name or UUID, <replaceable>user</replaceable>
+                    with the user name who should be allowed to log in
+                    and <replaceable>hash</replaceable> with the
+                    encrypted password. The following command example
+                    obtains the hash value for the password
+                    <literal>secret</literal>:
                   </para>
 
-<screen>VBoxManage internalcommands passwordhash "secret"</screen>
-
-                  <para>
-                    This command will generate output similar to the
-                    following:
-                  </para>
-
-<screen>2bb80d537b1da3e38bd30361aa855686bde0eacd7162fef6a25fe97bf527a25b</screen>
+<screen>$ VBoxManage internalcommands passwordhash "secret"
+2bb80d537b1da3e38bd30361aa855686bde0eacd7162fef6a25fe97bf527a25b</screen>
 
                   <para>
                     You then use <command>VBoxManage
                     setextradata</command> to store this value in the
-                    machine's <computeroutput>extradata</computeroutput>
-                    section.
+                    machine's <literal>extradata</literal> section.
                   </para>
 
                   <para>
                     As a combined example, to set the password for the
-                    user <computeroutput>john</computeroutput> and the
-                    machine <computeroutput>My VM</computeroutput> to
-                    <computeroutput>secret</computeroutput>, use this
-                    command:
+                    user <literal>john</literal> and the machine
+                    <literal>My VM</literal> to
+                    <literal>secret</literal>, use this command:
                   </para>
 
 <screen>VBoxManage setextradata "My VM" "VBoxAuthSimple/users/john"
@@ -813,8 +786,8 @@
 
         <listitem>
           <para>
-            <emphasis role="bold">RDP4</emphasis> authentication was
-            used historically. With RDP4, the RDP client does not
+            <emphasis role="bold">RDP 4</emphasis> authentication was
+            used historically. With RDP 4, the RDP client does not
             perform any checks in order to verify the identity of the
             server it connects to. Since user credentials can be
             obtained using a man in the middle (MITM) attack, RDP4
@@ -824,29 +797,30 @@
 
         <listitem>
           <para>
-            <emphasis role="bold">RDP5.1</emphasis> authentication
+            <emphasis role="bold">RDP 5.1</emphasis> authentication
             employs a server certificate for which the client possesses
             the public key. This way it is guaranteed that the server
             possess the corresponding private key. However, as this
-            hard-coded private key became public some years ago, RDP5.1
+            hard-coded private key became public some years ago, RDP 5.1
             authentication is also insecure.
           </para>
         </listitem>
 
         <listitem>
           <para>
-            <emphasis role="bold">RDP5.2</emphasis> authentication uses
-            Enhanced RDP Security, which means that an external security
-            protocol is used to secure the connection. RDP4 and RDP5.1
-            use Standard RDP Security. The VRDP server supports Enhanced
-            RDP Security with TLS protocol and, as a part of TLS
-            handshake, sends the server certificate to the client.
+            <emphasis role="bold">RDP 5.2 or later</emphasis>
+            authentication uses Enhanced RDP Security, which means that
+            an external security protocol is used to secure the
+            connection. RDP 4 and RDP 5.1 use Standard RDP Security. The
+            VRDP server supports Enhanced RDP Security with TLS protocol
+            and, as a part of the TLS handshake, sends the server
+            certificate to the client.
           </para>
 
           <para>
-            The <computeroutput>Security/Method</computeroutput> VRDE
-            property sets the desired security method, which is used for
-            a connection. Valid values are as follows:
+            The <literal>Security/Method</literal> VRDE property sets
+            the desired security method, which is used for a connection.
+            Valid values are as follows:
           </para>
 
           <itemizedlist>
@@ -874,12 +848,8 @@
               </para>
 
               <para>
-                The OpenSSL library version determines which versions of
-                TLS are supported. The &product-name; clients include at
-                least Version 1.1.0 of the OpenSSL library. This library
-                supports TLS versions 1.0, 1.1, and 1.2. Some clients
-                might include newer versions of the OpenSSL library and
-                thus support additional TLS versions.
+                The version of OpenSSL used by &product-name; supports
+                TLS versions 1.0, 1.1, 1.2, and 1.3.
               </para>
             </listitem>
 
@@ -890,15 +860,15 @@
             either Standard or Enhanced RDP Security connection:
           </para>
 
-<screen>vboxmanage modifyvm "VM name" --vrdeproperty "Security/Method=negotiate"</screen>
+<screen>vboxmanage modifyvm <replaceable>VM-name</replaceable> --vrdeproperty "Security/Method=negotiate"</screen>
 
           <para>
-            If the <computeroutput>Security/Method</computeroutput>
-            property is set to either Negotiate or TLS, the TLS protocol
-            will be automatically used by the server, if the client
-            supports TLS. However, in order to use TLS the server must
-            possess the Server Certificate, the Server Private Key and
-            the Certificate Authority (CA) Certificate. The following
+            If the <literal>Security/Method</literal> property is set to
+            either Negotiate or TLS, the TLS protocol will be
+            automatically used by the server, if the client supports
+            TLS. However, in order to use TLS the server must possess
+            the Server Certificate, the Server Private Key and the
+            Certificate Authority (CA) Certificate. The following
             example shows how to generate a server certificate.
           </para>
 
@@ -938,13 +908,13 @@ openssl req -new -key server_key_private.pem -out server_req.pem</screen>
             For example:
           </para>
 
-<screen>vboxmanage modifyvm "VM name" \
+<screen>vboxmanage modifyvm <replaceable>VM-name</replaceable> \
   --vrdeproperty "Security/CACertificate=path/ca_cert.pem"</screen>
 
-<screen>vboxmanage modifyvm "VM name" \
+<screen>vboxmanage modifyvm <replaceable>VM-name</replaceable> \
   --vrdeproperty "Security/ServerCertificate=path/server_cert.pem"</screen>
 
-<screen>vboxmanage modifyvm "VM name" \
+<screen>vboxmanage modifyvm <replaceable>VM-name</replaceable> \
   --vrdeproperty "Security/ServerPrivateKey=path/server_key_private.pem"</screen>
         </listitem>
 
@@ -953,9 +923,8 @@ openssl req -new -key server_key_private.pem -out server_req.pem</screen>
       <para>
         As the client that connects to the server determines what type
         of encryption will be used, with <command>rdesktop</command>,
-        the Linux RDP viewer, use the
-        <computeroutput>-4</computeroutput> or
-        <computeroutput>-5</computeroutput> options.
+        the Linux RDP viewer, use the <option>-4</option> or
+        <option>-5</option> options.
       </para>
 
     </sect2>
@@ -977,7 +946,7 @@ openssl req -new -key server_key_private.pem -out server_req.pem</screen>
         The following command enables multiple connection mode:
       </para>
 
-<screen>VBoxManage modifyvm "VM name" --vrdemulticon on</screen>
+<screen>VBoxManage modifyvm <replaceable>VM-name</replaceable> --vrdemulticon on</screen>
 
     </sect2>
 
@@ -993,25 +962,23 @@ openssl req -new -key server_key_private.pem -out server_req.pem</screen>
 
       <para>
         The RDP client can select the virtual monitor number to connect
-        to using the <computeroutput>domain</computeroutput> login
-        parameter (<computeroutput>-d</computeroutput>). If the
-        parameter ends with <computeroutput>@</computeroutput> followed
-        by a number, &product-name; interprets this number as the screen
-        index. The primary guest screen is selected with
-        <computeroutput>@1</computeroutput>, the first secondary screen
-        is <computeroutput>@2</computeroutput>, and so on.
+        to using the <literal>domain</literal> login parameter
+        (<option>-d</option>). If the parameter ends with
+        <literal>@</literal> followed by a number, &product-name;
+        interprets this number as the screen index. The primary guest
+        screen is selected with <literal>@1</literal>, the first
+        secondary screen is <literal>@2</literal>, and so on.
       </para>
 
       <para>
-        The Microsoft RDP6 client does not let you specify a separate
+        The Microsoft RDP 6 client does not let you specify a separate
         domain name. Instead, enter
-        <computeroutput>domain\username</computeroutput> in the
-        <emphasis role="bold">Username</emphasis> field. For example,
-        <computeroutput>@2\name</computeroutput>.
-        <computeroutput>name</computeroutput> must be supplied, and must
-        be the name used to log in if the VRDP server is set up to
-        require credentials. If it is not, you may use any text as the
-        username.
+        <literal><replaceable>domain</replaceable>\<replaceable>username</replaceable></literal>
+        in the <emphasis role="bold">Username</emphasis> field. For
+        example, <literal>@2\<replaceable>name</replaceable></literal>.
+        <replaceable>name</replaceable> must be supplied, and must be
+        the name used to log in if the VRDP server is set up to require
+        credentials. If it is not, you may use any text as the username.
       </para>
 
     </sect2>
@@ -1047,7 +1014,7 @@ openssl req -new -key server_key_private.pem -out server_req.pem</screen>
         The following command enables video redirection:
       </para>
 
-<screen>VBoxManage modifyvm "VM name" --vrdevideochannel on</screen>
+<screen>VBoxManage modifyvm <replaceable>VM-name</replaceable> --vrdevideochannel on</screen>
 
       <para>
         The quality of the video is defined as a value from 10 to 100
@@ -1056,7 +1023,7 @@ openssl req -new -key server_key_private.pem -out server_req.pem</screen>
         can be changed using the following command:
       </para>
 
-<screen>VBoxManage modifyvm "VM name" --vrdevideochannelquality 75</screen>
+<screen>VBoxManage modifyvm <replaceable>VM-name</replaceable> --vrdevideochannelquality 75</screen>
 
     </sect2>
 
@@ -1065,28 +1032,27 @@ openssl req -new -key server_key_private.pem -out server_req.pem</screen>
       <title>VRDP Customization</title>
 
       <para>
-        With &product-name; it is possible to disable display output,
-        mouse and keyboard input, audio, remote USB, or clipboard
-        individually in the VRDP server.
+        You can disable display output, mouse and keyboard input, audio,
+        remote USB, or clipboard individually in the VRDP server.
       </para>
 
       <para>
         The following commands change the corresponding server settings:
       </para>
 
-<screen>VBoxManage modifyvm "VM name" --vrdeproperty Client/DisableDisplay=1
-VBoxManage modifyvm "VM name" --vrdeproperty Client/DisableInput=1
-VBoxManage modifyvm "VM name" --vrdeproperty Client/DisableUSB=1
-VBoxManage modifyvm "VM name" --vrdeproperty Client/DisableAudio=1
-VBoxManage modifyvm "VM name" --vrdeproperty Client/DisableClipboard=1
-VBoxManage modifyvm "VM name" --vrdeproperty Client/DisableUpstreamAudio=1</screen>
+<screen>$ VBoxManage modifyvm <replaceable>VM-name</replaceable> --vrdeproperty Client/DisableDisplay=1
+$ VBoxManage modifyvm <replaceable>VM-name</replaceable> --vrdeproperty Client/DisableInput=1
+$ VBoxManage modifyvm <replaceable>VM-name</replaceable> --vrdeproperty Client/DisableUSB=1
+$ VBoxManage modifyvm <replaceable>VM-name</replaceable> --vrdeproperty Client/DisableAudio=1
+$ VBoxManage modifyvm <replaceable>VM-name</replaceable> --vrdeproperty Client/DisableClipboard=1
+$ VBoxManage modifyvm <replaceable>VM-name</replaceable> --vrdeproperty Client/DisableUpstreamAudio=1</screen>
 
       <para>
         To reenable a feature, use a similar command without the
         trailing 1. For example:
       </para>
 
-<screen>VBoxManage modifyvm "VM name" --vrdeproperty Client/DisableDisplay=</screen>
+<screen>$ VBoxManage modifyvm <replaceable>VM-name</replaceable> --vrdeproperty Client/DisableDisplay=</screen>
 
     </sect2>
 
@@ -1173,15 +1139,14 @@ VBoxManage modifyvm "VM name" --vrdeproperty Client/DisableUpstreamAudio=1</scre
           command:
         </para>
 
-<screen>VBoxManage modifyvm &lt;targetvmname&gt; --teleporter on --teleporterport &lt;port&gt;</screen>
+<screen>VBoxManage modifyvm <replaceable>targetvmname</replaceable> --teleporter on --teleporterport <replaceable>port</replaceable></screen>
 
         <para>
-          where <computeroutput>&lt;targetvmname&gt;</computeroutput> is
-          the name of the virtual machine on the target host and
-          <computeroutput>&lt;port&gt;</computeroutput> is a TCP/IP port
-          number to be used on both the source and the target hosts. For
-          example, use 6000. See
-          <xref linkend="vboxmanage-modifyvm-teleport" />.
+          <replaceable>targetvmname</replaceable> is the name of the
+          virtual machine on the target host and
+          <replaceable>port</replaceable> is a TCP/IP port number to be
+          used on both the source and the target hosts. For example, use
+          6000. See <xref linkend="vboxmanage-modifyvm" />.
         </para>
       </listitem>
 
@@ -1200,18 +1165,17 @@ VBoxManage modifyvm "VM name" --vrdeproperty Client/DisableUpstreamAudio=1</scre
           following command on the source host:
         </para>
 
-<screen>VBoxManage controlvm &lt;sourcevmname&gt; teleport --host &lt;targethost&gt; --port &lt;port&gt;</screen>
+<screen>VBoxManage controlvm <replaceable>sourcevmname</replaceable> teleport --host <replaceable>targethost</replaceable> --port <replaceable>port</replaceable></screen>
 
         <para>
-          where <computeroutput>&lt;sourcevmname&gt;</computeroutput> is
-          the name of the virtual machine on the source host, which is
-          the machine that is currently running.
-          <computeroutput>&lt;targethost&gt;</computeroutput> is the
-          host or IP name of the target host on which the machine is
-          waiting for the teleport request, and
-          <computeroutput>&lt;port&gt;</computeroutput> must be the same
-          number as specified in the command on the target host. See
-          <xref linkend="vboxmanage-controlvm" />.
+          where <replaceable>sourcevmname</replaceable> is the name of
+          the virtual machine on the source host, which is the machine
+          that is currently running.
+          <replaceable>targethost</replaceable> is the host or IP name
+          of the target host on which the machine is waiting for the
+          teleport request, and <replaceable>port</replaceable> must be
+          the same number as specified in the command on the target
+          host. See <xref linkend="vboxmanage-controlvm" />.
         </para>
       </listitem>
 
@@ -1233,15 +1197,14 @@ VBoxManage modifyvm "VM name" --vrdeproperty Client/DisableUpstreamAudio=1</scre
         features are actually present. &product-name; filters what CPU
         capabilities are presented to the guest operating system.
         Advanced users can attempt to restrict these virtual CPU
-        capabilities with the <computeroutput>VBoxManage modifyvm
-        --cpuid</computeroutput> command. See
-        <xref linkend="vboxmanage-modifyvm-teleport" />.
+        capabilities with the <command>VBoxManage modifyvm
+        --cpuid</command> command. See
+        <xref linkend="vboxmanage-modifyvm" />.
       </para>
     </note>
 
   </sect1>
 
   <xi:include href="user_man_VBoxHeadless.xml" xpointer="element(/1)" xmlns:xi="http://www.w3.org/2001/XInclude" />
-
 
 </chapter>

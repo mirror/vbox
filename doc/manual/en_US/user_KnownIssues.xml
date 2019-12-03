@@ -36,11 +36,11 @@
         </para>
       </listitem>
 
-      <listitem>
+<!--   <listitem>
         <para>
-          PCI pass-through (Linux hosts only)
+          PCI passthrough (Linux hosts only)
         </para>
-      </listitem>
+      </listitem>-->
 
       <listitem>
         <para>
@@ -62,7 +62,7 @@
 
       <listitem>
         <para>
-          Host CD/DVD drive pass-through
+          Host CD/DVD drive passthrough
         </para>
       </listitem>
 
@@ -107,9 +107,9 @@
               <emphasis role="bold">Poor performance</emphasis> with
               32-bit guests on AMD CPUs. This affects mainly Windows and
               Oracle Solaris guests, but possibly also some Linux kernel
-              revisions. Partially solved in 3.0.6 for 32-bit Windows
-              NT, 2000, XP, and 2003 guests. Requires Guest Additions
-              3.0.6 or later to be installed.
+              revisions. Partially solved for 32-bit Windows NT, 2000,
+              XP, and 2003 guests. Requires the Guest Additions to be
+              installed.
             </para>
           </listitem>
 
@@ -120,9 +120,8 @@
               include virtual APIC hardware optimization support. This
               affects mainly Windows and Oracle Solaris guests, but
               possibly also some Linux kernel revisions. Partially
-              solved in 3.0.12 for 32-bit Windows NT, 2000, XP, and 2003
-              guests. Requires Guest Additions 3.0.12 or later to be
-              installed.
+              solved for 32-bit Windows NT, 2000, XP, and 2003 guests.
+              Requires the Guest Additions to be installed.
             </para>
           </listitem>
 
@@ -133,30 +132,8 @@
         <para>
           <emphasis role="bold">NX (no execute, data execution
           prevention)</emphasis> only works for guests running on 64-bit
-          hosts or guests running on 32-bit hosts with PAE enabled and
-          requires that hardware virtualization be enabled.
+          hosts and requires that hardware virtualization be enabled.
         </para>
-      </listitem>
-
-      <listitem>
-        <para>
-          For <emphasis role="bold">basic Direct3D support in Windows
-          guests</emphasis> to work, the Guest Additions must be
-          installed in Windows safe mode. Press F8 when the Windows
-          guest is booting and select <emphasis role="bold">Safe
-          Mode</emphasis>, then install the Guest Additions. Otherwise
-          the Windows file protection mechanism will interfere with the
-          replacement DLLs installed by &product-name; and keep
-          restoring the original Windows system DLLs.
-        </para>
-
-        <note>
-          <para>
-            This does <emphasis>not</emphasis> apply to the WDDM
-            Direct3D video driver available for Vista and Windows 7
-            guests shipped with &product-name; 4.1.
-          </para>
-        </note>
       </listitem>
 
       <listitem>
@@ -172,12 +149,11 @@
           Also, to use accounts without or with an empty password, the
           guest's group policy must be changed. To do so, open the group
           policy editor on the command line by typing
-          <command>gpedit.msc</command>, open the key
-          <computeroutput>Computer Configuration\Windows
-          Settings\Security Settings\Local Policies\Security
-          Options</computeroutput> and change the value of
-          <computeroutput>Accounts: Limit local account use of blank
-          passwords to console logon only</computeroutput> to Disabled.
+          <command>gpedit.msc</command>, open the key <literal>Computer
+          Configuration\Windows Settings\Security Settings\Local
+          Policies\Security Options</literal> and change the value of
+          <literal>Accounts: Limit local account use of blank passwords
+          to console logon only</literal> to Disabled.
         </para>
       </listitem>
 
@@ -185,7 +161,7 @@
         <para>
           <emphasis role="bold">Compacting virtual disk images is
           limited to VDI files.</emphasis> The <command>VBoxManage
-          modifyhd --compact</command> command is currently only
+          modifymedium --compact</command> command is currently only
           implemented for VDI files. At the moment the only way to
           optimize the size of a virtual disk images in other formats,
           such as VMDK or VHD, is to clone the image and then use the
@@ -235,17 +211,16 @@
       <listitem>
         <para>
           Neither <emphasis role="bold">scale mode</emphasis> nor
-          <emphasis
-          role="bold">seamless mode</emphasis> work
-          correctly with guests using OpenGL 3D features, such as with
-          compiz-enabled window managers.
+          <emphasis role="bold">seamless mode</emphasis> work correctly
+          with guests using OpenGL 3D features, such as with
+          Compiz-enabled window managers.
         </para>
       </listitem>
 
       <listitem>
         <para>
           The RDP server in the &product-name; extension pack supports
-          only audio streams in format 22.05kHz stereo 16 bit. If the
+          only audio streams in format 22.05kHz stereo 16-bit. If the
           RDP client requests any other audio format there will be no
           audio.
         </para>
@@ -330,8 +305,8 @@
             <para>
               Depending on your system and version of Mac OS X, you
               might experience guest hangs after some time. This can be
-              fixed by turning off energy saving. Set timeout to "Never"
-              in the system preferences.
+              fixed by turning off energy saving. Set the timeout to
+              "Never" in the system preferences.
             </para>
           </listitem>
 
@@ -345,21 +320,21 @@
               using the following command:
             </para>
 
-<screen>VBoxManage setextradata "VM name" "VBoxInternal2/EfiBootArgs" "  "</screen>
+<screen>$ VBoxManage setextradata <replaceable>VM-name</replaceable> "VBoxInternal2/EfiBootArgs" "  "</screen>
 
             <para>
               To revert to the previous behavior, use the following
               command:
             </para>
 
-<screen>VBoxManage setextradata "VM name" "VBoxInternal2/EfiBootArgs" ""</screen>
+<screen>$ VBoxManage setextradata <replaceable>VM-name</replaceable> "VBoxInternal2/EfiBootArgs" ""</screen>
           </listitem>
 
           <listitem>
             <para>
               It is currently not possible to start a Mac OS X guest in
-              safe mode by specifying "-x" option in
-              "VBoxInternal2/EfiBootArgs" extradata.
+              safe mode by specifying the <option>-x</option> option in
+              <literal>VBoxInternal2/EfiBootArgs</literal> extradata.
             </para>
           </listitem>
 
@@ -372,13 +347,6 @@
         </para>
 
         <itemizedlist>
-
-          <listitem>
-            <para>
-              There is no support for USB devices connected to Oracle
-              Solaris 10 hosts.
-            </para>
-          </listitem>
 
           <listitem>
             <para>
@@ -415,11 +383,10 @@
             <para>
               Crossbow-based bridged networking on Oracle Solaris 11
               hosts does not work directly with aggregate links.
-              However, you can use
-              <computeroutput>dladm</computeroutput> to manually create
-              a VNIC over the aggregate link and use that with a VM.
-              This limitation does not exist in Oracle Solaris 11u1
-              build 17 and newer.
+              However, you can use <command>dladm</command> to manually
+              create a VNIC over the aggregate link and use that with a
+              VM. This limitation does not exist in Oracle Solaris 11u1
+              build 17 and later.
             </para>
           </listitem>
 
@@ -428,47 +395,12 @@
 
       <listitem>
         <para>
-          <emphasis role="bold">Guest Additions of version 4.1, 4.1.2
-          and 4.1.4 for Windows.</emphasis> The &product-name; WDDM
-          Video driver may be installed and remain in the guest system
-          when Guest additions uninstallation is performed. This is
-          caused by a bug in Guest Additions uninstaller.
-        </para>
-
-        <note>
-          <para>
-            This does <emphasis>not</emphasis> apply to a Guest
-            Additions update. Installing one version of Guest Additions
-            on top of another works correctly.
-          </para>
-        </note>
-
-        <para>
-          To solve this problem, uninstall the &product-name; WDDM Video
-          driver manually. Open Device Manager, and check whether the
-          Display Adapter is named "&product-name; Graphics Adapter ..".
-          If not, there is nothing to be done. If it is, right-click the
-          &product-name; Graphics Adapter in Device Manager, select
-          <emphasis role="bold">Uninstall</emphasis>, check
-          <emphasis role="bold">Delete the Driver Software for this
-          Device</emphasis> and click
-          <emphasis role="bold">OK</emphasis>. Once uninstallation is
-          done, start Device Manager, go to the
-          <emphasis role="bold">Action</emphasis> menu and select
-          <emphasis role="bold">Scan for Hardware Change</emphasis>s to
-          ensure that the correct Windows default driver be picked up
-          for the Graphics adapter.
-        </para>
-      </listitem>
-
-      <listitem>
-        <para>
-          Neither <emphasis>virtio</emphasis> nor <emphasis>Intel
-          PRO/1000 </emphasis> drivers for <emphasis role="bold">Windows
-          XP guests</emphasis> support segmentation offloading.
-          Therefore Windows XP guests have slower transmission rates
-          comparing to other guest types. Refer to MS Knowledge base
-          article 842264 for additional information.
+          Neither virtio nor Intel PRO/1000 drivers for
+          <emphasis role="bold">Windows XP guests</emphasis> support
+          segmentation offloading. Therefore Windows XP guests have
+          slower transmission rates comparing to other guest types.
+          Refer to MS Knowledge base article 842264 for additional
+          information.
         </para>
       </listitem>
 

@@ -296,9 +296,9 @@ ifdef VBOX_XML_ENTITIES
 		'<!ENTITY VBOX_C_YEAR "$(VBOX_C_YEAR)" >' \
 		'<!ENTITY VBOX_PRODUCT '\''<trademark class="registered">Oracle</trademark> VM <trademark class="registered">VirtualBox</trademark>'\'' >' \
 		'' \
-		'<!-- Entities for OTN -->' \
-		'<!ENTITY otn-base-url "https://www.oracle.com/technetwork">' \
-		'<!ENTITY otn-doc-tab "&otn-base-url;/server-storage/virtualbox/documentation/index.html">'
+		'<!-- Entities for Oracle Help Center -->' \
+		'<!ENTITY ohc-base-url "https://docs.oracle.com/en">' \
+		'<!ENTITY ohc-doc-page "&ohc-base-url;/virtualization/virtualbox/index.html">'
 
 endif # VBOX_XML_ENTITIES
 

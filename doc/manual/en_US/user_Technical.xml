@@ -23,30 +23,37 @@
     <para>
       In &product-name;, a virtual machine and its settings are
       described in a virtual machine settings file in XML format. In
-      addition, most virtual machine have one or more virtual hard
-      disks, which are typically represented by disk images, such as
-      those in VDI format. Where all these files are stored depends on
-      which version of &product-name; created the machine.
+      addition, most virtual machines have one or more virtual hard
+      disks. These are typically represented by disk images, such as
+      those in VDI format. The location of these files may vary,
+      depending on the host operating system. See
+      <xref linkend="vboxconfigdata-machine-folder"/>.
     </para>
 
-    <sect2 id="vboxconfigdata-post-version-four">
+    <para>
+      Global configuration data for &product-name; is maintained in
+      another location on the host. See
+      <xref linkend="vboxconfigdata-global"/>.
+    </para>
 
-      <title>Machines Created by &product-name; Version 4.0 or Later</title>
+    <sect2 id="vboxconfigdata-machine-folder">
+
+      <title>The Machine Folder</title>
 
       <para>
-        By default, each virtual machine has one directory on your host
+        By default, each virtual machine has a directory on your host
         computer where all the files of that machine are stored: the XML
-        settings file, with a <computeroutput>.vbox</computeroutput>
-        file extension, and its disk images.
+        settings file, with a <filename>.vbox</filename> file extension,
+        and its disk images. This is called the <emphasis>machine
+        folder</emphasis>.
       </para>
 
       <para>
-        By default, this <emphasis>machine folder</emphasis> is placed
-        in a common folder called <computeroutput>VirtualBox
-        VMs</computeroutput>, which &product-name; creates in the
-        current system user's home directory. The location of this home
-        directory depends on the conventions of the host operating
-        system, as follows:
+        By default, this machine folder is located in a common folder
+        called <filename>VirtualBox VMs</filename>, which &product-name;
+        creates in the current system user's home directory. The
+        location of this home directory depends on the conventions of
+        the host operating system, as follows:
       </para>
 
       <itemizedlist>
@@ -54,16 +61,10 @@
         <listitem>
           <para>
             On Windows, this is the location returned by the
-            <computeroutput>SHGetFolderPath</computeroutput> function of
-            the Windows system library Shell32.dll, asking for the user
-            profile. On very old Windows versions which do not have this
-            function or where it unexpectedly returns an error, there is
-            a fallback based on environment variables. First,
-            <computeroutput>%USERPROFILE%</computeroutput> is checked.
-            If it does not exist then an attempt with
-            <computeroutput>%HOMEDRIVE%%HOMEPATH%</computeroutput> is
-            made. A typical location is
-            <computeroutput>C:\Users\username</computeroutput>.
+            <literal>SHGetFolderPath</literal> function of the Windows
+            system library Shell32.dll, asking for the user profile. A
+            typical location is
+            <filename>C:\Users\<replaceable>username</replaceable></filename>.
           </para>
         </listitem>
 
@@ -71,26 +72,29 @@
           <para>
             On Linux, Mac OS X, and Oracle Solaris, this is generally
             taken from the environment variable
-            <computeroutput>$HOME</computeroutput>, except for the user
-            <computeroutput>root</computeroutput> where it is taken from
-            the account database. This is a workaround for the frequent
-            trouble caused by users using &product-name; in combination
-            with the tool <computeroutput>sudo</computeroutput> which by
-            default does not reset the environment variable
-            <computeroutput>$HOME</computeroutput>. A typical location
-            on Linux and Oracle Solaris is
-            <computeroutput>/home/username</computeroutput> and on Mac
-            OS X <computeroutput>/Users/username</computeroutput>.
+            <filename>$HOME</filename>, except for the user
+            <literal>root</literal> where it is taken from the account
+            database. This is a workaround for the frequent trouble
+            caused by users using &product-name; in combination with the
+            tool <command>sudo</command>, which by default does not
+            reset the environment variable <filename>$HOME</filename>.
+          </para>
+
+          <para>
+            A typical location on Linux and Oracle Solaris is
+            <filename>/home/<replaceable>username</replaceable></filename>
+            and on Mac OS X is
+            <filename>/Users/<replaceable>username</replaceable></filename>.
           </para>
         </listitem>
 
       </itemizedlist>
 
       <para>
-        For simplicity, we will abbreviate the location of the home
-        directory as <computeroutput>$HOME</computeroutput>. Using that
-        convention, the common folder for all virtual machines is
-        <computeroutput>$HOME/VirtualBox VMs</computeroutput>.
+        For simplicity, we abbreviate the location of the home directory
+        as <filename>$HOME</filename>. Using that convention, the common
+        folder for all virtual machines is <filename>$HOME/VirtualBox
+        VMs</filename>.
       </para>
 
       <para>
@@ -102,22 +106,22 @@
 
         <listitem>
           <para>
-            A machine folder <computeroutput>$HOME/VirtualBox
-            VMs/Example VM/</computeroutput>
+            A machine folder: <filename>$HOME/VirtualBox VMs/Example
+            VM/</filename>
           </para>
         </listitem>
 
         <listitem>
           <para>
-            In the machine folder, a settings file:
-            <computeroutput>Example VM.vbox</computeroutput>
+            In the machine folder, a settings file: <filename>Example
+            VM.vbox</filename>
           </para>
         </listitem>
 
         <listitem>
           <para>
             In the machine folder, a virtual disk image:
-            <computeroutput>Example VM.vdi</computeroutput>.
+            <filename>Example VM.vdi</filename>.
           </para>
         </listitem>
 
@@ -128,11 +132,10 @@
         <emphasis role="bold">Create New Virtual Machine</emphasis>
         wizard described in <xref linkend="gui-createvm" />. Once you
         start working with the VM, additional files are added. Log files
-        are in a subfolder called <computeroutput>Logs</computeroutput>,
-        and if you have taken snapshots, they are in a
-        <computeroutput>Snapshots</computeroutput> subfolder. For each
-        VM, you can change the location of its snapshots folder in the
-        VM settings.
+        are in a subfolder called <filename>Logs</filename>, and if you
+        have taken snapshots, they are in a
+        <filename>Snapshots</filename> subfolder. For each VM, you can
+        change the location of its snapshots folder in the VM settings.
       </para>
 
       <para>
@@ -141,96 +144,20 @@
         <emphasis role="bold">File</emphasis> menu in the &product-name;
         main window. Then, in the displayed window, click on the
         <emphasis role="bold">General</emphasis> tab. Alternatively, use
-        <command>VBoxManage setproperty machinefolder</command>. See
-        <xref linkend="vboxmanage-setproperty" />.
-      </para>
-
-    </sect2>
-
-    <sect2 id="vboxconfigdata-pre-version-four">
-
-      <title>Machines Created by &product-name; Versions Before 4.0</title>
-
-      <para>
-        If you have upgraded to &product-name; 4.0 from an earlier
-        version of &product-name;, you probably have settings files and
-        disks in the earlier file system layout.
-      </para>
-
-      <para>
-        Before version 4.0, &product-name; separated the machine
-        settings files from virtual disk images. The machine settings
-        files had an <computeroutput>.xml</computeroutput> file
-        extension and resided in a folder called
-        <computeroutput>Machines</computeroutput> under the global
-        &product-name; configuration directory. See
-        <xref linkend="vboxconfigdata-global"/>. On Linux, for example,
-        this was the hidden directory
-        <computeroutput>$HOME/.VirtualBox/Machines</computeroutput>. The
-        default hard disks folder was called
-        <computeroutput>HardDisks</computeroutput> and was also located
-        in the <computeroutput>.VirtualBox</computeroutput> folder. Both
-        locations could be changed by the user in the global
-        preferences. The concept of a default hard disk folder was
-        abandoned with &product-name; 4.0, since disk images now reside
-        in each machine's folder by default.
-      </para>
-
-      <para>
-        The old layout had the following severe disadvantages:
-      </para>
-
-      <itemizedlist>
-
-        <listitem>
-          <para>
-            It was very difficult to move a virtual machine from one
-            host to another because the files involved did not reside in
-            the same folder. In addition, the virtual media of all
-            machines were registered with a global registry in the
-            central &product-name; settings file,
-            <computeroutput>$HOME/.VirtualBox/VirtualBox.xml</computeroutput>.
-          </para>
-
-          <para>
-            To move a machine to another host, it was therefore not
-            enough to move the XML settings file and the disk images,
-            which were in different locations, but the hard disk entries
-            from the global media registry XML had to be meticulously
-            copied as well. This was close to impossible if the machine
-            had snapshots and therefore differencing images.
-          </para>
-        </listitem>
-
-        <listitem>
-          <para>
-            Storing virtual disk images, which can grow very large,
-            under the hidden
-            <computeroutput>.VirtualBox</computeroutput> directory, at
-            least on Linux and Oracle Solaris hosts, made many users
-            wonder where their disk space had gone.
-          </para>
-        </listitem>
-
-      </itemizedlist>
-
-      <para>
-        Whereas new VMs created with &product-name; 4.0 or later will
-        conform to the new layout, for maximum compatibility, old VMs
-        are <emphasis>not</emphasis> converted to the new layout.
-        Otherwise machine settings would be irrevocably broken if a user
-        downgraded from 4.0 back to an older version of &product-name;.
+        the <command>VBoxManage setproperty machinefolder</command>
+        command. See <xref linkend="vboxmanage-setproperty" />.
       </para>
 
     </sect2>
 
     <sect2 id="vboxconfigdata-global">
 
-      <title>Global Configuration Data</title>
+      <title>Global Settings</title>
 
       <para>
-        In addition to the files of the virtual machines, &product-name;
-        maintains global configuration data in the following directory:
+        In addition to the files for the virtual machines,
+        &product-name; maintains global configuration data in the
+        following directory:
       </para>
 
       <itemizedlist>
@@ -238,27 +165,21 @@
         <listitem>
           <para>
             <emphasis role="bold">Linux and Oracle Solaris:</emphasis>
-            <computeroutput>$HOME/.config/VirtualBox</computeroutput>.
-          </para>
-
-          <para>
-            <computeroutput>$HOME/.VirtualBox</computeroutput> is used
-            if it exists, for compatibility with legacy versions before
-            &product-name; 4.3.
+            <filename>$HOME/.config/VirtualBox</filename>.
           </para>
         </listitem>
 
         <listitem>
           <para>
             <emphasis role="bold">Windows:</emphasis>
-            <computeroutput>$HOME/.VirtualBox</computeroutput>.
+            <filename>$HOME/.VirtualBox</filename>.
           </para>
         </listitem>
 
         <listitem>
           <para>
             <emphasis role="bold">Mac OS X:</emphasis>
-            <computeroutput>$HOME/Library/VirtualBox</computeroutput>.
+            <filename>$HOME/Library/VirtualBox</filename>.
           </para>
         </listitem>
 
@@ -266,73 +187,45 @@
 
       <para>
         &product-name; creates this configuration directory
-        automatically, if necessary. Optionally, you can specify an
-        alternate configuration directory by setting the
-        <computeroutput>VBOX_USER_HOME</computeroutput> environment
-        variable, or additionally on Linux or Oracle Solaris by using
-        the standard <computeroutput>XDG_CONFIG_HOME</computeroutput>
-        variable. Since the global
-        <computeroutput>VirtualBox.xml</computeroutput> settings file
-        points to all other configuration files, this enables switching
-        between several &product-name; configurations.
+        automatically, if necessary. You can specify an alternate
+        configuration directory by either setting the
+        <literal>VBOX_USER_HOME</literal> environment variable, or on
+        Linux or Oracle Solaris by using the standard
+        <literal>XDG_CONFIG_HOME</literal> variable. Since the global
+        <filename>VirtualBox.xml</filename> settings file points to all
+        other configuration files, this enables switching between
+        several &product-name; configurations.
       </para>
 
       <para>
-        Most importantly, in this directory, &product-name; stores its
-        global settings file, another XML file called
-        <computeroutput>VirtualBox.xml</computeroutput>. This includes
-        global configuration options and the list of registered virtual
-        machines with pointers to their XML settings files. Neither the
-        location of this file nor its directory has changed with
-        &product-name; 4.0.
-      </para>
-
-      <para>
-        Before &product-name; 4.0, all virtual media, such as disk image
-        files, were also contained in a global registry in this settings
-        file. For compatibility, this media registry still exists if you
-        upgrade &product-name; and there are media from machines which
-        were created with a version before 4.0. If you have no such
-        machines, then there will be no global media registry. With
-        &product-name; 4.0, each machine XML file has its own media
-        registry.
-      </para>
-
-      <para>
-        Also before &product-name; 4.0, the default
-        <computeroutput>Machines</computeroutput> folder and the default
-        <computeroutput>HardDisks</computeroutput> folder resided under
-        the &product-name; configuration directory, such as
-        <computeroutput>$HOME/.VirtualBox/Machines</computeroutput> on
-        Linux. If you are upgrading from an &product-name; version
-        before 4.0, files in these directories are not automatically
-        moved in order not to break backwards compatibility.
+        In this configuration directory, &product-name; stores its
+        global settings file, an XML file called
+        <filename>VirtualBox.xml</filename>. This file includes global
+        configuration options and a list of registered virtual machines
+        with pointers to their XML settings files.
       </para>
 
     </sect2>
 
-    <sect2 id="vboxconfigdata-summary-version-four">
+    <sect2 id="vboxconfigdata-summary-locations">
 
-      <title>Summary of 4.0 Configuration Changes</title>
+      <title>Summary of Configuration Data Locations</title>
 
       <para>
         The following table gives a brief overview of the configuration
-        changes between legacy versions and version 4.0 or later.
+        data locations on an &product-name; host.
       </para>
 
-      <table id="table-version4-config-changes" tabstyle="oracle-all">
-        <title>Configuration Changes in Version 4.0 or Above</title>
-        <tgroup cols="3">
+      <table id="table-config-summary" tabstyle="oracle-all">
+        <title>Configuration File Locations</title>
+        <tgroup cols="2">
           <thead>
             <row>
               <entry><para>
                   <emphasis role="bold">Setting</emphasis>
                 </para></entry>
               <entry><para>
-                  <emphasis role="bold">Before 4.0</emphasis>
-                </para></entry>
-              <entry><para>
-                  <emphasis role="bold">4.0 or above</emphasis>
+                  <emphasis role="bold">Location</emphasis>
                 </para></entry>
             </row>
           </thead>
@@ -342,18 +235,12 @@
                   Default machines folder
                 </para></entry>
               <entry><para>
-                  <computeroutput>$HOME/.VirtualBox/Machines</computeroutput>
-                </para></entry>
-              <entry><para>
-                  <computeroutput>$HOME/VirtualBox VMs</computeroutput>
+                  <filename>$HOME/VirtualBox VMs</filename>
                 </para></entry>
             </row>
             <row>
               <entry><para>
                   Default disk image location
-                </para></entry>
-              <entry><para>
-                  <computeroutput>$HOME/.VirtualBox/HardDisks</computeroutput>
                 </para></entry>
               <entry><para>
                   In each machine's folder
@@ -364,10 +251,7 @@
                   Machine settings file extension
                 </para></entry>
               <entry><para>
-                  <computeroutput>.xml</computeroutput>
-                </para></entry>
-              <entry><para>
-                  <computeroutput>.vbox</computeroutput>
+                  <filename>.vbox</filename>
                 </para></entry>
             </row>
             <row>
@@ -375,22 +259,14 @@
                   Media registry
                 </para></entry>
               <entry><para>
-                  Global <computeroutput>VirtualBox.xml</computeroutput>
-                  file
-                </para></entry>
-              <entry><para>
                   Each machine settings file
-                </para></entry>
-            </row>
-            <row>
-              <entry><para>
-                  Media registration
-                </para></entry>
-              <entry><para>
-                  Explicit open/close required
-                </para></entry>
-              <entry><para>
-                  Automatic on attach
+                </para>
+
+
+
+                <para>
+                  Media registration is done automatically when a
+                  storage medium is attached to a VM
                 </para></entry>
             </row>
           </tbody>
@@ -406,7 +282,7 @@
       <para>
         &product-name; uses XML for both the machine settings files and
         the global configuration file,
-        <computeroutput>VirtualBox.xml</computeroutput>.
+        <filename>VirtualBox.xml</filename>.
       </para>
 
       <para>
@@ -422,21 +298,6 @@
         format if the current settings cannot be expressed in the old
         format, for example because you enabled a feature that was not
         present in an earlier version of &product-name;.
-      </para>
-
-      <para>
-        As an example, before &product-name; 3.1, it was only possible
-        to enable or disable a single DVD drive in a virtual machine. If
-        it was enabled, then it would always be visible as the secondary
-        master of the IDE controller. With &product-name; 3.1, DVD
-        drives can be attached to arbitrary slots of arbitrary
-        controllers, so they could be the secondary slave of an IDE
-        controller or in a SATA slot. If you have a machine settings
-        file from an earlier version and upgrade &product-name; to 3.1
-        and then move the DVD drive from its default position, this
-        cannot be expressed in the old settings format; the XML machine
-        file would get written in the new format, and a backup file of
-        the old format would be kept.
       </para>
 
       <para>
@@ -475,14 +336,14 @@
 
       <listitem>
         <para>
-          <computeroutput>VBoxSVC</computeroutput>, the &product-name;
-          service process which always runs in the background. This
-          process is started automatically by the first &product-name;
-          client process and exits a short time after the last client
-          exits. The first &product-name; service can be the GUI,
-          <computeroutput>VBoxManage</computeroutput>,
-          <computeroutput>VBoxHeadless</computeroutput>, the web service
-          amongst others. The service is responsible for bookkeeping,
+          <command>VBoxSVC</command>, the &product-name; service process
+          which always runs in the background. This process is started
+          automatically by the first &product-name; client process and
+          exits a short time after the last client exits. The first
+          &product-name; service can be the GUI,
+          <command>VBoxManage</command>,
+          <command>VBoxHeadless</command>, the web service amongst
+          others. The service is responsible for bookkeeping,
           maintaining the state of all VMs, and for providing
           communication between &product-name; components. This
           communication is implemented using COM/XPCOM.
@@ -491,27 +352,24 @@
         <note>
           <para>
             When we refer to <emphasis>clients</emphasis> here, we mean
-            the local clients of a particular
-            <computeroutput>VBoxSVC</computeroutput> server process, not
-            clients in a network. &product-name; employs its own
-            client/server design to allow its processes to cooperate,
-            but all these processes run under the same user account on
-            the host operating system, and this is totally transparent
-            to the user.
+            the local clients of a particular <command>VBoxSVC</command>
+            server process, not clients in a network. &product-name;
+            employs its own client/server design to allow its processes
+            to cooperate, but all these processes run under the same
+            user account on the host operating system, and this is
+            totally transparent to the user.
           </para>
         </note>
       </listitem>
 
       <listitem>
         <para>
-          The GUI process,
-          <computeroutput>VirtualBoxVM</computeroutput>, a client
+          The GUI process, <command>VirtualBoxVM</command>, a client
           application based on the cross-platform Qt library. When
-          started without the <computeroutput>--startvm</computeroutput>
-          option, this application acts as the VirtualBox Manager,
-          displaying the VMs and their settings. It then communicates
-          settings and state changes to
-          <computeroutput>VBoxSVC</computeroutput> and also reflects
+          started without the <option>--startvm</option> option, this
+          application acts as the VirtualBox Manager, displaying the VMs
+          and their settings. It then communicates settings and state
+          changes to <command>VBoxSVC</command> and also reflects
           changes effected through other means, such as the
           <command>VBoxManage</command> command.
         </para>
@@ -519,9 +377,8 @@
 
       <listitem>
         <para>
-          If the <computeroutput>VirtualBoxVM</computeroutput> client
-          application is started with the
-          <computeroutput>--startvm</computeroutput> argument, it loads
+          If the <command>VirtualBoxVM</command> client application is
+          started with the <option>--startvm</option> argument, it loads
           the VMM library which includes the actual hypervisor and then
           runs a virtual machine and provides the input and output for
           the guest.
@@ -548,43 +405,42 @@
 
       <listitem>
         <para>
-          <computeroutput>VirtualBoxVM</computeroutput>: The Qt front
-          end implementing the VirtualBox Manager and running VMs.
+          <command>VirtualBoxVM</command>: The Qt front end implementing
+          the VirtualBox Manager and running VMs.
         </para>
       </listitem>
 
       <listitem>
         <para>
-          <computeroutput>VBoxManage</computeroutput>: A less
-          user-friendly but more powerful alternative. See
-          <xref linkend="vboxmanage" />.
+          <command>VBoxManage</command>: A less user-friendly but more
+          powerful alternative. See <xref linkend="vboxmanage" />.
         </para>
       </listitem>
 
       <listitem>
         <para>
-          <computeroutput>VBoxHeadless</computeroutput>: A VM front end
-          which does not directly provide any video output and keyboard
-          or mouse input, but enables redirection through the VirtualBox
-          Remote Desktop Extension. See <xref linkend="vboxheadless" />.
+          <command>VBoxHeadless</command>: A VM front end which does not
+          directly provide any video output and keyboard or mouse input,
+          but enables redirection through the VirtualBox Remote Desktop
+          Extension. See <xref linkend="vboxheadless" />.
         </para>
       </listitem>
 
       <listitem>
         <para>
-          <computeroutput>vboxwebsrv</computeroutput>: The
-          &product-name; web service process which enables control of an
-          &product-name; host remotely. This is described in detail in
-          the &product-name; Software Development Kit (SDK) reference.
-          See <xref linkend="VirtualBoxAPI" />.
+          <command>vboxwebsrv</command>: The &product-name; web service
+          process which enables control of an &product-name; host
+          remotely. This is described in detail in the &product-name;
+          Software Development Kit (SDK) reference. See
+          <xref linkend="VirtualBoxAPI" />.
         </para>
       </listitem>
 
       <listitem>
         <para>
           The &product-name; Python shell: A Python alternative to
-          <computeroutput>VBoxManage</computeroutput>. This is also
-          described in the SDK reference.
+          <command>VBoxManage</command>. This is also described in the
+          SDK reference.
         </para>
       </listitem>
 
@@ -616,13 +472,6 @@
       <listitem>
         <para>
           EM (Execution Manager): Controls execution of guest code.
-        </para>
-      </listitem>
-
-      <listitem>
-        <para>
-          REM (Recompiled Execution Monitor): Provides software
-          emulation of CPU instructions.
         </para>
       </listitem>
 
@@ -661,13 +510,6 @@
       <listitem>
         <para>
           PGM (Page Manager): A component that controls guest paging.
-        </para>
-      </listitem>
-
-      <listitem>
-        <para>
-          PATM (Patch Manager): Patches guest code to improve and speed
-          up software virtualization.
         </para>
       </listitem>
 
@@ -746,7 +588,7 @@
 
   <sect1 id="hwvirt">
 
-    <title>Hardware vs. Software Virtualization</title>
+    <title>Hardware Virtualization</title>
 
     <para>
       &product-name; enables software in the virtual machine to run
@@ -756,68 +598,47 @@
       something that could be harmful to your computer and its data,
       &product-name; steps in and takes action. In particular, for lots
       of hardware that the guest believes to be accessing,
-      &product-name; simulates a certain "virtual" environment according
-      to how you have configured a virtual machine. For example, when
-      the guest attempts to access a hard disk, &product-name; redirects
-      these requests to whatever you have configured to be the virtual
-      machine's virtual hard disk. This is normally an image file on
-      your host.
+      &product-name; simulates a certain <emphasis>virtual</emphasis>
+      environment according to how you have configured a virtual
+      machine. For example, when the guest attempts to access a hard
+      disk, &product-name; redirects these requests to whatever you have
+      configured to be the virtual machine's virtual hard disk. This is
+      normally an image file on your host.
     </para>
 
     <para>
       Unfortunately, the x86 platform was never designed to be
       virtualized. Detecting situations in which &product-name; needs to
       take control over the guest code that is executing, as described
-      above, is difficult. There are two ways in which to achieve this:
+      above, is difficult. To achieve this, &product-name; uses
+      <emphasis>hardware virtualization</emphasis>.
     </para>
 
-    <itemizedlist>
-
-      <listitem>
-        <para>
-          Since 2006, Intel and AMD processors have had support for
-          so-called <emphasis>hardware virtualization</emphasis>. This
-          means that these processors can help &product-name; to
-          intercept potentially dangerous operations that a guest
-          operating system may be attempting and also makes it easier to
-          present virtual hardware to a virtual machine.
-        </para>
-
-        <para>
-          These hardware features differ between Intel and AMD
-          processors. Intel named its technology VT-x. AMD calls theirs
-          AMD-V. The Intel and AMD support for virtualization is very
-          different in detail, but not very different in principle.
-        </para>
-
-        <note>
-          <para>
-            On many systems, the hardware virtualization features first
-            need to be enabled in the BIOS before &product-name; can use
-            them.
-          </para>
-        </note>
-      </listitem>
-
-      <listitem>
-        <para>
-          As opposed to other virtualization software, for many usage
-          scenarios, &product-name; does not
-          <emphasis>require</emphasis> hardware virtualization features
-          to be present. Through sophisticated techniques,
-          &product-name; virtualizes many guest operating systems
-          entirely in <emphasis>software</emphasis>. This means that you
-          can run virtual machines even on older processors which do not
-          support hardware virtualization.
-        </para>
-      </listitem>
-
-    </itemizedlist>
+    <para>
+      Intel and AMD processors have support for hardware virtualization.
+      This means that these processors can help &product-name; to
+      intercept potentially dangerous operations that a guest operating
+      system may be attempting and also makes it easier to present
+      virtual hardware to a virtual machine.
+    </para>
 
     <para>
-      Even though &product-name; does not always require hardware
-      virtualization, enabling it is <emphasis>required</emphasis> in
-      the following scenarios:
+      These hardware features differ between Intel and AMD processors.
+      Intel named its technology VT-x, AMD calls theirs AMD-V. The Intel
+      and AMD support for virtualization is very different in detail,
+      but not very different in principle.
+    </para>
+
+    <note>
+      <para>
+        On many systems, the hardware virtualization features first need
+        to be enabled in the BIOS before &product-name; can use them.
+      </para>
+    </note>
+
+    <para>
+      Enabling hardware virtualization is <emphasis>required</emphasis>
+      in the following scenarios:
     </para>
 
     <itemizedlist>
@@ -825,22 +646,20 @@
       <listitem>
         <para>
           Certain rare guest operating systems like OS/2 make use of
-          very esoteric processor instructions that are not supported
-          with our software virtualization. For virtual machines that
-          are configured to contain such an operating system, hardware
+          very esoteric processor instructions. For virtual machines
+          that are configured to use such an operating system, hardware
           virtualization is enabled automatically.
         </para>
       </listitem>
 
       <listitem>
         <para>
-          &product-name;'s 64-bit guest support, added with version 2.0,
-          and multiprocessing (SMP), added with version 3.0, both
-          require hardware virtualization to be enabled. This is not
-          much of a limitation since the vast majority of today's 64-bit
-          and multicore CPUs ship with hardware virtualization anyway.
-          The exceptions to this rule are older Intel Celeron and AMD
-          Opteron CPUs, for example.
+          &product-name;'s 64-bit guest and multiprocessing (SMP)
+          support both require hardware virtualization to be enabled.
+          This is not much of a limitation since the vast majority of
+          64-bit and multicore CPUs ship with hardware virtualization.
+          The exceptions to this rule are some legacy Intel and AMD
+          CPUs.
         </para>
       </listitem>
 
@@ -857,321 +676,13 @@
         another hypervisor is currently attempting to do on the same
         host, and especially if several products attempt to use hardware
         virtualization features such as VT-x, this can crash the entire
-        host. Also, within &product-name;, you can mix software and
-        hardware virtualization when running multiple VMs. In certain
-        cases a small performance penalty will be unavoidable when
-        mixing VT-x and software virtualization VMs. We recommend not
-        mixing virtualization modes if maximum performance and low
-        overhead are essential. This does <emphasis>not</emphasis> apply
-        to AMD-V.
+        host.
       </para>
     </warning>
 
-  </sect1>
-
-  <sect1 id="gimproviders">
-
-    <title>Paravirtualization Providers</title>
-
     <para>
-      &product-name; enables the exposure of a paravirtualization
-      interface, to facilitate accurate and efficient execution of
-      software within a virtual machine. These interfaces require the
-      guest operating system to recognize their presence and make use of
-      them in order to leverage the benefits of communicating with the
-      &product-name; hypervisor.
-    </para>
-
-    <para>
-      Most modern, mainstream guest operating systems, including Windows
-      and Linux, ship with support for one or more paravirtualization
-      interfaces. Hence, there is typically no need to install
-      additional software in the guest to take advantage of this
-      feature.
-    </para>
-
-    <para>
-      Exposing a paravirtualization provider to the guest operating
-      system does not rely on the choice of host platforms. For example,
-      the <emphasis>Hyper-V</emphasis> paravirtualization provider can
-      be used for VMs to run on any host platform supported by
-      &product-name; and not just Windows.
-    </para>
-
-    <para>
-      &product-name; provides the following interfaces:
-    </para>
-
-    <itemizedlist>
-
-      <listitem>
-        <para>
-          <emphasis role="bold">Minimal</emphasis>: Announces the
-          presence of a virtualized environment. Additionally, reports
-          the TSC and APIC frequency to the guest operating system. This
-          provider is mandatory for running any Mac OS X guests.
-        </para>
-      </listitem>
-
-      <listitem>
-        <para>
-          <emphasis role="bold">KVM</emphasis>: Presents a Linux KVM
-          hypervisor interface which is recognized by Linux kernels
-          version 2.6.25 or later. &product-name;'s implementation
-          currently supports paravirtualized clocks and SMP spinlocks.
-          This provider is recommended for Linux guests.
-        </para>
-      </listitem>
-
-      <listitem>
-        <para>
-          <emphasis role="bold">Hyper-V</emphasis>: Presents a Microsoft
-          Hyper-V hypervisor interface which is recognized by Windows 7
-          and newer operating systems. &product-name;'s implementation
-          currently supports paravirtualized clocks, APIC frequency
-          reporting, guest debugging, guest crash reporting and relaxed
-          timer checks. This provider is recommended for Windows guests.
-        </para>
-      </listitem>
-
-    </itemizedlist>
-
-  </sect1>
-
-  <sect1 id="swvirt-details">
-
-    <title>Details About Software Virtualization</title>
-
-    <para>
-      Implementing virtualization on x86 CPUs with no hardware
-      virtualization support is an extraordinarily complex task because
-      the CPU architecture was not designed to be virtualized. The
-      problems can usually be solved, but at the cost of reduced
-      performance. Thus, there is a constant clash between
-      virtualization performance and accuracy.
-    </para>
-
-    <para>
-      The x86 instruction set was originally designed in the 1970s and
-      underwent significant changes with the addition of protected mode
-      in the 1980s with the 286 CPU architecture and then again with the
-      Intel 386 and its 32-bit architecture. Whereas the 386 did have
-      limited virtualization support for real mode operation with V86
-      mode, as used by the "DOS Box" of Windows 3.x and OS/2 2.x, no
-      support was provided for virtualizing the entire architecture.
-    </para>
-
-    <para>
-      In theory, software virtualization is not overly complex. There
-      are four privilege levels, called <emphasis>rings</emphasis>,
-      provided by the hardware. Typically only two rings are used: ring
-      0 for kernel mode and ring 3 for user mode. Additionally, one
-      needs to differentiate between <emphasis>host context</emphasis>
-      and <emphasis>guest context</emphasis>.
-    </para>
-
-    <para>
-      In host context, everything is as if no hypervisor was active.
-      This might be the active mode if another application on your host
-      has been scheduled CPU time. In that case, there is a host ring 3
-      mode and a host ring 0 mode. The hypervisor is not involved.
-    </para>
-
-    <para>
-      In guest context, however, a virtual machine is active. So long as
-      the guest code is running in ring 3, this is not much of a problem
-      since a hypervisor can set up the page tables properly and run
-      that code natively on the processor. The problems mostly lie in
-      how to intercept what the guest's kernel does.
-    </para>
-
-    <para>
-      There are several possible solutions to these problems. One
-      approach is full software emulation, usually involving
-      recompilation. That is, all code to be run by the guest is
-      analyzed, transformed into a form which will not allow the guest
-      to either modify or see the true state of the CPU, and only then
-      executed. This process is obviously highly complex and costly in
-      terms of performance. &product-name; contains a recompiler based
-      on QEMU which can be used for pure software emulation, but the
-      recompiler is only activated in special situations, described
-      below.
-    </para>
-
-    <para>
-      Another possible solution is paravirtualization, in which only
-      specially modified guest OSes are allowed to run. This way, most
-      of the hardware access is abstracted and any functions which would
-      normally access the hardware or privileged CPU state are passed on
-      to the hypervisor instead. Paravirtualization can achieve good
-      functionality and performance on standard x86 CPUs, but it can
-      only work if the guest OS can actually be modified, which is
-      obviously not always the case.
-    </para>
-
-    <para>
-      &product-name; chooses a different approach. When starting a
-      virtual machine, through its ring-0 support kernel driver,
-      &product-name; has set up the host system so that it can run most
-      of the guest code natively, but it has inserted itself at the
-      "bottom" of the picture. It can then assume control when needed.
-      If a privileged instruction is executed, the guest traps, in
-      particular because an I/O register was accessed and a device needs
-      to be virtualized, or external interrupts occur. &product-name;
-      may then handle this and either route a request to a virtual
-      device or possibly delegate handling such things to the guest or
-      host OS. In guest context, &product-name; can therefore be in one
-      of three states:
-    </para>
-
-    <itemizedlist>
-
-      <listitem>
-        <para>
-          Guest ring 3 code is run unmodified, at full speed, as much as
-          possible. The number of faults will generally be low, unless
-          the guest allows port I/O from ring 3. This is something we
-          cannot do as we do not want the guest to be able to access
-          real ports. This is also referred to as <emphasis>raw
-          mode</emphasis>, as the guest ring-3 code runs unmodified.
-        </para>
-      </listitem>
-
-      <listitem>
-        <para>
-          For guest code in ring 0, &product-name; employs a clever
-          trick. It actually reconfigures the guest so that its ring-0
-          code is run in ring 1 instead, which is normally not used in
-          x86 operating systems). As a result, when guest ring-0 code,
-          actually running n ring 1, such as a guest device driver
-          attempts to write to an I/O register or execute a privileged
-          instruction, the &product-name; hypervisor in the "real" ring
-          0 can take over.
-        </para>
-      </listitem>
-
-      <listitem>
-        <para>
-          The hypervisor (VMM) can be active. Every time a fault occurs,
-          &product-name; looks at the offending instruction and can
-          relegate it to a virtual device or the host OS or the guest OS
-          or run it in the recompiler.
-        </para>
-
-        <para>
-          In particular, the recompiler is used when guest code disables
-          interrupts and &product-name; cannot figure out when they will
-          be switched back on. In these situations, &product-name;
-          actually analyzes the guest code using its own disassembler.
-          Also, certain privileged instructions such as LIDT need to be
-          handled specially. Finally, any real-mode or protected-mode
-          code, such as BIOS code, a DOS guest, or any operating system
-          startup, is run in the recompiler entirely.
-        </para>
-      </listitem>
-
-    </itemizedlist>
-
-    <para>
-      Unfortunately this only works to a degree. Among others, the
-      following situations require special handling:
-    </para>
-
-    <itemizedlist>
-
-      <listitem>
-        <para>
-          Running ring 0 code in ring 1 causes a lot of additional
-          instruction faults, as ring 1 is not allowed to execute any
-          privileged instructions, of which guest's ring-0 contains
-          plenty. With each of these faults, the VMM must step in and
-          emulate the code to achieve the desired behavior. While this
-          works, emulating thousands of these faults is very expensive
-          and severely hurts the performance of the virtualized guest.
-        </para>
-      </listitem>
-
-      <listitem>
-        <para>
-          There are certain flaws in the implementation of ring 1 in the
-          x86 architecture that were never fixed. Certain instructions
-          that <emphasis>should</emphasis> trap in ring 1 do not. This
-          affects, for example, the LGDT/SGDT, LIDT/SIDT, or POPF/PUSHF
-          instruction pairs. Whereas the "load" operation is privileged
-          and can therefore be trapped, the "store" instruction always
-          succeed. If the guest is allowed to execute these, it will see
-          the true state of the CPU, not the virtualized state. The
-          CPUID instruction also has the same problem.
-        </para>
-      </listitem>
-
-      <listitem>
-        <para>
-          A hypervisor typically needs to reserve some portion of the
-          guest's address space, both linear address space and
-          selectors, for its own use. This is not entirely transparent
-          to the guest OS and may cause clashes.
-        </para>
-      </listitem>
-
-      <listitem>
-        <para>
-          The SYSENTER instruction, used for system calls, executed by
-          an application running in a guest OS always transitions to
-          ring 0. But that is where the hypervisor runs, not the guest
-          OS. In this case, the hypervisor must trap and emulate the
-          instruction even when it is not desirable.
-        </para>
-      </listitem>
-
-      <listitem>
-        <para>
-          The CPU segment registers contain a "hidden" descriptor cache
-          which is not software-accessible. The hypervisor cannot read,
-          save, or restore this state, but the guest OS may use it.
-        </para>
-      </listitem>
-
-      <listitem>
-        <para>
-          Some resources must, and can, be trapped by the hypervisor,
-          but the access is so frequent that this creates a significant
-          performance overhead. An example is the TPR (Task Priority)
-          register in 32-bit mode. Accesses to this register must be
-          trapped by the hypervisor. But certain guest operating
-          systems, notably Windows and Oracle Solaris, write this
-          register very often, which adversely affects virtualization
-          performance.
-        </para>
-      </listitem>
-
-    </itemizedlist>
-
-    <para>
-      To fix these performance and security issues, &product-name;
-      contains a Code Scanning and Analysis Manager (CSAM), which
-      disassembles guest code, and the Patch Manager (PATM), which can
-      replace it at runtime.
-    </para>
-
-    <para>
-      Before executing ring 0 code, CSAM scans it recursively to
-      discover problematic instructions. PATM then performs
-      <emphasis>in-situ </emphasis>patching. It replaces the instruction
-      with a jump to hypervisor memory where an integrated code
-      generator has placed a more suitable implementation. In reality,
-      this is a very complex task as there are lots of odd situations to
-      be discovered and handled correctly. So, with its current
-      complexity, one could argue that PATM is an advanced
-      <emphasis>in-situ</emphasis> recompiler.
-    </para>
-
-    <para>
-      In addition, every time a fault occurs, &product-name; analyzes
-      the offending code to determine if it is possible to patch it in
-      order to prevent it from causing more faults in the future. This
-      approach works well in practice and dramatically improves software
-      virtualization performance.
+      See <xref linkend="hwvirt-details"/> for a technical discussion of
+      hardware virtualization.
     </para>
 
   </sect1>
@@ -1269,10 +780,79 @@
       Of course hardware virtualization is not perfect. Compared to
       software virtualization, the overhead of VM exits is relatively
       high. This causes problems for devices whose emulation requires
-      high number of traps. One example is the VGA device in 16-color
-      modes, where not only every I/O port access but also every access
+      high number of traps. One example is a VGA device in 16-color
+      mode, where not only every I/O port access but also every access
       to the framebuffer memory must be trapped.
     </para>
+
+  </sect1>
+
+  <sect1 id="gimproviders">
+
+    <title>Paravirtualization Providers</title>
+
+    <para>
+      &product-name; enables the exposure of a paravirtualization
+      interface, to facilitate accurate and efficient execution of
+      software within a virtual machine. These interfaces require the
+      guest operating system to recognize their presence and make use of
+      them in order to leverage the benefits of communicating with the
+      &product-name; hypervisor.
+    </para>
+
+    <para>
+      Most modern, mainstream guest operating systems, including Windows
+      and Linux, ship with support for one or more paravirtualization
+      interfaces. Hence, there is typically no need to install
+      additional software in the guest to take advantage of this
+      feature.
+    </para>
+
+    <para>
+      Exposing a paravirtualization provider to the guest operating
+      system does not rely on the choice of host platforms. For example,
+      the <emphasis>Hyper-V</emphasis> paravirtualization provider can
+      be used for VMs to run on any host platform supported by
+      &product-name; and not just Windows.
+    </para>
+
+    <para>
+      &product-name; provides the following interfaces:
+    </para>
+
+    <itemizedlist>
+
+      <listitem>
+        <para>
+          <emphasis role="bold">Minimal</emphasis>: Announces the
+          presence of a virtualized environment. Additionally, reports
+          the TSC and APIC frequency to the guest operating system. This
+          provider is mandatory for running any Mac OS X guests.
+        </para>
+      </listitem>
+
+      <listitem>
+        <para>
+          <emphasis role="bold">KVM</emphasis>: Presents a Linux KVM
+          hypervisor interface which is recognized by Linux kernels
+          version 2.6.25 or later. &product-name;'s implementation
+          currently supports paravirtualized clocks and SMP spinlocks.
+          This provider is recommended for Linux guests.
+        </para>
+      </listitem>
+
+      <listitem>
+        <para>
+          <emphasis role="bold">Hyper-V</emphasis>: Presents a Microsoft
+          Hyper-V hypervisor interface which is recognized by Windows 7
+          and newer operating systems. &product-name;'s implementation
+          currently supports paravirtualized clocks, APIC frequency
+          reporting, guest debugging, guest crash reporting and relaxed
+          timer checks. This provider is recommended for Windows guests.
+        </para>
+      </listitem>
+
+    </itemizedlist>
 
   </sect1>
 
@@ -1327,9 +907,8 @@
           also use <emphasis>large pages</emphasis> to reduce TLB usage
           and overhead. This can yield a performance improvement of up
           to 5%. To enable this feature for a VM, you use the
-          <computeroutput>VBoxManage modifyvm
-          --largepages</computeroutput> command. See
-          <xref linkend="vboxmanage-modifyvm" />.
+          <command>VBoxManage modifyvm --largepages</command> command.
+          See <xref linkend="vboxmanage-modifyvm" />.
         </para>
 
         <para>
@@ -1349,8 +928,8 @@
 
         <para>
           To enable these features for a VM, you use the
-          <computeroutput>VBoxManage modifyvm --vtxvpid</computeroutput>
-          and <computeroutput>--largepages</computeroutput> commands.
+          <command>VBoxManage modifyvm --vtxvpid</command> and
+          <command>VBoxManage modifyvm --largepages</command> commands.
           See <xref linkend="vboxmanage-modifyvm" />.
         </para>
       </listitem>

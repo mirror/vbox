@@ -25,14 +25,12 @@
       <para>
         For the various versions of Windows that are supported as host
         operating systems, please refer to
-        <xref
-      linkend="hostossupport" />.
+        <xref linkend="hostossupport" />.
       </para>
 
       <para>
-        In addition, Windows Installer 1.1 or later must be present on
-        your system. This should be the case if you have all recent
-        Windows updates installed.
+        In addition, Windows Installer must be present on your system.
+        This should be the case for all supported Windows platforms.
       </para>
 
     </sect2>
@@ -50,8 +48,7 @@
 
         <listitem>
           <para>
-            By double-clicking on the executable file, which contains
-            both 32-bit and 64-bit architectures.
+            By double-clicking on the executable file.
           </para>
         </listitem>
 
@@ -63,12 +60,12 @@
 <screen>VirtualBox-&lt;version&gt;-&lt;revision&gt;-Win.exe -extract</screen>
 
           <para>
-            This will extract both installers into a temporary
-            directory, along with .MSI files. Run the following command
-            to to perform the installation:
+            This will extract the installer into a temporary directory,
+            along with the .MSI file. Run the following command to
+            perform the installation:
           </para>
 
-<screen>msiexec /i VirtualBox-&lt;version&gt;-&lt;revision&gt;-MultiArch_&lt;x86|amd64&gt;.msi</screen>
+<screen>msiexec /i VirtualBox-&lt;version&gt;-&lt;revision&gt;-Win.msi</screen>
         </listitem>
 
       </itemizedlist>
@@ -113,14 +110,13 @@
 
           <para>
             See, for example:
-            <ulink
-              url="http://www.python.org/download/windows/">http://www.python.org/download/windows/</ulink>.
+            <ulink url="http://www.python.org/download/windows/" />.
           </para>
 
           <note>
             <para>
-              Python version at least 2.6 is required. Since
-              &product-name; 5.1, Python 3 is also supported.
+              Python version at least 2.6 is required. Python 3 is also
+              supported.
             </para>
           </note>
         </listitem>
@@ -136,7 +132,7 @@
       </para>
 
       <para>
-        The installer will create a &product-name; group in the Windows
+        The installer will create an &product-name; group in the Windows
         <emphasis role="bold">Start</emphasis> menu, which enables you
         to launch the application and access its documentation.
       </para>
@@ -151,19 +147,18 @@
 
       <para>
         Then, run either of the following commands on the extracted .MSI
-        files. This will install &product-name; only for the current
+        file. This will install &product-name; only for the current
         user.
       </para>
 
 <screen>VirtualBox.exe -msiparams ALLUSERS=2</screen>
 
-<screen>msiexec /i VirtualBox-&lt;version&gt;-MultiArch_&lt;x86|amd64&gt;.msi ALLUSERS=2</screen>
+<screen>msiexec /i VirtualBox-&lt;version&gt;-Win.msi ALLUSERS=2</screen>
 
       <para>
         If you do not want to install all features of &product-name;,
-        you can set the optional
-        <computeroutput>ADDLOCAL</computeroutput> parameter to
-        explicitly name the features to be installed. The following
+        you can set the optional <literal>ADDLOCAL</literal> parameter
+        to explicitly name the features to be installed. The following
         features are available:
       </para>
 
@@ -247,13 +242,6 @@
             <para>
               Python support
             </para>
-
-            <note>
-              <para>
-                Python version at least 2.6 is required. Since
-                &product-name; 5.1, Python 3 is also supported.
-              </para>
-            </note>
           </listitem>
         </varlistentry>
 
@@ -266,26 +254,28 @@
 
 <screen>VirtualBox.exe -msiparams ADDLOCAL=VBoxApplication,VBoxUSB</screen>
 
-<screen>msiexec /i VirtualBox-&lt;version&gt;-MultiArch_&lt;x86|amd64&gt;.msi ADDLOCAL=VBoxApplication,VBoxUSB</screen>
+<screen>msiexec /i VirtualBox-&lt;version&gt;-Win.msi ADDLOCAL=VBoxApplication,VBoxUSB</screen>
 
       <para>
         The user is able to choose between NDIS5 and NDIS6 host network
         filter drivers during the installation. This is done using a
-        command line parameter,
-        <computeroutput>NETWORKTYPE</computeroutput>. The NDIS6 driver
-        is default for Windows Vista and later. For older Windows
-        versions, the installer will automatically select the NDIS5
-        driver and this cannot be changed. For Windows Vista and later
-        the user can force an install of the legacy NDIS5 host network
-        filter driver by using
-        <computeroutput>NETWORKTYPE=NDIS5</computeroutput>. For example,
-        to install the NDIS5 driver on Windows 7 use either of the
-        following commands:
+        command line parameter, <literal>NETWORKTYPE</literal>. The
+        NDIS6 driver is the default for most supported Windows hosts.
+        For some legacy Windows versions, the installer will
+        automatically select the NDIS5 driver and this cannot be
+        changed.
+      </para>
+
+      <para>
+        You can force an install of the legacy NDIS5 host network filter
+        driver by specifying <literal>NETWORKTYPE=NDIS5</literal>. For
+        example, to install the NDIS5 driver on Windows 7 use either of
+        the following commands:
       </para>
 
 <screen>VirtualBox.exe -msiparams NETWORKTYPE=NDIS5</screen>
 
-<screen>msiexec /i VirtualBox-&lt;version&gt;-MultiArch_&lt;x86|amd64&gt;.msi NETWORKTYPE=NDIS5</screen>
+<screen>msiexec /i VirtualBox-&lt;version&gt;-Win;.msi NETWORKTYPE=NDIS5</screen>
 
     </sect2>
 
@@ -325,7 +315,7 @@
 
 <screen>VirtualBox.exe -msiparams NAME=VALUE [...]</screen>
 
-<screen>msiexec /i VirtualBox-&lt;version&gt;-MultiArch_&lt;x86|amd64&gt;.msi NAME=VALUE [...]</screen>
+<screen>msiexec /i VirtualBox-&lt;version&gt;-Win.msi NAME=VALUE [...]</screen>
 
       <para>
         The following public properties are available.
@@ -344,8 +334,8 @@
           </para>
 
           <para>
-            Set to <computeroutput>1</computeroutput> to enable,
-            <computeroutput>0</computeroutput> to disable. Default is 1.
+            Set to <literal>1</literal> to enable, <literal>0</literal>
+            to disable. Default is 1.
           </para>
         </listitem>
 
@@ -360,8 +350,8 @@
           </para>
 
           <para>
-            Set to <computeroutput>1</computeroutput> to enable,
-            <computeroutput>0</computeroutput> to disable. Default is 1.
+            Set to <literal>1</literal> to enable, <literal>0</literal>
+            to disable. Default is 1.
           </para>
         </listitem>
 
@@ -378,8 +368,8 @@
           </para>
 
           <para>
-            Set to <computeroutput>1</computeroutput> to enable,
-            <computeroutput>0</computeroutput> to disable. Default is 1.
+            Set to <literal>1</literal> to enable, <literal>0</literal>
+            to disable. Default is 1.
           </para>
         </listitem>
 
@@ -394,8 +384,8 @@
           </para>
 
           <para>
-            Set to <computeroutput>1</computeroutput> to enable,
-            <computeroutput>0</computeroutput> to disable. Default is 1.
+            Set to <literal>1</literal> to enable, <literal>0</literal>
+            to disable. Default is 1.
           </para>
         </listitem>
 
@@ -415,40 +405,42 @@
 
       <para>
         For Mac OS X hosts, &product-name; ships in a
-        <computeroutput>dmg</computeroutput> disk image file. Perform
-        the following steps to install on a Mac OS X host:
+        <filename>dmg</filename> disk image file. Perform the following
+        steps to install on a Mac OS X host:
       </para>
 
       <orderedlist>
 
         <listitem>
           <para>
-            Double-click on the <computeroutput>dmg</computeroutput>
-            file, to mount the contents.
+            Double-click on the <filename>dmg</filename> file, to mount
+            the contents.
           </para>
         </listitem>
 
         <listitem>
           <para>
             A window opens, prompting you to double-click on the
-            <computeroutput>VirtualBox.pkg</computeroutput> installer
-            file displayed in that window.
+            <filename>VirtualBox.pkg</filename> installer file displayed
+            in that window.
           </para>
         </listitem>
 
         <listitem>
           <para>
-            This will start the installer, which enables you to select
-            where to install &product-name;.
+            This starts the installer, which enables you to select where
+            to install &product-name;.
+          </para>
+        </listitem>
+
+        <listitem>
+          <para>
+            An &product-name; icon is added to the
+            <filename>Applications</filename> folder in the Finder.
           </para>
         </listitem>
 
       </orderedlist>
-
-      <para>
-        After installation, you can find an &product-name; icon in the
-        "Applications" folder in the Finder.
-      </para>
 
     </sect2>
 
@@ -458,8 +450,8 @@
 
       <para>
         To uninstall &product-name;, open the disk image
-        <computeroutput>dmg</computeroutput> file and double-click on
-        the uninstall icon shown.
+        <filename>dmg</filename> file and double-click on the uninstall
+        icon shown.
       </para>
 
     </sect2>
@@ -474,9 +466,9 @@
       </para>
 
       <para>
-        Mount the <computeroutput>dmg</computeroutput> disk image file,
-        as described in the installation procedure, or use the following
-        command line:
+        Mount the <filename>dmg</filename> disk image file, as described
+        in the installation procedure, or use the following command
+        line:
       </para>
 
 <screen>hdiutil attach /path/to/VirtualBox-xyz.dmg</screen>
@@ -501,12 +493,11 @@
 
       <para>
         For the various versions of Linux that are supported as host
-        operating systems, see <xref
-      linkend="hostossupport" />.
+        operating systems, see <xref linkend="hostossupport" />.
       </para>
 
       <para>
-        You will need to install the following packages on your Linux
+        You may need to install the following packages on your Linux
         system before starting the installation. Some systems will do
         this for you automatically when you install &product-name;.
       </para>
@@ -522,7 +513,7 @@
         <listitem>
           <para>
             SDL 1.2.7 or later. This graphics library is typically
-            called <computeroutput>libsdl</computeroutput> or similar.
+            called <filename>libsdl</filename> or similar.
           </para>
         </listitem>
 
@@ -532,9 +523,9 @@
         <para>
           These packages are only required if you want to run the
           &product-name; graphical user interfaces. In particular,
-          <computeroutput>VirtualBox</computeroutput>, the graphical
-          VirtualBox Manager, requires both Qt and SDL. If you only want
-          to run <command>VBoxHeadless</command>, neither Qt nor SDL are
+          <command>VirtualBox</command>, the graphical VirtualBox
+          Manager, requires both Qt and SDL. If you only want to run
+          <command>VBoxHeadless</command>, neither Qt nor SDL are
           required.
         </para>
       </note>
@@ -543,44 +534,78 @@
 
     <sect2 id="externalkernelmodules">
 
-      <title>The &product-name; Driver Modules</title>
+      <title>The &product-name; Kernel Modules</title>
 
       <para>
         In order to run other operating systems in virtual machines
         alongside your main operating system, &product-name; needs to
-        integrate very tightly into the system. To do this it installs a
-        driver module called <computeroutput>vboxdrv</computeroutput>
-        which does a lot of that work into the system kernel, which is
-        the part of the operating system which controls your processor
-        and physical hardware. Without this kernel module, you can still
-        use the VirtualBox Manager to configure virtual machines, but
-        they will not start. It also installs network drivers called
-        <computeroutput>vboxnetflt</computeroutput> and
-        <computeroutput>vboxnetadp</computeroutput> which enable virtual
-        machines to make more use of your computer's network
+        integrate very tightly with your system. To do this it installs
+        a driver module called <command>vboxdrv</command> into the
+        system kernel. The kernel is the part of the operating system
+        which controls your processor and physical hardware. Without
+        this kernel module, you can still use the VirtualBox Manager to
+        configure virtual machines, but they will not start.
+      </para>
+
+      <para>
+        Network drivers called <command>vboxnetflt</command> and
+        <command>vboxnetadp</command> are also installed. They enable
+        virtual machines to make more use of your computer's network
         capabilities and are needed for any virtual machine networking
         beyond the basic NAT mode.
       </para>
 
       <para>
         Since distributing driver modules separately from the kernel is
-        not something which Linux supports well, the install process
-        creates the modules on the system where they will be used. This
-        usually means first installing software packages from the
-        distribution which are needed for the build process. Normally,
-        these will be the GNU compiler (GCC), GNU Make (make) and
-        packages containing header files for your kernel, as well as
-        making sure that all system updates are installed and that the
-        system is running the most up-to-date kernel included in the
-        distribution. <emphasis>The running kernel and the header files
-        must be updated to matching versions</emphasis>. The following
-        list includes some instructions for common distributions. For
-        most of them you may want to start by finding the version name
+        not something which Linux supports well, the &product-name;
+        install process creates the modules on the system where they
+        will be used. This means that you may need to install some
+        software packages from the distribution which are needed for the
+        build process. Required packages may include the following:
+      </para>
+
+      <itemizedlist>
+
+        <listitem>
+          <para>
+            GNU compiler (GCC)
+          </para>
+        </listitem>
+
+        <listitem>
+          <para>
+            GNU Make (make)
+          </para>
+        </listitem>
+
+        <listitem>
+          <para>
+            Kernel header files
+          </para>
+        </listitem>
+
+      </itemizedlist>
+
+      <para>
+        Also ensure that all system updates have been installed and that
+        your system is running the most up-to-date kernel for the
+        distribution.
+      </para>
+
+      <note>
+        <para>
+          The running kernel and the kernel header files must be updated
+          to matching versions.
+        </para>
+      </note>
+
+      <para>
+        The following list includes some details of the required files
+        for some common distributions. Start by finding the version name
         of your kernel, using the command <command>uname -r</command> in
-        a terminal. The instructions assume that you have not changed
-        too much from the original installation, particularly not
-        installed a different kernel type. If you have, then you will
-        need to determine yourself what to set up.
+        a terminal. The list assumes that you have not changed too much
+        from the original installation, in particular that you have not
+        installed a different kernel type.
       </para>
 
       <itemizedlist>
@@ -589,38 +614,37 @@
           <para>
             With Debian and Ubuntu-based distributions, you must install
             the correct version of the
-            <computeroutput>linux-headers</computeroutput>, usually
-            whichever of
-            <computeroutput>linux-headers-generic</computeroutput>,
-            <computeroutput>linux-headers-amd64</computeroutput>,
-            <computeroutput>linux-headers-i686</computeroutput> or
-            <computeroutput>linux-headers-i686-pae</computeroutput> best
-            matches the kernel version name. Also, the
-            <computeroutput>linux-kbuild</computeroutput> package if it
-            exists. Basic Ubuntu releases should have the correct
-            packages installed by default.
+            <filename>linux-headers</filename>, usually whichever of
+            <filename>linux-headers-generic</filename>,
+            <filename>linux-headers-amd64</filename>,
+            <filename>linux-headers-i686</filename> or
+            <filename>linux-headers-i686-pae</filename> best matches the
+            kernel version name. Also, the
+            <filename>linux-kbuild</filename> package if it exists.
+            Basic Ubuntu releases should have the correct packages
+            installed by default.
           </para>
         </listitem>
 
         <listitem>
           <para>
-            On Fedora, Redhat, Oracle Linux and many other RPM-based
+            On Fedora, Red Hat, Oracle Linux and many other RPM-based
             systems, the kernel version sometimes has a code of letters
             or a word close to the end of the version name. For example
-            "uek" for the Oracle Enterprise kernel or "default" or
-            "desktop" for the standard SUSE kernels. In this case, the
-            package name is
-            <computeroutput>kernel-uek-devel</computeroutput> or
-            equivalent. If there is no such code, it is usually
-            <computeroutput>kernel-devel</computeroutput>.
+            "uek" for the Oracle Unbreakable Enterprise Kernel or
+            "default" or "desktop" for the standard kernels. In this
+            case, the package name is
+            <filename>kernel-uek-devel</filename> or equivalent. If
+            there is no such code, it is usually
+            <filename>kernel-devel</filename>.
           </para>
         </listitem>
 
         <listitem>
           <para>
-            On older SUSE and openSUSE Linux, you must install the
-            <computeroutput>kernel-source</computeroutput> and
-            <computeroutput>kernel-syms</computeroutput> packages.
+            On some SUSE and openSUSE Linux versions, you may need to
+            install the <filename>kernel-source</filename> and
+            <filename>kernel-syms</filename> packages.
           </para>
         </listitem>
 
@@ -634,6 +658,51 @@
 
 <screen>rcvboxdrv setup</screen>
 
+      <sect3 id="kernel-modules-efi-secure-boot">
+
+        <title>Kernel Modules and UEFI Secure Boot</title>
+
+        <para>
+          If you are running on a system using UEFI (Unified Extensible
+          Firmware Interface) Secure Boot, you may need to sign the
+          following kernel modules before you can load them:
+        </para>
+
+        <itemizedlist>
+
+          <listitem>
+            <para>
+              <command>vboxdrv</command>
+            </para>
+          </listitem>
+
+          <listitem>
+            <para>
+              <command>vboxnetadp</command>
+            </para>
+          </listitem>
+
+          <listitem>
+            <para>
+              <command>vboxnetflt</command>
+            </para>
+          </listitem>
+
+          <listitem>
+            <para>
+              <command>vboxpci</command>
+            </para>
+          </listitem>
+
+        </itemizedlist>
+
+        <para>
+          See your system documentation for details of the kernel module
+          signing process.
+        </para>
+
+      </sect3>
+
     </sect2>
 
     <sect2 id="install-linux-performing">
@@ -644,36 +713,33 @@
         &product-name; is available in a number of package formats
         native to various common Linux distributions. See
         <xref linkend="hostossupport"/>. In addition, there is an
-        alternative generic installer (.run) which should work on most
-        Linux distributions. The generic installer packages are built on
-        EL5 systems and thus require reasonably old versions of glibc,
-        such as version 2.5, and other system libraries.
+        alternative generic installer (.run) which you can use on
+        supported Linux distributions.
       </para>
 
       <sect3 id="install-linux-debian-ubuntu">
 
-        <title>Installing &product-name; from a Debian/Ubuntu Package</title>
+        <title>Installing &product-name; from a Debian or Ubuntu Package</title>
 
         <para>
           Download the appropriate package for your distribution. The
-          following examples assume that you are installing to a 32-bit
-          Ubuntu Wily system. Use <computeroutput>dpkg</computeroutput>
-          to install the Debian package,as follows:
+          following example assumes that you are installing to a 64-bit
+          Ubuntu Xenial system. Use <command>dpkg</command> to install
+          the Debian package,as follows:
         </para>
 
-<screen>sudo dpkg -i virtualbox-5.0_<replaceable>version-number</replaceable>_Ubuntu_wily_i386.deb</screen>
+<screen>sudo dpkg -i virtualbox-<replaceable>version-number</replaceable>_Ubuntu_xenial_amd64.deb</screen>
 
         <para>
           The installer will also try to build kernel modules suitable
           for the current running kernel. If the build process is not
           successful you will be shown a warning and the package will be
           left unconfigured. Look at
-          <computeroutput>/var/log/vbox-install.log</computeroutput> to
-          find out why the compilation failed. You may have to install
-          the appropriate Linux kernel headers, see
-          <xref
-        linkend="externalkernelmodules" />. After
-          correcting any problems, run the following command:
+          <filename>/var/log/vbox-install.log</filename> to find out why
+          the compilation failed. You may have to install the
+          appropriate Linux kernel headers, see
+          <xref linkend="externalkernelmodules" />. After correcting any
+          problems, run the following command:
         </para>
 
 <screen>sudo rcvboxdrv setup</screen>
@@ -686,9 +752,8 @@
           If a suitable kernel module was found in the package or the
           module was successfully built, the installation script will
           attempt to load that module. If this fails, please see
-          <xref
-        linkend="ts_linux-kernelmodule-fails-to-load" />
-          for further information.
+          <xref linkend="ts_linux-kernelmodule-fails-to-load" /> for
+          further information.
         </para>
 
         <para>
@@ -715,40 +780,37 @@
           <listitem>
             <para>
               Unpacks the application files to the target directory
-              <computeroutput>/opt/VirtualBox/</computeroutput>, which
-              cannot be changed.
+              <filename>/opt/VirtualBox/</filename>, which cannot be
+              changed.
             </para>
           </listitem>
 
           <listitem>
             <para>
               Builds and installs the &product-name; kernel modules:
-              <computeroutput>vboxdrv</computeroutput>,
-              <computeroutput>vboxnetflt</computeroutput>, and
-              <computeroutput>vboxnetadp</computeroutput>.
+              <command>vboxdrv</command>, <command>vboxnetflt</command>,
+              and <command>vboxnetadp</command>.
             </para>
           </listitem>
 
           <listitem>
             <para>
-              Creates <computeroutput>/sbin/rcvboxdrv</computeroutput>,
-              an init script to start the &product-name; kernel module.
+              Creates <filename>/sbin/rcvboxdrv</filename>, an init
+              script to start the &product-name; kernel module.
             </para>
           </listitem>
 
           <listitem>
             <para>
               Creates a new system group called
-              <computeroutput>vboxusers</computeroutput>.
+              <literal>vboxusers</literal>.
             </para>
           </listitem>
 
           <listitem>
             <para>
-              Creates symbolic links in
-              <computeroutput>/usr/bin</computeroutput> to a shell
-              script
-              <computeroutput>/opt/VirtualBox/VBox</computeroutput>
+              Creates symbolic links in <filename>/usr/bin</filename> to
+              a shell script <filename>/opt/VirtualBox/VBox</filename>
               which does some sanity checks and dispatches to the actual
               executables: <command>VirtualBox</command>,
               <command>VBoxVRDP</command>,
@@ -760,17 +822,17 @@
           <listitem>
             <para>
               Creates
-              <computeroutput>/etc/udev/rules.d/60-vboxdrv.rules</computeroutput>,
-              a description file for udev, if that is present, which
-              makes the USB devices accessible to all users in the
-              <computeroutput>vboxusers</computeroutput> group.
+              <filename>/etc/udev/rules.d/60-vboxdrv.rules</filename>, a
+              description file for udev, if that is present, which makes
+              the USB devices accessible to all users in the
+              <literal>vboxusers</literal> group.
             </para>
           </listitem>
 
           <listitem>
             <para>
               Writes the installation directory to
-              <computeroutput>/etc/vbox/vbox.cfg</computeroutput>.
+              <filename>/etc/vbox/vbox.cfg</filename>.
             </para>
           </listitem>
 
@@ -778,9 +840,8 @@
 
         <para>
           The installer must be executed as root with either
-          <computeroutput>install</computeroutput> or
-          <computeroutput>uninstall</computeroutput> as the first
-          parameter. For example:
+          <literal>install</literal> or <literal>uninstall</literal> as
+          the first parameter. For example:
         </para>
 
 <screen>sudo ./VirtualBox.run install</screen>
@@ -794,9 +855,9 @@
 
         <para>
           Add every user who needs to access USB devices from a
-          VirtualBox guests to the group
-          <computeroutput>vboxusers</computeroutput>. Either use the GUI
-          user management tools or run the following command as root:
+          VirtualBox guests to the group <literal>vboxusers</literal>.
+          Either use the OS user management tools or run the following
+          command as root:
         </para>
 
 <screen>sudo usermod -a -G vboxusers username</screen>
@@ -810,9 +871,9 @@
             the current group memberships with the
             <command>groups</command> command and add all these groups
             in a comma-separated list to the command line after the
-            <option>-G</option> option. For example:
-            <computeroutput>usermod -G group1,group2,vboxusers
-            username</computeroutput>.
+            <option>-G</option> option. For example: <command>usermod -G
+            <replaceable>group1</replaceable>,<replaceable>group2</replaceable>,vboxusers
+            <replaceable>username</replaceable></command>.
           </para>
         </note>
 
@@ -832,11 +893,10 @@
 
         <para>
           This will unpack all the files needed for installation in the
-          directory <computeroutput>install</computeroutput> under the
-          current directory. The &product-name; application files are
-          contained in
-          <computeroutput>VirtualBox.tar.bz2</computeroutput> which you
-          can unpack to any directory on your system. For example:
+          directory <literal>install</literal> under the current
+          directory. The &product-name; application files are contained
+          in <filename>VirtualBox.tar.bz2</filename> which you can
+          unpack to any directory on your system. For example:
         </para>
 
 <screen>sudo mkdir /opt/VirtualBox
@@ -851,9 +911,8 @@ tar jxf ./install/VirtualBox.tar.bz2 -C /opt/VirtualBox</screen>
 
         <para>
           The sources for &product-name;'s kernel module are provided in
-          the <computeroutput>src</computeroutput> directory. To build
-          the module, change to the directory and use the following
-          command:
+          the <filename>src</filename> directory. To build the module,
+          change to the directory and use the following command:
         </para>
 
 <screen>make</screen>
@@ -877,10 +936,9 @@ tar jxf ./install/VirtualBox.tar.bz2 -C /opt/VirtualBox</screen>
           operate. The above <command>make</command> command will tell
           you how to create the device node, depending on your Linux
           system. The procedure is slightly different for a classical
-          Linux setup with a <computeroutput>/dev</computeroutput>
-          directory, a system with the now deprecated
-          <command>devfs</command> and a modern Linux system with
-          <command>udev</command>.
+          Linux setup with a <filename>/dev</filename> directory, a
+          system with the now deprecated <command>devfs</command> and a
+          modern Linux system with <command>udev</command>.
         </para>
 
         <para>
@@ -892,9 +950,9 @@ tar jxf ./install/VirtualBox.tar.bz2 -C /opt/VirtualBox</screen>
         </para>
 
         <para>
-          Note that the <computeroutput>/dev/vboxdrv</computeroutput>
-          kernel module device node must be owned by root:root and must
-          be read/writable only for the user.
+          Note that the <filename>/dev/vboxdrv</filename> kernel module
+          device node must be owned by root:root and must be
+          read/writable only for the user.
         </para>
 
         <para>
@@ -907,7 +965,7 @@ tar jxf ./install/VirtualBox.tar.bz2 -C /opt/VirtualBox</screen>
 
         <para>
           This example assumes you installed &product-name; to the
-          <computeroutput>/opt/VirtualBox</computeroutput> directory.
+          <filename>/opt/VirtualBox</filename> directory.
         </para>
 
         <para>
@@ -970,8 +1028,8 @@ ln -sf /opt/VirtualBox/VBox.sh /usr/bin/VBoxHeadless</screen>
           installed for the first time. The debconf system is used to
           perform this task. To prevent any user interaction during
           installation, default values can be defined. A file
-          <computeroutput>vboxconf</computeroutput> can contain the
-          following debconf settings:
+          <literal>vboxconf</literal> can contain the following debconf
+          settings:
         </para>
 
 <screen>virtualbox virtualbox/module-compilation-allowed boolean true
@@ -1007,9 +1065,8 @@ virtualbox virtualbox/delete-old-modules boolean true</screen>
         <para>
           The RPM format does not provide a configuration system
           comparable to the debconf system. See
-          <xref
-        linkend="linux_install_opts" /> for how to set
-          some common installation options provided by &product-name;.
+          <xref linkend="linux_install_opts" /> for how to set some
+          common installation options provided by &product-name;.
         </para>
 
       </sect3>
@@ -1021,9 +1078,9 @@ virtualbox virtualbox/delete-old-modules boolean true</screen>
         <para>
           To configure the installation process for .deb and .rpm
           packages, you can create a response file named
-          <computeroutput>/etc/default/virtualbox</computeroutput>. The
-          automatic generation of the udev rule can be prevented with
-          the following setting:
+          <filename>/etc/default/virtualbox</filename>. The automatic
+          generation of the udev rule can be prevented with the
+          following setting:
         </para>
 
 <screen>INSTALL_NO_UDEV=1</screen>
@@ -1037,9 +1094,8 @@ virtualbox virtualbox/delete-old-modules boolean true</screen>
 
         <para>
           If the following line is specified, the package installer will
-          not try to build the <computeroutput>vboxdrv</computeroutput>
-          kernel module if no module fitting the current kernel was
-          found.
+          not try to build the <command>vboxdrv</command> kernel module
+          if no module fitting the current kernel was found.
         </para>
 
 <screen>INSTALL_NO_VBOXDRV=1</screen>
@@ -1054,12 +1110,11 @@ virtualbox virtualbox/delete-old-modules boolean true</screen>
 
       <para>
         The Linux installers create the system user group
-        <computeroutput>vboxusers</computeroutput> during installation.
-        Any system user who is going to use USB devices from
-        &product-name; guests must be a member of that group. A user can
-        be made a member of the group
-        <computeroutput>vboxusers</computeroutput> through the GUI
-        user/group management or using the following command:
+        <literal>vboxusers</literal> during installation. Any system
+        user who is going to use USB devices from &product-name; guests
+        must be a member of that group. A user can be made a member of
+        the group <literal>vboxusers</literal> either by using the
+        desktop user and group tools, or with the following command:
       </para>
 
 <screen>sudo usermod -a -G vboxusers username</screen>
@@ -1071,7 +1126,7 @@ virtualbox virtualbox/delete-old-modules boolean true</screen>
       <title>Starting &product-name; on Linux</title>
 
       <para>
-        The easiest way to start a &product-name; program is by running
+        The easiest way to start an &product-name; program is by running
         the program of your choice (<command>VirtualBox</command>,
         <command>VBoxManage</command>, or
         <command>VBoxHeadless</command>) from a terminal. These are
@@ -1083,20 +1138,19 @@ virtualbox virtualbox/delete-old-modules boolean true</screen>
         The following detailed instructions should only be of interest
         if you wish to execute &product-name; without installing it
         first. You should start by compiling the
-        <computeroutput>vboxdrv</computeroutput> kernel module and
-        inserting it into the Linux kernel. &product-name; consists of a
-        service daemon, <computeroutput>VBoxSVC</computeroutput>, and
-        several application programs. The daemon is automatically
-        started if necessary. All &product-name; applications will
-        communicate with the daemon through UNIX local domain sockets.
-        There can be multiple daemon instances under different user
-        accounts and applications can only communicate with the daemon
-        running under the user account as the application. The local
-        domain socket resides in a subdirectory of your system's
-        directory for temporary files called
-        <computeroutput>.vbox-&lt;username&gt;-ipc</computeroutput>. In
-        case of communication problems or server startup problems, you
-        may try to remove this directory.
+        <command>vboxdrv</command> kernel module and inserting it into
+        the Linux kernel. &product-name; consists of a service daemon,
+        <command>VBoxSVC</command>, and several application programs.
+        The daemon is automatically started if necessary. All
+        &product-name; applications will communicate with the daemon
+        through UNIX local domain sockets. There can be multiple daemon
+        instances under different user accounts and applications can
+        only communicate with the daemon running under the user account
+        as the application. The local domain socket resides in a
+        subdirectory of your system's directory for temporary files
+        called <filename>.vbox-&lt;username&gt;-ipc</filename>. In case
+        of communication problems or server startup problems, you may
+        try to remove this directory.
       </para>
 
       <para>
@@ -1118,8 +1172,7 @@ virtualbox virtualbox/delete-old-modules boolean true</screen>
 
     <para>
       For the specific versions of Oracle Solaris that are supported as
-      host operating systems, see <xref
-    linkend="hostossupport" />.
+      host operating systems, see <xref linkend="hostossupport" />.
     </para>
 
     <para>
@@ -1136,22 +1189,24 @@ virtualbox virtualbox/delete-old-modules boolean true</screen>
 
       <para>
         &product-name; is available as a standard Oracle Solaris
-        package. Download the &product-name; SunOS package which
-        includes the 64-bit versions of &product-name;. <emphasis>The
+        package. Download the &product-name; SunOS package, which
+        includes the 64-bit version of &product-name;. <emphasis>The
         installation must be performed as root and from the global
-        zone</emphasis> as the &product-name; installer loads kernel
-        drivers which cannot be done from non-global zones. To verify
-        which zone you are currently in, execute the
-        <command>zonename</command> command. Execute the following
-        commands:
+        zone</emphasis>. This is because the &product-name; installer
+        loads kernel drivers, which cannot be done from non-global
+        zones. To verify which zone you are currently in, execute the
+        <command>zonename</command> command.
+      </para>
+
+      <para>
+        To start installation, run the following commands:
       </para>
 
 <screen>gunzip -cd VirtualBox-<replaceable>version-number</replaceable>-SunOS.tar.gz | tar xvf -</screen>
 
       <para>
-        The &product-name; kernel package is no longer a separate
-        package and has been integrated into the main package. Install
-        the &product-name; package as follows:
+        The &product-name; kernel package is integrated into the main
+        package. Install the &product-name; package as follows:
       </para>
 
 <screen>pkgadd -d VirtualBox-<replaceable>version-number</replaceable>-SunOS.pkg</screen>
@@ -1171,9 +1226,9 @@ virtualbox virtualbox/delete-old-modules boolean true</screen>
       <para>
         Once the postinstall script has been executed your installation
         is now complete. You may now safely delete the uncompressed
-        package and <computeroutput>autoresponse</computeroutput> files
-        from your system. &product-name; is installed in
-        <computeroutput>/opt/VirtualBox</computeroutput>.
+        package and <filename>autoresponse</filename> files from your
+        system. &product-name; is installed in
+        <filename>/opt/VirtualBox</filename>.
       </para>
 
       <note>
@@ -1191,21 +1246,22 @@ virtualbox virtualbox/delete-old-modules boolean true</screen>
 
       <para>
         The installer creates the system user group
-        <computeroutput>vboxuser</computeroutput> during installation
-        for Oracle Solaris hosts that support the USB features required
-        by &product-name;. Any system user who is going to use USB
-        devices from &product-name; guests must be a member of this
-        group. A user can be made a member of this group through the GUI
-        user/group management or at the command line by executing as
-        root:
+        <literal>vboxuser</literal> during installation for Oracle
+        Solaris hosts that support the USB features required by
+        &product-name;. Any system user who is going to use USB devices
+        from &product-name; guests must be a member of this group. A
+        user can be made a member of this group either by using the
+        desktop user and group tools or by running the following command
+        as root:
       </para>
 
 <screen>usermod -G vboxuser username</screen>
 
       <para>
-        Note that adding an active user to that group will require that
-        user to log out and back in again. This should be done manually
-        after successful installation of the package.
+        Note that adding an active user to the
+        <literal>vboxuser</literal> group will require the user to log
+        out and then log in again. This should be done manually after
+        successful installation of the package.
       </para>
 
     </sect2>
@@ -1215,7 +1271,7 @@ virtualbox virtualbox/delete-old-modules boolean true</screen>
       <title>Starting &product-name; on Oracle Solaris</title>
 
       <para>
-        The easiest way to start a &product-name; program is by running
+        The easiest way to start an &product-name; program is by running
         the program of your choice (<command>VirtualBox</command>,
         <command>VBoxManage</command>, or
         <command>VBoxHeadless</command>) from a terminal. These are
@@ -1225,9 +1281,8 @@ virtualbox virtualbox/delete-old-modules boolean true</screen>
 
       <para>
         Alternatively, you can directly invoke the required programs
-        from <computeroutput>/opt/VirtualBox</computeroutput>. Using the
-        links provided is easier as you do not have to enter the full
-        path.
+        from <filename>/opt/VirtualBox</filename>. Using the links
+        provided is easier as you do not have to enter the full path.
       </para>
 
       <para>
@@ -1255,14 +1310,6 @@ virtualbox virtualbox/delete-old-modules boolean true</screen>
         system.
       </para>
 
-      <para>
-        If you are uninstalling &product-name; version 3.0 or lower, you
-        need to remove the &product-name; kernel interface package, as
-        follows:
-      </para>
-
-<screen>pkgrm SUNWvboxkern</screen>
-
     </sect2>
 
     <sect2 id="install-solaris-unattended">
@@ -1272,15 +1319,14 @@ virtualbox virtualbox/delete-old-modules boolean true</screen>
       <para>
         To perform a non-interactive installation of &product-name;
         there is a response file named
-        <computeroutput>autoresponse</computeroutput>, that the
-        installer will use for responses to inputs rather than ask them
-        from you.
+        <filename>autoresponse</filename>. The installer uses this for
+        responses to inputs, rather than prompting the user.
       </para>
 
       <para>
-        Extract the tar.gz package as described in the normal
-        installation instructions. Then open a root terminal session and
-        run the following command:
+        Extract the tar.gz package as described in
+        <xref linkend="install-solaris-performing"/>. Then open a root
+        terminal session and run the following command:
       </para>
 
 <screen>pkgadd -d VirtualBox-<replaceable>version-number</replaceable>-SunOS-x86 -n -a autoresponse SUNWvbox</screen>
@@ -1305,18 +1351,17 @@ virtualbox virtualbox/delete-old-modules boolean true</screen>
         Start a root terminal and run the following command:
       </para>
 
-<screen>zonecfg -z vboxzone</screen>
+<screen>zonecfg -z <replaceable>vboxzone</replaceable></screen>
 
       <para>
-        Replace "vboxzone" with the name of the zone where you intend to
-        run &product-name;.
+        Replace <replaceable>vboxzone</replaceable> with the name of the
+        zone where you intend to run &product-name;.
       </para>
 
       <para>
-        Use<computeroutput>zonecfg</computeroutput> to add the
-        <computeroutput>device</computeroutput> resource and
-        <computeroutput>match</computeroutput> properties to the zone,
-        as follows:
+        Use <command>zonecfg</command> to add the
+        <literal>device</literal> resource and <literal>match</literal>
+        properties to the zone, as follows:
       </para>
 
 <screen>zonecfg:vboxzone&gt;add device
@@ -1328,20 +1373,17 @@ zonecfg:vboxzone:device&gt;end
 zonecfg:vboxzone&gt;exit</screen>
 
       <para>
-        If you are running &product-name; 2.2.0 or above on Oracle
-        Solaris 11 or above, you may also add a device for
-        <computeroutput>/dev/vboxusbmon</computeroutput>, similar to
-        that shown above. This does not apply to Oracle Solaris 10
-        hosts, due to lack of USB support.
+        On Oracle Solaris 11 or later, you may also add a device for
+        <filename>/dev/vboxusbmon</filename>, similar to that shown
+        above.
       </para>
 
       <para>
         If you are not using sparse root zones, you will need to
-        loopback mount <computeroutput>/opt/VirtualBox</computeroutput>
-        from the global zone into the non-global zone at the same path.
-        This is specified below using the
-        <computeroutput>dir</computeroutput> attribute and the
-        <computeroutput>special</computeroutput> attribute. For example:
+        loopback mount <filename>/opt/VirtualBox</filename> from the
+        global zone into the non-global zone at the same path. This is
+        specified below using the <literal>dir</literal> attribute and
+        the <literal>special</literal> attribute. For example:
       </para>
 
 <screen>zonecfg:vboxzone&gt;add fs
@@ -1352,9 +1394,8 @@ zonecfg:vboxzone:device&gt;end
 zonecfg:vboxzone&gt;exit</screen>
 
       <para>
-        Reboot the zone using <computeroutput>zoneadm</computeroutput>
-        and you should be able to run &product-name; from within the
-        configured zone.
+        Reboot the zone using <command>zoneadm</command> and you should
+        be able to run &product-name; from within the configured zone.
       </para>
 
     </sect2>

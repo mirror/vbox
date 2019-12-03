@@ -96,7 +96,7 @@
       <para>
         The &product-name; base package should be downloaded only from a
         trusted source, for instance the official website
-        <ulink url="http://www.virtualbox.org">http://www.virtualbox.org</ulink>.
+        <ulink url="http://www.virtualbox.org" />.
         The integrity of the package should be verified with the
         provided SHA256 checksum which can be found on the official
         website.
@@ -557,12 +557,12 @@
       </para>
 
       <para>
-        Mitigation options:
+        The following mitigation options are available.
       </para>
 
       <sect3>
 
-        <title>Disable nested paging</title>
+        <title>Disable Nested Paging</title>
 
         <para>
           By disabling nested paging (EPT), the VMM will construct page
@@ -577,7 +577,7 @@
           features are AVX, AVX2, XSAVE, AESNI, and POPCNT. Not all
           guests may be able to cope with dropping these features after
           installation. Also, for some guests, especially in SMP
-          configurations, there could be stability issues arrising from
+          configurations, there could be stability issues arising from
           disabling nested paging. Finally, some workloads may
           experience a performance degradation.
         </para>
@@ -586,7 +586,7 @@
 
       <sect3>
 
-        <title>Flushing the level 1 data cache</title>
+        <title>Flushing the Level 1 Data Cache</title>
 
         <para>
           This aims at removing potentially sensitive data from the
@@ -626,8 +626,8 @@
 
         <para>
           A more aggressive flushing option is provided via the
-          VBoxManage modifyvm option
-          <computeroutput>--l1d-flush-on-vm-entry</computeroutput>. When
+          <command>VBoxManage modifyvm</command>
+          <option>--l1d-flush-on-vm-entry</option> option. When
           enabled the level 1 data cache will be flushed on every VM
           entry. The performance impact is greater than with the default
           option, though this of course depends on the workload.
@@ -637,12 +637,8 @@
 
         <para>
           For users not concerned by this security issue, the default
-          mitigation can be disabled using
-        </para>
-
-        <para>
-          <computeroutput>VBoxManage modifyvm name --l1d-flush-on-sched
-          off</computeroutput>
+          mitigation can be disabled using the <command>VBoxManage modifyvm
+          name --l1d-flush-on-sched off</command> command.
         </para>
 
       </sect3>
@@ -655,73 +651,72 @@
 
       <para>
         These security issues affect a range of Intel CPUs starting with
-        Nehalem.  The CVE-2018-12130 also affects some Atom Silvermont,
-        Atom Airmont, and Knights family CPUs, however the scope is so limited
-        that the host OS should deal with it for us and VBox therefore not
-        be affected (leaks only happens when entering and leaving C states).
+        Nehalem. The CVE-2018-12130 also affects some Atom Silvermont,
+        Atom Airmont, and Knights family CPUs, however the scope is so
+        limited that the host OS should deal with it and &product-name;
+        is therefore not affected. Leaks only happens when entering and
+        leaving C states.
       </para>
 
       <para>
-        Mitigation option:
+        The following mitigation option is available.
       </para>
 
       <sect3>
 
-        <title>Buffer overwriting and disabling HT</title>
+        <title>Buffer Overwriting and Disabling Hyper-Threading</title>
 
         <para>
-          First, up to date CPU microcode is a prerequisite for the buffer
-          overwriting (clearing) mitigations.  Some host OSes may install
-          these automatically, though it has traditionally been a task best
-          performed by the system firmware.  So, please check with your
-          system / mainboard manufacturer for the latest firmware update.
+          First, up to date CPU microcode is a prerequisite for the
+          buffer overwriting (clearing) mitigations. Some host OSes may
+          install these automatically, though it has traditionally been
+          a task best performed by the system firmware. Please check
+          with your system or mainboard manufacturer for the latest
+          firmware update.
         </para>
 
         <para>
-          This mitigation aims at removing potentially sensitive data from
-          the affected buffers before running guest code.  Since this means
-          additional work each time the guest is scheduled, there might be
-          some performance side effects.
+          This mitigation aims at removing potentially sensitive data
+          from the affected buffers before running guest code. Since
+          this means additional work each time the guest is scheduled,
+          there might be some performance side effects.
         </para>
 
         <para>
-          We recommend disabling hyper threading on host affected by
-          CVE-2018-12126 and CVE-2018-12127 because the affected sets of
-          buffers are normally shared between thread pairs and therefore
-          cause leaks between the threads. This is traditionally done from
-          the firmware setup, but some OSes also offers ways disable HT. In
-          some cases it may be disabled by default, but please verify as the
-          effectiveness of the mitigation depends on it.
+          We recommend disabling hyper-threading (HT) on hosts affected
+          by CVE-2018-12126 and CVE-2018-12127, because the affected
+          sets of buffers are normally shared between thread pairs and
+          therefore cause leaks between the threads. This is
+          traditionally done from the firmware setup, but some OSes also
+          offers ways disable HT. In some cases it may be disabled by
+          default, but please verify as the effectiveness of the
+          mitigation depends on it.
         </para>
 
         <para>
-          The default action taken by VirtualBox is to clear the affected
-          buffers when a thread is scheduled to execute guest code, rather
-          than on each VM entry. This reduces the performance impact, while
-          making the assumption that the host OS will not handle security
-          sensitive data from interrupt handlers and similar without taking
-          precautions.
+          The default action taken by &product-name; is to clear the
+          affected buffers when a thread is scheduled to execute guest
+          code, rather than on each VM entry. This reduces the
+          performance impact, while making the assumption that the host
+          OS will not handle security sensitive data from interrupt
+          handlers and similar without taking precautions.
         </para>
 
         <para>
-          A more aggressive flushing option is provided via the
-          VBoxManage modifyvm option
-          <computeroutput>--mds-clear-on-vm-entry</computeroutput>. When
-          enabled the affected buffers will be cleared on every VM entry.
-          The performance impact is greater than with the default option,
-          though this of course depends on the workload.  Workloads producing
-          a lot of VM exits (like networking, VGA access, and similiar) will
-          probably be most impacted.
+          The <command>VBoxManage modifyvm</command> command provides a more
+          aggressive flushing option is provided by means of the
+          <option>--mds-clear-on-vm-entry</option> option. When
+          enabled the affected buffers will be cleared on every VM
+          entry. The performance impact is greater than with the default
+          option, though this of course depends on the workload.
+          Workloads producing a lot of VM exits (like networking, VGA
+          access, and similiar) will probably be most impacted.
         </para>
 
         <para>
           For users not concerned by this security issue, the default
-          mitigation can be disabled using
-        </para>
-
-        <para>
-          <computeroutput>VBoxManage modifyvm name --mds-clear-on-sched
-          off</computeroutput>
+          mitigation can be disabled using the <command>VBoxManage modifyvm
+          name --mds-clear-on-sched off</command> command.
         </para>
 
       </sect3>
