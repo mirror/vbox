@@ -273,9 +273,9 @@ typedef struct AC97STATE *PAC97STATE;
 typedef struct AC97BDLE
 {
     /** Location of data buffer (bits 31:1). */
-    uint32_t addr;
+    uint32_t                addr;
     /** Flags (bits 31 + 30) and length (bits 15:0) of data buffer (in audio samples). */
-    uint32_t ctl_len;
+    uint32_t                ctl_len;
 } AC97BDLE;
 AssertCompileSize(AC97BDLE, 8);
 /** Pointer to BDLE. */
@@ -286,15 +286,15 @@ typedef AC97BDLE *PAC97BDLE;
  */
 typedef struct AC97BMREGS
 {
-    uint32_t bdbar;             /**< rw 0, Buffer Descriptor List: BAR (Base Address Register). */
-    uint8_t  civ;               /**< ro 0, Current index value. */
-    uint8_t  lvi;               /**< rw 0, Last valid index. */
-    uint16_t sr;                /**< rw 1, Status register. */
-    uint16_t picb;              /**< ro 0, Position in current buffer (in samples). */
-    uint8_t  piv;               /**< ro 0, Prefetched index value. */
-    uint8_t  cr;                /**< rw 0, Control register. */
-    int32_t  bd_valid;          /**< Whether current BDLE is initialized or not. */
-    AC97BDLE bd;                /**< Current Buffer Descriptor List Entry (BDLE). */
+    uint32_t                bdbar;      /**< rw 0, Buffer Descriptor List: BAR (Base Address Register). */
+    uint8_t                 civ;        /**< ro 0, Current index value. */
+    uint8_t                 lvi;        /**< rw 0, Last valid index. */
+    uint16_t                sr;         /**< rw 1, Status register. */
+    uint16_t                picb;       /**< ro 0, Position in current buffer (in samples). */
+    uint8_t                 piv;        /**< ro 0, Prefetched index value. */
+    uint8_t                 cr;         /**< rw 0, Control register. */
+    int32_t                 bd_valid;   /**< Whether current BDLE is initialized or not. */
+    AC97BDLE                bd;         /**< Current Buffer Descriptor List Entry (BDLE). */
 } AC97BMREGS;
 AssertCompileSizeAlignment(AC97BMREGS, 8);
 /** Pointer to the BM registers of an audio stream. */
@@ -373,16 +373,16 @@ typedef AC97STREAMSTATE *PAC97STREAMSTATE;
 typedef struct AC97STREAMDEBUGRT
 {
     /** Whether debugging is enabled or not. */
-    bool                     fEnabled;
-    uint8_t                  Padding[7];
+    bool                        fEnabled;
+    uint8_t                     Padding[7];
     /** File for dumping stream reads / writes.
      *  For input streams, this dumps data being written to the device FIFO,
      *  whereas for output streams this dumps data being read from the device FIFO. */
-    R3PTRTYPE(PPDMAUDIOFILE) pFileStream;
+    R3PTRTYPE(PPDMAUDIOFILE)    pFileStream;
     /** File for dumping DMA reads / writes.
      *  For input streams, this dumps data being written to the device DMA,
      *  whereas for output streams this dumps data being read from the device DMA. */
-    R3PTRTYPE(PPDMAUDIOFILE) pFileDMA;
+    R3PTRTYPE(PPDMAUDIOFILE)    pFileDMA;
 } AC97STREAMDEBUGRT;
 
 /**
@@ -400,16 +400,16 @@ typedef struct AC97STREAMDEBUG
 typedef struct AC97STREAM
 {
     /** Stream number (SDn). */
-    uint8_t               u8SD;
-    uint8_t               abPadding0[7];
+    uint8_t                 u8SD;
+    uint8_t                 abPadding0[7];
     /** Bus master registers of this stream. */
-    AC97BMREGS            Regs;
+    AC97BMREGS              Regs;
     /** Internal state of this stream. */
-    AC97STREAMSTATE       State;
+    AC97STREAMSTATE         State;
     /** Pointer to parent (AC'97 state). */
-    R3PTRTYPE(PAC97STATE) pAC97State;
+    R3PTRTYPE(PAC97STATE)   pAC97State;
 #if HC_ARCH_BITS == 32
-    uint32_t              Padding1;
+    uint32_t                Padding1;
 #endif
     /** The timer for pumping data thru the attached LUN drivers. */
     TMTIMERHANDLE           hTimer;
@@ -427,8 +427,8 @@ typedef struct AC97STATE *PAC97STATE;
  */
 typedef struct AC97STREAMTHREADCTX
 {
-    PAC97STATE  pThis;
-    PAC97STREAM pStream;
+    PAC97STATE              pThis;
+    PAC97STREAM             pStream;
 } AC97STREAMTHREADCTX;
 /** Pointer to the context for an async I/O thread. */
 typedef AC97STREAMTHREADCTX *PAC97STREAMTHREADCTX;
@@ -443,7 +443,7 @@ typedef AC97STREAMTHREADCTX *PAC97STREAMTHREADCTX;
 typedef struct AC97DRIVERSTREAM
 {
     /** Associated mixer stream handle. */
-    R3PTRTYPE(PAUDMIXSTREAM)           pMixStrm;
+    R3PTRTYPE(PAUDMIXSTREAM)    pMixStrm;
 } AC97DRIVERSTREAM;
 /** Pointer to a driver stream. */
 typedef AC97DRIVERSTREAM *PAC97DRIVERSTREAM;
@@ -454,28 +454,28 @@ typedef AC97DRIVERSTREAM *PAC97DRIVERSTREAM;
 typedef struct AC97DRIVER
 {
     /** Node for storing this driver in our device driver list of AC97STATE. */
-    RTLISTNODER3                       Node;
+    RTLISTNODER3                    Node;
     /** Pointer to AC97 controller (state). */
-    R3PTRTYPE(PAC97STATE)              pAC97State;
+    R3PTRTYPE(PAC97STATE)           pAC97State;
     /** Driver flags. */
-    PDMAUDIODRVFLAGS                   fFlags;
+    PDMAUDIODRVFLAGS                fFlags;
     /** LUN # to which this driver has been assigned. */
-    uint8_t                            uLUN;
+    uint8_t                         uLUN;
     /** Whether this driver is in an attached state or not. */
-    bool                               fAttached;
-    uint8_t                            abPadding[2];
+    bool                            fAttached;
+    uint8_t                         abPadding[2];
     /** Pointer to the description string passed to PDMDevHlpDriverAttach(). */
-    R3PTRTYPE(char *)                  pszDesc;
+    R3PTRTYPE(char *)               pszDesc;
     /** Pointer to attached driver base interface. */
-    R3PTRTYPE(PPDMIBASE)               pDrvBase;
+    R3PTRTYPE(PPDMIBASE)            pDrvBase;
     /** Audio connector interface to the underlying host backend. */
-    R3PTRTYPE(PPDMIAUDIOCONNECTOR)     pConnector;
+    R3PTRTYPE(PPDMIAUDIOCONNECTOR)  pConnector;
     /** Driver stream for line input. */
-    AC97DRIVERSTREAM                   LineIn;
+    AC97DRIVERSTREAM                LineIn;
     /** Driver stream for mic input. */
-    AC97DRIVERSTREAM                   MicIn;
+    AC97DRIVERSTREAM                MicIn;
     /** Driver stream for output. */
-    AC97DRIVERSTREAM                   Out;
+    AC97DRIVERSTREAM                Out;
 } AC97DRIVER;
 /** Pointer to a host backend driver (LUN). */
 typedef AC97DRIVER *PAC97DRIVER;
@@ -486,10 +486,10 @@ typedef AC97DRIVER *PAC97DRIVER;
 typedef struct AC97STATEDEBUG
 {
     /** Whether debugging is enabled or not. */
-    bool                               fEnabled;
+    bool                    fEnabled;
     /** Path where to dump the debug output to.
      *  Defaults to VBOX_AUDIO_DEBUG_DUMP_PCM_DATA_PATH. */
-    char                               szOutPath[RTPATH_MAX];
+    char                    szOutPath[RTPATH_MAX];
 } AC97STATEDEBUG;
 
 
