@@ -599,7 +599,7 @@ static DECLCALLBACK(void) pdmR3DevHlp_TimerUnlockClock(PPDMDEVINS pDevIns, TMTIM
 }
 
 
-/** @interface_method_impl{PDMDEVHLPR3,pfnTimerUnlock} */
+/** @interface_method_impl{PDMDEVHLPR3,pfnTimerUnlockClock2} */
 static DECLCALLBACK(void) pdmR3DevHlp_TimerUnlockClock2(PPDMDEVINS pDevIns, TMTIMERHANDLE hTimer, PPDMCRITSECT pCritSect)
 {
     TMTimerUnlock(pdmR3DevHlp_TimerToPtr(pDevIns, hTimer));
