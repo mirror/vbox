@@ -1232,7 +1232,6 @@ HRESULT SystemProperties::getSupportedPointingHIDTypes(std::vector<PointingHIDTy
 {
     static const PointingHIDType_T aPointingHIDTypes[] =
     {
-        PointingHIDType_None,
         PointingHIDType_PS2Mouse,
 #ifdef DEBUG
         PointingHIDType_USBMouse,
@@ -1252,7 +1251,6 @@ HRESULT SystemProperties::getSupportedKeyboardHIDTypes(std::vector<KeyboardHIDTy
 {
     static const KeyboardHIDType_T aKeyboardHIDTypes[] =
     {
-        KeyboardHIDType_None,
         KeyboardHIDType_PS2Keyboard,
         KeyboardHIDType_USBKeyboard,
 #ifdef DEBUG
