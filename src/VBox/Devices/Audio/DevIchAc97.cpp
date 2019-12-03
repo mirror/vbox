@@ -47,16 +47,16 @@
 *********************************************************************************************************************************/
 
 /** Current saved state version. */
-#define AC97_SSM_VERSION    1
+#define AC97_SAVED_STATE_VERSION 1
 
 /** Default timer frequency (in Hz). */
-#define AC97_TIMER_HZ_DEFAULT 100
+#define AC97_TIMER_HZ_DEFAULT   100
 
 /** Maximum number of streams we support. */
-#define AC97_MAX_STREAMS      3
+#define AC97_MAX_STREAMS        3
 
 /** Maximum FIFO size (in bytes). */
-#define AC97_FIFO_MAX       256
+#define AC97_FIFO_MAX           256
 
 #define AC97_SR_FIFOE           RT_BIT(4)           /**< rwc, FIFO error. */
 #define AC97_SR_BCIS            RT_BIT(3)           /**< rwc, Buffer completion interrupt status. */
@@ -145,19 +145,21 @@
 /** AC'97 uses 1.5dB steps, we use 0.375dB steps: 1 AC'97 step equals 4 PDM steps. */
 #define AC97_DB_FACTOR          4
 
-#define AC97_REC_MASK 7
-enum
-{
-    AC97_REC_MIC = 0,
-    AC97_REC_CD,
-    AC97_REC_VIDEO,
-    AC97_REC_AUX,
-    AC97_REC_LINE_IN,
-    AC97_REC_STEREO_MIX,
-    AC97_REC_MONO_MIX,
-    AC97_REC_PHONE
-};
+/** @name Recording inputs?
+ * @{ */
+#define AC97_REC_MIC            UINT8_C(0)
+#define AC97_REC_CD             UINT8_C(1)
+#define AC97_REC_VIDEO          UINT8_C(2)
+#define AC97_REC_AUX            UINT8_C(3)
+#define AC97_REC_LINE_IN        UINT8_C(4)
+#define AC97_REC_STEREO_MIX     UINT8_C(5)
+#define AC97_REC_MONO_MIX       UINT8_C(6)
+#define AC97_REC_PHONE          UINT8_C(7)
+#define AC97_REC_MASK           UINT8_C(7)
+/** @} */
 
+/** @name Mixer registers / NAM BAR registers?
+ * @{ */
 enum
 {
     AC97_Reset                     = 0x00,
@@ -194,26 +196,20 @@ enum
     AC97_Vendor_ID1                = 0x7c,
     AC97_Vendor_ID2                = 0x7e
 };
+/** @} */
 
-/* Codec models. */
-typedef enum
-{
-    AC97_CODEC_STAC9700 = 1,     /**< SigmaTel STAC9700 */
-    AC97_CODEC_AD1980,           /**< Analog Devices AD1980 */
-    AC97_CODEC_AD1981B           /**< Analog Devices AD1981B */
-} AC97CODEC;
-
-/* Analog Devices miscellaneous regiter bits used in AD1980. */
+/** @name Analog Devices miscellaneous regiter bits used in AD1980.
+ * @{  */
 #define AC97_AD_MISC_LOSEL       RT_BIT(5)   /**< Surround (rear) goes to line out outputs. */
 #define AC97_AD_MISC_HPSEL       RT_BIT(10)  /**< PCM (front) goes to headphone outputs. */
+/** @} */
 
-#define ICHAC97STATE_2_DEVINS(a_pAC97)   ((a_pAC97)->CTX_SUFF(pDevIns))
 
-enum
-{
-    BUP_SET  = RT_BIT(0),
-    BUP_LAST = RT_BIT(1)
-};
+/** @name BUP flag values.
+ * @{ */
+#define BUP_SET     RT_BIT_32(0)
+#define BUP_LAST    RT_BIT_32(1)
+/** @}   */
 
 /** @name AC'97 source indices.
  * @note The order of these indices is fixed (also applies for saved states) for
@@ -512,6 +508,17 @@ typedef struct AC97STATEDEBUG
 } AC97STATEDEBUG;
 
 
+/* Codec models. */
+typedef enum AC97CODEC
+{
+    AC97CODEC_INVALID = 0,      /**< Customary illegal zero value. */
+    AC97CODEC_STAC9700,         /**< SigmaTel STAC9700 */
+    AC97CODEC_AD1980,           /**< Analog Devices AD1980 */
+    AC97CODEC_AD1981B,          /**< Analog Devices AD1981B */
+    AC97CODEC_32BIT_HACK = 0x7fffffff
+} AC97CODEC;
+
+
 /**
  * The shared AC'97 device state.
  */
@@ -533,9 +540,9 @@ typedef struct AC97STATE
     uint16_t                uTimerHz;
     uint16_t                au16Padding1[3];
     uint8_t                 silence[128];
-    int32_t                 bup_flag;
+    uint32_t                bup_flag;
     /** Codec model. */
-    uint32_t                uCodecModel;
+    AC97CODEC               enmCodecModel;
 
     /** PCI region \#0: NAM I/O ports. */
     IOMIOPORTHANDLE         hIoPortsNam;
@@ -551,6 +558,11 @@ typedef struct AC97STATE
 #endif
 } AC97STATE;
 AssertCompileMemberAlignment(AC97STATE, aStreams, 8);
+#ifdef VBOX_WITH_STATISTICS
+AssertCompileMemberAlignment(AC97STATE, StatTimer,        8);
+AssertCompileMemberAlignment(AC97STATE, StatBytesRead,    8);
+AssertCompileMemberAlignment(AC97STATE, StatBytesWritten, 8);
+#endif
 
 
 /**
@@ -632,12 +644,6 @@ typedef AC97STATER3 *PAC97STATER3;
  */
 #define DEVAC97_UNLOCK_BOTH(a_pDevIns, a_pThis, a_pStream) \
     PDMDevHlpTimerUnlockClock2((a_pDevIns), (a_pStream)->hTimer, &(a_pThis)->CritSect)
-
-#ifdef VBOX_WITH_STATISTICS
-AssertCompileMemberAlignment(AC97STATE, StatTimer,        8);
-AssertCompileMemberAlignment(AC97STATE, StatBytesRead,    8);
-AssertCompileMemberAlignment(AC97STATE, StatBytesWritten, 8);
-#endif
 
 #ifndef VBOX_DEVICE_STRUCT_TESTCASE
 
@@ -1782,7 +1788,7 @@ static int ichac97R3MixerAddDrvStream(PAUDMIXSINK pMixSink, PPDMAUDIOSTREAMCFG p
  * Adds all current driver streams to a specific mixer sink.
  *
  * @returns IPRT status code.
- * @param   pThis               The shared AC'97 state.
+ * @param   pThisCC             The ring-3 AC'97 state.
  * @param   pMixSink            Mixer sink to add stream to.
  * @param   pCfg                Stream configuration to use.
  */
@@ -1816,7 +1822,7 @@ static int ichac97R3MixerAddDrvStreams(PAC97STATER3 pThisCC, PAUDMIXSINK pMixSin
  * Adds a specific AC'97 driver to the driver chain.
  *
  * @return IPRT status code.
- * @param  pThis                The ring-3 AC'97 device state.
+ * @param  pThisCC              The ring-3 AC'97 device state.
  * @param  pDrv                 The AC'97 driver to add.
  */
 static int ichac97R3MixerAddDrv(PAC97STATER3 pThisCC, PAC97DRIVER pDrv)
@@ -1847,7 +1853,7 @@ static int ichac97R3MixerAddDrv(PAC97STATER3 pThisCC, PAC97DRIVER pDrv)
  * Removes a specific AC'97 driver from the driver chain and destroys its
  * associated streams.
  *
- * @param pThis                 The ring-3 AC'97 device state.
+ * @param pThisCC               The ring-3 AC'97 device state.
  * @param pDrv                  AC'97 driver to remove.
  */
 static void ichac97R3MixerRemoveDrv(PAC97STATER3 pThisCC, PAC97DRIVER pDrv)
@@ -1908,7 +1914,7 @@ static void ichac97R3MixerRemoveDrvStream(PAUDMIXSINK pMixSink, PDMAUDIODIR enmD
 /**
  * Removes all driver streams from a specific mixer sink.
  *
- * @param   pThis               The ring-3 AC'97 state.
+ * @param   pThisCC             The ring-3 AC'97 state.
  * @param   pMixSink            Mixer sink to remove audio streams from.
  * @param   enmDir              Stream direction to remove.
  * @param   dstSrc              Stream destination / source to remove.
@@ -2180,7 +2186,7 @@ static uint32_t ichac97R3StreamGetUsed(PAC97STREAMR3 pStreamCC)
  * Retrieves the free size of audio data (in bytes) of a given AC'97 stream.
  *
  * @returns Free data (in bytes).
- * @param   pStream             AC'97 stream to retrieve size for.
+ * @param   pStreamCC           AC'97 stream to retrieve size for (ring-3).
  */
 static uint32_t ichac97R3StreamGetFree(PAC97STREAMR3 pStreamCC)
 {
@@ -2215,7 +2221,7 @@ static int ichac97R3MixerSetVolume(PAC97STATE pThis, PAC97STATER3 pThisCC, int i
      * control and the optional 6th bit is not used. Note that this logic only applies to the
      * master volume controls.
      */
-    if ((index == AC97_Master_Volume_Mute) || (index == AC97_Headphone_Volume_Mute) || (index == AC97_Master_Volume_Mono_Mute))
+    if (index == AC97_Master_Volume_Mute || index == AC97_Headphone_Volume_Mute || index == AC97_Master_Volume_Mono_Mute)
     {
         if (uVal & RT_BIT(5))  /* D5 bit set? */
             uVal |= RT_BIT(4) | RT_BIT(3) | RT_BIT(2) | RT_BIT(1) | RT_BIT(0);
@@ -2516,7 +2522,7 @@ static int ichac97R3MixerReset(PAC97STATE pThis, PAC97STATER3 pThisCC)
     ichac97MixerSet(pThis, AC97_PCM_LR_ADC_Rate         , 0xbb80 /* 48000 Hz by default */);
     ichac97MixerSet(pThis, AC97_MIC_ADC_Rate            , 0xbb80 /* 48000 Hz by default */);
 
-    if (pThis->uCodecModel == AC97_CODEC_AD1980)
+    if (pThis->enmCodecModel == AC97CODEC_AD1980)
     {
         /* Analog Devices 1980 (AD1980) */
         ichac97MixerSet(pThis, AC97_Reset                   , 0x0010); /* Headphones. */
@@ -2524,7 +2530,7 @@ static int ichac97R3MixerReset(PAC97STATE pThis, PAC97STATER3 pThisCC)
         ichac97MixerSet(pThis, AC97_Vendor_ID2              , 0x5370);
         ichac97MixerSet(pThis, AC97_Headphone_Volume_Mute   , 0x8000);
     }
-    else if (pThis->uCodecModel == AC97_CODEC_AD1981B)
+    else if (pThis->enmCodecModel == AC97CODEC_AD1981B)
     {
         /* Analog Devices 1981B (AD1981B) */
         ichac97MixerSet(pThis, AC97_Vendor_ID1              , 0x4144);
@@ -3319,7 +3325,7 @@ ichac97IoPortNamWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32
                     ichac97MixerSet(pThis, offPort, u32);
                     break;
                 case AC97_Master_Volume_Mute:
-                    if (pThis->uCodecModel == AC97_CODEC_AD1980)
+                    if (pThis->enmCodecModel == AC97CODEC_AD1980)
                     {
                         if (ichac97MixerGet(pThis, AC97_AD_Misc) & AC97_AD_MISC_LOSEL)
                             break; /* Register controls surround (rear), do nothing. */
@@ -3331,7 +3337,7 @@ ichac97IoPortNamWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32
 #endif
                     break;
                 case AC97_Headphone_Volume_Mute:
-                    if (pThis->uCodecModel == AC97_CODEC_AD1980)
+                    if (pThis->enmCodecModel == AC97CODEC_AD1980)
                     {
                         if (ichac97MixerGet(pThis, AC97_AD_Misc) & AC97_AD_MISC_HPSEL)
                         {
@@ -3499,12 +3505,11 @@ ichac97IoPortNamWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32
 /**
  * Saves (serializes) an AC'97 stream using SSM.
  *
- * @returns IPRT status code.
  * @param   pDevIns             Device instance.
  * @param   pSSM                Saved state manager (SSM) handle to use.
  * @param   pStream             AC'97 stream to save.
  */
-static int ichac97R3SaveStream(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, PAC97STREAM pStream)
+static void ichac97R3SaveStream(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, PAC97STREAM pStream)
 {
     PAC97BMREGS   pRegs = &pStream->Regs;
     PCPDMDEVHLPR3 pHlp  = pDevIns->pHlpR3;
@@ -3519,8 +3524,6 @@ static int ichac97R3SaveStream(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, PAC97STREAM 
     pHlp->pfnSSMPutS32(pSSM, pRegs->bd_valid);
     pHlp->pfnSSMPutU32(pSSM, pRegs->bd.addr);
     pHlp->pfnSSMPutU32(pSSM, pRegs->bd.ctl_len);
-
-    return VINF_SUCCESS;
 }
 
 /**
@@ -3531,30 +3534,28 @@ static DECLCALLBACK(int) ichac97R3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
     PAC97STATE      pThis   = PDMDEVINS_2_DATA(pDevIns, PAC97STATE);
     PAC97STATER3    pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PAC97STATER3);
     PCPDMDEVHLPR3   pHlp    = pDevIns->pHlpR3;
-
     LogFlowFuncEnter();
 
     pHlp->pfnSSMPutU32(pSSM, pThis->glob_cnt);
     pHlp->pfnSSMPutU32(pSSM, pThis->glob_sta);
     pHlp->pfnSSMPutU32(pSSM, pThis->cas);
 
+    /*
+     * The order that the streams are saved here is fixed, so don't change.
+     */
     /** @todo r=andy For the next saved state version, add unique stream identifiers and a stream count. */
-    /* Note: The order the streams are loaded here is critical, so don't touch. */
     for (unsigned i = 0; i < AC97_MAX_STREAMS; i++)
-    {
-        int rc2 = ichac97R3SaveStream(pDevIns, pSSM, &pThis->aStreams[i]);
-        AssertRC(rc2);
-    }
+        ichac97R3SaveStream(pDevIns, pSSM, &pThis->aStreams[i]);
 
     pHlp->pfnSSMPutMem(pSSM, pThis->mixer_data, sizeof(pThis->mixer_data));
 
-    uint8_t active[AC97SOUNDSOURCE_MAX];
-
-    active[AC97SOUNDSOURCE_PI_INDEX] = ichac97R3StreamIsEnabled(pThisCC, &pThis->aStreams[AC97SOUNDSOURCE_PI_INDEX]) ? 1 : 0;
-    active[AC97SOUNDSOURCE_PO_INDEX] = ichac97R3StreamIsEnabled(pThisCC, &pThis->aStreams[AC97SOUNDSOURCE_PO_INDEX]) ? 1 : 0;
-    active[AC97SOUNDSOURCE_MC_INDEX] = ichac97R3StreamIsEnabled(pThisCC, &pThis->aStreams[AC97SOUNDSOURCE_MC_INDEX]) ? 1 : 0;
-
-    pHlp->pfnSSMPutMem(pSSM, active, sizeof(active));
+    /* The stream order is against fixed and set in stone. */
+    uint8_t afActiveStrms[AC97SOUNDSOURCE_MAX];
+    afActiveStrms[AC97SOUNDSOURCE_PI_INDEX] = ichac97R3StreamIsEnabled(pThisCC, &pThis->aStreams[AC97SOUNDSOURCE_PI_INDEX]);
+    afActiveStrms[AC97SOUNDSOURCE_PO_INDEX] = ichac97R3StreamIsEnabled(pThisCC, &pThis->aStreams[AC97SOUNDSOURCE_PO_INDEX]);
+    afActiveStrms[AC97SOUNDSOURCE_MC_INDEX] = ichac97R3StreamIsEnabled(pThisCC, &pThis->aStreams[AC97SOUNDSOURCE_MC_INDEX]);
+    AssertCompile(RT_ELEMENTS(afActiveStrms) == 3);
+    pHlp->pfnSSMPutMem(pSSM, afActiveStrms, sizeof(afActiveStrms));
 
     LogFlowFuncLeaveRC(VINF_SUCCESS);
     return VINF_SUCCESS;
@@ -3596,15 +3597,17 @@ static DECLCALLBACK(int) ichac97R3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, 
 
     LogRel2(("ichac97LoadExec: uVersion=%RU32, uPass=0x%x\n", uVersion, uPass));
 
-    AssertMsgReturn (uVersion == AC97_SSM_VERSION, ("%RU32\n", uVersion), VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION);
+    AssertMsgReturn (uVersion == AC97_SAVED_STATE_VERSION, ("%RU32\n", uVersion), VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION);
     Assert(uPass == SSM_PASS_FINAL); NOREF(uPass);
 
     pHlp->pfnSSMGetU32(pSSM, &pThis->glob_cnt);
     pHlp->pfnSSMGetU32(pSSM, &pThis->glob_sta);
     pHlp->pfnSSMGetU32(pSSM, &pThis->cas);
 
-    /** @todo r=andy For the next saved state version, add unique stream identifiers and a stream count. */
-    /* Note: The order the streams are loaded here is critical, so don't touch. */
+    /*
+     * The order the streams are loaded here is critical (defined by
+     * AC97SOUNDSOURCE_XX_INDEX), so don't touch!
+     */
     for (unsigned i = 0; i < AC97_MAX_STREAMS; i++)
     {
         int rc2 = ichac97R3LoadStream(pDevIns, pSSM, &pThis->aStreams[i]);
@@ -3612,11 +3615,6 @@ static DECLCALLBACK(int) ichac97R3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, 
     }
 
     pHlp->pfnSSMGetMem(pSSM, pThis->mixer_data, sizeof(pThis->mixer_data));
-
-    /** @todo r=andy Stream IDs are hardcoded to certain streams. */
-    uint8_t uaStrmsActive[AC97SOUNDSOURCE_MAX];
-    int rc2 = pHlp->pfnSSMGetMem(pSSM, uaStrmsActive, sizeof(uaStrmsActive));
-    AssertRCReturn(rc2, rc2);
 
     ichac97R3MixerRecordSelect(pThis, ichac97MixerGet(pThis, AC97_Record_Select));
     ichac97R3MixerSetVolume(pThis, pThisCC, AC97_Master_Volume_Mute,    PDMAUDIOMIXERCTL_VOLUME_MASTER,
@@ -3631,15 +3629,21 @@ static DECLCALLBACK(int) ichac97R3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, 
                           ichac97MixerGet(pThis, AC97_Record_Gain_Mic_Mute));
     ichac97R3MixerSetGain(pThis, pThisCC, AC97_Record_Gain_Mute,        PDMAUDIOMIXERCTL_LINE_IN,
                           ichac97MixerGet(pThis, AC97_Record_Gain_Mute));
-    if (pThis->uCodecModel == AC97_CODEC_AD1980)
+    if (pThis->enmCodecModel == AC97CODEC_AD1980)
         if (ichac97MixerGet(pThis, AC97_AD_Misc) & AC97_AD_MISC_HPSEL)
             ichac97R3MixerSetVolume(pThis, pThisCC, AC97_Headphone_Volume_Mute, PDMAUDIOMIXERCTL_VOLUME_MASTER,
                                     ichac97MixerGet(pThis, AC97_Headphone_Volume_Mute));
 
-    /** @todo r=andy Stream IDs are hardcoded to certain streams. */
+    /*
+     * Again the stream order is set is stone.
+     */
+    uint8_t afActiveStrms[AC97SOUNDSOURCE_MAX];
+    int rc2 = pHlp->pfnSSMGetMem(pSSM, afActiveStrms, sizeof(afActiveStrms));
+    AssertRCReturn(rc2, rc2);
+
     for (unsigned i = 0; i < AC97_MAX_STREAMS; i++)
     {
-        const bool          fEnable   = RT_BOOL(uaStrmsActive[i]);
+        const bool          fEnable   = RT_BOOL(afActiveStrms[i]);
         const PAC97STREAM   pStream   = &pThis->aStreams[i];
         const PAC97STREAMR3 pStreamCC = &pThisCC->aStreams[i];
 
@@ -3937,7 +3941,7 @@ static DECLCALLBACK(void) ichac97R3Detach(PPDMDEVINS pDevIns, unsigned iLUN, uin
  *
  * @returns VBox status code.
  * @param   pDevIns     The device instance.
- * @param   pThis       The ring-3 AC'97 device state.
+ * @param   pThisCC     The ring-3 AC'97 device state.
  * @param   iLun        The logical unit which is being replaced.
  */
 static int ichac97R3ReconfigLunWithNullAudio(PPDMDEVINS pDevIns, PAC97STATER3 pThisCC, unsigned iLun)
@@ -4030,11 +4034,11 @@ static DECLCALLBACK(int) ichac97R3Construct(PPDMDEVINS pDevIns, int iInstance, P
      * 48 kHz rate, which is exactly what we need. Same goes for AD1981B.
      */
     if (!strcmp(szCodec, "STAC9700"))
-        pThis->uCodecModel = AC97_CODEC_STAC9700;
+        pThis->enmCodecModel = AC97CODEC_STAC9700;
     else if (!strcmp(szCodec, "AD1980"))
-        pThis->uCodecModel = AC97_CODEC_AD1980;
+        pThis->enmCodecModel = AC97CODEC_AD1980;
     else if (!strcmp(szCodec, "AD1981B"))
-        pThis->uCodecModel = AC97_CODEC_AD1981B;
+        pThis->enmCodecModel = AC97CODEC_AD1981B;
     else
         return PDMDevHlpVMSetError(pDevIns, VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES, RT_SRC_POS,
                                    N_("AC'97 configuration error: The \"Codec\" value \"%s\" is unsupported"), szCodec);
@@ -4073,12 +4077,12 @@ static DECLCALLBACK(int) ichac97R3Construct(PPDMDEVINS pDevIns, int iInstance, P
     PCIDevSetInterruptLine(pPciDev,         0x00);   /* 3c rw. */                       Assert(pPciDev->abConfig[0x3c] == 0x00);
     PCIDevSetInterruptPin(pPciDev,          0x01);   /* 3d ro - INTA#. */               Assert(pPciDev->abConfig[0x3d] == 0x01);
 
-    if (pThis->uCodecModel == AC97_CODEC_AD1980)
+    if (pThis->enmCodecModel == AC97CODEC_AD1980)
     {
         PCIDevSetSubSystemVendorId(pPciDev, 0x1028); /* 2c ro - Dell.) */
         PCIDevSetSubSystemId(pPciDev,       0x0177); /* 2e ro. */
     }
-    else if (pThis->uCodecModel == AC97_CODEC_AD1981B)
+    else if (pThis->enmCodecModel == AC97CODEC_AD1981B)
     {
         PCIDevSetSubSystemVendorId(pPciDev, 0x1028); /* 2c ro - Dell.) */
         PCIDevSetSubSystemId(pPciDev,       0x01ad); /* 2e ro. */
@@ -4109,7 +4113,7 @@ static DECLCALLBACK(int) ichac97R3Construct(PPDMDEVINS pDevIns, int iInstance, P
     /*
      * Saved state.
      */
-    rc = PDMDevHlpSSMRegister(pDevIns, AC97_SSM_VERSION, sizeof(*pThis), ichac97R3SaveExec, ichac97R3LoadExec);
+    rc = PDMDevHlpSSMRegister(pDevIns, AC97_SAVED_STATE_VERSION, sizeof(*pThis), ichac97R3SaveExec, ichac97R3LoadExec);
     if (RT_FAILURE(rc))
         return rc;
 
