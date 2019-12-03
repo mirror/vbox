@@ -287,8 +287,8 @@ void UIMachineSettingsSystem::getFromCache()
     m_pCheckBoxNestedVirtualization->setChecked(oldSystemData.m_fEnabledNestedHwVirtEx);
 
     /* Load old 'Acceleration' data from the cache: */
-    const int iParavirtProviderPosition = m_pComboParavirtProvider->findData(oldSystemData.m_paravirtProvider);
-    m_pComboParavirtProvider->setCurrentIndex(iParavirtProviderPosition == -1 ? 0 : iParavirtProviderPosition);
+    const int iParavirtProviderPosition = m_pComboParavirtProviderType->findData(oldSystemData.m_paravirtProvider);
+    m_pComboParavirtProviderType->setCurrentIndex(iParavirtProviderPosition == -1 ? 0 : iParavirtProviderPosition);
     m_pCheckBoxVirtualization->setChecked(oldSystemData.m_fEnabledHwVirtEx);
     m_pCheckBoxNestedPaging->setChecked(oldSystemData.m_fEnabledNestedPaging);
 
@@ -327,7 +327,7 @@ void UIMachineSettingsSystem::putToCache()
     newSystemData.m_fEnabledNestedHwVirtEx = isNestedHWVirtExEnabled();
 
     /* Gather 'Acceleration' data: */
-    newSystemData.m_paravirtProvider = m_pComboParavirtProvider->currentData().value<KParavirtProvider>();
+    newSystemData.m_paravirtProvider = m_pComboParavirtProviderType->currentData().value<KParavirtProvider>();
     /* Enable HW Virt Ex automatically if it's supported and
      * 1. multiple CPUs, 2. Nested Paging or 3. Nested HW Virt Ex is requested. */
     newSystemData.m_fEnabledHwVirtEx =    isHWVirtExEnabled()
@@ -560,10 +560,10 @@ void UIMachineSettingsSystem::setOrderAfter(QWidget *pWidget)
     setTabOrder(m_pSliderCPUCount, m_pEditorCPUCount);
     setTabOrder(m_pEditorCPUCount, m_pSliderCPUExecCap);
     setTabOrder(m_pSliderCPUExecCap, m_pEditorCPUExecCap);
-    setTabOrder(m_pEditorCPUExecCap, m_pComboParavirtProvider);
+    setTabOrder(m_pEditorCPUExecCap, m_pComboParavirtProviderType);
 
     /* Configure navigation for 'acceleration' tab: */
-    setTabOrder(m_pComboParavirtProvider, m_pCheckBoxPAE);
+    setTabOrder(m_pComboParavirtProviderType, m_pCheckBoxPAE);
     setTabOrder(m_pCheckBoxPAE, m_pCheckBoxNestedVirtualization);
     setTabOrder(m_pCheckBoxNestedVirtualization, m_pCheckBoxVirtualization);
     setTabOrder(m_pCheckBoxVirtualization, m_pCheckBoxNestedPaging);
@@ -630,7 +630,7 @@ void UIMachineSettingsSystem::polishPage()
                                         && (   (systemData.m_fSupportedNestedPaging && isMachineOffline())
                                             || (systemData.m_fEnabledNestedPaging && isMachineOffline())));
     m_pLabelParavirtProvider->setEnabled(isMachineOffline());
-    m_pComboParavirtProvider->setEnabled(isMachineOffline());
+    m_pComboParavirtProviderType->setEnabled(isMachineOffline());
     m_pLabelVirtualization->setEnabled(isMachineOffline());
 }
 
@@ -908,23 +908,23 @@ void UIMachineSettingsSystem::repopulateComboPointingHIDType()
 
 void UIMachineSettingsSystem::repopulateComboParavirtProviderType()
 {
-    /* Paravirtualization Provider combo-box created in the .ui file. */
-    AssertPtrReturnVoid(m_pComboParavirtProvider);
+    /* Paravirtualization Provider Type combo-box created in the .ui file. */
+    AssertPtrReturnVoid(m_pComboParavirtProviderType);
     {
         /* Clear combo first of all: */
-        m_pComboParavirtProvider->clear();
+        m_pComboParavirtProviderType->clear();
 
-        /* Load currently supported paravirtualization providers: */
+        /* Load currently supported paravirtualization provider types: */
         CSystemProperties comProperties = uiCommon().virtualBox().GetSystemProperties();
-        QVector<KParavirtProvider> supportedProviders = comProperties.GetSupportedParavirtProviders();
+        QVector<KParavirtProvider> supportedProviderTypes = comProperties.GetSupportedParavirtProviders();
         /* Take into account currently cached value: */
         const KParavirtProvider enmCachedValue = m_pCache->base().m_paravirtProvider;
-        if (!supportedProviders.contains(enmCachedValue))
-            supportedProviders.prepend(enmCachedValue);
+        if (!supportedProviderTypes.contains(enmCachedValue))
+            supportedProviderTypes.prepend(enmCachedValue);
 
         /* Populate combo finally: */
-        foreach (const KParavirtProvider &enmProvider, supportedProviders)
-            m_pComboParavirtProvider->addItem(gpConverter->toString(enmProvider), QVariant::fromValue(enmProvider));
+        foreach (const KParavirtProvider &enmProvider, supportedProviderTypes)
+            m_pComboParavirtProviderType->addItem(gpConverter->toString(enmProvider), QVariant::fromValue(enmProvider));
     }
 }
 
@@ -960,12 +960,12 @@ void UIMachineSettingsSystem::retranslateComboPointingHIDType()
 
 void UIMachineSettingsSystem::retranslateComboParavirtProvider()
 {
-    /* For each the element in m_pComboParavirtProvider: */
-    for (int iIndex = 0; iIndex < m_pComboParavirtProvider->count(); ++iIndex)
+    /* For each the element in m_pComboParavirtProviderType: */
+    for (int iIndex = 0; iIndex < m_pComboParavirtProviderType->count(); ++iIndex)
     {
         /* Apply retranslated text: */
-        const KParavirtProvider enmType = m_pComboParavirtProvider->currentData().value<KParavirtProvider>();
-        m_pComboParavirtProvider->setItemText(iIndex, gpConverter->toString(enmType));
+        const KParavirtProvider enmType = m_pComboParavirtProviderType->currentData().value<KParavirtProvider>();
+        m_pComboParavirtProviderType->setItemText(iIndex, gpConverter->toString(enmType));
     }
 }
 
