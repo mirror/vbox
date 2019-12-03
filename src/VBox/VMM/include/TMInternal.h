@@ -205,6 +205,14 @@ typedef struct TMTIMER
 #if HC_ARCH_BITS == 32
     uint32_t                padding0; /**< pad structure to multiple of 8 bytes. */
 #endif
+#ifdef VBOX_WITH_STATISTICS
+    STAMPROFILE             StatTimer;
+    STAMPROFILE             StatCritSectEnter;
+    STAMCOUNTER             StatGet;
+    STAMCOUNTER             StatSetAbsolute;
+    STAMCOUNTER             StatSetRelative;
+    STAMCOUNTER             StatStop;
+#endif
 } TMTIMER;
 AssertCompileMemberSize(TMTIMER, enmState, sizeof(uint32_t));
 

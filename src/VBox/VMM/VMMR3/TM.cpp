@@ -1485,6 +1485,22 @@ static DECLCALLBACK(int) tmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, u
     return VINF_SUCCESS;
 }
 
+#ifdef VBOX_WITH_STATISTICS
+/** Names the clock of the timer.   */
+static const char *tmR3TimerClockName(PTMTIMERR3 pTimer)
+{
+    switch (pTimer->enmClock)
+    {
+        case TMCLOCK_VIRTUAL:       return "virtual";
+        case TMCLOCK_VIRTUAL_SYNC:  return "virtual-sync";
+        case TMCLOCK_REAL:          return "real";
+        case TMCLOCK_TSC:           return "tsc";
+        case TMCLOCK_MAX:           break;
+    }
+    return "corrupt clock value";
+}
+#endif
+
 
 /**
  * Internal TMR3TimerCreate worker.
@@ -1545,6 +1561,25 @@ static int tmr3TimerCreate(PVM pVM, TMCLOCK enmClock, const char *pszDesc, PPTMT
     tmTimerQueuesSanityChecks(pVM, "tmR3TimerCreate");
 #endif
     TM_UNLOCK_TIMERS(pVM);
+
+    /*
+     * Register statistics.
+     */
+#ifdef VBOX_WITH_STATISTICS
+
+    STAMR3RegisterF(pVM, &pTimer->StatTimer,        STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL,
+                    tmR3TimerClockName(pTimer), "/TM/Timers/%s", pszDesc);
+    STAMR3RegisterF(pVM, &pTimer->StatCritSectEnter, STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL,
+                    "", "/TM/Timers/%s/CritSectEnter", pszDesc);
+    STAMR3RegisterF(pVM, &pTimer->StatGet,          STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_CALLS,
+                    "", "/TM/Timers/%s/Get", pszDesc);
+    STAMR3RegisterF(pVM, &pTimer->StatSetAbsolute,  STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_CALLS,
+                    "", "/TM/Timers/%s/SetAbsolute", pszDesc);
+    STAMR3RegisterF(pVM, &pTimer->StatSetRelative,  STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_CALLS,
+                    "", "/TM/Timers/%s/SetRelative", pszDesc);
+    STAMR3RegisterF(pVM, &pTimer->StatStop,         STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_CALLS,
+                    "", "/TM/Timers/%s/Stop", pszDesc);
+#endif
 
     *ppTimer = pTimer;
     return VINF_SUCCESS;
@@ -1871,7 +1906,16 @@ VMMR3DECL(int) TMR3TimerDestroy(PTMTIMER pTimer)
     }
 
     /*
-     * Read to move the timer from the created list and onto the free list.
+     * Deregister statistics.
+     */
+#ifdef VBOX_WITH_STATISTICS
+    char szPrefix[128];
+    RTStrPrintf(szPrefix, sizeof(szPrefix), "/TM/Timers/%s", pTimer->pszDesc);
+    STAMR3DeregisterByPrefix(pVM->pUVM, szPrefix);
+#endif
+
+    /*
+     * Ready to move the timer from the created list and onto the free list.
      */
     Assert(!pTimer->offNext); Assert(!pTimer->offPrev); Assert(!pTimer->offScheduleNext);
 
@@ -2228,7 +2272,11 @@ static void tmR3TimerQueueRun(PVM pVM, PTMTIMERQUEUE pQueue)
         pNext = TMTIMER_GET_NEXT(pTimer);
         PPDMCRITSECT    pCritSect = pTimer->pCritSect;
         if (pCritSect)
+        {
+            STAM_PROFILE_START(&pTimer->StatCritSectEnter, Locking);
             PDMCritSectEnter(pCritSect, VERR_IGNORED);
+            STAM_PROFILE_STOP(&pTimer->StatCritSectEnter, Locking);
+        }
         Log2(("tmR3TimerQueueRun: %p:{.enmState=%s, .enmClock=%d, .enmType=%d, u64Expire=%llx (now=%llx) .pszDesc=%s}\n",
               pTimer, tmTimerState(pTimer->enmState), pTimer->enmClock, pTimer->enmType, pTimer->u64Expire, u64Now, pTimer->pszDesc));
         bool fRc;
@@ -2253,6 +2301,7 @@ static void tmR3TimerQueueRun(PVM pVM, PTMTIMERQUEUE pQueue)
 
             /* fire */
             TM_SET_STATE(pTimer, TMTIMERSTATE_EXPIRED_DELIVER);
+            STAM_PROFILE_START(&pTimer->StatTimer, PrfTimer);
             switch (pTimer->enmType)
             {
                 case TMTIMERTYPE_DEV:       pTimer->u.Dev.pfnTimer(pTimer->u.Dev.pDevIns, pTimer, pTimer->pvUser); break;
@@ -2264,6 +2313,7 @@ static void tmR3TimerQueueRun(PVM pVM, PTMTIMERQUEUE pQueue)
                     AssertMsgFailed(("Invalid timer type %d (%s)\n", pTimer->enmType, pTimer->pszDesc));
                     break;
             }
+            STAM_PROFILE_STOP(&pTimer->StatTimer, PrfTimer);
 
             /* change the state if it wasn't changed already in the handler. */
             TM_TRY_SET_STATE(pTimer, TMTIMERSTATE_STOPPED, TMTIMERSTATE_EXPIRED_DELIVER, fRc);
@@ -2415,7 +2465,11 @@ static void tmR3TimerQueueRunVirtualSync(PVM pVM)
         /* Take the associated lock. */
         PPDMCRITSECT pCritSect = pTimer->pCritSect;
         if (pCritSect)
+        {
+            STAM_PROFILE_START(&pTimer->StatCritSectEnter, Locking);
             PDMCritSectEnter(pCritSect, VERR_IGNORED);
+            STAM_PROFILE_STOP(&pTimer->StatCritSectEnter, Locking);
+        }
 
         Log2(("tmR3TimerQueueRun: %p:{.enmState=%s, .enmClock=%d, .enmType=%d, u64Expire=%llx (now=%llx) .pszDesc=%s}\n",
               pTimer, tmTimerState(pTimer->enmState), pTimer->enmClock, pTimer->enmType, pTimer->u64Expire, u64Now, pTimer->pszDesc));
@@ -2432,6 +2486,7 @@ static void tmR3TimerQueueRunVirtualSync(PVM pVM)
         /* Unlink it, change the state and do the callout. */
         tmTimerQueueUnlinkActive(pQueue, pTimer);
         TM_SET_STATE(pTimer, TMTIMERSTATE_EXPIRED_DELIVER);
+        STAM_PROFILE_START(&pTimer->StatTimer, PrfTimer);
         switch (pTimer->enmType)
         {
             case TMTIMERTYPE_DEV:       pTimer->u.Dev.pfnTimer(pTimer->u.Dev.pDevIns, pTimer, pTimer->pvUser); break;
@@ -2443,6 +2498,7 @@ static void tmR3TimerQueueRunVirtualSync(PVM pVM)
                 AssertMsgFailed(("Invalid timer type %d (%s)\n", pTimer->enmType, pTimer->pszDesc));
                 break;
         }
+        STAM_PROFILE_STOP(&pTimer->StatTimer, PrfTimer);
 
         /* Change the state if it wasn't changed already in the handler.
            Reset the Hz hint too since this is the same as TMTimerStop. */
