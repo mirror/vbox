@@ -1441,7 +1441,7 @@ int nemR3NativeInitAfterCPUM(PVM pVM)
                                                       RTNtLastErrorValue()));
                 }
                 return VMSetError(pVM, VERR_NEM_VM_CREATE_FAILED, RT_SRC_POS,
-                                  "Call to WHvSetupPartition failed: %Rhrc (Last=%#x/%u)", hrc, rcNtLast, dwErrLast);
+                                  "Call to WHvCreateVirtualProcessor failed: %Rhrc (Last=%#x/%u)", hrc, rcNtLast, dwErrLast);
             }
         }
 # ifdef NEM_WIN_WITH_RING0_RUNLOOP
