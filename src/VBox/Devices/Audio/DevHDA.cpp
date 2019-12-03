@@ -154,9 +154,9 @@
 /**
  * Acquires the TM lock and HDA lock, returns on failure.
  */
-#define DEVHDA_LOCK_BOTH_RETURN(a_pDevIns, a_pThis, a_SD, a_rcBusy) \
+#define DEVHDA_LOCK_BOTH_RETURN(a_pDevIns, a_pThis, a_pStream, a_rcBusy) \
     do { \
-        VBOXSTRICTRC rcLock = PDMDevHlpTimerLockClock2(pDevIns, (a_pThis)->ahTimers[a_SD], &(a_pThis)->CritSect,  (a_rcBusy)); \
+        VBOXSTRICTRC rcLock = PDMDevHlpTimerLockClock2(pDevIns, (a_pStream)->hTimer, &(a_pThis)->CritSect,  (a_rcBusy)); \
         if (RT_LIKELY(rcLock == VINF_SUCCESS)) \
         {  /* likely */ } \
         else \
@@ -166,8 +166,8 @@
 /**
  * Releases the HDA lock and TM lock.
  */
-#define DEVHDA_UNLOCK_BOTH(a_pDevIns, a_pThis, a_SD) \
-    PDMDevHlpTimerUnlockClock2(pDevIns, (a_pThis)->ahTimers[a_SD], &(a_pThis)->CritSect)
+#define DEVHDA_UNLOCK_BOTH(a_pDevIns, a_pThis, a_pStream) \
+    PDMDevHlpTimerUnlockClock2(pDevIns, (a_pStream)->hTimer, &(a_pThis)->CritSect)
 
 
 /*********************************************************************************************************************************
@@ -1301,7 +1301,7 @@ static int hdaRegWriteSDCTL(PPDMDEVINS pDevIns, PHDASTATE pThis, uint32_t iReg, 
      * @todo r=bird: Must reduce the time we holding the virtual sync
      *               clock lock here!
      */
-    DEVHDA_LOCK_BOTH_RETURN(pDevIns, pThis, uSD, VINF_IOM_R3_MMIO_WRITE);
+    DEVHDA_LOCK_BOTH_RETURN(pDevIns, pThis, pStream, VINF_IOM_R3_MMIO_WRITE);
 
     const bool fInRun    = RT_BOOL(HDA_REG_IND(pThis, iReg) & HDA_SDCTL_RUN);
     const bool fInReset  = RT_BOOL(HDA_REG_IND(pThis, iReg) & HDA_SDCTL_SRST);
@@ -1456,7 +1456,7 @@ static int hdaRegWriteSDCTL(PPDMDEVINS pDevIns, PHDASTATE pThis, uint32_t iReg, 
     int rc2 = hdaRegWriteU24(pDevIns, pThis, iReg, u32Value);
     AssertRC(rc2);
 
-    DEVHDA_UNLOCK_BOTH(pDevIns, pThis, uSD);
+    DEVHDA_UNLOCK_BOTH(pDevIns, pThis, pStream);
     return VINF_SUCCESS; /* Always return success to the MMIO handler. */
 #else  /* !IN_RING3 */
     RT_NOREF(pDevIns, pThis, iReg, u32Value);
@@ -1476,7 +1476,7 @@ static int hdaRegWriteSDSTS(PPDMDEVINS pDevIns, PHDASTATE pThis, uint32_t iReg, 
      * @todo r=bird: Must reduce the time we holding the virtual sync
      *               clock lock here!
      */
-    DEVHDA_LOCK_BOTH_RETURN(pDevIns, pThis, uSD, VINF_IOM_R3_MMIO_WRITE);
+    DEVHDA_LOCK_BOTH_RETURN(pDevIns, pThis, pStream, VINF_IOM_R3_MMIO_WRITE);
 
     hdaR3StreamLock(pStream);
 
@@ -1571,7 +1571,7 @@ static int hdaRegWriteSDSTS(PPDMDEVINS pDevIns, PHDASTATE pThis, uint32_t iReg, 
 
     hdaR3StreamUnlock(pStream);
 
-    DEVHDA_UNLOCK_BOTH(pDevIns, pThis, uSD);
+    DEVHDA_UNLOCK_BOTH(pDevIns, pThis, pStream);
     return VINF_SUCCESS;
 #else  /* !IN_RING3 */
     RT_NOREF(pDevIns, pThis, iReg, u32Value);
@@ -2841,7 +2841,7 @@ static DECLCALLBACK(void) hdaR3Timer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *
 {
     PHDASTATE       pThis   = PDMDEVINS_2_DATA(pDevIns, PHDASTATE);
     PHDASTREAM      pStream = (PHDASTREAM)pvUser;
-    TMTIMERHANDLE   hTimer  = RT_SAFE_SUBSCRIPT8(pThis->ahTimers, pStream->u8SD);
+    TMTIMERHANDLE   hTimer  = pStream->hTimer;
     RT_NOREF(pTimer);
 
     AssertPtr(pStream);
@@ -4966,10 +4966,10 @@ static DECLCALLBACK(int) hdaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     for (size_t i = 0; i < HDA_MAX_STREAMS; i++)
     {
         rc = PDMDevHlpTimerCreate(pDevIns, TMCLOCK_VIRTUAL_SYNC, hdaR3Timer, &pThis->aStreams[i],
-                                  TMTIMER_FLAGS_NO_CRIT_SECT, s_apszNames[i], &pThis->ahTimers[i]);
+                                  TMTIMER_FLAGS_NO_CRIT_SECT, s_apszNames[i], &pThis->aStreams[i].hTimer);
         AssertRCReturn(rc, rc);
 
-        rc = PDMDevHlpTimerSetCritSect(pDevIns, pThis->ahTimers[i], &pThis->CritSect);
+        rc = PDMDevHlpTimerSetCritSect(pDevIns, pThis->aStreams[i].hTimer, &pThis->CritSect);
         AssertRCReturn(rc, rc);
     }
 
