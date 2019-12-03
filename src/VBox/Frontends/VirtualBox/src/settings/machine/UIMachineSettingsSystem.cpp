@@ -189,7 +189,7 @@ bool UIMachineSettingsSystem::isNestedHWVirtExEnabled() const
 
 bool UIMachineSettingsSystem::isHIDEnabled() const
 {
-    return (KPointingHIDType)m_pComboPointingHIDType->itemData(m_pComboPointingHIDType->currentIndex()).toInt() != KPointingHIDType_PS2Mouse;
+    return m_pComboPointingHIDType->currentData().value<KPointingHIDType>() != KPointingHIDType_PS2Mouse;
 }
 
 KChipsetType UIMachineSettingsSystem::chipsetType() const
@@ -314,7 +314,7 @@ void UIMachineSettingsSystem::putToCache()
     newSystemData.m_iMemorySize = m_pBaseMemoryEditor->value();
     newSystemData.m_bootItems = m_pBootOrderEditor->value();
     newSystemData.m_chipsetType = (KChipsetType)m_pComboChipsetType->itemData(m_pComboChipsetType->currentIndex()).toInt();
-    newSystemData.m_pointingHIDType = (KPointingHIDType)m_pComboPointingHIDType->itemData(m_pComboPointingHIDType->currentIndex()).toInt();
+    newSystemData.m_pointingHIDType = m_pComboPointingHIDType->currentData().value<KPointingHIDType>();
     newSystemData.m_fEnabledIoApic = m_pCheckBoxApic->isChecked() || m_pSliderCPUCount->value() > 1 ||
                                   (KChipsetType)m_pComboChipsetType->itemData(m_pComboChipsetType->currentIndex()).toInt() == KChipsetType_ICH9;
     newSystemData.m_fEnabledEFI = m_pCheckBoxEFI->isChecked();
@@ -865,44 +865,23 @@ void UIMachineSettingsSystem::cleanup()
 
 void UIMachineSettingsSystem::repopulateComboPointingHIDType()
 {
-    /* Is there any value currently present/selected? */
-    KPointingHIDType enmCurrentValue = KPointingHIDType_None;
+    /* Pointing HID Type combo-box created in the .ui file. */
+    AssertPtrReturnVoid(m_pComboPointingHIDType);
     {
-        const int iCurrentIndex = m_pComboPointingHIDType->currentIndex();
-        if (iCurrentIndex != -1)
-            enmCurrentValue = (KPointingHIDType)m_pComboPointingHIDType->itemData(iCurrentIndex).toInt();
-    }
+        /* Clear combo first of all: */
+        m_pComboPointingHIDType->clear();
 
-    /* Clear combo: */
-    m_pComboPointingHIDType->clear();
+        /* Load currently supported pointing HID types: */
+        CSystemProperties comProperties = uiCommon().virtualBox().GetSystemProperties();
+        QVector<KPointingHIDType> pointingHidTypes = comProperties.GetSupportedPointingHIDTypes();
+        /* Take into account currently cached value: */
+        const KPointingHIDType enmCachedValue = m_pCache->base().m_pointingHIDType;
+        if (!pointingHidTypes.contains(enmCachedValue))
+            pointingHidTypes.prepend(enmCachedValue);
 
-    /* Repopulate combo taking into account currently cached value: */
-    const KPointingHIDType enmCachedValue = m_pCache->base().m_pointingHIDType;
-    {
-        /* "PS/2 Mouse" value is always here: */
-        m_pComboPointingHIDType->addItem(gpConverter->toString(KPointingHIDType_PS2Mouse), (int)KPointingHIDType_PS2Mouse);
-
-        /* "USB Mouse" value is here only if it is currently selected: */
-        if (enmCachedValue == KPointingHIDType_USBMouse)
-            m_pComboPointingHIDType->addItem(gpConverter->toString(KPointingHIDType_USBMouse), (int)KPointingHIDType_USBMouse);
-
-        /* "USB Mouse/Tablet" value is always here: */
-        m_pComboPointingHIDType->addItem(gpConverter->toString(KPointingHIDType_USBTablet), (int)KPointingHIDType_USBTablet);
-
-        /* "PS/2 and USB Mouse" value is here only if it is currently selected: */
-        if (enmCachedValue == KPointingHIDType_ComboMouse)
-            m_pComboPointingHIDType->addItem(gpConverter->toString(KPointingHIDType_ComboMouse), (int)KPointingHIDType_ComboMouse);
-
-        /* "USB Multi-Touch Mouse/Tablet" value is always here: */
-        m_pComboPointingHIDType->addItem(gpConverter->toString(KPointingHIDType_USBMultiTouch), (int)KPointingHIDType_USBMultiTouch);
-    }
-
-    /* Was there any value previously present/selected? */
-    if (enmCurrentValue != KPointingHIDType_None)
-    {
-        int iPreviousIndex = m_pComboPointingHIDType->findData((int)enmCurrentValue);
-        if (iPreviousIndex != -1)
-            m_pComboPointingHIDType->setCurrentIndex(iPreviousIndex);
+        /* Populate combo finally: */
+        foreach (const KPointingHIDType &enmType, pointingHidTypes)
+            m_pComboPointingHIDType->addItem(gpConverter->toString(enmType), QVariant::fromValue(enmType));
     }
 }
 
@@ -945,16 +924,12 @@ void UIMachineSettingsSystem::retranslateComboChipsetType()
 
 void UIMachineSettingsSystem::retranslateComboPointingHIDType()
 {
-    /* For each the element in KPointingHIDType enum: */
-    for (int iIndex = (int)KPointingHIDType_None; iIndex < (int)KPointingHIDType_Max; ++iIndex)
+    /* For each the element in m_pComboPointingHIDType: */
+    for (int iIndex = 0; iIndex < m_pComboPointingHIDType->count(); ++iIndex)
     {
-        /* Cast to the corresponding type: */
-        const KPointingHIDType enmType = (KPointingHIDType)iIndex;
-        /* Look for the corresponding item: */
-        const int iCorrespondingIndex = m_pComboPointingHIDType->findData((int)enmType);
-        /* Re-translate if corresponding item was found: */
-        if (iCorrespondingIndex != -1)
-            m_pComboPointingHIDType->setItemText(iCorrespondingIndex, gpConverter->toString(enmType));
+        /* Apply retranslated text: */
+        const KPointingHIDType enmType = m_pComboPointingHIDType->currentData().value<KPointingHIDType>();
+        m_pComboPointingHIDType->setItemText(iIndex, gpConverter->toString(enmType));
     }
 }
 
