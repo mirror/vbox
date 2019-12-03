@@ -5865,7 +5865,7 @@ DECLINLINE(bool)     PDMDevHlpTimerIsLockOwner(PPDMDEVINS pDevIns, TMTIMERHANDLE
 }
 
 /**
- * @copydoc PDMDEVHLPR3::pfnTimerLock
+ * @copydoc PDMDEVHLPR3::pfnTimerLockClock
  */
 DECLINLINE(VBOXSTRICTRC) PDMDevHlpTimerLockClock(PPDMDEVINS pDevIns, TMTIMERHANDLE hTimer, int rcBusy)
 {
@@ -5873,7 +5873,7 @@ DECLINLINE(VBOXSTRICTRC) PDMDevHlpTimerLockClock(PPDMDEVINS pDevIns, TMTIMERHAND
 }
 
 /**
- * @copydoc PDMDEVHLPR3::pfnTimerLock2
+ * @copydoc PDMDEVHLPR3::pfnTimerLockClock2
  */
 DECLINLINE(VBOXSTRICTRC) PDMDevHlpTimerLockClock2(PPDMDEVINS pDevIns, TMTIMERHANDLE hTimer, PPDMCRITSECT pCritSect, int rcBusy)
 {

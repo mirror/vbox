@@ -524,7 +524,7 @@ static DECLCALLBACK(VBOXSTRICTRC) pdmR3DevHlp_TimerLockClock(PPDMDEVINS pDevIns,
 }
 
 
-/** @interface_method_impl{PDMDEVHLPR3,pfnTimerLock} */
+/** @interface_method_impl{PDMDEVHLPR3,pfnTimerLockClock2} */
 static DECLCALLBACK(VBOXSTRICTRC) pdmR3DevHlp_TimerLockClock2(PPDMDEVINS pDevIns, TMTIMERHANDLE hTimer,
                                                               PPDMCRITSECT pCritSect, int rcBusy)
 {
