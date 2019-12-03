@@ -500,11 +500,11 @@ typedef struct AC97STATE
     PDMCRITSECT             CritSect;
     /** R3 pointer to the device instance. */
     PPDMDEVINSR3            pDevInsR3;
-    /** R0 pointer to the device instance. */
-    PPDMDEVINSR0            pDevInsR0;
-    /** RC pointer to the device instance. */
-    PPDMDEVINSRC            pDevInsRC;
-    bool                    afPadding0[4];
+//    /** R0 pointer to the device instance. */
+//    PPDMDEVINSR0            pDevInsR0;
+//    /** RC pointer to the device instance. */
+//    PPDMDEVINSRC            pDevInsRC;
+//    bool                    afPadding0[4];
     /** Global Control (Bus Master Control Register). */
     uint32_t                glob_cnt;
     /** Global Status (Bus Master Control Register). */
@@ -630,8 +630,8 @@ static void               ichac97R3StreamLock(PAC97STREAM pStream);
 static void               ichac97R3StreamUnlock(PAC97STREAM pStream);
 static uint32_t           ichac97R3StreamGetUsed(PAC97STREAM pStream);
 static uint32_t           ichac97R3StreamGetFree(PAC97STREAM pStream);
-static int                ichac97R3StreamTransfer(PAC97STATE pThis, PAC97STREAM pStream, uint32_t cbToProcessMax);
-static void               ichac97R3StreamUpdate(PAC97STATE pThis, PAC97STREAM pStream, bool fInTimer);
+static int                ichac97R3StreamTransfer(PPDMDEVINS pDevIns, PAC97STATE pThis, PAC97STREAM pStream, uint32_t cbToProcessMax);
+static void               ichac97R3StreamUpdate(PPDMDEVINS pDevIns, PAC97STATE pThis, PAC97STREAM pStream, bool fInTimer);
 
 static DECLCALLBACK(void) ichac97R3Reset(PPDMDEVINS pDevIns);
 
@@ -733,13 +733,13 @@ static void ichac97R3StreamFetchBDLE(PAC97STATE pThis, PAC97STREAM pStream)
 /**
  * Updates the status register (SR) of an AC'97 audio stream.
  *
+ * @param   pDevIns             The device instance.
  * @param   pThis               AC'97 state.
  * @param   pStream             AC'97 stream to update SR for.
  * @param   new_sr              New value for status register (SR).
  */
-static void ichac97StreamUpdateSR(PAC97STATE pThis, PAC97STREAM pStream, uint32_t new_sr)
+static void ichac97StreamUpdateSR(PPDMDEVINS pDevIns, PAC97STATE pThis, PAC97STREAM pStream, uint32_t new_sr)
 {
-    PPDMDEVINS  pDevIns = ICHAC97STATE_2_DEVINS(pThis);
     PAC97BMREGS pRegs   = &pStream->Regs;
 
     bool fSignal = false;
@@ -790,18 +790,19 @@ static void ichac97StreamUpdateSR(PAC97STATE pThis, PAC97STREAM pStream, uint32_
 /**
  * Writes a new value to a stream's status register (SR).
  *
+ * @param   pDevIns             The device instance.
  * @param   pThis               AC'97 device state.
  * @param   pStream             Stream to update SR for.
  * @param   u32Val              New value to set the stream's SR to.
  */
-static void ichac97StreamWriteSR(PAC97STATE pThis, PAC97STREAM pStream, uint32_t u32Val)
+static void ichac97StreamWriteSR(PPDMDEVINS pDevIns, PAC97STATE pThis, PAC97STREAM pStream, uint32_t u32Val)
 {
     PAC97BMREGS pRegs = &pStream->Regs;
 
     Log3Func(("[SD%RU8] SR <- %#x (sr %#x)\n", pStream->u8SD, u32Val, pRegs->sr));
 
     pRegs->sr |= u32Val & ~(AC97_SR_RO_MASK | AC97_SR_WCLEAR_MASK);
-    ichac97StreamUpdateSR(pThis, pStream, pRegs->sr & ~(u32Val & AC97_SR_WCLEAR_MASK));
+    ichac97StreamUpdateSR(pDevIns, pThis, pStream, pRegs->sr & ~(u32Val & AC97_SR_WCLEAR_MASK));
 }
 
 #ifdef IN_RING3
@@ -1244,7 +1245,7 @@ static DECLCALLBACK(int) ichac97R3StreamAsyncIOThread(RTTHREAD hThreadSelf, void
                 continue;
             }
 
-            ichac97R3StreamUpdate(pThis, pStream, false /* fInTimer */);
+            ichac97R3StreamUpdate(pDevIns, pThis, pStream, false /* fInTimer */);
 
             int rc3 = RTCritSectLeave(&pAIO->CritSect);
             AssertRC(rc3);
@@ -1469,12 +1470,13 @@ static void ichac97R3BDLEDumpAll(PAC97STATE pThis, uint64_t u64BDLBase, uint16_t
  * own async I/O thread. This thread also will call this function
  * (with fInTimer set to @c false).
  *
+ * @param   pDevIns             The device instance.
  * @param   pThis               AC'97 state.
  * @param   pStream             AC'97 stream to update.
  * @param   fInTimer            Whether to this function was called from the timer
  *                              context or an asynchronous I/O stream thread (if supported).
  */
-static void ichac97R3StreamUpdate(PAC97STATE pThis, PAC97STREAM pStream, bool fInTimer)
+static void ichac97R3StreamUpdate(PPDMDEVINS pDevIns, PAC97STATE pThis, PAC97STREAM pStream, bool fInTimer)
 {
     RT_NOREF(fInTimer);
 
@@ -1502,7 +1504,7 @@ static void ichac97R3StreamUpdate(PAC97STATE pThis, PAC97STREAM pStream, bool fI
                           pStream->State.cbTransferChunk, DrvAudioHlpBytesToMilli(pStream->State.cbTransferChunk, &pStream->State.Cfg.Props)));
 
                 /* Do the DMA transfer. */
-                rc2 = ichac97R3StreamTransfer(pThis, pStream, RT_MIN(pStream->State.cbTransferChunk, cbStreamFree));
+                rc2 = ichac97R3StreamTransfer(pDevIns, pThis, pStream, RT_MIN(pStream->State.cbTransferChunk, cbStreamFree));
                 AssertRC(rc2);
 
                 pStream->State.tsLastUpdateNs = RTTimeNanoTS();
@@ -1590,7 +1592,7 @@ static void ichac97R3StreamUpdate(PAC97STATE pThis, PAC97STREAM pStream, bool fI
             {
                 /* When running synchronously, do the DMA data transfers here.
                  * Otherwise this will be done in the stream's async I/O thread. */
-                rc2 = ichac97R3StreamTransfer(pThis, pStream, cbStreamUsed);
+                rc2 = ichac97R3StreamTransfer(pDevIns, pThis, pStream, cbStreamUsed);
                 AssertRC(rc2);
             }
 # ifdef VBOX_WITH_AUDIO_AC97_ASYNC_IO
@@ -2625,7 +2627,7 @@ static DECLCALLBACK(void) ichac97R3Timer(PPDMDEVINS pDevIns, PTMTIMER pTimer, vo
     Assert(PDMDevHlpCritSectIsOwner(pDevIns, &pThis->CritSect));
     Assert(PDMDevHlpTimerIsLockOwner(pDevIns, RT_SAFE_SUBSCRIPT8(pThis->ahTimers, pStream->u8SD)));
 
-    ichac97R3StreamUpdate(pThis, pStream, true /* fInTimer */);
+    ichac97R3StreamUpdate(pDevIns, pThis, pStream, true /* fInTimer */);
 
     PAUDMIXSINK pSink = ichac97R3IndexToSink(pThis, pStream->u8SD);
     if (pSink && AudioMixerSinkIsActive(pSink))
@@ -2666,11 +2668,12 @@ DECLINLINE(void) ichac97R3TimerSet(PPDMDEVINS pDevIns, PAC97STATE pThis, PAC97ST
  * internal FIFO buffer and writing it as DMA data to the device.
  *
  * @returns IPRT status code.
+ * @param   pDevIns             The device instance.
  * @param   pThis               AC'97 state.
  * @param   pStream             AC'97 stream to update.
  * @param   cbToProcessMax      Maximum of data (in bytes) to process.
  */
-static int ichac97R3StreamTransfer(PAC97STATE pThis, PAC97STREAM pStream, uint32_t cbToProcessMax)
+static int ichac97R3StreamTransfer(PPDMDEVINS pDevIns, PAC97STATE pThis, PAC97STREAM pStream, uint32_t cbToProcessMax)
 {
     AssertPtrReturn(pThis,       VERR_INVALID_POINTER);
     AssertPtrReturn(pStream,     VERR_INVALID_POINTER);
@@ -2851,7 +2854,7 @@ static int ichac97R3StreamTransfer(PAC97STATE pThis, PAC97STREAM pStream, uint32
                 ichac97R3StreamFetchBDLE(pThis, pStream);
             }
 
-            ichac97StreamUpdateSR(pThis, pStream, new_sr);
+            ichac97StreamUpdateSR(pDevIns, pThis, pStream, new_sr);
         }
 
         if (/* All data processed? */
@@ -3108,7 +3111,7 @@ ichac97IoPortNabmWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint3
                         ichac97R3StreamEnable(pThis, pStream, false /* fEnable */);
                         ichac97R3StreamReset(pThis, pStream);
 
-                        ichac97StreamUpdateSR(pThis, pStream, AC97_SR_DCH); /** @todo Do we need to do that? */
+                        ichac97StreamUpdateSR(pDevIns, pThis, pStream, AC97_SR_DCH); /** @todo Do we need to do that? */
                     }
                     else
                     {
@@ -3156,7 +3159,7 @@ ichac97IoPortNabmWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint3
                 case PO_SR:
                 case MC_SR:
                 {
-                    ichac97StreamWriteSR(pThis, pStream, u32);
+                    ichac97StreamWriteSR(pDevIns, pThis, pStream, u32);
                     break;
                 }
 
@@ -3174,7 +3177,7 @@ ichac97IoPortNabmWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint3
                 case PI_SR:
                 case PO_SR:
                 case MC_SR:
-                    ichac97StreamWriteSR(pThis, pStream, u32);
+                    ichac97StreamWriteSR(pDevIns, pThis, pStream, u32);
                     break;
                 default:
                     LogRel2(("AC97: Warning: Unimplemented NABMWrite offPort=%#x <- %#x LB 2\n", offPort, u32));
@@ -3932,16 +3935,6 @@ static int ichac97R3ReconfigLunWithNullAudio(PAC97STATE pThis, unsigned iLun)
 }
 
 /**
- * @interface_method_impl{PDMDEVREG,pfnRelocate}
- */
-static DECLCALLBACK(void) ichac97R3Relocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta)
-{
-    NOREF(offDelta);
-    PAC97STATE pThis = PDMDEVINS_2_DATA(pDevIns, PAC97STATE);
-    pThis->pDevInsRC = PDMDEVINS_2_RCPTR(pDevIns);
-}
-
-/**
  * @interface_method_impl{PDMDEVREG,pfnDestruct}
  */
 static DECLCALLBACK(int) ichac97R3Destruct(PPDMDEVINS pDevIns)
@@ -3979,8 +3972,6 @@ static DECLCALLBACK(int) ichac97R3Construct(PPDMDEVINS pDevIns, int iInstance, P
      * Initialize data so we can run the destructor without scewing up.
      */
     pThis->pDevInsR3                = pDevIns;
-    pThis->pDevInsR0                = PDMDEVINS_2_R0PTR(pDevIns);
-    pThis->pDevInsRC                = PDMDEVINS_2_RCPTR(pDevIns);
     pThis->IBase.pfnQueryInterface  = ichac97R3QueryInterface;
     RTListInit(&pThis->lstDrv);
 
@@ -4336,7 +4327,7 @@ const PDMDEVREG g_DeviceICHAC97 =
     /* .pszR0Mod = */               "VBoxDDR0.r0",
     /* .pfnConstruct = */           ichac97R3Construct,
     /* .pfnDestruct = */            ichac97R3Destruct,
-    /* .pfnRelocate = */            ichac97R3Relocate,
+    /* .pfnRelocate = */            NULL,
     /* .pfnMemSetup = */            NULL,
     /* .pfnPowerOn = */             NULL,
     /* .pfnReset = */               ichac97R3Reset,
