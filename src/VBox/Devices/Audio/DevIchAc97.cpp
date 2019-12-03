@@ -676,8 +676,6 @@ static void ichac97ColdReset(PAC97STATE pThis)
  */
 DECLINLINE(PAUDMIXSINK) ichac97R3IndexToSink(PAC97STATE pThis, uint8_t uIndex)
 {
-    AssertPtrReturn(pThis, NULL);
-
     switch (uIndex)
     {
         case AC97SOUNDSOURCE_PI_INDEX: return pThis->pSinkLineIn;
@@ -810,9 +808,6 @@ static void ichac97StreamWriteSR(PPDMDEVINS pDevIns, PAC97STATE pThis, PAC97STRE
  */
 static bool ichac97R3StreamIsEnabled(PAC97STATE pThis, PAC97STREAM pStream)
 {
-    AssertPtrReturn(pThis,   false);
-    AssertPtrReturn(pStream, false);
-
     PAUDMIXSINK pSink = ichac97R3IndexToSink(pThis, pStream->u8SD);
     bool fIsEnabled = RT_BOOL(AudioMixerSinkGetStatus(pSink) & AUDMIXSINK_STS_RUNNING);
 
@@ -831,9 +826,6 @@ static bool ichac97R3StreamIsEnabled(PAC97STATE pThis, PAC97STREAM pStream)
  */
 static int ichac97R3StreamEnable(PAC97STATE pThis, PAC97STREAM pStream, bool fEnable)
 {
-    AssertPtrReturn(pThis,   VERR_INVALID_POINTER);
-    AssertPtrReturn(pStream, VERR_INVALID_POINTER);
-
     ichac97R3StreamLock(pStream);
 
     int rc = VINF_SUCCESS;
@@ -899,9 +891,6 @@ static int ichac97R3StreamEnable(PAC97STATE pThis, PAC97STREAM pStream, bool fEn
  */
 static void ichac97R3StreamReset(PAC97STATE pThis, PAC97STREAM pStream)
 {
-    AssertPtrReturnVoid(pThis);
-    AssertPtrReturnVoid(pStream);
-
     ichac97R3StreamLock(pStream);
 
     LogFunc(("[SD%RU8]\n", pStream->u8SD));
@@ -936,8 +925,6 @@ static void ichac97R3StreamReset(PAC97STATE pThis, PAC97STREAM pStream)
 static int ichac97R3StreamCreate(PAC97STATE pThis, PAC97STREAM pStream, uint8_t u8SD)
 {
     RT_NOREF(pThis);
-    AssertPtrReturn(pStream, VERR_INVALID_PARAMETER);
-    /** @todo Validate u8Strm. */
 
     LogFunc(("[SD%RU8] pStream=%p\n", u8SD, pStream));
 
@@ -1089,9 +1076,7 @@ static int ichac97R3StreamWrite(PAC97STATE pThis, PAC97STREAM pDstStream, PAUDMI
                                 uint32_t *pcbWritten)
 {
     RT_NOREF(pThis);
-    AssertPtrReturn(pDstStream,  VERR_INVALID_POINTER);
-    AssertPtrReturn(pSrcMixSink, VERR_INVALID_POINTER);
-    AssertReturn(cbToWrite,      VERR_INVALID_PARAMETER);
+    AssertReturn(cbToWrite > 0,  VERR_INVALID_PARAMETER);
     /* pcbWritten is optional. */
 
     PRTCIRCBUF pCircBuf = pDstStream->State.pCircBuf;
@@ -1135,9 +1120,7 @@ static int ichac97R3StreamRead(PAC97STATE pThis, PAC97STREAM pSrcStream, PAUDMIX
                                uint32_t *pcbRead)
 {
     RT_NOREF(pThis);
-    AssertPtrReturn(pSrcStream,  VERR_INVALID_POINTER);
-    AssertPtrReturn(pDstMixSink, VERR_INVALID_POINTER);
-    AssertReturn(cbToRead,       VERR_INVALID_PARAMETER);
+    AssertReturn(cbToRead > 0, VERR_INVALID_PARAMETER);
     /* pcbRead is optional. */
 
     PRTCIRCBUF pCircBuf = pSrcStream->State.pCircBuf;
@@ -1699,9 +1682,7 @@ static PAC97DRIVERSTREAM ichac97R3MixerGetDrvStream(PAC97STATE pThis, PAC97DRIVE
  */
 static int ichac97R3MixerAddDrvStream(PAC97STATE pThis, PAUDMIXSINK pMixSink, PPDMAUDIOSTREAMCFG pCfg, PAC97DRIVER pDrv)
 {
-    AssertPtrReturn(pThis,    VERR_INVALID_POINTER);
     AssertPtrReturn(pMixSink, VERR_INVALID_POINTER);
-    AssertPtrReturn(pCfg,     VERR_INVALID_POINTER);
 
     PPDMAUDIOSTREAMCFG pStreamCfg = DrvAudioHlpStreamCfgDup(pCfg);
     if (!pStreamCfg)
@@ -1782,9 +1763,7 @@ static int ichac97R3MixerAddDrvStream(PAC97STATE pThis, PAUDMIXSINK pMixSink, PP
  */
 static int ichac97R3MixerAddDrvStreams(PAC97STATE pThis, PAUDMIXSINK pMixSink, PPDMAUDIOSTREAMCFG pCfg)
 {
-    AssertPtrReturn(pThis,    VERR_INVALID_POINTER);
     AssertPtrReturn(pMixSink, VERR_INVALID_POINTER);
-    AssertPtrReturn(pCfg,     VERR_INVALID_POINTER);
 
     if (!DrvAudioHlpStreamCfgIsValid(pCfg))
         return VERR_INVALID_PARAMETER;
@@ -1855,9 +1834,6 @@ static int ichac97R3MixerAddDrv(PAC97STATE pThis, PAC97DRIVER pDrv)
  */
 static void ichac97R3MixerRemoveDrv(PAC97STATE pThis, PAC97DRIVER pDrv)
 {
-    AssertPtrReturnVoid(pThis);
-    AssertPtrReturnVoid(pDrv);
-
     if (pDrv->MicIn.pMixStrm)
     {
         if (AudioMixerSinkGetRecordingSource(pThis->pSinkMicIn) == pDrv->MicIn.pMixStrm)
@@ -1900,9 +1876,6 @@ static void ichac97R3MixerRemoveDrv(PAC97STATE pThis, PAC97DRIVER pDrv)
 static void ichac97R3MixerRemoveDrvStream(PAC97STATE pThis, PAUDMIXSINK pMixSink,
                                           PDMAUDIODIR enmDir, PDMAUDIODSTSRCUNION dstSrc, PAC97DRIVER pDrv)
 {
-    AssertPtrReturnVoid(pThis);
-    AssertPtrReturnVoid(pMixSink);
-
     PAC97DRIVERSTREAM pDrvStream = ichac97R3MixerGetDrvStream(pThis, pDrv, enmDir, dstSrc);
     if (pDrvStream)
     {
@@ -1927,7 +1900,6 @@ static void ichac97R3MixerRemoveDrvStream(PAC97STATE pThis, PAUDMIXSINK pMixSink
 static void ichac97R3MixerRemoveDrvStreams(PAC97STATE pThis, PAUDMIXSINK pMixSink,
                                            PDMAUDIODIR enmDir, PDMAUDIODSTSRCUNION dstSrc)
 {
-    AssertPtrReturnVoid(pThis);
     AssertPtrReturnVoid(pMixSink);
 
     PAC97DRIVER pDrv;
@@ -2152,7 +2124,6 @@ static int ichac97R3StreamReOpen(PAC97STATE pThis, PAC97STREAM pStream, bool fFo
  */
 static void ichac97R3StreamLock(PAC97STREAM pStream)
 {
-    AssertPtrReturnVoid(pStream);
     int rc2 = RTCritSectEnter(&pStream->State.CritSect);
     AssertRC(rc2);
 }
@@ -2165,7 +2136,6 @@ static void ichac97R3StreamLock(PAC97STREAM pStream)
  */
 static void ichac97R3StreamUnlock(PAC97STREAM pStream)
 {
-    AssertPtrReturnVoid(pStream);
     int rc2 = RTCritSectLeave(&pStream->State.CritSect);
     AssertRC(rc2);
 }
@@ -2178,8 +2148,6 @@ static void ichac97R3StreamUnlock(PAC97STREAM pStream)
  */
 static uint32_t ichac97R3StreamGetUsed(PAC97STREAM pStream)
 {
-    AssertPtrReturn(pStream, 0);
-
     if (!pStream->State.pCircBuf)
         return 0;
 
@@ -2194,8 +2162,6 @@ static uint32_t ichac97R3StreamGetUsed(PAC97STREAM pStream)
  */
 static uint32_t ichac97R3StreamGetFree(PAC97STREAM pStream)
 {
-    AssertPtrReturn(pStream, 0);
-
     if (!pStream->State.pCircBuf)
         return 0;
 
@@ -2492,8 +2458,6 @@ static void ichac97R3MixerRecordSelect(PAC97STATE pThis, uint32_t val)
  */
 static int ichac97R3MixerReset(PAC97STATE pThis)
 {
-    AssertPtrReturn(pThis, VERR_INVALID_PARAMETER);
-
     LogFlowFuncEnter();
 
     RT_ZERO(pThis->mixer_data);
@@ -2667,9 +2631,6 @@ DECLINLINE(void) ichac97R3TimerSet(PPDMDEVINS pDevIns, PAC97STREAM pStream, uint
  */
 static int ichac97R3StreamTransfer(PPDMDEVINS pDevIns, PAC97STATE pThis, PAC97STREAM pStream, uint32_t cbToProcessMax)
 {
-    AssertPtrReturn(pThis,       VERR_INVALID_POINTER);
-    AssertPtrReturn(pStream,     VERR_INVALID_POINTER);
-
     if (!cbToProcessMax)
         return VINF_SUCCESS;
 
