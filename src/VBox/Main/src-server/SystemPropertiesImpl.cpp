@@ -1575,9 +1575,7 @@ HRESULT SystemProperties::getSupportedStorageBuses(std::vector<StorageBus_T> &aS
         StorageBus_SAS,
         StorageBus_USB,
         StorageBus_PCIe,
-#ifdef DEBUG
         StorageBus_VirtioSCSI,
-#endif
     };
     aSupportedStorageBuses.assign(aStorageBuses,
                                   aStorageBuses + RT_ELEMENTS(aStorageBuses));
@@ -1598,9 +1596,7 @@ HRESULT SystemProperties::getSupportedStorageControllerTypes(std::vector<Storage
         StorageControllerType_LsiLogicSas,
         StorageControllerType_USB,
         StorageControllerType_NVMe,
-#ifdef DEBUG
         StorageControllerType_VirtioSCSI,
-#endif
     };
     aSupportedStorageControllerTypes.assign(aStorageControllerTypes,
                                             aStorageControllerTypes + RT_ELEMENTS(aStorageControllerTypes));

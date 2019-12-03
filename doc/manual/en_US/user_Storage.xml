@@ -58,8 +58,8 @@
       to a device called hard disk controller which drives hard disk
       operation and data transfers. &product-name; can emulate the most
       common types of hard disk controllers typically found in computing
-      devices: IDE, SATA (AHCI), SCSI, SAS, USB-based, and NVMe mass
-      storage devices.
+      devices: IDE, SATA (AHCI), SCSI, SAS, USB-based, NVMe and
+      virtio-scsi mass storage devices.
     </para>
 
     <itemizedlist>
@@ -308,6 +308,25 @@
         </warning>
       </listitem>
 
+      <listitem>
+        <para>
+          <emphasis role="bold">Virtual I/O Device SCSI</emphasis> is a
+          standard to connect virtual storage devices like hard disks or
+          optical drives to a VM. Recent Linux and Windows versions
+          support these devices (Windows needs additional drivers).
+          Currently the virtio-scsi controller is experimental.
+        </para>
+
+        <warning>
+          <para>
+            The virtio-scsi controller will only be seen by OSes with
+            device support for it. In particular, <emphasis>there is
+            no built-in support in Windows</emphasis>. So Windows will
+            not see such disks unless you install additional drivers.
+          </para>
+        </warning>
+      </listitem>
+
     </itemizedlist>
 
     <para>
@@ -356,6 +375,13 @@
       <listitem>
         <para>
           Up to 255 slots attached to the NVMe controller, if enabled
+          and supported by the guest OS.
+        </para>
+      </listitem>
+
+      <listitem>
+        <para>
+          Up to 256 slots attached to the virtio-scsi controller, if enabled
           and supported by the guest OS.
         </para>
       </listitem>

@@ -4967,7 +4967,7 @@ UUID="457af700-bc0a-4258-aa3c-13b03da171f2"
                             [--add ide|sata|scsi|floppy|sas|usb|pcie]
                             [--controller LSILogic|LSILogicSAS|BusLogic|
                                           IntelAhci|PIIX3|PIIX4|ICH6|I82078|
-                                          USB|NVMe]
+                                          USB|NVMe|VirtIO]
                             [--portcount &lt;1-30&gt;]
                             [--hostiocache on|off]
                             [--bootable on|off]

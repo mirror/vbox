@@ -63,6 +63,7 @@
           <arg choice="plain">PIIX3</arg>
           <arg choice="plain">PIIX4</arg>
           <arg choice="plain">USB</arg>
+          <arg choice="plain">VirtIO</arg>
         </group></arg>
       <arg>--bootable=<group choice="plain">
           <arg choice="plain">on</arg>
