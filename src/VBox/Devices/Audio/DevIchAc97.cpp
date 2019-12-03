@@ -142,7 +142,7 @@
 #define AC97_BARS_VOL_MUTE_SHIFT        15     /**< Mute bit shift for the Baseline Audio Register Set (5.7.2). */
 /** @} */
 
-/* AC'97 uses 1.5dB steps, we use 0.375dB steps: 1 AC'97 step equals 4 PDM steps. */
+/** AC'97 uses 1.5dB steps, we use 0.375dB steps: 1 AC'97 step equals 4 PDM steps. */
 #define AC97_DB_FACTOR                  4
 
 #define AC97_REC_MASK 7
@@ -264,6 +264,8 @@ enum
 /*********************************************************************************************************************************
 *   Structures and Typedefs                                                                                                      *
 *********************************************************************************************************************************/
+/** The ICH AC'97 (Intel) controller. */
+typedef struct AC97STATE *PAC97STATE;
 
 /**
  * Buffer Descriptor List Entry (BDLE).
@@ -300,7 +302,7 @@ typedef AC97BMREGS *PAC97BMREGS;
 
 #ifdef VBOX_WITH_AUDIO_AC97_ASYNC_IO
 /**
- * Structure keeping the AC'97 stream's state for asynchronous I/O.
+ * Asynchronous I/O state for an AC'97 stream.
  */
 typedef struct AC97STREAMSTATEAIO
 {
@@ -317,14 +319,14 @@ typedef struct AC97STREAMSTATEAIO
     /** Whether the thread should do any data processing or not. */
     volatile bool           fEnabled;
     bool                    afPadding[5];
-} AC97STREAMSTATEAIO, *PAC97STREAMSTATEAIO;
+} AC97STREAMSTATEAIO;
+/** Pointer to the async I/O state for an AC'97 stream. */
+typedef AC97STREAMSTATEAIO *PAC97STREAMSTATEAIO;
 #endif
 
-/** The ICH AC'97 (Intel) controller. */
-typedef struct AC97STATE *PAC97STATE;
 
 /**
- * Structure for keeping the internal state of an AC'97 stream.
+ * The internal state of an AC'97 stream.
  */
 typedef struct AC97STREAMSTATE
 {
@@ -366,9 +368,9 @@ AssertCompileSizeAlignment(AC97STREAMSTATE, 8);
 typedef AC97STREAMSTATE *PAC97STREAMSTATE;
 
 /**
- * Structure containing AC'97 stream debug stuff, configurable at runtime.
+ * Runtime configurable debug stuff for an AC'97 stream.
  */
-typedef struct AC97STREAMDBGINFORT
+typedef struct AC97STREAMDEBUGRT
 {
     /** Whether debugging is enabled or not. */
     bool                     fEnabled;
@@ -381,19 +383,19 @@ typedef struct AC97STREAMDBGINFORT
      *  For input streams, this dumps data being written to the device DMA,
      *  whereas for output streams this dumps data being read from the device DMA. */
     R3PTRTYPE(PPDMAUDIOFILE) pFileDMA;
-} AC97STREAMDBGINFORT, *PAC97STREAMDBGINFORT;
+} AC97STREAMDEBUGRT;
 
 /**
- * Structure containing AC'97 stream debug information.
+ * Debug stuff for an AC'97 stream.
  */
-typedef struct AC97STREAMDBGINFO
+typedef struct AC97STREAMDEBUG
 {
-    /** Runtime debug info. */
-    AC97STREAMDBGINFORT      Runtime;
-} AC97STREAMDBGINFO ,*PAC97STREAMDBGINFO;
+    /** Runtime debug stuff. */
+    AC97STREAMDEBUGRT       Runtime;
+} AC97STREAMDEBUG;
 
 /**
- * Structure for an AC'97 stream.
+ * An AC'97 stream.
  */
 typedef struct AC97STREAM
 {
@@ -409,9 +411,9 @@ typedef struct AC97STREAM
 #if HC_ARCH_BITS == 32
     uint32_t              Padding1;
 #endif
-    /** Debug information. */
-    AC97STREAMDBGINFO     Dbg;
-} AC97STREAM, *PAC97STREAM;
+    /** Debug stuff. */
+    AC97STREAMDEBUG         Dbg;
+} AC97STREAM;
 AssertCompileSizeAlignment(AC97STREAM, 8);
 /** Pointer to an AC'97 stream (registers + state). */
 typedef AC97STREAM *PAC97STREAM;
@@ -419,17 +421,20 @@ typedef AC97STREAM *PAC97STREAM;
 typedef struct AC97STATE *PAC97STATE;
 #ifdef VBOX_WITH_AUDIO_AC97_ASYNC_IO
 /**
- * Structure for the async I/O thread context.
+ * Asynchronous I/O thread context (arguments).
  */
 typedef struct AC97STREAMTHREADCTX
 {
     PAC97STATE  pThis;
     PAC97STREAM pStream;
-} AC97STREAMTHREADCTX, *PAC97STREAMTHREADCTX;
+} AC97STREAMTHREADCTX;
+/** Pointer to the context for an async I/O thread. */
+typedef AC97STREAMTHREADCTX *PAC97STREAMTHREADCTX;
 #endif
 
 /**
- * Structure defining a (host backend) driver stream.
+ * A driver stream (host backend).
+ *
  * Each driver has its own instances of audio mixer streams, which then
  * can go into the same (or even different) audio mixer sinks.
  */
@@ -437,10 +442,12 @@ typedef struct AC97DRIVERSTREAM
 {
     /** Associated mixer stream handle. */
     R3PTRTYPE(PAUDMIXSTREAM)           pMixStrm;
-} AC97DRIVERSTREAM, *PAC97DRIVERSTREAM;
+} AC97DRIVERSTREAM;
+/** Pointer to a driver stream. */
+typedef AC97DRIVERSTREAM *PAC97DRIVERSTREAM;
 
 /**
- * Struct for maintaining a host backend driver.
+ * A host backend driver (LUN).
  */
 typedef struct AC97DRIVER
 {
@@ -467,19 +474,25 @@ typedef struct AC97DRIVER
     AC97DRIVERSTREAM                   MicIn;
     /** Driver stream for output. */
     AC97DRIVERSTREAM                   Out;
-} AC97DRIVER, *PAC97DRIVER;
+} AC97DRIVER;
+/** Pointer to a host backend driver (LUN). */
+typedef AC97DRIVER *PAC97DRIVER;
 
-typedef struct AC97STATEDBGINFO
+/**
+ * Debug settings.
+ */
+typedef struct AC97STATEDEBUG
 {
     /** Whether debugging is enabled or not. */
     bool                               fEnabled;
     /** Path where to dump the debug output to.
      *  Defaults to VBOX_AUDIO_DEBUG_DUMP_PCM_DATA_PATH. */
-    char                               szOutPath[RTPATH_MAX + 1];
-} AC97STATEDBGINFO, *PAC97STATEDBGINFO;
+    char                               szOutPath[RTPATH_MAX];
+} AC97STATEDEBUG;
+
 
 /**
- * Structure for maintaining an AC'97 device state.
+ * The shared AC'97 device state.
  */
 typedef struct AC97STATE
 {
@@ -523,7 +536,8 @@ typedef struct AC97STATE
     uint32_t                uCodecModel;
     /** The base interface for LUN\#0. */
     PDMIBASE                IBase;
-    AC97STATEDBGINFO        Dbg;
+    /** Debug settings. */
+    AC97STATEDEBUG          Dbg;
 
     /** PCI region \#0: NAM I/O ports. */
     IOMIOPORTHANDLE         hIoPortsNam;
@@ -539,8 +553,7 @@ typedef struct AC97STATE
 #endif
 } AC97STATE;
 AssertCompileMemberAlignment(AC97STATE, aStreams, 8);
-/** Pointer to a AC'97 state. */
-typedef AC97STATE *PAC97STATE;
+
 
 /**
  * Acquires the AC'97 lock.
@@ -632,7 +645,6 @@ static void               ichac97R3MixerRemoveDrvStream(PAC97STATE pThis, PAUDMI
 static void               ichac97R3MixerRemoveDrvStreams(PAC97STATE pThis, PAUDMIXSINK pMixSink, PDMAUDIODIR enmDir, PDMAUDIODSTSRCUNION dstSrc);
 
 # ifdef VBOX_WITH_AUDIO_AC97_ASYNC_IO
-static DECLCALLBACK(int)  ichac97R3StreamAsyncIOThread(RTTHREAD hThreadSelf, void *pvUser);
 static int                ichac97R3StreamAsyncIOCreate(PAC97STATE pThis, PAC97STREAM pStream);
 static int                ichac97R3StreamAsyncIODestroy(PAC97STATE pThis, PAC97STREAM pStream);
 static int                ichac97R3StreamAsyncIONotify(PAC97STATE pThis, PAC97STREAM pStream);
@@ -951,7 +963,7 @@ static int ichac97R3StreamCreate(PAC97STATE pThis, PAC97STREAM pStream, uint8_t 
         else
             RTStrPrintf(szFile, sizeof(szFile), "ac97StreamReadSD%RU8", pStream->u8SD);
 
-        char szPath[RTPATH_MAX + 1];
+        char szPath[RTPATH_MAX];
         int rc2 = DrvAudioHlpFileNameGet(szPath, sizeof(szPath), pThis->Dbg.szOutPath, szFile,
                                          0 /* uInst */, PDMAUDIOFILETYPE_WAV, PDMAUDIOFILENAME_FLAGS_NONE);
         AssertRC(rc2);
@@ -1206,6 +1218,10 @@ static DECLCALLBACK(int) ichac97R3StreamAsyncIOThread(RTTHREAD hThreadSelf, void
 
     RTThreadUserSignal(hThreadSelf);
 
+    /** @todo r=bird: What wasn't mentioned by the original author of this
+     *        code, is that pCtx is now invalid as it must be assumed to be out
+     *        of scope in the parent thread.  It is a 'ing stack object! */
+
     LogFunc(("[SD%RU8] Started\n", pStream->u8SD));
 
     for (;;)
@@ -1268,7 +1284,21 @@ static int ichac97R3StreamAsyncIOCreate(PAC97STATE pThis, PAC97STREAM pStream)
             rc = RTCritSectInit(&pAIO->CritSect);
             if (RT_SUCCESS(rc))
             {
+/** @todo r=bird: Why is Ctx on the stack?  There is no mention of this in
+ *        the thread structure.  Besides, you only wait 10seconds, if the
+ *        host is totally overloaded, it may go out of scope before the new
+ *        thread has finished with it and it will like crash and burn.
+ *
+ *        Also, there is RTThreadCreateF for giving threads complicated
+ *        names.
+ *
+ *        Why aren't this code using the PDM threads (PDMDevHlpThreadCreate)?
+ *        They would help you with managing stuff like VM suspending, resuming
+ *        and powering off.
+ *
+ *        Finally, just create the threads at construction time. */
                 AC97STREAMTHREADCTX Ctx = { pThis, pStream };
+# error "Busted code! Do not pass a structure living on the parent stack to the poor thread!"
 
                 char szThreadName[64];
                 RTStrPrintf2(szThreadName, sizeof(szThreadName), "ac97AIO%RU8", pStream->u8SD);
