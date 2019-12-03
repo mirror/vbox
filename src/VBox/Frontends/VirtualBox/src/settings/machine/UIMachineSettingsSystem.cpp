@@ -194,7 +194,7 @@ bool UIMachineSettingsSystem::isHIDEnabled() const
 
 KChipsetType UIMachineSettingsSystem::chipsetType() const
 {
-    return (KChipsetType)m_pComboChipsetType->itemData(m_pComboChipsetType->currentIndex()).toInt();
+    return m_pComboChipsetType->currentData().value<KChipsetType>();
 }
 
 void UIMachineSettingsSystem::setUSBEnabled(bool fEnabled)
@@ -266,6 +266,7 @@ void UIMachineSettingsSystem::getFromCache()
 
     /* We are doing that *now* because these combos have
      * dynamical content which depends on cashed value: */
+    repopulateComboChipsetType();
     repopulateComboPointingHIDType();
     repopulateComboParavirtProviderType();
 
@@ -313,10 +314,11 @@ void UIMachineSettingsSystem::putToCache()
     /* Gather 'Motherboard' data: */
     newSystemData.m_iMemorySize = m_pBaseMemoryEditor->value();
     newSystemData.m_bootItems = m_pBootOrderEditor->value();
-    newSystemData.m_chipsetType = (KChipsetType)m_pComboChipsetType->itemData(m_pComboChipsetType->currentIndex()).toInt();
+    newSystemData.m_chipsetType = m_pComboChipsetType->currentData().value<KChipsetType>();
     newSystemData.m_pointingHIDType = m_pComboPointingHIDType->currentData().value<KPointingHIDType>();
-    newSystemData.m_fEnabledIoApic = m_pCheckBoxApic->isChecked() || m_pSliderCPUCount->value() > 1 ||
-                                  (KChipsetType)m_pComboChipsetType->itemData(m_pComboChipsetType->currentIndex()).toInt() == KChipsetType_ICH9;
+    newSystemData.m_fEnabledIoApic =    m_pCheckBoxApic->isChecked()
+                                     || m_pSliderCPUCount->value() > 1
+                                     || m_pComboChipsetType->currentData().value<KChipsetType>() == KChipsetType_ICH9;
     newSystemData.m_fEnabledEFI = m_pCheckBoxEFI->isChecked();
     newSystemData.m_fEnabledUTC = m_pCheckBoxUseUTC->isChecked();
 
@@ -389,7 +391,7 @@ bool UIMachineSettingsSystem::validate(QList<UIValidationMessage> &messages)
         }
 
         /* Chipset type vs IO-APIC test: */
-        if ((KChipsetType)m_pComboChipsetType->itemData(m_pComboChipsetType->currentIndex()).toInt() == KChipsetType_ICH9 && !m_pCheckBoxApic->isChecked())
+        if (m_pComboChipsetType->currentData().value<KChipsetType>() == KChipsetType_ICH9 && !m_pCheckBoxApic->isChecked())
         {
             message.second << tr(
                 "The I/O APIC feature is not currently enabled in the Motherboard section of the System page. "
@@ -739,8 +741,7 @@ void UIMachineSettingsSystem::prepareTabMotherboard()
         AssertPtrReturnVoid(m_pComboChipsetType);
         {
             /* Configure combo-box: */
-            m_pComboChipsetType->addItem(gpConverter->toString(KChipsetType_PIIX3), QVariant(KChipsetType_PIIX3));
-            m_pComboChipsetType->addItem(gpConverter->toString(KChipsetType_ICH9), QVariant(KChipsetType_ICH9));
+            m_pComboChipsetType->setSizeAdjustPolicy(QComboBox::AdjustToContents);
         }
 
         /* Pointing HID Type combo-box created in the .ui file. */
@@ -834,7 +835,7 @@ void UIMachineSettingsSystem::prepareConnections()
 {
     /* Configure 'Motherboard' connections: */
     connect(m_pComboChipsetType, static_cast<void(QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
-        this, &UIMachineSettingsSystem::revalidate);
+            this, &UIMachineSettingsSystem::revalidate);
     connect(m_pComboPointingHIDType, static_cast<void(QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
             this, &UIMachineSettingsSystem::revalidate);
     connect(m_pBaseMemoryEditor, &UIBaseMemoryEditor::sigValidChanged, this, &UIMachineSettingsSystem::revalidate);
@@ -861,6 +862,28 @@ void UIMachineSettingsSystem::cleanup()
     /* Cleanup cache: */
     delete m_pCache;
     m_pCache = 0;
+}
+
+void UIMachineSettingsSystem::repopulateComboChipsetType()
+{
+    /* Chipset Type combo-box created in the .ui file. */
+    AssertPtrReturnVoid(m_pComboChipsetType);
+    {
+        /* Clear combo first of all: */
+        m_pComboChipsetType->clear();
+
+        /* Load currently supported chipset types: */
+        CSystemProperties comProperties = uiCommon().virtualBox().GetSystemProperties();
+        QVector<KChipsetType> chipsetTypes = comProperties.GetSupportedChipsetTypes();
+        /* Take into account currently cached value: */
+        const KChipsetType enmCachedValue = m_pCache->base().m_chipsetType;
+        if (!chipsetTypes.contains(enmCachedValue))
+            chipsetTypes.prepend(enmCachedValue);
+
+        /* Populate combo finally: */
+        foreach (const KChipsetType &enmType, chipsetTypes)
+            m_pComboChipsetType->addItem(gpConverter->toString(enmType), QVariant::fromValue(enmType));
+    }
 }
 
 void UIMachineSettingsSystem::repopulateComboPointingHIDType()
@@ -909,16 +932,12 @@ void UIMachineSettingsSystem::repopulateComboParavirtProviderType()
 
 void UIMachineSettingsSystem::retranslateComboChipsetType()
 {
-    /* For each the element in KChipsetType enum: */
-    for (int iIndex = (int)KChipsetType_Null; iIndex < (int)KChipsetType_Max; ++iIndex)
+    /* For each the element in m_pComboChipsetType: */
+    for (int iIndex = 0; iIndex < m_pComboChipsetType->count(); ++iIndex)
     {
-        /* Cast to the corresponding type: */
-        const KChipsetType enmType = (KChipsetType)iIndex;
-        /* Look for the corresponding item: */
-        const int iCorrespondingIndex = m_pComboChipsetType->findData((int)enmType);
-        /* Re-translate if corresponding item was found: */
-        if (iCorrespondingIndex != -1)
-            m_pComboChipsetType->setItemText(iCorrespondingIndex, gpConverter->toString(enmType));
+        /* Apply retranslated text: */
+        const KChipsetType enmType = m_pComboChipsetType->currentData().value<KChipsetType>();
+        m_pComboChipsetType->setItemText(iIndex, gpConverter->toString(enmType));
     }
 }
 

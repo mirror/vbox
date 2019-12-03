@@ -127,6 +127,8 @@ private:
     /** Cleanups all. */
     void cleanup();
 
+    /** Repopulates Chipset type combo-box. */
+    void repopulateComboChipsetType();
     /** Repopulates Pointing HID type combo-box. */
     void repopulateComboPointingHIDType();
     /** Repopulates Paravirtualization Provider type combo-box. */
