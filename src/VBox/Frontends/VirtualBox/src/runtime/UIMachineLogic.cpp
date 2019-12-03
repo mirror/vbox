@@ -2366,8 +2366,8 @@ void UIMachineLogic::sltAttachWebCamDevice()
 void UIMachineLogic::sltChangeSharedClipboardType(QAction *pAction)
 {
     /* Assign new mode (without save): */
-    KClipboardMode mode = pAction->data().value<KClipboardMode>();
-    machine().SetClipboardMode(mode);
+    KClipboardMode enmMode = pAction->data().value<KClipboardMode>();
+    machine().SetClipboardMode(enmMode);
 }
 
 void UIMachineLogic::sltToggleNetworkAdapterConnection()
@@ -2914,25 +2914,36 @@ void UIMachineLogic::updateMenuDevicesWebCams(QMenu *pMenu)
 
 void UIMachineLogic::updateMenuDevicesSharedClipboard(QMenu *pMenu)
 {
+    /* Acquire current clipboard mode: */
+    const KClipboardMode enmCurrentMode = machine().GetClipboardMode();
+
     /* First run: */
     if (!m_pSharedClipboardActions)
     {
+        /* Prepare action-group: */
         m_pSharedClipboardActions = new QActionGroup(this);
-        for (int i = KClipboardMode_Disabled; i < KClipboardMode_Max; ++i)
+        /* Load currently supported Clipboard modes: */
+        CSystemProperties comProperties = uiCommon().virtualBox().GetSystemProperties();
+        QVector<KClipboardMode> clipboardModes = comProperties.GetSupportedClipboardModes();
+        /* Take current clipboard mode into account: */
+        if (!clipboardModes.contains(enmCurrentMode))
+            clipboardModes.prepend(enmCurrentMode);
+        /* Create action for all clipboard modes: */
+        foreach (const KClipboardMode &enmMode, clipboardModes)
         {
-            KClipboardMode mode = (KClipboardMode)i;
-            QAction *pAction = new QAction(gpConverter->toString(mode), m_pSharedClipboardActions);
+            QAction *pAction = new QAction(gpConverter->toString(enmMode), m_pSharedClipboardActions);
             pMenu->addAction(pAction);
-            pAction->setData(QVariant::fromValue(mode));
+            pAction->setData(QVariant::fromValue(enmMode));
             pAction->setCheckable(true);
-            pAction->setChecked(machine().GetClipboardMode() == mode);
+            pAction->setChecked(enmMode == enmCurrentMode);
         }
+        /* Connect action-group trigger: */
         connect(m_pSharedClipboardActions, &QActionGroup::triggered, this, &UIMachineLogic::sltChangeSharedClipboardType);
     }
     /* Subsequent runs: */
     else
         foreach (QAction *pAction, m_pSharedClipboardActions->actions())
-            if (pAction->data().value<KClipboardMode>() == machine().GetClipboardMode())
+            if (pAction->data().value<KClipboardMode>() == enmCurrentMode)
                 pAction->setChecked(true);
 }
 
