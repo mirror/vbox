@@ -1439,7 +1439,7 @@ HRESULT Appliance::i_importCloudImpl(TaskCloud *pTask)
             }
 
             /* Check the target path. If the path exists and folder isn't empty return an error */
-            {          
+            {
                 Bstr bstrSettingsFilename;
                 /* Based on the VM name, create a target machine path. */
                 hrc = mVirtualBox->ComposeMachineFilename(Bstr(strVMName).raw(),
@@ -1460,7 +1460,7 @@ HRESULT Appliance::i_importCloudImpl(TaskCloud *pTask)
                     size_t counter = 0;
                     RTDIR hDir;
                     vrc = RTDirOpen(&hDir, strMachineFolder.c_str());
-                    if (RT_SUCCESS(vrc)) 
+                    if (RT_SUCCESS(vrc))
                     {
                         RTDIRENTRY DirEntry;
                         while (RT_SUCCESS(RTDirRead(hDir, &DirEntry, NULL)))
