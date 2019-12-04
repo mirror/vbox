@@ -1008,10 +1008,6 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Open the log menu</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>&amp;Find</source>
         <translation type="unfinished">&amp;ค้นหา</translation>
     </message>
@@ -1024,19 +1020,11 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Open Find Pane (%1)</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>&amp;Filter</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Open pane with filtering options</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Open Filter Pane (%1)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -1048,19 +1036,11 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Open Bookmark Pane (%1)</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>&amp;Options</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Open pane with log viewer options</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Open Options Pane (%1)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -1072,19 +1052,11 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Refresh Virtual Machine Log (%1)</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>&amp;Save...</source>
         <translation type="unfinished">&amp;บันทึก...</translation>
     </message>
     <message>
         <source>Save selected virtual machine log</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Save Virtual Machine Log (%1)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -1104,19 +1076,11 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Copy the Selected Object(s) from Host to Guest</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Copy the selected object(s) from host to guest</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Copy to host</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Copy the Selected Object(s) from Guest to Host</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -1136,15 +1100,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Open File Manager Session</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Go one level up to parent folder</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Go One Level Up to Parent Folder</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -1168,10 +1124,6 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Delete Selected File Object(s)</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Refresh</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1192,19 +1144,11 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Copy Selected File Object(s)</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Cut</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Cut selected file object(s)</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Cut Selected File Object(s)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -1216,19 +1160,11 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Paste Copied/Cut File Object(s)</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Select All</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Select all files objects</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Select All Files Objects</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -1240,19 +1176,11 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Invert the Current Selection</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Show Properties</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Show the properties of currently selected file object(s)</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Show the Properties of Currently Selected File Object(s)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -1288,10 +1216,6 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Open the machine tools menu</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Open the machine details pane</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1309,10 +1233,6 @@
     </message>
     <message>
         <source>&amp;Global Tools Menu</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Open the global tools menu</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -1344,10 +1264,6 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Open the snapshot menu</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>&amp;Take...</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1360,20 +1276,12 @@
         <translation type="unfinished">เก็บสแนปช็อตของสถานะปัจจุบันของเวอร์ชวลแมชชีน</translation>
     </message>
     <message>
-        <source>Take Snapshot (%1)</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>&amp;Delete...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Delete selected snapshot of the virtual machine</source>
         <translation type="unfinished">ลบสแนปช็อตที่เลือกของเวอร์ชวลแมชชีน</translation>
-    </message>
-    <message>
-        <source>Delete Snapshot (%1)</source>
-        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>&amp;Restore...</source>
@@ -1384,10 +1292,6 @@
         <translation type="unfinished">คืนค่าของสแนปช็อตที่เลือกให้เวอร์ชวลแมชชีน</translation>
     </message>
     <message>
-        <source>Restore Snapshot (%1)</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>&amp;Properties</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1396,23 +1300,11 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Open Snapshot Properties (%1)</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>&amp;Clone...</source>
         <translation type="unfinished">โ&amp;คลน...</translation>
     </message>
     <message>
-        <source>Clone Virtual Machine (%1)</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>&amp;Medium</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Open the medium menu</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -1420,59 +1312,11 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Add a disk image file</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Add a Disk Image File (%1)</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>&amp;Copy...</source>
         <translation type="unfinished">&amp;คัดลอก...</translation>
     </message>
     <message>
-        <source>Copy selected disk image file</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Copy Disk Image File (%1)</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Move selected disk image file</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Move Disk Image File (%1)</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Remove selected disk image file</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Remove Disk Image File (%1)</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Re&amp;lease...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Release selected disk image file</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Release Disk Image File (%1)</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Open pane with selected disk image file properties</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Open Disk Image File Properties (%1)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -1481,15 +1325,7 @@
     </message>
     <message>
         <source>Refresh the list of disk image files</source>
-        <translation type="unfinished">เรียกรายการไฟล์ดิสก์อิมเมจซ้ำอีกครั้ง</translation>
-    </message>
-    <message>
-        <source>Refresh Disk Image Files (%1)</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Open the network menu</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">เรียกรายการไฟล์ดิสก์อิมเมจซ้ำอีกครั้ง</translation>
     </message>
     <message>
         <source>&amp;Create...</source>
@@ -1504,15 +1340,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Create Host-only Network (%1)</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Remove selected host-only network</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Remove Host-only Network (%1)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -1520,23 +1348,11 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Open Host-only Network Properties (%1)</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Refresh the list of host-only networks</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Refresh Host-only Networks (%1)</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>&amp;Cloud</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Open the cloud menu</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -1556,19 +1372,11 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Add Cloud Profile (%1)</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>&amp;Import Profiles...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Import the list of cloud profiles from external files</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Import Cloud Profiles (%1)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -1584,10 +1392,6 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Remove Cloud Profile (%1)</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Properties</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1600,10 +1404,6 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Open Cloud Profile Properties (%1)</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Help</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1613,10 +1413,6 @@
     </message>
     <message>
         <source>Show cloud profile help</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Show Cloud Profile Help (%1)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -1683,27 +1479,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Open the file manager</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Open the file manager host submenu</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Open the file manager guest submenu</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Open File Manager Options</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Open panel with file manager log</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Open File Manager Log</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -1712,10 +1488,6 @@
     </message>
     <message>
         <source>Open panel with file manager operations</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Open File Manager Operations</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -1743,34 +1515,6 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>S&amp;earch</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Search virtual machines with respect to a search term</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Create a new disk image</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Create a New Disk Image (%1)</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Search</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Open the medium search pane</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Open Medium Search Pane (%1)</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Try</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1787,8 +1531,251 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Guest Control Terminal...</source>
-        <comment>debug action</comment>
+        <source>Display Global Preferences</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open Find Pane</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open Filter Pane</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open Bookmark Pane</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open Options Pane</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Refresh Virtual Machine Log</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Save Virtual Machine Log</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Copy from Host to Guest</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Copy from Guest to Host</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open Log Pane</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open Operations Pane</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open Session Pane</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Go One Level Up</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Delete Selected Object(s)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Refresh Contents</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Rename selected file object</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Rename Selected Object</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Copy Selected Object(s)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Cut Selected Object(s)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Paste Copied/Cut Object(s)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Select All Objects</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Invert Current Selection</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show Properties of Current Object(s)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;New Cloud VM...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Create new cloud virtual machine</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>E&amp;xport Locally...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Export selected virtual machine locally</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>S&amp;earch</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Search virtual machines with respect to a search term</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Take Snapshot</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Delete Snapshot</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Restore Snapshot</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open Snapshot Properties</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Clone Virtual Machine</source>
+        <translation type="unfinished">โคลนเวอร์ชวลแมชชีน</translation>
+    </message>
+    <message>
+        <source>Add a disk image</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Add Disk Image</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Create a new disk image</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Create Disk Image</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Copy selected disk image</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Copy Disk Image</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Move selected disk image</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Move Disk Image</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Remove selected disk image</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Remove Disk Image</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Release selected disk image</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Release Disk Image</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open pane with selected disk image properties</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open Disk Image Properties</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Search</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open the disk image search pane</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open Disk Image Search Pane</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Refresh the list of disk images</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Refresh Disk Images</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Create Host-only Network</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Remove Host-only Network</source>
+        <translation type="unfinished">นำเครือข่ายเฉพาะโฮสต์ออก</translation>
+    </message>
+    <message>
+        <source>Open Host-only Network Properties</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Refresh Host-only Networks</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Add Cloud Profile</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Import Cloud Profiles</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Remove Cloud Profile</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open Cloud Profile Properties</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show Cloud Profile Help</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -1797,6 +1784,11 @@
     </message>
     <message>
         <source>Display soft keyboard</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Guest Control Terminal...</source>
+        <comment>debug action</comment>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -2012,6 +2004,10 @@
         <source>Include all network adapter MAC addresses during cloning.</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>&amp;Machine Base Folder:</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UIApplianceModelItem</name>
@@ -2100,6 +2096,50 @@
     </message>
 </context>
 <context>
+    <name>UIAudioControllerEditor</name>
+    <message>
+        <source>Audio &amp;Controller:</source>
+        <translation type="unfinished">&amp;ตัวควบคุมเสียง:</translation>
+    </message>
+</context>
+<context>
+    <name>UIAudioHostDriverEditor</name>
+    <message>
+        <source>Host Audio &amp;Driver:</source>
+        <translation type="unfinished">ไ&amp;ดร์เวอร์เสียงของโฮสต์:</translation>
+    </message>
+</context>
+<context>
+    <name>UIBaseMemoryEditor</name>
+    <message>
+        <source>Base &amp;Memory:</source>
+        <translation type="unfinished">&amp;หน่วยความจำหลัก:</translation>
+    </message>
+    <message>
+        <source>%1 MB</source>
+        <translation type="unfinished">%1 MB</translation>
+    </message>
+    <message>
+        <source>MB</source>
+        <translation type="unfinished">MB</translation>
+    </message>
+</context>
+<context>
+    <name>UIBootOrderEditor</name>
+    <message>
+        <source>&amp;Boot Order:</source>
+        <translation type="unfinished">ลำดับการ&amp;บูต:</translation>
+    </message>
+    <message>
+        <source>Move Up</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Move Down</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>UIChooserAbstractModel</name>
     <message>
         <source>New group</source>
@@ -2110,11 +2150,11 @@
     <name>UIChooserItemGroup</name>
     <message>
         <source>Enter group</source>
-        <translation type="unfinished">เข้ากลุ่ม</translation>
+        <translation type="obsolete">เข้ากลุ่ม</translation>
     </message>
     <message>
         <source>Exit group</source>
-        <translation type="unfinished">ออกจากกลุ่ม</translation>
+        <translation type="obsolete">ออกจากกลุ่ม</translation>
     </message>
     <message>
         <source>&lt;b&gt;%1&lt;/b&gt;</source>
@@ -2324,6 +2364,1600 @@
     <message>
         <source>Add Profile</source>
         <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UICommon</name>
+    <message>
+        <source>MB</source>
+        <comment>size suffix MBytes=1024 KBytes</comment>
+        <translation type="unfinished">MB</translation>
+    </message>
+    <message>
+        <source>&lt;nobr&gt;%1 MB&lt;/nobr&gt;</source>
+        <comment>details report</comment>
+        <translation type="unfinished">&lt;nobr&gt;%1 MB&lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <source>Enabled</source>
+        <comment>details report (3D Acceleration)</comment>
+        <translation type="unfinished">ใช้</translation>
+    </message>
+    <message>
+        <source>Disabled</source>
+        <comment>details report (3D Acceleration)</comment>
+        <translation type="unfinished">ไม่ใช้</translation>
+    </message>
+    <message>
+        <source>not set</source>
+        <comment>details report (execution engine)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Active</source>
+        <comment>details report (Nested Paging)</comment>
+        <translation type="unfinished">ใช้งานอยู่</translation>
+    </message>
+    <message>
+        <source>Inactive</source>
+        <comment>details report (Nested Paging)</comment>
+        <translation type="unfinished">ไม่ได้ใช้งาน</translation>
+    </message>
+    <message>
+        <source>Active</source>
+        <comment>details report (Unrestricted Execution)</comment>
+        <translation type="unfinished">ใช้งานอยู่</translation>
+    </message>
+    <message>
+        <source>Inactive</source>
+        <comment>details report (Unrestricted Execution)</comment>
+        <translation type="unfinished">ไม่ได้ใช้งาน</translation>
+    </message>
+    <message>
+        <source>Execution engine</source>
+        <comment>details report</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Nested Paging</source>
+        <translation type="unfinished">การแบ่งหน้าซ้อนกัน</translation>
+    </message>
+    <message>
+        <source>Unrestricted Execution</source>
+        <translation type="unfinished">ประมวลผลโดยไม่มีข้อจำกัด</translation>
+    </message>
+    <message>
+        <source>Execution Cap</source>
+        <comment>details report</comment>
+        <translation type="unfinished">จำกัดการประมวลผล</translation>
+    </message>
+    <message>
+        <source>Paravirtualization Interface</source>
+        <comment>details report</comment>
+        <translation type="unfinished">ส่วนเชื่อมต่อพาราเวอร์ชวลไลเซชัน</translation>
+    </message>
+    <message>
+        <source>Processors</source>
+        <comment>details report</comment>
+        <translation type="unfinished">โปรเซสเซอร์</translation>
+    </message>
+    <message>
+        <source>Powered Off</source>
+        <comment>MachineState</comment>
+        <translation type="unfinished">ปิด</translation>
+    </message>
+    <message>
+        <source>Saved</source>
+        <comment>MachineState</comment>
+        <translation type="unfinished">บันทึกไว้</translation>
+    </message>
+    <message>
+        <source>Aborted</source>
+        <comment>MachineState</comment>
+        <translation type="unfinished">ล้มเหลว</translation>
+    </message>
+    <message>
+        <source>Teleported</source>
+        <comment>MachineState</comment>
+        <translation type="unfinished">เคลื่อนย้ายแล้ว</translation>
+    </message>
+    <message>
+        <source>Running</source>
+        <comment>MachineState</comment>
+        <translation type="unfinished">กำลังรัน</translation>
+    </message>
+    <message>
+        <source>Paused</source>
+        <comment>MachineState</comment>
+        <translation type="unfinished">หยุดชั่วคราว</translation>
+    </message>
+    <message>
+        <source>Guru Meditation</source>
+        <comment>MachineState</comment>
+        <translation type="unfinished">กูรูเข้าฌาน</translation>
+    </message>
+    <message>
+        <source>Teleporting</source>
+        <comment>MachineState</comment>
+        <translation type="unfinished">กำลังเคลื่อนย้าย</translation>
+    </message>
+    <message>
+        <source>Taking Snapshot</source>
+        <comment>MachineState</comment>
+        <translation type="unfinished">กำลังเก็บสแนปช็อต</translation>
+    </message>
+    <message>
+        <source>Taking Online Snapshot</source>
+        <comment>MachineState</comment>
+        <translation type="unfinished">กำลังเก็บสแนปช็อตออนไลน์</translation>
+    </message>
+    <message>
+        <source>Taking Live Snapshot</source>
+        <comment>MachineState</comment>
+        <translation type="unfinished">กำลังเก็บไลฟ์สแนปช็อต</translation>
+    </message>
+    <message>
+        <source>Starting</source>
+        <comment>MachineState</comment>
+        <translation type="unfinished">กำลังเริ่ม</translation>
+    </message>
+    <message>
+        <source>Stopping</source>
+        <comment>MachineState</comment>
+        <translation type="unfinished">กำลังหยุด</translation>
+    </message>
+    <message>
+        <source>Saving</source>
+        <comment>MachineState</comment>
+        <translation type="unfinished">กำลังบันทึก</translation>
+    </message>
+    <message>
+        <source>Restoring</source>
+        <comment>MachineState</comment>
+        <translation type="unfinished">กำลังคืนค่า</translation>
+    </message>
+    <message>
+        <source>Teleporting Paused VM</source>
+        <comment>MachineState</comment>
+        <translation type="unfinished">กำลังเคลื่อนย้าย VM ที่หยุดการทำงานไว้</translation>
+    </message>
+    <message>
+        <source>Deleting Snapshot</source>
+        <comment>MachineState</comment>
+        <translation type="unfinished">กำลังลบสแนปช็อต</translation>
+    </message>
+    <message>
+        <source>Restoring Snapshot</source>
+        <comment>MachineState</comment>
+        <translation type="unfinished">กำลังคืนค่าสแนปช็อต</translation>
+    </message>
+    <message>
+        <source>Setting Up</source>
+        <comment>MachineState</comment>
+        <translation type="unfinished">กำลังตั้งค่า</translation>
+    </message>
+    <message>
+        <source>Unlocked</source>
+        <comment>SessionState</comment>
+        <translation type="unfinished">ไม่ล็อค</translation>
+    </message>
+    <message>
+        <source>Locked</source>
+        <comment>SessionState</comment>
+        <translation type="unfinished">ล็อค</translation>
+    </message>
+    <message>
+        <source>Spawning</source>
+        <comment>SessionState</comment>
+        <translation type="unfinished">กำลังแตกแขนง</translation>
+    </message>
+    <message>
+        <source>Unlocking</source>
+        <comment>SessionState</comment>
+        <translation type="unfinished">กำลังปลดล็อค</translation>
+    </message>
+    <message>
+        <source>None</source>
+        <comment>ParavirtProvider</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Default</source>
+        <comment>ParavirtProvider</comment>
+        <translation type="unfinished">ค่าตั้งต้น</translation>
+    </message>
+    <message>
+        <source>Legacy</source>
+        <comment>ParavirtProvider</comment>
+        <translation type="unfinished">รุ่นเก่า</translation>
+    </message>
+    <message>
+        <source>Minimal</source>
+        <comment>ParavirtProvider</comment>
+        <translation type="unfinished">ขั้นต่ำ</translation>
+    </message>
+    <message>
+        <source>Hyper-V</source>
+        <comment>ParavirtProvider</comment>
+        <translation type="unfinished">Hyper-V</translation>
+    </message>
+    <message>
+        <source>KVM</source>
+        <comment>ParavirtProvider</comment>
+        <translation type="unfinished">KVM</translation>
+    </message>
+    <message>
+        <source>None</source>
+        <comment>DeviceType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Floppy</source>
+        <comment>DeviceType</comment>
+        <translation type="unfinished">ฟลอปปี้</translation>
+    </message>
+    <message>
+        <source>Optical</source>
+        <comment>DeviceType</comment>
+        <translation type="unfinished">ออปติคัล</translation>
+    </message>
+    <message>
+        <source>Hard Disk</source>
+        <comment>DeviceType</comment>
+        <translation type="unfinished">ฮาร์ดดิสก์</translation>
+    </message>
+    <message>
+        <source>Network</source>
+        <comment>DeviceType</comment>
+        <translation type="unfinished">เครือข่าย</translation>
+    </message>
+    <message>
+        <source>USB</source>
+        <comment>DeviceType</comment>
+        <translation type="unfinished">USB</translation>
+    </message>
+    <message>
+        <source>Shared Folder</source>
+        <comment>DeviceType</comment>
+        <translation type="unfinished">โฟลเดอร์ใช้ร่วมกัน</translation>
+    </message>
+    <message>
+        <source>Disabled</source>
+        <comment>ClipboardType</comment>
+        <translation type="unfinished">ไม่ใช้</translation>
+    </message>
+    <message>
+        <source>Host To Guest</source>
+        <comment>ClipboardType</comment>
+        <translation type="unfinished">จากโฮสต์ไปเกสต์</translation>
+    </message>
+    <message>
+        <source>Guest To Host</source>
+        <comment>ClipboardType</comment>
+        <translation type="unfinished">จากเกสต์ไปโฮสต์</translation>
+    </message>
+    <message>
+        <source>Bidirectional</source>
+        <comment>ClipboardType</comment>
+        <translation type="unfinished">สองทิศทาง</translation>
+    </message>
+    <message>
+        <source>Disabled</source>
+        <comment>DragAndDropType</comment>
+        <translation type="unfinished">ไม่ใช้</translation>
+    </message>
+    <message>
+        <source>Host To Guest</source>
+        <comment>DragAndDropType</comment>
+        <translation type="unfinished">จากโฮสต์ไปเกสต์</translation>
+    </message>
+    <message>
+        <source>Guest To Host</source>
+        <comment>DragAndDropType</comment>
+        <translation type="unfinished">จากเกสต์ไปโฮสต์</translation>
+    </message>
+    <message>
+        <source>Bidirectional</source>
+        <comment>DragAndDropType</comment>
+        <translation type="unfinished">สองทิศทาง</translation>
+    </message>
+    <message>
+        <source>PS/2 Mouse</source>
+        <comment>PointingHIDType</comment>
+        <translation type="unfinished">เมาส์ PS/2</translation>
+    </message>
+    <message>
+        <source>USB Mouse</source>
+        <comment>PointingHIDType</comment>
+        <translation type="unfinished">เมาส์ USB</translation>
+    </message>
+    <message>
+        <source>USB Tablet</source>
+        <comment>PointingHIDType</comment>
+        <translation type="unfinished">แท็บเล็ต USB</translation>
+    </message>
+    <message>
+        <source>PS/2 and USB Mouse</source>
+        <comment>PointingHIDType</comment>
+        <translation type="unfinished">เมาส์ PS/2 และ USB</translation>
+    </message>
+    <message>
+        <source>USB Multi-Touch Tablet</source>
+        <comment>PointingHIDType</comment>
+        <translation type="unfinished">แท็บเล็ต USB แบบมีหลายจุดสัมผัส</translation>
+    </message>
+    <message>
+        <source>None</source>
+        <comment>GraphicsControllerType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>VBoxVGA</source>
+        <comment>GraphicsControllerType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>VMSVGA</source>
+        <comment>GraphicsControllerType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>VBoxSVGA</source>
+        <comment>GraphicsControllerType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Normal</source>
+        <comment>MediumType</comment>
+        <translation type="unfinished">ปกติ</translation>
+    </message>
+    <message>
+        <source>Immutable</source>
+        <comment>MediumType</comment>
+        <translation type="unfinished">ไม่เปลี่ยนแปลง</translation>
+    </message>
+    <message>
+        <source>Writethrough</source>
+        <comment>MediumType</comment>
+        <translation type="unfinished">เขียนทั้งหมด</translation>
+    </message>
+    <message>
+        <source>Shareable</source>
+        <comment>MediumType</comment>
+        <translation type="unfinished">แชร์ได้</translation>
+    </message>
+    <message>
+        <source>Readonly</source>
+        <comment>MediumType</comment>
+        <translation type="unfinished">อ่านอย่างเดียว</translation>
+    </message>
+    <message>
+        <source>Multi-attach</source>
+        <comment>MediumType</comment>
+        <translation type="unfinished">เชื่อมต่อหลายทาง</translation>
+    </message>
+    <message>
+        <source>Dynamically allocated storage</source>
+        <comment>MediumVariant</comment>
+        <translation type="unfinished">หน่วยเก็บข้อมูลจัดสรรแบบพลวัต</translation>
+    </message>
+    <message>
+        <source>New dynamically allocated storage</source>
+        <comment>MediumVariant</comment>
+        <translation type="unfinished">หน่วยเก็บข้อมูลจัดสรรแบบพลวัตแบบใหม่</translation>
+    </message>
+    <message>
+        <source>Dynamically allocated differencing storage</source>
+        <comment>MediumVariant</comment>
+        <translation type="unfinished">หน่วยเก็บข้อมูลจัดสรรแบบพลวัตในส่วนที่แตกต่าง</translation>
+    </message>
+    <message>
+        <source>Fixed size storage</source>
+        <comment>MediumVariant</comment>
+        <translation type="unfinished">หน่วยเก็บข้อมูลขนาดคงที่</translation>
+    </message>
+    <message>
+        <source>Dynamically allocated storage split into files of less than 2GB</source>
+        <comment>MediumVariant</comment>
+        <translation type="unfinished">หน่วยเก็บข้อมูลจัดสรรแบบพลวัตแบ่งขนาดไฟล์ให้เล็กกว่า 2GB</translation>
+    </message>
+    <message>
+        <source>Dynamically allocated differencing storage split into files of less than 2GB</source>
+        <comment>MediumVariant</comment>
+        <translation type="unfinished">หน่วยเก็บข้อมูลจัดสรรแบบพลวัตในส่วนที่แตกต่างแบ่งขนาดไฟล์ให้เล็กกว่า 2GB</translation>
+    </message>
+    <message>
+        <source>Fixed size storage split into files of less than 2GB</source>
+        <comment>MediumVariant</comment>
+        <translation type="unfinished">หน่วยเก็บข้อมูลขนาดคงที่แบ่งขนาดไฟล์ให้เล็กกว่า 2GB</translation>
+    </message>
+    <message>
+        <source>Dynamically allocated compressed storage</source>
+        <comment>MediumVariant</comment>
+        <translation type="unfinished">หน่วยเก็บข้อมูลจัดสรรแบบพลวัตและบีบอัดข้อมูล</translation>
+    </message>
+    <message>
+        <source>Dynamically allocated differencing compressed storage</source>
+        <comment>MediumVariant</comment>
+        <translation type="unfinished">หน่วยเก็บข้อมูลจัดสรรแบบพลวัตในส่วนที่แตกต่างและบีบอัดข้อมูล</translation>
+    </message>
+    <message>
+        <source>Fixed size ESX storage</source>
+        <comment>MediumVariant</comment>
+        <translation type="unfinished">หน่วยเก็บข้อมูล ESX ขนาดคงที่</translation>
+    </message>
+    <message>
+        <source>Fixed size storage on raw disk</source>
+        <comment>MediumVariant</comment>
+        <translation type="unfinished">หน่วยเก็บข้อมูลขนาดคงที่แบบเก็บบนดิสก์โดยตรง</translation>
+    </message>
+    <message>
+        <source>Not attached</source>
+        <comment>NetworkAttachmentType</comment>
+        <translation type="unfinished">ไม่ได้เชื่อมต่อ</translation>
+    </message>
+    <message>
+        <source>NAT</source>
+        <comment>NetworkAttachmentType</comment>
+        <translation type="unfinished">NAT</translation>
+    </message>
+    <message>
+        <source>Bridged Adapter</source>
+        <comment>NetworkAttachmentType</comment>
+        <translation type="unfinished">แผงวงจรแบบบริดจ์</translation>
+    </message>
+    <message>
+        <source>Internal Network</source>
+        <comment>NetworkAttachmentType</comment>
+        <translation type="unfinished">เครือข่ายภายใน</translation>
+    </message>
+    <message>
+        <source>Host-only Adapter</source>
+        <comment>NetworkAttachmentType</comment>
+        <translation type="unfinished">แผงวงจรเฉพาะโฮสต์</translation>
+    </message>
+    <message>
+        <source>Generic Driver</source>
+        <comment>NetworkAttachmentType</comment>
+        <translation type="unfinished">ไดร์เวอร์ทั่วไป</translation>
+    </message>
+    <message>
+        <source>NAT Network</source>
+        <comment>NetworkAttachmentType</comment>
+        <translation type="unfinished">เครือข่าย NAT</translation>
+    </message>
+    <message>
+        <source>Cloud Network</source>
+        <comment>NetworkAttachmentType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>PCnet-PCI II (Am79C970A)</source>
+        <comment>NetworkAdapterType</comment>
+        <translation type="unfinished">PCnet-PCI II (Am79C970A)</translation>
+    </message>
+    <message>
+        <source>PCnet-FAST III (Am79C973)</source>
+        <comment>NetworkAdapterType</comment>
+        <translation type="unfinished">PCnet-FAST III (Am79C973)</translation>
+    </message>
+    <message>
+        <source>Intel PRO/1000 MT Desktop (82540EM)</source>
+        <comment>NetworkAdapterType</comment>
+        <translation type="unfinished">Intel PRO/1000 MT Desktop (82540EM)</translation>
+    </message>
+    <message>
+        <source>Intel PRO/1000 T Server (82543GC)</source>
+        <comment>NetworkAdapterType</comment>
+        <translation type="unfinished">Intel PRO/1000 T Server (82543GC)</translation>
+    </message>
+    <message>
+        <source>Intel PRO/1000 MT Server (82545EM)</source>
+        <comment>NetworkAdapterType</comment>
+        <translation type="unfinished">Intel PRO/1000 MT Server (82545EM)</translation>
+    </message>
+    <message>
+        <source>Paravirtualized Network (virtio-net)</source>
+        <comment>NetworkAdapterType</comment>
+        <translation type="unfinished">เครือข่ายพาราเวอร์ชวลไลซ์ (virtio-net)</translation>
+    </message>
+    <message>
+        <source>Deny</source>
+        <comment>NetworkAdapterPromiscModePolicy</comment>
+        <translation type="unfinished">ปฏิเสธ</translation>
+    </message>
+    <message>
+        <source>Allow VMs</source>
+        <comment>NetworkAdapterPromiscModePolicy</comment>
+        <translation type="unfinished">อนุญาต VM</translation>
+    </message>
+    <message>
+        <source>Allow All</source>
+        <comment>NetworkAdapterPromiscModePolicy</comment>
+        <translation type="unfinished">อนุญาตทั้งหมด</translation>
+    </message>
+    <message>
+        <source>Disconnected</source>
+        <comment>PortMode</comment>
+        <translation type="unfinished">ไม่ได้เชื่อมต่อ</translation>
+    </message>
+    <message>
+        <source>Host Pipe</source>
+        <comment>PortMode</comment>
+        <translation type="unfinished">ท่อของโฮสต์</translation>
+    </message>
+    <message>
+        <source>Host Device</source>
+        <comment>PortMode</comment>
+        <translation type="unfinished">อุปกรณ์ของโฮสต์</translation>
+    </message>
+    <message>
+        <source>Raw File</source>
+        <comment>PortMode</comment>
+        <translation type="unfinished">ไฟล์ดิบ</translation>
+    </message>
+    <message>
+        <source>TCP</source>
+        <comment>PortMode</comment>
+        <translation type="unfinished">TCP</translation>
+    </message>
+    <message>
+        <source>OHCI</source>
+        <comment>USBControllerType</comment>
+        <translation type="unfinished">AHCI</translation>
+    </message>
+    <message>
+        <source>EHCI</source>
+        <comment>USBControllerType</comment>
+        <translation type="unfinished">AHCI</translation>
+    </message>
+    <message>
+        <source>xHCI</source>
+        <comment>USBControllerType</comment>
+        <translation type="unfinished">AHCI</translation>
+    </message>
+    <message>
+        <source>Not supported</source>
+        <comment>USBDeviceState</comment>
+        <translation type="unfinished">ไม่รองรับ</translation>
+    </message>
+    <message>
+        <source>Unavailable</source>
+        <comment>USBDeviceState</comment>
+        <translation type="unfinished">ไม่พร้อมใช้งาน</translation>
+    </message>
+    <message>
+        <source>Busy</source>
+        <comment>USBDeviceState</comment>
+        <translation type="unfinished">ไม่ว่าง</translation>
+    </message>
+    <message>
+        <source>Available</source>
+        <comment>USBDeviceState</comment>
+        <translation type="unfinished">พร้อมใช้งาน</translation>
+    </message>
+    <message>
+        <source>Held</source>
+        <comment>USBDeviceState</comment>
+        <translation type="unfinished">จับไว้</translation>
+    </message>
+    <message>
+        <source>Captured</source>
+        <comment>USBDeviceState</comment>
+        <translation type="unfinished">ถูกจับไว้</translation>
+    </message>
+    <message>
+        <source>Ignore</source>
+        <comment>USBDeviceFilterAction</comment>
+        <translation type="unfinished">เพิกเฉย</translation>
+    </message>
+    <message>
+        <source>Hold</source>
+        <comment>USBDeviceFilterAction</comment>
+        <translation type="unfinished">จับ</translation>
+    </message>
+    <message>
+        <source>Null Audio Driver</source>
+        <comment>AudioDriverType</comment>
+        <translation type="unfinished">ไดร์เวอร์เสียง Null</translation>
+    </message>
+    <message>
+        <source>Windows Multimedia</source>
+        <comment>AudioDriverType</comment>
+        <translation type="unfinished">วินโดวส์มัลติมีเดีย</translation>
+    </message>
+    <message>
+        <source>OSS Audio Driver</source>
+        <comment>AudioDriverType</comment>
+        <translation type="unfinished">ไดร์เวอร์เสียง OSS</translation>
+    </message>
+    <message>
+        <source>ALSA Audio Driver</source>
+        <comment>AudioDriverType</comment>
+        <translation type="unfinished">ไดร์เวอร์เสียง ALSA</translation>
+    </message>
+    <message>
+        <source>Windows DirectSound</source>
+        <comment>AudioDriverType</comment>
+        <translation type="unfinished">วินโดวส์ไดเรกซาวด์</translation>
+    </message>
+    <message>
+        <source>CoreAudio</source>
+        <comment>AudioDriverType</comment>
+        <translation type="unfinished">คอร์ออดิโอ</translation>
+    </message>
+    <message>
+        <source>PulseAudio</source>
+        <comment>AudioDriverType</comment>
+        <translation type="unfinished">พัลส์ออดิโอ</translation>
+    </message>
+    <message>
+        <source>Solaris Audio</source>
+        <comment>AudioDriverType</comment>
+        <translation type="unfinished">โซลาริสออดิโอ</translation>
+    </message>
+    <message>
+        <source>ICH AC97</source>
+        <comment>AudioControllerType</comment>
+        <translation type="unfinished">ICH AC97</translation>
+    </message>
+    <message>
+        <source>SoundBlaster 16</source>
+        <comment>AudioControllerType</comment>
+        <translation type="unfinished">ซาวด์บลาสเตอร์ 16</translation>
+    </message>
+    <message>
+        <source>Intel HD Audio</source>
+        <comment>AudioControllerType</comment>
+        <translation type="unfinished">อินเทล HD ออดิโอ</translation>
+    </message>
+    <message>
+        <source>Null</source>
+        <comment>AuthType</comment>
+        <translation type="unfinished">ว่าง</translation>
+    </message>
+    <message>
+        <source>External</source>
+        <comment>AuthType</comment>
+        <translation type="unfinished">ภายนอก</translation>
+    </message>
+    <message>
+        <source>Guest</source>
+        <comment>AuthType</comment>
+        <translation type="unfinished">เกสต์</translation>
+    </message>
+    <message>
+        <source>IDE</source>
+        <comment>StorageBus</comment>
+        <translation type="unfinished">IDE</translation>
+    </message>
+    <message>
+        <source>SATA</source>
+        <comment>StorageBus</comment>
+        <translation type="unfinished">SATA</translation>
+    </message>
+    <message>
+        <source>SCSI</source>
+        <comment>StorageBus</comment>
+        <translation type="unfinished">SCSI</translation>
+    </message>
+    <message>
+        <source>Floppy</source>
+        <comment>StorageBus</comment>
+        <translation type="unfinished">ฟลอปปี้</translation>
+    </message>
+    <message>
+        <source>SAS</source>
+        <comment>StorageBus</comment>
+        <translation type="unfinished">SAS</translation>
+    </message>
+    <message>
+        <source>USB</source>
+        <comment>StorageBus</comment>
+        <translation type="unfinished">USB</translation>
+    </message>
+    <message>
+        <source>PCIe</source>
+        <comment>StorageBus</comment>
+        <translation type="unfinished">PCIe</translation>
+    </message>
+    <message>
+        <source>virtio-scsi</source>
+        <comment>StorageBus</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>LsiLogic</source>
+        <comment>StorageControllerType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>BusLogic</source>
+        <comment>StorageControllerType</comment>
+        <translation type="unfinished">BusLogic</translation>
+    </message>
+    <message>
+        <source>AHCI</source>
+        <comment>StorageControllerType</comment>
+        <translation type="unfinished">AHCI</translation>
+    </message>
+    <message>
+        <source>PIIX3</source>
+        <comment>StorageControllerType</comment>
+        <translation type="unfinished">PIIX3</translation>
+    </message>
+    <message>
+        <source>PIIX4</source>
+        <comment>StorageControllerType</comment>
+        <translation type="unfinished">PIIX4</translation>
+    </message>
+    <message>
+        <source>ICH6</source>
+        <comment>StorageControllerType</comment>
+        <translation type="unfinished">ICH6</translation>
+    </message>
+    <message>
+        <source>I82078</source>
+        <comment>StorageControllerType</comment>
+        <translation type="unfinished">I82078</translation>
+    </message>
+    <message>
+        <source>LsiLogic SAS</source>
+        <comment>StorageControllerType</comment>
+        <translation type="unfinished">LsiLogic SAS</translation>
+    </message>
+    <message>
+        <source>USB</source>
+        <comment>StorageControllerType</comment>
+        <translation type="unfinished">USB</translation>
+    </message>
+    <message>
+        <source>NVMe</source>
+        <comment>StorageControllerType</comment>
+        <translation type="unfinished">NVMe</translation>
+    </message>
+    <message>
+        <source>virtio-scsi</source>
+        <comment>StorageControllerType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>PIIX3</source>
+        <comment>ChipsetType</comment>
+        <translation type="unfinished">PIIX3</translation>
+    </message>
+    <message>
+        <source>ICH9</source>
+        <comment>ChipsetType</comment>
+        <translation type="unfinished">ICH9</translation>
+    </message>
+    <message>
+        <source>UDP</source>
+        <comment>NATProtocol</comment>
+        <translation type="unfinished">UDP</translation>
+    </message>
+    <message>
+        <source>TCP</source>
+        <comment>NATProtocol</comment>
+        <translation type="unfinished">TCP</translation>
+    </message>
+    <message>
+        <source>Undefined</source>
+        <comment>GuestSessionStatus</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Starting</source>
+        <comment>GuestSessionStatus</comment>
+        <translation type="unfinished">กำลังเริ่ม</translation>
+    </message>
+    <message>
+        <source>Started</source>
+        <comment>GuestSessionStatus</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Terminating</source>
+        <comment>GuestSessionStatus</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Terminated</source>
+        <comment>GuestSessionStatus</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>TimedOutKilled</source>
+        <comment>GuestSessionStatus</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>TimedOutAbnormally</source>
+        <comment>GuestSessionStatus</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Down</source>
+        <comment>GuestSessionStatus</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Error</source>
+        <comment>GuestSessionStatus</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Undefined</source>
+        <comment>ProcessStatus</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Starting</source>
+        <comment>ProcessStatus</comment>
+        <translation type="unfinished">กำลังเริ่ม</translation>
+    </message>
+    <message>
+        <source>Started</source>
+        <comment>ProcessStatus</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Paused</source>
+        <comment>ProcessStatus</comment>
+        <translation type="unfinished">หยุดชั่วคราว</translation>
+    </message>
+    <message>
+        <source>Terminating</source>
+        <comment>ProcessStatus</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>TerminatedNormally</source>
+        <comment>ProcessStatus</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>TerminatedSignal</source>
+        <comment>ProcessStatus</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>TerminatedAbnormally</source>
+        <comment>ProcessStatus</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>TimedOutKilled</source>
+        <comment>ProcessStatus</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>TimedOutAbnormally</source>
+        <comment>ProcessStatus</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Down</source>
+        <comment>ProcessStatus</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Error</source>
+        <comment>ProcessStatus</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>B</source>
+        <comment>size suffix Bytes</comment>
+        <translation type="unfinished">B</translation>
+    </message>
+    <message>
+        <source>KB</source>
+        <comment>size suffix KBytes=1024 Bytes</comment>
+        <translation type="unfinished">KB</translation>
+    </message>
+    <message>
+        <source>GB</source>
+        <comment>size suffix GBytes=1024 MBytes</comment>
+        <translation type="unfinished">GB</translation>
+    </message>
+    <message>
+        <source>TB</source>
+        <comment>size suffix TBytes=1024 GBytes</comment>
+        <translation type="unfinished">TB</translation>
+    </message>
+    <message>
+        <source>PB</source>
+        <comment>size suffix PBytes=1024 TBytes</comment>
+        <translation type="unfinished">PB</translation>
+    </message>
+    <message>
+        <source>IDE Primary Master</source>
+        <comment>StorageSlot</comment>
+        <translation type="unfinished">IDE ปฐมภูมิหลัก</translation>
+    </message>
+    <message>
+        <source>IDE Primary Slave</source>
+        <comment>StorageSlot</comment>
+        <translation type="unfinished">IDE ปฐมภูมิรอง</translation>
+    </message>
+    <message>
+        <source>IDE Secondary Master</source>
+        <comment>StorageSlot</comment>
+        <translation type="unfinished">IDE ทุติยภูมิหลัก</translation>
+    </message>
+    <message>
+        <source>IDE Secondary Slave</source>
+        <comment>StorageSlot</comment>
+        <translation type="unfinished">IDE ทุติยภูมิรอง</translation>
+    </message>
+    <message>
+        <source>SATA Port %1</source>
+        <comment>StorageSlot</comment>
+        <translation type="unfinished">พอร์ต SATA %1</translation>
+    </message>
+    <message>
+        <source>SCSI Port %1</source>
+        <comment>StorageSlot</comment>
+        <translation type="unfinished">พอร์ต SCSI %1</translation>
+    </message>
+    <message>
+        <source>SAS Port %1</source>
+        <comment>StorageSlot</comment>
+        <translation type="unfinished">พอร์ต SAS %1</translation>
+    </message>
+    <message>
+        <source>Floppy Device %1</source>
+        <comment>StorageSlot</comment>
+        <translation type="unfinished">อุปกรณ์ฟลอปปี้ %1</translation>
+    </message>
+    <message>
+        <source>USB Port %1</source>
+        <comment>StorageSlot</comment>
+        <translation type="unfinished">พอร์ต USB %1</translation>
+    </message>
+    <message>
+        <source>NVMe Port %1</source>
+        <comment>StorageSlot</comment>
+        <translation type="unfinished">พอร์ต NVMe %1</translation>
+    </message>
+    <message>
+        <source>virtio-scsi Port %1</source>
+        <comment>StorageSlot</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Name</source>
+        <translation type="unfinished">ชื่อ</translation>
+    </message>
+    <message>
+        <source>OS</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Location</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Groups</source>
+        <translation type="unfinished">กลุ่ม</translation>
+    </message>
+    <message>
+        <source>RAM</source>
+        <translation type="unfinished">แรม</translation>
+    </message>
+    <message>
+        <source>CPU Count</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>CPU Execution Cap</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Boot Order</source>
+        <translation type="unfinished">ลำดับการบูต</translation>
+    </message>
+    <message>
+        <source>Chipset Type</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Firmware</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Acceleration</source>
+        <translation type="unfinished">ตัวเร่งความเร็ว</translation>
+    </message>
+    <message>
+        <source>VRAM</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Screen Count</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Scale Factor</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Graphics Controller</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>VRDE</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Recording</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Hard Disks</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Optical Devices</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Floppy Devices</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Driver</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Controller</source>
+        <translation type="unfinished">ตัวควบคุม</translation>
+    </message>
+    <message>
+        <source>Input/Output</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Not Attached</source>
+        <comment>network adapter</comment>
+        <translation type="unfinished">ไม่ได้เชื่อมต่อ</translation>
+    </message>
+    <message>
+        <source>NAT</source>
+        <translation type="unfinished">NAT</translation>
+    </message>
+    <message>
+        <source>Bridget Adapter</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Internal Network</source>
+        <translation type="unfinished">เครือข่ายภายใน</translation>
+    </message>
+    <message>
+        <source>Host Only Adapter</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Generic Driver</source>
+        <translation type="unfinished">ไดร์เวอร์ทั่วไป</translation>
+    </message>
+    <message>
+        <source>NAT Network</source>
+        <translation type="unfinished">เครือข่าย NAT</translation>
+    </message>
+    <message>
+        <source>Disconnected</source>
+        <comment>serial port</comment>
+        <translation type="unfinished">ไม่ได้เชื่อมต่อ</translation>
+    </message>
+    <message>
+        <source>Host Pipe</source>
+        <translation type="unfinished">ท่อของโฮสต์</translation>
+    </message>
+    <message>
+        <source>Host Device</source>
+        <translation type="unfinished">อุปกรณ์ของโฮสต์</translation>
+    </message>
+    <message>
+        <source>Raw File</source>
+        <translation type="unfinished">ไฟล์ดิบ</translation>
+    </message>
+    <message>
+        <source>TCP</source>
+        <translation type="unfinished">TCP</translation>
+    </message>
+    <message>
+        <source>Device Filters</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Menu Bar</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Status Bar</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Mini Toolbar</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>General</source>
+        <comment>DetailsElementType</comment>
+        <translation type="unfinished">ทั่วไป</translation>
+    </message>
+    <message>
+        <source>Preview</source>
+        <comment>DetailsElementType</comment>
+        <translation type="unfinished">แสดงตัวอย่าง</translation>
+    </message>
+    <message>
+        <source>System</source>
+        <comment>DetailsElementType</comment>
+        <translation type="unfinished">ระบบ</translation>
+    </message>
+    <message>
+        <source>Display</source>
+        <comment>DetailsElementType</comment>
+        <translation type="unfinished">หน่วยแสดงผล</translation>
+    </message>
+    <message>
+        <source>Storage</source>
+        <comment>DetailsElementType</comment>
+        <translation type="unfinished">หน่วยเก็บข้อมูล</translation>
+    </message>
+    <message>
+        <source>Audio</source>
+        <comment>DetailsElementType</comment>
+        <translation type="unfinished">เสียง</translation>
+    </message>
+    <message>
+        <source>Network</source>
+        <comment>DetailsElementType</comment>
+        <translation type="unfinished">เครือข่าย</translation>
+    </message>
+    <message>
+        <source>Serial ports</source>
+        <comment>DetailsElementType</comment>
+        <translation type="unfinished">พอร์ตอนุกรม</translation>
+    </message>
+    <message>
+        <source>USB</source>
+        <comment>DetailsElementType</comment>
+        <translation type="unfinished">USB</translation>
+    </message>
+    <message>
+        <source>Shared folders</source>
+        <comment>DetailsElementType</comment>
+        <translation type="unfinished">โฟลเดอร์ใช้ร่วมกัน</translation>
+    </message>
+    <message>
+        <source>User interface</source>
+        <comment>DetailsElementType</comment>
+        <translation type="unfinished">ส่วนติดต่อผู้ใช้</translation>
+    </message>
+    <message>
+        <source>Description</source>
+        <comment>DetailsElementType</comment>
+        <translation type="unfinished">คำอธิบาย</translation>
+    </message>
+    <message>
+        <source>Hard Disks</source>
+        <comment>IndicatorType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Optical Disks</source>
+        <comment>IndicatorType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Floppy Disks</source>
+        <comment>IndicatorType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Audio</source>
+        <comment>IndicatorType</comment>
+        <translation type="unfinished">เสียง</translation>
+    </message>
+    <message>
+        <source>Network</source>
+        <comment>IndicatorType</comment>
+        <translation type="unfinished">เครือข่าย</translation>
+    </message>
+    <message>
+        <source>USB</source>
+        <comment>IndicatorType</comment>
+        <translation type="unfinished">USB</translation>
+    </message>
+    <message>
+        <source>Shared Folders</source>
+        <comment>IndicatorType</comment>
+        <translation type="unfinished">โฟลเดอร์ใช้ร่วมกัน</translation>
+    </message>
+    <message>
+        <source>Display</source>
+        <comment>IndicatorType</comment>
+        <translation type="unfinished">หน่วยแสดงผล</translation>
+    </message>
+    <message>
+        <source>Recording</source>
+        <comment>IndicatorType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Features</source>
+        <comment>IndicatorType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Mouse</source>
+        <comment>IndicatorType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Keyboard</source>
+        <comment>IndicatorType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>General</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished">ทั่วไป</translation>
+    </message>
+    <message>
+        <source>Preview</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished">แสดงตัวอย่าง</translation>
+    </message>
+    <message>
+        <source>System</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished">ระบบ</translation>
+    </message>
+    <message>
+        <source>Display</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished">หน่วยแสดงผล</translation>
+    </message>
+    <message>
+        <source>Storage</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished">หน่วยเก็บข้อมูล</translation>
+    </message>
+    <message>
+        <source>Audio</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished">เสียง</translation>
+    </message>
+    <message>
+        <source>Network</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished">เครือข่าย</translation>
+    </message>
+    <message>
+        <source>Serial ports</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished">พอร์ตอนุกรม</translation>
+    </message>
+    <message>
+        <source>USB</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished">USB</translation>
+    </message>
+    <message>
+        <source>Shared folders</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished">โฟลเดอร์ใช้ร่วมกัน</translation>
+    </message>
+    <message>
+        <source>User interface</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished">ส่วนติดต่อผู้ใช้</translation>
+    </message>
+    <message>
+        <source>Description</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished">คำอธิบาย</translation>
+    </message>
+    <message>
+        <source>Runtime attributes</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished">คุณสมบัติเฉพาะของรุ่นที่ใช้</translation>
+    </message>
+    <message>
+        <source>Storage statistics</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished">สถิติหน่วยเก็บข้อมูล</translation>
+    </message>
+    <message>
+        <source>Network statistics</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished">สถิติเครือข่าย</translation>
+    </message>
+    <message>
+        <source>VDI (VirtualBox Disk Image)</source>
+        <comment>UIMediumFormat</comment>
+        <translation type="unfinished">VDI (VirtualBox Disk Image)</translation>
+    </message>
+    <message>
+        <source>VMDK (Virtual Machine Disk)</source>
+        <comment>UIMediumFormat</comment>
+        <translation type="unfinished">VMDK (Virtual Machine Disk)</translation>
+    </message>
+    <message>
+        <source>VHD (Virtual Hard Disk)</source>
+        <comment>UIMediumFormat</comment>
+        <translation type="unfinished">VHD (Virtual Hard Disk)</translation>
+    </message>
+    <message>
+        <source>HDD (Parallels Hard Disk)</source>
+        <comment>UIMediumFormat</comment>
+        <translation type="unfinished">HDD (Parallels Hard Disk)</translation>
+    </message>
+    <message>
+        <source>QED (QEMU enhanced disk)</source>
+        <comment>UIMediumFormat</comment>
+        <translation type="unfinished">QED (QEMU enhanced disk)</translation>
+    </message>
+    <message>
+        <source>QCOW (QEMU Copy-On-Write)</source>
+        <comment>UIMediumFormat</comment>
+        <translation type="unfinished">QCOW (QEMU Copy-On-Write)</translation>
+    </message>
+    <message>
+        <source>Video/Audio</source>
+        <comment>UISettingsDefs::RecordingMode</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Video Only</source>
+        <comment>UISettingsDefs::RecordingMode</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Audio Only</source>
+        <comment>UISettingsDefs::RecordingMode</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message numerus="yes">
+        <source>%n year(s)</source>
+        <translation type="unfinished">
+            <numerusform>%n ปี</numerusform>
+        </translation>
+    </message>
+    <message numerus="yes">
+        <source>%n month(s)</source>
+        <translation type="unfinished">
+            <numerusform>%n เดือน</numerusform>
+        </translation>
+    </message>
+    <message numerus="yes">
+        <source>%n day(s)</source>
+        <translation type="unfinished">
+            <numerusform>%n วัน</numerusform>
+        </translation>
+    </message>
+    <message numerus="yes">
+        <source>%n hour(s)</source>
+        <translation type="unfinished">
+            <numerusform>%n ชั่วโมง</numerusform>
+        </translation>
+    </message>
+    <message numerus="yes">
+        <source>%n minute(s)</source>
+        <translation type="unfinished">
+            <numerusform>%n นาที</numerusform>
+        </translation>
+    </message>
+    <message numerus="yes">
+        <source>%n second(s)</source>
+        <translation type="unfinished">
+            <numerusform>%n วินาที</numerusform>
+        </translation>
+    </message>
+    <message>
+        <source>Please choose a virtual hard disk file</source>
+        <translation type="unfinished">โปรดเลือกไฟล์ฮาร์ดดิสก์เสมือน</translation>
+    </message>
+    <message>
+        <source>All virtual hard disk files (%1)</source>
+        <translation type="unfinished">ไฟล์ฮาร์ดดิสก์เสมือนทั้งหมด (%1)</translation>
+    </message>
+    <message>
+        <source>Please choose a virtual optical disk file</source>
+        <translation type="unfinished">โปรดเลือกไฟล์ออปติคัลดิสก์เสมือน</translation>
+    </message>
+    <message>
+        <source>All virtual optical disk files (%1)</source>
+        <translation type="unfinished">ไฟล์ออปติคัลดิสก์เสมือนทั้งหมด (%1)</translation>
+    </message>
+    <message>
+        <source>Please choose a virtual floppy disk file</source>
+        <translation type="unfinished">โปรดเลือกไฟล์ฟลอปปี้ดิสก์เสมือน</translation>
+    </message>
+    <message>
+        <source>All virtual floppy disk files (%1)</source>
+        <translation type="unfinished">ไฟล์ฟลอปปี้ดิสก์เสมือนทั้งหมด (%1)</translation>
+    </message>
+    <message>
+        <source>All files (*)</source>
+        <translation type="unfinished">ไฟล์ทั้งหมด (*)</translation>
+    </message>
+    <message>
+        <source>Unknown device</source>
+        <comment>USB device details</comment>
+        <translation type="unfinished">อุปกรณ์ที่ไม่รู้จัก</translation>
+    </message>
+    <message>
+        <source>Unknown device %1:%2</source>
+        <comment>USB device details</comment>
+        <translation type="unfinished">อุปกรณ์ที่ไม่รู้จัก %1: %2</translation>
+    </message>
+    <message>
+        <source>&lt;nobr&gt;Vendor ID: %1&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Product ID: %2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Revision: %3&lt;/nobr&gt;</source>
+        <comment>USB device tooltip</comment>
+        <translation type="unfinished">&lt;nobr&gt;รหัสผู้ผลิต: %1&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;รหัสผลิตภัณฑ์: %2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;ครั้งที่แก้ไข: %3&lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;br&gt;&lt;nobr&gt;Serial No. %1&lt;/nobr&gt;</source>
+        <comment>USB device tooltip</comment>
+        <translation type="unfinished">&lt;nobr&gt;เลขลำดับ: %1&lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;br&gt;&lt;nobr&gt;State: %1&lt;/nobr&gt;</source>
+        <comment>USB device tooltip</comment>
+        <translation type="unfinished">&lt;br&gt;&lt;nobr&gt;สถานะ: %1&lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;nobr&gt;Vendor ID: %1&lt;/nobr&gt;</source>
+        <comment>USB filter tooltip</comment>
+        <translation type="unfinished">&lt;nobr&gt;รหัสผู้ผลิต: %1&lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;nobr&gt;Product ID: %2&lt;/nobr&gt;</source>
+        <comment>USB filter tooltip</comment>
+        <translation type="unfinished">&lt;nobr&gt;รหัสผลิตภัณฑ์: %2&lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;nobr&gt;Revision: %3&lt;/nobr&gt;</source>
+        <comment>USB filter tooltip</comment>
+        <translation type="unfinished">&lt;nobr&gt;ครั้งที่แก้ไข: %3&lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;nobr&gt;Product: %4&lt;/nobr&gt;</source>
+        <comment>USB filter tooltip</comment>
+        <translation type="unfinished">&lt;nobr&gt;ผลิตภัณฑ์: %4&lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;nobr&gt;Manufacturer: %5&lt;/nobr&gt;</source>
+        <comment>USB filter tooltip</comment>
+        <translation type="unfinished">&lt;nobr&gt;ผู้ผลิต: %5&lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;nobr&gt;Serial No.: %1&lt;/nobr&gt;</source>
+        <comment>USB filter tooltip</comment>
+        <translation type="unfinished">&lt;nobr&gt;เลขลำดับ: %1&lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;nobr&gt;Port: %1&lt;/nobr&gt;</source>
+        <comment>USB filter tooltip</comment>
+        <translation type="unfinished">&lt;nobr&gt;พอร์ต: %1&lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;nobr&gt;State: %1&lt;/nobr&gt;</source>
+        <comment>USB filter tooltip</comment>
+        <translation type="unfinished">&lt;nobr&gt;สถานะ: %1&lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <source>User-defined</source>
+        <comment>serial port</comment>
+        <translation type="unfinished">กำหนดโดยผู้ใช้</translation>
+    </message>
+    <message>
+        <source>Inaccessible</source>
+        <comment>medium</comment>
+        <translation type="unfinished">ไม่สามารถเข้าถึงได้</translation>
+    </message>
+    <message>
+        <source>Empty</source>
+        <comment>medium</comment>
+        <translation type="unfinished">ว่าง</translation>
+    </message>
+    <message>
+        <source>Host Drive &apos;%1&apos;</source>
+        <comment>medium</comment>
+        <translation type="unfinished">ไดรฟ์ของโฮสต์ &apos;%1&apos;</translation>
+    </message>
+    <message>
+        <source>Host Drive %1 (%2)</source>
+        <comment>medium</comment>
+        <translation type="unfinished">ไดรฟ์ของโฮสต์ %1 (%2)</translation>
+    </message>
+    <message>
+        <source>&lt;p style=white-space:pre&gt;Type (Format):  %1 (%2)&lt;/p&gt;</source>
+        <comment>medium</comment>
+        <translation type="unfinished">&lt;p style=white-space:pre&gt;ชนิด (รูปแบบ)  %1 (%2)&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Attached to:  %1&lt;/p&gt;</source>
+        <comment>image</comment>
+        <translation type="unfinished">&lt;p&gt;เชื่อมต่อกับ:  %1&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;i&gt;Not Attached&lt;/i&gt;</source>
+        <comment>image</comment>
+        <translation type="unfinished">&lt;i&gt;ไม่ได้เชื่อมต่อ&lt;/i&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;i&gt;Checking accessibility...&lt;/i&gt;</source>
+        <comment>medium</comment>
+        <translation type="unfinished">&lt;i&gt;กำลังตรวจสอบการเข้าถึง...&lt;/i&gt;</translation>
+    </message>
+    <message>
+        <source>Failed to check accessibility of disk image files.</source>
+        <comment>medium</comment>
+        <translation type="unfinished">ไม่สามารถตรวจสอบสถานะการเข้าถึงไฟล์ดิสก์อิมเมจได้</translation>
+    </message>
+    <message>
+        <source>&lt;b&gt;No disk image file selected&lt;/b&gt;</source>
+        <comment>medium</comment>
+        <translation type="unfinished">&lt;b&gt;ไม่ได้เลือกไฟล์ดิสก์อิมเมจ&lt;/b&gt;</translation>
+    </message>
+    <message>
+        <source>You can also change this while the machine is running.</source>
+        <translation type="unfinished">คุณสามารถเปลี่ยนแปลงค่านี้ได้ขณะเครื่องกำลังทำงานอยู่</translation>
+    </message>
+    <message>
+        <source>&lt;b&gt;No disk image files available&lt;/b&gt;</source>
+        <comment>medium</comment>
+        <translation type="unfinished">&lt;b&gt;ไม่มีไฟล์ดิสก์อิมเมจที่พร้อมใช้งาน&lt;/b&gt;</translation>
+    </message>
+    <message>
+        <source>You can create or add disk image files in the virtual machine settings.</source>
+        <translation type="unfinished">คุณสามารถสร้างหรือเพิ่มไฟล์ดิสก์อิมเมจได้ในการตั้งค่าเวอร์ชวลแมชชีน</translation>
+    </message>
+    <message>
+        <source>Attaching this hard disk will be performed indirectly using a newly created differencing hard disk.</source>
+        <comment>medium</comment>
+        <translation type="unfinished">ฮาร์ดดิสก์นี้จะถูกเชื่อมต่อโดยอ้อมโดยใช้ฮาร์ดดิสก์แบบเก็บส่วนต่างที่ถูกสร้างขึ้นมาใหม่</translation>
+    </message>
+    <message>
+        <source>Encrypted</source>
+        <comment>medium</comment>
+        <translation type="unfinished">เข้ารหัสลับไว้</translation>
+    </message>
+    <message>
+        <source>Checking...</source>
+        <comment>medium</comment>
+        <translation type="unfinished">กำลังตรวจสอบ...</translation>
+    </message>
+    <message>
+        <source>Some of the files in this hard disk chain are inaccessible. Please use the Virtual Medium Manager to inspect these files.</source>
+        <comment>medium</comment>
+        <translation type="unfinished">มีบางไฟล์ในห่วงโซ่ของฮาร์ดดิสก์นี้ที่ไม่สามารถเข้าถึงได้ โปรดใช้ส่วนจัดการมีเดียเสมือนเพื่อตรวจสอบไฟล์เหล่านี้</translation>
+    </message>
+    <message>
+        <source>This base hard disk is indirectly attached using the following differencing hard disk:</source>
+        <comment>medium</comment>
+        <translation type="unfinished">ฮาร์ดดิสก์พื้นฐานนี้ถูกเชื่อมต่อโดยอ้อมจากฮาร์ดดิสก์แบบเก็บผลต่างต่อไปนี้:</translation>
+    </message>
+    <message>
+        <source>Differencing</source>
+        <comment>MediumType</comment>
+        <translation type="unfinished">ความแตกต่าง</translation>
+    </message>
+    <message>
+        <source>Adapter %1</source>
+        <translation type="unfinished">แผงวงจร %1</translation>
+    </message>
+    <message>
+        <source>Please choose a location for new virtual hard disk file</source>
+        <translation type="unfinished">โปรดเลือกที่ตั้งไฟล์เวอร์ชวลฮาร์ดดิสก์ที่จะสร้างขึ้นใหม่</translation>
     </message>
 </context>
 <context>
@@ -2766,6 +4400,25 @@
         <source>Graphics Controller</source>
         <comment>details (display)</comment>
         <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>USB 1.1 (OHCI) Controller</source>
+        <comment>details (usb)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>USB 2.0 (OHCI + EHCI) Controller</source>
+        <comment>details (usb)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>USB 3.0 (xHCI) Controller</source>
+        <comment>details (usb)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1 MB</source>
+        <translation type="unfinished">%1 MB</translation>
     </message>
 </context>
 <context>
@@ -3309,6 +4962,10 @@ a guest session</source>
 <context>
     <name>UIFormEditorWidget</name>
     <message>
+        <source>Edit...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>Assign value...</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3318,10 +4975,6 @@ a guest session</source>
     </message>
     <message>
         <source>Value</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Edit...</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -4612,6 +6265,13 @@ a guest session</source>
     </message>
 </context>
 <context>
+    <name>UIGraphicsControllerEditor</name>
+    <message>
+        <source>&amp;Graphics Controller:</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>UIGraphicsTextPane</name>
     <message>
         <source>%1: %2</source>
@@ -5549,11 +7209,11 @@ a guest session</source>
     <name>UIInformationDataNetworkStatistics</name>
     <message>
         <source>Data Transmitted</source>
-        <translation>ข้อมูลที่ส่งไป</translation>
+        <translation type="vanished">ข้อมูลที่ส่งไป</translation>
     </message>
     <message>
         <source>Data Received</source>
-        <translation>ข้อมูลที่ได้รับ</translation>
+        <translation type="vanished">ข้อมูลที่ได้รับ</translation>
     </message>
 </context>
 <context>
@@ -5574,33 +7234,33 @@ a guest session</source>
     <message>
         <source>Not Detected</source>
         <comment>guest additions</comment>
-        <translation>ไม่พบ</translation>
+        <translation type="vanished">ไม่พบ</translation>
     </message>
     <message>
         <source>Not Detected</source>
         <comment>guest os type</comment>
-        <translation>ไม่พบ</translation>
+        <translation type="vanished">ไม่พบ</translation>
     </message>
     <message>
         <source>Not Available</source>
         <comment>details report (VRDE server port)</comment>
-        <translation>ไม่พร้อมใช้งาน</translation>
+        <translation type="vanished">ไม่พร้อมใช้งาน</translation>
     </message>
     <message>
         <source>Screen Resolution</source>
-        <translation>ความละเอียดจอภาพ</translation>
+        <translation type="vanished">ความละเอียดจอภาพ</translation>
     </message>
     <message>
         <source>VM Uptime</source>
-        <translation>เวลาตั้งแต่เปิด VM</translation>
+        <translation type="vanished">เวลาตั้งแต่เปิด VM</translation>
     </message>
     <message>
         <source>Clipboard Mode</source>
-        <translation>โหมดของคลิปบอร์ด</translation>
+        <translation type="vanished">โหมดของคลิปบอร์ด</translation>
     </message>
     <message>
         <source>Drag and Drop Mode</source>
-        <translation>โหมดลากแล้วปล่อย</translation>
+        <translation type="vanished">โหมดลากแล้วปล่อย</translation>
     </message>
     <message>
         <source>VT-x/AMD-V</source>
@@ -5610,36 +7270,31 @@ a guest session</source>
     <message>
         <source>Nested Paging</source>
         <comment>details report</comment>
-        <translation>การแบ่งหน้าซ้อนกัน</translation>
+        <translation type="vanished">การแบ่งหน้าซ้อนกัน</translation>
     </message>
     <message>
         <source>Unrestricted Execution</source>
         <comment>details report</comment>
-        <translation>ประมวลผลโดยไม่มีข้อจำกัด</translation>
+        <translation type="vanished">ประมวลผลโดยไม่มีข้อจำกัด</translation>
     </message>
     <message>
         <source>Paravirtualization Interface</source>
         <comment>details report</comment>
-        <translation>ส่วนเชื่อมต่อพาราเวอร์ชวลไลเซชัน</translation>
+        <translation type="vanished">ส่วนเชื่อมต่อพาราเวอร์ชวลไลเซชัน</translation>
     </message>
     <message>
         <source>Guest Additions</source>
-        <translation>โปรแกรมเสริมสำหรับเกสต์</translation>
+        <translation type="vanished">โปรแกรมเสริมสำหรับเกสต์</translation>
     </message>
     <message>
         <source>Guest OS Type</source>
         <comment>details report</comment>
-        <translation>ชนิดของเกสต์โอเอส</translation>
+        <translation type="vanished">ชนิดของเกสต์โอเอส</translation>
     </message>
     <message>
         <source>Remote Desktop Server Port</source>
         <comment>details report (VRDE Server)</comment>
-        <translation>พอร์ตเซอร์ฟเวอร์รีโมตเดสก์ทอป</translation>
-    </message>
-    <message>
-        <source>VM Execution Engine</source>
-        <comment>details report</comment>
-        <translation type="unfinished"></translation>
+        <translation type="vanished">พอร์ตเซอร์ฟเวอร์รีโมตเดสก์ทอป</translation>
     </message>
 </context>
 <context>
@@ -5669,23 +7324,19 @@ a guest session</source>
     <name>UIInformationDataStorageStatistics</name>
     <message>
         <source>DMA Transfers</source>
-        <translation>รับส่งแบบ DMA</translation>
+        <translation type="vanished">รับส่งแบบ DMA</translation>
     </message>
     <message>
         <source>PIO Transfers</source>
-        <translation>รับส่งแบบ PIO</translation>
+        <translation type="vanished">รับส่งแบบ PIO</translation>
     </message>
     <message>
         <source>Data Read</source>
-        <translation>ข้อมูลที่อ่าน</translation>
+        <translation type="vanished">ข้อมูลที่อ่าน</translation>
     </message>
     <message>
         <source>Data Written</source>
-        <translation>ข้อมูลที่เขียน</translation>
-    </message>
-    <message>
-        <source>Requests</source>
-        <translation type="unfinished"></translation>
+        <translation type="vanished">ข้อมูลที่เขียน</translation>
     </message>
 </context>
 <context>
@@ -6101,7 +7752,7 @@ a guest session</source>
     </message>
     <message>
         <source>MB</source>
-        <translation>MB</translation>
+        <translation type="vanished">MB</translation>
     </message>
     <message>
         <source>Extended Features:</source>
@@ -6340,7 +7991,7 @@ a guest session</source>
     </message>
     <message>
         <source>%1 MB</source>
-        <translation>%1 MB</translation>
+        <translation type="vanished">%1 MB</translation>
     </message>
     <message>
         <source>%1%</source>
@@ -6384,6 +8035,14 @@ a guest session</source>
     </message>
     <message>
         <source>Controls the &lt;b&gt;quality&lt;/b&gt;. Increasing this value will make the audio sound better at the cost of an increased file size.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The virtual machine is configured to use 3D acceleration. This will work only if you pick a different graphics controller (%1). Either disable 3D acceleration or switch to required graphics controller type. The latter will be done automatically if you confirm your changes.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The virtual machine is configured to use a graphics controller other than the recommended one (%1). Please consider switching unless you have a reason to keep the currently selected graphics controller.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -6591,7 +8250,7 @@ a guest session</source>
     <message>
         <source>Not selected</source>
         <comment>network adapter name</comment>
-        <translation>ไม่ได้เลือก</translation>
+        <translation type="vanished">ไม่ได้เลือก</translation>
     </message>
     <message>
         <source>&amp;Name:</source>
@@ -6631,19 +8290,19 @@ a guest session</source>
     </message>
     <message>
         <source>Selects the network adapter on the host system that traffic to and from this network card will go through.</source>
-        <translation>เลือกแผงวงจรเครือข่ายของโฮสต์ที่ต้องการให้การ์ดเครือข่ายนี้ใช้สื่อสารทั้งขาเข้าและขาออก</translation>
+        <translation type="vanished">เลือกแผงวงจรเครือข่ายของโฮสต์ที่ต้องการให้การ์ดเครือข่ายนี้ใช้สื่อสารทั้งขาเข้าและขาออก</translation>
     </message>
     <message>
         <source>Holds the name of the internal network that this network card will be connected to. You can create a new internal network by choosing a name which is not used by any other network cards in this virtual machine or others.</source>
-        <translation>เก็บชื่อเครือข่ายภายในที่การ์ดเครือข่ายนี้จะถูกเชื่อมต่อไว้ คุณสามารถสร้างเครือข่ายภายในขึ้นมาใหม่โดยเลือกใช้ชื่อที่ไม่ได้ถูกใช้งานโดยเวอร์ชวลแมชชีนเครื่องนี้หรือเครื่องอื่น ๆ</translation>
+        <translation type="vanished">เก็บชื่อเครือข่ายภายในที่การ์ดเครือข่ายนี้จะถูกเชื่อมต่อไว้ คุณสามารถสร้างเครือข่ายภายในขึ้นมาใหม่โดยเลือกใช้ชื่อที่ไม่ได้ถูกใช้งานโดยเวอร์ชวลแมชชีนเครื่องนี้หรือเครื่องอื่น ๆ</translation>
     </message>
     <message>
         <source>Selects the virtual network adapter on the host system that traffic to and from this network card will go through. You can create and remove adapters using the global network settings in the virtual machine manager window.</source>
-        <translation>เลือกแผงวงจรเครือข่ายเสมือนของโฮสต์ที่ต้องการให้การ์ดเครือข่ายนี้ใช้สื่อสารทั้งขาเข้าและขาออก คุณสามารถสร้างและถอนแผงวงจรได้โดยใช้การตั้งค่าเครือข่ายกลางในหน้าต่างจัดการเวอร์ชวลแมชชีน</translation>
+        <translation type="vanished">เลือกแผงวงจรเครือข่ายเสมือนของโฮสต์ที่ต้องการให้การ์ดเครือข่ายนี้ใช้สื่อสารทั้งขาเข้าและขาออก คุณสามารถสร้างและถอนแผงวงจรได้โดยใช้การตั้งค่าเครือข่ายกลางในหน้าต่างจัดการเวอร์ชวลแมชชีน</translation>
     </message>
     <message>
         <source>Selects the driver to be used with this network card.</source>
-        <translation>เลือกไดร์เวอร์ที่จะใช้กับการ์ดเครือข่ายนี้</translation>
+        <translation type="vanished">เลือกไดร์เวอร์ที่จะใช้กับการ์ดเครือข่ายนี้</translation>
     </message>
     <message>
         <source>&amp;MAC Address:</source>
@@ -6679,7 +8338,7 @@ a guest session</source>
     </message>
     <message>
         <source>Holds the name of the NAT network that this network card will be connected to. You can create and remove networks using the global network settings in the virtual machine manager window.</source>
-        <translation>เก็บชื่อเครือข่าย NAT ที่การ์ดเครือข่ายนี้จะถูกเชื่อมต่อไว้ คุณสามารถสร้างและนำเครือข่ายออกได้ที่การตั้งค่าเครือข่ายส่วนกลางในหน้าต่างตัวจัดการเวอร์ชวลแมชชีน</translation>
+        <translation type="vanished">เก็บชื่อเครือข่าย NAT ที่การ์ดเครือข่ายนี้จะถูกเชื่อมต่อไว้ คุณสามารถสร้างและนำเครือข่ายออกได้ที่การตั้งค่าเครือข่ายส่วนกลางในหน้าต่างตัวจัดการเวอร์ชวลแมชชีน</translation>
     </message>
     <message>
         <source>Selects how this virtual adapter is attached to the real network of the Host OS.</source>
@@ -6700,6 +8359,10 @@ a guest session</source>
     <message>
         <source>Displays a window to configure port forwarding rules.</source>
         <translation>แสดงหน้าต่างเพื่อกำหนดค่ากฎการส่งต่อพอร์ต</translation>
+    </message>
+    <message>
+        <source>No cloud network name is currently specified.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -7011,19 +8674,19 @@ a guest session</source>
     </message>
     <message>
         <source>Add IDE Controller</source>
-        <translation>เพิ่มตัวควบคุม IDE</translation>
+        <translation type="vanished">เพิ่มตัวควบคุม IDE</translation>
     </message>
     <message>
         <source>Add SATA Controller</source>
-        <translation>เพิ่มตัวควบคุม SATA</translation>
+        <translation type="vanished">เพิ่มตัวควบคุม SATA</translation>
     </message>
     <message>
         <source>Add SCSI Controller</source>
-        <translation>เพิ่มตัวควบคุม SCSI</translation>
+        <translation type="vanished">เพิ่มตัวควบคุม SCSI</translation>
     </message>
     <message>
         <source>Add Floppy Controller</source>
-        <translation>เพิ่มตัวควบคุมฟลอปปี้</translation>
+        <translation type="vanished">เพิ่มตัวควบคุมฟลอปปี้</translation>
     </message>
     <message>
         <source>Remove Controller</source>
@@ -7035,7 +8698,7 @@ a guest session</source>
     </message>
     <message>
         <source>Add Hard Disk</source>
-        <translation>เพิ่มฮาร์ดดิสก์</translation>
+        <translation type="vanished">เพิ่มฮาร์ดดิสก์</translation>
     </message>
     <message>
         <source>Remove Attachment</source>
@@ -7115,7 +8778,7 @@ a guest session</source>
     </message>
     <message>
         <source>Add SAS Controller</source>
-        <translation>เพิ่มตัวควบคุม SAS</translation>
+        <translation type="vanished">เพิ่มตัวควบคุม SAS</translation>
     </message>
     <message>
         <source>Type:</source>
@@ -7197,7 +8860,7 @@ a guest session</source>
     </message>
     <message>
         <source>Add USB Controller</source>
-        <translation>เพิ่มตัวควบคุม USB</translation>
+        <translation type="vanished">เพิ่มตัวควบคุม USB</translation>
     </message>
     <message>
         <source>&amp;Hot-pluggable</source>
@@ -7205,11 +8868,11 @@ a guest session</source>
     </message>
     <message>
         <source>Add Optical Drive</source>
-        <translation>เพิ่มไดรฟ์ออปติคัล</translation>
+        <translation type="vanished">เพิ่มไดรฟ์ออปติคัล</translation>
     </message>
     <message>
         <source>Add Floppy Drive</source>
-        <translation>เพิ่มไดรฟ์ฟลอปปี้</translation>
+        <translation type="vanished">เพิ่มไดรฟ์ฟลอปปี้</translation>
     </message>
     <message>
         <source>Optical &amp;Drive:</source>
@@ -7286,7 +8949,7 @@ a guest session</source>
     </message>
     <message>
         <source>Create New Hard Disk...</source>
-        <translation>สร้างฮาร์ดดิสก์ใหม่...</translation>
+        <translation type="vanished">สร้างฮาร์ดดิสก์ใหม่...</translation>
     </message>
     <message>
         <source>Choose Virtual Hard Disk File...</source>
@@ -7311,18 +8974,10 @@ a guest session</source>
     </message>
     <message>
         <source>Add NVMe Controller</source>
-        <translation>เพิ่มตัวควบคุม NVMe</translation>
+        <translation type="vanished">เพิ่มตัวควบคุม NVMe</translation>
     </message>
     <message>
         <source>&amp;Storage Devices</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Bus:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Selects the bus type of the storage controller currently selected in the Storage Tree.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -7336,19 +8991,75 @@ a guest session</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Add virtio-scsi Controller</source>
+        <source>PIIX3 (IDE)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Choose Virtual Hard Disk...</source>
+        <source>PIIX4 (Default IDE)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Choose Virtual Optical Disk...</source>
+        <source>ICH6 (IDE)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Choose Virtual Floppy Disk...</source>
+        <source>AHCI (SATA)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>LsiLogic (Default SCSI)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>BusLogic (SCSI)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>LsiLogic SAS (SAS)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>I82078 (Floppy)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>USB</source>
+        <translation type="unfinished">USB</translation>
+    </message>
+    <message>
+        <source>NVMe (PCIe)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>virtio-scsi</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Hard Disk</source>
+        <translation type="unfinished">ฮาร์ดดิสก์</translation>
+    </message>
+    <message>
+        <source>Optical Drive</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Floppy Drive</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Choose/Create a Virtual Hard Disk...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Choose a disk file...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Choose/Create a Virtual Optical Disk...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Choose/Create a Virtual Floppy Disk...</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -7368,7 +9079,7 @@ a guest session</source>
     </message>
     <message>
         <source>MB</source>
-        <translation>MB</translation>
+        <translation type="vanished">MB</translation>
     </message>
     <message>
         <source>&amp;Boot Order:</source>
@@ -7380,11 +9091,11 @@ a guest session</source>
     </message>
     <message>
         <source>Moves the selected boot device down.</source>
-        <translation>เลื่อนอุปกรณ์สำหรับการบูตที่เลือกลง</translation>
+        <translation type="vanished">เลื่อนอุปกรณ์สำหรับการบูตที่เลือกลง</translation>
     </message>
     <message>
         <source>Moves the selected boot device up.</source>
-        <translation>เลื่อนอุปกรณ์สำหรับการบูตที่เลือกขึ้น</translation>
+        <translation type="vanished">เลื่อนอุปกรณ์สำหรับการบูตที่เลือกขึ้น</translation>
     </message>
     <message>
         <source>Extended Features:</source>
@@ -7532,7 +9243,7 @@ a guest session</source>
     </message>
     <message>
         <source>%1 MB</source>
-        <translation>%1 MB</translation>
+        <translation type="vanished">%1 MB</translation>
     </message>
     <message>
         <source>%1 CPU</source>
@@ -7670,7 +9381,7 @@ a guest session</source>
     </message>
     <message>
         <source>USB &amp;2.0 (EHCI) Controller</source>
-        <translation>ตัวควบคุม USB &amp;2.0 (EHCI)</translation>
+        <translation type="vanished">ตัวควบคุม USB &amp;2.0 (EHCI)</translation>
     </message>
     <message>
         <source>USB &amp;3.0 (xHCI) Controller</source>
@@ -7686,7 +9397,7 @@ a guest session</source>
     </message>
     <message>
         <source>When chosen, enables the virtual USB EHCI controller of this machine. The USB EHCI controller provides USB 2.0 support.</source>
-        <translation>หากเลือกไว้ ระบบจะเปิดใช้ตัวควบคุม USB EHCI เสมือนของเครื่องนี้ ตัวควบคุม USB EHCI รองรับการทำงานของ USB 2.0</translation>
+        <translation type="vanished">หากเลือกไว้ ระบบจะเปิดใช้ตัวควบคุม USB EHCI เสมือนของเครื่องนี้ ตัวควบคุม USB EHCI รองรับการทำงานของ USB 2.0</translation>
     </message>
     <message>
         <source>When chosen, enables the virtual USB xHCI controller of this machine. The USB xHCI controller provides USB 3.0 support.</source>
@@ -7739,6 +9450,14 @@ a guest session</source>
     <message>
         <source>Moves selected USB filter down.</source>
         <translation>เลื่อนลำดับฟิลเตอร์ USB ที่เลือกลง</translation>
+    </message>
+    <message>
+        <source>When chosen, enables the virtual USB OHCI and EHCI controllers of this machine. Together they provide USB 2.0 support.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>USB &amp;2.0 (OHCI + EHCI) Controller</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -8247,19 +9966,19 @@ a guest session</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Cancel</source>
-        <translation type="unfinished">ยกเลิก</translation>
-    </message>
-    <message>
-        <source>Leave Empty</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Expand All</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Collapse All</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Cancel</source>
+        <translation type="unfinished">ยกเลิก</translation>
+    </message>
+    <message>
+        <source>Leave Empty</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -8523,7 +10242,7 @@ a guest session</source>
     </message>
     <message>
         <source>&lt;p&gt;The virtual machine execution may run into an error condition as described below. We suggest that you take an appropriate action to avert the error.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;การทำงานของเวอร์ชวลแมชชีนอาจพบข้อผิดพลาดดังที่อธิบายไว้ด้านล่าง เราขอแนะนำให้คุณดำเนินการแก้ไขตามความเหมาะสมเพื่อเลี่ยงข้อผิดพลาดดังกล่าว&lt;/p&gt;</translation>
+        <translation type="vanished">&lt;p&gt;การทำงานของเวอร์ชวลแมชชีนอาจพบข้อผิดพลาดดังที่อธิบายไว้ด้านล่าง เราขอแนะนำให้คุณดำเนินการแก้ไขตามความเหมาะสมเพื่อเลี่ยงข้อผิดพลาดดังกล่าว&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Result&amp;nbsp;Code: </source>
@@ -9636,6 +11355,10 @@ a guest session</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <source>Failed to acquire machine parameter.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>&lt;p&gt;This controller has optical devices attached.  You have requested storage bus change to type which doesn&apos;t support optical devices.&lt;/p&gt;&lt;p&gt;If you proceed optical devices will be removed.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
@@ -9644,15 +11367,35 @@ a guest session</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <source>Failed to change the attribute of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to change graphics adapter attribute.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to change audio adapter attribute.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to change network adapter attribute.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>Failed to open the medium with following ID: &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Failed to acquire attachment medium.</source>
+        <source>Failed to acquire attachment parameter.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Failed to acquire medium attribute.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to create cloud machine.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -9668,7 +11411,15 @@ a guest session</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <source>&lt;p&gt;Cannot add a virtual system description value.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>&lt;p&gt;Cannot acquire a virtual system description property.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The virtual machine execution ran into a non-fatal problem as described below. We suggest that you take appropriate action to prevent the problem from recurring.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -9738,6 +11489,46 @@ a guest session</source>
     </message>
     <message>
         <source>Machine Folder:</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UINetworkAttachmentEditor</name>
+    <message>
+        <source>&amp;Attached to:</source>
+        <translation type="unfinished">เชื่อม&amp;ต่อกับ:</translation>
+    </message>
+    <message>
+        <source>&amp;Name:</source>
+        <translation type="unfinished">&amp;ชื่อ:</translation>
+    </message>
+    <message>
+        <source>Not selected</source>
+        <comment>network adapter name</comment>
+        <translation type="unfinished">ไม่ได้เลือก</translation>
+    </message>
+    <message>
+        <source>Selects the network adapter on the host system that traffic to and from this network card will go through.</source>
+        <translation type="unfinished">เลือกแผงวงจรเครือข่ายของโฮสต์ที่ต้องการให้การ์ดเครือข่ายนี้ใช้สื่อสารทั้งขาเข้าและขาออก</translation>
+    </message>
+    <message>
+        <source>Holds the name of the internal network that this network card will be connected to. You can create a new internal network by choosing a name which is not used by any other network cards in this virtual machine or others.</source>
+        <translation type="unfinished">เก็บชื่อเครือข่ายภายในที่การ์ดเครือข่ายนี้จะถูกเชื่อมต่อไว้ คุณสามารถสร้างเครือข่ายภายในขึ้นมาใหม่โดยเลือกใช้ชื่อที่ไม่ได้ถูกใช้งานโดยเวอร์ชวลแมชชีนเครื่องนี้หรือเครื่องอื่น ๆ</translation>
+    </message>
+    <message>
+        <source>Selects the virtual network adapter on the host system that traffic to and from this network card will go through. You can create and remove adapters using the global network settings in the virtual machine manager window.</source>
+        <translation type="unfinished">เลือกแผงวงจรเครือข่ายเสมือนของโฮสต์ที่ต้องการให้การ์ดเครือข่ายนี้ใช้สื่อสารทั้งขาเข้าและขาออก คุณสามารถสร้างและถอนแผงวงจรได้โดยใช้การตั้งค่าเครือข่ายกลางในหน้าต่างจัดการเวอร์ชวลแมชชีน</translation>
+    </message>
+    <message>
+        <source>Selects the driver to be used with this network card.</source>
+        <translation type="unfinished">เลือกไดร์เวอร์ที่จะใช้กับการ์ดเครือข่ายนี้</translation>
+    </message>
+    <message>
+        <source>Holds the name of the NAT network that this network card will be connected to. You can create and remove networks using the global network settings in the virtual machine manager window.</source>
+        <translation type="unfinished">เก็บชื่อเครือข่าย NAT ที่การ์ดเครือข่ายนี้จะถูกเชื่อมต่อไว้ คุณสามารถสร้างและนำเครือข่ายออกได้ที่การตั้งค่าเครือข่ายส่วนกลางในหน้าต่างตัวจัดการเวอร์ชวลแมชชีน</translation>
+    </message>
+    <message>
+        <source>(experimental) Holds the name of the cloud network that this network card will be connected to. You can add and remove cloud networks using the global network settings in the virtual machine manager window.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -10398,50 +12189,284 @@ a guest session</source>
 <context>
     <name>UISoftKeyboard</name>
     <message>
-        <source>XML files (*.xml)</source>
+        <source>Layout Editor</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Choose file to load physical keyboard layout..</source>
+        <source>Return Back to Layout List</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Load Layout</source>
+        <source>Back to Layout List</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Load Layout </source>
+        <source>Physical Layout</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Load Layout File...</source>
+        <source>English Name</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Keycaps</source>
+        <source>Name of the Layout in English</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Show key positions instead of key caps</source>
+        <source>Native Language Name</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Add/change key cap</source>
+        <source>Name of the Layout in the native Language</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Save key caps to file...</source>
+        <source>Scan Code</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The scan code the key produces. Not editable</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Position</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The physical position of the key. Not editable</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Base</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Shift</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>AltGr</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>ShiftAltGr</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Captions</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Selected Key</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Use the selected layout</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Edit the selected layout</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Delete the selected layout</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Copy the selected layout</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Save the selected layout into File</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Layout List</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Close the layout list</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Web browser go back</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Web browser go the home page</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Web browser go forward</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Web browser reload the current page</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Web browser stop loading the page</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Web browser search</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Jump back to previous media track</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Jump to next media track</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Stop playing</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Play or pause playing</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Start email application</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Start calculator</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show &apos;My Computer&apos;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show Media folder</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Mute</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Volume up</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Volume down</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Error! Could not create folder under</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Provide a file name</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The file will be saved under:
+</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source> is an invalid file name</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source> is saved</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Copy</source>
+        <translation type="unfinished">คัดลอก</translation>
+    </message>
+    <message>
+        <source>This will delete the keyboard layout file as well. Proceed?</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The file </source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source> has been deleted</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Deleting the file </source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source> has failed</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Settings</source>
+        <translation type="unfinished">การตั้งค่า</translation>
+    </message>
+    <message>
+        <source>Reset the keyboard and release all keys</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Click to change the color.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>This color theme is not editable.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Keyboard Settings</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Hide NumPad</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Hide OS/Menu Keys</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Hide Multimedia Keys</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Color Themes</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Button Background Color</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Button Font Color</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Button Hover Color</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Button Edit Color</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Pressed Button Font Color</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Soft Keyboard</source>
         <translation type="unfinished"></translation>
     </message>
-</context>
-<context>
-    <name>UISoftKeyboardWidget</name>
     <message>
-        <source>Save keycaps to a file...</source>
+        <source>&lt;p&gt;Following layouts are edited/copied but not saved:&lt;/p&gt;%1&lt;p&gt;Closing this dialog will cause loosing the changes. Proceed?&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Layout</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -10832,8 +12857,216 @@ a guest session</source>
         <translation>ข้อมูลของ&amp;รุ่นที่ใช้งาน</translation>
     </message>
     <message>
+        <source>General</source>
+        <translation type="unfinished">ทั่วไป</translation>
+    </message>
+    <message>
+        <source>System</source>
+        <translation type="unfinished">ระบบ</translation>
+    </message>
+    <message>
+        <source>Display</source>
+        <translation type="unfinished">หน่วยแสดงผล</translation>
+    </message>
+    <message>
+        <source>Storage</source>
+        <translation type="unfinished">หน่วยเก็บข้อมูล</translation>
+    </message>
+    <message>
+        <source>Audio</source>
+        <translation type="unfinished">เสียง</translation>
+    </message>
+    <message>
+        <source>Network</source>
+        <translation type="unfinished">เครือข่าย</translation>
+    </message>
+    <message>
+        <source>Serial Ports</source>
+        <translation type="unfinished">พอร์ตอนุกรม</translation>
+    </message>
+    <message>
+        <source>USB</source>
+        <translation type="unfinished">USB</translation>
+    </message>
+    <message>
+        <source>Shared Folders</source>
+        <translation type="unfinished">โฟลเดอร์ใช้ร่วมกัน</translation>
+    </message>
+    <message>
+        <source>Performance &amp;Monitor</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>Guest Control &amp;Session Information</source>
         <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>No guest additions! This metric requires guest additions to work properly.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Reset</source>
+        <translation type="unfinished">รีเซ็ต</translation>
+    </message>
+    <message>
+        <source>Show Pie Chart</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Draw Area Chart</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Seconds</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>CPU Load</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Guest Load</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>VMM Load</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>RAM Usage</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Total</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Free</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Used</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Network Rate</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Receive Rate</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Transmit Rate</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Total Received</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Total Transmitted</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Disk IO Rate</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Write Rate</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Read Rate</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Total Written</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Total Read</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>VM Exits</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Current</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Runtime Attributes</source>
+        <translation type="unfinished">คุณสมบัติเฉพาะของรุ่นที่ใช้</translation>
+    </message>
+    <message>
+        <source>Screen Resolution</source>
+        <translation type="unfinished">ความละเอียดจอภาพ</translation>
+    </message>
+    <message>
+        <source>turned off</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>VM Uptime</source>
+        <translation type="unfinished">เวลาตั้งแต่เปิด VM</translation>
+    </message>
+    <message>
+        <source>Clipboard Mode</source>
+        <translation type="unfinished">โหมดของคลิปบอร์ด</translation>
+    </message>
+    <message>
+        <source>Drag and Drop Mode</source>
+        <translation type="unfinished">โหมดลากแล้วปล่อย</translation>
+    </message>
+    <message>
+        <source>VM Execution Engine</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Nested Paging</source>
+        <translation type="unfinished">การแบ่งหน้าซ้อนกัน</translation>
+    </message>
+    <message>
+        <source>Unrestricted Execution</source>
+        <translation type="unfinished">ประมวลผลโดยไม่มีข้อจำกัด</translation>
+    </message>
+    <message>
+        <source>Paravirtualization Interface</source>
+        <translation type="unfinished">ส่วนเชื่อมต่อพาราเวอร์ชวลไลเซชัน</translation>
+    </message>
+    <message>
+        <source>Active</source>
+        <translation type="unfinished">ใช้งานอยู่</translation>
+    </message>
+    <message>
+        <source>Inactive</source>
+        <translation type="unfinished">ไม่ได้ใช้งาน</translation>
+    </message>
+    <message>
+        <source>Not Available</source>
+        <translation type="unfinished">ไม่พร้อมใช้งาน</translation>
+    </message>
+    <message>
+        <source>Guest Additions</source>
+        <translation type="unfinished">โปรแกรมเสริมสำหรับเกสต์</translation>
+    </message>
+    <message>
+        <source>Guest OS Type</source>
+        <translation type="unfinished">ชนิดของเกสต์โอเอส</translation>
+    </message>
+    <message>
+        <source>Remote Desktop Server Port</source>
+        <translation type="unfinished">พอร์ตเซอร์ฟเวอร์รีโมตเดสก์ทอป</translation>
+    </message>
+    <message>
+        <source>not set</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Not Detected</source>
+        <translation type="unfinished">ไม่พบ</translation>
     </message>
 </context>
 <context>
@@ -11083,6 +13316,21 @@ a guest session</source>
     </message>
 </context>
 <context>
+    <name>UIVideoMemoryEditor</name>
+    <message>
+        <source>Video &amp;Memory:</source>
+        <translation type="unfinished">&amp;หน่วยความจำวิดีโอ:</translation>
+    </message>
+    <message>
+        <source>%1 MB</source>
+        <translation type="unfinished">%1 MB</translation>
+    </message>
+    <message>
+        <source>MB</source>
+        <translation type="unfinished">MB</translation>
+    </message>
+</context>
+<context>
     <name>UIVirtualBoxManager</name>
     <message>
         <source>Manager</source>
@@ -11189,8 +13437,16 @@ a guest session</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Click to show/hide the tree view</source>
+        <source>Remove</source>
+        <translation type="unfinished">นำออก</translation>
+    </message>
+    <message>
+        <source>New Directory</source>
         <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Reset</source>
+        <translation type="unfinished">รีเซ็ต</translation>
     </message>
     <message>
         <source>VISO Creator</source>
@@ -11201,7 +13457,7 @@ a guest session</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Add selected file objects to VISO</source>
+        <source>Remove current option.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -11209,23 +13465,15 @@ a guest session</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Remove</source>
-        <translation type="unfinished">นำออก</translation>
+        <source>Click to show/hide the tree view</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>New Directory</source>
+        <source>Add selected file objects to VISO</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Reset VISO content.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Reset</source>
-        <translation type="unfinished">รีเซ็ต</translation>
-    </message>
-    <message>
-        <source>Remove current option.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -11838,6 +14086,22 @@ a guest session</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <source>Machine Creation:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Ask me about it &amp;after exporting disk as custom image</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Ask me about it &amp;before exporting disk as custom image</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Do &amp;not ask me about it, leave custom image for future usage</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>This is the descriptive information which will be used to determine settings for a cloud storage your VM being exported to.  You can change it by double clicking on individual lines.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -11962,7 +14226,19 @@ a guest session</source>
         <translation>มีลายเซ็นด้วยตนเองที่ไม่ได้ยืนยันของ %1!</translation>
     </message>
     <message>
-        <source>You can modify the base folder which will host all the virtual machines. Home folders can also be individually (per virtual machine) modified.</source>
+        <source>Importing Appliance ...</source>
+        <translation type="unfinished">กำลังนำเข้าแอพพลายแอนซ์ ...</translation>
+    </message>
+    <message>
+        <source>Acquire cloud instances...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Read appliance...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Acquire import form...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -12013,31 +14289,81 @@ a guest session</source>
         <source>Settings</source>
         <translation type="unfinished">การตั้งค่า</translation>
     </message>
-    <message>
-        <source>Importing Appliance ...</source>
-        <translation type="unfinished">กำลังนำเข้าแอพพลายแอนซ์ ...</translation>
-    </message>
-    <message>
-        <source>Acquire stopped cloud instances...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Acquire running cloud instances...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Read appliance...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Acquire import form...</source>
-        <translation type="unfinished"></translation>
-    </message>
 </context>
 <context>
     <name>UIWizardImportAppPageBasic1</name>
     <message>
         <source>&amp;Source:</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIWizardNewCloudVM</name>
+    <message>
+        <source>Acquire launch form...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Create Cloud Machine ...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Create Cloud Virtual Machine</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Create</source>
+        <translation type="unfinished">สร้าง</translation>
+    </message>
+    <message>
+        <source>Acquire cloud images...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Destination to create</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Please choose the destination to create cloud virtual machine in.  This can be one of known cloud service providers below.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Create VM for cloud service provider.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Please choose one of cloud service accounts you have registered to create virtual machine for.  Existing custom images list will be updated.  To continue, select one of custom images to create virtual machine on the basis of it.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Account:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Images:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Cloud Virtual Machine settings</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>These are the the suggested settings of the cloud VM creation procedure, they are influencing the resulting cloud VM instance.  You can change many of the properties shown by double-clicking on the items and disable others using the check boxes below.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Destination</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Settings</source>
+        <translation type="unfinished">การตั้งค่า</translation>
+    </message>
+</context>
+<context>
+    <name>UIWizardNewCloudVMPageBasic1</name>
+    <message>
+        <source>&amp;Destination:</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -12207,26 +14533,26 @@ a guest session</source>
     </message>
 </context>
 <context>
-    <name>UICommon</name>
+    <name>VBoxGlobal</name>
     <message>
         <source>Unknown device %1:%2</source>
         <comment>USB device details</comment>
-        <translation>อุปกรณ์ที่ไม่รู้จัก %1: %2</translation>
+        <translation type="vanished">อุปกรณ์ที่ไม่รู้จัก %1: %2</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;Vendor ID: %1&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Product ID: %2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Revision: %3&lt;/nobr&gt;</source>
         <comment>USB device tooltip</comment>
-        <translation>&lt;nobr&gt;รหัสผู้ผลิต: %1&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;รหัสผลิตภัณฑ์: %2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;ครั้งที่แก้ไข: %3&lt;/nobr&gt;</translation>
+        <translation type="vanished">&lt;nobr&gt;รหัสผู้ผลิต: %1&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;รหัสผลิตภัณฑ์: %2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;ครั้งที่แก้ไข: %3&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;Serial No. %1&lt;/nobr&gt;</source>
         <comment>USB device tooltip</comment>
-        <translation>&lt;nobr&gt;เลขลำดับ: %1&lt;/nobr&gt;</translation>
+        <translation type="vanished">&lt;nobr&gt;เลขลำดับ: %1&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;State: %1&lt;/nobr&gt;</source>
         <comment>USB device tooltip</comment>
-        <translation>&lt;br&gt;&lt;nobr&gt;สถานะ: %1&lt;/nobr&gt;</translation>
+        <translation type="vanished">&lt;br&gt;&lt;nobr&gt;สถานะ: %1&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>Name</source>
@@ -12301,7 +14627,7 @@ a guest session</source>
     <message>
         <source>Adapter %1</source>
         <comment>details report (network)</comment>
-        <translation>แผงวงจร %1</translation>
+        <translation type="vanished">แผงวงจร %1</translation>
     </message>
     <message>
         <source>Disabled</source>
@@ -12331,167 +14657,167 @@ a guest session</source>
     <message>
         <source>Powered Off</source>
         <comment>MachineState</comment>
-        <translation>ปิด</translation>
+        <translation type="vanished">ปิด</translation>
     </message>
     <message>
         <source>Saved</source>
         <comment>MachineState</comment>
-        <translation>บันทึกไว้</translation>
+        <translation type="vanished">บันทึกไว้</translation>
     </message>
     <message>
         <source>Aborted</source>
         <comment>MachineState</comment>
-        <translation>ล้มเหลว</translation>
+        <translation type="vanished">ล้มเหลว</translation>
     </message>
     <message>
         <source>Running</source>
         <comment>MachineState</comment>
-        <translation>กำลังรัน</translation>
+        <translation type="vanished">กำลังรัน</translation>
     </message>
     <message>
         <source>Paused</source>
         <comment>MachineState</comment>
-        <translation>หยุดชั่วคราว</translation>
+        <translation type="vanished">หยุดชั่วคราว</translation>
     </message>
     <message>
         <source>Starting</source>
         <comment>MachineState</comment>
-        <translation>กำลังเริ่ม</translation>
+        <translation type="vanished">กำลังเริ่ม</translation>
     </message>
     <message>
         <source>Stopping</source>
         <comment>MachineState</comment>
-        <translation>กำลังหยุด</translation>
+        <translation type="vanished">กำลังหยุด</translation>
     </message>
     <message>
         <source>Saving</source>
         <comment>MachineState</comment>
-        <translation>กำลังบันทึก</translation>
+        <translation type="vanished">กำลังบันทึก</translation>
     </message>
     <message>
         <source>Restoring</source>
         <comment>MachineState</comment>
-        <translation>กำลังคืนค่า</translation>
+        <translation type="vanished">กำลังคืนค่า</translation>
     </message>
     <message>
         <source>Spawning</source>
         <comment>SessionState</comment>
-        <translation>กำลังแตกแขนง</translation>
+        <translation type="vanished">กำลังแตกแขนง</translation>
     </message>
     <message>
         <source>None</source>
         <comment>DeviceType</comment>
-        <translation>ไม่มี</translation>
+        <translation type="vanished">ไม่มี</translation>
     </message>
     <message>
         <source>Floppy</source>
         <comment>DeviceType</comment>
-        <translation>ฟลอปปี้</translation>
+        <translation type="vanished">ฟลอปปี้</translation>
     </message>
     <message>
         <source>Hard Disk</source>
         <comment>DeviceType</comment>
-        <translation>ฮาร์ดดิสก์</translation>
+        <translation type="vanished">ฮาร์ดดิสก์</translation>
     </message>
     <message>
         <source>Network</source>
         <comment>DeviceType</comment>
-        <translation>เครือข่าย</translation>
+        <translation type="vanished">เครือข่าย</translation>
     </message>
     <message>
         <source>Null Audio Driver</source>
         <comment>AudioDriverType</comment>
-        <translation>ไดร์เวอร์เสียง Null</translation>
+        <translation type="vanished">ไดร์เวอร์เสียง Null</translation>
     </message>
     <message>
         <source>Windows Multimedia</source>
         <comment>AudioDriverType</comment>
-        <translation>วินโดวส์มัลติมีเดีย</translation>
+        <translation type="vanished">วินโดวส์มัลติมีเดีย</translation>
     </message>
     <message>
         <source>OSS Audio Driver</source>
         <comment>AudioDriverType</comment>
-        <translation>ไดร์เวอร์เสียง OSS</translation>
+        <translation type="vanished">ไดร์เวอร์เสียง OSS</translation>
     </message>
     <message>
         <source>ALSA Audio Driver</source>
         <comment>AudioDriverType</comment>
-        <translation>ไดร์เวอร์เสียง ALSA</translation>
+        <translation type="vanished">ไดร์เวอร์เสียง ALSA</translation>
     </message>
     <message>
         <source>Windows DirectSound</source>
         <comment>AudioDriverType</comment>
-        <translation>วินโดวส์ไดเรกซาวด์</translation>
+        <translation type="vanished">วินโดวส์ไดเรกซาวด์</translation>
     </message>
     <message>
         <source>CoreAudio</source>
         <comment>AudioDriverType</comment>
-        <translation>คอร์ออดิโอ</translation>
+        <translation type="vanished">คอร์ออดิโอ</translation>
     </message>
     <message>
         <source>Not attached</source>
         <comment>NetworkAttachmentType</comment>
-        <translation>ไม่ได้เชื่อมต่อ</translation>
+        <translation type="vanished">ไม่ได้เชื่อมต่อ</translation>
     </message>
     <message>
         <source>NAT</source>
         <comment>NetworkAttachmentType</comment>
-        <translation>NAT</translation>
+        <translation type="vanished">NAT</translation>
     </message>
     <message>
         <source>Internal Network</source>
         <comment>NetworkAttachmentType</comment>
-        <translation>เครือข่ายภายใน</translation>
+        <translation type="vanished">เครือข่ายภายใน</translation>
     </message>
     <message>
         <source>Not supported</source>
         <comment>USBDeviceState</comment>
-        <translation>ไม่รองรับ</translation>
+        <translation type="vanished">ไม่รองรับ</translation>
     </message>
     <message>
         <source>Unavailable</source>
         <comment>USBDeviceState</comment>
-        <translation>ไม่พร้อมใช้งาน</translation>
+        <translation type="vanished">ไม่พร้อมใช้งาน</translation>
     </message>
     <message>
         <source>Busy</source>
         <comment>USBDeviceState</comment>
-        <translation>ไม่ว่าง</translation>
+        <translation type="vanished">ไม่ว่าง</translation>
     </message>
     <message>
         <source>Available</source>
         <comment>USBDeviceState</comment>
-        <translation>พร้อมใช้งาน</translation>
+        <translation type="vanished">พร้อมใช้งาน</translation>
     </message>
     <message>
         <source>Held</source>
         <comment>USBDeviceState</comment>
-        <translation>จับไว้</translation>
+        <translation type="vanished">จับไว้</translation>
     </message>
     <message>
         <source>Captured</source>
         <comment>USBDeviceState</comment>
-        <translation>ถูกจับไว้</translation>
+        <translation type="vanished">ถูกจับไว้</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>ClipboardType</comment>
-        <translation>ไม่ใช้</translation>
+        <translation type="vanished">ไม่ใช้</translation>
     </message>
     <message>
         <source>Host To Guest</source>
         <comment>ClipboardType</comment>
-        <translation>จากโฮสต์ไปเกสต์</translation>
+        <translation type="vanished">จากโฮสต์ไปเกสต์</translation>
     </message>
     <message>
         <source>Guest To Host</source>
         <comment>ClipboardType</comment>
-        <translation>จากเกสต์ไปโฮสต์</translation>
+        <translation type="vanished">จากเกสต์ไปโฮสต์</translation>
     </message>
     <message>
         <source>Bidirectional</source>
         <comment>ClipboardType</comment>
-        <translation>สองทิศทาง</translation>
+        <translation type="vanished">สองทิศทาง</translation>
     </message>
     <message>
         <source>Port %1</source>
@@ -12531,22 +14857,22 @@ a guest session</source>
     <message>
         <source>Disconnected</source>
         <comment>PortMode</comment>
-        <translation>ไม่ได้เชื่อมต่อ</translation>
+        <translation type="vanished">ไม่ได้เชื่อมต่อ</translation>
     </message>
     <message>
         <source>Host Pipe</source>
         <comment>PortMode</comment>
-        <translation>ท่อของโฮสต์</translation>
+        <translation type="vanished">ท่อของโฮสต์</translation>
     </message>
     <message>
         <source>Host Device</source>
         <comment>PortMode</comment>
-        <translation>อุปกรณ์ของโฮสต์</translation>
+        <translation type="vanished">อุปกรณ์ของโฮสต์</translation>
     </message>
     <message>
         <source>User-defined</source>
         <comment>serial port</comment>
-        <translation>กำหนดโดยผู้ใช้</translation>
+        <translation type="vanished">กำหนดโดยผู้ใช้</translation>
     </message>
     <message>
         <source>VT-x/AMD-V</source>
@@ -12606,112 +14932,112 @@ a guest session</source>
     <message>
         <source>USB</source>
         <comment>DeviceType</comment>
-        <translation>USB</translation>
+        <translation type="vanished">USB</translation>
     </message>
     <message>
         <source>Shared Folder</source>
         <comment>DeviceType</comment>
-        <translation>โฟลเดอร์ใช้ร่วมกัน</translation>
+        <translation type="vanished">โฟลเดอร์ใช้ร่วมกัน</translation>
     </message>
     <message>
         <source>IDE</source>
         <comment>StorageBus</comment>
-        <translation>IDE</translation>
+        <translation type="vanished">IDE</translation>
     </message>
     <message>
         <source>SATA</source>
         <comment>StorageBus</comment>
-        <translation>SATA</translation>
+        <translation type="vanished">SATA</translation>
     </message>
     <message>
         <source>Solaris Audio</source>
         <comment>AudioDriverType</comment>
-        <translation>โซลาริสออดิโอ</translation>
+        <translation type="vanished">โซลาริสออดิโอ</translation>
     </message>
     <message>
         <source>PulseAudio</source>
         <comment>AudioDriverType</comment>
-        <translation>พัลส์ออดิโอ</translation>
+        <translation type="vanished">พัลส์ออดิโอ</translation>
     </message>
     <message>
         <source>ICH AC97</source>
         <comment>AudioControllerType</comment>
-        <translation>ICH AC97</translation>
+        <translation type="vanished">ICH AC97</translation>
     </message>
     <message>
         <source>SoundBlaster 16</source>
         <comment>AudioControllerType</comment>
-        <translation>ซาวด์บลาสเตอร์ 16</translation>
+        <translation type="vanished">ซาวด์บลาสเตอร์ 16</translation>
     </message>
     <message>
         <source>PCnet-PCI II (Am79C970A)</source>
         <comment>NetworkAdapterType</comment>
-        <translation>PCnet-PCI II (Am79C970A)</translation>
+        <translation type="vanished">PCnet-PCI II (Am79C970A)</translation>
     </message>
     <message>
         <source>PCnet-FAST III (Am79C973)</source>
         <comment>NetworkAdapterType</comment>
-        <translation>PCnet-FAST III (Am79C973)</translation>
+        <translation type="vanished">PCnet-FAST III (Am79C973)</translation>
     </message>
     <message>
         <source>Intel PRO/1000 MT Desktop (82540EM)</source>
         <comment>NetworkAdapterType</comment>
-        <translation>Intel PRO/1000 MT Desktop (82540EM)</translation>
+        <translation type="vanished">Intel PRO/1000 MT Desktop (82540EM)</translation>
     </message>
     <message>
         <source>Intel PRO/1000 T Server (82543GC)</source>
         <comment>NetworkAdapterType</comment>
-        <translation>Intel PRO/1000 T Server (82543GC)</translation>
+        <translation type="vanished">Intel PRO/1000 T Server (82543GC)</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;Vendor ID: %1&lt;/nobr&gt;</source>
         <comment>USB filter tooltip</comment>
-        <translation>&lt;nobr&gt;รหัสผู้ผลิต: %1&lt;/nobr&gt;</translation>
+        <translation type="vanished">&lt;nobr&gt;รหัสผู้ผลิต: %1&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;Product ID: %2&lt;/nobr&gt;</source>
         <comment>USB filter tooltip</comment>
-        <translation>&lt;nobr&gt;รหัสผลิตภัณฑ์: %2&lt;/nobr&gt;</translation>
+        <translation type="vanished">&lt;nobr&gt;รหัสผลิตภัณฑ์: %2&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;Revision: %3&lt;/nobr&gt;</source>
         <comment>USB filter tooltip</comment>
-        <translation>&lt;nobr&gt;ครั้งที่แก้ไข: %3&lt;/nobr&gt;</translation>
+        <translation type="vanished">&lt;nobr&gt;ครั้งที่แก้ไข: %3&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;Product: %4&lt;/nobr&gt;</source>
         <comment>USB filter tooltip</comment>
-        <translation>&lt;nobr&gt;ผลิตภัณฑ์: %4&lt;/nobr&gt;</translation>
+        <translation type="vanished">&lt;nobr&gt;ผลิตภัณฑ์: %4&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;Manufacturer: %5&lt;/nobr&gt;</source>
         <comment>USB filter tooltip</comment>
-        <translation>&lt;nobr&gt;ผู้ผลิต: %5&lt;/nobr&gt;</translation>
+        <translation type="vanished">&lt;nobr&gt;ผู้ผลิต: %5&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;Serial No.: %1&lt;/nobr&gt;</source>
         <comment>USB filter tooltip</comment>
-        <translation>&lt;nobr&gt;เลขลำดับ: %1&lt;/nobr&gt;</translation>
+        <translation type="vanished">&lt;nobr&gt;เลขลำดับ: %1&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;Port: %1&lt;/nobr&gt;</source>
         <comment>USB filter tooltip</comment>
-        <translation>&lt;nobr&gt;พอร์ต: %1&lt;/nobr&gt;</translation>
+        <translation type="vanished">&lt;nobr&gt;พอร์ต: %1&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;State: %1&lt;/nobr&gt;</source>
         <comment>USB filter tooltip</comment>
-        <translation>&lt;nobr&gt;สถานะ: %1&lt;/nobr&gt;</translation>
+        <translation type="vanished">&lt;nobr&gt;สถานะ: %1&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>Checking...</source>
         <comment>medium</comment>
-        <translation>กำลังตรวจสอบ...</translation>
+        <translation type="vanished">กำลังตรวจสอบ...</translation>
     </message>
     <message>
         <source>Inaccessible</source>
         <comment>medium</comment>
-        <translation>ไม่สามารถเข้าถึงได้</translation>
+        <translation type="vanished">ไม่สามารถเข้าถึงได้</translation>
     </message>
     <message>
         <source>3D Acceleration</source>
@@ -12721,17 +15047,17 @@ a guest session</source>
     <message>
         <source>Enabled</source>
         <comment>details report (3D Acceleration)</comment>
-        <translation>ใช้</translation>
+        <translation type="vanished">ใช้</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>details report (3D Acceleration)</comment>
-        <translation>ไม่ใช้</translation>
+        <translation type="vanished">ไม่ใช้</translation>
     </message>
     <message>
         <source>Setting Up</source>
         <comment>MachineState</comment>
-        <translation>กำลังตั้งค่า</translation>
+        <translation type="vanished">กำลังตั้งค่า</translation>
     </message>
     <message>
         <source>Differencing</source>
@@ -12761,37 +15087,37 @@ a guest session</source>
     <message>
         <source>SCSI</source>
         <comment>StorageBus</comment>
-        <translation>SCSI</translation>
+        <translation type="vanished">SCSI</translation>
     </message>
     <message>
         <source>PIIX3</source>
         <comment>StorageControllerType</comment>
-        <translation>PIIX3</translation>
+        <translation type="vanished">PIIX3</translation>
     </message>
     <message>
         <source>PIIX4</source>
         <comment>StorageControllerType</comment>
-        <translation>PIIX4</translation>
+        <translation type="vanished">PIIX4</translation>
     </message>
     <message>
         <source>ICH6</source>
         <comment>StorageControllerType</comment>
-        <translation>ICH6</translation>
+        <translation type="vanished">ICH6</translation>
     </message>
     <message>
         <source>AHCI</source>
         <comment>StorageControllerType</comment>
-        <translation>AHCI</translation>
+        <translation type="vanished">AHCI</translation>
     </message>
     <message>
         <source>Lsilogic</source>
         <comment>StorageControllerType</comment>
-        <translation>Lsilogic</translation>
+        <translation type="vanished">Lsilogic</translation>
     </message>
     <message>
         <source>BusLogic</source>
         <comment>StorageControllerType</comment>
-        <translation>BusLogic</translation>
+        <translation type="vanished">BusLogic</translation>
     </message>
     <message>
         <source>Bridged adapter, %1</source>
@@ -12806,22 +15132,22 @@ a guest session</source>
     <message>
         <source>Intel PRO/1000 MT Server (82545EM)</source>
         <comment>NetworkAdapterType</comment>
-        <translation>Intel PRO/1000 MT Server (82545EM)</translation>
+        <translation type="vanished">Intel PRO/1000 MT Server (82545EM)</translation>
     </message>
     <message>
         <source>Bridged Adapter</source>
         <comment>NetworkAttachmentType</comment>
-        <translation>แผงวงจรแบบบริดจ์</translation>
+        <translation type="vanished">แผงวงจรแบบบริดจ์</translation>
     </message>
     <message>
         <source>Host-only Adapter</source>
         <comment>NetworkAttachmentType</comment>
-        <translation>แผงวงจรเฉพาะโฮสต์</translation>
+        <translation type="vanished">แผงวงจรเฉพาะโฮสต์</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;%1 MB&lt;/nobr&gt;</source>
         <comment>details report</comment>
-        <translation>&lt;nobr&gt;%1 MB&lt;/nobr&gt;</translation>
+        <translation type="vanished">&lt;nobr&gt;%1 MB&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>Processor(s)</source>
@@ -12846,7 +15172,7 @@ a guest session</source>
     <message>
         <source>Raw File</source>
         <comment>PortMode</comment>
-        <translation>ไฟล์ดิบ</translation>
+        <translation type="vanished">ไฟล์ดิบ</translation>
     </message>
     <message>
         <source>Enabled</source>
@@ -12876,140 +15202,140 @@ a guest session</source>
     <message>
         <source>Teleported</source>
         <comment>MachineState</comment>
-        <translation>เคลื่อนย้ายแล้ว</translation>
+        <translation type="vanished">เคลื่อนย้ายแล้ว</translation>
     </message>
     <message>
         <source>Guru Meditation</source>
         <comment>MachineState</comment>
-        <translation>กูรูเข้าฌาน</translation>
+        <translation type="vanished">กูรูเข้าฌาน</translation>
     </message>
     <message>
         <source>Teleporting</source>
         <comment>MachineState</comment>
-        <translation>กำลังเคลื่อนย้าย</translation>
+        <translation type="vanished">กำลังเคลื่อนย้าย</translation>
     </message>
     <message>
         <source>Taking Live Snapshot</source>
         <comment>MachineState</comment>
-        <translation>กำลังเก็บไลฟ์สแนปช็อต</translation>
+        <translation type="vanished">กำลังเก็บไลฟ์สแนปช็อต</translation>
     </message>
     <message>
         <source>Teleporting Paused VM</source>
         <comment>MachineState</comment>
-        <translation>กำลังเคลื่อนย้าย VM ที่หยุดการทำงานไว้</translation>
+        <translation type="vanished">กำลังเคลื่อนย้าย VM ที่หยุดการทำงานไว้</translation>
     </message>
     <message>
         <source>Restoring Snapshot</source>
         <comment>MachineState</comment>
-        <translation>กำลังคืนค่าสแนปช็อต</translation>
+        <translation type="vanished">กำลังคืนค่าสแนปช็อต</translation>
     </message>
     <message>
         <source>Deleting Snapshot</source>
         <comment>MachineState</comment>
-        <translation>กำลังลบสแนปช็อต</translation>
+        <translation type="vanished">กำลังลบสแนปช็อต</translation>
     </message>
     <message>
         <source>Floppy</source>
         <comment>StorageBus</comment>
-        <translation>ฟลอปปี้</translation>
+        <translation type="vanished">ฟลอปปี้</translation>
     </message>
     <message>
         <source>Paravirtualized Network (virtio-net)</source>
         <comment>NetworkAdapterType</comment>
-        <translation>เครือข่ายพาราเวอร์ชวลไลซ์ (virtio-net)</translation>
+        <translation type="vanished">เครือข่ายพาราเวอร์ชวลไลซ์ (virtio-net)</translation>
     </message>
     <message>
         <source>I82078</source>
         <comment>StorageControllerType</comment>
-        <translation>I82078</translation>
+        <translation type="vanished">I82078</translation>
     </message>
     <message>
         <source>Empty</source>
         <comment>medium</comment>
-        <translation>ว่าง</translation>
+        <translation type="vanished">ว่าง</translation>
     </message>
     <message>
         <source>Host Drive &apos;%1&apos;</source>
         <comment>medium</comment>
-        <translation>ไดรฟ์ของโฮสต์ &apos;%1&apos;</translation>
+        <translation type="vanished">ไดรฟ์ของโฮสต์ &apos;%1&apos;</translation>
     </message>
     <message>
         <source>Host Drive %1 (%2)</source>
         <comment>medium</comment>
-        <translation>ไดรฟ์ของโฮสต์ %1 (%2)</translation>
+        <translation type="vanished">ไดรฟ์ของโฮสต์ %1 (%2)</translation>
     </message>
     <message>
         <source>&lt;p style=white-space:pre&gt;Type (Format):  %1 (%2)&lt;/p&gt;</source>
         <comment>medium</comment>
-        <translation>&lt;p style=white-space:pre&gt;ชนิด (รูปแบบ)  %1 (%2)&lt;/p&gt;</translation>
+        <translation type="vanished">&lt;p style=white-space:pre&gt;ชนิด (รูปแบบ)  %1 (%2)&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Attached to:  %1&lt;/p&gt;</source>
         <comment>image</comment>
-        <translation>&lt;p&gt;เชื่อมต่อกับ:  %1&lt;/p&gt;</translation>
+        <translation type="vanished">&lt;p&gt;เชื่อมต่อกับ:  %1&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;i&gt;Not Attached&lt;/i&gt;</source>
         <comment>image</comment>
-        <translation>&lt;i&gt;ไม่ได้เชื่อมต่อ&lt;/i&gt;</translation>
+        <translation type="vanished">&lt;i&gt;ไม่ได้เชื่อมต่อ&lt;/i&gt;</translation>
     </message>
     <message>
         <source>&lt;i&gt;Checking accessibility...&lt;/i&gt;</source>
         <comment>medium</comment>
-        <translation>&lt;i&gt;กำลังตรวจสอบการเข้าถึง...&lt;/i&gt;</translation>
+        <translation type="vanished">&lt;i&gt;กำลังตรวจสอบการเข้าถึง...&lt;/i&gt;</translation>
     </message>
     <message>
         <source>Failed to check accessibility of disk image files.</source>
         <comment>medium</comment>
-        <translation>ไม่สามารถตรวจสอบสถานะการเข้าถึงไฟล์ดิสก์อิมเมจได้</translation>
+        <translation type="vanished">ไม่สามารถตรวจสอบสถานะการเข้าถึงไฟล์ดิสก์อิมเมจได้</translation>
     </message>
     <message>
         <source>&lt;b&gt;No disk image file selected&lt;/b&gt;</source>
         <comment>medium</comment>
-        <translation>&lt;b&gt;ไม่ได้เลือกไฟล์ดิสก์อิมเมจ&lt;/b&gt;</translation>
+        <translation type="vanished">&lt;b&gt;ไม่ได้เลือกไฟล์ดิสก์อิมเมจ&lt;/b&gt;</translation>
     </message>
     <message>
         <source>You can also change this while the machine is running.</source>
-        <translation>คุณสามารถเปลี่ยนแปลงค่านี้ได้ขณะเครื่องกำลังทำงานอยู่</translation>
+        <translation type="vanished">คุณสามารถเปลี่ยนแปลงค่านี้ได้ขณะเครื่องกำลังทำงานอยู่</translation>
     </message>
     <message>
         <source>&lt;b&gt;No disk image files available&lt;/b&gt;</source>
         <comment>medium</comment>
-        <translation>&lt;b&gt;ไม่มีไฟล์ดิสก์อิมเมจที่พร้อมใช้งาน&lt;/b&gt;</translation>
+        <translation type="vanished">&lt;b&gt;ไม่มีไฟล์ดิสก์อิมเมจที่พร้อมใช้งาน&lt;/b&gt;</translation>
     </message>
     <message numerus="yes">
         <source>%n year(s)</source>
-        <translation>
+        <translation type="vanished">
             <numerusform>%n ปี</numerusform>
         </translation>
     </message>
     <message numerus="yes">
         <source>%n month(s)</source>
-        <translation>
+        <translation type="vanished">
             <numerusform>%n เดือน</numerusform>
         </translation>
     </message>
     <message numerus="yes">
         <source>%n day(s)</source>
-        <translation>
+        <translation type="vanished">
             <numerusform>%n วัน</numerusform>
         </translation>
     </message>
     <message numerus="yes">
         <source>%n hour(s)</source>
-        <translation>
+        <translation type="vanished">
             <numerusform>%n ชั่วโมง</numerusform>
         </translation>
     </message>
     <message numerus="yes">
         <source>%n minute(s)</source>
-        <translation>
+        <translation type="vanished">
             <numerusform>%n นาที</numerusform>
         </translation>
     </message>
     <message numerus="yes">
         <source>%n second(s)</source>
-        <translation>
+        <translation type="vanished">
             <numerusform>%n วินาที</numerusform>
         </translation>
     </message>
@@ -13021,51 +15347,51 @@ a guest session</source>
     <message>
         <source>SAS</source>
         <comment>StorageBus</comment>
-        <translation>SAS</translation>
+        <translation type="vanished">SAS</translation>
     </message>
     <message>
         <source>LsiLogic SAS</source>
         <comment>StorageControllerType</comment>
-        <translation>LsiLogic SAS</translation>
+        <translation type="vanished">LsiLogic SAS</translation>
     </message>
     <message>
         <source>B</source>
         <comment>size suffix Bytes</comment>
-        <translation>B</translation>
+        <translation type="vanished">B</translation>
     </message>
     <message>
         <source>KB</source>
         <comment>size suffix KBytes=1024 Bytes</comment>
-        <translation>KB</translation>
+        <translation type="vanished">KB</translation>
     </message>
     <message>
         <source>MB</source>
         <comment>size suffix MBytes=1024 KBytes</comment>
-        <translation>MB</translation>
+        <translation type="vanished">MB</translation>
     </message>
     <message>
         <source>GB</source>
         <comment>size suffix GBytes=1024 MBytes</comment>
-        <translation>GB</translation>
+        <translation type="vanished">GB</translation>
     </message>
     <message>
         <source>TB</source>
         <comment>size suffix TBytes=1024 GBytes</comment>
-        <translation>TB</translation>
+        <translation type="vanished">TB</translation>
     </message>
     <message>
         <source>PB</source>
         <comment>size suffix PBytes=1024 TBytes</comment>
-        <translation>PB</translation>
+        <translation type="vanished">PB</translation>
     </message>
     <message>
         <source>Nested Paging</source>
-        <translation>การแบ่งหน้าซ้อนกัน</translation>
+        <translation type="vanished">การแบ่งหน้าซ้อนกัน</translation>
     </message>
     <message>
         <source>Unknown device</source>
         <comment>USB device details</comment>
-        <translation>อุปกรณ์ที่ไม่รู้จัก</translation>
+        <translation type="vanished">อุปกรณ์ที่ไม่รู้จัก</translation>
     </message>
     <message>
         <source>Remote Desktop Server Port</source>
@@ -13084,62 +15410,62 @@ a guest session</source>
     </message>
     <message>
         <source>All files (*)</source>
-        <translation>ไฟล์ทั้งหมด (*)</translation>
+        <translation type="vanished">ไฟล์ทั้งหมด (*)</translation>
     </message>
     <message>
         <source>Fault Tolerant Syncing</source>
         <comment>MachineState</comment>
-        <translation>กำลังประสานเพื่อทนต่อความผิดพร่อง</translation>
+        <translation type="vanished">กำลังประสานเพื่อทนต่อความผิดพร่อง</translation>
     </message>
     <message>
         <source>Unlocked</source>
         <comment>SessionState</comment>
-        <translation>ไม่ล็อค</translation>
+        <translation type="vanished">ไม่ล็อค</translation>
     </message>
     <message>
         <source>Locked</source>
         <comment>SessionState</comment>
-        <translation>ล็อค</translation>
+        <translation type="vanished">ล็อค</translation>
     </message>
     <message>
         <source>Unlocking</source>
         <comment>SessionState</comment>
-        <translation>กำลังปลดล็อค</translation>
+        <translation type="vanished">กำลังปลดล็อค</translation>
     </message>
     <message>
         <source>Null</source>
         <comment>AuthType</comment>
-        <translation>ว่าง</translation>
+        <translation type="vanished">ว่าง</translation>
     </message>
     <message>
         <source>External</source>
         <comment>AuthType</comment>
-        <translation>ภายนอก</translation>
+        <translation type="vanished">ภายนอก</translation>
     </message>
     <message>
         <source>Guest</source>
         <comment>AuthType</comment>
-        <translation>เกสต์</translation>
+        <translation type="vanished">เกสต์</translation>
     </message>
     <message>
         <source>Intel HD Audio</source>
         <comment>AudioControllerType</comment>
-        <translation>อินเทล HD ออดิโอ</translation>
+        <translation type="vanished">อินเทล HD ออดิโอ</translation>
     </message>
     <message>
         <source>PIIX3</source>
         <comment>ChipsetType</comment>
-        <translation>PIIX3</translation>
+        <translation type="vanished">PIIX3</translation>
     </message>
     <message>
         <source>ICH9</source>
         <comment>ChipsetType</comment>
-        <translation>ICH9</translation>
+        <translation type="vanished">ICH9</translation>
     </message>
     <message>
         <source>Execution Cap</source>
         <comment>details report</comment>
-        <translation>จำกัดการประมวลผล</translation>
+        <translation type="vanished">จำกัดการประมวลผล</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;%1%&lt;/nobr&gt;</source>
@@ -13154,226 +15480,226 @@ a guest session</source>
     <message>
         <source>Generic Driver</source>
         <comment>NetworkAttachmentType</comment>
-        <translation>ไดร์เวอร์ทั่วไป</translation>
+        <translation type="vanished">ไดร์เวอร์ทั่วไป</translation>
     </message>
     <message>
         <source>Adapter %1</source>
-        <translation>แผงวงจร %1</translation>
+        <translation type="vanished">แผงวงจร %1</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>DragAndDropType</comment>
-        <translation>ไม่ใช้</translation>
+        <translation type="vanished">ไม่ใช้</translation>
     </message>
     <message>
         <source>Host To Guest</source>
         <comment>DragAndDropType</comment>
-        <translation>จากโฮสต์ไปเกสต์</translation>
+        <translation type="vanished">จากโฮสต์ไปเกสต์</translation>
     </message>
     <message>
         <source>Guest To Host</source>
         <comment>DragAndDropType</comment>
-        <translation>จากเกสต์ไปโฮสต์</translation>
+        <translation type="vanished">จากเกสต์ไปโฮสต์</translation>
     </message>
     <message>
         <source>Bidirectional</source>
         <comment>DragAndDropType</comment>
-        <translation>สองทิศทาง</translation>
+        <translation type="vanished">สองทิศทาง</translation>
     </message>
     <message>
         <source>Normal</source>
         <comment>MediumType</comment>
-        <translation>ปกติ</translation>
+        <translation type="vanished">ปกติ</translation>
     </message>
     <message>
         <source>Immutable</source>
         <comment>MediumType</comment>
-        <translation>ไม่เปลี่ยนแปลง</translation>
+        <translation type="vanished">ไม่เปลี่ยนแปลง</translation>
     </message>
     <message>
         <source>Writethrough</source>
         <comment>MediumType</comment>
-        <translation>เขียนทั้งหมด</translation>
+        <translation type="vanished">เขียนทั้งหมด</translation>
     </message>
     <message>
         <source>Shareable</source>
         <comment>MediumType</comment>
-        <translation>แชร์ได้</translation>
+        <translation type="vanished">แชร์ได้</translation>
     </message>
     <message>
         <source>Readonly</source>
         <comment>MediumType</comment>
-        <translation>อ่านอย่างเดียว</translation>
+        <translation type="vanished">อ่านอย่างเดียว</translation>
     </message>
     <message>
         <source>Multi-attach</source>
         <comment>MediumType</comment>
-        <translation>เชื่อมต่อหลายทาง</translation>
+        <translation type="vanished">เชื่อมต่อหลายทาง</translation>
     </message>
     <message>
         <source>Dynamically allocated storage</source>
         <comment>MediumVariant</comment>
-        <translation>หน่วยเก็บข้อมูลจัดสรรแบบพลวัต</translation>
+        <translation type="vanished">หน่วยเก็บข้อมูลจัดสรรแบบพลวัต</translation>
     </message>
     <message>
         <source>Dynamically allocated differencing storage</source>
         <comment>MediumVariant</comment>
-        <translation>หน่วยเก็บข้อมูลจัดสรรแบบพลวัตในส่วนที่แตกต่าง</translation>
+        <translation type="vanished">หน่วยเก็บข้อมูลจัดสรรแบบพลวัตในส่วนที่แตกต่าง</translation>
     </message>
     <message>
         <source>Fixed size storage</source>
         <comment>MediumVariant</comment>
-        <translation>หน่วยเก็บข้อมูลขนาดคงที่</translation>
+        <translation type="vanished">หน่วยเก็บข้อมูลขนาดคงที่</translation>
     </message>
     <message>
         <source>Dynamically allocated storage split into files of less than 2GB</source>
         <comment>MediumVariant</comment>
-        <translation>หน่วยเก็บข้อมูลจัดสรรแบบพลวัตแบ่งขนาดไฟล์ให้เล็กกว่า 2GB</translation>
+        <translation type="vanished">หน่วยเก็บข้อมูลจัดสรรแบบพลวัตแบ่งขนาดไฟล์ให้เล็กกว่า 2GB</translation>
     </message>
     <message>
         <source>Dynamically allocated differencing storage split into files of less than 2GB</source>
         <comment>MediumVariant</comment>
-        <translation>หน่วยเก็บข้อมูลจัดสรรแบบพลวัตในส่วนที่แตกต่างแบ่งขนาดไฟล์ให้เล็กกว่า 2GB</translation>
+        <translation type="vanished">หน่วยเก็บข้อมูลจัดสรรแบบพลวัตในส่วนที่แตกต่างแบ่งขนาดไฟล์ให้เล็กกว่า 2GB</translation>
     </message>
     <message>
         <source>Fixed size storage split into files of less than 2GB</source>
         <comment>MediumVariant</comment>
-        <translation>หน่วยเก็บข้อมูลขนาดคงที่แบ่งขนาดไฟล์ให้เล็กกว่า 2GB</translation>
+        <translation type="vanished">หน่วยเก็บข้อมูลขนาดคงที่แบ่งขนาดไฟล์ให้เล็กกว่า 2GB</translation>
     </message>
     <message>
         <source>Dynamically allocated compressed storage</source>
         <comment>MediumVariant</comment>
-        <translation>หน่วยเก็บข้อมูลจัดสรรแบบพลวัตและบีบอัดข้อมูล</translation>
+        <translation type="vanished">หน่วยเก็บข้อมูลจัดสรรแบบพลวัตและบีบอัดข้อมูล</translation>
     </message>
     <message>
         <source>Dynamically allocated differencing compressed storage</source>
         <comment>MediumVariant</comment>
-        <translation>หน่วยเก็บข้อมูลจัดสรรแบบพลวัตในส่วนที่แตกต่างและบีบอัดข้อมูล</translation>
+        <translation type="vanished">หน่วยเก็บข้อมูลจัดสรรแบบพลวัตในส่วนที่แตกต่างและบีบอัดข้อมูล</translation>
     </message>
     <message>
         <source>Fixed size ESX storage</source>
         <comment>MediumVariant</comment>
-        <translation>หน่วยเก็บข้อมูล ESX ขนาดคงที่</translation>
+        <translation type="vanished">หน่วยเก็บข้อมูล ESX ขนาดคงที่</translation>
     </message>
     <message>
         <source>Fixed size storage on raw disk</source>
         <comment>MediumVariant</comment>
-        <translation>หน่วยเก็บข้อมูลขนาดคงที่แบบเก็บบนดิสก์โดยตรง</translation>
+        <translation type="vanished">หน่วยเก็บข้อมูลขนาดคงที่แบบเก็บบนดิสก์โดยตรง</translation>
     </message>
     <message>
         <source>Deny</source>
         <comment>NetworkAdapterPromiscModePolicy</comment>
-        <translation>ปฏิเสธ</translation>
+        <translation type="vanished">ปฏิเสธ</translation>
     </message>
     <message>
         <source>Allow VMs</source>
         <comment>NetworkAdapterPromiscModePolicy</comment>
-        <translation>อนุญาต VM</translation>
+        <translation type="vanished">อนุญาต VM</translation>
     </message>
     <message>
         <source>Allow All</source>
         <comment>NetworkAdapterPromiscModePolicy</comment>
-        <translation>อนุญาตทั้งหมด</translation>
+        <translation type="vanished">อนุญาตทั้งหมด</translation>
     </message>
     <message>
         <source>Ignore</source>
         <comment>USBDeviceFilterAction</comment>
-        <translation>เพิกเฉย</translation>
+        <translation type="vanished">เพิกเฉย</translation>
     </message>
     <message>
         <source>Hold</source>
         <comment>USBDeviceFilterAction</comment>
-        <translation>จับ</translation>
+        <translation type="vanished">จับ</translation>
     </message>
     <message>
         <source>UDP</source>
         <comment>NATProtocol</comment>
-        <translation>UDP</translation>
+        <translation type="vanished">UDP</translation>
     </message>
     <message>
         <source>TCP</source>
         <comment>NATProtocol</comment>
-        <translation>TCP</translation>
+        <translation type="vanished">TCP</translation>
     </message>
     <message>
         <source>IDE Primary Master</source>
         <comment>StorageSlot</comment>
-        <translation>IDE ปฐมภูมิหลัก</translation>
+        <translation type="vanished">IDE ปฐมภูมิหลัก</translation>
     </message>
     <message>
         <source>IDE Primary Slave</source>
         <comment>StorageSlot</comment>
-        <translation>IDE ปฐมภูมิรอง</translation>
+        <translation type="vanished">IDE ปฐมภูมิรอง</translation>
     </message>
     <message>
         <source>IDE Secondary Master</source>
         <comment>StorageSlot</comment>
-        <translation>IDE ทุติยภูมิหลัก</translation>
+        <translation type="vanished">IDE ทุติยภูมิหลัก</translation>
     </message>
     <message>
         <source>IDE Secondary Slave</source>
         <comment>StorageSlot</comment>
-        <translation>IDE ทุติยภูมิรอง</translation>
+        <translation type="vanished">IDE ทุติยภูมิรอง</translation>
     </message>
     <message>
         <source>SATA Port %1</source>
         <comment>StorageSlot</comment>
-        <translation>พอร์ต SATA %1</translation>
+        <translation type="vanished">พอร์ต SATA %1</translation>
     </message>
     <message>
         <source>SCSI Port %1</source>
         <comment>StorageSlot</comment>
-        <translation>พอร์ต SCSI %1</translation>
+        <translation type="vanished">พอร์ต SCSI %1</translation>
     </message>
     <message>
         <source>SAS Port %1</source>
         <comment>StorageSlot</comment>
-        <translation>พอร์ต SAS %1</translation>
+        <translation type="vanished">พอร์ต SAS %1</translation>
     </message>
     <message>
         <source>Floppy Device %1</source>
         <comment>StorageSlot</comment>
-        <translation>อุปกรณ์ฟลอปปี้ %1</translation>
+        <translation type="vanished">อุปกรณ์ฟลอปปี้ %1</translation>
     </message>
     <message>
         <source>General</source>
         <comment>DetailsElementType</comment>
-        <translation>ทั่วไป</translation>
+        <translation type="vanished">ทั่วไป</translation>
     </message>
     <message>
         <source>Preview</source>
         <comment>DetailsElementType</comment>
-        <translation>แสดงตัวอย่าง</translation>
+        <translation type="vanished">แสดงตัวอย่าง</translation>
     </message>
     <message>
         <source>System</source>
         <comment>DetailsElementType</comment>
-        <translation>ระบบ</translation>
+        <translation type="vanished">ระบบ</translation>
     </message>
     <message>
         <source>Display</source>
         <comment>DetailsElementType</comment>
-        <translation>หน่วยแสดงผล</translation>
+        <translation type="vanished">หน่วยแสดงผล</translation>
     </message>
     <message>
         <source>Storage</source>
         <comment>DetailsElementType</comment>
-        <translation>หน่วยเก็บข้อมูล</translation>
+        <translation type="vanished">หน่วยเก็บข้อมูล</translation>
     </message>
     <message>
         <source>Audio</source>
         <comment>DetailsElementType</comment>
-        <translation>เสียง</translation>
+        <translation type="vanished">เสียง</translation>
     </message>
     <message>
         <source>Network</source>
         <comment>DetailsElementType</comment>
-        <translation>เครือข่าย</translation>
+        <translation type="vanished">เครือข่าย</translation>
     </message>
     <message>
         <source>Serial ports</source>
         <comment>DetailsElementType</comment>
-        <translation>พอร์ตอนุกรม</translation>
+        <translation type="vanished">พอร์ตอนุกรม</translation>
     </message>
     <message>
         <source>Parallel ports</source>
@@ -13383,33 +15709,33 @@ a guest session</source>
     <message>
         <source>USB</source>
         <comment>DetailsElementType</comment>
-        <translation>USB</translation>
+        <translation type="vanished">USB</translation>
     </message>
     <message>
         <source>Shared folders</source>
         <comment>DetailsElementType</comment>
-        <translation>โฟลเดอร์ใช้ร่วมกัน</translation>
+        <translation type="vanished">โฟลเดอร์ใช้ร่วมกัน</translation>
     </message>
     <message>
         <source>Description</source>
         <comment>DetailsElementType</comment>
-        <translation>คำอธิบาย</translation>
+        <translation type="vanished">คำอธิบาย</translation>
     </message>
     <message>
         <source>Please choose a virtual optical disk file</source>
-        <translation>โปรดเลือกไฟล์ออปติคัลดิสก์เสมือน</translation>
+        <translation type="vanished">โปรดเลือกไฟล์ออปติคัลดิสก์เสมือน</translation>
     </message>
     <message>
         <source>All virtual optical disk files (%1)</source>
-        <translation>ไฟล์ออปติคัลดิสก์เสมือนทั้งหมด (%1)</translation>
+        <translation type="vanished">ไฟล์ออปติคัลดิสก์เสมือนทั้งหมด (%1)</translation>
     </message>
     <message>
         <source>Please choose a virtual floppy disk file</source>
-        <translation>โปรดเลือกไฟล์ฟลอปปี้ดิสก์เสมือน</translation>
+        <translation type="vanished">โปรดเลือกไฟล์ฟลอปปี้ดิสก์เสมือน</translation>
     </message>
     <message>
         <source>All virtual floppy disk files (%1)</source>
-        <translation>ไฟล์ฟลอปปี้ดิสก์เสมือนทั้งหมด (%1)</translation>
+        <translation type="vanished">ไฟล์ฟลอปปี้ดิสก์เสมือนทั้งหมด (%1)</translation>
     </message>
     <message>
         <source>VDI (VirtualBox Disk Image)</source>
@@ -13443,36 +15769,36 @@ a guest session</source>
     <message>
         <source>PS/2 Mouse</source>
         <comment>PointingHIDType</comment>
-        <translation>เมาส์ PS/2</translation>
+        <translation type="vanished">เมาส์ PS/2</translation>
     </message>
     <message>
         <source>USB Mouse</source>
         <comment>PointingHIDType</comment>
-        <translation>เมาส์ USB</translation>
+        <translation type="vanished">เมาส์ USB</translation>
     </message>
     <message>
         <source>PS/2 and USB Mouse</source>
         <comment>PointingHIDType</comment>
-        <translation>เมาส์ PS/2 และ USB</translation>
+        <translation type="vanished">เมาส์ PS/2 และ USB</translation>
     </message>
     <message>
         <source>Unrestricted Execution</source>
-        <translation>ประมวลผลโดยไม่มีข้อจำกัด</translation>
+        <translation type="vanished">ประมวลผลโดยไม่มีข้อจำกัด</translation>
     </message>
     <message>
         <source>USB Tablet</source>
         <comment>PointingHIDType</comment>
-        <translation>แท็บเล็ต USB</translation>
+        <translation type="vanished">แท็บเล็ต USB</translation>
     </message>
     <message>
         <source>USB Multi-Touch Tablet</source>
         <comment>PointingHIDType</comment>
-        <translation>แท็บเล็ต USB แบบมีหลายจุดสัมผัส</translation>
+        <translation type="vanished">แท็บเล็ต USB แบบมีหลายจุดสัมผัส</translation>
     </message>
     <message>
         <source>NAT Network</source>
         <comment>NetworkAttachmentType</comment>
-        <translation>เครือข่าย NAT</translation>
+        <translation type="vanished">เครือข่าย NAT</translation>
     </message>
     <message>
         <source>NAT network, &apos;%1&apos;</source>
@@ -13481,132 +15807,132 @@ a guest session</source>
     </message>
     <message>
         <source>You can create or add disk image files in the virtual machine settings.</source>
-        <translation>คุณสามารถสร้างหรือเพิ่มไฟล์ดิสก์อิมเมจได้ในการตั้งค่าเวอร์ชวลแมชชีน</translation>
+        <translation type="vanished">คุณสามารถสร้างหรือเพิ่มไฟล์ดิสก์อิมเมจได้ในการตั้งค่าเวอร์ชวลแมชชีน</translation>
     </message>
     <message>
         <source>USB</source>
         <comment>StorageControllerType</comment>
-        <translation>USB</translation>
+        <translation type="vanished">USB</translation>
     </message>
     <message>
         <source>USB Port %1</source>
         <comment>StorageSlot</comment>
-        <translation>พอร์ต USB %1</translation>
+        <translation type="vanished">พอร์ต USB %1</translation>
     </message>
     <message>
         <source>off</source>
         <comment>guest monitor status</comment>
-        <translation>ปิด</translation>
+        <translation type="vanished">ปิด</translation>
     </message>
     <message>
         <source>Paravirtualization Interface</source>
         <comment>details report</comment>
-        <translation>ส่วนเชื่อมต่อพาราเวอร์ชวลไลเซชัน</translation>
+        <translation type="vanished">ส่วนเชื่อมต่อพาราเวอร์ชวลไลเซชัน</translation>
     </message>
     <message>
         <source>None</source>
         <comment>ParavirtProvider</comment>
-        <translation>ไม่มี</translation>
+        <translation type="vanished">ไม่มี</translation>
     </message>
     <message>
         <source>Default</source>
         <comment>ParavirtProvider</comment>
-        <translation>ค่าตั้งต้น</translation>
+        <translation type="vanished">ค่าตั้งต้น</translation>
     </message>
     <message>
         <source>Legacy</source>
         <comment>ParavirtProvider</comment>
-        <translation>รุ่นเก่า</translation>
+        <translation type="vanished">รุ่นเก่า</translation>
     </message>
     <message>
         <source>Minimal</source>
         <comment>ParavirtProvider</comment>
-        <translation>ขั้นต่ำ</translation>
+        <translation type="vanished">ขั้นต่ำ</translation>
     </message>
     <message>
         <source>Hyper-V</source>
         <comment>ParavirtProvider</comment>
-        <translation>Hyper-V</translation>
+        <translation type="vanished">Hyper-V</translation>
     </message>
     <message>
         <source>New dynamically allocated storage</source>
         <comment>MediumVariant</comment>
-        <translation>หน่วยเก็บข้อมูลจัดสรรแบบพลวัตแบบใหม่</translation>
+        <translation type="vanished">หน่วยเก็บข้อมูลจัดสรรแบบพลวัตแบบใหม่</translation>
     </message>
     <message>
         <source>Active</source>
         <comment>details report (VT-x/AMD-V)</comment>
-        <translation>ใช้งานอยู่</translation>
+        <translation type="vanished">ใช้งานอยู่</translation>
     </message>
     <message>
         <source>Inactive</source>
         <comment>details report (VT-x/AMD-V)</comment>
-        <translation>ไม่ได้ใช้งาน</translation>
+        <translation type="vanished">ไม่ได้ใช้งาน</translation>
     </message>
     <message>
         <source>Active</source>
         <comment>details report (Nested Paging)</comment>
-        <translation>ใช้งานอยู่</translation>
+        <translation type="vanished">ใช้งานอยู่</translation>
     </message>
     <message>
         <source>Inactive</source>
         <comment>details report (Nested Paging)</comment>
-        <translation>ไม่ได้ใช้งาน</translation>
+        <translation type="vanished">ไม่ได้ใช้งาน</translation>
     </message>
     <message>
         <source>Active</source>
         <comment>details report (Unrestricted Execution)</comment>
-        <translation>ใช้งานอยู่</translation>
+        <translation type="vanished">ใช้งานอยู่</translation>
     </message>
     <message>
         <source>Inactive</source>
         <comment>details report (Unrestricted Execution)</comment>
-        <translation>ไม่ได้ใช้งาน</translation>
+        <translation type="vanished">ไม่ได้ใช้งาน</translation>
     </message>
     <message>
         <source>Taking Snapshot</source>
         <comment>MachineState</comment>
-        <translation>กำลังเก็บสแนปช็อต</translation>
+        <translation type="vanished">กำลังเก็บสแนปช็อต</translation>
     </message>
     <message>
         <source>Taking Online Snapshot</source>
         <comment>MachineState</comment>
-        <translation>กำลังเก็บสแนปช็อตออนไลน์</translation>
+        <translation type="vanished">กำลังเก็บสแนปช็อตออนไลน์</translation>
     </message>
     <message>
         <source>KVM</source>
         <comment>ParavirtProvider</comment>
-        <translation>KVM</translation>
+        <translation type="vanished">KVM</translation>
     </message>
     <message>
         <source>Optical</source>
         <comment>DeviceType</comment>
-        <translation>ออปติคัล</translation>
+        <translation type="vanished">ออปติคัล</translation>
     </message>
     <message>
         <source>TCP</source>
         <comment>PortMode</comment>
-        <translation>TCP</translation>
+        <translation type="vanished">TCP</translation>
     </message>
     <message>
         <source>OHCI</source>
         <comment>USBControllerType</comment>
-        <translation>AHCI</translation>
+        <translation type="vanished">AHCI</translation>
     </message>
     <message>
         <source>EHCI</source>
         <comment>USBControllerType</comment>
-        <translation>AHCI</translation>
+        <translation type="vanished">AHCI</translation>
     </message>
     <message>
         <source>xHCI</source>
         <comment>USBControllerType</comment>
-        <translation>AHCI</translation>
+        <translation type="vanished">AHCI</translation>
     </message>
     <message>
         <source>User interface</source>
         <comment>DetailsElementType</comment>
-        <translation>ส่วนติดต่อผู้ใช้</translation>
+        <translation type="vanished">ส่วนติดต่อผู้ใช้</translation>
     </message>
     <message>
         <source>(Optical Drive)</source>
@@ -13615,94 +15941,94 @@ a guest session</source>
     <message>
         <source>Encrypted</source>
         <comment>medium</comment>
-        <translation>เข้ารหัสลับไว้</translation>
+        <translation type="vanished">เข้ารหัสลับไว้</translation>
     </message>
     <message>
         <source>Please choose a virtual hard disk file</source>
-        <translation>โปรดเลือกไฟล์ฮาร์ดดิสก์เสมือน</translation>
+        <translation type="vanished">โปรดเลือกไฟล์ฮาร์ดดิสก์เสมือน</translation>
     </message>
     <message>
         <source>All virtual hard disk files (%1)</source>
-        <translation>ไฟล์ฮาร์ดดิสก์เสมือนทั้งหมด (%1)</translation>
+        <translation type="vanished">ไฟล์ฮาร์ดดิสก์เสมือนทั้งหมด (%1)</translation>
     </message>
     <message>
         <source>Attaching this hard disk will be performed indirectly using a newly created differencing hard disk.</source>
         <comment>medium</comment>
-        <translation>ฮาร์ดดิสก์นี้จะถูกเชื่อมต่อโดยอ้อมโดยใช้ฮาร์ดดิสก์แบบเก็บส่วนต่างที่ถูกสร้างขึ้นมาใหม่</translation>
+        <translation type="vanished">ฮาร์ดดิสก์นี้จะถูกเชื่อมต่อโดยอ้อมโดยใช้ฮาร์ดดิสก์แบบเก็บส่วนต่างที่ถูกสร้างขึ้นมาใหม่</translation>
     </message>
     <message>
         <source>Some of the files in this hard disk chain are inaccessible. Please use the Virtual Medium Manager to inspect these files.</source>
         <comment>medium</comment>
-        <translation>มีบางไฟล์ในห่วงโซ่ของฮาร์ดดิสก์นี้ที่ไม่สามารถเข้าถึงได้ โปรดใช้ส่วนจัดการมีเดียเสมือนเพื่อตรวจสอบไฟล์เหล่านี้</translation>
+        <translation type="vanished">มีบางไฟล์ในห่วงโซ่ของฮาร์ดดิสก์นี้ที่ไม่สามารถเข้าถึงได้ โปรดใช้ส่วนจัดการมีเดียเสมือนเพื่อตรวจสอบไฟล์เหล่านี้</translation>
     </message>
     <message>
         <source>This base hard disk is indirectly attached using the following differencing hard disk:</source>
         <comment>medium</comment>
-        <translation>ฮาร์ดดิสก์พื้นฐานนี้ถูกเชื่อมต่อโดยอ้อมจากฮาร์ดดิสก์แบบเก็บผลต่างต่อไปนี้:</translation>
+        <translation type="vanished">ฮาร์ดดิสก์พื้นฐานนี้ถูกเชื่อมต่อโดยอ้อมจากฮาร์ดดิสก์แบบเก็บผลต่างต่อไปนี้:</translation>
     </message>
     <message>
         <source>Please choose a location for new virtual hard disk file</source>
-        <translation>โปรดเลือกที่ตั้งไฟล์เวอร์ชวลฮาร์ดดิสก์ที่จะสร้างขึ้นใหม่</translation>
+        <translation type="vanished">โปรดเลือกที่ตั้งไฟล์เวอร์ชวลฮาร์ดดิสก์ที่จะสร้างขึ้นใหม่</translation>
     </message>
     <message>
         <source>USB</source>
         <comment>StorageBus</comment>
-        <translation>USB</translation>
+        <translation type="vanished">USB</translation>
     </message>
     <message>
         <source>PCIe</source>
         <comment>StorageBus</comment>
-        <translation>PCIe</translation>
+        <translation type="vanished">PCIe</translation>
     </message>
     <message>
         <source>NVMe</source>
         <comment>StorageControllerType</comment>
-        <translation>NVMe</translation>
+        <translation type="vanished">NVMe</translation>
     </message>
     <message>
         <source>NVMe Port %1</source>
         <comment>StorageSlot</comment>
-        <translation>พอร์ต NVMe %1</translation>
+        <translation type="vanished">พอร์ต NVMe %1</translation>
     </message>
     <message>
         <source>General</source>
         <comment>InformationElementType</comment>
-        <translation>ทั่วไป</translation>
+        <translation type="vanished">ทั่วไป</translation>
     </message>
     <message>
         <source>Preview</source>
         <comment>InformationElementType</comment>
-        <translation>แสดงตัวอย่าง</translation>
+        <translation type="vanished">แสดงตัวอย่าง</translation>
     </message>
     <message>
         <source>System</source>
         <comment>InformationElementType</comment>
-        <translation>ระบบ</translation>
+        <translation type="vanished">ระบบ</translation>
     </message>
     <message>
         <source>Display</source>
         <comment>InformationElementType</comment>
-        <translation>หน่วยแสดงผล</translation>
+        <translation type="vanished">หน่วยแสดงผล</translation>
     </message>
     <message>
         <source>Storage</source>
         <comment>InformationElementType</comment>
-        <translation>หน่วยเก็บข้อมูล</translation>
+        <translation type="vanished">หน่วยเก็บข้อมูล</translation>
     </message>
     <message>
         <source>Audio</source>
         <comment>InformationElementType</comment>
-        <translation>เสียง</translation>
+        <translation type="vanished">เสียง</translation>
     </message>
     <message>
         <source>Network</source>
         <comment>InformationElementType</comment>
-        <translation>เครือข่าย</translation>
+        <translation type="vanished">เครือข่าย</translation>
     </message>
     <message>
         <source>Serial ports</source>
         <comment>InformationElementType</comment>
-        <translation>พอร์ตอนุกรม</translation>
+        <translation type="vanished">พอร์ตอนุกรม</translation>
     </message>
     <message>
         <source>Parallel ports</source>
@@ -13712,62 +16038,62 @@ a guest session</source>
     <message>
         <source>USB</source>
         <comment>InformationElementType</comment>
-        <translation>USB</translation>
+        <translation type="vanished">USB</translation>
     </message>
     <message>
         <source>Shared folders</source>
         <comment>InformationElementType</comment>
-        <translation>โฟลเดอร์ใช้ร่วมกัน</translation>
+        <translation type="vanished">โฟลเดอร์ใช้ร่วมกัน</translation>
     </message>
     <message>
         <source>User interface</source>
         <comment>InformationElementType</comment>
-        <translation>ส่วนติดต่อผู้ใช้</translation>
+        <translation type="vanished">ส่วนติดต่อผู้ใช้</translation>
     </message>
     <message>
         <source>Description</source>
         <comment>InformationElementType</comment>
-        <translation>คำอธิบาย</translation>
+        <translation type="vanished">คำอธิบาย</translation>
     </message>
     <message>
         <source>Runtime attributes</source>
         <comment>InformationElementType</comment>
-        <translation>คุณสมบัติเฉพาะของรุ่นที่ใช้</translation>
+        <translation type="vanished">คุณสมบัติเฉพาะของรุ่นที่ใช้</translation>
     </message>
     <message>
         <source>Storage statistics</source>
         <comment>InformationElementType</comment>
-        <translation>สถิติหน่วยเก็บข้อมูล</translation>
+        <translation type="vanished">สถิติหน่วยเก็บข้อมูล</translation>
     </message>
     <message>
         <source>Network statistics</source>
         <comment>InformationElementType</comment>
-        <translation>สถิติเครือข่าย</translation>
+        <translation type="vanished">สถิติเครือข่าย</translation>
     </message>
     <message>
         <source>Audio</source>
         <comment>IndicatorType</comment>
-        <translation type="unfinished">เสียง</translation>
+        <translation type="obsolete">เสียง</translation>
     </message>
     <message>
         <source>Network</source>
         <comment>IndicatorType</comment>
-        <translation type="unfinished">เครือข่าย</translation>
+        <translation type="obsolete">เครือข่าย</translation>
     </message>
     <message>
         <source>USB</source>
         <comment>IndicatorType</comment>
-        <translation type="unfinished">USB</translation>
+        <translation type="obsolete">USB</translation>
     </message>
     <message>
         <source>Shared Folders</source>
         <comment>IndicatorType</comment>
-        <translation type="unfinished">โฟลเดอร์ใช้ร่วมกัน</translation>
+        <translation type="obsolete">โฟลเดอร์ใช้ร่วมกัน</translation>
     </message>
     <message>
         <source>Display</source>
         <comment>IndicatorType</comment>
-        <translation type="unfinished">หน่วยแสดงผล</translation>
+        <translation type="obsolete">หน่วยแสดงผล</translation>
     </message>
     <message>
         <source>Video Capture</source>
@@ -13777,110 +16103,36 @@ a guest session</source>
     <message>
         <source>Differencing</source>
         <comment>MediumType</comment>
-        <translation type="unfinished">ความแตกต่าง</translation>
-    </message>
-    <message>
-        <source>not set</source>
-        <comment>details report (execution engine)</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Execution engine</source>
-        <comment>details report</comment>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">ความแตกต่าง</translation>
     </message>
     <message>
         <source>Processors</source>
         <comment>details report</comment>
-        <translation type="unfinished">โปรเซสเซอร์</translation>
+        <translation type="obsolete">โปรเซสเซอร์</translation>
     </message>
     <message>
         <source>Name</source>
-        <translation type="unfinished">ชื่อ</translation>
-    </message>
-    <message>
-        <source>OS</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Location</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">ชื่อ</translation>
     </message>
     <message>
         <source>Groups</source>
-        <translation type="unfinished">กลุ่ม</translation>
+        <translation type="obsolete">กลุ่ม</translation>
     </message>
     <message>
         <source>RAM</source>
-        <translation type="unfinished">แรม</translation>
-    </message>
-    <message>
-        <source>CPU Count</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>CPU Execution Cap</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">แรม</translation>
     </message>
     <message>
         <source>Boot Order</source>
-        <translation type="unfinished">ลำดับการบูต</translation>
-    </message>
-    <message>
-        <source>Chipset Type</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Firmware</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">ลำดับการบูต</translation>
     </message>
     <message>
         <source>Acceleration</source>
-        <translation type="unfinished">ตัวเร่งความเร็ว</translation>
-    </message>
-    <message>
-        <source>VRAM</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Screen Count</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Scale Factor</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>VRDE</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Recording</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Hard Disks</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Optical Devices</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Floppy Devices</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Driver</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">ตัวเร่งความเร็ว</translation>
     </message>
     <message>
         <source>Controller</source>
-        <translation type="unfinished">ตัวควบคุม</translation>
-    </message>
-    <message>
-        <source>Input/Output</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">ตัวควบคุม</translation>
     </message>
     <message>
         <source>Not Attached</source>
@@ -13888,23 +16140,15 @@ a guest session</source>
     </message>
     <message>
         <source>NAT</source>
-        <translation type="unfinished">NAT</translation>
-    </message>
-    <message>
-        <source>Bridget Adapter</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">NAT</translation>
     </message>
     <message>
         <source>Internal Network</source>
-        <translation type="unfinished">เครือข่ายภายใน</translation>
-    </message>
-    <message>
-        <source>Host Only Adapter</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">เครือข่ายภายใน</translation>
     </message>
     <message>
         <source>Generic Driver</source>
-        <translation type="unfinished">ไดร์เวอร์ทั่วไป</translation>
+        <translation type="obsolete">ไดร์เวอร์ทั่วไป</translation>
     </message>
     <message>
         <source>Disconnected</source>
@@ -13912,273 +16156,59 @@ a guest session</source>
     </message>
     <message>
         <source>Host Pipe</source>
-        <translation type="unfinished">ท่อของโฮสต์</translation>
+        <translation type="obsolete">ท่อของโฮสต์</translation>
     </message>
     <message>
         <source>Host Device</source>
-        <translation type="unfinished">อุปกรณ์ของโฮสต์</translation>
+        <translation type="obsolete">อุปกรณ์ของโฮสต์</translation>
     </message>
     <message>
         <source>Raw File</source>
-        <translation type="unfinished">ไฟล์ดิบ</translation>
+        <translation type="obsolete">ไฟล์ดิบ</translation>
     </message>
     <message>
         <source>TCP</source>
-        <translation type="unfinished">TCP</translation>
-    </message>
-    <message>
-        <source>Device Filters</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Menu Bar</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Status Bar</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Mini Toolbar</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Hard Disks</source>
-        <comment>IndicatorType</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Optical Disks</source>
-        <comment>IndicatorType</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Floppy Disks</source>
-        <comment>IndicatorType</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Recording</source>
-        <comment>IndicatorType</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Features</source>
-        <comment>IndicatorType</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Mouse</source>
-        <comment>IndicatorType</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Keyboard</source>
-        <comment>IndicatorType</comment>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">TCP</translation>
     </message>
     <message>
         <source>VDI (VirtualBox Disk Image)</source>
         <comment>UIMediumFormat</comment>
-        <translation type="unfinished">VDI (VirtualBox Disk Image)</translation>
+        <translation type="obsolete">VDI (VirtualBox Disk Image)</translation>
     </message>
     <message>
         <source>VMDK (Virtual Machine Disk)</source>
         <comment>UIMediumFormat</comment>
-        <translation type="unfinished">VMDK (Virtual Machine Disk)</translation>
+        <translation type="obsolete">VMDK (Virtual Machine Disk)</translation>
     </message>
     <message>
         <source>VHD (Virtual Hard Disk)</source>
         <comment>UIMediumFormat</comment>
-        <translation type="unfinished">VHD (Virtual Hard Disk)</translation>
+        <translation type="obsolete">VHD (Virtual Hard Disk)</translation>
     </message>
     <message>
         <source>HDD (Parallels Hard Disk)</source>
         <comment>UIMediumFormat</comment>
-        <translation type="unfinished">HDD (Parallels Hard Disk)</translation>
+        <translation type="obsolete">HDD (Parallels Hard Disk)</translation>
     </message>
     <message>
         <source>QED (QEMU enhanced disk)</source>
         <comment>UIMediumFormat</comment>
-        <translation type="unfinished">QED (QEMU enhanced disk)</translation>
+        <translation type="obsolete">QED (QEMU enhanced disk)</translation>
     </message>
     <message>
         <source>QCOW (QEMU Copy-On-Write)</source>
         <comment>UIMediumFormat</comment>
-        <translation type="unfinished">QCOW (QEMU Copy-On-Write)</translation>
-    </message>
-    <message>
-        <source>None</source>
-        <comment>GraphicsControllerType</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>VBoxVGA</source>
-        <comment>GraphicsControllerType</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>VMSVGA</source>
-        <comment>GraphicsControllerType</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>VBoxSVGA</source>
-        <comment>GraphicsControllerType</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Graphics Controller</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Video/Audio</source>
-        <comment>UISettingsDefs::RecordingMode</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Video Only</source>
-        <comment>UISettingsDefs::RecordingMode</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Audio Only</source>
-        <comment>UISettingsDefs::RecordingMode</comment>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">QCOW (QEMU Copy-On-Write)</translation>
     </message>
     <message>
         <source>Not Attached</source>
         <comment>network adapter</comment>
-        <translation type="unfinished">ไม่ได้เชื่อมต่อ</translation>
+        <translation type="obsolete">ไม่ได้เชื่อมต่อ</translation>
     </message>
     <message>
         <source>Disconnected</source>
         <comment>serial port</comment>
-        <translation type="unfinished">ไม่ได้เชื่อมต่อ</translation>
-    </message>
-    <message>
-        <source>virtio-scsi</source>
-        <comment>StorageBus</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>virtio-scsi</source>
-        <comment>StorageControllerType</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Undefined</source>
-        <comment>GuestSessionStatus</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Starting</source>
-        <comment>GuestSessionStatus</comment>
-        <translation type="unfinished">กำลังเริ่ม</translation>
-    </message>
-    <message>
-        <source>Started</source>
-        <comment>GuestSessionStatus</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Terminating</source>
-        <comment>GuestSessionStatus</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Terminated</source>
-        <comment>GuestSessionStatus</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>TimedOutKilled</source>
-        <comment>GuestSessionStatus</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>TimedOutAbnormally</source>
-        <comment>GuestSessionStatus</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Down</source>
-        <comment>GuestSessionStatus</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Error</source>
-        <comment>GuestSessionStatus</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Undefined</source>
-        <comment>ProcessStatus</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Starting</source>
-        <comment>ProcessStatus</comment>
-        <translation type="unfinished">กำลังเริ่ม</translation>
-    </message>
-    <message>
-        <source>Started</source>
-        <comment>ProcessStatus</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Paused</source>
-        <comment>ProcessStatus</comment>
-        <translation type="unfinished">หยุดชั่วคราว</translation>
-    </message>
-    <message>
-        <source>Terminating</source>
-        <comment>ProcessStatus</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>TerminatedNormally</source>
-        <comment>ProcessStatus</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>TerminatedSignal</source>
-        <comment>ProcessStatus</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>TerminatedAbnormally</source>
-        <comment>ProcessStatus</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>TimedOutKilled</source>
-        <comment>ProcessStatus</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>TimedOutAbnormally</source>
-        <comment>ProcessStatus</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Down</source>
-        <comment>ProcessStatus</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Error</source>
-        <comment>ProcessStatus</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>virtio-scsi Port %1</source>
-        <comment>StorageSlot</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>NAT Network</source>
-        <translation type="unfinished">เครือข่าย NAT</translation>
+        <translation type="obsolete">ไม่ได้เชื่อมต่อ</translation>
     </message>
 </context>
 <context>

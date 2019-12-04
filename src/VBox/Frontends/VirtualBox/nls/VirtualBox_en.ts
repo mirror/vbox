@@ -122,7 +122,7 @@
     </message>
 </context>
 <context>
-    <name>UICommon</name>
+    <name>VBoxGlobal</name>
     <message numerus="yes">
         <source>%n year(s)</source>
         <translation>
