@@ -744,6 +744,34 @@ protected:
     }
 };
 
+/** Simple action extension, used as 'Perform Export Machine locally' action class. */
+class UIActionSimpleSelectorMachinePerformExportLocally : public UIActionSimple
+{
+    Q_OBJECT;
+
+public:
+
+    /** Constructs action passing @a pParent to the base-class. */
+    UIActionSimpleSelectorMachinePerformExportLocally(UIActionPool *pParent)
+        : UIActionSimple(pParent, ":/export_16px.png", ":/export_disabled_16px.png")
+    {}
+
+protected:
+
+    /** Returns shortcut extra-data ID. */
+    virtual QString shortcutExtraDataID() const /* override */
+    {
+        return QString("ExportLocally");
+    }
+
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */
+    {
+        setName(QApplication::translate("UIActionPool", "E&xport Locally..."));
+        setStatusTip(QApplication::translate("UIActionPool", "Export selected virtual machine locally"));
+    }
+};
+
 /** Simple action extension, used as 'Perform Export Machine to OCI' action class. */
 class UIActionSimpleSelectorMachinePerformExportToOCI : public UIActionSimple
 {
