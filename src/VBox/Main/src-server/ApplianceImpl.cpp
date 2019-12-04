@@ -170,9 +170,22 @@ static struct
                                                                                                 // CIM 64-bit type for this
     { ovf::CIMOSType_CIMOS_CentOS,                               VBOXOSTYPE_RedHat },
     { ovf::CIMOSType_CIMOS_CentOS_64,                            VBOXOSTYPE_RedHat_x64 },
-    { ovf::CIMOSType_CIMOS_OracleEnterpriseLinux,                VBOXOSTYPE_Oracle },
-    { ovf::CIMOSType_CIMOS_OracleEnterpriseLinux_64,             VBOXOSTYPE_Oracle_x64 },
-    { ovf::CIMOSType_CIMOS_eComStation,                          VBOXOSTYPE_ECS }
+    { ovf::CIMOSType_CIMOS_OracleLinux,                          VBOXOSTYPE_Oracle },
+    { ovf::CIMOSType_CIMOS_OracleLinux_64,                       VBOXOSTYPE_Oracle_x64 },
+    { ovf::CIMOSType_CIMOS_eComStation,                          VBOXOSTYPE_ECS },
+
+    { ovf::CIMOSType_CIMOS_WindowsServer2011,                    VBOXOSTYPE_Win2k8_x64 },       // no 1:1 match on the VBox side
+    { ovf::CIMOSType_CIMOS_WindowsServer2012,                    VBOXOSTYPE_Win2k12_x64 },
+    { ovf::CIMOSType_CIMOS_Windows8,                             VBOXOSTYPE_Win8 },
+    { ovf::CIMOSType_CIMOS_Windows8_64,                          VBOXOSTYPE_Win8_x64 },
+    { ovf::CIMOSType_CIMOS_WindowsServer2012R2,                  VBOXOSTYPE_Win2k12_x64 },
+    { ovf::CIMOSType_CIMOS_Windows8_1,                           VBOXOSTYPE_Win81 },
+    { ovf::CIMOSType_CIMOS_Windows8_1_64,                        VBOXOSTYPE_Win81_x64 },
+    { ovf::CIMOSType_CIMOS_WindowsServer2016,                    VBOXOSTYPE_Win2k16_x64 },
+    { ovf::CIMOSType_CIMOS_Windows10,                            VBOXOSTYPE_Win10 },
+    { ovf::CIMOSType_CIMOS_Windows10_64,                         VBOXOSTYPE_Win10_x64 },
+    { ovf::CIMOSType_CIMOS_Windows10_64,                         VBOXOSTYPE_Win10_x64 },
+    { ovf::CIMOSType_CIMOS_WindowsServer2016,                    VBOXOSTYPE_Win2k19_x64 },      // no CIM type for this yet
 
     // there are no CIM types for these, so these turn to "other" on export:
     //      VBOXOSTYPE_OpenBSD
@@ -198,6 +211,10 @@ static const osTypePattern g_aOsTypesPattern[] =
     {"Windows 2003",  VBOXOSTYPE_Win2k3},
     {"Windows Vista", VBOXOSTYPE_WinVista},
     {"Windows 2008",  VBOXOSTYPE_Win2k8},
+    {"Windows 7",     VBOXOSTYPE_Win7},
+    {"Windows 8.1",   VBOXOSTYPE_Win81},
+    {"Windows 8",     VBOXOSTYPE_Win8},
+    {"Windows 10",    VBOXOSTYPE_Win10},
     {"SUSE",          VBOXOSTYPE_OpenSUSE},
     {"Novell",        VBOXOSTYPE_OpenSUSE},
     {"Red Hat",       VBOXOSTYPE_RedHat},
@@ -227,6 +244,13 @@ static const osTypePattern g_aOsTypesPattern64[] =
     {"Windows 2003",  VBOXOSTYPE_Win2k3_x64},
     {"Windows Vista", VBOXOSTYPE_WinVista_x64},
     {"Windows 2008",  VBOXOSTYPE_Win2k8_x64},
+    {"Windows 7",     VBOXOSTYPE_Win7_x64},
+    {"Windows 8.1",   VBOXOSTYPE_Win81_x64},
+    {"Windows 8",     VBOXOSTYPE_Win8_x64},
+    {"Windows 2012",  VBOXOSTYPE_Win2k12_x64},
+    {"Windows 10",    VBOXOSTYPE_Win10_x64},
+    {"Windows 2016",  VBOXOSTYPE_Win2k16_x64},
+    {"Windows 2019",  VBOXOSTYPE_Win2k19_x64},
     {"SUSE",          VBOXOSTYPE_OpenSUSE_x64},
     {"Novell",        VBOXOSTYPE_OpenSUSE_x64},
     {"Red Hat",       VBOXOSTYPE_RedHat_x64},

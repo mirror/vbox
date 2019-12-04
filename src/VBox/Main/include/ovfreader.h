@@ -176,10 +176,21 @@ enum CIMOSType_T
     CIMOSType_CIMOS_Windows7 = 105,
     CIMOSType_CIMOS_CentOS = 106,
     CIMOSType_CIMOS_CentOS_64 = 107,
-    CIMOSType_CIMOS_OracleEnterpriseLinux = 108,
-    CIMOSType_CIMOS_OracleEnterpriseLinux_64 = 109,
-    CIMOSType_CIMOS_eComStation = 110
+    CIMOSType_CIMOS_OracleLinux = 108,
+    CIMOSType_CIMOS_OracleLinux_64 = 109,
+    CIMOSType_CIMOS_eComStation = 110,
     // no new types added with CIM 2.26.0
+    CIMOSType_CIMOS_WindowsServer2011 = 111,
+    CIMOSType_CIMOS_WindowsServer2012 = 112,
+    CIMOSType_CIMOS_Windows8 = 113,
+    CIMOSType_CIMOS_Windows8_64 = 114,
+    CIMOSType_CIMOS_WindowsServer2012R2 = 115,
+    CIMOSType_CIMOS_Windows8_1 = 116,
+    CIMOSType_CIMOS_Windows8_1_64 = 117,
+    CIMOSType_CIMOS_WindowsServer2016 = 118,
+    CIMOSType_CIMOS_Windows10 = 119,
+    CIMOSType_CIMOS_Windows10_64 = 120,
+    // the above covers up to CIM 2.52.0, without checking when it was added
 };
 
 enum OVFVersion_T
