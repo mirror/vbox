@@ -134,14 +134,14 @@ void UIWizardExportAppPage2::populateMACAddressPolicies()
     AssertReturnVoid(m_pMACComboBox->count() == 0);
 
     /* Apply hardcoded policies list: */
-    for (int i = 0; i < (int)MACAddressPolicy_MAX; ++i)
+    for (int i = 0; i < (int)MACAddressExportPolicy_MAX; ++i)
     {
         m_pMACComboBox->addItem(QString::number(i));
         m_pMACComboBox->setItemData(i, i);
     }
 
     /* Set default: */
-    setMACAddressPolicy(MACAddressPolicy_StripAllNonNATMACs);
+    setMACAddressExportPolicy(MACAddressExportPolicy_StripAllNonNATMACs);
 }
 
 void UIWizardExportAppPage2::populateAccounts()
@@ -504,7 +504,7 @@ void UIWizardExportAppPage2::updateFormatComboToolTip()
     m_pFormatComboBox->setToolTip(strCurrentToolTip);
 }
 
-void UIWizardExportAppPage2::updateMACAddressPolicyComboToolTip()
+void UIWizardExportAppPage2::updateMACAddressExportPolicyComboToolTip()
 {
     const int iCurrentIndex = m_pMACComboBox->currentIndex();
     const QString strCurrentToolTip = m_pMACComboBox->itemData(iCurrentIndex, Qt::ToolTipRole).toString();
@@ -574,17 +574,17 @@ QString UIWizardExportAppPage2::path() const
     return m_pFileSelector->path();
 }
 
-void UIWizardExportAppPage2::setMACAddressPolicy(MACAddressPolicy enmMACAddressPolicy)
+void UIWizardExportAppPage2::setMACAddressExportPolicy(MACAddressExportPolicy enmMACAddressExportPolicy)
 {
-    const int iIndex = m_pMACComboBox->findData((int)enmMACAddressPolicy);
+    const int iIndex = m_pMACComboBox->findData((int)enmMACAddressExportPolicy);
     AssertMsg(iIndex != -1, ("Data not found!"));
     m_pMACComboBox->setCurrentIndex(iIndex);
 }
 
-MACAddressPolicy UIWizardExportAppPage2::macAddressPolicy() const
+MACAddressExportPolicy UIWizardExportAppPage2::macAddressExportPolicy() const
 {
     const int iIndex = m_pMACComboBox->currentIndex();
-    return (MACAddressPolicy)m_pMACComboBox->itemData(iIndex).toInt();
+    return (MACAddressExportPolicy)m_pMACComboBox->itemData(iIndex).toInt();
 }
 
 void UIWizardExportAppPage2::setManifestSelected(bool fChecked)
@@ -964,7 +964,7 @@ UIWizardExportAppPageBasic2::UIWizardExportAppPageBasic2(bool fExportToOCIByDefa
     connect(m_pFormatComboBox, static_cast<void(QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
             this, &UIWizardExportAppPageBasic2::sltHandleFormatComboChange);
     connect(m_pMACComboBox, static_cast<void(QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
-            this, &UIWizardExportAppPageBasic2::sltHandleMACAddressPolicyComboChange);
+            this, &UIWizardExportAppPageBasic2::sltHandleMACAddressExportPolicyComboChange);
     connect(m_pAccountComboBox, static_cast<void(QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
             this, &UIWizardExportAppPageBasic2::sltHandleAccountComboChange);
     connect(m_pAccountToolButton, &QIToolButton::clicked,
@@ -974,7 +974,7 @@ UIWizardExportAppPageBasic2::UIWizardExportAppPageBasic2(bool fExportToOCIByDefa
     registerField("format", this, "format");
     registerField("isFormatCloudOne", this, "isFormatCloudOne");
     registerField("path", this, "path");
-    registerField("macAddressPolicy", this, "macAddressPolicy");
+    registerField("macAddressExportPolicy", this, "macAddressExportPolicy");
     registerField("manifestSelected", this, "manifestSelected");
     registerField("includeISOsSelected", this, "includeISOsSelected");
     registerField("providerShortName", this, "providerShortName");
@@ -1048,17 +1048,17 @@ void UIWizardExportAppPageBasic2::retranslateUi()
 
     /* Translate MAC address policy combo-box: */
     m_pMACComboBoxLabel->setText(UIWizardExportApp::tr("MAC Address &Policy:"));
-    m_pMACComboBox->setItemText(MACAddressPolicy_KeepAllMACs,
+    m_pMACComboBox->setItemText(MACAddressExportPolicy_KeepAllMACs,
                                 UIWizardExportApp::tr("Include all network adapter MAC addresses"));
-    m_pMACComboBox->setItemText(MACAddressPolicy_StripAllNonNATMACs,
+    m_pMACComboBox->setItemText(MACAddressExportPolicy_StripAllNonNATMACs,
                                 UIWizardExportApp::tr("Include only NAT network adapter MAC addresses"));
-    m_pMACComboBox->setItemText(MACAddressPolicy_StripAllMACs,
+    m_pMACComboBox->setItemText(MACAddressExportPolicy_StripAllMACs,
                                 UIWizardExportApp::tr("Strip all network adapter MAC addresses"));
-    m_pMACComboBox->setItemData(MACAddressPolicy_KeepAllMACs,
+    m_pMACComboBox->setItemData(MACAddressExportPolicy_KeepAllMACs,
                                 UIWizardExportApp::tr("Include all network adapter MAC addresses in exported appliance archive."), Qt::ToolTipRole);
-    m_pMACComboBox->setItemData(MACAddressPolicy_StripAllNonNATMACs,
+    m_pMACComboBox->setItemData(MACAddressExportPolicy_StripAllNonNATMACs,
                                 UIWizardExportApp::tr("Include only NAT network adapter MAC addresses in exported appliance archive."), Qt::ToolTipRole);
-    m_pMACComboBox->setItemData(MACAddressPolicy_StripAllMACs,
+    m_pMACComboBox->setItemData(MACAddressExportPolicy_StripAllMACs,
                                 UIWizardExportApp::tr("Strip all network adapter MAC addresses from exported appliance archive."), Qt::ToolTipRole);
 
     /* Translate addtional stuff: */
@@ -1100,7 +1100,7 @@ void UIWizardExportAppPageBasic2::retranslateUi()
 
     /* Update tool-tips: */
     updateFormatComboToolTip();
-    updateMACAddressPolicyComboToolTip();
+    updateMACAddressExportPolicyComboToolTip();
     updateAccountPropertyTableToolTips();
 }
 
@@ -1208,10 +1208,10 @@ void UIWizardExportAppPageBasic2::sltHandleFileSelectorChange()
     emit completeChanged();
 }
 
-void UIWizardExportAppPageBasic2::sltHandleMACAddressPolicyComboChange()
+void UIWizardExportAppPageBasic2::sltHandleMACAddressExportPolicyComboChange()
 {
     /* Update tool-tip: */
-    updateMACAddressPolicyComboToolTip();
+    updateMACAddressExportPolicyComboToolTip();
 }
 
 void UIWizardExportAppPageBasic2::sltHandleAccountComboChange()

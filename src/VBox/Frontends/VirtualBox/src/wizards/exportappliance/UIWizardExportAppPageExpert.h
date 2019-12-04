@@ -41,7 +41,7 @@ class UIWizardExportAppPageExpert : public UIWizardPage,
     Q_PROPERTY(QString format READ format WRITE setFormat);
     Q_PROPERTY(bool isFormatCloudOne READ isFormatCloudOne);
     Q_PROPERTY(QString path READ path WRITE setPath);
-    Q_PROPERTY(MACAddressPolicy macAddressPolicy READ macAddressPolicy WRITE setMACAddressPolicy);
+    Q_PROPERTY(MACAddressExportPolicy macAddressExportPolicy READ macAddressExportPolicy WRITE setMACAddressExportPolicy);
     Q_PROPERTY(bool manifestSelected READ isManifestSelected WRITE setManifestSelected);
     Q_PROPERTY(bool includeISOsSelected READ isIncludeISOsSelected WRITE setIncludeISOsSelected);
     Q_PROPERTY(QString providerShortName READ providerShortName);
@@ -95,8 +95,8 @@ private slots:
     /** Handles change in file-name selector. */
     void sltHandleFileSelectorChange();
 
-    /** Handles change in MAC address policy combo-box. */
-    void sltHandleMACAddressPolicyComboChange();
+    /** Handles change in MAC address export policy combo-box. */
+    void sltHandleMACAddressExportPolicyComboChange();
 
     /** Handles change in account combo-box. */
     void sltHandleAccountComboChange();

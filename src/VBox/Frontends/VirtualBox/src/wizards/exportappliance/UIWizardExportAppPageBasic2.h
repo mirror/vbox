@@ -52,15 +52,15 @@ class QIToolButton;
 class UIEmptyFilePathSelector;
 
 
-/** MAC address policies. */
-enum MACAddressPolicy
+/** MAC address export policies. */
+enum MACAddressExportPolicy
 {
-    MACAddressPolicy_KeepAllMACs,
-    MACAddressPolicy_StripAllNonNATMACs,
-    MACAddressPolicy_StripAllMACs,
-    MACAddressPolicy_MAX
+    MACAddressExportPolicy_KeepAllMACs,
+    MACAddressExportPolicy_StripAllNonNATMACs,
+    MACAddressExportPolicy_StripAllMACs,
+    MACAddressExportPolicy_MAX
 };
-Q_DECLARE_METATYPE(MACAddressPolicy);
+Q_DECLARE_METATYPE(MACAddressExportPolicy);
 
 /** Format combo data fields. */
 enum
@@ -123,8 +123,8 @@ protected:
 
     /** Updates format combo tool-tips. */
     void updateFormatComboToolTip();
-    /** Updates MAC address policy combo tool-tips. */
-    void updateMACAddressPolicyComboToolTip();
+    /** Updates MAC address export policy combo tool-tips. */
+    void updateMACAddressExportPolicyComboToolTip();
     /** Updates account property table tool-tips. */
     void updateAccountPropertyTableToolTips();
     /** Adjusts account property table. */
@@ -142,10 +142,10 @@ protected:
     /** Returns path. */
     QString path() const;
 
-    /** Defines @a enmMACAddressPolicy. */
-    void setMACAddressPolicy(MACAddressPolicy enmMACAddressPolicy);
-    /** Returns MAC address policy. */
-    MACAddressPolicy macAddressPolicy() const;
+    /** Defines @a enmMACAddressExportPolicy. */
+    void setMACAddressExportPolicy(MACAddressExportPolicy enmMACAddressExportPolicy);
+    /** Returns MAC address export policy. */
+    MACAddressExportPolicy macAddressExportPolicy() const;
 
     /** Defines whether manifest @a fSelected. */
     void setManifestSelected(bool fChecked);
@@ -261,7 +261,7 @@ class UIWizardExportAppPageBasic2 : public UIWizardPage, public UIWizardExportAp
     Q_PROPERTY(QString format READ format WRITE setFormat);
     Q_PROPERTY(bool isFormatCloudOne READ isFormatCloudOne);
     Q_PROPERTY(QString path READ path WRITE setPath);
-    Q_PROPERTY(MACAddressPolicy macAddressPolicy READ macAddressPolicy WRITE setMACAddressPolicy);
+    Q_PROPERTY(MACAddressExportPolicy macAddressExportPolicy READ macAddressExportPolicy WRITE setMACAddressExportPolicy);
     Q_PROPERTY(bool manifestSelected READ isManifestSelected WRITE setManifestSelected);
     Q_PROPERTY(bool includeISOsSelected READ isIncludeISOsSelected WRITE setIncludeISOsSelected);
     Q_PROPERTY(QString providerShortName READ providerShortName);
@@ -311,8 +311,8 @@ private slots:
     /** Handles change in file-name selector. */
     void sltHandleFileSelectorChange();
 
-    /** Handles change in MAC address policy combo-box. */
-    void sltHandleMACAddressPolicyComboChange();
+    /** Handles change in MAC address export policy combo-box. */
+    void sltHandleMACAddressExportPolicyComboChange();
 
     /** Handles change in account combo-box. */
     void sltHandleAccountComboChange();

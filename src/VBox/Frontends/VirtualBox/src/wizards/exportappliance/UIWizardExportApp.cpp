@@ -304,10 +304,10 @@ bool UIWizardExportApp::exportVMs(CAppliance &comAppliance)
 
         /* Prepare export options: */
         QVector<KExportOptions> options;
-        switch (field("macAddressPolicy").value<MACAddressPolicy>())
+        switch (field("macAddressExportPolicy").value<MACAddressExportPolicy>())
         {
-            case MACAddressPolicy_StripAllNonNATMACs: options.append(KExportOptions_StripAllNonNATMACs); break;
-            case MACAddressPolicy_StripAllMACs: options.append(KExportOptions_StripAllMACs); break;
+            case MACAddressExportPolicy_StripAllNonNATMACs: options.append(KExportOptions_StripAllNonNATMACs); break;
+            case MACAddressExportPolicy_StripAllMACs: options.append(KExportOptions_StripAllMACs); break;
             default: break;
         }
         if (field("manifestSelected").toBool())
