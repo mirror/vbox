@@ -29,11 +29,13 @@
 /** The following are the symbols which we need from the fuse library. */
 #define RT_RUNTIME_LOADER_INSERT_SYMBOLS \
  RT_PROXY_STUB(fuse_main_real, int, (int argc, char **argv, struct fuse_operations *fuse_ops, size_t op_size, void *pv), \
-                 (argc, argv, fuse_ops, op_size, pv)) \
+               (argc, argv, fuse_ops, op_size, pv)) \
  RT_PROXY_STUB(fuse_opt_parse, int, (struct fuse_args *args, void *data, const struct fuse_opt opts[], fuse_opt_proc_t proc), \
-                 (args, data, opts, proc)) \
+               (args, data, opts, proc)) \
  RT_PROXY_STUB(fuse_opt_add_arg, int, (struct fuse_args *args, const char *arg), \
-                 (args, arg)) \
+               (args, arg)) \
+ RT_PROXY_STUB(fuse_opt_free_args, void, (struct fuse_args *args), \
+               (args))
 
 #ifdef VBOX_FUSE_GENERATE_HEADER
 # define RT_RUNTIME_LOADER_GENERATE_HEADER
