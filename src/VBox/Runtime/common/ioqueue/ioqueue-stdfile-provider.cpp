@@ -51,6 +51,7 @@
 #define RTIOQUEUE_STDFILE_PROV_STATE_F_EVTWAIT_NEED_WAKEUP      RT_BIT(0)
 /** The waiting thread was interrupted by the external wakeup call. */
 #define RTIOQUEUE_STDFILE_PROV_STATE_F_EVTWAIT_INTR             RT_BIT(1)
+#define RTIOQUEUE_STDFILE_PROV_STATE_F_EVTWAIT_INTR_BIT         1
 /** The I/O queue worker thread needs to be woken up to process new requests. */
 #define RTIOQUEUE_STDFILE_PROV_STATE_F_WORKER_NEED_WAKEUP       RT_BIT(2)
 #define RTIOQUEUE_STDFILE_PROV_STATE_F_WORKER_NEED_WAKEUP_BIT   2
@@ -108,6 +109,8 @@ typedef struct RTIOQUEUEPROVINT
     PRTIOQUEUESSQENTRY          paSqEntryBase;
     /** Submission queue producer index. */
     volatile uint32_t           idxSqProd;
+    /** Submission queue producer value for any uncommitted requests. */
+    uint32_t                    idxSqProdUncommit;
     /** Submission queue consumer index. */
     volatile uint32_t           idxSqCons;
     /** Pointer to the completion queue base. */
@@ -177,8 +180,9 @@ static void rtIoQueueStdFileProv_SqEntryProcess(PCRTIOQUEUESSQENTRY pSqEntry, PR
     }
 
     /* Write the result back into the completion queue. */
-    pCqEntry->rcReq  = rcReq;
-    pCqEntry->pvUser = pSqEntry->pvUser;
+    pCqEntry->rcReq    = rcReq;
+    pCqEntry->pvUser   = pSqEntry->pvUser;
+    pCqEntry->cbXfered = RT_SUCCESS(rcReq) ? pSqEntry->cbReq : 0;
 }
 
 
@@ -214,10 +218,15 @@ static DECLCALLBACK(int) rtIoQueueStdFileProv_WorkerLoop(RTTHREAD hThrdSelf, voi
         ASMAtomicBitTestAndClear(&pThis->fState, RTIOQUEUE_STDFILE_PROV_STATE_F_WORKER_NEED_WAKEUP_BIT);
 
         /* Process all requests. */
+        uint32_t cCqFree = 0;
+        if (idxCqCons > pThis->idxCqProd)
+            cCqFree = pThis->cCqEntries - (pThis->cCqEntries - idxCqCons) - pThis->idxCqProd;
+        else
+            cCqFree = pThis->cCqEntries - pThis->idxCqProd - idxCqCons;
         do
         {
             while (   idxSqCons != idxSqProd
-                   && idxCqCons != pThis->idxCqProd)
+                   && cCqFree)
             {
                 PCRTIOQUEUESSQENTRY pSqEntry = &pThis->paSqEntryBase[idxSqCons];
                 PRTIOQUEUECEVT pCqEntry = &pThis->paCqEntryBase[pThis->idxCqProd];
@@ -226,7 +235,9 @@ static DECLCALLBACK(int) rtIoQueueStdFileProv_WorkerLoop(RTTHREAD hThrdSelf, voi
                 ASMWriteFence();
 
                 idxSqCons = (idxSqCons + 1) % pThis->cSqEntries;
+                cCqFree--;
                 pThis->idxCqProd = (pThis->idxCqProd + 1) % pThis->cCqEntries;
+                ASMAtomicWriteU32(&pThis->idxSqCons, idxSqCons);
                 ASMWriteFence();
                 if (ASMAtomicReadU32(&pThis->fState) & RTIOQUEUE_STDFILE_PROV_STATE_F_EVTWAIT_NEED_WAKEUP)
                 {
@@ -235,11 +246,9 @@ static DECLCALLBACK(int) rtIoQueueStdFileProv_WorkerLoop(RTTHREAD hThrdSelf, voi
                 }
             }
 
-            ASMWriteFence();
-            ASMAtomicWriteU32(&pThis->idxSqCons, idxSqCons);
             idxSqProd = ASMAtomicReadU32(&pThis->idxSqProd);
-            idxSqCons = ASMAtomicReadU32(&pThis->idxSqCons);
-        } while (idxSqCons != idxSqProd);
+        } while (   idxSqCons != idxSqProd
+                 && cCqFree);
     }
 
     return VINF_SUCCESS;
@@ -263,14 +272,18 @@ static DECLCALLBACK(int) rtIoQueueStdFileProv_QueueInit(RTIOQUEUEPROV hIoQueuePr
     PRTIOQUEUEPROVINT pThis = hIoQueueProv;
     int rc = VINF_SUCCESS;
 
-    pThis->cSqEntries = cSqEntries;
-    pThis->cCqEntries = cCqEntries;
-    pThis->idxSqProd  = 0;
-    pThis->idxSqCons  = 0;
-    pThis->idxCqProd  = 0;
-    pThis->idxCqCons  = 0;
-    pThis->fShutdown  = false;
-    pThis->fState     = 0;
+    cSqEntries++;
+    cCqEntries++;
+
+    pThis->cSqEntries        = cSqEntries;
+    pThis->cCqEntries        = cCqEntries;
+    pThis->idxSqProd         = 0;
+    pThis->idxSqProdUncommit = 0;
+    pThis->idxSqCons         = 0;
+    pThis->idxCqProd         = 0;
+    pThis->idxCqCons         = 0;
+    pThis->fShutdown         = false;
+    pThis->fState            = 0;
 
     pThis->paSqEntryBase = (PRTIOQUEUESSQENTRY)RTMemAllocZ(cSqEntries * sizeof(RTIOQUEUESSQENTRY));
     if (RT_LIKELY(pThis->paSqEntryBase))
@@ -360,8 +373,7 @@ static DECLCALLBACK(int) rtIoQueueStdFileProv_ReqPrepare(RTIOQUEUEPROV hIoQueueP
                                                          void *pvUser)
 {
     PRTIOQUEUEPROVINT pThis = hIoQueueProv;
-    uint32_t idxSqProd = ASMAtomicReadU32(&pThis->idxSqProd);
-    PRTIOQUEUESSQENTRY pSqEntry = &pThis->paSqEntryBase[idxSqProd];
+    PRTIOQUEUESSQENTRY pSqEntry = &pThis->paSqEntryBase[pThis->idxSqProdUncommit];
 
     pSqEntry->hFile     = pHandle->u.hFile;
     pSqEntry->enmOp     = enmOp;
@@ -371,10 +383,8 @@ static DECLCALLBACK(int) rtIoQueueStdFileProv_ReqPrepare(RTIOQUEUEPROV hIoQueueP
     pSqEntry->pvUser    = pvUser;
     pSqEntry->fSg       = false;
     pSqEntry->u.pvBuf   = pvBuf;
-    ASMWriteFence();
 
-    idxSqProd = (idxSqProd + 1) % pThis->cSqEntries;
-    ASMAtomicWriteU32(&pThis->idxSqProd, idxSqProd);
+    pThis->idxSqProdUncommit = (pThis->idxSqProdUncommit + 1) % pThis->cSqEntries;
     return VINF_SUCCESS;
 }
 
@@ -385,8 +395,7 @@ static DECLCALLBACK(int) rtIoQueueStdFileProv_ReqPrepareSg(RTIOQUEUEPROV hIoQueu
                                                            void *pvUser)
 {
     PRTIOQUEUEPROVINT pThis = hIoQueueProv;
-    uint32_t idxSqProd = ASMAtomicReadU32(&pThis->idxSqProd);
-    PRTIOQUEUESSQENTRY pSqEntry = &pThis->paSqEntryBase[idxSqProd];
+    PRTIOQUEUESSQENTRY pSqEntry = &pThis->paSqEntryBase[pThis->idxSqProdUncommit];
 
     pSqEntry->hFile     = pHandle->u.hFile;
     pSqEntry->enmOp     = enmOp;
@@ -396,10 +405,8 @@ static DECLCALLBACK(int) rtIoQueueStdFileProv_ReqPrepareSg(RTIOQUEUEPROV hIoQueu
     pSqEntry->pvUser    = pvUser;
     pSqEntry->fSg       = true;
     pSqEntry->u.pSgBuf  = pSgBuf;
-    ASMWriteFence();
 
-    idxSqProd = (idxSqProd + 1) % pThis->cSqEntries;
-    ASMAtomicWriteU32(&pThis->idxSqProd, idxSqProd);
+    pThis->idxSqProdUncommit = (pThis->idxSqProdUncommit + 1) % pThis->cSqEntries;
     return VINF_SUCCESS;
 }
 
@@ -408,8 +415,14 @@ static DECLCALLBACK(int) rtIoQueueStdFileProv_ReqPrepareSg(RTIOQUEUEPROV hIoQueu
 static DECLCALLBACK(int) rtIoQueueStdFileProv_Commit(RTIOQUEUEPROV hIoQueueProv, uint32_t *pcReqsCommitted)
 {
     PRTIOQUEUEPROVINT pThis = hIoQueueProv;
-    RT_NOREF(pcReqsCommitted);
 
+    if (pThis->idxSqProd > pThis->idxSqProdUncommit)
+        *pcReqsCommitted = pThis->cSqEntries - pThis->idxSqProd + pThis->idxSqProdUncommit;
+    else
+        *pcReqsCommitted = pThis->idxSqProdUncommit - pThis->idxSqProd;
+
+    ASMWriteFence();
+    ASMAtomicWriteU32(&pThis->idxSqProd, pThis->idxSqProdUncommit);
     return RTSemEventSignal(pThis->hSemEvtWorker);
 }
 
@@ -418,10 +431,60 @@ static DECLCALLBACK(int) rtIoQueueStdFileProv_Commit(RTIOQUEUEPROV hIoQueueProv,
 static DECLCALLBACK(int) rtIoQueueStdFileProv_EvtWait(RTIOQUEUEPROV hIoQueueProv, PRTIOQUEUECEVT paCEvt, uint32_t cCEvt,
                                                       uint32_t cMinWait, uint32_t *pcCEvt, uint32_t fFlags)
 {
-    PRTIOQUEUEPROVINT pThis = hIoQueueProv;
-    RT_NOREF(pThis, paCEvt, cCEvt, cMinWait, pcCEvt, fFlags);
+    RT_NOREF(fFlags);
 
-    return VERR_NOT_IMPLEMENTED;
+    PRTIOQUEUEPROVINT pThis = hIoQueueProv;
+    int rc = VINF_SUCCESS;
+    uint32_t idxCEvt = 0;
+
+    while (   RT_SUCCESS(rc)
+           && cMinWait
+           && cCEvt)
+    {
+        ASMAtomicOrU32(&pThis->fState, RTIOQUEUE_STDFILE_PROV_STATE_F_EVTWAIT_NEED_WAKEUP);
+        uint32_t idxCqProd = ASMAtomicReadU32(&pThis->idxCqProd);
+        uint32_t idxCqCons = ASMAtomicReadU32(&pThis->idxCqCons);
+
+        if (idxCqCons == idxCqProd)
+        {
+            rc = RTSemEventWait(pThis->hSemEvtWaitEvts, RT_INDEFINITE_WAIT);
+            AssertRC(rc);
+            if (ASMAtomicBitTestAndClear(&pThis->fState, RTIOQUEUE_STDFILE_PROV_STATE_F_EVTWAIT_INTR_BIT))
+            {
+                rc = VERR_INTERRUPTED;
+                ASMAtomicBitTestAndClear(&pThis->fState, RTIOQUEUE_STDFILE_PROV_STATE_F_WORKER_NEED_WAKEUP_BIT);
+                break;
+            }
+
+            idxCqProd = ASMAtomicReadU32(&pThis->idxCqProd);
+            idxCqCons = ASMAtomicReadU32(&pThis->idxCqCons);
+        }
+
+        ASMAtomicBitTestAndClear(&pThis->fState, RTIOQUEUE_STDFILE_PROV_STATE_F_WORKER_NEED_WAKEUP_BIT);
+
+        /* Process all requests. */
+        while (   idxCqCons != idxCqProd
+               && cCEvt)
+        {
+            PRTIOQUEUECEVT pCqEntry = &pThis->paCqEntryBase[idxCqCons];
+
+            paCEvt[idxCEvt].rcReq    = pCqEntry->rcReq;
+            paCEvt[idxCEvt].pvUser   = pCqEntry->pvUser;
+            paCEvt[idxCEvt].cbXfered = pCqEntry->cbXfered;
+            ASMReadFence();
+
+            idxCEvt++;
+            cCEvt--;
+            cMinWait--;
+
+            idxCqCons = (idxCqCons + 1) % pThis->cCqEntries;
+            pThis->idxCqCons = (pThis->idxCqCons + 1) % pThis->cCqEntries;
+            ASMWriteFence();
+        }
+    }
+
+    *pcCEvt = idxCEvt;
+    return rc;
 }
 
 
