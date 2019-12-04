@@ -2634,7 +2634,6 @@ static DECLCALLBACK(void) ichac97R3Timer(PPDMDEVINS pDevIns, PTMTIMER pTimer, vo
  * Sets the virtual device timer to a new expiration time.
  *
  * @param   pDevIns             The device instance.
- * @param   pThis               The shared AC'97 state.
  * @param   pStream             AC'97 stream to set timer for.
  * @param   cTicksToDeadline    The number of ticks to the new deadline.
  *
