@@ -56,6 +56,7 @@
  */
 VMMDECL(VBOXSTRICTRC) IOMIOPortRead(PVMCC pVM, PVMCPU pVCpu, RTIOPORT Port, uint32_t *pu32Value, size_t cbValue)
 {
+    STAM_COUNTER_INC(&pVM->iom.s.StatIoPortIn);
     Assert(pVCpu->iom.s.PendingIOPortWrite.cbValue == 0);
 
 /** @todo should initialize *pu32Value here because it can happen that some
@@ -114,26 +115,30 @@ VMMDECL(VBOXSTRICTRC) IOMIOPortRead(PVMCC pVM, PVMCPU pVCpu, RTIOPORT Port, uint
             STAM_PROFILE_STOP(&pStats->CTX_SUFF_Z(ProfIn), a);
             PDMCritSectLeave(pDevIns->CTX_SUFF(pCritSectRo));
 
-            if (rcStrict == VINF_SUCCESS)
-                STAM_COUNTER_INC(&pStats->CTX_SUFF_Z(In));
 #ifndef IN_RING3
-            else if (rcStrict == VINF_IOM_R3_IOPORT_READ)
+            if (rcStrict == VINF_IOM_R3_IOPORT_READ)
                 STAM_COUNTER_INC(&pStats->InRZToR3);
+            else
 #endif
-            else if (rcStrict == VERR_IOM_IOPORT_UNUSED)
             {
-                /* make return value */
-                rcStrict = VINF_SUCCESS;
-                switch (cbValue)
+                STAM_COUNTER_INC(&pStats->CTX_SUFF_Z(In));
+                STAM_COUNTER_INC(&iomIoPortGetStats(pVM, pRegEntry, 0)->Total);
+                if (rcStrict == VERR_IOM_IOPORT_UNUSED)
                 {
-                    case 1: *(uint8_t  *)pu32Value = 0xff; break;
-                    case 2: *(uint16_t *)pu32Value = 0xffff; break;
-                    case 4: *(uint32_t *)pu32Value = UINT32_C(0xffffffff); break;
-                    default:
-                        AssertMsgFailedReturn(("Invalid I/O port size %d. Port=%d\n", cbValue, Port), VERR_IOM_INVALID_IOPORT_SIZE);
+                    /* make return value */
+                    rcStrict = VINF_SUCCESS;
+                    switch (cbValue)
+                    {
+                        case 1: *(uint8_t  *)pu32Value = 0xff; break;
+                        case 2: *(uint16_t *)pu32Value = 0xffff; break;
+                        case 4: *(uint32_t *)pu32Value = UINT32_C(0xffffffff); break;
+                        default:
+                            AssertMsgFailedReturn(("Invalid I/O port size %d. Port=%d\n", cbValue, Port), VERR_IOM_INVALID_IOPORT_SIZE);
+                    }
                 }
-            }
+           }
             Log3(("IOMIOPortRead: Port=%RTiop *pu32=%08RX32 cb=%d rc=%Rrc\n", Port, *pu32Value, cbValue, VBOXSTRICTRC_VAL(rcStrict)));
+            STAM_COUNTER_INC(&iomIoPortGetStats(pVM, pRegEntry, 0)->Total);
         }
         else
             STAM_COUNTER_INC(&pStats->InRZToR3);
@@ -178,6 +183,7 @@ VMMDECL(VBOXSTRICTRC) IOMIOPortRead(PVMCC pVM, PVMCPU pVCpu, RTIOPORT Port, uint
 VMM_INT_DECL(VBOXSTRICTRC) IOMIOPortReadString(PVMCC pVM, PVMCPU pVCpu, RTIOPORT uPort,
                                                void *pvDst, uint32_t *pcTransfers, unsigned cb)
 {
+    STAM_COUNTER_INC(&pVM->iom.s.StatIoPortInS);
     Assert(pVCpu->iom.s.PendingIOPortWrite.cbValue == 0);
 
     /* For lookups we need to share lock IOM. */
@@ -278,12 +284,15 @@ VMM_INT_DECL(VBOXSTRICTRC) IOMIOPortReadString(PVMCC pVM, PVMCPU pVCpu, RTIOPORT
             PDMCritSectLeave(pDevIns->CTX_SUFF(pCritSectRo));
 
 #ifdef VBOX_WITH_STATISTICS
-            if (rcStrict == VINF_SUCCESS && pStats)
-                STAM_COUNTER_INC(&pStats->CTX_SUFF_Z(In));
 # ifndef IN_RING3
-            else if (rcStrict == VINF_IOM_R3_IOPORT_READ && pStats)
+            if (rcStrict == VINF_IOM_R3_IOPORT_READ)
                 STAM_COUNTER_INC(&pStats->InRZToR3);
+            else
 # endif
+            {
+                STAM_COUNTER_INC(&pStats->CTX_SUFF_Z(In));
+                STAM_COUNTER_INC(&iomIoPortGetStats(pVM, pRegEntry, 0)->Total);
+            }
 #endif
             Log3(("IOMIOPortReadStr: uPort=%RTiop pvDst=%p pcTransfer=%p:{%#x->%#x} cb=%d rc=%Rrc\n",
                   uPort, pvDst, pcTransfers, cRequestedTransfers, *pcTransfers, cb, VBOXSTRICTRC_VAL(rcStrict)));
@@ -348,6 +357,7 @@ static VBOXSTRICTRC iomIOPortRing3WritePending(PVMCPU pVCpu, RTIOPORT Port, uint
  */
 VMMDECL(VBOXSTRICTRC) IOMIOPortWrite(PVMCC pVM, PVMCPU pVCpu, RTIOPORT Port, uint32_t u32Value, size_t cbValue)
 {
+    STAM_COUNTER_INC(&pVM->iom.s.StatIoPortOut);
 #ifndef IN_RING3
     Assert(pVCpu->iom.s.PendingIOPortWrite.cbValue == 0);
 #endif
@@ -407,8 +417,13 @@ VMMDECL(VBOXSTRICTRC) IOMIOPortWrite(PVMCC pVM, PVMCPU pVCpu, RTIOPORT Port, uin
             PDMCritSectLeave(pDevIns->CTX_SUFF(pCritSectRo));
 
 #ifdef VBOX_WITH_STATISTICS
-            if (rcStrict == VINF_SUCCESS)
+# ifndef IN_RING3
+            if (rcStrict != VINF_IOM_R3_IOPORT_WRITE)
+# endif
+            {
                 STAM_COUNTER_INC(&pStats->CTX_SUFF_Z(Out));
+                STAM_COUNTER_INC(&iomIoPortGetStats(pVM, pRegEntry, 0)->Total);
+            }
 #endif
             Log3(("IOMIOPortWrite: Port=%RTiop u32=%08RX32 cb=%d rc=%Rrc\n", Port, u32Value, cbValue, VBOXSTRICTRC_VAL(rcStrict)));
         }
@@ -453,6 +468,7 @@ VMMDECL(VBOXSTRICTRC) IOMIOPortWrite(PVMCC pVM, PVMCPU pVCpu, RTIOPORT Port, uin
 VMM_INT_DECL(VBOXSTRICTRC) IOMIOPortWriteString(PVMCC pVM, PVMCPU pVCpu, RTIOPORT uPort, void const *pvSrc,
                                                 uint32_t *pcTransfers, unsigned cb)
 {
+    STAM_COUNTER_INC(&pVM->iom.s.StatIoPortOutS);
     Assert(pVCpu->iom.s.PendingIOPortWrite.cbValue == 0);
     Assert(cb == 1 || cb == 2 || cb == 4);
 
@@ -548,12 +564,15 @@ VMM_INT_DECL(VBOXSTRICTRC) IOMIOPortWriteString(PVMCC pVM, PVMCPU pVCpu, RTIOPOR
             PDMCritSectLeave(pDevIns->CTX_SUFF(pCritSectRo));
 
 #ifdef VBOX_WITH_STATISTICS
-            if (rcStrict == VINF_SUCCESS)
-                STAM_COUNTER_INC(&pStats->CTX_SUFF_Z(Out));
 # ifndef IN_RING3
-            else if (rcStrict == VINF_IOM_R3_IOPORT_WRITE)
+            if (rcStrict == VINF_IOM_R3_IOPORT_WRITE)
                 STAM_COUNTER_INC(&pStats->OutRZToR3);
+            else
 # endif
+            {
+                STAM_COUNTER_INC(&pStats->CTX_SUFF_Z(Out));
+                STAM_COUNTER_INC(&iomIoPortGetStats(pVM, pRegEntry, 0)->Total);
+            }
 #endif
             Log3(("IOMIOPortWriteStr: uPort=%RTiop pvSrc=%p pcTransfer=%p:{%#x->%#x} cb=%d rcStrict=%Rrc\n",
                   uPort, pvSrc, pcTransfers, cRequestedTransfers, *pcTransfers, cb, VBOXSTRICTRC_VAL(rcStrict)));

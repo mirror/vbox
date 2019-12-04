@@ -57,14 +57,14 @@ void iomR3IoPortRegStats(PVM pVM, PIOMIOPORTENTRYR3 pRegEntry)
     char                 szName[80];
     size_t cchPrefix;
     if (uFirstPort < uEndPort - 1)
-        cchPrefix = RTStrPrintf(szName, sizeof(szName), "/IOM/NewPorts/%04x-%04x", uFirstPort, uEndPort - 1);
+        cchPrefix = RTStrPrintf(szName, sizeof(szName), "/IOM/IoPorts/%04x-%04x", uFirstPort, uEndPort - 1);
     else
-        cchPrefix = RTStrPrintf(szName, sizeof(szName), "/IOM/NewPorts/%04x", uPort);
+        cchPrefix = RTStrPrintf(szName, sizeof(szName), "/IOM/IoPorts/%04x", uPort);
     const char *pszDesc     = pRegEntry->pszDesc;
     char       *pszFreeDesc = NULL;
     if (pRegEntry->pDevIns && pRegEntry->pDevIns->iInstance > 0 && pszDesc)
         pszDesc = pszFreeDesc = RTStrAPrintf2("%u / %s", pRegEntry->pDevIns->iInstance, pszDesc);
-    int rc = STAMR3Register(pVM, &pRegEntry->idxSelf, STAMTYPE_U16, STAMVISIBILITY_ALWAYS, szName,
+    int rc = STAMR3Register(pVM, &pStats->Total, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, szName,
                             STAMUNIT_NONE, pRegEntry->pszDesc);
     AssertRC(rc);
     RTStrFree(pszFreeDesc);
@@ -131,9 +131,9 @@ static void iomR3IoPortDeregStats(PVM pVM, PIOMIOPORTENTRYR3 pRegEntry, unsigned
     char   szPrefix[80];
     size_t cchPrefix;
     if (pRegEntry->cPorts > 1)
-        cchPrefix = RTStrPrintf(szPrefix, sizeof(szPrefix), "/IOM/NewPorts/%04x-%04x", uPort, uPort + pRegEntry->cPorts - 1);
+        cchPrefix = RTStrPrintf(szPrefix, sizeof(szPrefix), "/IOM/IoPorts/%04x-%04x", uPort, uPort + pRegEntry->cPorts - 1);
     else
-        cchPrefix = RTStrPrintf(szPrefix, sizeof(szPrefix), "/IOM/NewPorts/%04x", uPort);
+        cchPrefix = RTStrPrintf(szPrefix, sizeof(szPrefix), "/IOM/IoPorts/%04x", uPort);
     STAMR3DeregisterByPrefix(pVM->pUVM, szPrefix);
 }
 

@@ -147,6 +147,9 @@ typedef IOMIOPORTENTRYR3 const *PCIOMIOPORTENTRYR3;
  */
 typedef struct IOMIOPORTSTATSENTRY
 {
+    /** All accesses (only updated for the first port in a range). */
+    STAMCOUNTER                 Total;
+
     /** Number of INs to this port from R3. */
     STAMCOUNTER                 InR3;
     /** Profiling IN handler overhead in R3. */
@@ -446,15 +449,13 @@ typedef struct IOM
     PDMCRITSECT                     CritSect;
 #endif
 
-#if 0 /* unused */
     /** @name I/O Port statistics.
      * @{ */
-    STAMCOUNTER                     StatInstIn;
-    STAMCOUNTER                     StatInstOut;
-    STAMCOUNTER                     StatInstIns;
-    STAMCOUNTER                     StatInstOuts;
+    STAMCOUNTER                     StatIoPortIn;
+    STAMCOUNTER                     StatIoPortOut;
+    STAMCOUNTER                     StatIoPortInS;
+    STAMCOUNTER                     StatIoPortOutS;
     /** @} */
-#endif
 
     /** @name MMIO statistics.
      * @{ */

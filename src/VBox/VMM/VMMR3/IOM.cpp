@@ -175,6 +175,10 @@ VMMR3_INT_DECL(int) IOMR3Init(PVM pVM)
      * Statistics.
      */
     STAM_REG(pVM, &pVM->iom.s.StatIoPortCommits,      STAMTYPE_COUNTER, "/IOM/IoPortCommits",                       STAMUNIT_OCCURENCES,     "Number of ring-3 I/O port commits.");
+    STAM_REG(pVM, &pVM->iom.s.StatIoPortIn,           STAMTYPE_PROFILE, "/IOM/IoPortIN",                            STAMUNIT_OCCURENCES,     "Number of IN instructions (attempts)");
+    STAM_REG(pVM, &pVM->iom.s.StatIoPortInS,          STAMTYPE_PROFILE, "/IOM/IoPortINS",                           STAMUNIT_OCCURENCES,     "Number of INS instructions (attempts)");
+    STAM_REG(pVM, &pVM->iom.s.StatIoPortOutS,         STAMTYPE_PROFILE, "/IOM/IoPortOUT",                           STAMUNIT_OCCURENCES,     "Number of OUT instructions (attempts)");
+    STAM_REG(pVM, &pVM->iom.s.StatIoPortOutS,         STAMTYPE_PROFILE, "/IOM/IoPortOUTS",                          STAMUNIT_OCCURENCES,     "Number of OUTS instructions (attempts)");
 
     STAM_REL_REG(pVM, &pVM->iom.s.StatMMIOStaleMappings, STAMTYPE_PROFILE, "/IOM/MMIOStaleMappings",                STAMUNIT_TICKS_PER_CALL, "Number of times iomMmioHandlerNew got a call for a remapped range at the old mapping.");
     STAM_REG(pVM, &pVM->iom.s.StatRZMMIOHandler,      STAMTYPE_PROFILE, "/IOM/RZ-MMIOHandler",                      STAMUNIT_TICKS_PER_CALL, "Profiling of the iomMmioPfHandler() body, only success calls.");
