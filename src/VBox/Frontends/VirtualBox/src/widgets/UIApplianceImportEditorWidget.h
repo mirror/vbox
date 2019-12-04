@@ -37,6 +37,7 @@ enum MACAddressImportPolicy
     MACAddressImportPolicy_StripAllMACs,
     MACAddressImportPolicy_MAX
 };
+Q_DECLARE_METATYPE(MACAddressImportPolicy);
 
 class UIApplianceImportEditorWidget: public UIApplianceEditorWidget
 {

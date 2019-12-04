@@ -252,8 +252,8 @@ bool UIApplianceImportEditorWidget::import()
         QVector<KImportOptions> options;
         if (m_pMACComboBox)
         {
-            MACAddressImportPolicy macPolicy = static_cast<MACAddressImportPolicy>(m_pMACComboBox->currentIndex());
-            switch (macPolicy)
+            const MACAddressImportPolicy enmPolicy = m_pMACComboBox->currentData().value<MACAddressImportPolicy>();
+            switch (enmPolicy)
             {
                 case MACAddressImportPolicy_KeepAllMACs:
                     options.append(KImportOptions_KeepAllMACs);
@@ -325,18 +325,33 @@ void UIApplianceImportEditorWidget::retranslateUi()
 
     /* Translate MAC address policy combo-box: */
     m_pMACComboBoxLabel->setText(tr("MAC Address &Policy:"));
-    m_pMACComboBox->setItemText(MACAddressImportPolicy_KeepAllMACs,
-                                tr("Include all network adapter MAC addresses"));
-    m_pMACComboBox->setItemText(MACAddressImportPolicy_KeepNATMACs,
-                                tr("Include only NAT network adapter MAC addresses"));
-    m_pMACComboBox->setItemText(MACAddressImportPolicy_StripAllMACs,
-                                tr("Generate new MAC addresses for all network adapters"));
-    m_pMACComboBox->setItemData(MACAddressImportPolicy_KeepAllMACs,
-                                tr("Include all network adapter MAC addresses during cloning."), Qt::ToolTipRole);
-    m_pMACComboBox->setItemData(MACAddressImportPolicy_KeepNATMACs,
-                                tr("Include only NAT network adapter MAC addresses during cloning."), Qt::ToolTipRole);
-    m_pMACComboBox->setItemData(MACAddressImportPolicy_StripAllMACs,
-                                tr("Generate new MAC addresses for all network adapters during cloning."), Qt::ToolTipRole);
+    for (int i = 0; i < m_pMACComboBox->count(); ++i)
+    {
+        const MACAddressImportPolicy enmPolicy = m_pMACComboBox->itemData(i).value<MACAddressImportPolicy>();
+        switch (enmPolicy)
+        {
+            case MACAddressImportPolicy_KeepAllMACs:
+            {
+                m_pMACComboBox->setItemText(i, tr("Include all network adapter MAC addresses"));
+                m_pMACComboBox->setItemData(i, tr("Include all network adapter MAC addresses during importing."), Qt::ToolTipRole);
+                break;
+            }
+            case MACAddressImportPolicy_KeepNATMACs:
+            {
+                m_pMACComboBox->setItemText(i, tr("Include only NAT network adapter MAC addresses"));
+                m_pMACComboBox->setItemData(i, tr("Include only NAT network adapter MAC addresses during importing."), Qt::ToolTipRole);
+                break;
+            }
+            case MACAddressImportPolicy_StripAllMACs:
+            {
+                m_pMACComboBox->setItemText(i, tr("Generate new MAC addresses for all network adapters"));
+                m_pMACComboBox->setItemData(i, tr("Generate new MAC addresses for all network adapters during importing."), Qt::ToolTipRole);
+                break;
+            }
+            default:
+                break;
+        }
+    }
 
     m_pAdditionalOptionsLabel->setText(tr("Additional Options:"));
 
@@ -361,20 +376,38 @@ void UIApplianceImportEditorWidget::populateMACAddressImportPolicies()
 {
     AssertReturnVoid(m_pMACComboBox->count() == 0);
 
-    /* Apply hardcoded policies list: */
-    for (int i = 0; i < (int)MACAddressImportPolicy_MAX; ++i)
-    {
-        m_pMACComboBox->addItem(QString::number(i));
-        m_pMACComboBox->setItemData(i, i);
-    }
+    /* Map known import options to known MAC address import policies: */
+    QMap<KImportOptions, MACAddressImportPolicy> knownOptions;
+    knownOptions[KImportOptions_KeepAllMACs] = MACAddressImportPolicy_KeepAllMACs;
+    knownOptions[KImportOptions_KeepNATMACs] = MACAddressImportPolicy_KeepNATMACs;
+
+    /* Load currently supported import options: */
+    CSystemProperties comProperties = uiCommon().virtualBox().GetSystemProperties();
+    const QVector<KImportOptions> supportedOptions = comProperties.GetSupportedImportOptions();
+
+    /* Check which of supported options/policies are known: */
+    QList<MACAddressImportPolicy> supportedPolicies;
+    foreach (const KImportOptions &enmOption, supportedOptions)
+        if (knownOptions.contains(enmOption))
+            supportedPolicies << knownOptions.value(enmOption);
+
+    /* Add supported policies first: */
+    foreach (const MACAddressImportPolicy &enmPolicy, supportedPolicies)
+        m_pMACComboBox->addItem(QString(), QVariant::fromValue(enmPolicy));
+
+    /* Add hardcoded policy finally: */
+    m_pMACComboBox->addItem(QString(), QVariant::fromValue(MACAddressImportPolicy_StripAllMACs));
 
     /* Set default: */
-    setMACAddressImportPolicy(MACAddressImportPolicy_KeepNATMACs);
+    if (supportedPolicies.contains(MACAddressImportPolicy_KeepNATMACs))
+        setMACAddressImportPolicy(MACAddressImportPolicy_KeepNATMACs);
+    else
+        setMACAddressImportPolicy(MACAddressImportPolicy_StripAllMACs);
 }
 
 void UIApplianceImportEditorWidget::setMACAddressImportPolicy(MACAddressImportPolicy enmMACAddressImportPolicy)
 {
-    const int iIndex = m_pMACComboBox->findData((int)enmMACAddressImportPolicy);
+    const int iIndex = m_pMACComboBox->findData(enmMACAddressImportPolicy);
     AssertMsg(iIndex != -1, ("Data not found!"));
     m_pMACComboBox->setCurrentIndex(iIndex);
 }
@@ -387,8 +420,7 @@ void UIApplianceImportEditorWidget::sltHandleMACAddressImportPolicyComboChange()
 
 void UIApplianceImportEditorWidget::updateMACAddressImportPolicyComboToolTip()
 {
-    const int iCurrentIndex = m_pMACComboBox->currentIndex();
-    const QString strCurrentToolTip = m_pMACComboBox->itemData(iCurrentIndex, Qt::ToolTipRole).toString();
+    const QString strCurrentToolTip = m_pMACComboBox->currentData(Qt::ToolTipRole).toString();
     AssertMsg(!strCurrentToolTip.isEmpty(), ("Data not found!"));
     m_pMACComboBox->setToolTip(strCurrentToolTip);
 }
