@@ -244,7 +244,7 @@ RePackScriptsAdd_TEMPLATE = DUMMY
 RePackScriptsAdd_INST = repack/
 RePackScriptsAdd_INSTTYPE = stage
 RePackScriptsAdd_SOURCES = \
-	$(RePackScriptsAddSRCDir)/UnpackBlessedDrivers.cmd \
+	../../../Installer/win/Scripts/UnpackBlessedDrivers.cmd \
 	$(RePackScriptsAdd_0_OUTDIR)/PackDriversForSubmission.cmd \
 	$(RePackScriptsAdd_0_OUTDIR)/Combined-1-Prepare.cmd \
 	$(RePackScriptsAdd_0_OUTDIR)/Combined-3-RepackAdditions.cmd
