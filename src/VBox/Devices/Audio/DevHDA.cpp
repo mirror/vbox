@@ -531,6 +531,8 @@ static SSMFIELD const g_aSSMStreamBdleFields1234[] =
     SSMFIELD_ENTRY_TERM()
 };
 
+#endif /* IN_RING3 */
+
 /**
  * 32-bit size indexed masks, i.e. g_afMasks[2 bytes] = 0xffff.
  */
@@ -539,7 +541,6 @@ static uint32_t const g_afMasks[5] =
     UINT32_C(0), UINT32_C(0x000000ff), UINT32_C(0x0000ffff), UINT32_C(0x00ffffff), UINT32_C(0xffffffff)
 };
 
-#endif /* IN_RING3 */
 
 
 
@@ -2980,7 +2981,44 @@ static void hdaR3GCTLReset(PHDASTATE pThis)
     LogRel(("HDA: Reset\n"));
 }
 
-#endif /* IN_RING3 */
+#else   /* !IN_RING3 */
+
+/**
+ * Checks if a dword read starting with @a idxRegDsc is safe.
+ *
+ * We can guarentee it only standard reader callbacks are used.
+ * @returns true if it will always succeed, false if it may return back to
+ *          ring-3 or we're just not sure.
+ * @param   idxRegDsc       The first register descriptor in the DWORD being read.
+ */
+DECLINLINE(bool) hdaIsMultiReadSafeInRZ(unsigned idxRegDsc)
+{
+    int32_t cbLeft = 4; /* signed on purpose */
+    do
+    {
+        if (   g_aHdaRegMap[idxRegDsc].pfnRead == hdaRegReadU24
+            || g_aHdaRegMap[idxRegDsc].pfnRead == hdaRegReadU16
+            || g_aHdaRegMap[idxRegDsc].pfnRead == hdaRegReadU8
+            || g_aHdaRegMap[idxRegDsc].pfnRead == hdaRegReadUnimpl)
+        { /* okay */ }
+        else
+        {
+            Log4(("hdaIsMultiReadSafeInRZ: idxRegDsc=%u %s\n", idxRegDsc, g_aHdaRegMap[idxRegDsc].abbrev));
+            return false;
+        }
+
+        idxRegDsc++;
+        if (idxRegDsc < RT_ELEMENTS(g_aHdaRegMap))
+            cbLeft -= g_aHdaRegMap[idxRegDsc].offset - g_aHdaRegMap[idxRegDsc - 1].offset;
+        else
+            break;
+    } while (cbLeft > 0);
+    return true;
+}
+
+
+#endif /* !IN_RING3 */
+
 
 /* MMIO callbacks */
 
@@ -3028,14 +3066,22 @@ static DECLCALLBACK(VBOXSTRICTRC) hdaMmioRead(PPDMDEVINS pDevIns, void *pvUser, 
                 Log3Func(("\tRead %s => %x (%Rrc)\n", g_aHdaRegMap[idxRegDsc].abbrev, *(uint32_t *)pv, VBOXSTRICTRC_VAL(rc)));
                 STAM_COUNTER_INC(&pThis->aStatRegReads[idxRegDsc]);
             }
+#ifndef IN_RING3
+            else if (!hdaIsMultiReadSafeInRZ(idxRegDsc))
+
+            {
+                STAM_COUNTER_INC(&pThis->aStatRegReadsToR3[idxRegDsc]);
+                rc = VINF_IOM_R3_MMIO_READ;
+            }
+#endif
             else
             {
                 /*
                  * Multi register read (unless there are trailing gaps).
                  * ASSUMES that only DWORD reads have sideeffects.
                  */
-#ifdef IN_RING3
-                STAM_COUNTER_INC(&pThis->StatRegMultiReads);
+                STAM_COUNTER_INC(&pThis->CTX_SUFF_Z(StatRegMultiReads));
+                Log4(("hdaMmioRead: multi read: %#x LB %#x %s\n", off, cb, g_aHdaRegMap[idxRegDsc].abbrev));
                 uint32_t u32Value = 0;
                 unsigned cbLeft   = 4;
                 do
@@ -3044,10 +3090,14 @@ static DECLCALLBACK(VBOXSTRICTRC) hdaMmioRead(PPDMDEVINS pDevIns, void *pvUser, 
                     uint32_t        u32Tmp       = 0;
 
                     rc = g_aHdaRegMap[idxRegDsc].pfnRead(pDevIns, pThis, idxRegDsc, &u32Tmp);
-                    Log3Func(("\tRead %s[%db] => %x (%Rrc)*\n", g_aHdaRegMap[idxRegDsc].abbrev, cbReg, u32Tmp, VBOXSTRICTRC_VAL(rc)));
+                    Log4Func(("\tRead %s[%db] => %x (%Rrc)*\n", g_aHdaRegMap[idxRegDsc].abbrev, cbReg, u32Tmp, VBOXSTRICTRC_VAL(rc)));
                     STAM_COUNTER_INC(&pThis->aStatRegReads[idxRegDsc]);
+#ifdef IN_RING3
                     if (rc != VINF_SUCCESS)
                         break;
+#else
+                    AssertMsgBreak(rc == VINF_SUCCESS, ("rc=%Rrc - impossible, we sanitized the readers!\n", VBOXSTRICTRC_VAL(rc)));
+#endif
                     u32Value |= (u32Tmp & g_afMasks[cbReg]) << ((4 - cbLeft) * 8);
 
                     cbLeft -= cbReg;
@@ -3059,11 +3109,6 @@ static DECLCALLBACK(VBOXSTRICTRC) hdaMmioRead(PPDMDEVINS pDevIns, void *pvUser, 
                     *(uint32_t *)pv = u32Value;
                 else
                     Assert(!IOM_SUCCESS(rc));
-#else  /* !IN_RING3 */
-                /* Take the easy way out. */
-                STAM_COUNTER_INC(&pThis->aStatRegReadsToR3[idxRegDsc]);
-                rc = VINF_IOM_R3_MMIO_READ;
-#endif /* !IN_RING3 */
             }
         }
         else
@@ -3196,10 +3241,6 @@ static DECLCALLBACK(VBOXSTRICTRC) hdaMmioWrite(PPDMDEVINS pDevIns, void *pvUser,
 
 #ifdef LOG_ENABLED
     uint32_t const u32LogOldValue = idxRegDsc >= 0 ? pThis->au32Regs[idxRegMem] : UINT32_MAX;
-    if (idxRegDsc == -1)
-        Log3Func(("@%#05x u32=%#010x cb=%d\n", (uint32_t)off, *(uint32_t const *)pv, cb));
-    else
-        Log3Func(("@%#05x u%u=%#0*RX64 %s\n", (uint32_t)off, cb * 8, 2 + cb * 2, u64Value, g_aHdaRegMap[idxRegDsc].abbrev));
 #endif
 
     /*
@@ -3208,8 +3249,26 @@ static DECLCALLBACK(VBOXSTRICTRC) hdaMmioWrite(PPDMDEVINS pDevIns, void *pvUser,
     VBOXSTRICTRC rc;
     if (idxRegDsc >= 0 && g_aHdaRegMap[idxRegDsc].size == cb)
     {
+        Log3Func(("@%#05x u%u=%#0*RX64 %s\n", (uint32_t)off, cb * 8, 2 + cb * 2, u64Value, g_aHdaRegMap[idxRegDsc].abbrev));
         rc = hdaWriteReg(pDevIns, pThis, idxRegDsc, u64Value, "");
         Log3Func(("\t%#x -> %#x\n", u32LogOldValue, idxRegMem != UINT32_MAX ? pThis->au32Regs[idxRegMem] : UINT32_MAX));
+    }
+    /*
+     * Sub-register access.  Supply missing bits as needed.
+     */
+    else if (   idxRegDsc >= 0
+             && cb < g_aHdaRegMap[idxRegDsc].size)
+    {
+        u64Value |=   pThis->au32Regs[g_aHdaRegMap[idxRegDsc].mem_idx]
+                    & g_afMasks[g_aHdaRegMap[idxRegDsc].size]
+                    & ~g_afMasks[cb];
+        Log4Func(("@%#05x u%u=%#0*RX64 cb=%#x cbReg=%x %s\n"
+                  "\tSupplying missing bits (%#x): %#llx -> %#llx ...\n",
+                  (uint32_t)off, cb * 8, 2 + cb * 2, u64Value, cb, g_aHdaRegMap[idxRegDsc].size, g_aHdaRegMap[idxRegDsc].abbrev,
+                  g_afMasks[g_aHdaRegMap[idxRegDsc].size] & ~g_afMasks[cb], u64Value & g_afMasks[cb], u64Value));
+        rc = hdaWriteReg(pDevIns, pThis, idxRegDsc, u64Value, "");
+        Log4Func(("\t%#x -> %#x\n", u32LogOldValue, idxRegMem != UINT32_MAX ? pThis->au32Regs[idxRegMem] : UINT32_MAX));
+        STAM_COUNTER_INC(&pThis->CTX_SUFF_Z(StatRegSubWrite));
     }
     /*
      * Partial or multiple register access, loop thru the requested memory.
@@ -3217,8 +3276,13 @@ static DECLCALLBACK(VBOXSTRICTRC) hdaMmioWrite(PPDMDEVINS pDevIns, void *pvUser,
     else
     {
 #ifdef IN_RING3
-        if (idxRegDsc >= 0 && g_aHdaRegMap[idxRegDsc].size != cb)
-            Log3Func(("\tSize mismatch: %RU32 (reg) vs %u (access)!!\n", g_aHdaRegMap[idxRegDsc].size, cb));
+        if (idxRegDsc == -1)
+            Log4Func(("@%#05x u32=%#010x cb=%d\n", (uint32_t)off, *(uint32_t const *)pv, cb));
+        else if (g_aHdaRegMap[idxRegDsc].size == cb)
+            Log4Func(("@%#05x u%u=%#0*RX64 %s\n", (uint32_t)off, cb * 8, 2 + cb * 2, u64Value, g_aHdaRegMap[idxRegDsc].abbrev));
+        else
+            Log4Func(("@%#05x u%u=%#0*RX64 %s - mismatch cbReg=%u\n", (uint32_t)off, cb * 8, 2 + cb * 2, u64Value,
+                      g_aHdaRegMap[idxRegDsc].abbrev, g_aHdaRegMap[idxRegDsc].size));
 
         /*
          * If it's an access beyond the start of the register, shift the input
@@ -3237,16 +3301,18 @@ static DECLCALLBACK(VBOXSTRICTRC) hdaMmioWrite(PPDMDEVINS pDevIns, void *pvUser,
                 idxRegMem = g_aHdaRegMap[idxRegDsc].mem_idx;
                 u64Value <<= cbBefore * 8;
                 u64Value  |= pThis->au32Regs[idxRegMem] & g_afMasks[cbBefore];
-                Log3Func(("\tWithin register, supplied %u leading bits: %#llx -> %#llx ...\n",
+                Log4Func(("\tWithin register, supplied %u leading bits: %#llx -> %#llx ...\n",
                           cbBefore * 8, ~g_afMasks[cbBefore] & u64Value, u64Value));
-                STAM_COUNTER_INC(&pThis->StatRegMultiWrites);
+                STAM_COUNTER_INC(&pThis->CTX_SUFF_Z(StatRegMultiWrites));
             }
             else
                 STAM_COUNTER_INC(&pThis->StatRegUnknownWrites);
         }
         else
-            STAM_COUNTER_INC(&pThis->StatRegMultiWrites);
-
+        {
+            Log4(("hdaMmioWrite: multi write: %s\n", g_aHdaRegMap[idxRegDsc].abbrev));
+            STAM_COUNTER_INC(&pThis->CTX_SUFF_Z(StatRegMultiWrites));
+        }
 
         /* Loop thru the write area, it may cover multiple registers. */
         rc = VINF_SUCCESS;
@@ -3260,14 +3326,14 @@ static DECLCALLBACK(VBOXSTRICTRC) hdaMmioWrite(PPDMDEVINS pDevIns, void *pvUser,
                 if (cb < cbReg)
                 {
                     u64Value |= pThis->au32Regs[idxRegMem] & g_afMasks[cbReg] & ~g_afMasks[cb];
-                    Log3Func(("\tSupplying missing bits (%#x): %#llx -> %#llx ...\n",
+                    Log4Func(("\tSupplying missing bits (%#x): %#llx -> %#llx ...\n",
                               g_afMasks[cbReg] & ~g_afMasks[cb], u64Value & g_afMasks[cb], u64Value));
                 }
 # ifdef LOG_ENABLED
                 uint32_t uLogOldVal = pThis->au32Regs[idxRegMem];
 # endif
                 rc = hdaWriteReg(pDevIns, pThis, idxRegDsc, u64Value, "*");
-                Log3Func(("\t%#x -> %#x\n", uLogOldVal, pThis->au32Regs[idxRegMem]));
+                Log4Func(("\t%#x -> %#x\n", uLogOldVal, pThis->au32Regs[idxRegMem]));
             }
             else
             {
@@ -4716,6 +4782,12 @@ static DECLCALLBACK(int) hdaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     rc = PDMDevHlpPCIRegister(pDevIns, pPciDev);
     AssertRCReturn(rc, rc);
 
+    /** @todo r=bird: The IOMMMIO_FLAGS_READ_DWORD flag isn't entirely optimal,
+     * as several frequently used registers aren't dword sized.  6.0 and earlier
+     * will go to ring-3 to handle accesses to any such register, where-as 6.1 and
+     * later will do trivial register reads in ring-0.   Real optimal code would use
+     * IOMMMIO_FLAGS_READ_PASSTHRU and do the necessary extra work to deal with
+     * anything the guest may throw at us. */
     rc = PDMDevHlpPCIIORegionCreateMmio(pDevIns, 0, 0x4000, PCI_ADDRESS_SPACE_MEM, hdaMmioWrite, hdaMmioRead, NULL /*pvUser*/,
                                         IOMMMIO_FLAGS_READ_DWORD | IOMMMIO_FLAGS_WRITE_PASSTHRU, "HDA", &pThis->hMmio);
     AssertRCReturn(rc, rc);
@@ -5076,8 +5148,12 @@ static DECLCALLBACK(int) hdaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
         PDMDevHlpSTAMRegisterF(pDevIns, &pThis->aStatRegWritesToR3[i], STAMTYPE_COUNTER,  STAMVISIBILITY_USED, STAMUNIT_OCCURENCES,
                                g_aHdaRegMap[i].desc, "Regs/%03x-%s-Writes-ToR3", g_aHdaRegMap[i].offset, g_aHdaRegMap[i].abbrev);
     }
-    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatRegMultiReads,     STAMTYPE_COUNTER, "RegMultiReads",      STAMUNIT_OCCURENCES, "Register read not targeting just one register");
-    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatRegMultiWrites,    STAMTYPE_COUNTER, "RegMultiWrites",     STAMUNIT_OCCURENCES, "Register writes not targeting just one register");
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatRegMultiReadsR3,   STAMTYPE_COUNTER, "RegMultiReadsR3",    STAMUNIT_OCCURENCES, "Register read not targeting just one register, handled in ring-3");
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatRegMultiReadsRZ,   STAMTYPE_COUNTER, "RegMultiReadsRZ",    STAMUNIT_OCCURENCES, "Register read not targeting just one register, handled in ring-0");
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatRegMultiWritesR3,  STAMTYPE_COUNTER, "RegMultiWritesR3",   STAMUNIT_OCCURENCES, "Register writes not targeting just one register, handled in ring-3");
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatRegMultiWritesRZ,  STAMTYPE_COUNTER, "RegMultiWritesRZ",   STAMUNIT_OCCURENCES, "Register writes not targeting just one register, handled in ring-0");
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatRegSubWriteR3,     STAMTYPE_COUNTER, "RegSubWritesR3",     STAMUNIT_OCCURENCES, "Trucated register writes, handled in ring-3");
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatRegSubWriteRZ,     STAMTYPE_COUNTER, "RegSubWritesRZ",     STAMUNIT_OCCURENCES, "Trucated register writes, handled in ring-0");
     PDMDevHlpSTAMRegister(pDevIns, &pThis->StatRegUnknownReads,   STAMTYPE_COUNTER, "RegUnknownReads",    STAMUNIT_OCCURENCES, "Reads of unknown registers.");
     PDMDevHlpSTAMRegister(pDevIns, &pThis->StatRegUnknownWrites,  STAMTYPE_COUNTER, "RegUnknownWrites",   STAMUNIT_OCCURENCES, "Writes to unknown registers.");
     PDMDevHlpSTAMRegister(pDevIns, &pThis->StatRegWritesBlockedByReset, STAMTYPE_COUNTER, "RegWritesBlockedByReset", STAMUNIT_OCCURENCES, "Writes blocked by pending reset (GCTL/CRST)");

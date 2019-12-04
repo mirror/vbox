@@ -208,8 +208,12 @@ typedef struct HDASTATE
     STAMCOUNTER             aStatRegReadsToR3[HDA_NUM_REGS];
     STAMCOUNTER             aStatRegWrites[HDA_NUM_REGS];
     STAMCOUNTER             aStatRegWritesToR3[HDA_NUM_REGS];
-    STAMCOUNTER             StatRegMultiReads;
-    STAMCOUNTER             StatRegMultiWrites;
+    STAMCOUNTER             StatRegMultiReadsRZ;
+    STAMCOUNTER             StatRegMultiReadsR3;
+    STAMCOUNTER             StatRegMultiWritesRZ;
+    STAMCOUNTER             StatRegMultiWritesR3;
+    STAMCOUNTER             StatRegSubWriteRZ;
+    STAMCOUNTER             StatRegSubWriteR3;
     STAMCOUNTER             StatRegUnknownReads;
     STAMCOUNTER             StatRegUnknownWrites;
     STAMCOUNTER             StatRegWritesBlockedByReset;
