@@ -1220,12 +1220,6 @@ static VBOXSTRICTRC hdaRegWriteSDCTL(PPDMDEVINS pDevIns, PHDASTATE pThis, uint32
     const uint8_t uSD = HDA_SD_NUM_FROM_REG(pThis, CTL, iReg);
 
     /*
-     * Some guests write too much (that is, 32-bit with the top 8 bit being junk)
-     * instead of 24-bit required for SDCTL. So just mask this here to be safe.
-     */
-    u32Value &= 0x00ffffff;
-
-    /*
      * Extract the stream tag the guest wants to use for this specific
      * stream descriptor (SDn). This only can happen if the stream is in a non-running
      * state, so we're doing the lookup and assignment here.
@@ -3332,7 +3326,7 @@ static DECLCALLBACK(VBOXSTRICTRC) hdaMmioWrite(PPDMDEVINS pDevIns, void *pvUser,
 # ifdef LOG_ENABLED
                 uint32_t uLogOldVal = pThis->au32Regs[idxRegMem];
 # endif
-                rc = hdaWriteReg(pDevIns, pThis, idxRegDsc, u64Value, "*");
+                rc = hdaWriteReg(pDevIns, pThis, idxRegDsc, u64Value & g_afMasks[cbReg], "*");
                 Log4Func(("\t%#x -> %#x\n", uLogOldVal, pThis->au32Regs[idxRegMem]));
             }
             else
