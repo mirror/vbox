@@ -651,7 +651,6 @@ DECLINLINE(bool) iomMmioCanHandlePfInRZ(PVMCC pVM, uint32_t uErrorCode, CTX_SUFF
 DECLINLINE(VBOXSTRICTRC) iomMmioCommonPfHandlerNew(PVMCC pVM, PVMCPUCC pVCpu, uint32_t uErrorCode,
                                                    RTGCPHYS GCPhysFault, CTX_SUFF(PIOMMMIOENTRY) pRegEntry)
 {
-    STAM_PROFILE_START(&pVM->iom.s.StatRZMMIOHandler, a);
     Log(("iomMmioCommonPfHandler: GCPhysFault=%RGp uErr=%#x rip=%RGv\n", GCPhysFault, uErrorCode, CPUMGetGuestRIP(pVCpu) ));
     RT_NOREF(GCPhysFault, uErrorCode);
 
@@ -692,11 +691,9 @@ DECLINLINE(VBOXSTRICTRC) iomMmioCommonPfHandlerNew(PVMCC pVM, PVMCPUCC pVCpu, ui
                 rcStrict = VINF_EM_RAW_EMULATE_INSTR;
             }
 #ifndef IN_RING3
-            STAM_PROFILE_STOP(&pVM->iom.s.StatRZMMIOHandler, a);
             return rcStrict;
         }
-        else
-            STAM_COUNTER_INC(&pVM->iom.s.StatRZMMIODevLockContention);
+        STAM_COUNTER_INC(&pVM->iom.s.StatMmioDevLockContentionR0);
     }
     else
         rcStrict = VINF_IOM_R3_MMIO_READ_WRITE;
@@ -708,20 +705,18 @@ DECLINLINE(VBOXSTRICTRC) iomMmioCommonPfHandlerNew(PVMCC pVM, PVMCPUCC pVCpu, ui
         if (uErrorCode & X86_TRAP_PF_RW)
         {
             STAM_COUNTER_INC(&pStats->WriteRZToR3);
-            STAM_COUNTER_INC(&pVM->iom.s.StatRZMMIOWritesToR3);
+            STAM_COUNTER_INC(&pVM->iom.s.StatMmioWritesR0ToR3);
         }
         else
         {
             STAM_COUNTER_INC(&pStats->ReadRZToR3);
-            STAM_COUNTER_INC(&pVM->iom.s.StatRZMMIOReadsToR3);
+            STAM_COUNTER_INC(&pVM->iom.s.StatMmioReadsR0ToR3);
         }
     }
 # endif
 #else  /* IN_RING3 */
     RT_NOREF(pVM, pRegEntry);
 #endif /* IN_RING3 */
-
-    STAM_PROFILE_STOP(&pVM->iom.s.StatRZMMIOHandler, a);
     return rcStrict;
 }
 
@@ -735,7 +730,7 @@ DECLINLINE(VBOXSTRICTRC) iomMmioCommonPfHandlerNew(PVMCC pVM, PVMCPUCC pVCpu, ui
 DECLEXPORT(VBOXSTRICTRC) iomMmioPfHandlerNew(PVMCC pVM, PVMCPUCC pVCpu, RTGCUINT uErrorCode, PCPUMCTXCORE pCtxCore,
                                              RTGCPTR pvFault, RTGCPHYS GCPhysFault, void *pvUser)
 {
-    STAM_COUNTER_INC(&pVM->iom.s.StatMmioPfHandlerNew);
+    STAM_PROFILE_START(&pVM->iom.s.StatMmioPfHandler, Prf);
     LogFlow(("iomMmioPfHandlerNew: GCPhys=%RGp uErr=%#x pvFault=%RGv rip=%RGv\n",
              GCPhysFault, (uint32_t)uErrorCode, pvFault, (RTGCPTR)pCtxCore->rip));
     RT_NOREF(pvFault, pCtxCore);
@@ -749,7 +744,10 @@ DECLEXPORT(VBOXSTRICTRC) iomMmioPfHandlerNew(PVMCC pVM, PVMCPUCC pVCpu, RTGCUINT
     CTX_SUFF(PIOMMMIOENTRY) pRegEntry = &pVM->iom.s.paMmioRegs[(uintptr_t)pvUser];
 # endif
 
-    return iomMmioCommonPfHandlerNew(pVM, pVCpu, (uint32_t)uErrorCode, GCPhysFault, pRegEntry);
+    VBOXSTRICTRC rcStrict = iomMmioCommonPfHandlerNew(pVM, pVCpu, (uint32_t)uErrorCode, GCPhysFault, pRegEntry);
+
+    STAM_PROFILE_STOP(&pVM->iom.s.StatMmioPfHandler, Prf);
+    return rcStrict;
 }
 
 #endif /* !IN_RING3 */
@@ -768,7 +766,7 @@ DECLEXPORT(VBOXSTRICTRC) iomMmioPfHandlerNew(PVMCC pVM, PVMCPUCC pVCpu, RTGCUINT
  */
 VMM_INT_DECL(VBOXSTRICTRC) IOMR0MmioPhysHandler(PVMCC pVM, PVMCPUCC pVCpu, uint32_t uErrorCode, RTGCPHYS GCPhysFault)
 {
-    STAM_COUNTER_INC(&pVM->iom.s.StatMmioPhysHandlerNew);
+    STAM_PROFILE_START(&pVM->iom.s.StatMmioPhysHandler, Prf);
 
     /*
      * We don't have a range here, so look it up before calling the common function.
@@ -786,6 +784,8 @@ VMM_INT_DECL(VBOXSTRICTRC) IOMR0MmioPhysHandler(PVMCC pVM, PVMCPUCC pVCpu, uint3
     }
     else if (rcStrict == VERR_SEM_BUSY)
         rcStrict = VINF_IOM_R3_MMIO_READ_WRITE;
+
+    STAM_PROFILE_STOP(&pVM->iom.s.StatMmioPhysHandler, Prf);
     return rcStrict;
 }
 #endif /* IN_RING0 */
@@ -800,7 +800,7 @@ PGM_ALL_CB2_DECL(VBOXSTRICTRC) iomMmioHandlerNew(PVMCC pVM, PVMCPUCC pVCpu, RTGC
                                                  size_t cbBuf, PGMACCESSTYPE enmAccessType, PGMACCESSORIGIN enmOrigin, void *pvUser)
 {
     STAM_PROFILE_START(UnusedMacroArg, Prf);
-    STAM_COUNTER_INC(&pVM->iom.s.CTX_SUFF(StatMmioHandlerNew));
+    STAM_COUNTER_INC(&pVM->iom.s.CTX_SUFF(StatMmioHandler));
     Log4(("iomMmioHandlerNew: GCPhysFault=%RGp cbBuf=%#x enmAccessType=%d enmOrigin=%d pvUser=%p\n", GCPhysFault, cbBuf, enmAccessType, enmOrigin, pvUser));
 
     Assert(enmAccessType == PGMACCESSTYPE_READ || enmAccessType == PGMACCESSTYPE_WRITE);
@@ -866,7 +866,7 @@ PGM_ALL_CB2_DECL(VBOXSTRICTRC) iomMmioHandlerNew(PVMCC pVM, PVMCPUCC pVCpu, RTGC
                 : pRegEntry->pfnWriteCallback != NULL || pVM->iomr0.s.paMmioRing3Regs[(uintptr_t)pvUser].pfnWriteCallback == NULL),
               pDevIns, pvUser));
         STAM_COUNTER_INC(enmAccessType == PGMACCESSTYPE_READ ? &pStats->ReadRZToR3 : &pStats->WriteRZToR3);
-        STAM_COUNTER_INC(enmAccessType == PGMACCESSTYPE_READ ? &pVM->iom.s.StatRZMMIOReadsToR3 : &pVM->iom.s.StatRZMMIOWritesToR3);
+        STAM_COUNTER_INC(enmAccessType == PGMACCESSTYPE_READ ? &pVM->iom.s.StatMmioReadsR0ToR3 : &pVM->iom.s.StatMmioWritesR0ToR3);
         return rcToRing3;
     }
 #endif /* !IN_RING3 */
@@ -886,7 +886,7 @@ PGM_ALL_CB2_DECL(VBOXSTRICTRC) iomMmioHandlerNew(PVMCC pVM, PVMCPUCC pVCpu, RTGC
     { /* likely */ }
     else
     {
-        STAM_REL_COUNTER_INC(&pVM->iom.s.StatMMIOStaleMappings);
+        STAM_REL_COUNTER_INC(&pVM->iom.s.StatMmioStaleMappings);
         LogRelMax(64, ("iomMmioHandlerNew: Stale access at %#RGp to range #%#x currently residing at %RGp LB %RGp\n",
                        GCPhysFault, pRegEntry->idxSelf, GCPhysMapping, pRegEntry->cbRegion));
 #ifdef IN_RING3
@@ -895,7 +895,7 @@ PGM_ALL_CB2_DECL(VBOXSTRICTRC) iomMmioHandlerNew(PVMCC pVM, PVMCPUCC pVCpu, RTGC
         return VINF_SUCCESS;
 #else
         STAM_COUNTER_INC(enmAccessType == PGMACCESSTYPE_READ ? &pStats->ReadRZToR3 : &pStats->WriteRZToR3);
-        STAM_COUNTER_INC(enmAccessType == PGMACCESSTYPE_READ ? &pVM->iom.s.StatRZMMIOReadsToR3 : &pVM->iom.s.StatRZMMIOWritesToR3);
+        STAM_COUNTER_INC(enmAccessType == PGMACCESSTYPE_READ ? &pVM->iom.s.StatMmioReadsR0ToR3 : &pVM->iom.s.StatMmioWritesR0ToR3);
         return rcToRing3;
 #endif
     }
@@ -924,7 +924,7 @@ PGM_ALL_CB2_DECL(VBOXSTRICTRC) iomMmioHandlerNew(PVMCC pVM, PVMCPUCC pVCpu, RTGC
             if (rcStrict == VINF_IOM_R3_MMIO_READ)
             {
                 STAM_COUNTER_INC(&pStats->ReadRZToR3);
-                STAM_COUNTER_INC(&pVM->iom.s.StatRZMMIOReadsToR3);
+                STAM_COUNTER_INC(&pVM->iom.s.StatMmioReadsR0ToR3);
             }
             else
 #endif
@@ -944,12 +944,12 @@ PGM_ALL_CB2_DECL(VBOXSTRICTRC) iomMmioHandlerNew(PVMCC pVM, PVMCPUCC pVCpu, RTGC
             if (rcStrict == VINF_IOM_R3_MMIO_WRITE)
             {
                 STAM_COUNTER_INC(&pStats->WriteRZToR3);
-                STAM_COUNTER_INC(&pVM->iom.s.StatRZMMIOWritesToR3);
+                STAM_COUNTER_INC(&pVM->iom.s.StatMmioWritesR0ToR3);
             }
             else if (rcStrict == VINF_IOM_R3_MMIO_COMMIT_WRITE)
             {
                 STAM_COUNTER_INC(&pStats->CommitRZToR3);
-                STAM_COUNTER_INC(&pVM->iom.s.StatRZMMIOCommitsToR3);
+                STAM_COUNTER_INC(&pVM->iom.s.StatMmioCommitsR0ToR3);
             }
             else
 #endif
@@ -990,20 +990,20 @@ PGM_ALL_CB2_DECL(VBOXSTRICTRC) iomMmioHandlerNew(PVMCC pVM, PVMCPUCC pVCpu, RTGC
         if (rcStrict == VINF_IOM_R3_MMIO_COMMIT_WRITE)
         {
             STAM_COUNTER_INC(&pStats->CommitRZToR3);
-            STAM_COUNTER_INC(&pVM->iom.s.StatRZMMIOCommitsToR3);
+            STAM_COUNTER_INC(&pVM->iom.s.StatMmioCommitsR0ToR3);
         }
         else
         {
             STAM_COUNTER_INC(&pStats->WriteRZToR3);
-            STAM_COUNTER_INC(&pVM->iom.s.StatRZMMIOWritesToR3);
+            STAM_COUNTER_INC(&pVM->iom.s.StatMmioWritesR0ToR3);
         }
-        STAM_COUNTER_INC(&pVM->iom.s.StatRZMMIODevLockContention);
+        STAM_COUNTER_INC(&pVM->iom.s.StatMmioDevLockContentionR0);
     }
     else if (rcStrict == VINF_IOM_R3_MMIO_READ)
     {
         Assert(enmAccessType == PGMACCESSTYPE_READ);
         STAM_COUNTER_INC(&pStats->ReadRZToR3);
-        STAM_COUNTER_INC(&pVM->iom.s.StatRZMMIODevLockContention);
+        STAM_COUNTER_INC(&pVM->iom.s.StatMmioDevLockContentionR0);
     }
 #endif
     else

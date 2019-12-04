@@ -172,31 +172,26 @@ VMMR3_INT_DECL(int) IOMR3Init(PVM pVM)
     DBGFR3InfoRegisterInternal(pVM, "mmio", "Dumps all MMIO ranges. No arguments.", &iomR3MmioInfo);
 
     /*
-     * Statistics.
+     * Statistics (names are somewhat contorted to make the registration
+     * sub-trees appear at the end of each group).
      */
-    STAM_REG(pVM, &pVM->iom.s.StatIoPortCommits,      STAMTYPE_COUNTER, "/IOM/IoPortCommits",                       STAMUNIT_OCCURENCES,     "Number of ring-3 I/O port commits.");
-    STAM_REG(pVM, &pVM->iom.s.StatIoPortIn,           STAMTYPE_PROFILE, "/IOM/IoPortIN",                            STAMUNIT_OCCURENCES,     "Number of IN instructions (attempts)");
-    STAM_REG(pVM, &pVM->iom.s.StatIoPortInS,          STAMTYPE_PROFILE, "/IOM/IoPortINS",                           STAMUNIT_OCCURENCES,     "Number of INS instructions (attempts)");
-    STAM_REG(pVM, &pVM->iom.s.StatIoPortOutS,         STAMTYPE_PROFILE, "/IOM/IoPortOUT",                           STAMUNIT_OCCURENCES,     "Number of OUT instructions (attempts)");
-    STAM_REG(pVM, &pVM->iom.s.StatIoPortOutS,         STAMTYPE_PROFILE, "/IOM/IoPortOUTS",                          STAMUNIT_OCCURENCES,     "Number of OUTS instructions (attempts)");
+    STAM_REG(pVM, &pVM->iom.s.StatIoPortCommits,    STAMTYPE_COUNTER, "/IOM/IoPortCommits",     STAMUNIT_OCCURENCES, "Number of ring-3 I/O port commits.");
+    STAM_REG(pVM, &pVM->iom.s.StatIoPortIn,         STAMTYPE_PROFILE, "/IOM/IoPortIN",          STAMUNIT_OCCURENCES, "Number of IN instructions (attempts)");
+    STAM_REG(pVM, &pVM->iom.s.StatIoPortInS,        STAMTYPE_PROFILE, "/IOM/IoPortINS",         STAMUNIT_OCCURENCES, "Number of INS instructions (attempts)");
+    STAM_REG(pVM, &pVM->iom.s.StatIoPortOutS,       STAMTYPE_PROFILE, "/IOM/IoPortOUT",         STAMUNIT_OCCURENCES, "Number of OUT instructions (attempts)");
+    STAM_REG(pVM, &pVM->iom.s.StatIoPortOutS,       STAMTYPE_PROFILE, "/IOM/IoPortOUTS",        STAMUNIT_OCCURENCES, "Number of OUTS instructions (attempts)");
 
-    STAM_REL_REG(pVM, &pVM->iom.s.StatMMIOStaleMappings, STAMTYPE_PROFILE, "/IOM/MMIOStaleMappings",                STAMUNIT_TICKS_PER_CALL, "Number of times iomMmioHandlerNew got a call for a remapped range at the old mapping.");
-    STAM_REG(pVM, &pVM->iom.s.StatRZMMIOHandler,      STAMTYPE_PROFILE, "/IOM/RZ-MMIOHandler",                      STAMUNIT_TICKS_PER_CALL, "Profiling of the iomMmioPfHandler() body, only success calls.");
-    STAM_REG(pVM, &pVM->iom.s.StatRZMMIOReadsToR3,    STAMTYPE_COUNTER, "/IOM/RZ-MMIOHandler/ReadsToR3",            STAMUNIT_OCCURENCES,     "Number of read deferred to ring-3.");
-    STAM_REG(pVM, &pVM->iom.s.StatRZMMIOWritesToR3,   STAMTYPE_COUNTER, "/IOM/RZ-MMIOHandler/WritesToR3",           STAMUNIT_OCCURENCES,     "Number of writes deferred to ring-3.");
-    STAM_REG(pVM, &pVM->iom.s.StatRZMMIOCommitsToR3,  STAMTYPE_COUNTER, "/IOM/RZ-MMIOHandler/CommitsToR3",          STAMUNIT_OCCURENCES,     "Number of commits deferred to ring-3.");
-    STAM_REG(pVM, &pVM->iom.s.StatRZMMIODevLockContention, STAMTYPE_COUNTER, "/IOM/RZ-MMIOHandler/DevLockContention", STAMUNIT_OCCURENCES,   "Number of device lock contention force return to ring-3.");
-    STAM_REG(pVM, &pVM->iom.s.StatR3MMIOHandler,      STAMTYPE_COUNTER, "/IOM/R3-MMIOHandler",                      STAMUNIT_OCCURENCES,     "Number of calls to iomMmioHandler.");
-
-    STAM_REG(pVM, &pVM->iom.s.StatMmioHandlerR3,      STAMTYPE_COUNTER, "/IOM/OldMmioHandlerR3",                    STAMUNIT_OCCURENCES,     "Number of calls to old iomMmioHandler from ring-3.");
-    STAM_REG(pVM, &pVM->iom.s.StatMmioHandlerR0,      STAMTYPE_COUNTER, "/IOM/OldMmioHandlerR0",                    STAMUNIT_OCCURENCES,     "Number of calls to old iomMmioHandler from ring-0.");
-
-    STAM_REG(pVM, &pVM->iom.s.StatMmioHandlerNewR3,   STAMTYPE_COUNTER, "/IOM/MmioHandlerNewR3",                    STAMUNIT_OCCURENCES,     "Number of calls to iomMmioHandlerNew from ring-3.");
-    STAM_REG(pVM, &pVM->iom.s.StatMmioHandlerNewR0,   STAMTYPE_COUNTER, "/IOM/MmioHandlerNewR0",                    STAMUNIT_OCCURENCES,     "Number of calls to iomMmioHandlerNew from ring-0.");
-    STAM_REG(pVM, &pVM->iom.s.StatMmioPfHandlerNew,   STAMTYPE_COUNTER, "/IOM/MmioPfHandlerNew",                    STAMUNIT_OCCURENCES,     "Number of calls to iomMmioPfHandlerNew.");
-    STAM_REG(pVM, &pVM->iom.s.StatMmioPhysHandlerNew, STAMTYPE_COUNTER, "/IOM/MmioPhysHandlerNew",                  STAMUNIT_OCCURENCES,     "Number of calls to IOMR0MmioPhysHandler.");
-    STAM_REG(pVM, &pVM->iom.s.StatMmioCommitsDirect,  STAMTYPE_COUNTER, "/IOM/MmioCommitsDirect",                   STAMUNIT_OCCURENCES,     "Number of ring-3 MMIO commits direct to handler via handle hint.");
-    STAM_REG(pVM, &pVM->iom.s.StatMmioCommitsPgm,     STAMTYPE_COUNTER, "/IOM/MmioCommitsPgm",                      STAMUNIT_OCCURENCES,     "Number of ring-3 MMIO commits via PGM.");
+    STAM_REG(pVM, &pVM->iom.s.StatMmioHandlerR3,    STAMTYPE_COUNTER, "/IOM/MmioHandlerR3",     STAMUNIT_OCCURENCES, "Number of calls to iomMmioHandlerNew from ring-3.");
+    STAM_REG(pVM, &pVM->iom.s.StatMmioHandlerR0,    STAMTYPE_COUNTER, "/IOM/MmioHandlerR0",     STAMUNIT_OCCURENCES, "Number of calls to iomMmioHandlerNew from ring-0.");
+    STAM_REG(pVM, &pVM->iom.s.StatMmioReadsR0ToR3,  STAMTYPE_COUNTER, "/IOM/MmioR0ToR3Reads",   STAMUNIT_OCCURENCES, "Number of reads deferred to ring-3.");
+    STAM_REG(pVM, &pVM->iom.s.StatMmioWritesR0ToR3, STAMTYPE_COUNTER, "/IOM/MmioR0ToR3Writes",  STAMUNIT_OCCURENCES, "Number of writes deferred to ring-3.");
+    STAM_REG(pVM, &pVM->iom.s.StatMmioCommitsR0ToR3,STAMTYPE_COUNTER, "/IOM/MmioR0ToR3Commits", STAMUNIT_OCCURENCES, "Number of commits deferred to ring-3.");
+    STAM_REG(pVM, &pVM->iom.s.StatMmioPfHandler,    STAMTYPE_PROFILE, "/IOM/MmioPfHandler",     STAMUNIT_OCCURENCES, "Number of calls to iomMmioPfHandlerNew.");
+    STAM_REG(pVM, &pVM->iom.s.StatMmioPhysHandler,  STAMTYPE_PROFILE, "/IOM/MmioPhysHandler",   STAMUNIT_OCCURENCES, "Number of calls to IOMR0MmioPhysHandler.");
+    STAM_REG(pVM, &pVM->iom.s.StatMmioCommitsDirect,STAMTYPE_COUNTER, "/IOM/MmioCommitsDirect", STAMUNIT_OCCURENCES, "Number of ring-3 MMIO commits direct to handler via handle hint.");
+    STAM_REG(pVM, &pVM->iom.s.StatMmioCommitsPgm,   STAMTYPE_COUNTER, "/IOM/MmioCommitsPgm",    STAMUNIT_OCCURENCES, "Number of ring-3 MMIO commits via PGM.");
+    STAM_REL_REG(pVM, &pVM->iom.s.StatMmioStaleMappings,   STAMTYPE_PROFILE, "/IOM/MmioMappingsStale",              STAMUNIT_TICKS_PER_CALL, "Number of times iomMmioHandlerNew got a call for a remapped range at the old mapping.");
+    STAM_REG(pVM, &pVM->iom.s.StatMmioDevLockContentionR0, STAMTYPE_COUNTER, "/IOM/MmioDevLockContentionR0",        STAMUNIT_OCCURENCES,     "Number of device lock contention force return to ring-3.");
 
     LogFlow(("IOMR3Init: returns VINF_SUCCESS\n"));
     return VINF_SUCCESS;

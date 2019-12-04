@@ -51,7 +51,7 @@ void iomR3MmioRegStats(PVM pVM, PIOMMMIOENTRYR3 pRegEntry)
 
     /* Format the prefix: */
     char                 szName[80];
-    size_t               cchPrefix = RTStrPrintf(szName, sizeof(szName), "/IOM/NewMmio/%RGp-%RGp",
+    size_t               cchPrefix = RTStrPrintf(szName, sizeof(szName), "/IOM/MmioRegions/%RGp-%RGp",
                                                  pRegEntry->GCPhysMapping, pRegEntry->GCPhysMapping + pRegEntry->cbRegion - 1);
 
     /* Mangle the description if this isn't the first device instance: */
@@ -105,7 +105,7 @@ void iomR3MmioRegStats(PVM pVM, PIOMMMIOENTRYR3 pRegEntry)
 static void iomR3MmioDeregStats(PVM pVM, PIOMMMIOENTRYR3 pRegEntry, RTGCPHYS GCPhys)
 {
     char szPrefix[80];
-    RTStrPrintf(szPrefix, sizeof(szPrefix), "/IOM/NewMmio/%RGp-%RGp", GCPhys, GCPhys + pRegEntry->cbRegion - 1);
+    RTStrPrintf(szPrefix, sizeof(szPrefix), "/IOM/MmioRegions/%RGp-%RGp", GCPhys, GCPhys + pRegEntry->cbRegion - 1);
     STAMR3DeregisterByPrefix(pVM->pUVM, szPrefix);
 }
 

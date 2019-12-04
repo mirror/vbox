@@ -455,33 +455,22 @@ typedef struct IOM
     STAMCOUNTER                     StatIoPortOut;
     STAMCOUNTER                     StatIoPortInS;
     STAMCOUNTER                     StatIoPortOutS;
+    STAMCOUNTER                     StatIoPortCommits;
     /** @} */
 
     /** @name MMIO statistics.
      * @{ */
-    STAMCOUNTER                     StatIoPortCommits;
-
-    STAMCOUNTER                     StatMMIOStaleMappings;
-    STAMPROFILE                     StatRZMMIOHandler;
-    STAMCOUNTER                     StatRZMMIOReadsToR3;
-    STAMCOUNTER                     StatRZMMIOWritesToR3;
-    STAMCOUNTER                     StatRZMMIOCommitsToR3;
-    STAMCOUNTER                     StatRZMMIODevLockContention;
-
-    STAMCOUNTER                     StatMmioPfHandlerNew;
-    STAMCOUNTER                     StatMmioPhysHandlerNew;
-    STAMCOUNTER                     StatMmioHandlerNewR3;
-    STAMCOUNTER                     StatMmioHandlerNewR0;
-    STAMCOUNTER                     StatMmioCommitsDirect;
-    STAMCOUNTER                     StatMmioCommitsPgm;
-
-    STAMCOUNTER                     StatR3MMIOHandler;
-
+    STAMPROFILE                     StatMmioPfHandler;
+    STAMPROFILE                     StatMmioPhysHandler;
     STAMCOUNTER                     StatMmioHandlerR3;
     STAMCOUNTER                     StatMmioHandlerR0;
-
-    RTUINT                          cMovsMaxBytes;
-    RTUINT                          cStosMaxBytes;
+    STAMCOUNTER                     StatMmioReadsR0ToR3;
+    STAMCOUNTER                     StatMmioWritesR0ToR3;
+    STAMCOUNTER                     StatMmioCommitsR0ToR3;
+    STAMCOUNTER                     StatMmioCommitsDirect;
+    STAMCOUNTER                     StatMmioCommitsPgm;
+    STAMCOUNTER                     StatMmioStaleMappings;
+    STAMCOUNTER                     StatMmioDevLockContentionR0;
     /** @} */
 } IOM;
 /** Pointer to IOM instance data. */
