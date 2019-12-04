@@ -123,23 +123,23 @@
 
 /** @name Extended Audio ID Register (EAID).
  * @{ */
-#define AC97_EAID_VRA           RT_BIT(0)            /**< Variable Rate Audio. */
-#define AC97_EAID_VRM           RT_BIT(3)            /**< Variable Rate Mic Audio. */
-#define AC97_EAID_REV0          RT_BIT(10)           /**< AC'97 revision compliance. */
-#define AC97_EAID_REV1          RT_BIT(11)           /**< AC'97 revision compliance. */
+#define AC97_EAID_VRA           RT_BIT(0)           /**< Variable Rate Audio. */
+#define AC97_EAID_VRM           RT_BIT(3)           /**< Variable Rate Mic Audio. */
+#define AC97_EAID_REV0          RT_BIT(10)          /**< AC'97 revision compliance. */
+#define AC97_EAID_REV1          RT_BIT(11)          /**< AC'97 revision compliance. */
 /** @} */
 
 /** @name Extended Audio Control and Status Register (EACS).
  * @{ */
-#define AC97_EACS_VRA           RT_BIT(0)            /**< Variable Rate Audio (4.2.1.1). */
-#define AC97_EACS_VRM           RT_BIT(3)            /**< Variable Rate Mic Audio (4.2.1.1). */
+#define AC97_EACS_VRA           RT_BIT(0)           /**< Variable Rate Audio (4.2.1.1). */
+#define AC97_EACS_VRM           RT_BIT(3)           /**< Variable Rate Mic Audio (4.2.1.1). */
 /** @} */
 
 /** @name Baseline Audio Register Set (BARS).
  * @{ */
-#define AC97_BARS_VOL_MASK      0x1f                 /**< Volume mask for the Baseline Audio Register Set (5.7.2). */
-#define AC97_BARS_GAIN_MASK     0x0f                 /**< Gain mask for the Baseline Audio Register Set. */
-#define AC97_BARS_VOL_MUTE_SHIFT 15                  /**< Mute bit shift for the Baseline Audio Register Set (5.7.2). */
+#define AC97_BARS_VOL_MASK      0x1f                /**< Volume mask for the Baseline Audio Register Set (5.7.2). */
+#define AC97_BARS_GAIN_MASK     0x0f                /**< Gain mask for the Baseline Audio Register Set. */
+#define AC97_BARS_VOL_MUTE_SHIFT 15                 /**< Mute bit shift for the Baseline Audio Register Set (5.7.2). */
 /** @} */
 
 /** AC'97 uses 1.5dB steps, we use 0.375dB steps: 1 AC'97 step equals 4 PDM steps. */
@@ -160,55 +160,52 @@
 
 /** @name Mixer registers / NAM BAR registers?
  * @{ */
-enum
-{
-    AC97_Reset                     = 0x00,
-    AC97_Master_Volume_Mute        = 0x02,
-    AC97_Headphone_Volume_Mute     = 0x04, /**< Also known as AUX, see table 16, section 5.7. */
-    AC97_Master_Volume_Mono_Mute   = 0x06,
-    AC97_Master_Tone_RL            = 0x08,
-    AC97_PC_BEEP_Volume_Mute       = 0x0a,
-    AC97_Phone_Volume_Mute         = 0x0c,
-    AC97_Mic_Volume_Mute           = 0x0e,
-    AC97_Line_In_Volume_Mute       = 0x10,
-    AC97_CD_Volume_Mute            = 0x12,
-    AC97_Video_Volume_Mute         = 0x14,
-    AC97_Aux_Volume_Mute           = 0x16,
-    AC97_PCM_Out_Volume_Mute       = 0x18,
-    AC97_Record_Select             = 0x1a,
-    AC97_Record_Gain_Mute          = 0x1c,
-    AC97_Record_Gain_Mic_Mute      = 0x1e,
-    AC97_General_Purpose           = 0x20,
-    AC97_3D_Control                = 0x22,
-    AC97_AC_97_RESERVED            = 0x24,
-    AC97_Powerdown_Ctrl_Stat       = 0x26,
-    AC97_Extended_Audio_ID         = 0x28,
-    AC97_Extended_Audio_Ctrl_Stat  = 0x2a,
-    AC97_PCM_Front_DAC_Rate        = 0x2c,
-    AC97_PCM_Surround_DAC_Rate     = 0x2e,
-    AC97_PCM_LFE_DAC_Rate          = 0x30,
-    AC97_PCM_LR_ADC_Rate           = 0x32,
-    AC97_MIC_ADC_Rate              = 0x34,
-    AC97_6Ch_Vol_C_LFE_Mute        = 0x36,
-    AC97_6Ch_Vol_L_R_Surround_Mute = 0x38,
-    AC97_Vendor_Reserved           = 0x58,
-    AC97_AD_Misc                   = 0x76,
-    AC97_Vendor_ID1                = 0x7c,
-    AC97_Vendor_ID2                = 0x7e
-};
+#define AC97_Reset                      0x00
+#define AC97_Master_Volume_Mute         0x02
+#define AC97_Headphone_Volume_Mute      0x04        /**< Also known as AUX, see table 16, section 5.7. */
+#define AC97_Master_Volume_Mono_Mute    0x06
+#define AC97_Master_Tone_RL             0x08
+#define AC97_PC_BEEP_Volume_Mute        0x0a
+#define AC97_Phone_Volume_Mute          0x0c
+#define AC97_Mic_Volume_Mute            0x0e
+#define AC97_Line_In_Volume_Mute        0x10
+#define AC97_CD_Volume_Mute             0x12
+#define AC97_Video_Volume_Mute          0x14
+#define AC97_Aux_Volume_Mute            0x16
+#define AC97_PCM_Out_Volume_Mute        0x18
+#define AC97_Record_Select              0x1a
+#define AC97_Record_Gain_Mute           0x1c
+#define AC97_Record_Gain_Mic_Mute       0x1e
+#define AC97_General_Purpose            0x20
+#define AC97_3D_Control                 0x22
+#define AC97_AC_97_RESERVED             0x24
+#define AC97_Powerdown_Ctrl_Stat        0x26
+#define AC97_Extended_Audio_ID          0x28
+#define AC97_Extended_Audio_Ctrl_Stat   0x2a
+#define AC97_PCM_Front_DAC_Rate         0x2c
+#define AC97_PCM_Surround_DAC_Rate      0x2e
+#define AC97_PCM_LFE_DAC_Rate           0x30
+#define AC97_PCM_LR_ADC_Rate            0x32
+#define AC97_MIC_ADC_Rate               0x34
+#define AC97_6Ch_Vol_C_LFE_Mute         0x36
+#define AC97_6Ch_Vol_L_R_Surround_Mute  0x38
+#define AC97_Vendor_Reserved            0x58
+#define AC97_AD_Misc                    0x76
+#define AC97_Vendor_ID1                 0x7c
+#define AC97_Vendor_ID2                 0x7e
 /** @} */
 
 /** @name Analog Devices miscellaneous regiter bits used in AD1980.
  * @{  */
-#define AC97_AD_MISC_LOSEL       RT_BIT(5)   /**< Surround (rear) goes to line out outputs. */
-#define AC97_AD_MISC_HPSEL       RT_BIT(10)  /**< PCM (front) goes to headphone outputs. */
+#define AC97_AD_MISC_LOSEL              RT_BIT(5)   /**< Surround (rear) goes to line out outputs. */
+#define AC97_AD_MISC_HPSEL              RT_BIT(10)  /**< PCM (front) goes to headphone outputs. */
 /** @} */
 
 
 /** @name BUP flag values.
  * @{ */
-#define BUP_SET     RT_BIT_32(0)
-#define BUP_LAST    RT_BIT_32(1)
+#define BUP_SET                         RT_BIT_32(0)
+#define BUP_LAST                        RT_BIT_32(1)
 /** @}   */
 
 /** @name AC'97 source indices.
@@ -216,10 +213,10 @@ enum
  *       the moment.  So make sure you know what you're done when altering this!
  * @{
  */
-#define AC97SOUNDSOURCE_PI_INDEX 0      /**< PCM in */
-#define AC97SOUNDSOURCE_PO_INDEX 1      /**< PCM out */
-#define AC97SOUNDSOURCE_MC_INDEX 2      /**< Mic in */
-#define AC97SOUNDSOURCE_MAX      3      /**< Max sound sources. */
+#define AC97SOUNDSOURCE_PI_INDEX        0      /**< PCM in */
+#define AC97SOUNDSOURCE_PO_INDEX        1      /**< PCM out */
+#define AC97SOUNDSOURCE_MC_INDEX        2      /**< Mic in */
+#define AC97SOUNDSOURCE_MAX             3      /**< Max sound sources. */
 /** @} */
 
 
@@ -259,14 +256,14 @@ enum
 /** @name Misc NABM BAR registers.
  * @{  */
 /** NABMBAR: Global Control Register. */
-#define AC97_GLOB_CNT 0x2c
+#define AC97_GLOB_CNT                   0x2c
 /** NABMBAR: Global Status. */
-#define AC97_GLOB_STA 0x30
+#define AC97_GLOB_STA                   0x30
 /** Codec Access Semaphore Register. */
-#define AC97_CAS      0x34
+#define AC97_CAS                        0x34
 /** @} */
 
-#define AC97_PORT2IDX(a_idx)   ( ((a_idx) >> 4) & 3 )
+#define AC97_PORT2IDX(a_idx)            ( ((a_idx) >> 4) & 3 )
 
 
 /*********************************************************************************************************************************
