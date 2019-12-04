@@ -1272,4 +1272,165 @@ static fsw_status_t fsw_hfs_readlink(struct fsw_hfs_volume *vol, struct fsw_hfs_
     return FSW_UNSUPPORTED;
 }
 
+static int fsw_hfs_btree_find_id(BTreeKey *record, void* param)
+{
+    visitor_parameter_t         *vp = (visitor_parameter_t*)param;
+    fsw_u8                      *base = (fsw_u8*)record->rawData + be16_to_cpu(record->length16) + 2;
+    fsw_u16                     rec_type = be16_to_cpu(*(fsw_u16*)base);
+    struct HFSPlusCatalogKey    *cat_key = (HFSPlusCatalogKey*)record;
+    fsw_u16                     name_len;
+    fsw_u16                     *name_ptr;
+    fsw_u16                     *old_ptr;
+    int                         i;
+    struct fsw_string           *file_name;
+    struct fsw_string           new_name;
+
+    if (be32_to_cpu(cat_key->parentID) != vp->parent)
+        return -1;
+
+    if (!vp->cur_pos)
+        vp->cur_pos = be32_to_cpu(cat_key->parentID);
+
+    /* Not what we're looking for. */
+    if (vp->file_info.id != vp->cur_pos++)
+        return 0;
+
+    if (rec_type == kHFSPlusFolderThreadRecord || rec_type == kHFSPlusFileThreadRecord)
+    {
+        HFSPlusCatalogThread    *thread;
+
+        thread = (HFSPlusCatalogThread *)base;
+        vp->file_info.id = be32_to_cpu(thread->parentID);
+
+        name_len = be16_to_cpu(thread->nodeName.length);
+
+        file_name = vp->file_info.name;
+
+        new_name.len = name_len + 1 + file_name->len;
+        new_name.size = 2 * new_name.len;
+        fsw_alloc(new_name.size, &new_name.data);
+        name_ptr = (fsw_u16*)new_name.data;
+        /* Tack on path separator. */
+        name_ptr[0] = L'/';
+        /* Copy over + swap the new path component. */
+        for (i = 0; i < name_len; i++)
+            name_ptr[i + 1] = be16_to_cpu(thread->nodeName.unicode[i]);
+        if (file_name->len) {
+            /* Tack on the previous path. */
+            old_ptr = (fsw_u16*)file_name->data;
+            for (++i; i < new_name.len; i++ )
+                name_ptr[i] = *old_ptr++;
+        }
+
+        fsw_free(file_name->data);
+        file_name->len  = new_name.len;
+        file_name->size = new_name.size;
+        file_name->data = new_name.data;
+        file_name->type = FSW_STRING_TYPE_UTF16;
+
+        /* This was it, stop iterating. */
+        return 1;
+    }
+
+    return 0;
+}
+
+/**
+ * Obtain the full path of a file given its CNID (Catalog Node ID), i.e.
+ * file or folder ID.
+ *
+ */
+static fsw_status_t fsw_hfs_get_path_from_cnid(struct fsw_hfs_volume *vol, fsw_u32 cnid, struct fsw_string *path)
+{
+    fsw_status_t                status = FSW_UNSUPPORTED;
+    fsw_u32                     ptr;
+    BTNodeDescriptor            *node = NULL;
+    struct HFSPlusCatalogKey    catkey;
+    visitor_parameter_t         param;
+    struct fsw_string           rec_name;
+
+    /* The CNID must be a valid user node ID. */
+    if (cnid < kHFSFirstUserCatalogNodeID)
+        goto done;
+
+    fsw_memzero(&param, sizeof(param));
+
+    catkey.parentID = cnid;
+    catkey.nodeName.length = 0;
+
+    param.vol = vol;
+    param.shandle = NULL;
+    param.file_info.id = cnid;
+    param.parent = cnid;
+    param.cur_pos = 0;
+
+    do {
+        rec_name.type = FSW_STRING_TYPE_EMPTY;
+        param.file_info.name = &rec_name;
+
+        status = fsw_hfs_btree_search(&vol->catalog_tree, (BTreeKey*)&catkey,
+                                      vol->case_sensitive ? fsw_hfs_cmp_catkey : fsw_hfs_cmpi_catkey,
+                                      &node, &ptr);
+        if (status)
+            goto done;
+
+        status = fsw_hfs_btree_iterate_node(&vol->catalog_tree, node, ptr,
+                                            fsw_hfs_btree_find_id, &param);
+        if (status)
+            goto done;
+
+        param.parent = param.file_info.id;
+        param.cur_pos = 0;
+
+        catkey.parentID = param.file_info.id;
+        catkey.nodeName.length = 0;
+    } while (catkey.parentID >= kHFSFirstUserCatalogNodeID);
+
+    /* If everything worked out , the final parent ID will be the root folder ID. */
+    if (catkey.parentID == kHFSRootFolderID)
+    {
+        *path = *param.file_info.name;
+        status = FSW_SUCCESS;
+    }
+    else
+        status = FSW_NOT_FOUND;
+
+done:
+    return status;
+}
+
+/**
+ * Get the path of the HFS+ blessed file, if any.
+ *
+ */
+/*static*/ fsw_status_t fsw_hfs_get_blessed_file(struct fsw_hfs_volume *vol, struct fsw_string *path)
+{
+    fsw_status_t                status = FSW_UNSUPPORTED;
+    fsw_u32                     bfile_id;
+    fsw_u32                     *finderinfo;
+
+    finderinfo = (fsw_u32 *)&vol->primary_voldesc->finderInfo;
+    bfile_id = finderinfo[1];
+    bfile_id = be32_to_cpu(bfile_id);
+
+    DPRINT2("Blessed file ID: %u\n", bfile_id);
+
+    status = fsw_hfs_get_path_from_cnid(vol, bfile_id, path);
+#ifdef HOST_POSIX
+    if (!status)
+    {
+        fsw_u16     *name_ptr;
+        int         i;
+
+        printf("Blessed file: ");
+        name_ptr = (fsw_u16*)path->data;
+        for (i = 0; i < path->len; i++)
+            printf("%c", name_ptr[i]);
+        printf("\n");
+    }
+#endif
+
+    return status;
+}
+
 // EOF

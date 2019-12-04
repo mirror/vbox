@@ -100,9 +100,12 @@ static int catfile(struct fsw_posix_volume *vol, char *path)
     return 0;
 }
 
+extern fsw_status_t fsw_hfs_get_blessed_file(struct fsw_hfs_volume *vol, struct fsw_string *link_target);
+
 int main(int argc, char **argv)
 {
     struct fsw_posix_volume *vol;
+    struct fsw_string  blessed;
     int i;
 
     if (argc != 2) {
@@ -127,6 +130,7 @@ int main(int argc, char **argv)
     //listdir(vol, "/System/Library/Extensions/", 0);
     catfile(vol, "/System/Library/CoreServices/SystemVersion.plist");
     //listdir(vol, "/", 0);
+    fsw_hfs_get_blessed_file((struct fsw_hfs_volume *)vol->vol, &blessed);
 
     fsw_posix_unmount(vol);
 

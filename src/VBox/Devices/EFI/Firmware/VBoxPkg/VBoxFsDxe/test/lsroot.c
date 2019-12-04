@@ -68,7 +68,7 @@ int main(int argc, char **argv)
         return 1;
     }
     while ((dent = fsw_posix_readdir(dir)) != NULL) {
-        printf("%c %s\n", dent->d_type, dent->d_name);
+        printf("%c %s %u\n", dent->d_type, dent->d_name, dent->d_fileno);
     }
     fsw_posix_closedir(dir);
     fsw_posix_unmount(vol);
