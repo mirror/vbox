@@ -766,7 +766,7 @@ static int hdaR3CmdSync(PHDASTATE pThis, bool fLocal)
             } while (j < 8);
             Log(("\n"));
             i += 8;
-        } while(i != 0);
+        } while (i != 0);
 
         do
         {
@@ -967,26 +967,17 @@ static VBOXSTRICTRC hdaRegReadU32(PPDMDEVINS pDevIns, PHDASTATE pThis, uint32_t 
 
 static VBOXSTRICTRC hdaRegWriteU32(PPDMDEVINS pDevIns, PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
 {
-    uint32_t iRegMem = g_aHdaRegMap[iReg].mem_idx;
+    RT_NOREF(pDevIns);
 
-    DEVHDA_LOCK_RETURN(pDevIns, pThis, VINF_IOM_R3_MMIO_WRITE);
-
+    uint32_t const iRegMem = g_aHdaRegMap[iReg].mem_idx;
     pThis->au32Regs[iRegMem]  = (u32Value & g_aHdaRegMap[iReg].writable)
                               | (pThis->au32Regs[iRegMem] & ~g_aHdaRegMap[iReg].writable);
-    DEVHDA_UNLOCK(pDevIns, pThis);
     return VINF_SUCCESS;
 }
 
 static VBOXSTRICTRC hdaRegWriteGCTL(PPDMDEVINS pDevIns, PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
 {
-    RT_NOREF_PV(iReg);
-#ifdef IN_RING3
-    DEVHDA_LOCK(pDevIns, pThis);
-#else
-    if (!(u32Value & HDA_GCTL_CRST))
-        return VINF_IOM_R3_MMIO_WRITE;
-    DEVHDA_LOCK_RETURN(pDevIns, pThis, VINF_IOM_R3_MMIO_WRITE);
-#endif
+    RT_NOREF(pDevIns, iReg);
 
     if (u32Value & HDA_GCTL_CRST)
     {
@@ -1007,7 +998,7 @@ static VBOXSTRICTRC hdaRegWriteGCTL(PPDMDEVINS pDevIns, PHDASTATE pThis, uint32_
 
         hdaR3GCTLReset(pThis);
 #else
-        AssertFailedReturnStmt(DEVHDA_UNLOCK(pDevIns, pThis), VINF_IOM_R3_MMIO_WRITE);
+        return VINF_IOM_R3_MMIO_WRITE;
 #endif
     }
 
@@ -1018,20 +1009,18 @@ static VBOXSTRICTRC hdaRegWriteGCTL(PPDMDEVINS pDevIns, PHDASTATE pThis, uint32_
         /* DPLBASE and DPUBASE should be initialized with initial value (see 6.2.6). */
     }
 
-    DEVHDA_UNLOCK(pDevIns, pThis);
     return VINF_SUCCESS;
 }
 
 static VBOXSTRICTRC hdaRegWriteSTATESTS(PPDMDEVINS pDevIns, PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
 {
-    DEVHDA_LOCK_RETURN(pDevIns, pThis, VINF_IOM_R3_MMIO_WRITE);
+    RT_NOREF(pDevIns);
 
     uint32_t v  = HDA_REG_IND(pThis, iReg);
     uint32_t nv = u32Value & HDA_STATESTS_SCSF_MASK;
 
     HDA_REG(pThis, STATESTS) &= ~(v & nv); /* Write of 1 clears corresponding bit. */
 
-    DEVHDA_UNLOCK(pDevIns, pThis);
     return VINF_SUCCESS;
 }
 
@@ -1095,15 +1084,14 @@ static uint64_t hdaR3WalClkGetMax(PHDASTATE pThis)
 
 static VBOXSTRICTRC hdaRegReadWALCLK(PPDMDEVINS pDevIns, PHDASTATE pThis, uint32_t iReg, uint32_t *pu32Value)
 {
-#ifdef IN_RING3
-    RT_NOREF(iReg);
-
+#ifdef IN_RING3 /** @todo r=bird: No reason (except logging) for this to be ring-3 only! */
+    RT_NOREF(pDevIns, iReg);
     DEVHDA_LOCK(pDevIns, pThis);
 
-    *pu32Value = RT_LO_U32(ASMAtomicReadU64(&pThis->u64WalClk));
+    const uint64_t u64WalClkCur = ASMAtomicReadU64(&pThis->u64WalClk);
+    *pu32Value = RT_LO_U32(u64WalClkCur);
 
-    Log3Func(("%RU32 (max @ %RU64)\n",*pu32Value, hdaR3WalClkGetMax(pThis)));
-
+    Log3Func(("%RU32 (max @ %RU64)\n", *pu32Value, hdaR3WalClkGetMax(pThis)));
     DEVHDA_UNLOCK(pDevIns, pThis);
     return VINF_SUCCESS;
 #else
@@ -1114,19 +1102,16 @@ static VBOXSTRICTRC hdaRegReadWALCLK(PPDMDEVINS pDevIns, PHDASTATE pThis, uint32
 
 static VBOXSTRICTRC hdaRegWriteCORBRP(PPDMDEVINS pDevIns, PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
 {
-    RT_NOREF(iReg);
-    DEVHDA_LOCK_RETURN(pDevIns, pThis, VINF_IOM_R3_MMIO_WRITE);
-
+    RT_NOREF(pDevIns, iReg);
     if (u32Value & HDA_CORBRP_RST)
     {
         /* Do a CORB reset. */
         if (pThis->cbCorbBuf)
         {
 #ifdef IN_RING3
-            Assert(pThis->pu32CorbBuf);
-            RT_BZERO((void *)pThis->pu32CorbBuf, pThis->cbCorbBuf);
+            AssertPtr(pThis->pu32CorbBuf);
+            RT_BZERO(pThis->pu32CorbBuf, pThis->cbCorbBuf);
 #else
-            DEVHDA_UNLOCK(pDevIns, pThis);
             return VINF_IOM_R3_MMIO_WRITE;
 #endif
         }
@@ -1138,24 +1123,20 @@ static VBOXSTRICTRC hdaRegWriteCORBRP(PPDMDEVINS pDevIns, PHDASTATE pThis, uint3
     else
         HDA_REG(pThis, CORBRP) &= ~HDA_CORBRP_RST;  /* Only CORBRP_RST bit is writable. */
 
-    DEVHDA_UNLOCK(pDevIns, pThis);
     return VINF_SUCCESS;
 }
 
 static VBOXSTRICTRC hdaRegWriteCORBCTL(PPDMDEVINS pDevIns, PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
 {
 #ifdef IN_RING3
-    DEVHDA_LOCK_RETURN(pDevIns, pThis, VINF_IOM_R3_MMIO_WRITE);
-
     VBOXSTRICTRC rc = hdaRegWriteU8(pDevIns, pThis, iReg, u32Value);
-    AssertRC(rc);
+    AssertRCSuccess(VBOXSTRICTRC_VAL(rc));
 
     if (HDA_REG(pThis, CORBCTL) & HDA_CORBCTL_DMA) /* Start DMA engine. */
         rc = hdaR3CORBCmdProcess(pThis);
     else
         LogFunc(("CORB DMA not running, skipping\n"));
 
-    DEVHDA_UNLOCK(pDevIns, pThis);
     return rc;
 #else
     RT_NOREF(pDevIns, pThis, iReg, u32Value);
@@ -1166,56 +1147,46 @@ static VBOXSTRICTRC hdaRegWriteCORBCTL(PPDMDEVINS pDevIns, PHDASTATE pThis, uint
 static VBOXSTRICTRC hdaRegWriteCORBSIZE(PPDMDEVINS pDevIns, PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
 {
 #ifdef IN_RING3
-    RT_NOREF(iReg);
-    DEVHDA_LOCK_RETURN(pDevIns, pThis, VINF_IOM_R3_MMIO_WRITE);
+    RT_NOREF(pDevIns, iReg);
 
-    if (HDA_REG(pThis, CORBCTL) & HDA_CORBCTL_DMA) /* Ignore request if CORB DMA engine is (still) running. */
+    if (!(HDA_REG(pThis, CORBCTL) & HDA_CORBCTL_DMA)) /* Ignore request if CORB DMA engine is (still) running. */
     {
+        u32Value = (u32Value & HDA_CORBSIZE_SZ);
+
+        uint16_t cEntries;
+        switch (u32Value)
+        {
+            case 0: /* 8 byte; 2 entries. */
+                cEntries = 2;
+                break;
+            case 1: /* 64 byte; 16 entries. */
+                cEntries = 16;
+                break;
+            case 2: /* 1 KB; 256 entries. */
+                cEntries = HDA_CORB_SIZE; /* default. */
+                break;
+            default:
+                LogRel(("HDA: Guest tried to set an invalid CORB size (0x%x), keeping default\n", u32Value));
+                u32Value = 2;
+                cEntries = HDA_CORB_SIZE; /* Use default size. */
+                break;
+        }
+
+        uint32_t cbCorbBuf = cEntries * HDA_CORB_ELEMENT_SIZE;
+        Assert(cbCorbBuf <= HDA_CORB_SIZE * HDA_CORB_ELEMENT_SIZE); /* Paranoia. */
+
+        if (cbCorbBuf != pThis->cbCorbBuf)
+        {
+            RT_BZERO(pThis->pu32CorbBuf, HDA_CORB_SIZE * HDA_CORB_ELEMENT_SIZE); /* Clear CORB when setting a new size. */
+            pThis->cbCorbBuf = cbCorbBuf;
+        }
+
+        LogFunc(("CORB buffer size is now %RU32 bytes (%u entries)\n", pThis->cbCorbBuf, pThis->cbCorbBuf / HDA_CORB_ELEMENT_SIZE));
+
+        HDA_REG(pThis, CORBSIZE) = u32Value;
+    }
+    else
         LogFunc(("CORB DMA is (still) running, skipping\n"));
-
-        DEVHDA_UNLOCK(pDevIns, pThis);
-        return VINF_SUCCESS;
-    }
-
-    u32Value = (u32Value & HDA_CORBSIZE_SZ);
-
-    uint16_t cEntries = HDA_CORB_SIZE; /* Set default. */
-
-    switch (u32Value)
-    {
-        case 0: /* 8 byte; 2 entries. */
-            cEntries = 2;
-            break;
-
-        case 1: /* 64 byte; 16 entries. */
-            cEntries = 16;
-            break;
-
-        case 2: /* 1 KB; 256 entries. */
-            /* Use default size. */
-            break;
-
-        default:
-            LogRel(("HDA: Guest tried to set an invalid CORB size (0x%x), keeping default\n", u32Value));
-            u32Value = 2;
-            /* Use default size. */
-            break;
-    }
-
-    uint32_t cbCorbBuf = cEntries * HDA_CORB_ELEMENT_SIZE;
-    Assert(cbCorbBuf <= HDA_CORB_SIZE * HDA_CORB_ELEMENT_SIZE); /* Paranoia. */
-
-    if (cbCorbBuf != pThis->cbCorbBuf)
-    {
-        RT_BZERO(pThis->pu32CorbBuf, HDA_CORB_SIZE * HDA_CORB_ELEMENT_SIZE); /* Clear CORB when setting a new size. */
-        pThis->cbCorbBuf = cbCorbBuf;
-    }
-
-    LogFunc(("CORB buffer size is now %RU32 bytes (%u entries)\n", pThis->cbCorbBuf, pThis->cbCorbBuf / HDA_CORB_ELEMENT_SIZE));
-
-    HDA_REG(pThis, CORBSIZE) = u32Value;
-
-    DEVHDA_UNLOCK(pDevIns, pThis);
     return VINF_SUCCESS;
 #else
     RT_NOREF(pDevIns, pThis, iReg, u32Value);
@@ -1225,28 +1196,21 @@ static VBOXSTRICTRC hdaRegWriteCORBSIZE(PPDMDEVINS pDevIns, PHDASTATE pThis, uin
 
 static VBOXSTRICTRC hdaRegWriteCORBSTS(PPDMDEVINS pDevIns, PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
 {
-    RT_NOREF_PV(iReg);
-    DEVHDA_LOCK_RETURN(pDevIns, pThis, VINF_IOM_R3_MMIO_WRITE);
+    RT_NOREF(pDevIns, iReg);
 
     uint32_t v = HDA_REG(pThis, CORBSTS);
     HDA_REG(pThis, CORBSTS) &= ~(v & u32Value);
 
-    DEVHDA_UNLOCK(pDevIns, pThis);
     return VINF_SUCCESS;
 }
 
 static VBOXSTRICTRC hdaRegWriteCORBWP(PPDMDEVINS pDevIns, PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
 {
 #ifdef IN_RING3
-    DEVHDA_LOCK_RETURN(pDevIns, pThis, VINF_IOM_R3_MMIO_WRITE);
-
     VBOXSTRICTRC rc = hdaRegWriteU16(pDevIns, pThis, iReg, u32Value);
     AssertRCSuccess(VBOXSTRICTRC_VAL(rc));
 
-    rc = hdaR3CORBCmdProcess(pThis);
-
-    DEVHDA_UNLOCK(pDevIns, pThis);
-    return rc;
+    return hdaR3CORBCmdProcess(pThis);
 #else
     RT_NOREF(pDevIns, pThis, iReg, u32Value);
     return VINF_IOM_R3_MMIO_WRITE;
@@ -1255,13 +1219,7 @@ static VBOXSTRICTRC hdaRegWriteCORBWP(PPDMDEVINS pDevIns, PHDASTATE pThis, uint3
 
 static VBOXSTRICTRC hdaRegWriteSDCBL(PPDMDEVINS pDevIns, PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
 {
-    DEVHDA_LOCK_RETURN(pDevIns, pThis, VINF_IOM_R3_MMIO_WRITE);
-
-    VBOXSTRICTRC rc = hdaRegWriteU32(pDevIns, pThis, iReg, u32Value);
-    AssertRCSuccess(VBOXSTRICTRC_VAL(rc));
-
-    DEVHDA_UNLOCK(pDevIns, pThis);
-    return rc;
+    return hdaRegWriteU32(pDevIns, pThis, iReg, u32Value);
 }
 
 static VBOXSTRICTRC hdaRegWriteSDCTL(PPDMDEVINS pDevIns, PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
@@ -1299,6 +1257,7 @@ static VBOXSTRICTRC hdaRegWriteSDCTL(PPDMDEVINS pDevIns, PHDASTATE pThis, uint32
      * @todo r=bird: Must reduce the time we holding the virtual sync
      *               clock lock here!
      */
+    DEVHDA_UNLOCK(pDevIns, pThis);
     DEVHDA_LOCK_BOTH_RETURN(pDevIns, pThis, pStream, VINF_IOM_R3_MMIO_WRITE);
 
     const bool fInRun    = RT_BOOL(HDA_REG_IND(pThis, iReg) & HDA_SDCTL_RUN);
@@ -1451,11 +1410,10 @@ static VBOXSTRICTRC hdaRegWriteSDCTL(PPDMDEVINS pDevIns, PHDASTATE pThis, uint32
         }
     }
 
-    VBOXSTRICTRC rc2 = hdaRegWriteU24(pDevIns, pThis, iReg, u32Value);
-    AssertRC(VBOXSTRICTRC_VAL(rc2));
+    VBOXSTRICTRC rc = hdaRegWriteU24(pDevIns, pThis, iReg, u32Value);
 
-    DEVHDA_UNLOCK_BOTH(pDevIns, pThis, pStream);
-    return VINF_SUCCESS; /* Always return success to the MMIO handler. */
+    PDMDevHlpTimerUnlockClock(pDevIns, pStream->hTimer); /* Caller will unlock pThis->CritSect. */ /** @todo r=bird: Move this up. */
+    return rc;
 #else  /* !IN_RING3 */
     RT_NOREF(pDevIns, pThis, iReg, u32Value);
     return VINF_IOM_R3_MMIO_WRITE;
@@ -1474,6 +1432,7 @@ static VBOXSTRICTRC hdaRegWriteSDSTS(PPDMDEVINS pDevIns, PHDASTATE pThis, uint32
      * @todo r=bird: Must reduce the time we holding the virtual sync
      *               clock lock here!
      */
+    DEVHDA_UNLOCK(pDevIns, pThis);
     DEVHDA_LOCK_BOTH_RETURN(pDevIns, pThis, pStream, VINF_IOM_R3_MMIO_WRITE);
 
     hdaR3StreamLock(pStream);
@@ -1567,9 +1526,8 @@ static VBOXSTRICTRC hdaRegWriteSDSTS(PPDMDEVINS pDevIns, PHDASTATE pThis, uint32
         }
     }
 
+    PDMDevHlpTimerUnlockClock(pDevIns, pStream->hTimer); /* Caller will unlock pThis->CritSect. */
     hdaR3StreamUnlock(pStream);
-
-    DEVHDA_UNLOCK_BOTH(pDevIns, pThis, pStream);
     return VINF_SUCCESS;
 #else  /* !IN_RING3 */
     RT_NOREF(pDevIns, pThis, iReg, u32Value);
@@ -1579,87 +1537,67 @@ static VBOXSTRICTRC hdaRegWriteSDSTS(PPDMDEVINS pDevIns, PHDASTATE pThis, uint32
 
 static VBOXSTRICTRC hdaRegWriteSDLVI(PPDMDEVINS pDevIns, PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
 {
-    DEVHDA_LOCK_RETURN(pDevIns, pThis, VINF_IOM_R3_MMIO_WRITE);
-
     const uint8_t uSD = HDA_SD_NUM_FROM_REG(pThis, LVI, iReg);
 
 #ifdef HDA_USE_DMA_ACCESS_HANDLER
     if (hdaGetDirFromSD(uSD) == PDMAUDIODIR_OUT)
     {
-        PHDASTREAM pStream = hdaGetStreamFromSD(pThis, uSD);
-
         /* Try registering the DMA handlers.
          * As we can't be sure in which order LVI + BDL base are set, try registering in both routines. */
+        PHDASTREAM pStream = hdaGetStreamFromSD(pThis, uSD);
         if (   pStream
             && hdaR3StreamRegisterDMAHandlers(pThis, pStream))
-        {
             LogFunc(("[SD%RU8] DMA logging enabled\n", pStream->u8SD));
-        }
     }
 #endif
 
     ASSERT_GUEST_LOGREL_MSG(u32Value <= UINT8_MAX, /* Should be covered by the register write mask, but just to make sure. */
                             ("LVI for stream #%RU8 must not be bigger than %RU8\n", uSD, UINT8_MAX - 1));
-
-    VBOXSTRICTRC rc2 = hdaRegWriteU16(pDevIns, pThis, iReg, u32Value);
-    AssertRC(VBOXSTRICTRC_VAL(rc2));
-
-    DEVHDA_UNLOCK(pDevIns, pThis);
-    return VINF_SUCCESS; /* Always return success to the MMIO handler. */
+    return hdaRegWriteU16(pDevIns, pThis, iReg, u32Value);
 }
 
 static VBOXSTRICTRC hdaRegWriteSDFIFOW(PPDMDEVINS pDevIns, PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
 {
-    DEVHDA_LOCK_RETURN(pDevIns, pThis, VINF_IOM_R3_MMIO_WRITE);
-
     uint8_t uSD = HDA_SD_NUM_FROM_REG(pThis, FIFOW, iReg);
 
-    if (hdaGetDirFromSD(uSD) != PDMAUDIODIR_IN) /* FIFOW for input streams only. */
+    if (RT_LIKELY(hdaGetDirFromSD(uSD) == PDMAUDIODIR_IN)) /* FIFOW for input streams only. */
+    { /* likely */ }
+    else
     {
 #ifndef IN_RING0
         LogRel(("HDA: Warning: Guest tried to write read-only FIFOW to output stream #%RU8, ignoring\n", uSD));
-        DEVHDA_UNLOCK(pDevIns, pThis);
         return VINF_SUCCESS;
 #else
-        DEVHDA_UNLOCK(pDevIns, pThis);
-        return VINF_IOM_R3_MMIO_WRITE;
+        return VINF_IOM_R3_MMIO_WRITE; /* (Go to ring-3 for release logging.) */
 #endif
     }
 
     PHDASTREAM pStream = hdaGetStreamFromSD(pThis, HDA_SD_NUM_FROM_REG(pThis, FIFOW, iReg));
-    if (!pStream)
+    if (pStream)
     {
-        DEVHDA_UNLOCK(pDevIns, pThis);
-        return VINF_SUCCESS; /* Always return success to the MMIO handler. */
+        uint32_t u32FIFOW = 0;
+        switch (u32Value)
+        {
+            case HDA_SDFIFOW_8B:
+            case HDA_SDFIFOW_16B:
+            case HDA_SDFIFOW_32B:
+                u32FIFOW = u32Value;
+                break;
+            default:
+                ASSERT_GUEST_LOGREL_MSG_FAILED(("Guest tried writing unsupported FIFOW (0x%x) to stream #%RU8, defaulting to 32 bytes\n",
+                                                u32Value, uSD));
+                u32FIFOW = HDA_SDFIFOW_32B;
+                break;
+        }
+
+        if (u32FIFOW) /** @todo r=bird: Logic error. it will never be zero, so why this check? */
+        {
+            pStream->u16FIFOW = hdaSDFIFOWToBytes(u32FIFOW);
+            LogFunc(("[SD%RU8] Updating FIFOW to %RU32 bytes\n", uSD, pStream->u16FIFOW));
+            return hdaRegWriteU16(pDevIns, pThis, iReg, u32FIFOW);
+        }
     }
-
-    uint32_t u32FIFOW = 0;
-
-    switch (u32Value)
-    {
-        case HDA_SDFIFOW_8B:
-        case HDA_SDFIFOW_16B:
-        case HDA_SDFIFOW_32B:
-            u32FIFOW = u32Value;
-            break;
-        default:
-            ASSERT_GUEST_LOGREL_MSG_FAILED(("Guest tried writing unsupported FIFOW (0x%x) to stream #%RU8, defaulting to 32 bytes\n",
-                                            u32Value, uSD));
-            u32FIFOW = HDA_SDFIFOW_32B;
-            break;
-    }
-
-    if (u32FIFOW)
-    {
-        pStream->u16FIFOW = hdaSDFIFOWToBytes(u32FIFOW);
-        LogFunc(("[SD%RU8] Updating FIFOW to %RU32 bytes\n", uSD, pStream->u16FIFOW));
-
-        VBOXSTRICTRC rc2 = hdaRegWriteU16(pDevIns, pThis, iReg, u32FIFOW);
-        AssertRC(VBOXSTRICTRC_VAL(rc2));
-    }
-
-    DEVHDA_UNLOCK(pDevIns, pThis);
-    return VINF_SUCCESS; /* Always return success to the MMIO handler. */
+    return VINF_SUCCESS;
 }
 
 /**
@@ -1667,20 +1605,14 @@ static VBOXSTRICTRC hdaRegWriteSDFIFOW(PPDMDEVINS pDevIns, PHDASTATE pThis, uint
  */
 static VBOXSTRICTRC hdaRegWriteSDFIFOS(PPDMDEVINS pDevIns, PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
 {
-    DEVHDA_LOCK_RETURN(pDevIns, pThis, VINF_IOM_R3_MMIO_WRITE);
-
     uint8_t uSD = HDA_SD_NUM_FROM_REG(pThis, FIFOS, iReg);
 
-    if (hdaGetDirFromSD(uSD) != PDMAUDIODIR_OUT) /* FIFOS for output streams only. */
-    {
-        ASSERT_GUEST_LOGREL_MSG_FAILED(("Guest tried writing read-only FIFOS to input stream #%RU8, ignoring\n", uSD));
-        DEVHDA_UNLOCK(pDevIns, pThis);
-        return VINF_SUCCESS;
-    }
+    ASSERT_GUEST_LOGREL_MSG_RETURN(hdaGetDirFromSD(uSD) == PDMAUDIODIR_OUT, /* FIFOS for output streams only. */
+                                   ("Guest tried writing read-only FIFOS to input stream #%RU8, ignoring\n", uSD),
+                                   VINF_SUCCESS);
 
     uint32_t u32FIFOS;
-
-    switch(u32Value)
+    switch (u32Value)
     {
         case HDA_SDOFIFO_16B:
         case HDA_SDOFIFO_32B:
@@ -1698,11 +1630,7 @@ static VBOXSTRICTRC hdaRegWriteSDFIFOS(PPDMDEVINS pDevIns, PHDASTATE pThis, uint
             break;
     }
 
-    VBOXSTRICTRC rc2 = hdaRegWriteU16(pDevIns, pThis, iReg, u32FIFOS);
-    AssertRC(VBOXSTRICTRC_VAL(rc2));
-
-    DEVHDA_UNLOCK(pDevIns, pThis);
-    return VINF_SUCCESS; /* Always return success to the MMIO handler. */
+    return hdaRegWriteU16(pDevIns, pThis, iReg, u32FIFOS);
 }
 
 #ifdef IN_RING3
@@ -1983,58 +1911,48 @@ static int hdaR3RemoveStream(PHDASTATE pThis, PPDMAUDIOSTREAMCFG pCfg)
     LogFlowFuncLeaveRC(rc);
     return rc;
 }
+
 #endif /* IN_RING3 */
 
 static VBOXSTRICTRC hdaRegWriteSDFMT(PPDMDEVINS pDevIns, PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
 {
-    DEVHDA_LOCK_RETURN(pDevIns, pThis, VINF_IOM_R3_MMIO_WRITE);
-
-    /* Write the wanted stream format into the register in any case.
+    /*
+     * Write the wanted stream format into the register in any case.
      *
      * This is important for e.g. MacOS guests, as those try to initialize streams which are not reported
      * by the device emulation (wants 4 channels, only have 2 channels at the moment).
      *
      * When ignoring those (invalid) formats, this leads to MacOS thinking that the device is malfunctioning
-     * and therefore disabling the device completely. */
-    VBOXSTRICTRC rc = hdaRegWriteU16(pDevIns, pThis, iReg, u32Value);
-    AssertRC(VBOXSTRICTRC_VAL(rc));
-
-    DEVHDA_UNLOCK(pDevIns, pThis);
-    return VINF_SUCCESS; /* Always return success to the MMIO handler. */ /** @todo r=bird: This is non-sense in this context, though due to the double locking not really a problem */
+     * and therefore disabling the device completely.
+     */
+    return hdaRegWriteU16(pDevIns, pThis, iReg, u32Value);
 }
 
-/* Note: Will be called for both, BDPL and BDPU, registers. */
-DECLINLINE(int) hdaRegWriteSDBDPX(PPDMDEVINS pDevIns, PHDASTATE pThis, uint32_t iReg, uint32_t u32Value, uint8_t uSD)
+/**
+ * Worker for writes to the BDPL and BDPU registers.
+ */
+DECLINLINE(VBOXSTRICTRC) hdaRegWriteSDBDPX(PPDMDEVINS pDevIns, PHDASTATE pThis, uint32_t iReg, uint32_t u32Value, uint8_t uSD)
 {
-#ifdef IN_RING3
-    DEVHDA_LOCK(pDevIns, pThis);
-
-# ifdef HDA_USE_DMA_ACCESS_HANDLER
+#ifndef HDA_USE_DMA_ACCESS_HANDLER
+    RT_NOREF(uSD);
+    return hdaRegWriteU32(pDevIns, pThis, iReg, u32Value);
+#else
+# ifdef IN_RING3
     if (hdaGetDirFromSD(uSD) == PDMAUDIODIR_OUT)
     {
-        PHDASTREAM pStream = hdaGetStreamFromSD(pThis, uSD);
-
         /* Try registering the DMA handlers.
          * As we can't be sure in which order LVI + BDL base are set, try registering in both routines. */
+        PHDASTREAM pStream = hdaGetStreamFromSD(pThis, uSD);
         if (   pStream
             && hdaR3StreamRegisterDMAHandlers(pThis, pStream))
-        {
             LogFunc(("[SD%RU8] DMA logging enabled\n", pStream->u8SD));
-        }
     }
+    return hdaRegWriteU32(pDevIns, pThis, iReg, u32Value);
 # else
-    RT_NOREF(uSD);
-# endif
-
-    VBOXSTRICTRC rc2 = hdaRegWriteU32(pDevIns, pThis, iReg, u32Value);
-    AssertRC(VBOXSTRICTRC_VAL(rc2));
-
-    DEVHDA_UNLOCK(pDevIns, pThis);
-    return VINF_SUCCESS; /* Always return success to the MMIO handler. */
-#else  /* !IN_RING3 */
     RT_NOREF(pDevIns, pThis, iReg, u32Value, uSD);
     return VINF_IOM_R3_MMIO_WRITE;
-#endif /* !IN_RING3 */
+# endif
+#endif
 }
 
 static VBOXSTRICTRC hdaRegWriteSDBDPL(PPDMDEVINS pDevIns, PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
@@ -2066,8 +1984,7 @@ static VBOXSTRICTRC hdaRegReadIRS(PPDMDEVINS pDevIns, PHDASTATE pThis, uint32_t 
 
 static VBOXSTRICTRC hdaRegWriteIRS(PPDMDEVINS pDevIns, PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
 {
-    RT_NOREF_PV(iReg);
-    DEVHDA_LOCK_RETURN(pDevIns, pThis, VINF_IOM_R3_MMIO_WRITE);
+    RT_NOREF(pDevIns, iReg);
 
     /*
      * If the guest set the ICB bit of IRS register, HDA should process the verb in IC register,
@@ -2081,8 +1998,6 @@ static VBOXSTRICTRC hdaRegWriteIRS(PPDMDEVINS pDevIns, PHDASTATE pThis, uint32_t
 
         if (HDA_REG(pThis, CORBWP) != HDA_REG(pThis, CORBRP))
         {
-            DEVHDA_UNLOCK(pDevIns, pThis);
-
             /*
              * 3.4.3: Defines behavior of immediate Command status register.
              */
@@ -2092,9 +2007,8 @@ static VBOXSTRICTRC hdaRegWriteIRS(PPDMDEVINS pDevIns, PHDASTATE pThis, uint32_t
 
         HDA_REG(pThis, IRS) = HDA_IRS_ICB;  /* busy */
 
-        uint64_t uResp;
-        int rc2 = pThis->pCodec->pfnLookup(pThis->pCodec,
-                                           HDA_CODEC_CMD(uCmd, 0 /* LUN */), &uResp);
+        uint64_t uResp = 0;
+        int rc2 = pThis->pCodec->pfnLookup(pThis->pCodec, HDA_CODEC_CMD(uCmd, 0 /* LUN */), &uResp);
         if (RT_FAILURE(rc2))
             LogFunc(("Codec lookup failed with rc2=%Rrc\n", rc2));
 
@@ -2103,10 +2017,8 @@ static VBOXSTRICTRC hdaRegWriteIRS(PPDMDEVINS pDevIns, PHDASTATE pThis, uint32_t
         /** @todo r=michaln We just set the IRS value, why are we clearing unset bits? */
         HDA_REG(pThis, IRS) &= ~HDA_IRS_ICB;    /* busy is clear */
 
-        DEVHDA_UNLOCK(pDevIns, pThis);
         return VINF_SUCCESS;
 #else  /* !IN_RING3 */
-        DEVHDA_UNLOCK(pDevIns, pThis);
         return VINF_IOM_R3_MMIO_WRITE;
 #endif /* !IN_RING3 */
     }
@@ -2115,53 +2027,41 @@ static VBOXSTRICTRC hdaRegWriteIRS(PPDMDEVINS pDevIns, PHDASTATE pThis, uint32_t
      * Once the guest read the response, it should clear the IRV bit of the IRS register.
      */
     HDA_REG(pThis, IRS) &= ~(u32Value & HDA_IRS_IRV);
-
-    DEVHDA_UNLOCK(pDevIns, pThis);
     return VINF_SUCCESS;
 }
 
 static VBOXSTRICTRC hdaRegWriteRIRBWP(PPDMDEVINS pDevIns, PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
 {
-    RT_NOREF(iReg);
-    DEVHDA_LOCK_RETURN(pDevIns, pThis, VINF_IOM_R3_MMIO_WRITE);
+    RT_NOREF(pDevIns, iReg);
 
     if (HDA_REG(pThis, CORBCTL) & HDA_CORBCTL_DMA) /* Ignore request if CORB DMA engine is (still) running. */
-    {
         LogFunc(("CORB DMA (still) running, skipping\n"));
-
-        DEVHDA_UNLOCK(pDevIns, pThis);
-        return VINF_SUCCESS;
-    }
-
-    if (u32Value & HDA_RIRBWP_RST)
+    else
     {
-        /* Do a RIRB reset. */
-        if (pThis->cbRirbBuf)
+        if (u32Value & HDA_RIRBWP_RST)
         {
-            Assert(pThis->pu64RirbBuf);
-            RT_BZERO((void *)pThis->pu64RirbBuf, pThis->cbRirbBuf);
+            /* Do a RIRB reset. */
+            if (pThis->cbRirbBuf)
+            {
+                Assert(pThis->pu64RirbBuf);
+                RT_BZERO((void *)pThis->pu64RirbBuf, pThis->cbRirbBuf);
+            }
+
+            LogRel2(("HDA: RIRB reset\n"));
+
+            HDA_REG(pThis, RIRBWP) = 0;
         }
-
-        LogRel2(("HDA: RIRB reset\n"));
-
-        HDA_REG(pThis, RIRBWP) = 0;
+        /* The remaining bits are O, see 6.2.22. */
     }
-
-    /* The remaining bits are O, see 6.2.22. */
-
-    DEVHDA_UNLOCK(pDevIns, pThis);
     return VINF_SUCCESS;
 }
 
 static VBOXSTRICTRC hdaRegWriteRINTCNT(PPDMDEVINS pDevIns, PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
 {
-    DEVHDA_LOCK_RETURN(pDevIns, pThis, VINF_IOM_R3_MMIO_WRITE);
-
+    RT_NOREF(pDevIns);
     if (HDA_REG(pThis, CORBCTL) & HDA_CORBCTL_DMA) /* Ignore request if CORB DMA engine is (still) running. */
     {
         LogFunc(("CORB DMA is (still) running, skipping\n"));
-
-        DEVHDA_UNLOCK(pDevIns, pThis);
         return VINF_SUCCESS;
     }
 
@@ -2169,19 +2069,17 @@ static VBOXSTRICTRC hdaRegWriteRINTCNT(PPDMDEVINS pDevIns, PHDASTATE pThis, uint
     AssertRC(VBOXSTRICTRC_VAL(rc));
 
     LogFunc(("Response interrupt count is now %RU8\n", HDA_REG(pThis, RINTCNT) & 0xFF));
-
-    DEVHDA_UNLOCK(pDevIns, pThis);
     return rc;
 }
 
 static VBOXSTRICTRC hdaRegWriteBase(PPDMDEVINS pDevIns, PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
 {
-    uint32_t iRegMem = g_aHdaRegMap[iReg].mem_idx;
-    DEVHDA_LOCK_RETURN(pDevIns, pThis, VINF_IOM_R3_MMIO_WRITE);
+    RT_NOREF(pDevIns);
 
     VBOXSTRICTRC rc = hdaRegWriteU32(pDevIns, pThis, iReg, u32Value);
     AssertRCSuccess(VBOXSTRICTRC_VAL(rc));
 
+    uint32_t const iRegMem = g_aHdaRegMap[iReg].mem_idx;
     switch (iReg)
     {
         case HDA_REG_CORBLBASE:
@@ -2190,7 +2088,7 @@ static VBOXSTRICTRC hdaRegWriteBase(PPDMDEVINS pDevIns, PHDASTATE pThis, uint32_
             break;
         case HDA_REG_CORBUBASE:
             pThis->u64CORBBase &= UINT64_C(0x00000000FFFFFFFF);
-            pThis->u64CORBBase |= ((uint64_t)pThis->au32Regs[iRegMem] << 32);
+            pThis->u64CORBBase |= (uint64_t)pThis->au32Regs[iRegMem] << 32;
             break;
         case HDA_REG_RIRBLBASE:
             pThis->u64RIRBBase &= UINT64_C(0xFFFFFFFF00000000);
@@ -2198,10 +2096,9 @@ static VBOXSTRICTRC hdaRegWriteBase(PPDMDEVINS pDevIns, PHDASTATE pThis, uint32_
             break;
         case HDA_REG_RIRBUBASE:
             pThis->u64RIRBBase &= UINT64_C(0x00000000FFFFFFFF);
-            pThis->u64RIRBBase |= ((uint64_t)pThis->au32Regs[iRegMem] << 32);
+            pThis->u64RIRBBase |= (uint64_t)pThis->au32Regs[iRegMem] << 32;
             break;
         case HDA_REG_DPLBASE:
-        {
             pThis->u64DPBase = pThis->au32Regs[iRegMem] & DPBASE_ADDR_MASK;
             Assert(pThis->u64DPBase % 128 == 0); /* Must be 128-byte aligned. */
 
@@ -2209,7 +2106,6 @@ static VBOXSTRICTRC hdaRegWriteBase(PPDMDEVINS pDevIns, PHDASTATE pThis, uint32_
             pThis->fDMAPosition = pThis->au32Regs[iRegMem] & RT_BIT_32(0);
             LogRel(("HDA: %s DMA position buffer\n", pThis->fDMAPosition ? "Enabled" : "Disabled"));
             break;
-        }
         case HDA_REG_DPUBASE:
             pThis->u64DPBase = RT_MAKE_U64(RT_LO_U32(pThis->u64DPBase) & DPBASE_ADDR_MASK, pThis->au32Regs[iRegMem]);
             break;
@@ -2220,23 +2116,17 @@ static VBOXSTRICTRC hdaRegWriteBase(PPDMDEVINS pDevIns, PHDASTATE pThis, uint32_
 
     LogFunc(("CORB base:%llx RIRB base: %llx DP base: %llx\n",
              pThis->u64CORBBase, pThis->u64RIRBBase, pThis->u64DPBase));
-
-    DEVHDA_UNLOCK(pDevIns, pThis);
     return rc;
 }
 
 static VBOXSTRICTRC hdaRegWriteRIRBSTS(PPDMDEVINS pDevIns, PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
 {
-    RT_NOREF_PV(iReg);
-    DEVHDA_LOCK_RETURN(pDevIns, pThis, VINF_IOM_R3_MMIO_WRITE);
+    RT_NOREF(pDevIns, iReg);
 
     uint8_t v = HDA_REG(pThis, RIRBSTS);
     HDA_REG(pThis, RIRBSTS) &= ~(v & u32Value);
 
-    VBOXSTRICTRC rc = HDA_PROCESS_INTERRUPT(pDevIns, pThis);
-
-    DEVHDA_UNLOCK(pDevIns, pThis);
-    return rc;
+    return HDA_PROCESS_INTERRUPT(pDevIns, pThis);
 }
 
 #ifdef IN_RING3
@@ -3259,18 +3149,6 @@ DECLINLINE(VBOXSTRICTRC) hdaWriteReg(PPDMDEVINS pDevIns, PHDASTATE pThis, int id
         }
     }
 
-    /* Leave the lock before calling write function. */
-    /** @todo r=bird: Why do we need to do that??  There is no
-     *        explanation why this is necessary here...
-     *
-     * More or less all write functions retake the lock, so why not let
-     * those who need to drop the lock or take additional locks release
-     * it? See, releasing a lock you already got always runs the risk
-     * of someone else grabbing it and forcing you to wait, better to
-     * do the two-three things a write handle needs to do than enter
-     * and exit the lock all the time. */
-    DEVHDA_UNLOCK(pDevIns, pThis);
-
 #ifdef LOG_ENABLED
     uint32_t const idxRegMem   = g_aHdaRegMap[idxRegDsc].mem_idx;
     uint32_t const u32OldValue = pThis->au32Regs[idxRegMem];
@@ -3278,6 +3156,8 @@ DECLINLINE(VBOXSTRICTRC) hdaWriteReg(PPDMDEVINS pDevIns, PHDASTATE pThis, int id
     VBOXSTRICTRC rc = g_aHdaRegMap[idxRegDsc].pfnWrite(pDevIns, pThis, idxRegDsc, u32Value);
     Log3Func(("Written value %#x to %s[%d byte]; %x => %x%s, rc=%d\n", u32Value, g_aHdaRegMap[idxRegDsc].abbrev,
               g_aHdaRegMap[idxRegDsc].size, u32OldValue, pThis->au32Regs[idxRegMem], pszLog, VBOXSTRICTRC_VAL(rc)));
+
+    DEVHDA_UNLOCK(pDevIns, pThis);
     RT_NOREF(pszLog);
     return rc;
 }
