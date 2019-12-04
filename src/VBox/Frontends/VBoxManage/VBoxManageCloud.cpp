@@ -505,71 +505,59 @@ static RTEXITCODE createCloudInstance(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT
             case 'i':
                 strImageId = ValueUnion.psz;
                 pVSD->AddDescription(VirtualSystemDescriptionType_CloudImageId,
-                                     Bstr(ValueUnion.psz).raw(),
-                                     Bstr(ValueUnion.psz).raw());
+                                     Bstr(ValueUnion.psz).raw(), NULL);
                 break;
 
             case 'v':
                 strBootVolumeId = ValueUnion.psz;
                 pVSD->AddDescription(VirtualSystemDescriptionType_CloudBootVolumeId,
-                                     Bstr(ValueUnion.psz).raw(),
-                                     Bstr(ValueUnion.psz).raw());
+                                     Bstr(ValueUnion.psz).raw(), NULL);
                 break;
             case 'n':
                 strDisplayName = ValueUnion.psz;
                 pVSD->AddDescription(VirtualSystemDescriptionType_Name,
-                                     Bstr(ValueUnion.psz).raw(),
-                                     Bstr(ValueUnion.psz).raw());
+                                     Bstr(ValueUnion.psz).raw(), NULL);
                 break;
             case 'm':
                 pVSD->AddDescription(VirtualSystemDescriptionType_CloudOCILaunchMode,
-                                     Bstr(ValueUnion.psz).raw(),
-                                     Bstr(ValueUnion.psz).raw());
+                                     Bstr(ValueUnion.psz).raw(), NULL);
                 break;
             case 's':
                 pVSD->AddDescription(VirtualSystemDescriptionType_CloudInstanceShape,
-                                     Bstr(ValueUnion.psz).raw(),
-                                     Bstr(ValueUnion.psz).raw());
+                                     Bstr(ValueUnion.psz).raw(), NULL);
                 break;
             case 'd':
                 pVSD->AddDescription(VirtualSystemDescriptionType_CloudDomain,
-                                     Bstr(ValueUnion.psz).raw(),
-                                     Bstr(ValueUnion.psz).raw());
+                                     Bstr(ValueUnion.psz).raw(), NULL);
                 break;
             case 'b':
                 pVSD->AddDescription(VirtualSystemDescriptionType_CloudBootDiskSize,
-                                     Bstr(ValueUnion.psz).raw(),
-                                     Bstr(ValueUnion.psz).raw());
+                                     Bstr(ValueUnion.psz).raw(), NULL);
                 break;
             case 'p':
                 pVSD->AddDescription(VirtualSystemDescriptionType_CloudPublicIP,
-                                     Bstr(ValueUnion.psz).raw(),
-                                     Bstr(ValueUnion.psz).raw());
+                                     Bstr(ValueUnion.psz).raw(), NULL);
                 break;
             case 'P':
                 pVSD->AddDescription(VirtualSystemDescriptionType_CloudPrivateIP,
-                                     Bstr(ValueUnion.psz).raw(),
-                                     Bstr(ValueUnion.psz).raw());
+                                     Bstr(ValueUnion.psz).raw(), NULL);
                 break;
             case 't':
                 pVSD->AddDescription(VirtualSystemDescriptionType_CloudOCISubnet,
-                                     Bstr(ValueUnion.psz).raw(),
-                                     Bstr(ValueUnion.psz).raw());
+                                     Bstr(ValueUnion.psz).raw(), NULL);
                 break;
             case 'l':
                 {
                     Utf8Str strLaunch(ValueUnion.psz);
                     if (strLaunch.isNotEmpty() && (strLaunch.equalsIgnoreCase("true") || strLaunch.equalsIgnoreCase("false")))
                         pVSD->AddDescription(VirtualSystemDescriptionType_CloudLaunchInstance,
-                                             Bstr(ValueUnion.psz).raw(),
-                                             Bstr(ValueUnion.psz).raw());
+                                             Bstr(ValueUnion.psz).raw(), NULL);
                     break;
                 }
             case 'k':
                 strPublicSSHKey = ValueUnion.psz;
                 pVSD->AddDescription(VirtualSystemDescriptionType_CloudPublicSSHKey,
-                                     Bstr(ValueUnion.psz).raw(),
-                                     Bstr(ValueUnion.psz).raw());
+                                     Bstr(ValueUnion.psz).raw(), NULL);
                 break;
             case VINF_GETOPT_NOT_OPTION:
                 return errorUnknownSubcommand(ValueUnion.psz);
@@ -592,7 +580,7 @@ static RTEXITCODE createCloudInstance(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT
 
     pVSD->AddDescription(VirtualSystemDescriptionType_CloudProfileName,
                          Bstr(pCommonOpts->profile.pszProfileName).raw(),
-                         Bstr(pCommonOpts->profile.pszProfileName).raw());
+                         NULL);
 
     ComObjPtr<ICloudClient> oCloudClient;
     CHECK_ERROR2_RET(hrc, pCloudProfile,

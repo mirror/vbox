@@ -1550,37 +1550,29 @@ RTEXITCODE handleExportAppliance(HandlerArg *a)
                         //remove default value if user has specified new name (default value is set in the ExportTo())
 //                      pVSD->RemoveDescriptionByType(VirtualSystemDescriptionType_Name);
                         pVSD->AddDescription(VirtualSystemDescriptionType_Name,
-                                             Bstr(itD->second).raw(),
-                                             Bstr(itD->second).raw());
+                                             Bstr(itD->second).raw(), NULL);
                     }
                     else if (itD->first == "product")
                         pVSD->AddDescription(VirtualSystemDescriptionType_Product,
-                                             Bstr(itD->second).raw(),
-                                             Bstr(itD->second).raw());
+                                             Bstr(itD->second).raw(), NULL);
                     else if (itD->first == "producturl")
                         pVSD->AddDescription(VirtualSystemDescriptionType_ProductUrl,
-                                             Bstr(itD->second).raw(),
-                                             Bstr(itD->second).raw());
+                                             Bstr(itD->second).raw(), NULL);
                     else if (itD->first == "vendor")
                         pVSD->AddDescription(VirtualSystemDescriptionType_Vendor,
-                                             Bstr(itD->second).raw(),
-                                             Bstr(itD->second).raw());
+                                             Bstr(itD->second).raw(), NULL);
                     else if (itD->first == "vendorurl")
                         pVSD->AddDescription(VirtualSystemDescriptionType_VendorUrl,
-                                             Bstr(itD->second).raw(),
-                                             Bstr(itD->second).raw());
+                                             Bstr(itD->second).raw(), NULL);
                     else if (itD->first == "version")
                         pVSD->AddDescription(VirtualSystemDescriptionType_Version,
-                                             Bstr(itD->second).raw(),
-                                             Bstr(itD->second).raw());
+                                             Bstr(itD->second).raw(), NULL);
                     else if (itD->first == "description")
                         pVSD->AddDescription(VirtualSystemDescriptionType_Description,
-                                             Bstr(itD->second).raw(),
-                                             Bstr(itD->second).raw());
+                                             Bstr(itD->second).raw(), NULL);
                     else if (itD->first == "eula")
                         pVSD->AddDescription(VirtualSystemDescriptionType_License,
-                                             Bstr(itD->second).raw(),
-                                             Bstr(itD->second).raw());
+                                             Bstr(itD->second).raw(), NULL);
                     else if (itD->first == "eulafile")
                     {
                         Utf8Str strContent;
@@ -1591,8 +1583,7 @@ RTEXITCODE handleExportAppliance(HandlerArg *a)
                         {
                             Bstr bstrContent((char*)pvFile, cbFile);
                             pVSD->AddDescription(VirtualSystemDescriptionType_License,
-                                                 bstrContent.raw(),
-                                                 bstrContent.raw());
+                                                 bstrContent.raw(), NULL);
                             RTFileReadAllFree(pvFile, cbFile);
                         }
                         else
@@ -1605,50 +1596,40 @@ RTEXITCODE handleExportAppliance(HandlerArg *a)
                     /* add cloud export settings */
                     else if (itD->first == "cloudshape")
                         pVSD->AddDescription(VirtualSystemDescriptionType_CloudInstanceShape,
-                                             Bstr(itD->second).raw(),
-                                             Bstr(itD->second).raw());
+                                             Bstr(itD->second).raw(), NULL);
                     else if (itD->first == "clouddomain")
                         pVSD->AddDescription(VirtualSystemDescriptionType_CloudDomain,
-                                             Bstr(itD->second).raw(),
-                                             Bstr(itD->second).raw());
+                                             Bstr(itD->second).raw(), NULL);
                     else if (itD->first == "clouddisksize")
                         pVSD->AddDescription(VirtualSystemDescriptionType_CloudBootDiskSize,
-                                             Bstr(itD->second).raw(),
-                                             Bstr(itD->second).raw());
+                                             Bstr(itD->second).raw(), NULL);
                     else if (itD->first == "cloudbucket")
                         pVSD->AddDescription(VirtualSystemDescriptionType_CloudBucket,
-                                             Bstr(itD->second).raw(),
-                                             Bstr(itD->second).raw());
+                                             Bstr(itD->second).raw(), NULL);
                     else if (itD->first == "cloudocivcn")
                         pVSD->AddDescription(VirtualSystemDescriptionType_CloudOCIVCN,
-                                             Bstr(itD->second).raw(),
-                                             Bstr(itD->second).raw());
+                                             Bstr(itD->second).raw(), NULL);
                     else if (itD->first == "cloudpublicip")
                         pVSD->AddDescription(VirtualSystemDescriptionType_CloudPublicIP,
-                                             Bstr(itD->second).raw(),
-                                             Bstr(itD->second).raw());
+                                             Bstr(itD->second).raw(), NULL);
                     else if (itD->first == "cloudprivateip")
                         pVSD->AddDescription(VirtualSystemDescriptionType_CloudPrivateIP,
                                              Bstr(itD->second).raw(), NULL);
                     else if (itD->first == "cloudprofile")
                         pVSD->AddDescription(VirtualSystemDescriptionType_CloudProfileName,
-                                             Bstr(itD->second).raw(),
-                                             Bstr(itD->second).raw());
+                                             Bstr(itD->second).raw(), NULL);
                     else if (itD->first == "cloudocisubnet")
                         pVSD->AddDescription(VirtualSystemDescriptionType_CloudOCISubnet,
-                                             Bstr(itD->second).raw(),
-                                             Bstr(itD->second).raw());
+                                             Bstr(itD->second).raw(), NULL);
                     else if (itD->first == "cloudkeepobject")
                         pVSD->AddDescription(VirtualSystemDescriptionType_CloudKeepObject,
-                                             Bstr(itD->second).raw(),
-                                             Bstr(itD->second).raw());
+                                             Bstr(itD->second).raw(), NULL);
                     else if (itD->first == "cloudlaunchmode")
                         pVSD->AddDescription(VirtualSystemDescriptionType_CloudOCILaunchMode,
                                              Bstr(itD->second).raw(), NULL);
                     else if (itD->first == "cloudlaunchinstance")
                         pVSD->AddDescription(VirtualSystemDescriptionType_CloudLaunchInstance,
-                                             Bstr(itD->second).raw(),
-                                             Bstr(itD->second).raw());
+                                             Bstr(itD->second).raw(), NULL);
                 }
             }
 
