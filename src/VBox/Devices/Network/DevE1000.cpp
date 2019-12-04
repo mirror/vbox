@@ -3932,6 +3932,8 @@ DECLINLINE(unsigned) e1kTxDLoadMore(PPDMDEVINS pDevIns, PE1KSTATE pThis)
     Assert(pThis->iTxDCurrent == 0);
     /* We've already loaded pThis->nTxDFetched descriptors past TDH. */
     unsigned nDescsAvailable    = e1kGetTxLen(pThis) - pThis->nTxDFetched;
+    /* The following two lines ensure that pThis->nTxDFetched never overflows. */
+    AssertCompile(E1K_TXD_CACHE_SIZE < (256 * sizeof(pThis->nTxDFetched)));
     unsigned nDescsToFetch      = RT_MIN(nDescsAvailable, E1K_TXD_CACHE_SIZE - pThis->nTxDFetched);
     unsigned nDescsTotal        = TDLEN / sizeof(E1KTXDESC);
     unsigned nFirstNotLoaded    = (TDH + pThis->nTxDFetched) % nDescsTotal;
@@ -3959,7 +3961,7 @@ DECLINLINE(unsigned) e1kTxDLoadMore(PPDMDEVINS pDevIns, PE1KSTATE pThis)
                  pThis->szPrf, nDescsToFetch - nDescsInSingleRead,
                  TDBAH, TDBAL));
     }
-    pThis->nTxDFetched += nDescsToFetch;
+    pThis->nTxDFetched += (uint8_t)nDescsToFetch;
     return nDescsToFetch;
 }
 
