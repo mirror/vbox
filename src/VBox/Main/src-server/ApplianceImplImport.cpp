@@ -1438,13 +1438,58 @@ HRESULT Appliance::i_importCloudImpl(TaskCloud *pTask)
                 /* No check again because it would be weird if a VM with such unique name exists */
             }
 
+            /* Check the target path. If the path exists and folder isn't empty return an error */
+            {          
+                Bstr bstrSettingsFilename;
+                /* Based on the VM name, create a target machine path. */
+                hrc = mVirtualBox->ComposeMachineFilename(Bstr(strVMName).raw(),
+                                                          Bstr("/").raw(),
+                                                          NULL /* aCreateFlags */,
+                                                          NULL /* aBaseFolder */,
+                                                          bstrSettingsFilename.asOutParam());
+                if (FAILED(hrc))
+                    break;
+
+                Utf8Str strMachineFolder(bstrSettingsFilename);
+                strMachineFolder.stripFilename();
+
+                RTFSOBJINFO dirInfo;
+                vrc = RTPathQueryInfo(strMachineFolder.c_str(), &dirInfo, RTFSOBJATTRADD_NOTHING);
+                if (RT_SUCCESS(vrc))
+                {
+                    size_t counter = 0;
+                    RTDIR hDir;
+                    vrc = RTDirOpen(&hDir, strMachineFolder.c_str());
+                    if (RT_SUCCESS(vrc)) 
+                    {
+                        RTDIRENTRY DirEntry;
+                        while (RT_SUCCESS(RTDirRead(hDir, &DirEntry, NULL)))
+                        {
+                            if (RTDirEntryIsStdDotLink(&DirEntry))
+                                continue;
+                            ++counter;
+                        }
+
+                        if ( hDir != NULL)
+                            vrc = RTDirClose(hDir);
+                    }
+                    else
+                        return setErrorVrc(vrc, tr("Can't open folder %s"), strMachineFolder.c_str());
+
+                    if (counter > 0)
+                    {
+                        return setErrorVrc(VERR_ALREADY_EXISTS, tr("The target folder %s has already contained some"
+                                          " files (%d items). Clear the folder from the files or choose another folder"),
+                                          strMachineFolder.c_str(), counter);
+                    }
+                }
+            }
+
             Utf8Str strInsId;
             GET_VSD_DESCRIPTION_BY_TYPE(VirtualSystemDescriptionType_CloudInstanceId)//aVBoxValues is set in this #define
             if (aVBoxValues.size() == 0)
-            {
-                hrc = setErrorVrc(VERR_NOT_FOUND, "%s: Cloud Instance Id wasn't found", __FUNCTION__);
-                break;
-            }
+                return setErrorVrc(VERR_NOT_FOUND, "%s: Cloud Instance Id wasn't found", __FUNCTION__);
+
             strInsId = aVBoxValues[0];
 
             LogRel(("%s: calling CloudClient::ImportInstance\n", __FUNCTION__));
@@ -1491,9 +1536,10 @@ HRESULT Appliance::i_importCloudImpl(TaskCloud *pTask)
             /** @todo
              *  future function which will eliminate the temporary objects created during the first phase.
              *  hrc = cloud.EliminateImportLeavings(aVBoxValues[0], pProgress); */
+/*
             if (FAILED(hrc))
             {
-                hrc = setErrorVrc(VERR_INVALID_STATE, tr("Some leavings may exist in the Cloud."));
+                hrc = setError(hrc, tr("Some leavings may exist in the Cloud."));
                 LogRel(("%s: Cleanup action - the leavings in the %s after import the "
                         "instance %s may not have been deleted\n",
                         __FUNCTION__, strProviderName.c_str(), vsdData.c_str()));
@@ -1502,6 +1548,7 @@ HRESULT Appliance::i_importCloudImpl(TaskCloud *pTask)
                 LogRel(("%s: Cleanup action - the leavings in the %s after import the "
                         "instance %s have been deleted\n",
                         __FUNCTION__, strProviderName.c_str(), vsdData.c_str()));
+*/
         }
 
         /* Because during the cleanup phase the hrc may have the good result
@@ -1512,7 +1559,7 @@ HRESULT Appliance::i_importCloudImpl(TaskCloud *pTask)
 
     if (FAILED(hrc))
     {
-        Utf8Str generalRollBackErrorMessage("Rollback action for Import Cloud operation failed."
+        Utf8Str generalRollBackErrorMessage("Rollback action for Import Cloud operation failed. "
                                             "Some leavings may exist on the local disk or in the Cloud.");
         /*
          * Roll-back actions.
@@ -1818,7 +1865,7 @@ HRESULT Appliance::i_importCloudImpl(TaskCloud *pTask)
 
                             /* Write the file on the disk */
                             vrc = RTVfsFileOpenNormal(strAbsDstPath.c_str(),
-                                                      RTFILE_O_WRITE | RTFILE_O_DENY_ALL | RTFILE_O_CREATE_REPLACE,
+                                                      RTFILE_O_WRITE | RTFILE_O_DENY_ALL | RTFILE_O_CREATE,
                                                       &hVfsDstFile);
                             if (RT_FAILURE(vrc))
                                 throw  setErrorVrc(vrc, tr("Could not create the file '%s' (%Rrc)"), strAbsDstPath.c_str(), vrc);
