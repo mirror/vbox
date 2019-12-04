@@ -955,13 +955,10 @@ static VBOXSTRICTRC hdaRegWriteU24(PPDMDEVINS pDevIns, PHDASTATE pThis, uint32_t
 /* U32 */
 static VBOXSTRICTRC hdaRegReadU32(PPDMDEVINS pDevIns, PHDASTATE pThis, uint32_t iReg, uint32_t *pu32Value)
 {
-    uint32_t iRegMem = g_aHdaRegMap[iReg].mem_idx;
+    RT_NOREF(pDevIns);
 
-    DEVHDA_LOCK_RETURN(pDevIns, pThis, VINF_IOM_R3_MMIO_READ);
-
+    uint32_t const iRegMem = g_aHdaRegMap[iReg].mem_idx;
     *pu32Value = pThis->au32Regs[iRegMem] & g_aHdaRegMap[iReg].readable;
-
-    DEVHDA_UNLOCK(pDevIns, pThis);
     return VINF_SUCCESS;
 }
 
@@ -1026,18 +1023,13 @@ static VBOXSTRICTRC hdaRegWriteSTATESTS(PPDMDEVINS pDevIns, PHDASTATE pThis, uin
 
 static VBOXSTRICTRC hdaRegReadLPIB(PPDMDEVINS pDevIns, PHDASTATE pThis, uint32_t iReg, uint32_t *pu32Value)
 {
-    DEVHDA_LOCK_RETURN(pDevIns, pThis, VINF_IOM_R3_MMIO_READ);
+    RT_NOREF(pDevIns);
 
     const uint8_t  uSD     = HDA_SD_NUM_FROM_REG(pThis, LPIB, iReg);
-    uint32_t       u32LPIB = HDA_STREAM_REG(pThis, LPIB, uSD);
-#ifdef LOG_ENABLED
-    const uint32_t u32CBL  = HDA_STREAM_REG(pThis, CBL,  uSD);
-    LogFlowFunc(("[SD%RU8] LPIB=%RU32, CBL=%RU32\n", uSD, u32LPIB, u32CBL));
-#endif
-
+    const uint32_t u32LPIB = HDA_STREAM_REG(pThis, LPIB, uSD);
     *pu32Value = u32LPIB;
+    LogFlowFunc(("[SD%RU8] LPIB=%RU32, CBL=%RU32\n", uSD, u32LPIB, HDA_STREAM_REG(pThis, CBL, uSD)));
 
-    DEVHDA_UNLOCK(pDevIns, pThis);
     return VINF_SUCCESS;
 }
 
@@ -1086,13 +1078,11 @@ static VBOXSTRICTRC hdaRegReadWALCLK(PPDMDEVINS pDevIns, PHDASTATE pThis, uint32
 {
 #ifdef IN_RING3 /** @todo r=bird: No reason (except logging) for this to be ring-3 only! */
     RT_NOREF(pDevIns, iReg);
-    DEVHDA_LOCK(pDevIns, pThis);
 
     const uint64_t u64WalClkCur = ASMAtomicReadU64(&pThis->u64WalClk);
     *pu32Value = RT_LO_U32(u64WalClkCur);
 
     Log3Func(("%RU32 (max @ %RU64)\n", *pu32Value, hdaR3WalClkGetMax(pThis)));
-    DEVHDA_UNLOCK(pDevIns, pThis);
     return VINF_SUCCESS;
 #else
     RT_NOREF(pDevIns, pThis, iReg, pu32Value);
@@ -1967,19 +1957,12 @@ static VBOXSTRICTRC hdaRegWriteSDBDPU(PPDMDEVINS pDevIns, PHDASTATE pThis, uint3
 
 static VBOXSTRICTRC hdaRegReadIRS(PPDMDEVINS pDevIns, PHDASTATE pThis, uint32_t iReg, uint32_t *pu32Value)
 {
-    DEVHDA_LOCK_RETURN(pDevIns, pThis, VINF_IOM_R3_MMIO_READ);
-
     /* regarding 3.4.3 we should mark IRS as busy in case CORB is active */
     if (   HDA_REG(pThis, CORBWP) != HDA_REG(pThis, CORBRP)
         || (HDA_REG(pThis, CORBCTL) & HDA_CORBCTL_DMA))
-    {
         HDA_REG(pThis, IRS) = HDA_IRS_ICB;  /* busy */
-    }
 
-    VBOXSTRICTRC rc = hdaRegReadU32(pDevIns, pThis, iReg, pu32Value);
-    DEVHDA_UNLOCK(pDevIns, pThis);
-
-    return rc;
+    return hdaRegReadU32(pDevIns, pThis, iReg, pu32Value);
 }
 
 static VBOXSTRICTRC hdaRegWriteIRS(PPDMDEVINS pDevIns, PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
@@ -3030,16 +3013,10 @@ static DECLCALLBACK(VBOXSTRICTRC) hdaMmioRead(PPDMDEVINS pDevIns, void *pvUser, 
     DEVHDA_LOCK_RETURN(pDevIns, pThis, VINF_IOM_R3_MMIO_READ);
 
     if (!(HDA_REG(pThis, GCTL) & HDA_GCTL_CRST) && idxRegDsc != HDA_REG_GCTL)
-        LogFunc(("Access to registers except GCTL is blocked while reset\n"));
+        LogFunc(("Access to registers except GCTL is blocked while resetting\n"));
 
-    if (idxRegDsc == -1)
-        LogRel(("HDA: Invalid read access @0x%x (bytes=%u)\n", (uint32_t)off, cb));
-
-    if (idxRegDsc != -1)
+    if (idxRegDsc >= 0)
     {
-        /* Leave lock before calling read function. */
-        DEVHDA_UNLOCK(pDevIns, pThis);
-
         /* ASSUMES gapless DWORD at end of map. */
         if (g_aHdaRegMap[idxRegDsc].size == 4)
         {
@@ -3086,11 +3063,12 @@ static DECLCALLBACK(VBOXSTRICTRC) hdaMmioRead(PPDMDEVINS pDevIns, void *pvUser, 
     }
     else
     {
-        DEVHDA_UNLOCK(pDevIns, pThis);
-
-        rc = VINF_IOM_MMIO_UNUSED_FF;
+        LogRel(("HDA: Invalid read access @0x%x (bytes=%u)\n", (uint32_t)off, cb));
         Log3Func(("\tHole at %x is accessed for read\n", offRegLog));
+        rc = VINF_IOM_MMIO_UNUSED_FF;
     }
+
+    DEVHDA_UNLOCK(pDevIns, pThis);
 
     /*
      * Log the outcome.
