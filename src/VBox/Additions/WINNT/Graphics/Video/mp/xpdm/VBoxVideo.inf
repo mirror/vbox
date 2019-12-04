@@ -55,7 +55,7 @@ AddService=VBoxVideo, 0x00000002, vboxvideo_Service_Inst, vboxvideo_EventLog_Ins
 
 [vboxvideo_Service_Inst]
 ServiceType=1                   ; SERVICE_KERNEL_DRIVER
-StartType=3                     ; SERVICE_DEMAND_START
+StartType=1                     ; SERVICE_SYSTEM_START (required, old non-PnP Windows versions need it)
 ErrorControl=0                  ; SERVICE_ERROR_IGNORE
 LoadOrderGroup=Video
 ServiceBinary=%12%\VBoxVideo.sys
