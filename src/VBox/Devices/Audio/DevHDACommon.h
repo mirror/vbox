@@ -24,32 +24,37 @@
 #include "AudioMixer.h"
 #include <VBox/log.h> /* LOG_ENABLED */
 
+    /** Read callback. */
+typedef VBOXSTRICTRC FNHDAREGREAD(PPDMDEVINS pDevIns, PHDASTATE pThis, uint32_t iReg, uint32_t *pu32Value);
+    /** Write callback. */
+typedef VBOXSTRICTRC FNHDAREGWRITE(PPDMDEVINS pDevIns, PHDASTATE pThis, uint32_t iReg, uint32_t u32Value);
+
 /** See 302349 p 6.2. */
 typedef struct HDAREGDESC
 {
     /** Register offset in the register space. */
-    uint32_t    offset;
+    uint32_t        offset;
     /** Size in bytes. Registers of size > 4 are in fact tables. */
-    uint32_t    size;
+    uint32_t        size;
     /** Readable bits. */
-    uint32_t    readable;
+    uint32_t        readable;
     /** Writable bits. */
-    uint32_t    writable;
+    uint32_t        writable;
     /** Register descriptor (RD) flags of type HDA_RD_FLAG_.
      *  These are used to specify the handling (read/write)
      *  policy of the register. */
-    uint32_t    fFlags;
+    uint32_t        fFlags;
     /** Read callback. */
-    int       (*pfnRead)(PPDMDEVINS pDevIns, PHDASTATE pThis, uint32_t iReg, uint32_t *pu32Value);
+    FNHDAREGREAD   *pfnRead;
     /** Write callback. */
-    int       (*pfnWrite)(PPDMDEVINS pDevIns, PHDASTATE pThis, uint32_t iReg, uint32_t u32Value);
+    FNHDAREGWRITE  *pfnWrite;
     /** Index into the register storage array. */
-    uint32_t    mem_idx;
+    uint32_t        mem_idx;
     /** Abbreviated name. */
-    const char *abbrev;
+    const char     *abbrev;
     /** Descripton. */
-    const char *desc;
-} HDAREGDESC, *PHDAREGDESC;
+    const char     *desc;
+} HDAREGDESC;
 
 /**
  * HDA register aliases (HDA spec 3.3.45).
@@ -61,7 +66,7 @@ typedef struct HDAREGALIAS
     uint32_t    offReg;
     /** The register index. */
     int         idxAlias;
-} HDAREGALIAS, *PHDAREGALIAS;
+} HDAREGALIAS;
 
 /**
  * At the moment we support 4 input + 4 output streams max, which is 8 in total.
