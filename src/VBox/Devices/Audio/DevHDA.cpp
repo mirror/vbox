@@ -3010,77 +3010,89 @@ static DECLCALLBACK(VBOXSTRICTRC) hdaMmioRead(PPDMDEVINS pDevIns, void *pvUser, 
     Log3Func(("off=%#x cb=%#x\n", offRegLog, cb));
     Assert(cb == 4); Assert((off & 3) == 0);
 
-    DEVHDA_LOCK_RETURN(pDevIns, pThis, VINF_IOM_R3_MMIO_READ);
-
-    if (!(HDA_REG(pThis, GCTL) & HDA_GCTL_CRST) && idxRegDsc != HDA_REG_GCTL)
-        LogFunc(("Access to registers except GCTL is blocked while resetting\n"));
-
-    if (idxRegDsc >= 0)
+    rc = PDMDevHlpCritSectEnter(pDevIns, &pThis->CritSect, VINF_IOM_R3_MMIO_READ);
+    if (rc == VINF_SUCCESS)
     {
-        /* ASSUMES gapless DWORD at end of map. */
-        if (g_aHdaRegMap[idxRegDsc].size == 4)
+        if (!(HDA_REG(pThis, GCTL) & HDA_GCTL_CRST) && idxRegDsc != HDA_REG_GCTL)
+            LogFunc(("Access to registers except GCTL is blocked while resetting\n"));
+
+        if (idxRegDsc >= 0)
         {
-            /*
-             * Straight forward DWORD access.
-             */
-            rc = g_aHdaRegMap[idxRegDsc].pfnRead(pDevIns, pThis, idxRegDsc, (uint32_t *)pv);
-            Log3Func(("\tRead %s => %x (%Rrc)\n", g_aHdaRegMap[idxRegDsc].abbrev, *(uint32_t *)pv, VBOXSTRICTRC_VAL(rc)));
+            /* ASSUMES gapless DWORD at end of map. */
+            if (g_aHdaRegMap[idxRegDsc].size == 4)
+            {
+                /*
+                 * Straight forward DWORD access.
+                 */
+                rc = g_aHdaRegMap[idxRegDsc].pfnRead(pDevIns, pThis, idxRegDsc, (uint32_t *)pv);
+                Log3Func(("\tRead %s => %x (%Rrc)\n", g_aHdaRegMap[idxRegDsc].abbrev, *(uint32_t *)pv, VBOXSTRICTRC_VAL(rc)));
+                STAM_COUNTER_INC(&pThis->aStatRegReads[idxRegDsc]);
+            }
+            else
+            {
+                /*
+                 * Multi register read (unless there are trailing gaps).
+                 * ASSUMES that only DWORD reads have sideeffects.
+                 */
+#ifdef IN_RING3
+                STAM_COUNTER_INC(&pThis->StatRegMultiReads);
+                uint32_t u32Value = 0;
+                unsigned cbLeft   = 4;
+                do
+                {
+                    uint32_t const  cbReg        = g_aHdaRegMap[idxRegDsc].size;
+                    uint32_t        u32Tmp       = 0;
+
+                    rc = g_aHdaRegMap[idxRegDsc].pfnRead(pDevIns, pThis, idxRegDsc, &u32Tmp);
+                    Log3Func(("\tRead %s[%db] => %x (%Rrc)*\n", g_aHdaRegMap[idxRegDsc].abbrev, cbReg, u32Tmp, VBOXSTRICTRC_VAL(rc)));
+                    STAM_COUNTER_INC(&pThis->aStatRegReads[idxRegDsc]);
+                    if (rc != VINF_SUCCESS)
+                        break;
+                    u32Value |= (u32Tmp & g_afMasks[cbReg]) << ((4 - cbLeft) * 8);
+
+                    cbLeft -= cbReg;
+                    off    += cbReg;
+                    idxRegDsc++;
+                } while (cbLeft > 0 && g_aHdaRegMap[idxRegDsc].offset == off);
+
+                if (rc == VINF_SUCCESS)
+                    *(uint32_t *)pv = u32Value;
+                else
+                    Assert(!IOM_SUCCESS(rc));
+#else  /* !IN_RING3 */
+                /* Take the easy way out. */
+                STAM_COUNTER_INC(&pThis->aStatRegReadsToR3[idxRegDsc]);
+                rc = VINF_IOM_R3_MMIO_READ;
+#endif /* !IN_RING3 */
+            }
         }
         else
         {
-            /*
-             * Multi register read (unless there are trailing gaps).
-             * ASSUMES that only DWORD reads have sideeffects.
-             */
-#ifdef IN_RING3
-            uint32_t u32Value = 0;
-            unsigned cbLeft   = 4;
-            do
-            {
-                uint32_t const  cbReg        = g_aHdaRegMap[idxRegDsc].size;
-                uint32_t        u32Tmp       = 0;
-
-                rc = g_aHdaRegMap[idxRegDsc].pfnRead(pDevIns, pThis, idxRegDsc, &u32Tmp);
-                Log3Func(("\tRead %s[%db] => %x (%Rrc)*\n", g_aHdaRegMap[idxRegDsc].abbrev, cbReg, u32Tmp, VBOXSTRICTRC_VAL(rc)));
-                if (rc != VINF_SUCCESS)
-                    break;
-                u32Value |= (u32Tmp & g_afMasks[cbReg]) << ((4 - cbLeft) * 8);
-
-                cbLeft -= cbReg;
-                off    += cbReg;
-                idxRegDsc++;
-            } while (cbLeft > 0 && g_aHdaRegMap[idxRegDsc].offset == off);
-
-            if (rc == VINF_SUCCESS)
-                *(uint32_t *)pv = u32Value;
-            else
-                Assert(!IOM_SUCCESS(rc));
-#else  /* !IN_RING3 */
-            /* Take the easy way out. */
-            rc = VINF_IOM_R3_MMIO_READ;
-#endif /* !IN_RING3 */
+            LogRel(("HDA: Invalid read access @0x%x (bytes=%u)\n", (uint32_t)off, cb));
+            Log3Func(("\tHole at %x is accessed for read\n", offRegLog));
+            STAM_COUNTER_INC(&pThis->StatRegUnknownReads);
+            rc = VINF_IOM_MMIO_UNUSED_FF;
         }
+
+        DEVHDA_UNLOCK(pDevIns, pThis);
+
+        /*
+         * Log the outcome.
+         */
+#ifdef LOG_ENABLED
+        if (cbLog == 4)
+            Log3Func(("\tReturning @%#05x -> %#010x %Rrc\n", offRegLog, *(uint32_t *)pv, VBOXSTRICTRC_VAL(rc)));
+        else if (cbLog == 2)
+            Log3Func(("\tReturning @%#05x -> %#06x %Rrc\n", offRegLog, *(uint16_t *)pv, VBOXSTRICTRC_VAL(rc)));
+        else if (cbLog == 1)
+            Log3Func(("\tReturning @%#05x -> %#04x %Rrc\n", offRegLog, *(uint8_t *)pv, VBOXSTRICTRC_VAL(rc)));
+#endif
     }
     else
     {
-        LogRel(("HDA: Invalid read access @0x%x (bytes=%u)\n", (uint32_t)off, cb));
-        Log3Func(("\tHole at %x is accessed for read\n", offRegLog));
-        rc = VINF_IOM_MMIO_UNUSED_FF;
+        if (idxRegDsc >= 0)
+            STAM_COUNTER_INC(&pThis->aStatRegReadsToR3[idxRegDsc]);
     }
-
-    DEVHDA_UNLOCK(pDevIns, pThis);
-
-    /*
-     * Log the outcome.
-     */
-#ifdef LOG_ENABLED
-    if (cbLog == 4)
-        Log3Func(("\tReturning @%#05x -> %#010x %Rrc\n", offRegLog, *(uint32_t *)pv, VBOXSTRICTRC_VAL(rc)));
-    else if (cbLog == 2)
-        Log3Func(("\tReturning @%#05x -> %#06x %Rrc\n", offRegLog, *(uint16_t *)pv, VBOXSTRICTRC_VAL(rc)));
-    else if (cbLog == 1)
-        Log3Func(("\tReturning @%#05x -> %#04x %Rrc\n", offRegLog, *(uint8_t *)pv, VBOXSTRICTRC_VAL(rc)));
-#endif
     return rc;
 }
 
@@ -3094,6 +3106,7 @@ DECLINLINE(VBOXSTRICTRC) hdaWriteReg(PPDMDEVINS pDevIns, PHDASTATE pThis, int id
         Log(("hdaWriteReg: Warning: Access to %s is blocked while controller is in reset mode\n", g_aHdaRegMap[idxRegDsc].abbrev));
         LogRel2(("HDA: Warning: Access to register %s is blocked while controller is in reset mode\n",
                  g_aHdaRegMap[idxRegDsc].abbrev));
+        STAM_COUNTER_INC(&pThis->StatRegWritesBlockedByReset);
 
         DEVHDA_UNLOCK(pDevIns, pThis);
         return VINF_SUCCESS;
@@ -3113,7 +3126,7 @@ DECLINLINE(VBOXSTRICTRC) hdaWriteReg(PPDMDEVINS pDevIns, PHDASTATE pThis, int id
          * while SDCTL's RUN bit is set. So just ignore those values.
          */
 
-            /* Is the RUN bit currently set? */
+        /* Is the RUN bit currently set? */
         if (   RT_BOOL(uSDCTL & HDA_SDCTL_RUN)
             /* Are writes to the register denied if RUN bit is set? */
             && !(g_aHdaRegMap[idxRegDsc].fFlags & HDA_RD_FLAG_SD_WRITE_RUN))
@@ -3121,6 +3134,7 @@ DECLINLINE(VBOXSTRICTRC) hdaWriteReg(PPDMDEVINS pDevIns, PHDASTATE pThis, int id
             Log(("hdaWriteReg: Warning: Access to %s is blocked! %R[sdctl]\n", g_aHdaRegMap[idxRegDsc].abbrev, uSDCTL));
             LogRel2(("HDA: Warning: Access to register %s is blocked while the stream's RUN bit is set\n",
                      g_aHdaRegMap[idxRegDsc].abbrev));
+            STAM_COUNTER_INC(&pThis->StatRegWritesBlockedByRun);
 
             DEVHDA_UNLOCK(pDevIns, pThis);
             return VINF_SUCCESS;
@@ -3134,6 +3148,12 @@ DECLINLINE(VBOXSTRICTRC) hdaWriteReg(PPDMDEVINS pDevIns, PHDASTATE pThis, int id
     VBOXSTRICTRC rc = g_aHdaRegMap[idxRegDsc].pfnWrite(pDevIns, pThis, idxRegDsc, u32Value);
     Log3Func(("Written value %#x to %s[%d byte]; %x => %x%s, rc=%d\n", u32Value, g_aHdaRegMap[idxRegDsc].abbrev,
               g_aHdaRegMap[idxRegDsc].size, u32OldValue, pThis->au32Regs[idxRegMem], pszLog, VBOXSTRICTRC_VAL(rc)));
+#ifndef IN_RING3
+    if (rc == VINF_IOM_R3_MMIO_WRITE)
+        STAM_COUNTER_INC(&pThis->aStatRegWritesToR3[idxRegDsc]);
+    else
+#endif
+        STAM_COUNTER_INC(&pThis->aStatRegWrites[idxRegDsc]);
 
     DEVHDA_UNLOCK(pDevIns, pThis);
     RT_NOREF(pszLog);
@@ -3206,16 +3226,27 @@ static DECLCALLBACK(VBOXSTRICTRC) hdaMmioWrite(PPDMDEVINS pDevIns, void *pvUser,
          * will only see 1 or 2 byte accesses of this kind, so no risk of
          * shifting out input values.
          */
-        if (idxRegDsc < 0 && (idxRegDsc = hdaR3RegLookupWithin(off)) != -1)
+        if (idxRegDsc < 0)
         {
-            uint32_t const cbBefore = (uint32_t)off - g_aHdaRegMap[idxRegDsc].offset; Assert(cbBefore > 0 && cbBefore < 4);
-            off      -= cbBefore;
-            idxRegMem = g_aHdaRegMap[idxRegDsc].mem_idx;
-            u64Value <<= cbBefore * 8;
-            u64Value  |= pThis->au32Regs[idxRegMem] & g_afMasks[cbBefore];
-            Log3Func(("\tWithin register, supplied %u leading bits: %#llx -> %#llx ...\n",
-                      cbBefore * 8, ~g_afMasks[cbBefore] & u64Value, u64Value));
+            idxRegDsc = hdaR3RegLookupWithin(off);
+            if (idxRegDsc != -1)
+            {
+                uint32_t const cbBefore = (uint32_t)off - g_aHdaRegMap[idxRegDsc].offset;
+                Assert(cbBefore > 0 && cbBefore < 4);
+                off      -= cbBefore;
+                idxRegMem = g_aHdaRegMap[idxRegDsc].mem_idx;
+                u64Value <<= cbBefore * 8;
+                u64Value  |= pThis->au32Regs[idxRegMem] & g_afMasks[cbBefore];
+                Log3Func(("\tWithin register, supplied %u leading bits: %#llx -> %#llx ...\n",
+                          cbBefore * 8, ~g_afMasks[cbBefore] & u64Value, u64Value));
+                STAM_COUNTER_INC(&pThis->StatRegMultiWrites);
+            }
+            else
+                STAM_COUNTER_INC(&pThis->StatRegUnknownWrites);
         }
+        else
+            STAM_COUNTER_INC(&pThis->StatRegMultiWrites);
+
 
         /* Loop thru the write area, it may cover multiple registers. */
         rc = VINF_SUCCESS;
@@ -5023,11 +5054,34 @@ static DECLCALLBACK(int) hdaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     /*
      * Register statistics.
      */
-    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatTimer,            STAMTYPE_PROFILE, "/Devices/HDA/Timer",             STAMUNIT_TICKS_PER_CALL, "Profiling hdaR3Timer.");
-    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatIn,               STAMTYPE_PROFILE, "/Devices/HDA/Input",             STAMUNIT_TICKS_PER_CALL, "Profiling input.");
-    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatOut,              STAMTYPE_PROFILE, "/Devices/HDA/Output",            STAMUNIT_TICKS_PER_CALL, "Profiling output.");
-    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatBytesRead,        STAMTYPE_COUNTER, "/Devices/HDA/BytesRead"   ,      STAMUNIT_BYTES,          "Bytes read from HDA emulation.");
-    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatBytesWritten,     STAMTYPE_COUNTER, "/Devices/HDA/BytesWritten",      STAMUNIT_BYTES,          "Bytes written to HDA emulation.");
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatTimer,            STAMTYPE_PROFILE, "Timer",             STAMUNIT_TICKS_PER_CALL, "Profiling hdaR3Timer.");
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatIn,               STAMTYPE_PROFILE, "Input",             STAMUNIT_TICKS_PER_CALL, "Profiling input.");
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatOut,              STAMTYPE_PROFILE, "Output",            STAMUNIT_TICKS_PER_CALL, "Profiling output.");
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatBytesRead,        STAMTYPE_COUNTER, "BytesRead"   ,      STAMUNIT_BYTES,          "Bytes read from HDA emulation.");
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatBytesWritten,     STAMTYPE_COUNTER, "BytesWritten",      STAMUNIT_BYTES,          "Bytes written to HDA emulation.");
+
+    AssertCompile(RT_ELEMENTS(g_aHdaRegMap)              == HDA_NUM_REGS);
+    AssertCompile(RT_ELEMENTS(pThis->aStatRegReads)      == HDA_NUM_REGS);
+    AssertCompile(RT_ELEMENTS(pThis->aStatRegReadsToR3)  == HDA_NUM_REGS);
+    AssertCompile(RT_ELEMENTS(pThis->aStatRegWrites)     == HDA_NUM_REGS);
+    AssertCompile(RT_ELEMENTS(pThis->aStatRegWritesToR3) == HDA_NUM_REGS);
+    for (size_t i = 0; i < RT_ELEMENTS(g_aHdaRegMap); i++)
+    {
+        PDMDevHlpSTAMRegisterF(pDevIns, &pThis->aStatRegReads[i], STAMTYPE_COUNTER,  STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,
+                               g_aHdaRegMap[i].desc, "Regs/%03x-%s-Reads",       g_aHdaRegMap[i].offset, g_aHdaRegMap[i].abbrev);
+        PDMDevHlpSTAMRegisterF(pDevIns, &pThis->aStatRegReadsToR3[i], STAMTYPE_COUNTER,  STAMVISIBILITY_USED, STAMUNIT_OCCURENCES,
+                               g_aHdaRegMap[i].desc, "Regs/%03x-%s-Reads-ToR3",  g_aHdaRegMap[i].offset, g_aHdaRegMap[i].abbrev);
+        PDMDevHlpSTAMRegisterF(pDevIns, &pThis->aStatRegWrites[i], STAMTYPE_COUNTER,  STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,
+                               g_aHdaRegMap[i].desc, "Regs/%03x-%s-Writes",      g_aHdaRegMap[i].offset, g_aHdaRegMap[i].abbrev);
+        PDMDevHlpSTAMRegisterF(pDevIns, &pThis->aStatRegWritesToR3[i], STAMTYPE_COUNTER,  STAMVISIBILITY_USED, STAMUNIT_OCCURENCES,
+                               g_aHdaRegMap[i].desc, "Regs/%03x-%s-Writes-ToR3", g_aHdaRegMap[i].offset, g_aHdaRegMap[i].abbrev);
+    }
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatRegMultiReads,     STAMTYPE_COUNTER, "RegMultiReads",      STAMUNIT_OCCURENCES, "Register read not targeting just one register");
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatRegMultiWrites,    STAMTYPE_COUNTER, "RegMultiWrites",     STAMUNIT_OCCURENCES, "Register writes not targeting just one register");
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatRegUnknownReads,   STAMTYPE_COUNTER, "RegUnknownReads",    STAMUNIT_OCCURENCES, "Reads of unknown registers.");
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatRegUnknownWrites,  STAMTYPE_COUNTER, "RegUnknownWrites",   STAMUNIT_OCCURENCES, "Writes to unknown registers.");
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatRegWritesBlockedByReset, STAMTYPE_COUNTER, "RegWritesBlockedByReset", STAMUNIT_OCCURENCES, "Writes blocked by pending reset (GCTL/CRST)");
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatRegWritesBlockedByRun,   STAMTYPE_COUNTER, "RegWritesBlockedByRun",   STAMUNIT_OCCURENCES, "Writes blocked by byte RUN bit.");
 # endif
 
     return VINF_SUCCESS;

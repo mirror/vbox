@@ -200,6 +200,21 @@ typedef struct HDASTATE
     STAMPROFILE             StatOut;
     STAMCOUNTER             StatBytesRead;
     STAMCOUNTER             StatBytesWritten;
+
+    /** @name Register statistics.
+     * The array members run parallel to g_aHdaRegMap.
+     * @{ */
+    STAMCOUNTER             aStatRegReads[HDA_NUM_REGS];
+    STAMCOUNTER             aStatRegReadsToR3[HDA_NUM_REGS];
+    STAMCOUNTER             aStatRegWrites[HDA_NUM_REGS];
+    STAMCOUNTER             aStatRegWritesToR3[HDA_NUM_REGS];
+    STAMCOUNTER             StatRegMultiReads;
+    STAMCOUNTER             StatRegMultiWrites;
+    STAMCOUNTER             StatRegUnknownReads;
+    STAMCOUNTER             StatRegUnknownWrites;
+    STAMCOUNTER             StatRegWritesBlockedByReset;
+    STAMCOUNTER             StatRegWritesBlockedByRun;
+    /** @} */
 #endif
     /** This is for checking that the build was correctly configured in all contexts.
      *  This is set to HDASTATE_ALIGNMENT_CHECK_MAGIC. */

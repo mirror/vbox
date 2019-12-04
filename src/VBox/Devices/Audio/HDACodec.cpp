@@ -3027,6 +3027,7 @@ static DECLCALLBACK(int) codecLookup(PHDACODEC pThis, uint32_t cmd, uint64_t *pu
 {
     AssertPtrReturn(pThis,  VERR_INVALID_POINTER);
     AssertPtrReturn(puResp, VERR_INVALID_POINTER);
+    STAM_COUNTER_INC(&pThis->StatLookups);
 
     if (CODEC_CAD(cmd) != pThis->id)
     {
@@ -3275,6 +3276,13 @@ int hdaCodecConstruct(PPDMDEVINS pDevIns, PHDACODEC pThis,
     hdaCodecToAudVolume(pThis, pNode, &pNode->adcvol.B_params, PDMAUDIOMIXERCTL_LINE_IN);
 #ifdef VBOX_WITH_AUDIO_HDA_MIC_IN
 # error "Implement mic-in support!"
+#endif
+
+    /*
+     * Statistics
+     */
+#ifdef VBOX_WITH_STATISTICS
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatLookups, STAMTYPE_COUNTER, "Codec/Lookups", STAMUNIT_OCCURENCES, "Number of codecLookup calls");
 #endif
 
     LogFlowFuncLeaveRC(rc);

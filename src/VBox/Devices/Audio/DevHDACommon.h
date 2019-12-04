@@ -29,7 +29,11 @@ typedef VBOXSTRICTRC FNHDAREGREAD(PPDMDEVINS pDevIns, PHDASTATE pThis, uint32_t 
     /** Write callback. */
 typedef VBOXSTRICTRC FNHDAREGWRITE(PPDMDEVINS pDevIns, PHDASTATE pThis, uint32_t iReg, uint32_t u32Value);
 
-/** See 302349 p 6.2. */
+/**
+ * HDA register descriptor.
+ *
+ * See 302349 p 6.2.
+ */
 typedef struct HDAREGDESC
 {
     /** Register offset in the register space. */
@@ -55,6 +59,8 @@ typedef struct HDAREGDESC
     /** Descripton. */
     const char     *desc;
 } HDAREGDESC;
+/** Pointer to a a const HDA register descriptor. */
+typedef HDAREGDESC const *PCHDAREGDESC;
 
 /**
  * HDA register aliases (HDA spec 3.3.45).

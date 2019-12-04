@@ -121,6 +121,10 @@ typedef struct HDACODEC
     DECLR3CALLBACKMEMBER(void, pfnDbgListNodes, (PHDACODEC pThis, PCDBGFINFOHLP pHlp, const char *pszArgs));
     DECLR3CALLBACKMEMBER(void, pfnDbgSelector, (PHDACODEC pThis, PCDBGFINFOHLP pHlp, const char *pszArgs));
     /** @} */
+
+#ifdef VBOX_WITH_STATISTICS
+    STAMCOUNTER             StatLookups;
+#endif
 } HDACODEC;
 
 int hdaCodecConstruct(PPDMDEVINS pDevIns, PHDACODEC pThis, uint16_t uLUN, PCFGMNODE pCfg);
