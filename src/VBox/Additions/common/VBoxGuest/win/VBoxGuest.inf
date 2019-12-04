@@ -77,7 +77,7 @@ LoadOrderGroup = Base
 ServiceBinary  = %12%\VBoxGuest.sys
 
 [VBoxTray_Add_Reg]
-HKLM, SOFTWARE\Microsoft\Windows\CurrentVersion\Run, VBoxTray, 0x00000000, %%SystemRoot%%\system32\VBoxTray.exe
+HKLM, SOFTWARE\Microsoft\Windows\CurrentVersion\Run, VBoxTray, 0x00020000, %%SystemRoot%%\system32\VBoxTray.exe
 
 [ClassInstall32]
 ; This should fix the error 0xe0000101 (The required section was not found in the INF).
