@@ -1255,14 +1255,14 @@ HRESULT Appliance::i_gettingCloudData(TaskCloud *pTask)
         // set cloud profile
         instanceDescription->AddDescription(VirtualSystemDescriptionType_CloudProfileName,
                              Bstr(profileName).raw(),
-                             Bstr(profileName).raw());
+                             NULL);
 
         Utf8StrFmt strSetting("VM with id %s imported from the cloud provider %s",
                               parts.at(1).c_str(), strProviderName.c_str());
         // set description
         instanceDescription->AddDescription(VirtualSystemDescriptionType_Description,
                              Bstr(strSetting).raw(),
-                             Bstr(strSetting).raw());
+                             NULL);
     }
     catch (HRESULT arc)
     {
@@ -1385,7 +1385,7 @@ HRESULT Appliance::i_importCloudImpl(TaskCloud *pTask)
                 vsd->RemoveDescriptionByType(VirtualSystemDescriptionType_OS);
                 vsd->AddDescription(VirtualSystemDescriptionType_OS,
                                     Bstr(strOsType).raw(),
-                                    Bstr(strOsType).raw());
+                                    NULL);
             }
         }
         /* Case when no OS type was passed. Set to VBOXOSTYPE_Unknown. */
@@ -1394,7 +1394,7 @@ HRESULT Appliance::i_importCloudImpl(TaskCloud *pTask)
             strOsType = Global::OSTypeId(guestOsType);
             vsd->AddDescription(VirtualSystemDescriptionType_OS,
                                 Bstr(strOsType).raw(),
-                                Bstr(strOsType).raw());
+                                NULL);
         }
 
         LogRel(("%s: OS type is %s\n", __FUNCTION__, strOsType.c_str()));
@@ -1434,7 +1434,7 @@ HRESULT Appliance::i_importCloudImpl(TaskCloud *pTask)
                 vsd->RemoveDescriptionByType(VirtualSystemDescriptionType_Name);
                 vsd->AddDescription(VirtualSystemDescriptionType_Name,
                                     Bstr(strVMName).raw(),
-                                    Bstr(strVMName).raw());
+                                    NULL);
                 /* No check again because it would be weird if a VM with such unique name exists */
             }
 
@@ -1770,7 +1770,7 @@ HRESULT Appliance::i_importCloudImpl(TaskCloud *pTask)
                         /* we should do it here because it'll be used later in the OVF logic (inside i_importMachines()) */
                         vsd->AddDescription(VirtualSystemDescriptionType_HardDiskControllerSATA,
                                             Bstr(hdc.strControllerType).raw(),
-                                            Bstr(hdc.strControllerType).raw());
+                                            NULL);
                     }
                 }
 
@@ -1785,7 +1785,7 @@ HRESULT Appliance::i_importCloudImpl(TaskCloud *pTask)
                         vsys.strSoundCardType = Utf8StrFmt("%RU32", (uint32_t)defaultAudioController);//"ensoniq1371";//"AC97";
                         vsd->AddDescription(VirtualSystemDescriptionType_SoundCard,
                                             Bstr(vsys.strSoundCardType).raw(),
-                                            Bstr(vsys.strSoundCardType).raw());
+                                            NULL);
                     }
 
                     LogRel(("%s: Sound card is %s\n", __FUNCTION__, vsys.strSoundCardType.c_str()));
@@ -3938,6 +3938,22 @@ void Appliance::i_importMachineGeneric(const ovf::VirtualSystem &vsysThis,
         if (FAILED(rc)) throw rc;
     }
 
+    if (stack.strFirmwareType.isNotEmpty())
+    {
+        FirmwareType_T firmwareType = FirmwareType_BIOS;
+        if (stack.strFirmwareType.contains("EFI"))
+        {
+            if (stack.strFirmwareType.contains("32"))
+                firmwareType = FirmwareType_EFI32;
+            if (stack.strFirmwareType.contains("64"))
+                firmwareType = FirmwareType_EFI64;
+            else
+                firmwareType = FirmwareType_EFI;
+        }
+        rc = pNewMachine->COMSETTER(FirmwareType)(firmwareType);
+        if (FAILED(rc)) throw rc;
+    }
+
     if (!stack.strAudioAdapter.isEmpty())
         if (stack.strAudioAdapter.compare("null", Utf8Str::CaseInsensitive) != 0)
         {
@@ -5178,6 +5194,13 @@ void Appliance::i_importMachines(ImportStack &stack)
             throw setError(VBOX_E_FILE_ERROR,
                            tr("Missing guest OS type"));
         stack.strOsTypeVBox = vsdeOS.front()->strVBoxCurrent;
+
+        // Firmware
+        std::list<VirtualSystemDescriptionEntry*> firmware = vsdescThis->i_findByType(VirtualSystemDescriptionType_BootingFirmware);
+        if (firmware.size() != 1)
+            stack.strFirmwareType = "BIOS";//try default BIOS type
+        else
+            stack.strFirmwareType = firmware.front()->strVBoxCurrent;
 
         // CPU count
         std::list<VirtualSystemDescriptionEntry*> vsdeCPU = vsdescThis->i_findByType(VirtualSystemDescriptionType_CPU);
