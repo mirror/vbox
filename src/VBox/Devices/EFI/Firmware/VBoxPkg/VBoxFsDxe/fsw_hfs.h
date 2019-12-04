@@ -39,7 +39,9 @@
 #include "iprt/formats/hfs.h"
 #include "iprt/asm.h"           /* endian conversion */
 
+#ifndef HOST_POSIX
 #include <Library/BaseLib.h>
+#endif
 
 //! Block size for HFS volumes.
 #define HFS_BLOCKSIZE            512
@@ -151,7 +153,11 @@ DECLINLINE(fsw_u64)
 be64_to_cpu(fsw_u64 x)
 {
 #ifdef RT_LITTLE_ENDIAN
+#ifdef HOST_POSIX
+    return RT_BE2H_U64(x);
+#else
     return SwapBytes64(x);
+#endif
 #else
     return x;
 #endif
