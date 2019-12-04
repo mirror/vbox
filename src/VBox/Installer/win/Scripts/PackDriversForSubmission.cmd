@@ -280,11 +280,24 @@ echo %_MY_OPT_GADIR%\VBoxTray.exe>>                                             
 echo %_MY_OPT_GADIR%\VBoxControl.exe>>                                                  "%_MY_OPT_DDF_FILE%"
 echo %_MY_OPT_GADIR%\VBoxMouse.inf>>                                                    "%_MY_OPT_DDF_FILE%"
 echo %_MY_OPT_GADIR%\VBoxMouse.sys>>                                                    "%_MY_OPT_DDF_FILE%"
-rem echo %_MY_OPT_GADIR%\VBoxSF.sys>>                                                       "%_MY_OPT_DDF_FILE%"
 echo %_MY_OPT_GADIR%\VBoxVideo.inf>>                                                    "%_MY_OPT_DDF_FILE%"
 echo %_MY_OPT_GADIR%\VBoxVideo.sys>>                                                    "%_MY_OPT_DDF_FILE%"
 echo %_MY_OPT_GADIR%\VBoxWddm.inf>>                                                     "%_MY_OPT_DDF_FILE%"
 echo %_MY_OPT_GADIR%\VBoxWddm.sys>>                                                     "%_MY_OPT_DDF_FILE%"
+echo %_MY_OPT_GADIR%\vboxdisp.dll>>                                                     "%_MY_OPT_DDF_FILE%"
+echo %_MY_OPT_GADIR%\vboxdispd3d.dll>>                                                  "%_MY_OPT_DDF_FILE%"
+echo %_MY_OPT_GADIR%\vboxnine.dll>>                                                     "%_MY_OPT_DDF_FILE%"
+echo %_MY_OPT_GADIR%\vboxsvga.dll>>                                                     "%_MY_OPT_DDF_FILE%"
+echo %_MY_OPT_GADIR%\vboxicd.dll>>                                                      "%_MY_OPT_DDF_FILE%"
+echo %_MY_OPT_GADIR%\vboxgl.dll>>                                                       "%_MY_OPT_DDF_FILE%"
+if ".%_MY_OPT_ARCH%" == ".x86" goto skip_amd64_files
+echo %_MY_OPT_GADIR%\vboxdispd3d-x86.dll>>                                              "%_MY_OPT_DDF_FILE%"
+echo %_MY_OPT_GADIR%\vboxnine-x86.dll>>                                                 "%_MY_OPT_DDF_FILE%"
+echo %_MY_OPT_GADIR%\vboxsvga-x86.dll>>                                                 "%_MY_OPT_DDF_FILE%"
+echo %_MY_OPT_GADIR%\vboxicd-x86.dll>>                                                  "%_MY_OPT_DDF_FILE%"
+echo %_MY_OPT_GADIR%\vboxgl-x86.dll>>                                                   "%_MY_OPT_DDF_FILE%"
+:skip_amd64_files
+
 :no_additions_ddf
 
 rem
