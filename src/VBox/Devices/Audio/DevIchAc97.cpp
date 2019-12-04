@@ -213,10 +213,27 @@
  *       the moment.  So make sure you know what you're done when altering this!
  * @{
  */
-#define AC97SOUNDSOURCE_PI_INDEX        0      /**< PCM in */
-#define AC97SOUNDSOURCE_PO_INDEX        1      /**< PCM out */
-#define AC97SOUNDSOURCE_MC_INDEX        2      /**< Mic in */
-#define AC97SOUNDSOURCE_MAX             3      /**< Max sound sources. */
+#define AC97SOUNDSOURCE_PI_INDEX        0           /**< PCM in */
+#define AC97SOUNDSOURCE_PO_INDEX        1           /**< PCM out */
+#define AC97SOUNDSOURCE_MC_INDEX        2           /**< Mic in */
+#define AC97SOUNDSOURCE_MAX             3           /**< Max sound sources. */
+/** @} */
+
+/** Port number (offset into NABM BAR) to stream index. */
+#define AC97_PORT2IDX(a_idx)            ( ((a_idx) >> 4) & 3 )
+/** Port number (offset into NABM BAR) to stream index, but no masking. */
+#define AC97_PORT2IDX_UNMASKED(a_idx)   ( ((a_idx) >> 4) )
+
+/** @name Stream offsets
+ * @{ */
+#define AC97_NABM_OFF_BDBAR             0x0         /**< Buffer Descriptor Base Address */
+#define AC97_NABM_OFF_CIV               0x4         /**< Current Index Value */
+#define AC97_NABM_OFF_LVI               0x5         /**< Last Valid Index */
+#define AC97_NABM_OFF_SR                0x6         /**< Status Register */
+#define AC97_NABM_OFF_PICB              0x8         /**< Position in Current Buffer */
+#define AC97_NABM_OFF_PIV               0xa         /**< Prefetched Index Value */
+#define AC97_NABM_OFF_CR                0xb         /**< Control Register */
+#define AC97_NABM_OFF_MASK              0xf         /**< Mask for getting the the per-stream register. */
 /** @} */
 
 
@@ -262,8 +279,6 @@
 /** Codec Access Semaphore Register. */
 #define AC97_CAS                        0x34
 /** @} */
-
-#define AC97_PORT2IDX(a_idx)            ( ((a_idx) >> 4) & 3 )
 
 
 /*********************************************************************************************************************************
@@ -2875,156 +2890,159 @@ ichac97IoPortNabmRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32
     DEVAC97_LOCK_RETURN(pDevIns, pThis, VINF_IOM_R3_IOPORT_READ);
 
     /* Get the index of the NABMBAR port. */
-    PAC97STREAM pStream = NULL;
-    PAC97BMREGS pRegs   = NULL;
-    if (AC97_PORT2IDX(offPort) < AC97_MAX_STREAMS)
+    if (AC97_PORT2IDX_UNMASKED(offPort) < AC97_MAX_STREAMS)
     {
-        pStream = &pThis->aStreams[AC97_PORT2IDX(offPort)];
-        pRegs   = &pStream->Regs;
+        PAC97STREAM pStream = &pThis->aStreams[AC97_PORT2IDX(offPort)];
+        PAC97BMREGS pRegs   = &pStream->Regs;
+
+        switch (cb)
+        {
+            case 1:
+                switch (offPort & AC97_NABM_OFF_MASK)
+                {
+                    case AC97_NABM_OFF_CIV:
+                        /* Current Index Value Register */
+                        *pu32 = pRegs->civ;
+                        Log3Func(("CIV[%d] -> %#x\n", AC97_PORT2IDX(offPort), *pu32));
+                        break;
+                    case AC97_NABM_OFF_LVI:
+                        /* Last Valid Index Register */
+                        *pu32 = pRegs->lvi;
+                        Log3Func(("LVI[%d] -> %#x\n", AC97_PORT2IDX(offPort), *pu32));
+                        break;
+                    case AC97_NABM_OFF_PIV:
+                        /* Prefetched Index Value Register */
+                        *pu32 = pRegs->piv;
+                        Log3Func(("PIV[%d] -> %#x\n", AC97_PORT2IDX(offPort), *pu32));
+                        break;
+                    case AC97_NABM_OFF_CR:
+                        /* Control Register */
+                        *pu32 = pRegs->cr;
+                        Log3Func(("CR[%d] -> %#x\n", AC97_PORT2IDX(offPort), *pu32));
+                        break;
+                    case AC97_NABM_OFF_SR:
+                        /* Status Register (lower part) */
+                        *pu32 = RT_LO_U8(pRegs->sr);
+                        Log3Func(("SRb[%d] -> %#x\n", AC97_PORT2IDX(offPort), *pu32));
+                        break;
+                    default:
+                        *pu32 = UINT32_MAX;
+                        LogFunc(("U nabm readb %#x -> %#x\n", offPort, UINT32_MAX));
+                        break;
+                }
+                break;
+
+            case 2:
+                switch (offPort & AC97_NABM_OFF_MASK)
+                {
+                    case AC97_NABM_OFF_SR:
+                        /* Status Register */
+                        *pu32 = pRegs->sr;
+                        Log3Func(("SR[%d] -> %#x\n", AC97_PORT2IDX(offPort), *pu32));
+                        break;
+                    case AC97_NABM_OFF_PICB:
+                        /* Position in Current Buffer */
+                        *pu32 = pRegs->picb;
+                        Log3Func(("PICB[%d] -> %#x\n", AC97_PORT2IDX(offPort), *pu32));
+                        break;
+                    default:
+                        *pu32 = UINT32_MAX;
+                        LogFunc(("U nabm readw %#x -> %#x\n", offPort, UINT32_MAX));
+                        break;
+                }
+                break;
+
+            case 4:
+                switch (offPort & AC97_NABM_OFF_MASK)
+                {
+                    case AC97_NABM_OFF_BDBAR:
+                        /* Buffer Descriptor Base Address Register */
+                        *pu32 = pRegs->bdbar;
+                        Log3Func(("BMADDR[%d] -> %#x\n", AC97_PORT2IDX(offPort), *pu32));
+                        break;
+                    case AC97_NABM_OFF_CIV:
+                        /* 32-bit access: Current Index Value Register +
+                         *                Last Valid Index Register +
+                         *                Status Register */
+                        *pu32 = pRegs->civ | (pRegs->lvi << 8) | (pRegs->sr << 16); /** @todo r=andy Use RT_MAKE_U32_FROM_U8. */
+                        Log3Func(("CIV LVI SR[%d] -> %#x, %#x, %#x\n",
+                                  AC97_PORT2IDX(offPort), pRegs->civ, pRegs->lvi, pRegs->sr));
+                        break;
+                    case AC97_NABM_OFF_PICB:
+                        /* 32-bit access: Position in Current Buffer Register +
+                         *                Prefetched Index Value Register +
+                         *                Control Register */
+                        *pu32 = pRegs->picb | (pRegs->piv << 16) | (pRegs->cr << 24); /** @todo r=andy Use RT_MAKE_U32_FROM_U8. */
+                        Log3Func(("PICB PIV CR[%d] -> %#x %#x %#x %#x\n",
+                                  AC97_PORT2IDX(offPort), *pu32, pRegs->picb, pRegs->piv, pRegs->cr));
+                        break;
+                    default:
+                        *pu32 = UINT32_MAX;
+                        LogFunc(("U nabm readl %#x -> %#x\n", offPort, UINT32_MAX));
+                        break;
+                }
+                break;
+
+            default:
+                DEVAC97_UNLOCK(pDevIns, pThis);
+                AssertFailed();
+                return VERR_IOM_IOPORT_UNUSED;
+        }
     }
-
-    VBOXSTRICTRC rc = VINF_SUCCESS;
-
-    switch (cb)
+    else
     {
-        case 1:
+        switch (cb)
         {
-            switch (offPort)
-            {
-                case AC97_CAS:
-                    /* Codec Access Semaphore Register */
-                    Log3Func(("CAS %d\n", pThis->cas));
-                    *pu32 = pThis->cas;
-                    pThis->cas = 1;
-                    break;
-                case PI_CIV:
-                case PO_CIV:
-                case MC_CIV:
-                    /* Current Index Value Register */
-                    *pu32 = pRegs->civ;
-                    Log3Func(("CIV[%d] -> %#x\n", AC97_PORT2IDX(offPort), *pu32));
-                    break;
-                case PI_LVI:
-                case PO_LVI:
-                case MC_LVI:
-                    /* Last Valid Index Register */
-                    *pu32 = pRegs->lvi;
-                    Log3Func(("LVI[%d] -> %#x\n", AC97_PORT2IDX(offPort), *pu32));
-                    break;
-                case PI_PIV:
-                case PO_PIV:
-                case MC_PIV:
-                    /* Prefetched Index Value Register */
-                    *pu32 = pRegs->piv;
-                    Log3Func(("PIV[%d] -> %#x\n", AC97_PORT2IDX(offPort), *pu32));
-                    break;
-                case PI_CR:
-                case PO_CR:
-                case MC_CR:
-                    /* Control Register */
-                    *pu32 = pRegs->cr;
-                    Log3Func(("CR[%d] -> %#x\n", AC97_PORT2IDX(offPort), *pu32));
-                    break;
-                case PI_SR:
-                case PO_SR:
-                case MC_SR:
-                    /* Status Register (lower part) */
-                    *pu32 = RT_LO_U8(pRegs->sr);
-                    Log3Func(("SRb[%d] -> %#x\n", AC97_PORT2IDX(offPort), *pu32));
-                    break;
-                default:
-                    *pu32 = UINT32_MAX;
-                    LogFunc(("U nabm readb %#x -> %#x\n", offPort, UINT32_MAX));
-                    break;
-            }
-            break;
-        }
+            case 1:
+                switch (offPort)
+                {
+                    case AC97_CAS:
+                        /* Codec Access Semaphore Register */
+                        Log3Func(("CAS %d\n", pThis->cas));
+                        *pu32 = pThis->cas;
+                        pThis->cas = 1;
+                        break;
+                    default:
+                        *pu32 = UINT32_MAX;
+                        LogFunc(("U nabm readb %#x -> %#x\n", offPort, UINT32_MAX));
+                        break;
+                }
+                break;
 
-        case 2:
-        {
-            switch (offPort)
-            {
-                case PI_SR:
-                case PO_SR:
-                case MC_SR:
-                    /* Status Register */
-                    *pu32 = pRegs->sr;
-                    Log3Func(("SR[%d] -> %#x\n", AC97_PORT2IDX(offPort), *pu32));
-                    break;
-                case PI_PICB:
-                case PO_PICB:
-                case MC_PICB:
-                    /* Position in Current Buffer */
-                    *pu32 = pRegs->picb;
-                    Log3Func(("PICB[%d] -> %#x\n", AC97_PORT2IDX(offPort), *pu32));
-                    break;
-                default:
-                    *pu32 = UINT32_MAX;
-                    LogFunc(("U nabm readw %#x -> %#x\n", offPort, UINT32_MAX));
-                    break;
-            }
-            break;
-        }
+            case 2:
+                *pu32 = UINT32_MAX;
+                LogFunc(("U nabm readw %#x -> %#x\n", offPort, UINT32_MAX));
+                break;
 
-        case 4:
-        {
-            switch (offPort)
-            {
-                case PI_BDBAR:
-                case PO_BDBAR:
-                case MC_BDBAR:
-                    /* Buffer Descriptor Base Address Register */
-                    *pu32 = pRegs->bdbar;
-                    Log3Func(("BMADDR[%d] -> %#x\n", AC97_PORT2IDX(offPort), *pu32));
-                    break;
-                case PI_CIV:
-                case PO_CIV:
-                case MC_CIV:
-                    /* 32-bit access: Current Index Value Register +
-                     *                Last Valid Index Register +
-                     *                Status Register */
-                    *pu32 = pRegs->civ | (pRegs->lvi << 8) | (pRegs->sr << 16); /** @todo r=andy Use RT_MAKE_U32_FROM_U8. */
-                    Log3Func(("CIV LVI SR[%d] -> %#x, %#x, %#x\n",
-                              AC97_PORT2IDX(offPort), pRegs->civ, pRegs->lvi, pRegs->sr));
-                    break;
-                case PI_PICB:
-                case PO_PICB:
-                case MC_PICB:
-                    /* 32-bit access: Position in Current Buffer Register +
-                     *                Prefetched Index Value Register +
-                     *                Control Register */
-                    *pu32 = pRegs->picb | (pRegs->piv << 16) | (pRegs->cr << 24); /** @todo r=andy Use RT_MAKE_U32_FROM_U8. */
-                    Log3Func(("PICB PIV CR[%d] -> %#x %#x %#x %#x\n",
-                              AC97_PORT2IDX(offPort), *pu32, pRegs->picb, pRegs->piv, pRegs->cr));
-                    break;
-                case AC97_GLOB_CNT:
-                    /* Global Control */
-                    *pu32 = pThis->glob_cnt;
-                    Log3Func(("glob_cnt -> %#x\n", *pu32));
-                    break;
-                case AC97_GLOB_STA:
-                    /* Global Status */
-                    *pu32 = pThis->glob_sta | AC97_GS_S0CR;
-                    Log3Func(("glob_sta -> %#x\n", *pu32));
-                    break;
-                default:
-                    *pu32 = UINT32_MAX;
-                    LogFunc(("U nabm readl %#x -> %#x\n", offPort, UINT32_MAX));
-                    break;
-            }
-            break;
-        }
+            case 4:
+                switch (offPort)
+                {
+                    case AC97_GLOB_CNT:
+                        /* Global Control */
+                        *pu32 = pThis->glob_cnt;
+                        Log3Func(("glob_cnt -> %#x\n", *pu32));
+                        break;
+                    case AC97_GLOB_STA:
+                        /* Global Status */
+                        *pu32 = pThis->glob_sta | AC97_GS_S0CR;
+                        Log3Func(("glob_sta -> %#x\n", *pu32));
+                        break;
+                    default:
+                        *pu32 = UINT32_MAX;
+                        LogFunc(("U nabm readl %#x -> %#x\n", offPort, UINT32_MAX));
+                        break;
+                }
+                break;
 
-        default:
-        {
-            AssertFailed();
-            rc = VERR_IOM_IOPORT_UNUSED;
+            default:
+                DEVAC97_UNLOCK(pDevIns, pThis);
+                AssertFailed();
+                return VERR_IOM_IOPORT_UNUSED;
         }
     }
 
     DEVAC97_UNLOCK(pDevIns, pThis);
-
-    return rc;
+    return VINF_SUCCESS;
 }
 
 /**
@@ -3044,7 +3062,7 @@ ichac97IoPortNabmWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint3
 #endif
     PAC97STREAM     pStream   = NULL;
     PAC97BMREGS     pRegs     = NULL;
-    if (AC97_PORT2IDX(offPort) < AC97_MAX_STREAMS)
+    if (AC97_PORT2IDX_UNMASKED(offPort) < AC97_MAX_STREAMS)
     {
 #ifdef IN_RING3
         pStreamCC = &pThisCC->aStreams[AC97_PORT2IDX(offPort)];
