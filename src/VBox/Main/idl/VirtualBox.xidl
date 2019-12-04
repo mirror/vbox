@@ -3956,7 +3956,7 @@
 
   <enum
     name="VirtualSystemDescriptionType"
-    uuid="29c2299c-2c40-44b5-9775-2927f20763f3"
+    uuid="9078595f-74cf-4454-8787-34a8f72beed5"
     >
     <desc>Used with <link to="IVirtualSystemDescription" /> to describe the type of
     a configuration value.</desc>
@@ -4023,6 +4023,7 @@
     <const name="CloudOCIVCNCompartment" value="46" />
     <const name="CloudOCISubnetCompartment" value="47" />
     <const name="CloudPublicSSHKey" value="48" />
+    <const name="BootingFirmware" value="49" />
   </enum>
 
   <enum

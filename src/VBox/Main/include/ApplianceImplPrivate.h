@@ -412,6 +412,7 @@ struct Appliance::ImportStack
     bool                            fForceHWVirt;       // if true, we force enabling hardware virtualization
     bool                            fForceIOAPIC;       // if true, we force enabling the IOAPIC
     uint32_t                        ulMemorySizeMB;     // virtual machine RAM in megabytes
+    Utf8Str                         strFirmwareType;    //Firmware - BIOS or EFI
 #ifdef VBOX_WITH_USB
     bool                            fUSBEnabled;
 #endif
