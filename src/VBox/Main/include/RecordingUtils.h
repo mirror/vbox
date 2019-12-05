@@ -21,14 +21,6 @@
 # pragma once
 #endif
 
-#include <iprt/asm.h>
-#include <iprt/assert.h>
-#include <iprt/critsect.h>
-#include <iprt/path.h>
-#include <iprt/semaphore.h>
-#include <iprt/thread.h>
-#include <iprt/time.h>
-
 
 /**
  * Iterator class for running through a BGRA32 image buffer and converting

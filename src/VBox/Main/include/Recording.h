@@ -21,14 +21,11 @@
 # pragma once
 #endif
 
-#include <VBox/com/array.h>
-#include <VBox/com/string.h>
-#include <VBox/com/VirtualBox.h>
-#include <VBox/settings.h>
-
 using namespace com;
 
-#include "RecordingInternals.h"
+#include <VBox/err.h>
+#include <VBox/settings.h>
+
 #include "RecordingStream.h"
 
 class Console;

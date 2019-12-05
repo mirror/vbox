@@ -26,8 +26,6 @@
 
 #include <iprt/critsect.h>
 
-#include <VBox/settings.h>
-
 #include "RecordingInternals.h"
 
 class WebMWriter;

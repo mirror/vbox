@@ -21,9 +21,9 @@
 # pragma once
 #endif
 
-#include <iprt/assert.h>
-#include <iprt/types.h> /* drag in stdint.h before vpx does it. */
 #include <list>
+
+#include <iprt/types.h> /* drag in stdint.h before vpx does it. */
 
 #ifdef VBOX_WITH_LIBVPX
 # define VPX_CODEC_DISABLE_COMPAT 1

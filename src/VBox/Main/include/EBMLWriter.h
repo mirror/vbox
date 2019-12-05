@@ -21,12 +21,9 @@
 # pragma once
 #endif
 
-#include <iprt/file.h>
-#include <VBox/com/string.h>
-
 #include <stack>
 
-#include <iprt/cdefs.h>
+#include <iprt/critsect.h>
 #include <iprt/file.h>
 
 /** No flags set. */

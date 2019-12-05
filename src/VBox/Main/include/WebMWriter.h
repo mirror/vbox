@@ -22,6 +22,7 @@
 #endif
 
 #include "EBMLWriter.h"
+#include "EBML_MKV.h"
 
 #include <queue>
 #include <map>

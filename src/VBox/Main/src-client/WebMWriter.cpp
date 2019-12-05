@@ -24,17 +24,10 @@
 #define LOG_GROUP LOG_GROUP_MAIN_DISPLAY
 #include "LoggingNew.h"
 
-#include <iprt/cdefs.h>
-#include <iprt/critsect.h>
-#include <iprt/errcore.h>
-#include <iprt/file.h>
 #include <iprt/buildconfig.h>
-
-#include <VBox/log.h>
 #include <VBox/version.h>
 
 #include "WebMWriter.h"
-#include "EBML_MKV.h"
 
 
 WebMWriter::WebMWriter(void)
