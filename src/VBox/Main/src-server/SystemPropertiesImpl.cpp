@@ -1371,6 +1371,7 @@ HRESULT SystemProperties::getSupportedGraphicsControllerTypes(std::vector<Graphi
         GraphicsControllerType_VBoxVGA,
         GraphicsControllerType_VMSVGA,
         GraphicsControllerType_VBoxSVGA,
+        GraphicsControllerType_Null,
     };
     aSupportedGraphicsControllerTypes.assign(aGraphicsControllerTypes,
                                              aGraphicsControllerTypes + RT_ELEMENTS(aGraphicsControllerTypes));
@@ -1434,6 +1435,7 @@ HRESULT SystemProperties::getSupportedNetworkAttachmentTypes(std::vector<Network
 #ifdef DEBUG
         NetworkAttachmentType_Cloud,
 #endif
+        NetworkAttachmentType_Null,
     };
     aSupportedNetworkAttachmentTypes.assign(aNetworkAttachmentTypes,
                                             aNetworkAttachmentTypes + RT_ELEMENTS(aNetworkAttachmentTypes));
@@ -1545,6 +1547,7 @@ HRESULT SystemProperties::getSupportedAudioDriverTypes(std::vector<AudioDriverTy
 #ifdef VBOX_WITH_AUDIO_PULSE
         AudioDriverType_Pulse,
 #endif
+        AudioDriverType_Null,
     };
     aSupportedAudioDriverTypes.assign(aAudioDriverTypes,
                                       aAudioDriverTypes + RT_ELEMENTS(aAudioDriverTypes));
