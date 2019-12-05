@@ -21,12 +21,15 @@
 #include <iprt/assert.h>
 
 volatile uint32_t g_fu32GaLogControl =
+      GALOG_GROUP_RELEASE
 #ifdef DEBUG
-    1 /* Enable LogRels */
-#else
-    0 /* Disable LogRels, but they can be enabled if necessary. */
+    | GALOG_GROUP_TEST
+//    | GALOG_GROUP_PRESENT
+//    | GALOG_GROUP_DXGK
+//    | GALOG_GROUP_SVGA
+//    | GALOG_GROUP_SVGA_FIFO
 #endif
-;
+    ;
 
 /*
  * Helpers.

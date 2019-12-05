@@ -14,6 +14,7 @@
  * VirtualBox OSE distribution. VirtualBox OSE is distributed in the
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
+#define GALOG_GROUP GALOG_GROUP_FENCE
 
 #include "VBoxMPGaWddm.h"
 #include "../VBoxMPVidPn.h"

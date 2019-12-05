@@ -15,6 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+#define GALOG_GROUP GALOG_GROUP_DXGK
+
 #include "VBoxMPGaWddm.h"
 #include "../VBoxMPVidPn.h"
 #include "VBoxMPGaExt.h"
@@ -554,8 +556,9 @@ static NTSTATUS gaPresentBlt(DXGKARG_PRESENT *pPresent,
                 || pSrcAlloc->enmType == VBOXWDDM_ALLOC_TYPE_STD_STAGINGSURFACE)
             {
                 /* From GDI software drawing surface. */
-                GALOG(("Blt: SHADOWSURFACE(%d) 0x%08X -> SHAREDPRIMARYSURFACE 0x%08X\n",
-                       pSrcAlloc->enmType, pSrc->PhysicalAddress.LowPart, pDst->PhysicalAddress.LowPart));
+                GALOGG(GALOG_GROUP_PRESENT, ("Blt: %s(%d) 0x%08X -> SHAREDPRIMARYSURFACE 0x%08X\n",
+                    vboxWddmAllocTypeString(pSrcAlloc),
+                    pSrcAlloc->enmType, pSrc->PhysicalAddress.LowPart, pDst->PhysicalAddress.LowPart));
 
                 int32_t const xSrc = pPresent->pDstSubRects[iSubRect].left + dx;
                 int32_t const ySrc = pPresent->pDstSubRects[iSubRect].top  + dy;
@@ -568,8 +571,8 @@ static NTSTATUS gaPresentBlt(DXGKARG_PRESENT *pPresent,
             else if (pSrcAlloc->enmType == VBOXWDDM_ALLOC_TYPE_UMD_RC_GENERIC)
             {
                 /* From a surface. */
-                GALOG(("Blt: surface id 0x%08X -> SHAREDPRIMARYSURFACE 0x%08X\n",
-                       pSrcAlloc->AllocData.hostID, pDst->PhysicalAddress.LowPart));
+                GALOGG(GALOG_GROUP_PRESENT, ("Blt: surface sid=%u -> SHAREDPRIMARYSURFACE 0x%08X\n",
+                    pSrcAlloc->AllocData.hostID, pDst->PhysicalAddress.LowPart));
 
                 RECT const dstRect = pPresent->pDstSubRects[iSubRect];
                 RECT srcRect;
@@ -598,8 +601,10 @@ static NTSTATUS gaPresentBlt(DXGKARG_PRESENT *pPresent,
             if (pSrcAlloc->enmType == VBOXWDDM_ALLOC_TYPE_STD_SHAREDPRIMARYSURFACE)
             {
                 /* From screen. */
-                GALOG(("Blt: SHAREDPRIMARYSURFACE 0x%08X -> SHADOWSURFACE(%d) 0x%08X\n",
-                       pSrc->PhysicalAddress.LowPart, pDstAlloc->enmType, pDst->PhysicalAddress.LowPart));
+                GALOGG(GALOG_GROUP_PRESENT, ("Blt: SHAREDPRIMARYSURFACE 0x%08X -> %s(%d) 0x%08X\n",
+                    pSrc->PhysicalAddress.LowPart,
+                    vboxWddmAllocTypeString(pDstAlloc),
+                    pDstAlloc->enmType, pDst->PhysicalAddress.LowPart));
 
                 int32_t const xSrc = pPresent->pDstSubRects[iSubRect].left + dx;
                 int32_t const ySrc = pPresent->pDstSubRects[iSubRect].top  + dy;
@@ -613,8 +618,10 @@ static NTSTATUS gaPresentBlt(DXGKARG_PRESENT *pPresent,
             else if (pSrcAlloc->enmType == VBOXWDDM_ALLOC_TYPE_UMD_RC_GENERIC)
             {
                 /* From a surface. */
-                GALOG(("Blt: surface id 0x%08X -> SHADOWSURFACE(%d) %d:0x%08X\n",
-                       pSrcAlloc->AllocData.hostID, pDstAlloc->enmType, pDst->SegmentId, pDst->PhysicalAddress.LowPart));
+                GALOGG(GALOG_GROUP_PRESENT, ("Blt: surface sid=%u -> %s(%d) %d:0x%08X\n",
+                    pSrcAlloc->AllocData.hostID,
+                    vboxWddmAllocTypeString(pDstAlloc),
+                    pDstAlloc->enmType, pDst->SegmentId, pDst->PhysicalAddress.LowPart));
 
                 SVGAGuestImage guestImage;
                 guestImage.ptr.gmrId  = SVGA_GMR_FRAMEBUFFER;
@@ -689,22 +696,22 @@ NTSTATUS APIENTRY GaDxgkDdiPresent(const HANDLE hContext,
     DXGK_ALLOCATIONLIST *pSrc =  &pPresent->pAllocationList[DXGK_PRESENT_SOURCE_INDEX];
     DXGK_ALLOCATIONLIST *pDst =  &pPresent->pAllocationList[DXGK_PRESENT_DESTINATION_INDEX];
 
-#ifdef VBOX_WDDM_DUMP_REGIONS_ON_PRESENT
-    LogRel(("%s: [%ld, %ld, %ld, %ld] -> [%ld, %ld, %ld, %ld] (SubRectCnt=%u)\n",
+    GALOGG(GALOG_GROUP_PRESENT, ("%s: [%ld, %ld, %ld, %ld] -> [%ld, %ld, %ld, %ld] (SubRectCnt=%u)\n",
         pPresent->Flags.Blt ? "Blt" : (pPresent->Flags.Flip ? "Flip" : (pPresent->Flags.ColorFill ? "ColorFill" : "Unknown OP")),
         pPresent->SrcRect.left, pPresent->SrcRect.top, pPresent->SrcRect.right, pPresent->SrcRect.bottom,
         pPresent->DstRect.left, pPresent->DstRect.top, pPresent->DstRect.right, pPresent->DstRect.bottom,
         pPresent->SubRectCnt));
-    for (unsigned int i = 0; i < pPresent->SubRectCnt; i++)
-        LogRel(("\tsub#%u = [%ld, %ld, %ld, %ld]\n", i, pPresent->pDstSubRects[i].left, pPresent->pDstSubRects[i].top, pPresent->pDstSubRects[i].right, pPresent->pDstSubRects[i].bottom));
-#endif
+    if (GALOG_ENABLED(GALOG_GROUP_PRESENT))
+        for (unsigned int i = 0; i < pPresent->SubRectCnt; ++i)
+            GALOGG(GALOG_GROUP_PRESENT, ("   sub#%u = [%ld, %ld, %ld, %ld]\n",
+                    i, pPresent->pDstSubRects[i].left, pPresent->pDstSubRects[i].top, pPresent->pDstSubRects[i].right, pPresent->pDstSubRects[i].bottom));
 
     if (pPresent->Flags.Blt)
     {
         PVBOXWDDM_ALLOCATION pSrcAlloc = vboxWddmGetAllocationFromAllocList(pSrc);
         PVBOXWDDM_ALLOCATION pDstAlloc = vboxWddmGetAllocationFromAllocList(pDst);
 
-        GALOG(("Blt: sid=%x -> sid=%x\n", pSrcAlloc->AllocData.hostID, pDstAlloc->AllocData.hostID));
+        GALOGG(GALOG_GROUP_PRESENT, ("Blt: sid=%x -> sid=%x\n", pSrcAlloc->AllocData.hostID, pDstAlloc->AllocData.hostID));
 
         /** @todo Review standard allocations (DxgkDdiGetStandardAllocationDriverData, etc).
          *        Probably can be used more naturally with VMSVGA.
@@ -761,21 +768,9 @@ NTSTATUS APIENTRY GaDxgkDdiPresent(const HANDLE hContext,
     {
         PVBOXWDDM_ALLOCATION pSrcAlloc = vboxWddmGetAllocationFromAllocList(pSrc);
 
-        GALOG(("Flip: sid=%x %dx%d\n",
-               pSrcAlloc->AllocData.hostID, pSrcAlloc->AllocData.SurfDesc.width, pSrcAlloc->AllocData.SurfDesc.height));
-
-        GALOG(("Flip: %d,%d %d,%d -> %d,%d %d,%d subrects %d\n",
-               pPresent->SrcRect.left, pPresent->SrcRect.top, pPresent->SrcRect.right, pPresent->SrcRect.bottom,
-               pPresent->DstRect.left, pPresent->DstRect.top, pPresent->DstRect.right, pPresent->DstRect.bottom,
-               pPresent->SubRectCnt));
-        uint32_t iSubRect;
-        for (iSubRect = 0; iSubRect < pPresent->SubRectCnt; ++iSubRect)
-        {
-            GALOG(("Flip[%d]: %d,%d %d,%d\n",
-                   pPresent->pDstSubRects[iSubRect].left, pPresent->pDstSubRects[iSubRect].top,
-                   pPresent->pDstSubRects[iSubRect].right, pPresent->pDstSubRects[iSubRect].bottom,
-                   iSubRect));
-        }
+        GALOGG(GALOG_GROUP_PRESENT, ("Flip: %s sid=%u %dx%d\n",
+            vboxWddmAllocTypeString(pSrcAlloc),
+            pSrcAlloc->AllocData.hostID, pSrcAlloc->AllocData.SurfDesc.width, pSrcAlloc->AllocData.SurfDesc.height));
 
         /* Generate DMA buffer containing the present commands.
          * Store the command buffer descriptor to pDmaBufferPrivateData.

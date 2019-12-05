@@ -15,6 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+#define GALOG_GROUP GALOG_GROUP_SVGA
+
 #include "Svga.h"
 #include "SvgaFifo.h"
 #include "SvgaHw.h"

@@ -27,19 +27,47 @@
 #define LOG_GROUP LOG_GROUP_DRV_MINIPORT
 #include <VBox/log.h>
 
+#define GALOG_GROUP_RELEASE   0x00000001
+#define GALOG_GROUP_TEST      0x00000002
+#define GALOG_GROUP_DXGK      0x00000004
+#define GALOG_GROUP_SVGA      0x00000008
+#define GALOG_GROUP_SVGA_FIFO 0x00000010
+#define GALOG_GROUP_FENCE     0x00000020
+#define GALOG_GROUP_PRESENT   0x00000040
+
+#ifndef GALOG_GROUP
+#define GALOG_GROUP GALOG_GROUP_TEST
+#endif
+
 extern volatile uint32_t g_fu32GaLogControl;
-#define GALOG_(_msg, _log) do {                   \
-    if (RT_LIKELY(g_fu32GaLogControl == 0))       \
-    { /* likely */ }                              \
-    else if (RT_BOOL(g_fu32GaLogControl & 1))     \
-        _log(_msg);                               \
+
+#define GALOG_ENABLED(a_Group) RT_BOOL(g_fu32GaLogControl & (a_Group))
+
+#define GALOG_EXACT_(a_Group, a_Msg, a_Logger) do { \
+    if (GALOG_ENABLED(a_Group)) \
+    { \
+        a_Logger(a_Msg); \
+    } \
 } while (0)
 
-#define GALOG_EXACT(_msg) GALOG_(_msg, LogRel)
-#define GALOG(_msg) GALOG_(_msg, LogRelFunc)
+#define GALOG_(a_Group, a_Msg, a_Logger) do { \
+    if (GALOG_ENABLED(a_Group)) \
+    { \
+        a_Logger(("%s: ", __FUNCTION__)); a_Logger(a_Msg); \
+    } \
+} while (0)
 
-#define GALOGREL_EXACT(a) LogRel(a)
-#define GALOGREL(a) LogRelFunc(a)
+#define GALOGG_EXACT(a_Group, a_Msg) GALOG_EXACT_(a_Group, a_Msg, LogRel)
+#define GALOGG(a_Group, a_Msg) GALOG_(a_Group, a_Msg, LogRel)
+
+#define GALOG_EXACT(a_Msg) GALOGG_EXACT(GALOG_GROUP, a_Msg)
+#define GALOG(a_Msg) GALOGG(GALOG_GROUP, a_Msg)
+
+#define GALOGREL_EXACT(a_Msg) GALOGG_EXACT(GALOG_GROUP_RELEASE, a_Msg)
+#define GALOGREL(a_Msg) GALOGG(GALOG_GROUP_RELEASE, a_Msg)
+
+#define GALOGTEST_EXACT(a_Msg) GALOGG_EXACT(GALOG_GROUP_TEST, a_Msg)
+#define GALOGTEST(a_Msg) GALOGG(GALOG_GROUP_TEST, a_Msg)
 
 void *GaMemAlloc(uint32_t cbSize);
 void *GaMemAllocZero(uint32_t cbSize);
