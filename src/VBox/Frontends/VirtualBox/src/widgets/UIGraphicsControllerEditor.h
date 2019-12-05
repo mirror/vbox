@@ -76,6 +76,9 @@ private:
     /** Holds whether descriptive label should be created. */
     bool  m_fWithLabel;
 
+    /** Holds the value to be selected. */
+    KGraphicsControllerType  m_enmValue;
+
     /** Holds the label instance. */
     QLabel     *m_pLabel;
     /** Holds the combo instance. */
