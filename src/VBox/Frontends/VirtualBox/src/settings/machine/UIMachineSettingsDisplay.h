@@ -59,7 +59,7 @@ public:
 #endif
 
     /** Returns recommended graphics controller type. */
-    KGraphicsControllerType graphicsControllerTypeRecommended() const { return m_enmGraphicsControllerTypeRecommended; }
+    KGraphicsControllerType graphicsControllerTypeRecommended() const;
     /** Returns current graphics controller type. */
     KGraphicsControllerType graphicsControllerTypeCurrent() const;
 

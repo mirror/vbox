@@ -56,6 +56,9 @@ public:
     /** Returns editor value. */
     KGraphicsControllerType value() const;
 
+    /** Returns the vector of supported values. */
+    QVector<KGraphicsControllerType> supportedValues() const { return m_supportedValues; }
+
 protected:
 
     /** Handles translation event. */
@@ -78,6 +81,9 @@ private:
 
     /** Holds the value to be selected. */
     KGraphicsControllerType  m_enmValue;
+
+    /** Holds the vector of supported values. */
+    QVector<KGraphicsControllerType>  m_supportedValues;
 
     /** Holds the label instance. */
     QLabel     *m_pLabel;

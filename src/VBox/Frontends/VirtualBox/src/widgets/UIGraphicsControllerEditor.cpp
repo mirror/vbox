@@ -22,8 +22,12 @@
 
 /* GUI includes: */
 #include "QIComboBox.h"
+#include "UICommon.h"
 #include "UIConverter.h"
 #include "UIGraphicsControllerEditor.h"
+
+/* COM includes: */
+#include "CSystemProperties.h"
 
 
 UIGraphicsControllerEditor::UIGraphicsControllerEditor(QWidget *pParent /* = 0 */, bool fWithLabel /* = false */)
@@ -40,8 +44,13 @@ void UIGraphicsControllerEditor::setValue(KGraphicsControllerType enmValue)
 {
     if (m_pCombo)
     {
-        /* Update cached value: */
-        m_enmValue = enmValue;
+        /* Update cached value and
+         * combo if value has changed: */
+        if (m_enmValue != enmValue)
+        {
+            m_enmValue = enmValue;
+            populateCombo();
+        }
 
         /* Look for proper index to choose: */
         int iIndex = m_pCombo->findData(QVariant::fromValue(m_enmValue));
@@ -99,6 +108,8 @@ void UIGraphicsControllerEditor::prepare()
             if (m_pCombo)
             {
                 setFocusProxy(m_pCombo->focusProxy());
+                /* This is necessary since contents is dynamical now: */
+                m_pCombo->setSizeAdjustPolicy(QComboBox::AdjustToContents);
                 if (m_pLabel)
                     m_pLabel->setBuddy(m_pCombo->focusProxy());
                 connect(m_pCombo, static_cast<void(QIComboBox::*)(int)>(&QIComboBox::currentIndexChanged),
@@ -123,6 +134,25 @@ void UIGraphicsControllerEditor::prepare()
 
 void UIGraphicsControllerEditor::populateCombo()
 {
-    for (int i = 0; i < KGraphicsControllerType_Max; ++i)
-        m_pCombo->addItem(QString(), QVariant::fromValue(static_cast<KGraphicsControllerType>(i)));
+    if (m_pCombo)
+    {
+        /* Clear combo first of all: */
+        m_pCombo->clear();
+
+        /* Load currently supported graphics controller types: */
+        CSystemProperties comProperties = uiCommon().virtualBox().GetSystemProperties();
+        m_supportedValues = comProperties.GetSupportedGraphicsControllerTypes();
+
+        /* Make sure requested value if sane is present as well: */
+        if (   m_enmValue != KGraphicsControllerType_Max
+            && !m_supportedValues.contains(m_enmValue))
+            m_supportedValues.prepend(m_enmValue);
+
+        /* Update combo with all the supported values: */
+        foreach (const KGraphicsControllerType &enmType, m_supportedValues)
+            m_pCombo->addItem(QString(), QVariant::fromValue(enmType));
+
+        /* Retranslate finally: */
+        retranslateUi();
+    }
 }
