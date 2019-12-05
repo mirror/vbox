@@ -1238,12 +1238,17 @@ static VBOXSTRICTRC hdaRegWriteSDCTL(PPDMDEVINS pDevIns, PHDASTATE pThis, uint32
     const bool fRun      = RT_BOOL(u32Value & HDA_SDCTL_RUN);
     const bool fReset    = RT_BOOL(u32Value & HDA_SDCTL_SRST);
 
-    /**
-     * @todo r=bird: Must reduce the time we holding the virtual sync
-     *               clock lock here!
-     */
-    DEVHDA_UNLOCK(pDevIns, pThis);
-    DEVHDA_LOCK_BOTH_RETURN(pDevIns, pThis, pStream, VINF_IOM_R3_MMIO_WRITE);
+    /* If the run bit is set, we take the virtual-sync clock lock as well so we
+       can safely update timers via hdaR3TimerSet if necessary.   We need to be
+       very careful with the fInReset and fInRun indicators here, as they may
+       change during the relocking if we need to acquire the clock lock. */
+    const bool fNeedVirtualSyncClockLock = (u32Value & (HDA_SDCTL_RUN | HDA_SDCTL_SRST)) == HDA_SDCTL_RUN
+                                        && (HDA_REG_IND(pThis, iReg) & HDA_SDCTL_RUN) == 0;
+    if (fNeedVirtualSyncClockLock)
+    {
+        DEVHDA_UNLOCK(pDevIns, pThis);
+        DEVHDA_LOCK_BOTH_RETURN(pDevIns, pThis, pStream, VINF_IOM_R3_MMIO_WRITE);
+    }
 
     const bool fInRun    = RT_BOOL(HDA_REG_IND(pThis, iReg) & HDA_SDCTL_RUN);
     const bool fInReset  = RT_BOOL(HDA_REG_IND(pThis, iReg) & HDA_SDCTL_SRST);
@@ -1395,10 +1400,10 @@ static VBOXSTRICTRC hdaRegWriteSDCTL(PPDMDEVINS pDevIns, PHDASTATE pThis, uint32
         }
     }
 
-    VBOXSTRICTRC rc = hdaRegWriteU24(pDevIns, pThis, iReg, u32Value);
+    if (fNeedVirtualSyncClockLock)
+        PDMDevHlpTimerUnlockClock(pDevIns, pStream->hTimer); /* Caller will unlock pThis->CritSect. */
 
-    PDMDevHlpTimerUnlockClock(pDevIns, pStream->hTimer); /* Caller will unlock pThis->CritSect. */ /** @todo r=bird: Move this up. */
-    return rc;
+    return hdaRegWriteU24(pDevIns, pThis, iReg, u32Value);
 #else  /* !IN_RING3 */
     RT_NOREF(pDevIns, pThis, iReg, u32Value);
     return VINF_IOM_R3_MMIO_WRITE;
