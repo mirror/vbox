@@ -163,12 +163,6 @@
             return VBOXSTRICTRC_TODO(rcLock); \
     } while (0)
 
-/**
- * Releases the HDA lock and TM lock.
- */
-#define DEVHDA_UNLOCK_BOTH(a_pDevIns, a_pThis, a_pStream) \
-    PDMDevHlpTimerUnlockClock2(pDevIns, (a_pStream)->hTimer, &(a_pThis)->CritSect)
-
 
 /*********************************************************************************************************************************
 *   Structures and Typedefs                                                                                                      *
