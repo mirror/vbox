@@ -194,7 +194,8 @@ enum
     SYSTEM_INFO_INDEX_PARALLEL1_IOBASE  = 28,
     SYSTEM_INFO_INDEX_PARALLEL1_IRQ     = 29,
     SYSTEM_INFO_INDEX_PREF64_MEMORY_MAX = 30,
-    SYSTEM_INFO_INDEX_END               = 31,
+    SYSTEM_INFO_INDEX_NVME_ADDRESS      = 31, /**< First NVMe controller PCI address, or 0 */
+    SYSTEM_INFO_INDEX_END               = 32,
     SYSTEM_INFO_INDEX_INVALID           = 0x80,
     SYSTEM_INFO_INDEX_VALID             = 0x200
 };
@@ -364,8 +365,10 @@ typedef struct ACPISTATE
     bool                afAlignment1;
     /** Primary NIC PCI address. */
     uint32_t            u32NicPciAddress;
-    /** Primary audio card PCI address. */
+    /** HD Audio PCI address. */
     uint32_t            u32AudioPciAddress;
+    /** Primary NVMe controller PCI address. */
+    uint32_t            u32NvmePciAddress;
     /** Flag whether S1 power state is enabled. */
     bool                fS1Enabled;
     /** Flag whether S4 power state is enabled. */
@@ -1438,6 +1441,10 @@ static DECLCALLBACK(VBOXSTRICTRC) acpiR3SysInfoDataRead(PPDMDEVINS pDevIns, void
             *pu32 = pThis->u32AudioPciAddress;
             break;
 
+        case SYSTEM_INFO_INDEX_NVME_ADDRESS:
+            *pu32 = pThis->u32NvmePciAddress;
+            break;
+
         case SYSTEM_INFO_INDEX_POWER_STATES:
             *pu32 = RT_BIT(0) | RT_BIT(5);  /* S1 and S5 always exposed */
             if (pThis->fS1Enabled)          /* Optionally expose S1 and S4 */
@@ -1446,7 +1453,7 @@ static DECLCALLBACK(VBOXSTRICTRC) acpiR3SysInfoDataRead(PPDMDEVINS pDevIns, void
                 *pu32 |= RT_BIT(4);
             break;
 
-       case SYSTEM_INFO_INDEX_IOC_ADDRESS:
+        case SYSTEM_INFO_INDEX_IOC_ADDRESS:
             *pu32 = pThis->u32IocPciAddress;
             break;
 
@@ -3689,6 +3696,7 @@ static DECLCALLBACK(int) acpiR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
                                   "|ShowCpu"
                                   "|NicPciAddress"
                                   "|AudioPciAddress"
+                                  "|NvmePciAddress"
                                   "|IocPciAddress"
                                   "|HostBusPciAddress"
                                   "|EnableSuspendToDisk"
@@ -3772,15 +3780,20 @@ static DECLCALLBACK(int) acpiR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc, N_("Configuration error: Failed to read \"ShowCpu\""));
 
-    /* query primary NIC PCI address */
+    /* query primary NIC PCI address (GIGE) */
     rc = pHlp->pfnCFGMQueryU32Def(pCfg, "NicPciAddress", &pThis->u32NicPciAddress, 0);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc, N_("Configuration error: Failed to read \"NicPciAddress\""));
 
-    /* query primary NIC PCI address */
+    /* query HD Audio PCI address (HDAA) */
     rc = pHlp->pfnCFGMQueryU32Def(pCfg, "AudioPciAddress", &pThis->u32AudioPciAddress, 0);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc, N_("Configuration error: Failed to read \"AudioPciAddress\""));
+
+    /* query NVMe PCI address (NVMA) */
+    rc = pHlp->pfnCFGMQueryU32Def(pCfg, "NvmePciAddress", &pThis->u32NvmePciAddress, 0);
+    if (RT_FAILURE(rc))
+        return PDMDEV_SET_ERROR(pDevIns, rc, N_("Configuration error: Failed to read \"NvmePciAddress\""));
 
     /* query IO controller (southbridge) PCI address */
     rc = pHlp->pfnCFGMQueryU32Def(pCfg, "IocPciAddress", &pThis->u32IocPciAddress, 0);

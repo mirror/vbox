@@ -3219,6 +3219,15 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
                     InsertConfigInteger(pCfg, "AudioPciAddress",    u32AudioPCIAddr);
                 }
             }
+            if (fOsXGuest)
+            {
+                PCIBusAddress Address;
+                if (pBusMgr->findPCIAddress("nvme", 0, Address))
+                {
+                    uint32_t u32NvmePCIAddr = (Address.miDevice << 16) | Address.miFn;
+                    InsertConfigInteger(pCfg, "NvmePciAddress",    u32NvmePCIAddr);
+                }
+            }
             InsertConfigInteger(pCfg,  "IocPciAddress", uIocPCIAddress);
             if (chipsetType == ChipsetType_ICH9)
             {
