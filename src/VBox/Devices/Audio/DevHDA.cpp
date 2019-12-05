@@ -345,35 +345,35 @@ static FNSSMFIELDGETPUT hdaR3GetPutTrans_HDABDLE_Desc_fFlags_1thru4;
 *********************************************************************************************************************************/
 
 /** No register description (RD) flags defined. */
-#define HDA_RD_FLAG_NONE           0
+#define HDA_RD_F_NONE           0
 /** Writes to SD are allowed while RUN bit is set. */
-#define HDA_RD_FLAG_SD_WRITE_RUN   RT_BIT(0)
+#define HDA_RD_F_SD_WRITE_RUN   RT_BIT(0)
 
 /** Emits a single audio stream register set (e.g. OSD0) at a specified offset. */
 #define HDA_REG_MAP_STRM(offset, name) \
     /* offset        size     read mask   write mask  flags                     read callback   write callback     index + abbrev                 description */ \
     /* -------       -------  ----------  ----------  ------------------------- --------------  -----------------  -----------------------------  ----------- */ \
     /* Offset 0x80 (SD0) */ \
-    { offset,        0x00003, 0x00FF001F, 0x00F0001F, HDA_RD_FLAG_SD_WRITE_RUN, hdaRegReadU24 , hdaRegWriteSDCTL  , HDA_REG_IDX_STRM(name, CTL)  , #name " Stream Descriptor Control" }, \
+    { offset,        0x00003, 0x00FF001F, 0x00F0001F, HDA_RD_F_SD_WRITE_RUN, hdaRegReadU24 , hdaRegWriteSDCTL  , HDA_REG_IDX_STRM(name, CTL)  , #name " Stream Descriptor Control" }, \
     /* Offset 0x83 (SD0) */ \
-    { offset + 0x3,  0x00001, 0x0000003C, 0x0000001C, HDA_RD_FLAG_SD_WRITE_RUN, hdaRegReadU8  , hdaRegWriteSDSTS  , HDA_REG_IDX_STRM(name, STS)  , #name " Status" }, \
+    { offset + 0x3,  0x00001, 0x0000003C, 0x0000001C, HDA_RD_F_SD_WRITE_RUN, hdaRegReadU8  , hdaRegWriteSDSTS  , HDA_REG_IDX_STRM(name, STS)  , #name " Status" }, \
     /* Offset 0x84 (SD0) */ \
-    { offset + 0x4,  0x00004, 0xFFFFFFFF, 0x00000000, HDA_RD_FLAG_NONE,         hdaRegReadLPIB, hdaRegWriteU32    , HDA_REG_IDX_STRM(name, LPIB) , #name " Link Position In Buffer" }, \
+    { offset + 0x4,  0x00004, 0xFFFFFFFF, 0x00000000, HDA_RD_F_NONE,         hdaRegReadLPIB, hdaRegWriteU32    , HDA_REG_IDX_STRM(name, LPIB) , #name " Link Position In Buffer" }, \
     /* Offset 0x88 (SD0) */ \
-    { offset + 0x8,  0x00004, 0xFFFFFFFF, 0xFFFFFFFF, HDA_RD_FLAG_NONE,         hdaRegReadU32 , hdaRegWriteSDCBL  , HDA_REG_IDX_STRM(name, CBL)  , #name " Cyclic Buffer Length" }, \
+    { offset + 0x8,  0x00004, 0xFFFFFFFF, 0xFFFFFFFF, HDA_RD_F_NONE,         hdaRegReadU32 , hdaRegWriteSDCBL  , HDA_REG_IDX_STRM(name, CBL)  , #name " Cyclic Buffer Length" }, \
     /* Offset 0x8C (SD0) -- upper 8 bits are reserved */ \
-    { offset + 0xC,  0x00002, 0x0000FFFF, 0x000000FF, HDA_RD_FLAG_NONE,         hdaRegReadU16 , hdaRegWriteSDLVI  , HDA_REG_IDX_STRM(name, LVI)  , #name " Last Valid Index" }, \
+    { offset + 0xC,  0x00002, 0x0000FFFF, 0x000000FF, HDA_RD_F_NONE,         hdaRegReadU16 , hdaRegWriteSDLVI  , HDA_REG_IDX_STRM(name, LVI)  , #name " Last Valid Index" }, \
     /* Reserved: FIFO Watermark. ** @todo Document this! */ \
-    { offset + 0xE,  0x00002, 0x00000007, 0x00000007, HDA_RD_FLAG_NONE,         hdaRegReadU16 , hdaRegWriteSDFIFOW, HDA_REG_IDX_STRM(name, FIFOW), #name " FIFO Watermark" }, \
+    { offset + 0xE,  0x00002, 0x00000007, 0x00000007, HDA_RD_F_NONE,         hdaRegReadU16 , hdaRegWriteSDFIFOW, HDA_REG_IDX_STRM(name, FIFOW), #name " FIFO Watermark" }, \
     /* Offset 0x90 (SD0) */ \
-    { offset + 0x10, 0x00002, 0x000000FF, 0x000000FF, HDA_RD_FLAG_NONE,         hdaRegReadU16 , hdaRegWriteSDFIFOS, HDA_REG_IDX_STRM(name, FIFOS), #name " FIFO Size" }, \
+    { offset + 0x10, 0x00002, 0x000000FF, 0x000000FF, HDA_RD_F_NONE,         hdaRegReadU16 , hdaRegWriteSDFIFOS, HDA_REG_IDX_STRM(name, FIFOS), #name " FIFO Size" }, \
     /* Offset 0x92 (SD0) */ \
-    { offset + 0x12, 0x00002, 0x00007F7F, 0x00007F7F, HDA_RD_FLAG_NONE,         hdaRegReadU16 , hdaRegWriteSDFMT  , HDA_REG_IDX_STRM(name, FMT)  , #name " Stream Format" }, \
+    { offset + 0x12, 0x00002, 0x00007F7F, 0x00007F7F, HDA_RD_F_NONE,         hdaRegReadU16 , hdaRegWriteSDFMT  , HDA_REG_IDX_STRM(name, FMT)  , #name " Stream Format" }, \
     /* Reserved: 0x94 - 0x98. */ \
     /* Offset 0x98 (SD0) */ \
-    { offset + 0x18, 0x00004, 0xFFFFFF80, 0xFFFFFF80, HDA_RD_FLAG_NONE,         hdaRegReadU32 , hdaRegWriteSDBDPL , HDA_REG_IDX_STRM(name, BDPL) , #name " Buffer Descriptor List Pointer-Lower Base Address" }, \
+    { offset + 0x18, 0x00004, 0xFFFFFF80, 0xFFFFFF80, HDA_RD_F_NONE,         hdaRegReadU32 , hdaRegWriteSDBDPL , HDA_REG_IDX_STRM(name, BDPL) , #name " Buffer Descriptor List Pointer-Lower Base Address" }, \
     /* Offset 0x9C (SD0) */ \
-    { offset + 0x1C, 0x00004, 0xFFFFFFFF, 0xFFFFFFFF, HDA_RD_FLAG_NONE,         hdaRegReadU32 , hdaRegWriteSDBDPU , HDA_REG_IDX_STRM(name, BDPU) , #name " Buffer Descriptor List Pointer-Upper Base Address" }
+    { offset + 0x1C, 0x00004, 0xFFFFFFFF, 0xFFFFFFFF, HDA_RD_F_NONE,         hdaRegReadU32 , hdaRegWriteSDBDPU , HDA_REG_IDX_STRM(name, BDPU) , #name " Buffer Descriptor List Pointer-Upper Base Address" }
 
 /** Defines a single audio stream register set (e.g. OSD0). */
 #define HDA_REG_MAP_DEF_STREAM(index, name) \
@@ -384,40 +384,40 @@ const HDAREGDESC g_aHdaRegMap[HDA_NUM_REGS] =
 {
     /* offset  size     read mask   write mask  flags             read callback     write callback       index + abbrev              */
     /*-------  -------  ----------  ----------  ----------------- ----------------  -------------------     ------------------------ */
-    { 0x00000, 0x00002, 0x0000FFFB, 0x00000000, HDA_RD_FLAG_NONE, hdaRegReadU16   , hdaRegWriteUnimpl  , HDA_REG_IDX(GCAP)         }, /* Global Capabilities */
-    { 0x00002, 0x00001, 0x000000FF, 0x00000000, HDA_RD_FLAG_NONE, hdaRegReadU8    , hdaRegWriteUnimpl  , HDA_REG_IDX(VMIN)         }, /* Minor Version */
-    { 0x00003, 0x00001, 0x000000FF, 0x00000000, HDA_RD_FLAG_NONE, hdaRegReadU8    , hdaRegWriteUnimpl  , HDA_REG_IDX(VMAJ)         }, /* Major Version */
-    { 0x00004, 0x00002, 0x0000FFFF, 0x00000000, HDA_RD_FLAG_NONE, hdaRegReadU16   , hdaRegWriteU16     , HDA_REG_IDX(OUTPAY)       }, /* Output Payload Capabilities */
-    { 0x00006, 0x00002, 0x0000FFFF, 0x00000000, HDA_RD_FLAG_NONE, hdaRegReadU16   , hdaRegWriteUnimpl  , HDA_REG_IDX(INPAY)        }, /* Input Payload Capabilities */
-    { 0x00008, 0x00004, 0x00000103, 0x00000103, HDA_RD_FLAG_NONE, hdaRegReadU32   , hdaRegWriteGCTL    , HDA_REG_IDX(GCTL)         }, /* Global Control */
-    { 0x0000c, 0x00002, 0x00007FFF, 0x00007FFF, HDA_RD_FLAG_NONE, hdaRegReadU16   , hdaRegWriteU16     , HDA_REG_IDX(WAKEEN)       }, /* Wake Enable */
-    { 0x0000e, 0x00002, 0x00000007, 0x00000007, HDA_RD_FLAG_NONE, hdaRegReadU8    , hdaRegWriteSTATESTS, HDA_REG_IDX(STATESTS)     }, /* State Change Status */
-    { 0x00010, 0x00002, 0xFFFFFFFF, 0x00000000, HDA_RD_FLAG_NONE, hdaRegReadUnimpl, hdaRegWriteUnimpl  , HDA_REG_IDX(GSTS)         }, /* Global Status */
-    { 0x00018, 0x00002, 0x0000FFFF, 0x00000000, HDA_RD_FLAG_NONE, hdaRegReadU16   , hdaRegWriteU16     , HDA_REG_IDX(OUTSTRMPAY)   }, /* Output Stream Payload Capability */
-    { 0x0001A, 0x00002, 0x0000FFFF, 0x00000000, HDA_RD_FLAG_NONE, hdaRegReadU16   , hdaRegWriteUnimpl  , HDA_REG_IDX(INSTRMPAY)    }, /* Input Stream Payload Capability */
-    { 0x00020, 0x00004, 0xC00000FF, 0xC00000FF, HDA_RD_FLAG_NONE, hdaRegReadU32   , hdaRegWriteU32     , HDA_REG_IDX(INTCTL)       }, /* Interrupt Control */
-    { 0x00024, 0x00004, 0xC00000FF, 0x00000000, HDA_RD_FLAG_NONE, hdaRegReadU32   , hdaRegWriteUnimpl  , HDA_REG_IDX(INTSTS)       }, /* Interrupt Status */
-    { 0x00030, 0x00004, 0xFFFFFFFF, 0x00000000, HDA_RD_FLAG_NONE, hdaRegReadWALCLK, hdaRegWriteUnimpl  , HDA_REG_IDX_NOMEM(WALCLK) }, /* Wall Clock Counter */
-    { 0x00034, 0x00004, 0x000000FF, 0x000000FF, HDA_RD_FLAG_NONE, hdaRegReadU32   , hdaRegWriteU32     , HDA_REG_IDX(SSYNC)        }, /* Stream Synchronization */
-    { 0x00040, 0x00004, 0xFFFFFF80, 0xFFFFFF80, HDA_RD_FLAG_NONE, hdaRegReadU32   , hdaRegWriteBase    , HDA_REG_IDX(CORBLBASE)    }, /* CORB Lower Base Address */
-    { 0x00044, 0x00004, 0xFFFFFFFF, 0xFFFFFFFF, HDA_RD_FLAG_NONE, hdaRegReadU32   , hdaRegWriteBase    , HDA_REG_IDX(CORBUBASE)    }, /* CORB Upper Base Address */
-    { 0x00048, 0x00002, 0x000000FF, 0x000000FF, HDA_RD_FLAG_NONE, hdaRegReadU16   , hdaRegWriteCORBWP  , HDA_REG_IDX(CORBWP)       }, /* CORB Write Pointer */
-    { 0x0004A, 0x00002, 0x000080FF, 0x00008000, HDA_RD_FLAG_NONE, hdaRegReadU16   , hdaRegWriteCORBRP  , HDA_REG_IDX(CORBRP)       }, /* CORB Read Pointer */
-    { 0x0004C, 0x00001, 0x00000003, 0x00000003, HDA_RD_FLAG_NONE, hdaRegReadU8    , hdaRegWriteCORBCTL , HDA_REG_IDX(CORBCTL)      }, /* CORB Control */
-    { 0x0004D, 0x00001, 0x00000001, 0x00000001, HDA_RD_FLAG_NONE, hdaRegReadU8    , hdaRegWriteCORBSTS , HDA_REG_IDX(CORBSTS)      }, /* CORB Status */
-    { 0x0004E, 0x00001, 0x000000F3, 0x00000003, HDA_RD_FLAG_NONE, hdaRegReadU8    , hdaRegWriteCORBSIZE, HDA_REG_IDX(CORBSIZE)     }, /* CORB Size */
-    { 0x00050, 0x00004, 0xFFFFFF80, 0xFFFFFF80, HDA_RD_FLAG_NONE, hdaRegReadU32   , hdaRegWriteBase    , HDA_REG_IDX(RIRBLBASE)    }, /* RIRB Lower Base Address */
-    { 0x00054, 0x00004, 0xFFFFFFFF, 0xFFFFFFFF, HDA_RD_FLAG_NONE, hdaRegReadU32   , hdaRegWriteBase    , HDA_REG_IDX(RIRBUBASE)    }, /* RIRB Upper Base Address */
-    { 0x00058, 0x00002, 0x000000FF, 0x00008000, HDA_RD_FLAG_NONE, hdaRegReadU8    , hdaRegWriteRIRBWP  , HDA_REG_IDX(RIRBWP)       }, /* RIRB Write Pointer */
-    { 0x0005A, 0x00002, 0x000000FF, 0x000000FF, HDA_RD_FLAG_NONE, hdaRegReadU16   , hdaRegWriteRINTCNT , HDA_REG_IDX(RINTCNT)      }, /* Response Interrupt Count */
-    { 0x0005C, 0x00001, 0x00000007, 0x00000007, HDA_RD_FLAG_NONE, hdaRegReadU8    , hdaRegWriteU8      , HDA_REG_IDX(RIRBCTL)      }, /* RIRB Control */
-    { 0x0005D, 0x00001, 0x00000005, 0x00000005, HDA_RD_FLAG_NONE, hdaRegReadU8    , hdaRegWriteRIRBSTS , HDA_REG_IDX(RIRBSTS)      }, /* RIRB Status */
-    { 0x0005E, 0x00001, 0x000000F3, 0x00000000, HDA_RD_FLAG_NONE, hdaRegReadU8    , hdaRegWriteUnimpl  , HDA_REG_IDX(RIRBSIZE)     }, /* RIRB Size */
-    { 0x00060, 0x00004, 0xFFFFFFFF, 0xFFFFFFFF, HDA_RD_FLAG_NONE, hdaRegReadU32   , hdaRegWriteU32     , HDA_REG_IDX(IC)           }, /* Immediate Command */
-    { 0x00064, 0x00004, 0x00000000, 0xFFFFFFFF, HDA_RD_FLAG_NONE, hdaRegReadU32   , hdaRegWriteUnimpl  , HDA_REG_IDX(IR)           }, /* Immediate Response */
-    { 0x00068, 0x00002, 0x00000002, 0x00000002, HDA_RD_FLAG_NONE, hdaRegReadIRS   , hdaRegWriteIRS     , HDA_REG_IDX(IRS)          }, /* Immediate Command Status */
-    { 0x00070, 0x00004, 0xFFFFFFFF, 0xFFFFFF81, HDA_RD_FLAG_NONE, hdaRegReadU32   , hdaRegWriteBase    , HDA_REG_IDX(DPLBASE)      }, /* DMA Position Lower Base */
-    { 0x00074, 0x00004, 0xFFFFFFFF, 0xFFFFFFFF, HDA_RD_FLAG_NONE, hdaRegReadU32   , hdaRegWriteBase    , HDA_REG_IDX(DPUBASE)      }, /* DMA Position Upper Base */
+    { 0x00000, 0x00002, 0x0000FFFB, 0x00000000, HDA_RD_F_NONE, hdaRegReadU16   , hdaRegWriteUnimpl  , HDA_REG_IDX(GCAP)         }, /* Global Capabilities */
+    { 0x00002, 0x00001, 0x000000FF, 0x00000000, HDA_RD_F_NONE, hdaRegReadU8    , hdaRegWriteUnimpl  , HDA_REG_IDX(VMIN)         }, /* Minor Version */
+    { 0x00003, 0x00001, 0x000000FF, 0x00000000, HDA_RD_F_NONE, hdaRegReadU8    , hdaRegWriteUnimpl  , HDA_REG_IDX(VMAJ)         }, /* Major Version */
+    { 0x00004, 0x00002, 0x0000FFFF, 0x00000000, HDA_RD_F_NONE, hdaRegReadU16   , hdaRegWriteU16     , HDA_REG_IDX(OUTPAY)       }, /* Output Payload Capabilities */
+    { 0x00006, 0x00002, 0x0000FFFF, 0x00000000, HDA_RD_F_NONE, hdaRegReadU16   , hdaRegWriteUnimpl  , HDA_REG_IDX(INPAY)        }, /* Input Payload Capabilities */
+    { 0x00008, 0x00004, 0x00000103, 0x00000103, HDA_RD_F_NONE, hdaRegReadU32   , hdaRegWriteGCTL    , HDA_REG_IDX(GCTL)         }, /* Global Control */
+    { 0x0000c, 0x00002, 0x00007FFF, 0x00007FFF, HDA_RD_F_NONE, hdaRegReadU16   , hdaRegWriteU16     , HDA_REG_IDX(WAKEEN)       }, /* Wake Enable */
+    { 0x0000e, 0x00002, 0x00000007, 0x00000007, HDA_RD_F_NONE, hdaRegReadU8    , hdaRegWriteSTATESTS, HDA_REG_IDX(STATESTS)     }, /* State Change Status */
+    { 0x00010, 0x00002, 0xFFFFFFFF, 0x00000000, HDA_RD_F_NONE, hdaRegReadUnimpl, hdaRegWriteUnimpl  , HDA_REG_IDX(GSTS)         }, /* Global Status */
+    { 0x00018, 0x00002, 0x0000FFFF, 0x00000000, HDA_RD_F_NONE, hdaRegReadU16   , hdaRegWriteU16     , HDA_REG_IDX(OUTSTRMPAY)   }, /* Output Stream Payload Capability */
+    { 0x0001A, 0x00002, 0x0000FFFF, 0x00000000, HDA_RD_F_NONE, hdaRegReadU16   , hdaRegWriteUnimpl  , HDA_REG_IDX(INSTRMPAY)    }, /* Input Stream Payload Capability */
+    { 0x00020, 0x00004, 0xC00000FF, 0xC00000FF, HDA_RD_F_NONE, hdaRegReadU32   , hdaRegWriteU32     , HDA_REG_IDX(INTCTL)       }, /* Interrupt Control */
+    { 0x00024, 0x00004, 0xC00000FF, 0x00000000, HDA_RD_F_NONE, hdaRegReadU32   , hdaRegWriteUnimpl  , HDA_REG_IDX(INTSTS)       }, /* Interrupt Status */
+    { 0x00030, 0x00004, 0xFFFFFFFF, 0x00000000, HDA_RD_F_NONE, hdaRegReadWALCLK, hdaRegWriteUnimpl  , HDA_REG_IDX_NOMEM(WALCLK) }, /* Wall Clock Counter */
+    { 0x00034, 0x00004, 0x000000FF, 0x000000FF, HDA_RD_F_NONE, hdaRegReadU32   , hdaRegWriteU32     , HDA_REG_IDX(SSYNC)        }, /* Stream Synchronization */
+    { 0x00040, 0x00004, 0xFFFFFF80, 0xFFFFFF80, HDA_RD_F_NONE, hdaRegReadU32   , hdaRegWriteBase    , HDA_REG_IDX(CORBLBASE)    }, /* CORB Lower Base Address */
+    { 0x00044, 0x00004, 0xFFFFFFFF, 0xFFFFFFFF, HDA_RD_F_NONE, hdaRegReadU32   , hdaRegWriteBase    , HDA_REG_IDX(CORBUBASE)    }, /* CORB Upper Base Address */
+    { 0x00048, 0x00002, 0x000000FF, 0x000000FF, HDA_RD_F_NONE, hdaRegReadU16   , hdaRegWriteCORBWP  , HDA_REG_IDX(CORBWP)       }, /* CORB Write Pointer */
+    { 0x0004A, 0x00002, 0x000080FF, 0x00008000, HDA_RD_F_NONE, hdaRegReadU16   , hdaRegWriteCORBRP  , HDA_REG_IDX(CORBRP)       }, /* CORB Read Pointer */
+    { 0x0004C, 0x00001, 0x00000003, 0x00000003, HDA_RD_F_NONE, hdaRegReadU8    , hdaRegWriteCORBCTL , HDA_REG_IDX(CORBCTL)      }, /* CORB Control */
+    { 0x0004D, 0x00001, 0x00000001, 0x00000001, HDA_RD_F_NONE, hdaRegReadU8    , hdaRegWriteCORBSTS , HDA_REG_IDX(CORBSTS)      }, /* CORB Status */
+    { 0x0004E, 0x00001, 0x000000F3, 0x00000003, HDA_RD_F_NONE, hdaRegReadU8    , hdaRegWriteCORBSIZE, HDA_REG_IDX(CORBSIZE)     }, /* CORB Size */
+    { 0x00050, 0x00004, 0xFFFFFF80, 0xFFFFFF80, HDA_RD_F_NONE, hdaRegReadU32   , hdaRegWriteBase    , HDA_REG_IDX(RIRBLBASE)    }, /* RIRB Lower Base Address */
+    { 0x00054, 0x00004, 0xFFFFFFFF, 0xFFFFFFFF, HDA_RD_F_NONE, hdaRegReadU32   , hdaRegWriteBase    , HDA_REG_IDX(RIRBUBASE)    }, /* RIRB Upper Base Address */
+    { 0x00058, 0x00002, 0x000000FF, 0x00008000, HDA_RD_F_NONE, hdaRegReadU8    , hdaRegWriteRIRBWP  , HDA_REG_IDX(RIRBWP)       }, /* RIRB Write Pointer */
+    { 0x0005A, 0x00002, 0x000000FF, 0x000000FF, HDA_RD_F_NONE, hdaRegReadU16   , hdaRegWriteRINTCNT , HDA_REG_IDX(RINTCNT)      }, /* Response Interrupt Count */
+    { 0x0005C, 0x00001, 0x00000007, 0x00000007, HDA_RD_F_NONE, hdaRegReadU8    , hdaRegWriteU8      , HDA_REG_IDX(RIRBCTL)      }, /* RIRB Control */
+    { 0x0005D, 0x00001, 0x00000005, 0x00000005, HDA_RD_F_NONE, hdaRegReadU8    , hdaRegWriteRIRBSTS , HDA_REG_IDX(RIRBSTS)      }, /* RIRB Status */
+    { 0x0005E, 0x00001, 0x000000F3, 0x00000000, HDA_RD_F_NONE, hdaRegReadU8    , hdaRegWriteUnimpl  , HDA_REG_IDX(RIRBSIZE)     }, /* RIRB Size */
+    { 0x00060, 0x00004, 0xFFFFFFFF, 0xFFFFFFFF, HDA_RD_F_NONE, hdaRegReadU32   , hdaRegWriteU32     , HDA_REG_IDX(IC)           }, /* Immediate Command */
+    { 0x00064, 0x00004, 0x00000000, 0xFFFFFFFF, HDA_RD_F_NONE, hdaRegReadU32   , hdaRegWriteUnimpl  , HDA_REG_IDX(IR)           }, /* Immediate Response */
+    { 0x00068, 0x00002, 0x00000002, 0x00000002, HDA_RD_F_NONE, hdaRegReadIRS   , hdaRegWriteIRS     , HDA_REG_IDX(IRS)          }, /* Immediate Command Status */
+    { 0x00070, 0x00004, 0xFFFFFFFF, 0xFFFFFF81, HDA_RD_F_NONE, hdaRegReadU32   , hdaRegWriteBase    , HDA_REG_IDX(DPLBASE)      }, /* DMA Position Lower Base */
+    { 0x00074, 0x00004, 0xFFFFFFFF, 0xFFFFFFFF, HDA_RD_F_NONE, hdaRegReadU32   , hdaRegWriteBase    , HDA_REG_IDX(DPUBASE)      }, /* DMA Position Upper Base */
     /* 4 Serial Data In (SDI). */
     HDA_REG_MAP_DEF_STREAM(0, SD0),
     HDA_REG_MAP_DEF_STREAM(1, SD1),
@@ -3175,7 +3175,7 @@ DECLINLINE(VBOXSTRICTRC) hdaWriteReg(PPDMDEVINS pDevIns, PHDASTATE pThis, int id
         /* Is the RUN bit currently set? */
         if (   RT_BOOL(uSDCTL & HDA_SDCTL_RUN)
             /* Are writes to the register denied if RUN bit is set? */
-            && !(g_aHdaRegMap[idxRegDsc].fFlags & HDA_RD_FLAG_SD_WRITE_RUN))
+            && !(g_aHdaRegMap[idxRegDsc].fFlags & HDA_RD_F_SD_WRITE_RUN))
         {
             Log(("hdaWriteReg: Warning: Access to %s is blocked! %R[sdctl]\n", g_aHdaRegMap[idxRegDsc].abbrev, uSDCTL));
             LogRel2(("HDA: Warning: Access to register %s is blocked while the stream's RUN bit is set\n",
@@ -3393,7 +3393,7 @@ hdaR3GetPutTrans_HDABDLEDESC_fFlags_6(PSSMHANDLE pSSM, const struct SSMFIELD *pF
     if (RT_SUCCESS(rc))
     {
         PHDABDLEDESC pDesc = (PHDABDLEDESC)pvStruct;
-        pDesc->fFlags = fIoc ? HDA_BDLE_FLAG_IOC : 0;
+        pDesc->fFlags = fIoc ? HDA_BDLE_F_IOC : 0;
     }
     return rc;
 }
@@ -3415,7 +3415,7 @@ hdaR3GetPutTrans_HDABDLE_Desc_fFlags_1thru4(PSSMHANDLE pSSM, const struct SSMFIE
     if (RT_SUCCESS(rc))
     {
         PHDABDLE pState = (PHDABDLE)pvStruct;
-        pState->Desc.fFlags = fIoc ? HDA_BDLE_FLAG_IOC : 0;
+        pState->Desc.fFlags = fIoc ? HDA_BDLE_F_IOC : 0;
     }
     return rc;
 }
@@ -4039,7 +4039,7 @@ static DECLCALLBACK(size_t) hdaR3StrFmtBDLE(PFNRTSTROUTPUT pfnOutput, void *pvAr
     return RTStrFormat(pfnOutput,  pvArgOutput, NULL, 0,
                        "BDLE(idx:%RU32, off:%RU32, fifow:%RU32, IOC:%RTbool, DMA[%RU32 bytes @ 0x%x])",
                        pBDLE->State.u32BDLIndex, pBDLE->State.u32BufOff, pBDLE->State.cbBelowFIFOW,
-                       pBDLE->Desc.fFlags & HDA_BDLE_FLAG_IOC, pBDLE->Desc.u32BufSize, pBDLE->Desc.u64BufAddr);
+                       pBDLE->Desc.fFlags & HDA_BDLE_F_IOC, pBDLE->Desc.u32BufSize, pBDLE->Desc.u64BufAddr);
 }
 
 /**
@@ -4195,7 +4195,7 @@ static void hdaR3DbgPrintBDLE(PHDASTATE pThis, PCDBGFINFOHLP pHlp, int iIdx)
         PDMDevHlpPhysRead(pThis->CTX_SUFF(pDevIns), u64BaseDMA + i * sizeof(HDABDLEDESC), &bd, sizeof(bd));
 
         pHlp->pfnPrintf(pHlp, "\t\t%s #%03d BDLE(adr:0x%llx, size:%RU32, ioc:%RTbool)\n",
-                        pBDLE->State.u32BDLIndex == i ? "*" : " ", i, bd.u64BufAddr, bd.u32BufSize, bd.fFlags & HDA_BDLE_FLAG_IOC);
+                        pBDLE->State.u32BDLIndex == i ? "*" : " ", i, bd.u64BufAddr, bd.u32BufSize, bd.fFlags & HDA_BDLE_F_IOC);
 
         cbBDLE += bd.u32BufSize;
     }

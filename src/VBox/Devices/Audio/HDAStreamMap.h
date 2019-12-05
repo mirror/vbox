@@ -22,29 +22,30 @@
 #endif
 
 /**
- * Structure for keeping an audio stream data mapping.
+ * Audio stream data mapping.
  */
 typedef struct HDASTREAMMAP
 {
     /** The stream's layout. */
-    PDMAUDIOSTREAMLAYOUT               enmLayout;
-    uint8_t                            cbFrameSize;
+    PDMAUDIOSTREAMLAYOUT            enmLayout;
+    uint8_t                         cbFrameSize;
     /** Number of mappings in paMappings. */
-    uint8_t                            cMappings;
-    uint8_t                            aPadding[2];
+    uint8_t                         cMappings;
+    uint8_t                         aPadding[2];
     /** Array of stream mappings.
      *  Note: The mappings *must* be layed out in an increasing order, e.g.
      *        how the data appears in the given data block. */
-    R3PTRTYPE(PPDMAUDIOSTREAMMAP)      paMappings;
+    R3PTRTYPE(PPDMAUDIOSTREAMMAP)   paMappings;
 #if HC_ARCH_BITS == 32
-    RTR3PTR                            Padding1;
+    RTR3PTR                         Padding1;
 #endif
 #ifdef VBOX_WITH_AUDIO_HDA_51_SURROUND
     /** Circular buffer holding for holding audio data for this mapping. */
-    R3PTRTYPE(PRTCIRCBUF)              pCircBuf;
+    R3PTRTYPE(PRTCIRCBUF)           pCircBuf;
 #endif
 } HDASTREAMMAP;
 AssertCompileSizeAlignment(HDASTREAMMAP, 8);
+/** Pointer to an audio stream data mapping. */
 typedef HDASTREAMMAP *PHDASTREAMMAP;
 
 /** @name Stream mapping functions.
@@ -54,7 +55,7 @@ typedef HDASTREAMMAP *PHDASTREAMMAP;
 int  hdaR3StreamMapInit(PHDASTREAMMAP pMapping, PPDMAUDIOPCMPROPS pProps);
 void hdaR3StreamMapDestroy(PHDASTREAMMAP pMapping);
 void hdaR3StreamMapReset(PHDASTREAMMAP pMapping);
-#endif /* IN_RING3 */
+#endif
 /** @} */
 
 #endif /* !VBOX_INCLUDED_SRC_Audio_HDAStreamMap_h */

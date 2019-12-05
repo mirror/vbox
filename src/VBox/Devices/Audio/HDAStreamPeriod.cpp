@@ -49,11 +49,11 @@
  */
 int hdaR3StreamPeriodCreate(PHDASTREAMPERIOD pPeriod)
 {
-    Assert(!(pPeriod->fStatus & HDASTREAMPERIOD_FLAG_VALID));
+    Assert(!(pPeriod->fStatus & HDASTREAMPERIOD_F_VALID));
 
     int rc = RTCritSectInit(&pPeriod->CritSect);
     AssertRCReturnStmt(rc, pPeriod->fStatus = 0, rc);
-    pPeriod->fStatus = HDASTREAMPERIOD_FLAG_VALID;
+    pPeriod->fStatus = HDASTREAMPERIOD_F_VALID;
 
     return VINF_SUCCESS;
 }
@@ -65,11 +65,11 @@ int hdaR3StreamPeriodCreate(PHDASTREAMPERIOD pPeriod)
  */
 void hdaR3StreamPeriodDestroy(PHDASTREAMPERIOD pPeriod)
 {
-    if (pPeriod->fStatus & HDASTREAMPERIOD_FLAG_VALID)
+    if (pPeriod->fStatus & HDASTREAMPERIOD_F_VALID)
     {
         RTCritSectDelete(&pPeriod->CritSect);
 
-        pPeriod->fStatus = HDASTREAMPERIOD_FLAG_NONE;
+        pPeriod->fStatus = HDASTREAMPERIOD_F_NONE;
     }
 }
 
@@ -137,7 +137,7 @@ void hdaR3StreamPeriodReset(PHDASTREAMPERIOD pPeriod)
         LogRelMax(50, ("HDA: Warning: %RU8 interrupts for stream #%RU8 still pending -- so a period reset might trigger audio hangs\n",
                  pPeriod->cIntPending, pPeriod->u8SD));
 
-    pPeriod->fStatus          &= ~HDASTREAMPERIOD_FLAG_ACTIVE;
+    pPeriod->fStatus          &= ~HDASTREAMPERIOD_F_ACTIVE;
     pPeriod->u64StartWalClk    = 0;
     pPeriod->u64ElapsedWalClk  = 0;
     pPeriod->framesTransferred = 0;
@@ -156,9 +156,9 @@ void hdaR3StreamPeriodReset(PHDASTREAMPERIOD pPeriod)
  */
 int hdaR3StreamPeriodBegin(PHDASTREAMPERIOD pPeriod, uint64_t u64WalClk)
 {
-    Assert(!(pPeriod->fStatus & HDASTREAMPERIOD_FLAG_ACTIVE)); /* No nested calls. */
+    Assert(!(pPeriod->fStatus & HDASTREAMPERIOD_F_ACTIVE)); /* No nested calls. */
 
-    pPeriod->fStatus          |= HDASTREAMPERIOD_FLAG_ACTIVE;
+    pPeriod->fStatus          |= HDASTREAMPERIOD_F_ACTIVE;
     pPeriod->u64StartWalClk    = u64WalClk;
     pPeriod->u64ElapsedWalClk  = 0;
     pPeriod->framesTransferred = 0;
@@ -180,7 +180,7 @@ void hdaR3StreamPeriodEnd(PHDASTREAMPERIOD pPeriod)
 {
     Log3Func(("[SD%RU8] Took %zuus\n", pPeriod->u8SD, (RTTimeNanoTS() - pPeriod->Dbg.tsStartNs) / 1000));
 
-    if (!(pPeriod->fStatus & HDASTREAMPERIOD_FLAG_ACTIVE))
+    if (!(pPeriod->fStatus & HDASTREAMPERIOD_F_ACTIVE))
         return;
 
     /* Sanity. */
@@ -189,7 +189,7 @@ void hdaR3StreamPeriodEnd(PHDASTREAMPERIOD pPeriod)
                pPeriod->cIntPending, pPeriod->u8SD));
     Assert(hdaR3StreamPeriodIsComplete(pPeriod));
 
-    pPeriod->fStatus &= ~HDASTREAMPERIOD_FLAG_ACTIVE;
+    pPeriod->fStatus &= ~HDASTREAMPERIOD_F_ACTIVE;
 }
 
 /**
@@ -199,9 +199,9 @@ void hdaR3StreamPeriodEnd(PHDASTREAMPERIOD pPeriod)
  */
 void hdaR3StreamPeriodPause(PHDASTREAMPERIOD pPeriod)
 {
-    AssertMsg((pPeriod->fStatus & HDASTREAMPERIOD_FLAG_ACTIVE), ("Period %p already in inactive state\n", pPeriod));
+    AssertMsg((pPeriod->fStatus & HDASTREAMPERIOD_F_ACTIVE), ("Period %p already in inactive state\n", pPeriod));
 
-    pPeriod->fStatus &= ~HDASTREAMPERIOD_FLAG_ACTIVE;
+    pPeriod->fStatus &= ~HDASTREAMPERIOD_F_ACTIVE;
 
     Log3Func(("[SD%RU8]\n", pPeriod->u8SD));
 }
@@ -213,9 +213,9 @@ void hdaR3StreamPeriodPause(PHDASTREAMPERIOD pPeriod)
  */
 void hdaR3StreamPeriodResume(PHDASTREAMPERIOD pPeriod)
 {
-    AssertMsg(!(pPeriod->fStatus & HDASTREAMPERIOD_FLAG_ACTIVE), ("Period %p already in active state\n", pPeriod));
+    AssertMsg(!(pPeriod->fStatus & HDASTREAMPERIOD_F_ACTIVE), ("Period %p already in active state\n", pPeriod));
 
-    pPeriod->fStatus |= HDASTREAMPERIOD_FLAG_ACTIVE;
+    pPeriod->fStatus |= HDASTREAMPERIOD_F_ACTIVE;
 
     Log3Func(("[SD%RU8]\n", pPeriod->u8SD));
 }
@@ -320,7 +320,7 @@ bool hdaR3StreamPeriodHasElapsed(PHDASTREAMPERIOD pPeriod)
 bool hdaR3StreamPeriodHasPassedAbsWalClk(PHDASTREAMPERIOD pPeriod, uint64_t u64WalClk)
 {
     /* Period not in use? */
-    if (!(pPeriod->fStatus & HDASTREAMPERIOD_FLAG_ACTIVE))
+    if (!(pPeriod->fStatus & HDASTREAMPERIOD_F_ACTIVE))
         return true; /* ... implies that it has passed. */
 
     if (hdaR3StreamPeriodHasElapsed(pPeriod))

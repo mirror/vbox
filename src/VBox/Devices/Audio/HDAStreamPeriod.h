@@ -28,28 +28,29 @@
 #include <VBox/log.h> /* LOG_ENABLED */
 
 struct HDASTREAM;
-typedef HDASTREAM *PHDASTREAM;
+typedef struct HDASTREAM *PHDASTREAM;
 
 #ifdef LOG_ENABLED
 /**
- * Structure for debug information of an HDA stream's period.
+ * Debug stuff for a HDA stream's period.
  */
-typedef struct HDASTREAMPERIODDBGINFO
+typedef struct HDASTREAMPERIODDDEBUG
 {
     /** Host start time (in ns) of the period. */
     uint64_t                tsStartNs;
-} HDASTREAMPERIODDBGINFO, *PHDASTREAMPERIODDBGINFO;
+} HDASTREAMPERIODDDEBUG;
 #endif
 
 /** No flags set. */
-#define HDASTREAMPERIOD_FLAG_NONE    0
+#define HDASTREAMPERIOD_F_NONE      0
 /** The stream period has been initialized and is in a valid state. */
-#define HDASTREAMPERIOD_FLAG_VALID   RT_BIT(0)
+#define HDASTREAMPERIOD_F_VALID     RT_BIT(0)
 /** The stream period is active. */
-#define HDASTREAMPERIOD_FLAG_ACTIVE  RT_BIT(1)
+#define HDASTREAMPERIOD_F_ACTIVE    RT_BIT(1)
 
 /**
- * Structure for keeping an HDA stream's (time) period.
+ * HDA stream's time period.
+ *
  * This is needed in order to keep track of stream timing and interrupt delivery.
  */
 typedef struct HDASTREAMPERIOD
@@ -78,8 +79,8 @@ typedef struct HDASTREAMPERIOD
     /** Number of audio frames already transfered. */
     uint32_t                framesTransferred;
 #ifdef LOG_ENABLED
-    /** Debugging information. */
-    HDASTREAMPERIODDBGINFO  Dbg;
+    /** Debugging state. */
+    HDASTREAMPERIODDDEBUG   Dbg;
 #endif
 } HDASTREAMPERIOD;
 AssertCompileSizeAlignment(HDASTREAMPERIOD, 8);

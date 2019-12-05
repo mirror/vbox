@@ -566,7 +566,7 @@ void hdaR3BDLEDumpAll(PHDASTATE pThis, uint64_t u64BDLBase, uint16_t cBDLE)
         PDMDevHlpPhysRead(pThis->CTX_SUFF(pDevIns), u64BDLBase + i * sizeof(HDABDLEDESC), &bd, sizeof(bd));
 
         LogFunc(("\t#%03d BDLE(adr:0x%llx, size:%RU32, ioc:%RTbool)\n",
-                 i, bd.u64BufAddr, bd.u32BufSize, bd.fFlags & HDA_BDLE_FLAG_IOC));
+                 i, bd.u64BufAddr, bd.u32BufSize, bd.fFlags & HDA_BDLE_F_IOC));
 
         cbBDLE += bd.u32BufSize;
     }
@@ -656,7 +656,7 @@ bool hdaR3BDLEIsComplete(PHDABDLE pBDLE)
  */
 bool hdaR3BDLENeedsInterrupt(PHDABDLE pBDLE)
 {
-    return (pBDLE->Desc.fFlags & HDA_BDLE_FLAG_IOC);
+    return (pBDLE->Desc.fFlags & HDA_BDLE_F_IOC);
 }
 
 /**

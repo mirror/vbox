@@ -248,7 +248,7 @@ typedef HDASTREAM *PHDASTREAM;
 
 #ifdef VBOX_WITH_AUDIO_HDA_ASYNC_IO
 /**
- * Structure for keeping a HDA stream thread context.
+ * HDA stream thread context (arguments).
  */
 typedef struct HDASTREAMTHREADCTX
 {

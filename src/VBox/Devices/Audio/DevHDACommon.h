@@ -44,9 +44,8 @@ typedef struct HDAREGDESC
     uint32_t        readable;
     /** Writable bits. */
     uint32_t        writable;
-    /** Register descriptor (RD) flags of type HDA_RD_FLAG_.
-     *  These are used to specify the handling (read/write)
-     *  policy of the register. */
+    /** Register descriptor (RD) flags of type HDA_RD_F_XXX. These are used to
+     *  specify the handling (read/write) policy of the register. */
     uint32_t        fFlags;
     /** Read callback. */
     FNHDAREGREAD   *pfnRead;
@@ -531,7 +530,7 @@ extern const HDAREGDESC g_aHdaRegMap[HDA_NUM_REGS];
      | ( (_aChan)     & HDA_SDFMT_CHANNELS_MASK))
 
 /** Interrupt on completion (IOC) flag. */
-#define HDA_BDLE_FLAG_IOC           RT_BIT(0)
+#define HDA_BDLE_F_IOC              RT_BIT(0)
 
 
 

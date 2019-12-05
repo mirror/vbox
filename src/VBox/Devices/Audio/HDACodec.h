@@ -61,7 +61,7 @@ union CODECNODE;
 typedef union CODECNODE CODECNODE, *PCODECNODE;
 
 /**
- * Structure for keeping a HDA codec state.
+ * HDA codec state.
  */
 typedef struct HDACODEC
 {

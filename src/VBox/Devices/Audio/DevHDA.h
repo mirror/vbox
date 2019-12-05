@@ -53,7 +53,7 @@ typedef struct HDAMIXERSINK
 } HDAMIXERSINK, *PHDAMIXERSINK;
 
 /**
- * Structure for mapping a stream tag to an HDA stream.
+ * Mapping a stream tag to an HDA stream.
  */
 typedef struct HDATAG
 {
@@ -62,7 +62,9 @@ typedef struct HDATAG
     uint8_t                 Padding[7];
     /** Pointer to associated stream. */
     R3PTRTYPE(PHDASTREAM) pStream;
-} HDATAG, *PHDATAG;
+} HDATAG;
+/** Pointer to a HDA stream tag mapping. */
+typedef HDATAG *PHDATAG;
 
 /** @todo Make STAM values out of this? */
 typedef struct HDASTATEDBGINFO
