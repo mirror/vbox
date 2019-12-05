@@ -28,6 +28,7 @@
 #include <map>
 #include <list>
 
+#include <iprt/mem.h>
 #include <iprt/rand.h>
 
 #ifdef VBOX_WITH_LIBVPX

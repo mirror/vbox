@@ -26,6 +26,9 @@
 #include <iprt/critsect.h>
 #include <iprt/file.h>
 
+#include <VBox/com/string.h>
+
+
 /** No flags set. */
 #define VBOX_EBMLWRITER_FLAG_NONE               0
 /** The file handle was inherited. */

@@ -25,6 +25,8 @@
 #include "LoggingNew.h"
 
 #include <iprt/buildconfig.h>
+#include <iprt/errcore.h>
+
 #include <VBox/version.h>
 
 #include "WebMWriter.h"
