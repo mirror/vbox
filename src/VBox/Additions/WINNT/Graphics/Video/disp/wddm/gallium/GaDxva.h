@@ -31,15 +31,13 @@ HRESULT VBoxDxvaGetDeviceGuids(GUID *paGuids, UINT cbGuids);
 HRESULT VBoxDxvaGetOutputFormatCount(UINT *pcFormats, DXVADDI_VIDEOPROCESSORINPUT const *pVPI, bool fSubstream);
 HRESULT VBoxDxvaGetOutputFormats(D3DDDIFORMAT *paFormats, UINT cbFormats, DXVADDI_VIDEOPROCESSORINPUT const *pVPI, bool fSubstream);
 
-HRESULT VBoxDxvaGetCaps(DXVADDI_VIDEOPROCESSORCAPS *pVideoProcessorCaps,
-                        DXVADDI_VIDEOPROCESSORINPUT const *pVPI);
+HRESULT VBoxDxvaGetCaps(DXVADDI_VIDEOPROCESSORCAPS *pVideoProcessorCaps, DXVADDI_VIDEOPROCESSORINPUT const *pVPI);
 
 HRESULT VBoxDxvaCreateVideoProcessDevice(PVBOXWDDMDISP_DEVICE pDevice, D3DDDIARG_CREATEVIDEOPROCESSDEVICE *pData);
 HRESULT VBoxDxvaDestroyVideoProcessDevice(PVBOXWDDMDISP_DEVICE pDevice, HANDLE hVideoProcessor);
 HRESULT VBoxDxvaVideoProcessBeginFrame(PVBOXWDDMDISP_DEVICE pDevice, HANDLE hVideoProcessor);
 HRESULT VBoxDxvaVideoProcessEndFrame(PVBOXWDDMDISP_DEVICE pDevice, D3DDDIARG_VIDEOPROCESSENDFRAME *pData);
-HRESULT VBoxDxvaSetVideoProcessRenderTarget(PVBOXWDDMDISP_DEVICE pDevice,
-                                            const D3DDDIARG_SETVIDEOPROCESSRENDERTARGET *pData);
+HRESULT VBoxDxvaSetVideoProcessRenderTarget(PVBOXWDDMDISP_DEVICE pDevice, const D3DDDIARG_SETVIDEOPROCESSRENDERTARGET *pData);
 HRESULT VBoxDxvaVideoProcessBlt(PVBOXWDDMDISP_DEVICE pDevice, const D3DDDIARG_VIDEOPROCESSBLT *pData);
 
 #endif /* !GA_INCLUDED_SRC_WINNT_Graphics_Video_disp_wddm_gallium_GaDxva_h */

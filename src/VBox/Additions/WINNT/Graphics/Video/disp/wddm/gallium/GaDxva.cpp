@@ -15,11 +15,7 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#include "VBoxGallium.h"
-//#include "../../../common/wddm/VBoxMPIf.h"
 #include "../VBoxDispD3DCmn.h"
-#include "../VBoxDispD3D.h"
-
 
 #define D3D_RELEASE(ptr) do { \
     if (ptr)                  \
@@ -31,9 +27,26 @@
 
 struct Vertex
 {
-    float x, y; /* The vertex position. */
-    float u, v; /* Texture coordinates. */
+    float x, y; /* The vertex position in pixels. */
+    float u, v; /* Normalized texture coordinates. */
 };
+
+/* Saved context. */
+typedef struct VBOXDXVAD3D9SAVEDSTATE
+{
+    D3DVIEWPORT9            Viewport;
+    DWORD                   rsCull;
+    DWORD                   rsZEnable;
+    IDirect3DSurface9      *pRT;
+    IDirect3DVertexShader9 *pVS;
+    IDirect3DPixelShader9  *pPS;
+    IDirect3DBaseTexture9  *pTexture;
+    float                   aVSConstantData[4];
+    float                   aPSConstantData[4];
+    DWORD                   ssMagFilter;
+    DWORD                   ssMinFilter;
+    DWORD                   ssMipFilter;
+} VBOXDXVAD3D9SAVEDSTATE;
 
 /*
  * Draw a quad in order to convert the input resource to the output render target.
@@ -50,29 +63,33 @@ typedef struct VBOXWDDMVIDEOPROCESSDEVICE
 
     /* The current render target, i.e. the Blt destination. */
     PVBOXWDDMDISP_RESOURCE pRenderTarget;
-    UINT SubResourceIndex;
-    IDirect3DTexture9 *pRTTexture;
+    UINT                   RTSubResourceIndex;
+    IDirect3DTexture9      *pRTTexture;
+    IDirect3DSurface9      *pRTSurface;
 
     /* Private objects for video processing. */
-    IDirect3DTexture9           *pTexture;    /* Intermediate texture. */
+    IDirect3DTexture9           *pStagingTexture;    /* Intermediate texture. */
     IDirect3DVertexBuffer9      *pVB;         /* Vertex buffer which describes the quad we render. */
     IDirect3DVertexDeclaration9 *pVertexDecl; /* Vertex declaration for the quad vertices. */
     IDirect3DVertexShader9      *pVS;         /* Vertex shader. */
     IDirect3DPixelShader9       *pPS;         /* Pixel shader. */
+
+    /* Saved D3D device state, which the blitter changes. */
+    VBOXDXVAD3D9SAVEDSTATE SavedState;
 } VBOXWDDMVIDEOPROCESSDEVICE;
 
-static const GUID gaDeviceGuids[] =
+static GUID const gaDeviceGuids[] =
 {
     DXVADDI_VideoProcProgressiveDevice,
     DXVADDI_VideoProcBobDevice
 };
 
-static const D3DDDIFORMAT gaInputFormats[] =
+static D3DDDIFORMAT const gaInputFormats[] =
 {
     D3DDDIFMT_YUY2
 };
 
-static const D3DDDIFORMAT gaOutputFormats[] =
+static D3DDDIFORMAT const gaOutputFormats[] =
 {
     D3DDDIFMT_A8R8G8B8,
     D3DDDIFMT_X8R8G8B8
@@ -98,16 +115,338 @@ static int vboxDxvaFindInputFormat(D3DDDIFORMAT enmFormat)
     return -1;
 }
 
+static HRESULT vboxDxvaCopyToVertexBuffer(IDirect3DVertexBuffer9 *pVB, const void *pvSrc, int cbSrc)
+{
+    void *pvDst = 0;
+    HRESULT hr = pVB->Lock(0, 0, &pvDst, 0);
+    if (SUCCEEDED(hr))
+    {
+        memcpy(pvDst, pvSrc, cbSrc);
+        hr = pVB->Unlock();
+    }
+    return hr;
+}
 
-static HRESULT vboxDxvaInit(VBOXWDDMVIDEOPROCESSDEVICE *pVideoProcessDevice /*,
-                            DWORD const *paVS, DWORD const *paPS*/)
+static HRESULT vboxDxvaDeviceStateSave(IDirect3DDevice9 *pDevice9, VBOXDXVAD3D9SAVEDSTATE *pState)
+{
+    HRESULT hr;
+
+    hr = pDevice9->GetViewport(&pState->Viewport);
+    AssertReturn(hr == D3D_OK, hr);
+
+    hr = pDevice9->GetRenderState(D3DRS_CULLMODE, &pState->rsCull);
+    AssertReturn(hr == D3D_OK, hr);
+
+    hr = pDevice9->GetRenderState(D3DRS_ZENABLE, &pState->rsZEnable);
+    AssertReturn(hr == D3D_OK, hr);
+
+    hr = pDevice9->GetRenderTarget(0, &pState->pRT);
+    AssertReturn(hr == D3D_OK, hr);
+
+    hr = pDevice9->GetVertexShader(&pState->pVS);
+    AssertReturn(hr == D3D_OK, hr);
+
+    hr = pDevice9->GetPixelShader(&pState->pPS);
+    AssertReturn(hr == D3D_OK, hr);
+
+    hr = pDevice9->GetTexture(0, &pState->pTexture);
+    AssertReturn(hr == D3D_OK, hr);
+
+    hr = pDevice9->GetVertexShaderConstantF(0, pState->aVSConstantData, 1);
+    AssertReturn(hr == D3D_OK, hr);
+
+    hr = pDevice9->GetPixelShaderConstantF(0, pState->aPSConstantData, 1);
+    AssertReturn(hr == D3D_OK, hr);
+
+    hr = pDevice9->GetSamplerState(0, D3DSAMP_MAGFILTER, &pState->ssMagFilter);
+    AssertReturn(hr == D3D_OK, hr);
+
+    hr = pDevice9->GetSamplerState(0, D3DSAMP_MINFILTER, &pState->ssMinFilter);
+    AssertReturn(hr == D3D_OK, hr);
+
+    hr = pDevice9->GetSamplerState(0, D3DSAMP_MIPFILTER, &pState->ssMipFilter);
+    AssertReturn(hr == D3D_OK, hr);
+
+    return hr;
+}
+
+static void vboxDxvaDeviceStateRestore(IDirect3DDevice9 *pDevice9, VBOXDXVAD3D9SAVEDSTATE const *pState)
+{
+    HRESULT hr;
+
+    hr = pDevice9->SetViewport(&pState->Viewport);
+    Assert(hr == D3D_OK);
+
+    hr = pDevice9->SetRenderState(D3DRS_CULLMODE, pState->rsCull);
+    Assert(hr == D3D_OK);
+
+    hr = pDevice9->SetRenderState(D3DRS_ZENABLE, pState->rsZEnable);
+    Assert(hr == D3D_OK);
+
+    hr = pDevice9->SetRenderTarget(0, pState->pRT);
+    Assert(hr == D3D_OK);
+
+    hr = pDevice9->SetVertexShader(pState->pVS);
+    Assert(hr == D3D_OK);
+
+    hr = pDevice9->SetPixelShader(pState->pPS);
+    Assert(hr == D3D_OK);
+
+    hr = pDevice9->SetTexture(0, pState->pTexture);
+    Assert(hr == D3D_OK);
+
+    hr = pDevice9->SetVertexShaderConstantF(0, pState->aVSConstantData, 1);
+    Assert(hr == D3D_OK);
+
+    hr = pDevice9->SetPixelShaderConstantF(0, pState->aPSConstantData, 1);
+    Assert(hr == D3D_OK);
+
+    hr = pDevice9->SetSamplerState(0, D3DSAMP_MAGFILTER, pState->ssMagFilter);
+    Assert(hr == D3D_OK);
+
+    hr = pDevice9->SetSamplerState(0, D3DSAMP_MINFILTER, pState->ssMinFilter);
+    Assert(hr == D3D_OK);
+
+    hr = pDevice9->SetSamplerState(0, D3DSAMP_MIPFILTER, pState->ssMipFilter);
+    Assert(hr == D3D_OK);
+}
+
+static HRESULT vboxDxvaUploadSample(VBOXWDDMVIDEOPROCESSDEVICE *pVideoProcessDevice,
+                                    IDirect3DTexture9 *pSrcTexture,
+                                    UINT SrcSubResourceIndex)
+{
+    HRESULT hr;
+
+    /*
+     * Upload the source data to the staging texture.
+     */
+    D3DLOCKED_RECT StagingLockedRect;
+    hr = pVideoProcessDevice->pStagingTexture->LockRect(0, /* texture level */
+                                                        &StagingLockedRect,
+                                                        NULL,   /* entire texture */
+                                                        D3DLOCK_DISCARD);
+    Assert(hr == D3D_OK);
+    if (hr == D3D_OK)
+    {
+        D3DLOCKED_RECT SampleLockedRect;
+        hr = pSrcTexture->LockRect(SrcSubResourceIndex, /* texture level */
+                                   &SampleLockedRect,
+                                   NULL,   /* entire texture */
+                                   D3DLOCK_READONLY);
+        Assert(hr == D3D_OK);
+        if (hr == D3D_OK)
+        {
+            uint8_t *pDst = (uint8_t *)StagingLockedRect.pBits;
+            const uint8_t *pSrc = (uint8_t *)SampleLockedRect.pBits;
+            for (uint32_t j = 0; j < pVideoProcessDevice->VideoDesc.SampleHeight; ++j)
+            {
+                memcpy(pDst, pSrc, RT_MIN(SampleLockedRect.Pitch, StagingLockedRect.Pitch));
+
+                pDst += StagingLockedRect.Pitch;
+                pSrc += SampleLockedRect.Pitch;
+            }
+
+            pSrcTexture->UnlockRect(SrcSubResourceIndex /* texture level */);
+        }
+        pVideoProcessDevice->pStagingTexture->UnlockRect(0 /* texture level */);
+    }
+
+    return hr;
+}
+
+/*
+ * The shader code has been obtained from the hex listing file (hexdump.txt) produced by fxc HLSL compiler:
+ * fxc.exe /Op /Tfx_2_0 /Fxhexdump.txt shader.fx
+ *
+    uniform extern float4 gTextureInfo; // .xy = (TargetWidth, TargetHeight), .zw = (SourceWidth, SourceHeight) in pixels
+    uniform extern texture gTexSource;
+    sampler sSource = sampler_state
+    {
+        Texture = <gTexSource>;
+    };
+
+    struct VS_INPUT
+    {
+        float2 Position   : POSITION;  // In pixels
+        float2 TexCoord   : TEXCOORD0; // Normalized
+    };
+
+    struct VS_OUTPUT
+    {
+        float4 Position   : POSITION;  // Normalized
+        float2 TexCoord   : TEXCOORD0; // Normalized
+    };
+
+    VS_OUTPUT VS(VS_INPUT In)
+    {
+        VS_OUTPUT Output;
+
+        // Target position is in pixels, i.e left,top is 0,0; right,bottom is width - 1,height - 1.
+        // Convert to the normalized coords in the -1;1 range (x right, y up).
+        float4 Position;
+        Position.x =  2.0f * In.Position.x / (gTextureInfo.x - 1.0f) - 1.0f;
+        Position.y = -2.0f * In.Position.y / (gTextureInfo.y - 1.0f) + 1.0f;
+        Position.z = 0.0f; // Not used.
+        Position.w = 1.0f; // It is a point.
+
+        Output.Position  = Position;
+        Output.TexCoord  = In.TexCoord;
+
+        return Output;
+    }
+
+    struct PS_OUTPUT
+    {
+        float4 Color : COLOR0;
+    };
+
+    static const float3x3 yuvCoeffs =
+    {
+        1.164383f,  1.164383f, 1.164383f,
+        0.0f,      -0.391762f, 2.017232f,
+        1.596027f, -0.812968f, 0.0f
+    };
+
+    PS_OUTPUT PS(VS_OUTPUT In)
+    {
+        PS_OUTPUT Output;
+
+        // 4 bytes of an YUV macropixel contain 2 pixels in X for the target.
+        // I.e. each YUV texture pixel is sampled twice: for both even and odd target pixels.
+
+        // In.TexCoord are in [0;1] range for the source texture.
+        float2 texCoord = In.TexCoord;
+
+        // Source texture data is half width, i.e. it contains data in pixels [0; width / 2 - 1].
+        texCoord.x = texCoord.x / 2.0f;
+
+        // Which source pixel needs to be read: xPixel = TexCoord.x * SourceWidth.
+        float xSourcePixel = texCoord.x * gTextureInfo.z;
+
+        // Remainder is about 0.25 for even pixels and about 0.75 for odd pixels.
+        float remainder = xSourcePixel - trunc(xSourcePixel);
+
+        // Fetch YUV
+        float4 texColor = tex2D(sSource, texCoord);
+
+        // Get YUV components.
+        float y0 = texColor.b;
+        float u  = texColor.g;
+        float y1 = texColor.r;
+        float v  = texColor.a;
+
+        // Get y0 for even x coordinates and y1 for odd ones.
+        float y = remainder < 0.5f ? y0 : y1;
+
+        // Make a vector for easier calculation.
+        float3 yuv = float3(y, u, v);
+
+        // Convert YUV to RGB for BT.601:
+        // https://docs.microsoft.com/en-us/windows/win32/medfound/recommended-8-bit-yuv-formats-for-video-rendering#converting-8-bit-yuv-to-rgb888
+        //
+        // For 8bit [0;255] when Y = [16;235], U,V = [16;239]:
+        //
+        //   C = Y - 16
+        //   D = U - 128
+        //   E = V - 128
+        //
+        //   R = 1.164383 * C                + 1.596027 * E
+        //   G = 1.164383 * C - 0.391762 * D - 0.812968 * E
+        //   B = 1.164383 * C + 2.017232 * D
+        //
+        // For shader values [0;1.0] when Y = [16/255;235/255], U,V = [16/255;239/255]:
+        //
+        //   C = Y - 0.0627
+        //   D = U - 0.5020
+        //   E = V - 0.5020
+        //
+        //   R = 1.164383 * C                + 1.596027 * E
+        //   G = 1.164383 * C - 0.391762 * D - 0.812968 * E
+        //   B = 1.164383 * C + 2.017232 * D
+        //
+        yuv -= float3(0.0627f, 0.502f, 0.502f);
+        float3 bgr = mul(yuv, yuvCoeffs);
+
+        // Clamp to [0;1]
+        bgr = saturate(bgr);
+
+        // Return RGBA
+        Output.Color = float4(bgr, 1.0f);
+
+        return Output;
+    }
+
+    technique RenderScene
+    {
+        pass P0
+        {
+            VertexShader = compile vs_2_0 VS();
+            PixelShader  = compile ps_2_0 PS();
+        }
+    }
+ */
+
+static DWORD const aVSCode[] =
+{
+    0xfffe0200,                                                             // vs_2_0
+    0x05000051, 0xa00f0001, 0xbf800000, 0xc0000000, 0x3f800000, 0x00000000, // def c1, -1, -2, 1, 0
+    0x0200001f, 0x80000000, 0x900f0000,                                     // dcl_position v0
+    0x0200001f, 0x80000005, 0x900f0001,                                     // dcl_texcoord v1
+    0x03000002, 0x80010000, 0x90000000, 0x90000000,                         // add r0.x, v0.x, v0.x
+    0x02000001, 0x80010001, 0xa0000001,                                     // mov r1.x, c1.x
+    0x03000002, 0x80060000, 0x80000001, 0xa0d00000,                         // add r0.yz, r1.x, c0.xxyw
+    0x02000006, 0x80020000, 0x80550000,                                     // rcp r0.y, r0.y
+    0x02000006, 0x80040000, 0x80aa0000,                                     // rcp r0.z, r0.z
+    0x04000004, 0xc0010000, 0x80000000, 0x80550000, 0xa0000001,             // mad oPos.x, r0.x, r0.y, c1.x
+    0x03000005, 0x80010000, 0x90550000, 0xa0550001,                         // mul r0.x, v0.y, c1.y
+    0x04000004, 0xc0020000, 0x80000000, 0x80aa0000, 0xa0aa0001,             // mad oPos.y, r0.x, r0.z, c1.z
+    0x02000001, 0xc00c0000, 0xa0b40001,                                     // mov oPos.zw, c1.xywz
+    0x02000001, 0xe0030000, 0x90e40001,                                     // mov oT0.xy, v1
+    0x0000ffff
+};
+
+static DWORD const aPSCodeYUY2toRGB[] =
+{
+    0xffff0200,                                                             // ps_2_0
+    0x05000051, 0xa00f0001, 0xbd8068dc, 0xbf008312, 0xbf008312, 0x00000000, // def c1, -0.0627000034, -0.501999974, -0.501999974, 0
+    0x05000051, 0xa00f0002, 0x3f000000, 0x00000000, 0x3f800000, 0x3f000000, // def c2, 0.5, 0, 1, 0.5
+    0x05000051, 0xa00f0003, 0x3f950a81, 0x00000000, 0x3fcc4a9d, 0x00000000, // def c3, 1.16438305, 0, 1.59602702, 0
+    0x05000051, 0xa00f0004, 0x3f950a81, 0xbec89507, 0xbf501eac, 0x00000000, // def c4, 1.16438305, -0.391761988, -0.812968016, 0
+    0x05000051, 0xa00f0005, 0x3f950a81, 0x40011a54, 0x00000000, 0x00000000, // def c5, 1.16438305, 2.01723194, 0, 0
+    0x0200001f, 0x80000000, 0xb0030000,                                     // dcl t0.xy
+    0x0200001f, 0x90000000, 0xa00f0800,                                     // dcl_2d s0
+    0x03000005, 0x80080000, 0xb0000000, 0xa0000002,                         // mul r0.w, t0.x, c2.x
+    0x03000005, 0x80010000, 0x80ff0000, 0xa0aa0000,                         // mul r0.x, r0.w, c0.z
+    0x02000013, 0x80020000, 0x80000000,                                     // frc r0.y, r0.x
+    0x04000058, 0x80040000, 0x81550000, 0xa0550002, 0xa0aa0002,             // cmp r0.z, -r0.y, c2.y, c2.z
+    0x03000002, 0x80020000, 0x80000000, 0x81550000,                         // add r0.y, r0.x, -r0.y
+    0x04000058, 0x80010000, 0x80000000, 0xa0550002, 0x80aa0000,             // cmp r0.x, r0.x, c2.y, r0.z
+    0x03000002, 0x80010000, 0x80000000, 0x80550000,                         // add r0.x, r0.x, r0.y
+    0x04000004, 0x80010000, 0x80ff0000, 0xa0aa0000, 0x81000000,             // mad r0.x, r0.w, c0.z, -r0.x
+    0x03000002, 0x80010000, 0x80000000, 0xa1ff0002,                         // add r0.x, r0.x, -c2.w
+    0x03000005, 0x80030001, 0xb0e40000, 0xa01b0002,                         // mul r1.xy, t0, c2.wzyx
+    0x03000042, 0x800f0001, 0x80e40001, 0xa0e40800,                         // texld r1, r1, s0
+    0x04000058, 0x80010001, 0x80000000, 0x80000001, 0x80aa0001,             // cmp r1.x, r0.x, r1.x, r1.z
+    0x02000001, 0x80040001, 0x80ff0001,                                     // mov r1.z, r1.w
+    0x03000002, 0x80070000, 0x80e40001, 0xa0e40001,                         // add r0.xyz, r1, c1
+    0x03000008, 0x80110001, 0x80e40000, 0xa0e40003,                         // dp3_sat r1.x, r0, c3
+    0x03000008, 0x80120001, 0x80e40000, 0xa0e40004,                         // dp3_sat r1.y, r0, c4
+    0x0400005a, 0x80140001, 0x80e40000, 0xa0e40005, 0xa0aa0005,             // dp2add_sat r1.z, r0, c5, c5.z
+    0x02000001, 0x80080001, 0xa0aa0002,                                     // mov r1.w, c2.z
+    0x02000001, 0x800f0800, 0x80e40001,                                     // mov oC0, r1
+    0x0000ffff
+};
+
+
+static HRESULT vboxDxvaInit(VBOXWDDMVIDEOPROCESSDEVICE *pVideoProcessDevice)
 {
     HRESULT hr;
 
     IDirect3DDevice9 *pDevice9 = pVideoProcessDevice->pDevice->pDevice9If;
-    AssertPtrReturn(pDevice9, E_INVALIDARG);
 
-#if 0
+    DWORD const *paVS = &aVSCode[0];
+    DWORD const *paPS = &aPSCodeYUY2toRGB[0];
+
     static D3DVERTEXELEMENT9 const aVertexElements[] =
     {
         {0,  0, D3DDECLTYPE_FLOAT2, D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_POSITION, 0},
@@ -115,7 +454,7 @@ static HRESULT vboxDxvaInit(VBOXWDDMVIDEOPROCESSDEVICE *pVideoProcessDevice /*,
         D3DDECL_END()
     };
 
-    HRESULT hr = pDevice9->CreateVertexDeclaration(aVertexElements, &pVideoProcessDevice->pVertexDecl);
+    hr = pDevice9->CreateVertexDeclaration(aVertexElements, &pVideoProcessDevice->pVertexDecl);
     AssertReturn(hr == D3D_OK, hr);
 
     hr = pDevice9->CreateVertexBuffer(6 * sizeof(Vertex), /* 2 triangles. */
@@ -131,51 +470,171 @@ static HRESULT vboxDxvaInit(VBOXWDDMVIDEOPROCESSDEVICE *pVideoProcessDevice /*,
 
     hr = pDevice9->CreatePixelShader(paPS, &pVideoProcessDevice->pPS);
     AssertReturn(hr == D3D_OK, hr);
-#endif
 
     hr = pDevice9->CreateTexture(pVideoProcessDevice->VideoDesc.SampleWidth,
-                                         pVideoProcessDevice->VideoDesc.SampleHeight,
-                                         0, /* Levels */
-                                         0, /* D3DUSAGE_ */
-                                         D3DFMT_YUY2, /** @todo Maybe a stretch is enough because host already does the conversion? */
-                                         D3DPOOL_DEFAULT,
-                                         &pVideoProcessDevice->pTexture,
-                                         NULL);
+                                 pVideoProcessDevice->VideoDesc.SampleHeight,
+                                 0, /* Levels */
+                                 0, /* D3DUSAGE_ */
+                                 D3DFMT_A8R8G8B8, //D3DFMT_YUY2,
+                                 D3DPOOL_DEFAULT,
+                                 &pVideoProcessDevice->pStagingTexture,
+                                 NULL);
     AssertReturn(hr == D3D_OK, hr);
 
     return S_OK;
 }
 
-static HRESULT vboxDxvaBltRect(VBOXWDDMVIDEOPROCESSDEVICE *pVideoProcessDevice,
-                               IDirect3DTexture9 *pSrcTexture,
-                               UINT SrcSubResourceIndex,
-                               RECT const *pSrcRect,
-                               RECT const *pDstRect)
+static HRESULT vboxDxvaSetState(VBOXWDDMVIDEOPROCESSDEVICE *pVideoProcessDevice)
 {
     HRESULT hr;
 
     IDirect3DDevice9 *pDevice9 = pVideoProcessDevice->pDevice->pDevice9If;
-    AssertPtrReturn(pDevice9, E_INVALIDARG);
 
-    hr = pDevice9->UpdateTexture(pSrcTexture, pVideoProcessDevice->pTexture);
+    hr = pDevice9->SetStreamSource(0, pVideoProcessDevice->pVB, 0, sizeof(Vertex));
     AssertReturn(hr == D3D_OK, hr);
 
-    IDirect3DSurface9 *pSrcSurface;
-    hr = pVideoProcessDevice->pTexture->GetSurfaceLevel(SrcSubResourceIndex, &pSrcSurface);
+    hr = pDevice9->SetVertexDeclaration(pVideoProcessDevice->pVertexDecl);
     AssertReturn(hr == D3D_OK, hr);
 
-    IDirect3DSurface9 *pDstSurface;
-    hr = pVideoProcessDevice->pRTTexture->GetSurfaceLevel(pVideoProcessDevice->SubResourceIndex, &pDstSurface);
-    AssertReturnStmt(hr == D3D_OK, D3D_RELEASE(pSrcSurface), hr);
+    hr = pDevice9->SetVertexShader(pVideoProcessDevice->pVS);
+    AssertReturn(hr == D3D_OK, hr);
 
-    hr = pDevice9->StretchRect(pSrcSurface, pSrcRect, pDstSurface, pDstRect, D3DTEXF_NONE);
+    hr = pDevice9->SetPixelShader(pVideoProcessDevice->pPS);
+    AssertReturn(hr == D3D_OK, hr);
 
-    D3D_RELEASE(pSrcSurface);
-    D3D_RELEASE(pDstSurface);
+    hr = pDevice9->SetRenderState(D3DRS_CULLMODE, D3DCULL_NONE);
+    AssertReturn(hr == D3D_OK, hr);
 
+    hr = pDevice9->SetRenderState(D3DRS_ZENABLE, D3DZB_FALSE);
+    AssertReturn(hr == D3D_OK, hr);
+
+    hr = pDevice9->SetTexture(0, pVideoProcessDevice->pStagingTexture);
+    AssertReturn(hr == D3D_OK, hr);
+
+    float const cTargetWidth = pVideoProcessDevice->pRenderTarget->aAllocations[0].SurfDesc.width;
+    float const cTargetHeight = pVideoProcessDevice->pRenderTarget->aAllocations[0].SurfDesc.height;
+
+    float const cSampleWidth = pVideoProcessDevice->VideoDesc.SampleWidth;
+    float const cSampleHeight = pVideoProcessDevice->VideoDesc.SampleHeight;
+
+    float aTextureInfo[4];
+    aTextureInfo[0] = cTargetWidth;
+    aTextureInfo[1] = cTargetHeight;
+    aTextureInfo[2] = cSampleWidth;
+    aTextureInfo[3] = cSampleHeight;
+
+    hr = pDevice9->SetVertexShaderConstantF(0, aTextureInfo, 1);
+    AssertReturn(hr == D3D_OK, hr);
+    hr = pDevice9->SetPixelShaderConstantF(0, aTextureInfo, 1);
+    AssertReturn(hr == D3D_OK, hr);
+
+    hr = pDevice9->SetSamplerState(0, D3DSAMP_MAGFILTER, D3DTEXF_POINT);
+    AssertReturn(hr == D3D_OK, hr);
+    hr = pDevice9->SetSamplerState(0, D3DSAMP_MINFILTER, D3DTEXF_POINT);
+    AssertReturn(hr == D3D_OK, hr);
+    hr = pDevice9->SetSamplerState(0, D3DSAMP_MIPFILTER, D3DTEXF_NONE);
+    AssertReturn(hr == D3D_OK, hr);
+
+    hr = pDevice9->SetRenderTarget(0, pVideoProcessDevice->pRTSurface);
     AssertReturn(hr == D3D_OK, hr);
 
     return S_OK;
+}
+
+static HRESULT vboxDxvaUpdateVertexBuffer(VBOXWDDMVIDEOPROCESSDEVICE *pVideoProcessDevice,
+                                          RECT const *pSrcRect,
+                                          RECT const *pDstRect)
+{
+    HRESULT hr;
+
+    /* Do not display anything if the source rectangle is not what is expected.
+     * But assert anyway in order to be able to investigate.
+     */
+    AssertReturn(pSrcRect->right > pSrcRect->left, S_OK);
+    AssertReturn(pSrcRect->bottom > pSrcRect->top, S_OK);
+
+    float const cSrcWidth = pVideoProcessDevice->VideoDesc.SampleWidth;
+    float const cSrcHeight = pVideoProcessDevice->VideoDesc.SampleHeight;
+
+    float const uSrcLeft   = pSrcRect->left/cSrcWidth;
+    float const uSrcRight  = pSrcRect->right/cSrcWidth;
+    float const vSrcTop    = pSrcRect->top/cSrcHeight;
+    float const vSrcBottom = pSrcRect->bottom/cSrcHeight;
+
+    /* Subtract 0.5 to line up the pixel centers with texels
+     * https://docs.microsoft.com/en-us/windows/win32/direct3d9/directly-mapping-texels-to-pixels
+     */
+    float const xDstLeft   = pDstRect->left - 0.5f;
+    float const xDstRight  = pDstRect->right - 0.5f;
+    float const yDstTop    = pDstRect->top - 0.5f;
+    float const yDstBottom = pDstRect->bottom - 0.5f;
+
+    Vertex const aVertices[] =
+    {
+        { xDstLeft,  yDstTop,    uSrcLeft,  vSrcTop},
+        { xDstRight, yDstTop,    uSrcRight, vSrcTop},
+        { xDstRight, yDstBottom, uSrcRight, vSrcBottom},
+
+        { xDstLeft,  yDstTop,    uSrcLeft,  vSrcTop},
+        { xDstRight, yDstBottom, uSrcRight, vSrcBottom},
+        { xDstLeft,  yDstBottom, uSrcLeft,  vSrcBottom},
+    };
+
+    hr = vboxDxvaCopyToVertexBuffer(pVideoProcessDevice->pVB, aVertices, sizeof(aVertices));
+    AssertReturn(hr == D3D_OK, hr);
+
+    return S_OK;
+}
+
+static HRESULT vboxDxvaProcessBlt(VBOXWDDMVIDEOPROCESSDEVICE *pVideoProcessDevice,
+                                  D3DDDIARG_VIDEOPROCESSBLT const *pData,
+                                  IDirect3DTexture9 *paSrcTextures[])
+{
+    HRESULT hr;
+
+    IDirect3DDevice9 *pDevice9 = pVideoProcessDevice->pDevice->pDevice9If;
+
+    hr = vboxDxvaDeviceStateSave(pDevice9, &pVideoProcessDevice->SavedState);
+    if (hr == D3D_OK)
+    {
+        /* Set the required state for the blits, inclusding the render target. */
+        hr = vboxDxvaSetState(pVideoProcessDevice);
+        if (hr == D3D_OK)
+        {
+            /* Clear the target rectangle. */
+            /** @todo Use pData->BackgroundColor */
+            D3DCOLOR BgColor = 0;
+            D3DRECT TargetRect;
+            TargetRect.x1 = pData->TargetRect.left;
+            TargetRect.y1 = pData->TargetRect.top;
+            TargetRect.x2 = pData->TargetRect.right;
+            TargetRect.y2 = pData->TargetRect.bottom;
+            hr = pDevice9->Clear(1, &TargetRect, D3DCLEAR_TARGET, BgColor, 0.0f, 0);
+            Assert(hr == D3D_OK); /* Ignore errors. */
+
+            DXVADDI_VIDEOSAMPLE const *pSrcSample = &pData->pSrcSurfaces[0];
+            IDirect3DTexture9 *pSrcTexture = paSrcTextures[0];
+
+            /* Upload the source data to the staging texture. */
+            hr = vboxDxvaUploadSample(pVideoProcessDevice, pSrcTexture, pSrcSample->SrcSubResourceIndex);
+            if (hr == D3D_OK)
+            {
+                /* Setup the blit dimensions. */
+                hr = vboxDxvaUpdateVertexBuffer(pVideoProcessDevice, &pSrcSample->SrcRect, &pSrcSample->DstRect);
+                Assert(hr == D3D_OK);
+                if (hr == D3D_OK)
+                {
+
+                    hr = pDevice9->DrawPrimitive(D3DPT_TRIANGLELIST, 0, 2);
+                    Assert(hr == D3D_OK);
+                }
+            }
+        }
+
+        vboxDxvaDeviceStateRestore(pDevice9, &pVideoProcessDevice->SavedState);
+    }
+
+    return hr;
 }
 
 /*
@@ -208,8 +667,6 @@ HRESULT VBoxDxvaGetOutputFormatCount(UINT *pcFormats, DXVADDI_VIDEOPROCESSORINPU
     UINT cFormats = 0;
     if (pVPI)
     {
-        LOGREL(("%dx%d", pVPI->VideoDesc.SampleWidth, pVPI->VideoDesc.SampleHeight));
-
         if (vboxDxvaFindDeviceGuid(pVPI->pVideoProcGuid) >= 0)
         {
             if (vboxDxvaFindInputFormat(pVPI->VideoDesc.Format) >= 0)
@@ -229,8 +686,6 @@ HRESULT VBoxDxvaGetOutputFormats(D3DDDIFORMAT *paFormats, UINT cbFormats, DXVADD
 
     if (pVPI)
     {
-        LOGREL(("%dx%d", pVPI->VideoDesc.SampleWidth, pVPI->VideoDesc.SampleHeight));
-
         if (vboxDxvaFindDeviceGuid(pVPI->pVideoProcGuid) >= 0)
         {
             if (vboxDxvaFindInputFormat(pVPI->VideoDesc.Format) >= 0)
@@ -255,8 +710,6 @@ HRESULT VBoxDxvaGetCaps(DXVADDI_VIDEOPROCESSORCAPS *pVideoProcessorCaps,
 
     if (pVPI)
     {
-        LOGREL(("%dx%d", pVPI->VideoDesc.SampleWidth, pVPI->VideoDesc.SampleHeight));
-
         if (vboxDxvaFindDeviceGuid(pVPI->pVideoProcGuid) >= 0)
         {
             if (vboxDxvaFindInputFormat(pVPI->VideoDesc.Format) >= 0)
@@ -309,18 +762,19 @@ HRESULT VBoxDxvaCreateVideoProcessDevice(PVBOXWDDMDISP_DEVICE pDevice, D3DDDIARG
 
 HRESULT VBoxDxvaDestroyVideoProcessDevice(PVBOXWDDMDISP_DEVICE pDevice, HANDLE hVideoProcessor)
 {
-    RT_NOREF(pDevice);
-
     VBOXWDDMVIDEOPROCESSDEVICE *pVideoProcessDevice = (VBOXWDDMVIDEOPROCESSDEVICE *)hVideoProcessor;
-    if (pVideoProcessDevice)
-    {
-        D3D_RELEASE(pVideoProcessDevice->pVertexDecl);
-        D3D_RELEASE(pVideoProcessDevice->pVB);
-        D3D_RELEASE(pVideoProcessDevice->pVS);
-        D3D_RELEASE(pVideoProcessDevice->pPS);
+    AssertReturn(pDevice == pVideoProcessDevice->pDevice, E_INVALIDARG);
 
-        RTMemFree(pVideoProcessDevice);
-    }
+    D3D_RELEASE(pVideoProcessDevice->pRTSurface);
+
+    D3D_RELEASE(pVideoProcessDevice->pStagingTexture);
+    D3D_RELEASE(pVideoProcessDevice->pVertexDecl);
+    D3D_RELEASE(pVideoProcessDevice->pVB);
+    D3D_RELEASE(pVideoProcessDevice->pVS);
+    D3D_RELEASE(pVideoProcessDevice->pPS);
+
+    RTMemFree(pVideoProcessDevice);
+
     return S_OK;
 }
 
@@ -328,9 +782,10 @@ HRESULT VBoxDxvaVideoProcessBeginFrame(PVBOXWDDMDISP_DEVICE pDevice, HANDLE hVid
 {
     VBOXWDDMVIDEOPROCESSDEVICE *pVideoProcessDevice = (VBOXWDDMVIDEOPROCESSDEVICE *)hVideoProcessor;
     AssertReturn(pDevice == pVideoProcessDevice->pDevice, E_INVALIDARG);
+    AssertPtrReturn(pDevice->pDevice9If, E_INVALIDARG);
 
     HRESULT hr = S_OK;
-    if (!pVideoProcessDevice->pTexture)
+    if (!pVideoProcessDevice->pStagingTexture)
     {
         hr = vboxDxvaInit(pVideoProcessDevice);
     }
@@ -351,44 +806,55 @@ HRESULT VBoxDxvaSetVideoProcessRenderTarget(PVBOXWDDMDISP_DEVICE pDevice,
     VBOXWDDMVIDEOPROCESSDEVICE *pVideoProcessDevice = (VBOXWDDMVIDEOPROCESSDEVICE *)pData->hVideoProcess;
     AssertReturn(pDevice == pVideoProcessDevice->pDevice, E_INVALIDARG);
 
+    D3D_RELEASE(pVideoProcessDevice->pRTSurface);
+    pVideoProcessDevice->pRenderTarget = NULL;
+    pVideoProcessDevice->RTSubResourceIndex = 0;
+    pVideoProcessDevice->pRTTexture = NULL;
+
     PVBOXWDDMDISP_RESOURCE pRc = (PVBOXWDDMDISP_RESOURCE)pData->hRenderTarget;
     AssertReturn(pRc->cAllocations > pData->SubResourceIndex, E_INVALIDARG);
-
-    pVideoProcessDevice->pRenderTarget = pRc;
-    pVideoProcessDevice->SubResourceIndex = pData->SubResourceIndex;
 
     VBOXWDDMDISP_ALLOCATION *pAllocation = &pRc->aAllocations[pData->SubResourceIndex];
     AssertPtrReturn(pAllocation->pD3DIf, E_INVALIDARG);
     AssertReturn(pAllocation->enmD3DIfType == VBOXDISP_D3DIFTYPE_TEXTURE, E_INVALIDARG);
 
-    pVideoProcessDevice->pRTTexture = (IDirect3DTexture9 *)pAllocation->pD3DIf;
-
+#ifdef LOG_ENABLED
     LOGREL_EXACT(("VideoProcess RT %dx%d sid=%u\n",
         pRc->aAllocations[0].SurfDesc.width, pRc->aAllocations[0].SurfDesc.height, pAllocation->hostID));
+#endif
+
+    IDirect3DTexture9 *pRTTexture = (IDirect3DTexture9 *)pAllocation->pD3DIf;
+    HRESULT hr = pRTTexture->GetSurfaceLevel(pData->SubResourceIndex, &pVideoProcessDevice->pRTSurface);
+    AssertReturn(hr == D3D_OK, E_INVALIDARG);
+
+    pVideoProcessDevice->pRenderTarget = pRc;
+    pVideoProcessDevice->RTSubResourceIndex = pData->SubResourceIndex;
+    pVideoProcessDevice->pRTTexture = pRTTexture;
 
     return S_OK;
 }
 
 HRESULT VBoxDxvaVideoProcessBlt(PVBOXWDDMDISP_DEVICE pDevice, const D3DDDIARG_VIDEOPROCESSBLT *pData)
 {
-    HRESULT  hr;
-
     VBOXWDDMVIDEOPROCESSDEVICE *pVideoProcessDevice = (VBOXWDDMVIDEOPROCESSDEVICE *)pData->hVideoProcess;
     AssertReturn(pDevice == pVideoProcessDevice->pDevice, E_INVALIDARG);
+    AssertPtrReturn(pDevice->pDevice9If, E_INVALIDARG);
+    AssertPtrReturn(pVideoProcessDevice->pRTSurface, E_INVALIDARG);
+
+    AssertReturn(pData->NumSrcSurfaces > 0, E_INVALIDARG);
 
     PVBOXWDDMDISP_RESOURCE pSrcRc = (PVBOXWDDMDISP_RESOURCE)pData->pSrcSurfaces[0].SrcResource;
+    AssertReturn(pSrcRc->cAllocations > pData->pSrcSurfaces[0].SrcSubResourceIndex, E_INVALIDARG);
 
-    PVBOXWDDMDISP_RESOURCE pRc = (PVBOXWDDMDISP_RESOURCE)pData->pSrcSurfaces[0].SrcResource;
-    AssertReturn(pRc->cAllocations > pData->pSrcSurfaces[0].SrcSubResourceIndex, E_INVALIDARG);
-
-    VBOXWDDMDISP_ALLOCATION *pAllocation = &pRc->aAllocations[pData->pSrcSurfaces[0].SrcSubResourceIndex];
+    VBOXWDDMDISP_ALLOCATION *pAllocation = &pSrcRc->aAllocations[pData->pSrcSurfaces[0].SrcSubResourceIndex];
     AssertPtrReturn(pAllocation->pD3DIf, E_INVALIDARG);
     AssertReturn(pAllocation->enmD3DIfType == VBOXDISP_D3DIFTYPE_TEXTURE, E_INVALIDARG);
 
     IDirect3DTexture9 *pSrcTexture = (IDirect3DTexture9 *)pAllocation->pD3DIf;
 
-    LOGREL_EXACT(("VideoProcess Blt sid = %u %d,%d %dx%d (%dx%d) -> %d,%d %dx%d (%d,%d %dx%d, %dx%d)\n",
-        pAllocation->hostID,
+#ifdef LOG_ENABLED
+    LOGREL_EXACT(("VideoProcess Blt sid = %u fmt 0x%08x %d,%d %dx%d (%dx%d) -> %d,%d %dx%d (%d,%d %dx%d, %dx%d)\n",
+        pAllocation->hostID, pSrcRc->aAllocations[0].SurfDesc.format,
         pData->pSrcSurfaces[0].SrcRect.left, pData->pSrcSurfaces[0].SrcRect.top,
         pData->pSrcSurfaces[0].SrcRect.right - pData->pSrcSurfaces[0].SrcRect.left,
         pData->pSrcSurfaces[0].SrcRect.bottom - pData->pSrcSurfaces[0].SrcRect.top,
@@ -405,10 +871,8 @@ HRESULT VBoxDxvaVideoProcessBlt(PVBOXWDDMDISP_DEVICE pDevice, const D3DDDIARG_VI
 
         pVideoProcessDevice->pRenderTarget->aAllocations[0].SurfDesc.width,
         pVideoProcessDevice->pRenderTarget->aAllocations[0].SurfDesc.height));
+#endif
 
-    hr = vboxDxvaBltRect(pVideoProcessDevice, pSrcTexture, pData->pSrcSurfaces[0].SrcSubResourceIndex,
-                         &pData->pSrcSurfaces[0].SrcRect,
-                         &pData->pSrcSurfaces[0].DstRect);
-
-    return S_OK;
+    HRESULT hr = vboxDxvaProcessBlt(pVideoProcessDevice, pData, &pSrcTexture);
+    return hr;
 }
