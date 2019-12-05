@@ -1506,3 +1506,20 @@ void vboxWddmDmSetupDefaultVramLocation(PVBOXMP_DEVEXT pDevExt, D3DDDI_VIDEO_PRE
         pSource->u8SyncState &= ~VBOXWDDM_HGSYNC_F_SYNCED_LOCATION;
 }
 
+char const *vboxWddmAllocTypeString(PVBOXWDDM_ALLOCATION pAlloc)
+{
+    switch (pAlloc->enmType)
+    {
+        case VBOXWDDM_ALLOC_TYPE_UNEFINED:                 return "UNEFINED"; 
+        case VBOXWDDM_ALLOC_TYPE_STD_SHAREDPRIMARYSURFACE: return "SHAREDPRIMARYSURFACE";
+        case VBOXWDDM_ALLOC_TYPE_STD_SHADOWSURFACE:        return "SHADOWSURFACE";
+        case VBOXWDDM_ALLOC_TYPE_STD_STAGINGSURFACE:       return "STAGINGSURFACE";
+        case VBOXWDDM_ALLOC_TYPE_STD_GDISURFACE:           return "GDISURFACE"; 
+        case VBOXWDDM_ALLOC_TYPE_UMD_RC_GENERIC:           return "UMD_RC_GENERIC"; 
+        case VBOXWDDM_ALLOC_TYPE_UMD_HGSMI_BUFFER:         return "UMD_HGSMI_BUFFER"; 
+        default: break;
+    }
+    AssertFailed();
+    return "UNKNOWN";
+ 
+}
