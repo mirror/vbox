@@ -923,7 +923,7 @@ static int hdaR3StreamTransfer(PPDMDEVINS pDevIns, PHDASTREAM pStream, uint32_t 
     AssertPtr(pThis);
 
     PHDASTREAMPERIOD pPeriod = &pStream->State.Period;
-    hdaR3StreamPeriodLock(pPeriod))
+    hdaR3StreamPeriodLock(pPeriod);
 
     bool fProceed = true;
 
