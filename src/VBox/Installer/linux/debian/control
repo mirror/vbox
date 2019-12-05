@@ -3,12 +3,12 @@ Section: contrib/misc
 Priority: optional
 Maintainer: Oracle Corporation <info@virtualbox.org>
 Standards-Version: 3.2.1
-Build-Depends: debhelper (>= 5), libz-dev, libssl-dev, 
+Build-Depends: debhelper (>= 5), libz-dev, libssl-dev,
   libsdl1.2-dev, uuid-dev, libxcursor-dev,
   libidl-dev, libpam0g-dev, iasl, xsltproc, linux-headers-generic,
   wine, java2-runtime, lsb-release, g++-multilib [amd64],
   libc6-dev-i386 [amd64], ia32-libs [amd64], libasound-dev,
-  libpulse-dev, libxml2-dev, python-dev,
+  libpulse-dev, libxml2-dev, python-dev, gsoap,
   libcap2-dev, libgl1-mesa-dev, libglu1-mesa-dev, libxmu-dev,
   libxext-dev, libcurl-dev, libxrandr-dev, openjdk-6-jdk | sun-java6-jdk
 XS-Python-Version: >= 2.4

@@ -45,6 +45,13 @@ technical terms if no non-technical ones are clear enough.
 
       <listitem>
         <para>
+          Linux host: Drop PCI passthrough, the current code is too incomplete
+          (cannot handle PCIe devices at all), i.e. not useful enough
+        </para>
+      </listitem>
+
+      <listitem>
+        <para>
         </para>
       </listitem>
 

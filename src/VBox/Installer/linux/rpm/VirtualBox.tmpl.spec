@@ -141,11 +141,13 @@ for d in /lib/modules/*; do
       --module-source `pwd`/src/vboxhost/vboxnetadp \
       KBUILD_VERBOSE= KERN_VER=$(basename $d) INSTALL_MODULE_PATH=$RPM_BUILD_ROOT -j4 \
       %INSTMOD%
-    ./src/vboxhost/build_in_tmp \
-      --use-module-symvers /tmp/vboxdrv-Module.symvers \
-      --module-source `pwd`/src/vboxhost/vboxpci \
-      KBUILD_VERBOSE= KERN_VER=$(basename $d) INSTALL_MODULE_PATH=$RPM_BUILD_ROOT -j4 \
-      %INSTMOD%
+    if [ -e `pwd`/src/vboxhost/vboxpci ]; then
+      ./src/vboxhost/build_in_tmp \
+        --use-module-symvers /tmp/vboxdrv-Module.symvers \
+        --module-source `pwd`/src/vboxhost/vboxpci \
+        KBUILD_VERBOSE= KERN_VER=$(basename $d) INSTALL_MODULE_PATH=$RPM_BUILD_ROOT -j4 \
+        %INSTMOD%
+    fi
   fi
 done
 rm -r src
