@@ -302,6 +302,7 @@ UIIconPoolGeneral::UIIconPoolGeneral()
     m_guestOSTypeIconNames.insert("Windows10",       ":/os_win10.png");
     m_guestOSTypeIconNames.insert("Windows10_64",    ":/os_win10_64.png");
     m_guestOSTypeIconNames.insert("Windows2016_64",  ":/os_win2k16_64.png");
+    m_guestOSTypeIconNames.insert("Windows2019_64",  ":/os_win2k19_64.png");
     m_guestOSTypeIconNames.insert("WindowsNT",       ":/os_win_other.png");
     m_guestOSTypeIconNames.insert("WindowsNT_64",    ":/os_win_other_64.png");
     m_guestOSTypeIconNames.insert("OS2Warp3",        ":/os_os2warp3.png");

@@ -101,6 +101,7 @@
         <file alias="os_win10_x2.png">images/x2/os_win10_x2.png</file>
         <file alias="os_win2k12_64_x2.png">images/x2/os_win2k12_64_x2.png</file>
         <file alias="os_win2k16_64_x2.png">images/x2/os_win2k16_64_x2.png</file>
+        <file alias="os_win2k19_64_x2.png">images/x2/os_win2k19_64_x2.png</file>
         <file alias="os_win2k3_64_x2.png">images/x2/os_win2k3_64_x2.png</file>
         <file alias="os_win2k3_x2.png">images/x2/os_win2k3_x2.png</file>
         <file alias="os_win2k8_64_x2.png">images/x2/os_win2k8_64_x2.png</file>

@@ -430,5 +430,6 @@
         <file alias="log_viewer_search_backward_16px.png">images/log_viewer_search_backward_16px.png</file>
         <file alias="log_viewer_search_forward_16px.png">images/log_viewer_search_forward_16px.png</file>
         <file alias="machine_16px.png">images/machine_16px.png</file>
+        <file alias="machine_24px.png">images/machine_24px.png</file>
     </qresource>
 </RCC>

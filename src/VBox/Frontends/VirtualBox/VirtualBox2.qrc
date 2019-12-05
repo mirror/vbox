@@ -1,6 +1,5 @@
 <RCC>
     <qresource suffix="/">
-        <file alias="machine_24px.png">images/machine_24px.png</file>
         <file alias="machine_32px.png">images/machine_32px.png</file>
         <file alias="machine_abstract_16px.png">images/machine_abstract_16px.png</file>
         <file alias="machine_details_manager_16px.png">images/machine_details_manager_16px.png</file>
@@ -102,6 +101,7 @@
         <file alias="os_win2k.png">images/os_win2k.png</file>
         <file alias="os_win2k12_64.png">images/os_win2k12_64.png</file>
         <file alias="os_win2k16_64.png">images/os_win2k16_64.png</file>
+        <file alias="os_win2k19_64.png">images/os_win2k19_64.png</file>
         <file alias="os_win2k3.png">images/os_win2k3.png</file>
         <file alias="os_win2k3_64.png">images/os_win2k3_64.png</file>
         <file alias="os_win2k8.png">images/os_win2k8.png</file>
