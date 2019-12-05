@@ -9,6 +9,9 @@
  *  - Log3 for hex dump of shader code.
  *  - Log4 for hex dumps of 3D data.
  *  - Log5 for info about GMR pages.
+ *  - LogRel for the usual important stuff.
+ *  - LogRel2 for cursor.
+ *  - LogRel3 for 3D performance data.
  */
 
 /*
@@ -4415,11 +4418,25 @@ static DECLCALLBACK(int) vmsvgaR3FifoLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread
                         VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
                         STAM_REL_COUNTER_INC(&pSVGAState->StatR3Cmd3dSurfaceDma);
 
+                        uint64_t u64NanoTS = 0;
+                        if (LogRelIs3Enabled())
+                            u64NanoTS = RTTimeNanoTS();
                         cCopyBoxes = (pHdr->size - sizeof(*pCmd)) / sizeof(SVGA3dCopyBox);
                         STAM_PROFILE_START(&pSVGAState->StatR3Cmd3dSurfaceDmaProf, a);
                         rc = vmsvga3dSurfaceDMA(pThis, pThisCC, pCmd->guest, pCmd->host, pCmd->transfer,
                                                 cCopyBoxes, (SVGA3dCopyBox *)(pCmd + 1));
                         STAM_PROFILE_STOP(&pSVGAState->StatR3Cmd3dSurfaceDmaProf, a);
+                        if (LogRelIs3Enabled())
+                        {
+                            if (cCopyBoxes)
+                            {
+                                SVGA3dCopyBox *pFirstBox = (SVGA3dCopyBox *)(pCmd + 1);
+                                LogRel3(("VMSVGA: SURFACE_DMA: %d us %d boxes %d,%d %dx%d%s\n",
+                                    (RTTimeNanoTS() - u64NanoTS) / 1000ULL, cCopyBoxes,
+                                    pFirstBox->x, pFirstBox->y, pFirstBox->w, pFirstBox->h,
+                                    pCmd->transfer == SVGA3D_READ_HOST_VRAM ? " readback!!!" : ""));
+                            }
+                        }
                         break;
                     }
 
@@ -4430,11 +4447,22 @@ static DECLCALLBACK(int) vmsvgaR3FifoLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread
                         VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
                         STAM_REL_COUNTER_INC(&pSVGAState->StatR3Cmd3dSurfaceScreen);
 
+                        uint64_t u64NanoTS = 0;
+                        if (LogRelIs3Enabled())
+                            u64NanoTS = RTTimeNanoTS();
                         cRects = (pHdr->size - sizeof(*pCmd)) / sizeof(SVGASignedRect);
                         STAM_REL_PROFILE_START(&pSVGAState->StatR3Cmd3dBlitSurfaceToScreenProf, a);
                         rc = vmsvga3dSurfaceBlitToScreen(pThis, pThisCC, pCmd->destScreenId, pCmd->destRect, pCmd->srcImage,
                                                          pCmd->srcRect, cRects, (SVGASignedRect *)(pCmd + 1));
                         STAM_REL_PROFILE_STOP(&pSVGAState->StatR3Cmd3dBlitSurfaceToScreenProf, a);
+                        if (LogRelIs3Enabled())
+                        {
+                            SVGASignedRect *pFirstRect = cRects ? (SVGASignedRect *)(pCmd + 1) : &pCmd->destRect;
+                            LogRel3(("VMSVGA: SURFACE_TO_SCREEN: %d us %d rects %d,%d %dx%d\n",
+                                (RTTimeNanoTS() - u64NanoTS) / 1000ULL, cRects,
+                                pFirstRect->left, pFirstRect->top,
+                                pFirstRect->right - pFirstRect->left, pFirstRect->bottom - pFirstRect->top));
+                        }
                         break;
                     }
 
