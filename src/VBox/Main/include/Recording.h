@@ -21,8 +21,6 @@
 # pragma once
 #endif
 
-using namespace com;
-
 #include <VBox/err.h>
 #include <VBox/settings.h>
 

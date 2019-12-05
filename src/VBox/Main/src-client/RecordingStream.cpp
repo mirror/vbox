@@ -27,7 +27,6 @@
 #include "RecordingUtils.h"
 #include "WebMWriter.h"
 
-
 #ifdef VBOX_RECORDING_DUMP
 #pragma pack(push)
 #pragma pack(1)
@@ -213,15 +212,15 @@ int RecordingStream::parseOptionsString(const com::Utf8Str &strOptions)
     com::Utf8Str key, value;
     while ((pos = strOptions.parseKeyValue(key, value, pos)) != com::Utf8Str::npos)
     {
-        if (key.compare("vc_quality", Utf8Str::CaseInsensitive) == 0)
+        if (key.compare("vc_quality", com::Utf8Str::CaseInsensitive) == 0)
         {
 #ifdef VBOX_WITH_LIBVPX
             Assert(this->ScreenSettings.Video.ulFPS);
-            if (value.compare("realtime", Utf8Str::CaseInsensitive) == 0)
+            if (value.compare("realtime", com::Utf8Str::CaseInsensitive) == 0)
                 this->Video.Codec.VPX.uEncoderDeadline = VPX_DL_REALTIME;
-            else if (value.compare("good", Utf8Str::CaseInsensitive) == 0)
+            else if (value.compare("good", com::Utf8Str::CaseInsensitive) == 0)
                 this->Video.Codec.VPX.uEncoderDeadline = 1000000 / this->ScreenSettings.Video.ulFPS;
-            else if (value.compare("best", Utf8Str::CaseInsensitive) == 0)
+            else if (value.compare("best", com::Utf8Str::CaseInsensitive) == 0)
                 this->Video.Codec.VPX.uEncoderDeadline = VPX_DL_BEST_QUALITY;
             else
             {
@@ -229,32 +228,32 @@ int RecordingStream::parseOptionsString(const com::Utf8Str &strOptions)
 #endif
             }
         }
-        else if (key.compare("vc_enabled", Utf8Str::CaseInsensitive) == 0)
+        else if (key.compare("vc_enabled", com::Utf8Str::CaseInsensitive) == 0)
         {
-            if (value.compare("false", Utf8Str::CaseInsensitive) == 0)
+            if (value.compare("false", com::Utf8Str::CaseInsensitive) == 0)
                 this->ScreenSettings.featureMap[RecordingFeature_Video] = false;
         }
-        else if (key.compare("ac_enabled", Utf8Str::CaseInsensitive) == 0)
+        else if (key.compare("ac_enabled", com::Utf8Str::CaseInsensitive) == 0)
         {
 #ifdef VBOX_WITH_AUDIO_RECORDING
-            if (value.compare("true", Utf8Str::CaseInsensitive) == 0)
+            if (value.compare("true", com::Utf8Str::CaseInsensitive) == 0)
                 this->ScreenSettings.featureMap[RecordingFeature_Audio] = true;
 #endif
         }
-        else if (key.compare("ac_profile", Utf8Str::CaseInsensitive) == 0)
+        else if (key.compare("ac_profile", com::Utf8Str::CaseInsensitive) == 0)
         {
 #ifdef VBOX_WITH_AUDIO_RECORDING
-            if (value.compare("low", Utf8Str::CaseInsensitive) == 0)
+            if (value.compare("low", com::Utf8Str::CaseInsensitive) == 0)
             {
                 this->ScreenSettings.Audio.uHz       = 8000;
                 this->ScreenSettings.Audio.cBits     = 16;
                 this->ScreenSettings.Audio.cChannels = 1;
             }
-            else if (value.startsWith("med" /* "med[ium]" */, Utf8Str::CaseInsensitive) == 0)
+            else if (value.startsWith("med" /* "med[ium]" */, com::Utf8Str::CaseInsensitive) == 0)
             {
                 /* Stay with the default set above. */
             }
-            else if (value.compare("high", Utf8Str::CaseInsensitive) == 0)
+            else if (value.compare("high", com::Utf8Str::CaseInsensitive) == 0)
             {
                 this->ScreenSettings.Audio.uHz       = 48000;
                 this->ScreenSettings.Audio.cBits     = 16;

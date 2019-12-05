@@ -56,38 +56,6 @@ using namespace com;
 //# define VBOX_RECORDING_DUMP
 #endif
 
-#ifdef VBOX_RECORDING_DUMP
-#pragma pack(push)
-#pragma pack(1)
-typedef struct
-{
-    uint16_t u16Magic;
-    uint32_t u32Size;
-    uint16_t u16Reserved1;
-    uint16_t u16Reserved2;
-    uint32_t u32OffBits;
-} RECORDINGBMPHDR, *PRECORDINGBMPHDR;
-AssertCompileSize(RECORDINGBMPHDR, 14);
-
-typedef struct
-{
-    uint32_t u32Size;
-    uint32_t u32Width;
-    uint32_t u32Height;
-    uint16_t u16Planes;
-    uint16_t u16BitCount;
-    uint32_t u32Compression;
-    uint32_t u32SizeImage;
-    uint32_t u32XPelsPerMeter;
-    uint32_t u32YPelsPerMeter;
-    uint32_t u32ClrUsed;
-    uint32_t u32ClrImportant;
-} RECORDINGBMPDIBHDR, *PRECORDINGBMPDIBHDR;
-AssertCompileSize(RECORDINGBMPDIBHDR, 40);
-
-#pragma pack(pop)
-#endif /* VBOX_RECORDING_DUMP */
-
 
 RecordingContext::RecordingContext(Console *a_pConsole, const settings::RecordingSettings &a_Settings)
     : pConsole(a_pConsole)
