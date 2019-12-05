@@ -114,6 +114,11 @@ public:
       * @param  flags  Specifies how the items in the combobox are searched. */
     int findText(const QString &strText, Qt::MatchFlags flags = static_cast<Qt::MatchFlags>(Qt::MatchExactly | Qt::MatchCaseSensitive)) const;
 
+    /** Returns size adjust policy. */
+    QComboBox::SizeAdjustPolicy sizeAdjustPolicy() const;
+    /** Defines size adjust @a enmPolicy. */
+    void setSizeAdjustPolicy(QComboBox::SizeAdjustPolicy enmPolicy);
+
 public slots:
 
     /** Clears the combobox, removing all items. */

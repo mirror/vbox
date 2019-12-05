@@ -288,6 +288,20 @@ int QIComboBox::findText(const QString &strText,
     return m_pComboBox->findText(strText, flags);
 }
 
+QComboBox::SizeAdjustPolicy QIComboBox::sizeAdjustPolicy() const
+{
+    /* Redirect to combo-box: */
+    AssertPtrReturn(m_pComboBox, QComboBox::AdjustToContentsOnFirstShow);
+    return m_pComboBox->sizeAdjustPolicy();
+}
+
+void QIComboBox::setSizeAdjustPolicy(QComboBox::SizeAdjustPolicy enmPolicy)
+{
+    /* Redirect to combo-box: */
+    AssertPtrReturnVoid(m_pComboBox);
+    m_pComboBox->setSizeAdjustPolicy(enmPolicy);
+}
+
 void QIComboBox::clear()
 {
     /* Redirect to combo-box: */
