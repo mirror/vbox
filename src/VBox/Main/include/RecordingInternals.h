@@ -23,6 +23,7 @@
 
 #include <list>
 
+#include <iprt/assert.h>
 #include <iprt/types.h> /* drag in stdint.h before vpx does it. */
 
 #ifdef VBOX_WITH_LIBVPX
