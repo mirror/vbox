@@ -436,6 +436,7 @@ static void vrdeWarningDeprecatedOption(const char *pszOption)
     RTStrmPrintf(g_pStdErr, "Warning: '--vrdp%s' is deprecated. Use '--vrde%s'.\n", pszOption, pszOption);
 }
 
+#ifdef VBOX_WITH_PCI_PASSTHROUGH
 /** Parse PCI address in format 01:02.03 and convert it to the numeric representation. */
 static int32_t parsePci(const char* szPciAddr)
 {
@@ -457,6 +458,7 @@ static int32_t parsePci(const char* szPciAddr)
 
     return (aVals[0] << 8) | (aVals[1] << 3) | (aVals[2] << 0);
 }
+#endif
 
 void parseGroups(const char *pcszGroups, com::SafeArray<BSTR> *pGroups)
 {
