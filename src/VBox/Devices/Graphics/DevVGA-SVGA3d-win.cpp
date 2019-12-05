@@ -1289,7 +1289,7 @@ static PVMSVGA3DSHAREDSURFACE vmsvga3dSurfaceGetSharedCopy(PVMSVGA3DSTATE pState
                 }
             }
             else
-                AssertMsgFailed(("idAssociatedContext cid = %d, sid = %d\n", pSurface->idAssociatedContext, pSurface->id));
+                AssertMsgFailed(("idAssociatedContext cid=%u, sid=%u\n", pSurface->idAssociatedContext, pSurface->id));
         }
         else
         {
