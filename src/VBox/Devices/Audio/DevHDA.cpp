@@ -506,7 +506,7 @@ static SSMFIELD const g_aSSMStreamPeriodFields7[] =
 {
     SSMFIELD_ENTRY(HDASTREAMPERIOD, u64StartWalClk),
     SSMFIELD_ENTRY(HDASTREAMPERIOD, u64ElapsedWalClk),
-    SSMFIELD_ENTRY(HDASTREAMPERIOD, framesTransferred),
+    SSMFIELD_ENTRY(HDASTREAMPERIOD, cFramesTransferred),
     SSMFIELD_ENTRY(HDASTREAMPERIOD, cIntPending),
     SSMFIELD_ENTRY_TERM()
 };
@@ -2785,7 +2785,7 @@ static DECLCALLBACK(VBOXSTRICTRC) hdaR3DmaAccessHandler(PVM pVM, PVMCPU pVCpu, R
         case PGMACCESSTYPE_WRITE:
         {
 #  ifdef DEBUG
-            PHDASTREAMDBGINFO pStreamDbg = &pStream->Dbg;
+            PHDASTREAMDEBUG pStreamDbg = &pStream->Dbg;
 
             const uint64_t tsNowNs     = RTTimeNanoTS();
             const uint32_t tsElapsedMs = (tsNowNs - pStreamDbg->tsWriteSlotBegin) / 1000 / 1000;

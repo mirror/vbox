@@ -534,11 +534,11 @@ extern const HDAREGDESC g_aHdaRegMap[HDA_NUM_REGS];
 
 
 
-/** The HDA controller. */
+/** Pointer to a shared HDA state. */
 typedef struct HDASTATE *PHDASTATE;
-/** The HDA stream. */
+/** Pointer to a HDA stream state. */
 typedef struct HDASTREAM *PHDASTREAM;
-
+/** Pointer to a mixer sink. */
 typedef struct HDAMIXERSINK *PHDAMIXERSINK;
 
 

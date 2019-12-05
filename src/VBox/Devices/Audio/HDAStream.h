@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * HDAStream.h - Stream functions for HD Audio.
+ * HDAStream.h - Streams for HD Audio.
  */
 
 /*
@@ -22,39 +22,38 @@
 #endif
 
 #include "DevHDACommon.h"
-
 #include "HDAStreamMap.h"
 #include "HDAStreamPeriod.h"
 
 
-typedef struct HDAMIXERSINK *PHDAMIXERSINK;
-
 #ifdef VBOX_WITH_AUDIO_HDA_ASYNC_IO
 /**
- * Structure keeping the HDA stream's state for asynchronous I/O.
+ * HDA stream's state for asynchronous I/O.
  */
 typedef struct HDASTREAMSTATEAIO
 {
     /** Thread handle for the actual I/O thread. */
-    RTTHREAD              Thread;
+    RTTHREAD                Thread;
     /** Event for letting the thread know there is some data to process. */
-    RTSEMEVENT            Event;
+    RTSEMEVENT              Event;
     /** Critical section for synchronizing access. */
-    RTCRITSECT            CritSect;
+    RTCRITSECT              CritSect;
     /** Started indicator. */
-    volatile bool         fStarted;
+    volatile bool           fStarted;
     /** Shutdown indicator. */
-    volatile bool         fShutdown;
+    volatile bool           fShutdown;
     /** Whether the thread should do any data processing or not. */
-    volatile bool         fEnabled;
-    uint32_t              Padding1;
-} HDASTREAMSTATEAIO, *PHDASTREAMSTATEAIO;
+    volatile bool           fEnabled;
+    bool                    afPadding[1+4];
+} HDASTREAMSTATEAIO;
+/** Pointer to a HDA stream's asynchronous I/O state. */
+typedef HDASTREAMSTATEAIO *PHDASTREAMSTATEAIO;
 #endif
 
 /**
  * Structure containing HDA stream debug stuff, configurable at runtime.
  */
-typedef struct HDASTREAMDBGINFORT
+typedef struct HDASTREAMDEBUGRT
 {
     /** Whether debugging is enabled or not. */
     bool                     fEnabled;
@@ -69,12 +68,12 @@ typedef struct HDASTREAMDBGINFORT
     R3PTRTYPE(PPDMAUDIOFILE) pFileDMARaw;
     /** File for dumping mapped (that is, extracted) DMA reads / writes. */
     R3PTRTYPE(PPDMAUDIOFILE) pFileDMAMapped;
-} HDASTREAMDBGINFORT, *PHDASTREAMDBGINFORT;
+} HDASTREAMDEBUGRT;
 
 /**
  * Structure containing HDA stream debug information.
  */
-typedef struct HDASTREAMDBGINFO
+typedef struct HDASTREAMDEBUG
 {
 #ifdef DEBUG
     /** Critical section to serialize access if needed. */
@@ -105,8 +104,9 @@ typedef struct HDASTREAMDBGINFO
     uint64_t                cbSilenceReadMin;
 #endif
     /** Runtime debug info. */
-    HDASTREAMDBGINFORT      Runtime;
-} HDASTREAMDBGINFO ,*PHDASTREAMDBGINFO;
+    HDASTREAMDEBUGRT        Runtime;
+} HDASTREAMDEBUG;
+typedef HDASTREAMDEBUG *PHDASTREAMDEBUG;
 
 /**
  * Internal state of a HDA stream.
@@ -184,6 +184,7 @@ typedef struct HDASTREAMSTATE
     uint64_t                tsLastUpdateNs;
 } HDASTREAMSTATE;
 AssertCompileSizeAlignment(HDASTREAMSTATE, 8);
+/** Pointer to the internal state of an HDA stream. */
 typedef HDASTREAMSTATE *PHDASTREAMSTATE;
 
 /**
@@ -203,45 +204,45 @@ typedef HDASTREAMSTATE *PHDASTREAMSTATE;
 typedef struct HDASTREAM
 {
     /** Stream descriptor number (SDn). */
-    uint8_t                  u8SD;
+    uint8_t                     u8SD;
     /** Current channel index.
      *  For a stereo stream, this is u8Channel + 1. */
-    uint8_t                  u8Channel;
-    uint8_t                  Padding0[6];
+    uint8_t                     u8Channel;
+    uint8_t                     abPadding0[6];
     /** DMA base address (SDnBDPU - SDnBDPL).
      *  Will be updated in hdaR3StreamInit(). */
-    uint64_t                 u64BDLBase;
+    uint64_t                    u64BDLBase;
     /** Cyclic Buffer Length (SDnCBL).
      *  Represents the size of the ring buffer.
      *  Will be updated in hdaR3StreamInit(). */
-    uint32_t                 u32CBL;
+    uint32_t                    u32CBL;
     /** Format (SDnFMT).
      *  Will be updated in hdaR3StreamInit(). */
-    uint16_t                 u16FMT;
+    uint16_t                    u16FMT;
     /** FIFO Size (FIFOS).
      *  Maximum number of bytes that may have been DMA'd into
      *  memory but not yet transmitted on the link.
      *
      *  Will be updated in hdaR3StreamInit(). */
-    uint16_t                 u16FIFOS;
+    uint16_t                    u16FIFOS;
     /** FIFO Watermark. */
-    uint16_t                 u16FIFOW;
+    uint16_t                    u16FIFOW;
     /** Last Valid Index (SDnLVI).
      *  Will be updated in hdaR3StreamInit(). */
-    uint16_t                 u16LVI;
-    uint16_t                 Padding1[2];
+    uint16_t                    u16LVI;
+    uint16_t                    au16Padding1[2];
     /** Pointer to the HDA state this stream is attached to. */
-    R3PTRTYPE(PHDASTATE)     pHDAState;
+    R3PTRTYPE(PHDASTATE)        pHDAState;
     /** Pointer to HDA sink this stream is attached to. */
-    R3PTRTYPE(PHDAMIXERSINK) pMixSink;
+    R3PTRTYPE(PHDAMIXERSINK)    pMixSink;
     /** The timer for pumping data thru the attached LUN drivers. */
-    TMTIMERHANDLE            hTimer;
+    TMTIMERHANDLE               hTimer;
     /** The stream'S critical section to serialize access. */
-    RTCRITSECT               CritSect;
+    RTCRITSECT                  CritSect;
     /** Internal state of this stream. */
-    HDASTREAMSTATE           State;
+    HDASTREAMSTATE              State;
     /** Debug information. */
-    HDASTREAMDBGINFO         Dbg;
+    HDASTREAMDEBUG              Dbg;
 } HDASTREAM;
 /** Pointer to an HDA stream (SDI / SDO).  */
 typedef HDASTREAM *PHDASTREAM;
@@ -281,15 +282,8 @@ void              hdaR3StreamUpdate(PPDMDEVINS pDevIns, PHDASTREAM pStream, bool
 # ifdef HDA_USE_DMA_ACCESS_HANDLER
 bool              hdaR3StreamRegisterDMAHandlers(PHDASTREAM pStream);
 void              hdaR3StreamUnregisterDMAHandlers(PHDASTREAM pStream);
-# endif /* HDA_USE_DMA_ACCESS_HANDLER */
+# endif
 /** @} */
-
-/** @name Timer functions.
- * @{
- */
-DECLCALLBACK(void) hdaR3StreamTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser);
-/** @} */
-
 
 /** @name Async I/O stream functions.
  * @{

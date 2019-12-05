@@ -2711,6 +2711,7 @@ static DECLCALLBACK(int) vrbProcSetSDISelect(PHDACODEC pThis, uint32_t cmd, uint
 /**
  * HDA codec verb map.
  * @todo Any reason not to use binary search here?
+ *      bird: because you'd need to sort the entries first...
  */
 static const CODECVERB g_aCodecVerbs[] =
 {

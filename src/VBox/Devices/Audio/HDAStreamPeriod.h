@@ -27,18 +27,16 @@
 #endif
 #include <VBox/log.h> /* LOG_ENABLED */
 
-struct HDASTREAM;
-typedef struct HDASTREAM *PHDASTREAM;
 
 #ifdef LOG_ENABLED
 /**
  * Debug stuff for a HDA stream's period.
  */
-typedef struct HDASTREAMPERIODDDEBUG
+typedef struct HDASTREAMPERIODDEBUG
 {
     /** Host start time (in ns) of the period. */
     uint64_t                tsStartNs;
-} HDASTREAMPERIODDDEBUG;
+} HDASTREAMPERIODDEBUG;
 #endif
 
 /** No flags set. */
@@ -55,7 +53,9 @@ typedef struct HDASTREAMPERIODDDEBUG
  */
 typedef struct HDASTREAMPERIOD
 {
-    /** Critical section for serializing access. */
+    /** Critical section for serializing access.
+     * @todo r=bird: This is not needed.  The stream lock is held the two places
+     *       this critsect is entered. */
     RTCRITSECT              CritSect;
     /** Associated HDA stream descriptor (SD) number. */
     uint8_t                 u8SD;
@@ -75,12 +75,12 @@ typedef struct HDASTREAMPERIOD
     /** Delay (in wall clock counts) for tweaking the period timing. Optional. */
     int64_t                 i64DelayWalClk;
     /** Number of audio frames to transfer for this period. */
-    uint32_t                framesToTransfer;
+    uint32_t                cFramesToTransfer;
     /** Number of audio frames already transfered. */
-    uint32_t                framesTransferred;
+    uint32_t                cFramesTransferred;
 #ifdef LOG_ENABLED
     /** Debugging state. */
-    HDASTREAMPERIODDDEBUG   Dbg;
+    HDASTREAMPERIODDEBUG    Dbg;
 #endif
 } HDASTREAMPERIOD;
 AssertCompileSizeAlignment(HDASTREAMPERIOD, 8);
@@ -96,7 +96,7 @@ int      hdaR3StreamPeriodBegin(PHDASTREAMPERIOD pPeriod, uint64_t u64WalClk);
 void     hdaR3StreamPeriodEnd(PHDASTREAMPERIOD pPeriod);
 void     hdaR3StreamPeriodPause(PHDASTREAMPERIOD pPeriod);
 void     hdaR3StreamPeriodResume(PHDASTREAMPERIOD pPeriod);
-bool     hdaR3StreamPeriodLock(PHDASTREAMPERIOD pPeriod);
+int      hdaR3StreamPeriodLock(PHDASTREAMPERIOD pPeriod);
 void     hdaR3StreamPeriodUnlock(PHDASTREAMPERIOD pPeriod);
 uint64_t hdaR3StreamPeriodFramesToWalClk(PHDASTREAMPERIOD pPeriod, uint32_t uFrames);
 uint64_t hdaR3StreamPeriodGetAbsEndWalClk(PHDASTREAMPERIOD pPeriod);
