@@ -250,6 +250,7 @@ GaDrvEnvWddm::gaEnvWddmSurfaceDestroy(void *pvEnv,
     // data.EscapeHdr.cmdSpecific = 0;
     data.u32Sid                = u32Sid;
 
+    RT_ZERO(ddiEscape);
     // ddiEscape.hDevice               = 0; // pThis->mWddmCallbacks.hDevice;
     // ddiEscape.Flags.Value           = 0;
     ddiEscape.pPrivateDriverData    = &data;
