@@ -47,6 +47,7 @@
  */
 int hdaR3StreamCreate(PHDASTREAM pStream, PHDASTATE pThis, uint8_t u8SD)
 {
+    int rc;
     RT_NOREF(pThis);
     AssertPtrReturn(pStream, VERR_INVALID_POINTER);
 
@@ -61,8 +62,10 @@ int hdaR3StreamCreate(PHDASTREAM pStream, PHDASTATE pThis, uint8_t u8SD)
     RTListInit(&pStream->State.lstDMAHandlers);
 #endif
 
-    int rc = RTCritSectInit(&pStream->CritSect);
+# ifdef VBOX_WITH_AUDIO_HDA_ASYNC_IO
+    rc = RTCritSectInit(&pStream->CritSect);
     AssertRCReturn(rc, rc);
+# endif
 
     rc = hdaR3StreamPeriodCreate(&pStream->State.Period);
     AssertRCReturn(rc, rc);
@@ -145,11 +148,13 @@ void hdaR3StreamDestroy(PHDASTREAM pStream)
     AssertRC(rc2);
 #endif
 
+# ifdef VBOX_WITH_AUDIO_HDA_ASYNC_IO
     if (RTCritSectIsInitialized(&pStream->CritSect))
     {
         rc2 = RTCritSectDelete(&pStream->CritSect);
         AssertRC(rc2);
     }
+# endif
 
     if (pStream->State.pCircBuf)
     {
@@ -1588,8 +1593,12 @@ void hdaR3StreamUpdate(PPDMDEVINS pDevIns, PHDASTREAM pStream, bool fInTimer)
 void hdaR3StreamLock(PHDASTREAM pStream)
 {
     AssertPtrReturnVoid(pStream);
+# ifdef VBOX_WITH_AUDIO_HDA_ASYNC_IO
     int rc2 = RTCritSectEnter(&pStream->CritSect);
     AssertRC(rc2);
+# else
+    Assert(PDMDevHlpCritSectIsOwner(pStream->pHDAState->pDevInsR3, pStream->pHDAState->CritSect));
+# endif
 }
 
 /**
@@ -1601,8 +1610,10 @@ void hdaR3StreamLock(PHDASTREAM pStream)
 void hdaR3StreamUnlock(PHDASTREAM pStream)
 {
     AssertPtrReturnVoid(pStream);
+# ifdef VBOX_WITH_AUDIO_HDA_ASYNC_IO
     int rc2 = RTCritSectLeave(&pStream->CritSect);
     AssertRC(rc2);
+# endif
 }
 
 /**
