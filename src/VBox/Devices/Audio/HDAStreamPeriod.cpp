@@ -51,8 +51,10 @@ int hdaR3StreamPeriodCreate(PHDASTREAMPERIOD pPeriod)
 {
     Assert(!(pPeriod->fStatus & HDASTREAMPERIOD_F_VALID));
 
+# ifdef HDA_STREAM_PERIOD_WITH_LOCKING
     int rc = RTCritSectInit(&pPeriod->CritSect);
     AssertRCReturnStmt(rc, pPeriod->fStatus = 0, rc);
+# endif
     pPeriod->fStatus = HDASTREAMPERIOD_F_VALID;
 
     return VINF_SUCCESS;
@@ -67,8 +69,9 @@ void hdaR3StreamPeriodDestroy(PHDASTREAMPERIOD pPeriod)
 {
     if (pPeriod->fStatus & HDASTREAMPERIOD_F_VALID)
     {
+# ifdef HDA_STREAM_PERIOD_WITH_LOCKING
         RTCritSectDelete(&pPeriod->CritSect);
-
+# endif
         pPeriod->fStatus = HDASTREAMPERIOD_F_NONE;
     }
 }
@@ -228,9 +231,14 @@ void hdaR3StreamPeriodResume(PHDASTREAMPERIOD pPeriod)
  */
 int hdaR3StreamPeriodLock(PHDASTREAMPERIOD pPeriod)
 {
+# ifdef HDA_STREAM_PERIOD_WITH_LOCKING
     int rc = RTCritSectEnter(&pPeriod->CritSect);
     AssertRC(rc);
     return rc;
+# else
+    RT_NOREF(pPeriod);
+    return VINF_SUCCESS;
+# endif
 }
 
 /**
@@ -240,8 +248,12 @@ int hdaR3StreamPeriodLock(PHDASTREAMPERIOD pPeriod)
  */
 void hdaR3StreamPeriodUnlock(PHDASTREAMPERIOD pPeriod)
 {
+# ifdef HDA_STREAM_PERIOD_WITH_LOCKING
     int rc2 = RTCritSectLeave(&pPeriod->CritSect);
     AssertRC(rc2);
+# else
+    RT_NOREF(pPeriod);
+# endif
 }
 
 /**

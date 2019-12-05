@@ -53,10 +53,12 @@ typedef struct HDASTREAMPERIODDEBUG
  */
 typedef struct HDASTREAMPERIOD
 {
+#ifdef HDA_STREAM_PERIOD_WITH_LOCKING
     /** Critical section for serializing access.
      * @todo r=bird: This is not needed.  The stream lock is held the two places
      *       this critsect is entered. */
     RTCRITSECT              CritSect;
+#endif
     /** Associated HDA stream descriptor (SD) number. */
     uint8_t                 u8SD;
     /** The period's status flags. */
