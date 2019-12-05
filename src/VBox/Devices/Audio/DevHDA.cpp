@@ -1418,12 +1418,15 @@ static VBOXSTRICTRC hdaRegWriteSDSTS(PPDMDEVINS pDevIns, PHDASTATE pThis, uint32
     ASSERT_GUEST_LOGREL_MSG_RETURN(pStream, ("Guest tried writing SDSTS (0x%x) to unhandled stream #%RU8\n", u32Value, uSD),
                                    VINF_SUCCESS);
 
-    /**
-     * @todo r=bird: Must reduce the time we holding the virtual sync
-     *               clock lock here!
-     */
-    DEVHDA_UNLOCK(pDevIns, pThis);
-    DEVHDA_LOCK_BOTH_RETURN(pDevIns, pThis, pStream, VINF_IOM_R3_MMIO_WRITE);
+    /* We only need to take the virtual-sync lock if we want to call
+       PDMDevHlpTimerGet or hdaR3TimerSet later.  Only precondition for that
+       is that we've got a non-zero ticks-per-transfer value. */
+    uint64_t const cTransferTicks = pStream->State.cTransferTicks;
+    if (cTransferTicks)
+    {
+        DEVHDA_UNLOCK(pDevIns, pThis);
+        DEVHDA_LOCK_BOTH_RETURN(pDevIns, pThis, pStream, VINF_IOM_R3_MMIO_WRITE);
+    }
 
     hdaR3StreamLock(pStream);
 
@@ -1432,6 +1435,12 @@ static VBOXSTRICTRC hdaRegWriteSDSTS(PPDMDEVINS pDevIns, PHDASTATE pThis, uint32
     /* Clear (zero) FIFOE, DESE and BCIS bits when writing 1 to it (6.2.33). */
     HDA_REG_IND(pThis, iReg) &= ~(u32Value & v);
 
+/** @todo r=bird: Check if we couldn't this stuff involving hdaR3StreamPeriodLock
+ *  and IRQs after PDMDevHlpTimerUnlockClock. */
+
+    /*
+     * ...
+     */
     /* Some guests tend to write SDnSTS even if the stream is not running.
      * So make sure to check if the RUN bit is set first. */
     const bool fRunning = pStream->State.fRunning;
@@ -1439,43 +1448,41 @@ static VBOXSTRICTRC hdaRegWriteSDSTS(PPDMDEVINS pDevIns, PHDASTATE pThis, uint32
     Log3Func(("[SD%RU8] fRunning=%RTbool %R[sdsts]\n", pStream->u8SD, fRunning, v));
 
     PHDASTREAMPERIOD pPeriod = &pStream->State.Period;
-
-    if (hdaR3StreamPeriodLock(pPeriod))
+    hdaR3StreamPeriodLock(pPeriod);
+    if (hdaR3StreamPeriodNeedsInterrupt(pPeriod))
+        hdaR3StreamPeriodReleaseInterrupt(pPeriod);
+    if (hdaR3StreamPeriodIsComplete(pPeriod))
     {
-        const bool fNeedsInterrupt = hdaR3StreamPeriodNeedsInterrupt(pPeriod);
-        if (fNeedsInterrupt)
-            hdaR3StreamPeriodReleaseInterrupt(pPeriod);
+        /* Make sure to try to update the WALCLK register if a period is complete.
+         * Use the maximum WALCLK value all (active) streams agree to. */
+        const uint64_t uWalClkMax = hdaR3WalClkGetMax(pThis);
+        if (uWalClkMax > hdaWalClkGetCurrent(pThis))
+            hdaR3WalClkSet(pThis, uWalClkMax, false /* fForce */);
 
-        if (hdaR3StreamPeriodIsComplete(pPeriod))
-        {
-            /* Make sure to try to update the WALCLK register if a period is complete.
-             * Use the maximum WALCLK value all (active) streams agree to. */
-            const uint64_t uWalClkMax = hdaR3WalClkGetMax(pThis);
-            if (uWalClkMax > hdaWalClkGetCurrent(pThis))
-                hdaR3WalClkSet(pThis, uWalClkMax, false /* fForce */);
+        hdaR3StreamPeriodEnd(pPeriod);
 
-            hdaR3StreamPeriodEnd(pPeriod);
-
-            if (fRunning)
-                hdaR3StreamPeriodBegin(pPeriod, hdaWalClkGetCurrent(pThis) /* Use current wall clock time */);
-        }
-
-        hdaR3StreamPeriodUnlock(pPeriod); /* Unlock before processing interrupt. */
+        if (fRunning)
+            hdaR3StreamPeriodBegin(pPeriod, hdaWalClkGetCurrent(pThis) /* Use current wall clock time */);
     }
+    hdaR3StreamPeriodUnlock(pPeriod); /* Unlock before processing interrupt. */
 
     HDA_PROCESS_INTERRUPT(pDevIns, pThis);
 
-    const uint64_t tsNow = PDMDevHlpTimerGet(pDevIns, pStream->hTimer);
-    Assert(tsNow >= pStream->State.tsTransferLast);
-
-    const uint64_t cTicksElapsed     = tsNow - pStream->State.tsTransferLast;
-# ifdef LOG_ENABLED
-    const uint64_t cTicksTransferred = pStream->State.cbTransferProcessed * pStream->State.cTicksPerByte;
-# endif
-
+    /*
+     * ...
+     */
     uint64_t cTicksToNext = pStream->State.cTransferTicks;
+    Assert(cTicksToNext == cTicksToNext);
     if (cTicksToNext) /* Only do any calculations if the stream currently is set up for transfers. */
     {
+        const uint64_t tsNow = PDMDevHlpTimerGet(pDevIns, pStream->hTimer);
+        Assert(tsNow >= pStream->State.tsTransferLast);
+
+        const uint64_t cTicksElapsed     = tsNow - pStream->State.tsTransferLast;
+# ifdef LOG_ENABLED
+        const uint64_t cTicksTransferred = pStream->State.cbTransferProcessed * pStream->State.cTicksPerByte;
+# endif
+
         Log3Func(("[SD%RU8] cTicksElapsed=%RU64, cTicksTransferred=%RU64, cTicksToNext=%RU64\n",
                   pStream->u8SD, cTicksElapsed, cTicksTransferred, cTicksToNext));
 
@@ -1516,7 +1523,8 @@ static VBOXSTRICTRC hdaRegWriteSDSTS(PPDMDEVINS pDevIns, PHDASTATE pThis, uint32
         }
     }
 
-    PDMDevHlpTimerUnlockClock(pDevIns, pStream->hTimer); /* Caller will unlock pThis->CritSect. */
+    if (cTransferTicks)
+        PDMDevHlpTimerUnlockClock(pDevIns, pStream->hTimer); /* Caller will unlock pThis->CritSect. */
     hdaR3StreamUnlock(pStream);
     return VINF_SUCCESS;
 #else  /* !IN_RING3 */
