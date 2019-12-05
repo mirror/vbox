@@ -67,7 +67,7 @@ typedef struct HDATAG
 typedef HDATAG *PHDATAG;
 
 /** @todo Make STAM values out of this? */
-typedef struct HDASTATEDBGINFO
+typedef struct HDASTATEDEBUG
 {
 #ifdef DEBUG
     /** Timestamp (in ns) of the last timer callback (hdaTimer).
@@ -97,7 +97,7 @@ typedef struct HDASTATEDBGINFO
     /** Path where to dump the debug output to.
      *  Defaults to VBOX_AUDIO_DEBUG_DUMP_PCM_DATA_PATH. */
     char                    szOutPath[RTPATH_MAX + 1];
-} HDASTATEDBGINFO, *PHDASTATEDBGINFO;
+} HDASTATEDEBUG;
 
 /**
  * Shared ICH Intel HD audio controller state.
@@ -191,7 +191,8 @@ typedef struct HDASTATE
     uint16_t                uTimerHz;
     /** Padding for alignment. */
     uint8_t                 au8Padding3[3];
-    HDASTATEDBGINFO         Dbg;
+    /** Debug stuff. */
+    HDASTATEDEBUG           Dbg;
 
     /** PCI Region \#0: 16KB of MMIO stuff. */
     IOMMMIOHANDLE           hMmio;

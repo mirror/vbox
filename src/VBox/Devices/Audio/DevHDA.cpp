@@ -4230,7 +4230,7 @@ static int hdaR3DbgLookupStrmIdx(PHDASTATE pThis, const char *pszArgs)
 }
 
 /**
- * @callback_method_impl{FNDBGFHANDLERDEV}
+ * @callback_method_impl{FNDBGFHANDLERDEV, hdastream}
  */
 static DECLCALLBACK(void) hdaR3DbgInfoStream(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *pszArgs)
 {
@@ -4244,7 +4244,7 @@ static DECLCALLBACK(void) hdaR3DbgInfoStream(PPDMDEVINS pDevIns, PCDBGFINFOHLP p
 }
 
 /**
- * @callback_method_impl{FNDBGFHANDLERDEV}
+ * @callback_method_impl{FNDBGFHANDLERDEV, hdabdle}
  */
 static DECLCALLBACK(void) hdaR3DbgInfoBDLE(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *pszArgs)
 {
@@ -4258,7 +4258,7 @@ static DECLCALLBACK(void) hdaR3DbgInfoBDLE(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHl
 }
 
 /**
- * @callback_method_impl{FNDBGFHANDLERDEV}
+ * @callback_method_impl{FNDBGFHANDLERDEV, hdcnodes}
  */
 static DECLCALLBACK(void) hdaR3DbgInfoCodecNodes(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *pszArgs)
 {
@@ -4271,7 +4271,7 @@ static DECLCALLBACK(void) hdaR3DbgInfoCodecNodes(PPDMDEVINS pDevIns, PCDBGFINFOH
 }
 
 /**
- * @callback_method_impl{FNDBGFHANDLERDEV}
+ * @callback_method_impl{FNDBGFHANDLERDEV, hdcselector}
  */
 static DECLCALLBACK(void) hdaR3DbgInfoCodecSelector(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *pszArgs)
 {
@@ -4284,7 +4284,7 @@ static DECLCALLBACK(void) hdaR3DbgInfoCodecSelector(PPDMDEVINS pDevIns, PCDBGFIN
 }
 
 /**
- * @callback_method_impl{FNDBGFHANDLERDEV}
+ * @callback_method_impl{FNDBGFHANDLERDEV, hdamixer}
  */
 static DECLCALLBACK(void) hdaR3DbgInfoMixer(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *pszArgs)
 {

@@ -2767,8 +2767,11 @@ static const CODECVERB g_aCodecVerbs[] =
     /** @todo Implement 0x7e7: IDT Set GPIO (STAC922x only). */
 };
 
-#ifdef DEBUG
-typedef struct CODECDBGINFO
+
+/**
+ * CODEC debug info item printing state.
+ */
+typedef struct CODECDEBUG
 {
     /** DBGF info helpers. */
     PCDBGFINFOHLP pHlp;
@@ -2776,46 +2779,38 @@ typedef struct CODECDBGINFO
     uint8_t uLevel;
     /** Pointer to codec state. */
     PHDACODEC pThis;
+} CODECDEBUG;
+/** Pointer to the debug info item printing state for the codec. */
+typedef CODECDEBUG *PCODECDEBUG;
 
-} CODECDBGINFO, *PCODECDBGINFO;
+#define CODECDBG_INDENT         pInfo->uLevel++;
+#define CODECDBG_UNINDENT       if (pInfo->uLevel) pInfo->uLevel--;
 
-#define CODECDBG_INDENT   pInfo->uLevel++;
-#define CODECDBG_UNINDENT if (pInfo->uLevel) pInfo->uLevel--;
+#define CODECDBG_PRINT(...)     pInfo->pHlp->pfnPrintf(pInfo->pHlp, __VA_ARGS__)
+#define CODECDBG_PRINTI(...)    codecDbgPrintf(pInfo, __VA_ARGS__)
 
-#define CODECDBG_PRINT(...)  pInfo->pHlp->pfnPrintf(pInfo->pHlp, __VA_ARGS__)
-#define CODECDBG_PRINTI(...) codecDbgPrintf(pInfo, __VA_ARGS__)
-
-static void codecDbgPrintfIndentV(PCODECDBGINFO pInfo, uint16_t uIndent, const char *pszFormat, va_list va)
-{
-    char *pszValueFormat;
-    if (RTStrAPrintfV(&pszValueFormat, pszFormat, va))
-    {
-        pInfo->pHlp->pfnPrintf(pInfo->pHlp, "%*s%s", uIndent, "", pszValueFormat);
-        RTStrFree(pszValueFormat);
-    }
-}
-
-static void codecDbgPrintf(PCODECDBGINFO pInfo, const char *pszFormat, ...)
+/** Wrapper around DBGFINFOHLP::pfnPrintf that adds identation. */
+static void codecDbgPrintf(PCODECDEBUG pInfo, const char *pszFormat, ...)
 {
     va_list va;
     va_start(va, pszFormat);
-    codecDbgPrintfIndentV(pInfo, pInfo->uLevel * 4, pszFormat, va);
+    pInfo->pHlp->pfnPrintf(pInfo->pHlp, "%*s%N", pInfo->uLevel * 4, "", pszFormat, &va);
     va_end(va);
 }
 
-/* Power state */
-static void codecDbgPrintNodeRegF05(PCODECDBGINFO pInfo, uint32_t u32Reg)
+/** Power state */
+static void codecDbgPrintNodeRegF05(PCODECDEBUG pInfo, uint32_t u32Reg)
 {
     codecDbgPrintf(pInfo, "Power (F05): fReset=%RTbool, fStopOk=%RTbool, Set=%RU8, Act=%RU8\n",
                    CODEC_F05_IS_RESET(u32Reg), CODEC_F05_IS_STOPOK(u32Reg), CODEC_F05_SET(u32Reg), CODEC_F05_ACT(u32Reg));
 }
 
-static void codecDbgPrintNodeRegA(PCODECDBGINFO pInfo, uint32_t u32Reg)
+static void codecDbgPrintNodeRegA(PCODECDEBUG pInfo, uint32_t u32Reg)
 {
     codecDbgPrintf(pInfo, "RegA: %x\n", u32Reg);
 }
 
-static void codecDbgPrintNodeRegF00(PCODECDBGINFO pInfo, uint32_t *paReg00)
+static void codecDbgPrintNodeRegF00(PCODECDEBUG pInfo, uint32_t *paReg00)
 {
     codecDbgPrintf(pInfo, "Parameters (F00):\n");
 
@@ -2840,25 +2835,25 @@ static void codecDbgPrintNodeRegF00(PCODECDBGINFO pInfo, uint32_t *paReg00)
     CODECDBG_UNINDENT
 }
 
-static void codecDbgPrintNodeAmp(PCODECDBGINFO pInfo, uint32_t *paReg, uint8_t uIdx, uint8_t uDir)
+static void codecDbgPrintNodeAmp(PCODECDEBUG pInfo, uint32_t *paReg, uint8_t uIdx, uint8_t uDir)
 {
-#define CODECDBG_AMP(reg, chan) \
-    codecDbgPrintf(pInfo, "Amp %RU8 %s %s: In=%RTbool, Out=%RTbool, Left=%RTbool, Right=%RTbool, Idx=%RU8, fMute=%RTbool, uGain=%RU8\n", \
-                   uIdx, chan, uDir == AMPLIFIER_IN ? "In" : "Out", \
-                   RT_BOOL(CODEC_SET_AMP_IS_IN_DIRECTION(reg)), RT_BOOL(CODEC_SET_AMP_IS_OUT_DIRECTION(reg)), \
-                   RT_BOOL(CODEC_SET_AMP_IS_LEFT_SIDE(reg)), RT_BOOL(CODEC_SET_AMP_IS_RIGHT_SIDE(reg)), \
-                   CODEC_SET_AMP_INDEX(reg), RT_BOOL(CODEC_SET_AMP_MUTE(reg)), CODEC_SET_AMP_GAIN(reg));
+# define CODECDBG_AMP(reg, chan) \
+        codecDbgPrintf(pInfo, "Amp %RU8 %s %s: In=%RTbool, Out=%RTbool, Left=%RTbool, Right=%RTbool, Idx=%RU8, fMute=%RTbool, uGain=%RU8\n", \
+                       uIdx, chan, uDir == AMPLIFIER_IN ? "In" : "Out", \
+                       RT_BOOL(CODEC_SET_AMP_IS_IN_DIRECTION(reg)), RT_BOOL(CODEC_SET_AMP_IS_OUT_DIRECTION(reg)), \
+                       RT_BOOL(CODEC_SET_AMP_IS_LEFT_SIDE(reg)), RT_BOOL(CODEC_SET_AMP_IS_RIGHT_SIDE(reg)), \
+                       CODEC_SET_AMP_INDEX(reg), RT_BOOL(CODEC_SET_AMP_MUTE(reg)), CODEC_SET_AMP_GAIN(reg))
 
     uint32_t regAmp = AMPLIFIER_REGISTER(paReg, uDir, AMPLIFIER_LEFT, uIdx);
     CODECDBG_AMP(regAmp, "Left");
     regAmp = AMPLIFIER_REGISTER(paReg, uDir, AMPLIFIER_RIGHT, uIdx);
     CODECDBG_AMP(regAmp, "Right");
 
-#undef CODECDBG_AMP
+# undef CODECDBG_AMP
 }
 
-#if 0 /* unused */
-static void codecDbgPrintNodeConnections(PCODECDBGINFO pInfo, PCODECNODE pNode)
+# if 0 /* unused */
+static void codecDbgPrintNodeConnections(PCODECDEBUG pInfo, PCODECNODE pNode)
 {
     if (pNode->node.au32F00_param[0xE] == 0) /* Directly connected to HDA link. */
     {
@@ -2866,9 +2861,9 @@ static void codecDbgPrintNodeConnections(PCODECDBGINFO pInfo, PCODECNODE pNode)
          return;
     }
 }
-#endif
+# endif
 
-static void codecDbgPrintNode(PCODECDBGINFO pInfo, PCODECNODE pNode, bool fRecursive)
+static void codecDbgPrintNode(PCODECDEBUG pInfo, PCODECNODE pNode, bool fRecursive)
 {
     codecDbgPrintf(pInfo, "Node 0x%02x (%02RU8): ", pNode->node.uID, pNode->node.uID);
 
@@ -2927,49 +2922,33 @@ static void codecDbgPrintNode(PCODECDBGINFO pInfo, PCODECNODE pNode, bool fRecur
         CODECDBG_UNINDENT
     }
     else if (hdaCodecIsPcbeepNode(pInfo->pThis, pNode->node.uID))
-    {
         CODECDBG_PRINT("PC BEEP\n");
-    }
     else if (hdaCodecIsSpdifOutNode(pInfo->pThis, pNode->node.uID))
-    {
         CODECDBG_PRINT("SPDIF OUT\n");
-    }
     else if (hdaCodecIsSpdifInNode(pInfo->pThis, pNode->node.uID))
-    {
         CODECDBG_PRINT("SPDIF IN\n");
-    }
     else if (hdaCodecIsDigInPinNode(pInfo->pThis, pNode->node.uID))
-    {
         CODECDBG_PRINT("DIGITAL IN PIN\n");
-    }
     else if (hdaCodecIsDigOutPinNode(pInfo->pThis, pNode->node.uID))
-    {
         CODECDBG_PRINT("DIGITAL OUT PIN\n");
-    }
     else if (hdaCodecIsCdNode(pInfo->pThis, pNode->node.uID))
-    {
         CODECDBG_PRINT("CD\n");
-    }
     else if (hdaCodecIsVolKnobNode(pInfo->pThis, pNode->node.uID))
-    {
         CODECDBG_PRINT("VOLUME KNOB\n");
-    }
     else if (hdaCodecIsReservedNode(pInfo->pThis, pNode->node.uID))
-    {
         CODECDBG_PRINT("RESERVED\n");
-    }
     else
         CODECDBG_PRINT("UNKNOWN TYPE 0x%x\n", pNode->node.uID);
 
     if (fRecursive)
     {
-#define CODECDBG_PRINT_CONLIST_ENTRY(_aNode, _aEntry)                              \
-        if (cCnt >= _aEntry)                                                       \
-        {                                                                          \
-            const uint8_t uID = RT_BYTE##_aEntry(_aNode->node.au32F02_param[0x0]); \
-            if (pNode->node.uID == uID)                                             \
-                codecDbgPrintNode(pInfo, _aNode, false /* fRecursive */);          \
-        }
+# define CODECDBG_PRINT_CONLIST_ENTRY(_aNode, _aEntry) \
+            if (cCnt >= _aEntry) \
+            { \
+                const uint8_t uID = RT_BYTE##_aEntry(_aNode->node.au32F02_param[0x0]); \
+                if (pNode->node.uID == uID) \
+                    codecDbgPrintNode(pInfo, _aNode, false /* fRecursive */); \
+            }
 
         /* Slow recursion, but this is debug stuff anyway. */
         for (uint8_t i = 0; i < pInfo->pThis->cTotalNodes; i++)
@@ -2990,7 +2969,7 @@ static void codecDbgPrintNode(PCODECDBGINFO pInfo, PCODECNODE pNode, bool fRecur
             CODECDBG_UNINDENT
         }
 
-#undef CODECDBG_PRINT_CONLIST_ENTRY
+# undef CODECDBG_PRINT_CONLIST_ENTRY
    }
 }
 
@@ -2999,12 +2978,12 @@ static DECLCALLBACK(void) codecDbgListNodes(PHDACODEC pThis, PCDBGFINFOHLP pHlp,
     RT_NOREF(pszArgs);
     pHlp->pfnPrintf(pHlp, "HDA LINK / INPUTS\n");
 
-    CODECDBGINFO dbgInfo;
+    CODECDEBUG dbgInfo;
     dbgInfo.pHlp   = pHlp;
     dbgInfo.pThis  = pThis;
     dbgInfo.uLevel = 0;
 
-    PCODECDBGINFO pInfo = &dbgInfo;
+    PCODECDEBUG pInfo = &dbgInfo;
 
     CODECDBG_INDENT
         for (uint8_t i = 0; i < pThis->cTotalNodes; i++)
@@ -3018,11 +2997,14 @@ static DECLCALLBACK(void) codecDbgListNodes(PHDACODEC pThis, PCDBGFINFOHLP pHlp,
     CODECDBG_UNINDENT
 }
 
+#ifdef DEBUG
+
 static DECLCALLBACK(void) codecDbgSelector(PHDACODEC pThis, PCDBGFINFOHLP pHlp, const char *pszArgs)
 {
     RT_NOREF(pThis, pHlp, pszArgs);
 }
-#endif
+
+#endif /* DEBUG */
 
 static DECLCALLBACK(int) codecLookup(PHDACODEC pThis, uint32_t cmd, uint64_t *puResp)
 {
@@ -3250,8 +3232,8 @@ int hdaCodecConstruct(PPDMDEVINS pDevIns, PHDACODEC pThis,
 
 #ifdef DEBUG
     pThis->pfnDbgSelector  = codecDbgSelector;
-    pThis->pfnDbgListNodes = codecDbgListNodes;
 #endif
+    pThis->pfnDbgListNodes = codecDbgListNodes;
     pThis->pfnLookup       = codecLookup;
 
     int rc = stac9220Construct(pThis);
