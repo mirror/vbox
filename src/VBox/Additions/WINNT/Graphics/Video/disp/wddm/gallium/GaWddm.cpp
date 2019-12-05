@@ -397,7 +397,9 @@ HRESULT GaD3DIfCreateForRc(struct VBOXWDDMDISP_RESOURCE *pRc)
     const DWORD d3dMultisampleQuality        = pRc->RcDesc.MultisampleQuality;
     const BOOL d3dLockable                   = !pRc->RcDesc.fFlags.NotLockable;
 
-    if (VBOXWDDMDISP_IS_TEXTURE(pRc->RcDesc.fFlags))
+    if (   VBOXWDDMDISP_IS_TEXTURE(pRc->RcDesc.fFlags)
+        || pRc->RcDesc.fFlags.VideoProcessRenderTarget
+        || pRc->RcDesc.fFlags.DecodeRenderTarget)
     {
         PVBOXWDDMDISP_ALLOCATION pAllocation = &pRc->aAllocations[0];
         IDirect3DBaseTexture9 *pD3DIfTex = NULL;

@@ -20,6 +20,7 @@
 #include "../VBoxDispD3DCmn.h"
 #include "../VBoxDispD3D.h"
 
+#include "GaDxva.h"
 
 /* Copy surface data from D3DPOOL_DEFAULT to D3DPOOL_SYSTEMMEM */
 static HRESULT gaSurfaceCopyD2S(IDirect3DDevice9 *pDevice,
@@ -4003,72 +4004,56 @@ HRESULT APIENTRY GaDdiCreateVideoProcessDevice(HANDLE hDevice, D3DDDIARG_CREATEV
 {
     VBOXVDBG_BREAK_DDI();
 
-    RT_NOREF(pData);
-
     vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p)\n", hDevice));
 
     PVBOXWDDMDISP_DEVICE pDevice = (PVBOXWDDMDISP_DEVICE)hDevice;
-    RT_NOREF(pDevice);
-
-    /// @todo Not implemented.
-    AssertFailed();
+    HRESULT hr;
+    if (pDevice)
+        hr = VBoxDxvaCreateVideoProcessDevice(pDevice, pData);
+    else
+        hr = E_INVALIDARG;
 
     vboxVDbgPrintF(("==> "__FUNCTION__", hDevice(0x%p)\n", hDevice));
-    return E_NOTIMPL;
+    return hr;
 }
 
 HRESULT APIENTRY GaDdiDestroyVideoProcessDevice(HANDLE hDevice, HANDLE hVideoProcessor)
 {
     VBOXVDBG_BREAK_DDI();
 
-    RT_NOREF(hVideoProcessor);
-
     vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p)\n", hDevice));
 
     PVBOXWDDMDISP_DEVICE pDevice = (PVBOXWDDMDISP_DEVICE)hDevice;
-    RT_NOREF(pDevice);
-
-    /// @todo Not implemented.
-    AssertFailed();
+    HRESULT hr = VBoxDxvaDestroyVideoProcessDevice(pDevice, hVideoProcessor);
 
     vboxVDbgPrintF(("==> "__FUNCTION__", hDevice(0x%p)\n", hDevice));
-    return E_NOTIMPL;
+    return hr;
 }
 
 HRESULT APIENTRY GaDdiVideoProcessBeginFrame(HANDLE hDevice, HANDLE hVideoProcessor)
 {
     VBOXVDBG_BREAK_DDI();
 
-    RT_NOREF(hVideoProcessor);
-
     vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p)\n", hDevice));
 
     PVBOXWDDMDISP_DEVICE pDevice = (PVBOXWDDMDISP_DEVICE)hDevice;
-    RT_NOREF(pDevice);
-
-    /// @todo Not implemented.
-    AssertFailed();
+    HRESULT hr = VBoxDxvaVideoProcessBeginFrame(pDevice, hVideoProcessor);
 
     vboxVDbgPrintF(("==> "__FUNCTION__", hDevice(0x%p)\n", hDevice));
-    return E_NOTIMPL;
+    return hr;
 }
 
 HRESULT APIENTRY GaDdiVideoProcessEndFrame(HANDLE hDevice, D3DDDIARG_VIDEOPROCESSENDFRAME* pData)
 {
     VBOXVDBG_BREAK_DDI();
 
-    RT_NOREF(pData);
-
     vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p)\n", hDevice));
 
     PVBOXWDDMDISP_DEVICE pDevice = (PVBOXWDDMDISP_DEVICE)hDevice;
-    RT_NOREF(pDevice);
-
-    /// @todo Not implemented.
-    AssertFailed();
+    HRESULT hr = VBoxDxvaVideoProcessEndFrame(pDevice, pData);
 
     vboxVDbgPrintF(("==> "__FUNCTION__", hDevice(0x%p)\n", hDevice));
-    return E_NOTIMPL;
+    return hr;
 }
 
 HRESULT APIENTRY GaDdiSetVideoProcessRenderTarget(HANDLE hDevice,
@@ -4076,36 +4061,26 @@ HRESULT APIENTRY GaDdiSetVideoProcessRenderTarget(HANDLE hDevice,
 {
     VBOXVDBG_BREAK_DDI();
 
-    RT_NOREF(pData);
-
     vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p)\n", hDevice));
 
     PVBOXWDDMDISP_DEVICE pDevice = (PVBOXWDDMDISP_DEVICE)hDevice;
-    RT_NOREF(pDevice);
-
-    /// @todo Not implemented.
-    AssertFailed();
+    HRESULT hr = VBoxDxvaSetVideoProcessRenderTarget(pDevice, pData);
 
     vboxVDbgPrintF(("==> "__FUNCTION__", hDevice(0x%p)\n", hDevice));
-    return E_NOTIMPL;
+    return hr;
 }
 
 HRESULT APIENTRY GaDdiVideoProcessBlt(HANDLE hDevice, const D3DDDIARG_VIDEOPROCESSBLT *pData)
 {
     VBOXVDBG_BREAK_DDI();
 
-    RT_NOREF(pData);
-
     vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p)\n", hDevice));
 
     PVBOXWDDMDISP_DEVICE pDevice = (PVBOXWDDMDISP_DEVICE)hDevice;
-    RT_NOREF(pDevice);
-
-    /// @todo Not implemented.
-    AssertFailed();
+    HRESULT hr = VBoxDxvaVideoProcessBlt(pDevice, pData);
 
     vboxVDbgPrintF(("==> "__FUNCTION__", hDevice(0x%p)\n", hDevice));
-    return E_NOTIMPL;
+    return hr;
 }
 
 HRESULT APIENTRY GaDdiCreateExtensionDevice(HANDLE hDevice, D3DDDIARG_CREATEEXTENSIONDEVICE *pData)
@@ -4514,6 +4489,139 @@ HRESULT APIENTRY GaDdiDestroyDevice(HANDLE hDevice)
     return S_OK;
 }
 
+HRESULT APIENTRY GaDdiDXVAHDCreateVideoProcessor(HANDLE hDevice,
+    D3DDDIARG_DXVAHD_CREATEVIDEOPROCESSOR *pData)
+{
+    VBOXVDBG_BREAK_DDI();
+
+    RT_NOREF(pData);
+
+    vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p)\n", hDevice));
+
+    PVBOXWDDMDISP_DEVICE pDevice = (PVBOXWDDMDISP_DEVICE)hDevice;
+    RT_NOREF(pDevice);
+
+    /// @todo Not implemented.
+    AssertFailed();
+
+    vboxVDbgPrintF(("==> "__FUNCTION__", hDevice(0x%p)\n", hDevice));
+    return E_NOTIMPL;
+}
+
+HRESULT APIENTRY GaDdiDXVAHDSetVideoProcessBltState(HANDLE hDevice,
+    CONST D3DDDIARG_DXVAHD_SETVIDEOPROCESSBLTSTATE *pData)
+{
+    VBOXVDBG_BREAK_DDI();
+
+    RT_NOREF(pData);
+
+    vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p)\n", hDevice));
+
+    PVBOXWDDMDISP_DEVICE pDevice = (PVBOXWDDMDISP_DEVICE)hDevice;
+    RT_NOREF(pDevice);
+
+    /// @todo Not implemented.
+    AssertFailed();
+
+    vboxVDbgPrintF(("==> "__FUNCTION__", hDevice(0x%p)\n", hDevice));
+    return E_NOTIMPL;
+}
+
+HRESULT APIENTRY GaDdiDXVAHDGetVideoProcessBltStatePrivate(HANDLE hDevice,
+    D3DDDIARG_DXVAHD_GETVIDEOPROCESSBLTSTATEPRIVATE *pData)
+{
+    VBOXVDBG_BREAK_DDI();
+
+    RT_NOREF(pData);
+
+    vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p)\n", hDevice));
+
+    PVBOXWDDMDISP_DEVICE pDevice = (PVBOXWDDMDISP_DEVICE)hDevice;
+    RT_NOREF(pDevice);
+
+    /// @todo Not implemented.
+    AssertFailed();
+
+    vboxVDbgPrintF(("==> "__FUNCTION__", hDevice(0x%p)\n", hDevice));
+    return E_NOTIMPL;
+}
+
+HRESULT APIENTRY GaDdiDXVAHDSetVideoProcessStreamState(HANDLE hDevice,
+    CONST D3DDDIARG_DXVAHD_SETVIDEOPROCESSSTREAMSTATE *pData)
+{
+    VBOXVDBG_BREAK_DDI();
+
+    RT_NOREF(pData);
+
+    vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p)\n", hDevice));
+
+    PVBOXWDDMDISP_DEVICE pDevice = (PVBOXWDDMDISP_DEVICE)hDevice;
+    RT_NOREF(pDevice);
+
+    /// @todo Not implemented.
+    AssertFailed();
+
+    vboxVDbgPrintF(("==> "__FUNCTION__", hDevice(0x%p)\n", hDevice));
+    return E_NOTIMPL;
+}
+
+HRESULT APIENTRY GaDdiDXVAHDGetVideoProcessStreamStatePrivate(HANDLE hDevice,
+    D3DDDIARG_DXVAHD_GETVIDEOPROCESSSTREAMSTATEPRIVATE *pData)
+{
+    VBOXVDBG_BREAK_DDI();
+
+    RT_NOREF(pData);
+
+    vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p)\n", hDevice));
+
+    PVBOXWDDMDISP_DEVICE pDevice = (PVBOXWDDMDISP_DEVICE)hDevice;
+    RT_NOREF(pDevice);
+
+    /// @todo Not implemented.
+    AssertFailed();
+
+    vboxVDbgPrintF(("==> "__FUNCTION__", hDevice(0x%p)\n", hDevice));
+    return E_NOTIMPL;
+}
+
+HRESULT APIENTRY GaDdiDXVAHDVideoProcessBltHD(HANDLE hDevice,
+    CONST D3DDDIARG_DXVAHD_VIDEOPROCESSBLTHD *pData)
+{
+    VBOXVDBG_BREAK_DDI();
+
+    RT_NOREF(pData);
+
+    vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p)\n", hDevice));
+
+    PVBOXWDDMDISP_DEVICE pDevice = (PVBOXWDDMDISP_DEVICE)hDevice;
+    RT_NOREF(pDevice);
+
+    /// @todo Not implemented.
+    AssertFailed();
+
+    vboxVDbgPrintF(("==> "__FUNCTION__", hDevice(0x%p)\n", hDevice));
+    return E_NOTIMPL;
+}
+
+HRESULT APIENTRY GaDdiDXVAHDDestroyVideoProcessor(HANDLE hDevice,
+    HANDLE hProcessor)
+{
+    VBOXVDBG_BREAK_DDI();
+
+    RT_NOREF(hProcessor);
+
+    vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p)\n", hDevice));
+
+    PVBOXWDDMDISP_DEVICE pDevice = (PVBOXWDDMDISP_DEVICE)hDevice;
+    RT_NOREF(pDevice);
+
+    /// @todo Not implemented.
+    AssertFailed();
+
+    vboxVDbgPrintF(("==> "__FUNCTION__", hDevice(0x%p)\n", hDevice));
+    return E_NOTIMPL;
+}
+
 HRESULT APIENTRY GaDdiAdapterCreateDevice(HANDLE hAdapter, D3DDDIARG_CREATEDEVICE *pCreateData)
 {
     VBOXVDBG_BREAK_DDI();
@@ -4659,6 +4767,13 @@ HRESULT APIENTRY GaDdiAdapterCreateDevice(HANDLE hAdapter, D3DDDIARG_CREATEDEVIC
         // pCreateData->pDeviceFuncs->pfnUnlockAsync               = NULL; /* Optional. */
         // pCreateData->pDeviceFuncs->pfnRename                    = NULL; /* Optional. */
 
+        // pCreateData->pDeviceFuncs->pfnCreateVideoProcessor              = GaDdiDXVAHDCreateVideoProcessor;
+        // pCreateData->pDeviceFuncs->pfnSetVideoProcessBltState           = GaDdiDXVAHDSetVideoProcessBltState;
+        // pCreateData->pDeviceFuncs->pfnGetVideoProcessBltStatePrivate    = GaDdiDXVAHDGetVideoProcessBltStatePrivate;
+        // pCreateData->pDeviceFuncs->pfnSetVideoProcessStreamState        = GaDdiDXVAHDSetVideoProcessStreamState;
+        // pCreateData->pDeviceFuncs->pfnGetVideoProcessStreamStatePrivate = GaDdiDXVAHDGetVideoProcessStreamStatePrivate;
+        // pCreateData->pDeviceFuncs->pfnVideoProcessBltHD                 = GaDdiDXVAHDVideoProcessBltHD;
+        // pCreateData->pDeviceFuncs->pfnDestroyVideoProcessor             = GaDdiDXVAHDDestroyVideoProcessor;
     }
     else
     {
@@ -4967,11 +5082,61 @@ HRESULT APIENTRY GaDdiAdapterGetCaps(HANDLE hAdapter, const D3DDDIARG_GETCAPS *p
             *((uint32_t*)pData->pData) = 0;
             break;
 
+        case D3DDDICAPS_GETVIDEOPROCESSORDEVICEGUIDCOUNT:
+        {
+            if (pData->DataSize >= sizeof(UINT))
+            {
+                if (pAdapter->AdapterInfo.u32AdapterCaps & VBOXWDDM_QAI_CAP_DXVA)
+                    hr = VBoxDxvaGetDeviceGuidCount((UINT *)pData->pData);
+                else
+                    *(UINT *)pData->pData = 0;
+            }
+            else
+                hr = E_INVALIDARG;
+            break;
+        }
+
+        case D3DDDICAPS_GETVIDEOPROCESSORDEVICEGUIDS:
+        {
+            hr = VBoxDxvaGetDeviceGuids((GUID *)pData->pData, pData->DataSize);
+            break;
+        }
+
+        case D3DDDICAPS_GETVIDEOPROCESSORRTSUBSTREAMFORMATCOUNT:
+        case D3DDDICAPS_GETVIDEOPROCESSORRTFORMATCOUNT:
+        {
+            if (pData->DataSize >= sizeof(UINT))
+                if (pAdapter->AdapterInfo.u32AdapterCaps & VBOXWDDM_QAI_CAP_DXVA)
+                    hr = VBoxDxvaGetOutputFormatCount((UINT *)pData->pData, (DXVADDI_VIDEOPROCESSORINPUT *)pData->pInfo,
+                                                      pData->Type == D3DDDICAPS_GETVIDEOPROCESSORRTSUBSTREAMFORMATCOUNT);
+                else
+                    *(UINT *)pData->pData = 0;
+            else
+                hr = E_INVALIDARG;
+            break;
+        }
+
+        case D3DDDICAPS_GETVIDEOPROCESSORRTSUBSTREAMFORMATS:
+        case D3DDDICAPS_GETVIDEOPROCESSORRTFORMATS:
+        {
+            hr = VBoxDxvaGetOutputFormats((D3DDDIFORMAT *)pData->pData, pData->DataSize,
+                                          (DXVADDI_VIDEOPROCESSORINPUT *)pData->pInfo,
+                                          pData->Type == D3DDDICAPS_GETVIDEOPROCESSORRTSUBSTREAMFORMATS);
+            break;
+        }
+
         case D3DDDICAPS_GETVIDEOPROCESSORCAPS:
+        {
+            if (pData->DataSize >= sizeof(DXVADDI_VIDEOPROCESSORCAPS))
+                hr = VBoxDxvaGetCaps((DXVADDI_VIDEOPROCESSORCAPS *)pData->pData,
+                                     (DXVADDI_VIDEOPROCESSORINPUT *)pData->pInfo);
+            else
+                hr = E_INVALIDARG;
+            break;
+        }
+
         case D3DDDICAPS_GETEXTENSIONGUIDCOUNT:
         case D3DDDICAPS_GETDECODEGUIDCOUNT:
-        case D3DDDICAPS_GETVIDEOPROCESSORDEVICEGUIDCOUNT:
-        case D3DDDICAPS_GETVIDEOPROCESSORRTFORMATCOUNT:
         case D3DDDICAPS_GETCONTENTPROTECTIONCAPS:
             if (pData->pData && pData->DataSize)
                 memset(pData->pData, 0, pData->DataSize);
@@ -4987,10 +5152,6 @@ HRESULT APIENTRY GaDdiAdapterGetCaps(HANDLE hAdapter, const D3DDDIARG_GETCAPS *p
         case D3DDDICAPS_GETDECODECOMPRESSEDBUFFERINFO:
         case D3DDDICAPS_GETDECODECONFIGURATIONCOUNT:
         case D3DDDICAPS_GETDECODECONFIGURATIONS:
-        case D3DDDICAPS_GETVIDEOPROCESSORDEVICEGUIDS:
-        case D3DDDICAPS_GETVIDEOPROCESSORRTFORMATS:
-        case D3DDDICAPS_GETVIDEOPROCESSORRTSUBSTREAMFORMATCOUNT:
-        case D3DDDICAPS_GETVIDEOPROCESSORRTSUBSTREAMFORMATS:
         case D3DDDICAPS_GETPROCAMPRANGE:
         case D3DDDICAPS_FILTERPROPERTYRANGE:
         case D3DDDICAPS_GETEXTENSIONGUIDS:

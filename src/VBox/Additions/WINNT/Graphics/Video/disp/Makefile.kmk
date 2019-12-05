@@ -132,6 +132,7 @@ VBoxDispD3D_INCS     += \
 	$(VBOX_PATH_3D)/win/include \
 	$(VBOX_PATH_VMSVGA_INC)
 VBoxDispD3D_SOURCES  += \
+	wddm/gallium/GaDxva.cpp \
 	wddm/gallium/GaDrvEnvWddm.cpp \
 	wddm/gallium/GaWddm.cpp \
 	wddm/gallium/GaDdi.cpp \
