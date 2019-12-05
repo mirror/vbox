@@ -504,6 +504,9 @@ static HRESULT listUsbHost(const ComPtr<IVirtualBox> &pVirtualBox)
             CHECK_ERROR_RET(dev, COMGETTER(Address)(bstr.asOutParam()), 1);
             if (!bstr.isEmpty())
                 RTPrintf("Address:            %ls\n", bstr.raw());
+            CHECK_ERROR_RET(dev, COMGETTER(PortPath)(bstr.asOutParam()), 1);
+            if (!bstr.isEmpty())
+                RTPrintf("Port path:          %ls\n", bstr.raw());
 
             /* current state  */
             USBDeviceState_T state;
