@@ -248,7 +248,14 @@ RePackScriptsAdd_SOURCES = \
 	$(RePackScriptsAdd_0_OUTDIR)/PackDriversForSubmission.cmd \
 	$(RePackScriptsAdd_0_OUTDIR)/Combined-1-Prepare.cmd \
 	$(RePackScriptsAdd_0_OUTDIR)/Combined-3-RepackAdditions.cmd \
-	$(RePackScriptsAdd_0_OUTDIR)/sign-ev.cmd
+	$(RePackScriptsAdd_0_OUTDIR)/sign-ev.cmd \
+	$(RePackScriptsAdd_0_OUTDIR)/welcome.bmp \
+	$(RePackScriptsAdd_0_OUTDIR)/VirtualBoxGA-vista.ico \
+	$(RePackScriptsAdd_0_OUTDIR)/VirtualBoxGA-nsis.ico \
+	$(RePackScriptsAdd_0_OUTDIR)/License-gpl-2.0.rtf \
+	$(RePackScriptsAdd_0_OUTDIR)/VBoxGuestAdditions.nsi
+
+
 
 $(call VBOX_EDIT_VERSION_AND_BUILD_RULE_FN,RePackScriptsAdd,../../../Installer/win/Scripts/PackDriversForSubmission.cmd,PackDriversForSubmission.cmd)
 $(call VBOX_EDIT_VERSION_AND_BUILD_RULE_FN,RePackScriptsAdd,../../../Installer/win/Scripts/Combined-1-Prepare.cmd,Combined-1-Prepare.cmd)
@@ -266,6 +273,20 @@ $$(RePackScriptsAdd_0_OUTDIR)/sign-ev.cmd: | $$(dir $$@)
 		'( $(call VBOX_SIGN_EV_FILE_FN,%1,%~dp1\) ) || exit /b1' \
 		) )
 
+$$(RePackScriptsAdd_0_OUTDIR)/welcome.bmp: $(PATH_SUB_CURRENT)/welcome.bmp
+	$(CP) -f $< $@
+
+$$(RePackScriptsAdd_0_OUTDIR)/VBoxGuestAdditions.nsi: $(PATH_SUB_CURRENT)/VBoxGuestAdditions.nsi
+	$(CP) -f $< $@
+
+$$(RePackScriptsAdd_0_OUTDIR)/License-gpl-2.0.rtf : doc/License-gpl-2.0.rtf
+	$(CP) -f $< $@
+
+$$(RePackScriptsAdd_0_OUTDIR)/VirtualBoxGA-vista.ico: src/VBox/Artwork/win/NonOSE/VirtualBoxGA-vista.ico
+	$(CP) -f $< $@
+
+$$(RePackScriptsAdd_0_OUTDIR)/VirtualBoxGA-nsis.ico: src/VBox/Artwork/win/NonOSE/VirtualBoxGA-vista.ico
+	$(CP) -f $< $@
 
 include $(FILE_KBUILD_SUB_FOOTER)
 
