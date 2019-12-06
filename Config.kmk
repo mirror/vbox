@@ -6409,11 +6409,13 @@ ifdef VBOX_WITH_EXTPACK
   TEMPLATE_VBoxR3ExtPackPuel_EXTENDS = VBoxR3ExtPack
   TEMPLATE_VBoxR3ExtPackPuel_INST = $(INST_EXTPACK_PUEL)$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)/
   TEMPLATE_VBoxR3ExtPackPuel_DEFS = $(TEMPLATE_VBoxR3ExtPack_DEFS) VBOX_IN_PUEL_EXTPACK
+  TEMPLATE_VBoxR3ExtPackPuel_LD_DEBUG = split
 
   TEMPLATE_VBoxR3ExtPackApiPuel = For the ring-3 context modules in the PUEL extension pack.
   TEMPLATE_VBoxR3ExtPackApiPuel_EXTENDS = VBoxR3ExtPackApi
   TEMPLATE_VBoxR3ExtPackApiPuel_INST = $(INST_EXTPACK_PUEL)$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)/
   TEMPLATE_VBoxR3ExtPackApiPuel_DEFS = $(TEMPLATE_VBoxR3ExtPackApi_DEFS) VBOX_IN_PUEL_EXTPACK
+  TEMPLATE_VBoxR3ExtPackApiPuel_LD_DEBUG = split
 
   TEMPLATE_VBoxR3ExtPackPuelWithOpenSsl = For the ring-3 context modules in the PUEL extension pack using ExtPack OpenSSL.
   TEMPLATE_VBoxR3ExtPackPuelWithOpenSsl_EXTENDS = VBoxR3ExtPackPuel
