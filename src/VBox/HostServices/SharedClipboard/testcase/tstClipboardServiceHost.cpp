@@ -126,17 +126,15 @@ static void testSetTransferMode(void)
 }
 #endif /* VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS */
 
-static void testMsgAddOld(PSHCLCLIENT pClient, uint32_t uMsg, uint32_t uParm1)
+/* Adds a host data read request message to the client's message queue. */
+static void testMsgAddReadData(PSHCLCLIENT pClient, uint32_t uFormat)
 {
-    PSHCLCLIENTMSG pMsg = shClSvcMsgAlloc(uMsg, 2 /* cParms */); /* The old protocol (v0) has a fixed parameter count of 2. */
-    RTTESTI_CHECK_RETV(pMsg != NULL);
+    SHCLDATAREQ dataReq;
+    RT_ZERO(dataReq);
 
-    HGCMSvcSetU32(&pMsg->paParms[0], uMsg);
-    HGCMSvcSetU32(&pMsg->paParms[1], uParm1);
+    dataReq.uFmt = uFormat;
 
-    int rc = shClSvcMsgAdd(pClient, pMsg, true /* fAppend */);
-    RTTESTI_CHECK_RC_OK(rc);
-    rc = shClSvcClientWakeup(pClient);
+    int rc = ShClSvcDataReadRequest(pClient, &dataReq, NULL /* puEvent */);
     RTTESTI_CHECK_RC_OK(rc);
 }
 
@@ -166,7 +164,7 @@ static void testGetHostMsgOld(void)
     table.pfnConnect(NULL, 1 /* clientId */, &g_Client, 0, 0);
     table.pfnCall(NULL, &call, 1 /* clientId */, &g_Client, VBOX_SHCL_GUEST_FN_GET_HOST_MSG_OLD, 2, parms, 0);
     RTTESTI_CHECK_RC(call.rc, VERR_TRY_AGAIN);  /* This should get updated only when the guest call completes. */
-    testMsgAddOld(&g_Client, VBOX_SHCL_HOST_MSG_READ_DATA, VBOX_SHCL_FMT_UNICODETEXT);
+    testMsgAddReadData(&g_Client, VBOX_SHCL_FMT_UNICODETEXT);
     RTTESTI_CHECK(parms[0].u.uint32 == VBOX_SHCL_HOST_MSG_READ_DATA);
     RTTESTI_CHECK(parms[1].u.uint32 == VBOX_SHCL_FMT_UNICODETEXT);
     RTTESTI_CHECK_RC_OK(call.rc);
@@ -176,7 +174,7 @@ static void testGetHostMsgOld(void)
 
     RTTestISub("Testing one format, no waiting guest calls.");
     shClSvcClientReset(&g_Client);
-    testMsgAddOld(&g_Client, VBOX_SHCL_HOST_MSG_READ_DATA, VBOX_SHCL_FMT_HTML);
+    testMsgAddReadData(&g_Client, VBOX_SHCL_FMT_HTML);
     HGCMSvcSetU32(&parms[0], 0);
     HGCMSvcSetU32(&parms[1], 0);
     call.rc = VERR_TRY_AGAIN;
@@ -195,7 +193,7 @@ static void testGetHostMsgOld(void)
     call.rc = VERR_TRY_AGAIN;
     table.pfnCall(NULL, &call, 1 /* clientId */, &g_Client, VBOX_SHCL_GUEST_FN_GET_HOST_MSG_OLD, 2, parms, 0);
     RTTESTI_CHECK_RC(call.rc, VERR_TRY_AGAIN);  /* This should get updated only when the guest call completes. */
-    testMsgAddOld(&g_Client, VBOX_SHCL_HOST_MSG_READ_DATA, VBOX_SHCL_FMT_UNICODETEXT | VBOX_SHCL_FMT_HTML);
+    testMsgAddReadData(&g_Client, VBOX_SHCL_FMT_UNICODETEXT | VBOX_SHCL_FMT_HTML);
     RTTESTI_CHECK(parms[0].u.uint32 == VBOX_SHCL_HOST_MSG_READ_DATA);
     RTTESTI_CHECK(parms[1].u.uint32 == VBOX_SHCL_FMT_UNICODETEXT);
     RTTESTI_CHECK_RC_OK(call.rc);
@@ -210,7 +208,7 @@ static void testGetHostMsgOld(void)
 
     RTTestISub("Testing two formats, no waiting guest calls.");
     shClSvcClientReset(&g_Client);
-    testMsgAddOld(&g_Client, VBOX_SHCL_HOST_MSG_READ_DATA, VBOX_SHCL_FMT_UNICODETEXT | VBOX_SHCL_FMT_HTML);
+    testMsgAddReadData(&g_Client, VBOX_SHCL_FMT_UNICODETEXT | VBOX_SHCL_FMT_HTML);
     HGCMSvcSetU32(&parms[0], 0);
     HGCMSvcSetU32(&parms[1], 0);
     call.rc = VERR_TRY_AGAIN;
@@ -315,7 +313,7 @@ int ShClSvcImplConnect(PSHCLCLIENT, bool) { return VINF_SUCCESS; }
 int ShClSvcImplFormatAnnounce(PSHCLCLIENT, PSHCLCLIENTCMDCTX, PSHCLFORMATDATA) { AssertFailed(); return VINF_SUCCESS; }
 int ShClSvcImplReadData(PSHCLCLIENT, PSHCLCLIENTCMDCTX, PSHCLDATABLOCK, unsigned int *) { AssertFailed(); return VERR_WRONG_ORDER; }
 int ShClSvcImplWriteData(PSHCLCLIENT, PSHCLCLIENTCMDCTX, PSHCLDATABLOCK) { AssertFailed(); return VINF_SUCCESS; }
-int ShClSvcImplSync(PSHCLCLIENT) { AssertFailed(); return VERR_WRONG_ORDER; }
+int ShClSvcImplSync(PSHCLCLIENT) { return VINF_SUCCESS; }
 
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
 int ShClSvcImplTransferCreate(PSHCLCLIENT, PSHCLTRANSFER) { return VINF_SUCCESS; }
