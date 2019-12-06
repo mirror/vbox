@@ -658,7 +658,7 @@ static NTSTATUS vboxUsbFltDevPopulate(PVBOXUSBFLT_DEVICE pDevice, PDEVICE_OBJECT
             WARN(("IoGetDevicePropertyData failed for DEVPKEY_Device_LocationPaths, Status (0x%x)", Status));
             break;
         }
-	LOG_STRW(pDevice->szLocationPath);
+        LOG_STRW(pDevice->szLocationPath);
 
         /* Query the location information. The hub number is iffy because the numbering is
          * non-obvious and not necessarily stable, but the port number is well defined and useful.
