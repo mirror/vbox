@@ -65,7 +65,6 @@ RT_C_DECLS_END
 /*********************************************************************************************************************************
 *   Structures and Typedefs                                                                                                      *
 *********************************************************************************************************************************/
-
 /**
  * Internal Network IP stack device instance data.
  *
@@ -114,13 +113,14 @@ typedef struct DEVINTNETIP
      * but we need inform constructing routine whether it was success or not(EMT thread).
      */
     int rcInitialization;
-} DEVINTNETIP, *PDEVINTNETIP;
+} DEVINTNETIP;
+/** Pointer to the instance data for an Internal Network IP stack. */
+typedef DEVINTNETIP *PDEVINTNETIP;
 
 
 /*********************************************************************************************************************************
 *   Global Variables                                                                                                             *
 *********************************************************************************************************************************/
-
 /**
  * Pointer to the (only) instance data in this device.
  */
@@ -276,33 +276,23 @@ static err_t devINIPInterface(struct netif *netif)
  */
 static DECLCALLBACK(int) devINIPNetworkConfiguration(PPDMDEVINS pDevIns, PDEVINTNETIP pThis, PCFGMNODE pCfg)
 {
-    int rc = VINF_SUCCESS;
-    rc = CFGMR3QueryStringAlloc(pCfg, "IP", &pThis->pszIP);
-    if (RT_FAILURE(rc))
-    {
-        PDMDEV_SET_ERROR(pDevIns, rc,
-                         N_("Configuration error: Failed to get the \"IP\" value"));
-        /** @todo perhaps we should panic if IPv4 address isn't specify, with assumtion that
-         * ISCSI target specified in IPv6 form.
-         */
-        return rc;
-    }
+    PCPDMDEVHLPR3 pHlp = pDevIns->pHlpR3;
 
-    rc = CFGMR3QueryStringAlloc(pCfg, "Netmask", &pThis->pszNetmask);
+    int rc = pHlp->pfnCFGMQueryStringAlloc(pCfg, "IP", &pThis->pszIP);
     if (RT_FAILURE(rc))
-    {
-        PDMDEV_SET_ERROR(pDevIns, rc,
-                         N_("Configuration error: Failed to get the \"Netmask\" value"));
-        return rc;
-    }
-    rc = CFGMR3QueryStringAlloc(pCfg, "Gateway", &pThis->pszGateway);
+        /** @todo perhaps we should panic if IPv4 address isn't specify, with assumtion that
+         * ISCSI target specified in IPv6 form.  */
+        return PDMDEV_SET_ERROR(pDevIns, rc, N_("Configuration error: Failed to get the \"IP\" value"));
+
+    rc = pHlp->pfnCFGMQueryStringAlloc(pCfg, "Netmask", &pThis->pszNetmask);
+    if (RT_FAILURE(rc))
+        return PDMDEV_SET_ERROR(pDevIns, rc, N_("Configuration error: Failed to get the \"Netmask\" value"));
+
+    rc = pHlp->pfnCFGMQueryStringAlloc(pCfg, "Gateway", &pThis->pszGateway);
     if (   RT_FAILURE(rc)
         && rc != VERR_CFGM_VALUE_NOT_FOUND)
-    {
-        PDMDEV_SET_ERROR(pDevIns, rc,
-                         N_("Configuration error: Failed to get the \"Gateway\" value"));
-        return rc;
-    }
+        return PDMDEV_SET_ERROR(pDevIns, rc, N_("Configuration error: Failed to get the \"Gateway\" value"));
+
     return VINF_SUCCESS;
 }
 
@@ -395,8 +385,8 @@ static DECLCALLBACK(void) devINIPNetworkDown_XmitPending(PPDMINETWORKDOWN pInter
 /**
  * Signals the end of lwIP TCPIP initialization.
  *
- * @note: TCPIP thread, corresponding EMT waiting on semaphore.
  * @param   arg     opaque argument, here the pointer to the PDEVINTNETIP.
+ * @note    TCPIP thread, corresponding EMT waiting on semaphore.
  */
 static DECLCALLBACK(void) devINIPTcpipInitDone(void *arg)
 {
@@ -404,76 +394,59 @@ static DECLCALLBACK(void) devINIPTcpipInitDone(void *arg)
     AssertPtrReturnVoid(arg);
 
     pThis->rcInitialization = VINF_SUCCESS;
+    struct in_addr ip;
+    if (!inet_aton(pThis->pszIP, &ip))
     {
-        struct netif *ret;
-        struct ip_addr ipaddr, netmask, gw;
-        struct in_addr ip;
-
-        if (!inet_aton(pThis->pszIP, &ip))
-        {
-            pThis->rcInitialization = VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES;
-            PDMDEV_SET_ERROR(pThis->pDevIns,
-                             pThis->rcInitialization,
-                             N_("Configuration error: Invalid \"IP\" value"));
-            goto done;
-        }
-        memcpy(&ipaddr, &ip, sizeof(ipaddr));
-
-        if (!inet_aton(pThis->pszNetmask, &ip))
-        {
-            pThis->rcInitialization = VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES;
-            PDMDEV_SET_ERROR(pThis->pDevIns,
-                             pThis->rcInitialization,
-                             N_("Configuration error: Invalid \"Netmask\" value"));
-            goto done;
-        }
-        memcpy(&netmask, &ip, sizeof(netmask));
-
-        if (pThis->pszGateway)
-        {
-            if (!inet_aton(pThis->pszGateway, &ip))
-            {
-                pThis->rcInitialization = VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES;
-                PDMDEV_SET_ERROR(pThis->pDevIns,
-                                 pThis->rcInitialization,
-                                 N_("Configuration error: Invalid \"Gateway\" value"));
-                goto done;
-            }
-
-        }
-        else
-        {
-            inet_aton(pThis->pszIP, &ip);
-        }
-        memcpy(&gw, &ip, sizeof(gw));
-
-        pThis->IntNetIF.name[0] = 'I';
-        pThis->IntNetIF.name[1] = 'N';
-
-        ret = netif_add(&pThis->IntNetIF, &ipaddr, &netmask, &gw, NULL,
-                        devINIPInterface, lwip_tcpip_input);
-
-        if (!ret)
-        {
-
-            pThis->rcInitialization = VERR_NET_NO_NETWORK;
-            PDMDEV_SET_ERROR(pThis->pDevIns,
-                             pThis->rcInitialization,
-                             N_("netif_add failed"));
-            goto done;
-        }
-
-        lwip_netif_set_default(&pThis->IntNetIF);
-        lwip_netif_set_up(&pThis->IntNetIF);
+        pThis->rcInitialization = VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES;
+        PDMDEV_SET_ERROR(pThis->pDevIns, pThis->rcInitialization, N_("Configuration error: Invalid \"IP\" value"));
+        return;
     }
-    done:
-    return;
+    struct ip_addr ipaddr;
+    memcpy(&ipaddr, &ip, sizeof(ipaddr));
+
+    if (!inet_aton(pThis->pszNetmask, &ip))
+    {
+        pThis->rcInitialization = VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES;
+        PDMDEV_SET_ERROR(pThis->pDevIns, pThis->rcInitialization, N_("Configuration error: Invalid \"Netmask\" value"));
+        return;
+    }
+    struct ip_addr netmask;
+    memcpy(&netmask, &ip, sizeof(netmask));
+
+    if (pThis->pszGateway)
+    {
+        if (!inet_aton(pThis->pszGateway, &ip))
+        {
+            pThis->rcInitialization = VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES;
+            PDMDEV_SET_ERROR(pThis->pDevIns, pThis->rcInitialization, N_("Configuration error: Invalid \"Gateway\" value"));
+            return;
+        }
+    }
+    else
+        inet_aton(pThis->pszIP, &ip);
+    struct ip_addr gw;
+    memcpy(&gw, &ip, sizeof(gw));
+
+    pThis->IntNetIF.name[0] = 'I';
+    pThis->IntNetIF.name[1] = 'N';
+
+    struct netif *ret = netif_add(&pThis->IntNetIF, &ipaddr, &netmask, &gw, NULL, devINIPInterface, lwip_tcpip_input);
+    if (!ret)
+    {
+
+        pThis->rcInitialization = VERR_NET_NO_NETWORK;
+        PDMDEV_SET_ERROR(pThis->pDevIns, pThis->rcInitialization, N_("netif_add failed"));
+        return;
+    }
+
+    lwip_netif_set_default(&pThis->IntNetIF);
+    lwip_netif_set_up(&pThis->IntNetIF);
 }
 
 
 /**
  * This callback is for finitializing our activity on TCPIP thread.
- * XXX: We do it only for new LWIP, old LWIP will stay broken for now.
+ * @todo XXX: We do it only for new LWIP, old LWIP will stay broken for now.
  */
 static DECLCALLBACK(void) devINIPTcpipFiniDone(void *arg)
 {
@@ -575,10 +548,9 @@ static DECLCALLBACK(void *) devINIPQueryInterface(PPDMIBASE pInterface,
  */
 static DECLCALLBACK(int) devINIPDestruct(PPDMDEVINS pDevIns)
 {
-    PDEVINTNETIP pThis = PDMDEVINS_2_DATA(pDevIns, PDEVINTNETIP);
-
-    LogFlow(("%s: pDevIns=%p\n", __FUNCTION__, pDevIns));
     PDMDEV_CHECK_VERSIONS_RETURN_QUIET(pDevIns);
+    LogFlow(("devINIPDestruct: pDevIns=%p\n", pDevIns));
+    PDEVINTNETIP pThis = PDMDEVINS_2_DATA(pDevIns, PDEVINTNETIP);
 
     if (g_pDevINIPData != NULL)
         vboxLwipCoreFinalize(devINIPTcpipFiniDone, pThis);
@@ -600,30 +572,20 @@ static DECLCALLBACK(int) devINIPDestruct(PPDMDEVINS pDevIns)
  */
 static DECLCALLBACK(int) devINIPConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE pCfg)
 {
+    PDMDEV_CHECK_VERSIONS_RETURN(pDevIns);
+    PDEVINTNETIP    pThis = PDMDEVINS_2_DATA(pDevIns, PDEVINTNETIP);
+    PCPDMDEVHLPR3   pHlp  = pDevIns->pHlpR3;
+    LogFlow(("devINIPConstruct: pDevIns=%p iInstance=%d pCfg=%p\n", pDevIns, iInstance, pCfg));
     RT_NOREF(iInstance);
-    PDEVINTNETIP pThis = PDMDEVINS_2_DATA(pDevIns, PDEVINTNETIP);
-
-    LogFlow(("%s: pDevIns=%p iInstance=%d pCfg=%p\n", __FUNCTION__,
-             pDevIns, iInstance, pCfg));
 
     Assert(iInstance == 0);
-    PDMDEV_CHECK_VERSIONS_RETURN(pDevIns);
-
-    /*
-     * Validate the config.
-     */
-    if (!CFGMR3AreValuesValid(pCfg, "MAC\0IP\0"
-                                    "IPv6\0"
-                                    "Netmask\0Gateway\0"))
-        return PDMDEV_SET_ERROR(pDevIns, VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES,
-                                N_("Unknown Internal Networking IP configuration option"));
 
     /*
      * Init the static parts.
      */
-    pThis->pszIP                            = NULL;
-    pThis->pszNetmask                       = NULL;
-    pThis->pszGateway                       = NULL;
+    //pThis->pszIP                            = NULL;
+    //pThis->pszNetmask                       = NULL;
+    //pThis->pszGateway                       = NULL;
     /* Pointer to device instance */
     pThis->pDevIns                          = pDevIns;
     /* IBase */
@@ -637,24 +599,28 @@ static DECLCALLBACK(int) devINIPConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
     pThis->INetworkConfig.pfnGetLinkState   = devINIPGetLinkState;
     pThis->INetworkConfig.pfnSetLinkState   = devINIPSetLinkState;
 
+
+    /*
+     * Validate the config.
+     */
+    PDMDEV_VALIDATE_CONFIG_RETURN(pDevIns, "MAC|IP|IPv6|Netmask|Gateway", "");
+
     /*
      * Get the configuration settings.
      */
-    int rc = CFGMR3QueryBytes(pCfg, "MAC", &pThis->MAC, sizeof(pThis->MAC));
+    int rc = pHlp->pfnCFGMQueryBytes(pCfg, "MAC", &pThis->MAC, sizeof(pThis->MAC));
     if (rc == VERR_CFGM_NOT_BYTES)
     {
         char szMAC[64];
-        rc = CFGMR3QueryString(pCfg, "MAC", &szMAC[0], sizeof(szMAC));
+        rc = pHlp->pfnCFGMQueryString(pCfg, "MAC", &szMAC[0], sizeof(szMAC));
         if (RT_SUCCESS(rc))
         {
             char *macStr = &szMAC[0];
             char *pMac = (char *)&pThis->MAC;
             for (uint32_t i = 0; i < 6; i++)
             {
-                if (   !*macStr || !*(macStr + 1)
-                    || *macStr == ':' || *(macStr + 1) == ':')
-                    return PDMDEV_SET_ERROR(pDevIns,
-                                            VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES,
+                if (!*macStr || !macStr[1] || *macStr == ':' || macStr[1] == ':')
+                    return PDMDEV_SET_ERROR(pDevIns, VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES,
                                             N_("Configuration error: Invalid \"MAC\" value"));
                 char c1 = *macStr++ - '0';
                 if (c1 > 9)
@@ -669,8 +635,7 @@ static DECLCALLBACK(int) devINIPConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
         }
     }
     if (RT_FAILURE(rc))
-        return PDMDEV_SET_ERROR(pDevIns, rc,
-                                N_("Configuration error: Failed to get the \"MAC\" value"));
+        return PDMDEV_SET_ERROR(pDevIns, rc, N_("Configuration error: Failed to get the \"MAC\" value"));
     rc = devINIPNetworkConfiguration(pDevIns, pThis, pCfg);
     AssertLogRelRCReturn(rc, rc);
 
@@ -706,7 +671,7 @@ static DECLCALLBACK(int) devINIPConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
     AssertRCReturn(pThis->rcInitialization, pThis->rcInitialization);
 
 
-    LogFlow(("%s: return %Rrc\n", __FUNCTION__, rc));
+    LogFlow(("devINIPConstruct: return %Rrc\n", rc));
     return rc;
 }
 
@@ -731,7 +696,7 @@ const PDMDEVREG g_DeviceINIP =
     /* .u32Version = */             PDM_DEVREG_VERSION,
     /* .uReserved0 = */             0,
     /* .szName = */                 "IntNetIP",
-    /* .fFlags = */                 PDM_DEVREG_FLAGS_DEFAULT_BITS,
+    /* .fFlags = */                 PDM_DEVREG_FLAGS_DEFAULT_BITS | PDM_DEVREG_FLAGS_NEW_STYLE,
     /* .fClass = */                 PDM_DEVREG_CLASS_VMM_DEV, /* As this is used by the storage devices, it must come earlier. */
     /* .cMaxInstances = */          1,
     /* .uSharedVersion = */         42,
