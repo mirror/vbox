@@ -110,10 +110,10 @@ typedef struct VBOXUSBFLT_DEVICE
     uint16_t        idVendor;
     uint16_t        idProduct;
     uint16_t        bcdDevice;
+    uint16_t        wPort;
     uint8_t         bClass;
     uint8_t         bSubClass;
     uint8_t         bProtocol;
-    uint8_t         bPort;
     char            szSerial[MAX_USB_SERIAL_STRING];
     char            szMfgName[MAX_USB_SERIAL_STRING];
     char            szProduct[MAX_USB_SERIAL_STRING];
@@ -372,16 +372,20 @@ static PVBOXUSBFLTCTX vboxUsbFltDevMatchLocked(PVBOXUSBFLT_DEVICE pDevice, uintp
     }
     else
     {
+        LOG(("Setting filter class/subclass/protocol %02X/%02X/%02X\n", pDevice->bClass, pDevice->bSubClass, pDevice->bProtocol));
         USBFilterSetNumExact(&DevFlt, USBFILTERIDX_DEVICE_CLASS, pDevice->bClass, true);
         USBFilterSetNumExact(&DevFlt, USBFILTERIDX_DEVICE_SUB_CLASS, pDevice->bSubClass, true);
         USBFilterSetNumExact(&DevFlt, USBFILTERIDX_DEVICE_PROTOCOL, pDevice->bProtocol, true);
     }
 
     /* If the port number looks valid, add it to the filter. */
-    if (pDevice->bPort != 0xffff)
+    if (pDevice->wPort < 256)
     {
-        USBFilterSetNumExact(&DevFlt, USBFILTERIDX_PORT, pDevice->bPort, true);
+        LOG(("Setting filter port %04X\n", pDevice->wPort));
+        USBFilterSetNumExact(&DevFlt, USBFILTERIDX_PORT, pDevice->wPort, true);
     }
+    else
+        LOG(("Port number not known, ignoring!"));
 
     /* Run filters on the thing. */
     PVBOXUSBFLTCTX pOwner = VBoxUSBFilterMatchEx(&DevFlt, puId, fRemoveFltIfOneShot, pfFilter, pfIsOneShot);
@@ -654,11 +658,13 @@ static NTSTATUS vboxUsbFltDevPopulate(PVBOXUSBFLT_DEVICE pDevice, PDEVICE_OBJECT
         Status = IoGetDevicePropertyData(pDo, &DEVPKEY_Device_LocationPaths, LOCALE_NEUTRAL, 0, sizeof(pDevice->szLocationPath), pDevice->szLocationPath, &ulResultLen, &type);
         if (!NT_SUCCESS(Status))
         {
-            /* We do need this, and it should always be available. */
+            /* We do need this, but not critically. On Windows 7, we may get STATUS_OBJECT_NAME_NOT_FOUND. */
             WARN(("IoGetDevicePropertyData failed for DEVPKEY_Device_LocationPaths, Status (0x%x)", Status));
-            break;
         }
-        LOG_STRW(pDevice->szLocationPath);
+        else
+        {
+            LOG_STRW(pDevice->szLocationPath);
+        }
 
         /* Query the location information. The hub number is iffy because the numbering is
          * non-obvious and not necessarily stable, but the port number is well defined and useful.
@@ -666,16 +672,20 @@ static NTSTATUS vboxUsbFltDevPopulate(PVBOXUSBFLT_DEVICE pDevice, PDEVICE_OBJECT
         Status = IoGetDevicePropertyData(pDo, &DEVPKEY_Device_LocationInfo, LOCALE_NEUTRAL, 0, sizeof(wchPropBuf), wchPropBuf, &ulResultLen, &type);
         if (!NT_SUCCESS(Status))
         {
-            /* We may well need this, and it should always be available. */
+            /* This is useful but not critical. On Windows 7, we may get STATUS_OBJECT_NAME_NOT_FOUND. */
             WARN(("IoGetDevicePropertyData failed for DEVPKEY_Device_LocationInfo, Status (0x%x)", Status));
-            break;
+            hub = port = 0xffff;
+            Status = STATUS_SUCCESS;    /* Need to override the IoGetDevicePropertyData return. */
         }
-        LOG_STRW(wchPropBuf);
-        rc = vboxUsbParseLocation(wchPropBuf, &hub, &port);
-        if (!rc)
+        else
         {
-            /* This *really* should not happen but it's not fatal. */
-            WARN(("Failed to parse Location Info"));
+            LOG_STRW(wchPropBuf);
+            rc = vboxUsbParseLocation(wchPropBuf, &hub, &port);
+            if (!rc)
+            {
+                /* This *really* should not happen but it's not fatal. */
+                WARN(("Failed to parse Location Info"));
+            }
         }
 
         if (vboxUsbFltBlDevMatchLocked(pDevDr->idVendor, pDevDr->idProduct, pDevDr->bcdDevice))
@@ -685,8 +695,8 @@ static NTSTATUS vboxUsbFltDevPopulate(PVBOXUSBFLT_DEVICE pDevice, PDEVICE_OBJECT
             break;
         }
 
-        LOG(("Device pid=%x vid=%x rev=%x", pDevDr->idVendor, pDevDr->idProduct, pDevDr->bcdDevice));
-        pDevice->bPort        = port;
+        LOG(("Device pid=%x vid=%x rev=%x port=%x", pDevDr->idVendor, pDevDr->idProduct, pDevDr->bcdDevice, port));
+        pDevice->wPort        = port;
         pDevice->idVendor     = pDevDr->idVendor;
         pDevice->idProduct    = pDevDr->idProduct;
         pDevice->bcdDevice    = pDevDr->bcdDevice;
