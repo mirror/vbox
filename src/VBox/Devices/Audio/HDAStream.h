@@ -165,7 +165,6 @@ typedef struct HDASTREAMSTATE
     /** The stream's current configuration.
      *  Should match SDFMT. */
     PDMAUDIOSTREAMCFG       Cfg;
-    uint32_t                Padding4;
     /** Timestamp (in ns) of last stream update. */
     uint64_t                tsLastUpdateNs;
 } HDASTREAMSTATE;

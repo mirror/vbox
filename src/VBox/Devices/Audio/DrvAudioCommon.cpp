@@ -950,7 +950,7 @@ void DrvAudioHlpStreamCfgInit(PPDMAUDIOSTREAMCFG pCfg)
 {
     AssertPtrReturnVoid(pCfg);
 
-    RT_BZERO(pCfg, sizeof(PDMAUDIOSTREAMCFG));
+    RT_ZERO(*pCfg);
 
     pCfg->Backend.cFramesPreBuffering = UINT32_MAX; /* Explicitly set to "undefined". */
 }

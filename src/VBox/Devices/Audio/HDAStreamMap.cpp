@@ -155,12 +155,12 @@ static int hdaR3StreamMapSetup(PHDASTREAMMAP pMap, PPDMAUDIOPCMPROPS pProps)
 
         PPDMAUDIOSTREAMMAP pMapLR = &pMap->paMappings[0];
 
-        pMapLR->aID[0]   = PDMAUDIOSTREAMCHANNELID_FRONT_LEFT;
-        pMapLR->aID[1]   = PDMAUDIOSTREAMCHANNELID_FRONT_RIGHT;
-        pMapLR->cbFrame  = pProps->cbSample * pProps->cChannels;
-        pMapLR->cbStep   = pProps->cbSample * 2 /* Front left + Front right channels */;
-        pMapLR->offFirst = 0;
-        pMapLR->offNext  = pMapLR->offFirst;
+        pMapLR->aenmIDs[0]  = PDMAUDIOSTREAMCHANNELID_FRONT_LEFT;
+        pMapLR->aenmIDs[1]  = PDMAUDIOSTREAMCHANNELID_FRONT_RIGHT;
+        pMapLR->cbFrame     = pProps->cbSample * pProps->cChannels;
+        pMapLR->cbStep      = pProps->cbSample * 2 /* Front left + Front right channels */;
+        pMapLR->offFirst    = 0;
+        pMapLR->offNext     = pMapLR->offFirst;
 
         rc = hdaR3StreamChannelDataInit(&pMapLR->Data, PDMAUDIOSTREAMCHANNELDATA_FLAGS_NONE);
         AssertRC(rc);

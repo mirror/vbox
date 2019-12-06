@@ -626,17 +626,18 @@ typedef enum PDMAUDIOSTREAMCHANNELID
 } PDMAUDIOSTREAMCHANNELID;
 
 /**
- * Structure for mapping a single (mono) channel or dual (stereo) channels onto
- * an audio stream (aka stream profile).
+ * Mappings channels onto an audio stream.
  *
- * An audio stream consists of one or multiple channels (e.g. 1 for mono, 2 for
- * stereo), depending on the configuration.
+ * The mappings are either for a single (mono) or dual (stereo) channels onto an
+ * audio stream (aka stream profile).  An audio stream consists of one or
+ * multiple channels (e.g. 1 for mono, 2 for stereo), depending on the
+ * configuration.
  */
 typedef struct PDMAUDIOSTREAMMAP
 {
     /** Array of channel IDs being handled.
      * @note The first (zero-based) index specifies the leftmost channel. */
-    PDMAUDIOSTREAMCHANNELID     aID[2];
+    PDMAUDIOSTREAMCHANNELID     aenmIDs[2];
     /** Step size (in bytes) to the channel's next frame. */
     uint32_t                    cbStep;
     /** Frame size (in bytes) of this channel. */
@@ -700,7 +701,7 @@ typedef PDMAUDIOPCMPROPS *PPDMAUDIOPCMPROPS;
 /** @}   */
 
 /**
- * Structure for keeping an audio stream configuration.
+ * An audio stream configuration.
  */
 typedef struct PDMAUDIOSTREAMCFG
 {
@@ -750,10 +751,11 @@ typedef struct PDMAUDIOSTREAMCFG
          *  0 if not set / available by the backend. UINT32_MAX if not defined (yet). */
         uint32_t            cFramesPreBuffering;
     } Backend;
+    uint32_t                u32Padding;
     /** Friendly name of the stream. */
     char                    szName[64];
 } PDMAUDIOSTREAMCFG;
-AssertCompileSizeAlignment(PDMAUDIOPCMPROPS, 8);
+AssertCompileSizeAlignment(PDMAUDIOSTREAMCFG, 8);
 /** Pointer to audio stream configuration keeper. */
 typedef PDMAUDIOSTREAMCFG *PPDMAUDIOSTREAMCFG;
 
@@ -1199,7 +1201,7 @@ typedef struct PDMAUDIOSTREAMCTX
 typedef struct PDMAUDIOSTREAM *PPDMAUDIOSTREAMCTX;
 
 /**
- * Structure for maintaining an input/output audio stream.
+ * An input or output audio stream.
  */
 typedef struct PDMAUDIOSTREAM
 {
@@ -1248,12 +1250,12 @@ typedef struct PDMAUDIOSTREAM
 
 
 /**
- * Enumeration for an audio callback source.
+ * Audio callback source.
  */
 typedef enum PDMAUDIOCBSOURCE
 {
     /** Invalid, do not use. */
-    PDMAUDIOCBSOURCE_INVALID    = 0,
+    PDMAUDIOCBSOURCE_INVALID = 0,
     /** Device emulation. */
     PDMAUDIOCBSOURCE_DEVICE,
     /** Audio connector interface. */

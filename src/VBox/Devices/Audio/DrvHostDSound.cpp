@@ -113,18 +113,19 @@ typedef struct DSOUNDHOSTCFG
 typedef struct DSOUNDSTREAM
 {
     /** The stream's acquired configuration. */
-    PDMAUDIOSTREAMCFG  Cfg;
+    PDMAUDIOSTREAMCFG   Cfg;
     /** Buffer alignment. */
-    uint8_t            uAlign;
+    uint8_t             uAlign;
     /** Whether this stream is in an enable state on the DirectSound side. */
-    bool               fEnabled;
-    /** The stream's critical section for synchronizing access. */
-    RTCRITSECT         CritSect;
-    /** The internal playback / capturing buffer. */
-    PRTCIRCBUF         pCircBuf;
+    bool                fEnabled;
+    bool                afPadding[2];
     /** Size (in bytes) of the DirectSound buffer.
-     *  Note: This in *not* the size of the circular buffer above! */
-    DWORD              cbBufSize;
+     *  @note This in *not* the size of the circular buffer above! */
+    DWORD               cbBufSize;
+    /** The stream's critical section for synchronizing access. */
+    RTCRITSECT          CritSect;
+    /** The internal playback / capturing buffer. */
+    PRTCIRCBUF          pCircBuf;
     union
     {
         struct
