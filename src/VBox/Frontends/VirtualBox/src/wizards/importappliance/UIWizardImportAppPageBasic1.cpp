@@ -816,7 +816,7 @@ void UIWizardImportAppPageBasic1::retranslateUi()
 
     /* Translate main label: */
     m_pLabelMain->setText(UIWizardImportApp::tr("Please choose the source to import appliance from.  This can be a "
-                                                "local file system to import OVF archive or one of known  cloud "
+                                                "local file system to import OVF archive or one of known cloud "
                                                 "service providers to import cloud VM from."));
 
     /* Translate source label: */
