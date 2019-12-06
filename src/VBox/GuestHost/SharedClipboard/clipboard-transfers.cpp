@@ -1455,7 +1455,7 @@ static int shClTransferResolvePathAbs(PSHCLTRANSFER pTransfer, const char *pszPa
         char *pszPathAbs = RTPathJoinA(pTransfer->pszPathRootAbs, pszPath);
         if (pszPathAbs)
         {
-            char   szResolved[RTPATH_MAX + 1];
+            char   szResolved[RTPATH_MAX];
             size_t cbResolved = sizeof(szResolved);
             rc = RTPathAbsEx(pTransfer->pszPathRootAbs, pszPathAbs, RTPATH_STR_F_STYLE_HOST, szResolved, &cbResolved);
 

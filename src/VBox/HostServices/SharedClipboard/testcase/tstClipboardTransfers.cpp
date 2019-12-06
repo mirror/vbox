@@ -29,7 +29,7 @@
 
 static int testCreateTempDir(RTTEST hTest, const char *pszTestcase, char *pszTempDir, size_t cbTempDir)
 {
-    char szTempDir[RTPATH_MAX + 1];
+    char szTempDir[RTPATH_MAX];
     int rc = RTPathTemp(szTempDir, sizeof(szTempDir));
     RTTESTI_CHECK_RC_RET(rc, VINF_SUCCESS, rc);
 
@@ -57,7 +57,7 @@ static int testCreateTempDir(RTTEST hTest, const char *pszTestcase, char *pszTem
 
 static int testRemoveTempDir(RTTEST hTest)
 {
-    char szTempDir[RTPATH_MAX + 1];
+    char szTempDir[RTPATH_MAX];
     int rc = RTPathTemp(szTempDir, sizeof(szTempDir));
     RTTESTI_CHECK_RC_RET(rc, VINF_SUCCESS, rc);
 
@@ -87,7 +87,7 @@ static int testCreateDir(RTTEST hTest, const char *pszPathToCreate)
 static int testCreateFile(RTTEST hTest, const char *pszTempDir, const char *pszFileName, uint32_t fOpen, size_t cbSize,
                           char **ppszFilePathAbs)
 {
-    char szFilePath[RTPATH_MAX + 1];
+    char szFilePath[RTPATH_MAX];
 
     int rc = RTStrCopy(szFilePath, sizeof(szFilePath), pszTempDir);
     RTTESTI_CHECK_RC_OK_RET(rc, rc);
