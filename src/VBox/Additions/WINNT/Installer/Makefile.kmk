@@ -309,10 +309,10 @@ $$(RePackScriptsAdd_0_OUTDIR)/sign-ev.cmd: | $$(dir $$@)
 $$(RePackScriptsAddResources_0_OUTDIR)/welcome.bmp: $(PATH_SUB_CURRENT)/welcome.bmp | $$(dir $$@)
 	$(CP) -f $< $@
 
-$$(RePackScriptsAddResources_0_OUTDIR)/VirtualBoxGA-vista.ico: src/VBox/Artwork/win/NonOSE/VirtualBoxGA-vista.ico | $$(dir $$@)
+$$(RePackScriptsAddResources_0_OUTDIR)/VirtualBoxGA-vista.ico: $(VBOX_WINDOWS_ADDITIONS_ICON_FILE) | $$(dir $$@)
 	$(CP) -f $< $@
 
-$$(RePackScriptsAddResources_0_OUTDIR)/VirtualBoxGA-nsis.ico: src/VBox/Artwork/win/NonOSE/VirtualBoxGA-vista.ico | $$(dir $$@)
+$$(RePackScriptsAddResources_0_OUTDIR)/VirtualBoxGA-nsis.ico: $(VBOX_NSIS_ICON_FILE) | $$(dir $$@)
 	$(CP) -f $< $@
 
 $$(RePackScriptsAddResources_0_OUTDIR)/iexplore.ico:  $(PATH_SUB_CURRENT)/iexplore.ico | $$(dir $$@)
