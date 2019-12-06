@@ -151,12 +151,12 @@ static DECLCALLBACK(int) vboxClipboardOnTransferStartCallback(PSHCLTRANSFERCALLB
     int rc;
 
     /* The guest wants to write local data to the host? */
-    if (enmDir == SHCLTRANSFERDIR_WRITE)
+    if (enmDir == SHCLTRANSFERDIR_TO_REMOTE)
     {
         rc = SharedClipboardWinGetRoots(&pCtx->Win, pTransfer);
     }
     /* The guest wants to read data from a remote source. */
-    else if (enmDir == SHCLTRANSFERDIR_READ)
+    else if (enmDir == SHCLTRANSFERDIR_FROM_REMOTE)
     {
         /* The IDataObject *must* be created on the same thread as our (proxy) window, so post a message to it
          * to do the stuff for us. */

@@ -363,7 +363,7 @@ static LRESULT CALLBACK vboxClipboardSvcWinWndProcMain(PSHCLCONTEXT pCtx,
             {
                 PSHCLTRANSFER pTransfer;
                 int rc = shClSvcTransferStart(pCtx->pClient,
-                                              SHCLTRANSFERDIR_READ, SHCLSOURCE_REMOTE,
+                                              SHCLTRANSFERDIR_FROM_REMOTE, SHCLSOURCE_REMOTE,
                                               &pTransfer);
                 if (RT_SUCCESS(rc))
                 {

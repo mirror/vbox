@@ -1814,7 +1814,7 @@ static int vbglR3ClipboardTransferStart(PVBGLR3SHCLCMDCTX pCmdCtx, PSHCLTRANSFER
             {
                 /* If this is a read transfer (reading data from host), set the interface to use
                  * our VbglR3 routines here. */
-                if (enmDir == SHCLTRANSFERDIR_READ)
+                if (enmDir == SHCLTRANSFERDIR_FROM_REMOTE)
                 {
                     SHCLPROVIDERCREATIONCTX creationCtx;
                     RT_ZERO(creationCtx);
@@ -1851,8 +1851,8 @@ static int vbglR3ClipboardTransferStart(PVBGLR3SHCLCMDCTX pCmdCtx, PSHCLTRANSFER
 
         LogRel2(("Shared Clipboard: Transfer ID=%RU16 (%s %s) successfully started\n",
                  uTransferID,
-                 enmDir    == SHCLTRANSFERDIR_READ ? "reading from" : "writing to",
-                 enmSource == SHCLSOURCE_LOCAL     ? "local"        : "remote"));
+                 enmDir    == SHCLTRANSFERDIR_FROM_REMOTE ? "reading from" : "writing to",
+                 enmSource == SHCLSOURCE_LOCAL            ? "local"        : "remote"));
     }
     else
         LogRel(("Shared Clipboard: Unable to start transfer ID=%RU16, rc=%Rrc\n", uTransferID, rc));
@@ -1951,14 +1951,14 @@ VBGLR3DECL(int) VbglR3ClipboardEventGetNextEx(uint32_t idMsg, uint32_t cParms,
                         SHCLSOURCE enmSource = SHCLSOURCE_INVALID;
 
                         /* The host announces the transfer direction from its point of view, so inverse the direction here. */
-                        if (enmDir == SHCLTRANSFERDIR_WRITE)
+                        if (enmDir == SHCLTRANSFERDIR_TO_REMOTE)
                         {
-                            enmDir = SHCLTRANSFERDIR_READ;
+                            enmDir = SHCLTRANSFERDIR_FROM_REMOTE;
                             enmSource = SHCLSOURCE_REMOTE;
                         }
-                        else if (enmDir == SHCLTRANSFERDIR_READ)
+                        else if (enmDir == SHCLTRANSFERDIR_FROM_REMOTE)
                         {
-                            enmDir = SHCLTRANSFERDIR_WRITE;
+                            enmDir = SHCLTRANSFERDIR_TO_REMOTE;
                             enmSource = SHCLSOURCE_LOCAL;
                         }
                         else

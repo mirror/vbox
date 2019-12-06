@@ -817,7 +817,7 @@ int ShClTransferObjOpen(PSHCLTRANSFER pTransfer, PSHCLOBJOPENCREATEPARMS pOpenCr
         /*
          * Make sure the transfer direction matches the open/create parameters.
          */
-        if (pTransfer->State.enmDir == SHCLTRANSFERDIR_READ)
+        if (pTransfer->State.enmDir == SHCLTRANSFERDIR_FROM_REMOTE)
         {
             if (pOpenCreateParms->fCreate & SHCL_OBJ_CF_ACCESS_READ) /* Read access wanted? */
             {
@@ -826,7 +826,7 @@ int ShClTransferObjOpen(PSHCLTRANSFER pTransfer, PSHCLOBJOPENCREATEPARMS pOpenCr
                 rc = VERR_INVALID_PARAMETER;
             }
         }
-        else if (pTransfer->State.enmDir == SHCLTRANSFERDIR_WRITE)
+        else if (pTransfer->State.enmDir == SHCLTRANSFERDIR_TO_REMOTE)
         {
             if (pOpenCreateParms->fCreate & SHCL_OBJ_CF_ACCESS_WRITE) /* Write access wanted? */
             {
@@ -853,7 +853,7 @@ int ShClTransferObjOpen(PSHCLTRANSFER pTransfer, PSHCLOBJOPENCREATEPARMS pOpenCr
 
                     /* Only if this is a read transfer (locally) we're able to actually write to files
                      * (we're reading from the source). */
-                    const bool fWritable = pTransfer->State.enmDir == SHCLTRANSFERDIR_READ;
+                    const bool fWritable = pTransfer->State.enmDir == SHCLTRANSFERDIR_FROM_REMOTE;
 
                     uint64_t fOpen;
                     rc = shClConvertFileCreateFlags(fWritable,

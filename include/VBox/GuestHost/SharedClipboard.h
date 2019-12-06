@@ -41,9 +41,9 @@ typedef enum _SHCLTRANSFERDIR
     /** Unknown transfer directory. */
     SHCLTRANSFERDIR_UNKNOWN = 0,
     /** Read transfer (from source). */
-    SHCLTRANSFERDIR_READ,
+    SHCLTRANSFERDIR_FROM_REMOTE,
     /** Write transfer (to target). */
-    SHCLTRANSFERDIR_WRITE,
+    SHCLTRANSFERDIR_TO_REMOTE,
     /** The usual 32-bit hack. */
     SHCLTRANSFERDIR_32BIT_HACK = 0x7fffffff
 } SHCLTRANSFERDIR, *PSHCLTRANSFERDIR;

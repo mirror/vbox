@@ -1243,7 +1243,7 @@ int ShClSvcFormatsReport(PSHCLCLIENT pClient, PSHCLFORMATDATA pFormats)
              * a transfer on the guest side. */
             if (fFormats & VBOX_SHCL_FMT_URI_LIST)
             {
-                rc = shClSvcTransferStart(pClient, SHCLTRANSFERDIR_WRITE, SHCLSOURCE_LOCAL,
+                rc = shClSvcTransferStart(pClient, SHCLTRANSFERDIR_TO_REMOTE, SHCLSOURCE_LOCAL,
                                           NULL /* pTransfer */);
                 if (RT_FAILURE(rc))
                     LogRel(("Shared Clipboard: Initializing host write transfer failed with %Rrc\n", rc));

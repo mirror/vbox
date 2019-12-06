@@ -1395,7 +1395,7 @@ int shClSvcTransferHandler(PSHCLCLIENT pClient,
                 break;
 
             if (   ShClTransferGetSource(pTransfer) == SHCLSOURCE_LOCAL
-                && ShClTransferGetDir(pTransfer)    == SHCLTRANSFERDIR_WRITE)
+                && ShClTransferGetDir(pTransfer)    == SHCLTRANSFERDIR_TO_REMOTE)
             {
                 /* Get roots if this is a local write transfer (host -> guest). */
                 rc = ShClSvcImplTransferGetRoots(pClient, pTransfer);
@@ -2046,7 +2046,7 @@ int shClSvcTransferStart(PSHCLCLIENT pClient,
 
     if (!ShClTransferCtxTransfersMaximumReached(&pClient->TransferCtx))
     {
-        LogRel2(("Shared Clipboard: Starting %s transfer ...\n", enmDir == SHCLTRANSFERDIR_READ ? "read" : "write"));
+        LogRel2(("Shared Clipboard: Starting %s transfer ...\n", enmDir == SHCLTRANSFERDIR_FROM_REMOTE ? "read" : "write"));
 
         PSHCLTRANSFER pTransfer;
         rc = ShClTransferCreate(&pTransfer);
@@ -2058,7 +2058,7 @@ int shClSvcTransferStart(PSHCLCLIENT pClient,
                 SHCLPROVIDERCREATIONCTX creationCtx;
                 RT_ZERO(creationCtx);
 
-                if (enmDir == SHCLTRANSFERDIR_READ)
+                if (enmDir == SHCLTRANSFERDIR_FROM_REMOTE)
                 {
                     rc = shClSvcTransferAreaRegister(&pClient->State, pTransfer);
                     if (RT_SUCCESS(rc))
@@ -2078,7 +2078,7 @@ int shClSvcTransferStart(PSHCLCLIENT pClient,
                         creationCtx.Interface.pfnObjRead       = shClSvcTransferIfaceObjRead;
                     }
                 }
-                else if (enmDir == SHCLTRANSFERDIR_WRITE)
+                else if (enmDir == SHCLTRANSFERDIR_TO_REMOTE)
                 {
                     creationCtx.Interface.pfnListHdrWrite   = shClSvcTransferIfaceListHdrWrite;
                     creationCtx.Interface.pfnListEntryWrite = shClSvcTransferIfaceListEntryWrite;
