@@ -45,6 +45,7 @@
 #include "VBoxUSBFilterMgr.h"
 #include <VBox/usblib.h>
 #include <devguid.h>
+#include <devpkey.h>
 
 
 /* We should be including ntifs.h but that's not as easy as it sounds. */
@@ -112,9 +113,11 @@ typedef struct VBOXUSBFLT_DEVICE
     uint8_t         bClass;
     uint8_t         bSubClass;
     uint8_t         bProtocol;
+    uint8_t         bPort;
     char            szSerial[MAX_USB_SERIAL_STRING];
     char            szMfgName[MAX_USB_SERIAL_STRING];
     char            szProduct[MAX_USB_SERIAL_STRING];
+    WCHAR           szLocationPath[768];
 #if 0
     char            szDrvKeyName[512];
     BOOLEAN         fHighSpeed;
@@ -374,6 +377,12 @@ static PVBOXUSBFLTCTX vboxUsbFltDevMatchLocked(PVBOXUSBFLT_DEVICE pDevice, uintp
         USBFilterSetNumExact(&DevFlt, USBFILTERIDX_DEVICE_PROTOCOL, pDevice->bProtocol, true);
     }
 
+    /* If the port number looks valid, add it to the filter. */
+    if (pDevice->bPort != 0xffff)
+    {
+        USBFilterSetNumExact(&DevFlt, USBFILTERIDX_PORT, pDevice->bPort, true);
+    }
+
     /* Run filters on the thing. */
     PVBOXUSBFLTCTX pOwner = VBoxUSBFilterMatchEx(&DevFlt, puId, fRemoveFltIfOneShot, pfFilter, pfIsOneShot);
     USBFilterDelete(&DevFlt);
@@ -521,12 +530,49 @@ static bool vboxUsbParseCompatibleIDs(WCHAR *pchIdStr, uint8_t *pClass, uint8_t 
 #undef PRO_PREFIX
 }
 
+static bool vboxUsbParseLocation(WCHAR *pchLocStr, uint16_t *pHub, uint16_t *pPort)
+{
+#define PORT_PREFIX L"Port_#"
+#define BUS_PREFIX  L".Hub_#"
+
+    *pHub = *pPort = 0xFFFF;
+
+    /* The Location Information is in the format Port_#xxxx.Hub_#xxxx, with 'xxxx'
+     * being 16-bit hexadecimal numbers. It should be reliable on Windows Vista and
+     * later. Note that while the port corresponds to the port number aka address,
+     * the hub number has no discernible relationship to how Windows enumerates hubs.
+     */
+
+    if (wcsncmp(pchLocStr, PORT_PREFIX, wcslen(PORT_PREFIX)))
+        return false;
+
+    /* Point to the start of the port number and parse it. */
+    pchLocStr += wcslen(PORT_PREFIX);
+    *pPort = vboxUsbParseHexNumU16(&pchLocStr);
+
+    if (wcsncmp(pchLocStr, BUS_PREFIX, wcslen(BUS_PREFIX)))
+        return false;
+
+    /* Point to the start of the hub/bus number and parse it. */
+    pchLocStr += wcslen(BUS_PREFIX);
+    *pHub = vboxUsbParseHexNumU16(&pchLocStr);
+
+    return true;
+#undef PORT_PREFIX
+#undef BUS_PREFIX
+}
+
 #define VBOXUSBMON_POPULATE_REQUEST_TIMEOUT_MS 10000
 
 static NTSTATUS vboxUsbFltDevPopulate(PVBOXUSBFLT_DEVICE pDevice, PDEVICE_OBJECT pDo /*, BOOLEAN bPopulateNonFilterProps*/)
 {
-    NTSTATUS Status;
-    PUSB_DEVICE_DESCRIPTOR pDevDr = 0;
+    NTSTATUS                Status;
+    PUSB_DEVICE_DESCRIPTOR  pDevDr = 0;
+    ULONG                   ulResultLen;
+    DEVPROPTYPE             type;
+    WCHAR                   wchPropBuf[256];
+    uint16_t                port, hub;
+    bool                    rc;
 
     pDevice->Pdo = pDo;
 
@@ -545,20 +591,17 @@ static NTSTATUS vboxUsbFltDevPopulate(PVBOXUSBFLT_DEVICE pDevice, PDEVICE_OBJECT
         Status = VBoxUsbToolGetDescriptor(pDo, pDevDr, sizeof(*pDevDr), USB_DEVICE_DESCRIPTOR_TYPE, 0, 0, VBOXUSBMON_POPULATE_REQUEST_TIMEOUT_MS);
         if (!NT_SUCCESS(Status))
         {
-            WCHAR       wchPropBuf[256];
-            ULONG       ulResultLen;
-            bool        rc;
             uint16_t    vid, pid, rev;
             uint8_t     cls, sub, prt;
 
             WARN(("getting device descriptor failed, Status (0x%x); falling back to IoGetDeviceProperty", Status));
 
-            /* Try falling back to IoGetDeviceProperty. */
-            Status = IoGetDeviceProperty(pDo, DevicePropertyHardwareID, sizeof(wchPropBuf), wchPropBuf, &ulResultLen);
+            /* Try falling back to IoGetDevicePropertyData. */
+            Status = IoGetDevicePropertyData(pDo, &DEVPKEY_Device_HardwareIds, LOCALE_NEUTRAL, 0, sizeof(wchPropBuf), wchPropBuf, &ulResultLen, &type);
             if (!NT_SUCCESS(Status))
             {
                 /* This just isn't our day. We have no idea what the device is. */
-                WARN(("IoGetDeviceProperty failed for DevicePropertyHardwareID, Status (0x%x)", Status));
+                WARN(("IoGetDevicePropertyData failed for DEVPKEY_Device_HardwareIds, Status (0x%x)", Status));
                 break;
             }
             rc = vboxUsbParseHardwareID(wchPropBuf, &vid, &pid, &rev);
@@ -570,11 +613,11 @@ static NTSTATUS vboxUsbFltDevPopulate(PVBOXUSBFLT_DEVICE pDevice, PDEVICE_OBJECT
             }
 
             /* Now grab the Compatible IDs to get the class/subclass/protocol. */
-            Status = IoGetDeviceProperty(pDo, DevicePropertyCompatibleIDs, sizeof(wchPropBuf), wchPropBuf, &ulResultLen);
+            Status = IoGetDevicePropertyData(pDo, &DEVPKEY_Device_CompatibleIds, LOCALE_NEUTRAL, 0, sizeof(wchPropBuf), wchPropBuf, &ulResultLen, &type);
             if (!NT_SUCCESS(Status))
             {
                 /* We really kind of need these. */
-                WARN(("IoGetDeviceProperty failed for DevicePropertyCompatibleIDs, Status (0x%x)", Status));
+                WARN(("IoGetDevicePropertyData failed for DEVPKEY_Device_CompatibleIds, Status (0x%x)", Status));
                 break;
             }
             rc = vboxUsbParseCompatibleIDs(wchPropBuf, &cls, &sub, &prt);
@@ -603,6 +646,38 @@ static NTSTATUS vboxUsbFltDevPopulate(PVBOXUSBFLT_DEVICE pDevice, PDEVICE_OBJECT
             pDevice->fInferredDesc = true;
         }
 
+        /* Query the location path. The path is purely a function of the physical device location
+         * and does not change if the device changes, and also does not change depending on
+         * whether the device is captured or not.
+         * NB: We ignore any additional strings and only look at the first one.
+         */
+        Status = IoGetDevicePropertyData(pDo, &DEVPKEY_Device_LocationPaths, LOCALE_NEUTRAL, 0, sizeof(pDevice->szLocationPath), pDevice->szLocationPath, &ulResultLen, &type);
+        if (!NT_SUCCESS(Status))
+        {
+            /* We do need this, and it should always be available. */
+            WARN(("IoGetDevicePropertyData failed for DEVPKEY_Device_LocationPaths, Status (0x%x)", Status));
+            break;
+        }
+	LOG_STRW(pDevice->szLocationPath);
+
+        /* Query the location information. The hub number is iffy because the numbering is
+         * non-obvious and not necessarily stable, but the port number is well defined and useful.
+         */
+        Status = IoGetDevicePropertyData(pDo, &DEVPKEY_Device_LocationInfo, LOCALE_NEUTRAL, 0, sizeof(wchPropBuf), wchPropBuf, &ulResultLen, &type);
+        if (!NT_SUCCESS(Status))
+        {
+            /* We may well need this, and it should always be available. */
+            WARN(("IoGetDevicePropertyData failed for DEVPKEY_Device_LocationInfo, Status (0x%x)", Status));
+            break;
+        }
+        LOG_STRW(wchPropBuf);
+        rc = vboxUsbParseLocation(wchPropBuf, &hub, &port);
+        if (!rc)
+        {
+            /* This *really* should not happen but it's not fatal. */
+            WARN(("Failed to parse Location Info"));
+        }
+
         if (vboxUsbFltBlDevMatchLocked(pDevDr->idVendor, pDevDr->idProduct, pDevDr->bcdDevice))
         {
             WARN(("found a known black list device, vid(0x%x), pid(0x%x), rev(0x%x)", pDevDr->idVendor, pDevDr->idProduct, pDevDr->bcdDevice));
@@ -611,6 +686,7 @@ static NTSTATUS vboxUsbFltDevPopulate(PVBOXUSBFLT_DEVICE pDevice, PDEVICE_OBJECT
         }
 
         LOG(("Device pid=%x vid=%x rev=%x", pDevDr->idVendor, pDevDr->idProduct, pDevDr->bcdDevice));
+        pDevice->bPort        = port;
         pDevice->idVendor     = pDevDr->idVendor;
         pDevice->idProduct    = pDevDr->idProduct;
         pDevice->bcdDevice    = pDevDr->bcdDevice;
