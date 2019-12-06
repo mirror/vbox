@@ -1056,7 +1056,12 @@ static int clipInit(PSHCLX11CTX pCtx)
 int ShClX11Init(PSHCLX11CTX pCtx, PSHCLCONTEXT pParent, bool fHeadless)
 {
     AssertPtrReturn(pCtx,    VERR_INVALID_POINTER);
+#if !defined(SMOKETEST) && !defined(TESTCASE)
+    /* Smoktests / Testcases don't have a (valid) parent. */
     AssertPtrReturn(pParent, VERR_INVALID_POINTER);
+#endif
+
+    RT_BZERO(pCtx, sizeof(SHCLX11CTX));
 
     if (fHeadless)
     {
