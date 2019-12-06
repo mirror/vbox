@@ -35,94 +35,110 @@
 #include "HDAStream.h"
 
 
-#ifdef IN_RING3
+#ifdef IN_RING3 /* whole file */
+
+/*********************************************************************************************************************************
+*   Internal Functions                                                                                                           *
+*********************************************************************************************************************************/
+static void hdaR3StreamSetPosition(PHDASTREAM pStreamShared, PPDMDEVINS pDevIns, PHDASTATE pThis, uint32_t u32LPIB);
+
+static int  hdaR3StreamAsyncIODestroy(PHDASTREAMR3 pStreamR3);
+static int  hdaR3StreamAsyncIONotify(PHDASTREAMR3 pStreamR3);
+
+
 
 /**
  * Creates an HDA stream.
  *
  * @returns IPRT status code.
- * @param   pStream             HDA stream to create.
- * @param   pThis               HDA state to assign the HDA stream to.
- * @param   u8SD                Stream descriptor number to assign.
+ * @param   pStreamShared       The HDA stream to construct - shared bits.
+ * @param   pStreamR3           The HDA stream to construct - ring-3 bits.
+ * @param   pThis               The shared HDA device instance.
+ * @param   pThisCC             The ring-3 HDA device instance.
+ * @param   uSD                 Stream descriptor number to assign.
  */
-int hdaR3StreamCreate(PHDASTREAM pStream, PHDASTATE pThis, uint8_t u8SD)
+int hdaR3StreamConstruct(PHDASTREAM pStreamShared, PHDASTREAMR3 pStreamR3, PHDASTATE pThis, PHDASTATER3 pThisCC, uint8_t uSD)
 {
     int rc;
-    RT_NOREF(pThis);
-    AssertPtrReturn(pStream, VERR_INVALID_POINTER);
 
-    pStream->u8SD           = u8SD;
-    pStream->pMixSink       = NULL;
-    pStream->pHDAState      = pThis;
-    Assert(pStream->hTimer != NIL_TMTIMERHANDLE); /* hdaR3Construct initalized this one already. */
+    pStreamR3->u8SD             = uSD;
+    pStreamShared->u8SD         = uSD;
+    pStreamR3->pMixSink         = NULL;
+    pStreamR3->pHDAStateShared  = pThis;
+    pStreamR3->pHDAStateR3      = pThisCC;
+    Assert(pStreamShared->hTimer != NIL_TMTIMERHANDLE); /* hdaR3Construct initalized this one already. */
 
-    pStream->State.fInReset = false;
-    pStream->State.fRunning = false;
+    pStreamShared->State.fInReset = false;
+    pStreamShared->State.fRunning = false;
 #ifdef HDA_USE_DMA_ACCESS_HANDLER
-    RTListInit(&pStream->State.lstDMAHandlers);
+    RTListInit(&pStreamR3->State.lstDMAHandlers);
 #endif
 
 # ifdef VBOX_WITH_AUDIO_HDA_ASYNC_IO
-    rc = RTCritSectInit(&pStream->CritSect);
+    rc = RTCritSectInit(&pStreamR3->CritSect);
     AssertRCReturn(rc, rc);
 # endif
 
-    rc = hdaR3StreamPeriodCreate(&pStream->State.Period);
+    rc = hdaR3StreamPeriodCreate(&pStreamShared->State.Period);
     AssertRCReturn(rc, rc);
 
-    pStream->State.tsLastUpdateNs = 0;
+    pStreamShared->State.tsLastUpdateNs = 0;
 
 #ifdef DEBUG
-    rc = RTCritSectInit(&pStream->Dbg.CritSect);
+    rc = RTCritSectInit(&pStreamR3->Dbg.CritSect);
     AssertRCReturn(rc, rc);
 #endif
 
-    pStream->Dbg.Runtime.fEnabled = pThis->Dbg.fEnabled;
+    pStreamR3->Dbg.Runtime.fEnabled = pThisCC->Dbg.fEnabled;
 
-    if (pStream->Dbg.Runtime.fEnabled)
+    if (pStreamR3->Dbg.Runtime.fEnabled)
     {
         char szFile[64];
+        char szPath[RTPATH_MAX];
 
-        if (hdaGetDirFromSD(pStream->u8SD) == PDMAUDIODIR_IN)
-            RTStrPrintf(szFile, sizeof(szFile), "hdaStreamWriteSD%RU8", pStream->u8SD);
+        /* pFileStream */
+        if (hdaGetDirFromSD(uSD) == PDMAUDIODIR_IN)
+            RTStrPrintf(szFile, sizeof(szFile), "hdaStreamWriteSD%RU8", uSD);
         else
-            RTStrPrintf(szFile, sizeof(szFile), "hdaStreamReadSD%RU8", pStream->u8SD);
+            RTStrPrintf(szFile, sizeof(szFile), "hdaStreamReadSD%RU8", uSD);
 
-        char szPath[RTPATH_MAX + 1];
-        int rc2 = DrvAudioHlpFileNameGet(szPath, sizeof(szPath), pThis->Dbg.szOutPath, szFile,
+        int rc2 = DrvAudioHlpFileNameGet(szPath, sizeof(szPath), pThisCC->Dbg.szOutPath, szFile,
                                          0 /* uInst */, PDMAUDIOFILETYPE_WAV, PDMAUDIOFILENAME_FLAGS_NONE);
         AssertRC(rc2);
-        rc2 = DrvAudioHlpFileCreate(PDMAUDIOFILETYPE_WAV, szPath, PDMAUDIOFILE_FLAGS_NONE, &pStream->Dbg.Runtime.pFileStream);
+
+        rc2 = DrvAudioHlpFileCreate(PDMAUDIOFILETYPE_WAV, szPath, PDMAUDIOFILE_FLAGS_NONE, &pStreamR3->Dbg.Runtime.pFileStream);
         AssertRC(rc2);
 
-        if (hdaGetDirFromSD(pStream->u8SD) == PDMAUDIODIR_IN)
-            RTStrPrintf(szFile, sizeof(szFile), "hdaDMARawWriteSD%RU8", pStream->u8SD);
+        /* pFileDMARaw */
+        if (hdaGetDirFromSD(uSD) == PDMAUDIODIR_IN)
+            RTStrPrintf(szFile, sizeof(szFile), "hdaDMARawWriteSD%RU8", uSD);
         else
-            RTStrPrintf(szFile, sizeof(szFile), "hdaDMARawReadSD%RU8", pStream->u8SD);
+            RTStrPrintf(szFile, sizeof(szFile), "hdaDMARawReadSD%RU8", uSD);
 
-        rc2 = DrvAudioHlpFileNameGet(szPath, sizeof(szPath), pThis->Dbg.szOutPath, szFile,
+        rc2 = DrvAudioHlpFileNameGet(szPath, sizeof(szPath), pThisCC->Dbg.szOutPath, szFile,
                                      0 /* uInst */, PDMAUDIOFILETYPE_WAV, PDMAUDIOFILENAME_FLAGS_NONE);
         AssertRC(rc2);
 
-        rc2 = DrvAudioHlpFileCreate(PDMAUDIOFILETYPE_WAV, szPath, PDMAUDIOFILE_FLAGS_NONE, &pStream->Dbg.Runtime.pFileDMARaw);
+        rc2 = DrvAudioHlpFileCreate(PDMAUDIOFILETYPE_WAV, szPath, PDMAUDIOFILE_FLAGS_NONE, &pStreamR3->Dbg.Runtime.pFileDMARaw);
         AssertRC(rc2);
 
-        if (hdaGetDirFromSD(pStream->u8SD) == PDMAUDIODIR_IN)
-            RTStrPrintf(szFile, sizeof(szFile), "hdaDMAWriteMappedSD%RU8", pStream->u8SD);
+        /* pFileDMAMapped */
+        if (hdaGetDirFromSD(uSD) == PDMAUDIODIR_IN)
+            RTStrPrintf(szFile, sizeof(szFile), "hdaDMAWriteMappedSD%RU8", uSD);
         else
-            RTStrPrintf(szFile, sizeof(szFile), "hdaDMAReadMappedSD%RU8", pStream->u8SD);
+            RTStrPrintf(szFile, sizeof(szFile), "hdaDMAReadMappedSD%RU8", uSD);
 
-        rc2 = DrvAudioHlpFileNameGet(szPath, sizeof(szPath), pThis->Dbg.szOutPath, szFile,
+        rc2 = DrvAudioHlpFileNameGet(szPath, sizeof(szPath), pThisCC->Dbg.szOutPath, szFile,
                                      0 /* uInst */, PDMAUDIOFILETYPE_WAV, PDMAUDIOFILENAME_FLAGS_NONE);
         AssertRC(rc2);
 
-        rc2 = DrvAudioHlpFileCreate(PDMAUDIOFILETYPE_WAV, szPath, PDMAUDIOFILE_FLAGS_NONE, &pStream->Dbg.Runtime.pFileDMAMapped);
+        rc2 = DrvAudioHlpFileCreate(PDMAUDIOFILETYPE_WAV, szPath, PDMAUDIOFILE_FLAGS_NONE, &pStreamR3->Dbg.Runtime.pFileDMAMapped);
         AssertRC(rc2);
 
         /* Delete stale debugging files from a former run. */
-        DrvAudioHlpFileDelete(pStream->Dbg.Runtime.pFileStream);
-        DrvAudioHlpFileDelete(pStream->Dbg.Runtime.pFileDMARaw);
-        DrvAudioHlpFileDelete(pStream->Dbg.Runtime.pFileDMAMapped);
+        DrvAudioHlpFileDelete(pStreamR3->Dbg.Runtime.pFileStream);
+        DrvAudioHlpFileDelete(pStreamR3->Dbg.Runtime.pFileDMARaw);
+        DrvAudioHlpFileDelete(pStreamR3->Dbg.Runtime.pFileDMAMapped);
     }
 
     return rc;
@@ -131,77 +147,79 @@ int hdaR3StreamCreate(PHDASTREAM pStream, PHDASTATE pThis, uint8_t u8SD)
 /**
  * Destroys an HDA stream.
  *
- * @param   pStream             HDA stream to destroy.
+ * @param   pStreamShared       The HDA stream to destroy - shared bits.
+ * @param   pStreamR3           The HDA stream to destroy - ring-3 bits.
  */
-void hdaR3StreamDestroy(PHDASTREAM pStream)
+void hdaR3StreamDestroy(PHDASTREAM pStreamShared, PHDASTREAMR3 pStreamR3)
 {
-    AssertPtrReturnVoid(pStream);
+    LogFlowFunc(("[SD%RU8] Destroying ...\n", pStreamShared->u8SD));
 
-    LogFlowFunc(("[SD%RU8] Destroying ...\n", pStream->u8SD));
-
-    hdaR3StreamMapDestroy(&pStream->State.Mapping);
+    hdaR3StreamMapDestroy(&pStreamR3->State.Mapping);
 
     int rc2;
 
 #ifdef VBOX_WITH_AUDIO_HDA_ASYNC_IO
-    rc2 = hdaR3StreamAsyncIODestroy(pStream);
+    rc2 = hdaR3StreamAsyncIODestroy(pStreamR3);
     AssertRC(rc2);
 #endif
 
 # ifdef VBOX_WITH_AUDIO_HDA_ASYNC_IO
-    if (RTCritSectIsInitialized(&pStream->CritSect))
+    if (RTCritSectIsInitialized(&pStreamR3->CritSect))
     {
-        rc2 = RTCritSectDelete(&pStream->CritSect);
+        rc2 = RTCritSectDelete(&pStreamR3->CritSect);
         AssertRC(rc2);
     }
 # endif
 
-    if (pStream->State.pCircBuf)
+    if (pStreamR3->State.pCircBuf)
     {
-        RTCircBufDestroy(pStream->State.pCircBuf);
-        pStream->State.pCircBuf = NULL;
+        RTCircBufDestroy(pStreamR3->State.pCircBuf);
+        pStreamR3->State.pCircBuf = NULL;
     }
 
-    hdaR3StreamPeriodDestroy(&pStream->State.Period);
+    hdaR3StreamPeriodDestroy(&pStreamShared->State.Period);
 
 #ifdef DEBUG
-    if (RTCritSectIsInitialized(&pStream->Dbg.CritSect))
+    if (RTCritSectIsInitialized(&pStreamR3->Dbg.CritSect))
     {
-        rc2 = RTCritSectDelete(&pStream->Dbg.CritSect);
+        rc2 = RTCritSectDelete(&pStreamR3->Dbg.CritSect);
         AssertRC(rc2);
     }
 #endif
 
-    if (pStream->Dbg.Runtime.fEnabled)
+    if (pStreamR3->Dbg.Runtime.fEnabled)
     {
-        DrvAudioHlpFileDestroy(pStream->Dbg.Runtime.pFileStream);
-        pStream->Dbg.Runtime.pFileStream = NULL;
+        DrvAudioHlpFileDestroy(pStreamR3->Dbg.Runtime.pFileStream);
+        pStreamR3->Dbg.Runtime.pFileStream = NULL;
 
-        DrvAudioHlpFileDestroy(pStream->Dbg.Runtime.pFileDMARaw);
-        pStream->Dbg.Runtime.pFileDMARaw = NULL;
+        DrvAudioHlpFileDestroy(pStreamR3->Dbg.Runtime.pFileDMARaw);
+        pStreamR3->Dbg.Runtime.pFileDMARaw = NULL;
 
-        DrvAudioHlpFileDestroy(pStream->Dbg.Runtime.pFileDMAMapped);
-        pStream->Dbg.Runtime.pFileDMAMapped = NULL;
+        DrvAudioHlpFileDestroy(pStreamR3->Dbg.Runtime.pFileDMAMapped);
+        pStreamR3->Dbg.Runtime.pFileDMAMapped = NULL;
     }
 
     LogFlowFuncLeave();
 }
 
 /**
- * Initializes an HDA stream.
+ * Sets up ((re-)iniitalizes) an HDA stream.
  *
- * @returns IPRT status code. VINF_NO_CHANGE if the stream does not need (re-)initialization because the stream's (hardware)
- *          parameters did not change.
- * @param   pDevIns The device instance.
- * @param   pStream HDA stream to initialize.
- * @param   uSD     SD (stream descriptor) number to assign the HDA stream to.
+ * @returns IPRT status code. VINF_NO_CHANGE if the stream does not need
+ *          be set-up again because the stream's (hardware) parameters did
+ *          not change.
+ * @param   pDevIns         The device instance.
+ * @param   pThis           The shared HDA device state (for HW register
+ *                          parameters).
+ * @param   pStreamShared   HDA stream to set up, shared portion.
+ * @param   pStreamR3       HDA stream to set up, ring-3 portion.
+ * @param   uSD             Stream descriptor number to assign it.
  */
-int hdaR3StreamInit(PPDMDEVINS pDevIns, PHDASTREAM pStream, uint8_t uSD)
+int hdaR3StreamSetUp(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTREAM pStreamShared, PHDASTREAMR3 pStreamR3, uint8_t uSD)
 {
-    AssertPtrReturn(pStream, VERR_INVALID_POINTER);
-
-    PHDASTATE pThis = pStream->pHDAState;
-    AssertPtr(pThis);
+    /* These member can only change on data corruption, despite what the code does further down (bird).  */
+    Assert(pStreamShared->u8SD == uSD);
+    Assert(pStreamR3->u8SD     == uSD);
 
     const uint64_t u64BDLBase = RT_MAKE_U64(HDA_STREAM_REG(pThis, BDPL, uSD),
                                             HDA_STREAM_REG(pThis, BDPU, uSD));
@@ -231,7 +249,7 @@ int hdaR3StreamInit(PPDMDEVINS pDevIns, PHDASTREAM pStream, uint8_t uSD)
     }
 
     /* Reset (any former) stream map. */
-    hdaR3StreamMapReset(&pStream->State.Mapping);
+    hdaR3StreamMapReset(&pStreamR3->State.Mapping);
 
     /*
      * Initialize the stream mapping in any case, regardless if
@@ -241,11 +259,13 @@ int hdaR3StreamInit(PPDMDEVINS pDevIns, PHDASTREAM pStream, uint8_t uSD)
      * In other words, the stream mapping *always* knows the real
      * number of channels in a single audio stream.
      */
-    rc = hdaR3StreamMapInit(&pStream->State.Mapping, &Props);
+    rc = hdaR3StreamMapInit(&pStreamR3->State.Mapping, &Props);
     AssertRCReturn(rc, rc);
 
-    ASSERT_GUEST_LOGREL_MSG_RETURN(u32CBL % pStream->State.Mapping.cbFrameSize == 0,
-                                   ("CBL for stream #%RU8 does not align to frame size\n", pStream->u8SD),
+    ASSERT_GUEST_LOGREL_MSG_RETURN(   pStreamR3->State.Mapping.cbFrameSize > 0
+                                   && u32CBL % pStreamR3->State.Mapping.cbFrameSize == 0,
+                                   ("CBL for stream #%RU8 does not align to frame size (u32CBL=%u cbFrameSize=%u)\n",
+                                    uSD, u32CBL, pStreamR3->State.Mapping.cbFrameSize),
                                    VERR_INVALID_PARAMETER);
 
     /*
@@ -257,14 +277,14 @@ int hdaR3StreamInit(PPDMDEVINS pDevIns, PHDASTREAM pStream, uint8_t uSD)
     if (pThis->uTimerHz == HDA_TIMER_HZ_DEFAULT) /* Make sure that we don't have any custom Hz rate set we want to enforce */
     {
         if (Props.cChannels >= 5)
-            pStream->State.uTimerHz = 300;
+            pStreamShared->State.uTimerHz = 300;
         else if (Props.cChannels == 4)
-            pStream->State.uTimerHz = 150;
+            pStreamShared->State.uTimerHz = 150;
         else
-            pStream->State.uTimerHz = 100;
+            pStreamShared->State.uTimerHz = 100;
     }
     else
-        pStream->State.uTimerHz = pThis->uTimerHz;
+        pStreamShared->State.uTimerHz = pThis->uTimerHz;
 
 #ifndef VBOX_WITH_AUDIO_HDA_51_SURROUND
     if (Props.cChannels > 2)
@@ -285,43 +305,43 @@ int hdaR3StreamInit(PPDMDEVINS pDevIns, PHDASTREAM pStream, uint8_t uSD)
     /* Did some of the vital / critical parameters change?
      * If not, we can skip a lot of the (re-)initialization and just (re-)use the existing stuff.
      * Also, tell the caller so that further actions can be taken. */
-    if (   uSD        == pStream->u8SD
-        && u64BDLBase == pStream->u64BDLBase
-        && u16LVI     == pStream->u16LVI
-        && u32CBL     == pStream->u32CBL
-        && u16FIFOS   == pStream->u16FIFOS
-        && u16FMT     == pStream->u16FMT)
+    if (   uSD        == pStreamShared->u8SD   /* paranoia OFC */
+        && u64BDLBase == pStreamShared->u64BDLBase
+        && u16LVI     == pStreamShared->u16LVI
+        && u32CBL     == pStreamShared->u32CBL
+        && u16FIFOS   == pStreamShared->u16FIFOS
+        && u16FMT     == pStreamShared->u16FMT)
     {
         LogFunc(("[SD%RU8] No format change, skipping (re-)initialization\n", uSD));
         return VINF_NO_CHANGE;
     }
 
-    pStream->u8SD       = uSD;
+    pStreamShared->u8SD       = uSD;
 
     /* Update all register copies so that we later know that something has changed. */
-    pStream->u64BDLBase = u64BDLBase;
-    pStream->u16LVI     = u16LVI;
-    pStream->u32CBL     = u32CBL;
-    pStream->u16FIFOS   = u16FIFOS;
-    pStream->u16FMT     = u16FMT;
+    pStreamShared->u64BDLBase = u64BDLBase;
+    pStreamShared->u16LVI     = u16LVI;
+    pStreamShared->u32CBL     = u32CBL;
+    pStreamShared->u16FIFOS   = u16FIFOS;
+    pStreamShared->u16FMT     = u16FMT;
 
-    PPDMAUDIOSTREAMCFG pCfg = &pStream->State.Cfg;
+    PPDMAUDIOSTREAMCFG pCfg = &pStreamShared->State.Cfg;
     pCfg->Props = Props;
 
     /* (Re-)Allocate the stream's internal DMA buffer, based on the PCM  properties we just got above. */
-    if (pStream->State.pCircBuf)
+    if (pStreamR3->State.pCircBuf)
     {
-        RTCircBufDestroy(pStream->State.pCircBuf);
-        pStream->State.pCircBuf = NULL;
+        RTCircBufDestroy(pStreamR3->State.pCircBuf);
+        pStreamR3->State.pCircBuf = NULL;
     }
 
     /* By default we allocate an internal buffer of 100ms. */
-    rc = RTCircBufCreate(&pStream->State.pCircBuf,
+    rc = RTCircBufCreate(&pStreamR3->State.pCircBuf,
                          DrvAudioHlpMilliToBytes(100 /* ms */, &pCfg->Props)); /** @todo Make this configurable. */
     AssertRCReturn(rc, rc);
 
     /* Set the stream's direction. */
-    pCfg->enmDir = hdaGetDirFromSD(pStream->u8SD);
+    pCfg->enmDir = hdaGetDirFromSD(uSD);
 
     /* The the stream's name, based on the direction. */
     switch (pCfg->enmDir)
@@ -347,22 +367,22 @@ int hdaR3StreamInit(PPDMDEVINS pDevIns, PHDASTREAM pStream, uint8_t uSD)
     }
 
     /* Set scheduling hint (if available). */
-    if (pStream->State.uTimerHz)
-        pCfg->Device.cMsSchedulingHint = 1000 /* ms */ / pStream->State.uTimerHz;
+    if (pStreamShared->State.uTimerHz)
+        pCfg->Device.cMsSchedulingHint = 1000 /* ms */ / pStreamShared->State.uTimerHz;
 
     LogFunc(("[SD%RU8] DMA @ 0x%x (%RU32 bytes), LVI=%RU16, FIFOS=%RU16\n",
-             pStream->u8SD, pStream->u64BDLBase, pStream->u32CBL, pStream->u16LVI, pStream->u16FIFOS));
+             uSD, pStreamShared->u64BDLBase, pStreamShared->u32CBL, pStreamShared->u16LVI, pStreamShared->u16FIFOS));
 
     if (RT_SUCCESS(rc))
     {
         /* Make sure that the chosen Hz rate dividable by the stream's rate. */
-        if (pStream->State.Cfg.Props.uHz % pStream->State.uTimerHz != 0)
+        if (pStreamShared->State.Cfg.Props.uHz % pStreamShared->State.uTimerHz != 0)
             LogRel(("HDA: Stream timer Hz rate (%RU32) does not fit to stream #%RU8 timing (%RU32)\n",
-                    pStream->State.uTimerHz, pStream->u8SD, pStream->State.Cfg.Props.uHz));
+                    pStreamShared->State.uTimerHz, uSD, pStreamShared->State.Cfg.Props.uHz));
 
         /* Figure out how many transfer fragments we're going to use for this stream. */
         /** @todo Use a more dynamic fragment size? */
-        uint8_t cFragments = pStream->u16LVI + 1;
+        uint8_t cFragments = pStreamShared->u16LVI + 1;
         if (cFragments <= 1)
             cFragments = 2; /* At least two fragments (BDLEs) must be present. */
 
@@ -372,14 +392,14 @@ int hdaR3StreamInit(PPDMDEVINS pDevIns, PHDASTREAM pStream, uint8_t uSD)
         uint32_t cfPosAdjust = 0;
 
         LogFunc(("[SD%RU8] fPosAdjustEnabled=%RTbool, cPosAdjustFrames=%RU16\n",
-                 pStream->u8SD, pThis->fPosAdjustEnabled, pThis->cPosAdjustFrames));
+                 uSD, pThis->fPosAdjustEnabled, pThis->cPosAdjustFrames));
 
         if (pThis->fPosAdjustEnabled) /* Is the position adjustment enabled at all? */
         {
             HDABDLE BDLE;
             RT_ZERO(BDLE);
 
-            int rc2 = hdaR3BDLEFetch(pThis, &BDLE, pStream->u64BDLBase, 0 /* Entry */);
+            int rc2 = hdaR3BDLEFetch(pDevIns, &BDLE, pStreamShared->u64BDLBase, 0 /* Entry */);
             AssertRC(rc2);
 
             /* Note: Do *not* check if this BDLE aligns to the stream's frame size.
@@ -399,12 +419,12 @@ int hdaR3StreamInit(PPDMDEVINS pDevIns, PHDASTREAM pStream, uint8_t uSD)
                 /** @todo Implement / use a (dynamic) table once this gets more complicated. */
 #ifdef VBOX_WITH_INTEL_HDA
                 /* Intel ICH / PCH: 1 frame. */
-                if (BDLE.Desc.u32BufSize == (uint32_t)(1 * pStream->State.Mapping.cbFrameSize))
+                if (BDLE.Desc.u32BufSize == (uint32_t)(1 * pStreamR3->State.Mapping.cbFrameSize))
                 {
                     cfPosAdjust = 1;
                 }
                 /* Intel Baytrail / Braswell: 32 frames. */
-                else if (BDLE.Desc.u32BufSize == (uint32_t)(32 * pStream->State.Mapping.cbFrameSize))
+                else if (BDLE.Desc.u32BufSize == (uint32_t)(32 * pStreamR3->State.Mapping.cbFrameSize))
                 {
                     cfPosAdjust = 32;
                 }
@@ -425,76 +445,76 @@ int hdaR3StreamInit(PPDMDEVINS pDevIns, PHDASTREAM pStream, uint8_t uSD)
                  * Only skip a fragment if the whole buffer fragment is used for
                  * position adjustment.
                  */
-                if (   (cfPosAdjust * pStream->State.Mapping.cbFrameSize) == BDLE.Desc.u32BufSize
+                if (   (cfPosAdjust * pStreamR3->State.Mapping.cbFrameSize) == BDLE.Desc.u32BufSize
                     && cFragments)
                 {
                     cFragments--;
                 }
 
                 /* Initialize position adjustment counter. */
-                pStream->State.cfPosAdjustDefault = cfPosAdjust;
-                pStream->State.cfPosAdjustLeft    = pStream->State.cfPosAdjustDefault;
+                pStreamShared->State.cfPosAdjustDefault = cfPosAdjust;
+                pStreamShared->State.cfPosAdjustLeft    = pStreamShared->State.cfPosAdjustDefault;
 
                 LogRel2(("HDA: Position adjustment for stream #%RU8 active (%RU32 frames)\n",
-                         pStream->u8SD, pStream->State.cfPosAdjustDefault));
+                         uSD, pStreamShared->State.cfPosAdjustDefault));
             }
         }
 
-        LogFunc(("[SD%RU8] cfPosAdjust=%RU32, cFragments=%RU8\n", pStream->u8SD, cfPosAdjust, cFragments));
+        LogFunc(("[SD%RU8] cfPosAdjust=%RU32, cFragments=%RU8\n", uSD, cfPosAdjust, cFragments));
 
         /*
          * Set up data transfer stuff.
          */
 
         /* Calculate the fragment size the guest OS expects interrupt delivery at. */
-        pStream->State.cbTransferSize = pStream->u32CBL / cFragments;
-        Assert(pStream->State.cbTransferSize);
-        Assert(pStream->State.cbTransferSize % pStream->State.Mapping.cbFrameSize == 0);
-        ASSERT_GUEST_LOGREL_MSG_STMT(pStream->State.cbTransferSize,
-                                     ("Transfer size for stream #%RU8 is invalid\n", pStream->u8SD), rc = VERR_INVALID_PARAMETER);
+        pStreamShared->State.cbTransferSize = pStreamShared->u32CBL / cFragments;
+        Assert(pStreamShared->State.cbTransferSize);
+        Assert(pStreamShared->State.cbTransferSize % pStreamR3->State.Mapping.cbFrameSize == 0);
+        ASSERT_GUEST_LOGREL_MSG_STMT(pStreamShared->State.cbTransferSize,
+                                     ("Transfer size for stream #%RU8 is invalid\n", uSD), rc = VERR_INVALID_PARAMETER);
         if (RT_SUCCESS(rc))
         {
             /* Calculate the bytes we need to transfer to / from the stream's DMA per iteration.
              * This is bound to the device's Hz rate and thus to the (virtual) timing the device expects. */
-            pStream->State.cbTransferChunk = (pStream->State.Cfg.Props.uHz / pStream->State.uTimerHz) * pStream->State.Mapping.cbFrameSize;
-            Assert(pStream->State.cbTransferChunk);
-            Assert(pStream->State.cbTransferChunk % pStream->State.Mapping.cbFrameSize == 0);
-            ASSERT_GUEST_LOGREL_MSG_STMT(pStream->State.cbTransferChunk,
-                                         ("Transfer chunk for stream #%RU8 is invalid\n", pStream->u8SD),
+            pStreamShared->State.cbTransferChunk = (pStreamShared->State.Cfg.Props.uHz / pStreamShared->State.uTimerHz) * pStreamR3->State.Mapping.cbFrameSize;
+            Assert(pStreamShared->State.cbTransferChunk);
+            Assert(pStreamShared->State.cbTransferChunk % pStreamR3->State.Mapping.cbFrameSize == 0);
+            ASSERT_GUEST_LOGREL_MSG_STMT(pStreamShared->State.cbTransferChunk,
+                                         ("Transfer chunk for stream #%RU8 is invalid\n", uSD),
                                          rc = VERR_INVALID_PARAMETER);
             if (RT_SUCCESS(rc))
             {
                 /* Make sure that the transfer chunk does not exceed the overall transfer size. */
-                if (pStream->State.cbTransferChunk > pStream->State.cbTransferSize)
-                    pStream->State.cbTransferChunk = pStream->State.cbTransferSize;
+                if (pStreamShared->State.cbTransferChunk > pStreamShared->State.cbTransferSize)
+                    pStreamShared->State.cbTransferChunk = pStreamShared->State.cbTransferSize;
 
-                const uint64_t cTicksPerHz = PDMDevHlpTimerGetFreq(pDevIns, pStream->hTimer) / pStream->State.uTimerHz;
+                const uint64_t cTicksPerHz = PDMDevHlpTimerGetFreq(pDevIns, pStreamShared->hTimer) / pStreamShared->State.uTimerHz;
 
                 /* Calculate the timer ticks per byte for this stream. */
-                pStream->State.cTicksPerByte = cTicksPerHz / pStream->State.cbTransferChunk;
-                Assert(pStream->State.cTicksPerByte);
+                pStreamShared->State.cTicksPerByte = cTicksPerHz / pStreamShared->State.cbTransferChunk;
+                Assert(pStreamShared->State.cTicksPerByte);
 
                 /* Calculate timer ticks per transfer. */
-                pStream->State.cTransferTicks = pStream->State.cbTransferChunk * pStream->State.cTicksPerByte;
-                Assert(pStream->State.cTransferTicks);
+                pStreamShared->State.cTransferTicks = pStreamShared->State.cbTransferChunk * pStreamShared->State.cTicksPerByte;
+                Assert(pStreamShared->State.cTransferTicks);
 
                 LogFunc(("[SD%RU8] Timer %uHz (%RU64 ticks per Hz), cTicksPerByte=%RU64, cbTransferChunk=%RU32, " \
                          "cTransferTicks=%RU64, cbTransferSize=%RU32\n",
-                         pStream->u8SD, pStream->State.uTimerHz, cTicksPerHz, pStream->State.cTicksPerByte,
-                         pStream->State.cbTransferChunk, pStream->State.cTransferTicks, pStream->State.cbTransferSize));
+                         uSD, pStreamShared->State.uTimerHz, cTicksPerHz, pStreamShared->State.cTicksPerByte,
+                         pStreamShared->State.cbTransferChunk, pStreamShared->State.cTransferTicks, pStreamShared->State.cbTransferSize));
 
                 /* Make sure to also update the stream's DMA counter (based on its current LPIB value). */
-                hdaR3StreamSetPosition(pStream, HDA_STREAM_REG(pThis, LPIB, pStream->u8SD));
+                hdaR3StreamSetPosition(pStreamShared, pDevIns, pThis, HDA_STREAM_REG(pThis, LPIB, uSD));
 
 #ifdef LOG_ENABLED
-                hdaR3BDLEDumpAll(pThis, pStream->u64BDLBase, pStream->u16LVI + 1);
+                hdaR3BDLEDumpAll(pDevIns, pThis, pStreamShared->u64BDLBase, pStreamShared->u16LVI + 1);
 #endif
             }
         }
     }
 
     if (RT_FAILURE(rc))
-        LogRel(("HDA: Initializing stream #%RU8 failed with %Rrc\n", pStream->u8SD, rc));
+        LogRel(("HDA: Initializing stream #%RU8 failed with %Rrc\n", uSD, rc));
 
     return rc;
 }
@@ -502,27 +522,27 @@ int hdaR3StreamInit(PPDMDEVINS pDevIns, PHDASTREAM pStream, uint8_t uSD)
 /**
  * Resets an HDA stream.
  *
- * @param   pThis               HDA state.
- * @param   pStream             HDA stream to reset.
+ * @param   pThis               The shared HDA device state.
+ * @param   pThisCC             The ring-3 HDA device state.
+ * @param   pStreamShared       HDA stream to reset (shared).
+ * @param   pStreamR3           HDA stream to reset (ring-3).
  * @param   uSD                 Stream descriptor (SD) number to use for this stream.
  */
-void hdaR3StreamReset(PHDASTATE pThis, PHDASTREAM pStream, uint8_t uSD)
+void hdaR3StreamReset(PHDASTATE pThis, PHDASTATER3 pThisCC, PHDASTREAM pStreamShared, PHDASTREAMR3 pStreamR3, uint8_t uSD)
 {
-    AssertPtrReturnVoid(pThis);
-    AssertPtrReturnVoid(pStream);
-    AssertReturnVoid(uSD < HDA_MAX_STREAMS);
-
-# ifdef VBOX_STRICT
-    AssertReleaseMsg(!pStream->State.fRunning, ("[SD%RU8] Cannot reset stream while in running state\n", uSD));
-# endif
+    AssertPtr(pThis);
+    AssertPtr(pStreamShared);
+    AssertPtr(pStreamR3);
+    Assert(uSD < HDA_MAX_STREAMS);
+    AssertMsg(!pStreamShared->State.fRunning, ("[SD%RU8] Cannot reset stream while in running state\n", uSD));
 
     LogFunc(("[SD%RU8] Reset\n", uSD));
 
     /*
      * Set reset state.
      */
-    Assert(ASMAtomicReadBool(&pStream->State.fInReset) == false); /* No nested calls. */
-    ASMAtomicXchgBool(&pStream->State.fInReset, true);
+    Assert(ASMAtomicReadBool(&pStreamShared->State.fInReset) == false); /* No nested calls. */
+    ASMAtomicXchgBool(&pStreamShared->State.fInReset, true);
 
     /*
      * Second, initialize the registers.
@@ -547,38 +567,38 @@ void hdaR3StreamReset(PHDASTATE pThis, PHDASTREAM pStream, uint8_t uSD)
 #endif
 
     /* Assign the default mixer sink to the stream. */
-    pStream->pMixSink = hdaR3GetDefaultSink(pThis, uSD);
+    pStreamR3->pMixSink = hdaR3GetDefaultSink(pThisCC, uSD);
 
     /* Reset position adjustment counter. */
-    pStream->State.cfPosAdjustLeft = pStream->State.cfPosAdjustDefault;
+    pStreamShared->State.cfPosAdjustLeft = pStreamShared->State.cfPosAdjustDefault;
 
     /* Reset transfer stuff. */
-    pStream->State.cbTransferProcessed        = 0;
-    pStream->State.cTransferPendingInterrupts = 0;
-    pStream->State.tsTransferLast = 0;
-    pStream->State.tsTransferNext = 0;
+    pStreamShared->State.cbTransferProcessed        = 0;
+    pStreamShared->State.cTransferPendingInterrupts = 0;
+    pStreamShared->State.tsTransferLast = 0;
+    pStreamShared->State.tsTransferNext = 0;
 
     /* Initialize other timestamps. */
-    pStream->State.tsLastUpdateNs = 0;
+    pStreamShared->State.tsLastUpdateNs = 0;
 
-    RT_ZERO(pStream->State.BDLE);
-    pStream->State.uCurBDLE = 0;
+    RT_ZERO(pStreamShared->State.BDLE);
+    pStreamShared->State.uCurBDLE = 0;
 
-    if (pStream->State.pCircBuf)
-        RTCircBufReset(pStream->State.pCircBuf);
+    if (pStreamR3->State.pCircBuf)
+        RTCircBufReset(pStreamR3->State.pCircBuf);
 
     /* Reset the stream's period. */
-    hdaR3StreamPeriodReset(&pStream->State.Period);
+    hdaR3StreamPeriodReset(&pStreamShared->State.Period);
 
 #ifdef DEBUG
-    pStream->Dbg.cReadsTotal      = 0;
-    pStream->Dbg.cbReadTotal      = 0;
-    pStream->Dbg.tsLastReadNs     = 0;
-    pStream->Dbg.cWritesTotal     = 0;
-    pStream->Dbg.cbWrittenTotal   = 0;
-    pStream->Dbg.cWritesHz        = 0;
-    pStream->Dbg.cbWrittenHz      = 0;
-    pStream->Dbg.tsWriteSlotBegin = 0;
+    pStreamR3->Dbg.cReadsTotal      = 0;
+    pStreamR3->Dbg.cbReadTotal      = 0;
+    pStreamR3->Dbg.tsLastReadNs     = 0;
+    pStreamR3->Dbg.cWritesTotal     = 0;
+    pStreamR3->Dbg.cbWrittenTotal   = 0;
+    pStreamR3->Dbg.cWritesHz        = 0;
+    pStreamR3->Dbg.cbWrittenHz      = 0;
+    pStreamR3->Dbg.tsWriteSlotBegin = 0;
 #endif
 
     /* Report that we're done resetting this stream. */
@@ -587,21 +607,23 @@ void hdaR3StreamReset(PHDASTATE pThis, PHDASTREAM pStream, uint8_t uSD)
     LogFunc(("[SD%RU8] Reset\n", uSD));
 
     /* Exit reset mode. */
-    ASMAtomicXchgBool(&pStream->State.fInReset, false);
+    ASMAtomicXchgBool(&pStreamShared->State.fInReset, false);
 }
 
 /**
  * Enables or disables an HDA audio stream.
  *
  * @returns IPRT status code.
- * @param   pStream             HDA stream to enable or disable.
+ * @param   pStreamShared       HDA stream to enable or disable - shared bits.
+ * @param   pStreamR3           HDA stream to enable or disable - ring-3 bits.
  * @param   fEnable             Whether to enable or disble the stream.
  */
-int hdaR3StreamEnable(PHDASTREAM pStream, bool fEnable)
+int hdaR3StreamEnable(PHDASTREAM pStreamShared, PHDASTREAMR3 pStreamR3, bool fEnable)
 {
-    AssertPtrReturn(pStream, VERR_INVALID_POINTER);
+    AssertPtr(pStreamR3);
+    AssertPtr(pStreamShared);
 
-    LogFunc(("[SD%RU8] fEnable=%RTbool, pMixSink=%p\n", pStream->u8SD, fEnable, pStream->pMixSink));
+    LogFunc(("[SD%RU8] fEnable=%RTbool, pMixSink=%p\n", pStreamShared->u8SD, fEnable, pStreamR3->pMixSink));
 
     int rc = VINF_SUCCESS;
 
@@ -609,36 +631,36 @@ int hdaR3StreamEnable(PHDASTREAM pStream, bool fEnable)
                          ? AUDMIXSINKCMD_ENABLE : AUDMIXSINKCMD_DISABLE;
 
     /* First, enable or disable the stream and the stream's sink, if any. */
-    if (   pStream->pMixSink
-        && pStream->pMixSink->pMixSink)
-        rc = AudioMixerSinkCtl(pStream->pMixSink->pMixSink, enmCmd);
+    if (   pStreamR3->pMixSink
+        && pStreamR3->pMixSink->pMixSink)
+        rc = AudioMixerSinkCtl(pStreamR3->pMixSink->pMixSink, enmCmd);
 
     if (   RT_SUCCESS(rc)
         && fEnable
-        && pStream->Dbg.Runtime.fEnabled)
+        && pStreamR3->Dbg.Runtime.fEnabled)
     {
-        Assert(DrvAudioHlpPCMPropsAreValid(&pStream->State.Cfg.Props));
+        Assert(DrvAudioHlpPCMPropsAreValid(&pStreamShared->State.Cfg.Props));
 
         if (fEnable)
         {
-            if (!DrvAudioHlpFileIsOpen(pStream->Dbg.Runtime.pFileStream))
+            if (!DrvAudioHlpFileIsOpen(pStreamR3->Dbg.Runtime.pFileStream))
             {
-                int rc2 = DrvAudioHlpFileOpen(pStream->Dbg.Runtime.pFileStream, PDMAUDIOFILE_DEFAULT_OPEN_FLAGS,
-                                              &pStream->State.Cfg.Props);
+                int rc2 = DrvAudioHlpFileOpen(pStreamR3->Dbg.Runtime.pFileStream, PDMAUDIOFILE_DEFAULT_OPEN_FLAGS,
+                                              &pStreamShared->State.Cfg.Props);
                 AssertRC(rc2);
             }
 
-            if (!DrvAudioHlpFileIsOpen(pStream->Dbg.Runtime.pFileDMARaw))
+            if (!DrvAudioHlpFileIsOpen(pStreamR3->Dbg.Runtime.pFileDMARaw))
             {
-                int rc2 = DrvAudioHlpFileOpen(pStream->Dbg.Runtime.pFileDMARaw, PDMAUDIOFILE_DEFAULT_OPEN_FLAGS,
-                                              &pStream->State.Cfg.Props);
+                int rc2 = DrvAudioHlpFileOpen(pStreamR3->Dbg.Runtime.pFileDMARaw, PDMAUDIOFILE_DEFAULT_OPEN_FLAGS,
+                                              &pStreamShared->State.Cfg.Props);
                 AssertRC(rc2);
             }
 
-            if (!DrvAudioHlpFileIsOpen(pStream->Dbg.Runtime.pFileDMAMapped))
+            if (!DrvAudioHlpFileIsOpen(pStreamR3->Dbg.Runtime.pFileDMAMapped))
             {
-                int rc2 = DrvAudioHlpFileOpen(pStream->Dbg.Runtime.pFileDMAMapped, PDMAUDIOFILE_DEFAULT_OPEN_FLAGS,
-                                              &pStream->State.Cfg.Props);
+                int rc2 = DrvAudioHlpFileOpen(pStreamR3->Dbg.Runtime.pFileDMAMapped, PDMAUDIOFILE_DEFAULT_OPEN_FLAGS,
+                                              &pStreamShared->State.Cfg.Props);
                 AssertRC(rc2);
             }
         }
@@ -646,40 +668,41 @@ int hdaR3StreamEnable(PHDASTREAM pStream, bool fEnable)
 
     if (RT_SUCCESS(rc))
     {
-        pStream->State.fRunning = fEnable;
+        pStreamShared->State.fRunning = fEnable;
     }
 
-    LogFunc(("[SD%RU8] rc=%Rrc\n", pStream->u8SD, rc));
+    LogFunc(("[SD%RU8] rc=%Rrc\n", pStreamShared->u8SD, rc));
     return rc;
 }
 
-uint32_t hdaR3StreamGetPosition(PHDASTATE pThis, PHDASTREAM pStream)
+static uint32_t hdaR3StreamGetPosition(PHDASTATE pThis, PHDASTREAM pStreamShared)
 {
-    return HDA_STREAM_REG(pThis, LPIB, pStream->u8SD);
+    return HDA_STREAM_REG(pThis, LPIB, pStreamShared->u8SD);
 }
 
-/**
+/*
  * Updates an HDA stream's current read or write buffer position (depending on the stream type) by
  * updating its associated LPIB register and DMA position buffer (if enabled).
  *
- * @param   pStream             HDA stream to update read / write position for.
+ * @param   pStreamShared       HDA stream to update read / write position for (shared).
+ * @param   pDevIns             The device instance.
+ * @param   pThis               The shared HDA device state.
  * @param   u32LPIB             Absolute position (in bytes) to set current read / write position to.
  */
-void hdaR3StreamSetPosition(PHDASTREAM pStream, uint32_t u32LPIB)
+static void hdaR3StreamSetPosition(PHDASTREAM pStreamShared, PPDMDEVINS pDevIns, PHDASTATE pThis, uint32_t u32LPIB)
 {
-    AssertPtrReturnVoid(pStream);
+    AssertPtrReturnVoid(pStreamShared);
 
-    Log3Func(("[SD%RU8] LPIB=%RU32 (DMA Position Buffer Enabled: %RTbool)\n",
-              pStream->u8SD, u32LPIB, pStream->pHDAState->fDMAPosition));
+    Log3Func(("[SD%RU8] LPIB=%RU32 (DMA Position Buffer Enabled: %RTbool)\n",  pStreamShared->u8SD, u32LPIB, pThis->fDMAPosition));
 
     /* Update LPIB in any case. */
-    HDA_STREAM_REG(pStream->pHDAState, LPIB, pStream->u8SD) = u32LPIB;
+    HDA_STREAM_REG(pThis, LPIB, pStreamShared->u8SD) = u32LPIB;
 
     /* Do we need to tell the current DMA position? */
-    if (pStream->pHDAState->fDMAPosition)
+    if (pThis->fDMAPosition)
     {
-        int rc2 = PDMDevHlpPCIPhysWrite(pStream->pHDAState->CTX_SUFF(pDevIns),
-                                        pStream->pHDAState->u64DPBase + (pStream->u8SD * 2 * sizeof(uint32_t)),
+        int rc2 = PDMDevHlpPCIPhysWrite(pDevIns,
+                                        pThis->u64DPBase + (pStreamShared->u8SD * 2 * sizeof(uint32_t)),
                                         (void *)&u32LPIB, sizeof(uint32_t));
         AssertRC(rc2);
     }
@@ -689,32 +712,30 @@ void hdaR3StreamSetPosition(PHDASTREAM pStream, uint32_t u32LPIB)
  * Retrieves the available size of (buffered) audio data (in bytes) of a given HDA stream.
  *
  * @returns Available data (in bytes).
- * @param   pStream             HDA stream to retrieve size for.
+ * @param   pStreamR3           HDA stream to retrieve size for (ring-3).
  */
-uint32_t hdaR3StreamGetUsed(PHDASTREAM pStream)
+static uint32_t hdaR3StreamGetUsed(PHDASTREAMR3 pStreamR3)
 {
-    AssertPtrReturn(pStream, 0);
+    AssertPtrReturn(pStreamR3, 0);
 
-    if (!pStream->State.pCircBuf)
-        return 0;
-
-    return (uint32_t)RTCircBufUsed(pStream->State.pCircBuf);
+    if (pStreamR3->State.pCircBuf)
+        return (uint32_t)RTCircBufUsed(pStreamR3->State.pCircBuf);
+    return 0;
 }
 
 /**
  * Retrieves the free size of audio data (in bytes) of a given HDA stream.
  *
  * @returns Free data (in bytes).
- * @param   pStream             HDA stream to retrieve size for.
+ * @param   pStreamR3           HDA stream to retrieve size for (ring-3).
  */
-uint32_t hdaR3StreamGetFree(PHDASTREAM pStream)
+static uint32_t hdaR3StreamGetFree(PHDASTREAMR3 pStreamR3)
 {
-    AssertPtrReturn(pStream, 0);
+    AssertPtrReturn(pStreamR3, 0);
 
-    if (!pStream->State.pCircBuf)
-        return 0;
-
-    return (uint32_t)RTCircBufFree(pStream->State.pCircBuf);
+    if (pStreamR3->State.pCircBuf)
+        return (uint32_t)RTCircBufFree(pStreamR3->State.pCircBuf);
+    return 0;
 }
 
 /**
@@ -724,26 +745,24 @@ uint32_t hdaR3StreamGetFree(PHDASTREAM pStream)
  * transfer timestamp.
  *
  * @returns True if a next transfer is scheduled, false if not.
- * @param   pStream             HDA stream to retrieve schedule status for.
+ * @param   pStreamShared       HDA stream to retrieve schedule status for (shared).
  * @param   tsNow               The current time.
  */
-bool hdaR3StreamTransferIsScheduled(PHDASTREAM pStream, uint64_t tsNow)
+bool hdaR3StreamTransferIsScheduled(PHDASTREAM pStreamShared, uint64_t tsNow)
 {
-    if (pStream)
+    if (pStreamShared)
     {
-        AssertPtrReturn(pStream->pHDAState, false);
-
-        if (pStream->State.fRunning)
+        if (pStreamShared->State.fRunning)
         {
-            if (pStream->State.cTransferPendingInterrupts)
+            if (pStreamShared->State.cTransferPendingInterrupts)
             {
-                Log3Func(("[SD%RU8] Scheduled (%RU8 IRQs pending)\n", pStream->u8SD, pStream->State.cTransferPendingInterrupts));
+                Log3Func(("[SD%RU8] Scheduled (%RU8 IRQs pending)\n", pStreamShared->u8SD, pStreamShared->State.cTransferPendingInterrupts));
                 return true;
             }
 
-            if (pStream->State.tsTransferNext > tsNow)
+            if (pStreamShared->State.tsTransferNext > tsNow)
             {
-                Log3Func(("[SD%RU8] Scheduled in %RU64\n", pStream->u8SD, pStream->State.tsTransferNext - tsNow));
+                Log3Func(("[SD%RU8] Scheduled in %RU64\n", pStreamShared->u8SD, pStreamShared->State.tsTransferNext - tsNow));
                 return true;
             }
         }
@@ -756,34 +775,29 @@ bool hdaR3StreamTransferIsScheduled(PHDASTREAM pStream, uint64_t tsNow)
  * Will return 0 if no new transfer is scheduled.
  *
  * @returns The (virtual) clock timestamp of the next transfer.
- * @param   pStream             HDA stream to retrieve timestamp for.
+ * @param   pStreamShared       HDA stream to retrieve timestamp for (shared).
  */
-uint64_t hdaR3StreamTransferGetNext(PHDASTREAM pStream)
+uint64_t hdaR3StreamTransferGetNext(PHDASTREAM pStreamShared)
 {
-    return pStream->State.tsTransferNext;
+    return pStreamShared->State.tsTransferNext;
 }
 
 /**
  * Writes audio data from a mixer sink into an HDA stream's DMA buffer.
  *
  * @returns IPRT status code.
- * @param   pStream             HDA stream to write to.
+ * @param   pStreamR3           HDA stream to write to (ring-3).
  * @param   pvBuf               Data buffer to write.
  *                              If NULL, silence will be written.
  * @param   cbBuf               Number of bytes of data buffer to write.
  * @param   pcbWritten          Number of bytes written. Optional.
  */
-int hdaR3StreamWrite(PHDASTREAM pStream, const void *pvBuf, uint32_t cbBuf, uint32_t *pcbWritten)
+static int hdaR3StreamWrite(PHDASTREAMR3 pStreamR3, const void *pvBuf, uint32_t cbBuf, uint32_t *pcbWritten)
 {
-    AssertPtrReturn(pStream, VERR_INVALID_POINTER);
-    /* pvBuf is optional. */
-    AssertReturn(cbBuf,      VERR_INVALID_PARAMETER);
-    /* pcbWritten is optional. */
+    Assert(cbBuf);
 
-    PRTCIRCBUF pCircBuf = pStream->State.pCircBuf;
+    PRTCIRCBUF pCircBuf = pStreamR3->State.pCircBuf;
     AssertPtr(pCircBuf);
-
-    int rc = VINF_SUCCESS;
 
     uint32_t cbWrittenTotal = 0;
     uint32_t cbLeft         = RT_MIN(cbBuf, (uint32_t)RTCircBufFree(pCircBuf));
@@ -792,15 +806,12 @@ int hdaR3StreamWrite(PHDASTREAM pStream, const void *pvBuf, uint32_t cbBuf, uint
     {
         void *pvDst;
         size_t cbDst;
-
         RTCircBufAcquireWriteBlock(pCircBuf, cbLeft, &pvDst, &cbDst);
 
         if (cbDst)
         {
             if (pvBuf)
-            {
                 memcpy(pvDst, (uint8_t *)pvBuf + cbWrittenTotal, cbDst);
-            }
             else /* Send silence. */
             {
                 /** @todo Use a sample spec for "silence" based on the PCM parameters.
@@ -808,18 +819,16 @@ int hdaR3StreamWrite(PHDASTREAM pStream, const void *pvBuf, uint32_t cbBuf, uint
                 RT_BZERO(pvDst, cbDst);
             }
 
-            if (pStream->Dbg.Runtime.fEnabled)
-                DrvAudioHlpFileWrite(pStream->Dbg.Runtime.pFileStream, pvDst, cbDst, 0 /* fFlags */);
+            if (RT_LIKELY(!pStreamR3->Dbg.Runtime.fEnabled))
+            { /* likely */ }
+            else
+                DrvAudioHlpFileWrite(pStreamR3->Dbg.Runtime.pFileStream, pvDst, cbDst, 0 /* fFlags */);
         }
 
         RTCircBufReleaseWriteBlock(pCircBuf, cbDst);
 
-        if (RT_FAILURE(rc))
-            break;
-
         Assert(cbLeft  >= (uint32_t)cbDst);
         cbLeft         -= (uint32_t)cbDst;
-
         cbWrittenTotal += (uint32_t)cbDst;
     }
 
@@ -828,7 +837,7 @@ int hdaR3StreamWrite(PHDASTREAM pStream, const void *pvBuf, uint32_t cbBuf, uint
     if (pcbWritten)
         *pcbWritten = cbWrittenTotal;
 
-    return rc;
+    return VINF_SUCCESS;
 }
 
 
@@ -836,27 +845,20 @@ int hdaR3StreamWrite(PHDASTREAM pStream, const void *pvBuf, uint32_t cbBuf, uint
  * Reads audio data from an HDA stream's DMA buffer and writes into a specified mixer sink.
  *
  * @returns IPRT status code.
- * @param   pStream             HDA stream to read audio data from.
+ * @param   pStreamR3           HDA stream to read audio data from (ring-3).
  * @param   cbToRead            Number of bytes to read.
  * @param   pcbRead             Number of bytes read. Optional.
  */
-int hdaR3StreamRead(PHDASTREAM pStream, uint32_t cbToRead, uint32_t *pcbRead)
+static int hdaR3StreamRead(PHDASTREAMR3 pStreamR3, uint32_t cbToRead, uint32_t *pcbRead)
 {
-    AssertPtrReturn(pStream, VERR_INVALID_POINTER);
-    AssertReturn(cbToRead,   VERR_INVALID_PARAMETER);
-    /* pcbWritten is optional. */
+    Assert(cbToRead);
 
-    PHDAMIXERSINK pSink = pStream->pMixSink;
-    if (!pSink)
-    {
-        AssertMsgFailed(("[SD%RU8] Can't read from a stream with no sink attached\n", pStream->u8SD));
+    PHDAMIXERSINK pSink = pStreamR3->pMixSink;
+    AssertMsgReturnStmt(pSink, ("[SD%RU8] Can't read from a stream with no sink attached\n", pStreamR3->u8SD),
+                        if (pcbRead) *pcbRead = 0,
+                        VINF_SUCCESS);
 
-        if (pcbRead)
-            *pcbRead = 0;
-        return VINF_SUCCESS;
-    }
-
-    PRTCIRCBUF pCircBuf = pStream->State.pCircBuf;
+    PRTCIRCBUF pCircBuf = pStreamR3->State.pCircBuf;
     AssertPtr(pCircBuf);
 
     int rc = VINF_SUCCESS;
@@ -875,14 +877,14 @@ int hdaR3StreamRead(PHDASTREAM pStream, uint32_t cbToRead, uint32_t *pcbRead)
 
         if (cbSrc)
         {
-            if (pStream->Dbg.Runtime.fEnabled)
-                DrvAudioHlpFileWrite(pStream->Dbg.Runtime.pFileStream, pvSrc, cbSrc, 0 /* fFlags */);
+            if (pStreamR3->Dbg.Runtime.fEnabled)
+                DrvAudioHlpFileWrite(pStreamR3->Dbg.Runtime.pFileStream, pvSrc, cbSrc, 0 /* fFlags */);
 
             rc = AudioMixerSinkWrite(pSink->pMixSink, AUDMIXOP_COPY, pvSrc, (uint32_t)cbSrc, &cbWritten);
             AssertRC(rc);
 
             Assert(cbSrc >= cbWritten);
-            Log2Func(("[SD%RU8] %RU32/%zu bytes read\n", pStream->u8SD, cbWritten, cbSrc));
+            Log2Func(("[SD%RU8] %RU32/%zu bytes read\n", pStreamR3->u8SD, cbWritten, cbSrc));
         }
 
         RTCircBufReleaseReadBlock(pCircBuf, cbWritten);
@@ -914,84 +916,83 @@ int hdaR3StreamRead(PHDASTREAM pStream, uint32_t cbToRead, uint32_t *pcbRead)
  *
  * @returns IPRT status code.
  * @param   pDevIns             The device instance.
- * @param   pStream             HDA stream to update.
+ * @param   pThis               The shared HDA device state.
+ * @param   pThisCC             The ring-3 HDA device state.
+ * @param   pStreamShared       HDA stream to update (shared).
+ * @param   pStreamR3           HDA stream to update (ring-3).
  * @param   cbToProcessMax      How much data (in bytes) to process as maximum.
  * @param   fInTimer            Set if we're in the timer callout.
  */
-static int hdaR3StreamTransfer(PPDMDEVINS pDevIns, PHDASTREAM pStream, uint32_t cbToProcessMax, bool fInTimer)
+static int hdaR3StreamTransfer(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER3 pThisCC, PHDASTREAM pStreamShared,
+                               PHDASTREAMR3 pStreamR3, uint32_t cbToProcessMax, bool fInTimer)
 {
-    AssertPtrReturn(pStream, VERR_INVALID_POINTER);
+    uint8_t const uSD = pStreamShared->u8SD;
+    hdaR3StreamLock(pStreamR3);
 
-    hdaR3StreamLock(pStream);
-
-    PHDASTATE pThis = pStream->pHDAState;
-    AssertPtr(pThis);
-
-    PHDASTREAMPERIOD pPeriod = &pStream->State.Period;
+    PHDASTREAMPERIOD pPeriod = &pStreamShared->State.Period;
     hdaR3StreamPeriodLock(pPeriod);
 
     bool fProceed = true;
 
     /* Stream not running? */
-    if (!pStream->State.fRunning)
+    if (!pStreamShared->State.fRunning)
     {
-        Log3Func(("[SD%RU8] Not running\n", pStream->u8SD));
+        Log3Func(("[SD%RU8] Not running\n", uSD));
         fProceed = false;
     }
-    else if (HDA_STREAM_REG(pThis, STS, pStream->u8SD) & HDA_SDSTS_BCIS)
+    else if (HDA_STREAM_REG(pThis, STS, uSD) & HDA_SDSTS_BCIS)
     {
-        Log3Func(("[SD%RU8] BCIS bit set\n", pStream->u8SD));
+        Log3Func(("[SD%RU8] BCIS bit set\n", uSD));
         fProceed = false;
     }
 
     if (!fProceed)
     {
         hdaR3StreamPeriodUnlock(pPeriod);
-        hdaR3StreamUnlock(pStream);
+        hdaR3StreamUnlock(pStreamR3);
         return VINF_SUCCESS;
     }
 
-    const uint64_t tsNow = PDMDevHlpTimerGet(pDevIns, pStream->hTimer);
+    const uint64_t tsNow = PDMDevHlpTimerGet(pDevIns, pStreamShared->hTimer);
 
-    if (!pStream->State.tsTransferLast)
-        pStream->State.tsTransferLast = tsNow;
+    if (!pStreamShared->State.tsTransferLast)
+        pStreamShared->State.tsTransferLast = tsNow;
 
 #ifdef DEBUG
-    const int64_t iTimerDelta = tsNow - pStream->State.tsTransferLast;
+    const int64_t iTimerDelta = tsNow - pStreamShared->State.tsTransferLast;
     Log3Func(("[SD%RU8] Time now=%RU64, last=%RU64 -> %RI64 ticks delta\n",
-              pStream->u8SD, tsNow, pStream->State.tsTransferLast, iTimerDelta));
+              uSD, tsNow, pStreamShared->State.tsTransferLast, iTimerDelta));
 #endif
 
-    pStream->State.tsTransferLast = tsNow;
+    pStreamShared->State.tsTransferLast = tsNow;
 
     /* Sanity checks. */
-    Assert(pStream->u8SD < HDA_MAX_STREAMS);
-    Assert(pStream->u64BDLBase);
-    Assert(pStream->u32CBL);
-    Assert(pStream->u16FIFOS);
+    Assert(uSD < HDA_MAX_STREAMS);
+    Assert(pStreamShared->u64BDLBase);
+    Assert(pStreamShared->u32CBL);
+    Assert(pStreamShared->u16FIFOS);
 
     /* State sanity checks. */
-    Assert(ASMAtomicReadBool(&pStream->State.fInReset) == false);
+    Assert(ASMAtomicReadBool(&pStreamShared->State.fInReset) == false);
 
     int rc = VINF_SUCCESS;
 
     /* Fetch first / next BDL entry. */
-    PHDABDLE pBDLE = &pStream->State.BDLE;
+    PHDABDLE pBDLE = &pStreamShared->State.BDLE;
     if (hdaR3BDLEIsComplete(pBDLE))
     {
-        rc = hdaR3BDLEFetch(pThis, pBDLE, pStream->u64BDLBase, pStream->State.uCurBDLE);
+        rc = hdaR3BDLEFetch(pDevIns, pBDLE, pStreamShared->u64BDLBase, pStreamShared->State.uCurBDLE);
         AssertRC(rc);
     }
 
-    uint32_t cbToProcess = RT_MIN(pStream->State.cbTransferSize - pStream->State.cbTransferProcessed,
-                                  pStream->State.cbTransferChunk);
+    uint32_t cbToProcess = RT_MIN(pStreamShared->State.cbTransferSize - pStreamShared->State.cbTransferProcessed,
+                                  pStreamShared->State.cbTransferChunk);
 
-    Log3Func(("[SD%RU8] cbToProcess=%RU32, cbToProcessMax=%RU32\n", pStream->u8SD, cbToProcess, cbToProcessMax));
+    Log3Func(("[SD%RU8] cbToProcess=%RU32, cbToProcessMax=%RU32\n", uSD, cbToProcess, cbToProcessMax));
 
     if (cbToProcess > cbToProcessMax)
     {
-        LogFunc(("[SD%RU8] Limiting transfer (cbToProcess=%RU32, cbToProcessMax=%RU32)\n",
-                 pStream->u8SD, cbToProcess, cbToProcessMax));
+        LogFunc(("[SD%RU8] Limiting transfer (cbToProcess=%RU32, cbToProcessMax=%RU32)\n", uSD, cbToProcess, cbToProcessMax));
 
         /* Never process more than a stream currently can handle. */
         cbToProcess = cbToProcessMax;
@@ -1004,26 +1005,26 @@ static int hdaR3StreamTransfer(PPDMDEVINS pDevIns, PHDASTREAM pStream, uint32_t 
     while (cbLeft)
     {
         /* Limit the chunk to the stream's FIFO size and what's left to process. */
-        uint32_t cbChunk = RT_MIN(cbLeft, pStream->u16FIFOS);
+        uint32_t cbChunk = RT_MIN(cbLeft, pStreamShared->u16FIFOS);
 
         /* Limit the chunk to the remaining data of the current BDLE. */
         cbChunk = RT_MIN(cbChunk, pBDLE->Desc.u32BufSize - pBDLE->State.u32BufOff);
 
         /* If there are position adjustment frames left to be processed,
          * make sure that we process them first as a whole. */
-        if (pStream->State.cfPosAdjustLeft)
-            cbChunk = RT_MIN(cbChunk, uint32_t(pStream->State.cfPosAdjustLeft * pStream->State.Mapping.cbFrameSize));
+        if (pStreamShared->State.cfPosAdjustLeft)
+            cbChunk = RT_MIN(cbChunk, uint32_t(pStreamShared->State.cfPosAdjustLeft * pStreamR3->State.Mapping.cbFrameSize));
 
         Log3Func(("[SD%RU8] cbChunk=%RU32, cPosAdjustFramesLeft=%RU16\n",
-                  pStream->u8SD, cbChunk, pStream->State.cfPosAdjustLeft));
+                  uSD, cbChunk, pStreamShared->State.cfPosAdjustLeft));
 
         if (!cbChunk)
             break;
 
         uint32_t   cbDMA    = 0;
-        PRTCIRCBUF pCircBuf = pStream->State.pCircBuf;
+        PRTCIRCBUF pCircBuf = pStreamR3->State.pCircBuf;
 
-        if (hdaGetDirFromSD(pStream->u8SD) == PDMAUDIODIR_IN) /* Input (SDI). */
+        if (hdaGetDirFromSD(uSD) == PDMAUDIODIR_IN) /* Input (SDI). */
         {
             STAM_PROFILE_START(&pThis->StatIn, a);
 
@@ -1053,24 +1054,24 @@ static int hdaR3StreamTransfer(PPDMDEVINS pDevIns, PHDASTREAM pStream, uint32_t 
 
             if (cbDMAToWrite)
             {
-                LogRel2(("HDA: FIFO underflow for stream #%RU8 (%RU32 bytes outstanding)\n", pStream->u8SD, cbDMAToWrite));
+                LogRel2(("HDA: FIFO underflow for stream #%RU8 (%RU32 bytes outstanding)\n", uSD, cbDMAToWrite));
 
                 Assert(cbChunk == cbDMAWritten + cbDMAToWrite);
                 memset((uint8_t *)abChunk + cbDMAWritten, 0, cbDMAToWrite);
                 cbDMAWritten = cbChunk;
             }
 
-            rc = hdaR3DMAWrite(pThis, pStream, abChunk, cbDMAWritten, &cbDMA /* pcbWritten */);
+            rc = hdaR3DMAWrite(pDevIns, pThis, pStreamShared, pStreamR3, abChunk, cbDMAWritten, &cbDMA /* pcbWritten */);
             if (RT_FAILURE(rc))
-                LogRel(("HDA: Writing to stream #%RU8 DMA failed with %Rrc\n", pStream->u8SD, rc));
+                LogRel(("HDA: Writing to stream #%RU8 DMA failed with %Rrc\n", uSD, rc));
 
             STAM_PROFILE_STOP(&pThis->StatIn, a);
         }
-        else if (hdaGetDirFromSD(pStream->u8SD) == PDMAUDIODIR_OUT) /* Output (SDO). */
+        else if (hdaGetDirFromSD(uSD) == PDMAUDIODIR_OUT) /* Output (SDO). */
         {
             STAM_PROFILE_START(&pThis->StatOut, a);
 
-            rc = hdaR3DMARead(pThis, pStream, abChunk, cbChunk, &cbDMA /* pcbRead */);
+            rc = hdaR3DMARead(pDevIns, pThis, pStreamShared, pStreamR3, abChunk, cbChunk, &cbDMA /* pcbRead */);
             if (RT_SUCCESS(rc))
             {
                 const uint32_t cbFree = (uint32_t)RTCircBufFree(pCircBuf);
@@ -1082,7 +1083,7 @@ static int hdaR3StreamTransfer(PPDMDEVINS pDevIns, PHDASTREAM pStream, uint32_t 
                  *
                  * Only macOS guests need the frame extraction branch below at the moment AFAIK.
                  */
-                if (pStream->State.Mapping.cbFrameSize == HDA_FRAME_SIZE_DEFAULT)
+                if (pStreamR3->State.Mapping.cbFrameSize == HDA_FRAME_SIZE_DEFAULT)
                 {
                     uint32_t cbDMARead = 0;
                     uint32_t cbDMALeft = RT_MIN(cbDMA, cbFree);
@@ -1118,13 +1119,13 @@ static int hdaR3StreamTransfer(PPDMDEVINS pDevIns, PHDASTREAM pStream, uint32_t 
                      * I know, the following code is horribly slow, but seems to work for now.
                      */
                     /** @todo Optimize channel data extraction! Use some SSE(3) / intrinsics? */
-                    for (unsigned m = 0; m < pStream->State.Mapping.cMappings; m++)
+                    for (unsigned m = 0; m < pStreamR3->State.Mapping.cMappings; m++)
                     {
-                        const uint32_t cbFrame  = pStream->State.Mapping.cbFrameSize;
+                        const uint32_t cbFrame  = pStreamR3->State.Mapping.cbFrameSize;
 
                         Assert(cbFree >= cbDMA);
 
-                        PPDMAUDIOSTREAMMAP pMap = &pStream->State.Mapping.paMappings[m];
+                        PPDMAUDIOSTREAMMAP pMap = &pStreamR3->State.Mapping.paMappings[m];
                         AssertPtr(pMap);
 
                         Log3Func(("Mapping #%u: Start (cbDMA=%RU32, cbFrame=%RU32, offNext=%RU32)\n",
@@ -1149,8 +1150,8 @@ static int hdaR3StreamTransfer(PPDMDEVINS pDevIns, PHDASTREAM pStream, uint32_t 
                                 memcpy(pvDstBuf, pbSrcBuf + cbSrcOff, cbDstBuf);
 
 #if 0 /* Too slow, even for release builds, so disabled it. */
-                                if (pStream->Dbg.Runtime.fEnabled)
-                                    DrvAudioHlpFileWrite(pStream->Dbg.Runtime.pFileDMAMapped, pvDstBuf, cbDstBuf,
+                                if (pStreamR3->Dbg.Runtime.fEnabled)
+                                    DrvAudioHlpFileWrite(pStreamR3->Dbg.Runtime.pFileDMAMapped, pvDstBuf, cbDstBuf,
                                                          0 /* fFlags */);
 #endif
                                 Assert(cbSrcOff <= cbDMA);
@@ -1199,7 +1200,7 @@ static int hdaR3StreamTransfer(PPDMDEVINS pDevIns, PHDASTREAM pStream, uint32_t 
                 }
             }
             else
-                LogRel(("HDA: Reading from stream #%RU8 DMA failed with %Rrc\n", pStream->u8SD, rc));
+                LogRel(("HDA: Reading from stream #%RU8 DMA failed with %Rrc\n", uSD, rc));
 
             STAM_PROFILE_STOP(&pThis->StatOut, a);
         }
@@ -1216,7 +1217,7 @@ static int hdaR3StreamTransfer(PPDMDEVINS pDevIns, PHDASTREAM pStream, uint32_t 
 
             /* Are we done doing the position adjustment?
              * Only then do the transfer accounting .*/
-            if (pStream->State.cfPosAdjustLeft == 0)
+            if (pStreamShared->State.cfPosAdjustLeft == 0)
             {
                 Assert(cbLeft >= cbDMA);
                 cbLeft        -= cbDMA;
@@ -1229,16 +1230,16 @@ static int hdaR3StreamTransfer(PPDMDEVINS pDevIns, PHDASTREAM pStream, uint32_t 
              * Do this as accurate and close to the actual data transfer as possible.
              * All guetsts rely on this, depending on the mechanism they use (LPIB register or DMA counters).
              */
-            uint32_t cbStreamPos = hdaR3StreamGetPosition(pThis, pStream);
-            if (cbStreamPos == pStream->u32CBL)
+            uint32_t cbStreamPos = hdaR3StreamGetPosition(pThis, pStreamShared);
+            if (cbStreamPos == pStreamShared->u32CBL)
                 cbStreamPos = 0;
 
-            hdaR3StreamSetPosition(pStream, cbStreamPos + cbDMA);
+            hdaR3StreamSetPosition(pStreamShared, pDevIns, pThis, cbStreamPos + cbDMA);
         }
 
         if (hdaR3BDLEIsComplete(pBDLE))
         {
-            Log3Func(("[SD%RU8] Complete: %R[bdle]\n", pStream->u8SD, pBDLE));
+            Log3Func(("[SD%RU8] Complete: %R[bdle]\n", uSD, pBDLE));
 
                 /* Does the current BDLE require an interrupt to be sent? */
             if (   hdaR3BDLENeedsInterrupt(pBDLE)
@@ -1247,42 +1248,42 @@ static int hdaR3StreamTransfer(PPDMDEVINS pDevIns, PHDASTREAM pStream, uint32_t 
                  * position adjustment requires an interrupt on completion (IOC) being set.
                  *
                  * In such a case we need to skip such an interrupt and just move on. */
-                && pStream->State.cfPosAdjustLeft == 0)
+                && pStreamShared->State.cfPosAdjustLeft == 0)
             {
                 /* If the IOCE ("Interrupt On Completion Enable") bit of the SDCTL register is set
                  * we need to generate an interrupt.
                  */
-                if (HDA_STREAM_REG(pThis, CTL, pStream->u8SD) & HDA_SDCTL_IOCE)
+                if (HDA_STREAM_REG(pThis, CTL, uSD) & HDA_SDCTL_IOCE)
                 {
-                    pStream->State.cTransferPendingInterrupts++;
+                    pStreamShared->State.cTransferPendingInterrupts++;
 
-                    AssertMsg(pStream->State.cTransferPendingInterrupts <= 32,
+                    AssertMsg(pStreamShared->State.cTransferPendingInterrupts <= 32,
                               ("Too many pending interrupts (%RU8) for stream #%RU8\n",
-                               pStream->State.cTransferPendingInterrupts, pStream->u8SD));
+                               pStreamShared->State.cTransferPendingInterrupts, uSD));
                 }
             }
 
-            if (pStream->State.uCurBDLE == pStream->u16LVI)
+            if (pStreamShared->State.uCurBDLE == pStreamShared->u16LVI)
             {
-                pStream->State.uCurBDLE = 0;
+                pStreamShared->State.uCurBDLE = 0;
             }
             else
-                pStream->State.uCurBDLE++;
+                pStreamShared->State.uCurBDLE++;
 
             /* Fetch the next BDLE entry. */
-            hdaR3BDLEFetch(pThis, pBDLE, pStream->u64BDLBase, pStream->State.uCurBDLE);
+            hdaR3BDLEFetch(pDevIns, pBDLE, pStreamShared->u64BDLBase, pStreamShared->State.uCurBDLE);
         }
 
         /* Do the position adjustment accounting. */
-        pStream->State.cfPosAdjustLeft -=
-            RT_MIN(pStream->State.cfPosAdjustLeft, cbDMA / pStream->State.Mapping.cbFrameSize);
+        pStreamShared->State.cfPosAdjustLeft -=
+            RT_MIN(pStreamShared->State.cfPosAdjustLeft, cbDMA / pStreamR3->State.Mapping.cbFrameSize);
 
         if (RT_FAILURE(rc))
             break;
     }
 
     Log3Func(("[SD%RU8] cbToProcess=%RU32, cbProcessed=%RU32, cbLeft=%RU32, %R[bdle], rc=%Rrc\n",
-              pStream->u8SD, cbToProcess, cbProcessed, cbLeft, pBDLE, rc));
+              uSD, cbToProcess, cbProcessed, cbLeft, pBDLE, rc));
 
     /* Sanity. */
     Assert(cbProcessed == cbToProcess);
@@ -1290,19 +1291,19 @@ static int hdaR3StreamTransfer(PPDMDEVINS pDevIns, PHDASTREAM pStream, uint32_t 
 
     /* Only do the data accounting if we don't have to do any position
      * adjustment anymore. */
-    if (pStream->State.cfPosAdjustLeft == 0)
+    if (pStreamShared->State.cfPosAdjustLeft == 0)
     {
-        hdaR3StreamPeriodInc(pPeriod, RT_MIN(cbProcessed / pStream->State.Mapping.cbFrameSize,
+        hdaR3StreamPeriodInc(pPeriod, RT_MIN(cbProcessed / pStreamR3->State.Mapping.cbFrameSize,
                                              hdaR3StreamPeriodGetRemainingFrames(pPeriod)));
 
-        pStream->State.cbTransferProcessed += cbProcessed;
+        pStreamShared->State.cbTransferProcessed += cbProcessed;
     }
 
     /* Make sure that we never report more stuff processed than initially announced. */
-    if (pStream->State.cbTransferProcessed > pStream->State.cbTransferSize)
-        pStream->State.cbTransferProcessed = pStream->State.cbTransferSize;
+    if (pStreamShared->State.cbTransferProcessed > pStreamShared->State.cbTransferSize)
+        pStreamShared->State.cbTransferProcessed = pStreamShared->State.cbTransferSize;
 
-    uint32_t cbTransferLeft     = pStream->State.cbTransferSize - pStream->State.cbTransferProcessed;
+    uint32_t cbTransferLeft     = pStreamShared->State.cbTransferSize - pStreamShared->State.cbTransferProcessed;
     bool     fTransferComplete  = !cbTransferLeft;
     uint64_t tsTransferNext     = 0;
 
@@ -1320,19 +1321,19 @@ static int hdaR3StreamTransfer(PPDMDEVINS pDevIns, PHDASTREAM pStream, uint32_t 
          *         fashion) this *will* upset guest device drivers and will completely fuck up the
          *         sound output. Running VLC on the guest will tell!
          */
-        const bool fWalClkSet = hdaR3WalClkSet(pThis,
+        const bool fWalClkSet = hdaR3WalClkSet(pThis, pThisCC,
                                                  hdaWalClkGetCurrent(pThis)
                                                + hdaR3StreamPeriodFramesToWalClk(pPeriod,
-                                                                                   pStream->State.cbTransferProcessed
-                                                                                 / pStream->State.Mapping.cbFrameSize),
+                                                                                   pStreamShared->State.cbTransferProcessed
+                                                                                 / pStreamR3->State.Mapping.cbFrameSize),
                                                false /* fForce */);
         RT_NOREF(fWalClkSet);
     }
 
     /* Does the period have any interrupts outstanding? */
-    if (pStream->State.cTransferPendingInterrupts)
+    if (pStreamShared->State.cTransferPendingInterrupts)
     {
-        Log3Func(("[SD%RU8] Scheduling interrupt\n", pStream->u8SD));
+        Log3Func(("[SD%RU8] Scheduling interrupt\n", uSD));
 
         /*
          * Set the stream's BCIS bit.
@@ -1345,11 +1346,11 @@ static int hdaR3StreamTransfer(PPDMDEVINS pDevIns, PHDASTREAM pStream, uint32_t 
          *
          * snd_hda_intel on Linux will tell.
          */
-        HDA_STREAM_REG(pThis, STS, pStream->u8SD) |= HDA_SDSTS_BCIS;
+        HDA_STREAM_REG(pThis, STS, uSD) |= HDA_SDSTS_BCIS;
 
         /* Trigger an interrupt first and let hdaRegWriteSDSTS() deal with
          * ending / beginning a period. */
-        HDA_PROCESS_INTERRUPT(pThis->pDevInsR3, pThis);
+        HDA_PROCESS_INTERRUPT(pDevIns, pThis);
     }
     else /* Transfer still in-flight -- schedule the next timing slot. */
     {
@@ -1358,12 +1359,12 @@ static int hdaR3StreamTransfer(PPDMDEVINS pDevIns, PHDASTREAM pStream, uint32_t 
         /* No data left to transfer anymore or do we have more data left
          * than we can transfer per timing slot? Clamp. */
         if (   !cbTransferNext
-            || cbTransferNext > pStream->State.cbTransferChunk)
+            || cbTransferNext > pStreamShared->State.cbTransferChunk)
         {
-            cbTransferNext = pStream->State.cbTransferChunk;
+            cbTransferNext = pStreamShared->State.cbTransferChunk;
         }
 
-        tsTransferNext = tsNow + (cbTransferNext * pStream->State.cTicksPerByte);
+        tsTransferNext = tsNow + (cbTransferNext * pStreamShared->State.cTicksPerByte);
 
         /*
          * If the current transfer is complete, reset our counter.
@@ -1373,32 +1374,33 @@ static int hdaR3StreamTransfer(PPDMDEVINS pDevIns, PHDASTREAM pStream, uint32_t 
          * transfer is complete before we reach such a BDL entry.
          */
         if (fTransferComplete)
-            pStream->State.cbTransferProcessed = 0;
+            pStreamShared->State.cbTransferProcessed = 0;
     }
 
     /* If we need to do another transfer, (re-)arm the device timer.  */
     if (tsTransferNext) /* Can be 0 if no next transfer is needed. */
     {
-        Log3Func(("[SD%RU8] Scheduling timer\n", pStream->u8SD));
+        Log3Func(("[SD%RU8] Scheduling timer\n", uSD));
 
-        LogFunc(("Timer set SD%RU8\n", pStream->u8SD));
-        Assert(!fInTimer || tsNow == PDMDevHlpTimerGet(pDevIns, pStream->hTimer));
-        hdaR3TimerSet(pDevIns, pStream, tsTransferNext, true /* fForce - skip tsTransferNext check */, fInTimer ? tsNow : 0);
+        LogFunc(("Timer set SD%RU8\n", uSD));
+        Assert(!fInTimer || tsNow == PDMDevHlpTimerGet(pDevIns, pStreamShared->hTimer));
+        hdaR3TimerSet(pDevIns, pStreamShared, tsTransferNext,
+                      true /* fForce - skip tsTransferNext check */, fInTimer ? tsNow : 0);
 
-        pStream->State.tsTransferNext = tsTransferNext;
+        pStreamShared->State.tsTransferNext = tsTransferNext;
     }
 
-    pStream->State.tsTransferLast = tsNow;
+    pStreamShared->State.tsTransferLast = tsNow;
 
     Log3Func(("[SD%RU8] cbTransferLeft=%RU32 -- %RU32/%RU32\n",
-              pStream->u8SD, cbTransferLeft, pStream->State.cbTransferProcessed, pStream->State.cbTransferSize));
+              uSD, cbTransferLeft, pStreamShared->State.cbTransferProcessed, pStreamShared->State.cbTransferSize));
     Log3Func(("[SD%RU8] fTransferComplete=%RTbool, cTransferPendingInterrupts=%RU8\n",
-              pStream->u8SD, fTransferComplete, pStream->State.cTransferPendingInterrupts));
+              uSD, fTransferComplete, pStreamShared->State.cTransferPendingInterrupts));
     Log3Func(("[SD%RU8] tsNow=%RU64, tsTransferNext=%RU64 (in %RU64 ticks)\n",
-              pStream->u8SD, tsNow, tsTransferNext, tsTransferNext - tsNow));
+              uSD, tsNow, tsTransferNext, tsTransferNext - tsNow));
 
     hdaR3StreamPeriodUnlock(pPeriod);
-    hdaR3StreamUnlock(pStream);
+    hdaR3StreamUnlock(pStreamR3);
 
     return VINF_SUCCESS;
 }
@@ -1420,29 +1422,30 @@ static int hdaR3StreamTransfer(PPDMDEVINS pDevIns, PHDASTREAM pStream, uint32_t 
  * own async I/O thread. This thread also will call this function
  * (with fInTimer set to @c false).
  *
- * @param   pDevIns     The device instance.
- * @param   pStream     HDA stream to update.
- * @param   fInTimer    Whether to this function was called from the timer
- *                      context or an asynchronous I/O stream thread (if supported).
+ * @param   pDevIns         The device instance.
+ * @param   pThis           The shared HDA device state.
+ * @param   pThisCC         The ring-3 HDA device state.
+ * @param   pStreamShared   HDA stream to update (shared bits).
+ * @param   pStreamR3       HDA stream to update (ring-3 bits).
+ * @param   fInTimer        Whether to this function was called from the timer
+ *                          context or an asynchronous I/O stream thread (if supported).
  */
-void hdaR3StreamUpdate(PPDMDEVINS pDevIns, PHDASTREAM pStream, bool fInTimer)
+void hdaR3StreamUpdate(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER3 pThisCC,
+                       PHDASTREAM pStreamShared, PHDASTREAMR3 pStreamR3, bool fInTimer)
 {
-    if (!pStream)
+    if (!pStreamShared)
         return;
 
     PAUDMIXSINK pSink = NULL;
-    if (   pStream->pMixSink
-        && pStream->pMixSink->pMixSink)
-    {
-        pSink = pStream->pMixSink->pMixSink;
-    }
+    if (pStreamR3->pMixSink)
+        pSink = pStreamR3->pMixSink->pMixSink;
 
     if (!AudioMixerSinkIsActive(pSink)) /* No sink available? Bail out. */
         return;
 
     int rc2;
 
-    if (hdaGetDirFromSD(pStream->u8SD) == PDMAUDIODIR_OUT) /* Output (SDO). */
+    if (hdaGetDirFromSD(pStreamShared->u8SD) == PDMAUDIODIR_OUT) /* Output (SDO). */
     {
         bool fDoRead = false; /* Whether to read from the HDA stream or not. */
 
@@ -1450,29 +1453,29 @@ void hdaR3StreamUpdate(PPDMDEVINS pDevIns, PHDASTREAM pStream, bool fInTimer)
         if (fInTimer)
 # endif
         {
-            const uint32_t cbStreamFree = hdaR3StreamGetFree(pStream);
+            const uint32_t cbStreamFree = hdaR3StreamGetFree(pStreamR3);
             if (cbStreamFree)
             {
                 /* Do the DMA transfer. */
-                rc2 = hdaR3StreamTransfer(pDevIns, pStream, cbStreamFree, fInTimer);
+                rc2 = hdaR3StreamTransfer(pDevIns, pThis, pThisCC, pStreamShared, pStreamR3, cbStreamFree, fInTimer);
                 AssertRC(rc2);
             }
 
             /* Only read from the HDA stream at the given scheduling rate. */
             const uint64_t tsNowNs = RTTimeNanoTS();
-            if (tsNowNs - pStream->State.tsLastUpdateNs >= pStream->State.Cfg.Device.cMsSchedulingHint * RT_NS_1MS)
+            if (tsNowNs - pStreamShared->State.tsLastUpdateNs >= pStreamShared->State.Cfg.Device.cMsSchedulingHint * RT_NS_1MS)
             {
                 fDoRead = true;
-                pStream->State.tsLastUpdateNs = tsNowNs;
+                pStreamShared->State.tsLastUpdateNs = tsNowNs;
             }
         }
 
-        Log3Func(("[SD%RU8] fInTimer=%RTbool, fDoRead=%RTbool\n", pStream->u8SD, fInTimer, fDoRead));
+        Log3Func(("[SD%RU8] fInTimer=%RTbool, fDoRead=%RTbool\n", pStreamShared->u8SD, fInTimer, fDoRead));
 
 # ifdef VBOX_WITH_AUDIO_HDA_ASYNC_IO
         if (fDoRead)
         {
-            rc2 = hdaR3StreamAsyncIONotify(pStream);
+            rc2 = hdaR3StreamAsyncIONotify(pStreamR3);
             AssertRC(rc2);
         }
 # endif
@@ -1485,15 +1488,15 @@ void hdaR3StreamUpdate(PPDMDEVINS pDevIns, PHDASTREAM pStream, bool fInTimer)
         {
 # endif
             const uint32_t cbSinkWritable     = AudioMixerSinkGetWritable(pSink);
-            const uint32_t cbStreamReadable   = hdaR3StreamGetUsed(pStream);
+            const uint32_t cbStreamReadable   = hdaR3StreamGetUsed(pStreamR3);
             const uint32_t cbToReadFromStream = RT_MIN(cbStreamReadable, cbSinkWritable);
 
-            Log3Func(("[SD%RU8] cbSinkWritable=%RU32, cbStreamReadable=%RU32\n", pStream->u8SD, cbSinkWritable, cbStreamReadable));
+            Log3Func(("[SD%RU8] cbSinkWritable=%RU32, cbStreamReadable=%RU32\n", pStreamShared->u8SD, cbSinkWritable, cbStreamReadable));
 
             if (cbToReadFromStream)
             {
                 /* Read (guest output) data and write it to the stream's sink. */
-                rc2 = hdaR3StreamRead(pStream, cbToReadFromStream, NULL /* pcbRead */);
+                rc2 = hdaR3StreamRead(pStreamR3, cbToReadFromStream, NULL /* pcbRead */);
                 AssertRC(rc2);
             }
 
@@ -1516,9 +1519,9 @@ void hdaR3StreamUpdate(PPDMDEVINS pDevIns, PHDASTREAM pStream, bool fInTimer)
             uint32_t cbSinkReadable = AudioMixerSinkGetReadable(pSink);
 
             /* How much (guest input) data is available for writing at the moment for the HDA stream? */
-            const uint32_t cbStreamFree = hdaR3StreamGetFree(pStream);
+            const uint32_t cbStreamFree = hdaR3StreamGetFree(pStreamR3);
 
-            Log3Func(("[SD%RU8] cbSinkReadable=%RU32, cbStreamFree=%RU32\n", pStream->u8SD, cbSinkReadable, cbStreamFree));
+            Log3Func(("[SD%RU8] cbSinkReadable=%RU32, cbStreamFree=%RU32\n", pStreamShared->u8SD, cbSinkReadable, cbStreamFree));
 
             /* Do not read more than the HDA stream can hold at the moment.
              * The host sets the overall pace. */
@@ -1543,14 +1546,9 @@ void hdaR3StreamUpdate(PPDMDEVINS pDevIns, PHDASTREAM pStream, bool fInTimer)
 
                     /* Write (guest input) data to the stream which was read from stream's sink before. */
                     uint32_t cbWritten;
-                    rc2 = hdaR3StreamWrite(pStream, abFIFO, cbRead, &cbWritten);
+                    rc2 = hdaR3StreamWrite(pStreamR3, abFIFO, cbRead, &cbWritten);
                     AssertRCBreak(rc2);
-
-                    if (!cbWritten)
-                    {
-                        AssertFailed(); /* Should never happen, as we know how much we can write. */
-                        break;
-                    }
+                    AssertBreak(cbWritten > 0); /* Should never happen, as we know how much we can write. */
 
                     Assert(cbSinkReadable >= cbRead);
                     cbSinkReadable -= cbRead;
@@ -1564,18 +1562,18 @@ void hdaR3StreamUpdate(PPDMDEVINS pDevIns, PHDASTREAM pStream, bool fInTimer)
 
 # ifdef VBOX_WITH_AUDIO_HDA_ASYNC_IO
             const uint64_t tsNowNs = RTTimeNanoTS();
-            if (tsNowNs - pStream->State.tsLastUpdateNs >= pStream->State.Cfg.Device.cMsSchedulingHint * RT_NS_1MS)
+            if (tsNowNs - pStreamShared->State.tsLastUpdateNs >= pStreamShared->State.Cfg.Device.cMsSchedulingHint * RT_NS_1MS)
             {
-                rc2 = hdaR3StreamAsyncIONotify(pStream);
+                rc2 = hdaR3StreamAsyncIONotify(pStreamR3);
                 AssertRC(rc2);
 
-                pStream->State.tsLastUpdateNs = tsNowNs;
+                pStreamShared->State.tsLastUpdateNs = tsNowNs;
             }
 # endif
-            const uint32_t cbStreamUsed = hdaR3StreamGetUsed(pStream);
+            const uint32_t cbStreamUsed = hdaR3StreamGetUsed(pStreamR3);
             if (cbStreamUsed)
             {
-                rc2 = hdaR3StreamTransfer(pDevIns, pStream, cbStreamUsed, fInTimer);
+                rc2 = hdaR3StreamTransfer(pDevIns, pThis, pThisCC, pStreamShared, pStreamR3, cbStreamUsed, fInTimer);
                 AssertRC(rc2);
             }
 # ifdef VBOX_WITH_AUDIO_HDA_ASYNC_IO
@@ -1588,13 +1586,13 @@ void hdaR3StreamUpdate(PPDMDEVINS pDevIns, PHDASTREAM pStream, bool fInTimer)
  * Locks an HDA stream for serialized access.
  *
  * @returns IPRT status code.
- * @param   pStream             HDA stream to lock.
+ * @param   pStreamR3           HDA stream to lock (ring-3 bits).
  */
-void hdaR3StreamLock(PHDASTREAM pStream)
+void hdaR3StreamLock(PHDASTREAMR3 pStreamR3)
 {
-    AssertPtrReturnVoid(pStream);
+    AssertPtrReturnVoid(pStreamR3);
 # ifdef VBOX_WITH_AUDIO_HDA_ASYNC_IO
-    int rc2 = RTCritSectEnter(&pStream->CritSect);
+    int rc2 = RTCritSectEnter(&pStreamR3->CritSect);
     AssertRC(rc2);
 # else
     Assert(PDMDevHlpCritSectIsOwner(pStream->pHDAState->pDevInsR3, pStream->pHDAState->CritSect));
@@ -1605,53 +1603,52 @@ void hdaR3StreamLock(PHDASTREAM pStream)
  * Unlocks a formerly locked HDA stream.
  *
  * @returns IPRT status code.
- * @param   pStream             HDA stream to unlock.
+ * @param   pStreamR3           HDA stream to unlock (ring-3 bits).
  */
-void hdaR3StreamUnlock(PHDASTREAM pStream)
+void hdaR3StreamUnlock(PHDASTREAMR3 pStreamR3)
 {
-    AssertPtrReturnVoid(pStream);
+    AssertPtrReturnVoid(pStreamR3);
 # ifdef VBOX_WITH_AUDIO_HDA_ASYNC_IO
-    int rc2 = RTCritSectLeave(&pStream->CritSect);
+    int rc2 = RTCritSectLeave(&pStreamR3->CritSect);
     AssertRC(rc2);
 # endif
 }
 
+#if 0 /* unused - no prototype even */
 /**
  * Updates an HDA stream's current read or write buffer position (depending on the stream type) by
  * updating its associated LPIB register and DMA position buffer (if enabled).
  *
  * @returns Set LPIB value.
+ * @param   pDevIns             The device instance.
  * @param   pStream             HDA stream to update read / write position for.
  * @param   u32LPIB             New LPIB (position) value to set.
  */
-uint32_t hdaR3StreamUpdateLPIB(PHDASTREAM pStream, uint32_t u32LPIB)
+uint32_t hdaR3StreamUpdateLPIB(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTREAM pStreamShared, uint32_t u32LPIB)
 {
-    AssertPtrReturn(pStream, 0);
+    AssertMsg(u32LPIB <= pStreamShared->u32CBL,
+              ("[SD%RU8] New LPIB (%RU32) exceeds CBL (%RU32)\n", pStreamShared->u8SD, u32LPIB, pStreamShared->u32CBL));
 
-    AssertMsg(u32LPIB <= pStream->u32CBL,
-              ("[SD%RU8] New LPIB (%RU32) exceeds CBL (%RU32)\n", pStream->u8SD, u32LPIB, pStream->u32CBL));
-
-    const PHDASTATE pThis = pStream->pHDAState;
-
-    u32LPIB = RT_MIN(u32LPIB, pStream->u32CBL);
+    u32LPIB = RT_MIN(u32LPIB, pStreamShared->u32CBL);
 
     LogFlowFunc(("[SD%RU8] LPIB=%RU32 (DMA Position Buffer Enabled: %RTbool)\n",
-                 pStream->u8SD, u32LPIB, pThis->fDMAPosition));
+                 pStreamShared->u8SD, u32LPIB, pThis->fDMAPosition));
 
     /* Update LPIB in any case. */
-    HDA_STREAM_REG(pThis, LPIB, pStream->u8SD) = u32LPIB;
+    HDA_STREAM_REG(pThis, LPIB, pStreamShared->u8SD) = u32LPIB;
 
     /* Do we need to tell the current DMA position? */
     if (pThis->fDMAPosition)
     {
-        int rc2 = PDMDevHlpPCIPhysWrite(pThis->CTX_SUFF(pDevIns),
-                                        pThis->u64DPBase + (pStream->u8SD * 2 * sizeof(uint32_t)),
+        int rc2 = PDMDevHlpPCIPhysWrite(pDevIns,
+                                        pThis->u64DPBase + (pStreamShared->u8SD * 2 * sizeof(uint32_t)),
                                         (void *)&u32LPIB, sizeof(uint32_t));
         AssertRC(rc2);
     }
 
     return u32LPIB;
 }
+#endif
 
 # ifdef HDA_USE_DMA_ACCESS_HANDLER
 /**
@@ -1663,8 +1660,8 @@ uint32_t hdaR3StreamUpdateLPIB(PHDASTREAM pStream, uint32_t u32LPIB)
 bool hdaR3StreamRegisterDMAHandlers(PHDASTREAM pStream)
 {
     /* At least LVI and the BDL base must be set. */
-    if (   !pStream->u16LVI
-        || !pStream->u64BDLBase)
+    if (   !pStreamShared->u16LVI
+        || !pStreamShared->u64BDLBase)
     {
         return false;
     }
@@ -1687,10 +1684,10 @@ bool hdaR3StreamRegisterDMAHandlers(PHDASTREAM pStream)
 
     size_t cRanges = 0;
 
-    for (uint16_t i = 0; i < pStream->u16LVI + 1; i++)
+    for (uint16_t i = 0; i < pStreamShared->u16LVI + 1; i++)
     {
         HDABDLE BDLE;
-        rc = hdaR3BDLEFetch(pThis, &BDLE, pStream->u64BDLBase, i /* Index */);
+        rc = hdaR3BDLEFetch(pDevIns, &BDLE, pStreamShared->u64BDLBase, i /* Index */);
         if (RT_FAILURE(rc))
             break;
 
@@ -1826,33 +1823,32 @@ void hdaR3StreamUnregisterDMAHandlers(PHDASTREAM pStream)
 
 # ifdef VBOX_WITH_AUDIO_HDA_ASYNC_IO
 /**
+ * @callback_method_impl{FNRTTHREAD,
  * Asynchronous I/O thread for a HDA stream.
- * This will do the heavy lifting work for us as soon as it's getting notified by another thread.
  *
- * @returns IPRT status code.
- * @param   hThreadSelf         Thread handle.
- * @param   pvUser              User argument. Must be of type PHDASTREAMTHREADCTX.
+ * This will do the heavy lifting work for us as soon as it's getting notified
+ * by another thread.}
  */
-DECLCALLBACK(int) hdaR3StreamAsyncIOThread(RTTHREAD hThreadSelf, void *pvUser)
+static DECLCALLBACK(int) hdaR3StreamAsyncIOThread(RTTHREAD hThreadSelf, void *pvUser)
 {
-    PHDASTREAMTHREADCTX pCtx = (PHDASTREAMTHREADCTX)pvUser;
-    AssertPtr(pCtx);
-    PHDASTREAM pStream = pCtx->pStream;
+    PHDASTREAMR3 const       pStreamR3     = (PHDASTREAMR3)pvUser;
+    PHDASTREAMSTATEAIO const pAIO          = &pStreamR3->State.AIO;
+    PHDASTATE const          pThis         = pStreamR3->pHDAStateShared;
+    PHDASTATER3 const        pThisCC       = pStreamR3->pHDAStateR3;
+    PPDMDEVINS const         pDevIns       = pThisCC->pDevIns;
+    PHDASTREAM const         pStreamShared = &pThis->aStreams[pStreamR3 - &pThisCC->aStreams[0]];
+    Assert(pStreamR3 - &pThisCC->aStreams[0] == pStreamR3->u8SD);
+    Assert(pStreamShared->u8SD == pStreamR3->u8SD);
 
-    AssertPtr(pStream);
-    PHDASTREAMSTATEAIO pAIO = &pStream->State.AIO;
-
-    PPDMDEVINS pDevIns = pCtx->pThis->pDevInsR3;
-
+    /* Signal parent thread that we've started  */
     ASMAtomicXchgBool(&pAIO->fStarted, true);
-
     RTThreadUserSignal(hThreadSelf);
 
-    LogFunc(("[SD%RU8] Started\n", pStream->u8SD));
+    LogFunc(("[SD%RU8] Started\n", pStreamShared->u8SD));
 
     for (;;)
     {
-        int rc2 = RTSemEventWait(pAIO->Event, RT_INDEFINITE_WAIT);
+        int rc2 = RTSemEventWait(pAIO->hEvent, RT_INDEFINITE_WAIT);
         if (RT_FAILURE(rc2))
             break;
 
@@ -1860,6 +1856,7 @@ DECLCALLBACK(int) hdaR3StreamAsyncIOThread(RTTHREAD hThreadSelf, void *pvUser)
             break;
 
         rc2 = RTCritSectEnter(&pAIO->CritSect);
+        AssertRC(rc2);
         if (RT_SUCCESS(rc2))
         {
             if (!pAIO->fEnabled)
@@ -1868,17 +1865,14 @@ DECLCALLBACK(int) hdaR3StreamAsyncIOThread(RTTHREAD hThreadSelf, void *pvUser)
                 continue;
             }
 
-            hdaR3StreamUpdate(pDevIns, pStream, false /* fInTimer */);
+            hdaR3StreamUpdate(pDevIns, pThis, pThisCC, pStreamShared, pStreamR3, false /* fInTimer */);
 
             int rc3 = RTCritSectLeave(&pAIO->CritSect);
             AssertRC(rc3);
         }
-
-        AssertRC(rc2);
     }
 
-    LogFunc(("[SD%RU8] Ended\n", pStream->u8SD));
-
+    LogFunc(("[SD%RU8] Ended\n", pStreamShared->u8SD));
     ASMAtomicXchgBool(&pAIO->fStarted, false);
 
     return VINF_SUCCESS;
@@ -1888,11 +1882,11 @@ DECLCALLBACK(int) hdaR3StreamAsyncIOThread(RTTHREAD hThreadSelf, void *pvUser)
  * Creates the async I/O thread for a specific HDA audio stream.
  *
  * @returns IPRT status code.
- * @param   pStream             HDA audio stream to create the async I/O thread for.
+ * @param   pStreamR3           HDA audio stream to create the async I/O thread for.
  */
-int hdaR3StreamAsyncIOCreate(PHDASTREAM pStream)
+int hdaR3StreamAsyncIOCreate(PHDASTREAMR3 pStreamR3)
 {
-    PHDASTREAMSTATEAIO pAIO = &pStream->State.AIO;
+    PHDASTREAMSTATEAIO pAIO = &pStreamR3->State.AIO;
 
     int rc;
 
@@ -1901,28 +1895,23 @@ int hdaR3StreamAsyncIOCreate(PHDASTREAM pStream)
         pAIO->fShutdown = false;
         pAIO->fEnabled  = true; /* Enabled by default. */
 
-        rc = RTSemEventCreate(&pAIO->Event);
+        rc = RTSemEventCreate(&pAIO->hEvent);
         if (RT_SUCCESS(rc))
         {
             rc = RTCritSectInit(&pAIO->CritSect);
             if (RT_SUCCESS(rc))
             {
-                HDASTREAMTHREADCTX Ctx = { pStream->pHDAState, pStream };
-
-                char szThreadName[64];
-                RTStrPrintf2(szThreadName, sizeof(szThreadName), "hdaAIO%RU8", pStream->u8SD);
-
-                rc = RTThreadCreate(&pAIO->Thread, hdaR3StreamAsyncIOThread, &Ctx,
-                                    0, RTTHREADTYPE_IO, RTTHREADFLAGS_WAITABLE, szThreadName);
+                rc = RTThreadCreateF(&pAIO->hThread, hdaR3StreamAsyncIOThread, pStreamR3, 0 /*cbStack*/,
+                                     RTTHREADTYPE_IO, RTTHREADFLAGS_WAITABLE, "hdaAIO%RU8", pStreamR3->u8SD);
                 if (RT_SUCCESS(rc))
-                    rc = RTThreadUserWait(pAIO->Thread, 10 * 1000 /* 10s timeout */);
+                    rc = RTThreadUserWait(pAIO->hThread, 10 * 1000 /* 10s timeout */);
             }
         }
     }
     else
         rc = VINF_SUCCESS;
 
-    LogFunc(("[SD%RU8] Returning %Rrc\n", pStream->u8SD, rc));
+    LogFunc(("[SD%RU8] Returning %Rrc\n", pStreamR3->u8SD, rc));
     return rc;
 }
 
@@ -1930,38 +1919,41 @@ int hdaR3StreamAsyncIOCreate(PHDASTREAM pStream)
  * Destroys the async I/O thread of a specific HDA audio stream.
  *
  * @returns IPRT status code.
- * @param   pStream             HDA audio stream to destroy the async I/O thread for.
+ * @param   pStreamR3           HDA audio stream to destroy the async I/O thread for.
  */
-int hdaR3StreamAsyncIODestroy(PHDASTREAM pStream)
+static int hdaR3StreamAsyncIODestroy(PHDASTREAMR3 pStreamR3)
 {
-    PHDASTREAMSTATEAIO pAIO = &pStream->State.AIO;
+    PHDASTREAMSTATEAIO pAIO = &pStreamR3->State.AIO;
 
     if (!ASMAtomicReadBool(&pAIO->fStarted))
         return VINF_SUCCESS;
 
     ASMAtomicWriteBool(&pAIO->fShutdown, true);
 
-    int rc = hdaR3StreamAsyncIONotify(pStream);
+    int rc = hdaR3StreamAsyncIONotify(pStreamR3);
     AssertRC(rc);
 
     int rcThread;
-    rc = RTThreadWait(pAIO->Thread, 30 * 1000 /* 30s timeout */, &rcThread);
+    rc = RTThreadWait(pAIO->hThread, 30 * 1000 /* 30s timeout */, &rcThread);
     LogFunc(("Async I/O thread ended with %Rrc (%Rrc)\n", rc, rcThread));
 
     if (RT_SUCCESS(rc))
     {
+        pAIO->hThread = NIL_RTTHREAD;
+
         rc = RTCritSectDelete(&pAIO->CritSect);
         AssertRC(rc);
 
-        rc = RTSemEventDestroy(pAIO->Event);
+        rc = RTSemEventDestroy(pAIO->hEvent);
         AssertRC(rc);
+        pAIO->hEvent = NIL_RTSEMEVENT;
 
         pAIO->fStarted  = false;
         pAIO->fShutdown = false;
         pAIO->fEnabled  = false;
     }
 
-    LogFunc(("[SD%RU8] Returning %Rrc\n", pStream->u8SD, rc));
+    LogFunc(("[SD%RU8] Returning %Rrc\n", pStreamR3->u8SD, rc));
     return rc;
 }
 
@@ -1969,21 +1961,21 @@ int hdaR3StreamAsyncIODestroy(PHDASTREAM pStream)
  * Lets the stream's async I/O thread know that there is some data to process.
  *
  * @returns IPRT status code.
- * @param   pStream             HDA stream to notify async I/O thread for.
+ * @param   pStreamR3           HDA stream to notify async I/O thread for.
  */
-int hdaR3StreamAsyncIONotify(PHDASTREAM pStream)
+static int hdaR3StreamAsyncIONotify(PHDASTREAMR3 pStreamR3)
 {
-    return RTSemEventSignal(pStream->State.AIO.Event);
+    return RTSemEventSignal(pStreamR3->State.AIO.hEvent);
 }
 
 /**
  * Locks the async I/O thread of a specific HDA audio stream.
  *
- * @param   pStream             HDA stream to lock async I/O thread for.
+ * @param   pStreamR3           HDA stream to lock async I/O thread for.
  */
-void hdaR3StreamAsyncIOLock(PHDASTREAM pStream)
+void hdaR3StreamAsyncIOLock(PHDASTREAMR3 pStreamR3)
 {
-    PHDASTREAMSTATEAIO pAIO = &pStream->State.AIO;
+    PHDASTREAMSTATEAIO pAIO = &pStreamR3->State.AIO;
 
     if (!ASMAtomicReadBool(&pAIO->fStarted))
         return;
@@ -1995,11 +1987,11 @@ void hdaR3StreamAsyncIOLock(PHDASTREAM pStream)
 /**
  * Unlocks the async I/O thread of a specific HDA audio stream.
  *
- * @param   pStream             HDA stream to unlock async I/O thread for.
+ * @param   pStreamR3           HDA stream to unlock async I/O thread for.
  */
-void hdaR3StreamAsyncIOUnlock(PHDASTREAM pStream)
+void hdaR3StreamAsyncIOUnlock(PHDASTREAMR3 pStreamR3)
 {
-    PHDASTREAMSTATEAIO pAIO = &pStream->State.AIO;
+    PHDASTREAMSTATEAIO pAIO = &pStreamR3->State.AIO;
 
     if (!ASMAtomicReadBool(&pAIO->fStarted))
         return;
@@ -2011,14 +2003,14 @@ void hdaR3StreamAsyncIOUnlock(PHDASTREAM pStream)
 /**
  * Enables (resumes) or disables (pauses) the async I/O thread.
  *
- * @param   pStream             HDA stream to enable/disable async I/O thread for.
+ * @param   pStreamR3           HDA stream to enable/disable async I/O thread for.
  * @param   fEnable             Whether to enable or disable the I/O thread.
  *
  * @remarks Does not do locking.
  */
-void hdaR3StreamAsyncIOEnable(PHDASTREAM pStream, bool fEnable)
+void hdaR3StreamAsyncIOEnable(PHDASTREAMR3 pStreamR3, bool fEnable)
 {
-    PHDASTREAMSTATEAIO pAIO = &pStream->State.AIO;
+    PHDASTREAMSTATEAIO pAIO = &pStreamR3->State.AIO;
     ASMAtomicXchgBool(&pAIO->fEnabled, fEnable);
 }
 # endif /* VBOX_WITH_AUDIO_HDA_ASYNC_IO */

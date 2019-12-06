@@ -24,9 +24,14 @@
 #include "AudioMixer.h"
 #include <VBox/log.h> /* LOG_ENABLED */
 
-    /** Read callback. */
+/** Pointer to an HDA stream (SDI / SDO).  */
+typedef struct HDASTREAMR3 *PHDASTREAMR3;
+
+
+
+/** Read callback. */
 typedef VBOXSTRICTRC FNHDAREGREAD(PPDMDEVINS pDevIns, PHDASTATE pThis, uint32_t iReg, uint32_t *pu32Value);
-    /** Write callback. */
+/** Write callback. */
 typedef VBOXSTRICTRC FNHDAREGWRITE(PPDMDEVINS pDevIns, PHDASTATE pThis, uint32_t iReg, uint32_t u32Value);
 
 /**
@@ -597,23 +602,24 @@ typedef HDABDLE *PHDABDLE;
  * @{
  */
 #ifdef IN_RING3
-PHDAMIXERSINK hdaR3GetDefaultSink(PHDASTATE pThis, uint8_t uSD);
+PHDAMIXERSINK hdaR3GetDefaultSink(PHDASTATER3 pThisCC, uint8_t uSD);
 #endif
 PDMAUDIODIR   hdaGetDirFromSD(uint8_t uSD);
-PHDASTREAM    hdaGetStreamFromSD(PHDASTATE pThis, uint8_t uSD);
+//PHDASTREAM    hdaGetStreamFromSD(PHDASTATER3 pThisCC, uint8_t uSD);
 #ifdef IN_RING3
-PHDASTREAM    hdaR3GetStreamFromSink(PHDASTATE pThis, PHDAMIXERSINK pSink);
+PHDASTREAMR3  hdaR3GetR3StreamFromSink(PHDAMIXERSINK pSink);
+PHDASTREAM    hdaR3GetSharedStreamFromSink(PHDAMIXERSINK pSink);
 #endif
 /** @} */
 
 /** @name Interrupt functions.
  * @{
  */
-#ifdef LOG_ENABLED
-int           hdaProcessInterrupt(PPDMDEVINS pDevIns, PHDASTATE pThis, const char *pszSource);
+#if defined(LOG_ENABLED) || defined(DOXYGEN_RUNNING)
+void          hdaProcessInterrupt(PPDMDEVINS pDevIns, PHDASTATE pThis, const char *pszSource);
 # define HDA_PROCESS_INTERRUPT(a_pDevIns, a_pThis)  hdaProcessInterrupt((a_pDevIns), (a_pThis), __FUNCTION__)
 #else
-int           hdaProcessInterrupt(PPDMDEVINS pDevIns, PHDASTATE pThis);
+void          hdaProcessInterrupt(PPDMDEVINS pDevIns, PHDASTATE pThis);
 # define HDA_PROCESS_INTERRUPT(a_pDevIns, a_pThis)  hdaProcessInterrupt((a_pDevIns), (a_pThis))
 #endif
 /** @} */
@@ -623,7 +629,7 @@ int           hdaProcessInterrupt(PPDMDEVINS pDevIns, PHDASTATE pThis);
  */
 uint64_t      hdaWalClkGetCurrent(PHDASTATE pThis);
 #ifdef IN_RING3
-bool          hdaR3WalClkSet(PHDASTATE pThis, uint64_t u64WalClk, bool fForce);
+bool          hdaR3WalClkSet(PHDASTATE pThis, PHDASTATER3 pThisCC, uint64_t u64WalClk, bool fForce);
 #endif
 /** @} */
 
@@ -631,8 +637,10 @@ bool          hdaR3WalClkSet(PHDASTATE pThis, uint64_t u64WalClk, bool fForce);
  * @{
  */
 #ifdef IN_RING3
-int           hdaR3DMARead(PHDASTATE pThis, PHDASTREAM pStream, void *pvBuf, uint32_t cbBuf, uint32_t *pcbRead);
-int           hdaR3DMAWrite(PHDASTATE pThis, PHDASTREAM pStream, const void *pvBuf, uint32_t cbBuf, uint32_t *pcbWritten);
+int           hdaR3DMARead(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTREAM pStreamShared, PHDASTREAMR3 pStreamR3,
+                           void *pvBuf, uint32_t cbBuf, uint32_t *pcbRead);
+int           hdaR3DMAWrite(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTREAM pStreamShared, PHDASTREAMR3 pStreamR3,
+                            const void *pvBuf, uint32_t cbBuf, uint32_t *pcbWritten);
 #endif
 /** @} */
 
@@ -650,9 +658,9 @@ int           hdaR3SDFMTToPCMProps(uint16_t u16SDFMT, PPDMAUDIOPCMPROPS pProps);
  */
 #ifdef IN_RING3
 # ifdef LOG_ENABLED
-void          hdaR3BDLEDumpAll(PHDASTATE pThis, uint64_t u64BDLBase, uint16_t cBDLE);
+void          hdaR3BDLEDumpAll(PPDMDEVINS pDevIns, PHDASTATE pThis, uint64_t u64BDLBase, uint16_t cBDLE);
 # endif
-int           hdaR3BDLEFetch(PHDASTATE pThis, PHDABDLE pBDLE, uint64_t u64BaseDMA, uint16_t u16Entry);
+int           hdaR3BDLEFetch(PPDMDEVINS pDevIns, PHDABDLE pBDLE, uint64_t u64BaseDMA, uint16_t u16Entry);
 bool          hdaR3BDLEIsComplete(PHDABDLE pBDLE);
 bool          hdaR3BDLENeedsInterrupt(PHDABDLE pBDLE);
 #endif /* IN_RING3 */
@@ -662,7 +670,7 @@ bool          hdaR3BDLENeedsInterrupt(PHDABDLE pBDLE);
  * @{
  */
 #ifdef IN_RING3
-bool          hdaR3TimerSet(PPDMDEVINS pDevIns, PHDASTREAM pStream, uint64_t u64Expire, bool fForce, uint64_t tsNow);
+bool          hdaR3TimerSet(PPDMDEVINS pDevIns, PHDASTREAM pStreamShared, uint64_t u64Expire, bool fForce, uint64_t tsNow);
 #endif
 /** @} */
 

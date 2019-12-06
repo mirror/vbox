@@ -33,9 +33,9 @@
 typedef struct HDASTREAMSTATEAIO
 {
     /** Thread handle for the actual I/O thread. */
-    RTTHREAD                Thread;
+    RTTHREAD                hThread;
     /** Event for letting the thread know there is some data to process. */
-    RTSEMEVENT              Event;
+    RTSEMEVENT              hEvent;
     /** Critical section for synchronizing access. */
     RTCRITSECT              CritSect;
     /** Started indicator. */
@@ -122,20 +122,9 @@ typedef struct HDASTREAMSTATE
     /** Flag indicating if the stream is in running state or not. */
     volatile bool           fRunning;
     /** Unused, padding. */
-    uint8_t                 Padding0[4];
-#ifdef VBOX_WITH_AUDIO_HDA_ASYNC_IO
-    /** Asynchronous I/O state members. */
-    HDASTREAMSTATEAIO       AIO;
-#endif
-    /** This stream's data mapping. */
-    HDASTREAMMAP            Mapping;
+    uint8_t                 abPadding0[4];
     /** Current BDLE (Buffer Descriptor List Entry). */
     HDABDLE                 BDLE;
-    /** Circular buffer (FIFO) for holding DMA'ed data. */
-    R3PTRTYPE(PRTCIRCBUF)   pCircBuf;
-#if HC_ARCH_BITS == 32
-    RTR3PTR                 Padding1;
-#endif
     /** Timestamp of the last DMA data transfer. */
     uint64_t                tsTransferLast;
     /** Timestamp of the next DMA data transfer.
@@ -152,7 +141,7 @@ typedef struct HDASTREAMSTATE
     /** How many interrupts are pending due to
      *  BDLE interrupt-on-completion (IOC) bits set. */
     uint8_t                 cTransferPendingInterrupts;
-    uint8_t                 Padding2[2];
+    uint8_t                 abPadding2[3];
     /** The stream's timer Hz rate.
      *  This value can can be different from the device's default Hz rate,
      *  depending on the rate the stream expects (e.g. for 5.1 speaker setups).
@@ -166,6 +155,7 @@ typedef struct HDASTREAMSTATE
      *
      *  0 if position adjustment handling is done or inactive. */
     uint16_t                cfPosAdjustLeft;
+    uint16_t                u16Padding3;
     /** (Virtual) clock ticks per byte. */
     uint64_t                cTicksPerByte;
     /** (Virtual) clock ticks per transfer. */
@@ -176,19 +166,13 @@ typedef struct HDASTREAMSTATE
      *  Should match SDFMT. */
     PDMAUDIOSTREAMCFG       Cfg;
     uint32_t                Padding4;
-#ifdef HDA_USE_DMA_ACCESS_HANDLER
-    /** List of DMA handlers. */
-    RTLISTANCHORR3          lstDMAHandlers;
-#endif
-   /** Timestamp (in ns) of last stream update. */
+    /** Timestamp (in ns) of last stream update. */
     uint64_t                tsLastUpdateNs;
 } HDASTREAMSTATE;
 AssertCompileSizeAlignment(HDASTREAMSTATE, 8);
-/** Pointer to the internal state of an HDA stream. */
-typedef HDASTREAMSTATE *PHDASTREAMSTATE;
 
 /**
- * An HDA stream (SDI / SDO).
+ * An HDA stream (SDI / SDO) - shared.
  *
  * @note This HDA stream has nothing to do with a regular audio stream handled
  *       by the audio connector or the audio mixer. This HDA stream is a serial
@@ -231,60 +215,85 @@ typedef struct HDASTREAM
      *  Will be updated in hdaR3StreamInit(). */
     uint16_t                    u16LVI;
     uint16_t                    au16Padding1[2];
-    /** Pointer to the HDA state this stream is attached to. */
-    R3PTRTYPE(PHDASTATE)        pHDAState;
-    /** Pointer to HDA sink this stream is attached to. */
-    R3PTRTYPE(PHDAMIXERSINK)    pMixSink;
     /** The timer for pumping data thru the attached LUN drivers. */
     TMTIMERHANDLE               hTimer;
+    /** Internal state of this stream. */
+    HDASTREAMSTATE              State;
+} HDASTREAM;
+/** Pointer to an HDA stream (SDI / SDO).  */
+typedef HDASTREAM *PHDASTREAM;
+
+
+/**
+ * An HDA stream (SDI / SDO) - ring-3 bits.
+ */
+typedef struct HDASTREAMR3
+{
+    /** Stream descriptor number (SDn). */
+    uint8_t                     u8SD;
+    uint8_t                     abPadding[7];
+    /** The shared state for the parent HDA device. */
+    R3PTRTYPE(PHDASTATE)        pHDAStateShared;
+    /** The ring-3 state for the parent HDA device. */
+    R3PTRTYPE(PHDASTATER3)      pHDAStateR3;
+    /** Pointer to HDA sink this stream is attached to. */
+    R3PTRTYPE(PHDAMIXERSINK)    pMixSink;
 #ifdef VBOX_WITH_AUDIO_HDA_ASYNC_IO
     /** The stream's critical section to serialize access between the async I/O
      *  thread and (basically) the guest. */
     RTCRITSECT                  CritSect;
 #endif
     /** Internal state of this stream. */
-    HDASTREAMSTATE              State;
-    /** Debug information. */
-    HDASTREAMDEBUG              Dbg;
-} HDASTREAM;
-/** Pointer to an HDA stream (SDI / SDO).  */
-typedef HDASTREAM *PHDASTREAM;
-
-#ifdef VBOX_WITH_AUDIO_HDA_ASYNC_IO
-/**
- * HDA stream thread context (arguments).
- */
-typedef struct HDASTREAMTHREADCTX
-{
-    PHDASTATE  pThis;
-    PHDASTREAM pStream;
-} HDASTREAMTHREADCTX, *PHDASTREAMTHREADCTX;
+    struct
+    {
+        /** This stream's data mapping. */
+        HDASTREAMMAP            Mapping;
+        /** Circular buffer (FIFO) for holding DMA'ed data. */
+        R3PTRTYPE(PRTCIRCBUF)   pCircBuf;
+#ifdef HDA_USE_DMA_ACCESS_HANDLER
+        /** List of DMA handlers. */
+        RTLISTANCHORR3          lstDMAHandlers;
 #endif
+#ifdef VBOX_WITH_AUDIO_HDA_ASYNC_IO
+        /** Asynchronous I/O state members. */
+        HDASTREAMSTATEAIO       AIO;
+#endif
+    } State;
+    /** Debug bits. */
+    HDASTREAMDEBUG              Dbg;
+} HDASTREAMR3;
+/** Pointer to an HDA stream (SDI / SDO).  */
+typedef HDASTREAMR3 *PHDASTREAMR3;
 
 #ifdef IN_RING3
 
 /** @name Stream functions.
  * @{
  */
-int               hdaR3StreamCreate(PHDASTREAM pStream, PHDASTATE pThis, uint8_t u8SD);
-void              hdaR3StreamDestroy(PHDASTREAM pStream);
-int               hdaR3StreamInit(PPDMDEVINS pDevIns, PHDASTREAM pStream, uint8_t uSD);
-void              hdaR3StreamReset(PHDASTATE pThis, PHDASTREAM pStream, uint8_t uSD);
-int               hdaR3StreamEnable(PHDASTREAM pStream, bool fEnable);
-uint32_t          hdaR3StreamGetPosition(PHDASTATE pThis, PHDASTREAM pStream);
-void              hdaR3StreamSetPosition(PHDASTREAM pStream, uint32_t u32LPIB);
-uint32_t          hdaR3StreamGetFree(PHDASTREAM pStream);
-uint32_t          hdaR3StreamGetUsed(PHDASTREAM pStream);
-bool              hdaR3StreamTransferIsScheduled(PHDASTREAM pStream, uint64_t tsNow);
-uint64_t          hdaR3StreamTransferGetNext(PHDASTREAM pStream);
-void              hdaR3StreamLock(PHDASTREAM pStream);
-void              hdaR3StreamUnlock(PHDASTREAM pStream);
-int               hdaR3StreamRead(PHDASTREAM pStream, uint32_t cbToRead, uint32_t *pcbRead);
-int               hdaR3StreamWrite(PHDASTREAM pStream, const void *pvBuf, uint32_t cbBuf, uint32_t *pcbWritten);
-void              hdaR3StreamUpdate(PPDMDEVINS pDevIns, PHDASTREAM pStream, bool fAsync);
+int                 hdaR3StreamConstruct(PHDASTREAM pStreamShared, PHDASTREAMR3 pStreamR3, PHDASTATE pThis,
+                                         PHDASTATER3 pThisCC, uint8_t uSD);
+void                hdaR3StreamDestroy(PHDASTREAM pStreamShared, PHDASTREAMR3 pStreamR3);
+int                 hdaR3StreamSetUp(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTREAM pStreamShared,
+                                     PHDASTREAMR3 pStreamR3, uint8_t uSD);
+void                hdaR3StreamReset(PHDASTATE pThis, PHDASTATER3 pThisCC,
+                                     PHDASTREAM pStreamShared, PHDASTREAMR3 pStreamR3, uint8_t uSD);
+int                 hdaR3StreamEnable(PHDASTREAM pStreamShared, PHDASTREAMR3 pStreamR3, bool fEnable);
+/* uint32_t            hdaR3StreamGetPosition(PHDASTATE pThis, PHDASTREAMR3 pStreamShared); - only used in HDAStream.cpp */
+/*void                hdaR3StreamSetPosition(PHDASTREAM pStream, PPDMDEVINS pDevIns, PHDASTATE pThis, uint32_t u32LPIB); - only used in HDAStream.cpp */
+/*uint32_t            hdaR3StreamGetFree(PHDASTREAM pStream); - only used in HDAStream.cpp */
+/*uint32_t            hdaR3StreamGetUsed(PHDASTREAM pStream); - only used in HDAStream.cpp */
+bool                hdaR3StreamTransferIsScheduled(PHDASTREAM pStreamShared, uint64_t tsNow);
+uint64_t            hdaR3StreamTransferGetNext(PHDASTREAM pStreamShared);
+void                hdaR3StreamLock(PHDASTREAMR3 pStreamR3);
+void                hdaR3StreamUnlock(PHDASTREAMR3 pStreamR3);
+/* int                 hdaR3StreamRead(PHDASTREAM pStream, uint32_t cbToRead, uint32_t *pcbRead); - only used in HDAStream.cpp */
+/*int                 hdaR3StreamWrite(PHDASTREAM pStream, const void *pvBuf, uint32_t cbBuf, uint32_t *pcbWritten); - only used in HDAStream.cpp */
+void                hdaR3StreamUpdate(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER3 pThisCC,
+                                      PHDASTREAM pStreamShared, PHDASTREAMR3 pStreamR3, bool fInTimer);
+PHDASTREAM          hdaR3StreamR3ToShared(PHDASTREAMR3 pStreamCC);
 # ifdef HDA_USE_DMA_ACCESS_HANDLER
-bool              hdaR3StreamRegisterDMAHandlers(PHDASTREAM pStream);
-void              hdaR3StreamUnregisterDMAHandlers(PHDASTREAM pStream);
+bool                hdaR3StreamRegisterDMAHandlers(PHDASTREAM pStream);
+void                hdaR3StreamUnregisterDMAHandlers(PHDASTREAM pStream);
 # endif
 /** @} */
 
@@ -292,13 +301,10 @@ void              hdaR3StreamUnregisterDMAHandlers(PHDASTREAM pStream);
  * @{
  */
 # ifdef VBOX_WITH_AUDIO_HDA_ASYNC_IO
-DECLCALLBACK(int) hdaR3StreamAsyncIOThread(RTTHREAD hThreadSelf, void *pvUser);
-int               hdaR3StreamAsyncIOCreate(PHDASTREAM pStream);
-int               hdaR3StreamAsyncIODestroy(PHDASTREAM pStream);
-int               hdaR3StreamAsyncIONotify(PHDASTREAM pStream);
-void              hdaR3StreamAsyncIOLock(PHDASTREAM pStream);
-void              hdaR3StreamAsyncIOUnlock(PHDASTREAM pStream);
-void              hdaR3StreamAsyncIOEnable(PHDASTREAM pStream, bool fEnable);
+int                 hdaR3StreamAsyncIOCreate(PHDASTREAMR3 pStreamR3);
+void                hdaR3StreamAsyncIOLock(PHDASTREAMR3 pStreamR3);
+void                hdaR3StreamAsyncIOUnlock(PHDASTREAMR3 pStreamR3);
+void                hdaR3StreamAsyncIOEnable(PHDASTREAMR3 pStreamR3, bool fEnable);
 # endif /* VBOX_WITH_AUDIO_HDA_ASYNC_IO */
 /** @} */
 

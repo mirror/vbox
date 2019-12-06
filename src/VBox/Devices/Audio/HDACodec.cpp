@@ -1630,7 +1630,7 @@ static int hdaCodecToAudVolume(PHDACODEC pThis, PCODECNODE pNode, AMPLIFIER *pAm
     LogRel2(("HDA: Setting volume for mixer control '%s' to %RU8/%RU8 (%s)\n",
              DrvAudioHlpAudMixerCtlToStr(enmMixerCtl), lVol, rVol, RT_BOOL(iMute) ? "Muted" : "Unmuted"));
 
-    return pThis->pfnCbMixerSetVolume(pThis->pHDAState, enmMixerCtl, &Vol);
+    return pThis->pfnCbMixerSetVolume(pThis->pDevIns, enmMixerCtl, &Vol);
 }
 
 DECLINLINE(void) hdaCodecSetRegister(uint32_t *pu32Reg, uint32_t u32Cmd, uint8_t u8Offset, uint32_t mask)
@@ -2411,17 +2411,17 @@ static DECLCALLBACK(int) vrbProcSetStreamId(PHDACODEC pThis, uint32_t cmd, uint6
             /** @todo Check if non-interleaved streams need a different channel / SDn? */
 
             /* Propagate to the controller. */
-            pThis->pfnCbMixerControl(pThis->pHDAState, PDMAUDIOMIXERCTL_FRONT,      uSD, uChannel);
+            pThis->pfnCbMixerControl(pThis->pDevIns, PDMAUDIOMIXERCTL_FRONT,      uSD, uChannel);
 #ifdef VBOX_WITH_AUDIO_HDA_51_SURROUND
-            pThis->pfnCbMixerControl(pThis->pHDAState, PDMAUDIOMIXERCTL_CENTER_LFE, uSD, uChannel);
-            pThis->pfnCbMixerControl(pThis->pHDAState, PDMAUDIOMIXERCTL_REAR,       uSD, uChannel);
+            pThis->pfnCbMixerControl(pThis->pDevIns, PDMAUDIOMIXERCTL_CENTER_LFE, uSD, uChannel);
+            pThis->pfnCbMixerControl(pThis->pDevIns, PDMAUDIOMIXERCTL_REAR,       uSD, uChannel);
 #endif
         }
         else if (enmDir == PDMAUDIODIR_IN)
         {
-            pThis->pfnCbMixerControl(pThis->pHDAState, PDMAUDIOMIXERCTL_LINE_IN,    uSD, uChannel);
+            pThis->pfnCbMixerControl(pThis->pDevIns, PDMAUDIOMIXERCTL_LINE_IN,    uSD, uChannel);
 #ifdef VBOX_WITH_AUDIO_HDA_MIC_IN
-            pThis->pfnCbMixerControl(pThis->pHDAState, PDMAUDIOMIXERCTL_MIC_IN,     uSD, uChannel);
+            pThis->pfnCbMixerControl(pThis->pDevIns, PDMAUDIOMIXERCTL_MIC_IN,     uSD, uChannel);
 #endif
         }
     }
@@ -3064,16 +3064,14 @@ int hdaCodecAddStream(PHDACODEC pThis, PDMAUDIOMIXERCTL enmMixerCtl, PPDMAUDIOST
         case PDMAUDIOMIXERCTL_CENTER_LFE:
         case PDMAUDIOMIXERCTL_REAR:
 #endif
-        {
             break;
-        }
+
         case PDMAUDIOMIXERCTL_LINE_IN:
 #ifdef VBOX_WITH_AUDIO_HDA_MIC_IN
         case PDMAUDIOMIXERCTL_MIC_IN:
 #endif
-        {
             break;
-        }
+
         default:
             AssertMsgFailed(("Mixer control %d not implemented\n", enmMixerCtl));
             rc = VERR_NOT_IMPLEMENTED;
@@ -3081,7 +3079,7 @@ int hdaCodecAddStream(PHDACODEC pThis, PDMAUDIOMIXERCTL enmMixerCtl, PPDMAUDIOST
     }
 
     if (RT_SUCCESS(rc))
-        rc = pThis->pfnCbMixerAddStream(pThis->pHDAState, enmMixerCtl, pCfg);
+        rc = pThis->pfnCbMixerAddStream(pThis->pDevIns, enmMixerCtl, pCfg);
 
     LogFlowFuncLeaveRC(rc);
     return rc;
@@ -3091,7 +3089,7 @@ int hdaCodecRemoveStream(PHDACODEC pThis, PDMAUDIOMIXERCTL enmMixerCtl)
 {
     AssertPtrReturn(pThis, VERR_INVALID_POINTER);
 
-    int rc = pThis->pfnCbMixerRemoveStream(pThis->pHDAState, enmMixerCtl);
+    int rc = pThis->pfnCbMixerRemoveStream(pThis->pDevIns, enmMixerCtl);
 
     LogFlowFuncLeaveRC(rc);
     return rc;
