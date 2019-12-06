@@ -121,10 +121,10 @@ typedef struct _SHCLEVENTPAYLOAD
 {
     /** Payload ID; currently unused. */
     uint32_t uID;
-    /** Pointer to actual payload data. */
-    void    *pvData;
     /** Size (in bytes) of actual payload data. */
     uint32_t cbData;
+    /** Pointer to actual payload data. */
+    void    *pvData;
 } SHCLEVENTPAYLOAD, *PSHCLEVENTPAYLOAD;
 
 /** Defines an event source ID. */
@@ -154,36 +154,32 @@ typedef SHCLEVENTID *PSHCLEVENTID;
 #define NIL_SHCLEVENTID                          UINT32_MAX
 
 /** Maximum number of concurrent Shared Clipboard client sessions a VM can have. */
-#define VBOX_SHCL_MAX_SESSIONS                   UINT16_MAX - 1
+#define VBOX_SHCL_MAX_SESSIONS                   (UINT16_MAX - 1)
 /** Maximum number of concurrent Shared Clipboard transfers a single
  *  client can have. */
-#define VBOX_SHCL_MAX_TRANSFERS                  UINT16_MAX - 1
+#define VBOX_SHCL_MAX_TRANSFERS                  (UINT16_MAX - 1)
 /** Maximum number of events a single Shared Clipboard transfer can have. */
-#define VBOX_SHCL_MAX_EVENTS                     UINT32_MAX - 1
+#define VBOX_SHCL_MAX_EVENTS                     (UINT32_MAX - 1)
 
 /**
  * Creates a context ID out of a client ID, a transfer ID and a count (can be an event ID).
  */
-#define VBOX_SHCL_CONTEXTID_MAKE(uSessionID, uTransferID, uEventID) \
-    (  (uint64_t)((uSessionID)  & 0xffff) << 48 \
-     | (uint64_t)((uTransferID) & 0xffff) << 32 \
-     | (uint32_t)((uEventID)    & 0xffffffff) \
+#define VBOX_SHCL_CONTEXTID_MAKE(a_idSession, a_idTransfer, a_idEvent) \
+    (  ((uint64_t)((a_idSession)  & 0xffff) << 48) \
+     | ((uint64_t)((a_idTransfer) & 0xffff) << 32) \
+     | ((uint32_t) (a_idEvent)) \
     )
 /** Creates a context ID out of a session ID. */
-#define VBOX_SHCL_CONTEXTID_MAKE_SESSION(uSessionID) \
-    ((uint32_t)((uSessionID) & 0xffff) << 48)
+#define VBOX_SHCL_CONTEXTID_MAKE_SESSION(a_idSession)    VBOX_SHCL_CONTEXTID_MAKE(a_idSession, 0, 0)
 /** Gets the session ID out of a context ID. */
-#define VBOX_SHCL_CONTEXTID_GET_SESSION(uContextID) \
-    (((uContextID) >> 48) & 0xffff)
+#define VBOX_SHCL_CONTEXTID_GET_SESSION(a_idContext)     ( (uint16_t)(((a_idContext) >> 48) & UINT16_MAX) )
 /** Gets the transfer ID out of a context ID. */
-#define VBOX_SHCL_CONTEXTID_GET_TRANSFER(uContextID) \
-    (((uContextID) >> 32) & 0xffff)
+#define VBOX_SHCL_CONTEXTID_GET_TRANSFER(a_idContext)    ( (uint16_t)(((a_idContext) >> 32) & UINT16_MAX) )
 /** Gets the transfer event out of a context ID. */
-#define VBOX_SHCL_CONTEXTID_GET_EVENT(uContextID) \
-    ((uContextID) & 0xffffffff)
+#define VBOX_SHCL_CONTEXTID_GET_EVENT(a_idContext)       ( (uint32_t)( (a_idContext)        & UINT32_MAX) )
 
 /**
- * Structure for maintaining a Shared Clipboard event.
+ * Shared Clipboard event.
  */
 typedef struct _SHCLEVENT
 {
@@ -198,14 +194,14 @@ typedef struct _SHCLEVENT
 } SHCLEVENT, *PSHCLEVENT;
 
 /**
- * Structure for maintaining a Shared Clipboard event source.
+ * Shared Clipboard event source.
  *
- * Each event source maintains an own counter for events, so that
- * it can be used in different contexts.
+ * Each event source maintains an own counter for events, so that it can be used
+ * in different contexts.
  */
-typedef struct _SHCLEVENTSOURCE
+typedef struct SHCLEVENTSOURCE
 {
-    /** The event source' ID. */
+    /** The event source ID. */
     SHCLEVENTSOURCEID uID;
     /** Next upcoming event ID. */
     SHCLEVENTID       uEventIDNext;
@@ -223,7 +219,7 @@ void ShClPayloadFree(PSHCLEVENTPAYLOAD pPayload);
 /** @name Shared Clipboard event source functions.
  *  @{
  */
-int ShClEventSourceCreate(PSHCLEVENTSOURCE pSource, SHCLEVENTSOURCEID uID);
+int ShClEventSourceCreate(PSHCLEVENTSOURCE pSource, SHCLEVENTSOURCEID idEvtSrc);
 void ShClEventSourceDestroy(PSHCLEVENTSOURCE pSource);
 void ShClEventSourceReset(PSHCLEVENTSOURCE pSource);
 /** @} */
@@ -233,15 +229,15 @@ void ShClEventSourceReset(PSHCLEVENTSOURCE pSource);
  */
 SHCLEVENTID ShClEventIDGenerate(PSHCLEVENTSOURCE pSource);
 SHCLEVENTID ShClEventGetLast(PSHCLEVENTSOURCE pSource);
-int ShClEventRegister(PSHCLEVENTSOURCE pSource, SHCLEVENTID uID);
-int ShClEventUnregister(PSHCLEVENTSOURCE pSource, SHCLEVENTID uID);
-int ShClEventWait(PSHCLEVENTSOURCE pSource, SHCLEVENTID uID, RTMSINTERVAL uTimeoutMs, PSHCLEVENTPAYLOAD* ppPayload);
-int ShClEventSignal(PSHCLEVENTSOURCE pSource, SHCLEVENTID uID, PSHCLEVENTPAYLOAD pPayload);
-void ShClEventPayloadDetach(PSHCLEVENTSOURCE pSource, SHCLEVENTID uID);
+int ShClEventRegister(PSHCLEVENTSOURCE pSource, SHCLEVENTID idEvent);
+int ShClEventUnregister(PSHCLEVENTSOURCE pSource, SHCLEVENTID idEvent);
+int ShClEventWait(PSHCLEVENTSOURCE pSource, SHCLEVENTID idEvent, RTMSINTERVAL uTimeoutMs, PSHCLEVENTPAYLOAD *ppPayload);
+int ShClEventSignal(PSHCLEVENTSOURCE pSource, SHCLEVENTID idEvent, PSHCLEVENTPAYLOAD pPayload);
+void ShClEventPayloadDetach(PSHCLEVENTSOURCE pSource, SHCLEVENTID idEvent);
 /** @} */
 
 /**
- * Enumeration to specify the Shared Clipboard transfer source type.
+ * Shared Clipboard transfer source type.
  */
 typedef enum SHCLSOURCE
 {
@@ -252,7 +248,7 @@ typedef enum SHCLSOURCE
     /** Source is remote. */
     SHCLSOURCE_REMOTE,
     /** The usual 32-bit hack. */
-    SHCLSOURCE_32Bit_Hack = 0x7fffffff
+    SHCLSOURCE_32BIT_HACK = 0x7fffffff
 } SHCLSOURCE;
 
 /** Opaque data structure for the X11/VBox frontend/glue code. */
