@@ -515,9 +515,10 @@ typedef struct AC97STATEDEBUG
 {
     /** Whether debugging is enabled or not. */
     bool                    fEnabled;
+    bool                    afAlignment[7];
     /** Path where to dump the debug output to.
      *  Defaults to VBOX_AUDIO_DEBUG_DUMP_PCM_DATA_PATH. */
-    char                    szOutPath[RTPATH_MAX];
+    R3PTRTYPE(char *)       pszOutPath;
 } AC97STATEDEBUG;
 
 
@@ -1088,7 +1089,7 @@ static int ichac97R3StreamCreate(PAC97STATER3 pThisCC, PAC97STREAM pStream, PAC9
             RTStrPrintf(szFile, sizeof(szFile), "ac97StreamReadSD%RU8", pStream->u8SD);
 
         char szPath[RTPATH_MAX];
-        int rc2 = DrvAudioHlpFileNameGet(szPath, sizeof(szPath), pThisCC->Dbg.szOutPath, szFile,
+        int rc2 = DrvAudioHlpFileNameGet(szPath, sizeof(szPath), pThisCC->Dbg.pszOutPath, szFile,
                                          0 /* uInst */, PDMAUDIOFILETYPE_WAV, PDMAUDIOFILENAME_FLAGS_NONE);
         AssertRC(rc2);
         rc2 = DrvAudioHlpFileCreate(PDMAUDIOFILETYPE_WAV, szPath, PDMAUDIOFILE_FLAGS_NONE, &pStreamCC->Dbg.Runtime.pFileStream);
@@ -1099,7 +1100,7 @@ static int ichac97R3StreamCreate(PAC97STATER3 pThisCC, PAC97STREAM pStream, PAC9
         else
             RTStrPrintf(szFile, sizeof(szFile), "ac97DMAReadSD%RU8", pStream->u8SD);
 
-        rc2 = DrvAudioHlpFileNameGet(szPath, sizeof(szPath), pThisCC->Dbg.szOutPath, szFile,
+        rc2 = DrvAudioHlpFileNameGet(szPath, sizeof(szPath), pThisCC->Dbg.pszOutPath, szFile,
                                      0 /* uInst */, PDMAUDIOFILETYPE_WAV, PDMAUDIOFILENAME_FLAGS_NONE);
         AssertRC(rc2);
 
@@ -4140,14 +4141,13 @@ static DECLCALLBACK(int) ichac97R3Construct(PPDMDEVINS pDevIns, int iInstance, P
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("AC97 configuration error: failed to read debugging enabled flag as boolean"));
 
-    rc = pHlp->pfnCFGMQueryStringDef(pCfg, "DebugPathOut", pThisCC->Dbg.szOutPath, sizeof(pThisCC->Dbg.szOutPath),
-                                     VBOX_AUDIO_DEBUG_DUMP_PCM_DATA_PATH);
+    rc = pHlp->pfnCFGMQueryStringAllocDef(pCfg, "DebugPathOut", &pThisCC->Dbg.pszOutPath, VBOX_AUDIO_DEBUG_DUMP_PCM_DATA_PATH);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("AC97 configuration error: failed to read debugging output path flag as string"));
 
     if (pThisCC->Dbg.fEnabled)
-        LogRel2(("AC97: Debug output will be saved to '%s'\n", pThisCC->Dbg.szOutPath));
+        LogRel2(("AC97: Debug output will be saved to '%s'\n", pThisCC->Dbg.pszOutPath));
 
     /*
      * The AD1980 codec (with corresponding PCI subsystem vendor ID) is whitelisted
