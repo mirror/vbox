@@ -123,7 +123,7 @@ typedef struct HDACODEC
      * streams to that sink.
      *
      * @return  VBox status code.
-     * @param   pThisCC             The ring-3 HDA device state.
+     * @param   pDevIns             The device instance.
      * @param   enmMixerCtl         Mixer control to assign new stream to.
      * @param   pCfg                Stream configuration for the new stream.
      */
@@ -132,7 +132,7 @@ typedef struct HDACODEC
      * Removes a specified mixer control from the HDA's mixer.
      *
      * @return  VBox status code.
-     * @param   pThisCC             The ring-3 HDA device state.
+     * @param   pDevIns             The device instance.
      * @param   enmMixerCtl         Mixer control to remove.
      */
     DECLR3CALLBACKMEMBER(int,  pfnCbMixerRemoveStream, (PPDMDEVINS pDevIns, PDMAUDIOMIXERCTL enmMixerCtl));
@@ -141,7 +141,7 @@ typedef struct HDACODEC
      * connected to which stream (and channel).
      *
      * @return  VBox status code.
-     * @param   pThisCC             The ring-3 HDA device state.
+     * @param   pDevIns             The device instance.
      * @param   enmMixerCtl         Mixer control to set SD stream number and channel for.
      * @param   uSD                 SD stream number (number + 1) to set. Set to 0 for unassign.
      * @param   uChannel            Channel to set. Only valid if a valid SD stream number is specified.
@@ -151,7 +151,7 @@ typedef struct HDACODEC
      * Sets the volume of a specified mixer control.
      *
      * @return  IPRT status code.
-     * @param   pThisCC             The ring-3 HDA device state.
+     * @param   pDevIns             The device instance.
      * @param   enmMixerCtl         Mixer control to set volume for.
      * @param   pVol                Pointer to volume data to set.
      */

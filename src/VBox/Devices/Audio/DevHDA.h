@@ -245,7 +245,7 @@ typedef struct HDASTATER3
         bool                    fEnabled;
         /** Path where to dump the debug output to.
          *  Defaults to VBOX_AUDIO_DEBUG_DUMP_PCM_DATA_PATH. */
-        char                    szOutPath[RTPATH_MAX];
+        R3PTRTYPE(char *)       pszOutPath;
     } Dbg;
 } HDASTATER3;
 /** Pointer to a ring-3 HDA device state.  */

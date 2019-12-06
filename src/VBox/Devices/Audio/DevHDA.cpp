@@ -4297,7 +4297,7 @@ static DECLCALLBACK(void *) hdaR3QueryInterface(struct PDMIBASE *pInterface, con
  * @returns VBox status code.
  * @param   pDevIns     The device instance.
  * @param   pThis       The shared HDA device state.
- * @param   pThisR3     The ring-3 HDA device state.
+ * @param   pThisCC     The ring-3 HDA device state.
  * @param   uLUN        The logical unit which is being detached.
  * @param   fFlags      Flags, combination of the PDMDEVATT_FLAGS_* \#defines.
  * @param   ppDrv       Attached driver instance on success. Optional.
@@ -4647,14 +4647,13 @@ static DECLCALLBACK(int) hdaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("HDA configuration error: failed to read debugging enabled flag as boolean"));
 
-    rc = pHlp->pfnCFGMQueryStringDef(pCfg, "DebugPathOut", pThisCC->Dbg.szOutPath, sizeof(pThisCC->Dbg.szOutPath),
-                                     VBOX_AUDIO_DEBUG_DUMP_PCM_DATA_PATH);
+    rc = pHlp->pfnCFGMQueryStringAllocDef(pCfg, "DebugPathOut", &pThisCC->Dbg.pszOutPath, VBOX_AUDIO_DEBUG_DUMP_PCM_DATA_PATH);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("HDA configuration error: failed to read debugging output path flag as string"));
 
     if (pThisCC->Dbg.fEnabled)
-        LogRel2(("HDA: Debug output will be saved to '%s'\n", pThisCC->Dbg.szOutPath));
+        LogRel2(("HDA: Debug output will be saved to '%s'\n", pThisCC->Dbg.pszOutPath));
 
     /*
      * Use our own critical section for the device instead of the default

@@ -34,8 +34,8 @@
 #include "DevHDA.h"
 #include "HDAStream.h"
 
-
 #ifdef IN_RING3 /* whole file */
+
 
 /*********************************************************************************************************************************
 *   Internal Functions                                                                                                           *
@@ -102,7 +102,7 @@ int hdaR3StreamConstruct(PHDASTREAM pStreamShared, PHDASTREAMR3 pStreamR3, PHDAS
         else
             RTStrPrintf(szFile, sizeof(szFile), "hdaStreamReadSD%RU8", uSD);
 
-        int rc2 = DrvAudioHlpFileNameGet(szPath, sizeof(szPath), pThisCC->Dbg.szOutPath, szFile,
+        int rc2 = DrvAudioHlpFileNameGet(szPath, sizeof(szPath), pThisCC->Dbg.pszOutPath, szFile,
                                          0 /* uInst */, PDMAUDIOFILETYPE_WAV, PDMAUDIOFILENAME_FLAGS_NONE);
         AssertRC(rc2);
 
@@ -115,7 +115,7 @@ int hdaR3StreamConstruct(PHDASTREAM pStreamShared, PHDASTREAMR3 pStreamR3, PHDAS
         else
             RTStrPrintf(szFile, sizeof(szFile), "hdaDMARawReadSD%RU8", uSD);
 
-        rc2 = DrvAudioHlpFileNameGet(szPath, sizeof(szPath), pThisCC->Dbg.szOutPath, szFile,
+        rc2 = DrvAudioHlpFileNameGet(szPath, sizeof(szPath), pThisCC->Dbg.pszOutPath, szFile,
                                      0 /* uInst */, PDMAUDIOFILETYPE_WAV, PDMAUDIOFILENAME_FLAGS_NONE);
         AssertRC(rc2);
 
@@ -128,7 +128,7 @@ int hdaR3StreamConstruct(PHDASTREAM pStreamShared, PHDASTREAMR3 pStreamR3, PHDAS
         else
             RTStrPrintf(szFile, sizeof(szFile), "hdaDMAReadMappedSD%RU8", uSD);
 
-        rc2 = DrvAudioHlpFileNameGet(szPath, sizeof(szPath), pThisCC->Dbg.szOutPath, szFile,
+        rc2 = DrvAudioHlpFileNameGet(szPath, sizeof(szPath), pThisCC->Dbg.pszOutPath, szFile,
                                      0 /* uInst */, PDMAUDIOFILETYPE_WAV, PDMAUDIOFILENAME_FLAGS_NONE);
         AssertRC(rc2);
 
