@@ -398,7 +398,7 @@ void UIWizardExportAppPage2::populateFormProperties()
             }
 
             /* Show "Acquire export form" progress: */
-            msgCenter().showModalProgressDialog(comExportDescriptionFormProgress, UIWizardExportApp::tr("Acquire export form..."),
+            msgCenter().showModalProgressDialog(comExportDescriptionFormProgress, UIWizardExportApp::tr("Acquire export form ..."),
                                                 ":/progress_refresh_90px.png", 0, 0);
             if (!comExportDescriptionFormProgress.isOk() || comExportDescriptionFormProgress.GetResultCode() != 0)
             {

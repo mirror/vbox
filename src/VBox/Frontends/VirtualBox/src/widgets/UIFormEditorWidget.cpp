@@ -726,7 +726,7 @@ void UIFormEditorRow::setBool(bool fBool)
     else
     {
         /* Show "Acquire export form" progress: */
-        msgCenter().showModalProgressDialog(comProgress, UIFormEditorWidget::tr("Assign value..."),
+        msgCenter().showModalProgressDialog(comProgress, UIFormEditorWidget::tr("Assign value ..."),
                                             ":/progress_reading_appliance_90px.png",
                                             0 /* parent */, 0 /* duration */);
 
@@ -762,7 +762,7 @@ void UIFormEditorRow::setText(const TextData &text)
     else
     {
         /* Show "Acquire export form" progress: */
-        msgCenter().showModalProgressDialog(comProgress, UIFormEditorWidget::tr("Assign value..."),
+        msgCenter().showModalProgressDialog(comProgress, UIFormEditorWidget::tr("Assign value ..."),
                                             ":/progress_reading_appliance_90px.png",
                                             0 /* parent */, 0 /* duration */);
 
@@ -792,7 +792,7 @@ void UIFormEditorRow::setString(const QString &strString)
     else
     {
         /* Show "Acquire export form" progress: */
-        msgCenter().showModalProgressDialog(comProgress, UIFormEditorWidget::tr("Assign value..."),
+        msgCenter().showModalProgressDialog(comProgress, UIFormEditorWidget::tr("Assign value ..."),
                                             ":/progress_reading_appliance_90px.png",
                                             0 /* parent */, 0 /* duration */);
 
@@ -826,7 +826,7 @@ void UIFormEditorRow::setChoice(const ChoiceData &choice)
     else
     {
         /* Show "Acquire export form" progress: */
-        msgCenter().showModalProgressDialog(comProgress, UIFormEditorWidget::tr("Assign value..."),
+        msgCenter().showModalProgressDialog(comProgress, UIFormEditorWidget::tr("Assign value ..."),
                                             ":/progress_reading_appliance_90px.png",
                                             0 /* parent */, 0 /* duration */);
 
@@ -856,7 +856,7 @@ void UIFormEditorRow::setRangedInteger(const RangedIntegerData &rangedInteger)
     else
     {
         /* Show "Acquire export form" progress: */
-        msgCenter().showModalProgressDialog(comProgress, UIFormEditorWidget::tr("Assign value..."),
+        msgCenter().showModalProgressDialog(comProgress, UIFormEditorWidget::tr("Assign value ..."),
                                             ":/progress_reading_appliance_90px.png",
                                             0 /* parent */, 0 /* duration */);
 

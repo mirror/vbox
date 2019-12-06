@@ -94,7 +94,7 @@ bool UIMediumItem::move()
         else
         {
             /* Show move storage progress: */
-            msgCenter().showModalProgressDialog(comProgress, tr("Moving medium..."),
+            msgCenter().showModalProgressDialog(comProgress, tr("Moving medium ..."),
                                                 ":/progress_media_move_90px.png", treeWidget());
 
             /* Show error message if necessary: */
@@ -509,7 +509,7 @@ bool UIMediumItemHD::maybeRemoveStorage()
             return false;
         }
         /* Show delete storage progress: */
-        msgCenter().showModalProgressDialog(progress, UIMediumItem::tr("Removing medium..."),
+        msgCenter().showModalProgressDialog(progress, UIMediumItem::tr("Removing medium ..."),
                                             ":/progress_media_delete_90px.png", treeWidget());
         if (!progress.isOk() || progress.GetResultCode() != 0)
         {

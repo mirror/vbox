@@ -330,7 +330,7 @@ void UIWizardImportAppPage1::populateAccountInstances()
             }
 
             /* Show "Acquire cloud instances" progress: */
-            msgCenter().showModalProgressDialog(comProgress, UIWizardImportApp::tr("Acquire cloud instances..."),
+            msgCenter().showModalProgressDialog(comProgress, UIWizardImportApp::tr("Acquire cloud instances ..."),
                                                 ":/progress_reading_appliance_90px.png", 0, 0);
             if (!comProgress.isOk() || comProgress.GetResultCode() != 0)
             {
@@ -397,7 +397,7 @@ void UIWizardImportAppPage1::populateFormProperties()
             }
 
             /* Show "Read appliance" progress: */
-            msgCenter().showModalProgressDialog(comReadProgress, UIWizardImportApp::tr("Read appliance..."),
+            msgCenter().showModalProgressDialog(comReadProgress, UIWizardImportApp::tr("Read appliance ..."),
                                                 ":/progress_reading_appliance_90px.png", 0, 0);
             if (!comReadProgress.isOk() || comReadProgress.GetResultCode() != 0)
             {
@@ -427,7 +427,7 @@ void UIWizardImportAppPage1::populateFormProperties()
             }
 
             /* Show "Acquire import form" progress: */
-            msgCenter().showModalProgressDialog(comImportDescriptionFormProgress, UIWizardImportApp::tr("Acquire import form..."),
+            msgCenter().showModalProgressDialog(comImportDescriptionFormProgress, UIWizardImportApp::tr("Acquire import form ..."),
                                                 ":/progress_refresh_90px.png", 0, 0);
             if (!comImportDescriptionFormProgress.isOk() || comImportDescriptionFormProgress.GetResultCode() != 0)
             {
@@ -820,7 +820,7 @@ void UIWizardImportAppPageBasic1::retranslateUi()
                                                 "service providers to import cloud VM from."));
 
     /* Translate source label: */
-    m_pSourceLabel->setText(tr("&Source:"));
+    m_pSourceLabel->setText(UIWizardImportApp::tr("&Source:"));
     /* Translate hardcoded values of Source combo-box: */
     m_pSourceComboBox->setItemText(0, UIWizardImportApp::tr("Local File System"));
     m_pSourceComboBox->setItemData(0, UIWizardImportApp::tr("Import from local file system."), Qt::ToolTipRole);

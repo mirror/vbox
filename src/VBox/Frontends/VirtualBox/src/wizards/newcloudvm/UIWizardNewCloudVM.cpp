@@ -98,7 +98,7 @@ bool UIWizardNewCloudVM::createVSDForm()
         }
 
         /* Show "Acquire launch form" progress: */
-        msgCenter().showModalProgressDialog(comProgress, tr("Acquire launch form..."),
+        msgCenter().showModalProgressDialog(comProgress, tr("Acquire launch form ..."),
                                             ":/progress_refresh_90px.png", this, 0);
         if (!comProgress.isOk() || comProgress.GetResultCode() != 0)
         {

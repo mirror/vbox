@@ -311,7 +311,7 @@ void UIWizardNewCloudVMPage1::populateAccountImages()
             }
 
             /* Show "Acquire cloud images" progress: */
-            msgCenter().showModalProgressDialog(comProgress, UIWizardNewCloudVM::tr("Acquire cloud images..."),
+            msgCenter().showModalProgressDialog(comProgress, UIWizardNewCloudVM::tr("Acquire cloud images ..."),
                                                 ":/progress_reading_appliance_90px.png", 0, 0);
             if (!comProgress.isOk() || comProgress.GetResultCode() != 0)
             {
@@ -707,7 +707,7 @@ void UIWizardNewCloudVMPageBasic1::retranslateUi()
                                                  "be one of known cloud service providers below."));
 
     /* Translate destination label: */
-    m_pDestinationLabel->setText(tr("&Destination:"));
+    m_pDestinationLabel->setText(UIWizardNewCloudVM::tr("&Destination:"));
     /* Translate received values of Destination combo-box.
      * We are enumerating starting from 0 for simplicity: */
     for (int i = 0; i < m_pDestinationComboBox->count(); ++i)
