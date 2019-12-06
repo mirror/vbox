@@ -185,9 +185,7 @@ STDMETHODIMP SharedClipboardWinStreamImpl::Read(void *pvBuffer, ULONG nBytesToRe
             rc = ShClTransferObjOpenParmsInit(&openParms);
             if (RT_SUCCESS(rc))
             {
-                openParms.fCreate = SHCL_OBJ_CF_ACT_OPEN_IF_EXISTS
-                                  | SHCL_OBJ_CF_ACT_FAIL_IF_NEW
-                                  | SHCL_OBJ_CF_ACCESS_READ
+                openParms.fCreate = SHCL_OBJ_CF_ACCESS_READ
                                   | SHCL_OBJ_CF_ACCESS_DENYWRITE;
 
                 rc = RTStrCopy(openParms.pszPath, openParms.cbPath, m_strPath.c_str());
