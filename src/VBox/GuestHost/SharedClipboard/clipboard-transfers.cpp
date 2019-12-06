@@ -814,89 +814,59 @@ int ShClTransferObjOpen(PSHCLTRANSFER pTransfer, PSHCLOBJOPENCREATEPARMS pOpenCr
 
     if (pTransfer->State.enmSource == SHCLSOURCE_LOCAL)
     {
-        /*
-         * Make sure the transfer direction matches the open/create parameters.
-         */
-        if (pTransfer->State.enmDir == SHCLTRANSFERDIR_FROM_REMOTE)
+        PSHCLOBJHANDLEINFO pInfo
+            = (PSHCLOBJHANDLEINFO)RTMemAllocZ(sizeof(SHCLOBJHANDLEINFO));
+        if (pInfo)
         {
-            if (pOpenCreateParms->fCreate & SHCL_OBJ_CF_ACCESS_READ) /* Read access wanted? */
+            rc = ShClTransferObjHandleInfoInit(pInfo);
+            if (RT_SUCCESS(rc))
             {
-                AssertMsgFailed(("Is not a write transfer, but object open flags are set to read access (0x%x)\n",
-                                 pOpenCreateParms->fCreate)); /* Should never happen. */
-                rc = VERR_INVALID_PARAMETER;
+
+                /* Only if this is a read transfer (locally) we're able to actually write to files
+                 * (we're reading from the source). */
+                const bool fWritable = pTransfer->State.enmDir == SHCLTRANSFERDIR_FROM_REMOTE;
+
+                uint64_t fOpen;
+                rc = shClConvertFileCreateFlags(fWritable,
+                                                pOpenCreateParms->fCreate, pOpenCreateParms->ObjInfo.Attr.fMode,
+                                                SHCLOBJHANDLE_INVALID, &fOpen);
+                if (RT_SUCCESS(rc))
+                {
+                    rc = shClTransferResolvePathAbs(pTransfer, pOpenCreateParms->pszPath, 0 /* fFlags */,
+                                                    &pInfo->pszPathLocalAbs);
+                    if (RT_SUCCESS(rc))
+                    {
+                        rc = RTFileOpen(&pInfo->u.Local.hFile, pInfo->pszPathLocalAbs, fOpen);
+                        if (RT_SUCCESS(rc))
+                        {
+                            LogRel2(("Shared Clipboard: Opened file '%s'\n", pInfo->pszPathLocalAbs));
+                        }
+                        else
+                            LogRel(("Shared Clipboard: Error opening file '%s', rc=%Rrc\n", pInfo->pszPathLocalAbs, rc));
+                    }
+                }
             }
-        }
-        else if (pTransfer->State.enmDir == SHCLTRANSFERDIR_TO_REMOTE)
-        {
-            if (pOpenCreateParms->fCreate & SHCL_OBJ_CF_ACCESS_WRITE) /* Write access wanted? */
+
+            if (RT_SUCCESS(rc))
             {
-                AssertMsgFailed(("Is not a read transfer, but object open flags are set to write access (0x%x)\n",
-                                 pOpenCreateParms->fCreate)); /* Should never happen. */
-                rc = VERR_INVALID_PARAMETER;
+                pInfo->hObj    = pTransfer->uObjHandleNext++;
+                pInfo->enmType = SHCLOBJTYPE_FILE;
+
+                RTListAppend(&pTransfer->lstObj, &pInfo->Node);
+                pTransfer->cObjHandles++;
+
+                LogFlowFunc(("cObjHandles=%RU32\n", pTransfer->cObjHandles));
+
+                *phObj = pInfo->hObj;
+            }
+            else
+            {
+                ShClTransferObjHandleInfoDestroy(pInfo);
+                RTMemFree(pInfo);
             }
         }
         else
-        {
-            AssertFailed();
-            rc = VERR_NOT_SUPPORTED;
-        }
-
-        if (RT_SUCCESS(rc))
-        {
-            PSHCLOBJHANDLEINFO pInfo
-                = (PSHCLOBJHANDLEINFO)RTMemAllocZ(sizeof(SHCLOBJHANDLEINFO));
-            if (pInfo)
-            {
-                rc = ShClTransferObjHandleInfoInit(pInfo);
-                if (RT_SUCCESS(rc))
-                {
-
-                    /* Only if this is a read transfer (locally) we're able to actually write to files
-                     * (we're reading from the source). */
-                    const bool fWritable = pTransfer->State.enmDir == SHCLTRANSFERDIR_FROM_REMOTE;
-
-                    uint64_t fOpen;
-                    rc = shClConvertFileCreateFlags(fWritable,
-                                                    pOpenCreateParms->fCreate, pOpenCreateParms->ObjInfo.Attr.fMode,
-                                                    SHCLOBJHANDLE_INVALID, &fOpen);
-                    if (RT_SUCCESS(rc))
-                    {
-                        rc = shClTransferResolvePathAbs(pTransfer, pOpenCreateParms->pszPath, 0 /* fFlags */,
-                                                        &pInfo->pszPathLocalAbs);
-                        if (RT_SUCCESS(rc))
-                        {
-                            rc = RTFileOpen(&pInfo->u.Local.hFile, pInfo->pszPathLocalAbs, fOpen);
-                            if (RT_SUCCESS(rc))
-                            {
-                                LogRel2(("Shared Clipboard: Opened file '%s'\n", pInfo->pszPathLocalAbs));
-                            }
-                            else
-                                LogRel(("Shared Clipboard: Error opening file '%s', rc=%Rrc\n", pInfo->pszPathLocalAbs, rc));
-                        }
-                    }
-                }
-
-                if (RT_SUCCESS(rc))
-                {
-                    pInfo->hObj    = pTransfer->uObjHandleNext++;
-                    pInfo->enmType = SHCLOBJTYPE_FILE;
-
-                    RTListAppend(&pTransfer->lstObj, &pInfo->Node);
-                    pTransfer->cObjHandles++;
-
-                    LogFlowFunc(("cObjHandles=%RU32\n", pTransfer->cObjHandles));
-
-                    *phObj = pInfo->hObj;
-                }
-                else
-                {
-                    ShClTransferObjHandleInfoDestroy(pInfo);
-                    RTMemFree(pInfo);
-                }
-            }
-            else
-                rc = VERR_NO_MEMORY;
-        }
+            rc = VERR_NO_MEMORY;
     }
     else if (pTransfer->State.enmSource == SHCLSOURCE_REMOTE)
     {
@@ -3097,6 +3067,7 @@ static int shClConvertFileCreateFlags(bool fWritable, unsigned fShClFlags, RTFMO
     switch ((fShClFlags & SHCL_OBJ_CF_ACCESS_MASK_RW))
     {
         default:
+            RT_FALL_THROUGH();
         case SHCL_OBJ_CF_ACCESS_NONE:
         {
 #ifdef RT_OS_WINDOWS
@@ -3115,30 +3086,12 @@ static int shClConvertFileCreateFlags(bool fWritable, unsigned fShClFlags, RTFMO
             LogFlowFunc(("SHCL_OBJ_CF_ACCESS_READ\n"));
             break;
         }
-
-        case SHCL_OBJ_CF_ACCESS_WRITE:
-        {
-            fOpen |= RTFILE_O_WRITE;
-            LogFlowFunc(("SHCL_OBJ_CF_ACCESS_WRITE\n"));
-            break;
-        }
-
-        case SHCL_OBJ_CF_ACCESS_READWRITE:
-        {
-            fOpen |= RTFILE_O_READWRITE;
-            LogFlowFunc(("SHCL_OBJ_CF_ACCESS_READWRITE\n"));
-            break;
-        }
-    }
-
-    if (fShClFlags & SHCL_OBJ_CF_ACCESS_APPEND)
-    {
-        fOpen |= RTFILE_O_APPEND;
     }
 
     switch ((fShClFlags & SHCL_OBJ_CF_ACCESS_MASK_ATTR))
     {
         default:
+            RT_FALL_THROUGH();
         case SHCL_OBJ_CF_ACCESS_ATTR_NONE:
         {
             fOpen |= RTFILE_O_ACCESS_ATTR_DEFAULT;
@@ -3150,20 +3103,6 @@ static int shClConvertFileCreateFlags(bool fWritable, unsigned fShClFlags, RTFMO
         {
             fOpen |= RTFILE_O_ACCESS_ATTR_READ;
             LogFlowFunc(("SHCL_OBJ_CF_ACCESS_ATTR_READ\n"));
-            break;
-        }
-
-        case SHCL_OBJ_CF_ACCESS_ATTR_WRITE:
-        {
-            fOpen |= RTFILE_O_ACCESS_ATTR_WRITE;
-            LogFlowFunc(("SHCL_OBJ_CF_ACCESS_ATTR_WRITE\n"));
-            break;
-        }
-
-        case SHCL_OBJ_CF_ACCESS_ATTR_READWRITE:
-        {
-            fOpen |= RTFILE_O_ACCESS_ATTR_READWRITE;
-            LogFlowFunc(("SHCL_OBJ_CF_ACCESS_ATTR_READWRITE\n"));
             break;
         }
     }
@@ -3191,80 +3130,6 @@ static int shClConvertFileCreateFlags(bool fWritable, unsigned fShClFlags, RTFMO
             fOpen |= RTFILE_O_DENY_ALL;
             LogFlowFunc(("SHCL_OBJ_CF_ACCESS_DENYALL\n"));
             break;
-    }
-
-    /* Open/Create action mask */
-    switch ((fShClFlags & SHCL_OBJ_CF_ACT_MASK_IF_EXISTS))
-    {
-        case SHCL_OBJ_CF_ACT_OPEN_IF_EXISTS:
-            if (SHCL_OBJ_CF_ACT_CREATE_IF_NEW == (fShClFlags & SHCL_OBJ_CF_ACT_MASK_IF_NEW))
-            {
-                fOpen |= RTFILE_O_OPEN_CREATE;
-                LogFlowFunc(("SHCL_OBJ_CF_ACT_OPEN_IF_EXISTS and SHCL_OBJ_CF_ACT_CREATE_IF_NEW\n"));
-            }
-            else if (SHCL_OBJ_CF_ACT_FAIL_IF_NEW == (fShClFlags & SHCL_OBJ_CF_ACT_MASK_IF_NEW))
-            {
-                fOpen |= RTFILE_O_OPEN;
-                LogFlowFunc(("SHCL_OBJ_CF_ACT_OPEN_IF_EXISTS and SHCL_OBJ_CF_ACT_FAIL_IF_NEW\n"));
-            }
-            else
-            {
-                LogFlowFunc(("invalid open/create action combination\n"));
-                rc = VERR_INVALID_PARAMETER;
-            }
-            break;
-        case SHCL_OBJ_CF_ACT_FAIL_IF_EXISTS:
-            if (SHCL_OBJ_CF_ACT_CREATE_IF_NEW == (fShClFlags & SHCL_OBJ_CF_ACT_MASK_IF_NEW))
-            {
-                fOpen |= RTFILE_O_CREATE;
-                LogFlowFunc(("SHCL_OBJ_CF_ACT_FAIL_IF_EXISTS and SHCL_OBJ_CF_ACT_CREATE_IF_NEW\n"));
-            }
-            else
-            {
-                LogFlowFunc(("invalid open/create action combination\n"));
-                rc = VERR_INVALID_PARAMETER;
-            }
-            break;
-        case SHCL_OBJ_CF_ACT_REPLACE_IF_EXISTS:
-            if (SHCL_OBJ_CF_ACT_CREATE_IF_NEW == (fShClFlags & SHCL_OBJ_CF_ACT_MASK_IF_NEW))
-            {
-                fOpen |= RTFILE_O_CREATE_REPLACE;
-                LogFlowFunc(("SHCL_OBJ_CF_ACT_REPLACE_IF_EXISTS and SHCL_OBJ_CF_ACT_CREATE_IF_NEW\n"));
-            }
-            else if (SHCL_OBJ_CF_ACT_FAIL_IF_NEW == (fShClFlags & SHCL_OBJ_CF_ACT_MASK_IF_NEW))
-            {
-                fOpen |= RTFILE_O_OPEN | RTFILE_O_TRUNCATE;
-                LogFlowFunc(("SHCL_OBJ_CF_ACT_REPLACE_IF_EXISTS and SHCL_OBJ_CF_ACT_FAIL_IF_NEW\n"));
-            }
-            else
-            {
-                LogFlowFunc(("invalid open/create action combination\n"));
-                rc = VERR_INVALID_PARAMETER;
-            }
-            break;
-        case SHCL_OBJ_CF_ACT_OVERWRITE_IF_EXISTS:
-            if (SHCL_OBJ_CF_ACT_CREATE_IF_NEW == (fShClFlags & SHCL_OBJ_CF_ACT_MASK_IF_NEW))
-            {
-                fOpen |= RTFILE_O_CREATE_REPLACE;
-                LogFlowFunc(("SHCL_OBJ_CF_ACT_OVERWRITE_IF_EXISTS and SHCL_OBJ_CF_ACT_CREATE_IF_NEW\n"));
-            }
-            else if (SHCL_OBJ_CF_ACT_FAIL_IF_NEW == (fShClFlags & SHCL_OBJ_CF_ACT_MASK_IF_NEW))
-            {
-                fOpen |= RTFILE_O_OPEN | RTFILE_O_TRUNCATE;
-                LogFlowFunc(("SHCL_OBJ_CF_ACT_OVERWRITE_IF_EXISTS and SHCL_OBJ_CF_ACT_FAIL_IF_NEW\n"));
-            }
-            else
-            {
-                LogFlowFunc(("invalid open/create action combination\n"));
-                rc = VERR_INVALID_PARAMETER;
-            }
-            break;
-        default:
-        {
-            rc = VERR_INVALID_PARAMETER;
-            LogFlowFunc(("SHCL_OBJ_CF_ACT_MASK_IF_EXISTS - invalid parameter\n"));
-            break;
-        }
     }
 
     if (RT_SUCCESS(rc))

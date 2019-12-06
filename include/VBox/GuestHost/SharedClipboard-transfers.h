@@ -110,39 +110,13 @@ typedef SHCLOBJHANDLE *PSHCLOBJHANDLE;
 /** Create/open a directory. */
 #define SHCL_OBJ_CF_DIRECTORY             (0x00000004)
 
-/** Open/create action to do if object exists
- *  and if the object does not exists.
- *  REPLACE file means atomically DELETE and CREATE.
- *  OVERWRITE file means truncating the file to 0 and
- *  setting new size.
- *  When opening an existing directory REPLACE and OVERWRITE
- *  actions are considered invalid, and cause returning
- *  FILE_EXISTS with NIL handle.
- */
-#define SHCL_OBJ_CF_ACT_MASK_IF_EXISTS      (0x000000F0)
-#define SHCL_OBJ_CF_ACT_MASK_IF_NEW         (0x00000F00)
-
-/** What to do if object exists. */
-#define SHCL_OBJ_CF_ACT_OPEN_IF_EXISTS      (0x00000000)
-#define SHCL_OBJ_CF_ACT_FAIL_IF_EXISTS      (0x00000010)
-#define SHCL_OBJ_CF_ACT_REPLACE_IF_EXISTS   (0x00000020)
-#define SHCL_OBJ_CF_ACT_OVERWRITE_IF_EXISTS (0x00000030)
-
-/** What to do if object does not exist. */
-#define SHCL_OBJ_CF_ACT_CREATE_IF_NEW       (0x00000000)
-#define SHCL_OBJ_CF_ACT_FAIL_IF_NEW         (0x00000100)
-
 /** Read/write requested access for the object. */
-#define SHCL_OBJ_CF_ACCESS_MASK_RW          (0x00003000)
+#define SHCL_OBJ_CF_ACCESS_MASK_RW          (0x00001000)
 
 /** No access requested. */
 #define SHCL_OBJ_CF_ACCESS_NONE             (0x00000000)
 /** Read access requested. */
 #define SHCL_OBJ_CF_ACCESS_READ             (0x00001000)
-/** Write access requested. */
-#define SHCL_OBJ_CF_ACCESS_WRITE            (0x00002000)
-/** Read/Write access requested. */
-#define SHCL_OBJ_CF_ACCESS_READWRITE        (SHCL_OBJ_CF_ACCESS_READ | SHCL_OBJ_CF_ACCESS_WRITE)
 
 /** Requested share access for the object. */
 #define SHCL_OBJ_CF_ACCESS_MASK_DENY        (0x0000C000)
@@ -163,17 +137,10 @@ typedef SHCLOBJHANDLE *PSHCLOBJHANDLE;
 #define SHCL_OBJ_CF_ACCESS_ATTR_NONE        (0x00000000)
 /** Read access requested. */
 #define SHCL_OBJ_CF_ACCESS_ATTR_READ        (0x00010000)
-/** Write access requested. */
-#define SHCL_OBJ_CF_ACCESS_ATTR_WRITE       (0x00020000)
-/** Read/Write access requested. */
-#define SHCL_OBJ_CF_ACCESS_ATTR_READWRITE   (SHCL_OBJ_CF_ACCESS_ATTR_READ | SHCL_OBJ_CF_ACCESS_ATTR_WRITE)
-
-/** The file is opened in append mode. Ignored if SHCL_OBJ_CF_ACCESS_WRITE is not set. */
-#define SHCL_OBJ_CF_ACCESS_APPEND           (0x00040000)
 
 /** @} */
 
-/** Result of an open/create request.
+/** Result of an open request.
  *  Along with handle value the result code
  *  identifies what has happened while
  *  trying to open the object.
@@ -185,12 +152,6 @@ typedef enum _SHCLCREATERESULT
     SHCL_CREATERESULT_PATH_NOT_FOUND,
     /** Path to file exists, but the last component does not. */
     SHCL_CREATERESULT_FILE_NOT_FOUND,
-    /** File already exists and either has been opened or not. */
-    SHCL_CREATERESULT_FILE_EXISTS,
-    /** New file was created. */
-    SHCL_CREATERESULT_FILE_CREATED,
-    /** Existing file was replaced or overwritten. */
-    SHCL_CREATERESULT_FILE_REPLACED,
     /** Blow the type up to 32-bit. */
     SHCL_CREATERESULT_32BIT_HACK = 0x7fffffff
 } SHCLCREATERESULT;
