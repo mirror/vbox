@@ -404,7 +404,7 @@ static int usbLibVUsbDevicePopulate(PVBOXUSB_DEV pVuDev, HDEVINFO InfoSet, PSP_D
         strncpy(pVuDev->szName, DetailData->DevicePath, sizeof(pVuDev->szName));
 
         /* The location is used as a unique identifier for cross-referencing the two lists. */
-        Location = (LPCSTR)usbLibGetRegistryProperty(InfoSet, &DeviceData, SPDRP_LOCATION_INFORMATION);
+        Location = (LPCSTR)usbLibGetRegistryProperty(InfoSet, &DeviceData, SPDRP_DRIVER);
         if (Location)
         {
             strncpy(pVuDev->szDriverRegName, Location, sizeof(pVuDev->szDriverRegName));
@@ -520,43 +520,8 @@ static uint16_t usbLibParseHexNumU16(LPCSTR *ppStr)
     return num;
 }
 
-static bool usbLibParseLocation(LPCSTR LocStr, uint16_t *pBus, uint16_t *pPort)
-{
-#define PORT_PREFIX "Port_#"
-#define BUS_PREFIX  ".Hub_#"
-
-    *pBus = *pPort = 0xFFFF;
-
-    /* The Location Information is in the format Port_#xxxx.Hub_#xxxx, with 'xxxx'
-     * being 16-bit hexadecimal numbers. It should be reliable on Windows Vista and
-     * later. Note that while the port corresponds to the port number aka address,
-     * the hub nomber has no discernible relationship to how Windows enumerates hubs.
-     */
-
-    if (strncmp(LocStr, PORT_PREFIX, strlen(PORT_PREFIX)))
-        return false;
-
-    /* Point to the start of the port number and parse it. */
-    LocStr += strlen(PORT_PREFIX);
-    *pPort = usbLibParseHexNumU16(&LocStr);
-
-    if (strncmp(LocStr, BUS_PREFIX, strlen(BUS_PREFIX)))
-        return false;
-
-    /* Point to the start of the hub/bus number and parse it. */
-    LocStr += strlen(BUS_PREFIX);
-    *pBus = usbLibParseHexNumU16(&LocStr);
-
-    return true;
-#undef PORT_PREFIX
-#undef BUS_PREFIX
-}
-
 static int usbLibDevPopulate(PUSBDEVICE pDev, PUSB_NODE_CONNECTION_INFORMATION_EX pConInfo, ULONG iPort, LPCSTR lpszLocation, LPCSTR lpszDrvKeyName, LPCSTR lpszHubName, PVBOXUSB_STRING_DR_ENTRY pDrList)
 {
-    uint16_t    uPort;
-    uint16_t    uBus;
-
     pDev->bcdUSB = pConInfo->DeviceDescriptor.bcdUSB;
     pDev->bDeviceClass = pConInfo->DeviceDescriptor.bDeviceClass;
     pDev->bDeviceSubClass = pConInfo->DeviceDescriptor.bDeviceSubClass;
@@ -564,22 +529,15 @@ static int usbLibDevPopulate(PUSBDEVICE pDev, PUSB_NODE_CONNECTION_INFORMATION_E
     pDev->idVendor = pConInfo->DeviceDescriptor.idVendor;
     pDev->idProduct = pConInfo->DeviceDescriptor.idProduct;
     pDev->bcdDevice = pConInfo->DeviceDescriptor.bcdDevice;
+    pDev->bBus = 0; /* The hub numbering is not very useful on Windows. Skip it. */
+    pDev->bPort = iPort;
 
-    /* Parse the bus (hub) and port out of the location. */
-    if (usbLibParseLocation(lpszLocation, &uBus, &uPort))
-    {
-        Assert(uPort == iPort);
-        pDev->bBus  = uBus;
-        pDev->bPort = uPort;
-    }
-    else
-    {
-        /* Shouldn't happen but fall back to semi-sane values. */
-        pDev->bBus  = 0;
-        pDev->bPort = iPort;
-    }
+    /* The port path/location uniquely identifies the port. */
+    pDev->pszPortPath = RTStrDup(lpszLocation);
+    if (!pDev->pszPortPath)
+        return VERR_NO_STR_MEMORY;
 
-    /** @todo check which devices are used for primary input (keyboard & mouse) */
+    /* If there is no DriverKey, the device is unused because there's no driver. */
     if (!lpszDrvKeyName || *lpszDrvKeyName == 0)
         pDev->enmState = USBDEVICESTATE_UNUSED;
     else
@@ -601,9 +559,12 @@ static int usbLibDevPopulate(PUSBDEVICE pDev, PUSB_NODE_CONNECTION_INFORMATION_E
     if (pDev->bcdUSB >= 0x0300)
         pDev->enmSpeed = USBDEVICESPEED_SUPER;
 
-    pDev->pszAddress = RTStrDup(lpszLocation);
-    if (!pDev->pszAddress)
-        return VERR_NO_STR_MEMORY;
+    /* If there's no DriverKey, jam in an empty string to avoid NULL pointers. */
+    if (!lpszDrvKeyName)
+        pDev->pszAddress = RTStrDup("");
+    else
+        pDev->pszAddress = RTStrDup(lpszDrvKeyName);
+
     pDev->pszBackend = RTStrDup("host");
     if (!pDev->pszBackend)
     {
@@ -1502,7 +1463,7 @@ static int usbLibEnumDevices(PUSBDEVICE *ppDevs, uint32_t *pcDevs)
         if (HubPath)
         {
             /* The location information uniquely identifies the USB device, (hub/port). */
-            Location = (LPCSTR)usbLibGetRegistryProperty(InfoSet, &DeviceData, SPDRP_LOCATION_INFORMATION);
+            Location = (LPCSTR)usbLibGetRegistryProperty(InfoSet, &DeviceData, SPDRP_LOCATION_PATHS);
 
             /* The software key aka DriverKey. This will be NULL for devices with no driver
              * and allows us to distinguish between 'busy' (driver installed) and 'available'
