@@ -141,54 +141,43 @@ static int drvHostValKitAudioCreateStreamOut(PDRVHOSTVAKITAUDIO pDrv, PVAKITAUDI
 {
     RT_NOREF(pDrv, pCfgAcq);
 
-    int rc = VINF_SUCCESS;
-
     pStreamDbg->tsStarted = 0;
     pStreamDbg->uSamplesSinceStarted = 0;
     pStreamDbg->Out.tsLastPlayed  = 0;
     pStreamDbg->Out.cbPlayBuffer  = DrvAudioHlpFramesToBytes(pCfgReq->Backend.cFramesBufferSize, &pCfgReq->Props);
     pStreamDbg->Out.pu8PlayBuffer = (uint8_t *)RTMemAlloc(pStreamDbg->Out.cbPlayBuffer);
-    if (!pStreamDbg->Out.pu8PlayBuffer)
-        rc = VERR_NO_MEMORY;
+    AssertReturn(pStreamDbg->Out.pu8PlayBuffer, VERR_NO_MEMORY);
 
+    char szTemp[RTPATH_MAX];
+    int rc = RTPathTemp(szTemp, sizeof(szTemp));
+    if (RT_SUCCESS(rc))
+        rc = RTPathAppend(szTemp, sizeof(szTemp), "VBoxTestTmp\\VBoxAudioValKit");
     if (RT_SUCCESS(rc))
     {
-        char szTemp[RTPATH_MAX];
-        rc = RTPathTemp(szTemp, sizeof(szTemp));
-
-        RTPathAppend(szTemp, sizeof(szTemp), "VBoxTestTmp\\VBoxAudioValKit");
-
+        char szFile[RTPATH_MAX];
+        rc = DrvAudioHlpFileNameGet(szFile, sizeof(szFile), szTemp, "VaKit",
+                                    0 /* Instance */, PDMAUDIOFILETYPE_WAV, PDMAUDIOFILENAME_FLAGS_NONE);
         if (RT_SUCCESS(rc))
         {
-            char szFile[RTPATH_MAX + 1];
-
-            rc = DrvAudioHlpFileNameGet(szFile, RT_ELEMENTS(szFile), szTemp, "VaKit",
-                                        0 /* Instance */, PDMAUDIOFILETYPE_WAV, PDMAUDIOFILENAME_FLAGS_NONE);
+            rc = DrvAudioHlpFileCreate(PDMAUDIOFILETYPE_WAV, szFile, PDMAUDIOFILE_FLAGS_NONE, &pStreamDbg->pFile);
             if (RT_SUCCESS(rc))
-            {
-                rc = DrvAudioHlpFileCreate(PDMAUDIOFILETYPE_WAV, szFile, PDMAUDIOFILE_FLAGS_NONE, &pStreamDbg->pFile);
-                if (RT_SUCCESS(rc))
-                    rc = DrvAudioHlpFileOpen(pStreamDbg->pFile, PDMAUDIOFILE_DEFAULT_OPEN_FLAGS, &pCfgReq->Props);
-            }
-
-            if (RT_FAILURE(rc))
-            {
-                LogRel(("VaKitAudio: Creating output file '%s' failed with %Rrc\n", szFile, rc));
-            }
-            else
-            {
-                size_t cch;
-                char szTimingInfo[128];
-                cch = RTStrPrintf(szTimingInfo, sizeof(szTimingInfo), "# %uHz %uch %ubit\n",
-                                  pCfgReq->Props.uHz, pCfgReq->Props.cChannels, pCfgReq->Props.cbSample * 8);
-
-                RTFileWrite(pStreamDbg->hFileTiming, szTimingInfo, cch, NULL);
-            }
+                rc = DrvAudioHlpFileOpen(pStreamDbg->pFile, PDMAUDIOFILE_DEFAULT_OPEN_FLAGS, &pCfgReq->Props);
         }
-        else
-            LogRel(("VaKitAudio: Unable to retrieve temp dir: %Rrc\n", rc));
-    }
 
+        if (RT_FAILURE(rc))
+            LogRel(("VaKitAudio: Creating output file '%s' failed with %Rrc\n", szFile, rc));
+        else
+        {
+            size_t cch;
+            char szTimingInfo[128];
+            cch = RTStrPrintf(szTimingInfo, sizeof(szTimingInfo), "# %uHz %uch %ubit\n",
+                              pCfgReq->Props.uHz, pCfgReq->Props.cChannels, pCfgReq->Props.cbSample * 8);
+
+            RTFileWrite(pStreamDbg->hFileTiming, szTimingInfo, cch, NULL);
+        }
+    }
+    else
+        LogRel(("VaKitAudio: Unable to retrieve temp dir: %Rrc\n", rc));
     return rc;
 }
 

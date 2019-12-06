@@ -1444,7 +1444,7 @@ int AudioMixerSinkSetFormat(PAUDMIXSINK pSink, PPDMAUDIOPCMPROPS pPCMProps)
             char szName[64];
             RTStrPrintf(szName, sizeof(szName), "MixerSink-%s", pSink->pszName);
 
-            char szFile[RTPATH_MAX + 1];
+            char szFile[RTPATH_MAX];
             rc2 = DrvAudioHlpFileNameGet(szFile, RT_ELEMENTS(szFile), szTemp, szName,
                                          0 /* Instance */, PDMAUDIOFILETYPE_WAV, PDMAUDIOFILENAME_FLAGS_NONE);
             if (RT_SUCCESS(rc2))

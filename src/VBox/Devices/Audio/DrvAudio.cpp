@@ -2546,13 +2546,12 @@ static DECLCALLBACK(int) drvAudioStreamCreate(PPDMIAUDIOCONNECTOR pInterface,
         /* Set initial reference counts. */
         pStream->cRefs = 1;
 
+        char szFile[RTPATH_MAX];
         if (pCfgHost->enmDir == PDMAUDIODIR_IN)
         {
             if (pThis->In.Cfg.Dbg.fEnabled)
             {
-                char szFile[RTPATH_MAX + 1];
-
-                int rc2 = DrvAudioHlpFileNameGet(szFile, RT_ELEMENTS(szFile), pThis->In.Cfg.Dbg.szPathOut, "CaptureNonInterleaved",
+                int rc2 = DrvAudioHlpFileNameGet(szFile, sizeof(szFile), pThis->In.Cfg.Dbg.szPathOut, "CaptureNonInterleaved",
                                                  pThis->pDrvIns->iInstance, PDMAUDIOFILETYPE_WAV, PDMAUDIOFILENAME_FLAGS_NONE);
                 if (RT_SUCCESS(rc2))
                 {
@@ -2565,7 +2564,7 @@ static DECLCALLBACK(int) drvAudioStreamCreate(PPDMIAUDIOCONNECTOR pInterface,
 
                 if (RT_SUCCESS(rc2))
                 {
-                    rc2 = DrvAudioHlpFileNameGet(szFile, RT_ELEMENTS(szFile), pThis->In.Cfg.Dbg.szPathOut, "StreamRead",
+                    rc2 = DrvAudioHlpFileNameGet(szFile, sizeof(szFile), pThis->In.Cfg.Dbg.szPathOut, "StreamRead",
                                                  pThis->pDrvIns->iInstance, PDMAUDIOFILETYPE_WAV, PDMAUDIOFILENAME_FLAGS_NONE);
                     if (RT_SUCCESS(rc2))
                     {
@@ -2585,9 +2584,7 @@ static DECLCALLBACK(int) drvAudioStreamCreate(PPDMIAUDIOCONNECTOR pInterface,
         {
             if (pThis->Out.Cfg.Dbg.fEnabled)
             {
-                char szFile[RTPATH_MAX + 1];
-
-                int rc2 = DrvAudioHlpFileNameGet(szFile, RT_ELEMENTS(szFile), pThis->Out.Cfg.Dbg.szPathOut, "PlayNonInterleaved",
+                int rc2 = DrvAudioHlpFileNameGet(szFile, sizeof(szFile), pThis->Out.Cfg.Dbg.szPathOut, "PlayNonInterleaved",
                                                  pThis->pDrvIns->iInstance, PDMAUDIOFILETYPE_WAV, PDMAUDIOFILENAME_FLAGS_NONE);
                 if (RT_SUCCESS(rc2))
                 {
@@ -2600,7 +2597,7 @@ static DECLCALLBACK(int) drvAudioStreamCreate(PPDMIAUDIOCONNECTOR pInterface,
 
                 if (RT_SUCCESS(rc2))
                 {
-                    rc2 = DrvAudioHlpFileNameGet(szFile, RT_ELEMENTS(szFile), pThis->Out.Cfg.Dbg.szPathOut, "StreamWrite",
+                    rc2 = DrvAudioHlpFileNameGet(szFile, sizeof(szFile), pThis->Out.Cfg.Dbg.szPathOut, "StreamWrite",
                                                  pThis->pDrvIns->iInstance, PDMAUDIOFILETYPE_WAV, PDMAUDIOFILENAME_FLAGS_NONE);
                     if (RT_SUCCESS(rc2))
                     {

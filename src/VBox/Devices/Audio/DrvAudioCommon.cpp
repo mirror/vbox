@@ -1519,8 +1519,9 @@ int DrvAudioHlpFileNameGet(char *pszFile, size_t cchFile, const char *pszPath, c
 
     do
     {
-        char szFilePath[RTPATH_MAX + 1];
-        RTStrPrintf2(szFilePath, sizeof(szFilePath), "%s", pszPath);
+        char szFilePath[RTPATH_MAX];
+        rc = RTStrCopy(szFilePath, sizeof(szFilePath), pszPath);
+        AssertRCBreak(rc);
 
         /* Create it when necessary. */
         if (!RTDirExists(szFilePath))
@@ -1530,7 +1531,7 @@ int DrvAudioHlpFileNameGet(char *pszFile, size_t cchFile, const char *pszPath, c
                 break;
         }
 
-        char szFileName[RTPATH_MAX + 1];
+        char szFileName[RTPATH_MAX];
         szFileName[0] = '\0';
 
         if (fFlags & PDMAUDIOFILENAME_FLAGS_TS)
@@ -1587,7 +1588,7 @@ int DrvAudioHlpFileNameGet(char *pszFile, size_t cchFile, const char *pszPath, c
         if (RT_FAILURE(rc))
             break;
 
-        RTStrPrintf2(pszFile, cchFile, "%s", szFilePath);
+        rc = RTStrCopy(pszFile, cchFile, szFilePath);
 
     } while (0);
 

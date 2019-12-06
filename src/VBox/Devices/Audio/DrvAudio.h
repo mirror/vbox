@@ -100,7 +100,7 @@ typedef struct DRVAUDIOCFG
         bool             fEnabled;
         /** Where to store the debugging files.
          *  Defaults to VBOX_AUDIO_DEBUG_DUMP_PCM_DATA_PATH if not set. */
-        char             szPathOut[RTPATH_MAX + 1];
+        char             szPathOut[RTPATH_MAX];
     } Dbg;
 } DRVAUDIOCFG, *PDRVAUDIOCFG;
 
