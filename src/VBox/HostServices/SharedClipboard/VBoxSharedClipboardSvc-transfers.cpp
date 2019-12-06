@@ -1369,7 +1369,7 @@ int shClSvcTransferHandler(PSHCLCLIENT pClient,
             pTransfer = ShClTransferCtxGetTransfer(&pClient->TransferCtx, uTransferID);
             if (!pTransfer)
             {
-                LogFunc(("Transfer with ID %RU32 not found\n", uTransferID));
+                LogFunc(("Transfer with ID %RU16 not found\n", uTransferID));
                 rc = VERR_SHCLPB_TRANSFER_ID_NOT_FOUND;
             }
             break;
@@ -1614,16 +1614,16 @@ int shClSvcTransferHandler(PSHCLCLIENT pClient,
 
         case VBOX_SHCL_GUEST_FN_OBJ_OPEN:
         {
-            if (cParms != VBOX_SHCL_CPARMS_OBJ_OPEN)
-                break;
+            ASSERT_GUEST_STMT_BREAK(cParms == VBOX_SHCL_CPARMS_OBJ_OPEN, VERR_WRONG_PARAMETER_COUNT);
 
             SHCLOBJOPENCREATEPARMS openCreateParms;
             RT_ZERO(openCreateParms);
 
             uint32_t cbPath;
-            rc = HGCMSvcGetU32(&paParms[2], &cbPath);
+            rc = HGCMSvcGetU32(&paParms[2], &cbPath); /** @todo r=bird: This is an pointless parameter. */
             if (RT_SUCCESS(rc))
             {
+                /** @todo r=bird: This is the wrong way of getting a string!   */
                 rc = HGCMSvcGetPv(&paParms[3], (void **)&openCreateParms.pszPath, &openCreateParms.cbPath);
                 if (cbPath != openCreateParms.cbPath)
                     rc = VERR_INVALID_PARAMETER;

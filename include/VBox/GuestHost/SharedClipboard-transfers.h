@@ -85,7 +85,7 @@ typedef uint64_t SHCLLISTHANDLE;
 typedef SHCLLISTHANDLE *PSHCLLISTHANDLE;
 
 /** Specifies an invalid Shared Clipboard list handle. */
-#define SHCLLISTHANDLE_INVALID        ((SHCLLISTHANDLE)~0LL)
+#define SHCLLISTHANDLE_INVALID        ((SHCLLISTHANDLE)UINT64_MAX)
 
 /** A Shared Clipboard object handle. */
 typedef uint64_t SHCLOBJHANDLE;
@@ -93,73 +93,51 @@ typedef uint64_t SHCLOBJHANDLE;
 typedef SHCLOBJHANDLE *PSHCLOBJHANDLE;
 
 /** Specifies an invalid Shared Clipboard object handle. */
-#define SHCLOBJHANDLE_INVALID         ((SHCLOBJHANDLE)~0LL)
+#define SHCLOBJHANDLE_INVALID         ((SHCLOBJHANDLE)UINT64_MAX)
 
 /** @} */
 
 /** @name Shared Clipboard open/create flags.
  *  @{
  */
-
 /** No flags. Initialization value. */
-#define SHCL_OBJ_CF_NONE                  (0x00000000)
+#define SHCL_OBJ_CF_NONE                    UINT32_C(0x00000000)
 
+#if 0 /* These probably won't be needed either */
 /** Lookup only the object, do not return a handle. All other flags are ignored. */
-#define SHCL_OBJ_CF_LOOKUP                (0x00000001)
-
+#define SHCL_OBJ_CF_LOOKUP                  UINT32_C(0x00000001)
 /** Create/open a directory. */
-#define SHCL_OBJ_CF_DIRECTORY             (0x00000004)
+#define SHCL_OBJ_CF_DIRECTORY               UINT32_C(0x00000004)
+#endif
 
 /** Read/write requested access for the object. */
-#define SHCL_OBJ_CF_ACCESS_MASK_RW          (0x00001000)
-
+#define SHCL_OBJ_CF_ACCESS_MASK_RW          UINT32_C(0x00001000)
 /** No access requested. */
-#define SHCL_OBJ_CF_ACCESS_NONE             (0x00000000)
+#define SHCL_OBJ_CF_ACCESS_NONE             UINT32_C(0x00000000)
 /** Read access requested. */
-#define SHCL_OBJ_CF_ACCESS_READ             (0x00001000)
+#define SHCL_OBJ_CF_ACCESS_READ             UINT32_C(0x00001000)
 
 /** Requested share access for the object. */
-#define SHCL_OBJ_CF_ACCESS_MASK_DENY        (0x0000C000)
-
+#define SHCL_OBJ_CF_ACCESS_MASK_DENY        UINT32_C(0x00008000)
 /** Allow any access. */
-#define SHCL_OBJ_CF_ACCESS_DENYNONE         (0x00000000)
-/** Do not allow read. */
-#define SHCL_OBJ_CF_ACCESS_DENYREAD         (0x00004000)
+#define SHCL_OBJ_CF_ACCESS_DENYNONE         UINT32_C(0x00000000)
 /** Do not allow write. */
-#define SHCL_OBJ_CF_ACCESS_DENYWRITE        (0x00008000)
-/** Do not allow access. */
-#define SHCL_OBJ_CF_ACCESS_DENYALL          (SHCL_OBJ_CF_ACCESS_DENYREAD | SHCL_OBJ_CF_ACCESS_DENYWRITE)
+#define SHCL_OBJ_CF_ACCESS_DENYWRITE        UINT32_C(0x00008000)
 
 /** Requested access to attributes of the object. */
-#define SHCL_OBJ_CF_ACCESS_MASK_ATTR        (0x00030000)
-
+#define SHCL_OBJ_CF_ACCESS_MASK_ATTR        UINT32_C(0x00010000)
 /** No access requested. */
-#define SHCL_OBJ_CF_ACCESS_ATTR_NONE        (0x00000000)
+#define SHCL_OBJ_CF_ACCESS_ATTR_NONE        UINT32_C(0x00000000)
 /** Read access requested. */
-#define SHCL_OBJ_CF_ACCESS_ATTR_READ        (0x00010000)
+#define SHCL_OBJ_CF_ACCESS_ATTR_READ        UINT32_C(0x00010000)
 
+/** Valid bits. */
+#define SHCL_OBJ_CF_VALID_MASK              UINT32_C(0x00018000)
 /** @} */
-
-/** Result of an open request.
- *  Along with handle value the result code
- *  identifies what has happened while
- *  trying to open the object.
- */
-typedef enum _SHCLCREATERESULT
-{
-    SHCL_CREATERESULT_NONE,
-    /** Specified path does not exist. */
-    SHCL_CREATERESULT_PATH_NOT_FOUND,
-    /** Path to file exists, but the last component does not. */
-    SHCL_CREATERESULT_FILE_NOT_FOUND,
-    /** Blow the type up to 32-bit. */
-    SHCL_CREATERESULT_32BIT_HACK = 0x7fffffff
-} SHCLCREATERESULT;
-AssertCompile(SHCL_CREATERESULT_NONE == 0);
-AssertCompileSize(SHCLCREATERESULT, 4);
 
 /**
  * The available additional information in a SHCLFSOBJATTR object.
+ * @sa RTFSOBJATTRADD
  */
 typedef enum _SHCLFSOBJATTRADD
 {
@@ -190,8 +168,9 @@ AssertCompileSize(RTUID,        4);
 
 /**
  * Shared Clipboard filesystem object attributes.
+ *
+ * @sa RTFSOBJATTR
  */
-#pragma pack(1)
 typedef struct _SHCLFSOBJATTR
 {
     /** Mode flags (st_mode). RTFS_UNIX_*, RTFS_TYPE_*, and RTFS_DOS_*.
@@ -262,10 +241,12 @@ typedef struct _SHCLFSOBJATTR
             /** Size of EAs. */
             RTFOFF          cb;
         } EASize;
+
+        /** Padding the structure to a multiple of 8 bytes. */
+        uint64_t au64Padding[5];
     } u;
 } SHCLFSOBJATTR;
-#pragma pack()
-AssertCompileSize(SHCLFSOBJATTR, 44);
+AssertCompileSize(SHCLFSOBJATTR, 48);
 /** Pointer to a Shared Clipboard filesystem object attributes structure. */
 typedef SHCLFSOBJATTR *PSHCLFSOBJATTR;
 /** Pointer to a const Shared Clipboard filesystem object attributes structure. */
@@ -273,8 +254,9 @@ typedef const SHCLFSOBJATTR *PCSHCLFSOBJATTR;
 
 /**
  * Shared Clipboard file system object information structure.
+ *
+ * @sa RTFSOBJINFO
  */
-#pragma pack(1)
 typedef struct _SHCLFSOBJINFO
 {
    /** Logical size (st_size).
@@ -310,15 +292,13 @@ typedef struct _SHCLFSOBJINFO
    SHCLFSOBJATTR Attr;
 
 } SHCLFSOBJINFO;
-#pragma pack()
-AssertCompileSize(SHCLFSOBJINFO, 92);
+AssertCompileSize(SHCLFSOBJINFO, 96);
 /** Pointer to a Shared Clipboard filesystem object information structure. */
 typedef SHCLFSOBJINFO *PSHCLFSOBJINFO;
 /** Pointer to a const Shared Clipboard filesystem object information
  *  structure. */
 typedef const SHCLFSOBJINFO *PCSHCLFSOBJINFO;
 
-#pragma pack(1)
 /**
  * Structure for keeping object open/create parameters.
  */
@@ -336,7 +316,6 @@ typedef struct _SHCLOBJOPENCREATEPARMS
      */
     SHCLFSOBJINFO    ObjInfo;
 } SHCLOBJOPENCREATEPARMS, *PSHCLOBJOPENCREATEPARMS;
-#pragma pack()
 
 /**
  * Structure for keeping a reply message.
@@ -536,9 +515,10 @@ typedef struct _SHCLAREAOBJ
 } SHCLAREAOBJ, *PSHCLAREAOBJ;
 
 /**
- * Class for maintaining a Shared Clipboard area
- * on the host or guest. This will contain all received files & directories
- * for a single Shared Clipboard operation.
+ * Class for maintaining a Shared Clipboard area on the host or guest.
+ *
+ * This will contain all received files & directories for a single Shared
+ * Clipboard operation.
  *
  * In case of a failed Shared Clipboard operation this class can also
  * perform a gentle rollback if required.
@@ -631,9 +611,6 @@ typedef struct _SHCLTRANSFEROBJ
     SHCLSOURCE           enmSource;
     SHCLTRANSFEROBJSTATE State;
 } SHCLTRANSFEROBJ, *PSHCLTRANSFEROBJ;
-
-/** Defines a transfer ID. */
-typedef uint16_t SHCLTRANSFERID;
 
 /**
  * Enumeration for specifying a Shared Clipboard object type.
@@ -742,7 +719,7 @@ typedef struct _SHCLTRANSFER *PSHCLTRANSFER;
  * Structure maintaining clipboard transfer provider context data.
  * This is handed in to the provider implementation callbacks.
  */
-    typedef struct _SHCLPROVIDERCTX
+typedef struct _SHCLPROVIDERCTX
 {
     /** Pointer to the related Shared Clipboard transfer. */
     PSHCLTRANSFER pTransfer;
@@ -751,7 +728,7 @@ typedef struct _SHCLTRANSFER *PSHCLTRANSFER;
 } SHCLPROVIDERCTX, *PSHCLPROVIDERCTX;
 
 /** @todo r=bird: These macros must go as they do no lend themselves to writing
- *        sane documentation.  Use the DECLCALLBACK macro instead, as you
+ *        sane documentation.  Use the DECLCALLBACKMEMBER macro instead, as you
  *        probably do not need the function and function pointer typedefs.
  *
  *        However, we need the documentation as you don't document a flying
@@ -912,14 +889,12 @@ typedef struct _SHCLTRANSFER
 {
     /** The node member for using this struct in a RTList. */
     RTLISTNODE               Node;
-    /** Critical section for serializing access. */
-    RTCRITSECT               CritSect;
     /** The transfer's state (for SSM, later). */
     SHCLTRANSFERSTATE        State;
-    /** Timeout (in ms) for waiting of events. Default is 30s. */
-    RTMSINTERVAL             uTimeoutMs;
     /** Absolute path to root entries. */
     char                    *pszPathRootAbs;
+    /** Timeout (in ms) for waiting of events. Default is 30s. */
+    RTMSINTERVAL             uTimeoutMs;
     /** Maximum data chunk size (in bytes) to transfer. Default is 64K. */
     uint32_t                 cbMaxChunkSize;
     /** The transfer's own event source. */
@@ -960,6 +935,8 @@ typedef struct _SHCLTRANSFER
     size_t                   cbUser;
     /** Contains thread-related attributes. */
     SHCLTRANSFERTHREAD       Thread;
+    /** Critical section for serializing access. */
+    RTCRITSECT               CritSect;
 } SHCLTRANSFER, *PSHCLTRANSFER;
 
 /**

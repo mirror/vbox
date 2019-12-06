@@ -33,7 +33,7 @@
 static int shClTransferThreadCreate(PSHCLTRANSFER pTransfer, PFNRTTHREAD pfnThreadFunc, void *pvUser);
 static int shClTransferThreadDestroy(PSHCLTRANSFER pTransfer, RTMSINTERVAL uTimeoutMs);
 static PSHCLTRANSFER shClTransferCtxGetTransferInternal(PSHCLTRANSFERCTX pTransferCtx, uint32_t uIdx);
-static int shClConvertFileCreateFlags(bool fWritable, unsigned fShClFlags, RTFMODE fMode, SHCLOBJHANDLE handleInitial, uint64_t *pfOpen);
+static int shClConvertFileCreateFlags(uint32_t fShClFlags, uint64_t *pfOpen);
 static int shClTransferResolvePathAbs(PSHCLTRANSFER pTransfer, const char *pszPath, uint32_t fFlags, char **ppszResolved);
 
 /** @todo Split this file up in different modules. */
@@ -795,41 +795,30 @@ DECLINLINE(PSHCLOBJHANDLEINFO) shClTransferObjGet(PSHCLTRANSFER pTransfer, SHCLO
  * @param   pOpenCreateParms    Open / create parameters of transfer object to open / create.
  * @param   phObj               Where to store the handle of transfer object opened on success.
  */
-int ShClTransferObjOpen(PSHCLTRANSFER pTransfer, PSHCLOBJOPENCREATEPARMS pOpenCreateParms,
-                        PSHCLOBJHANDLE phObj)
+int ShClTransferObjOpen(PSHCLTRANSFER pTransfer, PSHCLOBJOPENCREATEPARMS pOpenCreateParms, PSHCLOBJHANDLE phObj)
 {
     AssertPtrReturn(pTransfer,        VERR_INVALID_POINTER);
     AssertPtrReturn(pOpenCreateParms, VERR_INVALID_POINTER);
     AssertPtrReturn(phObj,            VERR_INVALID_POINTER);
-
-    int rc = VINF_SUCCESS;
-
     AssertMsgReturn(pTransfer->pszPathRootAbs, ("Transfer has no root path set\n"), VERR_INVALID_PARAMETER);
     AssertMsgReturn(pOpenCreateParms->pszPath, ("No path in open/create params set\n"), VERR_INVALID_PARAMETER);
 
-    if (pTransfer->cObjHandles == pTransfer->cMaxObjHandles)
+    if (pTransfer->cObjHandles >= pTransfer->cMaxObjHandles)
         return VERR_SHCLPB_MAX_OBJECTS_REACHED;
 
     LogFlowFunc(("pszPath=%s, fCreate=0x%x\n", pOpenCreateParms->pszPath, pOpenCreateParms->fCreate));
 
+    int rc;
     if (pTransfer->State.enmSource == SHCLSOURCE_LOCAL)
     {
-        PSHCLOBJHANDLEINFO pInfo
-            = (PSHCLOBJHANDLEINFO)RTMemAllocZ(sizeof(SHCLOBJHANDLEINFO));
+        PSHCLOBJHANDLEINFO pInfo = (PSHCLOBJHANDLEINFO)RTMemAllocZ(sizeof(SHCLOBJHANDLEINFO));
         if (pInfo)
         {
             rc = ShClTransferObjHandleInfoInit(pInfo);
             if (RT_SUCCESS(rc))
             {
-
-                /* Only if this is a read transfer (locally) we're able to actually write to files
-                 * (we're reading from the source). */
-                const bool fWritable = pTransfer->State.enmDir == SHCLTRANSFERDIR_FROM_REMOTE;
-
                 uint64_t fOpen;
-                rc = shClConvertFileCreateFlags(fWritable,
-                                                pOpenCreateParms->fCreate, pOpenCreateParms->ObjInfo.Attr.fMode,
-                                                SHCLOBJHANDLE_INVALID, &fOpen);
+                rc = shClConvertFileCreateFlags(pOpenCreateParms->fCreate, &fOpen);
                 if (RT_SUCCESS(rc))
                 {
                     rc = shClTransferResolvePathAbs(pTransfer, pOpenCreateParms->pszPath, 0 /* fFlags */,
@@ -838,11 +827,9 @@ int ShClTransferObjOpen(PSHCLTRANSFER pTransfer, PSHCLOBJOPENCREATEPARMS pOpenCr
                     {
                         rc = RTFileOpen(&pInfo->u.Local.hFile, pInfo->pszPathLocalAbs, fOpen);
                         if (RT_SUCCESS(rc))
-                        {
                             LogRel2(("Shared Clipboard: Opened file '%s'\n", pInfo->pszPathLocalAbs));
-                        }
                         else
-                            LogRel(("Shared Clipboard: Error opening file '%s', rc=%Rrc\n", pInfo->pszPathLocalAbs, rc));
+                            LogRel(("Shared Clipboard: Error opening file '%s': rc=%Rrc\n", pInfo->pszPathLocalAbs, rc));
                     }
                 }
             }
@@ -871,9 +858,7 @@ int ShClTransferObjOpen(PSHCLTRANSFER pTransfer, PSHCLOBJOPENCREATEPARMS pOpenCr
     else if (pTransfer->State.enmSource == SHCLSOURCE_REMOTE)
     {
         if (pTransfer->ProviderIface.pfnObjOpen)
-        {
             rc = pTransfer->ProviderIface.pfnObjOpen(&pTransfer->ProviderCtx, pOpenCreateParms, phObj);
-        }
         else
             rc = VERR_NOT_SUPPORTED;
     }
@@ -3011,63 +2996,20 @@ void ShClFsObjFromIPRT(PSHCLFSOBJINFO pDst, PCRTFSOBJINFO pSrc)
  * Converts Shared Clipboard create flags (see SharedClipboard-transfers.h) into IPRT create flags.
  *
  * @returns IPRT status code.
- * @param  fWritable            Whether the object is writable.
- * @param  fShClFlags           Shared clipboard create flags.
- * @param  fMode                File attributes.
- * @param  handleInitial        Initial handle.
- * @retval pfOpen               Where to store the IPRT creation / open flags.
+ * @param       fShClFlags  Shared clipboard create flags.
+ * @param[out]  pfOpen      Where to store the RTFILE_O_XXX flags for
+ *                          RTFileOpen.
  *
  * @sa Initially taken from vbsfConvertFileOpenFlags().
  */
-static int shClConvertFileCreateFlags(bool fWritable, unsigned fShClFlags, RTFMODE fMode,
-                                      SHCLOBJHANDLE handleInitial, uint64_t *pfOpen)
+static int shClConvertFileCreateFlags(uint32_t fShClFlags, uint64_t *pfOpen)
 {
+    AssertMsgReturnStmt(!(fShClFlags & ~SHCL_OBJ_CF_VALID_MASK), ("%#x4\n", fShClFlags), *pfOpen = 0, VERR_INVALID_FLAGS);
+
     uint64_t fOpen = 0;
-    int rc = VINF_SUCCESS;
 
-    if (   (fMode & RTFS_DOS_MASK) != 0
-        && (fMode & RTFS_UNIX_MASK) == 0)
+    switch (fShClFlags & SHCL_OBJ_CF_ACCESS_MASK_RW)
     {
-        /* A DOS/Windows guest, make RTFS_UNIX_* from RTFS_DOS_*.
-         * @todo this is based on rtFsModeNormalize/rtFsModeFromDos.
-         *       May be better to use RTFsModeNormalize here.
-         */
-        fMode |= RTFS_UNIX_IRUSR | RTFS_UNIX_IRGRP | RTFS_UNIX_IROTH;
-        /* x for directories. */
-        if (fMode & RTFS_DOS_DIRECTORY)
-            fMode |= RTFS_TYPE_DIRECTORY | RTFS_UNIX_IXUSR | RTFS_UNIX_IXGRP | RTFS_UNIX_IXOTH;
-        /* writable? */
-        if (!(fMode & RTFS_DOS_READONLY))
-            fMode |= RTFS_UNIX_IWUSR | RTFS_UNIX_IWGRP | RTFS_UNIX_IWOTH;
-
-        /* Set the requested mode using only allowed bits. */
-        fOpen |= ((fMode & RTFS_UNIX_MASK) << RTFILE_O_CREATE_MODE_SHIFT) & RTFILE_O_CREATE_MODE_MASK;
-    }
-    else
-    {
-        /* Old linux and solaris additions did not initialize the Info.Attr.fMode field
-         * and it contained random bits from stack. Detect this using the handle field value
-         * passed from the guest: old additions set it (incorrectly) to 0, new additions
-         * set it to SHCLOBJHANDLE_INVALID(~0).
-         */
-        if (handleInitial == 0)
-        {
-            /* Old additions. Do nothing, use default mode. */
-        }
-        else
-        {
-            /* New additions or Windows additions. Set the requested mode using only allowed bits.
-             * Note: Windows guest set RTFS_UNIX_MASK bits to 0, which means a default mode
-             *       will be set in fOpen.
-             */
-            fOpen |= ((fMode & RTFS_UNIX_MASK) << RTFILE_O_CREATE_MODE_SHIFT) & RTFILE_O_CREATE_MODE_MASK;
-        }
-    }
-
-    switch ((fShClFlags & SHCL_OBJ_CF_ACCESS_MASK_RW))
-    {
-        default:
-            RT_FALL_THROUGH();
         case SHCL_OBJ_CF_ACCESS_NONE:
         {
 #ifdef RT_OS_WINDOWS
@@ -3086,12 +3028,13 @@ static int shClConvertFileCreateFlags(bool fWritable, unsigned fShClFlags, RTFMO
             LogFlowFunc(("SHCL_OBJ_CF_ACCESS_READ\n"));
             break;
         }
+
+        default:
+            AssertFailedReturn(VERR_IPE_NOT_REACHED_DEFAULT_CASE);
     }
 
-    switch ((fShClFlags & SHCL_OBJ_CF_ACCESS_MASK_ATTR))
+    switch (fShClFlags & SHCL_OBJ_CF_ACCESS_MASK_ATTR)
     {
-        default:
-            RT_FALL_THROUGH();
         case SHCL_OBJ_CF_ACCESS_ATTR_NONE:
         {
             fOpen |= RTFILE_O_ACCESS_ATTR_DEFAULT;
@@ -3105,20 +3048,17 @@ static int shClConvertFileCreateFlags(bool fWritable, unsigned fShClFlags, RTFMO
             LogFlowFunc(("SHCL_OBJ_CF_ACCESS_ATTR_READ\n"));
             break;
         }
+
+        default:
+            AssertFailedReturn(VERR_IPE_NOT_REACHED_DEFAULT_CASE);
     }
 
     /* Sharing mask */
-    switch ((fShClFlags & SHCL_OBJ_CF_ACCESS_MASK_DENY))
+    switch (fShClFlags & SHCL_OBJ_CF_ACCESS_MASK_DENY)
     {
-        default:
         case SHCL_OBJ_CF_ACCESS_DENYNONE:
             fOpen |= RTFILE_O_DENY_NONE;
             LogFlowFunc(("SHCL_OBJ_CF_ACCESS_DENYNONE\n"));
-            break;
-
-        case SHCL_OBJ_CF_ACCESS_DENYREAD:
-            fOpen |= RTFILE_O_DENY_READ;
-            LogFlowFunc(("SHCL_OBJ_CF_ACCESS_DENYREAD\n"));
             break;
 
         case SHCL_OBJ_CF_ACCESS_DENYWRITE:
@@ -3126,22 +3066,14 @@ static int shClConvertFileCreateFlags(bool fWritable, unsigned fShClFlags, RTFMO
             LogFlowFunc(("SHCL_OBJ_CF_ACCESS_DENYWRITE\n"));
             break;
 
-        case SHCL_OBJ_CF_ACCESS_DENYALL:
-            fOpen |= RTFILE_O_DENY_ALL;
-            LogFlowFunc(("SHCL_OBJ_CF_ACCESS_DENYALL\n"));
-            break;
+        default:
+            AssertFailedReturn(VERR_IPE_NOT_REACHED_DEFAULT_CASE);
     }
 
-    if (RT_SUCCESS(rc))
-    {
-        if (!fWritable)
-            fOpen &= ~RTFILE_O_WRITE;
+    *pfOpen = fOpen;
 
-        *pfOpen = fOpen;
-    }
-
-    LogFlowFuncLeaveRC(rc);
-    return rc;
+    LogFlowFuncLeaveRC(VINF_SUCCESS);
+    return VINF_SUCCESS;
 }
 
 /**
