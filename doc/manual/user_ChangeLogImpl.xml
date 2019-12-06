@@ -52,6 +52,27 @@ technical terms if no non-technical ones are clear enough.
 
       <listitem>
         <para>
+          Windows host: When possible, distinguish devices by port number; helps
+          when multiple otherwise identical devices are connected
+        </para>
+      </listitem>
+
+      <listitem>
+        <para>
+          EFI: Added support for booting from APFS
+        </para>
+      </listitem>
+
+      <listitem>
+        <para>
+          EFI: Added support for non-standard SATA and NVMe boot device paths
+          created by OS X
+        </para>
+      </listitem>
+
+      <listitem>
+        <para>
+          EFI: Modified updated EFI code base to support older OS X guests again
         </para>
       </listitem>
 
