@@ -44,27 +44,23 @@ int ShClPayloadAlloc(uint32_t uID, const void *pvData, uint32_t cbData,
                      PSHCLEVENTPAYLOAD *ppPayload)
 {
     AssertPtrReturn(pvData, VERR_INVALID_POINTER);
-    AssertReturn   (cbData, VERR_INVALID_PARAMETER);
+    AssertReturn(cbData > 0, VERR_INVALID_PARAMETER);
 
-    PSHCLEVENTPAYLOAD pPayload =
-        (PSHCLEVENTPAYLOAD)RTMemAlloc(sizeof(SHCLEVENTPAYLOAD));
-    if (!pPayload)
-        return VERR_NO_MEMORY;
-
-    pPayload->pvData = RTMemAlloc(cbData);
-    if (pPayload->pvData)
+    PSHCLEVENTPAYLOAD pPayload = (PSHCLEVENTPAYLOAD)RTMemAlloc(sizeof(SHCLEVENTPAYLOAD));
+    if (pPayload)
     {
-        memcpy(pPayload->pvData, pvData, cbData);
+        pPayload->pvData = RTMemDup(pvData, cbData);
+        if (pPayload->pvData)
+        {
+            pPayload->cbData = cbData;
+            pPayload->uID    = uID;
 
-        pPayload->cbData = cbData;
-        pPayload->uID    = uID;
+            *ppPayload = pPayload;
+            return VINF_SUCCESS;
+        }
 
-        *ppPayload = pPayload;
-
-        return VINF_SUCCESS;
+        RTMemFree(pPayload);
     }
-
-    RTMemFree(pPayload);
     return VERR_NO_MEMORY;
 }
 
@@ -87,9 +83,9 @@ void ShClPayloadFree(PSHCLEVENTPAYLOAD pPayload)
     }
 
     pPayload->cbData = 0;
+    pPayload->uID = UINT32_MAX;
 
     RTMemFree(pPayload);
-    pPayload = NULL;
 }
 
 /**
@@ -147,11 +143,8 @@ void ShClEventDestroy(PSHCLEVENT pEvent)
  */
 int ShClEventSourceCreate(PSHCLEVENTSOURCE pSource, SHCLEVENTSOURCEID uID)
 {
+    LogFlowFunc(("pSource=%p, uID=%RU16\n", pSource, uID));
     AssertPtrReturn(pSource, VERR_INVALID_POINTER);
-
-    LogFlowFunc(("pSource=%p, uID=%RU32\n", pSource, uID));
-
-    int rc = VINF_SUCCESS;
 
     RTListInit(&pSource->lstEvents);
 
@@ -159,8 +152,8 @@ int ShClEventSourceCreate(PSHCLEVENTSOURCE pSource, SHCLEVENTSOURCEID uID)
     /* Choose a random event ID starting point. */
     pSource->uEventIDNext = RTRandU32() % VBOX_SHCL_MAX_EVENTS;
 
-    LogFlowFuncLeaveRC(rc);
-    return rc;
+    LogFlowFuncLeaveRC(VINF_SUCCESS);
+    return VINF_SUCCESS;
 }
 
 /**
@@ -177,8 +170,8 @@ void ShClEventSourceDestroy(PSHCLEVENTSOURCE pSource)
 
     ShClEventSourceReset(pSource);
 
-    pSource->uID          = 0;
-    pSource->uEventIDNext = 0;
+    pSource->uID          = UINT16_MAX;
+    pSource->uEventIDNext = UINT32_MAX;
 }
 
 /**
