@@ -701,6 +701,11 @@ template<> KNATProtocol fromInternalString<KNATProtocol>(const QString &strProto
     return values.at(keys.indexOf(QRegExp(strProtocol, Qt::CaseInsensitive)));
 }
 
+/// @todo Internal strings never being translated.
+///       If that is user-visible string then it is toString() and then each word should be
+///       translated separately (i.e. "TimedOutKilled" should be "Timed Out Killed").
+///       If that is purely internal thing used to tag something or save value to extra-data
+///       then this is toInternalString() indeed but no QApplication::translate should be used.
 template<> QString toInternalString(const KGuestSessionStatus &enmStatus)
 {
     switch (enmStatus)
@@ -719,6 +724,11 @@ template<> QString toInternalString(const KGuestSessionStatus &enmStatus)
     return QString();
 }
 
+/// @todo Internal strings never being translated.
+///       If that is user-visible string then it is fromString() and then each word should be
+///       translated separately (i.e. "TimedOutKilled" should be "Timed Out Killed").
+///       If that is purely internal thing used to tag something or save value to extra-data
+///       then this is fromInternalString() indeed but no QApplication::translate should be used.
 template<> KGuestSessionStatus fromInternalString<KGuestSessionStatus>(const QString &strStatus)
 {
     QHash<QString, KGuestSessionStatus> list;
@@ -738,6 +748,11 @@ template<> KGuestSessionStatus fromInternalString<KGuestSessionStatus>(const QSt
     return list.value(strStatus, KGuestSessionStatus_Error);
 }
 
+/// @todo Internal strings never being translated.
+///       If that is user-visible string then it is toString() and then each word should be
+///       translated separately (i.e. "TimedOutKilled" should be "Timed Out Killed").
+///       If that is purely internal thing used to tag something or save value to extra-data
+///       then this is toInternalString() indeed but no QApplication::translate should be used.
 template<> QString toInternalString(const KProcessStatus &enmStatus)
 {
     switch (enmStatus)
@@ -759,6 +774,11 @@ template<> QString toInternalString(const KProcessStatus &enmStatus)
     return QString();
 }
 
+/// @todo Internal strings never being translated.
+///       If that is user-visible string then it is fromString() and then each word should be
+///       translated separately (i.e. "TimedOutKilled" should be "Timed Out Killed").
+///       If that is purely internal thing used to tag something or save value to extra-data
+///       then this is fromInternalString() indeed but no QApplication::translate should be used.
 template<> KProcessStatus fromInternalString<KProcessStatus>(const QString &strStatus)
 {
     QHash<QString, KProcessStatus> list;

@@ -176,6 +176,11 @@ UIRuntimeInfoWidget::UIRuntimeInfoWidget(QWidget *pParent, const CMachine &machi
 
 void UIRuntimeInfoWidget::retranslateUi()
 {
+    /// @todo These NLS tags have to be reworked the following way:
+    ///       Each place which uses plural/gender-neutral verbs like Active, Inactive, Not Available, not set and Not Detected
+    ///       should use it directly like tr("Active", "Guest Additions") to make sure translator knows for sure whether this
+    ///       verb is related to single or plural form and male/female/neutral sex. There are languages different than English
+    ///       which sounds absolutely stupid if you ignore those rules while sequencing nouns and corresponding verbs.
     m_strTableTitle = QApplication::translate("UIVMInformationDialog", "Runtime Attributes");
     m_strScreenResolutionLabel = QApplication::translate("UIVMInformationDialog", "Screen Resolution");
     m_strMonitorTurnedOff = QApplication::translate("UIVMInformationDialog", "turned off");
