@@ -28,6 +28,7 @@
 #include <VBox/HostServices/VBoxClipboardSvc.h>
 #include <VBox/HostServices/VBoxClipboardExt.h>
 
+#include <VBox/AssertGuest.h>
 #include <iprt/dir.h>
 #include <iprt/file.h>
 #include <iprt/path.h>
