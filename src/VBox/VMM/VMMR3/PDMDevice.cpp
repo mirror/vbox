@@ -803,6 +803,9 @@ static DECLCALLBACK(int) pdmR3DevReg_Register(PPDMDEVREGCB pCallbacks, PCPDMDEVR
     AssertLogRelMsgReturn(pReg->cMaxMsixVectors <= VBOX_MSIX_MAX_ENTRIES,
                           ("%#x (szName=%s)\n", pReg->cMaxMsixVectors, pReg->szName),
                           VERR_PDM_INVALID_DEVICE_REGISTRATION);
+    AssertLogRelMsgReturn(pReg->fFlags & PDM_DEVREG_FLAGS_NEW_STYLE /* the flag is required now */,
+                          ("PDM_DEVREG_FLAGS_NEW_STYLE not set for szName=%s!\n", pReg->szName),
+                          VERR_PDM_INVALID_DEVICE_REGISTRATION);
 
     /*
      * Check for duplicate and find FIFO entry at the same time.
