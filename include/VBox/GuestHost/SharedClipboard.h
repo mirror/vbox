@@ -250,6 +250,7 @@ void ShClEventPayloadDetach(PSHCLEVENTSOURCE pSource, SHCLEVENTID idEvent);
 
 /**
  * Shared Clipboard transfer source type.
+ * @note Part of saved state!
  */
 typedef enum SHCLSOURCE
 {

@@ -215,20 +215,21 @@
 #define LOG_GROUP LOG_GROUP_SHARED_CLIPBOARD
 #include <VBox/log.h>
 
-#include <VBox/AssertGuest.h>
 #include <VBox/GuestHost/clipboard-helper.h>
 #include <VBox/HostServices/Service.h>
 #include <VBox/HostServices/VBoxClipboardSvc.h>
 #include <VBox/HostServices/VBoxClipboardExt.h>
 
-#include <iprt/alloc.h>
+#include <VBox/AssertGuest.h>
+#include <VBox/err.h>
+#include <VBox/VMMDev.h>
+#include <VBox/vmm/ssm.h>
+
+#include <iprt/mem.h>
 #include <iprt/string.h>
 #include <iprt/assert.h>
 #include <iprt/critsect.h>
 #include <iprt/rand.h>
-
-#include <VBox/err.h>
-#include <VBox/vmm/ssm.h>
 
 #include "VBoxSharedClipboardSvc-internal.h"
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
@@ -2092,15 +2093,29 @@ static DECLCALLBACK(int) svcHostCall(void *,
 #ifndef UNIT_TEST
 /**
  * SSM descriptor table for the SHCLCLIENTSTATE structure.
+ *
+ * @note Saving the session ID not necessary, as they're not persistent across
+ *       state save/restore.
  */
 static SSMFIELD const s_aShClSSMClientState[] =
 {
-    /** Note: Saving the session ID not necessary, as they're not persistent across state save/restore. */
     SSMFIELD_ENTRY(SHCLCLIENTSTATE, fGuestFeatures0),
     SSMFIELD_ENTRY(SHCLCLIENTSTATE, fGuestFeatures1),
     SSMFIELD_ENTRY(SHCLCLIENTSTATE, cbChunkSize),
     SSMFIELD_ENTRY(SHCLCLIENTSTATE, enmSource),
     SSMFIELD_ENTRY(SHCLCLIENTSTATE, fFlags),
+    SSMFIELD_ENTRY_TERM()
+};
+
+/**
+ * VBox 6.1 Beta 1 version of s_aShClSSMClientState (no flags).
+ */
+static SSMFIELD const s_aShClSSMClientState61B1[] =
+{
+    SSMFIELD_ENTRY(SHCLCLIENTSTATE, fGuestFeatures0),
+    SSMFIELD_ENTRY(SHCLCLIENTSTATE, fGuestFeatures1),
+    SSMFIELD_ENTRY(SHCLCLIENTSTATE, cbChunkSize),
+    SSMFIELD_ENTRY(SHCLCLIENTSTATE, enmSource),
     SSMFIELD_ENTRY_TERM()
 };
 
@@ -2265,62 +2280,43 @@ static DECLCALLBACK(int) svcLoadState(void *, uint32_t u32ClientID, void *pvClie
     {
         if (lenOrVer >= VBOX_SHCL_SAVED_STATE_VER_6_1RC1)
         {
-            rc = SSMR3GetStructEx(pSSM, &pClient->State, sizeof(pClient->State), 0 /* fFlags */,
-                                  &s_aShClSSMClientState[0], NULL);
-            AssertRCReturn(rc, rc);
-
-            rc = SSMR3GetStructEx(pSSM, &pClient->State.POD, sizeof(pClient->State.POD), 0 /* fFlags */,
-                                  &s_aShClSSMClientPODState[0], NULL);
-            AssertRCReturn(rc, rc);
+            SSMR3GetStructEx(pSSM, &pClient->State, sizeof(pClient->State), 0 /* fFlags */, &s_aShClSSMClientState[0], NULL);
+            SSMR3GetStructEx(pSSM, &pClient->State.POD, sizeof(pClient->State.POD), 0 /* fFlags */,
+                             &s_aShClSSMClientPODState[0], NULL);
         }
-        else /** @todo Remove this block after 6.1 RC; don't annoy team members with broken saved states. */
-        {
-            rc = SSMR3Skip(pSSM, sizeof(uint32_t));         /* Begin marker */
-            AssertRC(rc);
-
-            rc = SSMR3GetU64(pSSM, &pClient->State.fGuestFeatures0);
-            AssertRC(rc);
-
-            rc = SSMR3GetU64(pSSM, &pClient->State.fGuestFeatures1);
-            AssertRC(rc);
-
-            rc = SSMR3GetU32(pSSM, &pClient->State.cbChunkSize);
-            AssertRC(rc);
-
-            rc = SSMR3GetU32(pSSM, (uint32_t *)&pClient->State.enmSource);
-            AssertRC(rc);
-
-            rc = SSMR3Skip(pSSM, sizeof(uint32_t));         /* End marker */
-            AssertRC(rc);
-        }
-
+        else
+            SSMR3GetStructEx(pSSM, &pClient->State, sizeof(pClient->State), 0 /* fFlags */, &s_aShClSSMClientState61B1[0], NULL);
         rc = SSMR3GetStructEx(pSSM, &pClient->State.Transfers, sizeof(pClient->State.Transfers), 0 /* fFlags */,
                               &s_aShClSSMClientTransferState[0], NULL);
         AssertRCReturn(rc, rc);
 
         /* Load the client's internal message queue. */
-        uint64_t cMsg;
-        rc = SSMR3GetU64(pSSM, &cMsg);
+        uint64_t cMsgs;
+        rc = SSMR3GetU64(pSSM, &cMsgs);
         AssertRCReturn(rc, rc);
+        AssertLogRelMsgReturn(cMsgs < _16K, ("Too many messages: %u (%x)\n", cMsgs, cMsgs), VERR_SSM_DATA_UNIT_FORMAT_CHANGED);
 
-        for (uint64_t i = 0; i < cMsg; i++)
+        for (uint64_t i = 0; i < cMsgs; i++)
         {
             PSHCLCLIENTMSG pMsg = (PSHCLCLIENTMSG)RTMemAlloc(sizeof(SHCLCLIENTMSG));
-            AssertPtrReturn(pMsg, VERR_NO_MEMORY);
+            AssertReturn(pMsg, VERR_NO_MEMORY);
 
-            rc = SSMR3GetStructEx(pSSM, pMsg, sizeof(SHCLCLIENTMSG), 0 /*fFlags*/, &s_aShClSSMClientMsgHdr[0], NULL);
-            AssertRCReturn(rc, rc);
-
+            SSMR3GetStructEx(pSSM, pMsg, sizeof(SHCLCLIENTMSG), 0 /*fFlags*/, &s_aShClSSMClientMsgHdr[0], NULL);
             rc = SSMR3GetStructEx(pSSM, &pMsg->Ctx, sizeof(SHCLMSGCTX), 0 /*fFlags*/, &s_aShClSSMClientMsgCtx[0], NULL);
-            AssertRCReturn(rc, rc);
+            AssertRCReturnStmt(rc, RTMemFree(pMsg), rc);
+
+            AssertLogRelMsgReturnStmt(pMsg->cParms <= VMMDEV_MAX_HGCM_PARMS,
+                                      ("Too many HGCM message parameters: %u (%#x)\n", pMsg->cParms, pMsg->cParms),
+                                      RTMemFree(pMsg),
+                                      VERR_SSM_DATA_UNIT_FORMAT_CHANGED);
 
             pMsg->paParms = (PVBOXHGCMSVCPARM)RTMemAllocZ(sizeof(VBOXHGCMSVCPARM) * pMsg->cParms);
-            AssertPtrReturn(pMsg->paParms, VERR_NO_MEMORY);
+            AssertReturnStmt(pMsg->paParms, RTMemFree(pMsg), VERR_NO_MEMORY);
 
             for (uint32_t p = 0; p < pMsg->cParms; p++)
             {
                 rc = HGCMSvcSSMR3Get(&pMsg->paParms[p], pSSM);
-                AssertRCReturn(rc, rc);
+                AssertRCReturn(rc, rc); /* we'll leak stuff here, oh well... */
             }
 
             rc = shClSvcMsgAdd(pClient, pMsg, true /* fAppend */);

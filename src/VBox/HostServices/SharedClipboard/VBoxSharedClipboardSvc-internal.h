@@ -90,12 +90,15 @@ typedef struct SHCLCLIENTPODSTATE
     uint64_t                tsLastReadWrittenMs;
 } SHCLCLIENTPODSTATE, *PSHCLCLIENTPODSTATE;
 
+/** @name SHCLCLIENTSTATE_FLAGS_XXX
+ * @note Part of saved state! */
 /** No Shared Clipboard client flags defined. */
 #define SHCLCLIENTSTATE_FLAGS_NONE              0
 /** Client has a guest read operation active. */
 #define SHCLCLIENTSTATE_FLAGS_READ_ACTIVE       RT_BIT(0)
 /** Client has a guest write operation active. */
 #define SHCLCLIENTSTATE_FLAGS_WRITE_ACTIVE      RT_BIT(1)
+/** @} */
 
 /**
  * Structure for keeping generic client state data within the Shared Clipboard host service.
