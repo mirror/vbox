@@ -289,9 +289,11 @@
 /** @name VBOX_SHCL_GUEST_FN_XXX - The service functions which are called by guest.
  * @{
  */
-/** Calls the host and waits (blocking) for an host event VBOX_SHCL_HOST_MSG_*.
- *  Deprecated, do not use anymore. Kept to not break compatibility with older
- *  Guest Additions / VBox versions. */
+/** Calls the host and waits (blocking) for an host event VBOX_SHCL_HOST_MSG_XXX.
+ *
+ * @deprecated Replaced by VBOX_SHCL_GUEST_FN_MSG_PEEK_WAIT,
+ *             VBOX_SHCL_GUEST_FN_MSG_GET, VBOX_SHCL_GUEST_FN_MSG_CANCEL.
+ */
 #define VBOX_SHCL_GUEST_FN_GET_HOST_MSG_OLD       1
 /** Sends a list of available formats to the host.
  *  Formely known as VBOX_SHCL_GUEST_FN_REPORT_FORMATS. */
@@ -299,8 +301,9 @@
 /** Reads data in specified format from the host.
  *
  * @retval  VINF_SUCCESS on success.
- * @retval  For VBox >= 6.1: VINF_BUFFER_OVERLFLOW if not enough buffer space has been given to retrieve the actual data.
- *                           The call then must be repeated with a buffer size returned from the host in cbData.
+ * @retval  VINF_BUFFER_OVERLFLOW (VBox >= 6.1 only) if not enough buffer space
+ *          has been given to retrieve the actual data. The call then must be
+ *          repeated with a buffer size returned from the host in cbData.
  * @retval  VERR_INVALID_CLIENT_ID
  * @retval  VERR_WRONG_PARAMETER_COUNT
  * @retval  VERR_WRONG_PARAMETER_TYPE
@@ -322,12 +325,9 @@
 #define VBOX_SHCL_GUEST_FN_CONNECT                5
 /** Report guest side feature flags and retrieve the host ones.
  *
- * The guest replies to the host what features it support in addition.
- * In return the host will return features the host supports.
- *
- * Two 64-bit parameters are passed in from the
- * guest with the guest features (VBOX_SHCL_GF_XXX), the host replies by
- * replacing the parameter values with the host ones (VBOX_SHCL_HF_XXX).
+ * Two 64-bit parameters are passed in from the guest with the guest features
+ * (VBOX_SHCL_GF_XXX), the host replies by replacing the parameter values with
+ * the host ones (VBOX_SHCL_HF_XXX).
  *
  * @retval  VINF_SUCCESS on success.
  * @retval  VERR_INVALID_CLIENT_ID
@@ -357,6 +357,8 @@
  * @retval  VERR_WRONG_PARAMETER_COUNT
  * @retval  VERR_WRONG_PARAMETER_TYPE
  * @since   6.1
+ * @todo r=bird: Either s/_FN_(MSG_)/_MSG_/ or  s/_FN_(MSG_)/_FN_/, the place
+ *       you copied these from used _MSG_ instead of _FN_ in the general prefix.
  */
 #define VBOX_SHCL_GUEST_FN_MSG_PEEK_NOWAIT        8
 /** Peeks at the next message, waiting for one to arrive.
