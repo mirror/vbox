@@ -816,52 +816,31 @@ typedef struct _SHCLTRANSFERCALLBACKDATA
     size_t        cbUser;
 } SHCLTRANSFERCALLBACKDATA, *PSHCLTRANSFERCALLBACKDATA;
 
-/** Declares a Shared Clipboard transfer callback. */
-#define SHCLTRANSFERCALLBACKDECL(a_Ret, a_Name) \
-    typedef DECLCALLBACK(a_Ret) RT_CONCAT(FNSHCLCALLBACK, a_Name)(PSHCLTRANSFERCALLBACKDATA pData); \
-    typedef RT_CONCAT(FNSHCLCALLBACK, a_Name) RT_CONCAT(*PFNSHCLCALLBACK, a_Name);
-
-/** Declares a Shared Clipboard transfer callback with variable arguments. */
-#define SHCLTRANSFERCALLBACKDECL_VA(a_Ret, a_Name, ...) \
-    typedef DECLCALLBACK(a_Ret) RT_CONCAT(FNSHCLCALLBACK, a_Name)(PSHCLTRANSFERCALLBACKDATA pData, __VA_ARGS__); \
-    typedef RT_CONCAT(FNSHCLCALLBACK, a_Name) RT_CONCAT(*PFNSHCLCALLBACK, a_Name);
-
-/** Declares a Shared Clipboard transfer callback member function. */
-#define SHCLTRANSFERCALLBACKMEMBER(a_Name, a_Member) \
-    RT_CONCAT(PFNSHCLCALLBACK, a_Name) a_Member;
-
-SHCLTRANSFERCALLBACKDECL   (int,  TRANSFERINITIALIZE)
-SHCLTRANSFERCALLBACKDECL   (int,  TRANSFERSTART)
-SHCLTRANSFERCALLBACKDECL   (void, LISTHEADERCOMPLETE)
-SHCLTRANSFERCALLBACKDECL   (void, LISTENTRYCOMPLETE)
-SHCLTRANSFERCALLBACKDECL_VA(void, TRANSFERCOMPLETE, int rc)
-SHCLTRANSFERCALLBACKDECL   (void, TRANSFERCANCELED)
-SHCLTRANSFERCALLBACKDECL_VA(void, TRANSFERERROR, int rc)
-
 /**
- * Structure acting as a function callback table for Shared Clipboard transfers.
+ * Function callback table for Shared Clipboard transfers.
+ *
  * All callbacks are optional and therefore can be NULL.
  */
-typedef struct _SHCLTRANSFERCALLBACKS
+typedef struct SHCLTRANSFERCALLBACKS
 {
     /** User pointer to data. Optional and can be NULL. */
     void  *pvUser;
     /** Size (in bytes) of user data pointing at. Optional and can be 0. */
     size_t cbUser;
-    /** Function pointer, called after the transfer has been initialized. */
-    SHCLTRANSFERCALLBACKMEMBER(TRANSFERINITIALIZE, pfnTransferInitialize)
-    /** Function pointer, called before the transfer will be started. */
-    SHCLTRANSFERCALLBACKMEMBER(TRANSFERSTART, pfnTransferStart)
-    /** Function pointer, called when reading / writing the list header is complete. */
-    SHCLTRANSFERCALLBACKMEMBER(LISTHEADERCOMPLETE, pfnListHeaderComplete)
-    /** Function pointer, called when reading / writing a list entry is complete. */
-    SHCLTRANSFERCALLBACKMEMBER(LISTENTRYCOMPLETE, pfnListEntryComplete)
-    /** Function pointer, called when the transfer is complete. */
-    SHCLTRANSFERCALLBACKMEMBER(TRANSFERCOMPLETE, pfnTransferComplete)
-    /** Function pointer, called when the transfer has been canceled. */
-    SHCLTRANSFERCALLBACKMEMBER(TRANSFERCANCELED, pfnTransferCanceled)
-    /** Function pointer, called when transfer resulted in an unrecoverable error. */
-    SHCLTRANSFERCALLBACKMEMBER(TRANSFERERROR, pfnTransferError)
+    /** Called after the transfer has been initialized. */
+    DECLCALLBACKMEMBER(int,  pfnTransferInitialize)(PSHCLTRANSFERCALLBACKDATA pData);
+    /** Called before the transfer will be started. */
+    DECLCALLBACKMEMBER(int,  pfnTransferStart)(PSHCLTRANSFERCALLBACKDATA pData);
+    /** Called when reading / writing the list header is complete. */
+    DECLCALLBACKMEMBER(void, pfnListHeaderComplete)(PSHCLTRANSFERCALLBACKDATA pData);
+    /** Called when reading / writing a list entry is complete. */
+    DECLCALLBACKMEMBER(void, pfnListEntryComplete)(PSHCLTRANSFERCALLBACKDATA pData);
+    /** Called when the transfer is complete. */
+    DECLCALLBACKMEMBER(void, pfnTransferComplete)(PSHCLTRANSFERCALLBACKDATA pData, int rc);
+    /** Called when the transfer has been canceled. */
+    DECLCALLBACKMEMBER(void, pfnTransferCanceled)(PSHCLTRANSFERCALLBACKDATA pData);
+    /** Called when transfer resulted in an unrecoverable error. */
+    DECLCALLBACKMEMBER(void, pfnTransferError)(PSHCLTRANSFERCALLBACKDATA pData, int rc);
 } SHCLTRANSFERCALLBACKS, *PSHCLTRANSFERCALLBACKS;
 
 /**
