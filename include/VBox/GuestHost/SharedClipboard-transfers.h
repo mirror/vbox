@@ -721,7 +721,7 @@ typedef struct _SHCLTRANSFERSTATE
  * Structure maintaining clipboard transfer provider context data.
  * This is handed in to the provider implementation callbacks.
  */
-typedef struct _SHCLPROVIDERCTX
+typedef struct SHCLPROVIDERCTX
 {
     /** Pointer to the related Shared Clipboard transfer. */
     PSHCLTRANSFER pTransfer;
@@ -729,64 +729,26 @@ typedef struct _SHCLPROVIDERCTX
     void         *pvUser;
 } SHCLPROVIDERCTX, *PSHCLPROVIDERCTX;
 
-/** @todo r=bird: These macros must go as they do no lend themselves to writing
- *        sane documentation.  Use the DECLCALLBACKMEMBER macro instead, as you
- *        probably do not need the function and function pointer typedefs.
- *
- *        However, we need the documentation as you don't document a flying
- *        flamingo elsewhere regarding these functions.
- */
-/** Defines an clipboard transfer provider function declaration with additional parameters. */
-#define SHCLPROVIDERFUNCDECL(a_Name, ...) \
-    typedef DECLCALLBACK(int) RT_CONCAT(FNSHCLPROVIDER, a_Name)(PSHCLPROVIDERCTX, __VA_ARGS__); \
-    typedef RT_CONCAT(FNSHCLPROVIDER, a_Name) RT_CONCAT(*PFNSHCLPROVIDER, a_Name);
-
-/** Defines an clipboard transfer provider function declaration with additional parameters. */
-#define SHCLPROVIDERFUNCDECLRET(a_Ret, a_Name, ...) \
-    typedef DECLCALLBACK(a_Ret) RT_CONCAT(FNSHCLPROVIDER, a_Name)(PSHCLPROVIDERCTX, __VA_ARGS__); \
-    typedef RT_CONCAT(FNSHCLPROVIDER, a_Name) RT_CONCAT(*PFNSHCLPROVIDER, a_Name);
-
-/** Defines an clipboard transfer provider function declaration (no additional parameters). */
-#define SHCLPROVIDERFUNCDECLVOID(a_Name) \
-    typedef DECLCALLBACK(int) RT_CONCAT(FNSHCLPROVIDER, a_Name)(PSHCLPROVIDERCTX); \
-    typedef RT_CONCAT(FNSHCLPROVIDER, a_Name) RT_CONCAT(*PFNSHCLPROVIDER, a_Name);
-
-/** Declares a clipboard transfer provider function member. */
-#define SHCLPROVIDERFUNCMEMBER(a_Name, a_Member) \
-    RT_CONCAT(PFNSHCLPROVIDER, a_Name) a_Member;
-
-SHCLPROVIDERFUNCDECLVOID(TRANSFEROPEN)
-SHCLPROVIDERFUNCDECLVOID(TRANSFERCLOSE)
-SHCLPROVIDERFUNCDECL(GETROOTS, PSHCLROOTLIST *ppRootList)
-SHCLPROVIDERFUNCDECL(LISTOPEN, PSHCLLISTOPENPARMS pOpenParms, PSHCLLISTHANDLE phList)
-SHCLPROVIDERFUNCDECL(LISTCLOSE, SHCLLISTHANDLE hList)
-SHCLPROVIDERFUNCDECL(LISTHDRREAD, SHCLLISTHANDLE hList, PSHCLLISTHDR pListHdr)
-SHCLPROVIDERFUNCDECL(LISTHDRWRITE, SHCLLISTHANDLE hList, PSHCLLISTHDR pListHdr)
-SHCLPROVIDERFUNCDECL(LISTENTRYREAD, SHCLLISTHANDLE hList, PSHCLLISTENTRY pEntry)
-SHCLPROVIDERFUNCDECL(LISTENTRYWRITE, SHCLLISTHANDLE hList, PSHCLLISTENTRY pEntry)
-SHCLPROVIDERFUNCDECL(OBJOPEN, PSHCLOBJOPENCREATEPARMS pCreateParms, PSHCLOBJHANDLE phObj)
-SHCLPROVIDERFUNCDECL(OBJCLOSE, SHCLOBJHANDLE hObj)
-SHCLPROVIDERFUNCDECL(OBJREAD, SHCLOBJHANDLE hObj, void *pvData, uint32_t cbData, uint32_t fFlags, uint32_t *pcbRead)
-SHCLPROVIDERFUNCDECL(OBJWRITE, SHCLOBJHANDLE hObj, void *pvData, uint32_t cbData, uint32_t fFlags, uint32_t *pcbWritten)
-
 /**
  * Shared Clipboard transfer provider interface table.
  */
-typedef struct _SHCLPROVIDERINTERFACE
+typedef struct SHCLPROVIDERINTERFACE
 {
-    SHCLPROVIDERFUNCMEMBER(TRANSFEROPEN, pfnTransferOpen)
-    SHCLPROVIDERFUNCMEMBER(TRANSFERCLOSE, pfnTransferClose)
-    SHCLPROVIDERFUNCMEMBER(GETROOTS, pfnRootsGet)
-    SHCLPROVIDERFUNCMEMBER(LISTOPEN, pfnListOpen)
-    SHCLPROVIDERFUNCMEMBER(LISTCLOSE, pfnListClose)
-    SHCLPROVIDERFUNCMEMBER(LISTHDRREAD, pfnListHdrRead)
-    SHCLPROVIDERFUNCMEMBER(LISTHDRWRITE, pfnListHdrWrite)
-    SHCLPROVIDERFUNCMEMBER(LISTENTRYREAD, pfnListEntryRead)
-    SHCLPROVIDERFUNCMEMBER(LISTENTRYWRITE, pfnListEntryWrite)
-    SHCLPROVIDERFUNCMEMBER(OBJOPEN, pfnObjOpen)
-    SHCLPROVIDERFUNCMEMBER(OBJCLOSE, pfnObjClose)
-    SHCLPROVIDERFUNCMEMBER(OBJREAD, pfnObjRead)
-    SHCLPROVIDERFUNCMEMBER(OBJWRITE, pfnObjWrite)
+    DECLCALLBACKMEMBER(int, pfnTransferOpen)(PSHCLPROVIDERCTX pCtx);
+    DECLCALLBACKMEMBER(int, pfnTransferClose)(PSHCLPROVIDERCTX pCtx);
+    DECLCALLBACKMEMBER(int, pfnRootsGet)(PSHCLPROVIDERCTX pCtx, PSHCLROOTLIST *ppRootList);
+    DECLCALLBACKMEMBER(int, pfnListOpen)(PSHCLPROVIDERCTX pCtx, PSHCLLISTOPENPARMS pOpenParms, PSHCLLISTHANDLE phList);
+    DECLCALLBACKMEMBER(int, pfnListClose)(PSHCLPROVIDERCTX pCtx, SHCLLISTHANDLE hList);
+    DECLCALLBACKMEMBER(int, pfnListHdrRead)(PSHCLPROVIDERCTX pCtx, SHCLLISTHANDLE hList, PSHCLLISTHDR pListHdr);
+    DECLCALLBACKMEMBER(int, pfnListHdrWrite)(PSHCLPROVIDERCTX pCtx, SHCLLISTHANDLE hList, PSHCLLISTHDR pListHdr);
+    DECLCALLBACKMEMBER(int, pfnListEntryRead)(PSHCLPROVIDERCTX pCtx, SHCLLISTHANDLE hList, PSHCLLISTENTRY pEntry);
+    DECLCALLBACKMEMBER(int, pfnListEntryWrite)(PSHCLPROVIDERCTX pCtx, SHCLLISTHANDLE hList, PSHCLLISTENTRY pEntry);
+    DECLCALLBACKMEMBER(int, pfnObjOpen)(PSHCLPROVIDERCTX pCtx, PSHCLOBJOPENCREATEPARMS pCreateParms, PSHCLOBJHANDLE phObj);
+    DECLCALLBACKMEMBER(int, pfnObjClose)(PSHCLPROVIDERCTX pCtx, SHCLOBJHANDLE hObj);
+    DECLCALLBACKMEMBER(int, pfnObjRead)(PSHCLPROVIDERCTX pCtx, SHCLOBJHANDLE hObj, void *pvData, uint32_t cbData,
+                                        uint32_t fFlags, uint32_t *pcbRead);
+    DECLCALLBACKMEMBER(int, pfnObjWrite)(PSHCLPROVIDERCTX pCtx, SHCLOBJHANDLE hObj, void *pvData, uint32_t cbData,
+                                         uint32_t fFlags, uint32_t *pcbWritten);
 } SHCLPROVIDERINTERFACE, *PSHCLPROVIDERINTERFACE;
 
 /**
