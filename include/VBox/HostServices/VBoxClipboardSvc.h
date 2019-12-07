@@ -1,5 +1,19 @@
 /** @file
  * Shared Clipboard - Common header for host service and guest clients.
+ *
+ * Protocol history notes (incomplete):
+ *
+ *  - VirtualBox 6.1.0 betas:  Started work on adding support for copying &
+ *    pasting files and directories, refactoring the protocol in the process.
+ *      - Adds guest/host feature flags.
+ *      - Adds context IDs (via guest feature flags).
+ *      - Borrowed the message handling from guest controls.
+ *      - Adds a multitude of functions and messages for dealing with file & dir
+ *        copying, most inte
+ *
+ *  - VirtualBox x.x.x: Missing a lot of gradual improvements here.
+ *
+ *  - VirtualBox 1.3.2 (r17182): Initial implementation, supporting text.
  */
 
 /*
@@ -21,30 +35,6 @@
  *
  * You may elect to license modified versions of this file under the
  * terms and conditions of either the GPL or the CDDL or both.
- */
-
-/**
- * Protocol handling and notes:
- *     All client/server components should be backwards compatible.
- *
- ******************************************************************************
- *
- * Protocol changelog:
- *
- *     VBox < 6.1, deprecated:
- *         | First, initial implementation since feature was developed.
- *           Has no protocol handshake or support for feature exchange,
- *           the client's waiting message also acted as retrieving the
- *           parameters from the host (always and only *exactly* two
- *           parameters). Does not have the ability to control / handle parallel
- *           transfers.
- *
- *     VBox >= 6.1:
- *         + Adds host/guest feature flags and context IDs for parallel,
- *           asynchronous transfers.
- *         | Keeps backwards-compatbility with by translating messages to
- *           the older protocol (< 6.1), to not break compatibility with older
- *           Guest Additions.
  */
 
 #ifndef VBOX_INCLUDED_HostServices_VBoxClipboardSvc_h
