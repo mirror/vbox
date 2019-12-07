@@ -1711,10 +1711,8 @@ static DECLCALLBACK(void) svcCall(void *,
     LogFunc(("u32ClientID=%RU32, fn=%RU32 (%s), cParms=%RU32, paParms=%p\n",
              u32ClientID, u32Function, ShClGuestMsgToStr(u32Function), cParms, paParms));
 
-#ifdef DEBUG
-    uint32_t i;
-
-    for (i = 0; i < cParms; i++)
+#ifdef LOG_ENABLED
+    for (uint32_t i = 0; i < cParms; i++)
     {
         /** @todo parameters other than 32 bit */
         LogFunc(("    paParms[%d]: type %RU32 - value %RU32\n", i, paParms[i].type, paParms[i].u.uint32));
@@ -1888,6 +1886,12 @@ static DECLCALLBACK(void) svcCall(void *,
         {
             LogRel2(("Shared Clipboard: Operation canceled by guest side\n"));
 
+            /** @todo r=bird: What on earth is this?   The only user of this message
+             * (VBOX_SHCL_GUEST_FN_CANCEL) is VbglR3ClipboardMsgPeekWait(), where it was
+             * copied over from guest control.  What happens here is _nothing_ like what it
+             * expects to happen.  See GstCtrlService::clientMsgCancel for a reference.
+             */
+
             /* Reset client state and start over. */
             shclSvcClientStateReset(&pClient->State);
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
@@ -1917,18 +1921,22 @@ static DECLCALLBACK(void) svcCall(void *,
         default:
         {
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
-            if (g_fTransferMode & VBOX_SHCL_TRANSFER_MODE_ENABLED)
+            if (u32Function <= VBOX_SHCL_GUEST_FN_LAST)
             {
-                rc = shClSvcTransferHandler(pClient, callHandle, u32Function, cParms, paParms, tsArrival);
+                if (g_fTransferMode & VBOX_SHCL_TRANSFER_MODE_ENABLED)
+                    rc = shClSvcTransferHandler(pClient, callHandle, u32Function, cParms, paParms, tsArrival);
+                else
+                {
+                    LogRel2(("Shared Clipboard: File transfers are disabled for this VM\n"));
+                    rc = VERR_ACCESS_DENIED;
+                }
             }
             else
-            {
-                LogRel2(("Shared Clipboard: File transfers are disabled for this VM\n"));
-                rc = VERR_ACCESS_DENIED;
-            }
-#else
-            rc = VERR_NOT_SUPPORTED;
 #endif
+            {
+                LogRel2(("Shared Clipboard: Unknown guest function: %u (%#x)\n", u32Function, u32Function));
+                rc = VERR_NOT_IMPLEMENTED;
+            }
             break;
         }
     }

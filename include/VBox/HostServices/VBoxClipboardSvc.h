@@ -292,7 +292,7 @@
 /** Calls the host and waits (blocking) for an host event VBOX_SHCL_HOST_MSG_XXX.
  *
  * @deprecated Replaced by VBOX_SHCL_GUEST_FN_MSG_PEEK_WAIT,
- *             VBOX_SHCL_GUEST_FN_MSG_GET, VBOX_SHCL_GUEST_FN_MSG_CANCEL.
+ *             VBOX_SHCL_GUEST_FN_MSG_GET, VBOX_SHCL_GUEST_FN_CANCEL.
  */
 #define VBOX_SHCL_GUEST_FN_GET_HOST_MSG_OLD       1
 /** Sends a list of available formats to the host.
@@ -312,9 +312,10 @@
 /** Writes data in requested format to the host. */
 #define VBOX_SHCL_GUEST_FN_DATA_WRITE             4
 
-/** Does the actual protocol handshake. If this message is not
- *  being sent by the guest, the host handles that particular client
- *  with the legacy protocol (v0).
+/** Does the actual protocol handshake.
+ *
+ * If this message is not being sent by the guest, the host handles that
+ * particular client with the legacy protocol (v0).
  *
  * @retval  VINF_SUCCESS on success.
  * @retval  VERR_INVALID_CLIENT_ID
@@ -338,10 +339,9 @@
 #define VBOX_SHCL_GUEST_FN_REPORT_FEATURES        6
 /** Query the host ones feature masks.
  *
- * That way the guest (client) can get hold of the features
- * from the host.  Again, it is prudent to set the 127 bit and observe it being
- * cleared on success, as older hosts might return success without doing
- * anything.
+ * That way the guest (client) can get hold of the features from the host.
+ * Again, it is prudent to set the 127 bit and observe it being cleared on
+ * success, as older hosts might return success without doing anything.
  *
  * @retval  VINF_SUCCESS on success.
  * @retval  VERR_INVALID_CLIENT_ID
@@ -532,6 +532,9 @@
  * @since   6.1
  */
 #define VBOX_SHCL_GUEST_FN_ERROR                  27
+
+/** The last function number (used for validation/sanity).   */
+#define VBOX_SHCL_GUEST_FN_LAST                   VBOX_SHCL_GUEST_FN_ERROR
 /** @} */
 
 
