@@ -34,7 +34,7 @@
 *   Structures and Typedefs                                                                                                      *
 *********************************************************************************************************************************/
 /** Global clipboard context information */
-struct _SHCLCONTEXT
+struct SHCLCONTEXT
 {
     /** We have a separate thread to poll for new clipboard content */
     RTTHREAD                thread;

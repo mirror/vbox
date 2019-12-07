@@ -38,11 +38,10 @@
 /*********************************************************************************************************************************
 *   Structures and Typedefs                                                                                                      *
 *********************************************************************************************************************************/
-
 /**
  * Global context information used by the host glue for the X11 clipboard backend.
  */
-struct _SHCLCONTEXT
+struct SHCLCONTEXT
 {
     /** This mutex is grabbed during any critical operations on the clipboard
      * which might clash with others. */
@@ -163,7 +162,7 @@ int ShClSvcImplFormatAnnounce(PSHCLCLIENT pClient, PSHCLCLIENTCMDCTX pCmdCtx,
 }
 
 /** Structure describing a request for clipoard data from the guest. */
-struct _CLIPREADCBREQ
+struct CLIPREADCBREQ
 {
     /** User-supplied data pointer, based on the request type. */
     void                *pv;

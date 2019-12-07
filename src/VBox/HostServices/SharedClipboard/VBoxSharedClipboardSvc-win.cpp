@@ -54,7 +54,7 @@
 *********************************************************************************************************************************/
 static int vboxClipboardSvcWinSyncInternal(PSHCLCONTEXT pCtx);
 
-struct _SHCLCONTEXT
+struct SHCLCONTEXT
 {
     /** Handle for window message handling thread. */
     RTTHREAD    hThread;

@@ -54,10 +54,6 @@ typedef enum _SHCLX11FMT
 /** Defines an index of the X11 clipboad format table. */
 typedef unsigned SHCLX11FMTIDX;
 
-/** Prototype for the implementation-specfic Shared Clipboard context. */
-struct _SHCLCONTEXT;
-typedef SHCLCONTEXT _SHCLCONTEXT;
-
 /**
  * Structure for maintaining a Shared Clipboard context on X11 platforms.
  */

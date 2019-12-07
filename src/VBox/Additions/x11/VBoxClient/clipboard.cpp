@@ -58,7 +58,7 @@ typedef struct _SHCLCTXFUSE
 /**
  * Global clipboard context information.
  */
-struct _SHCLCONTEXT
+struct SHCLCONTEXT
 {
     /** Client command context */
     VBGLR3SHCLCMDCTX CmdCtx;
@@ -165,7 +165,7 @@ DECLCALLBACK(int) ShClX11RequestDataForX11Callback(PSHCLCONTEXT pCtx, SHCLFORMAT
  * data, passed in when the request is forwarded to the X11 backend so that
  * it can be completed correctly.
  */
-struct _CLIPREADCBREQ
+struct CLIPREADCBREQ
 {
     /** The data format that was requested. */
     SHCLFORMAT Format;

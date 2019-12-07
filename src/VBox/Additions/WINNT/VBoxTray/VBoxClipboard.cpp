@@ -50,8 +50,7 @@
 /*********************************************************************************************************************************
 *   Structures and Typedefs                                                                                                      *
 *********************************************************************************************************************************/
-
-typedef struct _SHCLCONTEXT
+struct SHCLCONTEXT
 {
     /** Pointer to the VBoxClient service environment. */
     const VBOXSERVICEENV *pEnv;
@@ -69,7 +68,7 @@ typedef struct _SHCLCONTEXT
     /** Associated transfer data. */
     SHCLTRANSFERCTX       TransferCtx;
 #endif
-} SHCLCONTEXT, *PSHCLCONTEXT;
+};
 
 
 /*********************************************************************************************************************************
@@ -578,7 +577,10 @@ static LRESULT vboxClipboardWinProcessMsg(PSHCLCONTEXT pCtx, HWND hwnd, UINT msg
                         LPVOID lp = GlobalLock(hClip);
                         if (lp != NULL)
                         {
-                            SHCLDATABLOCK dataBlock = { uFormat, lp, (uint32_t)GlobalSize(hClip) };
+                            SHCLDATABLOCK dataBlock;
+                            dataBlock.uFormat = uFormat;
+                            dataBlock.pvData  = lp;
+                            dataBlock.cbData  = (uint32_t)GlobalSize(hClip);
 
                             rc = VbglR3ClipboardWriteDataEx(&pEvent->cmdCtx, &dataBlock);
 
@@ -598,7 +600,10 @@ static LRESULT vboxClipboardWinProcessMsg(PSHCLCONTEXT pCtx, HWND hwnd, UINT msg
                         LPWSTR uniString = (LPWSTR)GlobalLock(hClip);
                         if (uniString != NULL)
                         {
-                            SHCLDATABLOCK dataBlock = { uFormat, uniString, ((uint32_t)lstrlenW(uniString) + 1) * 2 };
+                            SHCLDATABLOCK dataBlock;
+                            dataBlock.uFormat = uFormat;
+                            dataBlock.pvData  = uniString;
+                            dataBlock.cbData  = ((uint32_t)lstrlenW(uniString) + 1) * 2;
 
                             rc = VbglR3ClipboardWriteDataEx(&pEvent->cmdCtx, &dataBlock);
 
@@ -622,7 +627,10 @@ static LRESULT vboxClipboardWinProcessMsg(PSHCLCONTEXT pCtx, HWND hwnd, UINT msg
 
                             if (lp != NULL)
                             {
-                                SHCLDATABLOCK dataBlock = { uFormat, lp, (uint32_t)GlobalSize(hClip) };
+                                SHCLDATABLOCK dataBlock;
+                                dataBlock.uFormat = uFormat;
+                                dataBlock.pvData  = lp;
+                                dataBlock.cbData  = (uint32_t)GlobalSize(hClip);
 
                                 rc = VbglR3ClipboardWriteDataEx(&pEvent->cmdCtx, &dataBlock);
 

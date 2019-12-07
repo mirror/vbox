@@ -43,6 +43,11 @@
 #include <VBox/GuestHost/SharedClipboard.h>
 
 
+struct SHCLTRANSFER;
+/** Pointer to a single shared clipboard transfer   */
+typedef struct SHCLTRANSFER *PSHCLTRANSFER;
+
+
 /** @name Shared Clipboard transfer definitions.
  *  @{
  */
@@ -712,9 +717,6 @@ typedef struct _SHCLTRANSFERSTATE
     SHCLSOURCE         enmSource;
 } SHCLTRANSFERSTATE, *PSHCLTRANSFERSTATE;
 
-struct _SHCLTRANSFER;
-typedef struct _SHCLTRANSFER *PSHCLTRANSFER;
-
 /**
  * Structure maintaining clipboard transfer provider context data.
  * This is handed in to the provider implementation callbacks.
@@ -800,8 +802,6 @@ typedef struct _SHCLPROVIDERCREATIONCTX
     void                  *pvUser;
 } SHCLPROVIDERCREATIONCTX, *PSHCLPROVIDERCREATIONCTX;
 
-struct _SHCLTRANSFER;
-typedef _SHCLTRANSFER *PSHCLTRANSFER;
 
 /**
  * Structure for storing Shared Clipboard transfer callback data.
@@ -881,11 +881,11 @@ typedef struct _SHCLTRANSFERTHREAD
 } SHCLTRANSFERTHREAD, *PSHCLTRANSFERTHREAD;
 
 /**
- * Structure for maintaining a single Shared Clipboard transfer.
+ * A single Shared Clipboard transfer.
  *
  ** @todo Not yet thread safe.
  */
-typedef struct _SHCLTRANSFER
+typedef struct SHCLTRANSFER
 {
     /** The node member for using this struct in a RTList. */
     RTLISTNODE               Node;
