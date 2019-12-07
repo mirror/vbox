@@ -587,12 +587,8 @@ typedef struct VBGLR3SHCLTRANSFERCMDCTX
 #  endif /* VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS */
 
 /**
- * Structure containing the context required for
- * either retrieving or sending a HGCM shared clipboard
+ * The context required for either retrieving or sending a HGCM shared clipboard
  * commands from or to the host.
- *
- * Note: Do not change parameter order without also
- *       adapting all structure initializers.
  */
 typedef struct VBGLR3SHCLCMDCTX
 {
@@ -600,18 +596,19 @@ typedef struct VBGLR3SHCLCMDCTX
      *        a second communication channel, e.g. via TCP/IP.
      *        Use a union for the HGCM stuff then. */
 
-    /** IN: HGCM client ID to use for communication. */
-    uint32_t                  uClientID;
     /** IN/OUT: Context ID to retrieve or to use. */
     uint64_t                  uContextID;
+    /** IN: HGCM client ID to use for communication. */
+    uint32_t                  uClientID;
     /** IN: Maximum chunk size (in bytes). */
     uint32_t                  cbChunkSize;
+    /** IN: Host feature flags (of type VBOX_SHCL_HF_XXX). */
+    uint64_t                  fHostFeatures;
     /** Flag indicating whether to use the legacy protocol (<= VBox 6.1) or not.
      *  This is determined in VbglR3ClipboardConnectEx(). */
     bool                      fUseLegacyProtocol;
-    /** IN: Host feature flags (of type VBOX_SHCL_HF_XXX). */
-    uint64_t                  fHostFeatures;
-    /** OUT: Number of parameters retrieved. */
+    /** OUT: Number of parameters retrieved.
+     * @todo r=bird: s/uNumParms/cParms/ !! */
     uint32_t                  uNumParms;
 #  ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
     VBGLR3SHCLTRANSFERCMDCTX  Transfers;
