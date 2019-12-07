@@ -33,10 +33,11 @@
  *
  *     VBox < 6.1, deprecated:
  *         | First, initial implementation since feature was developed.
- *           Has no protocol handshake / versioning support, the client's
- *           waiting message also acted as retrieving the parameters from
- *           the host (always and only *exactly* two parameters). Does
- *           not have the ability to control / handle parallel transfers.
+ *           Has no protocol handshake or support for feature exchange,
+ *           the client's waiting message also acted as retrieving the
+ *           parameters from the host (always and only *exactly* two
+ *           parameters). Does not have the ability to control / handle parallel
+ *           transfers.
  *
  *     VBox >= 6.1:
  *         + Adds host/guest feature flags and context IDs for parallel,
@@ -60,20 +61,6 @@
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
 #include <VBox/GuestHost/SharedClipboard-transfers.h>
 #endif
-
-/*
- * The saved state versions.
- * We're using it as a version field with the high bit set.
- */
-/** Adds the client's POD state and client state flags. */
-#define VBOX_SHCL_SSM_VER_2          UINT32_C(0x80000004)
-/** New saved state (since VBox 6.1 Beta 2). */
-#define VBOX_SHCL_SSM_VER_1          UINT32_C(0x80000003)
-/** Older saved states (VBox < 6.1). Includes legacy protocol state. */
-#define VBOX_SHCL_SSM_VER_0          UINT32_C(0x80000002)
-
-/** Latest Shared Clipboard SSM version. */
-#define VBOX_SHCL_SSM_VER_LATEST     VBOX_SHCL_SSM_VER_2
 
 /*
  * The Shared Clipboard modes of operation.

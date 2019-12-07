@@ -239,6 +239,33 @@ using namespace HGCM;
 
 
 /*********************************************************************************************************************************
+*   Defined Constants And Macros                                                                                                 *
+*********************************************************************************************************************************/
+/** @name The saved state versions for the shared clipboard service.
+ *
+ * @note We set bit 31 because prior to version 0x80000002 there would be a
+ *       structure size rather than a version number.  Setting bit 31 dispells
+ *       any possible ambiguity.
+ *
+ * @{ */
+/** The current saved state version. */
+#define VBOX_SHCL_SAVED_STATE_VER_CURRENT   VBOX_SHCL_SAVED_STATE_VER_6_1RC1
+/** Adds the client's POD state and client state flags.
+ * @since 6.1 RC1 */
+#define VBOX_SHCL_SAVED_STATE_VER_6_1RC1    UINT32_C(0x80000004)
+/** First attempt saving state during @bugref{9437} development.
+ * @since 6.1 BETA 2   */
+#define VBOX_SHCL_SAVED_STATE_VER_6_1B2     UINT32_C(0x80000003)
+/** First structured version.
+ * @since 3.1 / r53668 */
+#define VBOX_SHCL_SAVED_STATE_VER_3_1       UINT32_C(0x80000002)
+/** This was just a state memory dump, including pointers and everything.
+ * @note This is not supported any more. Sorry.  */
+#define VBOX_SHCL_SAVED_STATE_VER_NOT_SUPP  (ARCH_BITS == 64 ? UINT32_C(72) : UINT32_C(48))
+/** @} */
+
+
+/*********************************************************************************************************************************
 *   Global Variables                                                                                                             *
 *********************************************************************************************************************************/
 PVBOXHGCMSVCHELPERS g_pHelpers;
@@ -2138,7 +2165,7 @@ static DECLCALLBACK(int) svcSaveState(void *, uint32_t u32ClientID, void *pvClie
     AssertPtr(pClient);
 
     /* Write Shared Clipboard saved state version. */
-    SSMR3PutU32(pSSM, VBOX_SHCL_SSM_VER_LATEST);
+    SSMR3PutU32(pSSM, VBOX_SHCL_SAVED_STATE_VER_CURRENT);
 
     int rc = SSMR3PutStructEx(pSSM, &pClient->State, sizeof(pClient->State), 0 /*fFlags*/, &s_aShClSSMClientState[0], NULL);
     AssertRCReturn(rc, rc);
@@ -2230,13 +2257,12 @@ static DECLCALLBACK(int) svcLoadState(void *, uint32_t u32ClientID, void *pvClie
 
     LogFunc(("u32ClientID=%RU32, lenOrVer=%#RX64\n", u32ClientID, lenOrVer));
 
-    if (lenOrVer == VBOX_SHCL_SSM_VER_0)
-    {
+    if (lenOrVer == VBOX_SHCL_SAVED_STATE_VER_3_1)
         return svcLoadStateV0(u32ClientID, pvClient, pSSM, uVersion);
-    }
-    else if (lenOrVer >= VBOX_SHCL_SSM_VER_1)
+
+    if (lenOrVer >= VBOX_SHCL_SAVED_STATE_VER_6_1B2)
     {
-        if (lenOrVer >= VBOX_SHCL_SSM_VER_2)
+        if (lenOrVer >= VBOX_SHCL_SAVED_STATE_VER_6_1RC1)
         {
             rc = SSMR3GetStructEx(pSSM, &pClient->State, sizeof(pClient->State), 0 /* fFlags */,
                                   &s_aShClSSMClientState[0], NULL);
