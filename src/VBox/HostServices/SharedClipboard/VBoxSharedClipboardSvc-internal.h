@@ -74,6 +74,7 @@ typedef struct SHCLCLIENTTRANSFERSTATE
 
 /**
  * Structure for holding a single POD (plain old data) transfer.
+ *
  * This mostly is plain text, but also can be stuff like bitmap (BMP) or other binary data.
  */
 typedef struct SHCLCLIENTPODSTATE
