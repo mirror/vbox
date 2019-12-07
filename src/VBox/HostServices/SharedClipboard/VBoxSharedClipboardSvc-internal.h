@@ -239,6 +239,20 @@ bool shClSvcTransferMsgIsAllowed(uint32_t uMode, uint32_t uMsg);
 void shClSvcClientTransfersReset(PSHCLCLIENT pClient);
 #endif /* VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS */
 
+/** @name Service functions, accessible by the backends.
+ * Locking is between the (host) service thread and the platform-dependent (window) thread.
+ * @{
+ */
+int ShClSvcDataReadRequest(PSHCLCLIENT pClient, PSHCLDATAREQ pDataReq, PSHCLEVENTID puEvent);
+int ShClSvcDataReadSignal(PSHCLCLIENT pClient, PSHCLCLIENTCMDCTX pCmdCtx, PSHCLDATABLOCK pData);
+int ShClSvcFormatsReport(PSHCLCLIENT pClient, PSHCLFORMATDATA pFormats);
+uint32_t ShClSvcGetMode(void);
+bool ShClSvcGetHeadless(void);
+bool ShClSvcLock(void);
+void ShClSvcUnlock(void);
+/** @} */
+
+
 /** @name Platform-dependent implementations for the Shared Clipboard host service, called *only* by the host service.
  * @{
  */
