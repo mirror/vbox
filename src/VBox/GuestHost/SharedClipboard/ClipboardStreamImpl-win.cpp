@@ -282,7 +282,7 @@ STDMETHODIMP SharedClipboardWinStreamImpl::Stat(STATSTG *pStatStg, DWORD dwFlags
 
     if (pStatStg)
     {
-        RT_BZERO(pStatStg, sizeof(STATSTG));
+        RT_ZERO(*pStatStg);
 
         switch (dwFlags)
         {
@@ -292,6 +292,9 @@ STDMETHODIMP SharedClipboardWinStreamImpl::Stat(STATSTG *pStatStg, DWORD dwFlags
 
             case STATFLAG_DEFAULT:
             {
+                /** @todo r=bird: This is using the wrong allocator.  According to MSDN the
+                 * caller will pass this to CoTaskMemFree, so we should use CoTaskMemAlloc to
+                 * allocate it. */
                 int rc2 = RTStrToUtf16(m_strPath.c_str(), &pStatStg->pwcsName);
                 if (RT_FAILURE(rc2))
                     hr = E_FAIL;
