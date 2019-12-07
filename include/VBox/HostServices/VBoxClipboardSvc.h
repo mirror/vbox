@@ -62,8 +62,9 @@
 #include <VBox/GuestHost/SharedClipboard-transfers.h>
 #endif
 
-/*
- * The Shared Clipboard modes of operation.
+
+/** @name VBOX_SHCL_MODE_XXX - The Shared Clipboard modes of operation.
+ * @{
  */
 /** Shared Clipboard is disabled completely. */
 #define VBOX_SHCL_MODE_OFF           0
@@ -73,9 +74,10 @@
 #define VBOX_SHCL_MODE_GUEST_TO_HOST 2
 /** Bidirectional transfers between guest and host are possible. */
 #define VBOX_SHCL_MODE_BIDIRECTIONAL 3
+/** @}  */
 
-/*
- * The Shared Clipboard file transfer mode (bit field).
+/** @name VBOX_SHCL_TRANSFER_MODE_XXX - The Shared Clipboard file transfer mode (bit field).
+ * @{
  */
 /** Shared Clipboard file transfers are disabled. */
 #define VBOX_SHCL_TRANSFER_MODE_DISABLED     UINT32_C(0)
@@ -83,47 +85,43 @@
 #define VBOX_SHCL_TRANSFER_MODE_ENABLED      RT_BIT(0)
 /** Shared Clipboard file transfer mode valid mask. */
 #define VBOX_SHCL_TRANSFER_MODE_VALID_MASK   UINT32_C(0x1)
+/** @} */
 
-/*
- * The service functions which are callable by host.
+/** @name VBOX_SHCL_HOST_FN_XXX - The service functions which are callable by host.
+ * @note These are not sacred and can be modified at will as long as all host
+ *       clients are updated accordingly (probably just Main).
+ * @{
  */
 /** Sets the current Shared Clipboard operation mode. */
 #define VBOX_SHCL_HOST_FN_SET_MODE           1
 /** Sets the current Shared Clipboard (file) transfers mode.
- *  Operates on the VBOX_SHCL_TRANSFERS_ defines.
- *
- * @since   6.1
- */
+ *  Operates on the VBOX_SHCL_TRANSFERS_XXX defines.
+ * @since   6.1  */
 #define VBOX_SHCL_HOST_FN_SET_TRANSFER_MODE  2
 /** Run headless on the host, i.e. do not touch the host clipboard. */
 #define VBOX_SHCL_HOST_FN_SET_HEADLESS       3
 /** Reports cancellation of the current operation to the guest.
- * @since   6.1
- */
+ * @since   6.1 - still a todo  */
 #define VBOX_SHCL_HOST_FN_CANCEL             4
 /** Reports an error to the guest.
- * @since   6.1
- */
+ * @since   6.1 - still a todo  */
 #define VBOX_SHCL_HOST_FN_ERROR              5
 /** Reports that a new clipboard area has been registered.
- * @since   6.1
- */
+ * @since   6.1 - not implemented */
 #define VBOX_SHCL_HOST_FN_AREA_REGISTER      6
 /** Reports that a clipboard area has been unregistered.
- * @since   6.1
- */
+ * @since   6.1 - not implemented  */
 #define VBOX_SHCL_HOST_FN_AREA_UNREGISTER    7
 /** Reports that a client (host / guest) has attached to a clipboard area.
- * @since   6.1
- */
+ * @since   6.1 - not implemented  */
 #define VBOX_SHCL_HOST_FN_AREA_ATTACH        8
 /** Reports that a client (host / guest) has detached from a clipboard area.
- * @since   6.1
- */
+ * @since   6.1 - not implemented */
 #define VBOX_SHCL_HOST_FN_AREA_DETACH        9
+/** @} */
 
-/**
- * The host messages for the guest.
+/** @name VBOX_SHCL_HOST_MSG_XXX - The host messages for the guest.
+ * @{
  */
 /** Asks the client to quit / terminate. */
 #define VBOX_SHCL_HOST_MSG_QUIT                              1
@@ -286,9 +284,10 @@
  * @since   6.1
  */
 #define VBOX_SHCL_HOST_MSG_TRANSFER_ERROR                    66
+/** @} */
 
-/*
- * The service functions which are called by guest.
+/** @name VBOX_SHCL_GUEST_FN_XXX - The service functions which are called by guest.
+ * @{
  */
 /** Calls the host and waits (blocking) for an host event VBOX_SHCL_HOST_MSG_*.
  *  Deprecated, do not use anymore. Kept to not break compatibility with older
@@ -531,9 +530,12 @@
  * @since   6.1
  */
 #define VBOX_SHCL_GUEST_FN_ERROR                  27
+/** @} */
 
-/** The maximum default chunk size for a single data transfer. */
-#define VBOX_SHCL_MAX_CHUNK_SIZE                  _64K
+
+/** The maximum default chunk size for a single data transfer.
+ * @note r=bird: Nobody actually uses this.  Name is misleading.  */
+#define VBOX_SHCL_DEFAULT_MAX_CHUNK_SIZE          _64K
 
 /** @name VBOX_SHCL_GF_XXX - Guest features.
  * @sa VBOX_SHCL_GUEST_FN_REPORT_FEATURES
@@ -558,6 +560,7 @@
 /*
  * HGCM parameter structures.
  */
+/** @todo r=bird: These structures are mostly pointless. */
 #pragma pack(1)
 /**
  * Waits (blocking) for a new host message to arrive.
