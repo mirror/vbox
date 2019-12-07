@@ -41,6 +41,7 @@
 #include <iprt/cpp/ministring.h>
 
 #include <VBox/GuestHost/SharedClipboard.h>
+#include <VBox/HostServices/VBoxClipboardSvc.h>
 
 
 struct SHCLTRANSFER;

@@ -50,33 +50,16 @@ typedef enum SHCLTRANSFERDIR
 typedef SHCLTRANSFERDIR *PSHCLTRANSFERDIR;
 
 
-/** A single Shared Clipboard format. */
+/** A single Shared Clipboard format (VBOX_SHCL_FMT_XXX). */
 typedef uint32_t SHCLFORMAT;
-/** Pointer to a single Shared Clipboard format. */
+/** Pointer to a single Shared Clipboard format (VBOX_SHCL_FMT_XXX). */
 typedef SHCLFORMAT *PSHCLFORMAT;
 
-/** Bit map of Shared Clipboard formats. */
+/** Bit map (flags) of Shared Clipboard formats (VBOX_SHCL_FMT_XXX). */
 typedef uint32_t SHCLFORMATS;
-/** Pointer to a bit map of Shared Clipboard formats. */
+/** Pointer to a bit map of Shared Clipboard formats (VBOX_SHCL_FMT_XXX). */
 typedef SHCLFORMATS *PSHCLFORMATS;
 
-/** @name VBOX_SHCL_FMT_XXX - Data formats (flags) for Shared Clipboard.
- * @todo r=bird: Wrong header, belongs in the host service!
- * @{
- */
-/** No format set. */
-#define VBOX_SHCL_FMT_NONE          0
-/** Shared Clipboard format is an Unicode text. */
-#define VBOX_SHCL_FMT_UNICODETEXT   RT_BIT(0)
-/** Shared Clipboard format is bitmap (BMP / DIB). */
-#define VBOX_SHCL_FMT_BITMAP        RT_BIT(1)
-/** Shared Clipboard format is HTML. */
-#define VBOX_SHCL_FMT_HTML          RT_BIT(2)
-#ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
-/** Shared Clipboard format is a transfer list. */
-# define VBOX_SHCL_FMT_URI_LIST     RT_BIT(3)
-#endif
-/** @}  */
 
 /**
  * Generic Shared Clipboard data block.
@@ -161,30 +144,6 @@ typedef uint32_t        SHCLEVENTID;
 typedef SHCLEVENTID    *PSHCLEVENTID;
 /** NIL shared clipboard event ID. */
 #define NIL_SHCLEVENTID                          UINT32_MAX
-
-/** Maximum number of concurrent Shared Clipboard client sessions a VM can have. */
-#define VBOX_SHCL_MAX_SESSIONS                   (UINT16_MAX - 1)
-/** Maximum number of concurrent Shared Clipboard transfers a single client can have. */
-#define VBOX_SHCL_MAX_TRANSFERS                  (UINT16_MAX - 1)
-/** Maximum number of events a single Shared Clipboard transfer can have. */
-#define VBOX_SHCL_MAX_EVENTS                     (UINT32_MAX - 1)
-
-/**
- * Creates a context ID out of a client ID, a transfer ID and an event ID (count).
- */
-#define VBOX_SHCL_CONTEXTID_MAKE(a_idSession, a_idTransfer, a_idEvent) \
-    (  ((uint64_t)((a_idSession)  & 0xffff) << 48) \
-     | ((uint64_t)((a_idTransfer) & 0xffff) << 32) \
-     | ((uint32_t) (a_idEvent)) \
-    )
-/** Creates a context ID out of a session ID. */
-#define VBOX_SHCL_CONTEXTID_MAKE_SESSION(a_idSession)    VBOX_SHCL_CONTEXTID_MAKE(a_idSession, 0, 0)
-/** Gets the session ID out of a context ID. */
-#define VBOX_SHCL_CONTEXTID_GET_SESSION(a_idContext)     ( (uint16_t)(((a_idContext) >> 48) & UINT16_MAX) )
-/** Gets the transfer ID out of a context ID. */
-#define VBOX_SHCL_CONTEXTID_GET_TRANSFER(a_idContext)    ( (uint16_t)(((a_idContext) >> 32) & UINT16_MAX) )
-/** Gets the transfer event out of a context ID. */
-#define VBOX_SHCL_CONTEXTID_GET_EVENT(a_idContext)       ( (uint32_t)( (a_idContext)        & UINT32_MAX) )
 
 /**
  * Shared Clipboard event.
