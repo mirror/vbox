@@ -89,16 +89,16 @@ typedef uint32_t SHCLTRANSFERSTATUS;
 typedef uint64_t SHCLLISTHANDLE;
 /** Pointer to a Shared Clipboard list handle. */
 typedef SHCLLISTHANDLE *PSHCLLISTHANDLE;
-
-/** Specifies an invalid Shared Clipboard list handle. */
+/** Specifies an invalid Shared Clipboard list handle.
+ * @todo r=bird: The convention is NIL_SHCLLISTHANDLE. */
 #define SHCLLISTHANDLE_INVALID        ((SHCLLISTHANDLE)UINT64_MAX)
 
 /** A Shared Clipboard object handle. */
 typedef uint64_t SHCLOBJHANDLE;
 /** Pointer to a Shared Clipboard object handle. */
 typedef SHCLOBJHANDLE *PSHCLOBJHANDLE;
-
-/** Specifies an invalid Shared Clipboard object handle. */
+/** Specifies an invalid Shared Clipboard object handle.
+ * @todo r=bird: The convention is NIL_SHCLOBJHANDLE. */
 #define SHCLOBJHANDLE_INVALID         ((SHCLOBJHANDLE)UINT64_MAX)
 
 /** @} */
