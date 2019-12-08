@@ -285,10 +285,20 @@
 #define VBOX_SHCL_GUEST_FN_FORMATS_REPORT         2
 /** Reads data in specified format from the host.
  *
+ * This function takes three parameters, a 32-bit format bit, a buffer
+ * and 32-bit number of bytes read (output).
+ *
+ * There was a period during 6.1 development where it would take five parameters
+ * when VBOX_SHCL_GF_0_CONTEXT_ID was reported by the guest.  A 64-bit context
+ * ID (ignored as purpose undefined), a 32-bit unused flag (MBZ), then the
+ * 32-bit format bits, number of bytes read (output), and the buffer.  This
+ * format is still accepted.
+ *
  * @retval  VINF_SUCCESS on success.
  * @retval  VINF_BUFFER_OVERLFLOW (VBox >= 6.1 only) if not enough buffer space
- *          has been given to retrieve the actual data. The call then must be
- *          repeated with a buffer size returned from the host in cbData.
+ *          has been given to retrieve the actual data, no data actually copied.
+ *          The call then must be repeated with a buffer size returned from the
+ *          host in cbData.
  * @retval  VERR_INVALID_CLIENT_ID
  * @retval  VERR_WRONG_PARAMETER_COUNT
  * @retval  VERR_WRONG_PARAMETER_TYPE
@@ -688,47 +698,22 @@ typedef struct _VBoxShClReadDataReqMsg
 
 #define VBOX_SHCL_CPARMS_READ_DATA_REQ 4
 
-/**
- * Reads clipboard data.
- */
-typedef struct _VBoxShClReadDataMsg
+/** @name VBOX_SHCL_GUEST_FN_DATA_READ
+ * @{ */
+/** VBOX_SHCL_GUEST_FN_DATA_READ parameters. */
+typedef struct VBoxShClParmDataRead
 {
-    VBGLIOCHGCMCALL hdr;
-
-    union
-    {
-        struct
-        {
-            /** uint32_t, out: Requested format. */
-            HGCMFunctionParameter format; /* IN uint32_t */
-            /** ptr, out: The data buffer. */
-            HGCMFunctionParameter ptr;    /* IN linear pointer. */
-            /** uint32_t, out: Size of returned data, if > ptr->cb, then no data was
-             *  actually transferred and the guest must repeat the call.
-             */
-            HGCMFunctionParameter size;   /* OUT uint32_t */
-        } v0;
-        struct
-        {
-            /** uint64_t, out: Context ID. */
-            HGCMFunctionParameter uContext;
-            /** uint32_t, out: Read flags; currently unused and must be set to 0. */
-            HGCMFunctionParameter fFlags;
-            /** uint32_t, out: Requested format. */
-            HGCMFunctionParameter uFormat;
-            /** uint32_t, in/out:
-             *  On input:  How much data to read max.
-             *  On output: Size of returned data, if > ptr->cb, then no data was
-             *  actually transferred and the guest must repeat the call.
-             */
-            HGCMFunctionParameter cbData;
-            /** ptr, out: The data buffer. */
-            HGCMFunctionParameter pvData;
-        } v1;
-    } u;
-} VBoxShClReadDataMsg;
-
-#define VBOX_SHCL_CPARMS_READ_DATA 5
+    /** uint32_t, in: Requested format. */
+    HGCMFunctionParameter f32Format;
+    /** ptr, out: The data buffer to put the data in on success. */
+    HGCMFunctionParameter pData;
+    /** uint32_t, out: Size of returned data, if larger than the buffer, then no
+     * data was actually transferred and the guest must repeat the call.  */
+    HGCMFunctionParameter cb32Needed;
+} VBoxShClParmDataRead;
+#define VBOX_SHCL_CPARMS_DATA_READ      3   /**< The parameter count for VBOX_SHCL_GUEST_FN_DATA_READ. */
+#define VBOX_SHCL_CPARMS_DATA_READ_61B  5   /**< The 6.1 dev cycle variant, see VBOX_SHCL_GUEST_FN_DATA_READ.  */
+/** @}  */
 
 /**
  * Writes clipboard data.

@@ -304,21 +304,24 @@ VBGLR3DECL(int) VbglR3ClipboardGetHostMsgOld(HGCMCLIENTID idClient, uint32_t *pi
 VBGLR3DECL(int) VbglR3ClipboardReadData(HGCMCLIENTID idClient, uint32_t fFormat, void *pvData, uint32_t cbData,
                                         uint32_t *pcbRead)
 {
-    VBoxShClReadDataMsg Msg;
-
     LogFlowFuncEnter();
 
-    VBGL_HGCM_HDR_INIT(&Msg.hdr, idClient, VBOX_SHCL_GUEST_FN_DATA_READ, 3);
+    struct
+    {
+        VBGLIOCHGCMCALL      Hdr;
+        VBoxShClParmDataRead Parms;
+    } Msg;
 
-    VbglHGCMParmUInt32Set(&Msg.u.v0.format, fFormat);
-    VbglHGCMParmPtrSet(&Msg.u.v0.ptr, pvData, cbData);
-    VbglHGCMParmUInt32Set(&Msg.u.v0.size, 0);
+    VBGL_HGCM_HDR_INIT(&Msg.Hdr, idClient, VBOX_SHCL_GUEST_FN_DATA_READ, VBOX_SHCL_CPARMS_DATA_READ);
+    VbglHGCMParmUInt32Set(&Msg.Parms.f32Format,  fFormat);
+    VbglHGCMParmPtrSet(   &Msg.Parms.pData,      pvData, cbData);
+    VbglHGCMParmUInt32Set(&Msg.Parms.cb32Needed, 0);
 
-    int rc = VbglR3HGCMCall(&Msg.hdr, sizeof(Msg.hdr) + sizeof(Msg.u.v0));
+    int rc = VbglR3HGCMCall(&Msg.Hdr, sizeof(Msg));
     if (RT_SUCCESS(rc))
     {
         uint32_t cbRead;
-        rc = VbglHGCMParmUInt32Get(&Msg.u.v0.size, &cbRead);
+        rc = VbglHGCMParmUInt32Get(&Msg.Parms.cb32Needed, &cbRead);
         if (RT_SUCCESS(rc))
         {
             LogFlowFunc(("cbRead=%RU32\n", cbRead));
@@ -348,46 +351,7 @@ VBGLR3DECL(int) VbglR3ClipboardReadDataEx(PVBGLR3SHCLCMDCTX pCtx, PSHCLDATABLOCK
 {
     AssertPtrReturn(pCtx,  VERR_INVALID_POINTER);
     AssertPtrReturn(pData, VERR_INVALID_POINTER);
-
-    int rc;
-
-    LogFlowFuncEnter();
-
-    if (pCtx->fUseLegacyProtocol)
-    {
-        rc = VbglR3ClipboardReadData(pCtx->uClientID, pData->uFormat, pData->pvData, pData->cbData, pcbRead);
-    }
-    else
-    {
-        VBoxShClReadDataMsg Msg;
-
-        VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID, VBOX_SHCL_GUEST_FN_DATA_READ, VBOX_SHCL_CPARMS_READ_DATA);
-
-        VbglHGCMParmUInt64Set(&Msg.u.v1.uContext, pCtx->uContextID);
-        VbglHGCMParmUInt32Set(&Msg.u.v1.fFlags, 0);
-        VbglHGCMParmUInt32Set(&Msg.u.v1.uFormat, pData->uFormat);
-        VbglHGCMParmUInt32Set(&Msg.u.v1.cbData, pData->cbData);
-        VbglHGCMParmPtrSet(&Msg.u.v1.pvData, pData->pvData, pData->cbData);
-
-        rc = VbglR3HGCMCall(&Msg.hdr, sizeof(Msg.hdr) + sizeof(Msg.u.v1));
-        if (RT_SUCCESS(rc))
-        {
-            uint32_t cbRead;
-            rc = VbglHGCMParmUInt32Get(&Msg.u.v1.cbData, &cbRead);
-            if (RT_SUCCESS(rc))
-            {
-                LogFlowFunc(("cbRead=%RU32\n", cbRead));
-
-                if (cbRead > pData->cbData)
-                    rc = VINF_BUFFER_OVERFLOW;
-
-                *pcbRead = cbRead;
-            }
-        }
-    }
-
-    LogFlowFuncLeaveRC(rc);
-    return rc;
+    return VbglR3ClipboardReadData(pCtx->uClientID, pData->uFormat, pData->pvData, pData->cbData, pcbRead);
 }
 
 /**

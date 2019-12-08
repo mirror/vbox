@@ -1289,164 +1289,177 @@ int ShClSvcFormatsReport(PSHCLCLIENT pClient, PSHCLFORMATDATA pFormats)
     return rc;
 }
 
-int shClSvcGetDataRead(PSHCLCLIENT pClient, uint32_t cParms, VBOXHGCMSVCPARM paParms[])
+/**
+ * Handles the VBOX_SHCL_GUEST_FN_DATA_READ message from the guest.
+ */
+static int shClSvcGetDataRead(PSHCLCLIENT pClient, uint32_t cParms, VBOXHGCMSVCPARM paParms[])
 {
     LogFlowFuncEnter();
 
-    if (   ShClSvcGetMode() != VBOX_SHCL_MODE_HOST_TO_GUEST
-        && ShClSvcGetMode() != VBOX_SHCL_MODE_BIDIRECTIONAL)
-    {
+    /*
+     * Check if the service mode allows this operation and whether the guest is
+     * supposed to be reading from the host.
+     */
+    uint32_t uMode = ShClSvcGetMode();
+    if (   uMode == VBOX_SHCL_MODE_BIDIRECTIONAL
+        || uMode == VBOX_SHCL_MODE_HOST_TO_GUEST)
+    { /* likely */ }
+    else
         return VERR_ACCESS_DENIED;
-    }
 
-    /* Is the guest supposed to read any clipboard data from the host? */
-    if (!(pClient->State.fFlags & SHCLCLIENTSTATE_FLAGS_READ_ACTIVE))
-        return VERR_WRONG_ORDER;
+    /// @todo r=bird: The management of the SHCLCLIENTSTATE_FLAGS_READ_ACTIVE
+    /// makes it impossible for the guest to retrieve more than one format from
+    /// the clipboard.  I.e. it can either get the TEXT or the HTML rendering,
+    /// but not both.  So, I've disable the check. */
+    //ASSERT_GUEST_RETURN(pClient->State.fFlags & SHCLCLIENTSTATE_FLAGS_READ_ACTIVE, VERR_WRONG_ORDER);
 
-    int rc;
+    /*
+     * Digest parameters.
+     *
+     * We are dragging some legacy here from the 6.1 dev cycle, a 5 parameter
+     * variant which prepends a 64-bit context ID (RAZ as meaning not defined),
+     * a 32-bit flag (MBZ, no defined meaning) and switches the last two parameters.
+     */
+    ASSERT_GUEST_RETURN(   cParms == VBOX_SHCL_CPARMS_DATA_READ
+                        || (    cParms == VBOX_SHCL_CPARMS_DATA_READ_61B
+                            &&  (pClient->State.fGuestFeatures0 & VBOX_SHCL_GF_0_CONTEXT_ID)),
+                        VERR_WRONG_PARAMETER_COUNT);
 
+    uintptr_t iParm = 0;
     SHCLCLIENTCMDCTX cmdCtx;
     RT_ZERO(cmdCtx);
+    if (cParms == VBOX_SHCL_CPARMS_DATA_READ_61B)
+    {
+        ASSERT_GUEST_RETURN(paParms[iParm].type == VBOX_HGCM_SVC_PARM_64BIT, VERR_WRONG_PARAMETER_TYPE);
+        /* This has no defined meaning and was never used, however the guest passed stuff, so ignore it and leave idContext=0. */
+        iParm++;
+        ASSERT_GUEST_RETURN(paParms[iParm].type == VBOX_HGCM_SVC_PARM_32BIT, VERR_WRONG_PARAMETER_TYPE);
+        ASSERT_GUEST_RETURN(paParms[iParm].u.uint32 == 0, VERR_INVALID_FLAGS);
+        iParm++;
+    }
 
     SHCLDATABLOCK dataBlock;
-    RT_ZERO(dataBlock);
-
-    if (!(pClient->State.fGuestFeatures0 & VBOX_SHCL_GF_0_CONTEXT_ID)) /* Legacy, Guest Additions < 6.1. */
+    ASSERT_GUEST_RETURN(paParms[iParm].type == VBOX_HGCM_SVC_PARM_32BIT, VERR_WRONG_PARAMETER_TYPE);
+    dataBlock.uFormat = paParms[iParm].u.uint32;
+    iParm++;
+    if (cParms != VBOX_SHCL_CPARMS_DATA_READ_61B)
     {
-        if (cParms != 3)
-        {
-            rc = VERR_INVALID_PARAMETER;
-        }
-        else
-        {
-            rc = HGCMSvcGetU32(&paParms[0], &dataBlock.uFormat);
-            if (RT_SUCCESS(rc))
-            {
-                if (pClient->State.POD.uFormat == VBOX_SHCL_FMT_NONE)
-                    pClient->State.POD.uFormat = dataBlock.uFormat;
-
-                if (dataBlock.uFormat != pClient->State.POD.uFormat)
-                {
-                    LogFlowFunc(("Invalid format (pClient->State.POD.uFormat=%RU32 vs dataBlock.uFormat=%RU32)\n",
-                                 pClient->State.POD.uFormat, dataBlock.uFormat));
-
-                    rc = VERR_INVALID_PARAMETER;
-                }
-                else
-                {
-                    rc = HGCMSvcGetBuf(&paParms[1], &dataBlock.pvData, &dataBlock.cbData);
-                }
-            }
-        }
+        ASSERT_GUEST_RETURN(paParms[iParm].type == VBOX_HGCM_SVC_PARM_PTR, VERR_WRONG_PARAMETER_TYPE); /* Data buffer */
+        dataBlock.pvData = paParms[iParm].u.pointer.addr;
+        dataBlock.cbData = paParms[iParm].u.pointer.size;
+        iParm++;
+        ASSERT_GUEST_RETURN(paParms[iParm].type == VBOX_HGCM_SVC_PARM_32BIT, VERR_WRONG_PARAMETER_TYPE); /*cbDataReturned*/
+        iParm++;
     }
     else
     {
-        if (cParms < VBOX_SHCL_CPARMS_READ_DATA)
-        {
-            rc = VERR_INVALID_PARAMETER;
-        }
-        else
-        {
-            /** @todo Handle paParms[1] flags. */
-
-            rc = HGCMSvcGetU32(&paParms[2], &dataBlock.uFormat);
-            if (RT_SUCCESS(rc))
-            {
-                uint32_t cbData;
-                rc = HGCMSvcGetU32(&paParms[3], &cbData);
-                if (RT_SUCCESS(rc))
-                {
-                    rc = HGCMSvcGetBuf(&paParms[4], &dataBlock.pvData, &dataBlock.cbData);
-                    if (RT_SUCCESS(rc))
-                    {
-                        if (cbData != dataBlock.cbData)
-                        {
-                            LogFlowFunc(("Invalid data (cbData=%RU32 vs dataBlock.cbData=%RU32)\n", cbData, dataBlock.cbData));
-                            rc = VERR_INVALID_PARAMETER;
-                        }
-                    }
-                }
-            }
-        }
+        ASSERT_GUEST_RETURN(paParms[iParm].type == VBOX_HGCM_SVC_PARM_32BIT, VERR_WRONG_PARAMETER_TYPE); /*cbDataReturned*/
+        iParm++;
+        ASSERT_GUEST_RETURN(paParms[iParm].type == VBOX_HGCM_SVC_PARM_PTR, VERR_WRONG_PARAMETER_TYPE); /* Data buffer */
+        dataBlock.pvData = paParms[iParm].u.pointer.addr;
+        dataBlock.cbData = paParms[iParm].u.pointer.size;
+        iParm++;
     }
+    Assert(iParm == cParms);
+
+    /*
+     * For some reason we need to do this (makes absolutely no sense to bird).
+     */
+    /** @todo r=bird: I really don't get why you need the State.POD.uFormat
+     *        member.  I'm sure there is a reason.  Incomplete code? */
+    if (!(pClient->State.fGuestFeatures0 & VBOX_SHCL_GF_0_CONTEXT_ID))
+    {
+        if (pClient->State.POD.uFormat == VBOX_SHCL_FMT_NONE)
+            pClient->State.POD.uFormat = dataBlock.uFormat;
+        /// @todo r=bird: This actively breaks copying different types of data into the
+        /// guest (first copy a text snippet, then you cannot copy any bitmaps), so I've
+        /// disabled it.
+        //ASSERT_GUEST_MSG_RETURN(pClient->State.POD.uFormat == dataBlock.uFormat,
+        //                        ("Requested %#x, POD.uFormat=%#x\n", dataBlock.uFormat, pClient->State.POD.uFormat),
+        //                        VERR_BAD_EXE_FORMAT /*VERR_INTERNAL_ERROR*/);
+    }
+
+    /*
+     * Do the reading.
+     */
+    int rc = VINF_SUCCESS;
+    uint32_t cbActual = 0;
+
+    /* If there is a service extension active, try reading data from it first. */
+    if (g_ExtState.pfnExtension)
+    {
+        SHCLEXTPARMS parms;
+        RT_ZERO(parms);
+
+        parms.uFormat  = dataBlock.uFormat;
+        parms.u.pvData = dataBlock.pvData;
+        parms.cbData   = dataBlock.cbData;
+
+        g_ExtState.fReadingData = true;
+
+        /* Read clipboard data from the extension. */
+        rc = g_ExtState.pfnExtension(g_ExtState.pvExtension, VBOX_CLIPBOARD_EXT_FN_DATA_READ, &parms, sizeof(parms));
+        LogRelFlowFunc(("g_ExtState.fDelayedAnnouncement=%RTbool, g_ExtState.uDelayedFormats=0x%x\n",
+                        g_ExtState.fDelayedAnnouncement, g_ExtState.uDelayedFormats));
+
+        /* Did the extension send the clipboard formats yet?
+         * Otherwise, do this now. */
+        if (g_ExtState.fDelayedAnnouncement)
+        {
+            SHCLFORMATDATA FormatData;
+            FormatData.fFlags  = 0;
+            FormatData.Formats = g_ExtState.uDelayedFormats;
+            Assert(FormatData.Formats != VBOX_SHCL_FMT_NONE); /* There better is *any* format here now. */
+
+            int rc2 = ShClSvcFormatsReport(pClient, &FormatData);
+            AssertRC(rc2);
+
+            g_ExtState.fDelayedAnnouncement = false;
+            g_ExtState.uDelayedFormats = 0;
+        }
+
+        g_ExtState.fReadingData = false;
+
+        if (RT_SUCCESS(rc))
+            cbActual = parms.cbData;
+    }
+
+    /* Note: The host clipboard *always* has precedence over the service extension above,
+     *       so data which has been read above might get overridden by the host clipboard eventually. */
+
+    /** @todo r=bird: This precedency stuff changed with the 6.1 overhaul and I'm
+     *        not quite sure this makes sense.  Imagine you think about connecting
+     *        to a VM running in a non-headless process and there is some stuff in
+     *        the host clipboard preventing you from copy & pasting via the RDP
+     *        client.  I guess this means clipboard sharing over RDP is only
+     *        possible when using VBoxHeadless?
+     *
+     *        Also, looking at the code, I think the host will _always_ return data
+     *        here.  Need to test. Sigh. */
 
     if (RT_SUCCESS(rc))
     {
-        uint32_t cbActual = 0;
-
-        /* If there is a service extension active, try reading data from it first. */
-        if (g_ExtState.pfnExtension)
-        {
-            SHCLEXTPARMS parms;
-            RT_ZERO(parms);
-
-            parms.uFormat  = pClient->State.POD.uFormat;
-            parms.u.pvData = dataBlock.pvData;
-            parms.cbData   = dataBlock.cbData;
-
-            g_ExtState.fReadingData = true;
-
-            /* Read clipboard data from the extension. */
-            rc = g_ExtState.pfnExtension(g_ExtState.pvExtension, VBOX_CLIPBOARD_EXT_FN_DATA_READ,
-                                         &parms, sizeof(parms));
-
-            LogFlowFunc(("g_ExtState.fDelayedAnnouncement=%RTbool, g_ExtState.uDelayedFormats=0x%x\n",
-                         g_ExtState.fDelayedAnnouncement, g_ExtState.uDelayedFormats));
-
-            /* Did the extension send the clipboard formats yet?
-             * Otherwise, do this now. */
-            if (g_ExtState.fDelayedAnnouncement)
-            {
-                SHCLFORMATDATA formatData;
-                RT_ZERO(formatData);
-
-                formatData.Formats = g_ExtState.uDelayedFormats;
-                Assert(formatData.Formats != VBOX_SHCL_FMT_NONE); /* There better is *any* format here now. */
-
-                int rc2 = ShClSvcFormatsReport(pClient, &formatData);
-                AssertRC(rc2);
-
-                g_ExtState.fDelayedAnnouncement = false;
-                g_ExtState.uDelayedFormats = 0;
-            }
-
-            g_ExtState.fReadingData = false;
-
-            if (RT_SUCCESS(rc))
-            {
-                cbActual = parms.cbData;
-            }
-        }
-
-        /* Note: The host clipboard *always* has precedence over the service extension above,
-         *       so data which has been read above might get overridden by the host clipboard eventually. */
-
+        rc = ShClSvcImplReadData(pClient, &cmdCtx, &dataBlock, &cbActual);
         if (RT_SUCCESS(rc))
         {
-            rc = ShClSvcImplReadData(pClient, &cmdCtx, &dataBlock, &cbActual);
-            if (RT_SUCCESS(rc))
+            LogFlowFunc(("cbData=%RU32, cbActual=%RU32\n", dataBlock.cbData, cbActual));
+
+            /* Return the actual size required to fullfil the request. */
+            if (cParms != VBOX_SHCL_CPARMS_DATA_READ_61B)
+                HGCMSvcSetU32(&paParms[2], cbActual);
+            else
+                HGCMSvcSetU32(&paParms[3], cbActual);
+
+            /* If the data to return exceeds the buffer the guest supplies, tell it (and let it try again). */
+            if (cbActual >= dataBlock.cbData)
+                rc = VINF_BUFFER_OVERFLOW;
+
+            if (rc == VINF_SUCCESS)
             {
-                LogFlowFunc(("cbData=%RU32, cbActual=%RU32\n", dataBlock.cbData, cbActual));
-
-                /* Return the actual size required to fullfil the request. */
-                if (!(pClient->State.fGuestFeatures0 & VBOX_SHCL_GF_0_CONTEXT_ID)) /* Legacy, Guest Additions < 6.1. */
-                {
-                    HGCMSvcSetU32(&paParms[2], cbActual);
-                }
-                else
-                {
-                    HGCMSvcSetU32(&paParms[3], cbActual);
-                }
-
-                /* If the data to return exceeds the buffer the guest supplies, tell it (and let it try again). */
-                if (cbActual >= dataBlock.cbData)
-                    rc = VINF_BUFFER_OVERFLOW;
-
-                if (rc == VINF_SUCCESS)
-                {
-                    /* Only remove "read active" flag after successful read again. */
-                    pClient->State.fFlags &= ~SHCLCLIENTSTATE_FLAGS_READ_ACTIVE;
-                }
+                /* Only remove "read active" flag after successful read again. */
+                /** @todo r=bird: This doesn't make any effing sense.  What if the guest
+                 *        wants to read another format???  */
+                pClient->State.fFlags &= ~SHCLCLIENTSTATE_FLAGS_READ_ACTIVE;
             }
         }
     }
@@ -1871,10 +1884,8 @@ static DECLCALLBACK(void) svcCall(void *,
         }
 
         case VBOX_SHCL_GUEST_FN_DATA_READ:
-        {
             rc = shClSvcGetDataRead(pClient, cParms, paParms);
             break;
-        }
 
         case VBOX_SHCL_GUEST_FN_DATA_WRITE:
         {
