@@ -257,6 +257,9 @@ SHCLEVENTID ShClEventGetLast(PSHCLEVENTSOURCE pSource)
  */
 static void shclEventPayloadDetachInternal(PSHCLEVENT pEvent)
 {
+    /** @todo r=bird: This should return pPayload.  It should also not need
+     *        assert the validity of pEvent in non-strict builds, given that this
+     *        is an static + internal function, that's a complete waste of time. */
     AssertPtrReturnVoid(pEvent);
 
     pEvent->pPayload = NULL;
@@ -425,6 +428,10 @@ int ShClEventSignal(PSHCLEVENTSOURCE pSource, SHCLEVENTID uID,
  */
 void ShClEventPayloadDetach(PSHCLEVENTSOURCE pSource, SHCLEVENTID uID)
 {
+    /** @todo r=bird: This API is not needed, it either is a no-op as it
+     *        replicates work done by ShClEventWait or it leaks the payload as
+     *        ShClEventWait is the only way to get it as far as I can tell. */
+
     AssertPtrReturnVoid(pSource);
 
     LogFlowFunc(("uSource=%RU16, uEvent=%RU32\n", pSource->uID, uID));
