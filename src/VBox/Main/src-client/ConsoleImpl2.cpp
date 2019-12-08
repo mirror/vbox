@@ -75,7 +75,6 @@
 #include <VBox/version.h>
 #ifdef VBOX_WITH_SHARED_CLIPBOARD
 # include <VBox/HostServices/VBoxClipboardSvc.h>
-# include "SharedClipboardPrivate.h"
 #endif
 #ifdef VBOX_WITH_GUEST_PROPS
 # include <VBox/HostServices/GuestPropertySvc.h>
@@ -3061,62 +3060,42 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
          * Shared Clipboard.
          */
         {
-            if (SharedClipboard::createInstance(this /* pConsole */) == NULL)
+            ClipboardMode_T enmClipboardMode = ClipboardMode_Disabled;
+            hrc = pMachine->COMGETTER(ClipboardMode)(&enmClipboardMode); H();
+# ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
+            BOOL fFileTransfersEnabled;
+            hrc = pMachine->COMGETTER(ClipboardFileTransfersEnabled)(&fFileTransfersEnabled); H();
+#endif
+
+            /* Load the service */
+            rc = pVMMDev->hgcmLoadService("VBoxSharedClipboard", "VBoxSharedClipboard");
+            if (RT_SUCCESS(rc))
             {
-                rc = VERR_NO_MEMORY;
+                LogRel(("Shared Clipboard: Service loaded\n"));
+
+                /* Set initial clipboard mode. */
+                rc = i_changeClipboardMode(enmClipboardMode);
+                AssertLogRelMsg(RT_SUCCESS(rc), ("Shared Clipboard: Failed to set initial clipboard mode (%d): rc=%Rrc\n",
+                                                 enmClipboardMode, rc));
+
+                /* Setup the service. */
+                VBOXHGCMSVCPARM parm;
+                HGCMSvcSetU32(&parm, !i_useHostClipboard());
+                rc = pVMMDev->hgcmHostCall("VBoxSharedClipboard", VBOX_SHCL_HOST_FN_SET_HEADLESS, 1, &parm);
+                AssertLogRelMsg(RT_SUCCESS(rc), ("Shared Clipboard: Failed to set initial headless mode (%RTbool): rc=%Rrc\n",
+                                                 !i_useHostClipboard(), rc));
+
+# ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
+                rc = i_changeClipboardFileTransferMode(RT_BOOL(fFileTransfersEnabled));
+                AssertLogRelMsg(RT_SUCCESS(rc), ("Shared Clipboard: Failed to set initial file transfers mode (%u): rc=%Rrc\n",
+                                                 fFileTransfersEnabled, rc));
+
+                /** @todo Register area callbacks? (See also deregistration todo in Console::i_powerDown.) */
+# endif
             }
             else
-            {
-                /* Load the service */
-                rc = pVMMDev->hgcmLoadService("VBoxSharedClipboard", "VBoxSharedClipboard");
-                if (RT_SUCCESS(rc))
-                {
-                    LogRel(("Shared Clipboard: Service loaded\n"));
-                    rc = HGCMHostRegisterServiceExtension(&m_hHgcmSvcExtShrdClipboard, "VBoxSharedClipboard",
-                                                          &Console::i_sharedClipboardServiceCallback,
-                                                          this /* pvExtension */);
-                    if (RT_FAILURE(rc))
-                    {
-                        LogRel(("Shared Clipboard: Cannot register service extension, rc=%Rrc\n", rc));
-                    }
-                    else
-                    {
-                        /* Set initial clipboard mode. */
-                        ClipboardMode_T mode = ClipboardMode_Disabled;
-                        hrc = pMachine->COMGETTER(ClipboardMode)(&mode); H();
-
-                        rc = i_changeClipboardMode(mode);
-                        if (RT_SUCCESS(rc))
-                        {
-                            /* Setup the service. */
-                            VBOXHGCMSVCPARM parm;
-                            HGCMSvcSetU32(&parm, !i_useHostClipboard());
-                            rc = SHAREDCLIPBOARDINST()->hostCall(VBOX_SHCL_HOST_FN_SET_HEADLESS, 1, &parm);
-                            if (RT_FAILURE(rc))
-                                LogRel(("Shared Clipboard: Unable to set initial headless mode, rc=%Rrc\n", rc));
-
-#ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
-                            /* Setup file transfer mode. */
-                            BOOL fFileTransfersEnabled;
-                            hrc = pMachine->COMGETTER(ClipboardFileTransfersEnabled)(&fFileTransfersEnabled); H();
-                            int rc2 = i_changeClipboardFileTransferMode(RT_BOOL(fFileTransfersEnabled));
-                            if (RT_FAILURE(rc2))
-                                LogRel(("Shared Clipboard: Unable to set initial file transfers mode, rc=%Rrc\n", rc2));
-                            /* Note: Don't let the Shared Clipboard fail as a whole if file transfers aren't available. */
-#endif /* VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS */
-                        }
-                        else
-                            LogRel(("Shared Clipboard: Unable to set initial clipboard mode, rc=%Rrc\n", rc));
-                    }
-                }
-            }
-
-            if (RT_FAILURE(rc))
-            {
                 LogRel(("Shared Clipboard: Not available, rc=%Rrc\n", rc));
-                /* That is not a fatal failure. */
-                rc = VINF_SUCCESS;
-            }
+            rc = VINF_SUCCESS;  /* None of the potential failures above are fatal. */
         }
 #endif /* VBOX_WITH_SHARED_CLIPBOARD */
 

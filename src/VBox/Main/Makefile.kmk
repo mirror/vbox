@@ -1032,10 +1032,6 @@ ifdef VBOX_WITH_DRAG_AND_DROP
 	src-client/GuestDnDSourceImpl.cpp \
 	src-client/GuestDnDTargetImpl.cpp
 endif
-ifdef VBOX_WITH_SHARED_CLIPBOARD
- VBoxC_SOURCES += \
-	src-client/SharedClipboardPrivate.cpp
-endif
 ifdef VBOX_WITH_XPCOM
  VBoxC_SOURCES += \
 	src-client/xpcom/module.cpp

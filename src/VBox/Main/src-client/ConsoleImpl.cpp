@@ -124,10 +124,7 @@
 #include <VBox/VMMDev.h>
 
 #ifdef VBOX_WITH_SHARED_CLIPBOARD
-#include <VBox/HostServices/VBoxClipboardSvc.h>
-# ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
-#  include "SharedClipboardPrivate.h"
-# endif
+# include <VBox/HostServices/VBoxClipboardSvc.h>
 #endif
 #include <VBox/HostServices/DragAndDropSvc.h>
 #ifdef VBOX_WITH_GUEST_PROPS
@@ -8247,12 +8244,8 @@ HRESULT Console::i_powerDown(IProgress *aProgress /*= NULL*/)
         /* Leave the lock since EMT might wait for it and will call us back as addVMCaller() */
         alock.release();
 
-# ifdef VBOX_WITH_SHARED_CLIPBOARD
-        if (m_hHgcmSvcExtShrdClipboard)
-        {
-            HGCMHostUnregisterServiceExtension(m_hHgcmSvcExtShrdClipboard);
-            m_hHgcmSvcExtShrdClipboard = NULL;
-        }
+# ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
+        /** @todo Deregister area callbacks?   */
 # endif
 # ifdef VBOX_WITH_DRAG_AND_DROP
         if (m_hHgcmSvcExtDragAndDrop)
@@ -8419,154 +8412,6 @@ HRESULT Console::i_setMachineState(MachineState_T aMachineState,
 
     return rc;
 }
-
-#ifdef VBOX_WITH_SHARED_CLIPBOARD
-/* static */
-DECLCALLBACK(int) Console::i_sharedClipboardServiceCallback(void *pvExtension, uint32_t u32Function,
-                                                            void *pvParms, uint32_t cbParms)
-{
-    LogFlowFunc(("pvExtension=%p, u32Function=%RU32, pvParms=%p, cbParms=%RU32\n",
-                 pvExtension, u32Function, pvParms, cbParms));
-
-    RT_NOREF(pvParms, cbParms);
-
-    Console *pThis = reinterpret_cast<Console *>(pvExtension);
-    AssertPtrReturn(pThis, VERR_INVALID_POINTER);
-
-    ComPtr<IInternalMachineControl> pControl = pThis->mControl;
-
-    int rc = VINF_SUCCESS;
-
-# ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
-    HRESULT hrc = S_OK;
-# endif /* VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS */
-
-    LogFunc(("mConsoleVRDPServer=%p\n", pThis->mConsoleVRDPServer));
-
-    switch (u32Function)
-    {
-        case VBOX_CLIPBOARD_EXT_FN_SET_CALLBACK:
-        {
-            LogFlowFunc(("VBOX_CLIPBOARD_EXT_FN_SET_CALLBACK\n"));
-        } break;
-
-        case VBOX_CLIPBOARD_EXT_FN_FORMAT_ANNOUNCE:
-        {
-            LogFlowFunc(("VBOX_CLIPBOARD_EXT_FN_FORMAT_ANNOUNCE\n"));
-
-            SHCLEXTPARMS *pParms = (SHCLEXTPARMS *)pvParms;
-            AssertPtrBreakStmt(pParms, rc = VERR_INVALID_POINTER);
-
-            /* The guest announces clipboard formats. This must be delivered to all clients. */
-            if (pThis->mConsoleVRDPServer)
-                pThis->mConsoleVRDPServer->SendClipboard(VRDE_CLIPBOARD_FUNCTION_FORMAT_ANNOUNCE,
-                                                         pParms->uFormat,
-                                                         NULL,
-                                                         0,
-                                                         NULL);
-        } break;
-
-        case VBOX_CLIPBOARD_EXT_FN_DATA_READ:
-        {
-            LogFlowFunc(("VBOX_CLIPBOARD_EXT_FN_DATA_READ\n"));
-
-            SHCLEXTPARMS *pParms = (SHCLEXTPARMS *)pvParms;
-            AssertPtrBreakStmt(pParms, rc = VERR_INVALID_POINTER);
-
-            /* The clipboard service expects that the pvData buffer will be filled
-             * with clipboard data. The server returns the data from the client that
-             * announced the requested format most recently.
-             */
-            if (pThis->mConsoleVRDPServer)
-                pThis->mConsoleVRDPServer->SendClipboard(VRDE_CLIPBOARD_FUNCTION_DATA_READ,
-                                                         pParms->uFormat,
-                                                         pParms->u.pvData,
-                                                         pParms->cbData,
-                                                         &pParms->cbData);
-        } break;
-
-        case VBOX_CLIPBOARD_EXT_FN_DATA_WRITE:
-        {
-            LogFlowFunc(("VBOX_CLIPBOARD_EXT_FN_DATA_WRITE\n"));
-
-            SHCLEXTPARMS *pParms = (SHCLEXTPARMS *)pvParms;
-            AssertPtrBreakStmt(pParms, rc = VERR_INVALID_POINTER);
-
-            if (pThis->mConsoleVRDPServer)
-                pThis->mConsoleVRDPServer->SendClipboard(VRDE_CLIPBOARD_FUNCTION_DATA_WRITE,
-                                                         pParms->uFormat,
-                                                         pParms->u.pvData,
-                                                         pParms->cbData,
-                                                         NULL);
-        } break;
-
-# ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
-        case VBOX_CLIPBOARD_EXT_FN_AREA_REGISTER:
-        {
-            com::SafeArray<BSTR> abstrParms; /* Empty for now. */
-            ULONG uID;
-            hrc = pControl->ClipboardAreaRegister(ComSafeArrayAsInParam(abstrParms), &uID);
-            if (SUCCEEDED(hrc))
-            {
-                PSHCLEXTAREAPARMS pParms = (PSHCLEXTAREAPARMS)pvParms;
-                AssertPtrBreakStmt(pParms, rc = VERR_INVALID_POINTER);
-
-                /* Return the registered area ID back to the caller. */
-                pParms->uID = uID;
-            }
-            else
-                LogFunc(("Registering clipboard area failed with %Rhrc\n", hrc));
-        } break;
-
-        case VBOX_CLIPBOARD_EXT_FN_AREA_UNREGISTER:
-        {
-            PSHCLEXTAREAPARMS pParms = (PSHCLEXTAREAPARMS)pvParms;
-            AssertPtrBreakStmt(pParms, rc = VERR_INVALID_POINTER);
-
-            hrc = pControl->ClipboardAreaUnregister(pParms->uID);
-            if (FAILED(hrc))
-                LogFunc(("Unregistering clipboard area %RU32 failed with %Rhrc\n", pParms->uID, hrc));
-        } break;
-
-        case VBOX_CLIPBOARD_EXT_FN_AREA_ATTACH:
-        {
-            PSHCLEXTAREAPARMS pParms = (PSHCLEXTAREAPARMS)pvParms;
-            AssertPtrBreakStmt(pParms, rc = VERR_INVALID_POINTER);
-
-            hrc = pControl->ClipboardAreaAttach(pParms->uID);
-            if (FAILED(hrc))
-                LogFunc(("Attaching to clipboard area %RU32 failed with %Rhrc\n", pParms->uID, hrc));
-        } break;
-
-        case VBOX_CLIPBOARD_EXT_FN_AREA_DETACH:
-        {
-            PSHCLEXTAREAPARMS pParms = (PSHCLEXTAREAPARMS)pvParms;
-            AssertPtrBreakStmt(pParms, rc = VERR_INVALID_POINTER);
-
-            hrc = pControl->ClipboardAreaDetach(pParms->uID);
-            if (FAILED(hrc))
-                LogFunc(("Detaching from clipboard area %RU32 failed with %Rhrc\n", pParms->uID, hrc));
-        } break;
-# endif /* VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS */
-
-        default:
-        {
-            rc = VERR_NOT_SUPPORTED;
-        } break;
-    }
-
-# ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
-    if (FAILED(hrc))
-    {
-        LogRel(("Shared Clipboard: Area handling failed with %Rhrc\n", hrc));
-        rc = VERR_GENERAL_FAILURE; /** @todo Fudge; fix this. */
-    }
-# endif
-
-    LogFlowFuncLeaveRC(rc);
-    return rc;
-}
-#endif /* VBOX_WITH_SHARED_CLIPBOARD */
 
 /**
  * Searches for a shared folder with the given logical name
