@@ -1382,7 +1382,7 @@ static int shClSvcGetDataRead(PSHCLCLIENT pClient, uint32_t cParms, VBOXHGCMSVCP
     /*
      * Do the reading.
      */
-    int rc = VINF_SUCCESS;
+    int rc;
     uint32_t cbActual = 0;
 
     /* If there is a service extension active, try reading data from it first. */
@@ -1399,8 +1399,8 @@ static int shClSvcGetDataRead(PSHCLCLIENT pClient, uint32_t cParms, VBOXHGCMSVCP
 
         /* Read clipboard data from the extension. */
         rc = g_ExtState.pfnExtension(g_ExtState.pvExtension, VBOX_CLIPBOARD_EXT_FN_DATA_READ, &parms, sizeof(parms));
-        LogRelFlowFunc(("g_ExtState.fDelayedAnnouncement=%RTbool, g_ExtState.uDelayedFormats=0x%x\n",
-                        g_ExtState.fDelayedAnnouncement, g_ExtState.uDelayedFormats));
+        LogRelFlowFunc(("DATA/Ext: fDelayedAnnouncement=%RTbool uDelayedFormats=%#x cbData=%RU32->%RU32 rc=%Rrc\n",
+                        g_ExtState.fDelayedAnnouncement, g_ExtState.uDelayedFormats, dataBlock.cbData, parms.cbData, rc));
 
         /* Did the extension send the clipboard formats yet?
          * Otherwise, do this now. */
@@ -1423,44 +1423,30 @@ static int shClSvcGetDataRead(PSHCLCLIENT pClient, uint32_t cParms, VBOXHGCMSVCP
         if (RT_SUCCESS(rc))
             cbActual = parms.cbData;
     }
-
-    /* Note: The host clipboard *always* has precedence over the service extension above,
-     *       so data which has been read above might get overridden by the host clipboard eventually. */
-
-    /** @todo r=bird: This precedency stuff changed with the 6.1 overhaul and I'm
-     *        not quite sure this makes sense.  Imagine you think about connecting
-     *        to a VM running in a non-headless process and there is some stuff in
-     *        the host clipboard preventing you from copy & pasting via the RDP
-     *        client.  I guess this means clipboard sharing over RDP is only
-     *        possible when using VBoxHeadless?
-     *
-     *        Also, looking at the code, I think the host will _always_ return data
-     *        here.  Need to test. Sigh. */
+    else
+    {
+        rc = ShClSvcImplReadData(pClient, &cmdCtx, &dataBlock, &cbActual);
+        LogRelFlowFunc(("DATA/Host: cbData=%RU32->%RU32 rc=%Rrc\n", dataBlock.cbData, cbActual, rc));
+    }
 
     if (RT_SUCCESS(rc))
     {
-        rc = ShClSvcImplReadData(pClient, &cmdCtx, &dataBlock, &cbActual);
-        if (RT_SUCCESS(rc))
+        /* Return the actual size required to fullfil the request. */
+        if (cParms != VBOX_SHCL_CPARMS_DATA_READ_61B)
+            HGCMSvcSetU32(&paParms[2], cbActual);
+        else
+            HGCMSvcSetU32(&paParms[3], cbActual);
+
+        /* If the data to return exceeds the buffer the guest supplies, tell it (and let it try again). */
+        if (cbActual >= dataBlock.cbData)
+            rc = VINF_BUFFER_OVERFLOW;
+
+        if (rc == VINF_SUCCESS)
         {
-            LogFlowFunc(("cbData=%RU32, cbActual=%RU32\n", dataBlock.cbData, cbActual));
-
-            /* Return the actual size required to fullfil the request. */
-            if (cParms != VBOX_SHCL_CPARMS_DATA_READ_61B)
-                HGCMSvcSetU32(&paParms[2], cbActual);
-            else
-                HGCMSvcSetU32(&paParms[3], cbActual);
-
-            /* If the data to return exceeds the buffer the guest supplies, tell it (and let it try again). */
-            if (cbActual >= dataBlock.cbData)
-                rc = VINF_BUFFER_OVERFLOW;
-
-            if (rc == VINF_SUCCESS)
-            {
-                /* Only remove "read active" flag after successful read again. */
-                /** @todo r=bird: This doesn't make any effing sense.  What if the guest
-                 *        wants to read another format???  */
-                pClient->State.fFlags &= ~SHCLCLIENTSTATE_FLAGS_READ_ACTIVE;
-            }
+            /* Only remove "read active" flag after successful read again. */
+            /** @todo r=bird: This doesn't make any effing sense.  What if the guest
+             *        wants to read another format???  */
+            pClient->State.fFlags &= ~SHCLCLIENTSTATE_FLAGS_READ_ACTIVE;
         }
     }
 
