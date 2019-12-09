@@ -35,427 +35,7 @@ technical terms if no non-technical ones are clear enough.
                            So, we use chapter and xpointer="xpointer(/chapter/)" with xi:include. -->
 
   <sect1>
-    <title>Version 6.1.x (2019-xx-xx)</title>
-
-    <para>
-        In addition, the following items were fixed and/or added:
-    </para>
-
-    <itemizedlist>
-
-      <listitem>
-        <para>
-          Storage: Experimental support for virtio-scsi, for both hard disks and
-          optical drives (including boot support in BIOS)
-        </para>
-      </listitem>
-
-      <listitem>
-        <para>
-          Storage: For optical drive emulation fix empty host drive case
-        </para>
-      </listitem>
-
-      <listitem>
-        <para>
-          ACPI: Report NVMe controller
-        </para>
-      </listitem>
-
-      <listitem>
-        <para>
-          VGA: Improve hardware and BIOS compatibility
-        </para>
-      </listitem>
-
-      <listitem>
-        <para>
-          VMSVGA 3D: Fixed OpenGL compressed textures
-        </para>
-      </listitem>
-
-      <listitem>
-        <para>
-          Appliance and Cloud Import: Add field for defining firmware type (not
-          part of OVF spec and thus manual in the Appliance case, for OCI it is
-          automatically taken from the instance information)
-        </para>
-      </listitem>
-
-      <listitem>
-        <para>
-          Linux host: Improve vboxweb systemd service dependency information
-        </para>
-      </listitem>
-
-      <listitem>
-        <para>
-          Linux host: Drop PCI passthrough, the current code is too incomplete
-          (cannot handle PCIe devices at all), i.e. not useful enough
-        </para>
-      </listitem>
-
-      <listitem>
-        <para>
-          Windows host: When possible, distinguish devices by port number; helps
-          when multiple otherwise identical devices are connected
-        </para>
-      </listitem>
-
-      <listitem>
-        <para>
-          EFI: Added support for booting from APFS
-        </para>
-      </listitem>
-
-      <listitem>
-        <para>
-          EFI: Added support for non-standard SATA and NVMe boot device paths
-          created by OS X
-        </para>
-      </listitem>
-
-      <listitem>
-        <para>
-          EFI: Modified updated EFI code base to support older OS X guests again
-        </para>
-      </listitem>
-
-      <listitem>
-        <para>
-          Windows guest: DXVA implementation for WDDM driver
-        </para>
-      </listitem>
-
-    </itemizedlist>
-  </sect1>
-
-  <sect1>
-    <title>Version 6.1.0_RC1 (2019-11-22)</title>
-
-    <para>
-        In addition, the following items were fixed and/or added:
-    </para>
-
-    <itemizedlist>
-
-      <listitem>
-        <para>
-          GUI: Some issues related to mouse integration cursor scaling were
-          addressed (bug #14366), more to go
-        </para>
-      </listitem>
-
-      <listitem>
-        <para>
-          GUI: Few usability related fixes for export appliance wizard
-        </para>
-      </listitem>
-
-      <listitem>
-        <para>
-          GUI: Fixed/improved mouse pointer scaling
-        </para>
-      </listitem>
-
-      <listitem>
-        <para>
-          GUI: Fixed crash in cloud related wizards when accessibility
-          functionality was enabled
-        </para>
-      </listitem>
-
-      <listitem>
-        <para>
-          GUI: Soft keyboard visual improvements, and fix crash for first use
-        </para>
-      </listitem>
-
-      <listitem>
-        <para>
-          GUI: Added the missing restriction options for disabling new
-          functionality such as the VISO creator
-        </para>
-      </listitem>
-
-      <listitem>
-        <para>
-          GUI: More consistent medium selection (both showing known images
-          and allowing to select using the file picker)
-        </para>
-      </listitem>
-
-      <listitem>
-        <para>
-          Documentation: Updated supported host operating systems, added few
-          new manual pages (more to come later)
-        </para>
-      </listitem>
-
-      <listitem>
-        <para>
-          Virtualization core: Improvements for nested hardware-virtualization
-          on Intel CPUs
-        </para>
-      </listitem>
-
-      <listitem>
-        <para>
-          VBoxSVGA/VMSVGA: Support YUV2 and related texture formats with hosts
-          using OpenGL (macOS and Linux), which accelerates video playback
-          when 3D is enabled by delegating the color space conversion to the
-          host GPU
-        </para>
-      </listitem>
-
-      <listitem>
-        <para>
-          VBoxSVGA/VMSVGA: Several drawing fixes for the 3D case
-        </para>
-      </listitem>
-
-      <listitem>
-        <para>
-          USB: Improvements for EHCI controller implementation
-        </para>
-      </listitem>
-
-      <listitem>
-        <para>
-          USB: Filter can now specify port path, uniquely identifying a port
-          in a system
-        </para>
-      </listitem>
-
-      <listitem>
-        <para>
-          NAT Network: Use non-blocking sockets on Linux for accepted
-          incoming connections (port forwarding)
-        </para>
-      </listitem>
-
-      <listitem>
-        <para>
-          PCnet-ISA: Added new network adapter type, currently CLI only
-        </para>
-      </listitem>
-
-      <listitem>
-        <para>
-          SMBIOS: Store system UUID in little endian format which is the
-          default for new VMs, while existing VMs stick to the old VirtualBox
-          behavior of storing them in big endian format for backwards
-          compatibility to avoid breaking the activation status of Windows VMs
-        </para>
-      </listitem>
-
-      <listitem>
-        <para>VBoxSDL frontend: Fixed running on Windows hosts</para>
-      </listitem>
-
-      <listitem>
-        <para>VBoxManage: Show "unrestricted guest" and "nested HW
-        virtualization" CPU features when listing the host information</para>
-      </listitem>
-
-      <listitem>
-        <para>
-          Shared Clipboard: Implemented experimental support for file transfers
-          for Linux hosts on Windows guests (disabled by default)
-        </para>
-      </listitem>
-
-      <listitem>
-        <para>Linux host and guest: Support Linux 5.4 (bug #18945)</para>
-      </listitem>
-
-      <listitem>
-        <para>Linux host and guest: Force disabling of kernel module signing
-        during build (user can do it afterwards)</para>
-      </listitem>
-
-      <listitem>
-        <para>
-          Windows Guest Additions: Many fixes for drawing problems in the
-          driver for VBoxSVGA
-        </para>
-      </listitem>
-
-      <listitem>
-        <para>
-          Windows Guest Additions: Fixes for legacy VBoxVGA adapter, restore
-          previously working cases
-        </para>
-      </listitem>
-
-      <listitem>
-        <para>
-          Windows Guest Additions: Restore VHWA functionality for VBoxSVGA
-        </para>
-      </listitem>
-
-    </itemizedlist>
-  </sect1>
-
-  <sect1>
-    <title>Version 6.1.0_BETA2 (2019-10-23)</title>
-
-    <para>
-        In addition, the following items were fixed and/or added:
-    </para>
-
-    <itemizedlist>
-
-      <listitem>
-        <para>
-          Virtualization core: Improvements for nested hardware-virtualization
-          on Intel CPUs, Windows works now on outer VM (needs beta VirtualBox)
-        </para>
-      </listitem>
-
-      <listitem>
-        <para>
-          Virtualization core: Drop recompiler, i.e. running VMs now needs
-          a CPU supporting hardware virtualization
-        </para>
-      </listitem>
-
-      <listitem>
-        <para>
-          Runtime: Works now on hosts with many CPUs (limit now 1024)
-        </para>
-      </listitem>
-
-      <listitem>
-        <para>
-          GUI: Storage and Network settings pages bug-fixes and usability optimization
-        </para>
-      </listitem>
-
-      <listitem>
-        <para>
-          GUI: Show VM CPU load as part of status bar CPU indicator
-        </para>
-      </listitem>
-
-      <listitem>
-        <para>
-          GUI: Media enumeration fixes
-        </para>
-      </listitem>
-
-      <listitem>
-        <para>
-          GUI: Popup messages mouse click fix
-        </para>
-      </listitem>
-
-      <listitem>
-        <para>
-          GUI: Details pane fixes
-        </para>
-      </listitem>
-
-      <listitem>
-        <para>
-          GUI: Added multimedia keys to soft keyboard and other improvements
-        </para>
-      </listitem>
-
-      <listitem>
-        <para>
-          GUI: Fix and unify geometry save/restore in various dialogs
-        </para>
-      </listitem>
-
-      <listitem>
-        <para>
-          Cloud: More flexibility in VM export and import to Oracle Cloud
-          Infrastructure, add free-form tags to cloud images
-        </para>
-      </listitem>
-
-      <listitem>
-        <para>
-          Graphics: Remove 3D support for VBoxVGA (old one deprecated with 6.0)
-        </para>
-      </listitem>
-
-      <listitem>
-        <para>
-          Graphics: Additional texture format supportd on Windows host
-        </para>
-      </listitem>
-
-      <listitem>
-        <para>
-          Graphics: Improved fix for flickering on Windows host
-        </para>
-      </listitem>
-
-      <listitem>
-        <para>
-          NAT: Fix TFTP OACK response, send only if request has options
-        </para>
-      </listitem>
-
-      <listitem>
-        <para>
-          API: Reduce the amount of leftovers from Move VM function
-        </para>
-      </listitem>
-
-      <listitem>
-        <para>
-          Audio: Allow changing the host audio backend while the VM is
-          in saved state
-        </para>
-      </listitem>
-
-      <listitem>
-        <para>vboximg-mount: Now also available on Linux host
-        </para>
-      </listitem>
-
-      <listitem>
-        <para>
-          VBoxManage: More cloud functionality coverage, e.g. starting
-          a cloud instance
-        </para>
-      </listitem>
-
-      <listitem>
-        <para>
-          VBoxManage: As part of the guest control feature support moving
-          multiple source files/directories to a target directory
-        </para>
-      </listitem>
-
-      <listitem>
-        <para>
-          macOS host: Fix VM crashes (most visible on macOS Catalina)
-        </para>
-      </listitem>
-
-      <listitem>
-        <para>
-          Windows host: Improve USB device capturing accuracy
-        </para>
-      </listitem>
-
-      <listitem>
-        <para>
-          EFI: Switch to newer firmware code base and add NVRAM support,
-          should improve compatibility with OSes significantly
-        </para>
-      </listitem>
-
-    </itemizedlist>
-
-  </sect1>
-
-  <sect1>
-    <title>Version 6.1.0_BETA1 (2019-09-12)</title>
+    <title>Version 6.1.0 (2019-xx-xx)</title>
 
     <para>
       This is a major update. The following major new features were
@@ -477,7 +57,8 @@ technical terms if no non-technical ones are clear enough.
           Cloud Infrastructure, allowing the creation of multiple
           virtual machines without re-uploading. Also added option to
           export a VM to the cloud using the more efficient variant
-          "paravirtialized"
+          "paravirtialized", and to specify free-form tags for cloud
+          images
         </para>
       </listitem>
 
@@ -485,7 +66,7 @@ technical terms if no non-technical ones are clear enough.
         <para>
           Virtualization core: Support for nested hardware-virtualization
           on Intel CPUs (starting with 5th generation Core i, codename
-          Broadwell)
+          Broadwell), so far tested only with guest running VirtualBox
         </para>
       </listitem>
 
@@ -514,6 +95,27 @@ technical terms if no non-technical ones are clear enough.
 
       <listitem>
         <para>
+          Virtualization core: Drop recompiler, i.e. running VMs now needs
+          a CPU supporting hardware virtualization
+        </para>
+      </listitem>
+
+      <listitem>
+        <para>
+          Runtime: Works now on hosts with many CPUs (limit now 1024)
+        </para>
+      </listitem>
+
+      <listitem>
+        <para>
+          Appliance and Cloud Import: Add field for defining firmware type (not
+          part of OVF spec and thus manual in the Appliance case, for OCI it is
+          automatically taken from the instance information)
+        </para>
+      </listitem>
+
+      <listitem>
+        <para>
             GUI: Improved the VISO creation and file manager dialogs
         </para>
       </listitem>
@@ -530,9 +132,14 @@ technical terms if no non-technical ones are clear enough.
       <listitem>
         <para>
           GUI: Virtual machine details pane is now extended with embedded editors
-          for certain VM attributes which we decided as the most
-          important, allowing user to edit them on-the-fly by clicking corresponding
-          hyper-links without opening VM settings dialog
+          for selected VM attributes, allowing user to edit them on-the-fly byi
+          clicking corresponding hyper-links without opening VM settings dialog
+        </para>
+      </listitem>
+
+      <listitem>
+        <para>
+          GUI: Details pane provides more complete information
         </para>
       </listitem>
 
@@ -547,6 +154,13 @@ technical terms if no non-technical ones are clear enough.
 
       <listitem>
         <para>
+          GUI: More consistent medium selection (both showing known images
+          and allowing to select using the file picker)
+        </para>
+      </listitem>
+
+      <listitem>
+        <para>
           GUI: VM storage settings page was adjusted a bit in usability regard. User is now
           allowed to change controller bus type and can move attachments between the controllers
           by using drag and drop
@@ -555,13 +169,83 @@ technical terms if no non-technical ones are clear enough.
 
       <listitem>
         <para>
-          GUI: Added a new soft (virtual) keyboard enabling keyboard inputs to guests
+          GUI: Storage and Network settings pages bug-fixes and usability optimization
+        </para>
+      </listitem>
+
+      <listitem>
+        <para>
+          GUI: Added a new soft (virtual) keyboard enabling arbitrary keyboard input to guests,
+          including multimedia keys
+        </para>
+      </listitem>
+
+      <listitem>
+        <para>
+          GUI: Fixed crash in cloud related wizards when accessibility
+          functionality was enabled
+        </para>
+      </listitem>
+
+      <listitem>
+        <para>
+          GUI: Show VM CPU load as part of status bar CPU indicator
         </para>
       </listitem>
 
       <listitem>
         <para>
           GUI: Improved and extended the Session Information dialog
+        </para>
+      </listitem>
+
+      <listitem>
+        <para>
+          GUI: Fixed/improved mouse pointer scaling
+        </para>
+      </listitem>
+
+      <listitem>
+        <para>
+          GUI: Some issues related to mouse integration cursor scaling were
+          addressed (bug #14366), more to go
+        </para>
+      </listitem>
+
+      <listitem>
+        <para>
+          GUI: Fix and unify geometry save/restore in various dialogs
+        </para>
+      </listitem>
+
+      <listitem>
+        <para>
+          GUI: Added the missing restriction options for disabling new
+          functionality such as the VISO creator
+        </para>
+      </listitem>
+
+      <listitem>
+        <para>
+          GUI: Popup messages mouse click fix
+        </para>
+      </listitem>
+
+      <listitem>
+        <para>
+          Graphics: Remove 3D support for VBoxVGA (old one deprecated with 6.0)
+        </para>
+      </listitem>
+
+      <listitem>
+        <para>
+          Graphics: Additional texture format support on Windows host
+        </para>
+      </listitem>
+
+      <listitem>
+        <para>
+          Graphics: Improved fix for flickering on Windows host
         </para>
       </listitem>
 
@@ -580,8 +264,238 @@ technical terms if no non-technical ones are clear enough.
       </listitem>
 
       <listitem>
+        <para>vboximg-mount: Now also available on Linux host
+        </para>
+      </listitem>
+
+      <listitem>
+        <para>
+          Storage: Experimental support for virtio-scsi, for both hard disks and
+          optical drives (including boot support in BIOS)
+        </para>
+      </listitem>
+
+      <listitem>
+        <para>
+          Storage: For optical drive emulation fix empty host drive crash
+        </para>
+      </listitem>
+
+      <listitem>
+        <para>
+          USB: Improvements for EHCI controller implementation
+        </para>
+      </listitem>
+
+      <listitem>
+        <para>
+          USB: Filter can now specify port path, uniquely identifying a port
+          in a system
+        </para>
+      </listitem>
+
+      <listitem>
+        <para>
+          NAT: Fix TFTP OACK response, send only if request has options
+        </para>
+      </listitem>
+
+      <listitem>
+        <para>
+          NAT Network: Use non-blocking sockets on Linux for accepted
+          incoming connections (port forwarding)
+        </para>
+      </listitem>
+
+      <listitem>
+        <para>
+          PCnet-ISA: Added new network adapter type, currently CLI only
+        </para>
+      </listitem>
+
+      <listitem>
+        <para>
+          Audio: Allow changing the host audio backend while the VM is
+          in saved state
+        </para>
+      </listitem>
+
+      <listitem>
+        <para>
+          ACPI: Report NVMe controller
+        </para>
+      </listitem>
+
+      <listitem>
+        <para>
+          VGA: Improve hardware and BIOS compatibility
+        </para>
+      </listitem>
+
+      <listitem>
+        <para>
+          VBoxSVGA/VMSVGA: Support YUV2 and related texture formats with hosts
+          using OpenGL (macOS and Linux), which accelerates video playback
+          when 3D is enabled by delegating the color space conversion to the
+          host GPU
+        </para>
+      </listitem>
+
+      <listitem>
+        <para>
+          VBoxSVGA/VMSVGA: Several drawing fixes for the 3D case
+        </para>
+      </listitem>
+
+      <listitem>
+        <para>
+          VMSVGA 3D: Fixed OpenGL compressed textures
+        </para>
+      </listitem>
+
+      <listitem>
+        <para>
+          VBoxManage: More cloud functionality coverage, e.g. starting
+          a cloud instance
+        </para>
+      </listitem>
+
+      <listitem>
+        <para>
+          VBoxManage: As part of the guest control feature support moving
+          multiple source files/directories to a target directory
+        </para>
+      </listitem>
+
+      <listitem>
         <para>Guest Control/VBoxManage: Added support for specifying multiple sources
           when renaming guest files
+        </para>
+      </listitem>
+
+      <listitem>
+        <para>VBoxManage: Show "unrestricted guest" and "nested HW
+        virtualization" CPU features when listing the host information</para>
+      </listitem>
+
+      <listitem>
+        <para>
+          API: Reduce the amount of leftovers from Move VM function
+        </para>
+      </listitem>
+
+      <listitem>
+        <para>
+          Shared Clipboard: Implemented experimental support for file transfers
+          for Linux hosts on Windows guests (disabled by default)
+        </para>
+      </listitem>
+
+      <listitem>
+        <para>
+          SMBIOS: Store system UUID in little endian format which is the
+          default for new VMs, while existing VMs stick to the old VirtualBox
+          behavior of storing them in big endian format for backwards
+          compatibility to avoid breaking the activation status of Windows VMs
+        </para>
+      </listitem>
+
+      <listitem>
+        <para>VBoxSDL frontend: Fixed running on Windows hosts</para>
+      </listitem>
+
+      <listitem>
+        <para>
+          macOS host: Fix VM crashes (most visible on macOS Catalina)
+        </para>
+      </listitem>
+
+      <listitem>
+        <para>
+          Linux host: Improve vboxweb systemd service dependency information
+        </para>
+      </listitem>
+
+      <listitem>
+        <para>
+          Linux host: Drop PCI passthrough, the current code is too incomplete
+          (cannot handle PCIe devices at all), i.e. not useful enough
+        </para>
+      </listitem>
+
+      <listitem>
+        <para>Linux host and guest: Support Linux 5.4 (bug #18945)</para>
+      </listitem>
+
+      <listitem>
+        <para>Linux host and guest: Force disabling of kernel module signing
+        during build (user can do it afterwards)</para>
+      </listitem>
+
+      <listitem>
+        <para>
+          Windows host: When possible, distinguish USB devices by port number; helps
+          with accurate capturing of devices when multiple otherwise identical devices
+          are connected
+        </para>
+      </listitem>
+
+      <listitem>
+        <para>
+          Windows Guest Additions: Many fixes for drawing problems in the
+          driver for VBoxSVGA
+        </para>
+      </listitem>
+
+      <listitem>
+        <para>
+          Windows Guest Additions: Fixes for legacy VBoxVGA adapter, restore
+          previously working cases
+        </para>
+      </listitem>
+
+      <listitem>
+        <para>
+          Windows Guest Additions: Restore VHWA functionality for VBoxSVGA
+        </para>
+      </listitem>
+
+      <listitem>
+        <para>
+          Windows guest: DXVA implementation for WDDM driver
+        </para>
+      </listitem>
+
+      <listitem>
+        <para>
+          Documentation: Updated supported host operating systems, added few
+          new manual pages (more to come later)
+        </para>
+      </listitem>
+
+      <listitem>
+        <para>
+          EFI: Switch to newer firmware code base and add NVRAM support,
+          should improve compatibility with OSes significantly
+        </para>
+      </listitem>
+
+      <listitem>
+        <para>
+          EFI: Added support for booting from APFS
+        </para>
+      </listitem>
+
+      <listitem>
+        <para>
+          EFI: Added support for non-standard SATA and NVMe boot device paths
+          created by OS X
+        </para>
+      </listitem>
+
+      <listitem>
+        <para>
+          EFI: Modified updated EFI code base to support older OS X guests again
         </para>
       </listitem>
 
