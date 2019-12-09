@@ -45,6 +45,51 @@ technical terms if no non-technical ones are clear enough.
 
       <listitem>
         <para>
+          Storage: Experimental support for virtio-scsi, for both hard disks and
+          optical drives (including boot support in BIOS)
+        </para>
+      </listitem>
+
+      <listitem>
+        <para>
+          Storage: For optical drive emulation fix empty host drive case
+        </para>
+      </listitem>
+
+      <listitem>
+        <para>
+          ACPI: Report NVMe controller
+        </para>
+      </listitem>
+
+      <listitem>
+        <para>
+          VGA: Improve hardware and BIOS compatibility
+        </para>
+      </listitem>
+
+      <listitem>
+        <para>
+          VMSVGA 3D: Fixed OpenGL compressed textures
+        </para>
+      </listitem>
+
+      <listitem>
+        <para>
+          Appliance and Cloud Import: Add field for defining firmware type (not
+          part of OVF spec and thus manual in the Appliance case, for OCI it is
+          automatically taken from the instance information)
+        </para>
+      </listitem>
+
+      <listitem>
+        <para>
+          Linux host: Improve vboxweb systemd service dependency information
+        </para>
+      </listitem>
+
+      <listitem>
+        <para>
           Linux host: Drop PCI passthrough, the current code is too incomplete
           (cannot handle PCIe devices at all), i.e. not useful enough
         </para>
@@ -73,6 +118,12 @@ technical terms if no non-technical ones are clear enough.
       <listitem>
         <para>
           EFI: Modified updated EFI code base to support older OS X guests again
+        </para>
+      </listitem>
+
+      <listitem>
+        <para>
+          Windows guest: DXVA implementation for WDDM driver
         </para>
       </listitem>
 
@@ -136,7 +187,7 @@ technical terms if no non-technical ones are clear enough.
 
       <listitem>
         <para>
-          Documentation: updated supported host operating systems, added few
+          Documentation: Updated supported host operating systems, added few
           new manual pages (more to come later)
         </para>
       </listitem>
@@ -203,7 +254,7 @@ technical terms if no non-technical ones are clear enough.
       </listitem>
 
       <listitem>
-        <para>VBoxManage: show "unrestricted guest" and "nested HW
+        <para>VBoxManage: Show "unrestricted guest" and "nested HW
         virtualization" CPU features when listing the host information</para>
       </listitem>
 
