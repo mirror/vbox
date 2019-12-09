@@ -667,6 +667,9 @@ typedef struct _VBGLR3CLIPBOARDEVENT
 } VBGLR3CLIPBOARDEVENT, *PVBGLR3CLIPBOARDEVENT;
 typedef const PVBGLR3CLIPBOARDEVENT CPVBGLR3CLIPBOARDEVENT;
 
+/** @todo r=bird: I'm not sure it is appropriate for the VbglR3 to use types
+ *        from VBox/GuestHost/SharedClipboard*.h, doesn't seem clean to me. */
+
 VBGLR3DECL(int)     VbglR3ClipboardConnect(HGCMCLIENTID *pidClient);
 VBGLR3DECL(int)     VbglR3ClipboardDisconnect(HGCMCLIENTID idClient);
 VBGLR3DECL(int)     VbglR3ClipboardGetHostMsgOld(HGCMCLIENTID idClient, uint32_t *pMsg, uint32_t *pfFormats);
