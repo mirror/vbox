@@ -2314,63 +2314,24 @@ VBGLR3DECL(void) VbglR3ClipboardEventFree(PVBGLR3CLIPBOARDEVENT pEvent)
 /**
  * Reports (advertises) guest clipboard formats to the host.
  *
- * @returns VBox status code.
- * @param   pCtx                The command context returned by VbglR3ClipboardConnectEx().
- * @param   pFormats            The formats to report.
- */
-VBGLR3DECL(int) VbglR3ClipboardFormatsReportEx(PVBGLR3SHCLCMDCTX pCtx, PSHCLFORMATDATA pFormats)
-{
-    AssertPtrReturn(pCtx,     VERR_INVALID_POINTER);
-    AssertPtrReturn(pFormats, VERR_INVALID_POINTER);
-
-    VBoxShClFormatsMsg Msg;
-
-    int rc;
-
-    LogFlowFunc(("uFormats=0x%x\n", pFormats->Formats));
-
-    if (pCtx->fUseLegacyProtocol)
-    {
-        VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID, VBOX_SHCL_GUEST_FN_FORMATS_REPORT, 1);
-        Msg.u.v0.uFormats.SetUInt32(pFormats->Formats);
-
-        rc = VbglR3HGCMCall(&Msg.hdr, sizeof(Msg.hdr) + sizeof(Msg.u.v0));
-    }
-    else
-    {
-        VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID, VBOX_SHCL_GUEST_FN_FORMATS_REPORT, 3);
-
-        Msg.u.v1.uContext.SetUInt64(pCtx->uContextID);
-        Msg.u.v1.uFormats.SetUInt32(pFormats->Formats);
-        Msg.u.v1.fFlags.SetUInt32(pFormats->fFlags);
-
-        rc = VbglR3HGCMCall(&Msg.hdr, sizeof(Msg.hdr) + sizeof(Msg.u.v1));
-    }
-
-    LogFlowFuncLeaveRC(rc);
-    return rc;
-}
-
-/**
- * Reports (advertises) guest clipboard formats to the host.
- *
  * Legacy function, do not use anymore.
  *
  * @returns VBox status code.
  * @param   idClient        The client id returned by VbglR3ClipboardConnect().
  * @param   fFormats        The formats to report.
  */
-VBGLR3DECL(int) VbglR3ClipboardFormatsReport(HGCMCLIENTID idClient, uint32_t fFormats)
+VBGLR3DECL(int) VbglR3ClipboardReportFormats(HGCMCLIENTID idClient, uint32_t fFormats)
 {
-    AssertReturn(idClient, VERR_INVALID_PARAMETER);
-    AssertReturn(fFormats, VERR_INVALID_PARAMETER);
+    struct
+    {
+        VBGLIOCHGCMCALL             Hdr;
+        VBoxShClParmReportFormats   Parms;
+    } Msg;
 
-    VBoxShClFormatsMsg Msg;
+    VBGL_HGCM_HDR_INIT(&Msg.Hdr, idClient, VBOX_SHCL_GUEST_FN_REPORT_FORMATS, VBOX_SHCL_CPARMS_REPORT_FORMATS);
+    VbglHGCMParmUInt32Set(&Msg.Parms.f32Formats, fFormats);
 
-    VBGL_HGCM_HDR_INIT(&Msg.hdr, idClient, VBOX_SHCL_GUEST_FN_FORMATS_REPORT, 1);
-    VbglHGCMParmUInt32Set(&Msg.u.v0.uFormats, fFormats);
-
-    int rc = VbglR3HGCMCall(&Msg.hdr, sizeof(Msg.hdr) + sizeof(Msg.u.v0));
+    int rc = VbglR3HGCMCall(&Msg.Hdr, sizeof(Msg));
 
     LogFlowFuncLeaveRC(rc);
     return rc;

@@ -93,6 +93,9 @@ typedef SHCLDATAREQ *PSHCLDATAREQ;
 
 /**
  * Shared Clipboard formats specification.
+ * @todo r=bird: Pointless as we don't have any fFlags defined, so, unless
+ *       someone can give me a plausible scenario where we will need flags here,
+ *       this structure will be eliminated.
  */
 typedef struct SHCLFORMATDATA
 {

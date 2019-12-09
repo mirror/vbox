@@ -360,9 +360,6 @@ static LRESULT CALLBACK vboxClipboardSvcWinWndProcMain(PSHCLCONTEXT pCtx,
             SHCLFORMATS fFormats = (uint32_t)lParam;
             LogFunc(("SHCL_WIN_WM_REPORT_FORMATS: fFormats=0x%x\n", fFormats));
 
-            if (fFormats == VBOX_SHCL_FMT_NONE) /* Could arrive with some older GA versions. */
-                break; /** @todo r=bird: Old code would do EmptyClipboard() here.  */
-
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
             if (fFormats & VBOX_SHCL_FMT_URI_LIST)
             {

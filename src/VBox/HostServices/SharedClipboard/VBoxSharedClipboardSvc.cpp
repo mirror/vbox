@@ -56,7 +56,7 @@
  * not waiting, it will be queued until the guest requests it.  The host code
  * only supports a single simultaneous GET call from one client guest.
  *
- * The second guest message is VBOX_SHCL_GUEST_FN_FORMATS_REPORT, which tells
+ * The second guest message is VBOX_SHCL_GUEST_FN_REPORT_FORMATS, which tells
  * the host that the guest has new clipboard data available.  The third is
  * VBOX_SHCL_GUEST_FN_DATA_READ, which asks the host to send its clipboard data
  * and waits until it arrives.  The host supports at most one simultaneous
@@ -1289,6 +1289,90 @@ int ShClSvcFormatsReport(PSHCLCLIENT pClient, PSHCLFORMATDATA pFormats)
     return rc;
 }
 
+
+/**
+ * Handles the VBOX_SHCL_GUEST_FN_REPORT_FORMATS message from the guest.
+ */
+static int shClSvcGuestReportFormats(PSHCLCLIENT pClient, uint32_t cParms, VBOXHGCMSVCPARM paParms[])
+{
+    /*
+     * Check if the service mode allows this operation and whether the guest is
+     * supposed to be reading from the host.
+     */
+    uint32_t uMode = ShClSvcGetMode();
+    if (   uMode == VBOX_SHCL_MODE_BIDIRECTIONAL
+        || uMode == VBOX_SHCL_MODE_GUEST_TO_HOST)
+    { /* likely */ }
+    else
+        return VERR_ACCESS_DENIED;
+
+    /*
+     * Digest parameters.
+     */
+    ASSERT_GUEST_RETURN(   cParms == VBOX_SHCL_CPARMS_REPORT_FORMATS
+                        || (   cParms == VBOX_SHCL_CPARMS_REPORT_FORMATS_61B
+                            && (pClient->State.fGuestFeatures0 & VBOX_SHCL_GF_0_CONTEXT_ID)),
+                        VERR_WRONG_PARAMETER_COUNT);
+
+    uintptr_t iParm = 0;
+    if (cParms == VBOX_SHCL_CPARMS_REPORT_FORMATS_61B)
+    {
+        ASSERT_GUEST_RETURN(paParms[iParm].type == VBOX_HGCM_SVC_PARM_64BIT, VERR_WRONG_PARAMETER_TYPE);
+        /* no defined value, so just ignore it */
+        iParm++;
+    }
+    ASSERT_GUEST_RETURN(paParms[iParm].type == VBOX_HGCM_SVC_PARM_32BIT, VERR_WRONG_PARAMETER_TYPE);
+    uint32_t const fFormats = paParms[iParm].u.uint32;
+    iParm++;
+    if (cParms == VBOX_SHCL_CPARMS_REPORT_FORMATS_61B)
+    {
+        ASSERT_GUEST_RETURN(paParms[iParm].type == VBOX_HGCM_SVC_PARM_32BIT, VERR_WRONG_PARAMETER_TYPE);
+        ASSERT_GUEST_RETURN(paParms[iParm].u.uint32 == 0, VERR_INVALID_FLAGS);
+        iParm++;
+    }
+    Assert(iParm == cParms);
+
+    /*
+     * Report the formats.
+     */
+    int rc = shClSvcSetSource(pClient, SHCLSOURCE_REMOTE);
+    if (RT_SUCCESS(rc))
+    {
+        if (g_ExtState.pfnExtension)
+        {
+            SHCLEXTPARMS parms;
+            RT_ZERO(parms);
+            parms.uFormat = fFormats;
+
+            g_ExtState.pfnExtension(g_ExtState.pvExtension, VBOX_CLIPBOARD_EXT_FN_FORMAT_ANNOUNCE, &parms, sizeof(parms));
+        }
+        else
+        {
+            SHCLCLIENTCMDCTX CmdCtx;
+            RT_ZERO(CmdCtx);
+
+            SHCLFORMATDATA FormatData;
+            FormatData.fFlags  = 0;
+            FormatData.Formats = fFormats;
+            rc = ShClSvcImplFormatAnnounce(pClient, &CmdCtx, &FormatData);
+        }
+
+        /** @todo r=bird: I'm not sure if the guest should be automatically allowed
+         *        to write the host clipboard now.  It would make more sense to disallow
+         *        host clipboard reads until the host reports formats.
+         *
+         *        The writes should only really be allowed upon request from the host,
+         *        shouldn't they? (Though, I'm not sure, maybe there are situations
+         *        where the guest side will just want to push the content over
+         *        immediately while it's still available, I don't quite recall now...
+         */
+        if (RT_SUCCESS(rc))
+            pClient->State.fFlags |= SHCLCLIENTSTATE_FLAGS_WRITE_ACTIVE;
+    }
+
+    return rc;
+}
+
 /**
  * Handles the VBOX_SHCL_GUEST_FN_DATA_READ message from the guest.
  */
@@ -1748,10 +1832,8 @@ static DECLCALLBACK(void) svcCall(void *,
     switch (u32Function)
     {
         case VBOX_SHCL_GUEST_FN_GET_HOST_MSG_OLD:
-        {
             rc = shClSvcMsgGetOld(pClient, callHandle, cParms, paParms);
             break;
-        }
 
         case VBOX_SHCL_GUEST_FN_CONNECT:
         {
@@ -1776,133 +1858,32 @@ static DECLCALLBACK(void) svcCall(void *,
 
                 rc = VINF_SUCCESS;
             }
-
             break;
         }
 
         case VBOX_SHCL_GUEST_FN_REPORT_FEATURES:
-        {
             rc = shClSvcClientReportFeatures(pClient, callHandle, cParms, paParms);
             break;
-        }
 
         case VBOX_SHCL_GUEST_FN_QUERY_FEATURES:
-        {
             rc = shClSvcClientQueryFeatures(callHandle, cParms, paParms);
             break;
-        }
 
         case VBOX_SHCL_GUEST_FN_MSG_PEEK_NOWAIT:
-        {
             rc = shClSvcMsgPeek(pClient, callHandle, cParms, paParms, false /*fWait*/);
             break;
-        }
 
         case VBOX_SHCL_GUEST_FN_MSG_PEEK_WAIT:
-        {
             rc = shClSvcMsgPeek(pClient, callHandle, cParms, paParms, true /*fWait*/);
             break;
-        }
 
         case VBOX_SHCL_GUEST_FN_MSG_GET:
-        {
             rc = shClSvcMsgGet(pClient, callHandle, cParms, paParms);
             break;
-        }
 
-        case VBOX_SHCL_GUEST_FN_FORMATS_REPORT:
-        {
-            uint32_t uFormats = 0;
-
-            if (!(pClient->State.fGuestFeatures0 & VBOX_SHCL_GF_0_CONTEXT_ID)) /* Legacy, Guest Additions < 6.1. */
-            {
-                if (cParms != 1)
-                {
-                    rc = VERR_INVALID_PARAMETER;
-                }
-                else if (paParms[0].type != VBOX_HGCM_SVC_PARM_32BIT) /* uFormats */
-                {
-                    rc = VERR_INVALID_PARAMETER;
-                }
-                else
-                {
-                    rc = HGCMSvcGetU32(&paParms[0], &uFormats);
-                }
-            }
-            else
-            {
-                if (cParms != 3)
-                {
-                    rc = VERR_INVALID_PARAMETER;
-                }
-                else if (   paParms[0].type != VBOX_HGCM_SVC_PARM_64BIT  /* uContextID */
-                         || paParms[1].type != VBOX_HGCM_SVC_PARM_32BIT  /* uFormats */
-                         || paParms[2].type != VBOX_HGCM_SVC_PARM_32BIT) /* fFlags */
-                {
-                    rc = VERR_INVALID_PARAMETER;
-                }
-                else
-                {
-                    rc = HGCMSvcGetU32(&paParms[1], &uFormats);
-
-                    /** @todo Handle rest. */
-                }
-            }
-
-            if (RT_SUCCESS(rc))
-            {
-                if (   ShClSvcGetMode() != VBOX_SHCL_MODE_GUEST_TO_HOST
-                    && ShClSvcGetMode() != VBOX_SHCL_MODE_BIDIRECTIONAL)
-                {
-                    rc = VERR_ACCESS_DENIED;
-                }
-                else if (uFormats != VBOX_SHCL_FMT_NONE) /* Only announce formats if we actually *have* formats to announce! */
-                {
-                    rc = shClSvcSetSource(pClient, SHCLSOURCE_REMOTE);
-                    if (RT_SUCCESS(rc))
-                    {
-                        if (g_ExtState.pfnExtension)
-                        {
-                            SHCLEXTPARMS parms;
-                            RT_ZERO(parms);
-
-                            parms.uFormat = uFormats;
-
-                            g_ExtState.pfnExtension(g_ExtState.pvExtension, VBOX_CLIPBOARD_EXT_FN_FORMAT_ANNOUNCE,
-                                                    &parms, sizeof(parms));
-                        }
-                        else
-                        {
-
-                            SHCLCLIENTCMDCTX cmdCtx;
-                            RT_ZERO(cmdCtx);
-
-                            SHCLFORMATDATA formatData;
-                            RT_ZERO(formatData);
-
-                            formatData.Formats = uFormats;
-                            Assert(formatData.Formats != VBOX_SHCL_FMT_NONE); /* Sanity. */
-
-                            rc = ShClSvcImplFormatAnnounce(pClient, &cmdCtx, &formatData);
-                        }
-
-                        /** @todo r=bird: I'm not sure if the guest should be automatically allowed
-                         *        to write the host clipboard now.  It would make more sense to disallow
-                         *        host clipboard reads until the host reports formats.
-                         *
-                         *        The writes should only really be allowed upon request from the host,
-                         *        shouldn't they? (Though, I'm not sure, maybe there are situations
-                         *        where the guest side will just want to push the content over
-                         *        immediately while it's still available, I don't quite recall now...
-                         */
-                        if (RT_SUCCESS(rc))
-                            pClient->State.fFlags |= SHCLCLIENTSTATE_FLAGS_WRITE_ACTIVE;
-                    }
-                }
-            }
-
+        case VBOX_SHCL_GUEST_FN_REPORT_FORMATS:
+            rc = shClSvcGuestReportFormats(pClient, cParms, paParms);
             break;
-        }
 
         case VBOX_SHCL_GUEST_FN_DATA_READ:
             rc = shClSvcGetDataRead(pClient, cParms, paParms);

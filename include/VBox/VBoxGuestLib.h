@@ -677,8 +677,7 @@ VBGLR3DECL(int)     VbglR3ClipboardReadData(HGCMCLIENTID idClient, uint32_t fFor
 VBGLR3DECL(int)     VbglR3ClipboardReadDataEx(PVBGLR3SHCLCMDCTX pCtx, PSHCLDATABLOCK pData, uint32_t *pcbRead);
 VBGLR3DECL(int)     VbglR3ClipboardWriteData(HGCMCLIENTID idClient, uint32_t fFormat, void *pv, uint32_t cb);
 VBGLR3DECL(int)     VbglR3ClipboardWriteDataEx(PVBGLR3SHCLCMDCTX pCtx, PSHCLDATABLOCK pData);
-VBGLR3DECL(int)     VbglR3ClipboardFormatsReportEx(PVBGLR3SHCLCMDCTX pCtx, PSHCLFORMATDATA pFormats);
-VBGLR3DECL(int)     VbglR3ClipboardFormatsReport(HGCMCLIENTID idClient, uint32_t fFormats);
+VBGLR3DECL(int)     VbglR3ClipboardReportFormats(HGCMCLIENTID idClient, uint32_t fFormats);
 
 VBGLR3DECL(int)     VbglR3ClipboardConnectEx(PVBGLR3SHCLCMDCTX pCtx);
 VBGLR3DECL(int)     VbglR3ClipboardDisconnectEx(PVBGLR3SHCLCMDCTX pCtx);

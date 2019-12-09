@@ -255,8 +255,8 @@ static LRESULT vboxClipboardWinProcessMsg(PSHCLCONTEXT pCtx, HWND hwnd, UINT msg
                     int rc = SharedClipboardWinGetFormats(pWinCtx, &Formats);
                     if (RT_SUCCESS(rc))
                     {
-                        LogFunc(("WM_CLIPBOARDUPDATE: Reporting formats 0x%x\n", Formats.Formats));
-                        rc = VbglR3ClipboardFormatsReportEx(&pCtx->CmdCtx, &Formats);
+                        LogFunc(("WM_CLIPBOARDUPDATE: Reporting formats %#x\n", Formats.Formats));
+                        rc = VbglR3ClipboardReportFormats(pCtx->CmdCtx.uClientID, Formats.Formats);
                     }
                 }
                 else
@@ -300,11 +300,9 @@ static LRESULT vboxClipboardWinProcessMsg(PSHCLCONTEXT pCtx, HWND hwnd, UINT msg
                     /* WM_DRAWCLIPBOARD always expects a return code of 0, so don't change "rc" here. */
                     SHCLFORMATDATA Formats;
                     rc = SharedClipboardWinGetFormats(pWinCtx, &Formats);
-                    if (RT_SUCCESS(rc)
+                    if (   RT_SUCCESS(rc)
                         && Formats.Formats != VBOX_SHCL_FMT_NONE)
-                    {
-                        rc = VbglR3ClipboardFormatsReportEx(&pCtx->CmdCtx, &Formats);
-                    }
+                        rc = VbglR3ClipboardReportFormats(pCtx->CmdCtx.uClientID, Formats.Formats);
                 }
                 else
                 {

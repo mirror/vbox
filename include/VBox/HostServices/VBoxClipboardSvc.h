@@ -281,8 +281,25 @@
  */
 #define VBOX_SHCL_GUEST_FN_GET_HOST_MSG_OLD       1
 /** Sends a list of available formats to the host.
- *  Formely known as VBOX_SHCL_GUEST_FN_REPORT_FORMATS. */
-#define VBOX_SHCL_GUEST_FN_FORMATS_REPORT         2
+ *
+ * This function takes a single parameter, a 32-bit set of formats
+ * (VBOX_SHCL_FMT_XXX), this can be zero if the clipboard is empty or previously
+ * reported formats are no longer avaible (logout, shutdown, whatever).
+ *
+ * There was a period during 6.1 development where it would take three
+ * parameters, a 64-bit context ID preceeded the formats and a 32-bit MBZ flags
+ * parameter was appended.  This is still accepted, though deprecated.
+ *
+ * @returns May return informational statuses indicating partial success, just
+ *          ignore it.
+ * @retval  VINF_SUCCESS on success.
+ * @retval  VERR_INVALID_CLIENT_ID
+ * @retval  VERR_WRONG_PARAMETER_COUNT
+ * @retval  VERR_WRONG_PARAMETER_TYPE
+ * @retval  VERR_NOT_SUPPORTED if all the formats are unsupported, host
+ *          clipboard will be empty.
+ */
+#define VBOX_SHCL_GUEST_FN_REPORT_FORMATS         2
 /** Reads data in specified format from the host.
  *
  * This function takes three parameters, a 32-bit format bit
@@ -670,6 +687,18 @@ typedef struct _VBoxShClConnect
 
 #define VBOX_SHCL_CPARMS_CONNECT 3
 
+/** @name VBOX_SHCL_GUEST_FN_REPORT_FORMATS
+ * @{  */
+/** VBOX_SHCL_GUEST_FN_REPORT_FORMATS parameters. */
+typedef struct VBoxShClParmReportFormats
+{
+    /** uint32_t, int:  Zero or more VBOX_SHCL_FMT_XXX bits. */
+    HGCMFunctionParameter f32Formats;
+} VBoxShClParmReportFormats;
+
+#define VBOX_SHCL_CPARMS_REPORT_FORMATS     1   /**< The parameter count for VBOX_SHCL_GUEST_FN_REPORT_FORMATS. */
+#define VBOX_SHCL_CPARMS_REPORT_FORMATS_61B 3   /**< The 6.1 dev cycle variant, see VBOX_SHCL_GUEST_FN_REPORT_FORMATS. */
+/** @} */
 /**
  * Reports available formats.
  */
@@ -731,7 +760,7 @@ typedef struct VBoxShClParmDataRead
 } VBoxShClParmDataRead;
 
 #define VBOX_SHCL_CPARMS_DATA_READ      3   /**< The parameter count for VBOX_SHCL_GUEST_FN_DATA_READ. */
-#define VBOX_SHCL_CPARMS_DATA_READ_61B  5   /**< The 6.1 dev cycle variant, see VBOX_SHCL_GUEST_FN_DATA_READ.  */
+#define VBOX_SHCL_CPARMS_DATA_READ_61B  5   /**< The 6.1 dev cycle variant, see VBOX_SHCL_GUEST_FN_DATA_READ. */
 /** @}  */
 
 /** @name
