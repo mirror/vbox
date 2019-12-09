@@ -1458,88 +1458,112 @@ int shClSvcGetDataWrite(PSHCLCLIENT pClient, uint32_t cParms, VBOXHGCMSVCPARM pa
 {
     LogFlowFuncEnter();
 
-    if (   ShClSvcGetMode() != VBOX_SHCL_MODE_GUEST_TO_HOST
-        && ShClSvcGetMode() != VBOX_SHCL_MODE_BIDIRECTIONAL)
-    {
+    /*
+     * Check if the service mode allows this operation and whether the guest is
+     * supposed to be reading from the host.
+     */
+    uint32_t uMode = ShClSvcGetMode();
+    if (   uMode == VBOX_SHCL_MODE_BIDIRECTIONAL
+        || uMode == VBOX_SHCL_MODE_GUEST_TO_HOST)
+    { /* likely */ }
+    else
         return VERR_ACCESS_DENIED;
-    }
 
-    /* Is the guest supposed to write any clipboard data from the host? */
-    if (!(pClient->State.fFlags & SHCLCLIENTSTATE_FLAGS_WRITE_ACTIVE))
-        return VERR_WRONG_ORDER;
+    /** @todo r=bird: This whole active flag stuff is broken, so disabling for now. */
+    //if (pClient->State.fFlags & SHCLCLIENTSTATE_FLAGS_WRITE_ACTIVE)
+    //{ /* likely */ }
+    //else
+    //    return VERR_WRONG_ORDER;
 
-    int rc;
+    /*
+     * Digest parameters.
+     *
+     * There are 3 different format here, formatunately no parameters have been
+     * switch around so it's plain sailing compared to the DATA_READ message.
+     */
+    ASSERT_GUEST_RETURN(pClient->State.fGuestFeatures0 & VBOX_SHCL_GF_0_CONTEXT_ID
+                        ? cParms == VBOX_SHCL_CPARMS_DATA_WRITE || cParms == VBOX_SHCL_CPARMS_DATA_WRITE_61B
+                        : cParms == VBOX_SHCL_CPARMS_DATA_WRITE_OLD,
+                        VERR_WRONG_PARAMETER_COUNT);
 
-    SHCLDATABLOCK dataBlock;
-    RT_ZERO(dataBlock);
-
+    uintptr_t iParm = 0;
     SHCLCLIENTCMDCTX cmdCtx;
     RT_ZERO(cmdCtx);
-
-    if (!(pClient->State.fGuestFeatures0 & VBOX_SHCL_GF_0_CONTEXT_ID)) /* Legacy, Guest Additions < 6.1. */
+    if (cParms > VBOX_SHCL_CPARMS_DATA_WRITE_OLD)
     {
-        if (cParms != 2)
-        {
-            rc = VERR_INVALID_PARAMETER;
-        }
-        else
-        {
-            rc = HGCMSvcGetU32(&paParms[0], &dataBlock.uFormat);
-            if (RT_SUCCESS(rc))
-            {
-                if (pClient->State.POD.uFormat == VBOX_SHCL_FMT_NONE)
-                    pClient->State.POD.uFormat = dataBlock.uFormat;
-
-                if (   dataBlock.uFormat == VBOX_SHCL_FMT_NONE
-                    || dataBlock.uFormat != pClient->State.POD.uFormat)
-                {
-                    LogFunc(("Invalid format (client=%RU32 vs host=%RU32)\n", dataBlock.uFormat, pClient->State.POD.uFormat));
-                    rc = VERR_INVALID_PARAMETER;
-                }
-                else
-                    rc = HGCMSvcGetBuf(&paParms[1], &dataBlock.pvData, &dataBlock.cbData);
-            }
-        }
+        ASSERT_GUEST_RETURN(paParms[iParm].type == VBOX_HGCM_SVC_PARM_64BIT, VERR_WRONG_PARAMETER_TYPE);
+        cmdCtx.uContextID = paParms[iParm].u.uint64;
+        uint64_t const idCtxExpected = VBOX_SHCL_CONTEXTID_MAKE(pClient->State.uSessionID, pClient->Events.uID,
+                                                                VBOX_SHCL_CONTEXTID_GET_EVENT(cmdCtx.uContextID));
+        ASSERT_GUEST_MSG_RETURN(cmdCtx.uContextID == idCtxExpected,
+                                ("Wrong context ID: %#RX64, expected %#RX64\n", cmdCtx.uContextID, idCtxExpected),
+                                VERR_INVALID_CONTEXT);
+        iParm++;
     }
     else
     {
-        if (cParms != VBOX_SHCL_CPARMS_WRITE_DATA)
-        {
-            rc = VERR_INVALID_PARAMETER;
-        }
-        else
-        {
-            rc = HGCMSvcGetU64(&paParms[0], &cmdCtx.uContextID);
+        /** @todo supply CID from client state? Setting it in ShClSvcDataReadRequest? */
+    }
+    if (cParms == VBOX_SHCL_CPARMS_DATA_WRITE_61B)
+    {
+        ASSERT_GUEST_RETURN(paParms[iParm].type == VBOX_HGCM_SVC_PARM_32BIT, VERR_WRONG_PARAMETER_TYPE);
+        ASSERT_GUEST_RETURN(paParms[iParm].u.uint32 == 0, VERR_INVALID_FLAGS);
+        iParm++;
+    }
+    SHCLDATABLOCK dataBlock;
+    ASSERT_GUEST_RETURN(paParms[iParm].type == VBOX_HGCM_SVC_PARM_32BIT, VERR_WRONG_PARAMETER_TYPE); /* Format bit. */
+    dataBlock.uFormat = paParms[iParm].u.uint32;
+    iParm++;
+    if (cParms == VBOX_SHCL_CPARMS_DATA_WRITE_61B)
+    {
+        ASSERT_GUEST_RETURN(paParms[iParm].type == VBOX_HGCM_SVC_PARM_32BIT, VERR_WRONG_PARAMETER_TYPE); /* "cbData" - duplicates buffer size. */
+        iParm++;
+    }
+    ASSERT_GUEST_RETURN(paParms[iParm].type == VBOX_HGCM_SVC_PARM_PTR, VERR_WRONG_PARAMETER_TYPE); /* Data buffer */
+    dataBlock.pvData = paParms[iParm].u.pointer.addr;
+    dataBlock.cbData = paParms[iParm].u.pointer.size;
+    iParm++;
+    Assert(iParm == cParms);
 
-            /** @todo Handle paParms[1] flags. */
-
-            if (RT_SUCCESS(rc))
-                rc = HGCMSvcGetU32(&paParms[2], &dataBlock.uFormat);
-            if (RT_SUCCESS(rc))
-                rc = HGCMSvcGetBuf(&paParms[4], &dataBlock.pvData, &dataBlock.cbData);
-        }
+    /*
+     * For some reason we need to do this (makes absolutely no sense to bird).
+     */
+    /** @todo r=bird: I really don't get why you need the State.POD.uFormat
+     *        member.  I'm sure there is a reason.  Incomplete code? */
+    if (!(pClient->State.fGuestFeatures0 & VBOX_SHCL_GF_0_CONTEXT_ID))
+    {
+        if (pClient->State.POD.uFormat == VBOX_SHCL_FMT_NONE)
+            pClient->State.POD.uFormat = dataBlock.uFormat;
+        /** @todo r=bird: this must be buggy to, I've disabled it without testing
+         *        though. */
+        //ASSERT_GUEST_MSG_RETURN(pClient->State.POD.uFormat == dataBlock.uFormat,
+        //                        ("Requested %#x, POD.uFormat=%#x\n", dataBlock.uFormat, pClient->State.POD.uFormat),
+        //                        VERR_BAD_EXE_FORMAT /*VERR_INTERNAL_ERROR*/);
     }
 
+    /*
+     * Write the data to the active host side clipboard.
+     */
+    int rc;
+    if (g_ExtState.pfnExtension)
+    {
+        SHCLEXTPARMS parms;
+        RT_ZERO(parms);
+        parms.uFormat   = dataBlock.uFormat;
+        parms.u.pvData  = dataBlock.pvData;
+        parms.cbData    = dataBlock.cbData;
+
+        g_ExtState.pfnExtension(g_ExtState.pvExtension, VBOX_CLIPBOARD_EXT_FN_DATA_WRITE, &parms, sizeof(parms));
+        rc = VINF_SUCCESS;
+    }
+    else
+        rc = ShClSvcImplWriteData(pClient, &cmdCtx, &dataBlock);
     if (RT_SUCCESS(rc))
     {
-        if (g_ExtState.pfnExtension)
-        {
-            SHCLEXTPARMS parms;
-            RT_ZERO(parms);
-
-            parms.uFormat   = dataBlock.uFormat;
-            parms.u.pvData  = dataBlock.pvData;
-            parms.cbData    = dataBlock.cbData;
-
-            g_ExtState.pfnExtension(g_ExtState.pvExtension, VBOX_CLIPBOARD_EXT_FN_DATA_WRITE, &parms, sizeof(parms));
-        }
-
-        rc = ShClSvcImplWriteData(pClient, &cmdCtx, &dataBlock);
-        if (RT_SUCCESS(rc))
-        {
-            /* Remove "write active" flag after successful read again. */
-            pClient->State.fFlags &= ~SHCLCLIENTSTATE_FLAGS_WRITE_ACTIVE;
-        }
+        /* Remove "write active" flag after successful read again. */
+        /** @todo r=bird: This doesn't make any effing sense.  What if the host
+         *         wants to have the guest write it another format???  */
+        pClient->State.fFlags &= ~SHCLCLIENTSTATE_FLAGS_WRITE_ACTIVE;
     }
 
     LogFlowFuncLeaveRC(rc);
@@ -1847,21 +1871,32 @@ static DECLCALLBACK(void) svcCall(void *,
                             g_ExtState.pfnExtension(g_ExtState.pvExtension, VBOX_CLIPBOARD_EXT_FN_FORMAT_ANNOUNCE,
                                                     &parms, sizeof(parms));
                         }
-
-                        SHCLCLIENTCMDCTX cmdCtx;
-                        RT_ZERO(cmdCtx);
-
-                        SHCLFORMATDATA formatData;
-                        RT_ZERO(formatData);
-
-                        formatData.Formats = uFormats;
-                        Assert(formatData.Formats != VBOX_SHCL_FMT_NONE); /* Sanity. */
-
-                        rc = ShClSvcImplFormatAnnounce(pClient, &cmdCtx, &formatData);
-                        if (RT_SUCCESS(rc))
+                        else
                         {
-                            pClient->State.fFlags |= SHCLCLIENTSTATE_FLAGS_WRITE_ACTIVE;
+
+                            SHCLCLIENTCMDCTX cmdCtx;
+                            RT_ZERO(cmdCtx);
+
+                            SHCLFORMATDATA formatData;
+                            RT_ZERO(formatData);
+
+                            formatData.Formats = uFormats;
+                            Assert(formatData.Formats != VBOX_SHCL_FMT_NONE); /* Sanity. */
+
+                            rc = ShClSvcImplFormatAnnounce(pClient, &cmdCtx, &formatData);
                         }
+
+                        /** @todo r=bird: I'm not sure if the guest should be automatically allowed
+                         *        to write the host clipboard now.  It would make more sense to disallow
+                         *        host clipboard reads until the host reports formats.
+                         *
+                         *        The writes should only really be allowed upon request from the host,
+                         *        shouldn't they? (Though, I'm not sure, maybe there are situations
+                         *        where the guest side will just want to push the content over
+                         *        immediately while it's still available, I don't quite recall now...
+                         */
+                        if (RT_SUCCESS(rc))
+                            pClient->State.fFlags |= SHCLCLIENTSTATE_FLAGS_WRITE_ACTIVE;
                     }
                 }
             }
@@ -1874,10 +1909,8 @@ static DECLCALLBACK(void) svcCall(void *,
             break;
 
         case VBOX_SHCL_GUEST_FN_DATA_WRITE:
-        {
             rc = shClSvcGetDataWrite(pClient, cParms, paParms);
             break;
-        }
 
         case VBOX_SHCL_GUEST_FN_CANCEL:
         {

@@ -2394,16 +2394,17 @@ VBGLR3DECL(int) VbglR3ClipboardWriteData(HGCMCLIENTID idClient, uint32_t fFormat
 {
     LogFlowFuncEnter();
 
-    VBoxShClWriteDataMsg Msg;
-    RT_ZERO(Msg);
+    struct
+    {
+        VBGLIOCHGCMCALL             Hdr;
+        VBoxShClParmDataWriteOld    Parms;
+    } Msg;
 
-    VBGL_HGCM_HDR_INIT(&Msg.hdr, idClient,
-                       VBOX_SHCL_GUEST_FN_DATA_WRITE, 2);
+    VBGL_HGCM_HDR_INIT(&Msg.Hdr, idClient, VBOX_SHCL_GUEST_FN_DATA_WRITE, VBOX_SHCL_CPARMS_DATA_WRITE_OLD);
+    VbglHGCMParmUInt32Set(&Msg.Parms.f32Format, fFormat);
+    VbglHGCMParmPtrSet(&Msg.Parms.pData, pv, cb);
 
-    VbglHGCMParmUInt32Set(&Msg.u.v0.format, fFormat);
-    VbglHGCMParmPtrSet(&Msg.u.v0.ptr, pv, cb);
-
-    int rc = VbglR3HGCMCall(&Msg.hdr, sizeof(Msg.hdr) + sizeof(Msg.u.v0));
+    int rc = VbglR3HGCMCall(&Msg.Hdr, sizeof(Msg));
 
     LogFlowFuncLeaveRC(rc);
     return rc;
@@ -2434,21 +2435,20 @@ VBGLR3DECL(int) VbglR3ClipboardWriteDataEx(PVBGLR3SHCLCMDCTX pCtx, PSHCLDATABLOC
     }
     else
     {
-        VBoxShClWriteDataMsg Msg;
-        RT_ZERO(Msg);
+        struct
+        {
+            VBGLIOCHGCMCALL         Hdr;
+            VBoxShClParmDataWrite   Parms;
+        } Msg;
 
-        VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID,
-                           VBOX_SHCL_GUEST_FN_DATA_WRITE, VBOX_SHCL_CPARMS_WRITE_DATA);
+        VBGL_HGCM_HDR_INIT(&Msg.Hdr, pCtx->uClientID, VBOX_SHCL_GUEST_FN_DATA_WRITE, VBOX_SHCL_CPARMS_DATA_WRITE);
+        Msg.Parms.id64Context.SetUInt64(pCtx->uContextID);
+        Msg.Parms.f32Format.SetUInt32(pData->uFormat);
+        Msg.Parms.pData.SetPtr(pData->pvData, pData->cbData);
 
         LogFlowFunc(("CID=%RU32\n", pCtx->uContextID));
 
-        Msg.u.v1.uContext.SetUInt64(pCtx->uContextID);
-        Msg.u.v1.uFormat.SetUInt32(pData->uFormat);
-        Msg.u.v1.fFlags.SetUInt32(0);
-        Msg.u.v1.cbData.SetUInt32(pData->cbData);
-        Msg.u.v1.pvData.SetPtr(pData->pvData, pData->cbData);
-
-        rc = VbglR3HGCMCall(&Msg.hdr, sizeof(Msg));
+        rc = VbglR3HGCMCall(&Msg.Hdr, sizeof(Msg));
     }
 
     LogFlowFuncLeaveRC(rc);

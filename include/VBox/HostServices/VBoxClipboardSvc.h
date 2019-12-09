@@ -285,8 +285,8 @@
 #define VBOX_SHCL_GUEST_FN_FORMATS_REPORT         2
 /** Reads data in specified format from the host.
  *
- * This function takes three parameters, a 32-bit format bit, a buffer
- * and 32-bit number of bytes read (output).
+ * This function takes three parameters, a 32-bit format bit
+ * (VBOX_SHCL_FMT_XXX), a buffer and 32-bit number of bytes read (output).
  *
  * There was a period during 6.1 development where it would take five parameters
  * when VBOX_SHCL_GF_0_CONTEXT_ID was reported by the guest.  A 64-bit context
@@ -304,7 +304,25 @@
  * @retval  VERR_WRONG_PARAMETER_TYPE
  */
 #define VBOX_SHCL_GUEST_FN_DATA_READ              3
-/** Writes data in requested format to the host. */
+/** Writes requested data to the host.
+ *
+ * This function takes either 2 or 3 parameters.  The last two parameters are a
+ * 32-bit format bit (VBOX_SHCL_FMT_XXX) and a data buffer holding the related
+ * data.  The three parameter variant have a context ID first, which shall be a
+ * copy of the ID in the data request message.
+ *
+ * There was a period during 6.1 development where there would be a 5 parameter
+ * version of this, inserting an unused flags parameter between the context ID
+ * and the format bit, as well as a 32-bit data buffer size repate between the
+ * format bit and the data buffer.  This format is still accepted, though
+ * deprecated.
+ *
+ * @retval  VINF_SUCCESS on success.
+ * @retval  VERR_INVALID_CLIENT_ID
+ * @retval  VERR_WRONG_PARAMETER_COUNT
+ * @retval  VERR_WRONG_PARAMETER_TYPE
+ * @retval  VERR_INVALID_CONTEXT if the context ID didn't match up.
+ */
 #define VBOX_SHCL_GUEST_FN_DATA_WRITE             4
 
 /** Does the actual protocol handshake.
@@ -703,51 +721,46 @@ typedef struct _VBoxShClReadDataReqMsg
 /** VBOX_SHCL_GUEST_FN_DATA_READ parameters. */
 typedef struct VBoxShClParmDataRead
 {
-    /** uint32_t, in: Requested format. */
+    /** uint32_t, in:   Requested format (VBOX_SHCL_FMT_XXX). */
     HGCMFunctionParameter f32Format;
-    /** ptr, out: The data buffer to put the data in on success. */
+    /** ptr, out:       The data buffer to put the data in on success. */
     HGCMFunctionParameter pData;
-    /** uint32_t, out: Size of returned data, if larger than the buffer, then no
+    /** uint32_t, out:  Size of returned data, if larger than the buffer, then no
      * data was actually transferred and the guest must repeat the call.  */
     HGCMFunctionParameter cb32Needed;
 } VBoxShClParmDataRead;
+
 #define VBOX_SHCL_CPARMS_DATA_READ      3   /**< The parameter count for VBOX_SHCL_GUEST_FN_DATA_READ. */
 #define VBOX_SHCL_CPARMS_DATA_READ_61B  5   /**< The 6.1 dev cycle variant, see VBOX_SHCL_GUEST_FN_DATA_READ.  */
 /** @}  */
 
-/**
- * Writes clipboard data.
- */
-typedef struct _VBoxShClWriteDataMsg
+/** @name
+ * @{ */
+
+/** VBOX_SHCL_GUEST_FN_DATA_WRITE parameters. */
+typedef struct VBoxShClParmDataWrite
 {
-    VBGLIOCHGCMCALL hdr;
+    /** uint64_t, in:   Context ID from VBOX_SHCL_HOST_MSG_READ_DATA. */
+    HGCMFunctionParameter id64Context;
+    /** uint32_t, in:   The data format (VBOX_SHCL_FMT_XXX). */
+    HGCMFunctionParameter f32Format;
+    /** ptr, in:        The data. */
+    HGCMFunctionParameter pData;
+} VBoxShClParmDataWrite;
 
-    union
-    {
-        struct
-        {
-            /** Returned format as requested in the VBOX_SHCL_HOST_MSG_READ_DATA message. */
-            HGCMFunctionParameter format; /* IN uint32_t */
-            /** Data.  */
-            HGCMFunctionParameter ptr;    /* IN linear pointer. */
-        } v0;
-        struct
-        {
-            /** uint64_t, out: Context ID. */
-            HGCMFunctionParameter uContext;
-            /** uint32_t, out: Write flags; currently unused and must be set to 0. */
-            HGCMFunctionParameter fFlags;
-            /** uint32_t, out: Requested format to read data in. */
-            HGCMFunctionParameter uFormat;
-            /** uint32_t, out: Size of data (in bytes). */
-            HGCMFunctionParameter cbData;
-            /** ptr, out: Actual data. */
-            HGCMFunctionParameter pvData;
-        } v1;
-    } u;
-} VBoxShClWriteDataMsg;
+/** Old VBOX_SHCL_GUEST_FN_DATA_WRITE parameters. */
+typedef struct VBoxShClParmDataWriteOld
+{
+    /** uint32_t, in:   The data format (VBOX_SHCL_FMT_XXX). */
+    HGCMFunctionParameter f32Format;
+    /** ptr, in:        The data. */
+    HGCMFunctionParameter pData;
+} VBoxShClParmDataWriteOld;
 
-#define VBOX_SHCL_CPARMS_WRITE_DATA 5
+#define VBOX_SHCL_CPARMS_DATA_WRITE     3   /**< The variant used when VBOX_SHCL_GF_0_CONTEXT_ID is reported. */
+#define VBOX_SHCL_CPARMS_DATA_WRITE_OLD 2   /**< The variant used when VBOX_SHCL_GF_0_CONTEXT_ID isn't reported. */
+#define VBOX_SHCL_CPARMS_DATA_WRITE_61B 5   /**< The 6.1 dev cycle variant, see VBOX_SHCL_GUEST_FN_DATA_WRITE.  */
+/** @} */
 
 /**
  * Reports a transfer status.

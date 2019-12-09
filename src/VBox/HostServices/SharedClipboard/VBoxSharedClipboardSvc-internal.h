@@ -145,7 +145,8 @@ typedef struct _SHCLCLIENT
     /** The client's message queue (FIFO). */
     RTCList<SHCLCLIENTMSG *> queueMsg;
     /** The client's own event source.
-     *  Needed for events which are not bound to a specific transfer. */
+     *  Needed for events which are not bound to a specific transfer.
+     * @todo r=bird: s/Events/EventSrc/ !!  */
     SHCLEVENTSOURCE          Events;
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
     /** Transfer contextdata. */
