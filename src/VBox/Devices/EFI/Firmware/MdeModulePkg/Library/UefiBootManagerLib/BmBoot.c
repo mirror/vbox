@@ -1006,7 +1006,6 @@ EFI_STATUS VBoxBmQueryMediaFileNameForSFs(EFI_HANDLE hSFs, CHAR16 **ppwszFileNam
   EFI_STATUS                          Status = EFI_SUCCESS;
   EFI_SIMPLE_FILE_SYSTEM_PROTOCOL     *pSFs  = NULL;
   EFI_FILE_PROTOCOL                   *pRoot = NULL;
-  EFI_FILE_PROTOCOL                   *pFile = NULL;
 
   *ppwszFileName = EFI_REMOVABLE_MEDIA_FILE_NAME;
 
@@ -1016,12 +1015,23 @@ EFI_STATUS VBoxBmQueryMediaFileNameForSFs(EFI_HANDLE hSFs, CHAR16 **ppwszFileNam
     Status = pSFs->OpenVolume(pSFs, &pRoot);
     if (!EFI_ERROR(Status))
     {
-      Status = pRoot->Open(pRoot, &pFile, VBOX_EFI_APPLE_MEDIA_FILE_NAME, EFI_FILE_MODE_READ,
-                           EFI_FILE_READ_ONLY | EFI_FILE_HIDDEN | EFI_FILE_SYSTEM);
-      if (!EFI_ERROR(Status))
-      {
-        *ppwszFileName = VBOX_EFI_APPLE_MEDIA_FILE_NAME;
-        pFile->Close(pFile);
+      VBOX_FS_BLESSED_FILE *Buffer = NULL;
+      UINTN BufferSize = 0;
+
+      Status = pRoot->GetInfo(pRoot, &gVBoxFsBlessedFileInfoGuid, &BufferSize, Buffer);
+      if (Status == EFI_BUFFER_TOO_SMALL) {
+        Buffer = AllocatePool (BufferSize);
+        ASSERT (Buffer != NULL);
+
+        /** @todo We might leak this allocation but it doesn't really matter as it
+         * is of type BootServicesData and will be reclaimed by the OS when it boots.
+         */
+        Status = pRoot->GetInfo(pRoot, &gVBoxFsBlessedFileInfoGuid, &BufferSize, Buffer);
+        if (!EFI_ERROR(Status))
+        {
+          DEBUG ((EFI_D_INFO, "[Bds] VBoxBmQueryMediaFileNameForSFs: Got blessed file info %s\n", &Buffer->BlessedFile[0]));
+          *ppwszFileName = &Buffer->BlessedFile[0];
+        }
       }
 
       pRoot->Close(pRoot);

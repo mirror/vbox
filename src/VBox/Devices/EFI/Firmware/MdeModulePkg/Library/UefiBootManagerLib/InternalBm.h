@@ -47,6 +47,9 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 #include <Guid/GlobalVariable.h>
 #include <Guid/StatusCodeDataTypeId.h>
 #include <Guid/StatusCodeDataTypeVariable.h>
+#ifdef VBOX
+#include <Guid/VBoxFsBlessedFileInfo.h>
+#endif
 
 #include <Library/PrintLib.h>
 #include <Library/DebugLib.h>
@@ -79,11 +82,6 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
     #else
         #error "Can not determine the default boot file name for unknown processor type!"
     #endif
-#endif
-
-#ifdef VBOX
-/* Support for booting Apple macOS. */
-# define VBOX_EFI_APPLE_MEDIA_FILE_NAME L"\\System\\Library\\CoreServices\\boot.efi"
 #endif
 
 typedef enum {
