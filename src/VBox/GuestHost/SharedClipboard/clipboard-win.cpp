@@ -828,7 +828,9 @@ int SharedClipboardWinHandleWMTimer(PSHCLWINCTX pWinCtx)
 
 /**
  * Announces a clipboard format to the Windows clipboard.
- * The actual rendering (setting) of the clipboard data will be done later with a separate WM_RENDERFORMAT message.
+ *
+ * The actual rendering (setting) of the clipboard data will be done later with
+ * a separate WM_RENDERFORMAT message.
  *
  * @returns VBox status code. VERR_NOT_SUPPORTED if the format is not supported / handled.
  * @param   pWinCtx             Windows context to use.
@@ -838,42 +840,70 @@ int SharedClipboardWinAnnounceFormats(PSHCLWINCTX pWinCtx, SHCLFORMATS fFormats)
 {
     LogFunc(("fFormats=0x%x\n", fFormats));
 
-    HANDLE hClip    = NULL;
-    UINT   cfFormat = 0;
-
-    int rc = VINF_SUCCESS;
-
-    /** @todo r=andy Only one clipboard format can be set at once, at least on Windows.
-     *  r=bird: Where did you get that misconception from?  That's utter
-     *          non-sense. */
-    /** @todo Implement more flexible clipboard precedence for supported formats. */
-
-    if (fFormats & VBOX_SHCL_FMT_UNICODETEXT)
+    /*
+     * Set the clipboard formats.
+     */
+    static struct
     {
-        LogFunc(("CF_UNICODETEXT\n"));
-        hClip = SetClipboardData(CF_UNICODETEXT, NULL);
-    }
-    else if (fFormats & VBOX_SHCL_FMT_BITMAP)
+        uint32_t        fVBoxFormat;
+        UINT            uWinFormat;
+        const char     *pszWinFormat;
+        const char     *pszLog;
+    } s_aFormats[] =
     {
-        LogFunc(("CF_DIB\n"));
-        hClip = SetClipboardData(CF_DIB, NULL);
-    }
-    else if (fFormats & VBOX_SHCL_FMT_HTML)
+        { VBOX_SHCL_FMT_UNICODETEXT,    CF_UNICODETEXT, NULL,                 "CF_UNICODETEXT" },
+        { VBOX_SHCL_FMT_BITMAP,         CF_DIB,         NULL,                 "CF_DIB" },
+        { VBOX_SHCL_FMT_HTML,           0,              SHCL_WIN_REGFMT_HTML, "SHCL_WIN_REGFMT_HTML" },
+    };
+    unsigned    cSuccessfullySet = 0;
+    SHCLFORMATS fFormatsLeft     = fFormats;
+    int         rc               = VINF_SUCCESS;
+    for (uintptr_t i = 0; i < RT_ELEMENTS(s_aFormats) && fFormatsLeft != 0; i++)
     {
-        LogFunc(("VBOX_SHCL_FMT_HTML\n"));
-        cfFormat = RegisterClipboardFormat(SHCL_WIN_REGFMT_HTML);
-        if (cfFormat != 0)
-            hClip = SetClipboardData(cfFormat, NULL);
-    }
-    else
-    {
-        LogRel(("Shared Clipboard: Unsupported format(s) (0x%x), skipping\n", fFormats));
-        rc = VERR_NOT_SUPPORTED;
+        if (fFormatsLeft & s_aFormats[i].fVBoxFormat)
+        {
+            LogFunc(("%s\n", s_aFormats[i].pszLog));
+            fFormatsLeft &= ~s_aFormats[i].fVBoxFormat;
+
+            /* Reg format if needed: */
+            UINT uWinFormat = s_aFormats[i].uWinFormat;
+            if (!uWinFormat)
+            {
+                uWinFormat = RegisterClipboardFormat(s_aFormats[i].pszWinFormat);
+                AssertContinue(uWinFormat != 0);
+            }
+
+            /* Tell the clipboard we've got data upon a request.  We check the
+               last error here as hClip will be NULL even on success (despite
+               what MSDN says). */
+            SetLastError(NO_ERROR);
+            HANDLE hClip = SetClipboardData(uWinFormat, NULL);
+            DWORD dwErr = GetLastError();
+            if (dwErr == NO_ERROR || hClip != NULL)
+                cSuccessfullySet++;
+            else
+            {
+                AssertMsgFailed(("%s/%u: %u\n", s_aFormats[i].pszLog, uWinFormat, dwErr));
+                rc = RTErrConvertFromWin32(dwErr);
+            }
+        }
     }
 
-    if (RT_SUCCESS(rc))
+    /*
+     * Consider setting anything a success, converting any error into
+     * informational status.  Unsupport error only happens if all formats
+     * were unsupported.
+     */
+    if (cSuccessfullySet > 0)
     {
         pWinCtx->hWndClipboardOwnerUs = GetClipboardOwner();
+        if (RT_FAILURE(rc))
+            rc = -rc;
+    }
+    else if (RT_SUCCESS(rc) && fFormatsLeft != 0)
+    {
+        LogFunc(("Unsupported formats: %#x (%#x)\n", fFormatsLeft, fFormats));
+        rc = VERR_NOT_SUPPORTED;
     }
 
     LogFlowFuncLeaveRC(rc);
