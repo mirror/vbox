@@ -1334,40 +1334,52 @@ static int shClSvcGuestReportFormats(PSHCLCLIENT pClient, uint32_t cParms, VBOXH
 
     /*
      * Report the formats.
+     *
+     * We ignore empty reports if the guest isn't the clipboard owner, this
+     * prevents a freshly booted guest with an empty clibpoard from clearing
+     * the host clipboard on startup.  Likewise, when a guest shutdown it will
+     * typically issue an empty report in case it's the owner, we don't want
+     * that to clear host content either.
      */
-    int rc = shClSvcSetSource(pClient, SHCLSOURCE_REMOTE);
-    if (RT_SUCCESS(rc))
+    int rc;
+    if (!fFormats && pClient->State.enmSource != SHCLSOURCE_REMOTE)
+        rc = VINF_SUCCESS;
+    else
     {
-        if (g_ExtState.pfnExtension)
-        {
-            SHCLEXTPARMS parms;
-            RT_ZERO(parms);
-            parms.uFormat = fFormats;
-
-            g_ExtState.pfnExtension(g_ExtState.pvExtension, VBOX_CLIPBOARD_EXT_FN_FORMAT_ANNOUNCE, &parms, sizeof(parms));
-        }
-        else
-        {
-            SHCLCLIENTCMDCTX CmdCtx;
-            RT_ZERO(CmdCtx);
-
-            SHCLFORMATDATA FormatData;
-            FormatData.fFlags  = 0;
-            FormatData.Formats = fFormats;
-            rc = ShClSvcImplFormatAnnounce(pClient, &CmdCtx, &FormatData);
-        }
-
-        /** @todo r=bird: I'm not sure if the guest should be automatically allowed
-         *        to write the host clipboard now.  It would make more sense to disallow
-         *        host clipboard reads until the host reports formats.
-         *
-         *        The writes should only really be allowed upon request from the host,
-         *        shouldn't they? (Though, I'm not sure, maybe there are situations
-         *        where the guest side will just want to push the content over
-         *        immediately while it's still available, I don't quite recall now...
-         */
+        rc = shClSvcSetSource(pClient, SHCLSOURCE_REMOTE);
         if (RT_SUCCESS(rc))
-            pClient->State.fFlags |= SHCLCLIENTSTATE_FLAGS_WRITE_ACTIVE;
+        {
+            if (g_ExtState.pfnExtension)
+            {
+                SHCLEXTPARMS parms;
+                RT_ZERO(parms);
+                parms.uFormat = fFormats;
+
+                g_ExtState.pfnExtension(g_ExtState.pvExtension, VBOX_CLIPBOARD_EXT_FN_FORMAT_ANNOUNCE, &parms, sizeof(parms));
+            }
+            else
+            {
+                SHCLCLIENTCMDCTX CmdCtx;
+                RT_ZERO(CmdCtx);
+
+                SHCLFORMATDATA FormatData;
+                FormatData.fFlags  = 0;
+                FormatData.Formats = fFormats;
+                rc = ShClSvcImplFormatAnnounce(pClient, &CmdCtx, &FormatData);
+            }
+
+            /** @todo r=bird: I'm not sure if the guest should be automatically allowed
+             *        to write the host clipboard now.  It would make more sense to disallow
+             *        host clipboard reads until the host reports formats.
+             *
+             *        The writes should only really be allowed upon request from the host,
+             *        shouldn't they? (Though, I'm not sure, maybe there are situations
+             *        where the guest side will just want to push the content over
+             *        immediately while it's still available, I don't quite recall now...
+             */
+            if (RT_SUCCESS(rc))
+                pClient->State.fFlags |= SHCLCLIENTSTATE_FLAGS_WRITE_ACTIVE;
+        }
     }
 
     return rc;
