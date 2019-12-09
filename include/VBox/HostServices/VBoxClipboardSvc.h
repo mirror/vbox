@@ -342,15 +342,14 @@
  */
 #define VBOX_SHCL_GUEST_FN_DATA_WRITE             4
 
-/** Does the actual protocol handshake.
+/** This is a left-over from the 6.1 dev cycle and will always fail.
  *
- * If this message is not being sent by the guest, the host handles that
- * particular client with the legacy protocol (v0).
+ * It used to take three 32-bit parameters, only one of which was actually used.
  *
- * @retval  VINF_SUCCESS on success.
- * @retval  VERR_INVALID_CLIENT_ID
- * @retval  VERR_WRONG_PARAMETER_COUNT
- * @retval  VERR_WRONG_PARAMETER_TYPE
+ * It was replaced by VBOX_SHCL_GUEST_FN_REPORT_FEATURES and
+ * VBOX_SHCL_GUEST_FN_NEGOTIATE_CHUNK_SIZE.
+ *
+ * @retval  VERR_NOT_IMPLEMENTED
  * @since   6.1
  */
 #define VBOX_SHCL_GUEST_FN_CONNECT                5
@@ -563,8 +562,26 @@
  */
 #define VBOX_SHCL_GUEST_FN_ERROR                  27
 
+/** For negotiating a chunk size between the guest and host.
+ *
+ * Takes two 32-bit parameters both being byte counts, the first one gives the
+ * maximum chunk size the guest can handle and the second the preferred choice
+ * of the guest.  Upon return, the host will have updated both of them to
+ * reflect the maximum and default chunk sizes this client connect.  The guest
+ * may set the 2nd value to zero and let the host choose.
+ *
+ * @retval  VINF_SUCCESS on success.
+ * @retval  VERR_INVALID_CLIENT_ID
+ * @retval  VERR_WRONG_PARAMETER_COUNT
+ * @retval  VERR_WRONG_PARAMETER_TYPE
+ * @retval  VERR_INVALID_PARAMETER if the 2nd parameter is larger than the
+ *          first one
+ * @since   6.1
+ */
+#define VBOX_SHCL_GUEST_FN_NEGOTIATE_CHUNK_SIZE     28
+
 /** The last function number (used for validation/sanity).   */
-#define VBOX_SHCL_GUEST_FN_LAST                   VBOX_SHCL_GUEST_FN_ERROR
+#define VBOX_SHCL_GUEST_FN_LAST                   VBOX_SHCL_GUEST_FN_NEGOTIATE_CHUNK_SIZE
 /** @} */
 
 
@@ -578,8 +595,7 @@
  * @{ */
 /** No flags set. */
 #define VBOX_SHCL_GF_NONE                         0
-/** Guest can handle context IDs (uint64_t, in paParam[0]).
- *  This is true for Guest Additions < 6.1. */
+/** The guest can handle context IDs where applicable. */
 #define VBOX_SHCL_GF_0_CONTEXT_ID                 RT_BIT_64(0)
 /** Bit that must be set in the 2nd parameter, will be cleared if the host reponds
  * correctly (old hosts might not). */
@@ -591,6 +607,9 @@
  * @{ */
 /** No flags set. */
 #define VBOX_SHCL_HF_NONE                         0
+/** The host can handle context IDs where applicable as well as the new
+ *  message handling functions. */
+#define VBOX_SHCL_HF_0_CONTEXT_ID                 RT_BIT_64(0)
 /** @} */
 
 

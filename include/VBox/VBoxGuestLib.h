@@ -575,45 +575,51 @@ VBGLR3DECL(int)     VbglR3GetSessionId(uint64_t *pu64IdSession);
 /** @name Shared Clipboard
  * @{ */
 
-#  ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
-/**
- * Structure containing context parameters for Shared Clipboard transfers.
- */
-typedef struct VBGLR3SHCLTRANSFERCMDCTX
-{
-    /** Callback table to use for all transfers. */
-    SHCLTRANSFERCALLBACKS Callbacks;
-} VBGLR3SHCLTRANSFERCMDCTX, *PVBGLR3SHCLTRANSFERCMDCTX;
-#  endif /* VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS */
-
 /**
  * The context required for either retrieving or sending a HGCM shared clipboard
  * commands from or to the host.
+ *
+ * @todo This struct could be handy if we want to implement a second
+ *       communication channel, e.g. via TCP/IP. Use a union for the HGCM stuff then.
  */
 typedef struct VBGLR3SHCLCMDCTX
 {
-    /** @todo This struct could be handy if we want to implement
-     *        a second communication channel, e.g. via TCP/IP.
-     *        Use a union for the HGCM stuff then. */
-
-    /** IN/OUT: Context ID to retrieve or to use. */
-    uint64_t                  uContextID;
-    /** IN: HGCM client ID to use for communication. */
-    uint32_t                  uClientID;
-    /** IN: Maximum chunk size (in bytes). */
-    uint32_t                  cbChunkSize;
-    /** IN: Host feature flags (of type VBOX_SHCL_HF_XXX). */
-    uint64_t                  fHostFeatures;
-    /** Flag indicating whether to use the legacy protocol (<= VBox 6.1) or not.
-     *  This is determined in VbglR3ClipboardConnectEx(). */
-    bool                      fUseLegacyProtocol;
-    /** OUT: Number of parameters retrieved.
-     * @todo r=bird: s/uNumParms/cParms/ !! */
-    uint32_t                  uNumParms;
+    /** HGCM client ID to use for communication.
+     * This is set by VbglR3ClipboardConnectEx(). */
+    uint32_t                    idClient;
+    /** This is @c false if both VBOX_SHCL_HF_0_CONTEXT_ID and
+     * VBOX_SHCL_GF_0_CONTEXT_ID are set, otherwise @c true and only the old
+     * protocol (< 6.1) should be used.
+     * This is set by VbglR3ClipboardConnectEx(). */
+    bool                        fUseLegacyProtocol;
+    /** Host feature flags (VBOX_SHCL_HF_XXX).
+     * This is set by VbglR3ClipboardConnectEx(). */
+    uint64_t                    fHostFeatures;
+    /** The guest feature flags reported to the host (VBOX_SHCL_GF_XXX).
+     * This is set by VbglR3ClipboardConnectEx().  */
+    uint64_t                    fGuestFeatures;
 #  ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
-    VBGLR3SHCLTRANSFERCMDCTX  Transfers;
+    /** Default chunk size (in bytes).
+     * This is set by VbglR3ClipboardConnectEx(). */
+    uint32_t                    cbChunkSize;
+    /** Max chunk size (in bytes).
+     * This is set by VbglR3ClipboardConnectEx(). */
+    uint32_t                    cbMaxChunkSize;
 #  endif
-} VBGLR3SHCLCMDCTX, *PVBGLR3SHCLCMDCTX;
+
+    /** The context ID - input or/and output depending on the operation. */
+    uint64_t                    idContext;
+    /** OUT: Number of parameters retrieved.
+     * This is set by ??. */
+    uint32_t                    cParmsRecived;
+
+#  ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
+    /** Callback table to use for all transfers. */
+    SHCLTRANSFERCALLBACKS       Callbacks;
+#  endif
+} VBGLR3SHCLCMDCTX;
+/** Pointer to a shared clipboard context for Vbgl. */
+typedef VBGLR3SHCLCMDCTX *PVBGLR3SHCLCMDCTX;
 
 /**
  * Enumeration specifying a Shared Clipboard event type.
@@ -679,7 +685,7 @@ VBGLR3DECL(int)     VbglR3ClipboardWriteData(HGCMCLIENTID idClient, uint32_t fFo
 VBGLR3DECL(int)     VbglR3ClipboardWriteDataEx(PVBGLR3SHCLCMDCTX pCtx, PSHCLDATABLOCK pData);
 VBGLR3DECL(int)     VbglR3ClipboardReportFormats(HGCMCLIENTID idClient, uint32_t fFormats);
 
-VBGLR3DECL(int)     VbglR3ClipboardConnectEx(PVBGLR3SHCLCMDCTX pCtx);
+VBGLR3DECL(int)     VbglR3ClipboardConnectEx(PVBGLR3SHCLCMDCTX pCtx, uint64_t fGuestFeatures);
 VBGLR3DECL(int)     VbglR3ClipboardDisconnectEx(PVBGLR3SHCLCMDCTX pCtx);
 
 VBGLR3DECL(int)     VbglR3ClipboardReportFeatures(uint32_t idClient, uint64_t fGuestFeatures, uint64_t *pfHostFeatures);

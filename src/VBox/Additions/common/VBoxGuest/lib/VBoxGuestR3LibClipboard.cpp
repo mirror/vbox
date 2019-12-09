@@ -80,65 +80,133 @@ VBGLR3DECL(int) VbglR3ClipboardConnect(HGCMCLIENTID *pidClient)
  * Connects to the Shared Clipboard service, extended version.
  *
  * @returns VBox status code.
- * @param   pCtx                Shared Clipboard command context to use for the connection.
+ * @param   pCtx            Command context.  This will be initialized by this
+ *                          call.
+ * @param   fGuestFeatures  The guest features supported by this client,
+ *                          VBOX_SHCL_GF_0_XXX.
  */
-VBGLR3DECL(int) VbglR3ClipboardConnectEx(PVBGLR3SHCLCMDCTX pCtx)
+VBGLR3DECL(int) VbglR3ClipboardConnectEx(PVBGLR3SHCLCMDCTX pCtx, uint64_t fGuestFeatures)
 {
-    int rc = VbglR3ClipboardConnect(&pCtx->uClientID);
+    /*
+     * Intialize the context structure.
+     */
+    pCtx->idClient              = 0;
+    pCtx->fHostFeatures         = 0;
+    pCtx->fGuestFeatures        = 0;
+    pCtx->fUseLegacyProtocol    = true;
+    pCtx->cParmsRecived         = 0;
+    pCtx->idContext             = 0;
+#ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
+    pCtx->cbChunkSize           = VBOX_SHCL_DEFAULT_MAX_CHUNK_SIZE;
+    pCtx->cbMaxChunkSize        = VMMDEV_MAX_HGCM_DATA_SIZE - _4K;
+# error todo
+#endif
+
+    /*
+     * First step is connecting to the HGCM service.
+     */
+    int rc = VbglR3ClipboardConnect(&pCtx->idClient);
     if (RT_SUCCESS(rc))
     {
-        VBoxShClConnect Msg;
-        RT_ZERO(Msg);
-
-        VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID,
-                           VBOX_SHCL_GUEST_FN_CONNECT, VBOX_SHCL_CPARMS_CONNECT);
-
-        VbglHGCMParmUInt32Set(&Msg.cbChunkSize, 0);
-        VbglHGCMParmUInt32Set(&Msg.enmCompression, 0);
-        VbglHGCMParmUInt32Set(&Msg.enmChecksumType, 0);
-
-        rc = VbglR3HGCMCall(&Msg.hdr, sizeof(Msg));
+        /*
+         * Next is reporting our features.  If this fails, assume older host.
+         */
+        rc = VbglR3ClipboardReportFeatures(pCtx->idClient, fGuestFeatures, &pCtx->fHostFeatures);
         if (RT_SUCCESS(rc))
         {
-            rc = VbglHGCMParmUInt32Get(&Msg.cbChunkSize, &pCtx->cbChunkSize);
-
-            /** @todo Add / handle checksum + compression type. */
-
-            if (RT_SUCCESS(rc))
+            LogRel2(("Shared Clipboard: Host features: %#RX64\n", pCtx->fHostFeatures));
+            if (   (pCtx->fHostFeatures & VBOX_SHCL_HF_0_CONTEXT_ID)
+                && (pCtx->fGuestFeatures & VBOX_SHCL_GF_0_CONTEXT_ID) )
             {
-                /*
-                 * Report features to the host.
-                 */
-                const uint64_t fGuestFeatures = VBOX_SHCL_GF_0_CONTEXT_ID;
-
-                rc = VbglR3ClipboardReportFeatures(pCtx->uClientID, fGuestFeatures,
-                                                   &pCtx->fHostFeatures);
-                if (RT_SUCCESS(rc))
-                    LogRel2(("Shared Clipboard: Host features: %#RX64\n", pCtx->fHostFeatures));
-                else
-                    LogRel(("Shared Clipboard: Warning! Feature reporing failed: %Rrc\n", rc));
-
                 pCtx->fUseLegacyProtocol = false;
+
+#ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
+                /*
+                 * Negotiate a chunk size (sketched, as I don't know what it is supposed to be for).
+                 */
+                struct
+                {
+                    VBGLIOCHGCMCALL                 Hdr;
+                    VBoxShClParmNegotiateChunkSize  Parms;
+                } Msg;
+                do
+                {
+                    VBGL_HGCM_HDR_INIT(&Msg.Hdr, pCtx->idClient, VBOX_SHCL_GUEST_FN_NEGOTIATE_CHUNK_SIZE,
+                                       VBOX_SHCL_GUEST_CPARM_NEGOTIATE_CHUNK_SIZE);
+                    Msg.Parsm.cb32MaxChunkSize = VMMDEV_MAX_HGCM_DATA_SIZE - _4K;
+                    Msg.Parsm.cb32ChunkSize    = 0;
+                    rc = VbglR3HGCMCall(&Msg.Hdr, sizeof(Msg));
+                } while (rc == VERR_INTERRUPTED);
+                if (RT_SUCCESS(rc))
+                {
+                    pCtx->cbChunkSize = RT_MIN(Msg.Parms.cb32ChunkSize, _4K);
+                    pCtx->cbMaxChunkSize = RT_MIN(Msg.Parms.cb32ChunkSize);
+                }
+# error todo
+                LogRel2(("Shared Clipboard: Client %RU32 connected (cbChunkSize=%RU32, fUseLegacyProtocol=%RTbool)\n",
+                         pCtx->idClient, pCtx->cbChunkSize, pCtx->fUseLegacyProtocol));
+#endif
+            }
+            else
+            {
+                if (pCtx->fHostFeatures & VBOX_SHCL_HF_0_CONTEXT_ID)
+                    LogRel(("Shared Clipboard: Host does not expose VBOX_SHCL_HF_0_CONTEXT_ID (%RX64)\n", pCtx->fHostFeatures));
+                if (pCtx->fHostFeatures & VBOX_SHCL_HF_0_CONTEXT_ID)
+                    LogRel(("Shared Clipboard: Host does not expose VBOX_SHCL_HF_0_CONTEXT_ID (%RX64)\n", pCtx->fHostFeatures));
+
+                pCtx->fUseLegacyProtocol = true;
             }
         }
         else
         {
-            /* If the above call fails, make sure to use some sane defaults for
-             * the old (legacy, VBox <= 6.1) protocol. */
+            AssertLogRelMsg(rc == VERR_NOT_SUPPORTED || rc == VERR_NOT_IMPLEMENTED,
+                            ("Reporting features failed: %Rrc\n", rc));
             pCtx->fUseLegacyProtocol = true;
-            pCtx->cbChunkSize        = _64K; /* Use 64KB as chunk size by default. */
-
-            rc = VINF_SUCCESS; /* Failing above is not fatal. */
         }
-
-        LogFlowFunc(("fHostFeatures=%#RX64, cbChunkSize=%RU32\n", pCtx->fHostFeatures, pCtx->cbChunkSize));
-
-        LogRel2(("Shared Clipboard: Client %RU32 connected (cbChunkSize=%RU32, fUseLegacyProtocol=%RTbool)\n",
-                 pCtx->uClientID, pCtx->cbChunkSize, pCtx->fUseLegacyProtocol));
     }
 
     LogFlowFuncLeaveRC(rc);
     return rc;
+}
+
+
+/**
+ * Reports features to the host and retrieve host feature set.
+ *
+ * @returns VBox status code.
+ * @param   idClient        The client ID returned by VbglR3ClipboardConnect().
+ * @param   fGuestFeatures  Features to report, VBOX_SHCL_GF_XXX.
+ * @param   pfHostFeatures  Where to store the features VBOX_SHCL_HF_XXX.
+ */
+VBGLR3DECL(int) VbglR3ClipboardReportFeatures(uint32_t idClient, uint64_t fGuestFeatures, uint64_t *pfHostFeatures)
+{
+    int rc;
+    do
+    {
+        struct
+        {
+            VBGLIOCHGCMCALL         Hdr;
+            HGCMFunctionParameter   f64Features0;
+            HGCMFunctionParameter   f64Features1;
+        } Msg;
+        VBGL_HGCM_HDR_INIT(&Msg.Hdr, idClient, VBOX_SHCL_GUEST_FN_REPORT_FEATURES, 2);
+        VbglHGCMParmUInt64Set(&Msg.f64Features0, fGuestFeatures);
+        VbglHGCMParmUInt64Set(&Msg.f64Features1, VBOX_SHCL_GF_1_MUST_BE_ONE);
+
+        rc = VbglR3HGCMCall(&Msg.Hdr, sizeof(Msg));
+        if (RT_SUCCESS(rc))
+        {
+            Assert(Msg.f64Features0.type == VMMDevHGCMParmType_64bit);
+            Assert(Msg.f64Features1.type == VMMDevHGCMParmType_64bit);
+            if (Msg.f64Features1.u.value64 & VBOX_SHCL_GF_1_MUST_BE_ONE)
+                rc = VERR_NOT_SUPPORTED;
+            else if (pfHostFeatures)
+                *pfHostFeatures = Msg.f64Features0.u.value64;
+            break;
+        }
+    } while (rc == VERR_INTERRUPTED);
+    return rc;
+
 }
 
 
@@ -162,10 +230,10 @@ VBGLR3DECL(int) VbglR3ClipboardDisconnect(HGCMCLIENTID idClient)
  */
 VBGLR3DECL(int) VbglR3ClipboardDisconnectEx(PVBGLR3SHCLCMDCTX pCtx)
 {
-    int rc = VbglR3ClipboardDisconnect(pCtx->uClientID);
+    int rc = VbglR3ClipboardDisconnect(pCtx->idClient);
     if (RT_SUCCESS(rc))
     {
-        pCtx->uClientID = 0;
+        pCtx->idClient = 0;
     }
 
     LogFlowFuncLeaveRC(rc);
@@ -188,7 +256,7 @@ VBGLR3DECL(int) VbglR3ClipboardFormatsReportRecv(PVBGLR3SHCLCMDCTX pCtx, PSHCLFO
     VBoxShClFormatsMsg Msg;
     RT_ZERO(Msg);
 
-    VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID, VBOX_SHCL_GUEST_FN_MSG_GET, 3);
+    VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->idClient, VBOX_SHCL_GUEST_FN_MSG_GET, 3);
 
     Msg.u.v1.uContext.SetUInt64(VBOX_SHCL_HOST_MSG_FORMATS_REPORT);
     Msg.u.v1.uFormats.SetUInt32(0);
@@ -197,7 +265,7 @@ VBGLR3DECL(int) VbglR3ClipboardFormatsReportRecv(PVBGLR3SHCLCMDCTX pCtx, PSHCLFO
     int rc = VbglR3HGCMCall(&Msg.hdr, sizeof(Msg));
     if (RT_SUCCESS(rc))
     {
-        rc = Msg.u.v1.uContext.GetUInt64(&pCtx->uContextID);
+        rc = Msg.u.v1.uContext.GetUInt64(&pCtx->idContext);
         if (RT_SUCCESS(rc))
             rc = Msg.u.v1.uFormats.GetUInt32(&pFormats->Formats);
         if (RT_SUCCESS(rc))
@@ -223,7 +291,7 @@ VBGLR3DECL(int) VbglR3ClipboardReadDataRecv(PVBGLR3SHCLCMDCTX pCtx, PSHCLDATAREQ
 
     VBoxShClReadDataReqMsg Msg;
 
-    VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID,
+    VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->idClient,
                        VBOX_SHCL_GUEST_FN_MSG_GET, VBOX_SHCL_CPARMS_READ_DATA_REQ);
 
     Msg.uContext.SetUInt64(VBOX_SHCL_HOST_MSG_READ_DATA);
@@ -234,7 +302,7 @@ VBGLR3DECL(int) VbglR3ClipboardReadDataRecv(PVBGLR3SHCLCMDCTX pCtx, PSHCLDATAREQ
     int rc = VbglR3HGCMCall(&Msg.hdr, sizeof(Msg));
     if (RT_SUCCESS(rc))
     {
-        rc = Msg.uContext.GetUInt64(&pCtx->uContextID);
+        rc = Msg.uContext.GetUInt64(&pCtx->idContext);
         if (RT_SUCCESS(rc))
             rc = Msg.uFormat.GetUInt32(&pDataReq->uFmt);
         if (RT_SUCCESS(rc))
@@ -337,6 +405,7 @@ VBGLR3DECL(int) VbglR3ClipboardReadData(HGCMCLIENTID idClient, uint32_t fFormat,
     return rc;
 }
 
+
 /**
  * Reads clipboard data from the host clipboard.
  *
@@ -351,47 +420,9 @@ VBGLR3DECL(int) VbglR3ClipboardReadDataEx(PVBGLR3SHCLCMDCTX pCtx, PSHCLDATABLOCK
 {
     AssertPtrReturn(pCtx,  VERR_INVALID_POINTER);
     AssertPtrReturn(pData, VERR_INVALID_POINTER);
-    return VbglR3ClipboardReadData(pCtx->uClientID, pData->uFormat, pData->pvData, pData->cbData, pcbRead);
+    return VbglR3ClipboardReadData(pCtx->idClient, pData->uFormat, pData->pvData, pData->cbData, pcbRead);
 }
 
-/**
- * Reports features to the host and retrieve host feature set.
- *
- * @returns VBox status code.
- * @param   idClient        The client ID returned by VbglR3ClipboardConnect().
- * @param   fGuestFeatures  Features to report, VBOX_SHCL_GF_XXX.
- * @param   pfHostFeatures  Where to store the features VBOX_SHCL_HF_XXX.
- */
-VBGLR3DECL(int) VbglR3ClipboardReportFeatures(uint32_t idClient, uint64_t fGuestFeatures, uint64_t *pfHostFeatures)
-{
-    int rc;
-    do
-    {
-        struct
-        {
-            VBGLIOCHGCMCALL         Hdr;
-            HGCMFunctionParameter   f64Features0;
-            HGCMFunctionParameter   f64Features1;
-        } Msg;
-        VBGL_HGCM_HDR_INIT(&Msg.Hdr, idClient, VBOX_SHCL_GUEST_FN_REPORT_FEATURES, 2);
-        VbglHGCMParmUInt64Set(&Msg.f64Features0, fGuestFeatures);
-        VbglHGCMParmUInt64Set(&Msg.f64Features1, VBOX_SHCL_GF_1_MUST_BE_ONE);
-
-        rc = VbglR3HGCMCall(&Msg.Hdr, sizeof(Msg));
-        if (RT_SUCCESS(rc))
-        {
-            Assert(Msg.f64Features0.type == VMMDevHGCMParmType_64bit);
-            Assert(Msg.f64Features1.type == VMMDevHGCMParmType_64bit);
-            if (Msg.f64Features1.u.value64 & VBOX_SHCL_GF_1_MUST_BE_ONE)
-                rc = VERR_NOT_SUPPORTED;
-            else if (pfHostFeatures)
-                *pfHostFeatures = Msg.f64Features0.u.value64;
-            break;
-        }
-    } while (rc == VERR_INTERRUPTED);
-    return rc;
-
-}
 
 /**
  * Query the host features.
@@ -461,7 +492,7 @@ int VbglR3ClipboardMsgPeekWait(PVBGLR3SHCLCMDCTX pCtx, uint32_t *pidMsg, uint32_
         HGCMFunctionParameter idMsg;       /* Doubles as restore check on input. */
         HGCMFunctionParameter cParameters;
     } Msg;
-    VBGL_HGCM_HDR_INIT(&Msg.Hdr, pCtx->uClientID, VBOX_SHCL_GUEST_FN_MSG_PEEK_WAIT, 2);
+    VBGL_HGCM_HDR_INIT(&Msg.Hdr, pCtx->idClient, VBOX_SHCL_GUEST_FN_MSG_PEEK_WAIT, 2);
     VbglHGCMParmUInt64Set(&Msg.idMsg, pidRestoreCheck ? *pidRestoreCheck : 0);
     VbglHGCMParmUInt32Set(&Msg.cParameters, 0);
     rc = VbglR3HGCMCall(&Msg.Hdr, sizeof(Msg));
@@ -483,7 +514,7 @@ int VbglR3ClipboardMsgPeekWait(PVBGLR3SHCLCMDCTX pCtx, uint32_t *pidMsg, uint32_
      */
     if (rc == VERR_INTERRUPTED)
     {
-        VBGL_HGCM_HDR_INIT(&Msg.Hdr, pCtx->uClientID, VBOX_SHCL_GUEST_FN_CANCEL, 0);
+        VBGL_HGCM_HDR_INIT(&Msg.Hdr, pCtx->idClient, VBOX_SHCL_GUEST_FN_CANCEL, 0);
         int rc2 = VbglR3HGCMCall(&Msg.Hdr, sizeof(Msg.Hdr));
         AssertRC(rc2);
     }
@@ -515,10 +546,10 @@ static int vbglR3ClipboardRootListHdrRead(PVBGLR3SHCLCMDCTX pCtx, PSHCLROOTLISTH
     VBoxShClRootListHdrMsg Msg;
     RT_ZERO(Msg);
 
-    VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID,
+    VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->idClient,
                        VBOX_SHCL_GUEST_FN_ROOT_LIST_HDR_READ, VBOX_SHCL_CPARMS_ROOT_LIST_HDR_READ);
 
-    Msg.ReqParms.uContext.SetUInt64(pCtx->uContextID);
+    Msg.ReqParms.uContext.SetUInt64(pCtx->idContext);
     Msg.ReqParms.fRoots.SetUInt32(0);
 
     Msg.cRoots.SetUInt32(0);
@@ -551,10 +582,10 @@ static int vbglR3ClipboardRootListEntryRead(PVBGLR3SHCLCMDCTX pCtx, uint32_t uIn
     VBoxShClRootListEntryMsg Msg;
     RT_ZERO(Msg);
 
-    VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID,
+    VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->idClient,
                        VBOX_SHCL_GUEST_FN_ROOT_LIST_ENTRY_READ, VBOX_SHCL_CPARMS_ROOT_LIST_ENTRY_READ);
 
-    Msg.Parms.uContext.SetUInt64(pCtx->uContextID);
+    Msg.Parms.uContext.SetUInt64(pCtx->idContext);
     Msg.Parms.fInfo.SetUInt32(pRootListEntry->fInfo);
     Msg.Parms.uIndex.SetUInt32(uIndex);
 
@@ -660,7 +691,7 @@ VBGLR3DECL(int) VbglR3ClipboarTransferStatusRecv(PVBGLR3SHCLCMDCTX pCtx,
     VBoxShClTransferStatusMsg Msg;
     RT_ZERO(Msg);
 
-    VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID,
+    VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->idClient,
                        VBOX_SHCL_GUEST_FN_MSG_GET, VBOX_SHCL_CPARMS_TRANSFER_STATUS);
 
     Msg.uContext.SetUInt64(VBOX_SHCL_HOST_MSG_TRANSFER_STATUS);
@@ -672,7 +703,7 @@ VBGLR3DECL(int) VbglR3ClipboarTransferStatusRecv(PVBGLR3SHCLCMDCTX pCtx,
     int rc = VbglR3HGCMCall(&Msg.hdr, sizeof(Msg));
     if (RT_SUCCESS(rc))
     {
-        rc = Msg.uContext.GetUInt64(&pCtx->uContextID); AssertRC(rc);
+        rc = Msg.uContext.GetUInt64(&pCtx->idContext); AssertRC(rc);
         if (RT_SUCCESS(rc))
             rc = Msg.enmDir.GetUInt32((uint32_t *)pEnmDir); AssertRC(rc);
         if (RT_SUCCESS(rc))
@@ -707,10 +738,10 @@ VBGLR3DECL(int) VbglR3ClipboardTransferStatusReply(PVBGLR3SHCLCMDCTX pCtx, PSHCL
     VBoxShClReplyMsg Msg;
     RT_ZERO(Msg);
 
-    VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID,
+    VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->idClient,
                        VBOX_SHCL_GUEST_FN_REPLY, VBOX_SHCL_CPARMS_REPLY_MIN + 1);
 
-    Msg.uContext.SetUInt64(pCtx->uContextID);
+    Msg.uContext.SetUInt64(pCtx->idContext);
     Msg.enmType.SetUInt32(VBOX_SHCL_REPLYMSGTYPE_TRANSFER_STATUS);
     Msg.rc.SetUInt32((uint32_t )rcTransfer); /* int vs. uint32_t */
     Msg.cbPayload.SetUInt32(0);
@@ -741,7 +772,7 @@ VBGLR3DECL(int) VbglR3ClipboardRootListHdrReadReq(PVBGLR3SHCLCMDCTX pCtx, uint32
     VBoxShClRootListReadReqMsg Msg;
     RT_ZERO(Msg);
 
-    VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID,
+    VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->idClient,
                        VBOX_SHCL_GUEST_FN_MSG_GET, VBOX_SHCL_CPARMS_ROOT_LIST_HDR_READ_REQ);
 
     Msg.ReqParms.uContext.SetUInt64(VBOX_SHCL_HOST_MSG_TRANSFER_ROOT_LIST_HDR_READ);
@@ -750,7 +781,7 @@ VBGLR3DECL(int) VbglR3ClipboardRootListHdrReadReq(PVBGLR3SHCLCMDCTX pCtx, uint32
     int rc = VbglR3HGCMCall(&Msg.hdr, sizeof(Msg));
     if (RT_SUCCESS(rc))
     {
-        rc = Msg.ReqParms.uContext.GetUInt64(&pCtx->uContextID); AssertRC(rc);
+        rc = Msg.ReqParms.uContext.GetUInt64(&pCtx->idContext); AssertRC(rc);
         if (RT_SUCCESS(rc))
             rc = Msg.ReqParms.fRoots.GetUInt32(pfRoots); AssertRC(rc);
     }
@@ -774,10 +805,10 @@ VBGLR3DECL(int) VbglR3ClipboardRootListHdrReadReply(PVBGLR3SHCLCMDCTX pCtx, PSHC
     VBoxShClRootListHdrMsg Msg;
     RT_ZERO(Msg);
 
-    VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID,
+    VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->idClient,
                        VBOX_SHCL_GUEST_FN_ROOT_LIST_HDR_WRITE, VBOX_SHCL_CPARMS_ROOT_LIST_HDR_WRITE);
 
-    Msg.ReqParms.uContext.SetUInt64(pCtx->uContextID);
+    Msg.ReqParms.uContext.SetUInt64(pCtx->idContext);
     Msg.ReqParms.fRoots.SetUInt32(pRootListHdr->fRoots);
 
     Msg.cRoots.SetUInt32(pRootListHdr->cRoots);
@@ -805,7 +836,7 @@ VBGLR3DECL(int) VbglR3ClipboardRootListEntryReadReq(PVBGLR3SHCLCMDCTX pCtx, uint
     VBoxShClRootListEntryReadReqMsg Msg;
     RT_ZERO(Msg);
 
-    VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID,
+    VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->idClient,
                        VBOX_SHCL_GUEST_FN_MSG_GET, VBOX_SHCL_CPARMS_ROOT_LIST_ENTRY_READ_REQ);
 
     Msg.Parms.uContext.SetUInt64(VBOX_SHCL_HOST_MSG_TRANSFER_ROOT_LIST_ENTRY_READ);
@@ -815,7 +846,7 @@ VBGLR3DECL(int) VbglR3ClipboardRootListEntryReadReq(PVBGLR3SHCLCMDCTX pCtx, uint
     int rc = VbglR3HGCMCall(&Msg.hdr, sizeof(Msg));
     if (RT_SUCCESS(rc))
     {
-        rc = Msg.Parms.uContext.GetUInt64(&pCtx->uContextID); AssertRC(rc);
+        rc = Msg.Parms.uContext.GetUInt64(&pCtx->idContext); AssertRC(rc);
         if (RT_SUCCESS(rc))
             rc = Msg.Parms.fInfo.GetUInt32(pfInfo); AssertRC(rc);
         if (RT_SUCCESS(rc))
@@ -842,10 +873,10 @@ VBGLR3DECL(int) VbglR3ClipboardRootListEntryReadReply(PVBGLR3SHCLCMDCTX pCtx, ui
     VBoxShClRootListEntryMsg Msg;
     RT_ZERO(Msg);
 
-    VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID,
+    VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->idClient,
                        VBOX_SHCL_GUEST_FN_ROOT_LIST_ENTRY_WRITE, VBOX_SHCL_CPARMS_ROOT_LIST_ENTRY_WRITE);
 
-    Msg.Parms.uContext.SetUInt64(pCtx->uContextID);
+    Msg.Parms.uContext.SetUInt64(pCtx->idContext);
     Msg.Parms.fInfo.SetUInt32(0);
     Msg.Parms.uIndex.SetUInt32(uIndex);
 
@@ -877,10 +908,10 @@ VBGLR3DECL(int) VbglR3ClipboardListOpenSend(PVBGLR3SHCLCMDCTX pCtx, PSHCLLISTOPE
     VBoxShClListOpenMsg Msg;
     RT_ZERO(Msg);
 
-    VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID,
+    VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->idClient,
                        VBOX_SHCL_GUEST_FN_LIST_OPEN, VBOX_SHCL_CPARMS_LIST_OPEN);
 
-    Msg.uContext.SetUInt64(pCtx->uContextID);
+    Msg.uContext.SetUInt64(pCtx->idContext);
     Msg.fList.SetUInt32(0);
     Msg.cbFilter.SetUInt32(pOpenParms->cbFilter);
     Msg.pvFilter.SetPtr(pOpenParms->pszFilter, pOpenParms->cbFilter);
@@ -913,7 +944,7 @@ VBGLR3DECL(int) VbglR3ClipboardListOpenRecv(PVBGLR3SHCLCMDCTX pCtx, PSHCLLISTOPE
     VBoxShClListOpenMsg Msg;
     RT_ZERO(Msg);
 
-    VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID,
+    VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->idClient,
                        VBOX_SHCL_GUEST_FN_MSG_GET, VBOX_SHCL_CPARMS_LIST_OPEN);
 
     Msg.uContext.SetUInt64(VBOX_SHCL_HOST_MSG_TRANSFER_LIST_OPEN);
@@ -927,7 +958,7 @@ VBGLR3DECL(int) VbglR3ClipboardListOpenRecv(PVBGLR3SHCLCMDCTX pCtx, PSHCLLISTOPE
     int rc = VbglR3HGCMCall(&Msg.hdr, sizeof(Msg));
     if (RT_SUCCESS(rc))
     {
-        rc = Msg.uContext.GetUInt64(&pCtx->uContextID);
+        rc = Msg.uContext.GetUInt64(&pCtx->idContext);
         if (RT_SUCCESS(rc))
             rc = Msg.fList.GetUInt32(&pOpenParms->fList);
         if (RT_SUCCESS(rc))
@@ -955,10 +986,10 @@ VBGLR3DECL(int) VbglR3ClipboardListOpenReply(PVBGLR3SHCLCMDCTX pCtx, int rcReply
     VBoxShClReplyMsg Msg;
     RT_ZERO(Msg);
 
-    VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID,
+    VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->idClient,
                        VBOX_SHCL_GUEST_FN_REPLY, VBOX_SHCL_CPARMS_REPLY_MIN + 1);
 
-    Msg.uContext.SetUInt64(pCtx->uContextID);
+    Msg.uContext.SetUInt64(pCtx->idContext);
     Msg.enmType.SetUInt32(VBOX_SHCL_REPLYMSGTYPE_LIST_OPEN);
     Msg.rc.SetUInt32((uint32_t)rcReply); /** int vs. uint32_t */
     Msg.cbPayload.SetUInt32(0);
@@ -987,7 +1018,7 @@ VBGLR3DECL(int) VbglR3ClipboardListCloseRecv(PVBGLR3SHCLCMDCTX pCtx, PSHCLLISTHA
     VBoxShClListCloseMsg Msg;
     RT_ZERO(Msg);
 
-    VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID,
+    VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->idClient,
                        VBOX_SHCL_GUEST_FN_MSG_GET, VBOX_SHCL_CPARMS_LIST_CLOSE);
 
     Msg.uContext.SetUInt64(VBOX_SHCL_HOST_MSG_TRANSFER_LIST_CLOSE);
@@ -996,7 +1027,7 @@ VBGLR3DECL(int) VbglR3ClipboardListCloseRecv(PVBGLR3SHCLCMDCTX pCtx, PSHCLLISTHA
     int rc = VbglR3HGCMCall(&Msg.hdr, sizeof(Msg));
     if (RT_SUCCESS(rc))
     {
-        rc = Msg.uContext.GetUInt64(&pCtx->uContextID);
+        rc = Msg.uContext.GetUInt64(&pCtx->idContext);
         if (RT_SUCCESS(rc))
             rc = Msg.uHandle.GetUInt64(phList); AssertRC(rc);
     }
@@ -1020,10 +1051,10 @@ VBGLR3DECL(int) VbglR3ClipboardListCloseReply(PVBGLR3SHCLCMDCTX pCtx, int rcRepl
     VBoxShClReplyMsg Msg;
     RT_ZERO(Msg);
 
-    VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID,
+    VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->idClient,
                        VBOX_SHCL_GUEST_FN_REPLY, VBOX_SHCL_CPARMS_REPLY_MIN + 1);
 
-    Msg.uContext.SetUInt64(pCtx->uContextID);
+    Msg.uContext.SetUInt64(pCtx->idContext);
     Msg.enmType.SetUInt32(VBOX_SHCL_REPLYMSGTYPE_LIST_CLOSE);
     Msg.rc.SetUInt32((uint32_t)rcReply); /** int vs. uint32_t */
     Msg.cbPayload.SetUInt32(0);
@@ -1051,10 +1082,10 @@ VBGLR3DECL(int) VbglR3ClipboardListCloseSend(PVBGLR3SHCLCMDCTX pCtx, SHCLLISTHAN
     VBoxShClListCloseMsg Msg;
     RT_ZERO(Msg);
 
-    VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID,
+    VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->idClient,
                        VBOX_SHCL_GUEST_FN_LIST_CLOSE, VBOX_SHCL_CPARMS_LIST_CLOSE);
 
-    Msg.uContext.SetUInt64(pCtx->uContextID);
+    Msg.uContext.SetUInt64(pCtx->idContext);
     Msg.uHandle.SetUInt64(hList);
 
     int rc = VbglR3HGCMCall(&Msg.hdr, sizeof(Msg));
@@ -1081,10 +1112,10 @@ VBGLR3DECL(int) VbglR3ClipboardListHdrRead(PVBGLR3SHCLCMDCTX pCtx, SHCLLISTHANDL
     VBoxShClListHdrMsg Msg;
     RT_ZERO(Msg);
 
-    VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID,
+    VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->idClient,
                        VBOX_SHCL_GUEST_FN_LIST_HDR_READ, VBOX_SHCL_CPARMS_LIST_HDR);
 
-    Msg.ReqParms.uContext.SetUInt64(pCtx->uContextID);
+    Msg.ReqParms.uContext.SetUInt64(pCtx->idContext);
     Msg.ReqParms.uHandle.SetUInt64(hList);
     Msg.ReqParms.fFlags.SetUInt32(fFlags);
 
@@ -1124,7 +1155,7 @@ VBGLR3DECL(int) VbglR3ClipboardListHdrReadRecvReq(PVBGLR3SHCLCMDCTX pCtx, PSHCLL
     VBoxShClListHdrReadReqMsg Msg;
     RT_ZERO(Msg);
 
-    VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID,
+    VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->idClient,
                        VBOX_SHCL_GUEST_FN_MSG_GET, VBOX_SHCL_CPARMS_LIST_HDR_READ_REQ);
 
     Msg.ReqParms.uContext.SetUInt64(VBOX_SHCL_HOST_MSG_TRANSFER_LIST_HDR_READ);
@@ -1134,7 +1165,7 @@ VBGLR3DECL(int) VbglR3ClipboardListHdrReadRecvReq(PVBGLR3SHCLCMDCTX pCtx, PSHCLL
     int rc = VbglR3HGCMCall(&Msg.hdr, sizeof(Msg));
     if (RT_SUCCESS(rc))
     {
-        rc = Msg.ReqParms.uContext.GetUInt64(&pCtx->uContextID);
+        rc = Msg.ReqParms.uContext.GetUInt64(&pCtx->idContext);
         if (RT_SUCCESS(rc))
             rc = Msg.ReqParms.uHandle.GetUInt64(phList);
         if (RT_SUCCESS(rc))
@@ -1162,10 +1193,10 @@ VBGLR3DECL(int) VbglR3ClipboardListHdrWrite(PVBGLR3SHCLCMDCTX pCtx, SHCLLISTHAND
     VBoxShClListHdrMsg Msg;
     RT_ZERO(Msg);
 
-    VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID,
+    VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->idClient,
                        VBOX_SHCL_GUEST_FN_LIST_HDR_WRITE, VBOX_SHCL_CPARMS_LIST_HDR);
 
-    Msg.ReqParms.uContext.SetUInt64(pCtx->uContextID);
+    Msg.ReqParms.uContext.SetUInt64(pCtx->idContext);
     Msg.ReqParms.uHandle.SetUInt64(hList);
     Msg.ReqParms.fFlags.SetUInt32(0);
 
@@ -1197,10 +1228,10 @@ VBGLR3DECL(int) VbglR3ClipboardListEntryRead(PVBGLR3SHCLCMDCTX pCtx, SHCLLISTHAN
     VBoxShClListEntryMsg Msg;
     RT_ZERO(Msg);
 
-    VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID,
+    VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->idClient,
                        VBOX_SHCL_GUEST_FN_LIST_ENTRY_READ, VBOX_SHCL_CPARMS_LIST_ENTRY);
 
-    Msg.ReqParms.uContext.SetUInt64(pCtx->uContextID);
+    Msg.ReqParms.uContext.SetUInt64(pCtx->idContext);
     Msg.ReqParms.uHandle.SetUInt64(hList);
     Msg.ReqParms.fInfo.SetUInt32(0);
 
@@ -1235,7 +1266,7 @@ VBGLR3DECL(int) VbglR3ClipboardListEntryReadRecvReq(PVBGLR3SHCLCMDCTX pCtx, PSHC
     VBoxShClListEntryReadReqMsg Msg;
     RT_ZERO(Msg);
 
-    VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID,
+    VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->idClient,
                        VBOX_SHCL_GUEST_FN_MSG_GET, VBOX_SHCL_CPARMS_LIST_ENTRY_READ);
 
     Msg.ReqParms.uContext.SetUInt64(VBOX_SHCL_HOST_MSG_TRANSFER_LIST_ENTRY_READ);
@@ -1245,7 +1276,7 @@ VBGLR3DECL(int) VbglR3ClipboardListEntryReadRecvReq(PVBGLR3SHCLCMDCTX pCtx, PSHC
     int rc = VbglR3HGCMCall(&Msg.hdr, sizeof(Msg));
     if (RT_SUCCESS(rc))
     {
-        rc = Msg.ReqParms.uContext.GetUInt64(&pCtx->uContextID);
+        rc = Msg.ReqParms.uContext.GetUInt64(&pCtx->idContext);
         if (RT_SUCCESS(rc))
             rc = Msg.ReqParms.uHandle.GetUInt64(phList); AssertRC(rc);
         if (RT_SUCCESS(rc))
@@ -1273,10 +1304,10 @@ VBGLR3DECL(int) VbglR3ClipboardListEntryWrite(PVBGLR3SHCLCMDCTX pCtx, SHCLLISTHA
     VBoxShClListEntryMsg Msg;
     RT_ZERO(Msg);
 
-    VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID,
+    VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->idClient,
                        VBOX_SHCL_GUEST_FN_LIST_ENTRY_WRITE, VBOX_SHCL_CPARMS_LIST_ENTRY);
 
-    Msg.ReqParms.uContext.SetUInt64(pCtx->uContextID);
+    Msg.ReqParms.uContext.SetUInt64(pCtx->idContext);
     Msg.ReqParms.uHandle.SetUInt64(hList);
     Msg.ReqParms.fInfo.SetUInt32(pListEntry->fInfo);
 
@@ -1305,7 +1336,7 @@ VBGLR3DECL(int) VbglR3ClipboardObjOpenRecv(PVBGLR3SHCLCMDCTX pCtx, PSHCLOBJOPENC
     VBoxShClObjOpenMsg Msg;
     RT_ZERO(Msg);
 
-    VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID,
+    VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->idClient,
                        VBOX_SHCL_GUEST_FN_MSG_GET, VBOX_SHCL_CPARMS_OBJ_OPEN);
 
     Msg.uContext.SetUInt64(VBOX_SHCL_HOST_MSG_TRANSFER_OBJ_OPEN);
@@ -1317,7 +1348,7 @@ VBGLR3DECL(int) VbglR3ClipboardObjOpenRecv(PVBGLR3SHCLCMDCTX pCtx, PSHCLOBJOPENC
     int rc = VbglR3HGCMCall(&Msg.hdr, sizeof(Msg));
     if (RT_SUCCESS(rc))
     {
-        rc = Msg.uContext.GetUInt64(&pCtx->uContextID);
+        rc = Msg.uContext.GetUInt64(&pCtx->idContext);
         if (RT_SUCCESS(rc))
             rc = Msg.cbPath.GetUInt32(&pCreateParms->cbPath);
         if (RT_SUCCESS(rc))
@@ -1343,10 +1374,10 @@ VBGLR3DECL(int) VbglR3ClipboardObjOpenReply(PVBGLR3SHCLCMDCTX pCtx, int rcReply,
     VBoxShClReplyMsg Msg;
     RT_ZERO(Msg);
 
-    VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID,
+    VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->idClient,
                        VBOX_SHCL_GUEST_FN_REPLY, VBOX_SHCL_CPARMS_REPLY_MIN + 1);
 
-    Msg.uContext.SetUInt64(pCtx->uContextID);
+    Msg.uContext.SetUInt64(pCtx->idContext);
     Msg.enmType.SetUInt32(VBOX_SHCL_REPLYMSGTYPE_OBJ_OPEN);
     Msg.rc.SetUInt32((uint32_t)rcReply); /** int vs. uint32_t */
     Msg.cbPayload.SetUInt32(0);
@@ -1378,10 +1409,10 @@ VBGLR3DECL(int) VbglR3ClipboardObjOpenSend(PVBGLR3SHCLCMDCTX pCtx, PSHCLOBJOPENC
     VBoxShClObjOpenMsg Msg;
     RT_ZERO(Msg);
 
-    VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID,
+    VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->idClient,
                        VBOX_SHCL_GUEST_FN_OBJ_OPEN, VBOX_SHCL_CPARMS_OBJ_OPEN);
 
-    Msg.uContext.SetUInt64(pCtx->uContextID);
+    Msg.uContext.SetUInt64(pCtx->idContext);
     Msg.uHandle.SetUInt64(0);
     Msg.cbPath.SetUInt32(pCreateParms->cbPath);
     Msg.szPath.SetPtr((void *)pCreateParms->pszPath, pCreateParms->cbPath);
@@ -1412,7 +1443,7 @@ VBGLR3DECL(int) VbglR3ClipboardObjCloseRecv(PVBGLR3SHCLCMDCTX pCtx, PSHCLOBJHAND
     VBoxShClObjCloseMsg Msg;
     RT_ZERO(Msg);
 
-    VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID,
+    VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->idClient,
                        VBOX_SHCL_GUEST_FN_MSG_GET, VBOX_SHCL_CPARMS_OBJ_CLOSE);
 
     Msg.uContext.SetUInt64(VBOX_SHCL_HOST_MSG_TRANSFER_OBJ_CLOSE);
@@ -1421,7 +1452,7 @@ VBGLR3DECL(int) VbglR3ClipboardObjCloseRecv(PVBGLR3SHCLCMDCTX pCtx, PSHCLOBJHAND
     int rc = VbglR3HGCMCall(&Msg.hdr, sizeof(Msg));
     if (RT_SUCCESS(rc))
     {
-        rc = Msg.uContext.GetUInt64(&pCtx->uContextID);
+        rc = Msg.uContext.GetUInt64(&pCtx->idContext);
         if (RT_SUCCESS(rc))
             rc = Msg.uHandle.GetUInt64(phObj);
     }
@@ -1445,10 +1476,10 @@ VBGLR3DECL(int) VbglR3ClipboardObjCloseReply(PVBGLR3SHCLCMDCTX pCtx, int rcReply
     VBoxShClReplyMsg Msg;
     RT_ZERO(Msg);
 
-    VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID,
+    VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->idClient,
                        VBOX_SHCL_GUEST_FN_REPLY, VBOX_SHCL_CPARMS_REPLY_MIN + 1);
 
-    Msg.uContext.SetUInt64(pCtx->uContextID);
+    Msg.uContext.SetUInt64(pCtx->idContext);
     Msg.enmType.SetUInt32(VBOX_SHCL_REPLYMSGTYPE_OBJ_CLOSE);
     Msg.rc.SetUInt32((uint32_t)rcReply); /** int vs. uint32_t */
     Msg.cbPayload.SetUInt32(0);
@@ -1476,10 +1507,10 @@ VBGLR3DECL(int) VbglR3ClipboardObjCloseSend(PVBGLR3SHCLCMDCTX pCtx, SHCLOBJHANDL
     VBoxShClObjCloseMsg Msg;
     RT_ZERO(Msg);
 
-    VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID,
+    VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->idClient,
                        VBOX_SHCL_GUEST_FN_OBJ_CLOSE, VBOX_SHCL_CPARMS_OBJ_CLOSE);
 
-    Msg.uContext.SetUInt64(pCtx->uContextID);
+    Msg.uContext.SetUInt64(pCtx->idContext);
     Msg.uHandle.SetUInt64(hObj);
 
     int rc = VbglR3HGCMCall(&Msg.hdr, sizeof(Msg));
@@ -1508,7 +1539,7 @@ VBGLR3DECL(int) VbglR3ClipboardObjReadRecv(PVBGLR3SHCLCMDCTX pCtx, PSHCLOBJHANDL
     VBoxShClObjReadReqMsg Msg;
     RT_ZERO(Msg);
 
-    VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID,
+    VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->idClient,
                        VBOX_SHCL_GUEST_FN_MSG_GET, VBOX_SHCL_CPARMS_OBJ_READ_REQ);
 
     Msg.ReqParms.uContext.SetUInt64(VBOX_SHCL_HOST_MSG_TRANSFER_OBJ_READ);
@@ -1519,7 +1550,7 @@ VBGLR3DECL(int) VbglR3ClipboardObjReadRecv(PVBGLR3SHCLCMDCTX pCtx, PSHCLOBJHANDL
     int rc = VbglR3HGCMCall(&Msg.hdr, sizeof(Msg));
     if (RT_SUCCESS(rc))
     {
-        rc = Msg.ReqParms.uContext.GetUInt64(&pCtx->uContextID);
+        rc = Msg.ReqParms.uContext.GetUInt64(&pCtx->idContext);
         if (RT_SUCCESS(rc))
             rc = Msg.ReqParms.uHandle.GetUInt64(phObj);
         if (RT_SUCCESS(rc))
@@ -1553,10 +1584,10 @@ VBGLR3DECL(int) VbglR3ClipboardObjReadSend(PVBGLR3SHCLCMDCTX pCtx, SHCLOBJHANDLE
     VBoxShClObjReadWriteMsg Msg;
     RT_ZERO(Msg);
 
-    VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID,
+    VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->idClient,
                        VBOX_SHCL_GUEST_FN_OBJ_READ, VBOX_SHCL_CPARMS_OBJ_READ);
 
-    Msg.uContext.SetUInt64(pCtx->uContextID);
+    Msg.uContext.SetUInt64(pCtx->idContext);
     Msg.uHandle.SetUInt64(hObj);
     Msg.cbData.SetUInt32(cbData);
     Msg.pvData.SetPtr(pvData, cbData);
@@ -1600,10 +1631,10 @@ VBGLR3DECL(int) VbglR3ClipboardObjWriteSend(PVBGLR3SHCLCMDCTX pCtx, SHCLOBJHANDL
     VBoxShClObjReadWriteMsg Msg;
     RT_ZERO(Msg);
 
-    VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID,
+    VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->idClient,
                        VBOX_SHCL_GUEST_FN_OBJ_WRITE, VBOX_SHCL_CPARMS_OBJ_WRITE);
 
-    Msg.uContext.SetUInt64(pCtx->uContextID);
+    Msg.uContext.SetUInt64(pCtx->idContext);
     Msg.uHandle.SetUInt64(hObj);
     Msg.pvData.SetPtr(pvData, cbData);
     Msg.cbData.SetUInt32(cbData);
@@ -2281,7 +2312,7 @@ VBGLR3DECL(int) VbglR3ClipboardEventGetNext(uint32_t idMsg, uint32_t cParms,
     else
     {
         /* Report error back to the host. */
-        int rc2 = VbglR3ClipboardWriteError(pCtx->uClientID, rc);
+        int rc2 = VbglR3ClipboardWriteError(pCtx->idClient, rc);
         AssertRC(rc2);
     }
 
@@ -2392,7 +2423,7 @@ VBGLR3DECL(int) VbglR3ClipboardWriteDataEx(PVBGLR3SHCLCMDCTX pCtx, PSHCLDATABLOC
 
     if (pCtx->fUseLegacyProtocol)
     {
-        rc = VbglR3ClipboardWriteData(pCtx->uClientID, pData->uFormat, pData->pvData, pData->cbData);
+        rc = VbglR3ClipboardWriteData(pCtx->idClient, pData->uFormat, pData->pvData, pData->cbData);
     }
     else
     {
@@ -2402,12 +2433,12 @@ VBGLR3DECL(int) VbglR3ClipboardWriteDataEx(PVBGLR3SHCLCMDCTX pCtx, PSHCLDATABLOC
             VBoxShClParmDataWrite   Parms;
         } Msg;
 
-        VBGL_HGCM_HDR_INIT(&Msg.Hdr, pCtx->uClientID, VBOX_SHCL_GUEST_FN_DATA_WRITE, VBOX_SHCL_CPARMS_DATA_WRITE);
-        Msg.Parms.id64Context.SetUInt64(pCtx->uContextID);
+        VBGL_HGCM_HDR_INIT(&Msg.Hdr, pCtx->idClient, VBOX_SHCL_GUEST_FN_DATA_WRITE, VBOX_SHCL_CPARMS_DATA_WRITE);
+        Msg.Parms.id64Context.SetUInt64(pCtx->idContext);
         Msg.Parms.f32Format.SetUInt32(pData->uFormat);
         Msg.Parms.pData.SetPtr(pData->pvData, pData->cbData);
 
-        LogFlowFunc(("CID=%RU32\n", pCtx->uContextID));
+        LogFlowFunc(("CID=%RU32\n", pCtx->idContext));
 
         rc = VbglR3HGCMCall(&Msg.Hdr, sizeof(Msg));
     }

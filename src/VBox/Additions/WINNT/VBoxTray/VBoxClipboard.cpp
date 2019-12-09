@@ -256,7 +256,7 @@ static LRESULT vboxClipboardWinProcessMsg(PSHCLCONTEXT pCtx, HWND hwnd, UINT msg
                     if (RT_SUCCESS(rc))
                     {
                         LogFunc(("WM_CLIPBOARDUPDATE: Reporting formats %#x\n", Formats.Formats));
-                        rc = VbglR3ClipboardReportFormats(pCtx->CmdCtx.uClientID, Formats.Formats);
+                        rc = VbglR3ClipboardReportFormats(pCtx->CmdCtx.idClient, Formats.Formats);
                     }
                 }
                 else
@@ -302,7 +302,7 @@ static LRESULT vboxClipboardWinProcessMsg(PSHCLCONTEXT pCtx, HWND hwnd, UINT msg
                     rc = SharedClipboardWinGetFormats(pWinCtx, &Formats);
                     if (   RT_SUCCESS(rc)
                         && Formats.Formats != VBOX_SHCL_FMT_NONE)
-                        rc = VbglR3ClipboardReportFormats(pCtx->CmdCtx.uClientID, Formats.Formats);
+                        rc = VbglR3ClipboardReportFormats(pCtx->CmdCtx.idClient, Formats.Formats);
                 }
                 else
                 {
@@ -646,7 +646,7 @@ static LRESULT vboxClipboardWinProcessMsg(PSHCLCONTEXT pCtx, HWND hwnd, UINT msg
                     LogFunc(("SHCL_WIN_WM_READ_DATA: hClip=NULL, lastError=%ld\n", GetLastError()));
 
                     /* Requested clipboard format is not available, send empty data. */
-                    VbglR3ClipboardWriteData(pCtx->CmdCtx.uClientID, VBOX_SHCL_FMT_NONE, NULL, 0);
+                    VbglR3ClipboardWriteData(pCtx->CmdCtx.idClient, VBOX_SHCL_FMT_NONE, NULL, 0);
                 }
 
                 SharedClipboardWinClose();
@@ -921,7 +921,7 @@ DECLCALLBACK(int) VBoxShClInit(const PVBOXSERVICEENV pEnv, void **ppInstance)
     {
         rc = SharedClipboardWinCtxInit(&pCtx->Win);
         if (RT_SUCCESS(rc))
-            rc = VbglR3ClipboardConnectEx(&pCtx->CmdCtx);
+            rc = VbglR3ClipboardConnectEx(&pCtx->CmdCtx, VBOX_SHCL_GF_0_CONTEXT_ID);
         if (RT_SUCCESS(rc))
         {
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
@@ -1003,7 +1003,7 @@ DECLCALLBACK(int) VBoxShClWorker(void *pInstance, bool volatile *pfShutdown)
 
         if (pCtx->CmdCtx.fUseLegacyProtocol)
         {
-            rc = VbglR3ClipboardGetHostMsgOld(pCtx->CmdCtx.uClientID, &uMsg, &uFormats);
+            rc = VbglR3ClipboardGetHostMsgOld(pCtx->CmdCtx.idClient, &uMsg, &uFormats);
             if (RT_FAILURE(rc))
             {
                 if (rc == VERR_INTERRUPTED)
@@ -1178,8 +1178,8 @@ DECLCALLBACK(int) VBoxShClStop(void *pInstance)
 
     /* Disconnect from the host service.
      * This will also send a VBOX_SHCL_HOST_MSG_QUIT from the host so that we can break out from our message worker. */
-    VbglR3ClipboardDisconnect(pCtx->CmdCtx.uClientID);
-    pCtx->CmdCtx.uClientID = 0;
+    VbglR3ClipboardDisconnect(pCtx->CmdCtx.idClient);
+    pCtx->CmdCtx.idClient = 0;
 
     LogFlowFuncLeaveRC(VINF_SUCCESS);
     return VINF_SUCCESS;
@@ -1193,7 +1193,7 @@ DECLCALLBACK(void) VBoxShClDestroy(void *pInstance)
     AssertPtr(pCtx);
 
     /* Make sure that we are disconnected. */
-    Assert(pCtx->CmdCtx.uClientID == 0);
+    Assert(pCtx->CmdCtx.idClient == 0);
 
     vboxClipboardDestroy(pCtx);
 

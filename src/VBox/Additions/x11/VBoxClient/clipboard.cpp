@@ -183,7 +183,7 @@ DECLCALLBACK(void) ShClX11ReportFormatsCallback(PSHCLCONTEXT pCtx, SHCLFORMATS f
 
     LogFlowFunc(("Formats=0x%x\n", fFormats));
 
-    int rc2 = VbglR3ClipboardReportFormats(pCtx->CmdCtx.uClientID, fFormats);
+    int rc2 = VbglR3ClipboardReportFormats(pCtx->CmdCtx.idClient, fFormats);
     RT_NOREF(rc2);
     LogFlowFuncLeaveRC(rc2);
 }
@@ -239,7 +239,7 @@ static int vboxClipboardConnect(void)
         rc = ShClX11ThreadStart(&g_Ctx.X11, false /* grab */);
         if (RT_SUCCESS(rc))
         {
-            rc = VbglR3ClipboardConnectEx(&g_Ctx.CmdCtx);
+            rc = VbglR3ClipboardConnectEx(&g_Ctx.CmdCtx, VBOX_SHCL_GF_0_CONTEXT_ID);
             if (RT_FAILURE(rc))
                 ShClX11ThreadStop(&g_Ctx.X11);
         }
@@ -285,10 +285,10 @@ int vboxClipboardMain(void)
             uint32_t uMsg;
             uint32_t uFormats;
 
-            rc = VbglR3ClipboardGetHostMsgOld(pCtx->CmdCtx.uClientID, &uMsg, &uFormats);
+            rc = VbglR3ClipboardGetHostMsgOld(pCtx->CmdCtx.idClient, &uMsg, &uFormats);
             if (RT_FAILURE(rc))
             {
-                if (rc == VERR_INTERRUPTED)
+                if (rc == VERR_INTERRUPTED) /** @todo r=bird: What on earth is the meaning of this?!?!?!?!?!?!? */
                     break;
 
                 LogFunc(("Error getting host message, rc=%Rrc\n", rc));

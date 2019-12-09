@@ -292,8 +292,9 @@ ClipboardClientMap g_mapClients;
  *  to process new commands. The key is the (unique) client ID. */
 ClipboardClientQueue g_listClientsDeferred;
 
-/** Host feature mask for VBOX_SHCL_GUEST_FN_REPORT_FEATURES/VBOX_SHCL_GUEST_FN_QUERY_FEATURES. */
-static uint64_t const g_fHostFeatures0 = VBOX_SHCL_HF_NONE;
+/** Host feature mask (VBOX_SHCL_HF_0_XXX) for VBOX_SHCL_GUEST_FN_REPORT_FEATURES
+ * and VBOX_SHCL_GUEST_FN_QUERY_FEATURES. */
+static uint64_t const g_fHostFeatures0 = VBOX_SHCL_HF_0_CONTEXT_ID;
 
 
 /**
@@ -1848,30 +1849,9 @@ static DECLCALLBACK(void) svcCall(void *,
             break;
 
         case VBOX_SHCL_GUEST_FN_CONNECT:
-        {
-            if (cParms != VBOX_SHCL_CPARMS_CONNECT)
-            {
-                rc = VERR_INVALID_PARAMETER;
-            }
-            else if (   paParms[0].type != VBOX_HGCM_SVC_PARM_32BIT  /* cbChunkSize */
-                     || paParms[1].type != VBOX_HGCM_SVC_PARM_32BIT  /* enmCompression */
-                     || paParms[2].type != VBOX_HGCM_SVC_PARM_32BIT) /* enmChecksumType */
-            {
-                rc = VERR_INVALID_PARAMETER;
-            }
-            else if (ShClSvcGetMode() == VBOX_SHCL_MODE_OFF)
-            {
-                rc = VERR_ACCESS_DENIED;
-            }
-            else
-            {
-                /* Report back supported chunk size to the guest. */
-                HGCMSvcSetU32(&paParms[0], _64K); /* Chunk size */ /** @todo Make chunk size dynamic. */
-
-                rc = VINF_SUCCESS;
-            }
+            LogRel(("6.1.0 beta or rc additions detected. Please upgrade!\n"));
+            rc = VERR_NOT_IMPLEMENTED;
             break;
-        }
 
         case VBOX_SHCL_GUEST_FN_REPORT_FEATURES:
             rc = shClSvcClientReportFeatures(pClient, callHandle, cParms, paParms);
