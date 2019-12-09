@@ -936,7 +936,7 @@ EFI_STATUS fsw_efi_dnode_getinfo(IN FSW_FILE_DATA *File,
 
         Status = fsw_efi_dnode_fill_FileInfo(Volume, File->shand.dnode, BufferSize, Buffer);
 
-    } else if (CompareGuid(InformationType, &GUID_NAME(FileSystemInfo)) == 0) {
+    } else if (CompareGuid(InformationType, &GUID_NAME(FileSystemInfo))) {
 #if DEBUG_LEVEL
         Print(L"fsw_efi_dnode_getinfo: FILE_SYSTEM_INFO\n");
 #endif
