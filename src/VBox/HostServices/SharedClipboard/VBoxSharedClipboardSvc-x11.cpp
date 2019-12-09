@@ -193,21 +193,21 @@ int ShClSvcImplReadData(PSHCLCLIENT pClient,
     CLIPREADCBREQ *pReq = (CLIPREADCBREQ *)RTMemAllocZ(sizeof(CLIPREADCBREQ));
     if (pReq)
     {
-        const SHCLEVENTID uEvent = ShClEventIDGenerate(&pClient->Events);
+        const SHCLEVENTID uEvent = ShClEventIDGenerate(&pClient->EventSrc);
 
         pReq->pv        = pData->pvData;
         pReq->cb        = pData->cbData;
         pReq->pcbActual = pcbActual;
         pReq->uEvent    = uEvent;
 
-        rc = ShClEventRegister(&pClient->Events, uEvent);
+        rc = ShClEventRegister(&pClient->EventSrc, uEvent);
         if (RT_SUCCESS(rc))
         {
             rc = ShClX11ReadDataFromX11(&pClient->State.pCtx->X11, pData->uFormat, pReq);
             if (RT_SUCCESS(rc))
             {
                 PSHCLEVENTPAYLOAD pPayload;
-                rc = ShClEventWait(&pClient->Events, uEvent, 30 * 1000, &pPayload);
+                rc = ShClEventWait(&pClient->EventSrc, uEvent, 30 * 1000, &pPayload);
                 if (RT_SUCCESS(rc))
                 {
                     memcpy(pData->pvData,  pPayload->pvData, RT_MIN(pData->cbData, pPayload->cbData));
@@ -217,7 +217,7 @@ int ShClSvcImplReadData(PSHCLCLIENT pClient,
                 }
             }
 
-            ShClEventUnregister(&pClient->Events, uEvent);
+            ShClEventUnregister(&pClient->EventSrc, uEvent);
         }
     }
     else
@@ -303,7 +303,7 @@ DECLCALLBACK(void) ShClX11RequestFromX11CompleteCallback(PSHCLCONTEXT pCtx, int 
             AssertRC(rc2);
         }
 
-        rc2 = ShClEventSignal(&pCtx->pClient->Events, pReq->uEvent, pPayload);
+        rc2 = ShClEventSignal(&pCtx->pClient->EventSrc, pReq->uEvent, pPayload);
         AssertRC(rc2);
     }
 
@@ -355,17 +355,17 @@ DECLCALLBACK(int) ShClX11RequestDataForX11Callback(PSHCLCONTEXT pCtx, SHCLFORMAT
         if (RT_SUCCESS(rc))
         {
             PSHCLEVENTPAYLOAD pPayload;
-            rc = ShClEventWait(&pCtx->pClient->Events, uEvent, 30 * 1000, &pPayload);
+            rc = ShClEventWait(&pCtx->pClient->EventSrc, uEvent, 30 * 1000, &pPayload);
             if (RT_SUCCESS(rc))
             {
                 *ppv = pPayload->pvData;
                 *pcb = pPayload->cbData;
 
                 /* Detach the payload, as the caller then will own the data. */
-                ShClEventPayloadDetach(&pCtx->pClient->Events, uEvent);
+                ShClEventPayloadDetach(&pCtx->pClient->EventSrc, uEvent);
             }
 
-            ShClEventUnregister(&pCtx->pClient->Events, uEvent);
+            ShClEventUnregister(&pCtx->pClient->EventSrc, uEvent);
         }
     }
 
@@ -398,9 +398,9 @@ int ShClSvcImplTransferGetRoots(PSHCLCLIENT pClient, PSHCLTRANSFER pTransfer)
 {
     LogFlowFuncEnter();
 
-    SHCLEVENTID uEvent = ShClEventIDGenerate(&pClient->Events);
+    SHCLEVENTID uEvent = ShClEventIDGenerate(&pClient->EventSrc);
 
-    int rc = ShClEventRegister(&pClient->Events, uEvent);
+    int rc = ShClEventRegister(&pClient->EventSrc, uEvent);
     if (RT_SUCCESS(rc))
     {
         CLIPREADCBREQ *pReq = (CLIPREADCBREQ *)RTMemAllocZ(sizeof(CLIPREADCBREQ));
@@ -413,7 +413,7 @@ int ShClSvcImplTransferGetRoots(PSHCLCLIENT pClient, PSHCLTRANSFER pTransfer)
             {
                 /* X supplies the data asynchronously, so we need to wait for data to arrive first. */
                 PSHCLEVENTPAYLOAD pPayload;
-                rc = ShClEventWait(&pClient->Events, uEvent, 30 * 1000, &pPayload);
+                rc = ShClEventWait(&pClient->EventSrc, uEvent, 30 * 1000, &pPayload);
                 if (RT_SUCCESS(rc))
                 {
                     rc = ShClTransferRootsSet(pTransfer,
@@ -422,7 +422,7 @@ int ShClSvcImplTransferGetRoots(PSHCLCLIENT pClient, PSHCLTRANSFER pTransfer)
             }
         }
 
-        ShClEventUnregister(&pClient->Events, uEvent);
+        ShClEventUnregister(&pClient->EventSrc, uEvent);
     }
 
     LogFlowFuncLeaveRC(rc);

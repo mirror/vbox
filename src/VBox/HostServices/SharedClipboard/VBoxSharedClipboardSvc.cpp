@@ -51,7 +51,7 @@
  * parallel, the service will process them one at the time.
  *
  * There are currently four messages defined.  The first is
- * VBOX_SHCL_GUEST_FN_MSG_GET / VBOX_SHCL_GUEST_FN_GET_HOST_MSG_OLD, which waits
+ * VBOX_SHCL_GUEST_FN_MSG_GET / VBOX_SHCL_GUEST_FN_MSG_OLD_GET_WAIT, which waits
  * for a message from the host.  If a host message is sent while the guest is
  * not waiting, it will be queued until the guest requests it.  The host code
  * only supports a single simultaneous GET call from one client guest.
@@ -77,7 +77,7 @@
  *
  * Since VBox 6.1 a newer protocol (v1) has been established to also support
  * file transfers. This protocol uses a (per-client) message queue instead
- * (see VBOX_SHCL_GUEST_FN_GET_HOST_MSG_OLD vs. VBOX_SHCL_GUEST_FN_GET_HOST_MSG).
+ * (see VBOX_SHCL_GUEST_FN_MSG_OLD_GET_WAIT vs. VBOX_SHCL_GUEST_FN_GET_HOST_MSG).
  *
  * To distinguish the old (legacy) or new(er) protocol, the VBOX_SHCL_GUEST_FN_CONNECT
  * message has been introduced. If an older guest does not send this message,
@@ -294,7 +294,11 @@ ClipboardClientQueue g_listClientsDeferred;
 
 /** Host feature mask (VBOX_SHCL_HF_0_XXX) for VBOX_SHCL_GUEST_FN_REPORT_FEATURES
  * and VBOX_SHCL_GUEST_FN_QUERY_FEATURES. */
-static uint64_t const g_fHostFeatures0 = VBOX_SHCL_HF_0_CONTEXT_ID;
+static uint64_t const g_fHostFeatures0 = VBOX_SHCL_HF_0_CONTEXT_ID
+#ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
+                                       | VBOX_SHCL_HF_0_TRANSFERS
+#endif
+                                       ;
 
 
 /**
@@ -448,7 +452,7 @@ void shClSvcMsgSetPeekReturn(PSHCLCLIENTMSG pMsg, PVBOXHGCMSVCPARM paDstParms, u
 }
 
 /**
- * Sets the VBOX_SHCL_GUEST_FN_GET_HOST_MSG_OLD return parameters.
+ * Sets the VBOX_SHCL_GUEST_FN_MSG_OLD_GET_WAIT return parameters.
  *
  * This function does the necessary translation between the legacy protocol (<= VBox 6.0) and the new protocols (>= VBox 6.1),
  * as messages are always stored as >= v1 messages in the message queue.
@@ -586,10 +590,10 @@ int shClSvcClientInit(PSHCLCLIENT pClient, uint32_t uClientID)
     if (RT_SUCCESS(rc))
     {
         /* Create the client's own event source. */
-        rc = ShClEventSourceCreate(&pClient->Events, 0 /* ID, ignored */);
+        rc = ShClEventSourceCreate(&pClient->EventSrc, 0 /* ID, ignored */);
         if (RT_SUCCESS(rc))
         {
-            LogFlowFunc(("[Client %RU32] Using event source %RU32\n", uClientID, pClient->Events.uID));
+            LogFlowFunc(("[Client %RU32] Using event source %RU32\n", uClientID, pClient->EventSrc.uID));
 
             /* Reset the client state. */
             shclSvcClientStateReset(&pClient->State);
@@ -620,18 +624,22 @@ void shClSvcClientDestroy(PSHCLCLIENT pClient)
     LogFlowFunc(("[Client %RU32]\n", pClient->State.uClientID));
 
     /* Make sure to send a quit message to the guest so that it can terminate gracefully. */
+    RTCritSectEnter(&pClient->CritSect);
     if (pClient->Pending.uType)
     {
-        if (pClient->Pending.cParms >= 2)
-        {
+        if (pClient->Pending.cParms > 1)
             HGCMSvcSetU32(&pClient->Pending.paParms[0], VBOX_SHCL_HOST_MSG_QUIT);
+        if (pClient->Pending.cParms > 2)
             HGCMSvcSetU32(&pClient->Pending.paParms[1], 0);
-        }
         g_pHelpers->pfnCallComplete(pClient->Pending.hHandle, VINF_SUCCESS);
-        pClient->Pending.uType = 0;
+        pClient->Pending.uType   = 0;
+        pClient->Pending.cParms  = 0;
+        pClient->Pending.hHandle = NULL;
+        pClient->Pending.paParms = NULL;
     }
+    RTCritSectLeave(&pClient->CritSect);
 
-    ShClEventSourceDestroy(&pClient->Events);
+    ShClEventSourceDestroy(&pClient->EventSrc);
 
     shClSvcClientStateDestroy(&pClient->State);
 
@@ -665,7 +673,7 @@ void shClSvcClientReset(PSHCLCLIENT pClient)
     shClSvcMsgQueueReset(pClient);
 
     /* Reset event source. */
-    ShClEventSourceReset(&pClient->Events);
+    ShClEventSourceReset(&pClient->EventSrc);
 
     /* Reset pending state. */
     RT_ZERO(pClient->Pending);
@@ -771,9 +779,10 @@ int shClSvcClientQueryFeatures(VBOXHGCMCALLHANDLE hCall, uint32_t cParms, VBOXHG
  * @param   paParms     Array of parameters.
  * @param   fWait       Set if we should wait for a message, clear if to return
  *                      immediately.
+ *
+ * @note    Caller takes and leave the client's critical section.
  */
-int shClSvcMsgPeek(PSHCLCLIENT pClient, VBOXHGCMCALLHANDLE hCall, uint32_t cParms, VBOXHGCMSVCPARM paParms[],
-                   bool fWait)
+static int shClSvcClientMsgPeek(PSHCLCLIENT pClient, VBOXHGCMCALLHANDLE hCall, uint32_t cParms, VBOXHGCMSVCPARM paParms[], bool fWait)
 {
     /*
      * Validate the request.
@@ -850,7 +859,7 @@ int shClSvcMsgPeek(PSHCLCLIENT pClient, VBOXHGCMCALLHANDLE hCall, uint32_t cParm
 }
 
 /**
- * Implements VBOX_SHCL_GUEST_FN_GET_HOST_MSG_OLD.
+ * Implements VBOX_SHCL_GUEST_FN_MSG_OLD_GET_WAIT.
  *
  * @returns VBox status code.
  * @retval  VINF_SUCCESS if a message was pending and is being returned.
@@ -860,8 +869,10 @@ int shClSvcMsgPeek(PSHCLCLIENT pClient, VBOXHGCMCALLHANDLE hCall, uint32_t cParm
  * @param   hCall       The client's call handle.
  * @param   cParms      Number of parameters.
  * @param   paParms     Array of parameters.
+ *
+ * @note    Caller takes and leave the client's critical section.
  */
-int shClSvcMsgGetOld(PSHCLCLIENT pClient, VBOXHGCMCALLHANDLE hCall, uint32_t cParms, VBOXHGCMSVCPARM paParms[])
+static int shClSvcClientMsgOldGet(PSHCLCLIENT pClient, VBOXHGCMCALLHANDLE hCall, uint32_t cParms, VBOXHGCMSVCPARM paParms[])
 {
     int rc;
 
@@ -909,7 +920,7 @@ int shClSvcMsgGetOld(PSHCLCLIENT pClient, VBOXHGCMCALLHANDLE hCall, uint32_t cPa
             pClient->Pending.hHandle = hCall;
             pClient->Pending.cParms  = cParms;
             pClient->Pending.paParms = paParms;
-            pClient->Pending.uType   = VBOX_SHCL_GUEST_FN_GET_HOST_MSG_OLD;
+            pClient->Pending.uType   = VBOX_SHCL_GUEST_FN_MSG_OLD_GET_WAIT;
 
             rc = VINF_HGCM_ASYNC_EXECUTE; /* The caller must not complete it. */
 
@@ -938,8 +949,10 @@ int shClSvcMsgGetOld(PSHCLCLIENT pClient, VBOXHGCMCALLHANDLE hCall, uint32_t cPa
  * @param   hCall        The client's call handle.
  * @param   cParms       Number of parameters.
  * @param   paParms      Array of parameters.
+ *
+ * @note    Called from within pClient->CritSect.
  */
-int shClSvcMsgGet(PSHCLCLIENT pClient, VBOXHGCMCALLHANDLE hCall, uint32_t cParms, VBOXHGCMSVCPARM paParms[])
+static int shClSvcClientMsgGet(PSHCLCLIENT pClient, VBOXHGCMCALLHANDLE hCall, uint32_t cParms, VBOXHGCMSVCPARM paParms[])
 {
     /*
      * Validate the request.
@@ -1047,6 +1060,72 @@ int shClSvcMsgGet(PSHCLCLIENT pClient, VBOXHGCMCALLHANDLE hCall, uint32_t cParms
 }
 
 /**
+ * Implements VBOX_SHCL_GUEST_FN_MSG_GET.
+ *
+ * @returns VBox status code.
+ * @retval  VINF_SUCCESS if message retrieved and removed from the pending queue.
+ * @retval  VERR_TRY_AGAIN if no message pending.
+ * @retval  VERR_MISMATCH if the incoming message ID does not match the pending.
+ * @retval  VINF_HGCM_ASYNC_EXECUTE if message was completed already.
+ *
+ * @param   pClient      The client state.
+ * @param   cParms       Number of parameters.
+ *
+ * @note    Called from within pClient->CritSect.
+ */
+static int shClSvcClientMsgCancel(PSHCLCLIENT pClient, uint32_t cParms)
+{
+    /*
+     * Validate the request.
+     */
+    ASSERT_GUEST_MSG_RETURN(cParms == 0, ("cParms=%u!\n", cParms), VERR_WRONG_PARAMETER_COUNT);
+
+    /*
+     * Execute.
+     */
+    if (pClient->Pending.uType != 0)
+    {
+        LogFlowFunc(("[Client %RU32] Cancelling waiting thread, isPending=%d, pendingNumParms=%RU32, m_idSession=%x\n",
+                     pClient->State.uClientID, pClient->Pending.uType, pClient->Pending.cParms, pClient->State.uSessionID));
+
+        /*
+         * The PEEK call is simple: At least two parameters, all set to zero before sleeping.
+         */
+        int rcComplete;
+        if (pClient->Pending.uType == VBOX_SHCL_GUEST_FN_MSG_PEEK_WAIT)
+        {
+            Assert(pClient->Pending.cParms >= 2);
+            HGCMSvcSetU32(&pClient->Pending.paParms[0], VBOX_SHCL_HOST_MSG_CANCELED);
+            rcComplete = VINF_TRY_AGAIN;
+        }
+        /*
+         * The MSG_OLD call is complicated, though we're
+         * generally here to wake up someone who is peeking and have two parameters.
+         * If there aren't two parameters, fail the call.
+         */
+        else
+        {
+            Assert(pClient->Pending.uType == VBOX_SHCL_GUEST_FN_MSG_OLD_GET_WAIT);
+            if (pClient->Pending.cParms > 0)
+                HGCMSvcSetU32(&pClient->Pending.paParms[0], VBOX_SHCL_HOST_MSG_CANCELED);
+            if (pClient->Pending.cParms > 1)
+                HGCMSvcSetU32(&pClient->Pending.paParms[1], 0);
+            rcComplete = pClient->Pending.cParms == 2 ? VINF_SUCCESS : VERR_TRY_AGAIN;
+        }
+
+        g_pHelpers->pfnCallComplete(pClient->Pending.hHandle, rcComplete);
+
+        pClient->Pending.hHandle    = NULL;
+        pClient->Pending.paParms    = NULL;
+        pClient->Pending.cParms     = 0;
+        pClient->Pending.uType      = 0;
+        return VINF_SUCCESS;
+    }
+    return VWRN_NOT_FOUND;
+}
+
+
+/**
  * Wakes up a pending client (i.e. waiting for new messages).
  *
  * @returns VBox status code.
@@ -1080,7 +1159,7 @@ int shClSvcClientWakeup(PSHCLCLIENT pClient)
                     shClSvcMsgSetPeekReturn(pFirstMsg, pClient->Pending.paParms, pClient->Pending.cParms);
                     fDonePending = true;
                 }
-                else if (pClient->Pending.uType == VBOX_SHCL_GUEST_FN_GET_HOST_MSG_OLD) /* Legacy, Guest Additions < 6.1. */
+                else if (pClient->Pending.uType == VBOX_SHCL_GUEST_FN_MSG_OLD_GET_WAIT) /* Legacy, Guest Additions < 6.1. */
                 {
                     bool fRemove;
                     rc = shClSvcMsgSetGetHostMsgOldReturn(pFirstMsg, pClient->Pending.paParms, pClient->Pending.cParms,
@@ -1131,8 +1210,7 @@ int shClSvcClientWakeup(PSHCLCLIENT pClient)
  * @param   pDataReq            Data request to send to the guest.
  * @param   puEvent             Event ID for waiting for new data. Optional.
  */
-int ShClSvcDataReadRequest(PSHCLCLIENT pClient, PSHCLDATAREQ pDataReq,
-                           PSHCLEVENTID puEvent)
+int ShClSvcDataReadRequest(PSHCLCLIENT pClient, PSHCLDATAREQ pDataReq, PSHCLEVENTID puEvent)
 {
     AssertPtrReturn(pClient,  VERR_INVALID_POINTER);
     AssertPtrReturn(pDataReq, VERR_INVALID_POINTER);
@@ -1146,12 +1224,12 @@ int ShClSvcDataReadRequest(PSHCLCLIENT pClient, PSHCLDATAREQ pDataReq,
                                                   VBOX_SHCL_CPARMS_READ_DATA_REQ);
     if (pMsgReadData)
     {
-        const SHCLEVENTID uEvent = ShClEventIDGenerate(&pClient->Events);
+        const SHCLEVENTID uEvent = ShClEventIDGenerate(&pClient->EventSrc);
 
         LogFlowFunc(("uFmt=0x%x\n", pDataReq->uFmt));
 
         HGCMSvcSetU64(&pMsgReadData->paParms[0], VBOX_SHCL_CONTEXTID_MAKE(pClient->State.uSessionID,
-                                                                          pClient->Events.uID, uEvent));
+                                                                          pClient->EventSrc.uID, uEvent));
         HGCMSvcSetU32(&pMsgReadData->paParms[1], 0 /* fFlags */);
         HGCMSvcSetU32(&pMsgReadData->paParms[2], pDataReq->uFmt);
         HGCMSvcSetU32(&pMsgReadData->paParms[3], pClient->State.cbChunkSize);
@@ -1159,7 +1237,7 @@ int ShClSvcDataReadRequest(PSHCLCLIENT pClient, PSHCLDATAREQ pDataReq,
         rc = shClSvcMsgAdd(pClient, pMsgReadData, true /* fAppend */);
         if (RT_SUCCESS(rc))
         {
-            rc = ShClEventRegister(&pClient->Events, uEvent);
+            rc = ShClEventRegister(&pClient->EventSrc, uEvent);
             if (RT_SUCCESS(rc))
             {
                 rc = shClSvcClientWakeup(pClient);
@@ -1169,7 +1247,7 @@ int ShClSvcDataReadRequest(PSHCLCLIENT pClient, PSHCLDATAREQ pDataReq,
                         *puEvent = uEvent;
                 }
                 else
-                    ShClEventUnregister(&pClient->Events, uEvent);
+                    ShClEventUnregister(&pClient->EventSrc, uEvent);
             }
         }
     }
@@ -1194,7 +1272,7 @@ int ShClSvcDataReadSignal(PSHCLCLIENT pClient, PSHCLCLIENTCMDCTX pCmdCtx,
     {
         /* Older Guest Additions (<= VBox 6.0) did not have any context ID handling, so we ASSUME that the last event registered
          * is the one we want to handle (as this all was a synchronous protocol anyway). */
-        uEvent = ShClEventGetLast(&pClient->Events);
+        uEvent = ShClEventGetLast(&pClient->EventSrc);
     }
     else
         uEvent = VBOX_SHCL_CONTEXTID_GET_EVENT(pCmdCtx->uContextID);
@@ -1207,7 +1285,7 @@ int ShClSvcDataReadSignal(PSHCLCLIENT pClient, PSHCLCLIENTCMDCTX pCmdCtx,
 
     if (RT_SUCCESS(rc))
     {
-        rc = ShClEventSignal(&pClient->Events, uEvent, pPayload);
+        rc = ShClEventSignal(&pClient->EventSrc, uEvent, pPayload);
         if (RT_FAILURE(rc))
             ShClPayloadFree(pPayload);
     }
@@ -1252,10 +1330,10 @@ int ShClSvcFormatsReport(PSHCLCLIENT pClient, PSHCLFORMATDATA pFormats)
     PSHCLCLIENTMSG pMsg = shClSvcMsgAlloc(VBOX_SHCL_HOST_MSG_FORMATS_REPORT, 3);
     if (pMsg)
     {
-        const SHCLEVENTID uEvent = ShClEventIDGenerate(&pClient->Events);
+        const SHCLEVENTID uEvent = ShClEventIDGenerate(&pClient->EventSrc);
 
         HGCMSvcSetU64(&pMsg->paParms[0], VBOX_SHCL_CONTEXTID_MAKE(pClient->State.uSessionID,
-                                                                  pClient->Events.uID, uEvent));
+                                                                  pClient->EventSrc.uID, uEvent));
         HGCMSvcSetU32(&pMsg->paParms[1], fFormats);
         HGCMSvcSetU32(&pMsg->paParms[2], fFlags);
 
@@ -1294,7 +1372,7 @@ int ShClSvcFormatsReport(PSHCLCLIENT pClient, PSHCLFORMATDATA pFormats)
 /**
  * Handles the VBOX_SHCL_GUEST_FN_REPORT_FORMATS message from the guest.
  */
-static int shClSvcGuestReportFormats(PSHCLCLIENT pClient, uint32_t cParms, VBOXHGCMSVCPARM paParms[])
+static int shClSvcClientReportFormats(PSHCLCLIENT pClient, uint32_t cParms, VBOXHGCMSVCPARM paParms[])
 {
     /*
      * Check if the service mode allows this operation and whether the guest is
@@ -1389,7 +1467,7 @@ static int shClSvcGuestReportFormats(PSHCLCLIENT pClient, uint32_t cParms, VBOXH
 /**
  * Handles the VBOX_SHCL_GUEST_FN_DATA_READ message from the guest.
  */
-static int shClSvcGetDataRead(PSHCLCLIENT pClient, uint32_t cParms, VBOXHGCMSVCPARM paParms[])
+static int shClSvcClientReadData(PSHCLCLIENT pClient, uint32_t cParms, VBOXHGCMSVCPARM paParms[])
 {
     LogFlowFuncEnter();
 
@@ -1551,7 +1629,7 @@ static int shClSvcGetDataRead(PSHCLCLIENT pClient, uint32_t cParms, VBOXHGCMSVCP
     return rc;
 }
 
-int shClSvcGetDataWrite(PSHCLCLIENT pClient, uint32_t cParms, VBOXHGCMSVCPARM paParms[])
+int shClSvcClientWriteData(PSHCLCLIENT pClient, uint32_t cParms, VBOXHGCMSVCPARM paParms[])
 {
     LogFlowFuncEnter();
 
@@ -1590,7 +1668,7 @@ int shClSvcGetDataWrite(PSHCLCLIENT pClient, uint32_t cParms, VBOXHGCMSVCPARM pa
     {
         ASSERT_GUEST_RETURN(paParms[iParm].type == VBOX_HGCM_SVC_PARM_64BIT, VERR_WRONG_PARAMETER_TYPE);
         cmdCtx.uContextID = paParms[iParm].u.uint64;
-        uint64_t const idCtxExpected = VBOX_SHCL_CONTEXTID_MAKE(pClient->State.uSessionID, pClient->Events.uID,
+        uint64_t const idCtxExpected = VBOX_SHCL_CONTEXTID_MAKE(pClient->State.uSessionID, pClient->EventSrc.uID,
                                                                 VBOX_SHCL_CONTEXTID_GET_EVENT(cmdCtx.uContextID));
         ASSERT_GUEST_MSG_RETURN(cmdCtx.uContextID == idCtxExpected,
                                 ("Wrong context ID: %#RX64, expected %#RX64\n", cmdCtx.uContextID, idCtxExpected),
@@ -1675,7 +1753,7 @@ int shClSvcGetDataWrite(PSHCLCLIENT pClient, uint32_t cParms, VBOXHGCMSVCPARM pa
  * @param   paParms             Array of HGCM parameters.
  * @param   pRc                 Where to store the received error code.
  */
-static int shClSvcGetError(uint32_t cParms, VBOXHGCMSVCPARM paParms[], int *pRc)
+static int shClSvcClientError(uint32_t cParms, VBOXHGCMSVCPARM paParms[], int *pRc)
 {
     AssertPtrReturn(paParms, VERR_INVALID_PARAMETER);
     AssertPtrReturn(pRc,     VERR_INVALID_PARAMETER);
@@ -1822,30 +1900,28 @@ static DECLCALLBACK(void) svcCall(void *,
                                   uint64_t tsArrival)
 {
     RT_NOREF(u32ClientID, pvClient, tsArrival);
-
-    int rc = VINF_SUCCESS;
-
     PSHCLCLIENT pClient = (PSHCLCLIENT)pvClient;
     AssertPtr(pClient);
 
+#ifdef LOG_ENABLED
     LogFunc(("u32ClientID=%RU32, fn=%RU32 (%s), cParms=%RU32, paParms=%p\n",
              u32ClientID, u32Function, ShClGuestMsgToStr(u32Function), cParms, paParms));
-
-#ifdef LOG_ENABLED
     for (uint32_t i = 0; i < cParms; i++)
     {
         /** @todo parameters other than 32 bit */
         LogFunc(("    paParms[%d]: type %RU32 - value %RU32\n", i, paParms[i].type, paParms[i].u.uint32));
     }
-#endif
-
     LogFunc(("Client state: fFlags=0x%x, fGuestFeatures0=0x%x, fGuestFeatures1=0x%x\n",
              pClient->State.fFlags, pClient->State.fGuestFeatures0, pClient->State.fGuestFeatures1));
+#endif
 
+    int rc;
     switch (u32Function)
     {
-        case VBOX_SHCL_GUEST_FN_GET_HOST_MSG_OLD:
-            rc = shClSvcMsgGetOld(pClient, callHandle, cParms, paParms);
+        case VBOX_SHCL_GUEST_FN_MSG_OLD_GET_WAIT:
+            RTCritSectEnter(&pClient->CritSect);
+            rc = shClSvcClientMsgOldGet(pClient, callHandle, cParms, paParms);
+            RTCritSectLeave(&pClient->CritSect);
             break;
 
         case VBOX_SHCL_GUEST_FN_CONNECT:
@@ -1862,52 +1938,45 @@ static DECLCALLBACK(void) svcCall(void *,
             break;
 
         case VBOX_SHCL_GUEST_FN_MSG_PEEK_NOWAIT:
-            rc = shClSvcMsgPeek(pClient, callHandle, cParms, paParms, false /*fWait*/);
+            RTCritSectEnter(&pClient->CritSect);
+            rc = shClSvcClientMsgPeek(pClient, callHandle, cParms, paParms, false /*fWait*/);
+            RTCritSectLeave(&pClient->CritSect);
             break;
 
         case VBOX_SHCL_GUEST_FN_MSG_PEEK_WAIT:
-            rc = shClSvcMsgPeek(pClient, callHandle, cParms, paParms, true /*fWait*/);
+            RTCritSectEnter(&pClient->CritSect);
+            rc = shClSvcClientMsgPeek(pClient, callHandle, cParms, paParms, true /*fWait*/);
+            RTCritSectLeave(&pClient->CritSect);
             break;
 
         case VBOX_SHCL_GUEST_FN_MSG_GET:
-            rc = shClSvcMsgGet(pClient, callHandle, cParms, paParms);
+            RTCritSectEnter(&pClient->CritSect);
+            rc = shClSvcClientMsgGet(pClient, callHandle, cParms, paParms);
+            RTCritSectLeave(&pClient->CritSect);
+            break;
+
+        case VBOX_SHCL_GUEST_FN_MSG_CANCEL:
+            RTCritSectEnter(&pClient->CritSect);
+            rc = shClSvcClientMsgCancel(pClient, cParms);
+            RTCritSectLeave(&pClient->CritSect);
             break;
 
         case VBOX_SHCL_GUEST_FN_REPORT_FORMATS:
-            rc = shClSvcGuestReportFormats(pClient, cParms, paParms);
+            rc = shClSvcClientReportFormats(pClient, cParms, paParms);
             break;
 
         case VBOX_SHCL_GUEST_FN_DATA_READ:
-            rc = shClSvcGetDataRead(pClient, cParms, paParms);
+            rc = shClSvcClientReadData(pClient, cParms, paParms);
             break;
 
         case VBOX_SHCL_GUEST_FN_DATA_WRITE:
-            rc = shClSvcGetDataWrite(pClient, cParms, paParms);
+            rc = shClSvcClientWriteData(pClient, cParms, paParms);
             break;
-
-        case VBOX_SHCL_GUEST_FN_CANCEL:
-        {
-            LogRel2(("Shared Clipboard: Operation canceled by guest side\n"));
-
-            /** @todo r=bird: What on earth is this?   The only user of this message
-             * (VBOX_SHCL_GUEST_FN_CANCEL) is VbglR3ClipboardMsgPeekWait(), where it was
-             * copied over from guest control.  What happens here is _nothing_ like what it
-             * expects to happen.  See GstCtrlService::clientMsgCancel for a reference.
-             */
-
-            /* Reset client state and start over. */
-            shclSvcClientStateReset(&pClient->State);
-#ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
-            shClSvcClientTransfersReset(pClient);
-#endif
-            /** @todo Do we need to do anything else here? */
-            break;
-        }
 
         case VBOX_SHCL_GUEST_FN_ERROR:
         {
             int rcGuest;
-            rc = shClSvcGetError(cParms,paParms, &rcGuest);
+            rc = shClSvcClientError(cParms,paParms, &rcGuest);
             if (RT_SUCCESS(rc))
             {
                 LogRel(("Shared Clipboard: Error from guest side: %Rrc\n", rcGuest));
@@ -1924,7 +1993,8 @@ static DECLCALLBACK(void) svcCall(void *,
         default:
         {
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
-            if (u32Function <= VBOX_SHCL_GUEST_FN_LAST)
+            if (   u32Function <= VBOX_SHCL_GUEST_FN_LAST
+                && (pClient->State.fGuestFeatures0 &  VBOX_SHCL_GF_0_CONTEXT_ID) )
             {
                 if (g_fTransferMode & VBOX_SHCL_TRANSFER_MODE_ENABLED)
                     rc = shClSvcTransferHandler(pClient, callHandle, u32Function, cParms, paParms, tsArrival);

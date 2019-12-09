@@ -332,7 +332,7 @@ VBGLR3DECL(int) VbglR3ClipboardGetHostMsgOld(HGCMCLIENTID idClient, uint32_t *pi
     VBoxShClGetHostMsgOld Msg;
 
     VBGL_HGCM_HDR_INIT(&Msg.hdr, idClient,
-                       VBOX_SHCL_GUEST_FN_GET_HOST_MSG_OLD, VBOX_SHCL_CPARMS_GET_HOST_MSG_OLD);
+                       VBOX_SHCL_GUEST_FN_MSG_OLD_GET_WAIT, VBOX_SHCL_CPARMS_GET_HOST_MSG_OLD);
 
     VbglHGCMParmUInt32Set(&Msg.msg, 0);
     VbglHGCMParmUInt32Set(&Msg.formats, 0);
@@ -514,7 +514,7 @@ int VbglR3ClipboardMsgPeekWait(PVBGLR3SHCLCMDCTX pCtx, uint32_t *pidMsg, uint32_
      */
     if (rc == VERR_INTERRUPTED)
     {
-        VBGL_HGCM_HDR_INIT(&Msg.Hdr, pCtx->idClient, VBOX_SHCL_GUEST_FN_CANCEL, 0);
+        VBGL_HGCM_HDR_INIT(&Msg.Hdr, pCtx->idClient, VBOX_SHCL_GUEST_FN_MSG_CANCEL, 0);
         int rc2 = VbglR3HGCMCall(&Msg.Hdr, sizeof(Msg.Hdr));
         AssertRC(rc2);
     }
@@ -531,6 +531,7 @@ int VbglR3ClipboardMsgPeekWait(PVBGLR3SHCLCMDCTX pCtx, uint32_t *pidMsg, uint32_
 }
 
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
+
 /**
  * Reads a root list header from the host.
  *
@@ -2257,6 +2258,7 @@ VBGLR3DECL(int) VbglR3ClipboardEventGetNextEx(uint32_t idMsg, uint32_t cParms,
     LogFlowFuncLeaveRC(rc);
     return rc;
 }
+
 #endif /* VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS */
 
 VBGLR3DECL(int) VbglR3ClipboardEventGetNext(uint32_t idMsg, uint32_t cParms,

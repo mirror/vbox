@@ -145,9 +145,8 @@ typedef struct _SHCLCLIENT
     /** The client's message queue (FIFO). */
     RTCList<SHCLCLIENTMSG *> queueMsg;
     /** The client's own event source.
-     *  Needed for events which are not bound to a specific transfer.
-     * @todo r=bird: s/Events/EventSrc/ !!  */
-    SHCLEVENTSOURCE          Events;
+     *  Needed for events which are not bound to a specific transfer. */
+    SHCLEVENTSOURCE          EventSrc;
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
     /** Transfer contextdata. */
     SHCLTRANSFERCTX          TransferCtx;
@@ -220,8 +219,6 @@ PSHCLCLIENTMSG shClSvcMsgAlloc(uint32_t uMsg, uint32_t cParms);
 void shClSvcMsgFree(PSHCLCLIENTMSG pMsg);
 void shClSvcMsgSetPeekReturn(PSHCLCLIENTMSG pMsg, PVBOXHGCMSVCPARM paDstParms, uint32_t cDstParms);
 int shClSvcMsgAdd(PSHCLCLIENT pClient, PSHCLCLIENTMSG pMsg, bool fAppend);
-int shClSvcMsgPeek(PSHCLCLIENT pClient, VBOXHGCMCALLHANDLE hCall, uint32_t cParms, VBOXHGCMSVCPARM paParms[], bool fWait);
-int shClSvcMsgGet(PSHCLCLIENT pClient, VBOXHGCMCALLHANDLE hCall, uint32_t cParms, VBOXHGCMSVCPARM paParms[]);
 
 int shClSvcClientInit(PSHCLCLIENT pClient, uint32_t uClientID);
 void shClSvcClientDestroy(PSHCLCLIENT pClient);

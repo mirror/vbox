@@ -751,7 +751,7 @@ bool shClSvcTransferMsgIsAllowed(uint32_t uMode, uint32_t uMsg)
             RT_FALL_THROUGH();
         case VBOX_SHCL_GUEST_FN_REPLY:
             RT_FALL_THROUGH();
-        case VBOX_SHCL_GUEST_FN_CANCEL:
+        case VBOX_SHCL_GUEST_FN_MSG_CANCEL:
             RT_FALL_THROUGH();
         case VBOX_SHCL_GUEST_FN_ERROR:
             RT_FALL_THROUGH();

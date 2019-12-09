@@ -72,6 +72,7 @@
 #define VBOX_SHCL_TRANSFER_MODE_VALID_MASK   UINT32_C(0x1)
 /** @} */
 
+
 /** @name VBOX_SHCL_HOST_FN_XXX - The service functions which are callable by host.
  * @note These are not sacred and can be modified at will as long as all host
  *       clients are updated accordingly (probably just Main).
@@ -85,6 +86,7 @@
 #define VBOX_SHCL_HOST_FN_SET_TRANSFER_MODE  2
 /** Run headless on the host, i.e. do not touch the host clipboard. */
 #define VBOX_SHCL_HOST_FN_SET_HEADLESS       3
+
 /** Reports cancellation of the current operation to the guest.
  * @since   6.1 - still a todo  */
 #define VBOX_SHCL_HOST_FN_CANCEL             4
@@ -105,171 +107,100 @@
 #define VBOX_SHCL_HOST_FN_AREA_DETACH        9
 /** @} */
 
+
 /** @name VBOX_SHCL_HOST_MSG_XXX - The host messages for the guest.
  * @{
  */
-/** Asks the client to quit / terminate. */
-#define VBOX_SHCL_HOST_MSG_QUIT                              1
-/** Reads (simple) data from the guest. */
-#define VBOX_SHCL_HOST_MSG_READ_DATA                         2
+/** Returned only when the HGCM client session is closed (by different thread).
+ *
+ * This can require no futher host interaction has session has been closed.
+ */
+#define VBOX_SHCL_HOST_MSG_QUIT                             1
+/** Request data for a specific format from the guest.
+ *
+ * This takes one parameter (in addition to the message number), a 32-bit
+ * format bit (VBOX_SHCL_FMT_XXX).  The guest will respond by issuing a
+ * VBOX_SHCL_GUEST_F_DATA_WRITE.
+ */
+#define VBOX_SHCL_HOST_MSG_READ_DATA                        2
 /** Reports available clipboard format from host to the guest.
  *  Formerly known as VBOX_SHCL_HOST_MSG_REPORT_FORMATS. */
-#define VBOX_SHCL_HOST_MSG_FORMATS_REPORT                    3
+#define VBOX_SHCL_HOST_MSG_FORMATS_REPORT                   3
+/** Message PEEK or GET operation was canceled, try again.
+ * @since   6.1.0
+ */
+#define VBOX_SHCL_HOST_MSG_CANCELED                         4
 
 /** Sends a transfer status to the guest side.
- *
- * @retval  VINF_SUCCESS on success.
- * @retval  VERR_INVALID_CLIENT_ID
- * @retval  VERR_WRONG_PARAMETER_COUNT
- * @retval  VERR_WRONG_PARAMETER_TYPE
- * @since   6.1
+ * @since   6.1.?
  */
 #define VBOX_SHCL_HOST_MSG_TRANSFER_STATUS                   50
 /** Reads the root list header from the guest.
- *
- * @retval  VINF_SUCCESS on success.
- * @retval  VERR_INVALID_CLIENT_ID
- * @retval  VERR_WRONG_PARAMETER_COUNT
- * @retval  VERR_WRONG_PARAMETER_TYPE
- * @since   6.1
+ * @since   6.1.?
  */
 #define VBOX_SHCL_HOST_MSG_TRANSFER_ROOT_LIST_HDR_READ       51
 /** Writes the root list header to the guest.
- *
- * @retval  VINF_SUCCESS on success.
- * @retval  VERR_INVALID_CLIENT_ID
- * @retval  VERR_WRONG_PARAMETER_COUNT
- * @retval  VERR_WRONG_PARAMETER_TYPE
- * @since   6.1
+ * @since   6.1.?
  */
 #define VBOX_SHCL_HOST_MSG_TRANSFER_ROOT_LIST_HDR_WRITE      52
 /** Reads a root list entry from the guest.
- *
- * @retval  VINF_SUCCESS on success.
- * @retval  VERR_INVALID_CLIENT_ID
- * @retval  VERR_WRONG_PARAMETER_COUNT
- * @retval  VERR_WRONG_PARAMETER_TYPE
- * @since   6.1
+ * @since   6.1.?
  */
 #define VBOX_SHCL_HOST_MSG_TRANSFER_ROOT_LIST_ENTRY_READ     53
 /** Writes a root list entry to the guest.
- *
- * @retval  VINF_SUCCESS on success.
- * @retval  VERR_INVALID_CLIENT_ID
- * @retval  VERR_WRONG_PARAMETER_COUNT
- * @retval  VERR_WRONG_PARAMETER_TYPE
- * @since   6.1
+ * @since   6.1.?
  */
 #define VBOX_SHCL_HOST_MSG_TRANSFER_ROOT_LIST_ENTRY_WRITE    54
 /** Open a transfer list on the guest side.
- *
- * @retval  VINF_SUCCESS on success.
- * @retval  VERR_INVALID_CLIENT_ID
- * @retval  VERR_WRONG_PARAMETER_COUNT
- * @retval  VERR_WRONG_PARAMETER_TYPE
- * @since   6.1
+ * @since   6.1.?
  */
 #define VBOX_SHCL_HOST_MSG_TRANSFER_LIST_OPEN                55
 /** Closes a formerly opened transfer list on the guest side.
- *
- * @retval  VINF_SUCCESS on success.
- * @retval  VERR_INVALID_CLIENT_ID
- * @retval  VERR_WRONG_PARAMETER_COUNT
- * @retval  VERR_WRONG_PARAMETER_TYPE
- * @since   6.1
+ * @since   6.1.?
  */
 #define VBOX_SHCL_HOST_MSG_TRANSFER_LIST_CLOSE               56
 /** Reads a list header from the guest.
- *
- * @retval  VINF_SUCCESS on success.
- * @retval  VERR_INVALID_CLIENT_ID
- * @retval  VERR_WRONG_PARAMETER_COUNT
- * @retval  VERR_WRONG_PARAMETER_TYPE
- * @since   6.1
+ * @since   6.1.?
  */
 #define VBOX_SHCL_HOST_MSG_TRANSFER_LIST_HDR_READ            57
 /** Writes a list header to the guest.
- *
- * @retval  VINF_SUCCESS on success.
- * @retval  VERR_INVALID_CLIENT_ID
- * @retval  VERR_WRONG_PARAMETER_COUNT
- * @retval  VERR_WRONG_PARAMETER_TYPE
- * @since   6.1
+ * @since   6.1.?
  */
 #define VBOX_SHCL_HOST_MSG_TRANSFER_LIST_HDR_WRITE           58
 /** Reads a list entry from the guest.
- *
- * @retval  VINF_SUCCESS on success.
- * @retval  VERR_INVALID_CLIENT_ID
- * @retval  VERR_WRONG_PARAMETER_COUNT
- * @retval  VERR_WRONG_PARAMETER_TYPE
- * @since   6.1
+ * @since   6.1.?
  */
 #define VBOX_SHCL_HOST_MSG_TRANSFER_LIST_ENTRY_READ          59
 /** Writes a list entry to the guest.
- *
- * @retval  VINF_SUCCESS on success.
- * @retval  VERR_INVALID_CLIENT_ID
- * @retval  VERR_WRONG_PARAMETER_COUNT
- * @retval  VERR_WRONG_PARAMETER_TYPE
- * @since   6.1
+ * @since   6.1.?
  */
 #define VBOX_SHCL_HOST_MSG_TRANSFER_LIST_ENTRY_WRITE         60
 /** Open a transfer object on the guest side.
- *
- * @retval  VINF_SUCCESS on success.
- * @retval  VERR_INVALID_CLIENT_ID
- * @retval  VERR_WRONG_PARAMETER_COUNT
- * @retval  VERR_WRONG_PARAMETER_TYPE
- * @since   6.1
+ * @since   6.1.?
  */
 #define VBOX_SHCL_HOST_MSG_TRANSFER_OBJ_OPEN                 61
 /** Closes a formerly opened transfer object on the guest side.
- *
- * @retval  VINF_SUCCESS on success.
- * @retval  VERR_INVALID_CLIENT_ID
- * @retval  VERR_WRONG_PARAMETER_COUNT
- * @retval  VERR_WRONG_PARAMETER_TYPE
- * @since   6.1
+ * @since   6.1.?
  */
 #define VBOX_SHCL_HOST_MSG_TRANSFER_OBJ_CLOSE                62
 /** Reads from an object on the guest side.
- *
- * @retval  VINF_SUCCESS on success.
- * @retval  VERR_INVALID_CLIENT_ID
- * @retval  VERR_WRONG_PARAMETER_COUNT
- * @retval  VERR_WRONG_PARAMETER_TYPE
- * @since   6.1
+ * @since   6.1.?
  */
 #define VBOX_SHCL_HOST_MSG_TRANSFER_OBJ_READ                 63
 /** Writes to an object on the guest side.
- *
- * @retval  VINF_SUCCESS on success.
- * @retval  VERR_INVALID_CLIENT_ID
- * @retval  VERR_WRONG_PARAMETER_COUNT
- * @retval  VERR_WRONG_PARAMETER_TYPE
- * @since   6.1
+ * @since   6.1.?
  */
 #define VBOX_SHCL_HOST_MSG_TRANSFER_OBJ_WRITE                64
 /** Indicates that the host has canceled a transfer.
- *
- * @retval  VINF_SUCCESS on success.
- * @retval  VERR_INVALID_CLIENT_ID
- * @retval  VERR_WRONG_PARAMETER_COUNT
- * @retval  VERR_WRONG_PARAMETER_TYPE
- * @since   6.1
+ * @since   6.1.?
  */
 #define VBOX_SHCL_HOST_MSG_TRANSFER_CANCEL                   65
 /** Indicates that the an unrecoverable error on the host occurred.
- *
- * @retval  VINF_SUCCESS on success.
- * @retval  VERR_INVALID_CLIENT_ID
- * @retval  VERR_WRONG_PARAMETER_COUNT
- * @retval  VERR_WRONG_PARAMETER_TYPE
- * @since   6.1
+ * @since   6.1.?
  */
 #define VBOX_SHCL_HOST_MSG_TRANSFER_ERROR                    66
 /** @} */
+
 
 /** @name VBOX_SHCL_GUEST_FN_XXX - The service functions which are called by guest.
  * @{
@@ -277,9 +208,10 @@
 /** Calls the host and waits (blocking) for an host event VBOX_SHCL_HOST_MSG_XXX.
  *
  * @deprecated Replaced by VBOX_SHCL_GUEST_FN_MSG_PEEK_WAIT,
- *             VBOX_SHCL_GUEST_FN_MSG_GET, VBOX_SHCL_GUEST_FN_CANCEL.
+ *             VBOX_SHCL_GUEST_FN_MSG_GET, VBOX_SHCL_GUEST_FN_MSG_CANCEL.
+ * @since   1.3.2
  */
-#define VBOX_SHCL_GUEST_FN_GET_HOST_MSG_OLD       1
+#define VBOX_SHCL_GUEST_FN_MSG_OLD_GET_WAIT         1
 /** Sends a list of available formats to the host.
  *
  * This function takes a single parameter, a 32-bit set of formats
@@ -298,8 +230,9 @@
  * @retval  VERR_WRONG_PARAMETER_TYPE
  * @retval  VERR_NOT_SUPPORTED if all the formats are unsupported, host
  *          clipboard will be empty.
+ * @since   1.3.2
  */
-#define VBOX_SHCL_GUEST_FN_REPORT_FORMATS         2
+#define VBOX_SHCL_GUEST_FN_REPORT_FORMATS           2
 /** Reads data in specified format from the host.
  *
  * This function takes three parameters, a 32-bit format bit
@@ -319,8 +252,9 @@
  * @retval  VERR_INVALID_CLIENT_ID
  * @retval  VERR_WRONG_PARAMETER_COUNT
  * @retval  VERR_WRONG_PARAMETER_TYPE
+ * @since   1.3.2
  */
-#define VBOX_SHCL_GUEST_FN_DATA_READ              3
+#define VBOX_SHCL_GUEST_FN_DATA_READ                3
 /** Writes requested data to the host.
  *
  * This function takes either 2 or 3 parameters.  The last two parameters are a
@@ -339,8 +273,9 @@
  * @retval  VERR_WRONG_PARAMETER_COUNT
  * @retval  VERR_WRONG_PARAMETER_TYPE
  * @retval  VERR_INVALID_CONTEXT if the context ID didn't match up.
+ * @since   1.3.2
  */
-#define VBOX_SHCL_GUEST_FN_DATA_WRITE             4
+#define VBOX_SHCL_GUEST_FN_DATA_WRITE               4
 
 /** This is a left-over from the 6.1 dev cycle and will always fail.
  *
@@ -352,7 +287,7 @@
  * @retval  VERR_NOT_IMPLEMENTED
  * @since   6.1
  */
-#define VBOX_SHCL_GUEST_FN_CONNECT                5
+#define VBOX_SHCL_GUEST_FN_CONNECT                  5
 /** Report guest side feature flags and retrieve the host ones.
  *
  * Two 64-bit parameters are passed in from the guest with the guest features
@@ -363,9 +298,9 @@
  * @retval  VERR_INVALID_CLIENT_ID
  * @retval  VERR_WRONG_PARAMETER_COUNT
  * @retval  VERR_WRONG_PARAMETER_TYPE
- * @since   6.1
+ * @since   6.1.0
  */
-#define VBOX_SHCL_GUEST_FN_REPORT_FEATURES        6
+#define VBOX_SHCL_GUEST_FN_REPORT_FEATURES          6
 /** Query the host ones feature masks.
  *
  * That way the guest (client) can get hold of the features from the host.
@@ -376,45 +311,102 @@
  * @retval  VERR_INVALID_CLIENT_ID
  * @retval  VERR_WRONG_PARAMETER_COUNT
  * @retval  VERR_WRONG_PARAMETER_TYPE
- * @since   6.1
+ * @since   6.1.0
  */
-#define VBOX_SHCL_GUEST_FN_QUERY_FEATURES         7
+#define VBOX_SHCL_GUEST_FN_QUERY_FEATURES           7
 /** Peeks at the next message, returning immediately.
  *
- * @retval  VINF_SUCCESS on success.
+ * Returns two 32-bit parameters, first is the message ID and the second the
+ * parameter count.  May optionally return additional 32-bit parameters with the
+ * sizes of respective message parameters.  To distinguish buffer sizes from
+ * integer parameters, the latter gets their sizes inverted (uint32_t is ~4U,
+ * uint64_t is ~8U).
+ *
+ * Does also support the VM restore checking as in VBOX_SHCL_GUEST_FN_MSG_PEEK_WAIT
+ * (64-bit param \# 0), see documentation there.
+ *
+ * @retval  VINF_SUCCESS if a message was pending and is being returned.
+ * @retval  VERR_TRY_AGAIN if no message pending.
+ * @retval  VERR_VM_RESTORED if first parameter is a non-zero 64-bit value that
+ *          does not match VbglR3GetSessionId() any more.  The new value is
+ *          returned.
  * @retval  VERR_INVALID_CLIENT_ID
  * @retval  VERR_WRONG_PARAMETER_COUNT
  * @retval  VERR_WRONG_PARAMETER_TYPE
- * @since   6.1
- * @todo r=bird: Either s/_FN_(MSG_)/_MSG_/ or  s/_FN_(MSG_)/_FN_/, the place
- *       you copied these from used _MSG_ instead of _FN_ in the general prefix.
+ * @since   6.1.0
  */
-#define VBOX_SHCL_GUEST_FN_MSG_PEEK_NOWAIT        8
+#define VBOX_SHCL_GUEST_FN_MSG_PEEK_NOWAIT          8
 /** Peeks at the next message, waiting for one to arrive.
  *
- * @retval  VINF_SUCCESS on success.
+ * Returns two 32-bit parameters, first is the message ID and the second the
+ * parameter count.  May optionally return additional 32-bit parameters with the
+ * sizes of respective message parameters.  To distinguish buffer sizes from
+ * integer parameters, the latter gets their sizes inverted (uint32_t is ~4U,
+ * uint64_t is ~8U).
+ *
+ * To facilitate VM restore checking, the first parameter can be a 64-bit
+ * integer holding the VbglR3GetSessionId() value the guest knowns.  The
+ * function will then check this before going to sleep and return
+ * VERR_VM_RESTORED if it doesn't match, same thing happens when the VM is
+ * restored.
+ *
+ * @retval  VINF_SUCCESS if info about an pending message is being returned.
+ * @retval  VINF_TRY_AGAIN and message set to VBOX_SHCL_HOST_MSG_CANCELED if
+ *          cancelled by VBOX_SHCL_GUEST_FN_MSG_CANCEL.
+ * @retval  VERR_RESOURCE_BUSY if another thread already made a waiting call.
+ * @retval  VERR_VM_RESTORED if first parameter is a non-zero 64-bit value that
+ *          does not match VbglR3GetSessionId() any more.  The new value is
+ *          returned.
  * @retval  VERR_INVALID_CLIENT_ID
  * @retval  VERR_WRONG_PARAMETER_COUNT
  * @retval  VERR_WRONG_PARAMETER_TYPE
- * @since   6.1
+ * @note    This replaces VBOX_SHCL_GUEST_FN_MSG_OLD_GET_WAIT.
+ * @since   6.1.0
  */
-#define VBOX_SHCL_GUEST_FN_MSG_PEEK_WAIT          9
+#define VBOX_SHCL_GUEST_FN_MSG_PEEK_WAIT            9
 /** Gets the next message, returning immediately.
  *
- * @retval  VINF_SUCCESS on success.
+ * All parameters are specific to the message being retrieved, however if the
+ * first one is an integer value it shall be an input parameter holding the
+ * ID of the message being retrieved.  While it would be nice to add a separate
+ * parameter for this purpose, this is done so because the code was liften from
+ * Guest Controls which had backwards compatibilities to consider and we just
+ * kept it like that.
+ *
+ * @retval  VINF_SUCCESS if message retrieved and removed from the pending queue.
+ * @retval  VERR_TRY_AGAIN if no message pending.
+ * @retval  VERR_MISMATCH if the incoming message ID does not match the pending.
+ * @retval  VERR_BUFFER_OVERFLOW if a parmeter buffer is too small.  The buffer
+ *          size was updated to reflect the required size.
  * @retval  VERR_INVALID_CLIENT_ID
  * @retval  VERR_WRONG_PARAMETER_COUNT
  * @retval  VERR_WRONG_PARAMETER_TYPE
- * @since   6.1
+ * @note    This replaces VBOX_SHCL_GUEST_FN_MSG_OLD_GET_WAIT.
+ * @since   6.1.0
  */
-#define VBOX_SHCL_GUEST_FN_MSG_GET                10
+#define VBOX_SHCL_GUEST_FN_MSG_GET                  10
+/** Cancels pending calls for this client session.
+ *
+ * This should be used if a VBOX_SHCL_GUEST_FN__MSG_PEEK_WAIT or
+ * VBOX_SHCL_GUEST_FN_MSG_OLD_GET_WAIT call gets interrupted on the client end,
+ * so as to prevent being rebuffed with VERR_RESOURCE_BUSY when restarting the
+ * call.
+ *
+ * @retval  VINF_SUCCESS if cancelled any calls.
+ * @retval  VWRN_NOT_FOUND if no callers.
+ * @retval  VERR_INVALID_CLIENT_ID
+ * @retval  VERR_WRONG_PARAMETER_COUNT
+ * @since   6.1.0
+ */
+#define VBOX_SHCL_GUEST_FN_MSG_CANCEL               26
+
 /** Replies to a function from the host.
  *
  * @retval  VINF_SUCCESS on success.
  * @retval  VERR_INVALID_CLIENT_ID
  * @retval  VERR_WRONG_PARAMETER_COUNT
  * @retval  VERR_WRONG_PARAMETER_TYPE
- * @since   6.1
+ * @since   6.1.x
  */
 #define VBOX_SHCL_GUEST_FN_REPLY                  11
 /** Gets the root list header from the host.
@@ -423,7 +415,7 @@
  * @retval  VERR_INVALID_CLIENT_ID
  * @retval  VERR_WRONG_PARAMETER_COUNT
  * @retval  VERR_WRONG_PARAMETER_TYPE
- * @since   6.1
+ * @since   6.1.x
  */
 #define VBOX_SHCL_GUEST_FN_ROOT_LIST_HDR_READ     12
 /** Sends the root list header to the host.
@@ -432,7 +424,7 @@
  * @retval  VERR_INVALID_CLIENT_ID
  * @retval  VERR_WRONG_PARAMETER_COUNT
  * @retval  VERR_WRONG_PARAMETER_TYPE
- * @since   6.1
+ * @since   6.1.x
  */
 #define VBOX_SHCL_GUEST_FN_ROOT_LIST_HDR_WRITE    13
 /** Gets a root list root entry from the host.
@@ -441,7 +433,7 @@
  * @retval  VERR_INVALID_CLIENT_ID
  * @retval  VERR_WRONG_PARAMETER_COUNT
  * @retval  VERR_WRONG_PARAMETER_TYPE
- * @since   6.1
+ * @since   6.1.x
  */
 #define VBOX_SHCL_GUEST_FN_ROOT_LIST_ENTRY_READ   14
 /** Sends a root list root entry to the host.
@@ -450,7 +442,7 @@
  * @retval  VERR_INVALID_CLIENT_ID
  * @retval  VERR_WRONG_PARAMETER_COUNT
  * @retval  VERR_WRONG_PARAMETER_TYPE
- * @since   6.1
+ * @since   6.1.x
  */
 #define VBOX_SHCL_GUEST_FN_ROOT_LIST_ENTRY_WRITE  15
 /** Opens / gets a list handle from the host.
@@ -459,7 +451,7 @@
  * @retval  VERR_INVALID_CLIENT_ID
  * @retval  VERR_WRONG_PARAMETER_COUNT
  * @retval  VERR_WRONG_PARAMETER_TYPE
- * @since   6.1
+ * @since   6.1.x
  */
 #define VBOX_SHCL_GUEST_FN_LIST_OPEN              16
 /** Closes a list handle from the host.
@@ -468,7 +460,7 @@
  * @retval  VERR_INVALID_CLIENT_ID
  * @retval  VERR_WRONG_PARAMETER_COUNT
  * @retval  VERR_WRONG_PARAMETER_TYPE
- * @since   6.1
+ * @since   6.1.x
  */
 #define VBOX_SHCL_GUEST_FN_LIST_CLOSE             17
 /** Reads a list header from the host.
@@ -477,7 +469,7 @@
  * @retval  VERR_INVALID_CLIENT_ID
  * @retval  VERR_WRONG_PARAMETER_COUNT
  * @retval  VERR_WRONG_PARAMETER_TYPE
- * @since   6.1
+ * @since   6.1.x
  */
 #define VBOX_SHCL_GUEST_FN_LIST_HDR_READ          18
 /** Writes a list header to the host.
@@ -486,7 +478,7 @@
  * @retval  VERR_INVALID_CLIENT_ID
  * @retval  VERR_WRONG_PARAMETER_COUNT
  * @retval  VERR_WRONG_PARAMETER_TYPE
- * @since   6.1
+ * @since   6.1.x
  */
 #define VBOX_SHCL_GUEST_FN_LIST_HDR_WRITE         19
 /** Reads a list entry from the host.
@@ -495,7 +487,7 @@
  * @retval  VERR_INVALID_CLIENT_ID
  * @retval  VERR_WRONG_PARAMETER_COUNT
  * @retval  VERR_WRONG_PARAMETER_TYPE
- * @since   6.1
+ * @since   6.1.x
  */
 #define VBOX_SHCL_GUEST_FN_LIST_ENTRY_READ        20
 /** Sends a list entry to the host.
@@ -504,7 +496,7 @@
  * @retval  VERR_INVALID_CLIENT_ID
  * @retval  VERR_WRONG_PARAMETER_COUNT
  * @retval  VERR_WRONG_PARAMETER_TYPE
- * @since   6.1
+ * @since   6.1.x
  */
 #define VBOX_SHCL_GUEST_FN_LIST_ENTRY_WRITE       21
 /** Opens an object on the host.
@@ -513,7 +505,7 @@
  * @retval  VERR_INVALID_CLIENT_ID
  * @retval  VERR_WRONG_PARAMETER_COUNT
  * @retval  VERR_WRONG_PARAMETER_TYPE
- * @since   6.1
+ * @since   6.1.x
  */
 #define VBOX_SHCL_GUEST_FN_OBJ_OPEN               22
 /** Closes an object on the host.
@@ -522,7 +514,7 @@
  * @retval  VERR_INVALID_CLIENT_ID
  * @retval  VERR_WRONG_PARAMETER_COUNT
  * @retval  VERR_WRONG_PARAMETER_TYPE
- * @since   6.1
+ * @since   6.1.x
  */
 #define VBOX_SHCL_GUEST_FN_OBJ_CLOSE              23
 /** Reads from an object on the host.
@@ -531,7 +523,7 @@
  * @retval  VERR_INVALID_CLIENT_ID
  * @retval  VERR_WRONG_PARAMETER_COUNT
  * @retval  VERR_WRONG_PARAMETER_TYPE
- * @since   6.1
+ * @since   6.1.x
  */
 #define VBOX_SHCL_GUEST_FN_OBJ_READ               24
 /** Writes to an object on the host.
@@ -540,19 +532,12 @@
  * @retval  VERR_INVALID_CLIENT_ID
  * @retval  VERR_WRONG_PARAMETER_COUNT
  * @retval  VERR_WRONG_PARAMETER_TYPE
- * @since   6.1
+ * @since   6.1.x
  */
 #define VBOX_SHCL_GUEST_FN_OBJ_WRITE              25
-/** Reports cancellation of the current operation to the host.
- *
- * @retval  VINF_SUCCESS on success.
- * @retval  VERR_INVALID_CLIENT_ID
- * @retval  VERR_WRONG_PARAMETER_COUNT
- * @retval  VERR_WRONG_PARAMETER_TYPE
- * @since   6.1
- */
-#define VBOX_SHCL_GUEST_FN_CANCEL                 26
 /** Reports an error to the host.
+ *
+ * @todo r=bird: Smells like GUEST_MSG_SKIP
  *
  * @retval  VINF_SUCCESS on success.
  * @retval  VERR_INVALID_CLIENT_ID
@@ -597,6 +582,9 @@
 #define VBOX_SHCL_GF_NONE                         0
 /** The guest can handle context IDs where applicable. */
 #define VBOX_SHCL_GF_0_CONTEXT_ID                 RT_BIT_64(0)
+/** The guest can copy & paste files and directories.
+ * @since 6.1.?  */
+#define VBOX_SHCL_GF_0_TRANSFERS                  RT_BIT_64(1)
 /** Bit that must be set in the 2nd parameter, will be cleared if the host reponds
  * correctly (old hosts might not). */
 #define VBOX_SHCL_GF_1_MUST_BE_ONE                RT_BIT_64(63)
@@ -610,6 +598,9 @@
 /** The host can handle context IDs where applicable as well as the new
  *  message handling functions. */
 #define VBOX_SHCL_HF_0_CONTEXT_ID                 RT_BIT_64(0)
+/** The host can copy & paste files and directories.
+ * @since 6.1.? */
+#define VBOX_SHCL_HF_0_TRANSFERS                  RT_BIT_64(1)
 /** @} */
 
 

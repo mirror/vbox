@@ -188,14 +188,14 @@ static int vboxClipboardSvcWinDataRead(PSHCLCONTEXT pCtx, UINT cfFormat,
     if (RT_SUCCESS(rc))
     {
         PSHCLEVENTPAYLOAD pPayload;
-        rc = ShClEventWait(&pCtx->pClient->Events, uEvent, 30 * 1000, &pPayload);
+        rc = ShClEventWait(&pCtx->pClient->EventSrc, uEvent, 30 * 1000, &pPayload);
         if (RT_SUCCESS(rc))
         {
             *ppvData = pPayload->pvData;
             *pcbData = pPayload->cbData;
 
             /* Detach the payload, as the caller then will own the data. */
-            ShClEventPayloadDetach(&pCtx->pClient->Events, uEvent);
+            ShClEventPayloadDetach(&pCtx->pClient->EventSrc, uEvent);
             /**
              * @todo r=bird: The payload has already been detached,
              * ShClEventPayloadDetach and ShClEventWait does the exact same
@@ -203,7 +203,7 @@ static int vboxClipboardSvcWinDataRead(PSHCLCONTEXT pCtx, UINT cfFormat,
              */
         }
 
-        ShClEventUnregister(&pCtx->pClient->Events, uEvent);
+        ShClEventUnregister(&pCtx->pClient->EventSrc, uEvent);
     }
 
     LogFlowFuncLeaveRC(rc);
