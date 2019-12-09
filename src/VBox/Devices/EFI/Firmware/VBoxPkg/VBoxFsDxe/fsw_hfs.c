@@ -1307,11 +1307,15 @@ static int fsw_hfs_btree_find_id(BTreeKey *record, void* param)
         file_name = vp->file_info.name;
 
         new_name.len = name_len + 1 + file_name->len;
-        new_name.size = 2 * new_name.len;
+        new_name.size = sizeof(fsw_u16) * new_name.len;
         fsw_alloc(new_name.size, &new_name.data);
         name_ptr = (fsw_u16*)new_name.data;
         /* Tack on path separator. */
+#ifdef HOST_POSIX
         name_ptr[0] = L'/';
+#else
+        name_ptr[0] = L'\\';
+#endif
         /* Copy over + swap the new path component. */
         for (i = 0; i < name_len; i++)
             name_ptr[i + 1] = be16_to_cpu(thread->nodeName.unicode[i]);
