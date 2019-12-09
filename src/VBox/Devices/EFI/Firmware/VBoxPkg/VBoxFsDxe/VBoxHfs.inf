@@ -63,6 +63,7 @@
   gEfiFileInfoGuid
   gEfiFileSystemInfoGuid
   gEfiFileSystemVolumeLabelInfoIdGuid
+  gVBoxFsBlessedFileInfoGuid
 
 [Protocols]
   gEfiDiskIoProtocolGuid

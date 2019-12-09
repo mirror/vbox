@@ -53,6 +53,8 @@
 # include <Guid/FileSystemVolumeLabelInfo.h>
 # include <Protocol/ComponentName.h>
 
+# include <Guid/VBoxFsBlessedFileInfo.h> /* For HFS blessed file support. */
+
 # define BS gBS
 # define PROTO_NAME(x) gEfi ## x ## Guid
 # define GUID_NAME(x) gEfi ## x ## Guid
