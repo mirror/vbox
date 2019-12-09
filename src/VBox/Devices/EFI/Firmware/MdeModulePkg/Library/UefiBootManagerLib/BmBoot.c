@@ -1015,7 +1015,7 @@ EFI_STATUS VBoxBmQueryMediaFileNameForSFs(EFI_HANDLE hSFs, CHAR16 **ppwszFileNam
     Status = pSFs->OpenVolume(pSFs, &pRoot);
     if (!EFI_ERROR(Status))
     {
-#if 1
+#if 0
 # define VBOX_EFI_APPLE_MEDIA_FILE_NAME L"\\System\\Library\\CoreServices\\boot.efi"
        EFI_FILE_PROTOCOL *pFile = NULL;
 
