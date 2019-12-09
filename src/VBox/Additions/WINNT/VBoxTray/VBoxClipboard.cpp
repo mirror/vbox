@@ -560,16 +560,16 @@ static LRESULT vboxClipboardWinProcessMsg(PSHCLCONTEXT pCtx, HWND hwnd, UINT msg
             AssertPtr(pEvent);
             Assert(pEvent->enmType == VBGLR3CLIPBOARDEVENTTYPE_READ_DATA);
 
-            const SHCLFORMAT uFormat = (uint32_t)pEvent->u.ReadData.uFmt;
+            const SHCLFORMAT fFormat = (uint32_t)pEvent->u.ReadData.uFmt;
 
             HANDLE hClip = NULL;
 
-            LogFlowFunc(("SHCL_WIN_WM_READ_DATA: uFormat=0x%x\n", uFormat));
+            LogFlowFunc(("SHCL_WIN_WM_READ_DATA: fFormat=%#x\n", fFormat));
 
             int rc = SharedClipboardWinOpen(hwnd);
             if (RT_SUCCESS(rc))
             {
-                if (uFormat == VBOX_SHCL_FMT_BITMAP)
+                if (fFormat & VBOX_SHCL_FMT_BITMAP)
                 {
                     hClip = GetClipboardData(CF_DIB);
                     if (hClip != NULL)
@@ -578,7 +578,7 @@ static LRESULT vboxClipboardWinProcessMsg(PSHCLCONTEXT pCtx, HWND hwnd, UINT msg
                         if (lp != NULL)
                         {
                             SHCLDATABLOCK dataBlock;
-                            dataBlock.uFormat = uFormat;
+                            dataBlock.uFormat = fFormat;
                             dataBlock.pvData  = lp;
                             dataBlock.cbData  = (uint32_t)GlobalSize(hClip);
 
@@ -592,7 +592,7 @@ static LRESULT vboxClipboardWinProcessMsg(PSHCLCONTEXT pCtx, HWND hwnd, UINT msg
                         }
                     }
                 }
-                else if (uFormat == VBOX_SHCL_FMT_UNICODETEXT)
+                else if (fFormat & VBOX_SHCL_FMT_UNICODETEXT)
                 {
                     hClip = GetClipboardData(CF_UNICODETEXT);
                     if (hClip != NULL)
@@ -601,7 +601,7 @@ static LRESULT vboxClipboardWinProcessMsg(PSHCLCONTEXT pCtx, HWND hwnd, UINT msg
                         if (uniString != NULL)
                         {
                             SHCLDATABLOCK dataBlock;
-                            dataBlock.uFormat = uFormat;
+                            dataBlock.uFormat = fFormat;
                             dataBlock.pvData  = uniString;
                             dataBlock.cbData  = ((uint32_t)lstrlenW(uniString) + 1) * 2;
 
@@ -615,7 +615,7 @@ static LRESULT vboxClipboardWinProcessMsg(PSHCLCONTEXT pCtx, HWND hwnd, UINT msg
                         }
                     }
                 }
-                else if (uFormat == VBOX_SHCL_FMT_HTML)
+                else if (fFormat & VBOX_SHCL_FMT_HTML)
                 {
                     UINT format = RegisterClipboardFormat(SHCL_WIN_REGFMT_HTML);
                     if (format != 0)
@@ -628,7 +628,7 @@ static LRESULT vboxClipboardWinProcessMsg(PSHCLCONTEXT pCtx, HWND hwnd, UINT msg
                             if (lp != NULL)
                             {
                                 SHCLDATABLOCK dataBlock;
-                                dataBlock.uFormat = uFormat;
+                                dataBlock.uFormat = fFormat;
                                 dataBlock.pvData  = lp;
                                 dataBlock.cbData  = (uint32_t)GlobalSize(hClip);
 

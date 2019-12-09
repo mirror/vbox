@@ -2259,11 +2259,11 @@ static void ShClX11ReadDataFromX11Worker(void *pvUserData, void * /* interval */
     CLIPREADX11CBREQ *pReq = (CLIPREADX11CBREQ *)pvUserData;
     SHCLX11CTX       *pCtx = pReq->mpCtx;
 
-    LogFlowFunc(("pReq->mFormat = %02X\n", pReq->mFormat));
+    LogFlowFunc(("pReq->mFormat = %02x\n", pReq->mFormat));
 
     int rc = VERR_NO_DATA; /* VBox thinks we have data and we don't. */
 
-    if (pReq->mFormat == VBOX_SHCL_FMT_UNICODETEXT)
+    if (pReq->mFormat & VBOX_SHCL_FMT_UNICODETEXT)
     {
         pReq->mX11Format = pCtx->X11TextFormat;
         if (pReq->mX11Format != SHCLX11FMT_INVALID)
@@ -2272,7 +2272,7 @@ static void ShClX11ReadDataFromX11Worker(void *pvUserData, void * /* interval */
             rc = clipGetSelectionValue(pCtx, pCtx->X11TextFormat, pReq);
         }
     }
-    else if (pReq->mFormat == VBOX_SHCL_FMT_BITMAP)
+    else if (pReq->mFormat & VBOX_SHCL_FMT_BITMAP)
     {
         pReq->mX11Format = pCtx->X11BitmapFormat;
         if (pReq->mX11Format != SHCLX11FMT_INVALID)
@@ -2281,7 +2281,7 @@ static void ShClX11ReadDataFromX11Worker(void *pvUserData, void * /* interval */
             rc = clipGetSelectionValue(pCtx, pCtx->X11BitmapFormat, pReq);
         }
     }
-    else if (pReq->mFormat == VBOX_SHCL_FMT_HTML)
+    else if (pReq->mFormat & VBOX_SHCL_FMT_HTML)
     {
         pReq->mX11Format = pCtx->X11HTMLFormat;
         if (pReq->mX11Format != SHCLX11FMT_INVALID)
@@ -2291,7 +2291,7 @@ static void ShClX11ReadDataFromX11Worker(void *pvUserData, void * /* interval */
         }
     }
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
-    else if (pReq->mFormat == VBOX_SHCL_FMT_URI_LIST)
+    else if (pReq->mFormat & VBOX_SHCL_FMT_URI_LIST)
     {
         pReq->mX11Format = pCtx->X11URIListFormat;
         if (pReq->mX11Format != SHCLX11FMT_INVALID)
