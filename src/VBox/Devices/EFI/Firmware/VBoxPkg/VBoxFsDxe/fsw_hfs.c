@@ -1358,6 +1358,7 @@ static fsw_status_t fsw_hfs_get_path_from_cnid(struct fsw_hfs_volume *vol, fsw_u
         goto done;
 
     fsw_memzero(&param, sizeof(param));
+    fsw_memzero(&rec_name, sizeof(rec_name));
 
     catkey.parentID = cnid;
     catkey.nodeName.length = 0;
