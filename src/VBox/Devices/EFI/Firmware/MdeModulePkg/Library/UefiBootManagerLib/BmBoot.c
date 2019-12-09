@@ -1015,6 +1015,18 @@ EFI_STATUS VBoxBmQueryMediaFileNameForSFs(EFI_HANDLE hSFs, CHAR16 **ppwszFileNam
     Status = pSFs->OpenVolume(pSFs, &pRoot);
     if (!EFI_ERROR(Status))
     {
+#if 1
+# define VBOX_EFI_APPLE_MEDIA_FILE_NAME L"\\System\\Library\\CoreServices\\boot.efi"
+       EFI_FILE_PROTOCOL *pFile = NULL;
+
+       Status = pRoot->Open(pRoot, &pFile, VBOX_EFI_APPLE_MEDIA_FILE_NAME, EFI_FILE_MODE_READ,
+                            EFI_FILE_READ_ONLY | EFI_FILE_HIDDEN | EFI_FILE_SYSTEM);
+       if (!EFI_ERROR(Status))
+       {
+         *ppwszFileName = VBOX_EFI_APPLE_MEDIA_FILE_NAME;
+         pFile->Close(pFile);
+       }
+#else /* Doesn't quite work yet. */
       VBOX_FS_BLESSED_FILE *Buffer = NULL;
       UINTN BufferSize = 0;
 
@@ -1033,6 +1045,7 @@ EFI_STATUS VBoxBmQueryMediaFileNameForSFs(EFI_HANDLE hSFs, CHAR16 **ppwszFileNam
           *ppwszFileName = &Buffer->BlessedFile[0];
         }
       }
+#endif
 
       pRoot->Close(pRoot);
     }
