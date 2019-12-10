@@ -2439,6 +2439,7 @@ VBGLR3DECL(int) VbglR3ClipboardEventGetNext(uint32_t idMsg, uint32_t cParms, PVB
                 rc = VERR_NOT_SUPPORTED;
                 break;
         }
+        pEvent->cmdCtx = *pCtx;
     }
 
     LogFlowFuncLeaveRC(rc);
