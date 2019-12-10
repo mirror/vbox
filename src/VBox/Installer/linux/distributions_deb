@@ -1,8 +1,11 @@
-_Debian_sid      = DEBIAN_9_0
+_Debian_sid      = DEBIAN_10_0
+_Debian_buster   = DEBIAN_10_0
 _Debian_stretch  = DEBIAN_9_0
 _Debian_jessie   = DEBIAN_8_0
 _Debian_wheezy   = DEBIAN_7_0
 _Debian_squeeze  = DEBIAN_6_0
+_Ubuntu_eoan     = UBUNTU_19_10
+_Ubuntu_bionic   = UBUNTU_18_04
 _Ubuntu_xenial   = UBUNTU_16_04
 _Ubuntu_wily     = UBUNTU_15_10
 _Ubuntu_trusty   = UBUNTU_14_04
