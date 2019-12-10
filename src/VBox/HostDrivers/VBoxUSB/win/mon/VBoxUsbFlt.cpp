@@ -110,7 +110,7 @@ typedef struct VBOXUSBFLT_DEVICE
     uint16_t        idVendor;
     uint16_t        idProduct;
     uint16_t        bcdDevice;
-    uint16_t        wPort;
+    uint16_t        bPort;
     uint8_t         bClass;
     uint8_t         bSubClass;
     uint8_t         bProtocol;
@@ -379,10 +379,10 @@ static PVBOXUSBFLTCTX vboxUsbFltDevMatchLocked(PVBOXUSBFLT_DEVICE pDevice, uintp
     }
 
     /* If the port number looks valid, add it to the filter. */
-    if (pDevice->wPort < 256)
+    if (pDevice->bPort)
     {
-        LOG(("Setting filter port %04X\n", pDevice->wPort));
-        USBFilterSetNumExact(&DevFlt, USBFILTERIDX_PORT, pDevice->wPort, true);
+        LOG(("Setting filter port %04X\n", pDevice->bPort));
+        USBFilterSetNumExact(&DevFlt, USBFILTERIDX_PORT, pDevice->bPort, true);
     }
     else
         LOG(("Port number not known, ignoring!"));
@@ -534,48 +534,17 @@ static bool vboxUsbParseCompatibleIDs(WCHAR *pchIdStr, uint8_t *pClass, uint8_t 
 #undef PRO_PREFIX
 }
 
-static bool vboxUsbParseLocation(WCHAR *pchLocStr, uint16_t *pHub, uint16_t *pPort)
-{
-#define PORT_PREFIX L"Port_#"
-#define BUS_PREFIX  L".Hub_#"
-
-    *pHub = *pPort = 0xFFFF;
-
-    /* The Location Information is in the format Port_#xxxx.Hub_#xxxx, with 'xxxx'
-     * being 16-bit hexadecimal numbers. It should be reliable on Windows Vista and
-     * later. Note that while the port corresponds to the port number aka address,
-     * the hub number has no discernible relationship to how Windows enumerates hubs.
-     */
-
-    if (wcsncmp(pchLocStr, PORT_PREFIX, wcslen(PORT_PREFIX)))
-        return false;
-
-    /* Point to the start of the port number and parse it. */
-    pchLocStr += wcslen(PORT_PREFIX);
-    *pPort = vboxUsbParseHexNumU16(&pchLocStr);
-
-    if (wcsncmp(pchLocStr, BUS_PREFIX, wcslen(BUS_PREFIX)))
-        return false;
-
-    /* Point to the start of the hub/bus number and parse it. */
-    pchLocStr += wcslen(BUS_PREFIX);
-    *pHub = vboxUsbParseHexNumU16(&pchLocStr);
-
-    return true;
-#undef PORT_PREFIX
-#undef BUS_PREFIX
-}
-
 #define VBOXUSBMON_POPULATE_REQUEST_TIMEOUT_MS 10000
 
 static NTSTATUS vboxUsbFltDevPopulate(PVBOXUSBFLT_DEVICE pDevice, PDEVICE_OBJECT pDo /*, BOOLEAN bPopulateNonFilterProps*/)
 {
     NTSTATUS                Status;
+    USB_TOPOLOGY_ADDRESS    TopoAddr;
     PUSB_DEVICE_DESCRIPTOR  pDevDr = 0;
     ULONG                   ulResultLen;
     DEVPROPTYPE             type;
     WCHAR                   wchPropBuf[256];
-    uint16_t                port, hub;
+    uint16_t                port;
     bool                    rc;
 
     pDevice->Pdo = pDo;
@@ -666,26 +635,85 @@ static NTSTATUS vboxUsbFltDevPopulate(PVBOXUSBFLT_DEVICE pDevice, PDEVICE_OBJECT
             LOG_STRW(pDevice->szLocationPath);
         }
 
-        /* Query the location information. The hub number is iffy because the numbering is
-         * non-obvious and not necessarily stable, but the port number is well defined and useful.
-         */
-        Status = IoGetDevicePropertyData(pDo, &DEVPKEY_Device_LocationInfo, LOCALE_NEUTRAL, 0, sizeof(wchPropBuf), wchPropBuf, &ulResultLen, &type);
-        if (!NT_SUCCESS(Status))
+        // Disabled, but could be used as a fallback instead of IoGetDevicePropertyData; it should work even
+        // when this code is entered from the PnP IRP processing path.
+#if 0
         {
-            /* This is useful but not critical. On Windows 7, we may get STATUS_OBJECT_NAME_NOT_FOUND. */
-            WARN(("IoGetDevicePropertyData failed for DEVPKEY_Device_LocationInfo, Status (0x%x)", Status));
-            hub = port = 0xffff;
-            Status = STATUS_SUCCESS;    /* Need to override the IoGetDevicePropertyData return. */
-        }
-        else
-        {
-            LOG_STRW(wchPropBuf);
-            rc = vboxUsbParseLocation(wchPropBuf, &hub, &port);
-            if (!rc)
+            HUB_DEVICE_CONFIG_INFO  HubInfo;
+
+            memset(&HubInfo, 0, sizeof(HubInfo));
+            HubInfo.Version = 1;
+            HubInfo.Length  = sizeof(HubInfo);
+
+            NTSTATUS Status = VBoxUsbToolIoInternalCtlSendSync(pDo, IOCTL_INTERNAL_USB_GET_DEVICE_CONFIG_INFO, &HubInfo, NULL);
+            ASSERT_WARN(Status == STATUS_SUCCESS, ("GET_DEVICE_CONFIG_INFO for PDO(0x%p) failed Status(0x%x)", pDo, Status));
+            LOG(("Querying hub device config info for PDO(0x%p) done with Status(0x%x)", pDo, Status));
+
+            if (Status == STATUS_SUCCESS)
             {
-                /* This *really* should not happen but it's not fatal. */
-                WARN(("Failed to parse Location Info"));
+                uint16_t    vid, pid, rev;
+                uint8_t     cls, sub, prt;
+
+                LOG(("Hub flags: %X\n", HubInfo.HubFlags));
+                LOG_STRW(HubInfo.HardwareIds.Buffer);
+                LOG_STRW(HubInfo.CompatibleIds.Buffer);
+                if (HubInfo.DeviceDescription.Buffer)
+                    LOG_STRW(HubInfo.DeviceDescription.Buffer);
+
+                rc = vboxUsbParseHardwareID(HubInfo.HardwareIds.Buffer, &pid, &vid, &rev);
+                if (!rc)
+                {
+                    /* This *really* should not happen. */
+                    WARN(("Failed to parse Hardware ID"));
+                }
+
+                rc = vboxUsbParseCompatibleIDs(HubInfo.CompatibleIds.Buffer, &cls, &sub, &prt);
+                if (!rc)
+                {
+                    /* This *really* should not happen. */
+                    WARN(("Failed to parse Hardware ID"));
+                    break;
+                }
+                LOG(("Parsed HardwareID from IOCTL: vid=%04X, pid=%04X, rev=%04X, class=%02X, subcls=%02X, prot=%02X", vid, pid, rev, cls, sub, prt));
+
+                ExFreePool(HubInfo.HardwareIds.Buffer);
+                ExFreePool(HubInfo.CompatibleIds.Buffer);
+                if (HubInfo.DeviceDescription.Buffer)
+                    ExFreePool(HubInfo.DeviceDescription.Buffer);
             }
+        }
+#endif
+
+        /* Query the topology address from the hub driver. This is not trivial to translate to the location
+         * path, but at least we can get the port number this way.
+         */
+        memset(&TopoAddr, 0, sizeof(TopoAddr));
+        Status = VBoxUsbToolIoInternalCtlSendSync(pDo, IOCTL_INTERNAL_USB_GET_TOPOLOGY_ADDRESS, &TopoAddr, NULL);
+        ASSERT_WARN(Status == STATUS_SUCCESS, ("GET_TOPOLOGY_ADDRESS for PDO(0x%p) failed Status(0x%x)", pDo, Status));
+        LOG(("Querying topology address for PDO(0x%p) done with Status(0x%x)", pDo, Status));
+
+        port = 0;
+        if (Status == STATUS_SUCCESS)
+        {
+            uint16_t    *pPort = &TopoAddr.RootHubPortNumber;
+
+            /* The last non-zero port number is the one we're looking for. It might be on the
+             * root hub directly, or on some downstream hub.
+             */
+            for (int i = 0; i < RT_ELEMENTS(TopoAddr.HubPortNumber) + 1; ++i) {
+                if (*pPort)
+                    port = *pPort;
+                pPort++;
+            }
+            LOG(("PCI bus/dev/fn: %02X:%02X:%02X, parsed port: %u\n", TopoAddr.PciBusNumber, TopoAddr.PciDeviceNumber, TopoAddr.PciFunctionNumber, port));
+            LOG(("RH port: %u, hub ports: %u/%u/%u/%u/%u/%u\n", TopoAddr.RootHubPortNumber, TopoAddr.HubPortNumber[0],
+                 TopoAddr.HubPortNumber[1], TopoAddr.HubPortNumber[2], TopoAddr.HubPortNumber[3], TopoAddr.HubPortNumber[4], TopoAddr.HubPortNumber[5]));
+
+            /* In the extremely unlikely case that the port number does not fit into 8 bits, force
+             * it to zero to indicate that we can't use it.
+             */
+            if (port > 255)
+                port = 0;
         }
 
         if (vboxUsbFltBlDevMatchLocked(pDevDr->idVendor, pDevDr->idProduct, pDevDr->bcdDevice))
@@ -696,7 +724,7 @@ static NTSTATUS vboxUsbFltDevPopulate(PVBOXUSBFLT_DEVICE pDevice, PDEVICE_OBJECT
         }
 
         LOG(("Device pid=%x vid=%x rev=%x port=%x", pDevDr->idVendor, pDevDr->idProduct, pDevDr->bcdDevice, port));
-        pDevice->wPort        = port;
+        pDevice->bPort        = port;
         pDevice->idVendor     = pDevDr->idVendor;
         pDevice->idProduct    = pDevDr->idProduct;
         pDevice->bcdDevice    = pDevDr->bcdDevice;
