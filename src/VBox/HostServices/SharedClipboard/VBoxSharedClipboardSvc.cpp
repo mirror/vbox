@@ -427,6 +427,7 @@ void shClSvcMsgFree(PSHCLCLIENT pClient, PSHCLCLIENTMSG pMsg)
 
         uint32_t cAllocated = ASMAtomicDecU32(&pClient->cAllocatedMessages);
         Assert(cAllocated < UINT32_MAX / 2);
+        RT_NOREF(cAllocated);
     }
 }
 
