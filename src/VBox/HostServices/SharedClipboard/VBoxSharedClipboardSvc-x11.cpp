@@ -202,10 +202,9 @@ int ShClSvcImplReadData(PSHCLCLIENT pClient,
                 rc = ShClEventWait(&pClient->EventSrc, idEvent, 30 * 1000, &pPayload);
                 if (RT_SUCCESS(rc))
                 {
-                    memcpy(pData->pvData,  pPayload->pvData, RT_MIN(pData->cbData, pPayload->cbData));
-                    pData->cbData = pPayload->cbData;
-
-                    Assert(pData->cbData == pPayload->cbData); /* Sanity. */
+                    memcpy(pData->pvData, pPayload->pvData, RT_MIN(pData->cbData, pPayload->cbData));
+                    pData->cbData = (uint32_t)pPayload->cbData; /** @todo r=bird: Just ditch this data block wrapper, it made you forget to set pcbActual! */
+                    *pcbActual = (uint32_t)pPayload->cbData;
                 }
             }
 
