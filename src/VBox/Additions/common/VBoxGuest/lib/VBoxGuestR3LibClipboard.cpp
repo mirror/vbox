@@ -114,6 +114,7 @@ VBGLR3DECL(int) VbglR3ClipboardConnectEx(PVBGLR3SHCLCMDCTX pCtx, uint64_t fGuest
         rc = VbglR3ClipboardReportFeatures(pCtx->idClient, fGuestFeatures, &pCtx->fHostFeatures);
         if (RT_SUCCESS(rc))
         {
+            pCtx->fGuestFeatures = fGuestFeatures;
             LogRel2(("Shared Clipboard: Host features: %#RX64\n", pCtx->fHostFeatures));
             if (   (pCtx->fHostFeatures & VBOX_SHCL_HF_0_CONTEXT_ID)
                 && (pCtx->fGuestFeatures & VBOX_SHCL_GF_0_CONTEXT_ID) )
@@ -263,17 +264,15 @@ static int vbglR3ClipboardFormatsReportRecv(PVBGLR3SHCLCMDCTX pCtx, PSHCLFORMATD
         HGCMFunctionParameter   f32Formats;
     } Msg;
 
-    VBGL_HGCM_HDR_INIT(&Msg.Hdr, pCtx->idClient, VBOX_SHCL_GUEST_FN_MSG_GET, 3);
-    Msg.id64Context.SetUInt64(VBOX_SHCL_HOST_MSG_FORMATS_REPORT);
+    VBGL_HGCM_HDR_INIT(&Msg.Hdr, pCtx->idClient, VBOX_SHCL_GUEST_FN_MSG_GET, 2);
+    Msg.id64Context.SetUInt32(VBOX_SHCL_HOST_MSG_FORMATS_REPORT);
     Msg.f32Formats.SetUInt32(0);
 
     int rc = VbglR3HGCMCall(&Msg.Hdr, sizeof(Msg));
     if (RT_SUCCESS(rc))
     {
-        rc = Msg.id64Context.GetUInt64(&pCtx->idContext);
+        rc = Msg.f32Formats.GetUInt32(&pFormats->Formats);
         AssertRC(rc);
-        int rc2 = Msg.f32Formats.GetUInt32(&pFormats->Formats);
-        AssertRCStmt(rc2, rc = rc2);
     }
 
     LogFlowFuncLeaveRC(rc);
@@ -282,13 +281,13 @@ static int vbglR3ClipboardFormatsReportRecv(PVBGLR3SHCLCMDCTX pCtx, PSHCLFORMATD
 
 
 /**
- * Receives a host request to read clipboard data from the guest.
+ * Fetches a VBOX_SHCL_HOST_MSG_READ_DATA_CID message.
  *
  * @returns VBox status code.
  * @param   pCtx                Shared Clipboard command context to use for the connection.
  * @param   pfFormat            Where to return the requested format.
  */
-static int vbglR3ClipboardReadDataRecv(PVBGLR3SHCLCMDCTX pCtx, PSHCLFORMAT pfFormat)
+static int vbglR3ClipboardFetchReadDataCid(PVBGLR3SHCLCMDCTX pCtx, PSHCLFORMAT pfFormat)
 {
     AssertPtrReturn(pCtx,     VERR_INVALID_POINTER);
     AssertPtrReturn(pfFormat, VERR_INVALID_POINTER);
@@ -311,6 +310,41 @@ static int vbglR3ClipboardReadDataRecv(PVBGLR3SHCLCMDCTX pCtx, PSHCLFORMAT pfFor
         AssertRC(rc);
         int rc2 = Msg.f32Format.GetUInt32(pfFormat);
         AssertRCStmt(rc2, rc = rc2);
+    }
+
+    LogFlowFuncLeaveRC(rc);
+    return rc;
+}
+
+
+/**
+ * Fetches a VBOX_SHCL_HOST_MSG_READ_DATA message.
+ *
+ * @returns VBox status code.
+ * @param   pCtx                Shared Clipboard command context to use for the connection.
+ * @param   pfFormat            Where to return the requested format.
+ */
+static int vbglR3ClipboardFetchReadData(PVBGLR3SHCLCMDCTX pCtx, PSHCLFORMAT pfFormat)
+{
+    AssertPtrReturn(pCtx,     VERR_INVALID_POINTER);
+    AssertPtrReturn(pfFormat, VERR_INVALID_POINTER);
+
+    struct
+    {
+        VBGLIOCHGCMCALL         Hdr;
+        HGCMFunctionParameter   id32Msg;
+        HGCMFunctionParameter   f32Format;
+    } Msg;
+
+    VBGL_HGCM_HDR_INIT(&Msg.Hdr, pCtx->idClient, VBOX_SHCL_GUEST_FN_MSG_GET, 2);
+    Msg.id32Msg.SetUInt32(VBOX_SHCL_HOST_MSG_READ_DATA);
+    Msg.f32Format.SetUInt32(0);
+
+    int rc = VbglR3HGCMCall(&Msg.Hdr, sizeof(Msg));
+    if (RT_SUCCESS(rc))
+    {
+        rc = Msg.f32Format.GetUInt32(pfFormat);
+        AssertRC(rc);
     }
 
     LogFlowFuncLeaveRC(rc);
@@ -486,7 +520,8 @@ VBGLR3DECL(int) VbglR3ClipboardQueryFeatures(uint32_t idClient, uint64_t *pfHost
  *
  * @note    Restore check is only performed optimally with a 6.0 host.
  */
-int VbglR3ClipboardMsgPeekWait(PVBGLR3SHCLCMDCTX pCtx, uint32_t *pidMsg, uint32_t *pcParameters, uint64_t *pidRestoreCheck)
+VBGLR3DECL(int) VbglR3ClipboardMsgPeekWait(PVBGLR3SHCLCMDCTX pCtx, uint32_t *pidMsg,
+                                           uint32_t *pcParameters, uint64_t *pidRestoreCheck)
 {
     AssertPtrReturn(pidMsg, VERR_INVALID_POINTER);
     AssertPtrReturn(pcParameters, VERR_INVALID_POINTER);
@@ -2333,9 +2368,17 @@ VBGLR3DECL(int) VbglR3ClipboardEventGetNext(uint32_t idMsg, uint32_t cParms, PVB
                 break;
             }
 
+            case VBOX_SHCL_HOST_MSG_READ_DATA_CID:
+            {
+                rc = vbglR3ClipboardFetchReadDataCid(pCtx, &pEvent->u.fReadData);
+                if (RT_SUCCESS(rc))
+                    pEvent->enmType = VBGLR3CLIPBOARDEVENTTYPE_READ_DATA;
+                break;
+            }
+
             case VBOX_SHCL_HOST_MSG_READ_DATA:
             {
-                rc = vbglR3ClipboardReadDataRecv(pCtx, &pEvent->u.fReadData);
+                rc = vbglR3ClipboardFetchReadData(pCtx, &pEvent->u.fReadData);
                 if (RT_SUCCESS(rc))
                     pEvent->enmType = VBGLR3CLIPBOARDEVENTTYPE_READ_DATA;
                 break;
@@ -2350,6 +2393,7 @@ VBGLR3DECL(int) VbglR3ClipboardEventGetNext(uint32_t idMsg, uint32_t cParms, PVB
 
             default:
             {
+                /** @todo r=bird: BUGBUG - need a skip command here! */
                 rc = VERR_NOT_SUPPORTED;
                 break;
             }
