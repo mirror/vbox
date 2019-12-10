@@ -188,21 +188,18 @@ int ShClSvcImplReadData(PSHCLCLIENT pClient,
     CLIPREADCBREQ *pReq = (CLIPREADCBREQ *)RTMemAllocZ(sizeof(CLIPREADCBREQ));
     if (pReq)
     {
-        const SHCLEVENTID uEvent = ShClEventIDGenerate(&pClient->EventSrc);
-
         pReq->pv        = pData->pvData;
         pReq->cb        = pData->cbData;
         pReq->pcbActual = pcbActual;
-        pReq->uEvent    = uEvent;
-
-        rc = ShClEventRegister(&pClient->EventSrc, uEvent);
-        if (RT_SUCCESS(rc))
+        const SHCLEVENTID idEvent = ShClEventIdGenerateAndRegister(&pClient->EventSrc);
+        pReq->uEvent    = idEvent;
+        if (idEvent)
         {
             rc = ShClX11ReadDataFromX11(&pClient->State.pCtx->X11, pData->uFormat, pReq);
             if (RT_SUCCESS(rc))
             {
                 PSHCLEVENTPAYLOAD pPayload;
-                rc = ShClEventWait(&pClient->EventSrc, uEvent, 30 * 1000, &pPayload);
+                rc = ShClEventWait(&pClient->EventSrc, idEvent, 30 * 1000, &pPayload);
                 if (RT_SUCCESS(rc))
                 {
                     memcpy(pData->pvData,  pPayload->pvData, RT_MIN(pData->cbData, pPayload->cbData));
@@ -212,7 +209,12 @@ int ShClSvcImplReadData(PSHCLCLIENT pClient,
                 }
             }
 
-            ShClEventUnregister(&pClient->EventSrc, uEvent);
+            ShClEventUnregister(&pClient->EventSrc, idEvent);
+        }
+        else
+        {
+            RTMemFree(pReq);
+            rc = VERR_GENERAL_FAILURE;
         }
     }
     else
@@ -294,8 +296,10 @@ DECLCALLBACK(void) ShClX11RequestFromX11CompleteCallback(PSHCLCONTEXT pCtx, int 
             AssertRC(rc2);
         }
 
+        RTCritSectEnter(&pCtx->pClient->CritSect);
         rc2 = ShClEventSignal(&pCtx->pClient->EventSrc, pReq->uEvent, pPayload);
         AssertRC(rc2);
+        RTCritSectLeave(&pCtx->pClient->CritSect);
     }
 
     RTMemFree(pReq);

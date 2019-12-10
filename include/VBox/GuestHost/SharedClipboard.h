@@ -204,7 +204,7 @@ void ShClEventSourceReset(PSHCLEVENTSOURCE pSource);
 SHCLEVENTID ShClEventIdGenerateAndRegister(PSHCLEVENTSOURCE pSource);
 SHCLEVENTID ShClEventIDGenerate(PSHCLEVENTSOURCE pSource);
 SHCLEVENTID ShClEventGetLast(PSHCLEVENTSOURCE pSource);
-int ShClEventRegister(PSHCLEVENTSOURCE pSource, SHCLEVENTID idEvent);
+/*int ShClEventRegister(PSHCLEVENTSOURCE pSource, SHCLEVENTID idEvent);*/
 int ShClEventUnregister(PSHCLEVENTSOURCE pSource, SHCLEVENTID idEvent);
 int ShClEventWait(PSHCLEVENTSOURCE pSource, SHCLEVENTID idEvent, RTMSINTERVAL uTimeoutMs, PSHCLEVENTPAYLOAD *ppPayload);
 int ShClEventSignal(PSHCLEVENTSOURCE pSource, SHCLEVENTID idEvent, PSHCLEVENTPAYLOAD pPayload);

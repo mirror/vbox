@@ -1235,7 +1235,9 @@ int ShClSvcDataReadSignal(PSHCLCLIENT pClient, PSHCLCLIENTCMDCTX pCmdCtx,
 
     if (RT_SUCCESS(rc))
     {
+        RTCritSectEnter(&pClient->CritSect);
         rc = ShClEventSignal(&pClient->EventSrc, uEvent, pPayload);
+        RTCritSectLeave(&pClient->CritSect);
         if (RT_FAILURE(rc))
             ShClPayloadFree(pPayload);
     }
