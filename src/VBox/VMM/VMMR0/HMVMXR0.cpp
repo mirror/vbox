@@ -4956,6 +4956,21 @@ static uint32_t hmR0VmxGetGuestIntrState(PVMCPUCC pVCpu)
     if (CPUMIsGuestNmiBlocking(pVCpu))
         fIntrState |= VMX_VMCS_GUEST_INT_STATE_BLOCK_NMI;
 
+    /*
+     * Validate.
+     */
+#ifdef VBOX_STRICT
+    /* We don't support block-by-SMI yet.*/
+    Assert(!(fIntrState & VMX_VMCS_GUEST_INT_STATE_BLOCK_SMI));
+
+    /* Block-by-STI must not be set when interrupts are disabled. */
+    if (fIntrState & VMX_VMCS_GUEST_INT_STATE_BLOCK_STI)
+    {
+        HMVMX_CPUMCTX_ASSERT(pVCpu, CPUMCTX_EXTRN_RFLAGS);
+        Assert(pVCpu->cpum.GstCtx.eflags.u & X86_EFL_IF);
+    }
+#endif
+
     return fIntrState;
 }
 
@@ -8568,37 +8583,18 @@ static VBOXSTRICTRC hmR0VmxEvaluatePendingEvent(PVMCPUCC pVCpu, PCVMXTRANSIENT p
     Assert(pfIntrState);
     Assert(!TRPMHasTrap(pVCpu));
 
-    PCPUMCTX     pCtx = &pVCpu->cpum.GstCtx;
-    PVMXVMCSINFO pVmcsInfo      = pVmxTransient->pVmcsInfo;
-    bool const   fIsNestedGuest = pVmxTransient->fIsNestedGuest;
-
     /*
      * Compute/update guest-interruptibility state related FFs.
+     * The FFs will be used below while evaluating events to be injected.
      */
-    /** @todo r=ramshankar: Move this outside this function to the caller. */
-    {
-        /* Get the current interruptibility-state of the guest or nested-guest (this updates FFs). */
-        uint32_t const fIntrState = hmR0VmxGetGuestIntrState(pVCpu);
-
-#ifdef VBOX_STRICT
-        /* Validate. */
-        Assert(!(fIntrState & VMX_VMCS_GUEST_INT_STATE_BLOCK_SMI));  /* We don't support block-by-SMI yet.*/
-        if (fIntrState & VMX_VMCS_GUEST_INT_STATE_BLOCK_STI)
-        {
-            /* Block-by-STI must not be set when interrupts are disabled. */
-            HMVMX_CPUMCTX_ASSERT(pVCpu, CPUMCTX_EXTRN_RFLAGS);
-            Assert(pCtx->eflags.Bits.u1IF);
-        }
-#endif
-
-        /* Update interruptibility state to the caller. */
-        *pfIntrState = fIntrState;
-    }
+    *pfIntrState = hmR0VmxGetGuestIntrState(pVCpu);
 
     /*
      * Evaluate if a new event needs to be injected.
      * An event that's already pending has already performed all necessary checks.
      */
+    PVMXVMCSINFO pVmcsInfo      = pVmxTransient->pVmcsInfo;
+    bool const   fIsNestedGuest = pVmxTransient->fIsNestedGuest;
     if (   !pVCpu->hm.s.Event.fPending
         && !VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS))
     {
@@ -8608,6 +8604,7 @@ static VBOXSTRICTRC hmR0VmxEvaluatePendingEvent(PVMCPUCC pVCpu, PCVMXTRANSIENT p
          * NMIs.
          * NMIs take priority over external interrupts.
          */
+        PCCPUMCTX pCtx = &pVCpu->cpum.GstCtx;
         if (VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INTERRUPT_NMI))
         {
             /*
@@ -10152,9 +10149,8 @@ static int hmR0VmxMergeVmcsNested(PVMCPUCC pVCpu)
     /*
      * Virtual-APIC page and TPR threshold.
      */
-    PVMXVMCSINFO pVmcsInfoNstGst = &pVCpu->hm.s.vmx.VmcsInfoNstGst;
-    RTHCPHYS     HCPhysVirtApic;
-    uint32_t     u32TprThreshold;
+    RTHCPHYS HCPhysVirtApic;
+    uint32_t u32TprThreshold;
     if (u32ProcCtls & VMX_PROC_CTLS_USE_TPR_SHADOW)
     {
         Assert(pVM->hm.s.vmx.Msrs.ProcCtls.n.allowed1 & VMX_PROC_CTLS_USE_TPR_SHADOW);
@@ -10196,6 +10192,7 @@ static int hmR0VmxMergeVmcsNested(PVMCPUCC pVCpu)
     /*
      * Validate basic assumptions.
      */
+    PVMXVMCSINFO pVmcsInfoNstGst = &pVCpu->hm.s.vmx.VmcsInfoNstGst;
     Assert(pVM->hm.s.vmx.fAllowUnrestricted);
     Assert(pVM->hm.s.vmx.Msrs.ProcCtls.n.allowed1 & VMX_PROC_CTLS_USE_SECONDARY_CTLS);
     Assert(hmGetVmxActiveVmcsInfo(pVCpu) == pVmcsInfoNstGst);
