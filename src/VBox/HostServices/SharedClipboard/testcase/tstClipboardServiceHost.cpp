@@ -127,14 +127,9 @@ static void testSetTransferMode(void)
 #endif /* VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS */
 
 /* Adds a host data read request message to the client's message queue. */
-static void testMsgAddReadData(PSHCLCLIENT pClient, uint32_t uFormat)
+static void testMsgAddReadData(PSHCLCLIENT pClient, uint32_t fFormat)
 {
-    SHCLDATAREQ dataReq;
-    RT_ZERO(dataReq);
-
-    dataReq.uFmt = uFormat;
-
-    int rc = ShClSvcDataReadRequest(pClient, &dataReq, NULL /* puEvent */);
+    int rc = ShClSvcDataReadRequest(pClient, fFormat, NULL /* puEvent */);
     RTTESTI_CHECK_RC_OK(rc);
 }
 

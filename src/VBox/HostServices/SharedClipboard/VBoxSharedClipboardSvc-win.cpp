@@ -166,25 +166,19 @@ static int vboxClipboardSvcWinDataSet(PSHCLCONTEXT pCtx, UINT cfFormat, void *pv
     return rc;
 }
 
-static int vboxClipboardSvcWinDataRead(PSHCLCONTEXT pCtx, UINT cfFormat,
-                                       void **ppvData, uint32_t *pcbData)
+static int vboxClipboardSvcWinDataRead(PSHCLCONTEXT pCtx, UINT uFormat, void **ppvData, uint32_t *pcbData)
 {
-    SHCLDATAREQ dataReq;
-    RT_ZERO(dataReq);
+    SHCLFORMAT fFormat = SharedClipboardWinClipboardFormatToVBox(uFormat);
+    LogFlowFunc(("uFormat=%u -> uFmt=0x%x\n", uFormat, fFormat));
 
-    dataReq.uFmt   = SharedClipboardWinClipboardFormatToVBox(cfFormat);
-    dataReq.cbSize = _64K; /** @todo Make this more dynamic. */
-
-    LogFlowFunc(("cfFormat=%u -> uFmt=0x%x\n", cfFormat, dataReq.uFmt));
-
-    if (dataReq.uFmt == VBOX_SHCL_FMT_NONE)
+    if (fFormat == VBOX_SHCL_FMT_NONE)
     {
-        LogRel2(("Shared Clipbaord: Windows format %u not supported, ingoring\n", cfFormat));
+        LogRel2(("Shared Clipbaord: Windows format %u not supported, ingoring\n", uFormat));
         return VERR_NOT_SUPPORTED;
     }
 
     SHCLEVENTID uEvent = 0;
-    int rc = ShClSvcDataReadRequest(pCtx->pClient, &dataReq, &uEvent);
+    int rc = ShClSvcDataReadRequest(pCtx->pClient, fFormat, &uEvent);
     if (RT_SUCCESS(rc))
     {
         PSHCLEVENTPAYLOAD pPayload;
@@ -309,11 +303,9 @@ static LRESULT CALLBACK vboxClipboardSvcWinWndProcMain(PSHCLCONTEXT pCtx,
             LogFunc(("WM_RENDERFORMAT\n"));
 
             /* Insert the requested clipboard format data into the clipboard. */
-            const UINT cfFormat = (UINT)wParam;
-
-            const SHCLFORMAT fFormat = SharedClipboardWinClipboardFormatToVBox(cfFormat);
-
-            LogFunc(("WM_RENDERFORMAT: cfFormat=%u -> fFormat=0x%x\n", cfFormat, fFormat));
+            const UINT       uFormat = (UINT)wParam;
+            const SHCLFORMAT fFormat = SharedClipboardWinClipboardFormatToVBox(uFormat);
+            LogFunc(("WM_RENDERFORMAT: uFormat=%u -> fFormat=0x%x\n", uFormat, fFormat));
 
             if (   fFormat       == VBOX_SHCL_FMT_NONE
                 || pCtx->pClient == NULL)
@@ -326,12 +318,12 @@ static LRESULT CALLBACK vboxClipboardSvcWinWndProcMain(PSHCLCONTEXT pCtx,
             {
                 void    *pvData = NULL;
                 uint32_t cbData = 0;
-                int rc = vboxClipboardSvcWinDataRead(pCtx, cfFormat, &pvData, &cbData);
+                int rc = vboxClipboardSvcWinDataRead(pCtx, uFormat, &pvData, &cbData);
                 if (   RT_SUCCESS(rc)
                     && pvData
                     && cbData)
                 {
-                    rc = vboxClipboardSvcWinDataSet(pCtx, cfFormat, pvData, cbData);
+                    rc = vboxClipboardSvcWinDataSet(pCtx, uFormat, pvData, cbData);
 
                     RTMemFree(pvData);
                     cbData = 0;
@@ -596,10 +588,8 @@ static int vboxClipboardSvcWinSyncInternal(PSHCLCONTEXT pCtx)
 
         rc = SharedClipboardWinGetFormats(&pCtx->Win, &Formats);
         if (   RT_SUCCESS(rc)
-            && Formats.Formats != VBOX_SHCL_FMT_NONE)
-        {
-            rc = ShClSvcFormatsReport(pCtx->pClient, &Formats);
-        }
+            && Formats.Formats != VBOX_SHCL_FMT_NONE) /** @todo r=bird: BUGBUG: revisit this. */
+            rc = ShClSvcHostReportFormats(pCtx->pClient, Formats.Formats);
     }
     else /* If we don't have any client data (yet), bail out. */
         rc = VINF_NO_CHANGE;

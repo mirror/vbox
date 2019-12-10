@@ -1189,7 +1189,7 @@ int ShClTransferCreate(PSHCLTRANSFER *ppTransfer)
 
     RTListInit(&pTransfer->Events.lstEvents);
     pTransfer->Events.uID          = 0;
-    pTransfer->Events.uEventIDNext = 1;
+    pTransfer->Events.idNextEvent  = 1;
 
     if (RT_SUCCESS(rc))
     {

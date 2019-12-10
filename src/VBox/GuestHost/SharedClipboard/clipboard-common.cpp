@@ -88,50 +88,52 @@ void ShClPayloadFree(PSHCLEVENTPAYLOAD pPayload)
     RTMemFree(pPayload);
 }
 
+#if 0 /* currently not used */
 /**
  * Creates (initializes) an event.
  *
  * @returns VBox status code.
  * @param   pEvent              Event to initialize.
- * @param   uID                 Event ID to use.
+ * @param   idEvent             Event ID to use.
  */
-int ShClEventCreate(PSHCLEVENT pEvent, SHCLEVENTID uID)
+static int shClEventInit(PSHCLEVENT pEvent, SHCLEVENTID idEvent)
 {
     AssertPtrReturn(pEvent, VERR_INVALID_POINTER);
 
-    LogFlowFunc(("Event %RU32\n", uID));
+    LogFlowFunc(("Event %RU32\n", idEvent));
 
-    int rc = RTSemEventCreate(&pEvent->hEventSem);
+    int rc = RTSemEventMultiCreate(&pEvent->hEvtMulSem);
     if (RT_SUCCESS(rc))
     {
-        pEvent->uID      = uID;
+        pEvent->idEvent  = idEvent;
         pEvent->pPayload = NULL;
     }
 
     return rc;
 }
+#endif
 
 /**
- * Destroys an event.
+ * Destroys an event, but doesn't free the memory.
  *
  * @param   pEvent              Event to destroy.
  */
-void ShClEventDestroy(PSHCLEVENT pEvent)
+static void shClEventTerm(PSHCLEVENT pEvent)
 {
     if (!pEvent)
         return;
 
-    LogFlowFunc(("Event %RU32\n", pEvent->uID));
+    LogFlowFunc(("Event %RU32\n", pEvent->idEvent));
 
-    if (pEvent->hEventSem != NIL_RTSEMEVENT)
+    if (pEvent->hEvtMulSem != NIL_RTSEMEVENT)
     {
-        RTSemEventDestroy(pEvent->hEventSem);
-        pEvent->hEventSem = NIL_RTSEMEVENT;
+        RTSemEventMultiDestroy(pEvent->hEvtMulSem);
+        pEvent->hEvtMulSem = NIL_RTSEMEVENT;
     }
 
     ShClPayloadFree(pEvent->pPayload);
 
-    pEvent->uID = 0;
+    pEvent->idEvent = 0;
 }
 
 /**
@@ -150,7 +152,7 @@ int ShClEventSourceCreate(PSHCLEVENTSOURCE pSource, SHCLEVENTSOURCEID uID)
 
     pSource->uID          = uID;
     /* Choose a random event ID starting point. */
-    pSource->uEventIDNext = RTRandU32() % VBOX_SHCL_MAX_EVENTS;
+    pSource->idNextEvent  = RTRandU32Ex(1, VBOX_SHCL_MAX_EVENTS - 1);
 
     LogFlowFuncLeaveRC(VINF_SUCCESS);
     return VINF_SUCCESS;
@@ -171,7 +173,7 @@ void ShClEventSourceDestroy(PSHCLEVENTSOURCE pSource)
     ShClEventSourceReset(pSource);
 
     pSource->uID          = UINT16_MAX;
-    pSource->uEventIDNext = UINT32_MAX;
+    pSource->idNextEvent  = UINT32_MAX;
 }
 
 /**
@@ -189,30 +191,11 @@ void ShClEventSourceReset(PSHCLEVENTSOURCE pSource)
     {
         RTListNodeRemove(&pEvIt->Node);
 
-        ShClEventDestroy(pEvIt);
+        shClEventTerm(pEvIt);
 
         RTMemFree(pEvIt);
         pEvIt = NULL;
     }
-}
-
-/**
- * Generates a new event ID for a specific event source.
- *
- * @returns New event ID generated, or 0 on error.
- * @param   pSource             Event source to generate event for.
- */
-SHCLEVENTID ShClEventIDGenerate(PSHCLEVENTSOURCE pSource)
-{
-    AssertPtrReturn(pSource, 0);
-
-    LogFlowFunc(("uSource=%RU16: New event: %RU32\n", pSource->uID, pSource->uEventIDNext));
-
-    pSource->uEventIDNext++;
-    if (pSource->uEventIDNext == VBOX_SHCL_MAX_EVENTS)
-        pSource->uEventIDNext = 0;
-
-    return pSource->uEventIDNext;
 }
 
 /**
@@ -222,16 +205,81 @@ SHCLEVENTID ShClEventIDGenerate(PSHCLEVENTSOURCE pSource)
  * @param   pSource             Event source to get event from.
  * @param   uID                 Event ID to get.
  */
-inline PSHCLEVENT shclEventGet(PSHCLEVENTSOURCE pSource, SHCLEVENTID uID)
+DECLINLINE(PSHCLEVENT) shclEventGet(PSHCLEVENTSOURCE pSource, SHCLEVENTID idEvent)
 {
-    PSHCLEVENT pEvIt;
-    RTListForEach(&pSource->lstEvents, pEvIt, SHCLEVENT, Node)
+    PSHCLEVENT pEvent;
+    RTListForEach(&pSource->lstEvents, pEvent, SHCLEVENT, Node)
     {
-        if (pEvIt->uID == uID)
-            return pEvIt;
+        if (pEvent->idEvent == idEvent)
+            return pEvent;
     }
 
     return NULL;
+}
+
+/**
+ * Generates a new event ID for a specific event source.
+ *
+ * @returns New event ID generated, or 0 on error.
+ * @param   pSource             Event source to generate event for.
+ * @deprecated as this does not deal with duplicates.
+ */
+SHCLEVENTID ShClEventIDGenerate(PSHCLEVENTSOURCE pSource)
+{
+    AssertPtrReturn(pSource, 0);
+
+    SHCLEVENTID idEvent = ++pSource->idNextEvent;
+    if (idEvent >= VBOX_SHCL_MAX_EVENTS)
+        pSource->idNextEvent = idEvent = 1;  /* zero == error, remember! */
+
+    LogFlowFunc(("uSource=%RU16: New event: %RU32\n", pSource->uID, idEvent));
+    return idEvent;
+}
+
+/**
+ * Generates a new event ID for a specific event source and registers it.
+ *
+ * @returns New event ID generated, or 0 on error.
+ * @param   pSource             Event source to generate event for.
+ */
+SHCLEVENTID ShClEventIdGenerateAndRegister(PSHCLEVENTSOURCE pSource)
+{
+    AssertPtrReturn(pSource, 0);
+
+    /*
+     * Allocate an event.
+     */
+    PSHCLEVENT pEvent = (PSHCLEVENT)RTMemAllocZ(sizeof(SHCLEVENT));
+    AssertReturn(pEvent, 0);
+    int rc = RTSemEventMultiCreate(&pEvent->hEvtMulSem);
+    AssertRCReturnStmt(rc, RTMemFree(pEvent), 0);
+
+    /*
+     * Allocate an unique event ID.
+     */
+    for (uint32_t cTries = 0;; cTries++)
+    {
+        SHCLEVENTID idEvent = ++pSource->idNextEvent;
+        if (idEvent < VBOX_SHCL_MAX_EVENTS)
+        { /* likely */ }
+        else
+            pSource->idNextEvent = idEvent = 1; /* zero == error, remember! */
+
+        if (shclEventGet(pSource, idEvent) == NULL)
+        {
+
+            pEvent->idEvent = idEvent;
+            RTListAppend(&pSource->lstEvents, &pEvent->Node);
+
+            LogFlowFunc(("uSource=%RU16: New event: %#x\n", pSource->uID, idEvent));
+            return idEvent;
+        }
+
+        AssertBreak(cTries < 4096);
+    }
+
+    RTMemFree(pEvent);
+    return 0;
 }
 
 /**
@@ -245,7 +293,7 @@ SHCLEVENTID ShClEventGetLast(PSHCLEVENTSOURCE pSource)
     AssertPtrReturn(pSource, 0);
     PSHCLEVENT pEvent = RTListGetLast(&pSource->lstEvents, SHCLEVENT, Node);
     if (pEvent)
-        return pEvent->uID;
+        return pEvent->idEvent;
 
     return 0;
 }
@@ -265,6 +313,7 @@ static void shclEventPayloadDetachInternal(PSHCLEVENT pEvent)
     pEvent->pPayload = NULL;
 }
 
+#if 0 /** @todo fix later */
 /**
  * Registers an event.
  *
@@ -282,11 +331,10 @@ int ShClEventRegister(PSHCLEVENTSOURCE pSource, SHCLEVENTID uID)
 
     if (shclEventGet(pSource, uID) == NULL)
     {
-        PSHCLEVENT pEvent
-            = (PSHCLEVENT)RTMemAllocZ(sizeof(SHCLEVENT));
+        PSHCLEVENT pEvent = (PSHCLEVENT)RTMemAllocZ(sizeof(SHCLEVENT));
         if (pEvent)
         {
-            rc = ShClEventCreate(pEvent, uID);
+            rc = shClEventInit(pEvent, uID);
             if (RT_SUCCESS(rc))
             {
                 RTListAppend(&pSource->lstEvents, &pEvent->Node);
@@ -307,6 +355,7 @@ int ShClEventRegister(PSHCLEVENTSOURCE pSource, SHCLEVENTID uID)
     LogFlowFuncLeaveRC(rc);
     return rc;
 }
+#endif /* later */
 
 /**
  * Unregisters an event.
@@ -326,11 +375,11 @@ int ShClEventUnregister(PSHCLEVENTSOURCE pSource, SHCLEVENTID uID)
     PSHCLEVENT pEvent = shclEventGet(pSource, uID);
     if (pEvent)
     {
-        LogFlowFunc(("Event %RU32\n", pEvent->uID));
+        LogFlowFunc(("Event %RU32\n", pEvent->idEvent));
 
         RTListNodeRemove(&pEvent->Node);
 
-        ShClEventDestroy(pEvent);
+        shClEventTerm(pEvent);
 
         RTMemFree(pEvent);
         pEvent = NULL;
@@ -367,7 +416,7 @@ int ShClEventWait(PSHCLEVENTSOURCE pSource, SHCLEVENTID uID, RTMSINTERVAL uTimeo
     PSHCLEVENT pEvent = shclEventGet(pSource, uID);
     if (pEvent)
     {
-        rc = RTSemEventWait(pEvent->hEventSem, uTimeoutMs);
+        rc = RTSemEventMultiWait(pEvent->hEvtMulSem, uTimeoutMs);
         if (RT_SUCCESS(rc))
         {
             if (ppPayload)
@@ -410,7 +459,7 @@ int ShClEventSignal(PSHCLEVENTSOURCE pSource, SHCLEVENTID uID,
 
         pEvent->pPayload = pPayload;
 
-        rc = RTSemEventSignal(pEvent->hEventSem);
+        rc = RTSemEventMultiSignal(pEvent->hEvtMulSem);
     }
     else
         rc = VERR_NOT_FOUND;

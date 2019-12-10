@@ -113,23 +113,56 @@
  */
 /** Returned only when the HGCM client session is closed (by different thread).
  *
- * This can require no futher host interaction has session has been closed.
+ * This can require no futher host interaction since the session has been
+ * closed.
+ *
+ * @since 1.3.2
  */
 #define VBOX_SHCL_HOST_MSG_QUIT                             1
 /** Request data for a specific format from the guest.
  *
- * This takes one parameter (in addition to the message number), a 32-bit
+ * Two parameters, first the 32-bit message ID followed by a  a 32-bit
  * format bit (VBOX_SHCL_FMT_XXX).  The guest will respond by issuing a
- * VBOX_SHCL_GUEST_F_DATA_WRITE.
+ * VBOX_SHCL_GUEST_FN_DATA_WRITE.
+ *
+ * @note  The host may sometimes incorrectly set more than one format bit, in
+ *        which case it's up to the guest to pick which to write back.
+ * @since 1.3.2
  */
 #define VBOX_SHCL_HOST_MSG_READ_DATA                        2
-/** Reports available clipboard format from host to the guest.
- *  Formerly known as VBOX_SHCL_HOST_MSG_REPORT_FORMATS. */
+/** Reports available clipboard format on the host to the guest.
+ *
+ * Two parameters, first the 32-bit message ID followed by a 32-bit format mask
+ * containing zero or more VBOX_SHCL_FMT_XXX flags.  The guest is not require to
+ * respond to the host when receiving this message.
+ *
+ * @since 1.3.2
+ */
 #define VBOX_SHCL_HOST_MSG_FORMATS_REPORT                   3
 /** Message PEEK or GET operation was canceled, try again.
+ *
+ * This is returned by VBOX_SHCL_GUEST_FN_MSG_PEEK_WAIT and
+ * VBOX_SHCL_GUEST_FN_MSG_OLD_GET_WAIT in response to the guest calling
+ * VBOX_SHCL_GUEST_FN_MSG_CANCEL.  The 2nd parameter is set to zero (be it
+ * thought of as a parameter count or a format mask).
+ *
  * @since   6.1.0
  */
 #define VBOX_SHCL_HOST_MSG_CANCELED                         4
+
+/** Request data for a specific format from the guest with context ID.
+ *
+ * This is send instead of the VBOX_SHCL_HOST_MSG_READ_DATA message to guest
+ * that advertises VBOX_SHCL_GF_0_CONTEXT_ID.  The first parameter is a 64-bit
+ * context ID which is to be used when issuing VBOX_SHCL_GUEST_F_DATA_WRITE, and
+ * the second parameter is a 32-bit format bit (VBOX_SHCL_FMT_XXX).  The guest
+ * will respond by issuing a VBOX_SHCL_GUEST_F_DATA_WRITE.
+ *
+ * @note  The host may sometimes incorrectly set more than one format bit, in
+ *        which case it's up to the guest to pick which to write back.
+ * @since 6.3.2
+ */
+#define VBOX_SHCL_HOST_MSG_READ_DATA_CID                    5
 
 /** Sends a transfer status to the guest side.
  * @since   6.1.?
@@ -709,51 +742,6 @@ typedef struct VBoxShClParmReportFormats
 #define VBOX_SHCL_CPARMS_REPORT_FORMATS     1   /**< The parameter count for VBOX_SHCL_GUEST_FN_REPORT_FORMATS. */
 #define VBOX_SHCL_CPARMS_REPORT_FORMATS_61B 3   /**< The 6.1 dev cycle variant, see VBOX_SHCL_GUEST_FN_REPORT_FORMATS. */
 /** @} */
-/**
- * Reports available formats.
- */
-typedef struct _VBoxShClFormatsMsg
-{
-    VBGLIOCHGCMCALL hdr;
-
-    union
-    {
-        struct
-        {
-            /** uint32_t, out:  VBOX_SHCL_FMT_*. */
-            HGCMFunctionParameter uFormats;
-        } v0;
-
-        struct
-        {
-            /** uint64_t, out: Context ID. */
-            HGCMFunctionParameter uContext;
-            /** uint32_t, out: VBOX_SHCL_FMT_*. */
-            HGCMFunctionParameter uFormats;
-            /** uint32_t, out: Format flags. */
-            HGCMFunctionParameter fFlags;
-        } v1;
-    } u;
-} VBoxShClFormatsMsg;
-
-/**
- * Requests to read clipboard data.
- */
-typedef struct _VBoxShClReadDataReqMsg
-{
-    VBGLIOCHGCMCALL hdr;
-
-    /** uint64_t, out: Context ID. */
-    HGCMFunctionParameter uContext;
-    /** uint32_t, out: Request flags; currently unused and must be set to 0. */
-    HGCMFunctionParameter fFlags;
-    /** uint32_t, out: Requested format to read data in. */
-    HGCMFunctionParameter uFormat;
-    /** uint32_t, out: Maximum size (in bytes) to read. */
-    HGCMFunctionParameter cbSize;
-} VBoxShClReadDataReqMsg;
-
-#define VBOX_SHCL_CPARMS_READ_DATA_REQ 4
 
 /** @name VBOX_SHCL_GUEST_FN_DATA_READ
  * @{ */

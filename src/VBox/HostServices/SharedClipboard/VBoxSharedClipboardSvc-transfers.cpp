@@ -120,7 +120,7 @@ DECLCALLBACK(int) shClSvcTransferIfaceGetRoots(PSHCLPROVIDERCTX pCtx, PSHCLROOTL
 
     int rc;
 
-    PSHCLCLIENTMSG pMsgHdr = shClSvcMsgAlloc(VBOX_SHCL_HOST_MSG_TRANSFER_ROOT_LIST_HDR_READ,
+    PSHCLCLIENTMSG pMsgHdr = shClSvcMsgAlloc(pClient, VBOX_SHCL_HOST_MSG_TRANSFER_ROOT_LIST_HDR_READ,
                                              VBOX_SHCL_CPARMS_ROOT_LIST_HDR_READ_REQ);
     if (pMsgHdr)
     {
@@ -161,7 +161,7 @@ DECLCALLBACK(int) shClSvcTransferIfaceGetRoots(PSHCLPROVIDERCTX pCtx, PSHCLROOTL
                             {
                                 for (uint32_t i = 0; i < pSrcRootListHdr->cRoots; i++)
                                 {
-                                    PSHCLCLIENTMSG pMsgEntry = shClSvcMsgAlloc(VBOX_SHCL_HOST_MSG_TRANSFER_ROOT_LIST_ENTRY_READ,
+                                    PSHCLCLIENTMSG pMsgEntry = shClSvcMsgAlloc(pClient, VBOX_SHCL_HOST_MSG_TRANSFER_ROOT_LIST_ENTRY_READ,
                                                                                VBOX_SHCL_CPARMS_ROOT_LIST_ENTRY_READ_REQ);
 
                                     uEvent = ShClEventIDGenerate(&pCtx->pTransfer->Events);
@@ -239,7 +239,7 @@ DECLCALLBACK(int) shClSvcTransferIfaceListOpen(PSHCLPROVIDERCTX pCtx,
 
     int rc;
 
-    PSHCLCLIENTMSG pMsg = shClSvcMsgAlloc(VBOX_SHCL_HOST_MSG_TRANSFER_LIST_OPEN,
+    PSHCLCLIENTMSG pMsg = shClSvcMsgAlloc(pClient, VBOX_SHCL_HOST_MSG_TRANSFER_LIST_OPEN,
                                           VBOX_SHCL_CPARMS_LIST_OPEN);
     if (pMsg)
     {
@@ -299,7 +299,7 @@ DECLCALLBACK(int) shClSvcTransferIfaceListClose(PSHCLPROVIDERCTX pCtx, SHCLLISTH
 
     int rc;
 
-    PSHCLCLIENTMSG pMsg = shClSvcMsgAlloc(VBOX_SHCL_HOST_MSG_TRANSFER_LIST_CLOSE,
+    PSHCLCLIENTMSG pMsg = shClSvcMsgAlloc(pClient, VBOX_SHCL_HOST_MSG_TRANSFER_LIST_CLOSE,
                                           VBOX_SHCL_CPARMS_LIST_CLOSE);
     if (pMsg)
     {
@@ -347,7 +347,7 @@ DECLCALLBACK(int) shClSvcTransferIfaceListHdrRead(PSHCLPROVIDERCTX pCtx,
 
     int rc;
 
-    PSHCLCLIENTMSG pMsg = shClSvcMsgAlloc(VBOX_SHCL_HOST_MSG_TRANSFER_LIST_HDR_READ,
+    PSHCLCLIENTMSG pMsg = shClSvcMsgAlloc(pClient, VBOX_SHCL_HOST_MSG_TRANSFER_LIST_HDR_READ,
                                           VBOX_SHCL_CPARMS_LIST_HDR_READ_REQ);
     if (pMsg)
     {
@@ -408,7 +408,7 @@ DECLCALLBACK(int) shClSvcTransferIfaceListEntryRead(PSHCLPROVIDERCTX pCtx,
 
     int rc;
 
-    PSHCLCLIENTMSG pMsg = shClSvcMsgAlloc(VBOX_SHCL_HOST_MSG_TRANSFER_LIST_ENTRY_READ,
+    PSHCLCLIENTMSG pMsg = shClSvcMsgAlloc(pClient, VBOX_SHCL_HOST_MSG_TRANSFER_LIST_ENTRY_READ,
                                           VBOX_SHCL_CPARMS_LIST_ENTRY_READ);
     if (pMsg)
     {
@@ -468,7 +468,7 @@ int shClSvcTransferIfaceObjOpen(PSHCLPROVIDERCTX pCtx, PSHCLOBJOPENCREATEPARMS p
 
     int rc;
 
-    PSHCLCLIENTMSG pMsg = shClSvcMsgAlloc(VBOX_SHCL_HOST_MSG_TRANSFER_OBJ_OPEN,
+    PSHCLCLIENTMSG pMsg = shClSvcMsgAlloc(pClient, VBOX_SHCL_HOST_MSG_TRANSFER_OBJ_OPEN,
                                           VBOX_SHCL_CPARMS_OBJ_OPEN);
     if (pMsg)
     {
@@ -530,7 +530,7 @@ int shClSvcTransferIfaceObjClose(PSHCLPROVIDERCTX pCtx, SHCLOBJHANDLE hObj)
 
     int rc;
 
-    PSHCLCLIENTMSG pMsg = shClSvcMsgAlloc(VBOX_SHCL_HOST_MSG_TRANSFER_OBJ_CLOSE,
+    PSHCLCLIENTMSG pMsg = shClSvcMsgAlloc(pClient, VBOX_SHCL_HOST_MSG_TRANSFER_OBJ_CLOSE,
                                           VBOX_SHCL_CPARMS_OBJ_CLOSE);
     if (pMsg)
     {
@@ -586,7 +586,7 @@ int shClSvcTransferIfaceObjRead(PSHCLPROVIDERCTX pCtx, SHCLOBJHANDLE hObj,
 
     int rc;
 
-    PSHCLCLIENTMSG pMsg = shClSvcMsgAlloc(VBOX_SHCL_HOST_MSG_TRANSFER_OBJ_READ,
+    PSHCLCLIENTMSG pMsg = shClSvcMsgAlloc(pClient, VBOX_SHCL_HOST_MSG_TRANSFER_OBJ_READ,
                                           VBOX_SHCL_CPARMS_OBJ_READ_REQ);
     if (pMsg)
     {
@@ -645,7 +645,7 @@ int shClSvcTransferIfaceObjWrite(PSHCLPROVIDERCTX pCtx, SHCLOBJHANDLE hObj,
 
     int rc;
 
-    PSHCLCLIENTMSG pMsg = shClSvcMsgAlloc(VBOX_SHCL_HOST_MSG_TRANSFER_OBJ_WRITE,
+    PSHCLCLIENTMSG pMsg = shClSvcMsgAlloc(pClient, VBOX_SHCL_HOST_MSG_TRANSFER_OBJ_WRITE,
                                           VBOX_SHCL_CPARMS_OBJ_WRITE);
     if (pMsg)
     {
@@ -1985,7 +1985,7 @@ int shClSvcTransferSendStatus(PSHCLCLIENT pClient, PSHCLTRANSFER pTransfer, SHCL
     AssertPtrReturn(pTransfer, VERR_INVALID_POINTER);
     /* puEvent is optional. */
 
-    PSHCLCLIENTMSG pMsgReadData = shClSvcMsgAlloc(VBOX_SHCL_HOST_MSG_TRANSFER_STATUS,
+    PSHCLCLIENTMSG pMsgReadData = shClSvcMsgAlloc(pClient, VBOX_SHCL_HOST_MSG_TRANSFER_STATUS,
                                                   VBOX_SHCL_CPARMS_TRANSFER_STATUS);
     if (!pMsgReadData)
         return VERR_NO_MEMORY;

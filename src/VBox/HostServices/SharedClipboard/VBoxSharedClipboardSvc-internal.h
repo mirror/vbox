@@ -52,19 +52,24 @@ typedef struct _SHCLMSGCTX
 } SHCLMSGCTX, *PSHCLMSGCTX;
 
 /**
- * Structure for keeping a single HGCM message.
+ * A queued message for the guest.
  */
 typedef struct _SHCLCLIENTMSG
 {
-    /** Stored message type. */
-    uint32_t         uMsg;
-    /** Number of stored HGCM parameters. */
-    uint32_t         cParms;
-    /** Stored HGCM parameters. */
-    PVBOXHGCMSVCPARM paParms;
-    /** Message context. */
-    SHCLMSGCTX       Ctx;
-} SHCLCLIENTMSG, *PSHCLCLIENTMSG;
+    /** The queue list entry. */
+    RTLISTNODE          ListEntry;
+    /** Stored message ID (VBOX_SHCL_HOST_MSG_XXX). */
+    uint32_t            idMsg;
+    /** Number of stored parameters. */
+    uint32_t            cParms;
+    /** The context ID for this message.
+     * @todo r=bird: Why do we need this? */
+    uint64_t            idContext;
+    /** HGCM parameters. */
+    VBOXHGCMSVCPARM     aParms[RT_FLEXIBLE_ARRAY];
+} SHCLCLIENTMSG;
+/** Pointer to a queue message for the guest.   */
+typedef SHCLCLIENTMSG *PSHCLCLIENTMSG;
 
 typedef struct SHCLCLIENTTRANSFERSTATE
 {
@@ -140,13 +145,16 @@ typedef struct _SHCLCLIENTCMDCTX
 typedef struct _SHCLCLIENT
 {
     /** General client state data. */
-    SHCLCLIENTSTATE          State;
-    RTCRITSECT               CritSect;
-    /** The client's message queue (FIFO). */
-    RTCList<SHCLCLIENTMSG *> queueMsg;
+    SHCLCLIENTSTATE             State;
+    /** The critical section protecting the queue, event source and whatnot.   */
+    RTCRITSECT                  CritSect;
+    /** The client's message queue (SHCLCLIENTMSG). */
+    RTLISTANCHOR                MsgQueue;
+    /** Number of allocated messages (updated atomically, not under critsect). */
+    uint32_t volatile           cAllocatedMessages;
     /** The client's own event source.
      *  Needed for events which are not bound to a specific transfer. */
-    SHCLEVENTSOURCE          EventSrc;
+    SHCLEVENTSOURCE             EventSrc;
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
     /** Transfer contextdata. */
     SHCLTRANSFERCTX          TransferCtx;
@@ -209,16 +217,16 @@ typedef struct _SHCLEXTSTATE
     bool           fDelayedAnnouncement;
     /** The actual clipboard formats announced while the host service
      *  is reading clipboard data from the extension. */
-    uint32_t       uDelayedFormats;
+    uint32_t       fDelayedFormats;
 } SHCLEXTSTATE, *PSHCLEXTSTATE;
 
 int shClSvcSetSource(PSHCLCLIENT pClient, SHCLSOURCE enmSource);
 
 void shClSvcMsgQueueReset(PSHCLCLIENT pClient);
-PSHCLCLIENTMSG shClSvcMsgAlloc(uint32_t uMsg, uint32_t cParms);
-void shClSvcMsgFree(PSHCLCLIENTMSG pMsg);
-void shClSvcMsgSetPeekReturn(PSHCLCLIENTMSG pMsg, PVBOXHGCMSVCPARM paDstParms, uint32_t cDstParms);
-int shClSvcMsgAdd(PSHCLCLIENT pClient, PSHCLCLIENTMSG pMsg, bool fAppend);
+PSHCLCLIENTMSG shClSvcMsgAlloc(PSHCLCLIENT pClient, uint32_t uMsg, uint32_t cParms);
+void shClSvcMsgFree(PSHCLCLIENT pClient, PSHCLCLIENTMSG pMsg);
+void shClSvcMsgAdd(PSHCLCLIENT pClient, PSHCLCLIENTMSG pMsg, bool fAppend);
+int shClSvcMsgAddAndWakeupClient(PSHCLCLIENT pClient, PSHCLCLIENTMSG pMsg);
 
 int shClSvcClientInit(PSHCLCLIENT pClient, uint32_t uClientID);
 void shClSvcClientDestroy(PSHCLCLIENT pClient);
@@ -242,9 +250,9 @@ void shClSvcClientTransfersReset(PSHCLCLIENT pClient);
  * Locking is between the (host) service thread and the platform-dependent (window) thread.
  * @{
  */
-int ShClSvcDataReadRequest(PSHCLCLIENT pClient, PSHCLDATAREQ pDataReq, PSHCLEVENTID puEvent);
+int ShClSvcDataReadRequest(PSHCLCLIENT pClient, SHCLFORMAT fFormat, PSHCLEVENTID puEvent);
 int ShClSvcDataReadSignal(PSHCLCLIENT pClient, PSHCLCLIENTCMDCTX pCmdCtx, PSHCLDATABLOCK pData);
-int ShClSvcFormatsReport(PSHCLCLIENT pClient, PSHCLFORMATDATA pFormats);
+int ShClSvcHostReportFormats(PSHCLCLIENT pClient, SHCLFORMATS fFormats);
 uint32_t ShClSvcGetMode(void);
 bool ShClSvcGetHeadless(void);
 bool ShClSvcLock(void);

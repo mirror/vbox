@@ -156,9 +156,9 @@ typedef struct SHCLEVENT
     /** List node. */
     RTLISTNODE          Node;
     /** The event's ID, for self-reference. */
-    SHCLEVENTID         uID;
+    SHCLEVENTID         idEvent;
     /** Event semaphore for signalling the event. */
-    RTSEMEVENT          hEventSem;
+    RTSEMEVENTMULTI     hEvtMulSem;
     /** Payload to this event, optional (NULL). */
     PSHCLEVENTPAYLOAD   pPayload;
 } SHCLEVENT;
@@ -176,7 +176,7 @@ typedef struct SHCLEVENTSOURCE
     /** The event source ID. */
     SHCLEVENTSOURCEID uID;
     /** Next upcoming event ID. */
-    SHCLEVENTID       uEventIDNext;
+    SHCLEVENTID       idNextEvent;
     /** List of events (PSHCLEVENT). */
     RTLISTANCHOR      lstEvents;
 } SHCLEVENTSOURCE;
@@ -201,6 +201,7 @@ void ShClEventSourceReset(PSHCLEVENTSOURCE pSource);
 /** @name Shared Clipboard event functions.
  *  @{
  */
+SHCLEVENTID ShClEventIdGenerateAndRegister(PSHCLEVENTSOURCE pSource);
 SHCLEVENTID ShClEventIDGenerate(PSHCLEVENTSOURCE pSource);
 SHCLEVENTID ShClEventGetLast(PSHCLEVENTSOURCE pSource);
 int ShClEventRegister(PSHCLEVENTSOURCE pSource, SHCLEVENTID idEvent);

@@ -275,79 +275,22 @@ int vboxClipboardMain(void)
     /* The thread waits for incoming messages from the host. */
     for (;;)
     {
-        PVBGLR3CLIPBOARDEVENT pEvent = NULL;
+        PVBGLR3CLIPBOARDEVENT pEvent = (PVBGLR3CLIPBOARDEVENT)RTMemAllocZ(sizeof(VBGLR3CLIPBOARDEVENT));
+        AssertPtrBreakStmt(pEvent, rc = VERR_NO_MEMORY);
 
         LogFlowFunc(("Waiting for host message (fUseLegacyProtocol=%RTbool, fHostFeatures=%#RX64) ...\n",
                      pCtx->CmdCtx.fUseLegacyProtocol, pCtx->CmdCtx.fHostFeatures));
 
-        if (pCtx->CmdCtx.fUseLegacyProtocol)
+        uint32_t idMsg  = 0;
+        uint32_t cParms = 0;
+        rc = VbglR3ClipboardMsgPeekWait(&pCtx->CmdCtx, &idMsg, &cParms, NULL /* pidRestoreCheck */);
+        if (RT_SUCCESS(rc))
         {
-            uint32_t uMsg;
-            uint32_t uFormats;
-
-            rc = VbglR3ClipboardGetHostMsgOld(pCtx->CmdCtx.idClient, &uMsg, &uFormats);
-            if (RT_FAILURE(rc))
-            {
-                if (rc == VERR_INTERRUPTED) /** @todo r=bird: What on earth is the meaning of this?!?!?!?!?!?!? */
-                    break;
-
-                LogFunc(("Error getting host message, rc=%Rrc\n", rc));
-            }
-            else
-            {
-                pEvent = (PVBGLR3CLIPBOARDEVENT)RTMemAllocZ(sizeof(VBGLR3CLIPBOARDEVENT));
-                AssertPtrBreakStmt(pEvent, rc = VERR_NO_MEMORY);
-
-                switch (uMsg)
-                {
-                    case VBOX_SHCL_HOST_MSG_FORMATS_REPORT:
-                    {
-                        pEvent->enmType = VBGLR3CLIPBOARDEVENTTYPE_REPORT_FORMATS;
-                        pEvent->u.ReportedFormats.Formats = uFormats;
-                        break;
-                    }
-
-                    case VBOX_SHCL_HOST_MSG_READ_DATA:
-                    {
-                        pEvent->enmType = VBGLR3CLIPBOARDEVENTTYPE_READ_DATA;
-                        pEvent->u.ReadData.uFmt = uFormats;
-                        break;
-                    }
-
-                    case VBOX_SHCL_HOST_MSG_QUIT:
-                    {
-                        pEvent->enmType = VBGLR3CLIPBOARDEVENTTYPE_QUIT;
-                        break;
-                    }
-
-                    default:
-                        rc = VERR_NOT_SUPPORTED;
-                        break;
-                }
-
-                if (RT_SUCCESS(rc))
-                {
-                    /* Copy over our command context to the event. */
-                    pEvent->cmdCtx = pCtx->CmdCtx;
-                }
-            }
-        }
-        else /* Host service has peeking for messages support. */
-        {
-            pEvent = (PVBGLR3CLIPBOARDEVENT)RTMemAllocZ(sizeof(VBGLR3CLIPBOARDEVENT));
-            AssertPtrBreakStmt(pEvent, rc = VERR_NO_MEMORY);
-
-            uint32_t uMsg   = 0;
-            uint32_t cParms = 0;
-            rc = VbglR3ClipboardMsgPeekWait(&pCtx->CmdCtx, &uMsg, &cParms, NULL /* pidRestoreCheck */);
-            if (RT_SUCCESS(rc))
-            {
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
-                rc = VbglR3ClipboardEventGetNextEx(uMsg, cParms, &pCtx->CmdCtx, &pCtx->TransferCtx, pEvent);
+            rc = VbglR3ClipboardEventGetNextEx(idMsg, cParms, &pCtx->CmdCtx, &pCtx->TransferCtx, pEvent);
 #else
-                rc = VbglR3ClipboardEventGetNext(uMsg, cParms, &pCtx->CmdCtx, pEvent);
+            rc = VbglR3ClipboardEventGetNext(idMsg, cParms, &pCtx->CmdCtx, pEvent);
 #endif
-            }
         }
 
         if (RT_FAILURE(rc))
@@ -384,7 +327,7 @@ int vboxClipboardMain(void)
                     pReq = (CLIPREADCBREQ *)RTMemAllocZ(sizeof(CLIPREADCBREQ));
                     if (pReq)
                     {
-                        pReq->Format = pEvent->u.ReadData.uFmt;
+                        pReq->Format = pEvent->u.fReadData;
                         ShClX11ReadDataFromX11(&g_Ctx.X11, pReq->Format, pReq);
                     }
                     else

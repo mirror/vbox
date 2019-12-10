@@ -112,12 +112,7 @@ int ShClSvcImplSync(PSHCLCLIENT pClient)
     /* Tell the guest we have no data in case X11 is not available.  If
      * there is data in the host clipboard it will automatically be sent to
      * the guest when the clipboard starts up. */
-    SHCLFORMATDATA formatData;
-    RT_ZERO(formatData);
-
-    formatData.Formats = VBOX_SHCL_FMT_NONE;
-
-    return ShClSvcFormatsReport(pClient, &formatData);
+    return ShClSvcHostReportFormats(pClient, VBOX_SHCL_FMT_NONE);
 }
 
 /**
@@ -249,21 +244,17 @@ int ShClSvcImplWriteData(PSHCLCLIENT pClient,
  * @note   Runs in Xt event thread.
  *
  * @param  pCtx                 Opaque context pointer for the glue code.
- * @param  Formats              The formats available.
+ * @param  fFormats             The formats available.
  */
-DECLCALLBACK(void) ShClX11ReportFormatsCallback(PSHCLCONTEXT pCtx, uint32_t Formats)
+DECLCALLBACK(void) ShClX11ReportFormatsCallback(PSHCLCONTEXT pCtx, uint32_t fFormats)
 {
-    LogFlowFunc(("pCtx=%p, Formats=%02X\n", pCtx, Formats));
+    LogFlowFunc(("pCtx=%p, fFormats=%#x\n", pCtx, fFormats));
 
-    if (Formats == VBOX_SHCL_FMT_NONE) /* No formats to report? Bail out early. */
+    /** @todo r=bird: BUGBUG: Revisit this   */
+    if (fFormats == VBOX_SHCL_FMT_NONE) /* No formats to report? Bail out early. */
         return;
 
-    SHCLFORMATDATA formatData;
-    RT_ZERO(formatData);
-
-    formatData.Formats = Formats;
-
-    int rc = ShClSvcFormatsReport(pCtx->pClient, &formatData);
+    int rc = ShClSvcHostReportFormats(pCtx->pClient, fFormats);
     RT_NOREF(rc);
 
     LogFlowFuncLeaveRC(rc);
@@ -316,15 +307,16 @@ DECLCALLBACK(void) ShClX11RequestFromX11CompleteCallback(PSHCLCONTEXT pCtx, int 
  * @note   Runs in Xt event thread.
  *
  * @param  pCtx      Pointer to the host clipboard structure.
- * @param  Format    The format in which the data should be transferred.
+ * @param  fFormat   The format in which the data should be transferred
+ *                   (VBOX_SHCL_FMT_XXX).
  * @param  ppv       On success and if pcb > 0, this will point to a buffer
  *                   to be freed with RTMemFree containing the data read.
  * @param  pcb       On success, this contains the number of bytes of data
  *                   returned.
  */
-DECLCALLBACK(int) ShClX11RequestDataForX11Callback(PSHCLCONTEXT pCtx, SHCLFORMAT Format, void **ppv, uint32_t *pcb)
+DECLCALLBACK(int) ShClX11RequestDataForX11Callback(PSHCLCONTEXT pCtx, SHCLFORMAT fFormat, void **ppv, uint32_t *pcb)
 {
-    LogFlowFunc(("pCtx=%p, Format=0x%x\n", pCtx, Format));
+    LogFlowFunc(("pCtx=%p, Format=0x%x\n", pCtx, fFormat));
 
     if (pCtx->fShuttingDown)
     {
@@ -336,22 +328,14 @@ DECLCALLBACK(int) ShClX11RequestDataForX11Callback(PSHCLCONTEXT pCtx, SHCLFORMAT
     int rc;
 
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
-    if (Format == VBOX_SHCL_FMT_URI_LIST)
-    {
-        rc = 0;
-    }
+    if (fFormat == VBOX_SHCL_FMT_URI_LIST)
+        rc = VINF_SUCCESS;
     else
 #endif
     {
         /* Request data from the guest. */
-        SHCLDATAREQ dataReq;
-        RT_ZERO(dataReq);
-
-        dataReq.uFmt   = Format;
-        dataReq.cbSize = _64K; /** @todo Make this more dynamic. */
-
         SHCLEVENTID uEvent;
-        rc = ShClSvcDataReadRequest(pCtx->pClient, &dataReq, &uEvent);
+        rc = ShClSvcDataReadRequest(pCtx->pClient, fFormat, &uEvent);
         if (RT_SUCCESS(rc))
         {
             PSHCLEVENTPAYLOAD pPayload;
@@ -374,6 +358,7 @@ DECLCALLBACK(int) ShClX11RequestDataForX11Callback(PSHCLCONTEXT pCtx, SHCLFORMAT
 }
 
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
+
 int ShClSvcImplTransferCreate(PSHCLCLIENT pClient, PSHCLTRANSFER pTransfer)
 {
     RT_NOREF(pClient, pTransfer);
@@ -428,4 +413,5 @@ int ShClSvcImplTransferGetRoots(PSHCLCLIENT pClient, PSHCLTRANSFER pTransfer)
     LogFlowFuncLeaveRC(rc);
     return rc;
 }
-#endif
+
+#endif /* VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS */

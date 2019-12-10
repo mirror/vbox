@@ -623,6 +623,7 @@ typedef VBGLR3SHCLCMDCTX *PVBGLR3SHCLCMDCTX;
 
 /**
  * Enumeration specifying a Shared Clipboard event type.
+ * @todo r=bird: Surely, this isn't necessary?!
  */
 typedef enum _VBGLR3CLIPBOARDEVENTTYPE
 {
@@ -656,7 +657,7 @@ typedef struct _VBGLR3CLIPBOARDEVENT
         /** Reports available formats from the host. */
         SHCLFORMATDATA       ReportedFormats;
         /** Reports that data needs to be read from the guest. */
-        SHCLDATAREQ          ReadData;
+        SHCLFORMAT           fReadData;
 #  ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
         /** Reports a transfer status to the guest. */
         struct
