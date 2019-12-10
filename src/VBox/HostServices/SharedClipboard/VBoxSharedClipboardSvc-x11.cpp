@@ -205,6 +205,8 @@ int ShClSvcImplReadData(PSHCLCLIENT pClient,
                     memcpy(pData->pvData, pPayload->pvData, RT_MIN(pData->cbData, pPayload->cbData));
                     pData->cbData = (uint32_t)pPayload->cbData; /** @todo r=bird: Just ditch this data block wrapper, it made you forget to set pcbActual! */
                     *pcbActual = (uint32_t)pPayload->cbData;
+
+                    ShClPayloadFree(pPayload);
                 }
             }
 
