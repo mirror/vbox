@@ -4913,14 +4913,14 @@ static void hmR0VmxExportGuestApicTpr(PVMCPUCC pVCpu, PCVMXTRANSIENT pVmxTransie
 
 
 /**
- * Gets the guest interruptibility-state.
+ * Gets the guest interruptibility-state and updates related force-flags.
  *
  * @returns Guest's interruptibility-state.
  * @param   pVCpu           The cross context virtual CPU structure.
  *
  * @remarks No-long-jump zone!!!
  */
-static uint32_t hmR0VmxGetGuestIntrState(PVMCPUCC pVCpu)
+static uint32_t hmR0VmxGetGuestIntrStateAndUpdateFFs(PVMCPUCC pVCpu)
 {
     /*
      * Check if we should inhibit interrupt delivery due to instructions like STI and MOV SS.
@@ -8587,7 +8587,7 @@ static VBOXSTRICTRC hmR0VmxEvaluatePendingEvent(PVMCPUCC pVCpu, PCVMXTRANSIENT p
      * Compute/update guest-interruptibility state related FFs.
      * The FFs will be used below while evaluating events to be injected.
      */
-    *pfIntrState = hmR0VmxGetGuestIntrState(pVCpu);
+    *pfIntrState = hmR0VmxGetGuestIntrStateAndUpdateFFs(pVCpu);
 
     /*
      * Evaluate if a new event needs to be injected.
