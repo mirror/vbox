@@ -9937,14 +9937,14 @@ static void hmR0VmxMergeMsrBitmapNested(PCVMCPUCC pVCpu, PVMXVMCSINFO pVmcsInfoN
      * MSR that is intercepted by the guest is also intercepted while executing the
      * nested-guest using hardware-assisted VMX.
      *
-     * Note! If the nested-guest is not using an MSR bitmap, ever MSR must cause a
+     * Note! If the nested-guest is not using an MSR bitmap, every MSR must cause a
      *       nested-guest VM-exit even if the outer guest is not intercepting some
      *       MSRs. We cannot assume the caller has initialized the nested-guest
      *       MSR bitmap in this case.
      *
      *       The nested hypervisor may also switch whether it uses MSR bitmaps for
-     *       each VM-entry, hence initializing it once per-VM while setting up the
-     *       nested-guest VMCS is not sufficient.
+     *       each of its VM-entry, hence initializing it once per-VM while setting
+     *       up the nested-guest VMCS is not sufficient.
      */
     PCVMXVVMCS pVmcsNstGst = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs);
     if (pVmcsNstGst->u32ProcCtls & VMX_PROC_CTLS_USE_MSR_BITMAPS)
@@ -14639,8 +14639,8 @@ HMVMX_EXIT_DECL hmR0VmxExitInvpcid(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransient)
 {
     HMVMX_VALIDATE_EXIT_HANDLER_PARAMS(pVCpu, pVmxTransient);
 
+    /** @todo Enable the new code after finding a reliably guest test-case. */
 #if 1
-    /** @todo Use VM-exit instruction information. */
     return VERR_EM_INTERPRETER;
 #else
     hmR0VmxReadExitInstrLenVmcs(pVmxTransient);
