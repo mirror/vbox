@@ -31,6 +31,7 @@
 #include "UICommon.h"
 
 /* COM includes: */
+#include "CSystemProperties.h"
 #include "CVirtualBox.h"
 
 
@@ -102,21 +103,19 @@ void UIWizardCloneVMPage1::composeCloneFilePath()
 
 void UIWizardCloneVMPage1::updateMACAddressClonePolicyComboToolTip()
 {
-    const int iCurrentIndex = m_pMACComboBox->currentIndex();
-    const QString strCurrentToolTip = m_pMACComboBox->itemData(iCurrentIndex, Qt::ToolTipRole).toString();
-    AssertMsg(!strCurrentToolTip.isEmpty(), ("Data not found!"));
+    const QString strCurrentToolTip = m_pMACComboBox->currentData(Qt::ToolTipRole).toString();
+    AssertMsg(!strCurrentToolTip.isEmpty(), ("Tool-tip data not found!"));
     m_pMACComboBox->setToolTip(strCurrentToolTip);
 }
 
 MACAddressClonePolicy UIWizardCloneVMPage1::macAddressClonePolicy() const
 {
-    const int iIndex = m_pMACComboBox->currentIndex();
-    return (MACAddressClonePolicy)m_pMACComboBox->itemData(iIndex).toInt();
+    return m_pMACComboBox->currentData().value<MACAddressClonePolicy>();
 }
 
 void UIWizardCloneVMPage1::setMACAddressClonePolicy(MACAddressClonePolicy enmMACAddressClonePolicy)
 {
-    const int iIndex = m_pMACComboBox->findData((int)enmMACAddressClonePolicy);
+    const int iIndex = m_pMACComboBox->findData(enmMACAddressClonePolicy);
     AssertMsg(iIndex != -1, ("Data not found!"));
     m_pMACComboBox->setCurrentIndex(iIndex);
 }
@@ -125,15 +124,33 @@ void UIWizardCloneVMPage1::populateMACAddressClonePolicies()
 {
     AssertReturnVoid(m_pMACComboBox->count() == 0);
 
-    /* Apply hardcoded policies list: */
-    for (int i = 0; i < (int)MACAddressClonePolicy_MAX; ++i)
-    {
-        m_pMACComboBox->addItem(QString::number(i));
-        m_pMACComboBox->setItemData(i, i);
-    }
+    /* Map known clone options to known MAC address export policies: */
+    QMap<KCloneOptions, MACAddressClonePolicy> knownOptions;
+    knownOptions[KCloneOptions_KeepAllMACs] = MACAddressClonePolicy_KeepAllMACs;
+    knownOptions[KCloneOptions_KeepNATMACs] = MACAddressClonePolicy_KeepNATMACs;
+
+    /* Load currently supported clone options: */
+    CSystemProperties comProperties = uiCommon().virtualBox().GetSystemProperties();
+    const QVector<KCloneOptions> supportedOptions = comProperties.GetSupportedCloneOptions();
+
+    /* Check which of supported options/policies are known: */
+    QList<MACAddressClonePolicy> supportedPolicies;
+    foreach (const KCloneOptions &enmOption, supportedOptions)
+        if (knownOptions.contains(enmOption))
+            supportedPolicies << knownOptions.value(enmOption);
+
+    /* Add supported policies first: */
+    foreach (const MACAddressClonePolicy &enmPolicy, supportedPolicies)
+        m_pMACComboBox->addItem(QString(), QVariant::fromValue(enmPolicy));
+
+    /* Add hardcoded policy finally: */
+    m_pMACComboBox->addItem(QString(), QVariant::fromValue(MACAddressClonePolicy_StripAllMACs));
 
     /* Set default: */
-    setMACAddressClonePolicy(MACAddressClonePolicy_KeepNATMACs);
+    if (supportedPolicies.contains(MACAddressClonePolicy_KeepNATMACs))
+        setMACAddressClonePolicy(MACAddressClonePolicy_KeepNATMACs);
+    else
+        setMACAddressClonePolicy(MACAddressClonePolicy_StripAllMACs);
 }
 
 bool UIWizardCloneVMPage1::keepDiskNames() const
@@ -296,18 +313,33 @@ void UIWizardCloneVMPageBasic1::retranslateUi()
 
     /* Translate MAC address policy combo-box: */
     m_pMACComboBoxLabel->setText(UIWizardCloneVM::tr("MAC Address &Policy:"));
-    m_pMACComboBox->setItemText(MACAddressClonePolicy_KeepAllMACs,
-                                UIWizardCloneVM::tr("Include all network adapter MAC addresses"));
-    m_pMACComboBox->setItemText(MACAddressClonePolicy_KeepNATMACs,
-                                UIWizardCloneVM::tr("Include only NAT network adapter MAC addresses"));
-    m_pMACComboBox->setItemText(MACAddressClonePolicy_StripAllMACs,
-                                UIWizardCloneVM::tr("Generate new MAC addresses for all network adapters"));
-    m_pMACComboBox->setItemData(MACAddressClonePolicy_KeepAllMACs,
-                                UIWizardCloneVM::tr("Include all network adapter MAC addresses during cloning."), Qt::ToolTipRole);
-    m_pMACComboBox->setItemData(MACAddressClonePolicy_KeepNATMACs,
-                                UIWizardCloneVM::tr("Include only NAT network adapter MAC addresses during cloning."), Qt::ToolTipRole);
-    m_pMACComboBox->setItemData(MACAddressClonePolicy_StripAllMACs,
-                                UIWizardCloneVM::tr("Generate new MAC addresses for all network adapters during cloning."), Qt::ToolTipRole);
+    for (int i = 0; i < m_pMACComboBox->count(); ++i)
+    {
+        const MACAddressClonePolicy enmPolicy = m_pMACComboBox->itemData(i).value<MACAddressClonePolicy>();
+        switch (enmPolicy)
+        {
+            case MACAddressClonePolicy_KeepAllMACs:
+            {
+                m_pMACComboBox->setItemText(i, UIWizardCloneVM::tr("Include all network adapter MAC addresses"));
+                m_pMACComboBox->setItemData(i, UIWizardCloneVM::tr("Include all network adapter MAC addresses during cloning."), Qt::ToolTipRole);
+                break;
+            }
+            case MACAddressClonePolicy_KeepNATMACs:
+            {
+                m_pMACComboBox->setItemText(i, UIWizardCloneVM::tr("Include only NAT network adapter MAC addresses"));
+                m_pMACComboBox->setItemData(i, UIWizardCloneVM::tr("Include only NAT network adapter MAC addresses during cloning."), Qt::ToolTipRole);
+                break;
+            }
+            case MACAddressClonePolicy_StripAllMACs:
+            {
+                m_pMACComboBox->setItemText(i, UIWizardCloneVM::tr("Generate new MAC addresses for all network adapters"));
+                m_pMACComboBox->setItemData(i, UIWizardCloneVM::tr("Generate new MAC addresses for all network adapters during cloning."), Qt::ToolTipRole);
+                break;
+            }
+            default:
+                break;
+        }
+    }
 
     m_pAdditionalOptionsLabel->setText(UIWizardCloneVM::tr("Additional Options:"));
     m_pKeepDiskNamesCheckBox->setToolTip(UIWizardCloneVM::tr("Don't change the disk names during cloning."));
