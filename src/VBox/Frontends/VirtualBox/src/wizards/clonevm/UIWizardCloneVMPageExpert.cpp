@@ -79,22 +79,43 @@ UIWizardCloneVMPageExpert::UIWizardCloneVMPageExpert(const QString &strOriginalN
                 }
             }
         }
+        /* Prepare clone-type options container: */
         m_pCloneTypeCnt = new QGroupBox(this);
+        if (m_pCloneTypeCnt)
         {
+            /* Prepare clone-type options button-group: */
             m_pButtonGroup = new QButtonGroup(m_pCloneTypeCnt);
+            if (m_pButtonGroup)
             {
+                /* Prepare clone-type options layout: */
                 QVBoxLayout *pCloneTypeCntLayout = new QVBoxLayout(m_pCloneTypeCnt);
                 {
+                    /* Prepare full clone option radio-button: */
                     m_pFullCloneRadio = new QRadioButton(m_pCloneTypeCnt);
+                    if (m_pFullCloneRadio)
                     {
                         m_pFullCloneRadio->setChecked(true);
+                        m_pButtonGroup->addButton(m_pFullCloneRadio);
+                        pCloneTypeCntLayout->addWidget(m_pFullCloneRadio);
                     }
-                    m_pLinkedCloneRadio = new QRadioButton(m_pCloneTypeCnt);
-                    pCloneTypeCntLayout->addWidget(m_pFullCloneRadio);
-                    pCloneTypeCntLayout->addWidget(m_pLinkedCloneRadio);
+
+                    /* Load currently supported clone options: */
+                    CSystemProperties comProperties = uiCommon().virtualBox().GetSystemProperties();
+                    const QVector<KCloneOptions> supportedOptions = comProperties.GetSupportedCloneOptions();
+                    /* Check whether we support linked clone option at all: */
+                    const bool fSupportedLinkedClone = supportedOptions.contains(KCloneOptions_Link);
+
+                    /* Prepare linked clone option radio-button: */
+                    if (fSupportedLinkedClone)
+                    {
+                        m_pLinkedCloneRadio = new QRadioButton(m_pCloneTypeCnt);
+                        if (m_pLinkedCloneRadio)
+                        {
+                            m_pButtonGroup->addButton(m_pLinkedCloneRadio);
+                            pCloneTypeCntLayout->addWidget(m_pLinkedCloneRadio);
+                        }
+                    }
                 }
-                m_pButtonGroup->addButton(m_pFullCloneRadio);
-                m_pButtonGroup->addButton(m_pLinkedCloneRadio);
             }
         }
         m_pCloneModeCnt = new QGroupBox(this);
@@ -198,7 +219,7 @@ UIWizardCloneVMPageExpert::UIWizardCloneVMPageExpert(const QString &strOriginalN
 
 void UIWizardCloneVMPageExpert::sltButtonToggled(QAbstractButton *pButton, bool fChecked)
 {
-    if (pButton == m_pLinkedCloneRadio && fChecked)
+    if (m_pLinkedCloneRadio && pButton == m_pLinkedCloneRadio && fChecked)
     {
         m_pCloneModeCnt->setEnabled(false);
         m_pMachineRadio->setChecked(true);
@@ -215,7 +236,8 @@ void UIWizardCloneVMPageExpert::retranslateUi()
     m_pNameCnt->setTitle(UIWizardCloneVM::tr("New machine &name and path"));
     m_pCloneTypeCnt->setTitle(UIWizardCloneVM::tr("Clone type"));
     m_pFullCloneRadio->setText(UIWizardCloneVM::tr("&Full Clone"));
-    m_pLinkedCloneRadio->setText(UIWizardCloneVM::tr("&Linked Clone"));
+    if (m_pLinkedCloneRadio)
+        m_pLinkedCloneRadio->setText(UIWizardCloneVM::tr("&Linked Clone"));
     m_pCloneModeCnt->setTitle(UIWizardCloneVM::tr("Snapshots"));
     m_pMachineRadio->setText(UIWizardCloneVM::tr("Current &machine state"));
     m_pMachineAndChildsRadio->setText(UIWizardCloneVM::tr("Current &snapshot tree branch"));
