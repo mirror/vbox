@@ -45,7 +45,6 @@ UIWizardCloneVMPage1::UIWizardCloneVMPage1(const QString &strOriginalName, const
     , m_pPathLabel(0)
     , m_pMACComboBoxLabel(0)
     , m_pMACComboBox(0)
-    , m_pAdditionalOptionsLabel(0)
     , m_pKeepDiskNamesCheckBox(0)
     , m_pKeepHWUUIDsCheckBox(0)
 {
@@ -190,6 +189,7 @@ UIWizardCloneVMPageBasic1::UIWizardCloneVMPageBasic1(const QString &strOriginalN
     : UIWizardCloneVMPage1(strOriginalName, strDefaultPath, strGroup)
     , m_pMainLabel(0)
     , m_pContainerLayout(0)
+    , m_pAdditionalOptionsLabel(0)
 {
     /* Create widgets: */
     QVBoxLayout *pMainLayout = new QVBoxLayout(this);

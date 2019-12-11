@@ -145,15 +145,6 @@ UIWizardCloneVMPageExpert::UIWizardCloneVMPageExpert(const QString &strOriginalN
             int iVerticalPosition = 3;
             const bool fSupportedKeepDiskNames = supportedOptions.contains(KCloneOptions_KeepDiskNames);
             const bool fSupportedKeepHWUUIDs = supportedOptions.contains(KCloneOptions_KeepHwUUIDs);
-            if (fSupportedKeepDiskNames || fSupportedKeepHWUUIDs)
-            {
-                m_pAdditionalOptionsLabel = new QLabel;
-                if (m_pAdditionalOptionsLabel)
-                {
-                    m_pAdditionalOptionsLabel->setAlignment(Qt::AlignRight | Qt::AlignTrailing | Qt::AlignVCenter);
-                    m_pCloneOptionsLayout->addWidget(m_pAdditionalOptionsLabel, iVerticalPosition, 0, 1, 1);
-                }
-            }
             if (fSupportedKeepDiskNames)
             {
                 m_pKeepDiskNamesCheckBox = new QCheckBox;
@@ -263,11 +254,16 @@ void UIWizardCloneVMPageExpert::retranslateUi()
         }
     }
 
-    m_pAdditionalOptionsLabel->setText(UIWizardCloneVM::tr("Additional Options:"));
-    m_pKeepDiskNamesCheckBox->setToolTip(UIWizardCloneVM::tr("Don't change the disk names during cloning."));
-    m_pKeepDiskNamesCheckBox->setText(UIWizardCloneVM::tr("Keep &Disk Names"));
-    m_pKeepHWUUIDsCheckBox->setToolTip(UIWizardCloneVM::tr("Don't change hardware UUIDs during cloning."));
-    m_pKeepHWUUIDsCheckBox->setText(UIWizardCloneVM::tr("Keep &Hardware UUIDs"));
+    if (m_pKeepDiskNamesCheckBox)
+    {
+        m_pKeepDiskNamesCheckBox->setToolTip(UIWizardCloneVM::tr("Don't change the disk names during cloning."));
+        m_pKeepDiskNamesCheckBox->setText(UIWizardCloneVM::tr("Keep &Disk Names"));
+    }
+    if (m_pKeepHWUUIDsCheckBox)
+    {
+        m_pKeepHWUUIDsCheckBox->setToolTip(UIWizardCloneVM::tr("Don't change hardware UUIDs during cloning."));
+        m_pKeepHWUUIDsCheckBox->setText(UIWizardCloneVM::tr("Keep &Hardware UUIDs"));
+    }
 }
 
 void UIWizardCloneVMPageExpert::initializePage()
