@@ -38,7 +38,7 @@ protected:
     UIWizardCloneVMPage2(bool fAdditionalInfo);
 
     /* Stuff for 'linkedClone' field: */
-    bool isLinkedClone() const;
+    bool linkedClone() const;
 
     /* Variables: */
     bool m_fAdditionalInfo;
@@ -53,7 +53,7 @@ protected:
 class UIWizardCloneVMPageBasic2 : public UIWizardPage, public UIWizardCloneVMPage2
 {
     Q_OBJECT;
-    Q_PROPERTY(bool linkedClone READ isLinkedClone);
+    Q_PROPERTY(bool linkedClone READ linkedClone);
 
 public:
 
