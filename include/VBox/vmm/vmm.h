@@ -381,8 +381,10 @@ typedef enum VMMR0OPERATION
     /** Call IntNetR0IfAbortWait(). */
     VMMR0_DO_INTNET_IF_ABORT_WAIT,
 
+#if 0
     /** Forward call to the PCI driver */
     VMMR0_DO_PCIRAW_REQ = 512,
+#endif
 
     /** The end of the R0 service operations. */
     VMMR0_DO_SRV_END,
