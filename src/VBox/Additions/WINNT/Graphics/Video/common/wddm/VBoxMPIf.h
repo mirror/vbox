@@ -568,8 +568,10 @@ typedef struct VBOXDISPIFESCAPE_GAFENCEUNREF
 #include <VBoxGaHWInfo.h>
 #endif /* VBOX_WITH_MESA3D */
 
-#define VBOXWDDM_QAI_CAP_3D   0x00000001 /* 3D is enabled in the VM settings. */
-#define VBOXWDDM_QAI_CAP_DXVA 0x00000002 /* DXVA is not disabled in the guest registry. */
+#define VBOXWDDM_QAI_CAP_3D     0x00000001 /* 3D is enabled in the VM settings. */
+#define VBOXWDDM_QAI_CAP_DXVA   0x00000002 /* DXVA is not disabled in the guest registry. */
+#define VBOXWDDM_QAI_CAP_DXVAHD 0x00000004 /* DXVA-HD is not disabled in the guest registry. */
+#define VBOXWDDM_QAI_CAP_WIN7   0x00000008 /* User mode driver can report D3D_UMD_INTERFACE_VERSION_WIN7. */
 
 /* D3DDDICB_QUERYADAPTERINFO::pPrivateDriverData */
 typedef struct VBOXWDDM_QAI

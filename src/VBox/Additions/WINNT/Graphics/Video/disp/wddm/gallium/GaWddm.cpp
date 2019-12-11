@@ -800,7 +800,7 @@ IUnknown *GaD3DIfCreateSharedPrimary(struct VBOXWDDMDISP_ALLOCATION *pAlloc)
 #define D3DCAPS2_CANRENDERWINDOWED UINT32_C(0x00080000)
 #endif
 
-HRESULT GaWddmGetD3D9Caps(IDirect3D9Ex *pD3D9If, D3DCAPS9 *pCaps)
+static HRESULT gaWddmGetD3D9Caps(VBOXWDDM_QAI const *pAdapterInfo, IDirect3D9Ex *pD3D9If, D3DCAPS9 *pCaps)
 {
     HRESULT hr = pD3D9If->GetDeviceCaps(D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL, pCaps);
     if (FAILED(hr))
@@ -839,6 +839,9 @@ HRESULT GaWddmGetD3D9Caps(IDirect3D9Ex *pD3D9If, D3DCAPS9 *pCaps)
 
     /* Required for Shader Model 3.0 but not set by Gallium backend. */
     pCaps->PS20Caps.Caps           |= D3DPS20CAPS_NOTEXINSTRUCTIONLIMIT;
+
+    if (RT_BOOL(pAdapterInfo->u32AdapterCaps & VBOXWDDM_QAI_CAP_DXVAHD))
+        pCaps->Caps3 |=  D3DCAPS3_DXVAHD;
 
 #ifdef DEBUG
     vboxDispCheckCapsLevel(pCaps);
@@ -1167,7 +1170,7 @@ HRESULT GaWddmD3DBackendOpen(PVBOXWDDMDISP_D3D pD3D, VBOXWDDM_QAI const *pAdapte
                                                    &pD3D9);
         if (SUCCEEDED(hr))
         {
-            hr = GaWddmGetD3D9Caps(pD3D9, &pD3D->Caps);
+            hr = gaWddmGetD3D9Caps(pAdapterInfo, pD3D9, &pD3D->Caps);
             pD3D9->Release();
 
             if (SUCCEEDED(hr))

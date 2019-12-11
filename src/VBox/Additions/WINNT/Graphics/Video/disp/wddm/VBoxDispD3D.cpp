@@ -179,7 +179,9 @@ HRESULT APIENTRY OpenAdapter(__inout D3DDDIARG_OPENADAPTER *pOpenData)
             pOpenData->pAdapterFuncs->pfnGetCaps      = GaDdiAdapterGetCaps;
             pOpenData->pAdapterFuncs->pfnCreateDevice = GaDdiAdapterCreateDevice;
             pOpenData->pAdapterFuncs->pfnCloseAdapter = GaDdiAdapterCloseAdapter;
-            pOpenData->DriverVersion                  = D3D_UMD_INTERFACE_VERSION_VISTA;
+            pOpenData->DriverVersion                  = RT_BOOL(pAdapterInfo->u32AdapterCaps & VBOXWDDM_QAI_CAP_WIN7)
+                                                      ? D3D_UMD_INTERFACE_VERSION_WIN7
+                                                      : D3D_UMD_INTERFACE_VERSION_VISTA;
         }
 #endif
         else
