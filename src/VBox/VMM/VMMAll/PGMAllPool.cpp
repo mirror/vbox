@@ -4973,7 +4973,7 @@ static int pgmPoolMakeMoreFreePages(PPGMPOOL pPool, PGMPOOLKIND enmKind, uint16_
     {
         STAM_PROFILE_ADV_SUSPEND(&pPool->StatAlloc, a);
 #ifdef IN_RING3
-        int rc = PGMR3PoolGrow(pVM);
+        int rc = PGMR3PoolGrow(pVM, VMMGetCpu(pVM));
 #else
         int rc = VMMRZCallRing3NoCpu(pVM, VMMCALLRING3_PGM_POOL_GROW, 0);
 #endif
@@ -5190,6 +5190,25 @@ PPGMPOOLPAGE pgmPoolQueryPageForDbg(PPGMPOOL pPool, RTHCPHYS HCPhys)
     return (PPGMPOOLPAGE)RTAvloHCPhysGet(&pPool->HCPhysTree, HCPhys & X86_PTE_PAE_PG_MASK);
 }
 
+
+/**
+ * Internal worker for PGM_HCPHYS_2_PTR.
+ *
+ * @returns VBox status code.
+ * @param   pVM         The cross context VM structure.
+ * @param   HCPhys      The HC physical address of the shadow page.
+ * @param   ppv         Where to return the address.
+ */
+int pgmPoolHCPhys2Ptr(PVM pVM, RTHCPHYS HCPhys, void **ppv)
+{
+    PPGMPOOLPAGE pPage = (PPGMPOOLPAGE)RTAvloHCPhysGet(&pVM->pgm.s.CTX_SUFF(pPool)->HCPhysTree, HCPhys & X86_PTE_PAE_PG_MASK);
+    AssertMsgReturn(pPage && pPage->enmKind != PGMPOOLKIND_FREE,
+                    ("HCPhys=%RHp pPage=%p idx=%d\n", HCPhys, pPage, (pPage) ? pPage->idx : 0),
+                    VERR_PGM_POOL_GET_PAGE_FAILED);
+    *ppv = (uint8_t *)pPage->CTX_SUFF(pvPage) + (HCPhys & PAGE_OFFSET_MASK);
+    return VINF_SUCCESS;
+}
+
 #ifdef IN_RING3 /* currently only used in ring 3; save some space in the R0 & GC modules (left it here as we might need it elsewhere later on) */
 
 /**
@@ -5332,7 +5351,6 @@ void pgmR3PoolReset(PVM pVM)
     {
         PPGMPOOLPAGE pPage = &pPool->aPages[i];
 
-        Assert(pPage->Core.Key == MMPage2Phys(pVM, pPage->pvPageR3));
         if (pPage->fMonitored)
             pgmPoolMonitorFlush(pPool, pPage);
         pPage->iModifiedNext = NIL_PGMPOOL_IDX;

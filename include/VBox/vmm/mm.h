@@ -212,11 +212,12 @@ VMMDECL(uint32_t)   MMHyperHeapPtrToOffset(PVM pVM, void *pv);
 VMMDECL(RTGCPTR)    MMHyperGetArea(PVM pVM, size_t *pcb);
 VMMDECL(bool)       MMHyperIsInsideArea(PVM pVM, RTGCPTR GCPtr);
 
-
+#if 0
 VMMDECL(RTHCPHYS)   MMPage2Phys(PVM pVM, void *pvPage);
 VMMDECL(void *)     MMPagePhys2Page(PVM pVM, RTHCPHYS HCPhysPage);
 VMMDECL(int)        MMPagePhys2PageEx(PVM pVM, RTHCPHYS HCPhysPage, void **ppvPage);
 VMMDECL(int)        MMPagePhys2PageTry(PVM pVM, RTHCPHYS HCPhysPage, void **ppvPage);
+#endif
 
 
 /** @def MMHYPER_RC_ASSERT_RCPTR
@@ -288,12 +289,14 @@ VMMR3DECL(uint32_t) MMR3PhysGet4GBRamHoleSize(PVM pVM);
 
 /** @defgroup grp_mm_page   Physical Page Pool
  * @{ */
+#if 0
 VMMR3DECL(void *)   MMR3PageAlloc(PVM pVM);
 VMMR3DECL(RTHCPHYS) MMR3PageAllocPhys(PVM pVM);
 VMMR3DECL(void)     MMR3PageFree(PVM pVM, void *pvPage);
 VMMR3DECL(void *)   MMR3PageAllocLow(PVM pVM);
 VMMR3DECL(void)     MMR3PageFreeLow(PVM pVM, void *pvPage);
 VMMR3DECL(void)     MMR3PageFreeByPhys(PVM pVM, RTHCPHYS HCPhysPage);
+#endif
 VMMR3DECL(void *)   MMR3PageDummyHCPtr(PVM pVM);
 VMMR3DECL(RTHCPHYS) MMR3PageDummyHCPhys(PVM pVM);
 /** @} */

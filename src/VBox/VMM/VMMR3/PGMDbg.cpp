@@ -1115,13 +1115,14 @@ static int pgmR3DumpHierarchyShwMapPage(PPGMR3DUMPHIERARCHYSTATE pState, RTHCPHY
     void *pvPage;
     if (!fIsMapping)
     {
-        int rc = MMPagePhys2PageTry(pState->pVM, HCPhys, &pvPage);
-        if (RT_FAILURE(rc))
+        PPGMPOOLPAGE pPoolPage = pgmPoolQueryPageForDbg(pState->pVM->pgm.s.pPoolR3, HCPhys);
+        if (pPoolPage)
         {
             pState->pHlp->pfnPrintf(pState->pHlp, "%0*llx error! %s at HCPhys=%RHp was not found in the page pool!\n",
                                     pState->cchAddress, pState->u64Address, pszDesc, HCPhys);
-            return rc;
+            return VERR_PGM_POOL_GET_PAGE_FAILED;
         }
+        pvPage = (uint8_t *)pPoolPage->pvPageR3 + (HCPhys & PAGE_OFFSET_MASK);
     }
     else
     {

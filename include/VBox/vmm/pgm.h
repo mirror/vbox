@@ -674,23 +674,31 @@ VMMRCDECL(int)      PGMRCDynMapInit(PVM pVM);
 /** @defgroup grp_pgm_r0  The PGM Host Context Ring-0 API
  * @{
  */
-VMMR0_INT_DECL(int) PGMR0PhysAllocateHandyPages(PGVM pGVM, VMCPUID idCpu);
-VMMR0_INT_DECL(int) PGMR0PhysFlushHandyPages(PGVM pGVM, VMCPUID idCpu);
-VMMR0_INT_DECL(int) PGMR0PhysAllocateLargeHandyPage(PGVM pGVM, VMCPUID idCpu);
-VMMR0_INT_DECL(int) PGMR0PhysMMIO2MapKernel(PGVM pGVM, PPDMDEVINS pDevIns, PGMMMIO2HANDLE hMmio2,
-                                            size_t offSub, size_t cbSub, void **ppvMapping);
-VMMR0_INT_DECL(int) PGMR0PhysSetupIoMmu(PGVM pGVM);
-VMMR0DECL(int)      PGMR0SharedModuleCheck(PVMCC pVM, PGVM pGVM, VMCPUID idCpu, PGMMSHAREDMODULE pModule, PCRTGCPTR64 paRegionsGCPtrs);
-VMMR0DECL(int)      PGMR0Trap0eHandlerNestedPaging(PGVM pGVM, PGVMCPU pGVCpu, PGMMODE enmShwPagingMode, RTGCUINT uErr, PCPUMCTXCORE pRegFrame, RTGCPHYS pvFault);
-VMMR0DECL(VBOXSTRICTRC) PGMR0Trap0eHandlerNPMisconfig(PGVM pGVM, PGVMCPU pGVCpu, PGMMODE enmShwPagingMode, PCPUMCTXCORE pRegFrame, RTGCPHYS GCPhysFault, uint32_t uErr);
+VMMR0_INT_DECL(int)  PGMR0InitPerVMData(PGVM pGVM);
+VMMR0_INT_DECL(int)  PGMR0InitVM(PGVM pGVM);
+VMMR0_INT_DECL(void) PGMR0CleanupVM(PGVM pGVM);
+VMMR0_INT_DECL(int)  PGMR0PhysAllocateHandyPages(PGVM pGVM, VMCPUID idCpu);
+VMMR0_INT_DECL(int)  PGMR0PhysFlushHandyPages(PGVM pGVM, VMCPUID idCpu);
+VMMR0_INT_DECL(int)  PGMR0PhysAllocateLargeHandyPage(PGVM pGVM, VMCPUID idCpu);
+VMMR0_INT_DECL(int)  PGMR0PhysMMIO2MapKernel(PGVM pGVM, PPDMDEVINS pDevIns, PGMMMIO2HANDLE hMmio2,
+                                             size_t offSub, size_t cbSub, void **ppvMapping);
+VMMR0_INT_DECL(int)  PGMR0PhysSetupIoMmu(PGVM pGVM);
+VMMR0DECL(int)       PGMR0SharedModuleCheck(PVMCC pVM, PGVM pGVM, VMCPUID idCpu, PGMMSHAREDMODULE pModule,
+                                            PCRTGCPTR64 paRegionsGCPtrs);
+VMMR0DECL(int)       PGMR0Trap0eHandlerNestedPaging(PGVM pGVM, PGVMCPU pGVCpu, PGMMODE enmShwPagingMode, RTGCUINT uErr,
+                                                    PCPUMCTXCORE pRegFrame, RTGCPHYS pvFault);
+VMMR0DECL(VBOXSTRICTRC) PGMR0Trap0eHandlerNPMisconfig(PGVM pGVM, PGVMCPU pGVCpu, PGMMODE enmShwPagingMode,
+                                                      PCPUMCTXCORE pRegFrame, RTGCPHYS GCPhysFault, uint32_t uErr);
+VMMR0_INT_DECL(int)  PGMR0PoolGrow(PGVM pGVM);
+
 # ifdef VBOX_WITH_2X_4GB_ADDR_SPACE
-VMMR0DECL(int)      PGMR0DynMapInit(void);
-VMMR0DECL(void)     PGMR0DynMapTerm(void);
-VMMR0DECL(int)      PGMR0DynMapInitVM(PVMCC pVM);
-VMMR0DECL(void)     PGMR0DynMapTermVM(PVMCC pVM);
-VMMR0DECL(int)      PGMR0DynMapAssertIntegrity(void);
-VMMR0DECL(bool)     PGMR0DynMapStartOrMigrateAutoSet(PVMCPUCC pVCpu);
-VMMR0DECL(void)     PGMR0DynMapMigrateAutoSet(PVMCPUCC pVCpu);
+VMMR0DECL(int)       PGMR0DynMapInit(void);
+VMMR0DECL(void)      PGMR0DynMapTerm(void);
+VMMR0DECL(int)       PGMR0DynMapInitVM(PVMCC pVM);
+VMMR0DECL(void)      PGMR0DynMapTermVM(PVMCC pVM);
+VMMR0DECL(int)       PGMR0DynMapAssertIntegrity(void);
+VMMR0DECL(bool)      PGMR0DynMapStartOrMigrateAutoSet(PVMCPUCC pVCpu);
+VMMR0DECL(void)      PGMR0DynMapMigrateAutoSet(PVMCPUCC pVCpu);
 # endif
 /** @} */
 #endif /* IN_RING0 */
@@ -786,7 +794,7 @@ VMMR3DECL(int)      PGMR3HandlerPhysicalTypeRegister(PVM pVM, PGMPHYSHANDLERKIND
                                                      const char *pszModRC, const char *pszHandlerRC, const char *pszPfHandlerRC,
                                                      const char *pszDesc,
                                                      PPGMPHYSHANDLERTYPE phType);
-VMMR3DECL(int)      PGMR3PoolGrow(PVM pVM);
+VMMR3_INT_DECL(int) PGMR3PoolGrow(PVM pVM, PVMCPU pVCpu);
 
 VMMR3DECL(int)      PGMR3PhysTlbGCPhys2Ptr(PVM pVM, RTGCPHYS GCPhys, bool fWritable, void **ppv);
 VMMR3DECL(uint8_t)  PGMR3PhysReadU8(PVM pVM, RTGCPHYS GCPhys, PGMACCESSORIGIN enmOrigin);

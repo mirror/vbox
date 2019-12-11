@@ -901,127 +901,129 @@ GVMMR0DECL(int) GVMMR0CreateVM(PSUPDRVSESSION pSession, uint32_t cCpus, PGVM *pp
                          */
                         RT_BZERO(pGVM, cPages << PAGE_SHIFT);
                         gvmmR0InitPerVMData(pGVM, iHandle, cCpus, pSession);
+                        pGVM->gvmm.s.VMMemObj  = hVMMemObj;
                         GMMR0InitPerVMData(pGVM);
+                        rc = PGMR0InitPerVMData(pGVM);
                         PDMR0InitPerVMData(pGVM);
                         IOMR0InitPerVMData(pGVM);
-                        pGVM->gvmm.s.VMMemObj  = hVMMemObj;
-
-                        /*
-                         * Allocate page array.
-                         * This currently have to be made available to ring-3, but this is should change eventually.
-                         */
-                        rc = RTR0MemObjAllocPage(&pGVM->gvmm.s.VMPagesMemObj, cPages * sizeof(SUPPAGE), false /* fExecutable */);
                         if (RT_SUCCESS(rc))
                         {
-                            PSUPPAGE paPages = (PSUPPAGE)RTR0MemObjAddress(pGVM->gvmm.s.VMPagesMemObj); AssertPtr(paPages);
-                            for (uint32_t iPage = 0; iPage < cPages; iPage++)
-                            {
-                                paPages[iPage].uReserved = 0;
-                                paPages[iPage].Phys = RTR0MemObjGetPagePhysAddr(pGVM->gvmm.s.VMMemObj, iPage);
-                                Assert(paPages[iPage].Phys != NIL_RTHCPHYS);
-                            }
-
                             /*
-                             * Map the page array, VM and VMCPU structures into ring-3.
+                             * Allocate page array.
+                             * This currently have to be made available to ring-3, but this is should change eventually.
                              */
-                            AssertCompileSizeAlignment(VM, PAGE_SIZE);
-                            rc = RTR0MemObjMapUserEx(&pGVM->gvmm.s.VMMapObj, pGVM->gvmm.s.VMMemObj, (RTR3PTR)-1, 0,
-                                                     RTMEM_PROT_READ | RTMEM_PROT_WRITE, NIL_RTR0PROCESS,
-                                                     0 /*offSub*/, sizeof(VM));
-                            for (VMCPUID i = 0; i < cCpus && RT_SUCCESS(rc); i++)
-                            {
-                                AssertCompileSizeAlignment(VMCPU, PAGE_SIZE);
-                                rc = RTR0MemObjMapUserEx(&pGVM->aCpus[i].gvmm.s.VMCpuMapObj, pGVM->gvmm.s.VMMemObj,
-                                                         (RTR3PTR)-1, 0, RTMEM_PROT_READ | RTMEM_PROT_WRITE, NIL_RTR0PROCESS,
-                                                         RT_UOFFSETOF_DYN(GVM, aCpus[i]), sizeof(VMCPU));
-                            }
-                            if (RT_SUCCESS(rc))
-                                rc = RTR0MemObjMapUser(&pGVM->gvmm.s.VMPagesMapObj, pGVM->gvmm.s.VMPagesMemObj, (RTR3PTR)-1,
-                                                       0 /* uAlignment */, RTMEM_PROT_READ | RTMEM_PROT_WRITE,
-                                                       NIL_RTR0PROCESS);
+                            rc = RTR0MemObjAllocPage(&pGVM->gvmm.s.VMPagesMemObj, cPages * sizeof(SUPPAGE), false /* fExecutable */);
                             if (RT_SUCCESS(rc))
                             {
-                                /*
-                                 * Initialize all the VM pointers.
-                                 */
-                                PVMR3 pVMR3 = RTR0MemObjAddressR3(pGVM->gvmm.s.VMMapObj);
-                                AssertPtr((void *)pVMR3);
-
-                                for (VMCPUID i = 0; i < cCpus; i++)
+                                PSUPPAGE paPages = (PSUPPAGE)RTR0MemObjAddress(pGVM->gvmm.s.VMPagesMemObj); AssertPtr(paPages);
+                                for (uint32_t iPage = 0; iPage < cPages; iPage++)
                                 {
-                                    pGVM->aCpus[i].pVMR0 = pGVM;
-                                    pGVM->aCpus[i].pVMR3 = pVMR3;
-                                    pGVM->apCpusR3[i] = RTR0MemObjAddressR3(pGVM->aCpus[i].gvmm.s.VMCpuMapObj);
-                                    pGVM->aCpus[i].pVCpuR3 = pGVM->apCpusR3[i];
-                                    pGVM->apCpusR0[i] = &pGVM->aCpus[i];
-                                    AssertPtr((void *)pGVM->apCpusR3[i]);
+                                    paPages[iPage].uReserved = 0;
+                                    paPages[iPage].Phys = RTR0MemObjGetPagePhysAddr(pGVM->gvmm.s.VMMemObj, iPage);
+                                    Assert(paPages[iPage].Phys != NIL_RTHCPHYS);
                                 }
 
-                                pGVM->paVMPagesR3 = RTR0MemObjAddressR3(pGVM->gvmm.s.VMPagesMapObj);
-                                AssertPtr((void *)pGVM->paVMPagesR3);
-
                                 /*
-                                 * Complete the handle - take the UsedLock sem just to be careful.
+                                 * Map the page array, VM and VMCPU structures into ring-3.
                                  */
-                                rc = GVMMR0_USED_EXCLUSIVE_LOCK(pGVMM);
-                                AssertRC(rc);
-
-                                pHandle->pGVM                   = pGVM;
-                                pHandle->hEMT0                  = hEMT0;
-                                pHandle->ProcId                 = ProcId;
-                                pGVM->pVMR3                     = pVMR3;
-                                pGVM->pVMR3Unsafe               = pVMR3;
-                                pGVM->aCpus[0].hEMT             = hEMT0;
-                                pGVM->aCpus[0].hNativeThreadR0  = hEMT0;
-                                pGVMM->cEMTs += cCpus;
-
-                                /* Associate it with the session and create the context hook for EMT0. */
-                                rc = SUPR0SetSessionVM(pSession, pGVM, pGVM);
+                                AssertCompileSizeAlignment(VM, PAGE_SIZE);
+                                rc = RTR0MemObjMapUserEx(&pGVM->gvmm.s.VMMapObj, pGVM->gvmm.s.VMMemObj, (RTR3PTR)-1, 0,
+                                                         RTMEM_PROT_READ | RTMEM_PROT_WRITE, NIL_RTR0PROCESS,
+                                                         0 /*offSub*/, sizeof(VM));
+                                for (VMCPUID i = 0; i < cCpus && RT_SUCCESS(rc); i++)
+                                {
+                                    AssertCompileSizeAlignment(VMCPU, PAGE_SIZE);
+                                    rc = RTR0MemObjMapUserEx(&pGVM->aCpus[i].gvmm.s.VMCpuMapObj, pGVM->gvmm.s.VMMemObj,
+                                                             (RTR3PTR)-1, 0, RTMEM_PROT_READ | RTMEM_PROT_WRITE, NIL_RTR0PROCESS,
+                                                             RT_UOFFSETOF_DYN(GVM, aCpus[i]), sizeof(VMCPU));
+                                }
+                                if (RT_SUCCESS(rc))
+                                    rc = RTR0MemObjMapUser(&pGVM->gvmm.s.VMPagesMapObj, pGVM->gvmm.s.VMPagesMemObj, (RTR3PTR)-1,
+                                                           0 /* uAlignment */, RTMEM_PROT_READ | RTMEM_PROT_WRITE,
+                                                           NIL_RTR0PROCESS);
                                 if (RT_SUCCESS(rc))
                                 {
-                                    rc = VMMR0ThreadCtxHookCreateForEmt(&pGVM->aCpus[0]);
-                                    if (RT_SUCCESS(rc))
+                                    /*
+                                     * Initialize all the VM pointers.
+                                     */
+                                    PVMR3 pVMR3 = RTR0MemObjAddressR3(pGVM->gvmm.s.VMMapObj);
+                                    AssertPtr((void *)pVMR3);
+
+                                    for (VMCPUID i = 0; i < cCpus; i++)
                                     {
-                                        /*
-                                         * Done!
-                                         */
-                                        VBOXVMM_R0_GVMM_VM_CREATED(pGVM, pGVM, ProcId, (void *)hEMT0, cCpus);
-
-                                        GVMMR0_USED_EXCLUSIVE_UNLOCK(pGVMM);
-                                        gvmmR0CreateDestroyUnlock(pGVMM);
-
-                                        CPUMR0RegisterVCpuThread(&pGVM->aCpus[0]);
-
-                                        *ppGVM = pGVM;
-                                        Log(("GVMMR0CreateVM: pVMR3=%p pGVM=%p hGVM=%d\n", pVMR3, pGVM, iHandle));
-                                        return VINF_SUCCESS;
+                                        pGVM->aCpus[i].pVMR0 = pGVM;
+                                        pGVM->aCpus[i].pVMR3 = pVMR3;
+                                        pGVM->apCpusR3[i] = RTR0MemObjAddressR3(pGVM->aCpus[i].gvmm.s.VMCpuMapObj);
+                                        pGVM->aCpus[i].pVCpuR3 = pGVM->apCpusR3[i];
+                                        pGVM->apCpusR0[i] = &pGVM->aCpus[i];
+                                        AssertPtr((void *)pGVM->apCpusR3[i]);
                                     }
 
-                                    SUPR0SetSessionVM(pSession, NULL, NULL);
-                                }
-                                GVMMR0_USED_EXCLUSIVE_UNLOCK(pGVMM);
-                            }
+                                    pGVM->paVMPagesR3 = RTR0MemObjAddressR3(pGVM->gvmm.s.VMPagesMapObj);
+                                    AssertPtr((void *)pGVM->paVMPagesR3);
 
-                            /* Cleanup mappings. */
-                            if (pGVM->gvmm.s.VMMapObj != NIL_RTR0MEMOBJ)
-                            {
-                                RTR0MemObjFree(pGVM->gvmm.s.VMMapObj, false /* fFreeMappings */);
-                                pGVM->gvmm.s.VMMapObj = NIL_RTR0MEMOBJ;
-                            }
-                            for (VMCPUID i = 0; i < cCpus; i++)
-                                if (pGVM->aCpus[i].gvmm.s.VMCpuMapObj != NIL_RTR0MEMOBJ)
-                                {
-                                    RTR0MemObjFree(pGVM->aCpus[i].gvmm.s.VMCpuMapObj, false /* fFreeMappings */);
-                                    pGVM->aCpus[i].gvmm.s.VMCpuMapObj = NIL_RTR0MEMOBJ;
+                                    /*
+                                     * Complete the handle - take the UsedLock sem just to be careful.
+                                     */
+                                    rc = GVMMR0_USED_EXCLUSIVE_LOCK(pGVMM);
+                                    AssertRC(rc);
+
+                                    pHandle->pGVM                   = pGVM;
+                                    pHandle->hEMT0                  = hEMT0;
+                                    pHandle->ProcId                 = ProcId;
+                                    pGVM->pVMR3                     = pVMR3;
+                                    pGVM->pVMR3Unsafe               = pVMR3;
+                                    pGVM->aCpus[0].hEMT             = hEMT0;
+                                    pGVM->aCpus[0].hNativeThreadR0  = hEMT0;
+                                    pGVMM->cEMTs += cCpus;
+
+                                    /* Associate it with the session and create the context hook for EMT0. */
+                                    rc = SUPR0SetSessionVM(pSession, pGVM, pGVM);
+                                    if (RT_SUCCESS(rc))
+                                    {
+                                        rc = VMMR0ThreadCtxHookCreateForEmt(&pGVM->aCpus[0]);
+                                        if (RT_SUCCESS(rc))
+                                        {
+                                            /*
+                                             * Done!
+                                             */
+                                            VBOXVMM_R0_GVMM_VM_CREATED(pGVM, pGVM, ProcId, (void *)hEMT0, cCpus);
+
+                                            GVMMR0_USED_EXCLUSIVE_UNLOCK(pGVMM);
+                                            gvmmR0CreateDestroyUnlock(pGVMM);
+
+                                            CPUMR0RegisterVCpuThread(&pGVM->aCpus[0]);
+
+                                            *ppGVM = pGVM;
+                                            Log(("GVMMR0CreateVM: pVMR3=%p pGVM=%p hGVM=%d\n", pVMR3, pGVM, iHandle));
+                                            return VINF_SUCCESS;
+                                        }
+
+                                        SUPR0SetSessionVM(pSession, NULL, NULL);
+                                    }
+                                    GVMMR0_USED_EXCLUSIVE_UNLOCK(pGVMM);
                                 }
-                            if (pGVM->gvmm.s.VMPagesMapObj != NIL_RTR0MEMOBJ)
-                            {
-                                RTR0MemObjFree(pGVM->gvmm.s.VMPagesMapObj, false /* fFreeMappings */);
-                                pGVM->gvmm.s.VMPagesMapObj = NIL_RTR0MEMOBJ;
+
+                                /* Cleanup mappings. */
+                                if (pGVM->gvmm.s.VMMapObj != NIL_RTR0MEMOBJ)
+                                {
+                                    RTR0MemObjFree(pGVM->gvmm.s.VMMapObj, false /* fFreeMappings */);
+                                    pGVM->gvmm.s.VMMapObj = NIL_RTR0MEMOBJ;
+                                }
+                                for (VMCPUID i = 0; i < cCpus; i++)
+                                    if (pGVM->aCpus[i].gvmm.s.VMCpuMapObj != NIL_RTR0MEMOBJ)
+                                    {
+                                        RTR0MemObjFree(pGVM->aCpus[i].gvmm.s.VMCpuMapObj, false /* fFreeMappings */);
+                                        pGVM->aCpus[i].gvmm.s.VMCpuMapObj = NIL_RTR0MEMOBJ;
+                                    }
+                                if (pGVM->gvmm.s.VMPagesMapObj != NIL_RTR0MEMOBJ)
+                                {
+                                    RTR0MemObjFree(pGVM->gvmm.s.VMPagesMapObj, false /* fFreeMappings */);
+                                    pGVM->gvmm.s.VMPagesMapObj = NIL_RTR0MEMOBJ;
+                                }
                             }
                         }
                     }
-
                 }
                 /* else: The user wasn't permitted to create this VM. */
 
@@ -1296,6 +1298,7 @@ static void gvmmR0CleanupVM(PGVM pGVM)
 #endif
     PDMR0CleanupVM(pGVM);
     IOMR0CleanupVM(pGVM);
+    PGMR0CleanupVM(pGVM);
 
     AssertCompile(NIL_RTTHREADCTXHOOK == (RTTHREADCTXHOOK)0); /* Depends on zero initialized memory working for NIL at the moment. */
     for (VMCPUID idCpu = 0; idCpu < pGVM->cCpus; idCpu++)

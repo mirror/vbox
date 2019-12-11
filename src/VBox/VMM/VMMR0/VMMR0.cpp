@@ -464,9 +464,7 @@ static int vmmR0InitVM(PGVM pGVM, uint32_t uSvnRev, uint32_t uBuildType)
             if (RT_SUCCESS(rc))
             {
                 VMM_CHECK_SMAP_CHECK2(pGVM, RT_NOTHING);
-#ifdef VBOX_WITH_2X_4GB_ADDR_SPACE
-                rc = PGMR0DynMapInitVM(pGVM);
-#endif
+                rc = PGMR0InitVM(pGVM);
                 if (RT_SUCCESS(rc))
                 {
                     VMM_CHECK_SMAP_CHECK2(pGVM, RT_NOTHING);
@@ -1799,6 +1797,13 @@ static int vmmR0EntryExWorker(PGVM pGVM, VMCPUID idCpu, VMMR0OPERATION enmOperat
             VMM_CHECK_SMAP_CHECK2(pGVM, RT_NOTHING);
             break;
 
+        case VMMR0_DO_PGM_POOL_GROW:
+            if (idCpu == NIL_VMCPUID)
+                return VERR_INVALID_CPU_ID;
+            rc = PGMR0PoolGrow(pGVM);
+            VMM_CHECK_SMAP_CHECK2(pGVM, RT_NOTHING);
+            break;
+
         /*
          * GMM wrappers.
          */
@@ -2343,6 +2348,7 @@ VMMR0DECL(int) VMMR0EntryEx(PGVM pGVM, PVMCC pVM, VMCPUID idCpu, VMMR0OPERATION 
             }
 
             default:
+            case VMMR0_DO_PGM_POOL_GROW:
                 break;
         }
     }

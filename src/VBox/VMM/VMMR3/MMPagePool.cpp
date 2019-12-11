@@ -378,6 +378,7 @@ DECLINLINE(void) mmR3PagePoolFree(PMMPAGEPOOL pPool, void *pv)
     }
 }
 
+#if 0
 
 /**
  * Allocates a page from the page pool.
@@ -482,6 +483,7 @@ VMMR3DECL(void) MMR3PageFreeByPhys(PVM pVM, RTHCPHYS HCPhysPage)
         AssertMsgFailed(("Invalid address HCPhysPT=%#x\n", HCPhysPage));
 }
 
+#endif
 
 /**
  * Gets the HC pointer to the dummy page.

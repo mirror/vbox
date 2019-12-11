@@ -139,7 +139,7 @@
 /** @def PGMPOOL_CFG_MAX_GROW
  * The maximum number of pages to add to the pool in one go.
  */
-#define PGMPOOL_CFG_MAX_GROW            (_256K >> PAGE_SHIFT)
+#define PGMPOOL_CFG_MAX_GROW            (_2M >> PAGE_SHIFT)
 
 /** @def VBOX_STRICT_PGM_HANDLER_VIRTUAL
  * Enables some extra assertions for virtual handlers (mainly phys2virt related).
@@ -265,17 +265,9 @@
  * @param   ppv         Where to store the virtual address. No need to cast
  *                      this.
  *
- * @remark  Use with care as we don't have so much dynamic mapping space in
- *          ring-0 on 32-bit darwin and in RC.
  * @remark  There is no need to assert on the result.
  */
-#ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
-# define PGM_HCPHYS_2_PTR(pVM, pVCpu, HCPhys, ppv) \
-     pgmRZDynMapHCPageInlined(pVCpu, HCPhys, (void **)(ppv) RTLOG_COMMA_SRC_POS)
-#else
-# define PGM_HCPHYS_2_PTR(pVM, pVCpu, HCPhys, ppv) \
-     MMPagePhys2PageEx(pVM, HCPhys, (void **)(ppv))
-#endif
+#define PGM_HCPHYS_2_PTR(pVM, pVCpu, HCPhys, ppv) pgmPoolHCPhys2Ptr(pVM, HCPhys, (void **)(ppv))
 
 /** @def PGM_GCPHYS_2_PTR_V2
  * Maps a GC physical page address to a virtual address.
@@ -2054,14 +2046,9 @@ typedef struct PGMPOOLPAGE
     /** AVL node code with the (HC) physical address of this page. */
     AVLOHCPHYSNODECORE  Core;
     /** Pointer to the R3 mapping of the page. */
-#ifdef VBOX_WITH_2X_4GB_ADDR_SPACE
     R3PTRTYPE(void *)   pvPageR3;
-#else
-    R3R0PTRTYPE(void *) pvPageR3;
-#endif
-#if HC_ARCH_BITS == 32 && GC_ARCH_BITS == 64
-    uint32_t            Alignment0;
-#endif
+    /** Pointer to the R0 mapping of the page. */
+    R0PTRTYPE(void *)   pvPageR0;
     /** The guest physical address. */
     RTGCPHYS            GCPhys;
     /** The kind of page we're shadowing. (This is really a PGMPOOLKIND enum.) */
@@ -2346,6 +2333,8 @@ typedef struct PGMPOOL
 #else
     uint32_t                    Alignment3;         /**< Align the next member on a 64-bit boundary. */
 #endif
+    /** Profiling PGMR0PoolGrow(). */
+    STAMPROFILE                 StatGrow;
     /** The AVL tree for looking up a page by its HC physical address. */
     AVLOHCPHYSTREE              HCPhysTree;
     uint32_t                    Alignment4;         /**< Align the next member on a 64-bit boundary. */
@@ -2381,11 +2370,13 @@ AssertCompileMemberAlignment(PGMPOOL, aPages, 8);
 DECLINLINE(void *) pgmPoolMapPageStrict(PPGMPOOLPAGE a_pPage, const char *pszCaller)
 {
     AssertPtr(a_pPage);
-    AssertReleaseMsg(RT_VALID_PTR(a_pPage->pvPageR3), ("enmKind=%d idx=%#x HCPhys=%RHp GCPhys=%RGp caller=%s\n", a_pPage->enmKind, a_pPage->idx, a_pPage->Core.Key, a_pPage->GCPhys, pszCaller));
-    return a_pPage->pvPageR3;
+    AssertMsg(RT_VALID_PTR(a_pPage->CTX_SUFF(pvPage)),
+              ("enmKind=%d idx=%#x HCPhys=%RHp GCPhys=%RGp pvPageR3=%p pvPageR0=%p caller=%s\n",
+               a_pPage->enmKind, a_pPage->idx, a_pPage->Core.Key, a_pPage->GCPhys, a_pPage->pvPageR3, a_pPage->pvPageR0, pszCaller));
+    return a_pPage->CTX_SUFF(pvPage);
 }
 #else
-# define PGMPOOL_PAGE_2_PTR(pVM, a_pPage)       ((a_pPage)->pvPageR3)
+# define PGMPOOL_PAGE_2_PTR(pVM, a_pPage)       ((a_pPage)->CTX_SUFF(pvPage))
 #endif
 
 
@@ -3833,6 +3824,22 @@ typedef PGMCPU *PPGMCPU;
 /** @} */
 
 
+/**
+ * PGM GVM instance data.
+ */
+typedef struct PGMR0PERVM
+{
+    /** @name PGM Pool related stuff.
+     * @{ */
+    /** Critical section for serializing pool growth. */
+    RTCRITSECT  PoolGrowCritSect;
+    /** The memory objects for the pool pages. */
+    RTR0MEMOBJ  ahPoolMemObjs[(PGMPOOL_IDX_LAST + PGMPOOL_CFG_MAX_GROW - 1) / PGMPOOL_CFG_MAX_GROW];
+    /** The ring-3 mapping objects for the pool pages. */
+    RTR0MEMOBJ  ahPoolMapObjs[(PGMPOOL_IDX_LAST + PGMPOOL_CFG_MAX_GROW - 1) / PGMPOOL_CFG_MAX_GROW];
+    /** @} */
+} PGMR0PERVM;
+
 RT_C_DECLS_BEGIN
 
 #if defined(VBOX_STRICT) && defined(IN_RING3)
@@ -3948,6 +3955,7 @@ int             pgmPoolFlushPage(PPGMPOOL pPool, PPGMPOOLPAGE pPage, bool fFlush
 void            pgmPoolFlushPageByGCPhys(PVM pVM, RTGCPHYS GCPhys);
 PPGMPOOLPAGE    pgmPoolGetPage(PPGMPOOL pPool, RTHCPHYS HCPhys);
 PPGMPOOLPAGE    pgmPoolQueryPageForDbg(PPGMPOOL pPool, RTHCPHYS HCPhys);
+int             pgmPoolHCPhys2Ptr(PVM pVM, RTHCPHYS HCPhys, void **ppv);
 int             pgmPoolSyncCR3(PVMCPUCC pVCpu);
 bool            pgmPoolIsDirtyPageSlow(PVM pVM, RTGCPHYS GCPhys);
 void            pgmPoolInvalidateDirtyPage(PVMCC pVM, RTGCPHYS GCPhysPT);

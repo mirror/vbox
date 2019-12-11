@@ -32,6 +32,7 @@
 #include <VBox/err.h>
 #include <iprt/assert.h>
 #include <iprt/mem.h>
+#include <iprt/memobj.h>
 
 
 /*
@@ -53,6 +54,74 @@
 #define PGM_BTH_NAME(name)          PGM_BTH_NAME_EPT_PROT(name)
 #include "PGMR0Bth.h"
 #undef PGM_BTH_NAME
+
+
+/**
+ * Initializes the per-VM data for the PGM.
+ *
+ * This is called from under the GVMM lock, so it should only initialize the
+ * data so PGMR0CleanupVM and others will work smoothly.
+ *
+ * @returns VBox status code.
+ * @param   pGVM    Pointer to the global VM structure.
+ */
+VMMR0_INT_DECL(int) PGMR0InitPerVMData(PGVM pGVM)
+{
+    AssertCompile(sizeof(pGVM->pgm.s) <= sizeof(pGVM->pgm.padding));
+    AssertCompile(sizeof(pGVM->pgmr0.s) <= sizeof(pGVM->pgmr0.padding));
+
+    AssertCompile(RT_ELEMENTS(pGVM->pgmr0.s.ahPoolMemObjs) == RT_ELEMENTS(pGVM->pgmr0.s.ahPoolMapObjs));
+    for (uint32_t i = 0; i < RT_ELEMENTS(pGVM->pgmr0.s.ahPoolMemObjs); i++)
+    {
+        pGVM->pgmr0.s.ahPoolMemObjs[i] = NIL_RTR0MEMOBJ;
+        pGVM->pgmr0.s.ahPoolMapObjs[i] = NIL_RTR0MEMOBJ;
+    }
+    return RTCritSectInit(&pGVM->pgmr0.s.PoolGrowCritSect);
+}
+
+
+/**
+ * Initalize the per-VM PGM for ring-0.
+ *
+ * @returns VBox status code.
+ * @param   pGVM    Pointer to the global VM structure.
+ */
+VMMR0_INT_DECL(int) PGMR0InitVM(PGVM pGVM)
+{
+    int rc = VINF_SUCCESS;
+#ifdef VBOX_WITH_2X_4GB_ADDR_SPACE
+    rc = PGMR0DynMapInitVM(pGVM);
+#endif
+    RT_NOREF(pGVM);
+    return rc;
+}
+
+
+/**
+ * Cleans up any loose ends before the GVM structure is destroyed.
+ */
+VMMR0_INT_DECL(void) PGMR0CleanupVM(PGVM pGVM)
+{
+    for (uint32_t i = 0; i < RT_ELEMENTS(pGVM->pgmr0.s.ahPoolMemObjs); i++)
+    {
+        if (pGVM->pgmr0.s.ahPoolMapObjs[i] != NIL_RTR0MEMOBJ)
+        {
+            int rc = RTR0MemObjFree(pGVM->pgmr0.s.ahPoolMapObjs[i], true /*fFreeMappings*/);
+            AssertRC(rc);
+            pGVM->pgmr0.s.ahPoolMapObjs[i] = NIL_RTR0MEMOBJ;
+        }
+
+        if (pGVM->pgmr0.s.ahPoolMemObjs[i] != NIL_RTR0MEMOBJ)
+        {
+            int rc = RTR0MemObjFree(pGVM->pgmr0.s.ahPoolMemObjs[i], true /*fFreeMappings*/);
+            AssertRC(rc);
+            pGVM->pgmr0.s.ahPoolMemObjs[i] = NIL_RTR0MEMOBJ;
+        }
+    }
+
+    if (RTCritSectIsInitialized(&pGVM->pgmr0.s.PoolGrowCritSect))
+        RTCritSectDelete(&pGVM->pgmr0.s.PoolGrowCritSect);
+}
 
 
 /**

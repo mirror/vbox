@@ -489,6 +489,7 @@ VMMR0_SOURCES   = \
 	VMMR0/PDMR0Device.cpp \
 	VMMR0/PDMR0Driver.cpp \
 	VMMR0/PGMR0.cpp \
+	VMMR0/PGMR0Pool.cpp \
 	VMMR0/PGMR0SharedPage.cpp \
 	VMMR0/VMMR0.cpp \
 	VMMRZ/CPUMRZ.cpp \
@@ -513,7 +514,6 @@ VMMR0_SOURCES   = \
 	VMMAll/IOMAllMmioNew.cpp \
 	VMMAll/MMAll.cpp \
 	VMMAll/MMAllHyper.cpp \
-	VMMAll/MMAllPagePool.cpp \
 	VMMAll/NEMAll.cpp \
 	VMMAll/PDMAll.cpp \
 	VMMAll/PDMAllCritSect.cpp \

@@ -169,7 +169,9 @@ int pgmR3PoolInit(PVM pVM)
     AssertLogRelRCReturn(rc, rc);
     AssertLogRelMsgReturn(cMaxPages <= PGMPOOL_IDX_LAST && cMaxPages >= RT_ALIGN(PGMPOOL_IDX_FIRST, 16),
                           ("cMaxPages=%u (%#x)\n", cMaxPages, cMaxPages), VERR_INVALID_PARAMETER);
-    cMaxPages = RT_ALIGN(cMaxPages, 16);
+    AssertCompile(RT_IS_POWER_OF_TWO(PGMPOOL_CFG_MAX_GROW));
+    if (cMaxPages < PGMPOOL_IDX_LAST)
+        cMaxPages = RT_ALIGN(cMaxPages, PGMPOOL_CFG_MAX_GROW / 2);
     if (cMaxPages > PGMPOOL_IDX_LAST)
         cMaxPages = PGMPOOL_IDX_LAST;
     LogRel(("PGM: PGMPool: cMaxPages=%u (u64MaxPages=%llu)\n", cMaxPages, u64MaxPages));
@@ -313,10 +315,11 @@ int pgmR3PoolInit(PVM pVM)
     Assert(!pPool->aPages[NIL_PGMPOOL_IDX].fZeroed);
     Assert(!pPool->aPages[NIL_PGMPOOL_IDX].fReusedFlushPending);
 
-#ifdef VBOX_WITH_STATISTICS
     /*
      * Register statistics.
      */
+    STAM_REL_REG(pVM, &pPool->StatGrow,                 STAMTYPE_PROFILE,   "/PGM/Pool/Grow",           STAMUNIT_TICKS, "Profiling PGMR0PoolGrow");
+#ifdef VBOX_WITH_STATISTICS
     STAM_REG(pVM, &pPool->cCurPages,                    STAMTYPE_U16,       "/PGM/Pool/cCurPages",      STAMUNIT_PAGES,             "Current pool size.");
     STAM_REG(pVM, &pPool->cMaxPages,                    STAMTYPE_U16,       "/PGM/Pool/cMaxPages",      STAMUNIT_PAGES,             "Max pool size.");
     STAM_REG(pVM, &pPool->cUsedPages,                   STAMTYPE_U16,       "/PGM/Pool/cUsedPages",     STAMUNIT_PAGES,             "The number of pages currently in use.");
@@ -472,64 +475,13 @@ void pgmR3PoolRelocate(PVM pVM)
  *
  * @returns VBox status code.
  * @param   pVM     The cross context VM structure.
+ * @param   pVCpu   The cross context virtual CPU structure of the calling EMT.
  */
-VMMR3DECL(int) PGMR3PoolGrow(PVM pVM)
+VMMR3_INT_DECL(int) PGMR3PoolGrow(PVM pVM, PVMCPU pVCpu)
 {
-    PPGMPOOL pPool = pVM->pgm.s.pPoolR3;
-    AssertReturn(pPool->cCurPages < pPool->cMaxPages, VERR_PGM_POOL_MAXED_OUT_ALREADY);
-
-    /* With 32-bit guests and no EPT, the CR3 limits the root pages to low
-       (below 4 GB) memory. */
-    /** @todo change the pool to handle ROOT page allocations specially when
-     *        required. */
-    bool fCanUseHighMemory = HMIsNestedPagingActive(pVM);
-
-    pgmLock(pVM);
-
-    /*
-     * How much to grow it by?
-     */
-    uint32_t cPages = pPool->cMaxPages - pPool->cCurPages;
-    cPages = RT_MIN(PGMPOOL_CFG_MAX_GROW, cPages);
-    LogFlow(("PGMR3PoolGrow: Growing the pool by %d (%#x) pages. fCanUseHighMemory=%RTbool\n", cPages, cPages, fCanUseHighMemory));
-
-    for (unsigned i = pPool->cCurPages; cPages-- > 0; i++)
-    {
-        PPGMPOOLPAGE pPage = &pPool->aPages[i];
-
-        if (fCanUseHighMemory)
-            pPage->pvPageR3 = MMR3PageAlloc(pVM);
-        else
-            pPage->pvPageR3 = MMR3PageAllocLow(pVM);
-        if (!pPage->pvPageR3)
-        {
-            Log(("We're out of memory!! i=%d fCanUseHighMemory=%RTbool\n", i, fCanUseHighMemory));
-            pgmUnlock(pVM);
-            return i ? VINF_SUCCESS : VERR_NO_PAGE_MEMORY;
-        }
-        pPage->Core.Key  = MMPage2Phys(pVM, pPage->pvPageR3);
-        AssertFatal(pPage->Core.Key < _4G || fCanUseHighMemory);
-        pPage->GCPhys    = NIL_RTGCPHYS;
-        pPage->enmKind   = PGMPOOLKIND_FREE;
-        pPage->idx       = pPage - &pPool->aPages[0];
-        LogFlow(("PGMR3PoolGrow: insert page #%#x - %RHp\n", pPage->idx, pPage->Core.Key));
-        pPage->iNext     = pPool->iFreeHead;
-        pPage->iUserHead = NIL_PGMPOOL_USER_INDEX;
-        pPage->iModifiedNext  = NIL_PGMPOOL_IDX;
-        pPage->iModifiedPrev  = NIL_PGMPOOL_IDX;
-        pPage->iMonitoredNext = NIL_PGMPOOL_IDX;
-        pPage->iMonitoredPrev = NIL_PGMPOOL_IDX;
-        pPage->iAgeNext  = NIL_PGMPOOL_IDX;
-        pPage->iAgePrev  = NIL_PGMPOOL_IDX;
-        /* commit it */
-        bool fRc = RTAvloHCPhysInsert(&pPool->HCPhysTree, &pPage->Core); Assert(fRc); NOREF(fRc);
-        pPool->iFreeHead = i;
-        pPool->cCurPages = i + 1;
-    }
-
-    pgmUnlock(pVM);
-    Assert(pPool->cCurPages <= pPool->cMaxPages);
-    return VINF_SUCCESS;
+    /* This used to do a lot of stuff, but it has moved to ring-0 (PGMR0PoolGrow). */
+    AssertReturn(pVM->pgm.s.pPoolR3->cCurPages < pVM->pgm.s.pPoolR3->cMaxPages, VERR_PGM_POOL_MAXED_OUT_ALREADY);
+    return VMMR3CallR0Emt(pVM, pVCpu, VMMR0_DO_PGM_POOL_GROW, 0, NULL);
 }
 
 

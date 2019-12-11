@@ -2392,7 +2392,7 @@ static int vmmR3ServiceCallRing3Request(PVM pVM, PVMCPU pVCpu)
          */
         case VMMCALLRING3_PGM_POOL_GROW:
         {
-            pVCpu->vmm.s.rcCallRing3 = PGMR3PoolGrow(pVM);
+            pVCpu->vmm.s.rcCallRing3 = PGMR3PoolGrow(pVM, pVCpu);
             break;
         }
 

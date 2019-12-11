@@ -459,10 +459,12 @@ VMMR3DECL(int) MMR3InitPaging(PVM pVM)
  */
 VMMR3DECL(int) MMR3Term(PVM pVM)
 {
+#if 0
     /*
      * Destroy the page pool. (first as it used the hyper heap)
      */
     mmR3PagePoolTerm(pVM);
+#endif
 
     /* Clean up the hypervisor heap. */
     mmR3HyperTerm(pVM);
@@ -739,12 +741,14 @@ VMMR3DECL(int) MMR3UpdateShadowReservation(PVM pVM, uint32_t cShadowPages)
  */
 VMMR3DECL(int) MMR3HCPhys2HCVirt(PVM pVM, RTHCPHYS HCPhys, void **ppv)
 {
+#if 0
     /*
      * Try page tables.
      */
     int rc = MMPagePhys2PageTry(pVM, HCPhys, ppv);
     if (RT_SUCCESS(rc))
         return rc;
+#endif
 
     /*
      * Iterate thru the lookup records for HMA.
