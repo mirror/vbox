@@ -183,7 +183,6 @@ VBoxVMM_SOURCES  = \
 	VMMAll/IOMAllMmioNew.cpp \
 	VMMAll/MMAll.cpp \
 	VMMAll/MMAllHyper.cpp \
-	VMMAll/MMAllPagePool.cpp \
 	VMMAll/NEMAll.cpp \
 	VMMAll/PDMAll.cpp \
 	VMMAll/PDMAllCritSect.cpp \

@@ -443,168 +443,6 @@ typedef MMHYPERHEAP *PMMHYPERHEAP;
 
 /** @} */
 
-
-/** @name Page Pool Internals
- * @{
- */
-
-/**
- * Page sub pool
- *
- * About the allocation of this structure. To keep the number of heap blocks,
- * the number of heap calls, and fragmentation low we allocate all the data
- * related to a MMPAGESUBPOOL node in one chunk. That means that after the
- * bitmap (which is of variable size) comes the SUPPAGE records and then
- * follows the lookup tree nodes. (The heap in question is the hyper heap.)
- */
-typedef struct MMPAGESUBPOOL
-{
-    /** Pointer to next sub pool. */
-#ifdef VBOX_WITH_2X_4GB_ADDR_SPACE
-    R3PTRTYPE(struct MMPAGESUBPOOL *)   pNext;
-#else
-    R3R0PTRTYPE(struct MMPAGESUBPOOL *) pNext;
-#endif
-    /** Pointer to next sub pool in the free chain.
-     * This is NULL if we're not in the free chain or at the end of it. */
-#ifdef VBOX_WITH_2X_4GB_ADDR_SPACE
-    R3PTRTYPE(struct MMPAGESUBPOOL *)   pNextFree;
-#else
-    R3R0PTRTYPE(struct MMPAGESUBPOOL *) pNextFree;
-#endif
-    /** Pointer to array of lock ranges.
-     * This is allocated together with the MMPAGESUBPOOL and thus needs no freeing.
-     * It follows immediately after the bitmap.
-     * The reserved field is a pointer to this structure.
-     */
-#ifdef VBOX_WITH_2X_4GB_ADDR_SPACE
-    R3PTRTYPE(PSUPPAGE)                 paPhysPages;
-#else
-    R3R0PTRTYPE(PSUPPAGE)               paPhysPages;
-#endif
-    /** Pointer to the first page. */
-#ifdef VBOX_WITH_2X_4GB_ADDR_SPACE
-    R3PTRTYPE(void *)                   pvPages;
-#else
-    R3R0PTRTYPE(void *)                 pvPages;
-#endif
-    /** Size of the subpool. */
-    uint32_t                            cPages;
-    /** Number of free pages. */
-    uint32_t                            cPagesFree;
-    /** The allocation bitmap.
-     * This may extend beyond the end of the defined array size.
-     */
-    uint32_t                            auBitmap[1];
-    /* ... SUPPAGE                      aRanges[1]; */
-} MMPAGESUBPOOL;
-/** Pointer to page sub pool. */
-typedef MMPAGESUBPOOL *PMMPAGESUBPOOL;
-
-/**
- * Page pool.
- */
-typedef struct MMPAGEPOOL
-{
-    /** List of subpools. */
-#ifdef VBOX_WITH_2X_4GB_ADDR_SPACE
-    R3PTRTYPE(PMMPAGESUBPOOL)           pHead;
-#else
-    R3R0PTRTYPE(PMMPAGESUBPOOL)         pHead;
-#endif
-    /** Head of subpools with free pages. */
-#ifdef VBOX_WITH_2X_4GB_ADDR_SPACE
-    R3PTRTYPE(PMMPAGESUBPOOL)           pHeadFree;
-#else
-    R3R0PTRTYPE(PMMPAGESUBPOOL)         pHeadFree;
-#endif
-    /** AVLPV tree for looking up HC virtual addresses.
-     * The tree contains MMLOOKUPVIRTPP records.
-     */
-#ifdef VBOX_WITH_2X_4GB_ADDR_SPACE
-    R3PTRTYPE(PAVLPVNODECORE)           pLookupVirt;
-#else
-    R3R0PTRTYPE(PAVLPVNODECORE)         pLookupVirt;
-#endif
-    /** Tree for looking up HC physical addresses.
-     * The tree contains MMLOOKUPPHYSHC records.
-     */
-#ifdef VBOX_WITH_2X_4GB_ADDR_SPACE
-    R3PTRTYPE(AVLHCPHYSTREE)            pLookupPhys;
-#else
-    R3R0PTRTYPE(AVLHCPHYSTREE)          pLookupPhys;
-#endif
-    /** Pointer to the VM this pool belongs. */
-#ifdef VBOX_WITH_2X_4GB_ADDR_SPACE
-    PVMR3                               pVM;
-#else
-    R3R0PTRTYPE(PVM)                    pVM;
-#endif
-    /** Flag indicating the allocation method.
-     * Set: SUPR3LowAlloc().
-     * Clear: SUPR3PageAllocEx(). */
-    bool                                fLow;
-    /** Number of subpools. */
-    uint32_t                            cSubPools;
-    /** Number of pages in pool. */
-    uint32_t                            cPages;
-#ifdef VBOX_WITH_STATISTICS
-    /** Number of free pages in pool. */
-    uint32_t                            cFreePages;
-# if HC_ARCH_BITS == 32
-    /** Aligning the statistics on an 8 byte boundary. */
-    uint32_t                            u32Alignment;
-# endif
-    /** Number of alloc calls. */
-    STAMCOUNTER                         cAllocCalls;
-    /** Number of free calls. */
-    STAMCOUNTER                         cFreeCalls;
-    /** Number of to phys conversions. */
-    STAMCOUNTER                         cToPhysCalls;
-    /** Number of to virtual conversions. */
-    STAMCOUNTER                         cToVirtCalls;
-    /** Number of real errors. */
-    STAMCOUNTER                         cErrors;
-#endif
-} MMPAGEPOOL;
-#ifndef IN_RC
-AssertCompileMemberAlignment(MMPAGEPOOL, cSubPools, 4);
-# ifdef VBOX_WITH_STATISTICS
-AssertCompileMemberAlignment(MMPAGEPOOL, cAllocCalls, 8);
-# endif
-#endif
-/** Pointer to page pool. */
-typedef MMPAGEPOOL *PMMPAGEPOOL;
-
-/**
- * Lookup record for HC virtual memory in the page pool.
- */
-typedef struct MMPPLOOKUPHCPTR
-{
-    /** The key is virtual address. */
-    AVLPVNODECORE           Core;
-    /** Pointer to subpool if lookup record for a pool. */
-    struct MMPAGESUBPOOL   *pSubPool;
-} MMPPLOOKUPHCPTR;
-/** Pointer to virtual memory lookup record. */
-typedef MMPPLOOKUPHCPTR *PMMPPLOOKUPHCPTR;
-
-/**
- * Lookup record for HC physical memory.
- */
-typedef struct MMPPLOOKUPHCPHYS
-{
-    /** The key is physical address. */
-    AVLHCPHYSNODECORE       Core;
-    /** Pointer to SUPPAGE record for this physical address. */
-    PSUPPAGE                pPhysPage;
-} MMPPLOOKUPHCPHYS;
-/** Pointer to physical memory lookup record. */
-typedef MMPPLOOKUPHCPHYS *PMMPPLOOKUPHCPHYS;
-
-/** @} */
-
-
 /**
  * Hypervisor memory mapping type.
  */
@@ -745,19 +583,9 @@ typedef struct MM
 
     /** The hypervisor heap (R0 Ptr). */
     R0PTRTYPE(PMMHYPERHEAP)     pHyperHeapR0;
-#ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
-    /** Page pool - R0 Ptr. */
-    R0PTRTYPE(PMMPAGEPOOL)      pPagePoolR0;
-    /** Page pool pages in low memory R0 Ptr. */
-    R0PTRTYPE(PMMPAGEPOOL)      pPagePoolLowR0;
-#endif /* !VBOX_WITH_2X_4GB_ADDR_SPACE */
 
     /** The hypervisor heap (R3 Ptr). */
     R3PTRTYPE(PMMHYPERHEAP)     pHyperHeapR3;
-    /** Page pool - R3 Ptr. */
-    R3PTRTYPE(PMMPAGEPOOL)      pPagePoolR3;
-    /** Page pool pages in low memory R3 Ptr. */
-    R3PTRTYPE(PMMPAGEPOOL)      pPagePoolLowR3;
 
     /** Pointer to the dummy page.
      * The dummy page is a paranoia thingy used for instance for pure MMIO RAM ranges
@@ -812,9 +640,6 @@ RT_C_DECLS_BEGIN
 
 int  mmR3UpdateReservation(PVM pVM);
 
-int  mmR3PagePoolInit(PVM pVM);
-void mmR3PagePoolTerm(PVM pVM);
-
 int  mmR3HeapCreateU(PUVM pUVM, PMMHEAP *ppHeap);
 void mmR3HeapDestroy(PMMHEAP pHeap);
 
@@ -827,30 +652,6 @@ int  mmR3HyperTerm(PVM pVM);
 int  mmR3HyperInitPaging(PVM pVM);
 
 const char *mmGetTagName(MMTAG enmTag);
-
-/**
- * Converts a pool address to a physical address.
- * The specified allocation type must match with the address.
- *
- * @returns Physical address.
- * @returns NIL_RTHCPHYS if not found or eType is not matching.
- * @param   pPool   Pointer to the page pool.
- * @param   pv      The address to convert.
- * @thread  The Emulation Thread.
- */
-RTHCPHYS mmPagePoolPtr2Phys(PMMPAGEPOOL pPool, void *pv);
-
-/**
- * Converts a pool physical address to a linear address.
- * The specified allocation type must match with the address.
- *
- * @returns Physical address.
- * @returns NULL if not found or eType is not matching.
- * @param   pPool       Pointer to the page pool.
- * @param   HCPhys      The address to convert.
- * @thread  The Emulation Thread.
- */
-void *mmPagePoolPhys2Ptr(PMMPAGEPOOL pPool, RTHCPHYS HCPhys);
 
 RT_C_DECLS_END
 
