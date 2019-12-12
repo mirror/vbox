@@ -821,17 +821,25 @@ QWidget *UIVirtualHardwareItem::createEditor(QWidget *pParent, const QStyleOptio
             }
             case KVirtualSystemDescriptionType_NetworkAdapter:
             {
+                /* Create combo editor: */
                 QComboBox *pComboBox = new QComboBox(pParent);
-                pComboBox->addItem(gpConverter->toString(KNetworkAdapterType_Am79C970A), KNetworkAdapterType_Am79C970A);
-                pComboBox->addItem(gpConverter->toString(KNetworkAdapterType_Am79C973), KNetworkAdapterType_Am79C973);
-#ifdef VBOX_WITH_E1000
-                pComboBox->addItem(gpConverter->toString(KNetworkAdapterType_I82540EM), KNetworkAdapterType_I82540EM);
-                pComboBox->addItem(gpConverter->toString(KNetworkAdapterType_I82543GC), KNetworkAdapterType_I82543GC);
-                pComboBox->addItem(gpConverter->toString(KNetworkAdapterType_I82545EM), KNetworkAdapterType_I82545EM);
-#endif /* VBOX_WITH_E1000 */
-#ifdef VBOX_WITH_VIRTIO
-                pComboBox->addItem(gpConverter->toString(KNetworkAdapterType_Virtio), KNetworkAdapterType_Virtio);
-#endif /* VBOX_WITH_VIRTIO */
+                /* Load currently supported network adapter types: */
+                CSystemProperties comProperties = uiCommon().virtualBox().GetSystemProperties();
+                QVector<KNetworkAdapterType> supportedTypes = comProperties.GetSupportedNetworkAdapterTypes();
+                /* Take currently requested type into account if it's sane: */
+                const KNetworkAdapterType enmAdapterType = static_cast<KNetworkAdapterType>(m_strConfigValue.toInt());
+                if (!supportedTypes.contains(enmAdapterType) && enmAdapterType != KNetworkAdapterType_Null)
+                    supportedTypes.prepend(enmAdapterType);
+                /* Populate adapter types: */
+                int iAdapterTypeIndex = 0;
+                foreach (const KNetworkAdapterType &enmType, supportedTypes)
+                {
+                    pComboBox->insertItem(iAdapterTypeIndex, gpConverter->toString(enmType));
+                    pComboBox->setItemData(iAdapterTypeIndex, QVariant::fromValue((int)enmType));
+                    pComboBox->setItemData(iAdapterTypeIndex, pComboBox->itemText(iAdapterTypeIndex), Qt::ToolTipRole);
+                    ++iAdapterTypeIndex;
+                }
+                /* Pass editor back: */
                 pEditor = pComboBox;
                 break;
             }
