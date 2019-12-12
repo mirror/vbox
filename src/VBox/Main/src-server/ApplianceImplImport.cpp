@@ -1853,7 +1853,7 @@ HRESULT Appliance::i_importCloudImpl(TaskCloud *pTask)
                             {
                                 if (vrc == VERR_FILE_NOT_FOUND || vrc == VERR_PATH_NOT_FOUND)
                                 {
-                                    vrc = RTDirCreate(strMachineFolder.c_str(), 0755, 0);
+                                    vrc = RTDirCreateFullPath(strMachineFolder.c_str(), 0755);
                                     if (RT_FAILURE(vrc))
                                         throw  setErrorVrc(vrc, tr("Could not create the directory '%s' (%Rrc)"),
                                                            strMachineFolder.c_str(), vrc);
@@ -1959,9 +1959,10 @@ HRESULT Appliance::i_importCloudImpl(TaskCloud *pTask)
                         hVfsIosCurr = NIL_RTVFSIOSTREAM;
                         /* Now wait for the background import operation to complete;
                          * this throws HRESULTs on error. */
-                        pTask->pProgress->WaitForOtherProgressCompletion(pProgressImport, 0 /* indefinite wait */);
+                        hrc = pTask->pProgress->WaitForOtherProgressCompletion(pProgressImport, 0 /* indefinite wait */);
 
                         /* Try to re-use some OVF stuff here */
+                        if (SUCCEEDED(hrc))
                         {
                             /* Small trick here.
                              * We add new item into the actual VSD after successful conversion.
@@ -2000,9 +2001,8 @@ HRESULT Appliance::i_importCloudImpl(TaskCloud *pTask)
                             vd.strDiskId = d.strDiskId;
                             vsys.mapVirtualDisks[vd.strDiskId] = vd;
 
+                            ++currImageObjectNum;
                         }
-
-                        ++currImageObjectNum;
                     }
 
                     RTVfsIoStrmRelease(hVfsIosCurr);
