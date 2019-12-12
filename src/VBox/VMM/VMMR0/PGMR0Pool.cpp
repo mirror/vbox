@@ -100,7 +100,7 @@ VMMR0_INT_DECL(int) PGMR0PoolGrow(PGVM pGVM)
                 RTR3PTR  pbRing3 = RTR0MemObjAddressR3(hMapObj);
                 AssertPtr(pbRing0);
                 Assert(((uintptr_t)pbRing0 & PAGE_OFFSET_MASK) == 0);
-                AssertPtr(pbRing3 != NIL_RTR3PTR);
+                Assert(pbRing3 != NIL_RTR3PTR);
                 Assert((pbRing3 & PAGE_OFFSET_MASK) == 0);
 
                 /*
