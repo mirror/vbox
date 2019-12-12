@@ -132,6 +132,7 @@ DECLINLINE(int) virtqIsEventNeeded(uint16_t uEventIdx, uint16_t uDescIdxNew, uin
 /**
  * Accessor for virtq descriptor
  */
+#ifdef IN_RING3
 DECLINLINE(void) virtioReadDesc(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t idxQueue,
                                 uint32_t idxDesc, PVIRTQ_DESC_T pDesc)
 {
@@ -141,10 +142,12 @@ DECLINLINE(void) virtioReadDesc(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_
                       pVirtio->aGCPhysQueueDesc[idxQueue] + sizeof(VIRTQ_DESC_T) * (idxDesc % cQueueItems),
                       pDesc, sizeof(VIRTQ_DESC_T));
 }
+#endif
 
 /**
  * Accessors for virtq avail ring
  */
+#ifdef IN_RING3
 DECLINLINE(uint16_t) virtioReadAvailDescIdx(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t idxQueue, uint32_t availIdx)
 {
     uint16_t uDescIdx;
@@ -156,6 +159,7 @@ DECLINLINE(uint16_t) virtioReadAvailDescIdx(PPDMDEVINS pDevIns, PVIRTIOCORE pVir
                       &uDescIdx, sizeof(uDescIdx));
     return uDescIdx;
 }
+#endif
 
 DECLINLINE(uint16_t) virtioReadAvailRingIdx(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t idxQueue)
 {
@@ -189,6 +193,7 @@ DECLINLINE(uint16_t) virtioReadAvailFlags(PPDMDEVINS pDevIns, PVIRTIOCORE pVirti
 }
 #endif
 
+#ifdef IN_RING3
 DECLINLINE(uint16_t) virtioReadAvailUsedEvent(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t idxQueue)
 {
     uint16_t uUsedEventIdx;
@@ -199,11 +204,15 @@ DECLINLINE(uint16_t) virtioReadAvailUsedEvent(PPDMDEVINS pDevIns, PVIRTIOCORE pV
                       &uUsedEventIdx, sizeof(uUsedEventIdx));
     return uUsedEventIdx;
 }
+#endif
+
 /** @} */
 
 /** @name Accessors for virtq used ring
  * @{
  */
+
+#ifdef IN_RING3
 DECLINLINE(void) virtioWriteUsedElem(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t idxQueue,
                                      uint32_t usedIdx, uint32_t uDescIdx, uint32_t uLen)
 {
@@ -214,6 +223,7 @@ DECLINLINE(void) virtioWriteUsedElem(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, ui
                           pVirtio->aGCPhysQueueUsed[idxQueue] + RT_UOFFSETOF_DYN(VIRTQ_USED_T, aRing[usedIdx % cQueueItems]),
                           &elem, sizeof(elem));
 }
+#endif
 
 DECLINLINE(void) virtioWriteUsedRingIdx(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t idxQueue, uint16_t uIdx)
 {
