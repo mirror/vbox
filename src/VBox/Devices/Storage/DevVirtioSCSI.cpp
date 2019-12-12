@@ -209,7 +209,7 @@ typedef struct VIRTIOSCSI_REQ_CMD_T
     REQ_CMD_HDR_T  ReqHdr;
     uint8_t  uCdb[1];                                           /**< cdb                                          */
 
-    REQ_CMD_PI_T piHdr;                                         /** T10 Pi block integrity (optional feature)     */
+    REQ_CMD_PI_T piHdr;                                         /**< T10 Pi block integrity (optional feature)     */
     uint8_t  uPiOut[1];                                         /**< pi_out[]          T10 pi block integrity     */
     uint8_t  uDataOut[1];                                       /**< dataout                                      */
     /** @} */
