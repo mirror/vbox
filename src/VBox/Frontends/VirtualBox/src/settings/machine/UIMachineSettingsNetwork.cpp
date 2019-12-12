@@ -214,6 +214,7 @@ private:
 
     /* Other variables: */
     int m_iSlot;
+    KNetworkAdapterType m_enmAdapterType;
     UIPortForwardingDataList m_portForwardingRules;
 };
 
@@ -226,6 +227,7 @@ UIMachineSettingsNetwork::UIMachineSettingsNetwork(UIMachineSettingsNetworkPage 
     : QIWithRetranslateUI<QWidget>(0)
     , m_pParent(pParent)
     , m_iSlot(-1)
+    , m_enmAdapterType(KNetworkAdapterType_Null)
 {
     /* Apply UI decorations: */
     Ui::UIMachineSettingsNetwork::setupUi(this);
@@ -290,7 +292,7 @@ void UIMachineSettingsNetwork::getAdapterDataFromCache(const UISettingsCacheMach
     sltHandleAttachmentTypeChange();
 
     /* Load adapter type: */
-    m_pAdapterTypeCombo->setCurrentIndex(position(m_pAdapterTypeCombo, oldAdapterData.m_adapterType));
+    m_enmAdapterType = oldAdapterData.m_adapterType;
 
     /* Load promiscuous mode type: */
     m_pPromiscuousModeCombo->setCurrentIndex(position(m_pPromiscuousModeCombo, oldAdapterData.m_promiscuousMode));
@@ -353,7 +355,7 @@ void UIMachineSettingsNetwork::putAdapterDataToCache(UISettingsCacheMachineNetwo
     }
 
     /* Save adapter type: */
-    newAdapterData.m_adapterType = (KNetworkAdapterType)m_pAdapterTypeCombo->itemData(m_pAdapterTypeCombo->currentIndex()).toInt();
+    newAdapterData.m_adapterType = m_pAdapterTypeCombo->currentData().value<KNetworkAdapterType>();
 
     /* Save promiscuous mode type: */
     newAdapterData.m_promiscuousMode = (KNetworkAdapterPromiscModePolicy)m_pPromiscuousModeCombo->itemData(m_pPromiscuousModeCombo->currentIndex()).toInt();
@@ -674,45 +676,29 @@ void UIMachineSettingsNetwork::populateComboboxes()
 
     /* Adapter type: */
     {
-        /* Remember the currently selected adapter type: */
-        int iCurrentAdapter = m_pAdapterTypeCombo->currentIndex();
-
         /* Clear the adapter type combo-box: */
         m_pAdapterTypeCombo->clear();
 
+        /* Load currently supported network adapter types: */
+        CSystemProperties comProperties = uiCommon().virtualBox().GetSystemProperties();
+        QVector<KNetworkAdapterType> supportedTypes = comProperties.GetSupportedNetworkAdapterTypes();
+        /* Take currently requested type into account if it's sane: */
+        if (!supportedTypes.contains(m_enmAdapterType) && m_enmAdapterType != KNetworkAdapterType_Null)
+            supportedTypes.prepend(m_enmAdapterType);
+
         /* Populate adapter types: */
         int iAdapterTypeIndex = 0;
-        m_pAdapterTypeCombo->insertItem(iAdapterTypeIndex, gpConverter->toString(KNetworkAdapterType_Am79C970A));
-        m_pAdapterTypeCombo->setItemData(iAdapterTypeIndex, KNetworkAdapterType_Am79C970A);
-        m_pAdapterTypeCombo->setItemData(iAdapterTypeIndex, m_pAdapterTypeCombo->itemText(iAdapterTypeIndex), Qt::ToolTipRole);
-        ++iAdapterTypeIndex;
-        m_pAdapterTypeCombo->insertItem(iAdapterTypeIndex, gpConverter->toString(KNetworkAdapterType_Am79C973));
-        m_pAdapterTypeCombo->setItemData(iAdapterTypeIndex, KNetworkAdapterType_Am79C973);
-        m_pAdapterTypeCombo->setItemData(iAdapterTypeIndex, m_pAdapterTypeCombo->itemText(iAdapterTypeIndex), Qt::ToolTipRole);
-        ++iAdapterTypeIndex;
-#ifdef VBOX_WITH_E1000
-        m_pAdapterTypeCombo->insertItem(iAdapterTypeIndex, gpConverter->toString(KNetworkAdapterType_I82540EM));
-        m_pAdapterTypeCombo->setItemData(iAdapterTypeIndex, KNetworkAdapterType_I82540EM);
-        m_pAdapterTypeCombo->setItemData(iAdapterTypeIndex, m_pAdapterTypeCombo->itemText(iAdapterTypeIndex), Qt::ToolTipRole);
-        ++iAdapterTypeIndex;
-        m_pAdapterTypeCombo->insertItem(iAdapterTypeIndex, gpConverter->toString(KNetworkAdapterType_I82543GC));
-        m_pAdapterTypeCombo->setItemData(iAdapterTypeIndex, KNetworkAdapterType_I82543GC);
-        m_pAdapterTypeCombo->setItemData(iAdapterTypeIndex, m_pAdapterTypeCombo->itemText(iAdapterTypeIndex), Qt::ToolTipRole);
-        ++iAdapterTypeIndex;
-        m_pAdapterTypeCombo->insertItem(iAdapterTypeIndex, gpConverter->toString(KNetworkAdapterType_I82545EM));
-        m_pAdapterTypeCombo->setItemData(iAdapterTypeIndex, KNetworkAdapterType_I82545EM);
-        m_pAdapterTypeCombo->setItemData(iAdapterTypeIndex, m_pAdapterTypeCombo->itemText(iAdapterTypeIndex), Qt::ToolTipRole);
-        ++iAdapterTypeIndex;
-#endif /* VBOX_WITH_E1000 */
-#ifdef VBOX_WITH_VIRTIO
-        m_pAdapterTypeCombo->insertItem(iAdapterTypeIndex, gpConverter->toString(KNetworkAdapterType_Virtio));
-        m_pAdapterTypeCombo->setItemData(iAdapterTypeIndex, KNetworkAdapterType_Virtio);
-        m_pAdapterTypeCombo->setItemData(iAdapterTypeIndex, m_pAdapterTypeCombo->itemText(iAdapterTypeIndex), Qt::ToolTipRole);
-        ++iAdapterTypeIndex;
-#endif /* VBOX_WITH_VIRTIO */
+        foreach (const KNetworkAdapterType &enmType, supportedTypes)
+        {
+            m_pAdapterTypeCombo->insertItem(iAdapterTypeIndex, gpConverter->toString(enmType));
+            m_pAdapterTypeCombo->setItemData(iAdapterTypeIndex, QVariant::fromValue(enmType));
+            m_pAdapterTypeCombo->setItemData(iAdapterTypeIndex, m_pAdapterTypeCombo->itemText(iAdapterTypeIndex), Qt::ToolTipRole);
+            ++iAdapterTypeIndex;
+        }
 
-        /* Restore the previously selected adapter type: */
-        m_pAdapterTypeCombo->setCurrentIndex(iCurrentAdapter == -1 ? 0 : iCurrentAdapter);
+        /* Choose requested adapter type: */
+        const int iIndex = m_pAdapterTypeCombo->findData(m_enmAdapterType);
+        m_pAdapterTypeCombo->setCurrentIndex(iIndex != -1 ? iIndex : 0);
     }
 
     /* Promiscuous Mode type: */

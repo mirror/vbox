@@ -366,6 +366,7 @@ template<> QString toString(const KNetworkAdapterType &type)
 #ifdef VBOX_WITH_VIRTIO
         case KNetworkAdapterType_Virtio:    return QApplication::translate("UICommon", "Paravirtualized Network (virtio-net)", "NetworkAdapterType");
 #endif /* VBOX_WITH_VIRTIO */
+        case KNetworkAdapterType_Am79C960:  return QApplication::translate("UICommon", "PCnet-ISA (Am79C960)", "NetworkAdapterType");
         default: AssertMsgFailed(("No text for %d", type)); break;
     }
     return QString();
