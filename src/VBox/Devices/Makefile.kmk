@@ -1216,7 +1216,7 @@ VBOX_WITH_VMSVGA3D_DYNAMIC_LOAD = 1
   	Storage/DevNVMe.cpp
  endif
 
- if defined(VBOX_WITH_VIRTIO_SCSI) 
+ if defined(VBOX_WITH_VIRTIO_SCSI)
   VBoxDDR0_DEFS         += VBOX_WITH_VIRTIO_SCSI
   VBoxDDR0_SOURCES      += \
   	VirtIO/Virtio_1_0.cpp \
