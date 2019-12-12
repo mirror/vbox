@@ -28,11 +28,12 @@
 #include "UINetworkAttachmentEditor.h"
 
 /* COM includes: */
+#ifdef VBOX_WITH_CLOUD_NET
+# include "CCloudNetwork.h"
+#endif
 #include "CHostNetworkInterface.h"
 #include "CNATNetwork.h"
-#ifdef VBOX_WITH_CLOUD_NET
-#include "CCloudNetwork.h"
-#endif /* VBOX_WITH_CLOUD_NET */
+#include "CSystemProperties.h"
 
 
 /* static */
@@ -42,6 +43,7 @@ UINetworkAttachmentEditor::UINetworkAttachmentEditor(QWidget *pParent /* = 0 */,
     : QIWithRetranslateUI<QWidget>(pParent)
     , m_fWithLabels(fWithLabels)
     , m_enmRestrictedNetworkAttachmentTypes(UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork_Invalid)
+    , m_enmType(KNetworkAttachmentType_Max)
     , m_pLabelType(0)
     , m_pComboType(0)
     , m_pLabelName(0)
@@ -65,21 +67,19 @@ void UINetworkAttachmentEditor::setValueType(KNetworkAttachmentType enmType)
     /* Make sure combo is there: */
     if (!m_pComboType)
         return;
+    /* Make sure type is changed: */
+    if (m_enmType == enmType)
+        return;
 
-    /* Search for an item with required data value, choose item to be current if found: */
-    const int iIndex = m_pComboType->findData(QVariant::fromValue(enmType));
-    if (iIndex != -1)
-        m_pComboType->setCurrentIndex(iIndex);
+    /* Remember requested type: */
+    m_enmType = enmType;
+    /* Repopulate finally, supported values might change: */
+    populateTypeCombo();
 }
 
 KNetworkAttachmentType UINetworkAttachmentEditor::valueType() const
 {
-    /* Make sure combo is there: */
-    if (!m_pComboType)
-        return KNetworkAttachmentType_Null;
-
-    /* Return current item data: */
-    return m_pComboType->currentData().value<KNetworkAttachmentType>();
+    return m_pComboType ? m_pComboType->currentData().value<KNetworkAttachmentType>() : m_enmType;
 }
 
 void UINetworkAttachmentEditor::setValueNames(KNetworkAttachmentType enmType, const QStringList &names)
@@ -189,7 +189,9 @@ void UINetworkAttachmentEditor::retranslateUi()
         for (int i = 0; i < m_pComboType->count(); ++i)
         {
             const KNetworkAttachmentType enmType = m_pComboType->itemData(i).value<KNetworkAttachmentType>();
-            m_pComboType->setItemText(i, gpConverter->toString(enmType));
+            const QString strName = gpConverter->toString(enmType);
+            m_pComboType->setItemData(i, strName, Qt::ToolTipRole);
+            m_pComboType->setItemText(i, strName);
         }
     }
 
@@ -337,26 +339,21 @@ void UINetworkAttachmentEditor::populateTypeCombo()
     /* Block signals initially: */
     m_pComboType->blockSignals(true);
 
-    /* Remember currently selected type index: */
-    int iCurrentAttachment = m_pComboType->currentIndex();
-
     /* Clear the type combo-box: */
     m_pComboType->clear();
 
-    /* Populate attachments: */
+    /* Load currently supported network attachment types (system-properties getter): */
+    CSystemProperties comProperties = uiCommon().virtualBox().GetSystemProperties();
+    QVector<KNetworkAttachmentType> supportedTypes = comProperties.GetSupportedNetworkAttachmentTypes();
+    /* Take currently requested type into account if it's sane: */
+    if (!supportedTypes.contains(m_enmType) && m_enmType != KNetworkAttachmentType_Max)
+        supportedTypes.prepend(m_enmType);
+
+    /* Populate attachment types: */
     int iAttachmentTypeIndex = 0;
-    // WORKAROUND:
-    // We want some hardcoded order, so prepare a list of enum values.
-    QList<KNetworkAttachmentType> attachmentTypes  = QList<KNetworkAttachmentType>() << KNetworkAttachmentType_Null
-                                                  << KNetworkAttachmentType_NAT << KNetworkAttachmentType_NATNetwork
-                                                  << KNetworkAttachmentType_Bridged << KNetworkAttachmentType_Internal
-                                                  << KNetworkAttachmentType_HostOnly << KNetworkAttachmentType_Generic;
-#ifdef VBOX_WITH_CLOUD_NET
-    attachmentTypes.append(KNetworkAttachmentType_Cloud);
-#endif /* VBOX_WITH_CLOUD_NET */
-    for (int i = 0; i < attachmentTypes.size(); ++i)
+    foreach (const KNetworkAttachmentType &enmType, supportedTypes)
     {
-        const KNetworkAttachmentType enmType = attachmentTypes.at(i);
+        /* Filter currently restricted network attachment types (extra-data getter): */
         if (m_enmRestrictedNetworkAttachmentTypes & toUiNetworkAdapterEnum(enmType))
             continue;
         m_pComboType->insertItem(iAttachmentTypeIndex, gpConverter->toString(enmType));
@@ -365,8 +362,9 @@ void UINetworkAttachmentEditor::populateTypeCombo()
         ++iAttachmentTypeIndex;
     }
 
-    /* Restore previously selected type index: */
-    m_pComboType->setCurrentIndex(iCurrentAttachment == -1 ? 0 : iCurrentAttachment);
+    /* Restore previously selected type if possible: */
+    const int iIndex = m_pComboType->findData(m_enmType);
+    m_pComboType->setCurrentIndex(iIndex != -1 ? iIndex : 0);
 
     /* Handle combo item change: */
     sltHandleCurrentTypeChanged();

@@ -133,6 +133,9 @@ private:
     /** Holds the map of current names. */
     QMap<KNetworkAttachmentType, QString>      m_name;
 
+    /** Holds the requested type. */
+    KNetworkAttachmentType  m_enmType;
+
     /** Holds the type label instance. */
     QLabel     *m_pLabelType;
     /** Holds the type combo instance. */
