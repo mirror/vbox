@@ -55,6 +55,7 @@
 #include "GVMMR0Internal.h"
 #include <VBox/vmm/iom.h>
 #include <VBox/vmm/pdm.h>
+#include <VBox/vmm/pgm.h>
 #include <VBox/vmm/vmm.h>
 #ifdef VBOX_WITH_NEM_R0
 # include <VBox/vmm/nem.h>
