@@ -2369,6 +2369,7 @@ AssertCompileMemberAlignment(PGMPOOL, aPages, 8);
 # define PGMPOOL_PAGE_2_PTR(a_pVM, a_pPage)     pgmPoolMapPageStrict(a_pPage, __FUNCTION__)
 DECLINLINE(void *) pgmPoolMapPageStrict(PPGMPOOLPAGE a_pPage, const char *pszCaller)
 {
+    RT_NOREF(pszCaller);
     AssertPtr(a_pPage);
     AssertMsg(RT_VALID_PTR(a_pPage->CTX_SUFF(pvPage)),
               ("enmKind=%d idx=%#x HCPhys=%RHp GCPhys=%RGp pvPageR3=%p pvPageR0=%p caller=%s\n",
