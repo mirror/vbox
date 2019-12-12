@@ -79,7 +79,7 @@
 
 #define VIRTIOSCSI_HOST_SCSI_FEATURES_OFFERED       VIRTIOSCSI_HOST_SCSI_FEATURES_NONE
 
-#define VIRTIOSCSI_REQ_QUEUE_CNT                    1           /**< T.B.D. Consider increasing                      */
+#define VIRTIOSCSI_REQ_QUEUE_CNT                    4           /**< T.B.D. Consider increasing                      */
 #define VIRTIOSCSI_QUEUE_CNT                        (VIRTIOSCSI_REQ_QUEUE_CNT + 2)
 #define VIRTIOSCSI_MAX_TARGETS                      256         /**< T.B.D. Figure out a a good value for this.      */
 #define VIRTIOSCSI_MAX_LUN                          256         /**< VirtIO specification, section 5.6.4             */
@@ -108,7 +108,7 @@
 #define EVENTQ_IDX                                  1           /**< Spec-defined Index of event queue               */
 #define VIRTQ_REQ_BASE                              2           /**< Spec-defined base index of request queues       */
 
-#define VIRTQNAME(qIdx) (pThis->aszVIRTQNAMEs[qIdx])            /**< Macro to get queue name from its index          */
+#define VIRTQNAME(qIdx) (pThis->aszVirtqNames[qIdx])            /**< Macro to get queue name from its index          */
 #define CBVIRTQNAME(qIdx) RTStrNLen(VIRTQNAME(qIdx), sizeof(VIRTQNAME(qIdx)))
 
 #define IS_REQ_QUEUE(qIdx) (qIdx >= VIRTQ_REQ_BASE && qIdx < VIRTIOSCSI_QUEUE_CNT)
@@ -125,10 +125,8 @@
 *********************************************************************************************************************************/
 /**
  * VirtIO SCSI Host Device device-specific configuration (see VirtIO 1.0, section 5.6.4)
- * VBox VirtIO framework issues callback to this client (device) to handle MMIO accesses
- * to the device-specific configuration parameters. uNumQueues is constant, readonly,
- * but maintained in this struct due to the design of local MMIO and logging handling.
- * The named constant will be used instead to wherever feasible.
+ * VBox VirtIO core issues callback to this VirtIO device-specific implementation to handle
+ * MMIO accesses to device-specific configuration parameters.
  */
 typedef struct virtio_scsi_config
 {
@@ -159,7 +157,7 @@ typedef struct virtio_scsi_config
 typedef struct virtio_scsi_event
 {
     // Device-writable part
-    uint32_t uEvent;                                            /**< event:                                          */
+    uint32_t uEvent;                                            /**< event                                          */
     uint8_t  abVirtioLun[8];                                    /**< lun                                             */
     uint32_t uReason;                                           /**< reason                                          */
 } VIRTIOSCSI_EVENT_T, *PVIRTIOSCSI_EVENT_T;
@@ -426,7 +424,7 @@ typedef struct VIRTIOSCSI
     char                            szInstance[16];
 
     /** Device-specific spec-based VirtIO VIRTQNAMEs */
-    char                            aszVIRTQNAMEs[VIRTIOSCSI_QUEUE_CNT][VIRTIO_MAX_QUEUE_NAME_SIZE];
+    char                            aszVirtqNames[VIRTIOSCSI_QUEUE_CNT][VIRTIO_MAX_QUEUE_NAME_SIZE];
 
     /** Track which VirtIO queues we've attached to */
     bool                            afQueueAttached[VIRTIOSCSI_QUEUE_CNT];
@@ -553,7 +551,6 @@ typedef CTX_SUFF(PVIRTIOSCSI) PVIRTIOSCSICC;
  */
 typedef struct VIRTIOSCSIREQ
 {
-    struct VIRTIOSCSIREQ           *next;                       /**< When linked into redo queue                       */
     PDMMEDIAEXIOREQ                hIoReq;                      /**< Handle of I/O request                             */
     PVIRTIOSCSITARGET              pTarget;                     /**< Target                                            */
     uint16_t                       qIdx;                        /**< Index of queue this request arrived on            */
@@ -576,10 +573,10 @@ typedef VIRTIOSCSIREQ *PVIRTIOSCSIREQ;
 
 DECLINLINE(void) virtioScsiSetVirtqNames(PVIRTIOSCSI pThis)
 {
-    RTStrCopy(pThis->aszVIRTQNAMEs[CONTROLQ_IDX], VIRTIO_MAX_QUEUE_NAME_SIZE, "controlq");
-    RTStrCopy(pThis->aszVIRTQNAMEs[EVENTQ_IDX],   VIRTIO_MAX_QUEUE_NAME_SIZE, "eventq");
+    RTStrCopy(pThis->aszVirtqNames[CONTROLQ_IDX], VIRTIO_MAX_QUEUE_NAME_SIZE, "controlq");
+    RTStrCopy(pThis->aszVirtqNames[EVENTQ_IDX],   VIRTIO_MAX_QUEUE_NAME_SIZE, "eventq");
     for (uint16_t qIdx = VIRTQ_REQ_BASE; qIdx < VIRTQ_REQ_BASE + VIRTIOSCSI_REQ_QUEUE_CNT; qIdx++)
-        RTStrPrintf(pThis->aszVIRTQNAMEs[qIdx], VIRTIO_MAX_QUEUE_NAME_SIZE,
+        RTStrPrintf(pThis->aszVirtqNames[qIdx], VIRTIO_MAX_QUEUE_NAME_SIZE,
                     "requestq<%d>", qIdx - VIRTQ_REQ_BASE);
 }
 
@@ -1044,7 +1041,7 @@ static DECLCALLBACK(int) virtioScsiR3IoReqCopyFromBuf(PPDMIMEDIAEXPORT pInterfac
     }
     RT_UNTRUSTED_NONVOLATILE_COPY_FENCE(); /* needed? */
 
-    Log2Func((".... Copied %lu bytes from %lu byte guest buffer, residual=%lu\n",
+    Log3Func((".... Copied %lu bytes from %lu byte guest buffer, residual=%lu\n",
          cbCopy, pReq->pDescChain->cbPhysReturn, pReq->pDescChain->cbPhysReturn - cbCopy));
 
     return VINF_SUCCESS;
@@ -1131,10 +1128,9 @@ static int virtioScsiR3ReqSubmit(PPDMDEVINS pDevIns, PVIRTIOSCSI pThis, PVIRTIOS
         LogRel(("* * * REPORT LUNS LU ACCESSED * * * "));
         /* Force rejection. todo: figure out right way to handle. Note this is a very
          * vague and confusing part of the VirtIO spec which deviates from the SCSI standard
-         * as Klaus has pointed out on numerous occasions. I have not been able to determine
-         * how to implement this properly. Nor do I see any of the guest drivers at this
-         * point making use of it, hence the loud log message so we can catch it if/when a guest
-         * does access it and can resume the investigation at that point.  r=paul */
+         * I have not been able to determine how to implement this properly.  Guest drivers
+         * whose source code has been checked, so far, don't seem to use it. If it starts
+         * showing up in the logs can try to work */
         uScsiLun = 0xff;
     }
     else
@@ -1159,7 +1155,6 @@ static int virtioScsiR3ReqSubmit(PPDMDEVINS pDevIns, PVIRTIOSCSI pThis, PVIRTIOS
     /*
      * Handle submission errors
      */
-
     if (RT_LIKELY(!fBadLUNFormat))
     { /*  likely */ }
     else
@@ -1580,7 +1575,7 @@ static DECLCALLBACK(int) virtioScsiR3WorkerThread(PPDMDEVINS pDevIns, PPDMTHREAD
              {
                   PVIRTIO_DESC_CHAIN_T pDescChain;
                   int rc = virtioCoreR3DescChainGet(pDevIns, &pThis->Virtio, qIdx,
-                                                pWorkerR3->auRedoDescs[i], &pDescChain);
+                                                    pWorkerR3->auRedoDescs[i], &pDescChain);
                   if (RT_FAILURE(rc))
                      LogRel(("Error fetching desc chain to redo, %Rrc", rc));
 
@@ -2354,7 +2349,9 @@ static DECLCALLBACK(void) virtioScsiR3MediumEjected(PPDMIMEDIAEXPORT pInterface)
     PPDMDEVINS          pDevIns   = pTarget->pDevIns;
     PVIRTIOSCSICC       pThisCC   = PDMDEVINS_2_DATA_CC(pDevIns, PVIRTIOSCSICC);
 
-#if 0 /* need more info about how to use this event */
+#if 0 /* need more info about how to use this event. The VirtIO 1.0 specification
+       * lists several SCSI related event types but presumes the reader knows
+       * how to use them without providing references. */
     virtioScsiR3ReportMediaChange(pDevIns, pThis, pTarget->uTarget);
 #endif
 
@@ -2661,7 +2658,7 @@ const PDMDEVREG g_DeviceVirtioSCSI =
     /* .u32Version = */             PDM_DEVREG_VERSION,
     /* .uReserved0 = */             0,
     /* .szName = */                 "virtio-scsi",
-    /* .fFlags = */                 PDM_DEVREG_FLAGS_DEFAULT_BITS /** @todo | PDM_DEVREG_FLAGS_RZ */ | PDM_DEVREG_FLAGS_NEW_STYLE
+    /* .fFlags = */                 PDM_DEVREG_FLAGS_DEFAULT_BITS | PDM_DEVREG_FLAGS_RZ | PDM_DEVREG_FLAGS_NEW_STYLE
                                     | PDM_DEVREG_FLAGS_FIRST_SUSPEND_NOTIFICATION
                                     | PDM_DEVREG_FLAGS_FIRST_POWEROFF_NOTIFICATION,
     /* .fClass = */                 PDM_DEVREG_CLASS_STORAGE,
