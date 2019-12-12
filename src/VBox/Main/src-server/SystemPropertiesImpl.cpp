@@ -1432,7 +1432,7 @@ HRESULT SystemProperties::getSupportedNetworkAttachmentTypes(std::vector<Network
         NetworkAttachmentType_HostOnly,
         NetworkAttachmentType_Generic,
         NetworkAttachmentType_NATNetwork,
-#ifdef DEBUG
+#ifdef VBOX_WITH_CLOUD_NET
         NetworkAttachmentType_Cloud,
 #endif
         NetworkAttachmentType_Null,
