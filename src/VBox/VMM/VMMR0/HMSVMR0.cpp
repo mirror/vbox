@@ -292,9 +292,9 @@ typedef struct SVMTRANSIENT
 {
     /** The host's rflags/eflags. */
     RTCCUINTREG     fEFlags;
-
     /** The \#VMEXIT exit code (the EXITCODE field in the VMCB). */
     uint64_t        u64ExitCode;
+
     /** The guest's TPR value used for TPR shadowing. */
     uint8_t         u8GuestTpr;
     /** Alignment. */
@@ -302,9 +302,9 @@ typedef struct SVMTRANSIENT
 
     /** Pointer to the currently executing VMCB. */
     PSVMVMCB        pVmcb;
+
     /** Whether we are currently executing a nested-guest. */
     bool            fIsNestedGuest;
-
     /** Whether the guest debug state was active at the time of \#VMEXIT. */
     bool            fWasGuestDebugStateActive;
     /** Whether the hyper debug state was active at the time of \#VMEXIT. */
@@ -319,12 +319,15 @@ typedef struct SVMTRANSIENT
     /** Whether the \#VMEXIT was caused by a page-fault during delivery of an
      *  external interrupt or NMI. */
     bool            fVectoringPF;
+    /** Padding. */
+    bool            afPadding0;
 } SVMTRANSIENT;
 /** Pointer to SVM transient state. */
 typedef SVMTRANSIENT *PSVMTRANSIENT;
 /** Pointer to a const SVM transient state. */
 typedef const SVMTRANSIENT *PCSVMTRANSIENT;
 
+AssertCompileSizeAlignment(SVMTRANSIENT, sizeof(uint64_t));
 AssertCompileMemberAlignment(SVMTRANSIENT, u64ExitCode, sizeof(uint64_t));
 AssertCompileMemberAlignment(SVMTRANSIENT, pVmcb,       sizeof(uint64_t));
 /** @}  */
@@ -802,19 +805,16 @@ VMMR0DECL(int) SVMR0TermVM(PVMCC pVM)
  * Returns whether the VMCB Clean Bits feature is supported.
  *
  * @returns @c true if supported, @c false otherwise.
- * @param   pVCpu       The cross context virtual CPU structure.
+ * @param   pVCpu           The cross context virtual CPU structure.
+ * @param   fIsNestedGuest  Whether we are currently executing the nested-guest.
  */
-DECLINLINE(bool) hmR0SvmSupportsVmcbCleanBits(PVMCPUCC pVCpu)
+DECL_FORCE_INLINE(bool) hmR0SvmSupportsVmcbCleanBits(PVMCPUCC pVCpu, bool fIsNestedGuest)
 {
-    PVMCC pVM = pVCpu->CTX_SUFF(pVM);
-#ifdef VBOX_WITH_NESTED_HWVIRT_SVM
-    if (CPUMIsGuestInSvmNestedHwVirtMode(&pVCpu->cpum.GstCtx))
-    {
-        return (pVM->hm.s.svm.u32Features & X86_CPUID_SVM_FEATURE_EDX_VMCB_CLEAN)
-            &&  pVM->cpum.ro.GuestFeatures.fSvmVmcbClean;
-    }
-#endif
-    return RT_BOOL(pVM->hm.s.svm.u32Features & X86_CPUID_SVM_FEATURE_EDX_VMCB_CLEAN);
+    PCVMCC pVM = pVCpu->CTX_SUFF(pVM);
+    bool const fHostVmcbCleanBits = RT_BOOL(pVM->hm.s.svm.u32Features & X86_CPUID_SVM_FEATURE_EDX_VMCB_CLEAN);
+    if (!fIsNestedGuest)
+        return fHostVmcbCleanBits;
+    return fHostVmcbCleanBits && pVM->cpum.ro.GuestFeatures.fSvmVmcbClean;
 }
 
 
@@ -4236,7 +4236,7 @@ static void hmR0SvmPreRunGuestCommitted(PVMCPUCC pVCpu, PSVMTRANSIENT pSvmTransi
      * virtualization case, mark all state-bits as dirty indicating to the CPU to re-load
      * from the VMCB.
      */
-    bool const fSupportsVmcbCleanBits = hmR0SvmSupportsVmcbCleanBits(pVCpu);
+    bool const fSupportsVmcbCleanBits = hmR0SvmSupportsVmcbCleanBits(pVCpu, pSvmTransient->fIsNestedGuest);
     if (!fSupportsVmcbCleanBits)
         pVmcb->ctrl.u32VmcbCleanBits = 0;
 }
@@ -4336,9 +4336,9 @@ static void hmR0SvmPostRunGuest(PVMCPUCC pVCpu, PSVMTRANSIENT pSvmTransient, int
     }
 
     pSvmTransient->u64ExitCode        = pVmcbCtrl->u64ExitCode; /* Save the #VMEXIT reason. */
-    pVmcbCtrl->u32VmcbCleanBits       = HMSVM_VMCB_CLEAN_ALL;   /* Mark the VMCB-state cache as unmodified by VMM. */
     pSvmTransient->fVectoringDoublePF = false;                  /* Vectoring double page-fault needs to be determined later. */
     pSvmTransient->fVectoringPF       = false;                  /* Vectoring page-fault needs to be determined later. */
+    pVmcbCtrl->u32VmcbCleanBits       = HMSVM_VMCB_CLEAN_ALL;   /* Mark the VMCB-state cache as unmodified by VMM. */
 
 #ifdef HMSVM_SYNC_FULL_GUEST_STATE
     hmR0SvmImportGuestState(pVCpu, HMSVM_CPUMCTX_EXTRN_ALL);
