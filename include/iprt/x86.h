@@ -915,6 +915,8 @@ typedef const X86CPUIDFEATEDX *PCX86CPUIDFEATEDX;
 #define X86_CR4_OSFXSR                      RT_BIT_32(9)
 /** Bit 10 - OSXMMEEXCPT - Operating System Support for Unmasked SIMD Floating-Point Exceptions. */
 #define X86_CR4_OSXMMEEXCPT                 RT_BIT_32(10)
+/** Bit 11 - UMIP - User-Mode Instruction Prevention. */
+#define X86_CR4_UMIP                        RT_BIT_32(11)
 /** Bit 13 - VMXE - VMX mode is enabled. */
 #define X86_CR4_VMXE                        RT_BIT_32(13)
 /** Bit 14 - SMXE - Safer Mode Extensions Enabled. */
@@ -932,6 +934,8 @@ typedef const X86CPUIDFEATEDX *PCX86CPUIDFEATEDX;
 #define X86_CR4_SMAP                        RT_BIT_32(21)
 /** Bit 22 - PKE - Protection Key Enable. */
 #define X86_CR4_PKE                         RT_BIT_32(22)
+/** Bit 23 - CET - Control-flow Enhancement Technology enabled. */
+#define X86_CR4_CET                         RT_BIT_32(23)
 /** @} */
 
 
