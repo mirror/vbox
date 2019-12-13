@@ -556,7 +556,7 @@ static DECLCALLBACK(int) drvHostOssAudioHA_GetConfig(PPDMIHOSTAUDIO pInterface, 
 {
     RT_NOREF(pInterface);
 
-    RTStrPrintf2(pBackendCfg->szName, sizeof(pBackendCfg->szName), "OSS audio driver");
+    RTStrPrintf2(pBackendCfg->szName, sizeof(pBackendCfg->szName), "OSS");
 
     pBackendCfg->cbStreamIn  = sizeof(OSSAUDIOSTREAM);
     pBackendCfg->cbStreamOut = sizeof(OSSAUDIOSTREAM);

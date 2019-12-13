@@ -1127,7 +1127,7 @@ static int paEnumerate(PDRVHOSTPULSEAUDIO pThis, PPDMAUDIOBACKENDCFG pCfg, uint3
     PDMAUDIOBACKENDCFG Cfg;
     RT_ZERO(Cfg);
 
-    RTStrPrintf2(Cfg.szName, sizeof(Cfg.szName), "PulseAudio driver");
+    RTStrPrintf2(Cfg.szName, sizeof(Cfg.szName), "PulseAudio");
 
     Cfg.cbStreamOut    = sizeof(PULSEAUDIOSTREAM);
     Cfg.cbStreamIn     = sizeof(PULSEAUDIOSTREAM);

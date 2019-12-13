@@ -88,7 +88,7 @@ static DECLCALLBACK(int) drvHostNullAudioHA_GetConfig(PPDMIHOSTAUDIO pInterface,
     NOREF(pInterface);
     AssertPtrReturn(pBackendCfg, VERR_INVALID_POINTER);
 
-    RTStrPrintf2(pBackendCfg->szName, sizeof(pBackendCfg->szName), "NULL audio driver");
+    RTStrPrintf2(pBackendCfg->szName, sizeof(pBackendCfg->szName), "NULL audio");
 
     pBackendCfg->cbStreamOut    = sizeof(NULLAUDIOSTREAM);
     pBackendCfg->cbStreamIn     = sizeof(NULLAUDIOSTREAM);

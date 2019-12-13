@@ -2182,7 +2182,7 @@ static DECLCALLBACK(int) drvHostDSoundHA_GetConfig(PPDMIHOSTAUDIO pInterface, PP
     pBackendCfg->cbStreamOut = sizeof(DSOUNDSTREAM);
     pBackendCfg->cbStreamIn  = sizeof(DSOUNDSTREAM);
 
-    RTStrPrintf2(pBackendCfg->szName, sizeof(pBackendCfg->szName), "DirectSound audio driver");
+    RTStrPrintf2(pBackendCfg->szName, sizeof(pBackendCfg->szName), "DirectSound");
 
     pBackendCfg->cMaxStreamsIn  = UINT32_MAX;
     pBackendCfg->cMaxStreamsOut = UINT32_MAX;

@@ -879,7 +879,7 @@ static DECLCALLBACK(int) drvAudioVideoRecHA_GetConfig(PPDMIHOSTAUDIO pInterface,
     RT_NOREF(pInterface);
     AssertPtrReturn(pBackendCfg, VERR_INVALID_POINTER);
 
-    RTStrPrintf2(pBackendCfg->szName, sizeof(pBackendCfg->szName), "Video recording audio driver");
+    RTStrPrintf2(pBackendCfg->szName, sizeof(pBackendCfg->szName), "VideoRec");
 
     pBackendCfg->cbStreamOut    = sizeof(AVRECSTREAM);
     pBackendCfg->cbStreamIn     = 0;

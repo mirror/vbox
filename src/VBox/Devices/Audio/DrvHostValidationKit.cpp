@@ -82,7 +82,7 @@ static DECLCALLBACK(int) drvHostValKitAudioHA_GetConfig(PPDMIHOSTAUDIO pInterfac
     RT_NOREF(pInterface);
     AssertPtrReturn(pBackendCfg, VERR_INVALID_POINTER);
 
-    RTStrPrintf2(pBackendCfg->szName, sizeof(pBackendCfg->szName), "Validation Kit audio driver");
+    RTStrPrintf2(pBackendCfg->szName, sizeof(pBackendCfg->szName), "Validation Kit");
 
     pBackendCfg->cbStreamOut    = sizeof(VAKITAUDIOSTREAM);
     pBackendCfg->cbStreamIn     = sizeof(VAKITAUDIOSTREAM);

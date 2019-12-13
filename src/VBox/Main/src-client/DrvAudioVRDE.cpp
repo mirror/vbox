@@ -375,7 +375,7 @@ static DECLCALLBACK(int) drvAudioVrdeHA_GetConfig(PPDMIHOSTAUDIO pInterface, PPD
     RT_NOREF(pInterface);
     AssertPtrReturn(pBackendCfg, VERR_INVALID_POINTER);
 
-    RTStrPrintf2(pBackendCfg->szName, sizeof(pBackendCfg->szName), "VRDE audio driver");
+    RTStrPrintf2(pBackendCfg->szName, sizeof(pBackendCfg->szName), "VRDE");
 
     pBackendCfg->cbStreamOut    = sizeof(VRDESTREAM);
     pBackendCfg->cbStreamIn     = sizeof(VRDESTREAM);
