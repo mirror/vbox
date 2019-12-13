@@ -1667,6 +1667,7 @@ typedef struct PDMIHOSTAUDIO
      * Controls an audio stream.
      *
      * @returns VBox status code.
+     * @retval  VERR_AUDIO_STREAM_NOT_READY if stream is not ready for required operation (yet).
      * @param   pInterface          Pointer to the interface structure containing the called function pointer.
      * @param   pStream             Pointer to audio stream.
      * @param   enmStreamCmd        The stream command to issue.

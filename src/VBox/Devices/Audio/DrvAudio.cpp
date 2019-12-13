@@ -513,8 +513,11 @@ static int drvAudioStreamControlInternalBackend(PDRVAUDIO pThis, PPDMAUDIOSTREAM
     if (RT_FAILURE(rc))
     {
         if (   rc != VERR_NOT_IMPLEMENTED
-            && rc != VERR_NOT_SUPPORTED)
+            && rc != VERR_NOT_SUPPORTED
+            && rc != VERR_AUDIO_STREAM_NOT_READY)
+        {
             LogRel(("Audio: %s stream '%s' failed with %Rrc\n", DrvAudioHlpStreamCmdToStr(enmStreamCmd), pStream->szName, rc));
+        }
 
         LogFunc(("[%s] %s failed with %Rrc\n", pStream->szName, DrvAudioHlpStreamCmdToStr(enmStreamCmd), rc));
     }
@@ -2663,8 +2666,15 @@ static DECLCALLBACK(int) drvAudioEnable(PPDMIAUDIOCONNECTOR pInterface, PDMAUDIO
             int rc2 = drvAudioStreamControlInternal(pThis, pStream,
                                                     fEnable ? PDMAUDIOSTREAMCMD_ENABLE : PDMAUDIOSTREAMCMD_DISABLE);
             if (RT_FAILURE(rc2))
-                LogRel(("Audio: Failed to %s %s stream '%s', rc=%Rrc\n",
-                        fEnable ? "enable" : "disable", enmDir == PDMAUDIODIR_IN ? "input" : "output", pStream->szName, rc2));
+            {
+                if (rc2 == VERR_AUDIO_STREAM_NOT_READY)
+                {
+                    LogRel(("Audio: Stream '%s' not available\n", pStream->szName));
+                }
+                else
+                    LogRel(("Audio: Failed to %s %s stream '%s', rc=%Rrc\n",
+                            fEnable ? "enable" : "disable", enmDir == PDMAUDIODIR_IN ? "input" : "output", pStream->szName, rc2));
+            }
 
             if (RT_SUCCESS(rc))
                 rc = rc2;
@@ -3206,8 +3216,9 @@ static int drvAudioStreamUninitInternal(PDRVAUDIO pThis, PPDMAUDIOSTREAM pStream
 
     LogFlowFunc(("[%s] cRefs=%RU32\n", pStream->szName, pStream->cRefs));
 
-    if (pStream->cRefs > 1)
-        return VERR_WRONG_ORDER;
+    AssertMsgReturn(pStream->cRefs <= 1,
+                    ("Stream '%s' still has %RU32 references held when uninitializing\n", pStream->szName, pStream->cRefs),
+                    VERR_WRONG_ORDER);
 
     int rc = drvAudioStreamControlInternal(pThis, pStream, PDMAUDIOSTREAMCMD_DISABLE);
     if (RT_SUCCESS(rc))

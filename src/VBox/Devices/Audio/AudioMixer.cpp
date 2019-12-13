@@ -522,6 +522,8 @@ int AudioMixerSinkAddStream(PAUDMIXSINK pSink, PAUDMIXSTREAM pStream)
         && !(pSink->fStatus & AUDMIXSINK_STS_PENDING_DISABLE))
     {
         rc = audioMixerStreamCtlInternal(pStream, PDMAUDIOSTREAMCMD_ENABLE, AUDMIXSTRMCTL_F_NONE);
+        if (rc == VERR_AUDIO_STREAM_NOT_READY)
+            rc = VINF_SUCCESS; /* Not fatal here, stream can become available at some later point in time. */
     }
 
     if (RT_SUCCESS(rc))
@@ -575,14 +577,23 @@ int AudioMixerSinkCreateStream(PAUDMIXSINK pSink,
     if (!pMixStream)
         return VERR_NO_MEMORY;
 
-    pMixStream->pszName = RTStrDup(pCfg->szName);
+    PDMAUDIOBACKENDCFG BackendCfg;
+    int rc = pConn->pfnGetConfig(pConn, &BackendCfg);
+    if (RT_FAILURE(rc))
+    {
+        RTMemFree(pMixStream);
+        return rc;
+    }
+
+    /* Assign the backend's name to the mixer stream's name for easier identification in the (release) log. */
+    pMixStream->pszName = RTStrAPrintf2("[%s] %s", pCfg->szName, BackendCfg.szName);
     if (!pMixStream->pszName)
     {
         RTMemFree(pMixStream);
         return VERR_NO_MEMORY;
     }
 
-    int rc = RTCritSectEnter(&pSink->CritSect);
+    rc = RTCritSectEnter(&pSink->CritSect);
     if (RT_FAILURE(rc))
         return rc;
 
@@ -1479,7 +1490,7 @@ static int audioMixerSinkSetRecSourceInternal(PAUDMIXSINK pSink, PAUDMIXSTREAM p
 
     int rc;
 
-    if (pSink->In.pStreamRecSource) /* Disable old recording source, if any set. */
+    if (pSink->In.pStreamRecSource) /* First, disable old recording source, if any set. */
     {
         const PPDMIAUDIOCONNECTOR pConn = pSink->In.pStreamRecSource->pConn;
         AssertPtr(pConn);
@@ -1494,15 +1505,18 @@ static int audioMixerSinkSetRecSourceInternal(PAUDMIXSINK pSink, PAUDMIXSTREAM p
         {
             AssertPtr(pStream->pStream);
             AssertMsg(pStream->pStream->enmDir == PDMAUDIODIR_IN, ("Specified stream is not an input stream\n"));
-        }
-
-        pSink->In.pStreamRecSource = pStream;
-
-        if (pSink->In.pStreamRecSource)
-        {
-            const PPDMIAUDIOCONNECTOR pConn = pSink->In.pStreamRecSource->pConn;
-            AssertPtr(pConn);
-            rc = pConn->pfnEnable(pConn, PDMAUDIODIR_IN, true /* Enable */);
+            AssertPtr(pStream->pConn);
+            rc = pStream->pConn->pfnEnable(pStream->pConn, PDMAUDIODIR_IN, true /* Enable */);
+            if (RT_SUCCESS(rc))
+            {
+                pSink->In.pStreamRecSource = pStream;
+            }
+            else if (pSink->In.pStreamRecSource->pConn) /* Stay with the current recording source (if any) and re-enable it. */
+            {
+                const PPDMIAUDIOCONNECTOR pConn = pSink->In.pStreamRecSource->pConn;
+                AssertPtr(pConn);
+                rc = pConn->pfnEnable(pConn, PDMAUDIODIR_IN, true /* Enable */);
+            }
         }
     }
 
@@ -1514,9 +1528,11 @@ static int audioMixerSinkSetRecSourceInternal(PAUDMIXSINK pSink, PAUDMIXSTREAM p
         LogRel(("Mixer: Setting recording source of sink '%s' to '%s'\n",
                 pSink->pszName, pSink->In.pStreamRecSource ? pSink->In.pStreamRecSource->pszName : "<None>"));
     }
-    else
+    else if (rc != VERR_AUDIO_STREAM_NOT_READY)
+    {
         LogRel(("Mixer: Setting recording source of sink '%s' to '%s' failed with %Rrc\n",
                 pSink->pszName, pSink->In.pStreamRecSource ? pSink->In.pStreamRecSource->pszName : "<None>", rc));
+    }
 
     return rc;
 }
