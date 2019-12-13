@@ -26,7 +26,7 @@
 #include <VBox/vmm/nem.h>
 #include <VBox/vmm/ssm.h>
 #include "CPUMInternal.h"
-#include <VBox/vmm/vm.h>
+#include <VBox/vmm/vmcc.h>
 #include <VBox/vmm/mm.h>
 #include <VBox/sup.h>
 
@@ -4981,6 +4981,10 @@ VMMR3_INT_DECL(void) CPUMR3SetGuestCpuIdFeature(PVM pVM, CPUMCPUIDFEATURE enmFea
                         int rc = CPUMR3MsrRangesInsert(pVM, &s_ArchCaps);
                         AssertLogRelRC(rc);
                     }
+
+                    /* Advertise IBRS_ALL if present at this point... */
+                    if (pVM->cpum.s.HostFeatures.fArchCap & MSR_IA32_ARCH_CAP_F_IBRS_ALL)
+                        VMCC_FOR_EACH_VMCPU_STMT(pVM, pVCpu->cpum.s.GuestMsrs.msr.ArchCaps |= MSR_IA32_ARCH_CAP_F_IBRS_ALL);
                 }
 
                 LogRel(("CPUM: SetGuestCpuIdFeature: Enabled Speculation Control.\n"));
@@ -5156,7 +5160,7 @@ VMMR3_INT_DECL(void) CPUMR3ClearGuestCpuIdFeature(PVM pVM, CPUMCPUIDFEATURE enmF
             pLeaf = cpumR3CpuIdGetExactLeaf(&pVM->cpum.s, UINT32_C(0x00000007), 0);
             if (pLeaf)
                 pLeaf->uEdx &= ~(X86_CPUID_STEXT_FEATURE_EDX_IBRS_IBPB | X86_CPUID_STEXT_FEATURE_EDX_STIBP);
-            pVM->cpum.s.GuestFeatures.fSpeculationControl = 0;
+            VMCC_FOR_EACH_VMCPU_STMT(pVM, pVCpu->cpum.s.GuestMsrs.msr.ArchCaps &= ~MSR_IA32_ARCH_CAP_F_IBRS_ALL);
             Log(("CPUM: ClearGuestCpuIdFeature: Disabled speculation control!\n"));
             break;
 
