@@ -798,7 +798,7 @@ int AudioMixerSinkCtl(PAUDMIXSINK pSink, AUDMIXSINKCMD enmSinkCmd)
     }
 
     char *pszStatus = dbgAudioMixerSinkStatusToStr(pSink->fStatus);
-    LogRel2(("Mixer: Set new status of sink '%s' to %s\n", pSink->pszName, pszStatus));
+    LogRel2(("Audio Mixer: Set new status of sink '%s' to %s\n", pSink->pszName, pszStatus));
     LogFlowFunc(("[%s] enmCmd=%RU32, fStatus=%s, rc=%Rrc\n", pSink->pszName, enmSinkCmd, pszStatus, rc));
     RTStrFree(pszStatus);
 
@@ -1525,12 +1525,12 @@ static int audioMixerSinkSetRecSourceInternal(PAUDMIXSINK pSink, PAUDMIXSTREAM p
 
     if (RT_SUCCESS(rc))
     {
-        LogRel(("Mixer: Setting recording source of sink '%s' to '%s'\n",
+        LogRel(("Audio Mixer: Setting recording source of sink '%s' to '%s'\n",
                 pSink->pszName, pSink->In.pStreamRecSource ? pSink->In.pStreamRecSource->pszName : "<None>"));
     }
     else if (rc != VERR_AUDIO_STREAM_NOT_READY)
     {
-        LogRel(("Mixer: Setting recording source of sink '%s' to '%s' failed with %Rrc\n",
+        LogRel(("Audio Mixer: Setting recording source of sink '%s' to '%s' failed with %Rrc\n",
                 pSink->pszName, pSink->In.pStreamRecSource ? pSink->In.pStreamRecSource->pszName : "<None>", rc));
     }
 
@@ -1582,7 +1582,7 @@ int AudioMixerSinkSetVolume(PAUDMIXSINK pSink, PPDMAUDIOVOLUME pVol)
     LogFlowFunc(("[%s] fMuted=%RTbool, lVol=%RU8, rVol=%RU8\n",
                  pSink->pszName, pSink->Volume.fMuted, pSink->Volume.uLeft, pSink->Volume.uRight));
 
-    LogRel2(("Mixer: Setting volume of sink '%s' to %RU8/%RU8 (%s)\n",
+    LogRel2(("Audio Mixer: Setting volume of sink '%s' to %RU8/%RU8 (%s)\n",
              pSink->pszName, pVol->uLeft, pVol->uRight, pVol->fMuted ? "Muted" : "Unmuted"));
 
     AssertPtr(pSink->pParent);
@@ -1882,7 +1882,7 @@ static int audioMixerSinkWriteToStreamEx(PAUDMIXSINK pSink, PAUDMIXSTREAM pMixSt
             {
                 if (rc == VERR_BUFFER_OVERFLOW)
                 {
-                    LogRel2(("Mixer: Buffer overrun for mixer stream '%s' (sink '%s')\n", pMixStream->pszName, pSink->pszName));
+                    LogRel2(("Audio Mixer: Buffer overrun for mixer stream '%s' (sink '%s')\n", pMixStream->pszName, pSink->pszName));
                     break;
                 }
                 else if (rc == VERR_AUDIO_STREAM_NOT_READY)
@@ -1891,7 +1891,7 @@ static int audioMixerSinkWriteToStreamEx(PAUDMIXSINK pSink, PAUDMIXSTREAM pMixSt
                     rc = VINF_SUCCESS;
                 }
                 else
-                    LogRel2(("Mixer: Writing to mixer stream '%s' (sink '%s') failed, rc=%Rrc\n",
+                    LogRel2(("Audio Mixer: Writing to mixer stream '%s' (sink '%s') failed, rc=%Rrc\n",
                              pMixStream->pszName, pSink->pszName, rc));
 
                 if (RT_FAILURE(rc))
