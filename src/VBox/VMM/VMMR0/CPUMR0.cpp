@@ -269,6 +269,7 @@ VMMR0_INT_DECL(int) CPUMR0InitVM(PVMCC pVM)
         /*
          * Copy MSR_IA32_ARCH_CAPABILITIES bits over into the host and guest feature
          * structure and as well as the guest MSR.
+         * Note! we assume this happens after the CPUMR3Init is done, so CPUID bits are settled.
          */
         pVM->cpum.s.HostFeatures.fArchRdclNo             = 0;
         pVM->cpum.s.HostFeatures.fArchIbrsAll            = 0;
@@ -283,20 +284,25 @@ VMMR0_INT_DECL(int) CPUMR0InitVM(PVMCC pVM)
             if (   (fEdxFeatures & X86_CPUID_STEXT_FEATURE_EDX_ARCHCAP)
                 && (fFeatures & X86_CPUID_FEATURE_EDX_MSR))
             {
-                uint64_t const fArchVal = ASMRdMsr(MSR_IA32_ARCH_CAPABILITIES);
-                pVM->cpum.s.GuestFeatures.fArchRdclNo
-                    = pVM->cpum.s.HostFeatures.fArchRdclNo             = RT_BOOL(fArchVal & MSR_IA32_ARCH_CAP_F_RDCL_NO);
-                pVM->cpum.s.GuestFeatures.fArchIbrsAll
-                    = pVM->cpum.s.HostFeatures.fArchIbrsAll            = RT_BOOL(fArchVal & MSR_IA32_ARCH_CAP_F_IBRS_ALL);
-                pVM->cpum.s.GuestFeatures.fArchRsbOverride
-                    = pVM->cpum.s.HostFeatures.fArchRsbOverride        = RT_BOOL(fArchVal & MSR_IA32_ARCH_CAP_F_RSBO);
-                pVM->cpum.s.GuestFeatures.fArchVmmNeedNotFlushL1d
-                    = pVM->cpum.s.HostFeatures.fArchVmmNeedNotFlushL1d = RT_BOOL(fArchVal & MSR_IA32_ARCH_CAP_F_VMM_NEED_NOT_FLUSH_L1D);
-                pVM->cpum.s.GuestFeatures.fArchMdsNo
-                    = pVM->cpum.s.HostFeatures.fArchMdsNo              = RT_BOOL(fArchVal & MSR_IA32_ARCH_CAP_F_MDS_NO);
+                /* Host: */
+                uint64_t fArchVal = ASMRdMsr(MSR_IA32_ARCH_CAPABILITIES);
+                pVM->cpum.s.HostFeatures.fArchRdclNo             = RT_BOOL(fArchVal & MSR_IA32_ARCH_CAP_F_RDCL_NO);
+                pVM->cpum.s.HostFeatures.fArchIbrsAll            = RT_BOOL(fArchVal & MSR_IA32_ARCH_CAP_F_IBRS_ALL);
+                pVM->cpum.s.HostFeatures.fArchRsbOverride        = RT_BOOL(fArchVal & MSR_IA32_ARCH_CAP_F_RSBO);
+                pVM->cpum.s.HostFeatures.fArchVmmNeedNotFlushL1d = RT_BOOL(fArchVal & MSR_IA32_ARCH_CAP_F_VMM_NEED_NOT_FLUSH_L1D);
+                pVM->cpum.s.HostFeatures.fArchMdsNo              = RT_BOOL(fArchVal & MSR_IA32_ARCH_CAP_F_MDS_NO);
 
-                if (pVM->cpum.s.GuestFeatures.fArchCap)
-                    VMCC_FOR_EACH_VMCPU_STMT(pVM, pVCpu->cpum.s.GuestMsrs.msr.ArchCaps = fArchVal);
+                /* guest: */
+                if (!pVM->cpum.s.GuestFeatures.fArchCap)
+                    fArchVal = 0;
+                else if (!pVM->cpum.s.GuestFeatures.fIbrs)
+                    fArchVal &= ~MSR_IA32_ARCH_CAP_F_IBRS_ALL;
+                VMCC_FOR_EACH_VMCPU_STMT(pVM, pVCpu->cpum.s.GuestMsrs.msr.ArchCaps = fArchVal);
+                pVM->cpum.s.GuestFeatures.fArchRdclNo             = RT_BOOL(fArchVal & MSR_IA32_ARCH_CAP_F_RDCL_NO);
+                pVM->cpum.s.GuestFeatures.fArchIbrsAll            = RT_BOOL(fArchVal & MSR_IA32_ARCH_CAP_F_IBRS_ALL);
+                pVM->cpum.s.GuestFeatures.fArchRsbOverride        = RT_BOOL(fArchVal & MSR_IA32_ARCH_CAP_F_RSBO);
+                pVM->cpum.s.GuestFeatures.fArchVmmNeedNotFlushL1d = RT_BOOL(fArchVal & MSR_IA32_ARCH_CAP_F_VMM_NEED_NOT_FLUSH_L1D);
+                pVM->cpum.s.GuestFeatures.fArchMdsNo              = RT_BOOL(fArchVal & MSR_IA32_ARCH_CAP_F_MDS_NO);
             }
             else
                 pVM->cpum.s.HostFeatures.fArchCap = 0;
