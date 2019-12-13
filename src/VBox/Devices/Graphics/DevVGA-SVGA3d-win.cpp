@@ -3903,6 +3903,7 @@ int vmsvga3dSetRenderTarget(PVGASTATECC pThisCC, uint32_t cid, SVGA3dRenderTarge
 
     /* Save for vm state save/restore. */
     pContext->state.aRenderTargets[type] = target.sid;
+    /** @todo Also save target.face and target.mipmap */
 
     if (target.sid == SVGA3D_INVALID_ID)
     {
@@ -4799,6 +4800,14 @@ int vmsvga3dSetClipPlane(PVGASTATECC pThisCC, uint32_t cid, uint32_t index, floa
 int vmsvga3dCommandClear(PVGASTATECC pThisCC, uint32_t cid, SVGA3dClearFlag clearFlag, uint32_t color, float depth,
                          uint32_t stencil, uint32_t cRects, SVGA3dRect *pRect)
 {
+    /* From SVGA3D_BeginClear comments:
+     *
+     *      Clear is not affected by clipping, depth test, or other
+     *      render state which affects the fragment pipeline.
+     *
+     * Therefore this code must ignore the current scissor rect.
+     */
+
     DWORD                 clearFlagD3D = 0;
     D3DRECT              *pRectD3D = NULL;
     HRESULT               hr;
@@ -4809,6 +4818,10 @@ int vmsvga3dCommandClear(PVGASTATECC pThisCC, uint32_t cid, SVGA3dClearFlag clea
     Log(("vmsvga3dCommandClear %x clearFlag=%x color=%x depth=%d stencil=%x cRects=%d\n", cid, clearFlag, color, (uint32_t)(depth * 100.0), stencil, cRects));
 
     int rc = vmsvga3dContextFromCid(pState, cid, &pContext);
+    AssertRCReturn(rc, rc);
+
+    PVMSVGA3DSURFACE pRT;
+    rc = vmsvga3dSurfaceFromSid(pState, pContext->state.aRenderTargets[SVGA3D_RT_COLOR0], &pRT);
     AssertRCReturn(rc, rc);
 
     if (clearFlag & SVGA3D_CLEAR_COLOR)
@@ -4833,9 +4846,22 @@ int vmsvga3dCommandClear(PVGASTATECC pThisCC, uint32_t cid, SVGA3dClearFlag clea
         }
     }
 
+    RECT currentScissorRect;
+    pContext->pDevice->GetScissorRect(&currentScissorRect);
+
+    RECT clearScissorRect;
+    clearScissorRect.left   = 0;
+    clearScissorRect.top    = 0;
+    clearScissorRect.right  = pRT->paMipmapLevels[0].mipmapSize.width;
+    clearScissorRect.bottom = pRT->paMipmapLevels[0].mipmapSize.height;
+    pContext->pDevice->SetScissorRect(&clearScissorRect);
+
     hr = pContext->pDevice->Clear(cRects, pRectD3D, clearFlagD3D, (D3DCOLOR)color, depth, stencil);
+
     if (pRectD3D)
         RTMemFree(pRectD3D);
+
+    pContext->pDevice->SetScissorRect(&currentScissorRect);
 
     AssertMsgReturn(hr == D3D_OK, ("Clear failed with %x\n", hr), VERR_INTERNAL_ERROR);
 

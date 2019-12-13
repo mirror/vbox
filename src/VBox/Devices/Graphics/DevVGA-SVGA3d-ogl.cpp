@@ -5777,9 +5777,11 @@ int vmsvga3dCommandClear(PVGASTATECC pThisCC, uint32_t cid, SVGA3dClearFlag clea
                          uint32_t cRects, SVGA3dRect *pRect)
 {
     GLbitfield            mask = 0;
+    GLbitfield            restoreMask = 0;
     PVMSVGA3DSTATE        pState = pThisCC->svga.p3dState;
     AssertReturn(pState, VERR_NO_MEMORY);
     GLboolean             fDepthWriteEnabled = GL_FALSE;
+    GLboolean             afColorWriteEnabled[4] = { GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE };
 
     Log(("vmsvga3dCommandClear cid=%u clearFlag=%x color=%x depth=%d stencil=%x cRects=%d\n", cid, clearFlag, color, (uint32_t)(depth * 100.0), stencil, cRects));
 
@@ -5792,57 +5794,105 @@ int vmsvga3dCommandClear(PVGASTATECC pThisCC, uint32_t cid, SVGA3dClearFlag clea
     if (clearFlag & SVGA3D_CLEAR_COLOR)
     {
         GLfloat red, green, blue, alpha;
-
         vmsvgaColor2GLFloatArray(color, &red, &green, &blue, &alpha);
 
         /* Set the color clear value. */
         glClearColor(red, green, blue, alpha);
+        VMSVGA3D_CHECK_LAST_ERROR_WARN(pState, pContext);
 
         mask |= GL_COLOR_BUFFER_BIT;
+
+        /* glClear will not clear the color buffer if writing is disabled. */
+        glGetBooleanv(GL_COLOR_WRITEMASK, afColorWriteEnabled);
+        VMSVGA3D_CHECK_LAST_ERROR_WARN(pState, pContext);
+        if (   afColorWriteEnabled[0] == GL_FALSE
+            || afColorWriteEnabled[1] == GL_FALSE
+            || afColorWriteEnabled[2] == GL_FALSE
+            || afColorWriteEnabled[3] == GL_FALSE)
+        {
+            glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+            VMSVGA3D_CHECK_LAST_ERROR_WARN(pState, pContext);
+
+            restoreMask |= GL_COLOR_BUFFER_BIT;
+        }
+
     }
+
     if (clearFlag & SVGA3D_CLEAR_STENCIL)
     {
         /** @todo possibly the same problem as with glDepthMask */
         glClearStencil(stencil);
+        VMSVGA3D_CHECK_LAST_ERROR_WARN(pState, pContext);
+
         mask |= GL_STENCIL_BUFFER_BIT;
     }
+
     if (clearFlag & SVGA3D_CLEAR_DEPTH)
     {
         glClearDepth((GLdouble)depth);
+        VMSVGA3D_CHECK_LAST_ERROR_WARN(pState, pContext);
+
         mask |= GL_DEPTH_BUFFER_BIT;
 
         /* glClear will not clear the depth buffer if writing is disabled. */
         glGetBooleanv(GL_DEPTH_WRITEMASK, &fDepthWriteEnabled);
+        VMSVGA3D_CHECK_LAST_ERROR_WARN(pState, pContext);
         if (fDepthWriteEnabled == GL_FALSE)
+        {
             glDepthMask(GL_TRUE);
+            VMSVGA3D_CHECK_LAST_ERROR_WARN(pState, pContext);
+
+            restoreMask |= GL_DEPTH_BUFFER_BIT;
+        }
     }
+
+    /* Save the current scissor test bit and scissor box. */
+    glPushAttrib(GL_SCISSOR_BIT);
+    VMSVGA3D_CHECK_LAST_ERROR_WARN(pState, pContext);
 
     if (cRects)
     {
-        /* Save the current scissor test bit and scissor box. */
-        glPushAttrib(GL_SCISSOR_BIT);
         glEnable(GL_SCISSOR_TEST);
-        for (unsigned i=0; i < cRects; i++)
+        VMSVGA3D_CHECK_LAST_ERROR_WARN(pState, pContext);
+
+        for (uint32_t i = 0; i < cRects; ++i)
         {
-            Log(("vmsvga3dCommandClear: rect %d (%d,%d)(%d,%d)\n", i, pRect[i].x, pRect[i].y, pRect[i].x + pRect[i].w, pRect[i].y + pRect[i].h));
+            LogFunc(("rect [%d] %d,%d %dx%d)\n", i, pRect[i].x, pRect[i].y, pRect[i].w, pRect[i].h));
             glScissor(pRect[i].x, pRect[i].y, pRect[i].w, pRect[i].h);
-            VMSVGA3D_CHECK_LAST_ERROR(pState, pContext);
+            VMSVGA3D_CHECK_LAST_ERROR_WARN(pState, pContext);
+
             glClear(mask);
-            VMSVGA3D_CHECK_LAST_ERROR(pState, pContext);
+            VMSVGA3D_CHECK_LAST_ERROR_WARN(pState, pContext);
         }
-        /* Restore the old scissor test bit and box */
-        glPopAttrib();
     }
     else
     {
+        glDisable(GL_SCISSOR_TEST);
+        VMSVGA3D_CHECK_LAST_ERROR_WARN(pState, pContext);
+
         glClear(mask);
-        VMSVGA3D_CHECK_LAST_ERROR(pState, pContext);
+        VMSVGA3D_CHECK_LAST_ERROR_WARN(pState, pContext);
     }
 
-    /* Restore depth write state. */
-    if (    (clearFlag & SVGA3D_CLEAR_DEPTH)
-        && fDepthWriteEnabled == GL_FALSE)
-        glDepthMask(GL_FALSE);
+    /* Restore the old scissor test bit and box */
+    glPopAttrib();
+    VMSVGA3D_CHECK_LAST_ERROR_WARN(pState, pContext);
+
+    /* Restore the write states. */
+    if (restoreMask & GL_COLOR_BUFFER_BIT)
+    {
+        glColorMask(afColorWriteEnabled[0],
+                    afColorWriteEnabled[1],
+                    afColorWriteEnabled[2],
+                    afColorWriteEnabled[3]);
+        VMSVGA3D_CHECK_LAST_ERROR_WARN(pState, pContext);
+    }
+
+    if (restoreMask & GL_DEPTH_BUFFER_BIT)
+    {
+        glDepthMask(fDepthWriteEnabled);
+        VMSVGA3D_CHECK_LAST_ERROR_WARN(pState, pContext);
+    }
 
     return VINF_SUCCESS;
 }
