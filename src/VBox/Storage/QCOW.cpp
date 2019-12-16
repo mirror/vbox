@@ -871,7 +871,10 @@ DECLINLINE(uint64_t) qcowClusterAllocate(PQCOWIMAGE pImage, uint32_t cClusters)
  * @param   idxL1         The L1 index.
  * @param   idxL2         The L2 index.
  * @param   offCluster    Offset inside the cluster.
- * @param   poffImage     Where to store the image offset on success;
+ * @param   poffImage     Where to store the image offset on success.
+ * @param   pfCompressed  Where to store the flag whether the cluster is compressed on success.
+ * @param   pcbCompressed Where to store the size of the compressed cluster in bytes on success.
+ *                        Only valid when the cluster comrpessed flag is true.
  */
 static int qcowConvertToImageOffset(PQCOWIMAGE pImage, PVDIOCTX pIoCtx,
                                     uint32_t idxL1, uint32_t idxL2,
