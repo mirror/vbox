@@ -89,8 +89,10 @@
 /*********************************************************************************************************************************
 *   Internal Functions                                                                                                           *
 *********************************************************************************************************************************/
+static int audioMixerAddSinkInternal(PAUDIOMIXER pMixer, PAUDMIXSINK pSink);
 static int audioMixerRemoveSinkInternal(PAUDIOMIXER pMixer, PAUDMIXSINK pSink);
 
+static int audioMixerSinkInit(PAUDMIXSINK pSink, PAUDIOMIXER pMixer, const char *pcszName, AUDMIXSINKDIR enmDir);
 static void audioMixerSinkDestroyInternal(PAUDMIXSINK pSink);
 static int audioMixerSinkUpdateVolume(PAUDMIXSINK pSink, const PPDMAUDIOVOLUME pVolMaster);
 static void audioMixerSinkRemoveAllStreamsInternal(PAUDMIXSINK pSink);
@@ -183,48 +185,23 @@ int AudioMixerCreateSink(PAUDIOMIXER pMixer, const char *pszName, AUDMIXSINKDIR 
     PAUDMIXSINK pSink = (PAUDMIXSINK)RTMemAllocZ(sizeof(AUDMIXSINK));
     if (pSink)
     {
-        pSink->pszName = RTStrDup(pszName);
-        if (!pSink->pszName)
-            rc = VERR_NO_MEMORY;
-
-        if (RT_SUCCESS(rc))
-            rc = RTCritSectInit(&pSink->CritSect);
-
+        rc = audioMixerSinkInit(pSink, pMixer, pszName, enmDir);
         if (RT_SUCCESS(rc))
         {
-            pSink->pParent  = pMixer;
-            pSink->enmDir   = enmDir;
-            RTListInit(&pSink->lstStreams);
-
-            /* Set initial volume to max. */
-            pSink->Volume.fMuted = false;
-            pSink->Volume.uLeft  = PDMAUDIO_VOLUME_MAX;
-            pSink->Volume.uRight = PDMAUDIO_VOLUME_MAX;
-
-            /* Ditto for the combined volume. */
-            pSink->VolumeCombined.fMuted = false;
-            pSink->VolumeCombined.uLeft  = PDMAUDIO_VOLUME_MAX;
-            pSink->VolumeCombined.uRight = PDMAUDIO_VOLUME_MAX;
-
-            RTListAppend(&pMixer->lstSinks, &pSink->Node);
-            pMixer->cSinks++;
-
-            LogFlowFunc(("pMixer=%p, pSink=%p, cSinks=%RU8\n",
-                         pMixer, pSink, pMixer->cSinks));
-
-            if (ppSink)
-                *ppSink = pSink;
+            rc = audioMixerAddSinkInternal(pMixer, pSink);
+            if (RT_SUCCESS(rc))
+            {
+                if (ppSink)
+                    *ppSink = pSink;
+            }
         }
 
         if (RT_FAILURE(rc))
         {
-            RTCritSectDelete(&pSink->CritSect);
+            audioMixerSinkDestroyInternal(pSink);
 
-            if (pSink)
-            {
-                RTMemFree(pSink);
-                pSink = NULL;
-            }
+            RTMemFree(pSink);
+            pSink = NULL;
         }
     }
     else
@@ -244,10 +221,10 @@ int AudioMixerCreateSink(PAUDIOMIXER pMixer, const char *pszName, AUDMIXSINKDIR 
  * @param   fFlags              Creation flags. Not used at the moment and must be 0.
  * @param   ppMixer             Pointer which returns the created mixer object.
  */
-int AudioMixerCreate(const char *pszName, uint32_t fFlags, PAUDIOMIXER *ppMixer)
+int AudioMixerCreate(const char *pcszName, uint32_t fFlags, PAUDIOMIXER *ppMixer)
 {
     RT_NOREF(fFlags);
-    AssertPtrReturn(pszName, VERR_INVALID_POINTER);
+    AssertPtrReturn(pcszName, VERR_INVALID_POINTER);
     /** @todo Add fFlags validation. */
     AssertPtrReturn(ppMixer, VERR_INVALID_POINTER);
 
@@ -256,7 +233,7 @@ int AudioMixerCreate(const char *pszName, uint32_t fFlags, PAUDIOMIXER *ppMixer)
     PAUDIOMIXER pMixer = (PAUDIOMIXER)RTMemAllocZ(sizeof(AUDIOMIXER));
     if (pMixer)
     {
-        pMixer->pszName = RTStrDup(pszName);
+        pMixer->pszName = RTStrDup(pcszName);
         if (!pMixer->pszName)
             rc = VERR_NO_MEMORY;
 
@@ -342,7 +319,10 @@ void AudioMixerDestroy(PAUDIOMIXER pMixer)
         PAUDMIXSINK pSinkToRemove = pSink;
 
         audioMixerRemoveSinkInternal(pMixer, pSinkToRemove);
+
         audioMixerSinkDestroyInternal(pSinkToRemove);
+
+        RTMemFree(pSinkToRemove);
     }
 
     pMixer->cSinks = 0;
@@ -408,6 +388,30 @@ void AudioMixerInvalidate(PAUDIOMIXER pMixer)
 }
 
 /**
+ * Adds sink to an existing mixer.
+ *
+ * @returns VBox status code.
+ * @param   pMixer              Mixer to add sink to.
+ * @param   pSink               Sink to add.
+ */
+static int audioMixerAddSinkInternal(PAUDIOMIXER pMixer, PAUDMIXSINK pSink)
+{
+    AssertPtrReturn(pMixer, VERR_INVALID_POINTER);
+    AssertPtrReturn(pSink,  VERR_INVALID_POINTER);
+
+    /** @todo Check upper sink limit? */
+    /** @todo Check for double-inserted sinks? */
+
+    RTListAppend(&pMixer->lstSinks, &pSink->Node);
+    pMixer->cSinks++;
+
+    LogFlowFunc(("pMixer=%p, pSink=%p, cSinks=%RU8\n",
+                 pMixer, pSink, pMixer->cSinks));
+
+    return VINF_SUCCESS;
+}
+
+/**
  * Removes a formerly attached audio sink for an audio mixer, internal version.
  *
  * @returns IPRT status code.
@@ -428,7 +432,9 @@ static int audioMixerRemoveSinkInternal(PAUDIOMIXER pMixer, PAUDMIXSINK pSink)
 
     /* Remove sink from mixer. */
     RTListNodeRemove(&pSink->Node);
+
     Assert(pMixer->cSinks);
+    pMixer->cSinks--;
 
     /* Set mixer to NULL so that we know we're not part of any mixer anymore. */
     pSink->pParent = NULL;
@@ -809,6 +815,44 @@ int AudioMixerSinkCtl(PAUDMIXSINK pSink, AUDMIXSINKCMD enmSinkCmd)
 }
 
 /**
+ * Initializes a sink.
+ *
+ * @returns VBox status code.
+ * @param   pSink               Sink to initialize.
+ * @param   pMixer              Mixer the sink is assigned to.
+ * @param   pcszName            Name of the sink.
+ * @param   enmDir              Direction of the sink.
+ */
+static int audioMixerSinkInit(PAUDMIXSINK pSink, PAUDIOMIXER pMixer, const char *pcszName, AUDMIXSINKDIR enmDir)
+{
+    pSink->pszName = RTStrDup(pcszName);
+    if (!pSink->pszName)
+        return VERR_NO_MEMORY;
+
+    int rc = RTCritSectInit(&pSink->CritSect);
+    if (RT_SUCCESS(rc))
+    {
+        pSink->pParent  = pMixer;
+        pSink->enmDir   = enmDir;
+
+        RTListInit(&pSink->lstStreams);
+
+        /* Set initial volume to max. */
+        pSink->Volume.fMuted = false;
+        pSink->Volume.uLeft  = PDMAUDIO_VOLUME_MAX;
+        pSink->Volume.uRight = PDMAUDIO_VOLUME_MAX;
+
+        /* Ditto for the combined volume. */
+        pSink->VolumeCombined.fMuted = false;
+        pSink->VolumeCombined.uLeft  = PDMAUDIO_VOLUME_MAX;
+        pSink->VolumeCombined.uRight = PDMAUDIO_VOLUME_MAX;
+    }
+
+    LogFlowFuncLeaveRC(rc);
+    return rc;
+}
+
+/**
  * Destroys a mixer sink and removes it from the attached mixer (if any).
  *
  * @param   pSink               Mixer sink to destroy.
@@ -829,15 +873,15 @@ void AudioMixerSinkDestroy(PAUDMIXSINK pSink)
         AssertPtr(pMixer);
 
         audioMixerRemoveSinkInternal(pMixer, pSink);
-
-        Assert(pMixer->cSinks);
-        pMixer->cSinks--;
     }
 
     rc2 = RTCritSectLeave(&pSink->CritSect);
     AssertRC(rc2);
 
     audioMixerSinkDestroyInternal(pSink);
+
+    RTMemFree(pSink);
+    pSink = NULL;
 }
 
 /**
@@ -875,9 +919,6 @@ static void audioMixerSinkDestroyInternal(PAUDMIXSINK pSink)
 
     AudioMixBufDestroy(&pSink->MixBuf);
     RTCritSectDelete(&pSink->CritSect);
-
-    RTMemFree(pSink);
-    pSink = NULL;
 }
 
 /**
@@ -995,7 +1036,7 @@ AUDMIXSINKDIR AudioMixerSinkGetDir(PAUDMIXSINK pSink)
     if (RT_FAILURE(rc))
         return AUDMIXSINKDIR_UNKNOWN;
 
-    AUDMIXSINKDIR enmDir = pSink->enmDir;
+    const AUDMIXSINKDIR enmDir = pSink->enmDir;
 
     int rc2 = RTCritSectLeave(&pSink->CritSect);
     AssertRC(rc2);
@@ -1089,7 +1130,7 @@ uint8_t AudioMixerSinkGetStreamCount(PAUDMIXSINK pSink)
     if (RT_FAILURE(rc2))
         return 0;
 
-    uint8_t cStreams = pSink->cStreams;
+    const uint8_t cStreams = pSink->cStreams;
 
     rc2 = RTCritSectLeave(&pSink->CritSect);
     AssertRC(rc2);
@@ -1113,7 +1154,7 @@ bool AudioMixerSinkIsActive(PAUDMIXSINK pSink)
     if (RT_FAILURE(rc2))
         return false;
 
-    bool fIsActive = pSink->fStatus & AUDMIXSINK_STS_RUNNING;
+    const bool fIsActive = pSink->fStatus & AUDMIXSINK_STS_RUNNING;
     /* Note: AUDMIXSINK_STS_PENDING_DISABLE implies AUDMIXSINK_STS_RUNNING. */
 
     Log3Func(("[%s] fActive=%RTbool\n", pSink->pszName, fIsActive));
@@ -1508,7 +1549,9 @@ static int audioMixerSinkSetRecSourceInternal(PAUDMIXSINK pSink, PAUDMIXSTREAM p
             AssertPtr(pStream->pConn);
             rc = pStream->pConn->pfnEnable(pStream->pConn, PDMAUDIODIR_IN, true /* Enable */);
             if (RT_SUCCESS(rc))
+            {
                 pSink->In.pStreamRecSource = pStream;
+            }
             else if (pSink->In.pStreamRecSource->pConn) /* Stay with the current recording source (if any) and re-enable it. */
             {
                 const PPDMIAUDIOCONNECTOR pConn = pSink->In.pStreamRecSource->pConn;
@@ -2306,4 +2349,3 @@ bool AudioMixerStreamIsValid(PAUDMIXSTREAM pMixStream)
 
     return fIsValid;
 }
-
