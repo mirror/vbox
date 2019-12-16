@@ -50,6 +50,7 @@
 
 #include "../SUPDrvInternal.h"
 #include <VBox/log.h>
+#include <VBox/param.h>
 #include <VBox/version.h>
 #include <iprt/semaphore.h>
 #include <iprt/spinlock.h>
