@@ -87,7 +87,7 @@
  * Checks that the AC flag is set if SMAP is enabled.  If AC is not set, it will
  * be logged, written to the VMs assertion text buffer, and @a a_BadExpr is
  * executed. */
-#if defined(VBOX_STRICT) || 1
+#if (defined(VBOX_STRICT) || 1) && !defined(VBOX_WITH_RAM_IN_KERNEL)
 # define VMM_CHECK_SMAP_SETUP() uint32_t const fKernelFeatures = SUPR0GetKernelFeatures()
 # define VMM_CHECK_SMAP_CHECK(a_BadExpr) \
     do { \
@@ -436,6 +436,8 @@ static int vmmR0InitVM(PGVM pGVM, uint32_t uSvnRev, uint32_t uBuildType)
         pR0Logger->fRegistered = true;
     }
 #endif /* LOG_ENABLED */
+SUPR0Printf("VMMR0InitVM: eflags=%x fKernelFeatures=%#x (SUPKERNELFEATURES_SMAP=%d)\n",
+            ASMGetFlags(), fKernelFeatures, RT_BOOL(fKernelFeatures & SUPKERNELFEATURES_SMAP));
 
     /*
      * Check if the host supports high resolution timers or not.

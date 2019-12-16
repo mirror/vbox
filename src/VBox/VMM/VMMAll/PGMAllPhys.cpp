@@ -572,7 +572,9 @@ void pgmPhysInvalidatePageMapTLB(PVMCC pVM)
     {
         pVM->pgm.s.PhysTlbR0.aEntries[i].GCPhys = NIL_RTGCPHYS;
         pVM->pgm.s.PhysTlbR0.aEntries[i].pPage = 0;
+#ifndef VBOX_WITH_RAM_IN_KERNEL
         pVM->pgm.s.PhysTlbR0.aEntries[i].pMap = 0;
+#endif
         pVM->pgm.s.PhysTlbR0.aEntries[i].pv = 0;
     }
 
@@ -604,7 +606,9 @@ void pgmPhysInvalidatePageMapTLBEntry(PVM pVM, RTGCPHYS GCPhys)
 
     pVM->pgm.s.PhysTlbR0.aEntries[idx].GCPhys = NIL_RTGCPHYS;
     pVM->pgm.s.PhysTlbR0.aEntries[idx].pPage = 0;
+#ifndef VBOX_WITH_RAM_IN_KERNEL
     pVM->pgm.s.PhysTlbR0.aEntries[idx].pMap = 0;
+#endif
     pVM->pgm.s.PhysTlbR0.aEntries[idx].pv = 0;
 
     pVM->pgm.s.PhysTlbR3.aEntries[idx].GCPhys = NIL_RTGCPHYS;
@@ -1130,7 +1134,7 @@ int pgmPhysPageMakeWritable(PVMCC pVM, PPGMPAGE pPage, RTGCPHYS GCPhys)
  *
  * @param   pVM         The cross context VM structure.
  * @param   idPage      The Page ID.
- * @param   HCPhys      The physical address (for RC).
+ * @param   HCPhys      The physical address (for SUPR0HCPhysToVirt).
  * @param   ppv         Where to store the mapping address.
  *
  * @remarks Called from within the PGM critical section.  The mapping is only
@@ -1151,6 +1155,13 @@ int pgmPhysPageMapByPageID(PVMCC pVM, uint32_t idPage, RTHCPHYS HCPhys, void **p
      * Map it by HCPhys.
      */
     return pgmRZDynMapHCPageInlined(VMMGetCpu(pVM), HCPhys, ppv  RTLOG_COMMA_SRC_POS);
+
+#elif defined(IN_RING0) && defined(VBOX_WITH_RAM_IN_KERNEL)
+# ifdef VBOX_WITH_LINEAR_HOST_PHYS_MEM
+    return SUPR0HCPhysToVirt(HCPhys & ~(RTHCPHYS)PAGE_OFFSET_MASK, ppv);
+# else
+    return GMMR0PageIdToVirt(pVM, idPage, ppv);
+# endif
 
 #else
     /*
@@ -1252,9 +1263,16 @@ static int pgmPhysPageMapCommon(PVMCC pVM, PPGMPAGE pPage, RTGCPHYS GCPhys, PPPG
         AssertLogRelReturn(pMmio2Range, VERR_PGM_PHYS_PAGE_MAP_MMIO2_IPE);
         AssertLogRelReturn(pMmio2Range->idMmio2 == idMmio2, VERR_PGM_PHYS_PAGE_MAP_MMIO2_IPE);
         AssertLogRelReturn(iPage < (pMmio2Range->RamRange.cb >> PAGE_SHIFT), VERR_PGM_PHYS_PAGE_MAP_MMIO2_IPE);
-        *ppv = (uint8_t *)pMmio2Range->RamRange.pvR3 + ((uintptr_t)iPage << PAGE_SHIFT);
         *ppMap = NULL;
+# if   defined(IN_RING0) && defined(VBOX_WITH_RAM_IN_KERNEL) && defined(VBOX_WITH_LINEAR_HOST_PHYS_MEM)
+        return SUPR0HCPhysToVirt(PGM_PAGE_GET_HCPHYS(pPage), ppv);
+# elif defined(IN_RING0) && defined(VBOX_WITH_RAM_IN_KERNEL)
+        *ppv = (uint8_t *)pMmio2Range->pvR0 + ((uintptr_t)iPage << PAGE_SHIFT);
         return VINF_SUCCESS;
+# else
+        *ppv = (uint8_t *)pMmio2Range->RamRange.pvR3 + ((uintptr_t)iPage << PAGE_SHIFT);
+        return VINF_SUCCESS;
+# endif
     }
 
     const uint32_t idChunk = PGM_PAGE_GET_CHUNKID(pPage);
@@ -1276,6 +1294,21 @@ static int pgmPhysPageMapCommon(PVMCC pVM, PPGMPAGE pPage, RTGCPHYS GCPhys, PPPG
         return VINF_SUCCESS;
     }
 
+# if defined(IN_RING0) && defined(VBOX_WITH_RAM_IN_KERNEL) && defined(VBOX_WITH_LINEAR_HOST_PHYS_MEM)
+    /*
+     * Just use the physical address.
+     */
+    *ppMap = NULL;
+    return SUPR0HCPhysToVirt(PGM_PAGE_GET_HCPHYS(pPage), ppv);
+
+# elif defined(IN_RING0) && defined(VBOX_WITH_RAM_IN_KERNEL)
+    /*
+     * Go by page ID thru GMMR0.
+     */
+    *ppMap = NULL;
+    return GMMR0PageIdToVirt(pVM, PGM_PAGE_GET_PAGEID(pPage), ppv);
+
+# else
     /*
      * Find/make Chunk TLB entry for the mapping chunk.
      */
@@ -1325,6 +1358,7 @@ static int pgmPhysPageMapCommon(PVMCC pVM, PPGMPAGE pPage, RTGCPHYS GCPhys, PPPG
     *ppv = (uint8_t *)pMap->pv + (PGM_PAGE_GET_PAGE_IN_CHUNK(pPage) << PAGE_SHIFT);
     *ppMap = pMap;
     return VINF_SUCCESS;
+# endif /* !IN_RING0 || !VBOX_WITH_RAM_IN_KERNEL */
 #endif /* !VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0 */
 }
 
@@ -1479,14 +1513,18 @@ int pgmPhysPageLoadIntoTlbWithPage(PVMCC pVM, PPGMPAGE pPage, RTGCPHYS GCPhys)
         int rc = pgmPhysPageMapCommon(pVM, pPage, GCPhys, &pMap, &pv);
         if (RT_FAILURE(rc))
             return rc;
+# if !defined(IN_RING0) || !defined(VBOX_WITH_RAM_IN_KERNEL)
         pTlbe->pMap = pMap;
+# endif
         pTlbe->pv = pv;
         Assert(!((uintptr_t)pTlbe->pv & PAGE_OFFSET_MASK));
     }
     else
     {
         AssertMsg(PGM_PAGE_GET_HCPHYS(pPage) == pVM->pgm.s.HCPhysZeroPg, ("%RGp/%R[pgmpage]\n", GCPhys, pPage));
+# if !defined(IN_RING0) || !defined(VBOX_WITH_RAM_IN_KERNEL)
         pTlbe->pMap = NULL;
+# endif
         pTlbe->pv = pVM->pgm.s.CTXALLSUFF(pvZeroPg);
     }
 # ifdef PGM_WITH_PHYS_TLB
@@ -1574,9 +1612,13 @@ int pgmPhysGCPhys2CCPtrInternalDepr(PVMCC pVM, PPGMPAGE pPage, RTGCPHYS GCPhys, 
  */
 DECLINLINE(void) pgmPhysPageMapLockForWriting(PVM pVM, PPGMPAGE pPage, PPGMPAGEMAPTLBE pTlbe, PPGMPAGEMAPLOCK pLock)
 {
+# if !defined(IN_RING0) || !defined(VBOX_WITH_RAM_IN_KERNEL)
     PPGMPAGEMAP pMap = pTlbe->pMap;
     if (pMap)
         pMap->cRefs++;
+# else
+    RT_NOREF(pTlbe);
+# endif
 
     unsigned cLocks = PGM_PAGE_GET_WRITE_LOCKS(pPage);
     if (RT_LIKELY(cLocks < PGM_PAGE_MAX_LOCKS - 1))
@@ -1589,12 +1631,18 @@ DECLINLINE(void) pgmPhysPageMapLockForWriting(PVM pVM, PPGMPAGE pPage, PPGMPAGEM
     {
         PGM_PAGE_INC_WRITE_LOCKS(pPage);
         AssertMsgFailed(("%R[pgmpage] is entering permanent write locked state!\n", pPage));
+# if !defined(IN_RING0) || !defined(VBOX_WITH_RAM_IN_KERNEL)
         if (pMap)
             pMap->cRefs++; /* Extra ref to prevent it from going away. */
+# endif
     }
 
     pLock->uPageAndType = (uintptr_t)pPage | PGMPAGEMAPLOCK_TYPE_WRITE;
+# if !defined(IN_RING0) || !defined(VBOX_WITH_RAM_IN_KERNEL)
     pLock->pvMap = pMap;
+# else
+    pLock->pvMap = NULL;
+# endif
 }
 
 /**
@@ -1607,9 +1655,13 @@ DECLINLINE(void) pgmPhysPageMapLockForWriting(PVM pVM, PPGMPAGE pPage, PPGMPAGEM
  */
 DECLINLINE(void) pgmPhysPageMapLockForReading(PVM pVM, PPGMPAGE pPage, PPGMPAGEMAPTLBE pTlbe, PPGMPAGEMAPLOCK pLock)
 {
+# if !defined(IN_RING0) || !defined(VBOX_WITH_RAM_IN_KERNEL)
     PPGMPAGEMAP pMap = pTlbe->pMap;
     if (pMap)
         pMap->cRefs++;
+# else
+    RT_NOREF(pTlbe);
+# endif
 
     unsigned cLocks = PGM_PAGE_GET_READ_LOCKS(pPage);
     if (RT_LIKELY(cLocks < PGM_PAGE_MAX_LOCKS - 1))
@@ -1622,12 +1674,18 @@ DECLINLINE(void) pgmPhysPageMapLockForReading(PVM pVM, PPGMPAGE pPage, PPGMPAGEM
     {
         PGM_PAGE_INC_READ_LOCKS(pPage);
         AssertMsgFailed(("%R[pgmpage] is entering permanent read locked state!\n", pPage));
+# if !defined(IN_RING0) || !defined(VBOX_WITH_RAM_IN_KERNEL)
         if (pMap)
             pMap->cRefs++; /* Extra ref to prevent it from going away. */
+# endif
     }
 
     pLock->uPageAndType = (uintptr_t)pPage | PGMPAGEMAPLOCK_TYPE_READ;
+# if !defined(IN_RING0) || !defined(VBOX_WITH_RAM_IN_KERNEL)
     pLock->pvMap = pMap;
+# else
+    pLock->pvMap = NULL;
+# endif
 }
 
 #endif /* !VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0 */
@@ -2041,7 +2099,9 @@ VMMDECL(void) PGMPhysReleasePageMappingLock(PVMCC pVM, PPGMPAGEMAPLOCK pLock)
     pLock->pvPage = NULL;
 
 #else
+# if !defined(IN_RING0) || !defined(VBOX_WITH_RAM_IN_KERNEL)
     PPGMPAGEMAP pMap       = (PPGMPAGEMAP)pLock->pvMap;
+# endif
     PPGMPAGE    pPage      = (PPGMPAGE)(pLock->uPageAndType & ~PGMPAGEMAPLOCK_TYPE_MASK);
     bool        fWriteLock = (pLock->uPageAndType & PGMPAGEMAPLOCK_TYPE_MASK) == PGMPAGEMAPLOCK_TYPE_WRITE;
 
@@ -2083,11 +2143,13 @@ VMMDECL(void) PGMPhysReleasePageMappingLock(PVMCC pVM, PPGMPAGEMAPLOCK pLock)
         }
     }
 
+# if !defined(IN_RING0) || !defined(VBOX_WITH_RAM_IN_KERNEL)
     if (pMap)
     {
         Assert(pMap->cRefs >= 1);
         pMap->cRefs--;
     }
+# endif
     pgmUnlock(pVM);
 #endif /* !VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0 */
 }
@@ -4267,7 +4329,7 @@ VMM_INT_DECL(int) PGMPhysIemGCPhys2PtrNoLock(PVMCC pVM, PVMCPUCC pVCpu, RTGCPHYS
                     *pfTlb |= PGMIEMGCPHYS2PTR_F_NO_MAPPINGR3;
                     *ppb = NULL;
 #else
-                    PPGMPAGER3MAPTLBE pTlbe;
+                    PPGMPAGEMAPTLBE pTlbe;
                     rc = pgmPhysPageQueryTlbeWithPage(pVM, pPage, GCPhys, &pTlbe);
                     AssertLogRelRCReturn(rc, rc);
                     *ppb = (uint8_t *)pTlbe->pv;
@@ -4308,7 +4370,7 @@ VMM_INT_DECL(int) PGMPhysIemGCPhys2PtrNoLock(PVMCC pVM, PVMCPUCC pVCpu, RTGCPHYS
                     *pfTlb |= PGMIEMGCPHYS2PTR_F_NO_MAPPINGR3;
                     *ppb = NULL;
 #else
-                    PPGMPAGER3MAPTLBE pTlbe;
+                    PPGMPAGEMAPTLBE pTlbe;
                     rc = pgmPhysPageQueryTlbeWithPage(pVM, pPage, GCPhys, &pTlbe);
                     AssertLogRelRCReturn(rc, rc);
                     *ppb = (uint8_t *)pTlbe->pv;
@@ -4436,7 +4498,7 @@ VMM_INT_DECL(int) PGMPhysIemGCPhys2Ptr(PVMCC pVM, PVMCPUCC pVCpu, RTGCPHYS GCPhy
 
 #else
             /* Get a ring-3 mapping of the address. */
-            PPGMPAGER3MAPTLBE pTlbe;
+            PPGMPAGEMAPTLBE pTlbe;
             rc2 = pgmPhysPageQueryTlbeWithPage(pVM, pPage, GCPhys, &pTlbe);
             AssertLogRelRCReturn(rc2, rc2);
 
@@ -4663,6 +4725,5 @@ VMM_INT_DECL(int) PGMPhysNemEnumPagesByState(PVMCC pVM, PVMCPUCC pVCpu, uint8_t 
     pgmUnlock(pVM);
 
     return rc;
-
 }
 

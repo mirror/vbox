@@ -105,7 +105,7 @@
  * Checks that the AC flag is set if SMAP is enabled.  If AC is not set, it will
  * be logged, written to the VMs assertion text buffer, and @a a_BadExpr is
  * executed. */
-#if defined(VBOX_STRICT) || 1
+#if (defined(VBOX_STRICT) || 1) && !defined(VBOX_WITH_RAM_IN_KERNEL)
 # define GVMM_CHECK_SMAP_SETUP() uint32_t const fKernelFeatures = SUPR0GetKernelFeatures()
 # define GVMM_CHECK_SMAP_CHECK(a_BadExpr) \
     do { \

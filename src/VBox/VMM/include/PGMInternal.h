@@ -1478,8 +1478,12 @@ typedef struct PGMREGMMIO2RANGE
 {
     /** The owner of the range. (a device) */
     PPDMDEVINSR3                        pDevInsR3;
-    /** Pointer to the ring-3 mapping of the allocation, if MMIO2. */
+    /** Pointer to the ring-3 mapping of the allocation. */
     RTR3PTR                             pvR3;
+#if defined(VBOX_WITH_RAM_IN_KERNEL) && !defined(VBOX_WITH_LINEAR_HOST_PHYS_MEM)
+    /** Pointer to the ring-0 mapping of the allocation. */
+    RTR0PTR                             pvR0;
+#endif
     /** Pointer to the next range - R3. */
     R3PTRTYPE(struct PGMREGMMIO2RANGE *) pNextR3;
     /** Flags (PGMREGMMIO2RANGE_F_XXX). */
@@ -1493,7 +1497,11 @@ typedef struct PGMREGMMIO2RANGE
     /** MMIO2 range identifier, for page IDs (PGMPAGE::s.idPage). */
     uint8_t                             idMmio2;
     /** Alignment padding for putting the ram range on a PGMPAGE alignment boundary. */
+#if defined(VBOX_WITH_RAM_IN_KERNEL) && !defined(VBOX_WITH_LINEAR_HOST_PHYS_MEM)
+    uint8_t                             abAlignment[HC_ARCH_BITS == 32 ? 6 + 4 : 2];
+#else
     uint8_t                             abAlignment[HC_ARCH_BITS == 32 ? 6 + 8 : 2 + 8];
+#endif
     /** The real size.
      * This may be larger than indicated by RamRange.cb if the range has been
      * reduced during saved state loading. */
@@ -1567,6 +1575,9 @@ typedef struct PGMPHYSCACHE
 } PGMPHYSCACHE;
 
 
+/** @name Ring-3 page mapping TLBs
+ * @{  */
+
 /** Pointer to an allocation chunk ring-3 mapping. */
 typedef struct PGMCHUNKR3MAP *PPGMCHUNKR3MAP;
 /** Pointer to an allocation chunk ring-3 mapping pointer. */
@@ -1603,7 +1614,7 @@ typedef struct PGMCHUNKR3MAPTLBE
     uint32_t                            u32Padding; /**< alignment padding. */
 #endif
     /** The chunk map. */
-#ifdef VBOX_WITH_2X_4GB_ADDR_SPACE
+#if defined(VBOX_WITH_2X_4GB_ADDR_SPACE) || defined(VBOX_WITH_RAM_IN_KERNEL)
     R3PTRTYPE(PPGMCHUNKR3MAP) volatile  pChunk;
 #else
     R3R0PTRTYPE(PPGMCHUNKR3MAP) volatile  pChunk;
@@ -1655,19 +1666,19 @@ typedef struct PGMPAGER3MAPTLBE
     /** Address of the page. */
     RTGCPHYS volatile                   GCPhys;
     /** The guest page. */
-#ifdef VBOX_WITH_2X_4GB_ADDR_SPACE
+#if defined(VBOX_WITH_2X_4GB_ADDR_SPACE) || defined(VBOX_WITH_RAM_IN_KERNEL)
     R3PTRTYPE(PPGMPAGE) volatile        pPage;
 #else
     R3R0PTRTYPE(PPGMPAGE) volatile      pPage;
 #endif
     /** Pointer to the page mapping tracking structure, PGMCHUNKR3MAP. */
-#ifdef VBOX_WITH_2X_4GB_ADDR_SPACE
+#if defined(VBOX_WITH_2X_4GB_ADDR_SPACE) || defined(VBOX_WITH_RAM_IN_KERNEL)
     R3PTRTYPE(PPGMCHUNKR3MAP) volatile  pMap;
 #else
     R3R0PTRTYPE(PPGMCHUNKR3MAP) volatile pMap;
 #endif
     /** The address */
-#ifdef VBOX_WITH_2X_4GB_ADDR_SPACE
+#if defined(VBOX_WITH_2X_4GB_ADDR_SPACE) || defined(VBOX_WITH_RAM_IN_KERNEL)
     R3PTRTYPE(void *) volatile          pv;
 #else
     R3R0PTRTYPE(void *) volatile        pv;
@@ -1703,6 +1714,51 @@ typedef PGMPAGER3MAPTLB *PPGMPAGER3MAPTLB;
  */
 #define PGM_PAGER3MAPTLB_IDX(GCPhys)    ( ((GCPhys) >> PAGE_SHIFT) & (PGM_PAGER3MAPTLB_ENTRIES - 1) )
 
+/** @} */
+
+#if defined(VBOX_WITH_RAM_IN_KERNEL) || defined(DOXYGEN_RUNNING)
+/** @name Ring-0 page mapping TLB
+ * @{  */
+/**
+ * Ring-0 guest page mapping TLB entry.
+ */
+typedef struct PGMPAGER0MAPTLBE
+{
+    /** Address of the page. */
+    RTGCPHYS volatile                   GCPhys;
+    /** The guest page. */
+    R0PTRTYPE(PPGMPAGE) volatile        pPage;
+    /** The address */
+    R0PTRTYPE(void *) volatile          pv;
+} PGMPAGER0MAPTLBE;
+/** Pointer to an entry in the HC physical TLB. */
+typedef PGMPAGER0MAPTLBE *PPGMPAGER0MAPTLBE;
+
+
+/** The number of entries in the ring-3 guest page mapping TLB.
+ * @remarks The value must be a power of two. */
+#define PGM_PAGER0MAPTLB_ENTRIES 256
+
+/**
+ * Ring-3 guest page mapping TLB.
+ * @remarks used in ring-0 as well at the moment.
+ */
+typedef struct PGMPAGER0MAPTLB
+{
+    /** The TLB entries. */
+    PGMPAGER0MAPTLBE            aEntries[PGM_PAGER0MAPTLB_ENTRIES];
+} PGMPAGER0MAPTLB;
+/** Pointer to the ring-3 guest page mapping TLB. */
+typedef PGMPAGER0MAPTLB *PPGMPAGER0MAPTLB;
+
+/**
+ * Calculates the index of the TLB entry for the specified guest page.
+ * @returns Physical TLB index.
+ * @param   GCPhys      The guest physical address.
+ */
+#define PGM_PAGER0MAPTLB_IDX(GCPhys)    ( ((GCPhys) >> PAGE_SHIFT) & (PGM_PAGER0MAPTLB_ENTRIES - 1) )
+/** @} */
+#endif /* VBOX_WITH_RAM_IN_KERNEL || DOXYGEN_RUNNING */
 
 /**
  * Raw-mode context dynamic mapping cache entry.
@@ -1866,22 +1922,22 @@ typedef PGMMAPSET *PPGMMAPSET;
  * Pointer to a page mapper unit for current context. */
 /** @typedef PPPGMPAGEMAP
  * Pointer to a page mapper unit pointer for current context. */
-#if defined(IN_RING0) && 0
-// typedef PPGMPAGER0MAPTLB               PPGMPAGEMAPTLB;
-// typedef PPGMPAGER0MAPTLBE              PPGMPAGEMAPTLBE;
-// typedef PPGMPAGER0MAPTLBE             *PPPGMPAGEMAPTLBE;
-//# define PGM_PAGEMAPTLB_ENTRIES         PGM_PAGER0MAPTLB_ENTRIES
-//# define PGM_PAGEMAPTLB_IDX(GCPhys)     PGM_PAGER0MAPTLB_IDX(GCPhys)
-// typedef PPGMCHUNKR0MAP                 PPGMPAGEMAP;
-// typedef PPPGMCHUNKR0MAP                PPPGMPAGEMAP;
+#if defined(IN_RING0) && defined(VBOX_WITH_RAM_IN_KERNEL)
+typedef PPGMPAGER0MAPTLB                PPGMPAGEMAPTLB;
+typedef PPGMPAGER0MAPTLBE               PPGMPAGEMAPTLBE;
+typedef PPGMPAGER0MAPTLBE              *PPPGMPAGEMAPTLBE;
+# define PGM_PAGEMAPTLB_ENTRIES         PGM_PAGER0MAPTLB_ENTRIES
+# define PGM_PAGEMAPTLB_IDX(GCPhys)     PGM_PAGER0MAPTLB_IDX(GCPhys)
+typedef struct PGMCHUNKR0MAP           *PPGMPAGEMAP;
+typedef struct PGMCHUNKR0MAP          **PPPGMPAGEMAP;
 #else
- typedef PPGMPAGER3MAPTLB               PPGMPAGEMAPTLB;
- typedef PPGMPAGER3MAPTLBE              PPGMPAGEMAPTLBE;
- typedef PPGMPAGER3MAPTLBE             *PPPGMPAGEMAPTLBE;
+typedef PPGMPAGER3MAPTLB                PPGMPAGEMAPTLB;
+typedef PPGMPAGER3MAPTLBE               PPGMPAGEMAPTLBE;
+typedef PPGMPAGER3MAPTLBE              *PPPGMPAGEMAPTLBE;
 # define PGM_PAGEMAPTLB_ENTRIES         PGM_PAGER3MAPTLB_ENTRIES
 # define PGM_PAGEMAPTLB_IDX(GCPhys)     PGM_PAGER3MAPTLB_IDX(GCPhys)
- typedef PPGMCHUNKR3MAP                 PPGMPAGEMAP;
- typedef PPPGMCHUNKR3MAP                PPPGMPAGEMAP;
+typedef PPGMCHUNKR3MAP                  PPGMPAGEMAP;
+typedef PPPGMCHUNKR3MAP                 PPPGMPAGEMAP;
 #endif
 /** @} */
 
@@ -3228,7 +3284,7 @@ typedef struct PGM
         /** The chunk mapping TLB. */
         PGMCHUNKR3MAPTLB            Tlb;
         /** The chunk tree, ordered by chunk id. */
-#ifdef VBOX_WITH_2X_4GB_ADDR_SPACE
+#if defined(VBOX_WITH_2X_4GB_ADDR_SPACE) || defined(VBOX_WITH_RAM_IN_KERNEL)
         R3PTRTYPE(PAVLU32NODECORE)  pTree;
 #else
         R3R0PTRTYPE(PAVLU32NODECORE) pTree;
@@ -3250,8 +3306,13 @@ typedef struct PGM
 
     /** The page mapping TLB for ring-3. */
     PGMPAGER3MAPTLB                 PhysTlbR3;
+#ifdef VBOX_WITH_RAM_IN_KERNEL
+    /** The page mapping TLB for ring-0. */
+    PGMPAGER0MAPTLB                 PhysTlbR0;
+#else
     /** The page mapping TLB for ring-0 (still using ring-3 mappings). */
     PGMPAGER3MAPTLB                 PhysTlbR0;
+#endif
 
     /** @name   The zero page.
      * @{ */

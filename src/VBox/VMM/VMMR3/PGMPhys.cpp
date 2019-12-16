@@ -2994,6 +2994,7 @@ VMMR3_INT_DECL(int) PGMR3PhysMmio2Register(PVM pVM, PPDMDEVINS pDevIns, uint32_t
     const uint32_t cPages = cb >> PAGE_SHIFT;
     AssertLogRelReturn(((RTGCPHYS)cPages << PAGE_SHIFT) == cb, VERR_INVALID_PARAMETER);
     AssertLogRelReturn(cPages <= (MM_MMIO_64_MAX >> X86_PAGE_SHIFT), VERR_OUT_OF_RANGE);
+    AssertLogRelReturn(cPages <= PGM_MMIO2_MAX_PAGE_COUNT, VERR_OUT_OF_RANGE);
 
     /*
      * For the 2nd+ instance, mangle the description string so it's unique.
@@ -3034,7 +3035,12 @@ VMMR3_INT_DECL(int) PGMR3PhysMmio2Register(PVM pVM, PPDMDEVINS pDevIns, uint32_t
         if (RT_SUCCESS(rc))
         {
             void *pvPages;
+#if defined(VBOX_WITH_RAM_IN_KERNEL) && !defined(VBOX_WITH_LINEAR_HOST_PHYS_MEM)
+            RTR0PTR pvPagesR0;
+            rc = SUPR3PageAllocEx(cPages, 0 /*fFlags*/, &pvPages, &pvPagesR0, paPages);
+#else
             rc = SUPR3PageAllocEx(cPages, 0 /*fFlags*/, &pvPages, NULL /*pR0Ptr*/, paPages);
+#endif
             if (RT_SUCCESS(rc))
             {
                 memset(pvPages, 0, cPages * PAGE_SIZE);
@@ -3054,6 +3060,9 @@ VMMR3_INT_DECL(int) PGMR3PhysMmio2Register(PVM pVM, PPDMDEVINS pDevIns, uint32_t
                     for (PPGMREGMMIO2RANGE pCur = pNew; pCur; pCur = pCur->pNextR3)
                     {
                         pCur->pvR3          = pbCurPages;
+#if defined(VBOX_WITH_RAM_IN_KERNEL) && !defined(VBOX_WITH_LINEAR_HOST_PHYS_MEM)
+                        pCur->pvR0          = pvPagesR0 + (iSrcPage << PAGE_SHIFT);
+#endif
                         pCur->RamRange.pvR3 = pbCurPages;
                         pCur->idMmio2       = idMmio2;
                         pCur->fFlags       |= PGMREGMMIO2RANGE_F_MMIO2;
@@ -4629,9 +4638,11 @@ static DECLCALLBACK(int) pgmR3PhysChunkUnmapCandidateCallback(PAVLU32NODECORE pN
     }
 #endif
 
+#ifndef VBOX_WITH_RAM_IN_KERNEL
     for (unsigned i = 0; i < RT_ELEMENTS(pVM->pgm.s.PhysTlbR0.aEntries); i++)
         if (pVM->pgm.s.PhysTlbR0.aEntries[i].pMap == pChunk)
             return 0;
+#endif
     for (unsigned i = 0; i < RT_ELEMENTS(pVM->pgm.s.PhysTlbR3.aEntries); i++)
         if (pVM->pgm.s.PhysTlbR3.aEntries[i].pMap == pChunk)
             return 0;

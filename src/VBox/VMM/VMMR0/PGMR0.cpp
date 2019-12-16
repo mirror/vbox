@@ -374,7 +374,11 @@ VMMR0_INT_DECL(int) PGMR0PhysMMIO2MapKernel(PGVM pGVM, PPDMDEVINS pDevIns, PGMMM
      */
     PPGMREGMMIO2RANGE pFirstRegMmio = pgmR0PhysMMIOExFind(pGVM, pDevIns, hMmio2);
     AssertReturn(pFirstRegMmio, VERR_NOT_FOUND);
+#if defined(VBOX_WITH_RAM_IN_KERNEL) && !defined(VBOX_WITH_LINEAR_HOST_PHYS_MEM)
+    uint8_t * const pvR0  = (uint8_t *)pFirstRegMmio->pvR0;
+#else
     RTR3PTR const  pvR3   = pFirstRegMmio->pvR3;
+#endif
     RTGCPHYS const cbReal = pFirstRegMmio->cbReal;
     pFirstRegMmio = NULL;
     ASMCompilerBarrier();
@@ -388,7 +392,13 @@ VMMR0_INT_DECL(int) PGMR0PhysMMIO2MapKernel(PGVM pGVM, PPDMDEVINS pDevIns, PGMMM
     /*
      * Do the mapping.
      */
+#if defined(VBOX_WITH_RAM_IN_KERNEL) && !defined(VBOX_WITH_LINEAR_HOST_PHYS_MEM)
+    AssertPtr(pvR0);
+    *ppvMapping = pvR0 + offSub;
+    return VINF_SUCCESS;
+#else
     return SUPR0PageMapKernel(pGVM->pSession, pvR3, (uint32_t)offSub, (uint32_t)cbSub, 0 /*fFlags*/, ppvMapping);
+#endif
 }
 
 

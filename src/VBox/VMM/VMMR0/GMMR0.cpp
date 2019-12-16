@@ -399,6 +399,10 @@ typedef struct GMMCHUNK
      * what the host can dish up with.  (Chunk mtx protects mapping accesses
      * and related frees.) */
     RTR0MEMOBJ          hMemObj;
+#if defined(VBOX_WITH_RAM_IN_KERNEL) && !defined(VBOX_WITH_LINEAR_HOST_PHYS_MEM)
+    /** Pointer to the kernel mapping. */
+    uint8_t            *pbMapping;
+#endif
     /** Pointer to the next chunk in the free list.  (Giant mtx.) */
     PGMMCHUNK           pFreeNext;
     /** Pointer to the previous chunk in the free list. (Giant mtx.) */
@@ -2112,7 +2116,7 @@ static uint32_t gmmR0AllocatePagesFromChunk(PGMMCHUNK pChunk, uint16_t const hGV
  *          caller must release it (ugly).
  * @param   pGMM        Pointer to the GMM instance.
  * @param   pSet        Pointer to the set.
- * @param   MemObj      The memory object for the chunk.
+ * @param   hMemObj     The memory object for the chunk.
  * @param   hGVM        The affinity of the chunk. NIL_GVM_HANDLE for no
  *                      affinity.
  * @param   fChunkFlags The chunk flags, GMM_CHUNK_FLAGS_XXX.
@@ -2122,13 +2126,33 @@ static uint32_t gmmR0AllocatePagesFromChunk(PGMMCHUNK pChunk, uint16_t const hGV
  *          The giant GMM mutex will be acquired and returned acquired in
  *          the success path.   On failure, no locks will be held.
  */
-static int gmmR0RegisterChunk(PGMM pGMM, PGMMCHUNKFREESET pSet, RTR0MEMOBJ MemObj, uint16_t hGVM, uint16_t fChunkFlags,
+static int gmmR0RegisterChunk(PGMM pGMM, PGMMCHUNKFREESET pSet, RTR0MEMOBJ hMemObj, uint16_t hGVM, uint16_t fChunkFlags,
                               PGMMCHUNK *ppChunk)
 {
     Assert(pGMM->hMtxOwner != RTThreadNativeSelf());
     Assert(hGVM != NIL_GVM_HANDLE || pGMM->fBoundMemoryMode);
     Assert(fChunkFlags == 0 || fChunkFlags == GMM_CHUNK_FLAGS_LARGE_PAGE);
 
+#if defined(VBOX_WITH_RAM_IN_KERNEL) && !defined(VBOX_WITH_LINEAR_HOST_PHYS_MEM)
+    /*
+     * Get a ring-0 mapping of the object.
+     */
+    uint8_t *pbMapping = (uint8_t *)RTR0MemObjAddress(hMemObj);
+    if (!pbMapping)
+    {
+        RTR0MEMOBJ hMapObj;
+        int rc = RTR0MemObjMapKernel(&hMapObj, hMemObj, (void *)-1, 0,  RTMEM_PROT_READ | RTMEM_PROT_WRITE);
+        if (RT_SUCCESS(rc))
+            pbMapping = (uint8_t *)RTR0MemObjAddress(hMapObj);
+        else
+            return rc;
+        AssertPtr(pbMapping);
+    }
+#endif
+
+    /*
+     * Allocate a chunk.
+     */
     int rc;
     PGMMCHUNK pChunk = (PGMMCHUNK)RTMemAllocZ(sizeof(*pChunk));
     if (pChunk)
@@ -2136,7 +2160,10 @@ static int gmmR0RegisterChunk(PGMM pGMM, PGMMCHUNKFREESET pSet, RTR0MEMOBJ MemOb
         /*
          * Initialize it.
          */
-        pChunk->hMemObj     = MemObj;
+        pChunk->hMemObj     = hMemObj;
+#if defined(VBOX_WITH_RAM_IN_KERNEL) && !defined(VBOX_WITH_LINEAR_HOST_PHYS_MEM)
+        pChunk->pbMapping   = pbMapping;
+#endif
         pChunk->cFree       = GMM_CHUNK_NUM_PAGES;
         pChunk->hGVM        = hGVM;
         /*pChunk->iFreeHead = 0;*/
@@ -2216,9 +2243,9 @@ static int gmmR0AllocateChunkNew(PGMM pGMM, PGVM pGVM, PGMMCHUNKFREESET pSet, ui
     int rc = RTR0MemObjAllocPhysNC(&hMemObj, GMM_CHUNK_SIZE, NIL_RTHCPHYS);
     if (RT_SUCCESS(rc))
     {
-/** @todo Duplicate gmmR0RegisterChunk here so we can avoid chaining up the
- *        free pages first and then unchaining them right afterwards. Instead
- *        do as much work as possible without holding the giant lock. */
+        /** @todo Duplicate gmmR0RegisterChunk here so we can avoid chaining up the
+         *        free pages first and then unchaining them right afterwards. Instead
+         *        do as much work as possible without holding the giant lock. */
         PGMMCHUNK pChunk;
         rc = gmmR0RegisterChunk(pGMM, pSet, hMemObj, pGVM->hSelf, 0 /*fChunkFlags*/, &pChunk);
         if (RT_SUCCESS(rc))
@@ -2228,7 +2255,7 @@ static int gmmR0AllocateChunkNew(PGMM pGMM, PGVM pGVM, PGMMCHUNKFREESET pSet, ui
         }
 
         /* bail out */
-        RTR0MemObjFree(hMemObj, false /* fFreeMappings */);
+        RTR0MemObjFree(hMemObj, true /* fFreeMappings */);
     }
 
     int rc2 = gmmR0MutexAcquire(pGMM);
@@ -3103,9 +3130,10 @@ GMMR0DECL(int)  GMMR0AllocateLargePage(PGVM pGVM, VMCPUID idCpu, uint32_t cbPage
 
                 gmmR0LinkChunk(pChunk, pSet);
                 gmmR0MutexRelease(pGMM);
+                LogFlow(("GMMR0AllocateLargePage: returns VINF_SUCCESS\n"));
+                return VINF_SUCCESS;
             }
-            else
-                RTR0MemObjFree(hMemObj, false /* fFreeMappings */);
+            RTR0MemObjFree(hMemObj, true /* fFreeMappings */);
         }
     }
     else
@@ -3291,7 +3319,11 @@ static bool gmmR0FreeChunk(PGMM pGMM, PGVM pGVM, PGMMCHUNK pChunk, bool fRelaxed
 
     RTMemFree(pChunk);
 
+#if defined(VBOX_WITH_RAM_IN_KERNEL) && !defined(VBOX_WITH_LINEAR_HOST_PHYS_MEM)
+    int rc = RTR0MemObjFree(hMemObj, true /* fFreeMappings */);
+#else
     int rc = RTR0MemObjFree(hMemObj, false /* fFreeMappings */);
+#endif
     AssertLogRelRC(rc);
 
     if (fRelaxedSem)
@@ -4254,20 +4286,63 @@ GMMR0DECL(int) GMMR0SeedChunk(PGVM pGVM, VMCPUID idCpu, RTR3PTR pvR3)
      * Lock the memory and add it as new chunk with our hGVM.
      * (The GMM locking is done inside gmmR0RegisterChunk.)
      */
-    RTR0MEMOBJ MemObj;
-    rc = RTR0MemObjLockUser(&MemObj, pvR3, GMM_CHUNK_SIZE, RTMEM_PROT_READ | RTMEM_PROT_WRITE, NIL_RTR0PROCESS);
+    RTR0MEMOBJ hMemObj;
+    rc = RTR0MemObjLockUser(&hMemObj, pvR3, GMM_CHUNK_SIZE, RTMEM_PROT_READ | RTMEM_PROT_WRITE, NIL_RTR0PROCESS);
     if (RT_SUCCESS(rc))
     {
-        rc = gmmR0RegisterChunk(pGMM, &pGVM->gmm.s.Private, MemObj, pGVM->hSelf, 0 /*fChunkFlags*/, NULL);
+        rc = gmmR0RegisterChunk(pGMM, &pGVM->gmm.s.Private, hMemObj, pGVM->hSelf, 0 /*fChunkFlags*/, NULL);
         if (RT_SUCCESS(rc))
             gmmR0MutexRelease(pGMM);
         else
-            RTR0MemObjFree(MemObj, false /* fFreeMappings */);
+            RTR0MemObjFree(hMemObj, true /* fFreeMappings */);
     }
 
     LogFlow(("GMMR0SeedChunk: rc=%d (pvR3=%p)\n", rc, pvR3));
     return rc;
 }
+
+#if defined(VBOX_WITH_RAM_IN_KERNEL) && !defined(VBOX_WITH_LINEAR_HOST_PHYS_MEM)
+
+/**
+ * Gets the ring-0 virtual address for the given page.
+ *
+ * @returns VBox status code.
+ * @param   pGVM        Pointer to the kernel-only VM instace data.
+ * @param   idPage      The page ID.
+ * @param   ppv         Where to store the address.
+ * @thread  EMT
+ */
+GMMR0DECL(int)  GMMR0PageIdToVirt(PGVM pGVM, uint32_t idPage, void **ppv)
+{
+    *ppv = NULL;
+    PGMM pGMM;
+    GMM_GET_VALID_INSTANCE(pGMM, VERR_GMM_INSTANCE);
+    gmmR0MutexAcquire(pGMM); /** @todo shared access */
+
+    int rc;
+    PGMMCHUNK pChunk = gmmR0GetChunk(pGMM, idPage >> GMM_CHUNKID_SHIFT);
+    if (pChunk)
+    {
+        const GMMPAGE *pPage = &pChunk->aPages[idPage & GMM_PAGEID_IDX_MASK];
+        if (RT_LIKELY(   (   GMM_PAGE_IS_PRIVATE(pPage)
+                          && pPage->Private.hGVM == pGVM->hSelf)
+                      || GMM_PAGE_IS_SHARED(pPage)))
+        {
+            AssertPtr(pChunk->pbMapping);
+            *ppv = &pChunk->pbMapping[(idPage & GMM_PAGEID_IDX_MASK) << PAGE_SHIFT];
+            rc = VINF_SUCCESS;
+        }
+        else
+            rc = VERR_GMM_NOT_PAGE_OWNER;
+    }
+    else
+        rc = VERR_GMM_PAGE_NOT_FOUND;
+
+    gmmR0MutexRelease(pGMM);
+    return rc;
+}
+
+#endif
 
 #ifdef VBOX_WITH_PAGE_SHARING
 

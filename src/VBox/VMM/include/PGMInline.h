@@ -504,7 +504,7 @@ DECLINLINE(int) pgmPhysPageQueryTlbeWithPage(PVMCC pVM, PPGMPAGE pPage, RTGCPHYS
             pTlbe->pv = pVM->pgm.s.CTX_SUFF(pvZeroPg);
 #endif
         AssertPtr(pTlbe->pv);
-#ifndef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
+#if defined(IN_RING3) || (!defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0) && !defined(VBOX_WITH_RAM_IN_KERNEL))
         Assert(!pTlbe->pMap || RT_VALID_PTR(pTlbe->pMap->pv));
 #endif
     }

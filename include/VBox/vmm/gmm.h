@@ -413,6 +413,7 @@ GMMR0DECL(int)  GMMR0FreeLargePage(PGVM pGVM, VMCPUID idCpu, uint32_t idPage);
 GMMR0DECL(int)  GMMR0BalloonedPages(PGVM pGVM, VMCPUID idCpu, GMMBALLOONACTION enmAction, uint32_t cBalloonedPages);
 GMMR0DECL(int)  GMMR0MapUnmapChunk(PGVM pGVM, uint32_t idChunkMap, uint32_t idChunkUnmap, PRTR3PTR ppvR3);
 GMMR0DECL(int)  GMMR0SeedChunk(PGVM pGVM, VMCPUID idCpu, RTR3PTR pvR3);
+GMMR0DECL(int)  GMMR0PageIdToVirt(PGVM pGVM, uint32_t idPage, void **ppv);
 GMMR0DECL(int)  GMMR0RegisterSharedModule(PGVM pGVM, VMCPUID idCpu, VBOXOSFAMILY enmGuestOS, char *pszModuleName,
                                           char *pszVersion, RTGCPTR GCBaseAddr,  uint32_t cbModule, uint32_t cRegions,
                                           struct VMMDEVSHAREDREGIONDESC const *paRegions);

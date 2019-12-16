@@ -2153,20 +2153,35 @@ int pgmGstLazyMap32BitPD(PVMCPUCC pVCpu, PX86PD *ppPd)
     int rc = pgmPhysGetPageEx(pVM, GCPhysCR3, &pPage);
     if (RT_SUCCESS(rc))
     {
+# ifdef VBOX_WITH_RAM_IN_KERNEL
+        rc = pgmPhysGCPhys2CCPtrInternalDepr(pVM, pPage, GCPhysCR3, (void **)ppPd);
+        if (RT_SUCCESS(rc))
+        {
+#  ifdef IN_RING3
+            pVCpu->pgm.s.pGst32BitPdR0 = NIL_RTR0PTR;
+            pVCpu->pgm.s.pGst32BitPdR3 = *ppPd;
+#  else
+            pVCpu->pgm.s.pGst32BitPdR3 = NIL_RTR0PTR;
+            pVCpu->pgm.s.pGst32BitPdR0 = *ppPd;
+#  endif
+            pgmUnlock(pVM);
+            return VINF_SUCCESS;
+        }
+# else
         RTHCPTR HCPtrGuestCR3;
         rc = pgmPhysGCPhys2CCPtrInternalDepr(pVM, pPage, GCPhysCR3, (void **)&HCPtrGuestCR3);
         if (RT_SUCCESS(rc))
         {
             pVCpu->pgm.s.pGst32BitPdR3 = (R3PTRTYPE(PX86PD))HCPtrGuestCR3;
-# ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
+#  ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
             pVCpu->pgm.s.pGst32BitPdR0 = (R0PTRTYPE(PX86PD))HCPtrGuestCR3;
-# endif
+#  endif
             *ppPd = (PX86PD)HCPtrGuestCR3;
 
             pgmUnlock(pVM);
             return VINF_SUCCESS;
         }
-
+# endif
         AssertRC(rc);
     }
     pgmUnlock(pVM);
@@ -2195,20 +2210,35 @@ int pgmGstLazyMapPaePDPT(PVMCPUCC pVCpu, PX86PDPT *ppPdpt)
     int rc = pgmPhysGetPageEx(pVM, GCPhysCR3, &pPage);
     if (RT_SUCCESS(rc))
     {
+# ifdef VBOX_WITH_RAM_IN_KERNEL
+        rc = pgmPhysGCPhys2CCPtrInternalDepr(pVM, pPage, GCPhysCR3, (void **)ppPdpt);
+        if (RT_SUCCESS(rc))
+        {
+#  ifdef IN_RING3
+            pVCpu->pgm.s.pGstPaePdptR0 = NIL_RTR0PTR;
+            pVCpu->pgm.s.pGstPaePdptR3 = *ppPdpt;
+#  else
+            pVCpu->pgm.s.pGstPaePdptR3 = NIL_RTR3PTR;
+            pVCpu->pgm.s.pGstPaePdptR0 = *ppPdpt;
+#  endif
+            pgmUnlock(pVM);
+            return VINF_SUCCESS;
+        }
+# else
         RTHCPTR HCPtrGuestCR3;
         rc = pgmPhysGCPhys2CCPtrInternalDepr(pVM, pPage, GCPhysCR3, (void **)&HCPtrGuestCR3);
         if (RT_SUCCESS(rc))
         {
             pVCpu->pgm.s.pGstPaePdptR3 = (R3PTRTYPE(PX86PDPT))HCPtrGuestCR3;
-# ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
+#  ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
             pVCpu->pgm.s.pGstPaePdptR0 = (R0PTRTYPE(PX86PDPT))HCPtrGuestCR3;
-# endif
+#  endif
             *ppPdpt = (PX86PDPT)HCPtrGuestCR3;
 
             pgmUnlock(pVM);
             return VINF_SUCCESS;
         }
-
+# endif
         AssertRC(rc);
     }
 
@@ -2243,17 +2273,35 @@ int pgmGstLazyMapPaePD(PVMCPUCC pVCpu, uint32_t iPdpt, PX86PDPAE *ppPd)
     int rc = pgmPhysGetPageEx(pVM, GCPhys, &pPage);
     if (RT_SUCCESS(rc))
     {
+# ifdef VBOX_WITH_RAM_IN_KERNEL
+        rc = pgmPhysGCPhys2CCPtrInternalDepr(pVM, pPage, GCPhys, (void **)ppPd);
+        AssertRC(rc);
+        if (RT_SUCCESS(rc))
+        {
+#  ifdef IN_RING3
+            pVCpu->pgm.s.apGstPaePDsR0[iPdpt]          = NIL_RTR0PTR;
+            pVCpu->pgm.s.apGstPaePDsR3[iPdpt]          = *ppPd;
+#  else
+            pVCpu->pgm.s.apGstPaePDsR3[iPdpt]          = NIL_RTR3PTR;
+            pVCpu->pgm.s.apGstPaePDsR0[iPdpt]          = *ppPd;
+#  endif
+            if (fChanged)
+                pVCpu->pgm.s.aGCPhysGstPaePDs[iPdpt]   = GCPhys;
+            pgmUnlock(pVM);
+            return VINF_SUCCESS;
+        }
+# else
         RTHCPTR     HCPtr       = NIL_RTHCPTR;
-# ifndef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
+#  ifndef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
         rc = pgmPhysGCPhys2CCPtrInternalDepr(pVM, pPage, GCPhys, &HCPtr);
         AssertRC(rc);
-# endif
+#  endif
         if (RT_SUCCESS(rc))
         {
             pVCpu->pgm.s.apGstPaePDsR3[iPdpt]          = (R3PTRTYPE(PX86PDPAE))HCPtr;
-# ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
+#  ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
             pVCpu->pgm.s.apGstPaePDsR0[iPdpt]          = (R0PTRTYPE(PX86PDPAE))HCPtr;
-# endif
+#  endif
             if (fChanged)
                 pVCpu->pgm.s.aGCPhysGstPaePDs[iPdpt]   = GCPhys;
 
@@ -2261,13 +2309,14 @@ int pgmGstLazyMapPaePD(PVMCPUCC pVCpu, uint32_t iPdpt, PX86PDPAE *ppPd)
             pgmUnlock(pVM);
             return VINF_SUCCESS;
         }
+# endif
     }
 
     /* Invalid page or some failure, invalidate the entry. */
     pVCpu->pgm.s.aGCPhysGstPaePDs[iPdpt]   = NIL_RTGCPHYS;
-    pVCpu->pgm.s.apGstPaePDsR3[iPdpt]      = 0;
+    pVCpu->pgm.s.apGstPaePDsR3[iPdpt]      = NIL_RTR3PTR;
 # ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
-    pVCpu->pgm.s.apGstPaePDsR0[iPdpt]      = 0;
+    pVCpu->pgm.s.apGstPaePDsR0[iPdpt]      = NIL_RTR0PTR;
 # endif
 
     pgmUnlock(pVM);
@@ -2294,19 +2343,35 @@ int pgmGstLazyMapPml4(PVMCPUCC pVCpu, PX86PML4 *ppPml4)
     int rc = pgmPhysGetPageEx(pVM, GCPhysCR3, &pPage);
     if (RT_SUCCESS(rc))
     {
+# ifdef VBOX_WITH_RAM_IN_KERNEL
+        rc = pgmPhysGCPhys2CCPtrInternalDepr(pVM, pPage, GCPhysCR3, (void **)ppPml4);
+        if (RT_SUCCESS(rc))
+        {
+#  ifdef IN_RING3
+            pVCpu->pgm.s.pGstAmd64Pml4R0 = NIL_RTR0PTR;
+            pVCpu->pgm.s.pGstAmd64Pml4R3 = *ppPml4;
+#  else
+            pVCpu->pgm.s.pGstAmd64Pml4R3 = NIL_RTR3PTR;
+            pVCpu->pgm.s.pGstAmd64Pml4R0 = *ppPml4;
+#  endif
+            pgmUnlock(pVM);
+            return VINF_SUCCESS;
+        }
+# else
         RTHCPTR HCPtrGuestCR3;
         rc = pgmPhysGCPhys2CCPtrInternalDepr(pVM, pPage, GCPhysCR3, (void **)&HCPtrGuestCR3);
         if (RT_SUCCESS(rc))
         {
             pVCpu->pgm.s.pGstAmd64Pml4R3 = (R3PTRTYPE(PX86PML4))HCPtrGuestCR3;
-# ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
+#  ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
             pVCpu->pgm.s.pGstAmd64Pml4R0 = (R0PTRTYPE(PX86PML4))HCPtrGuestCR3;
-# endif
+#  endif
             *ppPml4 = (PX86PML4)HCPtrGuestCR3;
 
             pgmUnlock(pVM);
             return VINF_SUCCESS;
         }
+# endif
     }
 
     pgmUnlock(pVM);

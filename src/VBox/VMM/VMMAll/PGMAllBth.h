@@ -4340,15 +4340,35 @@ PGM_BTH_DECL(int, MapCR3)(PVMCPUCC pVCpu, RTGCPHYS GCPhysCR3)
     if (RT_SUCCESS(rc))
     {
 # if PGM_GST_TYPE == PGM_TYPE_32BIT
+#  ifdef VBOX_WITH_RAM_IN_KERNEL
+#   ifdef IN_RING3
+        pVCpu->pgm.s.pGst32BitPdR3 = (PX86PD)HCPtrGuestCR3;
+        pVCpu->pgm.s.pGst32BitPdR0 = NIL_RTR0PTR;
+#   else
+        pVCpu->pgm.s.pGst32BitPdR3 = NIL_RTR3PTR;
+        pVCpu->pgm.s.pGst32BitPdR0 = (PX86PD)HCPtrGuestCR3;
+#   endif
+#  else
         pVCpu->pgm.s.pGst32BitPdR3 = (R3PTRTYPE(PX86PD))HCPtrGuestCR3;
-#  ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
+#   ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
         pVCpu->pgm.s.pGst32BitPdR0 = (R0PTRTYPE(PX86PD))HCPtrGuestCR3;
+#   endif
 #  endif
 
 # elif PGM_GST_TYPE == PGM_TYPE_PAE
+#  ifdef VBOX_WITH_RAM_IN_KERNEL
+#   ifdef IN_RING3
+        pVCpu->pgm.s.pGstPaePdptR3 = (PX86PDPT)HCPtrGuestCR3;
+        pVCpu->pgm.s.pGstPaePdptR0 = NIL_RTR0PTR;
+#   else
+        pVCpu->pgm.s.pGstPaePdptR3 = NIL_RTR3PTR;
+        pVCpu->pgm.s.pGstPaePdptR0 = (PX86PDPT)HCPtrGuestCR3;
+#   endif
+#  else
         pVCpu->pgm.s.pGstPaePdptR3 = (R3PTRTYPE(PX86PDPT))HCPtrGuestCR3;
-#  ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
+#   ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
         pVCpu->pgm.s.pGstPaePdptR0 = (R0PTRTYPE(PX86PDPT))HCPtrGuestCR3;
+#   endif
 #  endif
 
         /*
@@ -4374,9 +4394,19 @@ PGM_BTH_DECL(int, MapCR3)(PVMCPUCC pVCpu, RTGCPHYS GCPhysCR3)
                 pgmUnlock(pVM);
                 if (RT_SUCCESS(rc2))
                 {
+#  ifdef VBOX_WITH_RAM_IN_KERNEL
+#   ifdef IN_RING3
+                    pVCpu->pgm.s.apGstPaePDsR3[i]     = (PX86PDPAE)HCPtr;
+                    pVCpu->pgm.s.apGstPaePDsR0[i]     = NIL_RTR0PTR;
+#   else
+                    pVCpu->pgm.s.apGstPaePDsR3[i]     = NIL_RTR3PTR;
+                    pVCpu->pgm.s.apGstPaePDsR0[i]     = (PX86PDPAE)HCPtr;
+#   endif
+#  else
                     pVCpu->pgm.s.apGstPaePDsR3[i]     = (R3PTRTYPE(PX86PDPAE))HCPtr;
-#  ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
+#   ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
                     pVCpu->pgm.s.apGstPaePDsR0[i]     = (R0PTRTYPE(PX86PDPAE))HCPtr;
+#   endif
 #  endif
                     pVCpu->pgm.s.aGCPhysGstPaePDs[i]  = GCPhys;
                     continue;
@@ -4392,9 +4422,19 @@ PGM_BTH_DECL(int, MapCR3)(PVMCPUCC pVCpu, RTGCPHYS GCPhysCR3)
         }
 
 # elif PGM_GST_TYPE == PGM_TYPE_AMD64
+#  ifdef VBOX_WITH_RAM_IN_KERNEL
+#   ifdef IN_RING3
+        pVCpu->pgm.s.pGstAmd64Pml4R3 = (PX86PML4)HCPtrGuestCR3;
+        pVCpu->pgm.s.pGstAmd64Pml4R0 = NIL_RTR0PTR;
+#   else
+        pVCpu->pgm.s.pGstAmd64Pml4R3 = NIL_RTR3PTR;
+        pVCpu->pgm.s.pGstAmd64Pml4R0 = (PX86PML4)HCPtrGuestCR3;
+#   endif
+#  else
         pVCpu->pgm.s.pGstAmd64Pml4R3 = (R3PTRTYPE(PX86PML4))HCPtrGuestCR3;
-#  ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
+#   ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
         pVCpu->pgm.s.pGstAmd64Pml4R0 = (R0PTRTYPE(PX86PML4))HCPtrGuestCR3;
+#   endif
 #  endif
 # endif
     }
