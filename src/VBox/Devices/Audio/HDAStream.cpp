@@ -89,6 +89,19 @@ int hdaR3StreamConstruct(PHDASTREAM pStreamShared, PHDASTREAMR3 pStreamR3, PHDAS
     AssertRCReturn(rc, rc);
 #endif
 
+    const bool fIsInput = hdaGetDirFromSD(uSD) == PDMAUDIODIR_IN;
+
+    if (fIsInput)
+    {
+        pStreamShared->State.Cfg.u.enmSrc = PDMAUDIORECSRC_UNKNOWN;
+        pStreamShared->State.Cfg.enmDir   = PDMAUDIODIR_IN;
+    }
+    else
+    {
+        pStreamShared->State.Cfg.u.enmDst = PDMAUDIOPLAYBACKDST_UNKNOWN;
+        pStreamShared->State.Cfg.enmDir   = PDMAUDIODIR_OUT;
+    }
+
     pStreamR3->Dbg.Runtime.fEnabled = pThisCC->Dbg.fEnabled;
 
     if (pStreamR3->Dbg.Runtime.fEnabled)
@@ -97,7 +110,7 @@ int hdaR3StreamConstruct(PHDASTREAM pStreamShared, PHDASTREAMR3 pStreamR3, PHDAS
         char szPath[RTPATH_MAX];
 
         /* pFileStream */
-        if (hdaGetDirFromSD(uSD) == PDMAUDIODIR_IN)
+        if (fIsInput)
             RTStrPrintf(szFile, sizeof(szFile), "hdaStreamWriteSD%RU8", uSD);
         else
             RTStrPrintf(szFile, sizeof(szFile), "hdaStreamReadSD%RU8", uSD);
@@ -110,7 +123,7 @@ int hdaR3StreamConstruct(PHDASTREAM pStreamShared, PHDASTREAMR3 pStreamR3, PHDAS
         AssertRC(rc2);
 
         /* pFileDMARaw */
-        if (hdaGetDirFromSD(uSD) == PDMAUDIODIR_IN)
+        if (fIsInput)
             RTStrPrintf(szFile, sizeof(szFile), "hdaDMARawWriteSD%RU8", uSD);
         else
             RTStrPrintf(szFile, sizeof(szFile), "hdaDMARawReadSD%RU8", uSD);
@@ -123,7 +136,7 @@ int hdaR3StreamConstruct(PHDASTREAM pStreamShared, PHDASTREAMR3 pStreamR3, PHDAS
         AssertRC(rc2);
 
         /* pFileDMAMapped */
-        if (hdaGetDirFromSD(uSD) == PDMAUDIODIR_IN)
+        if (fIsInput)
             RTStrPrintf(szFile, sizeof(szFile), "hdaDMAWriteMappedSD%RU8", uSD);
         else
             RTStrPrintf(szFile, sizeof(szFile), "hdaDMAReadMappedSD%RU8", uSD);
