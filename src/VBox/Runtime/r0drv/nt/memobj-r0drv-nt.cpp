@@ -77,7 +77,9 @@ typedef struct RTR0MEMOBJNT
     uint32_t            cMdls;
     /** Array of MDL pointers. (variable size) */
     PMDL                apMdls[1];
-} RTR0MEMOBJNT, *PRTR0MEMOBJNT;
+} RTR0MEMOBJNT;
+/** Pointer to the NT version of the memory object structure. */
+typedef RTR0MEMOBJNT *PRTR0MEMOBJNT;
 
 
 
@@ -113,14 +115,25 @@ DECLHIDDEN(int) rtR0MemObjNativeFree(RTR0MEMOBJ pMem)
 
         case RTR0MEMOBJTYPE_PAGE:
             Assert(pMemNt->Core.pv);
-            if (g_pfnrtExFreePoolWithTag)
-                g_pfnrtExFreePoolWithTag(pMemNt->Core.pv, IPRT_NT_POOL_TAG);
+            if (pMemNt->fAllocatedPagesForMdl)
+            {
+                Assert(pMemNt->Core.pv && pMemNt->cMdls == 1 && pMemNt->apMdls[0]);
+                Assert(pMemNt->pvSecureMem == NULL);
+                MmUnmapLockedPages(pMemNt->Core.pv, pMemNt->apMdls[0]);
+                g_pfnrtMmFreePagesFromMdl(pMemNt->apMdls[0]);
+                ExFreePool(pMemNt->apMdls[0]);
+            }
             else
-                ExFreePool(pMemNt->Core.pv);
-            pMemNt->Core.pv = NULL;
+            {
+                if (g_pfnrtExFreePoolWithTag)
+                    g_pfnrtExFreePoolWithTag(pMemNt->Core.pv, IPRT_NT_POOL_TAG);
+                else
+                    ExFreePool(pMemNt->Core.pv);
 
-            Assert(pMemNt->cMdls == 1 && pMemNt->apMdls[0]);
-            IoFreeMdl(pMemNt->apMdls[0]);
+                Assert(pMemNt->cMdls == 1 && pMemNt->apMdls[0]);
+                IoFreeMdl(pMemNt->apMdls[0]);
+            }
+            pMemNt->Core.pv = NULL;
             pMemNt->apMdls[0] = NULL;
             pMemNt->cMdls = 0;
             break;
@@ -230,11 +243,65 @@ DECLHIDDEN(int) rtR0MemObjNativeAllocPage(PPRTR0MEMOBJINTERNAL ppMem, size_t cb,
     RT_NOREF1(fExecutable);
 
     /*
+     * Use MmAllocatePagesForMdl if the allocation is a little bit big.
+     */
+    int rc = VERR_NO_PAGE_MEMORY;
+    if (   cb > _1M
+        && g_pfnrtMmAllocatePagesForMdl
+        && g_pfnrtMmFreePagesFromMdl
+        && g_pfnrtMmMapLockedPagesSpecifyCache)
+    {
+        PHYSICAL_ADDRESS Zero;
+        Zero.QuadPart = 0;
+        PHYSICAL_ADDRESS HighAddr;
+        HighAddr.QuadPart = MAXLONGLONG;
+        PMDL pMdl = g_pfnrtMmAllocatePagesForMdl(Zero, HighAddr, Zero, cb);
+        if (pMdl)
+        {
+            if (MmGetMdlByteCount(pMdl) >= cb)
+            {
+                __try
+                {
+                    void *pv = g_pfnrtMmMapLockedPagesSpecifyCache(pMdl, KernelMode, MmCached, NULL /* no base address */,
+                                                                   FALSE /* no bug check on failure */, NormalPagePriority);
+                    if (pv)
+                    {
+#ifdef RT_ARCH_AMD64
+                        if (fExecutable)
+                            MmProtectMdlSystemAddress(pMdl, PAGE_EXECUTE_READWRITE);
+#endif
+
+                        PRTR0MEMOBJNT pMemNt = (PRTR0MEMOBJNT)rtR0MemObjNew(sizeof(*pMemNt), RTR0MEMOBJTYPE_PAGE, pv, cb);
+                        if (pMemNt)
+                        {
+                            pMemNt->fAllocatedPagesForMdl = true;
+                            pMemNt->cMdls = 1;
+                            pMemNt->apMdls[0] = pMdl;
+                            *ppMem = &pMemNt->Core;
+                            return VINF_SUCCESS;
+                        }
+                        MmUnmapLockedPages(pv, pMdl);
+                    }
+                }
+                __except(EXCEPTION_EXECUTE_HANDLER)
+                {
+# ifdef LOG_ENABLED
+                    NTSTATUS rcNt = GetExceptionCode();
+                    Log(("rtR0MemObjNativeAllocLow: Exception Code %#x\n", rcNt));
+# endif
+                    /* nothing */
+                }
+            }
+            g_pfnrtMmFreePagesFromMdl(pMdl);
+            ExFreePool(pMdl);
+        }
+    }
+
+    /*
      * Try allocate the memory and create an MDL for them so
      * we can query the physical addresses and do mappings later
      * without running into out-of-memory conditions and similar problems.
      */
-    int rc = VERR_NO_PAGE_MEMORY;
     void *pv;
     if (g_pfnrtExAllocatePoolWithTag)
         pv = g_pfnrtExAllocatePoolWithTag(NonPagedPool, cb, IPRT_NT_POOL_TAG);
@@ -247,7 +314,8 @@ DECLHIDDEN(int) rtR0MemObjNativeAllocPage(PPRTR0MEMOBJINTERNAL ppMem, size_t cb,
         {
             MmBuildMdlForNonPagedPool(pMdl);
 #ifdef RT_ARCH_AMD64
-            MmProtectMdlSystemAddress(pMdl, PAGE_EXECUTE_READWRITE);
+            if (fExecutable)
+                MmProtectMdlSystemAddress(pMdl, PAGE_EXECUTE_READWRITE);
 #endif
 
             /*
@@ -396,7 +464,8 @@ static int rtR0MemObjNativeAllocContEx(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, bo
     {
         MmBuildMdlForNonPagedPool(pMdl);
 #ifdef RT_ARCH_AMD64
-        MmProtectMdlSystemAddress(pMdl, PAGE_EXECUTE_READWRITE);
+        if (fExecutable)
+            MmProtectMdlSystemAddress(pMdl, PAGE_EXECUTE_READWRITE);
 #endif
 
         PRTR0MEMOBJNT pMemNt = (PRTR0MEMOBJNT)rtR0MemObjNew(sizeof(*pMemNt), RTR0MEMOBJTYPE_CONT, pv, cb);
