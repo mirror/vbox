@@ -199,6 +199,7 @@ RuntimeWin64ASM_SOURCES = \
 	win/amd64/ASMGetSS.asm \
 	win/amd64/ASMProbeReadByte.asm \
 	common/asm/ASMSetFlags.asm \
+	common/asm/ASMAddFlags.asm \
 	win/amd64/ASMGetDR0.asm \
 	win/amd64/ASMGetDR1.asm \
 	win/amd64/ASMGetDR2.asm \
