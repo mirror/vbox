@@ -66,7 +66,7 @@
 
 #include "dtrace/SUPDrv.h"
 
-extern "C" caddr_t hat_kpm_pfn2va(pfn_t); /* Found in vm/hat.h on solaris 11.3, but not on older like 10u7. */
+extern caddr_t hat_kpm_pfn2va(pfn_t); /* Found in vm/hat.h on solaris 11.3, but not on older like 10u7. */
 
 
 /*********************************************************************************************************************************
