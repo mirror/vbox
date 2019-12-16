@@ -408,31 +408,27 @@ static DWORD const aVSCode[] =
 static DWORD const aPSCodeYUY2toRGB[] =
 {
     0xffff0200,                                                             // ps_2_0
-    0x05000051, 0xa00f0001, 0xbd8068dc, 0xbf008312, 0xbf008312, 0x00000000, // def c1, -0.0627000034, -0.501999974, -0.501999974, 0
-    0x05000051, 0xa00f0002, 0x3f000000, 0x00000000, 0x3f800000, 0x3f000000, // def c2, 0.5, 0, 1, 0.5
-    0x05000051, 0xa00f0003, 0x3f950a81, 0x00000000, 0x3fcc4a9d, 0x00000000, // def c3, 1.16438305, 0, 1.59602702, 0
-    0x05000051, 0xa00f0004, 0x3f950a81, 0xbec89507, 0xbf501eac, 0x00000000, // def c4, 1.16438305, -0.391761988, -0.812968016, 0
-    0x05000051, 0xa00f0005, 0x3f950a81, 0x40011a54, 0x00000000, 0x00000000, // def c5, 1.16438305, 2.01723194, 0, 0
+    0x05000051, 0xa00f0005, 0x3f000000, 0x00000000, 0x3f800000, 0x3f000000, // def c5, 0.5, 0, 1, 0.5
     0x0200001f, 0x80000000, 0xb0030000,                                     // dcl t0.xy
     0x0200001f, 0x90000000, 0xa00f0800,                                     // dcl_2d s0
-    0x03000005, 0x80080000, 0xb0000000, 0xa0000002,                         // mul r0.w, t0.x, c2.x
+    0x03000005, 0x80080000, 0xb0000000, 0xa0000005,                         // mul r0.w, t0.x, c5.x
     0x03000005, 0x80010000, 0x80ff0000, 0xa0aa0000,                         // mul r0.x, r0.w, c0.z
     0x02000013, 0x80020000, 0x80000000,                                     // frc r0.y, r0.x
-    0x04000058, 0x80040000, 0x81550000, 0xa0550002, 0xa0aa0002,             // cmp r0.z, -r0.y, c2.y, c2.z
+    0x04000058, 0x80040000, 0x81550000, 0xa0550005, 0xa0aa0005,             // cmp r0.z, -r0.y, c5.y, c5.z
     0x03000002, 0x80020000, 0x80000000, 0x81550000,                         // add r0.y, r0.x, -r0.y
-    0x04000058, 0x80010000, 0x80000000, 0xa0550002, 0x80aa0000,             // cmp r0.x, r0.x, c2.y, r0.z
+    0x04000058, 0x80010000, 0x80000000, 0xa0550005, 0x80aa0000,             // cmp r0.x, r0.x, c5.y, r0.z
     0x03000002, 0x80010000, 0x80000000, 0x80550000,                         // add r0.x, r0.x, r0.y
     0x04000004, 0x80010000, 0x80ff0000, 0xa0aa0000, 0x81000000,             // mad r0.x, r0.w, c0.z, -r0.x
-    0x03000002, 0x80010000, 0x80000000, 0xa1ff0002,                         // add r0.x, r0.x, -c2.w
-    0x03000005, 0x80030001, 0xb0e40000, 0xa01b0002,                         // mul r1.xy, t0, c2.wzyx
+    0x03000002, 0x80010000, 0x80000000, 0xa1ff0005,                         // add r0.x, r0.x, -c5.w
+    0x03000005, 0x80030001, 0xb0e40000, 0xa01b0005,                         // mul r1.xy, t0, c5.wzyx
     0x03000042, 0x800f0001, 0x80e40001, 0xa0e40800,                         // texld r1, r1, s0
     0x04000058, 0x80010001, 0x80000000, 0x80000001, 0x80aa0001,             // cmp r1.x, r0.x, r1.x, r1.z
     0x02000001, 0x80040001, 0x80ff0001,                                     // mov r1.z, r1.w
-    0x03000002, 0x80070000, 0x80e40001, 0xa0e40001,                         // add r0.xyz, r1, c1
-    0x03000008, 0x80110001, 0x80e40000, 0xa0e40003,                         // dp3_sat r1.x, r0, c3
-    0x03000008, 0x80120001, 0x80e40000, 0xa0e40004,                         // dp3_sat r1.y, r0, c4
-    0x0400005a, 0x80140001, 0x80e40000, 0xa0e40005, 0xa0aa0005,             // dp2add_sat r1.z, r0, c5, c5.z
-    0x02000001, 0x80080001, 0xa0aa0002,                                     // mov r1.w, c2.z
+    0x03000002, 0x80070000, 0x80e40001, 0xa1e40001,                         // add r0.xyz, r1, -c1
+    0x03000008, 0x80110001, 0x80e40000, 0xa0e40002,                         // dp3_sat r1.x, r0, c2
+    0x03000008, 0x80120001, 0x80e40000, 0xa0e40003,                         // dp3_sat r1.y, r0, c3
+    0x03000008, 0x80140001, 0x80e40000, 0xa0e40004,                         // dp3_sat r1.z, r0, c4
+    0x02000001, 0x80080001, 0xa0aa0005,                                     // mov r1.w, c5.z
     0x02000001, 0x800f0800, 0x80e40001,                                     // mov oC0, r1
     0x0000ffff
 };
@@ -484,7 +480,32 @@ static HRESULT vboxDxvaInit(VBOXWDDMVIDEOPROCESSDEVICE *pVideoProcessDevice)
     return S_OK;
 }
 
-static HRESULT vboxDxvaSetState(VBOXWDDMVIDEOPROCESSDEVICE *pVideoProcessDevice)
+static float const aPSConstsBT601[] =
+{
+    0.062745f,  0.501961f,  0.501961f, 0.0f, // offsets
+    // Y        U           V
+    1.164384f,  0.000000f,  1.596027f, 0.0f, // R
+    1.164384f, -0.391762f, -0.812968f, 0.0f, // G
+    1.164384f,  2.017232f,  0.000000f, 0.0f, // B
+};
+static float const aPSConstsBT709[] =
+{
+    0.062745f,  0.501961f,  0.501961f, 0.0f, // offsets
+    // Y        U           V
+    1.164384f,  0.000000f,  1.792741f, 0.0f, // R
+    1.164384f, -0.213249f, -0.532909f, 0.0f, // G
+    1.164384f,  2.112402f,  0.000000f, 0.0f, // B
+};
+static float const aPSConstsSMPTE240M[] =
+{
+    0.062745f,  0.501961f,  0.501961f, 0.0f, // offsets
+    // Y        U           V
+    1.164384f,  0.000000f,  1.794107f, 0.0f, // R
+    1.164384f, -0.257985f, -0.542583f, 0.0f, // G
+    1.164384f,  2.078705f,  0.000000f, 0.0f, // B
+};
+
+static HRESULT vboxDxvaSetState(VBOXWDDMVIDEOPROCESSDEVICE *pVideoProcessDevice, DXVADDI_EXTENDEDFORMAT const *pSampleFormat)
 {
     HRESULT hr;
 
@@ -526,6 +547,28 @@ static HRESULT vboxDxvaSetState(VBOXWDDMVIDEOPROCESSDEVICE *pVideoProcessDevice)
     hr = pDevice9->SetVertexShaderConstantF(0, aTextureInfo, 1);
     AssertReturn(hr == D3D_OK, hr);
     hr = pDevice9->SetPixelShaderConstantF(0, aTextureInfo, 1);
+    AssertReturn(hr == D3D_OK, hr);
+
+    float const *pConstantData;
+    UINT Vector4fCount;
+    switch (pSampleFormat->VideoTransferMatrix)
+    {
+        case DXVADDI_VideoTransferMatrix_BT709:
+            pConstantData = aPSConstsBT709;
+            Vector4fCount = RT_ELEMENTS(aPSConstsBT709) / 4;
+            break;
+        case DXVADDI_VideoTransferMatrix_SMPTE240M:
+            pConstantData = aPSConstsSMPTE240M;
+            Vector4fCount = RT_ELEMENTS(aPSConstsSMPTE240M) / 4;
+            break;
+        case DXVADDI_VideoTransferMatrix_BT601:
+        default:
+            pConstantData = aPSConstsBT601;
+            Vector4fCount = RT_ELEMENTS(aPSConstsBT601) / 4;
+            break;
+    }
+
+    hr = pDevice9->SetPixelShaderConstantF(1, pConstantData, Vector4fCount);
     AssertReturn(hr == D3D_OK, hr);
 
     hr = pDevice9->SetSamplerState(0, D3DSAMP_MAGFILTER, D3DTEXF_POINT);
@@ -598,7 +641,7 @@ static HRESULT vboxDxvaProcessBlt(VBOXWDDMVIDEOPROCESSDEVICE *pVideoProcessDevic
     if (hr == D3D_OK)
     {
         /* Set the required state for the blits, inclusding the render target. */
-        hr = vboxDxvaSetState(pVideoProcessDevice);
+        hr = vboxDxvaSetState(pVideoProcessDevice, &pData->pSrcSurfaces[0].SampleFormat);
         if (hr == D3D_OK)
         {
             /* Clear the target rectangle. */
@@ -871,6 +914,12 @@ HRESULT VBoxDxvaVideoProcessBlt(PVBOXWDDMDISP_DEVICE pDevice, const D3DDDIARG_VI
 
         pVideoProcessDevice->pRenderTarget->aAllocations[0].SurfDesc.width,
         pVideoProcessDevice->pRenderTarget->aAllocations[0].SurfDesc.height));
+
+    DXVADDI_EXTENDEDFORMAT *pSampleFormat = &pData->pSrcSurfaces[0].SampleFormat;
+    LOGREL_EXACT(("VideoProcess Blt SampleFormat %u, VideoChromaSubsampling %u, NominalRange %u, VideoTransferMatrix %u, VideoLighting %u, VideoPrimaries %u, VideoTransferFunction %u\n",
+        pSampleFormat->SampleFormat, pSampleFormat->VideoChromaSubsampling, pSampleFormat->NominalRange,
+        pSampleFormat->VideoTransferMatrix, pSampleFormat->VideoLighting, pSampleFormat->VideoPrimaries,
+        pSampleFormat->VideoTransferFunction));
 #endif
 
     HRESULT hr = vboxDxvaProcessBlt(pVideoProcessDevice, pData, &pSrcTexture);
