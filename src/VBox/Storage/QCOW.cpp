@@ -30,6 +30,7 @@
 #include <iprt/alloc.h>
 #include <iprt/path.h>
 #include <iprt/list.h>
+#include <iprt/zip.h>
 
 #include "VDBackends.h"
 #include "VDBackendsInline.h"
@@ -249,6 +250,14 @@ typedef struct QCOWIMAGE
     uint64_t            offNextCluster;
     /** Cluster size in bytes. */
     uint32_t            cbCluster;
+    /** Number of bits in the virtual offset used as the cluster offset. */
+    uint32_t            cClusterBits;
+    /** Bitmask to extract the offset from a compressed cluster descriptor. */
+    uint64_t            fMaskCompressedClusterOffset;
+    /** Bitmask to extract the sector count from a compressed cluster descriptor. */
+    uint64_t            fMaskCompressedClusterSectors;
+    /** Number of bits to shift the sector count to the right to get the final value. */
+    uint32_t            cBitsShiftRCompressedClusterSectors;
     /** Number of entries in the L1 table. */
     uint32_t            cL1TableEntries;
     /** Size of an L1 rounded to the next cluster size. */
@@ -286,6 +295,13 @@ typedef struct QCOWIMAGE
     uint64_t            fL2Mask;
     /** Number of bits to shift to get the L2 index. */
     uint32_t            cL2Shift;
+
+    /** Size of compressed cluster buffer. */
+    size_t              cbCompCluster;
+    /** Compressed cluster buffer. */
+    void                *pvCompCluster;
+    /** Buffer to hold the uncompressed data. */
+    void                *pvCluster;
 
     /** Pointer to the L2 table we are currently allocating
      * (can be only one at a time). */
@@ -859,7 +875,8 @@ DECLINLINE(uint64_t) qcowClusterAllocate(PQCOWIMAGE pImage, uint32_t cClusters)
  */
 static int qcowConvertToImageOffset(PQCOWIMAGE pImage, PVDIOCTX pIoCtx,
                                     uint32_t idxL1, uint32_t idxL2,
-                                    uint32_t offCluster, uint64_t *poffImage)
+                                    uint32_t offCluster, uint64_t *poffImage,
+                                    bool *pfCompressed, size_t *pcbCompressed)
 {
     int rc = VERR_VD_BLOCK_FREE;
 
@@ -885,19 +902,42 @@ static int qcowConvertToImageOffset(PQCOWIMAGE pImage, PVDIOCTX pIoCtx,
                 if (pImage->uVersion == 2)
                 {
                     if (RT_UNLIKELY(off & QCOW_V2_COMPRESSED_FLAG))
-                        rc = VERR_NOT_SUPPORTED;
+                    {
+                        size_t cCompressedClusterSectors = ((off & pImage->fMaskCompressedClusterSectors) >> pImage->cBitsShiftRCompressedClusterSectors);
+                        uint64_t offImage = off & pImage->fMaskCompressedClusterOffset;
+
+                        *pfCompressed  = true;
+                        *poffImage     = offImage;
+                        *pcbCompressed = (cCompressedClusterSectors + 1) * 512 - (offImage & 511ULL);
+                    }
                     else
+                    {
                         off &= QCOW_V2_TBL_OFFSET_MASK;
+
+                        *pfCompressed = false;
+                        *poffImage = off + offCluster;
+                    }
                 }
                 else
                 {
                     if (RT_UNLIKELY(off & QCOW_V1_COMPRESSED_FLAG))
-                        rc = VERR_NOT_SUPPORTED;
-                    else
-                        off &= ~QCOW_V1_COMPRESSED_FLAG;
-                }
+                    {
+                        size_t cCompressedClusterSectors = (off & pImage->fMaskCompressedClusterSectors) >> pImage->cBitsShiftRCompressedClusterSectors;
 
-                *poffImage = off + offCluster;
+                        *pfCompressed  = true;
+                        *poffImage     = off & pImage->fMaskCompressedClusterOffset;
+                        *pcbCompressed = cCompressedClusterSectors * 512; /* Only additional sectors */
+                        /* Add remaining bytes of the sector the offset starts in. */
+                        *pcbCompressed += 512 - RT_ALIGN_64(*poffImage, 512) - *poffImage;
+                    }
+                    else
+                    {
+                        off &= ~QCOW_V1_COMPRESSED_FLAG;
+
+                        *pfCompressed = false;
+                        *poffImage = off + offCluster;
+                    }
+                }
             }
             else
                 rc = VERR_VD_BLOCK_FREE;
@@ -1032,6 +1072,19 @@ static int qcowFreeImage(PQCOWIMAGE pImage, bool fDelete)
             pImage->pszBackingFilename = NULL;
         }
 
+        if (pImage->pvCompCluster)
+        {
+            RTMemFree(pImage->pvCompCluster);
+            pImage->pvCompCluster = NULL;
+            pImage->cbCompCluster = 0;
+        }
+
+        if (pImage->pvCluster)
+        {
+            RTMemFree(pImage->pvCluster);
+            pImage->pvCluster = NULL;
+        }
+
         qcowL2TblCacheDestroy(pImage);
 
         if (fDelete && pImage->pszFilename)
@@ -1155,6 +1208,7 @@ static int qcowOpenImage(PQCOWIMAGE pImage, unsigned uOpenFlags)
                                 pImage->cbBackingFilename  = Header.Version.v1.u32BackingFileSize;
                                 pImage->MTime              = Header.Version.v1.u32MTime;
                                 pImage->cbSize             = Header.Version.v1.u64Size;
+                                pImage->cClusterBits       = Header.Version.v1.u8ClusterBits;
                                 pImage->cbCluster          = RT_BIT_32(Header.Version.v1.u8ClusterBits);
                                 pImage->cL2TableEntries    = RT_BIT_32(Header.Version.v1.u8L2Bits);
                                 pImage->cbL2Table          = RT_ALIGN_64(pImage->cL2TableEntries * sizeof(uint64_t), pImage->cbCluster);
@@ -1184,6 +1238,7 @@ static int qcowOpenImage(PQCOWIMAGE pImage, unsigned uOpenFlags)
                                 pImage->offBackingFilename    = Header.Version.v2.u64BackingFileOffset;
                                 pImage->cbBackingFilename     = Header.Version.v2.u32BackingFileSize;
                                 pImage->cbSize                = Header.Version.v2.u64Size;
+                                pImage->cClusterBits          = Header.Version.v2.u32ClusterBits;
                                 pImage->cbCluster             = RT_BIT_32(Header.Version.v2.u32ClusterBits);
                                 pImage->cL2TableEntries       = pImage->cbCluster / sizeof(uint64_t);
                                 pImage->cbL2Table             = pImage->cbCluster;
@@ -1192,6 +1247,12 @@ static int qcowOpenImage(PQCOWIMAGE pImage, unsigned uOpenFlags)
                                 pImage->offRefcountTable      = Header.Version.v2.u64RefcountTableOffset;
                                 pImage->cbRefcountTable       = qcowCluster2Byte(pImage, Header.Version.v2.u32RefcountTableClusters);
                                 pImage->cRefcountTableEntries = pImage->cbRefcountTable / sizeof(uint64_t);
+
+                                /* Init the masks to extract offset and sector count from a compressed cluster descriptor. */
+                                uint32_t cBitsCompressedClusterOffset = 62 - (pImage->cClusterBits - 8);
+                                pImage->fMaskCompressedClusterOffset  = RT_BIT_64(cBitsCompressedClusterOffset) - 1;
+                                pImage->fMaskCompressedClusterSectors = (RT_BIT_64(62) - 1) & ~pImage->fMaskCompressedClusterOffset;
+                                pImage->cBitsShiftRCompressedClusterSectors = cBitsCompressedClusterOffset;
 
                                 if (Header.u32Version == 3)
                                 {
@@ -1574,6 +1635,74 @@ static DECLCALLBACK(int) qcowAsyncClusterAllocUpdate(void *pBackendData, PVDIOCT
     return rc;
 }
 
+/**
+ * Reads a compressed cluster, inflates it and copies the amount of data requested
+ * into the given I/O context.
+ *
+ * @returns VBox status code.
+ * @param   pImage              The image instance data.
+ * @param   pIoCtx              The I/O context.
+ * @param   offCluster          Where to start reading in the uncompressed cluster.
+ * @param   cbToRead            How much to read in the uncomrpessed cluster.
+ * @param   offFile             Offset where the compressed cluster is stored in the image.
+ * @param   cbCompressedCluster Size of the comrpessed cluster in bytes.
+ */
+static int qcowReadCompressedCluster(PQCOWIMAGE pImage, PVDIOCTX pIoCtx,
+                                     uint32_t offCluster, size_t cbToRead,
+                                     uint64_t offFile, size_t cbCompressedCluster)
+{
+    int rc = VINF_SUCCESS;
+
+    AssertReturn(!(pImage->uOpenFlags & VD_OPEN_FLAGS_ASYNC_IO), VERR_NOT_SUPPORTED); /* Only synchronous I/O supported so far. */
+
+    if (cbCompressedCluster > pImage->cbCompCluster)
+    {
+        void *pvCompClusterNew = RTMemRealloc(pImage->pvCompCluster, cbCompressedCluster);
+        if (RT_LIKELY(pvCompClusterNew))
+        {
+            pImage->pvCompCluster = pvCompClusterNew;
+            pImage->cbCompCluster = cbCompressedCluster;
+        }
+        else
+            rc = VERR_NO_MEMORY;
+    }
+
+    if (RT_SUCCESS(rc))
+    {
+        rc = vdIfIoIntFileReadMeta(pImage->pIfIo, pImage->pStorage,
+                                   offFile, pImage->pvCompCluster,
+                                   cbCompressedCluster, NULL,
+                                   NULL, NULL, NULL);
+        if (RT_SUCCESS(rc))
+        {
+            if (!pImage->pvCluster)
+            {
+                pImage->pvCluster = RTMemAllocZ(pImage->cbCluster);
+                if (!pImage->pvCluster)
+                    rc = VERR_NO_MEMORY;
+            }
+
+            if (RT_SUCCESS(rc))
+            {
+                size_t cbDecomp = 0;
+
+                rc = RTZipBlockDecompress(RTZIPTYPE_ZLIB_NO_HEADER, 0 /*fFlags*/,
+                                          pImage->pvCompCluster, cbCompressedCluster, NULL,
+                                          pImage->pvCluster, pImage->cbCluster, &cbDecomp);
+                if (RT_SUCCESS(rc))
+                {
+                    Assert(cbDecomp == pImage->cbCluster);
+                    vdIfIoIntIoCtxCopyTo(pImage->pIfIo, pIoCtx,
+                                         (uint8_t *)pImage->pvCluster + offCluster,
+                                         cbToRead);
+                }
+            }
+        }
+    }
+
+    return rc;
+}
+
 /** @copydoc VDIMAGEBACKEND::pfnProbe */
 static DECLCALLBACK(int) qcowProbe(const char *pszFilename, PVDINTERFACE pVDIfsDisk,
                                    PVDINTERFACE pVDIfsImage, VDTYPE enmDesiredType, VDTYPE *penmType)
@@ -1772,7 +1901,7 @@ static DECLCALLBACK(int) qcowClose(void *pBackendData, bool fDelete)
 }
 
 static DECLCALLBACK(int) qcowRead(void *pBackendData, uint64_t uOffset, size_t cbToRead,
-                    PVDIOCTX pIoCtx, size_t *pcbActuallyRead)
+                                  PVDIOCTX pIoCtx, size_t *pcbActuallyRead)
 {
     LogFlowFunc(("pBackendData=%#p uOffset=%llu pIoCtx=%#p cbToRead=%zu pcbActuallyRead=%#p\n",
                  pBackendData, uOffset, pIoCtx, cbToRead, pcbActuallyRead));
@@ -1795,10 +1924,18 @@ static DECLCALLBACK(int) qcowRead(void *pBackendData, uint64_t uOffset, size_t c
     cbToRead = RT_MIN(cbToRead, pImage->cbCluster - offCluster);
 
     /* Get offset in image. */
-    rc = qcowConvertToImageOffset(pImage, pIoCtx, idxL1, idxL2, offCluster, &offFile);
+    bool fCompressedCluster = false;
+    size_t cbCompressedCluster = 0;
+    rc = qcowConvertToImageOffset(pImage, pIoCtx, idxL1, idxL2, offCluster,
+                                  &offFile, &fCompressedCluster, &cbCompressedCluster);
     if (RT_SUCCESS(rc))
-        rc = vdIfIoIntFileReadUser(pImage->pIfIo, pImage->pStorage, offFile,
-                                   pIoCtx, cbToRead);
+    {
+        if (!fCompressedCluster)
+            rc = vdIfIoIntFileReadUser(pImage->pIfIo, pImage->pStorage, offFile,
+                                       pIoCtx, cbToRead);
+        else
+            rc = qcowReadCompressedCluster(pImage, pIoCtx, offCluster, cbToRead, offFile, cbCompressedCluster);
+    }
 
     if (   (   RT_SUCCESS(rc)
             || rc == VERR_VD_BLOCK_FREE
@@ -1811,8 +1948,8 @@ static DECLCALLBACK(int) qcowRead(void *pBackendData, uint64_t uOffset, size_t c
 }
 
 static DECLCALLBACK(int) qcowWrite(void *pBackendData, uint64_t uOffset, size_t cbToWrite,
-                     PVDIOCTX pIoCtx, size_t *pcbWriteProcess, size_t *pcbPreRead,
-                     size_t *pcbPostRead, unsigned fWrite)
+                                   PVDIOCTX pIoCtx, size_t *pcbWriteProcess, size_t *pcbPreRead,
+                                   size_t *pcbPostRead, unsigned fWrite)
 {
     LogFlowFunc(("pBackendData=%#p uOffset=%llu pIoCtx=%#p cbToWrite=%zu pcbWriteProcess=%#p pcbPreRead=%#p pcbPostRead=%#p\n",
                  pBackendData, uOffset, pIoCtx, cbToWrite, pcbWriteProcess, pcbPreRead, pcbPostRead));
@@ -1839,10 +1976,18 @@ static DECLCALLBACK(int) qcowWrite(void *pBackendData, uint64_t uOffset, size_t 
         Assert(!(cbToWrite % 512));
 
         /* Get offset in image. */
-        rc = qcowConvertToImageOffset(pImage, pIoCtx, idxL1, idxL2, offCluster, &offImage);
+        bool fCompressedCluster = false;
+        size_t cbCompressedCluster = 0;
+        rc = qcowConvertToImageOffset(pImage, pIoCtx, idxL1, idxL2, offCluster,
+                                      &offImage, &fCompressedCluster, &cbCompressedCluster);
         if (RT_SUCCESS(rc))
-            rc = vdIfIoIntFileWriteUser(pImage->pIfIo, pImage->pStorage,
-                                        offImage, pIoCtx, cbToWrite, NULL, NULL);
+        {
+            if (!fCompressedCluster)
+                rc = vdIfIoIntFileWriteUser(pImage->pIfIo, pImage->pStorage,
+                                            offImage, pIoCtx, cbToWrite, NULL, NULL);
+            else
+                rc = VERR_NOT_SUPPORTED; /** @todo Support writing compressed clusters */
+        }
         else if (rc == VERR_VD_BLOCK_FREE)
         {
             if (   cbToWrite == pImage->cbCluster
