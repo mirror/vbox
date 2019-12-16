@@ -692,6 +692,20 @@ static SSMFIELD const g_aVMSVGA3DSURFACEFields[] =
 # define VMSVGA3DSURFACE_HAS_HW_SURFACE(a_pSurface) ((a_pSurface)->oglId.texture != OPENGL_INVALID_ID)
 #endif
 
+/** @def VMSVGA3DSURFACE_NEEDS_DATA
+ * Checks whether SurfaceDMA transfers must always update pSurfaceData,
+ * even if the surface has a host hardware resource.
+ * @returns true/false
+ * @param   a_pSurface      The VMSVGA3d surface.
+ */
+#ifdef VMSVGA3D_DIRECT3D
+# define VMSVGA3DSURFACE_NEEDS_DATA(a_pSurface) \
+   (   (a_pSurface)->enmD3DResType == VMSVGA3D_D3DRESTYPE_VERTEX_BUFFER \
+    || (a_pSurface)->enmD3DResType == VMSVGA3D_D3DRESTYPE_INDEX_BUFFER)
+#else
+# define VMSVGA3DSURFACE_NEEDS_DATA(a_pSurface) \
+    ((a_pSurface)->enmOGLResType == VMSVGA3D_OGLRESTYPE_BUFFER)
+#endif
 
 
 typedef struct VMSVGA3DSHADER
@@ -1083,6 +1097,12 @@ typedef struct VMSVGA3DSTATE
         PFNGLDETACHSHADERPROC                           glDetachShader;
         PFNGLDELETESHADERPROC                           glDeleteShader;
         PFNGLDELETEPROGRAMPROC                          glDeleteProgram;
+        PFNGLVERTEXATTRIB4FVPROC                        glVertexAttrib4fv;
+        PFNGLVERTEXATTRIB4UBVPROC                       glVertexAttrib4ubv;
+        PFNGLVERTEXATTRIB4NUBVPROC                      glVertexAttrib4Nubv;
+        PFNGLVERTEXATTRIB4SVPROC                        glVertexAttrib4sv;
+        PFNGLVERTEXATTRIB4NSVPROC                       glVertexAttrib4Nsv;
+        PFNGLVERTEXATTRIB4NUSVPROC                      glVertexAttrib4Nusv;
     } ext;
 
     struct

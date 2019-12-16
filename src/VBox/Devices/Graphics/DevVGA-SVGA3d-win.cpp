@@ -2473,30 +2473,13 @@ int vmsvga3dBackSurfaceDMACopyBox(PVGASTATE pThis, PVGASTATECC pThisCC, PVMSVGA3
         /* Caller already clipped pBox and buffers are 1-dimensional. */
         Assert(pBox->y == 0 && pBox->h == 1 && pBox->z == 0 && pBox->d == 1);
 
-        /* vmsvgaR3GmrTransfer verifies input parameters except for the host buffer addres and size.
-         * srcx has been verified in vmsvga3dSurfaceDMA to not cause 32 bit overflow when multiplied by cbBlock.
-         */
+        /* The caller has already updated pMipLevel->pSurfaceData, see VMSVGA3DSURFACE_NEEDS_DATA. */
+
+#ifdef LOG_ENABLED
         uint32_t const offHst = pBox->x * pSurface->cbBlock;
         uint32_t const cbWidth = pBox->w * pSurface->cbBlock;
-
-        uint32_t const offGst = pBox->srcx * pSurface->cbBlock;
-
-        /* Copy data between the guest and the host buffer. */
-        rc = vmsvgaR3GmrTransfer(pThis,
-                                 pThisCC,
-                                 transfer,
-                                 (uint8_t *)pMipLevel->pSurfaceData,
-                                 pMipLevel->cbSurface,
-                                 offHst,
-                                 pMipLevel->cbSurfacePitch,
-                                 GuestPtr,
-                                 offGst,
-                                 cbGuestPitch,
-                                 cbWidth,
-                                 1); /* Buffers are 1-dimensional */
-        AssertRC(rc);
-
         Log4(("Buffer updated at [0x%x;0x%x):\n%.*Rhxd\n", offHst, offHst + cbWidth, cbWidth, (uint8_t *)pMipLevel->pSurfaceData + offHst));
+#endif
 
         /* Do not bother to copy the data to the D3D resource now. vmsvga3dDrawPrimitives will do that.
          * The SVGA driver may use the same surface for both index and vertex data.
