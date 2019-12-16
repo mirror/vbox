@@ -1003,7 +1003,7 @@ static DECLCALLBACK(int) rtZipTarFssIos_Read(void *pvThis, RTFOFF off, PCRTSGBUF
 
 
     Assert(pThis->cbFile >= pThis->offFile);
-    uint64_t cbLeft   = (uint64_t)(pThis->cbFile - pThis->offFile);
+    uint64_t cbLeft   = (uint64_t)(pThis->cbFile - off);
     size_t   cbToRead = pSgBuf->paSegs[0].cbSeg;
     if (cbToRead > cbLeft)
     {
