@@ -2018,6 +2018,16 @@ SUPR0DECL(int) SUPR0TscDeltaMeasureBySetIndex(PSUPDRVSESSION pSession, uint32_t 
 
 SUPR0DECL(void) SUPR0BadContext(PSUPDRVSESSION pSession, const char *pszFile, uint32_t uLine, const char *pszExpr);
 
+#if defined(RT_OS_LINUX) || defined(RT_OS_SOLARIS)
+/**
+ * Translates a physical address to a virtual mapping (valid up to end of page).
+ * @returns VBox status code.
+ * @param   HCPhys      The physical address, must be page aligned.
+ * @param   ppv         Where to store the mapping address on success.
+ */
+SUPR0DECL(int) SUPR0HCPhysToVirt(RTHCPHYS HCPhys, void **ppv);
+#endif
+
 /** Context structure returned by SUPR0IoCtlSetup for use with
  * SUPR0IoCtlPerform and cleaned up by SUPR0IoCtlCleanup. */
 typedef struct SUPR0IOCTLCTX *PSUPR0IOCTLCTX;

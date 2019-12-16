@@ -761,15 +761,19 @@ if1of ($(KBUILD_TARGET), linux freebsd)
  $$(vboxdrv-src_0_OUTDIR)/Makefile: \
 		$(PATH_SUB_CURRENT)/$(KBUILD_TARGET)/Makefile \
 		$$(if $$(eq $$(Support/$(KBUILD_TARGET)/Makefile_VBOX_HARDENED),$$(VBOX_WITH_HARDENING)),,FORCE) \
+		$$(if $$(eq $$(Support/$(KBUILD_TARGET)/Makefile_VBOX_RAM_IN_KERNEL),$$(VBOX_WITH_RAM_IN_KERNEL)),,FORCE) \
 		| $$(dir $$@)
 	$(call MSG_TOOL,Creating,,$@)
 	$(QUIET)$(SED) -e "" \
 		$(if-expr !defined(VBOX_WITH_HARDENING)   ,-e "s;VBOX_WITH_HARDENING;;g",) \
-		$(if-expr ($(VBOX_VERSION_BUILD) % 2) == 0 \
+		$(if-expr ($(VBOX_VERSION_BUILD) % 2) == 0 || defined(VBOX_WITH_RAM_IN_KERNEL) \
 		 , -e "s;VBOX_WITH_EFLAGS_AC_SET_IN_VBOXDRV;;g" -e "s;IPRT_WITH_EFLAGS_AC_PRESERVING;;g",) \
+		$(if-expr !defined(VBOX_WITH_RAM_IN_KERNEL) \
+		 , -e 's;VBOX_WITHOUT_EFLAGS_AC_SET_IN_VBOXDRV;;g' -e 's;IPRT_WITHOUT_EFLAGS_AC_PRESERVING;;g',) \
 		--output $@ $<
 	%$(QUIET2)$(APPEND) -t '$(PATH_TARGET)/vboxdrv-src-1.dep' \
-		'Support/$(KBUILD_TARGET)/Makefile_VBOX_HARDENED=$(VBOX_WITH_HARDENING)'
+		'Support/$(KBUILD_TARGET)/Makefile_VBOX_HARDENED=$(VBOX_WITH_HARDENING)' \
+		'Support/$(KBUILD_TARGET)/Makefile_VBOX_RAM_IN_KERNEL=$(VBOX_WITH_RAM_IN_KERNEL)'
 
  #
  # Build test for the linux host kernel modules.

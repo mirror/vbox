@@ -45,6 +45,7 @@
 #include <sys/sunddi.h>
 #include <sys/file.h>
 #include <sys/priv_names.h>
+#include <vm/hat.h>
 #undef u /* /usr/include/sys/user.h:249:1 is where this is defined to (curproc->p_user). very cool. */
 
 #include "../SUPDrvInternal.h"
@@ -63,6 +64,8 @@
 #include <iprt/err.h>
 
 #include "dtrace/SUPDrv.h"
+
+extern "C" caddr_t hat_kpm_pfn2va(pfn_t); /* Found in vm/hat.h on solaris 11.3, but not on older like 10u7. */
 
 
 /*********************************************************************************************************************************
@@ -1274,6 +1277,17 @@ int VBOXCALL    supdrvOSMsrProberModify(RTCPUID idCpu, PSUPMSRPROBER pReq)
 }
 
 #endif /* SUPDRV_WITH_MSR_PROBER */
+
+
+SUPR0DECL(int) SUPR0HCPhysToVirt(RTHCPHYS HCPhys, void **ppv)
+{
+    AssertReturn(!(HCPhys & PAGE_OFFSET_MASK), VERR_INVALID_POINTER);
+    AssertReturn(HCPhys != NIL_RTHCPHYS, VERR_INVALID_POINTER);
+    HCPhys >>= PAGE_SHIFT;
+    AssertReturn(HCPhys <= physmax, VERR_INVALID_POINTER);
+    *ppv = hat_kpm_pfn2va(HCPhys);
+    return VINF_SUCCESS;
+}
 
 
 RTDECL(int) SUPR0Printf(const char *pszFormat, ...)
