@@ -318,7 +318,7 @@ $$(RePackScriptsAddResources_0_OUTDIR)/VirtualBoxGA-nsis.ico: $(VBOX_NSIS_ICON_F
 $$(RePackScriptsAddResources_0_OUTDIR)/iexplore.ico:  $(PATH_SUB_CURRENT)/iexplore.ico | $$(dir $$@)
 	$(CP) -f $< $@
 
-$$(RePackScriptsAddResources_0_OUTDIR)/License-gpl-2.0.rtf : doc/License-gpl-2.0.rtf | $$(dir $$@)
+$$(RePackScriptsAddResources_0_OUTDIR)/License-gpl-2.0.rtf : $(PATH_ROOT)/doc/License-gpl-2.0.rtf | $$(dir $$@)
 	$(CP) -f $< $@
 
 $$(RePackScriptsAddResources_0_OUTDIR)/VBoxGuestAdditions.nsi: $(PATH_SUB_CURRENT)/VBoxGuestAdditions.nsi | $$(dir $$@)
