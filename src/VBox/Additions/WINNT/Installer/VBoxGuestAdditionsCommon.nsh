@@ -611,10 +611,25 @@ Function ${un}VerifyFile
   Exch $2 ; Architecture; S: old$2 old$1 old$0
   Push $3 ;               S: old$3 old$2 old$1 old$0
 
-  IfFileExists "$0" check_vendor
+  ${LogVerbose} "Verifying file $\"$0$\" (vendor: $1, arch: $2) ..."
+
+  IfFileExists "$0" check_arch
   Goto not_found
 
-  ${LogVerbose} "Verifying file $\"$0$\" ..."
+check_arch:
+
+  ${LogVerbose} "File $\"$0$\" found"
+
+  Push $0
+  Call ${un}GetFileArchitecture
+  Pop $3
+
+  ${LogVerbose} "Architecture is: $3"
+
+  ${If} $3 == $2
+    Goto check_vendor
+  ${EndIf}
+  Goto invalid
 
 check_vendor:
 
@@ -622,30 +637,29 @@ check_vendor:
   Call ${un}GetFileVendor
   Pop $3
 
-  ${LogVerbose} "Vendor is: $3 (wanted: $2)"
+  ${LogVerbose} "Vendor is: $3"
 
   ${If} $3 == $1
-    Goto check_arch
+    Goto valid
   ${EndIf}
+
+invalid:
+
+  ${LogVerbose} "File $\"$0$\" is invalid"
+
   StrCpy $3 "1" ; Invalid
   Goto end
 
-check_arch:
+valid:
 
-  Push $0
-  Call ${un}GetFileArchitecture
-  Pop $3
+  ${LogVerbose} "File $\"$0$\" is valid"
 
-  ${LogVerbose} "Architecture is: $3 (wanted: $2)"
-
-  ${If} $3 == $2
-    StrCpy $3 "0" ; Valid
-  ${Else}
-    StrCpy $3 "1" ; Invalid
-  ${EndIf}
+  StrCpy $3 "0" ; Valid
   Goto end
 
 not_found:
+
+  ${LogVerbose} "File $\"$0$\" was not found"
 
   StrCpy $3 "2" ; Not found
   Goto end
