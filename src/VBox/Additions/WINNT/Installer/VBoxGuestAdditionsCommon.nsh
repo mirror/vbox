@@ -614,11 +614,15 @@ Function ${un}VerifyFile
   IfFileExists "$0" check_vendor
   Goto not_found
 
+  ${LogVerbose} "Verifying file $\"$0$\" ..."
+
 check_vendor:
 
   Push $0
   Call ${un}GetFileVendor
   Pop $3
+
+  ${LogVerbose} "Vendor is: $3 (wanted: $2)"
 
   ${If} $3 == $1
     Goto check_arch
@@ -631,6 +635,8 @@ check_arch:
   Push $0
   Call ${un}GetFileArchitecture
   Pop $3
+
+  ${LogVerbose} "Architecture is: $3 (wanted: $2)"
 
   ${If} $3 == $2
     StrCpy $3 "0" ; Valid
@@ -674,7 +680,6 @@ FunctionEnd
   Push "${Architecture}"
   Push "${Vendor}"
   Push "${File}"
-  ${LogVerbose} "Verifying file $\"${File}$\" ..."
   Call ${un}VerifyFile
   Pop $0
   ${If} $0 == "0"
