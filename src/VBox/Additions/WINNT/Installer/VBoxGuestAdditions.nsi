@@ -774,24 +774,7 @@ SectionEnd
 ; Direct3D support
 Section /o $(VBOX_COMPONENT_D3D) SEC03
 
-!if $%VBOX_WITH_WDDM% == "1"
-  ${If} $g_bWithWDDM == "true"
-    ${LogVerbose} "Installing WDDM Direct3D support ..."
-
-    ; Do we need to restore the original d3d8.dll/d3d9.dll files because the guest
-    ; installation was upgraded from XPDM to WDDM driver? In a XPDM installation
-    ; those DLLs were replaced by our own stub files.
-    Call RestoreFilesDirect3D
-    Return
-  ${EndIf}
-!endif
-
-!ifndef WFP_FILE_EXCEPTION
-  MessageBox MB_ICONINFORMATION|MB_OK $(VBOX_WFP_WARN_REPLACE) /SD IDOK
-!endif
-  Goto exit
-
-exit:
+  ; Nothing to do in here right now.
 
 SectionEnd
 

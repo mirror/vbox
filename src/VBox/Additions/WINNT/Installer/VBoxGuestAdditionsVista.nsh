@@ -29,6 +29,12 @@ FunctionEnd
 
 Function Vista_Prepare
 
+  ; Try to restore the original Direct3D files in case we're coming from an old(er) Guest Additions
+  ; installation, which formerly replaced those system files with our own stubs.
+  ; This no longer is needed and thus needs to be reverted in any case.
+  Call RestoreFilesDirect3D
+  ; Ignore the result in case we had trouble restoring. The system would be in an inconsistent state anyway.
+
   Call VBoxMMR_Uninstall
 
 FunctionEnd
