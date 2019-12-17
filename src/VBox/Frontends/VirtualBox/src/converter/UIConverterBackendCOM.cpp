@@ -53,8 +53,6 @@ template<> bool canConvert<KStorageBus>() { return true; }
 template<> bool canConvert<KStorageControllerType>() { return true; }
 template<> bool canConvert<KChipsetType>() { return true; }
 template<> bool canConvert<KNATProtocol>() { return true; }
-template<> bool canConvert<KGuestSessionStatus>() { return true; }
-template<> bool canConvert<KProcessStatus>() { return true; }
 
 /* QColor <= KMachineState: */
 template<> QColor toColor(const KMachineState &state)
@@ -700,106 +698,4 @@ template<> KNATProtocol fromInternalString<KNATProtocol>(const QString &strProto
     }
     /* Corresponding type for known words: */
     return values.at(keys.indexOf(QRegExp(strProtocol, Qt::CaseInsensitive)));
-}
-
-/// @todo Internal strings never being translated.
-///       If that is user-visible string then it is toString() and then each word should be
-///       translated separately (i.e. "TimedOutKilled" should be "Timed Out Killed").
-///       If that is purely internal thing used to tag something or save value to extra-data
-///       then this is toInternalString() indeed but no QApplication::translate should be used.
-template<> QString toInternalString(const KGuestSessionStatus &enmStatus)
-{
-    switch (enmStatus)
-    {
-        case KGuestSessionStatus_Undefined:           return QApplication::translate("UICommon", "Undefined",          "GuestSessionStatus");
-        case KGuestSessionStatus_Starting:            return QApplication::translate("UICommon", "Starting",           "GuestSessionStatus");
-        case KGuestSessionStatus_Started:             return QApplication::translate("UICommon", "Started",            "GuestSessionStatus");
-        case KGuestSessionStatus_Terminating:         return QApplication::translate("UICommon", "Terminating",        "GuestSessionStatus");
-        case KGuestSessionStatus_Terminated:          return QApplication::translate("UICommon", "Terminated",         "GuestSessionStatus");
-        case KGuestSessionStatus_TimedOutKilled:      return QApplication::translate("UICommon", "TimedOutKilled",     "GuestSessionStatus");
-        case KGuestSessionStatus_TimedOutAbnormally:  return QApplication::translate("UICommon", "TimedOutAbnormally", "GuestSessionStatus");
-        case KGuestSessionStatus_Down:                return QApplication::translate("UICommon", "Down",               "GuestSessionStatus");
-        case KGuestSessionStatus_Error:               return QApplication::translate("UICommon", "Error",              "GuestSessionStatus");
-        default: AssertMsgFailed(("No text for %d", enmStatus)); break;
-    }
-    return QString();
-}
-
-/// @todo Internal strings never being translated.
-///       If that is user-visible string then it is fromString() and then each word should be
-///       translated separately (i.e. "TimedOutKilled" should be "Timed Out Killed").
-///       If that is purely internal thing used to tag something or save value to extra-data
-///       then this is fromInternalString() indeed but no QApplication::translate should be used.
-template<> KGuestSessionStatus fromInternalString<KGuestSessionStatus>(const QString &strStatus)
-{
-    QHash<QString, KGuestSessionStatus> list;
-    list.insert(QApplication::translate("UICommon", "Undefined",          "GuestSessionStatus"),  KGuestSessionStatus_Undefined);
-    list.insert(QApplication::translate("UICommon", "Starting",           "GuestSessionStatus"),  KGuestSessionStatus_Starting);
-    list.insert(QApplication::translate("UICommon", "Started",            "GuestSessionStatus"),  KGuestSessionStatus_Started);
-    list.insert(QApplication::translate("UICommon", "Terminating",        "GuestSessionStatus"),  KGuestSessionStatus_Terminating);
-    list.insert(QApplication::translate("UICommon", "Terminated",         "GuestSessionStatus"),  KGuestSessionStatus_Terminated);
-    list.insert(QApplication::translate("UICommon", "TimedOutKilled",     "GuestSessionStatus"),  KGuestSessionStatus_TimedOutKilled);
-    list.insert(QApplication::translate("UICommon", "TimedOutAbnormally", "GuestSessionStatus"),  KGuestSessionStatus_TimedOutAbnormally);
-    list.insert(QApplication::translate("UICommon", "Down",               "GuestSessionStatus"),  KGuestSessionStatus_Down);
-    list.insert(QApplication::translate("UICommon", "Error",              "GuestSessionStatus"),  KGuestSessionStatus_Error);
-    if (!list.contains(strStatus))
-    {
-        AssertMsgFailed(("No value for '%s'", strStatus.toUtf8().constData()));
-    }
-    return list.value(strStatus, KGuestSessionStatus_Error);
-}
-
-/// @todo Internal strings never being translated.
-///       If that is user-visible string then it is toString() and then each word should be
-///       translated separately (i.e. "TimedOutKilled" should be "Timed Out Killed").
-///       If that is purely internal thing used to tag something or save value to extra-data
-///       then this is toInternalString() indeed but no QApplication::translate should be used.
-template<> QString toInternalString(const KProcessStatus &enmStatus)
-{
-    switch (enmStatus)
-    {
-        case KProcessStatus_Undefined:            return QApplication::translate("UICommon", "Undefined",            "ProcessStatus");
-        case KProcessStatus_Starting:             return QApplication::translate("UICommon", "Starting",             "ProcessStatus");
-        case KProcessStatus_Started:              return QApplication::translate("UICommon", "Started",              "ProcessStatus");
-        case KProcessStatus_Paused:               return QApplication::translate("UICommon", "Paused",               "ProcessStatus");
-        case KProcessStatus_Terminating:          return QApplication::translate("UICommon", "Terminating",          "ProcessStatus");
-        case KProcessStatus_TerminatedNormally:   return QApplication::translate("UICommon", "TerminatedNormally",   "ProcessStatus");
-        case KProcessStatus_TerminatedSignal:     return QApplication::translate("UICommon", "TerminatedSignal",     "ProcessStatus");
-        case KProcessStatus_TerminatedAbnormally: return QApplication::translate("UICommon", "TerminatedAbnormally", "ProcessStatus");
-        case KProcessStatus_TimedOutKilled:       return QApplication::translate("UICommon", "TimedOutKilled",       "ProcessStatus");
-        case KProcessStatus_TimedOutAbnormally:   return QApplication::translate("UICommon", "TimedOutAbnormally",   "ProcessStatus");
-        case KProcessStatus_Down:                 return QApplication::translate("UICommon", "Down",                 "ProcessStatus");
-        case KProcessStatus_Error:                return QApplication::translate("UICommon", "Error",                "ProcessStatus");
-        default: AssertMsgFailed(("No text for %d", enmStatus)); break;
-    }
-    return QString();
-}
-
-/// @todo Internal strings never being translated.
-///       If that is user-visible string then it is fromString() and then each word should be
-///       translated separately (i.e. "TimedOutKilled" should be "Timed Out Killed").
-///       If that is purely internal thing used to tag something or save value to extra-data
-///       then this is fromInternalString() indeed but no QApplication::translate should be used.
-template<> KProcessStatus fromInternalString<KProcessStatus>(const QString &strStatus)
-{
-    QHash<QString, KProcessStatus> list;
-    list.insert(QApplication::translate("UICommon", "Undefined",            "ProcessStatus"),  KProcessStatus_Undefined);
-    list.insert(QApplication::translate("UICommon", "Starting",             "ProcessStatus"),  KProcessStatus_Starting);
-    list.insert(QApplication::translate("UICommon", "Started",              "ProcessStatus"),  KProcessStatus_Started);
-    list.insert(QApplication::translate("UICommon", "Paused",               "ProcessStatus"),  KProcessStatus_Paused);
-    list.insert(QApplication::translate("UICommon", "Terminating",          "ProcessStatus"),  KProcessStatus_Terminating);
-    list.insert(QApplication::translate("UICommon", "TerminatedNormally",   "ProcessStatus"),  KProcessStatus_TerminatedNormally);
-    list.insert(QApplication::translate("UICommon", "TerminatedSignal",     "ProcessStatus"),  KProcessStatus_TerminatedSignal);
-    list.insert(QApplication::translate("UICommon", "TerminatedAbnormally", "ProcessStatus"),  KProcessStatus_TerminatedAbnormally);
-    list.insert(QApplication::translate("UICommon", "TimedOutKilled",       "ProcessStatus"),  KProcessStatus_TimedOutKilled);
-    list.insert(QApplication::translate("UICommon", "TimedOutAbnormally",   "ProcessStatus"),  KProcessStatus_TimedOutAbnormally);
-    list.insert(QApplication::translate("UICommon", "Down",                 "ProcessStatus"),  KProcessStatus_Down);
-    list.insert(QApplication::translate("UICommon", "Error",                "ProcessStatus"),  KProcessStatus_Error);
-
-    if (!list.contains(strStatus))
-    {
-        AssertMsgFailed(("No value for '%s'", strStatus.toUtf8().constData()));
-    }
-    return list.value(strStatus, KProcessStatus_Error);
-
 }

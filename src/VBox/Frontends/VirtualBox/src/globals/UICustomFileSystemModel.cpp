@@ -610,8 +610,6 @@ void UICustomFileSystemModel::initializeTree()
     m_pRootItem->setData(UICustomFileSystemModel::tr("Change Time"), UICustomFileSystemModelColumn_ChangeTime);
     m_pRootItem->setData(UICustomFileSystemModel::tr("Owner"), UICustomFileSystemModelColumn_Owner);
     m_pRootItem->setData(UICustomFileSystemModel::tr("Permissions"), UICustomFileSystemModelColumn_Permissions);
-    /// @todo Is this guy really user-readable. If that is so then each word should
-    ///       be translated separately (i.e. "LocalPath" should be "Local Path").
-    m_pRootItem->setData(UICustomFileSystemModel::tr("LocalPath"), UICustomFileSystemModelColumn_LocalPath);
+    m_pRootItem->setData(UICustomFileSystemModel::tr("Local Path"), UICustomFileSystemModelColumn_LocalPath);
     m_pRootItem->setData(UICustomFileSystemModel::tr("Path"), UICustomFileSystemModelColumn_Path);
 }

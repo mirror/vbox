@@ -1108,9 +1108,7 @@ void UIFileManagerTable::sltCreateNewDirectory()
     if (!parentFolderItem)
         return;
 
-    /// @todo Is this guy really user-readable. If that is so then each word should
-    ///       be translated separately (i.e. "NewDirectory" should be "New Directory").
-    QString newDirectoryName(UICustomFileSystemModel::tr("NewDirectory"));
+    QString newDirectoryName(UICustomFileSystemModel::tr("New Directory"));
 
     if (!createDirectory(parentFolderItem->path(), newDirectoryName))
         return;
@@ -1302,7 +1300,7 @@ void UIFileManagerTable::retranslateUi()
     ///       You can use only <br> between sentenses of the same paragraph. Most of Qt text is HTML by definition, so
     ///       it does support <br> tags.
     if (m_pWarningLabel)
-        m_pWarningLabel->setText(UIFileManager::tr("No Guest Session\nPlease use the Session Panel to start \na guest session"));
+        m_pWarningLabel->setText(UIFileManager::tr("No Guest Session found!<br>Please use the Session Panel to start a new guest session"));
 }
 
 bool UIFileManagerTable::eventFilter(QObject *pObject, QEvent *pEvent) /* override */
