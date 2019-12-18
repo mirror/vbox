@@ -110,14 +110,17 @@ private:
         QString m_strNestedPagingLabel;
         QString m_strUnrestrictedExecutionLabel;
         QString m_strParavirtualizationLabel;
-        QString m_strActive;
-        QString m_strInactive;
-        QString m_strNotAvailable;
+        QString m_strNestedPagingActive;
+        QString m_strNestedPagingInactive;
+        QString m_strUnrestrictedExecutionActive;
+        QString m_strUnrestrictedExecutionInactive;
+        QString m_strVRDEPortNotAvailable;
         QString m_strGuestAdditionsLabel;
         QString m_strGuestOSTypeLabel;
         QString m_strRemoteDesktopLabel;
-        QString m_strNotSet;
-        QString m_strNotDetected;
+        QString m_strExecutionEngineNotSet;
+        QString m_strOSNotDetected;
+        QString m_strGANotDetected;
     /** @} */
 
     int m_iFontHeight;
@@ -176,29 +179,27 @@ UIRuntimeInfoWidget::UIRuntimeInfoWidget(QWidget *pParent, const CMachine &machi
 
 void UIRuntimeInfoWidget::retranslateUi()
 {
-    /// @todo These NLS tags have to be reworked the following way:
-    ///       Each place which uses plural/gender-neutral verbs like Active, Inactive, Not Available, not set and Not Detected
-    ///       should use it directly like tr("Active", "Guest Additions") to make sure translator knows for sure whether this
-    ///       verb is related to single or plural form and male/female/neutral sex. There are languages different than English
-    ///       which sounds absolutely stupid if you ignore those rules while sequencing nouns and corresponding verbs.
-    m_strTableTitle = QApplication::translate("UIVMInformationDialog", "Runtime Attributes");
-    m_strScreenResolutionLabel = QApplication::translate("UIVMInformationDialog", "Screen Resolution");
-    m_strMonitorTurnedOff = QApplication::translate("UIVMInformationDialog", "turned off");
-    m_strUptimeLabel = QApplication::translate("UIVMInformationDialog", "VM Uptime");
-    m_strClipboardModeLabel = QApplication::translate("UIVMInformationDialog", "Clipboard Mode");
-    m_strDragAndDropLabel = QApplication::translate("UIVMInformationDialog", "Drag and Drop Mode");
-    m_strExcutionEngineLabel = QApplication::translate("UIVMInformationDialog", "VM Execution Engine");
-    m_strNestedPagingLabel = QApplication::translate("UIVMInformationDialog", "Nested Paging");
-    m_strUnrestrictedExecutionLabel = QApplication::translate("UIVMInformationDialog", "Unrestricted Execution");
-    m_strParavirtualizationLabel = QApplication::translate("UIVMInformationDialog", "Paravirtualization Interface");
-    m_strActive = QApplication::translate("UIVMInformationDialog", "Active");
-    m_strInactive = QApplication::translate("UIVMInformationDialog", "Inactive");
-    m_strNotAvailable = QApplication::translate("UIVMInformationDialog", "Not Available");
-    m_strGuestAdditionsLabel = QApplication::translate("UIVMInformationDialog", "Guest Additions");
-    m_strGuestOSTypeLabel = QApplication::translate("UIVMInformationDialog", "Guest OS Type");
-    m_strRemoteDesktopLabel = QApplication::translate("UIVMInformationDialog", "Remote Desktop Server Port");
-    m_strNotSet = QApplication::translate("UIVMInformationDialog", "not set");
-    m_strNotDetected = QApplication::translate("UIVMInformationDialog", "Not Detected");
+    m_strTableTitle                    = QApplication::translate("UIVMInformationDialog", "Runtime Attributes");
+    m_strScreenResolutionLabel         = QApplication::translate("UIVMInformationDialog", "Screen Resolution");
+    m_strMonitorTurnedOff              = QApplication::translate("UIVMInformationDialog", "turned off", "Screen");
+    m_strUptimeLabel                   = QApplication::translate("UIVMInformationDialog", "VM Uptime");
+    m_strClipboardModeLabel            = QApplication::translate("UIVMInformationDialog", "Clipboard Mode");
+    m_strDragAndDropLabel              = QApplication::translate("UIVMInformationDialog", "Drag and Drop Mode");
+    m_strExcutionEngineLabel           = QApplication::translate("UIVMInformationDialog", "VM Execution Engine");
+    m_strNestedPagingLabel             = QApplication::translate("UIVMInformationDialog", "Nested Paging");
+    m_strUnrestrictedExecutionLabel    = QApplication::translate("UIVMInformationDialog", "Unrestricted Execution");
+    m_strParavirtualizationLabel       = QApplication::translate("UIVMInformationDialog", "Paravirtualization Interface");
+    m_strNestedPagingActive            = QApplication::translate("UIVMInformationDialog", "Active", "Nested Paging");
+    m_strNestedPagingInactive          = QApplication::translate("UIVMInformationDialog", "Inactive", "Nested Paging");
+    m_strUnrestrictedExecutionActive   = QApplication::translate("UIVMInformationDialog", "Active", "Unrestricted Execution");
+    m_strUnrestrictedExecutionInactive = QApplication::translate("UIVMInformationDialog", "Inactive", "Unrestricted Execution");
+    m_strVRDEPortNotAvailable          = QApplication::translate("UIVMInformationDialog", "Not Available", "VRDE Port");
+    m_strGuestAdditionsLabel           = QApplication::translate("UIVMInformationDialog", "Guest Additions");
+    m_strGuestOSTypeLabel              = QApplication::translate("UIVMInformationDialog", "Guest OS Type");
+    m_strRemoteDesktopLabel            = QApplication::translate("UIVMInformationDialog", "Remote Desktop Server Port");
+    m_strExecutionEngineNotSet         = QApplication::translate("UIVMInformationDialog", "not set", "Execution Engine");
+    m_strOSNotDetected                 = QApplication::translate("UIVMInformationDialog", "Not Detected", "Guest OS Type");
+    m_strGANotDetected                 = QApplication::translate("UIVMInformationDialog", "Not Detected", "Guest Additions Version");
 
     QString* strLongest = 0;
     foreach (QString *strLabel, m_labels)
@@ -323,7 +324,7 @@ void UIRuntimeInfoWidget::updateOSTypeRow()
 {
    QString strOSType = m_console.GetGuest().GetOSTypeId();
     if (strOSType.isEmpty())
-        strOSType = m_strNotDetected;
+        strOSType = m_strOSNotDetected;
     else
         strOSType = uiCommon().vmGuestOSTypeDescription(strOSType);
    updateInfoRow(InfoRow_GuestOSType, QString("%1").arg(m_strGuestOSTypeLabel), strOSType);
@@ -334,9 +335,6 @@ void UIRuntimeInfoWidget::updateVirtualizationInfo()
 
     /* Determine virtualization attributes: */
     CMachineDebugger debugger = m_console.GetDebugger();
-
-    QString strVirtualization = debugger.GetHWVirtExEnabled() ?
-        m_strActive : m_strInactive;
 
     QString strExecutionEngine;
     switch (debugger.GetExecutionEngine())
@@ -354,20 +352,19 @@ void UIRuntimeInfoWidget::updateVirtualizationInfo()
             AssertFailed();
             RT_FALL_THRU();
         case KVMExecutionEngine_NotSet:
-            strExecutionEngine = m_strNotSet;
+            strExecutionEngine = m_strExecutionEngineNotSet;
             break;
     }
     QString strNestedPaging = debugger.GetHWVirtExNestedPagingEnabled() ?
-        m_strActive : m_strInactive;
+        m_strNestedPagingActive : m_strNestedPagingInactive;
     QString strUnrestrictedExecution = debugger.GetHWVirtExUXEnabled() ?
-        m_strActive : m_strInactive;
+        m_strUnrestrictedExecutionActive : m_strUnrestrictedExecutionInactive;
     QString strParavirtProvider = gpConverter->toString(m_machine.GetEffectiveParavirtProvider());
 
     updateInfoRow(InfoRow_ExecutionEngine, QString("%1").arg(m_strExcutionEngineLabel), strExecutionEngine);
     updateInfoRow(InfoRow_NestedPaging, QString("%1").arg(m_strNestedPagingLabel), strNestedPaging);
     updateInfoRow(InfoRow_UnrestrictedExecution, QString("%1").arg(m_strUnrestrictedExecutionLabel), strUnrestrictedExecution);
     updateInfoRow(InfoRow_Paravirtualization, QString("%1").arg(m_strParavirtualizationLabel), strParavirtProvider);
-
 }
 
 void UIRuntimeInfoWidget::updateGAsVersion()
@@ -375,7 +372,7 @@ void UIRuntimeInfoWidget::updateGAsVersion()
     CGuest guest = m_console.GetGuest();
     QString strGAVersion = guest.GetAdditionsVersion();
     if (strGAVersion.isEmpty())
-        strGAVersion = m_strNotDetected;
+        strGAVersion = m_strGANotDetected;
     else
     {
         ULONG uRevision = guest.GetAdditionsRevision();
@@ -389,7 +386,7 @@ void UIRuntimeInfoWidget::updateVRDE()
 {
     int iVRDEPort = m_console.GetVRDEServerInfo().GetPort();
     QString strVRDEInfo = (iVRDEPort == 0 || iVRDEPort == -1) ?
-        m_strNotAvailable : QString("%1").arg(iVRDEPort);
+        m_strVRDEPortNotAvailable : QString("%1").arg(iVRDEPort);
    updateInfoRow(InfoRow_RemoteDesktop, QString("%1").arg(m_strRemoteDesktopLabel), strVRDEInfo);
 }
 
