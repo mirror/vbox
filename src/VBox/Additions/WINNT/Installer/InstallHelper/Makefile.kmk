@@ -18,6 +18,9 @@
 SUB_DEPTH = ../../../../../..
 include $(KBUILD_PATH)/subheader.kmk
 
+# Include Sub-Makefiles.
+include $(PATH_SUB_CURRENT)/testcase/Makefile.kmk
+
 #
 # NSIS plugins always have to be compiled in 32-bit!
 #

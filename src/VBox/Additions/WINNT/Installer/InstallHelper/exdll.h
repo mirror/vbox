@@ -32,6 +32,34 @@
 #define UNUSED
 #endif
 
+// Starting with NSIS 2.42, you can check the version of the plugin API in exec_flags->plugin_api_version
+// The format is 0xXXXXYYYY where X is the major version and Y is the minor version (MAKELONG(y,x))
+// When doing version checks, always remember to use >=, ex: if (pX->exec_flags->plugin_api_version >= NSISPIAPIVER_1_0) {}
+
+#define NSISPIAPIVER_1_0 0x00010000
+#define NSISPIAPIVER_CURR NSISPIAPIVER_1_0
+
+// NSIS Plug-In Callback Messages
+enum NSPIM
+{
+    NSPIM_UNLOAD,    // This is the last message a plugin gets, do final cleanup
+    NSPIM_GUIUNLOAD, // Called after .onGUIEnd
+};
+
+/** Defines the maximum string length NSIS can handle.
+ *  Note: This depends on the NSIS build being used, e.g. there are different builds which can also handle larger strings.
+ *        So to play safe go with the minimum (default) string length here. */
+#define NSIS_MAX_STRLEN 1024
+
+// Prototype for callbacks registered with extra_parameters->RegisterPluginCallback()
+// Return NULL for unknown messages
+// Should always be __cdecl for future expansion possibilities
+typedef UINT_PTR (*NSISPLUGINCALLBACK)(enum NSPIM);
+
+#ifndef NSISCALL
+#  define NSISCALL __stdcall
+#endif
+
 // only include this file from one place in your DLL.
 // (it is all static, if you use it in two places it will fail)
 
@@ -40,11 +68,40 @@
         g_stacktop=stacktop;      \
         g_variables=variables; }
 
-typedef struct _stack_t {
-  struct _stack_t *next;
-  char text[1]; // this should be the length of string_size
+typedef struct _stack_t
+{
+    struct _stack_t *next;
+    char text[1]; // this should be the length of string_size
 } stack_t;
 
+// extra_parameters data structures containing other interesting stuff
+// but the stack, variables and HWND passed on to plug-ins.
+typedef struct
+{
+    int autoclose;
+    int all_user_var;
+    int exec_error;
+    int abort;
+    int exec_reboot; // NSIS_SUPPORT_REBOOT
+    int reboot_called; // NSIS_SUPPORT_REBOOT
+    int XXX_cur_insttype; // depreacted
+    int plugin_api_version; // see NSISPIAPIVER_CURR
+                          // used to be XXX_insttype_changed
+    int silent; // NSIS_CONFIG_SILENT_SUPPORT
+    int instdir_error;
+    int rtl;
+    int errlvl;
+    int alter_reg_view;
+    int status_update;
+} exec_flags_t;
+
+typedef struct
+{
+    exec_flags_t *exec_flags;
+    int (NSISCALL *ExecuteCodeSegment)(int, HWND);
+    void (NSISCALL *validate_filename)(TCHAR *);
+    BOOL (NSISCALL *RegisterPluginCallback)(HMODULE, NSISPLUGINCALLBACK);
+} extra_parameters;
 
 static unsigned int g_stringsize;
 static stack_t **g_stacktop;

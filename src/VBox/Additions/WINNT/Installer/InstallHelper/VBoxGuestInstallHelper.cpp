@@ -1,6 +1,7 @@
 /* $Id$ */
 /** @file
  * VBoxGuestInstallHelper - Various helper routines for Windows guest installer.
+ *                          Works with NSIS 3.x.
  */
 
 /*
@@ -44,7 +45,6 @@
 *   Defined Constants And Macros                                                                                                 *
 *********************************************************************************************************************************/
 #define VBOXINSTALLHELPER_EXPORT extern "C" void __declspec(dllexport)
-
 
 /*********************************************************************************************************************************
 *   Structures and Typedefs                                                                                                      *
@@ -159,7 +159,7 @@ static void vboxChar2WCharFree(PWCHAR pwString)
 static HRESULT vboxChar2WCharAlloc(const char *pszString, PWCHAR *ppwString)
 {
     HRESULT hr;
-    int iLen = strlen(pszString) + 2;
+    int iLen = (int)strlen(pszString) + 2;
     WCHAR *pwString = (WCHAR*)HeapAlloc(GetProcessHeap(), 0, iLen * sizeof(WCHAR));
     if (!pwString)
         hr = __HRESULT_FROM_WIN32(ERROR_NOT_ENOUGH_MEMORY);
@@ -205,10 +205,13 @@ static HMODULE loadSystemDll(const char *pszName)
  * @param   string_size         Size of variable string.
  * @param   variables           The actual variable string.
  * @param   stacktop            Pointer to a pointer to the current stack.
+ * @param   extra               Extra parameters. Currently unused.
  */
-VBOXINSTALLHELPER_EXPORT DisableWFP(HWND hwndParent, int string_size, TCHAR *variables, stack_t **stacktop)
+VBOXINSTALLHELPER_EXPORT DisableWFP(HWND hwndParent, int string_size, TCHAR *variables, stack_t **stacktop,
+                                    extra_parameters *extra)
 {
-    NOREF(hwndParent);
+    RT_NOREF(hwndParent, extra);
+
     EXDLL_INIT();
 
     TCHAR szFile[MAX_PATH + 1];
@@ -258,10 +261,13 @@ VBOXINSTALLHELPER_EXPORT DisableWFP(HWND hwndParent, int string_size, TCHAR *var
  * @param   string_size         Size of variable string.
  * @param   variables           The actual variable string.
  * @param   stacktop            Pointer to a pointer to the current stack.
+ * @param   extra               Extra parameters. Currently unused.
  */
-VBOXINSTALLHELPER_EXPORT FileGetArchitecture(HWND hwndParent, int string_size, TCHAR *variables, stack_t **stacktop)
+VBOXINSTALLHELPER_EXPORT FileGetArchitecture(HWND hwndParent, int string_size, TCHAR *variables, stack_t **stacktop,
+                                             extra_parameters *extra)
 {
-    NOREF(hwndParent);
+    RT_NOREF(hwndParent, extra);
+
     EXDLL_INIT();
 
     TCHAR szFile[MAX_PATH + 1];
@@ -315,10 +321,13 @@ VBOXINSTALLHELPER_EXPORT FileGetArchitecture(HWND hwndParent, int string_size, T
  * @param   string_size         Size of variable string.
  * @param   variables           The actual variable string.
  * @param   stacktop            Pointer to a pointer to the current stack.
+ * @param   extra               Extra parameters. Currently unused.
  */
-VBOXINSTALLHELPER_EXPORT FileGetVendor(HWND hwndParent, int string_size, TCHAR *variables, stack_t **stacktop)
+VBOXINSTALLHELPER_EXPORT FileGetVendor(HWND hwndParent, int string_size, TCHAR *variables, stack_t **stacktop,
+                                       extra_parameters *extra)
 {
-    NOREF(hwndParent);
+    RT_NOREF(hwndParent, extra);
+
     EXDLL_INIT();
 
     TCHAR szFile[MAX_PATH + 1];
@@ -378,10 +387,13 @@ VBOXINSTALLHELPER_EXPORT FileGetVendor(HWND hwndParent, int string_size, TCHAR *
  * @param   string_size         Size of variable string.
  * @param   variables           The actual variable string.
  * @param   stacktop            Pointer to a pointer to the current stack.
+ * @param   extra               Extra parameters. Currently unused.
  */
-VBOXINSTALLHELPER_EXPORT VBoxTrayShowBallonMsg(HWND hwndParent, int string_size, TCHAR *variables, stack_t **stacktop)
+VBOXINSTALLHELPER_EXPORT VBoxTrayShowBallonMsg(HWND hwndParent, int string_size, TCHAR *variables, stack_t **stacktop,
+                                               extra_parameters *extra)
 {
-    NOREF(hwndParent);
+    RT_NOREF(hwndParent, extra);
+
     EXDLL_INIT();
 
     char szMsg[256];
@@ -397,8 +409,8 @@ VBOXINSTALLHELPER_EXPORT VBoxTrayShowBallonMsg(HWND hwndParent, int string_size,
         RTR3InitDll(0);
 
         uint32_t cbMsg = sizeof(VBOXTRAYIPCMSG_SHOWBALLOONMSG)
-                       + strlen(szMsg) + 1    /* Include terminating zero */
-                       + strlen(szTitle) + 1; /* Dito. */
+                       + (uint32_t)strlen(szMsg)   + 1  /* Include terminating zero */
+                       + (uint32_t)strlen(szTitle) + 1; /* Ditto. */
         Assert(cbMsg);
         PVBOXTRAYIPCMSG_SHOWBALLOONMSG pIpcMsg =
             (PVBOXTRAYIPCMSG_SHOWBALLOONMSG)RTMemAlloc(cbMsg);
