@@ -84,38 +84,12 @@ public:
     bool requiresGuestAdditions() const;
     void setRequiresGuestAdditions(bool fRequiresGAs);
 
-    const QStringList &deviceTypeList() const;
-    void setDeviceTypeList(const QStringList &list);
-
-    void setQueryPrefix(const QString &strPrefix);
-
-    const QStringList &metricDataSubString() const;
-    void setMetricDataSubString(const QStringList &list);
-
-    const QString &queryString() const;
-
     void setIsInitialized(bool fIsInitialized);
     bool isInitialized() const;
 
     void reset();
 
 private:
-
-    void composeQueryString();
-
-    /** @name The following strings are string list are used while making IMachineDebugger::getStats calls and parsing the resultin
-      * xml stream.
-      * @{ */
-        /** This string is used while calling IMachineDebugger::getStats(..). It is composed of
-        * m_strQueryPrefix, m_deviceTypeList, and  m_metricDataSubString. */
-        QString m_strQueryString;
-        /** This list is used to differentiate xml data we get from the IMachineDebugger. */
-        QStringList m_deviceTypeList;
-        /** This is used to select data series of the metric. For example, for network metric
-         * it is ReceiveBytes/TransmitBytes */
-        QStringList m_metricDataSubString;
-        QString m_strQueryPrefix;
-    /** @} */
 
     QString m_strName;
     QString m_strUnit;
@@ -242,8 +216,6 @@ private:
         QString m_strVMExitLabelCurrent;
         QString m_strVMExitLabelTotal;
     /** @} */
-    /** The following string is used while querrying CMachineDebugger. */
-    QString m_strQueryString;
     quint64 m_iTimeStep;
 };
 

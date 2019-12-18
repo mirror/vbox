@@ -772,40 +772,6 @@ void UIMetric::setRequiresGuestAdditions(bool fRequiresGAs)
     m_fRequiresGuestAdditions = fRequiresGAs;
 }
 
-const QStringList &UIMetric::deviceTypeList() const
-{
-    return m_deviceTypeList;
-}
-
-void UIMetric::setDeviceTypeList(const QStringList &list)
-{
-    m_deviceTypeList = list;
-    composeQueryString();
-}
-
-const QStringList &UIMetric::metricDataSubString() const
-{
-    return m_metricDataSubString;
-}
-
-void UIMetric::setQueryPrefix(const QString &strPrefix)
-{
-    m_strQueryPrefix = strPrefix;
-    composeQueryString();
-
-}
-
-void UIMetric::setMetricDataSubString(const QStringList &list)
-{
-    m_metricDataSubString = list;
-    composeQueryString();
-}
-
-const QString &UIMetric::queryString() const
-{
-    return m_strQueryString;
-}
-
 bool UIMetric::isInitialized() const
 {
     return m_fIsInitialized;
@@ -825,27 +791,6 @@ void UIMetric::reset()
         m_data[i].clear();
     }
     m_iMaximum = 0;
-}
-
-void UIMetric::composeQueryString()
-{
-    /* Compose of if both m_metricDataSubString and m_deviceTypeList are not empty: */
-    if (m_deviceTypeList.isEmpty() || m_metricDataSubString.isEmpty())
-        return;
-    m_strQueryString.clear();
-    foreach (const QString &strDeviceName, m_deviceTypeList)
-    {
-        foreach (const QString &strSubString, m_metricDataSubString)
-        {
-            /** @todo r=bird: It is much more efficient to (1) start a query with '/' and
-             *        (2) not use multiple expressions.  If you don't start with '/',
-             *        STAM must search all the statistics.  If you have multiple
-             *        expressions it is not yet clever enough to optimize the search and
-             *        will search all the statistics.  There are several thousand in a
-             *        debug builds, some 400-600 in a typical release build (config dep). */
-            m_strQueryString += QString("*%1*%2*%3*|").arg(m_strQueryPrefix).arg(strDeviceName).arg(strSubString);
-        }
-    }
 }
 
 
@@ -1158,59 +1103,24 @@ void UIInformationPerformanceMonitor::prepareMetrics()
     }
 
     m_metrics.insert(m_strCPUMetricName, UIMetric(m_strCPUMetricName, "%", iMaximumQueueSize));
-/** @todo r=bird: This way of constructing queries is inefficient, see
- *        comment in query composer.  Also, both the network and disk bits
- *        have moved now.  The update timer method has been updated and no
- *        longer makes use of this for the statistics querying. */
     {
         /* Network metric: */
         UIMetric networkMetric(m_strNetworkMetricName, "B", iMaximumQueueSize);
-        networkMetric.setQueryPrefix("Public");
-        QStringList networkDeviceList;
-        networkDeviceList << "E1k" << "VNet" << "PCNet";
-        networkMetric.setDeviceTypeList(networkDeviceList);
-        QStringList networkMetricDataSubStringList;
-        networkMetricDataSubStringList << "BytesReceived" << "BytesTransmitted";
-        networkMetric.setMetricDataSubString(networkMetricDataSubStringList);
         m_metrics.insert(m_strNetworkMetricName, networkMetric);
     }
 
     /* Disk IO metric */
     {
         UIMetric diskIOMetric(m_strDiskIOMetricName, "B", iMaximumQueueSize);
-        diskIOMetric.setQueryPrefix("Devices");
-        QStringList diskTypeList;
-        diskTypeList << "LSILOGICSCSI" << "BUSLOGIC"
-                     << "AHCI" <<  "PIIX3IDE" << "I82078" << "LSILOGICSAS" << "MSD" << "NVME";
-        diskIOMetric.setDeviceTypeList(diskTypeList);
-        QStringList diskIODataSubStringList;
-        diskIODataSubStringList << "WrittenBytes" << "ReadBytes";
-        diskIOMetric.setMetricDataSubString(diskIODataSubStringList);
         m_metrics.insert(m_strDiskIOMetricName, diskIOMetric);
     }
 
     /* VM exits metric */
     {
         UIMetric VMExitsMetric(m_strVMExitMetricName, "times", iMaximumQueueSize);
-        VMExitsMetric.setQueryPrefix("PROF");
-        QStringList typeList;
-        typeList << "CPU";
-        VMExitsMetric.setDeviceTypeList(typeList);
-        QStringList subStringList;
-        subStringList << "RecordedExits";
-        VMExitsMetric.setMetricDataSubString(subStringList);
         m_metrics.insert(m_strVMExitMetricName, VMExitsMetric);
     }
-
-    for (QMap<QString, UIMetric>::const_iterator iterator =  m_metrics.begin();
-         iterator != m_metrics.end(); ++iterator)
-    {
-        if (iterator.value().queryString().isEmpty())
-            continue;
-        m_strQueryString += iterator.value().queryString();
-    }
 }
-
 
 bool UIInformationPerformanceMonitor::guestAdditionsAvailable(int iMinimumMajorVersion)
 {
