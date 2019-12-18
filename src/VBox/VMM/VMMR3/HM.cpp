@@ -359,7 +359,7 @@ VMMR3_INT_DECL(int) HMR3Init(PVM pVM)
 
     /** @cfgm{/HM/SvmLbrVirt, bool, false}
      * Whether to make use of the LBR virtualization feature of the CPU if it's
-     * available. This is disabled by default as its only useful while debugging
+     * available. This is disabled by default as it's only useful while debugging
      * and enabling it causes a small hit to performance. */
     rc = CFGMR3QueryBoolDef(pCfgHm, "SvmLbrVirt", &pVM->hm.s.svm.fLbrVirt, false);
     AssertRCReturn(rc, rc);
