@@ -272,7 +272,7 @@ void UIRuntimeInfoWidget::updateScreenInfo(int iScreenID /* = -1 */)
     int iRowCount = rowCount();
     for (int i = iRowCount - 1; i >= 0; --i)
     {
-        QTableWidgetItem *pItem = item(i, 0);
+        QTableWidgetItem *pItem = item(i, 1);
         if (pItem && pItem->type() == InfoRow_Resolution)
             removeRow(i);
     }
