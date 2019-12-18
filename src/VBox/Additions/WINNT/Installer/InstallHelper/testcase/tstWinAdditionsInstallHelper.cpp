@@ -151,7 +151,10 @@ int main()
                 pfnFileGetArchitecture(NULL /* hWnd */, NSIS_MAX_STRLEN, szVars, &pStack, NULL /* extra */);
 
                 char *pszStack = tstStackPopString(&pStack);
-                RTTestIPrintf(RTTESTLVL_ALWAYS, "Arch: %s\n", pszStack);
+                if (pszStack)
+                    RTTestIPrintf(RTTESTLVL_ALWAYS, "Arch: %s\n", pszStack);
+                else
+                    RTTestIFailed("Getting file arch failed (NSIS API changed?)\n");
                 RTStrFree(pszStack);
                 tstStackDestroy(pStack);
             }
@@ -166,7 +169,10 @@ int main()
                 tstStackPushString(&pStack, "c:\\windows\\system32\\kernel32.dll");
                 pfnFileGetVendor(NULL /* hWnd */, NSIS_MAX_STRLEN, szVars, &pStack, NULL /* extra */);
                 char *pszStack = tstStackPopString(&pStack);
-                RTTestIPrintf(RTTESTLVL_ALWAYS, "Vendor: %s\n", pszStack);
+                if (pszStack)
+                    RTTestIPrintf(RTTESTLVL_ALWAYS, "Vendor: %s\n", pszStack);
+                else
+                    RTTestIFailed("Getting file vendor failed (NSIS API changed?)\n");
                 RTStrFree(pszStack);
                 tstStackDestroy(pStack);
             }
