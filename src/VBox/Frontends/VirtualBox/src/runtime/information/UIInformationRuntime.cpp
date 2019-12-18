@@ -415,7 +415,7 @@ void UIRuntimeInfoWidget::updateInfoRow(InfoRow enmLine, const QString &strColum
     QTableWidgetItem *pItem = 0;
     for (int i = 0; i < rowCount() && !pItem; ++i)
     {
-        pItem = item(i, 1);
+        pItem = item(i, 2);
         if (!pItem)
             continue;
         if (pItem->type() != enmLine)
