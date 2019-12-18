@@ -177,10 +177,7 @@ UIWizardNewVDPageExpert::UIWizardNewVDPageExpert(const QString &strDefaultName, 
        since first m_formats should be populated and fields should be registered: */
     m_strDefaultExtension = defaultExtension(mediumFormat());
     if (m_pLocationEditor)
-    {
         m_pLocationEditor->setText(absoluteFilePath(m_strDefaultName, m_strDefaultPath, m_strDefaultExtension));
-        printf("%s\n", qPrintable(absoluteFilePath(m_strDefaultName, m_strDefaultPath, m_strDefaultExtension)));
-    }
 }
 
 void UIWizardNewVDPageExpert::sltMediumFormatChanged()
@@ -217,7 +214,6 @@ void UIWizardNewVDPageExpert::sltMediumFormatChanged()
         {
             QString strNewFilePath = QString("%1/%2.%3").arg(fileInfo.absoluteDir().absolutePath()).arg(fileInfo.fileName()).arg(m_strDefaultExtension);
             m_pLocationEditor->setText(strNewFilePath);
-            printf("%s %s\n", qPrintable(fileInfo.absoluteDir().absolutePath()), qPrintable(fileInfo.baseName()));
         }
     }
 
