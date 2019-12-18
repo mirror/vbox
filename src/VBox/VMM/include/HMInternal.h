@@ -610,7 +610,9 @@ typedef struct HM
         bool                        fVirtVmsaveVmload;
         /** Whether to use virtual GIF feature. */
         bool                        fVGif;
-        uint8_t                     u8Alignment0[2];
+        /** Whether to use LBR virtualization feature. */
+        bool                        fLbrVirt;
+        uint8_t                     u8Alignment0[1];
 
         /** Physical address of the IO bitmap (12kb). */
         RTHCPHYS                    HCPhysIOBitmap;

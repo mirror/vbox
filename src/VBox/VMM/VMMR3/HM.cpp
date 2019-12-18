@@ -357,6 +357,13 @@ VMMR3_INT_DECL(int) HMR3Init(PVM pVM)
     rc = CFGMR3QueryBoolDef(pCfgHm, "SvmVGif", &pVM->hm.s.svm.fVGif, true);
     AssertRCReturn(rc, rc);
 
+    /** @cfgm{/HM/SvmLbrVirt, bool, false}
+     * Whether to make use of the LBR virtualization feature of the CPU if it's
+     * available. This is disabled by default as its only useful while debugging
+     * and enabling it causes a small hit to performance. */
+    rc = CFGMR3QueryBoolDef(pCfgHm, "SvmLbrVirt", &pVM->hm.s.svm.fLbrVirt, false);
+    AssertRCReturn(rc, rc);
+
     /** @cfgm{/HM/Exclusive, bool}
      * Determines the init method for AMD-V and VT-x. If set to true, HM will do a
      * global init for each host CPU.  If false, we do local init each time we wish

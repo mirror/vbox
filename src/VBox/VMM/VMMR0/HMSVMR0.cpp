@@ -943,7 +943,7 @@ VMMR0DECL(int) SVMR0SetupVM(PVMCC pVM)
     bool const fUsePauseFilter       = fPauseFilter && pVM->hm.s.svm.cPauseFilter;
 
     bool const fLbrVirt              = RT_BOOL(pVM->hm.s.svm.u32Features & X86_CPUID_SVM_FEATURE_EDX_LBR_VIRT);
-    bool const fUseLbrVirt           = fLbrVirt; /** @todo CFGM, IEM implementation etc. */
+    bool const fUseLbrVirt           = fLbrVirt && pVM->hm.s.svm.fLbrVirt; /** @todo IEM implementation etc. */
 
 #ifdef VBOX_WITH_NESTED_HWVIRT_SVM
     bool const fVirtVmsaveVmload     = RT_BOOL(pVM->hm.s.svm.u32Features & X86_CPUID_SVM_FEATURE_EDX_VIRT_VMSAVE_VMLOAD);
