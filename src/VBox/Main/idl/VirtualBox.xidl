@@ -17905,7 +17905,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
         A ISO-9660 image will have one subdir in the root for each format present
         in the image, so the API user can select which data view to access (iso9660,
-        rockridge, jolie, udf, hfs, ...).
+        rockridge, joliet, udf, hfs, ...).
 
         A partitioned harddisk image will have subdirs for each partition.  The
         the filesystem content of each partition can be accessed thru the subdirs
