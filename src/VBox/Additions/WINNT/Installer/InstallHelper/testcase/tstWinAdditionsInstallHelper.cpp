@@ -126,7 +126,7 @@ int main()
     char szGuestInstallHelperDll[RTPATH_MAX];
     RTProcGetExecutablePath(szGuestInstallHelperDll, sizeof(szGuestInstallHelperDll));
 
-    /** @todo This ASSUMES that the testcase always is located in the separate "testcase" sub directory
+    /** @todo This ASSUMES that this testcase always is located in the separate "bin/additions" sub directory
      *        and that we currently always repack the Guest Additions stuff in a separate directory.
      *        Might need some more tweaking ... */
     int rc = RTPathAppend(szGuestInstallHelperDll, sizeof(szGuestInstallHelperDll),
