@@ -69,6 +69,9 @@ def _ControllerNameToBusAndType(sController):
     elif sController == "NVMe Controller":
         eBus  = vboxcon.StorageBus_PCIe;
         eType = vboxcon.StorageControllerType_NVMe;
+    elif sController == "VirtIO SCSI Controller":
+        eBus  = vboxcon.StorageBus_VirtioSCSI;
+        eType = vboxcon.StorageControllerType_VirtioSCSI;
     else:
         eBus  = vboxcon.StorageBus_Null;
         eType = vboxcon.StorageControllerType_Null;

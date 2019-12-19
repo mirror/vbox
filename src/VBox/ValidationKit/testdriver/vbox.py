@@ -4082,6 +4082,8 @@ class TestDriver(base.TestDriver):                                              
             sName = "SCSI Controller";
         elif eControllerType == vboxcon.StorageControllerType_NVMe:
             sName = "NVMe Controller";
+        elif eControllerType == vboxcon.StorageControllerType_VirtioSCSI:
+            sName = "VirtIO SCSI Controller";
         else:
             sName = "Storage Controller";
         return sName;
