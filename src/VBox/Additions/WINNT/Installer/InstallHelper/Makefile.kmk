@@ -30,14 +30,13 @@ VBoxGuestInstallHelper_TEMPLATE = VBoxGuestR3Dll
 #Installation is required for repacking Guest Additions
 VBoxGuestInstallHelper_INST     = repack/resources/VBoxGuestInstallHelper/
 ifdef VBOX_SIGN_ADDITIONS # (See the parent makefile.)
- VBoxGuestInstallHelper_INSTTYPE = stage
+ VBoxGuestInstallHelper_INSTTYPE       = stage
  VBoxGuestInstallHelper_DEBUG_INSTTYPE = both
 endif
-VBoxGuestInstallHelper_DEFS     = _WIN32_WINNT=0x0400 WIN32_LEAN_AND_MEAN=1
+VBoxGuestInstallHelper_DEFS         = _WIN32_WINNT=0x0400 WIN32_LEAN_AND_MEAN=1 UNICODE _UNICODE
 VBoxGuestInstallHelper_BLD_TRG_ARCH = x86
 VBoxGuestInstallHelper_SOURCES  = \
 	VBoxGuestInstallHelper.cpp \
 	VBoxGuestInstallHelper.rc
 
 include $(FILE_KBUILD_SUB_FOOTER)
-

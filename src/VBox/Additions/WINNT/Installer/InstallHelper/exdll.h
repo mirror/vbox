@@ -71,7 +71,7 @@ typedef UINT_PTR (*NSISPLUGINCALLBACK)(enum NSPIM);
 typedef struct _stack_t
 {
     struct _stack_t *next;
-    char text[1]; // this should be the length of string_size
+    TCHAR text[1]; // this should be the length of string_size
 } stack_t;
 
 // extra_parameters data structures containing other interesting stuff
@@ -105,12 +105,7 @@ typedef struct
 
 static unsigned int g_stringsize;
 static stack_t **g_stacktop;
-static char *g_variables;
-
-static int __stdcall popstring(char *str) UNUSED; // 0 on success, 1 on empty stack
-static void __stdcall pushstring(const char *str) UNUSED;
-static char * __stdcall getuservariable(const int varnum) UNUSED;
-static void __stdcall setuservariable(const int varnum, const char *var) UNUSED;
+static TCHAR *g_variables;
 
 enum
 {
@@ -143,39 +138,38 @@ __INST_LAST
 };
 
 // utility functions (not required but often useful)
-static int __stdcall popstring(char *str)
+int popstringn(TCHAR *str, int maxlen)
 {
   stack_t *th;
-  if (!g_stacktop || !*g_stacktop)
-      return 1;
+  if (!g_stacktop || !*g_stacktop) return 1;
   th=(*g_stacktop);
-  lstrcpyA(str,th->text);
+  if (str) lstrcpyn(str,th->text,maxlen?maxlen:g_stringsize);
   *g_stacktop = th->next;
   GlobalFree((HGLOBAL)th);
   return 0;
 }
 
-static void __stdcall pushstring(const char *str)
+static void __stdcall pushstring(const TCHAR *str)
 {
   stack_t *th;
   if (!g_stacktop)
       return;
   th=(stack_t*)GlobalAlloc(GPTR,sizeof(stack_t)+g_stringsize);
-  lstrcpynA(th->text,str,g_stringsize);
+  lstrcpyn(th->text,str,g_stringsize);
   th->next=*g_stacktop;
   *g_stacktop=th;
 }
 
-static char * __stdcall getuservariable(const int varnum)
+static TCHAR* __stdcall getuservariable(const int varnum)
 {
   if (varnum < 0 || varnum >= __INST_LAST)
       return NULL;
   return g_variables+varnum*g_stringsize;
 }
 
-static void __stdcall setuservariable(const int varnum, const char *var)
+static void __stdcall setuservariable(const int varnum, const TCHAR *var)
 {
     if (var != NULL && varnum >= 0 && varnum < __INST_LAST)
-        lstrcpyA(g_variables + varnum*g_stringsize, var);
+        lstrcpy(g_variables + varnum*g_stringsize, var);
 }
 #endif /* !GA_INCLUDED_SRC_WINNT_Installer_InstallHelper_exdll_h */

@@ -570,9 +570,15 @@ Function ${un}GetFileArchitecture
 
 found:
 
+  ${LogVerbose} "Getting architecture of file $\"$0$\" ..."
+
   VBoxGuestInstallHelper::FileGetArchitecture "$0"
+
   ; Stack: <architecture> $1 $0
   Pop  $0 ; Get architecture string
+
+  ${LogVerbose} "Architecture is: $0"
+
   Pop  $1 ; Restore $1
   Exch $0 ; Restore $0, push vendor on top of stack
   Goto end
