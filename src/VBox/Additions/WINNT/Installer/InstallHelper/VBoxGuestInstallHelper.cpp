@@ -61,7 +61,6 @@ typedef DWORD (WINAPI *PFNSFCFILEEXCEPTION)(DWORD param1, PWCHAR param2, DWORD p
 *********************************************************************************************************************************/
 HINSTANCE               g_hInstance;
 HWND                    g_hwndParent;
-PFNSFCFILEEXCEPTION     g_pfnSfcFileException = NULL;
 
 /**
  * @todo Clean up this DLL, use more IPRT in here!
@@ -240,47 +239,44 @@ VBOXINSTALLHELPER_EXPORT DisableWFP(HWND hwndParent, int string_size, TCHAR *var
     int rc = vboxPopString(szFile, sizeof(szFile) / sizeof(TCHAR));
     if (RT_SUCCESS(rc))
     {
-        HMODULE hSFCNative = NULL; /* Native fallback. */
-
         RTLDRMOD hSFC;
-        rc = RTLdrLoadSystem("sfc_os.dll", true /* fNoUnload */, &hSFC);
+        rc = RTLdrLoadSystem("sfc_os.dll", false /* fNoUnload */, &hSFC);
         if (RT_SUCCESS(rc))
         {
-            rc = RTLdrGetSymbol(hSFC, "SfcFileException", (void **)&g_pfnSfcFileException);
+            PFNSFCFILEEXCEPTION pfnSfcFileException = NULL;
+            rc = RTLdrGetSymbol(hSFC, "SfcFileException", (void **)&pfnSfcFileException);
             if (RT_FAILURE(rc))
             {
-                hSFCNative = (HMODULE)RTLdrGetNativeHandle(hSFC);
+                /* Native fallback. */
+                HMODULE hSFCNative = (HMODULE)RTLdrGetNativeHandle(hSFC);
 
                 /* If we didn't get the proc address with the call above, try it harder with
                  * the (zero based) index of the function list (ordinal). */
-                g_pfnSfcFileException = (PFNSFCFILEEXCEPTION)GetProcAddress(hSFCNative, (LPCSTR)5);
-                if (g_pfnSfcFileException)
+                pfnSfcFileException = (PFNSFCFILEEXCEPTION)GetProcAddress(hSFCNative, (LPCSTR)5);
+                if (pfnSfcFileException)
                     rc = VINF_SUCCESS;
+            }
+
+            if (RT_SUCCESS(rc))
+            {
+#ifndef UNICODE
+                WCHAR *pwszFile;
+                rc = vboxChar2WCharAlloc(szFile, &pwszFile);
+                if (RT_SUCCESS(rc))
+                {
+#else
+                    TCHAR *pwszFile = szFile;
+#endif
+                    if (pfnSfcFileException(0, pwszFile, UINT32_MAX) != 0)
+                        rc = VERR_ACCESS_DENIED; /** @todo Find a better rc. */
+#ifndef UNICODE
+                    vboxChar2WCharFree(pwszFile);
+                }
+#endif
             }
 
             RTLdrClose(hSFC);
         }
-
-        if (RT_SUCCESS(rc))
-        {
-#ifndef UNICODE
-            WCHAR *pwszFile;
-            rc = vboxChar2WCharAlloc(szFile, &pwszFile);
-            if (RT_SUCCESS(rc))
-            {
-#else
-                TCHAR *pwszFile = szFile;
-#endif
-                if (g_pfnSfcFileException(0, pwszFile, UINT32_MAX) != 0)
-                    rc = VERR_ACCESS_DENIED; /** @todo Find a better rc. */
-#ifndef UNICODE
-                vboxChar2WCharFree(pwszFile);
-            }
-#endif
-        }
-
-        if (hSFCNative)
-            FreeLibrary(hSFCNative);
     }
 
     vboxPushRcAsString(rc);
@@ -511,8 +507,29 @@ VBOXINSTALLHELPER_EXPORT VBoxTrayShowBallonMsg(HWND hwndParent, int string_size,
 
 BOOL WINAPI DllMain(HANDLE hInst, ULONG uReason, LPVOID pReserved)
 {
-    RT_NOREF(uReason, pReserved);
+    RT_NOREF(pReserved);
+
     g_hInstance = (HINSTANCE)hInst;
+
+    switch (uReason)
+    {
+        case DLL_PROCESS_ATTACH:
+            RTR3InitDll(RTR3INIT_FLAGS_UNOBTRUSIVE);
+            break;
+
+        case DLL_PROCESS_DETACH:
+            break;
+
+        case DLL_THREAD_ATTACH:
+            break;
+
+        case DLL_THREAD_DETACH:
+            break;
+
+        default:
+            break;
+    }
+
     return TRUE;
 }
 
