@@ -220,24 +220,6 @@ static int vboxChar2WCharAlloc(const TCHAR *pszString, PWCHAR *ppwString)
 #endif /* !UNICODE */
 
 /**
- * Loads a system DLL.
- *
- * @returns Module handle or NULL
- * @param   pszName             The DLL name.
- */
-static HMODULE loadSystemDll(const char *pszName)
-{
-    char   szPath[MAX_PATH];
-    UINT   cchPath = GetSystemDirectoryA(szPath, sizeof(szPath));
-    size_t cbName  = strlen(pszName) + 1;
-    if (cchPath + 1 + cbName > sizeof(szPath))
-        return NULL;
-    szPath[cchPath] = '\\';
-    memcpy(&szPath[cchPath + 1], pszName, cbName);
-    return LoadLibraryA(szPath);
-}
-
-/**
  * Disables the Windows File Protection for a specified file
  * using an undocumented SFC API call. Don't try this at home!
  *
@@ -258,21 +240,26 @@ VBOXINSTALLHELPER_EXPORT DisableWFP(HWND hwndParent, int string_size, TCHAR *var
     int rc = vboxPopString(szFile, sizeof(szFile) / sizeof(TCHAR));
     if (RT_SUCCESS(rc))
     {
-        HMODULE hSFC = loadSystemDll("sfc_os.dll"); /** @todo Replace this by RTLdr APIs. */
-        if (NULL != hSFC)
+        HMODULE hSFCNative = NULL; /* Native fallback. */
+
+        RTLDRMOD hSFC;
+        rc = RTLdrLoadSystem("sfc_os.dll", true /* fNoUnload */, &hSFC);
+        if (RT_SUCCESS(rc))
         {
-            g_pfnSfcFileException = (PFNSFCFILEEXCEPTION)GetProcAddress(hSFC, "SfcFileException");
-            if (g_pfnSfcFileException == NULL)
+            rc = RTLdrGetSymbol(hSFC, "SfcFileException", (void **)&g_pfnSfcFileException);
+            if (RT_FAILURE(rc))
             {
+                hSFCNative = (HMODULE)RTLdrGetNativeHandle(hSFC);
+
                 /* If we didn't get the proc address with the call above, try it harder with
-                 * the (zero based) index of the function list. */
-                g_pfnSfcFileException = (PFNSFCFILEEXCEPTION)GetProcAddress(hSFC, (LPCSTR)5);
-                if (g_pfnSfcFileException == NULL)
-                    rc = VERR_SYMBOL_NOT_FOUND;
+                 * the (zero based) index of the function list (ordinal). */
+                g_pfnSfcFileException = (PFNSFCFILEEXCEPTION)GetProcAddress(hSFCNative, (LPCSTR)5);
+                if (g_pfnSfcFileException)
+                    rc = VINF_SUCCESS;
             }
+
+            RTLdrClose(hSFC);
         }
-        else
-            rc = VERR_FILE_NOT_FOUND;
 
         if (RT_SUCCESS(rc))
         {
@@ -282,7 +269,7 @@ VBOXINSTALLHELPER_EXPORT DisableWFP(HWND hwndParent, int string_size, TCHAR *var
             if (RT_SUCCESS(rc))
             {
 #else
-            TCHAR *pwszFile = szFile;
+                TCHAR *pwszFile = szFile;
 #endif
                 if (g_pfnSfcFileException(0, pwszFile, UINT32_MAX) != 0)
                     rc = VERR_ACCESS_DENIED; /** @todo Find a better rc. */
@@ -292,8 +279,8 @@ VBOXINSTALLHELPER_EXPORT DisableWFP(HWND hwndParent, int string_size, TCHAR *var
 #endif
         }
 
-        if (hSFC)
-            FreeLibrary(hSFC);
+        if (hSFCNative)
+            FreeLibrary(hSFCNative);
     }
 
     vboxPushRcAsString(rc);
