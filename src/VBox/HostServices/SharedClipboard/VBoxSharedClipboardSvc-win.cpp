@@ -185,8 +185,8 @@ static int vboxClipboardSvcWinDataRead(PSHCLCONTEXT pCtx, UINT uFormat, void **p
         rc = ShClEventWait(&pCtx->pClient->EventSrc, uEvent, 30 * 1000, &pPayload);
         if (RT_SUCCESS(rc))
         {
-            *ppvData = pPayload->pvData;
-            *pcbData = pPayload->cbData;
+            *ppvData = pPayload ? pPayload->pvData : NULL;
+            *pcbData = pPayload ? pPayload->cbData : 0;
 
             /* Detach the payload, as the caller then will own the data. */
             ShClEventPayloadDetach(&pCtx->pClient->EventSrc, uEvent);

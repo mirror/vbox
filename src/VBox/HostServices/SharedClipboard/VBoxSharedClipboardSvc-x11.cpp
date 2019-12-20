@@ -347,8 +347,8 @@ DECLCALLBACK(int) ShClX11RequestDataForX11Callback(PSHCLCONTEXT pCtx, SHCLFORMAT
             rc = ShClEventWait(&pCtx->pClient->EventSrc, uEvent, 30 * 1000, &pPayload);
             if (RT_SUCCESS(rc))
             {
-                *ppv = pPayload->pvData;
-                *pcb = pPayload->cbData;
+                *ppv = pPayload ? pPayload->pvData : NULL;
+                *pcb = pPayload ? pPayload->cbData : 0;
 
                 /* Detach the payload, as the caller then will own the data. */
                 ShClEventPayloadDetach(&pCtx->pClient->EventSrc, uEvent);
