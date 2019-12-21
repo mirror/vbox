@@ -89,6 +89,13 @@ AssertCompile(sizeof(iconv_t) <= sizeof(void *));
 # error __FreeBSD_version__
 # endif
 #endif
+#ifdef RT_OS_NETBSD
+/* iconv constness was changed on 2019-10-24, shortly after 9.99.17 */
+# include <sys/param.h>
+# if __NetBSD_Prereq__(9,99,18)
+#  define NON_CONST_ICONV_INPUT
+# endif
+#endif
 
 
 /**
