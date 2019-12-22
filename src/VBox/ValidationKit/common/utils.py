@@ -65,6 +65,24 @@ if sys.version_info[0] >= 3:
 
 
 #
+# Strings.
+#
+
+def toUnicode(sString, encoding = None, errors = 'strict'):
+    """
+    A little like the python 2 unicode() function.
+    """
+    if sys.version_info[0] >= 3:
+        if isinstance(sString, bytes):
+            return str(sString, encoding if encoding else 'utf-8', errors);
+    else:
+        if not isinstance(sString, unicode):
+            return unicode(sString, encoding, errors);
+    return sString;
+
+
+
+#
 # Output.
 #
 
