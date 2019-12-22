@@ -61,6 +61,39 @@ class WuiTestSetLink(WuiTmLink):
                              TestSetData.ksParam_idTestSet: idTestSet, }, fBracketed = fBracketed);
         self.idTestSet = idTestSet;
 
+class WuiTestResultsForSomethingLink(WuiTmLink):
+    """  Test results link for a grouping. """
+
+    def __init__(self, sGroupedBy, idGroupMember, sName = WuiContentBase.ksShortTestResultsLink,
+                 dExtraParams = None, fBracketed = False):
+        dParams = dict(dExtraParams) if dExtraParams else dict();
+        dParams[WuiMain.ksParamAction] = sGroupedBy;
+        dParams[WuiMain.ksParamGroupMemberId] = idGroupMember;
+        WuiTmLink.__init__(self, sName, WuiMain.ksScriptName, dParams, fBracketed = fBracketed);
+
+
+class WuiTestResultsForTestBoxLink(WuiTestResultsForSomethingLink):
+    """  Test results link for a given testbox. """
+
+    def __init__(self, idTestBox, sName = WuiContentBase.ksShortTestResultsLink, dExtraParams = None, fBracketed = False):
+        WuiTestResultsForSomethingLink.__init__(self, WuiMain.ksActionResultsGroupedByTestBox, idTestBox,
+                                                sName = sName, dExtraParams = dExtraParams, fBracketed = fBracketed);
+
+
+class WuiTestResultsForTestCaseLink(WuiTestResultsForSomethingLink):
+    """  Test results link for a given testcase. """
+
+    def __init__(self, idTestCase, sName = WuiContentBase.ksShortTestResultsLink, dExtraParams = None, fBracketed = False):
+        WuiTestResultsForSomethingLink.__init__(self, WuiMain.ksActionResultsGroupedByTestCase, idTestCase,
+                                                sName = sName, dExtraParams = dExtraParams, fBracketed = fBracketed);
+
+
+class WuiTestResultsForBuildRevLink(WuiTestResultsForSomethingLink):
+    """  Test results link for a given build revision. """
+
+    def __init__(self, iRevision, sName = WuiContentBase.ksShortTestResultsLink, dExtraParams = None, fBracketed = False):
+        WuiTestResultsForSomethingLink.__init__(self, WuiMain.ksActionResultsGroupedByBuildRev, iRevision,
+                                                sName = sName, dExtraParams = dExtraParams, fBracketed = fBracketed);
 
 
 class WuiTestResult(WuiContentBase):
@@ -490,6 +523,7 @@ class WuiTestResult(WuiContentBase):
                                         TestCaseData.ksParam_idTestCase:      oTestCaseEx.idTestCase,
                                         self.oWuiAdmin.ksParamEffectiveDate:  oTestSet.tsConfig, },
                                       fBracketed = False),
+                            WuiTestResultsForTestCaseLink(oTestCaseEx.idTestCase),
                             WuiReportSummaryLink(ReportModelBase.ksSubTestCase, oTestCaseEx.idTestCase,
                                                  tsNow = tsReportEffectiveDate, fBracketed = False),
                           ]),
@@ -561,6 +595,7 @@ class WuiTestResult(WuiContentBase):
                                             BuildData.ksParam_idBuild:            oBuildEx.idBuild,
                                             self.oWuiAdmin.ksParamEffectiveDate:  oTestSet.tsCreated, },
                                           fBracketed = False),
+                                WuiTestResultsForBuildRevLink(oBuildEx.iRevision),
                                 WuiReportSummaryLink(ReportModelBase.ksSubBuild, oBuildEx.idBuild,
                                                      tsNow = tsReportEffectiveDate, fBracketed = False), ]),
             ];
@@ -612,8 +647,10 @@ class WuiTestResult(WuiContentBase):
                                       { self.oWuiAdmin.ksParamAction:     self.oWuiAdmin.ksActionTestBoxDetails,
                                         TestBoxData.ksParam_idGenTestBox: oTestSet.idGenTestBox, },
                                       fBracketed = False),
+                            WuiTestResultsForTestBoxLink(oTestBox.idTestBox),
                             WuiReportSummaryLink(ReportModelBase.ksSubTestBox, oTestSet.idTestBox,
-                                                 tsNow = tsReportEffectiveDate, fBracketed = False), ]),
+                                                 tsNow = tsReportEffectiveDate, fBracketed = False),
+                            ]),
         ];
         if oTestBox.sDescription:
             aoTestBoxRows.append([oTestBox.sDescription, ]);
