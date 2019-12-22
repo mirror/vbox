@@ -74,7 +74,7 @@ class WuiHlpForm(object):
         """Internal worker for appending text to the body."""
         assert not self._fFinalized;
         if not self._fFinalized:
-            self._sBody += unicode(sText, errors='ignore') if isinstance(sText, str) else sText;
+            self._sBody += utils.toUnicode(sText, errors='ignore');
             return True;
         return False;
 
