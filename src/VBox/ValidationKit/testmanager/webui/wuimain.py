@@ -563,9 +563,9 @@ class WuiMain(WuiDispatcherBase):
                                             WuiDispatcherBase.ksParamPageNo)
         sHrefPtr   += '%d">%s</a>'
 
-        cNumOfPages      = (cItems + cItemsPerPage - 1) / cItemsPerPage;
+        cNumOfPages      = (cItems + cItemsPerPage - 1) // cItemsPerPage;
         cPagesToDisplay  = 10
-        cPagesRangeStart = iPage - cPagesToDisplay / 2 \
+        cPagesRangeStart = iPage - cPagesToDisplay // 2 \
                            if not iPage - cPagesToDisplay / 2 < 0 else 0
         cPagesRangeEnd   = cPagesRangeStart + cPagesToDisplay \
                            if not cPagesRangeStart + cPagesToDisplay > cNumOfPages else cNumOfPages
@@ -914,7 +914,7 @@ class WuiMain(WuiDispatcherBase):
         # Add non-filter parameters as hidden fields so we can use 'GET' and have URLs to bookmark.
         self._dSideMenuFormAttrs['method'] = 'GET';
         sHtml = u'';
-        for sKey, oValue in self._oSrvGlue.getParameters().iteritems():
+        for sKey, oValue in self._oSrvGlue.getParameters().items():
             if len(sKey) > 3:
                 if hasattr(oValue, 'startswith'):
                     sHtml += u'<input type="hidden" name="%s" value="%s"/>\n' \
