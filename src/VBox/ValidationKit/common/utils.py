@@ -77,7 +77,7 @@ def toUnicode(sString, encoding = None, errors = 'strict'):
             return str(sString, encoding if encoding else 'utf-8', errors);
     else:
         if not isinstance(sString, unicode):
-            return unicode(sString, encoding, errors);
+            return unicode(sString, encoding if encoding else 'utf-8', errors);
     return sString;
 
 
