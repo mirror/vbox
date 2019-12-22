@@ -465,7 +465,7 @@ class ReportPeriodSetBase(object):
     def pruneRowsWithZeroSumHits(self):
         """ Discards rows with zero sum hits across all periods.  Works around lazy selects counting both totals and hits. """
         cDeleted = 0;
-        aidKeys  = self.dcHitsPerId.keys();
+        aidKeys  = list(self.dcHitsPerId);
         for idKey in aidKeys:
             if self.dcHitsPerId[idKey] == 0:
                 self.deleteKey(idKey);
