@@ -1283,6 +1283,28 @@ class ModelFilterBase(ModelBase):
             self._initFromParamsWorker(oDisp, oCriterion);
         return self;
 
+    def strainParameters(self, dParams, aAdditionalParams = None):
+        """ Filters just the parameters relevant to this filter, returning a copy. """
+
+        # Collect the parameter names.
+        dWanted = dict();
+        for oCrit in self.aCriteria:
+            dWanted[oCrit.sVarNm] = 1;
+            if oCrit.sInvVarNm:
+                dWanted[oCrit.sInvVarNm] = 1;
+
+        # Add additional stuff.
+        if aAdditionalParams:
+            for sParam in aAdditionalParams:
+                dWanted[sParam] = 1;
+
+        # To the straining.
+        dRet = dict();
+        for sKey in dParams:
+            if sKey in dWanted:
+                dRet[sKey] = dParams[sKey];
+        return dRet;
+
 
 class ModelLogicBase(ModelBase): # pylint: disable=too-few-public-methods
     """
