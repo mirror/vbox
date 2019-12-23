@@ -105,6 +105,11 @@ class WuiHlpBarGraph(WuiHlpGraphMatplotlibBase):
         self.fpMax = float(fpMax);
         return None;
 
+    def invertYDirection(self):
+        """ Inverts the direction of the Y-axis direction. """
+        ## @todo self.fYInverted = True;
+        return None;
+
     def renderGraph(self): # pylint: disable=too-many-locals
         aoTable  = self._oData.aoTable;
 

@@ -52,14 +52,26 @@ class WuiHlpBarGraph(WuiHlpGraphGoogleChartsBase):
         WuiHlpGraphGoogleChartsBase.__init__(self, sId, oData, oDisp);
         self.fpMax = None;
         self.fpMin = 0.0;
+        self.fYInverted = False;
 
     def setRangeMax(self, fpMax):
         """ Sets the max range."""
         self.fpMax = float(fpMax);
         return None;
 
+    def invertYDirection(self):
+        """ Inverts the direction of the Y-axis direction. """
+        self.fYInverted = True;
+        return None;
+
     def renderGraph(self):
         aoTable = self._oData.aoTable; # type: WuiHlpGraphDataTable
+
+        # Seems material (google.charts.Bar) cannot change the direction on the Y-axis,
+        # so we cannot get bars growing downwards from the top like we want for the
+        # reports.  The classic charts OTOH cannot put X-axis labels on the top, but
+        # we just drop them all together instead, saving a little space.
+        fUseMaterial = False;
 
         # Unique on load function.
         global g_cGraphs;
@@ -80,12 +92,18 @@ class WuiHlpBarGraph(WuiHlpGraphGoogleChartsBase):
                  '         "hAxis": {\n' \
                  '             "title": "%s",\n' \
                  '         },\n' \
-                 '    };\n' \
+                 '         "vAxis": {\n' \
+                 '             "direction": %s,\n' \
+                 '         },\n' \
                 % ( iGraph,
                     iGraph,
                     webutils.escapeAttrJavaScriptStringDQ(self._sTitle) if self._sTitle is not None else '',
                     webutils.escapeAttrJavaScriptStringDQ(aoTable[0].sName) if aoTable and aoTable[0].sName else '',
+                    '-1' if self.fYInverted else '1',
                   );
+        if fUseMaterial and self.fYInverted:
+            sHtml +=  '        "axes": { "x": { 0: { "side": "top" } }, "y": { "0": { "direction": -1, }, }, },\n';
+        sHtml += '    };\n';
 
         # The data.
         if self._oData.fHasStringValues and len(aoTable) > 1:
@@ -103,7 +121,10 @@ class WuiHlpBarGraph(WuiHlpGraphGoogleChartsBase):
             # The data rows.
             sHtml += '    oData.addRows([\n';
             for oRow in aoTable[1:]:
-                sRow = '        [ "%s"' % (webutils.escapeAttrJavaScriptStringDQ(oRow.sName),);
+                if oRow.sName:
+                    sRow = '        [ "%s"' % (webutils.escapeAttrJavaScriptStringDQ(oRow.sName),);
+                else:
+                    sRow = '        [ null';
                 for iValue, oValue in enumerate(oRow.aoValues):
                     if not utils.isString(oValue):
                         sRow += ', %s' % (oValue,);
@@ -128,9 +149,14 @@ class WuiHlpBarGraph(WuiHlpGraphGoogleChartsBase):
             sHtml += '    ]);\n';
 
         # Create and draw.
-        sHtml += '    oGraph = new google.visualization.ColumnChart(document.getElementById("%s"));\n' \
-                 '    oGraph.draw(oData, dGraphOptions);\n' \
-               % ( self._sId, );
+        if not fUseMaterial:
+            sHtml += '    oGraph = new google.visualization.ColumnChart(document.getElementById("%s"));\n' \
+                     '    oGraph.draw(oData, dGraphOptions);\n' \
+                   % ( self._sId, );
+        else:
+            sHtml += '    oGraph = new google.charts.Bar(document.getElementById("%s"));\n' \
+                     '    oGraph.draw(oData, google.charts.Bar.convertOptions(dGraphOptions));\n' \
+                   % ( self._sId, );
 
         # clean and return.
         sHtml += '    oData = null;\n' \

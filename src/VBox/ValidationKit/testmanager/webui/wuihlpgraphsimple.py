@@ -50,6 +50,10 @@ class WuiHlpBarGraph(WuiHlpGraphBase):
         self.fpMax = float(fpMax);
         return None;
 
+    def invertYDirection(self):
+        """ Not supported. """
+        return None;
+
     def renderGraph(self):
         aoTable  = self._oData.aoTable;
         sReport  = '<div class="tmbargraph">\n';
