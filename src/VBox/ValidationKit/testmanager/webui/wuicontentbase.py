@@ -273,19 +273,19 @@ class WuiContentBase(object): # pylint: disable=too-few-public-methods
     ## HTML hex entity string for ksShortDetailsLink.
     ksShortEditLinkHtml    = '&#x270d;'
     ## The text/symbol for a very short details link.
-    ksShortDetailsLink     = u'\U0001f6c8'
+    ksShortDetailsLink     = u'\U0001f6c8\ufe0e'
     ## HTML hex entity string for ksShortDetailsLink.
-    ksShortDetailsLinkHtml =    '&#x1f6c8;'
+    ksShortDetailsLinkHtml =    '&#x1f6c8;;&#xfe0e;'
     ## The text/symbol for a very short change log / details / previous page link.
     ksShortChangeLogLink   = u'\u2397'
     ## HTML hex entity string for ksShortDetailsLink.
     ksShortChangeLogLinkHtml = '&#x2397;'
     ## The text/symbol for a very short reports link.
-    ksShortReportLink      = u'\U0001f4ca'
+    ksShortReportLink      = u'\U0001f4ca\ufe0e'
     ## HTML hex entity string for ksShortReportLink.
-    ksShortReportLinkHtml  =    '&#x1f4ca;'
+    ksShortReportLinkHtml  =    '&#x1f4ca;&#xfe0e;'
     ## The text/symbol for a very short test results link.
-    ksShortTestResultsLink = u'\U0001f5d0'
+    ksShortTestResultsLink = u'\U0001f5d0\ufe0e'
 
 
     def __init__(self, fnDPrint = None, oDisp = None):
