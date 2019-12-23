@@ -173,28 +173,43 @@ class WuiReportSuccessRate(WuiReportBase):
 
     def generateReportBody(self):
         self._sTitle = 'Success rate';
+        fTailoredForGoogleCharts = True;
 
         adPeriods = self._oModel.getSuccessRates();
 
         sReport = '';
 
-        oTable = WuiHlpGraphDataTable('Period', [ 'Succeeded', 'Skipped', 'Failed' ]);
+        oTable = WuiHlpGraphDataTable('When', [ 'Succeeded', 'Skipped', 'Failed' ]);
 
         #for i in range(len(adPeriods) - 1, -1, -1):
         for i, dStatuses in enumerate(adPeriods):
-            cSuccess  = dStatuses[ReportModelBase.ksTestStatus_Success] + dStatuses[ReportModelBase.ksTestStatus_Skipped];
-            cTotal    = cSuccess + dStatuses[ReportModelBase.ksTestStatus_Failure];
+            cSuccesses = dStatuses[ReportModelBase.ksTestStatus_Success];
+            cFailures  = dStatuses[ReportModelBase.ksTestStatus_Failure];
+            cSkipped   = dStatuses[ReportModelBase.ksTestStatus_Skipped];
+
+            cSuccess  = cSuccesses + cSkipped;
+            cTotal    = cSuccess + cFailures;
             sPeriod   = self._oModel.getPeriodDesc(i);
-            if cTotal > 0:
+            if fTailoredForGoogleCharts:
                 oTable.addRow(sPeriod,
-                              [ dStatuses[ReportModelBase.ksTestStatus_Success] * 100 // cTotal,
-                                dStatuses[ReportModelBase.ksTestStatus_Skipped] * 100 // cTotal,
-                                dStatuses[ReportModelBase.ksTestStatus_Failure] * 100 // cTotal, ],
-                              [ self.fmtPctWithHits(dStatuses[ReportModelBase.ksTestStatus_Success], cTotal),
-                                self.fmtPctWithHits(dStatuses[ReportModelBase.ksTestStatus_Skipped], cTotal),
-                                self.fmtPctWithHits(dStatuses[ReportModelBase.ksTestStatus_Failure], cTotal), ]);
+                              [ cSuccesses * 100 // cTotal if cTotal else 0,
+                                cSkipped   * 100 // cTotal if cTotal else 0,
+                                cFailures  * 100 // cTotal if cTotal else 0, ],
+                              [ self.fmtPct(cSuccesses, cTotal) if cSuccesses else None,
+                                self.fmtPct(cSkipped,   cTotal) if cSkipped   else None,
+                                self.fmtPct(cFailures,  cTotal) if cFailures  else None, ]);
+
             else:
-                oTable.addRow(sPeriod, [ 0, 0, 0 ], [ '0%', '0%', '0%' ]);
+                if cTotal > 0:
+                    oTable.addRow(sPeriod,
+                                  [ cSuccesses * 100 // cTotal,
+                                    cSkipped * 100 // cTotal,
+                                    cFailures * 100 // cTotal, ],
+                                  [ self.fmtPctWithHits(cSuccesses, cTotal),
+                                    self.fmtPctWithHits(cSkipped, cTotal),
+                                    self.fmtPctWithHits(cFailures, cTotal), ]);
+                else:
+                    oTable.addRow(sPeriod, [ 0, 0, 0 ], [ '0%', '0%', '0%' ]);
 
         cTotalNow  = adPeriods[0][ReportModelBase.ksTestStatus_Success];
         cTotalNow += adPeriods[0][ReportModelBase.ksTestStatus_Skipped];
@@ -210,6 +225,24 @@ class WuiReportSuccessRate(WuiReportBase):
         oGraph = WuiHlpBarGraph('success-rate', oTable, self._oDisp);
         oGraph.setRangeMax(100);
         sReport += oGraph.renderGraph();
+
+        #
+        # Graph with absolute counts.
+        #
+        if fTailoredForGoogleCharts:
+            oTable = WuiHlpGraphDataTable(None, [ 'Succeeded', 'Skipped', 'Failed' ]);
+            for i, dStatuses in enumerate(adPeriods):
+                cSuccesses = dStatuses[ReportModelBase.ksTestStatus_Success];
+                cFailures  = dStatuses[ReportModelBase.ksTestStatus_Failure];
+                cSkipped   = dStatuses[ReportModelBase.ksTestStatus_Skipped];
+
+                oTable.addRow(self._oModel.getPeriodDesc(i),
+                              [ cSuccesses, cSkipped, cFailures, ],
+                              [ str(cSuccesses) if cSuccesses > 0 else None,
+                                str(cSkipped) if cSkipped > 0 else None,
+                                str(cFailures) if cFailures > 0 else None, ]);
+            oGraph = WuiHlpBarGraph('success-numbers', oTable, self._oDisp);
+            sReport += oGraph.renderGraph();
 
         return sReport;
 
