@@ -206,11 +206,12 @@ class ReportModelBase(ModelLogicBase): # pylint: disable=too-few-public-methods
         """
         if iPeriod == 0:
             return 'now' if self.tsNow is None else 'then';
+        sTerm = 'ago' if self.tsNow is None else 'earlier';
         if self.cHoursPerPeriod == 24:
-            return '%dd ago' % (iPeriod, );
+            return '%dd %s' % (iPeriod, sTerm, );
         if (iPeriod * self.cHoursPerPeriod) % 24 == 0:
-            return '%dd ago' % (iPeriod * self.cHoursPerPeriod / 24, );
-        return '%dh ago' % (iPeriod * self.cHoursPerPeriod, );
+            return '%dd %s' % (iPeriod * self.cHoursPerPeriod / 24, sTerm, );
+        return '%dh %s' % (iPeriod * self.cHoursPerPeriod, sTerm);
 
     def getStraightPeriodDesc(self, iPeriod):
         """
