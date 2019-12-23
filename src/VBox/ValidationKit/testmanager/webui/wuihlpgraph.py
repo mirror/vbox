@@ -47,9 +47,12 @@ class WuiHlpGraphDataTable(object): # pylint: disable=too-few-public-methods
 
     def __init__(self, sGroupLable, asMemberLabels):
         self.aoTable = [ WuiHlpGraphDataTable.Row(sGroupLable, asMemberLabels), ];
+        self.fHasStringValues = False;
 
     def addRow(self, sGroup, aoValues, asValues = None):
         """Adds a row to the data table."""
+        if asValues:
+            self.fHasStringValues = True;
         self.aoTable.append(WuiHlpGraphDataTable.Row(sGroup, aoValues, asValues));
         return True;
 

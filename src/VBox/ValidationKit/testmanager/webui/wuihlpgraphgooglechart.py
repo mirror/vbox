@@ -29,9 +29,8 @@ terms and conditions of either the GPL or the CDDL or both.
 __version__ = "$Revision$"
 
 # Validation Kit imports.
-from common                             import webutils;
+from common                             import utils, webutils;
 from testmanager.webui.wuihlpgraphbase  import WuiHlpGraphBase;
-from testmanager.webui                  import wuihlpgraphsimple;
 
 
 #*******************************************************************************
@@ -44,8 +43,103 @@ class WuiHlpGraphGoogleChartsBase(WuiHlpGraphBase):
     pass;                               # pylint: disable=unnecessary-pass
 
 
-## @todo bar graphs later.
-WuiHlpBarGraph = wuihlpgraphsimple.WuiHlpBarGraph;
+class WuiHlpBarGraph(WuiHlpGraphGoogleChartsBase):
+    """
+    Bar graph.
+    """
+
+    def __init__(self, sId, oData, oDisp = None):
+        WuiHlpGraphGoogleChartsBase.__init__(self, sId, oData, oDisp);
+        self.fpMax = None;
+        self.fpMin = 0.0;
+
+    def setRangeMax(self, fpMax):
+        """ Sets the max range."""
+        self.fpMax = float(fpMax);
+        return None;
+
+    def renderGraph(self):
+        aoTable = self._oData.aoTable; # type: WuiHlpGraphDataTable
+
+        # Unique on load function.
+        global g_cGraphs;
+        iGraph = g_cGraphs;
+        g_cGraphs += 1;
+
+        sHtml  = '<div id="%s">\n' % ( self._sId, );
+        sHtml += '<script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>\n' \
+                 '<script type="text/javascript">\n' \
+                 'google.charts.load("current", { packages: ["corechart", "bar"] });\n' \
+                 'google.setOnLoadCallback(tmDrawBarGraph%u);\n' \
+                 'function tmDrawBarGraph%u()\n' \
+                 '{\n' \
+                 '    var oGraph;\n' \
+                 '    var dGraphOptions = \n' \
+                 '    {\n' \
+                 '         "title":     "%s",\n' \
+                 '         "hAxis": {\n' \
+                 '             "title": "%s",\n' \
+                 '         },\n' \
+                 '    };\n' \
+                % ( iGraph,
+                    iGraph,
+                    webutils.escapeAttrJavaScriptStringDQ(self._sTitle) if self._sTitle is not None else '',
+                    webutils.escapeAttrJavaScriptStringDQ(aoTable[0].sName) if aoTable and aoTable[0].sName else '',
+                  );
+
+        # The data.
+        if self._oData.fHasStringValues and len(aoTable) > 1:
+            sHtml += '    var oData = new google.visualization.DataTable();\n';
+            # Column definitions.
+            sHtml += '    oData.addColumn("string", "%s");\n' \
+                   % (webutils.escapeAttrJavaScriptStringDQ(aoTable[0].sName) if aoTable[0].sName else '',);
+            for iValue, oValue in enumerate(aoTable[0].aoValues):
+                oSampleValue = aoTable[1].aoValues[iValue];
+                if utils.isString(oSampleValue):
+                    sHtml += '    oData.addColumn("string", "%s");\n' % (webutils.escapeAttrJavaScriptStringDQ(oValue),);
+                else:
+                    sHtml += '    oData.addColumn("number", "%s");\n' % (webutils.escapeAttrJavaScriptStringDQ(oValue),);
+                sHtml += '    oData.addColumn({type: "string", role: "annotation"});\n';
+            # The data rows.
+            sHtml += '    oData.addRows([\n';
+            for oRow in aoTable[1:]:
+                sRow = '        [ "%s"' % (webutils.escapeAttrJavaScriptStringDQ(oRow.sName),);
+                for iValue, oValue in enumerate(oRow.aoValues):
+                    if not utils.isString(oValue):
+                        sRow += ', %s' % (oValue,);
+                    else:
+                        sRow += ', "%s"' % (webutils.escapeAttrJavaScriptStringDQ(oValue),);
+                    if oRow.asValues[iValue]:
+                        sRow += ', "%s"' % (webutils.escapeAttrJavaScriptStringDQ(oRow.asValues[iValue]),);
+                    else:
+                        sRow += ', null';
+                sHtml += sRow + '],\n';
+            sHtml += '    ]);\n';
+        else:
+            sHtml += '    var oData = google.visualization.arrayToDataTable([\n';
+            for oRow in aoTable:
+                sRow = '        [ "%s"' % (webutils.escapeAttrJavaScriptStringDQ(oRow.sName),);
+                for oValue in oRow.aoValues:
+                    if utils.isString(oValue):
+                        sRow += ', "%s"' % (webutils.escapeAttrJavaScriptStringDQ(oValue),);
+                    else:
+                        sRow += ', %s' % (oValue,);
+                sHtml += sRow + '],\n';
+            sHtml += '    ]);\n';
+
+        # Create and draw.
+        sHtml += '    oGraph = new google.visualization.ColumnChart(document.getElementById("%s"));\n' \
+                 '    oGraph.draw(oData, dGraphOptions);\n' \
+               % ( self._sId, );
+
+        # clean and return.
+        sHtml += '    oData = null;\n' \
+                 '    return true;\n' \
+                 '};\n';
+
+        sHtml += '</script>\n' \
+                 '</div>\n';
+        return sHtml;
 
 
 class WuiHlpLineGraph(WuiHlpGraphGoogleChartsBase):
