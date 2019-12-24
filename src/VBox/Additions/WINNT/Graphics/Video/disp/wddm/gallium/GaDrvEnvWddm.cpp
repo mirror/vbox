@@ -252,6 +252,7 @@ GaDrvEnvWddm::gaEnvWddmSurfaceDestroy(void *pvEnv,
 
     ddiEscape.hDevice               = 0; // pThis->mWddmCallbacks.hDevice;
     ddiEscape.Flags.Value           = 0;
+    ddiEscape.Flags.HardwareAccess  = 1; /// @todo Remove when the miniport has the ref counting for the host objects
     ddiEscape.pPrivateDriverData    = &data;
     ddiEscape.PrivateDriverDataSize = sizeof(data);
     ddiEscape.hContext              = 0;
