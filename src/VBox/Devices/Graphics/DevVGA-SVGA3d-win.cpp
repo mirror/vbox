@@ -2660,6 +2660,8 @@ int vmsvga3dContextDestroy(PVGASTATECC pThisCC, uint32_t cid)
         Log(("vmsvga3dContextDestroy id %x\n", cid));
 
         /* Cleanup the device runtime state. */
+        if (pContext->pDevice)
+            pContext->pDevice->SetVertexDeclaration(NULL);
         D3D_RELEASE(pContext->d3dState.pVertexDecl);
 
         /* Check for all surfaces that are associated with this context to remove all dependencies */
@@ -2937,10 +2939,12 @@ int vmsvga3dChangeMode(PVGASTATECC pThisCC)
             }
 #endif /* #ifdef VMSVGA3D_DIRECT3D9_RESET */
 
+            AssertReturn(pContext->pDevice, VERR_INTERNAL_ERROR);
+
             /* Cleanup the device runtime state. */
+            pContext->pDevice->SetVertexDeclaration(NULL);
             D3D_RELEASE(pContext->d3dState.pVertexDecl);
 
-            AssertReturn(pContext->pDevice, VERR_INTERNAL_ERROR);
             hr = pContext->pDevice->GetViewport(&viewportOrg);
             AssertMsgReturn(hr == D3D_OK, ("vmsvga3dChangeMode: GetViewport failed with %x\n", hr), VERR_INTERNAL_ERROR);
 
@@ -5179,21 +5183,25 @@ int vmsvga3dDrawPrimitives(PVGASTATECC pThisCC, uint32_t cid, uint32_t numVertex
     }
     else
     {
+        /* Create and set the vertex declaration. */
+        IDirect3DVertexDeclaration9 *pVertexDecl;
+        hr = pContext->pDevice->CreateVertexDeclaration(&aVertexElements[0], &pVertexDecl);
+        AssertMsgReturn(hr == D3D_OK, ("CreateVertexDeclaration failed with %x\n", hr), VERR_INTERNAL_ERROR);
+
+        hr = pContext->pDevice->SetVertexDeclaration(pVertexDecl);
+        AssertMsgReturnStmt(hr == D3D_OK, ("SetVertexDeclaration failed with %x\n", hr),
+                            D3D_RELEASE(pVertexDecl),
+                            VERR_INTERNAL_ERROR);
+
+        /* The new vertex declaration has been successfully set. Delete the old one. */
         D3D_RELEASE(pContext->d3dState.pVertexDecl);
 
+        /* Remember the new vertext declaration. */
+        pContext->d3dState.pVertexDecl = pVertexDecl;
         pContext->d3dState.cVertexElements = numVertexDecls + 1;
         memcpy(pContext->d3dState.aVertexElements,
                aVertexElements,
                pContext->d3dState.cVertexElements * sizeof(aVertexElements[0]));
-
-        /* Create and set the vertex declaration. */
-        hr = pContext->pDevice->CreateVertexDeclaration(&aVertexElements[0], &pContext->d3dState.pVertexDecl);
-        AssertMsgReturn(hr == D3D_OK, ("CreateVertexDeclaration failed with %x\n", hr), VERR_INTERNAL_ERROR);
-
-        hr = pContext->pDevice->SetVertexDeclaration(pContext->d3dState.pVertexDecl);
-        AssertMsgReturnStmt(hr == D3D_OK, ("SetVertexDeclaration failed with %x\n", hr),
-                            D3D_RELEASE(pContext->d3dState.pVertexDecl),
-                            VERR_INTERNAL_ERROR);
     }
 
     /* Begin a scene before rendering anything. */
@@ -5299,8 +5307,10 @@ int vmsvga3dDrawPrimitives(PVGASTATECC pThisCC, uint32_t cid, uint32_t numVertex
 
     /* Cleanup. */
     uint32_t i;
-    /* Clear streams above 1 as they might accidentally be reused in the future. */
-    for (i = 1; i < iCurrentStreamId; ++i)
+    /* Clear all streams, because they are set at the beginning of this function anyway.
+     * Now the vertex buffers can be safely deleted/recreated if necessary.
+     */
+    for (i = 0; i < iCurrentStreamId; ++i)
     {
         LogFunc(("clear stream %d\n", i));
         HRESULT hr2 = pContext->pDevice->SetStreamSource(i, NULL, 0, 0);
