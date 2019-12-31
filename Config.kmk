@@ -2050,7 +2050,12 @@ endif
 
 
 # Intel ASL compiler for ACPI
+$(warning KBUILD_HOST:=$(KBUILD_HOST) KBUILD_HOST_VERSION_MAJOR=$(KBUILD_HOST_VERSION_MAJOR) VBOX_IASLCMD=$(VBOX_IASLCMD))
+if "$(KBUILD_HOST)" == "darwin" && "$(KBUILD_HOST_VERSION_MAJOR)" >= 19  # Temp hack! Catalina needs 64-bit binary
+VBOX_IASLCMD   ?= /opt/local/bin/iasl$(HOSTSUFF_EXE)
+else
 VBOX_IASLCMD   ?= $(firstword $(wildcard $(KBUILD_DEVTOOLS_HST)/bin/iasl$(HOSTSUFF_EXE)) iasl$(HOSTSUFF_EXE))
+endif
 
 # libxslt XSLT processor. (see PATH_TOOL_YASM for explanation why it's temporarily located in bin.)
 ifeq ($(VBOX_XSLTPROC),)
