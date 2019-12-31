@@ -2317,9 +2317,6 @@ VBOX_PATH_MACOSX_SDK := $(firstword $(wildcard $(addsuffix /MacOSX$(VBOX_DEF_MAC
    endif
   endif
   ifdef VBOX_WITH_NEW_XCODE
-   if defined(VBOX_WITH_REM) && "$(VBOX_XCODE_VERSION)" >= "4.2"
-    $(warning Xcode $(VBOX_XCODE_VERSION) is not able to correctly build the recompiler! Please disable it: 'VBOX_WITH_REM=')
-   endif
    ifdef KBUILD_USE_KOBJCACHE
     $(warning KBUILD_USE_KOBJCACHE does _not_ currently work with this version of Xcode)
    endif
