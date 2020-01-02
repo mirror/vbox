@@ -755,7 +755,7 @@ static DECLCALLBACK(VBOXSTRICTRC) picIOPortElcrWrite(PPDMDEVINS pDevIns, void *p
 /**
  * @callback_method_impl{FNDBGFHANDLERDEV}
  */
-static DECLCALLBACK(void) picIR3nfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *pszArgs)
+static DECLCALLBACK(void) picR3Info(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *pszArgs)
 {
     PDEVPIC pThis = PDMDEVINS_2_DATA(pDevIns, PDEVPIC);
     NOREF(pszArgs);
@@ -956,7 +956,7 @@ static DECLCALLBACK(int)  picR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
     /*
      * Register the info item.
      */
-    PDMDevHlpDBGFInfoRegister(pDevIns, "pic", "PIC info.", picIR3nfo);
+    PDMDevHlpDBGFInfoRegister(pDevIns, "pic", "PIC info.", picR3Info);
 
     /*
      * Initialize the device state.
