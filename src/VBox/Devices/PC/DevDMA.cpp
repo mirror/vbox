@@ -921,6 +921,67 @@ static DECLCALLBACK(int) dmaR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint
     return dmaR3LoadController(pHlp, pSSM, &pThis->DMAC[1], uVersion);
 }
 
+/** @callback_method_impl{FNDBGFHANDLERDEV} */
+static DECLCALLBACK(void) dmaR3Info(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *pszArgs)
+{
+    PDMASTATE       pThis = PDMDEVINS_2_DATA(pDevIns, PDMASTATE);
+    NOREF(pszArgs);
+
+    /*
+     * Show info.
+     */
+    for (unsigned i = 0; i < RT_ELEMENTS(pThis->DMAC); i++)
+    {
+        PDMACONTROLLER  pDmac = &pThis->DMAC[i];
+
+        pHlp->pfnPrintf(pHlp, "\nDMAC%d:\n", i);
+        pHlp->pfnPrintf(pHlp, " Status : %02X - DRQ 3210  TC 3210\n", pDmac->u8Status);
+        pHlp->pfnPrintf(pHlp, "                   %u%u%u%u     %u%u%u%u\n",
+                        !!(pDmac->u8Status & RT_BIT(7)), !!(pDmac->u8Status & RT_BIT(6)),
+                        !!(pDmac->u8Status & RT_BIT(5)), !!(pDmac->u8Status & RT_BIT(4)),
+                        !!(pDmac->u8Status & RT_BIT(3)), !!(pDmac->u8Status & RT_BIT(2)),
+                        !!(pDmac->u8Status & RT_BIT(1)), !!(pDmac->u8Status & RT_BIT(0)));
+        pHlp->pfnPrintf(pHlp, " Mask   : %02X - Chn 3210\n", pDmac->u8Mask);
+        pHlp->pfnPrintf(pHlp, "                   %u%u%u%u\n",
+                        !!(pDmac->u8Mask & RT_BIT(3)), !!(pDmac->u8Mask & RT_BIT(2)),
+                        !!(pDmac->u8Mask & RT_BIT(1)), !!(pDmac->u8Mask & RT_BIT(0)));
+        pHlp->pfnPrintf(pHlp, " Temp   : %02x\n", pDmac->u8Temp);
+        pHlp->pfnPrintf(pHlp, " Command: %02X\n", pDmac->u8Command);
+        pHlp->pfnPrintf(pHlp, "  DACK: active %s         DREQ: active %s\n",
+                        pDmac->u8Command & RT_BIT(7) ? "high" : "low ",
+                        pDmac->u8Command & RT_BIT(6) ? "high" : "low ");
+        pHlp->pfnPrintf(pHlp, "  Extended write: %s  Priority: %s\n",
+                        pDmac->u8Command & RT_BIT(5) ? "enabled " : "disabled",
+                        pDmac->u8Command & RT_BIT(4) ? "rotating" : "fixed   ");
+        pHlp->pfnPrintf(pHlp, "  Timing: %s        Controller: %s\n",
+                        pDmac->u8Command & RT_BIT(3) ? "normal    " : "compressed",
+                        pDmac->u8Command & RT_BIT(2) ? "enabled " : "disabled");
+        pHlp->pfnPrintf(pHlp, "  Adress Hold: %s     Mem-to-Mem Ch 0/1: %s\n",
+                        pDmac->u8Command & RT_BIT(1) ? "enabled " : "disabled",
+                        pDmac->u8Command & RT_BIT(0) ? "enabled " : "disabled");
+
+        for (unsigned ch = 0; ch < RT_ELEMENTS(pDmac->ChState); ch++)
+        {
+            PDMACHANNEL pChan = &pDmac->ChState[ch];
+            const char  *apszChanMode[] = { "demand ", "single ", "block  ", "cascade" };
+            const char  *apszChanType[] = { "verify ", "write  ", "read   ", "illegal" };
+
+            pHlp->pfnPrintf(pHlp, "\n DMA Channel %d:  Page:%02X\n",
+                            ch, pDmac->au8Page[DMACX2PG(ch)]);
+            pHlp->pfnPrintf(pHlp, "  Mode : %02X   Auto-init: %s  %screment\n",
+                            pChan->u8Mode, pChan->u8Mode & RT_BIT(4) ? "yes" : "no",
+                            pChan->u8Mode & RT_BIT(5) ? "De" : "In" );
+            pHlp->pfnPrintf(pHlp, "    Xfer Type: %s  Mode: %s\n",
+                            apszChanType[((pChan->u8Mode >> 2) & 3)],
+                            apszChanMode[((pChan->u8Mode >> 6) & 3)]);
+            pHlp->pfnPrintf(pHlp, "  Base    address:%04X  count:%04X\n",
+                            pChan->u16BaseAddr, pChan->u16BaseCount);
+            pHlp->pfnPrintf(pHlp, "  Current address:%04X  count:%04X\n",
+                            pChan->u16CurAddr, pChan->u16CurCount);
+        }
+    }
+}
+
 /**
  * @interface_method_impl{PDMDEVREG,pfnReset}
  */
@@ -1031,6 +1092,11 @@ static DECLCALLBACK(int) dmaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
      * Statistics.
      */
     PDMDevHlpSTAMRegister(pDevIns, &pThis->StatRun, STAMTYPE_PROFILE, "DmaRun", STAMUNIT_TICKS_PER_CALL, "Profiling dmaR3Run().");
+
+    /*
+     * Register the info item.
+     */
+    PDMDevHlpDBGFInfoRegister(pDevIns, "dmac", "DMA controller info.", dmaR3Info);
 
     return VINF_SUCCESS;
 }
