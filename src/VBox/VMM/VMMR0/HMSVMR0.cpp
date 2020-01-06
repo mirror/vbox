@@ -1790,13 +1790,16 @@ static void hmR0SvmExportGuestMsrs(PVMCPUCC pVCpu, PSVMVMCB pVmcb)
     /*
      * Setup the PAT MSR (applicable for Nested Paging only).
      *
+     * The default value should be MSR_IA32_CR_PAT_INIT_VAL, but we treat all guest memory
+     * as WB, so choose type 6 for all PAT slots, see @bugref{9634}.
+     *
      * While guests can modify and see the modified values through the shadow values,
      * we shall not honor any guest modifications of this MSR to ensure caching is always
      * enabled similar to how we clear CR0.CD and NW bits.
      *
      * For nested-guests this needs to always be set as well, see @bugref{7243#c109}.
      */
-    pVmcb->guest.u64PAT = MSR_IA32_CR_PAT_INIT_VAL;
+    pVmcb->guest.u64PAT = UINT64_C(0x0006060606060606);
 
     /* Enable the last branch record bit if LBR virtualization is enabled. */
     if (pVmcb->ctrl.LbrVirt.n.u1LbrVirt)
