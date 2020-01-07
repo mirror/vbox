@@ -548,7 +548,9 @@ static void vmsvgaR3SetTraces(PPDMDEVINS pDevIns, PVGASTATE pThis, bool fTraces)
 static int vmsvgaR3LoadExecFifo(PCPDMDEVHLPR3 pHlp, PVGASTATE pThis, PVGASTATECC pThisCC, PSSMHANDLE pSSM,
                                 uint32_t uVersion, uint32_t uPass);
 static int vmsvgaR3SaveExecFifo(PCPDMDEVHLPR3 pHlp, PVGASTATECC pThisCC, PSSMHANDLE pSSM);
+# ifdef VBOX_WITH_VMSVGA3D
 static void vmsvgaR3GmrFree(PVGASTATECC pThisCC, uint32_t idGMR);
+# endif /* VBOX_WITH_VMSVGA3D */
 #endif /* IN_RING3 */
 
 
@@ -4824,6 +4826,7 @@ static DECLCALLBACK(int) vmsvgaR3FifoLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread
 #undef VMSVGAFIFO_GET_MORE_CMD_BUFFER_BREAK
 #undef VMSVGAFIFO_GET_CMD_BUFFER_BREAK
 
+#ifdef VBOX_WITH_VMSVGA3D
 /**
  * Free the specified GMR
  *
@@ -4853,6 +4856,7 @@ static void vmsvgaR3GmrFree(PVGASTATECC pThisCC, uint32_t idGMR)
     Assert(!pGMR->cMaxPages);
     Assert(!pGMR->cbTotal);
 }
+#endif /* VBOX_WITH_VMSVGA3D */
 
 /**
  * Copy between a GMR and a host memory buffer.
