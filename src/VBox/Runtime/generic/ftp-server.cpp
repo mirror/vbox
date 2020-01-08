@@ -147,22 +147,61 @@ typedef struct RTFTPSERVERCLIENTSTATE
 /** Pointer to an internal FTP server client state. */
 typedef RTFTPSERVERCLIENTSTATE *PRTFTPSERVERCLIENTSTATE;
 
+/** Function pointer declaration for a specific FTP server command handler. */
 typedef DECLCALLBACK(int) FNRTFTPSERVERCMD(PRTFTPSERVERCLIENTSTATE pClient);
 /** Pointer to a FNRTFTPSERVERCMD(). */
 typedef FNRTFTPSERVERCMD *PFNRTFTPSERVERCMD;
 
+/**
+ * Function prototypes for command handlers.
+ */
+static FNRTFTPSERVERCMD rtFTPServerHandleABOR;
+static FNRTFTPSERVERCMD rtFTPServerHandleCDUP;
+static FNRTFTPSERVERCMD rtFTPServerHandleCWD;
+static FNRTFTPSERVERCMD rtFTPServerHandleLIST;
+static FNRTFTPSERVERCMD rtFTPServerHandleMODE;
+static FNRTFTPSERVERCMD rtFTPServerHandleNOOP;
+static FNRTFTPSERVERCMD rtFTPServerHandlePORT;
+static FNRTFTPSERVERCMD rtFTPServerHandlePWD;
+static FNRTFTPSERVERCMD rtFTPServerHandleQUIT;
+static FNRTFTPSERVERCMD rtFTPServerHandleRETR;
+static FNRTFTPSERVERCMD rtFTPServerHandleRGET;
+static FNRTFTPSERVERCMD rtFTPServerHandleSTAT;
 static FNRTFTPSERVERCMD rtFTPServerHandleSYST;
+static FNRTFTPSERVERCMD rtFTPServerHandleTYPE;
 
+/**
+ * Structure for maintaining a single command entry for the command table.
+ */
 typedef struct RTFTPSERVER_CMD_ENTRY
 {
+    /** Command ID. */
     RTFTPSERVER_CMD    enmCmd;
+    /** Command represented as ASCII string. */
     char               szCmd[RTFTPSERVER_MAX_CMD_LEN];
+    /** Function pointer invoked to handle the command. */
     PFNRTFTPSERVERCMD  pfnCmd;
 } RTFTPSERVER_CMD_ENTRY;
 
+/**
+ * Table of handled commands.
+ */
 const RTFTPSERVER_CMD_ENTRY g_aCmdMap[] =
 {
+    { RTFTPSERVER_CMD_ABOR,     "ABOR",         rtFTPServerHandleABOR },
+    { RTFTPSERVER_CMD_CDUP,     "CDUP",         rtFTPServerHandleCDUP },
+    { RTFTPSERVER_CMD_CWD,      "CWD",          rtFTPServerHandleCWD  },
+    { RTFTPSERVER_CMD_LIST,     "LIST",         rtFTPServerHandleLIST },
+    { RTFTPSERVER_CMD_MODE,     "MODE",         rtFTPServerHandleMODE },
+    { RTFTPSERVER_CMD_NOOP,     "NOOP",         rtFTPServerHandleNOOP },
+    { RTFTPSERVER_CMD_PORT,     "PORT",         rtFTPServerHandlePORT },
+    { RTFTPSERVER_CMD_PWD,      "PWD",          rtFTPServerHandlePWD  },
+    { RTFTPSERVER_CMD_QUIT,     "QUIT",         rtFTPServerHandleQUIT },
+    { RTFTPSERVER_CMD_RETR,     "RETR",         rtFTPServerHandleRETR },
+    { RTFTPSERVER_CMD_RGET,     "RGET",         rtFTPServerHandleRGET },
+    { RTFTPSERVER_CMD_STAT,     "STAT",         rtFTPServerHandleSTAT },
     { RTFTPSERVER_CMD_SYST,     "SYST",         rtFTPServerHandleSYST },
+    { RTFTPSERVER_CMD_TYPE,     "TYPE",         rtFTPServerHandleTYPE },
     { RTFTPSERVER_CMD_LAST,     "",             NULL }
 };
 
@@ -207,6 +246,102 @@ static int rtFTPServerAuthenticate(PRTFTPSERVERCLIENTSTATE pClient, const char *
     return VINF_SUCCESS; /** @todo Implement authentication. */
 }
 
+static int rtFTPServerHandleABOR(PRTFTPSERVERCLIENTSTATE pClient)
+{
+    RT_NOREF(pClient);
+
+    /** @todo Anything to do here? */
+    return VINF_SUCCESS;
+}
+
+static int rtFTPServerHandleCDUP(PRTFTPSERVERCLIENTSTATE pClient)
+{
+    RT_NOREF(pClient);
+
+    /** @todo Anything to do here? */
+    return VINF_SUCCESS;
+}
+
+static int rtFTPServerHandleCWD(PRTFTPSERVERCLIENTSTATE pClient)
+{
+    RT_NOREF(pClient);
+
+    /** @todo Anything to do here? */
+    return VINF_SUCCESS;
+}
+
+static int rtFTPServerHandleLIST(PRTFTPSERVERCLIENTSTATE pClient)
+{
+    RT_NOREF(pClient);
+
+    /** @todo Anything to do here? */
+    return VINF_SUCCESS;
+}
+
+static int rtFTPServerHandleMODE(PRTFTPSERVERCLIENTSTATE pClient)
+{
+    RT_NOREF(pClient);
+
+    /** @todo Anything to do here? */
+    return VINF_SUCCESS;
+}
+
+static int rtFTPServerHandleNOOP(PRTFTPSERVERCLIENTSTATE pClient)
+{
+    RT_NOREF(pClient);
+
+    /** @todo Anything to do here? */
+    return VINF_SUCCESS;
+}
+
+static int rtFTPServerHandlePORT(PRTFTPSERVERCLIENTSTATE pClient)
+{
+    RT_NOREF(pClient);
+
+    /** @todo Anything to do here? */
+    return VINF_SUCCESS;
+}
+
+static int rtFTPServerHandlePWD(PRTFTPSERVERCLIENTSTATE pClient)
+{
+    RT_NOREF(pClient);
+
+    /** @todo Anything to do here? */
+    return VINF_SUCCESS;
+}
+
+static int rtFTPServerHandleQUIT(PRTFTPSERVERCLIENTSTATE pClient)
+{
+    RT_NOREF(pClient);
+
+    /** @todo Anything to do here? */
+    return VINF_SUCCESS;
+}
+
+static int rtFTPServerHandleRETR(PRTFTPSERVERCLIENTSTATE pClient)
+{
+    RT_NOREF(pClient);
+
+    /** @todo Anything to do here? */
+    return VINF_SUCCESS;
+}
+
+static int rtFTPServerHandleRGET(PRTFTPSERVERCLIENTSTATE pClient)
+{
+    RT_NOREF(pClient);
+
+    /** @todo Anything to do here? */
+    return VINF_SUCCESS;
+}
+
+static int rtFTPServerHandleSTAT(PRTFTPSERVERCLIENTSTATE pClient)
+{
+    RT_NOREF(pClient);
+
+    /** @todo Anything to do here? */
+    return VINF_SUCCESS;
+}
+
 static int rtFTPServerHandleSYST(PRTFTPSERVERCLIENTSTATE pClient)
 {
     char szOSInfo[64];
@@ -215,6 +350,14 @@ static int rtFTPServerHandleSYST(PRTFTPSERVERCLIENTSTATE pClient)
         rc = rtFTPServerSendReplyStr(pClient, szOSInfo);
 
     return rc;
+}
+
+static int rtFTPServerHandleTYPE(PRTFTPSERVERCLIENTSTATE pClient)
+{
+    RT_NOREF(pClient);
+
+    /** @todo Anything to do here? */
+    return VINF_SUCCESS;
 }
 
 static int rtFTPServerDoLogin(PRTFTPSERVERCLIENTSTATE pClient)
@@ -306,6 +449,9 @@ static int rtFTPServerProcessCommands(PRTFTPSERVERCLIENTSTATE pClient)
                 if (RT_SUCCESS(rc))
                     rc = rc2;
             }
+
+            if (g_aCmdMap[i].enmCmd == RTFTPSERVER_CMD_QUIT)
+                break;
         }
         else
         {
