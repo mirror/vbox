@@ -2709,6 +2709,14 @@
 #define VERR_IOQUEUE_BUSY                                       (-26203)
 /** @} */
 
+/** @name FTP status codes
+ * @{ */
+/** FTP Internal Server Error. */
+#define VERR_FTP_STATUS_SERVER_ERROR                            (-26400)
+/** FTP initialization failed. */
+#define VERR_FTP_INIT_FAILED                                    (-26401)
+/** @} */
+
 /* SED-END */
 
 /** @} */

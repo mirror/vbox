@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2007-2019 Oracle Corporation
+ * Copyright (C) 2007-2020 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -83,6 +83,10 @@
 #define RTFILEAIOCTX_MAGIC_DEAD         UINT32_C(0x19370315)
 /** The value of RTFILEAIOREQINT::u32Magic. (Stephen Edwin King)  */
 #define RTFILEAIOREQ_MAGIC              UINT32_C(0x19470921)
+/** The magic value for RTFTPSERVERINTERNAL::u32Magic. */
+#define RTFTPSERVER_MAGIC               UINT32_C(0xfeed0004) /**< @todo find a value */
+/** The value of RTFTPSERVERINTERNAL::u32Magic after close. */
+#define RTFTPSERVER_MAGIC_DEAD          (~RTFTPSERVER_MAGIC)
 /** The value of RTENVINTERNAL::u32Magic. (Rumiko Takahashi) */
 #define RTENV_MAGIC                     UINT32_C(0x19571010)
 /** The value of RTERRVARS::ai32Vars[0]. (Ryuichi Sakamoto) */

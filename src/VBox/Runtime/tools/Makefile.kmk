@@ -4,7 +4,7 @@
 #
 
 #
-# Copyright (C) 2006-2019 Oracle Corporation
+# Copyright (C) 2006-2020 Oracle Corporation
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -129,6 +129,11 @@ if !defined(VBOX_ONLY_BUILD)
  PROGRAMS += RTLdrFlt
  RTLdrFlt_TEMPLATE = VBoxR3Tool
  RTLdrFlt_SOURCES = RTLdrFlt.cpp
+
+ # RTFTPServer implements a simple FTP server.
+ PROGRAMS += RTFTPServer
+ RTFTPServer_TEMPLATE = VBoxR3Tool
+ RTFTPServer_SOURCES = RTFTPServer.cpp
 
  # RTGzip - our gzip clone (for testing the gzip/gunzip streaming code)
  PROGRAMS += RTGzip

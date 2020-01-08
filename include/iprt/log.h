@@ -3,7 +3,7 @@
  */
 
 /*
- * Copyright (C) 2006-2019 Oracle Corporation
+ * Copyright (C) 2006-2020 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -61,6 +61,7 @@ typedef enum RTLOGGROUP
     RTLOGGROUP_DIR,
     RTLOGGROUP_FILE,
     RTLOGGROUP_FS,
+    RTLOGGROUP_FTP,
     RTLOGGROUP_HTTP,
     RTLOGGROUP_IOQUEUE,
     RTLOGGROUP_LDR,
@@ -89,6 +90,9 @@ typedef enum RTLOGGROUP
  *
  *         If anyone might be wondering what the alphabet looks like:
  *              a b c d e f g h i j k l m n o p q r s t u v w x y z
+ *
+ * The RT_XX log group names are placeholders for new modules being added,
+ * to make sure that there always is a total of 32 log group entries.
  */
 #define RT_LOGGROUP_NAMES \
     "DEFAULT", \
@@ -98,6 +102,7 @@ typedef enum RTLOGGROUP
     "RT_DIR", \
     "RT_FILE", \
     "RT_FS", \
+    "RT_FTP", \
     "RT_HTTP", \
     "RT_IOQUEUE", \
     "RT_LDR", \
@@ -110,7 +115,6 @@ typedef enum RTLOGGROUP
     "RT_TIME", \
     "RT_TIMER", \
     "RT_VFS", \
-    "RT_19", \
     "RT_20", \
     "RT_21", \
     "RT_22", \
@@ -122,7 +126,7 @@ typedef enum RTLOGGROUP
     "RT_28", \
     "RT_29", \
     "RT_30", \
-    "RT_ZIP"  \
+    "RT_ZIP"
 
 
 /** @def LOG_GROUP
