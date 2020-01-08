@@ -95,8 +95,6 @@ struct DRMCONTEXT
     RTFILE hDevice;
 };
 
-struct DRMVMWRECT aRects[VMW_MAX_HEADS];
-
 static void drmConnect(struct DRMCONTEXT *pContext)
 {
     unsigned i;
@@ -185,6 +183,8 @@ static int run(struct VBCLSERVICE **ppInterface, bool fDaemonised)
     struct DRMCONTEXT drmContext = { NIL_RTFILE };
     unsigned i;
     int rc;
+    struct DRMVMWRECT aRects[VMW_MAX_HEADS];
+    unsigned cHeads;
     /* Do not acknowledge the first event we query for to pick up old events,
      * e.g. from before a guest reboot. */
     bool fAck = false;
@@ -216,30 +216,28 @@ static int run(struct VBCLSERVICE **ppInterface, bool fDaemonised)
             VBClLogFatalError("Display change request contained, rc=%Rrc\n", rc);
         if (cDisplaysOut > 0)
         {
+            cHeads = 0;
             for (i = 0; i < cDisplaysOut && i < VMW_MAX_HEADS; ++i)
             {
                 if (!(aDisplays[i].fDisplayFlags & VMMDEV_DISPLAY_DISABLED))
                 {
-                    uint32_t idDisplay = aDisplays[i].idDisplay;
-                    if (idDisplay < VMW_MAX_HEADS)
+                    if ((i == 0) || (aDisplays[i].fDisplayFlags & VMMDEV_DISPLAY_ORIGIN))
                     {
-                        if ((idDisplay == 0) || (aDisplays[i].fDisplayFlags & VMMDEV_DISPLAY_ORIGIN))
-                        {
-                            aRects[idDisplay].x = aDisplays[i].xOrigin;
-                            aRects[idDisplay].y = aDisplays[i].yOrigin;
-                        } else {
-                            aRects[idDisplay].x = aRects[idDisplay - 1].x + aRects[idDisplay - 1].w;
-                            aRects[idDisplay].y = aRects[idDisplay - 1].y;
-                        }
-                        aRects[idDisplay].w = aDisplays[i].cx;
-                        aRects[idDisplay].h = aDisplays[i].cy;
+                        aRects[cHeads].x = aDisplays[i].xOrigin;
+                        aRects[cHeads].y = aDisplays[i].yOrigin;
+                    } else {
+                        aRects[cHeads].x = aRects[cHeads - 1].x + aRects[cHeads - 1].w;
+                        aRects[cHeads].y = aRects[cHeads - 1].y;
                     }
+                    aRects[cHeads].w = aDisplays[i].cx;
+                    aRects[cHeads].h = aDisplays[i].cy;
+                    ++cHeads;
                 }
             }
-            for (i = 0; i < cDisplaysOut; ++i)
+            for (i = 0; i < cHeads; ++i)
                 printf("Head %u: %dx%d, (%d, %d)\n", i, (int)aRects[i].w, (int)aRects[i].h,
                        (int)aRects[i].x, (int)aRects[i].y);
-            drmSendHints(&drmContext, aRects, VMW_MAX_HEADS);
+            drmSendHints(&drmContext, aRects, cHeads);
         }
         do
         {
