@@ -47,6 +47,9 @@
 #include <iprt/thread.h>
 #include <iprt/vfs.h>
 
+#ifdef RT_OS_WINDOWS
+# include <iprt/win/windows.h>
+#endif
 
 /*********************************************************************************************************************************
 *   Global Variables                                                                                                             *
