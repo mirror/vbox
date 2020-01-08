@@ -4273,6 +4273,7 @@ static DECLCALLBACK(void) vmmdevReset(PPDMDEVINS pDevIns)
         DISPLAYCHANGEREQUEST *pRequest = &pThis->displayChangeData.aRequests[i];
         memset(&pRequest->lastReadDisplayChangeRequest, 0, sizeof(pRequest->lastReadDisplayChangeRequest));
         pRequest->lastReadDisplayChangeRequest.fDisplayFlags = VMMDEV_DISPLAY_DISABLED;
+        pRequest->lastReadDisplayChangeRequest.idDisplay = i;
     }
     pThis->displayChangeData.iCurrentMonitor = 0;
     pThis->displayChangeData.fGuestSentChangeEventAck = false;
@@ -4464,7 +4465,9 @@ static DECLCALLBACK(int) vmmdevConstruct(PPDMDEVINS pDevIns, int iInstance, PCFG
     {
         DISPLAYCHANGEREQUEST *pRequest = &pThis->displayChangeData.aRequests[i];
         pRequest->displayChangeRequest.fDisplayFlags = VMMDEV_DISPLAY_DISABLED;
+        pRequest->displayChangeRequest.idDisplay = i;
         pRequest->lastReadDisplayChangeRequest.fDisplayFlags = VMMDEV_DISPLAY_DISABLED;
+        pRequest->lastReadDisplayChangeRequest.idDisplay = i;
     }
 
     /*
