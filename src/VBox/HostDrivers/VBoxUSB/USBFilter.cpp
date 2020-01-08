@@ -332,7 +332,7 @@ USBLIB_DECL(int) USBFilterValidate(PCUSBFILTER pFilter)
         if (    USBFilterIsMethodUsingStringValue((USBFILTERMATCH)pFilter->aFields[i].enmMatch)
             &&  pFilter->aFields[i].u16Value > pFilter->offCurEnd)
         {
-            Log(("USBFilter: %p - bad offset=%#x\n", pFilter->aFields[i].u16Value));
+            Log(("USBFilter: %p - bad offset=%#x\n", pFilter, pFilter->aFields[i].u16Value));
             return VERR_INVALID_PARAMETER;
         }
     }
