@@ -667,12 +667,16 @@ static NTSTATUS vboxUsbFltDevPopulate(PVBOXUSBFLT_DEVICE pDevice, PDEVICE_OBJECT
                     WARN(("Failed to parse Hardware ID"));
                 }
 
+                /* The CompatibleID the IOCTL gives is not always the same as what the PnP Manager uses
+                 * (thanks, Microsoft). It might look like "USB\DevClass_00&SubClass_00&Prot_00" or like
+                 * "USB\USB30_HUB". In such cases, we must consider the class/subclass/protocol
+                 * information simply unavailable.
+                 */
                 rc = vboxUsbParseCompatibleIDs(HubInfo.CompatibleIds.Buffer, &cls, &sub, &prt);
                 if (!rc)
                 {
-                    /* This *really* should not happen. */
-                    WARN(("Failed to parse Hardware ID"));
-                    break;
+                    /* This is unfortunate but not fatal. */
+                    WARN(("Failed to parse Compatible ID"));
                 }
                 LOG(("Parsed HardwareID from IOCTL: vid=%04X, pid=%04X, rev=%04X, class=%02X, subcls=%02X, prot=%02X", vid, pid, rev, cls, sub, prt));
 
