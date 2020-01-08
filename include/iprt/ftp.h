@@ -47,6 +47,51 @@ typedef RTFTPSERVER                            *PRTFTPSERVER;
 /** Nil FTP client handle. */
 #define NIL_RTFTPSERVER                         ((RTFTPSERVER)0)
 
+/** Maximum length (in characters) a command can have (without parameters). */
+#define RTFTPSERVER_MAX_CMD_LEN                 64
+
+/**
+ * Enumeration for defining the current server connection mode.
+ */
+typedef enum RTFTPSERVER_CONNECTION_MODE
+{
+    /** Normal mode, nothing to transfer. */
+    RTFTPSERVER_CONNECTION_MODE_NORMAL = 0,
+    /** Server is in passive mode (is listening). */
+    RTFTPSERVER_CONNECTION_MODE_PASSIVE,
+    /** Server connects via port to the client. */
+    RTFTPSERVER_CONNECTION_MODE_MODE_PORT,
+    /** The usual 32-bit hack. */
+    RTFTPSERVER_CONNECTION_MODE_32BIT_HACK = 0x7fffffff
+} RTFTPSERVER_CONNECTION_MODE;
+
+/**
+ * Enumeration for defining the data transfer mode.
+ */
+typedef enum RTFTPSERVER_TRANSFER_MODE
+{
+    RTFTPSERVER_TRANSFER_MODE_UNKNOWN = 0,
+    RTFTPSERVER_TRANSFER_MODE_STREAM,
+    RTFTPSERVER_TRANSFER_MODE_BLOCK,
+    RTFTPSERVER_TRANSFER_MODE_COMPRESSED,
+    /** The usual 32-bit hack. */
+    RTFTPSERVER_DATA_MODE_32BIT_HACK = 0x7fffffff
+} RTFTPSERVER_DATA_MODE;
+
+/**
+ * Enumeration for defining the data type.
+ */
+typedef enum RTFTPSERVER_DATA_TYPE
+{
+    RTFTPSERVER_DATA_TYPE_UNKNOWN = 0,
+    RTFTPSERVER_DATA_TYPE_ASCII,
+    RTFTPSERVER_DATA_TYPE_EBCDIC,
+    RTFTPSERVER_DATA_TYPE_IMAGE,
+    RTFTPSERVER_DATA_TYPE_LOCAL,
+    /** The usual 32-bit hack. */
+    RTFTPSERVER_DATA_TYPE_32BIT_HACK = 0x7fffffff
+} RTFTPSERVER_DATA_TYPE;
+
 /**
  * Enumeration for FTP server reply codes.
  *

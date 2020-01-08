@@ -43,9 +43,11 @@
 #include <iprt/errcore.h>
 #include <iprt/ftp.h>
 #include <iprt/mem.h>
+#include <iprt/log.h>
 #include <iprt/poll.h>
 #include <iprt/socket.h>
 #include <iprt/string.h>
+#include <iprt/system.h>
 #include <iprt/tcp.h>
 
 #include "internal/magics.h"
@@ -101,11 +103,15 @@ typedef enum RTFTPSERVER_CMD
     /** Changes the current working directory. */
     RTFTPSERVER_CMD_CWD,
     /** Lists a directory. */
-    RTFTPSERVER_CMD_LS,
+    RTFTPSERVER_CMD_LIST,
+    /** Sets the transfer mode. */
+    RTFTPSERVER_CMD_MODE,
     /** Sends a nop ("no operation") to the server. */
     RTFTPSERVER_CMD_NOOP,
     /** Sets the password for authentication. */
     RTFTPSERVER_CMD_PASS,
+    /** Sets the port to use for the data connection. */
+    RTFTPSERVER_CMD_PORT,
     /** Gets the current working directory. */
     RTFTPSERVER_CMD_PWD,
     /** Terminates the session (connection). */
@@ -116,10 +122,14 @@ typedef enum RTFTPSERVER_CMD
     RTFTPSERVER_CMD_RGET,
     /** Retrieves the current status of a transfer. */
     RTFTPSERVER_CMD_STAT,
+    /** Gets the server's OS info. */
+    RTFTPSERVER_CMD_SYST,
     /** Sets the (data) representation type. */
     RTFTPSERVER_CMD_TYPE,
     /** Sets the user name for authentication. */
     RTFTPSERVER_CMD_USER,
+    /** End marker. */
+    RTFTPSERVER_CMD_LAST,
     /** The usual 32-bit hack. */
     RTFTPSERVER_CMD_32BIT_HACK = 0x7fffffff
 } RTFTPSERVER_CMD;
@@ -137,22 +147,173 @@ typedef struct RTFTPSERVERCLIENTSTATE
 /** Pointer to an internal FTP server client state. */
 typedef RTFTPSERVERCLIENTSTATE *PRTFTPSERVERCLIENTSTATE;
 
+typedef DECLCALLBACK(int) FNRTFTPSERVERCMD(PRTFTPSERVERCLIENTSTATE pClient);
+/** Pointer to a FNRTFTPSERVERCMD(). */
+typedef FNRTFTPSERVERCMD *PFNRTFTPSERVERCMD;
 
-static int rtFTPServerSendReply(PRTFTPSERVERCLIENTSTATE pClient, RTFTPSERVER_REPLY enmReply)
+static FNRTFTPSERVERCMD rtFTPServerHandleSYST;
+
+typedef struct RTFTPSERVER_CMD_ENTRY
 {
-    RT_NOREF(enmReply);
+    RTFTPSERVER_CMD    enmCmd;
+    char               szCmd[RTFTPSERVER_MAX_CMD_LEN];
+    PFNRTFTPSERVERCMD  pfnCmd;
+} RTFTPSERVER_CMD_ENTRY;
 
-    RTTcpWrite(pClient->hSocket, "hello\n", sizeof("hello\n") - 1);
+const RTFTPSERVER_CMD_ENTRY g_aCmdMap[] =
+{
+    { RTFTPSERVER_CMD_SYST,     "SYST",         rtFTPServerHandleSYST },
+    { RTFTPSERVER_CMD_LAST,     "",             NULL }
+};
 
-    int rc =  0;
-    RT_NOREF(rc);
+
+static int rtFTPServerSendReplyRc(PRTFTPSERVERCLIENTSTATE pClient, RTFTPSERVER_REPLY enmReply)
+{
+    char szReply[32];
+    RTStrPrintf2(szReply, sizeof(szReply), "%RU32\r\n", enmReply);
+
+    return RTTcpWrite(pClient->hSocket, szReply, strlen(szReply) + 1);
+}
+
+static int rtFTPServerSendReplyStr(PRTFTPSERVERCLIENTSTATE pClient, const char *pcszStr)
+{
+    char *pszReply;
+    int rc = RTStrAPrintf(&pszReply, "%s\r\n", pcszStr);
+    if (RT_SUCCESS(rc))
+    {
+        rc = RTTcpWrite(pClient->hSocket, pszReply, strlen(pszReply) + 1);
+        RTStrFree(pszReply);
+        return rc;
+    }
+
+    return VERR_NO_MEMORY;
+}
+
+static int rtFTPServerLookupUser(PRTFTPSERVERCLIENTSTATE pClient, const char *pcszUser)
+{
+    RT_NOREF(pClient, pcszUser);
+
+    LogFunc(("User='%s'\n", pcszUser));
+
+    return VINF_SUCCESS; /** @todo Implement lookup. */
+}
+
+static int rtFTPServerAuthenticate(PRTFTPSERVERCLIENTSTATE pClient, const char *pcszUser, const char *pcszPassword)
+{
+    RT_NOREF(pClient, pcszUser, pcszPassword);
+
+    LogFunc(("User='%s', Password='%s'\n", pcszUser, pcszPassword));
+
+    return VINF_SUCCESS; /** @todo Implement authentication. */
+}
+
+static int rtFTPServerHandleSYST(PRTFTPSERVERCLIENTSTATE pClient)
+{
+    char szOSInfo[64];
+    int rc = RTSystemQueryOSInfo(RTSYSOSINFO_PRODUCT, szOSInfo, sizeof(szOSInfo));
+    if (RT_SUCCESS(rc))
+        rc = rtFTPServerSendReplyStr(pClient, szOSInfo);
 
     return rc;
 }
 
 static int rtFTPServerDoLogin(PRTFTPSERVERCLIENTSTATE pClient)
 {
-    int rc = rtFTPServerSendReply(pClient, RTFTPSERVER_REPLY_READY_FOR_NEW_USER);
+    LogFlowFuncEnter();
+
+    /* Send welcome message. */
+    int rc = rtFTPServerSendReplyRc(pClient, RTFTPSERVER_REPLY_READY_FOR_NEW_USER);
+    if (RT_SUCCESS(rc))
+    {
+        size_t cbRead;
+
+        char szUser[64];
+        rc = RTTcpRead(pClient->hSocket, szUser, sizeof(szUser), &cbRead);
+        if (RT_SUCCESS(rc))
+        {
+            rc = rtFTPServerLookupUser(pClient, szUser);
+            if (RT_SUCCESS(rc))
+            {
+                rc = rtFTPServerSendReplyRc(pClient, RTFTPSERVER_REPLY_USERNAME_OKAY_NEED_PASSWORD);
+                if (RT_SUCCESS(rc))
+                {
+                    char szPass[64];
+                    rc = RTTcpRead(pClient->hSocket, szPass, sizeof(szPass), &cbRead);
+                    {
+                        if (RT_SUCCESS(rc))
+                        {
+                            rc = rtFTPServerAuthenticate(pClient, szUser, szPass);
+                            if (RT_SUCCESS(rc))
+                            {
+                                rc = rtFTPServerSendReplyRc(pClient, RTFTPSERVER_REPLY_LOGGED_IN_PROCEED);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    if (RT_FAILURE(rc))
+    {
+        int rc2 = rtFTPServerSendReplyRc(pClient, RTFTPSERVER_REPLY_NOT_LOGGED_IN);
+        if (RT_SUCCESS(rc))
+            rc = rc2;
+    }
+
+    return rc;
+}
+
+static int rtFTPServerProcessCommands(PRTFTPSERVERCLIENTSTATE pClient)
+{
+    int rc;
+
+    for (;;)
+    {
+        size_t cbRead;
+        char   szCmd[RTFTPSERVER_MAX_CMD_LEN];
+        rc = RTTcpRead(pClient->hSocket, szCmd, sizeof(szCmd), &cbRead);
+        if (   RT_SUCCESS(rc)
+            && strlen(szCmd))
+        {
+            /* A tiny bit of sanitation. */
+            RTStrStripL(szCmd);
+
+            /* First, terminate string by finding the command end marker (telnet style). */
+            /** @todo Not sure if this is entirely correct and/or needs tweaking; good enough for now as it seems. */
+            char *pszCmdEnd = RTStrIStr(szCmd, "\r\n");
+            if (pszCmdEnd)
+                *pszCmdEnd = '\0';
+
+            /* Second, determine if there is any parameters following. */
+            char *pszCmdParms = RTStrIStr(szCmd, " ");
+            /* pszCmdParms can be NULL if command has not parameters. */
+            RT_NOREF(pszCmdParms);
+
+            unsigned i = 0;
+            for (; i < RT_ELEMENTS(g_aCmdMap); i++)
+            {
+                if (!RTStrICmp(szCmd, g_aCmdMap[i].szCmd))
+                {
+                    rc = g_aCmdMap[i].pfnCmd(pClient);
+                    break;
+                }
+            }
+
+            if (i == RT_ELEMENTS(g_aCmdMap))
+            {
+                int rc2 = rtFTPServerSendReplyRc(pClient, RTFTPSERVER_REPLY_ERROR_CMD_NOT_IMPL);
+                if (RT_SUCCESS(rc))
+                    rc = rc2;
+            }
+        }
+        else
+        {
+            int rc2 = rtFTPServerSendReplyRc(pClient, RTFTPSERVER_REPLY_ERROR_CMD_NOT_RECOGNIZED);
+            if (RT_SUCCESS(rc))
+                rc = rc2;
+        }
+    }
 
     return rc;
 }
@@ -169,6 +330,8 @@ static DECLCALLBACK(int) rtFTPServerThread(RTSOCKET hSocket, void *pvUser)
     ClientState.hSocket = hSocket;
 
     int rc = rtFTPServerDoLogin(&ClientState);
+    if (RT_SUCCESS(rc))
+        rc = rtFTPServerProcessCommands(&ClientState);
 
     return rc;
 }
@@ -186,6 +349,8 @@ RTR3DECL(int) RTFTPServerCreate(PRTFTPSERVER phFTPServer, const char *pcszAddres
     PRTFTPSERVERINTERNAL pThis = (PRTFTPSERVERINTERNAL)RTMemAllocZ(sizeof(RTFTPSERVERINTERNAL));
     if (pThis)
     {
+        pThis->u32Magic = RTFTPSERVER_MAGIC;
+
         rc = RTTcpServerCreate(pcszAddress, uPort, RTTHREADTYPE_DEFAULT, "ftpsrv",
                                rtFTPServerThread, pThis /* pvUser */, &pThis->pTCPServer);
     }
