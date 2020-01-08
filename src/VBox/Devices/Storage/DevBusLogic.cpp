@@ -1173,7 +1173,7 @@ static int buslogicR3HwReset(PPDMDEVINS pDevIns, PBUSLOGIC pThis, PBUSLOGICCC pT
     if (fResetIO)
         buslogicR3RegisterISARange(pDevIns, pThis, pThis->uDefaultISABaseCode);
     buslogicR3InitializeLocalRam(pThis);
-    vboxscsiInitialize(&pThisCC->VBoxSCSI);
+    vboxscsiHwReset(&pThisCC->VBoxSCSI);
 
     return VINF_SUCCESS;
 }
@@ -4080,6 +4080,7 @@ static DECLCALLBACK(int) buslogicR3Destruct(PPDMDEVINS pDevIns)
 {
     PDMDEV_CHECK_VERSIONS_RETURN_QUIET(pDevIns);
     PBUSLOGIC pThis = PDMDEVINS_2_DATA(pDevIns, PBUSLOGIC);
+    PBUSLOGICCC pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PBUSLOGICCC);
 
     PDMDevHlpCritSectDelete(pDevIns, &pThis->CritSectIntr);
 
@@ -4088,6 +4089,8 @@ static DECLCALLBACK(int) buslogicR3Destruct(PPDMDEVINS pDevIns)
         PDMDevHlpSUPSemEventClose(pDevIns, pThis->hEvtProcess);
         pThis->hEvtProcess = NIL_SUPSEMEVENT;
     }
+
+    vboxscsiDestroy(&pThisCC->VBoxSCSI);
 
     return VINF_SUCCESS;
 }
@@ -4206,6 +4209,11 @@ static DECLCALLBACK(int) buslogicR3Construct(PPDMDEVINS pDevIns, int iInstance, 
                                             "BusLogic MMIO", &pThis->hMmio);
         AssertRCReturn(rc, rc);
     }
+
+    /* Initialize the SCSI emulation for the BIOS. */
+    rc = vboxscsiInitialize(&pThisCC->VBoxSCSI);
+    if (RT_FAILURE(rc))
+        return PDMDEV_SET_ERROR(pDevIns, rc, N_("BusLogic failed to initialize BIOS SCSI interface"));
 
     if (fBootable)
     {

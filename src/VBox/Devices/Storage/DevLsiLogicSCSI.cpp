@@ -5079,7 +5079,7 @@ static void lsilogicR3ResetCommon(PPDMDEVINS pDevIns)
     rc = lsilogicR3HardReset(pDevIns, pThis, pThisCC);
     AssertRC(rc);
 
-    vboxscsiInitialize(&pThisCC->VBoxSCSI);
+    vboxscsiHwReset(&pThisCC->VBoxSCSI);
 }
 
 /**
@@ -5149,6 +5149,7 @@ static DECLCALLBACK(int) lsilogicR3Destruct(PPDMDEVINS pDevIns)
 
     lsilogicR3ConfigurationPagesFree(pThis, pThisCC);
     lsilogicR3MemRegionsFree(pThisCC);
+    vboxscsiDestroy(&pThisCC->VBoxSCSI);
 
     return VINF_SUCCESS;
 }
@@ -5484,7 +5485,8 @@ static DECLCALLBACK(int) lsilogicR3Construct(PPDMDEVINS pDevIns, int iInstance, 
 
     /* Initialize the SCSI emulation for the BIOS. */
     rc = vboxscsiInitialize(&pThisCC->VBoxSCSI);
-    AssertRC(rc);
+    if (RT_FAILURE(rc))
+        return PDMDEV_SET_ERROR(pDevIns, rc, N_("LsiLogic failed to initialize BIOS SCSI interface"));
 
     /*
      * Register I/O port space in ISA region for BIOS access

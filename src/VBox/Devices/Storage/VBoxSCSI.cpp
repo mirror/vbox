@@ -69,10 +69,37 @@ static void vboxscsiReset(PVBOXSCSI pVBoxSCSI, bool fEverything)
  */
 int vboxscsiInitialize(PVBOXSCSI pVBoxSCSI)
 {
-    pVBoxSCSI->pbBuf = NULL;
-    vboxscsiReset(pVBoxSCSI, true /*fEverything*/);
+    int rc = RTCritSectInit(&pVBoxSCSI->CritSect);
+    if (RT_SUCCESS(rc))
+    {
+        pVBoxSCSI->pbBuf = NULL;
+        vboxscsiReset(pVBoxSCSI, true /*fEverything*/);
+    }
 
-    return VINF_SUCCESS;
+    return rc;
+}
+
+/**
+ * Frees all allocated resources.
+ *
+ * @returns nothing.
+ * @param   pVBoxSCSI    Pointer to the SCSI state,
+ */
+void vboxscsiDestroy(PVBOXSCSI pVBoxSCSI)
+{
+    if (RTCritSectIsInitialized(&pVBoxSCSI->CritSect))
+        RTCritSectDelete(&pVBoxSCSI->CritSect);
+}
+
+/**
+ * Performs a hardware reset.
+ *
+ * @returns nothing.
+ * @param   pVBoxSCSI    Pointer to the SCSI state,
+ */
+void vboxscsiHwReset(PVBOXSCSI pVBoxSCSI)
+{
+    vboxscsiReset(pVBoxSCSI, true /*fEverything*/);
 }
 
 /**
@@ -87,6 +114,7 @@ int vboxscsiReadRegister(PVBOXSCSI pVBoxSCSI, uint8_t iRegister, uint32_t *pu32V
 {
     uint8_t uVal = 0;
 
+    RTCritSectEnter(&pVBoxSCSI->CritSect);
     switch (iRegister)
     {
         case 0:
@@ -137,6 +165,7 @@ int vboxscsiReadRegister(PVBOXSCSI pVBoxSCSI, uint8_t iRegister, uint32_t *pu32V
     }
 
     *pu32Value = uVal;
+    RTCritSectLeave(&pVBoxSCSI->CritSect);
 
     return VINF_SUCCESS;
 }
@@ -155,6 +184,7 @@ int vboxscsiWriteRegister(PVBOXSCSI pVBoxSCSI, uint8_t iRegister, uint8_t uVal)
 {
     int rc = VINF_SUCCESS;
 
+    RTCritSectEnter(&pVBoxSCSI->CritSect);
     switch (iRegister)
     {
         case 0:
@@ -269,6 +299,7 @@ int vboxscsiWriteRegister(PVBOXSCSI pVBoxSCSI, uint8_t iRegister, uint8_t uVal)
             AssertMsgFailed(("Invalid register to write to %u\n", iRegister));
     }
 
+    RTCritSectLeave(&pVBoxSCSI->CritSect);
     return rc;
 }
 
@@ -290,6 +321,7 @@ int vboxscsiSetupRequest(PVBOXSCSI pVBoxSCSI, uint32_t *puLun, uint8_t **ppbCdb,
 
     LogFlowFunc(("pVBoxSCSI=%#p puTargetDevice=%#p\n", pVBoxSCSI, puTargetDevice));
 
+    RTCritSectEnter(&pVBoxSCSI->CritSect);
     AssertMsg(pVBoxSCSI->enmState == VBOXSCSISTATE_COMMAND_READY, ("Invalid state %u\n", pVBoxSCSI->enmState));
 
     /* Clear any errors from a previous request. */
@@ -310,6 +342,7 @@ int vboxscsiSetupRequest(PVBOXSCSI pVBoxSCSI, uint32_t *puLun, uint8_t **ppbCdb,
     *pcbCdb = pVBoxSCSI->cbCDB;
     *pcbBuf = pVBoxSCSI->cbBuf;
     *puTargetDevice = pVBoxSCSI->uTargetDevice;
+    RTCritSectLeave(&pVBoxSCSI->CritSect);
 
     return rc;
 }
@@ -322,12 +355,14 @@ int vboxscsiRequestFinished(PVBOXSCSI pVBoxSCSI, int rcCompletion)
 {
     LogFlowFunc(("pVBoxSCSI=%#p\n", pVBoxSCSI));
 
+    RTCritSectEnter(&pVBoxSCSI->CritSect);
     if (pVBoxSCSI->uTxDir == VBOXSCSI_TXDIR_TO_DEVICE)
         vboxscsiReset(pVBoxSCSI, false /*fEverything*/);
 
     pVBoxSCSI->rcCompletion = rcCompletion;
 
     ASMAtomicXchgBool(&pVBoxSCSI->fBusy, false);
+    RTCritSectLeave(&pVBoxSCSI->CritSect);
 
     return VINF_SUCCESS;
 }
@@ -337,8 +372,12 @@ size_t vboxscsiCopyToBuf(PVBOXSCSI pVBoxSCSI, PRTSGBUF pSgBuf, size_t cbSkip, si
     AssertPtrReturn(pVBoxSCSI->pbBuf, 0);
     AssertReturn(cbSkip + cbCopy <= pVBoxSCSI->cbBuf, 0);
 
+    RTCritSectEnter(&pVBoxSCSI->CritSect);
     void *pvBuf = pVBoxSCSI->pbBuf + cbSkip;
-    return RTSgBufCopyToBuf(pSgBuf, pvBuf, cbCopy);
+    size_t cbCopied = RTSgBufCopyToBuf(pSgBuf, pvBuf, cbCopy);
+    RTCritSectLeave(&pVBoxSCSI->CritSect);
+
+    return cbCopied;
 }
 
 size_t vboxscsiCopyFromBuf(PVBOXSCSI pVBoxSCSI, PRTSGBUF pSgBuf, size_t cbSkip, size_t cbCopy)
@@ -346,8 +385,12 @@ size_t vboxscsiCopyFromBuf(PVBOXSCSI pVBoxSCSI, PRTSGBUF pSgBuf, size_t cbSkip, 
     AssertPtrReturn(pVBoxSCSI->pbBuf, 0);
     AssertReturn(cbSkip + cbCopy <= pVBoxSCSI->cbBuf, 0);
 
+    RTCritSectEnter(&pVBoxSCSI->CritSect);
     void *pvBuf = pVBoxSCSI->pbBuf + cbSkip;
-    return RTSgBufCopyFromBuf(pSgBuf, pvBuf, cbCopy);
+    size_t cbCopied = RTSgBufCopyFromBuf(pSgBuf, pvBuf, cbCopy);
+    RTCritSectLeave(&pVBoxSCSI->CritSect);
+
+    return cbCopied;
 }
 
 /**
@@ -375,6 +418,7 @@ int vboxscsiReadString(PPDMDEVINS pDevIns, PVBOXSCSI pVBoxSCSI, uint8_t iRegiste
     AssertReturn(pVBoxSCSI->enmState == VBOXSCSISTATE_COMMAND_READY, VINF_SUCCESS);
     Assert(!pVBoxSCSI->fBusy);
 
+    RTCritSectEnter(&pVBoxSCSI->CritSect);
     /*
      * Also ignore attempts to read more data than is available.
      */
@@ -406,6 +450,7 @@ int vboxscsiReadString(PPDMDEVINS pDevIns, PVBOXSCSI pVBoxSCSI, uint8_t iRegiste
         memset(pbDst, 0, cbTransfer);
     }
     *pcTransfers = 0;
+    RTCritSectLeave(&pVBoxSCSI->CritSect);
 
     return VINF_SUCCESS;
 }
@@ -433,6 +478,7 @@ int vboxscsiWriteString(PPDMDEVINS pDevIns, PVBOXSCSI pVBoxSCSI, uint8_t iRegist
     AssertReturn(pVBoxSCSI->enmState == VBOXSCSISTATE_COMMAND_READY, VINF_SUCCESS);
     AssertReturn(pVBoxSCSI->uTxDir == VBOXSCSI_TXDIR_TO_DEVICE, VINF_SUCCESS);
 
+    RTCritSectEnter(&pVBoxSCSI->CritSect);
     /*
      * Ignore excess data (not supposed to happen).
      */
@@ -456,6 +502,7 @@ int vboxscsiWriteString(PPDMDEVINS pDevIns, PVBOXSCSI pVBoxSCSI, uint8_t iRegist
     else
         AssertFailed();
     *pcTransfers = 0;
+    RTCritSectLeave(&pVBoxSCSI->CritSect);
 
     return rc;
 }
