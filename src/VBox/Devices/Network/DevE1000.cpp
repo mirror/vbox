@@ -3848,6 +3848,14 @@ DECLINLINE(int) e1kXmitAllocBuf(PE1KSTATE pThis, PE1KSTATECC pThisCC, bool fGso)
             /* Zero packet, no need for the buffer */
             return VINF_SUCCESS;
         }
+        if (fGso && pThis->GsoCtx.u8Type == PDMNETWORKGSOTYPE_INVALID)
+        {
+            E1kLog3(("Invalid GSO context, won't allocate this packet, cb=%u %s%s\n",
+                     pThis->cbTxAlloc, pThis->fVTag ? "VLAN " : "", pThis->fGSO ? "GSO " : ""));
+            /* No valid GSO context is available, ignore this packet. */
+            pThis->cbTxAlloc = 0;
+            return VINF_SUCCESS;
+        }
 
         PPDMINETWORKUP pDrv = pThisCC->CTX_SUFF(pDrv);
         if (RT_UNLIKELY(!pDrv))
@@ -4421,8 +4429,10 @@ static int e1kFallbackAddSegment(PPDMDEVINS pDevIns, PE1KSTATE pThis, RTGCPHYS P
         {
             pThis->cbTxAlloc = RT_MIN(pThis->u32PayRemain,
                                        pThis->contextTSE.dw3.u16MSS)
-                                + pThis->contextTSE.dw3.u8HDRLEN
-                                + (pThis->fVTag ? 4 : 0);
+                                + pThis->contextTSE.dw3.u8HDRLEN;
+            /* Do not add VLAN tags to empty packets. */
+            if (pThis->fVTag && pThis->cbTxAlloc > 0)
+                pThis->cbTxAlloc += 4;
             rc = e1kXmitAllocBuf(pThis, pThisCC, false /* fGSO */);
         }
     }
@@ -5275,7 +5285,8 @@ static bool e1kLocateTxPacket(PE1KSTATE pThis)
             pThis->cbTxAlloc = (!fTSE || pThis->fGSO) ?
                 cbPacket :
                 RT_MIN(cbPacket, pThis->contextTSE.dw3.u16MSS + pThis->contextTSE.dw3.u8HDRLEN);
-            if (pThis->fVTag)
+            /* Do not add VLAN tags to empty packets. */
+            if (pThis->fVTag && pThis->cbTxAlloc > 0)
                 pThis->cbTxAlloc += 4;
             LogFlow(("%s e1kLocateTxPacket: RET true cbTxAlloc=%d cbPacket=%d%s%s\n",
                      pThis->szPrf, pThis->cbTxAlloc, cbPacket,
