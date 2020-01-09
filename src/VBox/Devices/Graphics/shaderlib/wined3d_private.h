@@ -572,6 +572,7 @@ typedef struct shader_reg_maps
     WORD labels;                            /* MAX_LABELS, 16 */
     DWORD temporary;                        /* MAX_REG_TEMP, 32 */
     DWORD *constf;                          /* pixel, vertex */
+    DWORD constf_size;
     DWORD texcoord_mask[MAX_REG_TEXCRD];    /* vertex < 3.0 */
     WORD input_registers;                   /* max(MAX_REG_INPUT, MAX_ATTRIBS), 16 */
     WORD output_registers;                  /* MAX_REG_OUTPUT, 12 */

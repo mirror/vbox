@@ -340,11 +340,20 @@ static HRESULT shader_record_register_usage(IWineD3DBaseShaderImpl *shader, stru
     switch (reg->type)
     {
         case WINED3DSPR_TEXTURE: /* WINED3DSPR_ADDR */
-            if (shader_type == WINED3D_SHADER_TYPE_PIXEL) reg_maps->texcoord |= 1 << reg->idx;
-            else reg_maps->address |= 1 << reg->idx;
+            if (shader_type == WINED3D_SHADER_TYPE_PIXEL)
+            {
+                AssertReturn(reg->idx < MAX_REG_TEXCRD, E_INVALIDARG);
+                reg_maps->texcoord |= 1 << reg->idx;
+            }
+            else
+            {
+                AssertReturn(reg->idx < MAX_REG_ADDR, E_INVALIDARG);
+                reg_maps->address |= 1 << reg->idx;
+            }
             break;
 
         case WINED3DSPR_TEMP:
+            AssertReturn(reg->idx < MAX_REG_TEMP, E_INVALIDARG);
             reg_maps->temporary |= 1 << reg->idx;
             break;
 
@@ -370,7 +379,11 @@ static HRESULT shader_record_register_usage(IWineD3DBaseShaderImpl *shader, stru
                     ((IWineD3DPixelShaderImpl *)shader)->input_reg_used[reg_idx] = TRUE;
                 }
             }
-            else reg_maps->input_registers |= 1 << reg->idx;
+            else
+            {
+                AssertReturn(reg->idx < MAX_REG_INPUT, E_INVALIDARG);
+                reg_maps->input_registers |= 1 << reg->idx;
+            }
             break;
 
         case WINED3DSPR_RASTOUT:
@@ -403,15 +416,18 @@ static HRESULT shader_record_register_usage(IWineD3DBaseShaderImpl *shader, stru
             }
             else
             {
+                AssertReturn(reg->idx < reg_maps->constf_size, E_INVALIDARG);
                 set_bitmap_bit(reg_maps->constf, reg->idx);
             }
             break;
 
         case WINED3DSPR_CONSTINT:
+            AssertReturn(reg->idx < MAX_CONST_I, E_INVALIDARG);
             reg_maps->integer_constants |= (1 << reg->idx);
             break;
 
         case WINED3DSPR_CONSTBOOL:
+            AssertReturn(reg->idx < MAX_CONST_B, E_INVALIDARG);
             reg_maps->boolean_constants |= (1 << reg->idx);
             break;
 
@@ -421,7 +437,7 @@ static HRESULT shader_record_register_usage(IWineD3DBaseShaderImpl *shader, stru
 
         default:
             TRACE("Not recording register of type %#x and idx %u\n", reg->type, reg->idx);
-            break;
+            return E_INVALIDARG;
     }
 
     return S_OK;
@@ -477,6 +493,8 @@ static HRESULT shader_get_registers_used(IWineD3DBaseShader *iface, const struct
         ERR("Failed to allocate constant map memory.\n");
         return E_OUTOFMEMORY;
     }
+
+    reg_maps->constf_size = constf_size;
 
     while (!fe->shader_is_end(fe_data, &ptr))
     {
@@ -666,11 +684,7 @@ static HRESULT shader_get_registers_used(IWineD3DBaseShader *iface, const struct
                 fe->shader_read_dst_param(fe_data, &ptr, &dst_param, &dst_rel_addr);
 
                 hr = shader_record_register_usage(shader, reg_maps, &dst_param.reg, shader_version.type);
-                if (FAILED(hr))
-                {
-                    ERR("shader_record_register_usage failed.\n");
-                    return hr;
-                }
+                AssertReturn(FAILED(hr), hr);
 
                 /* WINED3DSPR_TEXCRDOUT is the same as WINED3DSPR_OUTPUT. _OUTPUT can be > MAX_REG_TEXCRD and
                  * is used in >= 3.0 shaders. Filter 3.0 shaders to prevent overflows, and also filter pixel
@@ -679,13 +693,8 @@ static HRESULT shader_get_registers_used(IWineD3DBaseShader *iface, const struct
                         && dst_param.reg.type == WINED3DSPR_TEXCRDOUT)
                 {
                     unsigned int idx = dst_param.reg.idx;
-                    
-                    if (idx >= MAX_REG_TEXCRD)
-                    {
-                        ERR("Invalid texcoord index %d.\n", idx);
-                        return E_INVALIDARG;
-                    }
-                    
+                    AssertReturn(idx < MAX_REG_TEXCRD, E_INVALIDARG);
+
                     reg_maps->texcoord_mask[idx] |= dst_param.write_mask;
                 }
 
@@ -777,15 +786,19 @@ static HRESULT shader_get_registers_used(IWineD3DBaseShader *iface, const struct
             {
                 struct wined3d_shader_src_param src_param, src_rel_addr;
                 unsigned int count;
+                HRESULT hr;
 
                 fe->shader_read_src_param(fe_data, &ptr, &src_param, &src_rel_addr);
                 count = get_instr_extra_regcount(ins.handler_idx, i);
 
-                shader_record_register_usage(shader, reg_maps, &src_param.reg, shader_version.type);
+                hr = shader_record_register_usage(shader, reg_maps, &src_param.reg, shader_version.type);
+                AssertReturn(FAILED(hr), hr);
+
                 while (count)
                 {
                     ++src_param.reg.idx;
-                    shader_record_register_usage(shader, reg_maps, &src_param.reg, shader_version.type);
+                    hr = shader_record_register_usage(shader, reg_maps, &src_param.reg, shader_version.type);
+                    AssertReturn(FAILED(hr), hr);
                     --count;
                 }
 
