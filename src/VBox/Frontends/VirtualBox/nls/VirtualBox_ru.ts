@@ -2908,15 +2908,15 @@
     </message>
     <message>
         <source>Include all network adapter MAC addresses during importing.</source>
-        <translation type="unfinished"></translation>
+        <translation>Включать MAC-адреса всех сетевых адаптеров во время импорта.</translation>
     </message>
     <message>
         <source>Include only NAT network adapter MAC addresses during importing.</source>
-        <translation type="unfinished"></translation>
+        <translation>Включать только MAC-адреса сетевого адаптера NAT во время импорта.</translation>
     </message>
     <message>
         <source>Generate new MAC addresses for all network adapters during importing.</source>
-        <translation type="unfinished"></translation>
+        <translation>Сгенерировать новые MAC-адреса всех сетевых адаптеров во время импорта.</translation>
     </message>
 </context>
 <context>
@@ -4982,12 +4982,12 @@
     <message>
         <source>Paravirtualized Network (virtio-net 1.0)</source>
         <comment>NetworkAdapterType</comment>
-        <translation type="unfinished"></translation>
+        <translation>Паравиртуальная сеть (virtio-net 1.0)</translation>
     </message>
     <message>
         <source>PCnet-ISA (Am79C960)</source>
         <comment>NetworkAdapterType</comment>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
 </context>
 <context>
@@ -5026,11 +5026,11 @@
     </message>
     <message>
         <source>New Directory</source>
-        <translation type="unfinished">Новая папка</translation>
+        <translation>Новая папка</translation>
     </message>
     <message>
         <source>Local Path</source>
-        <translation type="unfinished">Локальный путь</translation>
+        <translation>Локальный путь</translation>
     </message>
 </context>
 <context>
@@ -6878,7 +6878,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>No Guest Session found!&lt;br&gt;Please use the Session Panel to start a new guest session</source>
-        <translation type="unfinished"></translation>
+        <translation>Гостевая сессия не обнаружена!&lt;br&gt;Пожалуйста используйте панель сессий для запуска новой</translation>
     </message>
 </context>
 <context>
@@ -7161,7 +7161,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Assign value ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Задаём значение ...</translation>
     </message>
 </context>
 <context>
@@ -9607,11 +9607,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Adding network ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Создание сети ...</translation>
     </message>
     <message>
         <source>Removing network ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Удаление сети ...</translation>
     </message>
 </context>
 <context>
@@ -13376,7 +13376,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Choose/Create a disk image...</source>
-        <translation type="unfinished">Выбрать/создать образ диска...</translation>
+        <translation>Выбрать/создать образ диска...</translation>
     </message>
 </context>
 <context>
@@ -14274,11 +14274,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Moving medium ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Перенос носителя ...</translation>
     </message>
     <message>
         <source>Removing medium ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Удаление носителя ...</translation>
     </message>
 </context>
 <context>
@@ -14546,11 +14546,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Moving medium ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Перенос носителя ...</translation>
     </message>
     <message>
         <source>Resizing medium ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Изменение размера носителя ...</translation>
     </message>
 </context>
 <context>
@@ -18811,7 +18811,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>The file will be saved under:&lt;br&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>Файл будет сохранён в:&lt;br&gt;</translation>
     </message>
 </context>
 <context>
@@ -19554,52 +19554,52 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&amp;Guest Control</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Контроль гостевой ОС</translation>
     </message>
     <message>
         <source>turned off</source>
         <comment>Screen</comment>
-        <translation type="unfinished">выключена</translation>
+        <translation>выключен</translation>
     </message>
     <message>
         <source>Active</source>
         <comment>Nested Paging</comment>
-        <translation type="unfinished"></translation>
+        <translation>Активна</translation>
     </message>
     <message>
         <source>Inactive</source>
         <comment>Nested Paging</comment>
-        <translation type="unfinished"></translation>
+        <translation>Неактивна</translation>
     </message>
     <message>
         <source>Active</source>
         <comment>Unrestricted Execution</comment>
-        <translation type="unfinished"></translation>
+        <translation>Активна</translation>
     </message>
     <message>
         <source>Inactive</source>
         <comment>Unrestricted Execution</comment>
-        <translation type="unfinished"></translation>
+        <translation>Неактивна</translation>
     </message>
     <message>
         <source>Not Available</source>
         <comment>VRDE Port</comment>
-        <translation type="unfinished">Не доступен</translation>
+        <translation>Не доступен</translation>
     </message>
     <message>
         <source>not set</source>
         <comment>Execution Engine</comment>
-        <translation type="unfinished">Не задан</translation>
+        <translation>не задан</translation>
     </message>
     <message>
         <source>Not Detected</source>
         <comment>Guest OS Type</comment>
-        <translation type="unfinished"></translation>
+        <translation>Не определен</translation>
     </message>
     <message>
         <source>Not Detected</source>
         <comment>Guest Additions Version</comment>
-        <translation type="unfinished"></translation>
+        <translation>Не определены</translation>
     </message>
 </context>
 <context>
@@ -20870,7 +20870,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Acquire export form ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Получение формы экспорта ...</translation>
     </message>
 </context>
 <context>
@@ -21083,23 +21083,23 @@ Home folders can also be individually (per virtual machine)  modified.</source>
     </message>
     <message>
         <source>Acquire cloud instances ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Получение облачных экземпляров машин ...</translation>
     </message>
     <message>
         <source>Read appliance ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Чтение конфигурации ...</translation>
     </message>
     <message>
         <source>Acquire import form ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Получение формы импорта ...</translation>
     </message>
     <message>
         <source>Please choose the source to import appliance from.  This can be a local file system to import OVF archive or one of known cloud service providers to import cloud VM from.</source>
-        <translation type="unfinished"></translation>
+        <translation>Пожалуйста, выберите источник для импорта конфигурации.  Это может быть как локальная файловая система для импорта OVF архива, так и один из известных провайдеров облачных сервисов для импорта машины напрямую из облака.</translation>
     </message>
     <message>
         <source>&amp;Source:</source>
-        <translation type="unfinished">&amp;Источник:</translation>
+        <translation>&amp;Источник:</translation>
     </message>
 </context>
 <context>
@@ -21173,15 +21173,15 @@ Home folders can also be individually (per virtual machine)  modified.</source>
     </message>
     <message>
         <source>Acquire launch form ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Получение формы запуска ...</translation>
     </message>
     <message>
         <source>Acquire cloud images ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Получение облачных образов дисков ...</translation>
     </message>
     <message>
         <source>&amp;Destination:</source>
-        <translation type="unfinished">&amp;Расположение:</translation>
+        <translation>&amp;Расположение:</translation>
     </message>
 </context>
 <context>
