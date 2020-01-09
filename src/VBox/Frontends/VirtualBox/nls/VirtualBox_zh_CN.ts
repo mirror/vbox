@@ -2756,11 +2756,11 @@
     </message>
     <message>
         <source>Include only NAT network adapter MAC addresses during cloning.</source>
-        <translation>复制虚拟机时仅包含 NAT 网卡的 MAC 地址。</translation>
+        <translation type="vanished">复制虚拟机时仅包含 NAT 网卡的 MAC 地址。</translation>
     </message>
     <message>
         <source>Generate new MAC addresses for all network adapters during cloning.</source>
-        <translation>复制虚拟机时为所有网卡重新生成 MAC 地址。</translation>
+        <translation type="vanished">复制虚拟机时为所有网卡重新生成 MAC 地址。</translation>
     </message>
     <message>
         <source>Additional Options:</source>
@@ -2772,10 +2772,22 @@
     </message>
     <message>
         <source>Include all network adapter MAC addresses during cloning.</source>
-        <translation>复制虚拟机时包含所有网卡的 MAC 地址。</translation>
+        <translation type="vanished">复制虚拟机时包含所有网卡的 MAC 地址。</translation>
     </message>
     <message>
         <source>&amp;Machine Base Folder:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Include all network adapter MAC addresses during importing.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Include only NAT network adapter MAC addresses during importing.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Generate new MAC addresses for all network adapters during importing.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -4075,109 +4087,19 @@
         <translation type="unfinished">TCP</translation>
     </message>
     <message>
-        <source>Undefined</source>
-        <comment>GuestSessionStatus</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Starting</source>
         <comment>GuestSessionStatus</comment>
-        <translation type="unfinished">正在启动</translation>
-    </message>
-    <message>
-        <source>Started</source>
-        <comment>GuestSessionStatus</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Terminating</source>
-        <comment>GuestSessionStatus</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Terminated</source>
-        <comment>GuestSessionStatus</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>TimedOutKilled</source>
-        <comment>GuestSessionStatus</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>TimedOutAbnormally</source>
-        <comment>GuestSessionStatus</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Down</source>
-        <comment>GuestSessionStatus</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Error</source>
-        <comment>GuestSessionStatus</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Undefined</source>
-        <comment>ProcessStatus</comment>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">正在启动</translation>
     </message>
     <message>
         <source>Starting</source>
         <comment>ProcessStatus</comment>
-        <translation type="unfinished">正在启动</translation>
-    </message>
-    <message>
-        <source>Started</source>
-        <comment>ProcessStatus</comment>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">正在启动</translation>
     </message>
     <message>
         <source>Paused</source>
         <comment>ProcessStatus</comment>
-        <translation type="unfinished">已暂停</translation>
-    </message>
-    <message>
-        <source>Terminating</source>
-        <comment>ProcessStatus</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>TerminatedNormally</source>
-        <comment>ProcessStatus</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>TerminatedSignal</source>
-        <comment>ProcessStatus</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>TerminatedAbnormally</source>
-        <comment>ProcessStatus</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>TimedOutKilled</source>
-        <comment>ProcessStatus</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>TimedOutAbnormally</source>
-        <comment>ProcessStatus</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Down</source>
-        <comment>ProcessStatus</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Error</source>
-        <comment>ProcessStatus</comment>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">已暂停</translation>
     </message>
     <message>
         <source>B</source>
@@ -4892,6 +4814,16 @@
         <source>Please choose a location for new virtual hard disk file</source>
         <translation type="unfinished">请选择虚拟硬盘文件保存的位置</translation>
     </message>
+    <message>
+        <source>Paravirtualized Network (virtio-net 1.0)</source>
+        <comment>NetworkAdapterType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>PCnet-ISA (Am79C960)</source>
+        <comment>NetworkAdapterType</comment>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UICustomFileSystemModel</name>
@@ -4916,15 +4848,15 @@
         <translation type="unfinished">权限</translation>
     </message>
     <message>
-        <source>LocalPath</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Path</source>
         <translation type="unfinished">路径</translation>
     </message>
     <message>
-        <source>NewDirectory</source>
+        <source>New Directory</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Local Path</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -6582,9 +6514,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>No Guest Session
-Please use the Session Panel to start 
-a guest session</source>
+        <source>No Guest Session found!&lt;br&gt;Please use the Session Panel to start a new guest session</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -6732,15 +6662,15 @@ a guest session</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Assign value...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Name</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Value</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Assign value ...</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -9179,11 +9109,19 @@ a guest session</source>
     </message>
     <message>
         <source>Adding network...</source>
-        <translation>正在添加网络...</translation>
+        <translation type="vanished">正在添加网络...</translation>
     </message>
     <message>
         <source>Removing network...</source>
-        <translation>正在移除网络...</translation>
+        <translation type="vanished">正在移除网络...</translation>
+    </message>
+    <message>
+        <source>Adding network ...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Removing network ...</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -12313,16 +12251,6 @@ a guest session</source>
         <translation type="vanished">创建 VISO...</translation>
     </message>
     <message>
-        <source>Choose/Create a disk image...</source>
-        <comment>This is used for hard disks, optical media and floppies</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Choose a disk file...</source>
-        <comment>This is used for selecting an existing disk file</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>PIIX3 (IDE)</source>
         <translation type="unfinished"></translation>
     </message>
@@ -12392,6 +12320,10 @@ a guest session</source>
     </message>
     <message>
         <source>Choose/Create a Virtual Floppy Disk...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Choose/Create a disk image...</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -13209,7 +13141,7 @@ a guest session</source>
     </message>
     <message>
         <source>Moving medium...</source>
-        <translation>移动介质...</translation>
+        <translation type="vanished">移动介质...</translation>
     </message>
     <message>
         <source>%1, %2: %3, %4: %5</source>
@@ -13251,7 +13183,15 @@ a guest session</source>
     </message>
     <message>
         <source>Removing medium...</source>
-        <translation>移除介质...</translation>
+        <translation type="vanished">移除介质...</translation>
+    </message>
+    <message>
+        <source>Moving medium ...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Removing medium ...</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -13388,7 +13328,7 @@ a guest session</source>
     </message>
     <message>
         <source>Moving medium...</source>
-        <translation>移动介质...</translation>
+        <translation type="vanished">移动介质...</translation>
     </message>
     <message>
         <source>Virtual Media Manager</source>
@@ -13472,7 +13412,7 @@ a guest session</source>
     </message>
     <message>
         <source>Resizing medium...</source>
-        <translation>调整介质大小...</translation>
+        <translation type="vanished">调整介质大小...</translation>
     </message>
     <message>
         <source>Size:</source>
@@ -13497,6 +13437,14 @@ a guest session</source>
     <message>
         <source>&amp;Create</source>
         <translation type="obsolete">创建(&amp;C)</translation>
+    </message>
+    <message>
+        <source>Moving medium ...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Resizing medium ...</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -17023,11 +16971,6 @@ a guest session</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>The file will be saved under:
-</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source> is an invalid file name</source>
         <translation type="unfinished"></translation>
     </message>
@@ -17125,6 +17068,10 @@ a guest session</source>
     </message>
     <message>
         <source>Layout</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The file will be saved under:&lt;br&gt;</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -17613,10 +17560,6 @@ a guest session</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Guest Control &amp;Session Information</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>No guest additions! This metric requires guest additions to work properly.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -17721,10 +17664,6 @@ a guest session</source>
         <translation type="unfinished">显示设置</translation>
     </message>
     <message>
-        <source>turned off</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>VM Uptime</source>
         <translation type="unfinished">运行时间</translation>
     </message>
@@ -17754,15 +17693,15 @@ a guest session</source>
     </message>
     <message>
         <source>Active</source>
-        <translation type="unfinished">活动</translation>
+        <translation type="obsolete">活动</translation>
     </message>
     <message>
         <source>Inactive</source>
-        <translation type="unfinished">不活动</translation>
+        <translation type="obsolete">不活动</translation>
     </message>
     <message>
         <source>Not Available</source>
-        <translation type="unfinished">不可用</translation>
+        <translation type="obsolete">不可用</translation>
     </message>
     <message>
         <source>Guest Additions</source>
@@ -17778,10 +17717,59 @@ a guest session</source>
     </message>
     <message>
         <source>not set</source>
+        <translation type="obsolete">未设置</translation>
+    </message>
+    <message>
+        <source>Not Detected</source>
+        <translation type="obsolete">未检测到</translation>
+    </message>
+    <message>
+        <source>&amp;Guest Control</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>turned off</source>
+        <comment>Screen</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Active</source>
+        <comment>Nested Paging</comment>
+        <translation type="unfinished">活动</translation>
+    </message>
+    <message>
+        <source>Inactive</source>
+        <comment>Nested Paging</comment>
+        <translation type="unfinished">不活动</translation>
+    </message>
+    <message>
+        <source>Active</source>
+        <comment>Unrestricted Execution</comment>
+        <translation type="unfinished">活动</translation>
+    </message>
+    <message>
+        <source>Inactive</source>
+        <comment>Unrestricted Execution</comment>
+        <translation type="unfinished">不活动</translation>
+    </message>
+    <message>
+        <source>Not Available</source>
+        <comment>VRDE Port</comment>
+        <translation type="unfinished">不可用</translation>
+    </message>
+    <message>
+        <source>not set</source>
+        <comment>Execution Engine</comment>
         <translation type="unfinished">未设置</translation>
     </message>
     <message>
         <source>Not Detected</source>
+        <comment>Guest OS Type</comment>
+        <translation type="unfinished">未检测到</translation>
+    </message>
+    <message>
+        <source>Not Detected</source>
+        <comment>Guest Additions Version</comment>
         <translation type="unfinished">未检测到</translation>
     </message>
 </context>
@@ -18981,10 +18969,6 @@ a guest session</source>
         <translation>&lt;p&gt;请选择导出虚拟电脑对应的云服务账号。 请确认下表中的配置有效。 这些配置用于建立网络连接并上传虚拟电脑到服务器上。&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>Acquire export form...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Machine Creation:</source>
         <translation type="unfinished"></translation>
     </message>
@@ -19002,6 +18986,10 @@ a guest session</source>
     </message>
     <message>
         <source>This is the descriptive information which will be used to determine settings for a cloud storage your VM being exported to.  You can change it by double clicking on individual lines.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Acquire export form ...</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -19149,22 +19137,6 @@ a guest session</source>
         <translation type="unfinished">导入虚拟电脑 ...</translation>
     </message>
     <message>
-        <source>Acquire cloud instances...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Read appliance...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Acquire import form...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Please choose the source to import appliance from.  This can be a local file system to import OVF archive or one of known  cloud service providers to import cloud VM from.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Local File System</source>
         <translation type="unfinished"></translation>
     </message>
@@ -19208,9 +19180,22 @@ a guest session</source>
         <source>Settings</source>
         <translation type="unfinished">设置</translation>
     </message>
-</context>
-<context>
-    <name>UIWizardImportAppPageBasic1</name>
+    <message>
+        <source>Acquire cloud instances ...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Read appliance ...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Acquire import form ...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Please choose the source to import appliance from.  This can be a local file system to import OVF archive or one of known cloud service providers to import cloud VM from.</source>
+        <translation type="unfinished"></translation>
+    </message>
     <message>
         <source>&amp;Source:</source>
         <translation type="unfinished"></translation>
@@ -19218,10 +19203,6 @@ a guest session</source>
 </context>
 <context>
     <name>UIWizardNewCloudVM</name>
-    <message>
-        <source>Acquire launch form...</source>
-        <translation type="unfinished"></translation>
-    </message>
     <message>
         <source>Create Cloud Machine ...</source>
         <translation type="unfinished"></translation>
@@ -19233,10 +19214,6 @@ a guest session</source>
     <message>
         <source>Create</source>
         <translation type="unfinished">创建</translation>
-    </message>
-    <message>
-        <source>Acquire cloud images...</source>
-        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Destination to create</source>
@@ -19278,9 +19255,14 @@ a guest session</source>
         <source>Settings</source>
         <translation type="unfinished">设置</translation>
     </message>
-</context>
-<context>
-    <name>UIWizardNewCloudVMPageBasic1</name>
+    <message>
+        <source>Acquire launch form ...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Acquire cloud images ...</source>
+        <translation type="unfinished"></translation>
+    </message>
     <message>
         <source>&amp;Destination:</source>
         <translation type="unfinished"></translation>

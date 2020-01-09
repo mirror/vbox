@@ -2787,15 +2787,15 @@
     </message>
     <message>
         <source>Include all network adapter MAC addresses during cloning.</source>
-        <translation>Inclure toutes les adresses MAC de l&apos;interface réseau lors du clonage.</translation>
+        <translation type="vanished">Inclure toutes les adresses MAC de l&apos;interface réseau lors du clonage.</translation>
     </message>
     <message>
         <source>Include only NAT network adapter MAC addresses during cloning.</source>
-        <translation>Inclure uniquement les adresses MAC de l&apos;interface réseau NAT lors du clonage.</translation>
+        <translation type="vanished">Inclure uniquement les adresses MAC de l&apos;interface réseau NAT lors du clonage.</translation>
     </message>
     <message>
         <source>Generate new MAC addresses for all network adapters during cloning.</source>
-        <translation>Générer de nouvelles adresses MAC pour toutes les interfaces réseau lors du clonage.</translation>
+        <translation type="vanished">Générer de nouvelles adresses MAC pour toutes les interfaces réseau lors du clonage.</translation>
     </message>
     <message>
         <source>Additional Options:</source>
@@ -2803,6 +2803,18 @@
     </message>
     <message>
         <source>&amp;Machine Base Folder:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Include all network adapter MAC addresses during importing.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Include only NAT network adapter MAC addresses during importing.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Generate new MAC addresses for all network adapters during importing.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -4092,109 +4104,19 @@
         <translation type="unfinished">TCP</translation>
     </message>
     <message>
-        <source>Undefined</source>
-        <comment>GuestSessionStatus</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Starting</source>
         <comment>GuestSessionStatus</comment>
-        <translation type="unfinished">Démarrage</translation>
-    </message>
-    <message>
-        <source>Started</source>
-        <comment>GuestSessionStatus</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Terminating</source>
-        <comment>GuestSessionStatus</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Terminated</source>
-        <comment>GuestSessionStatus</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>TimedOutKilled</source>
-        <comment>GuestSessionStatus</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>TimedOutAbnormally</source>
-        <comment>GuestSessionStatus</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Down</source>
-        <comment>GuestSessionStatus</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Error</source>
-        <comment>GuestSessionStatus</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Undefined</source>
-        <comment>ProcessStatus</comment>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">Démarrage</translation>
     </message>
     <message>
         <source>Starting</source>
         <comment>ProcessStatus</comment>
-        <translation type="unfinished">Démarrage</translation>
-    </message>
-    <message>
-        <source>Started</source>
-        <comment>ProcessStatus</comment>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">Démarrage</translation>
     </message>
     <message>
         <source>Paused</source>
         <comment>ProcessStatus</comment>
-        <translation type="unfinished">En pause</translation>
-    </message>
-    <message>
-        <source>Terminating</source>
-        <comment>ProcessStatus</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>TerminatedNormally</source>
-        <comment>ProcessStatus</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>TerminatedSignal</source>
-        <comment>ProcessStatus</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>TerminatedAbnormally</source>
-        <comment>ProcessStatus</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>TimedOutKilled</source>
-        <comment>ProcessStatus</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>TimedOutAbnormally</source>
-        <comment>ProcessStatus</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Down</source>
-        <comment>ProcessStatus</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Error</source>
-        <comment>ProcessStatus</comment>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">En pause</translation>
     </message>
     <message>
         <source>B</source>
@@ -4915,6 +4837,16 @@
         <source>Please choose a location for new virtual hard disk file</source>
         <translation type="unfinished">Choisissez un emplacement pour le nouveau fichier de disque dur virtuel</translation>
     </message>
+    <message>
+        <source>Paravirtualized Network (virtio-net 1.0)</source>
+        <comment>NetworkAdapterType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>PCnet-ISA (Am79C960)</source>
+        <comment>NetworkAdapterType</comment>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UICustomFileSystemModel</name>
@@ -4939,15 +4871,15 @@
         <translation type="unfinished">Permissions</translation>
     </message>
     <message>
-        <source>LocalPath</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Path</source>
         <translation type="unfinished">Chemin</translation>
     </message>
     <message>
-        <source>NewDirectory</source>
+        <source>New Directory</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Local Path</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -6641,9 +6573,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>No Guest Session
-Please use the Session Panel to start 
-a guest session</source>
+        <source>No Guest Session found!&lt;br&gt;Please use the Session Panel to start a new guest session</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -6792,15 +6722,15 @@ a guest session</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Assign value...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Name</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Value</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Assign value ...</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -9203,11 +9133,19 @@ a guest session</source>
     </message>
     <message>
         <source>Adding network...</source>
-        <translation>Ajout du réseau en cours...</translation>
+        <translation type="vanished">Ajout du réseau en cours...</translation>
     </message>
     <message>
         <source>Removing network...</source>
-        <translation>Suppression du réseau en cours...</translation>
+        <translation type="vanished">Suppression du réseau en cours...</translation>
+    </message>
+    <message>
+        <source>Adding network ...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Removing network ...</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -12349,16 +12287,6 @@ a guest session</source>
         <translation type="vanished">Créer un VISO ad hoc...</translation>
     </message>
     <message>
-        <source>Choose/Create a disk image...</source>
-        <comment>This is used for hard disks, optical media and floppies</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Choose a disk file...</source>
-        <comment>This is used for selecting an existing disk file</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>PIIX3 (IDE)</source>
         <translation type="unfinished"></translation>
     </message>
@@ -12428,6 +12356,10 @@ a guest session</source>
     </message>
     <message>
         <source>Choose/Create a Virtual Floppy Disk...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Choose/Create a disk image...</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -13261,7 +13193,7 @@ a guest session</source>
     </message>
     <message>
         <source>Moving medium...</source>
-        <translation>Déplacement du support...</translation>
+        <translation type="vanished">Déplacement du support...</translation>
     </message>
     <message>
         <source>%1, %2: %3, %4: %5</source>
@@ -13303,7 +13235,15 @@ a guest session</source>
     </message>
     <message>
         <source>Removing medium...</source>
-        <translation>Retrait du support...</translation>
+        <translation type="vanished">Retrait du support...</translation>
+    </message>
+    <message>
+        <source>Moving medium ...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Removing medium ...</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -13440,7 +13380,7 @@ a guest session</source>
     </message>
     <message>
         <source>Moving medium...</source>
-        <translation>Déplacement du support...</translation>
+        <translation type="vanished">Déplacement du support...</translation>
     </message>
     <message>
         <source>Virtual Media Manager</source>
@@ -13524,7 +13464,15 @@ a guest session</source>
     </message>
     <message>
         <source>Resizing medium...</source>
-        <translation>Redimensionnement du support...</translation>
+        <translation type="vanished">Redimensionnement du support...</translation>
+    </message>
+    <message>
+        <source>Moving medium ...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Resizing medium ...</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -17253,11 +17201,6 @@ And the size is not necessarily &quot;in megabytes&quot;, the slider chooses the
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>The file will be saved under:
-</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source> is an invalid file name</source>
         <translation type="unfinished"></translation>
     </message>
@@ -17355,6 +17298,10 @@ And the size is not necessarily &quot;in megabytes&quot;, the slider chooses the
     </message>
     <message>
         <source>Layout</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The file will be saved under:&lt;br&gt;</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -17861,10 +17808,6 @@ And the size is not necessarily &quot;in megabytes&quot;, the slider chooses the
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Guest Control &amp;Session Information</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>No guest additions! This metric requires guest additions to work properly.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -17969,10 +17912,6 @@ And the size is not necessarily &quot;in megabytes&quot;, the slider chooses the
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>turned off</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>VM Uptime</source>
         <translation type="unfinished"></translation>
     </message>
@@ -18001,16 +17940,12 @@ And the size is not necessarily &quot;in megabytes&quot;, the slider chooses the
         <translation type="unfinished">Interface de paravirtualisation</translation>
     </message>
     <message>
-        <source>Active</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Inactive</source>
-        <translation type="unfinished">Inactive</translation>
+        <translation type="obsolete">Inactive</translation>
     </message>
     <message>
         <source>Not Available</source>
-        <translation type="unfinished">Non disponible</translation>
+        <translation type="obsolete">Non disponible</translation>
     </message>
     <message>
         <source>Guest Additions</source>
@@ -18026,10 +17961,55 @@ And the size is not necessarily &quot;in megabytes&quot;, the slider chooses the
     </message>
     <message>
         <source>not set</source>
+        <translation type="obsolete">Non configuré </translation>
+    </message>
+    <message>
+        <source>&amp;Guest Control</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>turned off</source>
+        <comment>Screen</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Active</source>
+        <comment>Nested Paging</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Inactive</source>
+        <comment>Nested Paging</comment>
+        <translation type="unfinished">Inactive</translation>
+    </message>
+    <message>
+        <source>Active</source>
+        <comment>Unrestricted Execution</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Inactive</source>
+        <comment>Unrestricted Execution</comment>
+        <translation type="unfinished">Inactive</translation>
+    </message>
+    <message>
+        <source>Not Available</source>
+        <comment>VRDE Port</comment>
+        <translation type="unfinished">Non disponible</translation>
+    </message>
+    <message>
+        <source>not set</source>
+        <comment>Execution Engine</comment>
         <translation type="unfinished">Non configuré </translation>
     </message>
     <message>
         <source>Not Detected</source>
+        <comment>Guest OS Type</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Not Detected</source>
+        <comment>Guest Additions Version</comment>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -19253,10 +19233,6 @@ And the size is not necessarily &quot;in megabytes&quot;, the slider chooses the
         <translation>Inclure les fichiers d&apos;image ISO dans l&apos;archive de MV exportée.</translation>
     </message>
     <message>
-        <source>Acquire export form...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Machine Creation:</source>
         <translation type="unfinished"></translation>
     </message>
@@ -19274,6 +19250,10 @@ And the size is not necessarily &quot;in megabytes&quot;, the slider chooses the
     </message>
     <message>
         <source>This is the descriptive information which will be used to determine settings for a cloud storage your VM being exported to.  You can change it by double clicking on individual lines.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Acquire export form ...</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -19422,22 +19402,6 @@ And the size is not necessarily &quot;in megabytes&quot;, the slider chooses the
         <translation type="unfinished">Importation de l&apos;apareil virtuel...</translation>
     </message>
     <message>
-        <source>Acquire cloud instances...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Read appliance...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Acquire import form...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Please choose the source to import appliance from.  This can be a local file system to import OVF archive or one of known  cloud service providers to import cloud VM from.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Local File System</source>
         <translation type="unfinished"></translation>
     </message>
@@ -19481,9 +19445,22 @@ And the size is not necessarily &quot;in megabytes&quot;, the slider chooses the
         <source>Settings</source>
         <translation type="unfinished">Paramètres</translation>
     </message>
-</context>
-<context>
-    <name>UIWizardImportAppPageBasic1</name>
+    <message>
+        <source>Acquire cloud instances ...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Read appliance ...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Acquire import form ...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Please choose the source to import appliance from.  This can be a local file system to import OVF archive or one of known cloud service providers to import cloud VM from.</source>
+        <translation type="unfinished"></translation>
+    </message>
     <message>
         <source>&amp;Source:</source>
         <translation type="unfinished"></translation>
@@ -19491,10 +19468,6 @@ And the size is not necessarily &quot;in megabytes&quot;, the slider chooses the
 </context>
 <context>
     <name>UIWizardNewCloudVM</name>
-    <message>
-        <source>Acquire launch form...</source>
-        <translation type="unfinished"></translation>
-    </message>
     <message>
         <source>Create Cloud Machine ...</source>
         <translation type="unfinished"></translation>
@@ -19506,10 +19479,6 @@ And the size is not necessarily &quot;in megabytes&quot;, the slider chooses the
     <message>
         <source>Create</source>
         <translation type="unfinished">Créer</translation>
-    </message>
-    <message>
-        <source>Acquire cloud images...</source>
-        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Destination to create</source>
@@ -19551,9 +19520,14 @@ And the size is not necessarily &quot;in megabytes&quot;, the slider chooses the
         <source>Settings</source>
         <translation type="unfinished">Paramètres</translation>
     </message>
-</context>
-<context>
-    <name>UIWizardNewCloudVMPageBasic1</name>
+    <message>
+        <source>Acquire launch form ...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Acquire cloud images ...</source>
+        <translation type="unfinished"></translation>
+    </message>
     <message>
         <source>&amp;Destination:</source>
         <translation type="unfinished"></translation>

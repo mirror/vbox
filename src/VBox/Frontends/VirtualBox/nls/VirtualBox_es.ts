@@ -2923,11 +2923,11 @@
     </message>
     <message>
         <source>Include only NAT network adapter MAC addresses during cloning.</source>
-        <translation>Incluir solo las direcciones NAT de adaptador de red durante la clonación.</translation>
+        <translation type="vanished">Incluir solo las direcciones NAT de adaptador de red durante la clonación.</translation>
     </message>
     <message>
         <source>Generate new MAC addresses for all network adapters during cloning.</source>
-        <translation>Generar nuevas direcciones MAC para todos los adaptadore de red durante la clonación.</translation>
+        <translation type="vanished">Generar nuevas direcciones MAC para todos los adaptadore de red durante la clonación.</translation>
     </message>
     <message>
         <source>Additional Options:</source>
@@ -2939,11 +2939,23 @@
     </message>
     <message>
         <source>Include all network adapter MAC addresses during cloning.</source>
-        <translation>Incluir todas las direcciones MAC de adaptadores de red durante la clonación.</translation>
+        <translation type="vanished">Incluir todas las direcciones MAC de adaptadores de red durante la clonación.</translation>
     </message>
     <message>
         <source>&amp;Machine Base Folder:</source>
         <translation>Carpeta base de &amp;máquina:</translation>
+    </message>
+    <message>
+        <source>Include all network adapter MAC addresses during importing.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Include only NAT network adapter MAC addresses during importing.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Generate new MAC addresses for all network adapters during importing.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -4274,107 +4286,107 @@
     <message>
         <source>Undefined</source>
         <comment>GuestSessionStatus</comment>
-        <translation>Indefinido</translation>
+        <translation type="vanished">Indefinido</translation>
     </message>
     <message>
         <source>Starting</source>
         <comment>GuestSessionStatus</comment>
-        <translation>Iniciando</translation>
+        <translation type="vanished">Iniciando</translation>
     </message>
     <message>
         <source>Started</source>
         <comment>GuestSessionStatus</comment>
-        <translation>Iniciada</translation>
+        <translation type="vanished">Iniciada</translation>
     </message>
     <message>
         <source>Terminating</source>
         <comment>GuestSessionStatus</comment>
-        <translation>Terminando</translation>
+        <translation type="vanished">Terminando</translation>
     </message>
     <message>
         <source>Terminated</source>
         <comment>GuestSessionStatus</comment>
-        <translation>Terminada</translation>
+        <translation type="vanished">Terminada</translation>
     </message>
     <message>
         <source>TimedOutKilled</source>
         <comment>GuestSessionStatus</comment>
-        <translation>TimedOutKilled</translation>
+        <translation type="vanished">TimedOutKilled</translation>
     </message>
     <message>
         <source>TimedOutAbnormally</source>
         <comment>GuestSessionStatus</comment>
-        <translation>TimedOutAbnormally</translation>
+        <translation type="vanished">TimedOutAbnormally</translation>
     </message>
     <message>
         <source>Down</source>
         <comment>GuestSessionStatus</comment>
-        <translation>Parada</translation>
+        <translation type="vanished">Parada</translation>
     </message>
     <message>
         <source>Error</source>
         <comment>GuestSessionStatus</comment>
-        <translation>Error</translation>
+        <translation type="vanished">Error</translation>
     </message>
     <message>
         <source>Undefined</source>
         <comment>ProcessStatus</comment>
-        <translation>Indefinido</translation>
+        <translation type="vanished">Indefinido</translation>
     </message>
     <message>
         <source>Starting</source>
         <comment>ProcessStatus</comment>
-        <translation>Iniciando</translation>
+        <translation type="vanished">Iniciando</translation>
     </message>
     <message>
         <source>Started</source>
         <comment>ProcessStatus</comment>
-        <translation>Iniciado</translation>
+        <translation type="vanished">Iniciado</translation>
     </message>
     <message>
         <source>Paused</source>
         <comment>ProcessStatus</comment>
-        <translation>Detenida</translation>
+        <translation type="vanished">Detenida</translation>
     </message>
     <message>
         <source>Terminating</source>
         <comment>ProcessStatus</comment>
-        <translation>Terminando</translation>
+        <translation type="vanished">Terminando</translation>
     </message>
     <message>
         <source>TerminatedNormally</source>
         <comment>ProcessStatus</comment>
-        <translation>TerminatedNormally</translation>
+        <translation type="vanished">TerminatedNormally</translation>
     </message>
     <message>
         <source>TerminatedSignal</source>
         <comment>ProcessStatus</comment>
-        <translation>TerminatedSignal</translation>
+        <translation type="vanished">TerminatedSignal</translation>
     </message>
     <message>
         <source>TerminatedAbnormally</source>
         <comment>ProcessStatus</comment>
-        <translation>TerminatedAbnormally</translation>
+        <translation type="vanished">TerminatedAbnormally</translation>
     </message>
     <message>
         <source>TimedOutKilled</source>
         <comment>ProcessStatus</comment>
-        <translation>TimedOutKilled</translation>
+        <translation type="vanished">TimedOutKilled</translation>
     </message>
     <message>
         <source>TimedOutAbnormally</source>
         <comment>ProcessStatus</comment>
-        <translation>TimedOutAbnormally</translation>
+        <translation type="vanished">TimedOutAbnormally</translation>
     </message>
     <message>
         <source>Down</source>
         <comment>ProcessStatus</comment>
-        <translation>Parado</translation>
+        <translation type="vanished">Parado</translation>
     </message>
     <message>
         <source>Error</source>
         <comment>ProcessStatus</comment>
-        <translation>Error</translation>
+        <translation type="vanished">Error</translation>
     </message>
     <message>
         <source>B</source>
@@ -5095,6 +5107,16 @@
         <source>Please choose a location for new virtual hard disk file</source>
         <translation>Seleccione una ubicación para el nuevo archivo de disco duro virtual</translation>
     </message>
+    <message>
+        <source>Paravirtualized Network (virtio-net 1.0)</source>
+        <comment>NetworkAdapterType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>PCnet-ISA (Am79C960)</source>
+        <comment>NetworkAdapterType</comment>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UICustomFileSystemModel</name>
@@ -5120,7 +5142,7 @@
     </message>
     <message>
         <source>LocalPath</source>
-        <translation>LocalPath</translation>
+        <translation type="vanished">LocalPath</translation>
     </message>
     <message>
         <source>Path</source>
@@ -5128,7 +5150,15 @@
     </message>
     <message>
         <source>NewDirectory</source>
-        <translation>NewDirectory</translation>
+        <translation type="vanished">NewDirectory</translation>
+    </message>
+    <message>
+        <source>New Directory</source>
+        <translation type="unfinished">Nueva carpeta</translation>
+    </message>
+    <message>
+        <source>Local Path</source>
+        <translation type="unfinished">Ruta local</translation>
     </message>
 </context>
 <context>
@@ -7011,9 +7041,13 @@ p, li { white-space: pre-wrap; }
         <source>No Guest Session
 Please use the Session Panel to start 
 a guest session</source>
-        <translation>Sin sesión invitado
+        <translation type="vanished">Sin sesión invitado
 Use el panel de sesión para iniciar 
 una sesión invitado</translation>
+    </message>
+    <message>
+        <source>No Guest Session found!&lt;br&gt;Please use the Session Panel to start a new guest session</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -7309,7 +7343,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Assign value...</source>
-        <translation>Asignar valor...</translation>
+        <translation type="vanished">Asignar valor...</translation>
     </message>
     <message>
         <source>Name</source>
@@ -7318,6 +7352,10 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Value</source>
         <translation>Valor</translation>
+    </message>
+    <message>
+        <source>Assign value ...</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -9818,11 +9856,19 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Adding network...</source>
-        <translation>Agregando red...</translation>
+        <translation type="vanished">Agregando red...</translation>
     </message>
     <message>
         <source>Removing network...</source>
-        <translation>Eliminado red...</translation>
+        <translation type="vanished">Eliminado red...</translation>
+    </message>
+    <message>
+        <source>Adding network ...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Removing network ...</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -13456,12 +13502,12 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Choose/Create a disk image...</source>
         <comment>This is used for hard disks, optical media and floppies</comment>
-        <translation>Seleccionar/crear una imagen de disco...</translation>
+        <translation type="vanished">Seleccionar/crear una imagen de disco...</translation>
     </message>
     <message>
         <source>Choose a disk file...</source>
         <comment>This is used for selecting an existing disk file</comment>
-        <translation>Selecionar un archivo de disco...</translation>
+        <translation type="vanished">Selecionar un archivo de disco...</translation>
     </message>
     <message>
         <source>PIIX3 (IDE)</source>
@@ -13534,6 +13580,10 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Choose/Create a Virtual Floppy Disk...</source>
         <translation>Seleccionar/crear un disquete virtual...</translation>
+    </message>
+    <message>
+        <source>Choose/Create a disk image...</source>
+        <translation type="unfinished">Seleccionar/crear una imagen de disco...</translation>
     </message>
 </context>
 <context>
@@ -14401,7 +14451,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Moving medium...</source>
-        <translation>Moviendo medio...</translation>
+        <translation type="vanished">Moviendo medio...</translation>
     </message>
     <message>
         <source>%1, %2: %3, %4: %5</source>
@@ -14443,7 +14493,15 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Removing medium...</source>
-        <translation>Eliminando medio...</translation>
+        <translation type="vanished">Eliminando medio...</translation>
+    </message>
+    <message>
+        <source>Moving medium ...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Removing medium ...</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -14580,7 +14638,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Moving medium...</source>
-        <translation>Moviendo medio...</translation>
+        <translation type="vanished">Moviendo medio...</translation>
     </message>
     <message>
         <source>Virtual Media Manager</source>
@@ -14652,7 +14710,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Resizing medium...</source>
-        <translation>Cambiando tamaño del medio...</translation>
+        <translation type="vanished">Cambiando tamaño del medio...</translation>
     </message>
     <message>
         <source>Size:</source>
@@ -14677,6 +14735,14 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>&amp;Create</source>
         <translation type="obsolete">&amp;Crear</translation>
+    </message>
+    <message>
+        <source>Moving medium ...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Resizing medium ...</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -19350,7 +19416,7 @@ este paso y luego conectar los Discos Duros desde el diálogo de Configuración 
     <message>
         <source>The file will be saved under:
 </source>
-        <translation>El archivo será guardado en:
+        <translation type="vanished">El archivo será guardado en:
 </translation>
     </message>
     <message>
@@ -19452,6 +19518,10 @@ este paso y luego conectar los Discos Duros desde el diálogo de Configuración 
     <message>
         <source>Layout</source>
         <translation>Disposición</translation>
+    </message>
+    <message>
+        <source>The file will be saved under:&lt;br&gt;</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -20038,7 +20108,7 @@ este paso y luego conectar los Discos Duros desde el diálogo de Configuración 
     </message>
     <message>
         <source>Guest Control &amp;Session Information</source>
-        <translation>Información de control de &amp;sesión de invitado</translation>
+        <translation type="vanished">Información de control de &amp;sesión de invitado</translation>
     </message>
     <message>
         <source>No guest additions! This metric requires guest additions to work properly.</source>
@@ -20146,7 +20216,7 @@ este paso y luego conectar los Discos Duros desde el diálogo de Configuración 
     </message>
     <message>
         <source>turned off</source>
-        <translation>apagado</translation>
+        <translation type="vanished">apagado</translation>
     </message>
     <message>
         <source>VM Uptime</source>
@@ -20178,15 +20248,15 @@ este paso y luego conectar los Discos Duros desde el diálogo de Configuración 
     </message>
     <message>
         <source>Active</source>
-        <translation>Activo</translation>
+        <translation type="vanished">Activo</translation>
     </message>
     <message>
         <source>Inactive</source>
-        <translation>Inactivo</translation>
+        <translation type="vanished">Inactivo</translation>
     </message>
     <message>
         <source>Not Available</source>
-        <translation>No disponible</translation>
+        <translation type="vanished">No disponible</translation>
     </message>
     <message>
         <source>Guest Additions</source>
@@ -20202,11 +20272,60 @@ este paso y luego conectar los Discos Duros desde el diálogo de Configuración 
     </message>
     <message>
         <source>not set</source>
-        <translation>no configurado</translation>
+        <translation type="vanished">no configurado</translation>
     </message>
     <message>
         <source>Not Detected</source>
-        <translation>No detectado</translation>
+        <translation type="vanished">No detectado</translation>
+    </message>
+    <message>
+        <source>&amp;Guest Control</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>turned off</source>
+        <comment>Screen</comment>
+        <translation type="unfinished">apagado</translation>
+    </message>
+    <message>
+        <source>Active</source>
+        <comment>Nested Paging</comment>
+        <translation type="unfinished">Activo</translation>
+    </message>
+    <message>
+        <source>Inactive</source>
+        <comment>Nested Paging</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Active</source>
+        <comment>Unrestricted Execution</comment>
+        <translation type="unfinished">Activo</translation>
+    </message>
+    <message>
+        <source>Inactive</source>
+        <comment>Unrestricted Execution</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Not Available</source>
+        <comment>VRDE Port</comment>
+        <translation type="unfinished">No disponible</translation>
+    </message>
+    <message>
+        <source>not set</source>
+        <comment>Execution Engine</comment>
+        <translation type="unfinished">no configurado</translation>
+    </message>
+    <message>
+        <source>Not Detected</source>
+        <comment>Guest OS Type</comment>
+        <translation type="unfinished">No detectado</translation>
+    </message>
+    <message>
+        <source>Not Detected</source>
+        <comment>Guest Additions Version</comment>
+        <translation type="unfinished">No detectado</translation>
     </message>
 </context>
 <context>
@@ -21439,7 +21558,7 @@ este paso y luego conectar los Discos Duros desde el diálogo de Configuración 
     </message>
     <message>
         <source>Acquire export form...</source>
-        <translation>Obtener exportación desde...</translation>
+        <translation type="vanished">Obtener exportación desde...</translation>
     </message>
     <message>
         <source>Machine Creation:</source>
@@ -21460,6 +21579,10 @@ este paso y luego conectar los Discos Duros desde el diálogo de Configuración 
     <message>
         <source>This is the descriptive information which will be used to determine settings for a cloud storage your VM being exported to.  You can change it by double clicking on individual lines.</source>
         <translation>Esta es la información descriptiva que será usada para determinar la cnfiguración para el almacenamiento en la nube de su MV siendo exportada. Puede cambiarla haciendo doble clic en las lineas individuales.</translation>
+    </message>
+    <message>
+        <source>Acquire export form ...</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -21615,19 +21738,19 @@ este paso y luego conectar los Discos Duros desde el diálogo de Configuración 
     </message>
     <message>
         <source>Acquire cloud instances...</source>
-        <translation>Obtener instancias en la nube...</translation>
+        <translation type="vanished">Obtener instancias en la nube...</translation>
     </message>
     <message>
         <source>Read appliance...</source>
-        <translation>Leer servicio...</translation>
+        <translation type="vanished">Leer servicio...</translation>
     </message>
     <message>
         <source>Acquire import form...</source>
-        <translation>Obtener importación desde...</translation>
+        <translation type="vanished">Obtener importación desde...</translation>
     </message>
     <message>
         <source>Please choose the source to import appliance from.  This can be a local file system to import OVF archive or one of known  cloud service providers to import cloud VM from.</source>
-        <translation>Seleccione el origen desde el que importar el servicio. Puede ser el sistema de archivos local para importar un archivo OVF o uno de los proveedores de servicio en la nube conocidos para importar la MV.</translation>
+        <translation type="vanished">Seleccione el origen desde el que importar el servicio. Puede ser el sistema de archivos local para importar un archivo OVF o uno de los proveedores de servicio en la nube conocidos para importar la MV.</translation>
     </message>
     <message>
         <source>Local File System</source>
@@ -21673,19 +21796,39 @@ este paso y luego conectar los Discos Duros desde el diálogo de Configuración 
         <source>Settings</source>
         <translation>Configuración</translation>
     </message>
+    <message>
+        <source>Acquire cloud instances ...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Read appliance ...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Acquire import form ...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Please choose the source to import appliance from.  This can be a local file system to import OVF archive or one of known cloud service providers to import cloud VM from.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Source:</source>
+        <translation type="unfinished">&amp;Fuente:</translation>
+    </message>
 </context>
 <context>
     <name>UIWizardImportAppPageBasic1</name>
     <message>
         <source>&amp;Source:</source>
-        <translation>&amp;Fuente:</translation>
+        <translation type="vanished">&amp;Fuente:</translation>
     </message>
 </context>
 <context>
     <name>UIWizardNewCloudVM</name>
     <message>
         <source>Acquire launch form...</source>
-        <translation>Obtener forma de inicio...</translation>
+        <translation type="vanished">Obtener forma de inicio...</translation>
     </message>
     <message>
         <source>Create Cloud Machine ...</source>
@@ -21701,7 +21844,7 @@ este paso y luego conectar los Discos Duros desde el diálogo de Configuración 
     </message>
     <message>
         <source>Acquire cloud images...</source>
-        <translation>Obtener imágenes en la nube...</translation>
+        <translation type="vanished">Obtener imágenes en la nube...</translation>
     </message>
     <message>
         <source>Destination to create</source>
@@ -21743,12 +21886,24 @@ este paso y luego conectar los Discos Duros desde el diálogo de Configuración 
         <source>Settings</source>
         <translation>Configuración</translation>
     </message>
+    <message>
+        <source>Acquire launch form ...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Acquire cloud images ...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Destination:</source>
+        <translation type="unfinished">&amp;Destino:</translation>
+    </message>
 </context>
 <context>
     <name>UIWizardNewCloudVMPageBasic1</name>
     <message>
         <source>&amp;Destination:</source>
-        <translation>&amp;Destino:</translation>
+        <translation type="vanished">&amp;Destino:</translation>
     </message>
 </context>
 <context>

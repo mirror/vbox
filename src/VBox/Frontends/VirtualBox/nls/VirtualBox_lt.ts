@@ -2496,14 +2496,6 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Include only NAT network adapter MAC addresses during cloning.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Generate new MAC addresses for all network adapters during cloning.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Additional Options:</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2512,11 +2504,19 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Include all network adapter MAC addresses during cloning.</source>
+        <source>&amp;Machine Base Folder:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&amp;Machine Base Folder:</source>
+        <source>Include all network adapter MAC addresses during importing.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Include only NAT network adapter MAC addresses during importing.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Generate new MAC addresses for all network adapters during importing.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -3790,109 +3790,19 @@
         <translation type="unfinished">TCP</translation>
     </message>
     <message>
-        <source>Undefined</source>
-        <comment>GuestSessionStatus</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Starting</source>
         <comment>GuestSessionStatus</comment>
-        <translation type="unfinished">Paleidžiama</translation>
-    </message>
-    <message>
-        <source>Started</source>
-        <comment>GuestSessionStatus</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Terminating</source>
-        <comment>GuestSessionStatus</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Terminated</source>
-        <comment>GuestSessionStatus</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>TimedOutKilled</source>
-        <comment>GuestSessionStatus</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>TimedOutAbnormally</source>
-        <comment>GuestSessionStatus</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Down</source>
-        <comment>GuestSessionStatus</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Error</source>
-        <comment>GuestSessionStatus</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Undefined</source>
-        <comment>ProcessStatus</comment>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">Paleidžiama</translation>
     </message>
     <message>
         <source>Starting</source>
         <comment>ProcessStatus</comment>
-        <translation type="unfinished">Paleidžiama</translation>
-    </message>
-    <message>
-        <source>Started</source>
-        <comment>ProcessStatus</comment>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">Paleidžiama</translation>
     </message>
     <message>
         <source>Paused</source>
         <comment>ProcessStatus</comment>
-        <translation type="unfinished">Pristabdyta</translation>
-    </message>
-    <message>
-        <source>Terminating</source>
-        <comment>ProcessStatus</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>TerminatedNormally</source>
-        <comment>ProcessStatus</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>TerminatedSignal</source>
-        <comment>ProcessStatus</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>TerminatedAbnormally</source>
-        <comment>ProcessStatus</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>TimedOutKilled</source>
-        <comment>ProcessStatus</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>TimedOutAbnormally</source>
-        <comment>ProcessStatus</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Down</source>
-        <comment>ProcessStatus</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Error</source>
-        <comment>ProcessStatus</comment>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">Pristabdyta</translation>
     </message>
     <message>
         <source>B</source>
@@ -4619,6 +4529,16 @@
         <source>Please choose a location for new virtual hard disk file</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Paravirtualized Network (virtio-net 1.0)</source>
+        <comment>NetworkAdapterType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>PCnet-ISA (Am79C960)</source>
+        <comment>NetworkAdapterType</comment>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UICustomFileSystemModel</name>
@@ -4643,15 +4563,15 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>LocalPath</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Path</source>
         <translation type="unfinished">Kelias</translation>
     </message>
     <message>
-        <source>NewDirectory</source>
+        <source>New Directory</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Local Path</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -6291,9 +6211,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>No Guest Session
-Please use the Session Panel to start 
-a guest session</source>
+        <source>No Guest Session found!&lt;br&gt;Please use the Session Panel to start a new guest session</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -6453,15 +6371,15 @@ a guest session</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Assign value...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Name</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Value</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Assign value ...</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -8759,11 +8677,19 @@ a guest session</source>
     </message>
     <message>
         <source>Adding network...</source>
-        <translation type="unfinished">Pridedamas tinklas...</translation>
+        <translation type="obsolete">Pridedamas tinklas...</translation>
     </message>
     <message>
         <source>Removing network...</source>
-        <translation type="unfinished">Šalinamas tinklas...</translation>
+        <translation type="obsolete">Šalinamas tinklas...</translation>
+    </message>
+    <message>
+        <source>Adding network ...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Removing network ...</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -11719,16 +11645,6 @@ a guest session</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Choose/Create a disk image...</source>
-        <comment>This is used for hard disks, optical media and floppies</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Choose a disk file...</source>
-        <comment>This is used for selecting an existing disk file</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>PIIX3 (IDE)</source>
         <translation type="unfinished"></translation>
     </message>
@@ -11798,6 +11714,10 @@ a guest session</source>
     </message>
     <message>
         <source>Choose/Create a Virtual Floppy Disk...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Choose/Create a disk image...</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -12584,10 +12504,6 @@ a guest session</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Moving medium...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>%1, %2: %3, %4: %5</source>
         <comment>col.1 text, col.2 name: col.2 text, col.3 name: col.3 text</comment>
         <translation type="unfinished">%1, %2: %3, %4: %5</translation>
@@ -12627,7 +12543,15 @@ a guest session</source>
     </message>
     <message>
         <source>Removing medium...</source>
-        <translation type="unfinished">Šalinama laikmena...</translation>
+        <translation type="obsolete">Šalinama laikmena...</translation>
+    </message>
+    <message>
+        <source>Moving medium ...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Removing medium ...</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -12739,10 +12663,6 @@ a guest session</source>
         <translation>Tikrinamas prieinamumas</translation>
     </message>
     <message>
-        <source>Moving medium...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Virtual Media Manager</source>
         <translation>Virtualių laikmenų tvarkytuvė</translation>
     </message>
@@ -12811,10 +12731,6 @@ a guest session</source>
         <translation type="vanished">&amp;Perkelti...</translation>
     </message>
     <message>
-        <source>Resizing medium...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Size:</source>
         <translation type="obsolete">Dydis:</translation>
     </message>
@@ -12837,6 +12753,14 @@ a guest session</source>
     <message>
         <source>&amp;Create</source>
         <translation type="obsolete">Su&amp;kurti</translation>
+    </message>
+    <message>
+        <source>Moving medium ...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Resizing medium ...</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -16701,11 +16625,6 @@ a guest session</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>The file will be saved under:
-</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source> is an invalid file name</source>
         <translation type="unfinished"></translation>
     </message>
@@ -16803,6 +16722,10 @@ a guest session</source>
     </message>
     <message>
         <source>Layout</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The file will be saved under:&lt;br&gt;</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -17274,10 +17197,6 @@ a guest session</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Guest Control &amp;Session Information</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>No guest additions! This metric requires guest additions to work properly.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -17382,10 +17301,6 @@ a guest session</source>
         <translation type="unfinished">Ekrano skiriamoji geba</translation>
     </message>
     <message>
-        <source>turned off</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>VM Uptime</source>
         <translation type="unfinished">VM veikimo trukmė</translation>
     </message>
@@ -17415,15 +17330,15 @@ a guest session</source>
     </message>
     <message>
         <source>Active</source>
-        <translation type="unfinished">Aktyvus</translation>
+        <translation type="obsolete">Aktyvus</translation>
     </message>
     <message>
         <source>Inactive</source>
-        <translation type="unfinished">Neaktyvus</translation>
+        <translation type="obsolete">Neaktyvus</translation>
     </message>
     <message>
         <source>Not Available</source>
-        <translation type="unfinished">Neprieinama</translation>
+        <translation type="obsolete">Neprieinama</translation>
     </message>
     <message>
         <source>Guest Additions</source>
@@ -17438,11 +17353,52 @@ a guest session</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <source>&amp;Guest Control</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>turned off</source>
+        <comment>Screen</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Active</source>
+        <comment>Nested Paging</comment>
+        <translation type="unfinished">Aktyvus</translation>
+    </message>
+    <message>
+        <source>Inactive</source>
+        <comment>Nested Paging</comment>
+        <translation type="unfinished">Neaktyvus</translation>
+    </message>
+    <message>
+        <source>Active</source>
+        <comment>Unrestricted Execution</comment>
+        <translation type="unfinished">Aktyvus</translation>
+    </message>
+    <message>
+        <source>Inactive</source>
+        <comment>Unrestricted Execution</comment>
+        <translation type="unfinished">Neaktyvus</translation>
+    </message>
+    <message>
+        <source>Not Available</source>
+        <comment>VRDE Port</comment>
+        <translation type="unfinished">Neprieinama</translation>
+    </message>
+    <message>
         <source>not set</source>
+        <comment>Execution Engine</comment>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Not Detected</source>
+        <comment>Guest OS Type</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Not Detected</source>
+        <comment>Guest Additions Version</comment>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -18501,10 +18457,6 @@ a guest session</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Acquire export form...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Machine Creation:</source>
         <translation type="unfinished"></translation>
     </message>
@@ -18522,6 +18474,10 @@ a guest session</source>
     </message>
     <message>
         <source>This is the descriptive information which will be used to determine settings for a cloud storage your VM being exported to.  You can change it by double clicking on individual lines.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Acquire export form ...</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -18645,22 +18601,6 @@ a guest session</source>
         <translation type="unfinished">Įkeliama virtuali mašina...</translation>
     </message>
     <message>
-        <source>Acquire cloud instances...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Read appliance...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Acquire import form...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Please choose the source to import appliance from.  This can be a local file system to import OVF archive or one of known  cloud service providers to import cloud VM from.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Local File System</source>
         <translation type="unfinished"></translation>
     </message>
@@ -18704,9 +18644,22 @@ a guest session</source>
         <source>Settings</source>
         <translation type="unfinished">Nuostatos</translation>
     </message>
-</context>
-<context>
-    <name>UIWizardImportAppPageBasic1</name>
+    <message>
+        <source>Acquire cloud instances ...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Read appliance ...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Acquire import form ...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Please choose the source to import appliance from.  This can be a local file system to import OVF archive or one of known cloud service providers to import cloud VM from.</source>
+        <translation type="unfinished"></translation>
+    </message>
     <message>
         <source>&amp;Source:</source>
         <translation type="unfinished"></translation>
@@ -18714,10 +18667,6 @@ a guest session</source>
 </context>
 <context>
     <name>UIWizardNewCloudVM</name>
-    <message>
-        <source>Acquire launch form...</source>
-        <translation type="unfinished"></translation>
-    </message>
     <message>
         <source>Create Cloud Machine ...</source>
         <translation type="unfinished"></translation>
@@ -18729,10 +18678,6 @@ a guest session</source>
     <message>
         <source>Create</source>
         <translation type="unfinished">Sukurti</translation>
-    </message>
-    <message>
-        <source>Acquire cloud images...</source>
-        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Destination to create</source>
@@ -18774,9 +18719,14 @@ a guest session</source>
         <source>Settings</source>
         <translation type="unfinished">Nuostatos</translation>
     </message>
-</context>
-<context>
-    <name>UIWizardNewCloudVMPageBasic1</name>
+    <message>
+        <source>Acquire launch form ...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Acquire cloud images ...</source>
+        <translation type="unfinished"></translation>
+    </message>
     <message>
         <source>&amp;Destination:</source>
         <translation type="unfinished"></translation>

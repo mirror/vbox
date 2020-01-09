@@ -2244,11 +2244,11 @@
     </message>
     <message>
         <source>Include only NAT network adapter MAC addresses during cloning.</source>
-        <translation>Während des Klonens nur MAC-Adressen der NAT-Netzwerk-Adapater mit einbeziehen.</translation>
+        <translation type="vanished">Während des Klonens nur MAC-Adressen der NAT-Netzwerk-Adapater mit einbeziehen.</translation>
     </message>
     <message>
         <source>Generate new MAC addresses for all network adapters during cloning.</source>
-        <translation>Während des Klonens neue MAC-Adressen für alle Netzwerk-Adapater generieren.</translation>
+        <translation type="vanished">Während des Klonens neue MAC-Adressen für alle Netzwerk-Adapater generieren.</translation>
     </message>
     <message>
         <source>Additional Options:</source>
@@ -2260,11 +2260,23 @@
     </message>
     <message>
         <source>Include all network adapter MAC addresses during cloning.</source>
-        <translation>Die MAC-Adressen aller Netzwerkadapter während des Klonen mit einbeziehen.</translation>
+        <translation type="vanished">Die MAC-Adressen aller Netzwerkadapter während des Klonen mit einbeziehen.</translation>
     </message>
     <message>
         <source>&amp;Machine Base Folder:</source>
         <translation>Basisordner der virtuellen &amp;Maschine:</translation>
+    </message>
+    <message>
+        <source>Include all network adapter MAC addresses during importing.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Include only NAT network adapter MAC addresses during importing.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Generate new MAC addresses for all network adapters during importing.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -3423,107 +3435,107 @@
     <message>
         <source>Undefined</source>
         <comment>GuestSessionStatus</comment>
-        <translation>Unbekannt</translation>
+        <translation type="vanished">Unbekannt</translation>
     </message>
     <message>
         <source>Starting</source>
         <comment>GuestSessionStatus</comment>
-        <translation>wird gestartet</translation>
+        <translation type="vanished">wird gestartet</translation>
     </message>
     <message>
         <source>Started</source>
         <comment>GuestSessionStatus</comment>
-        <translation>gestartet</translation>
+        <translation type="vanished">gestartet</translation>
     </message>
     <message>
         <source>Terminating</source>
         <comment>GuestSessionStatus</comment>
-        <translation>wird beendet</translation>
+        <translation type="vanished">wird beendet</translation>
     </message>
     <message>
         <source>Terminated</source>
         <comment>GuestSessionStatus</comment>
-        <translation>beendet</translation>
+        <translation type="vanished">beendet</translation>
     </message>
     <message>
         <source>TimedOutKilled</source>
         <comment>GuestSessionStatus</comment>
-        <translation>Nach Zeitüberschreitung getötet</translation>
+        <translation type="vanished">Nach Zeitüberschreitung getötet</translation>
     </message>
     <message>
         <source>TimedOutAbnormally</source>
         <comment>GuestSessionStatus</comment>
-        <translation>Nach Zeitüberschreitung anormal beendet</translation>
+        <translation type="vanished">Nach Zeitüberschreitung anormal beendet</translation>
     </message>
     <message>
         <source>Down</source>
         <comment>GuestSessionStatus</comment>
-        <translation>beendet (down)</translation>
+        <translation type="vanished">beendet (down)</translation>
     </message>
     <message>
         <source>Error</source>
         <comment>GuestSessionStatus</comment>
-        <translation>fehler</translation>
+        <translation type="vanished">fehler</translation>
     </message>
     <message>
         <source>Undefined</source>
         <comment>ProcessStatus</comment>
-        <translation>unbekannt</translation>
+        <translation type="vanished">unbekannt</translation>
     </message>
     <message>
         <source>Starting</source>
         <comment>ProcessStatus</comment>
-        <translation>wird gestartet</translation>
+        <translation type="vanished">wird gestartet</translation>
     </message>
     <message>
         <source>Started</source>
         <comment>ProcessStatus</comment>
-        <translation>gestartet</translation>
+        <translation type="vanished">gestartet</translation>
     </message>
     <message>
         <source>Paused</source>
         <comment>ProcessStatus</comment>
-        <translation>angehalten</translation>
+        <translation type="vanished">angehalten</translation>
     </message>
     <message>
         <source>Terminating</source>
         <comment>ProcessStatus</comment>
-        <translation>wird beendet</translation>
+        <translation type="vanished">wird beendet</translation>
     </message>
     <message>
         <source>TerminatedNormally</source>
         <comment>ProcessStatus</comment>
-        <translation>normal beendet</translation>
+        <translation type="vanished">normal beendet</translation>
     </message>
     <message>
         <source>TerminatedSignal</source>
         <comment>ProcessStatus</comment>
-        <translation>durch Signal beendet</translation>
+        <translation type="vanished">durch Signal beendet</translation>
     </message>
     <message>
         <source>TerminatedAbnormally</source>
         <comment>ProcessStatus</comment>
-        <translation>Anormal beendet</translation>
+        <translation type="vanished">Anormal beendet</translation>
     </message>
     <message>
         <source>TimedOutKilled</source>
         <comment>ProcessStatus</comment>
-        <translation>nach Zeitüberschreitung getötet</translation>
+        <translation type="vanished">nach Zeitüberschreitung getötet</translation>
     </message>
     <message>
         <source>TimedOutAbnormally</source>
         <comment>ProcessStatus</comment>
-        <translation>Nach Zeitüberschreitung anormal beendet</translation>
+        <translation type="vanished">Nach Zeitüberschreitung anormal beendet</translation>
     </message>
     <message>
         <source>Down</source>
         <comment>ProcessStatus</comment>
-        <translation>beendet (down)</translation>
+        <translation type="vanished">beendet (down)</translation>
     </message>
     <message>
         <source>Error</source>
         <comment>ProcessStatus</comment>
-        <translation>fehler</translation>
+        <translation type="vanished">fehler</translation>
     </message>
     <message>
         <source>B</source>
@@ -4244,6 +4256,16 @@
         <source>Please choose a location for new virtual hard disk file</source>
         <translation>Bitte wählen Sie einen Dateinamen für die neue virtuelle Festplatte</translation>
     </message>
+    <message>
+        <source>Paravirtualized Network (virtio-net 1.0)</source>
+        <comment>NetworkAdapterType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>PCnet-ISA (Am79C960)</source>
+        <comment>NetworkAdapterType</comment>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UICustomFileSystemModel</name>
@@ -4269,7 +4291,7 @@
     </message>
     <message>
         <source>LocalPath</source>
-        <translation>Lokaler Pfad</translation>
+        <translation type="vanished">Lokaler Pfad</translation>
     </message>
     <message>
         <source>Path</source>
@@ -4277,7 +4299,15 @@
     </message>
     <message>
         <source>NewDirectory</source>
-        <translation>Neues Verzeichnis</translation>
+        <translation type="vanished">Neues Verzeichnis</translation>
+    </message>
+    <message>
+        <source>New Directory</source>
+        <translation type="unfinished">Neues Verzeichnis</translation>
+    </message>
+    <message>
+        <source>Local Path</source>
+        <translation type="unfinished">Lokaler Pfad</translation>
     </message>
 </context>
 <context>
@@ -5233,7 +5263,11 @@
         <source>No Guest Session
 Please use the Session Panel to start 
 a guest session</source>
-        <translation>Keine Gastsitzung vorhanden</translation>
+        <translation type="vanished">Keine Gastsitzung vorhanden</translation>
+    </message>
+    <message>
+        <source>No Guest Session found!&lt;br&gt;Please use the Session Panel to start a new guest session</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -5299,7 +5333,7 @@ a guest session</source>
     </message>
     <message>
         <source>Assign value...</source>
-        <translation>Wert zuweisen...</translation>
+        <translation type="vanished">Wert zuweisen...</translation>
     </message>
     <message>
         <source>Name</source>
@@ -5308,6 +5342,10 @@ a guest session</source>
     <message>
         <source>Value</source>
         <translation>Wert</translation>
+    </message>
+    <message>
+        <source>Assign value ...</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -7205,11 +7243,19 @@ a guest session</source>
     </message>
     <message>
         <source>Adding network...</source>
-        <translation>Netzwerk hinzufügen ...</translation>
+        <translation type="vanished">Netzwerk hinzufügen ...</translation>
     </message>
     <message>
         <source>Removing network...</source>
-        <translation>Netzwerk entfernen ...</translation>
+        <translation type="vanished">Netzwerk entfernen ...</translation>
+    </message>
+    <message>
+        <source>Adding network ...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Removing network ...</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -9541,12 +9587,12 @@ a guest session</source>
     <message>
         <source>Choose/Create a disk image...</source>
         <comment>This is used for hard disks, optical media and floppies</comment>
-        <translation>Plattenabbild auswählen/erzeugen...</translation>
+        <translation type="vanished">Plattenabbild auswählen/erzeugen...</translation>
     </message>
     <message>
         <source>Choose a disk file...</source>
         <comment>This is used for selecting an existing disk file</comment>
-        <translation>Abbild auswählen...</translation>
+        <translation type="vanished">Abbild auswählen...</translation>
     </message>
     <message>
         <source>PIIX3 (IDE)</source>
@@ -9619,6 +9665,10 @@ a guest session</source>
     <message>
         <source>Choose/Create a Virtual Floppy Disk...</source>
         <translation>Virtuelles Diskettenlaufwerk auswählen/erzeugen...</translation>
+    </message>
+    <message>
+        <source>Choose/Create a disk image...</source>
+        <translation type="unfinished">Plattenabbild auswählen/erzeugen...</translation>
     </message>
 </context>
 <context>
@@ -10241,7 +10291,7 @@ a guest session</source>
     </message>
     <message>
         <source>Moving medium...</source>
-        <translation>Medium verschieben...</translation>
+        <translation type="vanished">Medium verschieben...</translation>
     </message>
     <message>
         <source>%1, %2: %3, %4: %5</source>
@@ -10283,7 +10333,15 @@ a guest session</source>
     </message>
     <message>
         <source>Removing medium...</source>
-        <translation>Entferne Medium...</translation>
+        <translation type="vanished">Entferne Medium...</translation>
+    </message>
+    <message>
+        <source>Moving medium ...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Removing medium ...</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -10438,7 +10496,7 @@ a guest session</source>
     </message>
     <message>
         <source>Moving medium...</source>
-        <translation>Medium verschieben...</translation>
+        <translation type="vanished">Medium verschieben...</translation>
     </message>
     <message>
         <source>Reset</source>
@@ -10518,7 +10576,7 @@ a guest session</source>
     </message>
     <message>
         <source>Resizing medium...</source>
-        <translation>Mediumgröße anpassen...</translation>
+        <translation type="vanished">Mediumgröße anpassen...</translation>
     </message>
     <message>
         <source>Size:</source>
@@ -10527,6 +10585,14 @@ a guest session</source>
     <message>
         <source>&amp;Create</source>
         <translation type="obsolete">&amp;Erzeugen</translation>
+    </message>
+    <message>
+        <source>Moving medium ...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Resizing medium ...</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -13151,7 +13217,7 @@ a guest session</source>
     <message>
         <source>The file will be saved under:
 </source>
-        <translation>Die Datei wird abgespeichert unter:
+        <translation type="vanished">Die Datei wird abgespeichert unter:
 </translation>
     </message>
     <message>
@@ -13253,6 +13319,10 @@ a guest session</source>
     <message>
         <source>Layout</source>
         <translation>Layout</translation>
+    </message>
+    <message>
+        <source>The file will be saved under:&lt;br&gt;</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -13706,10 +13776,6 @@ a guest session</source>
         <translation></translation>
     </message>
     <message>
-        <source>Guest Control &amp;Session Information</source>
-        <translation></translation>
-    </message>
-    <message>
         <source>No guest additions! This metric requires guest additions to work properly.</source>
         <translation>Keine Gast-Erweiterungen installiert! Diese Metrik erfordert, dass Gast-Erweiterungen installiert sind, damit sie ordnungsgemäß funktionieren.</translation>
     </message>
@@ -13815,7 +13881,7 @@ a guest session</source>
     </message>
     <message>
         <source>turned off</source>
-        <translation>ausgeschaltet</translation>
+        <translation type="vanished">ausgeschaltet</translation>
     </message>
     <message>
         <source>VM Uptime</source>
@@ -13847,15 +13913,15 @@ a guest session</source>
     </message>
     <message>
         <source>Active</source>
-        <translation>aktiv</translation>
+        <translation type="vanished">aktiv</translation>
     </message>
     <message>
         <source>Inactive</source>
-        <translation>inaktiv</translation>
+        <translation type="vanished">inaktiv</translation>
     </message>
     <message>
         <source>Not Available</source>
-        <translation>nicht verfügbar</translation>
+        <translation type="vanished">nicht verfügbar</translation>
     </message>
     <message>
         <source>Guest Additions</source>
@@ -13871,11 +13937,60 @@ a guest session</source>
     </message>
     <message>
         <source>not set</source>
-        <translation>nicht gesetzt</translation>
+        <translation type="vanished">nicht gesetzt</translation>
     </message>
     <message>
         <source>Not Detected</source>
-        <translation>nicht erkannt</translation>
+        <translation type="vanished">nicht erkannt</translation>
+    </message>
+    <message>
+        <source>&amp;Guest Control</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>turned off</source>
+        <comment>Screen</comment>
+        <translation type="unfinished">ausgeschaltet</translation>
+    </message>
+    <message>
+        <source>Active</source>
+        <comment>Nested Paging</comment>
+        <translation type="unfinished">aktiv</translation>
+    </message>
+    <message>
+        <source>Inactive</source>
+        <comment>Nested Paging</comment>
+        <translation type="unfinished">inaktiv</translation>
+    </message>
+    <message>
+        <source>Active</source>
+        <comment>Unrestricted Execution</comment>
+        <translation type="unfinished">aktiv</translation>
+    </message>
+    <message>
+        <source>Inactive</source>
+        <comment>Unrestricted Execution</comment>
+        <translation type="unfinished">inaktiv</translation>
+    </message>
+    <message>
+        <source>Not Available</source>
+        <comment>VRDE Port</comment>
+        <translation type="unfinished">nicht verfügbar</translation>
+    </message>
+    <message>
+        <source>not set</source>
+        <comment>Execution Engine</comment>
+        <translation type="unfinished">nicht gesetzt</translation>
+    </message>
+    <message>
+        <source>Not Detected</source>
+        <comment>Guest OS Type</comment>
+        <translation type="unfinished">nicht erkannt</translation>
+    </message>
+    <message>
+        <source>Not Detected</source>
+        <comment>Guest Additions Version</comment>
+        <translation type="unfinished">nicht erkannt</translation>
     </message>
 </context>
 <context>
@@ -14943,7 +15058,7 @@ a guest session</source>
     </message>
     <message>
         <source>Acquire export form...</source>
-        <translation>Export beziehen von...</translation>
+        <translation type="vanished">Export beziehen von...</translation>
     </message>
     <message>
         <source>Machine Creation:</source>
@@ -14964,6 +15079,10 @@ a guest session</source>
     <message>
         <source>This is the descriptive information which will be used to determine settings for a cloud storage your VM being exported to.  You can change it by double clicking on individual lines.</source>
         <translation>Dies sind die beschreibenden Informationen, die verwendet werden, um die Einstellungen für einen Cloud-Speicher festzulegen, in den Ihre VM exportiert wird.  Durch Doppelklick auf einzelne Zeilen können diese geändert werden.</translation>
+    </message>
+    <message>
+        <source>Acquire export form ...</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -15099,19 +15218,19 @@ a guest session</source>
     </message>
     <message>
         <source>Acquire cloud instances...</source>
-        <translation>Cloud-Instanzen erfassen...</translation>
+        <translation type="vanished">Cloud-Instanzen erfassen...</translation>
     </message>
     <message>
         <source>Read appliance...</source>
-        <translation>Appliance lesen...</translation>
+        <translation type="vanished">Appliance lesen...</translation>
     </message>
     <message>
         <source>Acquire import form...</source>
-        <translation>Erfasse Import von...</translation>
+        <translation type="vanished">Erfasse Import von...</translation>
     </message>
     <message>
         <source>Please choose the source to import appliance from.  This can be a local file system to import OVF archive or one of known  cloud service providers to import cloud VM from.</source>
-        <translation>Bitte Quelle auswählen, aus der die Appliance importieren werden soll.  Dies kann ein lokales Dateisystem zum Importieren von OVF-Archiven oder ein bekannter Cloud-Service-Anbieter zum Importieren von Cloud-VMs sein.</translation>
+        <translation type="vanished">Bitte Quelle auswählen, aus der die Appliance importieren werden soll.  Dies kann ein lokales Dateisystem zum Importieren von OVF-Archiven oder ein bekannter Cloud-Service-Anbieter zum Importieren von Cloud-VMs sein.</translation>
     </message>
     <message>
         <source>Local File System</source>
@@ -15157,19 +15276,39 @@ a guest session</source>
         <source>Settings</source>
         <translation>Einstellungen</translation>
     </message>
+    <message>
+        <source>Acquire cloud instances ...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Read appliance ...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Acquire import form ...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Please choose the source to import appliance from.  This can be a local file system to import OVF archive or one of known cloud service providers to import cloud VM from.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Source:</source>
+        <translation type="unfinished">&amp;Quelle:</translation>
+    </message>
 </context>
 <context>
     <name>UIWizardImportAppPageBasic1</name>
     <message>
         <source>&amp;Source:</source>
-        <translation>&amp;Quelle:</translation>
+        <translation type="vanished">&amp;Quelle:</translation>
     </message>
 </context>
 <context>
     <name>UIWizardNewCloudVM</name>
     <message>
         <source>Acquire launch form...</source>
-        <translation>Start-Typ beziehen...</translation>
+        <translation type="vanished">Start-Typ beziehen...</translation>
     </message>
     <message>
         <source>Create Cloud Machine ...</source>
@@ -15185,7 +15324,7 @@ a guest session</source>
     </message>
     <message>
         <source>Acquire cloud images...</source>
-        <translation>Cloud-Abbilder beziehen...</translation>
+        <translation type="vanished">Cloud-Abbilder beziehen...</translation>
     </message>
     <message>
         <source>Destination to create</source>
@@ -15227,12 +15366,24 @@ a guest session</source>
         <source>Settings</source>
         <translation>Einstellungen</translation>
     </message>
+    <message>
+        <source>Acquire launch form ...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Acquire cloud images ...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Destination:</source>
+        <translation type="unfinished">&amp;Ziel:</translation>
+    </message>
 </context>
 <context>
     <name>UIWizardNewCloudVMPageBasic1</name>
     <message>
         <source>&amp;Destination:</source>
-        <translation>&amp;Ziel:</translation>
+        <translation type="vanished">&amp;Ziel:</translation>
     </message>
 </context>
 <context>

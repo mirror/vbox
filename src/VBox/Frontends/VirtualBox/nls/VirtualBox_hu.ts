@@ -2838,11 +2838,11 @@
     </message>
     <message>
         <source>Include only NAT network adapter MAC addresses during cloning.</source>
-        <translation>Csak NAT hálózati kártya MAC-cím a klónozás alatt.</translation>
+        <translation type="vanished">Csak NAT hálózati kártya MAC-cím a klónozás alatt.</translation>
     </message>
     <message>
         <source>Generate new MAC addresses for all network adapters during cloning.</source>
-        <translation>Új MAC-cím generálása minden hálózati kártyához a klónozás alatt.</translation>
+        <translation type="vanished">Új MAC-cím generálása minden hálózati kártyához a klónozás alatt.</translation>
     </message>
     <message>
         <source>Additional Options:</source>
@@ -2854,10 +2854,22 @@
     </message>
     <message>
         <source>Include all network adapter MAC addresses during cloning.</source>
-        <translation>Minden hálózati kártya MAC-címe a klónozás alatt.</translation>
+        <translation type="vanished">Minden hálózati kártya MAC-címe a klónozás alatt.</translation>
     </message>
     <message>
         <source>&amp;Machine Base Folder:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Include all network adapter MAC addresses during importing.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Include only NAT network adapter MAC addresses during importing.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Generate new MAC addresses for all network adapters during importing.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -4144,109 +4156,14 @@
         <translation type="unfinished">TCP</translation>
     </message>
     <message>
-        <source>Undefined</source>
-        <comment>GuestSessionStatus</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Starting</source>
         <comment>GuestSessionStatus</comment>
-        <translation type="unfinished">Indítás</translation>
-    </message>
-    <message>
-        <source>Started</source>
-        <comment>GuestSessionStatus</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Terminating</source>
-        <comment>GuestSessionStatus</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Terminated</source>
-        <comment>GuestSessionStatus</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>TimedOutKilled</source>
-        <comment>GuestSessionStatus</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>TimedOutAbnormally</source>
-        <comment>GuestSessionStatus</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Down</source>
-        <comment>GuestSessionStatus</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Error</source>
-        <comment>GuestSessionStatus</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Undefined</source>
-        <comment>ProcessStatus</comment>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">Indítás</translation>
     </message>
     <message>
         <source>Starting</source>
         <comment>ProcessStatus</comment>
-        <translation type="unfinished">Indítás</translation>
-    </message>
-    <message>
-        <source>Started</source>
-        <comment>ProcessStatus</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Paused</source>
-        <comment>ProcessStatus</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Terminating</source>
-        <comment>ProcessStatus</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>TerminatedNormally</source>
-        <comment>ProcessStatus</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>TerminatedSignal</source>
-        <comment>ProcessStatus</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>TerminatedAbnormally</source>
-        <comment>ProcessStatus</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>TimedOutKilled</source>
-        <comment>ProcessStatus</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>TimedOutAbnormally</source>
-        <comment>ProcessStatus</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Down</source>
-        <comment>ProcessStatus</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Error</source>
-        <comment>ProcessStatus</comment>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">Indítás</translation>
     </message>
     <message>
         <source>B</source>
@@ -4961,6 +4878,16 @@
         <source>Please choose a location for new virtual hard disk file</source>
         <translation type="unfinished">Válaszd ki az új virtuális merevlemez fájl helyét</translation>
     </message>
+    <message>
+        <source>Paravirtualized Network (virtio-net 1.0)</source>
+        <comment>NetworkAdapterType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>PCnet-ISA (Am79C960)</source>
+        <comment>NetworkAdapterType</comment>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UICustomFileSystemModel</name>
@@ -4986,15 +4913,19 @@
     </message>
     <message>
         <source>LocalPath</source>
-        <translation>Helyi elérési út</translation>
+        <translation type="vanished">Helyi elérési út</translation>
     </message>
     <message>
         <source>Path</source>
         <translation>Elérési út</translation>
     </message>
     <message>
-        <source>NewDirectory</source>
-        <translation type="unfinished"></translation>
+        <source>New Directory</source>
+        <translation type="unfinished">Új mappa</translation>
+    </message>
+    <message>
+        <source>Local Path</source>
+        <translation type="unfinished">Helyi elérési út</translation>
     </message>
 </context>
 <context>
@@ -6856,9 +6787,7 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>No Guest Session
-Please use the Session Panel to start 
-a guest session</source>
+        <source>No Guest Session found!&lt;br&gt;Please use the Session Panel to start a new guest session</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -7146,15 +7075,15 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Assign value...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Name</source>
         <translation type="unfinished">Név</translation>
     </message>
     <message>
         <source>Value</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Assign value ...</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -9553,11 +9482,19 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Adding network...</source>
-        <translation>Hálózat hozzáadása...</translation>
+        <translation type="vanished">Hálózat hozzáadása...</translation>
     </message>
     <message>
         <source>Removing network...</source>
-        <translation>Hálózat eltávolítása...</translation>
+        <translation type="vanished">Hálózat eltávolítása...</translation>
+    </message>
+    <message>
+        <source>Adding network ...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Removing network ...</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -13092,16 +13029,6 @@ p, li { white-space: pre-wrap; }
         <translation type="vanished">NVMe vezérlő hozzáadása</translation>
     </message>
     <message>
-        <source>Choose/Create a disk image...</source>
-        <comment>This is used for hard disks, optical media and floppies</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Choose a disk file...</source>
-        <comment>This is used for selecting an existing disk file</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>PIIX3 (IDE)</source>
         <translation type="unfinished"></translation>
     </message>
@@ -13171,6 +13098,10 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Choose/Create a Virtual Floppy Disk...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Choose/Create a disk image...</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -14023,7 +13954,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Moving medium...</source>
-        <translation>Adathordozó áthelyezése...</translation>
+        <translation type="vanished">Adathordozó áthelyezése...</translation>
     </message>
     <message>
         <source>%1, %2: %3, %4: %5</source>
@@ -14065,7 +13996,15 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Removing medium...</source>
-        <translation>Adathordozó eltávolítása...</translation>
+        <translation type="vanished">Adathordozó eltávolítása...</translation>
+    </message>
+    <message>
+        <source>Moving medium ...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Removing medium ...</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -14161,7 +14100,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Moving medium...</source>
-        <translation>Adathordozó áthelyezése...</translation>
+        <translation type="vanished">Adathordozó áthelyezése...</translation>
     </message>
     <message>
         <source>Virtual Media Manager</source>
@@ -14213,7 +14152,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Resizing medium...</source>
-        <translation>Adathordozó átméretezése...</translation>
+        <translation type="vanished">Adathordozó átméretezése...</translation>
     </message>
     <message>
         <source>Size:</source>
@@ -14238,6 +14177,14 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>&amp;Create</source>
         <translation type="obsolete">Ú&amp;j</translation>
+    </message>
+    <message>
+        <source>Moving medium ...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Resizing medium ...</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -18500,11 +18447,6 @@ esetleg a &lt;b&gt;Létező&lt;/b&gt; gombbal a Virtuális lemezkezelőből.&lt;
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>The file will be saved under:
-</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source> is an invalid file name</source>
         <translation type="unfinished"></translation>
     </message>
@@ -18602,6 +18544,10 @@ esetleg a &lt;b&gt;Létező&lt;/b&gt; gombbal a Virtuális lemezkezelőből.&lt;
     </message>
     <message>
         <source>Layout</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The file will be saved under:&lt;br&gt;</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -19088,10 +19034,6 @@ esetleg a &lt;b&gt;Létező&lt;/b&gt; gombbal a Virtuális lemezkezelőből.&lt;
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Guest Control &amp;Session Information</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>No guest additions! This metric requires guest additions to work properly.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -19196,10 +19138,6 @@ esetleg a &lt;b&gt;Létező&lt;/b&gt; gombbal a Virtuális lemezkezelőből.&lt;
         <translation type="unfinished">Felbontás</translation>
     </message>
     <message>
-        <source>turned off</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>VM Uptime</source>
         <translation type="unfinished">VM futási ideje</translation>
     </message>
@@ -19229,15 +19167,15 @@ esetleg a &lt;b&gt;Létező&lt;/b&gt; gombbal a Virtuális lemezkezelőből.&lt;
     </message>
     <message>
         <source>Active</source>
-        <translation type="unfinished">Aktív</translation>
+        <translation type="obsolete">Aktív</translation>
     </message>
     <message>
         <source>Inactive</source>
-        <translation type="unfinished">Inaktív</translation>
+        <translation type="obsolete">Inaktív</translation>
     </message>
     <message>
         <source>Not Available</source>
-        <translation type="unfinished">Nem érhető el</translation>
+        <translation type="obsolete">Nem érhető el</translation>
     </message>
     <message>
         <source>Guest Additions</source>
@@ -19253,10 +19191,59 @@ esetleg a &lt;b&gt;Létező&lt;/b&gt; gombbal a Virtuális lemezkezelőből.&lt;
     </message>
     <message>
         <source>not set</source>
+        <translation type="obsolete">nincs megadva</translation>
+    </message>
+    <message>
+        <source>Not Detected</source>
+        <translation type="obsolete">Nem található</translation>
+    </message>
+    <message>
+        <source>&amp;Guest Control</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>turned off</source>
+        <comment>Screen</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Active</source>
+        <comment>Nested Paging</comment>
+        <translation type="unfinished">Aktív</translation>
+    </message>
+    <message>
+        <source>Inactive</source>
+        <comment>Nested Paging</comment>
+        <translation type="unfinished">Inaktív</translation>
+    </message>
+    <message>
+        <source>Active</source>
+        <comment>Unrestricted Execution</comment>
+        <translation type="unfinished">Aktív</translation>
+    </message>
+    <message>
+        <source>Inactive</source>
+        <comment>Unrestricted Execution</comment>
+        <translation type="unfinished">Inaktív</translation>
+    </message>
+    <message>
+        <source>Not Available</source>
+        <comment>VRDE Port</comment>
+        <translation type="unfinished">Nem érhető el</translation>
+    </message>
+    <message>
+        <source>not set</source>
+        <comment>Execution Engine</comment>
         <translation type="unfinished">nincs megadva</translation>
     </message>
     <message>
         <source>Not Detected</source>
+        <comment>Guest OS Type</comment>
+        <translation type="unfinished">Nem található</translation>
+    </message>
+    <message>
+        <source>Not Detected</source>
+        <comment>Guest Additions Version</comment>
         <translation type="unfinished">Nem található</translation>
     </message>
 </context>
@@ -20460,10 +20447,6 @@ esetleg a &lt;b&gt;Létező&lt;/b&gt; gombbal a Virtuális lemezkezelőből.&lt;
         <translation>&lt;p&gt;Válassz egy felhőszolgáltatási fiókot, ahova regisztráltál, hogy oda exportáld a virtuális gépeket. Győződj meg róla, hogy az alaptáblában szereplő profilbeállítások érvényesek. Ezek alapján épül fel a hálózati kapcsolat, melyen keresztül feltöltésre kerül a virtuális géped a távoli felhőbe.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>Acquire export form...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Machine Creation:</source>
         <translation type="unfinished"></translation>
     </message>
@@ -20481,6 +20464,10 @@ esetleg a &lt;b&gt;Létező&lt;/b&gt; gombbal a Virtuális lemezkezelőből.&lt;
     </message>
     <message>
         <source>This is the descriptive information which will be used to determine settings for a cloud storage your VM being exported to.  You can change it by double clicking on individual lines.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Acquire export form ...</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -20624,22 +20611,6 @@ esetleg a &lt;b&gt;Létező&lt;/b&gt; gombbal a Virtuális lemezkezelőből.&lt;
         <translation type="unfinished">Virtuális gép importálása...</translation>
     </message>
     <message>
-        <source>Acquire cloud instances...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Read appliance...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Acquire import form...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Please choose the source to import appliance from.  This can be a local file system to import OVF archive or one of known  cloud service providers to import cloud VM from.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Local File System</source>
         <translation type="unfinished"></translation>
     </message>
@@ -20683,9 +20654,22 @@ esetleg a &lt;b&gt;Létező&lt;/b&gt; gombbal a Virtuális lemezkezelőből.&lt;
         <source>Settings</source>
         <translation type="unfinished">Beállítások</translation>
     </message>
-</context>
-<context>
-    <name>UIWizardImportAppPageBasic1</name>
+    <message>
+        <source>Acquire cloud instances ...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Read appliance ...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Acquire import form ...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Please choose the source to import appliance from.  This can be a local file system to import OVF archive or one of known cloud service providers to import cloud VM from.</source>
+        <translation type="unfinished"></translation>
+    </message>
     <message>
         <source>&amp;Source:</source>
         <translation type="unfinished"></translation>
@@ -20693,10 +20677,6 @@ esetleg a &lt;b&gt;Létező&lt;/b&gt; gombbal a Virtuális lemezkezelőből.&lt;
 </context>
 <context>
     <name>UIWizardNewCloudVM</name>
-    <message>
-        <source>Acquire launch form...</source>
-        <translation type="unfinished"></translation>
-    </message>
     <message>
         <source>Create Cloud Machine ...</source>
         <translation type="unfinished"></translation>
@@ -20707,10 +20687,6 @@ esetleg a &lt;b&gt;Létező&lt;/b&gt; gombbal a Virtuális lemezkezelőből.&lt;
     </message>
     <message>
         <source>Create</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Acquire cloud images...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -20753,9 +20729,14 @@ esetleg a &lt;b&gt;Létező&lt;/b&gt; gombbal a Virtuális lemezkezelőből.&lt;
         <source>Settings</source>
         <translation type="unfinished">Beállítások</translation>
     </message>
-</context>
-<context>
-    <name>UIWizardNewCloudVMPageBasic1</name>
+    <message>
+        <source>Acquire launch form ...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Acquire cloud images ...</source>
+        <translation type="unfinished"></translation>
+    </message>
     <message>
         <source>&amp;Destination:</source>
         <translation type="unfinished"></translation>

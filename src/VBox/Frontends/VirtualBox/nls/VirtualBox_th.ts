@@ -1985,14 +1985,6 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Include only NAT network adapter MAC addresses during cloning.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Generate new MAC addresses for all network adapters during cloning.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Additional Options:</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2001,11 +1993,19 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Include all network adapter MAC addresses during cloning.</source>
+        <source>&amp;Machine Base Folder:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&amp;Machine Base Folder:</source>
+        <source>Include all network adapter MAC addresses during importing.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Include only NAT network adapter MAC addresses during importing.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Generate new MAC addresses for all network adapters during importing.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -3142,109 +3142,19 @@
         <translation type="unfinished">TCP</translation>
     </message>
     <message>
-        <source>Undefined</source>
-        <comment>GuestSessionStatus</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Starting</source>
         <comment>GuestSessionStatus</comment>
-        <translation type="unfinished">กำลังเริ่ม</translation>
-    </message>
-    <message>
-        <source>Started</source>
-        <comment>GuestSessionStatus</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Terminating</source>
-        <comment>GuestSessionStatus</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Terminated</source>
-        <comment>GuestSessionStatus</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>TimedOutKilled</source>
-        <comment>GuestSessionStatus</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>TimedOutAbnormally</source>
-        <comment>GuestSessionStatus</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Down</source>
-        <comment>GuestSessionStatus</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Error</source>
-        <comment>GuestSessionStatus</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Undefined</source>
-        <comment>ProcessStatus</comment>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">กำลังเริ่ม</translation>
     </message>
     <message>
         <source>Starting</source>
         <comment>ProcessStatus</comment>
-        <translation type="unfinished">กำลังเริ่ม</translation>
-    </message>
-    <message>
-        <source>Started</source>
-        <comment>ProcessStatus</comment>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">กำลังเริ่ม</translation>
     </message>
     <message>
         <source>Paused</source>
         <comment>ProcessStatus</comment>
-        <translation type="unfinished">หยุดชั่วคราว</translation>
-    </message>
-    <message>
-        <source>Terminating</source>
-        <comment>ProcessStatus</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>TerminatedNormally</source>
-        <comment>ProcessStatus</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>TerminatedSignal</source>
-        <comment>ProcessStatus</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>TerminatedAbnormally</source>
-        <comment>ProcessStatus</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>TimedOutKilled</source>
-        <comment>ProcessStatus</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>TimedOutAbnormally</source>
-        <comment>ProcessStatus</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Down</source>
-        <comment>ProcessStatus</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Error</source>
-        <comment>ProcessStatus</comment>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">หยุดชั่วคราว</translation>
     </message>
     <message>
         <source>B</source>
@@ -3959,6 +3869,16 @@
         <source>Please choose a location for new virtual hard disk file</source>
         <translation type="unfinished">โปรดเลือกที่ตั้งไฟล์เวอร์ชวลฮาร์ดดิสก์ที่จะสร้างขึ้นใหม่</translation>
     </message>
+    <message>
+        <source>Paravirtualized Network (virtio-net 1.0)</source>
+        <comment>NetworkAdapterType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>PCnet-ISA (Am79C960)</source>
+        <comment>NetworkAdapterType</comment>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UICustomFileSystemModel</name>
@@ -3983,15 +3903,15 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>LocalPath</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Path</source>
         <translation type="unfinished">เส้นทาง</translation>
     </message>
     <message>
-        <source>NewDirectory</source>
+        <source>New Directory</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Local Path</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -4898,9 +4818,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>No Guest Session
-Please use the Session Panel to start 
-a guest session</source>
+        <source>No Guest Session found!&lt;br&gt;Please use the Session Panel to start a new guest session</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -4966,15 +4884,15 @@ a guest session</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Assign value...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Name</source>
         <translation type="unfinished">ชื่อ</translation>
     </message>
     <message>
         <source>Value</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Assign value ...</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -6794,11 +6712,11 @@ a guest session</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Adding network...</source>
+        <source>Adding network ...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Removing network...</source>
+        <source>Removing network ...</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -8981,16 +8899,6 @@ a guest session</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Choose/Create a disk image...</source>
-        <comment>This is used for hard disks, optical media and floppies</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Choose a disk file...</source>
-        <comment>This is used for selecting an existing disk file</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>PIIX3 (IDE)</source>
         <translation type="unfinished"></translation>
     </message>
@@ -9060,6 +8968,10 @@ a guest session</source>
     </message>
     <message>
         <source>Choose/Create a Virtual Floppy Disk...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Choose/Create a disk image...</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -9682,10 +9594,6 @@ a guest session</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Moving medium...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>%1, %2: %3, %4: %5</source>
         <comment>col.1 text, col.2 name: col.2 text, col.3 name: col.3 text</comment>
         <translation type="unfinished"></translation>
@@ -9725,7 +9633,15 @@ a guest session</source>
     </message>
     <message>
         <source>Removing medium...</source>
-        <translation type="unfinished">กำลังนำสื่อบันทึกออก...</translation>
+        <translation type="obsolete">กำลังนำสื่อบันทึกออก...</translation>
+    </message>
+    <message>
+        <source>Moving medium ...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Removing medium ...</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -9816,10 +9732,6 @@ a guest session</source>
         <translation type="unfinished">กำลังตรวจสอบการเข้าถึง</translation>
     </message>
     <message>
-        <source>Moving medium...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Virtual Media Manager</source>
         <translation type="unfinished">ส่วนจัดการมีเดียเสมือน</translation>
     </message>
@@ -9868,10 +9780,6 @@ a guest session</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Resizing medium...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Size:</source>
         <translation type="obsolete">ขนาด:</translation>
     </message>
@@ -9890,6 +9798,14 @@ a guest session</source>
     <message>
         <source>360K</source>
         <translation type="obsolete">3D {360K?}</translation>
+    </message>
+    <message>
+        <source>Moving medium ...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Resizing medium ...</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -12365,11 +12281,6 @@ a guest session</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>The file will be saved under:
-</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source> is an invalid file name</source>
         <translation type="unfinished"></translation>
     </message>
@@ -12467,6 +12378,10 @@ a guest session</source>
     </message>
     <message>
         <source>Layout</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The file will be saved under:&lt;br&gt;</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -12897,10 +12812,6 @@ a guest session</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Guest Control &amp;Session Information</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>No guest additions! This metric requires guest additions to work properly.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -13005,10 +12916,6 @@ a guest session</source>
         <translation type="unfinished">ความละเอียดจอภาพ</translation>
     </message>
     <message>
-        <source>turned off</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>VM Uptime</source>
         <translation type="unfinished">เวลาตั้งแต่เปิด VM</translation>
     </message>
@@ -13038,15 +12945,15 @@ a guest session</source>
     </message>
     <message>
         <source>Active</source>
-        <translation type="unfinished">ใช้งานอยู่</translation>
+        <translation type="obsolete">ใช้งานอยู่</translation>
     </message>
     <message>
         <source>Inactive</source>
-        <translation type="unfinished">ไม่ได้ใช้งาน</translation>
+        <translation type="obsolete">ไม่ได้ใช้งาน</translation>
     </message>
     <message>
         <source>Not Available</source>
-        <translation type="unfinished">ไม่พร้อมใช้งาน</translation>
+        <translation type="obsolete">ไม่พร้อมใช้งาน</translation>
     </message>
     <message>
         <source>Guest Additions</source>
@@ -13061,11 +12968,56 @@ a guest session</source>
         <translation type="unfinished">พอร์ตเซอร์ฟเวอร์รีโมตเดสก์ทอป</translation>
     </message>
     <message>
+        <source>Not Detected</source>
+        <translation type="obsolete">ไม่พบ</translation>
+    </message>
+    <message>
+        <source>&amp;Guest Control</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>turned off</source>
+        <comment>Screen</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Active</source>
+        <comment>Nested Paging</comment>
+        <translation type="unfinished">ใช้งานอยู่</translation>
+    </message>
+    <message>
+        <source>Inactive</source>
+        <comment>Nested Paging</comment>
+        <translation type="unfinished">ไม่ได้ใช้งาน</translation>
+    </message>
+    <message>
+        <source>Active</source>
+        <comment>Unrestricted Execution</comment>
+        <translation type="unfinished">ใช้งานอยู่</translation>
+    </message>
+    <message>
+        <source>Inactive</source>
+        <comment>Unrestricted Execution</comment>
+        <translation type="unfinished">ไม่ได้ใช้งาน</translation>
+    </message>
+    <message>
+        <source>Not Available</source>
+        <comment>VRDE Port</comment>
+        <translation type="unfinished">ไม่พร้อมใช้งาน</translation>
+    </message>
+    <message>
         <source>not set</source>
+        <comment>Execution Engine</comment>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Not Detected</source>
+        <comment>Guest OS Type</comment>
+        <translation type="unfinished">ไม่พบ</translation>
+    </message>
+    <message>
+        <source>Not Detected</source>
+        <comment>Guest Additions Version</comment>
         <translation type="unfinished">ไม่พบ</translation>
     </message>
 </context>
@@ -14082,10 +14034,6 @@ a guest session</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Acquire export form...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Machine Creation:</source>
         <translation type="unfinished"></translation>
     </message>
@@ -14103,6 +14051,10 @@ a guest session</source>
     </message>
     <message>
         <source>This is the descriptive information which will be used to determine settings for a cloud storage your VM being exported to.  You can change it by double clicking on individual lines.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Acquire export form ...</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -14230,22 +14182,6 @@ a guest session</source>
         <translation type="unfinished">กำลังนำเข้าแอพพลายแอนซ์ ...</translation>
     </message>
     <message>
-        <source>Acquire cloud instances...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Read appliance...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Acquire import form...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Please choose the source to import appliance from.  This can be a local file system to import OVF archive or one of known  cloud service providers to import cloud VM from.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Local File System</source>
         <translation type="unfinished"></translation>
     </message>
@@ -14289,9 +14225,22 @@ a guest session</source>
         <source>Settings</source>
         <translation type="unfinished">การตั้งค่า</translation>
     </message>
-</context>
-<context>
-    <name>UIWizardImportAppPageBasic1</name>
+    <message>
+        <source>Acquire cloud instances ...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Read appliance ...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Acquire import form ...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Please choose the source to import appliance from.  This can be a local file system to import OVF archive or one of known cloud service providers to import cloud VM from.</source>
+        <translation type="unfinished"></translation>
+    </message>
     <message>
         <source>&amp;Source:</source>
         <translation type="unfinished"></translation>
@@ -14299,10 +14248,6 @@ a guest session</source>
 </context>
 <context>
     <name>UIWizardNewCloudVM</name>
-    <message>
-        <source>Acquire launch form...</source>
-        <translation type="unfinished"></translation>
-    </message>
     <message>
         <source>Create Cloud Machine ...</source>
         <translation type="unfinished"></translation>
@@ -14314,10 +14259,6 @@ a guest session</source>
     <message>
         <source>Create</source>
         <translation type="unfinished">สร้าง</translation>
-    </message>
-    <message>
-        <source>Acquire cloud images...</source>
-        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Destination to create</source>
@@ -14359,9 +14300,14 @@ a guest session</source>
         <source>Settings</source>
         <translation type="unfinished">การตั้งค่า</translation>
     </message>
-</context>
-<context>
-    <name>UIWizardNewCloudVMPageBasic1</name>
+    <message>
+        <source>Acquire launch form ...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Acquire cloud images ...</source>
+        <translation type="unfinished"></translation>
+    </message>
     <message>
         <source>&amp;Destination:</source>
         <translation type="unfinished"></translation>

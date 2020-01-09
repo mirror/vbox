@@ -1900,11 +1900,11 @@
     </message>
     <message>
         <source>Include only NAT network adapter MAC addresses during cloning.</source>
-        <translation>Inclou només les adreces MAC de l&apos;adaptador de xarxa NAT durant la clonació.</translation>
+        <translation type="vanished">Inclou només les adreces MAC de l&apos;adaptador de xarxa NAT durant la clonació.</translation>
     </message>
     <message>
         <source>Generate new MAC addresses for all network adapters during cloning.</source>
-        <translation>Genera noves adreces MAC per a tots els adaptadors de xarxa durant la clonació.</translation>
+        <translation type="vanished">Genera noves adreces MAC per a tots els adaptadors de xarxa durant la clonació.</translation>
     </message>
     <message>
         <source>Additional Options:</source>
@@ -1916,11 +1916,23 @@
     </message>
     <message>
         <source>Include all network adapter MAC addresses during cloning.</source>
-        <translation>Inclou totes les adreces MAC de l&apos;adaptador de xarxa durant la clonació.</translation>
+        <translation type="vanished">Inclou totes les adreces MAC de l&apos;adaptador de xarxa durant la clonació.</translation>
     </message>
     <message>
         <source>&amp;Machine Base Folder:</source>
         <translation>Carpeta de &amp;màquines bàsiques</translation>
+    </message>
+    <message>
+        <source>Include all network adapter MAC addresses during importing.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Include only NAT network adapter MAC addresses during importing.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Generate new MAC addresses for all network adapters during importing.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -3046,107 +3058,107 @@
     <message>
         <source>Undefined</source>
         <comment>GuestSessionStatus</comment>
-        <translation>Indefinit</translation>
+        <translation type="vanished">Indefinit</translation>
     </message>
     <message>
         <source>Starting</source>
         <comment>GuestSessionStatus</comment>
-        <translation>S&apos;està iniciant</translation>
+        <translation type="vanished">S&apos;està iniciant</translation>
     </message>
     <message>
         <source>Started</source>
         <comment>GuestSessionStatus</comment>
-        <translation>Engegat</translation>
+        <translation type="vanished">Engegat</translation>
     </message>
     <message>
         <source>Terminating</source>
         <comment>GuestSessionStatus</comment>
-        <translation>Acabant</translation>
+        <translation type="vanished">Acabant</translation>
     </message>
     <message>
         <source>Terminated</source>
         <comment>GuestSessionStatus</comment>
-        <translation>Acabat</translation>
+        <translation type="vanished">Acabat</translation>
     </message>
     <message>
         <source>TimedOutKilled</source>
         <comment>GuestSessionStatus</comment>
-        <translation>Temps sobrepassat i acabat</translation>
+        <translation type="vanished">Temps sobrepassat i acabat</translation>
     </message>
     <message>
         <source>TimedOutAbnormally</source>
         <comment>GuestSessionStatus</comment>
-        <translation>Temps sobrepassat de forma anòmala</translation>
+        <translation type="vanished">Temps sobrepassat de forma anòmala</translation>
     </message>
     <message>
         <source>Down</source>
         <comment>GuestSessionStatus</comment>
-        <translation>Avall</translation>
+        <translation type="vanished">Avall</translation>
     </message>
     <message>
         <source>Error</source>
         <comment>GuestSessionStatus</comment>
-        <translation>Error</translation>
+        <translation type="vanished">Error</translation>
     </message>
     <message>
         <source>Undefined</source>
         <comment>ProcessStatus</comment>
-        <translation>Indefinit</translation>
+        <translation type="vanished">Indefinit</translation>
     </message>
     <message>
         <source>Starting</source>
         <comment>ProcessStatus</comment>
-        <translation>S&apos;està iniciant</translation>
+        <translation type="vanished">S&apos;està iniciant</translation>
     </message>
     <message>
         <source>Started</source>
         <comment>ProcessStatus</comment>
-        <translation>Engegat</translation>
+        <translation type="vanished">Engegat</translation>
     </message>
     <message>
         <source>Paused</source>
         <comment>ProcessStatus</comment>
-        <translation>En pausa</translation>
+        <translation type="vanished">En pausa</translation>
     </message>
     <message>
         <source>Terminating</source>
         <comment>ProcessStatus</comment>
-        <translation>Acabant</translation>
+        <translation type="vanished">Acabant</translation>
     </message>
     <message>
         <source>TerminatedNormally</source>
         <comment>ProcessStatus</comment>
-        <translation>Acabat normalment</translation>
+        <translation type="vanished">Acabat normalment</translation>
     </message>
     <message>
         <source>TerminatedSignal</source>
         <comment>ProcessStatus</comment>
-        <translation>Senyal d&apos;acabament</translation>
+        <translation type="vanished">Senyal d&apos;acabament</translation>
     </message>
     <message>
         <source>TerminatedAbnormally</source>
         <comment>ProcessStatus</comment>
-        <translation>Acabat de forma anòmala</translation>
+        <translation type="vanished">Acabat de forma anòmala</translation>
     </message>
     <message>
         <source>TimedOutKilled</source>
         <comment>ProcessStatus</comment>
-        <translation>Temps sobrepassat i acabat</translation>
+        <translation type="vanished">Temps sobrepassat i acabat</translation>
     </message>
     <message>
         <source>TimedOutAbnormally</source>
         <comment>ProcessStatus</comment>
-        <translation>Temps sobrepassat de forma anòmala</translation>
+        <translation type="vanished">Temps sobrepassat de forma anòmala</translation>
     </message>
     <message>
         <source>Down</source>
         <comment>ProcessStatus</comment>
-        <translation>Avall</translation>
+        <translation type="vanished">Avall</translation>
     </message>
     <message>
         <source>Error</source>
         <comment>ProcessStatus</comment>
-        <translation>Error</translation>
+        <translation type="vanished">Error</translation>
     </message>
     <message>
         <source>B</source>
@@ -3867,6 +3879,16 @@
         <source>Please choose a location for new virtual hard disk file</source>
         <translation>Seleccioneu una ubicació per al fitxer de disc dur virtual nou</translation>
     </message>
+    <message>
+        <source>Paravirtualized Network (virtio-net 1.0)</source>
+        <comment>NetworkAdapterType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>PCnet-ISA (Am79C960)</source>
+        <comment>NetworkAdapterType</comment>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UICustomFileSystemModel</name>
@@ -3892,7 +3914,7 @@
     </message>
     <message>
         <source>LocalPath</source>
-        <translation>Ruta local</translation>
+        <translation type="vanished">Ruta local</translation>
     </message>
     <message>
         <source>Path</source>
@@ -3900,7 +3922,15 @@
     </message>
     <message>
         <source>NewDirectory</source>
-        <translation>NouDirectori</translation>
+        <translation type="vanished">NouDirectori</translation>
+    </message>
+    <message>
+        <source>New Directory</source>
+        <translation type="unfinished">Directori nou</translation>
+    </message>
+    <message>
+        <source>Local Path</source>
+        <translation type="unfinished">Camí local</translation>
     </message>
 </context>
 <context>
@@ -4774,7 +4804,11 @@
         <source>No Guest Session
 Please use the Session Panel to start 
 a guest session</source>
-        <translation>No hi ha sessió de convidat. Si us plau, feu servir el tauler de sessions per a engegar una sessió de convidat</translation>
+        <translation type="vanished">No hi ha sessió de convidat. Si us plau, feu servir el tauler de sessions per a engegar una sessió de convidat</translation>
+    </message>
+    <message>
+        <source>No Guest Session found!&lt;br&gt;Please use the Session Panel to start a new guest session</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -4840,7 +4874,7 @@ a guest session</source>
     </message>
     <message>
         <source>Assign value...</source>
-        <translation>Assigna un valor...</translation>
+        <translation type="vanished">Assigna un valor...</translation>
     </message>
     <message>
         <source>Name</source>
@@ -4849,6 +4883,10 @@ a guest session</source>
     <message>
         <source>Value</source>
         <translation>Valor</translation>
+    </message>
+    <message>
+        <source>Assign value ...</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -5704,11 +5742,19 @@ a guest session</source>
     </message>
     <message>
         <source>Adding network...</source>
-        <translation>S&apos;està afegint una xarxa...</translation>
+        <translation type="vanished">S&apos;està afegint una xarxa...</translation>
     </message>
     <message>
         <source>Removing network...</source>
-        <translation>S&apos;està suprimint una xarxa...</translation>
+        <translation type="vanished">S&apos;està suprimint una xarxa...</translation>
+    </message>
+    <message>
+        <source>Adding network ...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Removing network ...</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -7161,12 +7207,12 @@ a guest session</source>
     <message>
         <source>Choose/Create a disk image...</source>
         <comment>This is used for hard disks, optical media and floppies</comment>
-        <translation>Tria/crea un disc imatge</translation>
+        <translation type="vanished">Tria/crea un disc imatge</translation>
     </message>
     <message>
         <source>Choose a disk file...</source>
         <comment>This is used for selecting an existing disk file</comment>
-        <translation>Tria un fitxer del disc...</translation>
+        <translation type="vanished">Tria un fitxer del disc...</translation>
     </message>
     <message>
         <source>PIIX3 (IDE)</source>
@@ -7239,6 +7285,10 @@ a guest session</source>
     <message>
         <source>Choose/Create a Virtual Floppy Disk...</source>
         <translation>Tria/crea un disquet virtual</translation>
+    </message>
+    <message>
+        <source>Choose/Create a disk image...</source>
+        <translation type="unfinished">Tria/crea un disc imatge</translation>
     </message>
 </context>
 <context>
@@ -7781,7 +7831,7 @@ a guest session</source>
     </message>
     <message>
         <source>Moving medium...</source>
-        <translation>S&apos;està movent el mitjà</translation>
+        <translation type="vanished">S&apos;està movent el mitjà</translation>
     </message>
     <message>
         <source>%1, %2: %3, %4: %5</source>
@@ -7823,7 +7873,15 @@ a guest session</source>
     </message>
     <message>
         <source>Removing medium...</source>
-        <translation>S&apos;està suprimint el mitjà...</translation>
+        <translation type="vanished">S&apos;està suprimint el mitjà...</translation>
+    </message>
+    <message>
+        <source>Moving medium ...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Removing medium ...</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -7862,7 +7920,7 @@ a guest session</source>
     </message>
     <message>
         <source>Moving medium...</source>
-        <translation>Movent el mitjà</translation>
+        <translation type="vanished">Movent el mitjà</translation>
     </message>
     <message>
         <source>Virtual Media Manager</source>
@@ -7914,7 +7972,15 @@ a guest session</source>
     </message>
     <message>
         <source>Resizing medium...</source>
-        <translation>S&apos;està redimensionant el mitjà...</translation>
+        <translation type="vanished">S&apos;està redimensionant el mitjà...</translation>
+    </message>
+    <message>
+        <source>Moving medium ...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Resizing medium ...</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -10132,7 +10198,7 @@ a guest session</source>
     <message>
         <source>The file will be saved under:
 </source>
-        <translation>El fitxer es crearà a sota:
+        <translation type="vanished">El fitxer es crearà a sota:
 </translation>
     </message>
     <message>
@@ -10234,6 +10300,10 @@ a guest session</source>
     <message>
         <source>Layout</source>
         <translation>Disposició</translation>
+    </message>
+    <message>
+        <source>The file will be saved under:&lt;br&gt;</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -10556,7 +10626,7 @@ a guest session</source>
     </message>
     <message>
         <source>Guest Control &amp;Session Information</source>
-        <translation>Control de l&apos;hoste i informació de sessió</translation>
+        <translation type="vanished">Control de l&apos;hoste i informació de sessió</translation>
     </message>
     <message>
         <source>No guest additions! This metric requires guest additions to work properly.</source>
@@ -10664,7 +10734,7 @@ a guest session</source>
     </message>
     <message>
         <source>turned off</source>
-        <translation>Apagat</translation>
+        <translation type="vanished">Apagat</translation>
     </message>
     <message>
         <source>VM Uptime</source>
@@ -10696,15 +10766,15 @@ a guest session</source>
     </message>
     <message>
         <source>Active</source>
-        <translation>Actiu</translation>
+        <translation type="vanished">Actiu</translation>
     </message>
     <message>
         <source>Inactive</source>
-        <translation>Inactiu</translation>
+        <translation type="vanished">Inactiu</translation>
     </message>
     <message>
         <source>Not Available</source>
-        <translation>No disponible</translation>
+        <translation type="vanished">No disponible</translation>
     </message>
     <message>
         <source>Guest Additions</source>
@@ -10720,11 +10790,60 @@ a guest session</source>
     </message>
     <message>
         <source>not set</source>
-        <translation>sense especificar</translation>
+        <translation type="vanished">sense especificar</translation>
     </message>
     <message>
         <source>Not Detected</source>
-        <translation>No s&apos;ha detectat</translation>
+        <translation type="vanished">No s&apos;ha detectat</translation>
+    </message>
+    <message>
+        <source>&amp;Guest Control</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>turned off</source>
+        <comment>Screen</comment>
+        <translation type="unfinished">Apagat</translation>
+    </message>
+    <message>
+        <source>Active</source>
+        <comment>Nested Paging</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Inactive</source>
+        <comment>Nested Paging</comment>
+        <translation type="unfinished">Inactiu</translation>
+    </message>
+    <message>
+        <source>Active</source>
+        <comment>Unrestricted Execution</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Inactive</source>
+        <comment>Unrestricted Execution</comment>
+        <translation type="unfinished">Inactiu</translation>
+    </message>
+    <message>
+        <source>Not Available</source>
+        <comment>VRDE Port</comment>
+        <translation type="unfinished">No disponible</translation>
+    </message>
+    <message>
+        <source>not set</source>
+        <comment>Execution Engine</comment>
+        <translation type="unfinished">sense especificar</translation>
+    </message>
+    <message>
+        <source>Not Detected</source>
+        <comment>Guest OS Type</comment>
+        <translation type="unfinished">No s&apos;ha detectat</translation>
+    </message>
+    <message>
+        <source>Not Detected</source>
+        <comment>Guest Additions Version</comment>
+        <translation type="unfinished">No s&apos;ha detectat</translation>
     </message>
 </context>
 <context>
@@ -11489,7 +11608,7 @@ a guest session</source>
     </message>
     <message>
         <source>Acquire export form...</source>
-        <translation>Adquireix el formulari d&apos;exportació...</translation>
+        <translation type="vanished">Adquireix el formulari d&apos;exportació...</translation>
     </message>
     <message>
         <source>Machine Creation:</source>
@@ -11510,6 +11629,10 @@ a guest session</source>
     <message>
         <source>This is the descriptive information which will be used to determine settings for a cloud storage your VM being exported to.  You can change it by double clicking on individual lines.</source>
         <translation>Aquesta és la informació descriptiva que serà emprada per a determinar la configuració d&apos;un emmagatzematge al núvol per a exportar la vostra MV. Podeu canviar-la fent doble clic a les línies individuals.</translation>
+    </message>
+    <message>
+        <source>Acquire export form ...</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -11607,19 +11730,19 @@ a guest session</source>
     </message>
     <message>
         <source>Acquire cloud instances...</source>
-        <translation>Adquireix les instàncies del núvol...</translation>
+        <translation type="vanished">Adquireix les instàncies del núvol...</translation>
     </message>
     <message>
         <source>Read appliance...</source>
-        <translation>Llegeix l&apos;aplicació</translation>
+        <translation type="vanished">Llegeix l&apos;aplicació</translation>
     </message>
     <message>
         <source>Acquire import form...</source>
-        <translation>Adquireix el formulari d&apos;importació...</translation>
+        <translation type="vanished">Adquireix el formulari d&apos;importació...</translation>
     </message>
     <message>
         <source>Please choose the source to import appliance from.  This can be a local file system to import OVF archive or one of known  cloud service providers to import cloud VM from.</source>
-        <translation>Si us plau, trieu la font d&apos;on importar l&apos;aplicació. Pot ser un sistema de fitxers locals d&apos;on importar un fitxer OVF o un dels proveïdors de serveis al núvol coneguts, d&apos;on importar la MV.</translation>
+        <translation type="vanished">Si us plau, trieu la font d&apos;on importar l&apos;aplicació. Pot ser un sistema de fitxers locals d&apos;on importar un fitxer OVF o un dels proveïdors de serveis al núvol coneguts, d&apos;on importar la MV.</translation>
     </message>
     <message>
         <source>Local File System</source>
@@ -11665,19 +11788,39 @@ a guest session</source>
         <source>Settings</source>
         <translation>Paràmetres</translation>
     </message>
+    <message>
+        <source>Acquire cloud instances ...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Read appliance ...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Acquire import form ...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Please choose the source to import appliance from.  This can be a local file system to import OVF archive or one of known cloud service providers to import cloud VM from.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Source:</source>
+        <translation type="unfinished">&amp;Font</translation>
+    </message>
 </context>
 <context>
     <name>UIWizardImportAppPageBasic1</name>
     <message>
         <source>&amp;Source:</source>
-        <translation>&amp;Font</translation>
+        <translation type="vanished">&amp;Font</translation>
     </message>
 </context>
 <context>
     <name>UIWizardNewCloudVM</name>
     <message>
         <source>Acquire launch form...</source>
-        <translation>Adquireix el formulari de llançament...</translation>
+        <translation type="vanished">Adquireix el formulari de llançament...</translation>
     </message>
     <message>
         <source>Create Cloud Machine ...</source>
@@ -11693,7 +11836,7 @@ a guest session</source>
     </message>
     <message>
         <source>Acquire cloud images...</source>
-        <translation>Adquireix les imatges del núvol...</translation>
+        <translation type="vanished">Adquireix les imatges del núvol...</translation>
     </message>
     <message>
         <source>Destination to create</source>
@@ -11735,12 +11878,24 @@ a guest session</source>
         <source>Settings</source>
         <translation>Paràmetres</translation>
     </message>
+    <message>
+        <source>Acquire launch form ...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Acquire cloud images ...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Destination:</source>
+        <translation type="unfinished">&amp;Destí:</translation>
+    </message>
 </context>
 <context>
     <name>UIWizardNewCloudVMPageBasic1</name>
     <message>
         <source>&amp;Destination:</source>
-        <translation>&amp;Destí:</translation>
+        <translation type="vanished">&amp;Destí:</translation>
     </message>
 </context>
 <context>

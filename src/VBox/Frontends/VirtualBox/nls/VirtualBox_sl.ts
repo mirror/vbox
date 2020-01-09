@@ -2512,12 +2512,12 @@
     </message>
     <message>
         <location line="+1"/>
-        <location line="+951"/>
+        <location line="+959"/>
         <source>Description</source>
         <translation>Opis</translation>
     </message>
     <message>
-        <location line="-950"/>
+        <location line="-958"/>
         <source>License</source>
         <translation>Dovoljenje</translation>
     </message>
@@ -2592,7 +2592,7 @@
         <translation>&lt;b&gt;Izvirna vrednost:&lt;/b&gt; %1</translation>
     </message>
     <message>
-        <location line="+846"/>
+        <location line="+854"/>
         <source>Configuration</source>
         <translation>Nastavitve</translation>
     </message>
@@ -2615,7 +2615,7 @@
         <translation type="vanished">&amp;Ponovno vpelji naslov MAC vseh omrežnih kartic</translation>
     </message>
     <message>
-        <location line="-1385"/>
+        <location line="-1393"/>
         <source>Storage Controller (IDE)</source>
         <translation>Krmilnik pomnilniških naprav (IDE)</translation>
     </message>
@@ -2663,42 +2663,42 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+2"/>
+        <location line="+8"/>
         <source>Include all network adapter MAC addresses</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+2"/>
+        <location line="+1"/>
+        <source>Include all network adapter MAC addresses during importing.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+5"/>
         <source>Include only NAT network adapter MAC addresses</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+2"/>
+        <location line="+1"/>
+        <source>Include only NAT network adapter MAC addresses during importing.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+5"/>
         <source>Generate new MAC addresses for all network adapters</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+2"/>
-        <source>Include all network adapter MAC addresses during cloning.</source>
+        <location line="+1"/>
+        <source>Generate new MAC addresses for all network adapters during importing.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+2"/>
-        <source>Include only NAT network adapter MAC addresses during cloning.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+2"/>
-        <source>Generate new MAC addresses for all network adapters during cloning.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+2"/>
+        <location line="+8"/>
         <source>Additional Options:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-168"/>
+        <location line="-183"/>
         <source>Reading Appliance ...</source>
         <translation>Branje namenske naprave …</translation>
     </message>
@@ -3258,7 +3258,7 @@
         <translation type="unfinished">Procesorji</translation>
     </message>
     <message>
-        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="+136"/>
+        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="+134"/>
         <source>Powered Off</source>
         <comment>MachineState</comment>
         <translation type="unfinished">Izklopljen</translation>
@@ -3769,7 +3769,19 @@
         <translation type="unfinished">Paranavidezno omrežje (virtio-net)</translation>
     </message>
     <message>
-        <location line="+13"/>
+        <location line="+2"/>
+        <source>Paravirtualized Network (virtio-net 1.0)</source>
+        <comment>NetworkAdapterType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>PCnet-ISA (Am79C960)</source>
+        <comment>NetworkAdapterType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+12"/>
         <source>Deny</source>
         <comment>NetworkAdapterPromiscModePolicy</comment>
         <translation type="unfinished">Zavrni</translation>
@@ -4145,151 +4157,19 @@
         <translation type="unfinished">TCP</translation>
     </message>
     <message>
-        <location line="+41"/>
-        <location line="+17"/>
-        <source>Undefined</source>
-        <comment>GuestSessionStatus</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="-16"/>
-        <location line="+17"/>
         <source>Starting</source>
         <comment>GuestSessionStatus</comment>
-        <translation type="unfinished">Zaganjanje</translation>
+        <translation type="obsolete">Zaganjanje</translation>
     </message>
     <message>
-        <location line="-16"/>
-        <location line="+17"/>
-        <source>Started</source>
-        <comment>GuestSessionStatus</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="-16"/>
-        <location line="+17"/>
-        <source>Terminating</source>
-        <comment>GuestSessionStatus</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="-16"/>
-        <location line="+17"/>
-        <source>Terminated</source>
-        <comment>GuestSessionStatus</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="-16"/>
-        <location line="+17"/>
-        <source>TimedOutKilled</source>
-        <comment>GuestSessionStatus</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="-16"/>
-        <location line="+17"/>
-        <source>TimedOutAbnormally</source>
-        <comment>GuestSessionStatus</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="-16"/>
-        <location line="+17"/>
-        <source>Down</source>
-        <comment>GuestSessionStatus</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="-16"/>
-        <location line="+17"/>
-        <source>Error</source>
-        <comment>GuestSessionStatus</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+12"/>
-        <location line="+20"/>
-        <source>Undefined</source>
-        <comment>ProcessStatus</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="-19"/>
-        <location line="+20"/>
         <source>Starting</source>
         <comment>ProcessStatus</comment>
-        <translation type="unfinished">Zaganjanje</translation>
+        <translation type="obsolete">Zaganjanje</translation>
     </message>
     <message>
-        <location line="-19"/>
-        <location line="+20"/>
-        <source>Started</source>
-        <comment>ProcessStatus</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="-19"/>
-        <location line="+20"/>
         <source>Paused</source>
         <comment>ProcessStatus</comment>
-        <translation type="unfinished">Premor</translation>
-    </message>
-    <message>
-        <location line="-19"/>
-        <location line="+20"/>
-        <source>Terminating</source>
-        <comment>ProcessStatus</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="-19"/>
-        <location line="+20"/>
-        <source>TerminatedNormally</source>
-        <comment>ProcessStatus</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="-19"/>
-        <location line="+20"/>
-        <source>TerminatedSignal</source>
-        <comment>ProcessStatus</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="-19"/>
-        <location line="+20"/>
-        <source>TerminatedAbnormally</source>
-        <comment>ProcessStatus</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="-19"/>
-        <location line="+20"/>
-        <source>TimedOutKilled</source>
-        <comment>ProcessStatus</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="-19"/>
-        <location line="+20"/>
-        <source>TimedOutAbnormally</source>
-        <comment>ProcessStatus</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="-19"/>
-        <location line="+20"/>
-        <source>Down</source>
-        <comment>ProcessStatus</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="-19"/>
-        <location line="+20"/>
-        <source>Error</source>
-        <comment>ProcessStatus</comment>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">Premor</translation>
     </message>
     <message>
         <location filename="../src/converter/UIConverterBackendGlobal.cpp" line="-21"/>
@@ -5033,7 +4913,7 @@
         <translation type="unfinished">Vse datoteke (*)</translation>
     </message>
     <message>
-        <location line="+745"/>
+        <location line="+743"/>
         <source>Unknown device</source>
         <comment>USB device details</comment>
         <translation type="unfinished">Neznana naprava</translation>
@@ -5230,7 +5110,7 @@
         <translation type="unfinished">Razlikovalen</translation>
     </message>
     <message>
-        <location filename="../src/settings/machine/UIMachineSettingsNetwork.cpp" line="+492"/>
+        <location filename="../src/settings/machine/UIMachineSettingsNetwork.cpp" line="+494"/>
         <source>Adapter %1</source>
         <translation type="unfinished">Vmesnik %1</translation>
     </message>
@@ -5244,7 +5124,7 @@
     <name>UICustomFileSystemModel</name>
     <message>
         <location filename="../src/guestctrl/UIFileManagerTable.cpp" line="+1111"/>
-        <source>NewDirectory</source>
+        <source>New Directory</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -5279,7 +5159,7 @@
     </message>
     <message>
         <location filename="../src/globals/UICustomFileSystemModel.cpp" line="+1"/>
-        <source>LocalPath</source>
+        <source>Local Path</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -6276,10 +6156,8 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+625"/>
-        <source>No Guest Session
-Please use the Session Panel to start 
-a guest session</source>
+        <location line="+629"/>
+        <source>No Guest Session found!&lt;br&gt;Please use the Session Panel to start a new guest session</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -6564,7 +6442,7 @@ a guest session</source>
         <location line="+30"/>
         <location line="+34"/>
         <location line="+30"/>
-        <source>Assign value...</source>
+        <source>Assign value ...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -8052,7 +7930,7 @@ a guest session</source>
 <context>
     <name>UIGraphicsControllerEditor</name>
     <message>
-        <location filename="../src/widgets/UIGraphicsControllerEditor.cpp" line="+56"/>
+        <location filename="../src/widgets/UIGraphicsControllerEditor.cpp" line="+70"/>
         <source>&amp;Graphics Controller:</source>
         <translation type="unfinished"></translation>
     </message>
@@ -8671,14 +8549,22 @@ a guest session</source>
         <translation>Naslov/Maska IPv6</translation>
     </message>
     <message>
-        <location line="+164"/>
         <source>Adding network...</source>
-        <translation type="unfinished">Dodajanje omrežja …</translation>
+        <translation type="obsolete">Dodajanje omrežja …</translation>
+    </message>
+    <message>
+        <source>Removing network...</source>
+        <translation type="obsolete">Odstranjevanje omrežja …</translation>
+    </message>
+    <message>
+        <location line="+164"/>
+        <source>Adding network ...</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+101"/>
-        <source>Removing network...</source>
-        <translation type="unfinished">Odstranjevanje omrežja …</translation>
+        <source>Removing network ...</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+496"/>
@@ -10027,7 +9913,7 @@ a guest session</source>
         <translation>&amp;Zasloni:</translation>
     </message>
     <message>
-        <location filename="../src/settings/machine/UIMachineSettingsDisplay.cpp" line="+646"/>
+        <location filename="../src/settings/machine/UIMachineSettingsDisplay.cpp" line="+653"/>
         <source>The virtual machine is set up to use hardware graphics acceleration. However the host system does not currently provide this, so you will not be able to start the machine.</source>
         <translation>Navidezni računalnik je nastavljen za uporabo strojnega grafičnega poseševanja. Vendar gostiteljski sistem tega trenutno ne ponuja, tako da ne boste mogli zagnati računalnka.</translation>
     </message>
@@ -11218,14 +11104,20 @@ a guest session</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+1"/>
+        <location filename="../src/globals/UICommon.cpp" line="-662"/>
+        <source>Choose/Create a disk image...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+9"/>
+        <location filename="../src/settings/machine/UIMachineSettingsStorage.cpp" line="+1"/>
         <location line="+10"/>
         <location line="+18"/>
         <source>Choose a disk file...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-19"/>
+        <location filename="../src/settings/machine/UIMachineSettingsStorage.cpp" line="-19"/>
         <source>Choose/Create a Virtual Optical Disk...</source>
         <translation type="unfinished"></translation>
     </message>
@@ -11235,19 +11127,7 @@ a guest session</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/globals/UICommon.cpp" line="-664"/>
-        <source>Choose/Create a disk image...</source>
-        <comment>This is used for hard disks, optical media and floppies</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+10"/>
-        <source>Choose a disk file...</source>
-        <comment>This is used for selecting an existing disk file</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+112"/>
+        <location filename="../src/globals/UICommon.cpp" line="+111"/>
         <source>Remove disk from virtual drive</source>
         <translation>Odstrani disk iz navideznega pogona</translation>
     </message>
@@ -12207,9 +12087,13 @@ a guest session</source>
         <translation type="unfinished">Izberite mesto tega nosilca</translation>
     </message>
     <message>
-        <location line="+27"/>
         <source>Moving medium...</source>
-        <translation type="unfinished">Premikanje nosilca …</translation>
+        <translation type="obsolete">Premikanje nosilca …</translation>
+    </message>
+    <message>
+        <location line="+27"/>
+        <source>Moving medium ...</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+152"/>
@@ -12263,8 +12147,12 @@ a guest session</source>
     </message>
     <message>
         <location line="+120"/>
+        <source>Removing medium ...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>Removing medium...</source>
-        <translation type="unfinished">Odstranjevanje nosilca …</translation>
+        <translation type="obsolete">Odstranjevanje nosilca …</translation>
     </message>
 </context>
 <context>
@@ -12435,13 +12323,17 @@ a guest session</source>
         <translation>Preverjanje dostopnosti</translation>
     </message>
     <message>
-        <location line="+59"/>
         <source>Moving medium...</source>
-        <translation>Premikanje nosilca …</translation>
+        <translation type="vanished">Premikanje nosilca …</translation>
+    </message>
+    <message>
+        <location line="+59"/>
+        <source>Moving medium ...</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+29"/>
-        <source>Resizing medium...</source>
+        <source>Resizing medium ...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -14572,7 +14464,7 @@ a guest session</source>
         <translation type="unfinished">I&amp;me:</translation>
     </message>
     <message>
-        <location line="+224"/>
+        <location line="+222"/>
         <location line="+2"/>
         <source>Not selected</source>
         <comment>network adapter name</comment>
@@ -15683,8 +15575,7 @@ a guest session</source>
     </message>
     <message>
         <location line="+2"/>
-        <source>The file will be saved under:
-</source>
+        <source>The file will be saved under:&lt;br&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -16303,7 +16194,7 @@ a guest session</source>
     </message>
     <message>
         <location line="+1"/>
-        <source>Guest Control &amp;Session Information</source>
+        <source>&amp;Guest Control</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -16372,7 +16263,7 @@ a guest session</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+574"/>
+        <location line="+519"/>
         <source>Seconds</source>
         <translation type="unfinished"></translation>
     </message>
@@ -16473,7 +16364,7 @@ a guest session</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/runtime/information/UIInformationRuntime.cpp" line="+179"/>
+        <location filename="../src/runtime/information/UIInformationRuntime.cpp" line="+182"/>
         <source>Runtime Attributes</source>
         <translation type="unfinished">Lastnosti izvajanja</translation>
     </message>
@@ -16485,6 +16376,7 @@ a guest session</source>
     <message>
         <location line="+1"/>
         <source>turned off</source>
+        <comment>Screen</comment>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -16525,20 +16417,65 @@ a guest session</source>
     <message>
         <location line="+1"/>
         <source>Active</source>
+        <comment>Nested Paging</comment>
         <translation type="unfinished">Dejavno</translation>
     </message>
     <message>
         <location line="+1"/>
         <source>Inactive</source>
+        <comment>Nested Paging</comment>
+        <translation type="unfinished">Nedejavno</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Active</source>
+        <comment>Unrestricted Execution</comment>
+        <translation type="unfinished">Dejavno</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Inactive</source>
+        <comment>Unrestricted Execution</comment>
         <translation type="unfinished">Nedejavno</translation>
     </message>
     <message>
         <location line="+1"/>
         <source>Not Available</source>
+        <comment>VRDE Port</comment>
         <translation type="unfinished">Ni na voljo</translation>
     </message>
     <message>
+        <location line="+4"/>
+        <source>not set</source>
+        <comment>Execution Engine</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <location line="+1"/>
+        <source>Not Detected</source>
+        <comment>Guest OS Type</comment>
+        <translation type="unfinished">Ni zaznano</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Not Detected</source>
+        <comment>Guest Additions Version</comment>
+        <translation type="unfinished">Ni zaznano</translation>
+    </message>
+    <message>
+        <source>Active</source>
+        <translation type="obsolete">Dejavno</translation>
+    </message>
+    <message>
+        <source>Inactive</source>
+        <translation type="obsolete">Nedejavno</translation>
+    </message>
+    <message>
+        <source>Not Available</source>
+        <translation type="obsolete">Ni na voljo</translation>
+    </message>
+    <message>
+        <location line="-5"/>
         <source>Guest Additions</source>
         <translation type="unfinished">Guest Additions</translation>
     </message>
@@ -16553,14 +16490,8 @@ a guest session</source>
         <translation type="unfinished">Vrata strežnika oddaljenega namizja</translation>
     </message>
     <message>
-        <location line="+1"/>
-        <source>not set</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+1"/>
         <source>Not Detected</source>
-        <translation type="unfinished">Ni zaznano</translation>
+        <translation type="obsolete">Ni zaznano</translation>
     </message>
 </context>
 <context>
@@ -17307,8 +17238,8 @@ a guest session</source>
         <translation>Kloniraj</translation>
     </message>
     <message>
-        <location filename="../src/wizards/clonevm/UIWizardCloneVMPageBasic1.cpp" line="+207"/>
-        <location filename="../src/wizards/clonevm/UIWizardCloneVMPageExpert.cpp" line="+58"/>
+        <location filename="../src/wizards/clonevm/UIWizardCloneVMPageBasic1.cpp" line="+224"/>
+        <location filename="../src/wizards/clonevm/UIWizardCloneVMPageExpert.cpp" line="+62"/>
         <source>%1 Clone</source>
         <translation>Klon %1</translation>
     </message>
@@ -17317,7 +17248,7 @@ a guest session</source>
         <translation type="vanished">Novo ime računalnika</translation>
     </message>
     <message>
-        <location line="+76"/>
+        <location line="+92"/>
         <source>New machine name and path</source>
         <translation type="unfinished"></translation>
     </message>
@@ -17328,7 +17259,7 @@ a guest session</source>
     </message>
     <message>
         <location line="+5"/>
-        <location filename="../src/wizards/clonevm/UIWizardCloneVMPageExpert.cpp" line="+154"/>
+        <location filename="../src/wizards/clonevm/UIWizardCloneVMPageExpert.cpp" line="+183"/>
         <source>Name:</source>
         <translation type="unfinished"></translation>
     </message>
@@ -17345,50 +17276,49 @@ a guest session</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+2"/>
-        <location filename="../src/wizards/clonevm/UIWizardCloneVMPageExpert.cpp" line="+2"/>
+        <location line="+8"/>
+        <location filename="../src/wizards/clonevm/UIWizardCloneVMPageExpert.cpp" line="+8"/>
         <source>Include all network adapter MAC addresses</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+2"/>
-        <location filename="../src/wizards/clonevm/UIWizardCloneVMPageExpert.cpp" line="+2"/>
+        <location line="+6"/>
+        <location filename="../src/wizards/clonevm/UIWizardCloneVMPageExpert.cpp" line="+6"/>
         <source>Include only NAT network adapter MAC addresses</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+2"/>
-        <location filename="../src/wizards/clonevm/UIWizardCloneVMPageExpert.cpp" line="+2"/>
+        <location line="+6"/>
+        <location filename="../src/wizards/clonevm/UIWizardCloneVMPageExpert.cpp" line="+6"/>
         <source>Generate new MAC addresses for all network adapters</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+2"/>
-        <location filename="../src/wizards/clonevm/UIWizardCloneVMPageExpert.cpp" line="+2"/>
+        <location line="-11"/>
+        <location filename="../src/wizards/clonevm/UIWizardCloneVMPageExpert.cpp" line="-11"/>
         <source>Include all network adapter MAC addresses during cloning.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+2"/>
-        <location filename="../src/wizards/clonevm/UIWizardCloneVMPageExpert.cpp" line="+2"/>
+        <location line="+6"/>
+        <location filename="../src/wizards/clonevm/UIWizardCloneVMPageExpert.cpp" line="+6"/>
         <source>Include only NAT network adapter MAC addresses during cloning.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+2"/>
-        <location filename="../src/wizards/clonevm/UIWizardCloneVMPageExpert.cpp" line="+2"/>
+        <location line="+6"/>
+        <location filename="../src/wizards/clonevm/UIWizardCloneVMPageExpert.cpp" line="+6"/>
         <source>Generate new MAC addresses for all network adapters during cloning.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+2"/>
-        <location filename="../src/wizards/clonevm/UIWizardCloneVMPageExpert.cpp" line="+2"/>
+        <location line="+9"/>
         <source>Additional Options:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+1"/>
-        <location filename="../src/wizards/clonevm/UIWizardCloneVMPageExpert.cpp" line="+1"/>
+        <location line="+3"/>
+        <location filename="../src/wizards/clonevm/UIWizardCloneVMPageExpert.cpp" line="+10"/>
         <source>Don&apos;t change the disk names during cloning.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -17399,8 +17329,8 @@ a guest session</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+1"/>
-        <location filename="../src/wizards/clonevm/UIWizardCloneVMPageExpert.cpp" line="+1"/>
+        <location line="+4"/>
+        <location filename="../src/wizards/clonevm/UIWizardCloneVMPageExpert.cpp" line="+4"/>
         <source>Don&apos;t change hardware UUIDs during cloning.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -17423,8 +17353,8 @@ a guest session</source>
         <translation type="vanished">&amp;Ponovno vpelji naslov MAC vseh omrežnih kartic</translation>
     </message>
     <message>
-        <location filename="../src/wizards/clonevm/UIWizardCloneVMPageBasic2.cpp" line="+82"/>
-        <location filename="../src/wizards/clonevm/UIWizardCloneVMPageExpert.cpp" line="-30"/>
+        <location filename="../src/wizards/clonevm/UIWizardCloneVMPageBasic2.cpp" line="+117"/>
+        <location filename="../src/wizards/clonevm/UIWizardCloneVMPageExpert.cpp" line="-50"/>
         <source>Clone type</source>
         <translation>Vrsta klona</translation>
     </message>
@@ -17439,13 +17369,13 @@ a guest session</source>
         <translation>&amp;Poln klon</translation>
     </message>
     <message>
-        <location line="+1"/>
+        <location line="+2"/>
         <source>&amp;Linked clone</source>
         <translation>P&amp;ovezan klon</translation>
     </message>
     <message>
         <location filename="../src/wizards/clonevm/UIWizardCloneVMPageBasic3.cpp" line="+90"/>
-        <location filename="../src/wizards/clonevm/UIWizardCloneVMPageExpert.cpp" line="+3"/>
+        <location filename="../src/wizards/clonevm/UIWizardCloneVMPageExpert.cpp" line="+4"/>
         <source>Snapshots</source>
         <translation>Posnetki stanja</translation>
     </message>
@@ -17492,7 +17422,7 @@ a guest session</source>
         <translation type="vanished">Novo i&amp;me računalnika</translation>
     </message>
     <message>
-        <location filename="../src/wizards/clonevm/UIWizardCloneVMPageExpert.cpp" line="-7"/>
+        <location filename="../src/wizards/clonevm/UIWizardCloneVMPageExpert.cpp" line="-8"/>
         <source>New machine &amp;name and path</source>
         <translation type="unfinished"></translation>
     </message>
@@ -17502,7 +17432,7 @@ a guest session</source>
         <translation>&amp;Poln klon</translation>
     </message>
     <message>
-        <location line="+1"/>
+        <location line="+2"/>
         <source>&amp;Linked Clone</source>
         <translation>&amp;Povezan klon</translation>
     </message>
@@ -17512,7 +17442,7 @@ a guest session</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/wizards/clonevm/UIWizardCloneVMPageBasic2.cpp" line="-15"/>
+        <location filename="../src/wizards/clonevm/UIWizardCloneVMPageBasic2.cpp" line="-16"/>
         <source>&lt;p&gt;Please choose the type of clone you wish to create.&lt;/p&gt;&lt;p&gt;If you choose &lt;b&gt;Full clone&lt;/b&gt;, an exact copy (including all virtual hard disk files) of the original virtual machine will be created.&lt;/p&gt;&lt;p&gt;If you choose &lt;b&gt;Linked clone&lt;/b&gt;, a new machine will be created, but the virtual hard disk files will be tied to the virtual hard disk files of original machine and you will not be able to move the new virtual machine to a different computer without moving the original as well.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Izberite vrsto klona, ki ga želite ustvariti.&lt;/p&gt;&lt;p&gt;Če izberete &lt;b&gt;Poln klon&lt;/b&gt;, bo ustvarjena natančna kopija izvirnega navideznega računlanika (vključno z vsem datotekami navideznega trdega diska).&lt;/p&gt;&lt;p&gt;Če izberete &lt;b&gt;Povezan klon&lt;/b&gt;, bo ustvarjen nov računlanik, vendar bodo datoteke navideznega trdega diska povezane z datotekami trdega diska izvirnega računalnika in novega navideznega računalnika ne boste mogli premakniti na nov računalnik brez premikanja izvirnega.&lt;/p&gt;</translation>
     </message>
@@ -17560,7 +17490,7 @@ a guest session</source>
         <translation>&lt;p&gt;Izberite navidezne računalnike, ki morajo biti dodani k namenski napravi. Lahko izberete več kot enega. Upoštevajte, da morate te računalnike pred izvozom izklopiti.&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/wizards/exportappliance/UIWizardExportAppPageBasic2.cpp" line="+1011"/>
+        <location filename="../src/wizards/exportappliance/UIWizardExportAppPageBasic2.cpp" line="+1028"/>
         <location filename="../src/wizards/exportappliance/UIWizardExportAppPageExpert.cpp" line="+491"/>
         <source>Appliance settings</source>
         <translation>Nastavitve namenske naprave</translation>
@@ -17614,7 +17544,7 @@ a guest session</source>
         <translation>&amp;Datoteka:</translation>
     </message>
     <message>
-        <location line="-590"/>
+        <location line="-588"/>
         <source>Open Virtualization Format Archive (%1)</source>
         <translation>Arhiv odprte oblike navideznosti (%1)</translation>
     </message>
@@ -17623,17 +17553,12 @@ a guest session</source>
         <translation type="vanished">Arhiv oblike Oracle Public Cloud (%1)</translation>
     </message>
     <message>
-        <location line="-55"/>
-        <source>Acquire export form...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+56"/>
+        <location line="+1"/>
         <source>Open Virtualization Format (%1)</source>
         <translation>Odprta oblika navideznosti (%1)</translation>
     </message>
     <message>
-        <location line="+580"/>
+        <location line="+578"/>
         <source>&lt;p&gt;Please choose a format to export the virtual appliance to.&lt;/p&gt;&lt;p&gt;The &lt;b&gt;Open Virtualization Format&lt;/b&gt; supports only &lt;b&gt;ovf&lt;/b&gt; or &lt;b&gt;ova&lt;/b&gt; extensions. If you use the &lt;b&gt;ovf&lt;/b&gt; extension, several files will be written separately. If you use the &lt;b&gt;ova&lt;/b&gt; extension, all the files will be combined into one Open Virtualization Format archive.&lt;/p&gt;&lt;p&gt;The &lt;b&gt;Oracle Cloud Infrastructure&lt;/b&gt; format supports exporting to remote cloud servers only. Main virtual disk of each selected machine will be uploaded to remote server.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
@@ -17674,44 +17599,49 @@ a guest session</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+2"/>
-        <location filename="../src/wizards/exportappliance/UIWizardExportAppPageExpert.cpp" line="+2"/>
+        <location line="+8"/>
+        <location filename="../src/wizards/exportappliance/UIWizardExportAppPageExpert.cpp" line="+8"/>
         <source>Include all network adapter MAC addresses</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+2"/>
-        <location filename="../src/wizards/exportappliance/UIWizardExportAppPageExpert.cpp" line="+2"/>
+        <location line="+6"/>
+        <location filename="../src/wizards/exportappliance/UIWizardExportAppPageExpert.cpp" line="+6"/>
         <source>Include only NAT network adapter MAC addresses</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+2"/>
-        <location filename="../src/wizards/exportappliance/UIWizardExportAppPageExpert.cpp" line="+2"/>
+        <location line="+6"/>
+        <location filename="../src/wizards/exportappliance/UIWizardExportAppPageExpert.cpp" line="+6"/>
         <source>Strip all network adapter MAC addresses</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+2"/>
-        <location filename="../src/wizards/exportappliance/UIWizardExportAppPageExpert.cpp" line="+2"/>
+        <location line="-11"/>
+        <location filename="../src/wizards/exportappliance/UIWizardExportAppPageExpert.cpp" line="-11"/>
         <source>Include all network adapter MAC addresses in exported appliance archive.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+2"/>
-        <location filename="../src/wizards/exportappliance/UIWizardExportAppPageExpert.cpp" line="+2"/>
+        <location line="-675"/>
+        <source>Acquire export form ...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+681"/>
+        <location filename="../src/wizards/exportappliance/UIWizardExportAppPageExpert.cpp" line="+6"/>
         <source>Include only NAT network adapter MAC addresses in exported appliance archive.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+2"/>
-        <location filename="../src/wizards/exportappliance/UIWizardExportAppPageExpert.cpp" line="+2"/>
+        <location line="+6"/>
+        <location filename="../src/wizards/exportappliance/UIWizardExportAppPageExpert.cpp" line="+6"/>
         <source>Strip all network adapter MAC addresses from exported appliance archive.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+3"/>
-        <location filename="../src/wizards/exportappliance/UIWizardExportAppPageExpert.cpp" line="+3"/>
+        <location line="+9"/>
+        <location filename="../src/wizards/exportappliance/UIWizardExportAppPageExpert.cpp" line="+9"/>
         <source>Additionally:</source>
         <translation type="unfinished"></translation>
     </message>
@@ -17777,8 +17707,8 @@ a guest session</source>
         <translation type="vanished">Oblika Oracle Public Cloud 1.0</translation>
     </message>
     <message>
-        <location line="-143"/>
-        <location filename="../src/wizards/exportappliance/UIWizardExportAppPageExpert.cpp" line="-42"/>
+        <location line="-158"/>
+        <location filename="../src/wizards/exportappliance/UIWizardExportAppPageExpert.cpp" line="-57"/>
         <source>Write in legacy OVF 0.9 format for compatibility with other virtualization products.</source>
         <translation>Zapiši v zastareli obliki OVF 0.9 za združljivost z drugimi izdelki navideznosti.</translation>
     </message>
@@ -17793,8 +17723,8 @@ a guest session</source>
         <translation type="vanished">Zapiši v obliki Oracle Public Cloud 1.0.</translation>
     </message>
     <message>
-        <location line="+27"/>
-        <location filename="../src/wizards/exportappliance/UIWizardExportAppPageExpert.cpp" line="+27"/>
+        <location line="+42"/>
+        <location filename="../src/wizards/exportappliance/UIWizardExportAppPageExpert.cpp" line="+42"/>
         <source>Create a Manifest file for automatic data integrity checks on import.</source>
         <translation>Ustvari datoteko manifesta za samodejno preverjanje celovitosti podatkov ob izvozu.</translation>
     </message>
@@ -17818,7 +17748,7 @@ a guest session</source>
         <translation>To so opisni podatki, ki bodo dodani namenski napravi. Lahko jih spremenite z dvoklikom na posamezne vrstice.</translation>
     </message>
     <message>
-        <location filename="../src/wizards/exportappliance/UIWizardExportAppPageExpert.cpp" line="-44"/>
+        <location filename="../src/wizards/exportappliance/UIWizardExportAppPageExpert.cpp" line="-59"/>
         <source>Virtual &amp;machines to export</source>
         <translation>&amp;Navidezni računlaniki za izvoz</translation>
     </message>
@@ -17828,7 +17758,7 @@ a guest session</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+45"/>
+        <location line="+60"/>
         <source>Include ISO image files into exported VM archive.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -17849,8 +17779,8 @@ a guest session</source>
         <translation type="vanished">Nastavitve pomnilniške naprave</translation>
     </message>
     <message>
-        <location filename="../src/wizards/exportappliance/UIWizardExportAppPageBasic2.cpp" line="-37"/>
-        <location filename="../src/wizards/exportappliance/UIWizardExportAppPageExpert.cpp" line="-39"/>
+        <location filename="../src/wizards/exportappliance/UIWizardExportAppPageBasic2.cpp" line="-52"/>
+        <location filename="../src/wizards/exportappliance/UIWizardExportAppPageExpert.cpp" line="-54"/>
         <source>Please choose a file to export the virtual appliance to</source>
         <translation>Izberite datoteko, v katero želite izvoziti namensko napravo</translation>
     </message>
@@ -17999,26 +17929,31 @@ a guest session</source>
     </message>
     <message>
         <location filename="../src/wizards/importappliance/UIWizardImportAppPageBasic1.cpp" line="-507"/>
-        <source>Acquire cloud instances...</source>
+        <source>Acquire cloud instances ...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+67"/>
-        <source>Read appliance...</source>
+        <source>Read appliance ...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+30"/>
-        <source>Acquire import form...</source>
+        <source>Acquire import form ...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+388"/>
-        <source>Please choose the source to import appliance from.  This can be a local file system to import OVF archive or one of known  cloud service providers to import cloud VM from.</source>
+        <source>Please choose the source to import appliance from.  This can be a local file system to import OVF archive or one of known cloud service providers to import cloud VM from.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+7"/>
+        <location line="+5"/>
+        <source>&amp;Source:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+2"/>
         <location filename="../src/wizards/importappliance/UIWizardImportAppPageExpert.cpp" line="-14"/>
         <source>Local File System</source>
         <translation type="unfinished"></translation>
@@ -18119,18 +18054,10 @@ a guest session</source>
     </message>
 </context>
 <context>
-    <name>UIWizardImportAppPageBasic1</name>
-    <message>
-        <location filename="../src/wizards/importappliance/UIWizardImportAppPageBasic1.cpp" line="-119"/>
-        <source>&amp;Source:</source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
     <name>UIWizardNewCloudVM</name>
     <message>
         <location filename="../src/wizards/newcloudvm/UIWizardNewCloudVM.cpp" line="+101"/>
-        <source>Acquire launch form...</source>
+        <source>Acquire launch form ...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -18150,7 +18077,7 @@ a guest session</source>
     </message>
     <message>
         <location filename="../src/wizards/newcloudvm/UIWizardNewCloudVMPageBasic1.cpp" line="+314"/>
-        <source>Acquire cloud images...</source>
+        <source>Acquire cloud images ...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -18164,7 +18091,12 @@ a guest session</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+10"/>
+        <location line="+4"/>
+        <source>&amp;Destination:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+6"/>
         <location filename="../src/wizards/newcloudvm/UIWizardNewCloudVMPageExpert.cpp" line="+219"/>
         <source>Create VM for cloud service provider.</source>
         <translation type="unfinished"></translation>
@@ -18203,14 +18135,6 @@ a guest session</source>
         <location line="+11"/>
         <source>Settings</source>
         <translation type="unfinished">Nastavitve</translation>
-    </message>
-</context>
-<context>
-    <name>UIWizardNewCloudVMPageBasic1</name>
-    <message>
-        <location filename="../src/wizards/newcloudvm/UIWizardNewCloudVMPageBasic1.cpp" line="-17"/>
-        <source>&amp;Destination:</source>
-        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
