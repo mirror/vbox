@@ -158,19 +158,16 @@ debian/modules-stamp: debian/build-stamp
 	        make -j4 -C $(builddir)/bin/src/vboxdrv KBUILD_VERBOSE= KERN_VER=$$(basename $$d) all; \
 	        make -C $(builddir)/bin/src/vboxnetflt KERN_VER=$$(basename $$d) clean && \
 		(cp $(builddir)/bin/src/vboxdrv/Module.symvers $(builddir)/bin/src/vboxnetflt || true) && \
-	        make -j4 -C $(builddir)/bin/src/vboxnetflt KBUILD_VERBOSE= KERN_VER=$$(basename $$d) all; \
+	        make -j4 -C $(builddir)/bin/src/vboxnetflt KBUILD_VERBOSE= KERN_VER=$$(basename $$d) KBUILD_EXTRA_SYMBOLS=$(builddir)/bin/src/vboxnetflt/Module.symvers all; \
 	        make -C $(builddir)/bin/src/vboxnetadp KERN_VER=$$(basename $$d) clean && \
 		(cp $(builddir)/bin/src/vboxdrv/Module.symvers $(builddir)/bin/src/vboxnetadp || true) && \
-	        make -j4 -C $(builddir)/bin/src/vboxnetadp KBUILD_VERBOSE= KERN_VER=$$(basename $$d) all; \
+	        make -j4 -C $(builddir)/bin/src/vboxnetadp KBUILD_VERBOSE= KERN_VER=$$(basename $$d) KBUILD_EXTRA_SYMBOLS=$(builddir)/bin/src/vboxnetadp/Module.symvers all; \
 	        make -C $(builddir)/bin/src/vboxpci KERN_VER=$$(basename $$d) clean && \
 		(cp $(builddir)/bin/src/vboxdrv/Module.symvers $(builddir)/bin/src/vboxpci || true) && \
-	        make -j4 -C $(builddir)/bin/src/vboxpci KBUILD_VERBOSE= KERN_VER=$$(basename $$d) all; true; \
+	        make -j4 -C $(builddir)/bin/src/vboxpci KBUILD_VERBOSE= KERN_VER=$$(basename $$d) all KBUILD_EXTRA_SYMBOLS=$(builddir)/bin/src/vboxpci/Module.symvers all ; \
+	        make -C $(builddir)/bin/src/vboxpci KERN_VER=$$(basename $$d) clean; true
 	    fi; \
 	done
-	make -C $(builddir)/bin/src/vboxdrv clean
-	make -C $(builddir)/bin/src/vboxnetflt clean
-	make -C $(builddir)/bin/src/vboxnetadp clean
-	make -C $(builddir)/bin/src/vboxpci clean; true
 	touch debian/modules-stamp
 
 clean:

@@ -4599,7 +4599,7 @@ ifeq ($(KBUILD_TARGET),linux)
  ##
  ## @param 1    Module name.
  ## @param 2    The test build which symvers we need (empty if none)
- ## @param 3	 Save symvers if non-empty.
+ ## @param 3    Save symvers if non-empty.
  ##
  ## @note Using the extra expansion to replace $(1), $(2) and $(3) before eval,
  ##       thus everything else needs escaped dollars.
@@ -4630,7 +4630,7 @@ $$(PATH_TARGET)/tst$(1)$(subst /,_,$(KERN_DIR))_mod.run: \
 	$(QUIET)$$(CP) -f    -- "$$<" "$$(PATH_TARGET)/tst$(1)_mod/Module.symvers"
    endif
 	+ $(QUIET)$(REDIRECT_EXT) -d2=1 -w1 "$$(PATH_TARGET)/tst$(1)_mod/make.err" -- \
-		make KBUILD_VERBOSE=$(KBUILD_VERBOSE) KERN_DIR=$(KERN_DIR) VBOX_KERN_QUIET=1 $(if-expr $(KMK_OPTS_JOBS) != 0,JOBS=$(KMK_OPTS_JOBS),) -C $$(PATH_TARGET)/tst$(1)_mod
+		make KBUILD_VERBOSE=$(KBUILD_VERBOSE) KERN_DIR=$(KERN_DIR) VBOX_KERN_QUIET=1 $(if $(2),KBUILD_EXTRA_SYMBOLS="$$(PATH_TARGET)/tst$(1)_mod/Module.symvers",) $(if-expr $(KMK_OPTS_JOBS) != 0,JOBS=$(KMK_OPTS_JOBS),) -C $$(PATH_TARGET)/tst$(1)_mod
 	$(CAT) "$$(PATH_TARGET)/tst$(1)_mod/make.err"
 	$(QUIET)! grep "^WARNING: .* undefined!$$$$" "$$(PATH_TARGET)/tst$(1)_mod/make.err"
    if1of ($(USERNAME), bird)
