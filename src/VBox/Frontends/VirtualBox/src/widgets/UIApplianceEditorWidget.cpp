@@ -840,9 +840,6 @@ QWidget *UIVirtualHardwareItem::createEditor(QWidget *pParent, const QStyleOptio
                     ++iAdapterTypeIndex;
                 }
                 /* Pass editor back: */
-#ifdef VBOX_WITH_VIRTIO_NET_1_0
-                pComboBox->addItem(gpConverter->toString(KNetworkAdapterType_Virtio_1_0), KNetworkAdapterType_Virtio_1_0);
-#endif /* VBOX_WITH_VIRTIO */
                 pEditor = pComboBox;
                 break;
             }
