@@ -116,6 +116,11 @@ extern "C" DECLEXPORT(int) VBoxDevicesRegister(PPDMDEVREGCB pCallbacks, uint32_t
     if (RT_FAILURE(rc))
         return rc;
 #endif
+#ifdef VBOX_WITH_VIRTIO_NET_1_0
+    rc = pCallbacks->pfnRegister(pCallbacks, &g_DeviceVirtioNet_1_0);
+    if (RT_FAILURE(rc))
+        return rc;
+#endif
 #ifdef VBOX_WITH_INIP
     rc = pCallbacks->pfnRegister(pCallbacks, &g_DeviceINIP);
     if (RT_FAILURE(rc))

@@ -1721,8 +1721,8 @@ int virtioCoreR3Init(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, PVIRTIOCORECC pVir
      */
     AssertReturn(pVirtioCC->pfnStatusChanged, VERR_INVALID_POINTER);
     AssertReturn(pVirtioCC->pfnQueueNotified, VERR_INVALID_POINTER);
-    AssertReturn(pVirtioCC->pfnDevCapRead,    VERR_INVALID_POINTER);
-    AssertReturn(pVirtioCC->pfnDevCapWrite,   VERR_INVALID_POINTER);
+//    AssertReturn(pVirtioCC->pfnDevCapRead,    VERR_INVALID_POINTER);
+//    AssertReturn(pVirtioCC->pfnDevCapWrite,   VERR_INVALID_POINTER);
 
 #if 0 /* Until pdmR3DvHlp_PCISetIrq() impl is fixed and Assert that limits vec to 0 is removed */
 # ifdef VBOX_WITH_MSI_DEVICES

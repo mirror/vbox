@@ -56,6 +56,9 @@ extern const PDMDEVREG g_DeviceE1000;
 #ifdef VBOX_WITH_VIRTIO
 extern const PDMDEVREG g_DeviceVirtioNet;
 #endif
+#ifdef VBOX_WITH_VIRTIO_NET_1_0
+extern const PDMDEVREG g_DeviceVirtioNet_1_0;
+#endif
 #ifdef VBOX_WITH_INIP
 extern const PDMDEVREG g_DeviceINIP;
 #endif

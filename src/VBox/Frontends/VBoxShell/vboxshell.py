@@ -1656,6 +1656,8 @@ def getAdapterType(ctx, natype):
         return "e1000"
     elif (natype == ctx['global'].constants.NetworkAdapterType_Virtio):
         return "virtio"
+    elif (natype == ctx['global'].constants.NetworkAdapterType_Virtio_1_0):
+        return "virtio_1.0"
     elif (natype == ctx['global'].constants.NetworkAdapterType_Null):
         return None
     else:

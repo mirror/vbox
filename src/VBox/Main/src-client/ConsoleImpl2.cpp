@@ -2480,6 +2480,10 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
         PCFGMNODE pDevVirtioNet = NULL;          /* Virtio network devices */
         InsertConfigNode(pDevices, "virtio-net", &pDevVirtioNet);
 #endif /* VBOX_WITH_VIRTIO */
+#ifdef VBOX_WITH_VIRTIO_NET_1_0
+        PCFGMNODE pDevVirtioNet1_0 = NULL;          /* Virtio network devices */
+        InsertConfigNode(pDevices, "virtio-net-1-dot-0", &pDevVirtioNet1_0);
+#endif /* VBOX_WITH_VIRTIO_NET_1_0 */
         std::list<BootNic> llBootNics;
         for (ULONG uInstance = 0; uInstance < maxNetworkAdapters; ++uInstance)
         {
@@ -2517,6 +2521,12 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
                     pszAdapterName = "virtio-net";
                     break;
 #endif /* VBOX_WITH_VIRTIO */
+#ifdef VBOX_WITH_VIRTIO_NET_1_0
+                case NetworkAdapterType_Virtio_1_0:
+                    pDev = pDevVirtioNet1_0;
+                    pszAdapterName = "virtio-net-1-dot-0";
+                    break;
+#endif /* VBOX_WITH_VIRTIO_NET_1_0 */
                 default:
                     AssertMsgFailed(("Invalid network adapter type '%d' for slot '%d'", adapterType, uInstance));
                     return VMR3SetError(pUVM, VERR_INVALID_PARAMETER, RT_SRC_POS,
@@ -2603,6 +2613,8 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
                     InsertConfigInteger(pCfg, "AdapterType", 2);
                     break;
                 case NetworkAdapterType_Virtio:
+                    break;
+                case NetworkAdapterType_Virtio_1_0:
                     break;
                 case NetworkAdapterType_Null:      AssertFailedBreak(); /* (compiler warnings) */
 #ifdef VBOX_WITH_XPCOM_CPP_ENUM_HACK

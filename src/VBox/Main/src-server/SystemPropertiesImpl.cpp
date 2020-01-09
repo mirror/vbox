@@ -1452,6 +1452,8 @@ HRESULT SystemProperties::getSupportedNetworkAdapterTypes(std::vector<NetworkAda
         NetworkAdapterType_I82543GC,
         NetworkAdapterType_I82545EM,
         NetworkAdapterType_Virtio,
+        NetworkAdapterType_Virtio_1_0,
+        NetworkAdapterType_Am79C960,
     };
     aSupportedNetworkAdapterTypes.assign(aNetworkAdapterTypes,
                                          aNetworkAdapterTypes + RT_ELEMENTS(aNetworkAdapterTypes));

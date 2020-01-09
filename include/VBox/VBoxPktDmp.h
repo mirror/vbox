@@ -49,7 +49,8 @@ DECLINLINE(const char *) vboxEthTypeStr(uint16_t uType)
 }
 
 
-DECLHIDDEN(void) vboxEthPacketDump(const char *pcszInstance, const char *pcszText, const uint8_t *pcPacket, uint32_t cb)
+//DECLHIDDEN(void) 
+DECLINLINE(void) vboxEthPacketDump(const char *pcszInstance, const char *pcszText, const uint8_t *pcPacket, uint32_t cb)
 {
 #if defined(LOG_ENABLED) && !defined(VBOX_DEVICE_STRUCT_TESTCASE)
     AssertReturnVoid(cb >= 14);

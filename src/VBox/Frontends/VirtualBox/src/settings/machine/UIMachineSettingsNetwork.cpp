@@ -695,6 +695,12 @@ void UIMachineSettingsNetwork::populateComboboxes()
             m_pAdapterTypeCombo->setItemData(iAdapterTypeIndex, m_pAdapterTypeCombo->itemText(iAdapterTypeIndex), Qt::ToolTipRole);
             ++iAdapterTypeIndex;
         }
+#ifdef VBOX_WITH_VIRTIO_1_0
+        m_pAdapterTypeCombo->insertItem(iAdapterTypeIndex, gpConverter->toString(KNetworkAdapterType_Virtio_1_0));
+        m_pAdapterTypeCombo->setItemData(iAdapterTypeIndex, KNetworkAdapterType_Virtio_1_0);
+        m_pAdapterTypeCombo->setItemData(iAdapterTypeIndex, m_pAdapterTypeCombo->itemText(iAdapterTypeIndex), Qt::ToolTipRole);
+        ++iAdapterTypeIndex;
+#endif /* VBOX_WITH_VIRTIO_1_0 */
 
         /* Choose requested adapter type: */
         const int iIndex = m_pAdapterTypeCombo->findData(m_enmAdapterType);

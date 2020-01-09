@@ -475,8 +475,15 @@ VBOX_WITH_VMSVGA3D_DYNAMIC_LOAD = 1
   VBoxDD_DEFS           += VBOX_WITH_VIRTIO
   VBoxDD_SOURCES        += \
  	VirtIO/Virtio.cpp \
+  	VirtIO/Virtio_1_0.cpp \
  	Network/DevVirtioNet.cpp
  endif
+
+ if defined(VBOX_WITH_VIRTIO) && defined(VBOX_WITH_VIRTIO_NET_1_0)
+  VBoxDD_DEFS         += VBOX_WITH_VIRTIO_NET_1_0
+  VBoxDD_SOURCES      += \
+  	Network/DevVirtioNet_1_0.cpp
+endif
 
  ifdef VBOX_WITH_UDPTUNNEL
   VBoxDD_DEFS           += VBOX_WITH_UDPTUNNEL
@@ -524,10 +531,9 @@ VBOX_WITH_VMSVGA3D_DYNAMIC_LOAD = 1
  	Storage/DevNVMe.cpp
  endif
 
- ifdef VBOX_WITH_VIRTIO_SCSI
+ if defined(VBOX_WITH_VIRTIO) && defined(VBOX_WITH_VIRTIO_SCSI)
   VBoxDD_DEFS           += VBOX_WITH_VIRTIO_SCSI
   VBoxDD_SOURCES        += \
-  	VirtIO/Virtio_1_0.cpp \
   	Storage/DevVirtioSCSI.cpp
  endif
 
@@ -957,7 +963,14 @@ VBOX_WITH_VMSVGA3D_DYNAMIC_LOAD = 1
    VBoxDDRC_DEFS        += VBOX_WITH_VIRTIO
    VBoxDDRC_SOURCES     += \
   	VirtIO/Virtio.cpp \
+  	VirtIO/Virtio_1_0.cpp \
   	Network/DevVirtioNet.cpp
+  endif
+
+  ifdef defined(VBOX_WITH_VIRTIO) && defined(VBOX_WITH_VIRTIO_NET_1_0)
+   VBoxDDRC_DEFS         += VBOX_WITH_VIRTIO_NET_1_0
+   VBoxDDRC_SOURCES      += \
+  	 Network/DevVirtioNet_1_0.cpp
   endif
 
   ifdef VBOX_WITH_HGSMI
@@ -1145,7 +1158,14 @@ VBOX_WITH_VMSVGA3D_DYNAMIC_LOAD = 1
   VBoxDDR0_DEFS         += VBOX_WITH_VIRTIO
   VBoxDDR0_SOURCES      += \
 	VirtIO/Virtio.cpp \
+  	VirtIO/Virtio_1_0.cpp \
   	Network/DevVirtioNet.cpp
+ endif
+
+ if defined(VBOX_WITH_VIRTIO) && defined(VBOX_WITH_VIRTIO_NET_1_0)
+  VBoxDDR0_DEFS         += VBOX_WITH_VIRTIO_NET_1_0
+  VBoxDDR0_SOURCES      += \
+  	Network/DevVirtioNet_1_0.cpp
  endif
 
  ifdef VBOX_WITH_NETSHAPER
@@ -1216,10 +1236,9 @@ VBOX_WITH_VMSVGA3D_DYNAMIC_LOAD = 1
   	Storage/DevNVMe.cpp
  endif
 
- if defined(VBOX_WITH_VIRTIO_SCSI)
+ if defined (VBOX_WITH_VIRTIO) && defined(VBOX_WITH_VIRTIO_SCSI)
   VBoxDDR0_DEFS         += VBOX_WITH_VIRTIO_SCSI
   VBoxDDR0_SOURCES      += \
-  	VirtIO/Virtio_1_0.cpp \
   	Storage/DevVirtioSCSI.cpp
  endif
 

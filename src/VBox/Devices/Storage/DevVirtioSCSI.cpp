@@ -381,6 +381,7 @@ typedef struct VIRTIOSCSITARGET
 
     /** Flag whether device is present. */
     bool                            fPresent;
+
     /** Media port interface. */
     PDMIMEDIAPORT                   IMediaPort;
 
@@ -410,6 +411,9 @@ typedef struct VIRTIOSCSI
 {
     /** The core virtio state.   */
     VIRTIOCORE                      Virtio;
+
+    /** VirtIO Host SCSI device runtime configuration parameters */
+    VIRTIOSCSI_CONFIG_T             virtioScsiConfig;
 
     bool                            fBootable;
     bool                            afPadding0[3];
@@ -441,8 +445,6 @@ typedef struct VIRTIOSCSI
     /** Total number of requests active across all targets */
     volatile uint32_t               cActiveReqs;
 
-    /** VirtIO Host SCSI device runtime configuration parameters */
-    VIRTIOSCSI_CONFIG_T             virtioScsiConfig;
 
     /** True if the guest/driver and VirtIO framework are in the ready state */
     uint32_t                        fVirtioReady;
@@ -492,9 +494,6 @@ typedef struct VIRTIOSCSIR3
 
     /** Status Target: LEDs port interface. */
     PDMILEDPORTS                    ILeds;
-
-    /** Status Target: Partner of ILeds. */
-    R3PTRTYPE(PPDMILEDCONNECTORS)   pLedsConnector;
 
     /** IMediaExPort: Media ejection notification */
     R3PTRTYPE(PPDMIMEDIANOTIFY)     pMediaNotify;
@@ -2549,7 +2548,6 @@ static DECLCALLBACK(int) virtioScsiR3Construct(PPDMDEVINS pDevIns, int iInstance
         /* Initialize static parts of the device. */
         pTarget->pDevIns = pDevIns;
         pTarget->uTarget = uTarget;
-        pTarget->led.u32Magic = PDMLED_MAGIC;
 
         pTarget->IBase.pfnQueryInterface                 = virtioScsiR3TargetQueryInterface;
 
