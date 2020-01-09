@@ -188,7 +188,7 @@ typedef RTFTPSERVERCALLBACKS *PRTFTPSERVERCALLBACKS;
  * @param   uPort               The port for creating a listening socket.
  * @param   pCallbacks          Callback table to use.
  */
-RTR3DECL(int) RTFTPServerCreate(PRTFTPSERVER phFTPServer, const char *pcszAddress, uint16_t uPort,
+RTR3DECL(int) RTFtpServerCreate(PRTFTPSERVER phFTPServer, const char *pcszAddress, uint16_t uPort,
                                 PRTFTPSERVERCALLBACKS pCallbacks);
 
 /**
@@ -197,7 +197,7 @@ RTR3DECL(int) RTFTPServerCreate(PRTFTPSERVER phFTPServer, const char *pcszAddres
  * @returns IPRT status code.
  * @param   hFTPServer          Handle to the FTP server handle.
  */
-RTR3DECL(int) RTFTPServerDestroy(RTFTPSERVER hFTPServer);
+RTR3DECL(int) RTFtpServerDestroy(RTFTPSERVER hFTPServer);
 
 RT_C_DECLS_END
 

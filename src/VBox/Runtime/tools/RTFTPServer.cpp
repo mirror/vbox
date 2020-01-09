@@ -303,7 +303,7 @@ int main(int argc, char **argv)
         Callbacks.pfnOnList             = onList;
 
         RTFTPSERVER hFTPServer;
-        rc = RTFTPServerCreate(&hFTPServer, szAddress, uPort, &Callbacks);
+        rc = RTFtpServerCreate(&hFTPServer, szAddress, uPort, &Callbacks);
         if (RT_SUCCESS(rc))
         {
             RTPrintf("Starting FTP server at %s:%RU16 ...\n", szAddress, uPort);
@@ -321,7 +321,7 @@ int main(int argc, char **argv)
 
             RTPrintf("Stopping FTP server ...\n");
 
-            int rc2 = RTFTPServerDestroy(hFTPServer);
+            int rc2 = RTFtpServerDestroy(hFTPServer);
             if (RT_SUCCESS(rc))
                 rc = rc2;
 
