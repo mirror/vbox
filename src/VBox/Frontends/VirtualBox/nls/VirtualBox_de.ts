@@ -2268,15 +2268,15 @@
     </message>
     <message>
         <source>Include all network adapter MAC addresses during importing.</source>
-        <translation type="unfinished"></translation>
+        <translation>Die MAC-Adressen aller Netzwerkadapter während des Importierens mit einbeziehen.</translation>
     </message>
     <message>
         <source>Include only NAT network adapter MAC addresses during importing.</source>
-        <translation type="unfinished"></translation>
+        <translation>Während des Importierens nur MAC-Adressen der NAT-Netzwerk-Adapater mit einbeziehen.</translation>
     </message>
     <message>
         <source>Generate new MAC addresses for all network adapters during importing.</source>
-        <translation type="unfinished"></translation>
+        <translation>Während des Importierens neue MAC-Adressen für alle Netzwerk-Adapater generieren.</translation>
     </message>
 </context>
 <context>
@@ -4259,12 +4259,12 @@
     <message>
         <source>Paravirtualized Network (virtio-net 1.0)</source>
         <comment>NetworkAdapterType</comment>
-        <translation type="unfinished"></translation>
+        <translation>Paravirtualisiertes Netzwerk (virtio-net 1.0)</translation>
     </message>
     <message>
         <source>PCnet-ISA (Am79C960)</source>
         <comment>NetworkAdapterType</comment>
-        <translation type="unfinished"></translation>
+        <translation>PCnet-ISA (Am79C960)</translation>
     </message>
 </context>
 <context>
@@ -4303,11 +4303,11 @@
     </message>
     <message>
         <source>New Directory</source>
-        <translation type="unfinished">Neues Verzeichnis</translation>
+        <translation>Neues Verzeichnis</translation>
     </message>
     <message>
         <source>Local Path</source>
-        <translation type="unfinished">Lokaler Pfad</translation>
+        <translation>Lokaler Pfad</translation>
     </message>
 </context>
 <context>
@@ -5267,7 +5267,7 @@ a guest session</source>
     </message>
     <message>
         <source>No Guest Session found!&lt;br&gt;Please use the Session Panel to start a new guest session</source>
-        <translation type="unfinished"></translation>
+        <translation>Keine Gastsitzung vorhanden!&lt;br&gt;Bitte das Session-Panel nutzen um eine neue Gastsitzung zu starten</translation>
     </message>
 </context>
 <context>
@@ -5345,7 +5345,7 @@ a guest session</source>
     </message>
     <message>
         <source>Assign value ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Wert zuweisen ...</translation>
     </message>
 </context>
 <context>
@@ -7251,11 +7251,11 @@ a guest session</source>
     </message>
     <message>
         <source>Adding network ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Netzwerk hinzufügen ...</translation>
     </message>
     <message>
         <source>Removing network ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Netzwerk entfernen ...</translation>
     </message>
 </context>
 <context>
@@ -9668,7 +9668,7 @@ a guest session</source>
     </message>
     <message>
         <source>Choose/Create a disk image...</source>
-        <translation type="unfinished">Plattenabbild auswählen/erzeugen...</translation>
+        <translation>Plattenabbild auswählen/erzeugen...</translation>
     </message>
 </context>
 <context>
@@ -10337,11 +10337,11 @@ a guest session</source>
     </message>
     <message>
         <source>Moving medium ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Medium verschieben ...</translation>
     </message>
     <message>
         <source>Removing medium ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Entferne Medium ...</translation>
     </message>
 </context>
 <context>
@@ -10588,11 +10588,11 @@ a guest session</source>
     </message>
     <message>
         <source>Moving medium ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Medium verschieben ...</translation>
     </message>
     <message>
         <source>Resizing medium ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Mediumgröße anpassen ...</translation>
     </message>
 </context>
 <context>
@@ -13322,7 +13322,7 @@ a guest session</source>
     </message>
     <message>
         <source>The file will be saved under:&lt;br&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>Die Datei wird abgespeichert unter:&lt;br&gt;</translation>
     </message>
 </context>
 <context>
@@ -13945,52 +13945,52 @@ a guest session</source>
     </message>
     <message>
         <source>&amp;Guest Control</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Gastkontrolle</translation>
     </message>
     <message>
         <source>turned off</source>
         <comment>Screen</comment>
-        <translation type="unfinished">ausgeschaltet</translation>
+        <translation>ausgeschaltet</translation>
     </message>
     <message>
         <source>Active</source>
         <comment>Nested Paging</comment>
-        <translation type="unfinished">aktiv</translation>
+        <translation>aktiv</translation>
     </message>
     <message>
         <source>Inactive</source>
         <comment>Nested Paging</comment>
-        <translation type="unfinished">inaktiv</translation>
+        <translation>inaktiv</translation>
     </message>
     <message>
         <source>Active</source>
         <comment>Unrestricted Execution</comment>
-        <translation type="unfinished">aktiv</translation>
+        <translation>aktiv</translation>
     </message>
     <message>
         <source>Inactive</source>
         <comment>Unrestricted Execution</comment>
-        <translation type="unfinished">inaktiv</translation>
+        <translation>inaktiv</translation>
     </message>
     <message>
         <source>Not Available</source>
         <comment>VRDE Port</comment>
-        <translation type="unfinished">nicht verfügbar</translation>
+        <translation>nicht verfügbar</translation>
     </message>
     <message>
         <source>not set</source>
         <comment>Execution Engine</comment>
-        <translation type="unfinished">nicht gesetzt</translation>
+        <translation>nicht gesetzt</translation>
     </message>
     <message>
         <source>Not Detected</source>
         <comment>Guest OS Type</comment>
-        <translation type="unfinished">nicht erkannt</translation>
+        <translation>nicht erkannt</translation>
     </message>
     <message>
         <source>Not Detected</source>
         <comment>Guest Additions Version</comment>
-        <translation type="unfinished">nicht erkannt</translation>
+        <translation>nicht erkannt</translation>
     </message>
 </context>
 <context>
@@ -15082,7 +15082,7 @@ a guest session</source>
     </message>
     <message>
         <source>Acquire export form ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Export beziehen von ...</translation>
     </message>
 </context>
 <context>
@@ -15278,23 +15278,23 @@ a guest session</source>
     </message>
     <message>
         <source>Acquire cloud instances ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Cloud-Instanzen erfassen ...</translation>
     </message>
     <message>
         <source>Read appliance ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Appliance lesen ...</translation>
     </message>
     <message>
         <source>Acquire import form ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Erfasse Import von ...</translation>
     </message>
     <message>
         <source>Please choose the source to import appliance from.  This can be a local file system to import OVF archive or one of known cloud service providers to import cloud VM from.</source>
-        <translation type="unfinished"></translation>
+        <translation>Bitte Quelle auswählen, aus der die Appliance importieren werden soll.  Dies kann ein lokales Dateisystem zum Importieren von OVF-Archiven oder ein bekannter Cloud-Service-Anbieter zum Importieren von Cloud-VMs sein.</translation>
     </message>
     <message>
         <source>&amp;Source:</source>
-        <translation type="unfinished">&amp;Quelle:</translation>
+        <translation>&amp;Quelle:</translation>
     </message>
 </context>
 <context>
@@ -15368,15 +15368,15 @@ a guest session</source>
     </message>
     <message>
         <source>Acquire launch form ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Start-Typ beziehen ...</translation>
     </message>
     <message>
         <source>Acquire cloud images ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Cloud-Abbilder beziehen ...</translation>
     </message>
     <message>
         <source>&amp;Destination:</source>
-        <translation type="unfinished">&amp;Ziel:</translation>
+        <translation>&amp;Ziel:</translation>
     </message>
 </context>
 <context>
