@@ -12636,13 +12636,6 @@ DECLINLINE(VBOXSTRICTRC) hmR0VmxHandleExit(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTra
  */
 DECLINLINE(VBOXSTRICTRC) hmR0VmxHandleExitNested(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransient)
 {
-    /** @todo NSTVMX: Remove after debugging page-fault issue. */
-#ifdef DEBUG_ramshankar
-    hmR0VmxImportGuestState(pVCpu, pVmxTransient->pVmcsInfo, HMVMX_CPUMCTX_EXTRN_ALL);
-    Log4Func(("cs:rip=%#04x:%#RX64 rsp=%#RX64 eflags=%#RX32 cr3=%#RX64\n", pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip,
-              pVCpu->cpum.GstCtx.rsp, pVCpu->cpum.GstCtx.eflags.u32, pVCpu->cpum.GstCtx.cr3));
-#endif
-
     uint32_t const uExitReason = pVmxTransient->uExitReason;
     switch (uExitReason)
     {
