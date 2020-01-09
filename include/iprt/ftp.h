@@ -107,6 +107,8 @@ typedef enum RTFTPSERVER_REPLY
     RTFTPSERVER_REPLY_OKAY                           = 200,
     /** Service ready for new user. */
     RTFTPSERVER_REPLY_READY_FOR_NEW_USER             = 220,
+    /** Service is closing control connection. */
+    RTFTPSERVER_REPLY_CLOSING_CTRL_CONN              = 221,
     /** Closing data connection. */
     RTFTPSERVER_REPLY_CLOSING_DATA_CONN              = 226,
     /** User logged in, proceed. */
@@ -136,6 +138,10 @@ typedef enum RTFTPSERVER_REPLY
  */
 typedef struct RTFTPSERVERCLIENTSTATE
 {
+    /** User name. */
+    char         *pszUser;
+    /** Number of failed login attempts. */
+    uint8_t       cFailedLoginAttempts;
     /** Timestamp (in ms) of last command issued by the client. */
     uint64_t      tsLastCmdMs;
 } RTFTPSERVERCLIENTSTATE;

@@ -194,6 +194,7 @@ static FNRTFTPSERVERCMD rtFtpServerHandleCWD;
 static FNRTFTPSERVERCMD rtFtpServerHandleLIST;
 static FNRTFTPSERVERCMD rtFtpServerHandleMODE;
 static FNRTFTPSERVERCMD rtFtpServerHandleNOOP;
+static FNRTFTPSERVERCMD rtFtpServerHandlePASS;
 static FNRTFTPSERVERCMD rtFtpServerHandlePORT;
 static FNRTFTPSERVERCMD rtFtpServerHandlePWD;
 static FNRTFTPSERVERCMD rtFtpServerHandleQUIT;
@@ -202,6 +203,7 @@ static FNRTFTPSERVERCMD rtFtpServerHandleRGET;
 static FNRTFTPSERVERCMD rtFtpServerHandleSTAT;
 static FNRTFTPSERVERCMD rtFtpServerHandleSYST;
 static FNRTFTPSERVERCMD rtFtpServerHandleTYPE;
+static FNRTFTPSERVERCMD rtFtpServerHandleUSER;
 
 /**
  * Structure for maintaining a single command entry for the command table.
@@ -227,6 +229,7 @@ const RTFTPSERVER_CMD_ENTRY g_aCmdMap[] =
     { RTFTPSERVER_CMD_LIST,     "LIST",         rtFtpServerHandleLIST },
     { RTFTPSERVER_CMD_MODE,     "MODE",         rtFtpServerHandleMODE },
     { RTFTPSERVER_CMD_NOOP,     "NOOP",         rtFtpServerHandleNOOP },
+    { RTFTPSERVER_CMD_PASS,     "PASS",         rtFtpServerHandlePASS },
     { RTFTPSERVER_CMD_PORT,     "PORT",         rtFtpServerHandlePORT },
     { RTFTPSERVER_CMD_PWD,      "PWD",          rtFtpServerHandlePWD  },
     { RTFTPSERVER_CMD_QUIT,     "QUIT",         rtFtpServerHandleQUIT },
@@ -235,6 +238,7 @@ const RTFTPSERVER_CMD_ENTRY g_aCmdMap[] =
     { RTFTPSERVER_CMD_STAT,     "STAT",         rtFtpServerHandleSTAT },
     { RTFTPSERVER_CMD_SYST,     "SYST",         rtFtpServerHandleSYST },
     { RTFTPSERVER_CMD_TYPE,     "TYPE",         rtFtpServerHandleTYPE },
+    { RTFTPSERVER_CMD_USER,     "USER",         rtFtpServerHandleUSER },
     { RTFTPSERVER_CMD_LAST,     "",             NULL }
 };
 
@@ -369,6 +373,31 @@ static int rtFtpServerHandleNOOP(PRTFTPSERVERCLIENT pClient, uint8_t cArgs, cons
     return VINF_SUCCESS;
 }
 
+static int rtFtpServerHandlePASS(PRTFTPSERVERCLIENT pClient, uint8_t cArgs, const char * const *apcszArgs)
+{
+    if (cArgs != 1)
+        return rtFtpServerSendReplyRc(pClient, RTFTPSERVER_REPLY_ERROR_INVALID_PARAMETERS);
+
+    const char *pcszPassword = apcszArgs[0];
+    AssertPtrReturn(pcszPassword, VERR_INVALID_PARAMETER);
+
+    int rc = rtFtpServerAuthenticate(pClient, pClient->State.pszUser, pcszPassword);
+    if (RT_SUCCESS(rc))
+    {
+        rc = rtFtpServerSendReplyRc(pClient, RTFTPSERVER_REPLY_LOGGED_IN_PROCEED);
+    }
+    else
+    {
+        pClient->State.cFailedLoginAttempts++;
+
+        int rc2 = rtFtpServerSendReplyRc(pClient, RTFTPSERVER_REPLY_NOT_LOGGED_IN);
+        if (RT_SUCCESS(rc))
+            rc = rc2;
+    }
+
+    return rc;
+}
+
 static int rtFtpServerHandlePORT(PRTFTPSERVERCLIENT pClient, uint8_t cArgs, const char * const *apcszArgs)
 {
     RT_NOREF(pClient, cArgs, apcszArgs);
@@ -450,56 +479,32 @@ static int rtFtpServerHandleTYPE(PRTFTPSERVERCLIENT pClient, uint8_t cArgs, cons
     return VINF_SUCCESS;
 }
 
-
-/*********************************************************************************************************************************
-*   Internal server functions                                                                                                    *
-*********************************************************************************************************************************/
-
-/**
- * Handles the client's login procedure.
- *
- * @returns VBox status code.
- * @param   pClient             Client to handle login procedure for.
- */
-static int rtFtpServerDoLogin(PRTFTPSERVERCLIENT pClient)
+static int rtFtpServerHandleUSER(PRTFTPSERVERCLIENT pClient, uint8_t cArgs, const char * const *apcszArgs)
 {
-    LogFlowFuncEnter();
+    if (cArgs != 1)
+        return rtFtpServerSendReplyRc(pClient, RTFTPSERVER_REPLY_ERROR_INVALID_PARAMETERS);
 
-    /* Send welcome message. */
-    int rc = rtFtpServerSendReplyRc(pClient, RTFTPSERVER_REPLY_READY_FOR_NEW_USER);
-    if (RT_SUCCESS(rc))
+    const char *pcszUser = apcszArgs[0];
+    AssertPtrReturn(pcszUser, VERR_INVALID_PARAMETER);
+
+    if (pClient->State.pszUser)
     {
-        size_t cbRead;
-
-        char szUser[64];
-        rc = RTTcpRead(pClient->hSocket, szUser, sizeof(szUser), &cbRead);
-        if (RT_SUCCESS(rc))
-        {
-            rc = rtFtpServerLookupUser(pClient, szUser);
-            if (RT_SUCCESS(rc))
-            {
-                rc = rtFtpServerSendReplyRc(pClient, RTFTPSERVER_REPLY_USERNAME_OKAY_NEED_PASSWORD);
-                if (RT_SUCCESS(rc))
-                {
-                    char szPass[64];
-                    rc = RTTcpRead(pClient->hSocket, szPass, sizeof(szPass), &cbRead);
-                    {
-                        if (RT_SUCCESS(rc))
-                        {
-                            rc = rtFtpServerAuthenticate(pClient, szUser, szPass);
-                            if (RT_SUCCESS(rc))
-                            {
-                                rc = rtFtpServerSendReplyRc(pClient, RTFTPSERVER_REPLY_LOGGED_IN_PROCEED);
-                            }
-                        }
-                    }
-                }
-            }
-        }
+        RTStrFree(pClient->State.pszUser);
+        pClient->State.pszUser = NULL;
     }
 
-    if (RT_FAILURE(rc))
+    int rc = rtFtpServerLookupUser(pClient, pcszUser);
+    if (RT_SUCCESS(rc))
     {
+        pClient->State.pszUser = RTStrDup(pcszUser);
+        AssertPtrReturn(pClient->State.pszUser, VERR_NO_MEMORY);
+
+        rc = rtFtpServerSendReplyRc(pClient, RTFTPSERVER_REPLY_USERNAME_OKAY_NEED_PASSWORD);
+    }
+    else
+    {
+        pClient->State.cFailedLoginAttempts++;
+
         int rc2 = rtFtpServerSendReplyRc(pClient, RTFTPSERVER_REPLY_NOT_LOGGED_IN);
         if (RT_SUCCESS(rc))
             rc = rc2;
@@ -507,6 +512,11 @@ static int rtFtpServerDoLogin(PRTFTPSERVERCLIENT pClient)
 
     return rc;
 }
+
+
+/*********************************************************************************************************************************
+*   Internal server functions                                                                                                    *
+*********************************************************************************************************************************/
 
 /**
  * Parses FTP command arguments handed in by the client.
@@ -581,25 +591,21 @@ static int rtFtpServerProcessCommands(PRTFTPSERVERCLIENT pClient)
             if (pszCmdEnd)
                 *pszCmdEnd = '\0';
 
-            /* Second, determine if there is any parameters following. */
-            char *pszCmdParms = RTStrIStr(szCmd, " ");
-            if (pszCmdParms)
-                pszCmdParms++;
-
             uint8_t cArgs     = 0;
             char  **papszArgs = NULL;
-            rc = rtFtpServerCmdArgsParse(pszCmdParms, &cArgs, &papszArgs);
-            if (RT_SUCCESS(rc))
+            rc = rtFtpServerCmdArgsParse(szCmd, &cArgs, &papszArgs);
+            if (   RT_SUCCESS(rc)
+                && cArgs) /* At least the actual command (without args) must be present. */
             {
                 unsigned i = 0;
                 for (; i < RT_ELEMENTS(g_aCmdMap); i++)
                 {
-                    if (!RTStrICmp(szCmd, g_aCmdMap[i].szCmd))
+                    if (!RTStrICmp(papszArgs[0], g_aCmdMap[i].szCmd))
                     {
                         /* Save timestamp of last command sent. */
                         pClient->State.tsLastCmdMs = RTTimeMilliTS();
 
-                        rc = g_aCmdMap[i].pfnCmd(pClient, cArgs, papszArgs);
+                        rc = g_aCmdMap[i].pfnCmd(pClient, cArgs - 1, cArgs > 1 ? &papszArgs[1] : NULL);
                         break;
                     }
                 }
@@ -613,8 +619,14 @@ static int rtFtpServerProcessCommands(PRTFTPSERVERCLIENT pClient)
                         rc = rc2;
                 }
 
-                if (g_aCmdMap[i].enmCmd == RTFTPSERVER_CMD_QUIT)
+                const bool fDisconnect =    g_aCmdMap[i].enmCmd == RTFTPSERVER_CMD_QUIT
+                                         || pClient->State.cFailedLoginAttempts >= 3; /** @todo Make this dynamic. */
+                if (fDisconnect)
                 {
+                    int rc2 = rtFtpServerSendReplyRc(pClient, RTFTPSERVER_REPLY_CLOSING_CTRL_CONN);
+                    if (RT_SUCCESS(rc))
+                        rc = rc2;
+
                     RTFTPSERVER_HANDLE_CALLBACK_RET(pfnOnUserDisconnect);
                     break;
                 }
@@ -644,6 +656,9 @@ static int rtFtpServerProcessCommands(PRTFTPSERVERCLIENT pClient)
  */
 static void rtFtpServerClientStateReset(PRTFTPSERVERCLIENTSTATE pState)
 {
+    RTStrFree(pState->pszUser);
+    pState->pszUser = NULL;
+
     pState->tsLastCmdMs = RTTimeMilliTS();
 }
 
@@ -667,7 +682,8 @@ static DECLCALLBACK(int) rtFtpServerClientThread(RTSOCKET hSocket, void *pvUser)
 
     rtFtpServerClientStateReset(&Client.State);
 
-    int rc = rtFtpServerDoLogin(&Client);
+    /* Send welcome message. */
+    int rc = rtFtpServerSendReplyRc(&Client, RTFTPSERVER_REPLY_READY_FOR_NEW_USER);
     if (RT_SUCCESS(rc))
     {
         ASMAtomicIncU32(&pThis->cClients);
@@ -676,6 +692,8 @@ static DECLCALLBACK(int) rtFtpServerClientThread(RTSOCKET hSocket, void *pvUser)
 
         ASMAtomicDecU32(&pThis->cClients);
     }
+
+    rtFtpServerClientStateReset(&Client.State);
 
     return rc;
 }
