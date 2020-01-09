@@ -578,6 +578,8 @@ static LRESULT vboxClipboardWinProcessMsg(PSHCLCONTEXT pCtx, HWND hwnd, UINT msg
                         if (lp != NULL)
                         {
                             SHCLDATABLOCK dataBlock;
+                            RT_ZERO(dataBlock);
+
                             dataBlock.uFormat = fFormat;
                             dataBlock.pvData  = lp;
                             dataBlock.cbData  = (uint32_t)GlobalSize(hClip);
@@ -601,6 +603,8 @@ static LRESULT vboxClipboardWinProcessMsg(PSHCLCONTEXT pCtx, HWND hwnd, UINT msg
                         if (uniString != NULL)
                         {
                             SHCLDATABLOCK dataBlock;
+                            RT_ZERO(dataBlock);
+
                             dataBlock.uFormat = fFormat;
                             dataBlock.pvData  = uniString;
                             dataBlock.cbData  = ((uint32_t)lstrlenW(uniString) + 1) * 2;
@@ -628,6 +632,8 @@ static LRESULT vboxClipboardWinProcessMsg(PSHCLCONTEXT pCtx, HWND hwnd, UINT msg
                             if (lp != NULL)
                             {
                                 SHCLDATABLOCK dataBlock;
+                                RT_ZERO(dataBlock);
+
                                 dataBlock.uFormat = fFormat;
                                 dataBlock.pvData  = lp;
                                 dataBlock.cbData  = (uint32_t)GlobalSize(hClip);
