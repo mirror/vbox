@@ -88,12 +88,6 @@ struct DRMVMWRECT
 };
 AssertCompileSize(struct DRMVMWRECT, 16);
 
-struct DISPLAYCACHE
-{
-    int fEnabled;
-    struct DRMVMWRECT rect;
-};
-
 #define DRM_IOCTL_VERSION _IOWR('d', 0x00, struct DRMVERSION)
 
 struct DRMCONTEXT
@@ -101,7 +95,6 @@ struct DRMCONTEXT
     RTFILE hDevice;
 };
 
-struct DISPLAYCACHE aRects[VMW_MAX_HEADS];
 
 static void drmConnect(struct DRMCONTEXT *pContext)
 {
@@ -189,9 +182,9 @@ static int run(struct VBCLSERVICE **ppInterface, bool fDaemonised)
     (void)ppInterface;
     (void)fDaemonised;
     struct DRMCONTEXT drmContext = { NIL_RTFILE };
-
+    static struct VMMDevDisplayDef aMonitors[VMW_MAX_HEADS];
     int rc;
-    unsigned cHeads;
+    unsigned cEnabledMonitors;
     /* Do not acknowledge the first event we query for to pick up old events,
      * e.g. from before a guest reboot. */
     bool fAck = false;
@@ -206,10 +199,6 @@ static int run(struct VBCLSERVICE **ppInterface, bool fDaemonised)
         return VINF_SUCCESS;
     if (RT_FAILURE(rc))
         VBClLogFatalError("Failed to register resizing support, rc=%Rrc\n", rc);
-
-    /* For the time being we initialize all the monitors as disabled as per VMM device initialization. */
-    for (int i = 0; i < VMW_MAX_HEADS; ++i)
-        aRects[i].fEnabled = 0;
 
     for (;;)
     {
@@ -232,42 +221,41 @@ static int run(struct VBCLSERVICE **ppInterface, bool fDaemonised)
                 uint32_t idDisplay = aDisplays[i].idDisplay;
                 if (idDisplay >= VMW_MAX_HEADS)
                     continue;
+                aMonitors[idDisplay].fDisplayFlags = aDisplays[i].fDisplayFlags;
                 if (!(aDisplays[i].fDisplayFlags & VMMDEV_DISPLAY_DISABLED))
                 {
                     if ((idDisplay == 0) || (aDisplays[i].fDisplayFlags & VMMDEV_DISPLAY_ORIGIN))
                     {
-                        aRects[idDisplay].rect.x = aDisplays[i].xOrigin;
-                        aRects[idDisplay].rect.y = aDisplays[i].yOrigin;
+                        aMonitors[idDisplay].xOrigin = aDisplays[i].xOrigin;
+                        aMonitors[idDisplay].yOrigin = aDisplays[i].yOrigin;
                     } else {
-                        aRects[idDisplay].rect.x = aRects[idDisplay - 1].rect.x + aRects[idDisplay - 1].rect.w;
-                        aRects[idDisplay].rect.y = aRects[idDisplay - 1].rect.y;
+                        aMonitors[idDisplay].xOrigin = aMonitors[idDisplay - 1].xOrigin + aMonitors[idDisplay - 1].cx;
+                        aMonitors[idDisplay].yOrigin = aMonitors[idDisplay - 1].yOrigin;
                     }
-                    aRects[idDisplay].rect.w = aDisplays[i].cx;
-                    aRects[idDisplay].rect.h = aDisplays[i].cy;
-                    aRects[idDisplay].fEnabled = 1;
+                    aMonitors[idDisplay].cx = aDisplays[i].cx;
+                    aMonitors[idDisplay].cy = aDisplays[i].cy;
                 }
-                else
-                    aRects[idDisplay].fEnabled = 0;
             }
             /* Create an dense (consisting of enable monitors only) array to pass to DRM. */
-            cHeads = 0;
-            struct DRMVMWRECT enabledMonitors[VMW_MAX_HEADS];
-
+            cEnabledMonitors = 0;
+            struct DRMVMWRECT aEnabledMonitors[VMW_MAX_HEADS];
             for (int j = 0; j < VMW_MAX_HEADS; ++j)
             {
-                if (aRects[j].fEnabled)
+                if (!(aMonitors[j].fDisplayFlags & VMMDEV_DISPLAY_DISABLED))
                 {
-                    enabledMonitors[cHeads] = aRects[j].rect;
-                    if (cHeads > 0)
-                        enabledMonitors[cHeads].x = enabledMonitors[cHeads - 1].x + enabledMonitors[cHeads - 1].w;
-                    ++cHeads;
+                    aEnabledMonitors[cEnabledMonitors].x = aMonitors[j].xOrigin;
+                    aEnabledMonitors[cEnabledMonitors].y = aMonitors[j].yOrigin;
+                    aEnabledMonitors[cEnabledMonitors].w = aMonitors[j].cx;
+                    aEnabledMonitors[cEnabledMonitors].h = aMonitors[j].cy;
+                    if (cEnabledMonitors > 0)
+                        aEnabledMonitors[cEnabledMonitors].x = aEnabledMonitors[cEnabledMonitors - 1].x + aEnabledMonitors[cEnabledMonitors - 1].w;
+                    ++cEnabledMonitors;
                 }
             }
-
-            for (unsigned i = 0; i < cHeads; ++i)
-                printf("Monitor %u: %dx%d, (%d, %d)\n", i, (int)enabledMonitors[i].w, (int)enabledMonitors[i].h,
-                       (int)enabledMonitors[i].x, (int)enabledMonitors[i].y);
-            drmSendHints(&drmContext, enabledMonitors, cHeads);
+            for (unsigned i = 0; i < cEnabledMonitors; ++i)
+                printf("Monitor %u: %dx%d, (%d, %d)\n", i, (int)aEnabledMonitors[i].w, (int)aEnabledMonitors[i].h,
+                       (int)aEnabledMonitors[i].x, (int)aEnabledMonitors[i].y);
+            drmSendHints(&drmContext, aEnabledMonitors, cEnabledMonitors);
         }
         do
         {
