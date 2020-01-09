@@ -132,6 +132,53 @@ typedef enum RTFTPSERVER_REPLY
 } RTFTPSERVER_REPLY;
 
 /**
+ * Structure for maintaining a FTP server client state.
+ */
+typedef struct RTFTPSERVERCLIENTSTATE
+{
+    /** Timestamp (in ms) of last command issued by the client. */
+    uint64_t      tsLastCmdMs;
+} RTFTPSERVERCLIENTSTATE;
+/** Pointer to a FTP server client state. */
+typedef RTFTPSERVERCLIENTSTATE *PRTFTPSERVERCLIENTSTATE;
+
+/**
+ * Structure for storing FTP server callback data.
+ */
+typedef struct RTFTPCALLBACKDATA
+{
+    /** Pointer to the client state. */
+    PRTFTPSERVERCLIENTSTATE  pClient;
+    /** Saved user pointer. */
+    void                    *pvUser;
+    /** Size (in bytes) of data at user pointer. */
+    size_t                   cbUser;
+} RTFTPCALLBACKDATA;
+/** Pointer to FTP server callback data. */
+typedef RTFTPCALLBACKDATA *PRTFTPCALLBACKDATA;
+
+/**
+ * Function callback table for the FTP server implementation.
+ *
+ * All callbacks are optional and therefore can be NULL.
+ */
+typedef struct RTFTPSERVERCALLBACKS
+{
+    /** User pointer to data. Optional and can be NULL. */
+    void  *pvUser;
+    /** Size (in bytes) of user data pointing at. Optional and can be 0. */
+    size_t cbUser;
+    DECLCALLBACKMEMBER(int,  pfnOnUserConnect)(PRTFTPCALLBACKDATA pData, const char *pcszUser);
+    DECLCALLBACKMEMBER(int,  pfnOnUserAuthenticate)(PRTFTPCALLBACKDATA pData, const char *pcszUser, const char *pcszPassword);
+    DECLCALLBACKMEMBER(int,  pfnOnUserDisconnect)(PRTFTPCALLBACKDATA pData);
+    DECLCALLBACKMEMBER(int,  pfnOnPathSetCurrent)(PRTFTPCALLBACKDATA pData, const char *pcszCWD);
+    DECLCALLBACKMEMBER(int,  pfnOnPathGetCurrent)(PRTFTPCALLBACKDATA pData, char *pszPWD, size_t cbPWD);
+    DECLCALLBACKMEMBER(int,  pfnOnList)(PRTFTPCALLBACKDATA pData, void **ppvData, size_t *pcbData);
+} RTFTPSERVERCALLBACKS, *PRTFTPSERVERCALLBACKS;
+/** Pointer to a FTP server callback data table. */
+typedef RTFTPSERVERCALLBACKS *PRTFTPSERVERCALLBACKS;
+
+/**
  * Creates a FTP server instance.
  *
  * @returns IPRT status code.
@@ -139,10 +186,10 @@ typedef enum RTFTPSERVER_REPLY
  * @param   pcszAddress         The address for creating a listening socket.
  *                              If NULL or empty string the server is bound to all interfaces.
  * @param   uPort               The port for creating a listening socket.
- * @param   pcszPathRoot        Root path of the FTP server serving.
+ * @param   pCallbacks          Callback table to use.
  */
 RTR3DECL(int) RTFTPServerCreate(PRTFTPSERVER phFTPServer, const char *pcszAddress, uint16_t uPort,
-                                const char *pcszPathRoot);
+                                PRTFTPSERVERCALLBACKS pCallbacks);
 
 /**
  * Destroys a FTP server instance.

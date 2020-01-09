@@ -39,11 +39,13 @@
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
 #define LOG_GROUP RTLOGGROUP_FTP
+#include <iprt/asm.h>
 #include <iprt/assert.h>
 #include <iprt/errcore.h>
 #include <iprt/ftp.h>
 #include <iprt/mem.h>
 #include <iprt/log.h>
+#include <iprt/path.h>
 #include <iprt/poll.h>
 #include <iprt/socket.h>
 #include <iprt/string.h>
@@ -62,9 +64,13 @@
 typedef struct RTFTPSERVERINTERNAL
 {
     /** Magic value. */
-    uint32_t            u32Magic;
+    uint32_t                u32Magic;
+    /** Callback table. */
+    RTFTPSERVERCALLBACKS    Callbacks;
     /** Pointer to TCP server instance. */
-    PRTTCPSERVER        pTCPServer;
+    PRTTCPSERVER            pTCPServer;
+    /** Number of currently connected clients. */
+    uint32_t                cClients;
 } RTFTPSERVERINTERNAL;
 /** Pointer to an internal FTP server instance. */
 typedef RTFTPSERVERINTERNAL *PRTFTPSERVERINTERNAL;
@@ -135,22 +141,48 @@ typedef enum RTFTPSERVER_CMD
 } RTFTPSERVER_CMD;
 
 /**
- * Structure for maintaining an internal FTP server client state.
+ * Structure for maintaining an internal FTP server client.
  */
-typedef struct RTFTPSERVERCLIENTSTATE
+typedef struct RTFTPSERVERCLIENT
 {
     /** Pointer to internal server state. */
-    PRTFTPSERVERINTERNAL pServer;
+    PRTFTPSERVERINTERNAL        pServer;
     /** Socket handle the client is bound to. */
-    RTSOCKET             hSocket;
-} RTFTPSERVERCLIENTSTATE;
+    RTSOCKET                    hSocket;
+    /** Actual client state. */
+    RTFTPSERVERCLIENTSTATE      State;
+} RTFTPSERVERCLIENT;
 /** Pointer to an internal FTP server client state. */
-typedef RTFTPSERVERCLIENTSTATE *PRTFTPSERVERCLIENTSTATE;
+typedef RTFTPSERVERCLIENT *PRTFTPSERVERCLIENT;
 
 /** Function pointer declaration for a specific FTP server command handler. */
-typedef DECLCALLBACK(int) FNRTFTPSERVERCMD(PRTFTPSERVERCLIENTSTATE pClient);
+typedef DECLCALLBACK(int) FNRTFTPSERVERCMD(PRTFTPSERVERCLIENT pClient);
 /** Pointer to a FNRTFTPSERVERCMD(). */
 typedef FNRTFTPSERVERCMD *PFNRTFTPSERVERCMD;
+
+/** Handles a FTP server callback with no arguments and returns. */
+#define RTFTPSERVER_HANDLE_CALLBACK_RET(a_Name) \
+    do \
+    { \
+        PRTFTPSERVERCALLBACKS pCallbacks = &pClient->pServer->Callbacks; \
+        if (pCallbacks->a_Name) \
+        { \
+            RTFTPCALLBACKDATA Data = { &pClient->State, pCallbacks->pvUser, pCallbacks->cbUser }; \
+            return pCallbacks->a_Name(&Data); \
+        } \
+    } while (0)
+
+/** Handles a FTP server callback with arguments and returns. */
+#define RTFTPSERVER_HANDLE_CALLBACK_VA_RET(a_Name, ...) \
+    do \
+    { \
+        PRTFTPSERVERCALLBACKS pCallbacks = &pClient->pServer->Callbacks; \
+        if (pCallbacks->a_Name) \
+        { \
+            RTFTPCALLBACKDATA Data = { &pClient->State, pCallbacks->pvUser, pCallbacks->cbUser }; \
+            return pCallbacks->a_Name(&Data, __VA_ARGS__); \
+        } \
+    } while (0)
 
 /**
  * Function prototypes for command handlers.
@@ -206,7 +238,18 @@ const RTFTPSERVER_CMD_ENTRY g_aCmdMap[] =
 };
 
 
-static int rtFTPServerSendReplyRc(PRTFTPSERVERCLIENTSTATE pClient, RTFTPSERVER_REPLY enmReply)
+/*********************************************************************************************************************************
+*   Protocol Functions                                                                                                           *
+*********************************************************************************************************************************/
+
+/**
+ * Replies a (three digit) reply code back to the client.
+ *
+ * @returns VBox status code.
+ * @param   pClient             Client to reply to.
+ * @param   enmReply            Reply code to send.
+ */
+static int rtFTPServerSendReplyRc(PRTFTPSERVERCLIENT pClient, RTFTPSERVER_REPLY enmReply)
 {
     char szReply[32];
     RTStrPrintf2(szReply, sizeof(szReply), "%RU32\r\n", enmReply);
@@ -214,7 +257,14 @@ static int rtFTPServerSendReplyRc(PRTFTPSERVERCLIENTSTATE pClient, RTFTPSERVER_R
     return RTTcpWrite(pClient->hSocket, szReply, strlen(szReply) + 1);
 }
 
-static int rtFTPServerSendReplyStr(PRTFTPSERVERCLIENTSTATE pClient, const char *pcszStr)
+/**
+ * Replies a string back to the client.
+ *
+ * @returns VBox status code.
+ * @param   pClient             Client to reply to.
+ * @param   pcszStr             String to reply.
+ */
+static int rtFTPServerSendReplyStr(PRTFTPSERVERCLIENT pClient, const char *pcszStr)
 {
     char *pszReply;
     int rc = RTStrAPrintf(&pszReply, "%s\r\n", pcszStr);
@@ -228,49 +278,41 @@ static int rtFTPServerSendReplyStr(PRTFTPSERVERCLIENTSTATE pClient, const char *
     return VERR_NO_MEMORY;
 }
 
-static int rtFTPServerLookupUser(PRTFTPSERVERCLIENTSTATE pClient, const char *pcszUser)
+/**
+ * Looks up an user account.
+ *
+ * @returns VBox status code, or VERR_NOT_FOUND if user has not been found.
+ * @param   pClient             Client to look up user for.
+ * @param   pcszUser            User name to look up.
+ */
+static int rtFTPServerLookupUser(PRTFTPSERVERCLIENT pClient, const char *pcszUser)
 {
-    RT_NOREF(pClient, pcszUser);
+    RTFTPSERVER_HANDLE_CALLBACK_VA_RET(pfnOnUserConnect, pcszUser);
 
-    LogFunc(("User='%s'\n", pcszUser));
-
-    return VINF_SUCCESS; /** @todo Implement lookup. */
+    return VERR_NOT_FOUND;
 }
 
-static int rtFTPServerAuthenticate(PRTFTPSERVERCLIENTSTATE pClient, const char *pcszUser, const char *pcszPassword)
+/**
+ * Handles the actual client authentication.
+ *
+ * @returns VBox status code, or VERR_ACCESS_DENIED if authentication failed.
+ * @param   pClient             Client to authenticate.
+ * @param   pcszUser            User name to authenticate with.
+ * @param   pcszPassword        Password to authenticate with.
+ */
+static int rtFTPServerAuthenticate(PRTFTPSERVERCLIENT pClient, const char *pcszUser, const char *pcszPassword)
 {
-    RT_NOREF(pClient, pcszUser, pcszPassword);
+    RTFTPSERVER_HANDLE_CALLBACK_VA_RET(pfnOnUserAuthenticate, pcszUser, pcszPassword);
 
-    LogFunc(("User='%s', Password='%s'\n", pcszUser, pcszPassword));
-
-    return VINF_SUCCESS; /** @todo Implement authentication. */
+    return VERR_ACCESS_DENIED;
 }
 
-static int rtFTPServerHandleABOR(PRTFTPSERVERCLIENTSTATE pClient)
-{
-    RT_NOREF(pClient);
 
-    /** @todo Anything to do here? */
-    return VINF_SUCCESS;
-}
+/*********************************************************************************************************************************
+*   Command Protocol Handlers                                                                                                    *
+*********************************************************************************************************************************/
 
-static int rtFTPServerHandleCDUP(PRTFTPSERVERCLIENTSTATE pClient)
-{
-    RT_NOREF(pClient);
-
-    /** @todo Anything to do here? */
-    return VINF_SUCCESS;
-}
-
-static int rtFTPServerHandleCWD(PRTFTPSERVERCLIENTSTATE pClient)
-{
-    RT_NOREF(pClient);
-
-    /** @todo Anything to do here? */
-    return VINF_SUCCESS;
-}
-
-static int rtFTPServerHandleLIST(PRTFTPSERVERCLIENTSTATE pClient)
+static int rtFTPServerHandleABOR(PRTFTPSERVERCLIENT pClient)
 {
     RT_NOREF(pClient);
 
@@ -278,7 +320,7 @@ static int rtFTPServerHandleLIST(PRTFTPSERVERCLIENTSTATE pClient)
     return VINF_SUCCESS;
 }
 
-static int rtFTPServerHandleMODE(PRTFTPSERVERCLIENTSTATE pClient)
+static int rtFTPServerHandleCDUP(PRTFTPSERVERCLIENT pClient)
 {
     RT_NOREF(pClient);
 
@@ -286,7 +328,7 @@ static int rtFTPServerHandleMODE(PRTFTPSERVERCLIENTSTATE pClient)
     return VINF_SUCCESS;
 }
 
-static int rtFTPServerHandleNOOP(PRTFTPSERVERCLIENTSTATE pClient)
+static int rtFTPServerHandleCWD(PRTFTPSERVERCLIENT pClient)
 {
     RT_NOREF(pClient);
 
@@ -294,7 +336,7 @@ static int rtFTPServerHandleNOOP(PRTFTPSERVERCLIENTSTATE pClient)
     return VINF_SUCCESS;
 }
 
-static int rtFTPServerHandlePORT(PRTFTPSERVERCLIENTSTATE pClient)
+static int rtFTPServerHandleLIST(PRTFTPSERVERCLIENT pClient)
 {
     RT_NOREF(pClient);
 
@@ -302,7 +344,7 @@ static int rtFTPServerHandlePORT(PRTFTPSERVERCLIENTSTATE pClient)
     return VINF_SUCCESS;
 }
 
-static int rtFTPServerHandlePWD(PRTFTPSERVERCLIENTSTATE pClient)
+static int rtFTPServerHandleMODE(PRTFTPSERVERCLIENT pClient)
 {
     RT_NOREF(pClient);
 
@@ -310,7 +352,15 @@ static int rtFTPServerHandlePWD(PRTFTPSERVERCLIENTSTATE pClient)
     return VINF_SUCCESS;
 }
 
-static int rtFTPServerHandleQUIT(PRTFTPSERVERCLIENTSTATE pClient)
+static int rtFTPServerHandleNOOP(PRTFTPSERVERCLIENT pClient)
+{
+    RT_NOREF(pClient);
+
+    /* Nothing to do here. */
+    return VINF_SUCCESS;
+}
+
+static int rtFTPServerHandlePORT(PRTFTPSERVERCLIENT pClient)
 {
     RT_NOREF(pClient);
 
@@ -318,7 +368,26 @@ static int rtFTPServerHandleQUIT(PRTFTPSERVERCLIENTSTATE pClient)
     return VINF_SUCCESS;
 }
 
-static int rtFTPServerHandleRETR(PRTFTPSERVERCLIENTSTATE pClient)
+static int rtFTPServerHandlePWD(PRTFTPSERVERCLIENT pClient)
+{
+#if 0
+    char *pszReply;
+    int rc = RTStrAPrintf(&pszReply, "%s\r\n", pClient->szCWD);
+    if (RT_SUCCESS(rc))
+    {
+        rc = RTTcpWrite(pClient->hSocket, pszReply, strlen(pszReply) + 1);
+        RTStrFree(pszReply);
+        return rc;
+    }
+
+    return VERR_NO_MEMORY;
+#endif
+
+    RT_NOREF(pClient);
+    return 0;
+}
+
+static int rtFTPServerHandleQUIT(PRTFTPSERVERCLIENT pClient)
 {
     RT_NOREF(pClient);
 
@@ -326,7 +395,7 @@ static int rtFTPServerHandleRETR(PRTFTPSERVERCLIENTSTATE pClient)
     return VINF_SUCCESS;
 }
 
-static int rtFTPServerHandleRGET(PRTFTPSERVERCLIENTSTATE pClient)
+static int rtFTPServerHandleRETR(PRTFTPSERVERCLIENT pClient)
 {
     RT_NOREF(pClient);
 
@@ -334,7 +403,7 @@ static int rtFTPServerHandleRGET(PRTFTPSERVERCLIENTSTATE pClient)
     return VINF_SUCCESS;
 }
 
-static int rtFTPServerHandleSTAT(PRTFTPSERVERCLIENTSTATE pClient)
+static int rtFTPServerHandleRGET(PRTFTPSERVERCLIENT pClient)
 {
     RT_NOREF(pClient);
 
@@ -342,7 +411,15 @@ static int rtFTPServerHandleSTAT(PRTFTPSERVERCLIENTSTATE pClient)
     return VINF_SUCCESS;
 }
 
-static int rtFTPServerHandleSYST(PRTFTPSERVERCLIENTSTATE pClient)
+static int rtFTPServerHandleSTAT(PRTFTPSERVERCLIENT pClient)
+{
+    RT_NOREF(pClient);
+
+    /** @todo Anything to do here? */
+    return VINF_SUCCESS;
+}
+
+static int rtFTPServerHandleSYST(PRTFTPSERVERCLIENT pClient)
 {
     char szOSInfo[64];
     int rc = RTSystemQueryOSInfo(RTSYSOSINFO_PRODUCT, szOSInfo, sizeof(szOSInfo));
@@ -352,7 +429,7 @@ static int rtFTPServerHandleSYST(PRTFTPSERVERCLIENTSTATE pClient)
     return rc;
 }
 
-static int rtFTPServerHandleTYPE(PRTFTPSERVERCLIENTSTATE pClient)
+static int rtFTPServerHandleTYPE(PRTFTPSERVERCLIENT pClient)
 {
     RT_NOREF(pClient);
 
@@ -360,7 +437,18 @@ static int rtFTPServerHandleTYPE(PRTFTPSERVERCLIENTSTATE pClient)
     return VINF_SUCCESS;
 }
 
-static int rtFTPServerDoLogin(PRTFTPSERVERCLIENTSTATE pClient)
+
+/*********************************************************************************************************************************
+*   Internal server functions                                                                                                    *
+*********************************************************************************************************************************/
+
+/**
+ * Handles the client's login procedure.
+ *
+ * @returns VBox status code.
+ * @param   pClient             Client to handle login procedure for.
+ */
+static int rtFTPServerDoLogin(PRTFTPSERVERCLIENT pClient)
 {
     LogFlowFuncEnter();
 
@@ -407,7 +495,13 @@ static int rtFTPServerDoLogin(PRTFTPSERVERCLIENTSTATE pClient)
     return rc;
 }
 
-static int rtFTPServerProcessCommands(PRTFTPSERVERCLIENTSTATE pClient)
+/**
+ * Main loop for processing client commands.
+ *
+ * @returns VBox status code.
+ * @param   pClient             Client to process commands for.
+ */
+static int rtFTPServerProcessCommands(PRTFTPSERVERCLIENT pClient)
 {
     int rc;
 
@@ -416,9 +510,11 @@ static int rtFTPServerProcessCommands(PRTFTPSERVERCLIENTSTATE pClient)
         size_t cbRead;
         char   szCmd[RTFTPSERVER_MAX_CMD_LEN];
         rc = RTTcpRead(pClient->hSocket, szCmd, sizeof(szCmd), &cbRead);
-        if (   RT_SUCCESS(rc)
-            && strlen(szCmd))
+        if (RT_SUCCESS(rc))
         {
+            /* Make sure to terminate the string in any case. */
+            szCmd[RTFTPSERVER_MAX_CMD_LEN - 1] = '\0';
+
             /* A tiny bit of sanitation. */
             RTStrStripL(szCmd);
 
@@ -438,6 +534,9 @@ static int rtFTPServerProcessCommands(PRTFTPSERVERCLIENTSTATE pClient)
             {
                 if (!RTStrICmp(szCmd, g_aCmdMap[i].szCmd))
                 {
+                    /* Save timestamp of last command sent. */
+                    pClient->State.tsLastCmdMs = RTTimeMilliTS();
+
                     rc = g_aCmdMap[i].pfnCmd(pClient);
                     break;
                 }
@@ -451,7 +550,10 @@ static int rtFTPServerProcessCommands(PRTFTPSERVERCLIENTSTATE pClient)
             }
 
             if (g_aCmdMap[i].enmCmd == RTFTPSERVER_CMD_QUIT)
+            {
+                RTFTPSERVER_HANDLE_CALLBACK_RET(pfnOnUserDisconnect);
                 break;
+            }
         }
         else
         {
@@ -464,41 +566,67 @@ static int rtFTPServerProcessCommands(PRTFTPSERVERCLIENTSTATE pClient)
     return rc;
 }
 
-static DECLCALLBACK(int) rtFTPServerThread(RTSOCKET hSocket, void *pvUser)
+/**
+ * Resets the client's state.
+ *
+ * @param   pState              Client state to reset.
+ */
+static void rtFTPServerClientStateReset(PRTFTPSERVERCLIENTSTATE pState)
+{
+    pState->tsLastCmdMs = RTTimeMilliTS();
+}
+
+/**
+ * Per-client thread for serving the server's control connection.
+ *
+ * @returns VBox status code.
+ * @param   hSocket             Socket handle to use for the control connection.
+ * @param   pvUser              User-provided arguments. Of type PRTFTPSERVERINTERNAL.
+ */
+static DECLCALLBACK(int) rtFTPServerClientThread(RTSOCKET hSocket, void *pvUser)
 {
     PRTFTPSERVERINTERNAL pThis = (PRTFTPSERVERINTERNAL)pvUser;
     RTFTPSERVER_VALID_RETURN(pThis);
 
-    RTFTPSERVERCLIENTSTATE ClientState;
-    RT_ZERO(ClientState);
+    RTFTPSERVERCLIENT Client;
+    RT_ZERO(Client);
 
-    ClientState.pServer = pThis;
-    ClientState.hSocket = hSocket;
+    Client.pServer     = pThis;
+    Client.hSocket     = hSocket;
 
-    int rc = rtFTPServerDoLogin(&ClientState);
+    rtFTPServerClientStateReset(&Client.State);
+
+    int rc = rtFTPServerDoLogin(&Client);
     if (RT_SUCCESS(rc))
-        rc = rtFTPServerProcessCommands(&ClientState);
+    {
+        ASMAtomicIncU32(&pThis->cClients);
+
+        rc = rtFTPServerProcessCommands(&Client);
+
+        ASMAtomicDecU32(&pThis->cClients);
+    }
 
     return rc;
 }
 
 RTR3DECL(int) RTFTPServerCreate(PRTFTPSERVER phFTPServer, const char *pcszAddress, uint16_t uPort,
-                                const char *pcszPathRoot)
+                                PRTFTPSERVERCALLBACKS pCallbacks)
 {
     AssertPtrReturn(phFTPServer,  VERR_INVALID_POINTER);
     AssertPtrReturn(pcszAddress,  VERR_INVALID_POINTER);
-    AssertPtrReturn(pcszPathRoot, VERR_INVALID_POINTER);
     AssertReturn   (uPort,        VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pCallbacks,   VERR_INVALID_POINTER);
 
     int rc;
 
     PRTFTPSERVERINTERNAL pThis = (PRTFTPSERVERINTERNAL)RTMemAllocZ(sizeof(RTFTPSERVERINTERNAL));
     if (pThis)
     {
-        pThis->u32Magic = RTFTPSERVER_MAGIC;
+        pThis->u32Magic  = RTFTPSERVER_MAGIC;
+        pThis->Callbacks = *pCallbacks;
 
         rc = RTTcpServerCreate(pcszAddress, uPort, RTTHREADTYPE_DEFAULT, "ftpsrv",
-                               rtFTPServerThread, pThis /* pvUser */, &pThis->pTCPServer);
+                               rtFTPServerClientThread, pThis /* pvUser */, &pThis->pTCPServer);
     }
     else
         rc = VERR_NO_MEMORY;

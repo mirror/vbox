@@ -56,7 +56,8 @@
 *   Global Variables                                                                                                             *
 *********************************************************************************************************************************/
 /** Set by the signal handler when the FTP server shall be terminated. */
-static volatile bool g_fCanceled = false;
+static volatile bool  g_fCanceled  = false;
+static char          *g_pszRootDir = NULL;
 
 
 #ifdef RT_OS_WINDOWS
@@ -144,6 +145,56 @@ static int signalHandlerUninstall(void)
     return rc;
 }
 
+static DECLCALLBACK(int) onUserConnect(PRTFTPCALLBACKDATA pData, const char *pcszUser)
+{
+    RT_NOREF(pData, pcszUser);
+
+    RTPrintf("User '%s' connected", pcszUser);
+
+    return VINF_SUCCESS;
+}
+
+static DECLCALLBACK(int) onUserAuthenticate(PRTFTPCALLBACKDATA pData, const char *pcszUser, const char *pcszPassword)
+{
+    RT_NOREF(pData, pcszUser, pcszPassword);
+
+    RTPrintf("Authenticating user '%s' ...", pcszUser);
+
+    return VINF_SUCCESS;
+}
+
+static DECLCALLBACK(int) onUserDisonnect(PRTFTPCALLBACKDATA pData)
+{
+    RT_NOREF(pData);
+
+    RTPrintf("User disconnected");
+
+    return VINF_SUCCESS;
+}
+
+static DECLCALLBACK(int) onPathSetCurrent(PRTFTPCALLBACKDATA pData, const char *pcszCWD)
+{
+    RT_NOREF(pData, pcszCWD);
+
+    RTPrintf("Setting current directory to '%s'\n", pcszCWD);
+
+    return VINF_SUCCESS;
+}
+
+static DECLCALLBACK(int) onPathGetCurrent(PRTFTPCALLBACKDATA pData, char *pszPWD, size_t cbPWD)
+{
+    RT_NOREF(pData, pszPWD, cbPWD);
+
+    return VINF_SUCCESS;
+}
+
+static DECLCALLBACK(int) onList(PRTFTPCALLBACKDATA pData, void **ppvData, size_t *pcbData)
+{
+    RT_NOREF(pData, ppvData, pcbData);
+
+    return VINF_SUCCESS;
+}
+
 int main(int argc, char **argv)
 {
     int rc = RTR3InitExe(argc, &argv, 0);
@@ -153,12 +204,6 @@ int main(int argc, char **argv)
     /* Use some sane defaults. */
     char     szAddress[64]         = "localhost";
     uint16_t uPort                 = 2121;
-
-    /* By default use the current directory as serving root directory. */
-    char     szRootDir[RTPATH_MAX];
-    rc = RTPathGetCurrent(szRootDir, sizeof(szRootDir));
-    if (RT_FAILURE(rc))
-        return RTMsgErrorExit(RTEXITCODE_FAILURE, "Retrieving current directory failed: %Rrc", rc);
 
     /*
      * Parse arguments.
@@ -189,6 +234,10 @@ int main(int argc, char **argv)
 
             case 'p':
                 uPort = ValueUnion.u16;
+                break;
+
+            case 'r':
+                g_pszRootDir = RTStrDup(ValueUnion.psz);
                 break;
 
             case 'v':
@@ -223,6 +272,20 @@ int main(int argc, char **argv)
         }
     }
 
+    if (!g_pszRootDir)
+    {
+        char szRootDir[RTPATH_MAX];
+
+        /* By default use the current directory as serving root directory. */
+        rc = RTPathGetCurrent(szRootDir, sizeof(szRootDir));
+        if (RT_FAILURE(rc))
+            return RTMsgErrorExit(RTEXITCODE_FAILURE, "Retrieving current directory failed: %Rrc", rc);
+
+        g_pszRootDir = RTStrDup(szRootDir);
+        if (!g_pszRootDir)
+            return RTMsgErrorExit(RTEXITCODE_FAILURE, "Allocating current directory failed");
+    }
+
     /* Install signal handler. */
     rc = signalHandlerInstall();
     if (RT_SUCCESS(rc))
@@ -230,12 +293,21 @@ int main(int argc, char **argv)
         /*
          * Create the FTP server instance.
          */
+        RTFTPSERVERCALLBACKS Callbacks;
+        RT_ZERO(Callbacks);
+        Callbacks.pfnOnUserConnect      = onUserConnect;
+        Callbacks.pfnOnUserAuthenticate = onUserAuthenticate;
+        Callbacks.pfnOnUserDisconnect   = onUserDisonnect;
+        Callbacks.pfnOnPathSetCurrent   = onPathSetCurrent;
+        Callbacks.pfnOnPathGetCurrent   = onPathGetCurrent;
+        Callbacks.pfnOnList             = onList;
+
         RTFTPSERVER hFTPServer;
-        rc = RTFTPServerCreate(&hFTPServer, szAddress, uPort, szRootDir);
+        rc = RTFTPServerCreate(&hFTPServer, szAddress, uPort, &Callbacks);
         if (RT_SUCCESS(rc))
         {
             RTPrintf("Starting FTP server at %s:%RU16 ...\n", szAddress, uPort);
-            RTPrintf("Root directory is '%s'\n", szRootDir);
+            RTPrintf("Root directory is '%s'\n", g_pszRootDir);
 
             RTPrintf("Running FTP server ...\n");
 
@@ -262,6 +334,8 @@ int main(int argc, char **argv)
         if (RT_SUCCESS(rc))
             rc = rc2;
     }
+
+    RTStrFree(g_pszRootDir);
 
     /* Set rcExit on failure in case we forgot to do so before. */
     if (RT_FAILURE(rc))
