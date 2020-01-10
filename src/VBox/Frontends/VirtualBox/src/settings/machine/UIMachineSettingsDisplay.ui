@@ -158,36 +158,50 @@
            </widget>
           </item>
           <item row="7" column="1">
-           <widget class="QCheckBox" name="m_pCheckbox3D">
-            <property name="sizePolicy">
-             <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
-              <horstretch>0</horstretch>
-              <verstretch>0</verstretch>
-             </sizepolicy>
-            </property>
-            <property name="whatsThis">
-             <string>When checked, the virtual machine will be given access to the 3D graphics capabilities available on the host.</string>
-            </property>
-            <property name="text">
-             <string>Enable &amp;3D Acceleration</string>
-            </property>
-           </widget>
+           <layout class="QStackedLayout" name="m_pLayout3D">
+            <item>
+             <widget class="QCheckBox" name="m_pCheckbox3D">
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
+                <horstretch>0</horstretch>
+                <verstretch>0</verstretch>
+               </sizepolicy>
+              </property>
+              <property name="whatsThis">
+               <string>When checked, the virtual machine will be given access to the 3D graphics capabilities available on the host.</string>
+              </property>
+              <property name="text">
+               <string>Enable &amp;3D Acceleration</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QWidget" name="m_pPlaceholder3D"/>
+            </item>
+           </layout>
           </item>
           <item row="8" column="1">
-           <widget class="QCheckBox" name="m_pCheckbox2DVideo">
-            <property name="sizePolicy">
-             <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
-              <horstretch>0</horstretch>
-              <verstretch>0</verstretch>
-             </sizepolicy>
-            </property>
-            <property name="whatsThis">
-             <string>When checked, the virtual machine will be given access to the Video Acceleration capabilities available on the host.</string>
-            </property>
-            <property name="text">
-             <string>Enable &amp;2D Video Acceleration</string>
-            </property>
-           </widget>
+           <layout class="QStackedLayout" name="m_pLayout2DVideo">
+            <item>
+             <widget class="QCheckBox" name="m_pCheckbox2DVideo">
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
+                <horstretch>0</horstretch>
+                <verstretch>0</verstretch>
+               </sizepolicy>
+              </property>
+              <property name="whatsThis">
+               <string>When checked, the virtual machine will be given access to the Video Acceleration capabilities available on the host.</string>
+              </property>
+              <property name="text">
+               <string>Enable &amp;2D Video Acceleration</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QWidget" name="m_pPlaceholder2DVideo"/>
+            </item>
+           </layout>
           </item>
          </layout>
         </widget>
