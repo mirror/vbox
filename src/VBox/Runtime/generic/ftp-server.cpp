@@ -326,8 +326,6 @@ static int rtFtpServerSendReplyStr(PRTFTPSERVERCLIENT pClient, const char *pcszS
 static int rtFtpServerLookupUser(PRTFTPSERVERCLIENT pClient, const char *pcszUser)
 {
     RTFTPSERVER_HANDLE_CALLBACK_VA_RET(pfnOnUserConnect, pcszUser);
-
-    return VERR_NOT_FOUND;
 }
 
 /**
@@ -341,8 +339,6 @@ static int rtFtpServerLookupUser(PRTFTPSERVERCLIENT pClient, const char *pcszUse
 static int rtFtpServerAuthenticate(PRTFTPSERVERCLIENT pClient, const char *pcszUser, const char *pcszPassword)
 {
     RTFTPSERVER_HANDLE_CALLBACK_VA_RET(pfnOnUserAuthenticate, pcszUser, pcszPassword);
-
-    return VERR_ACCESS_DENIED;
 }
 
 
@@ -680,7 +676,7 @@ static int rtFtpServerProcessCommands(PRTFTPSERVERCLIENT pClient)
                     if (RT_SUCCESS(rc))
                         rc = rc2;
 
-                    RTFTPSERVER_HANDLE_CALLBACK_RET(pfnOnUserDisconnect);
+                    RTFTPSERVER_HANDLE_CALLBACK(pfnOnUserDisconnect);
                     break;
                 }
 
