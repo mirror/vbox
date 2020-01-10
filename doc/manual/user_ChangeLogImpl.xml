@@ -35,6 +35,95 @@ technical terms if no non-technical ones are clear enough.
                            So, we use chapter and xpointer="xpointer(/chapter/)" with xi:include. -->
 
   <sect1>
+    <title>Version 6.1.xx (2019-xx-xx)</title>
+
+    <para>
+      This is a maintenance release. The following items were fixed and/or
+      added:
+    </para>
+
+    <itemizedlist>
+
+      <listitem>
+        <para>Virtualization core: fixed performance issue observed with
+          Windows XP guests on AMD hosts (6.0.0 regression; bug #19152)</para>
+      </listitem>
+
+      <listitem>
+        <para>Virtualization core: consistent IBRS/IBPB CPUID feature
+          reporting, avoids crash of NetBSD 9.0 RC1 installer (bug
+          #19146)</para>
+      </listitem>
+
+      <listitem>
+        <para>GUI: fixed updating of runtime info</para>
+      </listitem>
+
+      <listitem>
+        <para>GUI: in Display settings, do not show "2D video acceleration"
+          checkbox if it is meaningless for the selected graphics
+          adapter</para>
+      </listitem>
+
+      <listitem>
+        <para>Audio: fixed audio input handling when VRDE is enabled</para>
+      </listitem>
+
+      <listitem>
+        <para>Linux guest: improve resize and multi-monitor handling for VMs
+          using VMSVGA (known remaining issue: do not disable a monitor
+          "in the middle", causes confusion)</para>
+      </listitem>
+
+      <listitem>
+        <para>Audio: fixed crash in the HDA emulation when using multi-speaker
+          configurations</para>
+      </listitem>
+
+      <listitem>
+        <para>Storage: improve performance of virtio-scsi</para>
+      </listitem>
+
+      <listitem>
+        <para>Storage: read-only support for compressed clusters in QCOW2
+          images</para>
+      </listitem>
+
+      <listitem>
+        <para>Windows installer: include unintentionally dropped vbox-img.exe
+          utility again</para>
+      </listitem>
+
+      <listitem>
+        <para>Windows host: when installing or removing an extension pack,
+          retry the sometimes failing directory renaming (usually caused by
+          anti-virus software accessing the directory)</para>
+      </listitem>
+
+      <listitem>
+        <para>Linux host: Support Linux 5.5 (guest additions not yet)</para>
+      </listitem>
+
+      <listitem>
+        <para>Windows guest: accelerate 2D video decoding (scaling and color
+          space conversion) if the VM is configured to use VBoxSVGA with 3D
+          enabled</para>
+      </listitem>
+
+      <listitem>
+        <para>Windows guest: fix guest additions installer to upgrade the mouse
+          filter driver reliably</para>
+      </listitem>
+
+      <listitem>
+        <para>Windows guest: when uninstalling older Guest Additions with old
+          3D support enabled try restoring original Direct3D files</para>
+      </listitem>
+
+    </itemizedlist>
+  </sect1>
+
+  <sect1>
     <title>Version 6.1.0 (2019-12-10)</title>
 
     <para>
