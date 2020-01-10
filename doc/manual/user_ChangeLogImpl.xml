@@ -75,6 +75,11 @@ technical terms if no non-technical ones are clear enough.
       </listitem>
 
       <listitem>
+        <para>Storage: fixed use of encrypted disks with snapshots involved
+          (6.1.0 regression; bug #19160)</para>
+      </listitem>
+
+      <listitem>
         <para>Storage: improve performance of virtio-scsi</para>
       </listitem>
 
