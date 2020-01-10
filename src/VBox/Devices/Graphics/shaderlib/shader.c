@@ -437,7 +437,7 @@ static HRESULT shader_record_register_usage(IWineD3DBaseShaderImpl *shader, stru
 
         default:
             TRACE("Not recording register of type %#x and idx %u\n", reg->type, reg->idx);
-            return E_INVALIDARG;
+            break;
     }
 
     return S_OK;
@@ -684,7 +684,7 @@ static HRESULT shader_get_registers_used(IWineD3DBaseShader *iface, const struct
                 fe->shader_read_dst_param(fe_data, &ptr, &dst_param, &dst_rel_addr);
 
                 hr = shader_record_register_usage(shader, reg_maps, &dst_param.reg, shader_version.type);
-                AssertReturn(FAILED(hr), hr);
+                AssertReturn(SUCCEEDED(hr), hr);
 
                 /* WINED3DSPR_TEXCRDOUT is the same as WINED3DSPR_OUTPUT. _OUTPUT can be > MAX_REG_TEXCRD and
                  * is used in >= 3.0 shaders. Filter 3.0 shaders to prevent overflows, and also filter pixel
@@ -742,7 +742,6 @@ static HRESULT shader_get_registers_used(IWineD3DBaseShader *iface, const struct
                     || ins.handler_idx == WINED3DSIH_TEXREG2RGB)
                 {
                     unsigned int sampler_idx;
-                    AssertReturn(shader_version.major == 1, E_INVALIDARG);
 
                     /* Fake sampler usage, only set reserved bit and type. */
                     sampler_idx = dst_param.reg.idx;
@@ -792,13 +791,13 @@ static HRESULT shader_get_registers_used(IWineD3DBaseShader *iface, const struct
                 count = get_instr_extra_regcount(ins.handler_idx, i);
 
                 hr = shader_record_register_usage(shader, reg_maps, &src_param.reg, shader_version.type);
-                AssertReturn(FAILED(hr), hr);
+                AssertReturn(SUCCEEDED(hr), hr);
 
                 while (count)
                 {
                     ++src_param.reg.idx;
                     hr = shader_record_register_usage(shader, reg_maps, &src_param.reg, shader_version.type);
-                    AssertReturn(FAILED(hr), hr);
+                    AssertReturn(SUCCEEDED(hr), hr);
                     --count;
                 }
 
