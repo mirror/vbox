@@ -164,8 +164,8 @@ debian/modules-stamp: debian/build-stamp
 	        make -j4 -C $(builddir)/bin/src/vboxnetadp KBUILD_VERBOSE= KERN_VER=$$(basename $$d) KBUILD_EXTRA_SYMBOLS=$(builddir)/bin/src/vboxnetadp/Module.symvers all; \
 	        make -C $(builddir)/bin/src/vboxpci KERN_VER=$$(basename $$d) clean && \
 		(cp $(builddir)/bin/src/vboxdrv/Module.symvers $(builddir)/bin/src/vboxpci || true) && \
-	        make -j4 -C $(builddir)/bin/src/vboxpci KBUILD_VERBOSE= KERN_VER=$$(basename $$d) KBUILD_EXTRA_SYMBOLS=$(builddir)/bin/src/vboxpci/Module.symvers all ; \
-	        make -C $(builddir)/bin/src/vboxpci KERN_VER=$$(basename $$d) clean; true
+	        make -j4 -C $(builddir)/bin/src/vboxpci KBUILD_VERBOSE= KERN_VER=$$(basename $$d) KBUILD_EXTRA_SYMBOLS=$(builddir)/bin/src/vboxpci/Module.symvers all; \
+	        make -C $(builddir)/bin/src/vboxpci KERN_VER=$$(basename $$d) clean; true; \
 	    fi; \
 	done
 	touch debian/modules-stamp
