@@ -70,12 +70,6 @@ technical terms if no non-technical ones are clear enough.
       </listitem>
 
       <listitem>
-        <para>Linux guest: improve resize and multi-monitor handling for VMs
-          using VMSVGA (known remaining issue: do not disable a monitor
-          "in the middle", causes confusion)</para>
-      </listitem>
-
-      <listitem>
         <para>Audio: fixed crash in the HDA emulation when using multi-speaker
           configurations</para>
       </listitem>
@@ -118,6 +112,12 @@ technical terms if no non-technical ones are clear enough.
       <listitem>
         <para>Windows guest: when uninstalling older Guest Additions with old
           3D support enabled try restoring original Direct3D files</para>
+      </listitem>
+
+      <listitem>
+        <para>Linux guest: improve resize and multi-monitor handling for VMs
+          using VMSVGA (known remaining issue: do not disable a monitor
+          "in the middle", causes confusion)</para>
       </listitem>
 
     </itemizedlist>
