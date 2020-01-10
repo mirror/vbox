@@ -1070,6 +1070,10 @@ static int cpumR3AllocSvmHwVirtState(PVM pVM)
 
         /*
          * Allocate the MSRPM (MSR Permission bitmap).
+         *
+         * This need not be physically contiguous pages because we use the one from
+         * HMPHYSCPU while executing the nested-guest using hardware-assisted SVM.
+         * This one is just used for caching the bitmap from guest physical memory.
          */
         Assert(!pVCpu->cpum.s.Guest.hwvirt.svm.pvMsrBitmapR3);
         rc = SUPR3PageAllocEx(SVM_MSRPM_PAGES, 0 /* fFlags */, &pVCpu->cpum.s.Guest.hwvirt.svm.pvMsrBitmapR3,
@@ -1084,6 +1088,13 @@ static int cpumR3AllocSvmHwVirtState(PVM pVM)
 
         /*
          * Allocate the IOPM (IO Permission bitmap).
+         *
+         * This need not be physically contiguous pages because we re-use the ring-0
+         * allocated IOPM while executing the nested-guest using hardware-assisted SVM
+         * because it's identical (we trap all IO accesses).
+         *
+         * This one is just used for caching the IOPM from guest physical memory in
+         * case the guest hypervisor allows direct access to some IO ports.
          */
         Assert(!pVCpu->cpum.s.Guest.hwvirt.svm.pvIoBitmapR3);
         rc = SUPR3PageAllocEx(SVM_IOPM_PAGES, 0 /* fFlags */, &pVCpu->cpum.s.Guest.hwvirt.svm.pvIoBitmapR3,
