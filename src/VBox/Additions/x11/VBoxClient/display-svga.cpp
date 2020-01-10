@@ -95,7 +95,6 @@ struct DRMCONTEXT
     RTFILE hDevice;
 };
 
-
 static void drmConnect(struct DRMCONTEXT *pContext)
 {
     unsigned i;
@@ -199,13 +198,11 @@ static int run(struct VBCLSERVICE **ppInterface, bool fDaemonised)
         return VINF_SUCCESS;
     if (RT_FAILURE(rc))
         VBClLogFatalError("Failed to register resizing support, rc=%Rrc\n", rc);
-
     for (;;)
     {
         uint32_t events;
         struct VMMDevDisplayDef aDisplays[VMW_MAX_HEADS];
         uint32_t cDisplaysOut;
-
         /* Query the first size without waiting.  This lets us e.g. pick up
          * the last event before a guest reboot when we start again after. */
         rc = VbglR3GetDisplayChangeRequestMulti(VMW_MAX_HEADS, &cDisplaysOut, aDisplays, fAck);
@@ -236,7 +233,7 @@ static int run(struct VBCLSERVICE **ppInterface, bool fDaemonised)
                     aMonitors[idDisplay].cy = aDisplays[i].cy;
                 }
             }
-            /* Create an dense (consisting of enable monitors only) array to pass to DRM. */
+            /* Create an dense (consisting of enabled monitors only) array to pass to DRM. */
             cEnabledMonitors = 0;
             struct DRMVMWRECT aEnabledMonitors[VMW_MAX_HEADS];
             for (int j = 0; j < VMW_MAX_HEADS; ++j)
