@@ -54,7 +54,7 @@ typedef QSet<QString> UIStringSet;
 
 
 UIToolsModel:: UIToolsModel(UITools *pParent)
-    : QObject(pParent)
+    : QIWithRetranslateUI3<QObject>(pParent)
     , m_pTools(pParent)
     , m_pScene(0)
     , m_pMouseHandler(0)
@@ -391,15 +391,15 @@ bool UIToolsModel::eventFilter(QObject *pWatched, QEvent *pEvent)
 {
     /* Process only scene events: */
     if (pWatched != scene())
-        return QObject::eventFilter(pWatched, pEvent);
+        return QIWithRetranslateUI3<QObject>::eventFilter(pWatched, pEvent);
 
     /* Process only item focused by model: */
     if (scene()->focusItem())
-        return QObject::eventFilter(pWatched, pEvent);
+        return QIWithRetranslateUI3<QObject>::eventFilter(pWatched, pEvent);
 
     /* Do not handle disabled items: */
     if (!currentItem()->isEnabled())
-        return QObject::eventFilter(pWatched, pEvent);
+        return QIWithRetranslateUI3<QObject>::eventFilter(pWatched, pEvent);
 
     /* Checking event-type: */
     switch (pEvent->type())
@@ -419,7 +419,25 @@ bool UIToolsModel::eventFilter(QObject *pWatched, QEvent *pEvent)
     }
 
     /* Call to base-class: */
-    return QObject::eventFilter(pWatched, pEvent);
+    return QIWithRetranslateUI3<QObject>::eventFilter(pWatched, pEvent);
+}
+
+void UIToolsModel::retranslateUi()
+{
+    foreach (UIToolsItem *pItem, m_items)
+    {
+        switch (pItem->itemType())
+        {
+            case UIToolType_Welcome:   pItem->reconfigure(tr("Welcome")); break;
+            case UIToolType_Media:     pItem->reconfigure(tr("Media")); break;
+            case UIToolType_Network:   pItem->reconfigure(tr("Network")); break;
+            case UIToolType_Cloud:     pItem->reconfigure(tr("Cloud")); break;
+            case UIToolType_Details:   pItem->reconfigure(tr("Details")); break;
+            case UIToolType_Snapshots: pItem->reconfigure(tr("Snapshots")); break;
+            case UIToolType_Logs:      pItem->reconfigure(tr("Logs")); break;
+            default: break;
+        }
+    }
 }
 
 void UIToolsModel::sltFocusItemDestroyed()
@@ -437,6 +455,8 @@ void UIToolsModel::prepare()
     prepareHandlers();
     /* Prepare connections: */
     prepareConnections();
+    /* Apply language settings: */
+    retranslateUi();
 }
 
 void UIToolsModel::prepareScene()
@@ -457,32 +477,32 @@ void UIToolsModel::prepareItems()
     m_statesToolsEnabled[UIToolClass_Machine] = true;
 
     /* Welcome: */
-    m_items << new UIToolsItem(scene(), UIToolClass_Global, UIToolType_Welcome, tr("Welcome"),
-                               UIIconPool::iconSet(":/welcome_screen_24px.png", ":/welcome_screen_24px.png")); /// @todo fix icon!
+    m_items << new UIToolsItem(scene(), UIToolClass_Global, UIToolType_Welcome, QString(),
+                               UIIconPool::iconSet(":/welcome_screen_24px.png", ":/welcome_screen_24px.png"));
 
     /* Media: */
-    m_items << new UIToolsItem(scene(), UIToolClass_Global, UIToolType_Media, tr("Media"),
+    m_items << new UIToolsItem(scene(), UIToolClass_Global, UIToolType_Media, QString(),
                                UIIconPool::iconSet(":/media_manager_24px.png", ":/media_manager_disabled_24px.png"));
 
     /* Network: */
-    m_items << new UIToolsItem(scene(), UIToolClass_Global, UIToolType_Network, tr("Network"),
+    m_items << new UIToolsItem(scene(), UIToolClass_Global, UIToolType_Network, QString(),
                                UIIconPool::iconSet(":/host_iface_manager_24px.png", ":/host_iface_manager_disabled_24px.png"));
 
     /* Cloud: */
     if (fExtPackAccessible)
-        m_items << new UIToolsItem(scene(), UIToolClass_Global, UIToolType_Cloud, tr("Cloud"),
+        m_items << new UIToolsItem(scene(), UIToolClass_Global, UIToolType_Cloud, QString(),
                                    UIIconPool::iconSet(":/cloud_profile_manager_24px.png", ":/cloud_profile_manager_disabled_24px.png"));
 
     /* Details: */
-    m_items << new UIToolsItem(scene(), UIToolClass_Machine, UIToolType_Details, tr("Details"),
+    m_items << new UIToolsItem(scene(), UIToolClass_Machine, UIToolType_Details, QString(),
                                UIIconPool::iconSet(":/machine_details_manager_24px.png", ":/machine_details_manager_disabled_24px.png"));
 
     /* Snapshots: */
-    m_items << new UIToolsItem(scene(), UIToolClass_Machine, UIToolType_Snapshots, tr("Snapshots"),
-                               UIIconPool::iconSet(":/snapshot_manager_24px.png",        ":/snapshot_manager_disabled_24px.png"));
+    m_items << new UIToolsItem(scene(), UIToolClass_Machine, UIToolType_Snapshots, QString(),
+                               UIIconPool::iconSet(":/snapshot_manager_24px.png", ":/snapshot_manager_disabled_24px.png"));
 
     /* Logs: */
-    m_items << new UIToolsItem(scene(), UIToolClass_Machine, UIToolType_Logs, tr("Logs"),
+    m_items << new UIToolsItem(scene(), UIToolClass_Machine, UIToolType_Logs, QString(),
                                UIIconPool::iconSet(":/vm_show_logs_24px.png", ":/vm_show_logs_disabled_24px.png"));
 }
 

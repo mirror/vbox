@@ -632,7 +632,7 @@ protected:
     /** Updates shortcuts. */
     virtual void updateShortcuts();
 
-    /** Hadles translation event. */
+    /** Handles translation event. */
     virtual void retranslateUi() /* override */;
 
     /** Handles any Qt @a pEvent */

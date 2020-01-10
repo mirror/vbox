@@ -236,6 +236,12 @@ void UIToolsItem::reconfigure(UIToolClass enmClass, UIToolType enmType,
     m_icon = icon;
     updatePixmap();
 
+    /* Update name finally: */
+    reconfigure(strName);
+}
+
+void UIToolsItem::reconfigure(const QString &strName)
+{
     /* If name is changed: */
     if (m_strName != strName)
     {
