@@ -212,6 +212,7 @@ struct wined3d_sm1_opcode_info
 struct wined3d_sm1_data
 {
     struct wined3d_shader_version shader_version;
+    const DWORD *end;
     const struct wined3d_sm1_opcode_info *opcode_table;
 };
 
@@ -517,7 +518,7 @@ static int shader_skip_unrecognized(const struct wined3d_sm1_data *priv, const D
     return tokens_read;
 }
 
-static void *shader_sm1_init(const DWORD *byte_code, const struct wined3d_shader_signature *output_signature)
+static void *shader_sm1_init(const DWORD *byte_code, DWORD tokens_num, const struct wined3d_shader_signature *output_signature)
 {
     struct wined3d_sm1_data *priv;
     BYTE major, minor;
@@ -536,6 +537,8 @@ static void *shader_sm1_init(const DWORD *byte_code, const struct wined3d_shader
         ERR("Failed to allocate private data\n");
         return NULL;
     }
+    
+    priv->end = byte_code + tokens_num;
 
     if (output_signature)
     {
@@ -673,6 +676,13 @@ static void shader_sm1_read_comment(const DWORD **ptr, const char **comment, UIN
 
 static BOOL shader_sm1_is_end(void *data, const DWORD **ptr)
 {
+    struct wined3d_sm1_data *priv = data;
+
+    if (*ptr >= priv->end)
+    {
+        return TRUE;
+    }
+
     if (**ptr == WINED3DSP_END)
     {
         ++(*ptr);

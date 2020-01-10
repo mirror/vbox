@@ -228,7 +228,7 @@ static void map_register(struct wined3d_sm4_data *priv, struct wined3d_shader_re
     }
 }
 
-static void *shader_sm4_init(const DWORD *byte_code, const struct wined3d_shader_signature *output_signature)
+static void *shader_sm4_init(const DWORD *byte_code, DWORD tokens_num, const struct wined3d_shader_signature *output_signature)
 {
     struct wined3d_sm4_data *priv = HeapAlloc(GetProcessHeap(), 0, sizeof(*priv));
     if (!priv)
@@ -237,6 +237,7 @@ static void *shader_sm4_init(const DWORD *byte_code, const struct wined3d_shader
         return NULL;
     }
 
+    priv->end = byte_code + tokens_num;
     priv->output_signature = output_signature;
 
     return priv;
@@ -424,7 +425,7 @@ static void shader_sm4_read_comment(const DWORD **ptr, const char **comment, UIN
 static BOOL shader_sm4_is_end(void *data, const DWORD **ptr)
 {
     struct wined3d_sm4_data *priv = data;
-    return *ptr == priv->end;
+    return *ptr >= priv->end;
 }
 
 const struct wined3d_shader_frontend sm4_shader_frontend =

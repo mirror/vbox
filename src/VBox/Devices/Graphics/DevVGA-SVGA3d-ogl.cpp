@@ -6907,12 +6907,12 @@ int vmsvga3dShaderDefine(PVGASTATECC pThisCC, uint32_t cid, uint32_t shid, SVGA3
     switch (type)
     {
     case SVGA3D_SHADERTYPE_VS:
-        rc = ShaderCreateVertexShader(pContext->pShaderContext, (const uint32_t *)pShaderData, &pShader->u.pVertexShader);
+        rc = ShaderCreateVertexShader(pContext->pShaderContext, (const uint32_t *)pShaderData, cbData, &pShader->u.pVertexShader);
         AssertRC(rc);
         break;
 
     case SVGA3D_SHADERTYPE_PS:
-        rc = ShaderCreatePixelShader(pContext->pShaderContext, (const uint32_t *)pShaderData, &pShader->u.pPixelShader);
+        rc = ShaderCreatePixelShader(pContext->pShaderContext, (const uint32_t *)pShaderData, cbData, &pShader->u.pPixelShader);
         AssertRC(rc);
         break;
 

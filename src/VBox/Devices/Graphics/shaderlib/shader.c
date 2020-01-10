@@ -1567,7 +1567,7 @@ static HRESULT shader_set_function(IWineD3DBaseShaderImpl *shader, const DWORD *
         return WINED3DERR_INVALIDCALL;
     }
     shader->baseShader.frontend = fe;
-    shader->baseShader.frontend_data = fe->shader_init(byte_code, output_signature);
+    shader->baseShader.frontend_data = fe->shader_init(byte_code, shader->baseShader.functionLength / 4, output_signature);
     if (!shader->baseShader.frontend_data)
     {
         FIXME("Failed to initialize frontend.\n");
