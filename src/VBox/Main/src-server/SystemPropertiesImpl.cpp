@@ -1452,7 +1452,7 @@ HRESULT SystemProperties::getSupportedNetworkAdapterTypes(std::vector<NetworkAda
         NetworkAdapterType_I82543GC,
         NetworkAdapterType_I82545EM,
         NetworkAdapterType_Virtio,
-#ifdef DEBUG
+#ifdef VBOX_WITH_VIRTIO_NET_1_0
         NetworkAdapterType_Virtio_1_0,
 #endif
     };
