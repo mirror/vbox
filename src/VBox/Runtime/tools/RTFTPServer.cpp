@@ -24,6 +24,15 @@
  * terms and conditions of either the GPL or the CDDL or both.
  */
 
+/*
+ * Use this setup to best see what's going on:
+ *
+ *    VBOX_LOG=rt_ftp=~0
+ *    VBOX_LOG_DEST="nofile stderr"
+ *    VBOX_LOG_FLAGS="unbuffered enabled thread msprog"
+ *
+ */
+
 
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
@@ -53,11 +62,22 @@
 
 
 /*********************************************************************************************************************************
+*   Definitations                                                                                                                *
+*********************************************************************************************************************************/
+typedef struct FTPSERVERDATA
+{
+    char szRootDir[RTPATH_MAX];
+    char szCWD[RTPATH_MAX];
+} FTPSERVERDATA;
+typedef FTPSERVERDATA *PFTPSERVERDATA;
+
+
+/*********************************************************************************************************************************
 *   Global Variables                                                                                                             *
 *********************************************************************************************************************************/
 /** Set by the signal handler when the FTP server shall be terminated. */
 static volatile bool  g_fCanceled  = false;
-static char          *g_pszRootDir = NULL;
+static FTPSERVERDATA  g_FTPServerData;
 
 
 #ifdef RT_OS_WINDOWS
@@ -149,7 +169,7 @@ static DECLCALLBACK(int) onUserConnect(PRTFTPCALLBACKDATA pData, const char *pcs
 {
     RT_NOREF(pData, pcszUser);
 
-    RTPrintf("User '%s' connected", pcszUser);
+    RTPrintf("User '%s' connected\n", pcszUser);
 
     return VINF_SUCCESS;
 }
@@ -158,7 +178,7 @@ static DECLCALLBACK(int) onUserAuthenticate(PRTFTPCALLBACKDATA pData, const char
 {
     RT_NOREF(pData, pcszUser, pcszPassword);
 
-    RTPrintf("Authenticating user '%s' ...", pcszUser);
+    RTPrintf("Authenticating user '%s' ...\n", pcszUser);
 
     return VINF_SUCCESS;
 }
@@ -167,30 +187,45 @@ static DECLCALLBACK(int) onUserDisonnect(PRTFTPCALLBACKDATA pData)
 {
     RT_NOREF(pData);
 
-    RTPrintf("User disconnected");
+    RTPrintf("User disconnected\n");
 
     return VINF_SUCCESS;
 }
 
 static DECLCALLBACK(int) onPathSetCurrent(PRTFTPCALLBACKDATA pData, const char *pcszCWD)
 {
-    RT_NOREF(pData, pcszCWD);
+    PFTPSERVERDATA pThis = (PFTPSERVERDATA)pData->pvUser;
+    Assert(pData->cbUser == sizeof(FTPSERVERDATA));
 
     RTPrintf("Setting current directory to '%s'\n", pcszCWD);
 
-    return VINF_SUCCESS;
+    /** @todo BUGBUG Santiy checks! */
+
+    return RTStrCopy(pThis->szCWD, sizeof(pThis->szCWD), pcszCWD);
 }
 
 static DECLCALLBACK(int) onPathGetCurrent(PRTFTPCALLBACKDATA pData, char *pszPWD, size_t cbPWD)
 {
-    RT_NOREF(pData, pszPWD, cbPWD);
+    PFTPSERVERDATA pThis = (PFTPSERVERDATA)pData->pvUser;
+    Assert(pData->cbUser == sizeof(FTPSERVERDATA));
+
+    RTPrintf("Current directory is: '%s'\n", pThis->szCWD);
+
+    RTStrPrintf(pszPWD, cbPWD, "%s", pThis->szCWD);
 
     return VINF_SUCCESS;
 }
 
-static DECLCALLBACK(int) onList(PRTFTPCALLBACKDATA pData, void **ppvData, size_t *pcbData)
+static DECLCALLBACK(int) onPathUp(PRTFTPCALLBACKDATA pData)
 {
-    RT_NOREF(pData, ppvData, pcbData);
+    RT_NOREF(pData);
+
+    return VINF_SUCCESS;
+}
+
+static DECLCALLBACK(int) onList(PRTFTPCALLBACKDATA pData, const char *pcszPath, void **ppvData, size_t *pcbData)
+{
+    RT_NOREF(pData, pcszPath, ppvData, pcbData);
 
     return VINF_SUCCESS;
 }
@@ -202,8 +237,10 @@ int main(int argc, char **argv)
         return RTMsgInitFailure(rc);
 
     /* Use some sane defaults. */
-    char     szAddress[64]         = "localhost";
-    uint16_t uPort                 = 2121;
+    char     szAddress[64] = "localhost";
+    uint16_t uPort         = 2121;
+
+    RT_ZERO(g_FTPServerData);
 
     /*
      * Parse arguments.
@@ -237,7 +274,7 @@ int main(int argc, char **argv)
                 break;
 
             case 'r':
-                g_pszRootDir = RTStrDup(ValueUnion.psz);
+                RTStrCopy(g_FTPServerData.szRootDir, sizeof(g_FTPServerData.szRootDir), ValueUnion.psz);
                 break;
 
             case 'v':
@@ -272,19 +309,16 @@ int main(int argc, char **argv)
         }
     }
 
-    if (!g_pszRootDir)
+    if (!strlen(g_FTPServerData.szRootDir))
     {
-        char szRootDir[RTPATH_MAX];
-
         /* By default use the current directory as serving root directory. */
-        rc = RTPathGetCurrent(szRootDir, sizeof(szRootDir));
+        rc = RTPathGetCurrent(g_FTPServerData.szRootDir, sizeof(g_FTPServerData.szRootDir));
         if (RT_FAILURE(rc))
             return RTMsgErrorExit(RTEXITCODE_FAILURE, "Retrieving current directory failed: %Rrc", rc);
-
-        g_pszRootDir = RTStrDup(szRootDir);
-        if (!g_pszRootDir)
-            return RTMsgErrorExit(RTEXITCODE_FAILURE, "Allocating current directory failed");
     }
+
+    /* Initialize CWD. */
+    RTStrPrintf2(g_FTPServerData.szCWD, sizeof(g_FTPServerData.szCWD), "/");
 
     /* Install signal handler. */
     rc = signalHandlerInstall();
@@ -295,11 +329,17 @@ int main(int argc, char **argv)
          */
         RTFTPSERVERCALLBACKS Callbacks;
         RT_ZERO(Callbacks);
+
+        Callbacks.pvUser                = &g_FTPServerData;
+        Callbacks.cbUser                = sizeof(g_FTPServerData);
+
         Callbacks.pfnOnUserConnect      = onUserConnect;
         Callbacks.pfnOnUserAuthenticate = onUserAuthenticate;
         Callbacks.pfnOnUserDisconnect   = onUserDisonnect;
         Callbacks.pfnOnPathSetCurrent   = onPathSetCurrent;
         Callbacks.pfnOnPathGetCurrent   = onPathGetCurrent;
+        Callbacks.pfnOnPathUp           = onPathUp;
+        Callbacks.pfnOnList             = onList;
         Callbacks.pfnOnList             = onList;
 
         RTFTPSERVER hFTPServer;
@@ -307,7 +347,7 @@ int main(int argc, char **argv)
         if (RT_SUCCESS(rc))
         {
             RTPrintf("Starting FTP server at %s:%RU16 ...\n", szAddress, uPort);
-            RTPrintf("Root directory is '%s'\n", g_pszRootDir);
+            RTPrintf("Root directory is '%s'\n", g_FTPServerData.szRootDir);
 
             RTPrintf("Running FTP server ...\n");
 
@@ -334,8 +374,6 @@ int main(int argc, char **argv)
         if (RT_SUCCESS(rc))
             rc = rc2;
     }
-
-    RTStrFree(g_pszRootDir);
 
     /* Set rcExit on failure in case we forgot to do so before. */
     if (RT_FAILURE(rc))

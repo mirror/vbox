@@ -174,12 +174,58 @@ typedef struct RTFTPSERVERCALLBACKS
     void  *pvUser;
     /** Size (in bytes) of user data pointing at. Optional and can be 0. */
     size_t cbUser;
+    /**
+     * Callback which gets invoked when a user connected.
+     *
+     * @returns VBox status code.
+     * @param   pcszUser        User name.
+     */
     DECLCALLBACKMEMBER(int,  pfnOnUserConnect)(PRTFTPCALLBACKDATA pData, const char *pcszUser);
+    /**
+     * Callback which gets invoked when a user tries to authenticate with a password.
+     *
+     * @returns VBox status code.
+     * @param   pcszUser        User name to authenticate.
+     * @param   pcszPassword    Password to authenticate with.
+     */
     DECLCALLBACKMEMBER(int,  pfnOnUserAuthenticate)(PRTFTPCALLBACKDATA pData, const char *pcszUser, const char *pcszPassword);
+    /**
+     * Callback which gets invoked when a user disconnected.
+     *
+     * @returns VBox status code.
+     * @param   pcszUser        User name which disconnected.
+     */
     DECLCALLBACKMEMBER(int,  pfnOnUserDisconnect)(PRTFTPCALLBACKDATA pData);
+    /**
+     * Callback which gets invoked when setting the current working directory.
+     *
+     * @returns VBox status code.
+     * @param   pcszCWD         Current working directory to set.
+     */
     DECLCALLBACKMEMBER(int,  pfnOnPathSetCurrent)(PRTFTPCALLBACKDATA pData, const char *pcszCWD);
+    /**
+     * Callback which gets invoked when a client wants to retrieve the current working directory.
+     *
+     * @returns VBox status code.
+     * @param   pszPWD          Where to store the current working directory.
+     * @param   cbPWD           Size of buffer in bytes.
+     */
     DECLCALLBACKMEMBER(int,  pfnOnPathGetCurrent)(PRTFTPCALLBACKDATA pData, char *pszPWD, size_t cbPWD);
-    DECLCALLBACKMEMBER(int,  pfnOnList)(PRTFTPCALLBACKDATA pData, void **ppvData, size_t *pcbData);
+    /**
+     * Callback which gets invoked when the client wants to move up a directory (relative to the current working directory).
+     *
+     * @returns VBox status code.
+     */
+    DECLCALLBACKMEMBER(int,  pfnOnPathUp)(PRTFTPCALLBACKDATA pData);
+    /**
+     * Callback which gets invoked when the client wants to list a directory or file.
+     *
+     * @param   pcszPath        Path of file / directory to list. Optional. If NULL, the current directory will be listed.
+     * @param   ppvData         Where to return the listing data. Must be free'd by the caller.
+     * @param   pcbvData        Where to return the listing data size in bytes.
+     * @returns VBox status code.
+     */
+    DECLCALLBACKMEMBER(int,  pfnOnList)(PRTFTPCALLBACKDATA pData, const char *pcszPath, void **ppvData, size_t *pcbData);
 } RTFTPSERVERCALLBACKS;
 /** Pointer to a FTP server callback data table. */
 typedef RTFTPSERVERCALLBACKS *PRTFTPSERVERCALLBACKS;

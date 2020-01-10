@@ -39,10 +39,13 @@
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
 #define LOG_GROUP RTLOGGROUP_FTP
+#include <iprt/ftp.h>
+#include "internal/iprt.h"
+#include "internal/magics.h"
+
 #include <iprt/asm.h>
 #include <iprt/assert.h>
 #include <iprt/errcore.h>
-#include <iprt/ftp.h>
 #include <iprt/getopt.h>
 #include <iprt/mem.h>
 #include <iprt/log.h>
@@ -52,8 +55,6 @@
 #include <iprt/string.h>
 #include <iprt/system.h>
 #include <iprt/tcp.h>
-
-#include "internal/magics.h"
 
 
 /*********************************************************************************************************************************
@@ -171,6 +172,36 @@ typedef FNRTFTPSERVERCMD *PFNRTFTPSERVERCMD;
             RTFTPCALLBACKDATA Data = { &pClient->State, pCallbacks->pvUser, pCallbacks->cbUser }; \
             return pCallbacks->a_Name(&Data); \
         } \
+        else \
+            return VERR_NOT_IMPLEMENTED; \
+    } while (0)
+
+/** Handles a FTP server callback with no arguments and sets rc accordingly. */
+#define RTFTPSERVER_HANDLE_CALLBACK(a_Name) \
+    do \
+    { \
+        PRTFTPSERVERCALLBACKS pCallbacks = &pClient->pServer->Callbacks; \
+        if (pCallbacks->a_Name) \
+        { \
+            RTFTPCALLBACKDATA Data = { &pClient->State, pCallbacks->pvUser, pCallbacks->cbUser }; \
+            rc = pCallbacks->a_Name(&Data); \
+        } \
+        else \
+            rc = VERR_NOT_IMPLEMENTED; \
+    } while (0)
+
+/** Handles a FTP server callback with arguments and sets rc accordingly. */
+#define RTFTPSERVER_HANDLE_CALLBACK_VA(a_Name, ...) \
+    do \
+    { \
+        PRTFTPSERVERCALLBACKS pCallbacks = &pClient->pServer->Callbacks; \
+        if (pCallbacks->a_Name) \
+        { \
+            RTFTPCALLBACKDATA Data = { &pClient->State, pCallbacks->pvUser, pCallbacks->cbUser }; \
+            rc = pCallbacks->a_Name(&Data, __VA_ARGS__); \
+        } \
+        else \
+            rc = VERR_NOT_IMPLEMENTED; \
     } while (0)
 
 /** Handles a FTP server callback with arguments and returns. */
@@ -183,6 +214,8 @@ typedef FNRTFTPSERVERCMD *PFNRTFTPSERVERCMD;
             RTFTPCALLBACKDATA Data = { &pClient->State, pCallbacks->pvUser, pCallbacks->cbUser }; \
             return pCallbacks->a_Name(&Data, __VA_ARGS__); \
         } \
+        else \
+            return VERR_NOT_IMPLEMENTED; \
     } while (0)
 
 /**
@@ -322,39 +355,58 @@ static int rtFtpServerHandleABOR(PRTFTPSERVERCLIENT pClient, uint8_t cArgs, cons
     RT_NOREF(pClient, cArgs, apcszArgs);
 
     /** @todo Anything to do here? */
-    return VINF_SUCCESS;
+    return VERR_NOT_IMPLEMENTED;
 }
 
 static int rtFtpServerHandleCDUP(PRTFTPSERVERCLIENT pClient, uint8_t cArgs, const char * const *apcszArgs)
 {
-    RT_NOREF(pClient, cArgs, apcszArgs);
+    RT_NOREF(cArgs, apcszArgs);
 
-    /** @todo Anything to do here? */
-    return VINF_SUCCESS;
+    int rc;
+
+    RTFTPSERVER_HANDLE_CALLBACK(pfnOnPathUp);
+
+    if (RT_SUCCESS(rc))
+        return rtFtpServerSendReplyRc(pClient, RTFTPSERVER_REPLY_OKAY);
+
+    return rc;
 }
 
 static int rtFtpServerHandleCWD(PRTFTPSERVERCLIENT pClient, uint8_t cArgs, const char * const *apcszArgs)
 {
-    AssertPtrReturn(apcszArgs, VERR_INVALID_POINTER);
-
     if (cArgs != 1)
         return VERR_INVALID_PARAMETER;
 
-    RTFTPSERVER_HANDLE_CALLBACK_VA_RET(pfnOnPathSetCurrent, apcszArgs[0]);
+    int rc;
 
-    return VERR_NOT_IMPLEMENTED;
+    RTFTPSERVER_HANDLE_CALLBACK_VA(pfnOnPathSetCurrent, apcszArgs[0]);
+
+    if (RT_SUCCESS(rc))
+        return rtFtpServerSendReplyRc(pClient, RTFTPSERVER_REPLY_OKAY);
+
+    return rc;
 }
 
 static int rtFtpServerHandleLIST(PRTFTPSERVERCLIENT pClient, uint8_t cArgs, const char * const *apcszArgs)
 {
     RT_NOREF(cArgs, apcszArgs);
 
+    int rc;
+
     void   *pvData = NULL;
     size_t  cbData = 0;
 
-    RTFTPSERVER_HANDLE_CALLBACK_VA_RET(pfnOnList, &pvData, &cbData);
+    /* The first argument might indicate a directory to list. */
+    RTFTPSERVER_HANDLE_CALLBACK_VA(pfnOnList,
+                                     cArgs == 1
+                                   ? apcszArgs[0] : NULL, &pvData, &cbData);
 
-    return VERR_NOT_IMPLEMENTED;
+    if (RT_SUCCESS(rc))
+    {
+        RTMemFree(pvData);
+    }
+
+    return rc;
 }
 
 static int rtFtpServerHandleMODE(PRTFTPSERVERCLIENT pClient, uint8_t cArgs, const char * const *apcszArgs)
@@ -367,10 +419,12 @@ static int rtFtpServerHandleMODE(PRTFTPSERVERCLIENT pClient, uint8_t cArgs, cons
 
 static int rtFtpServerHandleNOOP(PRTFTPSERVERCLIENT pClient, uint8_t cArgs, const char * const *apcszArgs)
 {
-    RT_NOREF(pClient, cArgs, apcszArgs);
+    RT_NOREF(cArgs, apcszArgs);
 
-    /* Nothing to do here. */
-    return VINF_SUCCESS;
+    /* Save timestamp of last command sent. */
+    pClient->State.tsLastCmdMs = RTTimeMilliTS();
+
+    return rtFtpServerSendReplyRc(pClient, RTFTPSERVER_REPLY_OKAY);
 }
 
 static int rtFtpServerHandlePASS(PRTFTPSERVERCLIENT pClient, uint8_t cArgs, const char * const *apcszArgs)
@@ -403,28 +457,23 @@ static int rtFtpServerHandlePORT(PRTFTPSERVERCLIENT pClient, uint8_t cArgs, cons
     RT_NOREF(pClient, cArgs, apcszArgs);
 
     /** @todo Anything to do here? */
-    return VINF_SUCCESS;
+    return VERR_NOT_IMPLEMENTED;
 }
 
 static int rtFtpServerHandlePWD(PRTFTPSERVERCLIENT pClient, uint8_t cArgs, const char * const *apcszArgs)
 {
     RT_NOREF(cArgs, apcszArgs);
 
-#if 0
-    char *pszReply;
-    int rc = RTStrAPrintf(&pszReply, "%s\r\n", pClient->szCWD);
+    int rc;
+
+    char szPWD[RTPATH_MAX];
+
+    RTFTPSERVER_HANDLE_CALLBACK_VA(pfnOnPathGetCurrent, szPWD, sizeof(szPWD));
+
     if (RT_SUCCESS(rc))
-    {
-        rc = RTTcpWrite(pClient->hSocket, pszReply, strlen(pszReply) + 1);
-        RTStrFree(pszReply);
-        return rc;
-    }
+       rc = rtFtpServerSendReplyStr(pClient, szPWD);
 
-    return VERR_NO_MEMORY;
-#endif
-
-    RT_NOREF(pClient);
-    return 0;
+    return rc;
 }
 
 static int rtFtpServerHandleQUIT(PRTFTPSERVERCLIENT pClient, uint8_t cArgs, const char * const *apcszArgs)
@@ -432,7 +481,7 @@ static int rtFtpServerHandleQUIT(PRTFTPSERVERCLIENT pClient, uint8_t cArgs, cons
     RT_NOREF(pClient, cArgs, apcszArgs);
 
     /** @todo Anything to do here? */
-    return VINF_SUCCESS;
+    return VERR_NOT_IMPLEMENTED;
 }
 
 static int rtFtpServerHandleRETR(PRTFTPSERVERCLIENT pClient, uint8_t cArgs, const char * const *apcszArgs)
@@ -440,7 +489,7 @@ static int rtFtpServerHandleRETR(PRTFTPSERVERCLIENT pClient, uint8_t cArgs, cons
     RT_NOREF(pClient, cArgs, apcszArgs);
 
     /** @todo Anything to do here? */
-    return VINF_SUCCESS;
+    return VERR_NOT_IMPLEMENTED;
 }
 
 static int rtFtpServerHandleRGET(PRTFTPSERVERCLIENT pClient, uint8_t cArgs, const char * const *apcszArgs)
@@ -448,7 +497,7 @@ static int rtFtpServerHandleRGET(PRTFTPSERVERCLIENT pClient, uint8_t cArgs, cons
     RT_NOREF(pClient, cArgs, apcszArgs);
 
     /** @todo Anything to do here? */
-    return VINF_SUCCESS;
+    return VERR_NOT_IMPLEMENTED;
 }
 
 static int rtFtpServerHandleSTAT(PRTFTPSERVERCLIENT pClient, uint8_t cArgs, const char * const *apcszArgs)
@@ -456,7 +505,7 @@ static int rtFtpServerHandleSTAT(PRTFTPSERVERCLIENT pClient, uint8_t cArgs, cons
     RT_NOREF(pClient, cArgs, apcszArgs);
 
     /** @todo Anything to do here? */
-    return VINF_SUCCESS;
+    return VERR_NOT_IMPLEMENTED;
 }
 
 static int rtFtpServerHandleSYST(PRTFTPSERVERCLIENT pClient, uint8_t cArgs, const char * const *apcszArgs)
@@ -476,13 +525,13 @@ static int rtFtpServerHandleTYPE(PRTFTPSERVERCLIENT pClient, uint8_t cArgs, cons
     RT_NOREF(pClient, cArgs, apcszArgs);
 
     /** @todo Anything to do here? */
-    return VINF_SUCCESS;
+    return VERR_NOT_IMPLEMENTED;
 }
 
 static int rtFtpServerHandleUSER(PRTFTPSERVERCLIENT pClient, uint8_t cArgs, const char * const *apcszArgs)
 {
     if (cArgs != 1)
-        return rtFtpServerSendReplyRc(pClient, RTFTPSERVER_REPLY_ERROR_INVALID_PARAMETERS);
+        return VERR_INVALID_PARAMETER;
 
     const char *pcszUser = apcszArgs[0];
     AssertPtrReturn(pcszUser, VERR_INVALID_PARAMETER);
@@ -591,6 +640,8 @@ static int rtFtpServerProcessCommands(PRTFTPSERVERCLIENT pClient)
             if (pszCmdEnd)
                 *pszCmdEnd = '\0';
 
+            int rcCmd = VINF_SUCCESS;
+
             uint8_t cArgs     = 0;
             char  **papszArgs = NULL;
             rc = rtFtpServerCmdArgsParse(szCmd, &cArgs, &papszArgs);
@@ -605,7 +656,7 @@ static int rtFtpServerProcessCommands(PRTFTPSERVERCLIENT pClient)
                         /* Save timestamp of last command sent. */
                         pClient->State.tsLastCmdMs = RTTimeMilliTS();
 
-                        rc = g_aCmdMap[i].pfnCmd(pClient, cArgs - 1, cArgs > 1 ? &papszArgs[1] : NULL);
+                        rcCmd = g_aCmdMap[i].pfnCmd(pClient, cArgs - 1, cArgs > 1 ? &papszArgs[1] : NULL);
                         break;
                     }
                 }
@@ -617,6 +668,8 @@ static int rtFtpServerProcessCommands(PRTFTPSERVERCLIENT pClient)
                     int rc2 = rtFtpServerSendReplyRc(pClient, RTFTPSERVER_REPLY_ERROR_CMD_NOT_IMPL);
                     if (RT_SUCCESS(rc))
                         rc = rc2;
+
+                    continue;
                 }
 
                 const bool fDisconnect =    g_aCmdMap[i].enmCmd == RTFTPSERVER_CMD_QUIT
@@ -629,6 +682,22 @@ static int rtFtpServerProcessCommands(PRTFTPSERVERCLIENT pClient)
 
                     RTFTPSERVER_HANDLE_CALLBACK_RET(pfnOnUserDisconnect);
                     break;
+                }
+
+                switch (rcCmd)
+                {
+                    case VERR_INVALID_PARAMETER:
+                        RT_FALL_THROUGH();
+                    case VERR_INVALID_POINTER:
+                        rc = rtFtpServerSendReplyRc(pClient, RTFTPSERVER_REPLY_ERROR_INVALID_PARAMETERS);
+                        break;
+
+                    case VERR_NOT_IMPLEMENTED:
+                        rc = rtFtpServerSendReplyRc(pClient, RTFTPSERVER_REPLY_ERROR_CMD_NOT_IMPL);
+                        break;
+
+                    default:
+                        break;
                 }
             }
             else
@@ -716,6 +785,10 @@ RTR3DECL(int) RTFtpServerCreate(PRTFTPSERVER phFTPServer, const char *pcszAddres
 
         rc = RTTcpServerCreate(pcszAddress, uPort, RTTHREADTYPE_DEFAULT, "ftpsrv",
                                rtFtpServerClientThread, pThis /* pvUser */, &pThis->pTCPServer);
+        if (RT_SUCCESS(rc))
+        {
+            *phFTPServer = (RTFTPSERVER)pThis;
+        }
     }
     else
         rc = VERR_NO_MEMORY;
