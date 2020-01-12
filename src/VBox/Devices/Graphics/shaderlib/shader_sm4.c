@@ -100,6 +100,7 @@ struct wined3d_sm4_data
 {
     struct wined3d_shader_version shader_version;
     const DWORD *end;
+    DWORD tokens_num;
     const struct wined3d_shader_signature *output_signature;
 };
 
@@ -237,7 +238,8 @@ static void *shader_sm4_init(const DWORD *byte_code, DWORD tokens_num, const str
         return NULL;
     }
 
-    priv->end = byte_code + tokens_num;
+    priv->end = NULL;
+    priv->tokens_num = tokens_num;
     priv->output_signature = output_signature;
 
     return priv;

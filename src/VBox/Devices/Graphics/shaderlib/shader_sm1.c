@@ -213,6 +213,7 @@ struct wined3d_sm1_data
 {
     struct wined3d_shader_version shader_version;
     const DWORD *end;
+    DWORD tokens_num;
     const struct wined3d_sm1_opcode_info *opcode_table;
 };
 
@@ -538,7 +539,8 @@ static void *shader_sm1_init(const DWORD *byte_code, DWORD tokens_num, const str
         return NULL;
     }
     
-    priv->end = byte_code + tokens_num;
+    priv->end = NULL;
+    priv->tokens_num = tokens_num;
 
     if (output_signature)
     {
@@ -575,6 +577,8 @@ static void shader_sm1_read_header(void *data, const DWORD **ptr, struct wined3d
 {
     struct wined3d_sm1_data *priv = data;
     DWORD version_token;
+
+    priv->end = *ptr + priv->tokens_num;
 
     version_token = *(*ptr)++;
     TRACE("version: 0x%08x\n", version_token);
@@ -678,16 +682,13 @@ static BOOL shader_sm1_is_end(void *data, const DWORD **ptr)
 {
     struct wined3d_sm1_data *priv = data;
 
-    if (*ptr >= priv->end)
-    {
-        return TRUE;
-    }
-
     if (**ptr == WINED3DSP_END)
     {
         ++(*ptr);
         return TRUE;
     }
+
+    AssertMsgReturn(*ptr < priv->end, ("End-of-bytecode token is missing"), TRUE);
 
     return FALSE;
 }
