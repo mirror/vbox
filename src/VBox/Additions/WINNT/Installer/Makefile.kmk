@@ -241,7 +241,7 @@ $(PATH_STAGE_BIN)/additions/VBoxWindowsAdditions-$(KBUILD_TARGET_ARCH).exe: \
 #
 INSTALLS += RePackScriptsAdd
 RePackScriptsAdd_TEMPLATE = DUMMY
-RePackScriptsAdd_INST = repack/
+RePackScriptsAdd_INST = repack/add/
 RePackScriptsAdd_INSTTYPE = stage
 RePackScriptsAdd_SOURCES = \
 	$(RePackScriptsAdd_0_OUTDIR)/UnpackBlessedDrivers.cmd \
@@ -252,7 +252,7 @@ RePackScriptsAdd_SOURCES = \
 
 INSTALLS += RePackScriptsAddResources
 RePackScriptsAddResources_TEMPLATE = DUMMY
-RePackScriptsAddResources_INST = repack/resources/
+RePackScriptsAddResources_INST = repack/add/resources/
 RePackScriptsAddResources_INSTTYPE = stage
 RePackScriptsAddResources_SOURCES = \
 	$(RePackScriptsAddResources_0_OUTDIR)/welcome.bmp \
@@ -279,7 +279,7 @@ RePackScriptsAddResources_SOURCES = \
 
 INSTALLS += RePackScriptsAddResourcesLanguages
 RePackScriptsAddResourcesLanguages_TEMPLATE = DUMMY
-RePackScriptsAddResourcesLanguages_INST = repack/resources/Languages/
+RePackScriptsAddResourcesLanguages_INST = repack/add/resources/Languages/
 RePackScriptsAddResourcesLanguages_INSTTYPE = stage
 RePackScriptsAddResourcesLanguages_SOURCES = \
 	$(RePackScriptsAddResourcesLanguages_0_OUTDIR)/English.nsh \
