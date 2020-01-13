@@ -89,7 +89,7 @@ class WebServerGlueBase(object):
 
         # Output.
         if sys.version_info[0] >= 3:
-            self.oOutputRaw = sys.stdout.detach();
+            self.oOutputRaw = sys.stdout.detach();  # pylint: disable=no-member
             sys.stdout = None; # Prevents flush_std_files() from complaining on stderr during sys.exit().
         else:
             self.oOutputRaw = sys.stdout;
