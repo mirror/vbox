@@ -102,10 +102,10 @@ typedef enum RTFTPSERVER_REPLY
 {
     /** Invalid reply type, do not use. */
     RTFTPSERVER_REPLY_INVALID                        = 0,
-    /** Command not implemented, superfluous at this site. */
-    RTFTPSERVER_REPLY_ERROR_CMD_NOT_IMPL_SUPERFLUOUS = 202,
     /** Command okay. */
     RTFTPSERVER_REPLY_OKAY                           = 200,
+    /** Command not implemented, superfluous at this site. */
+    RTFTPSERVER_REPLY_ERROR_CMD_NOT_IMPL_SUPERFLUOUS = 202,
     /** Service ready for new user. */
     RTFTPSERVER_REPLY_READY_FOR_NEW_USER             = 220,
     /** Service is closing control connection. */
@@ -116,6 +116,8 @@ typedef enum RTFTPSERVER_REPLY
     RTFTPSERVER_REPLY_LOGGED_IN_PROCEED              = 230,
     /** User name okay, need password. */
     RTFTPSERVER_REPLY_USERNAME_OKAY_NEED_PASSWORD    = 331,
+    /** Can't open data connection. */
+    RTFTPSERVER_REPLY_CANT_OPEN_DATA_CONN            = 425,
     /** Connection closed; transfer aborted. */
     RTFTPSERVER_REPLY_CONN_CLOSED_TRANSFER_ABORTED   = 426,
     /** Syntax error, command unrecognized. */
@@ -142,11 +144,13 @@ typedef enum RTFTPSERVER_REPLY
 typedef struct RTFTPSERVERCLIENTSTATE
 {
     /** User name. */
-    char         *pszUser;
+    char                       *pszUser;
     /** Number of failed login attempts. */
-    uint8_t       cFailedLoginAttempts;
+    uint8_t                     cFailedLoginAttempts;
     /** Timestamp (in ms) of last command issued by the client. */
-    uint64_t      tsLastCmdMs;
+    uint64_t                    tsLastCmdMs;
+    /** Current set data type. */
+    RTFTPSERVER_DATA_TYPE       enmDataType;
 } RTFTPSERVERCLIENTSTATE;
 /** Pointer to a FTP server client state. */
 typedef RTFTPSERVERCLIENTSTATE *PRTFTPSERVERCLIENTSTATE;
@@ -201,6 +205,9 @@ typedef struct RTFTPSERVERCALLBACKS
      * @param   pData           Pointer to generic callback data.
      */
     DECLCALLBACKMEMBER(int,  pfnOnUserDisconnect)(PRTFTPCALLBACKDATA pData);
+    DECLCALLBACKMEMBER(int,  pfnOnFileOpen)(PRTFTPCALLBACKDATA pData, const char *pcszPath, uint32_t fMode, void **ppvHandle);
+    DECLCALLBACKMEMBER(int,  pfnOnFileRead)(PRTFTPCALLBACKDATA pData, void *pvHandle, void *pvBuf, size_t cbToRead, size_t *pcbRead);
+    DECLCALLBACKMEMBER(int,  pfnOnFileClose)(PRTFTPCALLBACKDATA pData, void *pvHandle);
     /**
      * Callback which gets invoked when the client wants to retrieve the size of a specific file.
      *
@@ -215,7 +222,7 @@ typedef struct RTFTPSERVERCALLBACKS
      *
      * @param   pData           Pointer to generic callback data.
      * @param   pcszPath        Path of file / directory to "stat". Optional. If NULL, the current directory will be used.
-     * @param   pFsObjInfo      Where to return the RTFSOBJINFO data on success.
+     * @param   pFsObjInfo      Where to return the RTFSOBJINFO data on success. Optional.
      * @returns VBox status code.
      */
     DECLCALLBACKMEMBER(int,  pfnOnFileStat)(PRTFTPCALLBACKDATA pData, const char *pcszPath, PRTFSOBJINFO pFsObjInfo);

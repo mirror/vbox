@@ -69,6 +69,7 @@ typedef struct FTPSERVERDATA
 {
     char szRootDir[RTPATH_MAX];
     char szCWD[RTPATH_MAX];
+    RTFILE hFile;
 } FTPSERVERDATA;
 typedef FTPSERVERDATA *PFTPSERVERDATA;
 
@@ -193,6 +194,36 @@ static DECLCALLBACK(int) onUserDisonnect(PRTFTPCALLBACKDATA pData)
     return VINF_SUCCESS;
 }
 
+static DECLCALLBACK(int) onFileOpen(PRTFTPCALLBACKDATA pData, const char *pcszPath, uint32_t fMode, void **ppvHandle)
+{
+    RT_NOREF(ppvHandle);
+
+    PFTPSERVERDATA pThis = (PFTPSERVERDATA)pData->pvUser;
+    Assert(pData->cbUser == sizeof(FTPSERVERDATA));
+
+    return RTFileOpen(&pThis->hFile, pcszPath, fMode);
+}
+
+static DECLCALLBACK(int) onFileRead(PRTFTPCALLBACKDATA pData, void *pvHandle, void *pvBuf, size_t cbToRead, size_t *pcbRead)
+{
+    RT_NOREF(pvHandle);
+
+    PFTPSERVERDATA pThis = (PFTPSERVERDATA)pData->pvUser;
+    Assert(pData->cbUser == sizeof(FTPSERVERDATA));
+
+    return RTFileRead(pThis->hFile, pvBuf, cbToRead, pcbRead);
+}
+
+static DECLCALLBACK(int) onFileClose(PRTFTPCALLBACKDATA pData, void *pvHandle)
+{
+    RT_NOREF(pvHandle);
+
+    PFTPSERVERDATA pThis = (PFTPSERVERDATA)pData->pvUser;
+    Assert(pData->cbUser == sizeof(FTPSERVERDATA));
+
+    return RTFileClose(pThis->hFile);
+}
+
 static DECLCALLBACK(int) onFileGetSize(PRTFTPCALLBACKDATA pData, const char *pcszPath, uint64_t *puSize)
 {
     RT_NOREF(pData);
@@ -222,7 +253,14 @@ static DECLCALLBACK(int) onFileStat(PRTFTPCALLBACKDATA pData, const char *pcszPa
                         RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_WRITE);
     if (RT_SUCCESS(rc))
     {
-        rc = RTFileQueryInfo(hFile, pFsObjInfo, RTFSOBJATTRADD_NOTHING);
+        RTFSOBJINFO fsObjInfo;
+        rc = RTFileQueryInfo(hFile, &fsObjInfo, RTFSOBJATTRADD_NOTHING);
+        if (RT_SUCCESS(rc))
+        {
+            if (pFsObjInfo)
+                *pFsObjInfo = fsObjInfo;
+        }
+
         RTFileClose(hFile);
     }
 
@@ -373,6 +411,9 @@ int main(int argc, char **argv)
         Callbacks.pfnOnUserConnect      = onUserConnect;
         Callbacks.pfnOnUserAuthenticate = onUserAuthenticate;
         Callbacks.pfnOnUserDisconnect   = onUserDisonnect;
+        Callbacks.pfnOnFileOpen         = onFileOpen;
+        Callbacks.pfnOnFileRead         = onFileRead;
+        Callbacks.pfnOnFileClose        = onFileClose;
         Callbacks.pfnOnFileGetSize      = onFileGetSize;
         Callbacks.pfnOnFileStat         = onFileStat;
         Callbacks.pfnOnPathSetCurrent   = onPathSetCurrent;
