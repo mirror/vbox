@@ -613,7 +613,7 @@ static DECLCALLBACK(int) rtFtpServerDataConnThread(RTTHREAD ThreadSelf, void *pv
     {
         do
         {
-            size_t cbRead;
+            size_t cbRead = 0;
             RTFTPSERVER_HANDLE_CALLBACK_VA(pfnOnFileRead, pvHandle, pvBuf, cbBuf, &cbRead);
             if (RT_SUCCESS(rc))
                 rc = RTTcpWrite(pClient->DataConn.hSocket, pvBuf, cbRead);
