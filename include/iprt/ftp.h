@@ -30,6 +30,7 @@
 # pragma once
 #endif
 
+#include <iprt/fs.h>
 #include <iprt/types.h>
 
 RT_C_DECLS_BEGIN
@@ -129,6 +130,8 @@ typedef enum RTFTPSERVER_REPLY
     RTFTPSERVER_REPLY_ERROR_CMD_NOT_IMPL_PARAM       = 504,
     /** Not logged in. */
     RTFTPSERVER_REPLY_NOT_LOGGED_IN                  = 530,
+    /** Requested action not taken. */
+    RTFTPSERVER_REPLY_REQ_ACTION_NOT_TAKEN           = 550,
     /** The usual 32-bit hack. */
     RTFTPSERVER_REPLY_32BIT_HACK                     = 0x7fffffff
 } RTFTPSERVER_REPLY;
@@ -178,6 +181,7 @@ typedef struct RTFTPSERVERCALLBACKS
      * Callback which gets invoked when a user connected.
      *
      * @returns VBox status code.
+     * @param   pData           Pointer to generic callback data.
      * @param   pcszUser        User name.
      */
     DECLCALLBACKMEMBER(int,  pfnOnUserConnect)(PRTFTPCALLBACKDATA pData, const char *pcszUser);
@@ -185,6 +189,7 @@ typedef struct RTFTPSERVERCALLBACKS
      * Callback which gets invoked when a user tries to authenticate with a password.
      *
      * @returns VBox status code.
+     * @param   pData           Pointer to generic callback data.
      * @param   pcszUser        User name to authenticate.
      * @param   pcszPassword    Password to authenticate with.
      */
@@ -193,13 +198,32 @@ typedef struct RTFTPSERVERCALLBACKS
      * Callback which gets invoked when a user disconnected.
      *
      * @returns VBox status code.
-     * @param   pcszUser        User name which disconnected.
+     * @param   pData           Pointer to generic callback data.
      */
     DECLCALLBACKMEMBER(int,  pfnOnUserDisconnect)(PRTFTPCALLBACKDATA pData);
+    /**
+     * Callback which gets invoked when the client wants to retrieve the size of a specific file.
+     *
+     * @returns VBox status code.
+     * @param   pData           Pointer to generic callback data.
+     * @param   pcszPath        Path of file to retrieve size for.
+     * @param   puSize          Where to store the file size on success.
+     */
+    DECLCALLBACKMEMBER(int,  pfnOnFileGetSize)(PRTFTPCALLBACKDATA pData, const char *pcszPath, uint64_t *puSize);
+    /**
+     * Callback which gets invoked when the client wants to retrieve information about a file.
+     *
+     * @param   pData           Pointer to generic callback data.
+     * @param   pcszPath        Path of file / directory to "stat". Optional. If NULL, the current directory will be used.
+     * @param   pFsObjInfo      Where to return the RTFSOBJINFO data on success.
+     * @returns VBox status code.
+     */
+    DECLCALLBACKMEMBER(int,  pfnOnFileStat)(PRTFTPCALLBACKDATA pData, const char *pcszPath, PRTFSOBJINFO pFsObjInfo);
     /**
      * Callback which gets invoked when setting the current working directory.
      *
      * @returns VBox status code.
+     * @param   pData           Pointer to generic callback data.
      * @param   pcszCWD         Current working directory to set.
      */
     DECLCALLBACKMEMBER(int,  pfnOnPathSetCurrent)(PRTFTPCALLBACKDATA pData, const char *pcszCWD);
@@ -207,6 +231,7 @@ typedef struct RTFTPSERVERCALLBACKS
      * Callback which gets invoked when a client wants to retrieve the current working directory.
      *
      * @returns VBox status code.
+     * @param   pData           Pointer to generic callback data.
      * @param   pszPWD          Where to store the current working directory.
      * @param   cbPWD           Size of buffer in bytes.
      */
@@ -215,11 +240,13 @@ typedef struct RTFTPSERVERCALLBACKS
      * Callback which gets invoked when the client wants to move up a directory (relative to the current working directory).
      *
      * @returns VBox status code.
+     * @param   pData           Pointer to generic callback data.
      */
     DECLCALLBACKMEMBER(int,  pfnOnPathUp)(PRTFTPCALLBACKDATA pData);
     /**
      * Callback which gets invoked when the client wants to list a directory or file.
      *
+     * @param   pData           Pointer to generic callback data.
      * @param   pcszPath        Path of file / directory to list. Optional. If NULL, the current directory will be listed.
      * @param   ppvData         Where to return the listing data. Must be free'd by the caller.
      * @param   pcbvData        Where to return the listing data size in bytes.

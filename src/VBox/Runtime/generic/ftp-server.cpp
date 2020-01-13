@@ -1,6 +1,7 @@
 /* $Id$ */
 /** @file
  * Generic FTP server (RFC 959) implementation.
+ * Partly also implements RFC 3659 (Extensions to FTP, for "SIZE", ++).
  */
 
 /*
@@ -128,6 +129,8 @@ typedef enum RTFTPSERVER_CMD
     RTFTPSERVER_CMD_RETR,
     /** Recursively gets a directory (and its contents). */
     RTFTPSERVER_CMD_RGET,
+    /** Retrieves the size of a file. */
+    RTFTPSERVER_CMD_SIZE,
     /** Retrieves the current status of a transfer. */
     RTFTPSERVER_CMD_STAT,
     /** Gets the server's OS info. */
@@ -233,6 +236,7 @@ static FNRTFTPSERVERCMD rtFtpServerHandlePWD;
 static FNRTFTPSERVERCMD rtFtpServerHandleQUIT;
 static FNRTFTPSERVERCMD rtFtpServerHandleRETR;
 static FNRTFTPSERVERCMD rtFtpServerHandleRGET;
+static FNRTFTPSERVERCMD rtFtpServerHandleSIZE;
 static FNRTFTPSERVERCMD rtFtpServerHandleSTAT;
 static FNRTFTPSERVERCMD rtFtpServerHandleSYST;
 static FNRTFTPSERVERCMD rtFtpServerHandleTYPE;
@@ -268,6 +272,7 @@ const RTFTPSERVER_CMD_ENTRY g_aCmdMap[] =
     { RTFTPSERVER_CMD_QUIT,     "QUIT",         rtFtpServerHandleQUIT },
     { RTFTPSERVER_CMD_RETR,     "RETR",         rtFtpServerHandleRETR },
     { RTFTPSERVER_CMD_RGET,     "RGET",         rtFtpServerHandleRGET },
+    { RTFTPSERVER_CMD_SIZE,     "SIZE",         rtFtpServerHandleSIZE },
     { RTFTPSERVER_CMD_STAT,     "STAT",         rtFtpServerHandleSTAT },
     { RTFTPSERVER_CMD_SYST,     "SYST",         rtFtpServerHandleSYST },
     { RTFTPSERVER_CMD_TYPE,     "TYPE",         rtFtpServerHandleTYPE },
@@ -300,20 +305,26 @@ static int rtFtpServerSendReplyRc(PRTFTPSERVERCLIENT pClient, RTFTPSERVER_REPLY 
  *
  * @returns VBox status code.
  * @param   pClient             Client to reply to.
- * @param   pcszStr             String to reply.
+ * @param   pcszFormat          Format to reply.
+ * @param   ...                 Format arguments.
  */
-static int rtFtpServerSendReplyStr(PRTFTPSERVERCLIENT pClient, const char *pcszStr)
+static int rtFtpServerSendReplyStr(PRTFTPSERVERCLIENT pClient, const char *pcszFormat, ...)
 {
-    char *pszReply;
-    int rc = RTStrAPrintf(&pszReply, "%s\r\n", pcszStr);
-    if (RT_SUCCESS(rc))
-    {
-        rc = RTTcpWrite(pClient->hSocket, pszReply, strlen(pszReply) + 1);
-        RTStrFree(pszReply);
-        return rc;
-    }
+    va_list args;
+    va_start(args, pcszFormat);
+    char *psz = NULL;
+    const int cch = RTStrAPrintfV(&psz, pcszFormat, args);
+    va_end(args);
+    AssertReturn(cch > 0, VERR_NO_MEMORY);
 
-    return VERR_NO_MEMORY;
+    int rc = RTStrAAppend(&psz, "\r\n");
+    AssertRCReturn(rc, rc);
+
+    rc = RTTcpWrite(pClient->hSocket, psz, strlen(psz) + 1 /* Include termination */);
+
+    RTStrFree(psz);
+
+    return rc;
 }
 
 /**
@@ -339,6 +350,95 @@ static int rtFtpServerLookupUser(PRTFTPSERVERCLIENT pClient, const char *pcszUse
 static int rtFtpServerAuthenticate(PRTFTPSERVERCLIENT pClient, const char *pcszUser, const char *pcszPassword)
 {
     RTFTPSERVER_HANDLE_CALLBACK_VA_RET(pfnOnUserAuthenticate, pcszUser, pcszPassword);
+}
+
+/**
+ * Converts a RTFSOBJINFO struct to a string.
+ *
+ * @returns VBox status code.
+ * @param   pObjInfo            RTFSOBJINFO object to convert.
+ * @param   pszFsObjInfo        Where to store the output string.
+ * @param   cbFsObjInfo         Size of the output string in bytes.
+ */
+static int rtFtpServerFsObjInfoToStr(PRTFSOBJINFO pObjInfo, char *pszFsObjInfo, size_t cbFsObjInfo)
+{
+    RTFMODE fMode = pObjInfo->Attr.fMode;
+    char chFileType;
+    switch (fMode & RTFS_TYPE_MASK)
+    {
+        case RTFS_TYPE_FIFO:        chFileType = 'f'; break;
+        case RTFS_TYPE_DEV_CHAR:    chFileType = 'c'; break;
+        case RTFS_TYPE_DIRECTORY:   chFileType = 'd'; break;
+        case RTFS_TYPE_DEV_BLOCK:   chFileType = 'b'; break;
+        case RTFS_TYPE_FILE:        chFileType = '-'; break;
+        case RTFS_TYPE_SYMLINK:     chFileType = 'l'; break;
+        case RTFS_TYPE_SOCKET:      chFileType = 's'; break;
+        case RTFS_TYPE_WHITEOUT:    chFileType = 'w'; break;
+        default:                    chFileType = '?'; break;
+    }
+
+    char szTimeBirth[RTTIME_STR_LEN];
+    char szTimeChange[RTTIME_STR_LEN];
+    char szTimeModification[RTTIME_STR_LEN];
+    char szTimeAccess[RTTIME_STR_LEN];
+
+#define INFO_TO_STR(a_Format, ...) \
+    do \
+    { \
+        const ssize_t cchSize = RTStrPrintf2(szTemp, sizeof(szTemp), a_Format, __VA_ARGS__); \
+        AssertReturn(cchSize > 0, VERR_BUFFER_OVERFLOW); \
+        const int rc2 = RTStrCat(pszFsObjInfo, cbFsObjInfo, szTemp); \
+        AssertRCReturn(rc2, rc2); \
+    } while (0);
+
+    char szTemp[32];
+
+    INFO_TO_STR("%c", chFileType);
+    INFO_TO_STR("%c%c%c",
+                fMode & RTFS_UNIX_IRUSR ? 'r' : '-',
+                fMode & RTFS_UNIX_IWUSR ? 'w' : '-',
+                fMode & RTFS_UNIX_IXUSR ? 'x' : '-');
+    INFO_TO_STR("%c%c%c",
+                fMode & RTFS_UNIX_IRGRP ? 'r' : '-',
+                fMode & RTFS_UNIX_IWGRP ? 'w' : '-',
+                fMode & RTFS_UNIX_IXGRP ? 'x' : '-');
+    INFO_TO_STR("%c%c%c",
+                fMode & RTFS_UNIX_IROTH ? 'r' : '-',
+                fMode & RTFS_UNIX_IWOTH ? 'w' : '-',
+                fMode & RTFS_UNIX_IXOTH ? 'x' : '-');
+
+    INFO_TO_STR( " %c%c%c%c%c%c%c%c%c%c%c%c%c%c",
+                fMode & RTFS_DOS_READONLY          ? 'R' : '-',
+                fMode & RTFS_DOS_HIDDEN            ? 'H' : '-',
+                fMode & RTFS_DOS_SYSTEM            ? 'S' : '-',
+                fMode & RTFS_DOS_DIRECTORY         ? 'D' : '-',
+                fMode & RTFS_DOS_ARCHIVED          ? 'A' : '-',
+                fMode & RTFS_DOS_NT_DEVICE         ? 'd' : '-',
+                fMode & RTFS_DOS_NT_NORMAL         ? 'N' : '-',
+                fMode & RTFS_DOS_NT_TEMPORARY      ? 'T' : '-',
+                fMode & RTFS_DOS_NT_SPARSE_FILE    ? 'P' : '-',
+                fMode & RTFS_DOS_NT_REPARSE_POINT  ? 'J' : '-',
+                fMode & RTFS_DOS_NT_COMPRESSED     ? 'C' : '-',
+                fMode & RTFS_DOS_NT_OFFLINE        ? 'O' : '-',
+                fMode & RTFS_DOS_NT_NOT_CONTENT_INDEXED ? 'I' : '-',
+                fMode & RTFS_DOS_NT_ENCRYPTED      ? 'E' : '-');
+
+    INFO_TO_STR( " %d %4d %4d %10lld %10lld",
+                pObjInfo->Attr.u.Unix.cHardlinks,
+                pObjInfo->Attr.u.Unix.uid,
+                pObjInfo->Attr.u.Unix.gid,
+                pObjInfo->cbObject,
+                pObjInfo->cbAllocated);
+
+    INFO_TO_STR( " %s %s %s %s",
+                RTTimeSpecToString(&pObjInfo->BirthTime,        szTimeBirth,        sizeof(szTimeBirth)),
+                RTTimeSpecToString(&pObjInfo->ChangeTime,       szTimeChange,       sizeof(szTimeChange)),
+                RTTimeSpecToString(&pObjInfo->ModificationTime, szTimeModification, sizeof(szTimeModification)),
+                RTTimeSpecToString(&pObjInfo->AccessTime,       szTimeAccess,       sizeof(szTimeAccess)) );
+
+#undef INFO_TO_STR
+
+    return VINF_SUCCESS;
 }
 
 
@@ -496,12 +596,71 @@ static int rtFtpServerHandleRGET(PRTFTPSERVERCLIENT pClient, uint8_t cArgs, cons
     return VERR_NOT_IMPLEMENTED;
 }
 
+static int rtFtpServerHandleSIZE(PRTFTPSERVERCLIENT pClient, uint8_t cArgs, const char * const *apcszArgs)
+{
+    if (cArgs != 1)
+        return VERR_INVALID_PARAMETER;
+
+    int rc;
+
+    const char *pcszPath = apcszArgs[0];
+    uint64_t uSize = 0;
+
+    RTFTPSERVER_HANDLE_CALLBACK_VA(pfnOnFileGetSize, pcszPath, &uSize);
+
+    if (RT_SUCCESS(rc))
+    {
+        rc = rtFtpServerSendReplyStr(pClient, "213 %RU64\r\n", uSize);
+    }
+    else
+    {
+        int rc2 = rtFtpServerSendReplyRc(pClient, RTFTPSERVER_REPLY_REQ_ACTION_NOT_TAKEN);
+        AssertRC(rc2);
+    }
+
+    return rc;
+}
+
 static int rtFtpServerHandleSTAT(PRTFTPSERVERCLIENT pClient, uint8_t cArgs, const char * const *apcszArgs)
 {
-    RT_NOREF(pClient, cArgs, apcszArgs);
+    if (cArgs != 1)
+        return VERR_INVALID_PARAMETER;
 
-    /** @todo Anything to do here? */
-    return VERR_NOT_IMPLEMENTED;
+    int rc;
+
+    RTFSOBJINFO objInfo;
+    RT_ZERO(objInfo);
+
+    const char *pcszPath = apcszArgs[0];
+
+    RTFTPSERVER_HANDLE_CALLBACK_VA(pfnOnFileStat, pcszPath, &objInfo);
+
+    if (RT_SUCCESS(rc))
+    {
+        char szFsObjInfo[_4K]; /** @todo Check this size. */
+        rc = rtFtpServerFsObjInfoToStr(&objInfo, szFsObjInfo, sizeof(szFsObjInfo));
+        if (RT_SUCCESS(rc))
+        {
+            char szFsPathInfo[RTPATH_MAX + 16];
+            const ssize_t cchPathInfo = RTStrPrintf2(szFsPathInfo, sizeof(szFsPathInfo), " %2zu %s\n", strlen(pcszPath), pcszPath);
+            if (cchPathInfo > 0)
+            {
+                rc = RTStrCat(szFsObjInfo, sizeof(szFsObjInfo), szFsPathInfo);
+                if (RT_SUCCESS(rc))
+                    rc = rtFtpServerSendReplyStr(pClient, szFsObjInfo);
+            }
+            else
+                rc = VERR_BUFFER_OVERFLOW;
+        }
+    }
+
+    if (RT_FAILURE(rc))
+    {
+        int rc2 = rtFtpServerSendReplyRc(pClient, RTFTPSERVER_REPLY_REQ_ACTION_NOT_TAKEN);
+        AssertRC(rc2);
+    }
+
+    return rc;
 }
 
 static int rtFtpServerHandleSYST(PRTFTPSERVERCLIENT pClient, uint8_t cArgs, const char * const *apcszArgs)

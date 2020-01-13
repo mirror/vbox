@@ -47,6 +47,7 @@
 #include <iprt/assert.h>
 #include <iprt/ctype.h>
 #include <iprt/errcore.h>
+#include <iprt/file.h>
 #include <iprt/getopt.h>
 #include <iprt/initterm.h>
 #include <iprt/message.h>
@@ -190,6 +191,42 @@ static DECLCALLBACK(int) onUserDisonnect(PRTFTPCALLBACKDATA pData)
     RTPrintf("User disconnected\n");
 
     return VINF_SUCCESS;
+}
+
+static DECLCALLBACK(int) onFileGetSize(PRTFTPCALLBACKDATA pData, const char *pcszPath, uint64_t *puSize)
+{
+    RT_NOREF(pData);
+
+    RTPrintf("Retrieving file size for '%s' ...\n", pcszPath);
+
+    RTFILE hFile;
+    int rc = RTFileOpen(&hFile, pcszPath,
+                        RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_WRITE);
+    if (RT_SUCCESS(rc))
+    {
+        rc = RTFileQuerySize(hFile, puSize);
+        if (RT_SUCCESS(rc))
+            RTPrintf("File size is: %RU64\n", *puSize);
+        RTFileClose(hFile);
+    }
+
+    return rc;
+}
+
+static DECLCALLBACK(int) onFileStat(PRTFTPCALLBACKDATA pData, const char *pcszPath, PRTFSOBJINFO pFsObjInfo)
+{
+    RT_NOREF(pData);
+
+    RTFILE hFile;
+    int rc = RTFileOpen(&hFile, pcszPath,
+                        RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_WRITE);
+    if (RT_SUCCESS(rc))
+    {
+        rc = RTFileQueryInfo(hFile, pFsObjInfo, RTFSOBJATTRADD_NOTHING);
+        RTFileClose(hFile);
+    }
+
+    return rc;
 }
 
 static DECLCALLBACK(int) onPathSetCurrent(PRTFTPCALLBACKDATA pData, const char *pcszCWD)
@@ -336,10 +373,11 @@ int main(int argc, char **argv)
         Callbacks.pfnOnUserConnect      = onUserConnect;
         Callbacks.pfnOnUserAuthenticate = onUserAuthenticate;
         Callbacks.pfnOnUserDisconnect   = onUserDisonnect;
+        Callbacks.pfnOnFileGetSize      = onFileGetSize;
+        Callbacks.pfnOnFileStat         = onFileStat;
         Callbacks.pfnOnPathSetCurrent   = onPathSetCurrent;
         Callbacks.pfnOnPathGetCurrent   = onPathGetCurrent;
         Callbacks.pfnOnPathUp           = onPathUp;
-        Callbacks.pfnOnList             = onList;
         Callbacks.pfnOnList             = onList;
 
         RTFTPSERVER hFTPServer;
