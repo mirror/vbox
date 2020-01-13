@@ -158,12 +158,25 @@ static int rtSerialPortSetDefaultCfg(PRTSERIALPORTINTERNAL pThis)
     if (!GetCommState(pThis->hDev, &pThis->PortCfg))
         return RTErrConvertFromWin32(GetLastError());
 
-    pThis->PortCfg.BaudRate    = CBR_9600;
-    pThis->PortCfg.fBinary     = TRUE;
-    pThis->PortCfg.fParity     = TRUE;
-    pThis->PortCfg.fDtrControl = DTR_CONTROL_DISABLE;
-    pThis->PortCfg.ByteSize    = 8;
-    pThis->PortCfg.Parity      = NOPARITY;
+    pThis->PortCfg.BaudRate          = CBR_9600;
+    pThis->PortCfg.fBinary           = TRUE;
+    pThis->PortCfg.fParity           = TRUE;
+    pThis->PortCfg.fDtrControl       = DTR_CONTROL_DISABLE;
+    pThis->PortCfg.ByteSize          = 8;
+    pThis->PortCfg.Parity            = NOPARITY;
+    pThis->PortCfg.fOutxCtsFlow      = FALSE;
+    pThis->PortCfg.fOutxDsrFlow      = FALSE;
+    pThis->PortCfg.fDsrSensitivity   = FALSE;
+    pThis->PortCfg.fTXContinueOnXoff = TRUE;
+    pThis->PortCfg.fOutX             = FALSE;
+    pThis->PortCfg.fInX              = FALSE;
+    pThis->PortCfg.fErrorChar        = FALSE;
+    pThis->PortCfg.fNull             = FALSE;
+    pThis->PortCfg.fRtsControl       = RTS_CONTROL_DISABLE;
+    pThis->PortCfg.fAbortOnError     = FALSE;
+    pThis->PortCfg.wReserved         = 0;
+    pThis->PortCfg.XonLim            = 5;
+    pThis->PortCfg.XoffLim           = 5;
 
     int rc = VINF_SUCCESS;
     if (!SetCommState(pThis->hDev, &pThis->PortCfg))
