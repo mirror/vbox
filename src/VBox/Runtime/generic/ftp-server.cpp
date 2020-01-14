@@ -356,7 +356,54 @@ static int rtFtpServerSendReplyRc(PRTFTPSERVERCLIENT pClient, RTFTPSERVER_REPLY 
     char szReply[32];
     RTStrPrintf2(szReply, sizeof(szReply), "%RU32\r\n", enmReply);
 
+    LogFlowFunc(("Sending reply code %RU32\n", enmReply));
+
     return RTTcpWrite(pClient->hSocket, szReply, strlen(szReply) + 1);
+}
+
+/**
+ * Replies a (three digit) reply code with a custom message back to the client.
+ *
+ * @returns VBox status code.
+ * @param   pClient             Client to reply to.
+ * @param   enmReply            Reply code to send.
+ * @param   pcszFormat          Format string of message to send with the reply code.
+ */
+static int rtFtpServerSendReplyRcEx(PRTFTPSERVERCLIENT pClient, RTFTPSERVER_REPLY enmReply,
+                                    const char *pcszFormat, ...)
+{
+    char *pszMsg = NULL;
+
+    va_list args;
+    va_start(args, pcszFormat);
+    char *pszFmt = NULL;
+    const int cch = RTStrAPrintfV(&pszFmt, pcszFormat, args);
+    va_end(args);
+    AssertReturn(cch > 0, VERR_NO_MEMORY);
+
+    int rc = RTStrAPrintf(&pszMsg, "%RU32", enmReply);
+    AssertRCReturn(rc, rc);
+
+    if (pszFmt)
+    {
+        rc = RTStrAAppend(&pszMsg, " - ");
+        AssertRCReturn(rc, rc);
+
+        rc = RTStrAAppend(&pszMsg, pszFmt);
+        AssertRCReturn(rc, rc);
+    }
+
+
+    rc = RTStrAAppend(&pszMsg, "\r\n");
+    AssertRCReturn(rc, rc);
+
+    RTStrFree(pszFmt);
+
+    rc = RTTcpWrite(pClient->hSocket, pszMsg, strlen(pszMsg) + 1 /* Include termination */);
+
+    RTStrFree(pszMsg);
+
+    return rc;
 }
 
 /**
@@ -1210,6 +1257,8 @@ static int rtFtpServerProcessCommands(PRTFTPSERVERCLIENT pClient, char *pcszCmd,
     if (   RT_SUCCESS(rc)
         && cArgs) /* At least the actual command (without args) must be present. */
     {
+        LogFlowFunc(("Handling command '%s'\n", papszArgs[0]));
+
         unsigned i = 0;
         for (; i < RT_ELEMENTS(g_aCmdMap); i++)
         {
@@ -1231,6 +1280,7 @@ static int rtFtpServerProcessCommands(PRTFTPSERVERCLIENT pClient, char *pcszCmd,
             if (RT_SUCCESS(rc))
                 rc = rc2;
 
+            LogFlowFunc(("Command not implemented\n", papszArgs[0]));
             return rc;
         }
 
@@ -1370,10 +1420,17 @@ static DECLCALLBACK(int) rtFtpServerClientThread(RTSOCKET hSocket, void *pvUser)
     Client.pServer     = pThis;
     Client.hSocket     = hSocket;
 
+    LogFlowFunc(("New client connected\n"));
+
     rtFtpServerClientStateReset(&Client.State);
 
-    /* Send welcome message. */
-    int rc = rtFtpServerSendReplyRc(&Client, RTFTPSERVER_REPLY_READY_FOR_NEW_USER);
+    /*
+     * Send welcome message.
+     * Note: Some clients (like FileZilla / Firefox) expect a message together with the reply code,
+     *       so make sure to include at least *something*.
+     */
+    int rc = rtFtpServerSendReplyRcEx(&Client, RTFTPSERVER_REPLY_READY_FOR_NEW_USER,
+                                      "Welcome!");
     if (RT_SUCCESS(rc))
     {
         ASMAtomicIncU32(&pThis->cClients);
