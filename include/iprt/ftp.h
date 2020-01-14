@@ -125,6 +125,8 @@ typedef enum RTFTPSERVER_REPLY
     RTFTPSERVER_REPLY_OKAY                           = 200,
     /** Command not implemented, superfluous at this site. */
     RTFTPSERVER_REPLY_ERROR_CMD_NOT_IMPL_SUPERFLUOUS = 202,
+    /** System status report. */
+    RTFTPSERVER_REPLY_SYSTEM_STATUS                  = 211,
     /** Service ready for new user. */
     RTFTPSERVER_REPLY_READY_FOR_NEW_USER             = 220,
     /** Service is closing control connection. */

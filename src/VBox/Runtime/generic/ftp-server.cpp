@@ -118,6 +118,8 @@ typedef enum RTFTPSERVER_CMD
     RTFTPSERVER_CMD_CDUP,
     /** Changes the current working directory. */
     RTFTPSERVER_CMD_CWD,
+    /** Reports features supported by the server. */
+    RTFTPSERVER_CMD_FEAT,
     /** Lists a directory. */
     RTFTPSERVER_CMD_LIST,
     /** Sets the transfer mode. */
@@ -274,6 +276,7 @@ static void rtFtpServerClientStateReset(PRTFTPSERVERCLIENTSTATE pState);
 static FNRTFTPSERVERCMD rtFtpServerHandleABOR;
 static FNRTFTPSERVERCMD rtFtpServerHandleCDUP;
 static FNRTFTPSERVERCMD rtFtpServerHandleCWD;
+static FNRTFTPSERVERCMD rtFtpServerHandleFEAT;
 static FNRTFTPSERVERCMD rtFtpServerHandleLIST;
 static FNRTFTPSERVERCMD rtFtpServerHandleMODE;
 static FNRTFTPSERVERCMD rtFtpServerHandleNOOP;
@@ -311,6 +314,7 @@ const RTFTPSERVER_CMD_ENTRY g_aCmdMap[] =
     { RTFTPSERVER_CMD_ABOR,     "ABOR",         rtFtpServerHandleABOR },
     { RTFTPSERVER_CMD_CDUP,     "CDUP",         rtFtpServerHandleCDUP },
     { RTFTPSERVER_CMD_CWD,      "CWD",          rtFtpServerHandleCWD  },
+    { RTFTPSERVER_CMD_FEAT,     "FEAT",         rtFtpServerHandleFEAT },
     { RTFTPSERVER_CMD_LIST,     "LIST",         rtFtpServerHandleLIST },
     { RTFTPSERVER_CMD_MODE,     "MODE",         rtFtpServerHandleMODE },
     { RTFTPSERVER_CMD_NOOP,     "NOOP",         rtFtpServerHandleNOOP },
@@ -328,6 +332,12 @@ const RTFTPSERVER_CMD_ENTRY g_aCmdMap[] =
     { RTFTPSERVER_CMD_LAST,     "",             NULL }
 };
 
+/** Feature string which represents all commands we support in addition to RFC 959.
+ *  Must match the command table above.
+ *
+ *  Don't forget the terminating ";" at each feature. */
+#define RTFTPSERVER_FEATURES_STRING \
+    "SIZE;" /* Supports reporting file sizes. */
 
 /*********************************************************************************************************************************
 *   Protocol Functions                                                                                                           *
@@ -805,6 +815,21 @@ static int rtFtpServerHandleCWD(PRTFTPSERVERCLIENT pClient, uint8_t cArgs, const
 
     if (RT_SUCCESS(rc))
         return rtFtpServerSendReplyRc(pClient, RTFTPSERVER_REPLY_OKAY);
+
+    return rc;
+}
+
+static int rtFtpServerHandleFEAT(PRTFTPSERVERCLIENT pClient, uint8_t cArgs, const char * const *apcszArgs)
+{
+    RT_NOREF(cArgs, apcszArgs);
+
+    int rc = rtFtpServerSendReplyRc(pClient, RTFTPSERVER_REPLY_SYSTEM_STATUS); /* Features begin */
+    if (RT_SUCCESS(rc))
+    {
+        rc = rtFtpServerSendReplyStr(pClient, RTFTPSERVER_FEATURES_STRING);
+        if (RT_SUCCESS(rc))
+            rc = rtFtpServerSendReplyRc(pClient, RTFTPSERVER_REPLY_SYSTEM_STATUS); /* Features end */
+    }
 
     return rc;
 }
