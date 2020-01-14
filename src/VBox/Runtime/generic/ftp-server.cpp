@@ -353,8 +353,10 @@ const RTFTPSERVER_CMD_ENTRY g_aCmdMap[] =
  */
 static int rtFtpServerSendReplyRc(PRTFTPSERVERCLIENT pClient, RTFTPSERVER_REPLY enmReply)
 {
+    /* Note: If we don't supply any additional text, make sure to include an empty stub, as
+     *       some clients expect this as part of their parsing code. */
     char szReply[32];
-    RTStrPrintf2(szReply, sizeof(szReply), "%RU32\r\n", enmReply);
+    RTStrPrintf2(szReply, sizeof(szReply), "%RU32 -\r\n", enmReply);
 
     LogFlowFunc(("Sending reply code %RU32\n", enmReply));
 
