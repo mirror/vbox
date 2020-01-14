@@ -743,15 +743,15 @@ endif
 
 src-server/win/VBoxSVC.rc_INCS  = $(VBoxSVC_0_OUTDIR)
 src-server/win/VBoxSVC.rc_DEPS  = $(VBoxSVC_0_OUTDIR)/VBoxSVC-icon.rc
-src-server/win/VBoxSVC.rc_CLEAN = $(VBoxSVC_0_OUTDIR)/VBoxSVC-icon.rc
+VBoxSVC_CLEAN                  += $(VBoxSVC_0_OUTDIR)/VBoxSVC-icon.rc
 $(call KB_FN_AUTO_CMD_DEPS,$(VBoxSVC_0_OUTDIR)/VBoxSVC-icon.rc)
 $(VBoxSVC_0_OUTDIR)/VBoxSVC-icon.rc: $(VBOX_WINDOWS_ICON_FILE) | $$(dir $$@)
 	$(call KB_FN_AUTO_CMD_DEPS_COMMANDS)
 	$(APPEND) -t $@ '1 ICON DISCARDABLE "$(subst /,\\,$(VBOX_WINDOWS_ICON_FILE))"'
 
 ifndef VBOX_WITH_MIDL_PROXY_STUB
- src-server/win/VBoxSVC.rc_DEPS  += $(VBoxSVC_0_OUTDIR)/VBoxSVC.rgs
- src-server/win/VBoxSVC.rc_CLEAN += $(VBoxSVC_0_OUTDIR)/VBoxSVC.rgs
+ src-server/win/VBoxSVC.rc_DEPS += $(VBoxSVC_0_OUTDIR)/VBoxSVC.rgs
+ VBoxSVC_CLEAN                  += $(VBoxSVC_0_OUTDIR)/VBoxSVC.rgs
  $(call KB_FN_AUTO_CMD_DEPS,$(VBoxSVC_0_OUTDIR)/VBoxSVC.rgs)
  $(VBoxSVC_0_OUTDIR)/VBoxSVC.rgs: $(VBOX_PATH_MAIN_SRC)/src-all/win/VirtualBox_rgs.xsl $(VBOX_XIDL_FILE) | $$(dir $$@)
 	$(call KB_FN_AUTO_CMD_DEPS_COMMANDS)
