@@ -161,8 +161,10 @@ common/misc/buildconfig.cpp_DEFS = \
 BLDPROGS += oiddb2c
 oiddb2c_TEMPLATE = VBoxBldProg
 oiddb2c_SOURCES = common/asn1/oiddb2c.cpp
+
 common/asn1/asn1-dump.cpp_DEPS = $(IPRT_OUT_DIR)/oiddb.h
 common/asn1/asn1-dump.cpp_INCS = $(IPRT_OUT_DIR)
+OTHER_CLEAN += $(IPRT_OUT_DIR)/oiddb.h $(IPRT_OUT_DIR)/oiddb.h.ts
 
 $(IPRT_OUT_DIR)/oiddb.h.ts +| $(IPRT_OUT_DIR)/oiddb.h: \
 		$(VBOX_PATH_RUNTIME_SRC)/common/asn1/oiddb.cfg \
@@ -3850,7 +3852,7 @@ test-doxygen::
 if1of ($(LIBRARIES),RuntimeR3 RuntimeR0 RuntimeR0Drv RuntimeRC)
  test-mangling:: $(IPRT_OUT_DIR)/mangling.run
  OTHERS      += $(IPRT_OUT_DIR)/mangling.run
- CLEANS      += $(IPRT_OUT_DIR)/mangling.run
+ OTHER_CLEAN += $(IPRT_OUT_DIR)/mangling.run
  $(IPRT_OUT_DIR)/mangling.run: \
 		$$(RuntimeR3_1_TARGET) \
 		$$(RuntimeR0_1_TARGET) \
