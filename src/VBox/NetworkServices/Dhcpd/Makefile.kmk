@@ -1,6 +1,6 @@
 # $Id$
 ## @file
-# Sub-makefile for the DHCP server
+# Sub-makefile for the DHCP server.
 #
 
 #
@@ -15,50 +15,52 @@
 # hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
 #
 
-SUB_DEPTH = ../../../..
+SUB_DEPTH := ../../../..
 include $(KBUILD_PATH)/subheader.kmk
-# ifdef VBOX_WITH_...
 
- VBOX_PATH_Dhcpd_SRC := $(PATH_SUB_CURRENT)
+ifndef LWIP_SOURCES
+ include $(PATH_SUB_CURRENT)/../../Devices/Network/lwip-new/Config.kmk
+endif
 
- # XXX: do not depend on order
- ifndef LWIP_SOURCES
-  include $(PATH_SUB_CURRENT)/../../Devices/Network/lwip-new/Config.kmk
+#
+# Hardended stub executable.
+#
+ifdef VBOX_WITH_HARDENING
+PROGRAMS += VBoxNetDHCPHardened
+VBoxNetDHCPHardened_TEMPLATE = VBOXR3HARDENEDEXE
+VBoxNetDHCPHardened_NAME     = VBoxNetDHCP
+VBoxNetDHCPHardened_SOURCES  = VBoxNetDhcpdHardened.cpp
+VBoxNetDHCPHardened_LDFLAGS.win = /SUBSYSTEM:windows
+$(call VBOX_SET_VER_INFO_DLL,VBoxNetDHCPHardened,VirtualBox DHCP Server,$(VBOX_WINDOWS_ICON_FILE)) # Version info / description.
+endif
+
+
+#
+# The DHCP server module (dll if hardended)
+#
+ifdef VBOX_WITH_HARDENING
+DLLS     += VBoxNetDHCP
+VBoxNetDHCP_TEMPLATE := VBoxR3Dll
+else
+PROGRAMS += VBoxNetDHCP
+VBoxNetDHCP_TEMPLATE := VBOXR3EXE
+endif
+
+# (current dir is for for lwipopts.h)
+VBoxNetDHCP_INCS += . $(addprefix ../../Devices/Network/lwip-new/,$(LWIP_INCS))
+
+VBoxNetDHCP_DEFS      = KBUILD_TYPE=\"$(KBUILD_TYPE)\"
+#VBoxNetDHCP_DEFS     = IPv6
+#VBoxNetDHCP_DEFS.linux = WITH_VALGRIND
+ifneq ($(KBUILD_TARGET),win)
+VBoxNetDHCP_DEFS     += VBOX_WITH_XPCOM
+VBoxNetDHCP_INCS     += $(VBOX_XPCOM_INCS)
+ ifneq ($(KBUILD_TARGET),darwin)
+  # We want -std=c++11 for 4.7 and newer compilers, and -std=c++0x for older ones.
+VBoxNetDHCP_CXXFLAGS += -std=$(if $(VBOX_GCC_VERSION_CXX),$(if $(VBOX_GCC_VERSION_CXX) < 40700,c++0x,c++11),c++0x)
  endif
-
- ifdef VBOX_WITH_HARDENING
-  PROGRAMS += VBoxNetDhcpdHardened
-  DLLS += VBoxNetDhcpd
- else
-  PROGRAMS += VBoxNetDhcpd
- endif
-
- VBoxNetDhcpdHardened_TEMPLATE = VBOXR3HARDENEDEXE
- VBoxNetDhcpdHardened_NAME     = VBoxNetDHCP
- VBoxNetDhcpdHardened_DEFS     = SERVICE_NAME=\"VBoxNetDhcpd\"
- VBoxNetDhcpdHardened_SOURCES  = VBoxNetDhcpdHardened.cpp
- VBoxNetDhcpdHardened_SOURCES.win = $(VBoxNetDhcpd_0_OUTDIR)/VBoxNetDhcpd-icon.rc
- VBoxNetDhcpdHardened_LDFLAGS.win = /SUBSYSTEM:windows
-
- VBoxNetDhcpd_TEMPLATE := $(if-expr defined(VBOX_WITH_HARDENING),VBoxR3Dll,VBOXR3EXE)
- VBoxNetDhcpd_NAME      = VBoxNetDHCP
- # VBoxNetDhcpd_DEFS      = IPv6
- # VBoxNetDhcpd_DEFS.linux = WITH_VALGRIND
- #VBoxNetDhcpd_DEFS.win  = VBOX_COM_OUTOFPROC_MODULE _WIN32_WINNT=0x501 # Windows XP
-
- # (current dir is for for lwipopts.h)
- VBoxNetDhcpd_INCS += . $(addprefix ../../Devices/Network/lwip-new/,$(LWIP_INCS))
-
- VBoxNetDhcpd_DEFS       = KBUILD_TYPE=\"$(KBUILD_TYPE)\"
- ifneq ($(KBUILD_TARGET),win)
-  VBoxNetDhcpd_DEFS     += VBOX_WITH_XPCOM
-  VBoxNetDhcpd_INCS     += $(VBOX_XPCOM_INCS)
-  ifneq ($(KBUILD_TARGET),darwin)
-   # We want -std=c++11 for 4.7 and newer compilers, and -std=c++0x for older ones.
-   VBoxNetDhcpd_CXXFLAGS += -std=$(if $(VBOX_GCC_VERSION_CXX),$(if $(VBOX_GCC_VERSION_CXX) < 40700,c++0x,c++11),c++0x)
-  endif
- endif
- VBoxNetDhcpd_SOURCES = \
+endif
+VBoxNetDHCP_SOURCES = \
 	ClientId.cpp \
 	Config.cpp \
 	DHCPD.cpp \
@@ -68,26 +70,19 @@ include $(KBUILD_PATH)/subheader.kmk
 	IPv4Pool.cpp \
 	Timestamp.cpp \
 	VBoxNetDhcpd.cpp \
- 	../../Main/glue/VBoxLogRelCreate.cpp \
+	../../Main/glue/VBoxLogRelCreate.cpp \
 	../../Main/glue/GetVBoxUserHomeDirectory.cpp \
 	$(addprefix ../../Devices/Network/lwip-new/,$(LWIP_SOURCES))
 
- VBoxNetDhcpd_LIBS = $(LIB_RUNTIME)
- VBoxNetDhcpd_LIBS.solaris += socket nsl
- VBoxNetDhcpd_LDFLAGS.win = /SUBSYSTEM:windows
+VBoxNetDHCP_LIBS = $(LIB_RUNTIME)
+VBoxNetDHCP_LIBS.solaris += socket nsl
+VBoxNetDHCP_LDFLAGS.win = /SUBSYSTEM:windows
 
- ifeq ($(KBUILD_TARGET),win)
-  # Icon include file.
-  VBoxNetDhcpd_SOURCES  += VBoxNetDhcpd.rc
-  VBoxNetDhcpd.rc_INCS       = $(VBoxNetDhcpd_0_OUTDIR)
-  VBoxNetDhcpd.rc_DEPS       = $(VBoxNetDhcpd_0_OUTDIR)/VBoxNetDhcpd-icon.rc
-  VBoxNetDhcpd.rc_CLEAN      = $(VBoxNetDhcpd_0_OUTDIR)/VBoxNetDhcpd-icon.rc
+ifdef VBOX_WITH_HARDENING
+ $(call VBOX_SET_VER_INFO_DLL,VBoxNetDHCP,VirtualBox DHCP Server (dll),$(VBOX_WINDOWS_ICON_FILE)) # Version info / description.
+else
+ $(call VBOX_SET_VER_INFO_EXE,VBoxNetDHCP,VirtualBox DHCP Server,$(VBOX_WINDOWS_ICON_FILE))       # Version info / description.
+endif
 
-  $$(VBoxNetDhcpd_0_OUTDIR)/VBoxNetDhcpd-icon.rc: $(VBOX_WINDOWS_ICON_FILE) \
-						  $$(VBoxNetDhcpd_DEFPATH)/Makefile.kmk | $$(dir $$@)
-	$(RM) -f $@
-	$(APPEND) $@ 'IDI_VIRTUALBOX ICON DISCARDABLE "$(subst /,\\,$(VBOX_WINDOWS_ICON_FILE))"'
- endif # win
-
-# endif # VBOX_WITH_...
 include $(FILE_KBUILD_SUB_FOOTER)
+
