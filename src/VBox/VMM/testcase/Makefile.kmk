@@ -508,6 +508,8 @@ tstVMStructDTrace_DEFS    += VBOX_WITH_VMMR0_DISABLE_LAPIC_NMI
 VMMLibDTraceStructTest_INST = $(VBOX_INST_DTRACE_TST)$(KBUILD_TARGET_ARCH)/
 VMMLibDTraceStructTest_SOURCES = \
 	$(tstVMStructDTrace_0_OUTDIR)/vbox-vm-struct-test.d
+VMMLibDTraceStructTest_CLEAN = \
+	$(tstVMStructDTrace_0_OUTDIR)/vbox-vm-struct-test.d
 
 $$(tstVMStructDTrace_0_OUTDIR)/vbox-vm-struct-test.d: \
 		$$(tstVMStructDTrace_1_STAGE_TARGET) | $$(dir $$@)

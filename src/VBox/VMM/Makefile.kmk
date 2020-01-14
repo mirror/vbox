@@ -660,6 +660,8 @@ $$(VMMLibDTrace_0_OUTDIR)/$1: $2 $$(VBOX_VBOXCPP) | $$$$(dir $$$$@)
 		$2 \
 		$$@
 	$$(QUIET)$$(CHMOD) 644 $$@
+
+ VMMLibDTrace_CLEAN += $(VMMLibDTrace_0_OUTDIR)/$1
  endef
 $(evalcall2 def_vmm_lib_dtrace_preprocess,vm.d,$(PATH_ROOT)/include/VBox/vmm/vm.h)
 $(evalcall2 def_vmm_lib_dtrace_preprocess,cpumctx.d,$(PATH_ROOT)/include/VBox/vmm/cpumctx.h)

@@ -2425,6 +2425,8 @@ if1of (VBoxRT,$(DLLS))
  	$(VBoxRTStableCheck_0_OUTDIR)/VBoxRTStableCheckA.asm
  VBoxRTStableCheck_LIBS = \
  	$(LIB_RUNTIME)
+ VBoxRTStableCheck_CLEAN = \
+ 	$(VBoxRTStableCheck_0_OUTDIR)/VBoxRTStableCheckA.asm
  ifeq ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH),win.amd64)
 $$(VBoxRTStableCheck_0_OUTDIR)/VBoxRTStableCheckA.asm: \
        $(PATH_SUB_CURRENT)/VBox/DefToAsmExterns.sed \

@@ -171,6 +171,10 @@ if defined(VBOX_WITH_EXTPACK_VBOXDTRACE) && defined(VBOX_WITH_EXTPACK)
  #	$(VBOXDT_PATH_LIBDTRACE)/common/dt_pid.c
 
  # Generate sources
+ VBoxDTraceCmd_CLEAN = \
+ 	$(VBoxDTraceCmd_0_OUTDIR)/dt_errtags.c \
+ 	$(VBoxDTraceCmd_0_OUTDIR)/dt_names.c
+
  $$(VBoxDTraceCmd_0_OUTDIR)/dt_errtags.c: \
  		$(VBOXDT_PATH_LIBDTRACE)/common/dt_errtags.h \
  		$(VBOXDT_PATH_LIBDTRACE)/common/mkerrtags.sed \
