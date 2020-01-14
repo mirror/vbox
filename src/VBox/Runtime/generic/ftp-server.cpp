@@ -1280,7 +1280,7 @@ static int rtFtpServerProcessCommands(PRTFTPSERVERCLIENT pClient, char *pcszCmd,
             if (RT_SUCCESS(rc))
                 rc = rc2;
 
-            LogFlowFunc(("Command not implemented\n", papszArgs[0]));
+            LogFlowFunc(("Command not implemented\n"));
             return rc;
         }
 
