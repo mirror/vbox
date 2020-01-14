@@ -185,11 +185,11 @@ static DECLCALLBACK(int) onUserAuthenticate(PRTFTPCALLBACKDATA pData, const char
     return VINF_SUCCESS;
 }
 
-static DECLCALLBACK(int) onUserDisonnect(PRTFTPCALLBACKDATA pData)
+static DECLCALLBACK(int) onUserDisonnect(PRTFTPCALLBACKDATA pData, const char *pcszUser)
 {
     RT_NOREF(pData);
 
-    RTPrintf("User disconnected\n");
+    RTPrintf("User '%s' disconnected\n", pcszUser);
 
     return VINF_SUCCESS;
 }
@@ -221,7 +221,13 @@ static DECLCALLBACK(int) onFileClose(PRTFTPCALLBACKDATA pData, void *pvHandle)
     PFTPSERVERDATA pThis = (PFTPSERVERDATA)pData->pvUser;
     Assert(pData->cbUser == sizeof(FTPSERVERDATA));
 
-    return RTFileClose(pThis->hFile);
+    int rc = RTFileClose(pThis->hFile);
+    if (RT_SUCCESS(rc))
+    {
+        pThis->hFile = NIL_RTFILE;
+    }
+
+    return rc;
 }
 
 static DECLCALLBACK(int) onFileGetSize(PRTFTPCALLBACKDATA pData, const char *pcszPath, uint64_t *puSize)
@@ -405,9 +411,6 @@ int main(int argc, char **argv)
         RTFTPSERVERCALLBACKS Callbacks;
         RT_ZERO(Callbacks);
 
-        Callbacks.pvUser                = &g_FTPServerData;
-        Callbacks.cbUser                = sizeof(g_FTPServerData);
-
         Callbacks.pfnOnUserConnect      = onUserConnect;
         Callbacks.pfnOnUserAuthenticate = onUserAuthenticate;
         Callbacks.pfnOnUserDisconnect   = onUserDisonnect;
@@ -422,7 +425,8 @@ int main(int argc, char **argv)
         Callbacks.pfnOnList             = onList;
 
         RTFTPSERVER hFTPServer;
-        rc = RTFtpServerCreate(&hFTPServer, szAddress, uPort, &Callbacks);
+        rc = RTFtpServerCreate(&hFTPServer, szAddress, uPort, &Callbacks,
+                               &g_FTPServerData, sizeof(g_FTPServerData));
         if (RT_SUCCESS(rc))
         {
             RTPrintf("Starting FTP server at %s:%RU16 ...\n", szAddress, uPort);

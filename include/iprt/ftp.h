@@ -75,8 +75,8 @@ typedef enum RTFTPSERVER_CONNECTION_MODE
  */
 typedef enum RTFTPSERVER_TRANSFER_MODE
 {
-    RTFTPSERVER_TRANSFER_MODE_UNKNOWN = 0,
-    RTFTPSERVER_TRANSFER_MODE_STREAM,
+    /** Default if nothing else is set. */
+    RTFTPSERVER_TRANSFER_MODE_STREAM = 0,
     RTFTPSERVER_TRANSFER_MODE_BLOCK,
     RTFTPSERVER_TRANSFER_MODE_COMPRESSED,
     /** The usual 32-bit hack. */
@@ -88,14 +88,27 @@ typedef enum RTFTPSERVER_TRANSFER_MODE
  */
 typedef enum RTFTPSERVER_DATA_TYPE
 {
-    RTFTPSERVER_DATA_TYPE_UNKNOWN = 0,
-    RTFTPSERVER_DATA_TYPE_ASCII,
+    /** Default if nothing else is set. */
+    RTFTPSERVER_DATA_TYPE_ASCII = 0,
     RTFTPSERVER_DATA_TYPE_EBCDIC,
     RTFTPSERVER_DATA_TYPE_IMAGE,
     RTFTPSERVER_DATA_TYPE_LOCAL,
     /** The usual 32-bit hack. */
     RTFTPSERVER_DATA_TYPE_32BIT_HACK = 0x7fffffff
 } RTFTPSERVER_DATA_TYPE;
+
+/**
+ * Enumeration for defining the struct type.
+ */
+typedef enum RTFTPSERVER_STRUCT_TYPE
+{
+    /** Default if nothing else is set. */
+    RTFTPSERVER_STRUCT_TYPE_FILE = 0,
+    RTFTPSERVER_STRUCT_TYPE_RECORD,
+    RTFTPSERVER_STRUCT_TYPE_PAGE,
+    /** The usual 32-bit hack. */
+    RTFTPSERVER_STRUCT_TYPE_32BIT_HACK = 0x7fffffff
+} RTFTPSERVER_STRUCT_TYPE;
 
 /**
  * Enumeration for FTP server reply codes.
@@ -106,6 +119,8 @@ typedef enum RTFTPSERVER_REPLY
 {
     /** Invalid reply type, do not use. */
     RTFTPSERVER_REPLY_INVALID                        = 0,
+    /** Command okay. */
+    RTFTPSERVER_REPLY_FILE_STATUS_OKAY               = 150,
     /** Command okay. */
     RTFTPSERVER_REPLY_OKAY                           = 200,
     /** Command not implemented, superfluous at this site. */
@@ -155,6 +170,8 @@ typedef struct RTFTPSERVERCLIENTSTATE
     uint64_t                    tsLastCmdMs;
     /** Current set data type. */
     RTFTPSERVER_DATA_TYPE       enmDataType;
+    /** Current set struct type. */
+    RTFTPSERVER_STRUCT_TYPE     enmStructType;
 } RTFTPSERVERCLIENTSTATE;
 /** Pointer to a FTP server client state. */
 typedef RTFTPSERVERCLIENTSTATE *PRTFTPSERVERCLIENTSTATE;
@@ -181,10 +198,6 @@ typedef RTFTPCALLBACKDATA *PRTFTPCALLBACKDATA;
  */
 typedef struct RTFTPSERVERCALLBACKS
 {
-    /** User pointer to data. Optional and can be NULL. */
-    void  *pvUser;
-    /** Size (in bytes) of user data pointing at. Optional and can be 0. */
-    size_t cbUser;
     /**
      * Callback which gets invoked when a user connected.
      *
@@ -207,10 +220,37 @@ typedef struct RTFTPSERVERCALLBACKS
      *
      * @returns VBox status code.
      * @param   pData           Pointer to generic callback data.
+     * @param   pcszUser        User name which disconnected.
      */
-    DECLCALLBACKMEMBER(int,  pfnOnUserDisconnect)(PRTFTPCALLBACKDATA pData);
+    DECLCALLBACKMEMBER(int,  pfnOnUserDisconnect)(PRTFTPCALLBACKDATA pData, const char *pcszUser);
+    /**
+     * Callback which gets invoked when the client wants to start reading or writing a file.
+     *
+     * @returns VBox status code.
+     * @param   pData           Pointer to generic callback data.
+     * @param   pcsszPath       Path of file to handle.
+     * @param   fMode           File mode to use (IPRT stlye).
+     * @param   ppvHandle       Opaque file handle only known to the callback implementation.
+     */
     DECLCALLBACKMEMBER(int,  pfnOnFileOpen)(PRTFTPCALLBACKDATA pData, const char *pcszPath, uint32_t fMode, void **ppvHandle);
+    /**
+     * Callback which gets invoked when the client wants to read from a file.
+     *
+     * @returns VBox status code.
+     * @param   pData           Pointer to generic callback data.
+     * @param   pvHandle        Opaque file handle only known to the callback implementation.
+     * @param   pvBuf           Where to store the read file data.
+     * @param   cbToRead        How much (in bytes) to read. Must at least supply the size of pvBuf.
+     * @param   pcbRead         How much (in bytes) was read. Optional.
+     */
     DECLCALLBACKMEMBER(int,  pfnOnFileRead)(PRTFTPCALLBACKDATA pData, void *pvHandle, void *pvBuf, size_t cbToRead, size_t *pcbRead);
+    /**
+     * Callback which gets invoked when the client is done reading from or writing to a file.
+     *
+     * @returns VBox status code.
+     * @param   pData           Pointer to generic callback data.
+     * @param   ppvHandle       Opaque file handle only known to the callback implementation.
+     */
     DECLCALLBACKMEMBER(int,  pfnOnFileClose)(PRTFTPCALLBACKDATA pData, void *pvHandle);
     /**
      * Callback which gets invoked when the client wants to retrieve the size of a specific file.
@@ -277,9 +317,11 @@ typedef RTFTPSERVERCALLBACKS *PRTFTPSERVERCALLBACKS;
  *                              If NULL or empty string the server is bound to all interfaces.
  * @param   uPort               The port for creating a listening socket.
  * @param   pCallbacks          Callback table to use.
+ * @param   pvUser              Pointer to user-specific data. Optional.
+ * @param   cbUser              Size of user-specific data. Optional.
  */
 RTR3DECL(int) RTFtpServerCreate(PRTFTPSERVER phFTPServer, const char *pcszAddress, uint16_t uPort,
-                                PRTFTPSERVERCALLBACKS pCallbacks);
+                                PRTFTPSERVERCALLBACKS pCallbacks, void *pvUser, size_t cbUser);
 
 /**
  * Destroys a FTP server instance.
