@@ -3304,6 +3304,7 @@ define VBOX_EDIT_VERSION_RULE_DEF
 $$($(1)_0_OUTDIR)/$(if $(3),$(3),$(2)): $(PATH_SUB_CURRENT)/$(2) $(VBOX_SVN_REV_KMK) | $$(dir $$@)
 	$(call MSG_GENERATE,$(1),$@,$<)
 	$(QUIET)$(call VBOX_EDIT_VERSION_CMD_FN,$<,$@)
+$(eval $(1)_CLEAN += $$($(1)_0_OUTDIR)/$(if $(3),$(3),$(2)))
 endef
 
 
