@@ -510,7 +510,7 @@ tstLog_TEMPLATE      = VBOXR3TSTEXE
 tstLog_SOURCES       = tstLog.cpp
 tstLog_INCS          = $(tstLog_0_OUTDIR)
 tstLog_INTERMEDIATES = $(tstLog_0_OUTDIR)/tstLogGroups.h
-tstLog_CLEANS        = $(tstLog_0_OUTDIR)/tstLogGroups.h
+tstLog_CLEAN         = $(tstLog_0_OUTDIR)/tstLogGroups.h
 $$(tstLog_0_OUTDIR)/tstLogGroups.h: $(PATH_ROOT)/include/VBox/log.h
 	$(call MSG_GENERATE,,$@,$<)
 	$(QUIET)$(RM) -f -- "$@"

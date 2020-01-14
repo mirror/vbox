@@ -97,7 +97,7 @@ if 0 ## Disabled for now; needs to be adapted to the new protocol first.
  tstClipboardX11-2_DEFS     = VBOX_WITH_HGCM TESTCASE
  tstClipboardX11-2_SOURCES  = VBoxSharedClipboardSvc-x11.cpp
  tstClipboardX11-2_LIBS     = $(LIB_RUNTIME)
- tstClipboardX11-2_CLEANS   = $(tstClipboardX11-2_0_OUTDIR)/tstClipboardX11-2.run
+ tstClipboardX11-2_CLEAN    = $(tstClipboardX11-2_0_OUTDIR)/tstClipboardX11-2.run
 
 $$(tstClipboardX11-2_0_OUTDIR)/tstClipboardX11-2.run: $$(tstClipboardX11-2_1_STAGE_TARGET)
 	export VBOX_LOG_DEST=nofile; $(tstClipboardX11-2_1_STAGE_TARGET) quiet

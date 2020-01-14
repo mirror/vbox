@@ -30,6 +30,9 @@ CAPISamples_SOURCES = \
 	tstCAPIGlue.c \
 	makefile.tstCAPIGlue=>Makefile
 
+#
+# The ???.
+#
 INSTALLS += CAPIGlue
 CAPIGlue_MODE = a+r,u+rw
 CAPIGlue_INST = \
@@ -37,14 +40,8 @@ CAPIGlue_INST = \
 CAPIGlue_SOURCES = \
 	VBoxCAPIGlue.c \
 	$(CAPIHeaders_0_OUTDIR)/VBoxCAPIGlue.h
-
-INSTALLS += CAPIHeaders
-CAPIHeaders_MODE = a+r,u+rw
-CAPIHeaders_INST = $(INST_SDK)bindings/c/include/
-CAPIHeaders_SOURCES = \
-	$(CAPIHeaders_0_OUTDIR)/VBoxCAPI.h=>VBoxCAPI_v$(VBOX_API_VERSION).h
-CAPIHeaders_CLEAN = \
-	$(CAPIHeaders_0_OUTDIR)/VBoxCAPI.h
+CAPIGlue_CLEAN = \
+	$(CAPIHeaders_0_OUTDIR)/VBoxCAPIGlue.h
 
 $$(CAPIHeaders_0_OUTDIR)/VBoxCAPIGlue.h: \
 		$(PATH_SUB_CURRENT)/VBoxCAPIGlue.h.in \
@@ -54,6 +51,17 @@ $$(CAPIHeaders_0_OUTDIR)/VBoxCAPIGlue.h: \
 	$(QUIET)$(SED) \
 		-e 's/@VBOX_API_VERSION@/$(VBOX_API_VERSION)/' \
 		<  $< >  $@
+
+#
+# The ???.
+#
+INSTALLS += CAPIHeaders
+CAPIHeaders_MODE = a+r,u+rw
+CAPIHeaders_INST = $(INST_SDK)bindings/c/include/
+CAPIHeaders_SOURCES = \
+	$(CAPIHeaders_0_OUTDIR)/VBoxCAPI.h=>VBoxCAPI_v$(VBOX_API_VERSION).h
+CAPIHeaders_CLEAN = \
+	$(CAPIHeaders_0_OUTDIR)/VBoxCAPI.h
 
 $$(CAPIHeaders_0_OUTDIR)/VBoxCAPI.h: \
 		$(PATH_SUB_CURRENT)/capiidl.xsl \

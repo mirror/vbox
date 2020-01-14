@@ -141,6 +141,8 @@ endif
 		$(call VBOX_SUP_GEN_CERT_MACRO,AppleRoot,AppleRoot%) \
 		$(call VBOX_SUP_GEN_CERT_MACRO,Trusted,TrustedCert%,build)
 
+OTHER_CLEAN += $(VBOX_SUP_WIN_CERTS_FILE)
+
 tst: $(VBOX_SUP_WIN_CERTS_FILE)
 
 

@@ -1569,10 +1569,8 @@ ifn1of ($(KBUILD_TARGET), os2) # breaks validationkit, figure out later.
  #$(call KB_FN_DO_PASS0_ON_TARGET,RuntimeR3)
 
  BLDDIRS += $(IPRT_OUT_DIR)/man/
- OTHER_CLEAN += \
- 	$(addprefix $(IPRT_OUT_DIR)/man/,$(IPRT_XML_REFENTRY_FILES)) \
- 	$(addprefix $(IPRT_OUT_DIR)/man/,$(patsubst %.xml,%.h,$(IPRT_XML_REFENTRY_FILES))) \
- 	$(addprefix $(IPRT_OUT_DIR)/man/,$(patsubst %.xml,%.h.ts,$(IPRT_XML_REFENTRY_FILES)))
+ OTHER_CLEAN += $(foreach xml,$(basename $(notdir $(IPRT_XML_REFENTRY_FILES))), \
+ 	$(IPRT_OUT_DIR)/man/$(xml).xml $(IPRT_OUT_DIR)/man/$(xml).h $(IPRT_OUT_DIR)/man/$(xml).h.ts)
 
 
  include $(PATH_ROOT)/doc/manual/Config.kmk
