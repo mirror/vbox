@@ -119,8 +119,10 @@ typedef enum RTFTPSERVER_REPLY
 {
     /** Invalid reply type, do not use. */
     RTFTPSERVER_REPLY_INVALID                        = 0,
+    /** Data connection already open. */
+    RTFTPSERVER_REPLY_DATACONN_ALREADY_OPEN          = 125,
     /** Command okay. */
-    RTFTPSERVER_REPLY_FILE_STATUS_OKAY               = 150,
+    RTFTPSERVER_REPLY_FILE_STS_OK_OPENING_DATA_CONN  = 150,
     /** Command okay. */
     RTFTPSERVER_REPLY_OKAY                           = 200,
     /** Command not implemented, superfluous at this site. */
@@ -133,16 +135,24 @@ typedef enum RTFTPSERVER_REPLY
     RTFTPSERVER_REPLY_CLOSING_CTRL_CONN              = 221,
     /** Closing data connection. */
     RTFTPSERVER_REPLY_CLOSING_DATA_CONN              = 226,
+    /** Requested file action okay, completed. */
+    RTFTPSERVER_REPLY_FILE_ACTION_OKAY_COMPLETED     = 250,
     /** "PATHNAME" ok (created / exists). */
     RTFTPSERVER_REPLY_PATHNAME_OK                    = 257,
     /** User logged in, proceed. */
     RTFTPSERVER_REPLY_LOGGED_IN_PROCEED              = 230,
     /** User name okay, need password. */
     RTFTPSERVER_REPLY_USERNAME_OKAY_NEED_PASSWORD    = 331,
+    /** Service not available, closing control connection. */
+    RTFTPSERVER_REPLY_SVC_NOT_AVAIL_CLOSING_CTRL_CONN = 421,
     /** Can't open data connection. */
     RTFTPSERVER_REPLY_CANT_OPEN_DATA_CONN            = 425,
     /** Connection closed; transfer aborted. */
     RTFTPSERVER_REPLY_CONN_CLOSED_TRANSFER_ABORTED   = 426,
+    /** Requested file action not taken. */
+    RTFTPSERVER_REPLY_CONN_REQ_FILE_ACTION_NOT_TAKEN = 450,
+    /** Requested action aborted; local error in processing. */
+    RTFTPSERVER_REPLY_ACTION_ABORTED_LOCAL_ERROR     = 451,
     /** Syntax error, command unrecognized. */
     RTFTPSERVER_REPLY_ERROR_CMD_NOT_RECOGNIZED       = 500,
     /** Syntax error in parameters or arguments. */

@@ -252,10 +252,11 @@ static DECLCALLBACK(int) onFileGetSize(PRTFTPCALLBACKDATA pData, const char *pcs
 
 static DECLCALLBACK(int) onFileStat(PRTFTPCALLBACKDATA pData, const char *pcszPath, PRTFSOBJINFO pFsObjInfo)
 {
-    RT_NOREF(pData);
+    PFTPSERVERDATA pThis = (PFTPSERVERDATA)pData->pvUser;
+    Assert(pData->cbUser == sizeof(FTPSERVERDATA));
 
     RTFILE hFile;
-    int rc = RTFileOpen(&hFile, pcszPath,
+    int rc = RTFileOpen(&hFile, pcszPath ? pcszPath : pThis->szCWD,
                         RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_WRITE);
     if (RT_SUCCESS(rc))
     {
@@ -308,6 +309,31 @@ static DECLCALLBACK(int) onList(PRTFTPCALLBACKDATA pData, const char *pcszPath, 
 {
     RT_NOREF(pData, pcszPath, pvData, cbData, pcbRead);
 
+#if 0
+    PFTPSERVERDATA pThis = (PFTPSERVERDATA)pData->pvUser;
+    Assert(pData->cbUser == sizeof(FTPSERVERDATA));
+
+    RTFILE hFile;
+    int rc = RTFileOpen(&hFile, pcszPath ? pcszPath : pThis->szCWD,
+                        RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_WRITE);
+    if (RT_SUCCESS(rc))
+    {
+        RTFSOBJINFO fsObjInfo;
+        rc = RTFileQueryInfo(hFile, &fsObjInfo, RTFSOBJATTRADD_NOTHING);
+        if (RT_SUCCESS(rc))
+        {
+            rc = fsObjInfoToStr(&fsObjInfo, (char *)pvData, cbData);
+        }
+
+        RTFileClose(hFile);
+    }
+#endif
+
+    RTStrPrintf((char *)pvData, cbData, "-rwxr-xr-x 1 johndoe users    0 Apr  6  2017 foobar\r\n");
+
+    *pcbRead = strlen((char *)pvData);
+
+    /** @todo We ASSUME we're done here for now. */
     return VINF_EOF;
 }
 
