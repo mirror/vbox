@@ -231,9 +231,9 @@ static int CommonDirRenameWrapper(const char *pszSrc, const char *pszDst, uint32
     for (;;)
     {
         int rc = RTDirRename(pszSrc, pszDst, fFlags);
-        if (   (   rc == VERR_ACCESS_DENIED
-                || rc == VERR_SHARING_VIOLATION)
-            && RTTimeNanoTS() - nsNow < RT_NS_15SEC)
+        if (   (   rc != VERR_ACCESS_DENIED
+                && rc != VERR_SHARING_VIOLATION)
+            || RTTimeNanoTS() - nsNow > RT_NS_15SEC)
             return rc;
         RTThreadSleep(128);
     }
