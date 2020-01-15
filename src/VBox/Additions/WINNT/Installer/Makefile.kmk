@@ -275,6 +275,7 @@ INSTALLS += RePackScriptsAddResources
 RePackScriptsAddResources_TEMPLATE = DUMMY
 RePackScriptsAddResources_INST = repack/add/resources/
 RePackScriptsAddResources_INSTTYPE = stage
+RePackScriptsAddResources_DIRS = Languages
 RePackScriptsAddResources_SOURCES = \
 	welcome.bmp \
 	$(VBOX_WINDOWS_ADDITIONS_ICON_FILE)=>VirtualBoxGA-vista.ico \
