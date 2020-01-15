@@ -154,11 +154,15 @@ typedef enum RTFTPSERVER_CMD
     RTFTPSERVER_CMD_32BIT_HACK = 0x7fffffff
 } RTFTPSERVER_CMD;
 
+struct RTFTPSERVERCLIENT;
+
 /**
  * Structure for maintaining a single data connection.
  */
 typedef struct RTFTPSERVERDATACONN
 {
+    /** Pointer to associated client of this data connection. */
+    RTFTPSERVERCLIENT          *pClient;
     /** Data connection IP. */
     RTNETADDRIPV4               Addr;
     /** Data connection port number. */
@@ -174,10 +178,13 @@ typedef struct RTFTPSERVERDATACONN
     volatile bool               fStop;
     /** Thread stopped indicator. */
     volatile bool               fStopped;
-    /** Overall result of data connection on stop. */
+    /** Overall result when closing the data connection. */
     int                         rc;
-    /** For now we only support sending a single file per active data connection. */
-    char                        szFile[RTPATH_MAX];
+    /** Number of command arguments. */
+    uint8_t                     cArgs;
+    /** Command arguments array. Optional and can be NULL.
+     *  Will be free'd by the data connection thread. */
+    char**                      papszArgs;
 } RTFTPSERVERDATACONN;
 /** Pointer to a data connection struct. */
 typedef RTFTPSERVERDATACONN *PRTFTPSERVERDATACONN;
@@ -195,7 +202,7 @@ typedef struct RTFTPSERVERCLIENT
     RTFTPSERVERCLIENTSTATE      State;
     /** Data connection information.
      *  At the moment we only allow one data connection per client at a time. */
-    RTFTPSERVERDATACONN         DataConn;
+    PRTFTPSERVERDATACONN        pDataConn;
 } RTFTPSERVERCLIENT;
 /** Pointer to an internal FTP server client state. */
 typedef RTFTPSERVERCLIENT *PRTFTPSERVERCLIENT;
@@ -266,8 +273,12 @@ typedef FNRTFTPSERVERCMD *PFNRTFTPSERVERCMD;
 *   Defined Constants And Macros                                                                                                 *
 *********************************************************************************************************************************/
 
-static void rtFtpServerDataConnReset(PRTFTPSERVERDATACONN pDataConn);
 static int rtFtpServerDataConnOpen(PRTFTPSERVERDATACONN pDataConn, PRTNETADDRIPV4 pAddr, uint16_t uPort);
+static void rtFtpServerDataConnReset(PRTFTPSERVERDATACONN pDataConn);
+static int rtFtpServerDataConnStart(PRTFTPSERVERDATACONN pDataConn, PFNRTTHREAD pfnThread,
+                                    uint8_t cArgs, const char * const *apcszArgs);
+static int rtFtpServerDataConnDestroy(PRTFTPSERVERDATACONN pDataConn);
+
 static void rtFtpServerClientStateReset(PRTFTPSERVERCLIENTSTATE pState);
 
 /**
@@ -292,7 +303,6 @@ static FNRTFTPSERVERCMD rtFtpServerHandleSYST;
 static FNRTFTPSERVERCMD rtFtpServerHandleTYPE;
 static FNRTFTPSERVERCMD rtFtpServerHandleUSER;
 
-
 /**
  * Structure for maintaining a single command entry for the command table.
  */
@@ -302,34 +312,38 @@ typedef struct RTFTPSERVER_CMD_ENTRY
     RTFTPSERVER_CMD    enmCmd;
     /** Command represented as ASCII string. */
     char               szCmd[RTFTPSERVER_MAX_CMD_LEN];
+    /** Whether the commands needs a logged in (valid) user. */
+    bool               fNeedsUser;
     /** Function pointer invoked to handle the command. */
     PFNRTFTPSERVERCMD  pfnCmd;
 } RTFTPSERVER_CMD_ENTRY;
+/** Pointer to a command entry. */
+typedef RTFTPSERVER_CMD_ENTRY *PRTFTPSERVER_CMD_ENTRY;
 
 /**
  * Table of handled commands.
  */
 const RTFTPSERVER_CMD_ENTRY g_aCmdMap[] =
 {
-    { RTFTPSERVER_CMD_ABOR,     "ABOR",         rtFtpServerHandleABOR },
-    { RTFTPSERVER_CMD_CDUP,     "CDUP",         rtFtpServerHandleCDUP },
-    { RTFTPSERVER_CMD_CWD,      "CWD",          rtFtpServerHandleCWD  },
-    { RTFTPSERVER_CMD_FEAT,     "FEAT",         rtFtpServerHandleFEAT },
-    { RTFTPSERVER_CMD_LIST,     "LIST",         rtFtpServerHandleLIST },
-    { RTFTPSERVER_CMD_MODE,     "MODE",         rtFtpServerHandleMODE },
-    { RTFTPSERVER_CMD_NOOP,     "NOOP",         rtFtpServerHandleNOOP },
-    { RTFTPSERVER_CMD_PASS,     "PASS",         rtFtpServerHandlePASS },
-    { RTFTPSERVER_CMD_PORT,     "PORT",         rtFtpServerHandlePORT },
-    { RTFTPSERVER_CMD_PWD,      "PWD",          rtFtpServerHandlePWD  },
-    { RTFTPSERVER_CMD_QUIT,     "QUIT",         rtFtpServerHandleQUIT },
-    { RTFTPSERVER_CMD_RETR,     "RETR",         rtFtpServerHandleRETR },
-    { RTFTPSERVER_CMD_SIZE,     "SIZE",         rtFtpServerHandleSIZE },
-    { RTFTPSERVER_CMD_STAT,     "STAT",         rtFtpServerHandleSTAT },
-    { RTFTPSERVER_CMD_STRU,     "STRU",         rtFtpServerHandleSTRU },
-    { RTFTPSERVER_CMD_SYST,     "SYST",         rtFtpServerHandleSYST },
-    { RTFTPSERVER_CMD_TYPE,     "TYPE",         rtFtpServerHandleTYPE },
-    { RTFTPSERVER_CMD_USER,     "USER",         rtFtpServerHandleUSER },
-    { RTFTPSERVER_CMD_LAST,     "",             NULL }
+    { RTFTPSERVER_CMD_ABOR,     "ABOR", true,  rtFtpServerHandleABOR },
+    { RTFTPSERVER_CMD_CDUP,     "CDUP", true,  rtFtpServerHandleCDUP },
+    { RTFTPSERVER_CMD_CWD,      "CWD",  true,  rtFtpServerHandleCWD  },
+    { RTFTPSERVER_CMD_FEAT,     "FEAT", true,  rtFtpServerHandleFEAT },
+    { RTFTPSERVER_CMD_LIST,     "LIST", true,  rtFtpServerHandleLIST },
+    { RTFTPSERVER_CMD_MODE,     "MODE", true,  rtFtpServerHandleMODE },
+    { RTFTPSERVER_CMD_NOOP,     "NOOP", true,  rtFtpServerHandleNOOP },
+    { RTFTPSERVER_CMD_PASS,     "PASS", false, rtFtpServerHandlePASS },
+    { RTFTPSERVER_CMD_PORT,     "PORT", true,  rtFtpServerHandlePORT },
+    { RTFTPSERVER_CMD_PWD,      "PWD",  true,  rtFtpServerHandlePWD  },
+    { RTFTPSERVER_CMD_QUIT,     "QUIT", false, rtFtpServerHandleQUIT },
+    { RTFTPSERVER_CMD_RETR,     "RETR", true,  rtFtpServerHandleRETR },
+    { RTFTPSERVER_CMD_SIZE,     "SIZE", true,  rtFtpServerHandleSIZE },
+    { RTFTPSERVER_CMD_STAT,     "STAT", true,  rtFtpServerHandleSTAT },
+    { RTFTPSERVER_CMD_STRU,     "STRU", true,  rtFtpServerHandleSTRU },
+    { RTFTPSERVER_CMD_SYST,     "SYST", false, rtFtpServerHandleSYST },
+    { RTFTPSERVER_CMD_TYPE,     "TYPE", true,  rtFtpServerHandleTYPE },
+    { RTFTPSERVER_CMD_USER,     "USER", false, rtFtpServerHandleUSER },
+    { RTFTPSERVER_CMD_LAST,     "",     false, NULL }
 };
 
 /** Feature string which represents all commands we support in addition to RFC 959.
@@ -611,6 +625,61 @@ static int rtFtpParseHostAndPort(const char *pcszStr, PRTNETADDRIPV4 pAddr, uint
 }
 
 /**
+ * Duplicates a command argument vector.
+ *
+ * @returns Duplicated argument vector or NULL if failed or no arguments given. Needs to be free'd with rtFtpCmdArgsFree().
+ * @param   cArgs               Number of arguments in argument vector.
+ * @param   papcszArgs          Pointer to argument vector to duplicate.
+ */
+static char** rtFtpCmdArgsDup(uint8_t cArgs, const char * const *apcszArgs)
+{
+    if (!cArgs)
+        return NULL;
+
+    char **apcszArgsDup = (char **)RTMemAlloc(cArgs * sizeof(char *));
+    if (!apcszArgsDup)
+    {
+        AssertFailed();
+        return NULL;
+    }
+
+    int rc2 = VINF_SUCCESS;
+
+    uint8_t i;
+    for (i = 0; i < cArgs; i++)
+    {
+        apcszArgsDup[i] = RTStrDup(apcszArgs[i]);
+        if (!apcszArgsDup[i])
+            rc2 = VERR_NO_MEMORY;
+    }
+
+    if (RT_FAILURE(rc2))
+    {
+        while (i--)
+            RTStrFree(apcszArgsDup[i]);
+
+        RTMemFree(apcszArgsDup);
+        return NULL;
+    }
+
+    return apcszArgsDup;
+}
+
+/**
+ * Frees a command argument vector.
+ *
+ * @param   cArgs               Number of arguments in argument vector.
+ * @param   papcszArgs          Pointer to argument vector to free.
+ */
+static void rtFtpCmdArgsFree(uint8_t cArgs, char **papcszArgs)
+{
+    while (cArgs--)
+        RTStrFree(papcszArgs[cArgs]);
+
+    RTMemFree(papcszArgs);
+}
+
+/**
  * Opens a data connection to the client.
  *
  * @returns VBox status code.
@@ -673,38 +742,39 @@ static int rtFtpServerDataConnWrite(PRTFTPSERVERDATACONN pDataConn, const void *
 }
 
 /**
- * Thread serving a data connection.
+ * Data connection thread for writing (sending) a file to the client.
  *
  * @returns VBox status code.
  * @param   ThreadSelf          Thread handle. Unused at the moment.
  * @param   pvUser              Pointer to user-provided data. Of type PRTFTPSERVERCLIENT.
  */
-static DECLCALLBACK(int) rtFtpServerDataConnThread(RTTHREAD ThreadSelf, void *pvUser)
+static DECLCALLBACK(int) rtFtpServerDataConnFileWriteThread(RTTHREAD ThreadSelf, void *pvUser)
 {
     RT_NOREF(ThreadSelf);
 
     PRTFTPSERVERCLIENT pClient = (PRTFTPSERVERCLIENT)pvUser;
     AssertPtr(pClient);
 
-    PRTFTPSERVERDATACONN pDataConn = &pClient->DataConn;
+    PRTFTPSERVERDATACONN pDataConn = pClient->pDataConn;
+    AssertPtr(pDataConn);
 
     LogFlowFuncEnter();
-
-    int rc = rtFtpServerDataConnOpen(pDataConn, &pDataConn->Addr, pDataConn->uPort);
-    if (RT_FAILURE(rc))
-        return rc;
 
     uint32_t cbBuf = _64K; /** @todo Improve this. */
     void *pvBuf = RTMemAlloc(cbBuf);
     if (!pvBuf)
         return VERR_NO_MEMORY;
 
+    int rc;
+
     /* Set start indicator. */
     pDataConn->fStarted = true;
 
     RTThreadUserSignal(RTThreadSelf());
 
-    const char *pcszFile = pDataConn->szFile;
+    AssertPtr(pDataConn->papszArgs);
+    const char *pcszFile = pDataConn->papszArgs[0];
+    AssertPtr(pcszFile);
 
     void *pvHandle = NULL; /* Opaque handle known to the actual implementation. */
 
@@ -737,8 +807,6 @@ static DECLCALLBACK(int) rtFtpServerDataConnThread(RTTHREAD ThreadSelf, void *pv
         LogFlowFunc(("Transfer done\n"));
     }
 
-    rtFtpServerDataConnClose(pDataConn);
-
     RTMemFree(pvBuf);
     pvBuf = NULL;
 
@@ -750,58 +818,131 @@ static DECLCALLBACK(int) rtFtpServerDataConnThread(RTTHREAD ThreadSelf, void *pv
 }
 
 /**
- * Opens a data connection to the client.
+ * Creates a data connection.
  *
  * @returns VBox status code.
- * @param   pClient             Client to open data connection for.
- * @param   pDataConn           Data connection to open.
+ * @param   pClient             Client to create data connection for.
+ * @param   ppDataConn          Where to return the (allocated) data connection.
  */
-static int rtFtpServerDataConnCreate(PRTFTPSERVERCLIENT pClient, PRTFTPSERVERDATACONN pDataConn)
+static int rtFtpServerDataConnCreate(PRTFTPSERVERCLIENT pClient, PRTFTPSERVERDATACONN *ppDataConn)
 {
-    int rc = RTThreadCreate(&pDataConn->hThread, rtFtpServerDataConnThread,
-                            pClient, 0, RTTHREADTYPE_DEFAULT, RTTHREADFLAGS_WAITABLE,
-                            "ftpdata");
-    if (RT_SUCCESS(rc))
-    {
-        int rc2 = RTThreadUserWait(pDataConn->hThread, 30 * 1000 /* Timeout in ms */);
-        AssertRC(rc2);
+    if (pClient->pDataConn)
+        return VERR_FTP_DATA_CONN_LIMIT_REACHED;
 
-        if (!pDataConn->fStarted) /* Did the thread indicate that it started correctly? */
-            rc = VERR_GENERAL_FAILURE; /** @todo Fudge! */
+    PRTFTPSERVERDATACONN pDataConn = (PRTFTPSERVERDATACONN)RTMemAllocZ(sizeof(RTFTPSERVERDATACONN));
+    if (!pDataConn)
+        return VERR_NO_MEMORY;
+
+    rtFtpServerDataConnReset(pDataConn);
+
+    pDataConn->pClient = pClient;
+
+    *ppDataConn = pDataConn;
+
+    LogFlowFuncLeaveRC(VINF_SUCCESS);
+    return VINF_SUCCESS;
+}
+
+/**
+ * Starts a data connection.
+ *
+ * @returns VBox status code.
+ * @param   pClient             Client to start data connection for.
+ * @param   pfnThread           Pointer to thread function to use.
+ * @param   cArgs               Number of arguments.
+ * @param   apcszArgs           Array of arguments.
+ */
+static int rtFtpServerDataConnStart(PRTFTPSERVERDATACONN pDataConn, PFNRTTHREAD pfnThread,
+                                    uint8_t cArgs, const char * const *apcszArgs)
+{
+    AssertPtrReturn(pDataConn, VERR_INVALID_POINTER);
+    AssertPtrReturn(pfnThread, VERR_INVALID_POINTER);
+
+    AssertReturn(!pDataConn->fStarted, VERR_WRONG_ORDER);
+    AssertReturn(!pDataConn->fStop,    VERR_WRONG_ORDER);
+    AssertReturn(!pDataConn->fStopped, VERR_WRONG_ORDER);
+
+    int rc = VINF_SUCCESS;
+
+    if (cArgs)
+    {
+        pDataConn->papszArgs = rtFtpCmdArgsDup(cArgs, apcszArgs);
+        if (!pDataConn->papszArgs)
+            rc = VERR_NO_MEMORY;
     }
 
+    if (RT_SUCCESS(rc))
+    {
+        pDataConn->cArgs = cArgs;
+
+        rc = rtFtpServerDataConnOpen(pDataConn, &pDataConn->Addr, pDataConn->uPort);
+        if (RT_SUCCESS(rc))
+        {
+            rc = RTThreadCreate(&pDataConn->hThread, pfnThread,
+                                pDataConn->pClient, 0, RTTHREADTYPE_DEFAULT, RTTHREADFLAGS_WAITABLE,
+                                "ftpdata");
+            if (RT_SUCCESS(rc))
+            {
+                int rc2 = RTThreadUserWait(pDataConn->hThread, 30 * 1000 /* Timeout in ms */);
+                AssertRC(rc2);
+
+                if (!pDataConn->fStarted) /* Did the thread indicate that it started correctly? */
+                    rc = VERR_FTP_DATA_CONN_INIT_FAILED;
+            }
+
+            if (RT_FAILURE(rc))
+                rtFtpServerDataConnClose(pDataConn);
+        }
+    }
+
+    if (RT_FAILURE(rc))
+    {
+        rtFtpCmdArgsFree(pDataConn->cArgs, pDataConn->papszArgs);
+
+        pDataConn->cArgs     = 0;
+        pDataConn->papszArgs = NULL;
+    }
+
+    LogFlowFuncLeaveRC(rc);
     return rc;
 }
 
 /**
- * Closes a data connection to the client.
+ * Destroys a data connection.
  *
  * @returns VBox status code.
- * @param   pClient             Client to close data connection for.
- * @param   pDataConn           Data connection to close.
+ * @param   pDataConn           Data connection to destroy. The pointer is not valid anymore after successful return.
  */
-static int rtFtpServerDataConnDestroy(PRTFTPSERVERCLIENT pClient, PRTFTPSERVERDATACONN pDataConn)
+static int rtFtpServerDataConnDestroy(PRTFTPSERVERDATACONN pDataConn)
 {
-    RT_NOREF(pClient);
-
-    if (pDataConn->hThread == NIL_RTTHREAD)
+    if (!pDataConn)
         return VINF_SUCCESS;
 
     LogFlowFuncEnter();
 
-    /* Set stop indicator. */
-    pDataConn->fStop = true;
+    int rc = VINF_SUCCESS;
 
-    int rcThread = VERR_WRONG_ORDER;
-    int rc = RTThreadWait(pDataConn->hThread, 30 * 1000 /* Timeout in ms */, &rcThread);
+    if (pDataConn->hThread != NIL_RTTHREAD)
+    {
+        /* Set stop indicator. */
+        pDataConn->fStop = true;
+
+        int rcThread = VERR_WRONG_ORDER;
+        rc = RTThreadWait(pDataConn->hThread, 30 * 1000 /* Timeout in ms */, &rcThread);
+    }
+
     if (RT_SUCCESS(rc))
     {
         rtFtpServerDataConnClose(pDataConn);
-        rtFtpServerDataConnReset(pDataConn);
+        rtFtpCmdArgsFree(pDataConn->cArgs, pDataConn->papszArgs);
 
-        rc = rcThread;
+        RTMemFree(pDataConn);
+        pDataConn = NULL;
+
+        /** @todo Also check / handle rcThread? */
     }
 
+    LogFlowFuncLeaveRC(rc);
     return rc;
 }
 
@@ -833,9 +974,13 @@ static int rtFtpServerHandleABOR(PRTFTPSERVERCLIENT pClient, uint8_t cArgs, cons
 {
     RT_NOREF(cArgs, apcszArgs);
 
-    int rc = rtFtpServerDataConnDestroy(pClient, &pClient->DataConn);
+    int rc = rtFtpServerDataConnDestroy(pClient->pDataConn);
     if (RT_SUCCESS(rc))
+    {
+        pClient->pDataConn = NULL;
+
         rc = rtFtpServerSendReplyRc(pClient, RTFTPSERVER_REPLY_OKAY);
+    }
 
     return rc;
 }
@@ -884,24 +1029,87 @@ static int rtFtpServerHandleFEAT(PRTFTPSERVERCLIENT pClient, uint8_t cArgs, cons
     return rc;
 }
 
-static int rtFtpServerHandleLIST(PRTFTPSERVERCLIENT pClient, uint8_t cArgs, const char * const *apcszArgs)
+/**
+ * Thread for handling the LIST command's output in a separate data connection.
+ *
+ * @returns VBox status code.
+ * @param   ThreadSelf          Thread handle. Unused.
+ * @param   pvUser              User-provided arguments. Of type PRTFTPSERVERCLIENT.
+ */
+static DECLCALLBACK(int) rtFtpServerDataConnListThread(RTTHREAD ThreadSelf, void *pvUser)
 {
-    RT_NOREF(cArgs, apcszArgs);
+    RT_NOREF(ThreadSelf);
+
+    PRTFTPSERVERCLIENT pClient = (PRTFTPSERVERCLIENT)pvUser;
+    AssertPtr(pClient);
+
+    PRTFTPSERVERDATACONN pDataConn = pClient->pDataConn;
+    AssertPtr(pDataConn);
+
+    LogFlowFuncEnter();
+
+    uint32_t cbBuf = _64K; /** @todo Improve this. */
+    void *pvBuf = RTMemAlloc(cbBuf);
+    if (!pvBuf)
+        return VERR_NO_MEMORY;
 
     int rc;
 
-    void   *pvData = NULL;
-    size_t  cbData = 0;
+    /* Set start indicator. */
+    pDataConn->fStarted = true;
 
-    /* The first argument might indicate a directory to list. */
-    RTFTPSERVER_HANDLE_CALLBACK_VA(pfnOnList,
-                                     cArgs == 1
-                                   ? apcszArgs[0] : NULL, &pvData, &cbData);
+    RTThreadUserSignal(RTThreadSelf());
 
-    if (RT_SUCCESS(rc))
+    for (;;)
     {
-        RTMemFree(pvData);
+        /* The first argument might indicate a directory to list.
+         * If no argument is given, the implementation must use the last directory set. */
+        size_t cbRead = 0;
+        RTFTPSERVER_HANDLE_CALLBACK_VA(pfnOnList,
+                                         pDataConn->cArgs == 1
+                                       ? pDataConn->papszArgs[0] : NULL, pvBuf, cbBuf, &cbRead);
+        if (RT_SUCCESS(rc))
+        {
+            int rc2 = rtFtpServerDataConnWrite(pDataConn, pvBuf, cbRead, NULL /* pcbWritten */);
+            AssertRC(rc2);
+
+            if (rc == VINF_EOF)
+                break;
+        }
+        else
+            break;
+
+        if (ASMAtomicReadBool(&pDataConn->fStop))
+            break;
     }
+
+    RTMemFree(pvBuf);
+    pvBuf = NULL;
+
+    pDataConn->fStopped = true;
+    pDataConn->rc       = rc;
+
+    LogFlowFuncLeaveRC(rc);
+    return rc;
+}
+
+static int rtFtpServerHandleLIST(PRTFTPSERVERCLIENT pClient, uint8_t cArgs, const char * const *apcszArgs)
+{
+    int rc;
+
+    /* Note: Data connection gets created when the PORT command was sent. */
+    if (pClient->pDataConn)
+    {
+        rc = rtFtpServerDataConnStart(pClient->pDataConn, rtFtpServerDataConnListThread, cArgs, apcszArgs);
+    }
+    else
+        rc = VERR_FTP_DATA_CONN_NOT_FOUND;
+
+    int rc2 = rtFtpServerSendReplyRc(pClient,   RT_SUCCESS(rc)
+                                     ? RTFTPSERVER_REPLY_PATHNAME_OK
+                                     : RTFTPSERVER_REPLY_CANT_OPEN_DATA_CONN);
+    if (RT_SUCCESS(rc))
+        rc = rc2;
 
     return rc;
 }
@@ -954,16 +1162,24 @@ static int rtFtpServerHandlePORT(PRTFTPSERVERCLIENT pClient, uint8_t cArgs, cons
     if (cArgs != 1)
         return rtFtpServerSendReplyRc(pClient, RTFTPSERVER_REPLY_ERROR_INVALID_PARAMETERS);
 
-    /* Only allow one data connection per client at a time. */
-    rtFtpServerDataConnClose(&pClient->DataConn);
-
-    int rc = rtFtpParseHostAndPort(apcszArgs[0], &pClient->DataConn.Addr, &pClient->DataConn.uPort);
+    PRTFTPSERVERDATACONN pDataConn;
+    int rc = rtFtpServerDataConnCreate(pClient, &pDataConn);
     if (RT_SUCCESS(rc))
     {
-        rc = rtFtpServerSendReplyRc(pClient, RTFTPSERVER_REPLY_OKAY);
+        pClient->pDataConn = pDataConn;
+
+        rc = rtFtpParseHostAndPort(apcszArgs[0], &pDataConn->Addr, &pDataConn->uPort);
+        if (RT_SUCCESS(rc))
+        {
+            rc = rtFtpServerSendReplyRc(pClient, RTFTPSERVER_REPLY_OKAY);
+        }
     }
-    else
-        rc = rtFtpServerSendReplyRc(pClient, RTFTPSERVER_REPLY_CANT_OPEN_DATA_CONN);
+
+    if (RT_FAILURE(rc))
+    {
+        int rc2 = rtFtpServerSendReplyRc(pClient, RTFTPSERVER_REPLY_CANT_OPEN_DATA_CONN);
+        AssertRC(rc2);
+    }
 
     return rc;
 }
@@ -979,7 +1195,7 @@ static int rtFtpServerHandlePWD(PRTFTPSERVERCLIENT pClient, uint8_t cArgs, const
     RTFTPSERVER_HANDLE_CALLBACK_VA(pfnOnPathGetCurrent, szPWD, sizeof(szPWD));
 
     if (RT_SUCCESS(rc))
-       rc = rtFtpServerSendReplyStr(pClient, szPWD);
+       rc = rtFtpServerSendReplyRcEx(pClient, RTFTPSERVER_REPLY_PATHNAME_OK, "\"%s\"", szPWD); /* See RFC 959, APPENDIX II. */
 
     return rc;
 }
@@ -988,12 +1204,16 @@ static int rtFtpServerHandleQUIT(PRTFTPSERVERCLIENT pClient, uint8_t cArgs, cons
 {
     RT_NOREF(cArgs, apcszArgs);
 
-    return rtFtpServerDataConnDestroy(pClient, &pClient->DataConn);
+    int rc = rtFtpServerDataConnDestroy(pClient->pDataConn);
+    if (RT_SUCCESS(rc))
+        pClient->pDataConn = NULL;
+
+    return rc;
 }
 
 static int rtFtpServerHandleRETR(PRTFTPSERVERCLIENT pClient, uint8_t cArgs, const char * const *apcszArgs)
 {
-    if (cArgs != 1)
+    if (cArgs != 1) /* File name needs to be present. */
         return VERR_INVALID_PARAMETER;
 
     int rc;
@@ -1004,15 +1224,15 @@ static int rtFtpServerHandleRETR(PRTFTPSERVERCLIENT pClient, uint8_t cArgs, cons
 
     if (RT_SUCCESS(rc))
     {
-        rc = rtFtpServerSendReplyRc(pClient, RTFTPSERVER_REPLY_FILE_STATUS_OKAY);
-        if (RT_SUCCESS(rc))
+        if (pClient->pDataConn)
         {
-            rc = RTStrCopy(pClient->DataConn.szFile, sizeof(pClient->DataConn.szFile), pcszPath);
+            /* Note: Data connection gets created when the PORT command was sent. */
+            rc = rtFtpServerDataConnStart(pClient->pDataConn, rtFtpServerDataConnFileWriteThread, cArgs, apcszArgs);
             if (RT_SUCCESS(rc))
-            {
-                rc = rtFtpServerDataConnCreate(pClient, &pClient->DataConn);
-            }
+                rc = rtFtpServerSendReplyRc(pClient, RTFTPSERVER_REPLY_FILE_STATUS_OKAY);
         }
+        else
+            rc = VERR_FTP_DATA_CONN_NOT_FOUND;
     }
 
     if (RT_FAILURE(rc))
@@ -1251,6 +1471,9 @@ static int rtFtpServerProcessCommands(PRTFTPSERVERCLIENT pClient, char *pcszCmd,
     if (pszCmdEnd)
         *pszCmdEnd = '\0';
 
+    /* Reply which gets sent back to the client. */
+    RTFTPSERVER_REPLY rcClient = RTFTPSERVER_REPLY_INVALID;
+
     int rcCmd = VINF_SUCCESS;
 
     uint8_t cArgs     = 0;
@@ -1264,12 +1487,43 @@ static int rtFtpServerProcessCommands(PRTFTPSERVERCLIENT pClient, char *pcszCmd,
         unsigned i = 0;
         for (; i < RT_ELEMENTS(g_aCmdMap); i++)
         {
-            if (!RTStrICmp(papszArgs[0], g_aCmdMap[i].szCmd))
+            const RTFTPSERVER_CMD_ENTRY *pCmdEntry = &g_aCmdMap[i];
+
+            if (!RTStrICmp(papszArgs[0], pCmdEntry->szCmd))
             {
+                /* Some commands need a valid user before they can be executed. */
+                if (   pCmdEntry->fNeedsUser
+                    && pClient->State.pszUser == NULL)
+                {
+                    rcClient = RTFTPSERVER_REPLY_NOT_LOGGED_IN;
+                    break;
+                }
+
                 /* Save timestamp of last command sent. */
                 pClient->State.tsLastCmdMs = RTTimeMilliTS();
 
-                rcCmd = g_aCmdMap[i].pfnCmd(pClient, cArgs - 1, cArgs > 1 ? &papszArgs[1] : NULL);
+                /* Hand in arguments only without the actual command. */
+                rcCmd = pCmdEntry->pfnCmd(pClient, cArgs - 1, cArgs > 1 ? &papszArgs[1] : NULL);
+                if (RT_FAILURE(rcCmd))
+                {
+                    LogFunc(("Handling command '%s' failed with %Rrc\n", papszArgs[0], rcCmd));
+
+                    switch (rcCmd)
+                    {
+                        case VERR_INVALID_PARAMETER:
+                            RT_FALL_THROUGH();
+                        case VERR_INVALID_POINTER:
+                            rcClient = RTFTPSERVER_REPLY_ERROR_INVALID_PARAMETERS;
+                            break;
+
+                        case VERR_NOT_IMPLEMENTED:
+                            rcClient = RTFTPSERVER_REPLY_ERROR_CMD_NOT_IMPL;
+                            break;
+
+                        default:
+                            break;
+                    }
+                }
                 break;
             }
         }
@@ -1278,45 +1532,27 @@ static int rtFtpServerProcessCommands(PRTFTPSERVERCLIENT pClient, char *pcszCmd,
 
         if (i == RT_ELEMENTS(g_aCmdMap))
         {
-            int rc2 = rtFtpServerSendReplyRc(pClient, RTFTPSERVER_REPLY_ERROR_CMD_NOT_IMPL);
-            if (RT_SUCCESS(rc))
-                rc = rc2;
-
             LogFlowFunc(("Command not implemented\n"));
-            return rc;
+            Assert(rcClient == RTFTPSERVER_REPLY_INVALID);
+            rcClient = RTFTPSERVER_REPLY_ERROR_CMD_NOT_IMPL;
         }
 
         const bool fDisconnect =    g_aCmdMap[i].enmCmd == RTFTPSERVER_CMD_QUIT
                                  || pClient->State.cFailedLoginAttempts >= 3; /** @todo Make this dynamic. */
         if (fDisconnect)
         {
-            int rc2 = rtFtpServerSendReplyRc(pClient, RTFTPSERVER_REPLY_CLOSING_CTRL_CONN);
-            if (RT_SUCCESS(rc))
-                rc = rc2;
-
             RTFTPSERVER_HANDLE_CALLBACK_VA(pfnOnUserDisconnect, pClient->State.pszUser);
-            return rc;
-        }
 
-        switch (rcCmd)
-        {
-            case VERR_INVALID_PARAMETER:
-                RT_FALL_THROUGH();
-            case VERR_INVALID_POINTER:
-                rc = rtFtpServerSendReplyRc(pClient, RTFTPSERVER_REPLY_ERROR_INVALID_PARAMETERS);
-                break;
-
-            case VERR_NOT_IMPLEMENTED:
-                rc = rtFtpServerSendReplyRc(pClient, RTFTPSERVER_REPLY_ERROR_CMD_NOT_IMPL);
-                break;
-
-            default:
-                break;
+            Assert(rcClient == RTFTPSERVER_REPLY_INVALID);
+            rcClient = RTFTPSERVER_REPLY_CLOSING_CTRL_CONN;
         }
     }
     else
+        rcClient = RTFTPSERVER_REPLY_ERROR_INVALID_PARAMETERS;
+
+    if (rcClient != RTFTPSERVER_REPLY_INVALID)
     {
-        int rc2 = rtFtpServerSendReplyRc(pClient, RTFTPSERVER_REPLY_ERROR_INVALID_PARAMETERS);
+        int rc2 = rtFtpServerSendReplyRc(pClient, rcClient);
         if (RT_SUCCESS(rc))
             rc = rc2;
     }
@@ -1358,27 +1594,37 @@ static int rtFtpServerProcessCommands(PRTFTPSERVERCLIENT pClient)
 
             if (RT_FAILURE(rc))
                 break;
+        }
 
-            PRTFTPSERVERDATACONN pDataConn = &pClient->DataConn;
-
-            if (   ASMAtomicReadBool(&pDataConn->fStarted)
-                && ASMAtomicReadBool(&pDataConn->fStopped))
+        /*
+         * Handle data connection replies.
+         */
+        if (pClient->pDataConn)
+        {
+            if (   ASMAtomicReadBool(&pClient->pDataConn->fStarted)
+                && ASMAtomicReadBool(&pClient->pDataConn->fStopped))
             {
-                Assert(pDataConn->rc != VERR_IPE_UNINITIALIZED_STATUS);
+                Assert(pClient->pDataConn->rc != VERR_IPE_UNINITIALIZED_STATUS);
 
-                rc = rtFtpServerSendReplyRc(pClient, RT_SUCCESS(pDataConn->rc)
+                rc = rtFtpServerSendReplyRc(pClient, RT_SUCCESS(pClient->pDataConn->rc)
                                                      ? RTFTPSERVER_REPLY_CLOSING_DATA_CONN
                                                      : RTFTPSERVER_REPLY_CONN_CLOSED_TRANSFER_ABORTED);
 
-                int rc2 = rtFtpServerDataConnDestroy(pClient, pDataConn);
+                int rc2 = rtFtpServerDataConnDestroy(pClient->pDataConn);
+                if (RT_SUCCESS(rc2))
+                    pClient->pDataConn = NULL;
+
                 if (RT_SUCCESS(rc))
                     rc = rc2;
             }
         }
     }
 
-    /* Make sure to close any open data connections. */
-    int rc2 = rtFtpServerDataConnDestroy(pClient, &pClient->DataConn);
+    /* Make sure to destroy all data connections. */
+    int rc2 = rtFtpServerDataConnDestroy(pClient->pDataConn);
+    if (RT_SUCCESS(rc2))
+        pClient->pDataConn = NULL;
+
     if (RT_SUCCESS(rc))
         rc = rc2;
 

@@ -133,6 +133,8 @@ typedef enum RTFTPSERVER_REPLY
     RTFTPSERVER_REPLY_CLOSING_CTRL_CONN              = 221,
     /** Closing data connection. */
     RTFTPSERVER_REPLY_CLOSING_DATA_CONN              = 226,
+    /** "PATHNAME" ok (created / exists). */
+    RTFTPSERVER_REPLY_PATHNAME_OK                    = 257,
     /** User logged in, proceed. */
     RTFTPSERVER_REPLY_LOGGED_IN_PROCEED              = 230,
     /** User name okay, need password. */
@@ -164,7 +166,7 @@ typedef enum RTFTPSERVER_REPLY
  */
 typedef struct RTFTPSERVERCLIENTSTATE
 {
-    /** User name. */
+    /** Authenticated user (name). If NULL, no user has been logged in (yet). */
     char                       *pszUser;
     /** Number of failed login attempts. */
     uint8_t                     cFailedLoginAttempts;
@@ -299,13 +301,14 @@ typedef struct RTFTPSERVERCALLBACKS
     /**
      * Callback which gets invoked when the client wants to list a directory or file.
      *
+     * @returns VBox status code. VINF_EOF if listing is complete.
      * @param   pData           Pointer to generic callback data.
      * @param   pcszPath        Path of file / directory to list. Optional. If NULL, the current directory will be listed.
-     * @param   ppvData         Where to return the listing data. Must be free'd by the caller.
-     * @param   pcbvData        Where to return the listing data size in bytes.
-     * @returns VBox status code.
+     * @param   pvData          Buffer where to return the listing data.
+     * @param   cbData          Size (in bytes) of buffer where to return the listing data.
+     * @param   pcbRead         How many bytes were read.
      */
-    DECLCALLBACKMEMBER(int,  pfnOnList)(PRTFTPCALLBACKDATA pData, const char *pcszPath, void **ppvData, size_t *pcbData);
+    DECLCALLBACKMEMBER(int,  pfnOnList)(PRTFTPCALLBACKDATA pData, const char *pcszPath, void *pvData, size_t cbData, size_t *pcbRead);
 } RTFTPSERVERCALLBACKS;
 /** Pointer to a FTP server callback data table. */
 typedef RTFTPSERVERCALLBACKS *PRTFTPSERVERCALLBACKS;

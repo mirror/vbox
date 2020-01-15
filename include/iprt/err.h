@@ -2715,6 +2715,16 @@
 #define VERR_FTP_STATUS_SERVER_ERROR                            (-26400)
 /** FTP initialization failed. */
 #define VERR_FTP_INIT_FAILED                                    (-26401)
+/** Data connection not found. */
+#define VERR_FTP_DATA_CONN_INIT_FAILED                          (-26402)
+/** Data connection not found. */
+#define VERR_FTP_DATA_CONN_NOT_FOUND                            (-26403)
+/** Data connection limit has been reached. */
+#define VERR_FTP_DATA_CONN_LIMIT_REACHED                        (-26404)
+/** Client not found. */
+#define VERR_FTP_CLIENT_NOT_FOUND                               (-26405)
+/** Client limit has been reached. */
+#define VERR_FTP_CLIENT_LIMIT_REACHED                           (-26406)
 /** @} */
 
 /* SED-END */
