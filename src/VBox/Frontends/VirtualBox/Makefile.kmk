@@ -1238,8 +1238,11 @@ VirtualBoxVM_SOURCES.darwin += \
 	src/platform/darwin/UIAbstractDockIconPreview.cpp \
 	src/platform/darwin/UICocoaDockIconPreview.mm
 
-VirtualBoxVM_SOURCES.win += \
-	src/platform/win/VirtualBoxVM.rc
+ifdef VBOX_WITH_HARDENING
+$(call VBOX_SET_VER_INFO_DLL,VirtualBoxVM,VirtualBox Virtual Machine (dll),$(VBOX_WINDOWS_ICON_FILE))
+else
+$(call VBOX_SET_VER_INFO_EXE,VirtualBoxVM,VirtualBox Virtual Machine,$(VBOX_WINDOWS_ICON_FILE))
+endif
 
 
 #
