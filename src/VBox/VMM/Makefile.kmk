@@ -270,10 +270,11 @@ endif
 #endif
 
 if "$(USERNAME)" == "bird" && "$(KBUILD_TARGET)" == "win"
-VBoxVMM_VMMAll/IEMAll.cpp_CXXFLAGS = /FAcs /Fa$(subst /,\\,$(outbase).cod)
-VBoxVMM_VMMAll/IEMAllAImplC.cpp_CXXFLAGS = /FAcs /Fa$(subst /,\\,$(outbase).cod)
-VBoxVMM_VMMAll/PGMAll.cpp_CXXFLAGS = /FAcs /Fa$(subst /,\\,$(outbase).cod)
+VBoxVMM_VMMAll/IEMAll.cpp_CXXFLAGS         = /FAcs /Fa$(subst /,\\,$(outbase).cod)
+VBoxVMM_VMMAll/IEMAllAImplC.cpp_CXXFLAGS   = /FAcs /Fa$(subst /,\\,$(outbase).cod)
+VBoxVMM_VMMAll/PGMAll.cpp_CXXFLAGS         = /FAcs /Fa$(subst /,\\,$(outbase).cod)
 VBoxVMM_VMMAll/PDMAllCritSect.cpp_CXXFLAGS = /FAcs /Fa$(subst /,\\,$(outbase).cod)
+VBoxVMM_CLEAN += $(addprefix $(VBoxVMM_0_OUTDIR)/VMMAll/, IEMAll.cod IEMAllAImplC.cod PGMAll.cod PDMAllCritSect.cod)
 endif
 
 $(call VBOX_SET_VER_INFO_DLL,VBoxVMM,VirtualBox VMM) # Version info / description.
@@ -568,9 +569,10 @@ VMMR0/NEMR0Native-win.cpp_SDKS.win = ReorderCompilerIncs $(VBOX_WINDDK) $(VBOX_W
 $(call VBOX_SET_VER_INFO_R0,VMMR0,VirtualBox VMM - ring-0 context parts) # Version info / description.
 
  if "$(USERNAME)" == "bird" && "$(KBUILD_TARGET)" == "win"
-VMMR0_VMMAll/IEMAll.cpp_CXXFLAGS = /FAcs /Fa$(subst /,\\,$(outbase).cod)
+VMMR0_VMMAll/IEMAll.cpp_CXXFLAGS       = /FAcs /Fa$(subst /,\\,$(outbase).cod)
 VMMR0_VMMAll/IEMAllAImplC.cpp_CXXFLAGS = /FAcs /Fa$(subst /,\\,$(outbase).cod)
-VMMR0_VMMAll/PGMAll.cpp_CXXFLAGS = /FAcs /Fa$(subst /,\\,$(outbase).cod)
+VMMR0_VMMAll/PGMAll.cpp_CXXFLAGS       = /FAcs /Fa$(subst /,\\,$(outbase).cod)
+VMMR0_CLEAN += $(addprefix $(VMMR0_0_OUTDIR)/VMMAll/, IEMAll.cod IEMAllAImplC.cod PGMAll.cod)
  endif
 
 VMMR0_INTERMEDIATES += $(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMInstructionStatisticsTmpl.h
