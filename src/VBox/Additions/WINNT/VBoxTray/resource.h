@@ -21,6 +21,6 @@
 # pragma once
 #endif
 
-#define IDI_VIRTUALBOX 101
+#define IDI_VIRTUALBOX 1
 
 #endif /* !GA_INCLUDED_SRC_WINNT_VBoxTray_resource_h */
