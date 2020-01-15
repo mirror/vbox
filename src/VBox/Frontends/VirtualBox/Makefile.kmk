@@ -54,11 +54,9 @@ include $(PATH_SUB_CURRENT)/nls/ApprovedLanguages.kmk
 #
 VirtualBoxHardenedVM_TEMPLATE = VBOXR3HARDENEDEXE
 VirtualBoxHardenedVM_SOURCES = src/hardenedmain.cpp
-VirtualBoxHardenedVM_SOURCES.win = src/platform/win/VirtualBoxHardenedVM.rc
 VirtualBoxHardenedVM_NAME = VirtualBoxVM
 VirtualBoxHardenedVM_LDFLAGS.win = /SUBSYSTEM:$(if-expr "$(KBUILD_TYPE)" != "release",console,windows)
-src/platform/win/VirtualBoxHardenedVM.rc_INCS  = $(VirtualBox_0_OUTDIR)
-src/platform/win/VirtualBoxHardenedVM.rc_DEPS  = $(VirtualBox_0_OUTDIR)/VirtualBox-icon.rc
+$(call VBOX_SET_VER_INFO_EXE,VirtualBoxHardenedVM,VirtualBox Virtual Machine,$(VBOX_WINDOWS_ICON_FILE))
 
 
 #
