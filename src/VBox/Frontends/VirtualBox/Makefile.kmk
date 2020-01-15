@@ -1144,7 +1144,6 @@ if1of ($(KBUILD_TARGET), freebsd linux netbsd openbsd solaris) # X11
 endif
 
 VirtualBox_SOURCES.win += \
-	src/platform/win/VirtualBox.rc \
 	src/platform/win/UIDesktopServices_win.cpp
 
 if defined(VBOX_WITH_VIDEOHWACCEL) || defined(VBOX_GUI_USE_QGL)
@@ -1153,6 +1152,8 @@ if defined(VBOX_WITH_VIDEOHWACCEL) || defined(VBOX_GUI_USE_QGL)
 	src/VBoxFBOverlay.cpp \
 	src/VBoxGLSupportInfo.cpp
 endif
+
+$(call VBOX_SET_VER_INFO_EXE,VirtualBox,VirtualBox Manager,$(VBOX_WINDOWS_ICON_FILE))
 
 
 #
