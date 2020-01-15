@@ -3340,11 +3340,12 @@ VBOX_EDIT_VERSION_AND_BUILD_CMD_FN = $(SED) \
 # @param    3        The output filename relative to the target output dir.
 #                    Optional, defaults to 2.
 #
-VBOX_EDIT_VERSION_AND_BUILD_RULE_FN = $(eval $(value VBOX_EDIT_VERSION_AND_BUILD_RULE_DEF))
+VBOX_EDIT_VERSION_AND_BUILD_RULE_FN = $(eval $(VBOX_EDIT_VERSION_AND_BUILD_RULE_DEF))
 define VBOX_EDIT_VERSION_AND_BUILD_RULE_DEF
-$$($(1)_0_OUTDIR)/$(if $(3),$(3),$(2)): $(PATH_SUB_CURRENT)/$(2) $(VBOX_SVN_REV_KMK) | $$(dir $$@)
-	$(call MSG_GENERATE,$(1),$@,$<)
-	$(QUIET)$(call VBOX_EDIT_VERSION_AND_BUILD_CMD_FN,$<,$@)
+$$$$($(1)_0_OUTDIR)/$(if $(3),$(3),$(2)): $$(PATH_SUB_CURRENT)/$(2) $$(VBOX_SVN_REV_KMK) | $$$$(dir $$$$@)
+	$$(call MSG_GENERATE,$(1),$$@,$$<)
+	$$(QUIET)$$(call VBOX_EDIT_VERSION_AND_BUILD_CMD_FN,$$<,$$@)
+$(1)_CLEAN += $$($(1)_0_OUTDIR)/$(if $(3),$(3),$(2))
 endef
 
 
