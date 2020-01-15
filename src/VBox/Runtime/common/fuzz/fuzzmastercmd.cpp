@@ -707,6 +707,122 @@ static int rtFuzzCmdMasterFuzzRunProcessInputSeedSingle(PRTFUZZRUN pFuzzRun, RTJ
 
 
 /**
+ * Processes the given seed file and adds it to the input corpus.
+ *
+ * @returns IPRT status code.
+ * @param   hFuzzCtx            The fuzzing context handle.
+ * @param   pszCompression      Compression used for the seed.
+ * @param   pszSeed             The seed as a base64 encoded string.
+ * @param   pErrInfo            Where to store the error information on failure, optional.
+ */
+static int rtFuzzCmdMasterFuzzRunProcessSeedFile(RTFUZZCTX hFuzzCtx, const char *pszCompression, const char *pszFile, PRTERRINFO pErrInfo)
+{
+    int rc = VINF_SUCCESS;
+
+    /* Decompress if applicable. */
+    if (!RTStrICmp(pszCompression, "None"))
+        rc = RTFuzzCtxCorpusInputAddFromFile(hFuzzCtx, pszFile);
+    else
+    {
+        RTVFSIOSTREAM hVfsIosSeed;
+        rc = RTVfsIoStrmOpenNormal(pszFile, RTFILE_O_OPEN | RTFILE_O_READ, &hVfsIosSeed);
+        if (RT_SUCCESS(rc))
+        {
+            RTVFSIOSTREAM hVfsDecomp = NIL_RTVFSIOSTREAM;
+
+            if (!RTStrICmp(pszCompression, "Gzip"))
+                rc = RTZipGzipDecompressIoStream(hVfsIosSeed, RTZIPGZIPDECOMP_F_ALLOW_ZLIB_HDR, &hVfsDecomp);
+            else
+                rc = rtFuzzCmdMasterErrorRc(pErrInfo, VERR_INVALID_STATE, "Request error: Compression \"%s\" is not known", pszCompression);
+
+            if (RT_SUCCESS(rc))
+            {
+                RTVFSFILE hVfsFile;
+                rc = RTVfsMemFileCreate(hVfsDecomp, 2 * _1M, &hVfsFile);
+                if (RT_SUCCESS(rc))
+                {
+                    rc = RTVfsFileSeek(hVfsFile, 0, RTFILE_SEEK_BEGIN, NULL);
+                    if (RT_SUCCESS(rc))
+                    {
+                        /* The VFS file contains the buffer for the seed now. */
+                        rc = RTFuzzCtxCorpusInputAddFromVfsFile(hFuzzCtx, hVfsFile);
+                        if (RT_FAILURE(rc))
+                            rc = rtFuzzCmdMasterErrorRc(pErrInfo, rc, "Request error: Failed to add input seed");
+                        RTVfsFileRelease(hVfsFile);
+                    }
+                    else
+                        rc = rtFuzzCmdMasterErrorRc(pErrInfo, VERR_INVALID_STATE, "Request error: Failed to seek to the beginning of the seed");
+                }
+                else
+                    rc = rtFuzzCmdMasterErrorRc(pErrInfo, VERR_INVALID_STATE, "Request error: Failed to decompress input seed");
+
+                RTVfsIoStrmRelease(hVfsDecomp);
+            }
+
+            RTVfsIoStrmRelease(hVfsIosSeed);
+        }
+        else
+            rc = rtFuzzCmdMasterErrorRc(pErrInfo, rc, "Request error: Failed to create I/O stream from seed buffer");
+    }
+
+    return rc;
+}
+
+
+/**
+ * Processes a signle input seed given as a file path for the given fuzzing run.
+ *
+ * @returns IPRT status code.
+ * @param   pFuzzRun            The fuzzing run.
+ * @param   hJsonSeed           The seed node of the JSON request.
+ * @param   pErrInfo            Where to store the error information on failure, optional.
+ */
+static int rtFuzzCmdMasterFuzzRunProcessInputSeedFileSingle(PRTFUZZRUN pFuzzRun, RTJSONVAL hJsonSeed, PRTERRINFO pErrInfo)
+{
+    RTFUZZCTX hFuzzCtx;
+    int rc = RTFuzzObsQueryCtx(pFuzzRun->hFuzzObs, &hFuzzCtx);
+    if (RT_SUCCESS(rc))
+    {
+        RTJSONVAL hJsonValComp;
+        rc = RTJsonValueQueryByName(hJsonSeed, "Compression", &hJsonValComp);
+        if (RT_SUCCESS(rc))
+        {
+            const char *pszCompression = RTJsonValueGetString(hJsonValComp);
+            if (RT_LIKELY(pszCompression))
+            {
+                RTJSONVAL hJsonValFile;
+                rc = RTJsonValueQueryByName(hJsonSeed, "File", &hJsonValFile);
+                if (RT_SUCCESS(rc))
+                {
+                    const char *pszFile = RTJsonValueGetString(hJsonValFile);
+                    if (RT_LIKELY(pszFile))
+                        rc = rtFuzzCmdMasterFuzzRunProcessSeedFile(hFuzzCtx, pszCompression, pszFile, pErrInfo);
+                    else
+                        rc = rtFuzzCmdMasterErrorRc(pErrInfo, VERR_INVALID_STATE, "JSON request malformed: \"File\" value is not a string");
+
+                    RTJsonValueRelease(hJsonValFile);
+                }
+                else
+                    rc = rtFuzzCmdMasterErrorRc(pErrInfo, rc, "JSON request malformed: Couldn't find \"File\" value");
+            }
+            else
+                rc = rtFuzzCmdMasterErrorRc(pErrInfo, VERR_INVALID_STATE, "JSON request malformed: \"Compression\" value is not a string");
+
+            RTJsonValueRelease(hJsonValComp);
+        }
+        else
+            rc = rtFuzzCmdMasterErrorRc(pErrInfo, rc, "JSON request malformed: Couldn't find \"Compression\" value");
+
+        RTFuzzCtxRelease(hFuzzCtx);
+    }
+    else
+        rc = rtFuzzCmdMasterErrorRc(pErrInfo, rc, "Failed to query fuzzing context from observer");
+
+    return rc;
+}
+
+
+/**
  * Processes input seed related configs for the given fuzzing run.
  *
  * @returns IPRT status code.
@@ -742,6 +858,40 @@ static int rtFuzzCmdMasterFuzzRunProcessInputSeeds(PRTFUZZRUN pFuzzRun, RTJSONVA
             rc = rtFuzzCmdMasterErrorRc(pErrInfo, rc, "JSON request malformed: Failed to create array iterator");
 
         RTJsonValueRelease(hJsonValSeedArray);
+    }
+    else if (rc == VERR_NOT_FOUND)
+        rc = VINF_SUCCESS;
+
+    if (RT_SUCCESS(rc))
+    {
+        rc = RTJsonValueQueryByName(hJsonRoot, "InputSeedFiles", &hJsonValSeedArray);
+        if (RT_SUCCESS(rc))
+        {
+            RTJSONIT hIt;
+            rc = RTJsonIteratorBegin(hJsonValSeedArray, &hIt);
+            if (RT_SUCCESS(rc))
+            {
+                RTJSONVAL hJsonInpSeed;
+                while (   RT_SUCCESS(rc)
+                       && RTJsonIteratorQueryValue(hIt, &hJsonInpSeed, NULL) != VERR_JSON_ITERATOR_END)
+                {
+                    rc = rtFuzzCmdMasterFuzzRunProcessInputSeedFileSingle(pFuzzRun, hJsonInpSeed, pErrInfo);
+                    RTJsonValueRelease(hJsonInpSeed);
+                    if (RT_FAILURE(rc))
+                        break;
+                    rc = RTJsonIteratorNext(hIt);
+                }
+
+                if (rc == VERR_JSON_ITERATOR_END)
+                    rc = VINF_SUCCESS;
+            }
+            else
+                rc = rtFuzzCmdMasterErrorRc(pErrInfo, rc, "JSON request malformed: Failed to create array iterator");
+
+            RTJsonValueRelease(hJsonValSeedArray);
+        }
+        else if (rc == VERR_NOT_FOUND)
+            rc = VINF_SUCCESS;
     }
 
     return rc;

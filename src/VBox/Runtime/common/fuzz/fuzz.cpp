@@ -368,9 +368,9 @@ typedef struct RTFUZZMEMHDR
     /** Some padding. */
     uint32_t                    uPadding0;
 #elif HC_ARCH_BITS == 64
-#else
     /** Some padding. */
     uint64_t                    uPadding0;
+#else
 # error "Port me"
 #endif
 } RTFUZZMEMHDR;
