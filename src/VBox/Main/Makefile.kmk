@@ -1252,7 +1252,7 @@ if defined(VBOX_WITH_32_ON_64_MAIN_API) && !defined(VBOX_ONLY_EXTPACKS)
  	$(VBoxCOM-x86_0_OUTDIR)/VirtualBox_p.c \
  	$(VBoxCOM-x86_0_OUTDIR)/dlldata.c \
  	$(VBoxCOM-x86_0_OUTDIR)/VirtualBox.h \
- 	$(VBoxCOM-x86_0_OUTDIR)/VirtualBox.tlb
+ 	$(VBoxCOM-x86_0_OUTDIR)/VirtualBox-x86.tlb
  endif
 endif
 
