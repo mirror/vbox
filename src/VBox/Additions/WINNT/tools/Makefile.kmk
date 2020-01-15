@@ -25,20 +25,10 @@ PROGRAMS += VBoxCertUtil
 
 VBoxCertUtil_TEMPLATE = VBoxGuestR3Exe
 VBoxCertUtil_SOURCES = \
-	VBoxCertUtil.cpp \
-	VBoxCertUtil.rc
+	VBoxCertUtil.cpp
 VBoxCertUtil_LIBS = \
 	crypt32.lib
-
-# The icon is configurable.
-VBoxCertUtil.rc_INCS = $(VBoxCertUtil_0_OUTDIR)
-VBoxCertUtil.rc_DEPS = $(VBoxCertUtil_0_OUTDIR)/VBoxCertUtil-win-icon.rc
-VBoxCertUtil.rc_CLEAN = $(VBoxCertUtil_0_OUTDIR)/VBoxCertUtil-win-icon.rc
-
-# Icon include file.
-$$(VBoxCertUtil_0_OUTDIR)/VBoxCertUtil-win-icon.rc: $(VBOX_WINDOWS_ADDITIONS_ICON_FILE) $$(VBoxCertUtil_DEFPATH)/Makefile.kmk | $$(dir $$@)
-	$(RM) -f $@
-	$(APPEND) $@ 'IDI_VIRTUALBOX ICON DISCARDABLE "$(subst /,\\,$(VBOX_WINDOWS_ADDITIONS_ICON_FILE))"'
+$(call VBOX_SET_VER_INFO_EXE,VBoxCertUtil,VirtualBox Certificate Utility,$(VBOX_WINDOWS_ADDITIONS_ICON_FILE))
 
 
 #
