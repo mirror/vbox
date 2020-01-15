@@ -1205,10 +1205,10 @@ $$(RePackScripts_0_OUTDIR)/sign-sha1.cmd: | $$(dir $$@)
 		'( $(call VBOX_SIGN_FILE_FN,%1,$(VBOX_PRODUCT) $(VBOX_VERSION_STRING)r$(VBOX_SVN_REV) ($(KBUILD_TARGET_ARCH)),,,disable-dual-signing,&&) ) || exit /b1' \
 		) )
 
+# The %~dp1\ oddity is working around otherwise ending with \" during
+# expansion of the CCS command line which for a reason I cannot immediately
+# understand appends a " to the path.
 $$(RePackScripts_0_OUTDIR)/sign-ev.cmd: | $$(dir $$@)
-	# The %~dp1\ oddity is working around otherwise ending with \" during
-	# expansion of the CCS command line which for a reason I cannot immediately
-	# understand appends a " to the path.
 	$(APPEND) -nt "$@" \
 		'if ".%KBUILD_DEVTOOLS%" == "." (echo KBUILD_DEVTOOLS is not set & exit /b 1)' \
 		'if ".%KBUILD_BIN_PATH%" == "." (echo KBUILD_BIN_PATH is not set & exit /b 1)' \
