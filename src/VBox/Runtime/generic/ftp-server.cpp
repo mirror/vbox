@@ -629,7 +629,7 @@ static int rtFtpParseHostAndPort(const char *pcszStr, PRTNETADDRIPV4 pAddr, uint
  *
  * @returns Duplicated argument vector or NULL if failed or no arguments given. Needs to be free'd with rtFtpCmdArgsFree().
  * @param   cArgs               Number of arguments in argument vector.
- * @param   papcszArgs          Pointer to argument vector to duplicate.
+ * @param   apcszArgs           Pointer to argument vector to duplicate.
  */
 static char** rtFtpCmdArgsDup(uint8_t cArgs, const char * const *apcszArgs)
 {
@@ -847,8 +847,8 @@ static int rtFtpServerDataConnCreate(PRTFTPSERVERCLIENT pClient, PRTFTPSERVERDAT
  * Starts a data connection.
  *
  * @returns VBox status code.
- * @param   pClient             Client to start data connection for.
- * @param   pfnThread           Pointer to thread function to use.
+ * @param   pDataConn           Data connection to start.
+ * @param   pfnThread           Thread function for the data connection to use.
  * @param   cArgs               Number of arguments.
  * @param   apcszArgs           Array of arguments.
  */
