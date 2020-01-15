@@ -256,10 +256,10 @@ $(call VBOX_EDIT_VERSION_AND_BUILD_RULE_FN,RePackScriptsAdd,../../../Installer/w
 $(call VBOX_EDIT_VERSION_AND_BUILD_RULE_FN,RePackScriptsAdd,../../../Installer/win/Scripts/Combined-1-Prepare.cmd,Combined-1-Prepare.cmd)
 $(call VBOX_EDIT_VERSION_AND_BUILD_RULE_FN,RePackScriptsAdd,../../../Installer/win/Scripts/Combined-3-RepackAdditions.cmd,Combined-3-RepackAdditions.cmd)
 
+# The %~dp1\ oddity is working around otherwise ending with \" during
+# expansion of the CCS command line which for a reason I cannot immediately
+# understand appends a " to the path.
 $$(RePackScriptsAdd_0_OUTDIR)/sign-ev.cmd: | $$(dir $$@)
-	# The %~dp1\ oddity is working around otherwise ending with \" during
-	# expansion of the CCS command line which for a reason I cannot immediately
-	# understand appends a " to the path.
 	$(APPEND) -nt "$@" \
 		'if ".%KBUILD_DEVTOOLS%" == "." (echo KBUILD_DEVTOOLS is not set & exit /b 1)' \
 		'if ".%KBUILD_BIN_PATH%" == "." (echo KBUILD_BIN_PATH is not set & exit /b 1)' \
