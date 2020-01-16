@@ -1110,8 +1110,6 @@ static int virtioNetR3HandleRxPacket(PPDMDEVINS pDevIns, PVIRTIONET pThis, PVIRT
 
         AssertRC(rc == VINF_SUCCESS || rc == VERR_NOT_AVAILABLE, rc);
 
-        /** @todo  Find a better way to deal with this */
-
         AssertMsgReturn(rc == VINF_SUCCESS && pDescChain->cbPhysSend,
                         ("Not enough Rx buffers in queue to accomodate ethernet packet\n"),
                         VERR_INTERNAL_ERROR);
