@@ -132,6 +132,8 @@ typedef enum RTFTPSERVER_CMD
     RTFTPSERVER_CMD_PORT,
     /** Gets the current working directory. */
     RTFTPSERVER_CMD_PWD,
+    /** Get options. Needed in conjunction with the FEAT command. */
+    RTFTPSERVER_CMD_OPTS,
     /** Terminates the session (connection). */
     RTFTPSERVER_CMD_QUIT,
     /** Retrieves a specific file. */
@@ -299,6 +301,7 @@ static FNRTFTPSERVERCMD rtFtpServerHandleNOOP;
 static FNRTFTPSERVERCMD rtFtpServerHandlePASS;
 static FNRTFTPSERVERCMD rtFtpServerHandlePORT;
 static FNRTFTPSERVERCMD rtFtpServerHandlePWD;
+static FNRTFTPSERVERCMD rtFtpServerHandleOPTS;
 static FNRTFTPSERVERCMD rtFtpServerHandleQUIT;
 static FNRTFTPSERVERCMD rtFtpServerHandleRETR;
 static FNRTFTPSERVERCMD rtFtpServerHandleSIZE;
@@ -333,13 +336,14 @@ const RTFTPSERVER_CMD_ENTRY g_aCmdMap[] =
     { RTFTPSERVER_CMD_ABOR,     "ABOR", true,  rtFtpServerHandleABOR },
     { RTFTPSERVER_CMD_CDUP,     "CDUP", true,  rtFtpServerHandleCDUP },
     { RTFTPSERVER_CMD_CWD,      "CWD",  true,  rtFtpServerHandleCWD  },
-    { RTFTPSERVER_CMD_FEAT,     "FEAT", true,  rtFtpServerHandleFEAT },
+    { RTFTPSERVER_CMD_FEAT,     "FEAT", false, rtFtpServerHandleFEAT },
     { RTFTPSERVER_CMD_LIST,     "LIST", true,  rtFtpServerHandleLIST },
     { RTFTPSERVER_CMD_MODE,     "MODE", true,  rtFtpServerHandleMODE },
     { RTFTPSERVER_CMD_NOOP,     "NOOP", true,  rtFtpServerHandleNOOP },
     { RTFTPSERVER_CMD_PASS,     "PASS", false, rtFtpServerHandlePASS },
     { RTFTPSERVER_CMD_PORT,     "PORT", true,  rtFtpServerHandlePORT },
     { RTFTPSERVER_CMD_PWD,      "PWD",  true,  rtFtpServerHandlePWD  },
+    { RTFTPSERVER_CMD_OPTS,     "OPTS", false, rtFtpServerHandleOPTS },
     { RTFTPSERVER_CMD_QUIT,     "QUIT", false, rtFtpServerHandleQUIT },
     { RTFTPSERVER_CMD_RETR,     "RETR", true,  rtFtpServerHandleRETR },
     { RTFTPSERVER_CMD_SIZE,     "SIZE", true,  rtFtpServerHandleSIZE },
@@ -351,12 +355,13 @@ const RTFTPSERVER_CMD_ENTRY g_aCmdMap[] =
     { RTFTPSERVER_CMD_LAST,     "",     false, NULL }
 };
 
-/** Feature string which represents all commands we support in addition to RFC 959.
+/** Feature string which represents all commands we support in addition to RFC 959 (see RFC 2398).
  *  Must match the command table above.
  *
- *  Don't forget the terminating ";" at each feature. */
+ *  Don't forget the beginning space (" ") at each feature. */
 #define RTFTPSERVER_FEATURES_STRING \
-    "SIZE;" /* Supports reporting file sizes. */
+    " SIZE\r\n" \
+    " UTF8"
 
 
 /*********************************************************************************************************************************
@@ -379,7 +384,7 @@ static int rtFtpServerSendReplyRc(PRTFTPSERVERCLIENT pClient, RTFTPSERVER_REPLY 
 
     LogFlowFunc(("Sending reply code %RU32\n", enmReply));
 
-    return RTTcpWrite(pClient->hSocket, szReply, strlen(szReply) + 1);
+    return RTTcpWrite(pClient->hSocket, szReply, strlen(szReply));
 }
 
 /**
@@ -422,7 +427,7 @@ static int rtFtpServerSendReplyRcEx(PRTFTPSERVERCLIENT pClient, RTFTPSERVER_REPL
 
     RTStrFree(pszFmt);
 
-    rc = RTTcpWrite(pClient->hSocket, pszMsg, strlen(pszMsg) + 1 /* Include termination */);
+    rc = RTTcpWrite(pClient->hSocket, pszMsg, strlen(pszMsg));
 
     RTStrFree(pszMsg);
 
@@ -449,7 +454,9 @@ static int rtFtpServerSendReplyStr(PRTFTPSERVERCLIENT pClient, const char *pcszF
     int rc = RTStrAAppend(&psz, "\r\n");
     AssertRCReturn(rc, rc);
 
-    rc = RTTcpWrite(pClient->hSocket, psz, strlen(psz) + 1 /* Include termination */);
+    LogFlowFunc(("Sending reply '%s'\n", psz));
+
+    rc = RTTcpWrite(pClient->hSocket, psz, strlen(psz));
 
     RTStrFree(psz);
 
@@ -1054,12 +1061,12 @@ static int rtFtpServerHandleFEAT(PRTFTPSERVERCLIENT pClient, uint8_t cArgs, cons
 {
     RT_NOREF(cArgs, apcszArgs);
 
-    int rc = rtFtpServerSendReplyRc(pClient, RTFTPSERVER_REPLY_SYSTEM_STATUS); /* Features begin */
+    int rc = rtFtpServerSendReplyStr(pClient, "211-BEGIN Features:");
     if (RT_SUCCESS(rc))
     {
         rc = rtFtpServerSendReplyStr(pClient, RTFTPSERVER_FEATURES_STRING);
         if (RT_SUCCESS(rc))
-            rc = rtFtpServerSendReplyRc(pClient, RTFTPSERVER_REPLY_SYSTEM_STATUS); /* Features end */
+            rc = rtFtpServerSendReplyStr(pClient, "211 END Features");
     }
 
     return rc;
@@ -1245,6 +1252,19 @@ static int rtFtpServerHandlePWD(PRTFTPSERVERCLIENT pClient, uint8_t cArgs, const
     return rc;
 }
 
+static int rtFtpServerHandleOPTS(PRTFTPSERVERCLIENT pClient, uint8_t cArgs, const char * const *apcszArgs)
+{
+    RT_NOREF(cArgs, apcszArgs);
+
+    int rc = VINF_SUCCESS;
+
+    int rc2 = rtFtpServerSendReplyRc(pClient, RTFTPSERVER_REPLY_OKAY);
+    if (RT_SUCCESS(rc))
+        rc = rc2;
+
+    return rc;
+}
+
 static int rtFtpServerHandleQUIT(PRTFTPSERVERCLIENT pClient, uint8_t cArgs, const char * const *apcszArgs)
 {
     RT_NOREF(cArgs, apcszArgs);
@@ -1393,7 +1413,7 @@ static int rtFtpServerHandleSYST(PRTFTPSERVERCLIENT pClient, uint8_t cArgs, cons
     char szOSInfo[64];
     int rc = RTSystemQueryOSInfo(RTSYSOSINFO_PRODUCT, szOSInfo, sizeof(szOSInfo));
     if (RT_SUCCESS(rc))
-        rc = rtFtpServerSendReplyStr(pClient, szOSInfo);
+        rc = rtFtpServerSendReplyStr(pClient, "215 %s", szOSInfo);
 
     return rc;
 }
