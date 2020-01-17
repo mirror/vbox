@@ -1324,7 +1324,7 @@ Appuyer sur Échap pour annuler</translation>
     <name>QDialog</name>
     <message>
         <source>What&apos;s This?</source>
-        <translation>Qu&apos;est-ce que c&apos;est&#xa0;?</translation>
+        <translation>Qu&apos;est-ce que c&apos;est&amp;nbsp;?</translation>
     </message>
     <message>
         <source>Done</source>
@@ -2271,19 +2271,19 @@ Voulez-vous quand même le supprimer ?</translation>
     <message>
         <source>Listing directory failed:
 %1</source>
-        <translation>Échec du listage du dossier&#xa0;:
+        <translation>Échec du listage du dossier&amp;nbsp;:
 %1</translation>
     </message>
     <message>
         <source>Changing directory failed:
 %1</source>
-        <translation>Échec du changement de dossier&#xa0;:
+        <translation>Échec du changement de dossier&amp;nbsp;:
 %1</translation>
     </message>
     <message>
         <source>Downloading file failed:
 %1</source>
-        <translation>Échec du téléchargement du fichier&#xa0;:
+        <translation>Échec du téléchargement du fichier&amp;nbsp;:
 %1</translation>
     </message>
     <message>
@@ -2870,7 +2870,7 @@ Voulez-vous quand même le supprimer ?</translation>
     </message>
     <message>
         <source>Cannot load library %1: %2</source>
-        <translation>Impossible de charger la bibliothèque %1&#xa0;: %2</translation>
+        <translation>Impossible de charger la bibliothèque %1&amp;nbsp;: %2</translation>
     </message>
     <message>
         <source>Cannot unload library %1: %2</source>
@@ -2878,7 +2878,7 @@ Voulez-vous quand même le supprimer ?</translation>
     </message>
     <message>
         <source>Cannot resolve symbol &quot;%1&quot; in %2: %3</source>
-        <translation>Impossible de résoudre le symbole &quot;%1&quot; dans %2&#xa0;: %3</translation>
+        <translation>Impossible de résoudre le symbole &quot;%1&quot; dans %2&amp;nbsp;: %3</translation>
     </message>
     <message>
         <source>&apos;%1&apos; is not a valid Mach-O binary (%2)</source>
@@ -2952,42 +2952,42 @@ Voulez-vous quand même le supprimer ?</translation>
     <name>QLocalServer</name>
     <message>
         <source>%1: Name error</source>
-        <translation>%1&#xa0;: Erreur de nom</translation>
+        <translation>%1&amp;nbsp;: Erreur de nom</translation>
     </message>
     <message>
         <source>%1: Permission denied</source>
-        <translation>%1&#xa0;: Permission refusée</translation>
+        <translation>%1&amp;nbsp;: Permission refusée</translation>
     </message>
     <message>
         <source>%1: Address in use</source>
-        <translation>%1&#xa0;: Adresse déjà utilisée</translation>
+        <translation>%1&amp;nbsp;: Adresse déjà utilisée</translation>
     </message>
     <message>
         <source>%1: Unknown error %2</source>
-        <translation>%1&#xa0;: Erreur inconnue %2</translation>
+        <translation>%1&amp;nbsp;: Erreur inconnue %2</translation>
     </message>
 </context>
 <context>
     <name>QLocalSocket</name>
     <message>
         <source>%1: Connection refused</source>
-        <translation>%1&#xa0;: Connexion refusée</translation>
+        <translation>%1&amp;nbsp;: Connexion refusée</translation>
     </message>
     <message>
         <source>%1: Remote closed</source>
-        <translation>%1&#xa0;: Connexion fermée</translation>
+        <translation>%1&amp;nbsp;: Connexion fermée</translation>
     </message>
     <message>
         <source>%1: Invalid name</source>
-        <translation>%1&#xa0;: Nom invalide</translation>
+        <translation>%1&amp;nbsp;: Nom invalide</translation>
     </message>
     <message>
         <source>%1: Socket access error</source>
-        <translation>%1&#xa0;: Erreur d&apos;accès à la socket</translation>
+        <translation>%1&amp;nbsp;: Erreur d&apos;accès à la socket</translation>
     </message>
     <message>
         <source>%1: Socket resource error</source>
-        <translation>%1&#xa0;: Erreur de ressource de la socket</translation>
+        <translation>%1&amp;nbsp;: Erreur de ressource de la socket</translation>
     </message>
     <message>
         <source>%1: Socket operation timed out</source>
@@ -2999,15 +2999,15 @@ Voulez-vous quand même le supprimer ?</translation>
     </message>
     <message>
         <source>%1: Connection error</source>
-        <translation>%1&#xa0;: Erreur de connexion</translation>
+        <translation>%1&amp;nbsp;: Erreur de connexion</translation>
     </message>
     <message>
         <source>%1: The socket operation is not supported</source>
-        <translation>%1&#xa0;: L&apos;opération n&apos;est pas supportée</translation>
+        <translation>%1&amp;nbsp;: L&apos;opération n&apos;est pas supportée</translation>
     </message>
     <message>
         <source>%1: Unknown error %2</source>
-        <translation>%1&#xa0;: Erreur inconnue %2</translation>
+        <translation>%1&amp;nbsp;: Erreur inconnue %2</translation>
     </message>
     <message>
         <source>%1: Operation not permitted when socket is in this state</source>
@@ -3392,18 +3392,18 @@ Voulez-vous quand même le supprimer ?</translation>
     <name>QNetworkAccessDataBackend</name>
     <message>
         <source>Invalid URI: %1</source>
-        <translation>URI invalide&#xa0;: %1</translation>
+        <translation>URI invalide&amp;nbsp;: %1</translation>
     </message>
 </context>
 <context>
     <name>QNetworkAccessDebugPipeBackend</name>
     <message>
         <source>Write error writing to %1: %2</source>
-        <translation>Erreur lors de l&apos;écriture dans %1&#xa0;: %2</translation>
+        <translation>Erreur lors de l&apos;écriture dans %1&amp;nbsp;: %2</translation>
     </message>
     <message>
         <source>Socket error on %1: %2</source>
-        <translation>Erreur de socket sur %1&#xa0;: %2</translation>
+        <translation>Erreur de socket sur %1&amp;nbsp;: %2</translation>
     </message>
     <message>
         <source>Remote host closed the connection prematurely on %1</source>
@@ -3418,26 +3418,26 @@ Voulez-vous quand même le supprimer ?</translation>
     </message>
     <message>
         <source>Error opening %1: %2</source>
-        <translation>Erreur lors de l&apos;ouverture de %1&#xa0;: %2</translation>
+        <translation>Erreur lors de l&apos;ouverture de %1&amp;nbsp;: %2</translation>
     </message>
     <message>
         <source>Write error writing to %1: %2</source>
-        <translation>Erreur d&apos;écriture de %1&#xa0;: %2</translation>
+        <translation>Erreur d&apos;écriture de %1&amp;nbsp;: %2</translation>
     </message>
     <message>
         <source>Cannot open %1: Path is a directory</source>
-        <translation>Impossible d&apos;ouvrir %1&#xa0;: le chemin est un dossier</translation>
+        <translation>Impossible d&apos;ouvrir %1&amp;nbsp;: le chemin est un dossier</translation>
     </message>
     <message>
         <source>Read error reading from %1: %2</source>
-        <translation>Erreur de lecture de %1&#xa0;: %2</translation>
+        <translation>Erreur de lecture de %1&amp;nbsp;: %2</translation>
     </message>
 </context>
 <context>
     <name>QNetworkAccessFtpBackend</name>
     <message>
         <source>Cannot open %1: is a directory</source>
-        <translation>Impossible d&apos;ouvrir %1&#xa0;: le chemin est un dossier</translation>
+        <translation>Impossible d&apos;ouvrir %1&amp;nbsp;: le chemin est un dossier</translation>
     </message>
     <message>
         <source>Logging in to %1 failed: authentication required</source>
@@ -3445,11 +3445,11 @@ Voulez-vous quand même le supprimer ?</translation>
     </message>
     <message>
         <source>Error while downloading %1: %2</source>
-        <translation>Erreur lors du téléchargement de %1&#xa0;: %2</translation>
+        <translation>Erreur lors du téléchargement de %1&amp;nbsp;: %2</translation>
     </message>
     <message>
         <source>Error while uploading %1: %2</source>
-        <translation>Erreur lors de l&apos;envoi de %1&#xa0;: %2</translation>
+        <translation>Erreur lors de l&apos;envoi de %1&amp;nbsp;: %2</translation>
     </message>
     <message>
         <source>No suitable proxy found</source>
@@ -3467,7 +3467,7 @@ Voulez-vous quand même le supprimer ?</translation>
     <name>QNetworkReply</name>
     <message>
         <source>Error downloading %1 - server replied: %2</source>
-        <translation type="vanished">Erreur lors du téléchargement de %1 - le serveur a répondu&#xa0;: %2</translation>
+        <translation type="vanished">Erreur lors du téléchargement de %1 - le serveur a répondu&amp;nbsp;: %2</translation>
     </message>
     <message>
         <source>Protocol &quot;%1&quot; is unknown</source>
@@ -3491,7 +3491,7 @@ Voulez-vous quand même le supprimer ?</translation>
     </message>
     <message>
         <source>Error transferring %1 - server replied: %2</source>
-        <translation>Erreur lors du transfert de %1 - le serveur a répondu&#xa0;: %2</translation>
+        <translation>Erreur lors du transfert de %1 - le serveur a répondu&amp;nbsp;: %2</translation>
     </message>
 </context>
 <context>
@@ -4488,7 +4488,7 @@ Veuillez choisir un nom de fichier différent.</translation>
         <source>%1 already exists.
 Do you want to overwrite it?</source>
         <translation>%1 existe.
-Voulez-vous l&apos;écraser&#xa0;?</translation>
+Voulez-vous l&apos;écraser&amp;nbsp;?</translation>
     </message>
     <message>
         <source>%1 is a directory.
@@ -4898,7 +4898,7 @@ Veuillez désactiver l&apos;une de ces options.</translation>
     </message>
     <message>
         <source>Process failed to start: %1</source>
-        <translation>Le démarrage du processus a échoué&#xa0;: %1</translation>
+        <translation>Le démarrage du processus a échoué&amp;nbsp;: %1</translation>
     </message>
     <message>
         <source>Process failed to start</source>
@@ -5504,27 +5504,27 @@ Veuillez désactiver l&apos;une de ces options.</translation>
     <name>QSharedMemory</name>
     <message>
         <source>%1: unable to set key on lock</source>
-        <translation>%1&#xa0;: impossible d&apos;affecter la clé au verrou</translation>
+        <translation>%1&amp;nbsp;: impossible d&apos;affecter la clé au verrou</translation>
     </message>
     <message>
         <source>%1: create size is less then 0</source>
-        <translation>%1&#xa0;: taille de création est inférieur à 0</translation>
+        <translation>%1&amp;nbsp;: taille de création est inférieur à 0</translation>
     </message>
     <message>
         <source>%1: unable to lock</source>
-        <translation>%1&#xa0;: impossible de vérrouiller</translation>
+        <translation>%1&amp;nbsp;: impossible de vérrouiller</translation>
     </message>
     <message>
         <source>%1: unable to unlock</source>
-        <translation>%1&#xa0;: impossible de déverrouiller</translation>
+        <translation>%1&amp;nbsp;: impossible de déverrouiller</translation>
     </message>
     <message>
         <source>%1: permission denied</source>
-        <translation>%1&#xa0;: permission refusée</translation>
+        <translation>%1&amp;nbsp;: permission refusée</translation>
     </message>
     <message>
         <source>%1: already exists</source>
-        <translation>%1&#xa0;: existe déjà</translation>
+        <translation>%1&amp;nbsp;: existe déjà</translation>
     </message>
     <message>
         <source>%1: doesn&apos;t exists</source>
@@ -5536,7 +5536,7 @@ Veuillez désactiver l&apos;une de ces options.</translation>
     </message>
     <message>
         <source>%1: unknown error %2</source>
-        <translation>%1&#xa0;: erreur inconnue %2</translation>
+        <translation>%1&amp;nbsp;: erreur inconnue %2</translation>
     </message>
     <message>
         <source>%1: key is empty</source>
@@ -5548,15 +5548,15 @@ Veuillez désactiver l&apos;une de ces options.</translation>
     </message>
     <message>
         <source>%1: ftok failed</source>
-        <translation>%1&#xa0;: ftok a échoué</translation>
+        <translation>%1&amp;nbsp;: ftok a échoué</translation>
     </message>
     <message>
         <source>%1: unable to make key</source>
-        <translation>%1&#xa0;: impossible de créer la clé</translation>
+        <translation>%1&amp;nbsp;: impossible de créer la clé</translation>
     </message>
     <message>
         <source>%1: system-imposed size restrictions</source>
-        <translation>%1&#xa0;: le système impose des restrictions sur la taille</translation>
+        <translation>%1&amp;nbsp;: le système impose des restrictions sur la taille</translation>
     </message>
     <message>
         <source>%1: not attached</source>
@@ -5568,11 +5568,11 @@ Veuillez désactiver l&apos;une de ces options.</translation>
     </message>
     <message>
         <source>%1: UNIX key file doesn&apos;t exist</source>
-        <translation>%1&#xa0;: le fichier de clés UNIX n&apos;existe pas</translation>
+        <translation>%1&amp;nbsp;: le fichier de clés UNIX n&apos;existe pas</translation>
     </message>
     <message>
         <source>%1: doesn&apos;t exist</source>
-        <translation>%1&#xa0;: n&apos;existe pas</translation>
+        <translation>%1&amp;nbsp;: n&apos;existe pas</translation>
     </message>
     <message>
         <source>%1: invalid size</source>
@@ -5580,11 +5580,11 @@ Veuillez désactiver l&apos;une de ces options.</translation>
     </message>
     <message>
         <source>%1: key error</source>
-        <translation>%1&#xa0;: erreur de clé</translation>
+        <translation>%1&amp;nbsp;: erreur de clé</translation>
     </message>
     <message>
         <source>%1: size query failed</source>
-        <translation>%1&#xa0;: la requête de taille a échoué</translation>
+        <translation>%1&amp;nbsp;: la requête de taille a échoué</translation>
     </message>
 </context>
 <context>
@@ -6635,7 +6635,7 @@ Veuillez désactiver l&apos;une de ces options.</translation>
     </message>
     <message>
         <source>Proxy authentication failed: %1</source>
-        <translation>L&apos;authentification proxy a échoué&#xa0;: %1</translation>
+        <translation>L&apos;authentification proxy a échoué&amp;nbsp;: %1</translation>
     </message>
     <message>
         <source>SOCKS version 5 protocol error</source>
@@ -6663,7 +6663,7 @@ Veuillez désactiver l&apos;une de ces options.</translation>
     </message>
     <message>
         <source>Unknown SOCKSv5 proxy error code 0x%1</source>
-        <translation>Erreur proxy SOCKSv5 inconnue&#xa0;: 0x%1</translation>
+        <translation>Erreur proxy SOCKSv5 inconnue&amp;nbsp;: 0x%1</translation>
     </message>
 </context>
 <context>
@@ -7084,11 +7084,11 @@ Role of an accessible object</extracomment>
     <name>QSslSocket</name>
     <message>
         <source>Unable to write data: %1</source>
-        <translation>Impossible d&apos;écrire les données&#xa0;: %1</translation>
+        <translation>Impossible d&apos;écrire les données&amp;nbsp;: %1</translation>
     </message>
     <message>
         <source>Error while reading: %1</source>
-        <translation>Erreur lors de la lecture&#xa0;: %1</translation>
+        <translation>Erreur lors de la lecture&amp;nbsp;: %1</translation>
     </message>
     <message>
         <source>Error during SSL handshake: %1</source>
@@ -7108,7 +7108,7 @@ Role of an accessible object</extracomment>
     </message>
     <message>
         <source>Error creating SSL session: %1</source>
-        <translation>Erreur lors de la création de la session SSL&#xa0;: %1</translation>
+        <translation>Erreur lors de la création de la session SSL&amp;nbsp;: %1</translation>
     </message>
     <message>
         <source>Cannot provide a certificate with no key, %1</source>
@@ -7244,7 +7244,7 @@ Role of an accessible object</extracomment>
     </message>
     <message>
         <source>Unable to decrypt data: %1</source>
-        <translation>Impossible de décrypter les données&#xa0;: %1</translation>
+        <translation>Impossible de décrypter les données&amp;nbsp;: %1</translation>
     </message>
     <message>
         <source>The TLS/SSL connection has been closed</source>
@@ -7349,15 +7349,15 @@ Role of an accessible object</extracomment>
     <name>QSystemSemaphore</name>
     <message>
         <source>%1: permission denied</source>
-        <translation>%1&#xa0;: permission refusée</translation>
+        <translation>%1&amp;nbsp;: permission refusée</translation>
     </message>
     <message>
         <source>%1: already exists</source>
-        <translation>%1&#xa0;: existe déjà</translation>
+        <translation>%1&amp;nbsp;: existe déjà</translation>
     </message>
     <message>
         <source>%1: does not exist</source>
-        <translation>%1&#xa0;: n&apos;existe pas</translation>
+        <translation>%1&amp;nbsp;: n&apos;existe pas</translation>
     </message>
     <message>
         <source>%1: out of resources</source>
@@ -7365,7 +7365,7 @@ Role of an accessible object</extracomment>
     </message>
     <message>
         <source>%1: unknown error %2</source>
-        <translation>%1&#xa0;: erreur inconnue %2</translation>
+        <translation>%1&amp;nbsp;: erreur inconnue %2</translation>
     </message>
 </context>
 <context>

@@ -5431,7 +5431,7 @@ Please turn one of those options off.</source>
     </message>
     <message>
         <source>Connection to proxy closed prematurely</source>
-        <translation>S&apos;ha tancat prematurament la connexió al servidor intermediari&#xa0;</translation>
+        <translation>S&apos;ha tancat prematurament la connexió al servidor intermediari&amp;nbsp;</translation>
     </message>
     <message>
         <source>Proxy host not found</source>
