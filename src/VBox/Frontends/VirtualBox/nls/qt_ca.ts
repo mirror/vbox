@@ -330,7 +330,7 @@
         <source>Cursor at %1, %2
 Press ESC to cancel</source>
         <translation>Cursor a %1, %2
-Premeu ESC per cancel·lar</translation>
+Premeu ESC per a cancel·lar</translation>
     </message>
     <message>
         <source>Select Color</source>
@@ -463,11 +463,11 @@ Premeu ESC per cancel·lar</translation>
     </message>
     <message>
         <source>Day (06:00 to 17:59)</source>
-        <translation>Dia (06:00 a 17:59)</translation>
+        <translation>Dia (06.00 a 17.59)</translation>
     </message>
     <message>
         <source>Night (18:00 to 05:59)</source>
-        <translation>Nit (18:00 a 05:59)</translation>
+        <translation>Nit (18.00 a 05.59)</translation>
     </message>
     <message>
         <source>Second Shift (16:00 to 23:59)</source>
@@ -833,7 +833,7 @@ Premeu ESC per cancel·lar</translation>
     <name>QFileDevice</name>
     <message>
         <source>No file engine available or engine does not support UnMapExtension</source>
-        <translation>No hi ha cap motor de fitxers disponible o el motor actual no suporta la  UnMapExtension</translation>
+        <translation>No hi ha cap motor de fitxers disponible o el motor actual no suporta la UnMapExtension</translation>
     </message>
 </context>
 <context>
@@ -870,7 +870,7 @@ File not found.
 Please verify the correct file name was given.</source>
         <translation>%1
 No s&apos;ha trobat el fitxer.
-Comproveu que el nom del fitxer es correcte.</translation>
+Comproveu que el nom del fitxer és correcte.</translation>
     </message>
     <message>
         <source>My Computer</source>
@@ -918,7 +918,7 @@ Directory not found.
 Please verify the correct directory name was given.</source>
         <translation>%1
 No s&apos;ha trobat el directori.
-Comproveu que el nom del directori es correcte.</translation>
+Comproveu que el nom del directori és correcte.</translation>
     </message>
     <message>
         <source>&apos;%1&apos; is write protected.
@@ -1148,7 +1148,7 @@ Do you want to delete it anyway?</source>
     </message>
     <message>
         <source>Demi Bold</source>
-        <translation>Semi-negreta</translation>
+        <translation>Seminegreta</translation>
     </message>
     <message>
         <source>Black</source>
@@ -1169,7 +1169,7 @@ Do you want to delete it anyway?</source>
     </message>
     <message>
         <source>Oblique</source>
-        <translation>Oblíqua</translation>
+        <translation>Obliqua</translation>
     </message>
     <message>
         <source>Any</source>
@@ -1185,7 +1185,7 @@ Do you want to delete it anyway?</source>
     </message>
     <message>
         <source>Cyrillic</source>
-        <translation>Cirílic</translation>
+        <translation>Ciríl·lic</translation>
     </message>
     <message>
         <source>Armenian</source>
@@ -1201,7 +1201,7 @@ Do you want to delete it anyway?</source>
     </message>
     <message>
         <source>Syriac</source>
-        <translation>Siri</translation>
+        <translation>Siríac</translation>
     </message>
     <message>
         <source>Thaana</source>
@@ -1213,7 +1213,7 @@ Do you want to delete it anyway?</source>
     </message>
     <message>
         <source>Bengali</source>
-        <translation>Bengali</translation>
+        <translation>Bengalí</translation>
     </message>
     <message>
         <source>Gurmukhi</source>
@@ -1229,7 +1229,7 @@ Do you want to delete it anyway?</source>
     </message>
     <message>
         <source>Tamil</source>
-        <translation>Tamil</translation>
+        <translation>Tàmil</translation>
     </message>
     <message>
         <source>Telugu</source>
@@ -1241,11 +1241,11 @@ Do you want to delete it anyway?</source>
     </message>
     <message>
         <source>Malayalam</source>
-        <translation>Malayalam</translation>
+        <translation>Malaiàlam</translation>
     </message>
     <message>
         <source>Sinhala</source>
-        <translation>Sinhala</translation>
+        <translation>Singalès</translation>
     </message>
     <message>
         <source>Thai</source>
@@ -1253,7 +1253,7 @@ Do you want to delete it anyway?</source>
     </message>
     <message>
         <source>Lao</source>
-        <translation>Lao</translation>
+        <translation>Laosià</translation>
     </message>
     <message>
         <source>Tibetan</source>
@@ -1332,7 +1332,7 @@ Do you want to delete it anyway?</source>
     </message>
     <message>
         <source>N&apos;Ko</source>
-        <translation>N&apos;Ko</translation>
+        <translation>Nko</translation>
     </message>
 </context>
 <context>
@@ -1456,7 +1456,7 @@ Do you want to delete it anyway?</source>
     </message>
     <message>
         <source>Connection timed out to host %1</source>
-        <translation>S&apos;ha esgotat el temps d&apos;espera de la connexió per al host % 1</translation>
+        <translation>S&apos;ha esgotat el temps d&apos;espera de la connexió per a l&apos;amfitrió % 1</translation>
     </message>
     <message>
         <source>Data Connection refused</source>
@@ -1525,7 +1525,7 @@ Do you want to delete it anyway?</source>
     </message>
     <message>
         <source>Invalid hostname</source>
-        <translation>Nom d&apos;amfitrió no vàlid</translation>
+        <translation>Nom d&apos;amfitrió invàlid</translation>
     </message>
     <message>
         <source>Unknown error (%1)</source>
@@ -1568,7 +1568,7 @@ Do you want to delete it anyway?</source>
     </message>
     <message>
         <source>Too many redirects</source>
-        <translation>Masses redireccions</translation>
+        <translation>Massa redireccions</translation>
     </message>
     <message>
         <source>Insecure redirect</source>
@@ -1583,35 +1583,35 @@ Do you want to delete it anyway?</source>
     </message>
     <message>
         <source>Did not receive HTTP response from proxy</source>
-        <translation>No s&apos;ha rebut la resposta HTTP del proxy</translation>
+        <translation>No s&apos;ha rebut la resposta HTTP del servidor intermediari</translation>
     </message>
     <message>
         <source>Error parsing authentication request from proxy</source>
-        <translation>S&apos;ha produït un error en analitzar la sol·licitud d&apos;autenticació des del proxy</translation>
+        <translation>S&apos;ha produït un error en analitzar la sol·licitud d&apos;autenticació des del servidor intermediari</translation>
     </message>
     <message>
         <source>Proxy denied connection</source>
-        <translation>S&apos;ha denegat la connexió proxy</translation>
+        <translation>S&apos;ha denegat la connexió amb el servidor intermediari</translation>
     </message>
     <message>
         <source>Error communicating with HTTP proxy</source>
-        <translation>S&apos;ha produït un error en comunicar-se amb el proxy HTTP</translation>
+        <translation>S&apos;ha produït un error en comunicar-se amb el servidor intermediari HTTP</translation>
     </message>
     <message>
         <source>Proxy server not found</source>
-        <translation>No s&apos;ha trobat el servidor proxy</translation>
+        <translation>No s&apos;ha trobat el servidor intermediari</translation>
     </message>
     <message>
         <source>Proxy connection refused</source>
-        <translation>S&apos;ha refusat la connexió proxy</translation>
+        <translation>S&apos;ha refusat la connexió amb el servidor intermediari</translation>
     </message>
     <message>
         <source>Proxy server connection timed out</source>
-        <translation>S&apos;ha esgotat el temps de la connexió al servidor proxy</translation>
+        <translation>S&apos;ha esgotat el temps de la connexió al servidor intermediari</translation>
     </message>
     <message>
         <source>Proxy connection closed prematurely</source>
-        <translation>La connexió al proxy s&apos;ha tancat prematurament</translation>
+        <translation>La connexió al servidor intermediari s&apos;ha tancat prematurament</translation>
     </message>
 </context>
 <context>
@@ -1728,7 +1728,7 @@ Do you want to delete it anyway?</source>
     </message>
     <message>
         <source>file to open is a directory</source>
-        <translation>l&apos;arxiu a obrir és una carpeta</translation>
+        <translation>el fitxer a obrir és una carpeta</translation>
     </message>
 </context>
 <context>
@@ -1739,7 +1739,7 @@ Do you want to delete it anyway?</source>
     </message>
     <message>
         <source>File not found</source>
-        <translation>Arxiu no trobat</translation>
+        <translation>Fitxer no trobat</translation>
     </message>
     <message>
         <source>Unsupported image format</source>
@@ -1828,19 +1828,19 @@ Do you want to delete it anyway?</source>
     </message>
     <message>
         <source>object is missing after a comma</source>
-        <translation>falta un objecte desprès de la coma</translation>
+        <translation>falta un objecte després de la coma</translation>
     </message>
     <message>
         <source>too deeply nested document</source>
-        <translation>documents amb massa nivells d&apos;aniuament</translation>
+        <translation>documents amb massa nivells jerarquitzats</translation>
     </message>
     <message>
         <source>too large document</source>
-        <translation>document massa llarg</translation>
+        <translation>document massa gran</translation>
     </message>
     <message>
         <source>garbage at the end of the document</source>
-        <translation>escombraries al final del document</translation>
+        <translation>brossa al final del document</translation>
     </message>
 </context>
 <context>
@@ -1919,7 +1919,7 @@ Do you want to delete it anyway?</source>
     </message>
     <message>
         <source>no suitable architecture in fat binary</source>
-        <translation>no hi cap arquitectura adequada al &quot;gran binari&quot; (binari multiarquitectura)</translation>
+        <translation>no hi ha cap arquitectura adient al binari multiarquitectura</translation>
     </message>
     <message>
         <source>invalid magic %1</source>
@@ -1931,7 +1931,7 @@ Do you want to delete it anyway?</source>
     </message>
     <message>
         <source>not a dynamic library</source>
-        <translation>no és una llibreria dinàmica</translation>
+        <translation>no és una biblioteca dinàmica</translation>
     </message>
     <message>
         <source>&apos;%1&apos; is not a Qt plugin</source>
@@ -2016,7 +2016,7 @@ Do you want to delete it anyway?</source>
     </message>
     <message>
         <source>%1: Datagram too large</source>
-        <translation>%1: Datagrama massa llarg</translation>
+        <translation>%1: Datagrama massa gran</translation>
     </message>
     <message>
         <source>%1: Connection error</source>
@@ -2032,7 +2032,7 @@ Do you want to delete it anyway?</source>
     </message>
     <message>
         <source>%1: Operation not permitted when socket is in this state</source>
-        <translation>%1: Operació no permesa quan el sòcol està en aquest estat</translation>
+        <translation>%1: Operació no permesa quan el sòcol és en aquest estat</translation>
     </message>
     <message>
         <source>%1: Unknown error</source>
@@ -2040,7 +2040,7 @@ Do you want to delete it anyway?</source>
     </message>
     <message>
         <source>Trying to connect while connection is in progress</source>
-        <translation>S&apos;està intentant connectar mentre la connexió està en curs</translation>
+        <translation>S&apos;està intentant connectar mentre la connexió és en curs</translation>
     </message>
     <message>
         <source>%1: Access denied</source>
@@ -2231,7 +2231,7 @@ Do you want to delete it anyway?</source>
     </message>
     <message>
         <source>&lt;p&gt;Qt is a C++ toolkit for cross-platform application development.&lt;/p&gt;&lt;p&gt;Qt provides single-source portability across all major desktop operating systems. It is also available for embedded Linux and other embedded and mobile operating systems.&lt;/p&gt;&lt;p&gt;Qt is available under three different licensing options designed to accommodate the needs of our various users.&lt;/p&gt;&lt;p&gt;Qt licensed under our commercial license agreement is appropriate for development of proprietary/commercial software where you do not want to share any source code with third parties or otherwise cannot comply with the terms of the GNU LGPL version 3 or GNU LGPL version 2.1.&lt;/p&gt;&lt;p&gt;Qt licensed under the GNU LGPL version 3 is appropriate for the development of Qt&amp;nbsp;applications provided you can comply with the terms and conditions of the GNU LGPL version 3.&lt;/p&gt;&lt;p&gt;Qt licensed under the GNU LGPL version 2.1 is appropriate for the development of Qt&amp;nbsp;applications provided you can comply with the terms and conditions of the GNU LGPL version 2.1.&lt;/p&gt;&lt;p&gt;Please see &lt;a href=&quot;http://%2/&quot;&gt;%2&lt;/a&gt; for an overview of Qt licensing.&lt;/p&gt;&lt;p&gt;Copyright (C) %1 The Qt Company Ltd and other contributors.&lt;/p&gt;&lt;p&gt;Qt and the Qt logo are trademarks of The Qt Company Ltd.&lt;/p&gt;&lt;p&gt;Qt is The Qt Company Ltd product developed as an open source project. See &lt;a href=&quot;http://%3/&quot;&gt;%3&lt;/a&gt; for more information.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;El Qt és una eina de desenvolupament C++ multiplataforma.&lt;/p&gt;&lt;p&gt;El Qt facilita la portabilitat del mateix codi als principals sistemes operatius d&apos;escriptori. També està disponible com a sistema incrustat per a la plataforma Linux i altres sistemes operatius mòbils.&lt;/p&gt;&lt;p&gt;El Qt és disponible sota tres tipus de llicències diferents segons el tipus de necessitat dels seus usuaris.&lt;/p&gt;&lt;p&gt;El Qt amb llicència comercial, és l&apos;apropiat per al desenvolupament de programari propietari/comercial que no vol distribuir el codi font amb tercers o no compleix els termes d&apos;una llicència GNU LGPL versión 3 o GNU LGPL versió 2.1.&lt;/p&gt;&lt;p&gt;El Qt amb llicència GNU LGPL versió 3, és l&apos;idoni per al desenvolupament d&apos;aplicacions que compleixen les condicions GNU LGPL versió 3.&lt;/p&gt;&lt;p&gt;El Qt amb llicència GNU LGPL versió 2.1, és l&apos;indicat per al desenvolupament de programari appropriate for the development of Qt&amp;nbsp;applications que compleixen les condicions GNU LGPL versió 2.1.&lt;/p&gt;&lt;p&gt;Veieu &lt;a href=&quot;http://%2/&quot;&gt;%2&lt;/a&gt; per obtenir una visió general de la llic+encia del Qt.&lt;/p&gt;&lt;p&gt;Copyright (C) %1 The Qt Company Ltd i altres contribuïdors.&lt;/p&gt;&lt;p&gt;El Qt i el logotip del Qt són marques registrades per The Qt Company Ltd.&lt;/p&gt;&lt;p&gt;El Qt és un projecte de codi lliure de The Qt Company Ltd. Veieu &lt;a href=&quot;http://%3/&quot;&gt;%3&lt;/a&gt; per a més informació.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;El Qt és una eina de desenvolupament C++ multiplataforma.&lt;/p&gt;&lt;p&gt;El Qt facilita la portabilitat del mateix codi als principals sistemes operatius d&apos;escriptori. També està disponible com a sistema incrustat per a la plataforma Linux i altres sistemes operatius mòbils.&lt;/p&gt;&lt;p&gt;El Qt és disponible sota tres tipus de llicències diferents segons el tipus de necessitat dels seus usuaris.&lt;/p&gt;&lt;p&gt;El Qt amb llicència comercial, és l&apos;apropiat per al desenvolupament de programari propietari/comercial que no vol distribuir el codi font amb tercers o no compleix els termes d&apos;una llicència GNU LGPL versió 3 o GNU LGPL versió 2.1.&lt;/p&gt;&lt;p&gt;El Qt amb llicència GNU LGPL versió 3, és l&apos;idoni per al desenvolupament d&apos;aplicacions que compleixen les condicions GNU LGPL versió 3.&lt;/p&gt;&lt;p&gt;El Qt amb llicència GNU LGPL versió 2.1, és l&apos;indicat per al desenvolupament de programari appropriate for the development of Qt&amp;nbsp;applications que compleixen les condicions GNU LGPL versió 2.1.&lt;/p&gt;&lt;p&gt;Veieu &lt;a href=&quot;http://%2/&quot;&gt;%2&lt;/a&gt; per obtenir una visió general de la llicència del Qt.&lt;/p&gt;&lt;p&gt;Copyright (C) %1 The Qt Company Ltd i altres contribuïdors.&lt;/p&gt;&lt;p&gt;El Qt i el logotip del Qt són marques registrades per The Qt Company Ltd.&lt;/p&gt;&lt;p&gt;El Qt és un projecte de codi lliure de The Qt Company Ltd. Veieu &lt;a href=&quot;http://%3/&quot;&gt;%3&lt;/a&gt; per a més informació.&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
@@ -2278,7 +2278,7 @@ Do you want to delete it anyway?</source>
     </message>
     <message>
         <source>The bound address is already in use</source>
-        <translation>Ja s&apos;està fent servir l&apos;adreça limit</translation>
+        <translation>Ja s&apos;està fent servir l&apos;adreça límit</translation>
     </message>
     <message>
         <source>The address is not available</source>
@@ -2326,7 +2326,7 @@ Do you want to delete it anyway?</source>
     </message>
     <message>
         <source>Datagram was too large to send</source>
-        <translation>El datagrama era massa llarg i no s&apos;ha pogut enviar</translation>
+        <translation>El datagrama era massa gran i no s&apos;ha pogut enviar</translation>
     </message>
     <message>
         <source>Operation on non-socket</source>
@@ -2677,7 +2677,7 @@ Do you want to delete it anyway?</source>
     <name>QPageSetupWidget</name>
     <message>
         <source>Millimeters (mm)</source>
-        <translation>Milímetres (mm)</translation>
+        <translation>Mil·límetres (mm)</translation>
     </message>
     <message>
         <source>Inches (in)</source>
@@ -3093,7 +3093,7 @@ Do you want to delete it anyway?</source>
     </message>
     <message>
         <source>Quarto</source>
-        <translation>Quarto</translation>
+        <translation>En quart</translation>
     </message>
     <message>
         <source>Statement</source>
@@ -3129,15 +3129,15 @@ Do you want to delete it anyway?</source>
     </message>
     <message>
         <source>Fan-fold US (14.875 x 11 in)</source>
-        <translation>Plegat en acordió US (14.875 x 11 in)</translation>
+        <translation>Continu, plegat en acordió US (14.875” x 11”)</translation>
     </message>
     <message>
         <source>Fan-fold German (8.5 x 12 in)</source>
-        <translation>Plegat en acordió Alemany (8.5 x 12 in)</translation>
+        <translation>Continu, plegat en acordió Alemany (8.5” x 12”)</translation>
     </message>
     <message>
         <source>Fan-fold German Legal (8.5 x 13 in)</source>
-        <translation>Plegat en acordió Alemany Legal (8.5 x 13 in)</translation>
+        <translation>Continu, plegat en acordió Alemany Legal (8.5” x 13”)</translation>
     </message>
     <message>
         <source>Envelope B4</source>
@@ -3424,35 +3424,35 @@ Trieu un nom de fitxer diferent.</translation>
     </message>
     <message>
         <source>Left to Right, Top to Bottom</source>
-        <translation>D&apos;esquerra a dreta, d&apos;amunt a avall</translation>
+        <translation>D&apos;esquerra a dreta, de dalt a baix</translation>
     </message>
     <message>
         <source>Left to Right, Bottom to Top</source>
-        <translation>D&apos;esquerra a dreta, d&apos;avall a amunt</translation>
+        <translation>D&apos;esquerra a dreta, de baix a dalt</translation>
     </message>
     <message>
         <source>Right to Left, Bottom to Top</source>
-        <translation>De dreta a esquerra, d&apos;amunt a avall</translation>
+        <translation>De dreta a esquerra, de dalt a baix</translation>
     </message>
     <message>
         <source>Right to Left, Top to Bottom</source>
-        <translation>De dreta a esquerra, d&apos;avall a amunt</translation>
+        <translation>De dreta a esquerra, de baix a dalt</translation>
     </message>
     <message>
         <source>Bottom to Top, Left to Right</source>
-        <translation>D&apos;avall a amunt, d&apos;esquerra a dreta</translation>
+        <translation>De baix a dalt, d&apos;esquerra a dreta</translation>
     </message>
     <message>
         <source>Bottom to Top, Right to Left</source>
-        <translation>D&apos;avall a amunt, de dreta a esquerra</translation>
+        <translation>De baix a dalt, de dreta a esquerra</translation>
     </message>
     <message>
         <source>Top to Bottom, Left to Right</source>
-        <translation>D&apos;amunt a avall, d&apos;esquerra a dreta</translation>
+        <translation>De dalt a baix, d&apos;esquerra a dreta</translation>
     </message>
     <message>
         <source>Top to Bottom, Right to Left</source>
-        <translation>D&apos;amunt a avall, de dreta a esquerra</translation>
+        <translation>De dalt a baix, de dreta a esquerra</translation>
     </message>
     <message>
         <source>1 (1x1)</source>
@@ -3484,11 +3484,11 @@ Trieu un nom de fitxer diferent.</translation>
     </message>
     <message>
         <source>Odd Pages</source>
-        <translation>Pagines senars</translation>
+        <translation>Pàgines senars</translation>
     </message>
     <message>
         <source>Even Pages</source>
-        <translation>Pagines parells</translation>
+        <translation>Pàgines parelles</translation>
     </message>
     <message>
         <source>Write PDF file</source>
@@ -3747,7 +3747,7 @@ Please turn one of those options off.</source>
     </message>
     <message>
         <source>Process crashed</source>
-        <translation>S&apos;ha bloquejat el procés</translation>
+        <translation>El procés ha petat</translation>
     </message>
     <message>
         <source>Process operation timed out</source>
@@ -3759,23 +3759,23 @@ Please turn one of those options off.</source>
     </message>
     <message>
         <source>Error writing to process</source>
-        <translation>Error escrivint al procés</translation>
+        <translation>S&apos;ha produït un error en escriure al procés</translation>
     </message>
     <message>
         <source>No program defined</source>
-        <translation>No s&apos;ha definit un programa</translation>
+        <translation>No s&apos;ha definit cap programa</translation>
     </message>
     <message>
         <source>Could not open input redirection for reading</source>
-        <translation>No s&apos;ha pogut obrir la redirecció d&apos;entrada per llegir</translation>
+        <translation>No s&apos;ha pogut obrir la redirecció d&apos;entrada per a llegir</translation>
     </message>
     <message>
         <source>Resource error (fork failure): %1</source>
-        <translation>Error de recurs (ha fallat el fork):% 1</translation>
+        <translation>Error de recurs (ha fallat el fork): % 1</translation>
     </message>
     <message>
         <source>Could not open output redirection for writing</source>
-        <translation>No s&apos;ha pogut obrir la redirecció de sortida per escriure</translation>
+        <translation>No s&apos;ha pogut obrir la redirecció de sortida per a escriure</translation>
     </message>
     <message>
         <source>Process failed to start: %1</source>
@@ -3819,7 +3819,7 @@ Please turn one of those options off.</source>
     </message>
     <message>
         <source>bad lookahead syntax</source>
-        <translation>error de sintaxi a l&apos;ullada</translation>
+        <translation>error de sintaxi a la ullada</translation>
     </message>
     <message>
         <source>bad repetition syntax</source>
@@ -3831,7 +3831,7 @@ Please turn one of those options off.</source>
     </message>
     <message>
         <source>missing left delim</source>
-        <translation>falta el delim esquerre</translation>
+        <translation>falta el delimitador esquerre</translation>
     </message>
     <message>
         <source>unexpected end</source>
@@ -3843,7 +3843,7 @@ Please turn one of those options off.</source>
     </message>
     <message>
         <source>lookbehinds not supported, see QTBUG-2371</source>
-        <translation>no es suporta la cerca enrere, veure QTBUG-2371</translation>
+        <translation>no s&apos;admet la cerca enrere, veieu QTBUG-2371</translation>
     </message>
     <message>
         <source>invalid interval</source>
@@ -3882,7 +3882,7 @@ Please turn one of those options off.</source>
     </message>
     <message>
         <source>missing terminating ] for character class</source>
-        <translation>falta el finalitzador] per a la classe caràcter</translation>
+        <translation>falta el finalitzador ] per a la classe caràcter</translation>
     </message>
     <message>
         <source>invalid escape sequence in character class</source>
@@ -3894,7 +3894,7 @@ Please turn one of those options off.</source>
     </message>
     <message>
         <source>nothing to repeat</source>
-        <translation>res que repetir</translation>
+        <translation>res per repetir</translation>
     </message>
     <message>
         <source>internal error: unexpected repeat</source>
@@ -3902,11 +3902,11 @@ Please turn one of those options off.</source>
     </message>
     <message>
         <source>unrecognized character after (? or (?-</source>
-        <translation>caràcter no reconegut després de (? o (? -</translation>
+        <translation>caràcter no reconegut després de (? o (?-</translation>
     </message>
     <message>
         <source>POSIX named classes are supported only within a class</source>
-        <translation>Les classes POSIX només s&apos;admeten dins d&apos;una classe</translation>
+        <translation>Les classes POSIX amb nom només s&apos;admeten dins d&apos;una classe</translation>
     </message>
     <message>
         <source>missing )</source>
@@ -3914,7 +3914,7 @@ Please turn one of those options off.</source>
     </message>
     <message>
         <source>reference to non-existent subpattern</source>
-        <translation>referència a subpatró no existent</translation>
+        <translation>referència a un subpatró no existent</translation>
     </message>
     <message>
         <source>erroffset passed as NULL</source>
@@ -3930,11 +3930,11 @@ Please turn one of those options off.</source>
     </message>
     <message>
         <source>regular expression is too large</source>
-        <translation>l&apos;expressió regular és massa larga</translation>
+        <translation>l&apos;expressió regular és massa gran</translation>
     </message>
     <message>
         <source>failed to get memory</source>
-        <translation>no s&apos;ha pogut obtenir memòria</translation>
+        <translation>no s&apos;ha pogut aconseguir prou memòria</translation>
     </message>
     <message>
         <source>unmatched parentheses</source>
@@ -3954,7 +3954,7 @@ Please turn one of those options off.</source>
     </message>
     <message>
         <source>malformed number or name after (?(</source>
-        <translation>Nombre mal format o nom desprès de (?(</translation>
+        <translation>Nombre mal format o nom després de (?(</translation>
     </message>
     <message>
         <source>conditional group contains more than two branches</source>
@@ -3962,7 +3962,7 @@ Please turn one of those options off.</source>
     </message>
     <message>
         <source>assertion expected after (?(</source>
-        <translation>esperada afirmació després (? (</translation>
+        <translation>s&apos;espera afirmació després (? (</translation>
     </message>
     <message>
         <source>(?R or (?[+-]digits must be followed by )</source>
@@ -3982,7 +3982,7 @@ Please turn one of those options off.</source>
     </message>
     <message>
         <source>character value in \x{...} sequence is too large</source>
-        <translation>el valor del caràcter a la seqüència \x{...} és massa llarg</translation>
+        <translation>el valor del caràcter a la seqüència \x{...} és massa gran</translation>
     </message>
     <message>
         <source>invalid condition (?(0)</source>
@@ -3990,7 +3990,7 @@ Please turn one of those options off.</source>
     </message>
     <message>
         <source>\C not allowed in lookbehind assertion</source>
-        <translation>\C no estan permesa la cerca enrere afirmativa</translation>
+        <translation>\C no és permès en la cerca enrere afirmativa</translation>
     </message>
     <message>
         <source>PCRE does not support \L, \l, \N{name}, \U, or \u</source>
@@ -4002,7 +4002,7 @@ Please turn one of those options off.</source>
     </message>
     <message>
         <source>closing ) for (?C expected</source>
-        <translation>s&apos;esperava un ) de tancament per (?C</translation>
+        <translation>s&apos;esperava un ) de tancament per a (?C</translation>
     </message>
     <message>
         <source>recursive call could loop indefinitely</source>
@@ -4042,7 +4042,7 @@ Please turn one of those options off.</source>
     </message>
     <message>
         <source>too many named subpatterns (maximum 10000)</source>
-        <translation>s&apos;han anomenat masses subpatrons (màxim 10000)</translation>
+        <translation>s&apos;han anomenat massa subpatrons (màxim 10 000)</translation>
     </message>
     <message>
         <source>octal value is greater than \377 (not in UTF-8 mode)</source>
@@ -4050,7 +4050,7 @@ Please turn one of those options off.</source>
     </message>
     <message>
         <source>internal error: overran compiling workspace</source>
-        <translation>error intern: s&apos;ha excedir l&apos;espai de compilació</translation>
+        <translation>error intern: s&apos;ha excedit l&apos;espai de compilació</translation>
     </message>
     <message>
         <source>internal error: previously-checked referenced subpattern not found</source>
@@ -4078,7 +4078,7 @@ Please turn one of those options off.</source>
     </message>
     <message>
         <source>an argument is not allowed for (*ACCEPT), (*FAIL), or (*COMMIT)</source>
-        <translation>un argument no està permès per (* ACCEPT), (* FAIL), o (* COMMIT)</translation>
+        <translation>un argument no és permès per (*ACCEPT), (*FAIL), o (*COMMIT)</translation>
     </message>
     <message>
         <source>(*VERB) not recognized</source>
@@ -4146,7 +4146,7 @@ Please turn one of those options off.</source>
     </message>
     <message>
         <source>character value in \u.... sequence is too large</source>
-        <translation>el valor del caràcter a la seqüència \u.... és massa llarg</translation>
+        <translation>el valor del caràcter a la seqüència \u.... és massa gran</translation>
     </message>
     <message>
         <source>invalid UTF-32 string</source>
@@ -4166,11 +4166,11 @@ Please turn one of those options off.</source>
     </message>
     <message>
         <source>missing opening brace after \o</source>
-        <translation>falta una clau d&apos;obertura desprès de \o</translation>
+        <translation>falta una clau d&apos;obertura després de \o</translation>
     </message>
     <message>
         <source>parentheses are too deeply nested</source>
-        <translation>massa nivells d&apos;aniuament de parèntesis</translation>
+        <translation>massa nivells jerarquitzats de parèntesis</translation>
     </message>
     <message>
         <source>invalid range in character class</source>
@@ -4178,11 +4178,11 @@ Please turn one of those options off.</source>
     </message>
     <message>
         <source>group name must start with a non-digit</source>
-        <translation>un nom de grup ha de començar amb un no-digit</translation>
+        <translation>cal que el nom de grup comenci amb un no-dígit</translation>
     </message>
     <message>
         <source>parentheses are too deeply nested (stack check)</source>
-        <translation>massa nivells d&apos;aniuament de parèntesis (control de la pila)</translation>
+        <translation>massa nivells jerarquitzats de parèntesis (control de la pila)</translation>
     </message>
     <message>
         <source>digits missing in \x{} or \o{}</source>
@@ -4270,14 +4270,14 @@ Please turn one of those options off.</source>
     </message>
     <message>
         <source>Unable to execute multiple statements at a time</source>
-        <translation>No es poden executar multiples instruccions alhora</translation>
+        <translation>No es poden executar múltiples instruccions alhora</translation>
     </message>
 </context>
 <context>
     <name>QSaveFile</name>
     <message>
         <source>Existing file %1 is not writable</source>
-        <translation>El fitxer existent %1 no es pot escriure</translation>
+        <translation>Al fitxer existent %1 no s&apos;hi pot escriure</translation>
     </message>
     <message>
         <source>Filename refers to a directory</source>
@@ -4316,7 +4316,7 @@ Please turn one of those options off.</source>
     </message>
     <message>
         <source>Page up</source>
-        <translation>Re Pag</translation>
+        <translation>Re Pàg</translation>
     </message>
     <message>
         <source>Page right</source>
@@ -4324,7 +4324,7 @@ Please turn one of those options off.</source>
     </message>
     <message>
         <source>Page down</source>
-        <translation>Av Pag</translation>
+        <translation>Av Pàg</translation>
     </message>
     <message>
         <source>Scroll left</source>
@@ -4499,11 +4499,11 @@ Please turn one of those options off.</source>
     </message>
     <message>
         <source>PgUp</source>
-        <translation>Re Pag</translation>
+        <translation>Re Pàg</translation>
     </message>
     <message>
         <source>PgDown</source>
-        <translation>Av Pag</translation>
+        <translation>Av Pàg</translation>
     </message>
     <message>
         <source>CapsLock</source>
@@ -4543,7 +4543,7 @@ Please turn one of those options off.</source>
     </message>
     <message>
         <source>Volume Down</source>
-        <translation>Baixa el volum</translation>
+        <translation>Abaixa el volum</translation>
     </message>
     <message>
         <source>Volume Mute</source>
@@ -4551,7 +4551,7 @@ Please turn one of those options off.</source>
     </message>
     <message>
         <source>Volume Up</source>
-        <translation>Puja el volum</translation>
+        <translation>Apuja el volum</translation>
     </message>
     <message>
         <source>Bass Boost</source>
@@ -4687,11 +4687,11 @@ Please turn one of those options off.</source>
     </message>
     <message>
         <source>Page Up</source>
-        <translation>Re Pag</translation>
+        <translation>Re Pàg</translation>
     </message>
     <message>
         <source>Page Down</source>
-        <translation>Av Pag</translation>
+        <translation>Av Pàg</translation>
     </message>
     <message>
         <source>Caps Lock</source>
@@ -4798,32 +4798,32 @@ Please turn one of those options off.</source>
     <message>
         <source>Media Pause</source>
         <extracomment>Media player pause button</extracomment>
-        <translation>Mèdia pausat</translation>
+        <translation>Mèdia en pausa</translation>
     </message>
     <message>
         <source>Toggle Media Play/Pause</source>
         <extracomment>Media player button to toggle between playing and paused</extracomment>
-        <translation>Commuta el Mèdia entre reproducció/pausa</translation>
+        <translation>Commuta el mèdia entre reproducció/pausa</translation>
     </message>
     <message>
         <source>Monitor Brightness Up</source>
-        <translation>Augmentar la brillantor del monitor</translation>
+        <translation>Augmenta la brillantor del monitor</translation>
     </message>
     <message>
         <source>Monitor Brightness Down</source>
-        <translation>Baixar la brillantor del monitor</translation>
+        <translation>Baixa la brillantor del monitor</translation>
     </message>
     <message>
         <source>Keyboard Light On/Off</source>
-        <translation>Llum del teclat Activar/Desactivar</translation>
+        <translation>Llum del teclat: Activa/Desactiva</translation>
     </message>
     <message>
         <source>Keyboard Brightness Up</source>
-        <translation>Augmentar la brillantor del teclat</translation>
+        <translation>Augmenta la brillantor del teclat</translation>
     </message>
     <message>
         <source>Keyboard Brightness Down</source>
-        <translation> Baixar la brillantor del teclat</translation>
+        <translation> Baixa la brillantor del teclat</translation>
     </message>
     <message>
         <source>Power Off</source>
@@ -4867,11 +4867,11 @@ Please turn one of those options off.</source>
     </message>
     <message>
         <source>Hot Links</source>
-        <translation>Enllaços ràpids</translation>
+        <translation>Enllaços importants</translation>
     </message>
     <message>
         <source>Adjust Brightness</source>
-        <translation>Ajustar la brillantor</translation>
+        <translation>Ajusta la brillantor</translation>
     </message>
     <message>
         <source>Finance</source>
@@ -4883,11 +4883,11 @@ Please turn one of those options off.</source>
     </message>
     <message>
         <source>Media Rewind</source>
-        <translation>Rebobinar Mèdia</translation>
+        <translation>Rebobina Mèdia</translation>
     </message>
     <message>
         <source>Back Forward</source>
-        <translation>Avançar Mèdia</translation>
+        <translation>Avança Mèdia</translation>
     </message>
     <message>
         <source>Application Left</source>
@@ -4915,7 +4915,7 @@ Please turn one of those options off.</source>
     </message>
     <message>
         <source>Clear Grab</source>
-        <translation>Esborrar captura</translation>
+        <translation>Esborra captura</translation>
     </message>
     <message>
         <source>Close</source>
@@ -4931,7 +4931,7 @@ Please turn one of those options off.</source>
     </message>
     <message>
         <source>Display</source>
-        <translation>Mostrar</translation>
+        <translation>Mostra</translation>
     </message>
     <message>
         <source>DOS</source>
@@ -5015,7 +5015,7 @@ Please turn one of those options off.</source>
     </message>
     <message>
         <source>Rotate Windows</source>
-        <translation>Rotar les finestres</translation>
+        <translation>Gira les finestres</translation>
     </message>
     <message>
         <source>Rotation PB</source>
@@ -5047,7 +5047,7 @@ Please turn one of those options off.</source>
     </message>
     <message>
         <source>Task Panel</source>
-        <translation>Panell de tasques</translation>
+        <translation>Tauler de tasques</translation>
     </message>
     <message>
         <source>Terminal</source>
@@ -5095,7 +5095,7 @@ Please turn one of those options off.</source>
     </message>
     <message>
         <source>Mail Forward</source>
-        <translation>Enviar correu</translation>
+        <translation>Reenvia correu</translation>
     </message>
     <message>
         <source>Pictures</source>
@@ -5119,19 +5119,19 @@ Please turn one of those options off.</source>
     </message>
     <message>
         <source>Ultra Wide Band</source>
-        <translation>Ultra Wide Band</translation>
+        <translation>Banda Ultra Ampla</translation>
     </message>
     <message>
         <source>Media Fast Forward</source>
-        <translation>Avançar el Mèdia ràpid</translation>
+        <translation>Avança ràpidament el mèdia</translation>
     </message>
     <message>
         <source>Audio Repeat</source>
-        <translation>Repetir l&apos;audio</translation>
+        <translation>Repeteix l&apos;àudio</translation>
     </message>
     <message>
         <source>Audio Random Play</source>
-        <translation>Reproduir l&apos;àudio aleatoriament</translation>
+        <translation>Reprodueix aleatòriament l&apos;àudio</translation>
     </message>
     <message>
         <source>Subtitle</source>
@@ -5159,15 +5159,15 @@ Please turn one of those options off.</source>
     </message>
     <message>
         <source>Power Down</source>
-        <translation>Apagar</translation>
+        <translation>Tanca</translation>
     </message>
     <message>
         <source>Suspend</source>
-        <translation>Suspendre</translation>
+        <translation>Suspèn</translation>
     </message>
     <message>
         <source>Microphone Mute</source>
-        <translation>Silenciar micròfon</translation>
+        <translation>Silencia micròfon</translation>
     </message>
     <message>
         <source>Red</source>
@@ -5207,11 +5207,11 @@ Please turn one of those options off.</source>
     </message>
     <message>
         <source>Microphone Volume Up</source>
-        <translation>Pujar el volum del micròfon</translation>
+        <translation>Apuja el volum del micròfon</translation>
     </message>
     <message>
         <source>Microphone Volume Down</source>
-        <translation>Baixar el volum del micròfon</translation>
+        <translation>Abaixa el volum del micròfon</translation>
     </message>
     <message>
         <source>New</source>
@@ -5236,7 +5236,7 @@ Please turn one of those options off.</source>
     <message>
         <source>Toggle Call/Hangup</source>
         <extracomment>Button that will hang up if we&apos;re in call, or make a call if we&apos;re not.</extracomment>
-        <translation>Canviar entre trucada/conversa</translation>
+        <translation>Canvia entre trucada/conversa</translation>
     </message>
     <message>
         <source>Voice Dial</source>
@@ -5246,7 +5246,7 @@ Please turn one of those options off.</source>
     <message>
         <source>Last Number Redial</source>
         <extracomment>Button to redial the last number called</extracomment>
-        <translation>Tornar a trucar al darrer número</translation>
+        <translation>Torna a trucar al darrer número</translation>
     </message>
     <message>
         <source>Camera Shutter</source>
@@ -5340,11 +5340,11 @@ Please turn one of those options off.</source>
     </message>
     <message>
         <source>Hangul Start</source>
-        <translation>Inici Hangul</translation>
+        <translation>Inicia Hangul</translation>
     </message>
     <message>
         <source>Hangul End</source>
-        <translation>Final Hangul</translation>
+        <translation>Finalitza Hangul</translation>
     </message>
     <message>
         <source>Hangul Hanja</source>
@@ -5431,7 +5431,7 @@ Please turn one of those options off.</source>
     </message>
     <message>
         <source>Connection to proxy closed prematurely</source>
-        <translation>S&apos;ha tancat prematurament la connexió al servidor intermediari&amp;nbsp;</translation>
+        <translation>S&apos;ha tancat prematurament la connexió al servidor intermediari </translation>
     </message>
     <message>
         <source>Proxy host not found</source>
@@ -5451,7 +5451,7 @@ Please turn one of those options off.</source>
     </message>
     <message>
         <source>SOCKS version 5 protocol error</source>
-        <translation>Error de protocol amb SOCKS version 5</translation>
+        <translation>Error de protocol amb SOCKS versió 5</translation>
     </message>
     <message>
         <source>General SOCKSv5 server failure</source>
@@ -5503,7 +5503,7 @@ Please turn one of those options off.</source>
     <message>
         <source>grip</source>
         <extracomment>Role of an accessible object - the grip is usually used for resizing another object</extracomment>
-        <translation>Agafador</translation>
+        <translation>Nansa</translation>
     </message>
     <message>
         <source>sound</source>
@@ -5715,7 +5715,7 @@ Role of an accessible object</extracomment>
     <message>
         <source>dial</source>
         <extracomment>Role of an accessible object</extracomment>
-        <translation>MArcador</translation>
+        <translation>Marcador</translation>
     </message>
     <message>
         <source>hotkey field</source>
@@ -5958,7 +5958,7 @@ Role of an accessible object</extracomment>
     </message>
     <message>
         <source>The supplied certificate is unsuitable for this purpose</source>
-        <translation>El certificat subministrat no és adequat per a aquest propòsit</translation>
+        <translation>El certificat subministrat no és adient per a aquest propòsit</translation>
     </message>
     <message>
         <source>The root CA certificate is not trusted for this purpose</source>
@@ -5986,7 +5986,7 @@ Role of an accessible object</extracomment>
     </message>
     <message>
         <source>The peer certificate is blacklisted</source>
-        <translation>El certificat d&apos;iguals està a la llista negra</translation>
+        <translation>El certificat d&apos;iguals és a la llista negra</translation>
     </message>
     <message>
         <source>Unknown error</source>
@@ -6092,7 +6092,7 @@ Role of an accessible object</extracomment>
     </message>
     <message>
         <source>No common ancestor for targets and source of transition from state &apos;%1&apos;</source>
-        <translation>No hi ha cap ascendent pels destinacions i origen de la transició de l&apos;estat &apos;%1&apos;</translation>
+        <translation>No hi ha cap ascendent per les destinacions i origen de la transició de l&apos;estat &apos;%1&apos;</translation>
     </message>
     <message>
         <source>Unknown error</source>
@@ -6148,7 +6148,7 @@ Role of an accessible object</extracomment>
     <name>QTcpServer</name>
     <message>
         <source>Operation on socket is not supported</source>
-        <translation>L&apos;operació al sòcol no està permesa</translation>
+        <translation>L&apos;operació al sòcol no és permesa</translation>
     </message>
 </context>
 <context>
@@ -6212,11 +6212,11 @@ Role of an accessible object</extracomment>
     </message>
     <message>
         <source>ZWJ Zero width joiner</source>
-        <translation>Ensamblador d&apos;amplada zero ZWJ</translation>
+        <translation>Agregador d&apos;amplada zero ZWJ</translation>
     </message>
     <message>
         <source>ZWNJ Zero width non-joiner</source>
-        <translation>No-ensamblador d&apos;amplada zero ZWNJ</translation>
+        <translation>No-agregador d&apos;amplada zero ZWNJ</translation>
     </message>
     <message>
         <source>ZWSP Zero width space</source>
@@ -6260,7 +6260,7 @@ Role of an accessible object</extracomment>
     </message>
     <message>
         <source>PDI Pop directional isolate</source>
-        <translation>PDI Pop Directional Isolate</translation>
+        <translation>PDI Pop direccional aïllat</translation>
     </message>
 </context>
 <context>
@@ -6446,15 +6446,15 @@ La versió mínima de Direct2D requerida és% 1.% 2.% 3.% 4. La versió Direct2D
     </message>
     <message>
         <source>internal general entity reference not allowed in DTD</source>
-        <translation>no estan permeses referències internes a entitats generals a la DTD</translation>
+        <translation>no són permeses referències internes a entitats generals a la DTD</translation>
     </message>
     <message>
         <source>external parsed general entity reference not allowed in attribute value</source>
-        <translation>no estan permeses referències externes a entitats generals que ja s&apos;han analitzat al valor de l&apos;atribut</translation>
+        <translation>no són permeses referències externes a entitats generals que ja s&apos;han analitzat al valor de l&apos;atribut</translation>
     </message>
     <message>
         <source>external parsed general entity reference not allowed in DTD</source>
-        <translation>no estan permeses referències externes a entitats generals que ja s&apos;han analitzat a la DTD</translation>
+        <translation>no són permeses referències externes a entitats generals que ja s&apos;han analitzat a la DTD</translation>
     </message>
     <message>
         <source>unparsed entity reference in wrong context</source>
@@ -6605,7 +6605,7 @@ La versió mínima de Direct2D requerida és% 1.% 2.% 3.% 4. La versió Direct2D
     </message>
     <message>
         <source>%1 is an invalid PUBLIC identifier.</source>
-        <translation>%1 és un identificador PUBLIC no vàlid.</translation>
+        <translation>%1 és un identificador PÚBLIC no vàlid.</translation>
     </message>
     <message>
         <source>Attribute &apos;%1&apos; redefined.</source>
