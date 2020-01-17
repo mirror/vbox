@@ -2919,7 +2919,7 @@ Por favor verifique o nome do ficheiro</translation>
     </message>
     <message>
         <source>Trying to connect while connection is in progress</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">A tentar ligar enqunto a ligação está em progresso</translation>
     </message>
     <message>
         <source>%1: Access denied</source>
@@ -6237,11 +6237,11 @@ Please turn one of those options off.</source>
     </message>
     <message>
         <source>Copy</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Copiar</translation>
     </message>
     <message>
         <source>Cut</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Cortar</translation>
     </message>
     <message>
         <source>Display</source>
@@ -6313,7 +6313,7 @@ Please turn one of those options off.</source>
     </message>
     <message>
         <source>Paste</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Colar</translation>
     </message>
     <message>
         <source>Phone</source>
@@ -7547,7 +7547,7 @@ Role of an accessible object</extracomment>
     </message>
     <message>
         <source>Operation on socket is not supported</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">A operação no &quot;socket&quot; não é suportada</translation>
     </message>
 </context>
 <context>

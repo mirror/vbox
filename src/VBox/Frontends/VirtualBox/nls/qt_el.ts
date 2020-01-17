@@ -5,15 +5,15 @@
     <name>AudioOutput</name>
     <message>
         <source>&lt;html&gt;The audio playback device &lt;b&gt;%1&lt;/b&gt; does not work.&lt;br/&gt;Falling back to &lt;b&gt;%2&lt;/b&gt;.&lt;/html&gt;</source>
-        <translation>&lt;html&gt;Η συσκευή αναπαραγωγής ήχου &lt;b&gt;%1&lt;/b&gt; δεν δουλεύει.&lt;br/&gt;Επαναφορά σε &lt;b&gt;%2&lt;/b&gt;.&lt;/html&gt;</translation>
+        <translation type="vanished">&lt;html&gt;Η συσκευή αναπαραγωγής ήχου &lt;b&gt;%1&lt;/b&gt; δεν δουλεύει.&lt;br/&gt;Επαναφορά σε &lt;b&gt;%2&lt;/b&gt;.&lt;/html&gt;</translation>
     </message>
     <message>
         <source>&lt;html&gt;Switching to the audio playback device &lt;b&gt;%1&lt;/b&gt;&lt;br/&gt;which just became available and has higher preference.&lt;/html&gt;</source>
-        <translation>&lt;html&gt;Αλλαγή στη συσκευή αναπαραγωγής ήχου &lt;b&gt;%1&lt;/b&gt;&lt;br/&gt;η οποία είναι διαθέσιμη και έχει μεγαλύτερη προτεραιότητα.&lt;/html&gt;</translation>
+        <translation type="vanished">&lt;html&gt;Αλλαγή στη συσκευή αναπαραγωγής ήχου &lt;b&gt;%1&lt;/b&gt;&lt;br/&gt;η οποία είναι διαθέσιμη και έχει μεγαλύτερη προτεραιότητα.&lt;/html&gt;</translation>
     </message>
     <message>
         <source>Revert back to device &apos;%1&apos;</source>
-        <translation>Επαναφορά στη συσκευή &apos;%1&apos;</translation>
+        <translation type="vanished">Επαναφορά στη συσκευή &apos;%1&apos;</translation>
     </message>
 </context>
 <context>
@@ -59,27 +59,27 @@
     <name>Phonon::</name>
     <message>
         <source>Notifications</source>
-        <translation>Γνωστοποιήσεις</translation>
+        <translation type="vanished">Γνωστοποιήσεις</translation>
     </message>
     <message>
         <source>Music</source>
-        <translation>Μουσική</translation>
+        <translation type="vanished">Μουσική</translation>
     </message>
     <message>
         <source>Video</source>
-        <translation>Βίντεο</translation>
+        <translation type="vanished">Βίντεο</translation>
     </message>
     <message>
         <source>Communication</source>
-        <translation>Επικοινωνία</translation>
+        <translation type="vanished">Επικοινωνία</translation>
     </message>
     <message>
         <source>Games</source>
-        <translation>Παιχνίδια</translation>
+        <translation type="vanished">Παιχνίδια</translation>
     </message>
     <message>
         <source>Accessibility</source>
-        <translation>Βοηθήματα</translation>
+        <translation type="vanished">Βοηθήματα</translation>
     </message>
 </context>
 <context>
@@ -87,13 +87,13 @@
     <message>
         <source>Warning: You do not seem to have the package gstreamer0.10-plugins-good installed.
           Some video features have been disabled.</source>
-        <translation>Προειδοποίηση: Δεν έχετε το πακέτο gstreamer0.10-plugins-good εγκατεστημένο.
+        <translation type="vanished">Προειδοποίηση: Δεν έχετε το πακέτο gstreamer0.10-plugins-good εγκατεστημένο.
           Κάποιες εφαρμογές βίντεο θα είναι απενεργοποιημένες.</translation>
     </message>
     <message>
         <source>Warning: You do not seem to have the base GStreamer plugins installed.
           All audio and video support has been disabled</source>
-        <translation>Προειδοποίηση: Δεν έχετε τη βάση gstreamer plugins εγκατεστημένη.
+        <translation type="vanished">Προειδοποίηση: Δεν έχετε τη βάση gstreamer plugins εγκατεστημένη.
           Όλες οι εφαρμογές ήχου και βίντεο έχουν απενεργοποιηθεί</translation>
     </message>
 </context>
@@ -104,323 +104,323 @@
 
 Check your Gstreamer installation and make sure you 
 have libgstreamer-plugins-base installed.</source>
-        <translation>Δεν είναι δυνατή η αναπαραγωγή. 
+        <translation type="vanished">Δεν είναι δυνατή η αναπαραγωγή. 
 
 Ελέξτε την εγκατάσταση του Gstreamer και σιγουρευτείτε οτι
 έχετε εγκαταστήσει το  libgstreamer-plugins-base.</translation>
     </message>
     <message numerus="yes">
         <source>A required codec is missing. You need to install the following codec(s) to play this content: %0</source>
-        <translation>
+        <translation type="vanished">
             <numerusform>Ένα απαιτούμενο codec λείπει. Χρειάζεται να εγκαταστήσετε το ακόλουθο codec για να αναπαράγετε το περιεχόμενο: %0</numerusform>
             <numerusform>Κάποια απαιτούμενα codec λείπουν. Χρειάζεται να εγκαταστήσετε τα ακόλουθα codec για να αναπαράγετε το περιεχόμενο: %0</numerusform>
         </translation>
     </message>
     <message>
         <source>Could not open media source.</source>
-        <translation>Δεν ήταν δυνατό το άνοιγμα πηγής μέσου.</translation>
+        <translation type="vanished">Δεν ήταν δυνατό το άνοιγμα πηγής μέσου.</translation>
     </message>
     <message>
         <source>Invalid source type.</source>
-        <translation>Μή έγκυρος τύπος πηγής.</translation>
+        <translation type="vanished">Μή έγκυρος τύπος πηγής.</translation>
     </message>
     <message>
         <source>Could not locate media source.</source>
-        <translation>Δεν ήταν δυνατός ο εντοπισμός πηγής μέσου.</translation>
+        <translation type="vanished">Δεν ήταν δυνατός ο εντοπισμός πηγής μέσου.</translation>
     </message>
     <message>
         <source>Could not open audio device. The device is already in use.</source>
-        <translation>Δεν ήταν δυνατό το άνοιγμα της συσκευής ήχου. Η συσκευή ήδη χρησιμοποιείται.</translation>
+        <translation type="vanished">Δεν ήταν δυνατό το άνοιγμα της συσκευής ήχου. Η συσκευή ήδη χρησιμοποιείται.</translation>
     </message>
     <message>
         <source>Could not decode media source.</source>
-        <translation>Δεν ήταν δυνατή η αποκωδικοποίηση της πηγής μέσου.</translation>
+        <translation type="vanished">Δεν ήταν δυνατή η αποκωδικοποίηση της πηγής μέσου.</translation>
     </message>
 </context>
 <context>
     <name>Phonon::VolumeSlider</name>
     <message>
         <source>Volume: %1%</source>
-        <translation>Ένταση: %1%</translation>
+        <translation type="vanished">Ένταση: %1%</translation>
     </message>
     <message>
         <source>Use this slider to adjust the volume. The leftmost position is 0%, the rightmost is %1%</source>
-        <translation>Χρησιμοποιήστε τον ολισθητή για να ρυθμίσετε την ένταση. Η πιο αριστερή θέση είναι 0%, η πιο δεξιά είναι %1</translation>
+        <translation type="vanished">Χρησιμοποιήστε τον ολισθητή για να ρυθμίσετε την ένταση. Η πιο αριστερή θέση είναι 0%, η πιο δεξιά είναι %1</translation>
     </message>
 </context>
 <context>
     <name>Q3Accel</name>
     <message>
         <source>%1, %2 not defined</source>
-        <translation>%1, %2 δεν έχει καθοριστεί</translation>
+        <translation type="vanished">%1, %2 δεν έχει καθοριστεί</translation>
     </message>
     <message>
         <source>Ambiguous %1 not handled</source>
-        <translation>Αμφίβολο %1 δεν μπορεί να χειριστεί</translation>
+        <translation type="vanished">Αμφίβολο %1 δεν μπορεί να χειριστεί</translation>
     </message>
 </context>
 <context>
     <name>Q3DataTable</name>
     <message>
         <source>True</source>
-        <translation>Σωστό</translation>
+        <translation type="vanished">Σωστό</translation>
     </message>
     <message>
         <source>False</source>
-        <translation>Λάθος</translation>
+        <translation type="vanished">Λάθος</translation>
     </message>
     <message>
         <source>Insert</source>
-        <translation>Εισαγωγή</translation>
+        <translation type="vanished">Εισαγωγή</translation>
     </message>
     <message>
         <source>Update</source>
-        <translation>Ανανέωση</translation>
+        <translation type="vanished">Ανανέωση</translation>
     </message>
     <message>
         <source>Delete</source>
-        <translation>Διαγραφή</translation>
+        <translation type="vanished">Διαγραφή</translation>
     </message>
 </context>
 <context>
     <name>Q3FileDialog</name>
     <message>
         <source>Copy or Move a File</source>
-        <translation>Αντιγραφή ή Μετακίνηση αρχείου</translation>
+        <translation type="vanished">Αντιγραφή ή Μετακίνηση αρχείου</translation>
     </message>
     <message>
         <source>Read: %1</source>
-        <translation>Ανάγνωση : %1</translation>
+        <translation type="vanished">Ανάγνωση : %1</translation>
     </message>
     <message>
         <source>Write: %1</source>
-        <translation>Εγγραφή : %1</translation>
+        <translation type="vanished">Εγγραφή : %1</translation>
     </message>
     <message>
         <source>Cancel</source>
-        <translation>Ακύρωση</translation>
+        <translation type="vanished">Ακύρωση</translation>
     </message>
     <message>
         <source>All Files (*)</source>
-        <translation>Όλα τα Αρχεία (*)</translation>
+        <translation type="vanished">Όλα τα Αρχεία (*)</translation>
     </message>
     <message>
         <source>Name</source>
-        <translation>Όνομα</translation>
+        <translation type="vanished">Όνομα</translation>
     </message>
     <message>
         <source>Size</source>
-        <translation>Μέγεθος</translation>
+        <translation type="vanished">Μέγεθος</translation>
     </message>
     <message>
         <source>Type</source>
-        <translation>Τύπος</translation>
+        <translation type="vanished">Τύπος</translation>
     </message>
     <message>
         <source>Date</source>
-        <translation>Ημερομηνία</translation>
+        <translation type="vanished">Ημερομηνία</translation>
     </message>
     <message>
         <source>Attributes</source>
-        <translation>Ιδιότητες</translation>
+        <translation type="vanished">Ιδιότητες</translation>
     </message>
     <message>
         <source>&amp;OK</source>
-        <translation>&amp;Εντάξει</translation>
+        <translation type="vanished">&amp;Εντάξει</translation>
     </message>
     <message>
         <source>Look &amp;in:</source>
-        <translation>Ψάξε &amp;in :</translation>
+        <translation type="vanished">Ψάξε &amp;in :</translation>
     </message>
     <message>
         <source>File &amp;name:</source>
-        <translation>&amp;Όνομα αρχεiου:</translation>
+        <translation type="vanished">&amp;Όνομα αρχεiου:</translation>
     </message>
     <message>
         <source>File &amp;type:</source>
-        <translation>&amp;Τύπος αρχείου:</translation>
+        <translation type="vanished">&amp;Τύπος αρχείου:</translation>
     </message>
     <message>
         <source>Back</source>
-        <translation>Πίσω</translation>
+        <translation type="vanished">Πίσω</translation>
     </message>
     <message>
         <source>One directory up</source>
-        <translation>Επάνω</translation>
+        <translation type="vanished">Επάνω</translation>
     </message>
     <message>
         <source>Create New Folder</source>
-        <translation>Δημιουργία Νέου Φακέλου</translation>
+        <translation type="vanished">Δημιουργία Νέου Φακέλου</translation>
     </message>
     <message>
         <source>List View</source>
-        <translation>Προβολή Λίστας</translation>
+        <translation type="vanished">Προβολή Λίστας</translation>
     </message>
     <message>
         <source>Detail View</source>
-        <translation>Προβολή με Λεπτομέρειες</translation>
+        <translation type="vanished">Προβολή με Λεπτομέρειες</translation>
     </message>
     <message>
         <source>Preview File Info</source>
-        <translation>Προεπισκόπηση Πληροφοριών Αρχείου</translation>
+        <translation type="vanished">Προεπισκόπηση Πληροφοριών Αρχείου</translation>
     </message>
     <message>
         <source>Preview File Contents</source>
-        <translation>Προεπισκόπηση Περιεχομένων Αρχείου</translation>
+        <translation type="vanished">Προεπισκόπηση Περιεχομένων Αρχείου</translation>
     </message>
     <message>
         <source>Read-write</source>
-        <translation>Ανάγνωση-εγγραφή</translation>
+        <translation type="vanished">Ανάγνωση-εγγραφή</translation>
     </message>
     <message>
         <source>Read-only</source>
-        <translation>Ανάγνωση μόνο</translation>
+        <translation type="vanished">Ανάγνωση μόνο</translation>
     </message>
     <message>
         <source>Write-only</source>
-        <translation>Εγγραφή-μόνο</translation>
+        <translation type="vanished">Εγγραφή-μόνο</translation>
     </message>
     <message>
         <source>Inaccessible</source>
-        <translation>Απροσπέλαστο</translation>
+        <translation type="vanished">Απροσπέλαστο</translation>
     </message>
     <message>
         <source>Symlink to File</source>
-        <translation>Σύνδεσμος σε αρχείο</translation>
+        <translation type="vanished">Σύνδεσμος σε αρχείο</translation>
     </message>
     <message>
         <source>Symlink to Directory</source>
-        <translation>Σύνδεσμος σε φάκελλο</translation>
+        <translation type="vanished">Σύνδεσμος σε φάκελλο</translation>
     </message>
     <message>
         <source>Symlink to Special</source>
-        <translation>Σύνδεσμος σε ειδικό</translation>
+        <translation type="vanished">Σύνδεσμος σε ειδικό</translation>
     </message>
     <message>
         <source>File</source>
-        <translation>Αρχείο</translation>
+        <translation type="vanished">Αρχείο</translation>
     </message>
     <message>
         <source>Dir</source>
-        <translation>Κατάλογος</translation>
+        <translation type="vanished">Κατάλογος</translation>
     </message>
     <message>
         <source>Special</source>
-        <translation>Ειδικό</translation>
+        <translation type="vanished">Ειδικό</translation>
     </message>
     <message>
         <source>Open</source>
-        <translation>Άνοιγμα</translation>
+        <translation type="vanished">Άνοιγμα</translation>
     </message>
     <message>
         <source>Save As</source>
-        <translation>Αποθήκευση ως</translation>
+        <translation type="vanished">Αποθήκευση ως</translation>
     </message>
     <message>
         <source>&amp;Open</source>
-        <translation>&amp;Άνοιγμα</translation>
+        <translation type="vanished">&amp;Άνοιγμα</translation>
     </message>
     <message>
         <source>&amp;Save</source>
-        <translation>&amp;Αποθήκευση</translation>
+        <translation type="vanished">&amp;Αποθήκευση</translation>
     </message>
     <message>
         <source>&amp;Rename</source>
-        <translation>&amp;Μετονομασία</translation>
+        <translation type="vanished">&amp;Μετονομασία</translation>
     </message>
     <message>
         <source>&amp;Delete</source>
-        <translation>&amp;Διαγραφή</translation>
+        <translation type="vanished">&amp;Διαγραφή</translation>
     </message>
     <message>
         <source>R&amp;eload</source>
-        <translation>Φ&amp;όρτωμα</translation>
+        <translation type="vanished">Φ&amp;όρτωμα</translation>
     </message>
     <message>
         <source>Sort by &amp;Name</source>
-        <translation>Ταξινόμηση κατά &amp;Όνομα</translation>
+        <translation type="vanished">Ταξινόμηση κατά &amp;Όνομα</translation>
     </message>
     <message>
         <source>Sort by &amp;Size</source>
-        <translation>Ταξινόμηση κατά &amp;Μέγεθος</translation>
+        <translation type="vanished">Ταξινόμηση κατά &amp;Μέγεθος</translation>
     </message>
     <message>
         <source>Sort by &amp;Date</source>
-        <translation>Ταξινόμηση κατά &amp;Ημερομηνία</translation>
+        <translation type="vanished">Ταξινόμηση κατά &amp;Ημερομηνία</translation>
     </message>
     <message>
         <source>&amp;Unsorted</source>
-        <translation>&amp;Αταξινόμητα</translation>
+        <translation type="vanished">&amp;Αταξινόμητα</translation>
     </message>
     <message>
         <source>Sort</source>
-        <translation>Ταξινόμηση</translation>
+        <translation type="vanished">Ταξινόμηση</translation>
     </message>
     <message>
         <source>Show &amp;hidden files</source>
-        <translation>Εμφάνιση &amp;Κρυφών Αρχείων</translation>
+        <translation type="vanished">Εμφάνιση &amp;Κρυφών Αρχείων</translation>
     </message>
     <message>
         <source>the file</source>
-        <translation>το αρχείο</translation>
+        <translation type="vanished">το αρχείο</translation>
     </message>
     <message>
         <source>the directory</source>
-        <translation>ο φάκελος</translation>
+        <translation type="vanished">ο φάκελος</translation>
     </message>
     <message>
         <source>the symlink</source>
-        <translation>ο σύνδεσμος</translation>
+        <translation type="vanished">ο σύνδεσμος</translation>
     </message>
     <message>
         <source>Delete %1</source>
-        <translation>Διαγραφή %1</translation>
+        <translation type="vanished">Διαγραφή %1</translation>
     </message>
     <message>
         <source>&lt;qt&gt;Are you sure you wish to delete %1 &quot;%2&quot;?&lt;/qt&gt;</source>
-        <translation>&lt;qt&gt;Είστε σίγουροι ότι θέλετε να διαγράψετε %1 &quot;%2&quot;?&lt;/qt?\&gt;</translation>
+        <translation type="vanished">&lt;qt&gt;Είστε σίγουροι ότι θέλετε να διαγράψετε %1 &quot;%2&quot;?&lt;/qt?\&gt;</translation>
     </message>
     <message>
         <source>&amp;Yes</source>
-        <translation>&amp;Ναι</translation>
+        <translation type="vanished">&amp;Ναι</translation>
     </message>
     <message>
         <source>&amp;No</source>
-        <translation>&amp;Όχι</translation>
+        <translation type="vanished">&amp;Όχι</translation>
     </message>
     <message>
         <source>New Folder 1</source>
-        <translation>Νέος Φάκελος 1</translation>
+        <translation type="vanished">Νέος Φάκελος 1</translation>
     </message>
     <message>
         <source>New Folder</source>
-        <translation>Νέος Φάκελος</translation>
+        <translation type="vanished">Νέος Φάκελος</translation>
     </message>
     <message>
         <source>New Folder %1</source>
-        <translation>Νέος Φάκελος %1</translation>
+        <translation type="vanished">Νέος Φάκελος %1</translation>
     </message>
     <message>
         <source>Find Directory</source>
-        <translation>Εύρεση Φακέλου</translation>
+        <translation type="vanished">Εύρεση Φακέλου</translation>
     </message>
     <message>
         <source>Directories</source>
-        <translation>Φάκελοι</translation>
+        <translation type="vanished">Φάκελοι</translation>
     </message>
     <message>
         <source>Directory:</source>
-        <translation>Φάκελος:</translation>
+        <translation type="vanished">Φάκελος:</translation>
     </message>
     <message>
         <source>Error</source>
-        <translation>Λάθος</translation>
+        <translation type="vanished">Λάθος</translation>
     </message>
     <message>
         <source>%1
 File not found.
 Check path and filename.</source>
-        <translation>%1
+        <translation type="vanished">%1
 Το αρχείο δεν βρέθηκε.
 Ελέγξτε την διαδρομή και το όνομα του αρχείου.</translation>
     </message>
@@ -430,19 +430,19 @@ Check path and filename.</source>
     <message>
         <source>Could not read directory
 %1</source>
-        <translation>Δεν ήταν δυνατή η ανάγνωση του φακέλου
+        <translation type="vanished">Δεν ήταν δυνατή η ανάγνωση του φακέλου
 %1</translation>
     </message>
     <message>
         <source>Could not create directory
 %1</source>
-        <translation>Δεν ήταν δυνατή η δημιουργία του φακέλου
+        <translation type="vanished">Δεν ήταν δυνατή η δημιουργία του φακέλου
 %1</translation>
     </message>
     <message>
         <source>Could not remove file or directory
 %1</source>
-        <translation>Δεν ήταν δυνατή η διαγραφή του αρχείου ή του φακέλου
+        <translation type="vanished">Δεν ήταν δυνατή η διαγραφή του αρχείου ή του φακέλου
 %1</translation>
     </message>
     <message>
@@ -450,7 +450,7 @@ Check path and filename.</source>
 %1
 to
 %2</source>
-        <translation>Δεν ήταν δυνατή η μετονομασία
+        <translation type="vanished">Δεν ήταν δυνατή η μετονομασία
 %1
 σε
 %2</translation>
@@ -458,13 +458,13 @@ to
     <message>
         <source>Could not open
 %1</source>
-        <translation>Δεν ήταν δυνατό το άνοιγμα
+        <translation type="vanished">Δεν ήταν δυνατό το άνοιγμα
 %1</translation>
     </message>
     <message>
         <source>Could not write
 %1</source>
-        <translation>Δεν ήταν δυνατή η εγγραφή
+        <translation type="vanished">Δεν ήταν δυνατή η εγγραφή
 %1</translation>
     </message>
 </context>
@@ -472,203 +472,203 @@ to
     <name>Q3MainWindow</name>
     <message>
         <source>Line up</source>
-        <translation>Ευθυγράμμιση</translation>
+        <translation type="vanished">Ευθυγράμμιση</translation>
     </message>
     <message>
         <source>Customize...</source>
-        <translation>Προσαρμογή...</translation>
+        <translation type="vanished">Προσαρμογή...</translation>
     </message>
 </context>
 <context>
     <name>Q3NetworkProtocol</name>
     <message>
         <source>Operation stopped by the user</source>
-        <translation>Η λειτουργία σταμάτησε από τον χρήστη</translation>
+        <translation type="vanished">Η λειτουργία σταμάτησε από τον χρήστη</translation>
     </message>
 </context>
 <context>
     <name>Q3ProgressDialog</name>
     <message>
         <source>Cancel</source>
-        <translation>Άκυρο</translation>
+        <translation type="vanished">Άκυρο</translation>
     </message>
 </context>
 <context>
     <name>Q3TabDialog</name>
     <message>
         <source>OK</source>
-        <translation>Ναι</translation>
+        <translation type="vanished">Ναι</translation>
     </message>
     <message>
         <source>Apply</source>
-        <translation>Εφαρμογή</translation>
+        <translation type="vanished">Εφαρμογή</translation>
     </message>
     <message>
         <source>Help</source>
-        <translation>Βοήθεια</translation>
+        <translation type="vanished">Βοήθεια</translation>
     </message>
     <message>
         <source>Defaults</source>
-        <translation>Επαναφορά σε αρχικά</translation>
+        <translation type="vanished">Επαναφορά σε αρχικά</translation>
     </message>
     <message>
         <source>Cancel</source>
-        <translation>Άκυρο</translation>
+        <translation type="vanished">Άκυρο</translation>
     </message>
 </context>
 <context>
     <name>Q3TextEdit</name>
     <message>
         <source>&amp;Undo</source>
-        <translation>&amp;Αναίρεση</translation>
+        <translation type="vanished">&amp;Αναίρεση</translation>
     </message>
     <message>
         <source>&amp;Redo</source>
-        <translation>&amp;Ακύρωση Αναίρεσης</translation>
+        <translation type="vanished">&amp;Ακύρωση Αναίρεσης</translation>
     </message>
     <message>
         <source>Cu&amp;t</source>
-        <translation>Αποκοπ&amp;ή</translation>
+        <translation type="vanished">Αποκοπ&amp;ή</translation>
     </message>
     <message>
         <source>&amp;Copy</source>
-        <translation>&amp;Αντιγραφή</translation>
+        <translation type="vanished">&amp;Αντιγραφή</translation>
     </message>
     <message>
         <source>&amp;Paste</source>
-        <translation>&amp;Επικόλληση</translation>
+        <translation type="vanished">&amp;Επικόλληση</translation>
     </message>
     <message>
         <source>Clear</source>
-        <translation>Καθαρισμός</translation>
+        <translation type="vanished">Καθαρισμός</translation>
     </message>
     <message>
         <source>Select All</source>
-        <translation>Επιλογή Όλων</translation>
+        <translation type="vanished">Επιλογή Όλων</translation>
     </message>
 </context>
 <context>
     <name>Q3TitleBar</name>
     <message>
         <source>System</source>
-        <translation>Σύστημα</translation>
+        <translation type="vanished">Σύστημα</translation>
     </message>
     <message>
         <source>Restore up</source>
-        <translation>Επαναφορά πάνω</translation>
+        <translation type="vanished">Επαναφορά πάνω</translation>
     </message>
     <message>
         <source>Minimize</source>
-        <translation>Ελαχιστοποίηση</translation>
+        <translation type="vanished">Ελαχιστοποίηση</translation>
     </message>
     <message>
         <source>Restore down</source>
-        <translation>Επαναφορά κάτω</translation>
+        <translation type="vanished">Επαναφορά κάτω</translation>
     </message>
     <message>
         <source>Maximize</source>
-        <translation>Μεγιστοποίηση</translation>
+        <translation type="vanished">Μεγιστοποίηση</translation>
     </message>
     <message>
         <source>Close</source>
-        <translation>Κλείσιμο</translation>
+        <translation type="vanished">Κλείσιμο</translation>
     </message>
     <message>
         <source>Contains commands to manipulate the window</source>
-        <translation>Περιέχει εντολές για τον έλεγχο του παραθύρου</translation>
+        <translation type="vanished">Περιέχει εντολές για τον έλεγχο του παραθύρου</translation>
     </message>
     <message>
         <source>Puts a minimized back to normal</source>
-        <translation>Θετεί από ελαχιστοποίηση σε κανονικό μέγεθος</translation>
+        <translation type="vanished">Θετεί από ελαχιστοποίηση σε κανονικό μέγεθος</translation>
     </message>
     <message>
         <source>Moves the window out of the way</source>
-        <translation>Θέτει το παράθυρο εκτός όψης</translation>
+        <translation type="vanished">Θέτει το παράθυρο εκτός όψης</translation>
     </message>
     <message>
         <source>Puts a maximized window back to normal</source>
-        <translation>Θέτει το παράθυρο από μεγιστοποίηση σε κανονικό μέγεθος</translation>
+        <translation type="vanished">Θέτει το παράθυρο από μεγιστοποίηση σε κανονικό μέγεθος</translation>
     </message>
     <message>
         <source>Makes the window full screen</source>
-        <translation>Θέτει το παράθυρο σε πλήρη οθόνη</translation>
+        <translation type="vanished">Θέτει το παράθυρο σε πλήρη οθόνη</translation>
     </message>
     <message>
         <source>Closes the window</source>
-        <translation>Κλείνει το παράθυρο</translation>
+        <translation type="vanished">Κλείνει το παράθυρο</translation>
     </message>
     <message>
         <source>Holds the name of the window and contains controls to manipulate it</source>
-        <translation>Εμφανίζει το όνομα του παραθύρου και περιέχει εντολές για τον έλεγχο του</translation>
+        <translation type="vanished">Εμφανίζει το όνομα του παραθύρου και περιέχει εντολές για τον έλεγχο του</translation>
     </message>
 </context>
 <context>
     <name>Q3ToolBar</name>
     <message>
         <source>More...</source>
-        <translation>Περισσότερα...</translation>
+        <translation type="vanished">Περισσότερα...</translation>
     </message>
 </context>
 <context>
     <name>Q3UrlOperator</name>
     <message>
         <source>The protocol `%1&apos; is not supported</source>
-        <translation>Το πρωτόκολλο &apos;%1&apos; δεν υποστηρίζεται</translation>
+        <translation type="vanished">Το πρωτόκολλο &apos;%1&apos; δεν υποστηρίζεται</translation>
     </message>
     <message>
         <source>The protocol `%1&apos; does not support listing directories</source>
-        <translation>Το πρωτόκολλο &apos;%1&apos; δεν υποστηρίζει τον κατάλογο φακέλων</translation>
+        <translation type="vanished">Το πρωτόκολλο &apos;%1&apos; δεν υποστηρίζει τον κατάλογο φακέλων</translation>
     </message>
     <message>
         <source>The protocol `%1&apos; does not support creating new directories</source>
-        <translation>Το πρωτόκολλο &apos;%1&apos; δεν υποστηρίζει την δημιουργία νέων φακέλων</translation>
+        <translation type="vanished">Το πρωτόκολλο &apos;%1&apos; δεν υποστηρίζει την δημιουργία νέων φακέλων</translation>
     </message>
     <message>
         <source>The protocol `%1&apos; does not support removing files or directories</source>
-        <translation>Το πρωτόκολλο &apos;%1&apos; δεν υποστηρίζει την μετακίνηση αρχείων ή φακέλων</translation>
+        <translation type="vanished">Το πρωτόκολλο &apos;%1&apos; δεν υποστηρίζει την μετακίνηση αρχείων ή φακέλων</translation>
     </message>
     <message>
         <source>The protocol `%1&apos; does not support renaming files or directories</source>
-        <translation>Το πρωτόκολλο &apos;%1&apos; δεν υποστηρίζει την μετονομασία αρχείων ή φακέλων</translation>
+        <translation type="vanished">Το πρωτόκολλο &apos;%1&apos; δεν υποστηρίζει την μετονομασία αρχείων ή φακέλων</translation>
     </message>
     <message>
         <source>The protocol `%1&apos; does not support getting files</source>
-        <translation>Το πρωτόκολλο &apos;%1&apos; δεν υποστηρίζει την απόκτηση αρχείων</translation>
+        <translation type="vanished">Το πρωτόκολλο &apos;%1&apos; δεν υποστηρίζει την απόκτηση αρχείων</translation>
     </message>
     <message>
         <source>The protocol `%1&apos; does not support putting files</source>
-        <translation>Το πρωτόκολλο &apos;%1&apos; δεν υποστηρίζει την υποβολή αρχείων</translation>
+        <translation type="vanished">Το πρωτόκολλο &apos;%1&apos; δεν υποστηρίζει την υποβολή αρχείων</translation>
     </message>
     <message>
         <source>The protocol `%1&apos; does not support copying or moving files or directories</source>
-        <translation>Το πρωτόκολλο &apos;%1&apos; δεν υποστηρίζει την αντιγραφή ή μεταφορά αρχείων ή φακέλων</translation>
+        <translation type="vanished">Το πρωτόκολλο &apos;%1&apos; δεν υποστηρίζει την αντιγραφή ή μεταφορά αρχείων ή φακέλων</translation>
     </message>
     <message>
         <source>(unknown)</source>
-        <translation>(άγνωστο)</translation>
+        <translation type="vanished">(άγνωστο)</translation>
     </message>
 </context>
 <context>
     <name>Q3Wizard</name>
     <message>
         <source>&amp;Cancel</source>
-        <translation>&amp;Άκυρο</translation>
+        <translation type="vanished">&amp;Άκυρο</translation>
     </message>
     <message>
         <source>&lt; &amp;Back</source>
-        <translation>&lt; &amp;Πίσω</translation>
+        <translation type="vanished">&lt; &amp;Πίσω</translation>
     </message>
     <message>
         <source>&amp;Next &gt;</source>
-        <translation>&amp;Επόμενο &gt;</translation>
+        <translation type="vanished">&amp;Επόμενο &gt;</translation>
     </message>
     <message>
         <source>&amp;Finish</source>
-        <translation>&amp;Τέλος</translation>
+        <translation type="vanished">&amp;Τέλος</translation>
     </message>
     <message>
         <source>&amp;Help</source>
-        <translation>&amp;Βοήθεια</translation>
+        <translation type="vanished">&amp;Βοήθεια</translation>
     </message>
 </context>
 <context>
@@ -843,7 +843,7 @@ to
     <name>QApplication</name>
     <message>
         <source>Activate</source>
-        <translation>Ενεργοποίηση</translation>
+        <translation type="vanished">Ενεργοποίηση</translation>
     </message>
     <message>
         <source>Executable &apos;%1&apos; requires Qt %2, found Qt %3.</source>
@@ -856,26 +856,26 @@ to
     <message>
         <source>QT_LAYOUT_DIRECTION</source>
         <comment>Translate this string to the string &apos;LTR&apos; in left-to-right languages or to &apos;RTL&apos; in right-to-left languages (such as Hebrew and Arabic) to get proper widget layout.</comment>
-        <translation>QT_ΚΑΤΕΥΘΥΝΣΗ_ΠΑΡΑΘΕΣΗΣ</translation>
+        <translation type="vanished">QT_ΚΑΤΕΥΘΥΝΣΗ_ΠΑΡΑΘΕΣΗΣ</translation>
     </message>
     <message>
         <source>Activates the program&apos;s main window</source>
-        <translation>Ενεργοποιεί το κεντρικό παράθυρο της εφαρμογής</translation>
+        <translation type="vanished">Ενεργοποιεί το κεντρικό παράθυρο της εφαρμογής</translation>
     </message>
 </context>
 <context>
     <name>QCheckBox</name>
     <message>
         <source>Uncheck</source>
-        <translation>Απεπιλογή</translation>
+        <translation type="vanished">Απεπιλογή</translation>
     </message>
     <message>
         <source>Check</source>
-        <translation>Επιλογή</translation>
+        <translation type="vanished">Επιλογή</translation>
     </message>
     <message>
         <source>Toggle</source>
-        <translation>Αντιστροφή</translation>
+        <translation type="vanished">Αντιστροφή</translation>
     </message>
 </context>
 <context>
@@ -984,7 +984,7 @@ to
     </message>
     <message>
         <source>Select color</source>
-        <translation>Επιλέξτε χρώμα</translation>
+        <translation type="vanished">Επιλέξτε χρώμα</translation>
     </message>
     <message>
         <source>&amp;HTML:</source>
@@ -1008,7 +1008,7 @@ Press ESC to cancel</source>
     <name>QComboBox</name>
     <message>
         <source>Open</source>
-        <translation>Άνοιγμα</translation>
+        <translation type="vanished">Άνοιγμα</translation>
     </message>
     <message>
         <source>False</source>
@@ -1020,7 +1020,7 @@ Press ESC to cancel</source>
     </message>
     <message>
         <source>Close</source>
-        <translation>Κλείσιμο</translation>
+        <translation type="vanished">Κλείσιμο</translation>
     </message>
     <message>
         <source>Open the combo box selection popup</source>
@@ -1075,27 +1075,27 @@ Press ESC to cancel</source>
     <message>
         <source>%1: permission denied</source>
         <comment>QSystemSemaphore</comment>
-        <translation>%1: άρνηση άδειας</translation>
+        <translation type="vanished">%1: άρνηση άδειας</translation>
     </message>
     <message>
         <source>%1: already exists</source>
         <comment>QSystemSemaphore</comment>
-        <translation>%1: υπάρχει ήδη</translation>
+        <translation type="vanished">%1: υπάρχει ήδη</translation>
     </message>
     <message>
         <source>%1: doesn&apos;t exists</source>
         <comment>QSystemSemaphore</comment>
-        <translation>%1: δεν υπάρχει</translation>
+        <translation type="vanished">%1: δεν υπάρχει</translation>
     </message>
     <message>
         <source>%1: out of resources</source>
         <comment>QSystemSemaphore</comment>
-        <translation>%1: έλλειψη πόρων</translation>
+        <translation type="vanished">%1: έλλειψη πόρων</translation>
     </message>
     <message>
         <source>%1: unknown error %2</source>
         <comment>QSystemSemaphore</comment>
-        <translation>%1: άγνωστο λάθος %2</translation>
+        <translation type="vanished">%1: άγνωστο λάθος %2</translation>
     </message>
     <message>
         <source>%1: key is empty</source>
@@ -1274,19 +1274,19 @@ Press ESC to cancel</source>
     <name>QDateTimeEdit</name>
     <message>
         <source>AM</source>
-        <translation>ΜΜ</translation>
+        <translation type="vanished">ΜΜ</translation>
     </message>
     <message>
         <source>am</source>
-        <translation>μμ</translation>
+        <translation type="vanished">μμ</translation>
     </message>
     <message>
         <source>PM</source>
-        <translation>ΠΜ</translation>
+        <translation type="vanished">ΠΜ</translation>
     </message>
     <message>
         <source>pm</source>
-        <translation>πμ</translation>
+        <translation type="vanished">πμ</translation>
     </message>
 </context>
 <context>
@@ -1312,15 +1312,15 @@ Press ESC to cancel</source>
     <name>QDial</name>
     <message>
         <source>QDial</source>
-        <translation>Ποντεσιόμετρο</translation>
+        <translation type="vanished">Ποντεσιόμετρο</translation>
     </message>
     <message>
         <source>SpeedoMeter</source>
-        <translation>Ταχύμετρο</translation>
+        <translation type="vanished">Ταχύμετρο</translation>
     </message>
     <message>
         <source>SliderHandle</source>
-        <translation>Ελεγκτής Ολίσθησης</translation>
+        <translation type="vanished">Ελεγκτής Ολίσθησης</translation>
     </message>
 </context>
 <context>
@@ -1331,7 +1331,7 @@ Press ESC to cancel</source>
     </message>
     <message>
         <source>Done</source>
-        <translation>Εντάξει</translation>
+        <translation type="vanished">Εντάξει</translation>
     </message>
 </context>
 <context>
@@ -1342,83 +1342,83 @@ Press ESC to cancel</source>
     </message>
     <message>
         <source>Save</source>
-        <translation>Αποθήκευση</translation>
+        <translation type="vanished">Αποθήκευση</translation>
     </message>
     <message>
         <source>Open</source>
-        <translation>Άνοιγμα</translation>
+        <translation type="vanished">Άνοιγμα</translation>
     </message>
     <message>
         <source>Cancel</source>
-        <translation>Άκυρο</translation>
+        <translation type="vanished">Άκυρο</translation>
     </message>
     <message>
         <source>Close</source>
-        <translation>Κλείσιμο</translation>
+        <translation type="vanished">Κλείσιμο</translation>
     </message>
     <message>
         <source>Apply</source>
-        <translation>Εφαρμογή</translation>
+        <translation type="vanished">Εφαρμογή</translation>
     </message>
     <message>
         <source>Reset</source>
-        <translation>Επανέναρξη</translation>
+        <translation type="vanished">Επανέναρξη</translation>
     </message>
     <message>
         <source>Help</source>
-        <translation>Βοήθεια</translation>
+        <translation type="vanished">Βοήθεια</translation>
     </message>
     <message>
         <source>Don&apos;t Save</source>
-        <translation>Μην αποθηκεύσεις</translation>
+        <translation type="vanished">Μην αποθηκεύσεις</translation>
     </message>
     <message>
         <source>Discard</source>
-        <translation>Αποβολή</translation>
+        <translation type="vanished">Αποβολή</translation>
     </message>
     <message>
         <source>&amp;Yes</source>
-        <translation>&amp;Ναι</translation>
+        <translation type="vanished">&amp;Ναι</translation>
     </message>
     <message>
         <source>Yes to &amp;All</source>
-        <translation>Ναι σε &amp;Όλα</translation>
+        <translation type="vanished">Ναι σε &amp;Όλα</translation>
     </message>
     <message>
         <source>&amp;No</source>
-        <translation>&amp;Όχι</translation>
+        <translation type="vanished">&amp;Όχι</translation>
     </message>
     <message>
         <source>N&amp;o to All</source>
-        <translation>Ό&amp;χι σε Όλα</translation>
+        <translation type="vanished">Ό&amp;χι σε Όλα</translation>
     </message>
     <message>
         <source>Save All</source>
-        <translation>Αποθήκευση Όλων</translation>
+        <translation type="vanished">Αποθήκευση Όλων</translation>
     </message>
     <message>
         <source>Abort</source>
-        <translation>Ματαίωση</translation>
+        <translation type="vanished">Ματαίωση</translation>
     </message>
     <message>
         <source>Retry</source>
-        <translation>Προσπάθησε πάλι</translation>
+        <translation type="vanished">Προσπάθησε πάλι</translation>
     </message>
     <message>
         <source>Ignore</source>
-        <translation>Αγνόηση</translation>
+        <translation type="vanished">Αγνόηση</translation>
     </message>
     <message>
         <source>Restore Defaults</source>
-        <translation>Επανέφορα Προκαθορισμένων</translation>
+        <translation type="vanished">Επανέφορα Προκαθορισμένων</translation>
     </message>
     <message>
         <source>Close without Saving</source>
-        <translation>Κλείσιμο χωρίς αποθήκευση</translation>
+        <translation type="vanished">Κλείσιμο χωρίς αποθήκευση</translation>
     </message>
     <message>
         <source>&amp;OK</source>
-        <translation>&amp;Ναι</translation>
+        <translation type="vanished">&amp;Ναι</translation>
     </message>
 </context>
 <context>
@@ -1561,7 +1561,7 @@ Press ESC to cancel</source>
     </message>
     <message>
         <source>Dock</source>
-        <translation>Προσάρτηση</translation>
+        <translation type="vanished">Προσάρτηση</translation>
     </message>
     <message>
         <source>Float</source>
@@ -1581,11 +1581,11 @@ Press ESC to cancel</source>
     <name>QDoubleSpinBox</name>
     <message>
         <source>More</source>
-        <translation>Περισσότερα</translation>
+        <translation type="vanished">Περισσότερα</translation>
     </message>
     <message>
         <source>Less</source>
-        <translation>Λιγότερα</translation>
+        <translation type="vanished">Λιγότερα</translation>
     </message>
 </context>
 <context>
@@ -1757,7 +1757,7 @@ Do you want to delete it anyway?</source>
     </message>
     <message>
         <source>Are sure you want to delete &apos;%1&apos;?</source>
-        <translation>Είστε σίγουροι οτι θέλετε να διαγράψετε το &apos;%1&apos;?</translation>
+        <translation type="vanished">Είστε σίγουροι οτι θέλετε να διαγράψετε το &apos;%1&apos;?</translation>
     </message>
     <message>
         <source>Could not delete directory.</source>
@@ -1978,7 +1978,7 @@ Do you want to delete it anyway?</source>
     <name>QFontDatabase</name>
     <message>
         <source>Normal</source>
-        <translation>Κανονικά</translation>
+        <translation type="vanished">Κανονικά</translation>
     </message>
     <message>
         <source>Bold</source>
@@ -2232,7 +2232,7 @@ Do you want to delete it anyway?</source>
     </message>
     <message>
         <source>Connection refused for data connection</source>
-        <translation>Άρνηση σύνδεσης για σύνδεση δεδομένων</translation>
+        <translation type="vanished">Άρνηση σύνδεσης για σύνδεση δεδομένων</translation>
     </message>
     <message>
         <source>Unknown error</source>
@@ -2298,19 +2298,19 @@ Do you want to delete it anyway?</source>
     </message>
     <message>
         <source>Host %1 found</source>
-        <translation>Ο διακομιστής %1 βρέθηκε</translation>
+        <translation type="vanished">Ο διακομιστής %1 βρέθηκε</translation>
     </message>
     <message>
         <source>Connection to %1 closed</source>
-        <translation>Η σύνδεση στο %1 τερματίστηκε</translation>
+        <translation type="vanished">Η σύνδεση στο %1 τερματίστηκε</translation>
     </message>
     <message>
         <source>Host found</source>
-        <translation>Ο διακομιστής βρέθηκε</translation>
+        <translation type="vanished">Ο διακομιστής βρέθηκε</translation>
     </message>
     <message>
         <source>Connected to host</source>
-        <translation>Συνεδεμένος στον διακομιστή</translation>
+        <translation type="vanished">Συνεδεμένος στον διακομιστή</translation>
     </message>
     <message>
         <source>Connection timed out to host %1</source>
@@ -2394,23 +2394,23 @@ Do you want to delete it anyway?</source>
     <name>QHttp</name>
     <message>
         <source>Unknown error</source>
-        <translation>Άγνωστο πρόβλημα</translation>
+        <translation type="vanished">Άγνωστο πρόβλημα</translation>
     </message>
     <message>
         <source>Request aborted</source>
-        <translation>Το αίτημα ματαιώθηκε</translation>
+        <translation type="vanished">Το αίτημα ματαιώθηκε</translation>
     </message>
     <message>
         <source>No server set to connect to</source>
-        <translation>Δεν έχει οριστεί εξυπηρετητής για σύνδεση</translation>
+        <translation type="vanished">Δεν έχει οριστεί εξυπηρετητής για σύνδεση</translation>
     </message>
     <message>
         <source>Wrong content length</source>
-        <translation>Λάθος μέγεθος περιεχομένου</translation>
+        <translation type="vanished">Λάθος μέγεθος περιεχομένου</translation>
     </message>
     <message>
         <source>Server closed connection unexpectedly</source>
-        <translation>Ο εξυπηρετητής τερμάτισε τη σύνδεση απρόσμενα</translation>
+        <translation type="vanished">Ο εξυπηρετητής τερμάτισε τη σύνδεση απρόσμενα</translation>
     </message>
     <message>
         <source>Connection refused</source>
@@ -2422,35 +2422,35 @@ Do you want to delete it anyway?</source>
     </message>
     <message>
         <source>HTTP request failed</source>
-        <translation>Το αίτημα HTTP απέτυχε</translation>
+        <translation type="vanished">Το αίτημα HTTP απέτυχε</translation>
     </message>
     <message>
         <source>Invalid HTTP response header</source>
-        <translation>Μη έγκυρη HTTP κεφαλίδα στην απάντηση</translation>
+        <translation type="vanished">Μη έγκυρη HTTP κεφαλίδα στην απάντηση</translation>
     </message>
     <message>
         <source>Invalid HTTP chunked body</source>
-        <translation>Μη έγκυρος HTTP κορμός</translation>
+        <translation type="vanished">Μη έγκυρος HTTP κορμός</translation>
     </message>
     <message>
         <source>Host %1 found</source>
-        <translation>Ο διακομιστής %1 βρέθηκε</translation>
+        <translation type="vanished">Ο διακομιστής %1 βρέθηκε</translation>
     </message>
     <message>
         <source>Connected to host %1</source>
-        <translation>Συνδεδεμένος στον διακομιστή %1</translation>
+        <translation type="vanished">Συνδεδεμένος στον διακομιστή %1</translation>
     </message>
     <message>
         <source>Connection to %1 closed</source>
-        <translation>Η σύνδεση στο %1 τερματίστηκε</translation>
+        <translation type="vanished">Η σύνδεση στο %1 τερματίστηκε</translation>
     </message>
     <message>
         <source>Host found</source>
-        <translation>Ο διακομιστής βρέθηκε</translation>
+        <translation type="vanished">Ο διακομιστής βρέθηκε</translation>
     </message>
     <message>
         <source>Connected to host</source>
-        <translation>Συνδεδεμένος στον διακομιστή</translation>
+        <translation type="vanished">Συνδεδεμένος στον διακομιστή</translation>
     </message>
     <message>
         <source>Connection closed</source>
@@ -2458,15 +2458,15 @@ Do you want to delete it anyway?</source>
     </message>
     <message>
         <source>Proxy authentication required</source>
-        <translation>Ο διαμεσολαβητής απαιτεί αυθεντικοποίηση</translation>
+        <translation type="vanished">Ο διαμεσολαβητής απαιτεί αυθεντικοποίηση</translation>
     </message>
     <message>
         <source>Authentication required</source>
-        <translation>Απαιτείται αυθεντικοποίηση</translation>
+        <translation type="vanished">Απαιτείται αυθεντικοποίηση</translation>
     </message>
     <message>
         <source>Connection refused (or timed out)</source>
-        <translation>Άρνηση σύνδεσης (ή εξαντλήθηκε το χρονικό όριο)</translation>
+        <translation type="vanished">Άρνηση σύνδεσης (ή εξαντλήθηκε το χρονικό όριο)</translation>
     </message>
     <message>
         <source>Proxy requires authentication</source>
@@ -2490,7 +2490,7 @@ Do you want to delete it anyway?</source>
     </message>
     <message>
         <source>HTTPS connection requested but SSL support not compiled in</source>
-        <translation>Ζητήθηκε σύνδεση HTTPS αλλά η υποστήριξη για SSL δεν έχει περιληφθεί</translation>
+        <translation type="vanished">Ζητήθηκε σύνδεση HTTPS αλλά η υποστήριξη για SSL δεν έχει περιληφθεί</translation>
     </message>
     <message>
         <source>Too many redirects</source>
@@ -2703,19 +2703,19 @@ Do you want to delete it anyway?</source>
     <name>QInputContext</name>
     <message>
         <source>XIM</source>
-        <translation>XIM</translation>
+        <translation type="vanished">XIM</translation>
     </message>
     <message>
         <source>XIM input method</source>
-        <translation>Μέθοδος εισαγωγής XIM</translation>
+        <translation type="vanished">Μέθοδος εισαγωγής XIM</translation>
     </message>
     <message>
         <source>Windows input method</source>
-        <translation>Μέθοδος εισαγωγής Windows</translation>
+        <translation type="vanished">Μέθοδος εισαγωγής Windows</translation>
     </message>
     <message>
         <source>Mac OS X input method</source>
-        <translation>Μέθοδος εισαγωγής MAC OS Χ</translation>
+        <translation type="vanished">Μέθοδος εισαγωγής MAC OS Χ</translation>
     </message>
 </context>
 <context>
@@ -2804,27 +2804,27 @@ Do you want to delete it anyway?</source>
     <name>QLibrary</name>
     <message>
         <source>QLibrary::load_sys: Cannot load %1 (%2)</source>
-        <translation>QLibrary::load_sys: Δεν μπορεί να φορτωθεί %1 (%2)</translation>
+        <translation type="vanished">QLibrary::load_sys: Δεν μπορεί να φορτωθεί %1 (%2)</translation>
     </message>
     <message>
         <source>QLibrary::unload_sys: Cannot unload %1 (%2)</source>
-        <translation>QLibrary::load_sys: Δεν μπορεί να ξεφορτωθεί %1 (%2)</translation>
+        <translation type="vanished">QLibrary::load_sys: Δεν μπορεί να ξεφορτωθεί %1 (%2)</translation>
     </message>
     <message>
         <source>QLibrary::resolve_sys: Symbol &quot;%1&quot; undefined in %2 (%3)</source>
-        <translation>QLibrary::resolve_sys: Το σύμβολο &quot;%1&quot; δεν είναι ορισμένο στο %2 (%3)</translation>
+        <translation type="vanished">QLibrary::resolve_sys: Το σύμβολο &quot;%1&quot; δεν είναι ορισμένο στο %2 (%3)</translation>
     </message>
     <message>
         <source>Could not mmap &apos;%1&apos;: %2</source>
-        <translation>Δεν γίνεται mmap &apos;%1&apos;: %2</translation>
+        <translation type="vanished">Δεν γίνεται mmap &apos;%1&apos;: %2</translation>
     </message>
     <message>
         <source>Plugin verification data mismatch in &apos;%1&apos;</source>
-        <translation>Δεδομένα επιβεβαίωσης plugin λανθασμένα στο &apos;%1&apos;</translation>
+        <translation type="vanished">Δεδομένα επιβεβαίωσης plugin λανθασμένα στο &apos;%1&apos;</translation>
     </message>
     <message>
         <source>Could not unmap &apos;%1&apos;: %2</source>
-        <translation>Δεν γίνεται unmap &apos;%1&apos;: %2</translation>
+        <translation type="vanished">Δεν γίνεται unmap &apos;%1&apos;: %2</translation>
     </message>
     <message>
         <source>The plugin &apos;%1&apos; uses incompatible Qt library. (%2.%3.%4) [%5]</source>
@@ -2832,7 +2832,7 @@ Do you want to delete it anyway?</source>
     </message>
     <message>
         <source>The plugin &apos;%1&apos; uses incompatible Qt library. Expected build key &quot;%2&quot;, got &quot;%3&quot;</source>
-        <translation>Το plugin &apos;%1&apos; χρησιμοποιεί μη συμβατή Qt βιβλιοθήκη. Αναμενόταν κλειδί &quot;%2&quot; αντί του &quot;%3&quot;</translation>
+        <translation type="vanished">Το plugin &apos;%1&apos; χρησιμοποιεί μη συμβατή Qt βιβλιοθήκη. Αναμενόταν κλειδί &quot;%2&quot; αντί του &quot;%3&quot;</translation>
     </message>
     <message>
         <source>Unknown error</source>
@@ -3013,7 +3013,7 @@ Do you want to delete it anyway?</source>
     </message>
     <message>
         <source>Trying to connect while connection is in progress</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Προσπάθεια σύνδεσης ενώ η σύνδεση είναι σε διαδικασία</translation>
     </message>
     <message>
         <source>%1: Access denied</source>
@@ -3024,7 +3024,7 @@ Do you want to delete it anyway?</source>
     <name>QMYSQLDriver</name>
     <message>
         <source>Unable to open database &apos;</source>
-        <translation>Δεν ήταν δυνατό το άνοιγμα της βάσης δεδομένων &apos;</translation>
+        <translation type="vanished">Δεν ήταν δυνατό το άνοιγμα της βάσης δεδομένων &apos;</translation>
     </message>
     <message>
         <source>Unable to connect</source>
@@ -3184,15 +3184,15 @@ Do you want to delete it anyway?</source>
     <name>QMenu</name>
     <message>
         <source>Close</source>
-        <translation>Κλείσιμο</translation>
+        <translation type="vanished">Κλείσιμο</translation>
     </message>
     <message>
         <source>Open</source>
-        <translation>Άνοιγμα</translation>
+        <translation type="vanished">Άνοιγμα</translation>
     </message>
     <message>
         <source>Execute</source>
-        <translation>Εκτέλεση</translation>
+        <translation type="vanished">Εκτέλεση</translation>
     </message>
 </context>
 <context>
@@ -3211,7 +3211,7 @@ Do you want to delete it anyway?</source>
     </message>
     <message>
         <source>&lt;p&gt;This program uses Qt version %1.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Αυτό το πρόγραμμα χρησιμοποιεί την έκδοση Qt %1. &lt;/p&gt;</translation>
+        <translation type="vanished">&lt;p&gt;Αυτό το πρόγραμμα χρησιμοποιεί την έκδοση Qt %1. &lt;/p&gt;</translation>
     </message>
     <message>
         <source>Show Details...</source>
@@ -3223,11 +3223,11 @@ Do you want to delete it anyway?</source>
     </message>
     <message>
         <source>&lt;p&gt;This program uses Qt Open Source Edition version %1.&lt;/p&gt;&lt;p&gt;Qt Open Source Edition is intended for the development of Open Source applications. You need a commercial Qt license for development of proprietary (closed source) applications.&lt;/p&gt;&lt;p&gt;Please see &lt;a href=&quot;http://www.trolltech.com/company/model/&quot;&gt;www.trolltech.com/company/model/&lt;/a&gt; for an overview of Qt licensing.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Αυτο το πρόγραμμα χρησιμοποιεί την Qt Open Source Edition version %1.&lt;/p&gt;&lt;p&gt;Το Qt Open Source Edition αποσκοπεί στην ανάπτυξη Open Source εφαρμογών. Για την ανάπτυξη ιδιωτικών (closed source) εφαρμογών απαιτείται η εμπορική άδεια Qt&lt;/p&gt;&lt;p&gt;Για την επισκόπηση της Qt άδειας χρήσης δείτε &lt;a  href=&quot;http://www.trolltech.com/company/model/&apos; www.trolltech.com/company/model&lt;/a&gt;.&lt;/p&gt;</translation>
+        <translation type="vanished">&lt;p&gt;Αυτο το πρόγραμμα χρησιμοποιεί την Qt Open Source Edition version %1.&lt;/p&gt;&lt;p&gt;Το Qt Open Source Edition αποσκοπεί στην ανάπτυξη Open Source εφαρμογών. Για την ανάπτυξη ιδιωτικών (closed source) εφαρμογών απαιτείται η εμπορική άδεια Qt&lt;/p&gt;&lt;p&gt;Για την επισκόπηση της Qt άδειας χρήσης δείτε &lt;a  href=&quot;http://www.trolltech.com/company/model/&apos; www.trolltech.com/company/model&lt;/a&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;h3&gt;About Qt&lt;/h3&gt;%1&lt;p&gt;Qt is a C++ toolkit for cross-platform application development.&lt;/p&gt;&lt;p&gt;Qt provides single-source portability across MS&amp;nbsp;Windows, Mac&amp;nbsp;OS&amp;nbsp;X, Linux, and all major commercial Unix variants. Qt is also available for embedded devices as Qt for Embedded Linux and Qt for Windows CE.&lt;/p&gt;&lt;p&gt;Qt is a Nokia product. See &lt;a href=&quot;http://www.trolltech.com/qt/&quot;&gt;www.trolltech.com/qt/&lt;/a&gt; for more information.&lt;/p&gt;</source>
-        <translation>&lt;h3&gt;Σχετικά με το Qt&lt;/h3&gt;%1&lt;p&gt;Το Qt είναι μια εργαλειοθήκη C++ για ανάπτυξη πολυ-πλατφορμικών εφαρμογών.&lt;/p&gt;&lt;p&gt;Το Qt προσφέρει μίας-πηγής φορητότητα σε MS&amp;nbsp;Windows, Mac&amp;nbsp;OS&amp;nbsp;X, Linux, και όλες τις μεγάλες εμπορικές εκδόσεις Unix. Το Qt είναι επίσης διαθέσιμο για ενσωματωμένες συσκευές όπως το Qt for Embedded Linux και το Qt for Windows CE.&lt;/p&gt;&lt;p&gt;Το Qt είναι ένα προϊόν της Nokia. Για περισότερες πληροφορίες, δείτε &lt;a href=&quot;http://www.trolltech.com/qt/&quot;&gt;www.trolltech.com/qt/&lt;/a&gt;.&lt;/p&gt;</translation>
+        <translation type="vanished">&lt;h3&gt;Σχετικά με το Qt&lt;/h3&gt;%1&lt;p&gt;Το Qt είναι μια εργαλειοθήκη C++ για ανάπτυξη πολυ-πλατφορμικών εφαρμογών.&lt;/p&gt;&lt;p&gt;Το Qt προσφέρει μίας-πηγής φορητότητα σε MS&amp;nbsp;Windows, Mac&amp;nbsp;OS&amp;nbsp;X, Linux, και όλες τις μεγάλες εμπορικές εκδόσεις Unix. Το Qt είναι επίσης διαθέσιμο για ενσωματωμένες συσκευές όπως το Qt for Embedded Linux και το Qt for Windows CE.&lt;/p&gt;&lt;p&gt;Το Qt είναι ένα προϊόν της Nokia. Για περισότερες πληροφορίες, δείτε &lt;a href=&quot;http://www.trolltech.com/qt/&quot;&gt;www.trolltech.com/qt/&lt;/a&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;h3&gt;About Qt&lt;/h3&gt;&lt;p&gt;This program uses Qt version %1.&lt;/p&gt;</source>
@@ -3242,18 +3242,18 @@ Do you want to delete it anyway?</source>
     <name>QMultiInputContext</name>
     <message>
         <source>Select IM</source>
-        <translation>Επιλογή ΙΜ</translation>
+        <translation type="vanished">Επιλογή ΙΜ</translation>
     </message>
 </context>
 <context>
     <name>QMultiInputContextPlugin</name>
     <message>
         <source>Multiple input method switcher</source>
-        <translation>Επιλογέας πολλαπλών μεθόδων εισαγωγής</translation>
+        <translation type="vanished">Επιλογέας πολλαπλών μεθόδων εισαγωγής</translation>
     </message>
     <message>
         <source>Multiple input method switcher that uses the context menu of the text widgets</source>
-        <translation>Επιλογέας πολλαπλών μεθόδων εισαγωγής που χρησιμοποιεί το μενού των εργαλείων κειμένου</translation>
+        <translation type="vanished">Επιλογέας πολλαπλών μεθόδων εισαγωγής που χρησιμοποιεί το μενού των εργαλείων κειμένου</translation>
     </message>
 </context>
 <context>
@@ -3461,7 +3461,7 @@ Do you want to delete it anyway?</source>
     <name>QNetworkReply</name>
     <message>
         <source>Error downloading %1 - server replied: %2</source>
-        <translation>Λάθος στο κατέβασμα %1 - ο διακομιστής απάντησε %2</translation>
+        <translation type="vanished">Λάθος στο κατέβασμα %1 - ο διακομιστής απάντησε %2</translation>
     </message>
     <message>
         <source>Protocol &quot;%1&quot; is unknown</source>
@@ -3588,7 +3588,7 @@ Do you want to delete it anyway?</source>
     </message>
     <message>
         <source>Unable to execute select statement</source>
-        <translation>Δεν ήταν δυνατή η εκτέλεση της πρότασης επιλογής</translation>
+        <translation type="vanished">Δεν ήταν δυνατή η εκτέλεση της πρότασης επιλογής</translation>
     </message>
     <message>
         <source>Unable to execute statement</source>
@@ -3607,7 +3607,7 @@ Do you want to delete it anyway?</source>
     </message>
     <message>
         <source>Unable to connect - Driver doesn&apos;t support all needed functionality</source>
-        <translation>Δεν ήταν δυνατή η σύνδεση - Ο οδηγός δεν υποστηρίζει την απαραίτητη λειτουργικότητα</translation>
+        <translation type="vanished">Δεν ήταν δυνατή η σύνδεση - Ο οδηγός δεν υποστηρίζει την απαραίτητη λειτουργικότητα</translation>
     </message>
     <message>
         <source>Unable to disable autocommit</source>
@@ -3673,42 +3673,42 @@ Do you want to delete it anyway?</source>
     <name>QObject</name>
     <message>
         <source>Operation not supported on %1</source>
-        <translation>Η λειτουργία δεν υποστηρίζεται στο %1</translation>
+        <translation type="vanished">Η λειτουργία δεν υποστηρίζεται στο %1</translation>
     </message>
     <message>
         <source>Invalid URI: %1</source>
-        <translation>Μη έγκυρο URI: %1</translation>
+        <translation type="vanished">Μη έγκυρο URI: %1</translation>
     </message>
     <message>
         <source>Write error writing to %1: %2</source>
-        <translation>Λάθος εγγραφής γράφοντας το %1: %2</translation>
+        <translation type="vanished">Λάθος εγγραφής γράφοντας το %1: %2</translation>
     </message>
     <message>
         <source>Read error reading from %1: %2</source>
-        <translation>Λάθος ανάγνωσης διαβάζοντας το %1: %2</translation>
+        <translation type="vanished">Λάθος ανάγνωσης διαβάζοντας το %1: %2</translation>
     </message>
     <message>
         <source>Socket error on %1: %2</source>
-        <translation>Λάθος socket στο %1: %2</translation>
+        <translation type="vanished">Λάθος socket στο %1: %2</translation>
     </message>
     <message>
         <source>Remote host closed the connection prematurely on %1</source>
-        <translation>Ο απομακρυσμένος διακομιστής τερμάτισε τη σύνδεση πρόωρα στο %1</translation>
+        <translation type="vanished">Ο απομακρυσμένος διακομιστής τερμάτισε τη σύνδεση πρόωρα στο %1</translation>
     </message>
     <message>
         <source>Protocol error: packet of size 0 received</source>
-        <translation>Λάθος πρωτοκόλλου: ελήφθη πακέτο μεγέθους 0</translation>
+        <translation type="vanished">Λάθος πρωτοκόλλου: ελήφθη πακέτο μεγέθους 0</translation>
     </message>
 </context>
 <context>
     <name>QPPDOptionsModel</name>
     <message>
         <source>Name</source>
-        <translation>Όνομα</translation>
+        <translation type="vanished">Όνομα</translation>
     </message>
     <message>
         <source>Value</source>
-        <translation>Τιμή</translation>
+        <translation type="vanished">Τιμή</translation>
     </message>
 </context>
 <context>
@@ -3753,7 +3753,7 @@ Do you want to delete it anyway?</source>
     <name>QPageSetupWidget</name>
     <message>
         <source>Centimeters (cm)</source>
-        <translation>Εκατοστά (cm)</translation>
+        <translation type="vanished">Εκατοστά (cm)</translation>
     </message>
     <message>
         <source>Millimeters (mm)</source>
@@ -4458,15 +4458,15 @@ Do you want to delete it anyway?</source>
     <name>QPrintDialog</name>
     <message>
         <source>locally connected</source>
-        <translation>Συνδεδεμένος τοπικά</translation>
+        <translation type="vanished">Συνδεδεμένος τοπικά</translation>
     </message>
     <message>
         <source>Aliases: %1</source>
-        <translation>Αναγνωριστικό : %1</translation>
+        <translation type="vanished">Αναγνωριστικό : %1</translation>
     </message>
     <message>
         <source>unknown</source>
-        <translation>άγνωστο</translation>
+        <translation type="vanished">άγνωστο</translation>
     </message>
     <message>
         <source>Print To File ...</source>
@@ -4492,127 +4492,127 @@ Please choose a different file name.</source>
     </message>
     <message>
         <source>A0</source>
-        <translation>A0</translation>
+        <translation type="vanished">A0</translation>
     </message>
     <message>
         <source>A1</source>
-        <translation>A1</translation>
+        <translation type="vanished">A1</translation>
     </message>
     <message>
         <source>A2</source>
-        <translation>A2</translation>
+        <translation type="vanished">A2</translation>
     </message>
     <message>
         <source>A3</source>
-        <translation>A3</translation>
+        <translation type="vanished">A3</translation>
     </message>
     <message>
         <source>A4</source>
-        <translation>A4</translation>
+        <translation type="vanished">A4</translation>
     </message>
     <message>
         <source>A5</source>
-        <translation>A5</translation>
+        <translation type="vanished">A5</translation>
     </message>
     <message>
         <source>A6</source>
-        <translation>A6</translation>
+        <translation type="vanished">A6</translation>
     </message>
     <message>
         <source>A7</source>
-        <translation>A7</translation>
+        <translation type="vanished">A7</translation>
     </message>
     <message>
         <source>A8</source>
-        <translation>A8</translation>
+        <translation type="vanished">A8</translation>
     </message>
     <message>
         <source>A9</source>
-        <translation>A9</translation>
+        <translation type="vanished">A9</translation>
     </message>
     <message>
         <source>B0</source>
-        <translation>B0</translation>
+        <translation type="vanished">B0</translation>
     </message>
     <message>
         <source>B1</source>
-        <translation>B1</translation>
+        <translation type="vanished">B1</translation>
     </message>
     <message>
         <source>B2</source>
-        <translation>B2</translation>
+        <translation type="vanished">B2</translation>
     </message>
     <message>
         <source>B3</source>
-        <translation>B3</translation>
+        <translation type="vanished">B3</translation>
     </message>
     <message>
         <source>B4</source>
-        <translation>B4</translation>
+        <translation type="vanished">B4</translation>
     </message>
     <message>
         <source>B5</source>
-        <translation>B5</translation>
+        <translation type="vanished">B5</translation>
     </message>
     <message>
         <source>B6</source>
-        <translation>B6</translation>
+        <translation type="vanished">B6</translation>
     </message>
     <message>
         <source>B7</source>
-        <translation>B7</translation>
+        <translation type="vanished">B7</translation>
     </message>
     <message>
         <source>B8</source>
-        <translation>B8</translation>
+        <translation type="vanished">B8</translation>
     </message>
     <message>
         <source>B9</source>
-        <translation>B9</translation>
+        <translation type="vanished">B9</translation>
     </message>
     <message>
         <source>B10</source>
-        <translation>B10</translation>
+        <translation type="vanished">B10</translation>
     </message>
     <message>
         <source>C5E</source>
-        <translation>C5E</translation>
+        <translation type="vanished">C5E</translation>
     </message>
     <message>
         <source>DLE</source>
-        <translation>DLE</translation>
+        <translation type="vanished">DLE</translation>
     </message>
     <message>
         <source>Executive</source>
-        <translation>Executive</translation>
+        <translation type="vanished">Executive</translation>
     </message>
     <message>
         <source>Folio</source>
-        <translation>Folio</translation>
+        <translation type="vanished">Folio</translation>
     </message>
     <message>
         <source>Ledger</source>
-        <translation>Folio</translation>
+        <translation type="vanished">Folio</translation>
     </message>
     <message>
         <source>Legal</source>
-        <translation>US Legal</translation>
+        <translation type="vanished">US Legal</translation>
     </message>
     <message>
         <source>Letter</source>
-        <translation>US Letter</translation>
+        <translation type="vanished">US Letter</translation>
     </message>
     <message>
         <source>Tabloid</source>
-        <translation>Ταμπλόιντ</translation>
+        <translation type="vanished">Ταμπλόιντ</translation>
     </message>
     <message>
         <source>US Common #10 Envelope</source>
-        <translation>Φάκελος #10</translation>
+        <translation type="vanished">Φάκελος #10</translation>
     </message>
     <message>
         <source>Custom</source>
-        <translation>Προσαρμοσμένο</translation>
+        <translation type="vanished">Προσαρμοσμένο</translation>
     </message>
     <message>
         <source>&amp;Options &gt;&gt;</source>
@@ -4632,7 +4632,7 @@ Please choose a different file name.</source>
     </message>
     <message>
         <source>Print to File (Postscript)</source>
-        <translation>Εκτύπωση σε αρχείο (Postscript)</translation>
+        <translation type="vanished">Εκτύπωση σε αρχείο (Postscript)</translation>
     </message>
     <message>
         <source>Local file</source>
@@ -4640,7 +4640,7 @@ Please choose a different file name.</source>
     </message>
     <message>
         <source>Write %1 file</source>
-        <translation>Εγγραφή %1 σε αρχείο</translation>
+        <translation type="vanished">Εγγραφή %1 σε αρχείο</translation>
     </message>
     <message>
         <source>Print</source>
@@ -4808,7 +4808,7 @@ Please turn one of those options off.</source>
     </message>
     <message>
         <source>Close</source>
-        <translation>Κλείσιμο</translation>
+        <translation type="vanished">Κλείσιμο</translation>
     </message>
     <message>
         <source>%1%</source>
@@ -4842,7 +4842,7 @@ Please turn one of those options off.</source>
     </message>
     <message>
         <source>Advanced</source>
-        <translation>Προχωρημένα</translation>
+        <translation type="vanished">Προχωρημένα</translation>
     </message>
 </context>
 <context>
@@ -5025,7 +5025,7 @@ Please turn one of those options off.</source>
     <name>QPushButton</name>
     <message>
         <source>Open</source>
-        <translation>Άνοιγμα</translation>
+        <translation type="vanished">Άνοιγμα</translation>
     </message>
 </context>
 <context>
@@ -5046,7 +5046,7 @@ Please turn one of those options off.</source>
     <name>QRadioButton</name>
     <message>
         <source>Check</source>
-        <translation>Έλεγχος</translation>
+        <translation type="vanished">Έλεγχος</translation>
     </message>
 </context>
 <context>
@@ -5439,7 +5439,7 @@ Please turn one of those options off.</source>
     <name>QSQLite2Driver</name>
     <message>
         <source>Error to open database</source>
-        <translation>Λάθος στο άνοιγμα της βάσης δεδομένων</translation>
+        <translation type="vanished">Λάθος στο άνοιγμα της βάσης δεδομένων</translation>
     </message>
     <message>
         <source>Unable to begin transaction</source>
@@ -5451,7 +5451,7 @@ Please turn one of those options off.</source>
     </message>
     <message>
         <source>Unable to rollback Transaction</source>
-        <translation>Δεν ήταν δυνατή η ακύρωση της συνδιαλλαγής</translation>
+        <translation type="vanished">Δεν ήταν δυνατή η ακύρωση της συνδιαλλαγής</translation>
     </message>
     <message>
         <source>Error opening database</source>
@@ -5598,15 +5598,15 @@ Please turn one of those options off.</source>
     </message>
     <message>
         <source>Line up</source>
-        <translation>Γραμμή πάνω</translation>
+        <translation type="vanished">Γραμμή πάνω</translation>
     </message>
     <message>
         <source>Position</source>
-        <translation>Θέση</translation>
+        <translation type="vanished">Θέση</translation>
     </message>
     <message>
         <source>Line down</source>
-        <translation>Γραμμή κάτω</translation>
+        <translation type="vanished">Γραμμή κάτω</translation>
     </message>
 </context>
 <context>
@@ -5637,7 +5637,7 @@ Please turn one of those options off.</source>
     </message>
     <message>
         <source>%1: doesn&apos;t exists</source>
-        <translation>%1: υπάρχει ήδη</translation>
+        <translation type="vanished">%1: υπάρχει ήδη</translation>
     </message>
     <message>
         <source>%1: out of resources</source>
@@ -5653,7 +5653,7 @@ Please turn one of those options off.</source>
     </message>
     <message>
         <source>%1: unix key file doesn&apos;t exists</source>
-        <translation>%1: το αρχείο κλειδιού unix δεν υπάρχει</translation>
+        <translation type="vanished">%1: το αρχείο κλειδιού unix δεν υπάρχει</translation>
     </message>
     <message>
         <source>%1: ftok failed</source>
@@ -6674,7 +6674,7 @@ Please turn one of those options off.</source>
     </message>
     <message>
         <source>Exit</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Έξοδος</translation>
     </message>
     <message>
         <source>Touchpad Toggle</source>
@@ -6697,30 +6697,30 @@ Please turn one of those options off.</source>
     <name>QSlider</name>
     <message>
         <source>Page left</source>
-        <translation>Σελίδα αριστερά</translation>
+        <translation type="vanished">Σελίδα αριστερά</translation>
     </message>
     <message>
         <source>Page up</source>
-        <translation>Σελίδα πάνω</translation>
+        <translation type="vanished">Σελίδα πάνω</translation>
     </message>
     <message>
         <source>Position</source>
-        <translation>Θέση</translation>
+        <translation type="vanished">Θέση</translation>
     </message>
     <message>
         <source>Page right</source>
-        <translation>Σελίδα δεξιά</translation>
+        <translation type="vanished">Σελίδα δεξιά</translation>
     </message>
     <message>
         <source>Page down</source>
-        <translation>Σελίδα κάτω</translation>
+        <translation type="vanished">Σελίδα κάτω</translation>
     </message>
 </context>
 <context>
     <name>QSocks5SocketEngine</name>
     <message>
         <source>Socks5 timeout error connecting to socks server</source>
-        <translation>Socks5 πρόβλημα στη σύνδεση με τον socks server λόγω καθυστέρησης</translation>
+        <translation type="vanished">Socks5 πρόβλημα στη σύνδεση με τον socks server λόγω καθυστέρησης</translation>
     </message>
     <message>
         <source>Network operation timed out</source>
@@ -7143,54 +7143,54 @@ Role of an accessible object</extracomment>
     <name>QSpinBox</name>
     <message>
         <source>More</source>
-        <translation>Περισσότερα</translation>
+        <translation type="vanished">Περισσότερα</translation>
     </message>
     <message>
         <source>Less</source>
-        <translation>Λιγότερα</translation>
+        <translation type="vanished">Λιγότερα</translation>
     </message>
 </context>
 <context>
     <name>QSql</name>
     <message>
         <source>Delete</source>
-        <translation>Διαγραφή</translation>
+        <translation type="vanished">Διαγραφή</translation>
     </message>
     <message>
         <source>Delete this record?</source>
-        <translation>Θέλετε να διαγράψετε αυτή την εγγραφή ?</translation>
+        <translation type="vanished">Θέλετε να διαγράψετε αυτή την εγγραφή ?</translation>
     </message>
     <message>
         <source>Yes</source>
-        <translation>Ναι</translation>
+        <translation type="vanished">Ναι</translation>
     </message>
     <message>
         <source>No</source>
-        <translation>Όχι</translation>
+        <translation type="vanished">Όχι</translation>
     </message>
     <message>
         <source>Insert</source>
-        <translation>Εισαγωγή</translation>
+        <translation type="vanished">Εισαγωγή</translation>
     </message>
     <message>
         <source>Update</source>
-        <translation>Ενημέρωση</translation>
+        <translation type="vanished">Ενημέρωση</translation>
     </message>
     <message>
         <source>Save edits?</source>
-        <translation>Αποθήκευση αλλαγών ?</translation>
+        <translation type="vanished">Αποθήκευση αλλαγών ?</translation>
     </message>
     <message>
         <source>Cancel</source>
-        <translation>Άκυρο</translation>
+        <translation type="vanished">Άκυρο</translation>
     </message>
     <message>
         <source>Confirm</source>
-        <translation>Επιβεβαίωση</translation>
+        <translation type="vanished">Επιβεβαίωση</translation>
     </message>
     <message>
         <source>Cancel your edits?</source>
-        <translation>Ακύρωση αλλαγών;</translation>
+        <translation type="vanished">Ακύρωση αλλαγών;</translation>
     </message>
 </context>
 <context>
@@ -7237,7 +7237,7 @@ Role of an accessible object</extracomment>
     </message>
     <message>
         <source>Private key does not certificate public key, %1</source>
-        <translation>Το ιδιωτικό κλειδί δεν πιστοποιεί το δημόσιο κλειδί, %1</translation>
+        <translation type="vanished">Το ιδιωτικό κλειδί δεν πιστοποιεί το δημόσιο κλειδί, %1</translation>
     </message>
     <message>
         <source>Error when setting the elliptic curves (%1)</source>
@@ -7507,71 +7507,71 @@ Role of an accessible object</extracomment>
     <name>QTcpServer</name>
     <message>
         <source>Operation on socket is not supported</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Η λειτουργεία στο socket δεν υποστηρίζεται</translation>
     </message>
 </context>
 <context>
     <name>QTextControl</name>
     <message>
         <source>&amp;Undo</source>
-        <translation>&amp;Αναίρεση</translation>
+        <translation type="vanished">&amp;Αναίρεση</translation>
     </message>
     <message>
         <source>&amp;Redo</source>
-        <translation>&amp;Ακύρωση Αναίρεσης</translation>
+        <translation type="vanished">&amp;Ακύρωση Αναίρεσης</translation>
     </message>
     <message>
         <source>Cu&amp;t</source>
-        <translation>Αποκοπ&amp;ή</translation>
+        <translation type="vanished">Αποκοπ&amp;ή</translation>
     </message>
     <message>
         <source>&amp;Copy</source>
-        <translation>&amp;Αντιγραφή</translation>
+        <translation type="vanished">&amp;Αντιγραφή</translation>
     </message>
     <message>
         <source>Copy &amp;Link Location</source>
-        <translation>Αντιγραφή &amp;Θέσης Δεσμού</translation>
+        <translation type="vanished">Αντιγραφή &amp;Θέσης Δεσμού</translation>
     </message>
     <message>
         <source>&amp;Paste</source>
-        <translation>&amp;Επικόλληση</translation>
+        <translation type="vanished">&amp;Επικόλληση</translation>
     </message>
     <message>
         <source>Delete</source>
-        <translation>Διαγραφή</translation>
+        <translation type="vanished">Διαγραφή</translation>
     </message>
     <message>
         <source>Select All</source>
-        <translation>Επιλογή Όλων</translation>
+        <translation type="vanished">Επιλογή Όλων</translation>
     </message>
 </context>
 <context>
     <name>QToolButton</name>
     <message>
         <source>Press</source>
-        <translation>Πιέστε</translation>
+        <translation type="vanished">Πιέστε</translation>
     </message>
     <message>
         <source>Open</source>
-        <translation>Άνοιγμα</translation>
+        <translation type="vanished">Άνοιγμα</translation>
     </message>
 </context>
 <context>
     <name>QUdpSocket</name>
     <message>
         <source>This platform does not support IPv6</source>
-        <translation>Η πλατφόρμα δεν υποστηρίζει το IPv6</translation>
+        <translation type="vanished">Η πλατφόρμα δεν υποστηρίζει το IPv6</translation>
     </message>
 </context>
 <context>
     <name>QUndoGroup</name>
     <message>
         <source>Undo</source>
-        <translation>Αναίρεση</translation>
+        <translation type="vanished">Αναίρεση</translation>
     </message>
     <message>
         <source>Redo</source>
-        <translation>Ακύρωση Αναίρεσης</translation>
+        <translation type="vanished">Ακύρωση Αναίρεσης</translation>
     </message>
     <message>
         <source>Undo %1</source>
@@ -7603,11 +7603,11 @@ Role of an accessible object</extracomment>
     <name>QUndoStack</name>
     <message>
         <source>Undo</source>
-        <translation>Αναίρεση</translation>
+        <translation type="vanished">Αναίρεση</translation>
     </message>
     <message>
         <source>Redo</source>
-        <translation>Ακύρωση Αναίρεσης</translation>
+        <translation type="vanished">Ακύρωση Αναίρεσης</translation>
     </message>
     <message>
         <source>Undo %1</source>
@@ -7695,278 +7695,278 @@ Role of an accessible object</extracomment>
     <name>QWebFrame</name>
     <message>
         <source>Request cancelled</source>
-        <translation>Το αίτημα ακυρώθηκε</translation>
+        <translation type="vanished">Το αίτημα ακυρώθηκε</translation>
     </message>
     <message>
         <source>Request blocked</source>
-        <translation>Το αίτημα εμποδίστηκε</translation>
+        <translation type="vanished">Το αίτημα εμποδίστηκε</translation>
     </message>
     <message>
         <source>Cannot show URL</source>
-        <translation>Δεν μπορεί να εμφανιστεί το URL</translation>
+        <translation type="vanished">Δεν μπορεί να εμφανιστεί το URL</translation>
     </message>
     <message>
         <source>Frame load interruped by policy change</source>
-        <translation>Η φόρτωση του πλαισίου διακόπηκε λόγω αλλαγής πολιτικής</translation>
+        <translation type="vanished">Η φόρτωση του πλαισίου διακόπηκε λόγω αλλαγής πολιτικής</translation>
     </message>
     <message>
         <source>Cannot show mimetype</source>
-        <translation>Δεν μπορεί να εμφανιστεί ο τύπος MIME</translation>
+        <translation type="vanished">Δεν μπορεί να εμφανιστεί ο τύπος MIME</translation>
     </message>
     <message>
         <source>File does not exist</source>
-        <translation>Το αρχείο δεν υπάρχει</translation>
+        <translation type="vanished">Το αρχείο δεν υπάρχει</translation>
     </message>
 </context>
 <context>
     <name>QWebPage</name>
     <message>
         <source>Bad HTTP request</source>
-        <translation>Κακό αίτημα HTTP</translation>
+        <translation type="vanished">Κακό αίτημα HTTP</translation>
     </message>
     <message>
         <source>Submit</source>
         <comment>default label for Submit buttons in forms on web pages</comment>
-        <translation>Υποβολή</translation>
+        <translation type="vanished">Υποβολή</translation>
     </message>
     <message>
         <source>Submit</source>
         <comment>Submit (input element) alt text for &lt;input&gt; elements with no alt, title, or value</comment>
-        <translation>Υποβολή</translation>
+        <translation type="vanished">Υποβολή</translation>
     </message>
     <message>
         <source>Reset</source>
         <comment>default label for Reset buttons in forms on web pages</comment>
-        <translation>Επανέναρξη</translation>
+        <translation type="vanished">Επανέναρξη</translation>
     </message>
     <message>
         <source>This is a searchable index. Enter search keywords: </source>
         <comment>text that appears at the start of nearly-obsolete web pages in the form of a &apos;searchable index&apos;</comment>
-        <translation>Αυτό είναι το ευρετήριο. Εισάγετε λέξεις κλειδιά για αναζήτηση: </translation>
+        <translation type="vanished">Αυτό είναι το ευρετήριο. Εισάγετε λέξεις κλειδιά για αναζήτηση: </translation>
     </message>
     <message>
         <source>Choose File</source>
         <comment>title for file button used in HTML forms</comment>
-        <translation>Επιλογή αρχείου</translation>
+        <translation type="vanished">Επιλογή αρχείου</translation>
     </message>
     <message>
         <source>No file selected</source>
         <comment>text to display in file button used in HTML forms when no file is selected</comment>
-        <translation>Δεν επιλέχτηκε αρχείο</translation>
+        <translation type="vanished">Δεν επιλέχτηκε αρχείο</translation>
     </message>
     <message>
         <source>Open in New Window</source>
         <comment>Open in New Window context menu item</comment>
-        <translation>Άνοιγμα σε Νέο Παράθυρο</translation>
+        <translation type="vanished">Άνοιγμα σε Νέο Παράθυρο</translation>
     </message>
     <message>
         <source>Save Link...</source>
         <comment>Download Linked File context menu item</comment>
-        <translation>Αποθήκευση Δεσμού...</translation>
+        <translation type="vanished">Αποθήκευση Δεσμού...</translation>
     </message>
     <message>
         <source>Copy Link</source>
         <comment>Copy Link context menu item</comment>
-        <translation>Αντιγραφή Δεσμού</translation>
+        <translation type="vanished">Αντιγραφή Δεσμού</translation>
     </message>
     <message>
         <source>Open Image</source>
         <comment>Open Image in New Window context menu item</comment>
-        <translation>Άνοιγμα Εικόνας</translation>
+        <translation type="vanished">Άνοιγμα Εικόνας</translation>
     </message>
     <message>
         <source>Save Image</source>
         <comment>Download Image context menu item</comment>
-        <translation>Αποθήκευση Εικόνας</translation>
+        <translation type="vanished">Αποθήκευση Εικόνας</translation>
     </message>
     <message>
         <source>Copy Image</source>
         <comment>Copy Link context menu item</comment>
-        <translation>Αντιγραφή Εικόνας</translation>
+        <translation type="vanished">Αντιγραφή Εικόνας</translation>
     </message>
     <message>
         <source>Open Frame</source>
         <comment>Open Frame in New Window context menu item</comment>
-        <translation>Άνοιγμα πλαισίου</translation>
+        <translation type="vanished">Άνοιγμα πλαισίου</translation>
     </message>
     <message>
         <source>Copy</source>
         <comment>Copy context menu item</comment>
-        <translation>Αντιγραφή</translation>
+        <translation type="vanished">Αντιγραφή</translation>
     </message>
     <message>
         <source>Go Back</source>
         <comment>Back context menu item</comment>
-        <translation>Πίσω</translation>
+        <translation type="vanished">Πίσω</translation>
     </message>
     <message>
         <source>Go Forward</source>
         <comment>Forward context menu item</comment>
-        <translation>Μπροστά</translation>
+        <translation type="vanished">Μπροστά</translation>
     </message>
     <message>
         <source>Stop</source>
         <comment>Stop context menu item</comment>
-        <translation>Τερματισμός</translation>
+        <translation type="vanished">Τερματισμός</translation>
     </message>
     <message>
         <source>Reload</source>
         <comment>Reload context menu item</comment>
-        <translation>Επαναφόρτωση</translation>
+        <translation type="vanished">Επαναφόρτωση</translation>
     </message>
     <message>
         <source>Cut</source>
         <comment>Cut context menu item</comment>
-        <translation>Αποκοπή</translation>
+        <translation type="vanished">Αποκοπή</translation>
     </message>
     <message>
         <source>Paste</source>
         <comment>Paste context menu item</comment>
-        <translation>Επικόλληση</translation>
+        <translation type="vanished">Επικόλληση</translation>
     </message>
     <message>
         <source>No Guesses Found</source>
         <comment>No Guesses Found context menu item</comment>
-        <translation>Δεν βρέθηκαν προτάσεις</translation>
+        <translation type="vanished">Δεν βρέθηκαν προτάσεις</translation>
     </message>
     <message>
         <source>Ignore</source>
         <comment>Ignore Spelling context menu item</comment>
-        <translation>Αγνόησε</translation>
+        <translation type="vanished">Αγνόησε</translation>
     </message>
     <message>
         <source>Add To Dictionary</source>
         <comment>Learn Spelling context menu item</comment>
-        <translation>Προσθήκη στο Λεξικό</translation>
+        <translation type="vanished">Προσθήκη στο Λεξικό</translation>
     </message>
     <message>
         <source>Search The Web</source>
         <comment>Search The Web context menu item</comment>
-        <translation>Αναζήτηση στον Ιστό</translation>
+        <translation type="vanished">Αναζήτηση στον Ιστό</translation>
     </message>
     <message>
         <source>Look Up In Dictionary</source>
         <comment>Look Up in Dictionary context menu item</comment>
-        <translation>Αναζήτηση στο Λεξικό</translation>
+        <translation type="vanished">Αναζήτηση στο Λεξικό</translation>
     </message>
     <message>
         <source>Open Link</source>
         <comment>Open Link context menu item</comment>
-        <translation>Άνοιγμα Δεσμού</translation>
+        <translation type="vanished">Άνοιγμα Δεσμού</translation>
     </message>
     <message>
         <source>Ignore</source>
         <comment>Ignore Grammar context menu item</comment>
-        <translation>Αγνόησε</translation>
+        <translation type="vanished">Αγνόησε</translation>
     </message>
     <message>
         <source>Spelling</source>
         <comment>Spelling and Grammar context sub-menu item</comment>
-        <translation>Ορθογραφία</translation>
+        <translation type="vanished">Ορθογραφία</translation>
     </message>
     <message>
         <source>Show Spelling and Grammar</source>
         <comment>menu item title</comment>
-        <translation>Εμφάνιση Ορθογραφίας και Γραμματικής</translation>
+        <translation type="vanished">Εμφάνιση Ορθογραφίας και Γραμματικής</translation>
     </message>
     <message>
         <source>Hide Spelling and Grammar</source>
         <comment>menu item title</comment>
-        <translation>Απόκρυψη Ορθογραφίας και Γραμματικής</translation>
+        <translation type="vanished">Απόκρυψη Ορθογραφίας και Γραμματικής</translation>
     </message>
     <message>
         <source>Check Spelling</source>
         <comment>Check spelling context menu item</comment>
-        <translation>Έλεγχος Ορθογραφίας</translation>
+        <translation type="vanished">Έλεγχος Ορθογραφίας</translation>
     </message>
     <message>
         <source>Check Spelling While Typing</source>
         <comment>Check spelling while typing context menu item</comment>
-        <translation>Έλεγχος Ορθογραφίας ενώ Πληκτρολογείτε</translation>
+        <translation type="vanished">Έλεγχος Ορθογραφίας ενώ Πληκτρολογείτε</translation>
     </message>
     <message>
         <source>Check Grammar With Spelling</source>
         <comment>Check grammar with spelling context menu item</comment>
-        <translation>Έλεγχος Γραμματικής και Ορθογραφίας</translation>
+        <translation type="vanished">Έλεγχος Γραμματικής και Ορθογραφίας</translation>
     </message>
     <message>
         <source>Fonts</source>
         <comment>Font context sub-menu item</comment>
-        <translation>Γραμματοσειρά</translation>
+        <translation type="vanished">Γραμματοσειρά</translation>
     </message>
     <message>
         <source>Bold</source>
         <comment>Bold context menu item</comment>
-        <translation>Έντονα</translation>
+        <translation type="vanished">Έντονα</translation>
     </message>
     <message>
         <source>Italic</source>
         <comment>Italic context menu item</comment>
-        <translation>Πλάγια</translation>
+        <translation type="vanished">Πλάγια</translation>
     </message>
     <message>
         <source>Underline</source>
         <comment>Underline context menu item</comment>
-        <translation>Υπογράμμιση</translation>
+        <translation type="vanished">Υπογράμμιση</translation>
     </message>
     <message>
         <source>Outline</source>
         <comment>Outline context menu item</comment>
-        <translation>Περιγράμμιση</translation>
+        <translation type="vanished">Περιγράμμιση</translation>
     </message>
     <message>
         <source>Direction</source>
         <comment>Writing direction context sub-menu item</comment>
-        <translation>Κατεύθυνση</translation>
+        <translation type="vanished">Κατεύθυνση</translation>
     </message>
     <message>
         <source>Default</source>
         <comment>Default writing direction context menu item</comment>
-        <translation>Αρχικό</translation>
+        <translation type="vanished">Αρχικό</translation>
     </message>
     <message>
         <source>LTR</source>
         <comment>Left to Right context menu item</comment>
-        <translation>ΑΠΔ</translation>
+        <translation type="vanished">ΑΠΔ</translation>
     </message>
     <message>
         <source>RTL</source>
         <comment>Right to Left context menu item</comment>
-        <translation>ΔΠΑ</translation>
+        <translation type="vanished">ΔΠΑ</translation>
     </message>
     <message>
         <source>Inspect</source>
         <comment>Inspect Element context menu item</comment>
-        <translation>Επιθεώρηση</translation>
+        <translation type="vanished">Επιθεώρηση</translation>
     </message>
     <message>
         <source>No recent searches</source>
         <comment>Label for only item in menu that appears when clicking on the search field image, when no searches have been performed</comment>
-        <translation>Όχι πρόσφατες αναζητήσεις</translation>
+        <translation type="vanished">Όχι πρόσφατες αναζητήσεις</translation>
     </message>
     <message>
         <source>Recent searches</source>
         <comment>label for first item in the menu that appears when clicking on the search field image, used as embedded menu title</comment>
-        <translation>Πρόσφατες αναζητήσεις</translation>
+        <translation type="vanished">Πρόσφατες αναζητήσεις</translation>
     </message>
     <message>
         <source>Clear recent searches</source>
         <comment>menu item in Recent Searches menu that empties menu&apos;s contents</comment>
-        <translation>Εκκαθάριση πρόσφατων αναζητήσεων</translation>
+        <translation type="vanished">Εκκαθάριση πρόσφατων αναζητήσεων</translation>
     </message>
     <message>
         <source>Unknown</source>
         <comment>Unknown filesize FTP directory listing item</comment>
-        <translation>Άγνωστο</translation>
+        <translation type="vanished">Άγνωστο</translation>
     </message>
     <message>
         <source>%1 (%2x%3 pixels)</source>
         <comment>Title string for images</comment>
-        <translation>%1 (%2x%3 πίξελ)</translation>
+        <translation type="vanished">%1 (%2x%3 πίξελ)</translation>
     </message>
     <message>
         <source>Web Inspector - %2</source>
-        <translation>Επιθεώρηση σελίδων - %2</translation>
+        <translation type="vanished">Επιθεώρηση σελίδων - %2</translation>
     </message>
 </context>
 <context>
@@ -8051,7 +8051,7 @@ The minimum Direct2D version required is %1.%2.%3.%4. The Direct2D version on th
     </message>
     <message>
         <source>Quit</source>
-        <translation>Έξοδος</translation>
+        <translation type="vanished">Έξοδος</translation>
     </message>
     <message>
         <source>Help</source>
@@ -8086,55 +8086,55 @@ The minimum Direct2D version required is %1.%2.%3.%4. The Direct2D version on th
     <name>QWorkspace</name>
     <message>
         <source>&amp;Restore</source>
-        <translation>&amp;Επαναφορά</translation>
+        <translation type="vanished">&amp;Επαναφορά</translation>
     </message>
     <message>
         <source>&amp;Move</source>
-        <translation>&amp;Μετακίνηση</translation>
+        <translation type="vanished">&amp;Μετακίνηση</translation>
     </message>
     <message>
         <source>&amp;Size</source>
-        <translation>&amp;Μέγεθος</translation>
+        <translation type="vanished">&amp;Μέγεθος</translation>
     </message>
     <message>
         <source>Mi&amp;nimize</source>
-        <translation>Ε&amp;λαχιστοποίηση</translation>
+        <translation type="vanished">Ε&amp;λαχιστοποίηση</translation>
     </message>
     <message>
         <source>Ma&amp;ximize</source>
-        <translation>Μ&amp;εγιστοποίηση</translation>
+        <translation type="vanished">Μ&amp;εγιστοποίηση</translation>
     </message>
     <message>
         <source>&amp;Close</source>
-        <translation>&amp;Κλείσιμο</translation>
+        <translation type="vanished">&amp;Κλείσιμο</translation>
     </message>
     <message>
         <source>Stay on &amp;Top</source>
-        <translation>Παραμονή στην &amp;επιφάνεια</translation>
+        <translation type="vanished">Παραμονή στην &amp;επιφάνεια</translation>
     </message>
     <message>
         <source>Sh&amp;ade</source>
-        <translation>Σκίαση</translation>
+        <translation type="vanished">Σκίαση</translation>
     </message>
     <message>
         <source>%1 - [%2]</source>
-        <translation>%1 - [%2]</translation>
+        <translation type="vanished">%1 - [%2]</translation>
     </message>
     <message>
         <source>Minimize</source>
-        <translation>Ελαχιστοποίηση</translation>
+        <translation type="vanished">Ελαχιστοποίηση</translation>
     </message>
     <message>
         <source>Restore Down</source>
-        <translation>Επαναφορά Κάτω</translation>
+        <translation type="vanished">Επαναφορά Κάτω</translation>
     </message>
     <message>
         <source>Close</source>
-        <translation>Κλείσιμο</translation>
+        <translation type="vanished">Κλείσιμο</translation>
     </message>
     <message>
         <source>&amp;Unshade</source>
-        <translation>Αποσκίαση</translation>
+        <translation type="vanished">Αποσκίαση</translation>
     </message>
 </context>
 <context>
@@ -8256,7 +8256,7 @@ The minimum Direct2D version required is %1.%2.%3.%4. The Direct2D version on th
     </message>
     <message>
         <source>Attribute redefined.</source>
-        <translation>Η ιδιότητα επαναπροσδιορίστηκε.</translation>
+        <translation type="vanished">Η ιδιότητα επαναπροσδιορίστηκε.</translation>
     </message>
     <message>
         <source>Unexpected character &apos;%1&apos; in public id literal.</source>
@@ -8383,643 +8383,643 @@ The minimum Direct2D version required is %1.%2.%3.%4. The Direct2D version on th
     <name>QtXmlPatterns</name>
     <message>
         <source>An %1-attribute with value %2 has already been declared.</source>
-        <translation>Μια ιδιότητα-%1 με τιμή %2 έχει ήδη δηλωθεί.</translation>
+        <translation type="vanished">Μια ιδιότητα-%1 με τιμή %2 έχει ήδη δηλωθεί.</translation>
     </message>
     <message>
         <source>An %1-attribute must have a valid %2 as value, which %3 isn&apos;t.</source>
-        <translation>Μια ιδιότητα-%1 πρέπει να έχει έγκυρη τιμή %2, ενώ η %3 δεν είναι.</translation>
+        <translation type="vanished">Μια ιδιότητα-%1 πρέπει να έχει έγκυρη τιμή %2, ενώ η %3 δεν είναι.</translation>
     </message>
     <message>
         <source>Network timeout.</source>
-        <translation>Χρονικό περιθώριο δικτύου.</translation>
+        <translation type="vanished">Χρονικό περιθώριο δικτύου.</translation>
     </message>
     <message>
         <source>Element %1 can&apos;t be serialized because it appears outside the document element.</source>
-        <translation>Το στοιχείο %1 δεν μπορεί να είναι σειριακό γιατί εμφανίζεται εκτός του στοιχείου του αρχείου.</translation>
+        <translation type="vanished">Το στοιχείο %1 δεν μπορεί να είναι σειριακό γιατί εμφανίζεται εκτός του στοιχείου του αρχείου.</translation>
     </message>
     <message>
         <source>Year %1 is invalid because it begins with %2.</source>
-        <translation>Το έτος %1 δεν είναι έγκυρο γιατί αρχίζει με %2.</translation>
+        <translation type="vanished">Το έτος %1 δεν είναι έγκυρο γιατί αρχίζει με %2.</translation>
     </message>
     <message>
         <source>Day %1 is outside the range %2..%3.</source>
-        <translation>Η ημέρα %1 είναι εκτός του εύρους %2..%3.</translation>
+        <translation type="vanished">Η ημέρα %1 είναι εκτός του εύρους %2..%3.</translation>
     </message>
     <message>
         <source>Month %1 is outside the range %2..%3.</source>
-        <translation>Ο μήνας %1 είναι εκτός του εύρους %2..%3.</translation>
+        <translation type="vanished">Ο μήνας %1 είναι εκτός του εύρους %2..%3.</translation>
     </message>
     <message>
         <source>Overflow: Can&apos;t represent date %1.</source>
-        <translation>Υπερχείλιση: Δεν μπορεί να αντιπροσωπευθεί η ημέρα %1.</translation>
+        <translation type="vanished">Υπερχείλιση: Δεν μπορεί να αντιπροσωπευθεί η ημέρα %1.</translation>
     </message>
     <message>
         <source>Day %1 is invalid for month %2.</source>
-        <translation>Η ημέρα %1 δεν είναι έγκυρη για το μήνα %2.</translation>
+        <translation type="vanished">Η ημέρα %1 δεν είναι έγκυρη για το μήνα %2.</translation>
     </message>
     <message>
         <source>Time 24:%1:%2.%3 is invalid. Hour is 24, but minutes, seconds, and milliseconds are not all 0; </source>
-        <translation>Η ώρα 24:%1:%2.%3 δεν είναι έγκυρη. Η ώρα είναι 24, αλλά τα λεπτά, δευτερόλεπτα και χιλιοστά του δευτερολέπτου δεν είναι όλα 0</translation>
+        <translation type="vanished">Η ώρα 24:%1:%2.%3 δεν είναι έγκυρη. Η ώρα είναι 24, αλλά τα λεπτά, δευτερόλεπτα και χιλιοστά του δευτερολέπτου δεν είναι όλα 0</translation>
     </message>
     <message>
         <source>Time %1:%2:%3.%4 is invalid.</source>
-        <translation>Η ώρα %1:%2:%3.%4 δεν είναι έγκυρη.</translation>
+        <translation type="vanished">Η ώρα %1:%2:%3.%4 δεν είναι έγκυρη.</translation>
     </message>
     <message>
         <source>Overflow: Date can&apos;t be represented.</source>
-        <translation>Υπερχείλιση: Δεν μπορεί να αντιπροσωπευθεί η ημέρα.</translation>
+        <translation type="vanished">Υπερχείλιση: Δεν μπορεί να αντιπροσωπευθεί η ημέρα.</translation>
     </message>
     <message>
         <source>At least one component must be present.</source>
-        <translation>Τουλάχιστον ένα στοιχείο πρέπει να είναι παρών.</translation>
+        <translation type="vanished">Τουλάχιστον ένα στοιχείο πρέπει να είναι παρών.</translation>
     </message>
     <message>
         <source>At least one time component must appear after the %1-delimiter.</source>
-        <translation>Ένα τουλάχιστον στοιχείο του χρόνου πρέπει να είναι εμφανίζεται μετά το διαχωριστικό %1.</translation>
+        <translation type="vanished">Ένα τουλάχιστον στοιχείο του χρόνου πρέπει να είναι εμφανίζεται μετά το διαχωριστικό %1.</translation>
     </message>
     <message>
         <source>No operand in an integer division, %1, can be %2.</source>
-        <translation>Μη τελεστής σε διαίρεση ακέραιων, %1, μπορεί να είναι %2.</translation>
+        <translation type="vanished">Μη τελεστής σε διαίρεση ακέραιων, %1, μπορεί να είναι %2.</translation>
     </message>
     <message>
         <source>The first operand in an integer division, %1, cannot be infinity (%2).</source>
-        <translation>Ο πρώτος τελεστής σε διαίρεση ακέραιων, %1, δεν μπορεί ναι είναι το άπειρο (%2).</translation>
+        <translation type="vanished">Ο πρώτος τελεστής σε διαίρεση ακέραιων, %1, δεν μπορεί ναι είναι το άπειρο (%2).</translation>
     </message>
     <message>
         <source>The second operand in a division, %1, cannot be zero (%2).</source>
-        <translation>Ο δεύτερος τελεστής σε μια διαίρεση, %1, δεν μπορεί να είναι το μηδέν (%2).</translation>
+        <translation type="vanished">Ο δεύτερος τελεστής σε μια διαίρεση, %1, δεν μπορεί να είναι το μηδέν (%2).</translation>
     </message>
     <message>
         <source>%1 is not a valid value of type %2.</source>
-        <translation>%1 δεν είναι έγκυρη τιμή τύπου %2.</translation>
+        <translation type="vanished">%1 δεν είναι έγκυρη τιμή τύπου %2.</translation>
     </message>
     <message>
         <source>When casting to %1 from %2, the source value cannot be %3.</source>
-        <translation>Όταν γίνεται τροποποίηση στο %1 από το %2, η αρχική τιμή δεν μπορεί να είναι %3.</translation>
+        <translation type="vanished">Όταν γίνεται τροποποίηση στο %1 από το %2, η αρχική τιμή δεν μπορεί να είναι %3.</translation>
     </message>
     <message>
         <source>Integer division (%1) by zero (%2) is undefined.</source>
-        <translation>Η διαίρεση ακεραίου (%1) με το μηδέν (%2) είναι απροσδιόριστη.</translation>
+        <translation type="vanished">Η διαίρεση ακεραίου (%1) με το μηδέν (%2) είναι απροσδιόριστη.</translation>
     </message>
     <message>
         <source>Division (%1) by zero (%2) is undefined.</source>
-        <translation>Η διαίρεση (%1) με το μηδέν (%2) είναι απροσδιόριστη.</translation>
+        <translation type="vanished">Η διαίρεση (%1) με το μηδέν (%2) είναι απροσδιόριστη.</translation>
     </message>
     <message>
         <source>Modulus division (%1) by zero (%2) is undefined.</source>
-        <translation>Η διαίρεση μέτρου (%1) με το μηδέν (%2) είναι απροσδιόριστη.</translation>
+        <translation type="vanished">Η διαίρεση μέτρου (%1) με το μηδέν (%2) είναι απροσδιόριστη.</translation>
     </message>
     <message>
         <source>Dividing a value of type %1 by %2 (not-a-number) is not allowed.</source>
-        <translation>Η διαίρεση μιας τιμής τύπου %1 με το %2 (όχι αριθμό) δεν επιτρέπεται.</translation>
+        <translation type="vanished">Η διαίρεση μιας τιμής τύπου %1 με το %2 (όχι αριθμό) δεν επιτρέπεται.</translation>
     </message>
     <message>
         <source>Dividing a value of type %1 by %2 or %3 (plus or minus zero) is not allowed.</source>
-        <translation>Η διαίρεση μιας τιμής τύπου %1 με το %2 ή με το %3 (συν ή πλην μηδέν) δεν επιτρέπεται.</translation>
+        <translation type="vanished">Η διαίρεση μιας τιμής τύπου %1 με το %2 ή με το %3 (συν ή πλην μηδέν) δεν επιτρέπεται.</translation>
     </message>
     <message>
         <source>Multiplication of a value of type %1 by %2 or %3 (plus or minus infinity) is not allowed.</source>
-        <translation>Ο πολλαπλασιασμός μιας τιμής τύπου %1 με το %2 ή το %3 (συν ή πλην άπειρο) δεν επιτρέπεται.</translation>
+        <translation type="vanished">Ο πολλαπλασιασμός μιας τιμής τύπου %1 με το %2 ή το %3 (συν ή πλην άπειρο) δεν επιτρέπεται.</translation>
     </message>
     <message>
         <source>A value of type %1 cannot have an Effective Boolean Value.</source>
-        <translation>Μια τιμή του τύπου %1 δεν μπορεί να έχει μια Αποτελεσματική Μπούλεια Τιμή.</translation>
+        <translation type="vanished">Μια τιμή του τύπου %1 δεν μπορεί να έχει μια Αποτελεσματική Μπούλεια Τιμή.</translation>
     </message>
     <message>
         <source>Effective Boolean Value cannot be calculated for a sequence containing two or more atomic values.</source>
-        <translation>Η Αποτελεσματική Μπούλεια Τιμή δεν μπορεί να υπολογιστεί για μια ακολουθία που περιέχει δύο ή περισσότερες ατομικές τιμές.</translation>
+        <translation type="vanished">Η Αποτελεσματική Μπούλεια Τιμή δεν μπορεί να υπολογιστεί για μια ακολουθία που περιέχει δύο ή περισσότερες ατομικές τιμές.</translation>
     </message>
     <message>
         <source>Value %1 of type %2 exceeds maximum (%3).</source>
-        <translation>Η τιμή %1 του τύπου %2 υπερβαίνει το μέγιστο (%3).</translation>
+        <translation type="vanished">Η τιμή %1 του τύπου %2 υπερβαίνει το μέγιστο (%3).</translation>
     </message>
     <message>
         <source>Value %1 of type %2 is below minimum (%3).</source>
-        <translation>Η τιμή %1 του τύπου %2 είναι κάτω του ελάχιστου (%3).</translation>
+        <translation type="vanished">Η τιμή %1 του τύπου %2 είναι κάτω του ελάχιστου (%3).</translation>
     </message>
     <message>
         <source>A value of type %1 must contain an even number of digits. The value %2 does not.</source>
-        <translation>Μια τιμή του τύπου %1 πρέπει να περιέχει έναν ζυγό αριθμό ψηφίων. Η τιμή %2 δεν τον περιέχει.</translation>
+        <translation type="vanished">Μια τιμή του τύπου %1 πρέπει να περιέχει έναν ζυγό αριθμό ψηφίων. Η τιμή %2 δεν τον περιέχει.</translation>
     </message>
     <message>
         <source>%1 is not valid as a value of type %2.</source>
-        <translation>%1 δεν είναι έγκυρη σαν τιμή τύπου %2.</translation>
+        <translation type="vanished">%1 δεν είναι έγκυρη σαν τιμή τύπου %2.</translation>
     </message>
     <message>
         <source>Operator %1 cannot be used on type %2.</source>
-        <translation>Ο τελεστής %1 δεν μπορεί να χρησιμοποιηθεί στον τύπο %2.</translation>
+        <translation type="vanished">Ο τελεστής %1 δεν μπορεί να χρησιμοποιηθεί στον τύπο %2.</translation>
     </message>
     <message>
         <source>Operator %1 cannot be used on atomic values of type %2 and %3.</source>
-        <translation>Ο τελεστής %1 δεν μπορεί να χρησιμοποιηθεί σε ατομικές τιμές τύπου %2 και %3.</translation>
+        <translation type="vanished">Ο τελεστής %1 δεν μπορεί να χρησιμοποιηθεί σε ατομικές τιμές τύπου %2 και %3.</translation>
     </message>
     <message>
         <source>The namespace URI in the name for a computed attribute cannot be %1.</source>
-        <translation>Το URI χώρου ονομάτων στο όνομα για μία υπολογισμένη ιδιότητα δεν μπορεί να είναι %1.</translation>
+        <translation type="vanished">Το URI χώρου ονομάτων στο όνομα για μία υπολογισμένη ιδιότητα δεν μπορεί να είναι %1.</translation>
     </message>
     <message>
         <source>The name for a computed attribute cannot have the namespace URI %1 with the local name %2.</source>
-        <translation>Το όνομα για μια υπολογισμένη ιδιότητα δεν μπορεί να έχει το URI χώρου ονομάτων %1 με το τοπικό όνομα %2.</translation>
+        <translation type="vanished">Το όνομα για μια υπολογισμένη ιδιότητα δεν μπορεί να έχει το URI χώρου ονομάτων %1 με το τοπικό όνομα %2.</translation>
     </message>
     <message>
         <source>Type error in cast, expected %1, received %2.</source>
-        <translation>Λάθος τύπου στην τροποποίηση, αναμενόταν %1, ελήφθη %2.</translation>
+        <translation type="vanished">Λάθος τύπου στην τροποποίηση, αναμενόταν %1, ελήφθη %2.</translation>
     </message>
     <message>
         <source>When casting to %1 or types derived from it, the source value must be of the same type, or it must be a string literal. Type %2 is not allowed.</source>
-        <translation>Όταν τροποποείται το %1 ή τύποι που προήρθαν από αυτό, η αρχική τιμή πρέπει να είναι από τον ίδιο τύπο, ή πρέπει να είναι κυριολεκτικά χαρακτήρες. Ο τύπος %2 δεν επιτρέπεται.</translation>
+        <translation type="vanished">Όταν τροποποείται το %1 ή τύποι που προήρθαν από αυτό, η αρχική τιμή πρέπει να είναι από τον ίδιο τύπο, ή πρέπει να είναι κυριολεκτικά χαρακτήρες. Ο τύπος %2 δεν επιτρέπεται.</translation>
     </message>
     <message>
         <source>No casting is possible with %1 as the target type.</source>
-        <translation>Δεν είναι δυνατή τροποποίηση με το %1 σαν τον τελικό τύπο.</translation>
+        <translation type="vanished">Δεν είναι δυνατή τροποποίηση με το %1 σαν τον τελικό τύπο.</translation>
     </message>
     <message>
         <source>It is not possible to cast from %1 to %2.</source>
-        <translation>Δεν είναι δυνατό να τροποποίηθει το %1 σε %2.</translation>
+        <translation type="vanished">Δεν είναι δυνατό να τροποποίηθει το %1 σε %2.</translation>
     </message>
     <message>
         <source>Casting to %1 is not possible because it is an abstract type, and can therefore never be instantiated.</source>
-        <translation>Η τροποποίηση του %1 δεν είναι δυνατή επειδή είναι ένας αόριστος τύπος, και άρα δεν μπορεί να αποκτήσει υπόσταση.</translation>
+        <translation type="vanished">Η τροποποίηση του %1 δεν είναι δυνατή επειδή είναι ένας αόριστος τύπος, και άρα δεν μπορεί να αποκτήσει υπόσταση.</translation>
     </message>
     <message>
         <source>It&apos;s not possible to cast the value %1 of type %2 to %3</source>
-        <translation>Δεν είναι δυνατό να τροποποίηθει η τιμή %1 τύπου %2 σε %3</translation>
+        <translation type="vanished">Δεν είναι δυνατό να τροποποίηθει η τιμή %1 τύπου %2 σε %3</translation>
     </message>
     <message>
         <source>Failure when casting from %1 to %2: %3</source>
-        <translation>Αποτυχία κατά την τροποποίηση από %1 σε %2: %3</translation>
+        <translation type="vanished">Αποτυχία κατά την τροποποίηση από %1 σε %2: %3</translation>
     </message>
     <message>
         <source>A comment cannot contain %1</source>
-        <translation>Ένα σχόλιο δεν μπορεί να περιέχει %1</translation>
+        <translation type="vanished">Ένα σχόλιο δεν μπορεί να περιέχει %1</translation>
     </message>
     <message>
         <source>A comment cannot end with a %1.</source>
-        <translation>Ένα σχόλιο δεν μπορεί να τελειώνει με %1.</translation>
+        <translation type="vanished">Ένα σχόλιο δεν μπορεί να τελειώνει με %1.</translation>
     </message>
     <message>
         <source>No comparisons can be done involving the type %1.</source>
-        <translation>Καμία σύγκριση δεν μπορεί να γίνει που να περιλαμβάνει τον τύπο %1.</translation>
+        <translation type="vanished">Καμία σύγκριση δεν μπορεί να γίνει που να περιλαμβάνει τον τύπο %1.</translation>
     </message>
     <message>
         <source>Operator %1 is not available between atomic values of type %2 and %3.</source>
-        <translation>Ο τελεστής %1 δεν είναι διαθέσιμος μεταξύ ατομικών τιμών του τύπου %2 και %3.</translation>
+        <translation type="vanished">Ο τελεστής %1 δεν είναι διαθέσιμος μεταξύ ατομικών τιμών του τύπου %2 και %3.</translation>
     </message>
     <message>
         <source>An attribute node cannot be a child of a document node. Therefore, the attribute %1 is out of place.</source>
-        <translation>Ένας κόμβος ιδιότητας δεν μπορεί να είναι το τέκνο ενός κόμβου εγγράφου. Οπότε, η ιδιότητα %1 είναι άτοπη.</translation>
+        <translation type="vanished">Ένας κόμβος ιδιότητας δεν μπορεί να είναι το τέκνο ενός κόμβου εγγράφου. Οπότε, η ιδιότητα %1 είναι άτοπη.</translation>
     </message>
     <message>
         <source>A library module cannot be evaluated directly. It must be imported from a main module.</source>
-        <translation>Ένα δομοστοιχείο βιβλιοθήκης δεν μπορεί να εκτιμηθεί άμεσα. Πρέπει να εισαχθεί από το βασικό δομοστοιχείο.</translation>
+        <translation type="vanished">Ένα δομοστοιχείο βιβλιοθήκης δεν μπορεί να εκτιμηθεί άμεσα. Πρέπει να εισαχθεί από το βασικό δομοστοιχείο.</translation>
     </message>
     <message>
         <source>A value of type %1 cannot be a predicate. A predicate must have either a numeric type or an Effective Boolean Value type.</source>
-        <translation>Μια τιμή του τύπου %1 δεν μπορεί να είναι ένα κατηγόρημα. Ένα κατηγόρημα πρέπει να έχει ένα αριθμητικό τύπο ή ένα Αποτελεσματικό τύπο Τιμής Boolean.</translation>
+        <translation type="vanished">Μια τιμή του τύπου %1 δεν μπορεί να είναι ένα κατηγόρημα. Ένα κατηγόρημα πρέπει να έχει ένα αριθμητικό τύπο ή ένα Αποτελεσματικό τύπο Τιμής Boolean.</translation>
     </message>
     <message>
         <source>A positional predicate must evaluate to a single numeric value.</source>
-        <translation>Ένα κατηγόρημα θέσης πρέπει να εκτιμηθεί σε μια μονή αριθμητική τιμή.</translation>
+        <translation type="vanished">Ένα κατηγόρημα θέσης πρέπει να εκτιμηθεί σε μια μονή αριθμητική τιμή.</translation>
     </message>
     <message>
         <source>The target name in a processing instruction cannot be %1 in any combination of upper and lower case. Therefore, is %2 invalid.</source>
-        <translation>Το τελικό όνομα σε μια υπολογιστική οδηγία δεν μπορεί να είναι %1 σε κανένα συνδυασμό κεφαλαίων και πεζών. Οπότε, είναι %2 άκυρο.</translation>
+        <translation type="vanished">Το τελικό όνομα σε μια υπολογιστική οδηγία δεν μπορεί να είναι %1 σε κανένα συνδυασμό κεφαλαίων και πεζών. Οπότε, είναι %2 άκυρο.</translation>
     </message>
     <message>
         <source>%1 is not a valid target name in a processing instruction. It must be a %2 value, e.g. %3.</source>
-        <translation>%1 δεν είναι έγκυρο τελικό όνομα σε μία υπολογιστική οδηγία. Πρέπει να είναι μία %2 τιμή, π.χ. %3.</translation>
+        <translation type="vanished">%1 δεν είναι έγκυρο τελικό όνομα σε μία υπολογιστική οδηγία. Πρέπει να είναι μία %2 τιμή, π.χ. %3.</translation>
     </message>
     <message>
         <source>The last step in a path must contain either nodes or atomic values. It cannot be a mixture between the two.</source>
-        <translation>iΤο τελευταίο βήμα σε μια διαδρομή πρέπει να περιέχει είτε κόμβους είτε ατομικές τιμές. Δε μπορεί να είναι ένα μείγμα μεταξύ των δύο.</translation>
+        <translation type="vanished">iΤο τελευταίο βήμα σε μια διαδρομή πρέπει να περιέχει είτε κόμβους είτε ατομικές τιμές. Δε μπορεί να είναι ένα μείγμα μεταξύ των δύο.</translation>
     </message>
     <message>
         <source>The data of a processing instruction cannot contain the string %1</source>
-        <translation>Τα δεδομένα μιας υπολογιστικής οδηγίας δεν μπορεί να περιέχει τη γραμμή %1</translation>
+        <translation type="vanished">Τα δεδομένα μιας υπολογιστικής οδηγίας δεν μπορεί να περιέχει τη γραμμή %1</translation>
     </message>
     <message>
         <source>No namespace binding exists for the prefix %1</source>
-        <translation>Δεν υπάρχει σύνδεση χώρου ονομάτων για το πρόθεμα %1</translation>
+        <translation type="vanished">Δεν υπάρχει σύνδεση χώρου ονομάτων για το πρόθεμα %1</translation>
     </message>
     <message>
         <source>No namespace binding exists for the prefix %1 in %2</source>
-        <translation>Δεν υπάρχει σύνδεση χώρου ονομάτων για το πρόθεμα %1 στο %2</translation>
+        <translation type="vanished">Δεν υπάρχει σύνδεση χώρου ονομάτων για το πρόθεμα %1 στο %2</translation>
     </message>
     <message>
         <source>%1 is an invalid %2</source>
-        <translation>%1 είναι μη έγκυρο %2</translation>
+        <translation type="vanished">%1 είναι μη έγκυρο %2</translation>
     </message>
     <message numerus="yes">
         <source>%1 takes at most %n argument(s). %2 is therefore invalid.</source>
-        <translation>
+        <translation type="vanished">
             <numerusform>%1 παίρνει το πολύ %n όρισμα. Οπότε %2 είναι άκυρο.</numerusform>
             <numerusform>%1 παίρνει το πολύ %n ορίσματα. Οπότε %2 είναι άκυρο.</numerusform>
         </translation>
     </message>
     <message numerus="yes">
         <source>%1 requires at least %n argument(s). %2 is therefore invalid.</source>
-        <translation>
+        <translation type="vanished">
             <numerusform>%1 παίρνει τουλάχιστον %n όρισμα. Οπότε %2 είναι άκυρο.</numerusform>
             <numerusform>%1 παίρνει τουλάχιστον %n όρισμα. Οπότε %2 είναι άκυρο.</numerusform>
         </translation>
     </message>
     <message>
         <source>The first argument to %1 cannot be of type %2. It must be a numeric type, xs:yearMonthDuration or xs:dayTimeDuration.</source>
-        <translation>Το πρώτο όρισμα στο %1 δεν μπορεί να είναι του τύπου %2. Πρέπει να είναι ένας αριθμητικός τύπος, xs:χρόνοςΜήναςΔιάρκεια ή xs:ημέραΏραΔιάρκεια.</translation>
+        <translation type="vanished">Το πρώτο όρισμα στο %1 δεν μπορεί να είναι του τύπου %2. Πρέπει να είναι ένας αριθμητικός τύπος, xs:χρόνοςΜήναςΔιάρκεια ή xs:ημέραΏραΔιάρκεια.</translation>
     </message>
     <message>
         <source>The first argument to %1 cannot be of type %2. It must be of type %3, %4, or %5.</source>
-        <translation>Το πρώτο όρισμα στο %1 δεν μπορεί να είναι του τύπου %2. Πρέπει να είναι του τύπου %3, %4, ή %5.</translation>
+        <translation type="vanished">Το πρώτο όρισμα στο %1 δεν μπορεί να είναι του τύπου %2. Πρέπει να είναι του τύπου %3, %4, ή %5.</translation>
     </message>
     <message>
         <source>The second argument to %1 cannot be of type %2. It must be of type %3, %4, or %5.</source>
-        <translation>Το δεύτερο όρισμα στο %1 δεν μπορεί να είναι του τύπου %2. Πρέπει να είναι του τύπου %3, %4, ή %5.</translation>
+        <translation type="vanished">Το δεύτερο όρισμα στο %1 δεν μπορεί να είναι του τύπου %2. Πρέπει να είναι του τύπου %3, %4, ή %5.</translation>
     </message>
     <message>
         <source>%1 is not a valid XML 1.0 character.</source>
-        <translation>%1 δεν είναι ένας έγκυρος χαρακτήρας XML 1.0.</translation>
+        <translation type="vanished">%1 δεν είναι ένας έγκυρος χαρακτήρας XML 1.0.</translation>
     </message>
     <message>
         <source>The first argument to %1 cannot be of type %2.</source>
-        <translation>Το πρώτο όρισμα στο %1 δεν μπορεί να είναι του τύπου %2.</translation>
+        <translation type="vanished">Το πρώτο όρισμα στο %1 δεν μπορεί να είναι του τύπου %2.</translation>
     </message>
     <message>
         <source>If both values have zone offsets, they must have the same zone offset. %1 and %2 are not the same.</source>
-        <translation>Αν και οι δύο τιμές έχουν μετατοπίσεις ζώνης, πρέπει να έχουν τη ίδια μετατόπιση ζώνης. %1 και %2 δεν είναι τα ίδια.</translation>
+        <translation type="vanished">Αν και οι δύο τιμές έχουν μετατοπίσεις ζώνης, πρέπει να έχουν τη ίδια μετατόπιση ζώνης. %1 και %2 δεν είναι τα ίδια.</translation>
     </message>
     <message>
         <source>%1 was called.</source>
-        <translation>%1 κλήθηκε.</translation>
+        <translation type="vanished">%1 κλήθηκε.</translation>
     </message>
     <message>
         <source>%1 must be followed by %2 or %3, not at the end of the replacement string.</source>
-        <translation>%1 πρέπει να ακολουθείται από %2 ή %3, όχι στο τέλος των χαρακτήρων αντικατάστασης.</translation>
+        <translation type="vanished">%1 πρέπει να ακολουθείται από %2 ή %3, όχι στο τέλος των χαρακτήρων αντικατάστασης.</translation>
     </message>
     <message>
         <source>In the replacement string, %1 must be followed by at least one digit when not escaped.</source>
-        <translation>Στους χαρακτήρες αντικατάστασης, %1 πρέπει να ακολουθείται από τουλάχιστο ένα ψηφίο όταν δεν έχει διαφύγει.</translation>
+        <translation type="vanished">Στους χαρακτήρες αντικατάστασης, %1 πρέπει να ακολουθείται από τουλάχιστο ένα ψηφίο όταν δεν έχει διαφύγει.</translation>
     </message>
     <message>
         <source>In the replacement string, %1 can only be used to escape itself or %2, not %3</source>
-        <translation>Στους χαρακτήρες αντικατάστασης, %1 μπορεί να χρησιμοποιηθεί να διαφύγει του εαυτού του ή %2, όχι %3</translation>
+        <translation type="vanished">Στους χαρακτήρες αντικατάστασης, %1 μπορεί να χρησιμοποιηθεί να διαφύγει του εαυτού του ή %2, όχι %3</translation>
     </message>
     <message>
         <source>%1 matches newline characters</source>
-        <translation>%1 αντιστοιχεί σε χαρακτήρες νέας γραμμής</translation>
+        <translation type="vanished">%1 αντιστοιχεί σε χαρακτήρες νέας γραμμής</translation>
     </message>
     <message>
         <source>%1 and %2 match the start and end of a line.</source>
-        <translation>%1 και %2 αντιστοιχούν με την αρχή και το τέλος μιας γραμμής.</translation>
+        <translation type="vanished">%1 και %2 αντιστοιχούν με την αρχή και το τέλος μιας γραμμής.</translation>
     </message>
     <message>
         <source>Matches are case insensitive</source>
-        <translation>Οι αντιστοιχίες είναι χωρίς διάκριση πεζών-κεφαλαίων</translation>
+        <translation type="vanished">Οι αντιστοιχίες είναι χωρίς διάκριση πεζών-κεφαλαίων</translation>
     </message>
     <message>
         <source>Whitespace characters are removed, except when they appear in character classes</source>
-        <translation>Οι κενοί χαρακτήρες διαγράφονται, εκτός αν εμφανίζονται σε ομάδες χαρακτήρων</translation>
+        <translation type="vanished">Οι κενοί χαρακτήρες διαγράφονται, εκτός αν εμφανίζονται σε ομάδες χαρακτήρων</translation>
     </message>
     <message>
         <source>%1 is an invalid regular expression pattern: %2</source>
-        <translation>%1 δεν είναι έγκυρο σχήμα κανονικής έκφρασης : %2</translation>
+        <translation type="vanished">%1 δεν είναι έγκυρο σχήμα κανονικής έκφρασης : %2</translation>
     </message>
     <message>
         <source>%1 is an invalid flag for regular expressions. Valid flags are:</source>
-        <translation>%1 δεν είναι έγκυρη σημαία για κανονικές εκφράσεις. Έγκυρες σημαίες είναι:</translation>
+        <translation type="vanished">%1 δεν είναι έγκυρη σημαία για κανονικές εκφράσεις. Έγκυρες σημαίες είναι:</translation>
     </message>
     <message>
         <source>If the first argument is the empty sequence or a zero-length string (no namespace), a prefix cannot be specified. Prefix %1 was specified.</source>
-        <translation>Αν το πρώτο όρισμα είναι μια κενή ακολουθία ή μια μηδενικού μεγέθους γραμμή (όχι χώρος ονομάτων), δεν μπορεί να ορισθεί ένα πρόθεμα. Το πρόθεμα %1 έχει ορισθεί.</translation>
+        <translation type="vanished">Αν το πρώτο όρισμα είναι μια κενή ακολουθία ή μια μηδενικού μεγέθους γραμμή (όχι χώρος ονομάτων), δεν μπορεί να ορισθεί ένα πρόθεμα. Το πρόθεμα %1 έχει ορισθεί.</translation>
     </message>
     <message>
         <source>It will not be possible to retrieve %1.</source>
-        <translation>Δε θα είναι δυνατό να ανακτηθεί το %1.</translation>
+        <translation type="vanished">Δε θα είναι δυνατό να ανακτηθεί το %1.</translation>
     </message>
     <message>
         <source>The root node of the second argument to function %1 must be a document node. %2 is not a document node.</source>
-        <translation>Ο ριζικός κόμβος του δεύτερου ορίσματος στη συνάρτηση %1 πρέπει να είναι ένας κόμβος εγγράφου. Το %2 δεν είναι ένας κόμβος εγγράφου.</translation>
+        <translation type="vanished">Ο ριζικός κόμβος του δεύτερου ορίσματος στη συνάρτηση %1 πρέπει να είναι ένας κόμβος εγγράφου. Το %2 δεν είναι ένας κόμβος εγγράφου.</translation>
     </message>
     <message>
         <source>The default collection is undefined</source>
-        <translation>Η προκαθορισμένη συλλογή δεν έχει προσδιοριστεί</translation>
+        <translation type="vanished">Η προκαθορισμένη συλλογή δεν έχει προσδιοριστεί</translation>
     </message>
     <message>
         <source>%1 cannot be retrieved</source>
-        <translation>%1 δεν μπορεί να ανακτηθεί</translation>
+        <translation type="vanished">%1 δεν μπορεί να ανακτηθεί</translation>
     </message>
     <message>
         <source>The normalization form %1 is unsupported. The supported forms are %2, %3, %4, and %5, and none, i.e. the empty string (no normalization).</source>
-        <translation>Η αίτηση κανονικοποίησης %1 δεν υποστηρίζεται. Οι υποστηριζόμενες αιτήσεις είναι %2, %3, %4, και %5, και καμία, δηλαδή κενή γραμμή (μη κανονικοποίηση).</translation>
+        <translation type="vanished">Η αίτηση κανονικοποίησης %1 δεν υποστηρίζεται. Οι υποστηριζόμενες αιτήσεις είναι %2, %3, %4, και %5, και καμία, δηλαδή κενή γραμμή (μη κανονικοποίηση).</translation>
     </message>
     <message>
         <source>A zone offset must be in the range %1..%2 inclusive. %3 is out of range.</source>
-        <translation>Μία μετατόπιση ζώνης πρέπει να ανήκει στο εύρος %1..%2 συμπεριλαμβανομένου. %3 είναι εκτός εύρους.</translation>
+        <translation type="vanished">Μία μετατόπιση ζώνης πρέπει να ανήκει στο εύρος %1..%2 συμπεριλαμβανομένου. %3 είναι εκτός εύρους.</translation>
     </message>
     <message>
         <source>%1 is not a whole number of minutes.</source>
-        <translation>%1 δεν είναι ένας ολόκληρος αριθμός λεπτών.</translation>
+        <translation type="vanished">%1 δεν είναι ένας ολόκληρος αριθμός λεπτών.</translation>
     </message>
     <message>
         <source>Required cardinality is %1; got cardinality %2.</source>
-        <translation>Η απαιτούμενη πληθικότητα είναι %1, έχει πληθικότητα %2.</translation>
+        <translation type="vanished">Η απαιτούμενη πληθικότητα είναι %1, έχει πληθικότητα %2.</translation>
     </message>
     <message>
         <source>The item %1 did not match the required type %2.</source>
-        <translation>Το αντικείμενο %1 δεν ταιριάζει με τον απαιτούμενο τύπο %2.</translation>
+        <translation type="vanished">Το αντικείμενο %1 δεν ταιριάζει με τον απαιτούμενο τύπο %2.</translation>
     </message>
     <message>
         <source>%1 is an unknown schema type.</source>
-        <translation>%1 είναι ένας άγνωστος τύπος σχήματος.</translation>
+        <translation type="vanished">%1 είναι ένας άγνωστος τύπος σχήματος.</translation>
     </message>
     <message>
         <source>Only one %1 declaration can occur in the query prolog.</source>
-        <translation>Μόνο μία %1 δήλωση μπορεί να υπάρχει στον πρόλογο του ερωτήματος.</translation>
+        <translation type="vanished">Μόνο μία %1 δήλωση μπορεί να υπάρχει στον πρόλογο του ερωτήματος.</translation>
     </message>
     <message>
         <source>The initialization of variable %1 depends on itself</source>
-        <translation>Η έναρξη της μεταβλητής %1 εξαρτάται από τον εαυτό της</translation>
+        <translation type="vanished">Η έναρξη της μεταβλητής %1 εξαρτάται από τον εαυτό της</translation>
     </message>
     <message>
         <source>No variable by name %1 exists</source>
-        <translation>Δεν υπάρχει καμία μεταβλητή με το όνομα %1</translation>
+        <translation type="vanished">Δεν υπάρχει καμία μεταβλητή με το όνομα %1</translation>
     </message>
     <message>
         <source>The variable %1 is unused</source>
-        <translation>Η μεταβλητή %1 δεν χρησιμοποιείται</translation>
+        <translation type="vanished">Η μεταβλητή %1 δεν χρησιμοποιείται</translation>
     </message>
     <message>
         <source>Version %1 is not supported. The supported XQuery version is 1.0.</source>
-        <translation>Η έκδοση %1 δεν υποστηρίζεται. Η υποστηριζόμενη έκδοση XQuery είναι 1.0.</translation>
+        <translation type="vanished">Η έκδοση %1 δεν υποστηρίζεται. Η υποστηριζόμενη έκδοση XQuery είναι 1.0.</translation>
     </message>
     <message>
         <source>The encoding %1 is invalid. It must contain Latin characters only, must not contain whitespace, and must match the regular expression %2.</source>
-        <translation>Η κωδικοποίηση %1 είναι άκυρη. Πρέπει να περιέχει λατινικούς χαρακτήρες μόνο, δεν πρέπει να περιέχει κενά διαστήματα, και πρέπει να ταιριάζει στη κανονική έκφραση %2.</translation>
+        <translation type="vanished">Η κωδικοποίηση %1 είναι άκυρη. Πρέπει να περιέχει λατινικούς χαρακτήρες μόνο, δεν πρέπει να περιέχει κενά διαστήματα, και πρέπει να ταιριάζει στη κανονική έκφραση %2.</translation>
     </message>
     <message>
         <source>No function with signature %1 is available</source>
-        <translation>Καμία συνάρτηση με υπογραφή %1 δεν είναι διαθέσιμη</translation>
+        <translation type="vanished">Καμία συνάρτηση με υπογραφή %1 δεν είναι διαθέσιμη</translation>
     </message>
     <message>
         <source>A default namespace declaration must occur before function, variable, and option declarations.</source>
-        <translation>Μια προκαθορισμένη δήλωση χώρου ονομάτων πρέπει να λαμβάνει χώρα πριν τις δηλώσεις συνάρτησεων, μεταβλητών, και ιδιοτήτων.</translation>
+        <translation type="vanished">Μια προκαθορισμένη δήλωση χώρου ονομάτων πρέπει να λαμβάνει χώρα πριν τις δηλώσεις συνάρτησεων, μεταβλητών, και ιδιοτήτων.</translation>
     </message>
     <message>
         <source>Namespace declarations must occur before function, variable, and option declarations.</source>
-        <translation>Οι δηλώσεις χώρου ονομάτων πρέπει να λαμβάνουν χώρα πριν τις δηλώσεις συνάρτησεων, μεταβλητών, και ιδιοτήτων.</translation>
+        <translation type="vanished">Οι δηλώσεις χώρου ονομάτων πρέπει να λαμβάνουν χώρα πριν τις δηλώσεις συνάρτησεων, μεταβλητών, και ιδιοτήτων.</translation>
     </message>
     <message>
         <source>Module imports must occur before function, variable, and option declarations.</source>
-        <translation>Η εισαγωγή δομοστοιχείων πρέπει να λαμβάνει χώρα πριν τις δηλώσεις συνάρτησεων, μεταβλητών, και ιδιοτήτων.</translation>
+        <translation type="vanished">Η εισαγωγή δομοστοιχείων πρέπει να λαμβάνει χώρα πριν τις δηλώσεις συνάρτησεων, μεταβλητών, και ιδιοτήτων.</translation>
     </message>
     <message>
         <source>It is not possible to redeclare prefix %1.</source>
-        <translation>Δεν είναι δυνατό να επαναδηλωθεί το πρόθεμα %1.</translation>
+        <translation type="vanished">Δεν είναι δυνατό να επαναδηλωθεί το πρόθεμα %1.</translation>
     </message>
     <message>
         <source>Only the prefix %1 can be declared to bind the namespace %2. By default, it is already bound to the prefix %1.</source>
-        <translation>Μόνο το πρόθεμα %1 μπορεί να δηλωθεί για να συνδέσει το χώρο ονομάτων %2. Εξ&apos;ορισμού, είναι ήδη συνδεδεμένο με το πρόθεμα %1.</translation>
+        <translation type="vanished">Μόνο το πρόθεμα %1 μπορεί να δηλωθεί για να συνδέσει το χώρο ονομάτων %2. Εξ&apos;ορισμού, είναι ήδη συνδεδεμένο με το πρόθεμα %1.</translation>
     </message>
     <message>
         <source>Prefix %1 is already declared in the prolog.</source>
-        <translation>Το πρόθεμα %1 είναι ήδη δηλωμένο στο πρόλογο.</translation>
+        <translation type="vanished">Το πρόθεμα %1 είναι ήδη δηλωμένο στο πρόλογο.</translation>
     </message>
     <message>
         <source>The name of an option must have a prefix. There is no default namespace for options.</source>
-        <translation>Το όνομα μιας ιδιότητας πρέπει να έχει ένα πρόθεμα. Δεν υπάρχει προκαθορισμένος χώρος ονομάτων για ιδιότητες.</translation>
+        <translation type="vanished">Το όνομα μιας ιδιότητας πρέπει να έχει ένα πρόθεμα. Δεν υπάρχει προκαθορισμένος χώρος ονομάτων για ιδιότητες.</translation>
     </message>
     <message>
         <source>The Schema Import feature is not supported, and therefore %1 declarations cannot occur.</source>
-        <translation>Η λειτουργία εισαγωγής σχήματος δεν υποστηρίζεται, και γι&apos;αυτό %1 δηλώσεις δεν μπορούν να λάβουν χώρα.</translation>
+        <translation type="vanished">Η λειτουργία εισαγωγής σχήματος δεν υποστηρίζεται, και γι&apos;αυτό %1 δηλώσεις δεν μπορούν να λάβουν χώρα.</translation>
     </message>
     <message>
         <source>The target namespace of a %1 cannot be empty.</source>
-        <translation>Ο τελικός χώρος ονομάτων ενός %1 δεν μπορεί να είναι κενός.</translation>
+        <translation type="vanished">Ο τελικός χώρος ονομάτων ενός %1 δεν μπορεί να είναι κενός.</translation>
     </message>
     <message>
         <source>The module import feature is not supported</source>
-        <translation>Η λειτουργία εισαγωγής δομοστοιχείων δεν υποστηρίζεται</translation>
+        <translation type="vanished">Η λειτουργία εισαγωγής δομοστοιχείων δεν υποστηρίζεται</translation>
     </message>
     <message>
         <source>A variable by name %1 has already been declared in the prolog.</source>
-        <translation>Μια μεταβλητή με το όνομα %1 έχει ήδη δηλωθεί στο πρόλογο.</translation>
+        <translation type="vanished">Μια μεταβλητή με το όνομα %1 έχει ήδη δηλωθεί στο πρόλογο.</translation>
     </message>
     <message>
         <source>No value is available for the external variable by name %1.</source>
-        <translation>Καμία τιμή δεν είναι διαθέσιμη για την εξωτερική μεταβλητή με το όνομα %1.</translation>
+        <translation type="vanished">Καμία τιμή δεν είναι διαθέσιμη για την εξωτερική μεταβλητή με το όνομα %1.</translation>
     </message>
     <message>
         <source>The namespace %1 is reserved; therefore user defined functions may not use it. Try the predefined prefix %2, which exists for these cases.</source>
-        <translation>Ο χώρος ονομάτων %1 είναι εκχωρημένος, οπότε συναρτήσεις καθορισμένες από το χρήστη δεν θα τον χρησιμοποιήσουν. Δοκιμάστε το προκαθορισμένο πρόθεμα %2, το οποίο υπάρχει για αυτές τις περιπτώσεις.</translation>
+        <translation type="vanished">Ο χώρος ονομάτων %1 είναι εκχωρημένος, οπότε συναρτήσεις καθορισμένες από το χρήστη δεν θα τον χρησιμοποιήσουν. Δοκιμάστε το προκαθορισμένο πρόθεμα %2, το οποίο υπάρχει για αυτές τις περιπτώσεις.</translation>
     </message>
     <message>
         <source>The namespace of a user defined function in a library module must be equivalent to the module namespace. In other words, it should be %1 instead of %2</source>
-        <translation>Ο χώρος ονομάτων μιας συνάρτησης καθορισμένης από το χρήστη σε ένα αντιστάθμισμα βιβλιοθήκης πρέπει να είναι ισοδύναμο με το αντιστάθμισμα χώρου ονομάτων. Με άλλα λόγια, πρέπει να είναι %1 αντί για %2</translation>
+        <translation type="vanished">Ο χώρος ονομάτων μιας συνάρτησης καθορισμένης από το χρήστη σε ένα αντιστάθμισμα βιβλιοθήκης πρέπει να είναι ισοδύναμο με το αντιστάθμισμα χώρου ονομάτων. Με άλλα λόγια, πρέπει να είναι %1 αντί για %2</translation>
     </message>
     <message>
         <source>A function already exists with the signature %1.</source>
-        <translation>Μια συνάρτηση με την υπογραφή %1 υπάρχει ήδη.</translation>
+        <translation type="vanished">Μια συνάρτηση με την υπογραφή %1 υπάρχει ήδη.</translation>
     </message>
     <message>
         <source>No external functions are supported. All supported functions can be used directly, without first declaring them as external</source>
-        <translation>Δεν υποστηρίζονται εξωτερικές συναρτήσεις. Όλες οι υποστηριζόμενες συναρτήσεις μπορούν να χρησιμοποιηθούν άμεσα, χωρίς πρώτα να δηλώνονται σαν εξωτερικές</translation>
+        <translation type="vanished">Δεν υποστηρίζονται εξωτερικές συναρτήσεις. Όλες οι υποστηριζόμενες συναρτήσεις μπορούν να χρησιμοποιηθούν άμεσα, χωρίς πρώτα να δηλώνονται σαν εξωτερικές</translation>
     </message>
     <message>
         <source>An argument by name %1 has already been declared. Every argument name must be unique.</source>
-        <translation>Ένα όρισμα με το όνομα %1 έχει ήδη δηλωθεί. Κάθε όνομα ορίσματος πρέπει να είναι μοναδικό.</translation>
+        <translation type="vanished">Ένα όρισμα με το όνομα %1 έχει ήδη δηλωθεί. Κάθε όνομα ορίσματος πρέπει να είναι μοναδικό.</translation>
     </message>
     <message>
         <source>The name of a variable bound in a for-expression must be different from the positional variable. Hence, the two variables named %1 collide.</source>
-        <translation>Το όνομα μιας μεταβλητής συνδεδεμένης μέσα σε μια παράσταση πρέπει να είναι διαφορετικό από τη μεταβλητή θέσης. Συνεπώς, οι δύο μεταβλητές με το όνομα %1 συγκρούονται.</translation>
+        <translation type="vanished">Το όνομα μιας μεταβλητής συνδεδεμένης μέσα σε μια παράσταση πρέπει να είναι διαφορετικό από τη μεταβλητή θέσης. Συνεπώς, οι δύο μεταβλητές με το όνομα %1 συγκρούονται.</translation>
     </message>
     <message>
         <source>The Schema Validation Feature is not supported. Hence, %1-expressions may not be used.</source>
-        <translation>Η Λειτουργία Ταυτοποίησης Σχήματος δεν υποστηρίζεται. Οπότε, %1 εκφράσεις δεν μπορούν να χρησιμοποιηθούν.</translation>
+        <translation type="vanished">Η Λειτουργία Ταυτοποίησης Σχήματος δεν υποστηρίζεται. Οπότε, %1 εκφράσεις δεν μπορούν να χρησιμοποιηθούν.</translation>
     </message>
     <message>
         <source>None of the pragma expressions are supported. Therefore, a fallback expression must be present</source>
-        <translation>Καμία από τις αναγνωριστικές εκφράσεις δεν υποστηρίζεται. Οπότε, μια εναλλακτική έκφραση πρέπει να είναι παρούσα</translation>
+        <translation type="vanished">Καμία από τις αναγνωριστικές εκφράσεις δεν υποστηρίζεται. Οπότε, μια εναλλακτική έκφραση πρέπει να είναι παρούσα</translation>
     </message>
     <message>
         <source>The %1-axis is unsupported in XQuery</source>
-        <translation>Ο %1-άξονας δεν υποστηρίζεται στο XQuery</translation>
+        <translation type="vanished">Ο %1-άξονας δεν υποστηρίζεται στο XQuery</translation>
     </message>
     <message>
         <source>%1 is not a valid numeric literal.</source>
-        <translation>%1 δεν είναι μια έγκυρη αριθμητική σταθερά.</translation>
+        <translation type="vanished">%1 δεν είναι μια έγκυρη αριθμητική σταθερά.</translation>
     </message>
     <message>
         <source>No function by name %1 is available.</source>
-        <translation>Καμία συνάρτηση με το όνομα %1 δεν είναι διαθέσιμη.</translation>
+        <translation type="vanished">Καμία συνάρτηση με το όνομα %1 δεν είναι διαθέσιμη.</translation>
     </message>
     <message>
         <source>The namespace URI cannot be the empty string when binding to a prefix, %1.</source>
-        <translation>Το URI χώρου ονομάτων δεν μπορεί να είναι μια κενή γραμμή όταν συνδέεται με το πρόθεμα, %1.</translation>
+        <translation type="vanished">Το URI χώρου ονομάτων δεν μπορεί να είναι μια κενή γραμμή όταν συνδέεται με το πρόθεμα, %1.</translation>
     </message>
     <message>
         <source>%1 is an invalid namespace URI.</source>
-        <translation>%1 είναι μη έγκυρο URI χώρου ονομάτων.</translation>
+        <translation type="vanished">%1 είναι μη έγκυρο URI χώρου ονομάτων.</translation>
     </message>
     <message>
         <source>It is not possible to bind to the prefix %1</source>
-        <translation>Δεν είναι δυνατό να γίνει σύνδεση με το πρόθεμα %1</translation>
+        <translation type="vanished">Δεν είναι δυνατό να γίνει σύνδεση με το πρόθεμα %1</translation>
     </message>
     <message>
         <source>Namespace %1 can only be bound to %2 (and it is, in either case, pre-declared).</source>
-        <translation>Ο χώρος ονομάτων %1 μπορεί μόνο να συνδεθεί με το %2 (και είναι, σε κάθε περίπτωση, προδηλωμένο).</translation>
+        <translation type="vanished">Ο χώρος ονομάτων %1 μπορεί μόνο να συνδεθεί με το %2 (και είναι, σε κάθε περίπτωση, προδηλωμένο).</translation>
     </message>
     <message>
         <source>Prefix %1 can only be bound to %2 (and it is, in either case, pre-declared).</source>
-        <translation>Το πρόθεμα %1 μπορεί να συνδεθεί μόνο με το %2 (και είναι, σε κάθε περίπτωση, προδηλωμένο).</translation>
+        <translation type="vanished">Το πρόθεμα %1 μπορεί να συνδεθεί μόνο με το %2 (και είναι, σε κάθε περίπτωση, προδηλωμένο).</translation>
     </message>
     <message>
         <source>Two namespace declaration attributes have the same name: %1.</source>
-        <translation>Δύο ιδιότητες δήλωσης χώρου ονομάτων έχουν το ίδιο όνομα: %1.</translation>
+        <translation type="vanished">Δύο ιδιότητες δήλωσης χώρου ονομάτων έχουν το ίδιο όνομα: %1.</translation>
     </message>
     <message>
         <source>The namespace URI must be a constant and cannot use enclosed expressions.</source>
-        <translation>Το URI χώρου ονομάτων πρέπει να είναι μια σταθερά και δεν μπορεί να χρησιμοποιεί ενσωματωμένες εκφράσεις.</translation>
+        <translation type="vanished">Το URI χώρου ονομάτων πρέπει να είναι μια σταθερά και δεν μπορεί να χρησιμοποιεί ενσωματωμένες εκφράσεις.</translation>
     </message>
     <message>
         <source>An attribute by name %1 has already appeared on this element.</source>
-        <translation>Μια ιδιότητα με το όνομα %1 έχει ήδη εμφανιστεί σε αυτό το στοιχείο.</translation>
+        <translation type="vanished">Μια ιδιότητα με το όνομα %1 έχει ήδη εμφανιστεί σε αυτό το στοιχείο.</translation>
     </message>
     <message>
         <source>A direct element constructor is not well-formed. %1 is ended with %2.</source>
-        <translation>Ένας άμεσος κατασκευαστής στοιχείων δεν έχει σχηματιστεί καλά. %1 τελειώνει με %2.</translation>
+        <translation type="vanished">Ένας άμεσος κατασκευαστής στοιχείων δεν έχει σχηματιστεί καλά. %1 τελειώνει με %2.</translation>
     </message>
     <message>
         <source>The name %1 does not refer to any schema type.</source>
-        <translation>Το όνομα %1 δεν αναφέρεται σε κανένα τύπο σχήματος.</translation>
+        <translation type="vanished">Το όνομα %1 δεν αναφέρεται σε κανένα τύπο σχήματος.</translation>
     </message>
     <message>
         <source>%1 is an complex type. Casting to complex types is not possible. However, casting to atomic types such as %2 works.</source>
-        <translation>%1 είναι ένας πολύπλοκος τύπος. Η τροποποίηση σε πολύπλοκους τύπους δεν είναι δυνατή. Ωστόσο, τροποποίηση σε ατομικούς τύπους όπως %2 δουλεύει.</translation>
+        <translation type="vanished">%1 είναι ένας πολύπλοκος τύπος. Η τροποποίηση σε πολύπλοκους τύπους δεν είναι δυνατή. Ωστόσο, τροποποίηση σε ατομικούς τύπους όπως %2 δουλεύει.</translation>
     </message>
     <message>
         <source>%1 is not an atomic type. Casting is only possible to atomic types.</source>
-        <translation>%1 δεν είναι ένας ατομικός τύπος. Η τροποποίηση είναι μόνο δυνατή σε ατομικούς τύπους.</translation>
+        <translation type="vanished">%1 δεν είναι ένας ατομικός τύπος. Η τροποποίηση είναι μόνο δυνατή σε ατομικούς τύπους.</translation>
     </message>
     <message>
         <source>%1 is not a valid name for a processing-instruction. Therefore this name test will never match.</source>
-        <translation>%1 δεν είναι ένα έγκυρο όνομα για μια υπολογιστική οδηγία. Οπότε αυτή η δοκιμή ονόματος δεν θα ταιριάξει ποτέ.</translation>
+        <translation type="vanished">%1 δεν είναι ένα έγκυρο όνομα για μια υπολογιστική οδηγία. Οπότε αυτή η δοκιμή ονόματος δεν θα ταιριάξει ποτέ.</translation>
     </message>
     <message>
         <source>%1 is not in the in-scope attribute declarations. Note that the schema import feature is not supported.</source>
-        <translation>%1 δεν είναι μια εντός πεδίου δήλωση ιδιότητας. Σημειώστε ότι η λειτουργία εισαγωγής σχήματος δεν υποστηρίζεται.</translation>
+        <translation type="vanished">%1 δεν είναι μια εντός πεδίου δήλωση ιδιότητας. Σημειώστε ότι η λειτουργία εισαγωγής σχήματος δεν υποστηρίζεται.</translation>
     </message>
     <message>
         <source>The name of an extension expression must be in a namespace.</source>
-        <translation>Το όνομα μιας επέκτασης έκφρασης πρέπει να είναι σε χώρο ονομάτων.</translation>
+        <translation type="vanished">Το όνομα μιας επέκτασης έκφρασης πρέπει να είναι σε χώρο ονομάτων.</translation>
     </message>
     <message>
         <source>empty</source>
-        <translation>κενό</translation>
+        <translation type="vanished">κενό</translation>
     </message>
     <message>
         <source>zero or one</source>
-        <translation>μηδέν ή ένα</translation>
+        <translation type="vanished">μηδέν ή ένα</translation>
     </message>
     <message>
         <source>exactly one</source>
-        <translation>ακριβώς ένα</translation>
+        <translation type="vanished">ακριβώς ένα</translation>
     </message>
     <message>
         <source>one or more</source>
-        <translation>ένα ή παραπάνω</translation>
+        <translation type="vanished">ένα ή παραπάνω</translation>
     </message>
     <message>
         <source>zero or more</source>
-        <translation>μηδέν ή παραπάνω</translation>
+        <translation type="vanished">μηδέν ή παραπάνω</translation>
     </message>
     <message>
         <source>Required type is %1, but %2 was found.</source>
-        <translation>Ο απαιτούμενος τύπος είναι %1, αλλά βρέθηκε %2.</translation>
+        <translation type="vanished">Ο απαιτούμενος τύπος είναι %1, αλλά βρέθηκε %2.</translation>
     </message>
     <message>
         <source>Promoting %1 to %2 may cause loss of precision.</source>
-        <translation>Προάγωντας %1 σε %2 μπορεί να προκαλέσει απώλεια ακρίβειας.</translation>
+        <translation type="vanished">Προάγωντας %1 σε %2 μπορεί να προκαλέσει απώλεια ακρίβειας.</translation>
     </message>
     <message>
         <source>The focus is undefined.</source>
-        <translation>Η εστίαση δεν προσδιορίστηκε.</translation>
+        <translation type="vanished">Η εστίαση δεν προσδιορίστηκε.</translation>
     </message>
     <message>
         <source>It&apos;s not possible to add attributes after any other kind of node.</source>
-        <translation>Δεν είναι δυνατό να προστεθούν ιδιότητες μετά από κανένα είδος κόμβου.</translation>
+        <translation type="vanished">Δεν είναι δυνατό να προστεθούν ιδιότητες μετά από κανένα είδος κόμβου.</translation>
     </message>
     <message>
         <source>An attribute by name %1 has already been created.</source>
-        <translation>Μια ιδιότητα με το όνομα %1 έχει ήδη δημιουργηθεί.</translation>
+        <translation type="vanished">Μια ιδιότητα με το όνομα %1 έχει ήδη δημιουργηθεί.</translation>
     </message>
     <message>
         <source>Only the Unicode Codepoint Collation is supported(%1). %2 is unsupported.</source>
-        <translation>Μόνο το Unicode Codepoint Collation υποστηρίζεται(%1). %2 δεν υποστηρίζεται.</translation>
+        <translation type="vanished">Μόνο το Unicode Codepoint Collation υποστηρίζεται(%1). %2 δεν υποστηρίζεται.</translation>
     </message>
 </context>
 <context>
     <name>VolumeSlider</name>
     <message>
         <source>Muted</source>
-        <translation>Σιώπηση</translation>
+        <translation type="vanished">Σιώπηση</translation>
     </message>
     <message>
         <source>Volume: %1%</source>
-        <translation>Ένταση: %1%</translation>
+        <translation type="vanished">Ένταση: %1%</translation>
     </message>
 </context>
 <context>
     <name>WebCore::PlatformScrollbar</name>
     <message>
         <source>Scroll here</source>
-        <translation>Κύλισε εδώ</translation>
+        <translation type="vanished">Κύλισε εδώ</translation>
     </message>
     <message>
         <source>Left edge</source>
-        <translation>Αριστερό άκρο</translation>
+        <translation type="vanished">Αριστερό άκρο</translation>
     </message>
     <message>
         <source>Top</source>
-        <translation>Πάνω</translation>
+        <translation type="vanished">Πάνω</translation>
     </message>
     <message>
         <source>Right edge</source>
-        <translation>Δεξιό άκρο</translation>
+        <translation type="vanished">Δεξιό άκρο</translation>
     </message>
     <message>
         <source>Bottom</source>
-        <translation>Κάτω</translation>
+        <translation type="vanished">Κάτω</translation>
     </message>
     <message>
         <source>Page left</source>
-        <translation>Σελίδα αριστερά</translation>
+        <translation type="vanished">Σελίδα αριστερά</translation>
     </message>
     <message>
         <source>Page up</source>
-        <translation>Σελίδα πάνω</translation>
+        <translation type="vanished">Σελίδα πάνω</translation>
     </message>
     <message>
         <source>Page right</source>
-        <translation>Σελίδα δεξιά</translation>
+        <translation type="vanished">Σελίδα δεξιά</translation>
     </message>
     <message>
         <source>Page down</source>
-        <translation>Σελίδα κάτω</translation>
+        <translation type="vanished">Σελίδα κάτω</translation>
     </message>
     <message>
         <source>Scroll left</source>
-        <translation>Κύλισε αριστερά</translation>
+        <translation type="vanished">Κύλισε αριστερά</translation>
     </message>
     <message>
         <source>Scroll up</source>
-        <translation>Κύλισε πάνω</translation>
+        <translation type="vanished">Κύλισε πάνω</translation>
     </message>
     <message>
         <source>Scroll right</source>
-        <translation>Κύλισε δεξιά</translation>
+        <translation type="vanished">Κύλισε δεξιά</translation>
     </message>
     <message>
         <source>Scroll down</source>
-        <translation>Κύλισε κάτω</translation>
+        <translation type="vanished">Κύλισε κάτω</translation>
     </message>
 </context>
 </TS>
