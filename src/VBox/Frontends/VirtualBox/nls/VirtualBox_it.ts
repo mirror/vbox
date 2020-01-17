@@ -3159,15 +3159,15 @@
     </message>
     <message>
         <source>Include all network adapter MAC addresses during importing.</source>
-        <translation type="unfinished"></translation>
+        <translation>Includi tutti gli indirizzi MAC delle schede di rete durante l&apos;importazione.</translation>
     </message>
     <message>
         <source>Include only NAT network adapter MAC addresses during importing.</source>
-        <translation type="unfinished"></translation>
+        <translation>Includi solo gli indirizzi MAC delle schede di rete con NAT durante l&apos;importazione.</translation>
     </message>
     <message>
         <source>Generate new MAC addresses for all network adapters during importing.</source>
-        <translation type="unfinished"></translation>
+        <translation>Genera nuovi indirizzi MAC per tutte le schede di rete durante l&apos;importazione.</translation>
     </message>
 </context>
 <context>
@@ -5329,12 +5329,12 @@
     <message>
         <source>Paravirtualized Network (virtio-net 1.0)</source>
         <comment>NetworkAdapterType</comment>
-        <translation type="unfinished"></translation>
+        <translation>Rete paravirtualizzata (virtio-net 1.0)</translation>
     </message>
     <message>
         <source>PCnet-ISA (Am79C960)</source>
         <comment>NetworkAdapterType</comment>
-        <translation type="unfinished"></translation>
+        <translation>PCnet-ISA (Am79C960)</translation>
     </message>
 </context>
 <context>
@@ -5373,11 +5373,11 @@
     </message>
     <message>
         <source>New Directory</source>
-        <translation type="unfinished">Nuova cartella</translation>
+        <translation>Nuova cartella</translation>
     </message>
     <message>
         <source>Local Path</source>
-        <translation type="unfinished">Percorso locale</translation>
+        <translation>Percorso locale</translation>
     </message>
 </context>
 <context>
@@ -7278,7 +7278,7 @@ una sessione del guest</translation>
     </message>
     <message>
         <source>No Guest Session found!&lt;br&gt;Please use the Session Panel to start a new guest session</source>
-        <translation type="unfinished"></translation>
+        <translation>Nessuna sessione guest trovata!&lt;br&gt;Utilizza il pannello Sessioni per iniziare una nuova sessione del guest</translation>
     </message>
 </context>
 <context>
@@ -7597,7 +7597,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Assign value ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Assegna valore...</translation>
     </message>
 </context>
 <context>
@@ -10515,11 +10515,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Adding network ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Aggiunta rete...</translation>
     </message>
     <message>
         <source>Removing network ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Rimozione rete...</translation>
     </message>
 </context>
 <context>
@@ -14470,7 +14470,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Choose/Create a disk image...</source>
-        <translation type="unfinished">Scegli/Crea un&apos;immagine disco...</translation>
+        <translation>Scegli/Crea un&apos;immagine disco...</translation>
     </message>
 </context>
 <context>
@@ -15376,11 +15376,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Moving medium ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Spostamento supporto...</translation>
     </message>
     <message>
         <source>Removing medium ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Rimozione supporto...</translation>
     </message>
 </context>
 <context>
@@ -15657,11 +15657,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Moving medium ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Spostamento supporto...</translation>
     </message>
     <message>
         <source>Resizing medium ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Ridimensionamento supporto...</translation>
     </message>
 </context>
 <context>
@@ -20406,7 +20406,7 @@ questo passo e collegare hard disk più tardi tramite Impostazioni della MV.&lt;
     </message>
     <message>
         <source>The file will be saved under:&lt;br&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>Il file sarà salvato come:&lt;br&gt;</translation>
     </message>
 </context>
 <context>
@@ -21111,52 +21111,52 @@ questo passo e collegare hard disk più tardi tramite Impostazioni della MV.&lt;
     </message>
     <message>
         <source>&amp;Guest Control</source>
-        <translation type="unfinished"></translation>
+        <translation>Controllo del &amp;guest</translation>
     </message>
     <message>
         <source>turned off</source>
         <comment>Screen</comment>
-        <translation type="unfinished">spento</translation>
+        <translation>spento</translation>
     </message>
     <message>
         <source>Active</source>
         <comment>Nested Paging</comment>
-        <translation type="unfinished"></translation>
+        <translation>Attiva</translation>
     </message>
     <message>
         <source>Inactive</source>
         <comment>Nested Paging</comment>
-        <translation type="unfinished"></translation>
+        <translation>Inattiva</translation>
     </message>
     <message>
         <source>Active</source>
         <comment>Unrestricted Execution</comment>
-        <translation type="unfinished"></translation>
+        <translation>Attiva</translation>
     </message>
     <message>
         <source>Inactive</source>
         <comment>Unrestricted Execution</comment>
-        <translation type="unfinished"></translation>
+        <translation>Inattiva</translation>
     </message>
     <message>
         <source>Not Available</source>
         <comment>VRDE Port</comment>
-        <translation type="unfinished">Non disponibile</translation>
+        <translation>Non disponibile</translation>
     </message>
     <message>
         <source>not set</source>
         <comment>Execution Engine</comment>
-        <translation type="unfinished">non impostato</translation>
+        <translation>non impostato</translation>
     </message>
     <message>
         <source>Not Detected</source>
         <comment>Guest OS Type</comment>
-        <translation type="unfinished"></translation>
+        <translation>Non rilevato</translation>
     </message>
     <message>
         <source>Not Detected</source>
         <comment>Guest Additions Version</comment>
-        <translation type="unfinished"></translation>
+        <translation>Non rilevata</translation>
     </message>
 </context>
 <context>
@@ -22495,7 +22495,7 @@ questo passo e collegare hard disk più tardi tramite Impostazioni della MV.&lt;
     </message>
     <message>
         <source>Acquire export form ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Acquisisci esportazione da...</translation>
     </message>
 </context>
 <context>
@@ -22709,23 +22709,23 @@ La cartelle Home possono essere modificate singolarmente (per macchina virtuale)
     </message>
     <message>
         <source>Acquire cloud instances ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Acquisisci istanze cloud...</translation>
     </message>
     <message>
         <source>Read appliance ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Leggi applicazione...</translation>
     </message>
     <message>
         <source>Acquire import form ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Acquisisci importazione da...</translation>
     </message>
     <message>
         <source>Please choose the source to import appliance from.  This can be a local file system to import OVF archive or one of known cloud service providers to import cloud VM from.</source>
-        <translation type="unfinished"></translation>
+        <translation>Scegli la fonte da cui importare l&apos;applicazione virtuale. Questa può essere un file system locale da cui importare l&apos;archivio OVF o uno dei fornitori di servizi cloud conosciuti da cui importare la MV.</translation>
     </message>
     <message>
         <source>&amp;Source:</source>
-        <translation type="unfinished">Ori&amp;gine:</translation>
+        <translation>Ori&amp;gine:</translation>
     </message>
 </context>
 <context>
@@ -22799,15 +22799,15 @@ La cartelle Home possono essere modificate singolarmente (per macchina virtuale)
     </message>
     <message>
         <source>Acquire launch form ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Acquisisci modulo di avvio...</translation>
     </message>
     <message>
         <source>Acquire cloud images ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Acquisisci immagini cloud...</translation>
     </message>
     <message>
         <source>&amp;Destination:</source>
-        <translation type="unfinished">&amp;Destinazione:</translation>
+        <translation>&amp;Destinazione:</translation>
     </message>
 </context>
 <context>

@@ -2971,15 +2971,15 @@
     </message>
     <message>
         <source>Include all network adapter MAC addresses during importing.</source>
-        <translation type="unfinished"></translation>
+        <translation>İçe aktarma sırasında tüm ağ bağdaştırıcısı MAC adreslerini dahil et.</translation>
     </message>
     <message>
         <source>Include only NAT network adapter MAC addresses during importing.</source>
-        <translation type="unfinished"></translation>
+        <translation>İçe aktarma sırasında yalnızca NAT ağ bağdaştırıcısı MAC adreslerini dahil et.</translation>
     </message>
     <message>
         <source>Generate new MAC addresses for all network adapters during importing.</source>
-        <translation type="unfinished"></translation>
+        <translation>İçe aktarma sırasında tüm ağ bağdaştırıcıları için yeni MAC adresleri oluştur.</translation>
     </message>
 </context>
 <context>
@@ -5000,12 +5000,12 @@
     <message>
         <source>Paravirtualized Network (virtio-net 1.0)</source>
         <comment>NetworkAdapterType</comment>
-        <translation type="unfinished"></translation>
+        <translation>Yarı Sanallaştırılmış Ağ (virtio-net 1.0)</translation>
     </message>
     <message>
         <source>PCnet-ISA (Am79C960)</source>
         <comment>NetworkAdapterType</comment>
-        <translation type="unfinished"></translation>
+        <translation>PCnet-ISA (Am79C960)</translation>
     </message>
 </context>
 <context>
@@ -5044,11 +5044,11 @@
     </message>
     <message>
         <source>New Directory</source>
-        <translation type="unfinished">Yeni Dizin</translation>
+        <translation>Yeni Dizin</translation>
     </message>
     <message>
         <source>Local Path</source>
-        <translation type="unfinished">Yerel Yol</translation>
+        <translation>Yerel Yol</translation>
     </message>
 </context>
 <context>
@@ -6544,7 +6544,7 @@ Oturum Panelini kullanın</translation>
     </message>
     <message>
         <source>No Guest Session found!&lt;br&gt;Please use the Session Panel to start a new guest session</source>
-        <translation type="unfinished"></translation>
+        <translation>Bulunan Misafir Oturumu yok!&lt;br&gt;Yeni bir misafir oturumu başlatmak için lütfen Oturum Panelini kullanın</translation>
     </message>
 </context>
 <context>
@@ -6825,7 +6825,7 @@ Oturum Panelini kullanın</translation>
     </message>
     <message>
         <source>Assign value ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Değer ata ...</translation>
     </message>
 </context>
 <context>
@@ -9595,11 +9595,11 @@ Oturum Panelini kullanın</translation>
     </message>
     <message>
         <source>Adding network ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Ağ ekleniyor ...</translation>
     </message>
     <message>
         <source>Removing network ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Ağ kaldırılıyor ...</translation>
     </message>
 </context>
 <context>
@@ -13166,7 +13166,7 @@ Oturum Panelini kullanın</translation>
     </message>
     <message>
         <source>Choose/Create a disk image...</source>
-        <translation type="unfinished">Disk kalıbı seç/oluştur...</translation>
+        <translation>Disk kalıbı seç/oluştur...</translation>
     </message>
 </context>
 <context>
@@ -14043,11 +14043,11 @@ Oturum Panelini kullanın</translation>
     </message>
     <message>
         <source>Moving medium ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Ortam taşınıyor ...</translation>
     </message>
     <message>
         <source>Removing medium ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Ortam kaldırılıyor ...</translation>
     </message>
 </context>
 <context>
@@ -14324,11 +14324,11 @@ Oturum Panelini kullanın</translation>
     </message>
     <message>
         <source>Moving medium ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Ortam taşınıyor ...</translation>
     </message>
     <message>
         <source>Resizing medium ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Ortam yeniden boyutlandırılıyor ...</translation>
     </message>
 </context>
 <context>
@@ -18416,7 +18416,7 @@ bu basamağı atlayarak sabit diskleri Sanal Makine Ayarları penceresinden ekle
     </message>
     <message>
         <source>The file will be saved under:&lt;br&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>Dosya şunun altına kaydedilecektir:&lt;br&gt;</translation>
     </message>
 </context>
 <context>
@@ -19184,52 +19184,52 @@ bu basamağı atlayarak sabit diskleri Sanal Makine Ayarları penceresinden ekle
     </message>
     <message>
         <source>&amp;Guest Control</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Misafir Denetimi</translation>
     </message>
     <message>
         <source>turned off</source>
         <comment>Screen</comment>
-        <translation type="unfinished">kapalı</translation>
+        <translation>kapalı</translation>
     </message>
     <message>
         <source>Active</source>
         <comment>Nested Paging</comment>
-        <translation type="unfinished">Etkin</translation>
+        <translation>Etkin</translation>
     </message>
     <message>
         <source>Inactive</source>
         <comment>Nested Paging</comment>
-        <translation type="unfinished">Devre dışı</translation>
+        <translation>Devre dışı</translation>
     </message>
     <message>
         <source>Active</source>
         <comment>Unrestricted Execution</comment>
-        <translation type="unfinished">Etkin</translation>
+        <translation>Etkin</translation>
     </message>
     <message>
         <source>Inactive</source>
         <comment>Unrestricted Execution</comment>
-        <translation type="unfinished">Devre dışı</translation>
+        <translation>Devre dışı</translation>
     </message>
     <message>
         <source>Not Available</source>
         <comment>VRDE Port</comment>
-        <translation type="unfinished">Mevcut Değil</translation>
+        <translation>Mevcut Değil</translation>
     </message>
     <message>
         <source>not set</source>
         <comment>Execution Engine</comment>
-        <translation type="unfinished">ayarlı değil</translation>
+        <translation>ayarlı değil</translation>
     </message>
     <message>
         <source>Not Detected</source>
         <comment>Guest OS Type</comment>
-        <translation type="unfinished">Algılanmadı</translation>
+        <translation>Algılanmadı</translation>
     </message>
     <message>
         <source>Not Detected</source>
         <comment>Guest Additions Version</comment>
-        <translation type="unfinished">Algılanmadı</translation>
+        <translation>Algılanmadı</translation>
     </message>
 </context>
 <context>
@@ -20564,7 +20564,7 @@ bu basamağı atlayarak sabit diskleri Sanal Makine Ayarları penceresinden ekle
     </message>
     <message>
         <source>Acquire export form ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Dışa aktarma formunu al ...</translation>
     </message>
 </context>
 <context>
@@ -20778,23 +20778,23 @@ Ana klasörler aynı zamanda ayrı ayrı (sanal makine başına) değiştirilebi
     </message>
     <message>
         <source>Acquire cloud instances ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Bulut örneklerini al ...</translation>
     </message>
     <message>
         <source>Read appliance ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Cihazı oku ...</translation>
     </message>
     <message>
         <source>Acquire import form ...</source>
-        <translation type="unfinished"></translation>
+        <translation>İçe aktarma formunu al ...</translation>
     </message>
     <message>
         <source>Please choose the source to import appliance from.  This can be a local file system to import OVF archive or one of known cloud service providers to import cloud VM from.</source>
-        <translation type="unfinished"></translation>
+        <translation>Lütfen cihazı içe aktarmak için kaynağı seçin.  Bu, OVF arşivini ya da bulut VM&apos;i içe aktarmak konusunda bilinen bulut hizmet sağlayıcılarından birini içe aktarmak için yerel bir dosya sistemi olabilir.</translation>
     </message>
     <message>
         <source>&amp;Source:</source>
-        <translation type="unfinished">&amp;Kaynak:</translation>
+        <translation>&amp;Kaynak:</translation>
     </message>
 </context>
 <context>
@@ -20868,15 +20868,15 @@ Ana klasörler aynı zamanda ayrı ayrı (sanal makine başına) değiştirilebi
     </message>
     <message>
         <source>Acquire launch form ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Başlatma formunu al ...</translation>
     </message>
     <message>
         <source>Acquire cloud images ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Bulut kalıplarını al ...</translation>
     </message>
     <message>
         <source>&amp;Destination:</source>
-        <translation type="unfinished">&amp;Hedef:</translation>
+        <translation>&amp;Hedef:</translation>
     </message>
 </context>
 <context>
