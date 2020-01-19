@@ -346,7 +346,7 @@ static DECLCALLBACK(int) drvIfTraceISerialConnector_ChgBrk(PPDMISERIALCONNECTOR 
     PDRVIFTRACE pThis = RT_FROM_MEMBER(pInterface, DRVIFTRACE, ISerialConnector);
     int rc = pThis->pISerialConBelow->pfnChgBrk(pThis->pISerialConBelow, fBrk);
 
-    int rcTraceLog = RTTraceLogWrEvtAddL(pThis->hTraceLog, &g_ISerialPortNotifyBrkEvtDesc, 0, 0, 0, fBrk, rc);
+    int rcTraceLog = RTTraceLogWrEvtAddL(pThis->hTraceLog, &g_ISerialConnectorChgBrkEvtDesc, 0, 0, 0, fBrk, rc);
     if (RT_FAILURE(rcTraceLog))
         LogRelMax(10, ("DrvIfTrace#%d: Failed to add event to trace log %Rrc\n", pThis->pDrvIns->iInstance, rcTraceLog));
 
@@ -377,7 +377,7 @@ static DECLCALLBACK(int) drvIfTraceISerialConnector_QueryStsLines(PPDMISERIALCON
     PDRVIFTRACE pThis = RT_FROM_MEMBER(pInterface, DRVIFTRACE, ISerialConnector);
     int rc = pThis->pISerialConBelow->pfnQueryStsLines(pThis->pISerialConBelow, pfStsLines);
 
-    int rcTraceLog = RTTraceLogWrEvtAddL(pThis->hTraceLog, &g_ISerialPortNotifyBrkEvtDesc, 0, 0, 0, *pfStsLines, rc);
+    int rcTraceLog = RTTraceLogWrEvtAddL(pThis->hTraceLog, &g_ISerialConnectorQueryStsLinesEvtDesc, 0, 0, 0, *pfStsLines, rc);
     if (RT_FAILURE(rcTraceLog))
         LogRelMax(10, ("DrvIfTrace#%d: Failed to add event to trace log %Rrc\n", pThis->pDrvIns->iInstance, rcTraceLog));
 
