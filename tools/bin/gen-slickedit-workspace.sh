@@ -497,10 +497,10 @@ my_generate_usercpp_h()
     # Probe the slickedit user config, picking the most recent version.
     #
     if test -z "${MY_SLICK_CONFIG}"; then
-        if test -d "${HOME}/Library/Application Support/Slickedit"; then
-            MY_SLICKDIR_="${HOME}/Library/Application Support/Slickedit"
+        if test -d "${HOME}/Library/Application Support/SlickEdit"; then
+            MY_SLICKDIR_="${HOME}/Library/Application Support/SlickEdit"
             MY_USERCPP_H="unxcpp.h"
-            MY_VSLICK_DB="vslick.stu"
+            MY_VSLICK_DB="vslick.sta" # was .stu earlier, 24 is using .sta.
         elif test -d "${HOMEDRIVE}${HOMEPATH}/Documents/My SlickEdit Config"; then
             MY_SLICKDIR_="${HOMEDRIVE}${HOMEPATH}/Documents/My SlickEdit Config"
             MY_USERCPP_H="usercpp.h"
