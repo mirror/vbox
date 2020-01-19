@@ -198,7 +198,9 @@ if !defined(VBOX_ONLY_EXTPACKS) && "$(intersects $(KBUILD_TARGET_ARCH),$(VBOX_SU
  	Storage/ATAPIPassthrough.cpp \
  	Storage/IOBufMgmt.cpp \
  	Network/DrvNetSniffer.cpp \
- 	Network/Pcap.cpp
+ 	Network/Pcap.cpp \
+ 	Trace/DrvIfsTrace.cpp \
+ 	Trace/DrvIfsTrace-serial.cpp
  ifn1of ($(KBUILD_TARGET), os2)
   VBoxDD_SOURCES += Storage/DrvHostBase.cpp
  endif

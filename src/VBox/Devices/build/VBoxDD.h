@@ -191,6 +191,7 @@ extern const PDMUSBREG g_DevWebcam;
 extern const PDMDRVREG g_DrvSCSI;
 #endif
 
+extern const PDMDRVREG g_DrvIfTrace;
 
 /* VBoxAcpi.cpp */
 int acpiPrepareDsdt(PPDMDEVINS pDevIns, void **ppvPtr, size_t *pcbDsdt);
