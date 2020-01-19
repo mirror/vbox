@@ -200,7 +200,7 @@ static const RTTRACELOGEVTITEMDESC g_ISerialConnectorDataAvailWrNotifyEvtItems[]
 
 static const RTTRACELOGEVTDESC g_ISerialConnectorDataAvailWrNotifyEvtDesc =
 {
-    "ISerialPort.DataAvailWrNotify",
+    "ISerialConnector.DataAvailWrNotify",
     "",
     RTTRACELOGEVTSEVERITY_DEBUG,
     RT_ELEMENTS(g_ISerialConnectorDataAvailWrNotifyEvtItems),
@@ -230,7 +230,7 @@ static const RTTRACELOGEVTITEMDESC g_ISerialConnectorReadRdrEvtItems[] =
 
 static const RTTRACELOGEVTDESC g_ISerialConnectorReadRdrEvtDesc =
 {
-    "ISerialPort.ReadRdr",
+    "ISerialConnector.ReadRdr",
     "",
     RTTRACELOGEVTSEVERITY_DEBUG,
     RT_ELEMENTS(g_ISerialConnectorReadRdrEvtItems),
@@ -265,7 +265,7 @@ static const RTTRACELOGEVTITEMDESC g_ISerialConnectorChgParamsEvtItems[] =
 
 static const RTTRACELOGEVTDESC g_ISerialConnectorChgParamsEvtDesc =
 {
-    "ISerialPort.ChgParams",
+    "ISerialConnector.ChgParams",
     "",
     RTTRACELOGEVTSEVERITY_DEBUG,
     RT_ELEMENTS(g_ISerialConnectorChgParamsEvtItems),
@@ -300,7 +300,7 @@ static const RTTRACELOGEVTITEMDESC g_ISerialConnectorChgModemLinesEvtItems[] =
 
 static const RTTRACELOGEVTDESC g_ISerialConnectorChgModemLinesEvtDesc =
 {
-    "ISerialPort.ChgModemLines",
+    "ISerialConnector.ChgModemLines",
     "",
     RTTRACELOGEVTSEVERITY_DEBUG,
     RT_ELEMENTS(g_ISerialConnectorChgModemLinesEvtItems),
@@ -331,7 +331,7 @@ static const RTTRACELOGEVTITEMDESC g_ISerialConnectorChgBrkEvtItems[] =
 
 static const RTTRACELOGEVTDESC g_ISerialConnectorChgBrkEvtDesc =
 {
-    "ISerialPort.ChgBrk",
+    "ISerialConnector.ChgBrk",
     "",
     RTTRACELOGEVTSEVERITY_DEBUG,
     RT_ELEMENTS(g_ISerialConnectorChgBrkEvtItems),
@@ -362,7 +362,7 @@ static const RTTRACELOGEVTITEMDESC g_ISerialConnectorQueryStsLinesEvtItems[] =
 
 static const RTTRACELOGEVTDESC g_ISerialConnectorQueryStsLinesEvtDesc =
 {
-    "ISerialPort.QueryStsLines",
+    "ISerialConnector.QueryStsLines",
     "",
     RTTRACELOGEVTSEVERITY_DEBUG,
     RT_ELEMENTS(g_ISerialConnectorQueryStsLinesEvtItems),
@@ -394,7 +394,7 @@ static const RTTRACELOGEVTITEMDESC g_ISerialConnectorQueuesFlushEvtItems[] =
 
 static const RTTRACELOGEVTDESC g_ISerialConnectorQueuesFlushEvtDesc =
 {
-    "ISerialPort.QueuesFlush",
+    "ISerialConnector.QueuesFlush",
     "",
     RTTRACELOGEVTSEVERITY_DEBUG,
     RT_ELEMENTS(g_ISerialConnectorQueuesFlushEvtItems),
