@@ -96,8 +96,6 @@ typedef struct RTTRACELOGWRINT
     RTSEMMUTEX                  hMtx;
     /** Next sequence number to use. */
     volatile uint64_t           u64SeqNoNext;
-    /** Pointer to the description if set. */
-    char                        *pszDesc;
     /** AVL tree root for event descriptor lookups. */
     AVLPVTREE                   pTreeEvtDescs;
     /** Number of event descriptors known. */
@@ -503,7 +501,7 @@ static int rtTraceLogWrInit(PRTTRACELOGWRINT pThis, const char *pszDesc)
     Hdr.u64TsStart   = RTTimeNanoTS();
     int rc = rtTraceLogWrStream(pThis, &Hdr, sizeof(Hdr));
     if (   RT_SUCCESS(rc)
-        && pThis->pszDesc)
+        && pszDesc)
         rc = rtTraceLogWrStream(pThis, pszDesc, Hdr.cbStrDesc);
 
     return rc;
