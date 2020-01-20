@@ -190,6 +190,9 @@ UISnapshotItem::UISnapshotItem(UISnapshotPane *pSnapshotWidget, QITreeWidget *pT
     , m_fCurrentStateItem(false)
     , m_fCurrentSnapshotItem(false)
     , m_comSnapshot(comSnapshot)
+    , m_fOnline(false)
+    , m_fCurrentStateModified(false)
+    , m_enmMachineState(KMachineState_Null)
 {
 }
 
@@ -199,6 +202,9 @@ UISnapshotItem::UISnapshotItem(UISnapshotPane *pSnapshotWidget, QITreeWidgetItem
     , m_fCurrentStateItem(false)
     , m_fCurrentSnapshotItem(false)
     , m_comSnapshot(comSnapshot)
+    , m_fOnline(false)
+    , m_fCurrentStateModified(false)
+    , m_enmMachineState(KMachineState_Null)
 {
 }
 
@@ -208,6 +214,9 @@ UISnapshotItem::UISnapshotItem(UISnapshotPane *pSnapshotWidget, QITreeWidget *pT
     , m_fCurrentStateItem(true)
     , m_fCurrentSnapshotItem(false)
     , m_comMachine(comMachine)
+    , m_fOnline(false)
+    , m_fCurrentStateModified(false)
+    , m_enmMachineState(KMachineState_Null)
 {
     /* Set the bold font state
      * for "current state" item: */
@@ -225,6 +234,9 @@ UISnapshotItem::UISnapshotItem(UISnapshotPane *pSnapshotWidget, QITreeWidgetItem
     , m_fCurrentStateItem(true)
     , m_fCurrentSnapshotItem(false)
     , m_comMachine(comMachine)
+    , m_fOnline(false)
+    , m_fCurrentStateModified(false)
+    , m_enmMachineState(KMachineState_Null)
 {
     /* Set the bold font state
      * for "current state" item: */
