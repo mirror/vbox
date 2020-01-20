@@ -70,7 +70,7 @@ load-testmanager-db: \
 	$(PSQL) $(PSQL_OPTS) -d testmanager -f ../core/globalresource.pgsql
 	$(PSQL) $(PSQL_OPTS) -d testmanager -f TestManagerDatabaseDefaultUserAccounts.pgsql
 
-reload-testmanager-db-dunctions: \
+reload-testmanager-db-functions: \
 		../core/useraccount.pgsql \
 		../core/testcase.pgsql \
 		../core/testbox.pgsql \
