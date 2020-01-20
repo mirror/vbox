@@ -1356,6 +1356,8 @@ typedef struct APICCPU
     STAMCOUNTER                 StatIcrHiWrite;
     /** Number of times the full ICR (x2APIC send IPI) is written. */
     STAMCOUNTER                 StatIcrFullWrite;
+    /** Number of times the APIC-ID MSR is read. */
+    STAMCOUNTER                 StatIdMsrRead;
     /** @} */
 #endif
 } APICCPU;
