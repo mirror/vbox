@@ -494,7 +494,7 @@ RTDECL(void) RTLogPrintfEx(void *pvInstance, unsigned fFlags, unsigned iGroup,
 /** @def LOG_ENABLED
  * Use this compile time define to enable logging when not in debug mode
  * or LOG_DISABLED is set.
- * This will enabled Log() only.
+ * This will enable Log() only.
  */
 
 /** @def LOG_ENABLE_FLOW
