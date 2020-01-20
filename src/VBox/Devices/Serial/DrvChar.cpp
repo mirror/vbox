@@ -191,8 +191,8 @@ static DECLCALLBACK(int) drvCharChgBrk(PPDMISERIALCONNECTOR pInterface, bool fBr
  */
 static DECLCALLBACK(int) drvCharQueryStsLines(PPDMISERIALCONNECTOR pInterface, uint32_t *pfStsLines)
 {
-    /* Nothing to do here. */
-    *pfStsLines = 0;
+    /* Always carrier detect, data set read and clear to send. */
+    *pfStsLines = PDMISERIALPORT_STS_LINE_DCD | PDMISERIALPORT_STS_LINE_DSR | PDMISERIALPORT_STS_LINE_CTS;
     RT_NOREF(pInterface);
     return VINF_SUCCESS;
 }

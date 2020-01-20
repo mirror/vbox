@@ -1121,9 +1121,21 @@ DECLINLINE(VBOXSTRICTRC) uartRegMcrWrite(PPDMDEVINS pDevIns, PUARTCORE pThis, PU
             uartR3MsrUpdate(pDevIns, pThis, pThisCC, uRegMsrSts);
         }
         else if (pThisCC->pDrvSerial)
+        {
             pThisCC->pDrvSerial->pfnChgModemLines(pThisCC->pDrvSerial,
                                                   RT_BOOL(uVal & UART_REG_MCR_RTS),
                                                   RT_BOOL(uVal & UART_REG_MCR_DTR));
+
+            uint32_t fStsLines = 0;
+            int rc = pThisCC->pDrvSerial->pfnQueryStsLines(pThisCC->pDrvSerial, &fStsLines);
+            if (RT_SUCCESS(rc))
+                uartR3StsLinesUpdate(pDevIns, pThis, pThisCC, fStsLines);
+            else
+                LogRelMax(10, ("Serial#%d: Failed to query status line status with %Rrc during reset\n",
+                               pDevIns->iInstance, rc));
+        }
+        else /* Loopback mode got disabled and no driver attached, fake presence. */
+            uartR3MsrUpdate(pDevIns, pThis, pThisCC, UART_REG_MSR_DCD | UART_REG_MSR_CTS | UART_REG_MSR_DSR);
 #endif
     }
 
@@ -1548,8 +1560,14 @@ static DECLCALLBACK(void) uartR3TxUnconnectedTimer(PPDMDEVINS pDevIns, PTMTIMER 
         else
             ASMAtomicSubU32(&pThis->cbAvailRdr, 1);
     }
+
     if (cbRead == 1)
         PDMDevHlpTimerSetRelative(pDevIns, pThis->hTimerTxUnconnected, pThis->cSymbolXferTicks, NULL);
+    else
+    {
+        /* NO data left, set the transmitter holding register as empty. */
+        UART_REG_SET(pThis->uRegLsr, UART_REG_LSR_TEMT);
+    }
 
     PDMDevHlpCritSectLeave(pDevIns, &pThis->CritSect);
 }
@@ -1883,7 +1901,7 @@ DECLHIDDEN(void) uartR3Reset(PPDMDEVINS pDevIns, PUARTCORE pThis, PUARTCORECC pT
     pThis->uRegLcr        = 0; /* 5 data bits, no parity, 1 stop bit. */
     pThis->uRegMcr        = 0;
     pThis->uRegLsr        = UART_REG_LSR_THRE | UART_REG_LSR_TEMT;
-    pThis->uRegMsr        = 0; /* Updated below. */
+    pThis->uRegMsr        = UART_REG_MSR_DCD | UART_REG_MSR_CTS | UART_REG_MSR_DSR | UART_REG_MSR_DCTS | UART_REG_MSR_DDSR | UART_REG_MSR_DDCD;
     pThis->uRegScr        = 0;
     pThis->fIrqCtiPending = false;
     pThis->fThreEmptyPending = true;
