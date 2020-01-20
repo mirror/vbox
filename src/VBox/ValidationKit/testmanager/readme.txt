@@ -28,7 +28,8 @@ I.  Running a Test Manager instance with Docker:
     a. The Test Manager source is stored inside a separate data volume called
        "docker_vbox-testmgr-web". The source will be checked out automatically on
        container initialization.  Development then can take part within that data
-       container.
+       container. The initialization script will automatically pull the sources
+       from the public OSE tree, so make sure this is what you want!
 
     b. Edit the (hidden) .env file in this directory and change VBOX_TESTMGR_DATA
        to point to your checked out VBox root, e.g. VBOX_TESTMGR_DATA=/path/to/VBox/trunk
