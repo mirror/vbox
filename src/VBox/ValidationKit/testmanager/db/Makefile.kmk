@@ -36,7 +36,13 @@ endif
 
 GENERATED_FILES = TestManagerDatabaseComments.pgsql
 PSQL := $(firstword $(which $(foreach pgver, 95 94 93 92,psql$(pgver)) ) psql)
-PSQL_OPTS = -U postgres --set=ON_ERROR_STOP=1
+ifeq ($(PSQL_DB_HOST),)
+ PSQL_DB_HOST := localhost # Use localhost if nothing else is set.
+endif
+ifeq ($(PSQL_DB_PORT),)
+ PSQL_DB_PORT := 5432 # Same for the port; use the default.
+endif
+PSQL_OPTS = -U postgres --set=ON_ERROR_STOP=1 --host=$(PSQL_DB_HOST) --port=$(PSQL_DB_PORT)
 
 all: $(GENERATED_FILES)
 
@@ -77,4 +83,3 @@ reload-testmanager-db-dunctions: \
 
 # Only for prettier graphs:
 #	$(PSQL) $(PSQL_OPTS) -d testmanager -f TestManagerDatabaseForeignKeyErHacks.pgsql
-
