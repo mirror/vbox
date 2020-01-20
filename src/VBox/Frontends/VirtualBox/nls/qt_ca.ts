@@ -59,7 +59,7 @@
     </message>
     <message>
         <source>Operation on socket is not supported</source>
-        <translation>L&apos;operació al sòcol no està implementada</translation>
+        <translation>L&apos;operació al sòcol no és permesa</translation>
     </message>
     <message>
         <source>Connection timed out</source>
@@ -67,7 +67,7 @@
     </message>
     <message>
         <source>Trying to connect while connection is in progress</source>
-        <translation>S&apos;està intentant connectar mentre la connexió s&apos;està establint</translation>
+        <translation>S&apos;està intentant connectar mentre la connexió és en curs</translation>
     </message>
     <message>
         <source>Network unreachable</source>
@@ -215,7 +215,7 @@
     </message>
     <message>
         <source>Incompatible Qt Library Error</source>
-        <translation>S&apos;ha produït un error de biblioteca Qt incompatible</translation>
+        <translation>S&apos;ha produït un error de compatibilitat amb la biblioteca Qt</translation>
     </message>
 </context>
 <context>
@@ -349,7 +349,7 @@ Premeu ESC per a cancel·lar</translation>
     </message>
     <message>
         <source>True</source>
-        <translation>Vertader</translation>
+        <translation>Cert</translation>
     </message>
     <message>
         <source>Open the combo box selection popup</source>
@@ -533,7 +533,7 @@ Premeu ESC per a cancel·lar</translation>
     </message>
     <message>
         <source>Unable to rollback transaction</source>
-        <translation>No es pot fer enrere la transacció</translation>
+        <translation>No es pot desfer la transacció</translation>
     </message>
     <message>
         <source>Unable to set autocommit</source>
@@ -727,7 +727,7 @@ Premeu ESC per a cancel·lar</translation>
     </message>
     <message>
         <source>Invalid hostname</source>
-        <translation>Nom d&apos;amfitrió no vàlid</translation>
+        <translation>Nom d&apos;amfitrió invàlid</translation>
     </message>
     <message>
         <source>Host %1 could not be found.</source>
@@ -779,7 +779,7 @@ Premeu ESC per a cancel·lar</translation>
     </message>
     <message>
         <source>&amp;OK</source>
-        <translation>&amp;D&apos;acord</translation>
+        <translation>D&apos;ac&amp;ord</translation>
     </message>
 </context>
 <context>
@@ -852,7 +852,7 @@ Premeu ESC per a cancel·lar</translation>
     </message>
     <message>
         <source>&amp;Save</source>
-        <translation>&amp;Desa</translation>
+        <translation>De&amp;sa</translation>
     </message>
     <message>
         <source>Open</source>
@@ -1347,7 +1347,7 @@ Do you want to delete it anyway?</source>
     </message>
     <message>
         <source>&amp;Size</source>
-        <translation>&amp;Mida</translation>
+        <translation>Mi&amp;da</translation>
     </message>
     <message>
         <source>Effects</source>
@@ -1618,7 +1618,7 @@ Do you want to delete it anyway?</source>
     <name>QIBaseDriver</name>
     <message>
         <source>Error opening database</source>
-        <translation>S&apos;ha produït un error en obrir la base de dades</translation>
+        <translation>Error obrint la base de dades</translation>
     </message>
     <message>
         <source>Could not start transaction</source>
@@ -1630,7 +1630,7 @@ Do you want to delete it anyway?</source>
     </message>
     <message>
         <source>Unable to rollback transaction</source>
-        <translation>No es pot fer enrere la transacció</translation>
+        <translation>No es pot desfer la transacció</translation>
     </message>
 </context>
 <context>
@@ -1985,7 +1985,7 @@ Do you want to delete it anyway?</source>
     </message>
     <message>
         <source>%1: Unknown error %2</source>
-        <translation>%1: Error desconegut %2</translation>
+        <translation>%1: error desconegut %2</translation>
     </message>
 </context>
 <context>
@@ -2063,7 +2063,7 @@ Do you want to delete it anyway?</source>
     </message>
     <message>
         <source>Unable to rollback transaction</source>
-        <translation>No es pot fer enrere la transacció</translation>
+        <translation>No es pot desfer la transacció</translation>
     </message>
     <message>
         <source>Unable to allocate a MYSQL object</source>
@@ -2168,11 +2168,11 @@ Do you want to delete it anyway?</source>
     </message>
     <message>
         <source>Stay on &amp;Top</source>
-        <translation>Sempre per damun&amp;t</translation>
+        <translation>&amp;Sempre per damunt</translation>
     </message>
     <message>
         <source>&amp;Close</source>
-        <translation>&amp;Tanca</translation>
+        <translation>Tan&amp;ca</translation>
     </message>
     <message>
         <source>- [%1]</source>
@@ -2262,7 +2262,7 @@ Do you want to delete it anyway?</source>
     </message>
     <message>
         <source>Network unreachable</source>
-        <translation>La xarxa no és accessible</translation>
+        <translation>Xarxa no disponible</translation>
     </message>
     <message>
         <source>Permission denied</source>
@@ -2270,7 +2270,7 @@ Do you want to delete it anyway?</source>
     </message>
     <message>
         <source>Connection timed out</source>
-        <translation>La connexió ha excedit el temps</translation>
+        <translation>S&apos;ha excedit el temps d&apos;espera de la connexió.</translation>
     </message>
     <message>
         <source>Connection refused</source>
@@ -2394,7 +2394,7 @@ Do you want to delete it anyway?</source>
     </message>
     <message>
         <source>Write error writing to %1: %2</source>
-        <translation>S&apos;ha produït un error d&apos;escriptura a %1: %2</translation>
+        <translation>Error en escriure a %1: %2</translation>
     </message>
     <message>
         <source>Cannot open %1: Path is a directory</source>
@@ -2477,7 +2477,7 @@ Do you want to delete it anyway?</source>
     <name>QNetworkReplyImpl</name>
     <message>
         <source>Operation canceled</source>
-        <translation>S&apos;ha cancel·lat l&apos;operació</translation>
+        <translation>Operació cancel·lada</translation>
     </message>
 </context>
 <context>
@@ -2523,7 +2523,7 @@ Do you want to delete it anyway?</source>
     </message>
     <message>
         <source>Unable to begin transaction</source>
-        <translation>No es pot iniciar la transacció</translation>
+        <translation>No es pot començar la transacció</translation>
     </message>
     <message>
         <source>Unable to commit transaction</source>
@@ -2531,7 +2531,7 @@ Do you want to delete it anyway?</source>
     </message>
     <message>
         <source>Unable to rollback transaction</source>
-        <translation>No es pot fer enrere la transacció</translation>
+        <translation>No es pot desfer la transacció</translation>
     </message>
 </context>
 <context>
@@ -2581,11 +2581,11 @@ Do you want to delete it anyway?</source>
     </message>
     <message>
         <source>Unable to commit transaction</source>
-        <translation>No es pot enviar la transacció</translation>
+        <translation>No es pot validar la transacció</translation>
     </message>
     <message>
         <source>Unable to rollback transaction</source>
-        <translation>No es pot fer enrere la transacció</translation>
+        <translation>No es pot desfer la transacció</translation>
     </message>
     <message>
         <source>Unable to enable autocommit</source>
@@ -3356,7 +3356,7 @@ Do you want to delete it anyway?</source>
     </message>
     <message>
         <source>Reset</source>
-        <translation>Reinicia</translation>
+        <translation>Reinicialitza</translation>
     </message>
     <message>
         <source>Restore Defaults</source>
@@ -3724,7 +3724,7 @@ Please turn one of those options off.</source>
     </message>
     <message>
         <source>Preview</source>
-        <translation>Previsualització</translation>
+        <translation>Vista prèvia</translation>
     </message>
     <message>
         <source>Type:</source>
@@ -3807,7 +3807,7 @@ Please turn one of those options off.</source>
     <name>QRegExp</name>
     <message>
         <source>no error occurred</source>
-        <translation>no s&apos;ha produït cap error</translation>
+        <translation>cap error</translation>
     </message>
     <message>
         <source>disabled feature used</source>
@@ -4223,7 +4223,7 @@ Please turn one of those options off.</source>
     <name>QSQLiteDriver</name>
     <message>
         <source>Error opening database</source>
-        <translation>S&apos;ha produït un error en obrir la base de dades</translation>
+        <translation>Error obrint la base de dades</translation>
     </message>
     <message>
         <source>Error closing database</source>
@@ -4239,7 +4239,7 @@ Please turn one of those options off.</source>
     </message>
     <message>
         <source>Unable to rollback transaction</source>
-        <translation>No es pot fer enrere la transacció</translation>
+        <translation>No es pot desfer la transacció</translation>
     </message>
 </context>
 <context>
@@ -4371,7 +4371,7 @@ Please turn one of those options off.</source>
     </message>
     <message>
         <source>%1: out of resources</source>
-        <translation>%1: s&apos;han sobrepassat els recursos</translation>
+        <translation>%1: sense recursos</translation>
     </message>
     <message>
         <source>%1: unknown error %2</source>
@@ -4711,7 +4711,7 @@ Please turn one of those options off.</source>
     </message>
     <message>
         <source>Insert</source>
-        <translation>Insereix</translation>
+        <translation>Munta</translation>
     </message>
     <message>
         <source>Delete</source>
@@ -4931,7 +4931,7 @@ Please turn one of those options off.</source>
     </message>
     <message>
         <source>Display</source>
-        <translation>Mostra</translation>
+        <translation>Pantalla</translation>
     </message>
     <message>
         <source>DOS</source>
@@ -6137,11 +6137,11 @@ Role of an accessible object</extracomment>
     <name>QTabBar</name>
     <message>
         <source>Scroll Left</source>
-        <translation>Desplaça a l&apos;esquerra</translation>
+        <translation>Desplaçament a l&apos;esquerra</translation>
     </message>
     <message>
         <source>Scroll Right</source>
-        <translation>Desplaça a la dreta</translation>
+        <translation>Desplaçament a la dreta</translation>
     </message>
 </context>
 <context>
@@ -6309,7 +6309,7 @@ Role of an accessible object</extracomment>
     </message>
     <message>
         <source>Select All</source>
-        <translation>Suprimeix-ho tot</translation>
+        <translation>Selecciona-ho tot</translation>
     </message>
 </context>
 <context>
@@ -6363,11 +6363,11 @@ La versió mínima de Direct2D requerida és% 1.% 2.% 3.% 4. La versió Direct2D
     </message>
     <message>
         <source>&amp;Help</source>
-        <translation>A&amp;juda</translation>
+        <translation>&amp;Ajuda</translation>
     </message>
     <message>
         <source>&amp;Next</source>
-        <translation>Següe&amp;nt</translation>
+        <translation>En&amp;davant</translation>
     </message>
     <message>
         <source>&amp;Next &gt;</source>
@@ -6378,7 +6378,7 @@ La versió mínima de Direct2D requerida és% 1.% 2.% 3.% 4. La versió Direct2D
     <name>QXml</name>
     <message>
         <source>no error occurred</source>
-        <translation>no s&apos;ha produït cap error</translation>
+        <translation>cap error</translation>
     </message>
     <message>
         <source>error triggered by consumer</source>
