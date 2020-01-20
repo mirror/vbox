@@ -11,8 +11,30 @@ Directory descriptions:
     ./webui/            The Web User Interface (WUI) bits. (Not sure if we will
                         do model-view-controller stuff, though. Time will show.)
 
+I.  Running a Test Manager instance with Docker:
 
-Steps for setting up a local Test Manager instance for development:
+  - This way should be preferred to get a local Test Manager instance running
+    and is NOT meant for production use!
+
+  - Install docker-ce and docker-compose on your Linux host (not tested on
+    Windows yet). Your user must be able to run the Docker CLI (see Docker documentation).
+
+  - Type "kmk" to get the containers built, "kmk start|stop" to start/stop them
+    respectively. To start over, use "kmk clean". For having a peek into the container
+    logs, use "kmk logs".
+
+  - There are two ways of doing development with this setup:
+
+    a. The Test Manager source is stored inside a separate data volume called
+       "docker_vbox-testmgr-web". The source will be checked out automatically on
+       container initialization.  Development then can take part within that data
+       container.
+
+    b. Edit the (hidden) .env file in this directory and change VBOX_TESTMGR_DATA
+       to point to your checked out VBox root, e.g. VBOX_TESTMGR_DATA=/path/to/VBox/trunk
+
+
+II. Steps for manually setting up a local Test Manager instance for development:
 
   - Install apache, postgresql, python, psycopg2 (python) and pylint.
 
@@ -49,11 +71,3 @@ Steps for setting up a local Test Manager instance for development:
 
 N.B. For developing tests (../tests/), setting up a local test manager will be
      a complete waste of time.  Just run the test drivers locally.
-
-
-
-
-
-
-
-
