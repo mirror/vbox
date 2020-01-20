@@ -42,7 +42,10 @@ endif
 ifeq ($(PSQL_DB_PORT),)
  PSQL_DB_PORT := 5432 # Same for the port; use the default.
 endif
-PSQL_OPTS = -U postgres --set=ON_ERROR_STOP=1 --host=$(PSQL_DB_HOST) --port=$(PSQL_DB_PORT)
+ifeq ($(PSQL_DB_USER),)
+ PSQL_DB_USER := postgres
+endif
+PSQL_OPTS = --user=$(PSQL_DB_USER) --set=ON_ERROR_STOP=1 --host=$(PSQL_DB_HOST) --port=$(PSQL_DB_PORT)
 
 all: $(GENERATED_FILES)
 
