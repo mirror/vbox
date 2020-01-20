@@ -414,7 +414,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_TMTimerCreate(PPDMDEVINS pDevIns, TMCLOCK e
 
     if (pDevIns->iInstance > 0) /** @todo use a string cache here later. */
     {
-         char *pszDesc2 = MMR3HeapAPrintf(pVM, MM_TAG_PDM_DEVICE_DESC, "%s [%u]", pszDesc, pDevIns->iInstance);
+         char *pszDesc2 = MMR3HeapAPrintf(pVM, MM_TAG_PDM_DEVICE_DESC, "%s[%u]", pszDesc, pDevIns->iInstance);
          if (pszDesc2)
              pszDesc = pszDesc2;
     }
@@ -439,7 +439,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_TimerCreate(PPDMDEVINS pDevIns, TMCLOCK enm
 
     if (pDevIns->iInstance > 0) /** @todo use a string cache here later. */
     {
-         char *pszDesc2 = MMR3HeapAPrintf(pVM, MM_TAG_PDM_DEVICE_DESC, "%s [%u]", pszDesc, pDevIns->iInstance);
+         char *pszDesc2 = MMR3HeapAPrintf(pVM, MM_TAG_PDM_DEVICE_DESC, "%s[%u]", pszDesc, pDevIns->iInstance);
          if (pszDesc2)
              pszDesc = pszDesc2;
     }
