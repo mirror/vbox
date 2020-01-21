@@ -2050,7 +2050,6 @@ endif
 
 
 # Intel ASL compiler for ACPI
-$(warning KBUILD_HOST:=$(KBUILD_HOST) KBUILD_HOST_VERSION_MAJOR=$(KBUILD_HOST_VERSION_MAJOR) VBOX_IASLCMD=$(VBOX_IASLCMD))
 if "$(KBUILD_HOST)" == "darwin" && "$(KBUILD_HOST_VERSION_MAJOR)" >= 19  # Temp hack! Catalina needs 64-bit binary
 VBOX_IASLCMD   ?= /opt/local/bin/iasl$(HOSTSUFF_EXE)
 else
