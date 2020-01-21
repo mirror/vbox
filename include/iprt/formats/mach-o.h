@@ -312,7 +312,7 @@ typedef struct load_command
 #define LC_DYLD_ENVIRONMENT         UINT32_C(0x27)
 #define LC_MAIN                    (UINT32_C(0x28) | LC_REQ_DYLD)
 #define LC_DATA_IN_CODE             UINT32_C(0x29)
-#define LC_SOURCE_VERSION           UINT32_C(0x2a)
+#define LC_SOURCE_VERSION           UINT32_C(0x2a)  /**< source_version_command */
 #define LC_DYLIB_CODE_SIGN_DRS      UINT32_C(0x2b)
 #define LC_ENCRYPTION_INFO_64       UINT32_C(0x2c)
 #define LC_LINKER_OPTION            UINT32_C(0x2d)
@@ -593,7 +593,7 @@ AssertCompileSize(uuid_command_t, 24);
 typedef struct linkedit_data_command
 {
     uint32_t            cmd;        /**< LC_CODE_SIGNATURE, LC_SEGMENT_SPLIT_INFO, LC_FUNCTION_STARTS */
-    uint32_t            cmdsize;    /**< Size of this structure. */
+    uint32_t            cmdsize;    /**< Size of this structure (16). */
     uint32_t            dataoff;    /**< Offset into the file of the data. */
     uint32_t            datasize;   /**< The size of the data. */
 } linkedit_data_command_t;
@@ -601,12 +601,55 @@ AssertCompileSize(linkedit_data_command_t, 16);
 
 typedef struct version_min_command
 {
-    uint32_t            cmd;        /**< LC_VERSION_MIN_MACOSX, LC_VERSION_MIN_IPHONEOS */
-    uint32_t            cmdsize;    /**< Size of this structure. */
+    uint32_t            cmd;        /**< LC_VERSION_MIN_MACOSX, LC_VERSION_MIN_IPHONEOS, LC_VERSION_MIN_TVOS, LC_VERSION_MIN_WATCHOS */
+    uint32_t            cmdsize;    /**< Size of this structure (16). */
     uint32_t            version;    /**< 31..16=major, 15..8=minor, 7..0=patch. */
     uint32_t            reserved;   /**< MBZ. */
 } version_min_command_t;
 AssertCompileSize(version_min_command_t, 16);
+
+typedef struct build_tool_version
+{
+    uint32_t            tool;       /**< TOOL_XXX */
+    uint32_t            version;    /**< 31..16=major, 15..8=minor, 7..0=patch. */
+} build_tool_version_t;
+AssertCompileSize(build_tool_version_t, 8);
+
+/** @name TOOL_XXX - Values for build_tool_version::tool
+ * @{ */
+#define TOOL_CLANG          1
+#define TOOL_SWIFT          2
+#define TOOL_LD             3
+/** @} */
+
+typedef struct build_version_command
+{
+    uint32_t            cmd;        /**< LC_BUILD_VERSION */
+    uint32_t            cmdsize;    /**< Size of this structure (at least 24). */
+    uint32_t            platform;   /**< PLATFORM_XXX  */
+    uint32_t            minos;      /**< Minimum OS version: 31..16=major, 15..8=minor, 7..0=patch */
+    uint32_t            sdk;        /**< SDK version:        31..16=major, 15..8=minor, 7..0=patch */
+    uint32_t            ntools;     /**< Number of build_tool_version entries following in aTools. */
+    build_tool_version_t aTools[RT_FLEXIBLE_ARRAY];
+} build_version_command_t;
+AssertCompileMemberOffset(build_version_command_t, aTools, 24);
+
+/** @name PLATFORM_XXX - Values for build_version_command::platform
+ * @{ */
+#define PLATFORM_MACOS      1
+#define PLATFORM_IOS        2
+#define PLATFORM_TVOS       3
+#define PLATFORM_WATCHOS    4
+/** @} */
+
+typedef struct source_version_command
+{
+    uint32_t            cmd;        /**< LC_SOURCE_VERSION */
+    uint32_t            cmdsize;    /**< Size of this structure (16). */
+    uint64_t            version;    /**< A.B.C.D.E, where A is 24 bits wide and the rest 10 bits each. */
+} source_version_command_t;
+AssertCompileSize(source_version_command_t, 16);
+
 
 typedef struct macho_nlist_32
 {
