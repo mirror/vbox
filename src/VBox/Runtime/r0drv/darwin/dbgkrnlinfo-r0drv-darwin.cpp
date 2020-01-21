@@ -1081,7 +1081,7 @@ static int rtR0DbgKrnlDarwinSuccess(PRTDBGKRNLINFO phKrnlInfo, RTDBGKRNLINFOINT 
 #if defined(DEBUG) || defined(IN_RING3)
     LOG_SUCCESS("RTR0DbgKrnlInfoOpen: Found: %#zx + %#zx - %s\n", pThis->uTextSegLinkAddr, pThis->offLoad, pszKernelFile);
 #else
-    LOG_SUCCESS("RTR0DbgKrnlInfoOpen: Found: %s\n", pThis->uTextSegLinkAddr, pThis->offLoad, pszKernelFile);
+    LOG_SUCCESS("RTR0DbgKrnlInfoOpen: Found: %s\n", pszKernelFile);
 #endif
     LOG_SUCCESS("RTR0DbgKrnlInfoOpen: SDK version: %u.%u.%u  MinOS version: %u.%u.%u  Source version: %u.%u.%u.%u.%u\n",
                 pThis->uSdkVer   >> 16, (pThis->uSdkVer   >> 8) & 0xff, pThis->uSdkVer   & 0xff,
@@ -1165,6 +1165,7 @@ static bool rtR0DbgKrnlDarwinIsRangePresent(uintptr_t uAddress, size_t cb,
 {
     uintptr_t const uStartAddress = uAddress;
     intptr_t        cPages        = RT_ALIGN_Z(cb + (uAddress & PAGE_OFFSET_MASK), PAGE_SIZE);
+    RT_NOREF(uStartAddress, pszWhat, pHdr);
     for (;;)
     {
         if (!rtR0DbgKrnlDarwinIsPagePresent(uAddress))
