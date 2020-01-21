@@ -119,6 +119,17 @@ RT_C_DECLS_END
 # define RETURN_VERR_LDR_UNEXPECTED     do {    return VERR_LDR_UNEXPECTED; } while (0)
 # define RETURN_VERR_LDR_ARCH_MISMATCH  do {    return VERR_LDR_ARCH_MISMATCH; } while (0)
 #endif
+#if defined(DEBUG_bird) && !defined(IN_RING3)
+# define LOG_MISMATCH(...)                      kprintf(__VA_ARGS__)
+# define LOG_NOT_PRESENT(...)                   kprintf(__VA_ARGS__)
+# define LOG_BAD_SYM(...)                       kprintf(__VA_ARGS__)
+# define LOG_SUCCESS(...)                       kprintf(__VA_ARGS__)
+#else
+# define LOG_MISMATCH(...)                      Log((__VA_ARGS__))
+# define LOG_NOT_PRESENT(...)                   Log((__VA_ARGS__))
+# define LOG_BAD_SYM(...)                       printf(__VA_ARGS__)
+# define LOG_SUCCESS(...)                       printf(__VA_ARGS__)
+#endif
 /** @} */
 
 #define VERR_LDR_UNEXPECTED     (-641)
@@ -142,6 +153,10 @@ typedef struct RTDBGKRNLINFOINT
     /** Reference counter.  */
     uint32_t volatile   cRefs;
 
+    /** Set if this is an in-memory rather than on-disk instance. */
+    bool                fIsInMem;
+    bool                afAlignment[7];
+
     /** @name Result.
      * @{ */
     /** Pointer to the string table. */
@@ -150,14 +165,28 @@ typedef struct RTDBGKRNLINFOINT
     uint32_t            cbStrTab;
     /** The file offset of the string table. */
     uint32_t            offStrTab;
+    /** The link address of the string table. */
+    uintptr_t           uStrTabLinkAddr;
     /** Pointer to the symbol table. */
     MY_NLIST           *paSyms;
     /** The size of the symbol table. */
     uint32_t            cSyms;
     /** The file offset of the symbol table. */
     uint32_t            offSyms;
+    /** The link address of the symbol table. */
+    uintptr_t           uSymTabLinkAddr;
+    /** The link address of the text segment. */
+    uintptr_t           uTextSegLinkAddr;
+    /** Size of the text segment. */
+    uintptr_t           cbTextSeg;
     /** Offset between link address and actual load address. */
     uintptr_t           offLoad;
+    /** The minimum OS version (A.B.C; A is 16 bits, B & C each 8 bits). */
+    uint32_t            uMinOsVer;
+    /** The SDK version (A.B.C; A is 16 bits, B & C each 8 bits). */
+    uint32_t            uSdkVer;
+    /** The source version (A.B.C.D.E; A is 24 bits, the rest 10 each). */
+    uint64_t            uSrcVer;
     /** @} */
 
     /** @name Used during loading.
@@ -174,10 +203,14 @@ typedef struct RTDBGKRNLINFOINT
     uint32_t            cbLoadCmds;
     /** The load commands. */
     load_command_t     *pLoadCmds;
-    /** Section pointer table (points into the load commands). */
-    MY_SECTION const   *apSections[MACHO_MAX_SECT];
+    /** The number of segments. */
+    uint32_t            cSegments;
     /** The number of sections. */
     uint32_t            cSections;
+    /** Section pointer table (points into the load commands). */
+    MY_SEGMENT_COMMAND const *apSegments[MACHO_MAX_SECT / 2];
+    /** Section pointer table (points into the load commands). */
+    MY_SECTION const   *apSections[MACHO_MAX_SECT];
     /** @} */
 
     /** Buffer space. */
@@ -200,12 +233,15 @@ static bool g_fBreakpointOnError = false;
  */
 static void rtR0DbgKrnlDarwinLoadDone(RTDBGKRNLINFOINT *pThis)
 {
-    RTFileClose(pThis->hFile);
+    if (!pThis->fIsInMem)
+        RTFileClose(pThis->hFile);
     pThis->hFile = NIL_RTFILE;
 
-    RTMemFree(pThis->pLoadCmds);
+    if (!pThis->fIsInMem)
+        RTMemFree(pThis->pLoadCmds);
     pThis->pLoadCmds = NULL;
-    memset((void *)&pThis->apSections[0], 0, sizeof(pThis->apSections[0]) * MACHO_MAX_SECT);
+    RT_ZERO(pThis->apSections);
+    RT_ZERO(pThis->apSegments);
 }
 
 
@@ -258,8 +294,9 @@ extern "C" void kdp_set_interface(void);
  *
  * @returns IPRT status code.
  * @param   pThis               The internal scratch data.
+ * @param   pszKernelFile       The name of the kernel file.
  */
-static int rtR0DbgKrnlDarwinCheckStandardSymbols(RTDBGKRNLINFOINT *pThis)
+static int rtR0DbgKrnlDarwinCheckStandardSymbols(RTDBGKRNLINFOINT *pThis, const char *pszKernelFile)
 {
     static struct
     {
@@ -387,7 +424,12 @@ static int rtR0DbgKrnlDarwinCheckStandardSymbols(RTDBGKRNLINFOINT *pThis)
         if (uAddr == 0)
 #endif
         {
-            AssertLogRelMsgFailed(("%s (%p != %p)\n", s_aStandardCandles[i].pszName, uAddr, s_aStandardCandles[i].uAddr));
+#if defined(IN_RING0) && defined(DEBUG_bird)
+            kprintf("RTR0DbgKrnlInfoOpen: error: %s (%p != %p) in %s\n",
+                    s_aStandardCandles[i].pszName, (void *)uAddr, (void *)s_aStandardCandles[i].uAddr, pszKernelFile);
+#endif
+            printf("RTR0DbgKrnlInfoOpen: error: %s (%p != %p) in %s\n",
+                   s_aStandardCandles[i].pszName, (void *)uAddr, (void *)s_aStandardCandles[i].uAddr, pszKernelFile);
             return VERR_INTERNAL_ERROR_2;
         }
     }
@@ -402,29 +444,8 @@ static int rtR0DbgKrnlDarwinCheckStandardSymbols(RTDBGKRNLINFOINT *pThis)
  * @param   pThis               The internal scratch data.
  * @param   pszKernelFile       The name of the kernel file.
  */
-static int rtR0DbgKrnlDarwinLoadSymTab(RTDBGKRNLINFOINT *pThis, const char *pszKernelFile)
+static int rtR0DbgKrnlDarwinParseSymTab(RTDBGKRNLINFOINT *pThis, const char *pszKernelFile)
 {
-    /*
-     * Load the tables.
-     */
-    pThis->paSyms = (MY_NLIST *)RTMemAllocZ(pThis->cSyms * sizeof(MY_NLIST));
-    if (!pThis->paSyms)
-        return VERR_NO_MEMORY;
-
-    int rc = RTFileReadAt(pThis->hFile, pThis->offArch + pThis->offSyms,
-                          pThis->paSyms, pThis->cSyms * sizeof(MY_NLIST), NULL);
-    if (RT_FAILURE(rc))
-        return rc;
-
-    pThis->pachStrTab = (char *)RTMemAllocZ(pThis->cbStrTab + 1);
-    if (!pThis->pachStrTab)
-        return VERR_NO_MEMORY;
-
-    rc = RTFileReadAt(pThis->hFile, pThis->offArch + pThis->offStrTab,
-                      pThis->pachStrTab, pThis->cbStrTab, NULL);
-    if (RT_FAILURE(rc))
-        return rc;
-
     /*
      * The first string table symbol must be a zero length name.
      */
@@ -441,8 +462,8 @@ static int rtR0DbgKrnlDarwinLoadSymTab(RTDBGKRNLINFOINT *pThis, const char *pszK
     {
         if ((uint32_t)pSym->n_un.n_strx >= pThis->cbStrTab)
         {
-            printf("RTR0DbgKrnlInfoOpen: %s: Symbol #%u has a bad string table index: %#x vs cbStrTab=%#x\n",
-                   pszKernelFile, iSym, pSym->n_un.n_strx, pThis->cbStrTab);
+            LOG_BAD_SYM("RTR0DbgKrnlInfoOpen: %s: Symbol #%u has a bad string table index: %#x vs cbStrTab=%#x\n",
+                        pszKernelFile, iSym, pSym->n_un.n_strx, pThis->cbStrTab);
             RETURN_VERR_BAD_EXE_FORMAT;
         }
         const char *pszSym = &pThis->pachStrTab[(uint32_t)pSym->n_un.n_strx];
@@ -460,36 +481,36 @@ static int rtR0DbgKrnlDarwinLoadSymTab(RTDBGKRNLINFOINT *pThis, const char *pszK
                 case MACHO_N_SECT:
                     if (pSym->n_sect == MACHO_NO_SECT)
                     {
-                        printf("RTR0DbgKrnlInfoOpen: %s: Symbol #%u '%s' problem: n_sect = MACHO_NO_SECT\n",
-                               pszKernelFile, iSym, pszSym);
+                        LOG_BAD_SYM("RTR0DbgKrnlInfoOpen: %s: Symbol #%u '%s' problem: n_sect = MACHO_NO_SECT\n",
+                                    pszKernelFile, iSym, pszSym);
                         RETURN_VERR_BAD_EXE_FORMAT;
                     }
                     if (pSym->n_sect > pThis->cSections)
                     {
-                        printf("RTR0DbgKrnlInfoOpen: %s: Symbol #%u '%s' problem: n_sect (%u) is higher than cSections (%u)\n",
-                               pszKernelFile, iSym, pszSym, pSym->n_sect, pThis->cSections);
+                        LOG_BAD_SYM("RTR0DbgKrnlInfoOpen: %s: Symbol #%u '%s' problem: n_sect (%u) is higher than cSections (%u)\n",
+                                    pszKernelFile, iSym, pszSym, pSym->n_sect, pThis->cSections);
                         RETURN_VERR_BAD_EXE_FORMAT;
                     }
                     if (pSym->n_desc & ~(REFERENCED_DYNAMICALLY | N_WEAK_DEF))
                     {
-                        printf("RTR0DbgKrnlInfoOpen: %s: Symbol #%u '%s' problem: Unexpected value n_desc=%#x\n",
-                               pszKernelFile, iSym, pszSym, pSym->n_desc);
+                        LOG_BAD_SYM("RTR0DbgKrnlInfoOpen: %s: Symbol #%u '%s' problem: Unexpected value n_desc=%#x\n",
+                                    pszKernelFile, iSym, pszSym, pSym->n_desc);
                         RETURN_VERR_BAD_EXE_FORMAT;
                     }
                     if (   pSym->n_value < pThis->apSections[pSym->n_sect - 1]->addr
                         && strcmp(pszSym, "__mh_execute_header"))    /* in 10.8 it's no longer absolute (PIE?). */
                     {
-                        printf("RTR0DbgKrnlInfoOpen: %s: Symbol #%u '%s' problem: n_value (%#llx) < section addr (%#llx)\n",
-                               pszKernelFile, iSym, pszSym, pSym->n_value, pThis->apSections[pSym->n_sect - 1]->addr);
+                        LOG_BAD_SYM("RTR0DbgKrnlInfoOpen: %s: Symbol #%u '%s' problem: n_value (%#llx) < section addr (%#llx)\n",
+                                    pszKernelFile, iSym, pszSym, pSym->n_value, pThis->apSections[pSym->n_sect - 1]->addr);
                         RETURN_VERR_BAD_EXE_FORMAT;
                     }
                     if (      pSym->n_value - pThis->apSections[pSym->n_sect - 1]->addr
                            > pThis->apSections[pSym->n_sect - 1]->size
                         && strcmp(pszSym, "__mh_execute_header"))    /* see above. */
                     {
-                        printf("RTR0DbgKrnlInfoOpen: %s: Symbol #%u '%s' problem: n_value (%#llx) >= end of section (%#llx + %#llx)\n",
-                               pszKernelFile, iSym, pszSym, pSym->n_value, pThis->apSections[pSym->n_sect - 1]->addr,
-                               pThis->apSections[pSym->n_sect - 1]->size);
+                        LOG_BAD_SYM("RTR0DbgKrnlInfoOpen: %s: Symbol #%u '%s' problem: n_value (%#llx) >= end of section (%#llx + %#llx)\n",
+                                    pszKernelFile, iSym, pszSym, pSym->n_value, pThis->apSections[pSym->n_sect - 1]->addr,
+                                    pThis->apSections[pSym->n_sect - 1]->size);
                         RETURN_VERR_BAD_EXE_FORMAT;
                     }
                     break;
@@ -499,36 +520,36 @@ static int rtR0DbgKrnlDarwinLoadSymTab(RTDBGKRNLINFOINT *pThis, const char *pszK
                         && (   strcmp(pszSym, "__mh_execute_header") /* n_sect=1 in 10.7/amd64 */
                             || pSym->n_sect > pThis->cSections) )
                     {
-                        printf("RTR0DbgKrnlInfoOpen: %s: Abs symbol #%u '%s' problem: n_sect (%u) is not MACHO_NO_SECT (cSections is %u)\n",
-                               pszKernelFile, iSym, pszSym, pSym->n_sect, pThis->cSections);
+                        LOG_BAD_SYM("RTR0DbgKrnlInfoOpen: %s: Abs symbol #%u '%s' problem: n_sect (%u) is not MACHO_NO_SECT (cSections is %u)\n",
+                                    pszKernelFile, iSym, pszSym, pSym->n_sect, pThis->cSections);
                         RETURN_VERR_BAD_EXE_FORMAT;
                     }
                     if (pSym->n_desc & ~(REFERENCED_DYNAMICALLY | N_WEAK_DEF))
                     {
-                        printf("RTR0DbgKrnlInfoOpen: %s: Abs symbol #%u '%s' problem: Unexpected value n_desc=%#x\n",
-                               pszKernelFile, iSym, pszSym, pSym->n_desc);
+                        LOG_BAD_SYM("RTR0DbgKrnlInfoOpen: %s: Abs symbol #%u '%s' problem: Unexpected value n_desc=%#x\n",
+                                    pszKernelFile, iSym, pszSym, pSym->n_desc);
                         RETURN_VERR_BAD_EXE_FORMAT;
                     }
                     break;
 
                 case MACHO_N_UNDF:
                     /* No undefined or common symbols in the kernel. */
-                    printf("RTR0DbgKrnlInfoOpen: %s: Unexpected undefined symbol #%u '%s'\n", pszKernelFile, iSym, pszSym);
+                    LOG_BAD_SYM("RTR0DbgKrnlInfoOpen: %s: Unexpected undefined symbol #%u '%s'\n", pszKernelFile, iSym, pszSym);
                     RETURN_VERR_BAD_EXE_FORMAT;
 
                 case MACHO_N_INDR:
                     /* No indirect symbols in the kernel. */
-                    printf("RTR0DbgKrnlInfoOpen: %s: Unexpected indirect symbol #%u '%s'\n", pszKernelFile, iSym, pszSym);
+                    LOG_BAD_SYM("RTR0DbgKrnlInfoOpen: %s: Unexpected indirect symbol #%u '%s'\n", pszKernelFile, iSym, pszSym);
                     RETURN_VERR_BAD_EXE_FORMAT;
 
                 case MACHO_N_PBUD:
                     /* No prebound symbols in the kernel. */
-                    printf("RTR0DbgKrnlInfoOpen: %s: Unexpected prebound symbol #%u '%s'\n", pszKernelFile, iSym, pszSym);
+                    LOG_BAD_SYM("RTR0DbgKrnlInfoOpen: %s: Unexpected prebound symbol #%u '%s'\n", pszKernelFile, iSym, pszSym);
                     RETURN_VERR_BAD_EXE_FORMAT;
 
                 default:
-                    printf("RTR0DbgKrnlInfoOpen: %s: Unexpected symbol n_type %#x for symbol #%u '%s'\n",
-                           pszKernelFile, pSym->n_type, iSym, pszSym);
+                    LOG_BAD_SYM("RTR0DbgKrnlInfoOpen: %s: Unexpected symbol n_type %#x for symbol #%u '%s'\n",
+                                pszKernelFile, pSym->n_type, iSym, pszSym);
                     RETURN_VERR_BAD_EXE_FORMAT;
             }
         }
@@ -540,27 +561,49 @@ static int rtR0DbgKrnlDarwinLoadSymTab(RTDBGKRNLINFOINT *pThis, const char *pszK
 
 
 /**
- * Loads the load commands and validates them.
+ * Uses the segment table to translate a file offset into a virtual memory
+ * address.
+ *
+ * @returns The virtual memory address on success, 0 if not found.
+ * @param   pThis               The instance.
+ * @param   offFile             The file offset to translate.
+ */
+static uintptr_t rtR0DbgKrnlDarwinFileOffToVirtAddr(RTDBGKRNLINFOINT *pThis, uint64_t offFile)
+{
+    uint32_t iSeg = pThis->cSegments;
+    while (iSeg-- > 0)
+    {
+        uint64_t offSeg = offFile - pThis->apSegments[iSeg]->fileoff;
+        if (offSeg < pThis->apSegments[iSeg]->vmsize)
+            return pThis->apSegments[iSeg]->vmaddr + (uintptr_t)offSeg;
+    }
+    return 0;
+}
+
+
+/**
+ * Parses and validates the load commands.
  *
  * @returns IPRT status code.
  * @param   pThis               The internal scratch data.
  */
-static int rtR0DbgKrnlDarwinLoadCommands(RTDBGKRNLINFOINT *pThis)
+static int rtR0DbgKrnlDarwinParseCommands(RTDBGKRNLINFOINT *pThis)
 {
-    pThis->offStrTab = 0;
-    pThis->cbStrTab  = 0;
-    pThis->offSyms   = 0;
-    pThis->cSyms     = 0;
-    pThis->cSections = 0;
+    Assert(pThis->pLoadCmds);
 
-    pThis->pLoadCmds = (load_command_t *)RTMemAlloc(pThis->cbLoadCmds);
-    if (!pThis->pLoadCmds)
-        return VERR_NO_MEMORY;
-
-    int rc = RTFileReadAt(pThis->hFile, pThis->offArch + sizeof(MY_MACHO_HEADER),
-                          pThis->pLoadCmds, pThis->cbLoadCmds, NULL);
-    if (RT_FAILURE(rc))
-        return rc;
+    /*
+     * Reset the state.
+     */
+    pThis->offStrTab        = 0;
+    pThis->cbStrTab         = 0;
+    pThis->offSyms          = 0;
+    pThis->cSyms            = 0;
+    pThis->cSections        = 0;
+    pThis->uTextSegLinkAddr = 0;
+    pThis->cbTextSeg        = 0;
+    pThis->uMinOsVer        = 0;
+    pThis->uSdkVer          = 0;
+    pThis->uSrcVer          = 0;
 
     /*
      * Validate the relevant commands, picking up sections and the symbol
@@ -699,7 +742,7 @@ static int rtR0DbgKrnlDarwinLoadCommands(RTDBGKRNLINFOINT *pThis)
                         uAlignment = paSects[i].align;
 
                     /* Add to the section table. */
-                    if (pThis->cSections == MACHO_MAX_SECT)
+                    if (pThis->cSections >= RT_ELEMENTS(pThis->apSections))
                         RETURN_VERR_BAD_EXE_FORMAT;
                     pThis->apSections[pThis->cSections++] = &paSects[i];
                 }
@@ -709,6 +752,24 @@ static int rtR0DbgKrnlDarwinLoadCommands(RTDBGKRNLINFOINT *pThis)
                 if (   pSeg->filesize > RT_ALIGN_Z(pSeg->vmsize, RT_BIT_32(uAlignment))
                     && pSeg->vmsize != 0)
                     RETURN_VERR_BAD_EXE_FORMAT;
+
+                /*
+                 * Add to the segment table.
+                 */
+                if (pThis->cSegments >= RT_ELEMENTS(pThis->apSegments))
+                    RETURN_VERR_BAD_EXE_FORMAT;
+                pThis->apSegments[pThis->cSegments++] = pSeg;
+
+                /*
+                 * Take down the text segment size and link address (for in-mem variant):
+                 */
+                if (!strcmp(pSeg->segname, "__TEXT"))
+                {
+                    if (pThis->cbTextSeg != 0)
+                        RETURN_VERR_BAD_EXE_FORMAT;
+                    pThis->uTextSegLinkAddr = pSeg->vmaddr;
+                    pThis->cbTextSeg        = pSeg->vmsize;
+                }
                 break;
             }
 
@@ -724,14 +785,29 @@ static int rtR0DbgKrnlDarwinLoadCommands(RTDBGKRNLINFOINT *pThis)
             case LC_FUNCTION_STARTS:
             case LC_MAIN:
             case LC_DATA_IN_CODE:
-            case LC_SOURCE_VERSION:
             case LC_ENCRYPTION_INFO_64:
             case LC_LINKER_OPTION:
             case LC_LINKER_OPTIMIZATION_HINT:
             case LC_VERSION_MIN_TVOS:
             case LC_VERSION_MIN_WATCHOS:
             case LC_NOTE:
+                break;
+
             case LC_BUILD_VERSION:
+                if (pCmd->cmdsize >= RT_UOFFSETOF(build_version_command_t, aTools))
+                {
+                    build_version_command_t *pBldVerCmd = (build_version_command_t *)pCmd;
+                    pThis->uMinOsVer = pBldVerCmd->minos;
+                    pThis->uSdkVer   = pBldVerCmd->sdk;
+                }
+                break;
+
+            case LC_SOURCE_VERSION:
+                if (pCmd->cmdsize == sizeof(source_version_command_t))
+                {
+                    source_version_command_t *pSrcVerCmd = (source_version_command_t *)pCmd;
+                    pThis->uSrcVer = pSrcVerCmd->version;
+                }
                 break;
 
             /* not observed */
@@ -788,7 +864,78 @@ static int rtR0DbgKrnlDarwinLoadCommands(RTDBGKRNLINFOINT *pThis)
         pCmd = (load_command_t *)((uintptr_t)pCmd + pCmd->cmdsize);
     }
 
+    /*
+     * Try figure out the virtual addresses for the symbol and string tables.
+     */
+    if (pThis->cbStrTab > 0)
+        pThis->uStrTabLinkAddr = rtR0DbgKrnlDarwinFileOffToVirtAddr(pThis, pThis->offStrTab);
+    if (pThis->cSyms > 0)
+        pThis->uSymTabLinkAddr = rtR0DbgKrnlDarwinFileOffToVirtAddr(pThis, pThis->offSyms);
+
     return VINF_SUCCESS;
+}
+
+
+/**
+ * Loads and validates the symbol and string tables.
+ *
+ * @returns IPRT status code.
+ * @param   pThis               The internal scratch data.
+ * @param   pszKernelFile       The name of the kernel file.
+ */
+static int rtR0DbgKrnlDarwinLoadSymTab(RTDBGKRNLINFOINT *pThis, const char *pszKernelFile)
+{
+    /*
+     * Load the tables.
+     */
+    int rc;
+    pThis->paSyms = (MY_NLIST *)RTMemAllocZ(pThis->cSyms * sizeof(MY_NLIST));
+    if (pThis->paSyms)
+    {
+        rc = RTFileReadAt(pThis->hFile, pThis->offArch + pThis->offSyms, pThis->paSyms, pThis->cSyms * sizeof(MY_NLIST), NULL);
+        if (RT_SUCCESS(rc))
+        {
+            pThis->pachStrTab = (char *)RTMemAllocZ(pThis->cbStrTab + 1);
+            if (pThis->pachStrTab)
+            {
+                rc = RTFileReadAt(pThis->hFile, pThis->offArch + pThis->offStrTab, pThis->pachStrTab, pThis->cbStrTab, NULL);
+                if (RT_SUCCESS(rc))
+                {
+                    /*
+                     * Join paths with the in-memory code path.
+                     */
+                    rc = rtR0DbgKrnlDarwinParseSymTab(pThis, pszKernelFile);
+                }
+            }
+            else
+                rc = VERR_NO_MEMORY;
+        }
+    }
+    else
+        rc = VERR_NO_MEMORY;
+    return rc;
+}
+
+
+/**
+ * Loads the load commands and validates them.
+ *
+ * @returns IPRT status code.
+ * @param   pThis               The internal scratch data.
+ */
+static int rtR0DbgKrnlDarwinLoadCommands(RTDBGKRNLINFOINT *pThis)
+{
+    int rc;
+    pThis->pLoadCmds = (load_command_t *)RTMemAlloc(pThis->cbLoadCmds);
+    if (pThis->pLoadCmds)
+    {
+        rc = RTFileReadAt(pThis->hFile, pThis->offArch + sizeof(MY_MACHO_HEADER), pThis->pLoadCmds, pThis->cbLoadCmds, NULL);
+        if (RT_SUCCESS(rc))
+            rc = rtR0DbgKrnlDarwinParseCommands(pThis);
+    }
+    else
+        rc = VERR_NO_MEMORY;
+   return rc;
 }
 
 
@@ -906,13 +1053,47 @@ static void rtR0DbgKrnlDarwinDtor(RTDBGKRNLINFOINT *pThis)
 {
     pThis->u32Magic = ~RTDBGKRNLINFO_MAGIC;
 
-    RTMemFree(pThis->pachStrTab);
+    if (!pThis->fIsInMem)
+        RTMemFree(pThis->pachStrTab);
     pThis->pachStrTab = NULL;
 
-    RTMemFree(pThis->paSyms);
+    if (!pThis->fIsInMem)
+        RTMemFree(pThis->paSyms);
     pThis->paSyms = NULL;
 
     RTMemFree(pThis);
+}
+
+
+/**
+ * Completes a handle, logging details.
+ *
+ * @returns VINF_SUCCESS
+ * @param   phKrnlInfo      Where to return the handle.
+ * @param   pThis           The instance to complete.
+ * @param   pszKernelFile   What kernel file it's based on.
+ */
+static int rtR0DbgKrnlDarwinSuccess(PRTDBGKRNLINFO phKrnlInfo, RTDBGKRNLINFOINT *pThis, const char *pszKernelFile)
+{
+    pThis->u32Magic = RTDBGKRNLINFO_MAGIC;
+    pThis->cRefs    = 1;
+
+#if defined(DEBUG) || defined(IN_RING3)
+    LOG_SUCCESS("RTR0DbgKrnlInfoOpen: Found: %#zx + %#zx - %s\n", pThis->uTextSegLinkAddr, pThis->offLoad, pszKernelFile);
+#else
+    LOG_SUCCESS("RTR0DbgKrnlInfoOpen: Found: %s\n", pThis->uTextSegLinkAddr, pThis->offLoad, pszKernelFile);
+#endif
+    LOG_SUCCESS("RTR0DbgKrnlInfoOpen: SDK version: %u.%u.%u  MinOS version: %u.%u.%u  Source version: %u.%u.%u.%u.%u\n",
+                pThis->uSdkVer   >> 16, (pThis->uSdkVer   >> 8) & 0xff, pThis->uSdkVer   & 0xff,
+                pThis->uMinOsVer >> 16, (pThis->uMinOsVer >> 8) & 0xff, pThis->uMinOsVer & 0xff,
+                (uint32_t)(pThis->uSrcVer >> 40),
+                (uint32_t)(pThis->uSrcVer >> 30) & 0x3ff,
+                (uint32_t)(pThis->uSrcVer >> 20) & 0x3ff,
+                (uint32_t)(pThis->uSrcVer >> 10) & 0x3ff,
+                (uint32_t)(pThis->uSrcVer)       & 0x3ff);
+
+    *phKrnlInfo = pThis;
+    return VINF_SUCCESS;
 }
 
 
@@ -940,27 +1121,225 @@ static int rtR0DbgKrnlDarwinOpen(PRTDBGKRNLINFO phKrnlInfo, const char *pszKerne
         if (uLinkAddr != 0)
             pThis->offLoad = (uintptr_t)&kernel_map - uLinkAddr;
 #endif
-        rc = rtR0DbgKrnlDarwinCheckStandardSymbols(pThis);
+        rc = rtR0DbgKrnlDarwinCheckStandardSymbols(pThis, pszKernelFile);
     }
 
     rtR0DbgKrnlDarwinLoadDone(pThis);
     if (RT_SUCCESS(rc))
-    {
-        pThis->u32Magic = RTDBGKRNLINFO_MAGIC;
-        pThis->cRefs    = 1;
-        *phKrnlInfo = pThis;
-    }
+        rtR0DbgKrnlDarwinSuccess(phKrnlInfo, pThis, pszKernelFile);
     else
         rtR0DbgKrnlDarwinDtor(pThis);
     return rc;
 }
 
 
+#ifdef IN_RING0
+
+/**
+ * Checks if a page is present.
+ * @returns true if it is, false if it isn't.
+ * @param   uPageAddr   The address of/in the page to check.
+ */
+static bool rtR0DbgKrnlDarwinIsPagePresent(uintptr_t uPageAddr)
+{
+    /** @todo the dtrace code subjects the result to pmap_is_valid, but that
+     *        isn't exported, so we'll have to make to with != 0 here. */
+    return pmap_find_phys(kernel_pmap, uPageAddr) != 0;
+}
+
+
+/**
+ * Used to check whether a memory range is present or not.
+ *
+ * This is applied to the to the load commands and selected portions of the link
+ * edit segment.
+ *
+ * @returns true if all present, false if not.
+ * @param   uAddress    The start address.
+ * @param   cb          Number of bytes to check.
+ * @param   pszWhat     What we're checking, for logging.
+ * @param   pHdr        The header address (for logging).
+ */
+static bool rtR0DbgKrnlDarwinIsRangePresent(uintptr_t uAddress, size_t cb,
+                                            const char *pszWhat, MY_MACHO_HEADER const volatile *pHdr)
+{
+    uintptr_t const uStartAddress = uAddress;
+    intptr_t        cPages        = RT_ALIGN_Z(cb + (uAddress & PAGE_OFFSET_MASK), PAGE_SIZE);
+    for (;;)
+    {
+        if (!rtR0DbgKrnlDarwinIsPagePresent(uAddress))
+        {
+            LOG_NOT_PRESENT("RTR0DbgInfo: %p: Page in %s is not present: %#zx - rva %#zx; in structure %#zx (%#zx LB %#zx)\n",
+                            pHdr, pszWhat, uAddress, uAddress - (uintptr_t)pHdr, uAddress - uStartAddress, uStartAddress, cb);
+            return false;
+        }
+
+        cPages -= 1;
+        if (cPages <= 0)
+            uAddress += PAGE_SIZE;
+        else
+            return true;
+    }
+}
+
+
+/**
+ * Try "open" the in-memory kernel image
+ *
+ * @returns IPRT stauts code
+ * @param   phKrnlInfo          Where to return the info instance on success.
+ */
+static int rtR0DbgKrnlDarwinOpenInMemory(PRTDBGKRNLINFO phKrnlInfo)
+{
+    RTDBGKRNLINFOINT *pThis = (RTDBGKRNLINFOINT *)RTMemAllocZ(sizeof(*pThis));
+    if (!pThis)
+        return VERR_NO_MEMORY;
+    pThis->hFile    = NIL_RTFILE;
+    pThis->fIsInMem = true;
+
+    /*
+     * Figure the search range based on a symbol that is supposed to be in
+     * kernel text segment, using it as the upper boundrary.  The lower boundary
+     * is determined by subtracting a max kernel size of 64MB (the largest kernel
+     * file, kernel.kasan, is around 45MB, but the end of __TEXT is about 27 MB,
+     * which means we should still have plenty of room for future growth with 64MB).
+     */
+    uintptr_t  const    uSomeKernelAddr   = (uintptr_t)&absolutetime_to_nanoseconds;
+    uintptr_t  const    uLowestKernelAddr = uSomeKernelAddr - _64M;
+
+    /*
+     * The kernel is probably aligned at some boundrary larger than a page size,
+     * so to speed things up we start by assuming the alignment is page directory
+     * sized.  In case we're wrong and it's smaller, we decrease the alignment till
+     * we've reach the page size.
+     */
+    uintptr_t           fPrevAlignMask    = ~(uintptr_t)0;
+    uintptr_t           uCurAlign         = _2M;                    /* ASSUMES the kernel is typically 2MB aligned. */
+    while (uCurAlign >= PAGE_SIZE)
+    {
+        /*
+         * Search down from the symbol address looking for a mach-O header that
+         * looks like it might belong to the kernel.
+         */
+        for (uintptr_t uCur = uSomeKernelAddr & ~(uCurAlign - 1); uCur >= uLowestKernelAddr; uCur -= uCurAlign)
+        {
+            /* Skip pages we've checked in previous iterations and pages that aren't present: */
+            /** @todo This is a little bogus in case the header is paged out. */
+            if (   (uCur & fPrevAlignMask)
+                && rtR0DbgKrnlDarwinIsPagePresent(uCur))
+            {
+                /*
+                 * Look for valid mach-o header (we skip cpusubtype on purpose here).
+                 */
+                MY_MACHO_HEADER const volatile *pHdr = (MY_MACHO_HEADER const volatile *)uCur;
+                if (   pHdr->magic    == MY_MACHO_MAGIC
+                    && pHdr->filetype == MH_EXECUTE
+                    && pHdr->cputype  == MY_CPU_TYPE)
+                {
+                    /* More header validation: */
+                    pThis->cLoadCmds  = pHdr->ncmds;
+                    pThis->cbLoadCmds = pHdr->sizeofcmds;
+                    if (pHdr->ncmds < 4)
+                        LOG_MISMATCH("RTR0DbgInfo: %p: ncmds=%u is too small\n", pHdr, pThis->cLoadCmds);
+                    else if (pThis->cLoadCmds > 256)
+                        LOG_MISMATCH("RTR0DbgInfo: %p: ncmds=%u is too big\n", pHdr, pThis->cLoadCmds);
+                    else if (pThis->cbLoadCmds <= pThis->cLoadCmds * sizeof(load_command_t))
+                        LOG_MISMATCH("RTR0DbgInfo: %p: sizeofcmds=%u is too small for ncmds=%u\n",
+                                     pHdr, pThis->cbLoadCmds, pThis->cLoadCmds);
+                    else if (pThis->cbLoadCmds >= _1M)
+                        LOG_MISMATCH("RTR0DbgInfo: %p: sizeofcmds=%u is too big\n", pHdr, pThis->cbLoadCmds);
+                    else if (pHdr->flags & ~MH_VALID_FLAGS)
+                        LOG_MISMATCH("RTR0DbgInfo: %p: invalid flags=%#x\n", pHdr, pHdr->flags);
+                    /*
+                     * Check that we can safely read the load commands, then parse & validate them.
+                     */
+                    else if (rtR0DbgKrnlDarwinIsRangePresent((uintptr_t)(pHdr + 1), pThis->cbLoadCmds, "load commands", pHdr))
+                    {
+                        pThis->pLoadCmds = (load_command_t *)(pHdr + 1);
+                        int rc = rtR0DbgKrnlDarwinParseCommands(pThis);
+                        if (RT_SUCCESS(rc))
+                        {
+                            /* Calculate the slide value.  This is typically zero as the
+                               load commands has been relocated (the case with 10.14.0 at least). */
+                            /** @todo ASSUMES that the __TEXT segment comes first and includes the
+                             *        mach-o header and load commands and all that. */
+                            pThis->offLoad = uCur - pThis->uTextSegLinkAddr;
+
+                            /* Check that the kernel symbol is in the text segment: */
+                            uintptr_t const offSomeKernAddr = uSomeKernelAddr - uCur;
+                            if (offSomeKernAddr >= pThis->cbTextSeg)
+                                LOG_MISMATCH("RTR0DbgInfo: %p: Our symbol at %zx (off %zx) isn't within the text segment (size %#zx)\n",
+                                             pHdr, uSomeKernelAddr, offSomeKernAddr, pThis->cbTextSeg);
+                            /*
+                             * Parse the symbol+string tables.
+                             */
+                            else if (pThis->uSymTabLinkAddr == 0)
+                                LOG_MISMATCH("RTR0DbgInfo: %p: No symbol table VA (off %#x L %#x)\n",
+                                             pHdr, pThis->offSyms, pThis->cSyms);
+                            else if (pThis->uStrTabLinkAddr == 0)
+                                LOG_MISMATCH("RTR0DbgInfo: %p: No string table VA (off %#x LB %#x)\n",
+                                             pHdr, pThis->offSyms, pThis->cbStrTab);
+                            else if (   rtR0DbgKrnlDarwinIsRangePresent(pThis->uStrTabLinkAddr + pThis->offLoad,
+                                                                        pThis->cbStrTab, "string table", pHdr)
+                                     && rtR0DbgKrnlDarwinIsRangePresent(pThis->uSymTabLinkAddr + pThis->offLoad,
+                                                                        pThis->cSyms * sizeof(pThis->paSyms),
+                                                                        "symbol table", pHdr))
+                            {
+                                pThis->pachStrTab = (char *)pThis->uStrTabLinkAddr + pThis->offLoad;
+                                pThis->paSyms = (MY_NLIST *)pThis->uSymTabLinkAddr + pThis->offLoad;
+                                rc = rtR0DbgKrnlDarwinParseSymTab(pThis, "in-memory");
+                                if (RT_SUCCESS(rc))
+                                {
+                                    /*
+                                     * Finally check the standard candles.
+                                     */
+                                    rc = rtR0DbgKrnlDarwinCheckStandardSymbols(pThis, "in-memory");
+                                    rtR0DbgKrnlDarwinLoadDone(pThis);
+                                    if (RT_SUCCESS(rc))
+                                        return rtR0DbgKrnlDarwinSuccess(phKrnlInfo, pThis, "in-memory");
+                                }
+                            }
+                        }
+
+                        RT_ZERO(pThis->apSections);
+                        RT_ZERO(pThis->apSegments);
+                        pThis->pLoadCmds = NULL;
+                    }
+                }
+            }
+        }
+
+        fPrevAlignMask = uCurAlign - 1;
+        uCurAlign >>= 1;
+    }
+
+    RTMemFree(pThis);
+    return VERR_GENERAL_FAILURE;
+}
+
+#endif /* IN_RING0 */
+
 RTR0DECL(int) RTR0DbgKrnlInfoOpen(PRTDBGKRNLINFO phKrnlInfo, uint32_t fFlags)
 {
     AssertPtrReturn(phKrnlInfo, VERR_INVALID_POINTER);
     *phKrnlInfo = NIL_RTDBGKRNLINFO;
     AssertReturn(!fFlags, VERR_INVALID_PARAMETER);
+
+#ifdef IN_RING0
+    /*
+     * Try see if we can use the kernel memory directly.  This depends on not
+     * having the __LINKEDIT segment jettisoned or swapped out.  For older
+     * kernels this is typically the case, unless kallsyms=1 is in boot-args.
+     */
+    int rc = rtR0DbgKrnlDarwinOpenInMemory(phKrnlInfo);
+    if (RT_SUCCESS(rc))
+    {
+        Log(("RTR0DbgKrnlInfoOpen: Using in-memory kernel.\n"));
+        return rc;
+    }
+#else
+    int rc = VERR_WRONG_ORDER; /* shut up stupid MSC */
+#endif
 
     /*
      * Go thru likely kernel locations
@@ -986,7 +1365,6 @@ RTR0DECL(int) RTR0DbgKrnlInfoOpen(PRTDBGKRNLINFO phKrnlInfo, uint32_t fFlags)
         { "/System/Library/Kernels/kernel.debug", VERR_WRONG_ORDER },
         { "/mach_kernel", VERR_WRONG_ORDER },
     };
-    int rc = VERR_WRONG_ORDER; /* shut up stupid MSC */
     for (uint32_t i = 0; i < RT_ELEMENTS(aKernels); i++)
     {
         aKernels[i].rc = rc = rtR0DbgKrnlDarwinOpen(phKrnlInfo, aKernels[i].pszLocation);
