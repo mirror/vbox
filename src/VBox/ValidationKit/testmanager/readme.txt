@@ -23,6 +23,11 @@ I.  Running a Test Manager instance with Docker:
     respectively. To start over, use "kmk clean". For having a peek into the container
     logs, use "kmk logs".
 
+    To administrate / develop the database, an Adminer instance is running at
+    http://localhost:8080
+
+    To access the actual Test Manager instance, go to http://localhost:8080/testmanager/
+
   - There are two ways of doing development with this setup:
 
     a. The Test Manager source is stored inside a separate data volume called
