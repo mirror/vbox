@@ -178,6 +178,8 @@ typedef struct RTFTPSERVERCLIENTSTATE
 {
     /** Authenticated user (name). If NULL, no user has been logged in (yet). */
     char                       *pszUser;
+    /** Current working directory. If NULL, '/' must be assumed. */
+    char                       *pszCWD;
     /** Number of failed login attempts. */
     uint8_t                     cFailedLoginAttempts;
     /** Timestamp (in ms) of last command issued by the client. */

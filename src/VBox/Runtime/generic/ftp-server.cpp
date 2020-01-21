@@ -363,6 +363,9 @@ const RTFTPSERVER_CMD_ENTRY g_aCmdMap[] =
     " SIZE\r\n" \
     " UTF8"
 
+/** Maximum length in characters a FTP server path can have (excluding termination). */
+#define RTFTPSERVER_MAX_PATH        RTPATH_MAX
+
 
 /*********************************************************************************************************************************
 *   Protocol Functions                                                                                                           *
@@ -460,6 +463,26 @@ static int rtFtpServerSendReplyStr(PRTFTPSERVERCLIENT pClient, const char *pcszF
 
     RTStrFree(psz);
 
+    return rc;
+}
+
+/**
+ * Sets the current working directory for a client.
+ *
+ * @returns VBox status code.
+ * @param   pClient             Client to set current working directory for.
+ * @param   pcszPath            Working directory to set.
+ */
+static int rtFtpSetCWD(PRTFTPSERVERCLIENT pClient, const char *pcszPath)
+{
+    RTStrFree(pClient->State.pszCWD);
+
+    pClient->State.pszCWD = RTStrDup(pcszPath);
+
+    LogFlowFunc(("Current CWD is now '%s'\n", pClient->State.pszCWD));
+
+    int rc = pClient->State.pszCWD ? VINF_SUCCESS : VERR_NO_MEMORY;
+    AssertRC(rc);
     return rc;
 }
 
@@ -1037,7 +1060,23 @@ static int rtFtpServerHandleCDUP(PRTFTPSERVERCLIENT pClient, uint8_t cArgs, cons
     RTFTPSERVER_HANDLE_CALLBACK(pfnOnPathUp);
 
     if (RT_SUCCESS(rc))
+    {
+        const size_t cbPath   = sizeof(char) * RTFTPSERVER_MAX_PATH;
+        char        *pszPath  = RTStrAlloc(cbPath);
+        if (pszPath)
+        {
+            RTFTPSERVER_HANDLE_CALLBACK_VA(pfnOnPathGetCurrent, pszPath, cbPath);
+
+            if (RT_SUCCESS(rc))
+                rtFtpSetCWD(pClient, pszPath);
+
+            RTStrFree(pszPath);
+        }
+        else
+            rc = VERR_NO_MEMORY;
+
         return rtFtpServerSendReplyRc(pClient, RTFTPSERVER_REPLY_OKAY);
+    }
 
     return rc;
 }
@@ -1049,10 +1088,16 @@ static int rtFtpServerHandleCWD(PRTFTPSERVERCLIENT pClient, uint8_t cArgs, const
 
     int rc;
 
-    RTFTPSERVER_HANDLE_CALLBACK_VA(pfnOnPathSetCurrent, apcszArgs[0]);
+    const char *pcszPath = apcszArgs[0];
+
+    RTFTPSERVER_HANDLE_CALLBACK_VA(pfnOnPathSetCurrent, pcszPath);
 
     if (RT_SUCCESS(rc))
+    {
+        rtFtpSetCWD(pClient, pcszPath);
+
         return rtFtpServerSendReplyRc(pClient, RTFTPSERVER_REPLY_OKAY);
+    }
 
     return rc;
 }
@@ -1709,6 +1754,9 @@ static void rtFtpServerClientStateReset(PRTFTPSERVERCLIENTSTATE pState)
 
     RTStrFree(pState->pszUser);
     pState->pszUser = NULL;
+
+    RTStrFree(pState->pszCWD);
+    pState->pszCWD = NULL;
 
     pState->cFailedLoginAttempts = 0;
     pState->tsLastCmdMs          = RTTimeMilliTS();
