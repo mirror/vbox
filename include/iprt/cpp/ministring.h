@@ -69,8 +69,11 @@
 class RT_DECL_CLASS RTCString
 {
 public:
-#ifdef RT_NEED_NEW_AND_DELETE
+#if defined(RT_NEED_NEW_AND_DELETE) && (  !defined(RTMEM_WRAP_SOME_NEW_AND_DELETE_TO_EF) \
+                                        || defined(RTMEM_NO_WRAP_SOME_NEW_AND_DELETE_TO_EF))
     RTMEM_IMPLEMENT_NEW_AND_DELETE();
+#else
+    RTMEMEF_NEW_AND_DELETE_OPERATORS();
 #endif
 
     /**
@@ -294,8 +297,6 @@ public:
     {
         cleanup();
     }
-
-    RTMEMEF_NEW_AND_DELETE_OPERATORS();
 
     /**
      * Assigns a copy of pcsz to @a this.
