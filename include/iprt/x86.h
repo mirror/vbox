@@ -1400,15 +1400,103 @@ AssertCompile(X86_DR7_ANY_RW_IO(UINT32_C(0x00040000)) == 0);
                                              | MSR_IA32_DEBUGCTL_FREEZE_PERFMON_ON_PMI | MSR_IA32_DEBUGCTL_FREEZE_WHILE_SMM_EM \
                                              | MSR_IA32_DEBUGCTL_RTM)
 
-/** The number (0..3 or 0..15) of the last branch record register on P4 and
- * related Xeons. */
-#define MSR_P4_LASTBRANCH_TOS               UINT32_C(0x000001da)
 /** @name Last branch registers for P4 and Xeon, models 0 thru 2.
  * @{ */
-#define MSR_P4_LASTBRANCH_0                 UINT32_C(0x000001db)
-#define MSR_P4_LASTBRANCH_1                 UINT32_C(0x000001dc)
-#define MSR_P4_LASTBRANCH_2                 UINT32_C(0x000001dd)
-#define MSR_P4_LASTBRANCH_3                 UINT32_C(0x000001de)
+#define MSR_P4_LASTBRANCH_0                 0x1db
+#define MSR_P4_LASTBRANCH_1                 0x1dc
+#define MSR_P4_LASTBRANCH_2                 0x1dd
+#define MSR_P4_LASTBRANCH_3                 0x1de
+
+/** LBR Top-of-stack MSR (index to most recent record). */
+#define MSR_P4_LASTBRANCH_TOS               0x1da
+/** @} */
+
+/** @name Last branch registers for Core 2 and related Xeons.
+ * @{ */
+#define MSR_CORE2_LASTBRANCH_0_FROM_IP      0x40
+#define MSR_CORE2_LASTBRANCH_1_FROM_IP      0x41
+#define MSR_CORE2_LASTBRANCH_2_FROM_IP      0x42
+#define MSR_CORE2_LASTBRANCH_3_FROM_IP      0x43
+
+#define MSR_CORE2_LASTBRANCH_0_TO_IP        0x60
+#define MSR_CORE2_LASTBRANCH_1_TO_IP        0x61
+#define MSR_CORE2_LASTBRANCH_2_TO_IP        0x62
+#define MSR_CORE2_LASTBRANCH_3_TO_IP        0x63
+
+/** LBR Top-of-stack MSR (index to most recent record). */
+#define MSR_CORE2_LASTBRANCH_TOS            0x1c9
+/** @} */
+
+/** @name Last branch registers.
+ * @{ */
+#define MSR_LASTBRANCH_0_FROM_IP            0x680
+#define MSR_LASTBRANCH_1_FROM_IP            0x681
+#define MSR_LASTBRANCH_2_FROM_IP            0x682
+#define MSR_LASTBRANCH_3_FROM_IP            0x683
+#define MSR_LASTBRANCH_4_FROM_IP            0x684
+#define MSR_LASTBRANCH_5_FROM_IP            0x685
+#define MSR_LASTBRANCH_6_FROM_IP            0x686
+#define MSR_LASTBRANCH_7_FROM_IP            0x687
+#define MSR_LASTBRANCH_8_FROM_IP            0x688
+#define MSR_LASTBRANCH_9_FROM_IP            0x689
+#define MSR_LASTBRANCH_10_FROM_IP           0x68a
+#define MSR_LASTBRANCH_11_FROM_IP           0x68b
+#define MSR_LASTBRANCH_12_FROM_IP           0x68c
+#define MSR_LASTBRANCH_13_FROM_IP           0x68d
+#define MSR_LASTBRANCH_14_FROM_IP           0x68e
+#define MSR_LASTBRANCH_15_FROM_IP           0x68f
+#define MSR_LASTBRANCH_16_FROM_IP           0x690
+#define MSR_LASTBRANCH_17_FROM_IP           0x691
+#define MSR_LASTBRANCH_18_FROM_IP           0x692
+#define MSR_LASTBRANCH_19_FROM_IP           0x693
+#define MSR_LASTBRANCH_20_FROM_IP           0x694
+#define MSR_LASTBRANCH_21_FROM_IP           0x695
+#define MSR_LASTBRANCH_22_FROM_IP           0x696
+#define MSR_LASTBRANCH_23_FROM_IP           0x697
+#define MSR_LASTBRANCH_24_FROM_IP           0x698
+#define MSR_LASTBRANCH_25_FROM_IP           0x699
+#define MSR_LASTBRANCH_26_FROM_IP           0x69a
+#define MSR_LASTBRANCH_27_FROM_IP           0x69b
+#define MSR_LASTBRANCH_28_FROM_IP           0x69c
+#define MSR_LASTBRANCH_29_FROM_IP           0x69d
+#define MSR_LASTBRANCH_30_FROM_IP           0x69e
+#define MSR_LASTBRANCH_31_FROM_IP           0x69f
+
+#define MSR_LASTBRANCH_0_TO_IP              0x6c0
+#define MSR_LASTBRANCH_1_TO_IP              0x6c1
+#define MSR_LASTBRANCH_2_TO_IP              0x6c2
+#define MSR_LASTBRANCH_3_TO_IP              0x6c3
+#define MSR_LASTBRANCH_4_TO_IP              0x6c4
+#define MSR_LASTBRANCH_5_TO_IP              0x6c5
+#define MSR_LASTBRANCH_6_TO_IP              0x6c6
+#define MSR_LASTBRANCH_7_TO_IP              0x6c7
+#define MSR_LASTBRANCH_8_TO_IP              0x6c8
+#define MSR_LASTBRANCH_9_TO_IP              0x6c9
+#define MSR_LASTBRANCH_10_TO_IP             0x6ca
+#define MSR_LASTBRANCH_11_TO_IP             0x6cb
+#define MSR_LASTBRANCH_12_TO_IP             0x6cc
+#define MSR_LASTBRANCH_13_TO_IP             0x6cd
+#define MSR_LASTBRANCH_14_TO_IP             0x6ce
+#define MSR_LASTBRANCH_15_TO_IP             0x6cf
+#define MSR_LASTBRANCH_16_TO_IP             0x6d0
+#define MSR_LASTBRANCH_17_TO_IP             0x6d1
+#define MSR_LASTBRANCH_18_TO_IP             0x6d2
+#define MSR_LASTBRANCH_19_TO_IP             0x6d3
+#define MSR_LASTBRANCH_20_TO_IP             0x6d4
+#define MSR_LASTBRANCH_21_TO_IP             0x6d5
+#define MSR_LASTBRANCH_22_TO_IP             0x6d6
+#define MSR_LASTBRANCH_23_TO_IP             0x6d7
+#define MSR_LASTBRANCH_24_TO_IP             0x6d8
+#define MSR_LASTBRANCH_25_TO_IP             0x6d9
+#define MSR_LASTBRANCH_26_TO_IP             0x6da
+#define MSR_LASTBRANCH_27_TO_IP             0x6db
+#define MSR_LASTBRANCH_28_TO_IP             0x6dc
+#define MSR_LASTBRANCH_29_TO_IP             0x6dd
+#define MSR_LASTBRANCH_30_TO_IP             0x6de
+#define MSR_LASTBRANCH_31_TO_IP             0x6df
+
+/** LBR Top-of-stack MSR (index to most recent record). */
+#define MSR_LASTBRANCH_TOS                  0x1c9
 /** @} */
 
 /** Intel TSX (Transactional Synchronization Extensions) control MSR. */
@@ -1542,78 +1630,6 @@ AssertCompile(X86_DR7_ANY_RW_IO(UINT32_C(0x00040000)) == 0);
 #define MSR_TURBO_ACTIVATION_RATIO          0x64c
 /** Core Performance Limit Reasons. */
 #define MSR_CORE_PERF_LIMIT_REASONS         0x64f
-
-/** Last branch record from IP MSRs.
- * @{ */
-#define MSR_LASTBRANCH_0_FROM_IP            0x680
-#define MSR_LASTBRANCH_1_FROM_IP            0x681
-#define MSR_LASTBRANCH_2_FROM_IP            0x682
-#define MSR_LASTBRANCH_3_FROM_IP            0x683
-#define MSR_LASTBRANCH_4_FROM_IP            0x684
-#define MSR_LASTBRANCH_5_FROM_IP            0x685
-#define MSR_LASTBRANCH_6_FROM_IP            0x686
-#define MSR_LASTBRANCH_7_FROM_IP            0x687
-#define MSR_LASTBRANCH_8_FROM_IP            0x688
-#define MSR_LASTBRANCH_9_FROM_IP            0x689
-#define MSR_LASTBRANCH_10_FROM_IP           0x68a
-#define MSR_LASTBRANCH_11_FROM_IP           0x68b
-#define MSR_LASTBRANCH_12_FROM_IP           0x68c
-#define MSR_LASTBRANCH_13_FROM_IP           0x68d
-#define MSR_LASTBRANCH_14_FROM_IP           0x68e
-#define MSR_LASTBRANCH_15_FROM_IP           0x68f
-#define MSR_LASTBRANCH_16_FROM_IP           0x690
-#define MSR_LASTBRANCH_17_FROM_IP           0x691
-#define MSR_LASTBRANCH_18_FROM_IP           0x692
-#define MSR_LASTBRANCH_19_FROM_IP           0x693
-#define MSR_LASTBRANCH_20_FROM_IP           0x694
-#define MSR_LASTBRANCH_21_FROM_IP           0x695
-#define MSR_LASTBRANCH_22_FROM_IP           0x696
-#define MSR_LASTBRANCH_23_FROM_IP           0x697
-#define MSR_LASTBRANCH_24_FROM_IP           0x698
-#define MSR_LASTBRANCH_25_FROM_IP           0x699
-#define MSR_LASTBRANCH_26_FROM_IP           0x69a
-#define MSR_LASTBRANCH_27_FROM_IP           0x69b
-#define MSR_LASTBRANCH_28_FROM_IP           0x69c
-#define MSR_LASTBRANCH_29_FROM_IP           0x69d
-#define MSR_LASTBRANCH_30_FROM_IP           0x69e
-#define MSR_LASTBRANCH_31_FROM_IP           0x69f
-/** @} */
-
-/** Last branch record to IP MSRs.
- * @{ */
-#define MSR_LASTBRANCH_0_TO_IP              0x6c0
-#define MSR_LASTBRANCH_1_TO_IP              0x6c1
-#define MSR_LASTBRANCH_2_TO_IP              0x6c2
-#define MSR_LASTBRANCH_3_TO_IP              0x6c3
-#define MSR_LASTBRANCH_4_TO_IP              0x6c4
-#define MSR_LASTBRANCH_5_TO_IP              0x6c5
-#define MSR_LASTBRANCH_6_TO_IP              0x6c6
-#define MSR_LASTBRANCH_7_TO_IP              0x6c7
-#define MSR_LASTBRANCH_8_TO_IP              0x6c8
-#define MSR_LASTBRANCH_9_TO_IP              0x6c9
-#define MSR_LASTBRANCH_10_TO_IP             0x6ca
-#define MSR_LASTBRANCH_11_TO_IP             0x6cb
-#define MSR_LASTBRANCH_12_TO_IP             0x6cc
-#define MSR_LASTBRANCH_13_TO_IP             0x6cd
-#define MSR_LASTBRANCH_14_TO_IP             0x6ce
-#define MSR_LASTBRANCH_15_TO_IP             0x6cf
-#define MSR_LASTBRANCH_16_TO_IP             0x6d0
-#define MSR_LASTBRANCH_17_TO_IP             0x6d1
-#define MSR_LASTBRANCH_18_TO_IP             0x6d2
-#define MSR_LASTBRANCH_19_TO_IP             0x6d3
-#define MSR_LASTBRANCH_20_TO_IP             0x6d4
-#define MSR_LASTBRANCH_21_TO_IP             0x6d5
-#define MSR_LASTBRANCH_22_TO_IP             0x6d6
-#define MSR_LASTBRANCH_23_TO_IP             0x6d7
-#define MSR_LASTBRANCH_24_TO_IP             0x6d8
-#define MSR_LASTBRANCH_25_TO_IP             0x6d9
-#define MSR_LASTBRANCH_26_TO_IP             0x6da
-#define MSR_LASTBRANCH_27_TO_IP             0x6db
-#define MSR_LASTBRANCH_28_TO_IP             0x6dc
-#define MSR_LASTBRANCH_29_TO_IP             0x6dd
-#define MSR_LASTBRANCH_30_TO_IP             0x6de
-#define MSR_LASTBRANCH_31_TO_IP             0x6df
-/** @} */
 
 /** X2APIC MSR range start. */
 #define MSR_IA32_X2APIC_START               0x800
