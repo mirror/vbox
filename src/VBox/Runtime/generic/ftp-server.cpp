@@ -1594,7 +1594,7 @@ static DECLCALLBACK(int) rtFtpServerDataConnListThread(RTTHREAD ThreadSelf, void
     AssertPtrReturn(pszPath, VERR_NO_MEMORY);
     /* The paths already have been validated in the actual command handlers. */
 
-    void *pvHandle;
+    void *pvHandle = NULL; /* Shut up MSVC. */
     RTFTPSERVER_HANDLE_CALLBACK_VA(pfnOnDirOpen, pszPath, &pvHandle);
 
     for (;;)
