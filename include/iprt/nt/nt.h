@@ -391,6 +391,17 @@ RTDECL(int) RTNtPathRelativeFromUtf8(struct _UNICODE_STRING *pNtName, PHANDLE ph
 RTDECL(int) RTNtPathEnsureSpace(struct _UNICODE_STRING *pNtName, size_t cwcMin);
 
 /**
+ * Gets the NT path to the object represented by the given handle.
+ *
+ * @returns IPRT status code.
+ * @param   pNtName             Where to return the NT path.  Free using
+ *                              RTUtf16Alloc.
+ * @param   hHandle             The handle.
+ * @param   cwcExtra            How much extra space is needed.
+ */
+RTDECL(int) RTNtPathFromHandle(struct _UNICODE_STRING *pNtName, HANDLE hHandle, size_t cwcExtra);
+
+/**
  * Frees the native path and root handle.
  *
  * @param   pNtName             The NT path after a successful rtNtPathToNative
@@ -2748,6 +2759,27 @@ NTSYSAPI NTSTATUS NTAPI RtlSetDaclSecurityDescriptor(PSECURITY_DESCRIPTOR, BOOLE
 NTSYSAPI PULONG   NTAPI RtlSubAuthoritySid(PSID, ULONG);
 
 #endif /* IPRT_NT_USE_WINTERNL */
+
+/** For use with ObjectBasicInformation.
+ * A watered down version of this struct appears under the name
+ * PUBLIC_OBJECT_BASIC_INFORMATION in ntifs.h.  It only defines
+ * the first four members, so don't trust the rest.  */
+typedef struct _OBJECT_BASIC_INFORMATION
+{
+    ULONG Attributes;
+    ACCESS_MASK GrantedAccess;
+    ULONG HandleCount;
+    ULONG PointerCount;
+    /* Not in ntifs.h: */
+    ULONG PagedPoolCharge;
+    ULONG NonPagedPoolCharge;
+    ULONG Reserved[3];
+    ULONG NameInfoSize;
+    ULONG TypeInfoSize;
+    ULONG SecurityDescriptorSize;
+    LARGE_INTEGER CreationTime;
+} OBJECT_BASIC_INFORMATION;
+typedef OBJECT_BASIC_INFORMATION *POBJECT_BASIC_INFORMATION;
 
 /** For use with ObjectHandleFlagInformation. */
 typedef struct _OBJECT_HANDLE_FLAG_INFORMATION
