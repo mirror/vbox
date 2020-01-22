@@ -2311,7 +2311,7 @@ typedef struct PGMPOOL
     STAMCOUNTER                 StatMonitorPfRZEmulateInstr;
     /** Profiling the pgmPoolFlushPage calls made from the RC/R0 access handler. */
     STAMPROFILE                 StatMonitorPfRZFlushPage;
-    /* Times we've detected a page table reinit. */
+    /** Times we've detected a page table reinit. */
     STAMCOUNTER                 StatMonitorPfRZFlushReinit;
     /** Counting flushes for pages that are modified too often. */
     STAMCOUNTER                 StatMonitorPfRZFlushModOverflow;
