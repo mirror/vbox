@@ -22,13 +22,18 @@
 
 /* GUI includes: */
 #include "QIComboBox.h"
+#include "UICommon.h"
 #include "UIConverter.h"
 #include "UIAudioHostDriverEditor.h"
+
+/* COM includes: */
+#include "CSystemProperties.h"
 
 
 UIAudioHostDriverEditor::UIAudioHostDriverEditor(QWidget *pParent /* = 0 */, bool fWithLabel /* = false */)
     : QIWithRetranslateUI<QWidget>(pParent)
     , m_fWithLabel(fWithLabel)
+    , m_enmValue(KAudioDriverType_Max)
     , m_pLabel(0)
     , m_pCombo(0)
 {
@@ -39,7 +44,16 @@ void UIAudioHostDriverEditor::setValue(KAudioDriverType enmValue)
 {
     if (m_pCombo)
     {
-        int iIndex = m_pCombo->findData(QVariant::fromValue(enmValue));
+        /* Update cached value and
+         * combo if value has changed: */
+        if (m_enmValue != enmValue)
+        {
+            m_enmValue = enmValue;
+            populateCombo();
+        }
+
+        /* Look for proper index to choose: */
+        int iIndex = m_pCombo->findData(QVariant::fromValue(m_enmValue));
         if (iIndex != -1)
             m_pCombo->setCurrentIndex(iIndex);
     }
@@ -47,7 +61,7 @@ void UIAudioHostDriverEditor::setValue(KAudioDriverType enmValue)
 
 KAudioDriverType UIAudioHostDriverEditor::value() const
 {
-    return m_pCombo ? m_pCombo->itemData(m_pCombo->currentIndex()).value<KAudioDriverType>() : KAudioDriverType_Null;
+    return m_pCombo ? m_pCombo->currentData().value<KAudioDriverType>() : m_enmValue;
 }
 
 void UIAudioHostDriverEditor::retranslateUi()
@@ -94,6 +108,8 @@ void UIAudioHostDriverEditor::prepare()
             if (m_pCombo)
             {
                 setFocusProxy(m_pCombo->focusProxy());
+                /* This is necessary since contents is dynamical now: */
+                m_pCombo->setSizeAdjustPolicy(QComboBox::AdjustToContents);
                 if (m_pLabel)
                     m_pLabel->setBuddy(m_pCombo->focusProxy());
                 connect(m_pCombo, static_cast<void(QIComboBox::*)(int)>(&QIComboBox::currentIndexChanged),
@@ -118,24 +134,25 @@ void UIAudioHostDriverEditor::prepare()
 
 void UIAudioHostDriverEditor::populateCombo()
 {
-    /* Fill combo manually: */
-    m_pCombo->addItem(QString(), QVariant::fromValue(KAudioDriverType_Null));
-#ifdef Q_OS_WIN
-    m_pCombo->addItem(QString(), QVariant::fromValue(KAudioDriverType_DirectSound));
-# ifdef VBOX_WITH_WINMM
-    m_pCombo->addItem(QString(), QVariant::fromValue(KAudioDriverType_WinMM));
-# endif
-#endif
-#ifdef VBOX_WITH_AUDIO_OSS
-    m_pCombo->addItem(QString(), QVariant::fromValue(KAudioDriverType_OSS));
-#endif
-#ifdef VBOX_WITH_AUDIO_ALSA
-    m_pCombo->addItem(QString(), QVariant::fromValue(KAudioDriverType_ALSA));
-#endif
-#ifdef VBOX_WITH_AUDIO_PULSE
-    m_pCombo->addItem(QString(), QVariant::fromValue(KAudioDriverType_Pulse));
-#endif
-#ifdef Q_OS_MACX
-    m_pCombo->addItem(QString(), QVariant::fromValue(KAudioDriverType_CoreAudio));
-#endif
+    if (m_pCombo)
+    {
+        /* Clear combo first of all: */
+        m_pCombo->clear();
+
+        /* Load currently supported audio driver types: */
+        CSystemProperties comProperties = uiCommon().virtualBox().GetSystemProperties();
+        m_supportedValues = comProperties.GetSupportedAudioDriverTypes();
+
+        /* Make sure requested value if sane is present as well: */
+        if (   m_enmValue != KAudioDriverType_Max
+            && !m_supportedValues.contains(m_enmValue))
+            m_supportedValues.prepend(m_enmValue);
+
+        /* Update combo with all the supported values: */
+        foreach (const KAudioDriverType &enmType, m_supportedValues)
+            m_pCombo->addItem(QString(), QVariant::fromValue(enmType));
+
+        /* Retranslate finally: */
+        retranslateUi();
+    }
 }
