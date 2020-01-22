@@ -1722,7 +1722,7 @@ AssertCompile(X86_DR7_ANY_RW_IO(UINT32_C(0x00040000)) == 0);
 /** X2APIC MSR - Self IPI. */
 #define MSR_IA32_X2APIC_SELF_IPI            0x83F
 /** X2APIC MSR range end. */
-#define MSR_IA32_X2APIC_END                 0xBFF
+#define MSR_IA32_X2APIC_END                 0x8FF
 /** X2APIC MSR - LVT start range. */
 #define MSR_IA32_X2APIC_LVT_START           MSR_IA32_X2APIC_LVT_TIMER
 /** X2APIC MSR - LVT end range (inclusive). */
