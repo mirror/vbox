@@ -110,7 +110,9 @@ static void             supdrvDarwinDestroyCertStores(PSUPDRVDEVEXT pDevExt);
 static int              VBoxDrvDarwinOpen(dev_t Dev, int fFlags, int fDevType, struct proc *pProcess);
 static int              VBoxDrvDarwinClose(dev_t Dev, int fFlags, int fDevType, struct proc *pProcess);
 static int              VBoxDrvDarwinIOCtl(dev_t Dev, u_long iCmd, caddr_t pData, int fFlags, struct proc *pProcess);
+#ifndef VBOX_WITHOUT_EFLAGS_AC_SET_IN_VBOXDRV
 static int              VBoxDrvDarwinIOCtlSMAP(dev_t Dev, u_long iCmd, caddr_t pData, int fFlags, struct proc *pProcess);
+#endif
 static int              VBoxDrvDarwinIOCtlSlow(PSUPDRVSESSION pSession, u_long iCmd, caddr_t pData, struct proc *pProcess);
 
 static int              VBoxDrvDarwinErr2DarwinErr(int rc);
@@ -263,6 +265,8 @@ static int             (*g_pfnRdMsr64Carefully)(uint32_t uMsr, uint64_t *uValue)
 static int             (*g_pfnWrMsr64Carefully)(uint32_t uMsr, uint64_t uValue) = NULL;
 #endif
 
+/** SUPKERNELFEATURES_XXX */
+static uint32_t         g_fKernelFeatures = 0;
 
 /**
  * Start the kernel module.
@@ -299,8 +303,11 @@ static kern_return_t    VBoxDrvDarwinStart(struct kmod_info *pKModInfo, void *pv
             {
                 if (vboxdrvDarwinCpuHasSMAP())
                 {
+                    g_fKernelFeatures |= SUPKERNELFEATURES_SMAP;
+#ifndef VBOX_WITHOUT_EFLAGS_AC_SET_IN_VBOXDRV
                     LogRel(("disabling SMAP for VBoxDrvDarwinIOCtl\n"));
                     g_DevCW.d_ioctl = VBoxDrvDarwinIOCtlSMAP;
+#endif
                 }
 
                 /*
@@ -725,6 +732,7 @@ static int VBoxDrvDarwinIOCtl(dev_t Dev, u_long iCmd, caddr_t pData, int fFlags,
 }
 
 
+#ifndef VBOX_WITHOUT_EFLAGS_AC_SET_IN_VBOXDRV
 /**
  * Alternative Device I/O Control entry point on hosts with SMAP support.
  *
@@ -745,7 +753,7 @@ static int VBoxDrvDarwinIOCtlSMAP(dev_t Dev, u_long iCmd, caddr_t pData, int fFl
 
     int rc = VBoxDrvDarwinIOCtl(Dev, iCmd, pData, fFlags, pProcess);
 
-#if defined(VBOX_STRICT) || defined(VBOX_WITH_EFLAGS_AC_SET_IN_VBOXDRV)
+# if defined(VBOX_STRICT) || defined(VBOX_WITH_EFLAGS_AC_SET_IN_VBOXDRV)
     /*
      * Before we restore AC and the rest of EFLAGS, check if the IOCtl handler code
      * accidentially modified it or some other important flag.
@@ -757,11 +765,12 @@ static int VBoxDrvDarwinIOCtlSMAP(dev_t Dev, u_long iCmd, caddr_t pData, int fFl
         RTStrPrintf(szTmp, sizeof(szTmp), "iCmd=%#x: %#x->%#x!", iCmd, (uint32_t)fSavedEfl, (uint32_t)ASMGetFlags());
         supdrvBadContext(&g_DevExt, "SUPDrv-darwin.cpp",  __LINE__, szTmp);
     }
-#endif
+# endif
 
     ASMSetFlags(fSavedEfl);
     return rc;
 }
+#endif /* VBOX_WITHOUT_EFLAGS_AC_SET_IN_VBOXDRV */
 
 
 /**
@@ -1992,12 +2001,7 @@ RTDECL(int) SUPR0Printf(const char *pszFormat, ...)
 
 SUPR0DECL(uint32_t) SUPR0GetKernelFeatures(void)
 {
-    uint32_t fFlags = 0;
-    if (g_DevCW.d_ioctl == VBoxDrvDarwinIOCtlSMAP)
-        fFlags |= SUPKERNELFEATURES_SMAP;
-    else
-        Assert(!(ASMGetCR4() & X86_CR4_SMAP));
-    return fFlags;
+    return g_fKernelFeatures;
 }
 
 
