@@ -43,6 +43,7 @@
 #include <iprt/err.h>
 #include <iprt/ldr.h>
 #include <iprt/log.h>
+#include <iprt/utf16.h>
 #include "internal/file.h"
 #include "internal/fs.h"
 #include "internal/path.h"
@@ -752,8 +753,122 @@ RTR3DECL(int)  RTFileFlush(RTFILE hFile)
 }
 
 
+#if 0
+/**
+ * If @a hFile is opened in append mode, try return a handle with
+ * FILE_WRITE_DATA permissions.
+ *
+ * @returns Duplicate handle.
+ * @param   hFile               The NT handle to check & duplicate.
+ *
+ * @todo    It would be much easier to implement this by not dropping the
+ *          FILE_WRITE_DATA access and instead have the RTFileWrite APIs
+ *          enforce the appending.  That will require keeping additional
+ *          information along side the handle (instance structure).  However, on
+ *          windows you can grant append permissions w/o giving people access to
+ *          overwrite existing data, so the RTFileOpenEx code would have to deal
+ *          with those kinds of STATUS_ACCESS_DENIED too then.
+ */
+static HANDLE rtFileReOpenAppendOnlyWithFullWriteAccess(HANDLE hFile)
+{
+    OBJECT_BASIC_INFORMATION BasicInfo = {0};
+    ULONG                    cbActual  = 0;
+    NTSTATUS rcNt = NtQueryObject(hFile, ObjectBasicInformation, &BasicInfo, sizeof(BasicInfo), &cbActual);
+    if (NT_SUCCESS(rcNt))
+    {
+        if ((BasicInfo.GrantedAccess & (FILE_APPEND_DATA | FILE_WRITE_DATA)) == FILE_APPEND_DATA)
+        {
+            /*
+             * We cannot use NtDuplicateObject here as it is not possible to
+             * upgrade the access on files, only making it more strict.  So,
+             * query the path and re-open it (we could do by file/object/whatever
+             * id too, but that may not work with all file systems).
+             */
+            for (uint32_t i = 0; i < 16; i++)
+            {
+                UNICODE_STRING  NtName;
+                int rc = RTNtPathFromHandle(&NtName, hFile, 0);
+                AssertRCReturn(rc, INVALID_HANDLE_VALUE);
+
+                HANDLE              hDupFile = RTNT_INVALID_HANDLE_VALUE;
+                IO_STATUS_BLOCK     Ios      = RTNT_IO_STATUS_BLOCK_INITIALIZER;
+                OBJECT_ATTRIBUTES   ObjAttr;
+                InitializeObjectAttributes(&ObjAttr, &NtName, BasicInfo.Attributes & ~OBJ_INHERIT, NULL, NULL);
+
+                NTSTATUS rcNt = NtCreateFile(&hDupFile,
+                                             BasicInfo.GrantedAccess | FILE_WRITE_DATA,
+                                             &ObjAttr,
+                                             &Ios,
+                                             NULL /* AllocationSize*/,
+                                             FILE_ATTRIBUTE_NORMAL,
+                                             FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
+                                             FILE_OPEN,
+                                             FILE_OPEN_FOR_BACKUP_INTENT,
+                                             NULL /*EaBuffer*/,
+                                             0 /*EaLength*/);
+                RTUtf16Free(NtName.Buffer);
+                if (NT_SUCCESS(rcNt))
+                {
+                    /** @todo Check that the two handles are for the same file object. */
+
+                    return hDupFile;
+                }
+            }
+        }
+    }
+    return INVALID_HANDLE_VALUE;
+}
+#endif
+
+
 RTR3DECL(int) RTFileSetSize(RTFILE hFile, uint64_t cbSize)
 {
+#if 0
+    HANDLE hNtFile  = (HANDLE)RTFileToNative(hFile);
+    HANDLE hDupFile = INVALID_HANDLE_VALUE;
+    union
+    {
+        FILE_END_OF_FILE_INFORMATION Eof;
+        FILE_ALLOCATION_INFORMATION  Alloc;
+    } uInfo;
+
+    /*
+     * Change the EOF marker.  We may have to
+     */
+    IO_STATUS_BLOCK Ios = RTNT_IO_STATUS_BLOCK_INITIALIZER;
+    uInfo.Eof.EndOfFile.QuadPart = cbSize;
+    NTSTATUS rcNt = NtSetInformationFile(hNtFile, &Ios, &uInfo.Eof, sizeof(uInfo.Eof), FileEndOfFileInformation);
+    if (rcNt == STATUS_ACCESS_DENIED)
+    {
+        hDupFile = rtFileReOpenAppendOnlyWithFullWriteAccess(hNtFile);
+        if (hDupFile != INVALID_HANDLE_VALUE)
+        {
+            hNtFile = hDupFile;
+            uInfo.Eof.EndOfFile.QuadPart = cbSize;
+            rcNt = NtSetInformationFile(hNtFile, &Ios, &uInfo.Eof, sizeof(uInfo.Eof), FileEndOfFileInformation);
+        }
+    }
+
+    if (NT_SUCCESS(rcNt))
+    {
+        /*
+         * Change the allocation.
+         */
+        uInfo.Alloc.AllocationSize.QuadPart = cbSize;
+        rcNt = NtSetInformationFile(hNtFile, &Ios, &uInfo.Eof, sizeof(uInfo.Alloc), FileAllocationInformation);
+    }
+
+    /*
+     * Close the temporary file handle:
+     */
+    if (hDupFile != INVALID_HANDLE_VALUE)
+        NtClose(hDupFile);
+
+    if (RT_SUCCESS(rcNt))
+        return VINF_SUCCESS;
+    return RTErrConvertFromNtStatus(rcNt);
+
+#else /* this version of the code will fail to truncate files when RTFILE_O_APPEND is in effect, which isn't what we want... */
     /*
      * Get current file pointer.
      */
@@ -794,6 +909,7 @@ RTR3DECL(int) RTFileSetSize(RTFILE hFile, uint64_t cbSize)
         rc = GetLastError();
 
     return RTErrConvertFromWin32(rc);
+#endif
 }
 
 
