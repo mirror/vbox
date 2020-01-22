@@ -28,130 +28,141 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
+#include <iprt/test.h>
 #include <iprt/file.h>
 #include <iprt/errcore.h>
 #include <iprt/string.h>
 #include <iprt/stream.h>
-#include <iprt/initterm.h>
 
 
-int main()
+/*********************************************************************************************************************************
+*   Global Variables                                                                                                             *
+*********************************************************************************************************************************/
+static const char g_szTestStr[] = "Sausages and bacon for breakfast again!\n";
+static char       g_szTestStr2[] =
+"Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut "
+"enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor "
+"in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non "
+"proident, sunt in culpa qui officia deserunt mollit anim id est laborum.\n"
+"\n"
+"Curabitur pretium tincidunt lacus. Nulla gravida orci a odio. Nullam varius, turpis et commodo pharetra, est eros bibendum "
+"elit, nec luctus magna felis sollicitudin mauris. Integer in mauris eu nibh euismod gravida. Duis ac tellus et risus "
+"vulputate vehicula. Donec lobortis risus a elit. Etiam tempor. Ut ullamcorper, ligula eu tempor congue, eros est euismod "
+"turpis, id tincidunt sapien risus a quam. Maecenas fermentum consequat mi. Donec fermentum. Pellentesque malesuada nulla a mi. "
+"Duis sapien sem, aliquet nec, commodo eget, consequat quis, neque. Aliquam faucibus, elit ut dictum aliquet, felis nisl "
+"adipiscing sapien, sed malesuada diam lacus eget erat. Cras mollis scelerisque nunc. Nullam arcu. Aliquam consequat. Curabitur "
+"augue lorem, dapibus quis, laoreet et, pretium ac, nisi. Aenean magna nisl, mollis quis, molestie eu, feugiat in, orci. In hac "
+"habitasse platea dictumst.\n";
+
+
+static void tstAppend(RTFILE hFile)
 {
-    int         cErrors = 0;
-    RTPrintf("tstFile: TESTING\n");
-    RTR3InitExeNoArguments(0);
+    char achBuf[sizeof(g_szTestStr2) * 4];
 
-    RTFILE    File;
-    int rc = RTFileOpen(&File, "tstFile#1.tst", RTFILE_O_READWRITE | RTFILE_O_CREATE_REPLACE | RTFILE_O_DENY_NONE);
-    if (RT_FAILURE(rc))
-    {
-        RTPrintf("tstFile: FATAL ERROR - Failed to open file #1. rc=%Rrc\n", rc);
-        return 1;
-    }
+    /*
+     * Write some stuff and read it back.
+     */
+    size_t const cbWrite1 = sizeof(g_szTestStr2)  / 4;
+    RTTESTI_CHECK_RC_RETV(RTFileWrite(hFile, g_szTestStr2, sizeof(g_szTestStr2) - 1, NULL), VINF_SUCCESS);
 
+    size_t const offWrite2 = cbWrite1;
+    size_t const cbWrite2  = sizeof(g_szTestStr2) / 2;
+    RTTESTI_CHECK_RC_RETV(RTFileSeek(hFile, 0, RTFILE_SEEK_BEGIN, NULL), VINF_SUCCESS);
+    RTTESTI_CHECK_RC_RETV(RTFileWrite(hFile, &g_szTestStr2[offWrite2], cbWrite2, NULL), VINF_SUCCESS);
+
+    RTTESTI_CHECK_RC_RETV(RTFileSeek(hFile, 0, RTFILE_SEEK_BEGIN, NULL), VINF_SUCCESS);
+    RTTESTI_CHECK_RC_RETV(RTFileRead(hFile, achBuf, cbWrite1 + cbWrite2, NULL), VINF_SUCCESS);
+    if (memcmp(achBuf, g_szTestStr2, cbWrite1 + cbWrite2) != 0)
+        RTTestIFailed("Read back #1 failed (%#zx + %#zx)", cbWrite1, cbWrite2);
+
+#ifndef RT_OS_WINDOWS
+    /*
+     * Truncate the file and write some more. This is problematic on windows.
+     */
+    RTTESTI_CHECK_RC_RETV(RTFileSetSize(hFile, 0), VINF_SUCCESS);
+
+    size_t const offWrite3 = cbWrite1 + cbWrite2;
+    size_t const cbWrite3  = sizeof(g_szTestStr2) - 1 - offWrite3;
+    RTTESTI_CHECK_RC_RETV(RTFileSeek(hFile, 0, RTFILE_SEEK_BEGIN, NULL), VINF_SUCCESS);
+    RTTESTI_CHECK_RC_RETV(RTFileWrite(hFile, &g_szTestStr2[offWrite3], cbWrite3, NULL), VINF_SUCCESS);
+
+    RTTESTI_CHECK_RC_RETV(RTFileSeek(hFile, 0, RTFILE_SEEK_BEGIN, NULL), VINF_SUCCESS);
+    RTTESTI_CHECK_RC_RETV(RTFileRead(hFile, achBuf, cbWrite3, NULL), VINF_SUCCESS);
+    if (memcmp(achBuf, &g_szTestStr2[offWrite3], cbWrite3) != 0)
+        RTTestIFailed("Read back #2 failed (%#zx)", cbWrite3);
+#endif
+}
+
+
+static void tstBasics(RTFILE hFile)
+{
     RTFOFF cbMax = -2;
-    rc = RTFileQueryMaxSizeEx(File, &cbMax);
-    if (RT_FAILURE(rc))
+    int rc = RTFileQueryMaxSizeEx(hFile, &cbMax);
+    if (rc != VERR_NOT_IMPLEMENTED)
     {
-        RTPrintf("tstFile: RTFileQueryMaxSizeEx failed: %Rrc\n", rc);
-        cErrors++;
+        if (rc != VINF_SUCCESS)
+            RTTestIFailed("RTFileQueryMaxSizeEx failed: %Rrc", rc);
+        else
+        {
+            RTTESTI_CHECK_MSG(cbMax > 0, ("cbMax=%RTfoff", cbMax));
+            RTTESTI_CHECK_MSG(cbMax == RTFileGetMaxSize(hFile),
+                              ("cbMax=%RTfoff, RTFileGetMaxSize->%RTfoff", cbMax, RTFileGetMaxSize(hFile)));
+        }
     }
-    else if (cbMax <= 0)
-    {
-        RTPrintf("tstFile: RTFileQueryMaxSizeEx failed: cbMax=%RTfoff\n", cbMax);
-        cErrors++;
-    }
-    else if (RTFileGetMaxSize(File) != cbMax)
-    {
-        RTPrintf("tstFile: RTFileGetMaxSize failed; returns %RTfoff instead of %RTfoff\n", RTFileGetMaxSize(File), cbMax);
-        cErrors++;
-    }
-    else
-        RTPrintf("Maximum file size is %RTfoff bytes.\n", cbMax);
 
     /* grow file beyond 2G */
-    rc = RTFileSetSize(File, _2G + _1M);
+    rc = RTFileSetSize(hFile, _2G + _1M);
     if (RT_FAILURE(rc))
-    {
-        RTPrintf("Failed to grow file #1 to 2.001GB. rc=%Rrc\n", rc);
-        cErrors++;
-    }
+        RTTestIFailed("Failed to grow file #1 to 2.001GB. rc=%Rrc", rc);
     else
     {
         uint64_t cb;
-        rc = RTFileQuerySize(File, &cb);
-        if (RT_FAILURE(rc))
-        {
-            RTPrintf("Failed to get file size of #1. rc=%Rrc\n", rc);
-            cErrors++;
-        }
-        else if (cb != _2G + _1M)
-        {
-            RTPrintf("RTFileQuerySize return %RX64 bytes, expected %RX64.\n", cb, _2G + _1M);
-            cErrors++;
-        }
-        else
-            RTPrintf("tstFile: cb=%RX64\n", cb);
+        RTTESTI_CHECK_RC(RTFileQuerySize(hFile, &cb), VINF_SUCCESS);
+        RTTESTI_CHECK_MSG(cb == _2G + _1M, ("RTFileQuerySize return %RX64 bytes, expected %RX64.", cb, _2G + _1M));
 
         /*
          * Try some writes at the beginning of the file.
          */
-        uint64_t offFile = RTFileTell(File);
-        if (offFile != 0)
-        {
-            RTPrintf("RTFileTell -> %#RX64, expected 0 (#1)\n", offFile);
-            cErrors++;
-        }
-        static const char szTestBuf[] = "Sausages and bacon for breakfast again!";
+        uint64_t offFile = RTFileTell(hFile);
+        RTTESTI_CHECK_MSG(offFile == 0, ("RTFileTell -> %#RX64, expected 0 (#1)", offFile));
+
         size_t cbWritten = 0;
-        while (cbWritten < sizeof(szTestBuf))
+        while (cbWritten < sizeof(g_szTestStr))
         {
             size_t cbWrittenPart;
-            rc = RTFileWrite(File, &szTestBuf[cbWritten], sizeof(szTestBuf) - cbWritten, &cbWrittenPart);
+            rc = RTFileWrite(hFile, &g_szTestStr[cbWritten], sizeof(g_szTestStr) - cbWritten, &cbWrittenPart);
             if (RT_FAILURE(rc))
                 break;
             cbWritten += cbWrittenPart;
         }
         if (RT_FAILURE(rc))
-        {
-            RTPrintf("Failed to write to file #1 at offset 0. rc=%Rrc\n", rc);
-            cErrors++;
-        }
+            RTTestIFailed("Failed to write to file #1 at offset 0. rc=%Rrc\n", rc);
         else
         {
             /* check that it was written correctly. */
-            rc = RTFileSeek(File, 0, RTFILE_SEEK_BEGIN, NULL);
+            rc = RTFileSeek(hFile, 0, RTFILE_SEEK_BEGIN, NULL);
             if (RT_FAILURE(rc))
-            {
-                RTPrintf("Failed to seek offset 0 in file #1. rc=%Rrc\n", rc);
-                cErrors++;
-            }
+                RTTestIFailed("Failed to seek offset 0 in file #1. rc=%Rrc\n", rc);
             else
             {
-                char        szReadBuf[sizeof(szTestBuf)];
+                char        szReadBuf[sizeof(g_szTestStr)];
                 size_t      cbRead = 0;
-                while (cbRead < sizeof(szTestBuf))
+                while (cbRead < sizeof(g_szTestStr))
                 {
                     size_t cbReadPart;
-                    rc = RTFileRead(File, &szReadBuf[cbRead], sizeof(szTestBuf) - cbRead, &cbReadPart);
+                    rc = RTFileRead(hFile, &szReadBuf[cbRead], sizeof(g_szTestStr) - cbRead, &cbReadPart);
                     if (RT_FAILURE(rc))
                         break;
                     cbRead += cbReadPart;
                 }
                 if (RT_FAILURE(rc))
-                {
-                    RTPrintf("Failed to read from file #1 at offset 0. rc=%Rrc\n", rc);
-                    cErrors++;
-                }
+                    RTTestIFailed("Failed to read from file #1 at offset 0. rc=%Rrc\n", rc);
                 else
                 {
-                    if (!memcmp(szReadBuf, szTestBuf, sizeof(szTestBuf)))
+                    if (!memcmp(szReadBuf, g_szTestStr, sizeof(g_szTestStr)))
                         RTPrintf("tstFile: head write ok\n");
                     else
-                    {
-                        RTPrintf("Data read from file #1 at offset 0 differs from what we wrote there.\n");
-                        cErrors++;
-                    }
+                        RTTestIFailed("Data read from file #1 at offset 0 differs from what we wrote there.\n");
                 }
             }
         }
@@ -159,70 +170,52 @@ int main()
         /*
          * Try some writes at the end of the file.
          */
-        rc = RTFileSeek(File, _2G + _1M, RTFILE_SEEK_BEGIN, NULL);
+        rc = RTFileSeek(hFile, _2G + _1M, RTFILE_SEEK_BEGIN, NULL);
         if (RT_FAILURE(rc))
-        {
-            RTPrintf("Failed to seek to _2G + _1M in file #1. rc=%Rrc\n", rc);
-            cErrors++;
-        }
+            RTTestIFailed("Failed to seek to _2G + _1M in file #1. rc=%Rrc\n", rc);
         else
         {
-            offFile = RTFileTell(File);
+            offFile = RTFileTell(hFile);
             if (offFile != _2G + _1M)
-            {
-                RTPrintf("RTFileTell -> %#llx, expected %#llx (#2)\n", offFile, _2G + _1M);
-                cErrors++;
-            }
+                RTTestIFailed("RTFileTell -> %#llx, expected %#llx (#2)\n", offFile, _2G + _1M);
             else
             {
                 cbWritten = 0;
-                while (cbWritten < sizeof(szTestBuf))
+                while (cbWritten < sizeof(g_szTestStr))
                 {
                     size_t cbWrittenPart;
-                    rc = RTFileWrite(File, &szTestBuf[cbWritten], sizeof(szTestBuf) - cbWritten, &cbWrittenPart);
+                    rc = RTFileWrite(hFile, &g_szTestStr[cbWritten], sizeof(g_szTestStr) - cbWritten, &cbWrittenPart);
                     if (RT_FAILURE(rc))
                         break;
                     cbWritten += cbWrittenPart;
                 }
                 if (RT_FAILURE(rc))
-                {
-                    RTPrintf("Failed to write to file #1 at offset 2G + 1M.  rc=%Rrc\n", rc);
-                    cErrors++;
-                }
+                    RTTestIFailed("Failed to write to file #1 at offset 2G + 1M.  rc=%Rrc\n", rc);
                 else
                 {
-                    rc = RTFileSeek(File, offFile, RTFILE_SEEK_BEGIN, NULL);
+                    rc = RTFileSeek(hFile, offFile, RTFILE_SEEK_BEGIN, NULL);
                     if (RT_FAILURE(rc))
-                    {
-                        RTPrintf("Failed to seek offset %RX64 in file #1. rc=%Rrc\n", offFile, rc);
-                        cErrors++;
-                    }
+                        RTTestIFailed("Failed to seek offset %RX64 in file #1. rc=%Rrc\n", offFile, rc);
                     else
                     {
-                        char        szReadBuf[sizeof(szTestBuf)];
+                        char        szReadBuf[sizeof(g_szTestStr)];
                         size_t      cbRead = 0;
-                        while (cbRead < sizeof(szTestBuf))
+                        while (cbRead < sizeof(g_szTestStr))
                         {
                             size_t cbReadPart;
-                            rc = RTFileRead(File, &szReadBuf[cbRead], sizeof(szTestBuf) - cbRead, &cbReadPart);
+                            rc = RTFileRead(hFile, &szReadBuf[cbRead], sizeof(g_szTestStr) - cbRead, &cbReadPart);
                             if (RT_FAILURE(rc))
                                 break;
                             cbRead += cbReadPart;
                         }
                         if (RT_FAILURE(rc))
-                        {
-                            RTPrintf("Failed to read from file #1 at offset 2G + 1M.  rc=%Rrc\n", rc);
-                            cErrors++;
-                        }
+                            RTTestIFailed("Failed to read from file #1 at offset 2G + 1M.  rc=%Rrc\n", rc);
                         else
                         {
-                            if (!memcmp(szReadBuf, szTestBuf, sizeof(szTestBuf)))
+                            if (!memcmp(szReadBuf, g_szTestStr, sizeof(g_szTestStr)))
                                 RTPrintf("tstFile: tail write ok\n");
                             else
-                            {
-                                RTPrintf("Data read from file #1 at offset 2G + 1M differs from what we wrote there.\n");
-                                cErrors++;
-                            }
+                                RTTestIFailed("Data read from file #1 at offset 2G + 1M differs from what we wrote there.\n");
                         }
                     }
                 }
@@ -232,81 +225,81 @@ int main()
         /*
          * Some general seeking around.
          */
-        rc = RTFileSeek(File, _2G + 1, RTFILE_SEEK_BEGIN, NULL);
+        rc = RTFileSeek(hFile, _2G + 1, RTFILE_SEEK_BEGIN, NULL);
         if (RT_FAILURE(rc))
-        {
-            RTPrintf("Failed to seek to _2G + 1 in file #1. rc=%Rrc\n", rc);
-            cErrors++;
-        }
+            RTTestIFailed("Failed to seek to _2G + 1 in file #1. rc=%Rrc\n", rc);
         else
         {
-            offFile = RTFileTell(File);
+            offFile = RTFileTell(hFile);
             if (offFile != _2G + 1)
-            {
-                RTPrintf("RTFileTell -> %#llx, expected %#llx (#3)\n", offFile, _2G + 1);
-                cErrors++;
-            }
+                RTTestIFailed("RTFileTell -> %#llx, expected %#llx (#3)\n", offFile, _2G + 1);
         }
 
         /* seek end */
-        rc = RTFileSeek(File, 0, RTFILE_SEEK_END, NULL);
+        rc = RTFileSeek(hFile, 0, RTFILE_SEEK_END, NULL);
         if (RT_FAILURE(rc))
-        {
-            RTPrintf("Failed to seek to end of file #1. rc=%Rrc\n", rc);
-            cErrors++;
-        }
+            RTTestIFailed("Failed to seek to end of file #1. rc=%Rrc\n", rc);
         else
         {
-            offFile = RTFileTell(File);
-            if (offFile != _2G + _1M + sizeof(szTestBuf)) /* assuming tail write was ok. */
-            {
-                RTPrintf("RTFileTell -> %#RX64, expected %#RX64 (#4)\n", offFile, _2G + _1M + sizeof(szTestBuf));
-                cErrors++;
-            }
+            offFile = RTFileTell(hFile);
+            if (offFile != _2G + _1M + sizeof(g_szTestStr)) /* assuming tail write was ok. */
+                RTTestIFailed("RTFileTell -> %#RX64, expected %#RX64 (#4)\n", offFile, _2G + _1M + sizeof(g_szTestStr));
         }
 
         /* seek start */
-        rc = RTFileSeek(File, 0, RTFILE_SEEK_BEGIN, NULL);
+        rc = RTFileSeek(hFile, 0, RTFILE_SEEK_BEGIN, NULL);
         if (RT_FAILURE(rc))
-        {
-            RTPrintf("Failed to seek to end of file #1. rc=%Rrc\n", rc);
-            cErrors++;
-        }
+            RTTestIFailed("Failed to seek to end of file #1. rc=%Rrc\n", rc);
         else
         {
-            offFile = RTFileTell(File);
+            offFile = RTFileTell(hFile);
             if (offFile != 0)
-            {
-                RTPrintf("RTFileTell -> %#llx, expected 0 (#5)\n", offFile);
-                cErrors++;
-            }
+                RTTestIFailed("RTFileTell -> %#llx, expected 0 (#5)\n", offFile);
         }
     }
+}
 
-
-    /*
-     * Cleanup.
-     */
-    rc = RTFileClose(File);
-    if (RT_FAILURE(rc))
-    {
-        RTPrintf("Failed to close file #1. rc=%Rrc\n", rc);
-        cErrors++;
-    }
-    rc = RTFileDelete("tstFile#1.tst");
-    if (RT_FAILURE(rc))
-    {
-        RTPrintf("Failed to delete file #1. rc=%Rrc\n", rc);
-        cErrors++;
-    }
+int main()
+{
+    RTTEST      hTest;
+    RTEXITCODE rcExit = RTTestInitAndCreate("tstRTFile", &hTest);
+    if (rcExit != RTEXITCODE_SUCCESS)
+        return rcExit;
+    RTTestBanner(hTest);
 
     /*
-     * Summary
+     * Some basic tests.
      */
-    if (cErrors == 0)
-        RTPrintf("tstFile: SUCCESS\n");
-    else
-        RTPrintf("tstFile: FAILURE - %d errors\n", cErrors);
-    return !!cErrors;
+    RTTestSub(hTest, "Basics");
+    int rc = -1;
+    RTFILE hFile = NIL_RTFILE;
+    RTTESTI_CHECK_RC(rc = RTFileOpen(&hFile, "tstFile#1.tst", RTFILE_O_READWRITE | RTFILE_O_CREATE_REPLACE | RTFILE_O_DENY_NONE),
+                     VINF_SUCCESS);
+    if (RT_SUCCESS(rc))
+    {
+        tstBasics(hFile);
+        RTTESTI_CHECK_RC(RTFileClose(hFile), VINF_SUCCESS);
+        RTTESTI_CHECK_RC(RTFileDelete("tstFile#1.tst"), VINF_SUCCESS);
+    }
+
+    /*
+     * Test appending & truncation.
+     */
+    RTTestSub(hTest, "Basics");
+    hFile = NIL_RTFILE;
+    RTTESTI_CHECK_RC(rc = RTFileOpen(&hFile, "tstFile#2.tst",
+                                     RTFILE_O_READWRITE | RTFILE_O_CREATE_REPLACE | RTFILE_O_DENY_NONE | RTFILE_O_APPEND),
+                     VINF_SUCCESS);
+    if (RT_SUCCESS(rc))
+    {
+        tstAppend(hFile);
+        RTTESTI_CHECK_RC(RTFileClose(hFile), VINF_SUCCESS);
+        RTTESTI_CHECK_RC(RTFileDelete("tstFile#2.tst"), VINF_SUCCESS);
+    }
+
+    /*
+     * Done.
+     */
+    return RTTestSummaryAndDestroy(hTest);
 }
 
