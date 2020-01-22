@@ -178,7 +178,8 @@ typedef struct RTFTPSERVERCLIENTSTATE
 {
     /** Authenticated user (name). If NULL, no user has been logged in (yet). */
     char                       *pszUser;
-    /** Current working directory. If NULL, '/' must be assumed. */
+    /** Current working directory.
+     *  *Always* relative to the server's root directory (which is only is known to the actual implemenation). */
     char                       *pszCWD;
     /** Number of failed login attempts. */
     uint8_t                     cFailedLoginAttempts;
@@ -311,16 +312,36 @@ typedef struct RTFTPSERVERCALLBACKS
      */
     DECLCALLBACKMEMBER(int,  pfnOnPathUp)(PRTFTPCALLBACKDATA pData);
     /**
-     * Callback which gets invoked when the client wants to list a directory or file.
+     * Callback which gets invoked when the server wants to open a directory for reading.
      *
-     * @returns VBox status code. VINF_EOF if listing is complete.
+     * @returns VBox status code. VERR_NO_MORE_FILES if listing is complete.
      * @param   pData           Pointer to generic callback data.
      * @param   pcszPath        Path of file / directory to list. Optional. If NULL, the current directory will be listed.
-     * @param   pvData          Buffer where to return the listing data.
-     * @param   cbData          Size (in bytes) of buffer where to return the listing data.
-     * @param   pcbRead         How many bytes were read.
+     * @param   ppvHandle       Where to return the opaque directory handle.
      */
-    DECLCALLBACKMEMBER(int,  pfnOnList)(PRTFTPCALLBACKDATA pData, const char *pcszPath, void *pvData, size_t cbData, size_t *pcbRead);
+    DECLCALLBACKMEMBER(int,  pfnOnDirOpen)(PRTFTPCALLBACKDATA pData, const char *pcszPath, void **ppvHandle);
+    /**
+     * Callback which gets invoked when the server wants to close a directory handle.
+     *
+     * @returns VBox status code. VERR_NO_MORE_FILES if listing is complete.
+     * @param   pData           Pointer to generic callback data.
+     * @param   pvHandle        Directory handle to close.
+     */
+    DECLCALLBACKMEMBER(int,  pfnOnDirClose)(PRTFTPCALLBACKDATA pData, void *pvHandle);
+    /**
+     * Callback which gets invoked when the server wants to read the next directory entry.
+     *
+     * @returns VBox status code. VERR_NO_MORE_FILES if listing is complete.
+     * @param   pData           Pointer to generic callback data.
+     * @param   pvHandle        Directory handle to use for reading.
+     * @param   pInfo           Where to store the FS object information.
+     * @param   ppszEntry       Where to return the allocated string of the entry name.
+     * @param   ppszOwner       Where to return the allocated string of the owner.
+     * @param   ppszGroup       Where to return the allocated string of the group.
+     * @param   ppszTarget      Where to return the allocated string of the target (if a link).
+     */
+    DECLCALLBACKMEMBER(int, pfnOnDirRead)(PRTFTPCALLBACKDATA pData, void *pvHandle, char **ppszEntry,
+                                          PRTFSOBJINFO pInfo, char **ppszOwner, char **ppszGroup, char **ppszTarget);
 } RTFTPSERVERCALLBACKS;
 /** Pointer to a FTP server callback data table. */
 typedef RTFTPSERVERCALLBACKS *PRTFTPSERVERCALLBACKS;

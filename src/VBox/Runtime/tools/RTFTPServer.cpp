@@ -50,6 +50,7 @@
 #include <iprt/file.h>
 #include <iprt/getopt.h>
 #include <iprt/initterm.h>
+#include <iprt/mem.h>
 #include <iprt/message.h>
 #include <iprt/path.h>
 #include <iprt/stream.h>
@@ -72,6 +73,13 @@ typedef struct FTPSERVERDATA
     RTFILE hFile;
 } FTPSERVERDATA;
 typedef FTPSERVERDATA *PFTPSERVERDATA;
+
+typedef struct FTPDIRHANDLE
+{
+    /** The VFS (chain) handle to use for this directory. */
+    RTVFSDIR hVfsDir;
+} FTPDIRHANDLE;
+typedef FTPDIRHANDLE *PFTPDIRHANDLE;
 
 
 /*********************************************************************************************************************************
@@ -307,36 +315,133 @@ static DECLCALLBACK(int) onPathUp(PRTFTPCALLBACKDATA pData)
     return VINF_SUCCESS;
 }
 
-static DECLCALLBACK(int) onList(PRTFTPCALLBACKDATA pData, const char *pcszPath, void *pvData, size_t cbData, size_t *pcbRead)
+static DECLCALLBACK(int) onDirOpen(PRTFTPCALLBACKDATA pData, const char *pcszPath, void **ppvHandle)
 {
-    RT_NOREF(pData, pcszPath, pvData, cbData, pcbRead);
-
-#if 0
     PFTPSERVERDATA pThis = (PFTPSERVERDATA)pData->pvUser;
     Assert(pData->cbUser == sizeof(FTPSERVERDATA));
 
-    RTFILE hFile;
-    int rc = RTFileOpen(&hFile, pcszPath ? pcszPath : pThis->szCWD,
-                        RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_WRITE);
+    PFTPDIRHANDLE pHandle = (PFTPDIRHANDLE)RTMemAllocZ(sizeof(FTPDIRHANDLE));
+    if (!pHandle)
+        return VERR_NO_MEMORY;
+
+    /* Construct absolute path. */
+    char *pszPathAbs = NULL;
+    int rc = RTStrAAppend(&pszPathAbs, pThis->szRootDir);
+    AssertRCReturn(rc, rc);
+    rc = RTStrAAppend(&pszPathAbs, pcszPath);
+    AssertRCReturn(rc, rc);
+
+    RTPrintf("Opening directory '%s'\n", pszPathAbs);
+
+    rc = RTVfsChainOpenDir(pszPathAbs, 0 /*fFlags*/, &pHandle->hVfsDir, NULL /* poffError */, NULL /* pErrInfo */);
     if (RT_SUCCESS(rc))
     {
-        RTFSOBJINFO fsObjInfo;
-        rc = RTFileQueryInfo(hFile, &fsObjInfo, RTFSOBJATTRADD_NOTHING);
-        if (RT_SUCCESS(rc))
+        *ppvHandle = pHandle;
+    }
+    else
+    {
+        RTMemFree(pHandle);
+    }
+
+    RTStrFree(pszPathAbs);
+
+    return rc;
+}
+
+static DECLCALLBACK(int) onDirClose(PRTFTPCALLBACKDATA pData, void *pvHandle)
+{
+    RT_NOREF(pData);
+
+    PFTPDIRHANDLE pHandle = (PFTPDIRHANDLE)pvHandle;
+    AssertPtrReturn(pHandle, VERR_INVALID_POINTER);
+
+    RTVfsDirRelease(pHandle->hVfsDir);
+
+    RTMemFree(pHandle);
+    pHandle = NULL;
+
+    return VINF_SUCCESS;
+}
+
+static DECLCALLBACK(int) onDirRead(PRTFTPCALLBACKDATA pData, void *pvHandle, char **ppszEntry,
+                                   PRTFSOBJINFO pInfo, char **ppszOwner, char **ppszGroup, char **ppszTarget)
+{
+    RT_NOREF(pData);
+    RT_NOREF(ppszTarget); /* No symlinks yet */
+
+    PFTPDIRHANDLE pHandle = (PFTPDIRHANDLE)pvHandle;
+    AssertPtrReturn(pHandle, VERR_INVALID_POINTER);
+
+    size_t          cbDirEntryAlloced = sizeof(RTDIRENTRYEX);
+    PRTDIRENTRYEX   pDirEntry         = (PRTDIRENTRYEX)RTMemTmpAlloc(cbDirEntryAlloced);
+    if (!pDirEntry)
+        return VERR_NO_MEMORY;
+
+    int rc;
+
+    for (;;)
+    {
+        size_t cbDirEntry = cbDirEntryAlloced;
+        rc = RTVfsDirReadEx(pHandle->hVfsDir, pDirEntry, &cbDirEntry, RTFSOBJATTRADD_UNIX);
+        if (RT_FAILURE(rc))
         {
-            rc = fsObjInfoToStr(&fsObjInfo, (char *)pvData, cbData);
+            if (rc == VERR_BUFFER_OVERFLOW)
+            {
+                RTMemTmpFree(pDirEntry);
+                cbDirEntryAlloced = RT_ALIGN_Z(RT_MIN(cbDirEntry, cbDirEntryAlloced) + 64, 64);
+                pDirEntry  = (PRTDIRENTRYEX)RTMemTmpAlloc(cbDirEntryAlloced);
+                if (pDirEntry)
+                    continue;
+            }
+            else if (rc != VERR_NO_MORE_FILES)
+                break;
         }
 
-        RTFileClose(hFile);
-    }
-#endif
+        if (RT_SUCCESS(rc))
+        {
+            if (pDirEntry->Info.Attr.u.Unix.uid != NIL_RTUID)
+            {
+                RTFSOBJINFO OwnerInfo;
+                rc = RTVfsDirQueryPathInfo(pHandle->hVfsDir,
+                                           pDirEntry->szName, &OwnerInfo, RTFSOBJATTRADD_UNIX_OWNER, RTPATH_F_ON_LINK);
+                if (   RT_SUCCESS(rc)
+                    && OwnerInfo.Attr.u.UnixOwner.szName[0])
+                {
+                    *ppszOwner = RTStrDup(&OwnerInfo.Attr.u.UnixOwner.szName[0]);
+                    if (!*ppszOwner)
+                        rc = VERR_NO_MEMORY;
+                }
+            }
 
-    RTStrPrintf((char *)pvData, cbData, "-rwxr-xr-x 1 johndoe users    0 Apr  6  2017 foobar\r\n");
+            if (   RT_SUCCESS(rc)
+                && pDirEntry->Info.Attr.u.Unix.gid != NIL_RTGID)
+            {
+                RTFSOBJINFO GroupInfo;
+                rc = RTVfsDirQueryPathInfo(pHandle->hVfsDir,
+                                           pDirEntry->szName, &GroupInfo, RTFSOBJATTRADD_UNIX_GROUP, RTPATH_F_ON_LINK);
+                if (   RT_SUCCESS(rc)
+                    && GroupInfo.Attr.u.UnixGroup.szName[0])
+                {
+                    *ppszGroup = RTStrDup(&GroupInfo.Attr.u.UnixGroup.szName[0]);
+                    if (!*ppszGroup)
+                        rc = VERR_NO_MEMORY;
+                }
+            }
+        }
 
-    *pcbRead = strlen((char *)pvData);
+        *ppszEntry = RTStrDup(pDirEntry->szName);
+        AssertPtrReturn(*ppszEntry, VERR_NO_MEMORY);
 
-    /** @todo We ASSUME we're done here for now. */
-    return VINF_EOF;
+        *pInfo = pDirEntry->Info;
+
+        break;
+
+    } /* for */
+
+    RTMemTmpFree(pDirEntry);
+    pDirEntry = NULL;
+
+    return rc;
 }
 
 int main(int argc, char **argv)
@@ -450,7 +555,9 @@ int main(int argc, char **argv)
         Callbacks.pfnOnPathSetCurrent   = onPathSetCurrent;
         Callbacks.pfnOnPathGetCurrent   = onPathGetCurrent;
         Callbacks.pfnOnPathUp           = onPathUp;
-        Callbacks.pfnOnList             = onList;
+        Callbacks.pfnOnDirOpen          = onDirOpen;
+        Callbacks.pfnOnDirClose         = onDirClose;
+        Callbacks.pfnOnDirRead          = onDirRead;
 
         RTFTPSERVER hFTPServer;
         rc = RTFtpServerCreate(&hFTPServer, szAddress, uPort, &Callbacks,

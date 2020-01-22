@@ -29,6 +29,7 @@
  * Known limitations so far:
  * - UTF-8 support only.
  * - Only supports ASCII + binary (image type) file streams for now.
+ * - No directory / file caching yet.
  * - No support for writing / modifying ("DELE", "MKD", "RMD", "STOR", ++).
  * - No FTPS / SFTP support.
  * - No passive mode ("PASV") support.
@@ -84,6 +85,53 @@ typedef struct RTFTPSERVERINTERNAL
 } RTFTPSERVERINTERNAL;
 /** Pointer to an internal FTP server instance. */
 typedef RTFTPSERVERINTERNAL *PRTFTPSERVERINTERNAL;
+
+/**
+ * FTP directory entry.
+ */
+typedef struct RTFTPDIRENTRY
+{
+    /** The information about the entry. */
+    RTFSOBJINFO Info;
+    /** Symbolic link target (allocated after the name). */
+    const char *pszTarget;
+    /** Owner if applicable (allocated after the name). */
+    const char *pszOwner;
+    /** Group if applicable (allocated after the name). */
+    const char *pszGroup;
+    /** The length of szName. */
+    size_t      cchName;
+    /** The entry name. */
+    char        szName[RT_FLEXIBLE_ARRAY];
+} RTFTPDIRENTRY;
+/** Pointer to a FTP directory entry. */
+typedef RTFTPDIRENTRY *PRTFTPDIRENTRY;
+/** Pointer to a FTP directory entry pointer. */
+typedef PRTFTPDIRENTRY *PPRTFTPDIRENTRY;
+
+/**
+ * Collection of directory entries.
+ * Used for also caching stuff.
+ */
+typedef struct RTFTPDIRCOLLECTION
+{
+    /** Current size of papEntries. */
+    size_t                cEntries;
+    /** Memory allocated for papEntries. */
+    size_t                cEntriesAllocated;
+    /** Current entries pending sorting and display. */
+    PPRTFTPDIRENTRY       papEntries;
+
+    /** Total number of bytes allocated for the above entries. */
+    uint64_t              cbTotalAllocated;
+    /** Total number of file content bytes.    */
+    uint64_t              cbTotalFiles;
+
+} RTFTPDIRCOLLECTION;
+/** Pointer to a directory collection. */
+typedef RTFTPDIRCOLLECTION *PRTFTPDIRCOLLECTION;
+/** Pointer to a directory entry collection pointer. */
+typedef PRTFTPDIRCOLLECTION *PPRTFTPDIRCOLLECTION;
 
 
 /*********************************************************************************************************************************
@@ -467,21 +515,59 @@ static int rtFtpServerSendReplyStr(PRTFTPSERVERCLIENT pClient, const char *pcszF
 }
 
 /**
+ * Validates if a given absolute path is valid or not.
+ *
+ * @returns \c true if path is valid, or \c false if not.
+ * @param   pcszPath            Path to check.
+ * @param   fIsAbsolute         Whether the path to check is an absolute path or not.
+ */
+static bool rtFtpServerPathIsValid(const char *pcszPath, bool fIsAbsolute)
+{
+    if (!pcszPath)
+        return false;
+
+    bool fIsValid =    strlen(pcszPath)
+                    && RTStrIsValidEncoding(pcszPath)
+                    && RTStrStr(pcszPath, "..") == NULL;     /** @todo Very crude for now -- improve this. */
+    if (   fIsValid
+        && fIsAbsolute)
+    {
+        RTFSOBJINFO objInfo;
+        int rc2 = RTPathQueryInfo(pcszPath, &objInfo, RTFSOBJATTRADD_NOTHING);
+        if (RT_SUCCESS(rc2))
+        {
+            fIsValid =    RTFS_IS_DIRECTORY(objInfo.Attr.fMode)
+                       || RTFS_IS_FILE(objInfo.Attr.fMode);
+
+            /* No symlinks and other stuff not allowed. */
+        }
+        else
+            fIsValid = false;
+    }
+
+    LogFlowFunc(("pcszPath=%s -> %RTbool\n", pcszPath, fIsValid));
+    return fIsValid;
+}
+
+/**
  * Sets the current working directory for a client.
  *
  * @returns VBox status code.
- * @param   pClient             Client to set current working directory for.
+ * @param   pState              Client state to set current working directory for.
  * @param   pcszPath            Working directory to set.
  */
-static int rtFtpSetCWD(PRTFTPSERVERCLIENT pClient, const char *pcszPath)
+static int rtFtpSetCWD(PRTFTPSERVERCLIENTSTATE pState, const char *pcszPath)
 {
-    RTStrFree(pClient->State.pszCWD);
+    RTStrFree(pState->pszCWD);
 
-    pClient->State.pszCWD = RTStrDup(pcszPath);
+    if (!rtFtpServerPathIsValid(pcszPath, false /* fIsAbsolute */))
+        return VERR_INVALID_PARAMETER;
 
-    LogFlowFunc(("Current CWD is now '%s'\n", pClient->State.pszCWD));
+    pState->pszCWD = RTStrDup(pcszPath);
 
-    int rc = pClient->State.pszCWD ? VINF_SUCCESS : VERR_NO_MEMORY;
+    LogFlowFunc(("Current CWD is now '%s'\n", pState->pszCWD));
+
+    int rc = pState->pszCWD ? VINF_SUCCESS : VERR_NO_MEMORY;
     AssertRC(rc);
     return rc;
 }
@@ -788,6 +874,36 @@ static int rtFtpServerDataConnWrite(PRTFTPSERVERDATACONN pDataConn, const void *
 }
 
 /**
+ * Does a printf-style write on a data connection.
+ *
+ * @returns VBox status code.
+ * @param   pDataConn           Data connection to write to.
+ * @param   enmReply            Reply code to send.
+ * @param   pcszFormat          Format string of message to send with the reply code.
+ */
+static int rtFtpServerDataConnPrintf(PRTFTPSERVERDATACONN pDataConn, const char *pcszFormat, ...)
+{
+    va_list args;
+    va_start(args, pcszFormat);
+    char *pszFmt = NULL;
+    const int cch = RTStrAPrintfV(&pszFmt, pcszFormat, args);
+    va_end(args);
+    AssertReturn(cch > 0, VERR_NO_MEMORY);
+
+    char *pszMsg = NULL;
+    int rc = RTStrAAppend(&pszMsg, pszFmt);
+    AssertRCReturn(rc, rc);
+
+    RTStrFree(pszFmt);
+
+    rc = RTTcpWrite(pDataConn->hSocket, pszMsg, strlen(pszMsg));
+
+    RTStrFree(pszMsg);
+
+    return rc;
+}
+
+/**
  * Data connection thread for writing (sending) a file to the client.
  *
  * @returns VBox status code.
@@ -1068,14 +1184,20 @@ static int rtFtpServerHandleCDUP(PRTFTPSERVERCLIENT pClient, uint8_t cArgs, cons
             RTFTPSERVER_HANDLE_CALLBACK_VA(pfnOnPathGetCurrent, pszPath, cbPath);
 
             if (RT_SUCCESS(rc))
-                rtFtpSetCWD(pClient, pszPath);
+                rc = rtFtpSetCWD(&pClient->State, pszPath);
 
             RTStrFree(pszPath);
+
+            rc = rtFtpServerSendReplyRc(pClient, RTFTPSERVER_REPLY_OKAY);
         }
         else
             rc = VERR_NO_MEMORY;
+    }
 
-        return rtFtpServerSendReplyRc(pClient, RTFTPSERVER_REPLY_OKAY);
+    if (RT_FAILURE(rc))
+    {
+        int rc2 = rtFtpServerSendReplyRc(pClient, RTFTPSERVER_REPLY_CONN_REQ_FILE_ACTION_NOT_TAKEN);
+        AssertRC(rc2);
     }
 
     return rc;
@@ -1090,16 +1212,17 @@ static int rtFtpServerHandleCWD(PRTFTPSERVERCLIENT pClient, uint8_t cArgs, const
 
     const char *pcszPath = apcszArgs[0];
 
+    if (!rtFtpServerPathIsValid(pcszPath, false /* fIsAbsolute */))
+        return VERR_INVALID_PARAMETER;
+
     RTFTPSERVER_HANDLE_CALLBACK_VA(pfnOnPathSetCurrent, pcszPath);
 
     if (RT_SUCCESS(rc))
-    {
-        rtFtpSetCWD(pClient, pcszPath);
+        rc = rtFtpSetCWD(&pClient->State, pcszPath);
 
-        return rtFtpServerSendReplyRc(pClient, RTFTPSERVER_REPLY_OKAY);
-    }
-
-    return rc;
+    return rtFtpServerSendReplyRc(pClient,
+                                    RT_SUCCESS(rc)
+                                  ? RTFTPSERVER_REPLY_OKAY : RTFTPSERVER_REPLY_CONN_REQ_FILE_ACTION_NOT_TAKEN);
 }
 
 static int rtFtpServerHandleFEAT(PRTFTPSERVERCLIENT pClient, uint8_t cArgs, const char * const *apcszArgs)
@@ -1115,6 +1238,323 @@ static int rtFtpServerHandleFEAT(PRTFTPSERVERCLIENT pClient, uint8_t cArgs, cons
     }
 
     return rc;
+}
+
+/**
+ * Formats the given user ID according to the specified options.
+ *
+ * @returns pszDst
+ * @param   uid             The UID to format.
+ * @param   pszOwner        The owner returned by the FS.
+ * @param   pszDst          The output buffer.
+ * @param   cbDst           The output buffer size.
+ */
+static const char *rtFtpServerDecimalFormatOwner(RTUID uid, const char *pszOwner, char *pszDst, size_t cbDst)
+{
+    if (pszOwner)
+    {
+        RTStrCopy(pszDst, cbDst, pszOwner);
+        return pszDst;
+    }
+    if (uid == NIL_RTUID)
+        return "<Nil>";
+
+    RTStrFormatU64(pszDst, cbDst, uid, 10, 0, 0, 0);
+    return pszDst;
+}
+
+/**
+ * Formats the given group ID according to the specified options.
+ *
+ * @returns pszDst
+ * @param   gid             The GID to format.
+ * @param   pszOwner        The owner returned by the FS.
+ * @param   pszDst          The output buffer.
+ * @param   cbDst           The output buffer size.
+ */
+static const char *rtFtpServerDecimalFormatGroup(RTGID gid, const char *pszGroup, char *pszDst, size_t cbDst)
+{
+    if (pszGroup)
+    {
+        RTStrCopy(pszDst, cbDst, pszGroup);
+        return pszDst;
+    }
+    if (gid == NIL_RTGID)
+        return "<Nil>";
+
+    RTStrFormatU64(pszDst, cbDst, gid, 10, 0, 0, 0);
+    return pszDst;
+}
+
+/**
+ * Format file size.
+ */
+static const char *rtFtpServerFormatSize(uint64_t cb, char *pszDst, size_t cbDst)
+{
+    RTStrFormatU64(pszDst, cbDst, cb, 10, 0, 0, 0);
+    return pszDst;
+}
+
+/**
+ * Formats the given timestamp according to the desired --time-style.
+ *
+ * @returns pszDst
+ * @param   pTimestamp      The timestamp.
+ * @param   pszDst          The output buffer.
+ * @param   cbDst           The output buffer size.
+ */
+static const char *rtFtpServerFormatTimestamp(PCRTTIMESPEC pTimestamp, char *pszDst, size_t cbDst)
+{
+    /** @todo timestamp formatting according to the given style.   */
+    return RTTimeSpecToString(pTimestamp, pszDst, cbDst);
+}
+
+/**
+ * Format name, i.e. escape, hide, quote stuff.
+ */
+static const char *rtFtpServerFormatName(const char *pszName, char *pszDst, size_t cbDst)
+{
+    /** @todo implement name formatting.   */
+    RT_NOREF(pszDst, cbDst);
+    return pszName;
+}
+
+/**
+ * Figures out the length for a 32-bit number when formatted as decimal.
+ * @returns Number of digits.
+ * @param   uValue              The number.
+ */
+DECLINLINE(size_t) rtFtpServerDecimalFormatLengthU32(uint32_t uValue)
+{
+    if (uValue < 10)
+        return 1;
+    if (uValue < 100)
+        return 2;
+    if (uValue < 1000)
+        return 3;
+    if (uValue < 10000)
+        return 4;
+    if (uValue < 100000)
+        return 5;
+    if (uValue < 1000000)
+        return 6;
+    if (uValue < 10000000)
+        return 7;
+    if (uValue < 100000000)
+        return 8;
+    if (uValue < 1000000000)
+        return 9;
+    return 10;
+}
+
+/**
+ * Allocates a new directory collection.
+ *
+ * @returns The collection allocated.
+ */
+static PRTFTPDIRCOLLECTION rtFtpServerDataConnDirCollAlloc(void)
+{
+    return (PRTFTPDIRCOLLECTION)RTMemAllocZ(sizeof(RTFTPDIRCOLLECTION));
+}
+
+/**
+ * Frees a directory collection and its entries.
+ *
+ * @param   pCollection         The collection to free.
+ */
+static void rtFtpServerDataConnDirCollFree(PRTFTPDIRCOLLECTION pCollection)
+{
+    PPRTFTPDIRENTRY    papEntries  = pCollection->papEntries;
+    size_t             j           = pCollection->cEntries;
+    while (j-- > 0)
+    {
+        RTMemFree(papEntries[j]);
+        papEntries[j] = NULL;
+    }
+    RTMemFree(papEntries);
+    pCollection->papEntries        = NULL;
+    pCollection->cEntries          = 0;
+    pCollection->cEntriesAllocated = 0;
+    RTMemFree(pCollection);
+}
+
+/**
+ * Adds one entry to a collection.
+ *
+ * @returns VBox status code.
+ * @param   pCollection         The collection to add entry to.
+ * @param   pszEntry            The entry name.
+ * @param   pInfo               The entry info.
+ * @param   pszOwner            The owner name if available, otherwise NULL.
+ * @param   pszGroup            The group anme if available, otherwise NULL.
+ * @param   pszTarget           The symbolic link target if applicable and
+ *                              available, otherwise NULL.
+ */
+static int rtFtpServerDataConnDirCollAddEntry(PRTFTPDIRCOLLECTION pCollection, const char *pszEntry, PRTFSOBJINFO pInfo,
+                                              const char *pszOwner, const char *pszGroup, const char *pszTarget)
+{
+
+    /* Make sure there is space in the collection for the new entry. */
+    if (pCollection->cEntries >= pCollection->cEntriesAllocated)
+    {
+        size_t cNew = pCollection->cEntriesAllocated ? pCollection->cEntriesAllocated * 2 : 16;
+        void *pvNew = RTMemRealloc(pCollection->papEntries, cNew * sizeof(pCollection->papEntries[0]));
+        if (!pvNew)
+            return VERR_NO_MEMORY;
+        pCollection->papEntries        = (PPRTFTPDIRENTRY)pvNew;
+        pCollection->cEntriesAllocated = cNew;
+    }
+
+    /* Create and insert a new entry. */
+    size_t const cchEntry = strlen(pszEntry);
+    size_t const cbOwner  = pszOwner  ? strlen(pszOwner)  + 1 : 0;
+    size_t const cbGroup  = pszGroup  ? strlen(pszGroup)  + 1 : 0;
+    size_t const cbTarget = pszTarget ? strlen(pszTarget) + 1 : 0;
+    size_t const cbEntry  = RT_UOFFSETOF_DYN(RTFTPDIRENTRY, szName[cchEntry + 1 + cbOwner + cbGroup + cbTarget]);
+    PRTFTPDIRENTRY pEntry = (PRTFTPDIRENTRY)RTMemAlloc(cbEntry);
+    if (pEntry)
+    {
+        pEntry->Info      = *pInfo;
+        pEntry->pszTarget = NULL; /** @todo symbolic links. */
+        pEntry->pszOwner  = NULL;
+        pEntry->pszGroup  = NULL;
+        pEntry->cchName   = cchEntry;
+        memcpy(pEntry->szName, pszEntry, cchEntry);
+        pEntry->szName[cchEntry] = '\0';
+
+        char *psz = &pEntry->szName[cchEntry + 1];
+        if (pszTarget)
+        {
+            pEntry->pszTarget = psz;
+            memcpy(psz, pszTarget, cbTarget);
+            psz += cbTarget;
+        }
+        if (pszOwner)
+        {
+            pEntry->pszOwner = psz;
+            memcpy(psz, pszOwner, cbOwner);
+            psz += cbOwner;
+        }
+        if (pszGroup)
+        {
+            pEntry->pszGroup = psz;
+            memcpy(psz, pszGroup, cbGroup);
+        }
+
+        pCollection->papEntries[pCollection->cEntries++] = pEntry;
+        pCollection->cbTotalAllocated += pEntry->Info.cbAllocated;
+        pCollection->cbTotalFiles     += pEntry->Info.cbObject;
+        return VINF_SUCCESS;
+    }
+    return VERR_NO_MEMORY;
+}
+
+static int rtFtpServerDataConnDirCollWrite(PRTFTPSERVERDATACONN pDataConn, PRTFTPDIRCOLLECTION pCollection,
+                                           char *pszTmp, size_t cbTmp)
+{
+    /*
+     * Figure the width of the size, the link count, the uid, the gid, and the inode columns.
+     */
+    size_t cchSizeCol  = 1;
+    size_t cchLinkCol  = 1;
+    size_t cchUidCol   = 1;
+    size_t cchGidCol   = 1;
+
+    size_t i = pCollection->cEntries;
+    while (i-- > 0)
+    {
+        PRTFTPDIRENTRY pEntry = pCollection->papEntries[i];
+
+        rtFtpServerFormatSize(pEntry->Info.cbObject, pszTmp, cbTmp);
+        size_t cchTmp = strlen(pszTmp);
+        if (cchTmp > cchSizeCol)
+            cchSizeCol = cchTmp;
+
+        cchTmp = rtFtpServerDecimalFormatLengthU32(pEntry->Info.Attr.u.Unix.cHardlinks) + 1;
+        if (cchTmp > cchLinkCol)
+            cchLinkCol = cchTmp;
+
+        rtFtpServerDecimalFormatOwner(pEntry->Info.Attr.u.Unix.uid, pEntry->pszOwner, pszTmp, cbTmp);
+        cchTmp = strlen(pszTmp);
+        if (cchTmp > cchUidCol)
+            cchUidCol = cchTmp;
+
+        rtFtpServerDecimalFormatGroup(pEntry->Info.Attr.u.Unix.gid, pEntry->pszGroup, pszTmp, cbTmp);
+        cchTmp = strlen(pszTmp);
+        if (cchTmp > cchGidCol)
+            cchGidCol = cchTmp;
+    }
+
+    size_t offTime = RT_UOFFSETOF(RTFTPDIRENTRY, Info.ModificationTime);
+
+    /*
+     * Display the entries.
+     */
+    for (i = 0; i < pCollection->cEntries; i++)
+    {
+        PRTFTPDIRENTRY pEntry = pCollection->papEntries[i];
+
+        RTFMODE fMode = pEntry->Info.Attr.fMode;
+        switch (fMode & RTFS_TYPE_MASK)
+        {
+            case RTFS_TYPE_FIFO:        rtFtpServerDataConnPrintf(pDataConn, "f"); break;
+            case RTFS_TYPE_DEV_CHAR:    rtFtpServerDataConnPrintf(pDataConn, "c"); break;
+            case RTFS_TYPE_DIRECTORY:   rtFtpServerDataConnPrintf(pDataConn, "d"); break;
+            case RTFS_TYPE_DEV_BLOCK:   rtFtpServerDataConnPrintf(pDataConn, "b"); break;
+            case RTFS_TYPE_FILE:        rtFtpServerDataConnPrintf(pDataConn, "-"); break;
+            case RTFS_TYPE_SYMLINK:     rtFtpServerDataConnPrintf(pDataConn, "l"); break;
+            case RTFS_TYPE_SOCKET:      rtFtpServerDataConnPrintf(pDataConn, "s"); break;
+            case RTFS_TYPE_WHITEOUT:    rtFtpServerDataConnPrintf(pDataConn, "w"); break;
+            default:                    rtFtpServerDataConnPrintf(pDataConn, "?"); AssertFailed(); break;
+        }
+        /** @todo sticy bits++ */
+        rtFtpServerDataConnPrintf(pDataConn, "%c%c%c",
+                                  fMode & RTFS_UNIX_IRUSR ? 'r' : '-',
+                                  fMode & RTFS_UNIX_IWUSR ? 'w' : '-',
+                                  fMode & RTFS_UNIX_IXUSR ? 'x' : '-');
+        rtFtpServerDataConnPrintf(pDataConn, "%c%c%c",
+                                  fMode & RTFS_UNIX_IRGRP ? 'r' : '-',
+                                  fMode & RTFS_UNIX_IWGRP ? 'w' : '-',
+                                  fMode & RTFS_UNIX_IXGRP ? 'x' : '-');
+        rtFtpServerDataConnPrintf(pDataConn, "%c%c%c",
+                                  fMode & RTFS_UNIX_IROTH ? 'r' : '-',
+                                  fMode & RTFS_UNIX_IWOTH ? 'w' : '-',
+                                  fMode & RTFS_UNIX_IXOTH ? 'x' : '-');
+
+        rtFtpServerDataConnPrintf(pDataConn, " %c%c%c%c%c%c%c%c%c%c%c%c%c%c",
+                                  fMode & RTFS_DOS_READONLY          ? 'R' : '-',
+                                  fMode & RTFS_DOS_HIDDEN            ? 'H' : '-',
+                                  fMode & RTFS_DOS_SYSTEM            ? 'S' : '-',
+                                  fMode & RTFS_DOS_DIRECTORY         ? 'D' : '-',
+                                  fMode & RTFS_DOS_ARCHIVED          ? 'A' : '-',
+                                  fMode & RTFS_DOS_NT_DEVICE         ? 'd' : '-',
+                                  fMode & RTFS_DOS_NT_NORMAL         ? 'N' : '-',
+                                  fMode & RTFS_DOS_NT_TEMPORARY      ? 'T' : '-',
+                                  fMode & RTFS_DOS_NT_SPARSE_FILE    ? 'P' : '-',
+                                  fMode & RTFS_DOS_NT_REPARSE_POINT  ? 'J' : '-',
+                                  fMode & RTFS_DOS_NT_COMPRESSED     ? 'C' : '-',
+                                  fMode & RTFS_DOS_NT_OFFLINE        ? 'O' : '-',
+                                  fMode & RTFS_DOS_NT_NOT_CONTENT_INDEXED ? 'I' : '-',
+                                  fMode & RTFS_DOS_NT_ENCRYPTED      ? 'E' : '-');
+
+        rtFtpServerDataConnPrintf(pDataConn, " %*u",
+                                  cchLinkCol, pEntry->Info.Attr.u.Unix.cHardlinks);
+        if (cchUidCol)
+            rtFtpServerDataConnPrintf(pDataConn, " %*s", cchUidCol,
+                                      rtFtpServerDecimalFormatOwner(pEntry->Info.Attr.u.Unix.uid, pEntry->pszOwner, pszTmp, cbTmp));
+        if (cchGidCol)
+            rtFtpServerDataConnPrintf(pDataConn, " %*s", cchGidCol,
+                                      rtFtpServerDecimalFormatGroup(pEntry->Info.Attr.u.Unix.gid, pEntry->pszGroup, pszTmp, cbTmp));
+
+        rtFtpServerDataConnPrintf(pDataConn," %*s", cchSizeCol, rtFtpServerFormatSize(pEntry->Info.cbObject, pszTmp, cbTmp));
+
+        PCRTTIMESPEC pTime = (PCRTTIMESPEC)((uintptr_t)pEntry + offTime);
+        rtFtpServerDataConnPrintf(pDataConn," %s", rtFtpServerFormatTimestamp(pTime, pszTmp, cbTmp));
+
+        rtFtpServerDataConnPrintf(pDataConn," %s\r\n", rtFtpServerFormatName(pEntry->szName, pszTmp, cbTmp));
+    }
+
+    return VINF_SUCCESS;
 }
 
 /**
@@ -1136,43 +1576,87 @@ static DECLCALLBACK(int) rtFtpServerDataConnListThread(RTTHREAD ThreadSelf, void
 
     LogFlowFuncEnter();
 
-    uint32_t cbBuf = _64K; /** @todo Improve this. */
-    void *pvBuf = RTMemAlloc(cbBuf);
-    if (!pvBuf)
-        return VERR_NO_MEMORY;
-
     int rc;
+
+    char szTmp[RTPATH_MAX * 2];
+    PRTFTPDIRCOLLECTION pColl = rtFtpServerDataConnDirCollAlloc();
+    AssertPtrReturn(pColl, VERR_NO_MEMORY);
 
     /* Set start indicator. */
     pDataConn->fStarted = true;
 
     RTThreadUserSignal(RTThreadSelf());
 
+    /* The first argument might indicate a directory to list.
+     * If no argument is given, the implementation must use the last directory set. */
+    char *pszPath = RTStrDup(  pDataConn->cArgs == 1
+                             ? pDataConn->papszArgs[0] : pDataConn->pClient->State.pszCWD); /** @todo Needs locking. */
+    AssertPtrReturn(pszPath, VERR_NO_MEMORY);
+    /* The paths already have been validated in the actual command handlers. */
+
+    void *pvHandle;
+    RTFTPSERVER_HANDLE_CALLBACK_VA(pfnOnDirOpen, pszPath, &pvHandle);
+
     for (;;)
     {
-        /* The first argument might indicate a directory to list.
-         * If no argument is given, the implementation must use the last directory set. */
-        size_t cbRead = 0;
-        RTFTPSERVER_HANDLE_CALLBACK_VA(pfnOnList,
-                                         pDataConn->cArgs == 1
-                                       ? pDataConn->papszArgs[0] : NULL, pvBuf, cbBuf, &cbRead);
+        RTFSOBJINFO objInfo;
+        RT_ZERO(objInfo);
+
+        char *pszEntry  = NULL;
+        char *pszOwner  = NULL;
+        char *pszGroup  = NULL;
+        char *pszTarget = NULL;
+
+        RTFTPSERVER_HANDLE_CALLBACK_VA(pfnOnDirRead, pvHandle, &pszEntry,
+                                       &objInfo, &pszOwner, &pszGroup, &pszTarget);
         if (RT_SUCCESS(rc))
         {
-            int rc2 = rtFtpServerDataConnWrite(pDataConn, pvBuf, cbRead, NULL /* pcbWritten */);
-            AssertRC(rc2);
+            int rc2 = rtFtpServerDataConnDirCollAddEntry(pColl, pszEntry,
+                                                         &objInfo, pszOwner, pszGroup, pszTarget);
 
-            if (rc == VINF_EOF)
-                break;
+            RTStrFree(pszEntry);
+            pszEntry = NULL;
+
+            RTStrFree(pszOwner);
+            pszOwner = NULL;
+
+            RTStrFree(pszGroup);
+            pszGroup = NULL;
+
+            RTStrFree(pszTarget);
+            pszTarget = NULL;
+
+            if (RT_SUCCESS(rc))
+                rc = rc2;
         }
         else
+        {
+            if (rc == VERR_NO_MORE_FILES)
+            {
+                rc = VINF_SUCCESS;
+                break;
+            }
+        }
+
+        if (RT_FAILURE(rc))
             break;
 
         if (ASMAtomicReadBool(&pDataConn->fStop))
             break;
     }
 
-    RTMemFree(pvBuf);
-    pvBuf = NULL;
+    RTFTPSERVER_HANDLE_CALLBACK_VA(pfnOnDirClose, pvHandle);
+    pvHandle = NULL;
+
+    if (RT_SUCCESS(rc))
+    {
+        int rc2 = rtFtpServerDataConnDirCollWrite(pDataConn, pColl, szTmp, sizeof(szTmp));
+        AssertRC(rc2);
+    }
+
+    rtFtpServerDataConnDirCollFree(pColl);
+
+    RTStrFree(pszPath);
 
     pDataConn->fStopped = true;
     pDataConn->rc       = rc;
@@ -1183,37 +1667,48 @@ static DECLCALLBACK(int) rtFtpServerDataConnListThread(RTTHREAD ThreadSelf, void
 
 static int rtFtpServerHandleLIST(PRTFTPSERVERCLIENT pClient, uint8_t cArgs, const char * const *apcszArgs)
 {
-    int rc;
+    /* If no argument is given, use the server's CWD as the path. */
+    const char *pcszPath = cArgs ? apcszArgs[0] : pClient->State.pszCWD;
+    AssertPtr(pcszPath);
 
-    RTFTPSERVER_HANDLE_CALLBACK_VA(pfnOnFileStat, cArgs ? apcszArgs[0] : NULL, NULL /* PRTFSOBJINFO */);
+    int rc = VINF_SUCCESS;
 
-    RTFTPSERVER_REPLY rcClient = RTFTPSERVER_REPLY_INVALID;
-
-    if (RT_SUCCESS(rc))
+    if (!rtFtpServerPathIsValid(pcszPath, false /* fIsAbsolute */))
     {
-        int rc2 = rtFtpServerSendReplyRc(pClient,   pClient->pDataConn
-                                                  ? RTFTPSERVER_REPLY_DATACONN_ALREADY_OPEN
-                                                  : RTFTPSERVER_REPLY_FILE_STS_OK_OPENING_DATA_CONN);
-        if (RT_SUCCESS(rc))
-            rc = rc2;
+        int rc2 = rtFtpServerSendReplyRc(pClient, RTFTPSERVER_REPLY_CONN_REQ_FILE_ACTION_NOT_TAKEN);
+        AssertRC(rc2);
+    }
+    else
+    {
+        RTFTPSERVER_HANDLE_CALLBACK_VA(pfnOnFileStat, pcszPath, NULL /* PRTFSOBJINFO */);
 
         if (RT_SUCCESS(rc))
         {
-            rc = rtFtpServerDataConnCreate(pClient, &pClient->pDataConn);
-            if (RT_SUCCESS(rc))
-            {
-                rc = rtFtpServerDataConnStart(pClient->pDataConn, rtFtpServerDataConnListThread, cArgs, apcszArgs);
-            }
-
-            rc2 = rtFtpServerSendReplyRc(pClient,   RT_SUCCESS(rc)
-                                                  ? RTFTPSERVER_REPLY_FILE_ACTION_OKAY_COMPLETED
-                                                  : RTFTPSERVER_REPLY_CLOSING_DATA_CONN);
+            int rc2 = rtFtpServerSendReplyRc(pClient,   pClient->pDataConn
+                                                      ? RTFTPSERVER_REPLY_DATACONN_ALREADY_OPEN
+                                                      : RTFTPSERVER_REPLY_FILE_STS_OK_OPENING_DATA_CONN);
             if (RT_SUCCESS(rc))
                 rc = rc2;
+
+            if (RT_SUCCESS(rc))
+            {
+                rc = rtFtpServerDataConnCreate(pClient, &pClient->pDataConn);
+                if (RT_SUCCESS(rc))
+                    rc = rtFtpServerDataConnStart(pClient->pDataConn, rtFtpServerDataConnListThread, cArgs, apcszArgs);
+
+                rc2 = rtFtpServerSendReplyRc(pClient,   RT_SUCCESS(rc)
+                                                      ? RTFTPSERVER_REPLY_FILE_ACTION_OKAY_COMPLETED
+                                                      : RTFTPSERVER_REPLY_CLOSING_DATA_CONN);
+                if (RT_SUCCESS(rc))
+                    rc = rc2;
+            }
+        }
+        else
+        {
+            int rc2 = rtFtpServerSendReplyRc(pClient, RTFTPSERVER_REPLY_CONN_REQ_FILE_ACTION_NOT_TAKEN);
+            AssertRC(rc2);
         }
     }
-    else
-        rcClient = RTFTPSERVER_REPLY_CONN_REQ_FILE_ACTION_NOT_TAKEN;
 
     return rc;
 }
@@ -1314,13 +1809,16 @@ static int rtFtpServerHandleQUIT(PRTFTPSERVERCLIENT pClient, uint8_t cArgs, cons
 {
     RT_NOREF(cArgs, apcszArgs);
 
-    rtFtpServerClientStateReset(&pClient->State);
+    int rc = VINF_SUCCESS;
 
-    int rc = rtFtpServerDataConnClose(pClient->pDataConn);
-    if (RT_SUCCESS(rc))
+    if (pClient->pDataConn)
     {
-        rtFtpServerDataConnDestroy(pClient->pDataConn);
-        pClient->pDataConn = NULL;
+        rc = rtFtpServerDataConnClose(pClient->pDataConn);
+        if (RT_SUCCESS(rc))
+        {
+            rtFtpServerDataConnDestroy(pClient->pDataConn);
+            pClient->pDataConn = NULL;
+        }
     }
 
     int rc2 = rtFtpServerSendReplyRc(pClient, RTFTPSERVER_REPLY_OKAY);
@@ -1662,6 +2160,8 @@ static int rtFtpServerProcessCommands(PRTFTPSERVERCLIENT pClient, char *pcszCmd,
         {
             RTFTPSERVER_HANDLE_CALLBACK_VA(pfnOnUserDisconnect, pClient->State.pszUser);
 
+            rtFtpServerClientStateReset(&pClient->State);
+
             Assert(rcClient == RTFTPSERVER_REPLY_INVALID);
             rcClient = RTFTPSERVER_REPLY_CLOSING_CTRL_CONN;
         }
@@ -1755,8 +2255,8 @@ static void rtFtpServerClientStateReset(PRTFTPSERVERCLIENTSTATE pState)
     RTStrFree(pState->pszUser);
     pState->pszUser = NULL;
 
-    RTStrFree(pState->pszCWD);
-    pState->pszCWD = NULL;
+    int rc2 = rtFtpSetCWD(pState, "/");
+    AssertRC(rc2);
 
     pState->cFailedLoginAttempts = 0;
     pState->tsLastCmdMs          = RTTimeMilliTS();
@@ -1792,7 +2292,7 @@ static DECLCALLBACK(int) rtFtpServerClientThread(RTSOCKET hSocket, void *pvUser)
      *       so make sure to include at least *something*.
      */
     int rc = rtFtpServerSendReplyRcEx(&Client, RTFTPSERVER_REPLY_READY_FOR_NEW_USER,
-                                      "Welcome!");
+                                     "Welcome!");
     if (RT_SUCCESS(rc))
     {
         ASMAtomicIncU32(&pThis->cClients);
