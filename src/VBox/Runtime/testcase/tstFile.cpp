@@ -285,7 +285,7 @@ int main()
     /*
      * Test appending & truncation.
      */
-    RTTestSub(hTest, "Basics");
+    RTTestSub(hTest, "Append");
     hFile = NIL_RTFILE;
     RTTESTI_CHECK_RC(rc = RTFileOpen(&hFile, "tstFile#2.tst",
                                      RTFILE_O_READWRITE | RTFILE_O_CREATE_REPLACE | RTFILE_O_DENY_NONE | RTFILE_O_APPEND),

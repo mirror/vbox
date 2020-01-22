@@ -56,6 +56,7 @@
 typedef BOOL WINAPI FNVERIFYCONSOLEIOHANDLE(HANDLE);
 typedef FNVERIFYCONSOLEIOHANDLE *PFNVERIFYCONSOLEIOHANDLE; /* No, nobody fell on the keyboard, really! */
 
+
 /**
  * This is wrapper around the ugly SetFilePointer api.
  *
@@ -752,8 +753,104 @@ RTR3DECL(int)  RTFileFlush(RTFILE hFile)
     return VINF_SUCCESS;
 }
 
+#if 1
 
-#if 0
+/**
+ * Checks the the two handles refers to the same file.
+ *
+ * @returns true if the same file, false if different ones or invalid handles.
+ * @param   hFile1              Handle \#1.
+ * @param   hFile2              Handle \#2.
+ */
+static bool rtFileIsSame(HANDLE hFile1, HANDLE hFile2)
+{
+    /*
+     * We retry in case CreationTime or the Object ID is being modified and there
+     * aren't any IndexNumber (file ID) on this kind of file system.
+     */
+    for (uint32_t iTries = 0; iTries < 3; iTries++)
+    {
+        /*
+         * Fetch data to compare (being a little lazy here).
+         */
+        struct
+        {
+            HANDLE                      hFile;
+            NTSTATUS                    rcObjId;
+            FILE_OBJECTID_INFORMATION   ObjId;
+            FILE_ALL_INFORMATION        All;
+            FILE_FS_VOLUME_INFORMATION  Vol;
+        } auData[2];
+        auData[0].hFile = hFile1;
+        auData[1].hFile = hFile2;
+
+        for (uintptr_t i = 0; i < RT_ELEMENTS(auData); i++)
+        {
+            RT_ZERO(auData[i].ObjId);
+            IO_STATUS_BLOCK Ios = RTNT_IO_STATUS_BLOCK_INITIALIZER;
+            auData[i].rcObjId = NtQueryInformationFile(auData[i].hFile, &Ios, &auData[i].ObjId, sizeof(auData[i].ObjId),
+                                                       FileObjectIdInformation);
+
+            RT_ZERO(auData[i].All);
+            RTNT_IO_STATUS_BLOCK_REINIT(&Ios);
+            NTSTATUS rcNt = NtQueryInformationFile(auData[i].hFile, &Ios, &auData[i].All, sizeof(auData[i].All),
+                                                   FileAllInformation);
+            AssertReturn(rcNt == STATUS_BUFFER_OVERFLOW /* insufficient space for name info */ || NT_SUCCESS(rcNt), false);
+
+            union
+            {
+                 FILE_FS_VOLUME_INFORMATION Info;
+                 uint8_t                    abBuf[sizeof(FILE_FS_VOLUME_INFORMATION) + 4096];
+            } uVol;
+            RT_ZERO(uVol.Info);
+            RTNT_IO_STATUS_BLOCK_REINIT(&Ios);
+            rcNt = NtQueryVolumeInformationFile(auData[i].hFile, &Ios, &uVol, sizeof(uVol), FileFsVolumeInformation);
+            if (NT_SUCCESS(rcNt))
+                auData[i].Vol = uVol.Info;
+            else
+                RT_ZERO(auData[i].Vol);
+        }
+
+        /*
+         * Compare it.
+         */
+        if (   auData[0].All.StandardInformation.Directory
+            == auData[1].All.StandardInformation.Directory)
+        { /* likely */ }
+        else
+            break;
+
+        if (   (auData[0].All.BasicInformation.FileAttributes & (FILE_ATTRIBUTE_DIRECTORY | FILE_ATTRIBUTE_DEVICE | FILE_ATTRIBUTE_REPARSE_POINT))
+            == (auData[1].All.BasicInformation.FileAttributes & (FILE_ATTRIBUTE_DIRECTORY | FILE_ATTRIBUTE_DEVICE | FILE_ATTRIBUTE_REPARSE_POINT)))
+        { /* likely */ }
+        else
+            break;
+
+        if (   auData[0].Vol.VolumeSerialNumber
+            == auData[1].Vol.VolumeSerialNumber)
+        { /* likely */ }
+        else
+            break;
+
+        if (   auData[0].All.InternalInformation.IndexNumber.QuadPart
+            == auData[1].All.InternalInformation.IndexNumber.QuadPart)
+        { /* likely */ }
+        else
+            break;
+
+        if (   !NT_SUCCESS(auData[0].rcObjId)
+            || memcmp(&auData[0].ObjId, &auData[1].ObjId, RT_UOFFSETOF(FILE_OBJECTID_INFORMATION, ExtendedInfo)) == 0)
+        {
+            if (   auData[0].All.BasicInformation.CreationTime.QuadPart
+                == auData[1].All.BasicInformation.CreationTime.QuadPart)
+                return true;
+        }
+    }
+
+    return false;
+}
+
+
 /**
  * If @a hFile is opened in append mode, try return a handle with
  * FILE_WRITE_DATA permissions.
@@ -803,23 +900,27 @@ static HANDLE rtFileReOpenAppendOnlyWithFullWriteAccess(HANDLE hFile)
                                              FILE_ATTRIBUTE_NORMAL,
                                              FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
                                              FILE_OPEN,
-                                             FILE_OPEN_FOR_BACKUP_INTENT,
+                                             FILE_OPEN_FOR_BACKUP_INTENT /*??*/,
                                              NULL /*EaBuffer*/,
                                              0 /*EaLength*/);
                 RTUtf16Free(NtName.Buffer);
                 if (NT_SUCCESS(rcNt))
                 {
-                    /** @todo Check that the two handles are for the same file object. */
-
-                    return hDupFile;
+                    /*
+                     * Check that we've opened the same file.
+                     */
+                    if (rtFileIsSame(hFile, hDupFile))
+                        return hDupFile;
+                    NtClose(hDupFile);
                 }
             }
+            AssertFailed();
         }
     }
     return INVALID_HANDLE_VALUE;
 }
-#endif
 
+#endif
 
 RTR3DECL(int) RTFileSetSize(RTFILE hFile, uint64_t cbSize)
 {
