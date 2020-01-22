@@ -56,6 +56,9 @@ public:
     /** Returns editor value. */
     KAudioControllerType value() const;
 
+    /** Returns the vector of supported values. */
+    QVector<KAudioControllerType> supportedValues() const { return m_supportedValues; }
+
 protected:
 
     /** Handles translation event. */
@@ -75,6 +78,12 @@ private:
 
     /** Holds whether descriptive label should be created. */
     bool  m_fWithLabel;
+
+    /** Holds the value to be selected. */
+    KAudioControllerType  m_enmValue;
+
+    /** Holds the vector of supported values. */
+    QVector<KAudioControllerType>  m_supportedValues;
 
     /** Holds the label instance. */
     QLabel     *m_pLabel;

@@ -22,13 +22,18 @@
 
 /* GUI includes: */
 #include "QIComboBox.h"
+#include "UICommon.h"
 #include "UIConverter.h"
 #include "UIAudioControllerEditor.h"
+
+/* COM includes: */
+#include "CSystemProperties.h"
 
 
 UIAudioControllerEditor::UIAudioControllerEditor(QWidget *pParent /* = 0 */, bool fWithLabel /* = false */)
     : QIWithRetranslateUI<QWidget>(pParent)
     , m_fWithLabel(fWithLabel)
+    , m_enmValue(KAudioControllerType_Max)
     , m_pLabel(0)
     , m_pCombo(0)
 {
@@ -39,7 +44,16 @@ void UIAudioControllerEditor::setValue(KAudioControllerType enmValue)
 {
     if (m_pCombo)
     {
-        int iIndex = m_pCombo->findData(QVariant::fromValue(enmValue));
+        /* Update cached value and
+         * combo if value has changed: */
+        if (m_enmValue != enmValue)
+        {
+            m_enmValue = enmValue;
+            populateCombo();
+        }
+
+        /* Look for proper index to choose: */
+        int iIndex = m_pCombo->findData(QVariant::fromValue(m_enmValue));
         if (iIndex != -1)
             m_pCombo->setCurrentIndex(iIndex);
     }
@@ -47,7 +61,7 @@ void UIAudioControllerEditor::setValue(KAudioControllerType enmValue)
 
 KAudioControllerType UIAudioControllerEditor::value() const
 {
-    return m_pCombo ? m_pCombo->itemData(m_pCombo->currentIndex()).value<KAudioControllerType>() : KAudioControllerType_AC97;
+    return m_pCombo ? m_pCombo->currentData().value<KAudioControllerType>() : m_enmValue;
 }
 
 void UIAudioControllerEditor::retranslateUi()
@@ -94,6 +108,8 @@ void UIAudioControllerEditor::prepare()
             if (m_pCombo)
             {
                 setFocusProxy(m_pCombo->focusProxy());
+                /* This is necessary since contents is dynamical now: */
+                m_pCombo->setSizeAdjustPolicy(QComboBox::AdjustToContents);
                 if (m_pLabel)
                     m_pLabel->setBuddy(m_pCombo->focusProxy());
                 connect(m_pCombo, static_cast<void(QIComboBox::*)(int)>(&QIComboBox::currentIndexChanged),
@@ -118,8 +134,25 @@ void UIAudioControllerEditor::prepare()
 
 void UIAudioControllerEditor::populateCombo()
 {
-    /* Fill combo manually: */
-    m_pCombo->addItem(QString(), QVariant::fromValue(KAudioControllerType_HDA));
-    m_pCombo->addItem(QString(), QVariant::fromValue(KAudioControllerType_AC97));
-    m_pCombo->addItem(QString(), QVariant::fromValue(KAudioControllerType_SB16));
+    if (m_pCombo)
+    {
+        /* Clear combo first of all: */
+        m_pCombo->clear();
+
+        /* Load currently supported audio driver types: */
+        CSystemProperties comProperties = uiCommon().virtualBox().GetSystemProperties();
+        m_supportedValues = comProperties.GetSupportedAudioControllerTypes();
+
+        /* Make sure requested value if sane is present as well: */
+        if (   m_enmValue != KAudioControllerType_Max
+            && !m_supportedValues.contains(m_enmValue))
+            m_supportedValues.prepend(m_enmValue);
+
+        /* Update combo with all the supported values: */
+        foreach (const KAudioControllerType &enmType, m_supportedValues)
+            m_pCombo->addItem(QString(), QVariant::fromValue(enmType));
+
+        /* Retranslate finally: */
+        retranslateUi();
+    }
 }
