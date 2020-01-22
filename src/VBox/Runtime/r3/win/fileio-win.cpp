@@ -924,7 +924,7 @@ static HANDLE rtFileReOpenAppendOnlyWithFullWriteAccess(HANDLE hFile)
 
 RTR3DECL(int) RTFileSetSize(RTFILE hFile, uint64_t cbSize)
 {
-#if 0
+#if 1
     HANDLE hNtFile  = (HANDLE)RTFileToNative(hFile);
     HANDLE hDupFile = INVALID_HANDLE_VALUE;
     union
