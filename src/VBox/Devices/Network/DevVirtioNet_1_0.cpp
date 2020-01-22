@@ -1361,7 +1361,7 @@ static bool virtioNetR3AddressFilter(PVIRTIONET pThis, const void *pvBuf, size_t
         if (!memcmp(&pThis->aMacMulticastFilter[i], pvBuf, sizeof(RTMAC)))
             return true;
 
-    /* @todo Original combined unicast & multicast into one table. Should we distinguish? */
+    /** @todo Original combined unicast & multicast into one table. Should we distinguish? */
 
     for (uint16_t i = 0; i < pThis->cUnicastFilterMacs; i++)
         if (!memcmp(&pThis->aMacUnicastFilter[i], pvBuf, sizeof(RTMAC)))
