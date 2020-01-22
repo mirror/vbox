@@ -201,7 +201,7 @@ clean:
 	rm -rf $(stagedir)
 	rm -rf $(builddir)
 	rm -rf $(vboxroot)/rpm
-	rm -f rpm/VirtualBox-*
+	rm -rf rpm/VirtualBox-*
 	rm -f rpm/VirtualBox.tar rpm/VirtualBox.tar.bz2
 	rm -f rpm/VirtualBox.spec
 	rm -f rpm/build-stamp rpm/configure-stamp rpm/configure.log
