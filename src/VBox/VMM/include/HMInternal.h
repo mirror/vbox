@@ -563,7 +563,24 @@ typedef struct HM
         bool                        fSupportsVmcsEfer;
         /** Whether to use VMCS shadowing. */
         bool                        fUseVmcsShadowing;
-        uint8_t                     u8Alignment2[6];
+        /** Set if Last Branch Record (LBR) is enabled. */
+        bool                        fLbr;
+        uint8_t                     u8Alignment2[5];
+
+        /** The first valid host LBR branch-from-IP stack range. */
+        uint32_t                    idLbrFromIpMsrFirst;
+        /** The last valid host LBR branch-from-IP stack range. */
+        uint32_t                    idLbrFromIpMsrLast;
+
+        /** The first valid host LBR branch-to-IP stack range. */
+        uint32_t                    idLbrToIpMsrFirst;
+        /** The last valid host LBR branch-to-IP stack range. */
+        uint32_t                    idLbrToIpMsrLast;
+
+        /** The host LBR TOS (top-of-stack) MSR id. */
+        uint32_t                    idLbrTosMsr;
+        /** Padding. */
+        uint32_t                    u32Alignment1;
 
         /** VMX MSR values. */
         VMXMSRS                     Msrs;
@@ -812,8 +829,15 @@ typedef struct VMXVMCSINFO
     RTR0MEMOBJ                  hMemObj;
     /** @} */
 
-    /** Padding. */
-    uint64_t                    au64Padding[2];
+    /** @name LBR MSR data.
+     *  @{ */
+    /** List of LastBranch-From-IP MSRs. */
+    uint64_t    au64LbrFromIpMsr[32];
+    /** List of LastBranch-To-IP MSRs. */
+    uint64_t    au64LbrToIpMsr[32];
+    /** The MSR containing the index to the most recent branch record.  */
+    uint64_t    u64LbrTosMsr;
+    /** @} */
 } VMXVMCSINFO;
 /** Pointer to a VMXVMCSINFO struct. */
 typedef VMXVMCSINFO *PVMXVMCSINFO;

@@ -140,6 +140,7 @@ static DECLCALLBACK(int)  hmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, 
 static DECLCALLBACK(void) hmR3InfoSvmNstGstVmcbCache(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszArgs);
 static DECLCALLBACK(void) hmR3Info(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszArgs);
 static DECLCALLBACK(void) hmR3InfoEventPending(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszArgs);
+static DECLCALLBACK(void) hmR3InfoLbr(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszArgs);
 static int                hmR3InitFinalizeR3(PVM pVM);
 static int                hmR3InitFinalizeR0(PVM pVM);
 static int                hmR3InitFinalizeR0Intel(PVM pVM);
@@ -205,6 +206,9 @@ VMMR3_INT_DECL(int) HMR3Init(PVM pVM)
                                       hmR3InfoSvmNstGstVmcbCache, DBGFINFO_FLAGS_ALL_EMTS);
     AssertRCReturn(rc, rc);
 
+    rc = DBGFR3InfoRegisterInternalEx(pVM, "lbr", "Dumps the HM LBR info.", hmR3InfoLbr, DBGFINFO_FLAGS_ALL_EMTS);
+    AssertRCReturn(rc, rc);
+
     /*
      * Read configuration.
      */
@@ -234,6 +238,7 @@ VMMR3_INT_DECL(int) HMR3Init(PVM pVM)
                               "|MaxResumeLoops"
                               "|VmxPleGap"
                               "|VmxPleWindow"
+                              "|VmxLbr"
                               "|UseVmxPreemptTimer"
                               "|SvmPauseFilter"
                               "|SvmPauseFilterThreshold"
@@ -321,6 +326,12 @@ VMMR3_INT_DECL(int) HMR3Init(PVM pVM)
      * Setting VmxPleGap and VmxPleGap to 0 disables pause-filter exiting.
      */
     rc = CFGMR3QueryU32Def(pCfgHm, "VmxPleWindow", &pVM->hm.s.vmx.cPleWindowTicks, 0);
+    AssertRCReturn(rc, rc);
+
+    /** @cfgm{/HM/VmxLbr, bool, false}
+     * Whether to enable LBR for the guest. This is disabled by default as it's only
+     * useful while debugging and enabling it causes a noticeable performance hit. */
+    rc = CFGMR3QueryBoolDef(pCfgHm, "VmxLbr", &pVM->hm.s.vmx.fLbr, false);
     AssertRCReturn(rc, rc);
 
     /** @cfgm{/HM/SvmPauseFilterCount, uint16_t, 0}
@@ -3218,6 +3229,76 @@ static DECLCALLBACK(void) hmR3Info(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszA
     }
     else
         pHlp->pfnPrintf(pHlp, "HM is not enabled for this VM!\n");
+}
+
+
+/**
+ * Displays the HM Last-Branch-Record info. for the guest.
+ *
+ * @param   pVM         The cross context VM structure.
+ * @param   pHlp        The info helper functions.
+ * @param   pszArgs     Arguments, ignored.
+ */
+static DECLCALLBACK(void) hmR3InfoLbr(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszArgs)
+{
+    NOREF(pszArgs);
+    PVMCPU pVCpu = VMMGetCpu(pVM);
+    if (!pVCpu)
+        pVCpu = pVM->apCpusR3[0];
+
+    if (!HMIsEnabled(pVM))
+        pHlp->pfnPrintf(pHlp, "HM is not enabled for this VM!\n");
+
+    if (HMIsVmxActive(pVM))
+    {
+        if (pVM->hm.s.vmx.fLbr)
+        {
+            PCVMXVMCSINFO pVmcsInfo = hmGetVmxActiveVmcsInfo(pVCpu);
+            uint32_t const cLbrStack = pVM->hm.s.vmx.idLbrFromIpMsrLast - pVM->hm.s.vmx.idLbrFromIpMsrFirst + 1;
+
+            /** @todo r=ramshankar: The index technically varies depending on the CPU, but
+             *        0xf should cover everything we support thus far. Fix if necessary
+             *        later. */
+            uint32_t const idxTopOfStack = pVmcsInfo->u64LbrTosMsr & 0xf;
+            if (idxTopOfStack > cLbrStack)
+            {
+                pHlp->pfnPrintf(pHlp, "Top-of-stack LBR MSR seems corrupt (index=%u, msr=%#RX64) expected index < %u\n",
+                                idxTopOfStack, pVmcsInfo->u64LbrTosMsr, cLbrStack);
+                return;
+            }
+
+            /*
+             * Dump the circular buffer of LBR records starting from the most recent record (contained in idxTopOfStack).
+             */
+            pHlp->pfnPrintf(pHlp, "CPU[%u]: LBRs (most-recent first)\n", pVCpu->idCpu);
+            uint32_t idxCurrent = idxTopOfStack;
+            Assert(idxTopOfStack < cLbrStack);
+            Assert(RT_ELEMENTS(pVmcsInfo->au64LbrFromIpMsr) <= cLbrStack);
+            Assert(RT_ELEMENTS(pVmcsInfo->au64LbrToIpMsr) <= cLbrStack);
+            for (;;)
+            {
+                if (pVM->hm.s.vmx.idLbrToIpMsrFirst)
+                {
+                    pHlp->pfnPrintf(pHlp, "  Branch (%2u): From IP=%#016RX64 - To IP=%#016RX64\n", idxCurrent,
+                                    pVmcsInfo->au64LbrFromIpMsr[idxCurrent], pVmcsInfo->au64LbrToIpMsr[idxCurrent]);
+                }
+                else
+                    pHlp->pfnPrintf(pHlp, "  Branch (%2u): LBR=%#RX64\n", idxCurrent, pVmcsInfo->au64LbrFromIpMsr[idxCurrent]);
+
+                idxCurrent = (idxCurrent - 1) % cLbrStack;
+                if (idxCurrent == idxTopOfStack)
+                    break;
+            }
+        }
+        else
+            pHlp->pfnPrintf(pHlp, "VM not configured to record LBRs for the guest\n");
+    }
+    else
+    {
+        Assert(HMIsSvmActive(pVM));
+        /** @todo SVM: LBRs (get them from VMCB if possible). */
+        pHlp->pfnPrintf(pHlp, "SVM LBR not implemented in VM debugger yet\n");
+    }
 }
 
 

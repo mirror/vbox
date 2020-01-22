@@ -132,6 +132,10 @@ AssertCompileSizeAlignment(VMXRESTOREHOST, 8);
 #define VMX_UFC_EPT_PAGE_WALK_LENGTH_UNSUPPORTED                14
 /** VMX VMWRITE all feature exposed to the guest but not supported on host. */
 #define VMX_UFC_GST_HOST_VMWRITE_ALL                            15
+/** LBR stack size cannot be determined for the current CPU. */
+#define VMX_UFC_LBR_STACK_SIZE_UNKNOWN                          16
+/** LBR stack size of the CPU exceeds our buffer size. */
+#define VMX_UFC_LBR_STACK_SIZE_OVERFLOW                         17
 /** @} */
 
 /** @name VMX HM-error codes for VERR_VMX_VMCS_FIELD_CACHE_INVALID.
@@ -1199,6 +1203,26 @@ AssertCompileSize(VMXMSRS, 224);
 typedef VMXMSRS *PVMXMSRS;
 /** Pointer to a const VMXMSRS struct. */
 typedef const VMXMSRS *PCVMXMSRS;
+
+
+/**
+ * LBR MSRs.
+ */
+typedef struct LBRMSRS
+{
+    /** List of LastBranch-From-IP MSRs. */
+    uint64_t    au64BranchFromIpMsr[32];
+    /** List of LastBranch-To-IP MSRs. */
+    uint64_t    au64BranchToIpMsr[32];
+    /** The MSR containing the index to the most recent branch record.  */
+    uint64_t    uBranchTosMsr;
+} LBRMSRS;
+AssertCompileSizeAlignment(LBRMSRS, 8);
+AssertCompile(sizeof(LBRMSRS) < X86_PAGE_4K_SIZE);
+/** Pointer to a VMXMSRS struct. */
+typedef LBRMSRS *PLBRMSRS;
+/** Pointer to a const VMXMSRS struct. */
+typedef const LBRMSRS *PCLBRMSRS;
 
 
 /** @name VMX Basic Exit Reasons.

@@ -1278,7 +1278,7 @@ typedef struct VM
 #ifdef VMM_INCLUDED_SRC_include_HMInternal_h
         struct HM s;
 #endif
-        uint8_t     padding[5440];      /* multiple of 64 */
+        uint8_t     padding[5504];      /* multiple of 64 */
     } hm;
 
     /** TRPM part. */
@@ -1435,7 +1435,7 @@ typedef struct VM
     } cfgm;
 
     /** Padding for aligning the structure size on a page boundrary. */
-    uint8_t         abAlignment2[664 + 256 - sizeof(PVMCPUR3) * VMM_MAX_CPU_COUNT];
+    uint8_t         abAlignment2[664 - 64 + 256 - sizeof(PVMCPUR3) * VMM_MAX_CPU_COUNT];
 
     /* ---- end small stuff ---- */
 
