@@ -1218,7 +1218,6 @@ typedef struct LBRMSRS
     uint64_t    uBranchTosMsr;
 } LBRMSRS;
 AssertCompileSizeAlignment(LBRMSRS, 8);
-AssertCompile(sizeof(LBRMSRS) < X86_PAGE_4K_SIZE);
 /** Pointer to a VMXMSRS struct. */
 typedef LBRMSRS *PLBRMSRS;
 /** Pointer to a const VMXMSRS struct. */
