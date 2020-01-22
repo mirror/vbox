@@ -415,6 +415,18 @@ void UIMachineSettingsUSB::getFromCache()
     /* Get old USB data from the cache: */
     const UIDataSettingsMachineUSB &oldUsbData = m_pCache->base();
 
+    /* Load currently supported USB controllers: */
+    CSystemProperties comProperties = uiCommon().virtualBox().GetSystemProperties();
+    QVector<KUSBControllerType> supportedTypes = comProperties.GetSupportedUSBControllerTypes();
+    /* Take currently requested type into account if it's sane: */
+    if (!supportedTypes.contains(oldUsbData.m_USBControllerType) && oldUsbData.m_USBControllerType != KUSBControllerType_Null)
+        supportedTypes.prepend(oldUsbData.m_USBControllerType);
+
+    /* Adjust radio-button visibility: */
+    mRbUSB1->setVisible(supportedTypes.contains(KUSBControllerType_OHCI));
+    mRbUSB2->setVisible(supportedTypes.contains(KUSBControllerType_EHCI));
+    mRbUSB3->setVisible(supportedTypes.contains(KUSBControllerType_XHCI));
+
     /* Load old USB data from the cache: */
     mGbUSB->setChecked(oldUsbData.m_fUSBEnabled);
     switch (oldUsbData.m_USBControllerType)
@@ -801,6 +813,11 @@ void UIMachineSettingsUSB::prepare()
 {
     /* Apply UI decorations: */
     Ui::UIMachineSettingsUSB::setupUi(this);
+
+    /* Hide radio-button initially: */
+    mRbUSB1->setVisible(false);
+    mRbUSB2->setVisible(false);
+    mRbUSB3->setVisible(false);
 
     /* Prepare cache: */
     m_pCache = new UISettingsCacheMachineUSB;
