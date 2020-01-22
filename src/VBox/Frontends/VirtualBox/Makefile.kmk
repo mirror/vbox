@@ -445,9 +445,10 @@ else
 endif
 
 UICommon_LDFLAGS.darwin = \
-	-framework AppKit -framework Carbon -framework IOKit \
-	$(if $(VBOX_WITH_HARDENING),-install_name $(VBOX_DYLD_EXECUTABLE_PATH)/UICommon.dylib)
-
+	-install_name $(VBOX_DYLD_EXECUTABLE_PATH)/UICommon.dylib \
+	-framework AppKit \
+	-framework Carbon \
+	-framework IOKit
 if defined(VBOX_WITH_VIDEOHWACCEL) || defined(VBOX_GUI_USE_QGL)
  UICommon_LDFLAGS.darwin += -framework OpenGL
 endif
