@@ -4360,16 +4360,8 @@ IEM_STATIC VBOXSTRICTRC iemVmxVirtApicAccessMsrRead(PVMCPUCC pVCpu, uint32_t idM
 
     if (pVmcs->u32ProcCtls2 & VMX_PROC_CTLS2_APIC_REG_VIRT)
     {
-        /*
-         * Intel has different ideas in the x2APIC spec. vs the VT-x spec. as to
-         * what the end of the valid x2APIC MSR range is. Hence the use of different
-         * macros here.
-         *
-         * See Intel spec. 10.12.1.2 "x2APIC Register Address Space".
-         * See Intel spec. 29.5 "Virtualizing MSR-based APIC Accesses".
-         */
-        if (   idMsr >= VMX_V_VIRT_APIC_MSR_START
-            && idMsr <= VMX_V_VIRT_APIC_MSR_END)
+        if (   idMsr >= MSR_IA32_X2APIC_START
+            && idMsr <= MSR_IA32_X2APIC_END)
         {
             uint16_t const offReg   = (idMsr & 0xff) << 4;
             uint64_t const u64Value = iemVmxVirtApicReadRaw64(pVCpu, offReg);
