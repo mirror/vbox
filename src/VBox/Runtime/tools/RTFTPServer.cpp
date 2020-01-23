@@ -68,7 +68,9 @@
 *********************************************************************************************************************************/
 typedef struct FTPSERVERDATA
 {
-    char szRootDir[RTPATH_MAX];
+    /** The absolute path of the FTP server's root directory. */
+    char szPathRootAbs[RTPATH_MAX];
+    /** The relative current working directory (CWD) to szRootDir. */
     char szCWD[RTPATH_MAX];
     RTFILE hFile;
 } FTPSERVERDATA;
@@ -240,7 +242,12 @@ static DECLCALLBACK(int) onFileClose(PRTFTPCALLBACKDATA pData, void *pvHandle)
 
 static DECLCALLBACK(int) onFileGetSize(PRTFTPCALLBACKDATA pData, const char *pcszPath, uint64_t *puSize)
 {
-    RT_NOREF(pData);
+    PFTPSERVERDATA pThis = (PFTPSERVERDATA)pData->pvUser;
+    Assert(pData->cbUser == sizeof(FTPSERVERDATA));
+
+    char *pszStat = NULL;
+    if (RTStrAPrintf(&pszStat, "%s/%s", pThis->szPathRootAbs, pcszPath) <= 0)
+        return VERR_NO_MEMORY;
 
     RTPrintf("Retrieving file size for '%s' ...\n", pcszPath);
 
@@ -255,6 +262,8 @@ static DECLCALLBACK(int) onFileGetSize(PRTFTPCALLBACKDATA pData, const char *pcs
         RTFileClose(hFile);
     }
 
+    RTStrFree(pszStat);
+
     return rc;
 }
 
@@ -263,12 +272,14 @@ static DECLCALLBACK(int) onFileStat(PRTFTPCALLBACKDATA pData, const char *pcszPa
     PFTPSERVERDATA pThis = (PFTPSERVERDATA)pData->pvUser;
     Assert(pData->cbUser == sizeof(FTPSERVERDATA));
 
-    const char *pcszStat = pcszPath ? pcszPath : pThis->szCWD;
+    char *pszStat = NULL;
+    if (RTStrAPrintf(&pszStat, "%s/%s", pThis->szPathRootAbs, pcszPath) <= 0)
+        return VERR_NO_MEMORY;
 
-    RTPrintf("Stat for '%s'\n", pcszStat);
+    RTPrintf("Stat for '%s'\n", pszStat);
 
     RTFILE hFile;
-    int rc = RTFileOpen(&hFile, pcszStat,
+    int rc = RTFileOpen(&hFile, pszStat,
                         RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_WRITE);
     if (RT_SUCCESS(rc))
     {
@@ -282,6 +293,8 @@ static DECLCALLBACK(int) onFileStat(PRTFTPCALLBACKDATA pData, const char *pcszPa
 
         RTFileClose(hFile);
     }
+
+    RTStrFree(pszStat);
 
     return rc;
 }
@@ -326,14 +339,12 @@ static DECLCALLBACK(int) onDirOpen(PRTFTPCALLBACKDATA pData, const char *pcszPat
 
     /* Construct absolute path. */
     char *pszPathAbs = NULL;
-    int rc = RTStrAAppend(&pszPathAbs, pThis->szRootDir);
-    AssertRCReturn(rc, rc);
-    rc = RTStrAAppend(&pszPathAbs, pcszPath);
-    AssertRCReturn(rc, rc);
+    if (RTStrAPrintf(&pszPathAbs, "%s/%s", pThis->szPathRootAbs, pcszPath) <= 0)
+        return VERR_NO_MEMORY;
 
     RTPrintf("Opening directory '%s'\n", pszPathAbs);
 
-    rc = RTVfsChainOpenDir(pszPathAbs, 0 /*fFlags*/, &pHandle->hVfsDir, NULL /* poffError */, NULL /* pErrInfo */);
+    int rc = RTVfsChainOpenDir(pszPathAbs, 0 /*fFlags*/, &pHandle->hVfsDir, NULL /* poffError */, NULL /* pErrInfo */);
     if (RT_SUCCESS(rc))
     {
         *ppvHandle = pHandle;
@@ -488,7 +499,7 @@ int main(int argc, char **argv)
                 break;
 
             case 'r':
-                RTStrCopy(g_FTPServerData.szRootDir, sizeof(g_FTPServerData.szRootDir), ValueUnion.psz);
+                RTStrCopy(g_FTPServerData.szPathRootAbs, sizeof(g_FTPServerData.szPathRootAbs), ValueUnion.psz);
                 break;
 
             case 'v':
@@ -523,10 +534,10 @@ int main(int argc, char **argv)
         }
     }
 
-    if (!strlen(g_FTPServerData.szRootDir))
+    if (!strlen(g_FTPServerData.szPathRootAbs))
     {
         /* By default use the current directory as serving root directory. */
-        rc = RTPathGetCurrent(g_FTPServerData.szRootDir, sizeof(g_FTPServerData.szRootDir));
+        rc = RTPathGetCurrent(g_FTPServerData.szPathRootAbs, sizeof(g_FTPServerData.szPathRootAbs));
         if (RT_FAILURE(rc))
             return RTMsgErrorExit(RTEXITCODE_FAILURE, "Retrieving current directory failed: %Rrc", rc);
     }
@@ -565,7 +576,7 @@ int main(int argc, char **argv)
         if (RT_SUCCESS(rc))
         {
             RTPrintf("Starting FTP server at %s:%RU16 ...\n", szAddress, uPort);
-            RTPrintf("Root directory is '%s'\n", g_FTPServerData.szRootDir);
+            RTPrintf("Root directory is '%s'\n", g_FTPServerData.szPathRootAbs);
 
             RTPrintf("Running FTP server ...\n");
 

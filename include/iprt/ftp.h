@@ -245,7 +245,7 @@ typedef struct RTFTPSERVERCALLBACKS
      *
      * @returns VBox status code.
      * @param   pData           Pointer to generic callback data.
-     * @param   pcsszPath       Path of file to handle.
+     * @param   pcsszPath       Relative path (to root directory) of file to open.
      * @param   fMode           File mode to use (IPRT stlye).
      * @param   ppvHandle       Opaque file handle only known to the callback implementation.
      */
@@ -274,7 +274,7 @@ typedef struct RTFTPSERVERCALLBACKS
      *
      * @returns VBox status code.
      * @param   pData           Pointer to generic callback data.
-     * @param   pcszPath        Path of file to retrieve size for.
+     * @param   pcszPath        Relative path (to root directory) of file to retrieve size for.
      * @param   puSize          Where to store the file size on success.
      */
     DECLCALLBACKMEMBER(int,  pfnOnFileGetSize)(PRTFTPCALLBACKDATA pData, const char *pcszPath, uint64_t *puSize);
@@ -282,7 +282,8 @@ typedef struct RTFTPSERVERCALLBACKS
      * Callback which gets invoked when the client wants to retrieve information about a file.
      *
      * @param   pData           Pointer to generic callback data.
-     * @param   pcszPath        Path of file / directory to "stat". Optional. If NULL, the current directory will be used.
+     * @param   pcszPath        Relative path (to root directory) of file / directory to "stat". Optional.
+     *                          If NULL, the current directory will be used.
      * @param   pFsObjInfo      Where to return the RTFSOBJINFO data on success. Optional.
      * @returns VBox status code.
      */
@@ -316,7 +317,8 @@ typedef struct RTFTPSERVERCALLBACKS
      *
      * @returns VBox status code. VERR_NO_MORE_FILES if listing is complete.
      * @param   pData           Pointer to generic callback data.
-     * @param   pcszPath        Path of file / directory to list. Optional. If NULL, the current directory will be listed.
+     * @param   pcszPath        Relative path (to root directory) of file / directory to list. Optional.
+     *                          If NULL, the current directory will be listed.
      * @param   ppvHandle       Where to return the opaque directory handle.
      */
     DECLCALLBACKMEMBER(int,  pfnOnDirOpen)(PRTFTPCALLBACKDATA pData, const char *pcszPath, void **ppvHandle);
