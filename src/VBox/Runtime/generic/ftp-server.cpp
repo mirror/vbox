@@ -1551,6 +1551,18 @@ static int rtFtpServerDataConnDirCollAddEntry(PRTFTPDIRCOLLECTION pCollection, c
         return VINF_SUCCESS;
     }
 
+    /* Anything else besides files and directores is not allowed; just don't show them at all for the moment. */
+    switch (pInfo->Attr.fMode & RTFS_TYPE_MASK)
+    {
+        case RTFS_TYPE_DIRECTORY:
+            RT_FALL_THROUGH();
+        case RTFS_TYPE_FILE:
+            break;
+
+        default:
+            return VINF_SUCCESS;
+    }
+
     /* Make sure there is space in the collection for the new entry. */
     if (pCollection->cEntries >= pCollection->cEntriesAllocated)
     {
@@ -2281,6 +2293,8 @@ static int rtFtpServerProcessCommands(PRTFTPSERVERCLIENT pClient, char *pcszCmd,
         && cArgs) /* At least the actual command (without args) must be present. */
     {
         LogFlowFunc(("Handling command '%s'\n", papszArgs[0]));
+        for (uint8_t a = 0; a < cArgs; a++)
+            LogFlowFunc(("\targ[%RU8] = '%s'\n", a, papszArgs[a]));
 
         unsigned i = 0;
         for (; i < RT_ELEMENTS(g_aCmdMap); i++)
