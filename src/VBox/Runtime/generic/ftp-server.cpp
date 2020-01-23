@@ -909,11 +909,10 @@ static int rtFtpServerDataConnFlush(PRTFTPSERVERDATACONN pDataConn)
         RTCircBufAcquireReadBlock(pDataConn->pCircBuf, cbUsed, &pvBlock, &cbBlock);
         if (cbBlock)
         {
-            size_t cbWritten;
+            size_t cbWritten = 0;
             rc = rtFtpServerDataConnWrite(pDataConn, pvBlock, cbBlock, &cbWritten);
             if (RT_SUCCESS(rc))
             {
-
                 AssertBreak(cbUsed >= cbWritten);
                 cbUsed -= cbWritten;
             }
