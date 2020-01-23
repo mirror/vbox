@@ -934,7 +934,26 @@ RTR3DECL(int) RTFileSetSize(RTFILE hFile, uint64_t cbSize)
     } uInfo;
 
     /*
-     * Change the EOF marker.  We may have to
+     * Change the EOF marker.
+     *
+     * HACK ALERT! If the file was opened in RTFILE_O_APPEND mode, we will have
+     *             to re-open it with FILE_WRITE_DATA access to get the job done.
+     *             This how ftruncate on a unixy system would work but not how
+     *             it is done on Windows where appending is a separate permission
+     *             rather than just a write modifier, making this hack totally wrong.
+     */
+    /** @todo The right way to fix this is either to add a RTFileSetSizeEx function
+     *        for specifically requesting the unixy behaviour, or add an additional
+     *        flag to RTFileOpen[Ex] to request the unixy append behaviour there.
+     *        The latter would require saving the open flags in a instance data
+     *        structure, which is a bit of a risky move, though something we should
+     *        do in 6.2 (or later).
+     *
+     *        Note! Because handle interitance, it is not realyan option to
+     *              always use FILE_WRITE_DATA and implement the RTFILE_O_APPEND
+     *              bits in RTFileWrite and friends.  Besides, it's not like
+     *              RTFILE_O_APPEND is so clearly defined anyway - see
+     *              RTFileWriteAt.
      */
     IO_STATUS_BLOCK Ios = RTNT_IO_STATUS_BLOCK_INITIALIZER;
     uInfo.Eof.EndOfFile.QuadPart = cbSize;

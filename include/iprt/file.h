@@ -117,7 +117,9 @@ RTDECL(int) RTFileQuerySizeByPath(const char *pszPath, uint64_t *pcbFile);
 /** Open file in APPEND mode, so all writes to the file handle will
  * append data at the end of the file.
  * @remarks It is ignored if write access is not requested, that is
- *          RTFILE_O_WRITE is not set. */
+ *          RTFILE_O_WRITE is not set.
+ * @note    Behaviour of functions differ between hosts: See RTFileWriteAt, as
+ *          well as ticketref:19003 (RTFileSetSize). */
 #define RTFILE_O_APPEND                 UINT32_C(0x00000004)
                                      /* UINT32_C(0x00000008) is unused atm. */
 

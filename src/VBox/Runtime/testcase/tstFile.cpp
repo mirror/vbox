@@ -77,7 +77,8 @@ static void tstAppend(RTFILE hFile)
 
 #if 1 //ndef RT_OS_WINDOWS
     /*
-     * Truncate the file and write some more. This is problematic on windows.
+     * Truncate the file and write some more. This is problematic on windows,
+     * we currently have a questionable hack in place to make this work.
      */
     RTTESTI_CHECK_RC_RETV(RTFileSetSize(hFile, 0), VINF_SUCCESS);
 
