@@ -49,6 +49,7 @@
 
 #include <iprt/asm.h>
 #include <iprt/assert.h>
+#include <iprt/circbuf.h>
 #include <iprt/err.h>
 #include <iprt/file.h> /* For file mode flags. */
 #include <iprt/getopt.h>
@@ -57,6 +58,7 @@
 #include <iprt/path.h>
 #include <iprt/poll.h>
 #include <iprt/socket.h>
+#include <iprt/sort.h>
 #include <iprt/string.h>
 #include <iprt/system.h>
 #include <iprt/tcp.h>
@@ -235,6 +237,8 @@ typedef struct RTFTPSERVERDATACONN
     /** Command arguments array. Optional and can be NULL.
      *  Will be free'd by the data connection thread. */
     char**                      papszArgs;
+    /** Circular buffer for caching data before writing. */
+    PRTCIRCBUF                  pCircBuf;
 } RTFTPSERVERDATACONN;
 /** Pointer to a data connection struct. */
 typedef RTFTPSERVERDATACONN *PRTFTPSERVERDATACONN;
@@ -333,6 +337,7 @@ static void rtFtpServerDataConnReset(PRTFTPSERVERDATACONN pDataConn);
 static int  rtFtpServerDataConnStart(PRTFTPSERVERDATACONN pDataConn, PFNRTTHREAD pfnThread, uint8_t cArgs, const char * const *apcszArgs);
 static int  rtFtpServerDataConnStop(PRTFTPSERVERDATACONN pDataConn);
 static void rtFtpServerDataConnDestroy(PRTFTPSERVERDATACONN pDataConn);
+static int  rtFtpServerDataConnFlush(PRTFTPSERVERDATACONN pDataConn);
 
 static void rtFtpServerClientStateReset(PRTFTPSERVERCLIENTSTATE pState);
 
@@ -401,6 +406,12 @@ const RTFTPSERVER_CMD_ENTRY g_aCmdMap[] =
     { RTFTPSERVER_CMD_TYPE,     "TYPE", true,  rtFtpServerHandleTYPE },
     { RTFTPSERVER_CMD_USER,     "USER", false, rtFtpServerHandleUSER },
     { RTFTPSERVER_CMD_LAST,     "",     false, NULL }
+};
+
+/** RFC-1123 month of the year names. */
+static const char * const g_apszMonths[1+12] =
+{
+    "000", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
 };
 
 /** Feature string which represents all commands we support in addition to RFC 959 (see RFC 2398).
@@ -849,6 +860,8 @@ static int rtFtpServerDataConnClose(PRTFTPSERVERDATACONN pDataConn)
     {
         LogFlowFuncEnter();
 
+        rtFtpServerDataConnFlush(pDataConn);
+
         rc = RTTcpClientClose(pDataConn->hSocket);
         pDataConn->hSocket = NIL_RTSOCKET;
     }
@@ -864,13 +877,113 @@ static int rtFtpServerDataConnClose(PRTFTPSERVERDATACONN pDataConn)
  * @param   pDataConn           Data connection to write to.
  * @param   pvData              Data to write.
  * @param   cbData              Size (in bytes) of data to write.
- * @param   pcbWritten          How many bytes were written. Optional and unused atm.
+ * @param   pcbWritten          How many bytes were written. Optional.
  */
 static int rtFtpServerDataConnWrite(PRTFTPSERVERDATACONN pDataConn, const void *pvData, size_t cbData, size_t *pcbWritten)
 {
-    RT_NOREF(pcbWritten);
+    int rc = RTTcpWrite(pDataConn->hSocket, pvData, cbData);
+    if (RT_SUCCESS(rc))
+    {
+        if (pcbWritten)
+            *pcbWritten = cbData;
+    }
 
-    return RTTcpWrite(pDataConn->hSocket, pvData, cbData);
+    return rc;
+}
+
+/**
+ * Flushes a data connection.
+ *
+ * @returns VBox status code.
+ * @param   pDataConn           Data connection to flush.
+ */
+static int rtFtpServerDataConnFlush(PRTFTPSERVERDATACONN pDataConn)
+{
+    int rc = VINF_SUCCESS;
+
+    size_t cbUsed = RTCircBufUsed(pDataConn->pCircBuf);
+    while (cbUsed)
+    {
+        void   *pvBlock;
+        size_t  cbBlock;
+        RTCircBufAcquireReadBlock(pDataConn->pCircBuf, cbUsed, &pvBlock, &cbBlock);
+        if (cbBlock)
+        {
+            size_t cbWritten;
+            rc = rtFtpServerDataConnWrite(pDataConn, pvBlock, cbBlock, &cbWritten);
+            if (RT_SUCCESS(rc))
+            {
+
+                AssertBreak(cbUsed >= cbWritten);
+                cbUsed -= cbWritten;
+            }
+
+            RTCircBufReleaseReadBlock(pDataConn->pCircBuf, cbWritten);
+
+            if (RT_FAILURE(rc))
+                break;
+        }
+    }
+
+    return rc;
+}
+
+/**
+ * Checks if flushing a data connection is necessary, and if so, flush it.
+ *
+ * @returns VBox status code.
+ * @param   pDataConn           Data connection to check / do flushing for.
+ */
+static int rtFtpServerDataCheckFlush(PRTFTPSERVERDATACONN pDataConn)
+{
+    int rc = VINF_SUCCESS;
+
+    size_t cbUsed = RTCircBufUsed(pDataConn->pCircBuf);
+    if (cbUsed >= _4K) /** @todo Make this more dynamic. */
+    {
+        rc = rtFtpServerDataConnFlush(pDataConn);
+    }
+
+    return rc;
+}
+
+/**
+ * Adds new data for a data connection to be sent.
+ *
+ * @returns VBox status code.
+ * @param   pDataConn           Data connection to add new data to.
+ * @param   pvData              Pointer to data to add.
+ * @param   cbData              Size (in bytes) of data to add.
+ */
+static int rtFtpServerDataConnAddData(PRTFTPSERVERDATACONN pDataConn, const void *pvData, size_t cbData)
+{
+    AssertReturn(cbData <= RTCircBufFree(pDataConn->pCircBuf), VERR_BUFFER_OVERFLOW);
+
+    int rc = VINF_SUCCESS;
+
+    size_t cbToWrite = cbData;
+    do
+    {
+        void   *pvBlock;
+        size_t  cbBlock;
+        RTCircBufAcquireWriteBlock(pDataConn->pCircBuf, cbToWrite, &pvBlock, &cbBlock);
+        if (cbBlock)
+        {
+            AssertBreak(cbData >= cbBlock);
+            memcpy(pvBlock, pvData, cbBlock);
+
+            AssertBreak(cbToWrite >= cbBlock);
+            cbToWrite -= cbBlock;
+
+            RTCircBufReleaseWriteBlock(pDataConn->pCircBuf, cbBlock);
+        }
+
+    } while (cbToWrite);
+
+    if (RT_SUCCESS(rc))
+        rc = rtFtpServerDataCheckFlush(pDataConn);
+
+    return rc;
 }
 
 /**
@@ -895,7 +1008,7 @@ static int rtFtpServerDataConnPrintf(PRTFTPSERVERDATACONN pDataConn, const char 
 
     RTStrFree(pszFmt);
 
-    rc = RTTcpWrite(pDataConn->hSocket, pszMsg, strlen(pszMsg));
+    rc = rtFtpServerDataConnAddData(pDataConn, pszMsg, strlen(pszMsg));
 
     RTStrFree(pszMsg);
 
@@ -1002,10 +1115,14 @@ static int rtFtpServerDataConnCreate(PRTFTPSERVERCLIENT pClient, PRTFTPSERVERDAT
     pDataConn->Addr    = pClient->DataConnAddr;
     pDataConn->uPort   = pClient->uDataConnPort;
 
-    *ppDataConn = pDataConn;
+    int rc = RTCircBufCreate(&pDataConn->pCircBuf, _16K); /** @todo Some random value; improve. */
+    if (RT_SUCCESS(rc))
+    {
+        *ppDataConn = pDataConn;
+    }
 
     LogFlowFuncLeaveRC(VINF_SUCCESS);
-    return VINF_SUCCESS;
+    return rc;
 }
 
 /**
@@ -1118,6 +1235,8 @@ static void rtFtpServerDataConnDestroy(PRTFTPSERVERDATACONN pDataConn)
 
     rtFtpServerDataConnClose(pDataConn);
     rtFtpCmdArgsFree(pDataConn->cArgs, pDataConn->papszArgs);
+
+    RTCircBufDestroy(pDataConn->pCircBuf);
 
     RTMemFree(pDataConn);
     pDataConn = NULL;
@@ -1295,17 +1414,51 @@ static const char *rtFtpServerFormatSize(uint64_t cb, char *pszDst, size_t cbDst
 }
 
 /**
- * Formats the given timestamp according to the desired --time-style.
+ * Formats the given timestamp according to (non-standardized) FTP LIST command.
  *
  * @returns pszDst
- * @param   pTimestamp      The timestamp.
+ * @param   pTimestamp      The timestamp to format.
  * @param   pszDst          The output buffer.
  * @param   cbDst           The output buffer size.
  */
 static const char *rtFtpServerFormatTimestamp(PCRTTIMESPEC pTimestamp, char *pszDst, size_t cbDst)
 {
-    /** @todo timestamp formatting according to the given style.   */
-    return RTTimeSpecToString(pTimestamp, pszDst, cbDst);
+    RTTIME Time;
+    RTTimeExplode(&Time, pTimestamp);
+
+    /* Calc the UTC offset part. */
+    int32_t offUtc = Time.offUTC;
+    Assert(offUtc <= 840 && offUtc >= -840);
+    char     chSign;
+    if (offUtc >= 0)
+        chSign = '+';
+    else
+    {
+        chSign = '-';
+        offUtc = -offUtc;
+    }
+    uint32_t offUtcHour   = (uint32_t)offUtc / 60;
+    uint32_t offUtcMinute = (uint32_t)offUtc % 60;
+
+    /** @todo Cache this. */
+    RTTIMESPEC TimeSpecNow;
+    RTTimeNow(&TimeSpecNow);
+    RTTIME TimeNow;
+    RTTimeExplode(&TimeNow, &TimeSpecNow);
+
+    /* Only include the year if it's not the same year as today. */
+    if (TimeNow.i32Year != Time.i32Year)
+    {
+        RTStrPrintf(pszDst, cbDst, "%s  %02RU8  %5RU32",
+                    g_apszMonths[Time.u8Month], Time.u8MonthDay, Time.i32Year);
+    }
+    else /* ... otherwise include the (rough) time (as GMT). */
+    {
+        RTStrPrintf(pszDst, cbDst, "%s  %02RU8  %02RU32:%02RU32",
+                    g_apszMonths[Time.u8Month], Time.u8MonthDay, offUtcHour, offUtcMinute);
+    }
+
+    return pszDst;
 }
 
 /**
@@ -1392,6 +1545,12 @@ static void rtFtpServerDataConnDirCollFree(PRTFTPDIRCOLLECTION pCollection)
 static int rtFtpServerDataConnDirCollAddEntry(PRTFTPDIRCOLLECTION pCollection, const char *pszEntry, PRTFSOBJINFO pInfo,
                                               const char *pszOwner, const char *pszGroup, const char *pszTarget)
 {
+    /* Filter out entries we don't want to report to the client, even if they were reported by the actual implementation. */
+    if (   !RTStrCmp(pszEntry, ".")
+        || !RTStrCmp(pszEntry, ".."))
+    {
+        return VINF_SUCCESS;
+    }
 
     /* Make sure there is space in the collection for the new entry. */
     if (pCollection->cEntries >= pCollection->cEntriesAllocated)
@@ -1448,6 +1607,39 @@ static int rtFtpServerDataConnDirCollAddEntry(PRTFTPDIRCOLLECTION pCollection, c
     return VERR_NO_MEMORY;
 }
 
+/** @callback_method_impl{FNRTSORTCMP, Name} */
+static DECLCALLBACK(int) rtFtpServerCollEntryCmpName(void const *pvElement1, void const *pvElement2, void *pvUser)
+{
+    RT_NOREF(pvUser);
+    PRTFTPDIRENTRY pEntry1 = (PRTFTPDIRENTRY)pvElement1;
+    PRTFTPDIRENTRY pEntry2 = (PRTFTPDIRENTRY)pvElement2;
+    return RTStrCmp(pEntry1->szName, pEntry2->szName);
+}
+
+/** @callback_method_impl{FNRTSORTCMP, Dirs first + Name} */
+static DECLCALLBACK(int) rtFtpServerCollEntryCmpDirFirstName(void const *pvElement1, void const *pvElement2, void *pvUser)
+{
+    RT_NOREF(pvUser);
+    PRTFTPDIRENTRY pEntry1 = (PRTFTPDIRENTRY)pvElement1;
+    PRTFTPDIRENTRY pEntry2 = (PRTFTPDIRENTRY)pvElement2;
+    int iDiff = !RTFS_IS_DIRECTORY(pEntry1->Info.Attr.fMode) - !RTFS_IS_DIRECTORY(pEntry2->Info.Attr.fMode);
+    if (!iDiff)
+        iDiff = rtFtpServerCollEntryCmpName(pEntry1, pEntry2, pvUser);
+    return iDiff;
+}
+
+/**
+ * Sorts a given directory collection according to the FTP server's LIST style.
+ *
+ * @param   pCollection         Collection to sort.
+ */
+static void rtFtpServerCollSort(PRTFTPDIRCOLLECTION pCollection)
+{
+    PFNRTSORTCMP pfnCmp = rtFtpServerCollEntryCmpDirFirstName;
+    if (pfnCmp)
+        RTSortApvShell((void **)pCollection->papEntries, pCollection->cEntries, pfnCmp, NULL);
+}
+
 /**
  * Writes a directory collection to a specific data connection.
  *
@@ -1460,10 +1652,7 @@ static int rtFtpServerDataConnDirCollAddEntry(PRTFTPDIRCOLLECTION pCollection, c
 static int rtFtpServerDataConnDirCollWrite(PRTFTPSERVERDATACONN pDataConn, PRTFTPDIRCOLLECTION pCollection,
                                            char *pszTmp, size_t cbTmp)
 {
-    /*
-     * Figure the width of the size, the link count, the uid, the gid, and the inode columns.
-     */
-    size_t cchSizeCol  = 1;
+    size_t cchSizeCol  = 4;
     size_t cchLinkCol  = 1;
     size_t cchUidCol   = 1;
     size_t cchGidCol   = 1;
@@ -1515,7 +1704,7 @@ static int rtFtpServerDataConnDirCollWrite(PRTFTPSERVERDATACONN pDataConn, PRTFT
             case RTFS_TYPE_WHITEOUT:    rtFtpServerDataConnPrintf(pDataConn, "w"); break;
             default:                    rtFtpServerDataConnPrintf(pDataConn, "?"); AssertFailed(); break;
         }
-        /** @todo sticy bits++ */
+
         rtFtpServerDataConnPrintf(pDataConn, "%c%c%c",
                                   fMode & RTFS_UNIX_IRUSR ? 'r' : '-',
                                   fMode & RTFS_UNIX_IWUSR ? 'w' : '-',
@@ -1529,24 +1718,9 @@ static int rtFtpServerDataConnDirCollWrite(PRTFTPSERVERDATACONN pDataConn, PRTFT
                                   fMode & RTFS_UNIX_IWOTH ? 'w' : '-',
                                   fMode & RTFS_UNIX_IXOTH ? 'x' : '-');
 
-        rtFtpServerDataConnPrintf(pDataConn, " %c%c%c%c%c%c%c%c%c%c%c%c%c%c",
-                                  fMode & RTFS_DOS_READONLY          ? 'R' : '-',
-                                  fMode & RTFS_DOS_HIDDEN            ? 'H' : '-',
-                                  fMode & RTFS_DOS_SYSTEM            ? 'S' : '-',
-                                  fMode & RTFS_DOS_DIRECTORY         ? 'D' : '-',
-                                  fMode & RTFS_DOS_ARCHIVED          ? 'A' : '-',
-                                  fMode & RTFS_DOS_NT_DEVICE         ? 'd' : '-',
-                                  fMode & RTFS_DOS_NT_NORMAL         ? 'N' : '-',
-                                  fMode & RTFS_DOS_NT_TEMPORARY      ? 'T' : '-',
-                                  fMode & RTFS_DOS_NT_SPARSE_FILE    ? 'P' : '-',
-                                  fMode & RTFS_DOS_NT_REPARSE_POINT  ? 'J' : '-',
-                                  fMode & RTFS_DOS_NT_COMPRESSED     ? 'C' : '-',
-                                  fMode & RTFS_DOS_NT_OFFLINE        ? 'O' : '-',
-                                  fMode & RTFS_DOS_NT_NOT_CONTENT_INDEXED ? 'I' : '-',
-                                  fMode & RTFS_DOS_NT_ENCRYPTED      ? 'E' : '-');
-
         rtFtpServerDataConnPrintf(pDataConn, " %*u",
                                   cchLinkCol, pEntry->Info.Attr.u.Unix.cHardlinks);
+
         if (cchUidCol)
             rtFtpServerDataConnPrintf(pDataConn, " %*s", cchUidCol,
                                       rtFtpServerDecimalFormatOwner(pEntry->Info.Attr.u.Unix.uid, pEntry->pszOwner, pszTmp, cbTmp));
@@ -1554,7 +1728,7 @@ static int rtFtpServerDataConnDirCollWrite(PRTFTPSERVERDATACONN pDataConn, PRTFT
             rtFtpServerDataConnPrintf(pDataConn, " %*s", cchGidCol,
                                       rtFtpServerDecimalFormatGroup(pEntry->Info.Attr.u.Unix.gid, pEntry->pszGroup, pszTmp, cbTmp));
 
-        rtFtpServerDataConnPrintf(pDataConn," %*s", cchSizeCol, rtFtpServerFormatSize(pEntry->Info.cbObject, pszTmp, cbTmp));
+        rtFtpServerDataConnPrintf(pDataConn, "%*s", cchSizeCol, rtFtpServerFormatSize(pEntry->Info.cbObject, pszTmp, cbTmp));
 
         PCRTTIMESPEC pTime = (PCRTTIMESPEC)((uintptr_t)pEntry + offTime);
         rtFtpServerDataConnPrintf(pDataConn," %s", rtFtpServerFormatTimestamp(pTime, pszTmp, cbTmp));
@@ -1656,6 +1830,8 @@ static DECLCALLBACK(int) rtFtpServerDataConnListThread(RTTHREAD ThreadSelf, void
     RTFTPSERVER_HANDLE_CALLBACK_VA(pfnOnDirClose, pvHandle);
     pvHandle = NULL;
 
+    rtFtpServerCollSort(pColl);
+
     if (RT_SUCCESS(rc))
     {
         int rc2 = rtFtpServerDataConnDirCollWrite(pDataConn, pColl, szTmp, sizeof(szTmp));
@@ -1692,23 +1868,21 @@ static int rtFtpServerHandleLIST(PRTFTPSERVERCLIENT pClient, uint8_t cArgs, cons
 
         if (RT_SUCCESS(rc))
         {
-            int rc2 = rtFtpServerSendReplyRc(pClient,   pClient->pDataConn
-                                                      ? RTFTPSERVER_REPLY_DATACONN_ALREADY_OPEN
-                                                      : RTFTPSERVER_REPLY_FILE_STS_OK_OPENING_DATA_CONN);
-            if (RT_SUCCESS(rc))
-                rc = rc2;
-
-            if (RT_SUCCESS(rc))
+            if (pClient->pDataConn == NULL)
             {
                 rc = rtFtpServerDataConnCreate(pClient, &pClient->pDataConn);
                 if (RT_SUCCESS(rc))
                     rc = rtFtpServerDataConnStart(pClient->pDataConn, rtFtpServerDataConnListThread, cArgs, apcszArgs);
 
-                rc2 = rtFtpServerSendReplyRc(pClient,   RT_SUCCESS(rc)
-                                                      ? RTFTPSERVER_REPLY_FILE_ACTION_OKAY_COMPLETED
-                                                      : RTFTPSERVER_REPLY_CLOSING_DATA_CONN);
-                if (RT_SUCCESS(rc))
-                    rc = rc2;
+                int rc2 = rtFtpServerSendReplyRc(  pClient, RT_SUCCESS(rc)
+                                                 ? RTFTPSERVER_REPLY_DATACONN_ALREADY_OPEN
+                                                 : RTFTPSERVER_REPLY_CANT_OPEN_DATA_CONN);
+                AssertRC(rc2);
+            }
+            else
+            {
+                 int rc2 = rtFtpServerSendReplyRc(pClient, RTFTPSERVER_REPLY_DATACONN_ALREADY_OPEN);
+                 AssertRC(rc2);
             }
         }
         else
@@ -2232,6 +2406,11 @@ static int rtFtpServerProcessCommands(PRTFTPSERVERCLIENT pClient)
                 && ASMAtomicReadBool(&pClient->pDataConn->fStopped))
             {
                 Assert(pClient->pDataConn->rc != VERR_IPE_UNINITIALIZED_STATUS);
+
+                int rc2 = rtFtpServerSendReplyRc(pClient,
+                                                   RT_SUCCESS(pClient->pDataConn->rc)
+                                                 ? RTFTPSERVER_REPLY_CLOSING_DATA_CONN : RTFTPSERVER_REPLY_CONN_REQ_FILE_ACTION_NOT_TAKEN);
+                AssertRC(rc2);
 
                 rc = rtFtpServerDataConnStop(pClient->pDataConn);
                 if (RT_SUCCESS(rc))
