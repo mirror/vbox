@@ -1284,17 +1284,16 @@ int ShClSvcHostReportFormats(PSHCLCLIENT pClient, SHCLFORMATS fFormats)
         shClSvcMsgAddAndWakeupClient(pClient, pMsg);
         RTCritSectLeave(&pClient->CritSect);
 
-        /*
-         * ...
-         */
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
-# error fixme
         /* If we announce an URI list, create a transfer locally and also tell the guest to create
          * a transfer on the guest side. */
         if (fFormats & VBOX_SHCL_FMT_URI_LIST)
         {
             rc = shClSvcTransferStart(pClient, SHCLTRANSFERDIR_TO_REMOTE, SHCLSOURCE_LOCAL,
                                       NULL /* pTransfer */);
+            if (RT_SUCCESS(rc))
+                rc = shClSvcSetSource(pClient, SHCLSOURCE_LOCAL);
+
             if (RT_FAILURE(rc))
                 LogRel(("Shared Clipboard: Initializing host write transfer failed with %Rrc\n", rc));
         }
@@ -1304,8 +1303,6 @@ int ShClSvcHostReportFormats(PSHCLCLIENT pClient, SHCLFORMATS fFormats)
             pClient->State.fFlags |= SHCLCLIENTSTATE_FLAGS_READ_ACTIVE;
             rc = VINF_SUCCESS;
         }
-        /** @todo r=bird: shouldn't we also call shClSvcSetSource(pClient, SHCLSOURCE_LOCAL) here??
-         * Looks like the caller of this function does it, but only on windows.  Very helpful. */
     }
     else
         rc = VERR_NO_MEMORY;
@@ -1712,6 +1709,13 @@ static int shClSvcClientError(uint32_t cParms, VBOXHGCMSVCPARM paParms[], int *p
     return rc;
 }
 
+/**
+ * Sets the transfer source type of a Shared Clipboard client.
+ *
+ * @returns VBox status code.
+ * @param   pClient             Client to set transfer source type for.
+ * @param   enmSource           Source type to set.
+ */
 int shClSvcSetSource(PSHCLCLIENT pClient, SHCLSOURCE enmSource)
 {
     if (!pClient) /* If no client connected (anymore), bail out. */
