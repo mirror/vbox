@@ -1217,26 +1217,26 @@ int ShClSvcDataReadSignal(PSHCLCLIENT pClient, PSHCLCLIENTCMDCTX pCmdCtx,
 
     LogFlowFuncEnter();
 
-    SHCLEVENTID uEvent;
+    SHCLEVENTID idEvent;
     if (!(pClient->State.fGuestFeatures0 & VBOX_SHCL_GF_0_CONTEXT_ID)) /* Legacy, Guest Additions < 6.1. */
     {
         /* Older Guest Additions (<= VBox 6.0) did not have any context ID handling, so we ASSUME that the last event registered
          * is the one we want to handle (as this all was a synchronous protocol anyway). */
-        uEvent = ShClEventGetLast(&pClient->EventSrc);
+        idEvent = ShClEventGetLast(&pClient->EventSrc);
     }
     else
-        uEvent = VBOX_SHCL_CONTEXTID_GET_EVENT(pCmdCtx->uContextID);
+        idEvent = VBOX_SHCL_CONTEXTID_GET_EVENT(pCmdCtx->uContextID);
 
     int rc = VINF_SUCCESS;
 
     PSHCLEVENTPAYLOAD pPayload = NULL;
     if (pData->cbData)
-        rc = ShClPayloadAlloc(uEvent, pData->pvData, pData->cbData, &pPayload);
+        rc = ShClPayloadAlloc(idEvent, pData->pvData, pData->cbData, &pPayload);
 
     if (RT_SUCCESS(rc))
     {
         RTCritSectEnter(&pClient->CritSect);
-        rc = ShClEventSignal(&pClient->EventSrc, uEvent, pPayload);
+        rc = ShClEventSignal(&pClient->EventSrc, idEvent, pPayload);
         RTCritSectLeave(&pClient->CritSect);
         if (RT_FAILURE(rc))
             ShClPayloadFree(pPayload);
@@ -2391,7 +2391,7 @@ static DECLCALLBACK(int) extCallback(uint32_t u32Function, uint32_t u32Format, v
 
             /* The service extension wants read data from the guest. */
             case VBOX_CLIPBOARD_EXT_FN_DATA_READ:
-                rc = ShClSvcDataReadRequest(pClient, u32Format, NULL /* puEvent */);
+                rc = ShClSvcDataReadRequest(pClient, u32Format, NULL /* pidEvent */);
                 break;
 
             default:

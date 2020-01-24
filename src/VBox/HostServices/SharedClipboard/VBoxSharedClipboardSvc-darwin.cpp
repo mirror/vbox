@@ -207,7 +207,7 @@ int ShClSvcImplFormatAnnounce(PSHCLCLIENT pClient,
         return VINF_SUCCESS;
 #endif
 
-    return ShClSvcDataReadRequest(pClient, pFormats->Formats, NULL /* puEvent */);
+    return ShClSvcDataReadRequest(pClient, pFormats->Formats, NULL /* pidEvent */);
 }
 
 int ShClSvcImplReadData(PSHCLCLIENT pClient, PSHCLCLIENTCMDCTX pCmdCtx,

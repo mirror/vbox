@@ -160,16 +160,16 @@ static DECLCALLBACK(int) vboxClipboardOnTransferStartCallback(PSHCLTRANSFERCALLB
     {
         /* The IDataObject *must* be created on the same thread as our (proxy) window, so post a message to it
          * to do the stuff for us. */
-        const SHCLEVENTID uEvent = ShClEventIDGenerate(&pTransfer->Events);
+        const SHCLEVENTID idEvent = ShClEventIDGenerate(&pTransfer->Events);
 
-        rc = ShClEventRegister(&pTransfer->Events, uEvent);
+        rc = ShClEventRegister(&pTransfer->Events, idEvent);
         if (RT_SUCCESS(rc))
         {
             /* Don't want to rely on SendMessage (synchronous) here, so just post and wait the event getting signalled. */
-            ::PostMessage(pCtx->Win.hWnd, SHCL_WIN_WM_TRANSFER_START, (WPARAM)pTransfer, (LPARAM)uEvent);
+            ::PostMessage(pCtx->Win.hWnd, SHCL_WIN_WM_TRANSFER_START, (WPARAM)pTransfer, (LPARAM)idEvent);
 
             PSHCLEVENTPAYLOAD pPayload;
-            rc = ShClEventWait(&pTransfer->Events, uEvent, 30 * 1000 /* Timeout in ms */, &pPayload);
+            rc = ShClEventWait(&pTransfer->Events, idEvent, 30 * 1000 /* Timeout in ms */, &pPayload);
             if (RT_SUCCESS(rc))
             {
                 Assert(pPayload->cbData == sizeof(int));
@@ -178,7 +178,7 @@ static DECLCALLBACK(int) vboxClipboardOnTransferStartCallback(PSHCLTRANSFERCALLB
                 ShClPayloadFree(pPayload);
             }
 
-            ShClEventUnregister(&pTransfer->Events, uEvent);
+            ShClEventUnregister(&pTransfer->Events, idEvent);
         }
     }
     else
@@ -670,17 +670,17 @@ static LRESULT vboxClipboardWinProcessMsg(PSHCLCONTEXT pCtx, HWND hwnd, UINT msg
             PSHCLTRANSFER pTransfer  = (PSHCLTRANSFER)wParam;
             AssertPtr(pTransfer);
 
-            const SHCLEVENTID uEvent = (SHCLEVENTID)lParam;
+            const SHCLEVENTID idEvent = (SHCLEVENTID)lParam;
 
             Assert(ShClTransferGetSource(pTransfer) == SHCLSOURCE_REMOTE); /* Sanity. */
 
             int rcTransfer = SharedClipboardWinTransferCreate(pWinCtx, pTransfer);
 
             PSHCLEVENTPAYLOAD pPayload = NULL;
-            int rc = ShClPayloadAlloc(uEvent, &rcTransfer, sizeof(rcTransfer), &pPayload);
+            int rc = ShClPayloadAlloc(idEvent, &rcTransfer, sizeof(rcTransfer), &pPayload);
             if (RT_SUCCESS(rc))
             {
-                rc = ShClEventSignal(&pTransfer->Events, uEvent, pPayload);
+                rc = ShClEventSignal(&pTransfer->Events, idEvent, pPayload);
                 if (RT_FAILURE(rc))
                     ShClPayloadFree(pPayload);
             }

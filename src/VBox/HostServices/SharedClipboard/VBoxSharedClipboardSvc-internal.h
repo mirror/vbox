@@ -250,7 +250,7 @@ void shClSvcClientTransfersReset(PSHCLCLIENT pClient);
  * Locking is between the (host) service thread and the platform-dependent (window) thread.
  * @{
  */
-int ShClSvcDataReadRequest(PSHCLCLIENT pClient, SHCLFORMAT fFormat, PSHCLEVENTID puEvent);
+int ShClSvcDataReadRequest(PSHCLCLIENT pClient, SHCLFORMAT fFormat, PSHCLEVENTID pidEvent);
 int ShClSvcDataReadSignal(PSHCLCLIENT pClient, PSHCLCLIENTCMDCTX pCmdCtx, PSHCLDATABLOCK pData);
 int ShClSvcHostReportFormats(PSHCLCLIENT pClient, SHCLFORMATS fFormats);
 uint32_t ShClSvcGetMode(void);

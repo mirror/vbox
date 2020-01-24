@@ -166,7 +166,7 @@ struct CLIPREADCBREQ
     /** The actual size of the data written. */
     uint32_t            *pcbActual;
     /** The request's event ID. */
-    SHCLEVENTID          uEvent;
+    SHCLEVENTID          idEvent;
 };
 
 /**
@@ -192,7 +192,7 @@ int ShClSvcImplReadData(PSHCLCLIENT pClient,
         pReq->cb        = pData->cbData;
         pReq->pcbActual = pcbActual;
         const SHCLEVENTID idEvent = ShClEventIdGenerateAndRegister(&pClient->EventSrc);
-        pReq->uEvent    = idEvent;
+        pReq->idEvent    = idEvent;
         if (idEvent)
         {
             rc = ShClX11ReadDataFromX11(&pClient->State.pCtx->X11, pData->uFormat, pReq);
@@ -282,23 +282,23 @@ DECLCALLBACK(void) ShClX11RequestFromX11CompleteCallback(PSHCLCONTEXT pCtx, int 
 {
     RT_NOREF(rcCompletion);
 
-    LogFlowFunc(("rcCompletion=%Rrc, pReq=%p, pv=%p, cb=%RU32, uEvent=%RU32\n", rcCompletion, pReq, pv, cb, pReq->uEvent));
+    LogFlowFunc(("rcCompletion=%Rrc, pReq=%p, pv=%p, cb=%RU32, idEvent=%RU32\n", rcCompletion, pReq, pv, cb, pReq->idEvent));
 
     AssertMsgRC(rcCompletion, ("Clipboard data completion from X11 failed with %Rrc\n", rcCompletion));
 
-    if (pReq->uEvent != NIL_SHCLEVENTID)
+    if (pReq->idEvent != NIL_SHCLEVENTID)
     {
         int rc2;
 
         PSHCLEVENTPAYLOAD pPayload = NULL;
         if (pv && cb)
         {
-            rc2 = ShClPayloadAlloc(pReq->uEvent, pv, cb, &pPayload);
+            rc2 = ShClPayloadAlloc(pReq->idEvent, pv, cb, &pPayload);
             AssertRC(rc2);
         }
 
         RTCritSectEnter(&pCtx->pClient->CritSect);
-        rc2 = ShClEventSignal(&pCtx->pClient->EventSrc, pReq->uEvent, pPayload);
+        rc2 = ShClEventSignal(&pCtx->pClient->EventSrc, pReq->idEvent, pPayload);
         AssertRC(rc2);
         RTCritSectLeave(&pCtx->pClient->CritSect);
     }
@@ -339,22 +339,22 @@ DECLCALLBACK(int) ShClX11RequestDataForX11Callback(PSHCLCONTEXT pCtx, SHCLFORMAT
 #endif
     {
         /* Request data from the guest. */
-        SHCLEVENTID uEvent;
-        rc = ShClSvcDataReadRequest(pCtx->pClient, fFormat, &uEvent);
+        SHCLEVENTID idEvent;
+        rc = ShClSvcDataReadRequest(pCtx->pClient, fFormat, &idEvent);
         if (RT_SUCCESS(rc))
         {
             PSHCLEVENTPAYLOAD pPayload;
-            rc = ShClEventWait(&pCtx->pClient->EventSrc, uEvent, 30 * 1000, &pPayload);
+            rc = ShClEventWait(&pCtx->pClient->EventSrc, idEvent, 30 * 1000, &pPayload);
             if (RT_SUCCESS(rc))
             {
                 *ppv = pPayload ? pPayload->pvData : NULL;
                 *pcb = pPayload ? pPayload->cbData : 0;
 
                 /* Detach the payload, as the caller then will own the data. */
-                ShClEventPayloadDetach(&pCtx->pClient->EventSrc, uEvent);
+                ShClEventPayloadDetach(&pCtx->pClient->EventSrc, idEvent);
             }
 
-            ShClEventUnregister(&pCtx->pClient->EventSrc, uEvent);
+            ShClEventUnregister(&pCtx->pClient->EventSrc, idEvent);
         }
     }
 
@@ -388,22 +388,22 @@ int ShClSvcImplTransferGetRoots(PSHCLCLIENT pClient, PSHCLTRANSFER pTransfer)
 {
     LogFlowFuncEnter();
 
-    SHCLEVENTID uEvent = ShClEventIDGenerate(&pClient->EventSrc);
+    SHCLEVENTID idEvent = ShClEventIDGenerate(&pClient->EventSrc);
 
-    int rc = ShClEventRegister(&pClient->EventSrc, uEvent);
+    int rc = ShClEventRegister(&pClient->EventSrc, idEvent);
     if (RT_SUCCESS(rc))
     {
         CLIPREADCBREQ *pReq = (CLIPREADCBREQ *)RTMemAllocZ(sizeof(CLIPREADCBREQ));
         if (pReq)
         {
-            pReq->uEvent = uEvent;
+            pReq->idEvent = idEvent;
 
             rc = ShClX11ReadDataFromX11(&pClient->State.pCtx->X11, VBOX_SHCL_FMT_URI_LIST, pReq);
             if (RT_SUCCESS(rc))
             {
                 /* X supplies the data asynchronously, so we need to wait for data to arrive first. */
                 PSHCLEVENTPAYLOAD pPayload;
-                rc = ShClEventWait(&pClient->EventSrc, uEvent, 30 * 1000, &pPayload);
+                rc = ShClEventWait(&pClient->EventSrc, idEvent, 30 * 1000, &pPayload);
                 if (RT_SUCCESS(rc))
                 {
                     rc = ShClTransferRootsSet(pTransfer,
@@ -412,7 +412,7 @@ int ShClSvcImplTransferGetRoots(PSHCLCLIENT pClient, PSHCLTRANSFER pTransfer)
             }
         }
 
-        ShClEventUnregister(&pClient->EventSrc, uEvent);
+        ShClEventUnregister(&pClient->EventSrc, idEvent);
     }
 
     LogFlowFuncLeaveRC(rc);
