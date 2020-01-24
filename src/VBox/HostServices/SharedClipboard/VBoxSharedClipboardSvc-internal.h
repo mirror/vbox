@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2019 Oracle Corporation
+ * Copyright (C) 2006-2020 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -43,15 +43,6 @@ struct SHCLCLIENTSTATE;
 #endif /* VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS */
 
 /**
- * Structure for keeping a Shared Clipboard HGCM message context.
- */
-typedef struct _SHCLMSGCTX
-{
-    /** Context ID. */
-    uint64_t uContextID;
-} SHCLMSGCTX, *PSHCLMSGCTX;
-
-/**
  * A queued message for the guest.
  */
 typedef struct _SHCLCLIENTMSG
@@ -60,11 +51,10 @@ typedef struct _SHCLCLIENTMSG
     RTLISTNODE          ListEntry;
     /** Stored message ID (VBOX_SHCL_HOST_MSG_XXX). */
     uint32_t            idMsg;
-    /** Number of stored parameters. */
+    /** Context ID. */
+    uint64_t            idCtx;
+    /** Number of stored parameters in aParms. */
     uint32_t            cParms;
-    /** The context ID for this message.
-     * @todo r=bird: Why do we need this? */
-    uint64_t            idContext;
     /** HGCM parameters. */
     VBOXHGCMSVCPARM     aParms[RT_FLEXIBLE_ARRAY];
 } SHCLCLIENTMSG;

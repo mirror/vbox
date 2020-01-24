@@ -2955,6 +2955,8 @@
 #define VERR_SHCLPB_OBJ_HANDLE_INVALID              (-7104)
 /** A Shared Clipboard transfer ID is invalid. */
 #define VERR_SHCLPB_TRANSFER_ID_NOT_FOUND           (-7105)
+/** Maximum number of Shared Clipboard events for an event source has been reached. */
+#define VERR_SHCLPB_MAX_EVENTS_REACHED              (-7106)
 /** @} */
 /* SED-END */
 
