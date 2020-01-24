@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2019 Oracle Corporation
+ * Copyright (C) 2006-2020 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -500,7 +500,6 @@ static int shClSvcMsgSetOldWaitReturn(PSHCLCLIENTMSG pMsg, PVBOXHGCMSVCPARM paDs
 /**
  * Adds a new message to a client'S message queue.
  *
- * @returns IPRT status code.
  * @param   pClient             Pointer to the client data structure to add new message to.
  * @param   pMsg                Pointer to message to add. The queue then owns the pointer.
  * @param   fAppend             Whether to append or prepend the message to the queue.
@@ -1197,7 +1196,7 @@ int ShClSvcDataReadRequest(PSHCLCLIENT pClient, SHCLFORMAT fFormat, PSHCLEVENTID
             rc = VINF_SUCCESS;
         }
         else
-            rc = VERR_TRY_AGAIN;
+            rc = VERR_SHCLPB_MAX_EVENTS_REACHED;
 
         RTCritSectLeave(&pClient->CritSect);
     }
@@ -2176,7 +2175,7 @@ static SSMFIELD const s_aShClSSMClientMsgHdr[] =
  */
 static SSMFIELD const s_aShClSSMClientMsgCtx[] =
 {
-    SSMFIELD_ENTRY(SHCLCLIENTMSG, idContext),
+    SSMFIELD_ENTRY(SHCLCLIENTMSG, idCtx),
     SSMFIELD_ENTRY_TERM()
 };
 #endif /* !UNIT_TEST */
@@ -2331,7 +2330,7 @@ static DECLCALLBACK(int) svcLoadState(void *, uint32_t u32ClientID, void *pvClie
 
             PSHCLCLIENTMSG pMsg = shClSvcMsgAlloc(pClient, u.Msg.idMsg, u.Msg.cParms);
             AssertReturn(pMsg, VERR_NO_MEMORY);
-            pMsg->idContext = u.Msg.idContext;
+            pMsg->idCtx = u.Msg.idCtx;
 
             for (uint32_t p = 0; p < pMsg->cParms; p++)
             {
