@@ -17,7 +17,7 @@
  */
 
 /*
- * Copyright (C) 2006-2019 Oracle Corporation
+ * Copyright (C) 2006-2020 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -599,13 +599,14 @@
 #define VBOX_SHCL_GUEST_FN_NEGOTIATE_CHUNK_SIZE     28
 
 /** The last function number (used for validation/sanity).   */
-#define VBOX_SHCL_GUEST_FN_LAST                   VBOX_SHCL_GUEST_FN_NEGOTIATE_CHUNK_SIZE
+#define VBOX_SHCL_GUEST_FN_LAST                     VBOX_SHCL_GUEST_FN_NEGOTIATE_CHUNK_SIZE
 /** @} */
 
 
-/** The maximum default chunk size for a single data transfer.
- * @note r=bird: Nobody actually uses this.  */
-#define VBOX_SHCL_DEFAULT_MAX_CHUNK_SIZE          _64K
+/** Maximum chunk size for a single data transfer. */
+#define VBOX_SHCL_MAX_CHUNK_SIZE                  VMMDEV_MAX_HGCM_DATA_SIZE - _4K
+/** Default chunk size for a single data transfer. */
+#define VBOX_SHCL_DEFAULT_CHUNK_SIZE              RT_MIN(_64K, VBOX_SHCL_MAX_CHUNK_SIZE);
 
 
 /** @name VBOX_SHCL_GF_XXX - Guest features.
@@ -632,6 +633,7 @@
  *  message handling functions. */
 #define VBOX_SHCL_HF_0_CONTEXT_ID                 RT_BIT_64(0)
 /** The host can copy & paste files and directories.
+ *  This includes messages like
  * @since 6.1.? */
 #define VBOX_SHCL_HF_0_TRANSFERS                  RT_BIT_64(1)
 /** @} */
@@ -707,28 +709,6 @@ typedef struct _VBoxShClGetHostMsgOld
 } VBoxShClGetHostMsgOld;
 
 #define VBOX_SHCL_CPARMS_GET_HOST_MSG_OLD 2
-
-/**
- * Message for doing the protocol negotiation between the host
- * and the guest. Not available on older (VBox <= 6.0) hosts.
- *
- * This message acts as a beacon between the old protocol (VBox <= 6.0) and
- * the new protocol (>= VBox 6.1). Newer features are getting introduced soley via
- * the guest / host feature flags then.
- */
-typedef struct _VBoxShClConnect
-{
-    VBGLIOCHGCMCALL hdr;
-
-    /** uint32_t, out: Maximum chunk size for data transfers. */
-    HGCMFunctionParameter cbChunkSize;
-    /** uint32_t, in/out: Compression type. Currently unused. */
-    HGCMFunctionParameter enmCompression;
-    /** uint32_t, in/out: Checksum type used for data transfer. Currently unused. */
-    HGCMFunctionParameter enmChecksumType;
-} VBoxShClConnect;
-
-#define VBOX_SHCL_CPARMS_CONNECT 3
 
 /** @name VBOX_SHCL_GUEST_FN_REPORT_FORMATS
  * @{  */
@@ -1236,34 +1216,23 @@ typedef struct _VBoxShClErrorMsg
 
 #define VBOX_SHCL_CPARMS_ERROR 2
 
+/** @name VBOX_SHCL_GUEST_FN_NEGOTIATE_CHUNK_SIZE
+ * @{  */
+/** VBOX_SHCL_GUEST_FN_NEGOTIATE_CHUNK_SIZE parameters. */
+typedef struct _VBoxShClParmNegotiateChunkSize
+{
+    VBGLIOCHGCMCALL hdr;
+
+    /** uint32_t, in: Maximum chunk size. */
+    HGCMFunctionParameter cb32MaxChunkSize;
+    /** uint32_t, in: Default chunk size. */
+    HGCMFunctionParameter cb32ChunkSize;
+} VBoxShClParmNegotiateChunkSize;
+
+#define VBOX_SHCL_CPARMS_NEGOTIATE_CHUNK_SIZE     2
+/** @} */
+
 #pragma pack()
-
-#if 0 /** @todo r=bird: Wrong file + unused. Remove or put where they belong! */
-/**
- * Structure for keeping a Shared Clipboard file data chunk.
- *
- * @returns VBox status code.
- */
-typedef struct _SHCLFILEDATA
-{
-    /** Current file data chunk. */
-    void    *pvData;
-    /** Size (in bytes) of current data chunk. */
-    uint32_t cbData;
-    /** Checksum for current file data chunk. */
-    void    *pvChecksum;
-    /** Size (in bytes) of current data chunk. */
-    uint32_t cbChecksum;
-} SHCLFILEDATA, *PSHCLFILEDATA;
-
-/**
- * Structure for keeping Shared Clipboard error data.
- */
-typedef struct _SHCLERRORDATA
-{
-    int32_t rc;
-} SHCLERRORDATA, *PSHCLERRORDATA;
-#endif
 
 #endif /* !VBOX_INCLUDED_HostServices_VBoxClipboardSvc_h */
 

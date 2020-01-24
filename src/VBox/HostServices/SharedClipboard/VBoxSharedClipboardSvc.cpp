@@ -662,6 +662,46 @@ void shClSvcClientReset(PSHCLCLIENT pClient)
     RTCritSectLeave(&pClient->CritSect);
 }
 
+static int shClSvcClientNegogiateChunkSize(PSHCLCLIENT pClient, VBOXHGCMCALLHANDLE hCall,
+                                           uint32_t cParms, VBOXHGCMSVCPARM paParms[])
+{
+    /*
+     * Validate the request.
+     */
+    ASSERT_GUEST_RETURN(cParms == VBOX_SHCL_CPARMS_NEGOTIATE_CHUNK_SIZE, VERR_WRONG_PARAMETER_COUNT);
+    ASSERT_GUEST_RETURN(paParms[0].type == VBOX_HGCM_SVC_PARM_32BIT, VERR_WRONG_PARAMETER_TYPE);
+    uint32_t const cbClientMaxChunkSize = paParms[0].u.uint32;
+    ASSERT_GUEST_RETURN(paParms[1].type == VBOX_HGCM_SVC_PARM_32BIT, VERR_WRONG_PARAMETER_TYPE);
+    uint32_t const cbClientChunkSize    = paParms[1].u.uint32;
+
+    uint32_t const cbHostMaxChunkSize = VBOX_SHCL_MAX_CHUNK_SIZE; /** @todo Make this configurable. */
+
+    /*
+     * Do the work.
+     */
+    if (cbClientChunkSize == 0) /* Does the client want us to choose? */
+    {
+        paParms[0].u.uint32 = cbHostMaxChunkSize;                                     /* Maximum */
+        paParms[1].u.uint32 = RT_MIN(pClient->State.cbChunkSize, cbHostMaxChunkSize); /* Preferred */
+
+    }
+    else /* The client told us what it supports, so update and report back. */
+    {
+        paParms[0].u.uint32 = RT_MIN(cbClientMaxChunkSize, cbHostMaxChunkSize);         /* Maximum */
+        paParms[1].u.uint32 = RT_MIN(cbClientMaxChunkSize, pClient->State.cbChunkSize); /* Preferred */
+    }
+
+    int rc = g_pHelpers->pfnCallComplete(hCall, VINF_SUCCESS);
+    if (RT_SUCCESS(rc))
+    {
+        Log(("[Client %RU32] chunk size: %#RU32, max: %#RU32\n", paParms[1].u.uint32, paParms[0].u.uint32));
+    }
+    else
+        LogFunc(("pfnCallComplete -> %Rrc\n", rc));
+
+    return VINF_HGCM_ASYNC_EXECUTE;
+}
+
 /**
  * Implements VBOX_SHCL_GUEST_FN_REPORT_FEATURES.
  *
@@ -676,8 +716,8 @@ void shClSvcClientReset(PSHCLCLIENT pClient)
  * @param   cParms      Number of parameters.
  * @param   paParms     Array of parameters.
  */
-int shClSvcClientReportFeatures(PSHCLCLIENT pClient, VBOXHGCMCALLHANDLE hCall,
-                                uint32_t cParms, VBOXHGCMSVCPARM paParms[])
+static int shClSvcClientReportFeatures(PSHCLCLIENT pClient, VBOXHGCMCALLHANDLE hCall,
+                                       uint32_t cParms, VBOXHGCMSVCPARM paParms[])
 {
     /*
      * Validate the request.
@@ -719,7 +759,7 @@ int shClSvcClientReportFeatures(PSHCLCLIENT pClient, VBOXHGCMCALLHANDLE hCall,
  * @param   cParms      Number of parameters.
  * @param   paParms     Array of parameters.
  */
-int shClSvcClientQueryFeatures(VBOXHGCMCALLHANDLE hCall, uint32_t cParms, VBOXHGCMSVCPARM paParms[])
+static int shClSvcClientQueryFeatures(VBOXHGCMCALLHANDLE hCall, uint32_t cParms, VBOXHGCMSVCPARM paParms[])
 {
     /*
      * Validate the request.
@@ -1517,7 +1557,7 @@ static int shClSvcClientReadData(PSHCLCLIENT pClient, uint32_t cParms, VBOXHGCMS
 
         /* Read clipboard data from the extension. */
         rc = g_ExtState.pfnExtension(g_ExtState.pvExtension, VBOX_CLIPBOARD_EXT_FN_DATA_READ, &parms, sizeof(parms));
-        LogRelFlowFunc(("DATA/Ext: fDelayedAnnouncement=%RTbool fDelayedFormats=%#x cbData=%RU32->%RU32 rc=%Rrc\n",
+        LogRelFlowFunc(("Shared Clipboard: DATA/Ext: fDelayedAnnouncement=%RTbool fDelayedFormats=%#x cbData=%RU32->%RU32 rc=%Rrc\n",
                         g_ExtState.fDelayedAnnouncement, g_ExtState.fDelayedFormats, dataBlock.cbData, parms.cbData, rc));
 
         /* Did the extension send the clipboard formats yet?
@@ -1539,7 +1579,7 @@ static int shClSvcClientReadData(PSHCLCLIENT pClient, uint32_t cParms, VBOXHGCMS
     else
     {
         rc = ShClSvcImplReadData(pClient, &cmdCtx, &dataBlock, &cbActual);
-        LogRelFlowFunc(("DATA/Host: cbData=%RU32->%RU32 rc=%Rrc\n", dataBlock.cbData, cbActual, rc));
+        LogRelFlowFunc(("Shared Clipboard: DATA/Host: cbData=%RU32->%RU32 rc=%Rrc\n", dataBlock.cbData, cbActual, rc));
     }
 
     if (RT_SUCCESS(rc))
@@ -1870,8 +1910,12 @@ static DECLCALLBACK(void) svcCall(void *,
             break;
 
         case VBOX_SHCL_GUEST_FN_CONNECT:
-            LogRel(("6.1.0 beta or rc additions detected. Please upgrade!\n"));
+            LogRel(("Shared Clipboard: 6.1.0 beta or rc Guest Additions detected. Please upgrade!\n"));
             rc = VERR_NOT_IMPLEMENTED;
+            break;
+
+        case VBOX_SHCL_GUEST_FN_NEGOTIATE_CHUNK_SIZE:
+            rc = shClSvcClientNegogiateChunkSize(pClient, callHandle, cParms, paParms);
             break;
 
         case VBOX_SHCL_GUEST_FN_REPORT_FEATURES:
@@ -2011,9 +2055,9 @@ void shclSvcClientStateReset(PSHCLCLIENTSTATE pClientState)
     pClientState->fGuestFeatures0 = VBOX_SHCL_GF_NONE;
     pClientState->fGuestFeatures1 = VBOX_SHCL_GF_NONE;
 
-    pClientState->cbChunkSize        = _64K; /** Make this configurable. */
-    pClientState->enmSource          = SHCLSOURCE_INVALID;
-    pClientState->fFlags             = SHCLCLIENTSTATE_FLAGS_NONE;
+    pClientState->cbChunkSize     = VBOX_SHCL_DEFAULT_CHUNK_SIZE; /** @todo Make this configurable. */
+    pClientState->enmSource       = SHCLSOURCE_INVALID;
+    pClientState->fFlags          = SHCLCLIENTSTATE_FLAGS_NONE;
 
     pClientState->POD.enmDir             = SHCLTRANSFERDIR_UNKNOWN;
     pClientState->POD.uFormat            = VBOX_SHCL_FMT_NONE;

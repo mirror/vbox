@@ -737,6 +737,8 @@ bool shClSvcTransferMsgIsAllowed(uint32_t uMode, uint32_t uMsg)
 
         case VBOX_SHCL_GUEST_FN_CONNECT:
             RT_FALL_THROUGH();
+        case VBOX_SHCL_GUEST_FN_NEGOTIATE_CHUNK_SIZE:
+            RT_FALL_THROUGH();
         case VBOX_SHCL_GUEST_FN_MSG_PEEK_WAIT:
             RT_FALL_THROUGH();
         case VBOX_SHCL_GUEST_FN_MSG_PEEK_NOWAIT:

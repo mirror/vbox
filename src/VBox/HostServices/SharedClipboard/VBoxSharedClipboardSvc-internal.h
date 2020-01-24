@@ -115,7 +115,7 @@ typedef struct SHCLCLIENTSTATE
     uint64_t                fGuestFeatures0;
     /** Guest feature flags, VBOX_SHCL_GF_1_XXX. */
     uint64_t                fGuestFeatures1;
-    /** Maximum chunk size to use for data transfers. Set to _64K by default. */
+    /** Chunk size to use for data transfers. */
     uint32_t                cbChunkSize;
     /** Where the transfer sources its data from. */
     SHCLSOURCE              enmSource;
