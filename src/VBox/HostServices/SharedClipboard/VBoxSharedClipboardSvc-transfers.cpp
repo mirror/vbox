@@ -50,9 +50,9 @@ extern ClipboardClientQueue g_listClientsDeferred;
 /*********************************************************************************************************************************
 *   Prototypes                                                                                                                   *
 *********************************************************************************************************************************/
-static int shClSvcTransferSetListOpen(uint32_t cParms, VBOXHGCMSVCPARM paParms[],
+static int shClSvcTransferSetListOpen(uint32_t cParms, VBOXHGCMSVCPARM aParms[],
                                       PSHCLMSGCTX pMsgCtx, PSHCLLISTOPENPARMS pOpenParms);
-static int shClSvcTransferSetListClose(uint32_t cParms, VBOXHGCMSVCPARM paParms[],
+static int shClSvcTransferSetListClose(uint32_t cParms, VBOXHGCMSVCPARM aParms[],
                                        PSHCLMSGCTX pMsgCtx, SHCLLISTHANDLE hList);
 
 
@@ -126,9 +126,9 @@ DECLCALLBACK(int) shClSvcTransferIfaceGetRoots(PSHCLPROVIDERCTX pCtx, PSHCLROOTL
     {
         SHCLEVENTID idEvent = ShClEventIDGenerate(&pCtx->pTransfer->Events);
 
-        HGCMSvcSetU64(&pMsgHdr->paParms[0], VBOX_SHCL_CONTEXTID_MAKE(pClient->State.uSessionID,
-                                                                     pCtx->pTransfer->State.uID, idEvent));
-        HGCMSvcSetU32(&pMsgHdr->paParms[1], 0 /* fRoots */);
+        HGCMSvcSetU64(&pMsgHdr->aParms[0], VBOX_SHCL_CONTEXTID_MAKE(pClient->State.uSessionID,
+                                                                    pCtx->pTransfer->State.uID, idEvent));
+        HGCMSvcSetU32(&pMsgHdr->aParms[1], 0 /* fRoots */);
 
         rc = shClSvcMsgAdd(pClient, pMsgHdr, true /* fAppend */);
         if (RT_SUCCESS(rc))
@@ -166,11 +166,11 @@ DECLCALLBACK(int) shClSvcTransferIfaceGetRoots(PSHCLPROVIDERCTX pCtx, PSHCLROOTL
 
                                     idEvent = ShClEventIDGenerate(&pCtx->pTransfer->Events);
 
-                                    HGCMSvcSetU64(&pMsgEntry->paParms[0],
+                                    HGCMSvcSetU64(&pMsgEntry->aParms[0],
                                                   VBOX_SHCL_CONTEXTID_MAKE(pClient->State.uClientID,
                                                                                        pCtx->pTransfer->State.uID, idEvent));
-                                    HGCMSvcSetU32(&pMsgEntry->paParms[1], 0 /* fRoots */);
-                                    HGCMSvcSetU32(&pMsgEntry->paParms[2], i /* uIndex */);
+                                    HGCMSvcSetU32(&pMsgEntry->aParms[1], 0 /* fRoots */);
+                                    HGCMSvcSetU32(&pMsgEntry->aParms[2], i /* uIndex */);
 
                                     rc2 = ShClEventRegister(&pCtx->pTransfer->Events, idEvent);
                                     AssertRC(rc2);
@@ -248,7 +248,7 @@ DECLCALLBACK(int) shClSvcTransferIfaceListOpen(PSHCLPROVIDERCTX pCtx,
         pMsg->Ctx.uContextID = VBOX_SHCL_CONTEXTID_MAKE(pClient->State.uSessionID, pCtx->pTransfer->State.uID,
                                                         idEvent);
 
-        rc = shClSvcTransferSetListOpen(pMsg->cParms, pMsg->paParms, &pMsg->Ctx, pOpenParms);
+        rc = shClSvcTransferSetListOpen(pMsg->cParms, pMsg->aParms, &pMsg->Ctx, pOpenParms);
         if (RT_SUCCESS(rc))
         {
             rc = shClSvcMsgAdd(pClient, pMsg, true /* fAppend */);
@@ -308,7 +308,7 @@ DECLCALLBACK(int) shClSvcTransferIfaceListClose(PSHCLPROVIDERCTX pCtx, SHCLLISTH
         pMsg->Ctx.uContextID = VBOX_SHCL_CONTEXTID_MAKE(pClient->State.uSessionID, pCtx->pTransfer->State.uID,
                                                         idEvent);
 
-        rc = shClSvcTransferSetListClose(pMsg->cParms, pMsg->paParms, &pMsg->Ctx, hList);
+        rc = shClSvcTransferSetListClose(pMsg->cParms, pMsg->aParms, &pMsg->Ctx, hList);
         if (RT_SUCCESS(rc))
         {
             rc = shClSvcMsgAdd(pClient, pMsg, true /* fAppend */);
@@ -353,10 +353,10 @@ DECLCALLBACK(int) shClSvcTransferIfaceListHdrRead(PSHCLPROVIDERCTX pCtx,
     {
         const SHCLEVENTID idEvent = ShClEventIDGenerate(&pCtx->pTransfer->Events);
 
-        HGCMSvcSetU64(&pMsg->paParms[0], VBOX_SHCL_CONTEXTID_MAKE(pClient->State.uSessionID,
-                                                                  pCtx->pTransfer->State.uID, idEvent));
-        HGCMSvcSetU64(&pMsg->paParms[1], hList);
-        HGCMSvcSetU32(&pMsg->paParms[2], 0 /* fFlags */);
+        HGCMSvcSetU64(&pMsg->aParms[0], VBOX_SHCL_CONTEXTID_MAKE(pClient->State.uSessionID,
+                                                                 pCtx->pTransfer->State.uID, idEvent));
+        HGCMSvcSetU64(&pMsg->aParms[1], hList);
+        HGCMSvcSetU32(&pMsg->aParms[2], 0 /* fFlags */);
 
         rc = shClSvcMsgAdd(pClient, pMsg, true /* fAppend */);
         if (RT_SUCCESS(rc))
@@ -414,10 +414,10 @@ DECLCALLBACK(int) shClSvcTransferIfaceListEntryRead(PSHCLPROVIDERCTX pCtx,
     {
         const SHCLEVENTID idEvent = ShClEventIDGenerate(&pCtx->pTransfer->Events);
 
-        HGCMSvcSetU64(&pMsg->paParms[0], VBOX_SHCL_CONTEXTID_MAKE(pClient->State.uSessionID,
-                                                                  pCtx->pTransfer->State.uID, idEvent));
-        HGCMSvcSetU64(&pMsg->paParms[1], hList);
-        HGCMSvcSetU32(&pMsg->paParms[2], 0 /* fInfo */);
+        HGCMSvcSetU64(&pMsg->aParms[0], VBOX_SHCL_CONTEXTID_MAKE(pClient->State.uSessionID,
+                                                                 pCtx->pTransfer->State.uID, idEvent));
+        HGCMSvcSetU64(&pMsg->aParms[1], hList);
+        HGCMSvcSetU32(&pMsg->aParms[2], 0 /* fInfo */);
 
         rc = shClSvcMsgAdd(pClient, pMsg, true /* fAppend */);
         if (RT_SUCCESS(rc))
@@ -478,12 +478,12 @@ int shClSvcTransferIfaceObjOpen(PSHCLPROVIDERCTX pCtx, PSHCLOBJOPENCREATEPARMS p
 
         const uint32_t cbPath = (uint32_t)strlen(pCreateParms->pszPath) + 1; /* Include terminating zero */
 
-        HGCMSvcSetU64(&pMsg->paParms[0], VBOX_SHCL_CONTEXTID_MAKE(pClient->State.uSessionID,
-                                                                  pCtx->pTransfer->State.uID, idEvent));
-        HGCMSvcSetU64(&pMsg->paParms[1], 0); /* uHandle */
-        HGCMSvcSetU32(&pMsg->paParms[2], cbPath);
-        HGCMSvcSetPv (&pMsg->paParms[3], pCreateParms->pszPath, cbPath);
-        HGCMSvcSetU32(&pMsg->paParms[4], pCreateParms->fCreate);
+        HGCMSvcSetU64(&pMsg->aParms[0], VBOX_SHCL_CONTEXTID_MAKE(pClient->State.uSessionID,
+                                                                 pCtx->pTransfer->State.uID, idEvent));
+        HGCMSvcSetU64(&pMsg->aParms[1], 0); /* uHandle */
+        HGCMSvcSetU32(&pMsg->aParms[2], cbPath);
+        HGCMSvcSetPv (&pMsg->aParms[3], pCreateParms->pszPath, cbPath);
+        HGCMSvcSetU32(&pMsg->aParms[4], pCreateParms->fCreate);
 
         rc = shClSvcMsgAdd(pClient, pMsg, true /* fAppend */);
         if (RT_SUCCESS(rc))
@@ -536,9 +536,9 @@ int shClSvcTransferIfaceObjClose(PSHCLPROVIDERCTX pCtx, SHCLOBJHANDLE hObj)
     {
         const SHCLEVENTID idEvent = ShClEventIDGenerate(&pCtx->pTransfer->Events);
 
-        HGCMSvcSetU64(&pMsg->paParms[0], VBOX_SHCL_CONTEXTID_MAKE(pClient->State.uSessionID,
-                                                                  pCtx->pTransfer->State.uID, idEvent));
-        HGCMSvcSetU64(&pMsg->paParms[1], hObj);
+        HGCMSvcSetU64(&pMsg->aParms[0], VBOX_SHCL_CONTEXTID_MAKE(pClient->State.uSessionID,
+                                                                 pCtx->pTransfer->State.uID, idEvent));
+        HGCMSvcSetU64(&pMsg->aParms[1], hObj);
 
         rc = shClSvcMsgAdd(pClient, pMsg, true /* fAppend */);
         if (RT_SUCCESS(rc))
@@ -592,11 +592,11 @@ int shClSvcTransferIfaceObjRead(PSHCLPROVIDERCTX pCtx, SHCLOBJHANDLE hObj,
     {
         const SHCLEVENTID idEvent = ShClEventIDGenerate(&pCtx->pTransfer->Events);
 
-        HGCMSvcSetU64(&pMsg->paParms[0], VBOX_SHCL_CONTEXTID_MAKE(pClient->State.uSessionID,
-                                                                  pCtx->pTransfer->State.uID, idEvent));
-        HGCMSvcSetU64(&pMsg->paParms[1], hObj);
-        HGCMSvcSetU32(&pMsg->paParms[2], cbData);
-        HGCMSvcSetU32(&pMsg->paParms[3], fFlags);
+        HGCMSvcSetU64(&pMsg->aParms[0], VBOX_SHCL_CONTEXTID_MAKE(pClient->State.uSessionID,
+                                                                 pCtx->pTransfer->State.uID, idEvent));
+        HGCMSvcSetU64(&pMsg->aParms[1], hObj);
+        HGCMSvcSetU32(&pMsg->aParms[2], cbData);
+        HGCMSvcSetU32(&pMsg->aParms[3], fFlags);
 
         rc = shClSvcMsgAdd(pClient, pMsg, true /* fAppend */);
         if (RT_SUCCESS(rc))
@@ -651,11 +651,11 @@ int shClSvcTransferIfaceObjWrite(PSHCLPROVIDERCTX pCtx, SHCLOBJHANDLE hObj,
     {
         const SHCLEVENTID idEvent = ShClEventIDGenerate(&pCtx->pTransfer->Events);
 
-        HGCMSvcSetU64(&pMsg->paParms[0], VBOX_SHCL_CONTEXTID_MAKE(pClient->State.uSessionID,
-                                                                  pCtx->pTransfer->State.uID, idEvent));
-        HGCMSvcSetU64(&pMsg->paParms[1], hObj);
-        HGCMSvcSetU64(&pMsg->paParms[2], cbData);
-        HGCMSvcSetU64(&pMsg->paParms[3], fFlags);
+        HGCMSvcSetU64(&pMsg->aParms[0], VBOX_SHCL_CONTEXTID_MAKE(pClient->State.uSessionID,
+                                                                 pCtx->pTransfer->State.uID, idEvent));
+        HGCMSvcSetU64(&pMsg->aParms[1], hObj);
+        HGCMSvcSetU64(&pMsg->aParms[2], cbData);
+        HGCMSvcSetU64(&pMsg->aParms[3], fFlags);
 
         rc = shClSvcMsgAdd(pClient, pMsg, true /* fAppend */);
         if (RT_SUCCESS(rc))
@@ -777,11 +777,11 @@ bool shClSvcTransferMsgIsAllowed(uint32_t uMode, uint32_t uMsg)
  * Gets a transfer message reply from HGCM service parameters.
  *
  * @returns VBox status code.
- * @param   cParms              Number of HGCM parameters supplied in \a paParms.
- * @param   paParms             Array of HGCM parameters.
+ * @param   cParms              Number of HGCM parameters supplied in \a aParms.
+ * @param   aParms              Array of HGCM parameters.
  * @param   pReply              Where to store the reply.
  */
-static int shClSvcTransferGetReply(uint32_t cParms, VBOXHGCMSVCPARM paParms[],
+static int shClSvcTransferGetReply(uint32_t cParms, VBOXHGCMSVCPARM aParms[],
                                    PSHCLREPLY pReply)
 {
     int rc;
@@ -790,15 +790,15 @@ static int shClSvcTransferGetReply(uint32_t cParms, VBOXHGCMSVCPARM paParms[],
     {
         uint32_t cbPayload = 0;
 
-        /* paParms[0] has the context ID. */
-        rc = HGCMSvcGetU32(&paParms[1], &pReply->uType);
+        /* aParms[0] has the context ID. */
+        rc = HGCMSvcGetU32(&aParms[1], &pReply->uType);
         if (RT_SUCCESS(rc))
-            rc = HGCMSvcGetU32(&paParms[2], &pReply->rc);
+            rc = HGCMSvcGetU32(&aParms[2], &pReply->rc);
         if (RT_SUCCESS(rc))
-            rc = HGCMSvcGetU32(&paParms[3], &cbPayload);
+            rc = HGCMSvcGetU32(&aParms[3], &cbPayload);
         if (RT_SUCCESS(rc))
         {
-            rc = HGCMSvcGetPv(&paParms[4], &pReply->pvPayload, &pReply->cbPayload);
+            rc = HGCMSvcGetPv(&aParms[4], &pReply->pvPayload, &pReply->cbPayload);
             AssertReturn(cbPayload == pReply->cbPayload, VERR_INVALID_PARAMETER);
         }
 
@@ -811,7 +811,7 @@ static int shClSvcTransferGetReply(uint32_t cParms, VBOXHGCMSVCPARM paParms[],
                 case VBOX_SHCL_REPLYMSGTYPE_TRANSFER_STATUS:
                 {
                     if (cParms >= 6)
-                        rc = HGCMSvcGetU32(&paParms[5], &pReply->u.TransferStatus.uStatus);
+                        rc = HGCMSvcGetU32(&aParms[5], &pReply->u.TransferStatus.uStatus);
 
                     LogFlowFunc(("uTransferStatus=%RU32\n", pReply->u.TransferStatus.uStatus));
                     break;
@@ -820,7 +820,7 @@ static int shClSvcTransferGetReply(uint32_t cParms, VBOXHGCMSVCPARM paParms[],
                 case VBOX_SHCL_REPLYMSGTYPE_LIST_OPEN:
                 {
                     if (cParms >= 6)
-                        rc = HGCMSvcGetU64(&paParms[5], &pReply->u.ListOpen.uHandle);
+                        rc = HGCMSvcGetU64(&aParms[5], &pReply->u.ListOpen.uHandle);
 
                     LogFlowFunc(("hListOpen=%RU64\n", pReply->u.ListOpen.uHandle));
                     break;
@@ -829,7 +829,7 @@ static int shClSvcTransferGetReply(uint32_t cParms, VBOXHGCMSVCPARM paParms[],
                 case VBOX_SHCL_REPLYMSGTYPE_LIST_CLOSE:
                 {
                     if (cParms >= 6)
-                        rc = HGCMSvcGetU64(&paParms[5], &pReply->u.ListClose.uHandle);
+                        rc = HGCMSvcGetU64(&aParms[5], &pReply->u.ListClose.uHandle);
 
                     LogFlowFunc(("hListClose=%RU64\n", pReply->u.ListClose.uHandle));
                     break;
@@ -838,7 +838,7 @@ static int shClSvcTransferGetReply(uint32_t cParms, VBOXHGCMSVCPARM paParms[],
                 case VBOX_SHCL_REPLYMSGTYPE_OBJ_OPEN:
                 {
                     if (cParms >= 6)
-                        rc = HGCMSvcGetU64(&paParms[5], &pReply->u.ObjOpen.uHandle);
+                        rc = HGCMSvcGetU64(&aParms[5], &pReply->u.ObjOpen.uHandle);
 
                     LogFlowFunc(("hObjOpen=%RU64\n", pReply->u.ObjOpen.uHandle));
                     break;
@@ -847,7 +847,7 @@ static int shClSvcTransferGetReply(uint32_t cParms, VBOXHGCMSVCPARM paParms[],
                 case VBOX_SHCL_REPLYMSGTYPE_OBJ_CLOSE:
                 {
                     if (cParms >= 6)
-                        rc = HGCMSvcGetU64(&paParms[5], &pReply->u.ObjClose.uHandle);
+                        rc = HGCMSvcGetU64(&aParms[5], &pReply->u.ObjClose.uHandle);
 
                     LogFlowFunc(("hObjClose=%RU64\n", pReply->u.ObjClose.uHandle));
                     break;
@@ -870,20 +870,20 @@ static int shClSvcTransferGetReply(uint32_t cParms, VBOXHGCMSVCPARM paParms[],
  * Gets a transfer root list header from HGCM service parameters.
  *
  * @returns VBox status code.
- * @param   cParms              Number of HGCM parameters supplied in \a paParms.
- * @param   paParms             Array of HGCM parameters.
+ * @param   cParms              Number of HGCM parameters supplied in \a aParms.
+ * @param   aParms              Array of HGCM parameters.
  * @param   pRootLstHdr         Where to store the transfer root list header on success.
  */
-static int shClSvcTransferGetRootListHdr(uint32_t cParms, VBOXHGCMSVCPARM paParms[],
+static int shClSvcTransferGetRootListHdr(uint32_t cParms, VBOXHGCMSVCPARM aParms[],
                                          PSHCLROOTLISTHDR pRootLstHdr)
 {
     int rc;
 
     if (cParms == VBOX_SHCL_CPARMS_ROOT_LIST_HDR_WRITE)
     {
-        rc = HGCMSvcGetU32(&paParms[1], &pRootLstHdr->fRoots);
+        rc = HGCMSvcGetU32(&aParms[1], &pRootLstHdr->fRoots);
         if (RT_SUCCESS(rc))
-            rc = HGCMSvcGetU32(&paParms[2], &pRootLstHdr->cRoots);
+            rc = HGCMSvcGetU32(&aParms[2], &pRootLstHdr->cRoots);
     }
     else
         rc = VERR_INVALID_PARAMETER;
@@ -896,28 +896,28 @@ static int shClSvcTransferGetRootListHdr(uint32_t cParms, VBOXHGCMSVCPARM paParm
  * Gets a transfer root list entry from HGCM service parameters.
  *
  * @returns VBox status code.
- * @param   cParms              Number of HGCM parameters supplied in \a paParms.
- * @param   paParms             Array of HGCM parameters.
+ * @param   cParms              Number of HGCM parameters supplied in \a aParms.
+ * @param   aParms              Array of HGCM parameters.
  * @param   pListEntry          Where to store the root list entry.
  */
-static int shClSvcTransferGetRootListEntry(uint32_t cParms, VBOXHGCMSVCPARM paParms[],
+static int shClSvcTransferGetRootListEntry(uint32_t cParms, VBOXHGCMSVCPARM aParms[],
                                            PSHCLROOTLISTENTRY pListEntry)
 {
     int rc;
 
     if (cParms == VBOX_SHCL_CPARMS_ROOT_LIST_ENTRY_WRITE)
     {
-        rc = HGCMSvcGetU32(&paParms[1], &pListEntry->fInfo);
-        /* Note: paParms[2] contains the entry index, currently being ignored. */
+        rc = HGCMSvcGetU32(&aParms[1], &pListEntry->fInfo);
+        /* Note: aParms[2] contains the entry index, currently being ignored. */
         if (RT_SUCCESS(rc))
-            rc = HGCMSvcGetPv(&paParms[3], (void **)&pListEntry->pszName, &pListEntry->cbName);
+            rc = HGCMSvcGetPv(&aParms[3], (void **)&pListEntry->pszName, &pListEntry->cbName);
         if (RT_SUCCESS(rc))
         {
             uint32_t cbInfo;
-            rc = HGCMSvcGetU32(&paParms[4], &cbInfo);
+            rc = HGCMSvcGetU32(&aParms[4], &cbInfo);
             if (RT_SUCCESS(rc))
             {
-                rc = HGCMSvcGetPv(&paParms[5], &pListEntry->pvInfo, &pListEntry->cbInfo);
+                rc = HGCMSvcGetPv(&aParms[5], &pListEntry->pvInfo, &pListEntry->cbInfo);
                 AssertReturn(cbInfo == pListEntry->cbInfo, VERR_INVALID_PARAMETER);
             }
         }
@@ -933,11 +933,11 @@ static int shClSvcTransferGetRootListEntry(uint32_t cParms, VBOXHGCMSVCPARM paPa
  * Gets a transfer list open request from HGCM service parameters.
  *
  * @returns VBox status code.
- * @param   cParms              Number of HGCM parameters supplied in \a paParms.
- * @param   paParms             Array of HGCM parameters.
+ * @param   cParms              Number of HGCM parameters supplied in \a aParms.
+ * @param   aParms              Array of HGCM parameters.
  * @param   pOpenParms          Where to store the open parameters of the request.
  */
-static int shClSvcTransferGetListOpen(uint32_t cParms, VBOXHGCMSVCPARM paParms[],
+static int shClSvcTransferGetListOpen(uint32_t cParms, VBOXHGCMSVCPARM aParms[],
                                       PSHCLLISTOPENPARMS pOpenParms)
 {
     int rc;
@@ -947,19 +947,19 @@ static int shClSvcTransferGetListOpen(uint32_t cParms, VBOXHGCMSVCPARM paParms[]
         uint32_t cbPath   = 0;
         uint32_t cbFilter = 0;
 
-        rc = HGCMSvcGetU32(&paParms[1], &pOpenParms->fList);
+        rc = HGCMSvcGetU32(&aParms[1], &pOpenParms->fList);
         if (RT_SUCCESS(rc))
-            rc = HGCMSvcGetU32(&paParms[2], &cbFilter);
+            rc = HGCMSvcGetU32(&aParms[2], &cbFilter);
         if (RT_SUCCESS(rc))
         {
-            rc = HGCMSvcGetStr(&paParms[3], &pOpenParms->pszFilter, &pOpenParms->cbFilter);
+            rc = HGCMSvcGetStr(&aParms[3], &pOpenParms->pszFilter, &pOpenParms->cbFilter);
             AssertReturn(cbFilter == pOpenParms->cbFilter, VERR_INVALID_PARAMETER);
         }
         if (RT_SUCCESS(rc))
-            rc = HGCMSvcGetU32(&paParms[4], &cbPath);
+            rc = HGCMSvcGetU32(&aParms[4], &cbPath);
         if (RT_SUCCESS(rc))
         {
-            rc = HGCMSvcGetStr(&paParms[5], &pOpenParms->pszPath, &pOpenParms->cbPath);
+            rc = HGCMSvcGetStr(&aParms[5], &pOpenParms->pszPath, &pOpenParms->cbPath);
             AssertReturn(cbPath == pOpenParms->cbPath, VERR_INVALID_PARAMETER);
         }
 
@@ -976,25 +976,25 @@ static int shClSvcTransferGetListOpen(uint32_t cParms, VBOXHGCMSVCPARM paParms[]
  * Sets a transfer list open request to HGCM service parameters.
  *
  * @returns VBox status code.
- * @param   cParms              Number of HGCM parameters supplied in \a paParms.
- * @param   paParms             Array of HGCM parameters.
+ * @param   cParms              Number of HGCM parameters supplied in \a aParms.
+ * @param   aParms              Array of HGCM parameters.
  * @param   pMsgCtx             Message context to use.
  * @param   pOpenParms          List open parameters to set.
  */
-static int shClSvcTransferSetListOpen(uint32_t cParms, VBOXHGCMSVCPARM paParms[],
+static int shClSvcTransferSetListOpen(uint32_t cParms, VBOXHGCMSVCPARM aParms[],
                                       PSHCLMSGCTX pMsgCtx, PSHCLLISTOPENPARMS pOpenParms)
 {
     int rc;
 
     if (cParms == VBOX_SHCL_CPARMS_LIST_OPEN)
     {
-        HGCMSvcSetU64(&paParms[0], pMsgCtx->uContextID);
-        HGCMSvcSetU32(&paParms[1], pOpenParms->fList);
-        HGCMSvcSetU32(&paParms[2], pOpenParms->cbFilter);
-        HGCMSvcSetPv (&paParms[3], pOpenParms->pszFilter, pOpenParms->cbFilter);
-        HGCMSvcSetU32(&paParms[4], pOpenParms->cbPath);
-        HGCMSvcSetPv (&paParms[5], pOpenParms->pszPath, pOpenParms->cbPath);
-        HGCMSvcSetU64(&paParms[6], 0); /* OUT: uHandle */
+        HGCMSvcSetU64(&aParms[0], pMsgCtx->uContextID);
+        HGCMSvcSetU32(&aParms[1], pOpenParms->fList);
+        HGCMSvcSetU32(&aParms[2], pOpenParms->cbFilter);
+        HGCMSvcSetPv (&aParms[3], pOpenParms->pszFilter, pOpenParms->cbFilter);
+        HGCMSvcSetU32(&aParms[4], pOpenParms->cbPath);
+        HGCMSvcSetPv (&aParms[5], pOpenParms->pszPath, pOpenParms->cbPath);
+        HGCMSvcSetU64(&aParms[6], 0); /* OUT: uHandle */
 
         rc = VINF_SUCCESS;
     }
@@ -1009,20 +1009,20 @@ static int shClSvcTransferSetListOpen(uint32_t cParms, VBOXHGCMSVCPARM paParms[]
  * Sets a transfer list close request to HGCM service parameters.
  *
  * @returns VBox status code.
- * @param   cParms              Number of HGCM parameters supplied in \a paParms.
- * @param   paParms             Array of HGCM parameters.
+ * @param   cParms              Number of HGCM parameters supplied in \a aParms.
+ * @param   aParms              Array of HGCM parameters.
  * @param   pMsgCtx             Message context to use.
  * @param   hList               Handle of list to close.
  */
-static int shClSvcTransferSetListClose(uint32_t cParms, VBOXHGCMSVCPARM paParms[],
+static int shClSvcTransferSetListClose(uint32_t cParms, VBOXHGCMSVCPARM aParms[],
                                        PSHCLMSGCTX pMsgCtx, SHCLLISTHANDLE hList)
 {
     int rc;
 
     if (cParms == VBOX_SHCL_CPARMS_LIST_CLOSE)
     {
-        HGCMSvcSetU64(&paParms[0], pMsgCtx->uContextID);
-        HGCMSvcSetU64(&paParms[1], hList);
+        HGCMSvcSetU64(&aParms[0], pMsgCtx->uContextID);
+        HGCMSvcSetU64(&aParms[1], hList);
 
         rc = VINF_SUCCESS;
     }
@@ -1037,26 +1037,26 @@ static int shClSvcTransferSetListClose(uint32_t cParms, VBOXHGCMSVCPARM paParms[
  * Gets a transfer list header from HGCM service parameters.
  *
  * @returns VBox status code.
- * @param   cParms              Number of HGCM parameters supplied in \a paParms.
- * @param   paParms             Array of HGCM parameters.
+ * @param   cParms              Number of HGCM parameters supplied in \a aParms.
+ * @param   aParms              Array of HGCM parameters.
  * @param   phList              Where to store the list handle.
  * @param   pListHdr            Where to store the list header.
  */
-static int shClSvcTransferGetListHdr(uint32_t cParms, VBOXHGCMSVCPARM paParms[],
+static int shClSvcTransferGetListHdr(uint32_t cParms, VBOXHGCMSVCPARM aParms[],
                                      PSHCLLISTHANDLE phList, PSHCLLISTHDR pListHdr)
 {
     int rc;
 
     if (cParms == VBOX_SHCL_CPARMS_LIST_HDR)
     {
-        rc = HGCMSvcGetU64(&paParms[1], phList);
-        /* Note: Flags (paParms[2]) not used here. */
+        rc = HGCMSvcGetU64(&aParms[1], phList);
+        /* Note: Flags (aParms[2]) not used here. */
         if (RT_SUCCESS(rc))
-            rc = HGCMSvcGetU32(&paParms[3], &pListHdr->fFeatures);
+            rc = HGCMSvcGetU32(&aParms[3], &pListHdr->fFeatures);
         if (RT_SUCCESS(rc))
-            rc = HGCMSvcGetU64(&paParms[4], &pListHdr->cTotalObjects);
+            rc = HGCMSvcGetU64(&aParms[4], &pListHdr->cTotalObjects);
         if (RT_SUCCESS(rc))
-            rc = HGCMSvcGetU64(&paParms[5], &pListHdr->cbTotalSize);
+            rc = HGCMSvcGetU64(&aParms[5], &pListHdr->cbTotalSize);
 
         if (RT_SUCCESS(rc))
         {
@@ -1075,11 +1075,11 @@ static int shClSvcTransferGetListHdr(uint32_t cParms, VBOXHGCMSVCPARM paParms[],
  * Sets a transfer list header to HGCM service parameters.
  *
  * @returns VBox status code.
- * @param   cParms              Number of HGCM parameters supplied in \a paParms.
- * @param   paParms             Array of HGCM parameters.
+ * @param   cParms              Number of HGCM parameters supplied in \a aParms.
+ * @param   aParms              Array of HGCM parameters.
  * @param   pListHdr            Pointer to list header to set.
  */
-static int shClSvcTransferSetListHdr(uint32_t cParms, VBOXHGCMSVCPARM paParms[], PSHCLLISTHDR pListHdr)
+static int shClSvcTransferSetListHdr(uint32_t cParms, VBOXHGCMSVCPARM aParms[], PSHCLLISTHDR pListHdr)
 {
     int rc;
 
@@ -1088,9 +1088,9 @@ static int shClSvcTransferSetListHdr(uint32_t cParms, VBOXHGCMSVCPARM paParms[],
         /** @todo Set pvMetaFmt + cbMetaFmt. */
         /** @todo Calculate header checksum. */
 
-        HGCMSvcSetU32(&paParms[3], pListHdr->fFeatures);
-        HGCMSvcSetU64(&paParms[4], pListHdr->cTotalObjects);
-        HGCMSvcSetU64(&paParms[5], pListHdr->cbTotalSize);
+        HGCMSvcSetU32(&aParms[3], pListHdr->fFeatures);
+        HGCMSvcSetU64(&aParms[4], pListHdr->cTotalObjects);
+        HGCMSvcSetU64(&aParms[5], pListHdr->cbTotalSize);
 
         rc = VINF_SUCCESS;
     }
@@ -1105,30 +1105,30 @@ static int shClSvcTransferSetListHdr(uint32_t cParms, VBOXHGCMSVCPARM paParms[],
  * Gets a transfer list entry from HGCM service parameters.
  *
  * @returns VBox status code.
- * @param   cParms              Number of HGCM parameters supplied in \a paParms.
- * @param   paParms             Array of HGCM parameters.
+ * @param   cParms              Number of HGCM parameters supplied in \a aParms.
+ * @param   aParms              Array of HGCM parameters.
  * @param   phList              Where to store the list handle.
  * @param   pListEntry          Where to store the list entry.
  */
-static int shClSvcTransferGetListEntry(uint32_t cParms, VBOXHGCMSVCPARM paParms[],
+static int shClSvcTransferGetListEntry(uint32_t cParms, VBOXHGCMSVCPARM aParms[],
                                        PSHCLLISTHANDLE phList, PSHCLLISTENTRY pListEntry)
 {
     int rc;
 
     if (cParms == VBOX_SHCL_CPARMS_LIST_ENTRY)
     {
-        rc = HGCMSvcGetU64(&paParms[1], phList);
+        rc = HGCMSvcGetU64(&aParms[1], phList);
         if (RT_SUCCESS(rc))
-            rc = HGCMSvcGetU32(&paParms[2], &pListEntry->fInfo);
+            rc = HGCMSvcGetU32(&aParms[2], &pListEntry->fInfo);
         if (RT_SUCCESS(rc))
-            rc = HGCMSvcGetPv(&paParms[3], (void **)&pListEntry->pszName, &pListEntry->cbName);
+            rc = HGCMSvcGetPv(&aParms[3], (void **)&pListEntry->pszName, &pListEntry->cbName);
         if (RT_SUCCESS(rc))
         {
             uint32_t cbInfo;
-            rc = HGCMSvcGetU32(&paParms[4], &cbInfo);
+            rc = HGCMSvcGetU32(&aParms[4], &cbInfo);
             if (RT_SUCCESS(rc))
             {
-                rc = HGCMSvcGetPv(&paParms[5], &pListEntry->pvInfo, &pListEntry->cbInfo);
+                rc = HGCMSvcGetPv(&aParms[5], &pListEntry->pvInfo, &pListEntry->cbInfo);
                 AssertReturn(cbInfo == pListEntry->cbInfo, VERR_INVALID_PARAMETER);
             }
         }
@@ -1150,11 +1150,11 @@ static int shClSvcTransferGetListEntry(uint32_t cParms, VBOXHGCMSVCPARM paParms[
  * Sets a Shared Clipboard list entry to HGCM service parameters.
  *
  * @returns VBox status code.
- * @param   cParms              Number of HGCM parameters supplied in \a paParms.
- * @param   paParms             Array of HGCM parameters.
+ * @param   cParms              Number of HGCM parameters supplied in \a aParms.
+ * @param   aParms              Array of HGCM parameters.
  * @param   pListEntry          Pointer list entry to set.
  */
-static int shClSvcTransferSetListEntry(uint32_t cParms, VBOXHGCMSVCPARM paParms[],
+static int shClSvcTransferSetListEntry(uint32_t cParms, VBOXHGCMSVCPARM aParms[],
                                        PSHCLLISTENTRY pListEntry)
 {
     int rc;
@@ -1164,9 +1164,9 @@ static int shClSvcTransferSetListEntry(uint32_t cParms, VBOXHGCMSVCPARM paParms[
 
     if (cParms == VBOX_SHCL_CPARMS_LIST_ENTRY)
     {
-        HGCMSvcSetPv (&paParms[3], pListEntry->pszName, pListEntry->cbName);
-        HGCMSvcSetU32(&paParms[4], pListEntry->cbInfo);
-        HGCMSvcSetPv (&paParms[5], pListEntry->pvInfo, pListEntry->cbInfo);
+        HGCMSvcSetPv (&aParms[3], pListEntry->pszName, pListEntry->cbName);
+        HGCMSvcSetU32(&aParms[4], pListEntry->cbInfo);
+        HGCMSvcSetPv (&aParms[5], pListEntry->pvInfo, pListEntry->cbInfo);
 
         rc = VINF_SUCCESS;
     }
@@ -1181,27 +1181,27 @@ static int shClSvcTransferSetListEntry(uint32_t cParms, VBOXHGCMSVCPARM paParms[
  * Gets a transfer object data chunk from HGCM service parameters.
  *
  * @returns VBox status code.
- * @param   cParms              Number of HGCM parameters supplied in \a paParms.
- * @param   paParms             Array of HGCM parameters.
+ * @param   cParms              Number of HGCM parameters supplied in \a aParms.
+ * @param   aParms              Array of HGCM parameters.
  * @param   pDataChunk          Where to store the object data chunk data.
  */
-static int shClSvcTransferGetObjDataChunk(uint32_t cParms, VBOXHGCMSVCPARM paParms[], PSHCLOBJDATACHUNK pDataChunk)
+static int shClSvcTransferGetObjDataChunk(uint32_t cParms, VBOXHGCMSVCPARM aParms[], PSHCLOBJDATACHUNK pDataChunk)
 {
-    AssertPtrReturn(paParms,    VERR_INVALID_PARAMETER);
+    AssertPtrReturn(aParms,    VERR_INVALID_PARAMETER);
     AssertPtrReturn(pDataChunk, VERR_INVALID_PARAMETER);
 
     int rc;
 
     if (cParms == VBOX_SHCL_CPARMS_OBJ_WRITE)
     {
-        rc = HGCMSvcGetU64(&paParms[1], &pDataChunk->uHandle);
+        rc = HGCMSvcGetU64(&aParms[1], &pDataChunk->uHandle);
         if (RT_SUCCESS(rc))
         {
             uint32_t cbData;
-            rc = HGCMSvcGetU32(&paParms[2], &cbData);
+            rc = HGCMSvcGetU32(&aParms[2], &cbData);
             if (RT_SUCCESS(rc))
             {
-                rc = HGCMSvcGetPv(&paParms[3], &pDataChunk->pvData, &pDataChunk->cbData);
+                rc = HGCMSvcGetPv(&aParms[3], &pDataChunk->pvData, &pDataChunk->cbData);
                 AssertReturn(cbData == pDataChunk->cbData, VERR_INVALID_PARAMETER);
 
                 /** @todo Implement checksum handling. */
@@ -1222,10 +1222,10 @@ static int shClSvcTransferGetObjDataChunk(uint32_t cParms, VBOXHGCMSVCPARM paPar
  * @param   pClient             Pointer to associated client.
  * @param   pTransfer           Pointer to transfer to handle guest reply for.
  * @param   cParms              Number of function parameters supplied.
- * @param   paParms             Array function parameters supplied.
+ * @param   aParms              Array function parameters supplied.
  */
 static int shClSvcTransferHandleReply(PSHCLCLIENT pClient, PSHCLTRANSFER pTransfer,
-                                      uint32_t cParms, VBOXHGCMSVCPARM paParms[])
+                                      uint32_t cParms, VBOXHGCMSVCPARM aParms[])
 {
     RT_NOREF(pClient);
 
@@ -1235,7 +1235,7 @@ static int shClSvcTransferHandleReply(PSHCLCLIENT pClient, PSHCLTRANSFER pTransf
     PSHCLREPLY pReply  = (PSHCLREPLY)RTMemAlloc(cbReply);
     if (pReply)
     {
-        rc = shClSvcTransferGetReply(cParms, paParms, pReply);
+        rc = shClSvcTransferGetReply(cParms, aParms, pReply);
         if (RT_SUCCESS(rc))
         {
             PSHCLEVENTPAYLOAD pPayload
@@ -1258,7 +1258,7 @@ static int shClSvcTransferHandleReply(PSHCLCLIENT pClient, PSHCLTRANSFER pTransf
                     case VBOX_SHCL_REPLYMSGTYPE_OBJ_CLOSE:
                     {
                         uint64_t uCID;
-                        rc = HGCMSvcGetU64(&paParms[0], &uCID);
+                        rc = HGCMSvcGetU64(&aParms[0], &uCID);
                         if (RT_SUCCESS(rc))
                         {
                             const SHCLEVENTID idEvent = VBOX_SHCL_CONTEXTID_GET_EVENT(uCID);
@@ -1306,17 +1306,17 @@ static int shClSvcTransferHandleReply(PSHCLCLIENT pClient, PSHCLTRANSFER pTransf
  * @param   callHandle          The client's call handle of this call.
  * @param   u32Function         Function number being called.
  * @param   cParms              Number of function parameters supplied.
- * @param   paParms             Array function parameters  supplied.
+ * @param   aParms              Array function parameters supplied.
  * @param   tsArrival           Timestamp of arrival.
  */
 int shClSvcTransferHandler(PSHCLCLIENT pClient,
                            VBOXHGCMCALLHANDLE callHandle,
                            uint32_t u32Function,
                            uint32_t cParms,
-                           VBOXHGCMSVCPARM paParms[],
+                           VBOXHGCMSVCPARM aParms[],
                            uint64_t tsArrival)
 {
-    RT_NOREF(callHandle, paParms, tsArrival);
+    RT_NOREF(callHandle, aParms, tsArrival);
 
     LogFlowFunc(("uClient=%RU32, u32Function=%RU32 (%s), cParms=%RU32, g_ExtState.pfnExtension=%p\n",
                  pClient->State.uClientID, u32Function, ShClGuestMsgToStr(u32Function), cParms, g_ExtState.pfnExtension));
@@ -1361,7 +1361,7 @@ int shClSvcTransferHandler(PSHCLCLIENT pClient,
             if (cParms < 1)
                 break;
 
-            rc = HGCMSvcGetU64(&paParms[0], &uCID);
+            rc = HGCMSvcGetU64(&aParms[0], &uCID);
             if (RT_FAILURE(rc))
                 break;
 
@@ -1386,7 +1386,7 @@ int shClSvcTransferHandler(PSHCLCLIENT pClient,
     {
         case VBOX_SHCL_GUEST_FN_REPLY:
         {
-            rc = shClSvcTransferHandleReply(pClient, pTransfer, cParms, paParms);
+            rc = shClSvcTransferHandleReply(pClient, pTransfer, cParms, aParms);
             break;
         }
 
@@ -1412,9 +1412,9 @@ int shClSvcTransferHandler(PSHCLCLIENT pClient,
 
             rootListHdr.cRoots = ShClTransferRootsCount(pTransfer);
 
-            HGCMSvcSetU64(&paParms[0], 0 /* Context ID */);
-            HGCMSvcSetU32(&paParms[1], rootListHdr.fRoots);
-            HGCMSvcSetU32(&paParms[2], rootListHdr.cRoots);
+            HGCMSvcSetU64(&aParms[0], 0 /* Context ID */);
+            HGCMSvcSetU32(&aParms[1], rootListHdr.fRoots);
+            HGCMSvcSetU32(&aParms[2], rootListHdr.cRoots);
 
             rc = VINF_SUCCESS;
             break;
@@ -1423,7 +1423,7 @@ int shClSvcTransferHandler(PSHCLCLIENT pClient,
         case VBOX_SHCL_GUEST_FN_ROOT_LIST_HDR_WRITE:
         {
             SHCLROOTLISTHDR lstHdr;
-            rc = shClSvcTransferGetRootListHdr(cParms, paParms, &lstHdr);
+            rc = shClSvcTransferGetRootListHdr(cParms, aParms, &lstHdr);
             if (RT_SUCCESS(rc))
             {
                 void    *pvData = ShClTransferRootListHdrDup(&lstHdr);
@@ -1448,18 +1448,18 @@ int shClSvcTransferHandler(PSHCLCLIENT pClient,
             if (cParms != VBOX_SHCL_CPARMS_ROOT_LIST_ENTRY_READ)
                 break;
 
-            /* paParms[1] contains fInfo flags, currently unused. */
+            /* aParms[1] contains fInfo flags, currently unused. */
             uint32_t uIndex;
-            rc = HGCMSvcGetU32(&paParms[2], &uIndex);
+            rc = HGCMSvcGetU32(&aParms[2], &uIndex);
             if (RT_SUCCESS(rc))
             {
                 SHCLROOTLISTENTRY rootListEntry;
                 rc = ShClTransferRootsEntry(pTransfer, uIndex, &rootListEntry);
                 if (RT_SUCCESS(rc))
                 {
-                    HGCMSvcSetPv (&paParms[3], rootListEntry.pszName, rootListEntry.cbName);
-                    HGCMSvcSetU32(&paParms[4], rootListEntry.cbInfo);
-                    HGCMSvcSetPv (&paParms[5], rootListEntry.pvInfo, rootListEntry.cbInfo);
+                    HGCMSvcSetPv (&aParms[3], rootListEntry.pszName, rootListEntry.cbName);
+                    HGCMSvcSetU32(&aParms[4], rootListEntry.cbInfo);
+                    HGCMSvcSetPv (&aParms[5], rootListEntry.pvInfo, rootListEntry.cbInfo);
                 }
             }
             break;
@@ -1468,7 +1468,7 @@ int shClSvcTransferHandler(PSHCLCLIENT pClient,
         case VBOX_SHCL_GUEST_FN_ROOT_LIST_ENTRY_WRITE:
         {
             SHCLROOTLISTENTRY lstEntry;
-            rc = shClSvcTransferGetRootListEntry(cParms, paParms, &lstEntry);
+            rc = shClSvcTransferGetRootListEntry(cParms, aParms, &lstEntry);
             if (RT_SUCCESS(rc))
             {
                 void    *pvData = ShClTransferRootListEntryDup(&lstEntry);
@@ -1491,7 +1491,7 @@ int shClSvcTransferHandler(PSHCLCLIENT pClient,
         case VBOX_SHCL_GUEST_FN_LIST_OPEN:
         {
             SHCLLISTOPENPARMS listOpenParms;
-            rc = shClSvcTransferGetListOpen(cParms, paParms, &listOpenParms);
+            rc = shClSvcTransferGetListOpen(cParms, aParms, &listOpenParms);
             if (RT_SUCCESS(rc))
             {
                 SHCLLISTHANDLE hList;
@@ -1499,7 +1499,7 @@ int shClSvcTransferHandler(PSHCLCLIENT pClient,
                 if (RT_SUCCESS(rc))
                 {
                     /* Return list handle. */
-                    HGCMSvcSetU64(&paParms[6], hList);
+                    HGCMSvcSetU64(&aParms[6], hList);
                 }
             }
             break;
@@ -1511,7 +1511,7 @@ int shClSvcTransferHandler(PSHCLCLIENT pClient,
                 break;
 
             SHCLLISTHANDLE hList;
-            rc = HGCMSvcGetU64(&paParms[1], &hList);
+            rc = HGCMSvcGetU64(&aParms[1], &hList);
             if (RT_SUCCESS(rc))
             {
                 rc = ShClTransferListClose(pTransfer, hList);
@@ -1525,13 +1525,13 @@ int shClSvcTransferHandler(PSHCLCLIENT pClient,
                 break;
 
             SHCLLISTHANDLE hList;
-            rc = HGCMSvcGetU64(&paParms[1], &hList); /* Get list handle. */
+            rc = HGCMSvcGetU64(&aParms[1], &hList); /* Get list handle. */
             if (RT_SUCCESS(rc))
             {
                 SHCLLISTHDR hdrList;
                 rc = ShClTransferListGetHeader(pTransfer, hList, &hdrList);
                 if (RT_SUCCESS(rc))
-                    rc = shClSvcTransferSetListHdr(cParms, paParms, &hdrList);
+                    rc = shClSvcTransferSetListHdr(cParms, aParms, &hdrList);
             }
             break;
         }
@@ -1543,7 +1543,7 @@ int shClSvcTransferHandler(PSHCLCLIENT pClient,
             if (RT_SUCCESS(rc))
             {
                 SHCLLISTHANDLE hList;
-                rc = shClSvcTransferGetListHdr(cParms, paParms, &hList, &hdrList);
+                rc = shClSvcTransferGetListHdr(cParms, aParms, &hList, &hdrList);
                 if (RT_SUCCESS(rc))
                 {
                     void    *pvData = ShClTransferListHdrDup(&hdrList);
@@ -1570,7 +1570,7 @@ int shClSvcTransferHandler(PSHCLCLIENT pClient,
                 break;
 
             SHCLLISTHANDLE hList;
-            rc = HGCMSvcGetU64(&paParms[1], &hList); /* Get list handle. */
+            rc = HGCMSvcGetU64(&aParms[1], &hList); /* Get list handle. */
             if (RT_SUCCESS(rc))
             {
                 SHCLLISTENTRY entryList;
@@ -1579,7 +1579,7 @@ int shClSvcTransferHandler(PSHCLCLIENT pClient,
                 {
                     rc = ShClTransferListRead(pTransfer, hList, &entryList);
                     if (RT_SUCCESS(rc))
-                        rc = shClSvcTransferSetListEntry(cParms, paParms, &entryList);
+                        rc = shClSvcTransferSetListEntry(cParms, aParms, &entryList);
                 }
             }
             break;
@@ -1592,7 +1592,7 @@ int shClSvcTransferHandler(PSHCLCLIENT pClient,
             if (RT_SUCCESS(rc))
             {
                 SHCLLISTHANDLE hList;
-                rc = shClSvcTransferGetListEntry(cParms, paParms, &hList, &entryList);
+                rc = shClSvcTransferGetListEntry(cParms, aParms, &hList, &entryList);
                 if (RT_SUCCESS(rc))
                 {
                     void    *pvData = ShClTransferListEntryDup(&entryList);
@@ -1621,16 +1621,16 @@ int shClSvcTransferHandler(PSHCLCLIENT pClient,
             RT_ZERO(openCreateParms);
 
             uint32_t cbPath;
-            rc = HGCMSvcGetU32(&paParms[2], &cbPath); /** @todo r=bird: This is an pointless parameter. */
+            rc = HGCMSvcGetU32(&aParms[2], &cbPath); /** @todo r=bird: This is an pointless parameter. */
             if (RT_SUCCESS(rc))
             {
                 /** @todo r=bird: This is the wrong way of getting a string!   */
-                rc = HGCMSvcGetPv(&paParms[3], (void **)&openCreateParms.pszPath, &openCreateParms.cbPath);
+                rc = HGCMSvcGetPv(&aParms[3], (void **)&openCreateParms.pszPath, &openCreateParms.cbPath);
                 if (cbPath != openCreateParms.cbPath)
                     rc = VERR_INVALID_PARAMETER;
             }
             if (RT_SUCCESS(rc))
-                rc = HGCMSvcGetU32(&paParms[4], &openCreateParms.fCreate);
+                rc = HGCMSvcGetU32(&aParms[4], &openCreateParms.fCreate);
 
             if (RT_SUCCESS(rc))
             {
@@ -1640,7 +1640,7 @@ int shClSvcTransferHandler(PSHCLCLIENT pClient,
                 {
                     LogFlowFunc(("hObj=%RU64\n", hObj));
 
-                    HGCMSvcSetU64(&paParms[1], hObj);
+                    HGCMSvcSetU64(&aParms[1], hObj);
                 }
             }
             break;
@@ -1652,7 +1652,7 @@ int shClSvcTransferHandler(PSHCLCLIENT pClient,
                 break;
 
             SHCLOBJHANDLE hObj;
-            rc = HGCMSvcGetU64(&paParms[1], &hObj); /* Get object handle. */
+            rc = HGCMSvcGetU64(&aParms[1], &hObj); /* Get object handle. */
             if (RT_SUCCESS(rc))
                 rc = ShClTransferObjClose(pTransfer, hObj);
             break;
@@ -1664,16 +1664,16 @@ int shClSvcTransferHandler(PSHCLCLIENT pClient,
                 break;
 
             SHCLOBJHANDLE hObj;
-            rc = HGCMSvcGetU64(&paParms[1], &hObj); /* Get object handle. */
+            rc = HGCMSvcGetU64(&aParms[1], &hObj); /* Get object handle. */
 
             uint32_t cbToRead = 0;
             if (RT_SUCCESS(rc))
-                rc = HGCMSvcGetU32(&paParms[2], &cbToRead);
+                rc = HGCMSvcGetU32(&aParms[2], &cbToRead);
 
             void    *pvBuf = NULL;
             uint32_t cbBuf = 0;
             if (RT_SUCCESS(rc))
-                rc = HGCMSvcGetPv(&paParms[3], &pvBuf, &cbBuf);
+                rc = HGCMSvcGetPv(&aParms[3], &pvBuf, &cbBuf);
 
             LogFlowFunc(("hObj=%RU64, cbBuf=%RU32, cbToRead=%RU32, rc=%Rrc\n", hObj, cbBuf, cbToRead, rc));
 
@@ -1693,7 +1693,7 @@ int shClSvcTransferHandler(PSHCLCLIENT pClient,
                 rc = ShClTransferObjRead(pTransfer, hObj, pvBuf, cbToRead, &cbRead, 0 /* fFlags */);
                 if (RT_SUCCESS(rc))
                 {
-                    HGCMSvcSetU32(&paParms[3], cbRead);
+                    HGCMSvcSetU32(&aParms[3], cbRead);
 
                     /** @todo Implement checksum support. */
                 }
@@ -1704,7 +1704,7 @@ int shClSvcTransferHandler(PSHCLCLIENT pClient,
         case VBOX_SHCL_GUEST_FN_OBJ_WRITE:
         {
             SHCLOBJDATACHUNK dataChunk;
-            rc = shClSvcTransferGetObjDataChunk(cParms, paParms, &dataChunk);
+            rc = shClSvcTransferGetObjDataChunk(cParms, aParms, &dataChunk);
             if (RT_SUCCESS(rc))
             {
                 void    *pvData = ShClTransferObjDataChunkDup(&dataChunk);
@@ -1740,13 +1740,13 @@ int shClSvcTransferHandler(PSHCLCLIENT pClient,
  * @returns VBox status code.
  * @param   u32Function         Function number being called.
  * @param   cParms              Number of function parameters supplied.
- * @param   paParms             Array function parameters  supplied.
+ * @param   aParms              Array function parameters supplied.
  */
 int shClSvcTransferHostHandler(uint32_t u32Function,
                                uint32_t cParms,
-                               VBOXHGCMSVCPARM paParms[])
+                               VBOXHGCMSVCPARM aParms[])
 {
-    RT_NOREF(cParms, paParms);
+    RT_NOREF(cParms, aParms);
 
     int rc = VERR_NOT_IMPLEMENTED; /* Play safe. */
 
@@ -1976,7 +1976,7 @@ int shClSvcTransferAreaDetach(PSHCLCLIENTSTATE pClientState, PSHCLTRANSFER pTran
  * @param   pTransfer           Transfer to report status for.
  * @param   uStatus             Status to report.
  * @param   rcTransfer          Result code to report. Optional and depending on status.
- * @param   pidEvent             Where to store the created wait event. Optional.
+ * @param   pidEvent            Where to store the created wait event. Optional.
  */
 int shClSvcTransferSendStatus(PSHCLCLIENT pClient, PSHCLTRANSFER pTransfer, SHCLTRANSFERSTATUS uStatus,
                               int rcTransfer, PSHCLEVENTID pidEvent)
@@ -1992,12 +1992,12 @@ int shClSvcTransferSendStatus(PSHCLCLIENT pClient, PSHCLTRANSFER pTransfer, SHCL
 
     const SHCLEVENTID idEvent = ShClEventIDGenerate(&pTransfer->Events);
 
-    HGCMSvcSetU64(&pMsgReadData->paParms[0], VBOX_SHCL_CONTEXTID_MAKE(pClient->State.uSessionID,
-                                                                      pTransfer->State.uID, idEvent));
-    HGCMSvcSetU32(&pMsgReadData->paParms[1], pTransfer->State.enmDir);
-    HGCMSvcSetU32(&pMsgReadData->paParms[2], uStatus);
-    HGCMSvcSetU32(&pMsgReadData->paParms[3], (uint32_t)rcTransfer); /** @todo uint32_t vs. int. */
-    HGCMSvcSetU32(&pMsgReadData->paParms[4], 0 /* fFlags, unused */);
+    HGCMSvcSetU64(&pMsgReadData->aParms[0], VBOX_SHCL_CONTEXTID_MAKE(pClient->State.uSessionID,
+                                                                     pTransfer->State.uID, idEvent));
+    HGCMSvcSetU32(&pMsgReadData->aParms[1], pTransfer->State.enmDir);
+    HGCMSvcSetU32(&pMsgReadData->aParms[2], uStatus);
+    HGCMSvcSetU32(&pMsgReadData->aParms[3], (uint32_t)rcTransfer); /** @todo uint32_t vs. int. */
+    HGCMSvcSetU32(&pMsgReadData->aParms[4], 0 /* fFlags, unused */);
 
     int rc = shClSvcMsgAdd(pClient, pMsgReadData, true /* fAppend */);
     if (RT_SUCCESS(rc))
