@@ -694,7 +694,8 @@ static int shClSvcClientNegogiateChunkSize(PSHCLCLIENT pClient, VBOXHGCMCALLHAND
     int rc = g_pHelpers->pfnCallComplete(hCall, VINF_SUCCESS);
     if (RT_SUCCESS(rc))
     {
-        Log(("[Client %RU32] chunk size: %#RU32, max: %#RU32\n", paParms[1].u.uint32, paParms[0].u.uint32));
+        Log(("[Client %RU32] chunk size: %#RU32, max: %#RU32\n",
+             pClient->State.uClientID, paParms[1].u.uint32, paParms[0].u.uint32));
     }
     else
         LogFunc(("pfnCallComplete -> %Rrc\n", rc));
