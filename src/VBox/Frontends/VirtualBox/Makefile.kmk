@@ -1757,7 +1757,7 @@ VirtualBox.app_SOURCES = \
  $$(VirtualBox.app_0_OUTDIR)/qt.conf: $(PATH_SUB_CURRENT)/Makefile.kmk $(VBOX_VERSION_MK) | $$(@D)/
 	$(QUIET)$(RM) -f $@
 	$(QUIET)$(APPEND) $@ "[Paths]"
- ifndef VBOX_WITH_HARDENING # Not necessary and will screwup copying files elsewhere to test.
+ ifdef VBOX_WITH_HARDENING # Not necessary and will screwup copying files elsewhere to test.
 	$(QUIET)$(APPEND) $@ "Prefix =" $(PATH_OUT)/$(VirtualBox.app_INST)
  endif
 
