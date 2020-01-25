@@ -43,6 +43,10 @@
 DECLHIDDEN(void) rtR0AssertNativeMsg1(const char *pszExpr, unsigned uLine, const char *pszFile, const char *pszFunction)
 {
     IPRT_DARWIN_SAVE_EFL_AC();
+    kprintf("\r\n!!Assertion Failed!!\r\n"
+            "Expression: %s\r\n"
+            "Location  : %s(%u) %s\r\n",
+            pszExpr, pszFile, uLine, pszFunction);
     printf("\r\n!!Assertion Failed!!\r\n"
            "Expression: %s\r\n"
            "Location  : %s(%u) %s\r\n",
@@ -58,6 +62,7 @@ DECLHIDDEN(void) rtR0AssertNativeMsg2V(bool fInitial, const char *pszFormat, va_
 
     RTStrPrintfV(szMsg, sizeof(szMsg) - 1, pszFormat, va);
     szMsg[sizeof(szMsg) - 1] = '\0';
+    kprintf("%s", szMsg);
     printf("%s", szMsg);
 
     NOREF(fInitial);
@@ -67,7 +72,6 @@ DECLHIDDEN(void) rtR0AssertNativeMsg2V(bool fInitial, const char *pszFormat, va_
 
 RTR0DECL(void) RTR0AssertPanicSystem(void)
 {
-ASMBreakpoint();// temp
     panic("%s%s", g_szRTAssertMsg1, g_szRTAssertMsg2);
 }
 
