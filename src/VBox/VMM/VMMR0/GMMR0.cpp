@@ -182,7 +182,7 @@
  *
  * @remarks This is primarily a way of avoiding the deadlock checks in the
  *          windows driver verifier. */
-#if defined(RT_OS_WINDOWS) || defined(DOXYGEN_RUNNING)
+#if defined(RT_OS_WINDOWS) || defined(RT_OS_DARWIN) || defined(DOXYGEN_RUNNING)
 # define VBOX_USE_CRIT_SECT_FOR_GIANT
 #endif
 
@@ -450,6 +450,8 @@ typedef struct GMMCHUNK
  * @{ */
 /** Indicates that the chunk is a large page (2MB). */
 #define GMM_CHUNK_FLAGS_LARGE_PAGE  UINT16_C(0x0001)
+/** Indicates that the chunk was locked rather than allocated directly. */
+#define GMM_CHUNK_FLAGS_SEEDED      UINT16_C(0x0002)
 /** @}  */
 
 
@@ -2131,13 +2133,13 @@ static int gmmR0RegisterChunk(PGMM pGMM, PGMMCHUNKFREESET pSet, RTR0MEMOBJ hMemO
 {
     Assert(pGMM->hMtxOwner != RTThreadNativeSelf());
     Assert(hGVM != NIL_GVM_HANDLE || pGMM->fBoundMemoryMode);
-    Assert(fChunkFlags == 0 || fChunkFlags == GMM_CHUNK_FLAGS_LARGE_PAGE);
+    Assert(fChunkFlags == 0 || fChunkFlags == GMM_CHUNK_FLAGS_LARGE_PAGE || fChunkFlags == GMM_CHUNK_FLAGS_SEEDED);
 
 #if defined(VBOX_WITH_RAM_IN_KERNEL) && !defined(VBOX_WITH_LINEAR_HOST_PHYS_MEM)
     /*
      * Get a ring-0 mapping of the object.
      */
-    uint8_t *pbMapping = (uint8_t *)RTR0MemObjAddress(hMemObj);
+    uint8_t *pbMapping = !(fChunkFlags & GMM_CHUNK_FLAGS_SEEDED) ? (uint8_t *)RTR0MemObjAddress(hMemObj) : NULL;
     if (!pbMapping)
     {
         RTR0MEMOBJ hMapObj;
@@ -4290,7 +4292,7 @@ GMMR0DECL(int) GMMR0SeedChunk(PGVM pGVM, VMCPUID idCpu, RTR3PTR pvR3)
     rc = RTR0MemObjLockUser(&hMemObj, pvR3, GMM_CHUNK_SIZE, RTMEM_PROT_READ | RTMEM_PROT_WRITE, NIL_RTR0PROCESS);
     if (RT_SUCCESS(rc))
     {
-        rc = gmmR0RegisterChunk(pGMM, &pGVM->gmm.s.Private, hMemObj, pGVM->hSelf, 0 /*fChunkFlags*/, NULL);
+        rc = gmmR0RegisterChunk(pGMM, &pGVM->gmm.s.Private, hMemObj, pGVM->hSelf, GMM_CHUNK_FLAGS_SEEDED, NULL);
         if (RT_SUCCESS(rc))
             gmmR0MutexRelease(pGMM);
         else
