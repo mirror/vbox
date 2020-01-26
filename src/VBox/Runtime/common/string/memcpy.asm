@@ -42,6 +42,10 @@ RT_NOCRT_BEGINPROC memcpy
 
         ; Do the bulk of the work.
 %ifdef RT_ARCH_AMD64
+ %ifdef DEBUG
+        push    rbp
+        mov     rbp, rsp
+ %endif
  %ifdef ASM_CALL64_MSC
         mov     r10, rdi                ; save
         mov     r11, rsi                ; save
@@ -95,6 +99,9 @@ RT_NOCRT_BEGINPROC memcpy
  %ifdef ASM_CALL64_MSC
         mov     rdi, r10
         mov     rsi, r11
+ %endif
+ %ifdef DEBUG
+        leave
  %endif
 %else
         pop     esi
