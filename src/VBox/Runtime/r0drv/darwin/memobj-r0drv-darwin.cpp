@@ -47,6 +47,12 @@
 #include <iprt/thread.h>
 #include "internal/memobj.h"
 
+
+/*********************************************************************************************************************************
+*   Defined Constants And Macros                                                                                                 *
+*********************************************************************************************************************************/
+#define MY_PRINTF(...) do { printf(__VA_ARGS__); kprintf(__VA_ARGS__); } while (0)
+
 /*#define USE_VM_MAP_WIRE - may re-enable later when non-mapped allocations are added. */
 
 
@@ -240,12 +246,12 @@ static void rtR0MemObjDarwinReadPhys(RTHCPHYS HCPhys, size_t cb, void *pvDst)
             pMemMap->release();
         }
         else
-            printf("rtR0MemObjDarwinReadPhys: createMappingInTask failed; HCPhys=%llx\n", HCPhys);
+            MY_PRINTF("rtR0MemObjDarwinReadPhys: createMappingInTask failed; HCPhys=%llx\n", HCPhys);
 
         pMemDesc->release();
     }
     else
-        printf("rtR0MemObjDarwinReadPhys: withAddressRanges failed; HCPhys=%llx\n", HCPhys);
+        MY_PRINTF("rtR0MemObjDarwinReadPhys: withAddressRanges failed; HCPhys=%llx\n", HCPhys);
 }
 
 
@@ -280,7 +286,7 @@ static uint64_t rtR0MemObjDarwinGetPTE(void *pvPage)
         rtR0MemObjDarwinReadPhys((cr3 & ~(RTCCUINTREG)PAGE_OFFSET_MASK) | (((uint64_t)(uintptr_t)pvPage >> X86_PML4_SHIFT) & X86_PML4_MASK) * 8, 8, &u64);
         if (!(u64.u & X86_PML4E_P))
         {
-            printf("rtR0MemObjDarwinGetPTE: %p -> PML4E !p\n", pvPage);
+            MY_PRINTF("rtR0MemObjDarwinGetPTE: %p -> PML4E !p\n", pvPage);
             return 0;
         }
 
@@ -288,7 +294,7 @@ static uint64_t rtR0MemObjDarwinGetPTE(void *pvPage)
         rtR0MemObjDarwinReadPhys((u64.u & ~(uint64_t)PAGE_OFFSET_MASK) | (((uintptr_t)pvPage >> X86_PDPT_SHIFT) & X86_PDPT_MASK_AMD64) * 8, 8, &u64);
         if (!(u64.u & X86_PDPE_P))
         {
-            printf("rtR0MemObjDarwinGetPTE: %p -> PDPTE !p\n", pvPage);
+            MY_PRINTF("rtR0MemObjDarwinGetPTE: %p -> PDPTE !p\n", pvPage);
             return 0;
         }
         if (u64.u & X86_PDPE_LM_PS)
@@ -298,7 +304,7 @@ static uint64_t rtR0MemObjDarwinGetPTE(void *pvPage)
         rtR0MemObjDarwinReadPhys((u64.u & ~(uint64_t)PAGE_OFFSET_MASK) | (((uintptr_t)pvPage >> X86_PD_PAE_SHIFT) & X86_PD_PAE_MASK) * 8, 8, &u64);
         if (!(u64.u & X86_PDE_P))
         {
-            printf("rtR0MemObjDarwinGetPTE: %p -> PDE !p\n", pvPage);
+            MY_PRINTF("rtR0MemObjDarwinGetPTE: %p -> PDE !p\n", pvPage);
             return 0;
         }
         if (u64.u & X86_PDE_PS)
@@ -308,7 +314,7 @@ static uint64_t rtR0MemObjDarwinGetPTE(void *pvPage)
         rtR0MemObjDarwinReadPhys((u64.u & ~(uint64_t)PAGE_OFFSET_MASK) | (((uintptr_t)pvPage >> X86_PT_PAE_SHIFT) & X86_PT_PAE_MASK) * 8, 8, &u64);
         if (!(u64.u &  X86_PTE_P))
         {
-            printf("rtR0MemObjDarwinGetPTE: %p -> PTE !p\n", pvPage);
+            MY_PRINTF("rtR0MemObjDarwinGetPTE: %p -> PTE !p\n", pvPage);
             return 0;
         }
         return u64.u;
@@ -903,10 +909,22 @@ DECLHIDDEN(int) rtR0MemObjNativeMapKernel(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ
     PRTR0MEMOBJDARWIN pMemToMapDarwin = (PRTR0MEMOBJDARWIN)pMemToMap;
     if (pMemToMapDarwin->pMemDesc)
     {
-#if MAC_OS_X_VERSION_MIN_REQUIRED >= 1050
+        /* The kIOMapPrefault option was added in 10.10.0; causes PTEs to be populated with
+           INTEL_PTE_WIRED to be set, just like we desire (see further down). */
+#if MAC_OS_X_VERSION_MIN_REQUIRED >= 101000
         IOMemoryMap *pMemMap = pMemToMapDarwin->pMemDesc->createMappingInTask(kernel_task,
                                                                               0,
-                                                                              kIOMapAnywhere | kIOMapDefaultCache,
+                                                                              kIOMapAnywhere | kIOMapDefaultCache | kIOMapPrefault,
+                                                                              offSub,
+                                                                              cbSub);
+#elif MAC_OS_X_VERSION_MIN_REQUIRED >= 1050
+        static uint32_t volatile s_fOptions = UINT32_MAX;
+        uint32_t fOptions = s_fOptions;
+        if (RT_UNLIKELY(fOptions == UINT32_MAX))
+            s_fOptions = fOptions = version_major >= 14 ? 0x10000000 /*kIOMapPrefault*/ : 0; /* Since 10.10.0. */
+        IOMemoryMap *pMemMap = pMemToMapDarwin->pMemDesc->createMappingInTask(kernel_task,
+                                                                              0,
+                                                                              kIOMapAnywhere | kIOMapDefaultCache | fOptions,
                                                                               offSub,
                                                                               cbSub);
 #else
@@ -920,10 +938,14 @@ DECLHIDDEN(int) rtR0MemObjNativeMapKernel(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ
         {
             IOVirtualAddress VirtAddr = pMemMap->getVirtualAddress();
             void *pv = (void *)(uintptr_t)VirtAddr;
-            if ((uintptr_t)pv == VirtAddr)
+            if ((uintptr_t)pv == VirtAddr && pv != NULL)
             {
-                //addr64_t Addr = pMemToMapDarwin->pMemDesc->getPhysicalSegment64(offSub, NULL);
-                //printf("pv=%p: %8llx %8llx\n", pv, rtR0MemObjDarwinGetPTE(pv), Addr);
+//#ifdef __LP64__
+//                addr64_t Addr = pMemToMapDarwin->pMemDesc->getPhysicalSegment(offSub, NULL, kIOMemoryMapperNone);
+//#else
+//                addr64_t Addr = pMemToMapDarwin->pMemDesc->getPhysicalSegment64(offSub, NULL);
+//#endif
+//                MY_PRINTF("pv=%p: %8llx %8llx\n", pv, rtR0MemObjDarwinGetPTE(pv), Addr);
 
 //                /*
 //                 * Explicitly lock it so that we're sure it is present and that
@@ -944,16 +966,23 @@ DECLHIDDEN(int) rtR0MemObjNativeMapKernel(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ
 //                    IOReturn IORet = pMemDesc->prepare(kIODirectionInOut);
 //                    if (IORet == kIOReturnSuccess)
 //                    {
-                        /* HACK ALERT! */
-                        rtR0MemObjDarwinTouchPages(pv, cbSub);
+                        /* HACK ALERT! On kernels older than 10.10 (xnu version 14), we need to fault in
+                                       the pages here so they can safely be accessed from inside simple
+                                       locks and when preemption is disabled (no page-ins allowed).
+                           Note! This touching does not cause INTEL_PTE_WIRED (bit 10) to be set as we go
+                                 thru general #PF and vm_fault doesn't figure it should be wired or something.  */
+                        rtR0MemObjDarwinTouchPages(pv, cbSub ? cbSub : pMemToMap->cb);
                         /** @todo First, the memory should've been mapped by now, and second, it
-                         *        should have the wired attribute in the PTE (bit 9). Neither
-                         *        seems to be the case. The disabled locking code doesn't make any
-                         *        difference, which is extremely odd, and breaks
-                         *        rtR0MemObjNativeGetPagePhysAddr (getPhysicalSegment64 -> 64 for the
-                         *        lock descriptor. */
-                        //addr64_t Addr = pMemDesc->getPhysicalSegment64(0, NULL);
-                        //printf("pv=%p: %8llx %8llx (%d)\n", pv, rtR0MemObjDarwinGetPTE(pv), Addr, 2);
+                         *        should have the wired attribute in the PTE (bit 10). Neither seems to
+                         *        be the case. The disabled locking code doesn't make any difference,
+                         *        which is extremely odd, and breaks rtR0MemObjNativeGetPagePhysAddr
+                         *        (getPhysicalSegment64 -> 64 for the lock descriptor. */
+//#ifdef __LP64__
+//                        addr64_t Addr2 = pMemToMapDarwin->pMemDesc->getPhysicalSegment(offSub, NULL, kIOMemoryMapperNone);
+//#else
+//                        addr64_t Addr2 = pMemToMapDarwin->pMemDesc->getPhysicalSegment64(offSub, NULL);
+//#endif
+//                        MY_PRINTF("pv=%p: %8llx %8llx (%d)\n", pv, rtR0MemObjDarwinGetPTE(pv), Addr2, 2);
 
                         /*
                          * Create the IPRT memory object.
@@ -981,8 +1010,10 @@ DECLHIDDEN(int) rtR0MemObjNativeMapKernel(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ
 //                else
 //                    rc = VERR_MEMOBJ_INIT_FAILED;
             }
-            else
+            else if (pv)
                 rc = VERR_ADDRESS_TOO_BIG;
+            else
+                rc = VERR_MAP_FAILED;
             pMemMap->release();
         }
         else
@@ -1033,7 +1064,7 @@ DECLHIDDEN(int) rtR0MemObjNativeMapUser(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ p
         {
             IOVirtualAddress VirtAddr = pMemMap->getVirtualAddress();
             void *pv = (void *)(uintptr_t)VirtAddr;
-            if ((uintptr_t)pv == VirtAddr)
+            if ((uintptr_t)pv == VirtAddr && pv != NULL)
             {
                 /*
                  * Create the IPRT memory object.
@@ -1052,8 +1083,10 @@ DECLHIDDEN(int) rtR0MemObjNativeMapUser(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ p
 
                 rc = VERR_NO_MEMORY;
             }
-            else
+            else if (pv)
                 rc = VERR_ADDRESS_TOO_BIG;
+            else
+                rc = VERR_MAP_FAILED;
             pMemMap->release();
         }
         else
