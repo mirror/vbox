@@ -1047,10 +1047,20 @@ DECLHIDDEN(int) rtR0MemObjNativeMapUser(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ p
     PRTR0MEMOBJDARWIN pMemToMapDarwin = (PRTR0MEMOBJDARWIN)pMemToMap;
     if (pMemToMapDarwin->pMemDesc)
     {
-#if MAC_OS_X_VERSION_MIN_REQUIRED >= 1050
+#if MAC_OS_X_VERSION_MIN_REQUIRED >= 101000 /* The kIOMapPrefault option was added in 10.10.0. */
+         IOMemoryMap *pMemMap = pMemToMapDarwin->pMemDesc->createMappingInTask((task_t)R0Process,
+                                                                              0,
+                                                                              kIOMapAnywhere | kIOMapDefaultCache | kIOMapPrefault,
+                                                                              offSub,
+                                                                              cbSub);
+#elif MAC_OS_X_VERSION_MIN_REQUIRED >= 1050
+        static uint32_t volatile s_fOptions = UINT32_MAX;
+        uint32_t fOptions = s_fOptions;
+        if (RT_UNLIKELY(fOptions == UINT32_MAX))
+            s_fOptions = fOptions = version_major >= 14 ? 0x10000000 /*kIOMapPrefault*/ : 0; /* Since 10.10.0. */
         IOMemoryMap *pMemMap = pMemToMapDarwin->pMemDesc->createMappingInTask((task_t)R0Process,
                                                                               0,
-                                                                              kIOMapAnywhere | kIOMapDefaultCache,
+                                                                              kIOMapAnywhere | kIOMapDefaultCache | fOptions,
                                                                               offSub,
                                                                               cbSub);
 #else
