@@ -419,8 +419,7 @@ typedef struct GMMCHUNK
     /** The mapping lock this chunk is using using.  UINT16_MAX if nobody is
      *  mapping or freeing anything.  (Giant mtx.) */
     uint8_t volatile    iChunkMtx;
-    /** Flags field reserved for future use (like eliminating enmType).
-     *  (Giant mtx.) */
+    /** GMM_CHUNK_FLAGS_XXX. (Giant mtx.) */
     uint8_t             fFlags;
     /** The head of the list of free pages. UINT16_MAX is the NIL value.
      *  (Giant mtx.) */
@@ -3069,9 +3068,9 @@ GMMR0DECL(int)  GMMR0AllocateLargePage(PGVM pGVM, VMCPUID idCpu, uint32_t cbPage
     if (RT_FAILURE(rc))
         return rc;
 
-    /* Not supported in legacy mode where we allocate the memory in ring 3 and lock it in ring 0. */
-    if (pGMM->fLegacyAllocationMode)
-        return VERR_NOT_SUPPORTED;
+    // /* Not supported in legacy mode where we allocate the memory in ring 3 and lock it in ring 0. */
+    // if (pGMM->fLegacyAllocationMode)
+    //     return VERR_NOT_SUPPORTED;
 
     *pHCPhys = NIL_RTHCPHYS;
     *pIdPage = NIL_GMM_PAGEID;
@@ -3170,9 +3169,9 @@ GMMR0DECL(int)  GMMR0FreeLargePage(PGVM pGVM, VMCPUID idCpu, uint32_t idPage)
     if (RT_FAILURE(rc))
         return rc;
 
-    /* Not supported in legacy mode where we allocate the memory in ring 3 and lock it in ring 0. */
-    if (pGMM->fLegacyAllocationMode)
-        return VERR_NOT_SUPPORTED;
+    // /* Not supported in legacy mode where we allocate the memory in ring 3 and lock it in ring 0. */
+    // if (pGMM->fLegacyAllocationMode)
+    //     return VERR_NOT_SUPPORTED;
 
     gmmR0MutexAcquire(pGMM);
     if (GMM_CHECK_SANITY_UPON_ENTERING(pGMM))
@@ -3259,7 +3258,7 @@ static bool gmmR0FreeChunk(PGMM pGMM, PGVM pGVM, PGMMCHUNK pChunk, bool fRelaxed
      * This shouldn't happen, so screw lock contention...
      */
     if (    pChunk->cMappingsX
-        &&  !pGMM->fLegacyAllocationMode
+        &&  (!pGMM->fLegacyAllocationMode || (pChunk->fFlags & GMM_CHUNK_FLAGS_LARGE_PAGE))
         &&  pGVM)
         gmmR0UnmapChunkLocked(pGMM, pGVM, pChunk);
 
@@ -3390,7 +3389,7 @@ static void gmmR0FreePageWorker(PGMM pGMM, PGVM pGVM, PGMMCHUNK pChunk, uint32_t
     if (RT_UNLIKELY(   pChunk->cFree == GMM_CHUNK_NUM_PAGES
                     && pChunk->pFreeNext
                     && pChunk->pFreePrev /** @todo this is probably misfiring, see reset... */
-                    && !pGMM->fLegacyAllocationMode))
+                    && (!pGMM->fLegacyAllocationMode || (pChunk->fFlags & GMM_CHUNK_FLAGS_LARGE_PAGE))))
         gmmR0FreeChunk(pGMM, NULL, pChunk, false);
 
 }
@@ -3913,7 +3912,7 @@ GMMR0DECL(int) GMMR0QueryMemoryStatsReq(PGVM pGVM, VMCPUID idCpu, PGMMMEMSTATSRE
  */
 static int gmmR0UnmapChunkLocked(PGMM pGMM, PGVM pGVM, PGMMCHUNK pChunk)
 {
-    Assert(!pGMM->fLegacyAllocationMode); NOREF(pGMM);
+    Assert(!pGMM->fLegacyAllocationMode || (pChunk->fFlags & GMM_CHUNK_FLAGS_LARGE_PAGE)); NOREF(pGMM);
 
     /*
      * Find the mapping and try unmapping it.
@@ -3959,7 +3958,7 @@ static int gmmR0UnmapChunkLocked(PGMM pGMM, PGVM pGVM, PGMMCHUNK pChunk)
  */
 static int gmmR0UnmapChunk(PGMM pGMM, PGVM pGVM, PGMMCHUNK pChunk, bool fRelaxedSem)
 {
-    if (!pGMM->fLegacyAllocationMode)
+    if (!pGMM->fLegacyAllocationMode || (pChunk->fFlags & GMM_CHUNK_FLAGS_LARGE_PAGE))
     {
         /*
          * Lock the chunk and if possible leave the giant GMM lock.
@@ -3999,7 +3998,7 @@ static int gmmR0MapChunkLocked(PGMM pGMM, PGVM pGVM, PGMMCHUNK pChunk, PRTR3PTR 
     /*
      * If we're in legacy mode this is simple.
      */
-    if (pGMM->fLegacyAllocationMode)
+    if (pGMM->fLegacyAllocationMode && !(pChunk->fFlags & GMM_CHUNK_FLAGS_LARGE_PAGE))
     {
         if (pChunk->hGVM != pGVM->hSelf)
         {
