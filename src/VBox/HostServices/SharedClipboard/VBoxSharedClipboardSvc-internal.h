@@ -90,9 +90,9 @@ typedef struct SHCLCLIENTPODSTATE
  * @note Part of saved state! */
 /** No Shared Clipboard client flags defined. */
 #define SHCLCLIENTSTATE_FLAGS_NONE              0
-/** Client has a guest read operation active. */
+/** Client has a guest read operation active. Currently unused. */
 #define SHCLCLIENTSTATE_FLAGS_READ_ACTIVE       RT_BIT(0)
-/** Client has a guest write operation active. */
+/** Client has a guest write operation active. Currently unused. */
 #define SHCLCLIENTSTATE_FLAGS_WRITE_ACTIVE      RT_BIT(1)
 /** @} */
 

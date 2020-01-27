@@ -1341,7 +1341,6 @@ int ShClSvcHostReportFormats(PSHCLCLIENT pClient, SHCLFORMATS fFormats)
         else
 #endif
         {
-            pClient->State.fFlags |= SHCLCLIENTSTATE_FLAGS_READ_ACTIVE;
             rc = VINF_SUCCESS;
         }
     }
@@ -1430,18 +1429,6 @@ static int shClSvcClientReportFormats(PSHCLCLIENT pClient, uint32_t cParms, VBOX
                 FormatData.Formats = fFormats;
                 rc = ShClSvcImplFormatAnnounce(pClient, &CmdCtx, &FormatData);
             }
-
-            /** @todo r=bird: I'm not sure if the guest should be automatically allowed
-             *        to write the host clipboard now.  It would make more sense to disallow
-             *        host clipboard reads until the host reports formats.
-             *
-             *        The writes should only really be allowed upon request from the host,
-             *        shouldn't they? (Though, I'm not sure, maybe there are situations
-             *        where the guest side will just want to push the content over
-             *        immediately while it's still available, I don't quite recall now...
-             */
-            if (RT_SUCCESS(rc))
-                pClient->State.fFlags |= SHCLCLIENTSTATE_FLAGS_WRITE_ACTIVE;
         }
     }
 
@@ -1465,12 +1452,6 @@ static int shClSvcClientReadData(PSHCLCLIENT pClient, uint32_t cParms, VBOXHGCMS
     { /* likely */ }
     else
         return VERR_ACCESS_DENIED;
-
-    /// @todo r=bird: The management of the SHCLCLIENTSTATE_FLAGS_READ_ACTIVE
-    /// makes it impossible for the guest to retrieve more than one format from
-    /// the clipboard.  I.e. it can either get the TEXT or the HTML rendering,
-    /// but not both.  So, I've disable the check. */
-    //ASSERT_GUEST_RETURN(pClient->State.fFlags & SHCLCLIENTSTATE_FLAGS_READ_ACTIVE, VERR_WRONG_ORDER);
 
     /*
      * Digest parameters.
@@ -1530,12 +1511,6 @@ static int shClSvcClientReadData(PSHCLCLIENT pClient, uint32_t cParms, VBOXHGCMS
     {
         if (pClient->State.POD.uFormat == VBOX_SHCL_FMT_NONE)
             pClient->State.POD.uFormat = dataBlock.uFormat;
-        /// @todo r=bird: This actively breaks copying different types of data into the
-        /// guest (first copy a text snippet, then you cannot copy any bitmaps), so I've
-        /// disabled it.
-        //ASSERT_GUEST_MSG_RETURN(pClient->State.POD.uFormat == dataBlock.uFormat,
-        //                        ("Requested %#x, POD.uFormat=%#x\n", dataBlock.uFormat, pClient->State.POD.uFormat),
-        //                        VERR_BAD_EXE_FORMAT /*VERR_INTERNAL_ERROR*/);
     }
 
     /*
@@ -1594,14 +1569,6 @@ static int shClSvcClientReadData(PSHCLCLIENT pClient, uint32_t cParms, VBOXHGCMS
         /* If the data to return exceeds the buffer the guest supplies, tell it (and let it try again). */
         if (cbActual >= dataBlock.cbData)
             rc = VINF_BUFFER_OVERFLOW;
-
-        if (rc == VINF_SUCCESS)
-        {
-            /* Only remove "read active" flag after successful read again. */
-            /** @todo r=bird: This doesn't make any effing sense.  What if the guest
-             *        wants to read another format???  */
-            pClient->State.fFlags &= ~SHCLCLIENTSTATE_FLAGS_READ_ACTIVE;
-        }
     }
 
     LogFlowFuncLeaveRC(rc);
@@ -1622,12 +1589,6 @@ int shClSvcClientWriteData(PSHCLCLIENT pClient, uint32_t cParms, VBOXHGCMSVCPARM
     { /* likely */ }
     else
         return VERR_ACCESS_DENIED;
-
-    /** @todo r=bird: This whole active flag stuff is broken, so disabling for now. */
-    //if (pClient->State.fFlags & SHCLCLIENTSTATE_FLAGS_WRITE_ACTIVE)
-    //{ /* likely */ }
-    //else
-    //    return VERR_WRONG_ORDER;
 
     /*
      * Digest parameters.
@@ -1688,11 +1649,6 @@ int shClSvcClientWriteData(PSHCLCLIENT pClient, uint32_t cParms, VBOXHGCMSVCPARM
     {
         if (pClient->State.POD.uFormat == VBOX_SHCL_FMT_NONE)
             pClient->State.POD.uFormat = dataBlock.uFormat;
-        /** @todo r=bird: this must be buggy to, I've disabled it without testing
-         *        though. */
-        //ASSERT_GUEST_MSG_RETURN(pClient->State.POD.uFormat == dataBlock.uFormat,
-        //                        ("Requested %#x, POD.uFormat=%#x\n", dataBlock.uFormat, pClient->State.POD.uFormat),
-        //                        VERR_BAD_EXE_FORMAT /*VERR_INTERNAL_ERROR*/);
     }
 
     /*
@@ -1712,13 +1668,6 @@ int shClSvcClientWriteData(PSHCLCLIENT pClient, uint32_t cParms, VBOXHGCMSVCPARM
     }
     else
         rc = ShClSvcImplWriteData(pClient, &cmdCtx, &dataBlock);
-    if (RT_SUCCESS(rc))
-    {
-        /* Remove "write active" flag after successful read again. */
-        /** @todo r=bird: This doesn't make any effing sense.  What if the host
-         *         wants to have the guest write it another format???  */
-        pClient->State.fFlags &= ~SHCLCLIENTSTATE_FLAGS_WRITE_ACTIVE;
-    }
 
     LogFlowFuncLeaveRC(rc);
     return rc;
