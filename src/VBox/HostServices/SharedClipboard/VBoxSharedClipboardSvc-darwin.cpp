@@ -211,7 +211,7 @@ int ShClSvcImplFormatAnnounce(PSHCLCLIENT pClient,
 }
 
 int ShClSvcImplReadData(PSHCLCLIENT pClient, PSHCLCLIENTCMDCTX pCmdCtx,
-                        SHCLFORMAT uFormat, uint32_t cbData, void *pvData, uint32_t *pcbActual)
+                        SHCLFORMAT uFormat, void *pvData, uint32_t cbData, uint32_t *pcbActual)
 {
     RT_NOREF(pCmdCtx);
 
@@ -229,7 +229,7 @@ int ShClSvcImplReadData(PSHCLCLIENT pClient, PSHCLCLIENTCMDCTX pCmdCtx,
 }
 
 int ShClSvcImplWriteData(PSHCLCLIENT pClient,
-                         PSHCLCLIENTCMDCTX pCmdCtx, SHCLFORMAT uFormat, uint32_t cbData, void *pvData)
+                         PSHCLCLIENTCMDCTX pCmdCtx, SHCLFORMAT uFormat, void *pvData, uint32_t cbData)
 {
     RT_NOREF(pCmdCtx);
 
