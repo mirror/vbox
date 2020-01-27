@@ -143,7 +143,9 @@ DECLINLINE(vm_map_t) rtR0MemObjDarwinGetMap(PRTR0MEMOBJINTERNAL pMem)
 
         case RTR0MEMOBJTYPE_PHYS:
         case RTR0MEMOBJTYPE_PHYS_NC:
-            return NULL; /* pretend these have no mapping atm. */
+            if (pMem->pv)
+                return kernel_map;
+            return NULL;
 
         case RTR0MEMOBJTYPE_LOCK:
             return pMem->u.Lock.R0Process == NIL_RTR0PROCESS
@@ -453,12 +455,16 @@ DECLHIDDEN(int) rtR0MemObjNativeFree(RTR0MEMOBJ pMem)
  * @param   MaxPhysAddr     The max address to verify the result against. Use
  *                          UINT64_MAX if it doesn't matter.
  * @param   enmType         The object type.
+ * @param   uAlignment      The allocation alignment (in bytes).
  */
 static int rtR0MemObjNativeAllocWorker(PPRTR0MEMOBJINTERNAL ppMem, size_t cb,
                                        bool fExecutable, bool fContiguous,
                                        mach_vm_address_t PhysMask, uint64_t MaxPhysAddr,
-                                       RTR0MEMOBJTYPE enmType)
+                                       RTR0MEMOBJTYPE enmType, size_t uAlignment)
 {
+    RT_NOREF_PV(uAlignment);
+    int rc;
+
     /*
      * Try inTaskWithPhysicalMask first, but since we don't quite trust that it
      * actually respects the physical memory mask (10.5.x is certainly busted),
@@ -468,34 +474,46 @@ static int rtR0MemObjNativeAllocWorker(PPRTR0MEMOBJINTERNAL ppMem, size_t cb,
      *
      * The kIOMemoryMapperNone flag is required since 10.8.2 (IOMMU changes?).
      */
-    int rc;
     size_t cbFudged = cb;
     if (1) /** @todo Figure out why this is broken. Is it only on snow leopard? Seen allocating memory for the VM structure, last page corrupted or inaccessible. */
          cbFudged += PAGE_SIZE;
-#if 1
+
+    uint64_t uAlignmentActual = uAlignment;
+
     IOOptionBits fOptions = kIOMemoryKernelUserShared | kIODirectionInOut;
     if (fContiguous)
         fOptions |= kIOMemoryPhysicallyContiguous;
     if (version_major >= 12 /* 12 = 10.8.x = Mountain Kitten */)
         fOptions |= kIOMemoryMapperNone;
-    IOBufferMemoryDescriptor *pMemDesc = IOBufferMemoryDescriptor::inTaskWithPhysicalMask(kernel_task, fOptions,
-                                                                                          cbFudged, PhysMask);
-#else /* Requires 10.7 SDK, but allows alignment to be specified: */
-    uint64_t     uAlignment = PAGE_SIZE;
-    IOOptionBits fOptions   = kIODirectionInOut | kIOMemoryMapperNone;
-    if (fContiguous || MaxPhysAddr < UINT64_MAX)
-    {
-        fOptions  |= kIOMemoryPhysicallyContiguous;
-        uAlignment = 1;                 /* PhysMask isn't respected if higher. */
-    }
 
-    IOBufferMemoryDescriptor *pMemDesc = new IOBufferMemoryDescriptor;
-    if (pMemDesc && !pMemDesc->initWithPhysicalMask(kernel_task, fOptions, cbFudged, uAlignment, PhysMask))
+    /* The public initWithPhysicalMask virtual method appeared in 10.7.0, in
+       versions 10.5.0 up to 10.7.0 it was private, and 10.4.8-10.5.0 it was
+       x86 only and didn't have the alignment parameter (slot was different too). */
+    IOBufferMemoryDescriptor *pMemDesc;
+#if __MAC_OS_X_VERSION_MAX_ALLOWED >= 1070
+    if (version_major >= 11 /* 11 = 10.7.x = Lion, could probably allow 10.5.0+ here if we really wanted to. */)
     {
-        pMemDesc->release();
-        pMemDesc = NULL;
+        if (fContiguous || MaxPhysAddr < UINT64_MAX)
+        {
+            fOptions |= kIOMemoryPhysicallyContiguous;
+            // cannot find any evidence of this: uAlignmentActual = 1; /* PhysMask isn't respected if higher. */
+        }
+
+        pMemDesc = new IOBufferMemoryDescriptor;
+        if (pMemDesc)
+        {
+            if (pMemDesc->initWithPhysicalMask(kernel_task, fOptions, cbFudged, uAlignmentActual, PhysMask))
+            { /* likely */ }
+            else
+            {
+                pMemDesc->release();
+                pMemDesc = NULL;
+            }
+        }
     }
+    else
 #endif
+        pMemDesc = IOBufferMemoryDescriptor::inTaskWithPhysicalMask(kernel_task, fOptions, cbFudged, PhysMask);
     if (pMemDesc)
     {
         IOReturn IORet = pMemDesc->prepare(kIODirectionInOut);
@@ -527,11 +545,32 @@ static int rtR0MemObjNativeAllocWorker(PPRTR0MEMOBJINTERNAL ppMem, size_t cb,
                         pMemDesc->complete();
                         pMemDesc->release();
                         if (PhysMask)
-                            LogRel(("rtR0MemObjNativeAllocWorker: off=%x Addr=%llx AddrPrev=%llx MaxPhysAddr=%llx PhysMas=%llx fContiguous=%RTbool fOptions=%#x - buggy API!\n",
-                                    off, Addr, AddrPrev, MaxPhysAddr, PhysMask, fContiguous, fOptions));
+                        {
+                            kprintf("rtR0MemObjNativeAllocWorker: off=%zx Addr=%llx AddrPrev=%llx MaxPhysAddr=%llx PhysMas=%llx fContiguous=%d fOptions=%#x - buggy API!\n",
+                                    (size_t)off, Addr, AddrPrev, MaxPhysAddr, PhysMask, fContiguous, fOptions);
+                            LogRel(("rtR0MemObjNativeAllocWorker: off=%zx Addr=%llx AddrPrev=%llx MaxPhysAddr=%llx PhysMas=%llx fContiguous=%RTbool fOptions=%#x - buggy API!\n",
+                                    (size_t)off, Addr, AddrPrev, MaxPhysAddr, PhysMask, fContiguous, fOptions));
+                        }
                         return VERR_ADDRESS_TOO_BIG;
                     }
                     AddrPrev = Addr;
+                }
+
+                /*
+                 * Check that it's aligned correctly.
+                 */
+                if ((uintptr_t)pv & (uAlignment - 1))
+                {
+                    pMemDesc->complete();
+                    pMemDesc->release();
+                    if (PhysMask)
+                    {
+                        kprintf("rtR0MemObjNativeAllocWorker: pv=%p uAlignment=%#zx (MaxPhysAddr=%llx PhysMas=%llx fContiguous=%d fOptions=%#x) - buggy API!!\n",
+                                pv, uAlignment, MaxPhysAddr, PhysMask, fContiguous, fOptions);
+                        LogRel(("rtR0MemObjNativeAllocWorker: pv=%p uAlignment=%#zx (MaxPhysAddr=%llx PhysMas=%llx fContiguous=%RTbool fOptions=%#x) - buggy API!\n",
+                                pv, uAlignment, MaxPhysAddr, PhysMask, fContiguous, fOptions));
+                    }
+                    return VERR_NOT_SUPPORTED;
                 }
 
 #ifdef RT_STRICT
@@ -626,7 +665,7 @@ DECLHIDDEN(int) rtR0MemObjNativeAllocPage(PPRTR0MEMOBJINTERNAL ppMem, size_t cb,
     IPRT_DARWIN_SAVE_EFL_AC();
 
     int rc = rtR0MemObjNativeAllocWorker(ppMem, cb, fExecutable, false /* fContiguous */,
-                                         0 /* PhysMask */, UINT64_MAX, RTR0MEMOBJTYPE_PAGE);
+                                         0 /* PhysMask */, UINT64_MAX, RTR0MEMOBJTYPE_PAGE, PAGE_SIZE);
 
     IPRT_DARWIN_RESTORE_EFL_AC();
     return rc;
@@ -645,10 +684,10 @@ DECLHIDDEN(int) rtR0MemObjNativeAllocLow(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, 
      * (See bug comment in the worker and IOBufferMemoryDescriptor::initWithPhysicalMask.)
      */
     int rc = rtR0MemObjNativeAllocWorker(ppMem, cb, fExecutable, false /* fContiguous */,
-                                         ~(uint32_t)PAGE_OFFSET_MASK, _4G - PAGE_SIZE, RTR0MEMOBJTYPE_LOW);
+                                         ~(uint32_t)PAGE_OFFSET_MASK, _4G - PAGE_SIZE, RTR0MEMOBJTYPE_LOW, PAGE_SIZE);
     if (rc == VERR_ADDRESS_TOO_BIG)
         rc = rtR0MemObjNativeAllocWorker(ppMem, cb, fExecutable, false /* fContiguous */,
-                                         0 /* PhysMask */, _4G - PAGE_SIZE, RTR0MEMOBJTYPE_LOW);
+                                         0 /* PhysMask */, _4G - PAGE_SIZE, RTR0MEMOBJTYPE_LOW, PAGE_SIZE);
 
     IPRT_DARWIN_RESTORE_EFL_AC();
     return rc;
@@ -661,7 +700,7 @@ DECLHIDDEN(int) rtR0MemObjNativeAllocCont(PPRTR0MEMOBJINTERNAL ppMem, size_t cb,
 
     int rc = rtR0MemObjNativeAllocWorker(ppMem, cb, fExecutable, true /* fContiguous */,
                                          ~(uint32_t)PAGE_OFFSET_MASK, _4G - PAGE_SIZE,
-                                         RTR0MEMOBJTYPE_CONT);
+                                         RTR0MEMOBJTYPE_CONT, PAGE_SIZE);
 
     /*
      * Workaround for bogus IOKernelAllocateContiguous behavior, just in case.
@@ -670,7 +709,7 @@ DECLHIDDEN(int) rtR0MemObjNativeAllocCont(PPRTR0MEMOBJINTERNAL ppMem, size_t cb,
     if (RT_FAILURE(rc) && cb <= PAGE_SIZE)
         rc = rtR0MemObjNativeAllocWorker(ppMem, cb + PAGE_SIZE, fExecutable, true /* fContiguous */,
                                          ~(uint32_t)PAGE_OFFSET_MASK, _4G - PAGE_SIZE,
-                                         RTR0MEMOBJTYPE_CONT);
+                                         RTR0MEMOBJTYPE_CONT, PAGE_SIZE);
     IPRT_DARWIN_RESTORE_EFL_AC();
     return rc;
 }
@@ -678,9 +717,12 @@ DECLHIDDEN(int) rtR0MemObjNativeAllocCont(PPRTR0MEMOBJINTERNAL ppMem, size_t cb,
 
 DECLHIDDEN(int) rtR0MemObjNativeAllocPhys(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, RTHCPHYS PhysHighest, size_t uAlignment)
 {
-    /** @todo alignment */
     if (uAlignment != PAGE_SIZE)
-        return VERR_NOT_SUPPORTED;
+    {
+        /* See rtR0MemObjNativeAllocWorker: */
+        if (version_major < 9 /* 9 = 10.5.x = Snow Leopard */)
+            return VERR_NOT_SUPPORTED;
+    }
 
     IPRT_DARWIN_SAVE_EFL_AC();
 
@@ -689,8 +731,9 @@ DECLHIDDEN(int) rtR0MemObjNativeAllocPhys(PPRTR0MEMOBJINTERNAL ppMem, size_t cb,
      */
     int rc;
     if (PhysHighest == NIL_RTHCPHYS)
-        rc = rtR0MemObjNativeAllocWorker(ppMem, cb, true /* fExecutable */, true /* fContiguous */,
-                                         0 /* PhysMask*/, UINT64_MAX, RTR0MEMOBJTYPE_PHYS);
+        rc = rtR0MemObjNativeAllocWorker(ppMem, cb, false /* fExecutable */, true /* fContiguous */,
+                                         uAlignment <= PAGE_SIZE ? 0 : ~(mach_vm_address_t)(uAlignment - 1) /* PhysMask*/,
+                                         UINT64_MAX, RTR0MEMOBJTYPE_PHYS, uAlignment);
     else
     {
         mach_vm_address_t PhysMask = 0;
@@ -698,10 +741,10 @@ DECLHIDDEN(int) rtR0MemObjNativeAllocPhys(PPRTR0MEMOBJINTERNAL ppMem, size_t cb,
         while (PhysMask > (PhysHighest | PAGE_OFFSET_MASK))
             PhysMask >>= 1;
         AssertReturn(PhysMask + 1 <= cb, VERR_INVALID_PARAMETER);
-        PhysMask &= ~(mach_vm_address_t)PAGE_OFFSET_MASK;
+        PhysMask &= ~(mach_vm_address_t)(uAlignment - 1);
 
-        rc = rtR0MemObjNativeAllocWorker(ppMem, cb, true /* fExecutable */, true /* fContiguous */,
-                                         PhysMask, PhysHighest, RTR0MEMOBJTYPE_PHYS);
+        rc = rtR0MemObjNativeAllocWorker(ppMem, cb, false /* fExecutable */, true /* fContiguous */,
+                                         PhysMask, PhysHighest, RTR0MEMOBJTYPE_PHYS, uAlignment);
     }
 
     IPRT_DARWIN_RESTORE_EFL_AC();
