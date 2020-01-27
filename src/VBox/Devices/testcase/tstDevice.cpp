@@ -153,7 +153,7 @@ typedef struct TSTDEVPDMDEV
     /** Pointer to the PDM module containing the device. */
     PCTSTDEVPDMMOD                  pPdmMod;
     /** Device registration structure. */
-    const struct PDMDEVREG          *pReg;
+    const PDMDEVREG                 *pReg;
 } TSTDEVPDMDEV;
 /** Pointer to a PDM device descriptor .*/
 typedef TSTDEVPDMDEV *PTSTDEVPDMDEV;
@@ -203,13 +203,12 @@ RTLISTANCHOR g_LstPdmMods;
 /** List of registered PDM devices. */
 RTLISTANCHOR g_LstPdmDevs;
 
-extern const TSTDEVVMMCALLBACKS g_tstDevVmmCallbacks;
-
 /**
  * PDM R0 imports we implement.
  */
 static const TSTDEVPDMR0IMPORTS g_aPdmR0Imports[] =
 {
+#if 0
     {"IOMMMIOMapMMIO2Page",            (PFNRT)IOMMMIOMapMMIO2Page},
     {"IOMMMIOResetRegion",             (PFNRT)IOMMMIOResetRegion},
     {"IntNetR0IfSend",                 (PFNRT)/*IntNetR0IfSend*/NULL},
@@ -254,6 +253,9 @@ static const TSTDEVPDMR0IMPORTS g_aPdmR0Imports[] =
     {"nocrt_memmove",                  (PFNRT)memmove},
     {"nocrt_memset",                   (PFNRT)memset},
     {"nocrt_strlen",                   (PFNRT)strlen},
+#else
+    { NULL, NULL }
+#endif
 };
 
 
@@ -480,16 +482,6 @@ static DECLCALLBACK(int) tstDevPdmR3DevReg_Register(PPDMDEVREGCB pCallbacks, PCP
                     &&  tstDevPdmR3IsValidName(pReg->szName),
                     ("Invalid name '%.*s'\n", sizeof(pReg->szName), pReg->szName),
                     VERR_PDM_INVALID_DEVICE_REGISTRATION);
-    AssertMsgReturn(   !(pReg->fFlags & PDM_DEVREG_FLAGS_RC)
-                    || (   pReg->szRCMod[0]
-                        && strlen(pReg->szRCMod) < sizeof(pReg->szRCMod)),
-                    ("Invalid GC module name '%s' - (Device %s)\n", pReg->szRCMod, pReg->szName),
-                    VERR_PDM_INVALID_DEVICE_REGISTRATION);
-    AssertMsgReturn(   !(pReg->fFlags & PDM_DEVREG_FLAGS_R0)
-                    || (   pReg->szR0Mod[0]
-                        && strlen(pReg->szR0Mod) < sizeof(pReg->szR0Mod)),
-                    ("Invalid R0 module name '%s' - (Device %s)\n", pReg->szR0Mod, pReg->szName),
-                    VERR_PDM_INVALID_DEVICE_REGISTRATION);
     AssertMsgReturn((pReg->fFlags & PDM_DEVREG_FLAGS_HOST_BITS_MASK) == PDM_DEVREG_FLAGS_HOST_BITS_DEFAULT,
                     ("Invalid host bits flags! fFlags=%#x (Device %s)\n", pReg->fFlags, pReg->szName),
                     VERR_PDM_INVALID_DEVICE_HOST_BITS);
@@ -502,8 +494,8 @@ static DECLCALLBACK(int) tstDevPdmR3DevReg_Register(PPDMDEVREGCB pCallbacks, PCP
     AssertMsgReturn(pReg->cMaxInstances > 0,
                     ("Max instances %u! (Device %s)\n", pReg->cMaxInstances, pReg->szName),
                     VERR_PDM_INVALID_DEVICE_REGISTRATION);
-    AssertMsgReturn(pReg->cbInstance <= (uint32_t)(pReg->fFlags & (PDM_DEVREG_FLAGS_RC | PDM_DEVREG_FLAGS_R0)  ? 96 * _1K : _1M),
-                    ("Instance size %d bytes! (Device %s)\n", pReg->cbInstance, pReg->szName),
+    AssertMsgReturn(pReg->cbInstanceCC <= (uint32_t)(pReg->fFlags & (PDM_DEVREG_FLAGS_RC | PDM_DEVREG_FLAGS_R0)  ? 96 * _1K : _1M),
+                    ("Instance size %d bytes! (Device %s)\n", pReg->cbInstanceCC, pReg->szName),
                     VERR_PDM_INVALID_DEVICE_REGISTRATION);
     AssertMsgReturn(pReg->pfnConstruct,
                     ("No constructor! (Device %s)\n", pReg->szName),
@@ -851,29 +843,27 @@ static int tstDevPdmDevCreate(const char *pszName)
         RTListInit(&Dut.LstPdmThreads);
         RTListInit(&Dut.SupSession.LstSupSem);
         CFGMNODE Cfg;
-        Cfg.pVmmCallbacks = &g_tstDevVmmCallbacks;
         Cfg.pDut = &Dut;
 
         rc = RTCritSectRwInit(&Dut.CritSectLists);
         AssertRC(rc);
 
-        PPDMDEVINS pDevIns = (PPDMDEVINS)RTMemAllocZ(RT_UOFFSETOF_DYN(PDMDEVINS, achInstanceData[pPdmDev->pReg->cbInstance]));
+        PPDMDEVINS pDevIns = (PPDMDEVINS)RTMemAllocZ(RT_UOFFSETOF_DYN(PDMDEVINS, achInstanceData[pPdmDev->pReg->cbInstanceCC]));
         pDevIns->u32Version               = PDM_DEVINS_VERSION;
         pDevIns->iInstance                = 0;
         pDevIns->pReg                     = pPdmDev->pReg;
         pDevIns->pvInstanceDataR3         = &pDevIns->achInstanceData[0];
         pDevIns->pHlpR3                   = &g_tstDevPdmDevHlpR3;
         pDevIns->pCfg                     = &Cfg;
-        pDevIns->Internal.s.pVmmCallbacks = &g_tstDevVmmCallbacks;
         pDevIns->Internal.s.pDut          = &Dut;
         rc = pPdmDev->pReg->pfnConstruct(pDevIns, 0, &Cfg);
         if (RT_SUCCESS(rc))
         {
             PRTDEVDUTIOPORT pIoPort = RTListGetFirst(&Dut.LstIoPorts, RTDEVDUTIOPORT, NdIoPorts);
             uint32_t uVal = 0;
-            PDMCritSectEnter(pDevIns->pCritSectRoR3, VERR_IGNORED);
+            /*PDMCritSectEnter(pDevIns->pCritSectRoR3, VERR_IGNORED);*/
             pIoPort->pfnInR0(pDevIns, pIoPort->pvUserR0, pIoPort->PortStart, &uVal, sizeof(uint8_t));
-            PDMCritSectLeave(pDevIns->pCritSectRoR3);
+            /*PDMCritSectLeave(pDevIns->pCritSectRoR3);*/
         }
     }
     else
