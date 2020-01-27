@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2019 Oracle Corporation
+ * Copyright (C) 2006-2020 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -33,8 +33,18 @@
 #include "CSnapshot.h"
 
 
-UIVirtualMachineItem::UIVirtualMachineItem(const CMachine &aMachine)
-    : m_machine(aMachine)
+/*********************************************************************************************************************************
+*   Class UIVirtualMachineItem implementation.                                                                                   *
+*********************************************************************************************************************************/
+
+UIVirtualMachineItem::UIVirtualMachineItem(const CMachine &comMachine)
+    : m_comMachine(comMachine)
+    , m_fAccessible(false)
+    , m_fHasDetails(false)
+    , m_cSnaphot(0)
+    , m_enmMachineState(KMachineState_Null)
+    , m_enmSessionState(KSessionState_Null)
+    , m_enmConfigurationAccessLevel(ConfigurationAccessLevel_Null)
 {
     recache();
 }
@@ -52,142 +62,148 @@ QPixmap UIVirtualMachineItem::osPixmap(QSize *pLogicalSize /* = 0 */) const
 
 QString UIVirtualMachineItem::machineStateName() const
 {
-    return m_fAccessible ? gpConverter->toString(m_machineState) :
-           QApplication::translate("UIVMListView", "Inaccessible");
-}
-
-QIcon UIVirtualMachineItem::machineStateIcon() const
-{
-    return m_fAccessible ? gpConverter->toIcon(m_machineState) :
-                           gpConverter->toIcon(KMachineState_Aborted);
+    return   m_fAccessible
+           ? gpConverter->toString(m_enmMachineState)
+           : QApplication::translate("UIVMListView", "Inaccessible");
 }
 
 QString UIVirtualMachineItem::sessionStateName() const
 {
-    return m_fAccessible ? gpConverter->toString(m_sessionState) :
-           QApplication::translate("UIVMListView", "Inaccessible");
+    return   m_fAccessible
+           ? gpConverter->toString(m_enmSessionState)
+           : QApplication::translate("UIVMListView", "Inaccessible");
+}
+
+QIcon UIVirtualMachineItem::machineStateIcon() const
+{
+    return   m_fAccessible
+           ? gpConverter->toIcon(m_enmMachineState)
+           : gpConverter->toIcon(KMachineState_Aborted);
 }
 
 QString UIVirtualMachineItem::toolTipText() const
 {
-    QString dateTime = (m_lastStateChange.date() == QDate::currentDate()) ?
-                        m_lastStateChange.time().toString(Qt::LocalDate) :
-                        m_lastStateChange.toString(Qt::LocalDate);
+    QString strToolTip;
 
-    QString toolTip;
+    const QString strDateTime = (m_lastStateChange.date() == QDate::currentDate())
+                              ? m_lastStateChange.time().toString(Qt::LocalDate)
+                              : m_lastStateChange.toString(Qt::LocalDate);
 
     if (m_fAccessible)
     {
-        toolTip = QString("<b>%1</b>").arg(m_strName);
+        strToolTip = QString("<b>%1</b>").arg(m_strName);
         if (!m_strSnapshotName.isNull())
-            toolTip += QString(" (%1)").arg(m_strSnapshotName);
-        toolTip = QApplication::translate("UIVMListView",
-            "<nobr>%1<br></nobr>"
-            "<nobr>%2 since %3</nobr><br>"
-            "<nobr>Session %4</nobr>",
-            "VM tooltip (name, last state change, session state)")
-            .arg(toolTip)
-            .arg(gpConverter->toString(m_machineState))
-            .arg(dateTime)
-            .arg(gpConverter->toString(m_sessionState).toLower());
+            strToolTip += QString(" (%1)").arg(m_strSnapshotName);
+        strToolTip = QApplication::translate("UIVMListView",
+                                             "<nobr>%1<br></nobr>"
+                                             "<nobr>%2 since %3</nobr><br>"
+                                             "<nobr>Session %4</nobr>",
+                                             "VM tooltip (name, last state change, session state)")
+                                             .arg(strToolTip)
+                                             .arg(gpConverter->toString(m_enmMachineState))
+                                             .arg(strDateTime)
+                                             .arg(gpConverter->toString(m_enmSessionState).toLower());
     }
     else
     {
-        toolTip = QApplication::translate("UIVMListView",
-            "<nobr><b>%1</b><br></nobr>"
-            "<nobr>Inaccessible since %2</nobr>",
-            "Inaccessible VM tooltip (name, last state change)")
-            .arg(m_strSettingsFile)
-            .arg(dateTime);
+        strToolTip = QApplication::translate("UIVMListView",
+                                             "<nobr><b>%1</b><br></nobr>"
+                                             "<nobr>Inaccessible since %2</nobr>",
+                                             "Inaccessible VM tooltip (name, last state change)")
+                                             .arg(m_strSettingsFile)
+                                             .arg(strDateTime);
     }
 
-    return toolTip;
+    return strToolTip;
 }
 
-const QStringList& UIVirtualMachineItem::groups()
+void UIVirtualMachineItem::recache()
 {
-    return m_groups;
-}
+    /* Determine attributes which are always available: */
+    m_uId = m_comMachine.GetId();
+    m_strSettingsFile = m_comMachine.GetSettingsFilePath();
 
-bool UIVirtualMachineItem::recache()
-{
-    bool needsResort = true;
-
-    m_uId = m_machine.GetId();
-    m_strSettingsFile = m_machine.GetSettingsFilePath();
-
-    m_fAccessible = m_machine.GetAccessible();
+    /* Now determine whether VM is accessible: */
+    m_fAccessible = m_comMachine.GetAccessible();
     if (m_fAccessible)
     {
-        QString name = m_machine.GetName();
+        /* Reset last access error information: */
+        m_comAccessError = CVirtualBoxErrorInfo();
 
-        CSnapshot snp = m_machine.GetCurrentSnapshot();
-        m_strSnapshotName = snp.isNull() ? QString::null : snp.GetName();
-        needsResort = name != m_strName;
-        m_strName = name;
+        /* Determine own VM attributes: */
+        m_strName = m_comMachine.GetName();
+        m_strOSTypeId = m_comMachine.GetOSTypeId();
+        m_groups = m_comMachine.GetGroups().toList();
 
-        m_machineState = m_machine.GetState();
-        m_lastStateChange.setTime_t(m_machine.GetLastStateChange() / 1000);
-        m_sessionState = m_machine.GetSessionState();
-        m_strOSTypeId = m_machine.GetOSTypeId();
-        m_cSnaphot = m_machine.GetSnapshotCount();
+        /* Determine snapshot attributes: */
+        CSnapshot comSnapshot = m_comMachine.GetCurrentSnapshot();
+        m_strSnapshotName = comSnapshot.isNull() ? QString() : comSnapshot.GetName();
+        m_lastStateChange.setTime_t(m_comMachine.GetLastStateChange() / 1000);
+        m_cSnaphot = m_comMachine.GetSnapshotCount();
 
-        m_groups = m_machine.GetGroups().toList();
+        /* Determine VM states: */
+        m_enmMachineState = m_comMachine.GetState();
+        m_enmSessionState = m_comMachine.GetSessionState();
 
-        if (   m_machineState == KMachineState_PoweredOff
-            || m_machineState == KMachineState_Saved
-            || m_machineState == KMachineState_Teleported
-            || m_machineState == KMachineState_Aborted
+        /* Determine configuration access level: */
+        m_enmConfigurationAccessLevel = ::configurationAccessLevel(m_enmSessionState, m_enmMachineState);
+        /* Also take restrictions into account: */
+        if (   m_enmConfigurationAccessLevel != ConfigurationAccessLevel_Null
+            && !gEDataManager->machineReconfigurationEnabled(m_uId))
+            m_enmConfigurationAccessLevel = ConfigurationAccessLevel_Null;
+
+        /* Determine PID finally: */
+        if (   m_enmMachineState == KMachineState_PoweredOff
+            || m_enmMachineState == KMachineState_Saved
+            || m_enmMachineState == KMachineState_Teleported
+            || m_enmMachineState == KMachineState_Aborted
            )
         {
             m_pid = (ULONG) ~0;
         }
         else
         {
-            m_pid = m_machine.GetSessionPID();
+            m_pid = m_comMachine.GetSessionPID();
         }
 
-        /* Determine configuration access level: */
-        m_configurationAccessLevel = ::configurationAccessLevel(m_sessionState, m_machineState);
-        /* Also take restrictions into account: */
-        if (   m_configurationAccessLevel != ConfigurationAccessLevel_Null
-            && !gEDataManager->machineReconfigurationEnabled(m_uId))
-            m_configurationAccessLevel = ConfigurationAccessLevel_Null;
-
-        /* Should we show details for this item? */
+        /* Determine whether we should show this VM details: */
         m_fHasDetails = gEDataManager->showMachineInVirtualBoxManagerDetails(m_uId);
     }
     else
     {
-        m_accessError = m_machine.GetAccessError();
+        /* Update last access error information: */
+        m_comAccessError = m_comMachine.GetAccessError();
 
-        /* this should be in sync with
-         * UIMessageCenter::confirm_machineDeletion() */
+        /* Determine machine name on the basis of settings file only: */
         QFileInfo fi(m_strSettingsFile);
-        QString name = UICommon::hasAllowedExtension(fi.completeSuffix(), VBoxFileExts) ?
-                       fi.completeBaseName() : fi.fileName();
-        needsResort = name != m_strName;
-        m_strName = name;
-        m_machineState = KMachineState_Null;
-        m_sessionState = KSessionState_Null;
+        m_strName = UICommon::hasAllowedExtension(fi.completeSuffix(), VBoxFileExts)
+                  ? fi.completeBaseName()
+                  : fi.fileName();
+        /* Reset other VM attributes: */
+        m_strOSTypeId = QString();
+        m_groups.clear();
+
+        /* Reset snapshot attributes: */
+        m_strSnapshotName = QString();
         m_lastStateChange = QDateTime::currentDateTime();
-        m_strOSTypeId = QString::null;
         m_cSnaphot = 0;
 
-        m_groups.clear();
+        /* Reset VM states: */
+        m_enmMachineState = KMachineState_Null;
+        m_enmSessionState = KSessionState_Null;
+
+        /* Reset configuration access level: */
+        m_enmConfigurationAccessLevel = ConfigurationAccessLevel_Null;
+
+        /* Reset PID finally: */
         m_pid = (ULONG) ~0;
 
-        /* Set configuration access level to NULL: */
-        m_configurationAccessLevel = ConfigurationAccessLevel_Null;
-
-        /* Should we show details for this item? */
+        /* Reset whether we should show this VM details: */
         m_fHasDetails = true;
     }
 
     /* Recache item pixmap: */
     recachePixmap();
-
-    return needsResort;
 }
 
 void UIVirtualMachineItem::recachePixmap()
@@ -196,7 +212,7 @@ void UIVirtualMachineItem::recachePixmap()
     if (m_fAccessible)
     {
         /* First, we are trying to acquire personal machine guest OS type icon: */
-        m_pixmap = uiCommon().vmUserPixmapDefault(m_machine, &m_logicalPixmapSize);
+        m_pixmap = uiCommon().vmUserPixmapDefault(m_comMachine, &m_logicalPixmapSize);
         /* If there is nothing, we are using icon corresponding to cached guest OS type: */
         if (m_pixmap.isNull())
             m_pixmap = uiCommon().vmGuestOSTypePixmapDefault(m_strOSTypeId, &m_logicalPixmapSize);
@@ -209,29 +225,20 @@ void UIVirtualMachineItem::recachePixmap()
     }
 }
 
-/**
- * Returns @a true if we can activate and bring the VM console window to
- * foreground, and @a false otherwise.
- */
 bool UIVirtualMachineItem::canSwitchTo() const
 {
-    return const_cast <CMachine &>(m_machine).CanShowConsoleWindow();
+    return const_cast <CMachine &>(m_comMachine).CanShowConsoleWindow();
 }
 
-/**
- * Tries to switch to the main window of the VM process.
- *
- * @return true if successfully switched and false otherwise.
- */
 bool UIVirtualMachineItem::switchTo()
 {
 #ifdef VBOX_WS_MAC
-    ULONG64 id = m_machine.ShowConsoleWindow();
+    ULONG64 id = m_comMachine.ShowConsoleWindow();
 #else
-    WId id = (WId) m_machine.ShowConsoleWindow();
+    WId id = (WId) m_comMachine.ShowConsoleWindow();
 #endif
-    AssertWrapperOk(m_machine);
-    if (!m_machine.isOk())
+    AssertWrapperOk(m_comMachine);
+    if (!m_comMachine.isOk())
         return false;
 
     /* winId = 0 it means the console window has already done everything
@@ -244,10 +251,10 @@ bool UIVirtualMachineItem::switchTo()
     return uiCommon().activateWindow(id, true);
 
 #elif defined (VBOX_WS_MAC)
-    /*
-     * This is just for the case were the other process cannot steal
-     * the focus from us. It will send us a PSN so we can try.
-     */
+
+    // WORKAROUND:
+    // This is just for the case were the other process cannot steal
+    // the focus from us. It will send us a PSN so we can try.
     ProcessSerialNumber psn;
     psn.highLongOfPSN = id >> 32;
     psn.lowLongOfPSN = (UInt32)id;
@@ -259,51 +266,54 @@ bool UIVirtualMachineItem::switchTo()
     return !rc;
 
 #else
+
     return false;
+
 #endif
 }
 
 /* static */
 bool UIVirtualMachineItem::isItemEditable(UIVirtualMachineItem *pItem)
 {
-    return pItem &&
-           pItem->accessible() &&
-           pItem->sessionState() == KSessionState_Unlocked;
+    return    pItem
+           && pItem->accessible()
+           && pItem->sessionState() == KSessionState_Unlocked;
 }
 
 /* static */
 bool UIVirtualMachineItem::isItemSaved(UIVirtualMachineItem *pItem)
 {
-    return pItem &&
-           pItem->accessible() &&
-           pItem->machineState() == KMachineState_Saved;
+    return    pItem
+           && pItem->accessible()
+           && pItem->machineState() == KMachineState_Saved;
 }
 
 /* static */
 bool UIVirtualMachineItem::isItemPoweredOff(UIVirtualMachineItem *pItem)
 {
-    return pItem &&
-           pItem->accessible() &&
-           (pItem->machineState() == KMachineState_PoweredOff ||
-            pItem->machineState() == KMachineState_Saved ||
-            pItem->machineState() == KMachineState_Teleported ||
-            pItem->machineState() == KMachineState_Aborted);
+    return    pItem
+           && pItem->accessible()
+           && (   pItem->machineState() == KMachineState_PoweredOff
+               || pItem->machineState() == KMachineState_Saved
+               || pItem->machineState() == KMachineState_Teleported
+               || pItem->machineState() == KMachineState_Aborted);
 }
 
 /* static */
 bool UIVirtualMachineItem::isItemStarted(UIVirtualMachineItem *pItem)
 {
-    return isItemRunning(pItem) || isItemPaused(pItem);
+    return    isItemRunning(pItem)
+           || isItemPaused(pItem);
 }
 
 /* static */
 bool UIVirtualMachineItem::isItemRunning(UIVirtualMachineItem *pItem)
 {
-    return pItem &&
-           pItem->accessible() &&
-           (pItem->machineState() == KMachineState_Running ||
-            pItem->machineState() == KMachineState_Teleporting ||
-            pItem->machineState() == KMachineState_LiveSnapshotting);
+    return    pItem
+           && pItem->accessible()
+           && (   pItem->machineState() == KMachineState_Running
+               || pItem->machineState() == KMachineState_Teleporting
+               || pItem->machineState() == KMachineState_LiveSnapshotting);
 }
 
 /* static */
@@ -312,13 +322,13 @@ bool UIVirtualMachineItem::isItemRunningHeadless(UIVirtualMachineItem *pItem)
     if (isItemRunning(pItem))
     {
         /* Open session to determine which frontend VM is started with: */
-        CSession session = uiCommon().openExistingSession(pItem->id());
-        if (!session.isNull())
+        CSession comSession = uiCommon().openExistingSession(pItem->id());
+        if (!comSession.isNull())
         {
             /* Acquire the session name: */
-            const QString strSessionName = session.GetMachine().GetSessionName();
+            const QString strSessionName = comSession.GetMachine().GetSessionName();
             /* Close the session early: */
-            session.UnlockMachine();
+            comSession.UnlockMachine();
             /* Check whether we are in 'headless' session: */
             return strSessionName == "headless";
         }
@@ -329,30 +339,30 @@ bool UIVirtualMachineItem::isItemRunningHeadless(UIVirtualMachineItem *pItem)
 /* static */
 bool UIVirtualMachineItem::isItemPaused(UIVirtualMachineItem *pItem)
 {
-    return pItem &&
-           pItem->accessible() &&
-           (pItem->machineState() == KMachineState_Paused ||
-            pItem->machineState() == KMachineState_TeleportingPausedVM);
+    return    pItem
+           && pItem->accessible()
+           && (   pItem->machineState() == KMachineState_Paused
+               || pItem->machineState() == KMachineState_TeleportingPausedVM);
 }
 
 /* static */
 bool UIVirtualMachineItem::isItemStuck(UIVirtualMachineItem *pItem)
 {
-    return pItem &&
-           pItem->accessible() &&
-           pItem->machineState() == KMachineState_Stuck;
+    return    pItem
+           && pItem->accessible()
+           && pItem->machineState() == KMachineState_Stuck;
 }
+
+
+/*********************************************************************************************************************************
+*   Class UIVirtualMachineItemMimeData implementation.                                                                           *
+*********************************************************************************************************************************/
 
 QString UIVirtualMachineItemMimeData::m_type = "application/org.virtualbox.gui.vmselector.UIVirtualMachineItem";
 
 UIVirtualMachineItemMimeData::UIVirtualMachineItemMimeData(UIVirtualMachineItem *pItem)
-  : m_pItem(pItem)
+    : m_pItem(pItem)
 {
-}
-
-UIVirtualMachineItem *UIVirtualMachineItemMimeData::item() const
-{
-    return m_pItem;
 }
 
 QStringList UIVirtualMachineItemMimeData::formats() const
@@ -360,10 +370,4 @@ QStringList UIVirtualMachineItemMimeData::formats() const
     QStringList types;
     types << type();
     return types;
-}
-
-/* static */
-QString UIVirtualMachineItemMimeData::type()
-{
-    return m_type;
 }
