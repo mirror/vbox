@@ -70,7 +70,7 @@ typedef enum VIRTIOVMSTATECHANGED
 
 typedef struct VIRTIOSGSEG                                      /**< An S/G entry                              */
 {
-    RTGCPHYS pGcSeg;                                            /**< Pointer to the segment buffer             */
+    RTGCPHYS gcPhys;                                            /**< Pointer to the segment buffer             */
     size_t  cbSeg;                                              /**< Size of the segment buffer                */
 } VIRTIOSGSEG;
 
@@ -83,7 +83,7 @@ typedef struct VIRTIOSGBUF
     PVIRTIOSGSEG paSegs;                                       /**< Pointer to the scatter/gather array       */
     unsigned  cSegs;                                            /**< Number of segments                        */
     unsigned  idxSeg;                                           /**< Current segment we are in                 */
-    RTGCPHYS  pGcSegCur;                                        /**< Ptr to byte within the current seg        */
+    RTGCPHYS  gcPhysCur;                                        /**< Ptr to byte within the current seg        */
     size_t    cbSegLeft;                                        /**< # of bytes left in the current segment    */
 } VIRTIOSGBUF;
 
@@ -376,28 +376,23 @@ int  virtioCoreR3QueueAttach(PVIRTIOCORE pVirtio, uint16_t idxQueue, const char 
 int  virtioCoreR3DescChainGet(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t idxQueue,
                              uint16_t uHeadIdx, PPVIRTIO_DESC_CHAIN_T ppDescChain);
 
+int  virtioCoreR3QueuePeek(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t idxQueue,
+                           PPVIRTIO_DESC_CHAIN_T ppDescChain);
+
+int  virtioCoreR3QueueSkip(PVIRTIOCORE pVirtio, uint16_t idxQueue);
+
 int  virtioCoreR3QueueGet(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t idxQueue,
                           PPVIRTIO_DESC_CHAIN_T ppDescChain, bool fRemove);
+
 int  virtioCoreR3QueuePut(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t idxQueue, PRTSGBUF pSgVirtReturn,
                           PVIRTIO_DESC_CHAIN_T pDescChain, bool fFence);
+
+int  virtioCoreR3QueuePendingCount(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t idxQueue);
 int  virtioCoreQueueSync(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t idxQueue);
 bool virtioCoreQueueIsEmpty(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t idxQueue);
 void virtioCoreQueueEnable(PVIRTIOCORE pVirtio, uint16_t idxQueue, bool fEnabled);
-
-/**
- * Skip the next entry in the specified queue
- *
- * @param   pVirtio     Pointer to the virtio state.
- * @param   idxQueue    Index of queue
- *
- */
-int virtioQueueSkip(PVIRTIOCORE pVirtio, uint16_t idxQueue);
-
-/**
- * Reset the device and driver (see VirtIO 1.0 section 2.1.1/2.1.2)
- *
- * @param   pVirtio     Pointer to the virtio state.
- */
+void virtioCoreQueueSetNotify(PVIRTIOCORE pVirtio, uint16_t idxQueue, bool fEnabled);
+void virtioCoreNotifyConfigChanged(PVIRTIOCORE pVirtio);
 void virtioCoreResetAll(PVIRTIOCORE pVirtio);
 
 /**
