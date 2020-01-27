@@ -361,15 +361,8 @@ static LRESULT vboxClipboardWinProcessMsg(PSHCLCONTEXT pCtx, HWND hwnd, UINT msg
                     void *pMem = GlobalLock(hMem);
                     if (pMem)
                     {
-                        SHCLDATABLOCK dataBlock;
-                        RT_ZERO(dataBlock);
-
-                        dataBlock.cbData  = cbPrealloc;
-                        dataBlock.pvData  = pMem;
-                        dataBlock.uFormat = fFormat;
-
                         /* Read the host data to the preallocated buffer. */
-                        int rc = VbglR3ClipboardReadDataEx(&pCtx->CmdCtx, &dataBlock, &cb);
+                        int rc = VbglR3ClipboardReadDataEx(&pCtx->CmdCtx, fFormat, pMem, cbPrealloc, &cb);
                         if (RT_SUCCESS(rc))
                         {
                             if (cb == 0)
@@ -394,12 +387,9 @@ static LRESULT vboxClipboardWinProcessMsg(PSHCLCONTEXT pCtx, HWND hwnd, UINT msg
                                     pMem = GlobalLock(hMem);
                                     if (pMem)
                                     {
-                                        dataBlock.cbData  = cb;
-                                        dataBlock.pvData  = pMem;
-
                                         /* Read the host data to the preallocated buffer. */
                                         uint32_t cbNew = 0;
-                                        rc = VbglR3ClipboardReadDataEx(&pCtx->CmdCtx, &dataBlock, &cbNew);
+                                        rc = VbglR3ClipboardReadDataEx(&pCtx->CmdCtx, fFormat, pMem, cb, &cbNew);
                                         if (   RT_SUCCESS(rc)
                                             && cbNew <= cb)
                                         {
@@ -579,14 +569,7 @@ static LRESULT vboxClipboardWinProcessMsg(PSHCLCONTEXT pCtx, HWND hwnd, UINT msg
                         LPVOID lp = GlobalLock(hClip);
                         if (lp != NULL)
                         {
-                            SHCLDATABLOCK dataBlock;
-                            RT_ZERO(dataBlock);
-
-                            dataBlock.uFormat = fFormat;
-                            dataBlock.pvData  = lp;
-                            dataBlock.cbData  = (uint32_t)GlobalSize(hClip);
-
-                            rc = VbglR3ClipboardWriteDataEx(&pEvent->cmdCtx, &dataBlock);
+                            rc = VbglR3ClipboardWriteDataEx(&pEvent->cmdCtx, fFormat, lp, (uint32_t)GlobalSize(hClip));
 
                             GlobalUnlock(hClip);
                         }
@@ -604,14 +587,8 @@ static LRESULT vboxClipboardWinProcessMsg(PSHCLCONTEXT pCtx, HWND hwnd, UINT msg
                         LPWSTR uniString = (LPWSTR)GlobalLock(hClip);
                         if (uniString != NULL)
                         {
-                            SHCLDATABLOCK dataBlock;
-                            RT_ZERO(dataBlock);
-
-                            dataBlock.uFormat = fFormat;
-                            dataBlock.pvData  = uniString;
-                            dataBlock.cbData  = ((uint32_t)lstrlenW(uniString) + 1) * 2;
-
-                            rc = VbglR3ClipboardWriteDataEx(&pEvent->cmdCtx, &dataBlock);
+                            rc = VbglR3ClipboardWriteDataEx(&pEvent->cmdCtx,
+                                                            fFormat, uniString, ((uint32_t)lstrlenW(uniString) + 1) * 2);
 
                             GlobalUnlock(hClip);
                         }
@@ -630,17 +607,9 @@ static LRESULT vboxClipboardWinProcessMsg(PSHCLCONTEXT pCtx, HWND hwnd, UINT msg
                         if (hClip != NULL)
                         {
                             LPVOID lp = GlobalLock(hClip);
-
                             if (lp != NULL)
                             {
-                                SHCLDATABLOCK dataBlock;
-                                RT_ZERO(dataBlock);
-
-                                dataBlock.uFormat = fFormat;
-                                dataBlock.pvData  = lp;
-                                dataBlock.cbData  = (uint32_t)GlobalSize(hClip);
-
-                                rc = VbglR3ClipboardWriteDataEx(&pEvent->cmdCtx, &dataBlock);
+                                rc = VbglR3ClipboardWriteDataEx(&pEvent->cmdCtx, fFormat, lp, (uint32_t)GlobalSize(hClip));
 
                                 GlobalUnlock(hClip);
                             }

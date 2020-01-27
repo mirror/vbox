@@ -452,17 +452,20 @@ VBGLR3DECL(int) VbglR3ClipboardReadData(HGCMCLIENTID idClient, uint32_t fFormat,
  * Reads clipboard data from the host clipboard.
  *
  * @returns VBox status code.
- * @retval  VINF_BUFFER_OVERFLOW    If there is more data available than the caller provided buffer space for.
+ * @retval  VINF_BUFFER_OVERFLOW If there is more data available than the caller provided buffer space for.
  *
  * @param   pCtx                The command context returned by VbglR3ClipboardConnectEx().
- * @param   pData               Where to store the clipboard data read.
+ * @param   uFormat             Clipboard format of clipboard data to be read.
+ * @param   pvData              Buffer where to store the read data.
+ * @param   cbData              Size (in bytes) of data buffer where to store the read data.
  * @param   pcbRead             The actual size of the host clipboard data.
  */
-VBGLR3DECL(int) VbglR3ClipboardReadDataEx(PVBGLR3SHCLCMDCTX pCtx, PSHCLDATABLOCK pData, uint32_t *pcbRead)
+VBGLR3DECL(int) VbglR3ClipboardReadDataEx(PVBGLR3SHCLCMDCTX pCtx,
+                                          SHCLFORMAT uFormat, void *pvData, uint32_t cbData, uint32_t *pcbRead)
 {
-    AssertPtrReturn(pCtx,  VERR_INVALID_POINTER);
-    AssertPtrReturn(pData, VERR_INVALID_POINTER);
-    return VbglR3ClipboardReadData(pCtx->idClient, pData->uFormat, pData->pvData, pData->cbData, pcbRead);
+    AssertPtrReturn(pCtx,   VERR_INVALID_POINTER);
+    AssertPtrReturn(pvData, VERR_INVALID_POINTER);
+    return VbglR3ClipboardReadData(pCtx->idClient, uFormat, pvData, cbData, pcbRead);
 }
 
 
@@ -2542,12 +2545,14 @@ VBGLR3DECL(int) VbglR3ClipboardWriteData(HGCMCLIENTID idClient, uint32_t fFormat
  *
  * @returns VBox status code.
  * @param   pCtx                The command context returned by VbglR3ClipboardConnectEx().
- * @param   pData               Clipboard data to send.
+ * @param   uFormat             Clipboard format to send.
+ * @param   pvData              Pointer to data to send.
+ * @param   cbData              Size (in bytes) of data to send.
  */
-VBGLR3DECL(int) VbglR3ClipboardWriteDataEx(PVBGLR3SHCLCMDCTX pCtx, PSHCLDATABLOCK pData)
+VBGLR3DECL(int) VbglR3ClipboardWriteDataEx(PVBGLR3SHCLCMDCTX pCtx, SHCLFORMAT uFormat, void *pvData, uint32_t cbData)
 {
-    AssertPtrReturn(pCtx,  VERR_INVALID_POINTER);
-    AssertPtrReturn(pData, VERR_INVALID_POINTER);
+    AssertPtrReturn(pCtx,   VERR_INVALID_POINTER);
+    AssertPtrReturn(pvData, VERR_INVALID_POINTER);
 
     int rc;
 
@@ -2555,7 +2560,7 @@ VBGLR3DECL(int) VbglR3ClipboardWriteDataEx(PVBGLR3SHCLCMDCTX pCtx, PSHCLDATABLOC
 
     if (pCtx->fUseLegacyProtocol)
     {
-        rc = VbglR3ClipboardWriteData(pCtx->idClient, pData->uFormat, pData->pvData, pData->cbData);
+        rc = VbglR3ClipboardWriteData(pCtx->idClient, uFormat, pvData, cbData);
     }
     else
     {
@@ -2567,8 +2572,8 @@ VBGLR3DECL(int) VbglR3ClipboardWriteDataEx(PVBGLR3SHCLCMDCTX pCtx, PSHCLDATABLOC
 
         VBGL_HGCM_HDR_INIT(&Msg.Hdr, pCtx->idClient, VBOX_SHCL_GUEST_FN_DATA_WRITE, VBOX_SHCL_CPARMS_DATA_WRITE);
         Msg.Parms.id64Context.SetUInt64(pCtx->idContext);
-        Msg.Parms.f32Format.SetUInt32(pData->uFormat);
-        Msg.Parms.pData.SetPtr(pData->pvData, pData->cbData);
+        Msg.Parms.f32Format.SetUInt32(uFormat);
+        Msg.Parms.pData.SetPtr(pvData, cbData);
 
         LogFlowFunc(("CID=%RU32\n", pCtx->idContext));
 

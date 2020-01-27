@@ -1249,11 +1249,13 @@ int ShClSvcDataReadRequest(PSHCLCLIENT pClient, SHCLFORMAT fFormat, PSHCLEVENTID
 }
 
 int ShClSvcDataReadSignal(PSHCLCLIENT pClient, PSHCLCLIENTCMDCTX pCmdCtx,
-                          PSHCLDATABLOCK pData)
+                          SHCLFORMAT uFormat, void *pvData, uint32_t cbData)
 {
     AssertPtrReturn(pClient, VERR_INVALID_POINTER);
     AssertPtrReturn(pCmdCtx, VERR_INVALID_POINTER);
-    AssertPtrReturn(pData,   VERR_INVALID_POINTER);
+    AssertPtrReturn(pvData,  VERR_INVALID_POINTER);
+
+    RT_NOREF(uFormat);
 
     LogFlowFuncEnter();
 
@@ -1270,8 +1272,8 @@ int ShClSvcDataReadSignal(PSHCLCLIENT pClient, PSHCLCLIENTCMDCTX pCmdCtx,
     int rc = VINF_SUCCESS;
 
     PSHCLEVENTPAYLOAD pPayload = NULL;
-    if (pData->cbData)
-        rc = ShClPayloadAlloc(idEvent, pData->pvData, pData->cbData, &pPayload);
+    if (cbData)
+        rc = ShClPayloadAlloc(idEvent, pvData, cbData, &pPayload);
 
     if (RT_SUCCESS(rc))
     {
@@ -1478,15 +1480,18 @@ static int shClSvcClientReadData(PSHCLCLIENT pClient, uint32_t cParms, VBOXHGCMS
         iParm++;
     }
 
-    SHCLDATABLOCK dataBlock;
+    SHCLFORMAT  uFormat = VBOX_SHCL_FMT_NONE;
+    uint32_t    cbData  = 0;
+    void       *pvData  = NULL;
+
     ASSERT_GUEST_RETURN(paParms[iParm].type == VBOX_HGCM_SVC_PARM_32BIT, VERR_WRONG_PARAMETER_TYPE);
-    dataBlock.uFormat = paParms[iParm].u.uint32;
+    uFormat = paParms[iParm].u.uint32;
     iParm++;
     if (cParms != VBOX_SHCL_CPARMS_DATA_READ_61B)
     {
         ASSERT_GUEST_RETURN(paParms[iParm].type == VBOX_HGCM_SVC_PARM_PTR, VERR_WRONG_PARAMETER_TYPE); /* Data buffer */
-        dataBlock.pvData = paParms[iParm].u.pointer.addr;
-        dataBlock.cbData = paParms[iParm].u.pointer.size;
+        pvData = paParms[iParm].u.pointer.addr;
+        cbData = paParms[iParm].u.pointer.size;
         iParm++;
         ASSERT_GUEST_RETURN(paParms[iParm].type == VBOX_HGCM_SVC_PARM_32BIT, VERR_WRONG_PARAMETER_TYPE); /*cbDataReturned*/
         iParm++;
@@ -1496,8 +1501,8 @@ static int shClSvcClientReadData(PSHCLCLIENT pClient, uint32_t cParms, VBOXHGCMS
         ASSERT_GUEST_RETURN(paParms[iParm].type == VBOX_HGCM_SVC_PARM_32BIT, VERR_WRONG_PARAMETER_TYPE); /*cbDataReturned*/
         iParm++;
         ASSERT_GUEST_RETURN(paParms[iParm].type == VBOX_HGCM_SVC_PARM_PTR, VERR_WRONG_PARAMETER_TYPE); /* Data buffer */
-        dataBlock.pvData = paParms[iParm].u.pointer.addr;
-        dataBlock.cbData = paParms[iParm].u.pointer.size;
+        pvData = paParms[iParm].u.pointer.addr;
+        cbData = paParms[iParm].u.pointer.size;
         iParm++;
     }
     Assert(iParm == cParms);
@@ -1510,7 +1515,7 @@ static int shClSvcClientReadData(PSHCLCLIENT pClient, uint32_t cParms, VBOXHGCMS
     if (!(pClient->State.fGuestFeatures0 & VBOX_SHCL_GF_0_CONTEXT_ID))
     {
         if (pClient->State.POD.uFormat == VBOX_SHCL_FMT_NONE)
-            pClient->State.POD.uFormat = dataBlock.uFormat;
+            pClient->State.POD.uFormat = uFormat;
     }
 
     /*
@@ -1525,16 +1530,16 @@ static int shClSvcClientReadData(PSHCLCLIENT pClient, uint32_t cParms, VBOXHGCMS
         SHCLEXTPARMS parms;
         RT_ZERO(parms);
 
-        parms.uFormat  = dataBlock.uFormat;
-        parms.u.pvData = dataBlock.pvData;
-        parms.cbData   = dataBlock.cbData;
+        parms.uFormat  = uFormat;
+        parms.u.pvData = pvData;
+        parms.cbData   = cbData;
 
         g_ExtState.fReadingData = true;
 
         /* Read clipboard data from the extension. */
         rc = g_ExtState.pfnExtension(g_ExtState.pvExtension, VBOX_CLIPBOARD_EXT_FN_DATA_READ, &parms, sizeof(parms));
         LogRelFlowFunc(("Shared Clipboard: DATA/Ext: fDelayedAnnouncement=%RTbool fDelayedFormats=%#x cbData=%RU32->%RU32 rc=%Rrc\n",
-                        g_ExtState.fDelayedAnnouncement, g_ExtState.fDelayedFormats, dataBlock.cbData, parms.cbData, rc));
+                        g_ExtState.fDelayedAnnouncement, g_ExtState.fDelayedFormats, cbData, parms.cbData, rc));
 
         /* Did the extension send the clipboard formats yet?
          * Otherwise, do this now. */
@@ -1554,8 +1559,8 @@ static int shClSvcClientReadData(PSHCLCLIENT pClient, uint32_t cParms, VBOXHGCMS
     }
     else
     {
-        rc = ShClSvcImplReadData(pClient, &cmdCtx, &dataBlock, &cbActual);
-        LogRelFlowFunc(("Shared Clipboard: DATA/Host: cbData=%RU32->%RU32 rc=%Rrc\n", dataBlock.cbData, cbActual, rc));
+        rc = ShClSvcImplReadData(pClient, &cmdCtx, uFormat, pvData, cbData, &cbActual);
+        LogRelFlowFunc(("Shared Clipboard: DATA/Host: cbData=%RU32->%RU32 rc=%Rrc\n", cbData, cbActual, rc));
     }
 
     if (RT_SUCCESS(rc))
@@ -1567,7 +1572,7 @@ static int shClSvcClientReadData(PSHCLCLIENT pClient, uint32_t cParms, VBOXHGCMS
             HGCMSvcSetU32(&paParms[3], cbActual);
 
         /* If the data to return exceeds the buffer the guest supplies, tell it (and let it try again). */
-        if (cbActual >= dataBlock.cbData)
+        if (cbActual >= cbData)
             rc = VINF_BUFFER_OVERFLOW;
     }
 
@@ -1625,9 +1630,13 @@ int shClSvcClientWriteData(PSHCLCLIENT pClient, uint32_t cParms, VBOXHGCMSVCPARM
         ASSERT_GUEST_RETURN(paParms[iParm].u.uint32 == 0, VERR_INVALID_FLAGS);
         iParm++;
     }
-    SHCLDATABLOCK dataBlock;
+
+    SHCLFORMAT  uFormat = VBOX_SHCL_FMT_NONE;
+    uint32_t    cbData  = 0;
+    void       *pvData  = NULL;
+
     ASSERT_GUEST_RETURN(paParms[iParm].type == VBOX_HGCM_SVC_PARM_32BIT, VERR_WRONG_PARAMETER_TYPE); /* Format bit. */
-    dataBlock.uFormat = paParms[iParm].u.uint32;
+    uFormat = paParms[iParm].u.uint32;
     iParm++;
     if (cParms == VBOX_SHCL_CPARMS_DATA_WRITE_61B)
     {
@@ -1635,8 +1644,8 @@ int shClSvcClientWriteData(PSHCLCLIENT pClient, uint32_t cParms, VBOXHGCMSVCPARM
         iParm++;
     }
     ASSERT_GUEST_RETURN(paParms[iParm].type == VBOX_HGCM_SVC_PARM_PTR, VERR_WRONG_PARAMETER_TYPE); /* Data buffer */
-    dataBlock.pvData = paParms[iParm].u.pointer.addr;
-    dataBlock.cbData = paParms[iParm].u.pointer.size;
+    pvData = paParms[iParm].u.pointer.addr;
+    cbData = paParms[iParm].u.pointer.size;
     iParm++;
     Assert(iParm == cParms);
 
@@ -1648,7 +1657,7 @@ int shClSvcClientWriteData(PSHCLCLIENT pClient, uint32_t cParms, VBOXHGCMSVCPARM
     if (!(pClient->State.fGuestFeatures0 & VBOX_SHCL_GF_0_CONTEXT_ID))
     {
         if (pClient->State.POD.uFormat == VBOX_SHCL_FMT_NONE)
-            pClient->State.POD.uFormat = dataBlock.uFormat;
+            pClient->State.POD.uFormat = uFormat;
     }
 
     /*
@@ -1659,15 +1668,15 @@ int shClSvcClientWriteData(PSHCLCLIENT pClient, uint32_t cParms, VBOXHGCMSVCPARM
     {
         SHCLEXTPARMS parms;
         RT_ZERO(parms);
-        parms.uFormat   = dataBlock.uFormat;
-        parms.u.pvData  = dataBlock.pvData;
-        parms.cbData    = dataBlock.cbData;
+        parms.uFormat   = uFormat;
+        parms.u.pvData  = pvData;
+        parms.cbData    = cbData;
 
         g_ExtState.pfnExtension(g_ExtState.pvExtension, VBOX_CLIPBOARD_EXT_FN_DATA_WRITE, &parms, sizeof(parms));
         rc = VINF_SUCCESS;
     }
     else
-        rc = ShClSvcImplWriteData(pClient, &cmdCtx, &dataBlock);
+        rc = ShClSvcImplWriteData(pClient, &cmdCtx, uFormat, pvData, cbData);
 
     LogFlowFuncLeaveRC(rc);
     return rc;

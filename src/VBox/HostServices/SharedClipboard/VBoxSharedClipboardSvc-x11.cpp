@@ -176,34 +176,38 @@ struct CLIPREADCBREQ
  *         the backend code.
  */
 int ShClSvcImplReadData(PSHCLCLIENT pClient,
-                        PSHCLCLIENTCMDCTX pCmdCtx, PSHCLDATABLOCK pData, uint32_t *pcbActual)
+                        PSHCLCLIENTCMDCTX pCmdCtx, SHCLFORMAT uFormat, void *pvData, uint32_t cbData, uint32_t *pcbActual)
 {
+    AssertPtrReturn(pClient, VERR_INVALID_POINTER);
+    AssertPtrReturn(pCmdCtx, VERR_INVALID_POINTER);
+    AssertPtrReturn(pvData,  VERR_INVALID_POINTER);
+
     RT_NOREF(pCmdCtx);
 
     LogFlowFunc(("pClient=%p, uFormat=%02X, pv=%p, cb=%u, pcbActual=%p\n",
-                 pClient, pData->uFormat, pData->pvData, pData->cbData, pcbActual));
+                 pClient, uFormat, pvData, cbData, pcbActual));
 
     int rc = VINF_SUCCESS;
 
     CLIPREADCBREQ *pReq = (CLIPREADCBREQ *)RTMemAllocZ(sizeof(CLIPREADCBREQ));
     if (pReq)
     {
-        pReq->pv        = pData->pvData;
-        pReq->cb        = pData->cbData;
+        pReq->pv        = pvData;
+        pReq->cb        = cbData;
         pReq->pcbActual = pcbActual;
         const SHCLEVENTID idEvent = ShClEventIdGenerateAndRegister(&pClient->EventSrc);
         pReq->idEvent    = idEvent;
         if (idEvent != NIL_SHCLEVENTID)
         {
-            rc = ShClX11ReadDataFromX11(&pClient->State.pCtx->X11, pData->uFormat, pReq);
+            rc = ShClX11ReadDataFromX11(&pClient->State.pCtx->X11, uFormat, pReq);
             if (RT_SUCCESS(rc))
             {
                 PSHCLEVENTPAYLOAD pPayload;
                 rc = ShClEventWait(&pClient->EventSrc, idEvent, 30 * 1000, &pPayload);
                 if (RT_SUCCESS(rc))
                 {
-                    memcpy(pData->pvData, pPayload->pvData, RT_MIN(pData->cbData, pPayload->cbData));
-                    pData->cbData = (uint32_t)pPayload->cbData; /** @todo r=bird: Just ditch this data block wrapper, it made you forget to set pcbActual! */
+                    memcpy(pvData, pPayload->pvData, RT_MIN(cbData, pPayload->cbData));
+
                     *pcbActual = (uint32_t)pPayload->cbData;
 
                     ShClPayloadFree(pPayload);
@@ -226,16 +230,16 @@ int ShClSvcImplReadData(PSHCLCLIENT pClient,
 }
 
 int ShClSvcImplWriteData(PSHCLCLIENT pClient,
-                         PSHCLCLIENTCMDCTX pCmdCtx, PSHCLDATABLOCK pData)
+                         PSHCLCLIENTCMDCTX pCmdCtx, SHCLFORMAT uFormat, void *pvData, uint32_t cbData)
 {
     AssertPtrReturn(pClient, VERR_INVALID_POINTER);
     AssertPtrReturn(pCmdCtx, VERR_INVALID_POINTER);
-    AssertPtrReturn(pData,   VERR_INVALID_POINTER);
+    AssertPtrReturn(pvData,  VERR_INVALID_POINTER);
 
     LogFlowFunc(("pClient=%p, pv=%p, cb=%RU32, uFormat=%02X\n",
-                 pClient, pData->pvData, pData->cbData, pData->uFormat));
+                 pClient, pvData, cbData, uFormat));
 
-    int rc = ShClSvcDataReadSignal(pClient, pCmdCtx, pData);
+    int rc = ShClSvcDataReadSignal(pClient, pCmdCtx, uFormat, pvData, cbData);
 
     LogFlowFuncLeaveRC(rc);
     return rc;

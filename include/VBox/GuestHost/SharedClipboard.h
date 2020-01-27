@@ -3,7 +3,7 @@
  */
 
 /*
- * Copyright (C) 2006-2019 Oracle Corporation
+ * Copyright (C) 2006-2020 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -60,21 +60,6 @@ typedef uint32_t SHCLFORMATS;
 /** Pointer to a bit map of Shared Clipboard formats (VBOX_SHCL_FMT_XXX). */
 typedef SHCLFORMATS *PSHCLFORMATS;
 
-
-/**
- * Generic Shared Clipboard data block.
- */
-typedef struct SHCLDATABLOCK
-{
-    /** Clipboard format this data block represents. */
-    SHCLFORMAT  uFormat;
-    /** Size (in bytes) of actual data block. */
-    uint32_t    cbData;
-    /** Pointer to actual data block. */
-    void       *pvData;
-} SHCLDATABLOCK;
-/** Pointer to a generic shared clipboard data block. */
-typedef SHCLDATABLOCK *PSHCLDATABLOCK;
 
 /**
  * Shared Clipboard data read request.

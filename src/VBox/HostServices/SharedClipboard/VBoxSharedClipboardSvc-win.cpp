@@ -728,13 +728,14 @@ int ShClSvcImplFormatAnnounce(PSHCLCLIENT pClient, PSHCLCLIENTCMDCTX pCmdCtx,
 }
 
 int ShClSvcImplReadData(PSHCLCLIENT pClient, PSHCLCLIENTCMDCTX pCmdCtx,
-                        PSHCLDATABLOCK pData, uint32_t *pcbActual)
+                        SHCLFORMAT uFormat, uint32_t cbData, void *pvData, uint32_t *pcbActual)
 {
     AssertPtrReturn(pClient,             VERR_INVALID_POINTER);
     RT_NOREF(pCmdCtx);
+    AssertPtrReturn(pvData,              VERR_INVALID_POINTER);
     AssertPtrReturn(pClient->State.pCtx, VERR_INVALID_POINTER);
 
-    LogFlowFunc(("uFormat=%02X\n", pData->uFormat));
+    LogFlowFunc(("uFormat=%02X\n", uFormat));
 
     HANDLE hClip = NULL;
 
@@ -748,7 +749,7 @@ int ShClSvcImplReadData(PSHCLCLIENT pClient, PSHCLCLIENTCMDCTX pCmdCtx,
     {
         LogFunc(("Clipboard opened\n"));
 
-        if (pData->uFormat & VBOX_SHCL_FMT_BITMAP)
+        if (uFormat & VBOX_SHCL_FMT_BITMAP)
         {
             hClip = GetClipboardData(CF_DIB);
             if (hClip != NULL)
@@ -760,7 +761,7 @@ int ShClSvcImplReadData(PSHCLCLIENT pClient, PSHCLCLIENTCMDCTX pCmdCtx,
                     LogFunc(("CF_DIB\n"));
 
                     vboxClipboardSvcWinGetData(VBOX_SHCL_FMT_BITMAP, lp, GlobalSize(hClip),
-                                               pData->pvData, pData->cbData, pcbActual);
+                                               pvData, cbData, pcbActual);
 
                     GlobalUnlock(hClip);
                 }
@@ -770,7 +771,7 @@ int ShClSvcImplReadData(PSHCLCLIENT pClient, PSHCLCLIENTCMDCTX pCmdCtx,
                 }
             }
         }
-        else if (pData->uFormat & VBOX_SHCL_FMT_UNICODETEXT)
+        else if (uFormat & VBOX_SHCL_FMT_UNICODETEXT)
         {
             hClip = GetClipboardData(CF_UNICODETEXT);
             if (hClip != NULL)
@@ -782,7 +783,7 @@ int ShClSvcImplReadData(PSHCLCLIENT pClient, PSHCLCLIENTCMDCTX pCmdCtx,
                     LogFunc(("CF_UNICODETEXT\n"));
 
                     vboxClipboardSvcWinGetData(VBOX_SHCL_FMT_UNICODETEXT, uniString, (lstrlenW(uniString) + 1) * 2,
-                                               pData->pvData, pData->cbData, pcbActual);
+                                               pvData, cbData, pcbActual);
 
                     GlobalUnlock(hClip);
                 }
@@ -792,7 +793,7 @@ int ShClSvcImplReadData(PSHCLCLIENT pClient, PSHCLCLIENTCMDCTX pCmdCtx,
                 }
             }
         }
-        else if (pData->uFormat & VBOX_SHCL_FMT_HTML)
+        else if (uFormat & VBOX_SHCL_FMT_HTML)
         {
             UINT format = RegisterClipboardFormat(SHCL_WIN_REGFMT_HTML);
             if (format != 0)
@@ -805,10 +806,10 @@ int ShClSvcImplReadData(PSHCLCLIENT pClient, PSHCLCLIENTCMDCTX pCmdCtx,
                     {
                         /** @todo r=andy Add data overflow handling. */
                         vboxClipboardSvcWinGetData(VBOX_SHCL_FMT_HTML, lp, GlobalSize(hClip),
-                                                   pData->pvData, pData->cbData, pcbActual);
+                                                   pvData, cbData, pcbActual);
 #ifdef VBOX_STRICT
                         LogFlowFunc(("Raw HTML clipboard data from host:"));
-                        ShClDbgDumpHtml((char *)pData->pvData, pData->cbData);
+                        ShClDbgDumpHtml((char *)pvData, cbData);
 #endif
                         GlobalUnlock(hClip);
                     }
@@ -820,7 +821,7 @@ int ShClSvcImplReadData(PSHCLCLIENT pClient, PSHCLCLIENTCMDCTX pCmdCtx,
             }
         }
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
-        else if (pData->uFormat & VBOX_SHCL_FMT_URI_LIST)
+        else if (uFormat & VBOX_SHCL_FMT_URI_LIST)
         {
             AssertFailed(); /** @todo */
         }
@@ -831,7 +832,7 @@ int ShClSvcImplReadData(PSHCLCLIENT pClient, PSHCLCLIENTCMDCTX pCmdCtx,
     if (hClip == NULL)
     {
         /* Reply with empty data. */
-        vboxClipboardSvcWinGetData(0, NULL, 0, pData->pvData, pData->cbData, pcbActual);
+        vboxClipboardSvcWinGetData(0, NULL, 0, pvData, cbData, pcbActual);
     }
 
     LogFlowFuncLeaveRC(rc);
@@ -839,11 +840,11 @@ int ShClSvcImplReadData(PSHCLCLIENT pClient, PSHCLCLIENTCMDCTX pCmdCtx,
 }
 
 int ShClSvcImplWriteData(PSHCLCLIENT pClient, PSHCLCLIENTCMDCTX pCmdCtx,
-                         PSHCLDATABLOCK pData)
+                         SHCLFORMAT uFormat, uint32_t cbData, void *pvData)
 {
     LogFlowFuncEnter();
 
-    int rc = ShClSvcDataReadSignal(pClient, pCmdCtx, pData);
+    int rc = ShClSvcDataReadSignal(pClient, pCmdCtx, uFormat, cbData, pvData);
 
     LogFlowFuncLeaveRC(rc);
     return rc;
