@@ -88,31 +88,6 @@ void ShClPayloadFree(PSHCLEVENTPAYLOAD pPayload)
     RTMemFree(pPayload);
 }
 
-#if 0 /* currently not used */
-/**
- * Creates (initializes) an event.
- *
- * @returns VBox status code.
- * @param   pEvent              Event to initialize.
- * @param   idEvent             Event ID to use.
- */
-static int shClEventInit(PSHCLEVENT pEvent, SHCLEVENTID idEvent)
-{
-    AssertPtrReturn(pEvent, VERR_INVALID_POINTER);
-
-    LogFlowFunc(("Event %RU32\n", idEvent));
-
-    int rc = RTSemEventMultiCreate(&pEvent->hEvtMulSem);
-    if (RT_SUCCESS(rc))
-    {
-        pEvent->idEvent  = idEvent;
-        pEvent->pPayload = NULL;
-    }
-
-    return rc;
-}
-#endif
-
 /**
  * Destroys an event, but doesn't free the memory.
  *
@@ -218,25 +193,6 @@ DECLINLINE(PSHCLEVENT) shclEventGet(PSHCLEVENTSOURCE pSource, SHCLEVENTID idEven
 }
 
 /**
- * Generates a new event ID for a specific event source.
- *
- * @returns New event ID generated, or 0 on error.
- * @param   pSource             Event source to generate event for.
- * @deprecated as this does not deal with duplicates.
- */
-SHCLEVENTID ShClEventIDGenerate(PSHCLEVENTSOURCE pSource)
-{
-    AssertPtrReturn(pSource, 0);
-
-    SHCLEVENTID idEvent = ++pSource->idNextEvent;
-    if (idEvent >= VBOX_SHCL_MAX_EVENTS)
-        pSource->idNextEvent = idEvent = 1;  /* zero == error, remember! */
-
-    LogFlowFunc(("uSource=%RU16: New event: %RU32\n", pSource->uID, idEvent));
-    return idEvent;
-}
-
-/**
  * Generates a new event ID for a specific event source and registers it.
  *
  * @returns New event ID generated, or 0 on error.
@@ -267,7 +223,6 @@ SHCLEVENTID ShClEventIdGenerateAndRegister(PSHCLEVENTSOURCE pSource)
 
         if (shclEventGet(pSource, idEvent) == NULL)
         {
-
             pEvent->idEvent = idEvent;
             RTListAppend(&pSource->lstEvents, &pEvent->Node);
 
@@ -277,6 +232,8 @@ SHCLEVENTID ShClEventIdGenerateAndRegister(PSHCLEVENTSOURCE pSource)
 
         AssertBreak(cTries < 4096);
     }
+
+    AssertMsgFailed(("Unable to register a new event ID for event source %RU16\n", pSource->uID));
 
     RTMemFree(pEvent);
     return 0;
@@ -312,50 +269,6 @@ static void shclEventPayloadDetachInternal(PSHCLEVENT pEvent)
 
     pEvent->pPayload = NULL;
 }
-
-#if 0 /** @todo fix later */
-/**
- * Registers an event.
- *
- * @returns VBox status code.
- * @param   pSource             Event source to register event for.
- * @param   uID                 Event ID to register.
- */
-int ShClEventRegister(PSHCLEVENTSOURCE pSource, SHCLEVENTID uID)
-{
-    AssertPtrReturn(pSource, VERR_INVALID_POINTER);
-
-    int rc;
-
-    LogFlowFunc(("uSource=%RU16, uEvent=%RU32\n", pSource->uID, uID));
-
-    if (shclEventGet(pSource, uID) == NULL)
-    {
-        PSHCLEVENT pEvent = (PSHCLEVENT)RTMemAllocZ(sizeof(SHCLEVENT));
-        if (pEvent)
-        {
-            rc = shClEventInit(pEvent, uID);
-            if (RT_SUCCESS(rc))
-            {
-                RTListAppend(&pSource->lstEvents, &pEvent->Node);
-
-                LogFlowFunc(("Event %RU32\n", uID));
-            }
-        }
-        else
-            rc = VERR_NO_MEMORY;
-    }
-    else
-        rc = VERR_ALREADY_EXISTS;
-
-#ifdef DEBUG_andy
-    AssertRC(rc);
-#endif
-
-    LogFlowFuncLeaveRC(rc);
-    return rc;
-}
-#endif /* later */
 
 /**
  * Unregisters an event.
