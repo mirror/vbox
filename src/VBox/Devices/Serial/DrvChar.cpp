@@ -218,6 +218,7 @@ static DECLCALLBACK(int) drvCharQueuesFlush(PPDMISERIALCONNECTOR pInterface, boo
 
     LogFlowFunc(("-> %Rrc\n", rc));
     return rc;
+}
 
 
 /* -=-=-=-=- I/O thread -=-=-=-=- */
