@@ -40,11 +40,11 @@
 UIVirtualMachineItem::UIVirtualMachineItem(const CMachine &comMachine)
     : m_comMachine(comMachine)
     , m_fAccessible(false)
-    , m_fHasDetails(false)
     , m_cSnaphot(0)
     , m_enmMachineState(KMachineState_Null)
     , m_enmSessionState(KSessionState_Null)
     , m_enmConfigurationAccessLevel(ConfigurationAccessLevel_Null)
+    , m_fHasDetails(false)
 {
     recache();
 }
