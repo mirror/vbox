@@ -728,7 +728,7 @@ int ShClSvcImplFormatAnnounce(PSHCLCLIENT pClient, PSHCLCLIENTCMDCTX pCmdCtx,
 }
 
 int ShClSvcImplReadData(PSHCLCLIENT pClient, PSHCLCLIENTCMDCTX pCmdCtx,
-                        SHCLFORMAT uFormat, uint32_t cbData, void *pvData, uint32_t *pcbActual)
+                        SHCLFORMAT uFormat, void *pvData, uint32_t cbData, uint32_t *pcbActual)
 {
     AssertPtrReturn(pClient,             VERR_INVALID_POINTER);
     RT_NOREF(pCmdCtx);
@@ -840,11 +840,11 @@ int ShClSvcImplReadData(PSHCLCLIENT pClient, PSHCLCLIENTCMDCTX pCmdCtx,
 }
 
 int ShClSvcImplWriteData(PSHCLCLIENT pClient, PSHCLCLIENTCMDCTX pCmdCtx,
-                         SHCLFORMAT uFormat, uint32_t cbData, void *pvData)
+                         SHCLFORMAT uFormat, void *pvData, uint32_t cbData)
 {
     LogFlowFuncEnter();
 
-    int rc = ShClSvcDataReadSignal(pClient, pCmdCtx, uFormat, cbData, pvData);
+    int rc = ShClSvcDataReadSignal(pClient, pCmdCtx, uFormat, pvData, cbData);
 
     LogFlowFuncLeaveRC(rc);
     return rc;
