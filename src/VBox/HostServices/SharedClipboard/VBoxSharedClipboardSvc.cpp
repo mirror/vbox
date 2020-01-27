@@ -1215,7 +1215,7 @@ int ShClSvcDataReadRequest(PSHCLCLIENT pClient, SHCLFORMAT fFormat, PSHCLEVENTID
         RTCritSectEnter(&pClient->CritSect);
 
         const SHCLEVENTID idEvent = ShClEventIdGenerateAndRegister(&pClient->EventSrc);
-        if (idEvent != 0)
+        if (idEvent != NIL_SHCLEVENTID)
         {
             LogFlowFunc(("fFormat=%#x idEvent=%#x\n", fFormat, idEvent));
 

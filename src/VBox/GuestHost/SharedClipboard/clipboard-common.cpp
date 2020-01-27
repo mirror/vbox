@@ -195,20 +195,20 @@ DECLINLINE(PSHCLEVENT) shclEventGet(PSHCLEVENTSOURCE pSource, SHCLEVENTID idEven
 /**
  * Generates a new event ID for a specific event source and registers it.
  *
- * @returns New event ID generated, or 0 on error.
+ * @returns New event ID generated, or NIL_SHCLEVENTID on error.
  * @param   pSource             Event source to generate event for.
  */
 SHCLEVENTID ShClEventIdGenerateAndRegister(PSHCLEVENTSOURCE pSource)
 {
-    AssertPtrReturn(pSource, 0);
+    AssertPtrReturn(pSource, NIL_SHCLEVENTID);
 
     /*
      * Allocate an event.
      */
     PSHCLEVENT pEvent = (PSHCLEVENT)RTMemAllocZ(sizeof(SHCLEVENT));
-    AssertReturn(pEvent, 0);
+    AssertReturn(pEvent, NIL_SHCLEVENTID);
     int rc = RTSemEventMultiCreate(&pEvent->hEvtMulSem);
-    AssertRCReturnStmt(rc, RTMemFree(pEvent), 0);
+    AssertRCReturnStmt(rc, RTMemFree(pEvent), NIL_SHCLEVENTID);
 
     /*
      * Allocate an unique event ID.
@@ -236,7 +236,7 @@ SHCLEVENTID ShClEventIdGenerateAndRegister(PSHCLEVENTSOURCE pSource)
     AssertMsgFailed(("Unable to register a new event ID for event source %RU16\n", pSource->uID));
 
     RTMemFree(pEvent);
-    return 0;
+    return NIL_SHCLEVENTID;
 }
 
 /**

@@ -193,7 +193,7 @@ int ShClSvcImplReadData(PSHCLCLIENT pClient,
         pReq->pcbActual = pcbActual;
         const SHCLEVENTID idEvent = ShClEventIdGenerateAndRegister(&pClient->EventSrc);
         pReq->idEvent    = idEvent;
-        if (idEvent)
+        if (idEvent != NIL_SHCLEVENTID)
         {
             rc = ShClX11ReadDataFromX11(&pClient->State.pCtx->X11, pData->uFormat, pReq);
             if (RT_SUCCESS(rc))
@@ -391,7 +391,7 @@ int ShClSvcImplTransferGetRoots(PSHCLCLIENT pClient, PSHCLTRANSFER pTransfer)
     int rc;
 
     SHCLEVENTID idEvent = ShClEventIdGenerateAndRegister(&pClient->EventSrc);
-    if (idEvent)
+    if (idEvent != NIL_SHCLEVENTID)
     {
         CLIPREADCBREQ *pReq = (CLIPREADCBREQ *)RTMemAllocZ(sizeof(CLIPREADCBREQ));
         if (pReq)

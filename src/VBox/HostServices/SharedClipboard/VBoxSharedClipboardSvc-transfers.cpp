@@ -125,7 +125,7 @@ DECLCALLBACK(int) shClSvcTransferIfaceGetRoots(PSHCLPROVIDERCTX pCtx, PSHCLROOTL
     if (pMsgHdr)
     {
         SHCLEVENTID idEvent = ShClEventIdGenerateAndRegister(&pCtx->pTransfer->Events);
-        if (idEvent)
+        if (idEvent != NIL_SHCLEVENTID)
         {
             HGCMSvcSetU64(&pMsgHdr->aParms[0], VBOX_SHCL_CONTEXTID_MAKE(pClient->State.uSessionID,
                                                                         pCtx->pTransfer->State.uID, idEvent));
@@ -162,7 +162,7 @@ DECLCALLBACK(int) shClSvcTransferIfaceGetRoots(PSHCLPROVIDERCTX pCtx, PSHCLROOTL
                                                                                VBOX_SHCL_CPARMS_ROOT_LIST_ENTRY_READ_REQ);
 
                                     idEvent = ShClEventIdGenerateAndRegister(&pCtx->pTransfer->Events);
-                                    if (idEvent)
+                                    if (idEvent != NIL_SHCLEVENTID)
                                     {
                                         HGCMSvcSetU64(&pMsgEntry->aParms[0],
                                                       VBOX_SHCL_CONTEXTID_MAKE(pClient->State.uClientID,
@@ -217,6 +217,8 @@ DECLCALLBACK(int) shClSvcTransferIfaceGetRoots(PSHCLPROVIDERCTX pCtx, PSHCLROOTL
 
             ShClEventUnregister(&pCtx->pTransfer->Events, idEvent);
         }
+        else
+            rc = VERR_SHCLPB_MAX_EVENTS_REACHED;
     }
     else
         rc = VERR_NO_MEMORY;
@@ -240,7 +242,7 @@ DECLCALLBACK(int) shClSvcTransferIfaceListOpen(PSHCLPROVIDERCTX pCtx,
     if (pMsg)
     {
         const SHCLEVENTID idEvent = ShClEventIdGenerateAndRegister(&pCtx->pTransfer->Events);
-        if (idEvent)
+        if (idEvent != NIL_SHCLEVENTID)
         {
             pMsg->idCtx = VBOX_SHCL_CONTEXTID_MAKE(pClient->State.uSessionID, pCtx->pTransfer->State.uID,
                                                    idEvent);
@@ -299,7 +301,7 @@ DECLCALLBACK(int) shClSvcTransferIfaceListClose(PSHCLPROVIDERCTX pCtx, SHCLLISTH
     if (pMsg)
     {
         const SHCLEVENTID idEvent = ShClEventIdGenerateAndRegister(&pCtx->pTransfer->Events);
-        if (idEvent)
+        if (idEvent != NIL_SHCLEVENTID)
         {
             pMsg->idCtx = VBOX_SHCL_CONTEXTID_MAKE(pClient->State.uSessionID, pCtx->pTransfer->State.uID,
                                                    idEvent);
@@ -346,7 +348,7 @@ DECLCALLBACK(int) shClSvcTransferIfaceListHdrRead(PSHCLPROVIDERCTX pCtx,
     if (pMsg)
     {
         const SHCLEVENTID idEvent = ShClEventIdGenerateAndRegister(&pCtx->pTransfer->Events);
-        if (idEvent)
+        if (idEvent != NIL_SHCLEVENTID)
         {
             HGCMSvcSetU64(&pMsg->aParms[0], VBOX_SHCL_CONTEXTID_MAKE(pClient->State.uSessionID,
                                                                      pCtx->pTransfer->State.uID, idEvent));
@@ -408,7 +410,7 @@ DECLCALLBACK(int) shClSvcTransferIfaceListEntryRead(PSHCLPROVIDERCTX pCtx,
     if (pMsg)
     {
         const SHCLEVENTID idEvent = ShClEventIdGenerateAndRegister(&pCtx->pTransfer->Events);
-        if (idEvent)
+        if (idEvent != NIL_SHCLEVENTID)
         {
             HGCMSvcSetU64(&pMsg->aParms[0], VBOX_SHCL_CONTEXTID_MAKE(pClient->State.uSessionID,
                                                                      pCtx->pTransfer->State.uID, idEvent));
@@ -469,7 +471,7 @@ int shClSvcTransferIfaceObjOpen(PSHCLPROVIDERCTX pCtx, PSHCLOBJOPENCREATEPARMS p
     if (pMsg)
     {
         const SHCLEVENTID idEvent = ShClEventIdGenerateAndRegister(&pCtx->pTransfer->Events);
-        if (idEvent)
+        if (idEvent != NIL_SHCLEVENTID)
         {
             LogFlowFunc(("pszPath=%s, fCreate=0x%x\n", pCreateParms->pszPath, pCreateParms->fCreate));
 
@@ -532,7 +534,7 @@ int shClSvcTransferIfaceObjClose(PSHCLPROVIDERCTX pCtx, SHCLOBJHANDLE hObj)
     if (pMsg)
     {
         const SHCLEVENTID idEvent = ShClEventIdGenerateAndRegister(&pCtx->pTransfer->Events);
-        if (idEvent)
+        if (idEvent != NIL_SHCLEVENTID)
         {
             HGCMSvcSetU64(&pMsg->aParms[0], VBOX_SHCL_CONTEXTID_MAKE(pClient->State.uSessionID,
                                                                      pCtx->pTransfer->State.uID, idEvent));
@@ -587,7 +589,7 @@ int shClSvcTransferIfaceObjRead(PSHCLPROVIDERCTX pCtx, SHCLOBJHANDLE hObj,
     if (pMsg)
     {
         const SHCLEVENTID idEvent = ShClEventIdGenerateAndRegister(&pCtx->pTransfer->Events);
-        if (idEvent)
+        if (idEvent != NIL_SHCLEVENTID)
         {
             HGCMSvcSetU64(&pMsg->aParms[0], VBOX_SHCL_CONTEXTID_MAKE(pClient->State.uSessionID,
                                                                      pCtx->pTransfer->State.uID, idEvent));
@@ -647,7 +649,7 @@ int shClSvcTransferIfaceObjWrite(PSHCLPROVIDERCTX pCtx, SHCLOBJHANDLE hObj,
     if (pMsg)
     {
         const SHCLEVENTID idEvent = ShClEventIdGenerateAndRegister(&pCtx->pTransfer->Events);
-        if (idEvent)
+        if (idEvent != NIL_SHCLEVENTID)
         {
             HGCMSvcSetU64(&pMsg->aParms[0], VBOX_SHCL_CONTEXTID_MAKE(pClient->State.uSessionID,
                                                                      pCtx->pTransfer->State.uID, idEvent));
@@ -1993,7 +1995,7 @@ int shClSvcTransferSendStatus(PSHCLCLIENT pClient, PSHCLTRANSFER pTransfer, SHCL
     int rc;
 
     const SHCLEVENTID idEvent = ShClEventIdGenerateAndRegister(&pTransfer->Events);
-    if (idEvent)
+    if (idEvent != NIL_SHCLEVENTID)
     {
         HGCMSvcSetU64(&pMsgReadData->aParms[0], VBOX_SHCL_CONTEXTID_MAKE(pClient->State.uSessionID,
                                                                          pTransfer->State.uID, idEvent));
@@ -2020,6 +2022,8 @@ int shClSvcTransferSendStatus(PSHCLCLIENT pClient, PSHCLTRANSFER pTransfer, SHCL
         else
             ShClEventUnregister(&pTransfer->Events, idEvent);
     }
+    else
+        rc = VERR_SHCLPB_MAX_EVENTS_REACHED;
 
     LogFlowFuncLeaveRC(rc);
     return rc;
