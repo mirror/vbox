@@ -1843,8 +1843,25 @@ static DECLCALLBACK(void) svcCall(void *,
              u32ClientID, u32Function, ShClGuestMsgToStr(u32Function), cParms, paParms));
     for (uint32_t i = 0; i < cParms; i++)
     {
-        /** @todo parameters other than 32 bit */
-        LogFunc(("    paParms[%d]: type %RU32 - value %RU32\n", i, paParms[i].type, paParms[i].u.uint32));
+        switch (paParms[i].type)
+        {
+            case VBOX_HGCM_SVC_PARM_32BIT:
+                LogFunc(("    paParms[%RU32]: type uint32_t - value %RU32\n", i, paParms[i].u.uint32));
+                break;
+            case VBOX_HGCM_SVC_PARM_64BIT:
+                LogFunc(("    paParms[%RU32]: type uint64_t - value %RU64\n", i, paParms[i].u.uint64));
+                break;
+            case VBOX_HGCM_SVC_PARM_PTR:
+                LogFunc(("    paParms[%RU32]: type ptr - value 0x%p (%RU32 bytes)\n",
+                         i, paParms[i].u.pointer.addr, paParms[i].u.pointer.size));
+                break;
+            case VBOX_HGCM_SVC_PARM_PAGES:
+                LogFunc(("    paParms[%RU32]: type pages - cb=%RU32, cPages=%RU16\n",
+                         i, paParms[i].u.Pages.cb, paParms[i].u.Pages.cPages));
+                break;
+            default:
+                AssertFailed();
+        }
     }
     LogFunc(("Client state: fFlags=0x%x, fGuestFeatures0=0x%x, fGuestFeatures1=0x%x\n",
              pClient->State.fFlags, pClient->State.fGuestFeatures0, pClient->State.fGuestFeatures1));
