@@ -28,6 +28,7 @@
 #include <iprt/initterm.h>
 #include <iprt/mem.h>
 #include <iprt/string.h>
+#include <iprt/path.h>
 #include <iprt/process.h>
 #include <iprt/semaphore.h>
 
@@ -106,15 +107,11 @@ DECLCALLBACK(int) ShClX11RequestDataForX11Callback(PSHCLCONTEXT pCtx, SHCLFORMAT
     else
 #endif
     {
-        SHCLDATABLOCK dataBlock;
-        RT_ZERO(dataBlock);
-
-        dataBlock.uFormat = Format;
-        dataBlock.cbData  = _4K;
-        dataBlock.pvData  = RTMemAlloc(dataBlock.cbData);
-        if (dataBlock.pvData)
+        uint32_t cbData = _4K; /** @ŧodo Make this dynamic. */
+        void    *pvData = RTMemAlloc(cbData);
+        if (pvData)
         {
-            rc = VbglR3ClipboardReadDataEx(&pCtx->CmdCtx, &dataBlock, &cbRead);
+            rc = VbglR3ClipboardReadDataEx(&pCtx->CmdCtx, Format, pvData, cbData, &cbRead);
         }
         else
             rc = VERR_NO_MEMORY;
@@ -128,11 +125,11 @@ DECLCALLBACK(int) ShClX11RequestDataForX11Callback(PSHCLCONTEXT pCtx, SHCLFORMAT
         {
             /* cbRead contains the size required. */
 
-            dataBlock.cbData = cbRead;
-            dataBlock.pvData = RTMemRealloc(dataBlock.pvData, cbRead);
-            if (dataBlock.pvData)
+            cbData = cbRead;
+            pvData = RTMemRealloc(pvData, cbRead);
+            if (pvData)
             {
-                rc = VbglR3ClipboardReadDataEx(&pCtx->CmdCtx, &dataBlock, &cbRead);
+                rc = VbglR3ClipboardReadDataEx(&pCtx->CmdCtx, Format, pvData, cbData, &cbRead);
                 if (rc == VINF_BUFFER_OVERFLOW)
                     rc = VERR_BUFFER_OVERFLOW;
             }
@@ -143,7 +140,7 @@ DECLCALLBACK(int) ShClX11RequestDataForX11Callback(PSHCLCONTEXT pCtx, SHCLFORMAT
         if (RT_SUCCESS(rc))
         {
             *pcb = cbRead; /* Actual bytes read. */
-            *ppv = dataBlock.pvData;
+            *ppv = pvData;
         }
 
         /*
@@ -153,7 +150,7 @@ DECLCALLBACK(int) ShClX11RequestDataForX11Callback(PSHCLCONTEXT pCtx, SHCLFORMAT
          * not this is actually an error, we just return size 0.
          */
         if (RT_FAILURE(rc))
-            RTMemFree(dataBlock.pvData);
+            RTMemFree(pvData);
     }
 
     LogFlowFuncLeaveRC(rc);
@@ -205,18 +202,7 @@ DECLCALLBACK(void) ShClX11RequestFromX11CompleteCallback(PSHCLCONTEXT pCtx, int 
 
     LogFlowFunc(("rc=%Rrc, Format=0x%x, pv=%p, cb=%RU32\n", rc, pReq->Format, pv, cb));
 
-    SHCLDATABLOCK dataBlock;
-    RT_ZERO(dataBlock);
-
-    dataBlock.uFormat = pReq->Format;
-
-    if (RT_SUCCESS(rc))
-    {
-        dataBlock.pvData = pv;
-        dataBlock.cbData = cb;
-    }
-
-    int rc2 = VbglR3ClipboardWriteDataEx(&pCtx->CmdCtx, &dataBlock);
+    int rc2 = VbglR3ClipboardWriteDataEx(&pCtx->CmdCtx, pReq->Format, pv, cb);
     RT_NOREF(rc2);
 
     RTMemFree(pReq);
@@ -229,6 +215,7 @@ DECLCALLBACK(void) ShClX11RequestFromX11CompleteCallback(PSHCLCONTEXT pCtx, int 
  *
  * @returns VBox status code.
  */
+#if 0
 static int vboxClipboardConnect(void)
 {
     LogFlowFuncEnter();
@@ -258,6 +245,7 @@ static int vboxClipboardConnect(void)
     LogFlowFuncLeaveRC(rc);
     return rc;
 }
+#endif
 
 /**
  * The main loop of our clipboard reader.
@@ -391,21 +379,31 @@ static DECLCALLBACK(int) vboxClipoardFUSEThread(RTTHREAD hThreadSelf, void *pvUs
 
     RTThreadUserSignal(hThreadSelf);
 
-    char szExecPath[RTPATH_MAX];
-    RTProcGetExecutablePath(szExecPath, sizeof(szExecPath));
+    SHCL_FUSE_OPTS Opts;
+    RT_ZERO(Opts);
 
-    char szTempDir[RTPATH_MAX];
-    RTStrPrintf(szTempDir, sizeof(szTempDir), "VBoxSharedClipboard-XXXXXXXX");
+    Opts.fForeground     = true;
+    Opts.fSingleThreaded = false; /** @todo Do we want multithread here? */
 
-    int rc = RTDirCreateTemp(szTempDir, 0700);
+    int rc = RTPathTemp(Opts.szMountPoint, sizeof(Opts.szMountPoint));
     if (RT_SUCCESS(rc))
     {
-        char *paArgs[2];
-        paArgs[0] = szExecPath;
-        paArgs[1] = szTempDir;
-
-        rc = ShClFuseMain(2 /* argc */, paArgs);
+        rc = RTPathAppend(Opts.szMountPoint, sizeof(Opts.szMountPoint), "VBoxSharedClipboard");
+        if (RT_SUCCESS(rc))
+        {
+            rc = RTDirCreate(Opts.szMountPoint, 0700,
+                             RTDIRCREATE_FLAGS_NO_SYMLINKS);
+            if (rc == VERR_ALREADY_EXISTS)
+                rc = VINF_SUCCESS;
+        }
     }
+
+    if (RT_SUCCESS(rc))
+    {
+        rc = ShClFuseMain(&Opts);
+    }
+    else
+        LogRel(("Error creating FUSE mount directory, rc=%Rrc\n", rc));
 
     LogFlowFuncLeaveRC(rc);
     return rc;
@@ -471,7 +469,7 @@ static int run(struct VBCLSERVICE **ppInterface, bool fDaemonised)
     RT_NOREF(ppInterface, fDaemonised);
 
     /* Initialise the guest library. */
-    int rc = vboxClipboardConnect();
+    int rc = 0; //vboxClipboardConnect();
     if (RT_SUCCESS(rc))
     {
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_FUSE
@@ -479,7 +477,9 @@ static int run(struct VBCLSERVICE **ppInterface, bool fDaemonised)
         if (RT_SUCCESS(rc))
         {
 #endif
-            rc = vboxClipboardMain();
+            RTThreadSleep(60 * 1000);
+
+            //rc = vboxClipboardMain();
 
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_FUSE
             int rc2 = vboxClipboardFUSEStop();
