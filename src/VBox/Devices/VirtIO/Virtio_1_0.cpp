@@ -223,6 +223,16 @@ DECLINLINE(void) virtioWriteUsedElem(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, ui
                           pVirtio->aGCPhysQueueUsed[idxQueue] + RT_UOFFSETOF_DYN(VIRTQ_USED_T, aRing[usedIdx % cQueueItems]),
                           &elem, sizeof(elem));
 }
+
+DECLINLINE(void) virtioWriteUsedFlags(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t idxQueue, uint32_t fFlags)
+{
+    AssertMsg(pVirtio->uDeviceStatus & VIRTIO_STATUS_DRIVER_OK, ("Called with guest driver not ready\n"));
+    RT_UNTRUSTED_VALIDATED_FENCE(); /* VirtIO 1.0, Section 3.2.1.4.1 */
+    PDMDevHlpPCIPhysWrite(pDevIns,
+                          pVirtio->aGCPhysQueueUsed[idxQueue] + RT_UOFFSETOF(VIRTQ_USED_T, fFlags),
+                          &fFlags, sizeof(fFlags));
+}
+
 #endif
 
 DECLINLINE(void) virtioWriteUsedRingIdx(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t idxQueue, uint16_t uIdx)
@@ -253,15 +263,6 @@ DECLINLINE(uint16_t) virtioReadUsedFlags(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio
                       pVirtio->aGCPhysQueueUsed[idxQueue] + RT_UOFFSETOF(VIRTQ_USED_T, fFlags),
                       &fFlags, sizeof(fFlags));
     return fFlags;
-}
-
-DECLINLINE(void) virtioWriteUsedFlags(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t idxQueue, uint32_t fFlags)
-{
-    AssertMsg(pVirtio->uDeviceStatus & VIRTIO_STATUS_DRIVER_OK, ("Called with guest driver not ready\n"));
-    RT_UNTRUSTED_VALIDATED_FENCE(); /* VirtIO 1.0, Section 3.2.1.4.1 */
-    PDMDevHlpPCIPhysWrite(pDevIns,
-                          pVirtio->aGCPhysQueueUsed[idxQueue] + RT_UOFFSETOF(VIRTQ_USED_T, fFlags),
-                          &fFlags, sizeof(fFlags));
 }
 
 #if 0 /* unused - *May* be used when VIRTIO_F_EVENT_IDX optional feature is implemented VirtIO 1.0, 2.4.9.2*/
@@ -687,7 +688,6 @@ void virtioCoreQueueSetNotify(PVIRTIOCORE pVirtio, uint16_t idxQueue, bool fEnab
 
     virtioWriteUsedFlags(pVirtio->pDevIns, pVirtio, idxQueue, fFlags);
 }
-
 
 /**
  * Initiate orderly reset procedure. This is an exposed API for clients that might need it.
