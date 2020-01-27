@@ -217,8 +217,7 @@ static DECLCALLBACK(int) drvCharQueuesFlush(PPDMISERIALCONNECTOR pInterface, boo
     }
 
     LogFlowFunc(("-> %Rrc\n", rc));
-    return VINF_SUCCESS; /** @todo r=bird: return rc? */
-}
+    return rc;
 
 
 /* -=-=-=-=- I/O thread -=-=-=-=- */
