@@ -157,6 +157,8 @@ typedef struct SHCLEVENT
     RTLISTNODE          Node;
     /** The event's ID, for self-reference. */
     SHCLEVENTID         idEvent;
+    /** Reference count to this event. */
+    uint32_t            cRefs;
     /** Event semaphore for signalling the event. */
     RTSEMEVENTMULTI     hEvtMulSem;
     /** Payload to this event, optional (NULL). */
@@ -203,9 +205,12 @@ void ShClEventSourceReset(PSHCLEVENTSOURCE pSource);
  */
 SHCLEVENTID ShClEventIdGenerateAndRegister(PSHCLEVENTSOURCE pSource);
 SHCLEVENTID ShClEventGetLast(PSHCLEVENTSOURCE pSource);
+uint32_t ShClEventRetain(PSHCLEVENTSOURCE pSource, SHCLEVENTID idEvent);
+uint32_t ShClEventRelease(PSHCLEVENTSOURCE pSource, SHCLEVENTID idEvent);
+int ShClEventSignal(PSHCLEVENTSOURCE pSource, SHCLEVENTID idEvent, PSHCLEVENTPAYLOAD pPayload);
 int ShClEventUnregister(PSHCLEVENTSOURCE pSource, SHCLEVENTID idEvent);
 int ShClEventWait(PSHCLEVENTSOURCE pSource, SHCLEVENTID idEvent, RTMSINTERVAL uTimeoutMs, PSHCLEVENTPAYLOAD *ppPayload);
-int ShClEventSignal(PSHCLEVENTSOURCE pSource, SHCLEVENTID idEvent, PSHCLEVENTPAYLOAD pPayload);
+
 void ShClEventPayloadDetach(PSHCLEVENTSOURCE pSource, SHCLEVENTID idEvent);
 /** @} */
 

@@ -349,6 +349,48 @@ int ShClEventWait(PSHCLEVENTSOURCE pSource, SHCLEVENTID uID, RTMSINTERVAL uTimeo
 }
 
 /**
+ * Retains an event by increasing its reference count.
+ *
+ * @returns New reference count, or UINT32_MAX if failed.
+ * @param   pSource             Event source of event to retain.
+ * @param   idEvent             ID of event to retain.
+ */
+uint32_t ShClEventRetain(PSHCLEVENTSOURCE pSource, SHCLEVENTID idEvent)
+{
+    PSHCLEVENT pEvent = shclEventGet(pSource, idEvent);
+    if (!pEvent)
+    {
+        AssertFailed();
+        return UINT32_MAX;
+    }
+
+    AssertReturn(pEvent->cRefs < 64, UINT32_MAX); /* Sanity. Yeah, not atomic. */
+
+    return ASMAtomicIncU32(&pEvent->cRefs);
+}
+
+/**
+ * Releases an event by decreasing its reference count.
+ *
+ * @returns New reference count, or UINT32_MAX if failed.
+ * @param   pSource             Event source of event to release.
+ * @param   idEvent             ID of event to release.
+ */
+uint32_t ShClEventRelease(PSHCLEVENTSOURCE pSource, SHCLEVENTID idEvent)
+{
+    PSHCLEVENT pEvent = shclEventGet(pSource, idEvent);
+    if (!pEvent)
+    {
+        AssertFailed();
+        return UINT32_MAX;
+    }
+
+    AssertReturn(pEvent->cRefs, UINT32_MAX); /* Sanity. Yeah, not atomic. */
+
+    return ASMAtomicDecU32(&pEvent->cRefs);
+}
+
+/**
  * Signals an event.
  *
  * @returns VBox status code.
