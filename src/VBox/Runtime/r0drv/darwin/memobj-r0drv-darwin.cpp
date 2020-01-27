@@ -462,7 +462,6 @@ static int rtR0MemObjNativeAllocWorker(PPRTR0MEMOBJINTERNAL ppMem, size_t cb,
                                        mach_vm_address_t PhysMask, uint64_t MaxPhysAddr,
                                        RTR0MEMOBJTYPE enmType, size_t uAlignment)
 {
-    RT_NOREF_PV(uAlignment);
     int rc;
 
     /*
@@ -474,11 +473,15 @@ static int rtR0MemObjNativeAllocWorker(PPRTR0MEMOBJINTERNAL ppMem, size_t cb,
      *
      * The kIOMemoryMapperNone flag is required since 10.8.2 (IOMMU changes?).
      */
-    size_t cbFudged = cb;
-    if (1) /** @todo Figure out why this is broken. Is it only on snow leopard? Seen allocating memory for the VM structure, last page corrupted or inaccessible. */
-         cbFudged += PAGE_SIZE;
 
-    uint64_t uAlignmentActual = uAlignment;
+    /* This is an old fudge from the snow leoard days: "Is it only on snow leopard?
+       Seen allocating memory for the VM structure, last page corrupted or
+       inaccessible."  Made it only apply to snow leopard and older for now. */
+    size_t cbFudged = cb;
+    if (version_major >= 11 /* 10 = 10.7.x = Lion. */)
+    { /* likely */ }
+    else
+         cbFudged += PAGE_SIZE;
 
     IOOptionBits fOptions = kIOMemoryKernelUserShared | kIODirectionInOut;
     if (fContiguous)
@@ -489,6 +492,7 @@ static int rtR0MemObjNativeAllocWorker(PPRTR0MEMOBJINTERNAL ppMem, size_t cb,
     /* The public initWithPhysicalMask virtual method appeared in 10.7.0, in
        versions 10.5.0 up to 10.7.0 it was private, and 10.4.8-10.5.0 it was
        x86 only and didn't have the alignment parameter (slot was different too). */
+    uint64_t uAlignmentActual = uAlignment;
     IOBufferMemoryDescriptor *pMemDesc;
 #if __MAC_OS_X_VERSION_MAX_ALLOWED >= 1070
     if (version_major >= 11 /* 11 = 10.7.x = Lion, could probably allow 10.5.0+ here if we really wanted to. */)
