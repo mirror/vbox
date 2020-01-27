@@ -97,6 +97,22 @@ typedef struct DRVHOSTSERIAL
 
 
 /**
+ * Resets the read buffer.
+ *
+ * @returns Number of bytes which were queued in the read buffer before reset.
+ * @param   pThis               The host serial driver instance.
+ */
+DECLINLINE(size_t) drvHostSerialReadBufReset(PDRVHOSTSERIAL pThis)
+{
+    size_t cbOld = ASMAtomicXchgZ(&pThis->cbReadBuf, 0);
+    ASMAtomicWriteU32(&pThis->offWrite,  0);
+    ASMAtomicWriteU32(&pThis->offRead,   0);
+
+    return cbOld;
+}
+
+
+/**
  * Returns number of bytes free in the read buffer and pointer to the start of the free space
  * in the read buffer.
  *
@@ -369,7 +385,7 @@ static DECLCALLBACK(int) drvHostSerialQueuesFlush(PPDMISERIALCONNECTOR pInterfac
 
     if (fQueueRecv)
     {
-        size_t cbOld = ASMAtomicXchgZ(&pThis->cbReadBuf, 0);
+        size_t cbOld = drvHostSerialReadBufReset(pThis);
         if (cbOld) /* Kick the I/O thread to fetch new data. */
             rc = RTSerialPortEvtPollInterrupt(pThis->hSerialPort);
     }
@@ -467,16 +483,24 @@ static DECLCALLBACK(int) drvHostSerialIoThread(PPDMDRVINS pDrvIns, PPDMTHREAD pT
                 size_t cbToRead = drvHostSerialReadBufGetWrite(pThis, &pvDst);
                 size_t cbRead = 0;
                 rc = RTSerialPortReadNB(pThis->hSerialPort, pvDst, cbToRead, &cbRead);
-                if (RT_SUCCESS(rc))
+                /*
+                 * No data being available while the port is marked as readable can happen
+                 * if another thread changed the settings of the port inbetween the poll and
+                 * the read call because it can flush all the buffered data (seen on Windows).
+                 */
+                if (rc != VINF_TRY_AGAIN)
                 {
-                    drvHostSerialReadBufWriteAdv(pThis, cbRead);
-                    /* Notify the device/driver above. */
-                    rc = pThis->pDrvSerialPort->pfnDataAvailRdrNotify(pThis->pDrvSerialPort, cbRead);
-                    AssertRC(rc);
+                    if (RT_SUCCESS(rc))
+                    {
+                        drvHostSerialReadBufWriteAdv(pThis, cbRead);
+                        /* Notify the device/driver above. */
+                        rc = pThis->pDrvSerialPort->pfnDataAvailRdrNotify(pThis->pDrvSerialPort, cbRead);
+                        AssertRC(rc);
+                    }
+                    else
+                        LogRelMax(10, ("HostSerial#%d: Reading data failed even though the serial port is marked as readable (rc=%Rrc)\n",
+                                       pThis->pDrvIns->iInstance, rc));
                 }
-                else
-                    LogRelMax(10, ("HostSerial#%d: Reading data failed even though the serial port is marked as readable (rc=%Rrc)\n",
-                                   pThis->pDrvIns->iInstance, rc));
             }
 
             if (fEvtsRecv & RTSERIALPORT_EVT_F_BREAK_DETECTED)
