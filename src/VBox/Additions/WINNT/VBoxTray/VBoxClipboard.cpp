@@ -180,6 +180,8 @@ static DECLCALLBACK(int) vboxClipboardOnTransferStartCallback(PSHCLTRANSFERCALLB
 
             ShClEventUnregister(&pTransfer->Events, idEvent);
         }
+        else
+            AssertFailedStmt(rc = VERR_SHCLPB_MAX_EVENTS_REACHED);
     }
     else
         AssertFailedStmt(rc = VERR_NOT_SUPPORTED);
