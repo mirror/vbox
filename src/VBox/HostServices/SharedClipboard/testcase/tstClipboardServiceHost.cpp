@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2011-2019 Oracle Corporation
+ * Copyright (C) 2011-2020 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -34,6 +34,16 @@ struct VBOXHGCMCALLHANDLE_TYPEDEF
     /** Where to store the result code */
     int32_t rc;
 };
+
+/** Don't let assertions in the host service panic (core dump) the test cases. */
+RTDECL(bool) RTAssertShouldPanic(void)
+{
+#ifndef DEBUG_andy
+    return false;
+#else
+    return true;
+#endif
+}
 
 /** Call completion callback for guest calls. */
 static DECLCALLBACK(int) callComplete(VBOXHGCMCALLHANDLE callHandle, int32_t rc)
@@ -127,9 +137,9 @@ static void testSetTransferMode(void)
 #endif /* VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS */
 
 /* Adds a host data read request message to the client's message queue. */
-static void testMsgAddReadData(PSHCLCLIENT pClient, uint32_t fFormat)
+static void testMsgAddReadData(PSHCLCLIENT pClient, SHCLFORMATS fFormats)
 {
-    int rc = ShClSvcDataReadRequest(pClient, fFormat, NULL /* pidEvent */);
+    int rc = ShClSvcDataReadRequest(pClient, fFormats, NULL /* pidEvent */);
     RTTESTI_CHECK_RC_OK(rc);
 }
 
@@ -155,84 +165,73 @@ static void testGetHostMsgOld(void)
     RTTestISub("Testing one format, waiting guest call.");
     HGCMSvcSetU32(&parms[0], 0);
     HGCMSvcSetU32(&parms[1], 0);
-    call.rc = VERR_TRY_AGAIN;
+    call.rc = VERR_IPE_UNINITIALIZED_STATUS;
     table.pfnConnect(NULL, 1 /* clientId */, &g_Client, 0, 0);
     table.pfnCall(NULL, &call, 1 /* clientId */, &g_Client, VBOX_SHCL_GUEST_FN_MSG_OLD_GET_WAIT, 2, parms, 0);
-    RTTESTI_CHECK_RC(call.rc, VERR_TRY_AGAIN);  /* This should get updated only when the guest call completes. */
+    RTTESTI_CHECK_RC(call.rc, VERR_IPE_UNINITIALIZED_STATUS);  /* This should get updated only when the guest call completes. */
     testMsgAddReadData(&g_Client, VBOX_SHCL_FMT_UNICODETEXT);
     RTTESTI_CHECK(parms[0].u.uint32 == VBOX_SHCL_HOST_MSG_READ_DATA);
     RTTESTI_CHECK(parms[1].u.uint32 == VBOX_SHCL_FMT_UNICODETEXT);
     RTTESTI_CHECK_RC_OK(call.rc);
-    call.rc = VERR_TRY_AGAIN;
+    call.rc = VERR_IPE_UNINITIALIZED_STATUS;
     table.pfnCall(NULL, &call, 1 /* clientId */, &g_Client, VBOX_SHCL_GUEST_FN_MSG_OLD_GET_WAIT, 2, parms, 0);
-    RTTESTI_CHECK_RC(call.rc, VERR_TRY_AGAIN);  /* This call should not complete yet. */
+    RTTESTI_CHECK_RC(call.rc, VERR_IPE_UNINITIALIZED_STATUS);  /* This call should not complete yet. */
+    table.pfnDisconnect(NULL, 1 /* clientId */, &g_Client);
 
     RTTestISub("Testing one format, no waiting guest calls.");
-    shClSvcClientReset(&g_Client);
+    table.pfnConnect(NULL, 1 /* clientId */, &g_Client, 0, 0);
     testMsgAddReadData(&g_Client, VBOX_SHCL_FMT_HTML);
     HGCMSvcSetU32(&parms[0], 0);
     HGCMSvcSetU32(&parms[1], 0);
-    call.rc = VERR_TRY_AGAIN;
+    call.rc = VERR_IPE_UNINITIALIZED_STATUS;
     table.pfnCall(NULL, &call, 1 /* clientId */, &g_Client, VBOX_SHCL_GUEST_FN_MSG_OLD_GET_WAIT, 2, parms, 0);
     RTTESTI_CHECK(parms[0].u.uint32 == VBOX_SHCL_HOST_MSG_READ_DATA);
     RTTESTI_CHECK(parms[1].u.uint32 == VBOX_SHCL_FMT_HTML);
     RTTESTI_CHECK_RC_OK(call.rc);
-    call.rc = VERR_TRY_AGAIN;
+    call.rc = VERR_IPE_UNINITIALIZED_STATUS;
     table.pfnCall(NULL, &call, 1 /* clientId */, &g_Client, VBOX_SHCL_GUEST_FN_MSG_OLD_GET_WAIT, 2, parms, 0);
-    RTTESTI_CHECK_RC(call.rc, VERR_TRY_AGAIN);  /* This call should not complete yet. */
+    RTTESTI_CHECK_RC(call.rc, VERR_IPE_UNINITIALIZED_STATUS);  /* This call should not complete yet. */
+    table.pfnDisconnect(NULL, 1 /* clientId */, &g_Client);
 
     RTTestISub("Testing two formats, waiting guest call.");
-    shClSvcClientReset(&g_Client); /** @todo r=bird: These reset calls are a little bogus... Especially since they don't do what you need them to anyway. */
-    /** @todo r=bird: There is already a pending wait call here from 5 lines above.
-     *        The code in 6.0 and earlier would overwrite the previous call, leaking
-     *        HGCM resources.  6.1+ code rejects the 2nd call, completing it
-     *        with VERR_RESOURCE_BUSY.  If any client depends on this (doubtful),
-     *        we'll assert in debug builds. Need to fix the test and temporarily
-     *        disble assertions around it. */
+    table.pfnConnect(NULL, 1 /* clientId */, &g_Client, 0, 0);
     HGCMSvcSetU32(&parms[0], 0);
     HGCMSvcSetU32(&parms[1], 0);
-    call.rc = VERR_TRY_AGAIN;
+    call.rc = VERR_IPE_UNINITIALIZED_STATUS;
     table.pfnCall(NULL, &call, 1 /* clientId */, &g_Client, VBOX_SHCL_GUEST_FN_MSG_OLD_GET_WAIT, 2, parms, 0);
-    RTTESTI_CHECK_RC(call.rc, VERR_TRY_AGAIN);  /* This should get updated only when the guest call completes. */
+    RTTESTI_CHECK_RC(call.rc, VERR_IPE_UNINITIALIZED_STATUS);  /* This should get updated only when the guest call completes. */
     testMsgAddReadData(&g_Client, VBOX_SHCL_FMT_UNICODETEXT | VBOX_SHCL_FMT_HTML);
-    /** @todo r=bird: The 6.1+ is buggy in that it returns both
-     *        VBOX_SHCL_FMT_UNICODETEXT and VBOX_SHCL_FMT_HTML here, rather than
-     *        separating them.  This is relevant on OS X hosts where the host code
-     *        would request both formats in one go, but since the clients will only
-     *        handle one of them at the time, they need to be split up like the
-     *        testcase checks for here.  (This is, btw, why it's nice to have
-     *        interface testcases like this.  Good work Michael.) */
     RTTESTI_CHECK(parms[0].u.uint32 == VBOX_SHCL_HOST_MSG_READ_DATA);
     RTTESTI_CHECK(parms[1].u.uint32 == VBOX_SHCL_FMT_UNICODETEXT);
     RTTESTI_CHECK_RC_OK(call.rc);
-    call.rc = VERR_TRY_AGAIN;
+    call.rc = VERR_IPE_UNINITIALIZED_STATUS;
     table.pfnCall(NULL, &call, 1 /* clientId */, &g_Client, VBOX_SHCL_GUEST_FN_MSG_OLD_GET_WAIT, 2, parms, 0);
     RTTESTI_CHECK(parms[0].u.uint32 == VBOX_SHCL_HOST_MSG_READ_DATA);
     RTTESTI_CHECK(parms[1].u.uint32 == VBOX_SHCL_FMT_HTML);
     RTTESTI_CHECK_RC_OK(call.rc);
-    call.rc = VERR_TRY_AGAIN;
+    call.rc = VERR_IPE_UNINITIALIZED_STATUS;
     table.pfnCall(NULL, &call, 1 /* clientId */, &g_Client, VBOX_SHCL_GUEST_FN_MSG_OLD_GET_WAIT, 2, parms, 0);
-    RTTESTI_CHECK_RC(call.rc, VERR_TRY_AGAIN);  /* This call should not complete yet. */
+    RTTESTI_CHECK_RC(call.rc, VERR_IPE_UNINITIALIZED_STATUS);  /* This call should not complete yet. */
+    table.pfnDisconnect(NULL, 1 /* clientId */, &g_Client);
 
     RTTestISub("Testing two formats, no waiting guest calls.");
-    shClSvcClientReset(&g_Client);
+    table.pfnConnect(NULL, 1 /* clientId */, &g_Client, 0, 0);
     testMsgAddReadData(&g_Client, VBOX_SHCL_FMT_UNICODETEXT | VBOX_SHCL_FMT_HTML);
     HGCMSvcSetU32(&parms[0], 0);
     HGCMSvcSetU32(&parms[1], 0);
-    call.rc = VERR_TRY_AGAIN;
+    call.rc = VERR_IPE_UNINITIALIZED_STATUS;
     table.pfnCall(NULL, &call, 1 /* clientId */, &g_Client, VBOX_SHCL_GUEST_FN_MSG_OLD_GET_WAIT, 2, parms, 0);
     RTTESTI_CHECK(parms[0].u.uint32 == VBOX_SHCL_HOST_MSG_READ_DATA);
-    /** @todo r=bird: Same problems with two formats as described above. */
     RTTESTI_CHECK(parms[1].u.uint32 == VBOX_SHCL_FMT_UNICODETEXT);
     RTTESTI_CHECK_RC_OK(call.rc);
-    call.rc = VERR_TRY_AGAIN;
+    call.rc = VERR_IPE_UNINITIALIZED_STATUS;
     table.pfnCall(NULL, &call, 1 /* clientId */, &g_Client, VBOX_SHCL_GUEST_FN_MSG_OLD_GET_WAIT, 2, parms, 0);
     RTTESTI_CHECK(parms[0].u.uint32 == VBOX_SHCL_HOST_MSG_READ_DATA);
     RTTESTI_CHECK(parms[1].u.uint32 == VBOX_SHCL_FMT_HTML);
     RTTESTI_CHECK_RC_OK(call.rc);
-    call.rc = VERR_TRY_AGAIN;
+    call.rc = VERR_IPE_UNINITIALIZED_STATUS;
     table.pfnCall(NULL, &call, 1 /* clientId */, &g_Client, VBOX_SHCL_GUEST_FN_MSG_OLD_GET_WAIT, 2, parms, 0);
-    RTTESTI_CHECK_RC(call.rc, VERR_TRY_AGAIN);  /* This call should not complete yet. */
+    RTTESTI_CHECK_RC(call.rc, VERR_IPE_UNINITIALIZED_STATUS);  /* This call should not complete yet. */
     table.pfnDisconnect(NULL, 1 /* clientId */, &g_Client);
     table.pfnUnload(NULL);
 }
