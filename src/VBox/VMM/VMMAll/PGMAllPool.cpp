@@ -2055,7 +2055,7 @@ static int pgmPoolCacheFreeOne(PPGMPOOL pPool, uint16_t iUser)
         }
 */
         Assert(iToFree != iUser);
-        AssertRelease(iToFree != NIL_PGMPOOL_IDX);
+        AssertReleaseMsg(iToFree != NIL_PGMPOOL_IDX, ("iToFree=%#x (%#x)\n%.1024Rhxd\n", iToFree, pPool->iAgeTail, pPool));
         pPage = &pPool->aPages[iToFree];
 
         /*
@@ -5058,7 +5058,7 @@ int pgmPoolAlloc(PVMCC pVM, RTGCPHYS GCPhys, PGMPOOLKIND enmKind, PGMPOOLACCESS 
             return rc;
         }
         iNew = pPool->iFreeHead;
-        AssertReleaseReturn(iNew != NIL_PGMPOOL_IDX, VERR_PGM_POOL_IPE);
+        AssertReleaseMsgReturn(iNew != NIL_PGMPOOL_IDX, ("iNew=%#x\n", iNew), VERR_PGM_POOL_IPE);
     }
 
     /* unlink the free head */
