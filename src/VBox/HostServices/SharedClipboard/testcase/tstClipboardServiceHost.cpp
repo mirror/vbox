@@ -270,8 +270,6 @@ static void testSetHeadless(void)
 
 static void testHostCall(void)
 {
-    RTAssertSetMayPanic(false);
-
     testSetMode();
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
     testSetTransferMode();
@@ -293,6 +291,9 @@ int main(int argc, char *argv[])
     if (rcExit != RTEXITCODE_SUCCESS)
         return rcExit;
     RTTestBanner(hTest);
+
+    /* Don't let assertions in the host service panic (core dump) the test cases. */
+    RTAssertSetMayPanic(false);
 
     /*
      * Run the tests.
