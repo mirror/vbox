@@ -2025,8 +2025,9 @@ DECLINLINE(void) pgmPoolHashRemove(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
  * @retval  VINF_SUCCESS on success.
  * @param   pPool       The pool.
  * @param   iUser       The user index.
+ * @param   pszTmpCaller OS X debugging.
  */
-static int pgmPoolCacheFreeOne(PPGMPOOL pPool, uint16_t iUser)
+static int pgmPoolCacheFreeOne(PPGMPOOL pPool, uint16_t iUser, const char *pszTmpCaller)
 {
     const PVMCC pVM = pPool->CTX_SUFF(pVM);
     Assert(pPool->iAgeHead != pPool->iAgeTail); /* We shouldn't be here if there < 2 cached entries! */
@@ -2055,7 +2056,21 @@ static int pgmPoolCacheFreeOne(PPGMPOOL pPool, uint16_t iUser)
         }
 */
         Assert(iToFree != iUser);
-        AssertReleaseMsg(iToFree != NIL_PGMPOOL_IDX, ("iToFree=%#x (%#x)\n%.1024Rhxd\n", iToFree, pPool->iAgeTail, pPool));
+        if (RT_LIKELY(iToFree != NIL_PGMPOOL_IDX)) /* Temporary OS X debugging */
+        { /* likely */ }
+        else
+        {
+            size_t cbPool = RT_UOFFSETOF_DYN(PGMPOOL, aPages[pPool->cMaxPages])
+                          + pPool->cMaxUsers * sizeof(PGMPOOLUSER)
+                          + pPool->cMaxPhysExts * sizeof(PGMPOOLPHYSEXT);
+            uint8_t *pbLastPage = (uint8_t *)pPool + ((cbPool - 1) & ~(uintptr_t)PAGE_OFFSET_MASK);
+            AssertReleaseMsg(iToFree != NIL_PGMPOOL_IDX, ("%s: iToFree=%#x (iAgeTail=%#x) iUser=%#x iLoop=%u - pPool=%p (LB %#zx):\n"
+                                                          "%.512Rhxd\n"
+                                                          "pLastPage=%p:\n"
+                                                          "%.4096Rhxd\n",
+                                                          pszTmpCaller, iToFree, pPool->iAgeTail, iUser, iLoop,
+                                                          pPool, cbPool, pPool, pbLastPage, pbLastPage));
+        }
         pPage = &pPool->aPages[iToFree];
 
         /*
@@ -2788,8 +2803,9 @@ int pgmPoolSyncCR3(PVMCPUCC pVCpu)
  *
  * @param   pPool       The pool.
  * @param   iUser       The user index.
+ * @param   pszTmpCaller Temporary OS X debugging.
  */
-static int pgmPoolTrackFreeOneUser(PPGMPOOL pPool, uint16_t iUser)
+static int pgmPoolTrackFreeOneUser(PPGMPOOL pPool, uint16_t iUser, const char *pszTmpCaller)
 {
     STAM_COUNTER_INC(&pPool->StatTrackFreeUpOneUser);
     /*
@@ -2799,7 +2815,7 @@ static int pgmPoolTrackFreeOneUser(PPGMPOOL pPool, uint16_t iUser)
     int rc = VINF_SUCCESS;
     do
     {
-        int rc2 = pgmPoolCacheFreeOne(pPool, iUser);
+        int rc2 = pgmPoolCacheFreeOne(pPool, iUser, pszTmpCaller);
         if (RT_FAILURE(rc2) && rc == VINF_SUCCESS)
             rc = rc2;
     } while (pPool->iUserFreeHead == NIL_PGMPOOL_USER_INDEX);
@@ -2853,7 +2869,7 @@ DECLINLINE(int) pgmPoolTrackInsert(PPGMPOOL pPool, PPGMPOOLPAGE pPage, RTGCPHYS 
         uint16_t i = pPool->iUserFreeHead;
         if (i == NIL_PGMPOOL_USER_INDEX)
         {
-            rc = pgmPoolTrackFreeOneUser(pPool, iUser);
+            rc = pgmPoolTrackFreeOneUser(pPool, iUser, __FUNCTION__);
             if (RT_FAILURE(rc))
                 return rc;
             i = pPool->iUserFreeHead;
@@ -2939,7 +2955,7 @@ static int pgmPoolTrackAddUser(PPGMPOOL pPool, PPGMPOOLPAGE pPage, uint16_t iUse
     uint16_t i = pPool->iUserFreeHead;
     if (i == NIL_PGMPOOL_USER_INDEX)
     {
-        int rc = pgmPoolTrackFreeOneUser(pPool, iUser);
+        int rc = pgmPoolTrackFreeOneUser(pPool, iUser, __FUNCTION__);
         if (RT_FAILURE(rc))
             return rc;
         i = pPool->iUserFreeHead;
@@ -4969,6 +4985,7 @@ static int pgmPoolMakeMoreFreePages(PPGMPOOL pPool, PGMPOOLKIND enmKind, uint16_
     /*
      * If the pool isn't full grown yet, expand it.
      */
+const char *pszTmp = "pgmPoolMakeMoreFreePages/no-growth";
     if (pPool->cCurPages < pPool->cMaxPages)
     {
         STAM_PROFILE_ADV_SUSPEND(&pPool->StatAlloc, a);
@@ -4982,12 +4999,13 @@ static int pgmPoolMakeMoreFreePages(PPGMPOOL pPool, PGMPOOLKIND enmKind, uint16_
         STAM_PROFILE_ADV_RESUME(&pPool->StatAlloc, a);
         if (pPool->iFreeHead != NIL_PGMPOOL_IDX)
             return VINF_SUCCESS;
+pszTmp = "pgmPoolMakeMoreFreePages/grew-it";
     }
 
     /*
      * Free one cached page.
      */
-    return pgmPoolCacheFreeOne(pPool, iUser);
+    return pgmPoolCacheFreeOne(pPool, iUser, pszTmp);
 }
 
 
