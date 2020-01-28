@@ -187,16 +187,9 @@ static int vboxClipboardSvcWinDataRead(PSHCLCONTEXT pCtx, UINT uFormat, void **p
         {
             *ppvData = pPayload ? pPayload->pvData : NULL;
             *pcbData = pPayload ? pPayload->cbData : 0;
-
-            /* Detach the payload, as the caller then will own the data. */
-            ShClEventPayloadDetach(&pCtx->pClient->EventSrc, idEvent);
-            /**
-             * @todo r=bird: The payload has already been detached,
-             * ShClEventPayloadDetach and ShClEventWait does the exact same
-             * thing, except for the extra waiting in the latter.
-             */
         }
 
+        ShClEventRelease(&pCtx->pClient->EventSrc, idEvent);
         ShClEventUnregister(&pCtx->pClient->EventSrc, idEvent);
     }
 
