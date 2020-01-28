@@ -182,13 +182,26 @@ static void testGetHostMsgOld(void)
     RTTESTI_CHECK_RC(call.rc, VERR_TRY_AGAIN);  /* This call should not complete yet. */
 
     RTTestISub("Testing two formats, waiting guest call.");
-    shClSvcClientReset(&g_Client);
+    shClSvcClientReset(&g_Client); /** @todo r=bird: These reset calls are a little bogus... Especially since they don't do what you need them to anyway. */
+    /** @todo r=bird: There is already a pending wait call here from 5 lines above.
+     *        The code in 6.0 and earlier would overwrite the previous call, leaking
+     *        HGCM resources.  6.1+ code rejects the 2nd call, completing it
+     *        with VERR_RESOURCE_BUSY.  If any client depends on this (doubtful),
+     *        we'll assert in debug builds. Need to fix the test and temporarily
+     *        disble assertions around it. */
     HGCMSvcSetU32(&parms[0], 0);
     HGCMSvcSetU32(&parms[1], 0);
     call.rc = VERR_TRY_AGAIN;
     table.pfnCall(NULL, &call, 1 /* clientId */, &g_Client, VBOX_SHCL_GUEST_FN_MSG_OLD_GET_WAIT, 2, parms, 0);
     RTTESTI_CHECK_RC(call.rc, VERR_TRY_AGAIN);  /* This should get updated only when the guest call completes. */
     testMsgAddReadData(&g_Client, VBOX_SHCL_FMT_UNICODETEXT | VBOX_SHCL_FMT_HTML);
+    /** @todo r=bird: The 6.1+ is buggy in that it returns both
+     *        VBOX_SHCL_FMT_UNICODETEXT and VBOX_SHCL_FMT_HTML here, rather than
+     *        separating them.  This is relevant on OS X hosts where the host code
+     *        would request both formats in one go, but since the clients will only
+     *        handle one of them at the time, they need to be split up like the
+     *        testcase checks for here.  (This is, btw, why it's nice to have
+     *        interface testcases like this.  Good work Michael.) */
     RTTESTI_CHECK(parms[0].u.uint32 == VBOX_SHCL_HOST_MSG_READ_DATA);
     RTTESTI_CHECK(parms[1].u.uint32 == VBOX_SHCL_FMT_UNICODETEXT);
     RTTESTI_CHECK_RC_OK(call.rc);
@@ -209,6 +222,7 @@ static void testGetHostMsgOld(void)
     call.rc = VERR_TRY_AGAIN;
     table.pfnCall(NULL, &call, 1 /* clientId */, &g_Client, VBOX_SHCL_GUEST_FN_MSG_OLD_GET_WAIT, 2, parms, 0);
     RTTESTI_CHECK(parms[0].u.uint32 == VBOX_SHCL_HOST_MSG_READ_DATA);
+    /** @todo r=bird: Same problems with two formats as described above. */
     RTTESTI_CHECK(parms[1].u.uint32 == VBOX_SHCL_FMT_UNICODETEXT);
     RTTESTI_CHECK_RC_OK(call.rc);
     call.rc = VERR_TRY_AGAIN;
