@@ -1189,60 +1189,95 @@ int shClSvcClientWakeup(PSHCLCLIENT pClient)
  *
  * @returns VBox status code.
  * @param   pClient             Client to request to read data form.
- * @param   fFormat             The format being requested (VBOX_SHCL_FMT_XXX).
+ * @param   fFormats            The formats being requested, OR'ed together (VBOX_SHCL_FMT_XXX).
  * @param   pidEvent            Event ID for waiting for new data. Optional.
  */
-int ShClSvcDataReadRequest(PSHCLCLIENT pClient, SHCLFORMAT fFormat, PSHCLEVENTID pidEvent)
+int ShClSvcDataReadRequest(PSHCLCLIENT pClient, SHCLFORMATS fFormats, PSHCLEVENTID pidEvent)
 {
     LogFlowFuncEnter();
     if (pidEvent)
-        *pidEvent = 0;
+        *pidEvent = NIL_SHCLEVENTID;
     AssertPtrReturn(pClient,  VERR_INVALID_POINTER);
 
-    /*
-     * Allocate a message.
-     */
-    int rc;
-    PSHCLCLIENTMSG pMsg = shClSvcMsgAlloc(pClient,
-                                          pClient->State.fGuestFeatures0 & VBOX_SHCL_GF_0_CONTEXT_ID
-                                          ? VBOX_SHCL_HOST_MSG_READ_DATA_CID : VBOX_SHCL_HOST_MSG_READ_DATA,
-                                          2);
-    if (pMsg)
+    LogFlowFunc(("fFormats=%#x\n", fFormats));
+
+    int rc = VERR_NOT_SUPPORTED;
+
+    while (fFormats)
     {
+        SHCLFORMAT fFormat = VBOX_SHCL_FMT_NONE;
+
+        /** @todo Make format reporting precedence configurable? */
+        if (fFormats & VBOX_SHCL_FMT_UNICODETEXT)
+            fFormat = VBOX_SHCL_FMT_UNICODETEXT;
+        else if (fFormats & VBOX_SHCL_FMT_BITMAP)
+            fFormat = VBOX_SHCL_FMT_BITMAP;
+        else if (fFormats & VBOX_SHCL_FMT_HTML)
+            fFormat = VBOX_SHCL_FMT_HTML;
+        else
+            AssertStmt(fFormats == VBOX_SHCL_FMT_NONE, fFormat = VBOX_SHCL_FMT_NONE);
+
+        if (fFormat == VBOX_SHCL_FMT_NONE)
+            break;
+
+        /* Remove format from format list. */
+        fFormats &= ~fFormat;
+
         /*
-         * Enter the critical section and generate an event.
+         * Allocate messages, one for each format.
          */
-        RTCritSectEnter(&pClient->CritSect);
-
-        const SHCLEVENTID idEvent = ShClEventIdGenerateAndRegister(&pClient->EventSrc);
-        if (idEvent != NIL_SHCLEVENTID)
+        PSHCLCLIENTMSG pMsg = shClSvcMsgAlloc(pClient,
+                                              pClient->State.fGuestFeatures0 & VBOX_SHCL_GF_0_CONTEXT_ID
+                                              ? VBOX_SHCL_HOST_MSG_READ_DATA_CID : VBOX_SHCL_HOST_MSG_READ_DATA,
+                                              2);
+        if (pMsg)
         {
-            LogFlowFunc(("fFormat=%#x idEvent=%#x\n", fFormat, idEvent));
-
             /*
-             * Format the message
+             * Enter the critical section and generate an event.
              */
-            if (pMsg->idMsg == VBOX_SHCL_HOST_MSG_READ_DATA_CID)
-                HGCMSvcSetU64(&pMsg->aParms[0], VBOX_SHCL_CONTEXTID_MAKE(pClient->State.uSessionID, pClient->EventSrc.uID, idEvent));
+            RTCritSectEnter(&pClient->CritSect);
+
+            const SHCLEVENTID idEvent = ShClEventIdGenerateAndRegister(&pClient->EventSrc);
+            if (idEvent != NIL_SHCLEVENTID)
+            {
+                LogFlowFunc(("fFormats=%#x -> fFormat=%#x, idEvent=%#x\n", fFormats, fFormat, idEvent));
+
+                /*
+                 * Format the message.
+                 */
+                if (pMsg->idMsg == VBOX_SHCL_HOST_MSG_READ_DATA_CID)
+                    HGCMSvcSetU64(&pMsg->aParms[0],
+                                  VBOX_SHCL_CONTEXTID_MAKE(pClient->State.uSessionID, pClient->EventSrc.uID, idEvent));
+                else
+                    HGCMSvcSetU32(&pMsg->aParms[0], VBOX_SHCL_HOST_MSG_READ_DATA);
+                HGCMSvcSetU32(&pMsg->aParms[1], fFormat);
+
+                shClSvcMsgAdd(pClient, pMsg, true /* fAppend */);
+
+                rc = VINF_SUCCESS;
+            }
             else
-                HGCMSvcSetU32(&pMsg->aParms[0], VBOX_SHCL_HOST_MSG_READ_DATA);
-            HGCMSvcSetU32(&pMsg->aParms[1], fFormat);
+                rc = VERR_SHCLPB_MAX_EVENTS_REACHED;
 
-            /*
-             * Queue it and wake up the client if it's waiting on a message.
-             */
-            shClSvcMsgAddAndWakeupClient(pClient, pMsg);
-            if (pidEvent)
-                *pidEvent = idEvent;
-            rc = VINF_SUCCESS;
+            RTCritSectLeave(&pClient->CritSect);
         }
         else
-            rc = VERR_SHCLPB_MAX_EVENTS_REACHED;
+            rc = VERR_NO_MEMORY;
+
+        if (RT_FAILURE(rc))
+            break;
+    }
+
+    if (RT_SUCCESS(rc))
+    {
+        RTCritSectEnter(&pClient->CritSect);
+
+        shClSvcClientWakeup(pClient);
 
         RTCritSectLeave(&pClient->CritSect);
     }
-    else
-        rc = VERR_NO_MEMORY;
+
+    /** @todo BUGBUG What to do with allocated events? Which one to return? */
 
     LogFlowFuncLeaveRC(rc);
     return rc;
