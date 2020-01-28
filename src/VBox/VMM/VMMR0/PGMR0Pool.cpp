@@ -45,6 +45,8 @@ VMMR0_INT_DECL(int) PGMR0PoolGrow(PGVM pGVM)
 {
     PPGMPOOL pPool = pGVM->pgm.s.pPoolR0;
     AssertReturn(pPool->cCurPages < pPool->cMaxPages, VERR_PGM_POOL_MAXED_OUT_ALREADY);
+    AssertReturn(pPool->pVMR3 == pGVM->pVMR3, VERR_PGM_POOL_IPE);
+    AssertReturn(pPool->pVMR0 == pGVM, VERR_PGM_POOL_IPE);
 
     /* With 32-bit guests and no EPT, the CR3 limits the root pages to low
        (below 4 GB) memory. */
@@ -138,8 +140,13 @@ VMMR0_INT_DECL(int) PGMR0PoolGrow(PGVM pGVM)
 
             RTR0MemObjFree(hMemObj, true /*fFreeMappings*/);
         }
+        if (cCurPages > 0)
+            rc = -rc;
+        else
+            LogRel(("PGMR0PoolGrow: rc=%Rrc cNewPages=%#x cCurPages=%#x cMaxPages=%#x fCanUseHighMemory=%d\n",
+                    rc, cNewPages, cCurPages, cMaxPages, fCanUseHighMemory));
     }
     RTCritSectLeave(&pGVM->pgmr0.s.PoolGrowCritSect);
-    return VINF_SUCCESS;
+    return rc;
 }
 

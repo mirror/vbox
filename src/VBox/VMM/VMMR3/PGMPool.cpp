@@ -484,7 +484,12 @@ VMMR3_INT_DECL(int) PGMR3PoolGrow(PVM pVM, PVMCPU pVCpu)
 {
     /* This used to do a lot of stuff, but it has moved to ring-0 (PGMR0PoolGrow). */
     AssertReturn(pVM->pgm.s.pPoolR3->cCurPages < pVM->pgm.s.pPoolR3->cMaxPages, VERR_PGM_POOL_MAXED_OUT_ALREADY);
-    return VMMR3CallR0Emt(pVM, pVCpu, VMMR0_DO_PGM_POOL_GROW, 0, NULL);
+    int rc = VMMR3CallR0Emt(pVM, pVCpu, VMMR0_DO_PGM_POOL_GROW, 0, NULL);
+    if (rc == VINF_SUCCESS)
+        return rc;
+    LogRel(("PGMR3PoolGrow: rc=%Rrc cCurPages=%#x cMaxPages=%#x\n",
+            rc, pVM->pgm.s.pPoolR3->cCurPages, pVM->pgm.s.pPoolR3->cMaxPages));
+    return rc;
 }
 
 
