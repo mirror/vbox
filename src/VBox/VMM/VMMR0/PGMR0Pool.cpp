@@ -140,8 +140,9 @@ VMMR0_INT_DECL(int) PGMR0PoolGrow(PGVM pGVM)
 
             RTR0MemObjFree(hMemObj, true /*fFreeMappings*/);
         }
-        if (cCurPages > 0)
-            rc = -rc;
+        if (cCurPages > 64)
+            LogRelMax(5, ("PGMR0PoolGrow: rc=%Rrc cNewPages=%#x cCurPages=%#x cMaxPages=%#x fCanUseHighMemory=%d\n",
+                          rc, cNewPages, cCurPages, cMaxPages, fCanUseHighMemory));
         else
             LogRel(("PGMR0PoolGrow: rc=%Rrc cNewPages=%#x cCurPages=%#x cMaxPages=%#x fCanUseHighMemory=%d\n",
                     rc, cNewPages, cCurPages, cMaxPages, fCanUseHighMemory));
