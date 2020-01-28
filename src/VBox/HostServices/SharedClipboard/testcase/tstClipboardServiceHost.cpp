@@ -35,16 +35,6 @@ struct VBOXHGCMCALLHANDLE_TYPEDEF
     int32_t rc;
 };
 
-/** Don't let assertions in the host service panic (core dump) the test cases. */
-RTDECL(bool) RTAssertShouldPanic(void)
-{
-#ifndef DEBUG_andy
-    return false;
-#else
-    return true;
-#endif
-}
-
 /** Call completion callback for guest calls. */
 static DECLCALLBACK(int) callComplete(VBOXHGCMCALLHANDLE callHandle, int32_t rc)
 {
@@ -280,6 +270,8 @@ static void testSetHeadless(void)
 
 static void testHostCall(void)
 {
+    RTAssertSetMayPanic(false);
+
     testSetMode();
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
     testSetTransferMode();
