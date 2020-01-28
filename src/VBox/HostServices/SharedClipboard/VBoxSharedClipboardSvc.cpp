@@ -1191,6 +1191,7 @@ int shClSvcClientWakeup(PSHCLCLIENT pClient)
  * @param   pClient             Client to request to read data form.
  * @param   fFormats            The formats being requested, OR'ed together (VBOX_SHCL_FMT_XXX).
  * @param   pidEvent            Event ID for waiting for new data. Optional.
+ *                              Must be released by the caller with ShClEventRelease() before unregistering then.
  */
 int ShClSvcDataReadRequest(PSHCLCLIENT pClient, SHCLFORMATS fFormats, PSHCLEVENTID pidEvent)
 {
