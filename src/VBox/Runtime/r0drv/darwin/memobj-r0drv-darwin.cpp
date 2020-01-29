@@ -485,7 +485,12 @@ static int rtR0MemObjNativeAllocWorker(PPRTR0MEMOBJINTERNAL ppMem, size_t cb,
 
     IOOptionBits fOptions = kIOMemoryKernelUserShared | kIODirectionInOut;
     if (fContiguous)
+    {
         fOptions |= kIOMemoryPhysicallyContiguous;
+        if (   version_major > 12
+            || (version_major == 12 && version_minor >= 2) /* 10.8.2 = Mountain Kitten */ )
+            fOptions |= kIOMemoryHostPhysicallyContiguous; /* (Just to make ourselves clear, in case the xnu code changes.)  */
+    }
     if (version_major >= 12 /* 12 = 10.8.x = Mountain Kitten */)
         fOptions |= kIOMemoryMapperNone;
 
@@ -497,10 +502,13 @@ static int rtR0MemObjNativeAllocWorker(PPRTR0MEMOBJINTERNAL ppMem, size_t cb,
 #if __MAC_OS_X_VERSION_MAX_ALLOWED >= 1070
     if (version_major >= 11 /* 11 = 10.7.x = Lion, could probably allow 10.5.0+ here if we really wanted to. */)
     {
-        if (fContiguous || MaxPhysAddr < UINT64_MAX)
+        /* Starting with 10.6.x the physical mask is ignored if alignment is higher
+           than 1.  The assumption seems to be that inTaskWithPhysicalMask() should
+           be used and the alignment inferred from the PhysMask argument. */
+        if (MaxPhysAddr != UINT64_MAX)
         {
-            fOptions |= kIOMemoryPhysicallyContiguous;
-            // cannot find any evidence of this: uAlignmentActual = 1; /* PhysMask isn't respected if higher. */
+            Assert(RT_ALIGN_64(PhysMask, uAlignment) == PhysMask);
+            uAlignmentActual = 1;
         }
 
         pMemDesc = new IOBufferMemoryDescriptor;
