@@ -42,12 +42,17 @@
     do { \
         AssertPtr(pDevIns); \
         Assert(pDevIns->u32Version == PDM_DEVINS_VERSION); \
-        Assert(pDevIns->CTX_SUFF(pvInstanceData) == (void *)&pDevIns->achInstanceData[0]); \
+        Assert(pDevIns->CTX_SUFF(pvInstanceDataFor) == (void *)&pDevIns->achInstanceData[0]); \
     } while (0)
 #else
 # define PDMDEV_ASSERT_DEVINS(pDevIns)   do { } while (0)
 #endif
 
+
+/** Frequency of the real clock. */
+#define TMCLOCK_FREQ_REAL       UINT32_C(1000)
+/** Frequency of the virtual clock. */
+#define TMCLOCK_FREQ_VIRTUAL    UINT32_C(1000000000)
 
 /*********************************************************************************************************************************
 *   Structures and Typedefs                                                                                                      *
@@ -65,6 +70,43 @@
 *   Internal Functions                                                                                                           *
 *********************************************************************************************************************************/
 
+
+/**
+ * Resolves a path reference to a configuration item.
+ *
+ * @returns VBox status code.
+ * @param   paDevCfg        The array of config items.
+ * @param   pszName         Name of a byte string value.
+ * @param   ppItem          Where to store the pointer to the item.
+ */
+static int tstDev_CfgmR3ResolveItem(PCTSTDEVCFGITEM paDevCfg, const char *pszName, PCTSTDEVCFGITEM *ppItem)
+{
+    *ppItem = NULL;
+    if (!paDevCfg)
+        return VERR_CFGM_VALUE_NOT_FOUND;
+
+    size_t          cchName = strlen(pszName);
+    PCTSTDEVCFGITEM pDevCfgItem = paDevCfg;
+    while (pDevCfgItem->pszKey != NULL)
+    {
+        size_t cchKey = strlen(pDevCfgItem->pszKey);
+        if (cchName == cchKey)
+        {
+            int iDiff = memcmp(pszName, pDevCfgItem->pszKey, cchName);
+            if (iDiff <= 0)
+            {
+                if (iDiff != 0)
+                    break;
+                *ppItem = pDevCfgItem;
+                return VINF_SUCCESS;
+            }
+        }
+
+        /* next */
+        pDevCfgItem++;
+    }
+    return VERR_CFGM_VALUE_NOT_FOUND;
+}
 
 
 /** @interface_method_impl{PDMDEVHLPR3,pfnIoPortCreateEx} */
@@ -1104,9 +1146,22 @@ static DECLCALLBACK(uint64_t) pdmR3DevHlp_TimerGet(PPDMDEVINS pDevIns, TMTIMERHA
 /** @interface_method_impl{PDMDEVHLPR3,pfnTimerGetFreq} */
 static DECLCALLBACK(uint64_t) pdmR3DevHlp_TimerGetFreq(PPDMDEVINS pDevIns, TMTIMERHANDLE hTimer)
 {
-    RT_NOREF(pDevIns, hTimer);
-    AssertFailed();
-    return 0;
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+
+    PTMTIMERR3 pTimer = (PTMTIMERR3)hTimer;
+    switch (pTimer->enmClock)
+    {
+        case TMCLOCK_VIRTUAL:
+        case TMCLOCK_VIRTUAL_SYNC:
+            return TMCLOCK_FREQ_VIRTUAL;
+
+        case TMCLOCK_REAL:
+            return TMCLOCK_FREQ_REAL;
+
+        default:
+            AssertMsgFailed(("Invalid enmClock=%d\n", pTimer->enmClock));
+            return 0;
+    }
 }
 
 
@@ -1326,41 +1381,123 @@ static DECLCALLBACK(int) pdmR3DevHlp_CFGMQueryType(PCFGMNODE pNode, const char *
 
 static DECLCALLBACK(int) pdmR3DevHlp_CFGMQuerySize(PCFGMNODE pNode, const char *pszName, size_t *pcb)
 {
-    RT_NOREF(pNode, pszName, pcb);
-    AssertFailed();
-    return VERR_NOT_IMPLEMENTED;
+    if (!pNode)
+        return VERR_CFGM_NO_PARENT;
+
+    PCTSTDEVCFGITEM pCfgItem;
+    int rc = tstDev_CfgmR3ResolveItem(pNode->pDut->pTestcaseReg->paDevCfg, pszName, &pCfgItem);
+    if (RT_SUCCESS(rc))
+    {
+        switch (pCfgItem->enmType)
+        {
+            case TSTDEVCFGITEMTYPE_INTEGER:
+                *pcb = sizeof(uint64_t);
+                break;
+
+            case TSTDEVCFGITEMTYPE_STRING:
+                *pcb = strlen(pCfgItem->pszVal) + 1;
+                break;
+
+            case TSTDEVCFGITEMTYPE_BYTES:
+                AssertFailed();
+                break;
+
+            default:
+                rc = VERR_CFGM_IPE_1;
+                AssertMsgFailed(("Invalid value type %d\n", pCfgItem->enmType));
+                break;
+        }
+    }
+    return rc;
 }
 
 
 static DECLCALLBACK(int) pdmR3DevHlp_CFGMQueryInteger(PCFGMNODE pNode, const char *pszName, uint64_t *pu64)
 {
-    RT_NOREF(pNode, pszName, pu64);
-    AssertFailed();
-    return VERR_NOT_IMPLEMENTED;
+    if (!pNode)
+        return VERR_CFGM_NO_PARENT;
+
+    PCTSTDEVCFGITEM pCfgItem;
+    int rc = tstDev_CfgmR3ResolveItem(pNode->pDut->pTestcaseReg->paDevCfg, pszName, &pCfgItem);
+    if (RT_SUCCESS(rc))
+    {
+        if (pCfgItem->enmType == TSTDEVCFGITEMTYPE_INTEGER)
+            *pu64 = RTStrToUInt64(pCfgItem->pszVal);
+        else
+            rc = VERR_CFGM_NOT_INTEGER;
+    }
+
+    return rc;
 }
 
 
 static DECLCALLBACK(int) pdmR3DevHlp_CFGMQueryIntegerDef(PCFGMNODE pNode, const char *pszName, uint64_t *pu64, uint64_t u64Def)
 {
-    RT_NOREF(pNode, pszName, pu64, u64Def);
-    AssertFailed();
-    return VERR_NOT_IMPLEMENTED;
+    int rc = pdmR3DevHlp_CFGMQueryInteger(pNode, pszName, pu64);
+    if (RT_FAILURE(rc))
+    {
+        *pu64 = u64Def;
+        if (rc == VERR_CFGM_VALUE_NOT_FOUND || rc == VERR_CFGM_NO_PARENT)
+            rc = VINF_SUCCESS;
+    }
+
+    return rc;
 }
 
 
 static DECLCALLBACK(int) pdmR3DevHlp_CFGMQueryString(PCFGMNODE pNode, const char *pszName, char *pszString, size_t cchString)
 {
-    RT_NOREF(pNode, pszName, pszString, cchString);
-    AssertFailed();
-    return VERR_NOT_IMPLEMENTED;
+    if (!pNode)
+        return VERR_CFGM_NO_PARENT;
+
+    PCTSTDEVCFGITEM pCfgItem;
+    int rc = tstDev_CfgmR3ResolveItem(pNode->pDut->pTestcaseReg->paDevCfg, pszName, &pCfgItem);
+    if (RT_SUCCESS(rc))
+    {
+        switch (pCfgItem->enmType)
+        {
+            case TSTDEVCFGITEMTYPE_STRING:
+            {
+                size_t cchVal = strlen(pCfgItem->pszVal);
+                if (cchString <= cchVal + 1)
+                    memcpy(pszString, pCfgItem->pszVal, cchVal);
+                else
+                    rc = VERR_CFGM_NOT_ENOUGH_SPACE;
+                break;
+            }
+            case TSTDEVCFGITEMTYPE_INTEGER:
+            case TSTDEVCFGITEMTYPE_BYTES:
+            default:
+                rc = VERR_CFGM_IPE_1;
+                AssertMsgFailed(("Invalid value type %d\n", pCfgItem->enmType));
+                break;
+        }
+    }
+    else
+        rc = VERR_CFGM_VALUE_NOT_FOUND;
+
+    return rc;
 }
 
 
 static DECLCALLBACK(int) pdmR3DevHlp_CFGMQueryStringDef(PCFGMNODE pNode, const char *pszName, char *pszString, size_t cchString, const char *pszDef)
 {
-    RT_NOREF(pNode, pszName, pszString, cchString, pszDef);
-    AssertFailed();
-    return VERR_NOT_IMPLEMENTED;
+    int rc = pdmR3DevHlp_CFGMQueryString(pNode, pszName, pszString, cchString);
+    if (RT_FAILURE(rc) && rc != VERR_CFGM_NOT_ENOUGH_SPACE)
+    {
+        size_t cchDef = strlen(pszDef);
+        if (cchString > cchDef)
+        {
+            memcpy(pszString, pszDef, cchDef);
+            memset(pszString + cchDef, 0, cchString - cchDef);
+            if (rc == VERR_CFGM_VALUE_NOT_FOUND || rc == VERR_CFGM_NO_PARENT)
+                rc = VINF_SUCCESS;
+        }
+        else if (rc == VERR_CFGM_VALUE_NOT_FOUND || rc == VERR_CFGM_NO_PARENT)
+            rc = VERR_CFGM_NOT_ENOUGH_SPACE;
+    }
+
+    return rc;
 }
 
 
@@ -1374,17 +1511,13 @@ static DECLCALLBACK(int) pdmR3DevHlp_CFGMQueryBytes(PCFGMNODE pNode, const char 
 
 static DECLCALLBACK(int) pdmR3DevHlp_CFGMQueryU64(PCFGMNODE pNode, const char *pszName, uint64_t *pu64)
 {
-    RT_NOREF(pNode, pszName, pu64);
-    AssertFailed();
-    return VERR_NOT_IMPLEMENTED;
+    return pdmR3DevHlp_CFGMQueryInteger(pNode, pszName, pu64);
 }
 
 
 static DECLCALLBACK(int) pdmR3DevHlp_CFGMQueryU64Def(PCFGMNODE pNode, const char *pszName, uint64_t *pu64, uint64_t u64Def)
 {
-    RT_NOREF(pNode, pszName, pu64, u64Def);
-    AssertFailed();
-    return VERR_NOT_IMPLEMENTED;
+    return pdmR3DevHlp_CFGMQueryIntegerDef(pNode, pszName, pu64, u64Def);
 }
 
 
@@ -1406,49 +1539,99 @@ static DECLCALLBACK(int) pdmR3DevHlp_CFGMQueryS64Def(PCFGMNODE pNode, const char
 
 static DECLCALLBACK(int) pdmR3DevHlp_CFGMQueryU32(PCFGMNODE pNode, const char *pszName, uint32_t *pu32)
 {
-    RT_NOREF(pNode, pszName, pu32);
-    AssertFailed();
-    return VERR_NOT_IMPLEMENTED;
+    uint64_t u64;
+    int rc = pdmR3DevHlp_CFGMQueryInteger(pNode, pszName, &u64);
+    if (RT_SUCCESS(rc))
+    {
+        if (!(u64 & UINT64_C(0xffffffff00000000)))
+            *pu32 = (uint32_t)u64;
+        else
+            rc = VERR_CFGM_INTEGER_TOO_BIG;
+    }
+    return rc;
 }
 
 
 static DECLCALLBACK(int) pdmR3DevHlp_CFGMQueryU32Def(PCFGMNODE pNode, const char *pszName, uint32_t *pu32, uint32_t u32Def)
 {
-    RT_NOREF(pNode, pszName, pu32, u32Def);
-    AssertFailed();
-    return VERR_NOT_IMPLEMENTED;
+    uint64_t u64;
+    int rc = pdmR3DevHlp_CFGMQueryIntegerDef(pNode, pszName, &u64, u32Def);
+    if (RT_SUCCESS(rc))
+    {
+        if (!(u64 & UINT64_C(0xffffffff00000000)))
+            *pu32 = (uint32_t)u64;
+        else
+            rc = VERR_CFGM_INTEGER_TOO_BIG;
+    }
+    if (RT_FAILURE(rc))
+        *pu32 = u32Def;
+    return rc;
 }
 
 
 static DECLCALLBACK(int) pdmR3DevHlp_CFGMQueryS32(PCFGMNODE pNode, const char *pszName, int32_t *pi32)
 {
-    RT_NOREF(pNode, pszName, pi32);
-    AssertFailed();
-    return VERR_NOT_IMPLEMENTED;
+    uint64_t u64;
+    int rc = pdmR3DevHlp_CFGMQueryInteger(pNode, pszName, &u64);
+    if (RT_SUCCESS(rc))
+    {
+        if (   !(u64 & UINT64_C(0xffffffff80000000))
+            ||  (u64 & UINT64_C(0xffffffff80000000)) == UINT64_C(0xffffffff80000000))
+            *pi32 = (int32_t)u64;
+        else
+            rc = VERR_CFGM_INTEGER_TOO_BIG;
+    }
+    return rc;
 }
 
 
 static DECLCALLBACK(int) pdmR3DevHlp_CFGMQueryS32Def(PCFGMNODE pNode, const char *pszName, int32_t *pi32, int32_t i32Def)
 {
-    RT_NOREF(pNode, pszName, pi32, i32Def);
-    AssertFailed();
-    return VERR_NOT_IMPLEMENTED;
+    uint64_t u64;
+    int rc = pdmR3DevHlp_CFGMQueryIntegerDef(pNode, pszName, &u64, i32Def);
+    if (RT_SUCCESS(rc))
+    {
+        if (   !(u64 & UINT64_C(0xffffffff80000000))
+            ||  (u64 & UINT64_C(0xffffffff80000000)) == UINT64_C(0xffffffff80000000))
+            *pi32 = (int32_t)u64;
+        else
+            rc = VERR_CFGM_INTEGER_TOO_BIG;
+    }
+    if (RT_FAILURE(rc))
+        *pi32 = i32Def;
+    return rc;
 }
 
 
 static DECLCALLBACK(int) pdmR3DevHlp_CFGMQueryU16(PCFGMNODE pNode, const char *pszName, uint16_t *pu16)
 {
-    RT_NOREF(pNode, pszName, pu16);
-    AssertFailed();
-    return VERR_NOT_IMPLEMENTED;
+    uint64_t u64;
+    int rc = pdmR3DevHlp_CFGMQueryInteger(pNode, pszName, &u64);
+    if (RT_SUCCESS(rc))
+    {
+        if (!(u64 & UINT64_C(0xffffffffffff0000)))
+            *pu16 = (int16_t)u64;
+        else
+            rc = VERR_CFGM_INTEGER_TOO_BIG;
+    }
+    return rc;
 }
 
 
 static DECLCALLBACK(int) pdmR3DevHlp_CFGMQueryU16Def(PCFGMNODE pNode, const char *pszName, uint16_t *pu16, uint16_t u16Def)
 {
-    RT_NOREF(pNode, pszName, pu16, u16Def);
-    AssertFailed();
-    return VERR_NOT_IMPLEMENTED;
+    uint64_t u64;
+    int rc = pdmR3DevHlp_CFGMQueryIntegerDef(pNode, pszName, &u64, u16Def);
+    if (RT_SUCCESS(rc))
+    {
+        if (!(u64 & UINT64_C(0xffffffffffff0000)))
+            *pu16 = (int16_t)u64;
+        else
+            rc = VERR_CFGM_INTEGER_TOO_BIG;
+    }
+    if (RT_FAILURE(rc))
+        *pu16 = u16Def;
+    return rc;
 }
 
 
@@ -1470,17 +1653,33 @@ static DECLCALLBACK(int) pdmR3DevHlp_CFGMQueryS16Def(PCFGMNODE pNode, const char
 
 static DECLCALLBACK(int) pdmR3DevHlp_CFGMQueryU8(PCFGMNODE pNode, const char *pszName, uint8_t *pu8)
 {
-    RT_NOREF(pNode, pszName, pu8);
-    AssertFailed();
-    return VERR_NOT_IMPLEMENTED;
+    uint64_t u64;
+    int rc = pdmR3DevHlp_CFGMQueryInteger(pNode, pszName, &u64);
+    if (RT_SUCCESS(rc))
+    {
+        if (!(u64 & UINT64_C(0xffffffffffffff00)))
+            *pu8 = (uint8_t)u64;
+        else
+            rc = VERR_CFGM_INTEGER_TOO_BIG;
+    }
+    return rc;
 }
 
 
 static DECLCALLBACK(int) pdmR3DevHlp_CFGMQueryU8Def(PCFGMNODE pNode, const char *pszName, uint8_t *pu8, uint8_t u8Def)
 {
-    RT_NOREF(pNode, pszName, pu8, u8Def);
-    AssertFailed();
-    return VERR_NOT_IMPLEMENTED;
+    uint64_t u64;
+    int rc = pdmR3DevHlp_CFGMQueryIntegerDef(pNode, pszName, &u64, u8Def);
+    if (RT_SUCCESS(rc))
+    {
+        if (!(u64 & UINT64_C(0xffffffffffffff00)))
+            *pu8 = (uint8_t)u64;
+        else
+            rc = VERR_CFGM_INTEGER_TOO_BIG;
+    }
+    if (RT_FAILURE(rc))
+        *pu8 = u8Def;
+    return rc;
 }
 
 
@@ -1502,17 +1701,20 @@ static DECLCALLBACK(int) pdmR3DevHlp_CFGMQueryS8Def(PCFGMNODE pNode, const char 
 
 static DECLCALLBACK(int) pdmR3DevHlp_CFGMQueryBool(PCFGMNODE pNode, const char *pszName, bool *pf)
 {
-    RT_NOREF(pNode, pszName, pf);
-    AssertFailed();
-    return VERR_NOT_IMPLEMENTED;
+    uint64_t u64;
+    int rc = pdmR3DevHlp_CFGMQueryInteger(pNode, pszName, &u64);
+    if (RT_SUCCESS(rc))
+        *pf = u64 ? true : false;
+    return rc;
 }
 
 
 static DECLCALLBACK(int) pdmR3DevHlp_CFGMQueryBoolDef(PCFGMNODE pNode, const char *pszName, bool *pf, bool fDef)
 {
-    RT_NOREF(pNode, pszName, pf, fDef);
-    AssertFailed();
-    return VERR_NOT_IMPLEMENTED;
+    uint64_t u64;
+    int rc = pdmR3DevHlp_CFGMQueryIntegerDef(pNode, pszName, &u64, fDef);
+    *pf = u64 ? true : false;
+    return rc;
 }
 
 
@@ -1526,9 +1728,8 @@ static DECLCALLBACK(int) pdmR3DevHlp_CFGMQueryPort(PCFGMNODE pNode, const char *
 
 static DECLCALLBACK(int) pdmR3DevHlp_CFGMQueryPortDef(PCFGMNODE pNode, const char *pszName, PRTIOPORT pPort, RTIOPORT PortDef)
 {
-    RT_NOREF(pNode, pszName, pPort, PortDef);
-    AssertFailed();
-    return VERR_NOT_IMPLEMENTED;
+    AssertCompileSize(RTIOPORT, 2);
+    return pdmR3DevHlp_CFGMQueryU16Def(pNode, pszName, pPort, PortDef);
 }
 
 
@@ -1566,9 +1767,17 @@ static DECLCALLBACK(int) pdmR3DevHlp_CFGMQuerySIntDef(PCFGMNODE pNode, const cha
 
 static DECLCALLBACK(int) pdmR3DevHlp_CFGMQueryPtr(PCFGMNODE pNode, const char *pszName, void **ppv)
 {
-    RT_NOREF(pNode, pszName, ppv);
-    AssertFailed();
-    return VERR_NOT_IMPLEMENTED;
+    uint64_t u64;
+    int rc = pdmR3DevHlp_CFGMQueryInteger(pNode, pszName, &u64);
+    if (RT_SUCCESS(rc))
+    {
+        uintptr_t u = (uintptr_t)u64;
+        if (u64 == u)
+            *ppv = (void *)u;
+        else
+            rc = VERR_CFGM_INTEGER_TOO_BIG;
+    }
+    return rc;
 }
 
 
@@ -1758,9 +1967,35 @@ static DECLCALLBACK(CFGMVALUETYPE) pdmR3DevHlp_CFGMGetValueType(PCFGMLEAF pCur)
 
 static DECLCALLBACK(bool) pdmR3DevHlp_CFGMAreValuesValid(PCFGMNODE pNode, const char *pszzValid)
 {
-    RT_NOREF(pNode, pszzValid);
-    AssertFailed();
-    return false;
+    if (pNode && pNode->pDut->pTestcaseReg->paDevCfg)
+    {
+        PCTSTDEVCFGITEM pDevCfgItem = pNode->pDut->pTestcaseReg->paDevCfg;
+        while (pDevCfgItem->pszKey != NULL)
+        {
+            size_t cchKey = strlen(pDevCfgItem->pszKey);
+
+            /* search pszzValid for the name */
+            const char *psz = pszzValid;
+            while (*psz)
+            {
+                size_t cch = strlen(psz);
+                if (    cch == cchKey
+                    &&  !memcmp(psz, pDevCfgItem->pszKey, cch))
+                    break;
+
+                /* next */
+                psz += cch + 1;
+            }
+
+            /* if at end of pszzValid we didn't find it => failure */
+            if (!*psz)
+                return false;
+
+            pDevCfgItem++;
+        }
+    }
+
+    return true;
 }
 
 
@@ -1769,8 +2004,12 @@ static DECLCALLBACK(int) pdmR3DevHlp_CFGMValidateConfig(PCFGMNODE pNode, const c
                                                         const char *pszWho, uint32_t uInstance)
 {
     RT_NOREF(pNode, pszNode, pszValidValues, pszValidNodes, pszWho, uInstance);
+#if 1
+    return VINF_SUCCESS;
+#else
     AssertFailed();
     return VERR_NOT_IMPLEMENTED;
+#endif
 }
 
 
@@ -2061,7 +2300,16 @@ static DECLCALLBACK(void) pdmR3DevHlp_MMHeapFree(PPDMDEVINS pDevIns, void *pv)
     PDMDEV_ASSERT_DEVINS(pDevIns); RT_NOREF_PV(pDevIns);
     LogFlow(("pdmR3DevHlp_MMHeapFree: caller='%s'/%d: pv=%p\n", pDevIns->pReg->szName, pDevIns->iInstance, pv));
 
-    AssertFailed();
+    PTSTDEVMMHEAPALLOC pHeapAlloc = (PTSTDEVMMHEAPALLOC)((uint8_t *)pv - RT_UOFFSETOF(TSTDEVMMHEAPALLOC, abAlloc[0]));
+    PTSTDEVDUTINT pThis = pHeapAlloc->pDut;
+
+    tstDevDutLockExcl(pThis);
+    RTListNodeRemove(&pHeapAlloc->NdMmHeap);
+    tstDevDutUnlockExcl(pThis);
+
+    /* Poison */
+    memset(&pHeapAlloc->abAlloc[0], 0xfc, pHeapAlloc->cbAlloc);
+    RTMemFree(pHeapAlloc);
 
     LogFlow(("pdmR3DevHlp_MMHeapAlloc: caller='%s'/%d: returns void\n", pDevIns->pReg->szName, pDevIns->iInstance));
 }
@@ -3101,10 +3349,8 @@ static DECLCALLBACK(int)      pdmR3DevHlp_CritSectEnterDebug(PPDMDEVINS pDevIns,
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
 
-    RT_NOREF(pDevIns, pCritSect, rcBusy, uId, RT_SRC_POS_ARGS);
-    int rc = VERR_NOT_IMPLEMENTED;
-    AssertFailed();
-    return rc;
+    RT_NOREF(pDevIns, rcBusy, uId, RT_SRC_POS_ARGS);
+    return RTCritSectEnter(&pCritSect->s.CritSect);
 }
 
 
@@ -3137,10 +3383,7 @@ static DECLCALLBACK(int)      pdmR3DevHlp_CritSectLeave(PPDMDEVINS pDevIns, PPDM
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
 
-    RT_NOREF(pDevIns, pCritSect);
-    int rc = VERR_NOT_IMPLEMENTED;
-    AssertFailed();
-    return rc;
+    return RTCritSectLeave(&pCritSect->s.CritSect);
 }
 
 
@@ -3149,9 +3392,7 @@ static DECLCALLBACK(bool)     pdmR3DevHlp_CritSectIsOwner(PPDMDEVINS pDevIns, PC
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
 
-    RT_NOREF(pDevIns, pCritSect);
-    AssertFailed();
-    return false;
+    return RTCritSectIsOwner(&pCritSect->s.CritSect);
 }
 
 

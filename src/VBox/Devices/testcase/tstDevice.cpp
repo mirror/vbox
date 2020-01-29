@@ -814,7 +814,7 @@ static TSTDEVTESTCASEREG s_TestcaseDef =
 {
     "test",
     "Testcase during implementation",
-    "nvme",
+    "serial",
     0,
     &s_aTestcaseCfg[0],
     NULL,
@@ -848,7 +848,21 @@ static int tstDevPdmDevCreate(const char *pszName)
         rc = RTCritSectRwInit(&Dut.CritSectLists);
         AssertRC(rc);
 
-        PPDMDEVINS pDevIns = (PPDMDEVINS)RTMemAllocZ(RT_UOFFSETOF_DYN(PDMDEVINS, achInstanceData[pPdmDev->pReg->cbInstanceCC]));
+        PPDMCRITSECT pCritSect;
+        /* Figure out how much we need. */
+        uint32_t cb = RT_UOFFSETOF_DYN(PDMDEVINS, achInstanceData[pPdmDev->pReg->cbInstanceCC]);
+        cb  = RT_ALIGN_32(cb, 64);
+        uint32_t const offShared   = cb;
+        cb += RT_ALIGN_32(pPdmDev->pReg->cbInstanceShared, 64);
+        uint32_t const cbCritSect  = RT_ALIGN_32(sizeof(*pCritSect), 64);
+        cb += cbCritSect;
+        uint32_t const cbMsixState = RT_ALIGN_32(pPdmDev->pReg->cMaxMsixVectors * 16 + (pPdmDev->pReg->cMaxMsixVectors + 7) / 8, _4K);
+        uint32_t const cbPciDev    = RT_ALIGN_32(RT_UOFFSETOF_DYN(PDMPCIDEV, abMsixState[cbMsixState]), 64);
+        uint32_t const cPciDevs    = RT_MIN(pPdmDev->pReg->cMaxPciDevices, 1024);
+        uint32_t const cbPciDevs   = cbPciDev * cPciDevs;
+        cb += cbPciDevs;
+
+        PPDMDEVINS pDevIns = (PPDMDEVINS)RTMemAllocZ(cb);
         pDevIns->u32Version               = PDM_DEVINS_VERSION;
         pDevIns->iInstance                = 0;
         pDevIns->pReg                     = pPdmDev->pReg;
@@ -856,6 +870,26 @@ static int tstDevPdmDevCreate(const char *pszName)
         pDevIns->pHlpR3                   = &g_tstDevPdmDevHlpR3;
         pDevIns->pCfg                     = &Cfg;
         pDevIns->Internal.s.pDut          = &Dut;
+        pDevIns->cbRing3                  = cb;
+        //pDevIns->fR0Enabled             = false;
+        //pDevIns->fRCEnabled             = false;
+        pDevIns->pvInstanceDataR3         = (uint8_t *)pDevIns + offShared;
+        pDevIns->pvInstanceDataForR3      = &pDevIns->achInstanceData[0];
+        pCritSect = (PPDMCRITSECT)((uint8_t *)pDevIns + offShared + RT_ALIGN_32(pPdmDev->pReg->cbInstanceShared, 64));
+        pDevIns->pCritSectRoR3            = pCritSect;
+        pDevIns->cbPciDev                 = cbPciDev;
+        pDevIns->cPciDevs                 = cPciDevs;
+        for (uint32_t iPciDev = 0; iPciDev < cPciDevs; iPciDev++)
+        {
+            PPDMPCIDEV pPciDev = (PPDMPCIDEV)((uint8_t *)pDevIns->pCritSectRoR3 + cbCritSect + cbPciDev * iPciDev);
+            if (iPciDev < RT_ELEMENTS(pDevIns->apPciDevs))
+                pDevIns->apPciDevs[iPciDev] = pPciDev;
+            pPciDev->cbConfig           = _4K;
+            pPciDev->cbMsixState        = cbMsixState;
+            pPciDev->idxSubDev          = (uint16_t)iPciDev;
+            pPciDev->u32Magic           = PDMPCIDEV_MAGIC;
+        }
+
         rc = pPdmDev->pReg->pfnConstruct(pDevIns, 0, &Cfg);
         if (RT_SUCCESS(rc))
         {
@@ -891,7 +925,7 @@ int main(int argc, char *argv[])
         {
             rc = tstDevPdmLoadMod(argv[1], TSTDEVPDMMODTYPE_R3);
             if (RT_SUCCESS(rc))
-                rc = tstDevPdmDevCreate("nvme");
+                rc = tstDevPdmDevCreate("serial");
             else
                 rcExit = RTEXITCODE_FAILURE;
         }

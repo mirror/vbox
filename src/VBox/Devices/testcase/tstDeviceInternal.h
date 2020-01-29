@@ -25,6 +25,7 @@
 #include <iprt/assert.h>
 #include <iprt/list.h>
 #include <iprt/semaphore.h>
+#include <iprt/critsect.h>
 
 #include "tstDevicePlugin.h"
 
@@ -84,15 +85,71 @@ typedef struct PDMPCIDEVINT
     bool                            fRegistered;
 } PDMPCIDEVINT;
 
+
+/**
+ * Internal PDM critical section structure.
+ */
+typedef struct PDMCRITSECTINT
+{
+    /** The actual critical section used for emulation. */
+    RTCRITSECT           CritSect;
+} PDMCRITSECTINT;
+AssertCompile(sizeof(PDMCRITSECTINT) <= (HC_ARCH_BITS == 32 ? 0x80 : 0xc0));
+
+
+/**
+ * MM Heap allocation.
+ */
+typedef struct TSTDEVMMHEAPALLOC
+{
+    /** Node for the list of allocations. */
+    RTLISTNODE                      NdMmHeap;
+    /** Pointer to the device under test the allocation was made for. */
+    PTSTDEVDUTINT                   pDut;
+    /** Size of the allocation. */
+    size_t                          cbAlloc;
+    /** Start of the real allocation. */
+    uint8_t                         abAlloc[RT_FLEXIBLE_ARRAY];
+} TSTDEVMMHEAPALLOC;
+/** Pointer to a MM Heap allocation. */
+typedef TSTDEVMMHEAPALLOC *PTSTDEVMMHEAPALLOC;
+/** Pointer to a const MM Heap allocation. */
+typedef const TSTDEVMMHEAPALLOC *PCTSTDEVMMHEAPALLOC;
+
+AssertCompileMemberAlignment(TSTDEVMMHEAPALLOC, abAlloc, HC_ARCH_BITS == 64 ? 16 : 8);
+
+
+#define PDMCRITSECTINT_DECLARED
 #define PDMDEVINSINT_DECLARED
 #define PDMPCIDEVINT_DECLARED
 #define VMM_INCLUDED_SRC_include_VMInternal_h
 #define VMM_INCLUDED_SRC_include_VMMInternal_h
 RT_C_DECLS_END
+#include <VBox/vmm/pdmcritsect.h>
 #include <VBox/vmm/pdmdev.h>
 #include <VBox/vmm/pdmpci.h>
 #include <VBox/vmm/pdmdrv.h>
+#include <VBox/vmm/tm.h>
 RT_C_DECLS_BEGIN
+
+
+/**
+ * TM timer structure.
+ */
+typedef struct TMTIMER
+{
+    /** List of timers created by the device. */
+    RTLISTNODE           NdDevTimers;
+    /** Clock this timer belongs to. */
+    TMCLOCK              enmClock;
+    /** Callback to call when the timer expires. */
+    PFNTMTIMERDEV        pfnCallbackDev;
+    /** Opaque user data to pass to the callback. */
+    void                 *pvUser;
+    /** Flags. */
+    uint32_t             fFlags;
+    /** @todo: */
+} TMTIMER;
 
 
 /**
