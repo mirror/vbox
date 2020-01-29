@@ -641,10 +641,10 @@ SHCL_X11_DECL(void) clipUpdateX11Targets(PSHCLX11CTX pCtx, SHCLX11FMTIDX *pTarge
  * @note  This function is treated as API glue, and as such is not part of any
  *        unit test.  So keep it simple, be paranoid and log everything.
  */
-SHCL_X11_DECL(DECLCALLBACK(void)) clipConvertX11TargetsCallback(Widget widget, XtPointer pClient,
-                                                                Atom * /* selection */, Atom *atomType,
-                                                                XtPointer pValue, long unsigned int *pcLen,
-                                                                int *piFormat)
+SHCL_X11_DECL(void) clipConvertX11TargetsCallback(Widget widget, XtPointer pClient,
+                                                  Atom * /* selection */, Atom *atomType,
+                                                  XtPointer pValue, long unsigned int *pcLen,
+                                                  int *piFormat)
 {
     RT_NOREF(piFormat);
 
@@ -732,7 +732,7 @@ SHCL_X11_DECL(DECLCALLBACK(void)) clipConvertX11TargetsCallback(Widget widget, X
  *
  * @param   pCtx                The X11 clipboard context to use.
  */
-SHCL_X11_DECL(DECLCALLBACK(void)) clipQueryX11FormatsCallback(PSHCLX11CTX pCtx)
+SHCL_X11_DECL(void) clipQueryX11FormatsCallback(PSHCLX11CTX pCtx)
 {
 #ifndef TESTCASE
     LogFlowFunc(("fXtBusy=%RTbool\n", pCtx->fXtBusy));
