@@ -2939,7 +2939,7 @@ int main()
     RTTestBanner(hTest);
 
     /*
-     * Run the test.
+     * Run the tests.
      */
     SHCLX11CTX X11Ctx;
     rc = ShClX11Init(&X11Ctx, NULL, false);
@@ -2950,7 +2950,7 @@ int main()
     rc = ShClX11ThreadStart(&X11Ctx, false /* fGrab */);
     AssertRCReturn(rc, 1);
 
-    /*** UTF-8 from X11 ***/
+    /* UTF-8 from X11 */
     RTTestSub(hTest, "reading UTF-8 from X11");
     /* Simple test */
     tstClipSetSelectionValues("UTF8_STRING", XA_STRING, "hello world",
@@ -2982,7 +2982,7 @@ int main()
                               "hello world", sizeof("hello world") - 1, 8);
     tstStringFromX11(hTest, &X11Ctx, "hello world", VINF_SUCCESS);
 
-    /*** Latin1 from X11 ***/
+    /* Latin1 from X11 */
     RTTestSub(hTest, "reading Latin1 from X11");
     /* Simple test */
     tstClipSetSelectionValues("STRING", XA_STRING, "Georges Dupr\xEA",
@@ -3006,7 +3006,9 @@ int main()
                               sizeof("Georges Dupr\xEA!") - 1, 8);
     tstLatin1FromX11(hTest, &X11Ctx, "Georges Dupr\xEA!", VINF_SUCCESS);
 
-    /*** Unknown X11 format ***/
+    /*
+     * Unknown X11 format
+     */
     RTTestSub(hTest, "handling of an unknown X11 format");
     tstClipInvalidateFormats();
     tstClipSetSelectionValues("CLIPBOARD", XA_STRING, "Test",
@@ -3015,12 +3017,16 @@ int main()
     RTTEST_CHECK_MSG(hTest, tstClipQueryFormats() == 0,
                      (hTest, "Failed to send a format update notification\n"));
 
-    /*** Timeout from X11 ***/
+    /*
+     * Timeout from X11
+     */
     RTTestSub(hTest, "X11 timeout");
     tstClipSetSelectionValues("UTF8_STRING", XT_CONVERT_FAIL, NULL,0, 8);
     tstStringFromX11(hTest, &X11Ctx, "", VERR_NO_DATA);
 
-    /*** No data in X11 clipboard ***/
+    /*
+     * No data in X11 clipboard
+     */
     RTTestSub(hTest, "a data request from an empty X11 clipboard");
     tstClipSetSelectionValues("UTF8_STRING", XA_STRING, NULL,
                               0, 8);
@@ -3033,14 +3039,18 @@ int main()
                      (hTest, "Wrong returned request data, expected %p, got %p\n",
                      pReq, pReqRet));
 
-    /*** Ensure that VBox is notified when we return the CB to X11 ***/
+    /*
+     * Ensure that VBox is notified when we return the CB to X11
+     */
     RTTestSub(hTest, "notification of switch to X11 clipboard");
     tstClipInvalidateFormats();
     clipReportEmptyX11CB(&X11Ctx);
     RTTEST_CHECK_MSG(hTest, tstClipQueryFormats() == 0,
                      (hTest, "Failed to send a format update (release) notification\n"));
 
-    /*** request for an invalid VBox format from X11 ***/
+    /*
+     * Request for an invalid VBox format from X11
+     */
     RTTestSub(hTest, "a request for an invalid VBox format from X11");
     /* Testing for 0xffff will go into handling VBOX_SHCL_FMT_UNICODETEXT, where we don't have
      * have any data at the moment so far, so this will return VERR_NO_DATA. */
@@ -3053,7 +3063,9 @@ int main()
                      (hTest, "Wrong returned request data, expected %p, got %p\n",
                      pReq, pReqRet));
 
-    /*** Targets failure from X11 ***/
+    /*
+     * Targets failure from X11
+     */
     RTTestSub(hTest, "X11 targets conversion failure");
     tstClipSetSelectionValues("UTF8_STRING", XA_STRING, "hello world",
                               sizeof("hello world"), 8);
@@ -3067,12 +3079,16 @@ int main()
                      (hTest, "Wrong targets reported: %02X\n",
                       tstClipQueryFormats()));
 
-    /*** X11 text format conversion ***/
+    /*
+     * X11 text format conversion
+     */
     RTTestSub(hTest, "handling of X11 selection targets");
     RTTEST_CHECK_MSG(hTest, tstClipTextFormatConversion(&X11Ctx),
                      (hTest, "failed to select the right X11 text formats\n"));
 
-    /*** UTF-8 from VBox ***/
+    /*
+     * UTF-8 from VBox
+     */
     RTTestSub(hTest, "reading UTF-8 from VBox");
     /* Simple test */
     tstClipSetVBoxUtf16(&X11Ctx, VINF_SUCCESS, "hello world",
@@ -3112,12 +3128,16 @@ int main()
     tstStringFromVBox(hTest, &X11Ctx, "TEXT", clipGetAtom(&X11Ctx, "TEXT"),
                      "hello world");
 
-    /*** Timeout from VBox ***/
+    /*
+     * Timeout from VBox
+     */
     RTTestSub(hTest, "reading from VBox with timeout");
     tstClipEmptyVBox(&X11Ctx, VERR_TIMEOUT);
     tstStringFromVBoxFailed(hTest, &X11Ctx, "UTF8_STRING");
 
-    /*** No data in VBox clipboard ***/
+    /*
+     * No data in VBox clipboard
+     */
     RTTestSub(hTest, "an empty VBox clipboard");
     tstClipSetSelectionValues("TEXT", XA_STRING, "", sizeof(""), 8);
     tstClipEmptyVBox(&X11Ctx, VINF_SUCCESS);
@@ -3125,7 +3145,9 @@ int main()
                      (hTest, "VBox grabbed the clipboard with no data and we ignored it\n"));
     tstStringFromVBoxFailed(hTest, &X11Ctx, "UTF8_STRING");
 
-    /*** An unknown VBox format ***/
+    /*
+     * An unknown VBox format
+     */
     RTTestSub(hTest, "reading an unknown VBox format");
     tstClipSetSelectionValues("TEXT", XA_STRING, "", sizeof(""), 8);
     tstClipSetVBoxUtf16(&X11Ctx, VINF_SUCCESS, "", 2);
@@ -3134,7 +3156,9 @@ int main()
                      (hTest, "VBox grabbed the clipboard with unknown data and we ignored it\n"));
     tstStringFromVBoxFailed(hTest, &X11Ctx, "UTF8_STRING");
 
-    /*** VBox requests a bad format ***/
+    /*
+     * VBox requests a bad format
+     */
     RTTestSub(hTest, "recovery from a bad format request");
     tstBadFormatRequestFromHost(hTest, &X11Ctx);
 
@@ -3142,15 +3166,15 @@ int main()
     AssertRCReturn(rc, 1);
     ShClX11Destroy(&X11Ctx);
 
-    /*** Headless clipboard tests ***/
-
+    /*
+     * Headless clipboard tests
+     */
     rc = ShClX11Init(&X11Ctx, NULL, true);
     AssertRCReturn(rc, 1);
-
     rc = ShClX11ThreadStart(&X11Ctx, false /* fGrab */);
     AssertRCReturn(rc, 1);
 
-    /*** Read from X11 ***/
+    /* Read from X11 */
     RTTestSub(hTest, "reading from X11, headless clipboard");
     /* Simple test */
     tstClipSetVBoxUtf16(&X11Ctx, VINF_SUCCESS, "",
@@ -3159,7 +3183,7 @@ int main()
                               sizeof("hello world"), 8);
     tstNoX11(&X11Ctx, "reading from X11, headless clipboard");
 
-    /*** Read from VBox ***/
+    /* Read from VBox */
     RTTestSub(hTest, "reading from VBox, headless clipboard");
     /* Simple test */
     tstClipEmptyVBox(&X11Ctx, VERR_WRONG_ORDER);
