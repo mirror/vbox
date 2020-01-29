@@ -3,7 +3,7 @@
  */
 
 /*
- * Copyright (C) 2006-2019 Oracle Corporation
+ * Copyright (C) 2006-2020 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -2322,9 +2322,11 @@ static void ShClX11ReadDataFromX11Worker(void *pvUserData, void * /* interval */
  * Called when VBox wants to read the X11 clipboard.
  *
  * @returns VBox status code.
- * @param  pCtx                 Context data for the clipboard backend.
- * @param  Format               The format that the VBox would like to receive the data in.
- * @param  pReq                 Read callback request to use. Must be free'd in the callback.
+ * @retval  VERR_NO_DATA if format is supported but no data is available currently.
+ * @retval  VERR_NOT_IMPLEMENTED if the format is not implemented.
+ * @param   pCtx                Context data for the clipboard backend.
+ * @param   Format              The format that the VBox would like to receive the data in.
+ * @param   pReq                Read callback request to use. Must be free'd in the callback.
  *
  * @note   We allocate a request structure which must be freed by the worker.
  */
@@ -2911,7 +2913,7 @@ static void tstBadFormatRequestFromHost(RTTEST hTest, PSHCLX11CTX pCtx)
     {
         char *pc;
         CLIPREADCBREQ *pReq = (CLIPREADCBREQ *)&pReq, *pReqRet = NULL;
-        ShClX11ReadDataFromX11(pCtx, 100, pReq);  /* Bad format. */
+        ShClX11ReadDataFromX11(pCtx, 0xF000 /* vboxFormat */, pReq);  /* Bad format. */
         int rc = VINF_SUCCESS;
         uint32_t cbActual = 0;
         tstClipGetCompletedRequest(&rc, &pc, &cbActual, &pReqRet);
@@ -3040,10 +3042,12 @@ int main()
 
     /*** request for an invalid VBox format from X11 ***/
     RTTestSub(hTest, "a request for an invalid VBox format from X11");
-    ShClX11ReadDataFromX11(&X11Ctx, 0xffff, pReq);
+    /* Testing for 0xffff will go into handling VBOX_SHCL_FMT_UNICODETEXT, where we don't have
+     * have any data at the moment so far, so this will return VERR_NO_DATA. */
+    ShClX11ReadDataFromX11(&X11Ctx, 0xffff /* vboxFormat */, pReq);
     tstClipGetCompletedRequest(&rc, &pc, &cbActual, &pReqRet);
-    RTTEST_CHECK_MSG(hTest, rc == VERR_NOT_IMPLEMENTED,
-                     (hTest, "Returned %Rrc instead of VERR_NOT_IMPLEMENTED\n",
+    RTTEST_CHECK_MSG(hTest, rc == VERR_NO_DATA,
+                     (hTest, "Returned %Rrc instead of VERR_NO_DATA\n",
                       rc));
     RTTEST_CHECK_MSG(hTest, pReqRet == pReq,
                      (hTest, "Wrong returned request data, expected %p, got %p\n",
