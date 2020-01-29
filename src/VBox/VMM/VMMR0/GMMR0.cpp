@@ -192,8 +192,11 @@
 # define VBOX_USE_CRIT_SECT_FOR_GIANT
 #endif
 
+#if (!defined(VBOX_WITH_RAM_IN_KERNEL) || defined(VBOX_WITH_LINEAR_HOST_PHYS_MEM)) \
+ && !defined(RT_OS_DARWIN)
 /** Enable the legacy mode code (will be dropped soon). */
-#define GMM_WITH_LEGACY_MODE
+# define GMM_WITH_LEGACY_MODE
+#endif
 
 
 /*********************************************************************************************************************************
