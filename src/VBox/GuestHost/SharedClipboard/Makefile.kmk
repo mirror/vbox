@@ -1,10 +1,10 @@
 # $Id$
 ## @file
-# Sub-Makefile for the VirtualBox Guest/Host part
+# Sub-Makefile for the VirtualBox Shared Clipboard guest/host code.
 #
 
 #
-# Copyright (C) 2008-2019 Oracle Corporation
+# Copyright (C) 2020 Oracle Corporation
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -15,20 +15,11 @@
 # hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
 #
 
-SUB_DEPTH = ../../..
+SUB_DEPTH = ../../../..
 include $(KBUILD_PATH)/subheader.kmk
 
-# Include sub-makefile(s).
-ifdef VBOX_WITH_HGSMI
- include $(PATH_SUB_CURRENT)/HGSMI/Makefile.kmk
-endif
-
-ifdef VBOX_WITH_DRAG_AND_DROP
- include $(PATH_SUB_CURRENT)/DragAndDrop/Makefile.kmk
-endif
-
-ifdef VBOX_WITH_HGCM
- include $(PATH_SUB_CURRENT)/SharedClipboard/Makefile.kmk
+ifdef VBOX_WITH_TESTCASES
+ include $(PATH_SUB_CURRENT)/testcases/Makefile.kmk
 endif
 
 include $(FILE_KBUILD_SUB_FOOTER)
