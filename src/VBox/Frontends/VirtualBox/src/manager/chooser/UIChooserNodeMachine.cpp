@@ -24,7 +24,7 @@ UIChooserNodeMachine::UIChooserNodeMachine(UIChooserNode *pParent,
                                            int  iPosition,
                                            const CMachine &comMachine)
     : UIChooserNode(pParent, fFavorite)
-    , UIVirtualMachineItem(comMachine)
+    , m_pCache(new UIVirtualMachineItem(comMachine))
 {
     if (parentNode())
         parentNode()->addNode(this, iPosition);
@@ -35,7 +35,7 @@ UIChooserNodeMachine::UIChooserNodeMachine(UIChooserNode *pParent,
                                            UIChooserNodeMachine *pCopyFrom,
                                            int iPosition)
     : UIChooserNode(pParent, pCopyFrom->isFavorite())
-    , UIVirtualMachineItem(pCopyFrom->machine())
+    , m_pCache(new UIVirtualMachineItem(pCopyFrom->cache()->machine()))
 {
     if (parentNode())
         parentNode()->addNode(this, iPosition);
@@ -51,7 +51,7 @@ UIChooserNodeMachine::~UIChooserNodeMachine()
 
 QString UIChooserNodeMachine::name() const
 {
-    return UIVirtualMachineItem::name();
+    return m_pCache->name();
 }
 
 QString UIChooserNodeMachine::fullName() const
@@ -103,7 +103,7 @@ void UIChooserNodeMachine::removeNode(UIChooserNode *pNode)
 void UIChooserNodeMachine::removeAllNodes(const QUuid &uId)
 {
     /* Skip other ids: */
-    if (id() != uId)
+    if (m_pCache->id() != uId)
         return;
 
     /* Remove this node: */
@@ -113,11 +113,11 @@ void UIChooserNodeMachine::removeAllNodes(const QUuid &uId)
 void UIChooserNodeMachine::updateAllNodes(const QUuid &uId)
 {
     /* Skip other ids: */
-    if (id() != uId)
+    if (m_pCache->id() != uId)
         return;
 
-    /* Update machine-node: */
-    recache();
+    /* Update cache: */
+    m_pCache->recache();
 
     /* Update machine-item: */
     if (item())
@@ -159,7 +159,7 @@ void UIChooserNodeMachine::sortNodes()
 
 void UIChooserNodeMachine::retranslateUi()
 {
-    /* Update description: */
+    /* Update internal stuff: */
     m_strDescription = tr("Virtual Machine");
 
     /* Update machine-item: */

@@ -502,7 +502,7 @@ int UIChooserAbstractModel::getDesiredNodePosition(UIChooserNode *pParentNode, U
             UIChooserNode *pNode = nodes[i];
             /* Which position should be current node placed by definitions? */
             QString strDefinitionName = pNode->type() == UIChooserItemType_Group ? pNode->name() :
-                                        pNode->type() == UIChooserItemType_Machine ? toOldStyleUuid(pNode->toMachineNode()->id()) :
+                                        pNode->type() == UIChooserItemType_Machine ? toOldStyleUuid(pNode->toMachineNode()->cache()->id()) :
                                         QString();
             AssertMsg(!strDefinitionName.isEmpty(), ("Wrong definition name!"));
             int iNodeDefinitionPosition = getDefinedNodePosition(pParentNode, enmType, strDefinitionName);
@@ -619,8 +619,8 @@ void UIChooserAbstractModel::gatherGroupDefinitions(QMap<QString, QStringList> &
     /* Iterate over all the machine-nodes: */
     foreach (UIChooserNode *pNode, pParentGroup->nodes(UIChooserItemType_Machine))
         if (UIChooserNodeMachine *pMachineNode = pNode->toMachineNode())
-            if (pMachineNode->accessible())
-                definitions[toOldStyleUuid(pMachineNode->id())] << pParentGroup->fullName();
+            if (pMachineNode->cache()->accessible())
+                definitions[toOldStyleUuid(pMachineNode->cache()->id())] << pParentGroup->fullName();
     /* Iterate over all the group-nodes: */
     foreach (UIChooserNode *pNode, pParentGroup->nodes(UIChooserItemType_Group))
         gatherGroupDefinitions(definitions, pNode);
@@ -646,7 +646,7 @@ void UIChooserAbstractModel::gatherGroupOrders(QMap<QString, QStringList> &order
     }
     /* Iterate over all the machine-nodes: */
     foreach (UIChooserNode *pNode, pParentItem->nodes(UIChooserItemType_Machine))
-        orders[strExtraDataKey] << QString("m=%1").arg(toOldStyleUuid(pNode->toMachineNode()->id()));
+        orders[strExtraDataKey] << QString("m=%1").arg(toOldStyleUuid(pNode->toMachineNode()->cache()->id()));
 }
 
 void UIChooserAbstractModel::makeSureGroupDefinitionsSaveIsFinished()
