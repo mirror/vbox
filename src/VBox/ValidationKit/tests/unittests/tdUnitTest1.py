@@ -117,94 +117,95 @@ class tdUnitTest1(vbox.TestDriver):
     ## The permanent exclude list.
     # @note Stripped of extensions!
     kdTestCasesBlackList = {
-        'testcase/tstClipboardX11Smoke': '',
+        'testcase/tstClipboardX11Smoke': '',            # (Old naming, deprecated) Needs X, not available on all test boxes.
+        'testcase/tstClipboardGH-X11Smoke': '',         # (New name) Ditto.
         'testcase/tstFileLock': '',
-        'testcase/tstDisasm-2': '',         # without parameters it will disassembler 1GB starting from 0
-        'testcase/tstFileAppendWin-1': '',
-        'testcase/tstDir': '',              # useless without parameters
-        'testcase/tstDir-2': '',            # useless without parameters
-        'testcase/tstGlobalConfig': '',
-        'testcase/tstHostHardwareLinux': '', # must be killed with CTRL-C
-        'testcase/tstHttp': '',             # Talks to outside servers.
-        'testcase/tstRTHttp': '',           # parameters required
-        'testcase/tstLdr-2': '',            # parameters required
-        'testcase/tstLdr-3': '',            # parameters required
-        'testcase/tstLdr': '',              # parameters required
-        'testcase/tstLdrLoad': '',          # parameters required
-        'testcase/tstMove': '',             # parameters required
-        'testcase/tstRTR0Timer': '',        # loads 'tstRTR0Timer.r0'
-        'testcase/tstRTR0ThreadDriver': '', # loads 'tstRTR0Thread.r0'
-        'testcase/tstRunTestcases': '',     # that's a script like this one
-        'testcase/tstRTReqPool': '',        # fails sometimes, testcase buggy
-        'testcase/tstRTS3': '',             # parameters required
-        'testcase/tstSDL': '',              # graphics test
-        'testcase/tstSupLoadModule': '',    # Needs parameters and vboxdrv access. Covered elsewhere.
-        'testcase/tstSeamlessX11': '',      # graphics test
-        'testcase/tstTime-3': '',           # parameters required
-        'testcase/tstVBoxControl': '',      # works only inside a guest
-        'testcase/tstVDCopy': '',           # parameters required
-        'testcase/tstVDFill': '',           # parameters required
-        'tstAnimate': '',                   # parameters required
-        'testcase/tstAPI': '',              # user interaction required
-        'tstCollector': '',                 # takes forever
-        'testcase/tstHeadless': '',         # parameters required
-        'tstHeadless': '',                  # parameters required
-        'tstMicroRC': '',                   # required by tstMicro
-        'tstVBoxDbg': '',                   # interactive test
-        'testcase/tstTestServMgr': '',      # some strange xpcom18a4 test, does not work
-        'tstTestServMgr': '',               # some strange xpcom18a4 test, does not work
-        'tstPDMAsyncCompletion': '',        # parameters required
-        'testcase/tstXptDump': '',          # parameters required
-        'tstXptDump': '',                   # parameters required
-        'testcase/tstnsIFileEnumerator': '', # some strange xpcom18a4 test, does not work
-        'tstnsIFileEnumerator': '',         # some strange xpcom18a4 test, does not work
-        'testcase/tstSimpleTypeLib': '',    # parameters required
-        'tstSimpleTypeLib': '',             # parameters required
-        'testcase/tstTestAtoms': '',        # additional test file (words.txt) required
-        'tstTestAtoms': '',                 # additional test file (words.txt) required
-        'testcase/tstXptLink': '',          # parameters required
-        'tstXptLink': '',                   # parameters required
-        'tstXPCOMCGlue': '',                # user interaction required
-        'testcase/tstXPCOMCGlue': '',       # user interaction required
-        'testcase/tstCAPIGlue': '',         # user interaction required
-        'testcase/tstTestCallTemplates': '',  # some strange xpcom18a4 test, segfaults
-        'tstTestCallTemplates': '',         # some strange xpcom18a4 test, segfaults
-        'testcase/tstRTFilesystem': '',     # parameters required
-        'testcase/tstRTDvm': '',            # parameters required
-        # later
-        'testcase/tstIntNetR0': '',         # RTSPINLOCK_FLAGS_INTERRUPT_SAFE == RTSPINLOCK_FLAGS_INTERRUPT_UNSAFE
-        # slow stuff
-        'testcase/tstAvl': '',              # SLOW!
-        'testcase/tstRTAvl': '',            # SLOW! (new name)
-        'testcase/tstVD': '',               # 8GB fixed-sized vmdk
-        # failed or hang
-        'testcase/tstCryptoPkcs7Verify': '', # hang
-        'tstOVF': '',                       # hang (only ancient version, now in new place)
-        'testcase/tstOVF': '',              # Creates mess when fails, needs to be run in a separate test.
-        'testcase/tstRTLockValidator': '',  # Lock validation is not enabled for critical sections
-        'testcase/tstGuestControlSvc': '',  # failed: line 288: testHost(&svcTable): expected VINF_SUCCESS, got VERR_NOT_FOUND
-        'testcase/tstRTMemEf': '',          # failed w/o error message
-        'testcase/tstSupSem': '',           # failed: SRE Timeout Accuracy (ms) : FAILED (1 errors)
-        'testcase/tstCryptoPkcs7Sign': '',# failed: 29330:error:02001002:lib(2):func(1):reason(2):NA:0:fopen('server.pem': '','r')
-        'testcase/tstCompressionBenchmark': '', # failed: error: RTZipBlockCompress failed
-                                                # for 'RTZipBlock/LZJB' (#4): VERR_NOT_SUPPORTED
-        'tstPDMAsyncCompletionStress': '',  # VERR_INVALID_PARAMETER (cbSize = 0)
-        'tstMicro': '',                     # doesn't work on solaris, fix later if we care.
-        'tstVMM-HwAccm': '',                # failed: Only checked AMD-V on linux
-        'tstVMM-HM': '',                    # failed: Only checked AMD-V on linux
-        'tstVMMFork': '',                   # failed: xtracker 6171
-        'tstTestFactory': '',               # some strange xpcom18a4 test, does not work
-        'testcase/tstRTSemXRoads': '',      # sporadically failed: Traffic - 8 threads per direction, 10 sec : FAILED (8 errors)
-        'tstVBoxAPILinux': '',              # creates VirtualBox directories for root user because of sudo (should be in vbox)
-        'testcase/tstVMStructDTrace': '',   # This is a D-script generator.
-        'tstVMStructRC': '',                # This is a C-code generator.
-        'tstDeviceStructSizeRC': '',        # This is a C-code generator.
-        'testcase/tstTSC': '',              # Doesn't test anything and might fail with HT or/and too many cores.
-        'testcase/tstOpenUSBDev': '',       # Not a useful testcase.
-        'testcase/tstX86-1': '',            # Really more guest side.
-        'testcase/tstX86-FpuSaveRestore': '', # Experiments, could be useful for the guest not the host.
-        'tstAsmStructsRC': '',              # Testcase run during build time (fails to find libstdc++.so.6 on some
-                                            # Solaris testboxes).
+        'testcase/tstDisasm-2': '',                     # without parameters it will disassembler 1GB starting from 0
+        'testcase/tstFileAppendWin-1': '',              
+        'testcase/tstDir': '',                          # useless without parameters
+        'testcase/tstDir-2': '',                        # useless without parameters
+        'testcase/tstGlobalConfig': '',                 
+        'testcase/tstHostHardwareLinux': '',            # must be killed with CTRL-C
+        'testcase/tstHttp': '',                         # Talks to outside servers.
+        'testcase/tstRTHttp': '',                       # parameters required
+        'testcase/tstLdr-2': '',                        # parameters required
+        'testcase/tstLdr-3': '',                        # parameters required
+        'testcase/tstLdr': '',                          # parameters required
+        'testcase/tstLdrLoad': '',                      # parameters required
+        'testcase/tstMove': '',                         # parameters required
+        'testcase/tstRTR0Timer': '',                    # loads 'tstRTR0Timer.r0'
+        'testcase/tstRTR0ThreadDriver': '',             # loads 'tstRTR0Thread.r0'
+        'testcase/tstRunTestcases': '',                 # that's a script like this one
+        'testcase/tstRTReqPool': '',                    # fails sometimes, testcase buggy
+        'testcase/tstRTS3': '',                         # parameters required
+        'testcase/tstSDL': '',                          # graphics test
+        'testcase/tstSupLoadModule': '',                # Needs parameters and vboxdrv access. Covered elsewhere.
+        'testcase/tstSeamlessX11': '',                  # graphics test
+        'testcase/tstTime-3': '',                       # parameters required
+        'testcase/tstVBoxControl': '',                  # works only inside a guest
+        'testcase/tstVDCopy': '',                       # parameters required
+        'testcase/tstVDFill': '',                       # parameters required
+        'tstAnimate': '',                               # parameters required
+        'testcase/tstAPI': '',                          # user interaction required
+        'tstCollector': '',                             # takes forever
+        'testcase/tstHeadless': '',                     # parameters required
+        'tstHeadless': '',                              # parameters required
+        'tstMicroRC': '',                               # required by tstMicro
+        'tstVBoxDbg': '',                               # interactive test
+        'testcase/tstTestServMgr': '',                  # some strange xpcom18a4 test, does not work
+        'tstTestServMgr': '',                           # some strange xpcom18a4 test, does not work
+        'tstPDMAsyncCompletion': '',                    # parameters required
+        'testcase/tstXptDump': '',                      # parameters required
+        'tstXptDump': '',                               # parameters required
+        'testcase/tstnsIFileEnumerator': '',            # some strange xpcom18a4 test, does not work
+        'tstnsIFileEnumerator': '',                     # some strange xpcom18a4 test, does not work
+        'testcase/tstSimpleTypeLib': '',                # parameters required
+        'tstSimpleTypeLib': '',                         # parameters required
+        'testcase/tstTestAtoms': '',                    # additional test file (words.txt) required
+        'tstTestAtoms': '',                             # additional test file (words.txt) required
+        'testcase/tstXptLink': '',                      # parameters required
+        'tstXptLink': '',                               # parameters required
+        'tstXPCOMCGlue': '',                            # user interaction required
+        'testcase/tstXPCOMCGlue': '',                   # user interaction required
+        'testcase/tstCAPIGlue': '',                     # user interaction required
+        'testcase/tstTestCallTemplates': '',            # some strange xpcom18a4 test, segfaults
+        'tstTestCallTemplates': '',                     # some strange xpcom18a4 test, segfaults
+        'testcase/tstRTFilesystem': '',                 # parameters required
+        'testcase/tstRTDvm': '',                        # parameters required
+        # later                                         
+        'testcase/tstIntNetR0': '',                     # RTSPINLOCK_FLAGS_INTERRUPT_SAFE == RTSPINLOCK_FLAGS_INTERRUPT_UNSAFE
+        # slow stuff                                    
+        'testcase/tstAvl': '',                          # SLOW!
+        'testcase/tstRTAvl': '',                        # SLOW! (new name)
+        'testcase/tstVD': '',                           # 8GB fixed-sized vmdk
+        # failed or hang                                
+        'testcase/tstCryptoPkcs7Verify': '',            # hang
+        'tstOVF': '',                                   # hang (only ancient version, now in new place)
+        'testcase/tstOVF': '',                          # Creates mess when fails, needs to be run in a separate test.
+        'testcase/tstRTLockValidator': '',              # Lock validation is not enabled for critical sections
+        'testcase/tstGuestControlSvc': '',              # failed: line 288: testHost(&svcTable): expected VINF_SUCCESS, got VERR_NOT_FOUND
+        'testcase/tstRTMemEf': '',                      # failed w/o error message
+        'testcase/tstSupSem': '',                       # failed: SRE Timeout Accuracy (ms) : FAILED (1 errors)
+        'testcase/tstCryptoPkcs7Sign': '',              # failed: 29330:error:02001002:lib(2):func(1):reason(2):NA:0:fopen('server.pem': '','r')
+        'testcase/tstCompressionBenchmark': '',         # failed: error: RTZipBlockCompress failed
+                                                        # for 'RTZipBlock/LZJB' (#4): VERR_NOT_SUPPORTED
+        'tstPDMAsyncCompletionStress': '',              # VERR_INVALID_PARAMETER (cbSize = 0)
+        'tstMicro': '',                                 # doesn't work on solaris, fix later if we care.
+        'tstVMM-HwAccm': '',                            # failed: Only checked AMD-V on linux
+        'tstVMM-HM': '',                                # failed: Only checked AMD-V on linux
+        'tstVMMFork': '',                               # failed: xtracker 6171
+        'tstTestFactory': '',                           # some strange xpcom18a4 test, does not work
+        'testcase/tstRTSemXRoads': '',                  # sporadically failed: Traffic - 8 threads per direction, 10 sec : FAILED (8 errors)
+        'tstVBoxAPILinux': '',                          # creates VirtualBox directories for root user because of sudo (should be in vbox)
+        'testcase/tstVMStructDTrace': '',               # This is a D-script generator.
+        'tstVMStructRC': '',                            # This is a C-code generator.
+        'tstDeviceStructSizeRC': '',                    # This is a C-code generator.
+        'testcase/tstTSC': '',                          # Doesn't test anything and might fail with HT or/and too many cores.
+        'testcase/tstOpenUSBDev': '',                   # Not a useful testcase.
+        'testcase/tstX86-1': '',                        # Really more guest side.
+        'testcase/tstX86-FpuSaveRestore': '',           # Experiments, could be useful for the guest not the host.
+        'tstAsmStructsRC': '',                          # Testcase run during build time (fails to find libstdc++.so.6 on some
+                                                        # Solaris testboxes).
     };
 
     # Suffix exclude list.
