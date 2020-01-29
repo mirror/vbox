@@ -1627,6 +1627,26 @@ class Session(TdTaskBase):
     #def "LSTAT   "
     #def "LIST    "
 
+    @staticmethod
+    def calcFileXferTimeout(cbFile):
+        """
+        Calculates a reasonable timeout for an upload/download given the file size.
+
+        Returns timeout in milliseconds.
+        """
+        return 30000 + cbFile / 256; # 256 KiB/s (picked out of thin air)
+
+    @staticmethod
+    def calcUploadTimeout(sLocalFile):
+        """
+        Calculates a reasonable timeout for an upload given the file (will stat it).
+
+        Returns timeout in milliseconds.
+        """
+        try:    cbFile = os.path.getsize(sLocalFile);
+        except: cbFile = 1024*1024;
+        return Session.calcFileXferTimeout(cbFile);
+
     def asyncUploadFile(self, sLocalFile, sRemoteFile,
                         fMode = 0, fFallbackOkay = True, cMsTimeout = 30000, fIgnoreErrors = False):
         """
@@ -1639,12 +1659,14 @@ class Session(TdTaskBase):
         return self.startTask(cMsTimeout, fIgnoreErrors, "upload",
                               self.taskUploadFile, (sLocalFile, sRemoteFile, fMode, fFallbackOkay));
 
-    def syncUploadFile(self, sLocalFile, sRemoteFile, fMode = 0, fFallbackOkay = True, cMsTimeout = 30000, fIgnoreErrors = False):
+    def syncUploadFile(self, sLocalFile, sRemoteFile, fMode = 0, fFallbackOkay = True, cMsTimeout = 0, fIgnoreErrors = False):
         """Synchronous version."""
+        if cMsTimeout <= 0:
+            cMsTimeout = self.calcUploadTimeout(sLocalFile);
         return self.asyncToSync(self.asyncUploadFile, sLocalFile, sRemoteFile, fMode, fFallbackOkay, cMsTimeout, fIgnoreErrors);
 
     def asyncUploadString(self, sContent, sRemoteFile,
-                          fMode = 0, fFallbackOkay = True, cMsTimeout = 30000, fIgnoreErrors = False):
+                          fMode = 0, fFallbackOkay = True, cMsTimeout = 0, fIgnoreErrors = False):
         """
         Initiates a upload string task.
 
@@ -1652,14 +1674,18 @@ class Session(TdTaskBase):
 
         The task returns True on success, False on failure (logged).
         """
+        if cMsTimeout <= 0:
+            cMsTimeout = self.calcFileXferTimeout(len(sContent));
         return self.startTask(cMsTimeout, fIgnoreErrors, "uploadString",
                               self.taskUploadString, (sContent, sRemoteFile, fMode, fFallbackOkay));
 
-    def syncUploadString(self, sContent, sRemoteFile, fMode = 0, fFallbackOkay = True, cMsTimeout = 30000, fIgnoreErrors = False):
+    def syncUploadString(self, sContent, sRemoteFile, fMode = 0, fFallbackOkay = True, cMsTimeout = 0, fIgnoreErrors = False):
         """Synchronous version."""
+        if cMsTimeout <= 0:
+            cMsTimeout = self.calcFileXferTimeout(len(sContent));
         return self.asyncToSync(self.asyncUploadString, sContent, sRemoteFile, fMode, fFallbackOkay, cMsTimeout, fIgnoreErrors);
 
-    def asyncDownloadFile(self, sRemoteFile, sLocalFile, cMsTimeout = 30000, fIgnoreErrors = False):
+    def asyncDownloadFile(self, sRemoteFile, sLocalFile, cMsTimeout = 120000, fIgnoreErrors = False):
         """
         Initiates a download file task.
 
@@ -1669,7 +1695,7 @@ class Session(TdTaskBase):
         """
         return self.startTask(cMsTimeout, fIgnoreErrors, "downloadFile", self.taskDownloadFile, (sRemoteFile, sLocalFile));
 
-    def syncDownloadFile(self, sRemoteFile, sLocalFile, cMsTimeout = 30000, fIgnoreErrors = False):
+    def syncDownloadFile(self, sRemoteFile, sLocalFile, cMsTimeout = 120000, fIgnoreErrors = False):
         """Synchronous version."""
         return self.asyncToSync(self.asyncDownloadFile, sRemoteFile, sLocalFile, cMsTimeout, fIgnoreErrors);
 
@@ -1691,7 +1717,7 @@ class Session(TdTaskBase):
         return self.asyncToSync(self.asyncDownloadString, sRemoteFile, sEncoding, fIgnoreEncodingErrors,
                                 cMsTimeout, fIgnoreErrors);
 
-    def asyncUnpackFile(self, sRemoteFile, sRemoteDir, cMsTimeout = 30000, fIgnoreErrors = False):
+    def asyncUnpackFile(self, sRemoteFile, sRemoteDir, cMsTimeout = 120000, fIgnoreErrors = False):
         """
         Initiates a unpack file task.
 
@@ -1702,7 +1728,7 @@ class Session(TdTaskBase):
         return self.startTask(cMsTimeout, fIgnoreErrors, "unpackFile", self.taskUnpackFile,
                               (sRemoteFile, sRemoteDir));
 
-    def syncUnpackFile(self, sRemoteFile, sRemoteDir, cMsTimeout = 30000, fIgnoreErrors = False):
+    def syncUnpackFile(self, sRemoteFile, sRemoteDir, cMsTimeout = 120000, fIgnoreErrors = False):
         """Synchronous version."""
         return self.asyncToSync(self.asyncUnpackFile, sRemoteFile, sRemoteDir, cMsTimeout, fIgnoreErrors);
 
