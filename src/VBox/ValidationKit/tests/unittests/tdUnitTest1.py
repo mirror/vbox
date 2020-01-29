@@ -725,6 +725,9 @@ class tdUnitTest1(vbox.TestDriver):
         dTestCasesBuggyForHostOs = self.kdTestCasesBuggyPerOs.get(utils.getHostOs(), []);
         dTestCasesBuggyForHostOs.update(self.kdTestCasesBuggyPerOs.get(utils.getHostOsDotArch(), []));
 
+        ## @todo Add filtering for more specifc OSes (like OL server, doesn't have X installed) by adding a separate
+        #        black list + using utils.getHostOsVersion().
+
         #
         # Process the file list and run everything looking like a testcase.
         #
