@@ -25,10 +25,6 @@
  */
 
 
-#ifdef IN_ICON_FILE
-IDI_ICON1 ICON IN_ICON_FILE
-#endif
-
 #define VS_VERSION_INFO         1
 #define VS_FFI_FILEFLAGSMASK    0x3f
 #define VS_FF_DEBUG             0x01
