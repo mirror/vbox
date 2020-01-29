@@ -148,6 +148,8 @@ typedef struct TMTIMER
     void                 *pvUser;
     /** Flags. */
     uint32_t             fFlags;
+    /** Assigned critical section. */
+    PPDMCRITSECT         pCritSect;
     /** @todo: */
 } TMTIMER;
 
@@ -219,6 +221,32 @@ typedef struct RTDEVDUTIOPORT
 typedef RTDEVDUTIOPORT *PRTDEVDUTIOPORT;
 /** Pointer to a const I/O port handler. */
 typedef const RTDEVDUTIOPORT *PCRTDEVDUTIOPORT;
+
+
+/**
+ * Registered SSM handlers.
+ */
+typedef struct TSTDEVDUTSSM
+{
+    /** Node for the list of registered SSM handlers. */
+    RTLISTNODE                      NdSsm;
+    /** Version */
+    uint32_t                        uVersion;
+    PFNSSMDEVLIVEPREP               pfnLivePrep;
+    PFNSSMDEVLIVEEXEC               pfnLiveExec;
+    PFNSSMDEVLIVEVOTE               pfnLiveVote;
+    PFNSSMDEVSAVEPREP               pfnSavePrep;
+    PFNSSMDEVSAVEEXEC               pfnSaveExec;
+    PFNSSMDEVSAVEDONE               pfnSaveDone;
+    PFNSSMDEVLOADPREP               pfnLoadPrep;
+    PFNSSMDEVLOADEXEC               pfnLoadExec;
+    PFNSSMDEVLOADDONE               pfnLoadDone;
+} TSTDEVDUTSSM;
+/** Pointer to the registered SSM handlers. */
+typedef TSTDEVDUTSSM *PTSTDEVDUTSSM;
+/** Pointer to a const SSM handler. */
+typedef const TSTDEVDUTSSM *PCTSTDEVDUTSSM;
+
 
 /**
  * The Support Driver session state.
@@ -319,8 +347,12 @@ typedef struct TSTDEVDUTINT
     RTLISTANCHOR                    LstMmHeap;
     /** List of PDM threads. */
     RTLISTANCHOR                    LstPdmThreads;
+    /** List of SSM handlers (just one normally). */
+    RTLISTANCHOR                    LstSsmHandlers;
     /** The SUP session we emulate. */
     TSTDEVSUPDRVSESSION             SupSession;
+    /** The NOP critical section. */
+    PDMCRITSECT                     CritSectNop;
     /** The VM state associated with this device. */
     PVM                             pVm;
     /** The registered PCI device instance if this is a PCI device. */

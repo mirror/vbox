@@ -848,6 +848,9 @@ static int tstDevPdmDevCreate(const char *pszName)
         rc = RTCritSectRwInit(&Dut.CritSectLists);
         AssertRC(rc);
 
+        rc = RTCritSectInitEx(&Dut.CritSectNop.s.CritSect, RTCRITSECT_FLAGS_NOP, NIL_RTLOCKVALCLASS, RTLOCKVAL_SUB_CLASS_NONE, "DutNop");
+        AssertRC(rc);
+
         PPDMCRITSECT pCritSect;
         /* Figure out how much we need. */
         uint32_t cb = RT_UOFFSETOF_DYN(PDMDEVINS, achInstanceData[pPdmDev->pReg->cbInstanceCC]);

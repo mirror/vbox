@@ -121,8 +121,24 @@ static DECLCALLBACK(int) pdmR3DevHlp_IoPortCreateEx(PPDMDEVINS pDevIns, RTIOPORT
              pDevIns->pReg->szName, pDevIns->iInstance, cPorts, fFlags, pPciDev, iPciRegion, pfnOut, pfnIn, pfnOutStr, pfnInStr,
              pvUser, pszDesc, pszDesc, paExtDescs, phIoPorts));
 
-    int rc = VERR_NOT_IMPLEMENTED;
-    AssertFailed();
+    /** @todo Verify there is no overlapping. */
+
+    RT_NOREF(pszDesc);
+    int rc = VINF_SUCCESS;
+    PRTDEVDUTIOPORT pIoPort = (PRTDEVDUTIOPORT)RTMemAllocZ(sizeof(RTDEVDUTIOPORT));
+    if (RT_LIKELY(pIoPort))
+    {
+        pIoPort->cPorts      = cPorts;
+        pIoPort->pvUserR3    = pvUser;
+        pIoPort->pfnOutR3    = pfnOut;
+        pIoPort->pfnInR3     = pfnIn;
+        pIoPort->pfnOutStrR3 = pfnOutStr;
+        pIoPort->pfnInStrR3  = pfnInStr;
+        RTListAppend(&pDevIns->Internal.s.pDut->LstIoPorts, &pIoPort->NdIoPorts);
+        *phIoPorts = (IOMIOPORTHANDLE)pIoPort;
+    }
+    else
+        rc = VERR_NO_MEMORY;
 
     LogFlow(("pdmR3DevHlp_IoPortCreateEx: caller='%s'/%d: returns %Rrc (*phIoPorts=%#x)\n",
              pDevIns->pReg->szName, pDevIns->iInstance, rc, *phIoPorts));
@@ -136,11 +152,11 @@ static DECLCALLBACK(int) pdmR3DevHlp_IoPortMap(PPDMDEVINS pDevIns, IOMIOPORTHAND
     PDMDEV_ASSERT_DEVINS(pDevIns);
     LogFlow(("pdmR3DevHlp_IoPortMap: caller='%s'/%d: hIoPorts=%#x Port=%#x\n", pDevIns->pReg->szName, pDevIns->iInstance, hIoPorts, Port));
 
-    int rc = VERR_NOT_IMPLEMENTED;
-    AssertFailed();
+    PRTDEVDUTIOPORT pIoPort = (PRTDEVDUTIOPORT)hIoPorts;
+    pIoPort->PortStart = Port;
 
-    LogFlow(("pdmR3DevHlp_IoPortMap: caller='%s'/%d: returns %Rrc\n", pDevIns->pReg->szName, pDevIns->iInstance, rc));
-    return rc;
+    LogFlow(("pdmR3DevHlp_IoPortMap: caller='%s'/%d: returns VINF_SUCCESS\n", pDevIns->pReg->szName, pDevIns->iInstance, VINF_SUCCESS));
+    return VINF_SUCCESS;
 }
 
 
@@ -394,10 +410,25 @@ static DECLCALLBACK(int) pdmR3DevHlp_SSMRegister(PPDMDEVINS pDevIns, uint32_t uV
              pfnSavePrep, pfnSaveExec, pfnSaveDone,
              pfnLoadPrep, pfnLoadExec, pfnLoadDone));
 
-    RT_NOREF(uVersion, cbGuess, pszBefore, pfnLivePrep, pfnLiveExec, pfnLiveVote, pfnSavePrep, pfnSaveExec, pfnSaveDone,
-             pfnLoadPrep, pfnLoadExec, pfnLoadDone);
-    int rc = VERR_NOT_IMPLEMENTED;
-    AssertFailed();
+    RT_NOREF(cbGuess, pszBefore);
+    int rc = VINF_SUCCESS;
+    PTSTDEVDUTSSM pSsm = (PTSTDEVDUTSSM)RTMemAllocZ(sizeof(*pSsm));
+    if (RT_LIKELY(pSsm))
+    {
+        pSsm->uVersion      = uVersion;
+        pSsm->pfnLivePrep   = pfnLivePrep;
+        pSsm->pfnLiveExec   = pfnLiveExec;
+        pSsm->pfnLiveVote   = pfnLiveVote;
+        pSsm->pfnSavePrep   = pfnSavePrep;
+        pSsm->pfnSaveExec   = pfnSaveExec;
+        pSsm->pfnSaveDone   = pfnSaveDone;
+        pSsm->pfnLoadPrep   = pfnLoadPrep;
+        pSsm->pfnLoadExec   = pfnLoadExec;
+        pSsm->pfnLoadDone   = pfnLoadDone;
+        RTListAppend(&pDevIns->Internal.s.pDut->LstSsmHandlers, &pSsm->NdSsm);
+    }
+    else
+        rc = VERR_NO_MEMORY;
 
     LogFlow(("pdmR3DevHlp_SSMRegister: caller='%s'/%d: returns %Rrc\n", pDevIns->pReg->szName, pDevIns->iInstance, rc));
     return rc;
@@ -1092,8 +1123,19 @@ static DECLCALLBACK(int) pdmR3DevHlp_TimerCreate(PPDMDEVINS pDevIns, TMCLOCK enm
     LogFlow(("pdmR3DevHlp_TimerCreate: caller='%s'/%d: enmClock=%d pfnCallback=%p pvUser=%p fFlags=%#x pszDesc=%p:{%s} phTimer=%p\n",
              pDevIns->pReg->szName, pDevIns->iInstance, enmClock, pfnCallback, pvUser, fFlags, pszDesc, pszDesc, phTimer));
 
-    int rc = VERR_NOT_IMPLEMENTED;
-    AssertFailed();
+    int rc = VINF_SUCCESS;
+    PTMTIMERR3 pTimer = (PTMTIMERR3)RTMemAllocZ(sizeof(TMTIMER));
+    if (RT_LIKELY(pTimer))
+    {
+        pTimer->enmClock       = enmClock;
+        pTimer->pfnCallbackDev = pfnCallback;
+        pTimer->pvUser         = pvUser;
+        pTimer->fFlags         = fFlags;
+        RTListAppend(&pDevIns->Internal.s.pDut->LstTimers, &pTimer->NdDevTimers);
+        *phTimer = (TMTIMERHANDLE)pTimer;
+    }
+    else
+        rc = VERR_NO_MEMORY;
 
     LogFlow(("pdmR3DevHlp_TimerCreate: caller='%s'/%d: returns %Rrc\n", pDevIns->pReg->szName, pDevIns->iInstance, rc));
     return rc;
@@ -1278,8 +1320,14 @@ static DECLCALLBACK(int) pdmR3DevHlp_TimerSetRelative(PPDMDEVINS pDevIns, TMTIME
 static DECLCALLBACK(int) pdmR3DevHlp_TimerStop(PPDMDEVINS pDevIns, TMTIMERHANDLE hTimer)
 {
     RT_NOREF(pDevIns, hTimer);
+
+#if 1 /** @todo */
+    int rc = VINF_SUCCESS;
+#else
     int rc = VERR_NOT_IMPLEMENTED;
     AssertFailed();
+#endif
+
     return rc;
 }
 
@@ -1303,10 +1351,11 @@ static DECLCALLBACK(void) pdmR3DevHlp_TimerUnlockClock2(PPDMDEVINS pDevIns, TMTI
 /** @interface_method_impl{PDMDEVHLPR3,pfnTimerSetCritSect} */
 static DECLCALLBACK(int) pdmR3DevHlp_TimerSetCritSect(PPDMDEVINS pDevIns, TMTIMERHANDLE hTimer, PPDMCRITSECT pCritSect)
 {
-    RT_NOREF(pDevIns, hTimer, pCritSect);
-    int rc = VERR_NOT_IMPLEMENTED;
-    AssertFailed();
-    return rc;
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+
+    PTMTIMERR3 pTimer = (PTMTIMERR3)hTimer;
+    pTimer->pCritSect = pCritSect;
+    return VINF_SUCCESS;
 }
 
 
@@ -2843,8 +2892,12 @@ static DECLCALLBACK(int) pdmR3DevHlp_DriverAttach(PPDMDEVINS pDevIns, uint32_t i
     LogFlow(("pdmR3DevHlp_DriverAttach: caller='%s'/%d: iLun=%d pBaseInterface=%p ppBaseInterface=%p pszDesc=%p:{%s}\n",
              pDevIns->pReg->szName, pDevIns->iInstance, iLun, pBaseInterface, ppBaseInterface, pszDesc, pszDesc));
 
+#if 1
+    int rc = VERR_PDM_NO_ATTACHED_DRIVER;
+#else
     int rc = VERR_NOT_IMPLEMENTED;
     AssertFailed();
+#endif
 
     LogFlow(("pdmR3DevHlp_DriverAttach: caller='%s'/%d: returns %Rrc\n", pDevIns->pReg->szName, pDevIns->iInstance, rc));
     return rc;
@@ -3250,9 +3303,8 @@ static DECLCALLBACK(int) pdmR3DevHlp_CritSectInit(PPDMDEVINS pDevIns, PPDMCRITSE
     LogFlow(("pdmR3DevHlp_CritSectInit: caller='%s'/%d: pCritSect=%p pszNameFmt=%p:{%s}\n",
              pDevIns->pReg->szName, pDevIns->iInstance, pCritSect, pszNameFmt, pszNameFmt));
 
-    RT_NOREF(pDevIns, pCritSect, RT_SRC_POS_ARGS, pszNameFmt, va);
-    int rc = VERR_NOT_IMPLEMENTED;
-    AssertFailed();
+    RT_NOREF(RT_SRC_POS_ARGS, pszNameFmt, va);
+    int rc = RTCritSectInit(&pCritSect->s.CritSect);
 
     LogFlow(("pdmR3DevHlp_CritSectInit: caller='%s'/%d: returns %Rrc\n", pDevIns->pReg->szName, pDevIns->iInstance, rc));
     return rc;
@@ -3264,8 +3316,7 @@ static DECLCALLBACK(PPDMCRITSECT) pdmR3DevHlp_CritSectGetNop(PPDMDEVINS pDevIns)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
 
-    PPDMCRITSECT pCritSect = NULL;
-    AssertFailed();
+    PPDMCRITSECT pCritSect = &pDevIns->Internal.s.pDut->CritSectNop;
 
     LogFlow(("pdmR3DevHlp_CritSectGetNop: caller='%s'/%d: return %p\n",
              pDevIns->pReg->szName, pDevIns->iInstance, pCritSect));
@@ -3302,23 +3353,16 @@ static DECLCALLBACK(int) pdmR3DevHlp_SetDeviceCritSect(PPDMDEVINS pDevIns, PPDMC
 {
     /*
      * Validate input.
-     *
-     * Note! We only allow the automatically created default critical section
-     *       to be replaced by this API.
      */
     PDMDEV_ASSERT_DEVINS(pDevIns);
     AssertPtrReturn(pCritSect, VERR_INVALID_POINTER);
 
-#if 0
-    LogFlow(("pdmR3DevHlp_SetDeviceCritSect: caller='%s'/%d: pCritSect=%p (%s)\n",
-             pDevIns->pReg->szName, pDevIns->iInstance, pCritSect, pCritSect->s.pszName));
-#endif
+    LogFlow(("pdmR3DevHlp_SetDeviceCritSect: caller='%s'/%d: pCritSect=%p\n",
+             pDevIns->pReg->szName, pDevIns->iInstance, pCritSect));
 
-    int rc = VERR_NOT_IMPLEMENTED;
-    AssertFailed();
-
-    LogFlow(("pdmR3DevHlp_SetDeviceCritSect: caller='%s'/%d: returns %Rrc\n", pDevIns->pReg->szName, pDevIns->iInstance, rc));
-    return rc;
+    pDevIns->pCritSectRoR3 = pCritSect;
+    LogFlow(("pdmR3DevHlp_SetDeviceCritSect: caller='%s'/%d: returns %Rrc\n", pDevIns->pReg->szName, pDevIns->iInstance, VINF_SUCCESS));
+    return VINF_SUCCESS;
 }
 
 
