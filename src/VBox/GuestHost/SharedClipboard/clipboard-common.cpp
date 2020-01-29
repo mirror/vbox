@@ -98,6 +98,9 @@ static void shClEventTerm(PSHCLEVENT pEvent)
     if (!pEvent)
         return;
 
+    AssertMsgReturnVoid(pEvent->cRefs == 0, ("Event %RU32 still has %RU32 references\n",
+                                             pEvent->idEvent, pEvent->cRefs));
+
     LogFlowFunc(("Event %RU32\n", pEvent->idEvent));
 
     if (pEvent->hEvtMulSem != NIL_RTSEMEVENT)
