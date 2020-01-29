@@ -51,6 +51,22 @@ typedef enum _SHCLX11FMT
 #endif
 } SHCLX11FMT;
 
+/**
+ * The table maps X11 names to data formats
+ * and to the corresponding VBox clipboard formats.
+ */
+typedef struct SHCLX11FMTTABLE
+{
+    /** The X11 atom name of the format (several names can match one format). */
+    const char     *pcszAtom;
+    /** The format corresponding to the name. */
+    SHCLX11FMT      enmFmtX11;
+    /** The corresponding VBox clipboard format. */
+    SHCLFORMAT      uFmtVBox;
+} SHCLX11FMTTABLE;
+
+#define NIL_CLIPX11FORMAT   0
+
 /** Defines an index of the X11 clipboad format table. */
 typedef unsigned SHCLX11FMTIDX;
 
