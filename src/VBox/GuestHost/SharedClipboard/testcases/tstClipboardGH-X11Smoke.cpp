@@ -51,7 +51,7 @@ int main()
      * Init the runtime, test and say hello.
      */
     RTTEST hTest;
-    int rc = RTTestInitAndCreate("tstClipboardX11GH-Smoke", &hTest);
+    int rc = RTTestInitAndCreate("tstClipboardGH-X11Smoke", &hTest);
     if (rc)
         return rc;
     RTTestBanner(hTest);
