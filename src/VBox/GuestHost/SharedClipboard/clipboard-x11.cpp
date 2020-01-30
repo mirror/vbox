@@ -132,6 +132,28 @@ SHCL_X11_DECL(SHCLX11FMTTABLE) g_aFormats[] =
 };
 
 
+#ifdef TESTCASE
+# ifdef RT_OS_SOLARIS_10
+char XtStrings [] = "";
+WidgetClassRec* applicationShellWidgetClass;
+char XtShellStrings [] = "";
+int XmbTextPropertyToTextList(
+    Display*            /* display */,
+    XTextProperty*      /* text_prop */,
+    char***             /* list_return */,
+    int*                /* count_return */
+)
+{
+  return 0;
+}
+# else
+const char XtStrings [] = "";
+_WidgetClassRec* applicationShellWidgetClass;
+const char XtShellStrings [] = "";
+# endif /* RT_OS_SOLARIS_10 */
+#endif /* TESTCASE */
+
+
 /*********************************************************************************************************************************
 *   Defines                                                                                                                      *
 *********************************************************************************************************************************/
@@ -769,13 +791,14 @@ typedef struct
     Time selection_timestamp;
 } XFixesSelectionNotifyEvent;
 
+#ifndef TESTCASE
 /**
  * Waits until an event arrives and handle it if it is an XFIXES selection
  * event, which Xt doesn't know about.
  *
  * @param   pCtx                The X11 clipboard context to use.
  */
-void clipPeekEventAndDoXFixesHandling(PSHCLX11CTX pCtx)
+static void clipPeekEventAndDoXFixesHandling(PSHCLX11CTX pCtx)
 {
     union
     {
@@ -797,7 +820,6 @@ void clipPeekEventAndDoXFixesHandling(PSHCLX11CTX pCtx)
     }
 }
 
-#ifndef TESTCASE
 /**
  * The main loop of our X11 event thread.
  *
@@ -979,6 +1001,7 @@ static int clipInit(PSHCLX11CTX pCtx)
            LogRel(("Shared Clipboard: Failed to load the XFIXES extension\n"));
     }
 #endif
+
     if (RT_SUCCESS(rc))
     {
         pCtx->pWidget = XtVaAppCreateShell(0, "VBoxShCl",
@@ -993,6 +1016,7 @@ static int clipInit(PSHCLX11CTX pCtx)
         else
             rc = clipRegisterContext(pCtx);
     }
+
     if (RT_SUCCESS(rc))
     {
         XtSetMappedWhenManaged(pCtx->pWidget, false);
