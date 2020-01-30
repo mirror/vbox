@@ -68,7 +68,7 @@ public:
     /** @name Basic attributes.
       * @{ */
         /** Returns cached machine id. */
-        QUuid id() const { return m_uId; }
+        QString id() const { return m_strId; }
         /** Returns cached machine settings file name. */
         QString settingsFile() const { return m_strSettingsFile; }
         /** Returns cached machine name. */
@@ -184,7 +184,7 @@ private:
     /** @name Basic attributes.
       * @{ */
         /** Holds cached machine id. */
-        QUuid        m_uId;
+        QString      m_strId;
         /** Holds cached machine settings file name. */
         QString      m_strSettingsFile;
         /** Holds cached machine name. */

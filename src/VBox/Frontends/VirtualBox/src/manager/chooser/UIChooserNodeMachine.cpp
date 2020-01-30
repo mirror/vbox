@@ -103,7 +103,7 @@ void UIChooserNodeMachine::removeNode(UIChooserNode *pNode)
 void UIChooserNodeMachine::removeAllNodes(const QUuid &uId)
 {
     /* Skip other ids: */
-    if (m_pCache->id() != uId)
+    if (QUuid(m_pCache->id()) != uId)
         return;
 
     /* Remove this node: */
@@ -113,7 +113,7 @@ void UIChooserNodeMachine::removeAllNodes(const QUuid &uId)
 void UIChooserNodeMachine::updateAllNodes(const QUuid &uId)
 {
     /* Skip other ids: */
-    if (m_pCache->id() != uId)
+    if (QUuid(m_pCache->id()) != uId)
         return;
 
     /* Update cache: */
