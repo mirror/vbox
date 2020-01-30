@@ -26,13 +26,14 @@ if defined(VBOX_WITH_TESTCASES) && !defined(VBOX_ONLY_ADDITIONS) && !defined(VBO
   	$(tstClipboardGH-X11_0_OUTDIR)/tstClipboardGH-X11.run \
   	$(tstClipboardGH-X11_0_OUTDIR)/tstClipboardGH-X11Smoke.run
 
-  tstClipboardGH-X11_TEMPLATE = VBOXR3TSTEXE
-  tstClipboardGH-X11_DEFS     = VBOX_WITH_HGCM UNIT_TEST TESTCASE
-  tstClipboardGH-X11_SOURCES  = \
+  tstClipboardGH-X11_TEMPLATE  = VBOXR3TSTEXE
+  tstClipboardGH-X11_DEFS      = VBOX_WITH_HGCM UNIT_TEST TESTCASE
+  tstClipboardGH-X11_SOURCES   = \
 	tstClipboardGH-X11.cpp \
 	../clipboard-x11.cpp \
 	../clipboard-common.cpp
-  tstClipboardGH-X11_CLEAN    = $(tstClipboardGH-X11_0_OUTDIR)/tstClipboardGH-X11.run
+  tstClipboardGH-X11_CXXFLAGS += -Wno-array-bounds
+  tstClipboardGH-X11_CLEAN     = $(tstClipboardGH-X11_0_OUTDIR)/tstClipboardGH-X11.run
 
   tstClipboardGH-X11Smoke_TEMPLATE = VBOXR3TSTEXE
   tstClipboardGH-X11Smoke_DEFS     = VBOX_WITH_HGCM SMOKETEST
