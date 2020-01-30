@@ -45,5 +45,9 @@ include $(PATH_SUB_CURRENT)/installation/Makefile.kmk
 include $(PATH_SUB_CURRENT)/usb/Makefile.kmk
 include $(PATH_SUB_CURRENT)/serial/Makefile.kmk
 
+ifndef VBOX_OSE
+include $(PATH_SUB_CURRENT)/cloud/Makefile.kmk
+endif
+
 $(evalcall def_vbox_validationkit_process_python_sources)
 include $(FILE_KBUILD_SUB_FOOTER)
