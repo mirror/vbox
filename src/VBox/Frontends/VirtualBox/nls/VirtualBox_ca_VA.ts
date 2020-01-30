@@ -18632,7 +18632,7 @@ pas i connectar discos durs més avant, fent servir el diàleg de configuració 
     </message>
 </context>
 <context>
-    <name>UIVMListView</name>
+    <name>UIVirtualMachineItem</name>
     <message>
         <source>Inaccessible</source>
         <translation>No s&apos;hi pot accedir</translation>

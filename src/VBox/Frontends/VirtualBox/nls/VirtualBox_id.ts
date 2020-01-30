@@ -18607,7 +18607,7 @@ langkah ini dan memasang hard disk pada waktu lain menggunakan dialog Setting Me
     </message>
 </context>
 <context>
-    <name>UIVMListView</name>
+    <name>UIVirtualMachineItem</name>
     <message>
         <source>Inaccessible</source>
         <translation>Tidak dapat diakses</translation>

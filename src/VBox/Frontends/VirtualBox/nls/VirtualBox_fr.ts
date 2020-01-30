@@ -18014,7 +18014,7 @@ And the size is not necessarily &quot;in megabytes&quot;, the slider chooses the
     </message>
 </context>
 <context>
-    <name>UIVMListView</name>
+    <name>UIVirtualMachineItem</name>
     <message>
         <source>Inaccessible</source>
         <translation>Inaccessible</translation>

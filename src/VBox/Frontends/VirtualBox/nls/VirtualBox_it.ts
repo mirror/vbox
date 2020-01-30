@@ -21160,7 +21160,7 @@ questo passo e collegare hard disk più tardi tramite Impostazioni della MV.&lt;
     </message>
 </context>
 <context>
-    <name>UIVMListView</name>
+    <name>UIVirtualMachineItem</name>
     <message>
         <source>Inaccessible</source>
         <translation>Inaccessibile</translation>

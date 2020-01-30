@@ -17403,7 +17403,7 @@
     </message>
 </context>
 <context>
-    <name>UIVMListView</name>
+    <name>UIVirtualMachineItem</name>
     <message>
         <source>Inaccessible</source>
         <translation>Neprieinama</translation>

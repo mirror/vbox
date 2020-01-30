@@ -17945,7 +17945,7 @@
     </message>
 </context>
 <context>
-    <name>UIVMListView</name>
+    <name>UIVirtualMachineItem</name>
     <message>
         <location filename="../src/manager/UIVirtualMachineItem.cpp" line="+56"/>
         <location line="+12"/>

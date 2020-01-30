@@ -10836,7 +10836,7 @@ a guest session</source>
     </message>
 </context>
 <context>
-    <name>UIVMListView</name>
+    <name>UIVirtualMachineItem</name>
     <message>
         <source>Inaccessible</source>
         <translation>不可存取</translation>

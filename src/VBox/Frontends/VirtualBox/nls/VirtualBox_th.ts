@@ -13022,7 +13022,7 @@
     </message>
 </context>
 <context>
-    <name>UIVMListView</name>
+    <name>UIVirtualMachineItem</name>
     <message>
         <source>Inaccessible</source>
         <translation>ไม่สามารถเข้าถึงได้</translation>

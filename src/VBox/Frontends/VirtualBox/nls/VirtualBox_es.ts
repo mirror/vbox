@@ -20329,7 +20329,7 @@ este paso y luego conectar los Discos Duros desde el diálogo de Configuración 
     </message>
 </context>
 <context>
-    <name>UIVMListView</name>
+    <name>UIVirtualMachineItem</name>
     <message>
         <source>Inaccessible</source>
         <translation>Inaccesible</translation>

@@ -15079,7 +15079,7 @@ You may wish to translate this more like &quot;Time remaining: %1&quot;</comment
     </message>
 </context>
 <context>
-    <name>UIVMListView</name>
+    <name>UIVirtualMachineItem</name>
     <message>
         <source>Inaccessible</source>
         <translation>មិនអាច​ចូលដំណើរការ​បាន</translation>
