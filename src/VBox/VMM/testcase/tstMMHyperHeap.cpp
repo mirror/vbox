@@ -182,7 +182,9 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
     }
 
     /* free and allocate the same node again. */
-MMHyperHeapDump(pVM);
+#ifdef DEBUG
+    MMHyperHeapDump(pVM);
+#endif
     for (i = 0; i < RT_ELEMENTS(aOps); i++)
     {
         if (    !aOps[i].pvAlloc
