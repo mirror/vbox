@@ -233,7 +233,6 @@ int pgmR3PoolInit(PVM pVM)
     rc = MMR3HyperAllocOnceNoRel(pVM, cb, 0, MM_TAG_PGM_POOL, (void **)&pPool);
     if (RT_FAILURE(rc))
         return rc;
-memset((uint8_t *)pPool + cb, 0xbb, RT_ALIGN_Z(cb, PAGE_SIZE) - cb); /* Temporary OS X debugging: Color the unused bytes (ASSUMES page aligned alloc). */
     pVM->pgm.s.pPoolR3 = pPool;
     pVM->pgm.s.pPoolR0 = MMHyperR3ToR0(pVM, pPool);
 
@@ -288,8 +287,6 @@ memset((uint8_t *)pPool + cb, 0xbb, RT_ALIGN_Z(cb, PAGE_SIZE) - cb); /* Temporar
     AssertLogRelRCReturn(rc, rc);
 
     pPool->HCPhysTree = 0;
-LogRel(("PGM: pgmR3PoolInit: pPool=%p LB %#x paUsers=%p paPhysExts=%p (pEnd=%p) pVM=%p\n",
-        pPool, cb, pPool->paUsersR3, pPool->paPhysExtsR3, (uint8_t *)pPool + cb, pVM)); // Temporary OS X debugging.
 
     /*
      * The NIL entry.
