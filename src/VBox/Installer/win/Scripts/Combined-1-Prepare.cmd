@@ -179,6 +179,10 @@ if ".%_MY_PACK_EXTPACK%" == ".%_MY_PACK_ADDITIONS%" goto error_extpack_and_addit
 
 set _MY_REPACK_DIR_AMD64=%_MY_OPT_UNTAR_DIR%\win.amd64\%_MY_OPT_BUILD_TYPE%\repack
 set _MY_REPACK_DIR_X86=%_MY_OPT_UNTAR_DIR%\win.x86\%_MY_OPT_BUILD_TYPE%\repack
+if ".%_MY_PACK_ADDITIONS%" == ".0" goto skip_additions_packing_options
+set _MY_REPACK_DIR_AMD64=%_MY_OPT_UNTAR_DIR%\win.amd64\%_MY_OPT_BUILD_TYPE%\repackadd
+set _MY_REPACK_DIR_X86=%_MY_OPT_UNTAR_DIR%\win.x86\%_MY_OPT_BUILD_TYPE%\repackadd
+:skip_additions_packing_options
 if not exist "%_MY_REPACK_DIR_AMD64%"   goto error_amd64_repack_dir_not_found
 if not exist "%_MY_REPACK_DIR_X86%"     goto error_x86_repack_dir_not_found
 

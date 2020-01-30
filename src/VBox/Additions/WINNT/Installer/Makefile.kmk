@@ -241,7 +241,7 @@ $(PATH_STAGE_BIN)/additions/VBoxWindowsAdditions-$(KBUILD_TARGET_ARCH).exe: \
 #
 INSTALLS += RePackScriptsAdd
 RePackScriptsAdd_TEMPLATE = DUMMY
-RePackScriptsAdd_INST = repack/add/
+RePackScriptsAdd_INST = repackadd/
 RePackScriptsAdd_INSTTYPE = stage
 RePackScriptsAdd_SOURCES = \
 	../../../Installer/win/Scripts/UnpackBlessedDrivers.cmd \
@@ -273,7 +273,7 @@ $$(RePackScriptsAdd_0_OUTDIR)/sign-ev.cmd: | $$(dir $$@)
 #
 INSTALLS += RePackScriptsAddResources
 RePackScriptsAddResources_TEMPLATE = DUMMY
-RePackScriptsAddResources_INST = repack/add/resources/
+RePackScriptsAddResources_INST = repackadd/resources/
 RePackScriptsAddResources_INSTTYPE = stage
 RePackScriptsAddResources_DIRS = Languages
 RePackScriptsAddResources_SOURCES = \
