@@ -37,6 +37,7 @@
 
 #define NUM_CPUS  16
 
+#define OUTPUT(a) do { Log(a); RTPrintf a; } while (0)
 
 /**
  *  Entry point.
@@ -181,19 +182,20 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
     }
 
     /* free and allocate the same node again. */
+MMHyperHeapDump(pVM);
     for (i = 0; i < RT_ELEMENTS(aOps); i++)
     {
         if (    !aOps[i].pvAlloc
             ||  aOps[i].uAlignment == PAGE_SIZE)
             continue;
-        //size_t cbBeforeSub = MMHyperHeapGetFreeSize(pVM);
+        size_t cbBeforeSub = MMHyperHeapGetFreeSize(pVM);
         rc = MMHyperFree(pVM, aOps[i].pvAlloc);
         if (RT_FAILURE(rc))
         {
             RTPrintf("Failure: MMHyperFree(, %p,) -> %d i=%d\n", aOps[i].pvAlloc, rc, i);
             return 1;
         }
-        //RTPrintf("debug: i=%d cbBeforeSub=%d now=%d\n", i, cbBeforeSub, MMHyperHeapGetFreeSize(pVM));
+        size_t const cbFreed = MMHyperHeapGetFreeSize(pVM);
         void *pv;
         rc = MMHyperAlloc(pVM, aOps[i].cb, aOps[i].uAlignment, MM_TAG_VM_REQ, &pv);
         if (RT_FAILURE(rc))
@@ -207,14 +209,15 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
             //return 1;
         }
         aOps[i].pvAlloc = pv;
-        #if 0 /* won't work :/ */
+        OUTPUT(("debug: i=%02d cbBeforeSub=%d cbFreed=%d now=%d\n", i, cbBeforeSub, cbFreed, MMHyperHeapGetFreeSize(pVM)));
+#if 0 /* won't work :/ */
         size_t cbAfterSub = MMHyperHeapGetFreeSize(pVM);
         if (cbBeforeSub != cbAfterSub)
         {
             RTPrintf("Failure: cbBeforeSub=%d cbAfterSub=%d. i=%d\n", cbBeforeSub, cbAfterSub, i);
             return 1;
         }
-        #endif
+#endif
     }
 
     /* free it in a specific order. */
@@ -227,7 +230,7 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
             if (    aOps[j].iFreeOrder != i
                 ||  !aOps[j].pvAlloc)
                 continue;
-            RTPrintf("j=%d i=%d free=%d cb=%d pv=%p\n", j, i, MMHyperHeapGetFreeSize(pVM), aOps[j].cb, aOps[j].pvAlloc);
+            OUTPUT(("j=%02d i=%02d free=%d cb=%5u pv=%p\n", j, i, MMHyperHeapGetFreeSize(pVM), aOps[j].cb, aOps[j].pvAlloc));
             if (aOps[j].uAlignment == PAGE_SIZE)
                 cbBefore -= aOps[j].cb;
             else
@@ -244,14 +247,14 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
         }
     }
     Assert(cFreed == RT_ELEMENTS(aOps));
-    RTPrintf("i=done free=%d\n", MMHyperHeapGetFreeSize(pVM));
+    OUTPUT(("i=done free=%d\n", MMHyperHeapGetFreeSize(pVM)));
 
     /* check that we're back at the right amount of free memory. */
     size_t cbAfter = MMHyperHeapGetFreeSize(pVM);
     if (cbBefore != cbAfter)
     {
-        RTPrintf("Warning: Either we've split out an alignment chunk at the start, or we've got\n"
-                 "         an alloc/free accounting bug: cbBefore=%d cbAfter=%d\n", cbBefore, cbAfter);
+        OUTPUT(("Warning: Either we've split out an alignment chunk at the start, or we've got\n"
+                "         an alloc/free accounting bug: cbBefore=%d cbAfter=%d\n", cbBefore, cbAfter));
 #ifdef DEBUG
         MMHyperHeapDump(pVM);
 #endif
