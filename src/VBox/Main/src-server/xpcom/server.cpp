@@ -31,6 +31,7 @@
 #include "LoggingNew.h"
 
 #include <VBox/param.h>
+#include <VBox/version.h>
 
 #include <iprt/buildconfig.h>
 #include <iprt/initterm.h>
@@ -627,6 +628,34 @@ end:
     return rv;
 }
 
+static void showUsage(const char *pcszFileName)
+{
+    RTPrintf(VBOX_PRODUCT " VBoxSVC "
+             VBOX_VERSION_STRING "\n"
+             "(C) 2005-" VBOX_C_YEAR " " VBOX_VENDOR "\n"
+             "All rights reserved.\n"
+             "\n");
+    RTPrintf("By default the service will be started in the background.\n"
+             "\n");
+    RTPrintf("Usage:\n"
+             "\n");
+    RTPrintf("  %s\n", pcszFileName);
+    RTPrintf("\n");
+    RTPrintf("Options:\n");
+    RTPrintf("  -a, --automate            Start XPCOM on demand and daemonize.\n");
+    RTPrintf("  -A, --auto-shutdown       Shuts down service if no longer in use.\n");
+    RTPrintf("  -d, --daemonize           Starts service in background.\n");
+    RTPrintf("  -D, --shutdown-delay <ms> Sets shutdown delay in ms.\n");
+    RTPrintf("  -h, --help                Displays this help.\n");
+    RTPrintf("  -p, --pidfile <path>      Uses a specific pidfile.\n");
+    RTPrintf("  -F, --logfile <path>      Uses a specific logfile.\n");
+    RTPrintf("  -R, --logrotate <count>   Number of old log files to keep.\n");
+    RTPrintf("  -S, --logsize <bytes>     Maximum size of a log file before rotating.\n");
+    RTPrintf("  -I, --loginterval <s>     Maximum amount of time to put in a log file.\n");
+
+    RTPrintf("\n");
+}
+
 int main(int argc, char **argv)
 {
     /*
@@ -642,6 +671,7 @@ int main(int argc, char **argv)
         { "--automate",         'a', RTGETOPT_REQ_NOTHING },
         { "--auto-shutdown",    'A', RTGETOPT_REQ_NOTHING },
         { "--daemonize",        'd', RTGETOPT_REQ_NOTHING },
+        { "--help",             'h', RTGETOPT_REQ_NOTHING },
         { "--shutdown-delay",   'D', RTGETOPT_REQ_UINT32 },
         { "--pidfile",          'p', RTGETOPT_REQ_STRING },
         { "--logfile",          'F', RTGETOPT_REQ_STRING },
@@ -708,7 +738,7 @@ int main(int argc, char **argv)
                 break;
 
             case 'h':
-                RTPrintf("no help\n");
+                showUsage(argv[0]);
                 return RTEXITCODE_SYNTAX;
 
             case 'V':
