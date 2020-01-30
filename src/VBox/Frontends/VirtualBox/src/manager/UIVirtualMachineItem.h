@@ -23,10 +23,12 @@
 
 /* Qt includes: */
 #include <QDateTime>
+#include <QIcon>
 #include <QMimeData>
 #include <QPixmap>
 
 /* GUI includes: */
+#include "QIWithRetranslateUI.h"
 #include "UISettingsDefs.h"
 
 /* COM includes: */
@@ -37,10 +39,11 @@
 /* Using declarations: */
 using namespace UISettingsDefs;
 
-/** Virtual Machine item interface.
-  * A wrapper caching data about local VM. */
-class UIVirtualMachineItem
+/** Virtual Machine item interface. A wrapper caching VM data. */
+class UIVirtualMachineItem : public QIWithRetranslateUI3<QObject>
 {
+    Q_OBJECT;
+
 public:
 
     /** Constructs local VM item on the basis of taken @a comMachine. */
@@ -54,14 +57,6 @@ public:
         CMachine machine() const { return m_comMachine; }
     /** @} */
 
-    /** @name Basic attributes.
-      * @{ */
-        /** Returns cached machine id. */
-        QUuid id() const { return m_uId; }
-        /** Returns cached machine settings file name. */
-        QString settingsFile() const { return m_strSettingsFile; }
-    /** @} */
-
     /** @name VM access attributes.
       * @{ */
         /** Returns whether VM was accessible. */
@@ -70,8 +65,12 @@ public:
         const CVirtualBoxErrorInfo &accessError() const { return m_comAccessError; }
     /** @} */
 
-    /** @name Advanced attributes.
+    /** @name Basic attributes.
       * @{ */
+        /** Returns cached machine id. */
+        QUuid id() const { return m_uId; }
+        /** Returns cached machine settings file name. */
+        QString settingsFile() const { return m_strSettingsFile; }
         /** Returns cached machine name. */
         QString name() const { return m_strName; }
         /** Returns cached machine OS type id. */
@@ -95,14 +94,16 @@ public:
       * @{ */
         /** Returns cached machine state. */
         KMachineState machineState() const { return m_enmMachineState; }
+        /** Returns cached machine state name. */
+        QString machineStateName() const { return m_strMachineStateName; }
+        /** Returns cached machine state icon. */
+        QIcon machineStateIcon() const { return m_machineStateIcon; }
+
         /** Returns cached session state. */
         KSessionState sessionState() const { return m_enmSessionState; }
-        /** Returns cached machine state name. */
-        QString machineStateName() const;
         /** Returns cached session state name. */
-        QString sessionStateName() const;
-        /** Returns cached machine state icon. */
-        QIcon machineStateIcon() const;
+        QString sessionStateName() const { return m_strSessionStateName; }
+
         /** Returns cached configuration access level. */
         ConfigurationAccessLevel configurationAccessLevel() const { return m_enmConfigurationAccessLevel; }
     /** @} */
@@ -110,7 +111,7 @@ public:
     /** @name Visual attributes.
       * @{ */
         /** Returns cached machine tool-tip. */
-        QString toolTipText() const;
+        QString toolTipText() const { return m_strToolTipText; }
     /** @} */
 
     /** @name Console attributes.
@@ -156,20 +157,20 @@ public:
         static bool isItemStuck(UIVirtualMachineItem *pItem);
     /** @} */
 
+protected:
+
+    /** @name Event handling.
+      * @{ */
+        /** Handles translation event. */
+        virtual void retranslateUi() /* override */;
+    /** @} */
+
 private:
 
     /** @name Arguments.
       * @{ */
         /** Holds cached machine object reference. */
         CMachine  m_comMachine;
-    /** @} */
-
-    /** @name Basic attributes.
-      * @{ */
-        /** Holds cached machine id. */
-        QUuid    m_uId;
-        /** Holds cached machine settings file name. */
-        QString  m_strSettingsFile;
     /** @} */
 
     /** @name VM access attributes.
@@ -180,8 +181,12 @@ private:
         CVirtualBoxErrorInfo  m_comAccessError;
     /** @} */
 
-    /** @name Advanced attributes.
+    /** @name Basic attributes.
       * @{ */
+        /** Holds cached machine id. */
+        QUuid        m_uId;
+        /** Holds cached machine settings file name. */
+        QString      m_strSettingsFile;
         /** Holds cached machine name. */
         QString      m_strName;
         /** Holds cached machine OS type id. */
@@ -208,10 +213,24 @@ private:
       * @{ */
         /** Holds cached machine state. */
         KMachineState             m_enmMachineState;
+        /** Holds cached machine state name. */
+        QString                   m_strMachineStateName;
+        /** Holds cached machine state name. */
+        QIcon                     m_machineStateIcon;
+
         /** Holds cached session state. */
         KSessionState             m_enmSessionState;
+        /** Holds cached session state name. */
+        QString                   m_strSessionStateName;
+
         /** Holds configuration access level. */
         ConfigurationAccessLevel  m_enmConfigurationAccessLevel;
+    /** @} */
+
+    /** @name Visual attributes.
+      * @{ */
+        /** Holds cached machine tool-tip. */
+        QString  m_strToolTipText;
     /** @} */
 
     /** @name Console attributes.

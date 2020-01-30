@@ -16,7 +16,6 @@
  */
 
 /* Qt includes: */
-#include <QApplication>
 #include <QFileInfo>
 #include <QIcon>
 
@@ -60,63 +59,6 @@ QPixmap UIVirtualMachineItem::osPixmap(QSize *pLogicalSize /* = 0 */) const
     return m_pixmap;
 }
 
-QString UIVirtualMachineItem::machineStateName() const
-{
-    return   m_fAccessible
-           ? gpConverter->toString(m_enmMachineState)
-           : QApplication::translate("UIVMListView", "Inaccessible");
-}
-
-QString UIVirtualMachineItem::sessionStateName() const
-{
-    return   m_fAccessible
-           ? gpConverter->toString(m_enmSessionState)
-           : QApplication::translate("UIVMListView", "Inaccessible");
-}
-
-QIcon UIVirtualMachineItem::machineStateIcon() const
-{
-    return   m_fAccessible
-           ? gpConverter->toIcon(m_enmMachineState)
-           : gpConverter->toIcon(KMachineState_Aborted);
-}
-
-QString UIVirtualMachineItem::toolTipText() const
-{
-    QString strToolTip;
-
-    const QString strDateTime = (m_lastStateChange.date() == QDate::currentDate())
-                              ? m_lastStateChange.time().toString(Qt::LocalDate)
-                              : m_lastStateChange.toString(Qt::LocalDate);
-
-    if (m_fAccessible)
-    {
-        strToolTip = QString("<b>%1</b>").arg(m_strName);
-        if (!m_strSnapshotName.isNull())
-            strToolTip += QString(" (%1)").arg(m_strSnapshotName);
-        strToolTip = QApplication::translate("UIVMListView",
-                                             "<nobr>%1<br></nobr>"
-                                             "<nobr>%2 since %3</nobr><br>"
-                                             "<nobr>Session %4</nobr>",
-                                             "VM tooltip (name, last state change, session state)")
-                                             .arg(strToolTip)
-                                             .arg(gpConverter->toString(m_enmMachineState))
-                                             .arg(strDateTime)
-                                             .arg(gpConverter->toString(m_enmSessionState).toLower());
-    }
-    else
-    {
-        strToolTip = QApplication::translate("UIVMListView",
-                                             "<nobr><b>%1</b><br></nobr>"
-                                             "<nobr>Inaccessible since %2</nobr>",
-                                             "Inaccessible VM tooltip (name, last state change)")
-                                             .arg(m_strSettingsFile)
-                                             .arg(strDateTime);
-    }
-
-    return strToolTip;
-}
-
 void UIVirtualMachineItem::recache()
 {
     /* Determine attributes which are always available: */
@@ -143,7 +85,10 @@ void UIVirtualMachineItem::recache()
 
         /* Determine VM states: */
         m_enmMachineState = m_comMachine.GetState();
+        m_strMachineStateName = gpConverter->toString(m_enmMachineState);
+        m_machineStateIcon = gpConverter->toIcon(m_enmMachineState);
         m_enmSessionState = m_comMachine.GetSessionState();
+        m_strSessionStateName = gpConverter->toString(m_enmSessionState);
 
         /* Determine configuration access level: */
         m_enmConfigurationAccessLevel = ::configurationAccessLevel(m_enmSessionState, m_enmMachineState);
@@ -190,6 +135,7 @@ void UIVirtualMachineItem::recache()
 
         /* Reset VM states: */
         m_enmMachineState = KMachineState_Null;
+        m_machineStateIcon = gpConverter->toIcon(KMachineState_Aborted);
         m_enmSessionState = KSessionState_Null;
 
         /* Reset configuration access level: */
@@ -204,6 +150,9 @@ void UIVirtualMachineItem::recache()
 
     /* Recache item pixmap: */
     recachePixmap();
+
+    /* Retranslate finally: */
+    retranslateUi();
 }
 
 void UIVirtualMachineItem::recachePixmap()
@@ -227,7 +176,7 @@ void UIVirtualMachineItem::recachePixmap()
 
 bool UIVirtualMachineItem::canSwitchTo() const
 {
-    return const_cast <CMachine &>(m_comMachine).CanShowConsoleWindow();
+    return const_cast <CMachine&>(m_comMachine).CanShowConsoleWindow();
 }
 
 bool UIVirtualMachineItem::switchTo()
@@ -351,6 +300,45 @@ bool UIVirtualMachineItem::isItemStuck(UIVirtualMachineItem *pItem)
     return    pItem
            && pItem->accessible()
            && pItem->machineState() == KMachineState_Stuck;
+}
+
+void UIVirtualMachineItem::retranslateUi()
+{
+    /* This is used in tool-tip generation: */
+    const QString strDateTime = (m_lastStateChange.date() == QDate::currentDate())
+                              ? m_lastStateChange.time().toString(Qt::LocalDate)
+                              : m_lastStateChange.toString(Qt::LocalDate);
+
+    /* If machine is accessible: */
+    if (m_fAccessible)
+    {
+        /* Update tool-tip: */
+        m_strToolTipText = QString("<b>%1</b>").arg(m_strName);
+        if (!m_strSnapshotName.isNull())
+            m_strToolTipText += QString(" (%1)").arg(m_strSnapshotName);
+        m_strToolTipText = tr("<nobr>%1<br></nobr>"
+                              "<nobr>%2 since %3</nobr><br>"
+                              "<nobr>Session %4</nobr>",
+                              "VM tooltip (name, last state change, session state)")
+                              .arg(m_strToolTipText)
+                              .arg(gpConverter->toString(m_enmMachineState))
+                              .arg(strDateTime)
+                              .arg(gpConverter->toString(m_enmSessionState).toLower());
+    }
+    /* Otherwise: */
+    else
+    {
+        /* Update tool-tip: */
+        m_strToolTipText = tr("<nobr><b>%1</b><br></nobr>"
+                              "<nobr>Inaccessible since %2</nobr>",
+                              "Inaccessible VM tooltip (name, last state change)")
+                              .arg(m_strSettingsFile)
+                              .arg(strDateTime);
+
+        /* We have our own translation for Null states: */
+        m_strMachineStateName = tr("Inaccessible");
+        m_strSessionStateName = tr("Inaccessible");
+    }
 }
 
 
