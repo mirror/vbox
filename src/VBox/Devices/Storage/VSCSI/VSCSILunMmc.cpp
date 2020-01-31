@@ -1667,6 +1667,7 @@ static DECLCALLBACK(int) vscsiLunMmcReqProcess(PVSCSILUNINT pVScsiLun, PVSCSIREQ
             {
                 rcReq = vscsiLunReqSenseErrorSet(pVScsiLun, pVScsiReq, SCSI_SENSE_ILLEGAL_REQUEST, SCSI_ASC_LOGICAL_BLOCK_OOR, 0x00);
                 vscsiDeviceReqComplete(pVScsiLun->pVScsiDevice, pVScsiReq, rcReq, false, VINF_SUCCESS);
+                rc = VINF_SUCCESS; /* The request was completed properly, so don't indicate an error here which might cause another completion. */
             }
             else if (   enmDataForm != VDREGIONDATAFORM_MODE1_2048
                      && enmDataForm != VDREGIONDATAFORM_MODE1_2352
