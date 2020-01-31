@@ -1090,3 +1090,12 @@ table.tmsqltable pre {
     overflow:   auto;
 }
 
+
+/*
+ * Workaround for flickering tooltips in the column bar graphs (see
+ * https://github.com/google/google-visualization-issues/issues/2162).
+ */
+.google-visualization-tooltip {
+    pointer-events: none;
+}
+
