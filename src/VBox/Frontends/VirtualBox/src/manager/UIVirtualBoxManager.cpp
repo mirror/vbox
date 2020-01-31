@@ -2044,7 +2044,7 @@ bool UIVirtualBoxManager::isAtLeastOneItemSupportsShortcuts(const QList<UIVirtua
         if (   pItem->accessible()
 #ifdef VBOX_WS_MAC
             /* On Mac OS X this are real alias files, which don't work with the old legacy xml files. */
-            && pItem->settingsFile().endsWith(".vbox", Qt::CaseInsensitive)
+            && pItem->toLocal()->settingsFile().endsWith(".vbox", Qt::CaseInsensitive)
 #endif
             )
             return true;
