@@ -140,21 +140,21 @@ public:
     /** @name Validation stuff.
       * @{ */
         /** Returns whether passed machine @a pItem is editable. */
-        static bool isItemEditable(UIVirtualMachineItem *pItem);
+        bool isItemEditable() const;
         /** Returns whether passed machine @a pItem is saved. */
-        static bool isItemSaved(UIVirtualMachineItem *pItem);
+        bool isItemSaved() const;
         /** Returns whether passed machine @a pItem is powered off. */
-        static bool isItemPoweredOff(UIVirtualMachineItem *pItem);
+        bool isItemPoweredOff() const;
         /** Returns whether passed machine @a pItem is started. */
-        static bool isItemStarted(UIVirtualMachineItem *pItem);
+        bool isItemStarted() const;
         /** Returns whether passed machine @a pItem is running. */
-        static bool isItemRunning(UIVirtualMachineItem *pItem);
+        bool isItemRunning() const;
         /** Returns whether passed machine @a pItem is running headless. */
-        static bool isItemRunningHeadless(UIVirtualMachineItem *pItem);
+        bool isItemRunningHeadless() const;
         /** Returns whether passed machine @a pItem is paused. */
-        static bool isItemPaused(UIVirtualMachineItem *pItem);
+        bool isItemPaused() const;
         /** Returns whether passed machine @a pItem is stuck. */
-        static bool isItemStuck(UIVirtualMachineItem *pItem);
+        bool isItemStuck() const;
     /** @} */
 
 protected:

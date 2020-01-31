@@ -1612,9 +1612,11 @@ void UIVirtualBoxManager::performStartOrShowVirtualMachines(const QList<UIVirtua
             /* Fetch item launch mode: */
             UICommon::LaunchMode enmItemLaunchMode = enmLaunchMode;
             if (enmItemLaunchMode == UICommon::LaunchMode_Invalid)
-                enmItemLaunchMode = UIVirtualMachineItem::isItemRunningHeadless(pItem) ? UICommon::LaunchMode_Separate :
-                                    qApp->keyboardModifiers() == Qt::ShiftModifier     ? UICommon::LaunchMode_Headless :
-                                                                                         UICommon::LaunchMode_Default;
+                enmItemLaunchMode = pItem->isItemRunningHeadless()
+                                  ? UICommon::LaunchMode_Separate
+                                  : qApp->keyboardModifiers() == Qt::ShiftModifier
+                                  ? UICommon::LaunchMode_Headless
+                                  : UICommon::LaunchMode_Default;
 
             /* Launch current VM: */
             CMachine machine = pItem->machine();
@@ -1743,12 +1745,12 @@ void UIVirtualBoxManager::updateActionsAppearance()
     /* Start/Show action is deremined by 1st item: */
     if (pItem && pItem->accessible())
     {
-        actionPool()->action(UIActionIndexST_M_Group_M_StartOrShow)->toActionPolymorphicMenu()->setState(UIVirtualMachineItem::isItemPoweredOff(pItem) ? 0 : 1);
-        actionPool()->action(UIActionIndexST_M_Machine_M_StartOrShow)->toActionPolymorphicMenu()->setState(UIVirtualMachineItem::isItemPoweredOff(pItem) ? 0 : 1);
+        actionPool()->action(UIActionIndexST_M_Group_M_StartOrShow)->toActionPolymorphicMenu()->setState(pItem->isItemPoweredOff() ? 0 : 1);
+        actionPool()->action(UIActionIndexST_M_Machine_M_StartOrShow)->toActionPolymorphicMenu()->setState(pItem->isItemPoweredOff() ? 0 : 1);
         /// @todo Hmm, fix it?
 //        QToolButton *pButton = qobject_cast<QToolButton*>(m_pToolBar->widgetForAction(actionPool()->action(UIActionIndexST_M_Machine_M_StartOrShow)));
 //        if (pButton)
-//            pButton->setPopupMode(UIVirtualMachineItem::isItemPoweredOff(pItem) ? QToolButton::MenuButtonPopup : QToolButton::DelayedPopup);
+//            pButton->setPopupMode(pItem->isItemPoweredOff() ? QToolButton::MenuButtonPopup : QToolButton::DelayedPopup);
     }
     else
     {
@@ -1757,14 +1759,14 @@ void UIVirtualBoxManager::updateActionsAppearance()
         /// @todo Hmm, fix it?
 //        QToolButton *pButton = qobject_cast<QToolButton*>(m_pToolBar->widgetForAction(actionPool()->action(UIActionIndexST_M_Machine_M_StartOrShow)));
 //        if (pButton)
-//            pButton->setPopupMode(UIVirtualMachineItem::isItemPoweredOff(pItem) ? QToolButton::MenuButtonPopup : QToolButton::DelayedPopup);
+//            pButton->setPopupMode(pItem->isItemPoweredOff() ? QToolButton::MenuButtonPopup : QToolButton::DelayedPopup);
     }
 
     /* Pause/Resume action is deremined by 1st started item: */
     UIVirtualMachineItem *pFirstStartedAction = 0;
     foreach (UIVirtualMachineItem *pSelectedItem, items)
     {
-        if (UIVirtualMachineItem::isItemStarted(pSelectedItem))
+        if (pSelectedItem->isItemStarted())
         {
             pFirstStartedAction = pSelectedItem;
             break;
@@ -1772,12 +1774,12 @@ void UIVirtualBoxManager::updateActionsAppearance()
     }
     /* Update the group Pause/Resume action appearance: */
     actionPool()->action(UIActionIndexST_M_Group_T_Pause)->blockSignals(true);
-    actionPool()->action(UIActionIndexST_M_Group_T_Pause)->setChecked(pFirstStartedAction && UIVirtualMachineItem::isItemPaused(pFirstStartedAction));
+    actionPool()->action(UIActionIndexST_M_Group_T_Pause)->setChecked(pFirstStartedAction && pFirstStartedAction->isItemPaused());
     actionPool()->action(UIActionIndexST_M_Group_T_Pause)->retranslateUi();
     actionPool()->action(UIActionIndexST_M_Group_T_Pause)->blockSignals(false);
     /* Update the machine Pause/Resume action appearance: */
     actionPool()->action(UIActionIndexST_M_Machine_T_Pause)->blockSignals(true);
-    actionPool()->action(UIActionIndexST_M_Machine_T_Pause)->setChecked(pFirstStartedAction && UIVirtualMachineItem::isItemPaused(pFirstStartedAction));
+    actionPool()->action(UIActionIndexST_M_Machine_T_Pause)->setChecked(pFirstStartedAction && pFirstStartedAction->isItemPaused());
     actionPool()->action(UIActionIndexST_M_Machine_T_Pause)->retranslateUi();
     actionPool()->action(UIActionIndexST_M_Machine_T_Pause)->blockSignals(false);
 
@@ -1862,7 +1864,7 @@ bool UIVirtualBoxManager::isActionEnabled(int iActionIndex, const QList<UIVirtua
         {
             return !isGroupSavingInProgress() &&
                    items.size() == 1 &&
-                   UIVirtualMachineItem::isItemEditable(pItem);
+                   pItem->isItemEditable();
         }
         case UIActionIndexST_M_Machine_S_ExportToOCI:
         {
@@ -1974,7 +1976,7 @@ bool UIVirtualBoxManager::isActionEnabled(int iActionIndex, const QList<UIVirtua
 bool UIVirtualBoxManager::isItemsPoweredOff(const QList<UIVirtualMachineItem*> &items)
 {
     foreach (UIVirtualMachineItem *pItem, items)
-        if (!UIVirtualMachineItem::isItemPoweredOff(pItem))
+        if (!pItem->isItemPoweredOff())
             return false;
     return true;
 }
@@ -1986,7 +1988,7 @@ bool UIVirtualBoxManager::isAtLeastOneItemAbleToShutdown(const QList<UIVirtualMa
     foreach (UIVirtualMachineItem *pItem, items)
     {
         /* Skip non-running machines: */
-        if (!UIVirtualMachineItem::isItemRunning(pItem))
+        if (!pItem->isItemRunning())
             continue;
         /* Skip session failures: */
         CSession session = uiCommon().openExistingSession(pItem->id());
@@ -2050,7 +2052,7 @@ bool UIVirtualBoxManager::isAtLeastOneItemInaccessible(const QList<UIVirtualMach
 bool UIVirtualBoxManager::isAtLeastOneItemRemovable(const QList<UIVirtualMachineItem*> &items)
 {
     foreach (UIVirtualMachineItem *pItem, items)
-        if (!pItem->accessible() || UIVirtualMachineItem::isItemEditable(pItem))
+        if (!pItem->accessible() || pItem->isItemEditable())
             return true;
     return false;
 }
@@ -2060,7 +2062,7 @@ bool UIVirtualBoxManager::isAtLeastOneItemCanBeStarted(const QList<UIVirtualMach
 {
     foreach (UIVirtualMachineItem *pItem, items)
     {
-        if (UIVirtualMachineItem::isItemPoweredOff(pItem) && UIVirtualMachineItem::isItemEditable(pItem))
+        if (pItem->isItemPoweredOff() && pItem->isItemEditable())
             return true;
     }
     return false;
@@ -2071,7 +2073,7 @@ bool UIVirtualBoxManager::isAtLeastOneItemCanBeShown(const QList<UIVirtualMachin
 {
     foreach (UIVirtualMachineItem *pItem, items)
     {
-        if (UIVirtualMachineItem::isItemStarted(pItem) && (pItem->canSwitchTo() || UIVirtualMachineItem::isItemRunningHeadless(pItem)))
+        if (pItem->isItemStarted() && (pItem->canSwitchTo() || pItem->isItemRunningHeadless()))
             return true;
     }
     return false;
@@ -2082,8 +2084,8 @@ bool UIVirtualBoxManager::isAtLeastOneItemCanBeStartedOrShown(const QList<UIVirt
 {
     foreach (UIVirtualMachineItem *pItem, items)
     {
-        if ((UIVirtualMachineItem::isItemPoweredOff(pItem) && UIVirtualMachineItem::isItemEditable(pItem)) ||
-            (UIVirtualMachineItem::isItemStarted(pItem) && (pItem->canSwitchTo() || UIVirtualMachineItem::isItemRunningHeadless(pItem))))
+        if ((pItem->isItemPoweredOff() && pItem->isItemEditable()) ||
+            (pItem->isItemStarted() && (pItem->canSwitchTo() || pItem->isItemRunningHeadless())))
             return true;
     }
     return false;
@@ -2093,7 +2095,7 @@ bool UIVirtualBoxManager::isAtLeastOneItemCanBeStartedOrShown(const QList<UIVirt
 bool UIVirtualBoxManager::isAtLeastOneItemDiscardable(const QList<UIVirtualMachineItem*> &items)
 {
     foreach (UIVirtualMachineItem *pItem, items)
-        if (UIVirtualMachineItem::isItemSaved(pItem) && UIVirtualMachineItem::isItemEditable(pItem))
+        if (pItem->isItemSaved() && pItem->isItemEditable())
             return true;
     return false;
 }
@@ -2102,7 +2104,7 @@ bool UIVirtualBoxManager::isAtLeastOneItemDiscardable(const QList<UIVirtualMachi
 bool UIVirtualBoxManager::isAtLeastOneItemStarted(const QList<UIVirtualMachineItem*> &items)
 {
     foreach (UIVirtualMachineItem *pItem, items)
-        if (UIVirtualMachineItem::isItemStarted(pItem))
+        if (pItem->isItemStarted())
             return true;
     return false;
 }
@@ -2111,7 +2113,7 @@ bool UIVirtualBoxManager::isAtLeastOneItemStarted(const QList<UIVirtualMachineIt
 bool UIVirtualBoxManager::isAtLeastOneItemRunning(const QList<UIVirtualMachineItem*> &items)
 {
     foreach (UIVirtualMachineItem *pItem, items)
-        if (UIVirtualMachineItem::isItemRunning(pItem))
+        if (pItem->isItemRunning())
             return true;
     return false;
 }

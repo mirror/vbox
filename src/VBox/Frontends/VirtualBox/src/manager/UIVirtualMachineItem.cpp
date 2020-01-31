@@ -221,57 +221,47 @@ bool UIVirtualMachineItem::switchTo()
 #endif
 }
 
-/* static */
-bool UIVirtualMachineItem::isItemEditable(UIVirtualMachineItem *pItem)
+bool UIVirtualMachineItem::isItemEditable() const
 {
-    return    pItem
-           && pItem->accessible()
-           && pItem->sessionState() == KSessionState_Unlocked;
+    return    accessible()
+           && sessionState() == KSessionState_Unlocked;
 }
 
-/* static */
-bool UIVirtualMachineItem::isItemSaved(UIVirtualMachineItem *pItem)
+bool UIVirtualMachineItem::isItemSaved() const
 {
-    return    pItem
-           && pItem->accessible()
-           && pItem->machineState() == KMachineState_Saved;
+    return    accessible()
+           && machineState() == KMachineState_Saved;
 }
 
-/* static */
-bool UIVirtualMachineItem::isItemPoweredOff(UIVirtualMachineItem *pItem)
+bool UIVirtualMachineItem::isItemPoweredOff() const
 {
-    return    pItem
-           && pItem->accessible()
-           && (   pItem->machineState() == KMachineState_PoweredOff
-               || pItem->machineState() == KMachineState_Saved
-               || pItem->machineState() == KMachineState_Teleported
-               || pItem->machineState() == KMachineState_Aborted);
+    return    accessible()
+           && (   machineState() == KMachineState_PoweredOff
+               || machineState() == KMachineState_Saved
+               || machineState() == KMachineState_Teleported
+               || machineState() == KMachineState_Aborted);
 }
 
-/* static */
-bool UIVirtualMachineItem::isItemStarted(UIVirtualMachineItem *pItem)
+bool UIVirtualMachineItem::isItemStarted() const
 {
-    return    isItemRunning(pItem)
-           || isItemPaused(pItem);
+    return    isItemRunning()
+           || isItemPaused();
 }
 
-/* static */
-bool UIVirtualMachineItem::isItemRunning(UIVirtualMachineItem *pItem)
+bool UIVirtualMachineItem::isItemRunning() const
 {
-    return    pItem
-           && pItem->accessible()
-           && (   pItem->machineState() == KMachineState_Running
-               || pItem->machineState() == KMachineState_Teleporting
-               || pItem->machineState() == KMachineState_LiveSnapshotting);
+    return    accessible()
+           && (   machineState() == KMachineState_Running
+               || machineState() == KMachineState_Teleporting
+               || machineState() == KMachineState_LiveSnapshotting);
 }
 
-/* static */
-bool UIVirtualMachineItem::isItemRunningHeadless(UIVirtualMachineItem *pItem)
+bool UIVirtualMachineItem::isItemRunningHeadless() const
 {
-    if (isItemRunning(pItem))
+    if (isItemRunning())
     {
         /* Open session to determine which frontend VM is started with: */
-        CSession comSession = uiCommon().openExistingSession(pItem->id());
+        CSession comSession = uiCommon().openExistingSession(id());
         if (!comSession.isNull())
         {
             /* Acquire the session name: */
@@ -285,21 +275,17 @@ bool UIVirtualMachineItem::isItemRunningHeadless(UIVirtualMachineItem *pItem)
     return false;
 }
 
-/* static */
-bool UIVirtualMachineItem::isItemPaused(UIVirtualMachineItem *pItem)
+bool UIVirtualMachineItem::isItemPaused() const
 {
-    return    pItem
-           && pItem->accessible()
-           && (   pItem->machineState() == KMachineState_Paused
-               || pItem->machineState() == KMachineState_TeleportingPausedVM);
+    return    accessible()
+           && (   machineState() == KMachineState_Paused
+               || machineState() == KMachineState_TeleportingPausedVM);
 }
 
-/* static */
-bool UIVirtualMachineItem::isItemStuck(UIVirtualMachineItem *pItem)
+bool UIVirtualMachineItem::isItemStuck() const
 {
-    return    pItem
-           && pItem->accessible()
-           && pItem->machineState() == KMachineState_Stuck;
+    return    accessible()
+           && machineState() == KMachineState_Stuck;
 }
 
 void UIVirtualMachineItem::retranslateUi()
