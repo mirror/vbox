@@ -74,6 +74,52 @@ II. Steps for manually setting up a local Test Manager instance for development:
   - Try http://localhost/testmanager/ in a browser and see if it works.
 
 
+III. OS X version of the above manual setup using MacPorts:
+
+  - sudo ports install apache2 postgresql12 postgresql12-server py38-psycopg2 py38-pylint
+    sudo port select --set python python38
+    sudo port select --set python3 python38
+    sudo port select --set pylint pylint38
+
+    Note! Replace the python 38 with the most recent one you want to use.  Same
+          for the 12 in relation to postgresql.
+
+  - Do what the postgresql12-server notes says, at the time of writing:
+    sudo mkdir -p /opt/local/var/db/postgresql12/defaultdb
+    sudo chown postgres:postgres /opt/local/var/db/postgresql12/defaultdb
+    sudo su postgres -c 'cd /opt/local/var/db/postgresql12 && /opt/local/lib/postgresql12/bin/initdb -D /opt/local/var/db/postgresql12/defaultdb'
+    sudo port load postgresql12-server
+
+    Note! The postgresql12-server's config is 'trust' already, so no need to
+          edit /opt/local/var/db/postgresql12/defaultdb/pg_hba.conf there.  If
+          you use a different version, please check it.
+
+  - kmk load-testmanager-db
+
+  - Creating and loading a partial database dump as detailed above.
+
+  - Configure apache:
+      - sudo joe /opt/local/etc/apache2/httpd.conf:
+        - Uncomment the line "LoadModule cgi_module...".
+        - At the end of the file add (edit paths):
+            Define TestManagerRootDir "/Users/bird/coding/vbox/svn/trunk/src/VBox/ValidationKit/testmanager"
+            Define VBoxBuildOutputDir "/tmp"
+            Include "${TestManagerRootDir}/apache-template-2.4.conf"
+      - Test the config:
+          /opt/local/sbin/apachectl -t
+      - So apache will find the right python add the following to
+        /opt/local/sbin/envvars:
+          PATH=/opt/local/bin:/opt/local/sbin:$PATH
+          export PATH
+      - Load the apache service (or reload it):
+          sudo port load apache2
+      - Give apache access to read everything under TestManagerRootDir:
+          chmod -R a:rX /Users/bird/coding/vbox/svn/trunk/src/VBox/ValidationKit/testmanager
+          MYDIR=/Users/bird/coding/vbox/svn/trunk/src/VBox/ValidationKit; while [ '!' "$MYDIR" '<' "$HOME" ]; do \
+              chmod a+x "$MYDIR"; MYDIR=`dirname $MYDIR`; done
+
+  - Fix htpasswd file as detailed above and try the url (also above).
+
 
 N.B. For developing tests (../tests/), setting up a local test manager will be
      a complete waste of time.  Just run the test drivers locally.

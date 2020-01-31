@@ -35,7 +35,7 @@ endif
 
 
 GENERATED_FILES = TestManagerDatabaseComments.pgsql
-PSQL := $(firstword $(which $(foreach pgver, 95 94 93 92,psql$(pgver)) ) psql)
+PSQL := $(firstword $(which $(foreach pgver, 16 15 14 13 12 10 11 95 94 93 92,psql$(pgver)) ) psql)
 ifeq ($(PSQL_DB_HOST),)
  PSQL_DB_HOST := localhost # Use localhost if nothing else is set.
 endif
