@@ -247,7 +247,9 @@ RePackScriptsAdd_SOURCES = \
 	../../../Installer/win/Scripts/UnpackBlessedDrivers.cmd \
 	$(RePackScriptsAdd_0_OUTDIR)/PackDriversForSubmission.cmd \
 	$(RePackScriptsAdd_0_OUTDIR)/Combined-1-Prepare.cmd \
+	$(RePackScriptsAdd_0_OUTDIR)/Combined-2-SignAdditions.cmd \
 	$(RePackScriptsAdd_0_OUTDIR)/Combined-3-RepackAdditions.cmd \
+	$(RePackScriptsAdd_0_OUTDIR)/sign-attestation.sh \
 	$(RePackScriptsAdd_0_OUTDIR)/sign-ev.cmd
 RePackScriptsAdd_CLEAN = \
 	$(RePackScriptsAdd_0_OUTDIR)/sign-ev.cmd
