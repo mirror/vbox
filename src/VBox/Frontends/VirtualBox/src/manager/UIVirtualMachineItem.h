@@ -22,7 +22,6 @@
 #endif
 
 /* Qt includes: */
-#include <QDateTime>
 #include <QIcon>
 #include <QMimeData>
 #include <QPixmap>
@@ -33,8 +32,10 @@
 
 /* COM includes: */
 #include "COMEnums.h"
-#include "CMachine.h"
 #include "CVirtualBoxErrorInfo.h"
+
+/* Forward declarations: */
+class UIVirtualMachineItemLocal;
 
 /* Using declarations: */
 using namespace UISettingsDefs;
@@ -46,15 +47,20 @@ class UIVirtualMachineItem : public QIWithRetranslateUI3<QObject>
 
 public:
 
-    /** Constructs local VM item on the basis of taken @a comMachine. */
-    UIVirtualMachineItem(const CMachine &comMachine);
-    /** Destructs local VM item. */
+    /** Item types. */
+    enum ItemType { ItemType_Local };
+
+    /** Constructs VM item on the basis of taken @a enmType. */
+    UIVirtualMachineItem(ItemType enmType);
+    /** Destructs VM item. */
     virtual ~UIVirtualMachineItem();
 
-    /** @name Arguments.
+    /** @name RTTI stuff.
       * @{ */
-        /** Returns cached virtual machine object. */
-        CMachine machine() const { return m_comMachine; }
+        /** Returns item type. */
+        ItemType itemType() const { return m_enmType; }
+        /** Returns item casted to local type. */
+        UIVirtualMachineItemLocal *toLocal();
     /** @} */
 
     /** @name VM access attributes.
@@ -69,8 +75,6 @@ public:
       * @{ */
         /** Returns cached machine id. */
         QString id() const { return m_strId; }
-        /** Returns cached machine settings file name. */
-        QString settingsFile() const { return m_strSettingsFile; }
         /** Returns cached machine name. */
         QString name() const { return m_strName; }
         /** Returns cached machine OS type id. */
@@ -78,16 +82,6 @@ public:
         /** Returns cached machine OS type pixmap.
           * @param  pLogicalSize  Argument to assign actual pixmap size to. */
         QPixmap osPixmap(QSize *pLogicalSize = 0) const;
-        /** Returns cached machine group list. */
-        const QStringList &groups() { return m_groups; }
-    /** @} */
-
-    /** @name Snapshot attributes.
-      * @{ */
-        /** Returns cached snapshot name. */
-        QString snapshotName() const { return m_strSnapshotName; }
-        /** Returns cached snapshot children count. */
-        ULONG snapshotCount() const { return m_cSnaphot; }
     /** @} */
 
     /** @name State attributes.
@@ -99,11 +93,6 @@ public:
         /** Returns cached machine state icon. */
         QIcon machineStateIcon() const { return m_machineStateIcon; }
 
-        /** Returns cached session state. */
-        KSessionState sessionState() const { return m_enmSessionState; }
-        /** Returns cached session state name. */
-        QString sessionStateName() const { return m_strSessionStateName; }
-
         /** Returns cached configuration access level. */
         ConfigurationAccessLevel configurationAccessLevel() const { return m_enmConfigurationAccessLevel; }
     /** @} */
@@ -112,15 +101,6 @@ public:
       * @{ */
         /** Returns cached machine tool-tip. */
         QString toolTipText() const { return m_strToolTipText; }
-    /** @} */
-
-    /** @name Console attributes.
-      * @{ */
-        /** Returns whether we can switch to main window of VM process. */
-        bool canSwitchTo() const;
-        /** Tries to switch to the main window of the VM process.
-          * @return true if switched successfully. */
-        bool switchTo();
     /** @} */
 
     /** @name Extra-data options.
@@ -132,45 +112,37 @@ public:
     /** @name Update stuff.
       * @{ */
         /** Recaches machine data. */
-        void recache();
+        virtual void recache() = 0;
         /** Recaches machine item pixmap. */
-        void recachePixmap();
+        virtual void recachePixmap() = 0;
     /** @} */
 
     /** @name Validation stuff.
       * @{ */
         /** Returns whether passed machine @a pItem is editable. */
-        bool isItemEditable() const;
+        virtual bool isItemEditable() const = 0;
         /** Returns whether passed machine @a pItem is saved. */
-        bool isItemSaved() const;
+        virtual bool isItemSaved() const = 0;
         /** Returns whether passed machine @a pItem is powered off. */
-        bool isItemPoweredOff() const;
+        virtual bool isItemPoweredOff() const = 0;
         /** Returns whether passed machine @a pItem is started. */
-        bool isItemStarted() const;
+        virtual bool isItemStarted() const = 0;
         /** Returns whether passed machine @a pItem is running. */
-        bool isItemRunning() const;
+        virtual bool isItemRunning() const = 0;
         /** Returns whether passed machine @a pItem is running headless. */
-        bool isItemRunningHeadless() const;
+        virtual bool isItemRunningHeadless() const = 0;
         /** Returns whether passed machine @a pItem is paused. */
-        bool isItemPaused() const;
+        virtual bool isItemPaused() const = 0;
         /** Returns whether passed machine @a pItem is stuck. */
-        bool isItemStuck() const;
+        virtual bool isItemStuck() const = 0;
     /** @} */
 
 protected:
 
-    /** @name Event handling.
+    /** @name RTTI stuff.
       * @{ */
-        /** Handles translation event. */
-        virtual void retranslateUi() /* override */;
-    /** @} */
-
-private:
-
-    /** @name Arguments.
-      * @{ */
-        /** Holds cached machine object reference. */
-        CMachine  m_comMachine;
+        /** Holds item type. */
+        ItemType  m_enmType;
     /** @} */
 
     /** @name VM access attributes.
@@ -185,8 +157,6 @@ private:
       * @{ */
         /** Holds cached machine id. */
         QString      m_strId;
-        /** Holds cached machine settings file name. */
-        QString      m_strSettingsFile;
         /** Holds cached machine name. */
         QString      m_strName;
         /** Holds cached machine OS type id. */
@@ -195,18 +165,6 @@ private:
         QPixmap      m_pixmap;
         /** Holds cached machine OS type pixmap size. */
         QSize        m_logicalPixmapSize;
-        /** Holds cached machine group list. */
-        QStringList  m_groups;
-    /** @} */
-
-    /** @name Snapshot attributes.
-      * @{ */
-        /** Holds cached snapshot name. */
-        QString    m_strSnapshotName;
-        /** Holds cached last state change date/time. */
-        QDateTime  m_lastStateChange;
-        /** Holds cached snapshot children count. */
-        ULONG      m_cSnaphot;
     /** @} */
 
     /** @name State attributes.
@@ -218,11 +176,6 @@ private:
         /** Holds cached machine state name. */
         QIcon                     m_machineStateIcon;
 
-        /** Holds cached session state. */
-        KSessionState             m_enmSessionState;
-        /** Holds cached session state name. */
-        QString                   m_strSessionStateName;
-
         /** Holds configuration access level. */
         ConfigurationAccessLevel  m_enmConfigurationAccessLevel;
     /** @} */
@@ -231,12 +184,6 @@ private:
       * @{ */
         /** Holds cached machine tool-tip. */
         QString  m_strToolTipText;
-    /** @} */
-
-    /** @name Console attributes.
-      * @{ */
-        /** Holds machine PID. */
-        ULONG  m_pid;
     /** @} */
 
     /** @name Extra-data options.

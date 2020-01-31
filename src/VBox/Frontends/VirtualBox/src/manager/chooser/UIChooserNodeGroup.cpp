@@ -20,6 +20,9 @@
 #include "UIChooserNodeGlobal.h"
 #include "UIChooserNodeMachine.h"
 
+/* Other VBox includes: */
+#include "iprt/assert.h"
+
 
 UIChooserNodeGroup::UIChooserNodeGroup(UIChooserNode *pParent,
                                        bool fFavorite,

@@ -37,6 +37,7 @@
 #include "UIGraphicsScrollArea.h"
 #include "UIIconPool.h"
 #include "UIVirtualBoxManager.h"
+#include "UIVirtualMachineItem.h"
 
 
 /*********************************************************************************************************************************

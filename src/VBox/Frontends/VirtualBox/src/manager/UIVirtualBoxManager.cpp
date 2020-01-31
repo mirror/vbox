@@ -36,7 +36,7 @@
 #include "UIVirtualBoxManagerWidget.h"
 #include "UISettingsDialogSpecific.h"
 #include "UIVMLogViewerDialog.h"
-#include "UIVirtualMachineItem.h"
+#include "UIVirtualMachineItemLocal.h"
 #ifdef VBOX_GUI_WITH_NETWORK_MANAGER
 # include "UIUpdateManager.h"
 #endif
@@ -685,12 +685,15 @@ void UIVirtualBoxManager::sltOpenCloneMachineWizard()
     /* Get current item: */
     UIVirtualMachineItem *pItem = currentItem();
     AssertMsgReturnVoid(pItem, ("Current item should be selected!\n"));
+    /* Make sure current item is local one: */
+    UIVirtualMachineItemLocal *pItemLocal = pItem->toLocal();
+    AssertMsgReturnVoid(pItemLocal, ("Current item should be local one!\n"));
 
     /* Use the "safe way" to open stack of Mac OS X Sheets: */
     QWidget *pWizardParent = windowManager().realParentWindow(this);
-    const QStringList &machineGroupNames = pItem->groups();
+    const QStringList &machineGroupNames = pItemLocal->groups();
     const QString strGroup = !machineGroupNames.isEmpty() ? machineGroupNames.at(0) : QString();
-    UISafePointerWizard pWizard = new UIWizardCloneVM(pWizardParent, pItem->machine(), strGroup);
+    UISafePointerWizard pWizard = new UIWizardCloneVM(pWizardParent, pItemLocal->machine(), strGroup);
     windowManager().registerNewParent(pWizard, pWizardParent);
     pWizard->prepare();
     pWizard->exec();
@@ -1085,26 +1088,31 @@ void UIVirtualBoxManager::sltOpenLogViewerWindow()
     /* For each selected item: */
     foreach (UIVirtualMachineItem *pItem, items)
     {
+        /* Make sure current item is local one: */
+        UIVirtualMachineItemLocal *pItemLocal = pItem->toLocal();
+        if (!pItemLocal)
+            continue;
+
         /* Check if log could be show for the current item: */
         if (!isActionEnabled(UIActionIndexST_M_Group_S_ShowLogDialog, QList<UIVirtualMachineItem*>() << pItem))
             continue;
 
         QIManagerDialog *pLogViewerDialog = 0;
         /* Create and Show VM Log Viewer: */
-        if (!m_logViewers[pItem->machine().GetHardwareUUID().toString()])
+        if (!m_logViewers[pItemLocal->machine().GetHardwareUUID().toString()])
         {
-            UIVMLogViewerDialogFactory dialogFactory(actionPool(), pItem->machine());
+            UIVMLogViewerDialogFactory dialogFactory(actionPool(), pItemLocal->machine());
             dialogFactory.prepare(pLogViewerDialog, this);
             if (pLogViewerDialog)
             {
-                m_logViewers[pItem->machine().GetHardwareUUID().toString()] = pLogViewerDialog;
+                m_logViewers[pItemLocal->machine().GetHardwareUUID().toString()] = pLogViewerDialog;
                 connect(pLogViewerDialog, &QIManagerDialog::sigClose,
                         this, &UIVirtualBoxManager::sltCloseLogViewerWindow);
             }
         }
         else
         {
-            pLogViewerDialog = m_logViewers[pItem->machine().GetHardwareUUID().toString()];
+            pLogViewerDialog = m_logViewers[pItemLocal->machine().GetHardwareUUID().toString()];
         }
         if (pLogViewerDialog)
         {
@@ -1165,12 +1173,17 @@ void UIVirtualBoxManager::sltShowMachineInFileManager()
     /* For each selected item: */
     foreach (UIVirtualMachineItem *pItem, items)
     {
+        /* Make sure current item is local one: */
+        UIVirtualMachineItemLocal *pItemLocal = pItem->toLocal();
+        if (!pItemLocal)
+            continue;
+
         /* Check if that item could be shown in file-browser: */
         if (!isActionEnabled(UIActionIndexST_M_Group_S_ShowInFileManager, QList<UIVirtualMachineItem*>() << pItem))
             continue;
 
         /* Show VM in filebrowser: */
-        UIDesktopServices::openInFileManager(pItem->machine().GetSettingsFilePath());
+        UIDesktopServices::openInFileManager(pItemLocal->machine().GetSettingsFilePath());
     }
 }
 
@@ -1183,12 +1196,17 @@ void UIVirtualBoxManager::sltPerformCreateMachineShortcut()
     /* For each selected item: */
     foreach (UIVirtualMachineItem *pItem, items)
     {
+        /* Make sure current item is local one: */
+        UIVirtualMachineItemLocal *pItemLocal = pItem->toLocal();
+        if (!pItemLocal)
+            continue;
+
         /* Check if shortcuts could be created for this item: */
         if (!isActionEnabled(UIActionIndexST_M_Group_S_CreateShortcut, QList<UIVirtualMachineItem*>() << pItem))
             continue;
 
         /* Create shortcut for this VM: */
-        const CMachine &comMachine = pItem->machine();
+        const CMachine &comMachine = pItemLocal->machine();
         UIDesktopServices::createMachineShortcut(comMachine.GetSettingsFilePath(),
                                                  QStandardPaths::writableLocation(QStandardPaths::DesktopLocation),
                                                  comMachine.GetName(), comMachine.GetId());
@@ -1609,18 +1627,22 @@ void UIVirtualBoxManager::performStartOrShowVirtualMachines(const QList<UIVirtua
             || (   isAtLeastOneItemCanBeStarted(QList<UIVirtualMachineItem*>() << pItem)
                 && fStartConfirmed))
         {
-            /* Fetch item launch mode: */
-            UICommon::LaunchMode enmItemLaunchMode = enmLaunchMode;
-            if (enmItemLaunchMode == UICommon::LaunchMode_Invalid)
-                enmItemLaunchMode = pItem->isItemRunningHeadless()
-                                  ? UICommon::LaunchMode_Separate
-                                  : qApp->keyboardModifiers() == Qt::ShiftModifier
-                                  ? UICommon::LaunchMode_Headless
-                                  : UICommon::LaunchMode_Default;
+            /* Make sure item is local one: */
+            if (pItem->itemType() == UIVirtualMachineItem::ItemType_Local)
+            {
+                /* Fetch item launch mode: */
+                UICommon::LaunchMode enmItemLaunchMode = enmLaunchMode;
+                if (enmItemLaunchMode == UICommon::LaunchMode_Invalid)
+                    enmItemLaunchMode = pItem->isItemRunningHeadless()
+                                      ? UICommon::LaunchMode_Separate
+                                      : qApp->keyboardModifiers() == Qt::ShiftModifier
+                                      ? UICommon::LaunchMode_Headless
+                                      : UICommon::LaunchMode_Default;
 
-            /* Launch current VM: */
-            CMachine machine = pItem->machine();
-            uiCommon().launchMachine(machine, enmItemLaunchMode);
+                /* Launch current VM: */
+                CMachine machine = pItem->toLocal()->machine();
+                uiCommon().launchMachine(machine, enmItemLaunchMode);
+            }
         }
     }
 }
@@ -2073,7 +2095,10 @@ bool UIVirtualBoxManager::isAtLeastOneItemCanBeShown(const QList<UIVirtualMachin
 {
     foreach (UIVirtualMachineItem *pItem, items)
     {
-        if (pItem->isItemStarted() && (pItem->canSwitchTo() || pItem->isItemRunningHeadless()))
+        if (   pItem->toLocal()
+            && pItem->isItemStarted()
+            && (   pItem->toLocal()->canSwitchTo()
+                || pItem->isItemRunningHeadless()))
             return true;
     }
     return false;
@@ -2084,8 +2109,12 @@ bool UIVirtualBoxManager::isAtLeastOneItemCanBeStartedOrShown(const QList<UIVirt
 {
     foreach (UIVirtualMachineItem *pItem, items)
     {
-        if ((pItem->isItemPoweredOff() && pItem->isItemEditable()) ||
-            (pItem->isItemStarted() && (pItem->canSwitchTo() || pItem->isItemRunningHeadless())))
+        if (   pItem->toLocal()
+            && (   (   pItem->isItemPoweredOff()
+                    && pItem->isItemEditable())
+                || (   pItem->isItemStarted()
+                    && (   pItem->toLocal()->canSwitchTo()
+                        || pItem->isItemRunningHeadless()))))
             return true;
     }
     return false;

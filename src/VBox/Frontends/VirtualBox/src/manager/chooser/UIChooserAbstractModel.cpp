@@ -26,6 +26,10 @@
 #include "UIExtraDataManager.h"
 #include "UIMessageCenter.h"
 #include "UIVirtualBoxEventHandler.h"
+#include "UIVirtualMachineItem.h"
+
+/* COM includes: */
+#include "CMachine.h"
 
 /* Type defs: */
 typedef QSet<QString> UIStringSet;

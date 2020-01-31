@@ -23,7 +23,10 @@
 
 /* GUI includes: */
 #include "UIChooserNode.h"
-#include "UIVirtualMachineItem.h"
+
+/* Forward declarations: */
+class UIVirtualMachineItem;
+class CMachine;
 
 
 /** UIChooserNode subclass used as interface for invisible tree-view machine nodes. */

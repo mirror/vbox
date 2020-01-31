@@ -21,12 +21,12 @@
 #include <QStyleOptionGraphicsItem>
 
 /* GUI includes: */
+#include "UICommon.h"
 #include "UIDetailsElements.h"
 #include "UIDetailsModel.h"
 #include "UIDetailsSet.h"
 #include "UIVirtualBoxEventHandler.h"
-#include "UIVirtualMachineItem.h"
-#include "UICommon.h"
+#include "UIVirtualMachineItemLocal.h"
 
 /* COM includes: */
 #include "CUSBController.h"
@@ -65,7 +65,7 @@ void UIDetailsSet::buildSet(UIVirtualMachineItem *pMachineItem, bool fFullSet, c
 {
     /* Remember passed arguments: */
     m_pMachineItem = pMachineItem;
-    m_machine = m_pMachineItem->machine();
+    m_machine = m_pMachineItem->toLocal()->machine();
     m_fHasDetails = m_pMachineItem->hasDetails();
     m_fFullSet = fFullSet;
     m_settings = settings;

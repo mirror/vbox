@@ -31,7 +31,7 @@
 #include "UIVirtualBoxManagerWidget.h"
 #include "UITabBar.h"
 #include "UIToolBar.h"
-#include "UIVirtualMachineItem.h"
+#include "UIVirtualMachineItemLocal.h"
 #include "UITools.h"
 #ifndef VBOX_WS_MAC
 # include "UIMenuBar.h"
@@ -719,7 +719,8 @@ void UIVirtualBoxManagerWidget::recacheCurrentItemInformation(bool fDontRaiseErr
         /* Propagate current items to update the Details-pane: */
         m_pPaneToolsMachine->setItems(currentItems());
         /* Propagate current machine to update the Snapshots-pane or/and Logviewer-pane: */
-        m_pPaneToolsMachine->setMachine(pItem->machine());
+        if (pItem->itemType() == UIVirtualMachineItem::ItemType_Local)
+            m_pPaneToolsMachine->setMachine(pItem->toLocal()->machine());
     }
     else
     {
