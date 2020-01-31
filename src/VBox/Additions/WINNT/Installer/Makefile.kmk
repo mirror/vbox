@@ -249,13 +249,14 @@ RePackScriptsAdd_SOURCES = \
 	$(RePackScriptsAdd_0_OUTDIR)/Combined-1-Prepare.cmd \
 	$(RePackScriptsAdd_0_OUTDIR)/Combined-2-SignAdditions.cmd \
 	$(RePackScriptsAdd_0_OUTDIR)/Combined-3-RepackAdditions.cmd \
-	$(RePackScriptsAdd_0_OUTDIR)/sign-attestation.sh \
+	../../../Installer/win/Scripts/sign-attestation.sh \
 	$(RePackScriptsAdd_0_OUTDIR)/sign-ev.cmd
 RePackScriptsAdd_CLEAN = \
 	$(RePackScriptsAdd_0_OUTDIR)/sign-ev.cmd
 
 $(call VBOX_EDIT_VERSION_AND_BUILD_RULE_FN,RePackScriptsAdd,../../../Installer/win/Scripts/PackDriversForSubmission.cmd,PackDriversForSubmission.cmd)
 $(call VBOX_EDIT_VERSION_AND_BUILD_RULE_FN,RePackScriptsAdd,../../../Installer/win/Scripts/Combined-1-Prepare.cmd,Combined-1-Prepare.cmd)
+$(call VBOX_EDIT_VERSION_AND_BUILD_RULE_FN,RePackScriptsAdd,../../../Installer/win/Scripts/Combined-2-SignAdditions.cmd,Combined-2-SignAdditions.cmd)
 $(call VBOX_EDIT_VERSION_AND_BUILD_RULE_FN,RePackScriptsAdd,../../../Installer/win/Scripts/Combined-3-RepackAdditions.cmd,Combined-3-RepackAdditions.cmd)
 
 # The %~dp1\ oddity is working around otherwise ending with \" during
