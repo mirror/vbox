@@ -28,7 +28,7 @@ include $(PATH_SUB_CURRENT)/testcase/Makefile.kmk
 DLLS.x86 += VBoxGuestInstallHelper
 VBoxGuestInstallHelper_TEMPLATE = VBoxGuestR3Dll
 #Installation is required for repacking Guest Additions
-VBoxGuestInstallHelper_INST     = repack/resources/VBoxGuestInstallHelper/
+VBoxGuestInstallHelper_INST     = repackadd/resources/VBoxGuestInstallHelper/
 ifdef VBOX_SIGN_ADDITIONS # (See the parent makefile.)
  VBoxGuestInstallHelper_INSTTYPE       = stage
  VBoxGuestInstallHelper_DEBUG_INSTTYPE = both
