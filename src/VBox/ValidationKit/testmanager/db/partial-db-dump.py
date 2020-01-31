@@ -121,7 +121,7 @@ class PartialDbDump(object): # pylint: disable=too-few-public-methods
 
     def _doCopyTo(self, sTable, oZipFile, oDb, sSql, aoArgs = None):
         """ Does one COPY TO job. """
-        print 'Dumping %s...' % (sTable,);
+        print('Dumping %s...' % (sTable,));
 
         if aoArgs is not None:
             sSql = oDb.formatBindArgs(sSql, aoArgs);
@@ -130,7 +130,7 @@ class PartialDbDump(object): # pylint: disable=too-few-public-methods
         oDb.copyExpert(sSql, oFile);
         cRows = oDb.getRowCount();
         oFile.close();
-        print '... %s rows.' % (cRows,);
+        print('... %s rows.' % (cRows,));
 
         oZipFile.write(self.oConfig.sTempFile, sTable);
         return True;
@@ -151,7 +151,7 @@ class PartialDbDump(object): # pylint: disable=too-few-public-methods
         tsEffective = oDb.fetchOne()[0];
         oDb.execute('SELECT CURRENT_TIMESTAMP - INTERVAL \'%s days\'' % (self.oConfig.cDays + 2,));
         tsEffectiveSafe = oDb.fetchOne()[0];
-        print 'Going back to:     %s (safe: %s)' % (tsEffective, tsEffectiveSafe);
+        print('Going back to:     %s (safe: %s)' % (tsEffective, tsEffectiveSafe));
 
         # We dump test boxes back to the safe timestamp because the test sets may
         # use slightly dated test box references and we don't wish to have dangling
@@ -168,19 +168,19 @@ class PartialDbDump(object): # pylint: disable=too-few-public-methods
         idFirstTestSet = 0;
         if oDb.getRowCount() > 0:
             idFirstTestSet = oDb.fetchOne()[0];
-        print 'First test set ID: %s' % (idFirstTestSet,);
+        print('First test set ID: %s' % (idFirstTestSet,));
 
         oDb.execute('SELECT MAX(idTestSet) FROM TestSets WHERE tsCreated >= %s', (tsEffective, ));
         idLastTestSet = 0;
         if oDb.getRowCount() > 0:
             idLastTestSet = oDb.fetchOne()[0];
-        print 'Last test set ID: %s' % (idLastTestSet,);
+        print('Last test set ID: %s' % (idLastTestSet,));
 
         oDb.execute('SELECT MAX(idTestResult) FROM TestResults WHERE tsCreated >= %s', (tsEffective, ));
         idLastTestResult = 0;
         if oDb.getRowCount() > 0:
             idLastTestResult = oDb.fetchOne()[0];
-        print 'Last test result ID: %s' % (idLastTestResult,);
+        print('Last test result ID: %s' % (idLastTestResult,));
 
 
         # Tables with idTestSet member.
@@ -214,7 +214,7 @@ class PartialDbDump(object): # pylint: disable=too-few-public-methods
                            (tsEffective,));
 
         oZipFile.close();
-        print "Done!";
+        print('Done!');
         return 0;
 
     def _doLoad(self, oDb):
@@ -257,30 +257,30 @@ class PartialDbDump(object): # pylint: disable=too-few-public-methods
         oDb.begin();
         oDb.execute('SET CONSTRAINTS ALL DEFERRED;');
 
-        print 'Checking if the database looks empty...\n'
+        print('Checking if the database looks empty...\n');
         for sTable in asTablesInLoadOrder + [ 'TestBoxStatuses', 'GlobalResourceStatuses' ]:
             oDb.execute('SELECT COUNT(*) FROM ' + sTable);
             cRows = oDb.fetchOne()[0];
             cMaxRows = 0;
             if sTable in [ 'SchedGroups', 'TestBoxStrTab', 'TestResultStrTab', 'Users' ]:    cMaxRows =  1;
             if cRows > cMaxRows:
-                print 'error: Table %s has %u rows which is more than %u - refusing to delete and load.' \
-                    % (sTable, cRows, cMaxRows,);
-                print 'info:  Please drop and recreate the database before loading!'
+                print('error: Table %s has %u rows which is more than %u - refusing to delete and load.'
+                      % (sTable, cRows, cMaxRows,));
+                print('info:  Please drop and recreate the database before loading!')
                 return 1;
 
-        print 'Dropping default table content...\n'
+        print('Dropping default table content...\n');
         for sTable in [ 'SchedGroups', 'TestBoxStrTab', 'TestResultStrTab', 'Users']:
             oDb.execute('DELETE FROM ' + sTable);
 
         oDb.execute('ALTER TABLE TestSets DROP CONSTRAINT IF EXISTS TestSets_idTestResult_fkey');
 
         for sTable in asTablesInLoadOrder:
-            print 'Loading %s...' % (sTable,);
+            print('Loading %s...' % (sTable,));
             oFile = oZipFile.open(sTable);
             oDb.copyExpert('COPY ' + sTable + ' FROM STDIN WITH (FORMAT TEXT)', oFile);
             cRows = oDb.getRowCount();
-            print '... %s rows.' % (cRows,);
+            print('... %s rows.' % (cRows,));
 
         oDb.execute('ALTER TABLE TestSets ADD FOREIGN KEY (idTestResult) REFERENCES TestResults(idTestResult)');
         oDb.commit();
@@ -315,16 +315,16 @@ class PartialDbDump(object): # pylint: disable=too-few-public-methods
         for (sSeq, sTab, sCol) in atSequences:
             oDb.execute('SELECT MAX(%s) FROM %s' % (sCol, sTab,));
             idMax = oDb.fetchOne()[0];
-            print '%s: idMax=%s' % (sSeq, idMax);
+            print('%s: idMax=%s' % (sSeq, idMax));
             if idMax is not None:
                 oDb.execute('SELECT setval(\'%s\', %s)' % (sSeq, idMax));
 
         # Last step.
-        print 'Analyzing...'
+        print('Analyzing...');
         oDb.execute('ANALYZE');
         oDb.commit();
 
-        print 'Done!'
+        print('Done!');
         return 0;
 
     def main(self):
