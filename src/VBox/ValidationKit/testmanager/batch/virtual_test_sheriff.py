@@ -498,8 +498,7 @@ class VirtualTestSheriff(object): # pylint: disable=too-few-public-methods
                             oFailure = self.oTestResultFailureLogic.getById(oFailedResult.idTestResult);
                             if oFailure is not None and oFailure.idFailureReason in aidFailureReasons:
                                 break;
-                            else:
-                                oFailure = None;
+                            oFailure = None;
                     if oFailure is not None:
                         cBad += 1;
                     else:

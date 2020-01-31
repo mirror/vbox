@@ -664,7 +664,7 @@ class WuiReportTestCaseArgsFailures(WuiReportFailuresWithTotalBase):
     def __init__(self, oModel, dParams, fSubReport = False, aiSortColumns = None, fnDPrint = None, oDisp = None):
         WuiReportFailuresWithTotalBase.__init__(self, oModel, dParams, fSubReport = fSubReport,
                                                 aiSortColumns = aiSortColumns, fnDPrint = fnDPrint, oDisp = oDisp);
-        self.oTestCaseCrit = TestResultFilter().aCriteria[TestResultFilter.kiTestCases]; # type: FilterCriterion
+        self.oTestCaseCrit = TestResultFilter().aCriteria[TestResultFilter.kiTestCases] # type: FilterCriterion
 
     @staticmethod
     def _formatName(oTestCaseArgs):

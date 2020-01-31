@@ -65,7 +65,7 @@ class WuiHlpBarGraph(WuiHlpGraphGoogleChartsBase):
         return None;
 
     def renderGraph(self):
-        aoTable = self._oData.aoTable; # type: WuiHlpGraphDataTable
+        aoTable = self._oData.aoTable # type: WuiHlpGraphDataTable
 
         # Seems material (google.charts.Bar) cannot change the direction on the Y-axis,
         # so we cannot get bars growing downwards from the top like we want for the
