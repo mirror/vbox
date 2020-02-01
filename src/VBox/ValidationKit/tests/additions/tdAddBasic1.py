@@ -321,8 +321,8 @@ class tdAddBasic1(vbox.TestDriver):                                         # py
         return (fRc, oTxsSession);
 
     def testLinuxInstallAdditions(self, oSession, oTxsSession, oTestVm):
-        oSession = oSession;
-        oTestVm = oTestVm;
+        _ = oSession;
+        _ = oTestVm;
 
         fRc = False;
 

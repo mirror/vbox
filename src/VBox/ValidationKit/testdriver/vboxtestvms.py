@@ -330,7 +330,7 @@ class BaseTestVm(object):
             if _intersects(asSplit, ['uni']):
                 self.acCpusSup = [1];
             elif self.aInfo is not None:
-                self.acCpusSup = [i for i in range(self.aInfo[g_iMinCpu], self.aInfo[g_iMaxCpu]) ];
+                self.acCpusSup = list(range(self.aInfo[g_iMinCpu], self.aInfo[g_iMaxCpu]));
             else:
                 self.acCpusSup = [1];
 
@@ -1075,7 +1075,7 @@ class TestVm(object):
             if _intersects(asSplit, ['uni']):
                 self.acCpusSup = [1];
             elif self.aInfo is not None:
-                self.acCpusSup = [i for i in range(self.aInfo[g_iMinCpu], self.aInfo[g_iMaxCpu]) ];
+                self.acCpusSup = list(range(self.aInfo[g_iMinCpu], self.aInfo[g_iMaxCpu]));
             else:
                 self.acCpusSup = [1];
 
