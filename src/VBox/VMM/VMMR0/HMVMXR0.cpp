@@ -8078,11 +8078,27 @@ static void hmR0VmxPendingEventToTrpmTrap(PVMCPUCC pVCpu)
 
     if (VMX_IDT_VECTORING_INFO_IS_XCPT_PF(u32IntInfo))
         TRPMSetFaultAddress(pVCpu, pVCpu->hm.s.Event.GCPtrFaultAddress);
-    else if (VMX_IDT_VECTORING_INFO_TYPE(u32IntInfo) == VMX_IDT_VECTORING_INFO_TYPE_SW_INT)
-        TRPMSetInstrLength(pVCpu, pVCpu->hm.s.Event.cbInstr);
-
-    if (VMX_IDT_VECTORING_INFO_TYPE(u32IntInfo) == VMX_IDT_VECTORING_INFO_TYPE_PRIV_SW_XCPT)
-        TRPMSetTrapDueToIcebp(pVCpu);
+    else
+    {
+        uint8_t const uVectorType = VMX_IDT_VECTORING_INFO_TYPE(u32IntInfo);
+        switch (uVectorType)
+        {
+            case VMX_IDT_VECTORING_INFO_TYPE_PRIV_SW_XCPT:
+                TRPMSetTrapDueToIcebp(pVCpu);
+                RT_FALL_THRU();
+            case VMX_IDT_VECTORING_INFO_TYPE_SW_INT:
+            case VMX_IDT_VECTORING_INFO_TYPE_SW_XCPT:
+            {
+                AssertMsg(   uVectorType == VMX_IDT_VECTORING_INFO_TYPE_SW_INT
+                          || (   uVector == X86_XCPT_BP /* INT3 */
+                              || uVector == X86_XCPT_OF /* INTO */
+                              || uVector == X86_XCPT_DB /* INT1 (ICEBP) */),
+                          ("Invalid vector: uVector=%#x uVectorType=%#x\n", uVector, uVectorType));
+                TRPMSetInstrLength(pVCpu, pVCpu->hm.s.Event.cbInstr);
+                break;
+            }
+        }
+    }
 
     /* We're now done converting the pending event. */
     pVCpu->hm.s.Event.fPending = false;
@@ -8390,7 +8406,13 @@ static int hmR0VmxExitToRing3(PVMCPUCC pVCpu, VBOXSTRICTRC rcExit)
         rc     = VMXWriteVmcs32(VMX_VMCS_GUEST_PENDING_DEBUG_XCPTS, 0);         AssertRC(rc);
     }
 #ifdef VBOX_STRICT
-    else
+    /*
+     * We check for rcExit here since for errors like VERR_VMX_UNABLE_TO_START_VM (which are
+     * fatal), we don't care about verifying duplicate injection of events. Errors like
+     * VERR_EM_INTERPRET are converted to their VINF_* counterparts -prior- to  calling this
+     * function so those should and will be checked below.
+     */
+    else if (RT_SUCCESS(rcExit))
     {
         /*
          * Ensure we don't accidentally clear a pending HM event without clearing the VMCS.
