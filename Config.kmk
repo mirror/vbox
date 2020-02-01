@@ -3756,17 +3756,18 @@ ifdef VBOX_SIGNING_MODE
 	--verbose=9 \
 	--force \
 	$(if-expr $(KBUILD_HOST_VERSION_MAJOR) <= 14,--digest-algorithm sha256,) \
-	--file-list - \
+	--file-list=- \
 	$(if-expr defined(VBOX_TSA_URL),--timestamp="$(VBOX_TSA_URL)") \
+	$(if $(2),--identifier "$(2)",) \
 	$(VBOX_CERTIFICATE_SUBJECT_NAME_ARGS) \
-	$(1) \
-	$(if $(2),--identifier "$(2)",)
+	$(1)
   endif
 
   ## Sign a DMG image.
   # @param 1  The file to sign.
   # @param 2  Identifier, optional.
-  VBOX_SIGN_DMG_FN = $(VBOX_SIGN_FILE_FN)
+  # @note Will segfault if --file-list is used on 10.15.2 (kSecCodeInfoChangedFiles -> NULL, outputter doesn't check for NULL).
+  VBOX_SIGN_DMG_FN = $(filter-out --file-list=-,$(VBOX_SIGN_FILE_FN))
 
   ## Sign a PKG file. Used with corp code signing only.
   # @param 1  The file to sign.
