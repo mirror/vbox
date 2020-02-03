@@ -289,7 +289,8 @@ int UIChooserItemMachine::minimumWidthHint() const
     iProposedWidth += iMarginHL + iMarginHR;
     /* And machine-item content to take into account: */
     int iTopLineWidth = m_iMinimumNameWidth;
-    if (!node()->toMachineNode()->cache()->toLocal()->snapshotName().isEmpty())
+    if (   node()->toMachineNode()->cache()->itemType() == UIVirtualMachineItem::ItemType_Local
+        && !node()->toMachineNode()->cache()->toLocal()->snapshotName().isEmpty())
         iTopLineWidth += (iMinorSpacing +
                           m_iMinimumSnapshotNameWidth);
     int iBottomLineWidth = m_statePixmapSize.width() +
@@ -700,7 +701,8 @@ void UIChooserItemMachine::updateMinimumSnapshotNameWidth()
     /* Calculate new minimum snapshot-name width: */
     int iMinimumSnapshotNameWidth = 0;
     /* Is there any snapshot exists? */
-    if (!node()->toMachineNode()->cache()->toLocal()->snapshotName().isEmpty())
+    if (   node()->toMachineNode()->cache()->itemType() == UIVirtualMachineItem::ItemType_Local
+        && !node()->toMachineNode()->cache()->toLocal()->snapshotName().isEmpty())
     {
         QFontMetrics fm(m_snapshotNameFont, model()->paintDevice());
         int iBracketWidth = fm.width("()"); /* bracket width */
@@ -784,6 +786,10 @@ void UIChooserItemMachine::updateVisibleName()
 
 void UIChooserItemMachine::updateVisibleSnapshotName()
 {
+    /* Make sure this is local machine item: */
+    if (node()->toMachineNode()->cache()->itemType() != UIVirtualMachineItem::ItemType_Local)
+        return;
+
     /* Prepare variables: */
     QPaintDevice *pPaintDevice = model()->paintDevice();
 
@@ -1087,7 +1093,8 @@ void UIChooserItemMachine::paintMachineInfo(QPainter *pPainter, const QRect &rec
                                       iMinorSpacing;
 
             /* Paint middle element: */
-            if (!node()->toMachineNode()->cache()->toLocal()->snapshotName().isEmpty())
+            if (   node()->toMachineNode()->cache()->itemType() == UIVirtualMachineItem::ItemType_Local
+                && !node()->toMachineNode()->cache()->toLocal()->snapshotName().isEmpty())
             {
                 /* Prepare variables: */
                 int iSnapshotNameX = iSnapshotNameIndent;

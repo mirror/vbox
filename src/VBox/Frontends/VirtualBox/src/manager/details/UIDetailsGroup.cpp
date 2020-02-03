@@ -77,8 +77,14 @@ UIDetailsGroup::~UIDetailsGroup()
 
 void UIDetailsGroup::buildGroup(const QList<UIVirtualMachineItem*> &machineItems)
 {
+    /* Filter out cloud VM items for now: */
+    QList<UIVirtualMachineItem*> filteredItems;
+    foreach (UIVirtualMachineItem *pItem, machineItems)
+        if (pItem->itemType() == UIVirtualMachineItem::ItemType_Local)
+            filteredItems << pItem;
+
     /* Remember passed machine-items: */
-    m_machineItems = machineItems;
+    m_machineItems = filteredItems;
 
     /* Cleanup superflous items: */
     bool fCleanupPerformed = m_items.size() > m_machineItems.size();
