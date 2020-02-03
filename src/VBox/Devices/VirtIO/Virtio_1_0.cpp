@@ -39,7 +39,7 @@
 *   Defined Constants And Macros                                                                                                 *
 *********************************************************************************************************************************/
 #define INSTANCE(a_pVirtio)                 ((a_pVirtio)->szInstance)
-#define QUEUE_NAME(a_pVirtio, a_idxQueue)   ((a_pVirtio)->virtqState[(a_idxQueue)].szVirtqName)
+#define VIRTQNAME(a_pVirtio, a_idxQueue)    ((a_pVirtio)->virtqState[(a_idxQueue)].szVirtqName)
 #define IS_DRIVER_OK(a_pVirtio)             ((a_pVirtio)->uDeviceStatus & VIRTIO_STATUS_DRIVER_OK)
 
 /**
@@ -173,11 +173,12 @@ DECLINLINE(uint16_t) virtioReadAvailRingIdx(PPDMDEVINS pDevIns, PVIRTIOCORE pVir
 
 DECLINLINE(bool) virtqIsEmpty(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t idxQueue)
 {
-    uint16_t uAvailGst = virtioReadAvailRingIdx(pDevIns, pVirtio, idxQueue);
-    bool fEmpty = uAvailGst == pVirtio->virtqState[idxQueue].uAvailIdx;
+    uint16_t uAvailGuest = virtioReadAvailRingIdx(pDevIns, pVirtio, idxQueue);
+    bool fEmpty = uAvailGuest == pVirtio->virtqState[idxQueue].uAvailIdx;
 
-    Log6Func(("Q<%u>: uAvailGst=%u uAvailIdx=%u -> fEmpty=%RTbool\n",
-             idxQueue, uAvailGst, pVirtio->virtqState[idxQueue].uAvailIdx, fEmpty));
+    Log6Func(("%s: uAvailGuest=%u uAvailIdx=%u. (%s)\n",
+             VIRTQNAME(pVirtio, idxQueue), uAvailGuest, pVirtio->virtqState[idxQueue].uAvailIdx,
+             fEmpty ? "Queue empty" : "Queue has available descriptors"));
     return fEmpty;
 }
 
@@ -617,13 +618,13 @@ int virtioCoreR3DescChainGet(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t i
 
         if (desc.fFlags & VIRTQ_DESC_F_WRITE)
         {
-            Log3Func(("%s IN  desc_idx=%u seg=%u addr=%RGp cb=%u\n", QUEUE_NAME(pVirtio, idxQueue), uDescIdx, cSegsIn, desc.GCPhysBuf, desc.cb));
+            Log3Func(("%s IN  desc_idx=%u seg=%u addr=%RGp cb=%u\n", VIRTQNAME(pVirtio, idxQueue), uDescIdx, cSegsIn, desc.GCPhysBuf, desc.cb));
             cbIn += desc.cb;
             pSeg = &(paSegsIn[cSegsIn++]);
         }
         else
         {
-            Log3Func(("%s OUT desc_idx=%u seg=%u addr=%RGp cb=%u\n", QUEUE_NAME(pVirtio, idxQueue), uDescIdx, cSegsOut, desc.GCPhysBuf, desc.cb));
+            Log3Func(("%s OUT desc_idx=%u seg=%u addr=%RGp cb=%u\n", VIRTQNAME(pVirtio, idxQueue), uDescIdx, cSegsOut, desc.GCPhysBuf, desc.cb));
             cbOut += desc.cb;
             pSeg = &(paSegsOut[cSegsOut++]);
         }
@@ -667,7 +668,6 @@ int virtioCoreR3DescChainGet(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t i
 void virtioCoreNotifyConfigChanged(PVIRTIOCORE pVirtio)
 {
     virtioKick(pVirtio->pDevIns, pVirtio, VIRTIO_ISR_DEVICE_CONFIG, pVirtio->uMsixConfig, false);
-
 }
 
 /**
@@ -679,14 +679,17 @@ void virtioCoreNotifyConfigChanged(PVIRTIOCORE pVirtio)
  */
 void virtioCoreQueueSetNotify(PVIRTIOCORE pVirtio, uint16_t idxQueue, bool fEnabled)
 {
-    uint16_t fFlags = virtioReadUsedFlags(pVirtio->pDevIns, pVirtio, idxQueue);
+    if (pVirtio->uDeviceStatus & VIRTIO_STATUS_DRIVER_OK)
+    {
+        uint16_t fFlags = virtioReadUsedFlags(pVirtio->pDevIns, pVirtio, idxQueue);
 
-    if (fEnabled)
-        fFlags &= ~ VIRTQ_USED_F_NO_NOTIFY;
-    else
-        fFlags |= VIRTQ_USED_F_NO_NOTIFY;
+        if (fEnabled)
+            fFlags &= ~ VIRTQ_USED_F_NO_NOTIFY;
+        else
+            fFlags |= VIRTQ_USED_F_NO_NOTIFY;
 
-    virtioWriteUsedFlags(pVirtio->pDevIns, pVirtio, idxQueue, fFlags);
+        virtioWriteUsedFlags(pVirtio->pDevIns, pVirtio, idxQueue, fFlags);
+    }
 }
 
 /**
@@ -857,7 +860,7 @@ int virtioCoreR3QueuePut(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t idxQu
                     ("Guest driver not in ready state.\n"), VERR_INVALID_STATE);
 
     Log3Func(("Copying client data to %s, desc chain (head desc_idx %d)\n",
-              QUEUE_NAME(pVirtio, idxQueue), virtioReadUsedRingIdx(pDevIns, pVirtio, idxQueue)));
+              VIRTQNAME(pVirtio, idxQueue), virtioReadUsedRingIdx(pDevIns, pVirtio, idxQueue)));
 
     /*
      * Copy s/g buf (virtual memory) to guest phys mem (IN direction). This virtual memory
@@ -905,7 +908,7 @@ int virtioCoreR3QueuePut(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t idxQu
               cbCopy, pDescChain->cbPhysReturn, pDescChain->cbPhysReturn - cbCopy));
 
     Log6Func(("Write ahead used_idx=%u, %s used_idx=%u\n",
-              pVirtq->uUsedIdx, QUEUE_NAME(pVirtio, idxQueue), virtioReadUsedRingIdx(pDevIns, pVirtio, idxQueue)));
+              pVirtq->uUsedIdx, VIRTQNAME(pVirtio, idxQueue), virtioReadUsedRingIdx(pDevIns, pVirtio, idxQueue)));
 
     RTMemFree((void *)pDescChain->pSgPhysSend->paSegs);
     RTMemFree(pDescChain->pSgPhysSend);
@@ -945,7 +948,7 @@ int virtioCoreQueueSync(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t idxQue
                     ("Guest driver not in ready state.\n"), VERR_INVALID_STATE);
 
     Log6Func(("Updating %s used_idx from %u to %u\n",
-              QUEUE_NAME(pVirtio, idxQueue), virtioReadUsedRingIdx(pDevIns, pVirtio, idxQueue), pVirtq->uUsedIdx));
+              VIRTQNAME(pVirtio, idxQueue), virtioReadUsedRingIdx(pDevIns, pVirtio, idxQueue), pVirtq->uUsedIdx));
 
     virtioWriteUsedRingIdx(pDevIns, pVirtio, idxQueue, pVirtq->uUsedIdx);
     virtioNotifyGuestDriver(pDevIns, pVirtio, idxQueue, false);
@@ -1161,11 +1164,15 @@ static int virtioCommonCfgAccessed(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, PVIR
 
 #ifdef LOG_ENABLED
 # define LOG_COMMON_CFG_ACCESS(member, a_offIntra) \
-    virtioCoreLogMappedIoValue(__FUNCTION__, #member, RT_SIZEOFMEMB(VIRTIO_PCI_COMMON_CFG_T, member), \
-                           pv, cb, a_offIntra, fWrite, false, 0);
+    if (LogIs7Enabled()) { \
+        virtioCoreLogMappedIoValue(__FUNCTION__, #member, RT_SIZEOFMEMB(VIRTIO_PCI_COMMON_CFG_T, member), \
+                                   pv, cb, a_offIntra, fWrite, false, 0); \
+    }
 # define LOG_COMMON_CFG_ACCESS_INDEXED(member, idx, a_offIntra) \
-    virtioCoreLogMappedIoValue(__FUNCTION__, #member, RT_SIZEOFMEMB(VIRTIO_PCI_COMMON_CFG_T, member), \
-                           pv, cb, a_offIntra, fWrite, true, idx);
+    if (LogIs7Enabled()) { \
+        virtioCoreLogMappedIoValue(__FUNCTION__, #member, RT_SIZEOFMEMB(VIRTIO_PCI_COMMON_CFG_T, member), \
+                                   pv, cb, a_offIntra, fWrite, true, idx); \
+    }
 #else
 # define LOG_COMMON_CFG_ACCESS(member, a_offIntra)              do { } while (0)
 # define LOG_COMMON_CFG_ACCESS_INDEXED(member, idx, a_offIntra) do { } while (0)
@@ -1309,10 +1316,11 @@ static int virtioCommonCfgAccessed(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, PVIR
         if (fWrite) /* Guest WRITE pCommonCfg->uDeviceStatus */
         {
             uint8_t const fNewStatus = *(uint8_t *)pv;
-            Log6Func(("Guest wrote uDeviceStatus (%#x, was %#x, change #%x) ................ (",
+            Log7Func(("Guest wrote uDeviceStatus (%#x, was %#x, change #%x) ................ (",
                       fNewStatus, pVirtio->uDeviceStatus, fNewStatus ^ pVirtio->uDeviceStatus));
-            virtioLogDeviceStatus(fNewStatus);
-            Log6((")\n"));
+            if (LogIs7Enabled())
+                virtioLogDeviceStatus(fNewStatus);
+            Log7((")\n"));
 
             /* If the status changed or we were reset, we need to go to ring-3 as
                it requires notifying the parent device. */
@@ -1343,10 +1351,11 @@ static int virtioCommonCfgAccessed(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, PVIR
         }
         else /* Guest READ pCommonCfg->uDeviceStatus */
         {
-            Log6Func(("Guest read  uDeviceStatus ................ ("));
+            Log7Func(("Guest read  uDeviceStatus ................ ("));
             *(uint8_t *)pv = pVirtio->uDeviceStatus;
-            virtioLogDeviceStatus(pVirtio->uDeviceStatus);
-            Log6((")\n"));
+            if (LogIs7Enabled())
+                virtioLogDeviceStatus(pVirtio->uDeviceStatus);
+            Log7((")\n"));
         }
     }
     else
@@ -1450,9 +1459,7 @@ static DECLCALLBACK(VBOXSTRICTRC) virtioMmioRead(PPDMDEVINS pDevIns, void *pvUse
             pVirtio->fGenUpdatePending = false;
         }
 
-        if (pVirtio->fMsiSupport)
-            PDMDevHlpPCISetIrq(pDevIns, pVirtio->uMsixConfig, PDM_IRQ_LEVEL_LOW);
-
+        virtioLowerInterrupt(pDevIns, 0);
         return rcStrict;
 #else
         return VINF_IOM_R3_MMIO_READ;
@@ -1545,7 +1552,7 @@ static DECLCALLBACK(VBOXSTRICTRC) virtioR3PciConfigRead(PPDMDEVINS pDevIns, PPDM
     PVIRTIOCORECC pVirtioCC = PDMINS_2_DATA_CC(pDevIns, PVIRTIOCORECC);
     RT_NOREF(pPciDev);
 
-    LogFlowFunc(("pDevIns=%p pPciDev=%p uAddress=%#x cb=%u pu32Value=%p\n",
+    Log7Func(("pDevIns=%p pPciDev=%p uAddress=%#x cb=%u pu32Value=%p\n",
                  pDevIns, pPciDev, uAddress, cb, pu32Value));
     if (uAddress == pVirtio->uPciCfgDataOff)
     {
@@ -1585,7 +1592,7 @@ static DECLCALLBACK(VBOXSTRICTRC) virtioR3PciConfigWrite(PPDMDEVINS pDevIns, PPD
     PVIRTIOCORECC pVirtioCC = PDMINS_2_DATA_CC(pDevIns, PVIRTIOCORECC);
     RT_NOREF(pPciDev);
 
-    LogFlowFunc(("pDevIns=%p pPciDev=%p uAddress=%#x cb=%u u32Value=%#x\n", pDevIns, pPciDev, uAddress, cb, u32Value));
+    Log7Func(("pDevIns=%p pPciDev=%p uAddress=%#x cb=%u u32Value=%#x\n", pDevIns, pPciDev, uAddress, cb, u32Value));
     if (uAddress == pVirtio->uPciCfgDataOff)
     {
         /* VirtIO 1.0 spec section 4.1.4.7 describes a required alternative access capability
