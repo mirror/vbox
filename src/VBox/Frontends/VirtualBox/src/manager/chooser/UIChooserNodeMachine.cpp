@@ -17,6 +17,7 @@
 
 /* GUI includes: */
 #include "UIChooserNodeMachine.h"
+#include "UIVirtualMachineItemCloud.h"
 #include "UIVirtualMachineItemLocal.h"
 
 
@@ -33,11 +34,33 @@ UIChooserNodeMachine::UIChooserNodeMachine(UIChooserNode *pParent,
 }
 
 UIChooserNodeMachine::UIChooserNodeMachine(UIChooserNode *pParent,
+                                           bool fFavorite,
+                                           int  iPosition)
+    : UIChooserNode(pParent, fFavorite)
+    , m_pCache(new UIVirtualMachineItemCloud)
+{
+    if (parentNode())
+        parentNode()->addNode(this, iPosition);
+    retranslateUi();
+}
+
+UIChooserNodeMachine::UIChooserNodeMachine(UIChooserNode *pParent,
                                            UIChooserNodeMachine *pCopyFrom,
                                            int iPosition)
     : UIChooserNode(pParent, pCopyFrom->isFavorite())
-    , m_pCache(new UIVirtualMachineItemLocal(pCopyFrom->cache()->toLocal()->machine()))
 {
+    switch (pCopyFrom->cache()->itemType())
+    {
+        case UIVirtualMachineItem::ItemType_Local:
+            m_pCache = new UIVirtualMachineItemLocal(pCopyFrom->cache()->toLocal()->machine());
+            break;
+        case UIVirtualMachineItem::ItemType_CloudFake:
+            m_pCache = new UIVirtualMachineItemCloud;
+            break;
+        default:
+            break;
+    }
+
     if (parentNode())
         parentNode()->addNode(this, iPosition);
     retranslateUi();

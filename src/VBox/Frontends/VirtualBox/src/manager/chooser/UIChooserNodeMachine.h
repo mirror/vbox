@@ -36,7 +36,7 @@ class UIChooserNodeMachine : public UIChooserNode
 
 public:
 
-    /** Constructs chooser node passing @a pParent to the base-class.
+    /** Constructs chooser node for local VM passing @a pParent to the base-class.
       * @param  fFavorite   Brings whether the node is favorite.
       * @param  iPosition   Brings the initial node position.
       * @param  comMachine  Brings COM machine object. */
@@ -44,6 +44,12 @@ public:
                          bool fFavorite,
                          int iPosition,
                          const CMachine &comMachine);
+    /** Constructs chooser node for cloud VM passing @a pParent to the base-class.
+      * @param  fFavorite  Brings whether the node is favorite.
+      * @param  iPosition  Brings the initial node position. */
+    UIChooserNodeMachine(UIChooserNode *pParent,
+                         bool fFavorite,
+                         int iPosition);
     /** Constructs chooser node passing @a pParent to the base-class.
       * @param  pCopyFrom  Brings the node to copy data from.
       * @param  iPosition  Brings the initial node position. */

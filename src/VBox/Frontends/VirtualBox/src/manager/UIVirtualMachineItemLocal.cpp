@@ -20,10 +20,10 @@
 #include <QIcon>
 
 /* GUI includes: */
-#include "UIVirtualMachineItemLocal.h"
 #include "UICommon.h"
 #include "UIConverter.h"
 #include "UIExtraDataManager.h"
+#include "UIVirtualMachineItemLocal.h"
 #ifdef VBOX_WS_MAC
 # include <ApplicationServices/ApplicationServices.h>
 #endif /* VBOX_WS_MAC */

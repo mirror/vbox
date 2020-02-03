@@ -16,6 +16,7 @@
  */
 
 /* GUI includes: */
+#include "UIVirtualMachineItemCloud.h"
 #include "UIVirtualMachineItemLocal.h"
 
 
@@ -40,6 +41,13 @@ UIVirtualMachineItemLocal *UIVirtualMachineItem::toLocal()
 {
     return   itemType() == ItemType_Local
            ? static_cast<UIVirtualMachineItemLocal*>(this)
+           : 0;
+}
+
+UIVirtualMachineItemCloud *UIVirtualMachineItem::toCloud()
+{
+    return   itemType() == ItemType_CloudFake
+           ? static_cast<UIVirtualMachineItemCloud*>(this)
            : 0;
 }
 
