@@ -359,6 +359,25 @@ VBOX_INSTALL_LANG_LPROJ := $(addsuffix .lproj,$(VBOX_APPROVED_GUI_LANGUAGES))
 # The VirtualBox Application.
 #
 
+VBOX_DI_VBAPP_PROGS_HARDENED = \
+	MacOS/VirtualBoxVM \
+	MacOS/VBoxNetDHCP \
+	MacOS/VBoxNetNAT \
+	MacOS/VBoxHeadless
+
+VBOX_DI_VBAPP_PROGS = \
+	MacOS/VBoxManage \
+	MacOS/VBoxSVC \
+	MacOS/VBoxXPCOMIPCD \
+	MacOS/VBoxNetAdpCtl \
+	MacOS/VBoxExtPackHelperApp \
+	MacOS/VBoxBugReport \
+	MacOS/VBoxBalloonCtrl \
+	MacOS/VBoxAutostart \
+	$(if $(VBOX_WITH_WEBSERVICES),MacOS/vboxwebsrv) \
+	MacOS/VirtualBox \
+	$(if $(VBOX_WITH_DTRACE),MacOS/VBoxDTrace,)
+
 VBOX_DI_VBAPP_DYLIBS = \
 	$(foreach qtmod, $(VBOX_QT_MOD_NAMES), Frameworks/$(qtmod).framework/Versions/$(VBOX_QT_VERSION_MAJOR)/$(qtmod)) \
 	MacOS/VBoxDD.dylib \
@@ -378,7 +397,8 @@ VBOX_DI_VBAPP_DYLIBS = \
 	MacOS/components/VBoxXPCOMIPCC.dylib \
 	MacOS/VBoxAuth.dylib \
 	MacOS/VBoxAuthSimple.dylib \
-	$(if $(VBOX_WITH_GUEST_CONTROL),MacOS/VBoxGuestControlSvc.dylib,)
+	$(if $(VBOX_WITH_GUEST_CONTROL),MacOS/VBoxGuestControlSvc.dylib,) \
+	MacOS/UICommon.dylib
 ifneq ($(wildcard $(VBOX_PATH_DIST)/VirtualBox.app/Contents/MacOS/accessible/libqtaccessiblewidgets.dylib),)
  VBOX_DI_VBAPP_DYLIBS += \
 	MacOS/accessible/libqtaccessiblewidgets.dylib
@@ -393,12 +413,7 @@ ifdef VBOX_WITH_DEBUGGER_GUI
  	MacOS/DbgPlugInDiggers.dylib
 endif
 ifdef VBOX_WITH_HARDENING
- VBOX_DI_VBAPP_DYLIBS += \
- 	MacOS/UICommon.dylib \
- 	MacOS/VirtualBoxVM.dylib \
- 	MacOS/VBoxNetDHCP.dylib \
- 	MacOS/VBoxNetNAT.dylib \
- 	MacOS/VBoxHeadless.dylib
+ VBOX_DI_VBAPP_DYLIBS += $(addsuffix .dylib,$(VBOX_DI_VBAPP_PROGS_HARDENED))
 endif
 ifdef VBOX_WITH_HDDPARALLELS_INSTALL
  VBOX_DI_VBAPP_DYLIBS += \
@@ -441,23 +456,6 @@ endif
 if1of ($(VBOX_DI_VBAPP_DYLIBS.amd64) $(VBOX_DI_VBAPP_DYLIBS.x86),$(VBOX_DI_VBAPP_DYLIBS))
  $(error Conflict.$(NLTAB)VBOX_DI_VBAPP_DYLIBS.amd64=$(VBOX_DI_VBAPP_DYLIBS.amd64)$(NLTAB)VBOX_DI_VBAPP_DYLIBS.x86  =$(VBOX_DI_VBAPP_DYLIBS.x86)$(NLTAB)VBOX_DI_VBAPP_DYLIBS=$(VBOX_DI_VBAPP_DYLIBS))
 endif
-
-VBOX_DI_VBAPP_PROGS = \
-	MacOS/VBoxManage \
-	MacOS/VBoxSVC \
-	MacOS/VBoxHeadless \
-	MacOS/VBoxXPCOMIPCD \
-	MacOS/VBoxNetAdpCtl \
-	MacOS/VBoxNetDHCP \
-	MacOS/VBoxNetNAT \
-	MacOS/VBoxExtPackHelperApp \
-	MacOS/VBoxBugReport \
-	MacOS/VBoxBalloonCtrl \
-	MacOS/VBoxAutostart \
-	MacOS/VirtualBoxVM \
-	$(if $(VBOX_WITH_WEBSERVICES),MacOS/vboxwebsrv) \
-	MacOS/VirtualBox \
-	$(if $(VBOX_WITH_DTRACE),MacOS/VBoxDTrace,)
 
 VBOX_DI_VBAPP_UNIVERSAL_PROGS = \
 	MacOS/vmstarter \
@@ -540,7 +538,8 @@ endif
 $(VBOX_PATH_PACK_TMP)/Packages/VirtualBox.pkg: \
 		$(foreach f,$(VBOX_INSTALLER_ADD_LANGUAGES), \
 			$(VBOX_BRAND_$(f)_VIRTUALBOX_DESCRIPTION_PLIST)) \
-		$(foreach f, $(VBOX_DI_VBAPP_DYLIBS) $(VBOX_DI_VBAPP_OTHER_UNIVERSAL_BINS) $(VBOX_DI_VBAPP_UNIVERSAL_PROGS) $(VBOX_DI_VBAPP_OTHER_BINS) $(VBOX_DI_VBAPP_PROGS) $(VBOX_DI_VBAPP_MISC_FILES)\
+		$(foreach f, $(VBOX_DI_VBAPP_DYLIBS) $(VBOX_DI_VBAPP_OTHER_UNIVERSAL_BINS) $(VBOX_DI_VBAPP_UNIVERSAL_PROGS) \
+			$(VBOX_DI_VBAPP_OTHER_BINS) $(VBOX_DI_VBAPP_PROGS) $(VBOX_DI_VBAPP_PROGS_HARDENED) $(VBOX_DI_VBAPP_MISC_FILES) \
 			,$(call VBOX_DI_FN_DEP_BOTH,VirtualBox.app/Contents/$(f)) ) \
 		$(foreach f, $(VBOX_DI_VBAPP_DYLIBS.x86) $(VBOX_DI_VBAPP_MISC_FILES.x86)\
 			,$(call VBOX_DI_FN_DEP_32,VirtualBox.app/Contents/$(f)) ) \
@@ -583,6 +582,8 @@ $(VBOX_PATH_PACK_TMP)/Packages/VirtualBox.pkg: \
 		 	$(call VBOX_DI_FN_DEP_64,VirtualBox.app/Contents/MacOS/dtrace/testcase/amd64/$f)) \
                 $(addprefix $(VBOX_PATH_DIST)/VirtualBox.app/Contents/MacOS/dtrace/scripts/,$(VBOXINST_DTRACE_SCRIPTS_FILES)) \
 		 ,) \
+		$(if-expr defined(VBOX_WITH_MACOS_HARDENED_RUNTIME) && defined(VBOX_SIGNING_MODE), \
+			$(PATH_ROOT)/src/VBox/HostDrivers/Support/darwin/SUPR3HardenedEntitlements.plist,) \
 		$(VBOX_DARWIN_INST_DEP_ON_MAKEFILE)
 	$(call MSG_TOOL,pkgbuild,,,$@)
 	@# Cleanup any previously failed attempts.
@@ -628,6 +629,7 @@ $(VBOX_PATH_PACK_TMP)/Packages/VirtualBox.pkg: \
 			$(VBOX_DI_VBAPP_UNIVERSAL_PROGS) \
 			$(VBOX_DI_VBAPP_OTHER_BINS) \
 			$(VBOX_DI_VBAPP_PROGS) \
+			$(VBOX_DI_VBAPP_PROGS_HARDENED) \
 			$(VBOX_DI_VBAPP_MISC_FILES) \
 			$(VBOX_DI_VBAPP_DYLIBS.$(KBUILD_TARGET_ARCH)) \
 			$(VBOX_DI_VBAPP_MISC_FILES.$(KBUILD_TARGET_ARCH)) \
@@ -676,7 +678,7 @@ endif
 	$(foreach otherbin, $(VBOX_DI_VBAPP_UNIVERSAL_PROGS) \
 		,$(INSTALL) -m 0755 $(VBOX_PATH_DIST)/VirtualBox.app/Contents/$(otherbin)       $(VBOX_PATH_VBOX_APP_TMP)/Contents/$(otherbin)$(NLTAB))
 	@# Copy the binaries.
-	$(foreach prog, $(VBOX_DI_VBAPP_PROGS) \
+	$(foreach prog, $(VBOX_DI_VBAPP_PROGS) $(VBOX_DI_VBAPP_PROGS_HARDENED) \
 		,$(INSTALL) -m 0755 $(VBOX_PATH_DIST)/VirtualBox.app/Contents/$(prog)       	$(VBOX_PATH_VBOX_APP_TMP)/Contents/$(prog)$(NLTAB))
 #ifdef VBOX_WITH_HARDENING - disabled temporarily
 if 1
@@ -688,6 +690,7 @@ if 1
 		$(VBOX_DI_VBAPP_DYLIBS) \
 		$(VBOX_DI_VBAPP_DYLIBS.$(KBUILD_TARGET_ARCH)) \
 		$(VBOX_DI_VBAPP_PROGS) \
+		$(VBOX_DI_VBAPP_PROGS_HARDENED) \
 		,install_name_tool \
 			$(foreach qtmod, $(VBOX_QT_MOD_NAMES), \
 				-change           @executable_path/../Frameworks/$(qtmod).framework/Versions/$(VBOX_QT_VERSION_MAJOR)/$(qtmod) \
@@ -734,7 +737,7 @@ ifdef VBOX_SIGNING_MODE
 		, $(NLTAB)$(call VBOX_SIGN_MACHO_FN,$(VBOX_PATH_VBOX_APP_TMP)/Contents/$(bin),org.virtualbox.app.macos.$(notdir $(bin))) )
 	$(foreach other, $(VBOX_DI_VBAPP_OTHER_UNIVERSAL_BINS) $(VBOX_DI_VBAPP_OTHER_BINS)\
 		, $(NLTAB)$(call VBOX_SIGN_MACHO_FN,$(VBOX_PATH_VBOX_APP_TMP)/Contents/$(other),org.virtualbox.app.macos.$(notdir $(other))) )
-	$(foreach bin, $(filter-out MacOS/VirtualBox,$(VBOX_DI_VBAPP_PROGS)) \
+	$(foreach bin, $(filter-out MacOS/VirtualBox,$(VBOX_DI_VBAPP_PROGS) $(if-expr !defined(VBOX_WITH_MACOS_HARDENED_RUNTIME),$(VBOX_DI_VBAPP_PROGS_HARDENED),)) \
 		, $(NLTAB)$(call VBOX_SIGN_MACHO_FN,$(VBOX_PATH_VBOX_APP_TMP)/Contents/$(bin),org.virtualbox.app.macos.$(notdir $(bin))) )
 	$(foreach file, $(if-expr defined(VBOX_WITH_WEBSERVICES),MacOS/org.virtualbox.vboxwebsrv.plist,) \
 			MacOS/org.virtualbox.vboxballoonctrl.plist \
@@ -751,9 +754,20 @@ ifdef VBOX_SIGNING_MODE
 			$(addprefix MacOS/nls/,$(VBOX_INSTALL_LANG_FILES)) \
 		, $(NLTAB)$(call VBOX_SIGN_FILE_FN,$(VBOX_PATH_VBOX_APP_TMP)/Contents/$(file),org.virtualbox.app.$(tolower $(subst $(SP),,$(subst /,.,$(file))))) )
 
-	$(call VBOX_SIGN_BUNDLE_FN,$(VBOX_PATH_VBOX_APP_TMP)/Contents/Resources/VirtualBoxVM.app,,)
+	$(call VBOX_SIGN_BUNDLE_FN,$(VBOX_PATH_VBOX_APP_TMP)/Contents/Resources/VirtualBoxVM.app,,$(if-expr defined(VBOX_WITH_MACOS_HARDENED_RUNTIME)\
+		,--entitlements="$(PATH_ROOT)/src/VBox/HostDrivers/Support/darwin/SUPR3HardenedEntitlements.plist",))
 	$(call VBOX_SIGN_BUNDLE_FN,$(VBOX_PATH_VBOX_APP_TMP)/Contents/Resources/vmstarter.app,,)
 	$(call VBOX_SIGN_BUNDLE_FN,$(VBOX_PATH_VBOX_APP_TMP),,--deep)
+ ifdef VBOX_WITH_MACOS_HARDENED_RUNTIME # HACK ALERT! --deep fries the entitlements, so redo w/o --deep now.
+	$(foreach bin, $(VBOX_DI_VBAPP_PROGS_HARDENED) \
+		, $(NLTAB)$(call VBOX_SIGN_MACHO_FN,$(VBOX_PATH_VBOX_APP_TMP)/Contents/$(bin),org.virtualbox.app.macos.$(notdir $(bin)), \
+				--entitlements="$(PATH_ROOT)/src/VBox/HostDrivers/Support/darwin/SUPR3HardenedEntitlements.plist"))
+	$(call VBOX_SIGN_BUNDLE_FN,$(VBOX_PATH_VBOX_APP_TMP)/Contents/Resources/VirtualBoxVM.app,,\
+		--entitlements="$(PATH_ROOT)/src/VBox/HostDrivers/Support/darwin/SUPR3HardenedEntitlements.plist",)
+	$(call VBOX_SIGN_BUNDLE_FN,$(VBOX_PATH_VBOX_APP_TMP),,)
+	$(foreach bin, $(VBOX_DI_VBAPP_PROGS_HARDENED) \
+		, $(NLTAB)codesign -d -v -v -v --entitlements :- $(VBOX_PATH_VBOX_APP_TMP)/Contents/$(bin) )
+ endif
 endif
 	@# Set the correct owner and set the set-user-ID-on-execution bit on the relevant executables.
 	sudo chown -R root:admin $(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.root

@@ -3725,8 +3725,10 @@ ifdef VBOX_SIGNING_MODE
   ## Sign a Mach-O image.
   # @param 1  The file to sign.
   # @param 2  Identifier, optional.
+  # @param 3  Additional codesign command line parameters, optional.
   if $(intersects darwin all 1,$(VBOX_WITH_CORP_CODE_SIGNING))
    ## @todo cannot handle $(2), the identifier.
+   ## @todo must handle $(3) if entitlement.
    VBOX_SIGN_MACHO_FN = $(call MSG_TOOL,SIGNTOOL,,$(1),$(2))$(NLTAB)$(call VBOX_CCS_SIGN_CMD,binary,$(1))
   else
    VBOX_SIGN_MACHO_FN = $(call MSG_TOOL,SIGNTOOL,,$(1),$(2))$(NLTAB)$(VBOX_CODESIGN) \
@@ -3736,6 +3738,7 @@ ifdef VBOX_SIGNING_MODE
 	--file-list - \
 	$(if-expr defined(VBOX_TSA_URL),--timestamp="$(VBOX_TSA_URL)") \
 	$(VBOX_CERTIFICATE_SUBJECT_NAME_ARGS) \
+	$(3) \
 	$(1) \
 	$(if $(2),--identifier "$(2)",)
   endif
