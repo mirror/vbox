@@ -647,10 +647,6 @@ DECLINLINE(bool) virtioNetValidateRequiredFeatures(uint32_t fFeatures)
     return true;
 }
 
-/*********************************************************************************************************************************
-*   Virtio Net config.                                                                                                           *
-*********************************************************************************************************************************/
-
 /**
  * Resolves to boolean true if uOffset matches a field offset and size exactly,
  * (or if 64-bit field, if it accesses either 32-bit part as a 32-bit access)
