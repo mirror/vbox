@@ -1,6 +1,5 @@
 <RCC>
     <qresource suffix="/">
-        <file alias="machine_32px.png">images/machine_32px.png</file>
         <file alias="machine_abstract_16px.png">images/machine_abstract_16px.png</file>
         <file alias="machine_details_manager_16px.png">images/machine_details_manager_16px.png</file>
         <file alias="machine_details_manager_24px.png">images/machine_details_manager_24px.png</file>
@@ -45,6 +44,7 @@
         <file alias="ok_16px.png">images/ok_16px.png</file>
         <file alias="os_archlinux.png">images/os_archlinux.png</file>
         <file alias="os_archlinux_64.png">images/os_archlinux_64.png</file>
+        <file alias="os_cloud.png">images/os_cloud.png</file>
         <file alias="os_debian.png">images/os_debian.png</file>
         <file alias="os_debian_64.png">images/os_debian_64.png</file>
         <file alias="os_dos.png">images/os_dos.png</file>
@@ -282,6 +282,7 @@
         <file alias="sound_warning_16px.png">images/sound_warning_16px.png</file>
         <file alias="state_aborted_16px.png">images/state_aborted_16px.png</file>
         <file alias="state_discarding_16px.png">images/state_discarding_16px.png</file>
+        <file alias="state_loading_16px.png">images/state_loading_16px.png</file>
         <file alias="state_paused_16px.png">images/state_paused_16px.png</file>
         <file alias="state_powered_off_16px.png">images/state_powered_off_16px.png</file>
         <file alias="state_restoring_16px.png">images/state_restoring_16px.png</file>

@@ -1,6 +1,5 @@
 <RCC>
     <qresource suffix="/">
-        <file alias="log_viewer_search_forward_16px_x2.png">images/x2/log_viewer_search_forward_16px_x2.png</file>
         <file alias="machine_16px_x2.png">images/x2/machine_16px_x2.png</file>
         <file alias="machine_24px_x2.png">images/x2/machine_24px_x2.png</file>
         <file alias="machine_32px_x2.png">images/x2/machine_32px_x2.png</file>
@@ -46,6 +45,7 @@
         <file alias="ok_16px_x2.png">images/x2/ok_16px_x2.png</file>
         <file alias="os_archlinux_64_x2.png">images/x2/os_archlinux_64_x2.png</file>
         <file alias="os_archlinux_x2.png">images/x2/os_archlinux_x2.png</file>
+        <file alias="os_cloud_x2.png">images/x2/os_cloud_x2.png</file>
         <file alias="os_debian_64_x2.png">images/x2/os_debian_64_x2.png</file>
         <file alias="os_debian_x2.png">images/x2/os_debian_x2.png</file>
         <file alias="os_dos_x2.png">images/x2/os_dos_x2.png</file>
@@ -283,6 +283,7 @@
         <file alias="sound_warning_16px_x2.png">images/x2/sound_warning_16px_x2.png</file>
         <file alias="state_aborted_16px_x2.png">images/x2/state_aborted_16px_x2.png</file>
         <file alias="state_discarding_16px_x2.png">images/x2/state_discarding_16px_x2.png</file>
+        <file alias="state_loading_16px_x2.png">images/x2/state_loading_16px_x2.png</file>
         <file alias="state_paused_16px_x2.png">images/x2/state_paused_16px_x2.png</file>
         <file alias="state_powered_off_16px_x2.png">images/x2/state_powered_off_16px_x2.png</file>
         <file alias="state_restoring_16px_x2.png">images/x2/state_restoring_16px_x2.png</file>
