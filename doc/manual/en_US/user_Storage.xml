@@ -238,7 +238,7 @@
           To support high-end guests which require SAS controllers,
           &product-name; emulates a LSI Logic SAS controller, which can
           be enabled much the same way as a SCSI controller. At this
-          time, up to eight devices can be connected to the SAS
+          time, up to 255 devices can be connected to the SAS
           controller.
         </para>
 
@@ -360,8 +360,8 @@
 
       <listitem>
         <para>
-          Eight slots attached to the SAS controller, if enabled and
-          supported by the guest OS.
+          Up to 255 slots attached to the SAS controller, if enabled
+          and supported by the guest OS.
         </para>
       </listitem>
 
