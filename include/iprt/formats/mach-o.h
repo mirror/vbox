@@ -200,15 +200,16 @@ typedef struct mach_header_32
 
 typedef struct mach_header_64
 {
-    uint32_t            magic;
-    int32_t             cputype;
-    int32_t             cpusubtype;
-    uint32_t            filetype;
-    uint32_t            ncmds;
-    uint32_t            sizeofcmds;
-    uint32_t            flags;
-    uint32_t            reserved;
+    uint32_t            magic;          /**< 0x00 */
+    int32_t             cputype;        /**< 0x04 */
+    int32_t             cpusubtype;     /**< 0x08 */
+    uint32_t            filetype;       /**< 0x0c */
+    uint32_t            ncmds;          /**< 0x10 */
+    uint32_t            sizeofcmds;     /**< 0x14 */
+    uint32_t            flags;          /**< 0x18 */
+    uint32_t            reserved;       /**< 0x1c */
 } mach_header_64_t;
+AssertCompileSize(mach_header_64_t, 0x20);
 
 /* magic */
 #ifndef IMAGE_MACHO64_SIGNATURE
