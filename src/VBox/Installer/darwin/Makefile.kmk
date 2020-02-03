@@ -361,9 +361,9 @@ VBOX_INSTALL_LANG_LPROJ := $(addsuffix .lproj,$(VBOX_APPROVED_GUI_LANGUAGES))
 
 VBOX_DI_VBAPP_PROGS_HARDENED = \
 	MacOS/VirtualBoxVM \
+	MacOS/VBoxHeadless \
 	MacOS/VBoxNetDHCP \
 	MacOS/VBoxNetNAT \
-	MacOS/VBoxHeadless
 
 VBOX_DI_VBAPP_PROGS = \
 	MacOS/VBoxManage \
@@ -583,7 +583,8 @@ $(VBOX_PATH_PACK_TMP)/Packages/VirtualBox.pkg: \
                 $(addprefix $(VBOX_PATH_DIST)/VirtualBox.app/Contents/MacOS/dtrace/scripts/,$(VBOXINST_DTRACE_SCRIPTS_FILES)) \
 		 ,) \
 		$(if-expr defined(VBOX_WITH_MACOS_HARDENED_RUNTIME) && defined(VBOX_SIGNING_MODE), \
-			$(PATH_ROOT)/src/VBox/HostDrivers/Support/darwin/SUPR3HardenedEntitlements.plist,) \
+			$(PATH_ROOT)/src/VBox/HostDrivers/Support/darwin/SUPR3HardenedEntitlements.plist \
+			$(PATH_ROOT)/src/VBox/HostDrivers/Support/darwin/SUPR3HardenedEntitlementsVM.plist,) \
 		$(VBOX_DARWIN_INST_DEP_ON_MAKEFILE)
 	$(call MSG_TOOL,pkgbuild,,,$@)
 	@# Cleanup any previously failed attempts.
@@ -759,11 +760,14 @@ ifdef VBOX_SIGNING_MODE
 	$(call VBOX_SIGN_BUNDLE_FN,$(VBOX_PATH_VBOX_APP_TMP)/Contents/Resources/vmstarter.app,,)
 	$(call VBOX_SIGN_BUNDLE_FN,$(VBOX_PATH_VBOX_APP_TMP),,--deep)
  ifdef VBOX_WITH_MACOS_HARDENED_RUNTIME # HACK ALERT! --deep fries the entitlements, so redo w/o --deep now.
-	$(foreach bin, $(VBOX_DI_VBAPP_PROGS_HARDENED) \
+	$(foreach bin, $(filter-out MacOS/VirtualBoxVM MacOS/VBoxHeadless,$(VBOX_DI_VBAPP_PROGS_HARDENED)) \
 		, $(NLTAB)$(call VBOX_SIGN_MACHO_FN,$(VBOX_PATH_VBOX_APP_TMP)/Contents/$(bin),org.virtualbox.app.macos.$(notdir $(bin)), \
 				--entitlements="$(PATH_ROOT)/src/VBox/HostDrivers/Support/darwin/SUPR3HardenedEntitlements.plist"))
+	$(foreach bin, $(filter MacOS/VirtualBoxVM MacOS/VBoxHeadless,$(VBOX_DI_VBAPP_PROGS_HARDENED)) \
+		, $(NLTAB)$(call VBOX_SIGN_MACHO_FN,$(VBOX_PATH_VBOX_APP_TMP)/Contents/$(bin),org.virtualbox.app.macos.$(notdir $(bin)), \
+				--entitlements="$(PATH_ROOT)/src/VBox/HostDrivers/Support/darwin/SUPR3HardenedEntitlementsVM.plist"))
 	$(call VBOX_SIGN_BUNDLE_FN,$(VBOX_PATH_VBOX_APP_TMP)/Contents/Resources/VirtualBoxVM.app,,\
-		--entitlements="$(PATH_ROOT)/src/VBox/HostDrivers/Support/darwin/SUPR3HardenedEntitlements.plist",)
+		--entitlements="$(PATH_ROOT)/src/VBox/HostDrivers/Support/darwin/SUPR3HardenedEntitlementsVM.plist",)
 	$(call VBOX_SIGN_BUNDLE_FN,$(VBOX_PATH_VBOX_APP_TMP),,)
 	$(foreach bin, $(VBOX_DI_VBAPP_PROGS_HARDENED) \
 		, $(NLTAB)codesign -d -v -v -v --entitlements :- $(VBOX_PATH_VBOX_APP_TMP)/Contents/$(bin) )
