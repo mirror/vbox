@@ -536,7 +536,8 @@ typedef struct GMM
     /** Sharable modules (count of nodes in pGlobalSharedModuleTree). */
     uint32_t            cShareableModules;
 
-    /** The chunk list.  For simplifying the cleanup process. */
+    /** The chunk list.  For simplifying the cleanup process and avoid tree
+     * traversal. */
     RTLISTANCHOR        ChunkList;
 
     /** The maximum number of pages we're allowed to allocate.
