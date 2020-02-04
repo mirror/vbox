@@ -359,10 +359,13 @@ void BIOSCALL int13_harddisk(disk_regs_t r)
         if (( (bios_dsk->devices[device].pchs.heads != nlh) || (bios_dsk->devices[device].pchs.spt != nlspt)) || VBOX_IS_SCSI_DEVICE(device)) {
             lba = ((((uint32_t)cylinder * (uint32_t)nlh) + (uint32_t)head) * (uint32_t)nlspt) + (uint32_t)sector - 1;
             sector = 0; // this forces the command to be lba
+            BX_DEBUG_INT13_HD("%s: %d sectors from lba %lu @ %04x:%04x\n", __func__,
+                              count, lba, ES, BX);
+        } else {
+            BX_DEBUG_INT13_HD("%s: %d sectors from C/H/S %u/%u/%u @ %04x:%04x\n", __func__,
+                              count, cylinder, head, sector, ES, BX);
         }
 
-        BX_DEBUG_INT13_HD("%s: %d sectors from lba %lu @ %04x:%04x\n", __func__,
-                          count, lba, ES, BX);
 
         /* Clear the count of transferred sectors/bytes. */
         bios_dsk->drqp.trsfsectors = 0;
