@@ -5,7 +5,7 @@
  *  registry definitions necessary to properly register
  *  VirtualBox Main API COM components.
 
-    Copyright (C) 2007-2016 Oracle Corporation
+    Copyright (C) 2007-2020 Oracle Corporation
 
     This file is part of VirtualBox Open Source Edition (OSE), as
     available from http://www.virtualbox.org. This file is free software;
