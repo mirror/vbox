@@ -154,17 +154,13 @@ def timestampMilli():
     """
     Gets a millisecond timestamp.
     """
-    if sys.platform == 'win32':
-        return long(time.clock() * 1000);
-    return long(time.time() * 1000);
+    return utils.timestampMilli();
 
 def timestampNano():
     """
     Gets a nanosecond timestamp.
     """
-    if sys.platform == 'win32':
-        return long(time.clock() * 1000000000);
-    return long(time.time() * 1000000000);
+    return utils.timestampNano();
 
 def tryGetHostByName(sName):
     """

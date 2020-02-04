@@ -1337,6 +1337,7 @@ def processCollectCrashInfo(uPid, fnLog, fnCrashFile):
 #
 # Note! We cannot use time.clock() as the timestamp must be portable across
 #       processes.  See timeout testcase problem on win hosts (no logs).
+#       Also, time.clock() was axed in python 3.8 (https://bugs.python.org/issue31803).
 #
 #import sys;
 #import time;
