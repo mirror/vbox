@@ -4,7 +4,7 @@
     VirtualBox.xidl for cut & paste into man_VBoxManage-dhcpserver.xml.
 
 
-    Copyright (C) 2019 Oracle Corporation
+    Copyright (C) 2019-2020 Oracle Corporation
 
     This file is part of VirtualBox Open Source Edition (OSE), as
     available from http://www.virtualbox.org. This file is free software;
@@ -61,7 +61,7 @@ The work.
     DO NOT EDIT!
 
 
-    Copyright (C) 2019 Oracle Corporation
+    Copyright (C) 2019-2020 Oracle Corporation
 
     This file is part of VirtualBox Open Source Edition (OSE), as
     available from http://www.virtualbox.org. This file is free software;

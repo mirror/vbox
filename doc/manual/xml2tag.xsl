@@ -4,7 +4,7 @@
     xml2tag.xsl:
         XSLT stylesheet that extracts just the tags of an XML document.
 
-    Copyright (C) 2018 Oracle Corporation
+    Copyright (C) 2018-2020 Oracle Corporation
 
     This file is part of VirtualBox Open Source Edition (OSE), as
     available from http://www.virtualbox.org. This file is free software;

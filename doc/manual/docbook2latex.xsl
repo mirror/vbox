@@ -18,7 +18,7 @@
         pretty quotes for English in the LaTeX output generated
         by this XSLT (see below).
 
-    Copyright (C) 2006-2012 Oracle Corporation
+    Copyright (C) 2006-2020 Oracle Corporation
 
     This file is part of VirtualBox Open Source Edition (OSE), as
     available from http://www.virtualbox.org. This file is free software;

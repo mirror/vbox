@@ -5,7 +5,7 @@
         turning a refentry (manpage) into a unix manual page and
         VBoxManage built-in help.
 
-    Copyright (C) 2006-2015 Oracle Corporation
+    Copyright (C) 2006-2020 Oracle Corporation
 
     This file is part of VirtualBox Open Source Edition (OSE), as
     available from http://www.virtualbox.org. This file is free software;

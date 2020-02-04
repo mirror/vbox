@@ -7,7 +7,7 @@
         the lists of files that apiwrap-server.xsl produces
         from VirtualBox.xidl.
 
-    Copyright (C) 2015-2016 Oracle Corporation
+    Copyright (C) 2015-2020 Oracle Corporation
 
     This file is part of VirtualBox Open Source Edition (OSE), as
     available from http://www.virtualbox.org. This file is free software;
