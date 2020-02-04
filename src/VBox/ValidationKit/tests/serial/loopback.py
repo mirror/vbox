@@ -7,7 +7,7 @@ VirtualBox Validation Kit - Serial loopback module.
 
 __copyright__ = \
 """
-Copyright (C) 2018-2019 Oracle Corporation
+Copyright (C) 2018-2020 Oracle Corporation
 
 This file is part of VirtualBox Open Source Edition (OSE), as
 available from http://www.virtualbox.org. This file is free software;

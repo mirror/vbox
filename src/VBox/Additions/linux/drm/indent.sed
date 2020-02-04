@@ -2,7 +2,7 @@
 # VirtualBox to Linux kernel coding style conversion script.
 
 #
-# Copyright (C) 2017-2019 Oracle Corporation
+# Copyright (C) 2017-2020 Oracle Corporation
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;

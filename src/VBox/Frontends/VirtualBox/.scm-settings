@@ -4,7 +4,7 @@
 #
 
 #
-# Copyright (C) 2010-2019 Oracle Corporation
+# Copyright (C) 2010-2020 Oracle Corporation
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -23,5 +23,5 @@
 /src/precomp_vcc.h: --no-fix-header-guards
 /src/precomp_gcc.h: --no-fix-header-guards
 
-/precomptricks/*:   --no-fix-header-guards --no-update-license --treat-as .h
+/precomptricks/*:   --no-fix-header-guards --no-update-license --no-update-copyright-year --treat-as .h
 

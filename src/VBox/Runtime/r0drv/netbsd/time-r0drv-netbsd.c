@@ -6,7 +6,7 @@
 /*
  * Contributed by knut st. osmundsen.
  *
- * Copyright (C) 2007-2019 Oracle Corporation
+ * Copyright (C) 2007-2020 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -24,7 +24,6 @@
  *
  * You may elect to license modified versions of this file under the
  * terms and conditions of either the GPL or the CDDL or both.
- *
  * --------------------------------------------------------------------
  *
  * Copyright (c) 2007 knut st. osmundsen <bird-src-spam@anduin.net>

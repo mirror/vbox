@@ -7,7 +7,7 @@
  * Contributed by Ivo Smits <Ivo@UFO-Net.nl>, Howard Su and
  * Christophe Devriese <christophe.devriese@gmail.com>.
  *
- * Copyright (C) 2011-2019 Oracle Corporation
+ * Copyright (C) 2011-2020 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;

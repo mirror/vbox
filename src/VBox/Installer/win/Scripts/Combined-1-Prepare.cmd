@@ -5,7 +5,7 @@ rem Windows NT batch script for preparing both amd64 and x86 for signing submiss
 rem
 
 rem
-rem Copyright (C) 2018-2019 Oracle Corporation
+rem Copyright (C) 2018-2020 Oracle Corporation
 rem
 rem This file is part of VirtualBox Open Source Edition (OSE), as
 rem available from http://www.virtualbox.org. This file is free software;

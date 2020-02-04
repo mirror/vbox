@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2017-2019 Oracle Corporation
+ * Copyright (C) 2017-2020 Oracle Corporation
  * This file is based on qxl_prime.c
  * Copyright 2017 Canonical
  *
