@@ -832,11 +832,11 @@ typedef struct VMXVMCSINFO
     /** @name LBR MSR data.
      *  @{ */
     /** List of LastBranch-From-IP MSRs. */
-    uint64_t    au64LbrFromIpMsr[32];
+    uint64_t                    au64LbrFromIpMsr[32];
     /** List of LastBranch-To-IP MSRs. */
-    uint64_t    au64LbrToIpMsr[32];
+    uint64_t                    au64LbrToIpMsr[32];
     /** The MSR containing the index to the most recent branch record.  */
-    uint64_t    u64LbrTosMsr;
+    uint64_t                    u64LbrTosMsr;
     /** @} */
 } VMXVMCSINFO;
 /** Pointer to a VMXVMCSINFO struct. */
