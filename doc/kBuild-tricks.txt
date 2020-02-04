@@ -58,5 +58,5 @@ VBox checkouts.
 -----
 
 :Status: $Id$
-:Copyright: Copyright (C) 2006-2013 Oracle Corporation.
+:Copyright: Copyright (C) 2006-2020 Oracle Corporation.
 

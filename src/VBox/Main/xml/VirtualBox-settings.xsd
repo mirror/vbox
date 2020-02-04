@@ -28,7 +28,7 @@
 <xsd:annotation>
   <xsd:documentation xml:lang="en">
     Oracle VM VirtualBox Settings Schema (common definitions).
-    Copyright (c) 2004-2017 Oracle Corporation
+    Copyright (c) 2004-2020 Oracle Corporation
   </xsd:documentation>
 </xsd:annotation>
 
