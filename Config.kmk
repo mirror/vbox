@@ -431,9 +431,9 @@ if1of ($(KBUILD_TARGET), win)
  VBOX_WITH_NATIVE_NEM = 1
 endif
 # Enables mapping guest RAM into host kernel space.
-#if1of ($(KBUILD_TARGET), darwin win) # linux
-# VBOX_WITH_RAM_IN_KERNEL := 1
-#endif
+if1of ($(KBUILD_TARGET), darwin win) # linux
+ VBOX_WITH_RAM_IN_KERNEL := 1
+endif
 ## @}
 
 
