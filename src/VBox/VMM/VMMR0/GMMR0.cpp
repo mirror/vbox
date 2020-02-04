@@ -5353,21 +5353,15 @@ GMMR0DECL(int) GMMR0CheckSharedModules(PGVM pGVM, VMCPUID idCpu)
 #if defined(VBOX_STRICT) && HC_ARCH_BITS == 64
 
 /**
- * RTAvlU32DoWithAll callback.
+ * Worker for GMMR0FindDuplicatePageReq.
  *
- * @returns 0
- * @param   pNode       The node to search.
- * @param   pvUser      Pointer to the input argument packet.
+ * @returns true if duplicate, false if not.
  */
-static DECLCALLBACK(int) gmmR0FindDupPageInChunk(PAVLU32NODECORE pNode, void *pvUser)
+static bool gmmR0FindDupPageInChunk(PGMM pGMM, PGVM pGVM, PGMMCHUNK pChunk, uint8_t const *pbSourcePage)
 {
-    PGMMCHUNK           pChunk = (PGMMCHUNK)pNode;
-    GMMFINDDUPPAGEINFO *pArgs  = (GMMFINDDUPPAGEINFO *)pvUser;
-    PGVM                pGVM   = pArgs->pGVM;
-    PGMM                pGMM   = pArgs->pGMM;
-    uint8_t            *pbChunk;
-
+    bool fFoundDuplicate = false;
     /* Only take chunks not mapped into this VM process; not entirely correct. */
+    uint8_t *pbChunk;
     if (!gmmR0IsChunkMapped(pGMM, pGVM, pChunk, (PRTR3PTR)&pbChunk))
     {
         int rc = gmmR0MapChunk(pGMM, pGVM, pChunk, false /*fRelaxedSem*/, (PRTR3PTR)&pbChunk);
@@ -5376,16 +5370,15 @@ static DECLCALLBACK(int) gmmR0FindDupPageInChunk(PAVLU32NODECORE pNode, void *pv
             /*
              * Look for duplicate pages
              */
-            unsigned iPage = (GMM_CHUNK_SIZE >> PAGE_SHIFT);
+            uintptr_t iPage = (GMM_CHUNK_SIZE >> PAGE_SHIFT);
             while (iPage-- > 0)
             {
                 if (GMM_PAGE_IS_PRIVATE(&pChunk->aPages[iPage]))
                 {
                     uint8_t *pbDestPage = pbChunk + (iPage  << PAGE_SHIFT);
-
-                    if (!memcmp(pArgs->pSourcePage, pbDestPage, PAGE_SIZE))
+                    if (!memcmp(pbSourcePage, pbDestPage, PAGE_SIZE))
                     {
-                        pArgs->fFoundDuplicate = true;
+                        fFoundDuplicate = true;
                         break;
                     }
                 }
@@ -5393,7 +5386,7 @@ static DECLCALLBACK(int) gmmR0FindDupPageInChunk(PAVLU32NODECORE pNode, void *pv
             gmmR0UnmapChunk(pGMM, pGVM, pChunk, false /*fRelaxedSem*/);
         }
     }
-    return pArgs->fFoundDuplicate; /* (stops search if true) */
+    return fFoundDuplicate;
 }
 
 
@@ -5435,14 +5428,25 @@ GMMR0DECL(int) GMMR0FindDuplicatePageReq(PGVM pGVM, PGMMFINDDUPLICATEPAGEREQ pRe
                 PGMMPAGE pPage = gmmR0GetPage(pGMM, pReq->idPage);
                 if (pPage)
                 {
+                    /*
+                     * Walk the chunks
+                     */
                     GMMFINDDUPPAGEINFO Args;
                     Args.pGVM            = pGVM;
                     Args.pGMM            = pGMM;
                     Args.pSourcePage     = pbSourcePage;
                     Args.fFoundDuplicate = false;
-                    RTAvlU32DoWithAll(&pGMM->pChunks, true /* fFromLeft */, gmmR0FindDupPageInChunk, &Args);
 
-                    pReq->fDuplicate = Args.fFoundDuplicate;
+                    PGMMCHUNK pChunk;
+                    pReq->fDuplicate = false;
+                    RTListForEach(&pGMM->ChunkList, pChunk, GMMCHUNK, ListNode)
+                    {
+                        if (gmmR0FindDupPageInChunk(pGMM, pGVM, pChunk, pbSourcePage))
+                        {
+                            pReq->fDuplicate = true;
+                            break;
+                        }
+                    }
                 }
                 else
                 {
