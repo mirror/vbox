@@ -176,6 +176,7 @@
 #include <iprt/memobj.h>
 #include <iprt/mp.h>
 #include <iprt/semaphore.h>
+#include <iprt/spinlock.h>
 #include <iprt/string.h>
 #include <iprt/time.h>
 
@@ -521,9 +522,15 @@ typedef struct GMM
     /** The current mutex owner. */
     RTNATIVETHREAD      hMtxOwner;
 #endif
-    /** The chunk tree. */
+    /** Spinlock protecting the AVL tree.
+     * @todo Make this a read-write spinlock as we should allow concurrent
+     *       lookups. */
+    RTSPINLOCK          hSpinLockTree;
+    /** The chunk tree.
+     * Protected by hSpinLockTree. */
     PAVLU32NODECORE     pChunks;
-    /** The chunk TLB. */
+    /** The chunk TLB.
+     * Protected by hSpinLockTree. */
     GMMCHUNKTLB         ChunkTLB;
     /** The private free set. */
     GMMCHUNKFREESET     PrivateX;
@@ -809,6 +816,9 @@ GMMR0DECL(int) GMMR0Init(void)
             if (RT_FAILURE(rc))
                 break;
         }
+        pGMM->hSpinLockTree = NIL_RTSPINLOCK;
+        if (RT_SUCCESS(rc))
+            rc = RTSpinlockCreate(&pGMM->hSpinLockTree, RTSPINLOCK_FLAGS_INTERRUPT_SAFE, "gmm-chunk-tree");
         if (RT_SUCCESS(rc))
         {
 #ifndef GMM_WITH_LEGACY_MODE
@@ -883,6 +893,7 @@ GMMR0DECL(int) GMMR0Init(void)
         /*
          * Bail out.
          */
+        RTSpinlockDestroy(pGMM->hSpinLockTree);
         while (iMtx-- > 0)
             RTSemFastMutexDestroy(pGMM->aChunkMtx[iMtx].hMtx);
 #ifdef VBOX_USE_CRIT_SECT_FOR_GIANT
@@ -930,6 +941,8 @@ GMMR0DECL(void) GMMR0Term(void)
     RTSemFastMutexDestroy(pGMM->hMtx);
     pGMM->hMtx        = NIL_RTSEMFASTMUTEX;
 #endif
+    RTSpinlockDestroy(pGMM->hSpinLockTree);
+    pGMM->hSpinLockTree = NIL_RTSPINLOCK;
 
     /* Free any chunks still hanging around. */
     RTAvlU32Destroy(&pGMM->pChunks, gmmR0TermDestroyChunk, pGMM);
@@ -1844,6 +1857,8 @@ static uint32_t gmmR0SanityCheck(PGMM pGMM, const char *pszFunction, unsigned uL
  * @param   pGMM        Pointer to the GMM instance.
  * @param   idChunk     The ID of the chunk to find.
  * @param   pTlbe       Pointer to the TLB entry.
+ *
+ * @note    Caller owns spinlock.
  */
 static PGMMCHUNK gmmR0GetChunkSlow(PGMM pGMM, uint32_t idChunk, PGMMCHUNKTLBE pTlbe)
 {
@@ -1851,6 +1866,29 @@ static PGMMCHUNK gmmR0GetChunkSlow(PGMM pGMM, uint32_t idChunk, PGMMCHUNKTLBE pT
     AssertMsgReturn(pChunk, ("Chunk %#x not found!\n", idChunk), NULL);
     pTlbe->idChunk = idChunk;
     pTlbe->pChunk = pChunk;
+    return pChunk;
+}
+
+
+/**
+ * Finds a allocation chunk, spin-locked.
+ *
+ * This is not expected to fail and will bitch if it does.
+ *
+ * @returns Pointer to the allocation chunk, NULL if not found.
+ * @param   pGMM        Pointer to the GMM instance.
+ * @param   idChunk     The ID of the chunk to find.
+ */
+DECLINLINE(PGMMCHUNK) gmmR0GetChunkLocked(PGMM pGMM, uint32_t idChunk)
+{
+    /*
+     * Do a TLB lookup, branch if not in the TLB.
+     */
+    PGMMCHUNKTLBE pTlbe  = &pGMM->ChunkTLB.aEntries[GMM_CHUNKTLB_IDX(idChunk)];
+    PGMMCHUNK     pChunk = pTlbe->pChunk;
+    if (   pChunk == NULL
+        || pTlbe->idChunk != idChunk)
+        pChunk = gmmR0GetChunkSlow(pGMM, idChunk, pTlbe);
     return pChunk;
 }
 
@@ -1866,14 +1904,10 @@ static PGMMCHUNK gmmR0GetChunkSlow(PGMM pGMM, uint32_t idChunk, PGMMCHUNKTLBE pT
  */
 DECLINLINE(PGMMCHUNK) gmmR0GetChunk(PGMM pGMM, uint32_t idChunk)
 {
-    /*
-     * Do a TLB lookup, branch if not in the TLB.
-     */
-    PGMMCHUNKTLBE pTlbe = &pGMM->ChunkTLB.aEntries[GMM_CHUNKTLB_IDX(idChunk)];
-    if (    pTlbe->idChunk != idChunk
-        ||  !pTlbe->pChunk)
-        return gmmR0GetChunkSlow(pGMM, idChunk, pTlbe);
-    return pTlbe->pChunk;
+    RTSpinlockAcquire(pGMM->hSpinLockTree);
+    PGMMCHUNK pChunk = gmmR0GetChunkLocked(pGMM, idChunk);
+    RTSpinlockRelease(pGMM->hSpinLockTree);
+    return pChunk;
 }
 
 
@@ -2238,19 +2272,26 @@ static int gmmR0RegisterChunk(PGMM pGMM, PGMMCHUNKFREESET pSet, RTR0MEMOBJ hMemO
             if (GMM_CHECK_SANITY_UPON_ENTERING(pGMM))
             {
                 pChunk->Core.Key = gmmR0AllocateChunkId(pGMM);
-                if (    pChunk->Core.Key != NIL_GMM_CHUNKID
-                    &&  pChunk->Core.Key <= GMM_CHUNKID_LAST
-                    &&  RTAvlU32Insert(&pGMM->pChunks, &pChunk->Core))
+                if (   pChunk->Core.Key != NIL_GMM_CHUNKID
+                    && pChunk->Core.Key <= GMM_CHUNKID_LAST)
                 {
-                    pGMM->cChunks++;
-                    RTListAppend(&pGMM->ChunkList, &pChunk->ListNode);
-                    gmmR0LinkChunk(pChunk, pSet);
-                    LogFlow(("gmmR0RegisterChunk: pChunk=%p id=%#x cChunks=%d\n", pChunk, pChunk->Core.Key, pGMM->cChunks));
+                    RTSpinlockAcquire(pGMM->hSpinLockTree);
+                    if (RTAvlU32Insert(&pGMM->pChunks, &pChunk->Core))
+                    {
+                        pGMM->cChunks++;
+                        RTListAppend(&pGMM->ChunkList, &pChunk->ListNode);
+                        RTSpinlockRelease(pGMM->hSpinLockTree);
 
-                    if (ppChunk)
-                        *ppChunk = pChunk;
-                    GMM_CHECK_SANITY_UPON_LEAVING(pGMM);
-                    return VINF_SUCCESS;
+                        gmmR0LinkChunk(pChunk, pSet);
+
+                        LogFlow(("gmmR0RegisterChunk: pChunk=%p id=%#x cChunks=%d\n", pChunk, pChunk->Core.Key, pGMM->cChunks));
+
+                        if (ppChunk)
+                            *ppChunk = pChunk;
+                        GMM_CHECK_SANITY_UPON_LEAVING(pGMM);
+                        return VINF_SUCCESS;
+                    }
+                    RTSpinlockRelease(pGMM->hSpinLockTree);
                 }
 
                 /* bail out */
@@ -3357,6 +3398,8 @@ static bool gmmR0FreeChunk(PGMM pGMM, PGVM pGVM, PGMMCHUNK pChunk, bool fRelaxed
      */
     gmmR0UnlinkChunk(pChunk);
 
+    RTSpinlockAcquire(pGMM->hSpinLockTree);
+
     RTListNodeRemove(&pChunk->ListNode);
 
     PAVLU32NODECORE pCore = RTAvlU32Remove(&pGMM->pChunks, pChunk->Core.Key);
@@ -3371,6 +3414,8 @@ static bool gmmR0FreeChunk(PGMM pGMM, PGVM pGVM, PGMMCHUNK pChunk, bool fRelaxed
 
     Assert(pGMM->cChunks > 0);
     pGMM->cChunks--;
+
+    RTSpinlockRelease(pGMM->hSpinLockTree);
 
     /*
      * Free the Chunk ID before dropping the locks and freeing the rest.
@@ -4397,6 +4442,11 @@ GMMR0DECL(int) GMMR0SeedChunk(PGVM pGVM, VMCPUID idCpu, RTR3PTR pvR3)
 /**
  * Gets the ring-0 virtual address for the given page.
  *
+ * This is used by PGM when IEM and such wants to access guest RAM from ring-0.
+ * One of the ASSUMPTIONS here is that the @a idPage is used by the VM and the
+ * corresponding chunk will remain valid beyond the call (at least till the EMT
+ * returns to ring-3).
+ *
  * @returns VBox status code.
  * @param   pGVM        Pointer to the kernel-only VM instace data.
  * @param   idPage      The page ID.
@@ -4408,11 +4458,12 @@ GMMR0DECL(int)  GMMR0PageIdToVirt(PGVM pGVM, uint32_t idPage, void **ppv)
     *ppv = NULL;
     PGMM pGMM;
     GMM_GET_VALID_INSTANCE(pGMM, VERR_GMM_INSTANCE);
-    gmmR0MutexAcquire(pGMM); /** @todo shared access */
+
+    RTSpinlockAcquire(pGMM->hSpinLockTree);
 
     int rc;
-    PGMMCHUNK pChunk = gmmR0GetChunk(pGMM, idPage >> GMM_CHUNKID_SHIFT);
-    if (pChunk)
+    PGMMCHUNK pChunk = gmmR0GetChunkLocked(pGMM, idPage >> GMM_CHUNKID_SHIFT);
+    if (RT_LIKELY(pChunk))
     {
         const GMMPAGE *pPage = &pChunk->aPages[idPage & GMM_PAGEID_IDX_MASK];
         if (RT_LIKELY(   (   GMM_PAGE_IS_PRIVATE(pPage)
@@ -4429,7 +4480,7 @@ GMMR0DECL(int)  GMMR0PageIdToVirt(PGVM pGVM, uint32_t idPage, void **ppv)
     else
         rc = VERR_GMM_PAGE_NOT_FOUND;
 
-    gmmR0MutexRelease(pGMM);
+    RTSpinlockRelease(pGMM->hSpinLockTree);
     return rc;
 }
 
