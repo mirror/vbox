@@ -665,17 +665,6 @@ typedef struct GMMCHECKSHAREDMODULEINFO
     VMCPUID                 idCpu;
 } GMMCHECKSHAREDMODULEINFO;
 
-/**
- * Argument packet for gmmR0FindDupPageInChunk by GMMR0FindDuplicatePage.
- */
-typedef struct GMMFINDDUPPAGEINFO
-{
-    PGVM                    pGVM;
-    PGMM                    pGMM;
-    uint8_t                *pSourcePage;
-    bool                    fFoundDuplicate;
-} GMMFINDDUPPAGEINFO;
-
 
 /*********************************************************************************************************************************
 *   Global Variables                                                                                                             *
@@ -5432,13 +5421,6 @@ GMMR0DECL(int) GMMR0FindDuplicatePageReq(PGVM pGVM, PGMMFINDDUPLICATEPAGEREQ pRe
                     /*
                      * Walk the chunks
                      */
-                    GMMFINDDUPPAGEINFO Args;
-                    Args.pGVM            = pGVM;
-                    Args.pGMM            = pGMM;
-                    Args.pSourcePage     = pbSourcePage;
-                    Args.fFoundDuplicate = false;
-
-                    PGMMCHUNK pChunk;
                     pReq->fDuplicate = false;
                     RTListForEach(&pGMM->ChunkList, pChunk, GMMCHUNK, ListNode)
                     {
