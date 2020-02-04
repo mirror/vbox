@@ -1921,6 +1921,8 @@ ifndef VBOX_BLD_PYTHON
 				   python-not-found)
  endif
 endif
+## For running python unittests in the validation kit.
+VBOX_UNITTEST_PYTHON ?= $(VBOX_BLD_PYTHON)
 
 #
 # pylint setup, see https://www.pylint.org/.
