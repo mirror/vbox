@@ -30,6 +30,10 @@
 
 /* COM includes: */
 #include "CMachine.h"
+#ifdef VBOX_GUI_WITH_CLOUD_VMS
+# include "CCloudProvider.h"
+# include "CCloudProviderManager.h"
+#endif
 
 /* Type defs: */
 typedef QSet<QString> UIStringSet;
@@ -325,6 +329,76 @@ void UIChooserAbstractModel::loadTree()
                 addMachineIntoTheTree(comMachine);
         }
         LogRelFlow(("UIChooserModel: VMs loaded.\n"));
+
+#ifdef VBOX_GUI_WITH_CLOUD_VMS
+        /* Add cloud provider groups: */
+        LogRelFlow(("UIChooserModel: Loading cloud providers...\n"));
+        /* Acquire VBox: */
+        CVirtualBox comVBox = uiCommon().virtualBox();
+        CCloudProviderManager comCloudProviderManager = comVBox.GetCloudProviderManager();
+        /* Show error message if necessary: */
+        if (!comVBox.isOk())
+            msgCenter().cannotAcquireCloudProviderManager(comVBox);
+        else
+        {
+            /* Acquire existing providers: */
+            const QVector<CCloudProvider> providers = comCloudProviderManager.GetProviders();
+            /* Show error message if necessary: */
+            if (!comCloudProviderManager.isOk())
+                msgCenter().cannotAcquireCloudProviderManagerParameter(comCloudProviderManager);
+            else
+            {
+                /* Iterate through existing providers: */
+                foreach (const CCloudProvider &comProvider, providers)
+                {
+                    /* Skip if we have nothing to populate (file missing?): */
+                    if (comProvider.isNull())
+                        continue;
+                    /* Skip if we have nothing to populate (profiles missing?): */
+                    const QVector<QString> profileNames = comProvider.GetProfileNames();
+                    if (profileNames.isEmpty())
+                        continue;
+
+                    /* Get provider name: */
+                    const QString strProviderName = comProvider.GetShortName();
+
+                    /* If we have at least one profile we can add provider group node: */
+                    UIChooserNodeGroup *pProviderNode =
+                        new UIChooserNodeGroup(m_pInvisibleRootNode,
+                                               false /* favorite */,
+                                               getDesiredNodePosition(m_pInvisibleRootNode, UIChooserItemType_Group, strProviderName),
+                                               strProviderName,
+                                               true /* opened */);
+
+                    /* Show error message if necessary: */
+                    if (!comProvider.isOk())
+                        msgCenter().cannotAcquireCloudProviderParameter(comProvider);
+                    else
+                    {
+                        /* Iterate through existing profile names: */
+                        foreach (const QString &strProfileName, profileNames)
+                        {
+                            /* Skip if we have nothing to show (wtf happened?): */
+                            if (strProfileName.isEmpty())
+                                continue;
+
+                            /* If we have at least one profile we can add provider group node: */
+                            UIChooserNodeGroup *pProfileNode =
+                                new UIChooserNodeGroup(pProviderNode,
+                                                       false /* favorite */,
+                                                       getDesiredNodePosition(pProviderNode, UIChooserItemType_Group, strProfileName),
+                                                       strProfileName,
+                                                       true /* opened */);
+                            new UIChooserNodeMachine(pProfileNode,
+                                                     false /* favorite */,
+                                                     0 /* position */);
+                        }
+                    }
+                }
+            }
+        }
+        LogRelFlow(("UIChooserModel: Cloud providers loaded.\n"));
+#endif /* VBOX_GUI_WITH_CLOUD_VMS */
     }
 }
 
