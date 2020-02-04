@@ -126,14 +126,18 @@ endif # !VBOX_WITHOUT_VALIDATIONKIT_ZIP
 
 
 #
-# Automatically lint python code during build.
+# Automatically lint python code and python unit tests during build.
 #
 if defined(VBOX_WITH_PYLINT) && !defined(VBOX_WITHOUT_AUTO_PYLINT)
  OTHERS      += $(PATH_TARGET)/pylint.run
  OTHER_CLEAN += $(PATH_TARGET)/pylint.run
- $(PATH_TARGET)/pylint.run: \
- 		$$(filter-out %/testboxscript.o, $$(VBOX_VALIDATIONKIT_PYLINT_TARGETS)) \
-		$$(VBOX_VALIDATIONKIT_PYUNITTEST_TARGETS)
+ $(PATH_TARGET)/pylint.run: $$(filter-out %/testboxscript.o, $$(VBOX_VALIDATIONKIT_PYLINT_TARGETS))
+	$(QUIET)$(APPEND) -t "$@"
+endif
+if defined(VBOX_WITH_PYLINT) && !defined(VBOX_WITHOUT_AUTO_PYUNITTEST) # Tied to pylint for hysterical raisins.
+ OTHERS      += $(PATH_TARGET)/pyunittest.run
+ OTHER_CLEAN += $(PATH_TARGET)/pyunittest.run
+ $(PATH_TARGET)/pyunittest.run: $$(VBOX_VALIDATIONKIT_PYUNITTEST_TARGETS)
 	$(QUIET)$(APPEND) -t "$@"
 endif
 
