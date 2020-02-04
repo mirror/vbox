@@ -914,7 +914,7 @@ class TestResultFilter(ModelFilterBase):
                     if iValue in dConditions:
                         sQuery += '%s   AND %s\n' % (sExtraIndent, dConditions[iValue],);
             elif oCrit.sType == FilterCriterion.ksType_Ranges:
-                assert len(oCrit.aoPossible) == 0;
+                assert not oCrit.aoPossible;
                 if oCrit.aoSelected:
                     asConditions = [];
                     for tRange in oCrit.aoSelected:
