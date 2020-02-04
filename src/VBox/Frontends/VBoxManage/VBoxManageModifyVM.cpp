@@ -360,6 +360,7 @@ static const RTGETOPTDEF g_aModifyVMOptions[] =
     { "--audioout",                 MODIFYVM_AUDIOOUT,                  RTGETOPT_REQ_BOOL_ONOFF },
 #ifdef VBOX_WITH_SHARED_CLIPBOARD
     { "--clipboard-mode",           MODIFYVM_CLIPBOARD_MODE,            RTGETOPT_REQ_STRING },
+    { "--clipboard",                MODIFYVM_CLIPBOARD_MODE,            RTGETOPT_REQ_STRING },     /* deprecated */
 # ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
     { "--clipboard-file-transfers", MODIFYVM_CLIPBOARD_FILE_TRANSFERS,  RTGETOPT_REQ_STRING },
 # endif
