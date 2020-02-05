@@ -4557,9 +4557,14 @@ GMMR0DECL(int)  GMMR0PageIdToVirt(PGVM pGVM, uint32_t idPage, void **ppv)
     if (   pChunk              != NULL
         && pTlbe->idGeneration == ASMAtomicUoReadU64(&pGMM->idFreeGeneration)
         && pChunk->Core.Key    == idChunk)
-    { /* hopeful outcome */ }
+        pGVM->R0Stats.gmm.cChunkTlbHits++; /* hopefully this is a likely outcome */
     else
     {
+        pGVM->R0Stats.gmm.cChunkTlbMisses++;
+
+        /*
+         * Look it up in the chunk tree.
+         */
         RTSpinlockAcquire(pGMM->hSpinLockTree);
         pChunk = gmmR0GetChunkLocked(pGMM, idChunk);
         if (RT_LIKELY(pChunk))

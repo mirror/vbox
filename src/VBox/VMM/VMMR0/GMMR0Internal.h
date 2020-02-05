@@ -106,6 +106,8 @@ typedef struct GMMPERVM
 
     /** Spinlock protecting the chunk lookup TLB. */
     RTSPINLOCK          hChunkTlbSpinLock;
+    uint64_t            cChunkTlbHits;
+    uint64_t            cChunkTlbMisses;
     /** The chunk lookup TLB used by GMMR0PageIdToVirt. */
     GMMPERVMCHUNKTLBE   aChunkTlbEntries[GMMPERVM_CHUNKTLB_ENTRIES];
 } GMMPERVM;

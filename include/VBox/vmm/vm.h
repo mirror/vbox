@@ -1434,8 +1434,22 @@ typedef struct VM
         uint8_t     padding[8];         /* multiple of 8 */
     } cfgm;
 
+    /** Statistics for ring-0 only components. */
+    struct
+    {
+        /** GMMR0 stats. */
+        struct
+        {
+            /** Chunk TLB hits. */
+            uint64_t    cChunkTlbHits;
+            /** Chunk TLB misses. */
+            uint64_t    cChunkTlbMisses;
+        } gmm;
+        uint64_t    au64Padding[6];     /* probably more comming here... */
+    } R0Stats;
+
     /** Padding for aligning the structure size on a page boundrary. */
-    uint8_t         abAlignment2[664 - 64 + 256 - sizeof(PVMCPUR3) * VMM_MAX_CPU_COUNT];
+    uint8_t         abAlignment2[600 - 64 + 256 - sizeof(PVMCPUR3) * VMM_MAX_CPU_COUNT];
 
     /* ---- end small stuff ---- */
 
