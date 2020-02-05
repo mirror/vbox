@@ -522,6 +522,8 @@ VBOX_DI_VBAPP_MISC_FILES += \
 
 VBOX_DI_VBAPP_SYMLINKS = \
 	Resources/VirtualBoxVM.app/Contents/MacOS=>../../../MacOS/ \
+	Resources/VirtualBoxVM.app/Contents/plugins=>../../../plugins/ \
+	Resources/VirtualBoxVM.app/Contents/Frameworks=>../../../Frameworks/ \
 	Resources/vmstarter.app/Contents/MacOS=>../../../MacOS/ \
 	$(foreach qtmod, $(VBOX_QT_MOD_NAMES) \
 	,Frameworks/$(qtmod).framework/Versions/Current=>$(VBOX_QT_VERSION_MAJOR) )
