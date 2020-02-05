@@ -31,6 +31,8 @@
 /* COM includes: */
 #include "CMachine.h"
 #ifdef VBOX_GUI_WITH_CLOUD_VMS
+# include "CCloudClient.h"
+# include "CCloudProfile.h"
 # include "CCloudProvider.h"
 # include "CCloudProviderManager.h"
 #endif
@@ -335,6 +337,7 @@ void UIChooserAbstractModel::loadTree()
         LogRelFlow(("UIChooserModel: Loading cloud providers...\n"));
         /* Acquire VBox: */
         CVirtualBox comVBox = uiCommon().virtualBox();
+        /* Acquire Cloud Provider Manager: */
         CCloudProviderManager comCloudProviderManager = comVBox.GetCloudProviderManager();
         /* Show error message if necessary: */
         if (!comVBox.isOk())
@@ -349,32 +352,31 @@ void UIChooserAbstractModel::loadTree()
             else
             {
                 /* Iterate through existing providers: */
-                foreach (const CCloudProvider &comProvider, providers)
+                foreach (CCloudProvider comCloudProvider, providers)
                 {
                     /* Skip if we have nothing to populate (file missing?): */
-                    if (comProvider.isNull())
+                    if (comCloudProvider.isNull())
                         continue;
                     /* Skip if we have nothing to populate (profiles missing?): */
-                    const QVector<QString> profileNames = comProvider.GetProfileNames();
+                    const QVector<QString> profileNames = comCloudProvider.GetProfileNames();
                     if (profileNames.isEmpty())
                         continue;
 
                     /* Get provider name: */
-                    const QString strProviderName = comProvider.GetShortName();
-
-                    /* If we have at least one profile we can add provider group node: */
-                    UIChooserNodeGroup *pProviderNode =
-                        new UIChooserNodeGroup(m_pInvisibleRootNode,
-                                               false /* favorite */,
-                                               getDesiredNodePosition(m_pInvisibleRootNode, UIChooserItemType_Group, strProviderName),
-                                               strProviderName,
-                                               true /* opened */);
-
+                    const QString strProviderName = comCloudProvider.GetShortName();
                     /* Show error message if necessary: */
-                    if (!comProvider.isOk())
-                        msgCenter().cannotAcquireCloudProviderParameter(comProvider);
+                    if (!comCloudProvider.isOk())
+                        msgCenter().cannotAcquireCloudProviderParameter(comCloudProvider);
                     else
                     {
+                        /* Add provider group node: */
+                        UIChooserNodeGroup *pProviderNode =
+                            new UIChooserNodeGroup(m_pInvisibleRootNode,
+                                                   false /* favorite */,
+                                                   getDesiredNodePosition(m_pInvisibleRootNode, UIChooserItemType_Group, strProviderName),
+                                                   strProviderName,
+                                                   true /* opened */);
+
                         /* Iterate through existing profile names: */
                         foreach (const QString &strProfileName, profileNames)
                         {
@@ -382,16 +384,34 @@ void UIChooserAbstractModel::loadTree()
                             if (strProfileName.isEmpty())
                                 continue;
 
-                            /* If we have at least one profile we can add provider group node: */
-                            UIChooserNodeGroup *pProfileNode =
-                                new UIChooserNodeGroup(pProviderNode,
-                                                       false /* favorite */,
-                                                       getDesiredNodePosition(pProviderNode, UIChooserItemType_Group, strProfileName),
-                                                       strProfileName,
-                                                       true /* opened */);
-                            new UIChooserNodeMachine(pProfileNode,
-                                                     false /* favorite */,
-                                                     0 /* position */);
+                            /* Acquire Cloud Profile: */
+                            CCloudProfile comCloudProfile = comCloudProvider.GetProfileByName(strProfileName);
+                            /* Show error message if necessary: */
+                            if (!comCloudProvider.isOk())
+                                msgCenter().cannotFindCloudProfile(comCloudProvider, strProfileName);
+                            else
+                            {
+                                /* Create Cloud Client: */
+                                CCloudClient comCloudClient = comCloudProfile.CreateCloudClient();
+                                Q_UNUSED(comCloudClient);
+                                /* Show error message if necessary: */
+                                if (!comCloudProfile.isOk())
+                                    msgCenter().cannotCreateCloudClient(comCloudProfile);
+                                else
+                                {
+                                    /* Add profile sub-group node: */
+                                    UIChooserNodeGroup *pProfileNode =
+                                        new UIChooserNodeGroup(pProviderNode,
+                                                               false /* favorite */,
+                                                               getDesiredNodePosition(pProviderNode, UIChooserItemType_Group, strProfileName),
+                                                               strProfileName,
+                                                               true /* opened */);
+                                    /* Add fake cloud VM item: */
+                                    new UIChooserNodeMachine(pProfileNode,
+                                                             false /* favorite */,
+                                                             0 /* position */);
+                                }
+                            }
                         }
                     }
                 }
