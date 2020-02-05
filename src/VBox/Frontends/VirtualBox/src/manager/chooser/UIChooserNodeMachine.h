@@ -44,7 +44,15 @@ public:
                          bool fFavorite,
                          int iPosition,
                          const CMachine &comMachine);
-    /** Constructs chooser node for cloud VM passing @a pParent to the base-class.
+    /** Constructs chooser node for real cloud VM passing @a pParent to the base-class.
+      * @param  fFavorite  Brings whether the node is favorite.
+      * @param  iPosition  Brings the initial node position.
+      * @param  strName    Brings the cloud VM name. */
+    UIChooserNodeMachine(UIChooserNode *pParent,
+                         bool fFavorite,
+                         int iPosition,
+                         const QString &strName);
+    /** Constructs chooser node for fake cloud VM passing @a pParent to the base-class.
       * @param  fFavorite  Brings whether the node is favorite.
       * @param  iPosition  Brings the initial node position. */
     UIChooserNodeMachine(UIChooserNode *pParent,

@@ -46,7 +46,8 @@ UIVirtualMachineItemLocal *UIVirtualMachineItem::toLocal()
 
 UIVirtualMachineItemCloud *UIVirtualMachineItem::toCloud()
 {
-    return   itemType() == ItemType_CloudFake
+    return   (   itemType() == ItemType_CloudFake
+              || itemType() == ItemType_CloudReal)
            ? static_cast<UIVirtualMachineItemCloud*>(this)
            : 0;
 }

@@ -29,6 +29,14 @@ UIVirtualMachineItemCloud::UIVirtualMachineItemCloud()
     recache();
 }
 
+UIVirtualMachineItemCloud::UIVirtualMachineItemCloud(const QString &strName)
+    : UIVirtualMachineItem(ItemType_CloudReal)
+    , m_enmFakeCloudItemState(FakeCloudItemState_NotApplicable)
+{
+    m_strName = strName;
+    recache();
+}
+
 UIVirtualMachineItemCloud::~UIVirtualMachineItemCloud()
 {
 }

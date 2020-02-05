@@ -35,6 +35,18 @@ UIChooserNodeMachine::UIChooserNodeMachine(UIChooserNode *pParent,
 
 UIChooserNodeMachine::UIChooserNodeMachine(UIChooserNode *pParent,
                                            bool fFavorite,
+                                           int iPosition,
+                                           const QString &strName)
+    : UIChooserNode(pParent, fFavorite)
+    , m_pCache(new UIVirtualMachineItemCloud(strName))
+{
+    if (parentNode())
+        parentNode()->addNode(this, iPosition);
+    retranslateUi();
+}
+
+UIChooserNodeMachine::UIChooserNodeMachine(UIChooserNode *pParent,
+                                           bool fFavorite,
                                            int  iPosition)
     : UIChooserNode(pParent, fFavorite)
     , m_pCache(new UIVirtualMachineItemCloud)

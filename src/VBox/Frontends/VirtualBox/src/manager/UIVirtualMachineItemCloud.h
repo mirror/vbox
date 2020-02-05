@@ -41,6 +41,8 @@ public:
 
     /** Constructs fake cloud VM item. */
     UIVirtualMachineItemCloud();
+    /** Constructs real cloud VM item. */
+    UIVirtualMachineItemCloud(const QString &strName);
     /** Destructs cloud VM item. */
     virtual ~UIVirtualMachineItemCloud();
 

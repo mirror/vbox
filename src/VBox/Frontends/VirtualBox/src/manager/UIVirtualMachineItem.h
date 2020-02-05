@@ -49,7 +49,7 @@ class UIVirtualMachineItem : public QIWithRetranslateUI3<QObject>
 public:
 
     /** Item types. */
-    enum ItemType { ItemType_Local, ItemType_CloudFake };
+    enum ItemType { ItemType_Local, ItemType_CloudFake, ItemType_CloudReal };
 
     /** Constructs VM item on the basis of taken @a enmType. */
     UIVirtualMachineItem(ItemType enmType);
