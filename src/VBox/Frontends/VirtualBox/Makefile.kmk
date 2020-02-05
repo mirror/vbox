@@ -1774,7 +1774,9 @@ VirtualBox.app_SOURCES = \
  	$(VirtualBoxVM.app_0_OUTDIR)/VM-Info.plist=>Info.plist \
  	$(foreach mysrc,$(VirtualBox.app_SOURCES),$(if-expr $(pos =>Resources/,$(mysrc)) > 0,$(mysrc),))
  VirtualBoxVM.app_SYMLINKS = \
- 	MacOS=>../../../MacOS/
+ 	MacOS=>../../../MacOS/ \
+ 	plugins=>../../../plugins/ \
+ 	Frameworks=>../../../Frameworks/
 
  $$(VirtualBoxVM.app_0_OUTDIR)/VM-Info.plist: $(PATH_SUB_CURRENT)/src/platform/darwin/VM-Info.plist $(VBOX_VERSION_MK) | $$(@D)/
 	$(call MSG_GENERATE,VirtualBoxVM.app,$<,$@)
