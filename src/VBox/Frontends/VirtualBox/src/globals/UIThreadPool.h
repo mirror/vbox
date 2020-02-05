@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - UIThreadPool and UITask classes declaration.
+ * VBox Qt GUI - UIThreadPool class declaration.
  */
 
 /*
@@ -26,7 +26,6 @@
 #include <QObject>
 #include <QQueue>
 #include <QSet>
-#include <QVariant>
 #include <QVector>
 #include <QWaitCondition>
 
@@ -36,7 +35,6 @@
 /* Forward declarations: */
 class UITask;
 class UIThreadWorker;
-
 
 /** QObject extension used as worker-thread pool.
   * Schedules COM-related GUI tasks to multiple worker-threads. */
@@ -57,7 +55,7 @@ public:
       *                               pool will wait for the worker-thread on cleanup. */
     UIThreadPool(ulong cMaxWorkers = 3, ulong cMsWorkerIdleTimeout = 5000);
     /** Destructs worker-thread pool. */
-    ~UIThreadPool();
+    virtual ~UIThreadPool() /* override */;
 
     /** Returns whether the 'termination sequence' is started. */
     bool isTerminating() const;
@@ -113,50 +111,7 @@ private:
 
     /** Holds the guard mutex object protecting
       * all the inter-thread variables. */
-    mutable QMutex m_everythingLocker;
+    mutable QMutex  m_everythingLocker;
 };
-
-
-/** QObject extension used as worker-thread task interface.
-  * Describes task to be executed by the UIThreadWorker object. */
-class SHARED_LIBRARY_STUFF UITask : public QObject
-{
-    Q_OBJECT;
-
-signals:
-
-    /** Notifies listeners about @a pTask complete. */
-    void sigComplete(UITask *pTask);
-
-public:
-
-    /** Task types. */
-    enum Type
-    {
-        Type_MediumEnumeration = 1,
-        Type_DetailsPopulation = 2,
-    };
-
-    /** Constructs the task of passed @a enmType. */
-    UITask(UITask::Type enmType) : m_enmType(enmType) {}
-
-    /** Returns the type of the task. */
-    UITask::Type type() const { return m_enmType; }
-
-    /** Starts the task. */
-    void start();
-
-protected:
-
-    /** Contains the abstract task body. */
-    virtual void run() = 0;
-
-private:
-
-    /** Holds the type of the task. */
-    const UITask::Type m_enmType;
-};
-
 
 #endif /* !FEQT_INCLUDED_SRC_globals_UIThreadPool_h */
-

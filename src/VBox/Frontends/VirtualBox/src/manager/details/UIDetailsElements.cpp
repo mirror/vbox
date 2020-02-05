@@ -17,38 +17,39 @@
 
 /* Qt includes: */
 #include <QDir>
-#include <QTimer>
 #include <QGraphicsLinearLayout>
+#include <QTimer>
 
 /* GUI includes: */
+#include "UICommon.h"
+#include "UIConverter.h"
 #include "UIDetailsElements.h"
 #include "UIDetailsGenerator.h"
 #include "UIDetailsModel.h"
-#include "UIMachinePreview.h"
-#include "UIGraphicsRotatorButton.h"
-#include "UICommon.h"
-#include "UIIconPool.h"
-#include "UIConverter.h"
-#include "UIGraphicsTextPane.h"
 #include "UIErrorString.h"
+#include "UIGraphicsRotatorButton.h"
+#include "UIGraphicsTextPane.h"
+#include "UIIconPool.h"
+#include "UIMachinePreview.h"
+#include "UIThreadPool.h"
 
 /* COM includes: */
 #include "COMEnums.h"
-#include "CMachine.h"
-#include "CSystemProperties.h"
-#include "CVRDEServer.h"
-#include "CStorageController.h"
-#include "CMediumAttachment.h"
 #include "CAudioAdapter.h"
-#include "CRecordingSettings.h"
-#include "CRecordingScreenSettings.h"
-#include "CNetworkAdapter.h"
-#include "CSerialPort.h"
-#include "CUSBController.h"
-#include "CUSBDeviceFilters.h"
-#include "CUSBDeviceFilter.h"
-#include "CSharedFolder.h"
+#include "CMachine.h"
 #include "CMedium.h"
+#include "CMediumAttachment.h"
+#include "CNetworkAdapter.h"
+#include "CRecordingScreenSettings.h"
+#include "CRecordingSettings.h"
+#include "CSerialPort.h"
+#include "CSharedFolder.h"
+#include "CStorageController.h"
+#include "CSystemProperties.h"
+#include "CUSBController.h"
+#include "CUSBDeviceFilter.h"
+#include "CUSBDeviceFilters.h"
+#include "CVRDEServer.h"
 
 UIDetailsUpdateTask::UIDetailsUpdateTask(const CMachine &machine)
     : UITask(UITask::Type_DetailsPopulation)

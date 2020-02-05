@@ -22,6 +22,7 @@
 #include "UICommon.h"
 #include "UIMediumEnumerator.h"
 #include "UIMessageCenter.h"
+#include "UITask.h"
 #include "UIThreadPool.h"
 #include "UIVirtualBoxEventHandler.h"
 

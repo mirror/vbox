@@ -22,8 +22,8 @@
 #endif
 
 /* GUI includes: */
-#include "UIThreadPool.h"
 #include "UIDetailsElement.h"
+#include "UITask.h"
 
 /* Forward declarations: */
 class UIMachinePreview;
