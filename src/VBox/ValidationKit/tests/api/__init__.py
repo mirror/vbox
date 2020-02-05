@@ -27,5 +27,3 @@ You may elect to license modified versions of this file under the
 terms and conditions of either the GPL or the CDDL or both.
 """
 __version__ = "$Revision$"
-
-from .tdOciExport1 import SubTstOciExportVm1 # pylint: disable=relative-import
