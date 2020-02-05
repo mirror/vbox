@@ -385,8 +385,10 @@ typedef struct GMMSTATS
     uint32_t            cFreedChunks;
     /** The number of shareable modules (GMM:cShareableModules). */
     uint64_t            cShareableModules;
+    /** The current chunk freeing generation use by the per-VM TLB validation (GMM::idFreeGeneration). */
+    uint64_t            idFreeGeneration;
     /** Space reserved for later. */
-    uint64_t            au64Reserved[2];
+    uint64_t            au64Reserved[1];
 
     /** Statistics for the specified VM. (Zero filled if not requested.) */
     GMMVMSTATS          VMStats;
@@ -399,7 +401,7 @@ typedef const GMMSTATS *PCGMMSTATS;
 
 GMMR0DECL(int)  GMMR0Init(void);
 GMMR0DECL(void) GMMR0Term(void);
-GMMR0DECL(void) GMMR0InitPerVMData(PGVM pGVM);
+GMMR0DECL(int)  GMMR0InitPerVMData(PGVM pGVM);
 GMMR0DECL(void) GMMR0CleanupVM(PGVM pGVM);
 GMMR0DECL(int)  GMMR0InitialReservation(PGVM pGVM, VMCPUID idCpu, uint64_t cBasePages, uint32_t cShadowPages, uint32_t cFixedPages,
                                         GMMOCPOLICY enmPolicy, GMMPRIORITY enmPriority);

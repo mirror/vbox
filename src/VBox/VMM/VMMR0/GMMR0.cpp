@@ -483,7 +483,7 @@ typedef struct GMMCHUNKTLBE
 typedef GMMCHUNKTLBE *PGMMCHUNKTLBE;
 
 
-/** The number of entries tin the allocation chunk TLB. */
+/** The number of entries in the allocation chunk TLB. */
 #define GMM_CHUNKTLB_ENTRIES        32
 /** Gets the TLB entry index for the given Chunk ID. */
 #define GMM_CHUNKTLB_IDX(idChunk)   ( (idChunk) & (GMM_CHUNKTLB_ENTRIES - 1) )
@@ -529,6 +529,11 @@ typedef struct GMM
     /** The chunk tree.
      * Protected by hSpinLockTree. */
     PAVLU32NODECORE     pChunks;
+    /** Chunk freeing generation - incremented whenever a chunk is freed.  Used
+     * for validating the per-VM chunk TLB entries.  Valid range is 1 to 2^62
+     * (exclusive), though higher numbers may temporarily occure while
+     * invalidating the individual TLBs during wrap-around processing. */
+    uint64_t volatile   idFreeGeneration;
     /** The chunk TLB.
      * Protected by hSpinLockTree. */
     GMMCHUNKTLB         ChunkTLB;
@@ -879,6 +884,12 @@ GMMR0DECL(int) GMMR0Init(void)
              */
             pGMM->cMaxPages = UINT32_MAX; /** @todo IPRT function for query ram size and such. */
 
+            /*
+             * The idFreeGeneration value should be set so we actually trigger the
+             * wrap-around invalidation handling during a typical test run.
+             */
+            pGMM->idFreeGeneration = UINT64_MAX / 4 - 128;
+
             g_pGMM = pGMM;
 #ifdef GMM_WITH_LEGACY_MODE
             LogFlow(("GMMInit: pGMM=%p fLegacyAllocationMode=%RTbool fBoundMemoryMode=%RTbool\n", pGMM, pGMM->fLegacyAllocationMode, pGMM->fBoundMemoryMode));
@@ -1004,13 +1015,19 @@ static DECLCALLBACK(int) gmmR0TermDestroyChunk(PAVLU32NODECORE pNode, void *pvGM
  *
  * @param   pGVM    Pointer to the Global VM structure.
  */
-GMMR0DECL(void) GMMR0InitPerVMData(PGVM pGVM)
+GMMR0DECL(int) GMMR0InitPerVMData(PGVM pGVM)
 {
     AssertCompile(RT_SIZEOFMEMB(GVM,gmm.s) <= RT_SIZEOFMEMB(GVM,gmm.padding));
 
     pGVM->gmm.s.Stats.enmPolicy = GMMOCPOLICY_INVALID;
     pGVM->gmm.s.Stats.enmPriority = GMMPRIORITY_INVALID;
     pGVM->gmm.s.Stats.fMayAllocate = false;
+
+    pGVM->gmm.s.hChunkTlbSpinLock = NIL_RTSPINLOCK;
+    int rc = RTSpinlockCreate(&pGVM->gmm.s.hChunkTlbSpinLock, RTSPINLOCK_FLAGS_INTERRUPT_SAFE, "per-vm-chunk-tlb");
+    AssertRCReturn(rc, rc);
+
+    return VINF_SUCCESS;
 }
 
 
@@ -1443,6 +1460,13 @@ GMMR0DECL(void) GMMR0CleanupVM(PGVM pGVM)
 
     GMM_CHECK_SANITY_UPON_LEAVING(pGMM);
     gmmR0MutexRelease(pGMM);
+
+    /*
+     * Destroy the spinlock.
+     */
+    RTSPINLOCK hSpinlock = NIL_RTSPINLOCK;
+    ASMAtomicXchgHandle(&pGVM->gmm.s.hChunkTlbSpinLock, NIL_RTSPINLOCK, &hSpinlock);
+    RTSpinlockDestroy(hSpinlock);
 
     LogFlow(("GMMR0CleanupVM: returns\n"));
 }
@@ -3345,6 +3369,63 @@ GMMR0DECL(int) GMMR0FreeLargePageReq(PGVM pGVM, VMCPUID idCpu, PGMMFREELARGEPAGE
 
 
 /**
+ * @callback_method{FNGVMMR0ENUMCALLBACK,
+ * Used by gmmR0FreeChunkFlushPerVmTlbs().}
+ */
+static DECLCALLBACK(int) gmmR0InvalidatePerVmChunkTlbCallback(PGVM pGVM, void *pvUser)
+{
+    RT_NOREF(pvUser);
+    if (pGVM->gmm.s.hChunkTlbSpinLock != NIL_RTSPINLOCK)
+    {
+        RTSpinlockAcquire(pGVM->gmm.s.hChunkTlbSpinLock);
+        uintptr_t i = RT_ELEMENTS(pGVM->gmm.s.aChunkTlbEntries);
+        while (i-- > 0)
+        {
+            pGVM->gmm.s.aChunkTlbEntries[i].idGeneration = UINT64_MAX;
+            pGVM->gmm.s.aChunkTlbEntries[i].pChunk       = NULL;
+        }
+        RTSpinlockRelease(pGVM->gmm.s.hChunkTlbSpinLock);
+    }
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Called by gmmR0FreeChunk when we reach the threshold for wrapping around the
+ * free generation ID value.
+ *
+ * This is done at 2^62 - 1, which allows us to drop all locks and as it will
+ * take a while before 12 exa (2 305 843 009 213 693 952) calls to
+ * gmmR0FreeChunk can be made and causes a real wrap-around.  We do two
+ * invalidation passes and resets the generation ID between then.  This will
+ * make sure there are no false positives.
+ *
+ * @param   pGMM        Pointer to the GMM instance.
+ */
+static void gmmR0FreeChunkFlushPerVmTlbs(PGMM pGMM)
+{
+    /*
+     * First invalidation pass.
+     */
+    int rc = GVMMR0EnumVMs(gmmR0InvalidatePerVmChunkTlbCallback, NULL);
+    AssertRCSuccess(rc);
+
+    /*
+     * Reset the generation number.
+     */
+    RTSpinlockAcquire(pGMM->hSpinLockTree);
+    ASMAtomicWriteU64(&pGMM->idFreeGeneration, 1);
+    RTSpinlockRelease(pGMM->hSpinLockTree);
+
+    /*
+     * Second invalidation pass.
+     */
+    rc = GVMMR0EnumVMs(gmmR0InvalidatePerVmChunkTlbCallback, NULL);
+    AssertRCSuccess(rc);
+}
+
+
+/**
  * Frees a chunk, giving it back to the host OS.
  *
  * @param   pGMM        Pointer to the GMM instance.
@@ -3415,6 +3496,8 @@ static bool gmmR0FreeChunk(PGMM pGMM, PGVM pGVM, PGMMCHUNK pChunk, bool fRelaxed
     Assert(pGMM->cChunks > 0);
     pGMM->cChunks--;
 
+    uint64_t const idFreeGeneration = ASMAtomicIncU64(&pGMM->idFreeGeneration);
+
     RTSpinlockRelease(pGMM->hSpinLockTree);
 
     /*
@@ -3428,6 +3511,9 @@ static bool gmmR0FreeChunk(PGMM pGMM, PGVM pGVM, PGMMCHUNK pChunk, bool fRelaxed
     gmmR0ChunkMutexRelease(&MtxState, NULL);
     if (fRelaxedSem)
         gmmR0MutexRelease(pGMM);
+
+    if (idFreeGeneration == UINT64_MAX / 4)
+        gmmR0FreeChunkFlushPerVmTlbs(pGMM);
 
     RTMemFree(pChunk->paMappingsX);
     pChunk->paMappingsX = NULL;
@@ -4459,29 +4545,55 @@ GMMR0DECL(int)  GMMR0PageIdToVirt(PGVM pGVM, uint32_t idPage, void **ppv)
     PGMM pGMM;
     GMM_GET_VALID_INSTANCE(pGMM, VERR_GMM_INSTANCE);
 
-    RTSpinlockAcquire(pGMM->hSpinLockTree);
+    uint32_t const idChunk = idPage >> GMM_CHUNKID_SHIFT;
 
-    int rc;
-    PGMMCHUNK pChunk = gmmR0GetChunkLocked(pGMM, idPage >> GMM_CHUNKID_SHIFT);
-    if (RT_LIKELY(pChunk))
+    /*
+     * Start with the per-VM TLB.
+     */
+    RTSpinlockAcquire(pGVM->gmm.s.hChunkTlbSpinLock);
+
+    PGMMPERVMCHUNKTLBE pTlbe = &pGVM->gmm.s.aChunkTlbEntries[GMMPERVM_CHUNKTLB_IDX(idChunk)];
+    PGMMCHUNK pChunk = pTlbe->pChunk;
+    if (   pChunk              != NULL
+        && pTlbe->idGeneration == ASMAtomicUoReadU64(&pGMM->idFreeGeneration)
+        && pChunk->Core.Key    == idChunk)
+    { /* hopeful outcome */ }
+    else
     {
-        const GMMPAGE *pPage = &pChunk->aPages[idPage & GMM_PAGEID_IDX_MASK];
-        if (RT_LIKELY(   (   GMM_PAGE_IS_PRIVATE(pPage)
-                          && pPage->Private.hGVM == pGVM->hSelf)
-                      || GMM_PAGE_IS_SHARED(pPage)))
+        RTSpinlockAcquire(pGMM->hSpinLockTree);
+        pChunk = gmmR0GetChunkLocked(pGMM, idChunk);
+        if (RT_LIKELY(pChunk))
         {
-            AssertPtr(pChunk->pbMapping);
-            *ppv = &pChunk->pbMapping[(idPage & GMM_PAGEID_IDX_MASK) << PAGE_SHIFT];
-            rc = VINF_SUCCESS;
+            pTlbe->idGeneration = pGMM->idFreeGeneration;
+            RTSpinlockRelease(pGMM->hSpinLockTree);
+            pTlbe->pChunk       = pChunk;
         }
         else
-            rc = VERR_GMM_NOT_PAGE_OWNER;
+        {
+            RTSpinlockRelease(pGMM->hSpinLockTree);
+            RTSpinlockRelease(pGVM->gmm.s.hChunkTlbSpinLock);
+            AssertMsgFailed(("idPage=%#x\n", idPage));
+            return VERR_GMM_PAGE_NOT_FOUND;
+        }
     }
-    else
-        rc = VERR_GMM_PAGE_NOT_FOUND;
 
-    RTSpinlockRelease(pGMM->hSpinLockTree);
-    return rc;
+    RTSpinlockRelease(pGVM->gmm.s.hChunkTlbSpinLock);
+
+    /*
+     * Got a chunk, now validate the page ownership and calcuate it's address.
+     */
+    const GMMPAGE * const pPage = &pChunk->aPages[idPage & GMM_PAGEID_IDX_MASK];
+    if (RT_LIKELY(   (   GMM_PAGE_IS_PRIVATE(pPage)
+                      && pPage->Private.hGVM == pGVM->hSelf)
+                  || GMM_PAGE_IS_SHARED(pPage)))
+    {
+        AssertPtr(pChunk->pbMapping);
+        *ppv = &pChunk->pbMapping[(idPage & GMM_PAGEID_IDX_MASK) << PAGE_SHIFT];
+        return VINF_SUCCESS;
+    }
+    AssertMsgFailed(("idPage=%#x is-private=%RTbool Private.hGVM=%u pGVM->hGVM=%u\n",
+                     idPage, GMM_PAGE_IS_PRIVATE(pPage), pPage->Private.hGVM, pGVM->hSelf));
+    return VERR_GMM_NOT_PAGE_OWNER;
 }
 
 #endif
@@ -5556,6 +5668,7 @@ GMMR0DECL(int) GMMR0QueryStatistics(PGMMSTATS pStats, PSUPDRVSESSION pSession, P
     pStats->cChunks                     = pGMM->cChunks;
     pStats->cFreedChunks                = pGMM->cFreedChunks;
     pStats->cShareableModules           = pGMM->cShareableModules;
+    pStats->idFreeGeneration            = pGMM->idFreeGeneration;
     RT_ZERO(pStats->au64Reserved);
 
     /*

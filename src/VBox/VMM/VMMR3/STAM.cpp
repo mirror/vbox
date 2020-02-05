@@ -240,6 +240,7 @@ static const STAMR0SAMPLE g_aGMMStats[] =
     { RT_UOFFSETOF(GMMSTATS, cChunks),                          STAMTYPE_U32,   STAMUNIT_COUNT, "/GMM/cChunks",                     "The number of allocation chunks." },
     { RT_UOFFSETOF(GMMSTATS, cFreedChunks),                     STAMTYPE_U32,   STAMUNIT_COUNT, "/GMM/cFreedChunks",                "The number of freed chunks ever." },
     { RT_UOFFSETOF(GMMSTATS, cShareableModules),                STAMTYPE_U32,   STAMUNIT_COUNT, "/GMM/cShareableModules",           "The number of shareable modules." },
+    { RT_UOFFSETOF(GMMSTATS, idFreeGeneration),                 STAMTYPE_U64,   STAMUNIT_NONE,  "/GMM/idFreeGeneration",            "The current chunk freeing generation number (for per-VM chunk lookup TLB versioning)." },
     { RT_UOFFSETOF(GMMSTATS, VMStats.Reserved.cBasePages),      STAMTYPE_U64,   STAMUNIT_PAGES, "/GMM/VM/Reserved/cBasePages",      "The amount of base memory (RAM, ROM, ++) reserved by the VM." },
     { RT_UOFFSETOF(GMMSTATS, VMStats.Reserved.cShadowPages),    STAMTYPE_U32,   STAMUNIT_PAGES, "/GMM/VM/Reserved/cShadowPages",    "The amount of memory reserved for shadow/nested page tables." },
     { RT_UOFFSETOF(GMMSTATS, VMStats.Reserved.cFixedPages),     STAMTYPE_U32,   STAMUNIT_PAGES, "/GMM/VM/Reserved/cFixedPages",     "The amount of memory reserved for fixed allocations like MMIO2 and the hyper heap." },

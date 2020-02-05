@@ -154,6 +154,20 @@ typedef GVMMSTATS *PGVMMSTATS;
 /** Const pointer to the GVMM statistics. */
 typedef const GVMMSTATS *PCGVMMSTATS;
 
+/**
+ * Per-VM callback for GVMMR0EnumVMs.
+ *
+ * @note This is called while holding the VM used list lock, so only suitable
+ *       for quick and simple jobs!
+ *
+ * @returns VINF_SUCCESS to continue the enumeration, anything stops it and
+ *          returns the status code.
+ * @param   pGVM        The VM
+ * @param   pvUser      The user parameter.
+ *  */
+typedef DECLCALLBACK(int) FNGVMMR0ENUMCALLBACK(PGVM pGVM, void *pvUser);
+/** Pointer to an VM enumeration callback function. */
+typedef FNGVMMR0ENUMCALLBACK *PFNGVMMR0ENUMCALLBACK;
 
 
 GVMMR0DECL(int)     GVMMR0Init(void);
@@ -184,6 +198,7 @@ GVMMR0DECL(int)     GVMMR0SchedPokeNoGVMNoLock(PVMCC pVM, VMCPUID idCpu);
 GVMMR0DECL(int)     GVMMR0SchedWakeUpAndPokeCpus(PGVM pGVM, PCVMCPUSET pSleepSet, PCVMCPUSET pPokeSet);
 GVMMR0DECL(int)     GVMMR0SchedPoll(PGVM pGVM, VMCPUID idCpu, bool fYield);
 GVMMR0DECL(void)    GVMMR0SchedUpdatePeriodicPreemptionTimer(PGVM pGVM, RTCPUID idHostCpu, uint32_t uHz);
+GVMMR0DECL(int)     GVMMR0EnumVMs(PFNGVMMR0ENUMCALLBACK pfnCallback, void *pvUser);
 GVMMR0DECL(int)     GVMMR0QueryStatistics(PGVMMSTATS pStats, PSUPDRVSESSION pSession, PGVM pGVM);
 GVMMR0DECL(int)     GVMMR0ResetStatistics(PCGVMMSTATS pStats, PSUPDRVSESSION pSession, PGVM pGVM);
 

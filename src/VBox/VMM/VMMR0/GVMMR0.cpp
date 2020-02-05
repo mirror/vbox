@@ -903,11 +903,11 @@ GVMMR0DECL(int) GVMMR0CreateVM(PSUPDRVSESSION pSession, uint32_t cCpus, PGVM *pp
                         RT_BZERO(pGVM, cPages << PAGE_SHIFT);
                         gvmmR0InitPerVMData(pGVM, iHandle, cCpus, pSession);
                         pGVM->gvmm.s.VMMemObj  = hVMMemObj;
-                        GMMR0InitPerVMData(pGVM);
-                        rc = PGMR0InitPerVMData(pGVM);
+                        rc = GMMR0InitPerVMData(pGVM);
+                        int rc2 = PGMR0InitPerVMData(pGVM);
                         PDMR0InitPerVMData(pGVM);
                         IOMR0InitPerVMData(pGVM);
-                        if (RT_SUCCESS(rc))
+                        if (RT_SUCCESS(rc) && RT_SUCCESS(rc2))
                         {
                             /*
                              * Allocate page array.
@@ -1024,6 +1024,8 @@ GVMMR0DECL(int) GVMMR0CreateVM(PSUPDRVSESSION pSession, uint32_t cCpus, PGVM *pp
                                 }
                             }
                         }
+                        else if (RT_SUCCESS(rc))
+                            rc = rc2;
                     }
                 }
                 /* else: The user wasn't permitted to create this VM. */
@@ -2731,6 +2733,46 @@ GVMMR0DECL(void) GVMMR0SchedUpdatePeriodicPreemptionTimer(PGVM pGVM, RTCPUID idH
 #else  /* !GVMM_SCHED_WITH_PPT */
     NOREF(idHostCpu); NOREF(uHz);
 #endif /* !GVMM_SCHED_WITH_PPT */
+}
+
+
+/**
+ * Calls @a pfnCallback for each VM in the system.
+ *
+ * This will enumerate the VMs while holding the global VM used list lock in
+ * shared mode.  So, only suitable for simple work.  If more expensive work
+ * needs doing, a different approach must be taken as using this API would
+ * otherwise block VM creation and destruction.
+ *
+ * @returns VBox status code.
+ * @param   pfnCallback     The callback function.
+ * @param   pvUser          User argument to the callback.
+ */
+GVMMR0DECL(int) GVMMR0EnumVMs(PFNGVMMR0ENUMCALLBACK pfnCallback, void *pvUser)
+{
+    PGVMM pGVMM;
+    GVMM_GET_VALID_INSTANCE(pGVMM, VERR_GVMM_INSTANCE);
+
+    int rc = VINF_SUCCESS;
+    GVMMR0_USED_SHARED_LOCK(pGVMM);
+    for (unsigned i = pGVMM->iUsedHead, cLoops = 0;
+         i != NIL_GVM_HANDLE && i < RT_ELEMENTS(pGVMM->aHandles);
+         i = pGVMM->aHandles[i].iNext, cLoops++)
+    {
+        PGVM pGVM = pGVMM->aHandles[i].pGVM;
+        if (   RT_VALID_PTR(pGVM)
+            && RT_VALID_PTR(pGVMM->aHandles[i].pvObj)
+            && pGVM->u32Magic == GVM_MAGIC)
+        {
+            rc = pfnCallback(pGVM, pvUser);
+            if (rc != VINF_SUCCESS)
+                break;
+        }
+
+        AssertBreak(cLoops < RT_ELEMENTS(pGVMM->aHandles) * 4); /* paranoia */
+    }
+    GVMMR0_USED_SHARED_UNLOCK(pGVMM);
+    return rc;
 }
 
 
