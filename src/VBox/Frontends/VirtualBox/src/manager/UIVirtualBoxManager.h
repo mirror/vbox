@@ -312,6 +312,8 @@ private:
           * @param items used to calculate verdict about should the action be enabled. */
         bool isActionEnabled(int iActionIndex, const QList<UIVirtualMachineItem*> &items);
 
+        /** Returns whether all passed @a items are local. */
+        static bool isItemsLocal(const QList<UIVirtualMachineItem*> &items);
         /** Returns whether all passed @a items are powered off. */
         static bool isItemsPoweredOff(const QList<UIVirtualMachineItem*> &items);
         /** Returns whether at least one of passed @a items is able to shutdown. */
