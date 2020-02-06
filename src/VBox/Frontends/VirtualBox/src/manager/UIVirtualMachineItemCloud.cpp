@@ -59,9 +59,20 @@ void UIVirtualMachineItemCloud::recache()
         /* Determine VM states: */
         m_enmMachineState = KMachineState_PoweredOff;
         m_strMachineStateName = gpConverter->toString(m_enmMachineState);
-        if (   itemType() == ItemType_CloudFake
-            && fakeCloudItemState() == FakeCloudItemState_Loading)
-            m_machineStateIcon = UIIconPool::iconSet(":/state_loading_16px.png");
+        if (itemType() == ItemType_CloudFake)
+        {
+            switch (m_enmFakeCloudItemState)
+            {
+                case UIVirtualMachineItemCloud::FakeCloudItemState_Loading:
+                    m_machineStateIcon = UIIconPool::iconSet(":/state_loading_16px.png");
+                    break;
+                case UIVirtualMachineItemCloud::FakeCloudItemState_Done:
+                    m_machineStateIcon = UIIconPool::iconSet(":/vm_new_16px.png");
+                    break;
+                default:
+                    break;
+            }
+        }
         else
             m_machineStateIcon = gpConverter->toIcon(m_enmMachineState);
 
@@ -159,12 +170,8 @@ void UIVirtualMachineItemCloud::retranslateUi()
     /* If machine is accessible: */
     if (m_fAccessible)
     {
-        /* Update name: */
-        if (itemType() == UIVirtualMachineItem::ItemType_CloudFake)
-            m_strName = tr("Empty");
-
-        /* Update machine state: */
-        if (itemType() == UIVirtualMachineItem::ItemType_CloudFake)
+        /* Update machine/state name: */
+        if (itemType() == ItemType_CloudFake)
         {
             switch (m_enmFakeCloudItemState)
             {
@@ -172,7 +179,7 @@ void UIVirtualMachineItemCloud::retranslateUi()
                     m_strMachineStateName = tr("Loading ...");
                     break;
                 case UIVirtualMachineItemCloud::FakeCloudItemState_Done:
-                    m_strMachineStateName = tr("Done");
+                    m_strMachineStateName = tr("Up-To-Date");
                     break;
                 default:
                     break;

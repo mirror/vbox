@@ -48,6 +48,8 @@ public:
 
     /** @name State attributes.
       * @{ */
+        /** Defines fake cloud item @a enmState. */
+        void setFakeCloudItemState(FakeCloudItemState enmState) { m_enmFakeCloudItemState = enmState; }
         /** Returns fake cloud item state. */
         FakeCloudItemState fakeCloudItemState() const { return m_enmFakeCloudItemState; }
     /** @} */
