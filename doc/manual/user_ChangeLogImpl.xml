@@ -43,8 +43,15 @@ technical terms if no non-technical ones are clear enough.
 
     <itemizedlist>
       <listitem>
+        <para>Virtualization core: fixed a rare issue with ICEBP instruction
+        causing guru meditations on Intel hosts (6.1.0 regression;
+        bug #19171)</para>
+      </listitem>
+
+      <listitem>
         <para></para>
       </listitem>
+
     </itemizedlist>
   </sect1>
 
