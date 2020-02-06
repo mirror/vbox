@@ -132,28 +132,22 @@ uint32_t __far swap_32(uint32_t val);
     "xchg   ax, dx"     \
     parm [dx ax] value [dx ax] modify exact [dx ax] nomemory;
 
-//@todo: Do CLD elsewhere!
 extern void memsetb(uint16_t seg, uint16_t offset, uint16_t value, uint16_t count);
 #pragma aux memsetb =   \
-    "cld"               \
     "jcxz no_copy"      \
     "rep stosb"         \
     "no_copy:"          \
     parm [es] [di] [ax] [cx];
 
-//@todo: Do CLD elsewhere!
 extern void memsetw(uint16_t seg, uint16_t offset, uint16_t value, uint16_t count);
 #pragma aux memsetw =   \
-    "cld"               \
     "jcxz no_copy"      \
     "rep stosw"         \
     "no_copy:"          \
     parm [es] [di] [ax] [cx];
 
-//@todo: Do CLD elsewhere!
 extern void memcpyb(uint16_t dseg, uint16_t doffset, uint16_t sseg, uint16_t soffset, uint16_t count);
 #pragma aux memcpyb =   \
-    "cld"               \
     "jcxz   no_copy"    \
     "push   ds"         \
     "mov    ds, dx"     \
@@ -162,10 +156,8 @@ extern void memcpyb(uint16_t dseg, uint16_t doffset, uint16_t sseg, uint16_t sof
     "no_copy:"          \
     parm [es] [di] [dx] [si] [cx];
 
-//@todo: Do CLD elsewhere!
 extern void memcpyw(uint16_t dseg, uint16_t doffset, uint16_t sseg, uint16_t soffset, uint16_t count);
 #pragma aux memcpyw =   \
-    "cld"               \
     "jcxz   no_copy"    \
     "push   ds"         \
     "mov    ds, dx"     \

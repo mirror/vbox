@@ -76,19 +76,20 @@ void __cdecl          unimplemented(void);
 void __cdecl          unknown(void);
 
 static uint8_t find_vga_entry();
+static void biosfn_load_text_8_16_pat(uint8_t AL, uint8_t BL);
 
-extern uint8_t xread_byte(uint16_t seg, uint16_t offset);
+extern uint8_t readx_byte(uint16_t seg, uint16_t offset);
 
 #ifdef VBE
 extern uint16_t __cdecl vbe_has_vbe_display(void);
 extern void             vbe_init(void);
 #endif
 
-void set_int_vector(uint8_t int_vec, void *offset)
+void set_int_vector(uint8_t int_vec, void __far *ptr)
 {
     void __far * __far *ivt = 0;
 
-    ivt[int_vec] = 0xC000 :> offset;
+    ivt[int_vec] = ptr;
 }
 
 //@todo!!
@@ -572,22 +573,22 @@ static void vga_get_font_info (uint16_t func, uint16_t STACK_BASED *u_seg, uint1
         ptr = (void __far *)read_dword(0x00, 0x43 * 4);
         break;
     case 0x02:
-        ptr = 0xC000 :> vgafont14;
+        ptr = vgafont14;
         break;
     case 0x03:
-        ptr = 0xC000 :> vgafont8;
+        ptr = vgafont8;
         break;
     case 0x04:
-        ptr = 0xC000 :> (vgafont8 + 128 * 8);
+        ptr = vgafont8 + 128 * 8;
         break;
     case 0x05:
-        ptr = 0xC000 :> vgafont14alt;
+        ptr = vgafont14alt;
         break;
     case 0x06:
-        ptr = 0xC000 :> vgafont16;
+        ptr = vgafont16;
         break;
     case 0x07:
-        ptr = 0xC000 :> vgafont16alt;
+        ptr = vgafont16alt;
         break;
     default:
 #ifdef VGA_DEBUG
@@ -877,9 +878,10 @@ void biosfn_set_video_mode(uint8_t mode)
 
  // Should we clear the screen ?
  uint8_t  noclearmem=mode&0x80;
- uint8_t  line,mmask,*palette,vpti;
- uint16_t i,twidth,theightm1,cheight;
- uint8_t  modeset_ctl,video_ctl,vga_switches;
+ uint8_t  line,mmask,vpti;
+ uint8_t  modeset_ctl;
+ uint8_t  *palette;
+ uint16_t i;
  uint16_t crtc_addr;
 
 #ifdef VBE
@@ -909,15 +911,14 @@ void biosfn_set_video_mode(uint8_t mode)
   return;
 
  vpti=line_to_vpti[line];
- twidth=video_param_table[vpti].twidth;
- theightm1=video_param_table[vpti].theightm1;
- cheight=video_param_table[vpti].cheight;
 
+#if 0   // These are unused, but perhaps they shouldn't be?
  // Read the bios vga control
  video_ctl=read_byte(BIOSMEM_SEG,BIOSMEM_VIDEO_CTL);
 
  // Read the bios vga switches
  vga_switches=read_byte(BIOSMEM_SEG,BIOSMEM_SWITCHES);
+#endif
 
  // Read the bios mode set control
  modeset_ctl=read_byte(BIOSMEM_SEG,BIOSMEM_MODESET_CTL);
@@ -1035,11 +1036,11 @@ void biosfn_set_video_mode(uint8_t mode)
 
  // Set the BIOS mem
  write_byte(BIOSMEM_SEG,BIOSMEM_CURRENT_MODE,mode);
- write_word(BIOSMEM_SEG,BIOSMEM_NB_COLS,twidth);
+ write_word(BIOSMEM_SEG,BIOSMEM_NB_COLS,video_param_table[vpti].twidth);
  write_word(BIOSMEM_SEG,BIOSMEM_PAGE_SIZE,video_param_table[vpti].slength);
  write_word(BIOSMEM_SEG,BIOSMEM_CRTC_ADDRESS,crtc_addr);
- write_byte(BIOSMEM_SEG,BIOSMEM_NB_ROWS,theightm1);
- write_word(BIOSMEM_SEG,BIOSMEM_CHAR_HEIGHT,cheight);
+ write_byte(BIOSMEM_SEG,BIOSMEM_NB_ROWS,video_param_table[vpti].theightm1);
+ write_word(BIOSMEM_SEG,BIOSMEM_CHAR_HEIGHT,video_param_table[vpti].cheight);
  write_byte(BIOSMEM_SEG,BIOSMEM_VIDEO_CTL,(0x60|noclearmem));
  write_byte(BIOSMEM_SEG,BIOSMEM_SWITCHES,0xF9);
  write_byte(BIOSMEM_SEG,BIOSMEM_MODESET_CTL,read_byte(BIOSMEM_SEG,BIOSMEM_MODESET_CTL)&0x7f);
@@ -1077,7 +1078,7 @@ void biosfn_set_video_mode(uint8_t mode)
  // Set the ints 0x1F and 0x43
  set_int_vector(0x1f, vgafont8+128*8);
 
-  switch(cheight)
+  switch(video_param_table[vpti].cheight)
    {case 8:
      set_int_vector(0x43, vgafont8);
      break;
@@ -1393,7 +1394,7 @@ static void write_gfx_char_pl4(uint8_t car, uint8_t attr, uint8_t xcurs,
     {
      mask=0x80>>j;
      outw(VGAREG_GRDC_ADDRESS, (mask << 8) | 0x08);
-     xread_byte(0xa000,dest);
+     readx_byte(0xa000,dest);
      if(fdata[src+i]&mask)
       {
        write_byte(0xa000,dest,attr&0x0f);
@@ -1640,7 +1641,7 @@ static void biosfn_write_pixel(uint8_t BH, uint8_t AL, uint16_t CX, uint16_t DX)
      mask = 0x80 >> (CX & 0x07);
      outw(VGAREG_GRDC_ADDRESS, (mask << 8) | 0x08);
      outw(VGAREG_GRDC_ADDRESS, 0x0205);
-     data = xread_byte(0xa000,addr);
+     data = readx_byte(0xa000,addr);
      if (AL & 0x80)
       {
        outw(VGAREG_GRDC_ADDRESS, 0x1803);
@@ -2331,7 +2332,7 @@ static uint8_t find_vga_entry(uint8_t mode)
  * optimizer. We must read exactly one byte, otherwise the screen
  * may be corrupted.
  */
-uint8_t xread_byte(uint16_t seg, uint16_t offset)
+uint8_t readx_byte(uint16_t seg, uint16_t offset)
 {
     return( *(seg:>(uint8_t *)offset) );
 }
@@ -2547,7 +2548,7 @@ void __cdecl int10_func(uint16_t DI, uint16_t SI, uint16_t BP, uint16_t SP, uint
        case 0x34:   /* CGA text cursor emulation control. */
         if (GET_AL() < 2) {
             write_byte(BIOSMEM_SEG,BIOSMEM_VIDEO_CTL,
-              (xread_byte(BIOSMEM_SEG,BIOSMEM_VIDEO_CTL) & ~1) | GET_AL());
+              (read_byte(BIOSMEM_SEG,BIOSMEM_VIDEO_CTL) & ~1) | GET_AL());
             SET_AL(0x12);
         }
         else

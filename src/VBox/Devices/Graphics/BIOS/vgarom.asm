@@ -86,8 +86,9 @@ ifdef VGA_DEBUG
   push es
   push ds
   DO_pusha
-  mov   bx, 0C000h
-  mov   ds, bx
+  push  cs
+  pop   ds
+  cld
   call _int10_debugmsg
   DO_popa
   pop ds
@@ -196,8 +197,9 @@ int10_normal:
   DO_pusha
 
 ;; We have to set ds to access the right data segment
-  mov   bx, 0C000h
-  mov   ds, bx
+  push  cs
+  pop   ds
+  cld
   call _int10_func
 
   DO_popa

@@ -779,8 +779,8 @@ vbe_09_nohw:
 vbe_biosfn_return_protected_mode_interface:
   test bl, bl
   jnz _fail
-  mov di, 0C000h
-  mov es, di
+  push cs
+  pop es
   mov di, offset vesa_pm_start
   mov cx, vesa_pm_end - vesa_pm_start
   mov ax, 004Fh
