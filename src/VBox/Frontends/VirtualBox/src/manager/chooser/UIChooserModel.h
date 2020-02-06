@@ -248,6 +248,14 @@ protected slots:
         virtual void sltReloadMachine(const QUuid &uId) /* override */;
     /** @} */
 
+#ifdef VBOX_GUI_WITH_CLOUD_VMS
+    /** @name Cloud stuff.
+      * @{ */
+        /** Handles acquire cloud machine task complete signal. */
+        virtual void sltHandleCloudAcquireInstancesTaskComplete(UITask *pTask) /* override */;
+    /** @} */
+#endif /* VBOX_GUI_WITH_CLOUD_VMS */
+
 private slots:
 
     /** @name Selection stuff.

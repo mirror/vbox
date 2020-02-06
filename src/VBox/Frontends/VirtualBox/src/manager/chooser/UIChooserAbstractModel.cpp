@@ -27,6 +27,10 @@
 #include "UIMessageCenter.h"
 #include "UIVirtualBoxEventHandler.h"
 #include "UIVirtualMachineItem.h"
+#ifdef VBOX_GUI_WITH_CLOUD_VMS
+# include "UITaskCloudAcquireInstances.h"
+# include "UIThreadPool.h"
+#endif
 
 /* COM includes: */
 #include "CMachine.h"
@@ -259,6 +263,28 @@ void UIChooserAbstractModel::sltStartGroupSaving()
     saveGroupOrders();
 }
 
+#ifdef VBOX_GUI_WITH_CLOUD_VMS
+void UIChooserAbstractModel::sltHandleCloudAcquireInstancesTaskComplete(UITask *pTask)
+{
+    /* Skip unrelated tasks: */
+    if (!pTask || pTask->type() != UITask::Type_CloudAcquireInstances)
+        return;
+
+    /* Cast task to corresponding sub-class: */
+    UITaskCloudAcquireInstances *pAcquiringTask = static_cast<UITaskCloudAcquireInstances*>(pTask);
+
+    /* Add real cloud VM items: */
+    int iPosition = 1; /* we've got item with index 0 already, the "Empty" one .. */
+    foreach (const QString &strInstanceName, pAcquiringTask->instanceNames())
+    {
+        new UIChooserNodeMachine(pAcquiringTask->parentNode(),
+                                 false /* favorite */,
+                                 iPosition++ /* position */,
+                                 strInstanceName);
+    }
+}
+#endif /* VBOX_GUI_WITH_CLOUD_VMS */
+
 void UIChooserAbstractModel::sltGroupDefinitionsSaveComplete()
 {
     makeSureGroupDefinitionsSaveIsFinished();
@@ -373,7 +399,9 @@ void UIChooserAbstractModel::loadTree()
                         UIChooserNodeGroup *pProviderNode =
                             new UIChooserNodeGroup(m_pInvisibleRootNode,
                                                    false /* favorite */,
-                                                   getDesiredNodePosition(m_pInvisibleRootNode, UIChooserItemType_Group, strProviderName),
+                                                   getDesiredNodePosition(m_pInvisibleRootNode,
+                                                                          UIChooserItemType_Group,
+                                                                          strProviderName),
                                                    strProviderName,
                                                    true /* opened */);
 
@@ -393,7 +421,6 @@ void UIChooserAbstractModel::loadTree()
                             {
                                 /* Create Cloud Client: */
                                 CCloudClient comCloudClient = comCloudProfile.CreateCloudClient();
-                                Q_UNUSED(comCloudClient);
                                 /* Show error message if necessary: */
                                 if (!comCloudProfile.isOk())
                                     msgCenter().cannotCreateCloudClient(comCloudProfile);
@@ -403,13 +430,25 @@ void UIChooserAbstractModel::loadTree()
                                     UIChooserNodeGroup *pProfileNode =
                                         new UIChooserNodeGroup(pProviderNode,
                                                                false /* favorite */,
-                                                               getDesiredNodePosition(pProviderNode, UIChooserItemType_Group, strProfileName),
+                                                               getDesiredNodePosition(pProviderNode,
+                                                                                      UIChooserItemType_Group,
+                                                                                      strProfileName),
                                                                strProfileName,
                                                                true /* opened */);
                                     /* Add fake cloud VM item: */
                                     new UIChooserNodeMachine(pProfileNode,
                                                              false /* favorite */,
                                                              0 /* position */);
+
+                                    /* Create cloud acquire isntances task: */
+                                    UITaskCloudAcquireInstances *pTask = new UITaskCloudAcquireInstances(comCloudClient,
+                                                                                                         pProfileNode);
+                                    if (pTask)
+                                    {
+                                        connect(pTask, &UITask::sigComplete,
+                                                this, &UIChooserAbstractModel::sltHandleCloudAcquireInstancesTaskComplete);
+                                        uiCommon().threadPool()->enqueueTask(pTask);
+                                    }
                                 }
                             }
                         }

@@ -43,8 +43,9 @@ public:
     /** Task types. */
     enum Type
     {
-        Type_MediumEnumeration = 1,
-        Type_DetailsPopulation = 2,
+        Type_MediumEnumeration     = 1,
+        Type_DetailsPopulation     = 2,
+        Type_CloudAcquireInstances = 3,
     };
 
     /** Constructs the task of passed @a enmType. */

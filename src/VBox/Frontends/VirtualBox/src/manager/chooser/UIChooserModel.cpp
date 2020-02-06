@@ -705,6 +705,19 @@ void UIChooserModel::sltReloadMachine(const QUuid &uId)
     emit sigSelectionChanged();
 }
 
+#ifdef VBOX_GUI_WITH_CLOUD_VMS
+void UIChooserModel::sltHandleCloudAcquireInstancesTaskComplete(UITask *pTask)
+{
+    /* Call to base-class: */
+    UIChooserAbstractModel::sltHandleCloudAcquireInstancesTaskComplete(pTask);
+
+    /* Rebuild tree for main root: */
+    buildTreeForMainRoot();
+    updateNavigationItemList();
+    updateLayout();
+}
+#endif /* VBOX_GUI_WITH_CLOUD_VMS */
+
 void UIChooserModel::sltMakeSureCurrentItemVisible()
 {
     root()->toGroupItem()->makeSureItemIsVisible(currentItem());
