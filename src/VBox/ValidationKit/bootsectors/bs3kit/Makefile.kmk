@@ -544,7 +544,8 @@ LIBRARIES += bs3kit-lm64
 bs3kit-lm64_TEMPLATE = VBoxBS3KitImg64
 bs3kit-lm64_INSTTYPE = none
 bs3kit-lm64_DEFS     = TMPL_MODE=BS3_MODE_LM64
-bs3kit-lm64_SOURCES  = $(VBOX_BS3KIT_MODE_SOURCES)
+bs3kit-lm64_SOURCES  = $(VBOX_BS3KIT_MODE_SOURCES) \
+	bs3-first-init-all-lm64.asm
 
 
 #
