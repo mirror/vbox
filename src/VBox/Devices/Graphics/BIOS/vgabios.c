@@ -229,6 +229,7 @@ void __far __cdecl vgabios_init_func(void)
     vbe_init();
 #endif
     set_int_vector(0x10, vgabios_int10_handler);
+    set_int_vector(0x6D, vgabios_int10_handler);
 #ifdef CIRRUS
     cirrus_init();
 #endif
@@ -853,11 +854,11 @@ static void biosfn_set_active_page(uint8_t page)
  biosfn_set_cursor_pos(page,cursor);
 }
 
-/// @todo Evaluate whether executing INT 10h is the right thing here
+/// Recursive BIOS invocation, uses
 extern void vga_font_set(uint8_t function, uint8_t data);
 #pragma aux vga_font_set =  \
     "mov    ah, 11h"        \
-    "int    10h"            \
+    "int    6Dh"            \
     parm [al] [bl];
 
 // ============================================================================================
@@ -1069,8 +1070,8 @@ void biosfn_set_video_mode(uint8_t mode)
  // Write the fonts in memory
  if(vga_modes[line].class==TEXT)
   {
-     vga_font_set(0x04, 0);     /* Load 8x16 font into page 0. */
-     vga_font_set(0x03, 0);     /* Select font page mode 0. */
+     biosfn_load_text_8_16_pat(0x04, 0);    /* Load 8x16 font into page 0. */
+     vga_font_set(0x03, 0);                 /* Select font page mode 0. */
   }
 
  // Set the ints 0x1F and 0x43
