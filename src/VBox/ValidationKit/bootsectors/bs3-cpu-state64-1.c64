@@ -95,69 +95,60 @@ static void bs3CpuState64Comp(bool fModRbx)
 BS3_DECL(void) Main_lm64()
 {
     Bs3TestInit("bs3-cpu-state64-1");
-    if (!(g_uBs3CpuDetected & BS3CPU_F_LONG_MODE))
-        Bs3TestSkipped("no long mode");
-    else
-    {
-        /*
-         * Switch to 64-bit mode and back to rm.
-         */
-        Bs3TestSub("noop");
-        bs3CpuState64InitCtx(0);
-        bs3CpuState64Worker(bs3CpuState64Worker_Nop);
-        bs3CpuState64Comp(false /*fModRbx*/);
+    /*
+     * Switch to 64-bit mode and back to rm.
+     */
+    Bs3TestSub("noop");
+    bs3CpuState64InitCtx(0);
+    bs3CpuState64Worker(bs3CpuState64Worker_Nop);
+    bs3CpuState64Comp(false /*fModRbx*/);
 
-        Bs3TestSub("Modify all 32-bit GPRs");
-        bs3CpuState64InitCtx(0);
-        bs3CpuState64Worker(bs3CpuState64Worker_ModAll32BitGrps);
-        g_bs3CpuState64CtxToLoad.rax.u = UINT64_C(0xc0ffee0d);
-        g_bs3CpuState64CtxToLoad.rcx.u = UINT64_C(0xc0ffee1d);
-        g_bs3CpuState64CtxToLoad.rdx.u = UINT64_C(0xc0ffee2d);
-        g_bs3CpuState64CtxToLoad.rbx.u = UINT64_C(0xc0ffee3d);
-        g_bs3CpuState64CtxToLoad.rsp.u = UINT64_C(0xc0ffee4d);
-        g_bs3CpuState64CtxToLoad.rbp.u = UINT64_C(0xc0ffee5d);
-        g_bs3CpuState64CtxToLoad.rsi.u = UINT64_C(0xc0ffee6d);
-        g_bs3CpuState64CtxToLoad.rdi.u = UINT64_C(0xc0ffee7d);
-        bs3CpuState64Comp(true /*fModRbx*/);
+    Bs3TestSub("Modify all 32-bit GPRs");
+    bs3CpuState64InitCtx(0);
+    bs3CpuState64Worker(bs3CpuState64Worker_ModAll32BitGrps);
+    g_bs3CpuState64CtxToLoad.rax.u = UINT64_C(0xc0ffee0d);
+    g_bs3CpuState64CtxToLoad.rcx.u = UINT64_C(0xc0ffee1d);
+    g_bs3CpuState64CtxToLoad.rdx.u = UINT64_C(0xc0ffee2d);
+    g_bs3CpuState64CtxToLoad.rbx.u = UINT64_C(0xc0ffee3d);
+    g_bs3CpuState64CtxToLoad.rsp.u = UINT64_C(0xc0ffee4d);
+    g_bs3CpuState64CtxToLoad.rbp.u = UINT64_C(0xc0ffee5d);
+    g_bs3CpuState64CtxToLoad.rsi.u = UINT64_C(0xc0ffee6d);
+    g_bs3CpuState64CtxToLoad.rdi.u = UINT64_C(0xc0ffee7d);
+    bs3CpuState64Comp(true /*fModRbx*/);
 
-        Bs3TestSub("Modify all 16-bit GPRs");
-        bs3CpuState64InitCtx(0);
-        bs3CpuState64Worker(bs3CpuState64Worker_ModAll16BitGrps);
-        g_bs3CpuState64CtxToLoad.rax.u = UINT64_C(0xfad0);
-        g_bs3CpuState64CtxToLoad.rcx.u = UINT64_C(0xfad1);
-        g_bs3CpuState64CtxToLoad.rdx.u = UINT64_C(0xfad2);
-        g_bs3CpuState64CtxToLoad.rbx.u = UINT64_C(0xfad3);
-        g_bs3CpuState64CtxToLoad.rsp.u = UINT64_C(0xfad4);
-        g_bs3CpuState64CtxToLoad.rbp.u = UINT64_C(0xfad5);
-        g_bs3CpuState64CtxToLoad.rsi.u = UINT64_C(0xfad6);
-        g_bs3CpuState64CtxToLoad.rdi.u = UINT64_C(0xfad7);
-        bs3CpuState64Comp(true /*fModRbx*/);
+    Bs3TestSub("Modify all 16-bit GPRs");
+    bs3CpuState64InitCtx(0);
+    bs3CpuState64Worker(bs3CpuState64Worker_ModAll16BitGrps);
+    g_bs3CpuState64CtxToLoad.rax.au16[0] = UINT16_C(0xfad0);
+    g_bs3CpuState64CtxToLoad.rcx.au16[0] = UINT16_C(0xfad1);
+    g_bs3CpuState64CtxToLoad.rdx.au16[0] = UINT16_C(0xfad2);
+    g_bs3CpuState64CtxToLoad.rbx.au16[0] = UINT16_C(0xfad3);
+    g_bs3CpuState64CtxToLoad.rsp.au16[0] = UINT16_C(0xfad4);
+    g_bs3CpuState64CtxToLoad.rbp.au16[0] = UINT16_C(0xfad5);
+    g_bs3CpuState64CtxToLoad.rsi.au16[0] = UINT16_C(0xfad6);
+    g_bs3CpuState64CtxToLoad.rdi.au16[0] = UINT16_C(0xfad7);
+    bs3CpuState64Comp(true /*fModRbx*/);
 
-        Bs3TestSub("Modify all 8-bit GPRs");
-        bs3CpuState64InitCtx(0);
-        bs3CpuState64Worker(bs3CpuState64Worker_ModAll8BitGrps);
-        g_bs3CpuState64CtxToLoad.rax.u      = 0;
-        g_bs3CpuState64CtxToLoad.rax.au8[0] = 0x10;
-        g_bs3CpuState64CtxToLoad.rax.au8[1] = 0x11;
-        g_bs3CpuState64CtxToLoad.rcx.u      = 0;
-        g_bs3CpuState64CtxToLoad.rcx.au8[0] = 0x20;
-        g_bs3CpuState64CtxToLoad.rcx.au8[1] = 0x21;
-        g_bs3CpuState64CtxToLoad.rdx.u      = 0;
-        g_bs3CpuState64CtxToLoad.rdx.au8[0] = 0x30;
-        g_bs3CpuState64CtxToLoad.rdx.au8[1] = 0x31;
-        g_bs3CpuState64CtxToLoad.rbx.u      = 0;
-        g_bs3CpuState64CtxToLoad.rbx.au8[0] = 0x40;
-        g_bs3CpuState64CtxToLoad.rbx.au8[1] = 0x41;
-        bs3CpuState64Comp(true /*fModRbx*/);
+    Bs3TestSub("Modify all 8-bit GPRs");
+    bs3CpuState64InitCtx(0);
+    bs3CpuState64Worker(bs3CpuState64Worker_ModAll8BitGrps);
+    g_bs3CpuState64CtxToLoad.rax.au8[0] = 0x10;
+    g_bs3CpuState64CtxToLoad.rax.au8[1] = 0x11;
+    g_bs3CpuState64CtxToLoad.rcx.au8[0] = 0x20;
+    g_bs3CpuState64CtxToLoad.rcx.au8[1] = 0x21;
+    g_bs3CpuState64CtxToLoad.rdx.au8[0] = 0x30;
+    g_bs3CpuState64CtxToLoad.rdx.au8[1] = 0x31;
+    g_bs3CpuState64CtxToLoad.rbx.au8[0] = 0x40;
+    g_bs3CpuState64CtxToLoad.rbx.au8[1] = 0x41;
+    bs3CpuState64Comp(true /*fModRbx*/);
 
-        Bs3TestSub("Modify CR2");
-        bs3CpuState64InitCtx(0);
-        bs3CpuState64Worker(bs3CpuState64Worker_ModCr2);
-        g_bs3CpuState64CtxToLoad.cr2.u = 0xf00dface;
-        bs3CpuState64Comp(true /*fModRbx*/);
+    Bs3TestSub("Modify CR2");
+    bs3CpuState64InitCtx(0);
+    bs3CpuState64Worker(bs3CpuState64Worker_ModCr2);
+    g_bs3CpuState64CtxToLoad.cr2.u = 0xf00dface;
+    bs3CpuState64Comp(true /*fModRbx*/);
 
         /** @todo DRx */
-    }
     Bs3TestTerm();
     for (;;)
         ASMHalt();

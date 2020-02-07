@@ -35,6 +35,9 @@ extern NAME(Bs3InitAll_rm)
 extern NAME(Bs3SwitchToLM64_rm)
 extern NAME(Main_lm64)
 extern NAME(Bs3Shutdown_c64)
+extern BS3_DATA_NM(g_uBs3CpuDetected)
+extern NAME(Bs3PrintStrN_c16)
+extern NAME(Bs3Panic_c16)
 
 ;; Entry point.
         push    word 0                  ; zero return address.
@@ -50,6 +53,18 @@ extern NAME(Bs3Shutdown_c64)
         call    NAME(Bs3InitAll_rm)
 
         ;
+        ; Check that long mode is supported.
+        ;
+        test    word [BS3_DATA_NM(g_uBs3CpuDetected)], BS3CPU_F_LONG_MODE
+        jnz     .long_mode_supported
+        push    .s_szLongModeError_End - .s_szLongModeError
+        push    cs
+        push    .s_szLongModeError wrt CGROUP16
+        call    NAME(Bs3PrintStrN_c16)
+        call    NAME(Bs3Panic_c16)
+.long_mode_supported:
+
+        ;
         ; Switch to LM64 and call main.
         ;
         call    _Bs3SwitchToLM64_rm
@@ -58,4 +73,9 @@ extern NAME(Bs3Shutdown_c64)
 
         ; Try shutdown if it returns.
         call    NAME(Bs3Shutdown_c64)
+
+.s_szLongModeError:
+        db      'BS3 Error! Long mode not supported!', 0ah, 0dh
+.s_szLongModeError_End:
+        db      00h
 
