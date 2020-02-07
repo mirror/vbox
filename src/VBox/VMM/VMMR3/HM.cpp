@@ -148,6 +148,43 @@ static int                hmR3InitFinalizeR0Amd(PVM pVM);
 static int                hmR3TermCPU(PVM pVM);
 
 
+/**
+ * Returns the name of the hardware exception.
+ *
+ * @returns The name of the hardware exception.
+ * @param   uVector     The exception vector.
+ */
+static const char *hmR3GetXcptName(uint8_t uVector)
+{
+    switch (uVector)
+    {
+        case X86_XCPT_DE:             return "#DE";
+        case X86_XCPT_DB:             return "#DB";
+        case X86_XCPT_NMI:            return "#NMI";
+        case X86_XCPT_BP:             return "#BP";
+        case X86_XCPT_OF:             return "#OF";
+        case X86_XCPT_BR:             return "#BR";
+        case X86_XCPT_UD:             return "#UD";
+        case X86_XCPT_NM:             return "#NM";
+        case X86_XCPT_DF:             return "#DF";
+        case X86_XCPT_CO_SEG_OVERRUN: return "#CO_SEG_OVERRUN";
+        case X86_XCPT_TS:             return "#TS";
+        case X86_XCPT_NP:             return "#NP";
+        case X86_XCPT_SS:             return "#SS";
+        case X86_XCPT_GP:             return "#GP";
+        case X86_XCPT_PF:             return "#PF";
+        case X86_XCPT_MF:             return "#MF";
+        case X86_XCPT_AC:             return "#AC";
+        case X86_XCPT_MC:             return "#MC";
+        case X86_XCPT_XF:             return "#XF";
+        case X86_XCPT_VE:             return "#VE";
+        case X86_XCPT_CP:             return "#CP";
+        case X86_XCPT_VC:             return "#VC";
+        case X86_XCPT_SX:             return "#SX";
+    }
+    return "Reserved";
+}
+
 
 /**
  * Initializes the HM.
@@ -876,19 +913,43 @@ static int hmR3InitFinalizeR3(PVM pVM)
 #endif
 
         /*
-         * Injected events stats.
+         * Injected interrupts stats.
          */
-        rc = MMHyperAlloc(pVM, sizeof(STAMCOUNTER) * 256, 8, MM_TAG_HM, (void **)&pHmCpu->paStatInjectedIrqs);
-        AssertRCReturn(rc, rc);
-        pHmCpu->paStatInjectedIrqsR0 = MMHyperR3ToR0(pVM, pHmCpu->paStatInjectedIrqs);
-        Assert(pHmCpu->paStatInjectedIrqsR0 != NIL_RTR0PTR);
-        for (unsigned j = 0; j < 255; j++)
         {
-            rc = STAMR3RegisterF(pVM, &pHmCpu->paStatInjectedIrqs[j], STAMTYPE_COUNTER, STAMVISIBILITY_USED,
-                                 STAMUNIT_OCCURENCES, "Injected events.",
-                                 j <= X86_XCPT_LAST ? "/HM/CPU%u/EventInject/InjectTrap/%02X" : "/HM/CPU%u/EventInject/InjectIRQ/%02X",
-                                 idCpu, j);
-            AssertRC(rc);
+            uint32_t const cInterrupts = 0xff + 1;
+            rc = MMHyperAlloc(pVM, sizeof(STAMCOUNTER) * cInterrupts, 8, MM_TAG_HM, (void **)&pHmCpu->paStatInjectedIrqs);
+            AssertRCReturn(rc, rc);
+            pHmCpu->paStatInjectedIrqsR0 = MMHyperR3ToR0(pVM, pHmCpu->paStatInjectedIrqs);
+            Assert(pHmCpu->paStatInjectedIrqsR0 != NIL_RTR0PTR);
+            for (unsigned j = 0; j < cInterrupts; j++)
+            {
+                char aszIntrName[64];
+                RTStrPrintf(&aszIntrName[0], sizeof(aszIntrName),  "Interrupt %u", j);
+                rc = STAMR3RegisterF(pVM, &pHmCpu->paStatInjectedIrqs[j], STAMTYPE_COUNTER, STAMVISIBILITY_USED,
+                                     STAMUNIT_OCCURENCES, aszIntrName,
+                                     "/HM/CPU%u/EventInject/InjectIntr/%02X", idCpu, j);
+                AssertRC(rc);
+            }
+        }
+
+        /*
+         * Injected exception stats.
+         */
+        {
+            uint32_t const cXcpts = X86_XCPT_LAST + 1;
+            rc = MMHyperAlloc(pVM, sizeof(STAMCOUNTER) * cXcpts, 8, MM_TAG_HM, (void **)&pHmCpu->paStatInjectedXcpts);
+            AssertRCReturn(rc, rc);
+            pHmCpu->paStatInjectedXcptsR0 = MMHyperR3ToR0(pVM, pHmCpu->paStatInjectedXcpts);
+            Assert(pHmCpu->paStatInjectedXcptsR0 != NIL_RTR0PTR);
+            for (unsigned j = 0; j < cXcpts; j++)
+            {
+                char aszXcptName[64];
+                RTStrPrintf(&aszXcptName[0], sizeof(aszXcptName),  "%s exception", hmR3GetXcptName(j));
+                rc = STAMR3RegisterF(pVM, &pHmCpu->paStatInjectedXcpts[j], STAMTYPE_COUNTER, STAMVISIBILITY_USED,
+                                     STAMUNIT_OCCURENCES, aszXcptName,
+                                     "/HM/CPU%u/EventInject/InjectXcpt/%02X", idCpu, j);
+                AssertRC(rc);
+            }
         }
 
 #endif /* VBOX_WITH_STATISTICS */
@@ -1909,6 +1970,12 @@ static int hmR3TermCPU(PVM pVM)
             MMHyperFree(pVM, pVCpu->hm.s.paStatInjectedIrqs);
             pVCpu->hm.s.paStatInjectedIrqs   = NULL;
             pVCpu->hm.s.paStatInjectedIrqsR0 = NIL_RTR0PTR;
+        }
+        if (pVCpu->hm.s.paStatInjectedXcpts)
+        {
+            MMHyperFree(pVM, pVCpu->hm.s.paStatInjectedXcpts);
+            pVCpu->hm.s.paStatInjectedXcpts   = NULL;
+            pVCpu->hm.s.paStatInjectedXcptsR0 = NIL_RTR0PTR;
         }
 # if defined(VBOX_WITH_NESTED_HWVIRT_SVM) || defined(VBOX_WITH_NESTED_HWVIRT_VMX)
         if (pVCpu->hm.s.paStatNestedExitReason)

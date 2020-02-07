@@ -3299,7 +3299,14 @@ DECLINLINE(void) hmR0SvmInjectEventVmcb(PVMCPUCC pVCpu, PSVMVMCB pVmcb, PSVMEVEN
 {
     Assert(!pVmcb->ctrl.EventInject.n.u1Valid);
     pVmcb->ctrl.EventInject.u = pEvent->u;
-    STAM_COUNTER_INC(&pVCpu->hm.s.paStatInjectedIrqsR0[pEvent->n.u8Vector & MASK_INJECT_IRQ_STAT]);
+    if (   pVmcb->ctrl.EventInject.n.u3Type == SVM_EVENT_EXCEPTION
+        || pVmcb->ctrl.EventInject.n.u3Type == SVM_EVENT_NMI)
+    {
+        Assert(pEvent->n.u8Vector <= X86_XCPT_LAST);
+        STAM_COUNTER_INC(&pVCpu->hm.s.paStatInjectedXcptsR0[pEvent->n.u8Vector]);
+    }
+    else
+        STAM_COUNTER_INC(&pVCpu->hm.s.paStatInjectedIrqsR0[pEvent->n.u8Vector & MASK_INJECT_IRQ_STAT]);
     RT_NOREF(pVCpu);
 
     Log4Func(("u=%#RX64 u8Vector=%#x Type=%#x ErrorCodeValid=%RTbool ErrorCode=%#RX32\n", pEvent->u, pEvent->n.u8Vector,

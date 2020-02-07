@@ -1182,6 +1182,8 @@ typedef struct HMCPU
     R0PTRTYPE(PSTAMCOUNTER) paStatExitReasonR0;
     R3PTRTYPE(PSTAMCOUNTER) paStatInjectedIrqs;
     R0PTRTYPE(PSTAMCOUNTER) paStatInjectedIrqsR0;
+    R3PTRTYPE(PSTAMCOUNTER) paStatInjectedXcpts;
+    R0PTRTYPE(PSTAMCOUNTER) paStatInjectedXcptsR0;
     R3PTRTYPE(PSTAMCOUNTER) paStatNestedExitReason;
     R0PTRTYPE(PSTAMCOUNTER) paStatNestedExitReasonR0;
 #endif
