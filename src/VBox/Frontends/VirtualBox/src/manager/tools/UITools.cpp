@@ -88,6 +88,16 @@ bool UITools::areToolsEnabled(UIToolClass enmClass) const
     return m_pToolsModel->areToolsEnabled(enmClass);
 }
 
+void UITools::setRestrictedToolTypes(const QList<UIToolType> &types)
+{
+    m_pToolsModel->setRestrictedToolTypes(types);
+}
+
+QList<UIToolType> UITools::restrictedToolTypes() const
+{
+    return m_pToolsModel->restrictedToolTypes();
+}
+
 UIToolsItem *UITools::currentItem() const
 {
     return m_pToolsModel->currentItem();

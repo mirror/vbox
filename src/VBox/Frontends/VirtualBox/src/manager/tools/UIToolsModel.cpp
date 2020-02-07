@@ -53,7 +53,7 @@
 typedef QSet<QString> UIStringSet;
 
 
-UIToolsModel:: UIToolsModel(UITools *pParent)
+UIToolsModel::UIToolsModel(UITools *pParent)
     : QIWithRetranslateUI3<QObject>(pParent)
     , m_pTools(pParent)
     , m_pScene(0)
@@ -174,6 +174,24 @@ void UIToolsModel::setToolsEnabled(UIToolClass enmClass, bool fEnabled)
 bool UIToolsModel::areToolsEnabled(UIToolClass enmClass) const
 {
     return m_statesToolsEnabled.value(enmClass);
+}
+
+void UIToolsModel::setRestrictedToolTypes(const QList<UIToolType> &types)
+{
+    /* Update linked values: */
+    if (m_restrictedToolTypes != types)
+    {
+        m_restrictedToolTypes = types;
+        updateLayout();
+        updateNavigation();
+        sltItemMinimumWidthHintChanged();
+        sltItemMinimumHeightHintChanged();
+    }
+}
+
+QList<UIToolType> UIToolsModel::restrictedToolTypes() const
+{
+    return m_restrictedToolTypes;
 }
 
 void UIToolsModel::closeParent()
@@ -331,7 +349,8 @@ void UIToolsModel::updateLayout()
     foreach (UIToolsItem *pItem, items())
     {
         /* Hide/skip unrelated items: */
-        if (pItem->itemClass() != m_enmCurrentClass)
+        if (   pItem->itemClass() != m_enmCurrentClass
+            || m_restrictedToolTypes.contains(pItem->itemType()))
         {
             pItem->hide();
             continue;

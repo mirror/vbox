@@ -92,6 +92,11 @@ public:
         void setToolsEnabled(UIToolClass enmClass, bool fEnabled);
         /** Returns whether certain class of tools is enabled.*/
         bool areToolsEnabled(UIToolClass enmClass) const;
+
+        /** Defines restructed tool @a types. */
+        void setRestrictedToolTypes(const QList<UIToolType> &types);
+        /** Returns restricted tool types. */
+        QList<UIToolType> restrictedToolTypes() const;
     /** @} */
 
     /** @name Current item stuff.
