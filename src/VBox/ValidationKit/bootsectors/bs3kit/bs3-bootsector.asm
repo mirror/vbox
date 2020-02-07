@@ -312,8 +312,6 @@ BEGINPROC bs3InitLoadImage
         push    ax
 %define bMaxHead        byte [bp - 08h]
         push    ax
-%define bMaxCylinder    byte [bp - 0ah]
-        push    ax
 
         ;
         ; Try figure the geometry.
@@ -321,9 +319,9 @@ BEGINPROC bs3InitLoadImage
         mov     ah, 08h
         int     13h
         jc      .failure
+        and     cl, 63                  ; only the sector count.
         mov     bMaxSector, cl
         mov     bMaxHead, dh
-        mov     bMaxCylinder, ch
         mov     dl, bSavedDiskNo
 
 %if 0 ; bMaxSector=0x12 (18); bMaxHead=0x01; bMaxCylinder=0x4f (79)
@@ -337,7 +335,7 @@ BEGINPROC bs3InitLoadImage
         call bs3PrintHexInAl
         mov al, 'C'
         call bs3PrintChrInAl
-        mov al, bMaxCylinder
+        mov al, ch                      ; first 8-bit of cylinder count.
         call bs3PrintHexInAl
         mov al, ';'
         call bs3PrintChrInAl
@@ -481,7 +479,7 @@ BEGINPROC bs3InitLoadImage
         call bs3PrintChrInAl
 %endif
 
-        add     sp, 3*2
+        add     sp, 2*2
         pop     dx
         pop     es
         pop     bp
