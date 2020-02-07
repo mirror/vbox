@@ -30,6 +30,7 @@
 #ifdef VBOX_GUI_WITH_CLOUD_VMS
 # include "UITaskCloudAcquireInstances.h"
 # include "UIThreadPool.h"
+# include "UIVirtualMachineItemCloud.h"
 #endif
 
 /* COM includes: */
@@ -273,11 +274,34 @@ void UIChooserAbstractModel::sltHandleCloudAcquireInstancesTaskComplete(UITask *
     /* Cast task to corresponding sub-class: */
     UITaskCloudAcquireInstances *pAcquiringTask = static_cast<UITaskCloudAcquireInstances*>(pTask);
 
+    /* Acquire parent node we referencing: */
+    UIChooserNode *pParentNode = pAcquiringTask->parentNode();
+    AssertPtrReturnVoid(pParentNode);
+
+    /* This node always have 1st child: */
+    AssertReturnVoid(pParentNode->hasNodes());
+    UIChooserNode *pFirstChildNode = pParentNode->nodes().at(0);
+    AssertPtrReturnVoid(pFirstChildNode);
+
+    /* Which is machine node of course: */
+    UIChooserNodeMachine *pFirstChildNodeMachine = pFirstChildNode->toMachineNode();
+    AssertPtrReturnVoid(pFirstChildNodeMachine);
+
+    /* Which has cache of fake cloud item type: */
+    AssertPtrReturnVoid(pFirstChildNodeMachine->cache());
+    AssertReturnVoid(pFirstChildNodeMachine->cache()->itemType() == UIVirtualMachineItem::ItemType_CloudFake);
+    UIVirtualMachineItemCloud *pFakeCloudMachineItem = pFirstChildNodeMachine->cache()->toCloud();
+    AssertPtrReturnVoid(pFakeCloudMachineItem);
+
+    /* So that we could update this fake cloud item with new state and recache it: */
+    pFakeCloudMachineItem->setFakeCloudItemState(UIVirtualMachineItemCloud::FakeCloudItemState_Done);
+    pFakeCloudMachineItem->recache();
+
     /* Add real cloud VM items: */
     int iPosition = 1; /* we've got item with index 0 already, the "Empty" one .. */
     foreach (const QString &strInstanceName, pAcquiringTask->instanceNames())
     {
-        new UIChooserNodeMachine(pAcquiringTask->parentNode(),
+        new UIChooserNodeMachine(pParentNode,
                                  false /* favorite */,
                                  iPosition++ /* position */,
                                  strInstanceName);
