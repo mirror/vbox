@@ -37,6 +37,15 @@
 %include "iprt/x86.mac"
 
 
+;*********************************************************************************************************************************
+;*      Defined Constants And Macros                                                                                             *
+;*********************************************************************************************************************************
+;; Enabled faster loading.
+%define BS3KIT_BOOTSECTOR_FASTER_LOAD
+;; Enabled load progress dots.
+%define BS3KIT_BOOTSECTOR_LOAD_DOTS
+
+
 %ifdef __YASM__
 [map all]
 %endif
@@ -105,29 +114,35 @@ bs3InitCode:
 
         ; save the registers.
         mov     [cs:BS3_ADDR_REG_SAVE + BS3REGCTX.rax], ax
-        mov     [cs:BS3_ADDR_REG_SAVE + BS3REGCTX.rsp], sp
-        mov     [cs:BS3_ADDR_REG_SAVE + BS3REGCTX.ss], ss
         mov     [cs:BS3_ADDR_REG_SAVE + BS3REGCTX.ds], ds
 
-        ; set up the segment reisters and stack.
+        ; set up the DS segment reister so we can skip the CS prefix when saving more prefixes..
         mov     ax, 0
         mov     ds, ax
+
+        mov     [BS3_ADDR_REG_SAVE + BS3REGCTX.rdi], di
+        mov     di, BS3_ADDR_REG_SAVE
+        mov     [di + BS3REGCTX.rsp], sp
+        mov     [di + BS3REGCTX.ss], ss
+        mov     [di + BS3REGCTX.rcx], cx
+        mov     [di + BS3REGCTX.es], es
+        mov     [di + BS3REGCTX.rbp], bp
+
+        ; set up the stack.
         mov     ss, ax
         mov     sp, BS3_ADDR_STACK
-
-        ; Save more registers, without needing cs prefix.
-        mov     [BS3_ADDR_REG_SAVE + BS3REGCTX.rcx], cx
-        mov     [BS3_ADDR_REG_SAVE + BS3REGCTX.rdi], di
-        mov     [BS3_ADDR_REG_SAVE + BS3REGCTX.es], es
-        mov     [BS3_ADDR_REG_SAVE + BS3REGCTX.rbp], bp
 
         ; Load es and setup bp frame.
         mov     es, ax
         mov     bp, sp
+%if 0
         mov     [bp], ax                ; clear the first 8 bytes (terminates the ebp chain)
         mov     [bp + 02h], ax
         mov     [bp + 04h], ax
         mov     [bp + 06h], ax
+%else
+        mov     di, sp                  ; Combine clearing the rbp chain and register save area.
+%endif
 
         ; Save flags now that we know that there's a valid stack.
         pushf
@@ -135,14 +150,22 @@ bs3InitCode:
         ;
         ; Clear the register area.
         ;
+%if 0
         mov     di, BS3_ADDR_REG_SAVE
         mov     cx, BS3REGCTX_size/2
+%else
+        mov     cx, (BS3_ADDR_LOAD - BS3_ADDR_STACK) / 2
+%endif
         cld
         rep stosw
 
         ;
         ; Do basic CPU detection.
         ;
+
+        ; 0. Load the register save area address into DI to avoid absolute addressing
+        ;    when saving additional state.  To avoid disp16, offset the address.
+        mov     di, BS3_ADDR_REG_SAVE + 0x70
 
         ; 1. bit 15-bit was fixed to 1 in pre-286 CPUs, and fixed to 0 in 286+.
         mov     ax, [bp - 2]
@@ -161,50 +184,51 @@ CPU 286
         je      .is_386plus
 .is_80286:
 CPU 286
-        smsw    [BS3_ADDR_REG_SAVE + BS3REGCTX.cr0]
+        smsw    [di + BS3REGCTX.cr0 - 0x70]
 .pre_80286:
 CPU 8086
-        mov     [BS3_ADDR_REG_SAVE + BS3REGCTX.rbx], bx
-        mov     [BS3_ADDR_REG_SAVE + BS3REGCTX.rdx], dx
-        mov     [BS3_ADDR_REG_SAVE + BS3REGCTX.rsi], si
+        mov     [di - 0x70 + BS3REGCTX.rbx], bx
+        mov     [di - 0x70 + BS3REGCTX.rdx], dx
+        mov     [di - 0x70 + BS3REGCTX.rsi], si
         jmp     .do_load
 
         ; Save 386 registers. We can now skip the CS prefix as DS is flat.
 CPU 386
 .is_386plus:
         shr     eax, 16
-        mov     [BS3_ADDR_REG_SAVE + BS3REGCTX.rax+2], ax
+        mov     [di - 0x70 + BS3REGCTX.rax+2], ax
         mov     eax, esp
         shr     eax, 16
-        mov     [BS3_ADDR_REG_SAVE + BS3REGCTX.rsp+2], ax
+        mov     [di - 0x70 + BS3REGCTX.rsp+2], ax
         mov     eax, ebp
         shr     eax, 16
-        mov     [BS3_ADDR_REG_SAVE + BS3REGCTX.rbp+2], ax
-        shr     edi, 16
-        mov     [BS3_ADDR_REG_SAVE + BS3REGCTX.rdi+2], di
+        mov     [di - 0x70 + BS3REGCTX.rbp+2], ax
+        mov     eax, edi
+        shr     eax, 16
+        mov     [di - 0x70 + BS3REGCTX.rdi+2], ax
         shr     ecx, 16
-        mov     [BS3_ADDR_REG_SAVE + BS3REGCTX.rcx+2], cx
-        mov     [BS3_ADDR_REG_SAVE + BS3REGCTX.fs], fs
-        mov     [BS3_ADDR_REG_SAVE + BS3REGCTX.gs], gs
-        mov     [BS3_ADDR_REG_SAVE + BS3REGCTX.rbx], ebx
-        mov     [BS3_ADDR_REG_SAVE + BS3REGCTX.rdx], edx
-        mov     [BS3_ADDR_REG_SAVE + BS3REGCTX.rsi], esi
+        mov     [di - 0x70 + BS3REGCTX.rcx+2], cx
+        mov     [di - 0x70 + BS3REGCTX.fs], fs
+        mov     [di - 0x70 + BS3REGCTX.gs], gs
+        mov     [di - 0x70 + BS3REGCTX.rbx], ebx
+        mov     [di - 0x70 + BS3REGCTX.rdx], edx
+        mov     [di - 0x70 + BS3REGCTX.rsi], esi
         mov     eax, cr2
-        mov     [BS3_ADDR_REG_SAVE + BS3REGCTX.cr2], eax
+        mov     [di - 0x70 + BS3REGCTX.cr2], eax
         mov     eax, cr3
-        mov     [BS3_ADDR_REG_SAVE + BS3REGCTX.cr3], eax
-        mov     byte [BS3_ADDR_REG_SAVE + BS3REGCTX.bMode], BS3_MODE_RM
-        mov     [cs:BS3_ADDR_REG_SAVE + BS3REGCTX.cs], cs
+        mov     [di - 0x70 + BS3REGCTX.cr3], eax
+        mov     byte [di - 0x70 + BS3REGCTX.bMode], BS3_MODE_RM
+        mov     [di - 0x70 + BS3REGCTX.cs], cs
         xor     eax, eax
         mov     ax, start
-        mov     [cs:BS3_ADDR_REG_SAVE + BS3REGCTX.rip], eax
+        mov     [di - 0x70 + BS3REGCTX.rip], eax
 
         ; Pentium/486+: CR4 requires VME/CPUID, so we need to detect that before accessing it.
-        mov     [cs:BS3_ADDR_REG_SAVE + BS3REGCTX.cr4], eax
+        mov     [di - 0x70 + BS3REGCTX.cr4], eax
         popf                            ; (restores IOPL+NT)
         pushfd
         pop     eax
-        mov     [BS3_ADDR_REG_SAVE + BS3REGCTX.rflags], eax
+        mov     [di - 0x70 + BS3REGCTX.rflags], eax
         xor     eax, X86_EFL_ID
         push    eax
         popfd
@@ -213,11 +237,11 @@ CPU 386
         cmp     ebx, eax
         jne     .no_cr4
         mov     eax, cr4
-        mov     [BS3_ADDR_REG_SAVE + BS3REGCTX.cr4], eax
+        mov     [di - 0x70 + BS3REGCTX.cr4], eax
 .no_cr4:
         ; Make sure caching is enabled and alignment is off.
         mov     eax, cr0
-        mov     [BS3_ADDR_REG_SAVE + BS3REGCTX.cr0], eax
+        mov     [di - 0x70 + BS3REGCTX.cr0], eax
         and     eax, ~(X86_CR0_NW | X86_CR0_CD | X86_CR0_AM)
         mov     cr0, eax
 
@@ -283,6 +307,7 @@ BEGINPROC bs3InitLoadImage
 %define bSavedDiskNo    byte [bp - 04h]
         push    dx
 %define bMaxSector      byte [bp - 06h]
+%define wMaxSector      word [bp - 06h]
         xor     ax, ax
         push    ax
 %define bMaxHead        byte [bp - 08h]
@@ -301,16 +326,35 @@ BEGINPROC bs3InitLoadImage
         mov     bMaxCylinder, ch
         mov     dl, bSavedDiskNo
 
+%if 0 ; bMaxSector=0x12 (18); bMaxHead=0x01; bMaxCylinder=0x4f (79)
+        mov al, 'S'
+        call bs3PrintChrInAl
+        mov al, bMaxSector
+        call bs3PrintHexInAl
+        mov al, 'H'
+        call bs3PrintChrInAl
+        mov al, bMaxHead
+        call bs3PrintHexInAl
+        mov al, 'C'
+        call bs3PrintChrInAl
+        mov al, bMaxCylinder
+        call bs3PrintHexInAl
+        mov al, ';'
+        call bs3PrintChrInAl
+%endif
+
+%ifndef BS3KIT_BOOTSECTOR_FASTER_LOAD
         ;
-        ; Reload all the sectors one at a time (avoids problems).
+        ; Load the sectors following the boot sector one at a time (avoids problems).
         ;
         mov     si, [g_cLargeTotalSectors] ; 16-bit sector count ==> max 512 * 65 535 = 33 553 920 bytes.
-        dec     si
+        dec     si                       ; Practically max: ca 575 KB, or 1150 sectors.  Linker set BS3_MAX_SIZE to 480KB.
+
         mov     di, BS3_ADDR_LOAD / 16  ; The current load segment.
         mov     cx, 0002h               ; ch/cylinder=0 (0-based); cl/sector=2 (1-based)
         xor     dh, dh                  ; dh/head=0
 .the_load_loop:
-%if 0
+ %if 0
         mov al, 'c'
         call bs3PrintChrInAl
         mov al, ch
@@ -325,7 +369,10 @@ BEGINPROC bs3InitLoadImage
         call bs3PrintHexInAl
         mov al, ';'
         call bs3PrintChrInAl
-%endif
+ %elifdef BS3KIT_BOOTSECTOR_LOAD_DOTS
+        mov     al, '.'
+        call bs3PrintChrInAl
+ %endif
         xor     bx, bx
         mov     es, di                  ; es:bx -> buffer
         mov     ax, 0201h               ; al=1 sector; ah=read function
@@ -349,8 +396,88 @@ BEGINPROC bs3InitLoadImage
         add     di, 512 / 16
         dec     si
         jnz     .the_load_loop
+
+%else ; BS3KIT_BOOTSECTOR_FASTER_LOAD
+        ;
+        ; Load the sectors following the boot sector, trying to load a whole
+        ; side in each bios call, falling back on single sector reads if we
+        ; run into DMA 64KB boundrary issues (BIOS must tell us).
+        ;
+        mov     si, [g_cLargeTotalSectors] ; 16-bit sector count ==> max 512 * 65 535 = 33 553 920 bytes.
+        dec     si                      ; Skip the boot sector, it's not part of the test image we execute.
+        mov     di, BS3_ADDR_LOAD / 16  ; The current load segment.
+        mov     cx, 0002h               ; ch/cylinder=0 (0-based); cl/sector=0 (1-based)
+        xor     dh, dh                  ; dh/head=0
+.the_load_loop:
+ %if 0
+        mov al, 'c'
+        call bs3PrintChrInAl
+        mov al, ch
+        call bs3PrintHexInAl
+        mov al, 's'
+        call bs3PrintChrInAl
+        mov al, cl
+        call bs3PrintHexInAl
+        mov al, 'h'
+        call bs3PrintChrInAl
+        mov al, dh
+        call bs3PrintHexInAl
+        mov al, ';'
+        call bs3PrintChrInAl
+ %elifdef BS3KIT_BOOTSECTOR_LOAD_DOTS
+        mov     al, '.'
+        call bs3PrintChrInAl
+ %endif
+        mov     ax, wMaxSector          ; read to the end of the side by default.
+        sub     al, cl
+        inc     al
+.read_again:
+        cmp     si, ax
+        jae     .do_read
+        mov     ax, si
+.do_read:
+        mov     ah, 02h                 ; ah=read function
+        xor     bx, bx
+        mov     es, di                  ; es:bx -> buffer
+        int     13h
+        jnc     .advance_sector
+
+        cmp     ah, 9                   ; DMA 64KB crossing error
+        jne     .failure
+        mov     ax, 1                   ; Retry reading a single sector.
+        jmp .read_again
+
+        ; advance to the next sector/head/cylinder and address.
+.advance_sector:
+        inc     cl
+        cmp     cl, bMaxSector
+        jbe     .adv_addr
+
+        mov     cl, 1
+        inc     dh
+        cmp     dh, bMaxHead
+        jbe     .adv_addr
+
+        mov     dh, 0
+        inc     ch
+
+.adv_addr:
+        dec     si
+        jz      .done_reading
+        add     di, 512 / 16
+        dec     al
+        jnz     .advance_sector
+        jmp     .the_load_loop
+
+.done_reading:
+%endif ; BS3KIT_BOOTSECTOR_FASTER_LOAD
 %if 0
         mov     al, 'D'
+        call bs3PrintChrInAl
+%elifdef BS3KIT_BOOTSECTOR_LOAD_DOTS
+        mov     al, 13
+        call bs3PrintChrInAl
+        mov     al, 10
         call bs3PrintChrInAl
 %endif
 
@@ -364,6 +491,10 @@ BEGINPROC bs3InitLoadImage
         ; Something went wrong, display a message.
         ;
 .failure:
+%if 1
+        hlt
+        jmp .failure
+%else
         push    ax
 
         ; print message
@@ -383,6 +514,7 @@ BEGINPROC bs3InitLoadImage
         call    Bs3Panic
 .s_szErrMsg:
         db 13, 10, 'rd err! '
+%endif
 .s_szErrMsgEnd:
 ;ENDPROC bs3InitLoadImage - don't want the padding.
 
