@@ -252,6 +252,9 @@ BS3_GLOBAL_LOCAL_LABEL .sixteen_bit_segment
         ; segment registers so the hidden parts (which doesn't get reloaded in
         ; real mode) are real mode compatible.
         ;
+        ; ASSUMES BS3_SEL_R0_SS16 and BS3_SEL_R0_CS16 are both maxed out and
+        ; has no funny bits set!
+        ;
 .is_386_or_better:
 ;; @todo Testcase: Experiment leaving weird stuff in the hidden segment registers.
         mov     ax, BS3_SEL_R0_DS16

@@ -40,7 +40,7 @@
 
 BS3_DECL_FAR(void) Bs3InitGdt_rm_far(void)
 {
-#if 1
+#if 0 /* This totaly messes us up when going back to raw-mode for BIOS work. */
     Bs3Gdte_R0_CS16.Gen.u16LimitLow     = Bs3Text16_Size - 1;
     Bs3Gdte_R1_CS16.Gen.u16LimitLow     = Bs3Text16_Size - 1;
     Bs3Gdte_R2_CS16.Gen.u16LimitLow     = Bs3Text16_Size - 1;
