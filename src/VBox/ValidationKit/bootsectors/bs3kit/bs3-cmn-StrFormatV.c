@@ -540,7 +540,6 @@ BS3_CMN_DEF(size_t, Bs3StrFormatV,(const char BS3_FAR *pszFormat, va_list BS3_FA
                     while (--State.cchWidth >= cch)
                         cchRet += State.pfnOutput(' ', State.pvUser);
 
-                cchRet += cch;
                 while (cch-- > 0)
                     cchRet += State.pfnOutput(*psz++, State.pvUser);
 

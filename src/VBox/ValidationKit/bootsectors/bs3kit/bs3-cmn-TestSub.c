@@ -63,7 +63,7 @@ BS3_CMN_DEF(void, Bs3TestSubV,(const char *pszFormat, va_list BS3_FAR va))
     Bs3PrintChr(':');
     do
        Bs3PrintChr(' ');
-    while (cch++ < 49);
+    while (cch++ < 48);
     Bs3PrintStr(" TESTING\n");
 
     /* The sub-test result is not yet reported. */
