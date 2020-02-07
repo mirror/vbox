@@ -886,7 +886,7 @@ static int hmR3InitFinalizeR3(PVM pVM)
         {
             rc = STAMR3RegisterF(pVM, &pHmCpu->paStatInjectedIrqs[j], STAMTYPE_COUNTER, STAMVISIBILITY_USED,
                                  STAMUNIT_OCCURENCES, "Injected events.",
-                                 j < 0x20 ? "/HM/CPU%u/EventInject/InjectTrap/%02X" : "/HM/CPU%u/EventInject/InjectIRQ/%02X",
+                                 j <= X86_XCPT_LAST ? "/HM/CPU%u/EventInject/InjectTrap/%02X" : "/HM/CPU%u/EventInject/InjectIRQ/%02X",
                                  idCpu, j);
             AssertRC(rc);
         }
