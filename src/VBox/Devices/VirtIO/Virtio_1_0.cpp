@@ -225,7 +225,7 @@ DECLINLINE(void) virtioWriteUsedElem(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, ui
                           &elem, sizeof(elem));
 }
 
-DECLINLINE(void) virtioWriteUsedFlags(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t idxQueue, uint32_t fFlags)
+DECLINLINE(void) virtioWriteUsedFlags(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t idxQueue, uint16_t fFlags)
 {
     AssertMsg(pVirtio->uDeviceStatus & VIRTIO_STATUS_DRIVER_OK, ("Called with guest driver not ready\n"));
     RT_UNTRUSTED_VALIDATED_FENCE(); /* VirtIO 1.0, Section 3.2.1.4.1 */
@@ -233,7 +233,6 @@ DECLINLINE(void) virtioWriteUsedFlags(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, u
                           pVirtio->aGCPhysQueueUsed[idxQueue] + RT_UOFFSETOF(VIRTQ_USED_T, fFlags),
                           &fFlags, sizeof(fFlags));
 }
-
 #endif
 
 DECLINLINE(void) virtioWriteUsedRingIdx(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t idxQueue, uint16_t uIdx)
