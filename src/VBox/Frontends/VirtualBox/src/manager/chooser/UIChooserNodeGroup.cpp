@@ -164,6 +164,19 @@ void UIChooserNodeGroup::updateAllNodes(const QUuid &uId)
         pNode->updateAllNodes(uId);
 }
 
+bool UIChooserNodeGroup::hasAtLeastOneCloudNode() const
+{
+    foreach (UIChooserNode *pNode, m_nodesGroup)
+        if (pNode->hasAtLeastOneCloudNode())
+            return true;
+
+    foreach (UIChooserNode *pNode, m_nodesMachine)
+        if (pNode->hasAtLeastOneCloudNode())
+            return true;
+
+    return false;
+}
+
 int UIChooserNodeGroup::positionOf(UIChooserNode *pNode)
 {
     switch (pNode->type())

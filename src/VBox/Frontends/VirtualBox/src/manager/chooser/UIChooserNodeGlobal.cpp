@@ -108,6 +108,11 @@ void UIChooserNodeGlobal::updateAllNodes(const QUuid &)
     item()->updateItem();
 }
 
+bool UIChooserNodeGlobal::hasAtLeastOneCloudNode() const
+{
+    return false;
+}
+
 int UIChooserNodeGlobal::positionOf(UIChooserNode *pNode)
 {
     Q_UNUSED(pNode);
