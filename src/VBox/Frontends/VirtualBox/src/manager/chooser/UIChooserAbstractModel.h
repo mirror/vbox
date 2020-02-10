@@ -198,7 +198,7 @@ private:
         /** Gathers group @a definitions of @a pParentGroup. */
         void gatherGroupDefinitions(QMap<QString, QStringList> &definitions, UIChooserNode *pParentGroup);
         /** Gathers group @a orders of @a pParentGroup. */
-        void gatherGroupOrders(QMap<QString, QStringList> &orders, UIChooserNode *pParentItem);
+        void gatherGroupOrders(QMap<QString, QStringList> &orders, UIChooserNode *pParentGroup);
 
         /** Makes sure group definitions saving is finished. */
         void makeSureGroupDefinitionsSaveIsFinished();

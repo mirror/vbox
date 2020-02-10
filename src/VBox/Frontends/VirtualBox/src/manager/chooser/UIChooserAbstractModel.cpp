@@ -780,7 +780,8 @@ void UIChooserAbstractModel::gatherGroupDefinitions(QMap<QString, QStringList> &
     /* Iterate over all the machine-nodes: */
     foreach (UIChooserNode *pNode, pParentGroup->nodes(UIChooserItemType_Machine))
         if (UIChooserNodeMachine *pMachineNode = pNode->toMachineNode())
-            if (pMachineNode->cache()->accessible())
+            if (   pMachineNode->cache()->itemType() == UIVirtualMachineItem::ItemType_Local
+                && pMachineNode->cache()->accessible())
                 definitions[toOldStyleUuid(pMachineNode->cache()->id())] << pParentGroup->fullName();
     /* Iterate over all the group-nodes: */
     foreach (UIChooserNode *pNode, pParentGroup->nodes(UIChooserItemType_Group))
@@ -788,26 +789,28 @@ void UIChooserAbstractModel::gatherGroupDefinitions(QMap<QString, QStringList> &
 }
 
 void UIChooserAbstractModel::gatherGroupOrders(QMap<QString, QStringList> &orders,
-                                               UIChooserNode *pParentItem)
+                                               UIChooserNode *pParentGroup)
 {
     /* Prepare extra-data key for current group: */
-    const QString strExtraDataKey = pParentItem->fullName();
+    const QString strExtraDataKey = pParentGroup->fullName();
     /* Iterate over all the global-nodes: */
-    foreach (UIChooserNode *pNode, pParentItem->nodes(UIChooserItemType_Global))
+    foreach (UIChooserNode *pNode, pParentGroup->nodes(UIChooserItemType_Global))
     {
         const QString strGlobalDescriptor(pNode->isFavorite() ? "nf" : "n");
         orders[strExtraDataKey] << QString("%1=GLOBAL").arg(strGlobalDescriptor);
     }
     /* Iterate over all the group-nodes: */
-    foreach (UIChooserNode *pNode, pParentItem->nodes(UIChooserItemType_Group))
+    foreach (UIChooserNode *pNode, pParentGroup->nodes(UIChooserItemType_Group))
     {
         const QString strGroupDescriptor(pNode->toGroupNode()->isOpened() ? "go" : "gc");
         orders[strExtraDataKey] << QString("%1=%2").arg(strGroupDescriptor, pNode->name());
         gatherGroupOrders(orders, pNode);
     }
     /* Iterate over all the machine-nodes: */
-    foreach (UIChooserNode *pNode, pParentItem->nodes(UIChooserItemType_Machine))
-        orders[strExtraDataKey] << QString("m=%1").arg(toOldStyleUuid(pNode->toMachineNode()->cache()->id()));
+    foreach (UIChooserNode *pNode, pParentGroup->nodes(UIChooserItemType_Machine))
+        if (UIChooserNodeMachine *pMachineNode = pNode->toMachineNode())
+            if (pMachineNode->cache()->itemType() == UIVirtualMachineItem::ItemType_Local)
+                orders[strExtraDataKey] << QString("m=%1").arg(toOldStyleUuid(pMachineNode->cache()->id()));
 }
 
 void UIChooserAbstractModel::makeSureGroupDefinitionsSaveIsFinished()
