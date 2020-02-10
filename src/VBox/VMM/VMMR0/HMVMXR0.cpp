@@ -4855,18 +4855,11 @@ static int hmR0VmxExportGuestEntryExitCtls(PVMCPUCC pVCpu, PCVMXTRANSIENT pVmxTr
 
         /*
          * VMRUN function.
-         * If the guest is in long mode, use the 64-bit guest handler, else the 32-bit guest handler.
+         * If the guest supports long mode, always use the 64-bit guest handler, see @bugref{6208#c73}.
          * The host is always 64-bit since we no longer support 32-bit hosts.
          */
-        if (fGstInLongMode)
-        {
-#ifndef VBOX_WITH_64_BITS_GUESTS
-            return VERR_PGM_UNSUPPORTED_SHADOW_PAGING_MODE;
-#else
-            Assert(pVM->hm.s.fAllow64BitGuests);                              /* Guaranteed by hmR3InitFinalizeR0(). */
+        if (pVM->hm.s.fAllow64BitGuests)
             pVmcsInfo->pfnStartVM = VMXR0StartVM64;
-#endif
-        }
         else
             pVmcsInfo->pfnStartVM = VMXR0StartVM32;
 
