@@ -433,9 +433,10 @@ static void fwCommonUseHostDMIStrings(void)
  * @param   cCpus               Number of VCPUs.
  * @param   pcbDmiTables        Size of DMI data in bytes.
  * @param   pcDmiTables         Number of DMI tables.
+ * @param   fUefi               Flag whether the UEFI specification is supported.
  */
 int FwCommonPlantDMITable(PPDMDEVINS pDevIns, uint8_t *pTable, unsigned cbMax, PCRTUUID pUuid, PCFGMNODE pCfg, uint16_t cCpus,
-                          uint16_t *pcbDmiTables, uint16_t *pcDmiTables)
+                          uint16_t *pcbDmiTables, uint16_t *pcDmiTables, bool fUefi)
 {
     PCPDMDEVHLPR3 pHlp = pDevIns->pHlpR3;
 
@@ -650,7 +651,7 @@ int FwCommonPlantDMITable(PPDMDEVINS pDevIns, uint8_t *pTable, unsigned cbMax, P
         pBIOSInf->u8CharacteristicsByte1 = RT_BIT(0)   /* ACPI is supported */
                                          /* any more?? */
                                          ;
-        pBIOSInf->u8CharacteristicsByte2 = 0
+        pBIOSInf->u8CharacteristicsByte2 = fUefi ? RT_BIT(3) : 0
                                          /* any more?? */
                                          ;
         DMI_TERM_STRUCT;

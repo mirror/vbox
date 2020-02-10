@@ -2638,7 +2638,8 @@ static DECLCALLBACK(int)  efiConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
      * Plant DMI and MPS tables in the ROM region.
      */
     rc = FwCommonPlantDMITable(pDevIns, pThisCC->au8DMIPage, VBOX_DMI_TABLE_SIZE, &pThisCC->aUuid,
-                               pDevIns->pCfg, pThisCC->cCpus, &pThisCC->cbDmiTables, &pThisCC->cNumDmiTables);
+                               pDevIns->pCfg, pThisCC->cCpus, &pThisCC->cbDmiTables, &pThisCC->cNumDmiTables,
+                               true /*fUefi*/);
     AssertRCReturn(rc, rc);
 
     /*
