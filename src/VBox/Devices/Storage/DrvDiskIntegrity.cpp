@@ -1062,6 +1062,31 @@ static DECLCALLBACK(bool) drvdiskintIsNonRotational(PPDMIMEDIA pInterface)
     return pThis->pDrvMedia->pfnIsNonRotational(pThis->pDrvMedia);
 }
 
+/** @interface_method_impl{PDMIMEDIA,pfnGetRegionCount} */
+static DECLCALLBACK(uint32_t) drvdiskintGetRegionCount(PPDMIMEDIA pInterface)
+{
+    PDRVDISKINTEGRITY pThis = PDMIMEDIA_2_DRVDISKINTEGRITY(pInterface);
+    return pThis->pDrvMedia->pfnGetRegionCount(pThis->pDrvMedia);
+}
+
+/** @interface_method_impl{PDMIMEDIA,pfnQueryRegionProperties} */
+static DECLCALLBACK(int) drvdiskintQueryRegionProperties(PPDMIMEDIA pInterface, uint32_t uRegion, uint64_t *pu64LbaStart,
+                                                         uint64_t *pcBlocks, uint64_t *pcbBlock,
+                                                         PVDREGIONDATAFORM penmDataForm)
+{
+    PDRVDISKINTEGRITY pThis = PDMIMEDIA_2_DRVDISKINTEGRITY(pInterface);
+    return pThis->pDrvMedia->pfnQueryRegionProperties(pThis->pDrvMedia, uRegion, pu64LbaStart, pcBlocks, pcbBlock, penmDataForm);
+}
+
+/** @interface_method_impl{PDMIMEDIA,pfnQueryRegionPropertiesForLba} */
+static DECLCALLBACK(int) drvdiskintQueryRegionPropertiesForLba(PPDMIMEDIA pInterface, uint64_t u64LbaStart,
+                                                               uint32_t *puRegion, uint64_t *pcBlocks,
+                                                               uint64_t *pcbBlock, PVDREGIONDATAFORM penmDataForm)
+{
+    PDRVDISKINTEGRITY pThis = PDMIMEDIA_2_DRVDISKINTEGRITY(pInterface);
+    return pThis->pDrvMedia->pfnQueryRegionPropertiesForLba(pThis->pDrvMedia, u64LbaStart, puRegion, pcBlocks, pcbBlock, penmDataForm);
+}
+
 /* -=-=-=-=- IMediaPort -=-=-=-=- */
 
 /** Makes a PDRVBLOCK out of a PPDMIMEDIAPORT. */
@@ -1308,6 +1333,15 @@ static DECLCALLBACK(int) drvdiskintQueryFeatures(PPDMIMEDIAEX pInterface, uint32
 {
     PDRVDISKINTEGRITY pThis = RT_FROM_MEMBER(pInterface, DRVDISKINTEGRITY, IMediaEx);
     return pThis->pDrvMediaEx->pfnQueryFeatures(pThis->pDrvMediaEx, pfFeatures);
+}
+
+/**
+ * @interface_method_impl{PDMIMEDIAEX,pfnNotifySuspend}
+ */
+static DECLCALLBACK(void) drvdiskintNotifySuspend(PPDMIMEDIAEX pInterface)
+{
+    PDRVDISKINTEGRITY pThis = RT_FROM_MEMBER(pInterface, DRVDISKINTEGRITY, IMediaEx);
+    return pThis->pDrvMediaEx->pfnNotifySuspend(pThis->pDrvMediaEx);
 }
 
 /**
@@ -1864,24 +1898,30 @@ static DECLCALLBACK(int) drvdiskintConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg,
     pDrvIns->IBase.pfnQueryInterface     = drvdiskintQueryInterface;
 
     /* IMedia */
-    pThis->IMedia.pfnRead                = drvdiskintRead;
-    pThis->IMedia.pfnWrite               = drvdiskintWrite;
-    pThis->IMedia.pfnFlush               = drvdiskintFlush;
-    pThis->IMedia.pfnGetSize             = drvdiskintGetSize;
-    pThis->IMedia.pfnIsReadOnly          = drvdiskintIsReadOnly;
-    pThis->IMedia.pfnBiosIsVisible       = drvdiskintBiosIsVisible;
-    pThis->IMedia.pfnBiosGetPCHSGeometry = drvdiskintBiosGetPCHSGeometry;
-    pThis->IMedia.pfnBiosSetPCHSGeometry = drvdiskintBiosSetPCHSGeometry;
-    pThis->IMedia.pfnBiosGetLCHSGeometry = drvdiskintBiosGetLCHSGeometry;
-    pThis->IMedia.pfnBiosSetLCHSGeometry = drvdiskintBiosSetLCHSGeometry;
-    pThis->IMedia.pfnGetUuid             = drvdiskintGetUuid;
-    pThis->IMedia.pfnGetSectorSize       = drvdiskintGetSectorSize;
-    pThis->IMedia.pfnGetType             = drvdiskintGetType;
-    pThis->IMedia.pfnReadPcBios          = drvdiskintReadPcBios;
-    pThis->IMedia.pfnIsNonRotational     = drvdiskintIsNonRotational;
+    pThis->IMedia.pfnRead                        = drvdiskintRead;
+    pThis->IMedia.pfnWrite                       = drvdiskintWrite;
+    pThis->IMedia.pfnFlush                       = drvdiskintFlush;
+    pThis->IMedia.pfnGetSize                     = drvdiskintGetSize;
+    pThis->IMedia.pfnIsReadOnly                  = drvdiskintIsReadOnly;
+    pThis->IMedia.pfnBiosIsVisible               = drvdiskintBiosIsVisible;
+    pThis->IMedia.pfnBiosGetPCHSGeometry         = drvdiskintBiosGetPCHSGeometry;
+    pThis->IMedia.pfnBiosSetPCHSGeometry         = drvdiskintBiosSetPCHSGeometry;
+    pThis->IMedia.pfnBiosGetLCHSGeometry         = drvdiskintBiosGetLCHSGeometry;
+    pThis->IMedia.pfnBiosSetLCHSGeometry         = drvdiskintBiosSetLCHSGeometry;
+    pThis->IMedia.pfnGetUuid                     = drvdiskintGetUuid;
+    pThis->IMedia.pfnGetSectorSize               = drvdiskintGetSectorSize;
+    pThis->IMedia.pfnGetType                     = drvdiskintGetType;
+    pThis->IMedia.pfnReadPcBios                  = drvdiskintReadPcBios;
+    pThis->IMedia.pfnIsNonRotational             = drvdiskintIsNonRotational;
+    pThis->IMedia.pfnSendCmd                     = NULL;
+    pThis->IMedia.pfnGetRegionCount              = drvdiskintGetRegionCount;
+    pThis->IMedia.pfnQueryRegionProperties       = drvdiskintQueryRegionProperties;
+    pThis->IMedia.pfnQueryRegionPropertiesForLba = drvdiskintQueryRegionPropertiesForLba;
+
 
     /* IMediaEx. */
     pThis->IMediaEx.pfnQueryFeatures            = drvdiskintQueryFeatures;
+    pThis->IMediaEx.pfnNotifySuspend            = drvdiskintNotifySuspend;
     pThis->IMediaEx.pfnIoReqAllocSizeSet        = drvdiskintIoReqAllocSizeSet;
     pThis->IMediaEx.pfnIoReqAlloc               = drvdiskintIoReqAlloc;
     pThis->IMediaEx.pfnIoReqFree                = drvdiskintIoReqFree;
