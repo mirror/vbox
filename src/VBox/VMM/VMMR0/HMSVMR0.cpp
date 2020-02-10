@@ -2179,32 +2179,25 @@ static void hmR0SvmMergeVmcbCtrlsNested(PVMCPUCC pVCpu)
 /**
  * Selects the appropriate function to run guest code.
  *
- * @returns VBox status code.
  * @param   pVCpu   The cross context virtual CPU structure.
  *
  * @remarks No-long-jump zone!!!
  */
-static int hmR0SvmSelectVMRunHandler(PVMCPUCC pVCpu)
+DECLINLINE(void) hmR0SvmSelectVMRunHandler(PVMCPUCC pVCpu)
 {
-    if (CPUMIsGuestInLongMode(pVCpu))
+    if (pVCpu->CTX_SUFF(pVM)->hm.s.fAllow64BitGuests)
     {
-#ifndef VBOX_WITH_64_BITS_GUESTS
-        return VERR_PGM_UNSUPPORTED_SHADOW_PAGING_MODE;
-#else
 # if HC_ARCH_BITS != 64 || ARCH_BITS != 64
 #  error "Only 64-bit hosts are supported!"
 # endif
-        Assert(pVCpu->CTX_SUFF(pVM)->hm.s.fAllow64BitGuests);    /* Guaranteed by hmR3InitFinalizeR0(). */
-        /* Guest in long mode, use 64-bit handler (host is 64-bit). */
-        pVCpu->hm.s.svm.pfnVMRun = SVMR0VMRun64;
-#endif
+        /* Guest may enter long mode, always use 64-bit handler. */
+        pVCpu->hm.s.svm.pfnVMRun = SVMR0VMRun;
     }
     else
     {
-        /* Guest is not in long mode, use the 32-bit handler. */
-        pVCpu->hm.s.svm.pfnVMRun = SVMR0VMRun;
+        /* Guest is 32-bit only, use the 32-bit handler. */
+        pVCpu->hm.s.svm.pfnVMRun = SVMR0VMRun32;
     }
-    return VINF_SUCCESS;
 }
 
 
@@ -2362,8 +2355,7 @@ static int hmR0SvmExportGuestState(PVMCPUCC pVCpu, PCSVMTRANSIENT pSvmTransient)
         hmR0SvmExportGuestXcptIntercepts(pVCpu, pVmcb);
     }
 
-    rc = hmR0SvmSelectVMRunHandler(pVCpu);
-    AssertRCReturn(rc, rc);
+    hmR0SvmSelectVMRunHandler(pVCpu);
 
     /* Clear any bits that may be set but exported unconditionally or unused/reserved bits. */
     uint64_t fUnusedMask = HM_CHANGED_GUEST_RIP

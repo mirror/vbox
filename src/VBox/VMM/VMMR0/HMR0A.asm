@@ -1791,7 +1791,7 @@ ENDPROC   hmR0MdsClear
 
 
 ;;
-; Prepares for and executes VMRUN (32 bits guests)
+; Prepares for and executes VMRUN (32-bit register context guests)
 ;
 ; @returns  VBox status code
 ; @param    HCPhysVmcbHost  msc:rcx,gcc:rdi     Physical address of host VMCB.
@@ -1801,7 +1801,7 @@ ENDPROC   hmR0MdsClear
 ; @param    pVCpu           msc:[rsp+28],gcc:r8 The cross context virtual CPU structure of the calling EMT.
 ;
 ALIGNCODE(16)
-BEGINPROC SVMR0VMRun
+BEGINPROC SVMR0VMRun32
 %ifdef RT_ARCH_AMD64 ; fake a cdecl stack frame
  %ifdef ASM_CALL64_GCC
     push    r8                ; pVCpu
@@ -1935,12 +1935,12 @@ BEGINPROC SVMR0VMRun
     add     xSP, 6*xCB
 %endif
     ret
-ENDPROC SVMR0VMRun
+ENDPROC SVMR0VMRun32
 
 
 %ifdef RT_ARCH_AMD64
 ;;
-; Prepares for and executes VMRUN (64 bits guests)
+; Prepares for and executes VMRUN (64-bit register context)
 ;
 ; @returns  VBox status code
 ; @param    HCPhysVmcbHost  msc:rcx,gcc:rdi     Physical address of host VMCB.
@@ -1950,7 +1950,7 @@ ENDPROC SVMR0VMRun
 ; @param    pVCpu           msc:[rsp+28],gcc:r8 The cross context virtual CPU structure of the calling EMT.
 ;
 ALIGNCODE(16)
-BEGINPROC SVMR0VMRun64
+BEGINPROC SVMR0VMRun
     ; Fake a cdecl stack frame
  %ifdef ASM_CALL64_GCC
     push    r8                ;pVCpu
@@ -2113,6 +2113,6 @@ BEGINPROC SVMR0VMRun64
     pop     rbp
     add     rsp, 6 * xCB
     ret
-ENDPROC SVMR0VMRun64
+ENDPROC SVMR0VMRun
 %endif ; RT_ARCH_AMD64
 
