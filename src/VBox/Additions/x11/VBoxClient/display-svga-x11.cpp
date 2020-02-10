@@ -428,6 +428,7 @@ static void getModeNameAndLineFromCVT(int iWidth, int iHeight, char *pszOutModeN
     char szCvtCommand[MAX_COMMAND_LINE_LEN];
     const int iFreq = 60;
     const int iMinNameLen = 4;
+    /* Make release builds happy. */
     (void)iMinNameLen;
     RTStrPrintf(szCvtCommand, sizeof(szCvtCommand), "%s %d %d %d", pcszCvt, iWidth, iHeight, iFreq);
     FILE *pFile;
@@ -447,7 +448,7 @@ static void getModeNameAndLineFromCVT(int iWidth, int iHeight, char *pszOutModeN
                 szModeLine[strlen(szModeLine) - 1] = '\0';
             size_t iFirstQu = RTStrOffCharOrTerm(szModeLine, '\"');
             size_t iModeLineLen = strlen(szModeLine);
-            /* Some gcc's complain about unused variable. */
+            /* Make release builds happy. */
             (void)iModeLineLen;
             Assert(iFirstQu < iModeLineLen - iMinNameLen);
 
