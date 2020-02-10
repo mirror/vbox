@@ -329,6 +329,7 @@ VBOXDDU_DECL(int) VDIfDestroyFromVfsStream(PVDINTERFACEIO pIoIf)
             pThis->hVfsIos = NIL_RTVFSIOSTREAM;
         }
         pThis->u32Magic = ~VDIFFROMVFS_MAGIC;
+        RTMemFree(pThis);
     }
     return VINF_SUCCESS;
 }
