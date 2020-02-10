@@ -654,8 +654,8 @@ static int run(struct VBCLSERVICE **ppInterface, bool fDaemonised)
         eventMask |= RRProviderChangeNotifyMask |
             RRProviderPropertyNotifyMask |
             RRResourceChangeNotifyMask;
-    if (x11Context.hRandRMinor >= 6)
-        eventMask |= RRLeaseNotifyMask;
+    // if (x11Context.hRandRMinor >= 6)
+    //     eventMask |= RRLeaseNotifyMask;
 
 
     for (;;)
