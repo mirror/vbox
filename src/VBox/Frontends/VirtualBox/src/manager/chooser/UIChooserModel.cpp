@@ -859,8 +859,10 @@ void UIChooserModel::sltUngroupSelectedGroup()
 
 void UIChooserModel::sltCreateNewMachine()
 {
-    /* Check if action is enabled: */
-    if (!actionPool()->action(UIActionIndexST_M_Machine_S_New)->isEnabled())
+    /* Check if at least one of actions is enabled: */
+    if (   !actionPool()->action(UIActionIndexST_M_Welcome_S_New)->isEnabled()
+        && !actionPool()->action(UIActionIndexST_M_Machine_S_New)->isEnabled()
+        && !actionPool()->action(UIActionIndexST_M_Group_S_New)->isEnabled())
         return;
 
     /* Select the parent: */
