@@ -63,6 +63,9 @@ int main(int argc, char **argv, char **envp)
     }
 
     uint32_t fFlags = (fStartVM && !fSeparateProcess) ? 0 : SUPSECMAIN_FLAGS_DONT_OPEN_DEV;
+#ifdef RT_OS_DARWIN
+    fFlags |= SUPSECMAIN_FLAGS_LOC_OSX_HLP_APP;
+#endif
 
     return SUPR3HardenedMain("VirtualBoxVM",
                              fFlags | SUPSECMAIN_FLAGS_TRUSTED_ERROR,

@@ -360,7 +360,7 @@ VBOX_INSTALL_LANG_LPROJ := $(addsuffix .lproj,$(VBOX_APPROVED_GUI_LANGUAGES))
 #
 
 VBOX_DI_VBAPP_PROGS_HARDENED = \
-	MacOS/VirtualBoxVM \
+	Resources/VirtualBoxVM.app/Contents/MacOS/VirtualBoxVM \
 	MacOS/VBoxHeadless \
 	MacOS/VBoxNetDHCP \
 	MacOS/VBoxNetNAT \
@@ -413,7 +413,7 @@ ifdef VBOX_WITH_DEBUGGER_GUI
  	MacOS/DbgPlugInDiggers.dylib
 endif
 ifdef VBOX_WITH_HARDENING
- VBOX_DI_VBAPP_DYLIBS += $(addsuffix .dylib,$(VBOX_DI_VBAPP_PROGS_HARDENED))
+ VBOX_DI_VBAPP_DYLIBS += $(addprefix MacOS/,$(addsuffix .dylib,$(notdir $(VBOX_DI_VBAPP_PROGS_HARDENED))))
 endif
 ifdef VBOX_WITH_HDDPARALLELS_INSTALL
  VBOX_DI_VBAPP_DYLIBS += \
@@ -521,9 +521,6 @@ VBOX_DI_VBAPP_MISC_FILES += \
 	$(foreach qtmod, $(VBOX_QT_MOD_NAMES), Frameworks/$(qtmod).framework/Versions/$(VBOX_QT_VERSION_MAJOR)/Resources/Info.plist)
 
 VBOX_DI_VBAPP_SYMLINKS = \
-	Resources/VirtualBoxVM.app/Contents/MacOS=>../../../MacOS/ \
-	Resources/VirtualBoxVM.app/Contents/plugins=>../../../plugins/ \
-	Resources/VirtualBoxVM.app/Contents/Frameworks=>../../../Frameworks/ \
 	Resources/vmstarter.app/Contents/MacOS=>../../../MacOS/ \
 	$(foreach qtmod, $(VBOX_QT_MOD_NAMES) \
 	,Frameworks/$(qtmod).framework/Versions/Current=>$(VBOX_QT_VERSION_MAJOR) )
@@ -683,30 +680,6 @@ endif
 	@# Copy the binaries.
 	$(foreach prog, $(VBOX_DI_VBAPP_PROGS) $(VBOX_DI_VBAPP_PROGS_HARDENED) \
 		,$(INSTALL) -m 0755 $(VBOX_PATH_DIST)/VirtualBox.app/Contents/$(prog)       	$(VBOX_PATH_VBOX_APP_TMP)/Contents/$(prog)$(NLTAB))
-#ifdef VBOX_WITH_HARDENING - disabled temporarily
-if 1
-	@# We cannot use @executable_path together with setuid binaries, dyld gets upset about it. So, fix Qt libs and users.
-	$(foreach qtmod, $(VBOX_QT_MOD_NAMES) \
-		,install_name_tool -id /Applications/VirtualBox.app/Contents/Frameworks/$(qtmod).framework/Versions/$(VBOX_QT_VERSION_MAJOR)/$(qtmod) \
-			$(VBOX_PATH_VBOX_APP_TMP)/Contents/Frameworks/$(qtmod).framework/Versions/$(VBOX_QT_VERSION_MAJOR)/$(qtmod)$(NLTAB) )
-	$(foreach f, \
-		$(VBOX_DI_VBAPP_DYLIBS) \
-		$(VBOX_DI_VBAPP_DYLIBS.$(KBUILD_TARGET_ARCH)) \
-		$(VBOX_DI_VBAPP_PROGS) \
-		$(VBOX_DI_VBAPP_PROGS_HARDENED) \
-		,install_name_tool \
-			$(foreach qtmod, $(VBOX_QT_MOD_NAMES), \
-				-change           @executable_path/../Frameworks/$(qtmod).framework/Versions/$(VBOX_QT_VERSION_MAJOR)/$(qtmod) \
-				/Applications/VirtualBox.app/Contents/Frameworks/$(qtmod).framework/Versions/$(VBOX_QT_VERSION_MAJOR)/$(qtmod) \
-				-change               $(VBOX_PATH_QT)/Frameworks/$(qtmod).framework/Versions/$(VBOX_QT_VERSION_MAJOR)/$(qtmod) \
-				/Applications/VirtualBox.app/Contents/Frameworks/$(qtmod).framework/Versions/$(VBOX_QT_VERSION_MAJOR)/$(qtmod) \
-				-change                           $(PATH_SDK_QT)/$(qtmod).framework/Versions/$(VBOX_QT_VERSION_MAJOR)/$(qtmod) \
-				/Applications/VirtualBox.app/Contents/Frameworks/$(qtmod).framework/Versions/$(VBOX_QT_VERSION_MAJOR)/$(qtmod) \
-				-change                                          $(qtmod).framework/Versions/$(VBOX_QT_VERSION_MAJOR)/$(qtmod) \
-				/Applications/VirtualBox.app/Contents/Frameworks/$(qtmod).framework/Versions/$(VBOX_QT_VERSION_MAJOR)/$(qtmod) \
-				) \
-			$(VBOX_PATH_VBOX_APP_TMP)/Contents/$(f)$(NLTAB) )
-endif
 ifdef VBOX_UNATTENDED_TEMPLATES
 # Unattended installation template scripts.
 	$(MKDIR) -p -m 0755 -- $(VBOX_PATH_VBOX_APP_TMP)/Contents/MacOS/UnattendedTemplates
@@ -779,9 +752,11 @@ endif
 	sudo chown -R root:admin $(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.root
 	sudo chmod u+s $(VBOX_PATH_VBOX_APP_TMP)/Contents/MacOS/VBoxNetAdpCtl
 ifdef VBOX_WITH_HARDENING
-	sudo chmod u+s \
-		$(foreach bin,VBoxHeadless VirtualBoxVM VBoxNetDHCP VBoxNetNAT,\
-			$(VBOX_PATH_VBOX_APP_TMP)/Contents/MacOS/$(bin))
+	sudo chmod u+s $(foreach bin,$(VBOX_DI_VBAPP_PROGS_HARDENED),$(VBOX_PATH_VBOX_APP_TMP)/Contents/$(bin))
+endif
+if 0 # Handy for testing the app bundle w/o having to reinstall all the time (just untar it into -C /Applications/)
+	$(RM) -f -- "$(PATH_OUT)/VirtualBox.app.tar.gz"
+	tar -czf "$(PATH_OUT)/VirtualBox.app.tar.gz" -C "$(VBOX_PATH_VBOX_APP_TMP)/.." VirtualBox.app
 endif
 	@# Do keyword replacement in the package info and description files.
 	$(SED) \

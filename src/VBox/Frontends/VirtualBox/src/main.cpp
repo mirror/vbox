@@ -53,11 +53,18 @@
 #ifdef VBOX_WITH_HARDENING
 # include <iprt/ctype.h>
 #endif
+#if defined(VBOX_RUNTIME_UI) && defined(VBOX_WS_MAC)
+# include <iprt/path.h>
+#endif
 
 /* Other includes: */
 #ifdef VBOX_WS_MAC
 # include <dlfcn.h>
 # include <sys/mman.h>
+# ifdef VBOX_RUNTIME_UI
+//# include <mach-o/dyld.h>
+extern "C" const char *_dyld_get_image_name(uint32_t);
+# endif
 #endif /* VBOX_WS_MAC */
 #ifdef VBOX_WS_X11
 # include <dlfcn.h>
@@ -701,6 +708,21 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char ** /*envp*/)
 
         /* Instantiate own NSApplication before QApplication do it for us: */
         UICocoaApplication::instance();
+
+# ifdef VBOX_RUNTIME_UI
+        /* If we're a helper app inside Resources in the main application bundle,
+           we need to amend the library path so the platform plugin can be found.
+           Note! This builds on the initIprtForDarwinHelperApp() hack. */
+        {
+            char szExecDir[RTPATH_MAX];
+            int vrc = RTPathExecDir(szExecDir, sizeof(szExecDir));
+            AssertRC(vrc);
+            RTPathStripTrailingSlash(szExecDir); /* .../Contents/MacOS */
+            RTPathStripFilename(szExecDir);      /* .../Contents */
+            RTPathAppend(szExecDir, sizeof(szExecDir), "plugins");      /* .../Contents/plugins */
+            QCoreApplication::addLibraryPath(QString::fromUtf8(szExecDir));
+        }
+# endif
 #endif /* VBOX_WS_MAC */
 
 #ifdef VBOX_WS_X11
@@ -842,6 +864,51 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char ** /*envp*/)
 
 #if !defined(VBOX_WITH_HARDENING) || !defined(VBOX_RUNTIME_UI)
 
+# if defined(RT_OS_DARWIN) && defined(VBOX_RUNTIME_UI)
+/** Init runtime with the executable path pointing into the
+ * VirtualBox.app/Contents/MacOS/ rather than
+ * VirtualBox.app/Contents/Resource/VirtualBoxVM.app/Contents/MacOS/.
+ *
+ * This is a HACK to make codesign and friends happy on OS X.   The idea is to
+ * improve and eliminate this over time.
+ */
+DECL_NO_INLINE(static, int) initIprtForDarwinHelperApp(int cArgs, char ***ppapszArgs, uint32_t fFlags)
+{
+    const char *pszImageName = _dyld_get_image_name(0);
+    AssertReturn(pszImageName, VERR_INTERNAL_ERROR);
+
+    char szTmpPath[PATH_MAX + 1];
+    const char *psz = realpath(pszImageName, szTmpPath);
+    int rc;
+    if (psz)
+    {
+        char *pszFilename = RTPathFilename(szTmpPath);
+        if (pszFilename)
+        {
+            char const chSavedFilename0 = *pszFilename;
+            *pszFilename = '\0';
+            RTPathStripTrailingSlash(szTmpPath); /* VirtualBox.app/Contents/Resources/VirtualBoxVM.app/Contents/MacOS */
+            RTPathStripFilename(szTmpPath);      /* VirtualBox.app/Contents/Resources/VirtualBoxVM.app/Contents/ */
+            RTPathStripFilename(szTmpPath);      /* VirtualBox.app/Contents/Resources/VirtualBoxVM.app */
+            RTPathStripFilename(szTmpPath);      /* VirtualBox.app/Contents/Resources */
+            RTPathStripFilename(szTmpPath);      /* VirtualBox.app/Contents */
+            char *pszDst = strchr(szTmpPath, '\0');
+            pszDst = (char *)memcpy(pszDst, RT_STR_TUPLE("/MacOS/")) + sizeof("/MacOS/") - 1; /** @todo where is mempcpy? */
+            *pszFilename = chSavedFilename0;
+            memmove(pszDst, pszFilename, strlen(pszFilename) + 1);
+
+            return RTR3InitEx(RTR3INIT_VER_CUR, fFlags, cArgs, ppapszArgs, szTmpPath);
+        }
+        rc = VERR_INVALID_NAME;
+    }
+    else
+        rc = RTErrConvertFromErrno(errno);
+    AssertMsgRCReturn(rc, ("rc=%Rrc pszLink=\"%s\"\nhex: %.*Rhxs\n", rc, pszImageName, strlen(pszImageName), pszImageName), rc);
+    return rc;
+}
+# endif
+
+
 int main(int argc, char **argv, char **envp)
 {
 # ifdef VBOX_WS_X11
@@ -870,10 +937,14 @@ int main(int argc, char **argv, char **envp)
     }
 
     uint32_t fFlags = fStartVM && !fSeparateProcess ? RTR3INIT_FLAGS_SUPLIB : 0;
+# ifdef RT_OS_DARWIN
+    int rc = initIprtForDarwinHelperApp(argc, &argv, fFlags);
 # else
-    uint32_t fFlags = 0;
-# endif
     int rc = RTR3InitExe(argc, &argv, fFlags);
+# endif
+# else
+    int rc = RTR3InitExe(argc, &argv, 0 /*fFlags*/);
+# endif
 
     /* Initialization failed: */
     if (RT_FAILURE(rc))

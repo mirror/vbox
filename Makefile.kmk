@@ -178,6 +178,15 @@ ifeq ($(KBUILD_TARGET),darwin)
  	Frameworks/$(qtmod).framework/Versions/Current=>5 \
  	Frameworks/$(qtmod).framework/$(qtmod)=>Versions/5/$(qtmod) \
  	Frameworks/$(qtmod).framework/Resources=>Versions/5/Resources)
+ qt5-bin_INSTALLER = $(INSTALL) $(if $(uid),-o $(uid)) $(if $(gid),-g $(gid)) $(if $(mode),-m $(mode)) $(4) -- \
+ 			"$(1)" "$(2)" $(if-expr "$(source_type_prefix)" == "EXEC_" \
+ 			,$(NLTAB)install_name_tool \
+ 			$(if-expr "$(suffix $2)" == "", -id "$(if $(VBOX_WITH_HARDENING),/Applications/VirtualBox.app/Contents/Framework,@rpath)/$(notdir $(2)).framework/Version/5/$(notdir $(2))",) \
+ 			$(foreach qtmod, $(VBOX_QT_MOD_NAMES), \
+ 				$(foreach prefix, @executable_path/../Frameworks/ $(VBOX_PATH_QT)/Frameworks/ $(PATH_SDK_QT)/, \
+ 				-change "$(prefix)$(qtmod).framework/Versions/5/$(qtmod)" \
+ 					"$(if $(VBOX_WITH_HARDENING),/Applications/VirtualBox.app/Contents/Frameworks,@rpath)/$(qtmod).framework/Versions/5/$(qtmod)" ) ) \
+ 			"$(2)",) # HACK ALERT! Using $(source_type_prefix) to detect EXEC_SOURCES.
 else # win x11
  if1of ($(KBUILD_TARGET), linux solaris)
   ifndef VBOX_ONLY_BUILD

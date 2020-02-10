@@ -54,8 +54,9 @@ include $(PATH_SUB_CURRENT)/nls/ApprovedLanguages.kmk
 #
 ifdef VBOX_WITH_HARDENING
 VirtualBoxHardenedVM_TEMPLATE = VBOXR3HARDENEDEXE
-VirtualBoxHardenedVM_SOURCES = src/hardenedmain.cpp
+VirtualBoxHardenedVM_INST.darwin = $(INST_VIRTUALBOX)Contents/Resources/VirtualBoxVM.app/Contents/MacOS/
 VirtualBoxHardenedVM_NAME = VirtualBoxVM
+VirtualBoxHardenedVM_SOURCES = src/hardenedmain.cpp
 VirtualBoxHardenedVM_LDFLAGS.win = /SUBSYSTEM:$(if-expr "$(KBUILD_TYPE)" != "release",console,windows)
 $(call VBOX_SET_VER_INFO_EXE,VirtualBoxHardenedVM,VirtualBox Virtual Machine,$(VBOX_WINDOWS_ICON_FILE))
 endif
@@ -160,6 +161,9 @@ endif
 #
 VirtualBoxVM_TEMPLATE       := $(if $(VBOX_WITH_HARDENING),VBOXQTGUI,VBOXQTGUIEXE)
 VirtualBoxVM_NAME           = VirtualBoxVM
+ifndef VBOX_WITH_HARDENING
+VirtualBoxVM_INST.darwin    = $(INST_VIRTUALBOX)Contents/Resources/VirtualBoxVM.app/Contents/MacOS/
+endif
 VirtualBoxVM_DEPS           = $(UICommon_0_OUTDIR)/include/COMWrappers
 VirtualBoxVM_SDKS.win       = ReorderCompilerIncs $(VBOX_WINPSDK) $(VBOX_WINDDK)
 VirtualBoxVM_DEFS           += VBOX_RUNTIME_UI
@@ -387,6 +391,7 @@ else
 endif
 
 VirtualBox_LDFLAGS.darwin = \
+	$(if $(VBOX_WITH_HARDENING),,-rpath @executable_path/../MacOS -rpath @executable_path/../Frameworks) \
 	-framework AppKit -framework Carbon -framework IOKit
 
 if defined(VBOX_WITH_VIDEOHWACCEL) || defined(VBOX_GUI_USE_QGL)
@@ -421,8 +426,11 @@ else
 endif
 
 VirtualBoxVM_LDFLAGS.darwin = \
+	$(if $(VBOX_WITH_HARDENING)\
+	,-install_name $(VBOX_DYLD_EXECUTABLE_PATH)/VirtualBoxVM.dylib \
+	,-rpath @executable_path/../../../../MacOS \
+	-rpath @executable_path/../../../../Frameworks) \
 	-framework AppKit -framework Carbon -framework IOKit \
-	$(if $(VBOX_WITH_HARDENING),-install_name $(VBOX_DYLD_EXECUTABLE_PATH)/VirtualBoxVM.dylib)
 
 if defined(VBOX_WITH_VIDEOHWACCEL) || defined(VBOX_GUI_USE_QGL)
  VirtualBoxVM_LDFLAGS.darwin += -framework OpenGL
@@ -446,7 +454,7 @@ else
 endif
 
 UICommon_LDFLAGS.darwin = \
-	-install_name $(VBOX_DYLD_EXECUTABLE_PATH)/UICommon.dylib \
+	-install_name "$(VBOX_DYLD_EXECUTABLE_PATH)/UICommon.dylib" \
 	-framework AppKit \
 	-framework Carbon \
 	-framework IOKit
@@ -1777,10 +1785,6 @@ VirtualBox.app_SOURCES = \
  	src/platform/darwin/VM-PkgInfo=>PkgInfo \
  	$(VirtualBoxVM.app_0_OUTDIR)/VM-Info.plist=>Info.plist \
  	$(foreach mysrc,$(VirtualBox.app_SOURCES),$(if-expr $(pos =>Resources/,$(mysrc)) > 0,$(mysrc),))
- VirtualBoxVM.app_SYMLINKS = \
- 	MacOS=>../../../MacOS/ \
- 	plugins=>../../../plugins/ \
- 	Frameworks=>../../../Frameworks/
 
  $$(VirtualBoxVM.app_0_OUTDIR)/VM-Info.plist: $(PATH_SUB_CURRENT)/src/platform/darwin/VM-Info.plist $(VBOX_VERSION_MK) | $$(@D)/
 	$(call MSG_GENERATE,VirtualBoxVM.app,$<,$@)
