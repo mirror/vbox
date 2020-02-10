@@ -237,7 +237,7 @@ $(VBOX_PATH_PACK_TMP)/DiskImage/VirtualBox.pkg: \
 		--resources $(VBOX_PATH_PACK_TMP)/VirtualBox.dist.res \
 		--identifier org.VirtualBox.mpkg.virtualbox \
 		--version $(VBOX_VERSION_MAJOR).$(VBOX_VERSION_MINOR).$(VBOX_VERSION_BUILD) \
-		$(if $(VBOX_MACOSX_INSTALLER_SIGN),--sign "$(VBOX_MACOSX_INSTALLER_SIGN)",) \
+		$(if-expr defined(VBOX_MACOSX_INSTALLER_SIGN) && $(intersects darwin all 1,$(VBOX_WITH_CORP_CODE_SIGNING)) == "",--sign "$(VBOX_MACOSX_INSTALLER_SIGN)",) \
 		$@
 ifdef VBOX_SIGNING_MODE
  if $(intersects darwin all 1,$(VBOX_WITH_CORP_CODE_SIGNING))
@@ -297,7 +297,7 @@ $(VBOX_PATH_PACK_TMP)/Packages/VBoxKEXTs.pkg: \
 	@# Copy the binaries and invoking lipo.
 	$(foreach kext,$(VBOX_DI_KEXTS), \
 		$(NLTAB)$(INSTALL) -m 0755 $(VBOX_PATH_DIST)/$(kext).kext/Contents/MacOS/$(kext) $(VBOX_PATH_PACK_TMP)/VBoxKEXTs.pkg.root/$(kext).kext/Contents/MacOS/)
-	@# Signed the kext bundles.
+	@# Sign the kext bundles.
 ifdef VBOX_SIGNING_MODE
 	$(foreach kext,$(VBOX_DI_KEXTS) \
 		,$(NLTAB)$(call VBOX_SIGN_MACHO_FN,$(VBOX_PATH_PACK_TMP)/VBoxKEXTs.pkg.root/$(kext).kext/Contents/MacOS/$(kext),org.virtualbox.app.kext.$(kext)) )
@@ -329,7 +329,7 @@ endif
 		--version $(VBOX_VERSION_MAJOR).$(VBOX_VERSION_MINOR).$(VBOX_VERSION_BUILD) \
 		--install-location "/Library/Application Support/VirtualBox" \
 		--ownership preserve \
-		$(if $(VBOX_MACOSX_INSTALLER_SIGN),--sign "$(VBOX_MACOSX_INSTALLER_SIGN)",) \
+		$(if-expr defined(VBOX_MACOSX_INSTALLER_SIGN) && $(intersects darwin all 1,$(VBOX_WITH_CORP_CODE_SIGNING)) == "",--sign "$(VBOX_MACOSX_INSTALLER_SIGN)",) \
 		$@
 ifdef VBOX_SIGNING_MODE
  if $(intersects darwin all 1,$(VBOX_WITH_CORP_CODE_SIGNING))
@@ -699,7 +699,7 @@ ifdef VBOX_WITH_DTRACE
 		,$(INSTALL) -m 0655 $(VBOX_PATH_DIST)/VirtualBox.app/Contents/MacOS/dtrace/$(file) \
 			$(VBOX_PATH_VBOX_APP_TMP)/Contents/MacOS/dtrace/$(file)$(NLTAB))
 endif
-	@# Signed the binaries and the application bundle.
+	@# Sign the binaries and the application bundle.
 ifdef VBOX_SIGNING_MODE
 	$(foreach qtmod, $(VBOX_QT_MOD_NAMES) \
 		,$(NLTAB)$(call VBOX_SIGN_MACHO_FN,$(VBOX_PATH_VBOX_APP_TMP)/Contents/Frameworks/$(qtmod).framework/Versions/$(VBOX_QT_VERSION_MAJOR)/$(qtmod),org.virtualbox.app.frameworks.$(qtmod)) )
@@ -787,7 +787,7 @@ endif
 		--install-location /Applications/ \
 		--ownership preserve \
 		--preserve-xattr \
-		$(if $(VBOX_MACOSX_INSTALLER_SIGN),--sign "$(VBOX_MACOSX_INSTALLER_SIGN)",) \
+		$(if-expr defined(VBOX_MACOSX_INSTALLER_SIGN) && $(intersects darwin all 1,$(VBOX_WITH_CORP_CODE_SIGNING)) == "",--sign "$(VBOX_MACOSX_INSTALLER_SIGN)",) \
 		$@
 ifdef VBOX_SIGNING_MODE
  if $(intersects darwin all 1,$(VBOX_WITH_CORP_CODE_SIGNING))
@@ -874,7 +874,7 @@ endif
 		--version $(VBOX_VERSION_MAJOR).$(VBOX_VERSION_MINOR).$(VBOX_VERSION_BUILD) \
 		--install-location /usr/local/bin \
 		--ownership preserve \
-		$(if $(VBOX_MACOSX_INSTALLER_SIGN),--sign "$(VBOX_MACOSX_INSTALLER_SIGN)",) \
+		$(if-expr defined(VBOX_MACOSX_INSTALLER_SIGN) && $(intersects darwin all 1,$(VBOX_WITH_CORP_CODE_SIGNING)) == "",--sign "$(VBOX_MACOSX_INSTALLER_SIGN)",) \
 		$@
 ifdef VBOX_SIGNING_MODE
  if $(intersects darwin all 1,$(VBOX_WITH_CORP_CODE_SIGNING))

@@ -3705,10 +3705,12 @@ ifdef VBOX_SIGNING_MODE
   # @param 2  Identifier, optional.
   # @param 3  Additional codesign command line parameters, optional.
   if $(intersects darwin all 1,$(VBOX_WITH_CORP_CODE_SIGNING))
-   ## @todo cannot handle $(2), the identifier. $(3) is hopefully either empty or --deep
+   ## @todo cannot handle $(2), the identifier.
+   ## @todo $(3) is hopefully either empty, --deep or --entitlements=...
    VBOX_SIGN_BUNDLE_FN = $(call MSG_TOOL,SIGNTOOL,,$(1),$(2))$(NLTAB) \
 	ditto -c -k --keepParent "$(1)" "$(1).zip"$(NLTAB) \
-	$(call VBOX_CCS_SIGN_CMD,apple,$(1).zip,,$(if $(eq $(3),--deep),-deep,))$(NLTAB) \
+	$(call VBOX_CCS_SIGN_CMD,apple,$(1).zip,,$(subst --entitlements=,-entitlement_file_path ,$(subst --deep,-deep,$(3))) \
+		$(if $(VBOX_WITH_MACOS_HARDENED_RUNTIME),-hardened_runtime))$(NLTAB) \
 	ditto -x -k "$(1).zip" "$(1)/../"$(NLTAB) \
 	$(RM) -f -- "$(1).zip"
   else
@@ -3730,8 +3732,10 @@ ifdef VBOX_SIGNING_MODE
   # @param 3  Additional codesign command line parameters, optional.
   if $(intersects darwin all 1,$(VBOX_WITH_CORP_CODE_SIGNING))
    ## @todo cannot handle $(2), the identifier.
-   ## @todo must handle $(3) if entitlement.
-   VBOX_SIGN_MACHO_FN = $(call MSG_TOOL,SIGNTOOL,,$(1),$(2))$(NLTAB)$(call VBOX_CCS_SIGN_CMD,binary,$(1))
+   ## @todo $(3) is hopefully either empty or --entitlements=...
+   VBOX_SIGN_MACHO_FN = $(call MSG_TOOL,SIGNTOOL,,$(1),$(2))$(NLTAB) \
+	$(call VBOX_CCS_SIGN_CMD,binary,$(1),,$(subst --entitlements=,-entitlement_file_path ,$(3)) \
+		$(if $(VBOX_WITH_MACOS_HARDENED_RUNTIME),-hardened_runtime))
   else
    VBOX_SIGN_MACHO_FN = $(call MSG_TOOL,SIGNTOOL,,$(1),$(2))$(NLTAB)$(VBOX_CODESIGN) \
 	--verbose=9 \
