@@ -22,11 +22,13 @@
 #include <VBox/vmm/ssm.h>
 
 #include <VBox/log.h>
+#include <iprt/assert.h>
 #include <iprt/getopt.h>
 #include <iprt/errcore.h>
 #include <iprt/file.h>
 #include <iprt/path.h>
 #include <iprt/stream.h>
+#include <iprt/initterm.h>
 
 static RTEXITCODE extractUnit(const char *pszFilename, const char *pszUnitname, const char *pszOutputFilename)
 {
@@ -71,6 +73,9 @@ static RTEXITCODE extractUnit(const char *pszFilename, const char *pszUnitname, 
 
 int main(int argc, char **argv)
 {
+    int rc = RTR3InitExe(argc, &argv, 0);
+    AssertRCReturn(rc, RTEXITCODE_INIT);
+
     if (argc != 4)
     {
         RTPrintf("Usage: %s <SSM filename> <SSM unitname> <outfile>\n", RTPathFilename(argv[0]));
