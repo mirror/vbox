@@ -83,6 +83,7 @@ UIChooserNodeMachine::~UIChooserNodeMachine()
     delete item();
     if (parentNode())
         parentNode()->removeNode(this);
+    delete m_pCache;
 }
 
 QString UIChooserNodeMachine::name() const
