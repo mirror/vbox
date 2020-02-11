@@ -36,9 +36,9 @@ UIChooserNodeMachine::UIChooserNodeMachine(UIChooserNode *pParent,
 UIChooserNodeMachine::UIChooserNodeMachine(UIChooserNode *pParent,
                                            bool fFavorite,
                                            int iPosition,
-                                           const QString &strName)
+                                           const UICloudMachine &guiCloudMachine)
     : UIChooserNode(pParent, fFavorite)
-    , m_pCache(new UIVirtualMachineItemCloud(strName))
+    , m_pCache(new UIVirtualMachineItemCloud(guiCloudMachine))
 {
     if (parentNode())
         parentNode()->addNode(this, iPosition);

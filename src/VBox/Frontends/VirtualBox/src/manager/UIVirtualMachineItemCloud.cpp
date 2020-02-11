@@ -16,6 +16,7 @@
  */
 
 /* GUI includes: */
+#include "UICloudMachine.h"
 #include "UICommon.h"
 #include "UIConverter.h"
 #include "UIIconPool.h"
@@ -24,27 +25,34 @@
 
 UIVirtualMachineItemCloud::UIVirtualMachineItemCloud()
     : UIVirtualMachineItem(ItemType_CloudFake)
+    , m_pCloudMachine(0)
     , m_enmFakeCloudItemState(FakeCloudItemState_Loading)
 {
     recache();
 }
 
-UIVirtualMachineItemCloud::UIVirtualMachineItemCloud(const QString &strName)
+UIVirtualMachineItemCloud::UIVirtualMachineItemCloud(const UICloudMachine &guiCloudMachine)
     : UIVirtualMachineItem(ItemType_CloudReal)
+    , m_pCloudMachine(new UICloudMachine(guiCloudMachine))
     , m_enmFakeCloudItemState(FakeCloudItemState_NotApplicable)
 {
-    m_strName = strName;
     recache();
 }
 
 UIVirtualMachineItemCloud::~UIVirtualMachineItemCloud()
 {
+    delete m_pCloudMachine;
 }
 
 void UIVirtualMachineItemCloud::recache()
 {
     /* Determine attributes which are always available: */
-    /// @todo is there something?
+    if (itemType() == ItemType_CloudReal)
+    {
+        AssertPtrReturnVoid(m_pCloudMachine);
+        m_strId = m_pCloudMachine->id();
+        m_strName = m_pCloudMachine->name();
+    }
 
     /* Now determine whether VM is accessible: */
     m_fAccessible = true;
