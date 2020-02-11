@@ -92,7 +92,7 @@ int SeamlessX11::init(PFNSENDREGIONUPDATE pHostCallback)
 
     mRandRMask = 0;
     mRandRAvailable = false;
-    if (XRRQueryExtension(mDisplay, &mRandREventBase, &mRandRErrorBase))
+    /*if (XRRQueryExtension(mDisplay, &mRandREventBase, &mRandRErrorBase))
     {
         int iRandRMajor = 0;
         int iRandRMinor = 0;
@@ -105,7 +105,7 @@ int SeamlessX11::init(PFNSENDREGIONUPDATE pHostCallback)
                     RROutputChangeNotifyMask |
                     RROutputPropertyNotifyMask;
         }
-    }
+        }*/
     mHostCallback = pHostCallback;
     mEnabled = false;
     unmonitorClientList();
