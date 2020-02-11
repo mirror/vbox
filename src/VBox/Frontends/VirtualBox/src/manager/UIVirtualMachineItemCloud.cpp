@@ -62,8 +62,11 @@ void UIVirtualMachineItemCloud::updateState(QWidget *pParent)
     states["STOPPED"] = KMachineState_Paused;
     m_enmMachineState = states.value(strState, KMachineState_PoweredOff);
 
-    /* Recache finally: */
+    /* Recache: */
     recache();
+
+    /* Notify listeners finally: */
+    emit sigStateChange();
 }
 
 QString UIVirtualMachineItemCloud::acquireInstanceInfo(KVirtualSystemDescriptionType enmType, QWidget *pParent)
