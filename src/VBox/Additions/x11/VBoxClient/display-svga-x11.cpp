@@ -53,10 +53,7 @@
  *  context structure. */
 #define VMW_MAX_HEADS 32
 
-/* VMWare X.Org driver control parts definitions. */
-
-#include <X11/Xlibint.h>
-#include <X11/extensions/Xrandr.h>
+#include "seamless-x11.h"
 
 #ifdef RT_OS_LINUX
 # include <sys/ioctl.h>
