@@ -32,6 +32,11 @@ class UIVirtualMachineItemCloud : public UIVirtualMachineItem
 {
     Q_OBJECT;
 
+signals:
+
+    /** Notifies listeners about state change. */
+    void sigStateChange();
+
 public:
 
     /** Fake cloud item states. */
@@ -55,6 +60,13 @@ public:
         void setFakeCloudItemState(FakeCloudItemState enmState) { m_enmFakeCloudItemState = enmState; }
         /** Returns fake cloud item state. */
         FakeCloudItemState fakeCloudItemState() const { return m_enmFakeCloudItemState; }
+
+        /** Updates cloud VM state.
+          * @param  pWidget  Brings parent widget to show messages according to. */
+        void updateState(QWidget *pParent);
+        /** Acquires instance info of certain @a enmType.
+          * @param  pWidget  Brings parent widget to show messages according to. */
+        QString acquireInstanceInfo(KVirtualSystemDescriptionType enmType, QWidget *pParent);
     /** @} */
 
     /** @name Update stuff.

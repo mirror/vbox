@@ -116,6 +116,11 @@ protected:
     /** Handles translation event. */
     virtual void retranslateUi() /* override */;
 
+private slots:
+
+    /** Handles machine state change. */
+    void sltHandleStateChange();
+
 private:
 
     /** Holds virtual machine cache instance. */

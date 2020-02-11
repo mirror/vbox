@@ -20,7 +20,13 @@
 #include "UICommon.h"
 #include "UIConverter.h"
 #include "UIIconPool.h"
+#include "UIMessageCenter.h"
 #include "UIVirtualMachineItemCloud.h"
+
+/* COM includes: */
+#include "CAppliance.h"
+#include "CVirtualBox.h"
+#include "CVirtualSystemDescription.h"
 
 
 UIVirtualMachineItemCloud::UIVirtualMachineItemCloud()
@@ -44,6 +50,80 @@ UIVirtualMachineItemCloud::~UIVirtualMachineItemCloud()
     delete m_pCloudMachine;
 }
 
+void UIVirtualMachineItemCloud::updateState(QWidget *pParent)
+{
+    /* Make sure item is of real cloud type: */
+    AssertReturnVoid(itemType() == ItemType_CloudReal);
+
+    /* Update state: */
+    const QString strState = acquireInstanceInfo(KVirtualSystemDescriptionType_CloudInstanceState, pParent);
+    QMap<QString, KMachineState> states;
+    states["RUNNING"] = KMachineState_Running;
+    states["STOPPED"] = KMachineState_Paused;
+    m_enmMachineState = states.value(strState, KMachineState_PoweredOff);
+
+    /* Recache finally: */
+    recache();
+}
+
+QString UIVirtualMachineItemCloud::acquireInstanceInfo(KVirtualSystemDescriptionType enmType, QWidget *pParent)
+{
+    /* Make sure item is of real cloud type and is initialized: */
+    AssertReturn(itemType() == ItemType_CloudReal, QString());
+    AssertPtrReturn(m_pCloudMachine, QString());
+
+    /* Get VirtualBox object: */
+    CVirtualBox comVBox = uiCommon().virtualBox();
+
+    /* Create appliance: */
+    CAppliance comAppliance = comVBox.CreateAppliance();
+    if (!comVBox.isOk())
+        msgCenter().cannotCreateAppliance(comVBox);
+    else
+    {
+        /* Append it with one (1) description we need: */
+        comAppliance.CreateVirtualSystemDescriptions(1);
+        if (!comAppliance.isOk())
+            msgCenter().cannotCreateVirtualSystemDescription(comAppliance);
+        else
+        {
+            /* Get received description: */
+            QVector<CVirtualSystemDescription> descriptions = comAppliance.GetVirtualSystemDescriptions();
+            AssertReturn(!descriptions.isEmpty(), QString());
+            CVirtualSystemDescription comDescription = descriptions.at(0);
+
+            /* Acquire cloud client: */
+            CCloudClient comCloudClient = m_pCloudMachine->client();
+
+            /* Now execute GetInstanceInfo async method: */
+            CProgress comProgress = comCloudClient.GetInstanceInfo(m_strId, comDescription);
+            if (!comCloudClient.isOk())
+                msgCenter().cannotAcquireCloudClientParameter(comCloudClient);
+            else
+            {
+                /* Show "Acquire instance info" progress: */
+                msgCenter().showModalProgressDialog(comProgress, UICommon::tr("Acquire instance info ..."),
+                                                    ":/progress_reading_appliance_90px.png", pParent, 0);
+                if (!comProgress.isOk() || comProgress.GetResultCode() != 0)
+                    msgCenter().cannotAcquireCloudClientParameter(comProgress);
+                else
+                {
+                    /* Now acquire description of certain type: */
+                    QVector<KVirtualSystemDescriptionType> types;
+                    QVector<QString> refs, origValues, configValues, extraConfigValues;
+                    comDescription.GetDescriptionByType(enmType, types, refs, origValues, configValues, extraConfigValues);
+
+                    /* Return first config value if we have one: */
+                    AssertReturn(!configValues.isEmpty(), QString());
+                    return configValues.at(0);
+                }
+            }
+        }
+    }
+
+    /* Return null string by default: */
+    return QString();
+}
 void UIVirtualMachineItemCloud::recache()
 {
     /* Determine attributes which are always available: */
@@ -65,7 +145,9 @@ void UIVirtualMachineItemCloud::recache()
         m_strOSTypeId = "Other";
 
         /* Determine VM states: */
-        m_enmMachineState = KMachineState_PoweredOff;
+        if (   itemType() == ItemType_CloudFake
+            || m_enmMachineState == KMachineState_Null)
+            m_enmMachineState = KMachineState_PoweredOff;
         m_strMachineStateName = gpConverter->toString(m_enmMachineState);
         if (itemType() == ItemType_CloudFake)
         {

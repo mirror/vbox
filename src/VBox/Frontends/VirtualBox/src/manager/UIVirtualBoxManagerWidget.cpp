@@ -31,6 +31,7 @@
 #include "UIVirtualBoxManagerWidget.h"
 #include "UITabBar.h"
 #include "UIToolBar.h"
+#include "UIVirtualMachineItemCloud.h"
 #include "UIVirtualMachineItemLocal.h"
 #include "UITools.h"
 #ifndef VBOX_WS_MAC
@@ -730,6 +731,9 @@ void UIVirtualBoxManagerWidget::recacheCurrentItemInformation(bool fDontRaiseErr
         /* Propagate current machine to update the Snapshots-pane or/and Logviewer-pane: */
         if (pItem->itemType() == UIVirtualMachineItem::ItemType_Local)
             m_pPaneToolsMachine->setMachine(pItem->toLocal()->machine());
+        /* Update current cloud machine state: */
+        if (pItem->itemType() == UIVirtualMachineItem::ItemType_CloudReal)
+            pItem->toCloud()->updateState(this);
     }
     else
     {

@@ -40,6 +40,9 @@ UIChooserNodeMachine::UIChooserNodeMachine(UIChooserNode *pParent,
     : UIChooserNode(pParent, fFavorite)
     , m_pCache(new UIVirtualMachineItemCloud(guiCloudMachine))
 {
+    /* Cloud VM item can notify machine node only directly (no console), we have to setup listener: */
+    connect(static_cast<UIVirtualMachineItemCloud*>(m_pCache), &UIVirtualMachineItemCloud::sigStateChange,
+            this, &UIChooserNodeMachine::sltHandleStateChange);
     if (parentNode())
         parentNode()->addNode(this, iPosition);
     retranslateUi();
@@ -204,6 +207,13 @@ void UIChooserNodeMachine::retranslateUi()
     /* Update internal stuff: */
     m_strDescription = tr("Virtual Machine");
 
+    /* Update machine-item: */
+    if (item())
+        item()->updateItem();
+}
+
+void UIChooserNodeMachine::sltHandleStateChange()
+{
     /* Update machine-item: */
     if (item())
         item()->updateItem();
