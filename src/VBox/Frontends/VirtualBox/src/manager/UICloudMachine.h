@@ -55,14 +55,12 @@ public:
     const QString  m_strName;
 };
 
-/** QObject subclass representing cloud VM wrapper.
+/** Class representing cloud VM wrapper.
   * This is temporary class before ICloudMachine interface is represented.
   * This class is based on explicitly-shared memory and thus optimized
   * for being passed across as copied object, not just reference. */
-class UICloudMachine : public QObject
+class UICloudMachine
 {
-    Q_OBJECT;
-
 public:
 
     /** Constructs cloud VM wrapper on the basis of arguments.
