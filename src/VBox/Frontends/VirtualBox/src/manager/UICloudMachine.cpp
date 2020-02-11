@@ -17,13 +17,6 @@
 
 /* GUI includes: */
 #include "UICloudMachine.h"
-#include "UICommon.h"
-#include "UIMessageCenter.h"
-
-/* COM includes: */
-#include "CAppliance.h"
-#include "CVirtualBox.h"
-#include "CVirtualSystemDescription.h"
 
 
 /*********************************************************************************************************************************
