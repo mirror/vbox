@@ -1350,6 +1350,7 @@ endif
   tstDevice_DEFS        += IN_SUP_R3
   tstDevice_SOURCES     = \
  	testcase/tstDevice.cpp \
+ 	testcase/tstDeviceCfg.cpp \
  	testcase/tstDevicePdmDevHlp.cpp
  endif
 

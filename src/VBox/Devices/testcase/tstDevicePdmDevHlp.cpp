@@ -77,10 +77,11 @@
  *
  * @returns VBox status code.
  * @param   paDevCfg        The array of config items.
+ * @param   cCfgItems       Number of config items in the array.
  * @param   pszName         Name of a byte string value.
  * @param   ppItem          Where to store the pointer to the item.
  */
-static int tstDev_CfgmR3ResolveItem(PCTSTDEVCFGITEM paDevCfg, const char *pszName, PCTSTDEVCFGITEM *ppItem)
+static int tstDev_CfgmR3ResolveItem(PCTSTDEVCFGITEM paDevCfg, uint32_t cCfgItems, const char *pszName, PCTSTDEVCFGITEM *ppItem)
 {
     *ppItem = NULL;
     if (!paDevCfg)
@@ -88,7 +89,8 @@ static int tstDev_CfgmR3ResolveItem(PCTSTDEVCFGITEM paDevCfg, const char *pszNam
 
     size_t          cchName = strlen(pszName);
     PCTSTDEVCFGITEM pDevCfgItem = paDevCfg;
-    while (pDevCfgItem->pszKey != NULL)
+
+    for (uint32_t i = 0; i < cCfgItems; i++)
     {
         size_t cchKey = strlen(pDevCfgItem->pszKey);
         if (cchName == cchKey)
@@ -1435,7 +1437,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_CFGMQuerySize(PCFGMNODE pNode, const char *
         return VERR_CFGM_NO_PARENT;
 
     PCTSTDEVCFGITEM pCfgItem;
-    int rc = tstDev_CfgmR3ResolveItem(pNode->pDut->pTestcaseReg->paDevCfg, pszName, &pCfgItem);
+    int rc = tstDev_CfgmR3ResolveItem(pNode->pDut->pTest->paCfgItems, pNode->pDut->pTest->cCfgItems, pszName, &pCfgItem);
     if (RT_SUCCESS(rc))
     {
         switch (pCfgItem->enmType)
@@ -1445,7 +1447,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_CFGMQuerySize(PCFGMNODE pNode, const char *
                 break;
 
             case TSTDEVCFGITEMTYPE_STRING:
-                *pcb = strlen(pCfgItem->pszVal) + 1;
+                *pcb = strlen(pCfgItem->u.psz) + 1;
                 break;
 
             case TSTDEVCFGITEMTYPE_BYTES:
@@ -1468,11 +1470,11 @@ static DECLCALLBACK(int) pdmR3DevHlp_CFGMQueryInteger(PCFGMNODE pNode, const cha
         return VERR_CFGM_NO_PARENT;
 
     PCTSTDEVCFGITEM pCfgItem;
-    int rc = tstDev_CfgmR3ResolveItem(pNode->pDut->pTestcaseReg->paDevCfg, pszName, &pCfgItem);
+    int rc = tstDev_CfgmR3ResolveItem(pNode->pDut->pTest->paCfgItems, pNode->pDut->pTest->cCfgItems, pszName, &pCfgItem);
     if (RT_SUCCESS(rc))
     {
         if (pCfgItem->enmType == TSTDEVCFGITEMTYPE_INTEGER)
-            *pu64 = RTStrToUInt64(pCfgItem->pszVal);
+            *pu64 = (uint64_t)pCfgItem->u.i64;
         else
             rc = VERR_CFGM_NOT_INTEGER;
     }
@@ -1501,16 +1503,16 @@ static DECLCALLBACK(int) pdmR3DevHlp_CFGMQueryString(PCFGMNODE pNode, const char
         return VERR_CFGM_NO_PARENT;
 
     PCTSTDEVCFGITEM pCfgItem;
-    int rc = tstDev_CfgmR3ResolveItem(pNode->pDut->pTestcaseReg->paDevCfg, pszName, &pCfgItem);
+    int rc = tstDev_CfgmR3ResolveItem(pNode->pDut->pTest->paCfgItems, pNode->pDut->pTest->cCfgItems, pszName, &pCfgItem);
     if (RT_SUCCESS(rc))
     {
         switch (pCfgItem->enmType)
         {
             case TSTDEVCFGITEMTYPE_STRING:
             {
-                size_t cchVal = strlen(pCfgItem->pszVal);
+                size_t cchVal = strlen(pCfgItem->u.psz);
                 if (cchString <= cchVal + 1)
-                    memcpy(pszString, pCfgItem->pszVal, cchVal);
+                    memcpy(pszString, pCfgItem->u.psz, cchVal);
                 else
                     rc = VERR_CFGM_NOT_ENOUGH_SPACE;
                 break;
@@ -2017,10 +2019,10 @@ static DECLCALLBACK(CFGMVALUETYPE) pdmR3DevHlp_CFGMGetValueType(PCFGMLEAF pCur)
 
 static DECLCALLBACK(bool) pdmR3DevHlp_CFGMAreValuesValid(PCFGMNODE pNode, const char *pszzValid)
 {
-    if (pNode && pNode->pDut->pTestcaseReg->paDevCfg)
+    if (pNode && pNode->pDut->pTest->paCfgItems)
     {
-        PCTSTDEVCFGITEM pDevCfgItem = pNode->pDut->pTestcaseReg->paDevCfg;
-        while (pDevCfgItem->pszKey != NULL)
+        PCTSTDEVCFGITEM pDevCfgItem = pNode->pDut->pTest->paCfgItems;
+        for (uint32_t i = 0; i < pNode->pDut->pTest->cCfgItems; i++)
         {
             size_t cchKey = strlen(pDevCfgItem->pszKey);
 

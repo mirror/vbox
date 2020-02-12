@@ -27,6 +27,7 @@
 #include <iprt/semaphore.h>
 #include <iprt/critsect.h>
 
+#include "tstDeviceCfg.h"
 #include "tstDevicePlugin.h"
 
 RT_C_DECLS_BEGIN
@@ -329,10 +330,12 @@ typedef const TSTDEVDUTPCIREGION *PCTSTDEVDUTPCIREGION;
  */
 typedef struct TSTDEVDUTINT
 {
-    /** Pointer to the testcase this device is part of. */
-    PCTSTDEVTESTCASEREG             pTestcaseReg;
+    /** Pointer to the test this device is running under. */
+    PCTSTDEVTEST                    pTest;
     /** Pointer to the PDM device instance. */
     PPDMDEVINS                      pDevIns;
+    /** CFGM root config node for the device. */
+    CFGMNODE                        Cfg;
     /** Current device context. */
     TSTDEVDUTCTX                    enmCtx;
     /** Critical section protecting the lists below. */

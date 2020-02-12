@@ -38,6 +38,7 @@
 #include <iprt/trace.h>
 
 #include "tstDeviceInternal.h"
+#include "tstDeviceCfg.h"
 
 
 /*********************************************************************************************************************************
@@ -804,53 +805,21 @@ DECLHIDDEN(int) tstDevPdmLdrGetSymbol(PTSTDEVDUTINT pThis, const char *pszMod, T
 }
 
 
-static TSTDEVCFGITEM s_aTestcaseCfg[] =
-{
-    {"CtrlMemBufSize", TSTDEVCFGITEMTYPE_INTEGER, "0"  },
-    {NULL,             TSTDEVCFGITEMTYPE_INVALID, NULL }
-};
-
-static TSTDEVTESTCASEREG s_TestcaseDef =
-{
-    "test",
-    "Testcase during implementation",
-    "serial",
-    0,
-    &s_aTestcaseCfg[0],
-    NULL,
-};
-
 /**
  * Create a new PDM device with default config.
  *
  * @returns VBox status code.
  * @param   pszName                 Name of the device to create.
+ * @param   fR0Enabled              Flag whether R0 support should be enabled for this device.
+ * @param   fRCEnabled              Flag whether RC support should be enabled for this device.
+ * @param   pDut                    The device under test structure the created PDM device instance is exercised under.
  */
-static int tstDevPdmDevCreate(const char *pszName)
+static int tstDevPdmDevCreate(const char *pszName, bool fR0Enabled, bool fRCEnabled, PTSTDEVDUTINT pDut)
 {
     int rc = VINF_SUCCESS;
     PCTSTDEVPDMDEV pPdmDev = tstDevPdmDeviceFind(pszName);
     if (RT_LIKELY(pPdmDev))
     {
-        TSTDEVDUTINT Dut;
-        Dut.pTestcaseReg    = &s_TestcaseDef;
-        Dut.enmCtx          = TSTDEVDUTCTX_R3;
-        Dut.pVm             = NULL;
-        Dut.SupSession.pDut = &Dut;
-        RTListInit(&Dut.LstIoPorts);
-        RTListInit(&Dut.LstTimers);
-        RTListInit(&Dut.LstMmHeap);
-        RTListInit(&Dut.LstPdmThreads);
-        RTListInit(&Dut.SupSession.LstSupSem);
-        CFGMNODE Cfg;
-        Cfg.pDut = &Dut;
-
-        rc = RTCritSectRwInit(&Dut.CritSectLists);
-        AssertRC(rc);
-
-        rc = RTCritSectInitEx(&Dut.CritSectNop.s.CritSect, RTCRITSECT_FLAGS_NOP, NIL_RTLOCKVALCLASS, RTLOCKVAL_SUB_CLASS_NONE, "DutNop");
-        AssertRC(rc);
-
         PPDMCRITSECT pCritSect;
         /* Figure out how much we need. */
         uint32_t cb = RT_UOFFSETOF_DYN(PDMDEVINS, achInstanceData[pPdmDev->pReg->cbInstanceCC]);
@@ -871,11 +840,11 @@ static int tstDevPdmDevCreate(const char *pszName)
         pDevIns->pReg                     = pPdmDev->pReg;
         pDevIns->pvInstanceDataR3         = &pDevIns->achInstanceData[0];
         pDevIns->pHlpR3                   = &g_tstDevPdmDevHlpR3;
-        pDevIns->pCfg                     = &Cfg;
-        pDevIns->Internal.s.pDut          = &Dut;
+        pDevIns->pCfg                     = &pDut->Cfg;
+        pDevIns->Internal.s.pDut          = pDut;
         pDevIns->cbRing3                  = cb;
-        //pDevIns->fR0Enabled             = false;
-        //pDevIns->fRCEnabled             = false;
+        pDevIns->fR0Enabled               = fR0Enabled;
+        pDevIns->fRCEnabled               = fRCEnabled;
         pDevIns->pvInstanceDataR3         = (uint8_t *)pDevIns + offShared;
         pDevIns->pvInstanceDataForR3      = &pDevIns->achInstanceData[0];
         pCritSect = (PPDMCRITSECT)((uint8_t *)pDevIns + offShared + RT_ALIGN_32(pPdmDev->pReg->cbInstanceShared, 64));
@@ -893,14 +862,13 @@ static int tstDevPdmDevCreate(const char *pszName)
             pPciDev->u32Magic           = PDMPCIDEV_MAGIC;
         }
 
-        rc = pPdmDev->pReg->pfnConstruct(pDevIns, 0, &Cfg);
+        rc = pPdmDev->pReg->pfnConstruct(pDevIns, 0, pDevIns->pCfg);
         if (RT_SUCCESS(rc))
+            pDut->pDevIns = pDevIns;
+        else
         {
-            PRTDEVDUTIOPORT pIoPort = RTListGetFirst(&Dut.LstIoPorts, RTDEVDUTIOPORT, NdIoPorts);
-            uint32_t uVal = 0;
-            /*PDMCritSectEnter(pDevIns->pCritSectRoR3, VERR_IGNORED);*/
-            pIoPort->pfnInR0(pDevIns, pIoPort->pvUserR0, pIoPort->PortStart, &uVal, sizeof(uint8_t));
-            /*PDMCritSectLeave(pDevIns->pCritSectRoR3);*/
+            rc = pPdmDev->pReg->pfnDestruct(pDevIns);
+            RTMemFree(pDevIns);
         }
     }
     else
@@ -908,6 +876,51 @@ static int tstDevPdmDevCreate(const char *pszName)
 
     return rc;
 }
+
+
+/**
+ * Run a given test config.
+ *
+ * @returns VBox status code.
+ * @param   pDevTstCfg          The test config to run.
+ */
+static int tstDevTestsRun(PCTSTDEVCFG pDevTstCfg)
+{
+    int rc = VINF_SUCCESS;
+
+    for (uint32_t i = 0; i < pDevTstCfg->cTests; i++)
+    {
+        PCTSTDEVTEST pTest = &pDevTstCfg->aTests[i];
+
+        TSTDEVDUTINT Dut;
+        Dut.pTest           = pTest;
+        Dut.enmCtx          = TSTDEVDUTCTX_R3;
+        Dut.pVm             = NULL;
+        Dut.SupSession.pDut = &Dut;
+        Dut.Cfg.pDut        = &Dut;
+        RTListInit(&Dut.LstIoPorts);
+        RTListInit(&Dut.LstTimers);
+        RTListInit(&Dut.LstMmHeap);
+        RTListInit(&Dut.LstPdmThreads);
+        RTListInit(&Dut.LstSsmHandlers);
+        RTListInit(&Dut.SupSession.LstSupSem);
+
+        rc = RTCritSectRwInit(&Dut.CritSectLists);
+        AssertRC(rc);
+
+        rc = RTCritSectInitEx(&Dut.CritSectNop.s.CritSect, RTCRITSECT_FLAGS_NOP, NIL_RTLOCKVALCLASS, RTLOCKVAL_SUB_CLASS_NONE, "DutNop");
+        AssertRC(rc);
+
+        rc = tstDevPdmDevCreate(pDevTstCfg->pszDevName, pTest->fR0Enabled, pTest->fRCEnabled, &Dut);
+        if (RT_SUCCESS(rc))
+        {
+            /** @todo Next */
+        }
+    }
+
+    return rc;
+}
+
 
 int main(int argc, char *argv[])
 {
@@ -923,19 +936,32 @@ int main(int argc, char *argv[])
         RTListInit(&g_LstPdmMods);
         RTListInit(&g_LstPdmDevs);
 
-        rc = tstDevLoadPlugin("TSTDevTestcases");
-        if (RT_SUCCESS(rc) || true)
+        PCTSTDEVCFG pDevTstCfg = NULL;
+        rc = tstDevCfgLoad(argv[1], NULL, &pDevTstCfg);
+        if (RT_SUCCESS(rc))
         {
-            rc = tstDevPdmLoadMod(argv[1], TSTDEVPDMMODTYPE_R3);
+            if (pDevTstCfg->pszTstDevMod)
+                rc = tstDevLoadPlugin(pDevTstCfg->pszTstDevMod);
             if (RT_SUCCESS(rc))
-                rc = tstDevPdmDevCreate("serial");
+            {
+                rc = tstDevPdmLoadMod(pDevTstCfg->pszPdmR3Mod, TSTDEVPDMMODTYPE_R3);
+                if (   RT_SUCCESS(rc)
+                    && pDevTstCfg->pszPdmR0Mod)
+                    rc = tstDevPdmLoadMod(pDevTstCfg->pszPdmR0Mod, TSTDEVPDMMODTYPE_R0);
+                if (   RT_SUCCESS(rc)
+                    && pDevTstCfg->pszPdmRCMod)
+                    rc = tstDevPdmLoadMod(pDevTstCfg->pszPdmRCMod, TSTDEVPDMMODTYPE_RC);
+
+                if (RT_SUCCESS(rc))
+                    rc = tstDevTestsRun(pDevTstCfg);
+                else
+                    rcExit = RTEXITCODE_FAILURE;
+            }
             else
                 rcExit = RTEXITCODE_FAILURE;
         }
-        else
-            rcExit = RTEXITCODE_FAILURE;
 
-        //rcExit = tstDevParseOptions(argc, argv);
+        tstDevCfgDestroy(pDevTstCfg);
     }
     else
         rcExit = RTEXITCODE_FAILURE;
