@@ -395,6 +395,8 @@ protected:
     /** Handles translation event. */
     virtual void retranslateUi() /* override */
     {
+        /// @todo replace that one with separate "New" before 6.2
+        setIconText(QApplication::translate("UIActionPool", "&New...").remove('.'));
         setName(QApplication::translate("UIActionPool", "&New Machine..."));
         setStatusTip(QApplication::translate("UIActionPool", "Create new virtual machine"));
         setToolTip(simplifyText(text()) + (shortcut().isEmpty() ? QString() : QString(" (%1)").arg(shortcut().toString())));

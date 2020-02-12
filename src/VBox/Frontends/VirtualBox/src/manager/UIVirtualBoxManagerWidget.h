@@ -214,6 +214,9 @@ private:
     UISlidingAnimation *m_pSlidingAnimation;
     /** Holds the Tools-pane instance. */
     UITools            *m_pPaneTools;
+
+    /** Holds whether last time single group item was selected exclusively. */
+    bool  m_fSingleGroupSelected;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_manager_UIVirtualBoxManagerWidget_h */
