@@ -129,6 +129,9 @@ private slots:
 
         /** Handles current snapshot item change. */
         void sltCurrentSnapshotItemChange();
+
+        /** Handles state change for cloud machine with specified @a strMachineId. */
+        void sltHandleCloudMachineStateChange(const QString strMachineId);
     /** @} */
 
     /** @name CVirtualBox event handling stuff.

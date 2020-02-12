@@ -58,6 +58,12 @@ signals:
         void sigToolMenuRequested(UIToolClass enmClass, const QPoint &position);
     /** @} */
 
+    /** @name Cloud machine stuff.
+      * @{ */
+        /** Notifies about state change for cloud machine with certain @a strId. */
+        void sigCloudMachineStateChange(const QString &strId);
+    /** @} */
+
     /** @name Group saving stuff.
       * @{ */
         /** Notifies listeners about group saving state change. */

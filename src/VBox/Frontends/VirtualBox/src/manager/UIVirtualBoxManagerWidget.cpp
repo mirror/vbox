@@ -370,6 +370,9 @@ void UIVirtualBoxManagerWidget::prepareWidgets()
             m_pPaneChooser = new UIChooser(this);
             if (m_pPaneChooser)
             {
+                /* Configure Chooser-pane: */
+                connect(m_pPaneChooser, &UIChooser::sigCloudMachineStateChange,
+                        this, &UIVirtualBoxManagerWidget::sigCloudMachineStateChange);
                 /* Add into splitter: */
                 m_pSplitter->addWidget(m_pPaneChooser);
             }

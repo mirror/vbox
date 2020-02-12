@@ -349,6 +349,11 @@ void UIVirtualBoxManager::sltCurrentSnapshotItemChange()
     updateActionsAppearance();
 }
 
+void UIVirtualBoxManager::sltHandleCloudMachineStateChange(const QString /* strMachineId */)
+{
+    updateActionsAppearance();
+}
+
 void UIVirtualBoxManager::sltHandleStateChange(const QUuid &)
 {
     updateActionsAppearance();
@@ -1351,6 +1356,8 @@ void UIVirtualBoxManager::prepareWidgets()
                 this, &UIVirtualBoxManager::sigCloudProfileManagerChange);
         connect(m_pWidget, &UIVirtualBoxManagerWidget::sigCurrentSnapshotItemChange,
                 this, &UIVirtualBoxManager::sltCurrentSnapshotItemChange);
+        connect(m_pWidget, &UIVirtualBoxManagerWidget::sigCloudMachineStateChange,
+                this, &UIVirtualBoxManager::sltHandleCloudMachineStateChange);
         setCentralWidget(m_pWidget);
     }
 }

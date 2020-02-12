@@ -65,6 +65,9 @@ signals:
     /** Notifies listeners about current Snapshots pane item change. */
     void sigCurrentSnapshotItemChange();
 
+    /** Notifies about state change for cloud machine with certain @a strMachineId. */
+    void sigCloudMachineStateChange(const QString &strMachineId);
+
 public:
 
     /** Constructs VirtualBox Manager widget. */

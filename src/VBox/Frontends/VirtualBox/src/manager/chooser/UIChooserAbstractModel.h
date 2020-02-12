@@ -49,6 +49,12 @@ class UIChooserAbstractModel : public QObject
 
 signals:
 
+    /** @name Cloud machine stuff.
+      * @{ */
+        /** Notifies about state change for cloud machine with certain @a strId. */
+        void sigCloudMachineStateChange(const QString &strId);
+    /** @} */
+
     /** @name Group saving stuff.
       * @{ */
         /** Commands to start group saving. */
@@ -103,7 +109,13 @@ public:
 
 public slots:
 
-   /** @name Group saving stuff.
+    /** @name Cloud machine stuff.
+      * @{ */
+        /** Handles cloud machine state change. */
+        void sltHandleCloudMachineStateChange();
+    /** @} */
+
+    /** @name Group saving stuff.
       * @{ */
         /** Handles group definition saving complete. */
         void sltGroupDefinitionsSaveComplete();

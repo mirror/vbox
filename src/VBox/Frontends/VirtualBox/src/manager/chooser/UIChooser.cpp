@@ -168,6 +168,8 @@ void UIChooser::prepareConnections()
             m_pChooserView, &UIChooserView::sltMinimumWidthHintChanged);
     connect(m_pChooserModel, &UIChooserModel::sigToolMenuRequested,
             this, &UIChooser::sltToolMenuRequested);
+    connect(m_pChooserModel, &UIChooserModel::sigCloudMachineStateChange,
+            this, &UIChooser::sigCloudMachineStateChange);
 
     /* Setup chooser-view connections: */
     connect(m_pChooserView, &UIChooserView::sigResized,

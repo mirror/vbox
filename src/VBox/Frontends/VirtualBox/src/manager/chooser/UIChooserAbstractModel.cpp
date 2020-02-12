@@ -308,6 +308,13 @@ void UIChooserAbstractModel::sltHandleCloudAcquireInstancesTaskComplete(UITask *
 }
 #endif /* VBOX_GUI_WITH_CLOUD_VMS */
 
+void UIChooserAbstractModel::sltHandleCloudMachineStateChange()
+{
+    UIVirtualMachineItem *pCache = qobject_cast<UIVirtualMachineItem*>(sender());
+    AssertPtrReturnVoid(pCache);
+    sigCloudMachineStateChange(pCache->id());
+}
+
 void UIChooserAbstractModel::sltGroupDefinitionsSaveComplete()
 {
     makeSureGroupDefinitionsSaveIsFinished();
