@@ -225,7 +225,7 @@ DECLINLINE(void) virtioWriteUsedElem(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, ui
                           &elem, sizeof(elem));
 }
 
-DECLINLINE(void) virtioWriteUsedFlags(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t idxQueue, uint16_t fFlags)
+DECLINLINE(void) virtioWriteUsedRingFlags(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t idxQueue, uint16_t fFlags)
 {
     AssertMsg(pVirtio->uDeviceStatus & VIRTIO_STATUS_DRIVER_OK, ("Called with guest driver not ready\n"));
     RT_UNTRUSTED_VALIDATED_FENCE(); /* VirtIO 1.0, Section 3.2.1.4.1 */
@@ -255,7 +255,7 @@ DECLINLINE(uint16_t) virtioReadUsedRingIdx(PPDMDEVINS pDevIns, PVIRTIOCORE pVirt
 }
 #endif
 
-DECLINLINE(uint16_t) virtioReadUsedFlags(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t idxQueue)
+DECLINLINE(uint16_t) virtioReadUsedRingFlags(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t idxQueue)
 {
     uint16_t fFlags = 0;
     AssertMsg(pVirtio->uDeviceStatus & VIRTIO_STATUS_DRIVER_OK, ("Called with guest driver not ready\n"));
@@ -680,14 +680,14 @@ void virtioCoreQueueSetNotify(PVIRTIOCORE pVirtio, uint16_t idxQueue, bool fEnab
 {
     if (pVirtio->uDeviceStatus & VIRTIO_STATUS_DRIVER_OK)
     {
-        uint16_t fFlags = virtioReadUsedFlags(pVirtio->pDevIns, pVirtio, idxQueue);
+        uint16_t fFlags = virtioReadUsedRingFlags(pVirtio->pDevIns, pVirtio, idxQueue);
 
         if (fEnabled)
             fFlags &= ~ VIRTQ_USED_F_NO_NOTIFY;
         else
             fFlags |= VIRTQ_USED_F_NO_NOTIFY;
 
-        virtioWriteUsedFlags(pVirtio->pDevIns, pVirtio, idxQueue, fFlags);
+        virtioWriteUsedRingFlags(pVirtio->pDevIns, pVirtio, idxQueue, fFlags);
     }
 }
 
@@ -1013,7 +1013,7 @@ static void virtioNotifyGuestDriver(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uin
     else
     {
         /** If guest driver hasn't suppressed interrupts, interrupt  */
-        if (fForce || !(virtioReadUsedFlags(pDevIns, pVirtio, idxQueue) & VIRTQ_AVAIL_F_NO_INTERRUPT))
+        if (fForce || !(virtioReadUsedRingFlags(pDevIns, pVirtio, idxQueue) & VIRTQ_AVAIL_F_NO_INTERRUPT))
         {
             virtioKick(pDevIns, pVirtio, VIRTIO_ISR_VIRTQ_INTERRUPT, pVirtio->uQueueMsixVector[idxQueue], fForce);
             return;

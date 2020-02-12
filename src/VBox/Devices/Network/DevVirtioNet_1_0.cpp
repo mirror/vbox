@@ -1055,31 +1055,45 @@ void virtioNetR3SetWriteLed(PVIRTIONETR3 pThisR3, bool fOn)
  */
 static int virtioNetR3IsRxQueuePrimed(PPDMDEVINS pDevIns, PVIRTIONET pThis, uint16_t idxQueue)
 {
-    int rc;
-
-    LogFunc(("%s %s\n", INSTANCE(pThis), VIRTQNAME(idxQueue)));
+#define LOGPARAMS INSTANCE(pThis), VIRTQNAME(idxQueue)
 
     if (!pThis->fVirtioReady)
-        rc = VERR_NET_NO_BUFFER_SPACE;
-
+    {
+        LogFunc(("%s %s VirtIO not ready (rc = VERR_NET_NO_BUFFER_SPACE)\n", LOGPARAMS));
+    }
     else if (!virtioCoreIsQueueEnabled(&pThis->Virtio, RXQIDX_QPAIR(idxQueue)))
-        rc = VERR_NET_NO_BUFFER_SPACE;
-
+    {
+        LogFunc(("%s %s queue not enabled (rc = VERR_NET_NO_BUFFER_SPACE)\n", LOGPARAMS));
+    }
     else if (virtioCoreQueueIsEmpty(pDevIns, &pThis->Virtio, RXQIDX_QPAIR(idxQueue)))
     {
+        LogFunc(("%s %s queue is empty (rc = VERR_NET_NO_BUFFER_SPACE)\n", LOGPARAMS));
         virtioCoreQueueSetNotify(&pThis->Virtio, RXQIDX_QPAIR(idxQueue), true);
-        rc = VERR_NET_NO_BUFFER_SPACE;
     }
     else
     {
+        LogFunc(("%s %s ready with available buffers\n", LOGPARAMS));
         virtioCoreQueueSetNotify(&pThis->Virtio, RXQIDX_QPAIR(idxQueue), false);
-        rc = VINF_SUCCESS;
+        return VINF_SUCCESS;
     }
-
-    LogFlowFunc(("%s idxQueue = %d -> %Rrc\n", INSTANCE(pThis), idxQueue, rc));
-    return rc;
+    return VERR_NET_NO_BUFFER_SPACE;
 }
 
+
+static bool virtioNetR3AreRxBufsAvail(PPDMDEVINS pDevIns, PVIRTIONET pThis)
+{
+    /** @todo If we ever start using more than one Rx/Tx queue pair, is a random queue
+              selection algorithm feasible or even necessary to prevent starvation? */
+    for (int idxQueue = 0; idxQueue < pThis->cVirtQueues; idxQueue += 2) /* Skip odd queue #'s because Rx queues only! */
+    {
+        if (!IS_RX_QUEUE(idxQueue))
+            continue;
+
+        if (RT_SUCCESS(virtioNetR3IsRxQueuePrimed(pDevIns, pThis, idxQueue)))
+            return true;
+    }
+    return false;
+}
 /*
  * Returns true if VirtIO core and device are in a running and operational state
  */
@@ -1107,12 +1121,11 @@ static DECLCALLBACK(int) virtioNetR3NetworkDown_WaitReceiveAvail(PPDMINETWORKDOW
     PPDMDEVINS   pDevIns = pThisCC->pDevIns;
     PVIRTIONET   pThis   = PDMDEVINS_2_DATA(pDevIns, PVIRTIONET);
 
-    if (!virtioNetAllSystemsGo(pThis, pDevIns))
+    if (virtioNetR3AreRxBufsAvail(pDevIns, pThis))
     {
-        LogFunc(("%s VirtIO not ready\n", INSTANCE(pThis)));
-        return VERR_NET_NO_BUFFER_SPACE;
+            LogFunc(("%s Rx bufs now available, releasing waiter...\n", INSTANCE(pThis)));
+            return VINF_SUCCESS;
     }
-
     if (!timeoutMs)
         return VERR_NET_NO_BUFFER_SPACE;
 
@@ -1120,25 +1133,16 @@ static DECLCALLBACK(int) virtioNetR3NetworkDown_WaitReceiveAvail(PPDMINETWORKDOW
 
     ASMAtomicXchgBool(&pThis->fLeafWantsRxBuffers, true);
 
-    /** @todo If we ever start using more than one Rx/Tx queue pair, is a random queue
-              selection algorithm feasible or even necessary to prevent starvation? */
     do {
-        for (int idxQueue = 0; idxQueue < pThis->cVirtQueues; idxQueue += 2) /* Skip odd queue #'s because Rx queues only! */
+        if (virtioNetR3AreRxBufsAvail(pDevIns, pThis))
         {
-            if (!IS_RX_QUEUE(idxQueue))
-                continue;
-
-            if (RT_SUCCESS(virtioNetR3IsRxQueuePrimed(pDevIns, pThis, idxQueue)))
-            {
-                LogFunc(("%s Rx bufs now available, releasing waiter...", INSTANCE(pThis)));
+                LogFunc(("%s Rx bufs now available, releasing waiter...\n", INSTANCE(pThis)));
                 return VINF_SUCCESS;
-            }
         }
         LogFunc(("%s Starved for guest Rx bufs, waiting %u ms ...\n",
                  INSTANCE(pThis), timeoutMs));
 
-        int rc = PDMDevHlpSUPSemEventWaitNoResume(pDevIns,
-                        pThis->hEventRxDescAvail, timeoutMs);
+        int rc = PDMDevHlpSUPSemEventWaitNoResume(pDevIns, pThis->hEventRxDescAvail, timeoutMs);
 
         if (rc == VERR_TIMEOUT || rc == VERR_INTERRUPTED)
             continue;
@@ -1454,11 +1458,10 @@ static int virtioNetR3HandleRxPacket(PPDMDEVINS pDevIns, PVIRTIONET pThis, PVIRT
 static DECLCALLBACK(int) virtioNetR3NetworkDown_ReceiveGso(PPDMINETWORKDOWN pInterface, const void *pvBuf,
                                                size_t cb, PCPDMNETWORKGSO pGso)
 {
+LogFunc(("\n"));
     PVIRTIONETCC    pThisCC = RT_FROM_MEMBER(pInterface, VIRTIONETCC, INetworkDown);
     PPDMDEVINS      pDevIns = pThisCC->pDevIns;
     PVIRTIONET      pThis   = PDMDEVINS_2_DATA(pDevIns, PVIRTIONET);
-
-    LogFunc(("%s\n", pThis));
 
     if (!pThis->fVirtioReady)
     {
@@ -2067,7 +2070,7 @@ static DECLCALLBACK(void) virtioNetR3NetworkDown_XmitPending(PPDMINETWORKDOWN pI
 
     /** @todo If we ever start using more than one Rx/Tx queue pair, is a random queue
           selection algorithm feasible or even necessary */
-
+    LogFunc(("\n"));
     virtioNetR3TransmitPendingPackets(pDevIns, pThis, pThisCC, TXQIDX_QPAIR(0), false /*fOnWorkerThread*/);
 }
 
@@ -2624,8 +2627,7 @@ static DECLCALLBACK(int) virtioNetR3Construct(PPDMDEVINS pDevIns, int iInstance,
 
     /* Initialize the generic Virtio core: */
     pThisCC->Virtio.pfnStatusChanged        = virtioNetR3StatusChanged;
-    pThisCC->Virtio.pfnQueueNotified        = virtioNetR3QueueNotified
-    ;
+    pThisCC->Virtio.pfnQueueNotified        = virtioNetR3QueueNotified;
     pThisCC->Virtio.pfnDevCapRead           = virtioNetR3DevCapRead;
     pThisCC->Virtio.pfnDevCapWrite          = virtioNetR3DevCapWrite;
 
