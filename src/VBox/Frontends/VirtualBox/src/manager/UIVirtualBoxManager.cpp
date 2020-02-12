@@ -1866,6 +1866,10 @@ bool UIVirtualBoxManager::isActionEnabled(int iActionIndex, const QList<UIVirtua
     switch (iActionIndex)
     {
         case UIActionIndexST_M_Group_S_New:
+        {
+            return !isGroupSavingInProgress() &&
+                   isSingleGroupSelected();
+        }
         case UIActionIndexST_M_Group_S_Add:
         case UIActionIndexST_M_Group_S_Sort:
         {
