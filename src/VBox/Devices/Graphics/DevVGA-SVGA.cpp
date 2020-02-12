@@ -5533,6 +5533,35 @@ static DECLCALLBACK(void) vmsvgaR3Info(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, c
         pHlp->pfnPrintf(pHlp, "Driver mode:        %ux%u %ubpp\n", pThisCC->pDrv->cx, pThisCC->pDrv->cy, pThisCC->pDrv->cBits);
         pHlp->pfnPrintf(pHlp, "Driver pitch:       %u (%#x)\n", pThisCC->pDrv->cbScanline, pThisCC->pDrv->cbScanline);
     }
+
+    /* Dump screen information. */
+    for (unsigned iScreen = 0; iScreen < RT_ELEMENTS(pSVGAState->aScreens); ++iScreen)
+    {
+        VMSVGASCREENOBJECT *pScreen = vmsvgaR3GetScreenObject(pThisCC, iScreen);
+        if (pScreen)
+        {
+            pHlp->pfnPrintf(pHlp, "Screen %u defined (ID %u):\n", iScreen, pScreen->idScreen);
+            pHlp->pfnPrintf(pHlp, "  %u x %u x %ubpp @ %u, %u\n", pScreen->cWidth, pScreen->cHeight,
+                            pScreen->cBpp, pScreen->xOrigin, pScreen->yOrigin);
+            pHlp->pfnPrintf(pHlp, "  Pitch %u bytes, VRAM offset %X\n", pScreen->cbPitch, pScreen->offVRAM);
+            pHlp->pfnPrintf(pHlp, "  Flags %X", pScreen->fuScreen);
+            if (pScreen->fuScreen != SVGA_SCREEN_MUST_BE_SET)
+            {
+                pHlp->pfnPrintf(pHlp, " (");
+                if (pScreen->fuScreen & SVGA_SCREEN_IS_PRIMARY)
+                    pHlp->pfnPrintf(pHlp, " IS_PRIMARY");
+                if (pScreen->fuScreen & SVGA_SCREEN_FULLSCREEN_HINT)
+                    pHlp->pfnPrintf(pHlp, " FULLSCREEN_HINT");
+                if (pScreen->fuScreen & SVGA_SCREEN_DEACTIVATE)
+                    pHlp->pfnPrintf(pHlp, " DEACTIVATE");
+                if (pScreen->fuScreen & SVGA_SCREEN_BLANKING)
+                    pHlp->pfnPrintf(pHlp, " BLANKING");
+                pHlp->pfnPrintf(pHlp, " )");
+            }
+            pHlp->pfnPrintf(pHlp, ", %smodified\n", pScreen->fModified ? "" : "not ");
+        }
+    }
+
 }
 
 /**
