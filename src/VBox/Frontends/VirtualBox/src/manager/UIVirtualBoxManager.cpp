@@ -36,6 +36,7 @@
 #include "UIVirtualBoxManagerWidget.h"
 #include "UISettingsDialogSpecific.h"
 #include "UIVMLogViewerDialog.h"
+#include "UIVirtualMachineItemCloud.h"
 #include "UIVirtualMachineItemLocal.h"
 #ifdef VBOX_GUI_WITH_NETWORK_MANAGER
 # include "UIUpdateManager.h"
@@ -845,28 +846,40 @@ void UIVirtualBoxManager::sltPerformPauseOrResumeMachine(bool fPause)
              enmState == KMachineState_LiveSnapshotting))
             continue;
 
-        /* Open a session to modify VM state: */
-        CSession comSession = uiCommon().openExistingSession(pItem->id());
-        if (comSession.isNull())
-            return;
+        /* For local machine: */
+        if (pItem->itemType() == UIVirtualMachineItem::ItemType_Local)
+        {
+            /* Open a session to modify VM state: */
+            CSession comSession = uiCommon().openExistingSession(pItem->id());
+            if (comSession.isNull())
+                return;
 
-        /* Get session console: */
-        CConsole comConsole = comSession.GetConsole();
-        /* Pause/resume VM: */
-        if (fPause)
-            comConsole.Pause();
-        else
-            comConsole.Resume();
-        if (!comConsole.isOk())
+            /* Get session console: */
+            CConsole comConsole = comSession.GetConsole();
+            /* Pause/resume VM: */
+            if (fPause)
+                comConsole.Pause();
+            else
+                comConsole.Resume();
+            if (!comConsole.isOk())
+            {
+                if (fPause)
+                    msgCenter().cannotPauseMachine(comConsole);
+                else
+                    msgCenter().cannotResumeMachine(comConsole);
+            }
+
+            /* Unlock machine finally: */
+            comSession.UnlockMachine();
+        }
+        /* For real cloud machine: */
+        else if (pItem->itemType() == UIVirtualMachineItem::ItemType_CloudReal)
         {
             if (fPause)
-                msgCenter().cannotPauseMachine(comConsole);
+                pItem->toCloud()->pause(this);
             else
-                msgCenter().cannotResumeMachine(comConsole);
+                pItem->toCloud()->resume(this);
         }
-
-        /* Unlock machine finally: */
-        comSession.UnlockMachine();
     }
 }
 
@@ -1966,8 +1979,7 @@ bool UIVirtualBoxManager::isActionEnabled(int iActionIndex, const QList<UIVirtua
         case UIActionIndexST_M_Group_T_Pause:
         case UIActionIndexST_M_Machine_T_Pause:
         {
-            return isItemsLocal(items) &&
-                   isAtLeastOneItemStarted(items);
+            return isAtLeastOneItemStarted(items);
         }
         case UIActionIndexST_M_Group_S_Reset:
         case UIActionIndexST_M_Machine_S_Reset:

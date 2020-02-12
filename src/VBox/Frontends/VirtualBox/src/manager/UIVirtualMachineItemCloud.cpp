@@ -127,6 +127,47 @@ QString UIVirtualMachineItemCloud::acquireInstanceInfo(KVirtualSystemDescription
     /* Return null string by default: */
     return QString();
 }
+
+void UIVirtualMachineItemCloud::pause(QWidget *pParent)
+{
+    pauseOrResume(true /* pause? */, pParent);
+}
+
+void UIVirtualMachineItemCloud::resume(QWidget *pParent)
+{
+    pauseOrResume(false /* pause? */, pParent);
+}
+
+void UIVirtualMachineItemCloud::pauseOrResume(bool fPause, QWidget *pParent)
+{
+    /* Acquire cloud client: */
+    CCloudClient comCloudClient = m_pCloudMachine->client();
+
+    /* Now execute async method: */
+    CProgress comProgress;
+    if (fPause)
+        comProgress = comCloudClient.PauseInstance(m_strId);
+    else
+        comProgress = comCloudClient.StartInstance(m_strId);
+    if (!comCloudClient.isOk())
+        msgCenter().cannotAcquireCloudClientParameter(comCloudClient);
+    else
+    {
+        /* Show progress: */
+        /// @todo use proper pause icon
+        if (fPause)
+            msgCenter().showModalProgressDialog(comProgress, UICommon::tr("Pause instance ..."),
+                                                ":/progress_reading_appliance_90px.png", pParent, 0);
+        else
+            msgCenter().showModalProgressDialog(comProgress, UICommon::tr("Start instance ..."),
+                                                ":/progress_start_90px.png", pParent, 0);
+        if (!comProgress.isOk() || comProgress.GetResultCode() != 0)
+            msgCenter().cannotAcquireCloudClientParameter(comProgress);
+        else
+            updateState(pParent);
+    }
+}
+
 void UIVirtualMachineItemCloud::recache()
 {
     /* Determine attributes which are always available: */
