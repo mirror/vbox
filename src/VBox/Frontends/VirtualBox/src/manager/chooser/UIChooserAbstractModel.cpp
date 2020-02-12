@@ -365,6 +365,9 @@ void UIChooserAbstractModel::loadTree()
                                                   true /* opened */);
     if (invisibleRoot())
     {
+        /* Link root to this model: */
+        m_pInvisibleRootNode->setModel(this);
+
         /* Create global node: */
         new UIChooserNodeGlobal(m_pInvisibleRootNode,
                                 isGlobalNodeFavorite(m_pInvisibleRootNode),

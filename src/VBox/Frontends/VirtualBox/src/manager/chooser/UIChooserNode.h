@@ -32,6 +32,7 @@
 #include "UIChooserItem.h"
 
 /* Forward declaration: */
+class UIChooserAbstractModel;
 class UIChooserNodeGroup;
 class UIChooserNodeGlobal;
 class UIChooserNodeMachine;
@@ -66,11 +67,18 @@ public:
     UIChooserNode *parentNode() const {  return m_pParent; }
     /** Returns whether node is of root kind. */
     bool isRoot() const { return !m_pParent; }
+    /** Returns root node reference. */
+    UIChooserNode *rootNode() const;
 
     /** Returns whether the node is favorite. */
     bool isFavorite() const { return m_fFavorite; }
     /** Defines whether the node is @a fFavorite. */
     void setFavorite(bool fFavorite) { m_fFavorite = fFavorite; }
+
+    /** Defines the @a pModel reference. */
+    void setModel(UIChooserAbstractModel *pModel) { m_pModel = pModel; }
+    /** Returns the model reference. */
+    UIChooserAbstractModel *model() const;
 
     /** Returns node name. */
     virtual QString name() const = 0;
@@ -128,6 +136,9 @@ protected:
     UIChooserNode  *m_pParent;
     /** Holds whether the node is favorite. */
     bool            m_fFavorite;
+
+    /** Holds the model reference. */
+    UIChooserAbstractModel *m_pModel;
 
     /** Holds the linked item reference. */
     QPointer<UIChooserItem>  m_pItem;

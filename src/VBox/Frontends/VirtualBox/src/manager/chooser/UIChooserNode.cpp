@@ -21,11 +21,15 @@
 #include "UIChooserNodeGlobal.h"
 #include "UIChooserNodeMachine.h"
 
+/* Other VBox includes: */
+#include "iprt/cpp/utils.h"
+
 
 UIChooserNode::UIChooserNode(UIChooserNode *pParent /* = 0 */, bool fFavorite /* = false */)
     : QIWithRetranslateUI3<QObject>(pParent)
     , m_pParent(pParent)
     , m_fFavorite(fFavorite)
+    , m_pModel(0)
     , m_fDisabled(false)
 {
 }
@@ -49,6 +53,16 @@ UIChooserNodeGlobal *UIChooserNode::toGlobalNode()
 UIChooserNodeMachine *UIChooserNode::toMachineNode()
 {
     return static_cast<UIChooserNodeMachine*>(this);
+}
+
+UIChooserNode *UIChooserNode::rootNode() const
+{
+    return isRoot() ? unconst(this) : parentNode()->rootNode();
+}
+
+UIChooserAbstractModel *UIChooserNode::model() const
+{
+    return m_pModel ? m_pModel : rootNode()->model();
 }
 
 int UIChooserNode::position()
