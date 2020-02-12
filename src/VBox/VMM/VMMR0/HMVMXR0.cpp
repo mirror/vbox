@@ -4154,6 +4154,12 @@ static int hmR0VmxSetupVmcs(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcsInfo, bool fIsNstG
         rc = hmR0VmxLoadVmcs(pVmcsInfo);
         if (RT_SUCCESS(rc))
         {
+            /*
+             * Initialize the hardware-assisted VMX execution handler for guest and nested-guest VMCS.
+             * The host is always 64-bit since we no longer support 32-bit hosts.
+             * Currently we have just a single handler for all guest modes as well, see @bugref{6208#c73}.
+             */
+            pVmcsInfo->pfnStartVM = VMXR0StartVM64;
             if (!fIsNstGstVmcs)
             {
                 rc = hmR0VmxSetupVmcsPinCtls(pVCpu, pVmcsInfo);
@@ -4851,17 +4857,6 @@ static int hmR0VmxExportGuestEntryExitCtls(PVMCPUCC pVCpu, PCVMXTRANSIENT pVmxTr
     {
         PVMCC pVM = pVCpu->CTX_SUFF(pVM);
         PVMXVMCSINFO pVmcsInfo      = pVmxTransient->pVmcsInfo;
-        bool const   fGstInLongMode = CPUMIsGuestInLongModeEx(&pVCpu->cpum.GstCtx);
-
-        /*
-         * VMRUN function.
-         * If the guest supports long mode, always use the 64-bit guest handler, see @bugref{6208#c73}.
-         * The host is always 64-bit since we no longer support 32-bit hosts.
-         */
-        if (pVM->hm.s.fAllow64BitGuests)
-            pVmcsInfo->pfnStartVM = VMXR0StartVM64;
-        else
-            pVmcsInfo->pfnStartVM = VMXR0StartVM32;
 
         /*
          * VM-entry controls.
@@ -4888,7 +4883,7 @@ static int hmR0VmxExportGuestEntryExitCtls(PVMCPUCC pVCpu, PCVMXTRANSIENT pVmxTr
              * can skip intercepting changes to the EFER MSR. This is why it it needs to be done
              * here rather than while merging the guest VMCS controls.
              */
-            if (fGstInLongMode)
+            if (CPUMIsGuestInLongModeEx(&pVCpu->cpum.GstCtx))
             {
                 Assert(pVCpu->cpum.GstCtx.msrEFER & MSR_K6_EFER_LME);
                 fVal |= VMX_ENTRY_CTLS_IA32E_MODE_GUEST;
