@@ -43,6 +43,7 @@
 #include <iprt/mem.h>
 #include <iprt/param.h>
 #include <iprt/process.h>
+#include <iprt/semaphore.h>
 #include <iprt/string.h>
 #include <iprt/thread.h>
 #include "internal/memobj.h"
@@ -71,6 +72,52 @@ typedef struct RTR0MEMOBJDARWIN
     /** Pointer to the memory mapping object for mapped memory. */
     IOMemoryMap        *pMemMap;
 } RTR0MEMOBJDARWIN, *PRTR0MEMOBJDARWIN;
+
+/**
+ * Common thread_call_allocate/thread_call_enter argument package.
+ */
+typedef struct RTR0MEMOBJDARWINTHREADARGS
+{
+    int32_t volatile        rc;
+    RTSEMEVENTMULTI         hEvent;
+} RTR0MEMOBJDARWINTHREADARGS;
+
+
+/**
+ * Arguments for rtR0MemObjNativeAllockWorkOnKernelThread.
+ */
+typedef struct RTR0MEMOBJDARWINALLOCARGS
+{
+    RTR0MEMOBJDARWINTHREADARGS Core;
+    PPRTR0MEMOBJINTERNAL    ppMem;
+    size_t                  cb;
+    bool                    fExecutable;
+    bool                    fContiguous;
+    mach_vm_address_t       PhysMask;
+    uint64_t                MaxPhysAddr;
+    RTR0MEMOBJTYPE          enmType;
+    size_t                  uAlignment;
+} RTR0MEMOBJDARWINALLOCARGS;
+
+/**
+ * Arguments for rtR0MemObjNativeProtectWorkOnKernelThread.
+ */
+typedef struct RTR0MEMOBJDARWINPROTECTARGS
+{
+    RTR0MEMOBJDARWINTHREADARGS Core;
+    PRTR0MEMOBJINTERNAL     pMem;
+    size_t                  offSub;
+    size_t                  cbSub;
+    uint32_t                fProt;
+} RTR0MEMOBJDARWINPROTECTARGS;
+
+
+/*********************************************************************************************************************************
+*   Internal Functions                                                                                                           *
+*********************************************************************************************************************************/
+static void rtR0MemObjNativeAllockWorkerOnKernelThread(void *pvUser0, void *pvUser1);
+static int  rtR0MemObjNativeProtectWorker(PRTR0MEMOBJINTERNAL pMem, size_t offSub, size_t cbSub, uint32_t fProt);
+static void rtR0MemObjNativeProtectWorkerOnKernelThread(void *pvUser0, void *pvUser1);
 
 
 /**
@@ -439,6 +486,57 @@ DECLHIDDEN(int) rtR0MemObjNativeFree(RTR0MEMOBJ pMem)
 }
 
 
+/**
+ * This is a helper function to executes @a pfnWorker in the context of the
+ * kernel_task
+ *
+ * @returns IPRT status code - result from pfnWorker or dispatching error.
+ * @param   pfnWorker       The function to call.
+ * @param   pArgs           The arguments to pass to the function.
+ */
+static int rtR0MemObjDarwinDoInKernelTaskThread(thread_call_func_t pfnWorker, RTR0MEMOBJDARWINTHREADARGS *pArgs)
+{
+    pArgs->rc     = VERR_IPE_UNINITIALIZED_STATUS;
+    pArgs->hEvent = NIL_RTSEMEVENTMULTI;
+    int rc = RTSemEventMultiCreate(&pArgs->hEvent);
+    if (RT_SUCCESS(rc))
+    {
+        thread_call_t hCall = thread_call_allocate(pfnWorker, (void *)pArgs);
+        if (hCall)
+        {
+            boolean_t fRc = thread_call_enter(hCall);
+            AssertLogRel(fRc == FALSE);
+
+            rc = RTSemEventMultiWaitEx(pArgs->hEvent, RTSEMWAIT_FLAGS_INDEFINITE | RTSEMWAIT_FLAGS_UNINTERRUPTIBLE,
+                                       RT_INDEFINITE_WAIT);
+            AssertLogRelRC(rc);
+
+            rc = pArgs->rc;
+            thread_call_free(hCall);
+        }
+        else
+            rc = VERR_NO_MEMORY;
+        RTSemEventMultiDestroy(pArgs->hEvent);
+    }
+    return rc;
+}
+
+
+/**
+ * Signals result to thread waiting in rtR0MemObjDarwinDoInKernelTaskThread.
+ *
+ * @param   pArgs           The argument structure.
+ * @param   rc              The IPRT status code to signal.
+ */
+static void rtR0MemObjDarwinSignalThreadWaitinOnTask(RTR0MEMOBJDARWINTHREADARGS volatile *pArgs, int rc)
+{
+    if (ASMAtomicCmpXchgS32(&pArgs->rc, rc, VERR_IPE_UNINITIALIZED_STATUS))
+    {
+        rc = RTSemEventMultiSignal(pArgs->hEvent);
+        AssertLogRelRC(rc);
+    }
+}
+
 
 /**
  * Kernel memory alloc worker that uses inTaskWithPhysicalMask.
@@ -456,13 +554,39 @@ DECLHIDDEN(int) rtR0MemObjNativeFree(RTR0MEMOBJ pMem)
  *                          UINT64_MAX if it doesn't matter.
  * @param   enmType         The object type.
  * @param   uAlignment      The allocation alignment (in bytes).
+ * @param   fOnKernelThread Set if we're already on the kernel thread.
  */
 static int rtR0MemObjNativeAllocWorker(PPRTR0MEMOBJINTERNAL ppMem, size_t cb,
                                        bool fExecutable, bool fContiguous,
                                        mach_vm_address_t PhysMask, uint64_t MaxPhysAddr,
-                                       RTR0MEMOBJTYPE enmType, size_t uAlignment)
+                                       RTR0MEMOBJTYPE enmType, size_t uAlignment, bool fOnKernelThread)
 {
     int rc;
+
+    /*
+     * Because of process code signing properties leaking into kernel space in
+     * in XNU's vm_fault.c code, we have to defer allocations of exec memory to
+     * a thread running in the kernel_task to get consistent results here.
+     * Believing is trouble is caused by the page_nx() + exec check, it was
+     * introduced in 10.10.5 (or 10.11.0).
+     * (PS. Doubt this is in anyway intentional behaviour, but rather unforseen
+     * consequences from a pragmatic approach to modifying the complicate VM code.)
+     */
+    if (!fExecutable || fOnKernelThread)
+    { /* likely */ }
+    else
+    {
+        RTR0MEMOBJDARWINALLOCARGS Args;
+        Args.ppMem          = ppMem;
+        Args.cb             = cb;
+        Args.fExecutable    = fExecutable;
+        Args.fContiguous    = fContiguous;
+        Args.PhysMask       = PhysMask;
+        Args.MaxPhysAddr    = MaxPhysAddr;
+        Args.enmType        = enmType;
+        Args.uAlignment     = uAlignment;
+        return rtR0MemObjDarwinDoInKernelTaskThread(rtR0MemObjNativeAllockWorkerOnKernelThread, &Args.Core);
+    }
 
     /*
      * Try inTaskWithPhysicalMask first, but since we don't quite trust that it
@@ -493,6 +617,16 @@ static int rtR0MemObjNativeAllocWorker(PPRTR0MEMOBJINTERNAL ppMem, size_t cb,
     }
     if (version_major >= 12 /* 12 = 10.8.x = Mountain Kitten */)
         fOptions |= kIOMemoryMapperNone;
+
+#if __MAC_OS_X_VERSION_MAX_ALLOWED >= 1070 && 0 /* enable when/if necessary */
+    /* Paranoia: Don't misrepresent our intentions, we won't map kernel executable memory into ring-0. */
+    if (fExecutable && version_major >= 11 /* 10.7.x = Lion, as below */)
+    {
+        fOptions &= ~kIOMemoryKernelUserShared;
+        if (uAlignment < PAGE_SIZE)
+            uAlignment = PAGE_SIZE;
+    }
+#endif
 
     /* The public initWithPhysicalMask virtual method appeared in 10.7.0, in
        versions 10.5.0 up to 10.7.0 it was private, and 10.4.8-10.5.0 it was
@@ -617,25 +751,26 @@ static int rtR0MemObjNativeAllocWorker(PPRTR0MEMOBJINTERNAL ppMem, size_t cb,
                             AssertMsgFailed(("enmType=%d\n", enmType));
                     }
 
-#if 1 /* Experimental code. */
                     if (fExecutable)
                     {
-                        rc = rtR0MemObjNativeProtect(&pMemDarwin->Core, 0, cb, RTMEM_PROT_READ | RTMEM_PROT_WRITE | RTMEM_PROT_EXEC);
-# ifdef RT_STRICT
-                        /* check that the memory is actually mapped. */
-                        RTTHREADPREEMPTSTATE State2 = RTTHREADPREEMPTSTATE_INITIALIZER;
-                        RTThreadPreemptDisable(&State2);
-                        rtR0MemObjDarwinTouchPages(pv, cb);
-                        RTThreadPreemptRestore(&State2);
-# endif
-
+                        rc = rtR0MemObjNativeProtectWorker(&pMemDarwin->Core, 0, cb,
+                                                           RTMEM_PROT_READ | RTMEM_PROT_WRITE | RTMEM_PROT_EXEC);
+#ifdef RT_STRICT
+                        if (RT_SUCCESS(rc))
+                        {
+                            /* check that the memory is actually mapped. */
+                            RTTHREADPREEMPTSTATE State2 = RTTHREADPREEMPTSTATE_INITIALIZER;
+                            RTThreadPreemptDisable(&State2);
+                            rtR0MemObjDarwinTouchPages(pv, cb);
+                            RTThreadPreemptRestore(&State2);
+                        }
+#endif
                         /* Bug 6226: Ignore KERN_PROTECTION_FAILURE on Leopard and older. */
                         if (   rc == VERR_PERMISSION_DENIED
                             && version_major <= 10 /* 10 = 10.6.x = Snow Leopard. */)
                             rc = VINF_SUCCESS;
                     }
                     else
-#endif
                         rc = VINF_SUCCESS;
                     if (RT_SUCCESS(rc))
                     {
@@ -672,12 +807,25 @@ static int rtR0MemObjNativeAllocWorker(PPRTR0MEMOBJINTERNAL ppMem, size_t cb,
 }
 
 
+/**
+ * rtR0MemObjNativeAllocWorker kernel_task wrapper function.
+ */
+static void rtR0MemObjNativeAllockWorkerOnKernelThread(void *pvUser0, void *pvUser1)
+{
+    AssertPtr(pvUser0); Assert(pvUser1 == NULL); NOREF(pvUser1);
+    RTR0MEMOBJDARWINALLOCARGS volatile *pArgs = (RTR0MEMOBJDARWINALLOCARGS volatile *)pvUser0;
+    int rc = rtR0MemObjNativeAllocWorker(pArgs->ppMem, pArgs->cb, pArgs->fExecutable, pArgs->fContiguous, pArgs->PhysMask,
+                                         pArgs->MaxPhysAddr, pArgs->enmType, pArgs->uAlignment, true /*fOnKernelThread*/);
+    rtR0MemObjDarwinSignalThreadWaitinOnTask(&pArgs->Core, rc);
+}
+
+
 DECLHIDDEN(int) rtR0MemObjNativeAllocPage(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, bool fExecutable)
 {
     IPRT_DARWIN_SAVE_EFL_AC();
 
-    int rc = rtR0MemObjNativeAllocWorker(ppMem, cb, fExecutable, false /* fContiguous */,
-                                         0 /* PhysMask */, UINT64_MAX, RTR0MEMOBJTYPE_PAGE, PAGE_SIZE);
+    int rc = rtR0MemObjNativeAllocWorker(ppMem, cb, fExecutable, false /* fContiguous */, 0 /* PhysMask */, UINT64_MAX,
+                                         RTR0MEMOBJTYPE_PAGE, PAGE_SIZE, false /*fOnKernelThread*/);
 
     IPRT_DARWIN_RESTORE_EFL_AC();
     return rc;
@@ -695,11 +843,11 @@ DECLHIDDEN(int) rtR0MemObjNativeAllocLow(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, 
      *
      * (See bug comment in the worker and IOBufferMemoryDescriptor::initWithPhysicalMask.)
      */
-    int rc = rtR0MemObjNativeAllocWorker(ppMem, cb, fExecutable, false /* fContiguous */,
-                                         ~(uint32_t)PAGE_OFFSET_MASK, _4G - PAGE_SIZE, RTR0MEMOBJTYPE_LOW, PAGE_SIZE);
+    int rc = rtR0MemObjNativeAllocWorker(ppMem, cb, fExecutable, false /* fContiguous */, ~(uint32_t)PAGE_OFFSET_MASK,
+                                         _4G - PAGE_SIZE, RTR0MEMOBJTYPE_LOW, PAGE_SIZE, false /*fOnKernelThread*/);
     if (rc == VERR_ADDRESS_TOO_BIG)
-        rc = rtR0MemObjNativeAllocWorker(ppMem, cb, fExecutable, false /* fContiguous */,
-                                         0 /* PhysMask */, _4G - PAGE_SIZE, RTR0MEMOBJTYPE_LOW, PAGE_SIZE);
+        rc = rtR0MemObjNativeAllocWorker(ppMem, cb, fExecutable, false /* fContiguous */, 0 /* PhysMask */,
+                                         _4G - PAGE_SIZE, RTR0MEMOBJTYPE_LOW, PAGE_SIZE, false /*fOnKernelThread*/);
 
     IPRT_DARWIN_RESTORE_EFL_AC();
     return rc;
@@ -712,7 +860,7 @@ DECLHIDDEN(int) rtR0MemObjNativeAllocCont(PPRTR0MEMOBJINTERNAL ppMem, size_t cb,
 
     int rc = rtR0MemObjNativeAllocWorker(ppMem, cb, fExecutable, true /* fContiguous */,
                                          ~(uint32_t)PAGE_OFFSET_MASK, _4G - PAGE_SIZE,
-                                         RTR0MEMOBJTYPE_CONT, PAGE_SIZE);
+                                         RTR0MEMOBJTYPE_CONT, PAGE_SIZE, false /*fOnKernelThread*/);
 
     /*
      * Workaround for bogus IOKernelAllocateContiguous behavior, just in case.
@@ -721,7 +869,7 @@ DECLHIDDEN(int) rtR0MemObjNativeAllocCont(PPRTR0MEMOBJINTERNAL ppMem, size_t cb,
     if (RT_FAILURE(rc) && cb <= PAGE_SIZE)
         rc = rtR0MemObjNativeAllocWorker(ppMem, cb + PAGE_SIZE, fExecutable, true /* fContiguous */,
                                          ~(uint32_t)PAGE_OFFSET_MASK, _4G - PAGE_SIZE,
-                                         RTR0MEMOBJTYPE_CONT, PAGE_SIZE);
+                                         RTR0MEMOBJTYPE_CONT, PAGE_SIZE, false /*fOnKernelThread*/);
     IPRT_DARWIN_RESTORE_EFL_AC();
     return rc;
 }
@@ -745,7 +893,7 @@ DECLHIDDEN(int) rtR0MemObjNativeAllocPhys(PPRTR0MEMOBJINTERNAL ppMem, size_t cb,
     if (PhysHighest == NIL_RTHCPHYS)
         rc = rtR0MemObjNativeAllocWorker(ppMem, cb, false /* fExecutable */, true /* fContiguous */,
                                          uAlignment <= PAGE_SIZE ? 0 : ~(mach_vm_address_t)(uAlignment - 1) /* PhysMask*/,
-                                         UINT64_MAX, RTR0MEMOBJTYPE_PHYS, uAlignment);
+                                         UINT64_MAX, RTR0MEMOBJTYPE_PHYS, uAlignment, false /*fOnKernelThread*/);
     else
     {
         mach_vm_address_t PhysMask = 0;
@@ -756,7 +904,7 @@ DECLHIDDEN(int) rtR0MemObjNativeAllocPhys(PPRTR0MEMOBJINTERNAL ppMem, size_t cb,
         PhysMask &= ~(mach_vm_address_t)(uAlignment - 1);
 
         rc = rtR0MemObjNativeAllocWorker(ppMem, cb, false /* fExecutable */, true /* fContiguous */,
-                                         PhysMask, PhysHighest, RTR0MEMOBJTYPE_PHYS, uAlignment);
+                                         PhysMask, PhysHighest, RTR0MEMOBJTYPE_PHYS, uAlignment, false /*fOnKernelThread*/);
     }
 
     IPRT_DARWIN_RESTORE_EFL_AC();
@@ -1159,7 +1307,11 @@ DECLHIDDEN(int) rtR0MemObjNativeMapUser(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ p
 }
 
 
-DECLHIDDEN(int) rtR0MemObjNativeProtect(PRTR0MEMOBJINTERNAL pMem, size_t offSub, size_t cbSub, uint32_t fProt)
+/**
+ * Worker for rtR0MemObjNativeProtect that's typically called in a different
+ * context.
+ */
+static int rtR0MemObjNativeProtectWorker(PRTR0MEMOBJINTERNAL pMem, size_t offSub, size_t cbSub, uint32_t fProt)
 {
     IPRT_DARWIN_SAVE_EFL_AC();
 
@@ -1257,6 +1409,47 @@ DECLHIDDEN(int) rtR0MemObjNativeProtect(PRTR0MEMOBJINTERNAL pMem, size_t offSub,
 
     IPRT_DARWIN_RESTORE_EFL_AC();
     return VINF_SUCCESS;
+}
+
+
+/**
+ * rtR0MemObjNativeProtect kernel_task wrapper function.
+ */
+static void rtR0MemObjNativeProtectWorkerOnKernelThread(void *pvUser0, void *pvUser1)
+{
+    AssertPtr(pvUser0); Assert(pvUser1 == NULL); NOREF(pvUser1);
+    RTR0MEMOBJDARWINPROTECTARGS *pArgs = (RTR0MEMOBJDARWINPROTECTARGS *)pvUser0;
+    int rc = rtR0MemObjNativeProtectWorker(pArgs->pMem, pArgs->offSub, pArgs->cbSub, pArgs->fProt);
+    rtR0MemObjDarwinSignalThreadWaitinOnTask(&pArgs->Core, rc);
+}
+
+
+DECLHIDDEN(int) rtR0MemObjNativeProtect(PRTR0MEMOBJINTERNAL pMem, size_t offSub, size_t cbSub, uint32_t fProt)
+{
+    /*
+     * The code won't work right because process codesigning properties leaks
+     * into kernel_map memory management.  So, if the user process we're running
+     * in has CS restrictions active, we cannot play around with the EXEC
+     * protection because some vm_fault.c think we're modifying the process map
+     * or something.  Looks like this problem was introduced in 10.10.5 or/and
+     * 10.11.0, so for for Yosemite and up we'll just push the work off to a thread
+     * running in the kernel_task context and hope it has be better chance of
+     * consistent results.
+     */
+    int rc;
+    if (   version_major >= 14 /* 10.10 = Yosemite */
+        && rtR0MemObjDarwinGetMap(pMem) == kernel_map)
+    {
+        RTR0MEMOBJDARWINPROTECTARGS Args;
+        Args.pMem       = pMem;
+        Args.offSub     = offSub;
+        Args.cbSub      = cbSub;
+        Args.fProt      = fProt;
+        rc = rtR0MemObjDarwinDoInKernelTaskThread(rtR0MemObjNativeProtectWorkerOnKernelThread, &Args.Core);
+    }
+    else
+        rc = rtR0MemObjNativeProtectWorker(pMem, offSub, cbSub, fProt);
+    return rc;
 }
 
 
