@@ -741,6 +741,12 @@ VMMR0DECL(int) SVMR0InitVM(PVMCC pVM)
         PVMCPUCC pVCpu = VMCC_GET_CPU(pVM, idCpu);
 
         /*
+         * Initialize the hardware-assisted SVM guest-execution handler.
+         * We now use a single handler for both 32-bit and 64-bit guests, see @bugref{6208#c73}.
+         */
+        pVCpu->hm.s.svm.pfnVMRun = SVMR0VMRun;
+
+        /*
          * Allocate one page for the host-context VM control block (VMCB). This is used for additional host-state (such as
          * FS, GS, Kernel GS Base, etc.) apart from the host-state save area specified in MSR_K8_VM_HSAVE_PA.
          */
@@ -2177,31 +2183,6 @@ static void hmR0SvmMergeVmcbCtrlsNested(PVMCPUCC pVCpu)
 
 
 /**
- * Selects the appropriate function to run guest code.
- *
- * @param   pVCpu   The cross context virtual CPU structure.
- *
- * @remarks No-long-jump zone!!!
- */
-DECLINLINE(void) hmR0SvmSelectVMRunHandler(PVMCPUCC pVCpu)
-{
-    if (pVCpu->CTX_SUFF(pVM)->hm.s.fAllow64BitGuests)
-    {
-# if HC_ARCH_BITS != 64 || ARCH_BITS != 64
-#  error "Only 64-bit hosts are supported!"
-# endif
-        /* Guest may enter long mode, always use 64-bit handler. */
-        pVCpu->hm.s.svm.pfnVMRun = SVMR0VMRun;
-    }
-    else
-    {
-        /* Guest is 32-bit only, use the 32-bit handler. */
-        pVCpu->hm.s.svm.pfnVMRun = SVMR0VMRun32;
-    }
-}
-
-
-/**
  * Enters the AMD-V session.
  *
  * @returns VBox status code.
@@ -2354,8 +2335,6 @@ static int hmR0SvmExportGuestState(PVMCPUCC pVCpu, PCSVMTRANSIENT pSvmTransient)
         hmR0SvmExportGuestApicTpr(pVCpu, pVmcb);
         hmR0SvmExportGuestXcptIntercepts(pVCpu, pVmcb);
     }
-
-    hmR0SvmSelectVMRunHandler(pVCpu);
 
     /* Clear any bits that may be set but exported unconditionally or unused/reserved bits. */
     uint64_t fUnusedMask = HM_CHANGED_GUEST_RIP

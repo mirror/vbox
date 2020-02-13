@@ -53,19 +53,6 @@ VMMR0DECL(int)          SVMR0ImportStateOnDemand(PVMCPUCC pVCpu, uint64_t fWhat)
 VMMR0DECL(int)          SVMR0InvalidatePage(PVMCPUCC pVCpu, RTGCPTR GCVirt);
 
 /**
- * Prepares for and executes VMRUN (32-bit register context).
- *
- * @returns VBox status code.
- * @param   pVMCBHostPhys   Physical address of host VMCB.
- * @param   pVMCBPhys       Physical address of the VMCB.
- * @param   pCtx            Pointer to the guest CPU context.
- * @param   pVM             The cross context VM structure. (Not used.)
- * @param   pVCpu           The cross context virtual CPU structure. (Not used.)
- */
-DECLASM(int) SVMR0VMRun32(RTHCPHYS pVMCBHostPhys, RTHCPHYS pVMCBPhys, PCPUMCTX pCtx, PVMCC pVM, PVMCPUCC pVCpu);
-
-
-/**
  * Prepares for and executes VMRUN (64-bit register context).
  *
  * @returns VBox status code.
