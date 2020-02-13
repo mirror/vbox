@@ -1,6 +1,6 @@
 ; $Id$
 ;; @file
-; HM - Ring-0 VMX, SVM world-switch and helper routines
+; HM - Ring-0 VMX, SVM world-switch and helper routines.
 ;
 
 ;
@@ -64,7 +64,7 @@
 %endif
 
 ;;
-; Determine skipping restoring of GDTR, IDTR, TR across VMX non-root operation
+; Determine skipping restoring of GDTR, IDTR, TR across VMX non-root operation.
 ;
 %ifdef RT_ARCH_AMD64
  %define VMX_SKIP_GDTR
@@ -82,19 +82,19 @@
 %endif
 
 ;; @def MYPUSHAD
-; Macro generating an equivalent to pushad
+; Macro generating an equivalent to PUSHAD instruction.
 
 ;; @def MYPOPAD
-; Macro generating an equivalent to popad
+; Macro generating an equivalent to POPAD instruction.
 
 ;; @def MYPUSHSEGS
 ; Macro saving all segment registers on the stack.
-; @param 1  full width register name
+; @param 1  Full width register name.
 ; @param 2  16-bit register name for \a 1.
 
 ;; @def MYPOPSEGS
-; Macro restoring all segment registers on the stack
-; @param 1  full width register name
+; Macro restoring all segment registers on the stack.
+; @param 1  Full width register name.
 ; @param 2  16-bit register name for \a 1.
 
 %ifdef ASM_CALL64_GCC
@@ -141,7 +141,7 @@
  %macro MYPOPSEGS64 2
  %endmacro
 %else       ; !VBOX_SKIP_RESTORE_SEG
- ; trashes, rax, rdx & rcx
+ ; Trashes, rax, rdx & rcx.
  %macro MYPUSHSEGS64 2
   %ifndef HM_64_BIT_USE_NULL_SEL
    mov     %2, es
@@ -150,7 +150,8 @@
    push    %1
   %endif
 
-   ; Special case for FS; Windows and Linux either don't use it or restore it when leaving kernel mode, Solaris OTOH doesn't and we must save it.
+   ; Special case for FS; Windows and Linux either don't use it or restore it when leaving kernel mode,
+   ; Solaris OTOH doesn't and we must save it.
    mov     ecx, MSR_K8_FS_BASE
    rdmsr
    push    rdx
@@ -159,7 +160,8 @@
    push    fs
   %endif
 
-   ; Special case for GS; OSes typically use swapgs to reset the hidden base register for GS on entry into the kernel. The same happens on exit
+   ; Special case for GS; OSes typically use swapgs to reset the hidden base register for GS on entry into the kernel.
+   ; The same happens on exit.
    mov     ecx, MSR_K8_GS_BASE
    rdmsr
    push    rdx
@@ -282,7 +284,7 @@
     jz      %%no_cache_flush_barrier
     mov     ecx, MSR_IA32_FLUSH_CMD
     wrmsr
-    jmp     %%no_mds_buffer_flushing    ; MDS flushing is included in L1D_FLUSH.
+    jmp     %%no_mds_buffer_flushing    ; MDS flushing is included in L1D_FLUSH
 %%no_cache_flush_barrier:
 
     ; MDS buffer flushing.
@@ -309,13 +311,13 @@ extern NAME(CPUMIsGuestFPUStateActive)
 BEGINCODE
 
 
-;/**
-; * Restores host-state fields.
-; *
-; * @returns VBox status code
-; * @param   f32RestoreHost x86: [ebp + 08h]  msc: ecx  gcc: edi   RestoreHost flags.
-; * @param   pRestoreHost   x86: [ebp + 0ch]  msc: rdx  gcc: rsi   Pointer to the RestoreHost struct.
-; */
+;;
+; Restores host-state fields.
+;
+; @returns VBox status code
+; @param   f32RestoreHost x86: [ebp + 08h]  msc: ecx  gcc: edi   RestoreHost flags.
+; @param   pRestoreHost   x86: [ebp + 0ch]  msc: rdx  gcc: rsi   Pointer to the RestoreHost struct.
+;
 ALIGNCODE(16)
 BEGINPROC VMXRestoreHostState
 %ifdef RT_ARCH_AMD64
@@ -356,11 +358,11 @@ BEGINPROC VMXRestoreHostState
     ; When restoring the TR, we must first clear the busy flag or we'll end up faulting.
     mov         dx, [rsi + VMXRESTOREHOST.uHostSelTR]
     mov         ax, dx
-    and         eax, X86_SEL_MASK_OFF_RPL                       ; Mask away TI and RPL bits leaving only the descriptor offset.
+    and         eax, X86_SEL_MASK_OFF_RPL                       ; mask away TI and RPL bits leaving only the descriptor offset
     test        edi, VMX_RESTORE_HOST_GDT_READ_ONLY | VMX_RESTORE_HOST_GDT_NEED_WRITABLE
     jnz         .gdt_readonly
     add         rax, qword [rsi + VMXRESTOREHOST.HostGdtr + 2]  ; xAX <- descriptor offset + GDTR.pGdt.
-    and         dword [rax + 4], ~RT_BIT(9)                     ; Clear the busy flag in TSS desc (bits 0-7=base, bit 9=busy bit).
+    and         dword [rax + 4], ~RT_BIT(9)                     ; clear the busy flag in TSS desc (bits 0-7=base, bit 9=busy bit)
     ltr         dx
     jmp short   .test_fs
 .gdt_readonly:
@@ -371,16 +373,16 @@ BEGINPROC VMXRestoreHostState
     add         rax, qword [rsi + VMXRESTOREHOST.HostGdtr + 2]  ; xAX <- descriptor offset + GDTR.pGdt.
     and         rcx, ~X86_CR0_WP
     mov         cr0, rcx
-    and         dword [rax + 4], ~RT_BIT(9)                     ; Clear the busy flag in TSS desc (bits 0-7=base, bit 9=busy bit).
+    and         dword [rax + 4], ~RT_BIT(9)                     ; clear the busy flag in TSS desc (bits 0-7=base, bit 9=busy bit)
     ltr         dx
     mov         cr0, r9
     jmp short   .test_fs
 .gdt_readonly_need_writable:
-    add         rax, qword [rsi + VMXRESTOREHOST.HostGdtrRw + 2]  ; xAX <- descriptor offset + GDTR.pGdtRw.
-    and         dword [rax + 4], ~RT_BIT(9)                     ; Clear the busy flag in TSS desc (bits 0-7=base, bit 9=busy bit).
+    add         rax, qword [rsi + VMXRESTOREHOST.HostGdtrRw + 2]  ; xAX <- descriptor offset + GDTR.pGdtRw
+    and         dword [rax + 4], ~RT_BIT(9)                     ; clear the busy flag in TSS desc (bits 0-7=base, bit 9=busy bit)
     lgdt        [rsi + VMXRESTOREHOST.HostGdtrRw]
     ltr         dx
-    lgdt        [rsi + VMXRESTOREHOST.HostGdtr]                 ; Load the original GDT
+    lgdt        [rsi + VMXRESTOREHOST.HostGdtr]                 ; load the original GDT
 
 .test_fs:
     ;
@@ -433,23 +435,24 @@ BEGINPROC VMXRestoreHostState
 ENDPROC VMXRestoreHostState
 
 
-;/**
-; * Dispatches an NMI to the host.
-; */
+;;
+; Dispatches an NMI to the host.
+;
 ALIGNCODE(16)
 BEGINPROC VMXDispatchHostNmi
-    int 2   ; NMI is always vector 2. The IDT[2] IRQ handler cannot be anything else. See Intel spec. 6.3.1 "External Interrupts".
+    ; NMI is always vector 2. The IDT[2] IRQ handler cannot be anything else. See Intel spec. 6.3.1 "External Interrupts".
+    int 2
     ret
 ENDPROC VMXDispatchHostNmi
 
 
-;/**
-; * Executes VMWRITE, 64-bit value.
-; *
-; * @returns VBox status code.
-; * @param   idxField   x86: [ebp + 08h]  msc: rcx  gcc: rdi   VMCS index.
-; * @param   u64Data    x86: [ebp + 0ch]  msc: rdx  gcc: rsi   VM field value.
-; */
+;;
+; Executes VMWRITE, 64-bit value.
+;
+; @returns VBox status code.
+; @param   idxField   x86: [ebp + 08h]  msc: rcx  gcc: rdi   VMCS index.
+; @param   u64Data    x86: [ebp + 0ch]  msc: rdx  gcc: rsi   VM field value.
+;
 ALIGNCODE(16)
 BEGINPROC VMXWriteVmcs64
 %ifdef RT_ARCH_AMD64
@@ -484,13 +487,13 @@ BEGINPROC VMXWriteVmcs64
 ENDPROC VMXWriteVmcs64
 
 
-;/**
-; * Executes VMREAD, 64-bit value.
-; *
-; * @returns VBox status code.
-; * @param   idxField        VMCS index.
-; * @param   pData           Where to store VM field value.
-; */
+;;
+; Executes VMREAD, 64-bit value.
+;
+; @returns VBox status code.
+; @param   idxField        VMCS index.
+; @param   pData           Where to store VM field value.
+;
 ;DECLASM(int) VMXReadVmcs64(uint32_t idxField, uint64_t *pData);
 ALIGNCODE(16)
 BEGINPROC VMXReadVmcs64
@@ -526,13 +529,13 @@ BEGINPROC VMXReadVmcs64
 ENDPROC VMXReadVmcs64
 
 
-;/**
-; * Executes VMREAD, 32-bit value.
-; *
-; * @returns VBox status code.
-; * @param   idxField        VMCS index.
-; * @param   pu32Data        Where to store VM field value.
-; */
+;;
+; Executes VMREAD, 32-bit value.
+;
+; @returns VBox status code.
+; @param   idxField        VMCS index.
+; @param   pu32Data        Where to store VM field value.
+;
 ;DECLASM(int) VMXReadVmcs32(uint32_t idxField, uint32_t *pu32Data);
 ALIGNCODE(16)
 BEGINPROC VMXReadVmcs32
@@ -565,13 +568,13 @@ BEGINPROC VMXReadVmcs32
 ENDPROC VMXReadVmcs32
 
 
-;/**
-; * Executes VMWRITE, 32-bit value.
-; *
-; * @returns VBox status code.
-; * @param   idxField        VMCS index.
-; * @param   u32Data         Where to store VM field value.
-; */
+;;
+; Executes VMWRITE, 32-bit value.
+;
+; @returns VBox status code.
+; @param   idxField        VMCS index.
+; @param   u32Data         Where to store VM field value.
+;
 ;DECLASM(int) VMXWriteVmcs32(uint32_t idxField, uint32_t u32Data);
 ALIGNCODE(16)
 BEGINPROC VMXWriteVmcs32
@@ -604,12 +607,12 @@ BEGINPROC VMXWriteVmcs32
 ENDPROC VMXWriteVmcs32
 
 
-;/**
-; * Executes VMXON.
-; *
-; * @returns VBox status code.
-; * @param   HCPhysVMXOn      Physical address of VMXON structure.
-; */
+;;
+; Executes VMXON.
+;
+; @returns VBox status code.
+; @param   HCPhysVMXOn      Physical address of VMXON structure.
+;
 ;DECLASM(int) VMXEnable(RTHCPHYS HCPhysVMXOn);
 BEGINPROC VMXEnable
 %ifdef RT_ARCH_AMD64
@@ -640,9 +643,9 @@ BEGINPROC VMXEnable
 ENDPROC VMXEnable
 
 
-;/**
-; * Executes VMXOFF.
-; */
+;;
+; Executes VMXOFF.
+;
 ;DECLASM(void) VMXDisable(void);
 BEGINPROC VMXDisable
     vmxoff
@@ -651,12 +654,12 @@ BEGINPROC VMXDisable
 ENDPROC VMXDisable
 
 
-;/**
-; * Executes VMCLEAR.
-; *
-; * @returns VBox status code.
-; * @param   HCPhysVmcs     Physical address of VM control structure.
-; */
+;;
+; Executes VMCLEAR.
+;
+; @returns VBox status code.
+; @param   HCPhysVmcs     Physical address of VM control structure.
+;
 ;DECLASM(int) VMXClearVmcs(RTHCPHYS HCPhysVmcs);
 ALIGNCODE(16)
 BEGINPROC VMXClearVmcs
@@ -682,12 +685,12 @@ BEGINPROC VMXClearVmcs
 ENDPROC VMXClearVmcs
 
 
-;/**
-; * Executes VMPTRLD.
-; *
-; * @returns VBox status code.
-; * @param   HCPhysVmcs     Physical address of VMCS structure.
-; */
+;;
+; Executes VMPTRLD.
+;
+; @returns VBox status code.
+; @param   HCPhysVmcs     Physical address of VMCS structure.
+;
 ;DECLASM(int) VMXLoadVmcs(RTHCPHYS HCPhysVmcs);
 ALIGNCODE(16)
 BEGINPROC VMXLoadVmcs
@@ -713,12 +716,12 @@ BEGINPROC VMXLoadVmcs
 ENDPROC VMXLoadVmcs
 
 
-;/**
-; * Executes VMPTRST.
-; *
-; * @returns VBox status code.
-; * @param    [esp + 04h]  gcc:rdi  msc:rcx   Param 1 - First parameter - Address that will receive the current pointer.
-; */
+;;
+; Executes VMPTRST.
+;
+; @returns VBox status code.
+; @param    [esp + 04h]  gcc:rdi  msc:rcx   Param 1 - First parameter - Address that will receive the current pointer.
+;
 ;DECLASM(int) VMXGetCurrentVmcs(RTHCPHYS *pVMCS);
 BEGINPROC VMXGetCurrentVmcs
 %ifdef RT_OS_OS2
@@ -740,11 +743,12 @@ BEGINPROC VMXGetCurrentVmcs
 %endif
 ENDPROC VMXGetCurrentVmcs
 
-;/**
-; * Invalidate a page using INVEPT.
+;;
+; Invalidate a page using INVEPT.
+;
 ; @param   enmTlbFlush  msc:ecx  gcc:edi  x86:[esp+04]  Type of flush.
 ; @param   pDescriptor  msc:edx  gcc:esi  x86:[esp+08]  Descriptor pointer.
-; */
+;
 ;DECLASM(int) VMXR0InvEPT(VMXTLBFLUSHEPT enmTlbFlush, uint64_t *pDescriptor);
 BEGINPROC VMXR0InvEPT
 %ifdef RT_ARCH_AMD64
@@ -777,11 +781,12 @@ BEGINPROC VMXR0InvEPT
 ENDPROC VMXR0InvEPT
 
 
-;/**
-; * Invalidate a page using invvpid
+;;
+; Invalidate a page using INVVPID.
+;
 ; @param   enmTlbFlush  msc:ecx  gcc:edi  x86:[esp+04]  Type of flush
 ; @param   pDescriptor  msc:edx  gcc:esi  x86:[esp+08]  Descriptor pointer
-; */
+;
 ;DECLASM(int) VMXR0InvVPID(VMXTLBFLUSHVPID enmTlbFlush, uint64_t *pDescriptor);
 BEGINPROC VMXR0InvVPID
 %ifdef RT_ARCH_AMD64
@@ -816,7 +821,7 @@ ENDPROC VMXR0InvVPID
 
 %if GC_ARCH_BITS == 64
 ;;
-; Executes INVLPGA
+; Executes INVLPGA.
 ;
 ; @param   pPageGC  msc:rcx  gcc:rdi  x86:[esp+04]  Virtual page to invalidate
 ; @param   uASID    msc:rdx  gcc:rsi  x86:[esp+0C]  Tagged TLB id
@@ -854,9 +859,9 @@ BEGINPROC SVMR0InvlpgA
     mov     ecx, esi
  %else
     ; from http://www.cs.cmu.edu/~fp/courses/15213-s06/misc/asm64-handout.pdf:
-    ; ``Perhaps unexpectedly, instructions that move or generate 32-bit register
-    ;   values also set the upper 32 bits of the register to zero. Consequently
-    ;   there is no need for an instruction movzlq.''
+    ; "Perhaps unexpectedly, instructions that move or generate 32-bit register
+    ;  values also set the upper 32 bits of the register to zero. Consequently
+    ;  there is no need for an instruction movzlq."
     mov     eax, ecx
     mov     ecx, edx
  %endif
@@ -905,7 +910,7 @@ BEGINPROC hmR0VMXStartVMWrapXMM
         mov     xBP, xSP
         sub     xSP, 0b0h + 040h ; Don't bother optimizing the frame size.
 
-        ; spill input parameters.
+        ; Spill input parameters.
         mov     [xBP + 010h], rcx       ; fResumeVM
         mov     [xBP + 018h], rdx       ; pCtx
         mov     [xBP + 020h], r8        ; pvUnused
@@ -958,7 +963,7 @@ ALIGNCODE(8)
         mov     r10, [r10 + CPUMCTX.pXStateR0]
         xrstor  [r10]
 
-        ; Make the call (same as in the other case ).
+        ; Make the call (same as in the other case).
         mov     r11, [xBP + 38h]        ; pfnStartVM
         mov     r10, [xBP + 30h]        ; pVCpu
         mov     [xSP + 020h], r10
@@ -978,7 +983,7 @@ ALIGNCODE(8)
         mov     r10, [r10 + CPUMCTX.pXStateR0]
         xsave  [r10]
 
-        mov     eax, r11d               ; restore return value.
+        mov     eax, r11d               ; restore return value
 
 .restore_non_volatile_host_xmm_regs:
         ; Load the non-volatile host XMM registers.
@@ -1020,7 +1025,7 @@ ALIGNCODE(8)
         movdqa  xmm15, [r10 + XMM_OFF_IN_X86FXSTATE + 0f0h]
         ldmxcsr        [r10 + X86FXSTATE.MXCSR]
 
-        ; Make the call (same as in the other case ).
+        ; Make the call (same as in the other case).
         mov     r11, [xBP + 38h]        ; pfnStartVM
         mov     r10, [xBP + 30h]        ; pVCpu
         mov     [xSP + 020h], r10
@@ -1082,9 +1087,9 @@ ALIGNCODE(16)
 BEGINPROC hmR0SVMRunWrapXMM
         push    xBP
         mov     xBP, xSP
-        sub     xSP, 0b0h + 040h        ; Don't bother optimizing the frame size.
+        sub     xSP, 0b0h + 040h        ; don't bother optimizing the frame size
 
-        ; spill input parameters.
+        ; Spill input parameters.
         mov     [xBP + 010h], rcx       ; HCPhysVmcbHost
         mov     [xBP + 018h], rdx       ; HCPhysVmcb
         mov     [xBP + 020h], r8        ; pCtx
@@ -1137,7 +1142,7 @@ ALIGNCODE(8)
         mov     r10, [r10 + CPUMCTX.pXStateR0]
         xrstor  [r10]
 
-        ; Make the call (same as in the other case ).
+        ; Make the call (same as in the other case).
         mov     r11, [xBP + 38h]        ; pfnVMRun
         mov     r10, [xBP + 30h]        ; pVCpu
         mov     [xSP + 020h], r10
@@ -1157,7 +1162,7 @@ ALIGNCODE(8)
         mov     r10, [r10 + CPUMCTX.pXStateR0]
         xsave  [r10]
 
-        mov     eax, r11d               ; restore return value.
+        mov     eax, r11d               ; restore return value
 
 .restore_non_volatile_host_xmm_regs:
         ; Load the non-volatile host XMM registers.
@@ -1199,7 +1204,7 @@ ALIGNCODE(8)
         movdqa  xmm15, [r10 + XMM_OFF_IN_X86FXSTATE + 0f0h]
         ldmxcsr        [r10 + X86FXSTATE.MXCSR]
 
-        ; Make the call (same as in the other case ).
+        ; Make the call (same as in the other case).
         mov     r11, [xBP + 38h]        ; pfnVMRun
         mov     r10, [xBP + 30h]        ; pVCpu
         mov     [xSP + 020h], r10
@@ -1241,7 +1246,7 @@ ENDPROC   hmR0SVMRunWrapXMM
 ; for 64-bit host, 64-bit guest for VT-x.
 ;
 %macro RESTORE_STATE_VM64 0
-    ; Restore base and limit of the IDTR & GDTR
+    ; Restore base and limit of the IDTR & GDTR.
  %ifndef VMX_SKIP_IDTR
     lidt    [xSP]
     add     xSP, xCB * 2
@@ -1296,16 +1301,16 @@ ENDPROC   hmR0SVMRunWrapXMM
     INDIRECT_BRANCH_PREDICTION_BARRIER xDI, CPUMCTX_WSF_IBPB_EXIT
 
  %ifndef VMX_SKIP_TR
-    ; Restore TSS selector; must mark it as not busy before using ltr (!)
-    ; ASSUME that this is supposed to be 'BUSY'. (saves 20-30 ticks on the T42p).
+    ; Restore TSS selector; must mark it as not busy before using ltr!
+    ; ASSUME that this is supposed to be 'BUSY' (saves 20-30 ticks on the T42p).
     ; @todo get rid of sgdt
     pop     xBX         ; Saved TR
     sub     xSP, xCB * 2
     sgdt    [xSP]
     mov     xAX, xBX
-    and     eax, X86_SEL_MASK_OFF_RPL           ; Mask away TI and RPL bits leaving only the descriptor offset.
-    add     xAX, [xSP + 2]                      ; eax <- GDTR.address + descriptor offset.
-    and     dword [xAX + 4], ~RT_BIT(9)         ; Clear the busy flag in TSS desc (bits 0-7=base, bit 9=busy bit).
+    and     eax, X86_SEL_MASK_OFF_RPL           ; mask away TI and RPL bits leaving only the descriptor offset
+    add     xAX, [xSP + 2]                      ; eax <- GDTR.address + descriptor offset
+    and     dword [xAX + 4], ~RT_BIT(9)         ; clear the busy flag in TSS desc (bits 0-7=base, bit 9=busy bit)
     ltr     bx
     add     xSP, xCB * 2
  %endif
@@ -1339,11 +1344,11 @@ ENDPROC   hmR0SVMRunWrapXMM
 ; Prepares for and executes VMLAUNCH/VMRESUME (64 bits guest mode)
 ;
 ; @returns VBox status code
-; @param    fResume    msc:rcx, gcc:rdi     Whether to use vmlauch/vmresume.
-; @param    pCtx       msc:rdx, gcc:rsi     Pointer to the guest-CPU context.
-; @param    pvUnused   msc:r8,  gcc:rdx     Unused argument.
-; @param    pVM        msc:r9,  gcc:rcx     The cross context VM structure.
-; @param    pVCpu      msc:[ebp+30], gcc:r8 The cross context virtual CPU structure of the calling EMT.
+; @param    fResume    msc:rcx, gcc:rdi       Whether to use vmlauch/vmresume.
+; @param    pCtx       msc:rdx, gcc:rsi       Pointer to the guest-CPU context.
+; @param    pvUnused   msc:r8,  gcc:rdx       Unused argument.
+; @param    pVM        msc:r9,  gcc:rcx       The cross context VM structure.
+; @param    pVCpu      msc:[ebp+30], gcc:r8   The cross context virtual CPU structure of the calling EMT.
 ;
 ALIGNCODE(16)
 BEGINPROC VMXR0StartVM64
@@ -1358,9 +1363,9 @@ BEGINPROC VMXR0StartVM64
 
     ; First we have to save some final CPU context registers.
     lea     r10, [.vmlaunch64_done wrt rip]
-    mov     rax, VMX_VMCS_HOST_RIP      ; Return address (too difficult to continue after VMLAUNCH?).
+    mov     rax, VMX_VMCS_HOST_RIP      ; return address (too difficult to continue after VMLAUNCH?)
     vmwrite rax, r10
-    ; Note: assumes success!
+    ; Note: ASSUMES success!
 
     ;
     ; Unify the input parameter registers.
@@ -1388,20 +1393,20 @@ BEGINPROC VMXR0StartVM64
     jz      .xcr0_before_skip
 
     xor     ecx, ecx
-    xgetbv                              ; Save the host one on the stack.
+    xgetbv                              ; save the host one on the stack
     push    xDX
     push    xAX
 
-    mov     eax, [xSI + CPUMCTX.aXcr]   ; Load the guest one.
+    mov     eax, [xSI + CPUMCTX.aXcr]   ; load the guest one
     mov     edx, [xSI + CPUMCTX.aXcr + 4]
     xor     ecx, ecx                    ; paranoia
     xsetbv
 
-    push    0                           ; Indicate that we must restore XCR0 (popped into ecx, thus 0).
+    push    0                           ; indicate that we must restore XCR0 (popped into ecx, thus 0)
     jmp     .xcr0_before_done
 
 .xcr0_before_skip:
-    push    3fh                         ; indicate that we need not.
+    push    3fh                         ; indicate that we need not
 .xcr0_before_done:
 
     ;
@@ -1444,7 +1449,7 @@ BEGINPROC VMXR0StartVM64
 .skip_cr2_write:
     mov     eax, VMX_VMCS_HOST_RSP
     vmwrite xAX, xSP
-    ; Note: assumes success!
+    ; Note: ASSUMES success!
     ; Don't mess with ESP anymore!!!
 
     ; Fight spectre and similar.
@@ -1477,13 +1482,13 @@ BEGINPROC VMXR0StartVM64
     vmresume
     jc      near .vmxstart64_invalid_vmcs_ptr
     jz      near .vmxstart64_start_failed
-    jmp     .vmlaunch64_done;      ; Here if vmresume detected a failure.
+    jmp     .vmlaunch64_done;      ; here if vmresume detected a failure
 
 .vmlaunch64_launch:
     vmlaunch
     jc      near .vmxstart64_invalid_vmcs_ptr
     jz      near .vmxstart64_start_failed
-    jmp     .vmlaunch64_done;      ; Here if vmlaunch detected a failure.
+    jmp     .vmlaunch64_done;      ; here if vmlaunch detected a failure
 
 ALIGNCODE(16)
 .vmlaunch64_done:
@@ -1535,11 +1540,11 @@ ALIGNCODE(16)
 BEGINPROC SVMR0VMRun
     ; Fake a cdecl stack frame
  %ifdef ASM_CALL64_GCC
-    push    r8                ;pVCpu
-    push    rcx               ;pVM
-    push    rdx               ;pCtx
-    push    rsi               ;HCPhysVmcb
-    push    rdi               ;HCPhysVmcbHost
+    push    r8                ; pVCpu
+    push    rcx               ; pVM
+    push    rdx               ; pCtx
+    push    rsi               ; HCPhysVmcb
+    push    rdi               ; HCPhysVmcbHost
  %else
     mov     rax, [rsp + 28h]
     push    rax               ; rbp + 30h pVCpu
@@ -1574,7 +1579,7 @@ BEGINPROC SVMR0VMRun
     jz      .xcr0_before_skip
 
     xor     ecx, ecx
-    xgetbv                                  ; save the host XCR0 on the stack.
+    xgetbv                                  ; save the host XCR0 on the stack
     push    xDX
     push    xAX
 
@@ -1595,15 +1600,15 @@ BEGINPROC SVMR0VMRun
     push    rsi
 
     ; Save host fs, gs, sysenter msr etc.
-    mov     rax, [rbp + xCB * 2]                    ; HCPhysVmcbHost (64 bits physical address; x86: take low dword only)
-    push    rax                                     ; save for the vmload after vmrun
+    mov     rax, [rbp + xCB * 2]            ; HCPhysVmcbHost (64 bits physical address; x86: take low dword only)
+    push    rax                             ; save for the vmload after vmrun
     vmsave
 
     ; Fight spectre.
     INDIRECT_BRANCH_PREDICTION_BARRIER xSI, CPUMCTX_WSF_IBPB_ENTRY
 
     ; Setup rax for VMLOAD.
-    mov     rax, [rbp + xCB * 2 + RTHCPHYS_CB]      ; HCPhysVmcb (64 bits physical address; take low dword only)
+    mov     rax, [rbp + xCB * 2 + RTHCPHYS_CB] ; HCPhysVmcb (64 bits physical address; take low dword only)
 
     ; Load guest general purpose registers (rax is loaded from the VMCB by VMRUN).
     mov     rbx, qword [xSI + CPUMCTX.ebx]
