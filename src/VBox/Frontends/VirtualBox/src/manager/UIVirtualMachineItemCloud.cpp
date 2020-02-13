@@ -60,6 +60,8 @@ void UIVirtualMachineItemCloud::updateState(QWidget *pParent)
     QMap<QString, KMachineState> states;
     states["RUNNING"] = KMachineState_Running;
     states["STOPPED"] = KMachineState_Paused;
+    states["STOPPING"] = KMachineState_Stopping;
+    states["STARTING"] = KMachineState_Starting;
     m_enmMachineState = states.value(strState, KMachineState_PoweredOff);
 
     /* Recache: */
