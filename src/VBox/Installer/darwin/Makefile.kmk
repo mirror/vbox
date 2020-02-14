@@ -164,6 +164,10 @@ ifdef VBOX_SIGNING_MODE
  ifndef VBOX_WITHOUT_SIGNED_DMG
 	@# Sign the created dmg.
 	$(call VBOX_SIGN_DMG_FN,$@,org.virtualbox.dmg)
+  if $(intersects darwin all 1,$(VBOX_WITH_CORP_CODE_SIGNING))
+	@# Notarize the signed dmg (includes stapling).
+	$(call VBOX_NOTARIZE_FILE_FN,$@,org.virtualbox.VirtualBox.$(VBOX_VERSION_MAJOR).$(VBOX_VERSION_MINOR).$(VBOX_VERSION_BUILD).$(VBOX_SVN_REV))
+  endif
  endif
 endif
 

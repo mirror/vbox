@@ -3701,6 +3701,16 @@ ifdef VBOX_SIGNING_MODE
    VBOX_DARWIN_KEXT_SIGN_FILES = CodeResources
   endif
 
+  ##
+  # Corp Code Notarization command line. Modifies the file because the tickets are stapled.
+  # @param 1  The file to be submitted for signing.
+  # @param 2  Identifier, mandatory.
+  # @param 3  The directory to put the notarized file in. Defaults to $(dir $1).
+ VBOX_CCS_NOTARIZE_CMD = $(VBOX_RETRY) $(VBOX_JAVA) -jar "$(VBOX_CCS_CLIENT_JAR)" \
+ 	mac_notarize -user "$(VBOX_CCS_USER)" -global_uid "$(VBOX_CCS_GLOBAL_UID)" \
+		-job_timeout 90 -server_timeout 75 -server "$(VBOX_CCS_SERVER)" \
+ 		-file_to_notarize "$1" -bundle_id "$2" -download_location "$(if $3,$3,$(dir $2))"
+
   ## Sign an application bundle, framework or kernel extension.
   # @param 1  The bundle to sign.
   # @param 2  Identifier, optional.
@@ -3786,6 +3796,13 @@ ifdef VBOX_SIGNING_MODE
   if $(intersects darwin all 1,$(VBOX_WITH_CORP_CODE_SIGNING))
    ## @todo cannot handle $(2), the identifier.
    VBOX_SIGN_PKG_FN = $(call MSG_TOOL,SIGNTOOL,,$(1),$(2))$(NLTAB)$(call VBOX_CCS_SIGN_CMD,mac_pkg,$(1))
+  endif
+
+  ## Notarize a file (usually DMG, can also be PKG). Used with corp code signing only.
+  # @param 1  The file to notarize.
+  # @param 2  Identifier, mandatory.
+  if $(intersects darwin all 1,$(VBOX_WITH_CORP_CODE_SIGNING))
+   VBOX_NOTARIZE_FILE_FN = $(call MSG_TOOL,SIGNTOOL,,$(1),$(2))$(NLTAB)$(call VBOX_CCS_NOTARIZE_CMD,$(1),$(2))
   endif
 
   ## @def VBOX_TEST_SIGN_KEXT
