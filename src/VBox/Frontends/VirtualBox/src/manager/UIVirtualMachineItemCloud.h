@@ -64,9 +64,6 @@ public:
         /** Updates cloud VM state.
           * @param  pWidget  Brings parent widget to show messages according to. */
         void updateState(QWidget *pParent);
-        /** Acquires instance info of certain @a enmType.
-          * @param  pWidget  Brings parent widget to show messages according to. */
-        QString acquireInstanceInfo(KVirtualSystemDescriptionType enmType, QWidget *pParent);
 
         /** Puts cloud VM on pause.
           * @param  pWidget  Brings parent widget to show messages according to. */
@@ -117,6 +114,12 @@ protected:
     /** @} */
 
 private:
+
+    /** @name State attributes.
+      * @{ */
+        /** Updates cloud VM state on the basis of string @a strState value. */
+        void updateState(const QString &strState);
+    /** @} */
 
     /** @name Arguments.
       * @{ */
