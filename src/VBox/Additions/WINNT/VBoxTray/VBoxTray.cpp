@@ -36,7 +36,6 @@
 #include "VBoxIPC.h"
 #include "VBoxLA.h"
 #include <VBoxHook.h>
-#include "resource.h"
 
 #include <sddl.h>
 
@@ -207,7 +206,7 @@ static int vboxTrayGlMsgTaskbarCreated(WPARAM wParam, LPARAM lParam)
 
 static int vboxTrayCreateTrayIcon(void)
 {
-    HICON hIcon = LoadIcon(g_hInstance, MAKEINTRESOURCE(IDI_VIRTUALBOX));
+    HICON hIcon = LoadIcon(g_hInstance, "IDI_ICON1"); /* see Artwork/win/TemplateR3.rc */
     if (hIcon == NULL)
     {
         DWORD dwErr = GetLastError();

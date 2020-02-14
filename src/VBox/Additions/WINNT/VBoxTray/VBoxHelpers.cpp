@@ -24,7 +24,6 @@
 #include <VBox/VBoxGuestLib.h>
 
 #include "VBoxHelpers.h"
-#include "resource.h"
 
 
 int hlpReportStatus(VBoxGuestFacilityStatus statusCurrent)
@@ -297,7 +296,7 @@ int hlpShowBalloonTip(HINSTANCE hInst, HWND hWnd, UINT uID,
         && (dwInfoFlags & NIIF_INFO))
     {
         /* Load (or retrieve handle of) the app's icon. */
-        HICON hIcon = LoadIcon(hInst, MAKEINTRESOURCE(IDI_VIRTUALBOX));
+        HICON hIcon = LoadIcon(hInst, "IDI_ICON1"); /* see Artwork/win/TemplateR3.rc */
         if (hIcon)
             niData.dwInfoFlags = NIIF_USER; /* Use an own notification icon. */
 
