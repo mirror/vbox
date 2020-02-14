@@ -47,6 +47,10 @@ lck_grp_t                  *g_pDarwinLockGroup = NULL;
 PFNR0DARWINASTPENDING       g_pfnR0DarwinAstPending = NULL;
 /** Pointer to the cpu_interrupt function, if found. */
 PFNR0DARWINCPUINTERRUPT     g_pfnR0DarwinCpuInterrupt = NULL;
+#ifdef DEBUG
+/** Pointer to the vm_fault_external function - used once for debugging @bugref{9466}. */
+PFNR0DARWINVMFAULTEXTERNAL  g_pfnR0DarwinVmFaultExternal = NULL;
+#endif
 
 
 DECLHIDDEN(int) rtR0InitNative(void)
@@ -76,6 +80,10 @@ DECLHIDDEN(int) rtR0InitNative(void)
             printf("ast_pending=%p\n", g_pfnR0DarwinAstPending);
             RTR0DbgKrnlInfoQuerySymbol(hKrnlInfo, NULL, "cpu_interrupt", (void **)&g_pfnR0DarwinCpuInterrupt);
             printf("cpu_interrupt=%p\n", g_pfnR0DarwinCpuInterrupt);
+#ifdef DEBUG
+            RTR0DbgKrnlInfoQuerySymbol(hKrnlInfo, NULL, "vm_fault_external", (void **)&g_pfnR0DarwinVmFaultExternal);
+            printf("vm_fault_external=%p\n", g_pfnR0DarwinVmFaultExternal);
+#endif
             RTR0DbgKrnlInfoRelease(hKrnlInfo);
         }
         if (RT_FAILURE(rc))

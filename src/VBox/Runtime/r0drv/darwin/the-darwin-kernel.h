@@ -205,6 +205,10 @@ typedef void        (*PFNR0DARWINCPUINTERRUPT)(int);
 extern lck_grp_t                  *g_pDarwinLockGroup;
 extern PFNR0DARWINASTPENDING       g_pfnR0DarwinAstPending;
 extern PFNR0DARWINCPUINTERRUPT     g_pfnR0DarwinCpuInterrupt;
+#ifdef DEBUG /* Used once for debugging memory issues (see #9466). */
+typedef kern_return_t (*PFNR0DARWINVMFAULTEXTERNAL)(vm_map_t, vm_map_offset_t, vm_prot_t, boolean_t, int, pmap_t, vm_map_offset_t);
+extern PFNR0DARWINVMFAULTEXTERNAL  g_pfnR0DarwinVmFaultExternal;
+#endif
 
 /* threadpreempt-r0drv-darwin.cpp */
 int  rtThreadPreemptDarwinInit(void);
