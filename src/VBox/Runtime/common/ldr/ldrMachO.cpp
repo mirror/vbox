@@ -1175,6 +1175,7 @@ static int kldrModMachOPreParseLoadCommands(uint8_t *pbLoadCommands, const mach_
                 break;
 
             case LC_SOURCE_VERSION:     /* Harmless. It just gives a clue regarding the source code revision/version. */
+            case LC_BUILD_VERSION:      /* Harmless. It just gives a clue regarding the tool/sdk versions. */
             case LC_DATA_IN_CODE:       /* Ignore */
             case LC_DYLIB_CODE_SIGN_DRS:/* Ignore */
                 /** @todo valid command size. */
