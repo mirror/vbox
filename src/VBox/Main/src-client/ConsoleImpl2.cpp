@@ -3308,6 +3308,7 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
             Utf8Str strPath;
             strPath.append(strSettingsPath).append("debug/;");
             strPath.append(strSettingsPath).append(";");
+            strPath.append("cache*").append(strSettingsPath).append("dbgcache/;"); /* handy for symlinking to actual cache */
             strPath.append(szHomeDir);
 
             InsertConfigString(pDbgf, "Path", strPath.c_str());
