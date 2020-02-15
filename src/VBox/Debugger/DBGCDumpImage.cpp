@@ -39,6 +39,7 @@
 #include <iprt/formats/elf32.h>
 #include <iprt/formats/elf64.h>
 #include <iprt/formats/codeview.h>
+#include <iprt/formats/mach-o.h>
 
 #include "DBGCInternal.h"
 
@@ -78,11 +79,33 @@ typedef struct DUMPIMAGEPE
 typedef DUMPIMAGEPE *PDUMPIMAGEPE;
 
 
+/** Helper for translating flags. */
+typedef struct
+{
+    uint32_t        fFlag;
+    const char     *pszNm;
+} DBGCDUMPFLAGENTRY;
+#define FLENT(a_Define) { a_Define, #a_Define }
+
+
 /*********************************************************************************************************************************
 *   Internal Functions                                                                                                           *
 *********************************************************************************************************************************/
 extern FNDBGCCMD dbgcCmdDumpImage; /* See DBGCCommands.cpp. */
 
+
+/** Stringifies a 32-bit flag value. */
+static void dbgcDumpImageFlags32(PDBGCCMDHLP pCmdHlp, uint32_t fFlags, DBGCDUMPFLAGENTRY const *paEntries, size_t cEntries)
+{
+    for (size_t i = 0; i < cEntries; i++)
+        if (fFlags & paEntries[i].fFlag)
+            DBGCCmdHlpPrintf(pCmdHlp, " %s", paEntries[i].pszNm);
+}
+
+
+/*********************************************************************************************************************************
+*   PE                                                                                                                           *
+*********************************************************************************************************************************/
 
 static const char *dbgcPeMachineName(uint16_t uMachine)
 {
@@ -405,11 +428,287 @@ static int dbgcDumpImagePe(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PCDBGCVAR pImage
 }
 
 
+/*********************************************************************************************************************************
+*   ELF                                                                                                                          *
+*********************************************************************************************************************************/
+
 static int dbgcDumpImageElf(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PCDBGCVAR pImageBase)
 {
     RT_NOREF_PV(pCmd);
     DBGCCmdHlpPrintf(pCmdHlp, "%Dv: ELF image dumping not implemented yet.\n", pImageBase);
     return VINF_SUCCESS;
+}
+
+
+/*********************************************************************************************************************************
+*   Mach-O                                                                                                                       *
+*********************************************************************************************************************************/
+
+static const char *dbgcMachoFileType(uint32_t uType)
+{
+    switch (uType)
+    {
+        case MH_OBJECT:      return "MH_OBJECT";
+        case MH_EXECUTE:     return "MH_EXECUTE";
+        case MH_FVMLIB:      return "MH_FVMLIB";
+        case MH_CORE:        return "MH_CORE";
+        case MH_PRELOAD:     return "MH_PRELOAD";
+        case MH_DYLIB:       return "MH_DYLIB";
+        case MH_DYLINKER:    return "MH_DYLINKER";
+        case MH_BUNDLE:      return "MH_BUNDLE";
+        case MH_DYLIB_STUB:  return "MH_DYLIB_STUB";
+        case MH_DSYM:        return "MH_DSYM";
+        case MH_KEXT_BUNDLE: return "MH_KEXT_BUNDLE";
+    }
+    return "??";
+}
+
+
+static const char *dbgcMachoCpuType(uint32_t uType, uint32_t uSubType)
+{
+    switch (uType)
+    {
+        case CPU_TYPE_ANY:          return "CPU_TYPE_ANY";
+        case CPU_TYPE_VAX:          return "VAX";
+        case CPU_TYPE_MC680x0:      return "MC680x0";
+        case CPU_TYPE_X86:          return "X86";
+        case CPU_TYPE_X86_64:
+            switch (uSubType)
+            {
+                case CPU_SUBTYPE_X86_64_ALL:    return "X86_64/ALL64";
+            }
+            return "X86_64";
+        case CPU_TYPE_MC98000:      return "MC98000";
+        case CPU_TYPE_HPPA:         return "HPPA";
+        case CPU_TYPE_MC88000:      return "MC88000";
+        case CPU_TYPE_SPARC:        return "SPARC";
+        case CPU_TYPE_I860:         return "I860";
+        case CPU_TYPE_POWERPC:      return "POWERPC";
+        case CPU_TYPE_POWERPC64:    return "POWERPC64";
+
+    }
+    return "??";
+}
+
+
+static const char *dbgcMachoLoadCommand(uint32_t uCmd)
+{
+    switch (uCmd)
+    {
+        RT_CASE_RET_STR(LC_SEGMENT_32);
+        RT_CASE_RET_STR(LC_SYMTAB);
+        RT_CASE_RET_STR(LC_SYMSEG);
+        RT_CASE_RET_STR(LC_THREAD);
+        RT_CASE_RET_STR(LC_UNIXTHREAD);
+        RT_CASE_RET_STR(LC_LOADFVMLIB);
+        RT_CASE_RET_STR(LC_IDFVMLIB);
+        RT_CASE_RET_STR(LC_IDENT);
+        RT_CASE_RET_STR(LC_FVMFILE);
+        RT_CASE_RET_STR(LC_PREPAGE);
+        RT_CASE_RET_STR(LC_DYSYMTAB);
+        RT_CASE_RET_STR(LC_LOAD_DYLIB);
+        RT_CASE_RET_STR(LC_ID_DYLIB);
+        RT_CASE_RET_STR(LC_LOAD_DYLINKER);
+        RT_CASE_RET_STR(LC_ID_DYLINKER);
+        RT_CASE_RET_STR(LC_PREBOUND_DYLIB);
+        RT_CASE_RET_STR(LC_ROUTINES);
+        RT_CASE_RET_STR(LC_SUB_FRAMEWORK);
+        RT_CASE_RET_STR(LC_SUB_UMBRELLA);
+        RT_CASE_RET_STR(LC_SUB_CLIENT);
+        RT_CASE_RET_STR(LC_SUB_LIBRARY);
+        RT_CASE_RET_STR(LC_TWOLEVEL_HINTS);
+        RT_CASE_RET_STR(LC_PREBIND_CKSUM);
+        RT_CASE_RET_STR(LC_LOAD_WEAK_DYLIB);
+        RT_CASE_RET_STR(LC_SEGMENT_64);
+        RT_CASE_RET_STR(LC_ROUTINES_64);
+        RT_CASE_RET_STR(LC_UUID);
+        RT_CASE_RET_STR(LC_RPATH);
+        RT_CASE_RET_STR(LC_CODE_SIGNATURE);
+        RT_CASE_RET_STR(LC_SEGMENT_SPLIT_INFO);
+        RT_CASE_RET_STR(LC_REEXPORT_DYLIB);
+        RT_CASE_RET_STR(LC_LAZY_LOAD_DYLIB);
+        RT_CASE_RET_STR(LC_ENCRYPTION_INFO);
+        RT_CASE_RET_STR(LC_DYLD_INFO);
+        RT_CASE_RET_STR(LC_DYLD_INFO_ONLY);
+        RT_CASE_RET_STR(LC_LOAD_UPWARD_DYLIB);
+        RT_CASE_RET_STR(LC_VERSION_MIN_MACOSX);
+        RT_CASE_RET_STR(LC_VERSION_MIN_IPHONEOS);
+        RT_CASE_RET_STR(LC_FUNCTION_STARTS);
+        RT_CASE_RET_STR(LC_DYLD_ENVIRONMENT);
+        RT_CASE_RET_STR(LC_MAIN);
+        RT_CASE_RET_STR(LC_DATA_IN_CODE);
+        RT_CASE_RET_STR(LC_SOURCE_VERSION);
+        RT_CASE_RET_STR(LC_DYLIB_CODE_SIGN_DRS);
+        RT_CASE_RET_STR(LC_ENCRYPTION_INFO_64);
+        RT_CASE_RET_STR(LC_LINKER_OPTION);
+        RT_CASE_RET_STR(LC_LINKER_OPTIMIZATION_HINT);
+        RT_CASE_RET_STR(LC_VERSION_MIN_TVOS);
+        RT_CASE_RET_STR(LC_VERSION_MIN_WATCHOS);
+        RT_CASE_RET_STR(LC_NOTE);
+        RT_CASE_RET_STR(LC_BUILD_VERSION);
+    }
+    return "??";
+}
+
+
+static const char *dbgcMachoProt(uint32_t fProt)
+{
+    switch (fProt)
+    {
+        case VM_PROT_NONE:                                      return "---";
+        case VM_PROT_READ:                                      return "r--";
+        case VM_PROT_READ | VM_PROT_WRITE:                      return "rw-";
+        case VM_PROT_READ | VM_PROT_EXECUTE:                    return "r-x";
+        case VM_PROT_READ | VM_PROT_WRITE | VM_PROT_EXECUTE:    return "rwx";
+        case VM_PROT_WRITE:                                     return "-w-";
+        case VM_PROT_WRITE | VM_PROT_EXECUTE:                   return "-wx";
+        case VM_PROT_EXECUTE:                                   return "-w-";
+    }
+    return "???";
+}
+
+
+static int dbgcDumpImageMachO(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PCDBGCVAR pImageBase, mach_header_64_t const *pHdr)
+{
+#define ENTRY(a_Define)  { a_Define, #a_Define }
+    RT_NOREF_PV(pCmd);
+
+    /*
+     * Header:
+     */
+    DBGCCmdHlpPrintf(pCmdHlp, "%Dv: Mach-O image (%s bit) - %s (%u) - %s (%#x / %#x)\n",
+                     pImageBase, pHdr->magic == IMAGE_MACHO64_SIGNATURE ? "64" : "32",
+                     dbgcMachoFileType(pHdr->filetype), pHdr->filetype,
+                     dbgcMachoCpuType(pHdr->cputype, pHdr->cpusubtype), pHdr->cputype, pHdr->cpusubtype);
+
+    DBGCCmdHlpPrintf(pCmdHlp, "%Dv: Flags: %#x", pImageBase, pHdr->flags);
+    static DBGCDUMPFLAGENTRY const s_aHdrFlags[] =
+    {
+        FLENT(MH_NOUNDEFS),                     FLENT(MH_INCRLINK),
+        FLENT(MH_DYLDLINK),                     FLENT(MH_BINDATLOAD),
+        FLENT(MH_PREBOUND),                     FLENT(MH_SPLIT_SEGS),
+        FLENT(MH_LAZY_INIT),                    FLENT(MH_TWOLEVEL),
+        FLENT(MH_FORCE_FLAT),                   FLENT(MH_NOMULTIDEFS),
+        FLENT(MH_NOFIXPREBINDING),              FLENT(MH_PREBINDABLE),
+        FLENT(MH_ALLMODSBOUND),                 FLENT(MH_SUBSECTIONS_VIA_SYMBOLS),
+        FLENT(MH_CANONICAL),                    FLENT(MH_WEAK_DEFINES),
+        FLENT(MH_BINDS_TO_WEAK),                FLENT(MH_ALLOW_STACK_EXECUTION),
+        FLENT(MH_ROOT_SAFE),                    FLENT(MH_SETUID_SAFE),
+        FLENT(MH_NO_REEXPORTED_DYLIBS),         FLENT(MH_PIE),
+        FLENT(MH_DEAD_STRIPPABLE_DYLIB),        FLENT(MH_HAS_TLV_DESCRIPTORS),
+        FLENT(MH_NO_HEAP_EXECUTION),
+    };
+    dbgcDumpImageFlags32(pCmdHlp, pHdr->flags, s_aHdrFlags, RT_ELEMENTS(s_aHdrFlags));
+    DBGCCmdHlpPrintf(pCmdHlp, "\n");
+    if (pHdr->reserved != 0 && pHdr->magic == IMAGE_MACHO64_SIGNATURE)
+        DBGCCmdHlpPrintf(pCmdHlp, "%Dv: Reserved header field: %#x\n", pImageBase, pHdr->reserved);
+
+    /*
+     * And now the load commands.
+     */
+    const uint32_t cCmds  = pHdr->ncmds;
+    const uint32_t cbCmds = pHdr->sizeofcmds;
+    DBGCCmdHlpPrintf(pCmdHlp, "%Dv: %u load commands covering %#x bytes:\n", pImageBase, cCmds, cbCmds);
+    if (cbCmds > _16M)
+        return DBGCCmdHlpFailRc(pCmdHlp, pCmd, VERR_OUT_OF_RANGE,
+                                "%Dv: Commands too big: %#x bytes, max 16MiB\n", pImageBase, cbCmds);
+
+    /* Calc address of the first command: */
+    const uint32_t cbHdr = pHdr->magic == IMAGE_MACHO64_SIGNATURE ? sizeof(mach_header_64_t) : sizeof(mach_header_32_t);
+    DBGCVAR Addr;
+    int rc = DBGCCmdHlpEval(pCmdHlp, &Addr, "%DV + %#RX32", pImageBase, cbHdr);
+    AssertRCReturn(rc, rc);
+
+    /* Read them into a temp buffer: */
+    uint8_t *pbCmds = (uint8_t *)RTMemTmpAllocZ(cbCmds);
+    if (!pbCmds)
+        return VERR_NO_TMP_MEMORY;
+
+    rc = DBGCCmdHlpMemRead(pCmdHlp, pbCmds, cbCmds, &Addr, NULL);
+    if (RT_SUCCESS(rc))
+    {
+        static const DBGCDUMPFLAGENTRY s_aSegFlags[] =
+        { FLENT(SG_HIGHVM), FLENT(SG_FVMLIB), FLENT(SG_NORELOC), FLENT(SG_PROTECTED_VERSION_1), };
+
+        /*
+         * Iterate the commands.
+         */
+        uint32_t offCmd = 0;
+        for (uint32_t iCmd = 0; iCmd < cCmds; iCmd++)
+        {
+            load_command_t const *pCurCmd = (load_command_t const *)&pbCmds[offCmd];
+            const uint32_t cbCurCmd = offCmd + sizeof(*pCurCmd) <= cbCmds ? pCurCmd->cmdsize : sizeof(*pCurCmd);
+            if (offCmd + cbCurCmd > cbCmds)
+            {
+                rc = DBGCCmdHlpFailRc(pCmdHlp, pCmd, VERR_OUT_OF_RANGE,
+                                      "%Dv: Load command #%u (offset %#x + %#x) is out of bounds! cmdsize=%u (%#x) cmd=%u\n",
+                                      pImageBase, iCmd, offCmd, cbHdr, cbCurCmd, cbCurCmd,
+                                      offCmd + RT_UOFFSET_AFTER(load_command_t, cmd) <= cbCmds ? pCurCmd->cmd : UINT32_MAX);
+                break;
+            }
+
+            DBGCCmdHlpPrintf(pCmdHlp, "%Dv: Load command #%u (offset %#x + %#x): %s (%u) LB %u\n",
+                             pImageBase, iCmd, offCmd, cbHdr, dbgcMachoLoadCommand(pCurCmd->cmd), pCurCmd->cmd, cbCurCmd);
+            switch (pCurCmd->cmd)
+            {
+                case LC_SEGMENT_64:
+                    if (cbCurCmd < sizeof(segment_command_64_t))
+                        rc = DBGCCmdHlpFailRc(pCmdHlp, pCmd, VERR_LDRMACHO_BAD_LOAD_COMMAND,
+                                              "%Dv: LC_SEGMENT64 is too short!\n", pImageBase);
+                    else
+                    {
+                        segment_command_64_t const *pSeg = (segment_command_64_t const *)pCurCmd;
+                        DBGCCmdHlpPrintf(pCmdHlp, "%Dv:   vmaddr: %016RX64 LB %08RX64  prot: %s(%x)  maxprot: %s(%x)  name: %.16s\n",
+                                         pImageBase, pSeg->vmaddr, pSeg->vmsize, dbgcMachoProt(pSeg->initprot), pSeg->initprot,
+                                         dbgcMachoProt(pSeg->maxprot), pSeg->maxprot, pSeg->segname);
+                        DBGCCmdHlpPrintf(pCmdHlp, "%Dv:   file:   %016RX64 LB %08RX64  sections: %2u  flags: %#x",
+                                         pImageBase, pSeg->fileoff, pSeg->filesize, pSeg->nsects, pSeg->flags);
+                        dbgcDumpImageFlags32(pCmdHlp, pSeg->flags, s_aSegFlags, RT_ELEMENTS(s_aSegFlags));
+                        DBGCCmdHlpPrintf(pCmdHlp, "\n");
+                        if (   pSeg->nsects > _64K
+                            || pSeg->nsects * sizeof(section_64_t) + sizeof(pSeg) > cbCurCmd)
+                            rc = DBGCCmdHlpFailRc(pCmdHlp, pCmd, VERR_LDRMACHO_BAD_LOAD_COMMAND,
+                                                  "%Dv: LC_SEGMENT64 is too short for all the sections!\n", pImageBase);
+                        else
+                        {
+                            section_64_t const *paSec = (section_64_t const *)(pSeg + 1);
+                            for (uint32_t iSec = 0; iSec < pSeg->nsects; iSec++)
+                            {
+                                DBGCCmdHlpPrintf(pCmdHlp,
+                                                 "%Dv:   Section #%u: %016RX64 LB %08RX64  align: 2**%-2u  name: %.16s",
+                                                 pImageBase, iSec, paSec[iSec].addr, paSec[iSec].size, paSec[iSec].align,
+                                                 paSec[iSec].sectname);
+                                if (strncmp(pSeg->segname, paSec[iSec].segname, sizeof(pSeg->segname)))
+                                    DBGCCmdHlpPrintf(pCmdHlp, "(in %.16s)", paSec[iSec].segname);
+                                DBGCCmdHlpPrintf(pCmdHlp, "\n");
+
+                                /// @todo Good night!
+                                ///    uint32_t            offset;
+                                ///    uint32_t            reloff;
+                                ///    uint32_t            nreloc;
+                                ///    uint32_t            flags;
+                                ///    /** For S_LAZY_SYMBOL_POINTERS, S_NON_LAZY_SYMBOL_POINTERS and S_SYMBOL_STUBS
+                                ///     * this is the index into the indirect symbol table. */
+                                ///    uint32_t            reserved1;
+                                ///    uint32_t            reserved2;
+                                ///    uint32_t            reserved3;
+                                ///
+                            }
+                        }
+                    }
+                    break;
+            }
+
+            /* Advance: */
+            offCmd += cbCurCmd;
+        }
+    }
+    else
+        rc = DBGCCmdHlpFailRc(pCmdHlp, pCmd, rc, "%Dv: Error reading load commands %Dv LB %#x\n",
+                              pImageBase, &Addr, cbCmds);
+    RTMemTmpFree(pbCmds);
+    return rc;
+#undef ENTRY
 }
 
 
@@ -430,6 +729,7 @@ DECLCALLBACK(int) dbgcCmdDumpImage(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM pUV
                 uint32_t            u32Magic;
                 IMAGE_FILE_HEADER   FileHdr;
             } Nt;
+            mach_header_64_t    MachO64;
         } uBuf;
         DBGCVAR const ImageBase = paArgs[iArg];
         int rc = DBGCCmdHlpMemRead(pCmdHlp, &uBuf.DosHdr, sizeof(uBuf.DosHdr), &ImageBase, NULL);
@@ -474,6 +774,12 @@ DECLCALLBACK(int) dbgcCmdDumpImage(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM pUV
              */
             else if (uBuf.ab[0] == ELFMAG0 && uBuf.ab[1] == ELFMAG1 && uBuf.ab[2] == ELFMAG2 && uBuf.ab[3] == ELFMAG3)
                 rc = dbgcDumpImageElf(pCmd, pCmdHlp, &ImageBase);
+            /*
+             * Mach-O.
+             */
+            else if (   uBuf.MachO64.magic == IMAGE_MACHO64_SIGNATURE
+                     || uBuf.MachO64.magic == IMAGE_MACHO32_SIGNATURE )
+                rc = dbgcDumpImageMachO(pCmd, pCmdHlp, &ImageBase, &uBuf.MachO64);
             /*
              * Dunno.
              */
