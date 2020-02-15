@@ -635,9 +635,9 @@ static DECLCALLBACK(int) rtDbgModDeferredImg_Close(PRTDBGMODINT pMod)
 
 
 /** @interface_method_impl{RTDBGMODVTIMG,pfnTryOpen} */
-static DECLCALLBACK(int) rtDbgModDeferredImg_TryOpen(PRTDBGMODINT pMod, RTLDRARCH enmArch)
+static DECLCALLBACK(int) rtDbgModDeferredImg_TryOpen(PRTDBGMODINT pMod, RTLDRARCH enmArch, uint32_t fLdrFlags)
 {
-    NOREF(enmArch);
+    RT_NOREF(enmArch, fLdrFlags);
     return rtDbgModDeferredDoIt(pMod, true /*fForceRetry*/);
 }
 
@@ -680,10 +680,11 @@ DECL_HIDDEN_CONST(RTDBGMODVTIMG) const g_rtDbgModVtImgDeferred =
  *                              reference will be retained.
  * @param   cbDeferred          The size of the deferred instance data, 0 if the
  *                              default structure is good enough.
+ * @param   fFlags              RTDBGMOD_F_XXX.
  * @param   ppDeferred          Where to return the instance data. Can be NULL.
  */
 DECLHIDDEN(int) rtDbgModDeferredCreate(PRTDBGMODINT pDbgMod, PFNRTDBGMODDEFERRED pfnDeferred, RTUINTPTR cbImage,
-                                       RTDBGCFG hDbgCfg, size_t cbDeferred, PRTDBGMODDEFERRED *ppDeferred)
+                                       RTDBGCFG hDbgCfg, size_t cbDeferred, uint32_t fFlags, PRTDBGMODDEFERRED *ppDeferred)
 {
     AssertReturn(!pDbgMod->pDbgVt, VERR_DBG_MOD_IPE);
 
@@ -700,6 +701,7 @@ DECLHIDDEN(int) rtDbgModDeferredCreate(PRTDBGMODINT pDbgMod, PFNRTDBGMODDEFERRED
         RTDbgCfgRetain(hDbgCfg);
     pDeferred->hDbgCfg     = hDbgCfg;
     pDeferred->pfnDeferred = pfnDeferred;
+    pDeferred->fFlags      = fFlags;
 
     pDbgMod->pDbgVt             = &g_rtDbgModVtDbgDeferred;
     pDbgMod->pvDbgPriv          = pDeferred;

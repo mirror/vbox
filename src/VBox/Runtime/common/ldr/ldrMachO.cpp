@@ -1524,7 +1524,7 @@ static int  kldrModMachOParseLoadCommands(PRTLDRMODMACHO pThis, char *pbStringPo
      * Adjust mapping addresses calculating the image size.
      */
     {
-        bool                fLoadLinkEdit = false;
+        bool                fLoadLinkEdit = RT_BOOL(pThis->fOpenFlags & RTLDR_O_MACHO_LOAD_LINKEDIT);
         PRTLDRMODMACHOSECT  pSectExtraItr;
         RTLDRADDR           uNextRVA = 0;
         RTLDRADDR           cb;
@@ -1546,7 +1546,7 @@ static int  kldrModMachOParseLoadCommands(PRTLDRMODMACHO pThis, char *pbStringPo
 
             /* If we're skipping the __LINKEDIT segment, check for it and adjust
                the number of segments we'll be messing with here.  ASSUMES it's
-               last (by now anyway). */
+               last (typcially is, but not always for mach_kernel). */
             if (   !fLoadLinkEdit
                 && cSegmentsToAdjust > 0
                 && !strcmp(pThis->aSegments[cSegmentsToAdjust - 1].SegInfo.pszName, "__LINKEDIT"))

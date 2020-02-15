@@ -547,9 +547,10 @@ static int dbgDiggerDarwinAddModule(PDBGDIGGERDARWIN pThis, PUVM pUVM, uint64_t 
     /*
      * Process the load commands.
      */
+    RTUUID          Uuid   = RTUUID_INITIALIZE_NULL;
     RTDBGSEGMENT    aSegs[24];
     uint32_t        cSegs  = 0;
-    RTUUID          Uuid   = RTUUID_INITIALIZE_NULL;
+    bool            fHasLinkEdit = false;
     uint32_t        cLeft  = uBuf.Hdr32.ncmds;
     uint32_t        cbLeft = uBuf.Hdr32.sizeofcmds;
     union
@@ -558,9 +559,6 @@ static int dbgDiggerDarwinAddModule(PDBGDIGGERDARWIN pThis, PUVM pUVM, uint64_t 
         load_command_t const       *pGenric;
         segment_command_32_t const *pSeg32;
         segment_command_64_t const *pSeg64;
-        section_32_t const         *pSect32;
-        section_64_t const         *pSect64;
-        symtab_command_t const     *pSymTab;
         uuid_command_t const       *pUuid;
     } uLCmd;
     uLCmd.pb = &uBuf.ab[f64Bit ? sizeof(mach_header_64_t) : sizeof(mach_header_32_t)];
@@ -579,8 +577,8 @@ static int dbgDiggerDarwinAddModule(PDBGDIGGERDARWIN pThis, PUVM pUVM, uint64_t 
                 if (!dbgDiggerDarwinIsValidSegOrSectName(uLCmd.pSeg32->segname, sizeof(uLCmd.pSeg32->segname)))
                     return VERR_INVALID_NAME;
                 if (   !strcmp(uLCmd.pSeg32->segname, "__LINKEDIT")
-                    && !dbgDiggerDarwinIsSegmentPresent(pUVM, uLCmd.pSeg32->vmaddr, uLCmd.pSeg32->vmsize,
-                                                        uModAddr, uModAddr + _64M))
+                    && !(fHasLinkEdit = dbgDiggerDarwinIsSegmentPresent(pUVM, uLCmd.pSeg32->vmaddr, uLCmd.pSeg32->vmsize,
+                                                                        uModAddr, uModAddr + _64M)))
                     break; /* This usually is discarded or not loaded at all. */
                 if (cSegs >= RT_ELEMENTS(aSegs))
                     return VERR_BUFFER_OVERFLOW;
@@ -600,8 +598,8 @@ static int dbgDiggerDarwinAddModule(PDBGDIGGERDARWIN pThis, PUVM pUVM, uint64_t 
                 if (!dbgDiggerDarwinIsValidSegOrSectName(uLCmd.pSeg64->segname, sizeof(uLCmd.pSeg64->segname)))
                     return VERR_INVALID_NAME;
                 if (   !strcmp(uLCmd.pSeg64->segname, "__LINKEDIT")
-                    && !dbgDiggerDarwinIsSegmentPresent(pUVM, uLCmd.pSeg64->vmaddr, uLCmd.pSeg64->vmsize,
-                                                        uModAddr, uModAddr + _128M))
+                    && !(fHasLinkEdit = dbgDiggerDarwinIsSegmentPresent(pUVM, uLCmd.pSeg64->vmaddr, uLCmd.pSeg64->vmsize,
+                                                                        uModAddr, uModAddr + _128M)))
                     break; /* This usually is discarded or not loaded at all. */
                 if (cSegs >= RT_ELEMENTS(aSegs))
                     return VERR_BUFFER_OVERFLOW;
@@ -636,7 +634,10 @@ static int dbgDiggerDarwinAddModule(PDBGDIGGERDARWIN pThis, PUVM pUVM, uint64_t 
     }
 
     if (cbLeft != 0)
+    {
+        LogRel(("OSXDig: uModAddr=%#RX64 - %u bytes of command left over!\n", uModAddr, cbLeft));
         return VERR_BAD_EXE_FORMAT;
+    }
 
     /*
      * Some post processing checks.
@@ -656,7 +657,8 @@ static int dbgDiggerDarwinAddModule(PDBGDIGGERDARWIN pThis, PUVM pUVM, uint64_t 
      */
     RTDBGMOD hMod;
     rc = RTDbgModCreateFromMachOImage(&hMod, pszName, NULL, f64Bit ? RTLDRARCH_AMD64 : RTLDRARCH_X86_32, 0 /*cbImage*/,
-                                      cSegs, aSegs, &Uuid, DBGFR3AsGetConfig(pUVM), RTDBGMOD_F_NOT_DEFERRED);
+                                      cSegs, aSegs, &Uuid, DBGFR3AsGetConfig(pUVM),
+                                      RTDBGMOD_F_NOT_DEFERRED | (fHasLinkEdit ? RTDBGMOD_F_MACHO_LOAD_LINKEDIT : 0));
 
     if (RT_FAILURE(rc))
     {

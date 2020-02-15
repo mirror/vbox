@@ -1244,7 +1244,11 @@ RTDECL(int)         RTDbgModCreateFromMachOImage(PRTDBGMOD phDbgMod, const char 
  * @{ */
 /** Overrides the hDbgCfg settings and forces an image and/or symbol file
  *  search.  RTDbgModCreate will quietly ignore this flag. */
-#define RTDBGMOD_F_NOT_DEFERRED     RT_BIT_32(0)
+#define RTDBGMOD_F_NOT_DEFERRED         RT_BIT_32(0)
+/** Mach-O: Load the __LINKEDIT segment (@sa RTLDR_O_MACHO_LOAD_LINKEDIT). */
+#define RTDBGMOD_F_MACHO_LOAD_LINKEDIT  RT_BIT_32(1)
+/** Valid flag mask. */
+#define RTDBGMOD_F_VALID_MASK           UINT32_C(0x00000003)
 /** @} */
 
 
