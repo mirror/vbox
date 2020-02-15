@@ -34,6 +34,7 @@
 #include <iprt/string.h>
 #include <iprt/assert.h>
 #include <iprt/ctype.h>
+#include <iprt/time.h>
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -6118,6 +6119,18 @@ static DECLCALLBACK(int) dbgcCmdListModules(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp,
                             DBGCCmdHlpPrintf(pCmdHlp, "    Local image: %s\n", pszImgFileUsed);
                         if (fVerbose && pszDbgFile)
                             DBGCCmdHlpPrintf(pCmdHlp, "    Debug file:  %s\n", pszDbgFile);
+                        if (fVerbose)
+                        {
+                            char szTmp[64];
+                            RTTIMESPEC TimeSpec;
+                            int64_t    secTs = 0;
+                            if (RT_SUCCESS(RTDbgModImageQueryProp(hMod, RTLDRPROP_TIMESTAMP_SECONDS, &secTs, sizeof(secTs), NULL)))
+                                DBGCCmdHlpPrintf(pCmdHlp, "    Timestamp:   %08RX64  %s\n", secTs,
+                                                 RTTimeSpecToString(RTTimeSpecSetSeconds(&TimeSpec, secTs), szTmp, sizeof(szTmp)));
+                            RTUUID Uuid;
+                            if (RT_SUCCESS(RTDbgModImageQueryProp(hMod, RTLDRPROP_UUID, &Uuid, sizeof(Uuid), NULL)))
+                                DBGCCmdHlpPrintf(pCmdHlp, "    UUID:        %RTuuid\n", &Uuid);
+                        }
 
                         if (fMappings)
                         {
