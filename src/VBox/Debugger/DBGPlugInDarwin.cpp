@@ -406,7 +406,7 @@ static DECLCALLBACK(int)  dbgDiggerDarwinRefresh(PUVM pUVM, void *pvData)
  * @param   uMinAddr            Lowest allowed address.
  * @param   uMaxAddr            Highest allowed address.
  */
-static int dbgDiggerDarwinIsSegmentPresent(PUVM pUVM, uint64_t uSegAddr, uint64_t cbSeg, uint64_t uMinAddr, uint64_t uMaxAddr)
+static bool dbgDiggerDarwinIsSegmentPresent(PUVM pUVM, uint64_t uSegAddr, uint64_t cbSeg, uint64_t uMinAddr, uint64_t uMaxAddr)
 {
     /*
      * Validate the size and address.
@@ -656,17 +656,33 @@ static int dbgDiggerDarwinAddModule(PDBGDIGGERDARWIN pThis, PUVM pUVM, uint64_t 
      * Create a debug module.
      */
     RTDBGMOD hMod;
-    rc = RTDbgModCreateFromMachOImage(&hMod, pszName, NULL, f64Bit ? RTLDRARCH_AMD64 : RTLDRARCH_X86_32, 0 /*cbImage*/,
-                                      cSegs, aSegs, &Uuid, DBGFR3AsGetConfig(pUVM),
+    rc = RTDbgModCreateFromMachOImage(&hMod, pszName, NULL, f64Bit ? RTLDRARCH_AMD64 : RTLDRARCH_X86_32, NULL /*phLdrModIn*/,
+                                      0 /*cbImage*/, cSegs, aSegs, &Uuid, DBGFR3AsGetConfig(pUVM),
                                       RTDBGMOD_F_NOT_DEFERRED | (fHasLinkEdit ? RTDBGMOD_F_MACHO_LOAD_LINKEDIT : 0));
 
+
+    /*
+     * If module creation failed and we've got a linkedit segment, try open the
+     * image in-memory, because that will at a minimum give us symbol table symbols.
+     */
+    if (RT_FAILURE(rc) && fHasLinkEdit)
+    {
+        DBGFADDRESS DbgfAddr;
+        RTERRINFOSTATIC ErrInfo;
+        rc = DBGFR3ModInMem(pUVM, DBGFR3AddrFromFlat(pUVM, &DbgfAddr, uModAddr),
+                            DBGFMODINMEM_F_NO_CONTAINER_FALLBACK,
+                            pszName, NULL /*pszFilename*/, f64Bit ? RTLDRARCH_AMD64 : RTLDRARCH_X86_32, 0 /*cbImage */,
+                            &hMod, RTErrInfoInitStatic(&ErrInfo));
+        if (RT_FAILURE(rc))
+            LogRel(("OSXDig: Failed to do an in-memory-opening of '%s' at %#RX64: %Rrc%s%s\n", pszName, uModAddr, rc,
+                    RTErrInfoIsSet(&ErrInfo.Core) ? " - " : "", RTErrInfoIsSet(&ErrInfo.Core) ? ErrInfo.Core.pszMsg : ""));
+    }
+
+    /*
+     * Final fallback is a container module.
+     */
     if (RT_FAILURE(rc))
     {
-        /** @todo try open in memory. */
-
-        /*
-         * Final fallback is a container module.
-         */
         rc = RTDbgModCreate(&hMod, pszName, 0, 0);
         if (RT_FAILURE(rc))
             return rc;

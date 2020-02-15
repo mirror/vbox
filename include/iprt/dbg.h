@@ -1237,8 +1237,8 @@ RTDECL(int)         RTDbgModCreateFromPdb(PRTDBGMOD phDbgMod, const char *pszFil
 RTDECL(int)         RTDbgModCreateFromDwo(PRTDBGMOD phDbgMod, const char *pszFilename, const char *pszName, uint32_t cbImage,
                                           uint32_t uCrc32, RTDBGCFG hDbgCfg);
 RTDECL(int)         RTDbgModCreateFromMachOImage(PRTDBGMOD phDbgMod, const char *pszFilename, const char *pszName,
-                                                 RTLDRARCH enmArch, uint32_t cbImage, uint32_t cSegs, PCRTDBGSEGMENT paSegs,
-                                                 PCRTUUID pUuid, RTDBGCFG hDbgCfg, uint32_t fFlags);
+                                                 RTLDRARCH enmArch, PRTLDRMOD phLdrModIn, uint32_t cbImage, uint32_t cSegs,
+                                                 PCRTDBGSEGMENT paSegs, PCRTUUID pUuid, RTDBGCFG hDbgCfg, uint32_t fFlags);
 
 /** @name Flags for RTDbgModCreate and friends.
  * @{ */

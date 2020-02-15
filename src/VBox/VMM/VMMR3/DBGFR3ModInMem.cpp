@@ -28,14 +28,53 @@
 #include <iprt/mem.h>
 #include <iprt/path.h>
 #include <iprt/string.h>
+#include <iprt/sort.h>
 #include <iprt/formats/pecoff.h>
 #include <iprt/formats/mz.h>
 #include <iprt/formats/elf.h>
+#include <iprt/formats/mach-o.h>
 
 
 /*********************************************************************************************************************************
 *   Structures and Typedefs                                                                                                      *
 *********************************************************************************************************************************/
+/** Entry for mapping file offset to memory location. */
+typedef struct DBGFMODINMEMMAPPING
+{
+    /** The file offset. */
+    uint32_t        offFile;
+    /** The file size of this mapping. */
+    uint32_t        cbFile;
+    /** The size of this mapping. */
+    uint32_t        cbMem;
+    /** The offset to the memory from the start of the image.
+     * @note This can be negative (for mach_kernel).  */
+    int32_t         offMem;
+} DBGFMODINMEMMAPPING;
+typedef DBGFMODINMEMMAPPING *PDBGFMODINMEMMAPPING;
+typedef DBGFMODINMEMMAPPING const *PCDBGFMODINMEMMAPPING;
+
+/**
+ * Common in-memory reader instance data.
+ */
+typedef struct DBGFMODINMEMRDR
+{
+    /** The VM handle (referenced). */
+    PUVM                pUVM;
+    /** The image base. */
+    DBGFADDRESS         ImageAddr;
+    /** The file size, based on the offFile and cbFile of the last  mapping. */
+    uint32_t            cbFile;
+    /** Number of entries in the aMappings table. */
+    uint32_t            cMappings;
+    /** Mapping hint. */
+    uint32_t            iHint;
+    /** Mapping file offset to memory offsets, ordered by file offset. */
+    DBGFMODINMEMMAPPING aMappings[RT_FLEXIBLE_ARRAY_NESTED];
+} DBGFMODINMEMRDR;
+/** Pointer to the common instance data for an in-memory file reader. */
+typedef DBGFMODINMEMRDR *PDBGFMODINMEMRDR;
+
 /**
  * The WinNT digger's loader reader instance data.
  */
@@ -79,6 +118,8 @@ typedef union DBGFMODINMEMBUF
     IMAGE_DOS_HEADER    DosHdr;
     IMAGE_NT_HEADERS32  Nt32;
     IMAGE_NT_HEADERS64  Nt64;
+    mach_header_64      MachoHdr;
+    DBGFMODINMEMMAPPING aMappings[0x2000 / sizeof(DBGFMODINMEMMAPPING)];
 } DBGFMODINMEMBUF;
 /** Pointer to stack buffer. */
 typedef DBGFMODINMEMBUF *PDBGFMODINMEMBUF;
@@ -133,6 +174,157 @@ const char *dbgfR3ModNormalizeName(const char *pszName, char *pszBuf, size_t cbB
 
 
 /**
+ * @callback_method_impl{PFNRTLDRRDRMEMREAD}
+ */
+static DECLCALLBACK(int) dbgfModInMemCommon_Read(void *pvBuf, size_t cb, size_t off, void *pvUser)
+{
+    PDBGFMODINMEMRDR pThis   = (PDBGFMODINMEMRDR)pvUser;
+    uint32_t         offFile = (uint32_t)off;
+    AssertReturn(offFile == off, VERR_INVALID_PARAMETER);
+
+    /*
+     * Set i to a mapping that starts at or before the specified offset.
+     * ASSUMING aMappings are sorted by offFile.
+     */
+    uint32_t i = pThis->iHint;
+    if (pThis->aMappings[i].offFile > offFile)
+    {
+        i = pThis->cMappings; /** @todo doesn't need to start from the end here... */
+        while (i-- > 0)
+            if (offFile >= pThis->aMappings[i].offFile)
+                break;
+        pThis->iHint = i;
+    }
+
+    while (cb > 0)
+    {
+        uint32_t offNextMap =  i + 1 < pThis->cMappings ? pThis->aMappings[i + 1].offFile
+                            : pThis->aMappings[i].offFile + RT_MAX(pThis->aMappings[i].cbFile, pThis->aMappings[i].cbMem);
+        uint32_t offMap     = offFile - pThis->aMappings[i].offFile;
+
+        /* Read file bits backed by memory. */
+        if (offMap < pThis->aMappings[i].cbMem)
+        {
+            uint32_t cbToRead = pThis->aMappings[i].cbMem - offMap;
+            if (cbToRead > cb)
+                cbToRead = (uint32_t)cb;
+
+            DBGFADDRESS Addr = pThis->ImageAddr;
+            DBGFR3AddrAdd(&Addr, pThis->aMappings[i].offMem + offMap);
+
+            int rc = DBGFR3MemRead(pThis->pUVM, 0 /*idCpu*/, &Addr, pvBuf, cbToRead);
+            if (RT_FAILURE(rc))
+                return rc;
+
+            /* Done? */
+            if (cbToRead == cb)
+                break;
+
+            offFile += cbToRead;
+            cb      -= cbToRead;
+            pvBuf    = (char *)pvBuf + cbToRead;
+        }
+
+        /* Mind the gap. */
+        if (offNextMap > offFile)
+        {
+            uint32_t cbZero = offNextMap - offFile;
+            if (cbZero > cb)
+            {
+                RT_BZERO(pvBuf, cb);
+                break;
+            }
+
+            RT_BZERO(pvBuf, cbZero);
+            offFile += cbZero;
+            cb      -= cbZero;
+            pvBuf   = (char *)pvBuf + cbZero;
+        }
+
+        pThis->iHint = ++i;
+    }
+
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * @callback_method_impl{PFNRTLDRRDRMEMDTOR}
+ */
+static DECLCALLBACK(void) dbgfModInMemCommon_Dtor(void *pvUser, size_t cbImage)
+{
+    PDBGFMODINMEMRDR pThis = (PDBGFMODINMEMRDR)pvUser;
+    RT_NOREF(cbImage);
+
+    VMR3ReleaseUVM(pThis->pUVM);
+    pThis->pUVM = NULL;
+
+    RTMemFree(pThis);
+}
+
+
+/**
+ * @callback_method_impl{FNRTSORTCMP}
+ */
+static DECLCALLBACK(int) dbgfModInMemCompMappings(void const *pvElement1, void const *pvElement2, void *pvUser)
+{
+    RT_NOREF(pvUser);
+    PCDBGFMODINMEMMAPPING pElement1 = (PCDBGFMODINMEMMAPPING)pvElement1;
+    PCDBGFMODINMEMMAPPING pElement2 = (PCDBGFMODINMEMMAPPING)pvElement2;
+    if (pElement1->offFile < pElement2->offFile)
+        return -1;
+    if (pElement1->offFile > pElement2->offFile)
+        return 1;
+    if (pElement1->cbFile < pElement2->cbFile)
+        return -1;
+    if (pElement1->cbFile > pElement2->cbFile)
+        return 1;
+    if (pElement1->offMem < pElement2->offMem)
+        return -1;
+    if (pElement1->offMem > pElement2->offMem)
+        return 1;
+    if (pElement1->cbMem < pElement2->cbMem)
+        return -1;
+    if (pElement1->cbMem > pElement2->cbMem)
+        return 1;
+    return 0;
+}
+
+
+static int dbgfModInMemCommon_Init(PDBGFMODINMEMRDR pThis, PUVM pUVM, PCDBGFADDRESS pImageAddr,PCDBGFMODINMEMMAPPING paMappings,
+                                   uint32_t cMappings, const char *pszName, RTLDRARCH enmArch,
+                                   PRTLDRMOD phLdrMod, PRTERRINFO pErrInfo)
+{
+    /*
+     * Initialize the reader instance.
+     */
+    VMR3RetainUVM(pUVM);
+    pThis->pUVM      = pUVM;
+    pThis->ImageAddr = *pImageAddr;
+    pThis->cMappings = cMappings;
+    pThis->iHint     = 0;
+    memcpy(pThis->aMappings, paMappings, cMappings * sizeof(pThis->aMappings[0]));
+    RTSortShell(pThis->aMappings, cMappings, sizeof(pThis->aMappings[0]), dbgfModInMemCompMappings, NULL);
+    pThis->cbFile    = pThis->aMappings[cMappings - 1].offFile + pThis->aMappings[cMappings - 1].cbFile;
+
+    /*
+     * Call the loader to open it.
+     * Note! destructore is always called.
+     */
+
+    RTLDRMOD hLdrMod;
+    int rc = RTLdrOpenInMemory(pszName, RTLDR_O_FOR_DEBUG, enmArch, pThis->cbFile,
+                               dbgfModInMemCommon_Read, dbgfModInMemCommon_Dtor, pThis,
+                               &hLdrMod, pErrInfo);
+    if (RT_SUCCESS(rc))
+        *phLdrMod = hLdrMod;
+    else
+        *phLdrMod = NIL_RTLDRMOD;
+    return rc;
+}
+
+
+/**
  * Handles in-memory ELF images.
  *
  * @returns VBox status code.
@@ -154,6 +346,201 @@ static int dbgfR3ModInMemElf(PUVM pUVM, PCDBGFADDRESS pImageAddr, uint32_t fFlag
 {
     RT_NOREF(pUVM, fFlags, pszName, pszFilename, enmArch, cbImage, puBuf, phDbgMod);
     return RTERRINFO_LOG_SET_F(pErrInfo, VERR_INVALID_EXE_SIGNATURE, "Found ELF magic at %RGv", pImageAddr->FlatPtr);
+}
+
+
+/**
+ * Handles in-memory Mach-O images.
+ *
+ * @returns VBox status code.
+ * @param   pUVM            The user mode VM handle.
+ * @param   pImageAddr      The image address.
+ * @param   fFlags          Flags, DBGFMODINMEM_F_XXX.
+ * @param   pszName         The module name, optional.
+ * @param   pszFilename     The image filename, optional.
+ * @param   enmArch         The image arch if we force it, pass
+ *                          RTLDRARCH_WHATEVER if you don't care.
+ * @param   cbImage         Image size.  Pass 0 if not known.
+ * @param   puBuf           The header buffer.
+ * @param   phDbgMod        Where to return the resulting debug module on success.
+ * @param   pErrInfo        Where to return extended error info on failure.
+ */
+static int dbgfR3ModInMemMachO(PUVM pUVM, PCDBGFADDRESS pImageAddr, uint32_t fFlags, const char *pszName, const char *pszFilename,
+                               RTLDRARCH enmArch, uint32_t cbImage, PDBGFMODINMEMBUF puBuf,
+                               PRTDBGMOD phDbgMod, PRTERRINFO pErrInfo)
+{
+    RT_NOREF(cbImage, fFlags);
+
+    /*
+     * Match up enmArch.
+     */
+    if (enmArch == RTLDRARCH_AMD64)
+    {
+        if (puBuf->MachoHdr.magic != IMAGE_MACHO64_SIGNATURE)
+            return RTERRINFO_LOG_SET_F(pErrInfo, VERR_LDR_ARCH_MISMATCH, "Wanted AMD64 but header is not 64-bit");
+        if (puBuf->MachoHdr.cputype != CPU_TYPE_X86_64)
+            return RTERRINFO_LOG_SET_F(pErrInfo, VERR_LDR_ARCH_MISMATCH, "Wanted AMD64 but cpu type is %#x instead of %#x",
+                                       puBuf->MachoHdr.cputype, CPU_TYPE_X86_64);
+    }
+    else if (enmArch == RTLDRARCH_X86_32)
+    {
+        if (puBuf->MachoHdr.magic != IMAGE_MACHO32_SIGNATURE)
+            return RTERRINFO_LOG_SET_F(pErrInfo, VERR_LDR_ARCH_MISMATCH, "Wanted X86_32 but header is not 32-bit");
+        if (puBuf->MachoHdr.cputype != CPU_TYPE_X86)
+            return RTERRINFO_LOG_SET_F(pErrInfo, VERR_LDR_ARCH_MISMATCH, "Wanted X86_32 but cpu type is %#x instead of %#x",
+                                       puBuf->MachoHdr.cputype, CPU_TYPE_X86);
+    }
+    else if (enmArch != RTLDRARCH_WHATEVER)
+        return RTERRINFO_LOG_SET_F(pErrInfo, VERR_LDR_ARCH_MISMATCH, "Unsupported enmArch value %s (%d)",
+                                   RTLdrArchName(enmArch), enmArch);
+
+    /*
+     * Guess the module name if not specified and make sure it conforms to DBGC expectations.
+     */
+    char szNormalized[128];
+    if (!pszName)
+    {
+        if (pszFilename)
+            pszName = RTPathFilenameEx(pszFilename, RTPATH_STR_F_STYLE_DOS /*whatever*/);
+        if (!pszName)
+        {
+            RTStrPrintf(szNormalized, sizeof(szNormalized), "image_%#llx", (uint64_t)pImageAddr->FlatPtr);
+            pszName = szNormalized;
+        }
+    }
+    if (pszName != szNormalized)
+        pszName = dbgfR3ModNormalizeName(pszName, szNormalized, sizeof(szNormalized));
+
+    /*
+     * Read the load commands into memory, they follow the header.  Refuse
+     * if there appear to be too many or too much of these.
+     */
+    uint32_t const cLoadCmds  = puBuf->MachoHdr.ncmds;
+    uint32_t const cbLoadCmds = puBuf->MachoHdr.sizeofcmds;
+    if (cLoadCmds > _8K || cLoadCmds < 2)
+        return RTERRINFO_LOG_SET_F(pErrInfo, VERR_LDRMACHO_BAD_HEADER,
+                                   "ncmds=%u is out of sensible range (2..8192)", cLoadCmds);
+    if (cbLoadCmds > _2M || cbLoadCmds < sizeof(load_command_t) * 2)
+        return RTERRINFO_LOG_SET_F(pErrInfo, VERR_LDRMACHO_BAD_HEADER,
+                                   "cbLoadCmds=%#x is out of sensible range (8..2MiB)", cbLoadCmds);
+
+    uint8_t *pbLoadCmds = (uint8_t *)RTMemTmpAllocZ(cbLoadCmds);
+    AssertReturn(pbLoadCmds, VERR_NO_TMP_MEMORY);
+
+    uint32_t const cbHdr = puBuf->MachoHdr.magic == IMAGE_MACHO64_SIGNATURE ? sizeof(mach_header_64) : sizeof(mach_header_32);
+    DBGFADDRESS Addr = *pImageAddr;
+    int rc = DBGFR3MemRead(pUVM, 0 /*idCpu*/, DBGFR3AddrAdd(&Addr, cbHdr), pbLoadCmds, cbLoadCmds);
+    if (RT_SUCCESS(rc))
+    {
+        /*
+         * Scan it for segments so we can tranlate file offsets to virtual
+         * memory locations.
+         */
+        RTUUID   Uuid = RTUUID_INITIALIZE_NULL;
+        uint32_t cMappings = 0;
+        uint32_t offCmd = 0;
+        for (uint32_t iCmd = 0; iCmd < cLoadCmds; iCmd++)
+        {
+            load_command_t const *pCurCmd = (load_command_t const *)&pbLoadCmds[offCmd];
+            uint32_t       const  cbCurCmd = offCmd + sizeof(*pCurCmd) <= cbLoadCmds ? pCurCmd->cmdsize : sizeof(*pCurCmd);
+            if (offCmd + cbCurCmd > cbLoadCmds)
+                rc = RTERRINFO_LOG_SET_F(pErrInfo, VERR_LDRMACHO_BAD_LOAD_COMMAND,
+                                         "Load command #%u @ %#x is out of bounds: size %#x, left %#x", iCmd, offCmd, cbCurCmd,
+                                         cbLoadCmds - offCmd);
+            else if (pCurCmd->cmd == LC_SEGMENT_64)
+            {
+                segment_command_64 const *pSeg = (segment_command_64 const *)pCurCmd;
+                if (cbCurCmd >= sizeof(*pSeg))
+                {
+                    if (cMappings >= RT_ELEMENTS(puBuf->aMappings))
+                        rc = RTERRINFO_LOG_SET_F(pErrInfo, VERR_OUT_OF_RANGE, "Too many segments!");
+                    else
+                    {
+                        puBuf->aMappings[cMappings].offFile = pSeg->fileoff;
+                        puBuf->aMappings[cMappings].cbFile  = pSeg->filesize;
+                        puBuf->aMappings[cMappings].offMem  = pSeg->vmaddr - pImageAddr->FlatPtr;
+                        puBuf->aMappings[cMappings].cbMem   = pSeg->vmsize;
+                        cMappings++;
+                    }
+                }
+                else
+                    rc = RTERRINFO_LOG_SET_F(pErrInfo, VERR_LDRMACHO_BAD_LOAD_COMMAND,
+                                             "Load command #%u @ %#x is too small for a 64-bit segment: %#x", iCmd, offCmd, cbCurCmd);
+            }
+            else if (pCurCmd->cmd == LC_SEGMENT_32)
+            {
+                segment_command_32 const *pSeg = (segment_command_32 const *)pCurCmd;
+                if (cbCurCmd >= sizeof(*pSeg))
+                {
+                    if (cMappings >= RT_ELEMENTS(puBuf->aMappings))
+                        rc = RTERRINFO_LOG_SET_F(pErrInfo, VERR_OUT_OF_RANGE, "Too many segments!");
+                    else
+                    {
+                        puBuf->aMappings[cMappings].offFile = pSeg->fileoff;
+                        puBuf->aMappings[cMappings].cbFile  = pSeg->filesize;
+                        puBuf->aMappings[cMappings].offMem  = pSeg->vmaddr - pImageAddr->FlatPtr;
+                        puBuf->aMappings[cMappings].cbMem   = pSeg->vmsize;
+                        cMappings++;
+                    }
+                }
+                else
+                    rc = RTERRINFO_LOG_SET_F(pErrInfo, VERR_LDRMACHO_BAD_LOAD_COMMAND,
+                                             "Load command #%u @ %#x is too small for a 32-bit segment: %#x", iCmd, offCmd, cbCurCmd);
+            }
+            else if (pCurCmd->cmd == LC_UUID && cbCurCmd == sizeof(uuid_command_t))
+                memcpy(&Uuid, ((uuid_command_t const *)pCurCmd)->uuid, sizeof(Uuid));
+
+            if (RT_SUCCESS(rc))
+                offCmd += cbCurCmd;
+            else
+                break;
+        } /* for each command */
+
+        if (RT_SUCCESS(rc))
+        {
+            /*
+             * Create generic loader module instance (pThis is tied to it
+             * come rain come shine).
+             */
+            PDBGFMODINMEMRDR pThis = (PDBGFMODINMEMRDR)RTMemAllocZVar(RT_UOFFSETOF_DYN(DBGFMODINMEMRDR, aMappings[cMappings]));
+            if (pThis)
+            {
+                RTLDRMOD hLdrMod;
+                rc = dbgfModInMemCommon_Init(pThis, pUVM, pImageAddr, puBuf->aMappings, cMappings,
+                                             pszName, enmArch, &hLdrMod, pErrInfo);
+                if (RT_FAILURE(rc))
+                    hLdrMod = NIL_RTLDRMOD;
+
+                RTDBGMOD hMod;
+                rc = RTDbgModCreateFromMachOImage(&hMod, pszFilename ? pszFilename : pszName, pszName, enmArch,
+                                                  &hLdrMod, 0 /*cbImage*/, 0, NULL, &Uuid, DBGFR3AsGetConfig(pUVM), fFlags);
+                if (RT_SUCCESS(rc))
+                    *phDbgMod = hMod;
+#if 0 /** @todo later */
+                else if (!(fFlags & DBGFMODINMEM_F_NO_CONTAINER_FALLBACK))
+                {
+                    /*
+                     * Fallback is a container module.
+                     */
+                    rc = RTDbgModCreate(&hMod, pszName, cbImage, 0);
+                    if (RT_SUCCESS(rc))
+                    {
+                        rc = RTDbgModSymbolAdd(hMod, "Headers", 0 /*iSeg*/, 0, cbImage, 0 /*fFlags*/, NULL);
+                        AssertRC(rc);
+                    }
+                }
+#endif
+                if (hLdrMod != NIL_RTLDRMOD)
+                    RTLdrClose(hLdrMod);
+            }
+            else
+                rc = VERR_NO_MEMORY;
+        }
+    }
+    else
+        RTERRINFO_LOG_SET_F(pErrInfo, rc, "Failed to read %#x bytes of load commands", cbLoadCmds);
+    RTMemTmpFree(pbLoadCmds);
+    return rc;
 }
 
 
@@ -669,6 +1056,10 @@ VMMR3DECL(int) DBGFR3ModInMem(PUVM pUVM, PCDBGFADDRESS pImageAddr, uint32_t fFla
 
     if (uBuf.ab[0] == ELFMAG0 && uBuf.ab[1] == ELFMAG1 && uBuf.ab[2] == ELFMAG2 && uBuf.ab[3] == ELFMAG3)
         return dbgfR3ModInMemElf(pUVM, pImageAddr, fFlags, pszName, pszFilename, enmArch, cbImage, &uBuf, phDbgMod, pErrInfo);
+
+    if (   uBuf.MachoHdr.magic == IMAGE_MACHO64_SIGNATURE
+        || uBuf.MachoHdr.magic == IMAGE_MACHO32_SIGNATURE)
+        return dbgfR3ModInMemMachO(pUVM, pImageAddr, fFlags, pszName, pszFilename, enmArch, cbImage, &uBuf, phDbgMod, pErrInfo);
 
     uint32_t offNewHdrs;
     if (uBuf.DosHdr.e_magic == IMAGE_DOS_SIGNATURE)
