@@ -173,7 +173,16 @@ static RTEXITCODE rtDbgSymCacheVersion(void)
 static RTEXITCODE rtDbgSymCacheUsage(const char *pszArg0, const char *pszCommand)
 {
     if (!pszCommand || !strcmp(pszCommand, "add"))
-        RTPrintf("Usage: %s add [-Rno] <cache-root-dir> <file1> [fileN..]\n", pszArg0);
+        RTPrintf("Usage: %s add [-Rno] <cache-root-dir> <file1[=cache-name]> [fileN..]\n"
+                 "\n"
+                 "Options:\n"
+                 "  -R, --recursive\n"
+                 "      Process directory arguments recursively.\n"
+                 "  -n, --no-recursive\n"
+                 "      No recursion. (default)\n"
+                 "  -o, --overwrite-on-conflict\n"
+                 "      Overwrite existing cache entry.\n"
+                 , RTPathFilename(pszArg0));
     return RTEXITCODE_SUCCESS;
 }
 
@@ -238,9 +247,9 @@ static int rtDbgSymCacheAddCreateUuidMapping(const char *pszCacheFile, PRTUUID p
      * Calculate a relative path from there to the actual file.
      */
     char szLinkTarget[RTPATH_MAX];
-    //szMapPath[cch] = '\0';
+    szMapPath[cch] = '\0';
     rc = RTPathCalcRelative(szLinkTarget, sizeof(szLinkTarget), szMapPath, false /*fFromFile*/, pszCacheFile);
-    //szMapPath[cch] = RTPATH_SLASH;
+    szMapPath[cch] = RTPATH_SLASH;
     if (RT_FAILURE(rc))
         return RTMsgErrorRc(rc, "Failed to calculate relative path from '%s' to '%s': %Rrc", szMapPath, pszCacheFile, rc);
 
@@ -394,6 +403,8 @@ static int rtDbgSymCacheAddOneFile(const char *pszSrcPath, const char *pszDstNam
  *
  * @returns IPRT status code.
  * @param   pszPath             Path to the image file.
+ * @param   pszDstName          Add to the cache under this name.  Typically the
+ *                              filename part of @a pszPath.
  * @param   pCfg                Configuration data.
  * @param   hLdrMod             Image handle.
  * @param   pszExtraSuff        Optional extra suffix.  Mach-O dSYM hack.
@@ -404,8 +415,8 @@ static int rtDbgSymCacheAddOneFile(const char *pszSrcPath, const char *pszDstNam
  *                              descriptions of DBGFileMappedPaths in the
  *                              com.apple.DebugSymbols in the user defaults.
  */
-static int rtDbgSymCacheAddImageFileWorker(const char *pszPath, PCRTDBGSYMCACHEADDCFG pCfg, RTLDRMOD hLdrMod,
-                                           const char *pszExtrSuff, const char *pszUuidMapDir)
+static int rtDbgSymCacheAddImageFileWorker(const char *pszPath, const char *pszDstName, PCRTDBGSYMCACHEADDCFG pCfg,
+                                           RTLDRMOD hLdrMod, const char *pszExtrSuff, const char *pszUuidMapDir)
 {
     /*
      * Determine which subdirectory to put the files in.
@@ -458,8 +469,7 @@ static int rtDbgSymCacheAddImageFileWorker(const char *pszPath, PCRTDBGSYMCACHEA
     /*
      * Now add it.
      */
-    return rtDbgSymCacheAddOneFile(pszPath, RTPathFilename(pszPath), pszExtrSuff,
-                                   szSubDir, pUuid, pszUuidMapDir, pCfg);
+    return rtDbgSymCacheAddOneFile(pszPath, pszDstName, pszExtrSuff, szSubDir, pUuid, pszUuidMapDir, pCfg);
 }
 
 
@@ -468,14 +478,18 @@ static int rtDbgSymCacheAddImageFileWorker(const char *pszPath, PCRTDBGSYMCACHEA
  *
  * @returns IPRT status code.
  * @param   pszPath         Path to the image file.
+ * @param   pszDstName      Add to the cache under this name.  Typically the
+ *                          filename part of @a pszPath.
  * @param   pszExtraSuff    Optional extra suffix. Mach-O dSYM hack.
  * @param   pszUuidMapDir   The UUID map subdirectory in the cache, if this is
  *                          wanted, otherwise NULL.
  * @param   pCfg            Configuration data.
  */
-static int rtDbgSymCacheAddImageFile(const char *pszPath, const char *pszExtraSuff, const char *pszUuidMapDir,
-                                     PCRTDBGSYMCACHEADDCFG pCfg)
+static int rtDbgSymCacheAddImageFile(const char *pszPath, const char *pszDstName, const char *pszExtraSuff,
+                                     const char *pszUuidMapDir, PCRTDBGSYMCACHEADDCFG pCfg)
 {
+    RTERRINFOSTATIC ErrInfo;
+
     /*
      * Use the loader to open the alleged image file.  We need to open it with
      * arch set to amd64 and x86_32 in order to handle FAT images from the mac
@@ -484,13 +498,16 @@ static int rtDbgSymCacheAddImageFile(const char *pszPath, const char *pszExtraSu
      */
     /* Open it as AMD64. */
     RTLDRMOD hLdrMod64;
-    int rc = RTLdrOpen(pszPath, RTLDR_O_FOR_DEBUG, RTLDRARCH_AMD64, &hLdrMod64);
+    int rc = RTLdrOpenEx(pszPath, RTLDR_O_FOR_DEBUG, RTLDRARCH_AMD64, &hLdrMod64, RTErrInfoInitStatic(&ErrInfo));
     if (RT_FAILURE(rc))
     {
         if (rc != VERR_LDR_ARCH_MISMATCH)
         {
             if (rc != VERR_INVALID_EXE_SIGNATURE)
-                return RTMsgErrorRc(rc, "RTLdrOpen failed opening '%s' [arch=amd64]: %Rrc", pszPath, rc);
+                return RTMsgErrorRc(rc, "RTLdrOpen failed opening '%s' [arch=amd64]: %Rrc%s%s", pszPath, rc,
+                                    RTErrInfoIsSet(&ErrInfo.Core) ? " - " : "",
+                                    RTErrInfoIsSet(&ErrInfo.Core) ? ErrInfo.Core.pszMsg : "");
+
             RTMsgInfo("Skipping '%s', no a recognizable image file...", pszPath);
             return VINF_SUCCESS;
         }
@@ -499,13 +516,15 @@ static int rtDbgSymCacheAddImageFile(const char *pszPath, const char *pszExtraSu
 
     /* Open it as X86. */
     RTLDRMOD hLdrMod32;
-    rc = RTLdrOpen(pszPath, RTLDR_O_FOR_DEBUG, RTLDRARCH_X86_32, &hLdrMod32);
+    rc = RTLdrOpenEx(pszPath, RTLDR_O_FOR_DEBUG, RTLDRARCH_X86_32, &hLdrMod32, RTErrInfoInitStatic(&ErrInfo));
     if (RT_FAILURE(rc))
     {
         if (rc != VERR_LDR_ARCH_MISMATCH)
         {
-            RTLdrClose(hLdrMod32);
-            return RTMsgErrorRc(rc, "RTLdrOpen failed opening '%s' [arch=x86]: %Rrc", pszPath, rc);
+            RTLdrClose(hLdrMod64);
+            return RTMsgErrorRc(rc, "RTLdrOpen failed opening '%s' [arch=x86]: %Rrc%s%s", pszPath, rc,
+                                RTErrInfoIsSet(&ErrInfo.Core) ? " - " : "",
+                                RTErrInfoIsSet(&ErrInfo.Core) ? ErrInfo.Core.pszMsg : "");
         }
         hLdrMod32 = NIL_RTLDRMOD;
     }
@@ -514,9 +533,9 @@ static int rtDbgSymCacheAddImageFile(const char *pszPath, const char *pszExtraSu
      * Add the file.
      */
     if (hLdrMod32 == NIL_RTLDRMOD)
-        rc = rtDbgSymCacheAddImageFileWorker(pszPath, pCfg, hLdrMod64, pszExtraSuff, pszUuidMapDir);
+        rc = rtDbgSymCacheAddImageFileWorker(pszPath, pszDstName, pCfg, hLdrMod64, pszExtraSuff, pszUuidMapDir);
     else if (hLdrMod64 == NIL_RTLDRMOD)
-        rc = rtDbgSymCacheAddImageFileWorker(pszPath, pCfg, hLdrMod32, pszExtraSuff, pszUuidMapDir);
+        rc = rtDbgSymCacheAddImageFileWorker(pszPath, pszDstName, pCfg, hLdrMod32, pszExtraSuff, pszUuidMapDir);
     else
     {
         /*
@@ -547,11 +566,11 @@ static int rtDbgSymCacheAddImageFile(const char *pszPath, const char *pszExtraSu
             }
         }
 
-        rc = rtDbgSymCacheAddImageFileWorker(pszPath, pCfg, hLdrMod64, pszExtraSuff, pszUuidMapDir);
+        rc = rtDbgSymCacheAddImageFileWorker(pszPath, pszDstName, pCfg, hLdrMod64, pszExtraSuff, pszUuidMapDir);
         if (!fSame)
         {
             /** @todo should symlink or hardlink this second copy. */
-            int rc2 = rtDbgSymCacheAddImageFileWorker(pszPath, pCfg, hLdrMod32, pszExtraSuff, pszUuidMapDir);
+            int rc2 = rtDbgSymCacheAddImageFileWorker(pszPath, pszDstName, pCfg, hLdrMod32, pszExtraSuff, pszUuidMapDir);
             if (RT_FAILURE(rc2) && RT_SUCCESS(rc))
                 rc = rc2;
         }
@@ -569,13 +588,15 @@ static int rtDbgSymCacheAddImageFile(const char *pszPath, const char *pszExtraSu
  *
  * @returns IPRT status code
  * @param   pszPath             The path to the PDB file.
+ * @param   pszDstName          Add to the cache under this name.  Typically the
+ *                              filename part of @a pszPath.
  * @param   pCfg                The configuration.
  * @param   hFile               Handle to the file.
  */
-static int rtDbgSymCacheAddDebugMachO(const char *pszPath, PCRTDBGSYMCACHEADDCFG pCfg)
+static int rtDbgSymCacheAddDebugMachO(const char *pszPath, const char *pszDstName, PCRTDBGSYMCACHEADDCFG pCfg)
 {
     /* This shouldn't happen, figure out what to do if it does. */
-    RT_NOREF_PV(pCfg);
+    RT_NOREF(pCfg, pszDstName);
     return RTMsgErrorRc(VERR_NOT_IMPLEMENTED,
                         "'%s' is an OS X image file, did you point me to a file inside a .dSYM or .sym file?",
                         pszPath);
@@ -587,12 +608,14 @@ static int rtDbgSymCacheAddDebugMachO(const char *pszPath, PCRTDBGSYMCACHEADDCFG
  *
  * @returns IPRT status code
  * @param   pszPath             The path to the PDB file.
+ * @param   pszDstName          Add to the cache under this name.  Typically the
+ *                              filename part of @a pszPath.
  * @param   pCfg                The configuration.
  * @param   hFile               Handle to the file.
  */
-static int rtDbgSymCacheAddDebugPdb(const char *pszPath, PCRTDBGSYMCACHEADDCFG pCfg, RTFILE hFile)
+static int rtDbgSymCacheAddDebugPdb(const char *pszPath, const char *pszDstName, PCRTDBGSYMCACHEADDCFG pCfg, RTFILE hFile)
 {
-    RT_NOREF2(pCfg, hFile);
+    RT_NOREF(pCfg, hFile, pszDstName);
     return RTMsgErrorRc(VERR_NOT_IMPLEMENTED, "PDB support not implemented: '%s'", pszPath);
 }
 
@@ -602,9 +625,11 @@ static int rtDbgSymCacheAddDebugPdb(const char *pszPath, PCRTDBGSYMCACHEADDCFG p
  *
  * @returns IPRT status code
  * @param   pszPath             The path to the debug file in question.
+ * @param   pszDstName          Add to the cache under this name.  Typically the
+ *                              filename part of @a pszPath.
  * @param   pCfg                The configuration.
  */
-static int rtDbgSymCacheAddDebugFile(const char *pszPath, PCRTDBGSYMCACHEADDCFG pCfg)
+static int rtDbgSymCacheAddDebugFile(const char *pszPath, const char *pszDstName, PCRTDBGSYMCACHEADDCFG pCfg)
 {
     /*
      * Need to extract an identifier of sorts here in order to put them in
@@ -633,14 +658,14 @@ static int rtDbgSymCacheAddDebugFile(const char *pszPath, PCRTDBGSYMCACHEADDCFG 
          * Look for magics and call workers.
          */
         if (!memcmp(uBuf.ab, RT_STR_TUPLE("Microsoft C/C++ MSF 7.00")))
-            rc = rtDbgSymCacheAddDebugPdb(pszPath, pCfg, hFile);
+            rc = rtDbgSymCacheAddDebugPdb(pszPath, pszDstName, pCfg, hFile);
         else if (   uBuf.au32[0] == IMAGE_FAT_SIGNATURE
                  || uBuf.au32[0] == IMAGE_FAT_SIGNATURE_OE
                  || uBuf.au32[0] == IMAGE_MACHO32_SIGNATURE
                  || uBuf.au32[0] == IMAGE_MACHO64_SIGNATURE
                  || uBuf.au32[0] == IMAGE_MACHO32_SIGNATURE_OE
                  || uBuf.au32[0] == IMAGE_MACHO64_SIGNATURE_OE)
-            rc = rtDbgSymCacheAddDebugMachO(pszPath, pCfg);
+            rc = rtDbgSymCacheAddDebugMachO(pszPath, pszDstName, pCfg);
         else
             rc = RTMsgErrorRc(VERR_INVALID_MAGIC, "Unsupported debug file '%s' magic: %#010x", pszPath, uBuf.au32[0]);
     }
@@ -720,17 +745,19 @@ static int rtDbgSymCacheConstructBundlePath(char *pszPath, size_t cchPath, size_
  * Adds a image bundle of some sort.
  *
  * @returns IPRT status code.
- * @param   pszPath             Path to the bundle. This a RTPATH_MAX size
- *                              buffer that we can write to when creating the
- *                              path to the file inside the bundle that we're
- *                              interested in.
- * @param   cchPath             The length of the path up to the bundle name.
- * @param   cchName             The length of the bundle name.
- * @param   pDirEntry           The directory entry buffer, for handling bundle
- *                              within bundle recursion.
- * @param   pCfg                The configuration.
+ * @param   pszPath         Path to the bundle. This a RTPATH_MAX size
+ *                          buffer that we can write to when creating the
+ *                          path to the file inside the bundle that we're
+ *                          interested in.
+ * @param   cchPath         The length of the path up to the bundle name.
+ * @param   cchName         The length of the bundle name.
+ * @param   pszDstName      Add to the cache under this name, NULL if not
+ *                          specified.
+ * @param   pDirEntry       The directory entry buffer, for handling bundle
+ *                          within bundle recursion.
+ * @param   pCfg            The configuration.
  */
-static int rtDbgSymCacheAddImageBundle(char *pszPath, size_t cchPath, size_t cchName,
+static int rtDbgSymCacheAddImageBundle(char *pszPath, size_t cchPath, size_t cchName, const char *pszDstName,
                                        PRTDIRENTRYEX pDirEntry, PCRTDBGSYMCACHEADDCFG pCfg)
 {
     /*
@@ -740,7 +767,11 @@ static int rtDbgSymCacheAddImageBundle(char *pszPath, size_t cchPath, size_t cch
     /** @todo consider looking for Frameworks and handling framework bundles. */
     int rc = rtDbgSymCacheConstructBundlePath(pszPath, cchPath, cchName, "Contents/MacOS/", g_apszBundleSuffixes);
     if (RT_SUCCESS(rc))
-        rc = rtDbgSymCacheAddImageFile(pszPath, NULL, RTDBG_CACHE_UUID_MAP_DIR_IMAGES, pCfg);
+    {
+        if (!pszDstName)
+            pszDstName = RTPathFilename(pszPath);
+        rc = rtDbgSymCacheAddImageFile(pszPath, pszDstName, NULL, RTDBG_CACHE_UUID_MAP_DIR_IMAGES, pCfg);
+    }
 
     /*
      * Look for plugins and other sub-bundles.
@@ -787,15 +818,18 @@ static int rtDbgSymCacheAddImageBundle(char *pszPath, size_t cchPath, size_t cch
  * Adds a debug bundle.
  *
  * @returns IPRT status code.
- * @param   pszPath             Path to the bundle. This a RTPATH_MAX size
- *                              buffer that we can write to when creating the
- *                              path to the file inside the bundle that we're
- *                              interested in.
- * @param   cchPath             The length of the path up to the bundle name.
- * @param   cchName             The length of the bundle name.
- * @param   pCfg                The configuration.
+ * @param   pszPath         Path to the bundle. This a RTPATH_MAX size
+ *                          buffer that we can write to when creating the
+ *                          path to the file inside the bundle that we're
+ *                          interested in.
+ * @param   cchPath         The length of the path up to the bundle name.
+ * @param   cchName         The length of the bundle name.
+ * @param   pszDstName      Add to the cache under this name, NULL if not
+ *                          specified.
+ * @param   pCfg            The configuration.
  */
-static int rtDbgSymCacheAddDebugBundle(char *pszPath, size_t cchPath, size_t cchName, PCRTDBGSYMCACHEADDCFG pCfg)
+static int rtDbgSymCacheAddDebugBundle(char *pszPath, size_t cchPath, size_t cchName, const char *pszDstName,
+                                       PCRTDBGSYMCACHEADDCFG pCfg)
 {
     /*
      * The current policy is not to add the whole .dSYM (or .sym) bundle, but
@@ -814,7 +848,11 @@ static int rtDbgSymCacheAddDebugBundle(char *pszPath, size_t cchPath, size_t cch
      */
     int rc = rtDbgSymCacheConstructBundlePath(pszPath, cchPath, cchName, "Contents/Resources/DWARF/", g_apszDSymBundleSuffixes);
     if (RT_SUCCESS(rc))
-        rc = rtDbgSymCacheAddImageFile(pszPath, RTDBG_CACHE_DSYM_FILE_SUFFIX, RTDBG_CACHE_UUID_MAP_DIR_DSYMS, pCfg);
+    {
+        if (!pszDstName)
+            pszDstName = RTPathFilename(pszPath);
+        rc = rtDbgSymCacheAddImageFile(pszPath, pszDstName, RTDBG_CACHE_DSYM_FILE_SUFFIX, RTDBG_CACHE_UUID_MAP_DIR_DSYMS, pCfg);
+    }
     return rc;
 }
 
@@ -1017,19 +1055,19 @@ static int rtDbgSymCacheAddDirWorker(char *pszPath, size_t cchPath, PRTDIRENTRYE
                 break;
 
             case RTDBGSYMCACHEFILETYPE_DEBUG_FILE:
-                rc2 = rtDbgSymCacheAddDebugFile(pszPath, pCfg);
+                rc2 = rtDbgSymCacheAddDebugFile(pszPath, pDirEntry->szName, pCfg);
                 break;
 
             case RTDBGSYMCACHEFILETYPE_IMAGE_FILE:
-                rc2 = rtDbgSymCacheAddImageFile(pszPath, NULL /*pszExtraSuff*/, RTDBG_CACHE_UUID_MAP_DIR_IMAGES, pCfg);
+                rc2 = rtDbgSymCacheAddImageFile(pszPath, pDirEntry->szName, NULL /*pszExtraSuff*/, RTDBG_CACHE_UUID_MAP_DIR_IMAGES, pCfg);
                 break;
 
             case RTDBGSYMCACHEFILETYPE_DEBUG_BUNDLE:
-                rc2 = rtDbgSymCacheAddDebugBundle(pszPath, cchPath, pDirEntry->cbName, pCfg);
+                rc2 = rtDbgSymCacheAddDebugBundle(pszPath, cchPath, pDirEntry->cbName, NULL /*pszDstName*/, pCfg);
                 break;
 
             case RTDBGSYMCACHEFILETYPE_IMAGE_BUNDLE:
-                rc2 = rtDbgSymCacheAddImageBundle(pszPath, cchPath, pDirEntry->cbName, pDirEntry, pCfg);
+                rc2 = rtDbgSymCacheAddImageBundle(pszPath, cchPath, pDirEntry->cbName, NULL /*pszDstName*/, pDirEntry, pCfg);
                 break;
 
             case RTDBGSYMCACHEFILETYPE_DIR_FILTER:
@@ -1116,27 +1154,46 @@ static RTEXITCODE rtDbgSymCacheAddFileOrDir(const char *pszPath, const char *psz
     Cfg.pszCache        = pszCache;
     Cfg.pszFilter       = NULL;
 
+    /* If the filename contains an equal ('=') char, treat the left as the file
+       to add tne right part as the name to add it under (handy for kernels). */
+    char *pszFree = NULL;
+    const char *pszDstName = RTPathFilename(pszPath);
+    const char *pszEqual   = pszDstName ? strchr(pszDstName, '=') : NULL;
+    if (pszEqual)
+    {
+        pszPath = pszFree = RTStrDupN(pszPath, pszEqual - pszPath);
+        if (!pszFree)
+            return RTMsgErrorExitFailure("out of memory!\n");
+        pszDstName = pszEqual + 1;
+        if (!*pszDstName)
+            return RTMsgErrorExitFailure("add-as filename is empty!\n");
+    }
+
     int rc;
     RTDBGSYMCACHEFILETYPE enmType = rtDbgSymCacheFigureType(pszPath);
     switch (enmType)
     {
         default:
         case RTDBGSYMCACHEFILETYPE_INVALID:
-            return RTMsgErrorExit(RTEXITCODE_FAILURE, "Invalid: '%s'", pszPath);
+            rc = RTMsgErrorRc(VERR_INVALID_PARAMETER, "Invalid: '%s'", pszPath);
+            break;
 
         case RTDBGSYMCACHEFILETYPE_DIR_FILTER:
             Cfg.pszFilter = RTPathFilename(pszPath);
             RT_FALL_THRU();
         case RTDBGSYMCACHEFILETYPE_DIR:
-            rc = rtDbgSymCacheAddDir(pszPath, &Cfg);
+            if (!pszEqual)
+                rc = rtDbgSymCacheAddDir(pszPath, &Cfg);
+            else
+                rc = RTMsgErrorRc(VERR_INVALID_PARAMETER, "Add-as filename is not applicable to directories!");
             break;
 
         case RTDBGSYMCACHEFILETYPE_DEBUG_FILE:
-            rc = rtDbgSymCacheAddDebugFile(pszPath, &Cfg);
+            rc = rtDbgSymCacheAddDebugFile(pszPath, pszDstName, &Cfg);
             break;
 
         case RTDBGSYMCACHEFILETYPE_IMAGE_FILE:
-            rc = rtDbgSymCacheAddImageFile(pszPath, NULL /*pszExtraSuff*/, RTDBG_CACHE_UUID_MAP_DIR_IMAGES, &Cfg);
+            rc = rtDbgSymCacheAddImageFile(pszPath, pszDstName, NULL /*pszExtraSuff*/, RTDBG_CACHE_UUID_MAP_DIR_IMAGES, &Cfg);
             break;
 
         case RTDBGSYMCACHEFILETYPE_DEBUG_BUNDLE:
@@ -1149,11 +1206,13 @@ static RTEXITCODE rtDbgSymCacheAddFileOrDir(const char *pszPath, const char *psz
             {
                 memcpy(szPathBuf, pszPath, cchPath + 1);
                 if (enmType == RTDBGSYMCACHEFILETYPE_DEBUG_BUNDLE)
-                    rc = rtDbgSymCacheAddDebugBundle(szPathBuf, cchPath - cchFilename, cchFilename, &Cfg);
+                    rc = rtDbgSymCacheAddDebugBundle(szPathBuf, cchPath - cchFilename, cchFilename,
+                                                     pszEqual ? pszDstName : NULL, &Cfg);
                 else
                 {
                     RTDIRENTRYEX DirEntry;
-                    rc = rtDbgSymCacheAddImageBundle(szPathBuf, cchPath - cchFilename, cchFilename, &DirEntry, &Cfg);
+                    rc = rtDbgSymCacheAddImageBundle(szPathBuf, cchPath - cchFilename, cchFilename,
+                                                     pszEqual ? pszDstName : NULL, &DirEntry, &Cfg);
                 }
             }
             else
@@ -1165,6 +1224,8 @@ static RTEXITCODE rtDbgSymCacheAddFileOrDir(const char *pszPath, const char *psz
             rc = RTMsgErrorRc(VERR_INVALID_PARAMETER, "Invalid file: '%s'", pszPath);
             break;
     }
+
+    RTStrFree(pszFree);
     return RT_SUCCESS(rc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
 }
 
