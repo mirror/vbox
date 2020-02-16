@@ -368,6 +368,7 @@ VBOX_DI_VBAPP_PROGS_HARDENED = \
 	MacOS/VBoxHeadless \
 	MacOS/VBoxNetDHCP \
 	MacOS/VBoxNetNAT \
+	MacOS/VBoxVMMPreload
 
 VBOX_DI_VBAPP_PROGS = \
 	MacOS/VBoxManage \
