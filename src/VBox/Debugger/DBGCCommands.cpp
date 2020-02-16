@@ -64,6 +64,7 @@ static FNDBGCCMD dbgcCmdLoadImage;
 static FNDBGCCMD dbgcCmdLoadInMem;
 static FNDBGCCMD dbgcCmdLoadMap;
 static FNDBGCCMD dbgcCmdLoadSeg;
+static FNDBGCCMD dbgcCmdMultiStep;
 static FNDBGCCMD dbgcCmdUnload;
 static FNDBGCCMD dbgcCmdSet;
 static FNDBGCCMD dbgcCmdUnset;
@@ -208,6 +209,14 @@ static const DBGCVARDESC    g_aArgLogFlags[] =
     {  0,           1,          DBGCVAR_CAT_STRING,     0,                              "flags",        "Flag modifier string (quote it!)." }
 };
 
+/** multistep arguments. */
+static const DBGCVARDESC    g_aArgMultiStep[] =
+{
+    /* cTimesMin,   cTimesMax,  enmCategory,            fFlags,                         pszName,        pszDescription */
+    {  0,           1,          DBGCVAR_CAT_NUMBER_NO_RANGE, 0,                         "count",        "Number of steps to take, defaults to 64." },
+    {  0,           1,          DBGCVAR_CAT_NUMBER_NO_RANGE, DBGCVD_FLAGS_DEP_PREV,     "stride",       "The length of each step, defaults to 1." },
+};
+
 
 /** loadplugin, unloadplugin. */
 static const DBGCVARDESC    g_aArgPlugIn[] =
@@ -282,6 +291,7 @@ const DBGCCMD    g_aDbgcCmds[] =
     { "logdest",    0,        1,        &g_aArgLogDest[0],   RT_ELEMENTS(g_aArgLogDest),   0, dbgcCmdLogDest,   "[dest string]",        "Displays or modifies the logging destination (VBOX_LOG_DEST)." },
     { "logflags",   0,        1,        &g_aArgLogFlags[0],  RT_ELEMENTS(g_aArgLogFlags),  0, dbgcCmdLogFlags,  "[flags string]",       "Displays or modifies the logging flags (VBOX_LOG_FLAGS)." },
     { "logflush",   0,        0,        NULL,                0,                            0, dbgcCmdLogFlush,  "",                     "Flushes the log buffers." },
+    { "multistep",  0,        2,        &g_aArgMultiStep[0], RT_ELEMENTS(g_aArgMultiStep), 0, dbgcCmdMultiStep, "[count [stride]",              "Performs the specified number of step-into operations. Stops early if non-step event occurs." },
     { "quit",       0,        0,        NULL,                0,                            0, dbgcCmdQuit,      "",                     "Exits the debugger." },
     { "runscript",  1,        1,        &g_aArgFilename[0],  RT_ELEMENTS(g_aArgFilename),  0, dbgcCmdRunScript, "<filename>",           "Runs the command listed in the script. Lines starting with '#' "
                                                                                                                                         "(after removing blanks) are comment. blank lines are ignored. Stops on failure." },
@@ -858,6 +868,52 @@ static DECLCALLBACK(int) dbgcCmdHelp(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM p
 
     NOREF(pCmd);
     NOREF(pUVM);
+    return rc;
+}
+
+
+/**
+ * @callback_method_impl{FNDBGCCMD, The 'multistep' command.}
+ */
+static DECLCALLBACK(int) dbgcCmdMultiStep(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM pUVM, PCDBGCVAR paArgs, unsigned cArgs)
+{
+    PDBGC pDbgc = DBGC_CMDHLP2DBGC(pCmdHlp);
+
+    /*
+     * Parse arguments.
+     */
+    uint32_t cSteps = 64;
+    if (cArgs > 0)
+    {
+        if (paArgs[0].u.u64Number == 0 || paArgs[0].u.u64Number > _2G)
+            return DBGCCmdHlpFailRc(pCmdHlp, pCmd, VERR_OUT_OF_RANGE,
+                                    "The 'count' argument is out of range: %#llx - 1..2GiB\n", paArgs[0].u.u64Number);
+        cSteps = (uint32_t)paArgs[0].u.u64Number;
+    }
+    uint32_t uStrideLength = 1;
+    if (cArgs > 1)
+    {
+        if (paArgs[1].u.u64Number == 0 || paArgs[1].u.u64Number > _2G)
+            return DBGCCmdHlpFailRc(pCmdHlp, pCmd, VERR_OUT_OF_RANGE,
+                                    "The 'stride' argument is out of range: %#llx - 1..2GiB\n", paArgs[0].u.u64Number);
+        uStrideLength = (uint32_t)paArgs[0].u.u64Number;
+    }
+
+    /*
+     * Take the first step.
+     */
+    int rc = DBGFR3StepEx(pUVM, pDbgc->idCpu, DBGF_STEP_F_INTO, NULL, NULL, 0, uStrideLength);
+    if (RT_SUCCESS(rc))
+    {
+        pDbgc->cMultiStepsLeft          = cSteps;
+        pDbgc->uMultiStepStrideLength   = uStrideLength;
+        pDbgc->pMultiStepCmd            = pCmd;
+        pDbgc->fReady                   = false;
+    }
+    else
+        return DBGCCmdHlpFailRc(pCmdHlp, pCmd, rc, "DBGFR3StepEx(,,DBGF_STEP_F_INTO,) failed");
+
+    NOREF(pCmd);
     return rc;
 }
 

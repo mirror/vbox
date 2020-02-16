@@ -715,7 +715,10 @@ static int dbgcProcessEvent(PDBGC pDbgc, PCDBGFEVENT pEvent)
         case DBGFEVENT_STEPPED:
         case DBGFEVENT_STEPPED_HYPER:
         {
-            rc = pDbgc->CmdHlp.pfnPrintf(&pDbgc->CmdHlp, NULL, "\ndbgf event: Single step! (%s)\n", dbgcGetEventCtx(pEvent->enmCtx));
+            if (!pDbgc->cMultiStepsLeft)
+                rc = pDbgc->CmdHlp.pfnPrintf(&pDbgc->CmdHlp, NULL, "\ndbgf event: Single step! (%s)\n", dbgcGetEventCtx(pEvent->enmCtx));
+            else
+                pDbgc->cMultiStepsLeft -= 1;
             if (RT_SUCCESS(rc))
             {
                 if (pDbgc->fStepTraceRegs)
@@ -732,6 +735,16 @@ static int dbgcProcessEvent(PDBGC pDbgc, PCDBGFEVENT pEvent)
                     if (RT_SUCCESS(rc))
                         rc = pDbgc->CmdHlp.pfnExec(&pDbgc->CmdHlp, "%s", szCmd);
                 }
+            }
+
+            /* If multi-stepping, take the next step: */
+            if (pDbgc->cMultiStepsLeft > 0)
+            {
+                int rc2 = DBGFR3StepEx(pDbgc->pUVM, pDbgc->idCpu, DBGF_STEP_F_INTO, NULL, NULL, 0, pDbgc->uMultiStepStrideLength);
+                if (RT_SUCCESS(rc2))
+                    fPrintPrompt = false;
+                else
+                    DBGCCmdHlpFailRc(&pDbgc->CmdHlp, pDbgc->pMultiStepCmd, rc2, "DBGFR3StepEx(,,DBGF_STEP_F_INTO,) failed");
             }
             break;
         }
@@ -859,6 +872,7 @@ static int dbgcProcessEvent(PDBGC pDbgc, PCDBGFEVENT pEvent)
         pDbgc->fReady = true;
         if (RT_SUCCESS(rc))
             pDbgc->pBack->pfnSetReady(pDbgc->pBack, true);
+        pDbgc->cMultiStepsLeft = 0;
     }
 
     return rc;
