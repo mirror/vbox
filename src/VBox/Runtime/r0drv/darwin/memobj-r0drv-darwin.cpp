@@ -567,10 +567,15 @@ static int rtR0MemObjNativeAllocWorker(PPRTR0MEMOBJINTERNAL ppMem, size_t cb,
      * Because of process code signing properties leaking into kernel space in
      * in XNU's vm_fault.c code, we have to defer allocations of exec memory to
      * a thread running in the kernel_task to get consistent results here.
-     * Believing is trouble is caused by the page_nx() + exec check, it was
-     * introduced in 10.10.5 (or 10.11.0).
-     * (PS. Doubt this is in anyway intentional behaviour, but rather unforseen
-     * consequences from a pragmatic approach to modifying the complicate VM code.)
+     *
+     * Trouble strikes in vm_fault_enter() when cs_enforcement_enabled is determined
+     * to be true because current process has the CS_ENFORCEMENT flag, the page flag
+     * vmp_cs_validated is clear, and the protection mask includes VM_PROT_EXECUTE
+     * (pmap_cs_enforced does not apply to macOS it seems).  This test seems to go
+     * back to 10.5, though I'm not sure whether it's enabled for macOS that early
+     * on.  Only VM_PROT_EXECUTE is problematic for kernel memory, (though
+     * VM_PROT_WRITE on code signed pages is also problematic in theory).  As long as
+     * kernel_task doesn't have CS_ENFORCEMENT enabled, we'll be fine switching to it.
      */
     if (!fExecutable || fOnKernelThread)
     { /* likely */ }
@@ -1431,14 +1436,10 @@ DECLHIDDEN(int) rtR0MemObjNativeProtect(PRTR0MEMOBJINTERNAL pMem, size_t offSub,
      * into kernel_map memory management.  So, if the user process we're running
      * in has CS restrictions active, we cannot play around with the EXEC
      * protection because some vm_fault.c think we're modifying the process map
-     * or something.  Looks like this problem was introduced in 10.10.5 or/and
-     * 10.11.0, so for for Yosemite and up we'll just push the work off to a thread
-     * running in the kernel_task context and hope it has be better chance of
-     * consistent results.
+     * or something.
      */
     int rc;
-    if (   version_major >= 14 /* 10.10 = Yosemite */
-        && rtR0MemObjDarwinGetMap(pMem) == kernel_map)
+    if (rtR0MemObjDarwinGetMap(pMem) == kernel_map)
     {
         RTR0MEMOBJDARWINPROTECTARGS Args;
         Args.pMem       = pMem;
