@@ -49,6 +49,11 @@ technical terms if no non-technical ones are clear enough.
       </listitem>
 
       <listitem>
+        <para>Virtualization core: fixed macOS Catalina guests failing to boot
+          after upgrading to 10.15.2 onwards (bug #19188)</para>
+      </listitem>
+
+      <listitem>
         <para></para>
       </listitem>
 
