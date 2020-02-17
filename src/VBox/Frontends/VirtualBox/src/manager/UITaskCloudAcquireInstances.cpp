@@ -30,12 +30,12 @@ UITaskCloudAcquireInstances::UITaskCloudAcquireInstances(const CCloudClient &com
 {
 }
 
-QList<UICloudMachine> UITaskCloudAcquireInstances::instances() const
+QList<UICloudMachine> UITaskCloudAcquireInstances::result() const
 {
     m_mutex.lock();
-    const QList<UICloudMachine> instances = m_instances;
+    const QList<UICloudMachine> resultList = m_result;
     m_mutex.unlock();
-    return instances;
+    return resultList;
 }
 
 CVirtualBoxErrorInfo UITaskCloudAcquireInstances::errorInfo()
@@ -50,39 +50,37 @@ void UITaskCloudAcquireInstances::run()
 {
     m_mutex.lock();
 
-    do
+    /* Gather VM names, ids and states.
+     * Currently we are interested in Running and Stopped VMs only. */
+    CStringArray comNames;
+    CStringArray comIDs;
+    const QVector<KCloudMachineState> cloudMachineStates  = QVector<KCloudMachineState>()
+                                                         << KCloudMachineState_Running
+                                                         << KCloudMachineState_Stopped;
+
+    /* Ask for cloud instance list: */
+    CProgress comProgress = m_comCloudClient.ListInstances(cloudMachineStates, comNames, comIDs);
+    if (!m_comCloudClient.isOk())
     {
-        /* Gather VM names, ids and states.
-         * Currently we are interested in Running and Stopped VMs only. */
-        CStringArray comNames;
-        CStringArray comIDs;
-        const QVector<KCloudMachineState> cloudMachineStates  = QVector<KCloudMachineState>()
-                                                             << KCloudMachineState_Running
-                                                             << KCloudMachineState_Stopped;
-
-        /* Ask for cloud instance list: */
-        CProgress comProgress = m_comCloudClient.ListInstances(cloudMachineStates, comNames, comIDs);
-        if (!m_comCloudClient.isOk())
-        {
-            /// @todo pack error info to m_comErrorInfo
-            break;
-        }
-
+        /// @todo pack error info to m_comErrorInfo
+    }
+    else
+    {
         /* Wait for "Acquire cloud instances" progress: */
         comProgress.WaitForCompletion(-1);
         if (!comProgress.isOk() || comProgress.GetResultCode() != 0)
         {
             /// @todo pack error info to m_comErrorInfo
-            break;
         }
-
-        /* Fetch acquired objects to lists: */
-        const QVector<QString> instanceIds = comIDs.GetValues();
-        const QVector<QString> instanceNames = comNames.GetValues();
-        for (int i = 0; i < instanceIds.size(); ++i)
-            m_instances << UICloudMachine(m_comCloudClient, instanceIds.at(i), instanceNames.at(i));
+        else
+        {
+            /* Fetch acquired objects to lists: */
+            const QVector<QString> instanceIds = comIDs.GetValues();
+            const QVector<QString> instanceNames = comNames.GetValues();
+            for (int i = 0; i < instanceIds.size(); ++i)
+                m_result << UICloudMachine(m_comCloudClient, instanceIds.at(i), instanceNames.at(i));
+        }
     }
-    while (0);
 
     m_mutex.unlock();
 }

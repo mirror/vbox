@@ -300,7 +300,7 @@ void UIChooserAbstractModel::sltHandleCloudAcquireInstancesTaskComplete(UITask *
 
     /* Add real cloud VM items: */
     int iPosition = 1; /* we've got item with index 0 already, the "Empty" one .. */
-    foreach (const UICloudMachine &guiCloudMachine, pAcquiringTask->instances())
+    foreach (const UICloudMachine &guiCloudMachine, pAcquiringTask->result())
         new UIChooserNodeMachine(pParentNode,
                                  false /* favorite */,
                                  iPosition++ /* position */,
