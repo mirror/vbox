@@ -615,6 +615,7 @@ VirtualBox_QT_MOCHDRS = \
 	src/hostnetwork/UIHostNetworkDetailsWidget.h \
 	src/hostnetwork/UIHostNetworkManager.h \
 	src/manager/UIErrorPane.h \
+	src/manager/UITaskCloudAcquireInstances.h \
 	src/manager/UIToolPaneGlobal.h \
 	src/manager/UIToolPaneMachine.h \
 	src/manager/UIVirtualBoxManager.h \
@@ -638,7 +639,6 @@ VirtualBox_QT_MOCHDRS = \
 	src/manager/chooser/UIChooserNodeGlobal.h \
 	src/manager/chooser/UIChooserNodeMachine.h \
 	src/manager/chooser/UIChooserSearchWidget.h \
-	src/manager/chooser/UITaskCloudAcquireInstances.h \
 	src/manager/details/UIDetails.h \
 	src/manager/details/UIDetailsContextMenu.h \
 	src/manager/details/UIDetailsModel.h \
@@ -1063,6 +1063,7 @@ VirtualBox_SOURCES = \
 	src/hostnetwork/UIHostNetworkUtils.cpp \
 	src/manager/UICloudMachine.cpp \
 	src/manager/UIErrorPane.cpp \
+	src/manager/UITaskCloudAcquireInstances.cpp \
 	src/manager/UIToolPaneGlobal.cpp \
 	src/manager/UIToolPaneMachine.cpp \
 	src/manager/UIVirtualBoxManager.cpp \
@@ -1086,7 +1087,6 @@ VirtualBox_SOURCES = \
 	src/manager/chooser/UIChooserNodeGlobal.cpp \
 	src/manager/chooser/UIChooserNodeMachine.cpp \
 	src/manager/chooser/UIChooserSearchWidget.cpp \
-	src/manager/chooser/UITaskCloudAcquireInstances.cpp \
 	src/manager/details/UIDetails.cpp \
 	src/manager/details/UIDetailsContextMenu.cpp \
 	src/manager/details/UIDetailsModel.cpp \
