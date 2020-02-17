@@ -136,13 +136,14 @@ PROGRAMS += \
 	tstRTThreadPoke \
 	tstRTThreadExecutionTime \
 	tstRTTime \
-	tstRTTraceLog \
 	tstTime-2 \
 	tstTime-3 \
 	tstTime-4 \
 	tstTimer \
 	tstRTTimerLR \
 	tstRTTimeSpec \
+	tstRTTls-1 \
+	tstRTTraceLog \
 	tstRTUdp-1 \
 	tstUtf8 \
 	tstRTUuid \
@@ -685,6 +686,9 @@ tstRTThreadExecutionTime_SOURCES = tstRTThreadExecutionTime.cpp
 
 tstRTTime_TEMPLATE = VBOXR3TSTEXE
 tstRTTime_SOURCES = tstRTTime.cpp
+
+tstRTTls-1_TEMPLATE = VBOXR3TSTEXE
+tstRTTls-1_SOURCES = tstRTTls-1.cpp
 
 tstRTTraceLog_TEMPLATE = VBOXR3TSTEXE
 tstRTTraceLog_SOURCES = tstRTTraceLog.cpp
