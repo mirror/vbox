@@ -2193,11 +2193,12 @@ VBoxRT_SOURCES.$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH) := $(RuntimeR3_SOURCES.$(K
 VBoxRT_SOURCES.$(KBUILD_TARGET).x86   := $(RuntimeR3_SOURCES.$(KBUILD_TARGET).x86)
 VBoxRT_SOURCES.$(KBUILD_TARGET).amd64 := $(RuntimeR3_SOURCES.$(KBUILD_TARGET).amd64)
 VBoxRT_SOURCES.$(KBUILD_TARGET_ARCH) := $(RuntimeR3_SOURCES.$(KBUILD_TARGET_ARCH))
-VBoxRT_SOURCES.x86   := $(RuntimeR3_SOURCES.x86)
-VBoxRT_SOURCES.amd64 := $(RuntimeR3_SOURCES.amd64)
-VBoxRT_SOURCES.win            += \
+VBoxRT_SOURCES.x86            := $(RuntimeR3_SOURCES.x86)
+VBoxRT_SOURCES.amd64          := $(RuntimeR3_SOURCES.amd64)
+VBoxRT_SOURCES.win            := $(filter-out r3/win/tls-win.cpp, $(VBoxRT_SOURCES.win))\
 	r3/win/dllmain-win.cpp \
-	$(VBoxRT_0_OUTDIR)/VBoxRT.def
+	r3/win/tls-dllmain-win.cpp \
+	$(call TARGET_PATH,VBoxRT)/VBoxRT.def
 VBoxRT_INCS                   := $(RuntimeR3_INCS)
 VBoxRT_INCS.$(KBUILD_TARGET)  := $(RuntimeR3_INCS.$(KBUILD_TARGET))
 VBoxRT_INCS.$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH) := $(RuntimeR3_INCS.$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH))
@@ -2208,13 +2209,13 @@ VBoxRT_LIBS                   += \
 	$(PATH_STAGE_LIB)/SUPR3$(VBOX_SUFF_LIB)
 endif
 ifndef SDK_VBOX_LIBXML2_LIBS
- VBoxRT_LIBS                 += \
+ VBoxRT_LIBS                  += \
 	$(PATH_STAGE_LIB)/VBox-libxml2$(VBOX_SUFF_LIB)
 endif
-VBoxRT_LIBS                  += \
+VBoxRT_LIBS                   += \
 	$(SDK_VBOX_ZLIB_LIBS)
 ifndef SDK_VBOX_OPENSSL_LIBS
- VBoxRT_LIBS                 += \
+ VBoxRT_LIBS                  += \
 	$(PATH_STAGE_LIB)/VBox-libcrypto$(VBOX_SUFF_LIB) \
 	$(PATH_STAGE_LIB)/VBox-libssl$(VBOX_SUFF_LIB)
 endif
