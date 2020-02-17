@@ -215,6 +215,7 @@ UIVirtualMachineItemCloud::UIVirtualMachineItemCloud()
     : UIVirtualMachineItem(ItemType_CloudFake)
     , m_pCloudMachine(0)
     , m_enmFakeCloudItemState(FakeCloudItemState_Loading)
+    , m_pTask(0)
 {
     recache();
 }
@@ -223,6 +224,7 @@ UIVirtualMachineItemCloud::UIVirtualMachineItemCloud(const UICloudMachine &guiCl
     : UIVirtualMachineItem(ItemType_CloudReal)
     , m_pCloudMachine(new UICloudMachine(guiCloudMachine))
     , m_enmFakeCloudItemState(FakeCloudItemState_NotApplicable)
+    , m_pTask(0)
 {
     recache();
 }
@@ -289,7 +291,7 @@ void UIVirtualMachineItemCloud::pauseOrResume(bool fPause, QWidget *pParent)
         if (!comProgress.isOk() || comProgress.GetResultCode() != 0)
             msgCenter().cannotAcquireCloudClientParameter(comProgress);
         else
-            updateState(pParent);
+            updateStateAsync(false /* delayed? */);
     }
 }
 
@@ -477,18 +479,24 @@ void UIVirtualMachineItemCloud::sltCreateGetCloudInstanceStateTask()
     AssertReturnVoid(itemType() == ItemType_CloudReal);
     AssertPtrReturnVoid(m_pCloudMachine);
 
-    /* Create and start task to acquire state async way: */
-    UITask *pTask = new UITaskGetCloudInstanceState(m_pCloudMachine->client(), m_strId);
-    connect(pTask, &UITask::sigComplete,
-            this, &UIVirtualMachineItemCloud::sltHandleGetCloudInstanceStateDone);
-    uiCommon().threadPool()->enqueueTask(pTask);
+    /* Create and start task to acquire state async way only if there is no task yet: */
+    if (!m_pTask)
+    {
+        m_pTask = new UITaskGetCloudInstanceState(m_pCloudMachine->client(), m_strId);
+        connect(m_pTask, &UITask::sigComplete,
+                this, &UIVirtualMachineItemCloud::sltHandleGetCloudInstanceStateDone);
+        uiCommon().threadPool()->enqueueTask(m_pTask);
+    }
 }
 
 void UIVirtualMachineItemCloud::sltHandleGetCloudInstanceStateDone(UITask *pTask)
 {
     /* Skip unrelated tasks: */
-    if (!pTask || pTask->type() != UITask::Type_GetCloudInstanceState)
+    if (!m_pTask || pTask != m_pTask)
         return;
+
+    /* Mark our task handled: */
+    m_pTask = 0;
 
     /* Cast task to corresponding sub-class: */
     UITaskGetCloudInstanceState *pStateTask = static_cast<UITaskGetCloudInstanceState*>(pTask);

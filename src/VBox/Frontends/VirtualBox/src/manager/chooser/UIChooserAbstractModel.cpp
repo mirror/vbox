@@ -311,6 +311,7 @@ void UIChooserAbstractModel::sltHandleCloudAcquireInstancesTaskComplete(UITask *
 void UIChooserAbstractModel::sltHandleCloudMachineStateChange()
 {
     UIVirtualMachineItem *pCache = qobject_cast<UIVirtualMachineItem*>(sender());
+    printf("UIChooserAbstractModel::sltHandleCloudMachineStateChange\n, id = %s\n", pCache->id().toUtf8().constData());
     AssertPtrReturnVoid(pCache);
     sigCloudMachineStateChange(pCache->id());
 }

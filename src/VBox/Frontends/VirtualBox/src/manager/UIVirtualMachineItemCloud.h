@@ -142,6 +142,9 @@ private:
       * @{ */
         /** Holds fake cloud item state. */
         FakeCloudItemState  m_enmFakeCloudItemState;
+
+        /** Holds the state acquire task instance. */
+        UITask *m_pTask;
     /** @} */
 };
 
