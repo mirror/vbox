@@ -46,6 +46,7 @@ public:
         Type_MediumEnumeration     = 1,
         Type_DetailsPopulation     = 2,
         Type_CloudAcquireInstances = 3,
+        Type_GetCloudInstanceState = 4,
     };
 
     /** Constructs the task of passed @a enmType. */

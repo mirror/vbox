@@ -955,6 +955,7 @@ UICommon_QT_MOCHDRS.darwin += \
 #
 VirtualBox_QT_MOCSRCS = \
 	src/hostnetwork/UIHostNetworkManager.cpp \
+	src/manager/UIVirtualMachineItemCloud.cpp \
 	src/manager/UIWelcomePane.cpp \
 	src/snapshots/UISnapshotDetailsWidget.cpp \
 	src/snapshots/UISnapshotPane.cpp \

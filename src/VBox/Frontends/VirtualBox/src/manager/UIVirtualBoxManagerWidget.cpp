@@ -283,6 +283,19 @@ void UIVirtualBoxManagerWidget::sltHandleSlidingAnimationComplete(SlidingDirecti
     sltHandleChooserPaneIndexChange();
 }
 
+void UIVirtualBoxManagerWidget::sltHandleCloudMachineStateChange(const QString &strId)
+{
+    /* Acquire current item: */
+    UIVirtualMachineItem *pItem = currentItem();
+
+    /* repeat the task only if we are still on the same item: */
+    if (pItem && pItem->id() == strId)
+        pItem->toCloud()->updateStateAsync(true /* delayed? */);
+
+    /* Pass the signal further: */
+    emit sigCloudMachineStateChange(strId);
+}
+
 void UIVirtualBoxManagerWidget::sltHandleToolMenuRequested(UIToolClass enmClass, const QPoint &position)
 {
     /* Define current tools class: */
@@ -372,7 +385,7 @@ void UIVirtualBoxManagerWidget::prepareWidgets()
             {
                 /* Configure Chooser-pane: */
                 connect(m_pPaneChooser, &UIChooser::sigCloudMachineStateChange,
-                        this, &UIVirtualBoxManagerWidget::sigCloudMachineStateChange);
+                        this, &UIVirtualBoxManagerWidget::sltHandleCloudMachineStateChange);
                 /* Add into splitter: */
                 m_pSplitter->addWidget(m_pPaneChooser);
             }
@@ -756,7 +769,7 @@ void UIVirtualBoxManagerWidget::recacheCurrentItemInformation(bool fDontRaiseErr
             m_pPaneToolsMachine->setMachine(pItem->toLocal()->machine());
         /* Update current cloud machine state: */
         if (pItem->itemType() == UIVirtualMachineItem::ItemType_CloudReal)
-            pItem->toCloud()->updateState(this);
+            pItem->toCloud()->updateStateAsync(false /* delayed? */);
     }
     else
     {

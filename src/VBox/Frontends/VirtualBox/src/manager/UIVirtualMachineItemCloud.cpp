@@ -15,12 +15,17 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+/* Qt includes: */
+#include <QTimer>
+
 /* GUI includes: */
 #include "UICloudMachine.h"
 #include "UICommon.h"
 #include "UIConverter.h"
 #include "UIIconPool.h"
 #include "UIMessageCenter.h"
+#include "UITask.h"
+#include "UIThreadPool.h"
 #include "UIVirtualMachineItemCloud.h"
 
 /* COM includes: */
@@ -44,6 +49,44 @@ namespace GetInstanceInfo
 
 /* Using across module: */
 using namespace GetInstanceInfo;
+
+
+/** UITask extension used to get cloud instance state async way. */
+class UITaskGetCloudInstanceState : public UITask
+{
+    Q_OBJECT;
+
+public:
+
+    /** Constructs task taking @a comCloudClient and @a strId as data.
+      * @param  comCloudClient  Brings the cloud client object.
+      * @param  strId           Brings the cloud VM id. */
+    UITaskGetCloudInstanceState(const CCloudClient &comCloudClient, const QString &strId);
+
+    /** Returns the task result. */
+    QString result() const;
+
+protected:
+
+    /** Contains the task body. */
+    virtual void run() /* override */;
+
+private:
+
+    /** Holds the mutex to access result. */
+    mutable QMutex  m_mutex;
+
+    /** Holds the cloud client object. */
+    CCloudClient  m_comCloudClient;
+    /** Holds the cloud VM id. */
+    QString       m_strId;
+
+    /** Holds the error info object. */
+    CVirtualBoxErrorInfo  m_comErrorInfo;
+
+    /** Holds the task result. */
+    QString  m_strResult;
+};
 
 
 /*********************************************************************************************************************************
@@ -138,6 +181,33 @@ QString GetInstanceInfo::getInstanceInfo(KVirtualSystemDescriptionType enmType,
 
 
 /*********************************************************************************************************************************
+*   Class UITaskGetCloudInstanceState implementation.                                                                            *
+*********************************************************************************************************************************/
+
+UITaskGetCloudInstanceState::UITaskGetCloudInstanceState(const CCloudClient &comCloudClient, const QString &strId)
+    : UITask(Type_GetCloudInstanceState)
+    , m_comCloudClient(comCloudClient)
+    , m_strId(strId)
+{
+}
+
+QString UITaskGetCloudInstanceState::result() const
+{
+    m_mutex.lock();
+    const QString strResult = m_strResult;
+    m_mutex.unlock();
+    return strResult;
+}
+
+void UITaskGetCloudInstanceState::run()
+{
+    m_mutex.lock();
+    m_strResult = getInstanceInfo(KVirtualSystemDescriptionType_CloudInstanceState, m_comCloudClient, m_strId);
+    m_mutex.unlock();
+}
+
+
+/*********************************************************************************************************************************
 *   Class UIVirtualMachineItemCloud implementation.                                                                              *
 *********************************************************************************************************************************/
 
@@ -176,6 +246,11 @@ void UIVirtualMachineItemCloud::updateState(QWidget *pParent)
 
     /* Update state: */
     updateState(strState);
+}
+
+void UIVirtualMachineItemCloud::updateStateAsync(bool fDelayed)
+{
+    QTimer::singleShot(fDelayed ? 10000 : 0, this, SLOT(sltCreateGetCloudInstanceStateTask()));
 }
 
 void UIVirtualMachineItemCloud::pause(QWidget *pParent)
@@ -396,6 +471,32 @@ void UIVirtualMachineItemCloud::retranslateUi()
     }
 }
 
+void UIVirtualMachineItemCloud::sltCreateGetCloudInstanceStateTask()
+{
+    /* Make sure item is of real cloud type and is initialized: */
+    AssertReturnVoid(itemType() == ItemType_CloudReal);
+    AssertPtrReturnVoid(m_pCloudMachine);
+
+    /* Create and start task to acquire state async way: */
+    UITask *pTask = new UITaskGetCloudInstanceState(m_pCloudMachine->client(), m_strId);
+    connect(pTask, &UITask::sigComplete,
+            this, &UIVirtualMachineItemCloud::sltHandleGetCloudInstanceStateDone);
+    uiCommon().threadPool()->enqueueTask(pTask);
+}
+
+void UIVirtualMachineItemCloud::sltHandleGetCloudInstanceStateDone(UITask *pTask)
+{
+    /* Skip unrelated tasks: */
+    if (!pTask || pTask->type() != UITask::Type_GetCloudInstanceState)
+        return;
+
+    /* Cast task to corresponding sub-class: */
+    UITaskGetCloudInstanceState *pStateTask = static_cast<UITaskGetCloudInstanceState*>(pTask);
+
+    /* Update state: */
+    updateState(pStateTask->result());
+}
+
 void UIVirtualMachineItemCloud::updateState(const QString &strState)
 {
     /* Prepare a map of known states: */
@@ -414,3 +515,6 @@ void UIVirtualMachineItemCloud::updateState(const QString &strState)
     /* Notify listeners finally: */
     emit sigStateChange();
 }
+
+
+#include "UIVirtualMachineItemCloud.moc"
