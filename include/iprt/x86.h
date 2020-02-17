@@ -1500,7 +1500,7 @@ AssertCompile(X86_DR7_ANY_RW_IO(UINT32_C(0x00040000)) == 0);
 /** @} */
 
 /** Intel TSX (Transactional Synchronization Extensions) control MSR. */
-#define IA32_TSX_CTRL                       0x122
+#define MSR_IA32_TSX_CTRL                   0x122
 
 #define IA32_MTRR_PHYSBASE0                 0x200
 #define IA32_MTRR_PHYSMASK0                 0x201
