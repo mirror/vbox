@@ -760,6 +760,22 @@ int cpumR3MsrApplyFudge(PVM pVM)
         AssertLogRelRCReturn(rc, rc);
     }
 
+    /*
+     * Windows 10 incorrectly writes to MSR_IA32_TSX_CTRL without checking
+     * CPUID.ARCH_CAP(EAX=7h,ECX=0):EDX[bit 29] or the MSR feature bits in
+     * MSR_IA32_ARCH_CAPABILITIES[bit 7], see @bugref{9630}.
+     * Ignore writes to this MSR and return 0 on reads.
+     */
+    if (pVM->cpum.s.GuestFeatures.fArchCap)
+    {
+        static CPUMMSRRANGE const s_aTsxCtrl[] =
+        {
+            MVI(MSR_IA32_TSX_CTRL, "IA32_TSX_CTRL", 0),
+        };
+        rc = cpumR3MsrApplyFudgeTable(pVM, &s_aTsxCtrl[0], RT_ELEMENTS(s_aTsxCtrl));
+        AssertLogRelRCReturn(rc, rc);
+    }
+
     return rc;
 }
 
