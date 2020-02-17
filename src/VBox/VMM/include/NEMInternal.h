@@ -49,8 +49,8 @@ RT_C_DECLS_BEGIN
 # define NEM_WIN_USE_HYPERCALLS_FOR_PAGES
 //# define NEM_WIN_USE_HYPERCALLS_FOR_REGISTERS /**< Applies to ring-3 code only. Useful for testing VID API. */
 //# define NEM_WIN_USE_OUR_OWN_RUN_API          /**< Applies to ring-3 code only. Useful for testing VID API. */
-# define NEM_WIN_WITH_RING0_RUNLOOP             /**< Enables the ring-0 runloop. */
-# define NEM_WIN_USE_RING0_RUNLOOP_BY_DEFAULT   /**< For quickly testing ring-3 API without messing with CFGM. */
+//# define NEM_WIN_WITH_RING0_RUNLOOP             /**< Enables the ring-0 runloop. */
+//# define NEM_WIN_USE_RING0_RUNLOOP_BY_DEFAULT   /**< For quickly testing ring-3 API without messing with CFGM. */
 # if defined(NEM_WIN_USE_OUR_OWN_RUN_API) && !defined(NEM_WIN_USE_HYPERCALLS_FOR_REGISTERS)
 #  error "NEM_WIN_USE_OUR_OWN_RUN_API requires NEM_WIN_USE_HYPERCALLS_FOR_REGISTERS"
 # endif

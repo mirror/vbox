@@ -178,9 +178,9 @@ static NEMWINIOCTL g_IoCtlMessageSlotHandleAndGetNext;
 #ifdef LOG_ENABLED
 /** Info about the VidMessageSlotMap I/O control interface - for logging. */
 static NEMWINIOCTL g_IoCtlMessageSlotMap;
-/* Info about the VidGetVirtualProcessorState I/O control interface - for logging. */
+/** Info about the VidGetVirtualProcessorState I/O control interface - for logging. */
 static NEMWINIOCTL g_IoCtlGetVirtualProcessorState;
-/* Info about the VidSetVirtualProcessorState I/O control interface - for logging. */
+/** Info about the VidSetVirtualProcessorState I/O control interface - for logging. */
 static NEMWINIOCTL g_IoCtlSetVirtualProcessorState;
 /** Pointer to what nemR3WinIoctlDetector_ForLogging should fill in. */
 static NEMWINIOCTL *g_pIoCtlDetectForLogging;
