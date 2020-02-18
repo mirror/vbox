@@ -3255,7 +3255,7 @@ static int acpiR3PlantTables(PPDMDEVINS pDevIns, PACPISTATE pThis, PACPISTATER3 
         {
             /* Activate MEM4. See also DevPciIch9.cpp / ich9pciFakePCIBIOS() / uPciBiosMmio64 */
             pThis->u64PciPref64Min = u64PciPref64Min;
-            LogRel(("ACPI: enabling 64-bit prefetch root bus resource %#018RX64..%#018RX64\n",
+            LogRel(("ACPI: Enabling 64-bit prefetch root bus resource %#018RX64..%#018RX64\n",
                    u64PciPref64Min, pThis->u64PciPref64Max-1));
         }
         else
