@@ -42,11 +42,12 @@
 #include <linux/fb.h>
 #include <linux/init.h>
 
+#include "vbox_drv.h"
+
 #include <drm/drm_crtc.h>
 #include <drm/drm_fb_helper.h>
 #include <drm/drm_crtc_helper.h>
 
-#include "vbox_drv.h"
 #include <VBoxVideo.h>
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(4, 7, 0) && !defined(RHEL_74)
