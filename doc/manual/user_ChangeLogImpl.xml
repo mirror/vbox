@@ -43,22 +43,85 @@ technical terms if no non-technical ones are clear enough.
 
     <itemizedlist>
       <listitem>
-        <para>Virtualization core: fixed a rare issue with ICEBP instruction
+        <para>Virtualization core: Fixed a rare issue with ICEBP instruction
         causing guru meditations on Intel hosts (6.1.0 regression;
         bug #19171)</para>
       </listitem>
 
       <listitem>
-        <para>Virtualization core: fixed macOS Catalina guests failing to boot
+        <para>Virtualization core: Fixed macOS Catalina guests failing to boot
           after upgrading to 10.15.2 onwards (bug #19188)</para>
       </listitem>
 
       <listitem>
-        <para>GUI: recent NLS integration and bug fixes for GUI and Qt translation tags</para>
+        <para>GUI: recent NLS integration and bug fixes for GUI and Qt
+          translation tags</para>
+      </listitem>
+
       </listitem>
 
       <listitem>
-        <para></para>
+        <para>USB: Fix isochronous transfers to the VM for xHCI</para>
+      </listitem>
+
+      <listitem>
+        <para>Serial: Fix buffer handling, avoiding receiving stale data
+          when the receive queue is flushed (bug #18671)</para>
+      </listitem>
+
+      <listitem>
+        <para>Serial: Improve host serial port passthrough handling on
+          Windows host</para>
+      </listitem>
+
+      <listitem>
+        <para>VBoxManage: Restore old --clipboard option for modifyvm
+          command</para>
+      </listitem>
+
+      <listitem>
+        <para>macOS host: Use hardened runtime and request the needed
+          entitlements, meeting latest notarization rules which also
+          required moving VirtualBoxVM executable</para>
+      </listitem>
+
+      <listitem>
+        <para>macOS host: Update osxfuse to v3.10.4</para>
+      </listitem>
+
+      <listitem>
+        <para>Windows host: Update Italian translation of installer</para>
+      </listitem>
+
+      <listitem>
+        <para>Windows host: Improve shared folder compatibility with POSIX
+          append semantic (bug #19003)</para>
+      </listitem>
+
+      <listitem>
+        <para>Windows host: Restore the ability to run VMs through Hyper-V,
+          at the expense of performance</para>
+      </listitem>
+
+      <listitem>
+        <para>Linux guest: Support Linux 5.5 (bug #19145)</para>
+      </listitem>
+
+      <listitem>
+        <para>Linux guest: Shared folder fix for loopback mounting of
+          images</para>
+      </listitem>
+
+      <listitem>
+        <para>BIOS: Always report non-ATA disks as ready</para>
+      </listitem>
+
+      <listitem>
+        <para>BIOS: Report EFI support through DMI table (bug 19144)</para>
+      </listitem>
+
+      <listitem>
+        <para>VGA BIOS: Reduce stack space usage for INT 10h handlers</para>
       </listitem>
 
     </itemizedlist>
@@ -75,56 +138,56 @@ technical terms if no non-technical ones are clear enough.
     <itemizedlist>
 
       <listitem>
-        <para>Virtualization core: fixed performance issue observed with
+        <para>Virtualization core: Fixed performance issue observed with
           Windows XP guests on AMD hosts (6.0.0 regression; bug #19152)</para>
       </listitem>
 
       <listitem>
-        <para>Virtualization core: consistent IBRS/IBPB CPUID feature
+        <para>Virtualization core: Consistent IBRS/IBPB CPUID feature
           reporting, avoids crash of NetBSD 9.0 RC1 installer (bug
           #19146)</para>
       </listitem>
 
       <listitem>
-        <para>GUI: fixed updating of runtime info</para>
+        <para>GUI: Fixed updating of runtime info</para>
       </listitem>
 
       <listitem>
-        <para>GUI: in Display settings, do not show "2D video acceleration"
+        <para>GUI: In Display settings, do not show "2D video acceleration"
           checkbox if it is meaningless for the selected graphics
           adapter</para>
       </listitem>
 
       <listitem>
-        <para>Audio: fixed audio input handling when VRDE is enabled</para>
+        <para>Audio: Fixed audio input handling when VRDE is enabled</para>
       </listitem>
 
       <listitem>
-        <para>Audio: fixed crash in the HDA emulation when using multi-speaker
+        <para>Audio: Fixed crash in the HDA emulation when using multi-speaker
           configurations</para>
       </listitem>
 
       <listitem>
-        <para>Storage: fixed use of encrypted disks with snapshots involved
+        <para>Storage: Fixed use of encrypted disks with snapshots involved
           (6.1.0 regression; bug #19160)</para>
       </listitem>
 
       <listitem>
-        <para>Storage: improve performance of virtio-scsi</para>
+        <para>Storage: Improve performance of virtio-scsi</para>
       </listitem>
 
       <listitem>
-        <para>Storage: read-only support for compressed clusters in QCOW2
+        <para>Storage: Read-only support for compressed clusters in QCOW2
           images</para>
       </listitem>
 
       <listitem>
-        <para>Windows installer: include unintentionally dropped vbox-img.exe
+        <para>Windows installer: Include unintentionally dropped vbox-img.exe
           utility again</para>
       </listitem>
 
       <listitem>
-        <para>Windows host: when installing or removing an extension pack,
+        <para>Windows host: When installing or removing an extension pack,
           retry the sometimes failing directory renaming (usually caused by
           anti-virus software accessing the directory)</para>
       </listitem>
@@ -134,23 +197,23 @@ technical terms if no non-technical ones are clear enough.
       </listitem>
 
       <listitem>
-        <para>Windows guest: accelerate 2D video decoding (scaling and color
+        <para>Windows guest: Accelerate 2D video decoding (scaling and color
           space conversion) if the VM is configured to use VBoxSVGA with 3D
           enabled</para>
       </listitem>
 
       <listitem>
-        <para>Windows guest: fix guest additions installer to upgrade the mouse
+        <para>Windows guest: Fix guest additions installer to upgrade the mouse
           filter driver reliably</para>
       </listitem>
 
       <listitem>
-        <para>Windows guest: when uninstalling older Guest Additions with old
+        <para>Windows guest: When uninstalling older Guest Additions with old
           3D support enabled try restoring original Direct3D files</para>
       </listitem>
 
       <listitem>
-        <para>Linux guest: improve resize and multi-monitor handling for VMs
+        <para>Linux guest: Improve resize and multi-monitor handling for VMs
           using VMSVGA (known remaining issue: do not disable a monitor
           "in the middle", causes confusion)</para>
       </listitem>
