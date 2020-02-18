@@ -54,6 +54,10 @@ technical terms if no non-technical ones are clear enough.
       </listitem>
 
       <listitem>
+        <para>GUI: recent NLS integration and bug fixes for GUI and Qt translation tags</para>
+      </listitem>
+
+      <listitem>
         <para></para>
       </listitem>
 
