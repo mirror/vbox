@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - UIVirtualMachineItemLocal class declarations.
+ * VBox Qt GUI - UIVirtualMachineItemLocal class declaration.
  */
 
 /*
