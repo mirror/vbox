@@ -43,7 +43,9 @@ class UITaskCloudAcquireInstances : public UITask
 
 public:
 
-    /** Constructs update task taking @a comCloudClient and @a pParentNode as data. */
+    /** Constructs update task taking @a comCloudClient and @a pParentNode as data.
+      * @param  comCloudClient  Brings the cloud client object.
+      * @param  m_pParentNode   Brings the parent node reference. */
     UITaskCloudAcquireInstances(const CCloudClient &comCloudClient, UIChooserNode *pParentNode);
 
     /** Returns cloud client object. */
