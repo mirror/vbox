@@ -3431,6 +3431,7 @@ ifdef VBOX_SIGNING_MODE
  ifn1of ($(VBOX_SIGNING_MODE), test release)
   $(error VBOX_SIGNING_MODE must be either 'test' or 'release'. The value '$(VBOX_SIGNING_MODE)' is not recognized.)
  endif
+ VBOX_RETRY    ?= $(ASH) $(KBUILD_DEVTOOLS)/bin/retry.sh
  # Corp code signing client.
  VBOX_CCS_CLIENT_JAR := $(firstword $(rsort \
  	$(wildcard $(KBUILD_DEVTOOLS)/common/ccs/v*/Client.jar)) \
@@ -3473,7 +3474,6 @@ ifdef VBOX_SIGNING_MODE
    endif
   endif
 
-  VBOX_RETRY    ?= $(ASH) $(KBUILD_DEVTOOLS)/bin/retry.sh
   VBOX_SIGNTOOL ?= $(VBOX_RETRY) "$(VBOX_PATH_SIGN_TOOLS)/signtool.exe"
   VBOX_INF2CAT  ?= $(VBOX_PATH_SELFSIGN)/inf2cat.exe
 
@@ -3759,6 +3759,24 @@ ifdef VBOX_SIGNING_MODE
 	$(3) \
 	$(1) \
 	$(if $(2),--identifier "$(2)",)
+  endif
+
+  ## Commands for signing an the extpack dylib files after link.
+  if $(intersects darwin all 1,$(VBOX_WITH_CORP_CODE_SIGNING))
+   VBOX_SIGN_EXTPACK_DYLIB_CMDS ?= $(if $(eq $(tool_do),LINK_LIBRARY),, \
+	$(call VBOX_CCS_SIGN_CMD,binary,$(out),, \
+		$(if $(VBOX_WITH_MACOS_HARDENED_RUNTIME),-hardened_runtime)) )
+  else
+   VBOX_SIGN_EXTPACK_DYLIB_CMDS ?= $(if $(eq $(tool_do),LINK_LIBRARY),, \
+	$(VBOX_CODESIGN) \
+	--verbose=9 \
+	--force \
+	$(if-expr $(KBUILD_HOST_VERSION_MAJOR) <= 14,--digest-algorithm sha256,) \
+	$(if $(VBOX_WITH_MACOS_HARDENED_RUNTIME),$(if-expr $(KBUILD_HOST_VERSION_MAJOR) <= 16,--options 0x10000,--options runtime)) \
+	--file-list - \
+	$(if-expr defined(VBOX_TSA_URL),--timestamp="$(VBOX_TSA_URL)") \
+	$(VBOX_CERTIFICATE_SUBJECT_NAME_ARGS) \
+	$(out) )
   endif
 
   ## Sign a VMM Mach-O image.
@@ -6397,6 +6415,9 @@ ifdef VBOX_WITH_EXTPACK
   	$(LIB_RUNTIME) \
   	$(VBOX_LIB_VMM_LAZY)
  endif
+ ifeq ($(KBUILD_TARGET),darwin)
+  TEMPLATE_VBoxR3ExtPack_POST_CMDS = $(VBOX_SIGN_EXTPACK_DYLIB_CMDS)
+ endif
 
  TEMPLATE_VBoxR3ExtPackApi = For the ring-3 context extension pack modules using the Main API.
  TEMPLATE_VBoxR3ExtPackApi_EXTENDS = VBOXMAINDLL
@@ -6424,6 +6445,9 @@ ifdef VBOX_WITH_EXTPACK
   	$(TEMPLATE_LIBS_VBOXR3) \
   	$(LIB_RUNTIME) \
   	$(VBOX_LIB_VMM_LAZY)
+ endif
+ ifeq ($(KBUILD_TARGET),darwin)
+  TEMPLATE_VBoxR3ExtPackApi_POST_CMDS = $(VBOX_SIGN_EXTPACK_DYLIB_CMDS)
  endif
 
  TEMPLATE_VBoxR0ExtPack = For the ring-0 context extension pack modules.
