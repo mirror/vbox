@@ -34,6 +34,22 @@ technical terms if no non-technical ones are clear enough.
 <!-- HACK ALERT! Seems we must have a single top level element for xi:include to work.
                            So, we use chapter and xpointer="xpointer(/chapter/)" with xi:include. -->
 
+
+  <sect1>
+
+    <title>Version 6.1.x (2020-xx-xx)</title>
+
+    <para>This is a maintenance release. The following items were fixed and/or
+      added:</para>
+
+    <itemizedlist>
+      <listitem>
+        <para></para>
+      </listitem>
+
+    </itemizedlist>
+  </sect1>
+
   <sect1>
 
     <title>Version 6.1.4 (2020-02-19)</title>
