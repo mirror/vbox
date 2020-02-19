@@ -2092,6 +2092,7 @@ static int buslogicProcessCommand(PPDMDEVINS pDevIns, PBUSLOGIC pThis)
             }
             pThis->fMbxIs24Bit = true;
             pThis->cMailbox = pRequest->cMailbox;
+            pThis->uMailboxOutgoingPositionCurrent = pThis->uMailboxIncomingPositionCurrent = 0;
             pThis->GCPhysAddrMailboxOutgoingBase = (RTGCPHYS)ADDR_TO_U32(pRequest->aMailboxBaseAddr);
             /* The area for incoming mailboxes is right after the last entry of outgoing mailboxes. */
             pThis->GCPhysAddrMailboxIncomingBase = pThis->GCPhysAddrMailboxOutgoingBase + (pThis->cMailbox * sizeof(Mailbox24));
@@ -2125,6 +2126,7 @@ static int buslogicProcessCommand(PPDMDEVINS pDevIns, PBUSLOGIC pThis)
             }
             pThis->fMbxIs24Bit = false;
             pThis->cMailbox = pRequest->cMailbox;
+            pThis->uMailboxOutgoingPositionCurrent = pThis->uMailboxIncomingPositionCurrent = 0;
             pThis->GCPhysAddrMailboxOutgoingBase = (RTGCPHYS)pRequest->uMailboxBaseAddress;
             /* The area for incoming mailboxes is right after the last entry of outgoing mailboxes. */
             pThis->GCPhysAddrMailboxIncomingBase = (RTGCPHYS)pRequest->uMailboxBaseAddress + (pThis->cMailbox * sizeof(Mailbox32));
