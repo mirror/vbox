@@ -3827,7 +3827,7 @@ static DECLCALLBACK(void) buslogicR3Info(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp,
 
             /* Incoming mailbox, 32-bit format. */
             GCMailbox = pThis->GCPhysAddrMailboxOutgoingBase + (pThis->cMailbox * sizeof(Mailbox32));
-            pHlp->pfnPrintf(pHlp, " Outgoing mailbox entries (32-bit) at %08X:\n", (uint32_t)GCMailbox);
+            pHlp->pfnPrintf(pHlp, " Incoming mailbox entries (32-bit) at %08X:\n", (uint32_t)GCMailbox);
             for (i = 0; i < pThis->cMailbox; ++i)
             {
                 PDMDevHlpPhysRead(pDevIns, GCMailbox, &Mbx32, sizeof(Mailbox32));
