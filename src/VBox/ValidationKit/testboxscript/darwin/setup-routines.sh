@@ -137,13 +137,13 @@ os_final_message() {
 
 Additional things to do:"
     1. Change the 'Energy Saver' options to never turn off the computer:
-       $ systemsetup -setcomputersleep Never -setdisplaysleep 5 -setharddisksleep 15
+          $ systemsetup -setcomputersleep Never -setdisplaysleep 5 -setharddisksleep 15
     2. Check 'Restart automatically if the computer freezes' if available in
        the 'Energy Saver' settings.
-       $ systemsetup -setrestartfreeze on
+          $ systemsetup -setrestartfreeze on
     3. In the 'Sharing' panel enable (VBox/Oracle):
          a) 'Remote Login' so ssh works.
-             $ systemsetup -setremotelogin on
+              $ systemsetup -setremotelogin on
          b) 'Remote Management, tick all the checkboxes in the sheet dialog.
             Open the 'Computer Settings' and check 'Show Remote Management
             status in menu bar', 'Anyone may request permission to control
@@ -157,12 +157,24 @@ Additional things to do:"
        to hit OK to close the dialog.)
     5. Configure NTP to the nearest local time source. For VBox/Oracle this
        means wei01-time.de.oracle.com:
-       $ systemsetup -setnetworktimeserver wei01-time.de.oracle.com
+          $ systemsetup -setnetworktimeserver wei01-time.de.oracle.com
     6. Configure the vbox (pw:password) account for automatic login.
-    7. Configure the kernel to keep symbols:
-       $ sudo nvram boot-args="keepsyms=1"
+    7. For configure the kernel to keep symbols you might need to:
+          a) For 10.11 (El Capitan) and later boot to the recovery partition and
+             either enabling loading of unsigned kexts:
+                $ csrutil enable --without kext
+             or disable SIP all together:
+                $ csrutil disable
+          b) For 10.15 (Catalina) and later you also need to disable
+             the reboot requirement (also from recovery partition):
+                $ spctl kext-consent disable
+          c) If you are running 10.10 (Yosemite) there is a boot-args option for
+             allowing the loading of unsigned kexts. Run the following and reboot:
+                $ sudo nvram boot-args="kext-dev-mode=1"
+       And then run the following:
+          $ sudo nvram boot-args="keepsyms=1"
 
 Enjoy!
 EOF
 }
-
+ß
