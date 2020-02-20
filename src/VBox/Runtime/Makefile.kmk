@@ -1972,6 +1972,7 @@ RuntimeBldProg_SOURCES.win = \
 	r3/win/thread2-win.cpp \
 	$(if-expr 1,r3/win/time-win.cpp,r3/nt/time-nt.cpp) \
 	r3/win/time2-win.cpp \
+	r3/win/tls-win.cpp \
 	r3/win/utf16locale-win.cpp \
 	r3/win/utf8-win.cpp \
 	win/errmsgwin.cpp \
@@ -2195,10 +2196,9 @@ VBoxRT_SOURCES.$(KBUILD_TARGET).amd64 := $(RuntimeR3_SOURCES.$(KBUILD_TARGET).am
 VBoxRT_SOURCES.$(KBUILD_TARGET_ARCH) := $(RuntimeR3_SOURCES.$(KBUILD_TARGET_ARCH))
 VBoxRT_SOURCES.x86            := $(RuntimeR3_SOURCES.x86)
 VBoxRT_SOURCES.amd64          := $(RuntimeR3_SOURCES.amd64)
-VBoxRT_SOURCES.win            := $(filter-out r3/win/tls-win.cpp, $(VBoxRT_SOURCES.win))\
+VBoxRT_SOURCES.win            += \
 	r3/win/dllmain-win.cpp \
-	r3/win/tls-dllmain-win.cpp \
-	$(call TARGET_PATH,VBoxRT)/VBoxRT.def
+	 $(VBoxRT_0_OUTDIR)/VBoxRT.def
 VBoxRT_INCS                   := $(RuntimeR3_INCS)
 VBoxRT_INCS.$(KBUILD_TARGET)  := $(RuntimeR3_INCS.$(KBUILD_TARGET))
 VBoxRT_INCS.$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH) := $(RuntimeR3_INCS.$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH))

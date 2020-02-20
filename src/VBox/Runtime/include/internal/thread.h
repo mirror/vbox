@@ -264,7 +264,7 @@ DECLHIDDEN(void)         rtThreadClearTlsEntry(RTTLS iTls);
 DECLHIDDEN(void)         rtThreadTlsDestruction(PRTTHREADINT pThread); /* in tls-generic.cpp */
 #endif
 #ifdef RT_OS_WINDOWS
-DECLHIDDEN(void)         rtTlsWinDetachThread(void); /* in tls-dllmain-win.cpp */
+DECLHIDDEN(void)         rtThreadWinTlsDestruction(void); /* in tls-win.cpp */
 #endif
 
 /* thread-posix.cpp */
