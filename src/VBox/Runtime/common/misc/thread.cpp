@@ -668,7 +668,7 @@ DECLHIDDEN(void) rtThreadTerminate(PRTTHREADINT pThread, int rc)
      */
 #ifdef IPRT_WITH_GENERIC_TLS
     rtThreadTlsDestruction(pThread);
-#elif defined(RT_OS_WINDOWS)
+#elif defined(RT_OS_WINDOWS) && defined(IN_RING3)
     rtThreadWinTlsDestruction();
 #endif
 
