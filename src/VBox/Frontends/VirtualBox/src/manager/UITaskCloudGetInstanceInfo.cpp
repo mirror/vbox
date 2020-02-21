@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - UITaskCloudGetInstanceState class implementation.
+ * VBox Qt GUI - UITaskCloudGetInstanceInfo class implementation.
  */
 
 /*
@@ -17,25 +17,25 @@
 
 /* GUI includes: */
 #include "UICloudNetworkingStuff.h"
-#include "UITaskCloudGetInstanceState.h"
+#include "UITaskCloudGetInstanceInfo.h"
 
 
-UITaskCloudGetInstanceState::UITaskCloudGetInstanceState(const CCloudClient &comCloudClient, const QString &strId)
+UITaskCloudGetInstanceInfo::UITaskCloudGetInstanceInfo(const CCloudClient &comCloudClient, const QString &strId)
     : UITask(Type_CloudGetInstanceState)
     , m_comCloudClient(comCloudClient)
     , m_strId(strId)
 {
 }
 
-QString UITaskCloudGetInstanceState::result() const
+QMap<KVirtualSystemDescriptionType, QString> UITaskCloudGetInstanceInfo::result() const
 {
     m_mutex.lock();
-    const QString strResult = m_strResult;
+    const QMap<KVirtualSystemDescriptionType, QString> resultMap = m_resultMap;
     m_mutex.unlock();
-    return strResult;
+    return resultMap;
 }
 
-CVirtualBoxErrorInfo UITaskCloudGetInstanceState::errorInfo()
+CVirtualBoxErrorInfo UITaskCloudGetInstanceInfo::errorInfo()
 {
     m_mutex.lock();
     CVirtualBoxErrorInfo comErrorInfo = m_comErrorInfo;
@@ -43,9 +43,9 @@ CVirtualBoxErrorInfo UITaskCloudGetInstanceState::errorInfo()
     return comErrorInfo;
 }
 
-void UITaskCloudGetInstanceState::run()
+void UITaskCloudGetInstanceInfo::run()
 {
     m_mutex.lock();
-    m_strResult = getInstanceInfo(KVirtualSystemDescriptionType_CloudInstanceState, m_comCloudClient, m_strId);
+    m_resultMap = getInstanceInfo(m_comCloudClient, m_strId);
     m_mutex.unlock();
 }

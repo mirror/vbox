@@ -290,7 +290,7 @@ void UIVirtualBoxManagerWidget::sltHandleCloudMachineStateChange(const QString &
 
     /* repeat the task only if we are still on the same item: */
     if (pItem && pItem->id() == strId)
-        pItem->toCloud()->updateStateAsync(true /* delayed? */);
+        pItem->toCloud()->updateInfoAsync(true /* delayed? */);
 
     /* Pass the signal further: */
     emit sigCloudMachineStateChange(strId);
@@ -769,7 +769,7 @@ void UIVirtualBoxManagerWidget::recacheCurrentItemInformation(bool fDontRaiseErr
             m_pPaneToolsMachine->setMachine(pItem->toLocal()->machine());
         /* Update current cloud machine state: */
         if (pItem->itemType() == UIVirtualMachineItem::ItemType_CloudReal)
-            pItem->toCloud()->updateStateAsync(false /* delayed? */);
+            pItem->toCloud()->updateInfoAsync(false /* delayed? */);
     }
     else
     {

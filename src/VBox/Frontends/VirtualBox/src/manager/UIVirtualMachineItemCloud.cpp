@@ -25,7 +25,7 @@
 #include "UIConverter.h"
 #include "UIIconPool.h"
 #include "UIMessageCenter.h"
-#include "UITaskCloudGetInstanceState.h"
+#include "UITaskCloudGetInstanceInfo.h"
 #include "UIThreadPool.h"
 #include "UIVirtualMachineItemCloud.h"
 
@@ -56,25 +56,24 @@ UIVirtualMachineItemCloud::~UIVirtualMachineItemCloud()
     delete m_pCloudMachine;
 }
 
-void UIVirtualMachineItemCloud::updateState(QWidget *pParent)
+void UIVirtualMachineItemCloud::updateInfo(QWidget *pParent)
 {
     /* Make sure item is of real cloud type and is initialized: */
     AssertReturnVoid(itemType() == ItemType_CloudReal);
     AssertPtrReturnVoid(m_pCloudMachine);
 
-    /* Acquire state: */
-    const QString strState = getInstanceInfo(KVirtualSystemDescriptionType_CloudInstanceState,
-                                             m_pCloudMachine->client(),
-                                             m_strId,
-                                             pParent);
+    /* Acquire info: */
+    const QMap<KVirtualSystemDescriptionType, QString> infoMap = getInstanceInfo(m_pCloudMachine->client(),
+                                                                                 m_strId,
+                                                                                 pParent);
 
-    /* Update state: */
-    updateState(strState);
+    /* Update info: */
+    updateInfo(infoMap);
 }
 
-void UIVirtualMachineItemCloud::updateStateAsync(bool fDelayed)
+void UIVirtualMachineItemCloud::updateInfoAsync(bool fDelayed)
 {
-    QTimer::singleShot(fDelayed ? 10000 : 0, this, SLOT(sltCreateGetCloudInstanceStateTask()));
+    QTimer::singleShot(fDelayed ? 10000 : 0, this, SLOT(sltCreateGetCloudInstanceInfoTask()));
 }
 
 void UIVirtualMachineItemCloud::pause(QWidget *pParent)
@@ -113,7 +112,7 @@ void UIVirtualMachineItemCloud::pauseOrResume(bool fPause, QWidget *pParent)
         if (!comProgress.isOk() || comProgress.GetResultCode() != 0)
             msgCenter().cannotAcquireCloudClientParameter(comProgress);
         else
-            updateStateAsync(false /* delayed? */);
+            updateInfoAsync(false /* delayed? */);
     }
 }
 
@@ -295,23 +294,23 @@ void UIVirtualMachineItemCloud::retranslateUi()
     }
 }
 
-void UIVirtualMachineItemCloud::sltCreateGetCloudInstanceStateTask()
+void UIVirtualMachineItemCloud::sltCreateGetCloudInstanceInfoTask()
 {
     /* Make sure item is of real cloud type and is initialized: */
     AssertReturnVoid(itemType() == ItemType_CloudReal);
     AssertPtrReturnVoid(m_pCloudMachine);
 
-    /* Create and start task to acquire state async way only if there is no task yet: */
+    /* Create and start task to acquire info async way only if there is no task yet: */
     if (!m_pTask)
     {
-        m_pTask = new UITaskCloudGetInstanceState(m_pCloudMachine->client(), m_strId);
+        m_pTask = new UITaskCloudGetInstanceInfo(m_pCloudMachine->client(), m_strId);
         connect(m_pTask, &UITask::sigComplete,
-                this, &UIVirtualMachineItemCloud::sltHandleGetCloudInstanceStateDone);
+                this, &UIVirtualMachineItemCloud::sltHandleGetCloudInstanceInfoDone);
         uiCommon().threadPool()->enqueueTask(m_pTask);
     }
 }
 
-void UIVirtualMachineItemCloud::sltHandleGetCloudInstanceStateDone(UITask *pTask)
+void UIVirtualMachineItemCloud::sltHandleGetCloudInstanceInfoDone(UITask *pTask)
 {
     /* Skip unrelated tasks: */
     if (!m_pTask || pTask != m_pTask)
@@ -321,13 +320,13 @@ void UIVirtualMachineItemCloud::sltHandleGetCloudInstanceStateDone(UITask *pTask
     m_pTask = 0;
 
     /* Cast task to corresponding sub-class: */
-    UITaskCloudGetInstanceState *pStateTask = static_cast<UITaskCloudGetInstanceState*>(pTask);
+    UITaskCloudGetInstanceInfo *pInfoTask = static_cast<UITaskCloudGetInstanceInfo*>(pTask);
 
-    /* Update state: */
-    updateState(pStateTask->result());
+    /* Update info: */
+    updateInfo(pInfoTask->result());
 }
 
-void UIVirtualMachineItemCloud::updateState(const QString &strState)
+void UIVirtualMachineItemCloud::updateInfo(const QMap<KVirtualSystemDescriptionType, QString> &infoMap)
 {
     /* Prepare a map of known states: */
     QMap<QString, KMachineState> states;
@@ -337,7 +336,7 @@ void UIVirtualMachineItemCloud::updateState(const QString &strState)
     states["STARTING"] = KMachineState_Starting;
 
     /* Update our state value: */
-    m_enmMachineState = states.value(strState, KMachineState_PoweredOff);
+    m_enmMachineState = states.value(infoMap.value(KVirtualSystemDescriptionType_CloudInstanceState), KMachineState_PoweredOff);
 
     /* Recache: */
     recache();

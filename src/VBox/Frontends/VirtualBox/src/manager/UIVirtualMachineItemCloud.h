@@ -55,19 +55,19 @@ public:
     /** Destructs cloud VM item. */
     virtual ~UIVirtualMachineItemCloud();
 
-    /** @name State attributes.
+    /** @name Data attributes.
       * @{ */
         /** Defines fake cloud item @a enmState. */
         void setFakeCloudItemState(FakeCloudItemState enmState) { m_enmFakeCloudItemState = enmState; }
         /** Returns fake cloud item state. */
         FakeCloudItemState fakeCloudItemState() const { return m_enmFakeCloudItemState; }
 
-        /** Updates cloud VM state.
+        /** Updates cloud VM info.
           * @param  pWidget  Brings parent widget to show messages according to. */
-        void updateState(QWidget *pParent);
+        void updateInfo(QWidget *pParent);
 
-        /** Updates cloud VM state async way, @a fDelayed if requested or instant otherwise. */
-        void updateStateAsync(bool fDelayed);
+        /** Updates cloud VM info async way, @a fDelayed if requested or instant otherwise. */
+        void updateInfoAsync(bool fDelayed);
 
         /** Puts cloud VM on pause.
           * @param  pWidget  Brings parent widget to show messages according to. */
@@ -119,17 +119,17 @@ protected:
 
 private slots:
 
-        /** Create cloud VM state acquire task. */
-        void sltCreateGetCloudInstanceStateTask();
-        /** Handles signal about cloud VM state acquire task is done. */
-        void sltHandleGetCloudInstanceStateDone(UITask *pTask);
+        /** Create cloud VM info acquire task. */
+        void sltCreateGetCloudInstanceInfoTask();
+        /** Handles signal about cloud VM info acquire task is done. */
+        void sltHandleGetCloudInstanceInfoDone(UITask *pTask);
 
 private:
 
-    /** @name State attributes.
+    /** @name Data attributes.
       * @{ */
-        /** Updates cloud VM state on the basis of string @a strState value. */
-        void updateState(const QString &strState);
+        /** Updates cloud VM info on the basis of string @a infoMap value. */
+        void updateInfo(const QMap<KVirtualSystemDescriptionType, QString> &infoMap);
     /** @} */
 
     /** @name Arguments.
@@ -138,12 +138,12 @@ private:
         UICloudMachine *m_pCloudMachine;
     /** @} */
 
-    /** @name State attributes.
+    /** @name Data attributes.
       * @{ */
         /** Holds fake cloud item state. */
         FakeCloudItemState  m_enmFakeCloudItemState;
 
-        /** Holds the state acquire task instance. */
+        /** Holds the info acquire task instance. */
         UITask *m_pTask;
     /** @} */
 };

@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - UITaskCloudGetInstanceState class declaration.
+ * VBox Qt GUI - UITaskCloudGetInstanceInfo class declaration.
  */
 
 /*
@@ -15,13 +15,14 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef FEQT_INCLUDED_SRC_manager_UITaskCloudGetInstanceState_h
-#define FEQT_INCLUDED_SRC_manager_UITaskCloudGetInstanceState_h
+#ifndef FEQT_INCLUDED_SRC_manager_UITaskCloudGetInstanceInfo_h
+#define FEQT_INCLUDED_SRC_manager_UITaskCloudGetInstanceInfo_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
 
 /* Qt includes: */
+#include <QMap>
 #include <QMutex>
 
 /* GUI includes: */
@@ -34,7 +35,7 @@
 
 
 /** UITask extension used to get cloud instance state. */
-class UITaskCloudGetInstanceState : public UITask
+class UITaskCloudGetInstanceInfo : public UITask
 {
     Q_OBJECT;
 
@@ -43,13 +44,13 @@ public:
     /** Constructs task taking @a comCloudClient and @a strId as data.
       * @param  comCloudClient  Brings the cloud client object.
       * @param  strId           Brings the cloud VM id. */
-    UITaskCloudGetInstanceState(const CCloudClient &comCloudClient, const QString &strId);
+    UITaskCloudGetInstanceInfo(const CCloudClient &comCloudClient, const QString &strId);
 
     /** Returns error info. */
     CVirtualBoxErrorInfo errorInfo();
 
     /** Returns the task result. */
-    QString result() const;
+    QMap<KVirtualSystemDescriptionType, QString> result() const;
 
 protected:
 
@@ -70,7 +71,7 @@ private:
     CVirtualBoxErrorInfo  m_comErrorInfo;
 
     /** Holds the task result. */
-    QString  m_strResult;
+    QMap<KVirtualSystemDescriptionType, QString>  m_resultMap;
 };
 
-#endif /* !FEQT_INCLUDED_SRC_manager_UITaskCloudGetInstanceState_h */
+#endif /* !FEQT_INCLUDED_SRC_manager_UITaskCloudGetInstanceInfo_h */
