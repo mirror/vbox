@@ -131,6 +131,8 @@ private:
         /** Updates cloud VM info on the basis of @a infoMap value. */
         void updateInfo(const QMap<KVirtualSystemDescriptionType, QString> &infoMap);
 
+        /** Updates cloud VM OS type on the basis of @a strInfo value. */
+        void updateOsType(const QString &strInfo);
         /** Updates cloud VM state on the basis of @a strInfo value. */
         void updateState(const QString &strInfo);
     /** @} */

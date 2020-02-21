@@ -134,7 +134,9 @@ void UIVirtualMachineItemCloud::recache()
         m_comAccessError = CVirtualBoxErrorInfo();
 
         /* Determine own VM attributes: */
-        m_strOSTypeId = "Other";
+        if (   itemType() == ItemType_CloudFake
+            || m_strOSTypeId.isNull())
+            m_strOSTypeId = "Other";
 
         /* Determine VM states: */
         if (   itemType() == ItemType_CloudFake
@@ -329,6 +331,7 @@ void UIVirtualMachineItemCloud::sltHandleGetCloudInstanceInfoDone(UITask *pTask)
 void UIVirtualMachineItemCloud::updateInfo(const QMap<KVirtualSystemDescriptionType, QString> &infoMap)
 {
     /* Update info: */
+    updateOsType(infoMap.value(KVirtualSystemDescriptionType_OS));
     updateState(infoMap.value(KVirtualSystemDescriptionType_CloudInstanceState));
 
     /* Recache: */
@@ -336,6 +339,18 @@ void UIVirtualMachineItemCloud::updateInfo(const QMap<KVirtualSystemDescriptionT
 
     /* Notify listeners finally: */
     emit sigStateChange();
+}
+
+void UIVirtualMachineItemCloud::updateOsType(const QString &strInfo)
+{
+    /* Prepare a map of known OS types: */
+    QMap<QString, QString> osTypes;
+    osTypes["Custom"] = QString("Other");
+    osTypes["Oracle Linux"] = QString("Oracle_64");
+    osTypes["Canonical Ubuntu"] = QString("Ubuntu_64");
+
+    /* Update OS type value: */
+    m_strOSTypeId = osTypes.value(strInfo, "Other");
 }
 
 void UIVirtualMachineItemCloud::updateState(const QString &strInfo)
