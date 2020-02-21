@@ -41,6 +41,7 @@
 
 #include <VBox/VBoxGuestLib.h>
 
+#include <iprt/asm.h>
 #include <iprt/assert.h>
 #include <iprt/err.h>
 #include <iprt/file.h>
@@ -61,6 +62,8 @@
 RTPOINT *mpMonitorPositions;
 /** Thread to listen to some of the X server events. */
 RTTHREAD mX11MonitorThread = NIL_RTTHREAD;
+/** Shutdown indicator for the monitor thread. */
+static bool g_fMonitorThreadShutdown = false;
 
 struct X11VMWRECT /* xXineramaScreenInfo in Xlib headers. */
 {
@@ -200,16 +203,18 @@ static void monitorRandREvents()
             VBClLogInfo("RRNotify\n");
             break;
         default:
-            VBClLogInfo("Unknown RR event\n");
+            VBClLogInfo("Unknown RR event: %d\n", event.type);
             break;
     }
 }
 
-int x11MonitorThreadFunction(RTTHREAD hThreadSelf, void *pvUser)
+/**
+ * @callback_method_impl{FNRTTHREAD}
+ */
+static DECLCALLBACK(int) x11MonitorThreadFunction(RTTHREAD hThreadSelf, void *pvUser)
 {
-    (void)hThreadSelf;
-    (void*)pvUser;
-    while(1)
+    RT_NOREF(hThreadSelf, pvUser);
+    while (!ASMAtomicReadBool(&g_fMonitorThreadShutdown))
     {
         monitorRandREvents();
     }
@@ -220,14 +225,16 @@ static int startX11MonitorThread()
 {
     int rc;
 
+    Assert(g_fMonitorThreadShutdown == false);
     if (mX11MonitorThread == NIL_RTTHREAD)
     {
-        rc = RTThreadCreate(&mX11MonitorThread, x11MonitorThreadFunction, 0, 0,
-                            RTTHREADTYPE_MSG_PUMP, RTTHREADFLAGS_WAITABLE,
-                            "X11 events");
+        rc = RTThreadCreate(&mX11MonitorThread, x11MonitorThreadFunction, NULL /*pvUser*/, 0 /*cbStack*/,
+                            RTTHREADTYPE_MSG_PUMP, RTTHREADFLAGS_WAITABLE, "X11 events");
         if (RT_FAILURE(rc))
             VBClLogFatalError("Warning: failed to start X11 monitor thread (VBoxClient) rc=%Rrc!\n", rc);
     }
+    else
+        rc = VINF_ALREADY_INITIALIZED;
     return rc;
 }
 
@@ -236,11 +243,16 @@ static int stopX11MonitorThread(void)
     int rc;
     if (mX11MonitorThread != NIL_RTTHREAD)
     {
+        ASMAtomicWriteBool(&g_fMonitorThreadShutdown, true);
+        /** @todo  Send event to thread to get it out of XNextEvent. */
         //????????
         //mX11Monitor.interruptEventWait();
-        rc = RTThreadWait(mX11MonitorThread, 1000, NULL);
+        rc = RTThreadWait(mX11MonitorThread, RT_MS_1SEC, NULL /*prc*/);
         if (RT_SUCCESS(rc))
+        {
             mX11MonitorThread = NIL_RTTHREAD;
+            g_fMonitorThreadShutdown = false;
+        }
         else
             VBClLogError("Failed to stop X11 monitor thread, rc=%Rrc!\n", rc);
     }
@@ -278,8 +290,8 @@ static void x11Connect()
     x11Context.pDisplay = XOpenDisplay(NULL);
     if (x11Context.pDisplay == NULL)
         return;
-    if(!XQueryExtension(x11Context.pDisplay, "VMWARE_CTRL",
-                        &x11Context.hVMWMajor, &dummy, &dummy))
+    if (!XQueryExtension(x11Context.pDisplay, "VMWARE_CTRL",
+                         &x11Context.hVMWMajor, &dummy, &dummy))
     {
         XCloseDisplay(x11Context.pDisplay);
         x11Context.pDisplay = NULL;
@@ -296,9 +308,9 @@ static void x11Connect()
     }
     x11Context.hEventMask = RRScreenChangeNotifyMask;
     if (x11Context.hRandRMinor >= 2)
-        x11Context.hEventMask |=  RRCrtcChangeNotifyMask |
-            RROutputChangeNotifyMask |
-            RROutputPropertyNotifyMask;
+        x11Context.hEventMask |= RRCrtcChangeNotifyMask
+                               | RROutputChangeNotifyMask
+                               | RROutputPropertyNotifyMask;
     x11Context.rootWindow = DefaultRootWindow(x11Context.pDisplay);
     x11Context.hOutputCount = determineOutputCount();
 }
@@ -342,7 +354,7 @@ static bool parseModeLine(char *pszLine, char *outPszModeName)
     size_t iNameIndex = 0;
     bool fInitialSpace = true;
 
-    while(*p)
+    while (*p)
     {
         if (*p != ' ')
             fInitialSpace = false;
@@ -352,9 +364,9 @@ static bool parseModeLine(char *pszLine, char *outPszModeName)
             ++iNameIndex;
             if (iNameIndex >= 4)
             {
-                if (outPszModeName[iNameIndex-1] == 'x' &&
-                    outPszModeName[iNameIndex-2] == 'o' &&
-                    outPszModeName[iNameIndex-3] == 'b')
+                if (   outPszModeName[iNameIndex-1] == 'x'
+                    && outPszModeName[iNameIndex-2] == 'o'
+                    && outPszModeName[iNameIndex-3] == 'b')
                     break;
             }
         }
@@ -538,8 +550,7 @@ static const char *getPidFilePath()
 
 static int run(struct VBCLSERVICE **ppInterface, bool fDaemonised)
 {
-    (void)ppInterface;
-    (void)fDaemonised;
+    RT_NOREF(ppInterface, fDaemonised);
     int rc;
     uint32_t events;
     /* Do not acknowledge the first event we query for to pick up old events,
@@ -561,13 +572,13 @@ static int run(struct VBCLSERVICE **ppInterface, bool fDaemonised)
 
     int eventMask = RRScreenChangeNotifyMask;
     if (x11Context.hRandRMinor >= 2)
-        eventMask |=  RRCrtcChangeNotifyMask |
-            RROutputChangeNotifyMask |
-            RROutputPropertyNotifyMask;
+        eventMask |= RRCrtcChangeNotifyMask
+                   | RROutputChangeNotifyMask
+                   | RROutputPropertyNotifyMask;
     if (x11Context.hRandRMinor >= 4)
-        eventMask |= RRProviderChangeNotifyMask |
-            RRProviderPropertyNotifyMask |
-            RRResourceChangeNotifyMask;
+        eventMask |= RRProviderChangeNotifyMask
+                   | RRProviderPropertyNotifyMask
+                   | RRResourceChangeNotifyMask;
     for (;;)
     {
         struct VMMDevDisplayDef aDisplays[VMW_MAX_HEADS];
@@ -590,7 +601,7 @@ static int run(struct VBCLSERVICE **ppInterface, bool fDaemonised)
                 aMonitors[idDisplay].fDisplayFlags = aDisplays[i].fDisplayFlags;
                 if (!(aDisplays[i].fDisplayFlags & VMMDEV_DISPLAY_DISABLED))
                 {
-                    if ((idDisplay == 0) || (aDisplays[i].fDisplayFlags & VMMDEV_DISPLAY_ORIGIN))
+                    if (idDisplay == 0 || (aDisplays[i].fDisplayFlags & VMMDEV_DISPLAY_ORIGIN))
                     {
                         aMonitors[idDisplay].xOrigin = aDisplays[i].xOrigin;
                         aMonitors[idDisplay].yOrigin = aDisplays[i].yOrigin;
