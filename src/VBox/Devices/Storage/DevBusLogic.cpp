@@ -1189,7 +1189,7 @@ static int buslogicR3HwReset(PPDMDEVINS pDevIns, PBUSLOGIC pThis, PBUSLOGICCC pT
  * @param   pDevIns         The device instance.
  * @param   pThis           Pointer to the shared BusLogic instance data.
  * @param   fSuppressIrq    Flag to suppress IRQ generation regardless of current state
- * @param   fNoComplStat    Flag to suppress command completion status as well
+ * @param   fSuppressCMDC   Flag to suppress command completion status as well
  */
 static void buslogicCommandComplete(PPDMDEVINS pDevIns, PBUSLOGIC pThis, bool fSuppressIrq, bool fSuppressCMDC)
 {
@@ -1200,7 +1200,7 @@ static void buslogicCommandComplete(PPDMDEVINS pDevIns, PBUSLOGIC pThis, bool fS
     pThis->regStatus |= BL_STAT_HARDY;
     pThis->iReply = 0;
 
-    /* Some commands do not set CMDC when successful. */
+    /* The Enable OMBR command does not set CMDC when successful. */
     if (!fSuppressCMDC)
     {
         /* Notify that the command is complete. */
@@ -4379,22 +4379,15 @@ static DECLCALLBACK(int) buslogicRZConstruct(PPDMDEVINS pDevIns)
 
     if (!pThis->uIsaIrq)
     {
-        Assert(pThis->hIoPortsIsa == NIL_IOMIOPORTHANDLE);
-
         int rc = PDMDevHlpIoPortSetUpContext(pDevIns, pThis->hIoPortsPci, buslogicIOPortWrite, buslogicIOPortRead, NULL /*pvUser*/);
         AssertRCReturn(rc, rc);
 
         rc = PDMDevHlpMmioSetUpContext(pDevIns, pThis->hMmio, buslogicMMIOWrite, buslogicMMIORead, NULL /*pvUser*/);
         AssertRCReturn(rc, rc);
     }
-    else
-    {
-        Assert(pThis->hIoPortsPci == NIL_IOMIOPORTHANDLE);
-        Assert(pThis->hMmio       == NIL_IOMMMIOHANDLE);
 
-        int rc = PDMDevHlpIoPortSetUpContext(pDevIns, pThis->hIoPortsIsa, buslogicIOPortWrite, buslogicIOPortRead, NULL /*pvUser*/);
-        AssertRCReturn(rc, rc);
-    }
+    int rc = PDMDevHlpIoPortSetUpContext(pDevIns, pThis->hIoPortsIsa, buslogicIOPortWrite, buslogicIOPortRead, NULL /*pvUser*/);
+    AssertRCReturn(rc, rc);
 
     return VINF_SUCCESS;
 }
