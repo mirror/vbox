@@ -65,6 +65,8 @@ RTTHREAD mX11MonitorThread = NIL_RTTHREAD;
 /** Shutdown indicator for the monitor thread. */
 static bool g_fMonitorThreadShutdown = false;
 
+#define OLD_JUNK
+
 struct X11VMWRECT /* xXineramaScreenInfo in Xlib headers. */
 {
     int16_t x;
@@ -116,6 +118,8 @@ struct RANDROUTPUT
 static void x11Connect();
 static int determineOutputCount();
 
+
+#ifndef OLD_JUNK
 /** This function assumes monitors are named as from Virtual1 to VirtualX. */
 static int getMonitorIdFromName(const char *sMonitorName)
 {
@@ -139,18 +143,12 @@ static int getMonitorIdFromName(const char *sMonitorName)
 
 static void queryMonitorPositions()
 {
-    printf("===========================================================================================================================================");
     static const int iSentinelPosition = -1;
     if (mpMonitorPositions)
     {
         free(mpMonitorPositions);
         mpMonitorPositions = NULL;
     }
-    // if (!mHostMonitorPositionSendCallback)
-    // {
-    //     VBClLogFatalError("No monitor positions update callback\n");
-    //     return;
-    // }
 
     XRRScreenResources *pScreenResources = XRRGetScreenResources (x11Context.pDisplay, DefaultRootWindow(x11Context.pDisplay));
     AssertReturnVoid(pScreenResources);
@@ -187,9 +185,11 @@ static void queryMonitorPositions()
     }
     XRRFreeMonitors(pMonitorInfo);
 }
+#endif
 
 static void monitorRandREvents()
 {
+#ifndef OLD_JUNK
     XEvent event;
     XNextEvent(x11Context.pDisplay, &event);
     int eventTypeOffset = event.type - x11Context.hRandREventBase;
@@ -206,6 +206,7 @@ static void monitorRandREvents()
             VBClLogInfo("Unknown RR event: %d\n", event.type);
             break;
     }
+#endif
 }
 
 /**
@@ -306,11 +307,14 @@ static void x11Connect()
         XCloseDisplay(x11Context.pDisplay);
         x11Context.pDisplay = NULL;
     }
+    x11Context.hEventMask = 0;
+#ifndef OLD_JUNK
     x11Context.hEventMask = RRScreenChangeNotifyMask;
     if (x11Context.hRandRMinor >= 2)
         x11Context.hEventMask |= RRCrtcChangeNotifyMask
                                | RROutputChangeNotifyMask
                                | RROutputPropertyNotifyMask;
+#endif
     x11Context.rootWindow = DefaultRootWindow(x11Context.pDisplay);
     x11Context.hOutputCount = determineOutputCount();
 }
@@ -570,15 +574,6 @@ static int run(struct VBCLSERVICE **ppInterface, bool fDaemonised)
     if (RT_FAILURE(rc))
         VBClLogFatalError("Failed to register resizing support, rc=%Rrc\n", rc);
 
-    int eventMask = RRScreenChangeNotifyMask;
-    if (x11Context.hRandRMinor >= 2)
-        eventMask |= RRCrtcChangeNotifyMask
-                   | RROutputChangeNotifyMask
-                   | RROutputPropertyNotifyMask;
-    if (x11Context.hRandRMinor >= 4)
-        eventMask |= RRProviderChangeNotifyMask
-                   | RRProviderPropertyNotifyMask
-                   | RRResourceChangeNotifyMask;
     for (;;)
     {
         struct VMMDevDisplayDef aDisplays[VMW_MAX_HEADS];
