@@ -289,8 +289,11 @@ typedef struct DMIMEMORYDEV
     uint8_t         u8PartNumber;
     /* v2.6+ */
     uint8_t         u8Attributes;
+    /* v2.7+ */
+    uint32_t        u32ExtendedSize;
+    uint16_t        u16CfgSpeed;    /* Configured speed in MT/sec. */
 } *PDMIMEMORYDEV;
-AssertCompileSize(DMIMEMORYDEV, 28);
+AssertCompileSize(DMIMEMORYDEV, 34);
 
 /** MPS floating pointer structure */
 typedef struct MPSFLOATPTR
@@ -867,19 +870,32 @@ int FwCommonPlantDMITable(PPDMDEVINS pDevIns, uint8_t *pTable, unsigned cbMax, P
         pMemDev->u16TotalWidth           = 0xffff; /* Unknown */
         pMemDev->u16DataWidth            = 0xffff; /* Unknown */
         int16_t u16RamSizeM;
+        int32_t u32ExtRamSizeM = 0;
         if (cbRamSize / _1M > INT16_MAX)
         {
-            /** @todo 32G-1M limit. Provide multiple type-17 descriptors.
-             * The highest bit of u16Size must be 0 to specify 'GB' units / 1 would be 'KB' */
+            /* The highest bit of u16Size must be 0 to specify 'GB' units / 1 would be 'KB'.
+             * SMBIOS 2.7 intruduced a 32-bit extended size. If module size is 32GB or greater,
+             * the old u16Size is set to 7FFFh; old parsers will see 32GB-1MB, new parsers will
+             * look at new u32ExtendedSize which can represent at least 128TB. OS X 10.14+ looks
+             * at the extended size.
+             */
             AssertLogRelMsgFailed(("DMI: RAM size %#RX64 too big for one type-17 descriptor, clipping to %#RX64\n",
                                    cbRamSize, (uint64_t)INT16_MAX * _1M));
             u16RamSizeM = INT16_MAX;
+            if (cbRamSize / _1M >= 0x8000000) {
+                AssertLogRelMsgFailed(("DMI: RAM size %#RX64 too big for one type-17 descriptor, clipping to %#RX64\n",
+                                       cbRamSize, (uint64_t)INT32_MAX * _1M));
+                u32ExtRamSizeM = 0x8000000; /* 128TB */
+            }
+            else
+                u32ExtRamSizeM = cbRamSize / _1M;
         }
         else
             u16RamSizeM = (uint16_t)(cbRamSize / _1M);
         if (u16RamSizeM == 0)
             u16RamSizeM = 0x400; /* 1G */
         pMemDev->u16Size                 = u16RamSizeM; /* RAM size */
+        pMemDev->u32ExtendedSize         = u32ExtRamSizeM;
         pMemDev->u8FormFactor            = 0x09; /* DIMM */
         pMemDev->u8DeviceSet             = 0x00; /* Not part of a device set */
         DMI_READ_CFG_STR_DEF(pMemDev->u8DeviceLocator, " ", "DIMM 0");
