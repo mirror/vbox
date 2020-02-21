@@ -164,7 +164,7 @@ static void queryMonitorPositions()
     {
         getMonitorIdFromName("virtual123");
         mpMonitorPositions = (RTPOINT*)malloc(x11Context.hOutputCount * sizeof(RTPOINT));
-        /* todo: memset? */
+        /** @todo memset? */
         for (int i = 0; i < x11Context.hOutputCount; ++i)
         {
             mpMonitorPositions[i].x = iSentinelPosition;
