@@ -25,11 +25,11 @@
 #include <iprt/vector.h>
 #include <VBox/log.h>
 
-#include <X11/Xatom.h>
-#include <X11/Xmu/WinUtil.h>
-
 #include "seamless-x11.h"
 #include "VBoxClient.h"
+
+#include <X11/Xatom.h>
+#include <X11/Xmu/WinUtil.h>
 
 #include <limits.h>
 
@@ -89,23 +89,6 @@ int SeamlessX11::init(PFNSENDREGIONUPDATE pHostCallback)
         VBClLogError("Seamless guest object failed to acquire a connection to the display\n");
         return VERR_ACCESS_DENIED;
     }
-
-    mRandRMask = 0;
-    mRandRAvailable = false;
-    /*if (XRRQueryExtension(mDisplay, &mRandREventBase, &mRandRErrorBase))
-    {
-        int iRandRMajor = 0;
-        int iRandRMinor = 0;
-        if (XRRQueryVersion(mDisplay, &iRandRMajor, &iRandRMinor))
-        {
-            mRandRAvailable = true;
-            mRandRMask = RRScreenChangeNotifyMask;
-            if (iRandRMinor >= 2)
-                mRandRMask |=  RRCrtcChangeNotifyMask |
-                    RROutputChangeNotifyMask |
-                    RROutputPropertyNotifyMask;
-        }
-        }*/
     mHostCallback = pHostCallback;
     mEnabled = false;
     unmonitorClientList();
@@ -161,25 +144,6 @@ void SeamlessX11::unmonitorClientList(void)
 {
     LogRelFlowFuncEnter();
     XSelectInput(mDisplay, DefaultRootWindow(mDisplay), PropertyChangeMask);
-}
-
-void SeamlessX11::monitorRandREvents(XEvent *pEvent)
-{
-    if (!pEvent)
-        return;
-    int eventTypeOffset = pEvent->type - mRandREventBase;
-    switch (eventTypeOffset)
-    {
-        case RRScreenChangeNotify:
-            VBClLogError("RRScreenChangeNotify\n");
-            break;
-        case RRNotify:
-            VBClLogError("RRNotify\n");
-            break;
-        default:
-            VBClLogError("Unknown RR event\n");
-            break;
-    }
 }
 
 /**
@@ -340,11 +304,6 @@ void SeamlessX11::nextConfigurationEvent(void)
     XEvent event;
 
     LogRelFlowFuncEnter();
-
-    /* We execute this even when seamless is disabled, as it also waits for
-     * enable and disable notification. */
-    XNextEvent(mDisplay, &event);
-    monitorRandREvents(&event);
     /* Start by sending information about the current window setup to the host.  We do this
        here because we want to send all such information from a single thread. */
     if (mChanged && mEnabled)
@@ -353,6 +312,9 @@ void SeamlessX11::nextConfigurationEvent(void)
         mHostCallback(mpRects, mcRects);
     }
     mChanged = false;
+    /* We execute this even when seamless is disabled, as it also waits for
+     * enable and disable notification. */
+    XNextEvent(mDisplay, &event);
     if (!mEnabled)
         return;
     switch (event.type)

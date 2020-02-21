@@ -30,55 +30,13 @@
 
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
-#include <X11/Xlibint.h>
 #include <X11/extensions/shape.h>
-#include <X11/extensions/Xrandr.h>
 
 #define WM_TYPE_PROP "_NET_WM_WINDOW_TYPE"
 #define WM_TYPE_DESKTOP_PROP "_NET_WM_WINDOW_TYPE_DESKTOP"
 
 /* This is defined wrong in my X11 header files! */
 #define VBoxShapeNotify 64
-
-/** Following are stolen from randr.h Define XrandR stuff of they are not there (some ancient build box maybe). */
-
-/* Event selection bits */
-#ifndef RRScreenChangeNotifyMask
-#define RRScreenChangeNotifyMask  (1L << 0)
-#endif
-/* V1.2 additions */
-#ifndef RRCrtcChangeNotifyMask
-#define RRCrtcChangeNotifyMask      (1L << 1)
-#endif
-#ifndef RROutputChangeNotifyMask
-#define RROutputChangeNotifyMask    (1L << 2)
-#endif
-
-#ifndef RROutputPropertyNotifyMask
-#define RROutputPropertyNotifyMask  (1L << 3)
-#endif
-
-/* V1.4 additions */
-#ifndef RRProviderChangeNotifyMask
-#define RRProviderChangeNotifyMask   (1L << 4)
-#endif
-
-#ifndef RRProviderPropertyNotifyMask
-#define RRProviderPropertyNotifyMask (1L << 5)
-#endif
-
-#ifndef RRResourceChangeNotifyMask
-#define RRResourceChangeNotifyMask   (1L << 6)
-#endif
-
-#ifndef RRScreenChangeNotify
-/* Event codes */
-#define RRScreenChangeNotify    0
-#endif
-#ifndef RRNotify
-/* V1.2 additions */
-#define RRNotify 1
-#endif
 
 /**
  * Callback which provides the interface for notifying the host of changes to
@@ -231,11 +189,6 @@ private:
     bool mEnabled;
     /** Have there been changes since the last time we sent a notification? */
     bool mChanged;
-    /** Event mask we use to select randr related events. */
-    int  mRandRMask;
-    int  mRandREventBase;
-    int  mRandRErrorBase;
-    bool mRandRAvailable;
 
     // Private methods
 
@@ -250,7 +203,6 @@ private:
      */
     void monitorClientList(void);
     void unmonitorClientList(void);
-    void monitorRandREvents(XEvent *pEvent);
     void rebuildWindowTree(void);
     void addClients(const Window hRoot);
     bool isVirtualRoot(Window hWin);
