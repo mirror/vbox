@@ -84,11 +84,13 @@ QList<UICloudMachine> UICloudNetworkingStuff::listInstances(const CCloudClient &
     return QList<UICloudMachine>();
 }
 
-QString UICloudNetworkingStuff::getInstanceInfo(KVirtualSystemDescriptionType enmType,
-                                                const CCloudClient &comCloudClient,
-                                                const QString &strId,
-                                                QWidget *pParent /* = 0 */)
+QMap<KVirtualSystemDescriptionType, QString> UICloudNetworkingStuff::getInstanceInfo(const CCloudClient &comCloudClient,
+                                                                                     const QString &strId,
+                                                                                     QWidget *pParent /* = 0 */)
 {
+    /* Prepare result: */
+    QMap<KVirtualSystemDescriptionType, QString> resultMap;
+
     /* Get VirtualBox object: */
     CVirtualBox comVBox = uiCommon().virtualBox();
 
@@ -120,7 +122,7 @@ QString UICloudNetworkingStuff::getInstanceInfo(KVirtualSystemDescriptionType en
         {
             /* Get received description: */
             QVector<CVirtualSystemDescription> descriptions = comAppliance.GetVirtualSystemDescriptions();
-            AssertReturn(!descriptions.isEmpty(), QString());
+            AssertReturn(!descriptions.isEmpty(), resultMap);
             CVirtualSystemDescription comDescription = descriptions.at(0);
 
             /* Now execute GetInstanceInfo async method: */
@@ -157,16 +159,26 @@ QString UICloudNetworkingStuff::getInstanceInfo(KVirtualSystemDescriptionType en
                     /* Now acquire description of certain type: */
                     QVector<KVirtualSystemDescriptionType> types;
                     QVector<QString> refs, origValues, configValues, extraConfigValues;
-                    comDescription.GetDescriptionByType(enmType, types, refs, origValues, configValues, extraConfigValues);
+                    comDescription.GetDescription(types, refs, origValues, configValues, extraConfigValues);
 
-                    /* Return first config value if we have one: */
-                    AssertReturn(!configValues.isEmpty(), QString());
-                    return configValues.at(0);
+                    /* Make sure key & value vectors have the same size: */
+                    AssertReturn(!types.isEmpty() && types.size() == configValues.size(), resultMap);
+                    /* Append resulting map with key/value pairs we have: */
+                    for (int i = 0; i < types.size(); ++i)
+                        resultMap[types.at(i)] = configValues.at(i);
                 }
             }
         }
     }
 
-    /* Return null string by default: */
-    return QString();
+    /* Return result: */
+    return resultMap;
+}
+
+QString UICloudNetworkingStuff::getInstanceInfo(KVirtualSystemDescriptionType enmType,
+                                                const CCloudClient &comCloudClient,
+                                                const QString &strId,
+                                                QWidget *pParent /* = 0 */)
+{
+    return getInstanceInfo(comCloudClient, strId, pParent).value(enmType, QString());
 }

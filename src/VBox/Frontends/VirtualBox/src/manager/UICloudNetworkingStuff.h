@@ -38,7 +38,15 @@ namespace UICloudNetworkingStuff
     QList<UICloudMachine> listInstances(const CCloudClient &comCloudClient,
                                         QWidget *pParent = 0);
 
-    /** Acquires instance info of certain @a enmType.
+    /** Acquires instance info as a map.
+      * @param  comCloudClient  Brings cloud client object.
+      * @param  strId           Brings cloud VM id.
+      * @param  pWidget         Brings parent widget to show messages according to,
+      *                         if no parent set, progress will be executed in blocking way. */
+    QMap<KVirtualSystemDescriptionType, QString> getInstanceInfo(const CCloudClient &comCloudClient,
+                                                                 const QString &strId,
+                                                                 QWidget *pParent = 0);
+    /** Acquires instance info of certain @a enmType as a string.
       * @param  comCloudClient  Brings cloud client object.
       * @param  strId           Brings cloud VM id.
       * @param  pWidget         Brings parent widget to show messages according to,
