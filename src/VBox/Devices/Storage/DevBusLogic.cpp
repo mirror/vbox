@@ -1136,6 +1136,8 @@ static void buslogicR3InitializeLocalRam(PBUSLOGIC pThis)
     pThis->LocalRam.structured.autoSCSIData.u16DisconnectPermittedMask = UINT16_MAX;
     pThis->LocalRam.structured.autoSCSIData.fStrictRoundRobinMode = pThis->fStrictRoundRobinMode;
     pThis->LocalRam.structured.autoSCSIData.u16UltraPermittedMask = UINT16_MAX;
+    pThis->LocalRam.structured.autoSCSIData.uSCSIId = 7;
+    pThis->LocalRam.structured.autoSCSIData.uHostAdapterIoPortAddress = pThis->uDefaultISABaseCode == ISA_BASE_DISABLED ? 2 : pThis->uDefaultISABaseCode;
     /** @todo calculate checksum? */
 }
 
@@ -1824,8 +1826,11 @@ static int buslogicProcessCommand(PPDMDEVINS pDevIns, PBUSLOGIC pThis)
             PReplyInquirePCIHostAdapterInformation pReply = (PReplyInquirePCIHostAdapterInformation)pThis->aReplyBuffer;
             memset(pReply, 0, sizeof(ReplyInquirePCIHostAdapterInformation));
 
-            /* It seems VMware does not provide valid information here too, lets do the same :) */
-            pReply->InformationIsValid = 0;
+            /* Modeled after a real BT-958(D) */
+            pReply->HighByteTerminated = 1;
+            pReply->LowByteTerminated = 1;
+            pReply->JP1 = 1;    /* Closed; "Factory configured - do not alter" */
+            pReply->InformationIsValid = 1;
             pReply->IsaIOPort = pThis->uISABaseCode;
             pReply->IRQ = PCIDevGetInterruptLine(pDevIns->apPciDevs[0]);
             pThis->cbReplyParametersLeft = sizeof(ReplyInquirePCIHostAdapterInformation);
