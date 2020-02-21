@@ -211,9 +211,9 @@ static void monitorRandREvents()
 /**
  * @callback_method_impl{FNRTTHREAD}
  */
-static DECLCALLBACK(int) x11MonitorThreadFunction(RTTHREAD hThreadSelf, void *pvUser)
+static DECLCALLBACK(int) x11MonitorThreadFunction(RTTHREAD ThreadSelf, void *pvUser)
 {
-    RT_NOREF(hThreadSelf, pvUser);
+    RT_NOREF(ThreadSelf, pvUser);
     while (!ASMAtomicReadBool(&g_fMonitorThreadShutdown))
     {
         monitorRandREvents();
