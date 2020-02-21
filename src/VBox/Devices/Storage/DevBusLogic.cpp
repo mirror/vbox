@@ -1189,8 +1189,9 @@ static int buslogicR3HwReset(PPDMDEVINS pDevIns, PBUSLOGIC pThis, PBUSLOGICCC pT
  * @param   pDevIns         The device instance.
  * @param   pThis           Pointer to the shared BusLogic instance data.
  * @param   fSuppressIrq    Flag to suppress IRQ generation regardless of current state
+ * @param   fNoComplStat    Flag to suppress command completion status as well
  */
-static void buslogicCommandComplete(PPDMDEVINS pDevIns, PBUSLOGIC pThis, bool fSuppressIrq)
+static void buslogicCommandComplete(PPDMDEVINS pDevIns, PBUSLOGIC pThis, bool fSuppressIrq, bool fSuppressCMDC)
 {
     LogFlowFunc(("pThis=%#p\n", pThis));
     Assert(pThis->uOperationCode != BUSLOGICCOMMAND_EXECUTE_MAILBOX_COMMAND);
@@ -1199,8 +1200,8 @@ static void buslogicCommandComplete(PPDMDEVINS pDevIns, PBUSLOGIC pThis, bool fS
     pThis->regStatus |= BL_STAT_HARDY;
     pThis->iReply = 0;
 
-    /* The Enable OMBR command does not set CMDC when successful. */
-    if (pThis->uOperationCode != BUSLOGICCOMMAND_ENABLE_OUTGOING_MAILBOX_AVAILABLE_INTERRUPT)
+    /* Some commands do not set CMDC when successful. */
+    if (!fSuppressCMDC)
     {
         /* Notify that the command is complete. */
         pThis->regStatus &= ~BL_STAT_DIRRDY;
@@ -1811,6 +1812,7 @@ static int buslogicProcessCommand(PPDMDEVINS pDevIns, PBUSLOGIC pThis)
 {
     int rc = VINF_SUCCESS;
     bool fSuppressIrq = false;
+    bool fSuppressCMDC = false;
 
     LogFlowFunc(("pThis=%#p\n", pThis));
     AssertMsg(pThis->uOperationCode != 0xff, ("There is no command to execute\n"));
@@ -1853,6 +1855,7 @@ static int buslogicProcessCommand(PPDMDEVINS pDevIns, PBUSLOGIC pThis)
             buslogicR3RegisterISARange(pDevIns, pThis, pThis->aCommandBuffer[0]);
             pThis->cbReplyParametersLeft = 0;
             fSuppressIrq = true;
+            fSuppressCMDC = true;
             break;
 #else
             AssertMsgFailed(("Must never get here!\n"));
@@ -2259,6 +2262,7 @@ static int buslogicProcessCommand(PPDMDEVINS pDevIns, PBUSLOGIC pThis)
             {
                 pThis->LocalRam.structured.autoSCSIData.uReserved6 = uEnable;
                 fSuppressIrq = true;
+                fSuppressCMDC = true;
             }
             break;
         }
@@ -2343,7 +2347,7 @@ static int buslogicProcessCommand(PPDMDEVINS pDevIns, PBUSLOGIC pThis)
     if (pThis->cbReplyParametersLeft)
         pThis->regStatus |= BL_STAT_DIRRDY;
     else if (!pThis->cbCommandParametersLeft)
-        buslogicCommandComplete(pDevIns, pThis, fSuppressIrq);
+        buslogicCommandComplete(pDevIns, pThis, fSuppressIrq, fSuppressCMDC );
 
     return rc;
 }
@@ -2413,9 +2417,9 @@ static int buslogicRegisterRead(PPDMDEVINS pDevIns, PBUSLOGIC pThis, unsigned iR
                      * NB: Some commands do not set the CMDC bit / raise completion interrupt.
                      */
                     if (pThis->uOperationCode == BUSLOGICCOMMAND_FETCH_HOST_ADAPTER_LOCAL_RAM)
-                        buslogicCommandComplete(pDevIns, pThis, true /* fSuppressIrq */);
+                        buslogicCommandComplete(pDevIns, pThis, true /* fSuppressIrq */, true /* fSuppressCMDC */ );
                     else
-                        buslogicCommandComplete(pDevIns, pThis, false);
+                        buslogicCommandComplete(pDevIns, pThis, false, false);
                 }
             }
             LogFlowFunc(("data=%02x, iReply=%d, cbReplyParametersLeft=%u\n", *pu32,
