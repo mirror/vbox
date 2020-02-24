@@ -392,6 +392,7 @@ DECLCALLBACK(VBOXSTRICTRC) vmsvgaIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOP
 
 DECLCALLBACK(void) vmsvgaR3PortSetViewport(PPDMIDISPLAYPORT pInterface, uint32_t uScreenId,
                                          uint32_t x, uint32_t y, uint32_t cx, uint32_t cy);
+DECLCALLBACK(void) vmsvgaR3PortReportMonitorPositions(PPDMIDISPLAYPORT pInterface, uint32_t cPositions, PRTPOINT pPosition);
 
 int vmsvgaR3Init(PPDMDEVINS pDevIns);
 int vmsvgaR3Reset(PPDMDEVINS pDevIns);
@@ -418,4 +419,3 @@ void vmsvgaR3ClipBox(const SVGA3dSize *pSize, SVGA3dBox *pBox);
 void vmsvgaR3ClipRect(SVGASignedRect const *pBound, SVGASignedRect *pRect);
 
 #endif /* !VBOX_INCLUDED_SRC_Graphics_DevVGA_SVGA_h */
-

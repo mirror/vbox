@@ -141,6 +141,16 @@ static int getMonitorIdFromName(const char *sMonitorName)
     return iResult;
 }
 
+static void sendMonitorPositions(RTPOINT *pPositions, size_t cPositions)
+{
+    if (cPositions && !pPositions)
+    {
+        VBClLogError(("Monitor position update called with NULL pointer!\n"));
+        return;
+    }
+    VbglR3SeamlessSendMonitorPositions(cPositions, pPositions);
+}
+
 static void queryMonitorPositions()
 {
     static const int iSentinelPosition = -1;
@@ -180,8 +190,8 @@ static void queryMonitorPositions()
             mpMonitorPositions[iMonitorID].x = pMonitorInfo[i].x;
             mpMonitorPositions[iMonitorID].y = pMonitorInfo[i].y;
         }
-        // if (iMonitorCount > 0)
-        //     mHostMonitorPositionSendCallback(mpMonitorPositions, x11Context.hOutputCount);
+        if (iMonitorCount > 0)
+            mHostMonitorPositionSendCallback(mpMonitorPositions, x11Context.hOutputCount);
     }
     XRRFreeMonitors(pMonitorInfo);
 }

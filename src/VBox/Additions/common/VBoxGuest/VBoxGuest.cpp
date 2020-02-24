@@ -2387,6 +2387,7 @@ static int vgdrvCheckIfVmmReqIsAllowed(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSESSI
         case VMMDevReq_VideoAccelEnable:
         case VMMDevReq_VideoAccelFlush:
         case VMMDevReq_VideoSetVisibleRegion:
+        case VMMDevReq_VideoUpdateMonitorPositions:
         case VMMDevReq_GetDisplayChangeRequestEx:
         case VMMDevReq_GetDisplayChangeRequestMulti:
         case VMMDevReq_GetSeamlessChangeRequest:
@@ -4503,4 +4504,3 @@ bool VGDrvCommonISR(PVBOXGUESTDEVEXT pDevExt)
     AssertMsg(rc == 0, ("rc=%#x (%d)\n", rc, rc));
     return fOurIrq;
 }
-

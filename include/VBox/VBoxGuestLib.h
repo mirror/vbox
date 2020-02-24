@@ -742,6 +742,7 @@ VBGLR3DECL(int)     VbglR3ClipboardObjWriteSend(PVBGLR3SHCLCMDCTX pCtx, SHCLOBJH
 VBGLR3DECL(int)     VbglR3SeamlessSetCap(bool fState);
 VBGLR3DECL(int)     VbglR3SeamlessWaitEvent(VMMDevSeamlessMode *pMode);
 VBGLR3DECL(int)     VbglR3SeamlessSendRects(uint32_t cRects, PRTRECT pRects);
+VBGLR3DECL(int)     VbglR3SeamlessSendMonitorPositions(uint32_t cPositions, PRTPOINT pPositions);
 VBGLR3DECL(int)     VbglR3SeamlessGetLastEvent(VMMDevSeamlessMode *pMode);
 
 /** @}  */
@@ -1262,4 +1263,3 @@ RT_C_DECLS_END
 /** @} */
 
 #endif /* !VBOX_INCLUDED_VBoxGuestLib_h */
-

@@ -75,7 +75,7 @@ typedef struct DRVMAINDISPLAY
     Display                    *pDisplay;
     /** Pointer to the driver instance structure. */
     PPDMDRVINS                  pDrvIns;
-    /** Pointer to the keyboard port interface of the driver/device above us. */
+    /** Pointer to the display port interface of the driver/device above us. */
     PPDMIDISPLAYPORT            pUpPort;
     /** Our display connector interface. */
     PDMIDISPLAYCONNECTOR        IConnector;
@@ -1282,6 +1282,14 @@ int Display::i_handleSetVisibleRegion(uint32_t cRect, PRTRECT pRect)
 
     RTMemTmpFree(pVisibleRegion);
 
+    return VINF_SUCCESS;
+}
+
+int  Display::i_handleUpdateMonitorPositions(uint32_t cPositions, PRTPOINT pPosition)
+{
+    AssertMsgReturn(pPosition, ("Empty monitor position array\n"), E_INVALIDARG);
+    if (mpDrv && mpDrv->pUpPort->pfnReportMonitorPositions)
+        mpDrv->pUpPort->pfnReportMonitorPositions(mpDrv->pUpPort, cPositions, pPosition);
     return VINF_SUCCESS;
 }
 

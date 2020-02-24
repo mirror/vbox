@@ -6589,6 +6589,12 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
     pThisCC->IPort.pfnSendModeHint      = vbvaR3PortSendModeHint;
     pThisCC->IPort.pfnReportHostCursorCapabilities = vgaR3PortReportHostCursorCapabilities;
     pThisCC->IPort.pfnReportHostCursorPosition = vgaR3PortReportHostCursorPosition;
+# ifdef VBOX_WITH_VMSVGA
+    pThisCC->IPort.pfnReportMonitorPositions = vmsvgaR3PortReportMonitorPositions;
+# else
+    pThisCC->IPort.pfnReportMonitorPositions = NULL;
+# endif
+
 
 # if defined(VBOX_WITH_HGSMI) && defined(VBOX_WITH_VIDEOHWACCEL)
     pThisCC->IVBVACallbacks.pfnVHWACommandCompleteAsync = vbvaR3VHWACommandCompleteAsync;

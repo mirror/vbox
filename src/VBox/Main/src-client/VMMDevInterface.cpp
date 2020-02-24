@@ -461,6 +461,16 @@ DECLCALLBACK(int) vmmdevSetVisibleRegion(PPDMIVMMDEVCONNECTOR pInterface, uint32
     return VINF_SUCCESS;
 }
 
+DECLCALLBACK(int) vmmdevUpdateMonitorPositions(PPDMIVMMDEVCONNECTOR pInterface, uint32_t cPositions, PRTPOINT pPositions)
+{
+    PDRVMAINVMMDEV pDrv = RT_FROM_MEMBER(pInterface, DRVMAINVMMDEV, Connector);
+    Console *pConsole = pDrv->pVMMDev->getParent();
+
+    pConsole->i_getDisplay()->i_handleUpdateMonitorPositions(cPositions, pPositions);
+
+    return VINF_SUCCESS;
+}
+
 DECLCALLBACK(int) vmmdevQueryVisibleRegion(PPDMIVMMDEVCONNECTOR pInterface, uint32_t *pcRects, PRTRECT paRects)
 {
     PDRVMAINVMMDEV pDrv = RT_FROM_MEMBER(pInterface, DRVMAINVMMDEV, Connector);
@@ -1069,6 +1079,7 @@ DECLCALLBACK(int) VMMDev::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle,
     pThis->Connector.pfnGetHeightReduction            = vmmdevGetHeightReduction;
     pThis->Connector.pfnSetCredentialsJudgementResult = vmmdevSetCredentialsJudgementResult;
     pThis->Connector.pfnSetVisibleRegion              = vmmdevSetVisibleRegion;
+    pThis->Connector.pfnUpdateMonitorPositions        = vmmdevUpdateMonitorPositions;
     pThis->Connector.pfnQueryVisibleRegion            = vmmdevQueryVisibleRegion;
     pThis->Connector.pfnReportStatistics              = vmmdevReportStatistics;
     pThis->Connector.pfnQueryStatisticsInterval       = vmmdevQueryStatisticsInterval;

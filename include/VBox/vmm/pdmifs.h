@@ -709,6 +709,18 @@ typedef struct PDMIDISPLAYPORT
      * @thread  Any.
      */
     DECLR3CALLBACKMEMBER(void, pfnReportHostCursorPosition, (PPDMIDISPLAYPORT pInterface, uint32_t x, uint32_t y, bool fOutOfRange));
+
+    /**
+     * Notify the graphics device about the monitor positions since the ones we get from vmwgfx FIFO are not correct. In an ideal
+     * universe this method should not be here.
+     *
+     * @param   pInterface   Pointer to this interface.
+     * @param   cPositions   Number of monitor positions
+     * @param   pPosition    Monitor positions (offsets/origins) array
+     * @thread  Any.
+     */
+    DECLR3CALLBACKMEMBER(void, pfnReportMonitorPositions, (PPDMIDISPLAYPORT pInterface, uint32_t cPositions, PRTPOINT pPosition));
+
 } PDMIDISPLAYPORT;
 /** PDMIDISPLAYPORT interface ID. */
 #define PDMIDISPLAYPORT_IID                     "471b0520-338c-11e9-bb84-6ff2c956da45"
@@ -1811,6 +1823,20 @@ typedef struct PDMIVMMDEVCONNECTOR
      * @thread  The emulation thread.
      */
     DECLR3CALLBACKMEMBER(int, pfnSetVisibleRegion,(PPDMIVMMDEVCONNECTOR pInterface, uint32_t cRect, PRTRECT pRect));
+
+    /**
+     * Update monitor positions (offsets). Passing monitor positions from the guest to host
+     * exclusively since vmwgfx fails to do so (thru FIFO).
+     *
+     * @returns VBox status code.
+     * @param   pInterface          Pointer to this interface.
+     * @param   cPositions          Number of monitor positions
+     * @param   pPosition           Positions array
+     * @thread  The emulation thread.
+     *
+     * @remarks Is allowed to be NULL.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnUpdateMonitorPositions,(PPDMIVMMDEVCONNECTOR pInterface, uint32_t cPositions, PRTPOINT pPosition));
 
     /**
      * Query the visible region of the display

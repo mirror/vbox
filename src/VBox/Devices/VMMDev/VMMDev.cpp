@@ -1994,6 +1994,33 @@ static int vmmdevReqHandler_VideoSetVisibleRegion(PVMMDEVCC pThisCC, VMMDevReque
     return pThisCC->pDrv->pfnSetVisibleRegion(pThisCC->pDrv, pReq->cRect, &pReq->Rect);
 }
 
+/**
+ * Handles VMMDevReq_VideoUpdateMonitorPositions.
+ *
+ * @returns VBox status code that the guest should see.
+ * @param   pThisCC         The VMMDev ring-3 instance data.
+ * @param   pReqHdr         The header of the request to handle.
+ */
+static int vmmdevReqHandler_VideoUpdateMonitorPositions(PVMMDEVCC pThisCC, VMMDevRequestHeader *pReqHdr)
+{
+    VMMDevVideoUpdateMonitorPositions *pReq = (VMMDevVideoUpdateMonitorPositions *)pReqHdr;
+    AssertMsgReturn(pReq->header.size + sizeof(RTRECT) >= sizeof(*pReq), ("%u\n", pReq->header.size), VERR_INVALID_PARAMETER);
+    if (!pThisCC->pDrv)
+    {
+        Log(("VMMDevReq_VideoUpdateMonitorPositions: Connector is NULL!!!\n"));
+        return VERR_NOT_SUPPORTED;
+    }
+    if (   pReq->cPositions > _1M /* restrict to sane range */
+        || pReq->header.size != sizeof(VMMDevVideoUpdateMonitorPositions) + pReq->cPositions * sizeof(RTPOINT) - sizeof(RTPOINT))
+    {
+        Log(("VMMDevReq_VideoUpdateMonitorPositions: cRects=%#x doesn't match size=%#x or is out of bounds\n",
+             pReq->cPositions, pReq->header.size));
+        return VERR_INVALID_PARAMETER;
+    }
+    Log(("VMMDevReq_VideoUpdateMonitorPositions %d rectangles\n", pReq->cPositions));
+    /* forward the call */
+    return pThisCC->pDrv->pfnUpdateMonitorPositions(pThisCC->pDrv, pReq->cPositions, &(pReq->aPositions[0]));
+}
 
 /**
  * Handles VMMDevReq_GetSeamlessChangeRequest.
@@ -2652,7 +2679,6 @@ static VBOXSTRICTRC vmmdevReqDispatcher(PPDMDEVINS pDevIns, PVMMDEV pThis, PVMMD
 {
     int rcRet = VINF_SUCCESS;
     Assert(*pfPostOptimize == 0);
-
     switch (pReqHdr->requestType)
     {
         case VMMDevReq_ReportGuestInfo:
@@ -2806,6 +2832,10 @@ static VBOXSTRICTRC vmmdevReqDispatcher(PPDMDEVINS pDevIns, PVMMDEV pThis, PVMMD
 
         case VMMDevReq_VideoSetVisibleRegion:
             pReqHdr->rc = vmmdevReqHandler_VideoSetVisibleRegion(pThisCC, pReqHdr);
+            break;
+
+        case VMMDevReq_VideoUpdateMonitorPositions:
+            pReqHdr->rc = vmmdevReqHandler_VideoUpdateMonitorPositions(pThisCC, pReqHdr);
             break;
 
         case VMMDevReq_GetSeamlessChangeRequest:

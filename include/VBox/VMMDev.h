@@ -201,6 +201,7 @@ typedef enum VMMDevRequestType
     VMMDevReq_GuestHeartbeat             = 219,
     VMMDevReq_HeartbeatConfigure         = 220,
     VMMDevReq_NtBugCheck                 = 221,
+    VMMDevReq_VideoUpdateMonitorPositions= 222,
     VMMDevReq_SizeHack                   = 0x7fffffff
 } VMMDevRequestType;
 
@@ -1350,6 +1351,23 @@ AssertCompileSize(RTRECT, 16);
 AssertCompileSize(VMMDevVideoSetVisibleRegion, 24+4+16);
 
 /**
+ * VBVA monitor positions update request structure.
+ *
+ * Used by VMMDevReq_VideoUpdateMonitorPositions.
+ */
+typedef struct
+{
+    /** Header. */
+    VMMDevRequestHeader header;
+    /** Number of monitor positions (monitors) */
+    uint32_t cPositions;
+    /** Positions array.*/
+    RTPOINT aPositions[1];
+} VMMDevVideoUpdateMonitorPositions;
+AssertCompileSize(RTPOINT, 8);
+AssertCompileSize(VMMDevVideoUpdateMonitorPositions, 24+4+8);
+
+/**
  * CPU event types.
  */
 typedef enum
@@ -1821,6 +1839,8 @@ DECLINLINE(size_t) vmmdevGetRequestSize(VMMDevRequestType requestType)
             return sizeof(VMMDevReqHeartbeat);
         case VMMDevReq_GuestHeartbeat:
             return sizeof(VMMDevRequestHeader);
+        case VMMDevReq_VideoUpdateMonitorPositions:
+            return sizeof(VMMDevVideoUpdateMonitorPositions);
         default:
             break;
     }
@@ -1969,4 +1989,3 @@ RT_C_DECLS_END
 #pragma pack()
 
 #endif /* !VBOX_INCLUDED_VMMDev_h */
-

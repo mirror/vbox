@@ -1289,66 +1289,16 @@ static int vmsvgaReadPort(PPDMDEVINS pDevIns, PVGASTATE pThis, uint32_t *pu32)
 
 #ifdef IN_RING3
 /**
- * Apply the current resolution settings to change the video mode.
+ * Updating screen information in API
  *
- * @returns VBox status code.
- * @param   pThis       The shared VGA state.
- * @param   pThisCC     The ring-3 VGA state.
+ * @param   pThis       The The shared VGA/VMSVGA instance data.
+ * @param   pThisCC     The VGA/VMSVGA state for ring-3.
  */
-static int vmsvgaR3ChangeMode(PVGASTATE pThis, PVGASTATECC pThisCC)
+void vmsvgaR3VBVAResize(PVGASTATE pThis, PVGASTATECC pThisCC)
 {
     int rc;
 
-    /* Always do changemode on FIFO thread. */
-    Assert(RTThreadSelf() == pThisCC->svga.pFIFOIOThread->Thread);
-
     PVMSVGAR3STATE pSVGAState = pThisCC->svga.pSvgaR3State;
-
-    pThisCC->pDrv->pfnLFBModeChange(pThisCC->pDrv, true);
-
-    if (pThis->svga.fGFBRegisters)
-    {
-        /* "For backwards compatibility, when the GFB mode registers (WIDTH,
-         * HEIGHT, PITCHLOCK, BITS_PER_PIXEL) are modified, the SVGA device
-         * deletes all screens other than screen #0, and redefines screen
-         * #0 according to the specified mode. Drivers that use
-         * SVGA_CMD_DEFINE_SCREEN should destroy or redefine screen #0."
-         */
-
-        VMSVGASCREENOBJECT *pScreen = &pSVGAState->aScreens[0];
-        pScreen->fDefined  = true;
-        pScreen->fModified = true;
-        pScreen->fuScreen  = SVGA_SCREEN_MUST_BE_SET | SVGA_SCREEN_IS_PRIMARY;
-        pScreen->idScreen  = 0;
-        pScreen->xOrigin   = 0;
-        pScreen->yOrigin   = 0;
-        pScreen->offVRAM   = 0;
-        pScreen->cbPitch   = pThis->svga.cbScanline;
-        pScreen->cWidth    = pThis->svga.uWidth;
-        pScreen->cHeight   = pThis->svga.uHeight;
-        pScreen->cBpp      = pThis->svga.uBpp;
-
-        for (unsigned iScreen = 1; iScreen < RT_ELEMENTS(pSVGAState->aScreens); ++iScreen)
-        {
-            /* Delete screen. */
-            pScreen = &pSVGAState->aScreens[iScreen];
-            if (pScreen->fDefined)
-            {
-                pScreen->fModified = true;
-                pScreen->fDefined = false;
-            }
-        }
-    }
-    else
-    {
-        /* "If Screen Objects are supported, they can be used to fully
-         * replace the functionality provided by the framebuffer registers
-         * (SVGA_REG_WIDTH, HEIGHT, etc.) and by SVGA_CAP_DISPLAY_TOPOLOGY."
-         */
-        pThis->svga.uWidth  = VMSVGA_VAL_UNINITIALIZED;
-        pThis->svga.uHeight = VMSVGA_VAL_UNINITIALIZED;
-        pThis->svga.uBpp    = VMSVGA_VAL_UNINITIALIZED;
-    }
 
     for (unsigned iScreen = 0; iScreen < RT_ELEMENTS(pSVGAState->aScreens); ++iScreen)
     {
@@ -1400,6 +1350,69 @@ static int vmsvgaR3ChangeMode(PVGASTATE pThis, PVGASTATECC pThisCC)
         rc = pThisCC->pDrv->pfnVBVAResize(pThisCC->pDrv, &view, &screen, pThisCC->pbVRam, /*fResetInputMapping=*/ true);
         AssertRC(rc);
     }
+}
+
+/**
+ * Apply the current resolution settings to change the video mode.
+ *
+ * @returns VBox status code.
+ * @param   pThis       The shared VGA state.
+ * @param   pThisCC     The ring-3 VGA state.
+ */
+static int vmsvgaR3ChangeMode(PVGASTATE pThis, PVGASTATECC pThisCC)
+{
+    /* Always do changemode on FIFO thread. */
+    Assert(RTThreadSelf() == pThisCC->svga.pFIFOIOThread->Thread);
+
+    PVMSVGAR3STATE pSVGAState = pThisCC->svga.pSvgaR3State;
+
+    pThisCC->pDrv->pfnLFBModeChange(pThisCC->pDrv, true);
+
+    if (pThis->svga.fGFBRegisters)
+    {
+        /* "For backwards compatibility, when the GFB mode registers (WIDTH,
+         * HEIGHT, PITCHLOCK, BITS_PER_PIXEL) are modified, the SVGA device
+         * deletes all screens other than screen #0, and redefines screen
+         * #0 according to the specified mode. Drivers that use
+         * SVGA_CMD_DEFINE_SCREEN should destroy or redefine screen #0."
+         */
+
+        VMSVGASCREENOBJECT *pScreen = &pSVGAState->aScreens[0];
+        pScreen->fDefined  = true;
+        pScreen->fModified = true;
+        pScreen->fuScreen  = SVGA_SCREEN_MUST_BE_SET | SVGA_SCREEN_IS_PRIMARY;
+        pScreen->idScreen  = 0;
+        pScreen->xOrigin   = 0;
+        pScreen->yOrigin   = 0;
+        pScreen->offVRAM   = 0;
+        pScreen->cbPitch   = pThis->svga.cbScanline;
+        pScreen->cWidth    = pThis->svga.uWidth;
+        pScreen->cHeight   = pThis->svga.uHeight;
+        pScreen->cBpp      = pThis->svga.uBpp;
+
+        for (unsigned iScreen = 1; iScreen < RT_ELEMENTS(pSVGAState->aScreens); ++iScreen)
+        {
+            /* Delete screen. */
+            pScreen = &pSVGAState->aScreens[iScreen];
+            if (pScreen->fDefined)
+            {
+                pScreen->fModified = true;
+                pScreen->fDefined = false;
+            }
+        }
+    }
+    else
+    {
+        /* "If Screen Objects are supported, they can be used to fully
+         * replace the functionality provided by the framebuffer registers
+         * (SVGA_REG_WIDTH, HEIGHT, etc.) and by SVGA_CAP_DISPLAY_TOPOLOGY."
+         */
+        pThis->svga.uWidth  = VMSVGA_VAL_UNINITIALIZED;
+        pThis->svga.uHeight = VMSVGA_VAL_UNINITIALIZED;
+        pThis->svga.uBpp    = VMSVGA_VAL_UNINITIALIZED;
+    }
+
+    vmsvgaR3VBVAResize(pThis, pThisCC);
 
     /* Last stuff. For the VGA device screenshot. */
     pThis->last_bpp        = pSVGAState->aScreens[0].cBpp;
@@ -5459,6 +5472,41 @@ DECLCALLBACK(void) vmsvgaR3Info3dSurfaceBmp(PPDMDEVINS pDevIns, PCDBGFINFOHLP pH
                               pHlp, sid, fVerbose, cxAscii, fInvY, pszBitmapPath);
 }
 
+/**
+ * Used to update screen offsets (positions) since appearently vmwgfx fails to pass correct offsets thru FIFO.
+ *
+ * @param   pInterface  The device instance.
+ * @param   cPosition   The size of the pPosition array
+ * @param   pPosition   Monitor positions. We assume for the disable monitors the positions is (-1, -1)
+ */
+DECLCALLBACK(void) vmsvgaR3PortReportMonitorPositions(PPDMIDISPLAYPORT pInterface, uint32_t cPositions, PRTPOINT pPosition)
+{
+    PVGASTATECC pThisCC = RT_FROM_MEMBER(pInterface, VGASTATECC, IPort);
+    PVGASTATE   pThis   = PDMDEVINS_2_DATA(pThisCC->pDevIns, PVGASTATE);
+
+
+    PVMSVGAR3STATE  pSVGAState = pThisCC->svga.pSvgaR3State;
+    size_t cScreenCount = RT_ELEMENTS(pSVGAState->aScreens);
+
+    VMSVGASCREENOBJECT *pScreens = pSVGAState->aScreens;
+    /* We assume cPositions is the # of outputs Xserver reports and pPosition is (-1, -1) for disabled monitors. */
+    for (unsigned i = 0; i < cPositions; ++i)
+    {
+        /* Stop walking the array once we go thru all the monitors. */
+        if (i >= cScreenCount)
+            break;
+        if ( pScreens[i].xOrigin == -1
+          || pScreens[i].yOrigin == -1)
+            continue;
+        if (   pScreens[i].xOrigin == pPosition[i].x
+            && pScreens[i].yOrigin == pPosition[i].y)
+            continue;
+        pScreens[i].xOrigin = pPosition[i].x;
+        pScreens[i].yOrigin = pPosition[i].y;
+        pScreens[i].fModified = true;
+    }
+    vmsvgaR3VBVAResize(pThis, pThisCC);
+}
 
 /**
  * @callback_method_impl{FNDBGFHANDLERDEV, "vmsvga3dctx"}
@@ -6522,4 +6570,3 @@ DECLCALLBACK(void) vmsvgaR3PowerOn(PPDMDEVINS pDevIns)
 }
 
 #endif /* IN_RING3 */
-
