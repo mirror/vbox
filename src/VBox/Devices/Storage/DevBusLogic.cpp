@@ -1033,7 +1033,11 @@ static int buslogicR3RegisterISARange(PPDMDEVINS pDevIns, PBUSLOGIC pThis, uint8
 
 
 /**
- * Assert IRQ line of the BusLogic adapter.
+ * Assert IRQ line of the BusLogic adapter. Rather than using
+ * the more modern method of the guest explicitly only clearing
+ * the interrupt causes it handled, BusLogic never reports all
+ * interrupts at once. Instead, new interrupts are postponed if
+ * an interrupt of a different type is still pending.
  *
  * @returns nothing.
  * @param   pDevIns         The device instance.
@@ -1043,26 +1047,40 @@ static int buslogicR3RegisterISARange(PPDMDEVINS pDevIns, PBUSLOGIC pThis, uint8
  */
 static void buslogicSetInterrupt(PPDMDEVINS pDevIns, PBUSLOGIC pThis, bool fSuppressIrq, uint8_t uIrqType)
 {
-    LogFlowFunc(("pThis=%#p\n", pThis));
+    LogFlowFunc(("pThis=%#p, setting %#02x (current %#02x, pending %#02x)\n",
+                 pThis, uIrqType, pThis->regInterrupt, pThis->uPendingIntr));
 
-    /* The CMDC interrupt has priority over IMBL and OMBR. */
-    if (uIrqType & (BL_INTR_IMBL | BL_INTR_OMBR))
+    /* A CMDC interrupt overrides other pending interrupts. The documentation may claim
+     * otherwise, but a real BT-958 replaces a pending IMBL with a CMDC; the IMBL simply
+     * vanishes. However, if there's a CMDC already active, another CMDC is latched and
+     * reported once the first CMDC is cleared.
+     */
+    if (uIrqType & BL_INTR_CMDC)
     {
+        Assert(uIrqType == BL_INTR_CMDC);
+        if ((pThis->regInterrupt & BL_INTR_INTV) && !(pThis->regInterrupt & BL_INTR_CMDC))
+            Log(("CMDC overriding pending interrupt! (was %02x)\n", pThis->regInterrupt));
         if (!(pThis->regInterrupt & BL_INTR_CMDC))
-            pThis->regInterrupt |= uIrqType;    /* Report now. */
+            pThis->regInterrupt |= uIrqType | BL_INTR_INTV; /* Report now. */
         else
-            pThis->uPendingIntr |= uIrqType;    /* Report later. */
+            pThis->uPendingIntr |= uIrqType;                /* Report later. */
     }
-    else if (uIrqType & BL_INTR_CMDC)
+    else if (uIrqType & (BL_INTR_IMBL | BL_INTR_OMBR))
     {
-        AssertMsg(pThis->regInterrupt == 0 || pThis->regInterrupt == (BL_INTR_INTV | BL_INTR_CMDC),
-                  ("regInterrupt=%02X\n", pThis->regInterrupt));
-        pThis->regInterrupt |= uIrqType;
+        /* If the CMDC interrupt is pending, store IMBL/OMBR for later. Note that IMBL
+         * and OMBR can be reported together even if an interrupt of the other type is
+         * already pending.
+         */
+        if (!(pThis->regInterrupt & BL_INTR_CMDC))
+            pThis->regInterrupt |= uIrqType | BL_INTR_INTV; /* Report now. */
+        else
+            pThis->uPendingIntr |= uIrqType;                /* Report later. */
     }
-    else
-        AssertMsgFailed(("Invalid interrupt state!\n"));
+    else    /* We do not expect to see BL_INTR_RSTS at this point. */
+        AssertMsgFailed(("Invalid interrupt state (unknown interrupt cause)!\n"));
+    AssertMsg(pThis->regInterrupt, ("Invalid interrupt state (interrupt not set)!\n"));
+    AssertMsg(pThis->regInterrupt != BL_INTR_INTV, ("Invalid interrupt state (set but no cause)!\n"));
 
-    pThis->regInterrupt |= BL_INTR_INTV;
     if (pThis->fIRQEnabled && !fSuppressIrq)
     {
         if (!pThis->uIsaIrq)
@@ -1184,6 +1202,7 @@ static int buslogicR3HwReset(PPDMDEVINS pDevIns, PBUSLOGIC pThis, PBUSLOGICCC pT
 
 /**
  * Resets the command state machine for the next command and notifies the guest.
+ * Note that suppressing CMDC also suppresses the interrupt, but not vice versa.
  *
  * @returns nothing.
  * @param   pDevIns         The device instance.
@@ -1198,13 +1217,13 @@ static void buslogicCommandComplete(PPDMDEVINS pDevIns, PBUSLOGIC pThis, bool fS
 
     pThis->fUseLocalRam = false;
     pThis->regStatus |= BL_STAT_HARDY;
+    pThis->regStatus &= ~BL_STAT_DIRRDY;
     pThis->iReply = 0;
 
-    /* The Enable OMBR command does not set CMDC when successful. */
+    /* Some commands do not set CMDC when successful. */
     if (!fSuppressCMDC)
     {
         /* Notify that the command is complete. */
-        pThis->regStatus &= ~BL_STAT_DIRRDY;
         buslogicSetInterrupt(pDevIns, pThis, fSuppressIrq, BL_INTR_CMDC);
     }
 
@@ -2239,7 +2258,7 @@ static int buslogicProcessCommand(PPDMDEVINS pDevIns, PBUSLOGIC pThis)
                 pThis->fIRQEnabled = false;
             else
                 pThis->fIRQEnabled = true;
-            /* No interrupt signaled regardless of enable/disable. */
+            /* No interrupt signaled regardless of enable/disable. NB: CMDC is still signaled! */
             fSuppressIrq = true;
             break;
         }
@@ -2347,7 +2366,7 @@ static int buslogicProcessCommand(PPDMDEVINS pDevIns, PBUSLOGIC pThis)
     if (pThis->cbReplyParametersLeft)
         pThis->regStatus |= BL_STAT_DIRRDY;
     else if (!pThis->cbCommandParametersLeft)
-        buslogicCommandComplete(pDevIns, pThis, fSuppressIrq, fSuppressCMDC );
+        buslogicCommandComplete(pDevIns, pThis, fSuppressIrq, fSuppressCMDC);
 
     return rc;
 }
@@ -2417,7 +2436,7 @@ static int buslogicRegisterRead(PPDMDEVINS pDevIns, PBUSLOGIC pThis, unsigned iR
                      * NB: Some commands do not set the CMDC bit / raise completion interrupt.
                      */
                     if (pThis->uOperationCode == BUSLOGICCOMMAND_FETCH_HOST_ADAPTER_LOCAL_RAM)
-                        buslogicCommandComplete(pDevIns, pThis, true /* fSuppressIrq */, true /* fSuppressCMDC */ );
+                        buslogicCommandComplete(pDevIns, pThis, true /* fSuppressIrq */, true /* fSuppressCMDC */);
                     else
                         buslogicCommandComplete(pDevIns, pThis, false, false);
                 }
