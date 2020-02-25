@@ -304,6 +304,16 @@ const CMachine &UIDetailsElement::machine()
     return m_pSet->machine();
 }
 
+const UICloudMachine &UIDetailsElement::cloudMachine()
+{
+    return m_pSet->cloudMachine();
+}
+
+bool UIDetailsElement::isLocal() const
+{
+    return m_pSet->isLocal();
+}
+
 void UIDetailsElement::setName(const QString &strName)
 {
     /* Cache name: */

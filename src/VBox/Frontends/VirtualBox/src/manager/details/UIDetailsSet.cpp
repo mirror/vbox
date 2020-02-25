@@ -26,6 +26,7 @@
 #include "UIDetailsModel.h"
 #include "UIDetailsSet.h"
 #include "UIVirtualBoxEventHandler.h"
+#include "UIVirtualMachineItemCloud.h"
 #include "UIVirtualMachineItemLocal.h"
 
 /* COM includes: */
@@ -37,6 +38,7 @@ UIDetailsSet::UIDetailsSet(UIDetailsItem *pParent)
     : UIDetailsItem(pParent)
     , m_pMachineItem(0)
     , m_fFullSet(true)
+    , m_fIsLocal(true)
     , m_fHasDetails(false)
     , m_configurationAccessLevel(ConfigurationAccessLevel_Null)
     , m_pBuildStep(0)
@@ -65,15 +67,21 @@ void UIDetailsSet::buildSet(UIVirtualMachineItem *pMachineItem, bool fFullSet, c
 {
     /* Remember passed arguments: */
     m_pMachineItem = pMachineItem;
-    m_machine = m_pMachineItem->toLocal()->machine();
+    m_fIsLocal = m_pMachineItem->itemType() == UIVirtualMachineItem::ItemType_Local;
     m_fHasDetails = m_pMachineItem->hasDetails();
     m_fFullSet = fFullSet;
     m_settings = settings;
 
     /* Cleanup superfluous items: */
-    if (!m_fFullSet || !m_fHasDetails)
+    if (   !m_fHasDetails
+        || !m_fIsLocal
+        || !m_fFullSet)
     {
-        int iFirstItem = m_fHasDetails ? DetailsElementType_Display : DetailsElementType_General;
+        int iFirstItem = !m_fHasDetails
+                       ? DetailsElementType_General
+                       : !m_fIsLocal
+                       ? DetailsElementType_Preview
+                       : DetailsElementType_Display;
         int iLastItem = DetailsElementType_Description;
         bool fCleanupPerformed = false;
         for (int i = iFirstItem; i <= iLastItem; ++i)
@@ -96,13 +104,37 @@ void UIDetailsSet::buildSet(UIVirtualMachineItem *pMachineItem, bool fFullSet, c
         return;
     }
 
-    /* Choose last-step number: */
-    m_iLastStepNumber = m_fFullSet ? DetailsElementType_Description : DetailsElementType_Preview;
+    /* Special handling wrt item type: */
+    switch (m_pMachineItem->itemType())
+    {
+        case UIVirtualMachineItem::ItemType_Local:
+        {
+            /* Get local machine: */
+            m_machine = m_pMachineItem->toLocal()->machine();
 
-    /* Fetch USB controller restrictions: */
-    const CUSBDeviceFilters &filters = m_machine.GetUSBDeviceFilters();
-    if (filters.isNull() || !m_machine.GetUSBProxyAvailable())
-        m_settings.remove(DetailsElementType_USB);
+            /* Choose last-step number: */
+            m_iLastStepNumber = m_fFullSet ? DetailsElementType_Description : DetailsElementType_Preview;
+
+            /* Fetch USB controller restrictions: */
+            const CUSBDeviceFilters &filters = m_machine.GetUSBDeviceFilters();
+            if (filters.isNull() || !m_machine.GetUSBProxyAvailable())
+                m_settings.remove(DetailsElementType_USB);
+
+            break;
+        }
+        case UIVirtualMachineItem::ItemType_CloudReal:
+        {
+            /* Get cloud machine: */
+            m_cloudMachine = m_pMachineItem->toCloud()->machine();
+
+            /* Choose last-step number: */
+            m_iLastStepNumber = DetailsElementType_System;
+
+            break;
+        }
+        default:
+            break;
+    }
 
     /* Start building set: */
     rebuildSet();

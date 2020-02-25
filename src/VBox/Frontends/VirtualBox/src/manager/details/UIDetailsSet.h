@@ -22,6 +22,7 @@
 #endif
 
 /* GUI includes: */
+#include "UICloudMachine.h"
 #include "UIDetailsItem.h"
 #include "UIExtraDataDefs.h"
 #include "UISettingsDefs.h"
@@ -60,6 +61,11 @@ public:
 
         /** Returns cached machine. */
         const CMachine &machine() const { return m_machine; }
+        /** Returns cached cloud machine. */
+        const UICloudMachine &cloudMachine() const { return m_cloudMachine; }
+
+        /** Returns whether set is of local type. */
+        bool isLocal() const { return m_fIsLocal; }
         /** Returns whether set has cached details. */
         bool hasDetails() const { return m_fHasDetails; }
         /** Returns configuration access level. */
@@ -197,7 +203,12 @@ private:
         QMap<DetailsElementType, bool>  m_settings;
 
         /** Holds the machine reference. */
-        CMachine                  m_machine;
+        CMachine        m_machine;
+        /** Holds the cloud machine reference. */
+        UICloudMachine  m_cloudMachine;
+
+        /** Holds whether set is of local type. */
+        bool                      m_fIsLocal;
         /** Holds whether set has details. */
         bool                      m_fHasDetails;
         /** Holds configuration access level. */
