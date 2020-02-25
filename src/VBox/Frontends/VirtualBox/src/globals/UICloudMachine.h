@@ -66,6 +66,8 @@ class SHARED_LIBRARY_STUFF UICloudMachine
 {
 public:
 
+    /** Constructs null cloud VM wrapper. */
+    UICloudMachine();
     /** Constructs cloud VM wrapper on the basis of arguments.
       * @param  comCloudClient  Brings the cloud client object instance.
       * @param  strId           Brings the cloud VM id.
@@ -75,6 +77,9 @@ public:
                    const QString &strName);
     /** Constructs cloud VM wrapper on the basis of @a other wrapper. */
     UICloudMachine(const UICloudMachine &other);
+
+    /** Returns whether cloud VM wrapper is null. */
+    bool isNull() const { return !d.constData(); }
 
     /** Returns cloud client object reference. */
     CCloudClient client() const { return d->m_comCloudClient; }
@@ -89,5 +94,8 @@ private:
     /** Holds the pointer to explicitly shared cloud VM data. */
     QExplicitlySharedDataPointer<UICloudMachineData>  d;
 };
+
+/* Make meta-object sub-system aware: */
+Q_DECLARE_METATYPE(UICloudMachine);
 
 #endif /* !FEQT_INCLUDED_SRC_manager_UICloudMachine_h */

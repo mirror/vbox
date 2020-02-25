@@ -52,6 +52,10 @@ UICloudMachineData::~UICloudMachineData()
 *   Class UICloudMachine implementation.                                                                                         *
 *********************************************************************************************************************************/
 
+UICloudMachine::UICloudMachine()
+{
+}
+
 UICloudMachine::UICloudMachine(const CCloudClient &comCloudClient,
                                const QString &strId,
                                const QString &strName)
