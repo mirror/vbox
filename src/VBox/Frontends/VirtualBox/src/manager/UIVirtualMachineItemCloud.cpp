@@ -159,7 +159,7 @@ void UIVirtualMachineItemCloud::recache()
         m_enmConfigurationAccessLevel = ConfigurationAccessLevel_Null;
 
         /* Determine whether we should show this VM details: */
-        m_fHasDetails = false;
+        m_fHasDetails = true;
     }
     else
     {
