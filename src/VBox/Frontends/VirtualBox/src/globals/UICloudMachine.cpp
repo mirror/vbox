@@ -29,6 +29,10 @@ UICloudMachineData::UICloudMachineData(const CCloudClient &comCloudClient,
     : m_comCloudClient(comCloudClient)
     , m_strId(strId)
     , m_strName(strName)
+    , m_fAccessible(true)
+    , m_strOsType("Other")
+    , m_iMemorySize(0)
+    , m_iCpuCount(0)
 {
     //printf("Data for machine with id = {%s} is created\n", m_strId.toUtf8().constData());
 }
@@ -38,6 +42,10 @@ UICloudMachineData::UICloudMachineData(const UICloudMachineData &other)
     , m_comCloudClient(other.m_comCloudClient)
     , m_strId(other.m_strId)
     , m_strName(other.m_strName)
+    , m_fAccessible(other.m_fAccessible)
+    , m_strOsType(other.m_strOsType)
+    , m_iMemorySize(other.m_iMemorySize)
+    , m_iCpuCount(other.m_iCpuCount)
 {
     //printf("Data for machine with id = {%s} is copied\n", m_strId.toUtf8().constData());
 }

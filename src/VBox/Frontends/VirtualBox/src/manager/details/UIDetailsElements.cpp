@@ -21,6 +21,7 @@
 #include <QTimer>
 
 /* GUI includes: */
+#include "UICloudMachine.h"
 #include "UICommon.h"
 #include "UIConverter.h"
 #include "UIDetailsElements.h"
@@ -51,11 +52,18 @@
 #include "CUSBDeviceFilters.h"
 #include "CVRDEServer.h"
 
-UIDetailsUpdateTask::UIDetailsUpdateTask(const CMachine &machine)
+UIDetailsUpdateTask::UIDetailsUpdateTask(const CMachine &comMachine)
     : UITask(UITask::Type_DetailsPopulation)
 {
     /* Store machine as property: */
-    setProperty("machine", QVariant::fromValue(machine));
+    setProperty("machine", QVariant::fromValue(comMachine));
+}
+
+UIDetailsUpdateTask::UIDetailsUpdateTask(const UICloudMachine &guiCloudMachine)
+    : UITask(UITask::Type_DetailsPopulation)
+{
+    /* Store cloud machine as property: */
+    setProperty("cloudMachine", QVariant::fromValue(guiCloudMachine));
 }
 
 UIDetailsElementInterface::UIDetailsElementInterface(UIDetailsSet *pParent, DetailsElementType type, bool fOpened)
@@ -234,9 +242,23 @@ void UIDetailsUpdateTaskGeneral::run()
     setProperty("table", QVariant::fromValue(table));
 }
 
+void UIDetailsUpdateTaskGeneralCloud::run()
+{
+    /* Acquire corresponding machine: */
+    UICloudMachine guiCloudMachine = property("cloudMachine").value<UICloudMachine>();
+    if (guiCloudMachine.isNull())
+        return;
+
+    /* Generate details table: */
+    UITextTable table = UIDetailsGenerator::generateMachineInformationGeneral(guiCloudMachine, m_fOptions);
+    setProperty("table", QVariant::fromValue(table));
+}
+
 UITask *UIDetailsElementGeneral::createUpdateTask()
 {
-    return new UIDetailsUpdateTaskGeneral(machine(), model()->optionsGeneral());
+    return   isLocal()
+           ? static_cast<UITask*>(new UIDetailsUpdateTaskGeneral(machine(), model()->optionsGeneral()))
+           : static_cast<UITask*>(new UIDetailsUpdateTaskGeneralCloud(cloudMachine(), model()->optionsGeneral()));
 }
 
 
@@ -252,9 +274,23 @@ void UIDetailsUpdateTaskSystem::run()
     setProperty("table", QVariant::fromValue(table));
 }
 
+void UIDetailsUpdateTaskSystemCloud::run()
+{
+    /* Acquire corresponding machine: */
+    UICloudMachine guiCloudMachine = property("cloudMachine").value<UICloudMachine>();
+    if (guiCloudMachine.isNull())
+        return;
+
+    /* Generate details table: */
+    UITextTable table = UIDetailsGenerator::generateMachineInformationSystem(guiCloudMachine, m_fOptions);
+    setProperty("table", QVariant::fromValue(table));
+}
+
 UITask *UIDetailsElementSystem::createUpdateTask()
 {
-    return new UIDetailsUpdateTaskSystem(machine(), model()->optionsSystem());
+    return   isLocal()
+           ? static_cast<UITask*>(new UIDetailsUpdateTaskSystem(machine(), model()->optionsSystem()))
+           : static_cast<UITask*>(new UIDetailsUpdateTaskSystemCloud(cloudMachine(), model()->optionsSystem()));
 }
 
 

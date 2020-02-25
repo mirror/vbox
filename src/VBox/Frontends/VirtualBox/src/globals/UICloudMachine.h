@@ -56,6 +56,16 @@ public:
     const QString  m_strId;
     /** Holds the cloud VM name. */
     const QString  m_strName;
+
+    /** Holds whether cloud VM is accessible. */
+    bool  m_fAccessible;
+
+    /** Holds the cloud VM OS type. */
+    QString  m_strOsType;
+    /** Holds the cloud VM memory size. */
+    int      m_iMemorySize;
+    /** Holds the cloud VM CPU count. */
+    int      m_iCpuCount;
 };
 
 /** Class representing cloud VM wrapper.
@@ -88,6 +98,16 @@ public:
     QString id() const { return d->m_strId; }
     /** Returns cloud VM name. */
     QString name() const { return d->m_strName; }
+
+    /** Returns whether cloud VM is accessible. */
+    bool isAccessible() const { return d->m_fAccessible; }
+
+    /** Returns cloud VM OS type. */
+    QString osType() const { return d->m_strOsType; }
+    /** Returns cloud VM memory size. */
+    int memorySize() const { return d->m_iMemorySize; }
+    /** Returns cloud VM CPU count. */
+    int cpuCount() const { return d->m_iCpuCount; }
 
 private:
 

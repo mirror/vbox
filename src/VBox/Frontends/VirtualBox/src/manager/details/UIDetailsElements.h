@@ -39,6 +39,8 @@ public:
 
     /** Constructs update task taking @a comMachine as data. */
     UIDetailsUpdateTask(const CMachine &comMachine);
+    /** Constructs update task taking @a guiCloudMachine as data. */
+    UIDetailsUpdateTask(const UICloudMachine &guiCloudMachine);
 };
 
 /** UIDetailsElement extension used as a wrapping interface to
@@ -135,6 +137,26 @@ private:
     UIExtraDataMetaDefs::DetailsElementOptionTypeGeneral m_fOptions;
 };
 
+/** UITask extension used as update task for the details-element type 'General' of cloud VM. */
+class UIDetailsUpdateTaskGeneralCloud : public UIDetailsUpdateTask
+{
+    Q_OBJECT;
+
+public:
+
+    /** Constructs update task passing @a guiCloudMachine to the base-class. */
+    UIDetailsUpdateTaskGeneralCloud(const UICloudMachine &guiCloudMachine, UIExtraDataMetaDefs::DetailsElementOptionTypeGeneral fOptions)
+        : UIDetailsUpdateTask(guiCloudMachine), m_fOptions(fOptions) {}
+
+private:
+
+    /** Contains update task body. */
+    void run();
+
+    /** Holds the options. */
+    UIExtraDataMetaDefs::DetailsElementOptionTypeGeneral m_fOptions;
+};
+
 /** UIDetailsElementInterface extension for the details-element type 'General'. */
 class UIDetailsElementGeneral : public UIDetailsElementInterface
 {
@@ -164,6 +186,26 @@ public:
     /** Constructs update task passing @a comMachine to the base-class. */
     UIDetailsUpdateTaskSystem(const CMachine &comMachine, UIExtraDataMetaDefs::DetailsElementOptionTypeSystem fOptions)
         : UIDetailsUpdateTask(comMachine), m_fOptions(fOptions) {}
+
+private:
+
+    /** Contains update task body. */
+    void run();
+
+    /** Holds the options. */
+    UIExtraDataMetaDefs::DetailsElementOptionTypeSystem m_fOptions;
+};
+
+/** UITask extension used as update task for the details-element type 'System' of cloud VM. */
+class UIDetailsUpdateTaskSystemCloud : public UIDetailsUpdateTask
+{
+    Q_OBJECT;
+
+public:
+
+    /** Constructs update task passing @a guiCloudMachine to the base-class. */
+    UIDetailsUpdateTaskSystemCloud(const UICloudMachine &guiCloudMachine, UIExtraDataMetaDefs::DetailsElementOptionTypeSystem fOptions)
+        : UIDetailsUpdateTask(guiCloudMachine), m_fOptions(fOptions) {}
 
 private:
 

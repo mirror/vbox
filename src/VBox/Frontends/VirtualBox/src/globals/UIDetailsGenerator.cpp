@@ -21,6 +21,7 @@
 
 /* GUI includes: */
 #include "UIBootOrderEditor.h"
+#include "UICloudMachine.h"
 #include "UIConverter.h"
 #include "UIDetailsGenerator.h"
 #include "UIErrorString.h"
@@ -117,6 +118,33 @@ UITextTable UIDetailsGenerator::generateMachineInformationGeneral(CMachine &comM
             table << UITextTableLine(QApplication::translate("UIDetails", "Groups", "details (general)"), groups.join(", "));
         }
     }
+
+    return table;
+}
+
+UITextTable UIDetailsGenerator::generateMachineInformationGeneral(UICloudMachine &guiCloudMachine,
+                                                                  const UIExtraDataMetaDefs::DetailsElementOptionTypeGeneral &fOptions)
+{
+    UITextTable table;
+
+    if (guiCloudMachine.isNull())
+        return table;
+
+    if (!guiCloudMachine.isAccessible())
+    {
+        table << UITextTableLine(QApplication::translate("UIDetails", "Information Inaccessible", "details"), QString());
+        return table;
+    }
+
+    /* Name: */
+    if (fOptions & UIExtraDataMetaDefs::DetailsElementOptionTypeGeneral_Name)
+        table << UITextTableLine(QApplication::translate("UIDetails", "Name", "details (general)"),
+                                 guiCloudMachine.name());
+
+    /* Operating system: */
+    if (fOptions & UIExtraDataMetaDefs::DetailsElementOptionTypeGeneral_OS)
+        table << UITextTableLine(QApplication::translate("UIDetails", "Operating System", "details (general)"),
+                                 uiCommon().vmGuestOSTypeDescription(guiCloudMachine.osType()));
 
     return table;
 }
@@ -245,6 +273,32 @@ UITextTable UIDetailsGenerator::generateMachineInformationSystem(CMachine &comMa
     return table;
 }
 
+UITextTable UIDetailsGenerator::generateMachineInformationSystem(UICloudMachine &guiCloudMachine,
+                                                                 const UIExtraDataMetaDefs::DetailsElementOptionTypeSystem &fOptions)
+{
+    UITextTable table;
+
+    if (guiCloudMachine.isNull())
+        return table;
+
+    if (!guiCloudMachine.isAccessible())
+    {
+        table << UITextTableLine(QApplication::translate("UIDetails", "Information Inaccessible", "details"), QString());
+        return table;
+    }
+
+    /* Base memory: */
+    if (fOptions & UIExtraDataMetaDefs::DetailsElementOptionTypeSystem_RAM)
+        table << UITextTableLine(QApplication::translate("UIDetails", "Base Memory", "details (system)"),
+                                 QApplication::translate("UIDetails", "%1 MB").arg(guiCloudMachine.memorySize()));
+
+    /* Processors: */
+    if (fOptions & UIExtraDataMetaDefs::DetailsElementOptionTypeSystem_CPUCount)
+        table << UITextTableLine(QApplication::translate("UIDetails", "Processors", "details (system)"),
+                                 QString::number(guiCloudMachine.cpuCount()));
+
+    return table;
+}
 
 UITextTable UIDetailsGenerator::generateMachineInformationDisplay(CMachine &comMachine,
                                                                   const UIExtraDataMetaDefs::DetailsElementOptionTypeDisplay &fOptions)

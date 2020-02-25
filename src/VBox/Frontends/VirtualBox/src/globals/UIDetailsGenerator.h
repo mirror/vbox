@@ -26,6 +26,7 @@
 #include "UITextTable.h"
 
 /* Forward declarations: */
+class UICloudMachine;
 class CMachine;
 
 /** Details generation namespace. */
@@ -34,7 +35,13 @@ namespace UIDetailsGenerator
     SHARED_LIBRARY_STUFF UITextTable generateMachineInformationGeneral(CMachine &comMachine,
                                                                        const UIExtraDataMetaDefs::DetailsElementOptionTypeGeneral &fOptions);
 
+    SHARED_LIBRARY_STUFF UITextTable generateMachineInformationGeneral(UICloudMachine &guiCloudMachine,
+                                                                       const UIExtraDataMetaDefs::DetailsElementOptionTypeGeneral &fOptions);
+
     SHARED_LIBRARY_STUFF UITextTable generateMachineInformationSystem(CMachine &comMachine,
+                                                                      const UIExtraDataMetaDefs::DetailsElementOptionTypeSystem &fOptions);
+
+    SHARED_LIBRARY_STUFF UITextTable generateMachineInformationSystem(UICloudMachine &guiCloudMachine,
                                                                       const UIExtraDataMetaDefs::DetailsElementOptionTypeSystem &fOptions);
 
     SHARED_LIBRARY_STUFF UITextTable generateMachineInformationDisplay(CMachine &comMachine,
