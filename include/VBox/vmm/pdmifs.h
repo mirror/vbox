@@ -711,15 +711,18 @@ typedef struct PDMIDISPLAYPORT
     DECLR3CALLBACKMEMBER(void, pfnReportHostCursorPosition, (PPDMIDISPLAYPORT pInterface, uint32_t x, uint32_t y, bool fOutOfRange));
 
     /**
-     * Notify the graphics device about the monitor positions since the ones we get from vmwgfx FIFO are not correct. In an ideal
-     * universe this method should not be here.
+     * Notify the graphics device about the monitor positions since the ones we get
+     * from vmwgfx FIFO are not correct.
      *
-     * @param   pInterface   Pointer to this interface.
-     * @param   cPositions   Number of monitor positions
-     * @param   pPosition    Monitor positions (offsets/origins) array
+     * In an ideal universe this method should not be here.
+     *
+     * @param   pInterface      Pointer to this interface.
+     * @param   cPositions      Number of monitor positions.
+     * @param   paPositions     Monitor positions (offsets/origins) array.
      * @thread  Any.
      */
-    DECLR3CALLBACKMEMBER(void, pfnReportMonitorPositions, (PPDMIDISPLAYPORT pInterface, uint32_t cPositions, PRTPOINT pPosition));
+    DECLR3CALLBACKMEMBER(void, pfnReportMonitorPositions, (PPDMIDISPLAYPORT pInterface, uint32_t cPositions,
+                                                           PCRTPOINT paPositions));
 
 } PDMIDISPLAYPORT;
 /** PDMIDISPLAYPORT interface ID. */

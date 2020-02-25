@@ -711,8 +711,8 @@ static const char *vmsvgaR3FifoCmdToString(uint32_t u32Cmd)
 # endif /* IN_RING3 */
 
 #endif /* LOG_ENABLED */
-
 #ifdef IN_RING3
+
 /**
  * @interface_method_impl{PDMIDISPLAYPORT,pfnSetViewport}
  */
@@ -766,6 +766,7 @@ DECLCALLBACK(void) vmsvgaR3PortSetViewport(PPDMIDISPLAYPORT pInterface, uint32_t
     RT_NOREF(OldViewport);
 # endif
 }
+
 
 /**
  * Updating screen information in API
@@ -831,41 +832,40 @@ void vmsvgaR3VBVAResize(PVGASTATE pThis, PVGASTATECC pThisCC)
     }
 }
 
+
 /**
- * Used to update screen offsets (positions) since appearently vmwgfx fails to pass correct offsets thru FIFO.
+ * @interface_method_impl{PDMIDISPLAYPORT,pfnReportMonitorPositions}
  *
- * @param   pInterface  The device instance.
- * @param   cPositions  The size of the pPosition array
- * @param   pPosition   Monitor positions. We assume for the disable monitors the positions is (-1, -1)
+ * Used to update screen offsets (positions) since appearently vmwgfx fails to
+ * pass correct offsets thru FIFO.
  */
-DECLCALLBACK(void) vmsvgaR3PortReportMonitorPositions(PPDMIDISPLAYPORT pInterface, uint32_t cPositions, PRTPOINT pPosition)
+DECLCALLBACK(void) vmsvgaR3PortReportMonitorPositions(PPDMIDISPLAYPORT pInterface, uint32_t cPositions, PCRTPOINT paPositions)
 {
-    PVGASTATECC pThisCC = RT_FROM_MEMBER(pInterface, VGASTATECC, IPort);
-    PVGASTATE   pThis   = PDMDEVINS_2_DATA(pThisCC->pDevIns, PVGASTATE);
+    PVGASTATECC         pThisCC    = RT_FROM_MEMBER(pInterface, VGASTATECC, IPort);
+    PVGASTATE           pThis      = PDMDEVINS_2_DATA(pThisCC->pDevIns, PVGASTATE);
+    PVMSVGAR3STATE      pSVGAState = pThisCC->svga.pSvgaR3State;
 
-
-    PVMSVGAR3STATE  pSVGAState = pThisCC->svga.pSvgaR3State;
-    size_t cScreenCount = RT_ELEMENTS(pSVGAState->aScreens);
-
-    VMSVGASCREENOBJECT *pScreens = pSVGAState->aScreens;
-    /* We assume cPositions is the # of outputs Xserver reports and pPosition is (-1, -1) for disabled monitors. */
-    for (unsigned i = 0; i < cPositions; ++i)
+    /* We assume cPositions is the # of outputs Xserver reports and paPositions is (-1, -1) for disabled monitors. */
+    cPositions = RT_MIN(cPositions, RT_ELEMENTS(pSVGAState->aScreens));
+    for (uint32_t i = 0; i < cPositions; ++i)
     {
-        /* Stop walking the array once we go thru all the monitors. */
-        if (i >= cScreenCount)
-            break;
-        if ( pScreens[i].xOrigin == -1
-          || pScreens[i].yOrigin == -1)
+        if (   pSVGAState->aScreens[i].xOrigin == paPositions[i].x
+            && pSVGAState->aScreens[i].yOrigin == paPositions[i].y)
             continue;
-        if (   pScreens[i].xOrigin == pPosition[i].x
-            && pScreens[i].yOrigin == pPosition[i].y)
+
+        if (pSVGAState->aScreens[i].xOrigin == -1)
             continue;
-        pScreens[i].xOrigin = pPosition[i].x;
-        pScreens[i].yOrigin = pPosition[i].y;
-        pScreens[i].fModified = true;
+        if (pSVGAState->aScreens[i].yOrigin == -1)
+            continue;
+
+        pSVGAState->aScreens[i].xOrigin = paPositions[i].x;
+        pSVGAState->aScreens[i].yOrigin = paPositions[i].y;
+        pSVGAState->aScreens[i].fModified = true;
     }
+
     vmsvgaR3VBVAResize(pThis, pThisCC);
 }
+
 #endif /* IN_RING3 */
 
 /**
