@@ -98,4 +98,4 @@ private:
 /* Make meta-object sub-system aware: */
 Q_DECLARE_METATYPE(UICloudMachine);
 
-#endif /* !FEQT_INCLUDED_SRC_manager_UICloudMachine_h */
+#endif /* !FEQT_INCLUDED_SRC_globals_UICloudMachine_h */
