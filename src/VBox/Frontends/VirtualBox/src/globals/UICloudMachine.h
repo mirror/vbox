@@ -25,12 +25,15 @@
 #include <QObject>
 #include <QSharedData>
 
+/* GUI includes: */
+#include "UILibraryDefs.h"
+
 /* COM includes: */
 #include "COMEnums.h"
 #include "CCloudClient.h"
 
 /** QSharedData subclass to handle shared data for cloud VM wrapper below. */
-class UICloudMachineData : public QSharedData
+class SHARED_LIBRARY_STUFF UICloudMachineData : public QSharedData
 {
 public:
 
@@ -59,7 +62,7 @@ public:
   * This is temporary class before ICloudMachine interface is represented.
   * This class is based on explicitly-shared memory and thus optimized
   * for being passed across as copied object, not just reference. */
-class UICloudMachine
+class SHARED_LIBRARY_STUFF UICloudMachine
 {
 public:
 
