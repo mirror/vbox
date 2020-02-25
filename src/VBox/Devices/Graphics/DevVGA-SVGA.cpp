@@ -766,6 +766,106 @@ DECLCALLBACK(void) vmsvgaR3PortSetViewport(PPDMIDISPLAYPORT pInterface, uint32_t
     RT_NOREF(OldViewport);
 # endif
 }
+
+/**
+ * Updating screen information in API
+ *
+ * @param   pThis       The The shared VGA/VMSVGA instance data.
+ * @param   pThisCC     The VGA/VMSVGA state for ring-3.
+ */
+void vmsvgaR3VBVAResize(PVGASTATE pThis, PVGASTATECC pThisCC)
+{
+    int rc;
+
+    PVMSVGAR3STATE pSVGAState = pThisCC->svga.pSvgaR3State;
+
+    for (unsigned iScreen = 0; iScreen < RT_ELEMENTS(pSVGAState->aScreens); ++iScreen)
+    {
+        VMSVGASCREENOBJECT *pScreen = &pSVGAState->aScreens[iScreen];
+        if (!pScreen->fModified)
+            continue;
+
+        pScreen->fModified = false;
+
+        VBVAINFOVIEW view;
+        RT_ZERO(view);
+        view.u32ViewIndex     = pScreen->idScreen;
+        // view.u32ViewOffset    = 0;
+        view.u32ViewSize      = pThis->vram_size;
+        view.u32MaxScreenSize = pThis->vram_size;
+
+        VBVAINFOSCREEN screen;
+        RT_ZERO(screen);
+        screen.u32ViewIndex   = pScreen->idScreen;
+
+        if (pScreen->fDefined)
+        {
+            if (   pScreen->cWidth  == VMSVGA_VAL_UNINITIALIZED
+                || pScreen->cHeight == VMSVGA_VAL_UNINITIALIZED
+                || pScreen->cBpp    == VMSVGA_VAL_UNINITIALIZED)
+            {
+                Assert(pThis->svga.fGFBRegisters);
+                continue;
+            }
+
+            screen.i32OriginX      = pScreen->xOrigin;
+            screen.i32OriginY      = pScreen->yOrigin;
+            screen.u32StartOffset  = pScreen->offVRAM;
+            screen.u32LineSize     = pScreen->cbPitch;
+            screen.u32Width        = pScreen->cWidth;
+            screen.u32Height       = pScreen->cHeight;
+            screen.u16BitsPerPixel = pScreen->cBpp;
+            if (!(pScreen->fuScreen & SVGA_SCREEN_DEACTIVATE))
+                screen.u16Flags    = VBVA_SCREEN_F_ACTIVE;
+            if (pScreen->fuScreen & SVGA_SCREEN_BLANKING)
+                screen.u16Flags   |= VBVA_SCREEN_F_BLANK2;
+        }
+        else
+        {
+            /* Screen is destroyed. */
+            screen.u16Flags        = VBVA_SCREEN_F_DISABLED;
+        }
+
+        rc = pThisCC->pDrv->pfnVBVAResize(pThisCC->pDrv, &view, &screen, pThisCC->pbVRam, /*fResetInputMapping=*/ true);
+        AssertRC(rc);
+    }
+}
+
+/**
+ * Used to update screen offsets (positions) since appearently vmwgfx fails to pass correct offsets thru FIFO.
+ *
+ * @param   pInterface  The device instance.
+ * @param   cPosition   The size of the pPosition array
+ * @param   pPosition   Monitor positions. We assume for the disable monitors the positions is (-1, -1)
+ */
+DECLCALLBACK(void) vmsvgaR3PortReportMonitorPositions(PPDMIDISPLAYPORT pInterface, uint32_t cPositions, PRTPOINT pPosition)
+{
+    PVGASTATECC pThisCC = RT_FROM_MEMBER(pInterface, VGASTATECC, IPort);
+    PVGASTATE   pThis   = PDMDEVINS_2_DATA(pThisCC->pDevIns, PVGASTATE);
+
+
+    PVMSVGAR3STATE  pSVGAState = pThisCC->svga.pSvgaR3State;
+    size_t cScreenCount = RT_ELEMENTS(pSVGAState->aScreens);
+
+    VMSVGASCREENOBJECT *pScreens = pSVGAState->aScreens;
+    /* We assume cPositions is the # of outputs Xserver reports and pPosition is (-1, -1) for disabled monitors. */
+    for (unsigned i = 0; i < cPositions; ++i)
+    {
+        /* Stop walking the array once we go thru all the monitors. */
+        if (i >= cScreenCount)
+            break;
+        if ( pScreens[i].xOrigin == -1
+          || pScreens[i].yOrigin == -1)
+            continue;
+        if (   pScreens[i].xOrigin == pPosition[i].x
+            && pScreens[i].yOrigin == pPosition[i].y)
+            continue;
+        pScreens[i].xOrigin = pPosition[i].x;
+        pScreens[i].yOrigin = pPosition[i].y;
+        pScreens[i].fModified = true;
+    }
+    vmsvgaR3VBVAResize(pThis, pThisCC);
+}
 #endif /* IN_RING3 */
 
 /**
@@ -1288,70 +1388,6 @@ static int vmsvgaReadPort(PPDMDEVINS pDevIns, PVGASTATE pThis, uint32_t *pu32)
 }
 
 #ifdef IN_RING3
-/**
- * Updating screen information in API
- *
- * @param   pThis       The The shared VGA/VMSVGA instance data.
- * @param   pThisCC     The VGA/VMSVGA state for ring-3.
- */
-void vmsvgaR3VBVAResize(PVGASTATE pThis, PVGASTATECC pThisCC)
-{
-    int rc;
-
-    PVMSVGAR3STATE pSVGAState = pThisCC->svga.pSvgaR3State;
-
-    for (unsigned iScreen = 0; iScreen < RT_ELEMENTS(pSVGAState->aScreens); ++iScreen)
-    {
-        VMSVGASCREENOBJECT *pScreen = &pSVGAState->aScreens[iScreen];
-        if (!pScreen->fModified)
-            continue;
-
-        pScreen->fModified = false;
-
-        VBVAINFOVIEW view;
-        RT_ZERO(view);
-        view.u32ViewIndex     = pScreen->idScreen;
-        // view.u32ViewOffset    = 0;
-        view.u32ViewSize      = pThis->vram_size;
-        view.u32MaxScreenSize = pThis->vram_size;
-
-        VBVAINFOSCREEN screen;
-        RT_ZERO(screen);
-        screen.u32ViewIndex   = pScreen->idScreen;
-
-        if (pScreen->fDefined)
-        {
-            if (   pScreen->cWidth  == VMSVGA_VAL_UNINITIALIZED
-                || pScreen->cHeight == VMSVGA_VAL_UNINITIALIZED
-                || pScreen->cBpp    == VMSVGA_VAL_UNINITIALIZED)
-            {
-                Assert(pThis->svga.fGFBRegisters);
-                continue;
-            }
-
-            screen.i32OriginX      = pScreen->xOrigin;
-            screen.i32OriginY      = pScreen->yOrigin;
-            screen.u32StartOffset  = pScreen->offVRAM;
-            screen.u32LineSize     = pScreen->cbPitch;
-            screen.u32Width        = pScreen->cWidth;
-            screen.u32Height       = pScreen->cHeight;
-            screen.u16BitsPerPixel = pScreen->cBpp;
-            if (!(pScreen->fuScreen & SVGA_SCREEN_DEACTIVATE))
-                screen.u16Flags    = VBVA_SCREEN_F_ACTIVE;
-            if (pScreen->fuScreen & SVGA_SCREEN_BLANKING)
-                screen.u16Flags   |= VBVA_SCREEN_F_BLANK2;
-        }
-        else
-        {
-            /* Screen is destroyed. */
-            screen.u16Flags        = VBVA_SCREEN_F_DISABLED;
-        }
-
-        rc = pThisCC->pDrv->pfnVBVAResize(pThisCC->pDrv, &view, &screen, pThisCC->pbVRam, /*fResetInputMapping=*/ true);
-        AssertRC(rc);
-    }
-}
-
 /**
  * Apply the current resolution settings to change the video mode.
  *
@@ -5473,42 +5509,6 @@ DECLCALLBACK(void) vmsvgaR3Info3dSurfaceBmp(PPDMDEVINS pDevIns, PCDBGFINFOHLP pH
 }
 
 /**
- * Used to update screen offsets (positions) since appearently vmwgfx fails to pass correct offsets thru FIFO.
- *
- * @param   pInterface  The device instance.
- * @param   cPosition   The size of the pPosition array
- * @param   pPosition   Monitor positions. We assume for the disable monitors the positions is (-1, -1)
- */
-DECLCALLBACK(void) vmsvgaR3PortReportMonitorPositions(PPDMIDISPLAYPORT pInterface, uint32_t cPositions, PRTPOINT pPosition)
-{
-    PVGASTATECC pThisCC = RT_FROM_MEMBER(pInterface, VGASTATECC, IPort);
-    PVGASTATE   pThis   = PDMDEVINS_2_DATA(pThisCC->pDevIns, PVGASTATE);
-
-
-    PVMSVGAR3STATE  pSVGAState = pThisCC->svga.pSvgaR3State;
-    size_t cScreenCount = RT_ELEMENTS(pSVGAState->aScreens);
-
-    VMSVGASCREENOBJECT *pScreens = pSVGAState->aScreens;
-    /* We assume cPositions is the # of outputs Xserver reports and pPosition is (-1, -1) for disabled monitors. */
-    for (unsigned i = 0; i < cPositions; ++i)
-    {
-        /* Stop walking the array once we go thru all the monitors. */
-        if (i >= cScreenCount)
-            break;
-        if ( pScreens[i].xOrigin == -1
-          || pScreens[i].yOrigin == -1)
-            continue;
-        if (   pScreens[i].xOrigin == pPosition[i].x
-            && pScreens[i].yOrigin == pPosition[i].y)
-            continue;
-        pScreens[i].xOrigin = pPosition[i].x;
-        pScreens[i].yOrigin = pPosition[i].y;
-        pScreens[i].fModified = true;
-    }
-    vmsvgaR3VBVAResize(pThis, pThisCC);
-}
-
-/**
  * @callback_method_impl{FNDBGFHANDLERDEV, "vmsvga3dctx"}
  */
 DECLCALLBACK(void) vmsvgaR3Info3dContext(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *pszArgs)
@@ -5528,7 +5528,6 @@ DECLCALLBACK(void) vmsvgaR3Info3dContext(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp,
 
     vmsvga3dInfoContextWorker(PDMDEVINS_2_DATA_CC(pDevIns, PVGASTATECC), pHlp, sid, fVerbose);
 }
-
 # endif /* VBOX_WITH_VMSVGA3D */
 
 /**
