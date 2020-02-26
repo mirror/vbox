@@ -195,6 +195,18 @@ QString UICloudNetworkingStuff::fetchOsType(const QMap<KVirtualSystemDescription
     return osTypes.value(infoMap.value(KVirtualSystemDescriptionType_OS), "Other");
 }
 
+int UICloudNetworkingStuff::fetchMemorySize(const QMap<KVirtualSystemDescriptionType, QString> &infoMap)
+{
+    /* Return memory size value: */
+    return infoMap.value(KVirtualSystemDescriptionType_Memory).toInt();
+}
+
+int UICloudNetworkingStuff::fetchCpuCount(const QMap<KVirtualSystemDescriptionType, QString> &infoMap)
+{
+    /* Return CPU count value: */
+    return infoMap.value(KVirtualSystemDescriptionType_CPU).toInt();
+}
+
 KMachineState UICloudNetworkingStuff::fetchMachineState(const QMap<KVirtualSystemDescriptionType, QString> &infoMap)
 {
     /* Prepare a map of known machine states: */

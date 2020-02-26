@@ -15,8 +15,12 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+/* Qt includes: */
+#include <QMap>
+
 /* GUI includes: */
 #include "UICloudMachine.h"
+#include "UICloudNetworkingStuff.h"
 
 
 /*********************************************************************************************************************************
@@ -29,6 +33,7 @@ UICloudMachineData::UICloudMachineData(const CCloudClient &comCloudClient,
     : m_comCloudClient(comCloudClient)
     , m_strId(strId)
     , m_strName(strName)
+    , m_fDataActual(false)
     , m_fAccessible(true)
     , m_strOsType("Other")
     , m_iMemorySize(0)
@@ -42,6 +47,7 @@ UICloudMachineData::UICloudMachineData(const UICloudMachineData &other)
     , m_comCloudClient(other.m_comCloudClient)
     , m_strId(other.m_strId)
     , m_strName(other.m_strName)
+    , m_fDataActual(other.m_fDataActual)
     , m_fAccessible(other.m_fAccessible)
     , m_strOsType(other.m_strOsType)
     , m_iMemorySize(other.m_iMemorySize)
@@ -77,17 +83,37 @@ bool UICloudMachineData::isAccessible() const
 
 QString UICloudMachineData::osType()
 {
+    if (!m_fDataActual)
+        refresh();
     return m_strOsType;
 }
 
 int UICloudMachineData::memorySize()
 {
+    if (!m_fDataActual)
+        refresh();
     return m_iMemorySize;
 }
 
 int UICloudMachineData::cpuCount()
 {
+    if (!m_fDataActual)
+        refresh();
     return m_iCpuCount;
+}
+
+void UICloudMachineData::refresh()
+{
+    /* Acquire instance info sync way, be aware, this is blocking stuff, it takes some time: */
+    const QMap<KVirtualSystemDescriptionType, QString> infoMap = getInstanceInfo(m_comCloudClient, m_strId);
+
+    /* Refresh corresponding values: */
+    m_strOsType = fetchOsType(infoMap);
+    m_iMemorySize = fetchMemorySize(infoMap);
+    m_iCpuCount = fetchCpuCount(infoMap);
+
+    /* Mark data actual: */
+    m_fDataActual = true;
 }
 
 

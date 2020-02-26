@@ -69,6 +69,9 @@ public:
 
 private:
 
+    /** Performs data refreshing. */
+    void refresh();
+
     /** Holds the cloud client object reference. */
     CCloudClient  m_comCloudClient;
 
@@ -76,6 +79,9 @@ private:
     const QString  m_strId;
     /** Holds the cloud VM name. */
     const QString  m_strName;
+
+    /** Holds whether data is actual. */
+    bool  m_fDataActual;
 
     /** Holds whether cloud VM is accessible. */
     bool  m_fAccessible;
