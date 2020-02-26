@@ -26,11 +26,10 @@
 #include <QMutex>
 
 /* GUI includes: */
+#include "UICloudMachine.h"
 #include "UITask.h"
 
 /* COM includes: */
-#include "COMEnums.h"
-#include "CCloudClient.h"
 #include "CVirtualBoxErrorInfo.h"
 
 
@@ -41,16 +40,12 @@ class UITaskCloudGetInstanceInfo : public UITask
 
 public:
 
-    /** Constructs task taking @a comCloudClient and @a strId as data.
-      * @param  comCloudClient  Brings the cloud client object.
-      * @param  strId           Brings the cloud VM id. */
-    UITaskCloudGetInstanceInfo(const CCloudClient &comCloudClient, const QString &strId);
+    /** Constructs task taking @a guiCloudMachine as data.
+      * @param  guiCloudMachine  Brings the cloud VM wrapper. */
+    UITaskCloudGetInstanceInfo(const UICloudMachine &guiCloudMachine);
 
     /** Returns error info. */
     CVirtualBoxErrorInfo errorInfo();
-
-    /** Returns the task result. */
-    QMap<KVirtualSystemDescriptionType, QString> result() const;
 
 protected:
 
@@ -59,19 +54,14 @@ protected:
 
 private:
 
-    /** Holds the mutex to access result. */
+    /** Holds the mutex to access m_guiCloudMachine member. */
     mutable QMutex  m_mutex;
 
     /** Holds the cloud client object. */
-    CCloudClient  m_comCloudClient;
-    /** Holds the cloud VM id. */
-    QString       m_strId;
+    UICloudMachine  m_guiCloudMachine;
 
     /** Holds the error info object. */
     CVirtualBoxErrorInfo  m_comErrorInfo;
-
-    /** Holds the task result. */
-    QMap<KVirtualSystemDescriptionType, QString>  m_resultMap;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_manager_UITaskCloudGetInstanceInfo_h */

@@ -68,10 +68,6 @@ public:
         /** Returns fake cloud item state. */
         FakeCloudItemState fakeCloudItemState() const { return m_enmFakeCloudItemState; }
 
-        /** Updates cloud VM info.
-          * @param  pWidget  Brings parent widget to show messages according to. */
-        void updateInfo(QWidget *pParent);
-
         /** Updates cloud VM info async way, @a fDelayed if requested or instant otherwise. */
         void updateInfoAsync(bool fDelayed);
 
@@ -131,12 +127,6 @@ private slots:
         void sltHandleGetCloudInstanceInfoDone(UITask *pTask);
 
 private:
-
-    /** @name Data attributes.
-      * @{ */
-        /** Updates cloud VM info on the basis of @a infoMap value. */
-        void updateInfo(const QMap<KVirtualSystemDescriptionType, QString> &infoMap);
-    /** @} */
 
     /** @name Arguments.
       * @{ */

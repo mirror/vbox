@@ -53,20 +53,6 @@ UIVirtualMachineItemCloud::~UIVirtualMachineItemCloud()
 {
 }
 
-void UIVirtualMachineItemCloud::updateInfo(QWidget *pParent)
-{
-    /* Make sure item is of real cloud type and is initialized: */
-    AssertReturnVoid(itemType() == ItemType_CloudReal);
-
-    /* Acquire info: */
-    const QMap<KVirtualSystemDescriptionType, QString> infoMap = getInstanceInfo(m_guiCloudMachine.client(),
-                                                                                 m_strId,
-                                                                                 pParent);
-
-    /* Update info: */
-    updateInfo(infoMap);
-}
-
 void UIVirtualMachineItemCloud::updateInfoAsync(bool fDelayed)
 {
     QTimer::singleShot(fDelayed ? 10000 : 0, this, SLOT(sltCreateGetCloudInstanceInfoTask()));
@@ -115,7 +101,7 @@ void UIVirtualMachineItemCloud::pauseOrResume(bool fPause, QWidget *pParent)
 void UIVirtualMachineItemCloud::recache()
 {
     /* Determine attributes which are always available: */
-    if (itemType() == ItemType_CloudReal)
+    if (!m_guiCloudMachine.isNull())
     {
         m_strId = m_guiCloudMachine.id();
         m_strName = m_guiCloudMachine.name();
@@ -129,14 +115,14 @@ void UIVirtualMachineItemCloud::recache()
         m_comAccessError = CVirtualBoxErrorInfo();
 
         /* Determine own VM attributes: */
-        if (   itemType() == ItemType_CloudFake
-            || m_strOSTypeId.isNull())
-            m_strOSTypeId = "Other";
+        m_strOSTypeId = !m_guiCloudMachine.isNull()
+                      ? m_guiCloudMachine.osType()
+                      : "Other";
 
         /* Determine VM states: */
-        if (   itemType() == ItemType_CloudFake
-            || m_enmMachineState == KMachineState_Null)
-            m_enmMachineState = KMachineState_PoweredOff;
+        m_enmMachineState = !m_guiCloudMachine.isNull()
+                          ? m_guiCloudMachine.machineState()
+                          : KMachineState_PoweredOff;
         m_strMachineStateName = gpConverter->toString(m_enmMachineState);
         if (itemType() == ItemType_CloudFake)
         {
@@ -299,7 +285,7 @@ void UIVirtualMachineItemCloud::sltCreateGetCloudInstanceInfoTask()
     /* Create and start task to acquire info async way only if there is no task yet: */
     if (!m_pTask)
     {
-        m_pTask = new UITaskCloudGetInstanceInfo(m_guiCloudMachine.client(), m_strId);
+        m_pTask = new UITaskCloudGetInstanceInfo(m_guiCloudMachine);
         connect(m_pTask, &UITask::sigComplete,
                 this, &UIVirtualMachineItemCloud::sltHandleGetCloudInstanceInfoDone);
         uiCommon().threadPool()->enqueueTask(m_pTask);
@@ -314,19 +300,6 @@ void UIVirtualMachineItemCloud::sltHandleGetCloudInstanceInfoDone(UITask *pTask)
 
     /* Mark our task handled: */
     m_pTask = 0;
-
-    /* Cast task to corresponding sub-class: */
-    UITaskCloudGetInstanceInfo *pInfoTask = static_cast<UITaskCloudGetInstanceInfo*>(pTask);
-
-    /* Update info: */
-    updateInfo(pInfoTask->result());
-}
-
-void UIVirtualMachineItemCloud::updateInfo(const QMap<KVirtualSystemDescriptionType, QString> &infoMap)
-{
-    /* Update info: */
-    m_strOSTypeId = fetchOsType(infoMap);
-    m_enmMachineState = fetchMachineState(infoMap);
 
     /* Recache: */
     recache();

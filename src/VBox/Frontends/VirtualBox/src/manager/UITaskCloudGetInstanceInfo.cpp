@@ -16,23 +16,13 @@
  */
 
 /* GUI includes: */
-#include "UICloudNetworkingStuff.h"
 #include "UITaskCloudGetInstanceInfo.h"
 
 
-UITaskCloudGetInstanceInfo::UITaskCloudGetInstanceInfo(const CCloudClient &comCloudClient, const QString &strId)
+UITaskCloudGetInstanceInfo::UITaskCloudGetInstanceInfo(const UICloudMachine &guiCloudMachine)
     : UITask(Type_CloudGetInstanceState)
-    , m_comCloudClient(comCloudClient)
-    , m_strId(strId)
+    , m_guiCloudMachine(guiCloudMachine)
 {
-}
-
-QMap<KVirtualSystemDescriptionType, QString> UITaskCloudGetInstanceInfo::result() const
-{
-    m_mutex.lock();
-    const QMap<KVirtualSystemDescriptionType, QString> resultMap = m_resultMap;
-    m_mutex.unlock();
-    return resultMap;
 }
 
 CVirtualBoxErrorInfo UITaskCloudGetInstanceInfo::errorInfo()
@@ -46,6 +36,6 @@ CVirtualBoxErrorInfo UITaskCloudGetInstanceInfo::errorInfo()
 void UITaskCloudGetInstanceInfo::run()
 {
     m_mutex.lock();
-    m_resultMap = getInstanceInfo(m_comCloudClient, m_strId);
+    m_guiCloudMachine.refresh();
     m_mutex.unlock();
 }
