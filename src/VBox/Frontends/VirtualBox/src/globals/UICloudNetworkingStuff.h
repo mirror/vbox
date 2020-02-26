@@ -15,14 +15,15 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef FEQT_INCLUDED_SRC_manager_UICloudNetworkingStuff_h
-#define FEQT_INCLUDED_SRC_manager_UICloudNetworkingStuff_h
+#ifndef FEQT_INCLUDED_SRC_globals_UICloudNetworkingStuff_h
+#define FEQT_INCLUDED_SRC_globals_UICloudNetworkingStuff_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
 
 /* GUI includes: */
 #include "UICloudMachine.h"
+#include "UILibraryDefs.h"
 
 /* COM includes: */
 #include "COMEnums.h"
@@ -35,29 +36,29 @@ namespace UICloudNetworkingStuff
       * @param  comCloudClient  Brings cloud client object.
       * @param  pWidget         Brings parent widget to show messages according to,
       *                         if no parent set, progress will be executed in blocking way. */
-    QList<UICloudMachine> listInstances(const CCloudClient &comCloudClient,
-                                        QWidget *pParent = 0);
+    SHARED_LIBRARY_STUFF QList<UICloudMachine> listInstances(const CCloudClient &comCloudClient,
+                                                             QWidget *pParent = 0);
 
     /** Acquires instance info as a map.
       * @param  comCloudClient  Brings cloud client object.
       * @param  strId           Brings cloud VM id.
       * @param  pWidget         Brings parent widget to show messages according to,
       *                         if no parent set, progress will be executed in blocking way. */
-    QMap<KVirtualSystemDescriptionType, QString> getInstanceInfo(const CCloudClient &comCloudClient,
-                                                                 const QString &strId,
-                                                                 QWidget *pParent = 0);
+    SHARED_LIBRARY_STUFF QMap<KVirtualSystemDescriptionType, QString> getInstanceInfo(const CCloudClient &comCloudClient,
+                                                                                      const QString &strId,
+                                                                                      QWidget *pParent = 0);
     /** Acquires instance info of certain @a enmType as a string.
       * @param  comCloudClient  Brings cloud client object.
       * @param  strId           Brings cloud VM id.
       * @param  pWidget         Brings parent widget to show messages according to,
       *                         if no parent set, progress will be executed in blocking way. */
-    QString getInstanceInfo(KVirtualSystemDescriptionType enmType,
-                            const CCloudClient &comCloudClient,
-                            const QString &strId,
-                            QWidget *pParent = 0);
+    SHARED_LIBRARY_STUFF QString getInstanceInfo(KVirtualSystemDescriptionType enmType,
+                                                 const CCloudClient &comCloudClient,
+                                                 const QString &strId,
+                                                 QWidget *pParent = 0);
 }
 
 /* Using across any module who included us: */
 using namespace UICloudNetworkingStuff;
 
-#endif /* !FEQT_INCLUDED_SRC_manager_UICloudNetworkingStuff_h */
+#endif /* !FEQT_INCLUDED_SRC_globals_UICloudNetworkingStuff_h */

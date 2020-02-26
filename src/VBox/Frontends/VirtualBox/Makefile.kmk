@@ -1061,7 +1061,6 @@ VirtualBox_SOURCES = \
 	src/hostnetwork/UIHostNetworkDetailsWidget.cpp \
 	src/hostnetwork/UIHostNetworkManager.cpp \
 	src/hostnetwork/UIHostNetworkUtils.cpp \
-	src/manager/UICloudNetworkingStuff.cpp \
 	src/manager/UIErrorPane.cpp \
 	src/manager/UITaskCloudAcquireInstances.cpp \
 	src/manager/UITaskCloudGetInstanceInfo.cpp \
@@ -1319,6 +1318,7 @@ UICommon_SOURCES = \
 	src/globals/UIActionPoolRuntime.cpp \
 	src/globals/UIAnimationFramework.cpp \
 	src/globals/UICloudMachine.cpp \
+	src/globals/UICloudNetworkingStuff.cpp \
 	src/globals/UICommon.cpp \
 	src/globals/UICustomFileSystemModel.cpp \
 	src/globals/UIDefs.cpp \
