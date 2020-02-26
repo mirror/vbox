@@ -555,6 +555,7 @@ bool virtioCoreQueueIsEmpty(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t id
 {
     if (pVirtio->uDeviceStatus & VIRTIO_STATUS_DRIVER_OK)
         return virtqIsEmpty(pDevIns, pVirtio, idxQueue);
+    LogFunc(("VirtIO not ready: Returning 'true' for queue empty\n"));
     return true;
 }
 
@@ -581,7 +582,7 @@ int virtioCoreR3DescChainGet(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t i
 
     uint16_t uDescIdx = uHeadIdx;
 
-    Log3Func(("%s DESC CHAIN: (head) desc_idx=%u\n", pVirtq->szVirtqName, uHeadIdx));
+    Log6Func(("%s DESC CHAIN: (head) desc_idx=%u\n", pVirtq->szVirtqName, uHeadIdx));
     RT_NOREF(pVirtq);
 
     VIRTQ_DESC_T desc;
@@ -617,13 +618,13 @@ int virtioCoreR3DescChainGet(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t i
 
         if (desc.fFlags & VIRTQ_DESC_F_WRITE)
         {
-            Log3Func(("%s IN  desc_idx=%u seg=%u addr=%RGp cb=%u\n", VIRTQNAME(pVirtio, idxQueue), uDescIdx, cSegsIn, desc.GCPhysBuf, desc.cb));
+            Log6Func(("%s IN  desc_idx=%u seg=%u addr=%RGp cb=%u\n", VIRTQNAME(pVirtio, idxQueue), uDescIdx, cSegsIn, desc.GCPhysBuf, desc.cb));
             cbIn += desc.cb;
             pSeg = &(paSegsIn[cSegsIn++]);
         }
         else
         {
-            Log3Func(("%s OUT desc_idx=%u seg=%u addr=%RGp cb=%u\n", VIRTQNAME(pVirtio, idxQueue), uDescIdx, cSegsOut, desc.GCPhysBuf, desc.cb));
+            Log6Func(("%s OUT desc_idx=%u seg=%u addr=%RGp cb=%u\n", VIRTQNAME(pVirtio, idxQueue), uDescIdx, cSegsOut, desc.GCPhysBuf, desc.cb));
             cbOut += desc.cb;
             pSeg = &(paSegsOut[cSegsOut++]);
         }
@@ -634,27 +635,34 @@ int virtioCoreR3DescChainGet(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t i
         uDescIdx = desc.uDescIdxNext;
     } while (desc.fFlags & VIRTQ_DESC_F_NEXT);
 
-    PVIRTIOSGBUF pSgPhysIn = (PVIRTIOSGBUF)RTMemAllocZ(sizeof(VIRTIOSGBUF));
-    AssertReturn(pSgPhysIn, VERR_NO_MEMORY);
-
-    virtioCoreSgBufInit(pSgPhysIn, paSegsIn, cSegsIn);
-
-    PVIRTIOSGBUF pSgPhysOut = (PVIRTIOSGBUF)RTMemAllocZ(sizeof(VIRTIOSGBUF));
-    AssertReturn(pSgPhysOut, VERR_NO_MEMORY);
-
-    virtioCoreSgBufInit(pSgPhysOut, paSegsOut, cSegsOut);
-
     PVIRTIO_DESC_CHAIN_T pDescChain = (PVIRTIO_DESC_CHAIN_T)RTMemAllocZ(sizeof(VIRTIO_DESC_CHAIN_T));
     AssertReturn(pDescChain, VERR_NO_MEMORY);
 
     pDescChain->uHeadIdx      = uHeadIdx;
-    pDescChain->cbPhysSend    = cbOut;
-    pDescChain->pSgPhysSend   = pSgPhysOut;
-    pDescChain->cbPhysReturn  = cbIn;
-    pDescChain->pSgPhysReturn = pSgPhysIn;
     *ppDescChain = pDescChain;
 
-    Log3Func(("%s -- segs OUT: %u (%u bytes)   IN: %u (%u bytes) --\n", pVirtq->szVirtqName, cSegsOut, cbOut, cSegsIn, cbIn));
+    if (cSegsIn)
+    {
+        PVIRTIOSGBUF pSgPhysIn = (PVIRTIOSGBUF)RTMemAllocZ(sizeof(VIRTIOSGBUF));
+        AssertReturn(pSgPhysIn, VERR_NO_MEMORY);
+
+        virtioCoreSgBufInit(pSgPhysIn, paSegsIn, cSegsIn);
+        pDescChain->pSgPhysReturn = pSgPhysIn;
+        pDescChain->cbPhysReturn  = cbIn;
+    }
+
+    if (cSegsOut)
+    {
+        PVIRTIOSGBUF pSgPhysOut = (PVIRTIOSGBUF)RTMemAllocZ(sizeof(VIRTIOSGBUF));
+        AssertReturn(pSgPhysOut, VERR_NO_MEMORY);
+
+        virtioCoreSgBufInit(pSgPhysOut, paSegsOut, cSegsOut);
+        pDescChain->pSgPhysSend   = pSgPhysOut;
+        pDescChain->cbPhysSend    = cbOut;
+    }
+
+
+    Log6Func(("%s -- segs OUT: %u (%u bytes)   IN: %u (%u bytes) --\n", pVirtq->szVirtqName, cSegsOut, cbOut, cSegsIn, cbIn));
 
     return VINF_SUCCESS;
 }
@@ -858,7 +866,7 @@ int virtioCoreR3QueuePut(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t idxQu
     AssertMsgReturn(IS_DRIVER_OK(pVirtio) /*&& pVirtio->uQueueEnable[idxQueue]*/,
                     ("Guest driver not in ready state.\n"), VERR_INVALID_STATE);
 
-    Log3Func(("Copying client data to %s, desc chain (head desc_idx %d)\n",
+    Log6Func(("Copying client data to %s, desc chain (head desc_idx %d)\n",
               VIRTQNAME(pVirtio, idxQueue), virtioReadUsedRingIdx(pDevIns, pVirtio, idxQueue)));
 
     /*
@@ -867,11 +875,11 @@ int virtioCoreR3QueuePut(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t idxQu
      * control commands or error return values)... The bulk of req data xfers to phys mem
      * is handled by client */
 
-    size_t cbCopy = 0;
+    size_t cbCopy = 0, cbTotal, cbRemain;
 
     if (pSgVirtReturn)
     {
-        size_t cbRemain = RTSgBufCalcTotalLength(pSgVirtReturn);
+        cbRemain = cbTotal = RTSgBufCalcTotalLength(pSgVirtReturn);
         virtioCoreSgBufReset(pSgPhysReturn); /* Reset ptr because req data may have already been written */
         while (cbRemain)
         {
@@ -903,16 +911,22 @@ int virtioCoreR3QueuePut(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t idxQu
      * That will be done with a subsequent client call to virtioCoreQueueSync() */
     virtioWriteUsedElem(pDevIns, pVirtio, idxQueue, pVirtq->uUsedIdx++, pDescChain->uHeadIdx, (uint32_t)cbCopy);
 
-    Log3Func((".... Copied %zu bytes to %u byte buffer, residual=%zu\n",
-              cbCopy, pDescChain->cbPhysReturn, pDescChain->cbPhysReturn - cbCopy));
+    Log6Func((".... Copied %zu bytes in %d segs to %u byte buffer, residual=%zu\n",
+              cbTotal - cbRemain, pSgVirtReturn->cSegs, pDescChain->cbPhysReturn, pDescChain->cbPhysReturn - cbCopy));
 
     Log6Func(("Write ahead used_idx=%u, %s used_idx=%u\n",
               pVirtq->uUsedIdx, VIRTQNAME(pVirtio, idxQueue), virtioReadUsedRingIdx(pDevIns, pVirtio, idxQueue)));
 
-    RTMemFree((void *)pDescChain->pSgPhysSend->paSegs);
-    RTMemFree(pDescChain->pSgPhysSend);
-    RTMemFree((void *)pSgPhysReturn->paSegs);
-    RTMemFree(pSgPhysReturn);
+    if (pDescChain->pSgPhysSend)
+    {
+        RTMemFree((void *)pDescChain->pSgPhysSend->paSegs);
+        RTMemFree(pDescChain->pSgPhysSend);
+    }
+    if (pDescChain->pSgPhysReturn)
+    {
+        RTMemFree((void *)pSgPhysReturn->paSegs);
+        RTMemFree(pSgPhysReturn);
+    }
     RTMemFree(pDescChain);
 
     return VINF_SUCCESS;

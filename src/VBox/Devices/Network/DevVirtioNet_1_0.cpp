@@ -76,7 +76,7 @@
 #define QUEUE_NAME(a_pVirtio, a_idxQueue) ((a_pVirtio)->virtqState[(a_idxQueue)].szVirtqName)
 #define VIRTQNAME(idxQueue)           (pThis->aszVirtqNames[idxQueue])
 #define CBVIRTQNAME(idxQueue)         RTStrNLen(VIRTQNAME(idxQueue), sizeof(VIRTQNAME(idxQueue)))
-#define FEATURE_ENABLED(feature)  (pThis->fNegotiatedFeatures & VIRTIONET_F_##feature)
+#define FEATURE_ENABLED(feature)  (!!(pThis->fNegotiatedFeatures & VIRTIONET_F_##feature))
 #define FEATURE_DISABLED(feature) (!FEATURE_ENABLED(feature))
 #define FEATURE_OFFERED(feature)  VIRTIONET_HOST_FEATURES_OFFERED & VIRTIONET_F_##feature
 
@@ -208,7 +208,7 @@ typedef struct virtio_net_config
 
 /* Device operation: Net header packet (VirtIO 1.0, 5.1.6) */
 #pragma pack(1)
-struct virtio_net_hdr {
+struct virtio_net_pkt_hdr {
     uint8_t  uFlags;                                           /**< flags                                           */
     uint8_t  uGsoType;                                         /**< gso_type                                        */
     uint16_t uHdrLen;                                          /**< hdr_len                                         */
@@ -218,7 +218,7 @@ struct virtio_net_hdr {
     uint16_t uNumBuffers;                                      /**< num_buffers                                     */
 };
 #pragma pack()
-typedef virtio_net_hdr VIRTIONET_PKT_HDR_T, *PVIRTIONET_PKT_HDR_T;
+typedef virtio_net_pkt_hdr VIRTIONET_PKT_HDR_T, *PVIRTIONET_PKT_HDR_T;
 AssertCompileSize(VIRTIONET_PKT_HDR_T, 12);
 
 /* Control virtq: Command entry (VirtIO 1.0, 5.1.6.5) */
@@ -1353,7 +1353,7 @@ static int virtioNetR3HandleRxPacket(PPDMDEVINS pDevIns, PVIRTIONET pThis, PVIRT
 {
     RT_NOREF(pThisCC);
 
-    LogFunc(("%s (%RTmac)\n", INSTANCE(pThis), pvBuf));
+    LogFunc(("%s (%RTmac) pGso %s\n", INSTANCE(pThis), pvBuf, pGso ? "present" : "not present"));
     VIRTIONET_PKT_HDR_T rxPktHdr;
 
     if (pGso)
@@ -1401,11 +1401,13 @@ static int virtioNetR3HandleRxPacket(PPDMDEVINS pDevIns, PVIRTIONET pThis, PVIRT
     RTGCPHYS gcPhysPktHdrNumBuffers;
     uint32_t cDescs = 0;
 
-    uint8_t fAddPktHdr = true;
-    uint32_t uOffset = 0;
+    uint8_t fAddPktHdr = !!FEATURE_ENABLED(MRG_RXBUF);
 
-    while (uOffset < cb)
+    uint32_t uOffset;
+    for (uOffset = 0; uOffset < cb; )
     {
+        /* Pull the next empty Guest Rx buffer from the  queue */
+
         PVIRTIO_DESC_CHAIN_T pDescChain;
         int rc = virtioCoreR3QueueGet(pDevIns, &pThis->Virtio, RXQIDX_QPAIR(idxQueue), &pDescChain, true);
 
@@ -1417,7 +1419,7 @@ static int virtioNetR3HandleRxPacket(PPDMDEVINS pDevIns, PVIRTIONET pThis, PVIRT
                         ("Not enough Rx buffers in queue to accomodate ethernet packet\n"),
                         VERR_INTERNAL_ERROR);
 
-        /* Unlikely that len of 1st seg of guest Rx (IN) buf is less than sizeof(virtio_net_hdr) == 12.
+        /* Unlikely that len of 1st seg of guest Rx (IN) buf is less than sizeof(virtio_net_pkt_hdr) == 12.
          * Assert it to reduce complexity. Robust solution would entail finding seg idx and offset of
          * virtio_net_header.num_buffers (to update field *after* hdr & pkts copied to gcPhys) */
 
@@ -1425,51 +1427,49 @@ static int virtioNetR3HandleRxPacket(PPDMDEVINS pDevIns, PVIRTIONET pThis, PVIRT
                         ("Desc chain's first seg has insufficient space for pkt header!\n"),
                         VERR_INTERNAL_ERROR);
 
-        uint32_t cbDescChainLeft = pDescChain->cbPhysSend;
+        uint32_t cbDescChainLeft = pDescChain->cbPhysReturn;
 
-        uint16_t cSegs = 0;
-        if (fAddPktHdr)
+        /* Fill the Guest Rx buffer with data received from the interface */
+        for (uint16_t cSegs = 0; uOffset < cb && cbDescChainLeft; cSegs++)
         {
-LogFunc(("Add pkthdr\n"));
-            /* Lead with packet header */
-            paVirtSegsToGuest[cSegs].cbSeg = sizeof(VIRTIONET_PKT_HDR_T);
-            paVirtSegsToGuest[cSegs].pvSeg = RTMemAlloc(sizeof(VIRTIONET_PKT_HDR_T));
-            AssertReturn(paVirtSegsToGuest[0].pvSeg, VERR_NO_MEMORY);
+            if (fAddPktHdr)
+            {
+                /* Lead with packet header */
+                paVirtSegsToGuest[0].cbSeg = sizeof(VIRTIONET_PKT_HDR_T);
+                paVirtSegsToGuest[0].pvSeg = RTMemAlloc(sizeof(VIRTIONET_PKT_HDR_T));
+                AssertReturn(paVirtSegsToGuest[0].pvSeg, VERR_NO_MEMORY);
+                cbDescChainLeft -= sizeof(VIRTIONET_PKT_HDR_T);
 
-            cbDescChainLeft -= sizeof(VIRTIONET_PKT_HDR_T);
+                memcpy(paVirtSegsToGuest[0].pvSeg, &rxPktHdr, sizeof(VIRTIONET_PKT_HDR_T));
 
-            memcpy(paVirtSegsToGuest[cSegs].pvSeg, &rxPktHdr, sizeof(VIRTIONET_PKT_HDR_T));
+                /* Calculate & cache the field we will need to update later in gcPhys memory */
+                gcPhysPktHdrNumBuffers = pDescChain->pSgPhysReturn->paSegs[0].gcPhys
+                                         + RT_UOFFSETOF(VIRTIONET_PKT_HDR_T, uNumBuffers);
+                fAddPktHdr = false;
+                cSegs++;
+            }
+            if (cSegs >= cSegsAllocated)
+            {
+                cSegsAllocated <<= 1; /* double the allocation size */
+                paVirtSegsToGuest = (PRTSGSEG)RTMemRealloc(paVirtSegsToGuest, sizeof(RTSGSEG) * cSegsAllocated);
+                AssertReturn(paVirtSegsToGuest, VERR_NO_MEMORY);
+            }
 
-            /* Calculate & cache the field we will need to update later in gcPhys memory */
-            gcPhysPktHdrNumBuffers = pDescChain->pSgPhysReturn->paSegs[0].gcPhys
-                                     + RT_UOFFSETOF(VIRTIONET_PKT_HDR_T, uNumBuffers);
+            /* Append remaining Rx pkt or as much current desc chain has room for */
+            uint32_t cbCropped = RT_MIN(cb, cbDescChainLeft);
+            paVirtSegsToGuest[cSegs].cbSeg = cbCropped;
+            paVirtSegsToGuest[cSegs].pvSeg = ((uint8_t *)pvBuf) + uOffset;
+            cbDescChainLeft -= cbCropped;
+            uOffset += cbCropped;
+            cDescs++;
+            RTSgBufInit(pVirtSegBufToGuest, paVirtSegsToGuest, cSegs + 1);
+            Log7Func(("Send Rx pkt to guest...\n"));
+            virtioCoreR3QueuePut(pDevIns, &pThis->Virtio, RXQIDX_QPAIR(idxQueue),
+                                 pVirtSegBufToGuest, pDescChain, true);
 
-            fAddPktHdr = false;
+            if (FEATURE_DISABLED(MRG_RXBUF))
+                break;
         }
-        if (cSegs++ >= cSegsAllocated)
-        {
-            cSegsAllocated <<= 1; /* double the allocation size */
-            paVirtSegsToGuest = (PRTSGSEG)RTMemRealloc(paVirtSegsToGuest, sizeof(RTSGSEG) * cSegsAllocated);
-            AssertReturn(paVirtSegsToGuest, VERR_NO_MEMORY);
-        }
-LogFunc(("Add new post-hdr segment\n"));
-
-        /* Append remaining Rx pkt or as much current desc chain has room for */
-        uint32_t cbLim = RT_MIN(cb, cbDescChainLeft);
-        paVirtSegsToGuest[cSegs].cbSeg = cbLim;
-        paVirtSegsToGuest[cSegs++].pvSeg = ((uint8_t *)pvBuf) + uOffset;
-        uOffset += cbLim;
-        cDescs++;
-
-        RTSgBufInit(pVirtSegBufToGuest, paVirtSegsToGuest, cSegs);
-//if (pThis->fLog)
-//    RT_BREAKPOINT();
-        Log7Func(("Send Rx pkt to guest...\n"));
-        virtioCoreR3QueuePut(pDevIns, &pThis->Virtio, RXQIDX_QPAIR(idxQueue),
-                             pVirtSegBufToGuest, pDescChain, true);
-
-        if (FEATURE_DISABLED(MRG_RXBUF))
-            break;
     }
 
     /* Fix-up pkthdr (in guest phys. memory) with number buffers (descriptors) processed */
@@ -1480,9 +1480,6 @@ LogFunc(("Add new post-hdr segment\n"));
                       rc);
 
     virtioCoreQueueSync(pDevIns, &pThis->Virtio, RXQIDX_QPAIR(idxQueue));
-
-//    for (int i = 0; i < cSegs; i++)
-//        RTMemFree(paVirtSegsToGuest[i].pvSeg);
 
     RTMemFree(paVirtSegsToGuest);
     RTMemFree(pVirtSegBufToGuest);
@@ -2446,6 +2443,7 @@ static DECLCALLBACK(void) virtioNetR3StatusChanged(PVIRTIOCORE pVirtio, PVIRTIOC
         pThis->fResetting    = false;
         pThisCC->fQuiescing  = false;
         pThis->fNegotiatedFeatures = virtioCoreGetAcceptedFeatures(pVirtio);
+
         for (unsigned idxQueue = 0; idxQueue < pThis->cVirtQueues; idxQueue++)
         {
             (void) virtioCoreR3QueueAttach(&pThis->Virtio, idxQueue, VIRTQNAME(idxQueue));
