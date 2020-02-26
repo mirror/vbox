@@ -49,28 +49,28 @@ public:
     /** Destructs shared cloud VM data. */
     virtual ~UICloudMachineData();
 
-    /** Returns cloud client object reference. */
-    CCloudClient cloudClient() const;
-
-    /** Returns cloud VM id. */
-    QString id() const;
-    /** Returns cloud VM name. */
-    QString name() const;
-
-    /** Returns whether cloud VM is accessible. */
-    bool isAccessible() const;
-
-    /** Returns cloud VM OS type. */
-    QString osType();
-    /** Returns cloud VM memory size. */
-    int memorySize();
-    /** Returns cloud VM CPU count. */
-    int cpuCount();
-
-private:
-
     /** Performs data refreshing. */
     void refresh();
+
+    /** Returns cloud client object reference. */
+    CCloudClient cloudClient() const { return m_comCloudClient; }
+
+    /** Returns cloud VM id. */
+    QString id() const { return m_strId; }
+    /** Returns cloud VM name. */
+    QString name() const { return m_strName; }
+
+    /** Returns whether cloud VM is accessible. */
+    bool isAccessible() const { return m_fAccessible; }
+
+    /** Returns cloud VM OS type. */
+    QString osType() const { return m_strOsType; }
+    /** Returns cloud VM memory size. */
+    int memorySize() const { return m_iMemorySize; }
+    /** Returns cloud VM CPU count. */
+    int cpuCount() const { return m_iCpuCount; }
+
+private:
 
     /** Holds the cloud client object reference. */
     CCloudClient  m_comCloudClient;
@@ -79,9 +79,6 @@ private:
     const QString  m_strId;
     /** Holds the cloud VM name. */
     const QString  m_strName;
-
-    /** Holds whether data is actual. */
-    bool  m_fDataActual;
 
     /** Holds whether cloud VM is accessible. */
     bool  m_fAccessible;
@@ -113,6 +110,9 @@ public:
                    const QString &strName);
     /** Constructs cloud VM wrapper on the basis of @a other wrapper. */
     UICloudMachine(const UICloudMachine &other);
+
+    /** Performs data refreshing. */
+    void refresh() { d->refresh(); }
 
     /** Returns whether cloud VM wrapper is null. */
     bool isNull() const { return !d.constData(); }
