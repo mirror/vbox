@@ -34,6 +34,7 @@ UICloudMachineData::UICloudMachineData(const CCloudClient &comCloudClient,
     , m_strId(strId)
     , m_strName(strName)
     , m_fAccessible(true)
+    , m_enmMachineState(KMachineState_PoweredOff)
     , m_strOsType("Other")
     , m_iMemorySize(0)
     , m_iCpuCount(0)
@@ -47,6 +48,7 @@ UICloudMachineData::UICloudMachineData(const UICloudMachineData &other)
     , m_strId(other.m_strId)
     , m_strName(other.m_strName)
     , m_fAccessible(other.m_fAccessible)
+    , m_enmMachineState(other.m_enmMachineState)
     , m_strOsType(other.m_strOsType)
     , m_iMemorySize(other.m_iMemorySize)
     , m_iCpuCount(other.m_iCpuCount)
@@ -68,6 +70,7 @@ void UICloudMachineData::refresh()
     m_strOsType = fetchOsType(infoMap);
     m_iMemorySize = fetchMemorySize(infoMap);
     m_iCpuCount = fetchCpuCount(infoMap);
+    m_enmMachineState = fetchMachineState(infoMap);
 }
 
 
