@@ -49,6 +49,26 @@ public:
     /** Destructs shared cloud VM data. */
     virtual ~UICloudMachineData();
 
+    /** Returns cloud client object reference. */
+    CCloudClient cloudClient() const;
+
+    /** Returns cloud VM id. */
+    QString id() const;
+    /** Returns cloud VM name. */
+    QString name() const;
+
+    /** Returns whether cloud VM is accessible. */
+    bool isAccessible() const;
+
+    /** Returns cloud VM OS type. */
+    QString osType();
+    /** Returns cloud VM memory size. */
+    int memorySize();
+    /** Returns cloud VM CPU count. */
+    int cpuCount();
+
+private:
+
     /** Holds the cloud client object reference. */
     CCloudClient  m_comCloudClient;
 
@@ -92,22 +112,22 @@ public:
     bool isNull() const { return !d.constData(); }
 
     /** Returns cloud client object reference. */
-    CCloudClient client() const { return d->m_comCloudClient; }
+    CCloudClient client() const { return d->cloudClient(); }
 
     /** Returns cloud VM id. */
-    QString id() const { return d->m_strId; }
+    QString id() const { return d->id(); }
     /** Returns cloud VM name. */
-    QString name() const { return d->m_strName; }
+    QString name() const { return d->name(); }
 
     /** Returns whether cloud VM is accessible. */
-    bool isAccessible() const { return d->m_fAccessible; }
+    bool isAccessible() const { return d->isAccessible(); }
 
     /** Returns cloud VM OS type. */
-    QString osType() const { return d->m_strOsType; }
+    QString osType() const { return d->osType(); }
     /** Returns cloud VM memory size. */
-    int memorySize() const { return d->m_iMemorySize; }
+    int memorySize() const { return d->memorySize(); }
     /** Returns cloud VM CPU count. */
-    int cpuCount() const { return d->m_iCpuCount; }
+    int cpuCount() const { return d->cpuCount(); }
 
 private:
 
