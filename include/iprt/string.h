@@ -1432,6 +1432,10 @@ RTDECL(char *) RTStrPrevCp(const char *pszStart, const char *psz);
  * Group 1, the basic runtime typedefs (excluding those which obviously are
  * pointer):
  *      - \%RTbool          - Takes a bool value and prints 'true', 'false', or '!%d!'.
+ *      - \%RTeic           - Takes a #PCERRINFO value outputting 'rc: msg', or
+ *                            'rc - msg' with the \# flag.
+ *      - \%RTeim           - Takes a #PCERRINFO value outputting ': msg', or
+ *                            ' - msg' with the \# flag.
  *      - \%RTfile          - Takes a #RTFILE value.
  *      - \%RTfmode         - Takes a #RTFMODE value.
  *      - \%RTfoff          - Takes a #RTFOFF value.

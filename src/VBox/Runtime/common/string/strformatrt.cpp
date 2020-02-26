@@ -272,7 +272,9 @@ DECLHIDDEN(size_t) rtstrFormatRt(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, co
                     RTSF_IPV6,
                     RTSF_MAC,
                     RTSF_NETADDR,
-                    RTSF_UUID
+                    RTSF_UUID,
+                    RTSF_ERRINFO,
+                    RTSF_ERRINFO_MSG_ONLY
                 } RTSF;
                 static const struct
                 {
@@ -312,6 +314,8 @@ DECLHIDDEN(size_t) rtstrFormatRt(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, co
                     { STRMEM("Kv"),      sizeof(RTHCPTR),        16, RTSF_INT,   RTSTR_F_OBFUSCATE_PTR },
                     { STRMEM("Rv"),      sizeof(RTRCPTR),        16, RTSF_INTW,  0 },
                     { STRMEM("Tbool"),   sizeof(bool),           10, RTSF_BOOL,  0 },
+                    { STRMEM("Teic"),    sizeof(PCRTERRINFO),    16, RTSF_ERRINFO, 0 },
+                    { STRMEM("Teim"),    sizeof(PCRTERRINFO),    16, RTSF_ERRINFO_MSG_ONLY, 0 },
                     { STRMEM("Tfile"),   sizeof(RTFILE),         10, RTSF_INT,   0 },
                     { STRMEM("Tfmode"),  sizeof(RTFMODE),        16, RTSF_INTW,  0 },
                     { STRMEM("Tfoff"),   sizeof(RTFOFF),         10, RTSF_INT,   RTSTR_F_VALSIGNED },
@@ -378,6 +382,7 @@ DECLHIDDEN(size_t) rtstrFormatRt(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, co
                     PCRTNETADDRIPV6     pIpv6Addr;
                     PCRTNETADDR         pNetAddr;
                     PCRTUUID            pUuid;
+                    PCRTERRINFO         pErrInfo;
                 } u;
 
                 AssertMsg(!chArgSize, ("Not argument size '%c' for RT types! '%.10s'\n", chArgSize, pszFormatOrg));
@@ -656,6 +661,35 @@ DECLHIDDEN(size_t) rtstrFormatRt(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, co
                                                u.pUuid->Gen.au8Node[5]);
                         }
                         return pfnOutput(pvArgOutput, s_szNull, sizeof(s_szNull) - 1);
+                    }
+
+                    case RTSF_ERRINFO:
+                    case RTSF_ERRINFO_MSG_ONLY:
+                    {
+                        if (VALID_PTR(u.pErrInfo) && RTErrInfoIsSet(u.pErrInfo))
+                        {
+                            cch = 0;
+                            if (s_aTypes[i].enmFormat == RTSF_ERRINFO)
+                            {
+#ifdef IN_RING3                         /* we don't want this anywhere else yet. */
+                                PCRTSTATUSMSG pMsg = RTErrGet(u.pErrInfo->rc);
+                                cch += pfnOutput(pvArgOutput, pMsg->pszMsgShort, strlen(pMsg->pszMsgShort));
+#else
+                                cch += RTStrFormat(pfnOutput, pvArgOutput, NULL, 0, "%d", u.pErrInfo->rc);
+#endif
+                            }
+
+                            if (u.pErrInfo->cbMsg > 0)
+                            {
+                                if (fFlags & RTSTR_F_SPECIAL)
+                                    cch = pfnOutput(pvArgOutput, RT_STR_TUPLE(" - "));
+                                else
+                                    cch = pfnOutput(pvArgOutput, RT_STR_TUPLE(": "));
+                                cch += pfnOutput(pvArgOutput, u.pErrInfo->pszMsg, u.pErrInfo->cbMsg);
+                            }
+                            return cch;
+                        }
+                        return 0;
                     }
 
                     default:
