@@ -56,6 +56,11 @@ namespace UICloudNetworkingStuff
                                                  const CCloudClient &comCloudClient,
                                                  const QString &strId,
                                                  QWidget *pParent = 0);
+
+    /** Fetches cloud VM OS type from the passed @a info. */
+    SHARED_LIBRARY_STUFF QString fetchOsType(const QMap<KVirtualSystemDescriptionType, QString> &infoMap);
+    /** Fetches cloud VM state from the passed @a info. */
+    SHARED_LIBRARY_STUFF KMachineState fetchMachineState(const QMap<KVirtualSystemDescriptionType, QString> &infoMap);
 }
 
 /* Using across any module who included us: */

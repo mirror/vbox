@@ -182,3 +182,28 @@ QString UICloudNetworkingStuff::getInstanceInfo(KVirtualSystemDescriptionType en
 {
     return getInstanceInfo(comCloudClient, strId, pParent).value(enmType, QString());
 }
+
+QString UICloudNetworkingStuff::fetchOsType(const QMap<KVirtualSystemDescriptionType, QString> &infoMap)
+{
+    /* Prepare a map of known OS types: */
+    QMap<QString, QString> osTypes;
+    osTypes["Custom"] = QString("Other");
+    osTypes["Oracle Linux"] = QString("Oracle_64");
+    osTypes["Canonical Ubuntu"] = QString("Ubuntu_64");
+
+    /* Return OS type value: */
+    return osTypes.value(infoMap.value(KVirtualSystemDescriptionType_OS), "Other");
+}
+
+KMachineState UICloudNetworkingStuff::fetchMachineState(const QMap<KVirtualSystemDescriptionType, QString> &infoMap)
+{
+    /* Prepare a map of known machine states: */
+    QMap<QString, KMachineState> machineStates;
+    machineStates["RUNNING"] = KMachineState_Running;
+    machineStates["STOPPED"] = KMachineState_Paused;
+    machineStates["STOPPING"] = KMachineState_Stopping;
+    machineStates["STARTING"] = KMachineState_Starting;
+
+    /* Return machine state value: */
+    return machineStates.value(infoMap.value(KVirtualSystemDescriptionType_CloudInstanceState), KMachineState_PoweredOff);
+}

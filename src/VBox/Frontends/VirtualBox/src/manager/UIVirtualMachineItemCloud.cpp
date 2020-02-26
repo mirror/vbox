@@ -325,37 +325,12 @@ void UIVirtualMachineItemCloud::sltHandleGetCloudInstanceInfoDone(UITask *pTask)
 void UIVirtualMachineItemCloud::updateInfo(const QMap<KVirtualSystemDescriptionType, QString> &infoMap)
 {
     /* Update info: */
-    updateOsType(infoMap.value(KVirtualSystemDescriptionType_OS));
-    updateState(infoMap.value(KVirtualSystemDescriptionType_CloudInstanceState));
+    m_strOSTypeId = fetchOsType(infoMap);
+    m_enmMachineState = fetchMachineState(infoMap);
 
     /* Recache: */
     recache();
 
     /* Notify listeners finally: */
     emit sigStateChange();
-}
-
-void UIVirtualMachineItemCloud::updateOsType(const QString &strInfo)
-{
-    /* Prepare a map of known OS types: */
-    QMap<QString, QString> osTypes;
-    osTypes["Custom"] = QString("Other");
-    osTypes["Oracle Linux"] = QString("Oracle_64");
-    osTypes["Canonical Ubuntu"] = QString("Ubuntu_64");
-
-    /* Update OS type value: */
-    m_strOSTypeId = osTypes.value(strInfo, "Other");
-}
-
-void UIVirtualMachineItemCloud::updateState(const QString &strInfo)
-{
-    /* Prepare a map of known states: */
-    QMap<QString, KMachineState> states;
-    states["RUNNING"] = KMachineState_Running;
-    states["STOPPED"] = KMachineState_Paused;
-    states["STOPPING"] = KMachineState_Stopping;
-    states["STARTING"] = KMachineState_Starting;
-
-    /* Update state value: */
-    m_enmMachineState = states.value(strInfo, KMachineState_PoweredOff);
 }
