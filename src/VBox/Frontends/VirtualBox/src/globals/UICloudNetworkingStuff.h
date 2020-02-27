@@ -63,8 +63,14 @@ namespace UICloudNetworkingStuff
     SHARED_LIBRARY_STUFF int fetchMemorySize(const QMap<KVirtualSystemDescriptionType, QString> &infoMap);
     /** Fetches cloud VM CPU count from the passed @a info. */
     SHARED_LIBRARY_STUFF int fetchCpuCount(const QMap<KVirtualSystemDescriptionType, QString> &infoMap);
+    /** Fetches cloud VM instance shape from the passed @a info. */
+    SHARED_LIBRARY_STUFF QString fetchInstanceShape(const QMap<KVirtualSystemDescriptionType, QString> &infoMap);
+    /** Fetches cloud VM domain from the passed @a info. */
+    SHARED_LIBRARY_STUFF QString fetchDomain(const QMap<KVirtualSystemDescriptionType, QString> &infoMap);
     /** Fetches cloud VM state from the passed @a info. */
     SHARED_LIBRARY_STUFF KMachineState fetchMachineState(const QMap<KVirtualSystemDescriptionType, QString> &infoMap);
+    /** Fetches cloud VM booting firmware from the passed @a info. */
+    SHARED_LIBRARY_STUFF QString fetchBootingFirmware(const QMap<KVirtualSystemDescriptionType, QString> &infoMap);
 }
 
 /* Using across any module who included us: */

@@ -38,6 +38,9 @@ UICloudMachineData::UICloudMachineData(const CCloudClient &comCloudClient,
     , m_strOsType("Other")
     , m_iMemorySize(0)
     , m_iCpuCount(0)
+    //, m_strInstanceShape("None")
+    //, m_strDomain("None")
+    //, m_strBootingFirmware("None")
 {
     //printf("Data for machine with id = {%s} is created\n", m_strId.toUtf8().constData());
 }
@@ -52,6 +55,9 @@ UICloudMachineData::UICloudMachineData(const UICloudMachineData &other)
     , m_strOsType(other.m_strOsType)
     , m_iMemorySize(other.m_iMemorySize)
     , m_iCpuCount(other.m_iCpuCount)
+    , m_strInstanceShape(other.m_strInstanceShape)
+    , m_strDomain(other.m_strDomain)
+    , m_strBootingFirmware(other.m_strBootingFirmware)
 {
     //printf("Data for machine with id = {%s} is copied\n", m_strId.toUtf8().constData());
 }
@@ -71,6 +77,9 @@ void UICloudMachineData::refresh()
     m_iMemorySize = fetchMemorySize(infoMap);
     m_iCpuCount = fetchCpuCount(infoMap);
     m_enmMachineState = fetchMachineState(infoMap);
+    m_strInstanceShape = fetchInstanceShape(infoMap);
+    m_strDomain = fetchDomain(infoMap);
+    m_strBootingFirmware = fetchBootingFirmware(infoMap);
 }
 
 

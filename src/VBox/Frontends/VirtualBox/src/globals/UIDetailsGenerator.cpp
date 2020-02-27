@@ -146,6 +146,11 @@ UITextTable UIDetailsGenerator::generateMachineInformationGeneral(UICloudMachine
         table << UITextTableLine(QApplication::translate("UIDetails", "Operating System", "details (general)"),
                                  uiCommon().vmGuestOSTypeDescription(guiCloudMachine.osType()));
 
+    /* Domain: */
+    if (fOptions & UIExtraDataMetaDefs::DetailsElementOptionTypeGeneral_Location)
+        table << UITextTableLine(QApplication::translate("UIDetails", "Domain", "details (general)"),
+                                 guiCloudMachine.domain());
+
     return table;
 }
 
@@ -287,6 +292,10 @@ UITextTable UIDetailsGenerator::generateMachineInformationSystem(UICloudMachine 
         return table;
     }
 
+    /* Instance Shape: */
+    table << UITextTableLine(QApplication::translate("UIDetails", "Shape", "details (system)"),
+                             guiCloudMachine.instanceShape());
+
     /* Base memory: */
     if (fOptions & UIExtraDataMetaDefs::DetailsElementOptionTypeSystem_RAM)
         table << UITextTableLine(QApplication::translate("UIDetails", "Base Memory", "details (system)"),
@@ -296,6 +305,11 @@ UITextTable UIDetailsGenerator::generateMachineInformationSystem(UICloudMachine 
     if (fOptions & UIExtraDataMetaDefs::DetailsElementOptionTypeSystem_CPUCount)
         table << UITextTableLine(QApplication::translate("UIDetails", "Processors", "details (system)"),
                                  QString::number(guiCloudMachine.cpuCount()));
+
+    /* Booting firmware: */
+    if (fOptions & UIExtraDataMetaDefs::DetailsElementOptionTypeSystem_Firmware)
+        table << UITextTableLine(QApplication::translate("UIDetails", "Booting Firmware", "details (system)"),
+                                 guiCloudMachine.bootingFirmware());
 
     return table;
 }

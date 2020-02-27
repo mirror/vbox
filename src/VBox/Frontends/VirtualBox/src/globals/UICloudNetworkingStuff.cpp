@@ -207,6 +207,18 @@ int UICloudNetworkingStuff::fetchCpuCount(const QMap<KVirtualSystemDescriptionTy
     return infoMap.value(KVirtualSystemDescriptionType_CPU).toInt();
 }
 
+QString UICloudNetworkingStuff::fetchInstanceShape(const QMap<KVirtualSystemDescriptionType, QString> &infoMap)
+{
+    /* Return instance shape value: */
+    return infoMap.value(KVirtualSystemDescriptionType_CloudInstanceShape);
+}
+
+QString UICloudNetworkingStuff::fetchDomain(const QMap<KVirtualSystemDescriptionType, QString> &infoMap)
+{
+    /* Return domain value: */
+    return infoMap.value(KVirtualSystemDescriptionType_CloudDomain);
+}
+
 KMachineState UICloudNetworkingStuff::fetchMachineState(const QMap<KVirtualSystemDescriptionType, QString> &infoMap)
 {
     /* Prepare a map of known machine states: */
@@ -218,4 +230,10 @@ KMachineState UICloudNetworkingStuff::fetchMachineState(const QMap<KVirtualSyste
 
     /* Return machine state value: */
     return machineStates.value(infoMap.value(KVirtualSystemDescriptionType_CloudInstanceState), KMachineState_PoweredOff);
+}
+
+QString UICloudNetworkingStuff::fetchBootingFirmware(const QMap<KVirtualSystemDescriptionType, QString> &infoMap)
+{
+    /* Return booting firmware value: */
+    return infoMap.value(KVirtualSystemDescriptionType_BootingFirmware);
 }

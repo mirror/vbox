@@ -72,6 +72,12 @@ public:
     int memorySize() const { return m_iMemorySize; }
     /** Returns cloud VM CPU count. */
     int cpuCount() const { return m_iCpuCount; }
+    /** Returns cloud VM instance shape. */
+    QString instanceShape() const { return m_strInstanceShape; }
+    /** Returns cloud VM domain. */
+    QString domain() const { return m_strDomain; }
+    /** Returns cloud VM booting firmware. */
+    QString bootingFirmware() const { return m_strBootingFirmware; }
 
 private:
 
@@ -95,6 +101,12 @@ private:
     int      m_iMemorySize;
     /** Holds the cloud VM CPU count. */
     int      m_iCpuCount;
+    /** Holds the cloud VM instance shape. */
+    QString  m_strInstanceShape;
+    /** Holds the cloud VM domain. */
+    QString  m_strDomain;
+    /** Holds the cloud VM booting firmware. */
+    QString  m_strBootingFirmware;
 };
 
 /** Class representing cloud VM wrapper.
@@ -143,6 +155,12 @@ public:
     int memorySize() const { return d->memorySize(); }
     /** Returns cloud VM CPU count. */
     int cpuCount() const { return d->cpuCount(); }
+    /** Returns cloud VM instance shape. */
+    QString instanceShape() const { return d->instanceShape(); }
+    /** Returns cloud VM domain. */
+    QString domain() const { return d->domain(); }
+    /** Returns cloud VM booting firmware. */
+    QString bootingFirmware() const { return d->bootingFirmware(); }
 
 private:
 
