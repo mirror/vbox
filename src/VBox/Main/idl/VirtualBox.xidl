@@ -26670,8 +26670,11 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   <interface name="ICloudNetworkGatewayInfo" extends="$unknown"
              uuid="89a63ace-0c65-11ea-ad23-0ff257c71a7f"
              wsmap="managed"
-             reservedAttributes="8">
+             reservedAttributes="5">
     <attribute name="publicIP" type="wstring" readonly="yes"/>
+    <attribute name="secondaryPublicIP" type="wstring" readonly="yes"/>
+    <attribute name="macAddress" type="wstring" readonly="yes"/>
+    <attribute name="instanceId" type="wstring" readonly="yes"/>
   </interface>
 
 

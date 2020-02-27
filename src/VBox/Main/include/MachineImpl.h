@@ -767,6 +767,7 @@ protected:
 #ifdef VBOX_WITH_CLOUD_NET
 HRESULT i_connectToCloudNetwork(ProgressProxy *aProgress);
 HRESULT i_disconnectFromCloudNetwork();
+HRESULT i_setMacAddress(int slot, const Utf8Str& strMac);
 #endif /* VBOX_WITH_CLOUD_NET */
 
     Machine * const         mPeer;

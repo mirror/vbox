@@ -7309,6 +7309,54 @@ bool Machine::i_isUSBControllerPresent()
 }
 
 #ifdef VBOX_WITH_CLOUD_NET
+HRESULT Machine::i_setMacAddress(int slot, const Utf8Str& strMac)
+{
+    Bstr macAddress = strMac;
+    ComPtr<ISession> session;
+    HRESULT hrc = session.createInprocObject(CLSID_Session);
+    if (FAILED(hrc))
+        LogRel(("OCI-NET: Failed to create a session. hrc=%x\n", hrc));
+
+    hrc = lockMachine(session, LockType_Write);
+    if (FAILED(hrc))
+    {
+        LogRel(("OCI-NET: Failed to lock target VM for modifications. hrc=%x\n", hrc));
+        return hrc;
+    }
+
+    ComPtr<IMachine> sessionMachine;
+    hrc = session->COMGETTER(Machine)(sessionMachine.asOutParam());
+    if (FAILED(hrc))
+    {
+        LogRel(("OCI-NET: Failed to obtain a mutable machine. hrc=%x\n", hrc));
+        return hrc;
+    }
+
+    ComPtr<INetworkAdapter> networkAdapter;
+    hrc = sessionMachine->GetNetworkAdapter(slot, networkAdapter.asOutParam());
+    if (FAILED(hrc))
+    {
+        LogRel(("OCI-NET: Failed to locate the second network adapter. hrc=%x\n", hrc));
+        return hrc;
+    }
+
+    hrc = networkAdapter->COMSETTER(MACAddress)(macAddress.raw());
+    if (FAILED(hrc))
+    {
+        LogRel(("OCI-NET: Failed to set network name for the second network adapter. hrc=%x\n", hrc));
+        return hrc;
+    }
+
+    hrc = sessionMachine->SaveSettings();
+    if (FAILED(hrc))
+        LogRel(("OCI-NET: Failed to save 'lgw' settings. hrc=%x\n", hrc));
+
+    session->UnlockMachine();
+
+    return hrc;
+}
+
+
 HRESULT Machine::i_connectToCloudNetwork(ProgressProxy *aProgress)
 {
     LogFlowThisFuncEnter();
@@ -7316,6 +7364,7 @@ HRESULT Machine::i_connectToCloudNetwork(ProgressProxy *aProgress)
 
     HRESULT hrc = E_FAIL;
     Bstr name;
+    ULONG iSlot = ULONG_MAX;
 
     LogFlowThisFunc(("Checking if cloud network needs to be connected\n"));
     for (ULONG slot = 0; slot < mNetworkAdapters.size(); ++slot)
@@ -7333,15 +7382,16 @@ HRESULT Machine::i_connectToCloudNetwork(ProgressProxy *aProgress)
         {
             if (name.isNotEmpty())
             {
-                LogRel(("VM '%s' uses multiple cloud network attachments. '%ls' will be ignored.\n",
+                LogRel(("OCI-NET: VM '%s' uses multiple cloud network attachments. '%ls' will be ignored.\n",
                         mUserData->s.strName.c_str(), name.raw()));
                 continue;
             }
             hrc = mNetworkAdapters[slot]->COMGETTER(CloudNetwork)(name.asOutParam());
             if (SUCCEEDED(hrc))
             {
-                LogRel(("VM '%s' uses cloud network '%ls'\n",
+                LogRel(("OCI-NET: VM '%s' uses cloud network '%ls'\n",
                         mUserData->s.strName.c_str(), name.raw()));
+                iSlot = slot;
             }
         }
     }
@@ -7352,15 +7402,49 @@ HRESULT Machine::i_connectToCloudNetwork(ProgressProxy *aProgress)
         hrc = mParent->i_findCloudNetworkByName(name, &network);
         if (FAILED(hrc))
         {
-            LogRel(("Could not find cloud network '%ls'.\n", name.raw()));
+            LogRel(("OCI-NET: Could not find cloud network '%ls'.\n", name.raw()));
             return hrc;
         }
+        Bstr MacAddress;
+        Utf8Str strMacAddress;
         GatewayInfo gateways;
+        gateways.mTargetVM = mUserData->s.strName;
+        gateways.mAdapterSlot = iSlot;
+        hrc = mNetworkAdapters[iSlot]->COMGETTER(MACAddress)(MacAddress.asOutParam());
+        if (FAILED(hrc))
+        {
+            Host::i_generateMACAddress(strMacAddress);
+            LogRel(("OCI-NET: Failed to get MAC address of adapter connected to cloud network '%ls'.\n"
+                    "OCI-NET: Will use auto-generated '%s'.\n", name.raw(), strMacAddress.c_str()));
+        }
+        else
+            strMacAddress = MacAddress;
+        hrc = gateways.setLocalMacAddress(strMacAddress);
+        if (FAILED(hrc))
+        {
+            LogRel(("OCI-NET: Failed to obtain valid MAC address (%s) from cloud gateway '%ls'.\n",
+                    strMacAddress, name.raw()));
+            return hrc;
+        }
         hrc = startGateways(mParent, network, gateways);
+        /* We copy gateways structure unconditionally in order to be able to undo partially failed gateway setup. */
+        AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+        mData->mGatewayInfo = gateways;
+        alock.release();
         if (SUCCEEDED(hrc))
         {
-            AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-            mData->mGatewayInfo = gateways;
+            if (iSlot == ULONG_MAX)
+                LogRel(("OCI-NET: No slot information available for cloud network attachment!\n"));
+            else
+            {
+                hrc = i_setMacAddress(iSlot, gateways.getCloudMacAddressWithoutColons());
+                if (SUCCEEDED(hrc))
+                    LogRel(("OCI-NET: Updated MAC address for '%s' to %RTmac\n",
+                            mUserData->s.strName.c_str(), &gateways.mCloudMacAddress));
+                else
+                    LogRel(("OCI-NET: Failed to update MAC address for '%s' to %RTmac\n",
+                            mUserData->s.strName.c_str(), &gateways.mCloudMacAddress));
+            }
         }
     }
     else
@@ -7378,6 +7462,8 @@ HRESULT Machine::i_disconnectFromCloudNetwork()
     alock.release();
 
     HRESULT hrc = stopGateways(mParent, gateways);
+    // @todo Restore original MAC address. I'd hate to wait here for Machine to power off though.
+    // i_setMacAddress(gateways.mAdapterSlot, gateways.getLocalMacAddressWithoutColons());
     return hrc;
 }
 #endif /* VBOX_WITH_CLOUD_NET */

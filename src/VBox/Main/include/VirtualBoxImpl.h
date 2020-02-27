@@ -210,6 +210,7 @@ public:
 #ifdef VBOX_WITH_CLOUD_NET
     HRESULT i_findCloudNetworkByName(const com::Utf8Str &aNetworkName,
                                      ComObjPtr<CloudNetwork> *aNetwork = NULL);
+    HRESULT i_getEventSource(ComPtr<IEventSource>& aSource);
 #endif /* VBOX_WITH_CLOUD_NET */
 
     ComObjPtr<GuestOSType> i_getUnknownOSType();

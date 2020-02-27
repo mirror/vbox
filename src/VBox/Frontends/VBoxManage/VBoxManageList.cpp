@@ -194,6 +194,49 @@ static HRESULT listNetworkInterfaces(const ComPtr<IVirtualBox> pVirtualBox,
 }
 
 
+#ifdef VBOX_WITH_CLOUD_NET
+/**
+ * List configured cloud network attachments.
+ *
+ * @returns See produceList.
+ * @param   pVirtualBox         Reference to the IVirtualBox smart pointer.
+ * @param   Reserved            Placeholder!
+ */
+static HRESULT listCloudNetworks(const ComPtr<IVirtualBox> pVirtualBox)
+{
+    HRESULT rc;
+    com::SafeIfaceArray<ICloudNetwork> cloudNetworks;
+    CHECK_ERROR(pVirtualBox, COMGETTER(CloudNetworks)(ComSafeArrayAsOutParam(cloudNetworks)));
+    for (size_t i = 0; i < cloudNetworks.size(); ++i)
+    {
+        ComPtr<ICloudNetwork> cloudNetwork = cloudNetworks[i];
+        Bstr networkName;
+        cloudNetwork->COMGETTER(NetworkName)(networkName.asOutParam());
+        RTPrintf("Name:            %ls\n", networkName.raw());
+        // Guid interfaceGuid;
+        // cloudNetwork->COMGETTER(Id)(interfaceGuid.asOutParam());
+        // RTPrintf("GUID:        %ls\n\n", Bstr(interfaceGuid.toString()).raw());
+        BOOL fEnabled = FALSE;
+        cloudNetwork->COMGETTER(Enabled)(&fEnabled);
+        RTPrintf("State:           %s\n", fEnabled ? "Enabled" : "Disabled");
+
+        Bstr Provider;
+        cloudNetwork->COMGETTER(Provider)(Provider.asOutParam());
+        RTPrintf("CloudProvider:   %ls\n", Provider.raw());
+        Bstr Profile;
+        cloudNetwork->COMGETTER(Profile)(Profile.asOutParam());
+        RTPrintf("CloudProfile:    %ls\n", Profile.raw());
+        Bstr NetworkId;
+        cloudNetwork->COMGETTER(NetworkId)(NetworkId.asOutParam());
+        RTPrintf("CloudNetworkId:  %ls\n", NetworkId.raw());
+        Bstr netName = BstrFmt("cloud-%ls", networkName.raw());
+        RTPrintf("VBoxNetworkName: %ls\n\n", netName.raw());
+    }
+    return rc;
+}
+#endif /* VBOX_WITH_CLOUD_NET */
+
+
 /**
  * List host information.
  *
@@ -1268,6 +1311,9 @@ enum enmListType
 #if defined(VBOX_WITH_NETFLT)
     kListHostOnlyInterfaces,
 #endif
+#if defined(VBOX_WITH_CLOUD_NET)
+    kListCloudNetworks,
+#endif
     kListHostCpuIDs,
     kListHostInfo,
     kListHddBackends,
@@ -1475,6 +1521,11 @@ static HRESULT produceList(enum enmListType enmCommand, bool fOptLong, bool fOpt
             rc = listNetworkInterfaces(pVirtualBox, enmCommand == kListBridgedInterfaces);
             break;
 
+#if defined(VBOX_WITH_CLOUD_NET)
+        case kListCloudNetworks:
+            rc = listCloudNetworks(pVirtualBox);
+            break;
+#endif
         case kListHostInfo:
             rc = listHostInfo(pVirtualBox);
             break;
@@ -1668,6 +1719,9 @@ RTEXITCODE handleList(HandlerArg *a)
 #if defined(VBOX_WITH_NETFLT)
         { "hostonlyifs",        kListHostOnlyInterfaces, RTGETOPT_REQ_NOTHING },
 #endif
+#if defined(VBOX_WITH_CLOUD_NET)
+        { "cloudnets",          kListCloudNetworks,      RTGETOPT_REQ_NOTHING },
+#endif
         { "natnetworks",        kListNatNetworks,        RTGETOPT_REQ_NOTHING },
         { "natnets",            kListNatNetworks,        RTGETOPT_REQ_NOTHING },
         { "hostinfo",           kListHostInfo,           RTGETOPT_REQ_NOTHING },
@@ -1721,6 +1775,9 @@ RTEXITCODE handleList(HandlerArg *a)
             case kListBridgedInterfaces:
 #if defined(VBOX_WITH_NETFLT)
             case kListHostOnlyInterfaces:
+#endif
+#if defined(VBOX_WITH_CLOUD_NET)
+            case kListCloudNetworks:
 #endif
             case kListHostInfo:
             case kListHostCpuIDs:

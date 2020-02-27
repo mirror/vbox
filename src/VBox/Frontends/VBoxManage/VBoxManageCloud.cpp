@@ -1598,6 +1598,325 @@ static RTEXITCODE handleCloudImage(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT pC
     return errorNoSubcommand();
 }
 
+#ifdef VBOX_WITH_CLOUD_NET
+struct CloudNetworkOptions
+{
+    BOOL fEnable;
+    BOOL fDisable;
+    Bstr strNetworkId;
+    Bstr strNetworkName;
+};
+typedef struct CloudNetworkOptions CLOUDNETOPT;
+typedef CLOUDNETOPT *PCLOUDNETOPT;
+
+static RTEXITCODE createUpdateCloudNetworkCommon(ComPtr<ICloudNetwork> cloudNetwork, CLOUDNETOPT& options, PCLOUDCOMMONOPT pCommonOpts)
+{
+    HRESULT hrc = S_OK;
+
+    Bstr strProvider = pCommonOpts->provider.pszProviderName;
+    Bstr strProfile = pCommonOpts->profile.pszProfileName;
+
+    if (options.fEnable)
+        CHECK_ERROR2_RET(hrc, cloudNetwork, COMSETTER(Enabled)(TRUE), RTEXITCODE_FAILURE);
+    if (options.fDisable)
+        CHECK_ERROR2_RET(hrc, cloudNetwork, COMSETTER(Enabled)(FALSE), RTEXITCODE_FAILURE);
+    if (options.strNetworkId.isNotEmpty())
+        CHECK_ERROR2_RET(hrc, cloudNetwork, COMSETTER(NetworkId)(options.strNetworkId.raw()), RTEXITCODE_FAILURE);
+    if (strProvider.isNotEmpty())
+        CHECK_ERROR2_RET(hrc, cloudNetwork, COMSETTER(Provider)(strProvider.raw()), RTEXITCODE_FAILURE);
+    if (strProfile.isNotEmpty())
+        CHECK_ERROR2_RET(hrc, cloudNetwork, COMSETTER(Profile)(strProfile.raw()), RTEXITCODE_FAILURE);
+
+    return RTEXITCODE_SUCCESS;
+}
+
+
+static RTEXITCODE createCloudNetwork(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT pCommonOpts)
+{
+    HRESULT hrc = S_OK;
+    hrc = checkAndSetCommonOptions(a, pCommonOpts);
+    if (FAILED(hrc))
+        return RTEXITCODE_FAILURE;
+
+    /* Required parameters, the rest is handled in update */
+    static const RTGETOPTDEF s_aOptions[] =
+    {
+        { "--disable",        'd', RTGETOPT_REQ_NOTHING },
+        { "--enable",         'e', RTGETOPT_REQ_NOTHING },
+        { "--network-id",     'i', RTGETOPT_REQ_STRING },
+        { "--name",           'n', RTGETOPT_REQ_STRING },
+    };
+
+    RTGETOPTSTATE GetState;
+    RTGETOPTUNION ValueUnion;
+    int vrc = RTGetOptInit(&GetState, a->argc, a->argv, s_aOptions, RT_ELEMENTS(s_aOptions), iFirst, 0);
+    AssertRCReturn(vrc, RTEXITCODE_FAILURE);
+
+    CLOUDNETOPT options;
+    options.fEnable = FALSE;
+    options.fDisable = FALSE;
+
+    int c;
+    while ((c = RTGetOpt(&GetState, &ValueUnion)) != 0)
+    {
+        switch (c)
+        {
+            case 'd':
+                options.fDisable = TRUE;
+                break;
+            case 'e':
+                options.fEnable = TRUE;
+                break;
+            case 'i':
+                options.strNetworkId=ValueUnion.psz;
+                break;
+            case 'n':
+                options.strNetworkName=ValueUnion.psz;
+                break;
+            case VINF_GETOPT_NOT_OPTION:
+                return errorUnknownSubcommand(ValueUnion.psz);
+            default:
+                return errorGetOpt(c, &ValueUnion);
+        }
+    }
+
+    if (options.strNetworkName.isEmpty())
+        return errorArgument("Missing --name parameter");
+    if (options.strNetworkId.isEmpty())
+        return errorArgument("Missing --network-id parameter");
+
+    ComPtr<IVirtualBox> pVirtualBox = a->virtualBox;
+
+    ComPtr<ICloudNetwork> cloudNetwork;
+    CHECK_ERROR2_RET(hrc, pVirtualBox,
+                     CreateCloudNetwork(options.strNetworkName.raw(), cloudNetwork.asOutParam()),
+                     RTEXITCODE_FAILURE);
+
+    /* Fill out the created network */
+    RTEXITCODE rc = createUpdateCloudNetworkCommon(cloudNetwork, options, pCommonOpts);
+    if (RT_SUCCESS(rc))
+        RTPrintf("Cloud network was created successfully\n");
+
+    return rc;
+}
+
+
+static RTEXITCODE showCloudNetworkInfo(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT pCommonOpts)
+{
+    RT_NOREF(pCommonOpts);
+    HRESULT hrc = S_OK;
+    static const RTGETOPTDEF s_aOptions[] =
+    {
+        { "--name",           'n', RTGETOPT_REQ_STRING },
+    };
+    RTGETOPTSTATE GetState;
+    RTGETOPTUNION ValueUnion;
+    int vrc = RTGetOptInit(&GetState, a->argc, a->argv, s_aOptions, RT_ELEMENTS(s_aOptions), iFirst, 0);
+    AssertRCReturn(vrc, RTEXITCODE_FAILURE);
+
+    Bstr strNetworkName;
+
+    int c;
+    while ((c = RTGetOpt(&GetState, &ValueUnion)) != 0)
+    {
+        switch (c)
+        {
+            case 'n':
+                strNetworkName=ValueUnion.psz;
+                break;
+            case VINF_GETOPT_NOT_OPTION:
+                return errorUnknownSubcommand(ValueUnion.psz);
+            default:
+                return errorGetOpt(c, &ValueUnion);
+        }
+    }
+
+    if (strNetworkName.isEmpty())
+        return errorArgument("Missing --name parameter");
+
+    ComPtr<IVirtualBox> pVirtualBox = a->virtualBox;
+    ComPtr<ICloudNetwork> cloudNetwork;
+    CHECK_ERROR2_RET(hrc, pVirtualBox,
+                     FindCloudNetworkByName(strNetworkName.raw(), cloudNetwork.asOutParam()),
+                     RTEXITCODE_FAILURE);
+
+    RTPrintf("Name:            %ls\n", strNetworkName.raw());
+    BOOL fEnabled = FALSE;
+    cloudNetwork->COMGETTER(Enabled)(&fEnabled);
+    RTPrintf("State:           %s\n", fEnabled ? "Enabled" : "Disabled");
+    Bstr Provider;
+    cloudNetwork->COMGETTER(Provider)(Provider.asOutParam());
+    RTPrintf("CloudProvider:   %ls\n", Provider.raw());
+    Bstr Profile;
+    cloudNetwork->COMGETTER(Profile)(Profile.asOutParam());
+    RTPrintf("CloudProfile:    %ls\n", Profile.raw());
+    Bstr NetworkId;
+    cloudNetwork->COMGETTER(NetworkId)(NetworkId.asOutParam());
+    RTPrintf("CloudNetworkId:  %ls\n", NetworkId.raw());
+    Bstr netName = BstrFmt("cloud-%ls", strNetworkName.raw());
+    RTPrintf("VBoxNetworkName: %ls\n\n", netName.raw());
+
+    return RTEXITCODE_SUCCESS;
+}
+
+
+static RTEXITCODE updateCloudNetwork(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT pCommonOpts)
+{
+    HRESULT hrc = S_OK;
+
+    static const RTGETOPTDEF s_aOptions[] =
+    {
+        { "--disable",        'd', RTGETOPT_REQ_NOTHING },
+        { "--enable",         'e', RTGETOPT_REQ_NOTHING },
+        { "--network-id",     'i', RTGETOPT_REQ_STRING },
+        { "--name",           'n', RTGETOPT_REQ_STRING },
+    };
+
+    RTGETOPTSTATE GetState;
+    RTGETOPTUNION ValueUnion;
+    int vrc = RTGetOptInit(&GetState, a->argc, a->argv, s_aOptions, RT_ELEMENTS(s_aOptions), iFirst, 0);
+    AssertRCReturn(vrc, RTEXITCODE_FAILURE);
+
+    CLOUDNETOPT options;
+    options.fEnable = FALSE;
+    options.fDisable = FALSE;
+
+    int c;
+    while ((c = RTGetOpt(&GetState, &ValueUnion)) != 0)
+    {
+        switch (c)
+        {
+            case 'd':
+                options.fDisable = TRUE;
+                break;
+            case 'e':
+                options.fEnable = TRUE;
+                break;
+            case 'i':
+                options.strNetworkId=ValueUnion.psz;
+                break;
+            case 'n':
+                options.strNetworkName=ValueUnion.psz;
+                break;
+            case VINF_GETOPT_NOT_OPTION:
+                return errorUnknownSubcommand(ValueUnion.psz);
+            default:
+                return errorGetOpt(c, &ValueUnion);
+        }
+    }
+
+    if (options.strNetworkName.isEmpty())
+        return errorArgument("Missing --name parameter");
+
+    ComPtr<IVirtualBox> pVirtualBox = a->virtualBox;
+    ComPtr<ICloudNetwork> cloudNetwork;
+    CHECK_ERROR2_RET(hrc, pVirtualBox,
+                     FindCloudNetworkByName(options.strNetworkName.raw(), cloudNetwork.asOutParam()),
+                     RTEXITCODE_FAILURE);
+
+    RTEXITCODE rc = createUpdateCloudNetworkCommon(cloudNetwork, options, pCommonOpts);
+    if (RT_SUCCESS(rc))
+        RTPrintf("Cloud network %ls was updated successfully\n", options.strNetworkName.raw());
+
+    return rc;
+}
+
+
+static RTEXITCODE deleteCloudNetwork(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT pCommonOpts)
+{
+    RT_NOREF(pCommonOpts);
+    HRESULT hrc = S_OK;
+    static const RTGETOPTDEF s_aOptions[] =
+    {
+        { "--name",           'n', RTGETOPT_REQ_STRING },
+    };
+    RTGETOPTSTATE GetState;
+    RTGETOPTUNION ValueUnion;
+    int vrc = RTGetOptInit(&GetState, a->argc, a->argv, s_aOptions, RT_ELEMENTS(s_aOptions), iFirst, 0);
+    AssertRCReturn(vrc, RTEXITCODE_FAILURE);
+
+    Bstr strNetworkName;
+
+    int c;
+    while ((c = RTGetOpt(&GetState, &ValueUnion)) != 0)
+    {
+        switch (c)
+        {
+            case 'n':
+                strNetworkName=ValueUnion.psz;
+                break;
+            case VINF_GETOPT_NOT_OPTION:
+                return errorUnknownSubcommand(ValueUnion.psz);
+            default:
+                return errorGetOpt(c, &ValueUnion);
+        }
+    }
+
+    if (strNetworkName.isEmpty())
+        return errorArgument("Missing --name parameter");
+
+    ComPtr<IVirtualBox> pVirtualBox = a->virtualBox;
+    ComPtr<ICloudNetwork> cloudNetwork;
+    CHECK_ERROR2_RET(hrc, pVirtualBox,
+                     FindCloudNetworkByName(strNetworkName.raw(), cloudNetwork.asOutParam()),
+                     RTEXITCODE_FAILURE);
+
+    CHECK_ERROR2_RET(hrc, pVirtualBox,
+                     RemoveCloudNetwork(cloudNetwork),
+                     RTEXITCODE_FAILURE);
+
+    if (SUCCEEDED(hrc))
+        RTPrintf("Cloud network %ls was deleted successfully\n", strNetworkName.raw());
+
+    return SUCCEEDED(hrc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
+}
+
+
+static RTEXITCODE handleCloudNetwork(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT pCommonOpts)
+{
+    if (a->argc < 1)
+        return errorNoSubcommand();
+
+    static const RTGETOPTDEF s_aOptions[] =
+    {
+        { "create",         1000, RTGETOPT_REQ_NOTHING },
+        { "info",           1001, RTGETOPT_REQ_NOTHING },
+        { "update",         1002, RTGETOPT_REQ_NOTHING },
+        { "delete",         1003, RTGETOPT_REQ_NOTHING }
+    };
+
+    RTGETOPTSTATE GetState;
+    int vrc = RTGetOptInit(&GetState, a->argc, a->argv, s_aOptions, RT_ELEMENTS(s_aOptions), iFirst, 0);
+    AssertRCReturn(vrc, RTEXITCODE_FAILURE);
+
+    int c;
+    RTGETOPTUNION ValueUnion;
+    while ((c = RTGetOpt(&GetState, &ValueUnion)) != 0)
+    {
+        switch (c)
+        {
+            /* Sub-commands: */
+            case 1000:
+                return createCloudNetwork(a, GetState.iNext, pCommonOpts);
+            case 1001:
+                return showCloudNetworkInfo(a, GetState.iNext, pCommonOpts);
+            case 1002:
+                return updateCloudNetwork(a, GetState.iNext, pCommonOpts);
+            case 1003:
+                return deleteCloudNetwork(a, GetState.iNext, pCommonOpts);
+            case VINF_GETOPT_NOT_OPTION:
+                return errorUnknownSubcommand(ValueUnion.psz);
+
+            default:
+                return errorGetOpt(c, &ValueUnion);
+        }
+    }
+
+    return errorNoSubcommand();
+}
+#endif /* VBOX_WITH_CLOUD_NET */
+
+
 RTEXITCODE handleCloud(HandlerArg *a)
 {
     if (a->argc < 1)
@@ -1640,6 +1959,10 @@ RTEXITCODE handleCloud(HandlerArg *a)
                 return handleCloudImage(a, GetState.iNext, &commonOpts);
             case 1002:
                 return handleCloudInstance(a, GetState.iNext, &commonOpts);
+#ifdef VBOX_WITH_CLOUD_NET
+            case 1003:
+                return handleCloudNetwork(a, GetState.iNext, &commonOpts);
+#endif /* VBOX_WITH_CLOUD_NET */
             case VINF_GETOPT_NOT_OPTION:
                 return errorUnknownSubcommand(ValueUnion.psz);
 
