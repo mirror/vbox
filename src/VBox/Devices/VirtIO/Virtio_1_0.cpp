@@ -424,6 +424,42 @@ void virtioCoreHexDump(uint8_t *pv, uint32_t cb, uint32_t uBase, const char *psz
     RT_NOREF2(uBase, pv);
 }
 
+/**
+ * Do a hex dump of memory in guest physical context
+ *
+ * @param   gcPhys      pointer to buffer to dump contents of
+ * @param   cb          count of characters to dump from buffer
+ * @param   uBase       base address of per-row address prefixing of hex output
+ * @param   pszTitle    Optional title. If present displays title that lists
+ *                      provided text with value of cb to indicate size next to it.
+ */
+void virtioCoreGcPhysHexDump(PPDMDEVINS pDevIns, RTGCPHYS gcPhys, uint32_t cb, uint32_t uBase, const char *pszTitle)
+{
+    if (pszTitle)
+        Log(("%s [%d bytes]:\n", pszTitle, cb));
+    for (uint32_t row = 0; row < RT_MAX(1, (cb / 16) + 1) && row * 16 < cb; row++)
+    {
+        uint8_t c;
+        Log(("%04x: ", row * 16 + uBase)); /* line address */
+        for (uint8_t col = 0; col < 16; col++)
+        {
+           uint32_t idx = row * 16 + col;
+           PDMDevHlpPCIPhysRead(pDevIns, gcPhys + idx, &c, 1);
+           if (idx >= cb)
+               Log(("-- %s", (col + 1) % 8 ? "" : "  "));
+           else
+               Log(("%02x %s", c, (col + 1) % 8 ? "" : "  "));
+        }
+        for (uint32_t idx = row * 16; idx < row * 16 + 16; idx++)
+        {
+           PDMDevHlpPCIPhysRead(pDevIns, gcPhys + idx, &c, 1);
+           Log(("%c", (idx >= cb) ? ' ' : (c >= 0x20 && c <= 0x7e ? c : '.')));
+        }
+        Log(("\n"));
+    }
+    Log(("\n"));
+    RT_NOREF(uBase);
+}
 #endif /* LOG_ENABLED */
 
 /**
@@ -875,7 +911,7 @@ int virtioCoreR3QueuePut(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t idxQu
      * control commands or error return values)... The bulk of req data xfers to phys mem
      * is handled by client */
 
-    size_t cbCopy = 0, cbTotal, cbRemain;
+    size_t cbCopy = 0, cbTotal = 0, cbRemain = 0;
 
     if (pSgVirtReturn)
     {
