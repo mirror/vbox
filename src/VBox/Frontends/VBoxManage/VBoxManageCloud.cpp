@@ -1617,15 +1617,25 @@ static RTEXITCODE createUpdateCloudNetworkCommon(ComPtr<ICloudNetwork> cloudNetw
     Bstr strProfile = pCommonOpts->profile.pszProfileName;
 
     if (options.fEnable)
+    {
         CHECK_ERROR2_RET(hrc, cloudNetwork, COMSETTER(Enabled)(TRUE), RTEXITCODE_FAILURE);
+    }
     if (options.fDisable)
+    {
         CHECK_ERROR2_RET(hrc, cloudNetwork, COMSETTER(Enabled)(FALSE), RTEXITCODE_FAILURE);
+    }
     if (options.strNetworkId.isNotEmpty())
+    {
         CHECK_ERROR2_RET(hrc, cloudNetwork, COMSETTER(NetworkId)(options.strNetworkId.raw()), RTEXITCODE_FAILURE);
+    }
     if (strProvider.isNotEmpty())
+    {
         CHECK_ERROR2_RET(hrc, cloudNetwork, COMSETTER(Provider)(strProvider.raw()), RTEXITCODE_FAILURE);
+    }
     if (strProfile.isNotEmpty())
+    {
         CHECK_ERROR2_RET(hrc, cloudNetwork, COMSETTER(Profile)(strProfile.raw()), RTEXITCODE_FAILURE);
+    }
 
     return RTEXITCODE_SUCCESS;
 }

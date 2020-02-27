@@ -7364,10 +7364,10 @@ HRESULT Machine::i_connectToCloudNetwork(ProgressProxy *aProgress)
 
     HRESULT hrc = E_FAIL;
     Bstr name;
-    ULONG iSlot = ULONG_MAX;
+    int iSlot = -1;
 
     LogFlowThisFunc(("Checking if cloud network needs to be connected\n"));
-    for (ULONG slot = 0; slot < mNetworkAdapters.size(); ++slot)
+    for (int slot = 0; slot < mNetworkAdapters.size(); ++slot)
     {
         BOOL enabled;
         hrc = mNetworkAdapters[slot]->COMGETTER(Enabled)(&enabled);
@@ -7423,7 +7423,7 @@ HRESULT Machine::i_connectToCloudNetwork(ProgressProxy *aProgress)
         if (FAILED(hrc))
         {
             LogRel(("OCI-NET: Failed to obtain valid MAC address (%s) from cloud gateway '%ls'.\n",
-                    strMacAddress, name.raw()));
+                    strMacAddress.c_str(), name.raw()));
             return hrc;
         }
         hrc = startGateways(mParent, network, gateways);
@@ -7433,7 +7433,7 @@ HRESULT Machine::i_connectToCloudNetwork(ProgressProxy *aProgress)
         alock.release();
         if (SUCCEEDED(hrc))
         {
-            if (iSlot == ULONG_MAX)
+            if (iSlot == -1)
                 LogRel(("OCI-NET: No slot information available for cloud network attachment!\n"));
             else
             {

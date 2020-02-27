@@ -1695,9 +1695,9 @@ NATNetwork::NATNetwork() :
  * Constructor. Needs to set sane defaults which stand the test of time.
  */
 CloudNetwork::CloudNetwork() :
-    fEnabled(true),
     strProviderShortName("OCI"),
-    strProfileName("Default")
+    strProfileName("Default"),
+    fEnabled(true)
 {
 }
 #endif /* VBOX_WITH_CLOUD_NET */

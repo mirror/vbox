@@ -5827,7 +5827,7 @@ int Console::i_configNetwork(const char *pszDevice,
                 {
                     InsertConfigString(pLunL0, "Driver", "IntNet");
                     InsertConfigNode(pLunL0, "Config", &pCfg);
-                    InsertConfigString(pCfg, "Network", BstrFmt("cloud-%ls", bstr));
+                    InsertConfigString(pCfg, "Network", BstrFmt("cloud-%ls", bstr.raw()));
                     InsertConfigInteger(pCfg, "TrunkType", kIntNetTrunkType_WhateverNone);
                     InsertConfigString(pCfg, "IfPolicyPromisc", pszPromiscuousGuestPolicy);
                     networkName = bstr;
