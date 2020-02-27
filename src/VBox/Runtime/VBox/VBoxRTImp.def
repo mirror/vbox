@@ -995,6 +995,9 @@ EXPORTS
     RTErrInfoSet
     RTErrInfoSetF
     RTErrInfoSetV
+    RTIniFileCreateFromVfsFile
+    RTIniFileQueryValue
+    RTIniFileRelease
     RTFileAioCtxAssociateWithFile
     RTFileAioCtxCreate
     RTFileAioCtxDestroy
