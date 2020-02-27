@@ -7367,7 +7367,7 @@ HRESULT Machine::i_connectToCloudNetwork(ProgressProxy *aProgress)
     int iSlot = -1;
 
     LogFlowThisFunc(("Checking if cloud network needs to be connected\n"));
-    for (int slot = 0; slot < mNetworkAdapters.size(); ++slot)
+    for (int slot = 0; (unsigned)slot < mNetworkAdapters.size(); ++slot)
     {
         BOOL enabled;
         hrc = mNetworkAdapters[slot]->COMGETTER(Enabled)(&enabled);
