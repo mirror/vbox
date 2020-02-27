@@ -170,7 +170,6 @@ static void queryMonitorPositions()
         VBClLogError("Could not get monitor info\n");
     else
     {
-        getMonitorIdFromName("virtual123");
         mpMonitorPositions = (RTPOINT*)malloc(x11Context.hOutputCount * sizeof(RTPOINT));
         /** @todo memset? */
         for (int i = 0; i < x11Context.hOutputCount; ++i)
@@ -191,7 +190,7 @@ static void queryMonitorPositions()
             mpMonitorPositions[iMonitorID].y = pMonitorInfo[i].y;
         }
         if (iMonitorCount > 0)
-            mHostMonitorPositionSendCallback(mpMonitorPositions, x11Context.hOutputCount);
+            sendMonitorPositions(mpMonitorPositions, x11Context.hOutputCount);
     }
     XRRFreeMonitors(pMonitorInfo);
 }
@@ -306,16 +305,19 @@ static void x11Connect()
     {
         XCloseDisplay(x11Context.pDisplay);
         x11Context.pDisplay = NULL;
+        return;
     }
     if (!XRRQueryExtension(x11Context.pDisplay, &x11Context.hRandREventBase, &x11Context.hRandRErrorBase))
     {
         XCloseDisplay(x11Context.pDisplay);
         x11Context.pDisplay = NULL;
+        return;
     }
     if (!XRRQueryVersion(x11Context.pDisplay, &x11Context.hRandRMajor, &x11Context.hRandRMinor))
     {
         XCloseDisplay(x11Context.pDisplay);
         x11Context.pDisplay = NULL;
+        return;
     }
     x11Context.hEventMask = 0;
 #ifndef OLD_JUNK
