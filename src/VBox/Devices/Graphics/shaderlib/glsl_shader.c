@@ -1055,6 +1055,39 @@ static void shader_generate_glsl_declarations(const struct wined3d_context *cont
         if (map & 1) shader_addline(buffer, "void subroutine%u();\n", i);
     }
 
+#ifdef VBOX_WITH_VMSVGA
+    /* Declare texture samplers before the constants in order to workaround a NVidia driver quirk. */
+    for (i = 0; i < This->baseShader.limits.sampler; i++) {
+        if (reg_maps->sampler_type[i])
+        {
+            switch (reg_maps->sampler_type[i])
+            {
+                case WINED3DSTT_1D:
+                    shader_addline(buffer, "uniform sampler1D %csampler%u;\n", prefix, i);
+                    break;
+                case WINED3DSTT_2D:
+                    if(device->stateBlock->textures[i] &&
+                       IWineD3DBaseTexture_GetTextureDimensions(device->stateBlock->textures[i]) == GL_TEXTURE_RECTANGLE_ARB) {
+                        shader_addline(buffer, "uniform sampler2DRect %csampler%u;\n", prefix, i);
+                    } else {
+                        shader_addline(buffer, "uniform sampler2D %csampler%u;\n", prefix, i);
+                    }
+                    break;
+                case WINED3DSTT_CUBE:
+                    shader_addline(buffer, "uniform samplerCube %csampler%u;\n", prefix, i);
+                    break;
+                case WINED3DSTT_VOLUME:
+                    shader_addline(buffer, "uniform sampler3D %csampler%u;\n", prefix, i);
+                    break;
+                default:
+                    shader_addline(buffer, "uniform unsupported_sampler %csampler%u;\n", prefix, i);
+                    FIXME("Unrecognized sampler type: %#x\n", reg_maps->sampler_type[i]);
+                    break;
+            }
+        }
+    }
+#endif
+
     /* Declare the constants (aka uniforms) */
     if (This->baseShader.limits.constant_float > 0) {
         unsigned max_constantsF;
@@ -1215,6 +1248,9 @@ static void shader_generate_glsl_declarations(const struct wined3d_context *cont
         }
     }
 
+#ifdef VBOX_WITH_VMSVGA
+    /* Declare texture samplers before the constants in order to workaround a NVidia driver quirk. */
+#else
     /* Declare texture samplers */
     for (i = 0; i < This->baseShader.limits.sampler; i++) {
         if (reg_maps->sampler_type[i])
@@ -1245,6 +1281,7 @@ static void shader_generate_glsl_declarations(const struct wined3d_context *cont
             }
         }
     }
+#endif
 
     /* Declare uniforms for NP2 texcoord fixup:
      * This is NOT done inside the loop that declares the texture samplers since the NP2 fixup code
