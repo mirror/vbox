@@ -42,7 +42,6 @@ UIDetailsSet::UIDetailsSet(UIDetailsItem *pParent)
     , m_fHasDetails(false)
     , m_configurationAccessLevel(ConfigurationAccessLevel_Null)
     , m_pBuildStep(0)
-    , m_iLastStepNumber(-1)
 {
     /* Add set to the parent group: */
     parentItem()->addItem(this);
@@ -72,72 +71,67 @@ void UIDetailsSet::buildSet(UIVirtualMachineItem *pMachineItem, bool fFullSet, c
     m_fFullSet = fFullSet;
     m_settings = settings;
 
-    /* Cleanup superfluous items: */
-    if (   !m_fHasDetails
-        || !m_fIsLocal
-        || !m_fFullSet)
-    {
-        int iFirstItem = !m_fHasDetails
-                       ? DetailsElementType_General
-                       : !m_fIsLocal
-                       ? DetailsElementType_Preview
-                       : DetailsElementType_Display;
-        int iLastItem = DetailsElementType_Description;
-        bool fCleanupPerformed = false;
-        for (int i = iFirstItem; i <= iLastItem; ++i)
-            if (m_elements.contains(i))
-            {
-                delete m_elements[i];
-                fCleanupPerformed = true;
-            }
-        if (fCleanupPerformed)
-            updateGeometry();
-    }
+    /* Prepare a list of types to build: */
+    QList<DetailsElementType> types;
 
     /* Make sure we have details: */
-    if (!m_fHasDetails)
+    if (m_fHasDetails)
     {
-        /* Reset last-step number: */
-        m_iLastStepNumber = -1;
-        /* Notify parent group we are built: */
+        /* Special handling wrt item type: */
+        switch (m_pMachineItem->itemType())
+        {
+            case UIVirtualMachineItem::ItemType_Local:
+            {
+                /* Get local machine: */
+                m_machine = m_pMachineItem->toLocal()->machine();
+
+                /* Compose a list of types to build: */
+                if (m_fFullSet)
+                    types << DetailsElementType_General << DetailsElementType_System << DetailsElementType_Preview
+                          << DetailsElementType_Display << DetailsElementType_Storage << DetailsElementType_Audio
+                          << DetailsElementType_Network << DetailsElementType_Serial << DetailsElementType_USB
+                          << DetailsElementType_SF << DetailsElementType_UI << DetailsElementType_Description;
+                else
+                    types << DetailsElementType_General << DetailsElementType_System << DetailsElementType_Preview;
+
+                /* Take into account USB controller restrictions: */
+                const CUSBDeviceFilters &filters = m_machine.GetUSBDeviceFilters();
+                if (filters.isNull() || !m_machine.GetUSBProxyAvailable())
+                    m_settings.remove(DetailsElementType_USB);
+
+                break;
+            }
+            case UIVirtualMachineItem::ItemType_CloudReal:
+            {
+                /* Get cloud machine: */
+                m_cloudMachine = m_pMachineItem->toCloud()->machine();
+
+                /* Compose a list of types to build: */
+                types << DetailsElementType_General << DetailsElementType_System;
+
+                break;
+            }
+            default:
+                break;
+        }
+    }
+
+    /* Cleanup if new types differs from old: */
+    if (m_types != types)
+    {
+        qDeleteAll(m_elements);
+        m_elements.clear();
+        updateGeometry();
+    }
+
+    /* Remember new types: */
+    m_types = types;
+
+    /* Build or emit fake signal: */
+    if (m_fHasDetails)
+        rebuildSet();
+    else
         emit sigBuildDone();
-        return;
-    }
-
-    /* Special handling wrt item type: */
-    switch (m_pMachineItem->itemType())
-    {
-        case UIVirtualMachineItem::ItemType_Local:
-        {
-            /* Get local machine: */
-            m_machine = m_pMachineItem->toLocal()->machine();
-
-            /* Choose last-step number: */
-            m_iLastStepNumber = m_fFullSet ? DetailsElementType_Description : DetailsElementType_Preview;
-
-            /* Fetch USB controller restrictions: */
-            const CUSBDeviceFilters &filters = m_machine.GetUSBDeviceFilters();
-            if (filters.isNull() || !m_machine.GetUSBProxyAvailable())
-                m_settings.remove(DetailsElementType_USB);
-
-            break;
-        }
-        case UIVirtualMachineItem::ItemType_CloudReal:
-        {
-            /* Get cloud machine: */
-            m_cloudMachine = m_pMachineItem->toCloud()->machine();
-
-            /* Choose last-step number: */
-            m_iLastStepNumber = DetailsElementType_System;
-
-            break;
-        }
-        default:
-            break;
-    }
-
-    /* Start building set: */
-    rebuildSet();
 }
 
 void UIDetailsSet::sltBuildStep(const QUuid &uStepId, int iStepNumber)
@@ -151,10 +145,10 @@ void UIDetailsSet::sltBuildStep(const QUuid &uStepId, int iStepNumber)
         return;
 
     /* Step number feats the bounds: */
-    if (iStepNumber >= 0 && iStepNumber <= m_iLastStepNumber)
+    if (iStepNumber >= 0 && iStepNumber < m_types.size())
     {
         /* Load details settings: */
-        DetailsElementType enmElementType = (DetailsElementType)iStepNumber;
+        const DetailsElementType enmElementType = m_types.at(iStepNumber);
         /* Should the element be visible? */
         bool fVisible = m_settings.contains(enmElementType);
         /* Should the element be opened? */
@@ -645,7 +639,7 @@ void UIDetailsSet::rebuildSet()
     m_uSetId = QUuid::createUuid();
 
     /* Request to build first step: */
-    emit sigBuildStep(m_uSetId, DetailsElementType_General);
+    emit sigBuildStep(m_uSetId, 0);
 }
 
 UIDetailsElement *UIDetailsSet::createElement(DetailsElementType enmElementType, bool fOpen)
