@@ -207,7 +207,7 @@ int UICloudNetworkingStuff::fetchCpuCount(const QMap<KVirtualSystemDescriptionTy
     return infoMap.value(KVirtualSystemDescriptionType_CPU).toInt();
 }
 
-QString UICloudNetworkingStuff::fetchInstanceShape(const QMap<KVirtualSystemDescriptionType, QString> &infoMap)
+QString UICloudNetworkingStuff::fetchShape(const QMap<KVirtualSystemDescriptionType, QString> &infoMap)
 {
     /* Return instance shape value: */
     return infoMap.value(KVirtualSystemDescriptionType_CloudInstanceShape);
@@ -236,4 +236,10 @@ QString UICloudNetworkingStuff::fetchBootingFirmware(const QMap<KVirtualSystemDe
 {
     /* Return booting firmware value: */
     return infoMap.value(KVirtualSystemDescriptionType_BootingFirmware);
+}
+
+QString UICloudNetworkingStuff::fetchImageId(const QMap<KVirtualSystemDescriptionType, QString> &infoMap)
+{
+    /* Return image id value: */
+    return infoMap.value(KVirtualSystemDescriptionType_CloudImageId);
 }

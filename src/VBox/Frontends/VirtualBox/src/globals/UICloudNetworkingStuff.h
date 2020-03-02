@@ -41,7 +41,7 @@ namespace UICloudNetworkingStuff
 
     /** Acquires instance info as a map.
       * @param  comCloudClient  Brings cloud client object.
-      * @param  strId           Brings cloud VM id.
+      * @param  strId           Brings cloud instance id.
       * @param  pWidget         Brings parent widget to show messages according to,
       *                         if no parent set, progress will be executed in blocking way. */
     SHARED_LIBRARY_STUFF QMap<KVirtualSystemDescriptionType, QString> getInstanceInfo(const CCloudClient &comCloudClient,
@@ -49,7 +49,7 @@ namespace UICloudNetworkingStuff
                                                                                       QWidget *pParent = 0);
     /** Acquires instance info of certain @a enmType as a string.
       * @param  comCloudClient  Brings cloud client object.
-      * @param  strId           Brings cloud VM id.
+      * @param  strId           Brings cloud instance id.
       * @param  pWidget         Brings parent widget to show messages according to,
       *                         if no parent set, progress will be executed in blocking way. */
     SHARED_LIBRARY_STUFF QString getInstanceInfo(KVirtualSystemDescriptionType enmType,
@@ -57,20 +57,22 @@ namespace UICloudNetworkingStuff
                                                  const QString &strId,
                                                  QWidget *pParent = 0);
 
-    /** Fetches cloud VM OS type from the passed @a info. */
+    /** Fetches cloud instance OS type from the passed @a info. */
     SHARED_LIBRARY_STUFF QString fetchOsType(const QMap<KVirtualSystemDescriptionType, QString> &infoMap);
-    /** Fetches cloud VM memory size from the passed @a info. */
+    /** Fetches cloud instance memory size from the passed @a info. */
     SHARED_LIBRARY_STUFF int fetchMemorySize(const QMap<KVirtualSystemDescriptionType, QString> &infoMap);
-    /** Fetches cloud VM CPU count from the passed @a info. */
+    /** Fetches cloud instance CPU count from the passed @a info. */
     SHARED_LIBRARY_STUFF int fetchCpuCount(const QMap<KVirtualSystemDescriptionType, QString> &infoMap);
-    /** Fetches cloud VM instance shape from the passed @a info. */
-    SHARED_LIBRARY_STUFF QString fetchInstanceShape(const QMap<KVirtualSystemDescriptionType, QString> &infoMap);
-    /** Fetches cloud VM domain from the passed @a info. */
+    /** Fetches cloud instance shape from the passed @a info. */
+    SHARED_LIBRARY_STUFF QString fetchShape(const QMap<KVirtualSystemDescriptionType, QString> &infoMap);
+    /** Fetches cloud instance domain from the passed @a info. */
     SHARED_LIBRARY_STUFF QString fetchDomain(const QMap<KVirtualSystemDescriptionType, QString> &infoMap);
-    /** Fetches cloud VM state from the passed @a info. */
+    /** Fetches cloud instance state from the passed @a info. */
     SHARED_LIBRARY_STUFF KMachineState fetchMachineState(const QMap<KVirtualSystemDescriptionType, QString> &infoMap);
-    /** Fetches cloud VM booting firmware from the passed @a info. */
+    /** Fetches cloud instance booting firmware from the passed @a info. */
     SHARED_LIBRARY_STUFF QString fetchBootingFirmware(const QMap<KVirtualSystemDescriptionType, QString> &infoMap);
+    /** Fetches cloud instance image id from the passed @a info. */
+    SHARED_LIBRARY_STUFF QString fetchImageId(const QMap<KVirtualSystemDescriptionType, QString> &infoMap);
 }
 
 /* Using across any module who included us: */

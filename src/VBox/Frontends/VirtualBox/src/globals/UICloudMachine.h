@@ -78,6 +78,8 @@ public:
     QString domain() const { return m_strDomain; }
     /** Returns cloud VM booting firmware. */
     QString bootingFirmware() const { return m_strBootingFirmware; }
+    /** Returns cloud VM image id. */
+    QString imageId() const { return m_strImageId; }
 
 private:
 
@@ -107,6 +109,8 @@ private:
     QString  m_strDomain;
     /** Holds the cloud VM booting firmware. */
     QString  m_strBootingFirmware;
+    /** Holds the cloud VM image id. */
+    QString  m_strImageId;
 };
 
 /** Class representing cloud VM wrapper.
@@ -161,6 +165,8 @@ public:
     QString domain() const { return d->domain(); }
     /** Returns cloud VM booting firmware. */
     QString bootingFirmware() const { return d->bootingFirmware(); }
+    /** Returns cloud VM image id. */
+    QString imageId() const { return d->imageId(); }
 
 private:
 

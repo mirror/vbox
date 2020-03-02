@@ -41,6 +41,7 @@ UICloudMachineData::UICloudMachineData(const CCloudClient &comCloudClient,
     //, m_strInstanceShape("None")
     //, m_strDomain("None")
     //, m_strBootingFirmware("None")
+    //, m_strImageId(QString())
 {
     //printf("Data for machine with id = {%s} is created\n", m_strId.toUtf8().constData());
 }
@@ -58,6 +59,7 @@ UICloudMachineData::UICloudMachineData(const UICloudMachineData &other)
     , m_strInstanceShape(other.m_strInstanceShape)
     , m_strDomain(other.m_strDomain)
     , m_strBootingFirmware(other.m_strBootingFirmware)
+    , m_strImageId(other.m_strImageId)
 {
     //printf("Data for machine with id = {%s} is copied\n", m_strId.toUtf8().constData());
 }
@@ -70,16 +72,17 @@ UICloudMachineData::~UICloudMachineData()
 void UICloudMachineData::refresh()
 {
     /* Acquire instance info sync way, be aware, this is blocking stuff, it takes some time: */
-    const QMap<KVirtualSystemDescriptionType, QString> infoMap = getInstanceInfo(m_comCloudClient, m_strId);
+    const QMap<KVirtualSystemDescriptionType, QString> instanceInfoMap = getInstanceInfo(m_comCloudClient, m_strId);
 
     /* Refresh corresponding values: */
-    m_strOsType = fetchOsType(infoMap);
-    m_iMemorySize = fetchMemorySize(infoMap);
-    m_iCpuCount = fetchCpuCount(infoMap);
-    m_enmMachineState = fetchMachineState(infoMap);
-    m_strInstanceShape = fetchInstanceShape(infoMap);
-    m_strDomain = fetchDomain(infoMap);
-    m_strBootingFirmware = fetchBootingFirmware(infoMap);
+    m_strOsType = fetchOsType(instanceInfoMap);
+    m_iMemorySize = fetchMemorySize(instanceInfoMap);
+    m_iCpuCount = fetchCpuCount(instanceInfoMap);
+    m_enmMachineState = fetchMachineState(instanceInfoMap);
+    m_strInstanceShape = fetchShape(instanceInfoMap);
+    m_strDomain = fetchDomain(instanceInfoMap);
+    m_strBootingFirmware = fetchBootingFirmware(instanceInfoMap);
+    m_strImageId = fetchImageId(instanceInfoMap);
 }
 
 
