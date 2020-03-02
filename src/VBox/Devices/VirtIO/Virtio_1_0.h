@@ -463,6 +463,7 @@ void virtioCoreLogMappedIoValue(const char *pszFunc, const char *pszMember, uint
                                 int fWrite, int fHasIndex, uint32_t idx);
 
 void virtioCoreHexDump(uint8_t *pv, uint32_t cb, uint32_t uBase, const char *pszTitle);
+void virtioCoreGcPhysHexDump(PPDMDEVINS pDevIns, RTGCPHYS gcPhys, uint32_t cb, uint32_t uBase, const char *pszTitle);
 
 void     virtioCoreSgBufInit(PVIRTIOSGBUF pGcSgBuf, PVIRTIOSGSEG paSegs, size_t cSegs);
 void     virtioCoreSgBufReset(PVIRTIOSGBUF pGcSgBuf);

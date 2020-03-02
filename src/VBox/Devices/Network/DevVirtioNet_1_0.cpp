@@ -415,7 +415,7 @@ typedef struct VIRTIONET
     uint8_t                 aVlanFilter[VIRTIONET_MAX_VLAN_ID / sizeof(uint8_t)];
 
     bool                    fLog;
-
+    bool                    fBp;
     /* Receive-blocking-related fields ***************************************/
 
 } VIRTIONET;
@@ -567,7 +567,32 @@ DECLINLINE(void) virtioNetR3PacketDump(PVIRTIONET pThis, const uint8_t *pbPacket
     vboxEthPacketDump(INSTANCE(pThis), pszText, pbPacket, (uint32_t)cb);
 }
 
-DECLINLINE(void) virtioNetPrintFeatures(PVIRTIONET pThis, uint32_t fFeatures, const char *pcszText)
+void virtioNetDumpGcPhysRxBuf(PPDMDEVINS pDevIns, PVIRTIONET_PKT_HDR_T pRxPktHdr,
+                     uint16_t cDescs, uint8_t *pvBuf, uint16_t cb, RTGCPHYS gcPhysRxBuf, uint8_t cbRxBuf)
+{
+    PVIRTIONET pThis = PDMDEVINS_2_DATA(pDevIns, PVIRTIONET);
+    pRxPktHdr->uNumBuffers = cDescs;
+    LogFunc(("-------------------------------------------------------------------\n"));
+    LogFunc(("rxPktHdr\n"
+             "    uFlags ......... %2.2x\n"
+             "    uGsoType ....... %2.2x\n"
+             "    uHdrLen ........ %4.4x\n"
+             "    uGsoSize ....... %4.4x\n"
+             "    uChksumStart ... %4.4x\n"
+             "    uChksumOffset .. %4.4x\n"
+             "    uNumBuffers .... %4.4x\n",
+                    pRxPktHdr->uFlags,
+                    pRxPktHdr->uGsoType, pRxPktHdr->uHdrLen, pRxPktHdr->uGsoSize,
+                    pRxPktHdr->uChksumStart, pRxPktHdr->uChksumOffset, pRxPktHdr->uNumBuffers));
+
+    virtioCoreHexDump((uint8_t *)pRxPktHdr, sizeof(VIRTIONET_PKT_HDR_T), 0, "Dump of virtual rPktHdr");
+    virtioNetR3PacketDump(pThis, (const uint8_t *)pvBuf, cb, "<-- Incoming");
+    LogFunc((". . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .\n"));
+    virtioCoreGcPhysHexDump(pDevIns, gcPhysRxBuf, cbRxBuf, 0, "Phys Mem Dump of Rx pkt");
+    LogFunc(("-------------------------------------------------------------------\n"));
+}
+
+DECLINLINE(void) virtioNetPrintFeatures(uint32_t fFeatures, const char *pcszText)
 {
 #ifdef LOG_ENABLED
     static struct
@@ -576,34 +601,41 @@ DECLINLINE(void) virtioNetPrintFeatures(PVIRTIONET pThis, uint32_t fFeatures, co
         const char *pcszDesc;
     } const s_aFeatures[] =
     {
-        { VIRTIONET_F_CSUM,                "Host handles packets with partial checksum." },
-        { VIRTIONET_F_GUEST_CSUM,          "Guest handles packets with partial checksum." },
-        { VIRTIONET_F_CTRL_GUEST_OFFLOADS, "Control channel offloads reconfiguration support." },
-        { VIRTIONET_F_MAC,                 "Host has given MAC address." },
-        { VIRTIONET_F_GUEST_TSO4,          "Guest can receive TSOv4." },
-        { VIRTIONET_F_GUEST_TSO6,          "Guest can receive TSOv6." },
-        { VIRTIONET_F_GUEST_ECN,           "Guest can receive TSO with ECN." },
-        { VIRTIONET_F_GUEST_UFO,           "Guest can receive UFO." },
-        { VIRTIONET_F_HOST_TSO4,           "Host can receive TSOv4." },
-        { VIRTIONET_F_HOST_TSO6,           "Host can receive TSOv6." },
-        { VIRTIONET_F_HOST_ECN,            "Host can receive TSO with ECN." },
-        { VIRTIONET_F_HOST_UFO,            "Host can receive UFO." },
-        { VIRTIONET_F_MRG_RXBUF,           "Guest can merge receive buffers." },
-        { VIRTIONET_F_STATUS,              "Configuration status field is available." },
-        { VIRTIONET_F_CTRL_VQ,             "Control channel is available." },
-        { VIRTIONET_F_CTRL_RX,             "Control channel RX mode support." },
-        { VIRTIONET_F_CTRL_VLAN,           "Control channel VLAN filtering." },
-        { VIRTIONET_F_GUEST_ANNOUNCE,      "Guest can send gratuitous packets." },
-        { VIRTIONET_F_MQ,                  "Host supports multiqueue with automatic receive steering." },
-        { VIRTIONET_F_CTRL_MAC_ADDR,       "Set MAC address through control channel." }
+        { VIRTIONET_F_CSUM,                "   CSUM:                Host handles packets with partial checksum.\n" },
+        { VIRTIONET_F_GUEST_CSUM,          "   GUEST_CSUM:          Guest handles packets with partial checksum.\n" },
+        { VIRTIONET_F_CTRL_GUEST_OFFLOADS, "   CTRL_GUEST_OFFLOADS: Control channel offloads reconfiguration support.\n" },
+        { VIRTIONET_F_MAC,                 "   MAC:                 Host has given MAC address.\n" },
+        { VIRTIONET_F_GUEST_TSO4,          "   GUEST_TSO4:          Guest can receive TSOv4.\n" },
+        { VIRTIONET_F_GUEST_TSO6,          "   GUEST_TSO6:          Guest can receive TSOv6.\n" },
+        { VIRTIONET_F_GUEST_ECN,           "   GUEST_ECN:           Guest can receive TSO with ECN.\n" },
+        { VIRTIONET_F_GUEST_UFO,           "   GUEST_UFO:           Guest can receive UFO.\n" },
+        { VIRTIONET_F_HOST_TSO4,           "   HOST_TSO4:           Host can receive TSOv4.\n" },
+        { VIRTIONET_F_HOST_TSO6,           "   HOST_TSO6:           Host can receive TSOv6.\n" },
+        { VIRTIONET_F_HOST_ECN,            "   HOST_ECN:            Host can receive TSO with ECN.\n" },
+        { VIRTIONET_F_HOST_UFO,            "   HOST_UFO:            Host can receive UFO.\n" },
+        { VIRTIONET_F_MRG_RXBUF,           "   MRG_RXBUF:           Guest can merge receive buffers.\n" },
+        { VIRTIONET_F_STATUS,              "   STATUS:              Configuration status field is available.\n" },
+        { VIRTIONET_F_CTRL_VQ,             "   CTRL_VQ:             Control channel is available.\n" },
+        { VIRTIONET_F_CTRL_RX,             "   CTRL_RX:             Control channel RX mode support.\n" },
+        { VIRTIONET_F_CTRL_VLAN,           "   CTRL_VLAN:           Control channel VLAN filtering.\n" },
+        { VIRTIONET_F_GUEST_ANNOUNCE,      "   GUEST_ANNOUNCE:      Guest can send gratuitous packets.\n" },
+        { VIRTIONET_F_MQ,                  "   MQ:                  Host supports multiqueue with automatic receive steering.\n" },
+        { VIRTIONET_F_CTRL_MAC_ADDR,       "   CTRL_MAC_ADDR:       Set MAC address through control channel.\n" }
     };
 
-    Log3(("%s %s:\n", INSTANCE(pThis), pcszText));
+#define MAXLINE 80
+    /* Display as a single buf to prevent interceding log messages */
+    char *pszBuf = (char *)RTMemAllocZ(RT_ELEMENTS(s_aFeatures) * 80), *cp = pszBuf;
+    Assert(pszBuf);
     for (unsigned i = 0; i < RT_ELEMENTS(s_aFeatures); ++i)
-    {
-        if (s_aFeatures[i].fMask & fFeatures)
-            Log3(("%s --> %s\n", INSTANCE(pThis), s_aFeatures[i].pcszDesc));
-    }
+        if (s_aFeatures[i].fMask & fFeatures) {
+            int len = RTStrNLen(s_aFeatures[i].pcszDesc, MAXLINE);
+            memcpy(cp, s_aFeatures[i].pcszDesc, len); /* intentionally drop trailing '\0' */
+            cp += len;
+        }
+    Log3(("%s:\n%s\n", pcszText, pszBuf));
+    RTMemFree(pszBuf);
+
 #else  /* !LOG_ENABLED */
     RT_NOREF3(pThis, fFeatures, pcszText);
 #endif /* !LOG_ENABLED */
@@ -1275,7 +1307,7 @@ static bool virtioNetR3AddressFilter(PVIRTIONET pThis, const void *pvBuf, size_t
         Log11Func(("\n%s not our VLAN, returning false\n", INSTANCE(pThis)));
         return false;
     }
-
+/* @todo remove this debug hack that detects ARP from specific ping on development setup - pk */
 uint8_t src[6] = { 0xA8, 0x20, 0x66, 0x57, 0x50, 0x3C };
 uint8_t dst[6] = { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF };
 if (memcmp(pvBuf, dst, 6) == 0 && memcmp(((uint8_t *)pvBuf) + 6, src, 6) == 0)
@@ -1354,7 +1386,7 @@ static int virtioNetR3HandleRxPacket(PPDMDEVINS pDevIns, PVIRTIONET pThis, PVIRT
     RT_NOREF(pThisCC);
 
     LogFunc(("%s (%RTmac) pGso %s\n", INSTANCE(pThis), pvBuf, pGso ? "present" : "not present"));
-    VIRTIONET_PKT_HDR_T rxPktHdr;
+    VIRTIONET_PKT_HDR_T rxPktHdr = { 0 };
 
     if (pGso)
     {
@@ -1382,7 +1414,7 @@ static int virtioNetR3HandleRxPacket(PPDMDEVINS pDevIns, PVIRTIONET pThis, PVIRT
         }
         rxPktHdr.uHdrLen = pGso->cbHdrsTotal;
         rxPktHdr.uGsoSize = pGso->cbMaxSeg;
-        rxPktHdr.uChksumOffset = pGso->offHdr2;
+        rxPktHdr.uChksumStart = pGso->offHdr2;
     }
     else
     {
@@ -1390,31 +1422,25 @@ static int virtioNetR3HandleRxPacket(PPDMDEVINS pDevIns, PVIRTIONET pThis, PVIRT
         rxPktHdr.uGsoType = VIRTIONET_HDR_GSO_NONE;
     }
 
-//    virtioNetR3PacketDump(pThis, (const uint8_t *)pvBuf, cb, "<-- Incoming");
-
     uint16_t cSegsAllocated = VIRTIONET_PREALLOCATE_RX_SEG_COUNT;
 
     PRTSGBUF pVirtSegBufToGuest = (PRTSGBUF)RTMemAllocZ(sizeof(RTSGBUF));
     PRTSGSEG paVirtSegsToGuest  = (PRTSGSEG)RTMemAllocZ(sizeof(RTSGSEG) * cSegsAllocated);
     AssertReturn(paVirtSegsToGuest, VERR_NO_MEMORY);
 
+
+    uint8_t fAddPktHdr = true;
     RTGCPHYS gcPhysPktHdrNumBuffers;
-    uint32_t cDescs = 0;
-
-    uint8_t fAddPktHdr = !!FEATURE_ENABLED(MRG_RXBUF);
-
+    uint16_t cDescs;
     uint32_t uOffset;
-    for (uOffset = 0; uOffset < cb; )
+    for (cDescs = uOffset = 0; uOffset < cb; )
     {
-        /* Pull the next empty Guest Rx buffer from the  queue */
-
         PVIRTIO_DESC_CHAIN_T pDescChain;
-        int rc = virtioCoreR3QueueGet(pDevIns, &pThis->Virtio, RXQIDX_QPAIR(idxQueue), &pDescChain, true);
 
+        int rc = virtioCoreR3QueueGet(pDevIns, &pThis->Virtio, RXQIDX_QPAIR(idxQueue), &pDescChain, true);
         AssertRC(rc == VINF_SUCCESS || rc == VERR_NOT_AVAILABLE);
 
         /** @todo  Find a better way to deal with this */
-
         AssertMsgReturn(rc == VINF_SUCCESS && pDescChain->cbPhysReturn,
                         ("Not enough Rx buffers in queue to accomodate ethernet packet\n"),
                         VERR_INTERNAL_ERROR);
@@ -1422,7 +1448,6 @@ static int virtioNetR3HandleRxPacket(PPDMDEVINS pDevIns, PVIRTIONET pThis, PVIRT
         /* Unlikely that len of 1st seg of guest Rx (IN) buf is less than sizeof(virtio_net_pkt_hdr) == 12.
          * Assert it to reduce complexity. Robust solution would entail finding seg idx and offset of
          * virtio_net_header.num_buffers (to update field *after* hdr & pkts copied to gcPhys) */
-
         AssertMsgReturn(pDescChain->pSgPhysReturn->paSegs[0].cbSeg >= sizeof(VIRTIONET_PKT_HDR_T),
                         ("Desc chain's first seg has insufficient space for pkt header!\n"),
                         VERR_INTERNAL_ERROR);
@@ -1430,7 +1455,7 @@ static int virtioNetR3HandleRxPacket(PPDMDEVINS pDevIns, PVIRTIONET pThis, PVIRT
         uint32_t cbDescChainLeft = pDescChain->cbPhysReturn;
 
         /* Fill the Guest Rx buffer with data received from the interface */
-        for (uint16_t cSegs = 0; uOffset < cb && cbDescChainLeft; cSegs++)
+        for (uint16_t cSegs = 0; uOffset < cb && cbDescChainLeft; )
         {
             if (fAddPktHdr)
             {
@@ -1462,7 +1487,8 @@ static int virtioNetR3HandleRxPacket(PPDMDEVINS pDevIns, PVIRTIONET pThis, PVIRT
             cbDescChainLeft -= cbCropped;
             uOffset += cbCropped;
             cDescs++;
-            RTSgBufInit(pVirtSegBufToGuest, paVirtSegsToGuest, cSegs + 1);
+            cSegs++;
+            RTSgBufInit(pVirtSegBufToGuest, paVirtSegsToGuest, cSegs);
             Log7Func(("Send Rx pkt to guest...\n"));
             virtioCoreR3QueuePut(pDevIns, &pThis->Virtio, RXQIDX_QPAIR(idxQueue),
                                  pVirtSegBufToGuest, pDescChain, true);
@@ -1476,11 +1502,25 @@ static int virtioNetR3HandleRxPacket(PPDMDEVINS pDevIns, PVIRTIONET pThis, PVIRT
 
     int rc = PDMDevHlpPCIPhysWrite(pDevIns, gcPhysPktHdrNumBuffers, &cDescs, sizeof(cDescs));
     AssertMsgRCReturn(rc,
-                      ("Failure updating descriptor count in pkt hdr in guest physical memory\n"),
-                      rc);
+                  ("Failure updating descriptor count in pkt hdr in guest physical memory\n"),
+                  rc);
+
+ /* Dump Rx Pkt after it's been written to guest physical memory via the virtio core API */
+    if (pThis->fLog)
+    {
+        virtioNetDumpGcPhysRxBuf(pDevIns, &rxPktHdr, cDescs, (uint8_t *)pvBuf, cb,
+                                 gcPhysPktHdrNumBuffers - RT_UOFFSETOF(VIRTIONET_PKT_HDR_T, uNumBuffers),
+                                 cb + sizeof(VIRTIONET_PKT_HDR_T));
+    }
 
     virtioCoreQueueSync(pDevIns, &pThis->Virtio, RXQIDX_QPAIR(idxQueue));
 
+
+if (pThis->fLog) {
+    RTThreadSleep(500);
+    RT_BREAKPOINT();
+    pThis->fBp = false;
+}
     RTMemFree(paVirtSegsToGuest);
     RTMemFree(pVirtSegBufToGuest);
 
@@ -1814,7 +1854,7 @@ static void virtioNetR3Ctrl(PPDMDEVINS pDevIns, PVIRTIONET pThis, PVIRTIONETCC p
             if (FEATURE_DISABLED(STATUS) || FEATURE_DISABLED(GUEST_ANNOUNCE))
             {
                 LogFunc(("%s Ignoring CTRL class VIRTIONET_CTRL_ANNOUNCE. Not configured to handle it\n", INSTANCE(pThis)));
-                virtioNetPrintFeatures(pThis, pThis->fNegotiatedFeatures, "Features");
+                virtioNetPrintFeatures(pThis->fNegotiatedFeatures, "Features");
                 break;
             }
             if (pCtrlPktHdr->uCmd != VIRTIONET_CTRL_ANNOUNCE_ACK)
@@ -2172,7 +2212,7 @@ static DECLCALLBACK(void) virtioNetR3QueueNotified(PVIRTIOCORE pVirtio, PVIRTIOC
  */
 static DECLCALLBACK(int) virtioNetR3WorkerThread(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
 {
-    uint16_t const     idxQueue      = (uint16_t)(uintptr_t)pThread->pvUser;
+    uint16_t const     idxQueue  = (uint16_t)(uintptr_t)pThread->pvUser;
     PVIRTIONET         pThis     = PDMDEVINS_2_DATA(pDevIns, PVIRTIONET);
     PVIRTIONETCC       pThisCC   = PDMDEVINS_2_DATA_CC(pDevIns, PVIRTIONETCC);
     PVIRTIONETWORKER   pWorker   = &pThis->aWorkers[idxQueue];
@@ -2437,13 +2477,15 @@ static DECLCALLBACK(void) virtioNetR3StatusChanged(PVIRTIOCORE pVirtio, PVIRTIOC
 
     if (fVirtioReady)
     {
+pThis->fBp = true;
         LogFunc(("%s VirtIO ready\n-----------------------------------------------------------------------------------------\n",
                  INSTANCE(pThis)));
 
         pThis->fResetting    = false;
         pThisCC->fQuiescing  = false;
         pThis->fNegotiatedFeatures = virtioCoreGetAcceptedFeatures(pVirtio);
-
+        virtioNetPrintFeatures(VIRTIONET_HOST_FEATURES_OFFERED, "Offered Features");
+        virtioNetPrintFeatures(pThis->fNegotiatedFeatures, "Negotiated Features");
         for (unsigned idxQueue = 0; idxQueue < pThis->cVirtQueues; idxQueue++)
         {
             (void) virtioCoreR3QueueAttach(&pThis->Virtio, idxQueue, VIRTQNAME(idxQueue));
