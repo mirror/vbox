@@ -1012,6 +1012,14 @@ class TestBoxScript(object):
         parser.add_option("-E", "--putenv", metavar = "<variable>=<value>", action = "append",
                           dest = "asEnvVars", default = [],
                           help = "Sets an environment variable. Can be repeated.");
+        def sbp_callback(option, opt_str, value, parser):
+            _, _, _ = opt_str, value, option
+            parser.values.sTestManagerUrl = 'http://10.162.100.8/testmanager/'
+            parser.values.sBuildsServerName = 'vbox-st02.ru.oracle.com'
+            parser.values.sTestRsrcServerName = 'vbox-st02.ru.oracle.com'
+            parser.values.sTestRsrcServerShare = 'scratch/data/testrsrc'
+        parser.add_option("--spb", "--load-sbp-defaults", action="callback", callback=sbp_callback,
+                          help="Load defaults for the sbp setup.")
 
         (oOptions, args) = parser.parse_args()
         # Check command line
