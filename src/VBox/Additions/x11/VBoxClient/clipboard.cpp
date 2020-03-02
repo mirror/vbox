@@ -107,7 +107,7 @@ DECLCALLBACK(int) ShClX11RequestDataForX11Callback(PSHCLCONTEXT pCtx, SHCLFORMAT
     else
 #endif
     {
-        uint32_t cbData = _4K; /** @ŧodo Make this dynamic. */
+        uint32_t cbData = _4K; /** @todo Make this dynamic. */
         void    *pvData = RTMemAlloc(cbData);
         if (pvData)
         {
@@ -215,7 +215,6 @@ DECLCALLBACK(void) ShClX11RequestFromX11CompleteCallback(PSHCLCONTEXT pCtx, int 
  *
  * @returns VBox status code.
  */
-#if 0
 static int vboxClipboardConnect(void)
 {
     LogFlowFuncEnter();
@@ -245,7 +244,6 @@ static int vboxClipboardConnect(void)
     LogFlowFuncLeaveRC(rc);
     return rc;
 }
-#endif
 
 /**
  * The main loop of our clipboard reader.
@@ -469,7 +467,7 @@ static int run(struct VBCLSERVICE **ppInterface, bool fDaemonised)
     RT_NOREF(ppInterface, fDaemonised);
 
     /* Initialise the guest library. */
-    int rc = 0; //vboxClipboardConnect();
+    int rc = vboxClipboardConnect();
     if (RT_SUCCESS(rc))
     {
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_FUSE
@@ -477,9 +475,7 @@ static int run(struct VBCLSERVICE **ppInterface, bool fDaemonised)
         if (RT_SUCCESS(rc))
         {
 #endif
-            RTThreadSleep(60 * 1000);
-
-            //rc = vboxClipboardMain();
+            rc = vboxClipboardMain();
 
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_FUSE
             int rc2 = vboxClipboardFUSEStop();
