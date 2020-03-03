@@ -219,7 +219,7 @@
         <File Id="file_VBoxManage.exe" Name="VBoxManage.exe"
               Source="$(env.PATH_OUT)\bin\VBoxManage.exe" />
         <File Id="file_VBoxHeadless.exe" Name="VBoxHeadless.exe"
-              Source="$(env.PATH_OUT)\bin\VBoxHeadless.exe" />		
+              Source="$(env.PATH_OUT)\bin\VBoxHeadless.exe" />
 <?if $(env.VBOX_WITH_HARDENING) = "yes" ?>
         <File Id="file_VBoxHeadless.dll" Name="VBoxHeadless.dll"
               Source="$(env.PATH_OUT)\bin\VBoxHeadless.dll">
