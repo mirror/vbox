@@ -381,7 +381,7 @@ static HRESULT shader_record_register_usage(IWineD3DBaseShaderImpl *shader, stru
             }
             else
             {
-                AssertReturn(reg->idx < MAX_REG_INPUT, E_INVALIDARG);
+                AssertReturn(reg->idx < MAX_ATTRIBS, E_INVALIDARG);
                 reg_maps->input_registers |= 1 << reg->idx;
             }
             break;
