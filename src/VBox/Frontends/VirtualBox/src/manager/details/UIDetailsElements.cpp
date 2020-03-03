@@ -324,9 +324,23 @@ void UIDetailsUpdateTaskStorage::run()
     setProperty("table", QVariant::fromValue(table));
 }
 
+void UIDetailsUpdateTaskStorageCloud::run()
+{
+    /* Acquire corresponding machine: */
+    UICloudMachine guiCloudMachine = property("cloudMachine").value<UICloudMachine>();
+    if (guiCloudMachine.isNull())
+        return;
+
+    /* Generate details table: */
+    UITextTable table = UIDetailsGenerator::generateMachineInformationStorage(guiCloudMachine, m_fOptions);
+    setProperty("table", QVariant::fromValue(table));
+}
+
 UITask *UIDetailsElementStorage::createUpdateTask()
 {
-    return new UIDetailsUpdateTaskStorage(machine(), model()->optionsStorage());
+    return   isLocal()
+           ? static_cast<UITask*>(new UIDetailsUpdateTaskStorage(machine(), model()->optionsStorage()))
+           : static_cast<UITask*>(new UIDetailsUpdateTaskStorageCloud(cloudMachine(), model()->optionsStorage()));
 }
 
 

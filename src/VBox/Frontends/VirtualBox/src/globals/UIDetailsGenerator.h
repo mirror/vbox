@@ -51,6 +51,9 @@ namespace UIDetailsGenerator
                                                                        const UIExtraDataMetaDefs::DetailsElementOptionTypeStorage &fOptions,
                                                                        bool fLink = true);
 
+    SHARED_LIBRARY_STUFF UITextTable generateMachineInformationStorage(UICloudMachine &guiCloudMachine,
+                                                                       const UIExtraDataMetaDefs::DetailsElementOptionTypeStorage &fOptions);
+
     SHARED_LIBRARY_STUFF UITextTable generateMachineInformationAudio(CMachine &comMachine,
                                                                      const UIExtraDataMetaDefs::DetailsElementOptionTypeAudio &fOptions);
 

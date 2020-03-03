@@ -294,6 +294,26 @@ private:
     UIExtraDataMetaDefs::DetailsElementOptionTypeStorage m_fOptions;
 };
 
+/** UITask extension used as update task for the details-element type 'Storage' of cloud VM. */
+class UIDetailsUpdateTaskStorageCloud : public UIDetailsUpdateTask
+{
+    Q_OBJECT;
+
+public:
+
+    /** Constructs update task passing @a guiCloudMachine to the base-class. */
+    UIDetailsUpdateTaskStorageCloud(const UICloudMachine &guiCloudMachine, UIExtraDataMetaDefs::DetailsElementOptionTypeStorage fOptions)
+        : UIDetailsUpdateTask(guiCloudMachine), m_fOptions(fOptions) {}
+
+private:
+
+    /** Contains update task body. */
+    void run();
+
+    /** Holds the options. */
+    UIExtraDataMetaDefs::DetailsElementOptionTypeStorage m_fOptions;
+};
+
 /** UIDetailsElementInterface extension for the details-element type 'Storage'. */
 class UIDetailsElementStorage : public UIDetailsElementInterface
 {

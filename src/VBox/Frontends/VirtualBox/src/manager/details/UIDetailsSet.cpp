@@ -107,7 +107,7 @@ void UIDetailsSet::buildSet(UIVirtualMachineItem *pMachineItem, bool fFullSet, c
                 m_cloudMachine = m_pMachineItem->toCloud()->machine();
 
                 /* Compose a list of types to build: */
-                types << DetailsElementType_General << DetailsElementType_System;
+                types << DetailsElementType_General << DetailsElementType_System << DetailsElementType_Storage;
 
                 break;
             }

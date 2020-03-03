@@ -537,6 +537,34 @@ UITextTable UIDetailsGenerator::generateMachineInformationStorage(CMachine &comM
     return table;
 }
 
+UITextTable UIDetailsGenerator::generateMachineInformationStorage(UICloudMachine &guiCloudMachine,
+                                                                  const UIExtraDataMetaDefs::DetailsElementOptionTypeStorage &fOptions)
+{
+    UITextTable table;
+
+    if (guiCloudMachine.isNull())
+        return table;
+
+    if (!guiCloudMachine.isAccessible())
+    {
+        table << UITextTableLine(QApplication::translate("UIDetails", "Information Inaccessible", "details"), QString());
+        return table;
+    }
+
+    /* Image: */
+    if (fOptions & UIExtraDataMetaDefs::DetailsElementOptionTypeStorage_HardDisks)
+    {
+        const QString strImageName = guiCloudMachine.imageName();
+        const QString strImageSize = guiCloudMachine.imageSize();
+        const QString strResult = !strImageName.isEmpty() && !strImageSize.isEmpty()
+                                ? QString("%1 (%2)").arg(strImageName, strImageSize)
+                                : QString();
+        table << UITextTableLine(QApplication::translate("UIDetails", "Image", "details (storage)"), strResult);
+    }
+
+    return table;
+}
+
 UITextTable UIDetailsGenerator::generateMachineInformationAudio(CMachine &comMachine,
                                                                 const UIExtraDataMetaDefs::DetailsElementOptionTypeAudio &fOptions)
 {
