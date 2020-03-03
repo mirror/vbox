@@ -80,6 +80,10 @@ public:
     QString bootingFirmware() const { return m_strBootingFirmware; }
     /** Returns cloud VM image id. */
     QString imageId() const { return m_strImageId; }
+    /** Returns cloud VM image name. */
+    QString imageName() const { return m_strImageName; }
+    /** Returns cloud VM image size. */
+    QString imageSize() const { return m_strImageSize; }
 
 private:
 
@@ -111,6 +115,10 @@ private:
     QString  m_strBootingFirmware;
     /** Holds the cloud VM image id. */
     QString  m_strImageId;
+    /** Holds the cloud VM image name. */
+    QString  m_strImageName;
+    /** Holds the cloud VM image size. */
+    QString  m_strImageSize;
 };
 
 /** Class representing cloud VM wrapper.
@@ -167,6 +175,10 @@ public:
     QString bootingFirmware() const { return d->bootingFirmware(); }
     /** Returns cloud VM image id. */
     QString imageId() const { return d->imageId(); }
+    /** Returns cloud VM image name. */
+    QString imageName() const { return d->imageName(); }
+    /** Returns cloud VM image size. */
+    QString imageSize() const { return d->imageSize(); }
 
 private:
 
