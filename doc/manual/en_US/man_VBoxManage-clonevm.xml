@@ -42,7 +42,7 @@
 
       <arg>--basefolder=<replaceable>basefolder</replaceable></arg>
 
-      <arg rep="repeat">--group=<replaceable>group</replaceable>,</arg>
+      <arg rep="repeat">--groups=<replaceable>group</replaceable>,</arg>
 
       <group choice='opt'>
         <arg choice='plain'>--mode=machine</arg>
