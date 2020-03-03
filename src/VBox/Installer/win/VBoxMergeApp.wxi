@@ -219,7 +219,7 @@
         <File Id="file_VBoxManage.exe" Name="VBoxManage.exe"
               Source="$(env.PATH_OUT)\bin\VBoxManage.exe" />
         <File Id="file_VBoxHeadless.exe" Name="VBoxHeadless.exe"
-              Source="$(env.PATH_OUT)\bin\VBoxHeadless.exe" />
+              Source="$(env.PATH_OUT)\bin\VBoxHeadless.exe" />		
 <?if $(env.VBOX_WITH_HARDENING) = "yes" ?>
         <File Id="file_VBoxHeadless.dll" Name="VBoxHeadless.dll"
               Source="$(env.PATH_OUT)\bin\VBoxHeadless.dll">
@@ -229,6 +229,8 @@
               Source="$(env.PATH_OUT)\bin\VBoxBalloonCtrl.exe"/>
         <File Id="file_VBoxBugReport.exe" Name="VBoxBugReport.exe"
               Source="$(env.PATH_OUT)\bin\VBoxBugReport.exe"/>
+		<File Id="file_VBoxAutostartSvc.exe" Name="VBoxAutostartSvc.exe"
+              Source="$(env.PATH_OUT)\bin\VBoxAutostartSvc.exe" />
 <?if $(env.VBOX_WITH_VBOX_IMG) = "yes" ?>
         <File Id="file_vbox_img.exe" Name="vbox-img.exe"
               Source="$(env.PATH_OUT)\bin\vbox-img.exe"/>
