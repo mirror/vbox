@@ -148,8 +148,13 @@ UITextTable UIDetailsGenerator::generateMachineInformationGeneral(UICloudMachine
 
     /* Domain: */
     if (fOptions & UIExtraDataMetaDefs::DetailsElementOptionTypeGeneral_Location)
-        table << UITextTableLine(QApplication::translate("UIDetails", "Domain", "details (general)"),
-                                 guiCloudMachine.domain());
+    {
+        const QString strDomain = guiCloudMachine.domain();
+        const QString strResult = !strDomain.isEmpty()
+                                ? strDomain
+                                : QApplication::translate("UIDetails", "Checking ...", "details");
+        table << UITextTableLine(QApplication::translate("UIDetails", "Domain", "details (general)"), strResult);
+    }
 
     return table;
 }
@@ -293,23 +298,43 @@ UITextTable UIDetailsGenerator::generateMachineInformationSystem(UICloudMachine 
     }
 
     /* Instance Shape: */
-    table << UITextTableLine(QApplication::translate("UIDetails", "Shape", "details (system)"),
-                             guiCloudMachine.instanceShape());
+    {
+        const QString strShape = guiCloudMachine.instanceShape();
+        const QString strResult = !strShape.isEmpty()
+                                ? strShape
+                                : QApplication::translate("UIDetails", "Checking ...", "details");
+        table << UITextTableLine(QApplication::translate("UIDetails", "Shape", "details (system)"), strResult);
+    }
 
     /* Base memory: */
     if (fOptions & UIExtraDataMetaDefs::DetailsElementOptionTypeSystem_RAM)
-        table << UITextTableLine(QApplication::translate("UIDetails", "Base Memory", "details (system)"),
-                                 QApplication::translate("UIDetails", "%1 MB").arg(guiCloudMachine.memorySize()));
+    {
+        const int iMemorySize = guiCloudMachine.memorySize();
+        const QString strResult = iMemorySize > 0
+                                ? QApplication::translate("UIDetails", "%1 MB").arg(iMemorySize)
+                                : QApplication::translate("UIDetails", "Checking ...", "details");
+        table << UITextTableLine(QApplication::translate("UIDetails", "Base Memory", "details (system)"), strResult);
+    }
 
     /* Processors: */
     if (fOptions & UIExtraDataMetaDefs::DetailsElementOptionTypeSystem_CPUCount)
-        table << UITextTableLine(QApplication::translate("UIDetails", "Processors", "details (system)"),
-                                 QString::number(guiCloudMachine.cpuCount()));
+    {
+        const int cCpuCount = guiCloudMachine.cpuCount();
+        const QString strResult = cCpuCount > 0
+                                ? QString::number(cCpuCount)
+                                : QApplication::translate("UIDetails", "Checking ...", "details");
+        table << UITextTableLine(QApplication::translate("UIDetails", "Processors", "details (system)"), strResult);
+    }
 
     /* Booting firmware: */
     if (fOptions & UIExtraDataMetaDefs::DetailsElementOptionTypeSystem_Firmware)
-        table << UITextTableLine(QApplication::translate("UIDetails", "Booting Firmware", "details (system)"),
-                                 guiCloudMachine.bootingFirmware());
+    {
+        const QString strBottingFirmware = guiCloudMachine.bootingFirmware();
+        const QString strResult = !strBottingFirmware.isEmpty()
+                                ? strBottingFirmware
+                                : QApplication::translate("UIDetails", "Checking ...", "details");
+        table << UITextTableLine(QApplication::translate("UIDetails", "Booting Firmware", "details (system)"), strResult);
+    }
 
     return table;
 }
@@ -558,7 +583,7 @@ UITextTable UIDetailsGenerator::generateMachineInformationStorage(UICloudMachine
         const QString strImageSize = guiCloudMachine.imageSize();
         const QString strResult = !strImageName.isEmpty() && !strImageSize.isEmpty()
                                 ? QString("%1 (%2)").arg(strImageName, strImageSize)
-                                : QString();
+                                : QApplication::translate("UIDetails", "Checking ...", "details");
         table << UITextTableLine(QApplication::translate("UIDetails", "Image", "details (storage)"), strResult);
     }
 
