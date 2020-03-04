@@ -262,7 +262,7 @@ int UICloudNetworkingStuff::fetchCpuCount(const QMap<KVirtualSystemDescriptionTy
 
 QString UICloudNetworkingStuff::fetchShape(const QMap<KVirtualSystemDescriptionType, QString> &infoMap)
 {
-    /* Return instance shape value: */
+    /* Return shape value: */
     return infoMap.value(KVirtualSystemDescriptionType_CloudInstanceShape);
 }
 

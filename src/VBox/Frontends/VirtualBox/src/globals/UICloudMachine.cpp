@@ -38,10 +38,6 @@ UICloudMachineData::UICloudMachineData(const CCloudClient &comCloudClient,
     , m_strOsType("Other")
     , m_iMemorySize(0)
     , m_iCpuCount(0)
-    //, m_strInstanceShape("None")
-    //, m_strDomain("None")
-    //, m_strBootingFirmware("None")
-    //, m_strImageId(QString())
 {
     //printf("Data for machine with id = {%s} is created\n", m_strId.toUtf8().constData());
 }
@@ -56,7 +52,7 @@ UICloudMachineData::UICloudMachineData(const UICloudMachineData &other)
     , m_strOsType(other.m_strOsType)
     , m_iMemorySize(other.m_iMemorySize)
     , m_iCpuCount(other.m_iCpuCount)
-    , m_strInstanceShape(other.m_strInstanceShape)
+    , m_strShape(other.m_strShape)
     , m_strDomain(other.m_strDomain)
     , m_strBootingFirmware(other.m_strBootingFirmware)
     , m_strImageId(other.m_strImageId)
@@ -79,7 +75,7 @@ void UICloudMachineData::refresh()
     m_iMemorySize = fetchMemorySize(instanceInfoMap);
     m_iCpuCount = fetchCpuCount(instanceInfoMap);
     m_enmMachineState = fetchMachineState(instanceInfoMap);
-    m_strInstanceShape = fetchShape(instanceInfoMap);
+    m_strShape = fetchShape(instanceInfoMap);
     m_strDomain = fetchDomain(instanceInfoMap);
     m_strBootingFirmware = fetchBootingFirmware(instanceInfoMap);
     m_strImageId = fetchImageId(instanceInfoMap);

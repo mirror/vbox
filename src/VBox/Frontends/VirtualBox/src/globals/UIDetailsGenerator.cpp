@@ -297,9 +297,9 @@ UITextTable UIDetailsGenerator::generateMachineInformationSystem(UICloudMachine 
         return table;
     }
 
-    /* Instance Shape: */
+    /* Shape: */
     {
-        const QString strShape = guiCloudMachine.instanceShape();
+        const QString strShape = guiCloudMachine.shape();
         const QString strResult = !strShape.isEmpty()
                                 ? strShape
                                 : QApplication::translate("UIDetails", "Checking ...", "details");
