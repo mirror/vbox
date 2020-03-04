@@ -53,6 +53,11 @@
 #include <X11/Xlibint.h>
 #include <X11/extensions/shape.h>
 #include <X11/extensions/Xrandr.h>
+#include <X11/extensions/panoramiXproto.h>
+
+#ifndef sz_XineramaScreenInfo
+#define sz_XineramaScreenInfo 8
+#endif
 
 /** Maximum number of supported screens.  DRM and X11 both limit this to 32. */
 /** @todo if this ever changes, dynamically allocate resizeable arrays in the
@@ -67,7 +72,33 @@ static bool g_fMonitorThreadShutdown = false;
 
 #define OLD_JUNK
 
-struct X11VMWRECT /* xXineramaScreenInfo in Xlib headers. */
+typedef struct {
+   CARD8  reqType;           /* always X_VMwareCtrlReqCode */
+   CARD8  VMwareCtrlReqType; /* always X_VMwareCtrlSetTopology */
+   CARD16 length B16;
+   CARD32 screen B32;
+   CARD32 number B32;
+   CARD32 pad1   B32;
+} xVMwareCtrlSetTopologyReq;
+#define sz_xVMwareCtrlSetTopologyReq 16
+
+#define X_VMwareCtrlSetTopology 2
+
+typedef struct {
+   BYTE   type; /* X_Reply */
+   BYTE   pad1;
+   CARD16 sequenceNumber B16;
+   CARD32 length B32;
+   CARD32 screen B32;
+   CARD32 pad2   B32;
+   CARD32 pad3   B32;
+   CARD32 pad4   B32;
+   CARD32 pad5   B32;
+   CARD32 pad6   B32;
+} xVMwareCtrlSetTopologyReply;
+#define sz_xVMwareCtrlSetTopologyReply 32
+
+struct X11VMWRECT
 {
     int16_t x;
     int16_t y;
@@ -80,7 +111,7 @@ struct X11CONTEXT
 {
     Display *pDisplay;
     int hRandRMajor;
-    int hVMWMajor;
+    int hVMWCtrlMajorOpCode;
     int hRandRMinor;
     int hRandREventBase;
     int hRandRErrorBase;
@@ -100,11 +131,6 @@ static const char *szDefaultOutputNamePrefix = "Virtual";
 static const char *pcszXrandr = "xrandr";
 static const char *pcszCvt = "cvt";
 
-struct DRMCONTEXT
-{
-    RTFILE hDevice;
-};
-
 struct RANDROUTPUT
 {
     int32_t x;
@@ -120,6 +146,41 @@ static int determineOutputCount();
 
 
 #ifndef OLD_JUNK
+
+bool VMwareCtrlSetTopology(Display *dpy, int hExtensionMajorOpcode,
+                            int screen, xXineramaScreenInfo extents[], int number)
+{
+   xVMwareCtrlSetTopologyReply rep;
+   xVMwareCtrlSetTopologyReq *req;
+
+   long len;
+
+   LockDisplay(dpy);
+
+   GetReq(VMwareCtrlSetTopology, req);
+   req->reqType = hExtensionMajorOpcode;
+   req->VMwareCtrlReqType = X_VMwareCtrlSetTopology;
+   req->screen = screen;
+   req->number = number;
+
+   len = ((long) number) << 1;
+   SetReqLen(req, len, len);
+   len <<= 2;
+   _XSend(dpy, (char *)extents, len);
+
+   if (!_XReply(dpy, (xReply *)&rep,
+                (SIZEOF(xVMwareCtrlSetTopologyReply) - SIZEOF(xReply)) >> 2,
+                xFalse))
+   {
+       UnlockDisplay(dpy);
+       SyncHandle();
+       return false;
+   }
+   UnlockDisplay(dpy);
+   SyncHandle();
+   return true;
+}
+
 /** This function assumes monitors are named as from Virtual1 to VirtualX. */
 static int getMonitorIdFromName(const char *sMonitorName)
 {
@@ -269,11 +330,38 @@ static int stopX11MonitorThread(void)
     return rc;
 }
 
+static bool callVMWCTRL()
+{
+#ifndef OLD_JUNK
+    const int hHeight = 600;
+    const int hWidth = 800;
+
+    xXineramaScreenInfo *extents = (xXineramaScreenInfo *)malloc(x11Context.hOutputCount * sizeof(xXineramaScreenInfo));
+    if (!extents)
+        return false;
+    int hRunningOffset = 0;
+    for (int i = 0; i < x11Context.hOutputCount; ++i)
+    {
+        extents[i].x_org = hRunningOffset;
+        extents[i].y_org = 0;
+        extents[i].width = hWidth;
+        extents[i].height = hHeight;
+        hRunningOffset += hWidth;
+    }
+    return VMwareCtrlSetTopology(x11Context.pDisplay, x11Context.hVMWCtrlMajorOpCode,
+                                 DefaultScreen(x11Context.pDisplay),
+                                 extents, x11Context.hOutputCount);
+#else
+    return true;
+#endif
+}
+
 static bool init()
 {
     x11Connect();
     if (x11Context.pDisplay == NULL)
         return false;
+    callVMWCTRL();
     if (RT_FAILURE(startX11MonitorThread()))
         return false;
     XRRSelectInput(x11Context.pDisplay, x11Context.rootWindow, x11Context.hEventMask);
@@ -301,7 +389,7 @@ static void x11Connect()
     if (x11Context.pDisplay == NULL)
         return;
     if (!XQueryExtension(x11Context.pDisplay, "VMWARE_CTRL",
-                         &x11Context.hVMWMajor, &dummy, &dummy))
+                         &x11Context.hVMWCtrlMajorOpCode, &dummy, &dummy))
     {
         XCloseDisplay(x11Context.pDisplay);
         x11Context.pDisplay = NULL;
