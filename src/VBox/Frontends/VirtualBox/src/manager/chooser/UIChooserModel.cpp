@@ -42,6 +42,7 @@
 #include "UIExtraDataManager.h"
 #include "UIMessageCenter.h"
 #include "UIModalWindowManager.h"
+#include "UITask.h"
 #include "UIVirtualBoxManagerWidget.h"
 #include "UIVirtualMachineItem.h"
 #include "UIWizardNewCloudVM.h"
@@ -710,6 +711,10 @@ void UIChooserModel::sltReloadMachine(const QUuid &uId)
 #ifdef VBOX_GUI_WITH_CLOUD_VMS
 void UIChooserModel::sltHandleCloudAcquireInstancesTaskComplete(UITask *pTask)
 {
+    /* Skip unrelated tasks: */
+    if (!pTask || pTask->type() != UITask::Type_CloudAcquireInstances)
+        return;
+
     /* Call to base-class: */
     UIChooserAbstractModel::sltHandleCloudAcquireInstancesTaskComplete(pTask);
 
