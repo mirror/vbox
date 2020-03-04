@@ -619,6 +619,8 @@ public:
      * @{ */
         /** Returns the thread-pool instance. */
         UIThreadPool *threadPool() const { return m_pThreadPool; }
+        /** Returns the thread-pool instance for cloud needs. */
+        UIThreadPool *threadPoolCloud() const { return m_pThreadPoolCloud; }
     /** @} */
 
     /** @name Icon/Pixmap stuff.
@@ -900,6 +902,8 @@ private:
      * @{ */
         /** Holds the thread-pool instance. */
         UIThreadPool *m_pThreadPool;
+        /** Holds the thread-pool instance for cloud needs. */
+        UIThreadPool *m_pThreadPoolCloud;
     /** @} */
 
     /** @name Icon/Pixmap stuff.

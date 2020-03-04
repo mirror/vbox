@@ -483,9 +483,9 @@ void UIChooserAbstractModel::loadTree()
                                                                                                          pProfileNode);
                                     if (pTask)
                                     {
-                                        connect(pTask, &UITask::sigComplete,
+                                        connect(uiCommon().threadPoolCloud(), &UIThreadPool::sigTaskComplete,
                                                 this, &UIChooserAbstractModel::sltHandleCloudAcquireInstancesTaskComplete);
-                                        uiCommon().threadPool()->enqueueTask(pTask);
+                                        uiCommon().threadPoolCloud()->enqueueTask(pTask);
                                     }
                                 }
                             }

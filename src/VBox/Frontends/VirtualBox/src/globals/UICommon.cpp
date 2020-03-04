@@ -310,6 +310,7 @@ UICommon::UICommon(UIType enmType)
     , m_fVBoxSVCAvailable(true)
     , m_i3DAvailable(-1)
     , m_pThreadPool(0)
+    , m_pThreadPoolCloud(0)
     , m_pIconPool(0)
     , m_pMediumEnumerator(0)
 {
@@ -4107,8 +4108,9 @@ void UICommon::prepare()
     connect(gVBoxEvents, &UIVirtualBoxEventHandler::sigVBoxSVCAvailabilityChange,
             this, &UICommon::sltHandleVBoxSVCAvailabilityChange);
 
-    /* Prepare thread-pool instance: */
+    /* Prepare thread-pool instances: */
     m_pThreadPool = new UIThreadPool(3 /* worker count */, 5000 /* worker timeout */);
+    m_pThreadPoolCloud = new UIThreadPool(2 /* worker count */, 1000 /* worker timeout */);
 
     /* Load translation based on the user settings: */
     QString sLanguageId = gEDataManager->languageId();
@@ -4556,9 +4558,11 @@ void UICommon::cleanup()
     /* Cleanup converter: */
     UIConverter::cleanup();
 
-    /* Cleanup thread-pool: */
+    /* Cleanup thread-pools: */
     delete m_pThreadPool;
     m_pThreadPool = 0;
+    delete m_pThreadPoolCloud;
+    m_pThreadPoolCloud = 0;
     /* Cleanup general icon-pool: */
     delete m_pIconPool;
     m_pIconPool = 0;

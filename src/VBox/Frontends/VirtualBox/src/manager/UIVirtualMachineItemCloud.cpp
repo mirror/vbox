@@ -286,9 +286,9 @@ void UIVirtualMachineItemCloud::sltCreateGetCloudInstanceInfoTask()
     if (!m_pTask)
     {
         m_pTask = new UITaskCloudGetInstanceInfo(m_guiCloudMachine);
-        connect(m_pTask, &UITask::sigComplete,
+        connect(uiCommon().threadPoolCloud(), &UIThreadPool::sigTaskComplete,
                 this, &UIVirtualMachineItemCloud::sltHandleGetCloudInstanceInfoDone);
-        uiCommon().threadPool()->enqueueTask(m_pTask);
+        uiCommon().threadPoolCloud()->enqueueTask(m_pTask);
     }
 }
 
