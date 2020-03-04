@@ -53,7 +53,12 @@
 #include <X11/Xlibint.h>
 #include <X11/extensions/shape.h>
 #include <X11/extensions/Xrandr.h>
+
+#define OLD_JUNK
+
+#ifndef OLD_JUNK
 #include <X11/extensions/panoramiXproto.h>
+#endif
 
 #ifndef sz_XineramaScreenInfo
 #define sz_XineramaScreenInfo 8
@@ -70,7 +75,6 @@ RTTHREAD mX11MonitorThread = NIL_RTTHREAD;
 /** Shutdown indicator for the monitor thread. */
 static bool g_fMonitorThreadShutdown = false;
 
-#define OLD_JUNK
 
 typedef struct {
    CARD8  reqType;           /* always X_VMwareCtrlReqCode */
