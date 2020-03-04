@@ -1824,12 +1824,10 @@ static DECLCALLBACK(int) pdmR3UsbHlp_TMTimerCreate(PPDMUSBINS pUsbIns, TMCLOCK e
     LogFlow(("pdmR3UsbHlp_TMTimerCreate: caller='%s'/%d: enmClock=%d pfnCallback=%p pvUser=%p fFlags=%#x pszDesc=%p:{%s} ppTimer=%p\n",
              pUsbIns->pReg->szName, pUsbIns->iInstance, enmClock, pfnCallback, pvUser, fFlags, pszDesc, pszDesc, ppTimer));
 
-    if (pUsbIns->iInstance > 0) /** @todo use a string cache here later. */
-    {
-         char *pszDesc2 = MMR3HeapAPrintf(pVM, MM_TAG_PDM_USB_DESC, "%s [%u]", pszDesc, pUsbIns->iInstance);
-         if (pszDesc2)
-             pszDesc = pszDesc2;
-    }
+    /** @todo use a string cache here later. */
+    char *pszDesc2 = MMR3HeapAPrintf(pVM, MM_TAG_PDM_USB_DESC, "%s[%s:%u]", pszDesc, pUsbIns->Internal.s.pUsbDev->pReg->szName, pUsbIns->iInstance);
+    if (pszDesc2)
+        pszDesc = pszDesc2;
 
     int rc = TMR3TimerCreateUsb(pVM, pUsbIns, enmClock, pfnCallback, pvUser, fFlags, pszDesc, ppTimer);
 
