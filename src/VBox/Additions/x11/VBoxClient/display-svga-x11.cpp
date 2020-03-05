@@ -50,7 +50,7 @@
 
 #include <X11/Xlibint.h>
 #include <X11/extensions/Xrandr.h>
-#include <X11/extensions/Xinerama.h>
+#include <X11/extensions/panoramiXproto.h>
 
 #define OLD_JUNK
 
@@ -139,8 +139,6 @@ static void x11Connect();
 static int determineOutputCount();
 
 
-#ifndef OLD_JUNK
-
 bool VMwareCtrlSetTopology(Display *dpy, int hExtensionMajorOpcode,
                             int screen, xXineramaScreenInfo extents[], int number)
 {
@@ -175,6 +173,7 @@ bool VMwareCtrlSetTopology(Display *dpy, int hExtensionMajorOpcode,
    return true;
 }
 
+#ifndef OLD_JUNK
 /** This function assumes monitors are named as from Virtual1 to VirtualX. */
 static int getMonitorIdFromName(const char *sMonitorName)
 {
