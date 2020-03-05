@@ -35,17 +35,17 @@ QList<UICloudMachine> UITaskCloudAcquireInstances::result() const
     return resultList;
 }
 
-CVirtualBoxErrorInfo UITaskCloudAcquireInstances::errorInfo()
+QString UITaskCloudAcquireInstances::errorInfo()
 {
     m_mutex.lock();
-    CVirtualBoxErrorInfo comErrorInfo = m_comErrorInfo;
+    QString strErrorInfo = m_strErrorInfo;
     m_mutex.unlock();
-    return comErrorInfo;
+    return strErrorInfo;
 }
 
 void UITaskCloudAcquireInstances::run()
 {
     m_mutex.lock();
-    m_result = listInstances(m_comCloudClient);
+    m_result = listInstances(m_comCloudClient, m_strErrorInfo);
     m_mutex.unlock();
 }

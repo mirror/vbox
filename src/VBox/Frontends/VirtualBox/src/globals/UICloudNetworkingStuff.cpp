@@ -18,6 +18,7 @@
 /* GUI includes: */
 #include "UICloudNetworkingStuff.h"
 #include "UICommon.h"
+#include "UIErrorString.h"
 #include "UIMessageCenter.h"
 
 /* COM includes: */
@@ -29,6 +30,7 @@
 
 
 QList<UICloudMachine> UICloudNetworkingStuff::listInstances(const CCloudClient &comCloudClient,
+                                                            QString &strErrorMessage,
                                                             QWidget *pParent /* = 0 */)
 {
     /* Prepare VM names, ids and states.
@@ -46,9 +48,7 @@ QList<UICloudMachine> UICloudNetworkingStuff::listInstances(const CCloudClient &
         if (pParent)
             msgCenter().cannotAcquireCloudClientParameter(comCloudClient, pParent);
         else
-        {
-            /// @todo fetch error info
-        }
+            strErrorMessage = UIErrorString::formatErrorInfo(comCloudClient);
     }
     else
     {
@@ -64,9 +64,7 @@ QList<UICloudMachine> UICloudNetworkingStuff::listInstances(const CCloudClient &
             if (pParent)
                 msgCenter().cannotAcquireCloudClientParameter(comProgress, pParent);
             else
-            {
-                /// @todo fetch error info
-            }
+                strErrorMessage = UIErrorString::formatErrorInfo(comProgress);
         }
         else
         {

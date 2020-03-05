@@ -37,6 +37,7 @@ namespace UICloudNetworkingStuff
       * @param  pWidget         Brings parent widget to show messages according to,
       *                         if no parent set, progress will be executed in blocking way. */
     SHARED_LIBRARY_STUFF QList<UICloudMachine> listInstances(const CCloudClient &comCloudClient,
+                                                             QString &strErrorMessage,
                                                              QWidget *pParent = 0);
 
     /** Acquires instance info as a map.

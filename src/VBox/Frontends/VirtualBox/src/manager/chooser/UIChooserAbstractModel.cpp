@@ -275,6 +275,10 @@ void UIChooserAbstractModel::sltHandleCloudAcquireInstancesTaskComplete(UITask *
     /* Cast task to corresponding sub-class: */
     UITaskCloudAcquireInstances *pAcquiringTask = static_cast<UITaskCloudAcquireInstances*>(pTask);
 
+    /* Check whether there was an error: */
+    if (!pAcquiringTask->errorInfo().isNull())
+        return msgCenter().cannotAcquireCloudInstanceList(pAcquiringTask->errorInfo());
+
     /* Acquire parent node we referencing: */
     UIChooserNode *pParentNode = pAcquiringTask->parentNode();
     AssertPtrReturnVoid(pParentNode);

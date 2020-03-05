@@ -602,6 +602,12 @@ void UIMessageCenter::cannotAcquireMachineParameter(const CMachine &comMachine, 
           tr("Failed to acquire machine parameter."), UIErrorString::formatErrorInfo(comMachine));
 }
 
+void UIMessageCenter::cannotAcquireCloudInstanceList(const QString &strErrorDetails, QWidget *pParent /* = 0 */) const
+{
+    error(pParent, MessageType_Error,
+          tr("Failed to acquire cloud intance list."), strErrorDetails);
+}
+
 void UIMessageCenter::cannotOpenMachine(const CVirtualBox &vbox, const QString &strMachinePath) const
 {
     error(0, MessageType_Error,
