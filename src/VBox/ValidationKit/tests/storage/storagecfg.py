@@ -175,6 +175,13 @@ class StorageConfigOsSolaris(StorageConfigOs):
         else:
             fRc = oExec.execBinaryNoStdOut('zfs', ('create', '-o', 'mountpoint='+sMountPoint, sPool + '/' + sVol));
 
+        # @todo Add proper parameters to set proper owner:group ownership, the testcase broke in r133060 for Solaris
+        #       because ceating directories is now done using the python mkdir API instead of calling 'sudo mkdir...'.
+        #       No one noticed though because testboxstor1 went out of action before...
+        #       Will get fixed as soon as I'm back home.
+        if fRc:
+            fRc = oExec.execBinaryNoStdOut('chmod', ('777', sMountPoint));
+
         return fRc;
 
     def destroyVolume(self, oExec, sPool, sVol):
