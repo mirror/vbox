@@ -423,6 +423,7 @@ class tdUnitTest1(vbox.TestDriver):
             sVer = re.sub(r'_BETA.*r', '.', sVer);
             sVer = re.sub(r'_ALPHA.*r', '.', sVer);
             sVer = re.sub(r'_RC.*r', '.', sVer);
+            sVer = re.sub('_SPB', '', sVer)
             sVer = sVer.replace('r', '.');
 
             self.aiVBoxVer = [int(sComp) for sComp in sVer.split('.')];
