@@ -50,7 +50,7 @@
 
 #include <X11/Xlibint.h>
 #include <X11/extensions/Xrandr.h>
-#include <X11/extensions/panoramiXproto.h>
+#include <X11/extensions/Xinerama.h>
 
 #define OLD_JUNK
 
