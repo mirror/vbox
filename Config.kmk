@@ -1956,9 +1956,9 @@ VBOX_UNITTEST_PYTHON ?= $(VBOX_BLD_PYTHON)
 #
 ifndef VBOX_PYLINT
  VBOX_PYLINT        := $(firstword $(which pylint-2.7) $(which pylint-2.6) $(which pylint2) $(which pylint))
- ifdef VBOX_PYLINT
-  VBOX_PYLINT       := $(VBOX_BLD_PYTHON) $(VBOX_PYLINT)
- endif
+ #ifdef VBOX_PYLINT # -- why was this needed. It messes up when using pylint w/ 3.x and building with 2.7.
+ # VBOX_PYLINT       := $(VBOX_BLD_PYTHON) $(VBOX_PYLINT)
+ #endif
 endif
 if !defined(VBOX_WITH_PYLINT) && defined(VBOX_PYLINT)
  VBOX_WITH_PYLINT := 1
