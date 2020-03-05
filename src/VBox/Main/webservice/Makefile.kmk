@@ -197,6 +197,12 @@ VBOXWEB_OTHERS += \
 	$(VBOXWEB_GSOAPH_FROM_XSLT)
 
 
+# GCC 9.2 doesn't cope well with the split files (internal error), so
+# don't do it there.
+if !defined(VBOX_WITHOUT_SPLIT_SOAPC) && !defined(VBOX_WITH_SPLIT_SOAPC) && $(VBOX_GCC_VERSION_CXX) >= 90200
+ VBOX_WITHOUT_SPLIT_SOAPC := 1
+endif
+
 # disable -fvisibility=hidden as the SOAP stuff does not properly set the visibility attributes
 TEMPLATE_VBOXWEBR3EXE = Webservices without -fvisibility
 TEMPLATE_VBOXWEBR3EXE_EXTENDS = VBOXR3EXE
@@ -285,11 +291,14 @@ ifdef VBOX_GSOAP_INSTALLED
   ifn1of ($(KBUILD_TARGET), win)
    $(VBOX_GSOAP_CXX_SOURCES)_CXXFLAGS = \
 	-Wno-format \
-	 $(VBOX_GCC_Wno-int-in-bool-context) \
+	$(VBOX_GCC_Wno-int-in-bool-context) \
 	$(if $(VBOX_GCC_Wlogical-op),-Wno-error=logical-op,)
    # currently necessary when compiling against OpenSSL 1.0 due to a missing
    # typecase from 'const v3_ext_method*' to 'aka v3_ext_method*'.
    $(VBOX_GSOAP_CXX_SOURCES)_CXXFLAGS += -fpermissive
+   # Necessary with gcc 9.2.1 for some reason:
+   $(VBOX_GSOAP_CXX_SOURCES)_CXXFLAGS += -Wno-deprecated-declarations
+
 
   endif
 
