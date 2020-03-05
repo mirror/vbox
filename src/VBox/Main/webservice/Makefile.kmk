@@ -209,6 +209,9 @@ TEMPLATE_VBOXWEBR3EXE_EXTENDS = VBOXR3EXE
 TEMPLATE_VBOXWEBR3EXE_DEFS.win += WIN32_LEAN_AND_MEAN $(TEMPLATE_VBOXR3EXE_DEFS.win) # Makes the redefinition warnings go away.
 TEMPLATE_VBOXWEBR3EXE_CXXFLAGS = $(filter-out $(VBOX_GCC_fvisibility-hidden) $(VBOX_GCC_fvisibility-inlines-hidden),\
 				 $(TEMPLATE_VBOXR3EXE_CXXFLAGS))
+ifn1of ($(KBUILD_TARGET), win)
+TEMPLATE_VBOXWEBR3EXE_CXXFLAGS += $(VBOX_GCC_Wno-misleading-indentation)
+endif
 
 ifdef VBOX_GSOAP_INSTALLED
  ifndef VBOX_ONLY_SDK
@@ -292,7 +295,7 @@ ifdef VBOX_GSOAP_INSTALLED
    $(VBOX_GSOAP_CXX_SOURCES)_CXXFLAGS = \
 	-Wno-format \
 	$(VBOX_GCC_Wno-int-in-bool-context) \
-	$(if $(VBOX_GCC_Wlogical-op),-Wno-error=logical-op,)
+	$(VBOX_GCC_Wno-logical-op)
    # currently necessary when compiling against OpenSSL 1.0 due to a missing
    # typecase from 'const v3_ext_method*' to 'aka v3_ext_method*'.
    $(VBOX_GSOAP_CXX_SOURCES)_CXXFLAGS += -fpermissive
@@ -355,7 +358,7 @@ ifdef VBOX_GSOAP_INSTALLED
 	.
  vboxwebsrv_CXXFLAGS.win += -bigobj
  ifn1of ($(KBUILD_TARGET), win)
-  vboxwebsrv_CXXFLAGS += -Wno-shadow $(VBOX_GCC_Wno-literal-suffix)
+  vboxwebsrv_CXXFLAGS += -Wno-shadow $(VBOX_GCC_Wno-literal-suffix) $(VBOX_GCC_Wno-misleading-indentation)
   ifn1of ($(KBUILD_TYPE), debug) # Save time+memory by using -O1 instead of -O2.
    vboxwebsrv_CXXFLAGS += -O0
   endif
@@ -373,16 +376,13 @@ ifdef VBOX_GSOAP_INSTALLED
 	vboxweb.cpp \
 	$(VBOXWEB_OUT_DIR)/methodmaps.cpp \
 	$(VBOXWEB_OUT_DIR)/soapServer.cpp \
-    $(VBOXWEB_OUT_DIR)/vboxweb-wsdl.c
+	$(VBOXWEB_OUT_DIR)/vboxweb-wsdl.c
  vboxwebsrv_SOURCES.win = \
 	VBoxWebSrv.rc
  vboxwebsrv_CLEAN = \
 	$(VBOXWEB_OUT_DIR)/methodmaps.cpp \
 	$(VBOXWEB_OUT_DIR)/soapServer.cpp \
-    $(VBOXWEB_OUT_DIR)/vboxweb-wsdl.c
- # gcc 6.2 warns about aborting misleading indentation detection (too much code)
- vboxweb.cpp_CXXFLAGS = \
-	$(VBOX_GCC_Wno-misleading-indentation)
+	$(VBOXWEB_OUT_DIR)/vboxweb-wsdl.c
  vboxwebsrv_ORDERDEPS = $(VBOXWEB_OUT_DIR)/gsoap_copy_all_ts
  endif # !VBOX_ONLY_SDK
 

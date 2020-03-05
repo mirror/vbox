@@ -2831,6 +2831,7 @@ endif
 	$(QUIET)$(APPEND) '$@' 'ifneq ($$(VBOX_GCC_VERSION_CC),)'
 	$(QUIET)$(APPEND) '$@' ' ifneq ($$(int-ge $$(VBOX_GCC_VERSION_CC),40500),)'
 	$(QUIET)$(APPEND) '$@' '  VBOX_GCC_Wlogical-op         ?= $(call VBOX_GCC_CHECK_CC,-Wlogical-op,)'
+	$(QUIET)$(APPEND) '$@' '  VBOX_GCC_Wno-logical-op      ?= $$(subst -Wlogical-op,-Wno-logical-op,$$(VBOX_GCC_Wlogical-op))
 	$(QUIET)$(APPEND) '$@' ' endif'
 	$(QUIET)$(APPEND) '$@' 'endif'
 	$(QUIET)$(APPEND) '$@' 'VBOX_GCC_Wno-address           ?= $(call VBOX_GCC_CHECK_CXX,-Wno-address,)'
