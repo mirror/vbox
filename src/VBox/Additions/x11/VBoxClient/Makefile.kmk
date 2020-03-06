@@ -42,6 +42,7 @@ VBoxClient_DEFS.linux += _GNU_SOURCE
 VBoxClient_INCS = $(VBOX_GRAPHICS_INCS)
 VBoxClient_INCS += ../x11include/panoramiXproto-1.1
 VBoxClient_INCS += ../x11include/libXrandr-1.5.2
+VBoxClient_INCS += ../x11include/randrproto-1.6.0
 VBoxClient_SOURCES = \
 	main.cpp \
 	display-svga.cpp \
