@@ -18,6 +18,9 @@
 SUB_DEPTH = ../../../../..
 include $(KBUILD_PATH)/subheader.kmk
 
+# Use header files from our tree for randr and xinerama. and don't link but rather dlopen libXrand
+VBOX_WITH_DISTRO_XRAND_XINERAMA=
+
 #
 # VBoxClient - clipboard and seamless.
 #
@@ -28,6 +31,9 @@ VBoxClient_DEFS += VBOX_X11_CLIPBOARD VBOX_WITH_HGCM
 VBoxClient_DEFS += VBOX_BUILD_TARGET=\"$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)\"
 ifdef VBOX_WITH_DBUS
  VBoxClient_DEFS += VBOX_WITH_DBUS
+endif
+ifdef VBOX_WITH_DISTRO_XRAND_XINERAMA
+ VBoxClient_DEFS += WITH_DISTRO_XRAND_XINERAMA
 endif
 VBoxClient_DEFS.linux += _GNU_SOURCE
 VBoxClient_INCS = $(VBOX_GRAPHICS_INCS)
@@ -53,8 +59,10 @@ VBoxClient_LIBS.netbsd = \
 VBoxClient_LIBS.solaris = \
 	dl
 VBoxClient_LIBS = \
-	X11 Xrandr Xt Xext Xmu
-
+	X11 Xt Xext Xmu
+ifdef VBOX_WITH_DISTRO_XRAND_XINERAMA
+VBoxClient_LIBS += Xrandr
+endif
 # XXX: -L comes from the template, but not rpath
 VBoxClient_LDFLAGS.netbsd = \
 	-Wl,-rpath /usr/X11R7/lib

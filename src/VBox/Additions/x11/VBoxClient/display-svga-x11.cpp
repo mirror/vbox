@@ -53,10 +53,6 @@
 #include <X11/extensions/Xrandr.h>
 #include <X11/extensions/panoramiXproto.h>
 
-#define OLD_JUNK
-
-//#define DL_OPEN_RANDR
-
 /** Maximum number of supported screens.  DRM and X11 both limit this to 32. */
 /** @todo if this ever changes, dynamically allocate resizeable arrays in the
  *  context structure. */
@@ -120,6 +116,8 @@ struct X11CONTEXT
     void (*pXRRSelectInput) (Display *, Window, int);
     Bool (*pXRRQueryExtension) (Display *, int *, int *);
     Status (*pXRRQueryVersion) (Display *, int *, int*);
+    XRRMonitorInfo* (*pXRRGetMonitors)(Display *, Window, Bool, int *);
+    void (*pXRRFreeMonitors)(XRRMonitorInfo *);
 };
 
 static X11CONTEXT x11Context;
@@ -180,7 +178,6 @@ bool VMwareCtrlSetTopology(Display *dpy, int hExtensionMajorOpcode,
    return true;
 }
 
-#ifndef OLD_JUNK
 /** This function assumes monitors are named as from Virtual1 to VirtualX. */
 static int getMonitorIdFromName(const char *sMonitorName)
 {
@@ -221,12 +218,20 @@ static void queryMonitorPositions()
         mpMonitorPositions = NULL;
     }
 
-    XRRScreenResources *pScreenResources = XRRGetScreenResources (x11Context.pDisplay, DefaultRootWindow(x11Context.pDisplay));
-    AssertReturnVoid(pScreenResources);
-    XRRFreeScreenResources (pScreenResources);
+    // XRRScreenResources *pScreenResources = XRRGetScreenResources(x11Context.pDisplay, DefaultRootWindow(x11Context.pDisplay));
+    // AssertReturnVoid(pScreenResources);
+    // XRRFreeScreenResources(pScreenResources);
 
     int iMonitorCount = 0;
-    XRRMonitorInfo *pMonitorInfo = XRRGetMonitors(x11Context.pDisplay, DefaultRootWindow(x11Context.pDisplay), true, &iMonitorCount);
+    XRRMonitorInfo *pMonitorInfo = NULL;
+#ifdef WITH_DISTRO_XRAND_XINERAMA
+    pMonitorInfo = XRRGetMonitors(x11Context.pDisplay, DefaultRootWindow(x11Context.pDisplay), true, &iMonitorCount);
+#else
+    if (x11Context.pXRRGetMonitors)
+        x11Context.pXRRGetMonitors(x11Context.pDisplay, DefaultRootWindow(x11Context.pDisplay), true, &iMonitorCount);
+#endif
+    if (!pMonitorInfo)
+        return;
     if (iMonitorCount == -1)
         VBClLogError("Could not get monitor info\n");
     else
@@ -253,13 +258,16 @@ static void queryMonitorPositions()
         if (iMonitorCount > 0)
             sendMonitorPositions(mpMonitorPositions, x11Context.hOutputCount);
     }
+#ifdef WITH_DISTRO_XRAND_XINERAMA
     XRRFreeMonitors(pMonitorInfo);
-}
+#else
+    if (x11Context.pXRRFreeMonitors)
+        x11Context.pXRRFreeMonitors(pMonitorInfo);
 #endif
+}
 
 static void monitorRandREvents()
 {
-#ifndef OLD_JUNK
     XEvent event;
     XNextEvent(x11Context.pDisplay, &event);
     int eventTypeOffset = event.type - x11Context.hRandREventBase;
@@ -276,7 +284,6 @@ static void monitorRandREvents()
             VBClLogInfo("Unknown RR event: %d\n", event.type);
             break;
     }
-#endif
 }
 
 /**
@@ -332,7 +339,6 @@ static int stopX11MonitorThread(void)
 
 static bool callVMWCTRL()
 {
-#ifndef OLD_JUNK
     const int hHeight = 600;
     const int hWidth = 800;
 
@@ -351,9 +357,6 @@ static bool callVMWCTRL()
     return VMwareCtrlSetTopology(x11Context.pDisplay, x11Context.hVMWCtrlMajorOpCode,
                                  DefaultScreen(x11Context.pDisplay),
                                  extents, x11Context.hOutputCount);
-#else
-    return true;
-#endif
 }
 
 static bool init()
@@ -364,11 +367,11 @@ static bool init()
     callVMWCTRL();
     if (RT_FAILURE(startX11MonitorThread()))
         return false;
-#ifdef DL_OPEN_RANDR
+#ifdef WITH_DISTRO_XRAND_XINERAMA
+    XRRSelectInput(x11Context.pDisplay, x11Context.rootWindow, x11Context.hEventMask);
+#else
     if (x11Context.pXRRSelectInput)
         x11Context.pXRRSelectInput(x11Context.pDisplay, x11Context.rootWindow, x11Context.hEventMask);
-#else
-    XRRSelectInput(x11Context.pDisplay, x11Context.rootWindow, x11Context.hEventMask);
 #endif
     return true;
 }
@@ -386,16 +389,16 @@ static void cleanup()
         dlclose(x11Context.pRandLibraryHandle);
         x11Context.pRandLibraryHandle = NULL;
     }
-#ifdef DL_OPEN_RANDR
+#ifdef WITH_DISTRO_XRAND_XINERAMA
+    XRRSelectInput(x11Context.pDisplay, x11Context.rootWindow, 0);
+#else
     if (x11Context.pXRRSelectInput)
         x11Context.pXRRSelectInput(x11Context.pDisplay, x11Context.rootWindow, 0);
-#else
-    XRRSelectInput(x11Context.pDisplay, x11Context.rootWindow, 0);
 #endif
     XCloseDisplay(x11Context.pDisplay);
 }
 
-#ifdef DL_OPEN_RANDR
+#ifndef WITH_DISTRO_XRAND_XINERAMA
 static int openLibRandR()
 {
     x11Context.pRandLibraryHandle = dlopen("/usr/lib/x86_64-linux-gnu/libXrandr.so", RTLD_LAZY /*| RTLD_LOCAL */);
@@ -433,6 +436,27 @@ static int openLibRandR()
         x11Context.pRandLibraryHandle = NULL;
         return VERR_NOT_FOUND;
     }
+
+    x11Context.pXRRGetMonitors = (XRRMonitorInfo* (*)(Display *, Window, Bool, int *))
+        dlsym(x11Context.pRandLibraryHandle, "XRRGetMonitors");
+    if (!x11Context.pXRRGetMonitors)
+    {
+        VBClLogFatalError("Could not find address for the symbol XRRGetMonitors\n");
+        dlclose(x11Context.pRandLibraryHandle);
+        x11Context.pRandLibraryHandle = NULL;
+        return VERR_NOT_FOUND;
+    }
+
+    x11Context.pXRRFreeMonitors = (void (*)(XRRMonitorInfo *))
+        dlsym(x11Context.pRandLibraryHandle, "XRRFreeMonitors");
+    if (!x11Context.pXRRFreeMonitors)
+    {
+        VBClLogFatalError("Could not find address for the symbol XRRFreeMonitors\n");
+        dlclose(x11Context.pRandLibraryHandle);
+        x11Context.pRandLibraryHandle = NULL;
+        return VERR_NOT_FOUND;
+    }
+
     return VINF_SUCCESS;
 }
 #endif
@@ -453,20 +477,20 @@ static void x11Connect()
         return;
     }
     bool fSuccess = false;
-#ifdef DL_OPEN_RANDR
+#ifdef WITH_DISTRO_XRAND_XINERAMA
+    fSuccess = XRRQueryExtension(x11Context.pDisplay, &x11Context.hRandREventBase, &x11Context.hRandRErrorBase);
+#else
     if (x11Context.pXRRQueryExtension)
         fSuccess = x11Context.pXRRQueryExtension(x11Context.pDisplay, &x11Context.hRandREventBase, &x11Context.hRandRErrorBase);
-#else
-    fSuccess = XRRQueryExtension(x11Context.pDisplay, &x11Context.hRandREventBase, &x11Context.hRandRErrorBase);
 #endif
     if (fSuccess)
     {
         fSuccess = false;
-#ifdef DL_OPEN_RANDR
+#ifdef WITH_DISTRO_XRAND_XINERAMA
+        fSuccess = XRRQueryVersion(x11Context.pDisplay, &x11Context.hRandRMajor, &x11Context.hRandRMinor);
+#else
     if (x11Context.pXRRQueryVersion)
         fSuccess = x11Context.pXRRQueryVersion(x11Context.pDisplay, &x11Context.hRandRMajor, &x11Context.hRandRMinor);
-#else
-        fSuccess = XRRQueryVersion(x11Context.pDisplay, &x11Context.hRandRMajor, &x11Context.hRandRMinor);
 #endif
         if (!fSuccess)
         {
@@ -476,20 +500,20 @@ static void x11Connect()
         }
     }
     x11Context.hEventMask = 0;
-#ifndef OLD_JUNK
     x11Context.hEventMask = RRScreenChangeNotifyMask;
     if (x11Context.hRandRMinor >= 2)
         x11Context.hEventMask |= RRCrtcChangeNotifyMask
                                | RROutputChangeNotifyMask
                                | RROutputPropertyNotifyMask;
-#endif
     x11Context.rootWindow = DefaultRootWindow(x11Context.pDisplay);
     x11Context.hOutputCount = determineOutputCount();
     x11Context.pXRRSelectInput = NULL;
     x11Context.pRandLibraryHandle = NULL;
     x11Context.pXRRQueryExtension = NULL;
     x11Context.pXRRQueryVersion = NULL;
-#ifdef DL_OPEN_RANDR
+    x11Context.pXRRGetMonitors = NULL;
+    x11Context.pXRRFreeMonitors = NULL;
+#ifndef WITH_DISTRO_XRAND_XINERAMA
     if (openLibRandR() != VINF_SUCCESS)
     {
         XCloseDisplay(x11Context.pDisplay);
