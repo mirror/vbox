@@ -1346,7 +1346,7 @@ EOF
 
 
 #
-# Check for the Xinerama library, needed by the Qt GUI
+# Check for the XRandR library, needed by the Qt GUI
 #
 check_xrandr()
 {
