@@ -34,10 +34,15 @@ ifdef VBOX_WITH_DBUS
 endif
 ifdef VBOX_WITH_DISTRO_XRAND_XINERAMA
  VBoxClient_DEFS += WITH_DISTRO_XRAND_XINERAMA
+ VBoxClient_LIBS += Xrandr
+else
+ VBoxClient_INCS += ../x11include/panoramiXproto-1.1
+ VBoxClient_INCS += ../x11include/libXrandr-1.5.2
 endif
+
 VBoxClient_DEFS.linux += _GNU_SOURCE
 VBoxClient_INCS = $(VBOX_GRAPHICS_INCS)
-VBoxClient_INCS += ../x11include/panoramiXproto-1.1
+
 VBoxClient_SOURCES = \
 	main.cpp \
 	display-svga.cpp \
@@ -60,9 +65,6 @@ VBoxClient_LIBS.solaris = \
 	dl
 VBoxClient_LIBS = \
 	X11 Xt Xext Xmu
-ifdef VBOX_WITH_DISTRO_XRAND_XINERAMA
-VBoxClient_LIBS += Xrandr
-endif
 # XXX: -L comes from the template, but not rpath
 VBoxClient_LDFLAGS.netbsd = \
 	-Wl,-rpath /usr/X11R7/lib
