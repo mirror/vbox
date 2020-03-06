@@ -197,10 +197,13 @@ VBOXWEB_OTHERS += \
 	$(VBOXWEB_GSOAPH_FROM_XSLT)
 
 
-# GCC 9.2 doesn't cope well with the split files (internal error), so
-# don't do it there.
-if !defined(VBOX_WITHOUT_SPLIT_SOAPC) && !defined(VBOX_WITH_SPLIT_SOAPC) && $(VBOX_GCC_VERSION_CXX) >= 90200
- VBOX_WITHOUT_SPLIT_SOAPC := 1
+# GCC 9.2 doesn't cope ver well with the split soapC.cpp files (internal error).
+# Seemingly, the issue goes away when we strip inline functions from soapH.h.
+ifdef VBOX_WITHOUT_NOINLINE_SOAPH
+ if !defined(VBOX_WITHOUT_SPLIT_SOAPC) && !defined(VBOX_WITH_SPLIT_SOAPC) && $(VBOX_GCC_VERSION_CXX) >= 90200
+  $(info Triggering VBOX_WITHOUT_SPLIT_SOAPC because of VBOX_GCC_VERSION_CXX=$(VBOX_GCC_VERSION_CXX) and VBOX_WITHOUT_NOINLINE_SOAPH)
+  VBOX_WITHOUT_SPLIT_SOAPC := 1
+ endif
 endif
 
 # disable -fvisibility=hidden as the SOAP stuff does not properly set the visibility attributes
@@ -216,6 +219,13 @@ endif
 ifdef VBOX_GSOAP_INSTALLED
  ifndef VBOX_ONLY_SDK
   #
+  # soapC and soapH-noinline file splitter.
+  #
+  BLDPROGS += split-soapC
+  split-soapC_TEMPLATE = VBoxBldProg
+  split-soapC_SOURCES = split-soapC.cpp
+
+  #
   # vboxsoap - Library used by both the programs (save build time).
   #
   LIBRARIES += vboxsoap
@@ -229,7 +239,9 @@ ifdef VBOX_GSOAP_INSTALLED
   vboxsoap_CXXFLAGS.win += -bigobj
   vboxsoap_CXXFLAGS.win += -wd4702 # soapc-4.cpp(16) : warning C4702: unreachable code
   ifn1of ($(KBUILD_TARGET), win)
-   vboxsoap_CXXFLAGS += -Wno-shadow -Wno-parentheses $(VBOX_GCC_Wno-literal-suffix) $(VBOX_GCC_Wno-stringop-overflow) $(VBOX_GCC_Wno-stringop-truncation)
+   vboxsoap_CXXFLAGS += -Wno-shadow -Wno-parentheses $(VBOX_GCC_Wno-literal-suffix) \
+   	$(VBOX_GCC_Wno-stringop-overflow) $(VBOX_GCC_Wno-stringop-truncation) \
+   	$(VBOX_GCC_Wno-vla) -Wno-format -Wno-deprecated-declarations
    ifn1of ($(KBUILD_TYPE), debug) # Save time+memory by using -O0 instead of -O2.
     vboxsoap_CXXFLAGS += -O0 ## @todo this could be interesting for g++ (not clang++): -fcprop-registers
    endif
@@ -246,10 +258,6 @@ ifdef VBOX_GSOAP_INSTALLED
    vboxsoap_SOURCES = \
    	$(VBOXWEB_OUT_DIR)/soapC.cpp
   else
-   BLDPROGS += split-soapC
-   split-soapC_TEMPLATE = VBoxBldProg
-   split-soapC_SOURCES = split-soapC.cpp
-
    vboxsoap_SOURCES = \
 	$(VBOXWEB_OUT_DIR)/soapC-1.cpp \
 	$(VBOXWEB_OUT_DIR)/soapC-2.cpp \
@@ -280,10 +288,21 @@ ifdef VBOX_GSOAP_INSTALLED
 	$(VBOXWEB_OUT_DIR)/soapC-27.cpp \
 	$(VBOXWEB_OUT_DIR)/soapC-28.cpp \
 	$(VBOXWEB_OUT_DIR)/soapC-29.cpp
-  vboxsoap_CXXFLAGS += \
-  	$(VBOX_GCC_Wno-vla) \
-	$(if-expr $(KBUILD_TARGET) == "win",,-Wno-format) \
-  	$(if-expr $(KBUILD_TARGET) == "win",,-Wno-deprecated-declarations)
+  endif
+  ifndef VBOX_WITHOUT_NOINLINE_SOAPH
+   vboxsoap_SOURCES += \
+   	$(VBOXWEB_OUT_DIR)/soapH-noinline-1.cpp \
+   	$(VBOXWEB_OUT_DIR)/soapH-noinline-2.cpp \
+   	$(VBOXWEB_OUT_DIR)/soapH-noinline-3.cpp \
+   	$(VBOXWEB_OUT_DIR)/soapH-noinline-4.cpp \
+   	$(VBOXWEB_OUT_DIR)/soapH-noinline-5.cpp \
+   	$(VBOXWEB_OUT_DIR)/soapH-noinline-6.cpp \
+   	$(VBOXWEB_OUT_DIR)/soapH-noinline-7.cpp \
+   	$(VBOXWEB_OUT_DIR)/soapH-noinline-8.cpp \
+   	$(VBOXWEB_OUT_DIR)/soapH-noinline-9.cpp \
+   	$(VBOXWEB_OUT_DIR)/soapH-noinline-10.cpp \
+   	$(VBOXWEB_OUT_DIR)/soapH-noinline-11.cpp \
+   	$(VBOXWEB_OUT_DIR)/soapH-noinline-12.cpp
   endif
   vboxsoap_CLEAN := $(vboxsoap_SOURCES) # lazy bird
   vboxsoap_SOURCES <= \
@@ -301,8 +320,6 @@ ifdef VBOX_GSOAP_INSTALLED
    $(VBOX_GSOAP_CXX_SOURCES)_CXXFLAGS += -fpermissive
    # Necessary with gcc 9.2.1 for some reason:
    $(VBOX_GSOAP_CXX_SOURCES)_CXXFLAGS += -Wno-deprecated-declarations
-
-
   endif
 
   if "$(KBUILD_TARGET)" == "win" && "$(VBOX_GSOAP_CXX_SOURCES)" != ""
@@ -769,14 +786,39 @@ GSOAPH_RELEVANT = $(VBOXWEB_GSOAPH_FROM_XSLT)
 
 ## @todo change this to state explicitly what will be generated?
 
-# generate server and client code from gsoap pseudo-C header file
+#
+# Generate server and client code from gsoap pseudo-C header file.
+#
+# Options for soapcpp2:
+#   -2: generate SOAP 1.2 calls
+#   -L: don't generate soapClientLib/soapServerLib
+#   -w: don't generate WSDL and schema files
+#   -x: don't generate sample XML files (VBOXWEB_SOAPCPP2_SKIP_FILES).
+#
 $(VBOXWEB_OUT_DIR)/gsoap_generate_all_ts \
 + $(VBOXWEB_OUT_DIR)/soapH.h \
+$(if-expr !defined(VBOX_WITHOUT_NOINLINE_SOAPH),\
++ $(VBOXWEB_OUT_DIR)/soapH-noinline-1.cpp \
++ $(VBOXWEB_OUT_DIR)/soapH-noinline-2.cpp \
++ $(VBOXWEB_OUT_DIR)/soapH-noinline-3.cpp \
++ $(VBOXWEB_OUT_DIR)/soapH-noinline-4.cpp \
++ $(VBOXWEB_OUT_DIR)/soapH-noinline-5.cpp \
++ $(VBOXWEB_OUT_DIR)/soapH-noinline-6.cpp \
++ $(VBOXWEB_OUT_DIR)/soapH-noinline-7.cpp \
++ $(VBOXWEB_OUT_DIR)/soapH-noinline-8.cpp \
++ $(VBOXWEB_OUT_DIR)/soapH-noinline-9.cpp \
++ $(VBOXWEB_OUT_DIR)/soapH-noinline-10.cpp \
++ $(VBOXWEB_OUT_DIR)/soapH-noinline-11.cpp \
++ $(VBOXWEB_OUT_DIR)/soapH-noinline-12.cpp,) \
 + $(VBOXWEB_SOAP_CLIENT_H) \
 + $(VBOXWEB_OUT_DIR)/soapC.cpp \
 + $(VBOXWEB_OUT_DIR)/soapClient.cpp \
 + $(VBOXWEB_OUT_DIR)/soapServer.cpp \
-: $(VBOXWEB_GSOAPH_FROM_GSOAP) $(VBOXWEB_GSOAPH_FROM_XSLT) $(VBOX_NSMAP) $(VBOX_PATH_WEBSERVICE)/stdsoap2.sed \
+: $(VBOXWEB_GSOAPH_FROM_GSOAP) $(VBOXWEB_GSOAPH_FROM_XSLT) $(VBOX_NSMAP) \
+		$(VBOX_PATH_WEBSERVICE)/stdsoap2.sed \
+		$(VBOX_PATH_WEBSERVICE)/soap-header-to-inline-source-file.sed \
+		$(VBOX_PATH_WEBSERVICE)/soap-header-strip-inline.sed \
+		$$(split-soapC_1_TARGET) \
 		$(RECOMPILE_ON_MAKEFILE_CURRENT) | $$(dir $$@)
 	$(call MSG_GENERATE,,lots of files,$(GSOAPH_RELEVANT))
 	$(RM) -f $@
@@ -785,6 +827,17 @@ ifeq ($(KBUILD_TARGET),win) # MSC -Wall workaround.
 	$(CP) -f "$(VBOXWEB_SOAP_CLIENT_H)" "$(VBOXWEB_SOAP_CLIENT_H).tmp"
 	$(SED) -f $(VBOX_PATH_WEBSERVICE)/stdsoap2.sed --output "$(VBOXWEB_SOAP_CLIENT_H)" "$(VBOXWEB_SOAP_CLIENT_H).tmp"
 	$(RM) -f "$(VBOXWEB_SOAP_CLIENT_H).tmp"
+endif
+ifndef VBOX_WITHOUT_NOINLINE_SOAPH
+	$(MV) -f -- "$(VBOXWEB_OUT_DIR)/soapH.h" "$(VBOXWEB_OUT_DIR)/soapH.h.tmp"
+	$(SED) -f $(VBOX_PATH_WEBSERVICE)/soap-header-to-inline-source-file.sed \
+		--output "$(VBOXWEB_OUT_DIR)/soapH-noinline.cpp" \
+		"$(VBOXWEB_OUT_DIR)/soapH.h.tmp"
+	$(split-soapC_1_TARGET) $(VBOXWEB_OUT_DIR)/soapH-noinline.cpp $(VBOXWEB_OUT_DIR)/soapH-noinline- 12
+	$(SED) -f $(VBOX_PATH_WEBSERVICE)/soap-header-strip-inline.sed \
+		--output "$(VBOXWEB_OUT_DIR)/soapH.h" \
+		"$(VBOXWEB_OUT_DIR)/soapH.h.tmp"
+	$(RM) -f -- "$(VBOXWEB_OUT_DIR)/soapH.h.tmp" "$(VBOXWEB_OUT_DIR)/soapH-noinline.cpp"
 endif
 	$(APPEND) $@ done
 
@@ -807,11 +860,7 @@ $(PATH_TARGET_SOAPDEMONSMAPS) \
 $(PATH_TARGET_SOAPDEMOHEADERS)/soapvboxBindingProxy.h \
 $(PATH_TARGET_SOAPDEMOHEADERS)/soapvboxBindingObject.h: $(VBOXWEB_OUT_DIR)/gsoap_copy_all_ts
 
-# soapcpp2 -2: generate SOAP 1.2 calls
-# soapcpp2 -S: server-side code only
-# soapcpp2 -L: don't generate soapClientLib/soapServerLib
-# soapcpp2 -w: don't generate WSDL and schema files
-# soapcpp2 -x: don't generate sample XML files
+hack: $(VBOXWEB_OUT_DIR)/gsoap_copy_all_ts
 
 ifndef VBOX_WITHOUT_SPLIT_SOAPC
 #
@@ -849,7 +898,7 @@ $(VBOXWEB_OUT_DIR)/soapC-1.cpp \
 + $(VBOXWEB_OUT_DIR)/soapC-29.cpp \
 : $(VBOXWEB_OUT_DIR)/soapC.cpp $$(split-soapC_1_TARGET) | $$(dir $$@)
 	$(RM) -f -- $(wildcard $(VBOXWEB_OUT_DIR)/soapC-?.cpp $(VBOXWEB_OUT_DIR)/soapC-??.cpp)
-	$(split-soapC_1_TARGET) $(VBOXWEB_OUT_DIR)/soapC.cpp $(VBOXWEB_OUT_DIR) 29
+	$(split-soapC_1_TARGET) $(VBOXWEB_OUT_DIR)/soapC.cpp $(VBOXWEB_OUT_DIR)/soapC- 29
 endif # !VBOX_WITHOUT_SPLIT_SOAPC
 
 endif # VBOX_GSOAP_INSTALLED
