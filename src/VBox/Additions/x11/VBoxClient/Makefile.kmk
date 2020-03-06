@@ -35,11 +35,10 @@ endif
 ifdef VBOX_WITH_DISTRO_XRAND_XINERAMA
  VBoxClient_DEFS += WITH_DISTRO_XRAND_XINERAMA
  VBoxClient_LIBS += Xrandr
-else
- VBoxClient_INCS += ../x11include/panoramiXproto-1.1
- VBoxClient_INCS += ../x11include/libXrandr-1.5.2
 endif
 
+VBoxClient_INCS += ../x11include/panoramiXproto-1.1
+VBoxClient_INCS += ../x11include/libXrandr-1.5.2
 VBoxClient_DEFS.linux += _GNU_SOURCE
 VBoxClient_INCS = $(VBOX_GRAPHICS_INCS)
 
