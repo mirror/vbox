@@ -408,9 +408,7 @@ static int openLibRandR()
         VBClLogFatalError("Could not locate libXranr for dlopen\n");
         return VERR_NOT_FOUND;
     }
-
-    x11Context.pXRRSelectInput = (void (*)(Display*, Window, int))
-        dlsym(x11Context.pRandLibraryHandle, "XRRSelectInput");
+    *(void **)(&x11Context.pXRRSelectInput) = dlsym(x11Context.pRandLibraryHandle, "XRRSelectInput");
     if (!x11Context.pXRRSelectInput)
     {
         VBClLogFatalError("Could not find address for the symbol XRRSelectInput\n");
@@ -418,8 +416,7 @@ static int openLibRandR()
         x11Context.pRandLibraryHandle = NULL;
         return VERR_NOT_FOUND;
     }
-    x11Context.pXRRQueryExtension = (Bool (*)(Display *, int *, int *))
-        dlsym(x11Context.pRandLibraryHandle, "XRRQueryExtension");
+    *(void **)(&x11Context.pXRRQueryExtension) = dlsym(x11Context.pRandLibraryHandle, "XRRQueryExtension");
     if (!x11Context.pXRRQueryExtension)
     {
         VBClLogFatalError("Could not find address for the symbol XRRQueryExtension\n");
@@ -427,8 +424,7 @@ static int openLibRandR()
         x11Context.pRandLibraryHandle = NULL;
         return VERR_NOT_FOUND;
     }
-    x11Context.pXRRQueryVersion = (Status (*)(Display *, int *, int*))
-        dlsym(x11Context.pRandLibraryHandle, "XRRQueryVersion");
+    *(void **)(&x11Context.pXRRQueryVersion) = dlsym(x11Context.pRandLibraryHandle, "XRRQueryVersion");
     if (!x11Context.pXRRQueryVersion)
     {
         VBClLogFatalError("Could not find address for the symbol XRRQueryVersion\n");
@@ -436,9 +432,7 @@ static int openLibRandR()
         x11Context.pRandLibraryHandle = NULL;
         return VERR_NOT_FOUND;
     }
-
-    x11Context.pXRRGetMonitors = (XRRMonitorInfo* (*)(Display *, Window, Bool, int *))
-        dlsym(x11Context.pRandLibraryHandle, "XRRGetMonitors");
+    *(void **)(&x11Context.pXRRGetMonitors) = dlsym(x11Context.pRandLibraryHandle, "XRRGetMonitors");
     if (!x11Context.pXRRGetMonitors)
     {
         VBClLogFatalError("Could not find address for the symbol XRRGetMonitors\n");
@@ -446,9 +440,7 @@ static int openLibRandR()
         x11Context.pRandLibraryHandle = NULL;
         return VERR_NOT_FOUND;
     }
-
-    x11Context.pXRRFreeMonitors = (void (*)(XRRMonitorInfo *))
-        dlsym(x11Context.pRandLibraryHandle, "XRRFreeMonitors");
+    *(void **)(&x11Context.pXRRFreeMonitors) = dlsym(x11Context.pRandLibraryHandle, "XRRFreeMonitors");
     if (!x11Context.pXRRFreeMonitors)
     {
         VBClLogFatalError("Could not find address for the symbol XRRFreeMonitors\n");
