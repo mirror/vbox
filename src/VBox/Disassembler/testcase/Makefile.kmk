@@ -221,10 +221,6 @@ $(foreach bits, 32 16, $(foreach binary, $(filter-out $(VBOX_DISAS_TESTS_BINARIE
 VBOX_DISAS_TEST_CLEAN += $(addprefix $(VBOX_DISAS_TEST_OUT_DIR)/, $(VBOX_DISAS_TESTS))
 OTHER_CLEAN += $(VBOX_DISAS_TEST_CLEAN)
 
-# We don't want any of the tests rules to run in parallel because the
-# output will be difficult to follow. Abusing VBOX_DISAS_TEST_CLEAN here...
-.NOTPARALLEL: $$(VBOX_DISAS_TEST_CLEAN)
-
 
 #
 # Add the tests to the target list for the testing pass.
