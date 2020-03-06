@@ -37,6 +37,7 @@
  *  - When VMSVGA is not enabled, VBoxClient --vmsvga should never stay running.
  */
 #include <stdio.h>
+#include <dlfcn.h>
 #include "VBoxClient.h"
 
 #include <VBox/VBoxGuestLib.h>
@@ -53,6 +54,8 @@
 #include <X11/extensions/panoramiXproto.h>
 
 #define OLD_JUNK
+
+//#define DL_OPEN_RANDR
 
 /** Maximum number of supported screens.  DRM and X11 both limit this to 32. */
 /** @todo if this ever changes, dynamically allocate resizeable arrays in the
@@ -113,6 +116,10 @@ struct X11CONTEXT
     /** The number of outputs (monitors, including disconnect ones) xrandr reports. */
     int hOutputCount;
     Window rootWindow;
+    void *pRandLibraryHandle;
+    void (*pXRRSelectInput) (Display *, Window, int);
+    Bool (*pXRRQueryExtension) (Display *, int *, int *);
+    Status (*pXRRQueryVersion) (Display *, int *, int*);
 };
 
 static X11CONTEXT x11Context;
@@ -357,7 +364,12 @@ static bool init()
     callVMWCTRL();
     if (RT_FAILURE(startX11MonitorThread()))
         return false;
+#ifdef DL_OPEN_RANDR
+    if (x11Context.pXRRSelectInput)
+        x11Context.pXRRSelectInput(x11Context.pDisplay, x11Context.rootWindow, x11Context.hEventMask);
+#else
     XRRSelectInput(x11Context.pDisplay, x11Context.rootWindow, x11Context.hEventMask);
+#endif
     return true;
 }
 
@@ -369,9 +381,61 @@ static void cleanup()
         mpMonitorPositions = NULL;
     }
     stopX11MonitorThread();
+    if (x11Context.pRandLibraryHandle)
+    {
+        dlclose(x11Context.pRandLibraryHandle);
+        x11Context.pRandLibraryHandle = NULL;
+    }
+#ifdef DL_OPEN_RANDR
+    if (x11Context.pXRRSelectInput)
+        x11Context.pXRRSelectInput(x11Context.pDisplay, x11Context.rootWindow, 0);
+#else
     XRRSelectInput(x11Context.pDisplay, x11Context.rootWindow, 0);
+#endif
     XCloseDisplay(x11Context.pDisplay);
 }
+
+#ifdef DL_OPEN_RANDR
+static int openLibRandR()
+{
+    x11Context.pRandLibraryHandle = dlopen("/usr/lib/x86_64-linux-gnu/libXrandr.so", RTLD_LAZY /*| RTLD_LOCAL */);
+
+    if (!x11Context.pRandLibraryHandle)
+    {
+        VBClLogFatalError("Could not locate libXranr for dlopen\n");
+        return VERR_NOT_FOUND;
+    }
+
+    x11Context.pXRRSelectInput = (void (*)(Display*, Window, int))
+        dlsym(x11Context.pRandLibraryHandle, "XRRSelectInput");
+    if (!x11Context.pXRRSelectInput)
+    {
+        VBClLogFatalError("Could not find address for the symbol XRRSelectInput\n");
+        dlclose(x11Context.pRandLibraryHandle);
+        x11Context.pRandLibraryHandle = NULL;
+        return VERR_NOT_FOUND;
+    }
+    x11Context.pXRRQueryExtension = (Bool (*)(Display *, int *, int *))
+        dlsym(x11Context.pRandLibraryHandle, "XRRQueryExtension");
+    if (!x11Context.pXRRQueryExtension)
+    {
+        VBClLogFatalError("Could not find address for the symbol XRRQueryExtension\n");
+        dlclose(x11Context.pRandLibraryHandle);
+        x11Context.pRandLibraryHandle = NULL;
+        return VERR_NOT_FOUND;
+    }
+    x11Context.pXRRQueryVersion = (Status (*)(Display *, int *, int*))
+        dlsym(x11Context.pRandLibraryHandle, "XRRQueryVersion");
+    if (!x11Context.pXRRQueryVersion)
+    {
+        VBClLogFatalError("Could not find address for the symbol XRRQueryVersion\n");
+        dlclose(x11Context.pRandLibraryHandle);
+        x11Context.pRandLibraryHandle = NULL;
+        return VERR_NOT_FOUND;
+    }
+    return VINF_SUCCESS;
+}
+#endif
 
 static void x11Connect()
 {
@@ -388,17 +452,28 @@ static void x11Connect()
         x11Context.pDisplay = NULL;
         return;
     }
-    if (!XRRQueryExtension(x11Context.pDisplay, &x11Context.hRandREventBase, &x11Context.hRandRErrorBase))
+    bool fSuccess = false;
+#ifdef DL_OPEN_RANDR
+    if (x11Context.pXRRQueryExtension)
+        fSuccess = x11Context.pXRRQueryExtension(x11Context.pDisplay, &x11Context.hRandREventBase, &x11Context.hRandRErrorBase);
+#else
+    fSuccess = XRRQueryExtension(x11Context.pDisplay, &x11Context.hRandREventBase, &x11Context.hRandRErrorBase);
+#endif
+    if (fSuccess)
     {
-        XCloseDisplay(x11Context.pDisplay);
-        x11Context.pDisplay = NULL;
-        return;
-    }
-    if (!XRRQueryVersion(x11Context.pDisplay, &x11Context.hRandRMajor, &x11Context.hRandRMinor))
-    {
-        XCloseDisplay(x11Context.pDisplay);
-        x11Context.pDisplay = NULL;
-        return;
+        fSuccess = false;
+#ifdef DL_OPEN_RANDR
+    if (x11Context.pXRRQueryVersion)
+        fSuccess = x11Context.pXRRQueryVersion(x11Context.pDisplay, &x11Context.hRandRMajor, &x11Context.hRandRMinor);
+#else
+        fSuccess = XRRQueryVersion(x11Context.pDisplay, &x11Context.hRandRMajor, &x11Context.hRandRMinor);
+#endif
+        if (!fSuccess)
+        {
+            XCloseDisplay(x11Context.pDisplay);
+            x11Context.pDisplay = NULL;
+            return;
+        }
     }
     x11Context.hEventMask = 0;
 #ifndef OLD_JUNK
@@ -410,6 +485,18 @@ static void x11Connect()
 #endif
     x11Context.rootWindow = DefaultRootWindow(x11Context.pDisplay);
     x11Context.hOutputCount = determineOutputCount();
+    x11Context.pXRRSelectInput = NULL;
+    x11Context.pRandLibraryHandle = NULL;
+    x11Context.pXRRQueryExtension = NULL;
+    x11Context.pXRRQueryVersion = NULL;
+#ifdef DL_OPEN_RANDR
+    if (openLibRandR() != VINF_SUCCESS)
+    {
+        XCloseDisplay(x11Context.pDisplay);
+        x11Context.pDisplay = NULL;
+        return;
+    }
+#endif
 }
 
 /** run the xrandr command without options to get the total # of outputs (monitors) including
