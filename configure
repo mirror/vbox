@@ -2859,6 +2859,8 @@ if [ "$OS" = "linux" ]; then
   [ $ONLY_ADDITIONS -eq 0 -a "$BUILD_MACHINE" = "amd64" -a $WITH_VMMRAW -eq 1 ] && check_32bit
   # tools/common/makeself*
   [ $OSE -ge 1 ] && check_makeself
+  # Use header files from our tree for randr and xinerama. don't link but rather dlopen libXrand
+  VBOX_WITH_DISTRO_XRAND_XINERAMA = 
 fi
 
 [ -n "$SETUP_WINE" ] && setup_wine
