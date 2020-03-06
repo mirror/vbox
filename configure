@@ -2860,7 +2860,7 @@ if [ "$OS" = "linux" ]; then
   # tools/common/makeself*
   [ $OSE -ge 1 ] && check_makeself
   # Use header files from our tree for randr and xinerama. don't link but rather dlopen libXrand
-  VBOX_WITH_DISTRO_XRAND_XINERAMA = 
+  VBOX_WITH_DISTRO_XRAND_XINERAMA=
 fi
 
 [ -n "$SETUP_WINE" ] && setup_wine
