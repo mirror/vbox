@@ -24,6 +24,7 @@ volatile uint32_t g_fu32GaLogControl =
       GALOG_GROUP_RELEASE
 #ifdef DEBUG
     | GALOG_GROUP_TEST
+    | GALOG_GROUP_HOSTOBJECTS
 //    | GALOG_GROUP_PRESENT
 //    | GALOG_GROUP_DXGK
 //    | GALOG_GROUP_SVGA

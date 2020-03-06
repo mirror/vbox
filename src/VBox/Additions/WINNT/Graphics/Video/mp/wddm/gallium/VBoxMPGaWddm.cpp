@@ -35,6 +35,17 @@ void GaAdapterStop(PVBOXMP_DEVEXT pDevExt)
 
     if (pGaDevExt)
     {
+        if (!RTListIsEmpty(&pGaDevExt->listHwRenderData))
+        {
+            GAHWRENDERDATA *pIter, *pNext;
+            RTListForEachSafe(&pGaDevExt->listHwRenderData, pIter, pNext, GAHWRENDERDATA, node)
+            {
+                /* Delete the data. SvgaRenderComplete deallocates pIter. */
+                RTListNodeRemove(&pIter->node);
+                SvgaRenderComplete(pGaDevExt->hw.pSvga, pIter);
+            }
+        }
+
         /* Free fence objects. */
         GaFenceObjectsDestroy(pGaDevExt, NULL);
 
@@ -60,6 +71,8 @@ NTSTATUS GaAdapterStart(PVBOXMP_DEVEXT pDevExt)
         VBOXWDDM_EXT_GA *pGaDevExt = (VBOXWDDM_EXT_GA *)GaMemAllocZero(sizeof(*pGaDevExt));
         if (pGaDevExt)
         {
+            RTListInit(&pGaDevExt->listHwRenderData);
+
             /* Init fence objects. */
             pGaDevExt->fenceObjects.u32SeqNoSource = 0;
             RTListInit(&pGaDevExt->fenceObjects.list);
@@ -234,41 +247,14 @@ static NTSTATUS gaSurfaceDefine(PVBOXWDDM_EXT_GA pGaDevExt,
                                 uint32_t *pu32Sid)
 {
     VBOXWDDM_EXT_VMSVGA *pSvga = pGaDevExt->hw.pSvga;
-
-    uint32_t u32Sid;
-    NTSTATUS Status = SvgaSurfaceIdAlloc(pSvga, &u32Sid);
-    if (NT_SUCCESS(Status))
-    {
-        Status = SvgaSurfaceDefine(pSvga, pCreateParms, paSizes, cSizes, u32Sid);
-        if (NT_SUCCESS(Status))
-        {
-            *pu32Sid = u32Sid;
-        }
-        else
-        {
-            SvgaSurfaceIdFree(pSvga, u32Sid);
-        }
-    }
-    else
-    {
-        Status = STATUS_INSUFFICIENT_RESOURCES;
-    }
-
-    return Status;
+    return SvgaSurfaceCreate(pSvga, pCreateParms, paSizes, cSizes, pu32Sid);
 }
 
 static NTSTATUS gaSurfaceDestroy(PVBOXWDDM_EXT_GA pGaDevExt,
                                  uint32_t u32Sid)
 {
     VBOXWDDM_EXT_VMSVGA *pSvga = pGaDevExt->hw.pSvga;
-
-    NTSTATUS Status = SvgaSurfaceDestroy(pSvga, u32Sid);
-    if (NT_SUCCESS(Status))
-    {
-        SvgaSurfaceIdFree(pSvga, u32Sid);
-    }
-
-    return Status;
+    return SvgaSurfaceUnref(pSvga, u32Sid);
 }
 
 NTSTATUS GaScreenDefine(PVBOXWDDM_EXT_GA pGaDevExt,
@@ -293,19 +279,15 @@ static NTSTATUS gaSharedSidInsert(PVBOXWDDM_EXT_GA pGaDevExt,
                                   uint32_t u32Sid,
                                   uint32_t u32SharedSid)
 {
-    GASHAREDSID *pNode = (GASHAREDSID *)GaMemAllocZero(sizeof(GASHAREDSID));
-    if (!pNode)
-        return STATUS_INSUFFICIENT_RESOURCES;
-    return SvgaSharedSidInsert(pGaDevExt->hw.pSvga, pNode, u32Sid, u32SharedSid);
+    VBOXWDDM_EXT_VMSVGA *pSvga = pGaDevExt->hw.pSvga;
+    return SvgaSharedSidInsert(pSvga, u32Sid, u32SharedSid);
 }
 
 static NTSTATUS gaSharedSidRemove(PVBOXWDDM_EXT_GA pGaDevExt,
                                   uint32_t u32Sid)
 {
-    GASHAREDSID *pNode = SvgaSharedSidRemove(pGaDevExt->hw.pSvga, u32Sid);
-    if (pNode)
-        GaMemFree(pNode);
-    return STATUS_SUCCESS;
+    VBOXWDDM_EXT_VMSVGA *pSvga = pGaDevExt->hw.pSvga;
+    return SvgaSharedSidRemove(pSvga, u32Sid);
 }
 
 static NTSTATUS gaPresent(PVBOXWDDM_EXT_GA pGaDevExt,
@@ -435,6 +417,7 @@ typedef struct GARENDERDATA
     uint32_t      cbData;         /* How many bytes. */
     GAFENCEOBJECT *pFenceObject;  /* User mode fence associated with this command buffer. */
     void          *pvDmaBuffer;   /* Pointer to the DMA buffer. */
+    GAHWRENDERDATA *pHwRenderData; /* The hardware module private data. */
 } GARENDERDATA;
 
 #define GARENDERDATA_TYPE_RENDER   1
@@ -740,6 +723,7 @@ NTSTATUS APIENTRY GaDxgkDdiPresent(const HANDLE hContext,
             pRenderData->cbData       = u32TargetLength;
             pRenderData->pFenceObject = NULL; /* Not a user request, so no user accessible fence object. */
             pRenderData->pvDmaBuffer  = pPresent->pDmaBuffer;
+            pRenderData->pHwRenderData = NULL;
             cbPrivateData = sizeof(GARENDERDATA);
         }
         else
@@ -842,6 +826,7 @@ NTSTATUS APIENTRY GaDxgkDdiPresent(const HANDLE hContext,
             pRenderData->cbData       = u32TargetLength;
             pRenderData->pFenceObject = NULL; /* Not a user request, so no user accessible fence object. */
             pRenderData->pvDmaBuffer = pPresent->pDmaBuffer;
+            pRenderData->pHwRenderData = NULL;
             cbPrivateData = sizeof(GARENDERDATA);
         }
         else
@@ -886,6 +871,7 @@ NTSTATUS APIENTRY GaDxgkDdiPresent(const HANDLE hContext,
             pRenderData->cbData       = u32TargetLength;
             pRenderData->pFenceObject = NULL; /* Not a user request, so no user accessible fence object. */
             pRenderData->pvDmaBuffer  = pPresent->pDmaBuffer;
+            pRenderData->pHwRenderData = NULL;
             cbPrivateData = sizeof(GARENDERDATA);
         }
         else
@@ -970,10 +956,11 @@ NTSTATUS APIENTRY GaDxgkDdiRender(const HANDLE hContext, DXGKARG_RENDER *pRender
         {
             void *pvTarget          = pRender->pDmaBuffer;
             uint32_t const cbTarget = pRender->DmaSize;
+            GAHWRENDERDATA *pHwRenderData = NULL;
             if (cbTarget > GA_DMA_MIN_SUBMIT_SIZE)
             {
                 Status = SvgaRenderCommands(pGaDevExt->hw.pSvga, pvTarget, cbTarget, pvSource, cbSource,
-                                            &u32TargetLength, &u32ProcessedLength);
+                                            &u32TargetLength, &u32ProcessedLength, &pHwRenderData);
             }
             else
             {
@@ -1008,6 +995,7 @@ NTSTATUS APIENTRY GaDxgkDdiRender(const HANDLE hContext, DXGKARG_RENDER *pRender
             pRenderData->cbData       = u32TargetLength;
             pRenderData->pFenceObject = pFO;
             pRenderData->pvDmaBuffer  = pRender->pDmaBuffer;
+            pRenderData->pHwRenderData = pHwRenderData;
             cbPrivateData = sizeof(GARENDERDATA);
         }
         else
@@ -1215,6 +1203,7 @@ NTSTATUS APIENTRY GaDxgkDdiBuildPagingBuffer(const HANDLE hAdapter,
         pRenderData->cbData       = u32TargetLength;
         pRenderData->pFenceObject = NULL; /* Not a user request, so no user accessible fence object. */
         pRenderData->pvDmaBuffer = pBuildPagingBuffer->pDmaBuffer;
+        pRenderData->pHwRenderData = NULL;
         cbPrivateData = sizeof(GARENDERDATA);
     }
     else
@@ -1395,6 +1384,18 @@ NTSTATUS APIENTRY GaDxgkDdiSubmitCommand(const HANDLE hAdapter, const DXGKARG_SU
             }
         }
 
+        if (pRenderData->pHwRenderData)
+        {
+            GAHWRENDERDATA * const pHwRenderData = pRenderData->pHwRenderData;
+            pHwRenderData->u32SubmissionFenceId = pSubmitCommand->SubmissionFenceId;
+            pHwRenderData->u32Reserved = 0;
+
+            KIRQL OldIrql;
+            SvgaHostObjectsLock(pGaDevExt->hw.pSvga, &OldIrql);
+            RTListAppend(&pGaDevExt->listHwRenderData, &pHwRenderData->node);
+            SvgaHostObjectsUnlock(pGaDevExt->hw.pSvga, OldIrql);
+        }
+
         ++pRenderData;
     }
 
@@ -1462,6 +1463,13 @@ VOID GaDxgkDdiDpcRoutine(const PVOID MiniportDeviceContext)
         return;
     }
 
+    PVBOXWDDM_EXT_VMSVGA pSvga = pGaDevExt->hw.pSvga;
+    if (!pSvga)
+    {
+        /* Device is not initialized yet. */
+        return;
+    }
+
     /* Scan fence objects and mark all with u32FenceId < u32LastCompletedFenceId as SIGNALED */
     const uint32_t u32LastCompletedFenceId = ASMAtomicReadU32(&pGaDevExt->u32LastCompletedFenceId);
 
@@ -1490,6 +1498,39 @@ VOID GaDxgkDdiDpcRoutine(const PVOID MiniportDeviceContext)
     }
 
     gaFenceObjectsUnlock(pGaDevExt);
+
+    KIRQL OldIrql;
+    SvgaHostObjectsLock(pSvga, &OldIrql);
+
+    /* Move the completed render data objects to the local list under the lock. */
+    RTLISTANCHOR listHwRenderData;
+    RTListInit(&listHwRenderData);
+
+    if (!RTListIsEmpty(&pGaDevExt->listHwRenderData))
+    {
+        GAHWRENDERDATA *pIter, *pNext;
+        RTListForEachSafe(&pGaDevExt->listHwRenderData, pIter, pNext, GAHWRENDERDATA, node)
+        {
+            if (gaFenceCmp(pIter->u32SubmissionFenceId, u32LastCompletedFenceId) <= 0)
+            {
+                RTListNodeRemove(&pIter->node);
+                RTListAppend(&listHwRenderData, &pIter->node);
+            }
+        }
+    }
+
+    SvgaHostObjectsUnlock(pSvga, OldIrql);
+
+    if (!RTListIsEmpty(&listHwRenderData))
+    {
+        GAHWRENDERDATA *pIter, *pNext;
+        RTListForEachSafe(&listHwRenderData, pIter, pNext, GAHWRENDERDATA, node)
+        {
+            /* Delete the data. SvgaRenderComplete deallocates pIter. */
+            RTListNodeRemove(&pIter->node);
+            SvgaRenderComplete(pSvga, pIter);
+        }
+    }
 }
 
 typedef struct GAPREEMPTCOMMANDCBCTX

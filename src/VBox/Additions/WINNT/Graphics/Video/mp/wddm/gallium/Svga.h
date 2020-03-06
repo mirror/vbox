@@ -25,6 +25,7 @@
 
 #include <iprt/assert.h>
 #include <iprt/avl.h>
+#include <iprt/list.h>
 
 #include <VBoxGaTypes.h>
 #include <VBoxGaHWSVGA.h>
@@ -88,12 +89,17 @@ typedef struct VBOXWDDM_EXT_VMSVGA
     /** For atomic hardware access. */
     KSPIN_LOCK HwSpinLock;
 
+    /** Maintaining the host objects lists. */
+    KSPIN_LOCK HostObjectsSpinLock;
+
     /** AVL tree for mapping GMR id to the corresponding structure. */
     AVLU32TREE GMRTree;
 
-    /** Bitmap of used GMR ids. Bit 0 - GMR id 0, etc. */
-    uint32_t *pu32GMRBits; /* Number of GMRs is controlled by the host (u32GmrMaxIds), so allocte the bitmap. */
-    uint32_t cbGMRBits;    /* Bytes allocated for pu32GMRBits */
+    /** AVL tree for mapping sids to the surface objects. */
+    AVLU32TREE SurfaceTree;
+
+    /** List of host objects, which must be deleted at PASSIVE_LEVEL. */
+    RTLISTANCHOR DeletedHostObjectsList;
 
     /** SVGA data access. */
     FAST_MUTEX SvgaMutex;
@@ -104,8 +110,9 @@ typedef struct VBOXWDDM_EXT_VMSVGA
         uint32_t u32BytesPerLine;
     } lastGMRFB;
 
-    /** AVL tree for mapping sids to the original sid for shared resources. */
-    AVLU32TREE SharedSidMap;
+    /** Bitmap of used GMR ids. Bit 0 - GMR id 0, etc. */
+    uint32_t *pu32GMRBits; /* Number of GMRs is controlled by the host (u32GmrMaxIds), so allocate the bitmap. */
+    uint32_t cbGMRBits;    /* Bytes allocated for pu32GMRBits */
 
     /** Bitmap of used context ids. Bit 0 - context id 0, etc. */
     uint32_t au32ContextBits[(SVGA3D_MAX_CONTEXT_IDS + 31) / 32];
@@ -115,6 +122,75 @@ typedef struct VBOXWDDM_EXT_VMSVGA
 } VBOXWDDM_EXT_VMSVGA;
 typedef struct VBOXWDDM_EXT_VMSVGA *PVBOXWDDM_EXT_VMSVGA;
 
+typedef struct SVGAHOSTOBJECT SVGAHOSTOBJECT;
+typedef DECLCALLBACK(NTSTATUS) FNHostObjectDestroy(SVGAHOSTOBJECT *pThis);
+typedef FNHostObjectDestroy *PFNHostObjectDestroy;
+
+#define SVGA_HOST_OBJECT_UNDEFINED 0
+#define SVGA_HOST_OBJECT_SURFACE   1
+
+/* Information about an allocated surface. */
+typedef struct SVGAHOSTOBJECT
+{
+    union {
+        /* core.Key is the object id: surface id (sid), or (curently not required) context id (cid), gmr id (gid). */
+        struct
+        {
+            AVLU32NODECORE core;
+        } avl;
+
+        struct {
+            RTLISTNODE node;
+            uint32_t u32Key;
+        } list;
+    } u;
+
+    /* By UM driver, during submission of commands, by shared surface, etc. */
+    uint32_t volatile cRefs;
+
+    /* SVGA_HOST_OBJECT_ type. */
+    uint32_t uType;
+
+    /* Device the object is associated with. */
+    VBOXWDDM_EXT_VMSVGA *pSvga;
+
+    /* Destructor. */
+    PFNHostObjectDestroy pfnHostObjectDestroy;
+} SVGAHOSTOBJECT;
+
+#define SVGAHOSTOBJECTID(pHO) ((pHO)->u.avl.core.Key)
+
+/* Information about an allocated surface. */
+typedef struct SURFACEOBJECT
+{
+    SVGAHOSTOBJECT ho;
+
+    /* The actual sid, which must be used by the commands instead of the ho.core.Key.
+     * Equal to the AVL node key for non-shared surfaces.
+     */
+    uint32_t u32SharedSid;
+} SURFACEOBJECT;
+AssertCompile(RT_OFFSETOF(SURFACEOBJECT, ho) == 0);
+
+typedef struct GAHWRENDERDATA
+{
+    RTLISTNODE node;
+    uint32_t u32SubmissionFenceId;
+    uint32_t u32Reserved;
+    /* Private data follows. */
+} GAHWRENDERDATA;
+
+DECLINLINE(void) SvgaHostObjectsLock(VBOXWDDM_EXT_VMSVGA *pSvga, KIRQL *pOldIrql)
+{
+    KeAcquireSpinLock(&pSvga->HostObjectsSpinLock, pOldIrql);
+}
+
+DECLINLINE(void) SvgaHostObjectsUnlock(VBOXWDDM_EXT_VMSVGA *pSvga, KIRQL OldIrql)
+{
+    KeReleaseSpinLock(&pSvga->HostObjectsSpinLock, OldIrql);
+}
+
+NTSTATUS SvgaHostObjectsCleanup(VBOXWDDM_EXT_VMSVGA *pSvga);
 
 NTSTATUS SvgaAdapterStart(PVBOXWDDM_EXT_VMSVGA *ppSvga,
                           DXGKRNL_INTERFACE *pDxgkInterface,
@@ -143,6 +219,17 @@ NTSTATUS SvgaContextCreate(PVBOXWDDM_EXT_VMSVGA pSvga,
                            uint32_t u32Cid);
 NTSTATUS SvgaContextDestroy(PVBOXWDDM_EXT_VMSVGA pSvga,
                             uint32_t u32Cid);
+
+NTSTATUS SvgaSurfaceCreate(VBOXWDDM_EXT_VMSVGA *pSvga,
+                           GASURFCREATE *pCreateParms,
+                           GASURFSIZE *paSizes,
+                           uint32_t cSizes,
+                           uint32_t *pu32Sid);
+NTSTATUS SvgaSurfaceUnref(VBOXWDDM_EXT_VMSVGA *pSvga,
+                          uint32_t u32Sid);
+SURFACEOBJECT *SvgaSurfaceObjectQuery(VBOXWDDM_EXT_VMSVGA *pSvga,
+                                      uint32_t u32Sid);
+NTSTATUS SvgaSurfaceObjectRelease(SURFACEOBJECT *pSO);
 
 NTSTATUS SvgaFence(PVBOXWDDM_EXT_VMSVGA pSvga,
                    uint32_t u32Fence);
@@ -174,22 +261,16 @@ NTSTATUS SvgaRenderCommands(PVBOXWDDM_EXT_VMSVGA pSvga,
                             const void *pvSource,
                             uint32_t cbSource,
                             uint32_t *pu32TargetLength,
-                            uint32_t *pu32ProcessedLength);
-
-typedef struct GASHAREDSID
-{
-    /** Key is sid. */
-    AVLU32NODECORE Core;
-    /** The original sid, the key maps to it. */
-    uint32_t u32SharedSid;
-} GASHAREDSID;
+                            uint32_t *pu32ProcessedLength,
+                            GAHWRENDERDATA **ppHwRenderData);
+NTSTATUS SvgaRenderComplete(PVBOXWDDM_EXT_VMSVGA pSvga,
+                            GAHWRENDERDATA *pHwRenderData);
 
 NTSTATUS SvgaSharedSidInsert(VBOXWDDM_EXT_VMSVGA *pSvga,
-                             GASHAREDSID *pNode,
                              uint32_t u32Sid,
                              uint32_t u32SharedSid);
-GASHAREDSID *SvgaSharedSidRemove(VBOXWDDM_EXT_VMSVGA *pSvga,
-                                 uint32_t u32Sid);
+NTSTATUS SvgaSharedSidRemove(VBOXWDDM_EXT_VMSVGA *pSvga,
+                             uint32_t u32Sid);
 uint32_t SvgaSharedSidGet(VBOXWDDM_EXT_VMSVGA *pSvga,
                           uint32_t u32Sid);
 

@@ -152,6 +152,7 @@ ifdef VBOX_WITH_WDDM
   	wddm/gallium/Svga.cpp \
   	wddm/gallium/SvgaCmd.cpp \
   	wddm/gallium/SvgaFifo.cpp \
+  	wddm/gallium/SvgaHostObjects.cpp \
   	wddm/gallium/SvgaHw.cpp \
   	wddm/gallium/VBoxMPGaFence.cpp \
   	wddm/gallium/VBoxMPGaUtils.cpp \

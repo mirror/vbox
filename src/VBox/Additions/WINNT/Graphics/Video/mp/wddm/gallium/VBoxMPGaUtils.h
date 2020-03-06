@@ -27,13 +27,14 @@
 #define LOG_GROUP LOG_GROUP_DRV_MINIPORT
 #include <VBox/log.h>
 
-#define GALOG_GROUP_RELEASE   0x00000001
-#define GALOG_GROUP_TEST      0x00000002
-#define GALOG_GROUP_DXGK      0x00000004
-#define GALOG_GROUP_SVGA      0x00000008
-#define GALOG_GROUP_SVGA_FIFO 0x00000010
-#define GALOG_GROUP_FENCE     0x00000020
-#define GALOG_GROUP_PRESENT   0x00000040
+#define GALOG_GROUP_RELEASE     0x00000001
+#define GALOG_GROUP_TEST        0x00000002
+#define GALOG_GROUP_DXGK        0x00000004
+#define GALOG_GROUP_SVGA        0x00000008
+#define GALOG_GROUP_SVGA_FIFO   0x00000010
+#define GALOG_GROUP_FENCE       0x00000020
+#define GALOG_GROUP_PRESENT     0x00000040
+#define GALOG_GROUP_HOSTOBJECTS 0x00000080
 
 #ifndef GALOG_GROUP
 #define GALOG_GROUP GALOG_GROUP_TEST
@@ -64,7 +65,14 @@ extern volatile uint32_t g_fu32GaLogControl;
 #define GALOG(a_Msg) GALOGG(GALOG_GROUP, a_Msg)
 
 #define GALOGREL_EXACT(a_Msg) GALOGG_EXACT(GALOG_GROUP_RELEASE, a_Msg)
-#define GALOGREL(a_Msg) GALOGG(GALOG_GROUP_RELEASE, a_Msg)
+#define GALOGREL(a_cMax, a_Msg)  do { \
+        static uint32_t s_cLogged = 0; \
+        if (s_cLogged < (a_cMax)) \
+        { \
+            ++s_cLogged; \
+            GALOGG(GALOG_GROUP_RELEASE, a_Msg); \
+        } \
+    } while (0)
 
 #define GALOGTEST_EXACT(a_Msg) GALOGG_EXACT(GALOG_GROUP_TEST, a_Msg)
 #define GALOGTEST(a_Msg) GALOGG(GALOG_GROUP_TEST, a_Msg)

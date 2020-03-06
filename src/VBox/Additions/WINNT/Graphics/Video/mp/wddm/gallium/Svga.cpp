@@ -78,6 +78,9 @@ void SvgaAdapterStop(PVBOXWDDM_EXT_VMSVGA pSvga,
 {
     if (pSvga)
     {
+        NTSTATUS Status = SvgaHostObjectsCleanup(pSvga);
+        Assert(Status == STATUS_SUCCESS); RT_NOREF(Status);
+
         if (pSvga->pu32GMRBits)
         {
             if (pSvga->GMRTree != NULL)
@@ -98,8 +101,8 @@ void SvgaAdapterStop(PVBOXWDDM_EXT_VMSVGA pSvga,
         SVGARegWrite(pSvga, SVGA_REG_IRQMASK, 0);
         SVGARegWrite(pSvga, SVGA_REG_ENABLE, SVGA_REG_ENABLE_DISABLE);
 
-        NTSTATUS Status = pDxgkInterface->DxgkCbUnmapMemory(pDxgkInterface->DeviceHandle,
-                                                            (PVOID)pSvga->pu32FIFO);
+        Status = pDxgkInterface->DxgkCbUnmapMemory(pDxgkInterface->DeviceHandle,
+                                                   (PVOID)pSvga->pu32FIFO);
         Assert(Status == STATUS_SUCCESS); RT_NOREF(Status);
 
         GaMemFree(pSvga);
@@ -124,7 +127,10 @@ NTSTATUS SvgaAdapterStart(PVBOXWDDM_EXT_VMSVGA *ppSvga,
 
     /* The spinlock is required for hardware access. Init it as the very first. */
     KeInitializeSpinLock(&pSvga->HwSpinLock);
+    KeInitializeSpinLock(&pSvga->HostObjectsSpinLock);
     ExInitializeFastMutex(&pSvga->SvgaMutex);
+    // pSvga->SurfaceTree = NULL;
+    RTListInit(&pSvga->DeletedHostObjectsList);
 
     /* The port IO address is also needed for hardware access. */
     pSvga->ioportBase = (RTIOPORT)physIO.QuadPart;
@@ -172,7 +178,7 @@ NTSTATUS SvgaAdapterStart(PVBOXWDDM_EXT_VMSVGA *ppSvga,
         }
         else
         {
-            GALOGREL(("SVGA_ID_2 not supported. Device returned %d\n", u32SvgaId));
+            GALOGREL(32, ("SVGA_ID_2 not supported. Device returned %d\n", u32SvgaId));
             Status = STATUS_INSUFFICIENT_RESOURCES;
         }
     }
@@ -453,62 +459,159 @@ NTSTATUS SvgaSurfaceDestroy(PVBOXWDDM_EXT_VMSVGA pSvga,
 }
 
 NTSTATUS SvgaSharedSidInsert(VBOXWDDM_EXT_VMSVGA *pSvga,
-                             GASHAREDSID *pNode,
                              uint32_t u32Sid,
                              uint32_t u32SharedSid)
 {
-    ExAcquireFastMutex(&pSvga->SvgaMutex);
+    /* 'u32Sid' actually maps to 'u32SharedSid'. */
+    AssertReturn(u32Sid != u32SharedSid, STATUS_INVALID_PARAMETER);
 
-    GALOG(("[%p] %d -> shared %d\n", pSvga, u32Sid, u32SharedSid));
+    /* Get the surface object, which must be redirected to the 'u32SharedSid'. */
+    SURFACEOBJECT *pSO = SvgaSurfaceObjectQuery(pSvga, u32Sid);
+    AssertPtrReturn(pSO, STATUS_INVALID_PARAMETER);
 
-    pNode->Core.Key = u32Sid;
-    pNode->u32SharedSid = u32SharedSid;
-    RTAvlU32Insert(&pSvga->SharedSidMap, &pNode->Core);
+    /* The surface must not be redirected yet. */
+    AssertReturn(SVGAHOSTOBJECTID(&pSO->ho) == pSO->u32SharedSid, STATUS_INVALID_PARAMETER);
 
-    ExReleaseFastMutex(&pSvga->SvgaMutex);
+    /* The surface object to be mapped to. */
+    SURFACEOBJECT *pSharedSO = SvgaSurfaceObjectQuery(pSvga, u32SharedSid);
+    AssertReturnStmt(pSharedSO, SvgaSurfaceObjectRelease(pSO), STATUS_INVALID_PARAMETER);
+
+    pSO->u32SharedSid = u32SharedSid;
+
+    /* Release the redirected surface object only.
+     * The shared surface object must keep the reference.
+     */
+    SvgaSurfaceObjectRelease(pSO);
     return STATUS_SUCCESS;
 }
 
-
-GASHAREDSID *SvgaSharedSidRemove(VBOXWDDM_EXT_VMSVGA *pSvga,
-                                 uint32_t u32Sid)
+NTSTATUS SvgaSharedSidRemove(VBOXWDDM_EXT_VMSVGA *pSvga,
+                             uint32_t u32Sid)
 {
-    ExAcquireFastMutex(&pSvga->SvgaMutex);
+    /* Get the surface object, which was redirected. */
+    SURFACEOBJECT *pSO = SvgaSurfaceObjectQuery(pSvga, u32Sid);
+    AssertPtrReturn(pSO, STATUS_INVALID_PARAMETER);
 
-    GALOG(("[%p] %d\n", pSvga, u32Sid));
-    GASHAREDSID *pNode = (GASHAREDSID *)RTAvlU32Remove(&pSvga->SharedSidMap, u32Sid);
+    /* The surface must be redirected. */
+    AssertReturn(SVGAHOSTOBJECTID(&pSO->ho) != pSO->u32SharedSid, STATUS_INVALID_PARAMETER);
 
-    ExReleaseFastMutex(&pSvga->SvgaMutex);
-    return pNode;
+    /* The shared surface object, which the u32Sid was mapped to. */
+    SURFACEOBJECT *pSharedSO = SvgaSurfaceObjectQuery(pSvga, pSO->u32SharedSid);
+    AssertReturnStmt(pSharedSO, SvgaSurfaceObjectRelease(pSO), STATUS_INVALID_PARAMETER);
+
+    pSO->u32SharedSid = SVGAHOSTOBJECTID(&pSO->ho);
+
+    /* Remove the reference which was added by SvgaSharedSidInsert. */
+    SvgaSurfaceObjectRelease(pSharedSO);
+
+    /* Release both surface objects. */
+    SvgaSurfaceObjectRelease(pSharedSO);
+    SvgaSurfaceObjectRelease(pSO);
+    return STATUS_SUCCESS;
 }
 
-uint32_t SvgaSharedSidGet(VBOXWDDM_EXT_VMSVGA *pSvga,
-                          uint32_t u32Sid)
+typedef struct SVGAHOSTOBJECTARRAY
 {
-    ExAcquireFastMutex(&pSvga->SvgaMutex);
+    GAHWRENDERDATA hdr;
+    uint32_t cObjects;
+    uint32_t u32Reserved;
+    SVGAHOSTOBJECT *aObjects[(4096 - 2 * sizeof(uint32_t) - sizeof(GAHWRENDERDATA)) / sizeof(void *)];
+} SVGAHOSTOBJECTARRAY;
+AssertCompileSize(SVGAHOSTOBJECTARRAY, 4096);
 
-    GASHAREDSID *p = (GASHAREDSID *)RTAvlU32Get(&pSvga->SharedSidMap, u32Sid);
-    if (p)
+NTSTATUS SvgaProcessSurface(VBOXWDDM_EXT_VMSVGA *pSvga,
+                            uint32_t *pu32Sid,
+                            SVGAHOSTOBJECTARRAY *pHOA)
+{
+    uint32_t const u32Sid = *pu32Sid;
+    if (u32Sid != SVGA3D_INVALID_ID)
     {
-        GALOG(("%d -> shared %d\n", u32Sid, p->u32SharedSid));
-        u32Sid = p->u32SharedSid;
+        SURFACEOBJECT *pSO = NULL;
+        for (uint32_t i = 0; i < pHOA->cObjects; ++i)
+        {
+            if (   pHOA->aObjects[i]->uType == SVGA_HOST_OBJECT_SURFACE
+                && SVGAHOSTOBJECTID(pHOA->aObjects[i]) == u32Sid)
+            {
+                pSO = (SURFACEOBJECT *)pHOA->aObjects[i];
+                break;
+            }
+        }
+
+        if (!pSO)
+        {
+            pSO = SvgaSurfaceObjectQuery(pSvga, u32Sid);
+            if (pSO)
+            {
+                AssertReturnStmt(pHOA->cObjects < RT_ELEMENTS(pHOA->aObjects),
+                                 SvgaSurfaceObjectRelease(pSO),
+                                 STATUS_GRAPHICS_INSUFFICIENT_DMA_BUFFER);
+                pHOA->aObjects[pHOA->cObjects++] = &pSO->ho;
+            }
+            else
+            {
+                GALOGREL(32, ("WDDM: no surface for sid %u\n", u32Sid));
+                AssertFailed();
+                /* Ignore the error. */
+                return STATUS_SUCCESS;
+            }
+        }
+
+        *pu32Sid = pSO->u32SharedSid;
+    }
+    return STATUS_SUCCESS;
+}
+
+static NTSTATUS svgaReleaseHostObjects(uint32_t iStart,
+                                       SVGAHOSTOBJECTARRAY *pHOA)
+{
+    AssertReturn(iStart <= pHOA->cObjects, STATUS_INVALID_PARAMETER);
+
+    for (uint32_t i = iStart; i < pHOA->cObjects; ++i)
+    {
+        SVGAHOSTOBJECT *pHO = pHOA->aObjects[i];
+        if (pHO->uType == SVGA_HOST_OBJECT_SURFACE)
+        {
+            SURFACEOBJECT *pSO = (SURFACEOBJECT *)pHO;
+            SvgaSurfaceObjectRelease(pSO);
+        }
+        else
+        {
+            /* Should never happen. No other types of objects can be in the array. */
+            AssertFailedReturn(STATUS_ILLEGAL_INSTRUCTION);
+        }
     }
 
-    ExReleaseFastMutex(&pSvga->SvgaMutex);
-    return u32Sid;
+    pHOA->cObjects = iStart;
+
+    return STATUS_SUCCESS;
+}
+
+NTSTATUS SvgaRenderComplete(PVBOXWDDM_EXT_VMSVGA pSvga,
+                            GAHWRENDERDATA *pHwRenderData)
+{
+    RT_NOREF(pSvga);
+
+    SVGAHOSTOBJECTARRAY *pHOA = (SVGAHOSTOBJECTARRAY *)pHwRenderData;
+
+    NTSTATUS Status = svgaReleaseHostObjects(0, pHOA);
+
+    GaMemFree(pHOA);
+
+    return Status;
 }
 
 static NTSTATUS svgaUpdateCommand(VBOXWDDM_EXT_VMSVGA *pSvga,
                                   uint32_t u32CmdId,
                                   uint8_t *pu8Cmd,
-                                  uint32_t cbCmd)
+                                  uint32_t cbCmd,
+                                  SVGAHOSTOBJECTARRAY *pHOA)
 {
-    RT_NOREF4(pSvga, u32CmdId, pu8Cmd, cbCmd);
-
     NTSTATUS Status = STATUS_SUCCESS;
 
     const SVGA3dCmdHeader *pHeader = (SVGA3dCmdHeader *)pu8Cmd;
     uint8_t *pCommand = (uint8_t *)&pHeader[1];
+
+    uint32_t iStart = pHOA->cObjects;
 
     switch (u32CmdId)
     {
@@ -516,49 +619,52 @@ static NTSTATUS svgaUpdateCommand(VBOXWDDM_EXT_VMSVGA *pSvga,
         case SVGA_3D_CMD_PRESENT_READBACK:
         {
             SVGA3dCmdPresent *p = (SVGA3dCmdPresent *)pCommand;
-            p->sid = SvgaSharedSidGet(pSvga, p->sid);
+            Status = SvgaProcessSurface(pSvga, &p->sid, pHOA);
         } break;
         case SVGA_3D_CMD_SETRENDERTARGET:
         {
-             SVGA3dCmdSetRenderTarget *p = (SVGA3dCmdSetRenderTarget *)pCommand;
-             p->target.sid = SvgaSharedSidGet(pSvga, p->target.sid);
+            SVGA3dCmdSetRenderTarget *p = (SVGA3dCmdSetRenderTarget *)pCommand;
+            Status = SvgaProcessSurface(pSvga, &p->target.sid, pHOA);
         } break;
         case SVGA_3D_CMD_SURFACE_COPY:
         {
             SVGA3dCmdSurfaceCopy *p = (SVGA3dCmdSurfaceCopy *)pCommand;
-            p->src.sid = SvgaSharedSidGet(pSvga, p->src.sid);
-            p->dest.sid = SvgaSharedSidGet(pSvga, p->dest.sid);
+            Status = SvgaProcessSurface(pSvga, &p->src.sid, pHOA);
+            if (Status == STATUS_SUCCESS)
+                Status = SvgaProcessSurface(pSvga, &p->dest.sid, pHOA);
         } break;
         case SVGA_3D_CMD_SURFACE_STRETCHBLT:
         {
             SVGA3dCmdSurfaceStretchBlt *p = (SVGA3dCmdSurfaceStretchBlt *)pCommand;
-            p->src.sid = SvgaSharedSidGet(pSvga, p->src.sid);
-            p->dest.sid = SvgaSharedSidGet(pSvga, p->dest.sid);
+            Status = SvgaProcessSurface(pSvga, &p->src.sid, pHOA);
+            if (Status == STATUS_SUCCESS)
+                Status = SvgaProcessSurface(pSvga, &p->dest.sid, pHOA);
         } break;
         case SVGA_3D_CMD_SURFACE_DMA:
         {
+            /// @todo gmrid?
             SVGA3dCmdSurfaceDMA *p = (SVGA3dCmdSurfaceDMA *)pCommand;
-            p->host.sid = SvgaSharedSidGet(pSvga, p->host.sid);
+            Status = SvgaProcessSurface(pSvga, &p->host.sid, pHOA);
         } break;
         case SVGA_3D_CMD_BLIT_SURFACE_TO_SCREEN:
         {
             SVGA3dCmdBlitSurfaceToScreen *p = (SVGA3dCmdBlitSurfaceToScreen *)pCommand;
-            p->srcImage.sid = SvgaSharedSidGet(pSvga, p->srcImage.sid);
+            Status = SvgaProcessSurface(pSvga, &p->srcImage.sid, pHOA);
         } break;
         case SVGA_3D_CMD_GENERATE_MIPMAPS:
         {
             SVGA3dCmdGenerateMipmaps *p = (SVGA3dCmdGenerateMipmaps *)pCommand;
-            p->sid = SvgaSharedSidGet(pSvga, p->sid);
+            Status = SvgaProcessSurface(pSvga, &p->sid, pHOA);
         } break;
         case SVGA_3D_CMD_ACTIVATE_SURFACE:
         {
             SVGA3dCmdActivateSurface *p = (SVGA3dCmdActivateSurface *)pCommand;
-            p->sid = SvgaSharedSidGet(pSvga, p->sid);
+            Status = SvgaProcessSurface(pSvga, &p->sid, pHOA);
         } break;
         case SVGA_3D_CMD_DEACTIVATE_SURFACE:
         {
             SVGA3dCmdDeactivateSurface *p = (SVGA3dCmdDeactivateSurface *)pCommand;
-            p->sid = SvgaSharedSidGet(pSvga, p->sid);
+            Status = SvgaProcessSurface(pSvga, &p->sid, pHOA);
         } break;
         case SVGA_3D_CMD_SETTEXTURESTATE:
         {
@@ -569,15 +675,46 @@ static NTSTATUS svgaUpdateCommand(VBOXWDDM_EXT_VMSVGA *pSvga,
             {
                 if (pState->name == SVGA3D_TS_BIND_TEXTURE)
                 {
-                    pState->value = SvgaSharedSidGet(pSvga, pState->value);
+                    Status = SvgaProcessSurface(pSvga, &pState->value, pHOA);
+                    if (Status != STATUS_SUCCESS)
+                        break;
                 }
 
                 ++pState;
                 --cStates;
             }
         } break;
+        case SVGA_3D_CMD_DRAW_PRIMITIVES:
+        {
+            SVGA3dCmdDrawPrimitives *p = (SVGA3dCmdDrawPrimitives *)pCommand;
+            AssertBreakStmt(cbCmd >= sizeof(SVGA3dCmdDrawPrimitives), Status = STATUS_ILLEGAL_INSTRUCTION);
+            AssertBreakStmt(   p->numVertexDecls <= SVGA3D_MAX_VERTEX_ARRAYS
+                            && p->numRanges <= SVGA3D_MAX_DRAW_PRIMITIVE_RANGES, Status = STATUS_ILLEGAL_INSTRUCTION);
+            AssertBreakStmt(cbCmd >= p->numVertexDecls * sizeof(SVGA3dVertexDecl)
+                                   + p->numRanges * sizeof(SVGA3dPrimitiveRange), Status = STATUS_ILLEGAL_INSTRUCTION);
 
-        /** @todo Might need (unlikely) SVGA_3D_CMD_DRAWPRIMITIVES SVGA3dVertexDecl::array::surfaceId */
+            /// @todo cid?
+
+            SVGA3dVertexDecl *paDecls = (SVGA3dVertexDecl *)&p[1];
+            SVGA3dPrimitiveRange *paRanges = (SVGA3dPrimitiveRange *)&paDecls[p->numVertexDecls];
+
+            uint32_t i;
+            for (i = 0; i < p->numVertexDecls; ++i)
+            {
+                Status = SvgaProcessSurface(pSvga, &paDecls[i].array.surfaceId, pHOA);
+                if (Status != STATUS_SUCCESS)
+                    break;
+            }
+            if (Status == STATUS_SUCCESS)
+            {
+                for (i = 0; i < p->numRanges; ++i)
+                {
+                    Status = SvgaProcessSurface(pSvga, &paRanges[i].indexArray.surfaceId, pHOA);
+                    if (Status != STATUS_SUCCESS)
+                        break;
+                }
+            }
+        } break;
 
         /*
          * Unsupported commands, which might include a sid.
@@ -618,6 +755,12 @@ static NTSTATUS svgaUpdateCommand(VBOXWDDM_EXT_VMSVGA *pSvga,
             }
             break;
     }
+
+    if (Status != STATUS_SUCCESS)
+    {
+        svgaReleaseHostObjects(iStart, pHOA);
+    }
+
     return Status;
 }
 
@@ -635,6 +778,7 @@ static NTSTATUS svgaUpdateCommand(VBOXWDDM_EXT_VMSVGA *pSvga,
  * @param cbSource .
  * @param pu32TargetLength How many bytes were copied to pvTarget buffer.
  * @param pu32ProcessedLength How many bytes were processed in the pvSource buffer.
+ * @param ppvHwPrivate The hardware private data. SVGA stores information about host objects there.
  */
 NTSTATUS SvgaRenderCommands(PVBOXWDDM_EXT_VMSVGA pSvga,
                             void *pvTarget,
@@ -642,10 +786,17 @@ NTSTATUS SvgaRenderCommands(PVBOXWDDM_EXT_VMSVGA pSvga,
                             const void *pvSource,
                             uint32_t cbSource,
                             uint32_t *pu32TargetLength,
-                            uint32_t *pu32ProcessedLength)
+                            uint32_t *pu32ProcessedLength,
+                            GAHWRENDERDATA **ppHwRenderData)
 {
     /* All commands consist of 32 bit dwords. */
     AssertReturn(cbSource % sizeof(uint32_t) == 0, STATUS_ILLEGAL_INSTRUCTION);
+
+    SVGAHOSTOBJECTARRAY *pHO = (SVGAHOSTOBJECTARRAY *)GaMemAlloc(sizeof(SVGAHOSTOBJECTARRAY));
+    if (!pHO)
+        return STATUS_INSUFFICIENT_RESOURCES;
+    pHO->cObjects = 0;
+    pHO->u32Reserved = 0;
 
     NTSTATUS Status = STATUS_SUCCESS;
 
@@ -690,15 +841,34 @@ NTSTATUS SvgaRenderCommands(PVBOXWDDM_EXT_VMSVGA pSvga,
         memcpy(pu8Dst, pu8Src, cbCmd);
 
         /* Update the command in dst place if necessary. */
-        Status = svgaUpdateCommand(pSvga, u32CmdId, pu8Dst, cbCmd);
-        AssertBreak(Status == STATUS_SUCCESS);
+        Status = svgaUpdateCommand(pSvga, u32CmdId, pu8Dst, cbCmd, pHO);
+        if (Status != STATUS_SUCCESS)
+        {
+            Assert(Status == STATUS_GRAPHICS_INSUFFICIENT_DMA_BUFFER);
+            break;
+        }
 
         pu8Src += cbCmd;
         pu8Dst += cbCmd;
     }
 
-    *pu32TargetLength = pu8Dst - (uint8_t *)pvTarget;
-    *pu32ProcessedLength = pu8Src - (uint8_t *)pvSource;
+    if (   Status == STATUS_SUCCESS
+        || Status == STATUS_GRAPHICS_INSUFFICIENT_DMA_BUFFER)
+    {
+        *pu32TargetLength = pu8Dst - (uint8_t *)pvTarget;
+        *pu32ProcessedLength = pu8Src - (uint8_t *)pvSource;
+        if (pHO->cObjects)
+            *ppHwRenderData = &pHO->hdr;
+        else
+        {
+            SvgaRenderComplete(pSvga, &pHO->hdr);
+            *ppHwRenderData = NULL;
+        }
+    }
+    else
+    {
+        SvgaRenderComplete(pSvga, &pHO->hdr);
+    }
 
     return Status;
 }

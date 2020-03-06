@@ -40,6 +40,8 @@ typedef struct VBOXWDDM_EXT_GA
     volatile uint32_t u32PreemptionFenceId; /* Updated in GaDxgkDdiPreemptCommand. */
     volatile uint32_t u32LastCompletedSeqNo; /* Updated in DPC routine. */
 
+    RTLISTANCHOR listHwRenderData;
+
     struct
     {
         /* Generation of SeqNo's. */
