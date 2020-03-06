@@ -71,7 +71,6 @@ DECLINLINE(void) VBClServiceDefaultCleanup(struct VBCLSERVICE **ppInterface)
 
 extern struct VBCLSERVICE **VBClGetClipboardService();
 extern struct VBCLSERVICE **VBClGetSeamlessService();
-extern struct VBCLSERVICE **VBClGetDisplayService();
 extern struct VBCLSERVICE **VBClGetHostVersionService();
 #ifdef VBOX_WITH_DRAG_AND_DROP
 extern struct VBCLSERVICE **VBClGetDragAndDropService();

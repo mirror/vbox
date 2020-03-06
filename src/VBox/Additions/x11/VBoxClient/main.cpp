@@ -64,7 +64,6 @@
 #define VBOXCLIENT_OPT_SERVICES             980
 #define VBOXCLIENT_OPT_CHECKHOSTVERSION     VBOXCLIENT_OPT_SERVICES
 #define VBOXCLIENT_OPT_CLIPBOARD            VBOXCLIENT_OPT_SERVICES + 1
-#define VBOXCLIENT_OPT_DISPLAY              VBOXCLIENT_OPT_SERVICES + 2
 #define VBOXCLIENT_OPT_DRAGANDDROP          VBOXCLIENT_OPT_SERVICES + 3
 #define VBOXCLIENT_OPT_SEAMLESS             VBOXCLIENT_OPT_SERVICES + 4
 #define VBOXCLIENT_OPT_VMSVGA               VBOXCLIENT_OPT_SERVICES + 5
@@ -502,7 +501,6 @@ int main(int argc, char *argv[])
 #ifdef VBOX_WITH_SHARED_CLIPBOARD
         { "--clipboard",                    VBOXCLIENT_OPT_CLIPBOARD,                 RTGETOPT_REQ_NOTHING },
 #endif
-        { "--display",                      VBOXCLIENT_OPT_DISPLAY,                   RTGETOPT_REQ_NOTHING },
 #ifdef VBOX_WITH_DRAG_AND_DROP
         { "--draganddrop",                  VBOXCLIENT_OPT_DRAGANDDROP,               RTGETOPT_REQ_NOTHING },
 #endif
@@ -581,14 +579,6 @@ int main(int argc, char *argv[])
                 break;
             }
 #endif
-            case VBOXCLIENT_OPT_DISPLAY:
-            {
-                if (g_pService)
-                    return vbclSyntaxOnlyOneService();
-                g_pService = VBClGetDisplayService();
-                break;
-            }
-
 #ifdef VBOX_WITH_DRAG_AND_DROP
             case VBOXCLIENT_OPT_DRAGANDDROP:
             {
@@ -715,4 +705,3 @@ int main(int argc, char *argv[])
     VBClCleanUp(false /*fExit*/);
     return RTEXITCODE_SUCCESS;
 }
-
