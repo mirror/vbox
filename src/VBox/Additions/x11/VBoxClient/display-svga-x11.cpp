@@ -143,6 +143,16 @@ struct RANDROUTPUT
 static void x11Connect();
 static int determineOutputCount();
 
+#define checkFunctionPtr(pFunction)                                     \
+    do{                                                                 \
+        if (!pFunction)                                                 \
+        {                                                               \
+            VBClLogFatalError("Could not find symbol address\n");       \
+            dlclose(x11Context.pRandLibraryHandle);                     \
+            x11Context.pRandLibraryHandle = NULL;                       \
+            return VERR_NOT_FOUND;                                      \
+        }                                                               \
+    }while(0)
 
 bool VMwareCtrlSetTopology(Display *dpy, int hExtensionMajorOpcode,
                             int screen, xXineramaScreenInfo extents[], int number)
@@ -408,46 +418,21 @@ static int openLibRandR()
         VBClLogFatalError("Could not locate libXranr for dlopen\n");
         return VERR_NOT_FOUND;
     }
+
     *(void **)(&x11Context.pXRRSelectInput) = dlsym(x11Context.pRandLibraryHandle, "XRRSelectInput");
-    if (!x11Context.pXRRSelectInput)
-    {
-        VBClLogFatalError("Could not find address for the symbol XRRSelectInput\n");
-        dlclose(x11Context.pRandLibraryHandle);
-        x11Context.pRandLibraryHandle = NULL;
-        return VERR_NOT_FOUND;
-    }
+    checkFunctionPtr(x11Context.pXRRSelectInput);
+
     *(void **)(&x11Context.pXRRQueryExtension) = dlsym(x11Context.pRandLibraryHandle, "XRRQueryExtension");
-    if (!x11Context.pXRRQueryExtension)
-    {
-        VBClLogFatalError("Could not find address for the symbol XRRQueryExtension\n");
-        dlclose(x11Context.pRandLibraryHandle);
-        x11Context.pRandLibraryHandle = NULL;
-        return VERR_NOT_FOUND;
-    }
+    checkFunctionPtr(x11Context.pXRRQueryExtension);
+
     *(void **)(&x11Context.pXRRQueryVersion) = dlsym(x11Context.pRandLibraryHandle, "XRRQueryVersion");
-    if (!x11Context.pXRRQueryVersion)
-    {
-        VBClLogFatalError("Could not find address for the symbol XRRQueryVersion\n");
-        dlclose(x11Context.pRandLibraryHandle);
-        x11Context.pRandLibraryHandle = NULL;
-        return VERR_NOT_FOUND;
-    }
+    checkFunctionPtr(x11Context.pXRRQueryVersion);
+
     *(void **)(&x11Context.pXRRGetMonitors) = dlsym(x11Context.pRandLibraryHandle, "XRRGetMonitors");
-    if (!x11Context.pXRRGetMonitors)
-    {
-        VBClLogFatalError("Could not find address for the symbol XRRGetMonitors\n");
-        dlclose(x11Context.pRandLibraryHandle);
-        x11Context.pRandLibraryHandle = NULL;
-        return VERR_NOT_FOUND;
-    }
+    checkFunctionPtr(x11Context.pXRRGetMonitors);
+
     *(void **)(&x11Context.pXRRFreeMonitors) = dlsym(x11Context.pRandLibraryHandle, "XRRFreeMonitors");
-    if (!x11Context.pXRRFreeMonitors)
-    {
-        VBClLogFatalError("Could not find address for the symbol XRRFreeMonitors\n");
-        dlclose(x11Context.pRandLibraryHandle);
-        x11Context.pRandLibraryHandle = NULL;
-        return VERR_NOT_FOUND;
-    }
+    checkFunctionPtr(x11Context.pXRRFreeMonitors);
 
     return VINF_SUCCESS;
 }
