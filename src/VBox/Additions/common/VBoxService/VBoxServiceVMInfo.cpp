@@ -606,7 +606,7 @@ static int vgsvcVMInfoWriteUsers(void)
         {
             bool fFound = false;
             for (uint32_t i = 0; i < cUsersInList && !fFound; i++)
-                fFound = strcmp(papszUsers[i], ut_user->ut_user) == 0;
+                fFound = strncmp(papszUsers[i], ut_user->ut_user, sizeof(ut_user->ut_user)) == 0;
 
             if (!fFound)
             {
