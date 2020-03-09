@@ -375,14 +375,14 @@ static bool init()
     if (x11Context.pDisplay == NULL)
         return false;
     callVMWCTRL();
-    if (RT_FAILURE(startX11MonitorThread()))
-        return false;
 #ifdef WITH_DISTRO_XRAND_XINERAMA
     XRRSelectInput(x11Context.pDisplay, x11Context.rootWindow, x11Context.hEventMask);
 #else
     if (x11Context.pXRRSelectInput)
         x11Context.pXRRSelectInput(x11Context.pDisplay, x11Context.rootWindow, x11Context.hEventMask);
 #endif
+    if (RT_FAILURE(startX11MonitorThread()))
+        return false;
     return true;
 }
 
