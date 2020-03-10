@@ -46,9 +46,12 @@ public:
     virtual ~VBoxMMNotificationClient();
 
     HRESULT Initialize();
+
+    HRESULT Register(void);
+    void    Unregister(void);
+
     int     RegisterCallback(PPDMDRVINS pDrvIns, PFNPDMHOSTAUDIOCALLBACK pfnCallback);
     void    UnregisterCallback(void);
-    void    Dispose();
 
     /** @name IUnknown interface
      * @{ */
