@@ -128,10 +128,10 @@ RT_BF_ASSERT_COMPILE_CHECKS(IOMMU_BF_BASEADDR_LO_, UINT32_C(0), UINT32_MAX,
  */
 /** UnitID: HyperTransport Unit ID. */
 #define IOMMU_BF_RANGE_UNIT_ID_SHIFT                0
-#define IOMMU_BF_RANGE_UNIT_ID_MASK                 UINT32_C(0x0000000f)
+#define IOMMU_BF_RANGE_UNIT_ID_MASK                 UINT32_C(0x0000001f)
 /** Bits 6:5 reserved. */
-#define IOMMU_BF_RANGE_RSVD_6_5_SHIFT               5
-#define IOMMU_BF_RANGE_RSVD_6_5_MASK                UINT32_C(0x00000060)
+#define IOMMU_BF_RANGE_RSVD_5_6_SHIFT               5
+#define IOMMU_BF_RANGE_RSVD_5_6_MASK                UINT32_C(0x00000060)
 /** RngValid: Range valid. */
 #define IOMMU_BF_RANGE_VALID_SHIFT                  7
 #define IOMMU_BF_RANGE_VALID_MASK                   UINT32_C(0x00000080)
@@ -145,7 +145,7 @@ RT_BF_ASSERT_COMPILE_CHECKS(IOMMU_BF_BASEADDR_LO_, UINT32_C(0), UINT32_MAX,
 #define IOMMU_BF_RANGE_LAST_DEVICE_SHIFT            24
 #define IOMMU_BF_RANGE_LAST_DEVICE_MASK             UINT32_C(0xff000000)
 RT_BF_ASSERT_COMPILE_CHECKS(IOMMU_BF_RANGE_, UINT32_C(0), UINT32_MAX,
-                            (UNIT_ID, RSVD_6_15, VALID, BUS_NUMBER, FIRST_DEVICE, LAST_DEVICE));
+                            (UNIT_ID, RSVD_5_6, VALID, BUS_NUMBER, FIRST_DEVICE, LAST_DEVICE));
 /** @} */
 
 /**
@@ -155,7 +155,7 @@ RT_BF_ASSERT_COMPILE_CHECKS(IOMMU_BF_RANGE_, UINT32_C(0), UINT32_MAX,
  */
 /** MsiNum: MSI message number. */
 #define IOMMU_BF_MISCINFO_0_MSI_NUM_SHIFT           0
-#define IOMMU_BF_MISCINFO_0_MSI_NUM_MASK            UINT32_C(0x0000000f)
+#define IOMMU_BF_MISCINFO_0_MSI_NUM_MASK            UINT32_C(0x0000001f)
 /** GvaSize: Guest Virtual Address Size. */
 #define IOMMU_BF_MISCINFO_0_GVA_SIZE_SHIFT          5
 #define IOMMU_BF_MISCINFO_0_GVA_SIZE_MASK           UINT32_C(0x000000e0)
@@ -175,7 +175,7 @@ RT_BF_ASSERT_COMPILE_CHECKS(IOMMU_BF_RANGE_, UINT32_C(0), UINT32_MAX,
 #define IOMMU_BF_MISCINFO_0_MSI_NUM_PPR_SHIFT       27
 #define IOMMU_BF_MISCINFO_0_MSI_NUM_PPR_MASK        UINT32_C(0xf8000000)
 RT_BF_ASSERT_COMPILE_CHECKS(IOMMU_BF_MISCINFO_0_, UINT32_C(0), UINT32_MAX,
-                            (MSI_NUM, GVA_SIZE, PA_SIZE, VA_SIZE, HTS_ATS_RESV, RSVD_23_26, MSI_NUM_PPR));
+                            (MSI_NUM, GVA_SIZE, PA_SIZE, VA_SIZE, HT_ATS_RESV, RSVD_23_26, MSI_NUM_PPR));
 /** @} */
 
 /**
@@ -185,12 +185,12 @@ RT_BF_ASSERT_COMPILE_CHECKS(IOMMU_BF_MISCINFO_0_, UINT32_C(0), UINT32_MAX,
  */
 /** MsiNumGA: MSI message number for guest vAPIC. */
 #define IOMMU_BF_MISCINFO_1_MSI_NUM_GA_SHIFT        0
-#define IOMMU_BF_MISCINFO_1_MSI_NUM_GA_MASK         UINT32_C(0x0000000f)
+#define IOMMU_BF_MISCINFO_1_MSI_NUM_GA_MASK         UINT32_C(0x0000001f)
 /** Bits 31:5 reserved. */
 #define IOMMU_BF_MISCINFO_1_RSVD_5_31_SHIFT         5
 #define IOMMU_BF_MISCINFO_1_RSVD_5_31_MASK          UINT32_C(0xffffffe0)
 RT_BF_ASSERT_COMPILE_CHECKS(IOMMU_BF_MISCINFO_1_, UINT32_C(0), UINT32_MAX,
-                            (NUM_GA, RSVD_5_31));
+                            (MSI_NUM_GA, RSVD_5_31));
 /** @} */
 
 
@@ -228,7 +228,7 @@ typedef union
         uint32_t    u2Had : 2;                        /**< Bits 8:7     - HAD: Host Access Dirty. */
         uint32_t    u3Mode : 3;                       /**< Bits 11:9    - Mode: Paging mode. */
         uint32_t    u20PageTableRootPtrLo : 20;       /**< Bits 31:12   - Page Table Root Pointer (Lo). */
-        uint32_t    u40PageTableRootPtrHi : 40;       /**< Bits 51:32   - Page Table Root Pointer (Hi). */
+        uint32_t    u20PageTableRootPtrHi : 20;       /**< Bits 51:32   - Page Table Root Pointer (Hi). */
         uint32_t    u1Ppr : 1;                        /**< Bit  52      - PPR: Peripheral Page Request. */
         uint32_t    u1Grpr : 1;                       /**< Bit  53      - GRPR: Guest PPR Response with PASID. */
         uint32_t    u1GIov : 1;                       /**< Bit  54      - GIoV: Guest I/O Protection Valid. */
@@ -374,16 +374,17 @@ typedef union
 {
     struct
     {
-        RT_GCC_EXTENSION uint64_t    u1Store;               /**< Bit 0       - S: Completion Store. */
-        RT_GCC_EXTENSION uint64_t    u1Interrupt;           /**< Bit 1       - I: Completion Interrupt. */
-        RT_GCC_EXTENSION uint64_t    u1Flush;               /**< Bit 2       - F: Flush Queue. */
-        RT_GCC_EXTENSION uint64_t    u48StoreAddr : 48;     /**< Bits 51:3   - Store Address. */
-        RT_GCC_EXTENSION uint64_t    u8Rsvd0 : 8;           /**< Bits 59:52  - Reserved. */
-        RT_GCC_EXTENSION uint64_t    u4OpCode : 4;          /**< Bits 63:60  - OpCode (Command). */
-        uint64_t                     u64StoreData;          /**< Bits 127:64 - Store Data. */
+        uint32_t    u1Store : 1;           /**< Bit 0       - S: Completion Store. */
+        uint32_t    u1Interrupt : 1;       /**< Bit 1       - I: Completion Interrupt. */
+        uint32_t    u1Flush : 1;           /**< Bit 2       - F: Flush Queue. */
+        uint32_t    u29StoreAddrLo : 29;   /**< Bits 31:3   - Store Address (Lo). */
+        uint32_t    u20StoreAddrHi : 20;   /**< Bits 51:32  - Store Address (Hi). */
+        uint32_t    u8Rsvd0 : 8;           /**< Bits 59:52  - Reserved. */
+        uint32_t    u4OpCode : 4;          /**< Bits 63:60  - OpCode (Command). */
+        uint64_t    u64StoreData;          /**< Bits 127:64 - Store Data. */
     } n;
     /** The 64-bit unsigned integer view. */
-    uint64_t    au64[2];
+    uint32_t    au64[2];
 } CMD_COMPLETION_WAIT_T;
 AssertCompileSize(CMD_COMPLETION_WAIT_T, 16);
 
@@ -488,14 +489,14 @@ typedef union
     {
         uint16_t    u16DeviceId;            /**< Bits 15:0    - Device ID. */
         uint16_t    u16Rsvd0;               /**< Bits 31:16   - Reserved. */
-        uint32_t    u20Pasid;               /**< Bits 51:32   - PASID: Process Address-Space ID. */
-        uint32_t    u8Rsvd0;                /**< Bits 59:52   - Reserved. */
-        uint32_t    u4OpCode;               /**< Bits 63:60   - Op Code (Command). */
+        uint32_t    u20Pasid : 20;          /**< Bits 51:32   - PASID: Process Address-Space ID. */
+        uint32_t    u8Rsvd0 : 8;            /**< Bits 59:52   - Reserved. */
+        uint32_t    u4OpCode : 4;           /**< Bits 63:60   - Op Code (Command). */
         uint32_t    u2Rsvd0 : 2;            /**< Bits 65:64   - Reserved. */
         uint32_t    u1GuestOrNested : 1;    /**< Bit  66      - GN: Guest (GPA) or Nested (GVA). */
         uint32_t    u29Rsvd0 : 29;          /**< Bits 95:67   - Reserved. */
-        uint16_t    u16CompletionTag;       /**< Bits 111:96  - Completion Tag. */
-        uint16_t    u16Rsvd0;               /**< Bits 127:112 - Reserved. */
+        uint32_t    u16CompletionTag : 16;  /**< Bits 111:96  - Completion Tag. */
+        uint32_t    u16Rsvd1 : 16;          /**< Bits 127:112 - Reserved. */
     } n;
     /** The 64-bit unsigned integer view. */
     uint64_t    au64[2];
@@ -556,7 +557,7 @@ typedef union
         uint16_t    u1Interrupt : 1;        /**< Bit  51     - I: Interrupt. */
         uint16_t    u1Rsvd0 : 1;            /**< Bit  52     - Reserved. */
         uint16_t    u1ReadWrite : 1;        /**< Bit  53     - RW: Read/Write. */
-        uint16_t    u1Rsvd0 : 1;            /**< Bit  54     - Reserved. */
+        uint16_t    u1Rsvd1 : 1;            /**< Bit  54     - Reserved. */
         uint16_t    u1RsvdZero : 1;         /**< Bit  55     - RZ: Reserved bit not Zero or invalid level encoding. */
         uint16_t    u1Translation : 1;      /**< Bit  56     - TN: Translation. */
         uint16_t    u3Rsvd0 : 3;            /**< Bits 59:57  - Reserved. */
@@ -767,7 +768,95 @@ typedef union
 AssertCompileSize(EVT_EVENT_COUNTER_ZERO, 16);
 
 
+/**
+ * The IOMMU device state.
+ */
+typedef struct IOMMU
+{
+
+} IOMMU;
+/** Pointer to the IOMMU device state. */
+typedef struct IOMMU *PIOMMU;
+
+/**
+ * The ring-3 IOMMU device state.
+ */
+typedef struct IOMMUR3
+{
+} IOMMUR3;
+/** Pointer to the ring-3 IOMMU device state. */
+typedef IOMMUR3 *PIOMMUR3;
+
+/**
+ * The ring-0 IOMMU device state.
+ */
+typedef struct IOMMUR0
+{
+    uint64_t        uUnused;
+} IOMMUR0;
+/** Pointer to the ring-0 IOMMU device state. */
+typedef IOMMUR0 *PIOMMUR0;
+
+/**
+ * The raw-mode IOMMU device state.
+ */
+typedef struct IOMMURC
+{
+    uint64_t        uUnused;
+} IOMMURC;
+/** Pointer to the raw-mode IOMMU device state. */
+typedef IOMMURC *PIOMMURC;
+
+/** The IOMMU device state for the current context. */
+typedef CTX_SUFF(IOMMU) IOMMUCC;
+/** Pointer to the IOMMU device state for the current context. */
+typedef CTX_SUFF(PIOMMU) PIOMMUCC;
+
+
 #ifndef VBOX_DEVICE_STRUCT_TESTCASE
+
+# ifdef IN_RING3
+/**
+ * @interface_method_impl{PDMDEVREG,pfnDestruct}
+ */
+static DECLCALLBACK(int) iommuR3Destruct(PPDMDEVINS pDevIns)
+{
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * @interface_method_impl{PDMDEVREG,pfnConstruct}
+ */
+static DECLCALLBACK(int) iommuR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE pCfg)
+{
+    PDMDEV_CHECK_VERSIONS_RETURN(pDevIns);
+    PIOMMU          pThis   = PDMDEVINS_2_DATA(pDevIns, PIOMMU);
+    PIOMMUCC        pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PIOMMUCC);
+    PCPDMDEVHLPR3   pHlp    = pDevIns->pHlpR3;
+    int             rc;
+    LogFlowFunc(("\n"));
+
+    /*
+     * Validate and read the configuration.
+     */
+    //PDMDEV_VALIDATE_CONFIG_RETURN(pDevIns, "", "");
+    return VINF_SUCCESS;
+}
+
+# else  /* !IN_RING3 */
+
+/**
+ * @callback_method_impl{PDMDEVREGR0,pfnConstruct}
+ */
+static DECLCALLBACK(int) iommuRZConstruct(PPDMDEVINS pDevIns)
+{
+    PDMDEV_CHECK_VERSIONS_RETURN(pDevIns);
+    return VINF_SUCCESS;
+}
+
+# endif /* !IN_RING3 */
+
 /**
  * The device registration structure.
  */
@@ -776,14 +865,14 @@ const PDMDEVREG g_DeviceIommu =
     /* .u32Version = */             PDM_DEVREG_VERSION,
     /* .uReserved0 = */             0,
     /* .szName = */                 "iommu",
-    /* .fFlags = */                 /** @todo IOMMU: figure out flags. */,
-    /* .fClass = */                 PDM_DEVREG_CLASS_ARCH, /** @todo IOMMU: We want to be instantiated
-                                                               before PDM_DEVREG_CLASS_BUS_PCI? Maybe doesn't matter? */
+    /* .fFlags = */                 PDM_DEVREG_FLAGS_DEFAULT_BITS | PDM_DEVREG_FLAGS_RZ | PDM_DEVREG_FLAGS_NEW_STYLE,
+    /* .fClass = */                 PDM_DEVREG_CLASS_BUS_PCI,  /** @todo IOMMU: We want to be instantiated
+                                                                   before PDM_DEVREG_CLASS_BUS_PCI? Maybe doesn't matter? */
     /* .cMaxInstances = */          ~0U,
     /* .uSharedVersion = */         42,
-    /* .cbInstanceShared = */       sizeof(),   /** @todo IOMMU: compute. */
-    /* .cbInstanceCC = */           sizeof(),   /** @todo IOMMU: compute. */
-    /* .cbInstanceRC = */           sizeof(),   /** @todo IOMMU: compute. */
+    /* .cbInstanceShared = */       sizeof(IOMMU),
+    /* .cbInstanceCC = */           sizeof(IOMMUCC),
+    /* .cbInstanceRC = */           sizeof(IOMMURC),
     /* .cMaxPciDevices = */         1,
     /* .cMaxMsixVectors = */        0,
     /* .pszDescription = */         "IOMMU (AMD)",
@@ -843,3 +932,4 @@ const PDMDEVREG g_DeviceIommu =
 };
 
 #endif /* !VBOX_DEVICE_STRUCT_TESTCASE */
+
