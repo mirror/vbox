@@ -69,6 +69,8 @@ private:
     HRESULT AttachToDefaultEndpoint();
     void    DetachFromEndpoint();
 
+    void    doCallback(void);
+
     /** @name IMMNotificationClient interface
      * @{ */
     IFACEMETHODIMP OnDeviceStateChanged(LPCWSTR pwstrDeviceId, DWORD dwNewState);

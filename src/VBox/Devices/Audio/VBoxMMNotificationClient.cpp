@@ -125,6 +125,20 @@ void VBoxMMNotificationClient::DetachFromEndpoint(void)
 }
 
 /**
+ * Helper function for invoking the audio connector callback (if any).
+ */
+void VBoxMMNotificationClient::doCallback(void)
+{
+#ifdef VBOX_WITH_AUDIO_CALLBACKS
+    AssertPtr(this->m_pDrvIns);
+    AssertPtr(this->m_pfnCallback);
+
+    if (this->m_pfnCallback)
+        /* Ignore rc */ this->m_pfnCallback(this->m_pDrvIns, PDMAUDIOBACKENDCBTYPE_DEVICES_CHANGED, NULL, 0);
+#endif
+}
+
+/**
  * Handler implementation which is called when an audio device state
  * has been changed.
  *
@@ -154,15 +168,9 @@ STDMETHODIMP VBoxMMNotificationClient::OnDeviceStateChanged(LPCWSTR pwstrDeviceI
             break;
     }
 
-    LogRel2(("Audio: Device '%ls' has changed state to '%s'\n", pwstrDeviceId, pszState));
+    LogRel(("Audio: Device '%ls' has changed state to '%s'\n", pwstrDeviceId, pszState));
 
-#ifdef VBOX_WITH_AUDIO_CALLBACKS
-    AssertPtr(this->m_pDrvIns);
-    AssertPtr(this->m_pfnCallback);
-
-    if (this->m_pfnCallback)
-        /* Ignore rc */ this->m_pfnCallback(this->m_pDrvIns, PDMAUDIOBACKENDCBTYPE_DEVICES_CHANGED, NULL, 0);
-#endif
+    doCallback();
 
     return S_OK;
 }
@@ -175,8 +183,8 @@ STDMETHODIMP VBoxMMNotificationClient::OnDeviceStateChanged(LPCWSTR pwstrDeviceI
  */
 STDMETHODIMP VBoxMMNotificationClient::OnDeviceAdded(LPCWSTR pwstrDeviceId)
 {
-    RT_NOREF(pwstrDeviceId);
-    LogFunc(("%ls\n", pwstrDeviceId));
+    LogRel(("Audio: Device '%ls' has been added\n", pwstrDeviceId));
+
     return S_OK;
 }
 
@@ -188,8 +196,8 @@ STDMETHODIMP VBoxMMNotificationClient::OnDeviceAdded(LPCWSTR pwstrDeviceId)
  */
 STDMETHODIMP VBoxMMNotificationClient::OnDeviceRemoved(LPCWSTR pwstrDeviceId)
 {
-    RT_NOREF(pwstrDeviceId);
-    LogFunc(("%ls\n", pwstrDeviceId));
+    LogRel(("Audio: Device '%ls' has been removed\n", pwstrDeviceId));
+
     return S_OK;
 }
 
@@ -204,12 +212,18 @@ STDMETHODIMP VBoxMMNotificationClient::OnDeviceRemoved(LPCWSTR pwstrDeviceId)
  */
 STDMETHODIMP VBoxMMNotificationClient::OnDefaultDeviceChanged(EDataFlow eFlow, ERole eRole, LPCWSTR pwstrDefaultDeviceId)
 {
-    RT_NOREF(eFlow, eRole, pwstrDefaultDeviceId);
+    RT_NOREF(eRole);
+
+    char *pszRole = "unknown";
 
     if (eFlow == eRender)
-    {
+        pszRole = "output";
+    else if (eFlow == eCapture)
+        pszRole = "input";
 
-    }
+    LogRel(("Audio: Default %s device has been changed to '%ls'\n", pszRole, pwstrDefaultDeviceId));
+
+    doCallback();
 
     return S_OK;
 }
