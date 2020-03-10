@@ -2582,7 +2582,7 @@ static DECLCALLBACK(void) drvHostDSoundDestruct(PPDMDRVINS pDrvIns)
 #ifdef VBOX_WITH_AUDIO_MMNOTIFICATION_CLIENT
     if (pThis->m_pNotificationClient)
     {
-        pThis->m_pNotificationClient->Dispose();
+        pThis->m_pNotificationClient->Unregister();
         pThis->m_pNotificationClient->Release();
 
         pThis->m_pNotificationClient = NULL;
@@ -2682,12 +2682,15 @@ static DECLCALLBACK(int) drvHostDSoundConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pC
             pThis->m_pNotificationClient = new VBoxMMNotificationClient();
 
             HRESULT hr = pThis->m_pNotificationClient->Initialize();
+            if (SUCCEEDED(hr))
+                hr = pThis->m_pNotificationClient->Register();
+
             if (FAILED(hr))
                 rc = VERR_AUDIO_BACKEND_INIT_FAILED;
         }
         catch (std::bad_alloc &ex)
         {
-            NOREF(ex);
+            RT_NOREF(ex);
             rc = VERR_NO_MEMORY;
         }
     }
