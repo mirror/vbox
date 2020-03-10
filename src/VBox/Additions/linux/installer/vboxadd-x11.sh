@@ -484,7 +484,7 @@ EOF
         setup_opengl
     esac
     # Try enabling VMSVGA drm device resizing.
-    VBoxClient --vmsvga
+    #VBoxClient --vmsvga
 }
 
 cleanup()
