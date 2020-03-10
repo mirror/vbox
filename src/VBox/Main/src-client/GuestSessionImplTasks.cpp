@@ -2562,7 +2562,7 @@ int GuestSessionTaskUpdateAdditions::Run(void)
             {
 #ifdef VBOX_STRICT
                 /* If we forgot to set the progress object accordingly, let us know. */
-                HRESULT rcProgress;
+                LONG rcProgress;
                 AssertMsg(   SUCCEEDED(mProgress->COMGETTER(ResultCode(&rcProgress)))
                           && FAILED(rcProgress), ("Task indicated an error (%Rrc), but progress did not indicate this (%Rhrc)\n",
                                                   rc, rcProgress));
