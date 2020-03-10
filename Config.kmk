@@ -1266,9 +1266,9 @@ ifdef VBOX_OSE
   # Disable recording (with audio support).
   VBOX_WITH_RECORDING=
   VBOX_WITH_AUDIO_RECORDING=
-  # Disable cloud network support
-  VBOX_WITH_CLOUD_NET=
  endif
+ # Disable cloud network support
+ VBOX_WITH_CLOUD_NET=
  # Disable building and packing vboximg-mount.
  VBOX_WITH_VBOXIMGMOUNT=
  VBOX_WITH_FUSE_PACKING=
