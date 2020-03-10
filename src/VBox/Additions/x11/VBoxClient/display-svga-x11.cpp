@@ -216,7 +216,11 @@ static void sendMonitorPositions(RTPOINT *pPositions, size_t cPositions)
         VBClLogError(("Monitor position update called with NULL pointer!\n"));
         return;
     }
-    VbglR3SeamlessSendMonitorPositions(cPositions, pPositions);
+    int rc = VbglR3SeamlessSendMonitorPositions(cPositions, pPositions);
+    if (RT_SUCCESS(rc))
+        VBClLogError("Sending monitor positions (%u of them)  to the host: %Rrc\n", cPositions, rc);
+    else
+        VBClLogError("Error during sending monitor positions (%u of them)  to the host: %Rrc\n", cPositions, rc);
 }
 
 static void queryMonitorPositions()
@@ -238,7 +242,7 @@ static void queryMonitorPositions()
     pMonitorInfo = XRRGetMonitors(x11Context.pDisplay, DefaultRootWindow(x11Context.pDisplay), true, &iMonitorCount);
 #else
     if (x11Context.pXRRGetMonitors)
-        x11Context.pXRRGetMonitors(x11Context.pDisplay, DefaultRootWindow(x11Context.pDisplay), true, &iMonitorCount);
+        pMonitorInfo = x11Context.pXRRGetMonitors(x11Context.pDisplay, DefaultRootWindow(x11Context.pDisplay), true, &iMonitorCount);
 #endif
     if (!pMonitorInfo)
         return;
@@ -375,12 +379,6 @@ static bool init()
     if (x11Context.pDisplay == NULL)
         return false;
     callVMWCTRL();
-#ifdef WITH_DISTRO_XRAND_XINERAMA
-    XRRSelectInput(x11Context.pDisplay, x11Context.rootWindow, x11Context.hEventMask);
-#else
-    if (x11Context.pXRRSelectInput)
-        x11Context.pXRRSelectInput(x11Context.pDisplay, x11Context.rootWindow, x11Context.hEventMask);
-#endif
     if (RT_FAILURE(startX11MonitorThread()))
         return false;
     return true;
@@ -440,12 +438,28 @@ static int openLibRandR()
 
 static void x11Connect()
 {
+    x11Context.pXRRSelectInput = NULL;
+    x11Context.pRandLibraryHandle = NULL;
+    x11Context.pXRRQueryExtension = NULL;
+    x11Context.pXRRQueryVersion = NULL;
+    x11Context.pXRRGetMonitors = NULL;
+    x11Context.pXRRFreeMonitors = NULL;
+
     int dummy;
     if (x11Context.pDisplay != NULL)
         VBClLogFatalError("%s called with bad argument\n", __func__);
     x11Context.pDisplay = XOpenDisplay(NULL);
     if (x11Context.pDisplay == NULL)
         return;
+#ifndef WITH_DISTRO_XRAND_XINERAMA
+    if (openLibRandR() != VINF_SUCCESS)
+    {
+        XCloseDisplay(x11Context.pDisplay);
+        x11Context.pDisplay = NULL;
+        return;
+    }
+#endif
+
     if (!XQueryExtension(x11Context.pDisplay, "VMWARE_CTRL",
                          &x11Context.hVMWCtrlMajorOpCode, &dummy, &dummy))
     {
@@ -476,27 +490,21 @@ static void x11Connect()
             return;
         }
     }
-    x11Context.hEventMask = 0;
+    x11Context.rootWindow = DefaultRootWindow(x11Context.pDisplay);
+    x11Context.hOutputCount = determineOutputCount();
+
     x11Context.hEventMask = RRScreenChangeNotifyMask;
     if (x11Context.hRandRMinor >= 2)
         x11Context.hEventMask |= RRCrtcChangeNotifyMask
                                | RROutputChangeNotifyMask
                                | RROutputPropertyNotifyMask;
-    x11Context.rootWindow = DefaultRootWindow(x11Context.pDisplay);
-    x11Context.hOutputCount = determineOutputCount();
-    x11Context.pXRRSelectInput = NULL;
-    x11Context.pRandLibraryHandle = NULL;
-    x11Context.pXRRQueryExtension = NULL;
-    x11Context.pXRRQueryVersion = NULL;
-    x11Context.pXRRGetMonitors = NULL;
-    x11Context.pXRRFreeMonitors = NULL;
-#ifndef WITH_DISTRO_XRAND_XINERAMA
-    if (openLibRandR() != VINF_SUCCESS)
-    {
-        XCloseDisplay(x11Context.pDisplay);
-        x11Context.pDisplay = NULL;
-        return;
-    }
+
+    /* Select the XEvent types we want to listen to. */
+#ifdef WITH_DISTRO_XRAND_XINERAMA
+    XRRSelectInput(x11Context.pDisplay, x11Context.rootWindow, x11Context.hEventMask);
+#else
+    if (x11Context.pXRRSelectInput)
+        x11Context.pXRRSelectInput(x11Context.pDisplay, x11Context.rootWindow, x11Context.hEventMask);
 #endif
 }
 
