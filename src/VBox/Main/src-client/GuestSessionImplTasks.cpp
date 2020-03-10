@@ -2253,15 +2253,20 @@ int GuestSessionTaskUpdateAdditions::Run(void)
          */
         RTVFSFILE hVfsFileIso;
         rc = RTVfsFileOpenNormal(mSource.c_str(), RTFILE_O_OPEN | RTFILE_O_READ | RTFILE_O_DENY_WRITE, &hVfsFileIso);
-        if (RT_SUCCESS(rc))
+        if (RT_FAILURE(rc))
+        {
+            hr = setProgressErrorMsg(VBOX_E_IPRT_ERROR,
+                                         Utf8StrFmt(GuestSession::tr("Unable to open Guest Additions .ISO file \"%s\": %Rrc"),
+                                         mSource.c_str(), rc));
+        }
+        else
         {
             RTVFS hVfsIso;
             rc = RTFsIso9660VolOpen(hVfsFileIso, 0 /*fFlags*/, &hVfsIso, NULL);
             if (RT_FAILURE(rc))
             {
                 hr = setProgressErrorMsg(VBOX_E_IPRT_ERROR,
-                                         Utf8StrFmt(GuestSession::tr("Unable to open Guest Additions .ISO file \"%s\": %Rrc"),
-                                         mSource.c_str(), rc));
+                                         Utf8StrFmt(GuestSession::tr("Unable to open file as ISO 9660 file system volume: %Rrc"), rc));
             }
             else
             {
@@ -2555,6 +2560,13 @@ int GuestSessionTaskUpdateAdditions::Run(void)
             Utf8Str strError = Utf8StrFmt("No further error information available (%Rrc)", rc);
             if (!mProgress.isNull()) /* Progress object is optional. */
             {
+#ifdef VBOX_STRICT
+                /* If we forgot to set the progress object accordingly, let us know. */
+                HRESULT rcProgress;
+                AssertMsg(   SUCCEEDED(mProgress->COMGETTER(ResultCode(&rcProgress)))
+                          && FAILED(rcProgress), ("Task indicated an error (%Rrc), but progress did not indicate this (%Rhrc)\n",
+                                                  rc, rcProgress));
+#endif
                 com::ProgressErrorInfo errorInfo(mProgress);
                 if (   errorInfo.isFullAvailable()
                     || errorInfo.isBasicAvailable())
