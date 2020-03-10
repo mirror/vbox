@@ -34,9 +34,6 @@ include $(PATH_SUB_CURRENT)/additions/Makefile.kmk
 include $(PATH_SUB_CURRENT)/api/Makefile.kmk
 include $(PATH_SUB_CURRENT)/autostart/Makefile.kmk
 include $(PATH_SUB_CURRENT)/benchmarks/Makefile.kmk
-ifndef VBOX_OSE
- include $(PATH_SUB_CURRENT)/cloud/Makefile.kmk
-endif
 include $(PATH_SUB_CURRENT)/cpu/Makefile.kmk
 include $(PATH_SUB_CURRENT)/network/Makefile.kmk
 include $(PATH_SUB_CURRENT)/selftests/Makefile.kmk
