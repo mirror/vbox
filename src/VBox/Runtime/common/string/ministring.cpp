@@ -981,8 +981,11 @@ bool RTCString::endsWith(const RTCString &that, CaseSensitivity cs /*= CaseSensi
     size_t l2 = that.length();
     if (l1 < l2)
         return false;
-    /** @todo r=bird: If l2 is 0, then m_psz can be NULL and we will crash. See
-     *        also handling of l2 == in startsWith. */
+
+    if (!m_psz) /* Don't crash when running against an empty string. */
+        return false;
+
+    /** @todo r=bird: See handling of l2 == in startsWith; inconsistent output (if l2 == 0, it matches anything). */
 
     size_t l = l1 - l2;
     if (cs == CaseSensitive)
