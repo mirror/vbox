@@ -950,7 +950,7 @@ int GuestSessionTask::fileCopyToGuest(const Utf8Str &strSource, const Utf8Str &s
     if (RT_SUCCESS(rc))
     {
         RTVFSFILE hSrcFile;
-        rc = RTVfsFileOpenNormal(szSrcReal, RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_WRITE, &hSrcFile); /** @todo Use the correct open modes! */
+        rc = RTVfsFileOpenNormal(szSrcReal, RTFILE_O_OPEN | RTFILE_O_READ | RTFILE_O_DENY_WRITE, &hSrcFile);
         if (RT_SUCCESS(rc))
         {
             LogFlowThisFunc(("Copying '%s' to '%s' (%RI64 bytes) ...\n",
@@ -1982,7 +1982,8 @@ int GuestSessionTaskUpdateAdditions::copyFileToGuest(GuestSession *pSession, RTV
     AssertReturn(hVfsIso != NIL_RTVFS, VERR_INVALID_POINTER);
 
     RTVFSFILE hVfsFile = NIL_RTVFSFILE;
-    int rc = RTVfsFileOpen(hVfsIso, strFileSource.c_str(), RTFILE_O_OPEN | RTFILE_O_READ, &hVfsFile);
+    int rc = RTVfsFileOpen(hVfsIso, strFileSource.c_str(),
+                           RTFILE_O_OPEN | RTFILE_O_READ | RTFILE_O_DENY_WRITE, & hVfsFile);
     if (RT_SUCCESS(rc))
     {
         uint64_t cbSrcSize = 0;
@@ -2251,7 +2252,7 @@ int GuestSessionTaskUpdateAdditions::Run(void)
          * Try to open the .ISO file to extract all needed files.
          */
         RTVFSFILE hVfsFileIso;
-        rc = RTVfsFileOpenNormal(mSource.c_str(), RTFILE_O_OPEN | RTFILE_O_READ | RTFILE_O_DENY_NONE, &hVfsFileIso);
+        rc = RTVfsFileOpenNormal(mSource.c_str(), RTFILE_O_OPEN | RTFILE_O_READ | RTFILE_O_DENY_WRITE, &hVfsFileIso);
         if (RT_SUCCESS(rc))
         {
             RTVFS hVfsIso;
