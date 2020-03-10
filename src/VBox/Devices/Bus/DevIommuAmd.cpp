@@ -817,10 +817,20 @@ typedef CTX_SUFF(PIOMMU) PIOMMUCC;
 
 # ifdef IN_RING3
 /**
+ * @interface_method_impl{PDMDEVREG,pfnReset}
+ */
+static DECLCALLBACK(void) iommuR3Reset(PPDMDEVINS pDevIns)
+{
+    NOREF(pDevIns);
+}
+
+
+/**
  * @interface_method_impl{PDMDEVREG,pfnDestruct}
  */
 static DECLCALLBACK(int) iommuR3Destruct(PPDMDEVINS pDevIns)
 {
+    NOREF(pDevIns);
     return VINF_SUCCESS;
 }
 
@@ -830,7 +840,11 @@ static DECLCALLBACK(int) iommuR3Destruct(PPDMDEVINS pDevIns)
  */
 static DECLCALLBACK(int) iommuR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE pCfg)
 {
+    NOREF(iInstance);
+    NOREF(pCfg);
+
     PDMDEV_CHECK_VERSIONS_RETURN(pDevIns);
+#if 0
     PIOMMU          pThis   = PDMDEVINS_2_DATA(pDevIns, PIOMMU);
     PIOMMUCC        pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PIOMMUCC);
     PCPDMDEVHLPR3   pHlp    = pDevIns->pHlpR3;
@@ -841,6 +855,7 @@ static DECLCALLBACK(int) iommuR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
      * Validate and read the configuration.
      */
     //PDMDEV_VALIDATE_CONFIG_RETURN(pDevIns, "", "");
+#endif
     return VINF_SUCCESS;
 }
 
@@ -885,13 +900,13 @@ const PDMDEVREG g_DeviceIommu =
     /* .pfnMemSetup = */            NULL,
     /* .pfnPowerOn = */             NULL,
     /* .pfnReset = */               iommuR3Reset,
-    /* .pfnSuspend = */             iommuR3Suspend,
+    /* .pfnSuspend = */             NULL,
     /* .pfnResume = */              NULL,
-    /* .pfnAttach = */              iommuR3Attach,
-    /* .pfnDetach = */              iommuR3Detach,
+    /* .pfnAttach = */              NULL,
+    /* .pfnDetach = */              NULL,
     /* .pfnQueryInterface = */      NULL,
     /* .pfnInitComplete = */        NULL,
-    /* .pfnPowerOff = */            iommuR3PowerOff,
+    /* .pfnPowerOff = */            NULL,
     /* .pfnSoftReset = */           NULL,
     /* .pfnReserved0 = */           NULL,
     /* .pfnReserved1 = */           NULL,
