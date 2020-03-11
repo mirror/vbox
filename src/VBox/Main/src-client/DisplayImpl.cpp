@@ -1288,6 +1288,10 @@ int Display::i_handleSetVisibleRegion(uint32_t cRect, PRTRECT pRect)
 int  Display::i_handleUpdateMonitorPositions(uint32_t cPositions, PRTPOINT pPosition)
 {
     AssertMsgReturn(pPosition, ("Empty monitor position array\n"), E_INVALIDARG);
+    for (unsigned i = 0; i < cPositions; ++i)
+        LogRel2(("Display::i_handleUpdateMonitorPositions: uScreenId=%d xOrigin=%d yOrigin=%dX\n",
+                 i, pPosition[i].x, pPosition[i].y));
+
     if (mpDrv && mpDrv->pUpPort->pfnReportMonitorPositions)
         mpDrv->pUpPort->pfnReportMonitorPositions(mpDrv->pUpPort, cPositions, pPosition);
     return VINF_SUCCESS;

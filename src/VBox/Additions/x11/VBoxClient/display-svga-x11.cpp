@@ -405,11 +405,15 @@ static void cleanup()
 #ifndef WITH_DISTRO_XRAND_XINERAMA
 static int openLibRandR()
 {
-    x11Context.pRandLibraryHandle = dlopen("/usr/lib/x86_64-linux-gnu/libXrandr.so", RTLD_LAZY /*| RTLD_LOCAL */);
+    x11Context.pRandLibraryHandle = dlopen("libXrandr.so", RTLD_LAZY /*| RTLD_LOCAL */);
+    if (!x11Context.pRandLibraryHandle)
+        x11Context.pRandLibraryHandle = dlopen("libXrandr.so.2", RTLD_LAZY /*| RTLD_LOCAL */);
+    if (!x11Context.pRandLibraryHandle)
+        x11Context.pRandLibraryHandle = dlopen("libXrandr.so.2.2.0", RTLD_LAZY /*| RTLD_LOCAL */);
 
     if (!x11Context.pRandLibraryHandle)
     {
-        VBClLogFatalError("Could not locate libXranr for dlopen\n");
+        VBClLogFatalError("Could not locate libXrandr for dlopen\n");
         return VERR_NOT_FOUND;
     }
 
