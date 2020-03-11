@@ -2751,7 +2751,7 @@ static void vmsvgaR3CmdDefineCursor(PVGASTATE pThis, PVGASTATECC pThisCC, PVMSVG
                 for (uint32_t x = 0; x < cx; )
                 {
                     uint8_t bDst = 0;
-                    uint8_t fBit = 1;
+                    uint8_t fBit = 0x80;
                     do
                     {
                         uintptr_t const idxPal = pbSrc[x] * 3;
@@ -2759,7 +2759,7 @@ static void vmsvgaR3CmdDefineCursor(PVGASTATE pThis, PVGASTATECC pThisCC, PVMSVG
                               | (pThis->last_palette[idxPal] >>  8)
                               | (pThis->last_palette[idxPal] >> 16)) & 0xff) > 0xfc)
                             bDst |= fBit;
-                        fBit <<= 1;
+                        fBit >>= 1;
                         x++;
                     } while (x < cx && (x & 7));
                     pbDst[(x - 1) / 8] = bDst;
@@ -2774,12 +2774,12 @@ static void vmsvgaR3CmdDefineCursor(PVGASTATE pThis, PVGASTATECC pThisCC, PVMSVG
                 for (uint32_t x = 0; x < cx; )
                 {
                     uint8_t bDst = 0;
-                    uint8_t fBit = 1;
+                    uint8_t fBit = 0x80;
                     do
                     {
                         if ((pbSrc[x * 2] | (pbSrc[x * 2 + 1] & 0x7f)) >= 0xfc)
                             bDst |= fBit;
-                        fBit <<= 1;
+                        fBit >>= 1;
                         x++;
                     } while (x < cx && (x & 7));
                     pbDst[(x - 1) / 8] = bDst;
@@ -2794,12 +2794,12 @@ static void vmsvgaR3CmdDefineCursor(PVGASTATE pThis, PVGASTATECC pThisCC, PVMSVG
                 for (uint32_t x = 0; x < cx; )
                 {
                     uint8_t bDst = 0;
-                    uint8_t fBit = 1;
+                    uint8_t fBit = 0x80;
                     do
                     {
                         if ((pbSrc[x * 2] | pbSrc[x * 2 + 1]) >= 0xfc)
                             bDst |= fBit;
-                        fBit <<= 1;
+                        fBit >>= 1;
                         x++;
                     } while (x < cx && (x & 7));
                     pbDst[(x - 1) / 8] = bDst;
@@ -2814,12 +2814,12 @@ static void vmsvgaR3CmdDefineCursor(PVGASTATE pThis, PVGASTATECC pThisCC, PVMSVG
                 for (uint32_t x = 0; x < cx; )
                 {
                     uint8_t bDst = 0;
-                    uint8_t fBit = 1;
+                    uint8_t fBit = 0x80;
                     do
                     {
                         if ((pbSrc[x * 3] | pbSrc[x * 3 + 1] | pbSrc[x * 3 + 2]) >= 0xfc)
                             bDst |= fBit;
-                        fBit <<= 1;
+                        fBit >>= 1;
                         x++;
                     } while (x < cx && (x & 7));
                     pbDst[(x - 1) / 8] = bDst;
@@ -2834,12 +2834,12 @@ static void vmsvgaR3CmdDefineCursor(PVGASTATE pThis, PVGASTATECC pThisCC, PVMSVG
                 for (uint32_t x = 0; x < cx; )
                 {
                     uint8_t bDst = 0;
-                    uint8_t fBit = 1;
+                    uint8_t fBit = 0x80;
                     do
                     {
                         if ((pbSrc[x * 4] | pbSrc[x * 4 + 1] | pbSrc[x * 4 + 2] | pbSrc[x * 4 + 3]) >= 0xfc)
                             bDst |= fBit;
-                        fBit <<= 1;
+                        fBit >>= 1;
                         x++;
                     } while (x < cx && (x & 7));
                     pbDst[(x - 1) / 8] = bDst;
