@@ -286,14 +286,33 @@ void UIVirtualBoxManagerWidget::sltHandleCloudMachineStateChange(const QString &
 {
     /* Acquire current item: */
     UIVirtualMachineItem *pItem = currentItem();
+    const bool fCurrentItemIsOk = pItem && pItem->accessible();
 
-    /* If we still have same item selected: */
-    if (pItem && pItem->id() == strId)
+    /* If current item is Ok: */
+    if (fCurrentItemIsOk)
     {
-        /* Propagate current items to update the Details-pane: */
-        m_pPaneToolsMachine->setItems(currentItems());
-        /* Repeat the task a bit delayed: */
-        pItem->toCloud()->updateInfoAsync(true /* delayed? */);
+        /* If we still have same item selected: */
+        if (pItem && pItem->id() == strId)
+        {
+            /* Propagate current items to update the Details-pane: */
+            m_pPaneToolsMachine->setItems(currentItems());
+            /* Repeat the task a bit delayed: */
+            pItem->toCloud()->updateInfoAsync(true /* delayed? */);
+        }
+    }
+    else
+    {
+        /* Make sure Error pane raised: */
+        m_pPaneToolsMachine->openTool(UIToolType_Error);
+
+        /* If we still have same item selected: */
+        if (pItem && pItem->id() == strId)
+        {
+            /* Propagate current items to update the Details-pane (in any case): */
+            m_pPaneToolsMachine->setItems(currentItems());
+            /* Propagate last access error to update the Error-pane (if machine selected but inaccessible): */
+            m_pPaneToolsMachine->setErrorDetails(pItem->accessError());
+        }
     }
 
     /* Pass the signal further: */
