@@ -291,6 +291,10 @@ void UIVirtualBoxManagerWidget::sltHandleCloudMachineStateChange(const QString &
     /* If current item is Ok: */
     if (fCurrentItemIsOk)
     {
+        /* If Error-pane is chosen currently => open tool currently chosen in Tools-pane: */
+        if (m_pPaneToolsMachine->currentTool() == UIToolType_Error)
+            sltHandleToolsPaneIndexChange();
+
         /* If we still have same item selected: */
         if (pItem && pItem->id() == strId)
         {
