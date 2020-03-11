@@ -273,6 +273,20 @@ RTDECL(int) RTFuzzCtxStateExportToFile(RTFUZZCTX hFuzzCtx, const char *pszFilena
 RTDECL(int) RTFuzzCtxCorpusInputAdd(RTFUZZCTX hFuzzCtx, const void *pvInput, size_t cbInput);
 
 /**
+ * Adds a new seed to the input corpus of the given fuzzing context - extended version.
+ *
+ * @returns IPRT status code.
+ * @param   hFuzzCtx            The fuzzing context handle.
+ * @param   pvInput             The pointer to the input buffer.
+ * @param   cbInput             Size of the input buffer.
+ * @param   offMutStart         Start offset at which a mutation can happen.
+ * @param   cbMutRange          Size of the range in bytes where a mutation can happen,
+ *                              use UINT64_MAX to allow mutations till the end of the input.
+ */
+RTDECL(int) RTFuzzCtxCorpusInputAddEx(RTFUZZCTX hFuzzCtx, const void *pvInput, size_t cbInput,
+                                      uint64_t offMutStart, uint64_t cbMutRange);
+
+/**
  * Adds a new seed to the input corpus of the given fuzzing context from the given file.
  *
  * @returns IPRT status code.
@@ -282,6 +296,19 @@ RTDECL(int) RTFuzzCtxCorpusInputAdd(RTFUZZCTX hFuzzCtx, const void *pvInput, siz
 RTDECL(int) RTFuzzCtxCorpusInputAddFromFile(RTFUZZCTX hFuzzCtx, const char *pszFilename);
 
 /**
+ * Adds a new seed to the input corpus of the given fuzzing context from the given file - extended version.
+ *
+ * @returns IPRT status code.
+ * @param   hFuzzCtx            The fuzzing context handle.
+ * @param   pszFilename         The filename to load the seed from.
+ * @param   offMutStart         Start offset at which a mutation can happen.
+ * @param   cbMutRange          Size of the range in bytes where a mutation can happen,
+ *                              use UINT64_MAX to allow mutations till the end of the input.
+ */
+RTDECL(int) RTFuzzCtxCorpusInputAddFromFileEx(RTFUZZCTX hFuzzCtx, const char *pszFilename,
+                                              uint64_t offMutStart, uint64_t cbMutRange);
+
+/**
  * Adds a new seed to the input corpus of the given fuzzing context from the given VFS file.
  *
  * @returns IPRT status code.
@@ -289,6 +316,19 @@ RTDECL(int) RTFuzzCtxCorpusInputAddFromFile(RTFUZZCTX hFuzzCtx, const char *pszF
  * @param   hVfsFile            The VFS file handle to load the seed from.
  */
 RTDECL(int) RTFuzzCtxCorpusInputAddFromVfsFile(RTFUZZCTX hFuzzCtx, RTVFSFILE hVfsFile);
+
+/**
+ * Adds a new seed to the input corpus of the given fuzzing context from the given VFS file - extended version.
+ *
+ * @returns IPRT status code.
+ * @param   hFuzzCtx            The fuzzing context handle.
+ * @param   hVfsFile            The VFS file handle to load the seed from.
+ * @param   offMutStart         Start offset at which a mutation can happen.
+ * @param   cbMutRange          Size of the range in bytes where a mutation can happen,
+ *                              use UINT64_MAX to allow mutations till the end of the input.
+ */
+RTDECL(int) RTFuzzCtxCorpusInputAddFromVfsFileEx(RTFUZZCTX hFuzzCtx, RTVFSFILE hVfsFile,
+                                                 uint64_t offMutStart, uint64_t cbMutRange);
 
 /**
  * Adds new seeds to the input corpus of the given fuzzing context from the given directory.
@@ -352,6 +392,17 @@ RTDECL(int) RTFuzzCtxCfgSetTmpDirectory(RTFUZZCTX hFuzzCtx, const char *pszPathT
  * @param   hFuzzCtx            The fuzzing context handle.
  */
 RTDECL(const char *) RTFuzzCtxCfgGetTmpDirectory(RTFUZZCTX hFuzzCtx);
+
+/**
+ * Sets the range in which a particular input can get mutated.
+ *
+ * @returns IPRT status code.
+ * @param   hFuzzCtx            The fuzzing context handle.
+ * @param   offStart            Start offset at which a mutation can happen.
+ * @param   cbRange             Size of the range in bytes where a mutation can happen,
+ *                              use UINT64_MAX to allow mutations till the end of the input.
+ */
+RTDECL(int) RTFuzzCtxCfgSetMutationRange(RTFUZZCTX hFuzzCtx, uint64_t offStart, uint64_t cbRange);
 
 /**
  * Reseeds the PRNG of the given fuzzing context.
