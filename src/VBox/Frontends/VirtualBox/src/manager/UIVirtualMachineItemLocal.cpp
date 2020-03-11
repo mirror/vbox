@@ -22,6 +22,7 @@
 /* GUI includes: */
 #include "UICommon.h"
 #include "UIConverter.h"
+#include "UIErrorString.h"
 #include "UIExtraDataManager.h"
 #include "UIVirtualMachineItemLocal.h"
 #ifdef VBOX_WS_MAC
@@ -30,6 +31,7 @@
 
 /* COM includes: */
 #include "CSnapshot.h"
+#include "CVirtualBoxErrorInfo.h"
 
 
 /*********************************************************************************************************************************
@@ -60,7 +62,7 @@ void UIVirtualMachineItemLocal::recache()
     if (m_fAccessible)
     {
         /* Reset last access error information: */
-        m_comAccessError = CVirtualBoxErrorInfo();
+        m_strAccessError.clear();
 
         /* Determine own VM attributes: */
         m_strName = m_comMachine.GetName();
@@ -107,7 +109,7 @@ void UIVirtualMachineItemLocal::recache()
     else
     {
         /* Update last access error information: */
-        m_comAccessError = m_comMachine.GetAccessError();
+        m_strAccessError = UIErrorString::formatErrorInfo(m_comMachine.GetAccessError());
 
         /* Determine machine name on the basis of settings file only: */
         QFileInfo fi(m_strSettingsFile);

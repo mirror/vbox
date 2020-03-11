@@ -24,7 +24,6 @@
 /* GUI includes: */
 #include "QISplitter.h"
 #include "UIActionPoolManager.h"
-#include "UIErrorString.h"
 #include "UIExtraDataManager.h"
 #include "UIChooser.h"
 #include "UIVirtualBoxManager.h"
@@ -786,7 +785,7 @@ void UIVirtualBoxManagerWidget::recacheCurrentItemInformation(bool fDontRaiseErr
 
             /* Propagate last access error to update the Error-pane (if machine selected but inaccessible): */
             if (pItem)
-                m_pPaneToolsMachine->setErrorDetails(UIErrorString::formatErrorInfo(pItem->accessError()));
+                m_pPaneToolsMachine->setErrorDetails(pItem->accessError());
         }
 
         /* Propagate current items to update the Details-pane (in any case): */

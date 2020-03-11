@@ -112,7 +112,7 @@ void UIVirtualMachineItemCloud::recache()
     if (m_fAccessible)
     {
         /* Reset last access error information: */
-        m_comAccessError = CVirtualBoxErrorInfo();
+        m_strAccessError.clear();
 
         /* Determine own VM attributes: */
         m_strOSTypeId = !m_guiCloudMachine.isNull()
