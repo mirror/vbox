@@ -717,9 +717,9 @@ typedef struct PDMIOAPIC
 } PDMIOAPIC;
 
 /** Maximum number of PCI busses for a VM. */
-#define PDM_PCI_BUSSES_MAX  8
+#define PDM_PCI_BUSSES_MAX 8
 /** Maximum number of IOMMUs (at most one per PCI bus). */
-#define PDM_IOMMUS_MAX      PDM_PCI_BUSSES_MAX
+#define PDM_IOMMUS_MAX     PDM_PCI_BUSSES_MAX
 
 
 #ifdef IN_RING3
