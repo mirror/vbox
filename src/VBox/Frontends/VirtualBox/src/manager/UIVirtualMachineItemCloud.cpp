@@ -108,49 +108,45 @@ void UIVirtualMachineItemCloud::recache()
     }
 
     /* Now determine whether VM is accessible: */
-    m_fAccessible = true;
-    if (m_fAccessible)
+    m_fAccessible = !m_guiCloudMachine.isNull()
+                  ? m_guiCloudMachine.accessible()
+                  : true;
+    m_strAccessError = !m_guiCloudMachine.isNull()
+                     ? m_guiCloudMachine.accessError()
+                     : QString();
+
+    /* Determine own VM attributes: */
+    m_strOSTypeId = !m_guiCloudMachine.isNull()
+                  ? m_guiCloudMachine.osType()
+                  : "Other";
+
+    /* Determine VM states: */
+    m_enmMachineState = !m_guiCloudMachine.isNull()
+                      ? m_guiCloudMachine.machineState()
+                      : KMachineState_PoweredOff;
+    m_strMachineStateName = gpConverter->toString(m_enmMachineState);
+    if (itemType() == ItemType_CloudFake)
     {
-        /* Reset last access error information: */
-        m_strAccessError.clear();
-
-        /* Determine own VM attributes: */
-        m_strOSTypeId = !m_guiCloudMachine.isNull()
-                      ? m_guiCloudMachine.osType()
-                      : "Other";
-
-        /* Determine VM states: */
-        m_enmMachineState = !m_guiCloudMachine.isNull()
-                          ? m_guiCloudMachine.machineState()
-                          : KMachineState_PoweredOff;
-        m_strMachineStateName = gpConverter->toString(m_enmMachineState);
-        if (itemType() == ItemType_CloudFake)
+        switch (m_enmFakeCloudItemState)
         {
-            switch (m_enmFakeCloudItemState)
-            {
-                case UIVirtualMachineItemCloud::FakeCloudItemState_Loading:
-                    m_machineStateIcon = UIIconPool::iconSet(":/state_loading_16px.png");
-                    break;
-                case UIVirtualMachineItemCloud::FakeCloudItemState_Done:
-                    m_machineStateIcon = UIIconPool::iconSet(":/vm_new_16px.png");
-                    break;
-                default:
-                    break;
-            }
+            case UIVirtualMachineItemCloud::FakeCloudItemState_Loading:
+                m_machineStateIcon = UIIconPool::iconSet(":/state_loading_16px.png");
+                break;
+            case UIVirtualMachineItemCloud::FakeCloudItemState_Done:
+                m_machineStateIcon = UIIconPool::iconSet(":/vm_new_16px.png");
+                break;
+            default:
+                break;
         }
-        else
-            m_machineStateIcon = gpConverter->toIcon(m_enmMachineState);
-
-        /* Determine configuration access level: */
-        m_enmConfigurationAccessLevel = ConfigurationAccessLevel_Null;
-
-        /* Determine whether we should show this VM details: */
-        m_fHasDetails = true;
     }
     else
-    {
-        /// @todo handle inaccessible cloud VM
-    }
+        m_machineStateIcon = gpConverter->toIcon(m_enmMachineState);
+
+    /* Determine configuration access level: */
+    m_enmConfigurationAccessLevel = ConfigurationAccessLevel_Null;
+
+    /* Determine whether we should show this VM details: */
+    m_fHasDetails = true;
 
     /* Recache item pixmap: */
     recachePixmap();

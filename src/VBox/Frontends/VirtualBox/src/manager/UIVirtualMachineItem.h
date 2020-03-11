@@ -155,25 +155,25 @@ protected:
     /** @name Basic attributes.
       * @{ */
         /** Holds cached machine id. */
-        QString      m_strId;
+        QString  m_strId;
         /** Holds cached machine name. */
-        QString      m_strName;
+        QString  m_strName;
         /** Holds cached machine OS type id. */
-        QString      m_strOSTypeId;
+        QString  m_strOSTypeId;
         /** Holds cached machine OS type pixmap. */
-        QPixmap      m_pixmap;
+        QPixmap  m_pixmap;
         /** Holds cached machine OS type pixmap size. */
-        QSize        m_logicalPixmapSize;
+        QSize    m_logicalPixmapSize;
     /** @} */
 
     /** @name State attributes.
       * @{ */
         /** Holds cached machine state. */
-        KMachineState             m_enmMachineState;
+        KMachineState  m_enmMachineState;
         /** Holds cached machine state name. */
-        QString                   m_strMachineStateName;
+        QString        m_strMachineStateName;
         /** Holds cached machine state name. */
-        QIcon                     m_machineStateIcon;
+        QIcon          m_machineStateIcon;
 
         /** Holds configuration access level. */
         ConfigurationAccessLevel  m_enmConfigurationAccessLevel;

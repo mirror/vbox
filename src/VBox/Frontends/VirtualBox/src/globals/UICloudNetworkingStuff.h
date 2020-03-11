@@ -33,38 +33,45 @@
 namespace UICloudNetworkingStuff
 {
     /** Acquires instance list.
-      * @param  comCloudClient  Brings cloud client object.
-      * @param  pWidget         Brings parent widget to show messages according to,
-      *                         if no parent set, progress will be executed in blocking way. */
+      * @param  comCloudClient   Brings cloud client object.
+      * @param  strErrorMessage  Brings error message container.
+      * @param  pWidget          Brings parent widget to show messages according to,
+      *                          if no parent set, progress will be executed in blocking way. */
     SHARED_LIBRARY_STUFF QList<UICloudMachine> listInstances(const CCloudClient &comCloudClient,
                                                              QString &strErrorMessage,
                                                              QWidget *pParent = 0);
 
     /** Acquires instance info as a map.
-      * @param  comCloudClient  Brings cloud client object.
-      * @param  strId           Brings cloud instance id.
-      * @param  pWidget         Brings parent widget to show messages according to,
-      *                         if no parent set, progress will be executed in blocking way. */
+      * @param  comCloudClient   Brings cloud client object.
+      * @param  strId            Brings cloud instance id.
+      * @param  strErrorMessage  Brings error message container.
+      * @param  pWidget          Brings parent widget to show messages according to,
+      *                          if no parent set, progress will be executed in blocking way. */
     SHARED_LIBRARY_STUFF QMap<KVirtualSystemDescriptionType, QString> getInstanceInfo(const CCloudClient &comCloudClient,
                                                                                       const QString &strId,
+                                                                                      QString &strErrorMessage,
                                                                                       QWidget *pParent = 0);
     /** Acquires instance info of certain @a enmType as a string.
-      * @param  comCloudClient  Brings cloud client object.
-      * @param  strId           Brings cloud instance id.
-      * @param  pWidget         Brings parent widget to show messages according to,
-      *                         if no parent set, progress will be executed in blocking way. */
+      * @param  comCloudClient   Brings cloud client object.
+      * @param  strId            Brings cloud instance id.
+      * @param  strErrorMessage  Brings error message container.
+      * @param  pWidget          Brings parent widget to show messages according to,
+      *                          if no parent set, progress will be executed in blocking way. */
     SHARED_LIBRARY_STUFF QString getInstanceInfo(KVirtualSystemDescriptionType enmType,
                                                  const CCloudClient &comCloudClient,
                                                  const QString &strId,
+                                                 QString &strErrorMessage,
                                                  QWidget *pParent = 0);
 
     /** Acquires image info as a map.
-      * @param  comCloudClient  Brings cloud client object.
-      * @param  strId           Brings cloud image id.
-      * @param  pWidget         Brings parent widget to show messages according to,
-      *                         if no parent set, progress will be executed in blocking way. */
+      * @param  comCloudClient   Brings cloud client object.
+      * @param  strId            Brings cloud image id.
+      * @param  strErrorMessage  Brings error message container.
+      * @param  pWidget          Brings parent widget to show messages according to,
+      *                          if no parent set, progress will be executed in blocking way. */
     SHARED_LIBRARY_STUFF QMap<QString, QString> getImageInfo(const CCloudClient &comCloudClient,
                                                              const QString &strId,
+                                                             QString &strErrorMessage,
                                                              QWidget *pParent = 0);
 
     /** Fetches cloud instance OS type from the passed @a info. */

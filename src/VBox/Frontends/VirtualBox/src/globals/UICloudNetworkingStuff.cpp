@@ -84,6 +84,7 @@ QList<UICloudMachine> UICloudNetworkingStuff::listInstances(const CCloudClient &
 
 QMap<KVirtualSystemDescriptionType, QString> UICloudNetworkingStuff::getInstanceInfo(const CCloudClient &comCloudClient,
                                                                                      const QString &strId,
+                                                                                     QString &strErrorMessage,
                                                                                      QWidget *pParent /* = 0 */)
 {
     /* Prepare result: */
@@ -99,9 +100,7 @@ QMap<KVirtualSystemDescriptionType, QString> UICloudNetworkingStuff::getInstance
         if (pParent)
             msgCenter().cannotCreateAppliance(comVBox, pParent);
         else
-        {
-            /// @todo fetch error info
-        }
+            strErrorMessage = UIErrorString::formatErrorInfo(comVBox);
     }
     else
     {
@@ -112,9 +111,7 @@ QMap<KVirtualSystemDescriptionType, QString> UICloudNetworkingStuff::getInstance
             if (pParent)
                 msgCenter().cannotCreateVirtualSystemDescription(comAppliance, pParent);
             else
-            {
-                /// @todo fetch error info
-            }
+                strErrorMessage = UIErrorString::formatErrorInfo(comAppliance);
         }
         else
         {
@@ -130,9 +127,7 @@ QMap<KVirtualSystemDescriptionType, QString> UICloudNetworkingStuff::getInstance
                 if (pParent)
                     msgCenter().cannotAcquireCloudClientParameter(comCloudClient, pParent);
                 else
-                {
-                    /// @todo fetch error info
-                }
+                    strErrorMessage = UIErrorString::formatErrorInfo(comCloudClient);
             }
             else
             {
@@ -148,9 +143,7 @@ QMap<KVirtualSystemDescriptionType, QString> UICloudNetworkingStuff::getInstance
                     if (pParent)
                         msgCenter().cannotAcquireCloudClientParameter(comProgress, pParent);
                     else
-                    {
-                        /// @todo fetch error info
-                    }
+                        strErrorMessage = UIErrorString::formatErrorInfo(comProgress);
                 }
                 else
                 {
@@ -176,13 +169,15 @@ QMap<KVirtualSystemDescriptionType, QString> UICloudNetworkingStuff::getInstance
 QString UICloudNetworkingStuff::getInstanceInfo(KVirtualSystemDescriptionType enmType,
                                                 const CCloudClient &comCloudClient,
                                                 const QString &strId,
+                                                QString &strErrorMessage,
                                                 QWidget *pParent /* = 0 */)
 {
-    return getInstanceInfo(comCloudClient, strId, pParent).value(enmType, QString());
+    return getInstanceInfo(comCloudClient, strId, strErrorMessage, pParent).value(enmType, QString());
 }
 
 QMap<QString, QString> UICloudNetworkingStuff::getImageInfo(const CCloudClient &comCloudClient,
                                                             const QString &strId,
+                                                            QString &strErrorMessage,
                                                             QWidget *pParent /* = 0 */)
 {
     /* Prepare result: */
@@ -196,9 +191,7 @@ QMap<QString, QString> UICloudNetworkingStuff::getImageInfo(const CCloudClient &
         if (pParent)
             msgCenter().cannotAcquireCloudClientParameter(comCloudClient, pParent);
         else
-        {
-            /// @todo fetch error info
-        }
+            strErrorMessage = UIErrorString::formatErrorInfo(comCloudClient);
     }
     else
     {
@@ -214,9 +207,7 @@ QMap<QString, QString> UICloudNetworkingStuff::getImageInfo(const CCloudClient &
             if (pParent)
                 msgCenter().cannotAcquireCloudClientParameter(comProgress, pParent);
             else
-            {
-                /// @todo fetch error info
-            }
+                strErrorMessage = UIErrorString::formatErrorInfo(comProgress);
         }
         else
         {

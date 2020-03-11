@@ -130,7 +130,7 @@ UITextTable UIDetailsGenerator::generateMachineInformationGeneral(UICloudMachine
     if (guiCloudMachine.isNull())
         return table;
 
-    if (!guiCloudMachine.isAccessible())
+    if (!guiCloudMachine.accessible())
     {
         table << UITextTableLine(QApplication::translate("UIDetails", "Information Inaccessible", "details"), QString());
         return table;
@@ -291,7 +291,7 @@ UITextTable UIDetailsGenerator::generateMachineInformationSystem(UICloudMachine 
     if (guiCloudMachine.isNull())
         return table;
 
-    if (!guiCloudMachine.isAccessible())
+    if (!guiCloudMachine.accessible())
     {
         table << UITextTableLine(QApplication::translate("UIDetails", "Information Inaccessible", "details"), QString());
         return table;
@@ -570,7 +570,7 @@ UITextTable UIDetailsGenerator::generateMachineInformationStorage(UICloudMachine
     if (guiCloudMachine.isNull())
         return table;
 
-    if (!guiCloudMachine.isAccessible())
+    if (!guiCloudMachine.accessible())
     {
         table << UITextTableLine(QApplication::translate("UIDetails", "Information Inaccessible", "details"), QString());
         return table;

@@ -61,7 +61,9 @@ public:
     QString name() const { return m_strName; }
 
     /** Returns whether cloud VM is accessible. */
-    bool isAccessible() const { return m_fAccessible; }
+    bool accessible() const { return m_fAccessible; }
+    /** Returns last access error message. */
+    QString accessError() const { return m_strAccessError; }
 
     /** Returns cloud VM state. */
     KMachineState machineState() const { return m_enmMachineState; }
@@ -96,7 +98,9 @@ private:
     const QString  m_strName;
 
     /** Holds whether cloud VM is accessible. */
-    bool  m_fAccessible;
+    bool     m_fAccessible;
+    /** Holds the last access error message. */
+    QString  m_strAccessError;
 
     /** Holds the cloud VM state. */
     KMachineState  m_enmMachineState;
@@ -156,7 +160,9 @@ public:
     QString name() const { return d->name(); }
 
     /** Returns whether cloud VM is accessible. */
-    bool isAccessible() const { return d->isAccessible(); }
+    bool accessible() const { return d->accessible(); }
+    /** Returns last access error message. */
+    QString accessError() const { return d->accessError(); }
 
     /** Returns cloud VM state. */
     KMachineState machineState() { return d->machineState(); }

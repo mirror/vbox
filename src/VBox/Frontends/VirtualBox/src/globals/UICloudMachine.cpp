@@ -48,6 +48,7 @@ UICloudMachineData::UICloudMachineData(const UICloudMachineData &other)
     , m_strId(other.m_strId)
     , m_strName(other.m_strName)
     , m_fAccessible(other.m_fAccessible)
+    , m_strAccessError(other.m_strAccessError)
     , m_enmMachineState(other.m_enmMachineState)
     , m_strOsType(other.m_strOsType)
     , m_iMemorySize(other.m_iMemorySize)
@@ -68,28 +69,55 @@ UICloudMachineData::~UICloudMachineData()
 void UICloudMachineData::refresh()
 {
     /* Acquire instance info sync way, be aware, this is blocking stuff, it takes some time: */
-    const QMap<KVirtualSystemDescriptionType, QString> instanceInfoMap = getInstanceInfo(m_comCloudClient, m_strId);
+    const QMap<KVirtualSystemDescriptionType, QString> instanceInfoMap = getInstanceInfo(m_comCloudClient, m_strId, m_strAccessError);
+    /* Update accessibility state: */
+    m_fAccessible = m_strAccessError.isNull();
 
-    /* Refresh corresponding values: */
-    m_strOsType = fetchOsType(instanceInfoMap);
-    m_iMemorySize = fetchMemorySize(instanceInfoMap);
-    m_iCpuCount = fetchCpuCount(instanceInfoMap);
-    m_enmMachineState = fetchMachineState(instanceInfoMap);
-    m_strShape = fetchShape(instanceInfoMap);
-    m_strDomain = fetchDomain(instanceInfoMap);
-    m_strBootingFirmware = fetchBootingFirmware(instanceInfoMap);
-    m_strImageId = fetchImageId(instanceInfoMap);
+    /* Refresh corresponding values if accessible: */
+    if (m_fAccessible)
+    {
+        m_strOsType = fetchOsType(instanceInfoMap);
+        m_iMemorySize = fetchMemorySize(instanceInfoMap);
+        m_iCpuCount = fetchCpuCount(instanceInfoMap);
+        m_enmMachineState = fetchMachineState(instanceInfoMap);
+        m_strShape = fetchShape(instanceInfoMap);
+        m_strDomain = fetchDomain(instanceInfoMap);
+        m_strBootingFirmware = fetchBootingFirmware(instanceInfoMap);
+        m_strImageId = fetchImageId(instanceInfoMap);
 
-    /* Acquire image info sync way, be aware, this is blocking stuff, it takes some time: */
-    const QMap<QString, QString> imageInfoMap = getImageInfo(m_comCloudClient, m_strImageId);
-    //printf("Image info:\n");
-    //foreach (const QString &strKey, imageInfoMap.keys())
-    //    printf("key = %s, value = %s\n", strKey.toUtf8().constData(), imageInfoMap.value(strKey).toUtf8().constData());
-    //printf("\n");
+        /* Acquire image info sync way, be aware, this is blocking stuff, it takes some time: */
+        const QMap<QString, QString> imageInfoMap = getImageInfo(m_comCloudClient, m_strImageId, m_strAccessError);
+        /* Update accessibility state: */
+        m_fAccessible = m_strAccessError.isNull();
 
-    /* Sorry, but these are hardcoded in Main: */
-    m_strImageName = imageInfoMap.value("display name");
-    m_strImageSize = imageInfoMap.value("size");
+        //printf("Image info:\n");
+        //foreach (const QString &strKey, imageInfoMap.keys())
+        //    printf("key = %s, value = %s\n", strKey.toUtf8().constData(), imageInfoMap.value(strKey).toUtf8().constData());
+        //printf("\n");
+
+        /* Refresh corresponding values if accessible: */
+        if (m_fAccessible)
+        {
+            /* Sorry, but these are hardcoded in Main: */
+            m_strImageName = imageInfoMap.value("display name");
+            m_strImageSize = imageInfoMap.value("size");
+        }
+    }
+
+    /* Reset everything if not accessible: */
+    if (!m_fAccessible)
+    {
+        m_enmMachineState = KMachineState_PoweredOff;
+        m_strOsType = "Other";
+        m_iMemorySize = 0;
+        m_iCpuCount = 0;
+        m_strShape.clear();
+        m_strDomain.clear();
+        m_strBootingFirmware.clear();
+        m_strImageId.clear();
+        m_strImageName.clear();
+        m_strImageSize.clear();
+    }
 }
 
 
