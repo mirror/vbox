@@ -1351,7 +1351,8 @@ endif
   tstDevice_SOURCES     = \
  	testcase/tstDevice.cpp \
  	testcase/tstDeviceCfg.cpp \
- 	testcase/tstDevicePdmDevHlp.cpp
+ 	testcase/tstDevicePdmDevHlp.cpp \
+ 	testcase/tstDeviceSsmFuzz.cpp
  endif
 
 endif # !VBOX_ONLY_EXTPACKS && "$(intersects $(KBUILD_TARGET_ARCH),$(VBOX_SUPPORTED_HOST_ARCHS))" != ""

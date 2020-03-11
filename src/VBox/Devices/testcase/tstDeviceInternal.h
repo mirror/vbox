@@ -99,6 +99,26 @@ AssertCompile(sizeof(PDMCRITSECTINT) <= (HC_ARCH_BITS == 32 ? 0x80 : 0xc0));
 
 
 /**
+ * SSM handle state.
+ */
+typedef struct SSMHANDLE
+{
+    /** Pointer to the device under test the handle is for. */
+    PTSTDEVDUTINT                   pDut;
+    /** The saved state data buffer. */
+    uint8_t                         *pbSavedState;
+    /** Size of the saved state. */
+    size_t                          cbSavedState;
+    /** Current offset into the data buffer. */
+    uint32_t                        offDataBuffer;
+    /** Current unit version. */
+    uint32_t                        uCurUnitVer;
+    /** Status code. */
+    int                             rc;
+} SSMHANDLE;
+
+
+/**
  * MM Heap allocation.
  */
 typedef struct TSTDEVMMHEAPALLOC
@@ -362,6 +382,9 @@ typedef struct TSTDEVDUTINT
     PPDMPCIDEV                      pPciDev;
     /** PCI Region descriptors. */
     TSTDEVDUTPCIREGION              aPciRegions[VBOX_PCI_NUM_REGIONS];
+    /** The status port interface we implement. */
+    PDMIBASE                        IBaseSts;
+    /**  */
 } TSTDEVDUTINT;
 
 

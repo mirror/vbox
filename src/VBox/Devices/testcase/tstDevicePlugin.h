@@ -22,6 +22,9 @@
 
 #include <VBox/types.h>
 
+#include "tstDeviceCfg.h"
+
+
 /** Device under test handle. */
 typedef struct TSTDEVDUTINT *TSTDEVDUT;
 
@@ -34,20 +37,18 @@ typedef struct TSTDEVTESTCASEREG
     char                szName[16];
     /** Testcase description. */
     const char          *pszDesc;
-    /** The device name the testcase handles. */
-    char                szDevName[16];
     /** Flags for this testcase. */
     uint32_t            fFlags;
-    /** CFGM configuration for the device to be instantiated. */
-    PCTSTDEVCFGITEM     paDevCfg;
 
     /**
      * Testcase entry point.
      *
      * @returns VBox status code.
      * @param   hDut      Handle of the device under test.
+     * @param   paCfg     Pointer to the testcase config.
+     * @param   cCfgItems Number of config items.
      */
-    DECLR3CALLBACKMEMBER(int, pfnTestEntry, (TSTDEVDUT hDut));
+    DECLR3CALLBACKMEMBER(int, pfnTestEntry, (TSTDEVDUT hDut, PCTSTDEVCFGITEM paCfg, uint32_t cCfgItems));
 } TSTDEVTESTCASEREG;
 /** Pointer to a testcase registration structure. */
 typedef TSTDEVTESTCASEREG *PTSTDEVTESTCASEREG;

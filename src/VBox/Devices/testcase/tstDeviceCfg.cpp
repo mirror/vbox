@@ -309,6 +309,12 @@ static int tstDevCfgLoadTestcase(RTJSONVAL hJsonTestcase, const char **ppszTestc
                     else
                         rc = tstDevCfgErrorRc(pErrInfo, rc, "tstDevCfg/JSON: Failed to allocate %zu bytes for the test config structure", cbCfg);
                 }
+                else
+                {
+                    *ppszTestcaseId     = pszTestcaseId;
+                    *pcTestcaseCfgItems = 0;
+                    *ppTestcaseCfg      = NULL;
+                }
             }
             else
                 rc = tstDevCfgErrorRc(pErrInfo, rc, "tstDevCfg/JSON: \"Config\" is not an array");

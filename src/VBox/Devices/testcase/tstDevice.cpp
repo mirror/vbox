@@ -39,6 +39,7 @@
 
 #include "tstDeviceInternal.h"
 #include "tstDeviceCfg.h"
+#include "tstDeviceBuiltin.h"
 
 
 /*********************************************************************************************************************************
@@ -329,7 +330,8 @@ static DECLCALLBACK(int) tstDevRegisterTestcase(void *pvUser, PCTSTDEVTESTCASERE
         if (RT_LIKELY(pTestcase))
         {
             pTestcase->pPlugin = pPlugin;
-            pPlugin->cRefs++;
+            if (pPlugin)
+                pPlugin->cRefs++;
             pTestcase->pTestcaseReg = pTestcaseReg;
             RTListAppend(&g_LstTestcases, &pTestcase->NdTestcases);
             return VINF_SUCCESS;
@@ -878,6 +880,17 @@ static int tstDevPdmDevCreate(const char *pszName, bool fR0Enabled, bool fRCEnab
 }
 
 
+DECLCALLBACK(void *) tstDevTestsRun_QueryInterface(PPDMIBASE pInterface, const char *pszIID)
+{
+    RT_NOREF(pInterface, pszIID);
+#if 0
+    PDMIBASE_RETURN_INTERFACE(pszIID, PDMIBASE, &pDrvIns->IBase);
+    PDMIBASE_RETURN_INTERFACE(pszIID, PDMILEDCONNECTORS, &pThis->ILedConnectors);
+    PDMIBASE_RETURN_INTERFACE(pszIID, PDMIMEDIANOTIFY, &pThis->IMediaNotify);
+#endif
+    return NULL;
+}
+
 /**
  * Run a given test config.
  *
@@ -895,9 +908,12 @@ static int tstDevTestsRun(PCTSTDEVCFG pDevTstCfg)
         TSTDEVDUTINT Dut;
         Dut.pTest           = pTest;
         Dut.enmCtx          = TSTDEVDUTCTX_R3;
-        Dut.pVm             = NULL;
+        Dut.pVm             = (PVM)0x1000;
         Dut.SupSession.pDut = &Dut;
         Dut.Cfg.pDut        = &Dut;
+
+        Dut.IBaseSts.pfnQueryInterface = tstDevTestsRun_QueryInterface;
+
         RTListInit(&Dut.LstIoPorts);
         RTListInit(&Dut.LstTimers);
         RTListInit(&Dut.LstMmHeap);
@@ -914,7 +930,11 @@ static int tstDevTestsRun(PCTSTDEVCFG pDevTstCfg)
         rc = tstDevPdmDevCreate(pDevTstCfg->pszDevName, pTest->fR0Enabled, pTest->fRCEnabled, &Dut);
         if (RT_SUCCESS(rc))
         {
-            /** @todo Next */
+            PCTSTDEVTESTCASE pTestcase = tstDevTestcaseFind(pTest->papszTestcaseIds[i]);
+            if (pTestcase)
+                rc = pTestcase->pTestcaseReg->pfnTestEntry(&Dut, pTest->papTestcaseCfg[i], pTest->pacTestcaseCfgItems[i]);
+            else
+                rc = VERR_NOT_FOUND;
         }
     }
 
@@ -935,6 +955,9 @@ int main(int argc, char *argv[])
         RTListInit(&g_LstTestcases);
         RTListInit(&g_LstPdmMods);
         RTListInit(&g_LstPdmDevs);
+
+        /* Register builtin tests. */
+        tstDevRegisterTestcase(NULL, &g_TestcaseSsmFuzz);
 
         PCTSTDEVCFG pDevTstCfg = NULL;
         rc = tstDevCfgLoad(argv[1], NULL, &pDevTstCfg);

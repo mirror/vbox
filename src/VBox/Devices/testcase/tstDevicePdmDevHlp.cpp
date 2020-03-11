@@ -34,6 +34,9 @@
 *   Defined Constants And Macros                                                                                                 *
 *********************************************************************************************************************************/
 
+/* Temporarily until the stubs got implemented. */
+#define VBOX_TSTDEV_NOT_IMPLEMENTED_STUBS_FAKE_SUCCESS 1
+
 /** @def PDMDEV_ASSERT_DEVINS
  * Asserts the validity of the device instance.
  */
@@ -53,6 +56,12 @@
 #define TMCLOCK_FREQ_REAL       UINT32_C(1000)
 /** Frequency of the virtual clock. */
 #define TMCLOCK_FREQ_VIRTUAL    UINT32_C(1000000000)
+
+
+/** Start structure magic. (Isaac Asimov) */
+#define SSMR3STRUCT_BEGIN                       UINT32_C(0x19200102)
+/** End structure magic. (Isaac Asimov) */
+#define SSMR3STRUCT_END                         UINT32_C(0x19920406)
 
 
 /*********************************************************************************************************************************
@@ -200,8 +209,12 @@ static DECLCALLBACK(int) pdmR3DevHlp_MmioCreateEx(PPDMDEVINS pDevIns, RTGCPHYS c
     LogFlow(("pdmR3DevHlp_MmioCreateEx: caller='%s'/%d: cbRegion=%#RGp fFlags=%#x pPciDev=%p iPciRegion=%#x pfnWrite=%p pfnRead=%p pfnFill=%p pvUser=%p pszDesc=%p:{%s} phRegion=%p\n",
              pDevIns->pReg->szName, pDevIns->iInstance, cbRegion, fFlags, pPciDev, iPciRegion, pfnWrite, pfnRead, pfnFill, pvUser, pszDesc, pszDesc, phRegion));
 
+#ifndef VBOX_TSTDEV_NOT_IMPLEMENTED_STUBS_FAKE_SUCCESS
     int rc = VERR_NOT_IMPLEMENTED;
     AssertFailed();
+#else
+    int rc = VINF_SUCCESS;
+#endif
 
     LogFlow(("pdmR3DevHlp_MmioCreateEx: caller='%s'/%d: returns %Rrc (*phRegion=%#x)\n",
              pDevIns->pReg->szName, pDevIns->iInstance, rc, *phRegion));
@@ -215,8 +228,12 @@ static DECLCALLBACK(int) pdmR3DevHlp_MmioMap(PPDMDEVINS pDevIns, IOMMMIOHANDLE h
     PDMDEV_ASSERT_DEVINS(pDevIns);
     LogFlow(("pdmR3DevHlp_MmioMap: caller='%s'/%d: hRegion=%#x GCPhys=%#RGp\n", pDevIns->pReg->szName, pDevIns->iInstance, hRegion, GCPhys));
 
+#ifndef VBOX_TSTDEV_NOT_IMPLEMENTED_STUBS_FAKE_SUCCESS
     int rc = VERR_NOT_IMPLEMENTED;
     AssertFailed();
+#else
+    int rc = VINF_SUCCESS;
+#endif
 
     LogFlow(("pdmR3DevHlp_MmioMap: caller='%s'/%d: returns %Rrc\n", pDevIns->pReg->szName, pDevIns->iInstance, rc));
     return rc;
@@ -229,8 +246,12 @@ static DECLCALLBACK(int) pdmR3DevHlp_MmioUnmap(PPDMDEVINS pDevIns, IOMMMIOHANDLE
     PDMDEV_ASSERT_DEVINS(pDevIns);
     LogFlow(("pdmR3DevHlp_MmioUnmap: caller='%s'/%d: hRegion=%#x\n", pDevIns->pReg->szName, pDevIns->iInstance, hRegion));
 
+#ifndef VBOX_TSTDEV_NOT_IMPLEMENTED_STUBS_FAKE_SUCCESS
     int rc = VERR_NOT_IMPLEMENTED;
     AssertFailed();
+#else
+    int rc = VINF_SUCCESS;
+#endif
 
     LogFlow(("pdmR3DevHlp_MmioUnmap: caller='%s'/%d: returns %Rrc\n", pDevIns->pReg->szName, pDevIns->iInstance, rc));
     return rc;
@@ -243,9 +264,12 @@ static DECLCALLBACK(int) pdmR3DevHlp_MmioReduce(PPDMDEVINS pDevIns, IOMMMIOHANDL
     PDMDEV_ASSERT_DEVINS(pDevIns);
     LogFlow(("pdmR3DevHlp_MmioReduce: caller='%s'/%d: hRegion=%#x cbRegion=%#RGp\n", pDevIns->pReg->szName, pDevIns->iInstance, hRegion, cbRegion));
 
+#ifndef VBOX_TSTDEV_NOT_IMPLEMENTED_STUBS_FAKE_SUCCESS
     int rc = VERR_NOT_IMPLEMENTED;
     AssertFailed();
-
+#else
+    int rc = VINF_SUCCESS;
+#endif
     LogFlow(("pdmR3DevHlp_MmioReduce: caller='%s'/%d: returns %Rrc\n", pDevIns->pReg->szName, pDevIns->iInstance, rc));
     return rc;
 }
@@ -257,8 +281,12 @@ static DECLCALLBACK(RTGCPHYS) pdmR3DevHlp_MmioGetMappingAddress(PPDMDEVINS pDevI
     PDMDEV_ASSERT_DEVINS(pDevIns);
     LogFlow(("pdmR3DevHlp_MmioGetMappingAddress: caller='%s'/%d: hRegion=%#x\n", pDevIns->pReg->szName, pDevIns->iInstance, hRegion));
 
+#ifndef VBOX_TSTDEV_NOT_IMPLEMENTED_STUBS_FAKE_SUCCESS
     RTGCPHYS GCPhys = NIL_RTGCPHYS;
     AssertFailed();
+#else
+    RTGCPHYS GCPhys = 0x1000;
+#endif
 
     LogFlow(("pdmR3DevHlp_MmioGetMappingAddress: caller='%s'/%d: returns %RGp\n", pDevIns->pReg->szName, pDevIns->iInstance, GCPhys));
     return GCPhys;
@@ -274,8 +302,15 @@ static DECLCALLBACK(int) pdmR3DevHlp_Mmio2Create(PPDMDEVINS pDevIns, PPDMPCIDEV 
              pDevIns->pReg->szName, pDevIns->iInstance, pPciDev, pPciDev ? pPciDev->uDevFn : UINT32_MAX, iPciRegion, cbRegion,
              fFlags, pszDesc, pszDesc, ppvMapping, phRegion));
 
+#ifndef VBOX_TSTDEV_NOT_IMPLEMENTED_STUBS_FAKE_SUCCESS
     int rc = VERR_NOT_IMPLEMENTED;
     AssertFailed();
+#else
+    int rc = VINF_SUCCESS;
+    *ppvMapping = RTMemAllocZ(cbRegion);
+    if (!*ppvMapping)
+        rc = VERR_NO_MEMORY;
+#endif
 
     LogFlow(("pdmR3DevHlp_Mmio2Create: caller='%s'/%d: returns %Rrc *ppvMapping=%p phRegion=%#RX64\n",
              pDevIns->pReg->szName, pDevIns->iInstance, rc, *ppvMapping, *phRegion));
@@ -376,8 +411,12 @@ static DECLCALLBACK(int) pdmR3DevHlp_ROMRegister(PPDMDEVINS pDevIns, RTGCPHYS GC
     LogFlow(("pdmR3DevHlp_ROMRegister: caller='%s'/%d: GCPhysStart=%RGp cbRange=%#x pvBinary=%p cbBinary=%#x fFlags=%#RX32 pszDesc=%p:{%s}\n",
              pDevIns->pReg->szName, pDevIns->iInstance, GCPhysStart, cbRange, pvBinary, cbBinary, fFlags, pszDesc, pszDesc));
 
+#ifndef VBOX_TSTDEV_NOT_IMPLEMENTED_STUBS_FAKE_SUCCESS
     int rc = VERR_NOT_IMPLEMENTED;
     AssertFailed();
+#else
+    int rc = VINF_SUCCESS;
+#endif
 
     LogFlow(("pdmR3DevHlp_ROMRegister: caller='%s'/%d: returns %Rrc\n", pDevIns->pReg->szName, pDevIns->iInstance, rc));
     return rc;
@@ -653,347 +692,756 @@ static DECLCALLBACK(int) pdmR3DevHlp_SSMPutStrZ(PSSMHANDLE pSSM, const char *psz
 }
 
 
-static DECLCALLBACK(int) pdmR3DevHlp_SSMGetStruct(PSSMHANDLE pSSM, void *pvStruct, PCSSMFIELD paFields)
+/**
+ * Gets the host bit count of the saved state.
+ *
+ * Works for on both save and load handles.
+ *
+ * @returns 32 or 64.
+ * @param   pSSM                The saved state handle.
+ */
+DECLINLINE(uint32_t) ssmR3GetHostBits(PSSMHANDLE pSSM)
 {
-    RT_NOREF(pSSM, pvStruct, paFields);
-    AssertFailed();
-    return VERR_NOT_IMPLEMENTED;
+    /** @todo Don't care about 32bit saved states for now (VBox is 64bit only as of 6.0). */
+    RT_NOREF(pSSM);
+    return HC_ARCH_BITS;
 }
 
 
-static DECLCALLBACK(int) pdmR3DevHlp_SSMGetStructEx(PSSMHANDLE pSSM, void *pvStruct, size_t cbStruct, uint32_t fFlags, PCSSMFIELD paFields, void *pvUser)
+/**
+ * Saved state origins on a host using 32-bit MSC?
+ *
+ * Works for on both save and load handles.
+ *
+ * @returns true/false.
+ * @param   pSSM                The saved state handle.
+ */
+DECLINLINE(bool) ssmR3IsHostMsc32(PSSMHANDLE pSSM)
 {
-    RT_NOREF(pSSM, pvStruct, cbStruct, fFlags, paFields, pvUser);
-    AssertFailed();
-    return VERR_NOT_IMPLEMENTED;
+    /** @todo Don't care about 32bit saved states for now (VBox is 64bit only as of 6.0). */
+    RT_NOREF(pSSM);
+    return false;
+}
+
+
+/**
+ * Inlined worker that handles format checks and buffered reads.
+ *
+ * @param   pSSM            The saved state handle.
+ * @param   pvBuf           Where to store the read data.
+ * @param   cbBuf           Number of bytes to read.
+ */
+DECLINLINE(int) tstDevSsmR3DataRead(PSSMHANDLE pSSM, void *pvBuf, size_t cbBuf)
+{
+    /*
+     * Fend off previous errors and V1 data units.
+     */
+    if (RT_SUCCESS(pSSM->rc))
+    {
+        /** @todo Don't care about version 1 saved states (long obsolete). */
+        uint32_t off = pSSM->offDataBuffer;
+        if (   cbBuf <= pSSM->cbSavedState
+            && pSSM->cbSavedState - cbBuf >= off)
+        {
+            memcpy(pvBuf, &pSSM->pbSavedState[off], cbBuf);
+            pSSM->offDataBuffer = off + (uint32_t)cbBuf;
+            return VINF_SUCCESS;
+        }
+        else
+            pSSM->rc = VERR_BUFFER_OVERFLOW;
+    }
+    return pSSM->rc;
 }
 
 
 static DECLCALLBACK(int) pdmR3DevHlp_SSMGetBool(PSSMHANDLE pSSM, bool *pfBool)
 {
-    RT_NOREF(pSSM, pfBool);
-    AssertFailed();
-    return VERR_NOT_IMPLEMENTED;
+    uint8_t u8; /* see SSMR3PutBool */
+    int rc = tstDevSsmR3DataRead(pSSM, &u8, sizeof(u8));
+    if (RT_SUCCESS(rc))
+    {
+        Assert(u8 <= 1);
+        *pfBool = RT_BOOL(u8);
+    }
+    return rc;
 }
 
 
 static DECLCALLBACK(int) pdmR3DevHlp_SSMGetBoolV(PSSMHANDLE pSSM, bool volatile *pfBool)
 {
-    RT_NOREF(pSSM, pfBool);
-    AssertFailed();
-    return VERR_NOT_IMPLEMENTED;
+    uint8_t u8; /* see SSMR3PutBool */
+    int rc = tstDevSsmR3DataRead(pSSM, &u8, sizeof(u8));
+    if (RT_SUCCESS(rc))
+    {
+        Assert(u8 <= 1);
+        *pfBool = RT_BOOL(u8);
+    }
+    return rc;
 }
 
 
 static DECLCALLBACK(int) pdmR3DevHlp_SSMGetU8(PSSMHANDLE pSSM, uint8_t *pu8)
 {
-    RT_NOREF(pSSM, pu8);
-    AssertFailed();
-    return VERR_NOT_IMPLEMENTED;
+    return tstDevSsmR3DataRead(pSSM, pu8, sizeof(*pu8));
 }
 
 
 static DECLCALLBACK(int) pdmR3DevHlp_SSMGetU8V(PSSMHANDLE pSSM, uint8_t volatile *pu8)
 {
-    RT_NOREF(pSSM, pu8);
-    AssertFailed();
-    return VERR_NOT_IMPLEMENTED;
+    return tstDevSsmR3DataRead(pSSM, (void *)pu8, sizeof(*pu8));
 }
 
 
 static DECLCALLBACK(int) pdmR3DevHlp_SSMGetS8(PSSMHANDLE pSSM, int8_t *pi8)
 {
-    RT_NOREF(pSSM, pi8);
-    AssertFailed();
-    return VERR_NOT_IMPLEMENTED;
+    return tstDevSsmR3DataRead(pSSM, pi8, sizeof(*pi8));
 }
 
 
 static DECLCALLBACK(int) pdmR3DevHlp_SSMGetS8V(PSSMHANDLE pSSM, int8_t volatile *pi8)
 {
-    RT_NOREF(pSSM, pi8);
-    AssertFailed();
-    return VERR_NOT_IMPLEMENTED;
+    return tstDevSsmR3DataRead(pSSM, (void *)pi8, sizeof(*pi8));
 }
 
 
 static DECLCALLBACK(int) pdmR3DevHlp_SSMGetU16(PSSMHANDLE pSSM, uint16_t *pu16)
 {
-    RT_NOREF(pSSM, pu16);
-    AssertFailed();
-    return VERR_NOT_IMPLEMENTED;
+    return tstDevSsmR3DataRead(pSSM, pu16, sizeof(*pu16));
 }
 
 
 static DECLCALLBACK(int) pdmR3DevHlp_SSMGetU16V(PSSMHANDLE pSSM, uint16_t volatile *pu16)
 {
-    RT_NOREF(pSSM, pu16);
-    AssertFailed();
-    return VERR_NOT_IMPLEMENTED;
+    return tstDevSsmR3DataRead(pSSM, (void *)pu16, sizeof(*pu16));
 }
 
 
 static DECLCALLBACK(int) pdmR3DevHlp_SSMGetS16(PSSMHANDLE pSSM, int16_t *pi16)
 {
-    RT_NOREF(pSSM, pi16);
-    AssertFailed();
-    return VERR_NOT_IMPLEMENTED;
+    return tstDevSsmR3DataRead(pSSM, pi16, sizeof(*pi16));
 }
 
 
 static DECLCALLBACK(int) pdmR3DevHlp_SSMGetS16V(PSSMHANDLE pSSM, int16_t volatile *pi16)
 {
-    RT_NOREF(pSSM, pi16);
-    AssertFailed();
-    return VERR_NOT_IMPLEMENTED;
+    return tstDevSsmR3DataRead(pSSM, (void *)pi16, sizeof(*pi16));
 }
 
 
 static DECLCALLBACK(int) pdmR3DevHlp_SSMGetU32(PSSMHANDLE pSSM, uint32_t *pu32)
 {
-    RT_NOREF(pSSM, pu32);
-    AssertFailed();
-    return VERR_NOT_IMPLEMENTED;
+    return tstDevSsmR3DataRead(pSSM, pu32, sizeof(*pu32));
 }
 
 
 static DECLCALLBACK(int) pdmR3DevHlp_SSMGetU32V(PSSMHANDLE pSSM, uint32_t volatile *pu32)
 {
-    RT_NOREF(pSSM, pu32);
-    AssertFailed();
-    return VERR_NOT_IMPLEMENTED;
+    return tstDevSsmR3DataRead(pSSM, (void *)pu32, sizeof(*pu32));
 }
 
 
 static DECLCALLBACK(int) pdmR3DevHlp_SSMGetS32(PSSMHANDLE pSSM, int32_t *pi32)
 {
-    RT_NOREF(pSSM, pi32);
-    AssertFailed();
-    return VERR_NOT_IMPLEMENTED;
+    return tstDevSsmR3DataRead(pSSM, pi32, sizeof(*pi32));
 }
 
 
 static DECLCALLBACK(int) pdmR3DevHlp_SSMGetS32V(PSSMHANDLE pSSM, int32_t volatile *pi32)
 {
-    RT_NOREF(pSSM, pi32);
-    AssertFailed();
-    return VERR_NOT_IMPLEMENTED;
+    return tstDevSsmR3DataRead(pSSM, (void *)pi32, sizeof(*pi32));
 }
 
 
 static DECLCALLBACK(int) pdmR3DevHlp_SSMGetU64(PSSMHANDLE pSSM, uint64_t *pu64)
 {
-    RT_NOREF(pSSM, pu64);
-    AssertFailed();
-    return VERR_NOT_IMPLEMENTED;
+    return tstDevSsmR3DataRead(pSSM, pu64, sizeof(*pu64));
 }
 
 
 static DECLCALLBACK(int) pdmR3DevHlp_SSMGetU64V(PSSMHANDLE pSSM, uint64_t volatile *pu64)
 {
-    RT_NOREF(pSSM, pu64);
-    AssertFailed();
-    return VERR_NOT_IMPLEMENTED;
+    return tstDevSsmR3DataRead(pSSM, (void *)pu64, sizeof(*pu64));
 }
 
 
 static DECLCALLBACK(int) pdmR3DevHlp_SSMGetS64(PSSMHANDLE pSSM, int64_t *pi64)
 {
-    RT_NOREF(pSSM, pi64);
-    AssertFailed();
-    return VERR_NOT_IMPLEMENTED;
+    return tstDevSsmR3DataRead(pSSM, pi64, sizeof(*pi64));
 }
 
 
 static DECLCALLBACK(int) pdmR3DevHlp_SSMGetS64V(PSSMHANDLE pSSM, int64_t volatile *pi64)
 {
-    RT_NOREF(pSSM, pi64);
-    AssertFailed();
-    return VERR_NOT_IMPLEMENTED;
+    return tstDevSsmR3DataRead(pSSM, (void *)pi64, sizeof(*pi64));
 }
 
 
 static DECLCALLBACK(int) pdmR3DevHlp_SSMGetU128(PSSMHANDLE pSSM, uint128_t *pu128)
 {
-    RT_NOREF(pSSM, pu128);
-    AssertFailed();
-    return VERR_NOT_IMPLEMENTED;
+    return tstDevSsmR3DataRead(pSSM, pu128, sizeof(*pu128));
 }
 
 
 static DECLCALLBACK(int) pdmR3DevHlp_SSMGetU128V(PSSMHANDLE pSSM, uint128_t volatile *pu128)
 {
-    RT_NOREF(pSSM, pu128);
-    AssertFailed();
-    return VERR_NOT_IMPLEMENTED;
+    return tstDevSsmR3DataRead(pSSM, (void *)pu128, sizeof(*pu128));
 }
 
 
 static DECLCALLBACK(int) pdmR3DevHlp_SSMGetS128(PSSMHANDLE pSSM, int128_t *pi128)
 {
-    RT_NOREF(pSSM, pi128);
-    AssertFailed();
-    return VERR_NOT_IMPLEMENTED;
+    return tstDevSsmR3DataRead(pSSM, pi128, sizeof(*pi128));
 }
 
 
 static DECLCALLBACK(int) pdmR3DevHlp_SSMGetS128V(PSSMHANDLE pSSM, int128_t  volatile *pi128)
 {
-    RT_NOREF(pSSM, pi128);
-    AssertFailed();
-    return VERR_NOT_IMPLEMENTED;
+    return tstDevSsmR3DataRead(pSSM, (void *)pi128, sizeof(*pi128));
 }
 
 
 static DECLCALLBACK(int) pdmR3DevHlp_SSMGetGCPhys32(PSSMHANDLE pSSM, PRTGCPHYS32 pGCPhys)
 {
-    RT_NOREF(pSSM, pGCPhys);
-    AssertFailed();
-    return VERR_NOT_IMPLEMENTED;
+    return tstDevSsmR3DataRead(pSSM, pGCPhys, sizeof(*pGCPhys));
 }
 
 
 static DECLCALLBACK(int) pdmR3DevHlp_SSMGetGCPhys32V(PSSMHANDLE pSSM, RTGCPHYS32 volatile *pGCPhys)
 {
-    RT_NOREF(pSSM, pGCPhys);
-    AssertFailed();
-    return VERR_NOT_IMPLEMENTED;
+    return tstDevSsmR3DataRead(pSSM, (void *)pGCPhys, sizeof(*pGCPhys));
 }
 
 
 static DECLCALLBACK(int) pdmR3DevHlp_SSMGetGCPhys64(PSSMHANDLE pSSM, PRTGCPHYS64 pGCPhys)
 {
-    RT_NOREF(pSSM, pGCPhys);
-    AssertFailed();
-    return VERR_NOT_IMPLEMENTED;
+    return tstDevSsmR3DataRead(pSSM, pGCPhys, sizeof(*pGCPhys));
 }
 
 
 static DECLCALLBACK(int) pdmR3DevHlp_SSMGetGCPhys64V(PSSMHANDLE pSSM, RTGCPHYS64 volatile *pGCPhys)
 {
-    RT_NOREF(pSSM, pGCPhys);
-    AssertFailed();
-    return VERR_NOT_IMPLEMENTED;
+    return tstDevSsmR3DataRead(pSSM, (void *)pGCPhys, sizeof(*pGCPhys));
 }
 
 
 static DECLCALLBACK(int) pdmR3DevHlp_SSMGetGCPhys(PSSMHANDLE pSSM, PRTGCPHYS pGCPhys)
 {
-    RT_NOREF(pSSM, pGCPhys);
-    AssertFailed();
-    return VERR_NOT_IMPLEMENTED;
+    /*
+     * Default size?
+     */
+    if (RT_LIKELY(/*sizeof(*pGCPhys) == pSSM->u.Read.cbGCPhys*/true))
+        return tstDevSsmR3DataRead(pSSM, pGCPhys, sizeof(*pGCPhys));
+
+#if 0 /** @todo Later if necessary (only very old saved states). */
+    /*
+     * Fiddly.
+     */
+    Assert(sizeof(*pGCPhys)      == sizeof(uint64_t) || sizeof(*pGCPhys)      == sizeof(uint32_t));
+    Assert(pSSM->u.Read.cbGCPhys == sizeof(uint64_t) || pSSM->u.Read.cbGCPhys == sizeof(uint32_t));
+    if (pSSM->u.Read.cbGCPhys == sizeof(uint64_t))
+    {
+        /* 64-bit saved, 32-bit load: try truncate it. */
+        uint64_t u64;
+        int rc = tstDevSsmR3DataRead(pSSM, &u64, sizeof(uint64_t));
+        if (RT_FAILURE(rc))
+            return rc;
+        if (u64 >= _4G)
+            return VERR_SSM_GCPHYS_OVERFLOW;
+        *pGCPhys = (RTGCPHYS)u64;
+        return rc;
+    }
+
+    /* 32-bit saved, 64-bit load: clear the high part. */
+    *pGCPhys = 0;
+    return tstDevSsmR3DataRead(pSSM, pGCPhys, sizeof(uint32_t));
+#endif
 }
 
 
 static DECLCALLBACK(int) pdmR3DevHlp_SSMGetGCPhysV(PSSMHANDLE pSSM, RTGCPHYS volatile *pGCPhys)
 {
-    RT_NOREF(pSSM, pGCPhys);
-    AssertFailed();
-    return VERR_NOT_IMPLEMENTED;
+    return pdmR3DevHlp_SSMGetGCPhys(pSSM, (PRTGCPHYS)pGCPhys);
 }
 
 
 static DECLCALLBACK(int) pdmR3DevHlp_SSMGetUInt(PSSMHANDLE pSSM, PRTUINT pu)
 {
-    RT_NOREF(pSSM, pu);
-    AssertFailed();
-    return VERR_NOT_IMPLEMENTED;
+    return tstDevSsmR3DataRead(pSSM, pu, sizeof(*pu));
 }
 
 
 static DECLCALLBACK(int) pdmR3DevHlp_SSMGetSInt(PSSMHANDLE pSSM, PRTINT pi)
 {
-    RT_NOREF(pSSM, pi);
-    AssertFailed();
-    return VERR_NOT_IMPLEMENTED;
-}
-
-
-static DECLCALLBACK(int) pdmR3DevHlp_SSMGetGCUInt(PSSMHANDLE pSSM, PRTGCUINT pu)
-{
-    RT_NOREF(pSSM, pu);
-    AssertFailed();
-    return VERR_NOT_IMPLEMENTED;
-}
-
-
-static DECLCALLBACK(int) pdmR3DevHlp_SSMGetGCUIntReg(PSSMHANDLE pSSM, PRTGCUINTREG pu)
-{
-    RT_NOREF(pSSM, pu);
-    AssertFailed();
-    return VERR_NOT_IMPLEMENTED;
+    return tstDevSsmR3DataRead(pSSM, pi, sizeof(*pi));
 }
 
 
 static DECLCALLBACK(int) pdmR3DevHlp_SSMGetGCPtr(PSSMHANDLE pSSM, PRTGCPTR pGCPtr)
 {
-    RT_NOREF(pSSM, pGCPtr);
-    AssertFailed();
-    return VERR_NOT_IMPLEMENTED;
+    return tstDevSsmR3DataRead(pSSM, pGCPtr, sizeof(*pGCPtr));
+}
+
+
+static DECLCALLBACK(int) pdmR3DevHlp_SSMGetGCUInt(PSSMHANDLE pSSM, PRTGCUINT pu)
+{
+    return pdmR3DevHlp_SSMGetGCPtr(pSSM, (PRTGCPTR)pu);
+}
+
+
+static DECLCALLBACK(int) pdmR3DevHlp_SSMGetGCUIntReg(PSSMHANDLE pSSM, PRTGCUINTREG pu)
+{
+    AssertCompile(sizeof(RTGCPTR) == sizeof(*pu));
+    return pdmR3DevHlp_SSMGetGCPtr(pSSM, (PRTGCPTR)pu);
 }
 
 
 static DECLCALLBACK(int) pdmR3DevHlp_SSMGetGCUIntPtr(PSSMHANDLE pSSM, PRTGCUINTPTR pGCPtr)
 {
-    RT_NOREF(pSSM, pGCPtr);
-    AssertFailed();
-    return VERR_NOT_IMPLEMENTED;
+    return pdmR3DevHlp_SSMGetGCPtr(pSSM, (PRTGCPTR)pGCPtr);
 }
 
 
 static DECLCALLBACK(int) pdmR3DevHlp_SSMGetRCPtr(PSSMHANDLE pSSM, PRTRCPTR pRCPtr)
 {
-    RT_NOREF(pSSM, pRCPtr);
-    AssertFailed();
-    return VERR_NOT_IMPLEMENTED;
+    return tstDevSsmR3DataRead(pSSM, pRCPtr, sizeof(*pRCPtr));
 }
 
 
 static DECLCALLBACK(int) pdmR3DevHlp_SSMGetIOPort(PSSMHANDLE pSSM, PRTIOPORT pIOPort)
 {
-    RT_NOREF(pSSM, pIOPort);
-    AssertFailed();
-    return VERR_NOT_IMPLEMENTED;
+    return tstDevSsmR3DataRead(pSSM, pIOPort, sizeof(*pIOPort));
 }
 
 
 static DECLCALLBACK(int) pdmR3DevHlp_SSMGetSel(PSSMHANDLE pSSM, PRTSEL pSel)
 {
-    RT_NOREF(pSSM, pSel);
-    AssertFailed();
-    return VERR_NOT_IMPLEMENTED;
+    return tstDevSsmR3DataRead(pSSM, pSel, sizeof(*pSel));
 }
 
 
 static DECLCALLBACK(int) pdmR3DevHlp_SSMGetMem(PSSMHANDLE pSSM, void *pv, size_t cb)
 {
-    RT_NOREF(pSSM, pv, cb);
-    AssertFailed();
-    return VERR_NOT_IMPLEMENTED;
-}
-
-
-static DECLCALLBACK(int) pdmR3DevHlp_SSMGetStrZ(PSSMHANDLE pSSM, char *psz, size_t cbMax)
-{
-    RT_NOREF(pSSM, psz, cbMax);
-    AssertFailed();
-    return VERR_NOT_IMPLEMENTED;
+    return tstDevSsmR3DataRead(pSSM, pv, cb);
 }
 
 
 static DECLCALLBACK(int) pdmR3DevHlp_SSMGetStrZEx(PSSMHANDLE pSSM, char *psz, size_t cbMax, size_t *pcbStr)
 {
-    RT_NOREF(pSSM, psz,cbMax, pcbStr);
-    AssertFailed();
-    return VERR_NOT_IMPLEMENTED;
+    /* read size prefix. */
+    uint32_t u32;
+    int rc = pdmR3DevHlp_SSMGetU32(pSSM, &u32);
+    if (RT_SUCCESS(rc))
+    {
+        if (pcbStr)
+            *pcbStr = u32;
+        if (u32 < cbMax)
+        {
+            /* terminate and read string content. */
+            psz[u32] = '\0';
+            return tstDevSsmR3DataRead(pSSM, psz, u32);
+        }
+        return VERR_TOO_MUCH_DATA;
+    }
+    return rc;
+}
+
+
+static DECLCALLBACK(int) pdmR3DevHlp_SSMGetStrZ(PSSMHANDLE pSSM, char *psz, size_t cbMax)
+{
+    return pdmR3DevHlp_SSMGetStrZEx(pSSM, psz, cbMax, NULL);
 }
 
 
 static DECLCALLBACK(int) pdmR3DevHlp_SSMSkip(PSSMHANDLE pSSM, size_t cb)
 {
-    RT_NOREF(pSSM, cb);
-    AssertFailed();
-    return VERR_NOT_IMPLEMENTED;
+    while (cb > 0)
+    {
+        uint8_t abBuf[8192];
+        size_t  cbCur = RT_MIN(sizeof(abBuf), cb);
+        cb -= cbCur;
+        int rc = tstDevSsmR3DataRead(pSSM, abBuf, cbCur);
+        if (RT_FAILURE(rc))
+            return rc;
+    }
+
+    return VINF_SUCCESS;
+}
+
+
+static DECLCALLBACK(int) pdmR3DevHlp_SSMGetStruct(PSSMHANDLE pSSM, void *pvStruct, PCSSMFIELD paFields)
+{
+    AssertPtr(pvStruct);
+    AssertPtr(paFields);
+
+    /* begin marker. */
+    uint32_t u32Magic;
+    int rc = pdmR3DevHlp_SSMGetU32(pSSM, &u32Magic);
+    if (RT_FAILURE(rc))
+        return rc;
+    AssertMsgReturn(u32Magic == SSMR3STRUCT_BEGIN, ("u32Magic=%#RX32\n", u32Magic), pSSM->rc = VERR_SSM_STRUCTURE_MAGIC);
+
+    /* get the fields */
+    for (PCSSMFIELD pCur = paFields;
+         pCur->cb != UINT32_MAX && pCur->off != UINT32_MAX;
+         pCur++)
+    {
+        if (pCur->uFirstVer <= pSSM->uCurUnitVer)
+        {
+            uint8_t *pbField = (uint8_t *)pvStruct + pCur->off;
+            switch ((uintptr_t)pCur->pfnGetPutOrTransformer)
+            {
+                case SSMFIELDTRANS_NO_TRANSFORMATION:
+                    rc = tstDevSsmR3DataRead(pSSM, pbField, pCur->cb);
+                    break;
+
+                case SSMFIELDTRANS_GCPTR:
+                    AssertMsgBreakStmt(pCur->cb == sizeof(RTGCPTR), ("%#x (%s)\n", pCur->cb, pCur->pszName), rc = VERR_SSM_FIELD_INVALID_SIZE);
+                    rc = pdmR3DevHlp_SSMGetGCPtr(pSSM, (PRTGCPTR)pbField);
+                    break;
+
+                case SSMFIELDTRANS_GCPHYS:
+                    AssertMsgBreakStmt(pCur->cb == sizeof(RTGCPHYS), ("%#x (%s)\n", pCur->cb, pCur->pszName), rc = VERR_SSM_FIELD_INVALID_SIZE);
+                    rc = pdmR3DevHlp_SSMGetGCPhys(pSSM, (PRTGCPHYS)pbField);
+                    break;
+
+                case SSMFIELDTRANS_RCPTR:
+                    AssertMsgBreakStmt(pCur->cb == sizeof(RTRCPTR), ("%#x (%s)\n", pCur->cb, pCur->pszName), rc = VERR_SSM_FIELD_INVALID_SIZE);
+                    rc = pdmR3DevHlp_SSMGetRCPtr(pSSM, (PRTRCPTR)pbField);
+                    break;
+
+                case SSMFIELDTRANS_RCPTR_ARRAY:
+                {
+                    uint32_t const cEntries = pCur->cb / sizeof(RTRCPTR);
+                    AssertMsgBreakStmt(pCur->cb == cEntries * sizeof(RTRCPTR) && cEntries, ("%#x (%s)\n", pCur->cb, pCur->pszName), rc = VERR_SSM_FIELD_INVALID_SIZE);
+                    rc = VINF_SUCCESS;
+                    for (uint32_t i = 0; i < cEntries && RT_SUCCESS(rc); i++)
+                        rc = pdmR3DevHlp_SSMGetRCPtr(pSSM, &((PRTRCPTR)pbField)[i]);
+                    break;
+                }
+
+                default:
+                    AssertMsgFailedBreakStmt(("%#x\n", pCur->pfnGetPutOrTransformer), rc = VERR_SSM_FIELD_COMPLEX);
+            }
+            if (RT_FAILURE(rc))
+            {
+                if (RT_SUCCESS(pSSM->rc))
+                    pSSM->rc = rc;
+                return rc;
+            }
+        }
+    }
+
+    /* end marker */
+    rc = pdmR3DevHlp_SSMGetU32(pSSM, &u32Magic);
+    if (RT_FAILURE(rc))
+        return rc;
+    AssertMsgReturn(u32Magic == SSMR3STRUCT_END, ("u32Magic=%#RX32\n", u32Magic), pSSM->rc = VERR_SSM_STRUCTURE_MAGIC);
+    return rc;
+}
+
+
+/**
+ * SSMR3GetStructEx helper that gets a HCPTR that is used as a NULL indicator.
+ *
+ * @returns VBox status code.
+ *
+ * @param   pSSM            The saved state handle.
+ * @param   ppv             Where to return the value (0/1).
+ * @param   fFlags          SSMSTRUCT_FLAGS_XXX.
+ */
+DECLINLINE(int) ssmR3GetHCPtrNI(PSSMHANDLE pSSM, void **ppv, uint32_t fFlags)
+{
+    uintptr_t uPtrNI;
+    if (fFlags & SSMSTRUCT_FLAGS_DONT_IGNORE)
+    {
+        if (ssmR3GetHostBits(pSSM) == 64)
+        {
+            uint64_t u;
+            int rc = tstDevSsmR3DataRead(pSSM, &u, sizeof(u));
+            if (RT_FAILURE(rc))
+                return rc;
+            uPtrNI = u ? 1 : 0;
+        }
+        else
+        {
+            uint32_t u;
+            int rc = tstDevSsmR3DataRead(pSSM, &u, sizeof(u));
+            if (RT_FAILURE(rc))
+                return rc;
+            uPtrNI = u ? 1 : 0;
+        }
+    }
+    else
+    {
+        bool f;
+        int rc = pdmR3DevHlp_SSMGetBool(pSSM, &f);
+        if (RT_FAILURE(rc))
+            return rc;
+        uPtrNI = f ? 1 : 0;
+    }
+    *ppv = (void *)uPtrNI;
+    return VINF_SUCCESS;
+}
+
+
+static DECLCALLBACK(int) pdmR3DevHlp_SSMGetStructEx(PSSMHANDLE pSSM, void *pvStruct, size_t cbStruct, uint32_t fFlags, PCSSMFIELD paFields, void *pvUser)
+{
+    int         rc;
+    uint32_t    u32Magic;
+
+    /*
+     * Validation.
+     */
+    AssertMsgReturn(!(fFlags & ~SSMSTRUCT_FLAGS_VALID_MASK), ("%#x\n", fFlags), pSSM->rc = VERR_INVALID_PARAMETER);
+    AssertPtr(pvStruct);
+    AssertPtr(paFields);
+
+    /*
+     * Begin marker.
+     */
+    if (!(fFlags & (SSMSTRUCT_FLAGS_NO_MARKERS | SSMSTRUCT_FLAGS_NO_LEAD_MARKER)))
+    {
+        rc = pdmR3DevHlp_SSMGetU32(pSSM, &u32Magic);
+        if (RT_FAILURE(rc))
+            return rc;
+        AssertMsgReturn(u32Magic == SSMR3STRUCT_BEGIN, ("u32Magic=%#RX32\n", u32Magic), pSSM->rc = VERR_SSM_STRUCTURE_MAGIC);
+    }
+
+    /*
+     * Put the fields
+     */
+    rc = VINF_SUCCESS;
+    uint32_t off = 0;
+    for (PCSSMFIELD pCur = paFields;
+         pCur->cb != UINT32_MAX && pCur->off != UINT32_MAX;
+         pCur++)
+    {
+        uint32_t const offField =    (!SSMFIELDTRANS_IS_PADDING(pCur->pfnGetPutOrTransformer) || pCur->off != UINT32_MAX / 2)
+                                  &&  !SSMFIELDTRANS_IS_OLD(pCur->pfnGetPutOrTransformer)
+                                ? pCur->off
+                                : off;
+        uint32_t const cbField  = SSMFIELDTRANS_IS_OLD(pCur->pfnGetPutOrTransformer)
+                                ? 0
+                                : SSMFIELDTRANS_IS_PADDING(pCur->pfnGetPutOrTransformer)
+                                ? RT_HIWORD(pCur->cb)
+                                : pCur->cb;
+        AssertMsgReturn(   cbField            <= cbStruct
+                        && offField + cbField <= cbStruct
+                        && offField + cbField >= offField,
+                        ("off=%#x cb=%#x cbStruct=%#x (%s)\n", cbField, offField, cbStruct, pCur->pszName),
+                        pSSM->rc = VERR_SSM_FIELD_OUT_OF_BOUNDS);
+        AssertMsgReturn(    !(fFlags & SSMSTRUCT_FLAGS_FULL_STRUCT)
+                        || off == offField,
+                        ("off=%#x offField=%#x (%s)\n", off, offField, pCur->pszName),
+                        pSSM->rc = VERR_SSM_FIELD_NOT_CONSECUTIVE);
+
+        if (pCur->uFirstVer <= pSSM->uCurUnitVer)
+        {
+            rc = VINF_SUCCESS;
+            uint8_t       *pbField  = (uint8_t *)pvStruct + offField;
+            switch ((uintptr_t)pCur->pfnGetPutOrTransformer)
+            {
+                case SSMFIELDTRANS_NO_TRANSFORMATION:
+                    rc = tstDevSsmR3DataRead(pSSM, pbField, cbField);
+                    break;
+
+                case SSMFIELDTRANS_GCPHYS:
+                    AssertMsgBreakStmt(cbField == sizeof(RTGCPHYS), ("%#x (%s)\n", cbField, pCur->pszName), rc = VERR_SSM_FIELD_INVALID_SIZE);
+                    rc = pdmR3DevHlp_SSMGetGCPhys(pSSM, (PRTGCPHYS)pbField);
+                    break;
+
+                case SSMFIELDTRANS_GCPTR:
+                    AssertMsgBreakStmt(cbField == sizeof(RTGCPTR), ("%#x (%s)\n", cbField, pCur->pszName), rc = VERR_SSM_FIELD_INVALID_SIZE);
+                    rc = pdmR3DevHlp_SSMGetGCPtr(pSSM, (PRTGCPTR)pbField);
+                    break;
+
+                case SSMFIELDTRANS_RCPTR:
+                    AssertMsgBreakStmt(cbField == sizeof(RTRCPTR), ("%#x (%s)\n", cbField, pCur->pszName), rc = VERR_SSM_FIELD_INVALID_SIZE);
+                    rc = pdmR3DevHlp_SSMGetRCPtr(pSSM, (PRTRCPTR)pbField);
+                    break;
+
+                case SSMFIELDTRANS_RCPTR_ARRAY:
+                {
+                    uint32_t const cEntries = cbField / sizeof(RTRCPTR);
+                    AssertMsgBreakStmt(cbField == cEntries * sizeof(RTRCPTR) && cEntries, ("%#x (%s)\n", cbField, pCur->pszName), rc = VERR_SSM_FIELD_INVALID_SIZE);
+                    rc = VINF_SUCCESS;
+                    for (uint32_t i = 0; i < cEntries && RT_SUCCESS(rc); i++)
+                        rc = pdmR3DevHlp_SSMGetRCPtr(pSSM, &((PRTRCPTR)pbField)[i]);
+                    break;
+                }
+
+                case SSMFIELDTRANS_HCPTR_NI:
+                    AssertMsgBreakStmt(cbField == sizeof(void *), ("%#x (%s)\n", cbField, pCur->pszName), rc = VERR_SSM_FIELD_INVALID_SIZE);
+                    rc = ssmR3GetHCPtrNI(pSSM, (void **)pbField, fFlags);
+                    break;
+
+                case SSMFIELDTRANS_HCPTR_NI_ARRAY:
+                {
+                    uint32_t const cEntries = cbField / sizeof(void *);
+                    AssertMsgBreakStmt(cbField == cEntries * sizeof(void *) && cEntries, ("%#x (%s)\n", cbField, pCur->pszName), rc = VERR_SSM_FIELD_INVALID_SIZE);
+                    rc = VINF_SUCCESS;
+                    for (uint32_t i = 0; i < cEntries && RT_SUCCESS(rc); i++)
+                        rc = ssmR3GetHCPtrNI(pSSM, &((void **)pbField)[i], fFlags);
+                    break;
+                }
+
+                case SSMFIELDTRANS_HCPTR_HACK_U32:
+                    AssertMsgBreakStmt(cbField == sizeof(void *), ("%#x (%s)\n", cbField, pCur->pszName), rc = VERR_SSM_FIELD_INVALID_SIZE);
+                    *(uintptr_t *)pbField = 0;
+                    rc = tstDevSsmR3DataRead(pSSM, pbField, sizeof(uint32_t));
+                    if ((fFlags & SSMSTRUCT_FLAGS_DONT_IGNORE) && ssmR3GetHostBits(pSSM) == 64)
+                    {
+                        uint32_t u32;
+                        rc = tstDevSsmR3DataRead(pSSM, &u32, sizeof(uint32_t));
+                        AssertMsgBreakStmt(RT_FAILURE(rc) || u32 == 0 || (fFlags & SSMSTRUCT_FLAGS_SAVED_AS_MEM),
+                                           ("high=%#x low=%#x (%s)\n", u32, *(uint32_t *)pbField, pCur->pszName),
+                                           rc = VERR_SSM_FIELD_INVALID_VALUE);
+                    }
+                    break;
+
+                case SSMFIELDTRANS_U32_ZX_U64:
+                    AssertMsgBreakStmt(cbField == sizeof(uint64_t), ("%#x (%s)\n", cbField, pCur->pszName), rc = VERR_SSM_FIELD_INVALID_SIZE);
+                    ((uint32_t *)pbField)[1] = 0;
+                    rc = pdmR3DevHlp_SSMGetU32(pSSM, (uint32_t *)pbField);
+                    break;
+
+
+                case SSMFIELDTRANS_IGNORE:
+                    if (fFlags & SSMSTRUCT_FLAGS_DONT_IGNORE)
+                        rc = pdmR3DevHlp_SSMSkip(pSSM, cbField);
+                    break;
+
+                case SSMFIELDTRANS_IGN_GCPHYS:
+                    AssertMsgBreakStmt(cbField == sizeof(RTGCPHYS), ("%#x (%s)\n", cbField, pCur->pszName), rc = VERR_SSM_FIELD_INVALID_SIZE);
+                    if (fFlags & SSMSTRUCT_FLAGS_DONT_IGNORE)
+                        rc = pdmR3DevHlp_SSMSkip(pSSM, sizeof(RTGCPHYS));
+                    break;
+
+                case SSMFIELDTRANS_IGN_GCPTR:
+                    AssertMsgBreakStmt(cbField == sizeof(RTGCPTR), ("%#x (%s)\n", cbField, pCur->pszName), rc = VERR_SSM_FIELD_INVALID_SIZE);
+                    if (fFlags & SSMSTRUCT_FLAGS_DONT_IGNORE)
+                        rc = pdmR3DevHlp_SSMSkip(pSSM, sizeof(RTGCPTR));
+                    break;
+
+                case SSMFIELDTRANS_IGN_RCPTR:
+                    AssertMsgBreakStmt(cbField == sizeof(RTRCPTR), ("%#x (%s)\n", cbField, pCur->pszName), rc = VERR_SSM_FIELD_INVALID_SIZE);
+                    if (fFlags & SSMSTRUCT_FLAGS_DONT_IGNORE)
+                        rc = pdmR3DevHlp_SSMSkip(pSSM, sizeof(RTRCPTR));
+                    break;
+
+                case SSMFIELDTRANS_IGN_HCPTR:
+                    AssertMsgBreakStmt(cbField == sizeof(void *), ("%#x (%s)\n", cbField, pCur->pszName), rc = VERR_SSM_FIELD_INVALID_SIZE);
+                    if (fFlags & SSMSTRUCT_FLAGS_DONT_IGNORE)
+                        rc = pdmR3DevHlp_SSMSkip(pSSM, ssmR3GetHostBits(pSSM) / 8);
+                    break;
+
+
+                case SSMFIELDTRANS_OLD:
+                    AssertMsgBreakStmt(pCur->off == UINT32_MAX / 2, ("%#x %#x (%s)\n", pCur->cb, pCur->off, pCur->pszName), rc = VERR_SSM_FIELD_INVALID_SIZE);
+                    rc = pdmR3DevHlp_SSMSkip(pSSM, pCur->cb);
+                    break;
+
+                case SSMFIELDTRANS_OLD_GCPHYS:
+                    AssertMsgBreakStmt(pCur->cb == sizeof(RTGCPHYS) && pCur->off == UINT32_MAX / 2, ("%#x %#x (%s)\n", pCur->cb, pCur->off, pCur->pszName), rc = VERR_SSM_FIELD_INVALID_SIZE);
+                    rc = pdmR3DevHlp_SSMSkip(pSSM, sizeof(RTGCPHYS));
+                    break;
+
+                case SSMFIELDTRANS_OLD_GCPTR:
+                    AssertMsgBreakStmt(pCur->cb == sizeof(RTGCPTR) && pCur->off == UINT32_MAX / 2, ("%#x %#x (%s)\n", pCur->cb, pCur->off, pCur->pszName), rc = VERR_SSM_FIELD_INVALID_SIZE);
+                    rc = pdmR3DevHlp_SSMSkip(pSSM, sizeof(RTGCPTR));
+                    break;
+
+                case SSMFIELDTRANS_OLD_RCPTR:
+                    AssertMsgBreakStmt(pCur->cb == sizeof(RTRCPTR) && pCur->off == UINT32_MAX / 2, ("%#x %#x (%s)\n", pCur->cb, pCur->off, pCur->pszName), rc = VERR_SSM_FIELD_INVALID_SIZE);
+                    rc = pdmR3DevHlp_SSMSkip(pSSM, sizeof(RTRCPTR));
+                    break;
+
+                case SSMFIELDTRANS_OLD_HCPTR:
+                    AssertMsgBreakStmt(pCur->cb == sizeof(void *) && pCur->off == UINT32_MAX / 2, ("%#x %#x (%s)\n", pCur->cb, pCur->off, pCur->pszName), rc = VERR_SSM_FIELD_INVALID_SIZE);
+                    rc = pdmR3DevHlp_SSMSkip(pSSM, ssmR3GetHostBits(pSSM) / 8);
+                    break;
+
+                case SSMFIELDTRANS_OLD_PAD_HC:
+                    AssertMsgBreakStmt(pCur->off == UINT32_MAX / 2, ("%#x %#x (%s)\n", pCur->cb, pCur->off, pCur->pszName), rc = VERR_SSM_FIELD_INVALID_SIZE);
+                    rc = pdmR3DevHlp_SSMSkip(pSSM, ssmR3GetHostBits(pSSM) == 64 ? RT_HIWORD(pCur->cb) : RT_LOWORD(pCur->cb));
+                    break;
+
+                case SSMFIELDTRANS_OLD_PAD_MSC32:
+                    AssertMsgBreakStmt(pCur->off == UINT32_MAX / 2, ("%#x %#x (%s)\n", pCur->cb, pCur->off, pCur->pszName), rc = VERR_SSM_FIELD_INVALID_SIZE);
+                    if (ssmR3IsHostMsc32(pSSM))
+                        rc = pdmR3DevHlp_SSMSkip(pSSM, pCur->cb);
+                    break;
+
+
+                case SSMFIELDTRANS_PAD_HC:
+                case SSMFIELDTRANS_PAD_HC32:
+                case SSMFIELDTRANS_PAD_HC64:
+                case SSMFIELDTRANS_PAD_HC_AUTO:
+                case SSMFIELDTRANS_PAD_MSC32_AUTO:
+                {
+                    uint32_t cb32    = RT_BYTE1(pCur->cb);
+                    uint32_t cb64    = RT_BYTE2(pCur->cb);
+                    uint32_t cbCtx   =    HC_ARCH_BITS == 64
+                                       || (uintptr_t)pCur->pfnGetPutOrTransformer == SSMFIELDTRANS_PAD_MSC32_AUTO
+                                     ? cb64 : cb32;
+                    uint32_t cbSaved =    ssmR3GetHostBits(pSSM) == 64
+                                       || (   (uintptr_t)pCur->pfnGetPutOrTransformer == SSMFIELDTRANS_PAD_MSC32_AUTO
+                                           && !ssmR3IsHostMsc32(pSSM))
+                                     ? cb64 : cb32;
+                    AssertMsgBreakStmt(    cbField == cbCtx
+                                       &&  (   (   pCur->off == UINT32_MAX / 2
+                                                && (   cbField == 0
+                                                    || (uintptr_t)pCur->pfnGetPutOrTransformer == SSMFIELDTRANS_PAD_HC_AUTO
+                                                    || (uintptr_t)pCur->pfnGetPutOrTransformer == SSMFIELDTRANS_PAD_MSC32_AUTO
+                                                   )
+                                               )
+                                            || (pCur->off != UINT32_MAX / 2 && cbField != 0)
+                                            )
+                                       , ("cbField=%#x cb32=%#x cb64=%#x HC_ARCH_BITS=%u cbCtx=%#x cbSaved=%#x off=%#x\n",
+                                          cbField, cb32, cb64, HC_ARCH_BITS, cbCtx, cbSaved, pCur->off),
+                                       rc = VERR_SSM_FIELD_INVALID_PADDING_SIZE);
+                    if (fFlags & SSMSTRUCT_FLAGS_DONT_IGNORE)
+                        rc = pdmR3DevHlp_SSMSkip(pSSM, cbSaved);
+                    break;
+                }
+
+                default:
+                    AssertBreakStmt(pCur->pfnGetPutOrTransformer, rc = VERR_SSM_FIELD_INVALID_CALLBACK);
+                    rc = pCur->pfnGetPutOrTransformer(pSSM, pCur, pvStruct, fFlags, true /*fGetOrPut*/, pvUser);
+                    break;
+            }
+            if (RT_FAILURE(rc))
+                break;
+        }
+
+        off = offField + cbField;
+    }
+
+    if (RT_SUCCESS(rc))
+        AssertMsgStmt(   !(fFlags & SSMSTRUCT_FLAGS_FULL_STRUCT)
+                      || off == cbStruct,
+                      ("off=%#x cbStruct=%#x\n", off, cbStruct),
+                      rc = VERR_SSM_FIELD_NOT_CONSECUTIVE);
+
+    if (RT_FAILURE(rc))
+    {
+        if (RT_SUCCESS(pSSM->rc))
+            pSSM->rc = rc;
+        return rc;
+    }
+
+    /*
+     * End marker
+     */
+    if (!(fFlags & (SSMSTRUCT_FLAGS_NO_MARKERS | SSMSTRUCT_FLAGS_NO_TAIL_MARKER)))
+    {
+        rc = pdmR3DevHlp_SSMGetU32(pSSM, &u32Magic);
+        if (RT_FAILURE(rc))
+            return rc;
+        AssertMsgReturn(u32Magic == SSMR3STRUCT_END, ("u32Magic=%#RX32\n", u32Magic), pSSM->rc = VERR_SSM_STRUCTURE_MAGIC);
+    }
+
+    return VINF_SUCCESS;
 }
 
 
@@ -1024,24 +1472,23 @@ static DECLCALLBACK(int) pdmR3DevHlp_SSMSetLoadErrorV(PSSMHANDLE pSSM, int rc, R
 static DECLCALLBACK(int) pdmR3DevHlp_SSMSetCfgError(PSSMHANDLE pSSM, RT_SRC_POS_DECL, const char *pszFormat, ...) RT_IPRT_FORMAT_ATTR(5, 6)
 {
     RT_NOREF(pSSM, RT_SRC_POS_ARGS, pszFormat);
-    AssertFailed();
-    return VERR_NOT_IMPLEMENTED;
+    pSSM->rc = VERR_SSM_LOAD_CONFIG_MISMATCH;
+    return pSSM->rc;
 }
 
 
 static DECLCALLBACK(int) pdmR3DevHlp_SSMSetCfgErrorV(PSSMHANDLE pSSM, RT_SRC_POS_DECL, const char *pszFormat, va_list va) RT_IPRT_FORMAT_ATTR(5, 0)
 {
     RT_NOREF(pSSM, RT_SRC_POS_ARGS, pszFormat, va);
-    AssertFailed();
-    return VERR_NOT_IMPLEMENTED;
+    pSSM->rc = VERR_SSM_LOAD_CONFIG_MISMATCH;
+    return pSSM->rc;
 }
 
 
 static DECLCALLBACK(int) pdmR3DevHlp_SSMHandleGetStatus(PSSMHANDLE pSSM)
 {
     RT_NOREF(pSSM);
-    AssertFailed();
-    return VERR_NOT_IMPLEMENTED;
+    return pSSM->rc;
 }
 
 
@@ -1241,8 +1688,13 @@ static DECLCALLBACK(bool) pdmR3DevHlp_TimerIsLockOwner(PPDMDEVINS pDevIns, TMTIM
 static DECLCALLBACK(VBOXSTRICTRC) pdmR3DevHlp_TimerLockClock(PPDMDEVINS pDevIns, TMTIMERHANDLE hTimer, int rcBusy)
 {
     RT_NOREF(pDevIns, hTimer, rcBusy);
+
+#ifndef VBOX_TSTDEV_NOT_IMPLEMENTED_STUBS_FAKE_SUCCESS
     int rc = VERR_NOT_IMPLEMENTED;
     AssertFailed();
+#else
+    int rc = VINF_SUCCESS;
+#endif
     return rc;
 }
 
@@ -1252,8 +1704,13 @@ static DECLCALLBACK(VBOXSTRICTRC) pdmR3DevHlp_TimerLockClock2(PPDMDEVINS pDevIns
                                                               PPDMCRITSECT pCritSect, int rcBusy)
 {
     RT_NOREF(pDevIns, hTimer, pCritSect, rcBusy);
+
+#ifndef VBOX_TSTDEV_NOT_IMPLEMENTED_STUBS_FAKE_SUCCESS
     int rc = VERR_NOT_IMPLEMENTED;
     AssertFailed();
+#else
+    int rc = VINF_SUCCESS;
+#endif
     return rc;
 }
 
@@ -1262,8 +1719,14 @@ static DECLCALLBACK(VBOXSTRICTRC) pdmR3DevHlp_TimerLockClock2(PPDMDEVINS pDevIns
 static DECLCALLBACK(int) pdmR3DevHlp_TimerSet(PPDMDEVINS pDevIns, TMTIMERHANDLE hTimer, uint64_t uExpire)
 {
     RT_NOREF(pDevIns, hTimer, uExpire);
+
+#ifndef VBOX_TSTDEV_NOT_IMPLEMENTED_STUBS_FAKE_SUCCESS
     int rc = VERR_NOT_IMPLEMENTED;
     AssertFailed();
+#else
+    int rc = VINF_SUCCESS;
+#endif
+
     return rc;
 }
 
@@ -1272,8 +1735,14 @@ static DECLCALLBACK(int) pdmR3DevHlp_TimerSet(PPDMDEVINS pDevIns, TMTIMERHANDLE 
 static DECLCALLBACK(int) pdmR3DevHlp_TimerSetFrequencyHint(PPDMDEVINS pDevIns, TMTIMERHANDLE hTimer, uint32_t uHz)
 {
     RT_NOREF(pDevIns, hTimer, uHz);
+
+#ifndef VBOX_TSTDEV_NOT_IMPLEMENTED_STUBS_FAKE_SUCCESS
     int rc = VERR_NOT_IMPLEMENTED;
     AssertFailed();
+#else
+    int rc = VINF_SUCCESS;
+#endif
+
     return rc;
 }
 
@@ -1282,8 +1751,13 @@ static DECLCALLBACK(int) pdmR3DevHlp_TimerSetFrequencyHint(PPDMDEVINS pDevIns, T
 static DECLCALLBACK(int) pdmR3DevHlp_TimerSetMicro(PPDMDEVINS pDevIns, TMTIMERHANDLE hTimer, uint64_t cMicrosToNext)
 {
     RT_NOREF(pDevIns, hTimer, cMicrosToNext);
+
+#ifndef VBOX_TSTDEV_NOT_IMPLEMENTED_STUBS_FAKE_SUCCESS
     int rc = VERR_NOT_IMPLEMENTED;
     AssertFailed();
+#else
+    int rc = VINF_SUCCESS;
+#endif
     return rc;
 }
 
@@ -1292,8 +1766,13 @@ static DECLCALLBACK(int) pdmR3DevHlp_TimerSetMicro(PPDMDEVINS pDevIns, TMTIMERHA
 static DECLCALLBACK(int) pdmR3DevHlp_TimerSetMillies(PPDMDEVINS pDevIns, TMTIMERHANDLE hTimer, uint64_t cMilliesToNext)
 {
     RT_NOREF(pDevIns, hTimer, cMilliesToNext);
+
+#ifndef VBOX_TSTDEV_NOT_IMPLEMENTED_STUBS_FAKE_SUCCESS
     int rc = VERR_NOT_IMPLEMENTED;
     AssertFailed();
+#else
+    int rc = VINF_SUCCESS;
+#endif
     return rc;
 }
 
@@ -1302,8 +1781,14 @@ static DECLCALLBACK(int) pdmR3DevHlp_TimerSetMillies(PPDMDEVINS pDevIns, TMTIMER
 static DECLCALLBACK(int) pdmR3DevHlp_TimerSetNano(PPDMDEVINS pDevIns, TMTIMERHANDLE hTimer, uint64_t cNanosToNext)
 {
     RT_NOREF(pDevIns, hTimer, cNanosToNext);
+
+#ifndef VBOX_TSTDEV_NOT_IMPLEMENTED_STUBS_FAKE_SUCCESS
     int rc = VERR_NOT_IMPLEMENTED;
     AssertFailed();
+#else
+    int rc = VINF_SUCCESS;
+#endif
+
     return rc;
 }
 
@@ -1312,8 +1797,14 @@ static DECLCALLBACK(int) pdmR3DevHlp_TimerSetNano(PPDMDEVINS pDevIns, TMTIMERHAN
 static DECLCALLBACK(int) pdmR3DevHlp_TimerSetRelative(PPDMDEVINS pDevIns, TMTIMERHANDLE hTimer, uint64_t cTicksToNext, uint64_t *pu64Now)
 {
     RT_NOREF(pDevIns, hTimer, cTicksToNext, pu64Now);
+
+#ifndef VBOX_TSTDEV_NOT_IMPLEMENTED_STUBS_FAKE_SUCCESS
     int rc = VERR_NOT_IMPLEMENTED;
     AssertFailed();
+#else
+    int rc = VINF_SUCCESS;
+#endif
+
     return rc;
 }
 
@@ -1374,10 +1865,51 @@ static DECLCALLBACK(int) pdmR3DevHlp_TimerSave(PPDMDEVINS pDevIns, TMTIMERHANDLE
 /** @interface_method_impl{PDMDEVHLPR3,pfnTimerLoad} */
 static DECLCALLBACK(int) pdmR3DevHlp_TimerLoad(PPDMDEVINS pDevIns, TMTIMERHANDLE hTimer, PSSMHANDLE pSSM)
 {
-    RT_NOREF(pDevIns, hTimer, pSSM);
-    int rc = VERR_NOT_IMPLEMENTED;
-    AssertFailed();
-    return rc;
+    RT_NOREF(pDevIns, hTimer);
+
+/** @name Saved state values (comes directly from TM.cpp)
+ * @{ */
+#define TMTIMERSTATE_SAVED_PENDING_STOP         4
+#define TMTIMERSTATE_SAVED_PENDING_SCHEDULE     7
+/** @}  */
+
+    /*
+     * Load the state and validate it.
+     */
+    uint8_t u8State;
+    int rc = pdmR3DevHlp_SSMGetU8(pSSM, &u8State);
+    if (RT_FAILURE(rc))
+        return rc;
+
+    /* TMTIMERSTATE_SAVED_XXX: Workaround for accidental state shift in r47786 (2009-05-26 19:12:12). */
+    if (    u8State == TMTIMERSTATE_SAVED_PENDING_STOP + 1
+        ||  u8State == TMTIMERSTATE_SAVED_PENDING_SCHEDULE + 1)
+        u8State--;
+
+    if (    u8State != TMTIMERSTATE_SAVED_PENDING_STOP
+        &&  u8State != TMTIMERSTATE_SAVED_PENDING_SCHEDULE)
+    {
+        /*AssertLogRelMsgFailed(("u8State=%d\n", u8State));*/
+        return VERR_TM_LOAD_STATE;
+    }
+
+    if (u8State == TMTIMERSTATE_SAVED_PENDING_SCHEDULE)
+    {
+        /*
+         * Load the expire time.
+         */
+        uint64_t u64Expire;
+        rc = pdmR3DevHlp_SSMGetU64(pSSM, &u64Expire);
+        if (RT_FAILURE(rc))
+            return rc;
+
+        /*
+         * Set it.
+         */
+        Log(("u8State=%d u64Expire=%llu\n", u8State, u64Expire));
+    }
+
+    return VINF_SUCCESS;
 }
 
 
@@ -1556,8 +2088,14 @@ static DECLCALLBACK(int) pdmR3DevHlp_CFGMQueryStringDef(PCFGMNODE pNode, const c
 static DECLCALLBACK(int) pdmR3DevHlp_CFGMQueryBytes(PCFGMNODE pNode, const char *pszName, void *pvData, size_t cbData)
 {
     RT_NOREF(pNode, pszName, pvData, cbData);
+
+#ifndef VBOX_TSTDEV_NOT_IMPLEMENTED_STUBS_FAKE_SUCCESS
     AssertFailed();
     return VERR_NOT_IMPLEMENTED;
+#else
+    memset(pvData, 0, cbData);
+    return VINF_SUCCESS;
+#endif
 }
 
 
@@ -1892,16 +2430,24 @@ static DECLCALLBACK(int) pdmR3DevHlp_CFGMQueryGCPtrSDef(PCFGMNODE pNode, const c
 static DECLCALLBACK(int) pdmR3DevHlp_CFGMQueryStringAlloc(PCFGMNODE pNode, const char *pszName, char **ppszString)
 {
     RT_NOREF(pNode, pszName, ppszString);
+#ifndef VBOX_TSTDEV_NOT_IMPLEMENTED_STUBS_FAKE_SUCCESS
     AssertFailed();
     return VERR_NOT_IMPLEMENTED;
+#else
+    return VERR_CFGM_VALUE_NOT_FOUND;
+#endif
 }
 
 
 static DECLCALLBACK(int) pdmR3DevHlp_CFGMQueryStringAllocDef(PCFGMNODE pNode, const char *pszName, char **ppszString, const char *pszDef)
 {
     RT_NOREF(pNode, pszName, ppszString, pszDef);
+#ifndef VBOX_TSTDEV_NOT_IMPLEMENTED_STUBS_FAKE_SUCCESS
     AssertFailed();
     return VERR_NOT_IMPLEMENTED;
+#else
+    return VERR_CFGM_VALUE_NOT_FOUND;
+#endif
 }
 
 
@@ -2324,8 +2870,12 @@ static DECLCALLBACK(void *) pdmR3DevHlp_MMHeapAlloc(PPDMDEVINS pDevIns, size_t c
     PDMDEV_ASSERT_DEVINS(pDevIns);
     LogFlow(("pdmR3DevHlp_MMHeapAlloc: caller='%s'/%d: cb=%#x\n", pDevIns->pReg->szName, pDevIns->iInstance, cb));
 
+#ifndef VBOX_TSTDEV_NOT_IMPLEMENTED_STUBS_FAKE_SUCCESS
     void *pv = NULL;
     AssertFailed();
+#else
+    void *pv = RTMemAlloc(cb);
+#endif
 
     LogFlow(("pdmR3DevHlp_MMHeapAlloc: caller='%s'/%d: returns %p\n", pDevIns->pReg->szName, pDevIns->iInstance, pv));
     return pv;
@@ -2338,8 +2888,12 @@ static DECLCALLBACK(void *) pdmR3DevHlp_MMHeapAllocZ(PPDMDEVINS pDevIns, size_t 
     PDMDEV_ASSERT_DEVINS(pDevIns);
     LogFlow(("pdmR3DevHlp_MMHeapAllocZ: caller='%s'/%d: cb=%#x\n", pDevIns->pReg->szName, pDevIns->iInstance, cb));
 
+#ifndef VBOX_TSTDEV_NOT_IMPLEMENTED_STUBS_FAKE_SUCCESS
     void *pv = NULL;
     AssertFailed();
+#else
+    void *pv = RTMemAllocZ(cb);
+#endif
 
     LogFlow(("pdmR3DevHlp_MMHeapAllocZ: caller='%s'/%d: returns %p\n", pDevIns->pReg->szName, pDevIns->iInstance, pv));
     return pv;
@@ -2352,6 +2906,7 @@ static DECLCALLBACK(void) pdmR3DevHlp_MMHeapFree(PPDMDEVINS pDevIns, void *pv)
     PDMDEV_ASSERT_DEVINS(pDevIns); RT_NOREF_PV(pDevIns);
     LogFlow(("pdmR3DevHlp_MMHeapFree: caller='%s'/%d: pv=%p\n", pDevIns->pReg->szName, pDevIns->iInstance, pv));
 
+#ifndef VBOX_TSTDEV_NOT_IMPLEMENTED_STUBS_FAKE_SUCCESS
     PTSTDEVMMHEAPALLOC pHeapAlloc = (PTSTDEVMMHEAPALLOC)((uint8_t *)pv - RT_UOFFSETOF(TSTDEVMMHEAPALLOC, abAlloc[0]));
     PTSTDEVDUTINT pThis = pHeapAlloc->pDut;
 
@@ -2362,6 +2917,9 @@ static DECLCALLBACK(void) pdmR3DevHlp_MMHeapFree(PPDMDEVINS pDevIns, void *pv)
     /* Poison */
     memset(&pHeapAlloc->abAlloc[0], 0xfc, pHeapAlloc->cbAlloc);
     RTMemFree(pHeapAlloc);
+#else
+    RTMemFree(pv);
+#endif
 
     LogFlow(("pdmR3DevHlp_MMHeapAlloc: caller='%s'/%d: returns void\n", pDevIns->pReg->szName, pDevIns->iInstance));
 }
@@ -2387,7 +2945,10 @@ static DECLCALLBACK(bool) pdmR3DevHlp_VMTeleportedAndNotFullyResumedYet(PPDMDEVI
     PDMDEV_ASSERT_DEVINS(pDevIns);
 
     bool fRc = false;
+
+#ifndef VBOX_TSTDEV_NOT_IMPLEMENTED_STUBS_FAKE_SUCCESS
     AssertFailed();
+#endif
 
     LogFlow(("pdmR3DevHlp_VMState: caller='%s'/%d: returns %RTbool\n", pDevIns->pReg->szName, pDevIns->iInstance,
              fRc));
@@ -2472,8 +3033,13 @@ static DECLCALLBACK(int) pdmR3DevHlp_DBGFInfoRegister(PPDMDEVINS pDevIns, const 
     LogFlow(("pdmR3DevHlp_DBGFInfoRegister: caller='%s'/%d: pszName=%p:{%s} pszDesc=%p:{%s} pfnHandler=%p\n",
              pDevIns->pReg->szName, pDevIns->iInstance, pszName, pszName, pszDesc, pszDesc, pfnHandler));
 
+#ifndef VBOX_TSTDEV_NOT_IMPLEMENTED_STUBS_FAKE_SUCCESS
     int rc = VERR_NOT_IMPLEMENTED;
     AssertFailed();
+#else
+    int rc = VINF_SUCCESS;
+#endif
+
 
     LogFlow(("pdmR3DevHlp_DBGFInfoRegister: caller='%s'/%d: returns %Rrc\n", pDevIns->pReg->szName, pDevIns->iInstance, rc));
     return rc;
@@ -2487,8 +3053,12 @@ static DECLCALLBACK(int) pdmR3DevHlp_DBGFInfoRegisterArgv(PPDMDEVINS pDevIns, co
     LogFlow(("pdmR3DevHlp_DBGFInfoRegisterArgv: caller='%s'/%d: pszName=%p:{%s} pszDesc=%p:{%s} pfnHandler=%p\n",
              pDevIns->pReg->szName, pDevIns->iInstance, pszName, pszName, pszDesc, pszDesc, pfnHandler));
 
+#ifndef VBOX_TSTDEV_NOT_IMPLEMENTED_STUBS_FAKE_SUCCESS
     int rc = VERR_NOT_IMPLEMENTED;
     AssertFailed();
+#else
+    int rc = VINF_SUCCESS;
+#endif
 
     LogFlow(("pdmR3DevHlp_DBGFInfoRegisterArgv: caller='%s'/%d: returns %Rrc\n", pDevIns->pReg->szName, pDevIns->iInstance, rc));
     return rc;
@@ -2528,7 +3098,10 @@ static DECLCALLBACK(void) pdmR3DevHlp_STAMRegister(PPDMDEVINS pDevIns, void *pvS
     PDMDEV_ASSERT_DEVINS(pDevIns);
 
     RT_NOREF(pDevIns, pvSample, enmType, pszName, enmUnit, pszDesc);
+
+#ifndef VBOX_TSTDEV_NOT_IMPLEMENTED_STUBS_FAKE_SUCCESS
     AssertFailed();
+#endif
 }
 
 
@@ -2539,7 +3112,10 @@ static DECLCALLBACK(void) pdmR3DevHlp_STAMRegisterV(PPDMDEVINS pDevIns, void *pv
     PDMDEV_ASSERT_DEVINS(pDevIns);
 
     RT_NOREF(pDevIns, pvSample, enmType, enmVisibility, enmUnit, pszDesc, pszName, args);
+
+#ifndef VBOX_TSTDEV_NOT_IMPLEMENTED_STUBS_FAKE_SUCCESS
     AssertFailed();
+#endif
 }
 
 
@@ -2588,8 +3164,12 @@ static DECLCALLBACK(int) pdmR3DevHlp_PCIRegister(PPDMDEVINS pDevIns, PPDMPCIDEV 
     AssertMsgReturn(pPciDev->u32Magic == PDMPCIDEV_MAGIC, ("%#x\n", pPciDev->u32Magic), VERR_PDM_NOT_PCI_DEVICE);
 #endif
 
+#ifndef VBOX_TSTDEV_NOT_IMPLEMENTED_STUBS_FAKE_SUCCESS
     int rc = VERR_NOT_IMPLEMENTED;
     AssertFailed();
+#else
+    int rc = VINF_SUCCESS;
+#endif
 
     LogFlow(("pdmR3DevHlp_PCIRegister: caller='%s'/%d: returns %Rrc\n", pDevIns->pReg->szName, pDevIns->iInstance, rc));
     return rc;
@@ -2615,8 +3195,13 @@ static DECLCALLBACK(int) pdmR3DevHlp_PCIRegisterMsi(PPDMDEVINS pDevIns, PPDMPCID
                            pDevIns->pReg->szName, pDevIns->iInstance, pMsiReg->cMsixVectors, pDevIns->pReg->cMaxMsixVectors),
                           VERR_INVALID_FLAGS);
 
+#ifndef VBOX_TSTDEV_NOT_IMPLEMENTED_STUBS_FAKE_SUCCESS
     int rc = VERR_NOT_IMPLEMENTED;
     AssertFailed();
+#else
+    int rc = VINF_SUCCESS;
+#endif
+
 
     LogFlow(("pdmR3DevHlp_PCIRegisterMsi: caller='%s'/%d: returns %Rrc\n", pDevIns->pReg->szName, pDevIns->iInstance, rc));
     return rc;
@@ -2634,7 +3219,10 @@ static DECLCALLBACK(int) pdmR3DevHlp_PCIIORegionRegister(PPDMDEVINS pDevIns, PPD
     AssertReturn(pPciDev, VERR_PDM_NOT_PCI_DEVICE);
     LogFlow(("pdmR3DevHlp_PCIIORegionRegister: caller='%s'/%d: pPciDev=%p:{%#x} iRegion=%d cbRegion=%RGp enmType=%d fFlags=%#x, hHandle=%#RX64 pfnMapUnmap=%p\n",
              pDevIns->pReg->szName, pDevIns->iInstance, pPciDev, pPciDev->uDevFn, iRegion, cbRegion, enmType, fFlags, hHandle, pfnMapUnmap));
+
+#ifndef VBOX_TSTDEV_NOT_IMPLEMENTED_STUBS_FAKE_SUCCESS
     PDMPCIDEV_ASSERT_VALID_RET(pDevIns, pPciDev);
+#endif
 
     /*
      * Validate input.
@@ -2692,8 +3280,12 @@ static DECLCALLBACK(int) pdmR3DevHlp_PCIIORegionRegister(PPDMDEVINS pDevIns, PPD
                     VERR_INVALID_PARAMETER);
 
     AssertMsgReturn(!(fFlags & ~PDMPCIDEV_IORGN_F_VALID_MASK), ("fFlags=%#x\n", fFlags), VERR_INVALID_FLAGS);
+#ifndef VBOX_TSTDEV_NOT_IMPLEMENTED_STUBS_FAKE_SUCCESS
     int rc = VERR_NOT_IMPLEMENTED;
     AssertFailed();
+#else
+    int rc = VINF_SUCCESS;
+#endif
 
     LogFlow(("pdmR3DevHlp_PCIIORegionRegister: caller='%s'/%d: returns %Rrc\n", pDevIns->pReg->szName, pDevIns->iInstance, rc));
     return rc;
@@ -2710,10 +3302,15 @@ static DECLCALLBACK(int) pdmR3DevHlp_PCIInterceptConfigAccesses(PPDMDEVINS pDevI
     AssertReturn(pPciDev, VERR_PDM_NOT_PCI_DEVICE);
     LogFlow(("pdmR3DevHlp_PCIInterceptConfigAccesses: caller='%s'/%d: pPciDev=%p pfnRead=%p pfnWrite=%p\n",
              pDevIns->pReg->szName, pDevIns->iInstance, pPciDev, pfnRead, pfnWrite));
+
+#ifndef VBOX_TSTDEV_NOT_IMPLEMENTED_STUBS_FAKE_SUCCESS
     PDMPCIDEV_ASSERT_VALID_RET(pDevIns, pPciDev);
 
     int rc = VERR_NOT_IMPLEMENTED;
     AssertFailed();
+#else
+    int rc = VINF_SUCCESS;
+#endif
 
     LogFlow(("pdmR3DevHlp_PCIInterceptConfigAccesses: caller='%s'/%d: returns %Rrc\n",
              pDevIns->pReg->szName, pDevIns->iInstance, rc));
@@ -2895,7 +3492,11 @@ static DECLCALLBACK(int) pdmR3DevHlp_DriverAttach(PPDMDEVINS pDevIns, uint32_t i
              pDevIns->pReg->szName, pDevIns->iInstance, iLun, pBaseInterface, ppBaseInterface, pszDesc, pszDesc));
 
 #if 1
-    int rc = VERR_PDM_NO_ATTACHED_DRIVER;
+    int rc = VINF_SUCCESS;
+    if (iLun == PDM_STATUS_LUN)
+        *ppBaseInterface = &pDevIns->Internal.s.pDut->IBaseSts;
+    else
+        rc = VERR_PDM_NO_ATTACHED_DRIVER;
 #else
     int rc = VERR_NOT_IMPLEMENTED;
     AssertFailed();
@@ -3041,8 +3642,12 @@ static DECLCALLBACK(int) pdmR3DevHlp_TaskCreate(PPDMDEVINS pDevIns, uint32_t fFl
              pDevIns->pReg->szName, pDevIns->iInstance, pfnCallback, fFlags, pszName, pszName, phTask));
 
     RT_NOREF(pDevIns, fFlags, pszName, pfnCallback, pvUser, phTask);
+#ifndef VBOX_TSTDEV_NOT_IMPLEMENTED_STUBS_FAKE_SUCCESS
     int rc = VERR_NOT_IMPLEMENTED;
     AssertFailed();
+#else
+    int rc = VINF_SUCCESS;
+#endif
 
     LogFlow(("pdmR3DevHlp_TaskTrigger: caller='%s'/%d: returns %Rrc\n", pDevIns->pReg->szName, pDevIns->iInstance, rc));
     return rc;
@@ -3056,8 +3661,12 @@ static DECLCALLBACK(int) pdmR3DevHlp_TaskTrigger(PPDMDEVINS pDevIns, PDMTASKHAND
     LogFlow(("pdmR3DevHlp_TaskTrigger: caller='%s'/%d: hTask=%RU64\n", pDevIns->pReg->szName, pDevIns->iInstance, hTask));
 
     RT_NOREF(pDevIns, hTask);
+#ifndef VBOX_TSTDEV_NOT_IMPLEMENTED_STUBS_FAKE_SUCCESS
     int rc = VERR_NOT_IMPLEMENTED;
     AssertFailed();
+#else
+    int rc = VINF_SUCCESS;
+#endif
 
     LogFlow(("pdmR3DevHlp_TaskTrigger: caller='%s'/%d: returns %Rrc\n", pDevIns->pReg->szName, pDevIns->iInstance, rc));
     return rc;
@@ -3071,8 +3680,12 @@ static DECLCALLBACK(int) pdmR3DevHlp_SUPSemEventCreate(PPDMDEVINS pDevIns, PSUPS
     LogFlow(("pdmR3DevHlp_SUPSemEventCreate: caller='%s'/%d: phEvent=%p\n", pDevIns->pReg->szName, pDevIns->iInstance, phEvent));
 
     RT_NOREF(pDevIns, phEvent);
+#ifndef VBOX_TSTDEV_NOT_IMPLEMENTED_STUBS_FAKE_SUCCESS
     int rc = VERR_NOT_IMPLEMENTED;
     AssertFailed();
+#else
+    int rc = VINF_SUCCESS;
+#endif
 
     LogFlow(("pdmR3DevHlp_SUPSemEventCreate: caller='%s'/%d: returns %Rrc *phEvent=%p\n", pDevIns->pReg->szName, pDevIns->iInstance, rc, *phEvent));
     return rc;
@@ -3086,8 +3699,12 @@ static DECLCALLBACK(int) pdmR3DevHlp_SUPSemEventClose(PPDMDEVINS pDevIns, SUPSEM
     LogFlow(("pdmR3DevHlp_SUPSemEventClose: caller='%s'/%d: hEvent=%p\n", pDevIns->pReg->szName, pDevIns->iInstance, hEvent));
 
     RT_NOREF(pDevIns, hEvent);
+#ifndef VBOX_TSTDEV_NOT_IMPLEMENTED_STUBS_FAKE_SUCCESS
     int rc = VERR_NOT_IMPLEMENTED;
     AssertFailed();
+#else
+    int rc = VINF_SUCCESS;
+#endif
 
     LogFlow(("pdmR3DevHlp_SUPSemEventClose: caller='%s'/%d: returns %Rrc\n", pDevIns->pReg->szName, pDevIns->iInstance, rc));
     return rc;
@@ -3101,8 +3718,12 @@ static DECLCALLBACK(int) pdmR3DevHlp_SUPSemEventSignal(PPDMDEVINS pDevIns, SUPSE
     LogFlow(("pdmR3DevHlp_SUPSemEventSignal: caller='%s'/%d: hEvent=%p\n", pDevIns->pReg->szName, pDevIns->iInstance, hEvent));
 
     RT_NOREF(pDevIns, hEvent);
+#ifndef VBOX_TSTDEV_NOT_IMPLEMENTED_STUBS_FAKE_SUCCESS
     int rc = VERR_NOT_IMPLEMENTED;
     AssertFailed();
+#else
+    int rc = VINF_SUCCESS;
+#endif
 
     LogFlow(("pdmR3DevHlp_SUPSemEventSignal: caller='%s'/%d: returns %Rrc\n", pDevIns->pReg->szName, pDevIns->iInstance, rc));
     return rc;
@@ -3117,8 +3738,12 @@ static DECLCALLBACK(int) pdmR3DevHlp_SUPSemEventWaitNoResume(PPDMDEVINS pDevIns,
              pDevIns->pReg->szName, pDevIns->iInstance, hEvent, cMillies));
 
     RT_NOREF(pDevIns, hEvent, cMillies);
+#ifndef VBOX_TSTDEV_NOT_IMPLEMENTED_STUBS_FAKE_SUCCESS
     int rc = VERR_NOT_IMPLEMENTED;
     AssertFailed();
+#else
+    int rc = VINF_SUCCESS;
+#endif
 
     LogFlow(("pdmR3DevHlp_SUPSemEventWaitNoResume: caller='%s'/%d: returns %Rrc\n", pDevIns->pReg->szName, pDevIns->iInstance, rc));
     return rc;
@@ -3133,8 +3758,12 @@ static DECLCALLBACK(int) pdmR3DevHlp_SUPSemEventWaitNsAbsIntr(PPDMDEVINS pDevIns
              pDevIns->pReg->szName, pDevIns->iInstance, hEvent, uNsTimeout));
 
     RT_NOREF(pDevIns, hEvent, uNsTimeout);
+#ifndef VBOX_TSTDEV_NOT_IMPLEMENTED_STUBS_FAKE_SUCCESS
     int rc = VERR_NOT_IMPLEMENTED;
     AssertFailed();
+#else
+    int rc = VINF_SUCCESS;
+#endif
 
     LogFlow(("pdmR3DevHlp_SUPSemEventWaitNsAbsIntr: caller='%s'/%d: returns %Rrc\n", pDevIns->pReg->szName, pDevIns->iInstance, rc));
     return rc;
@@ -3149,8 +3778,12 @@ static DECLCALLBACK(int) pdmR3DevHlp_SUPSemEventWaitNsRelIntr(PPDMDEVINS pDevIns
              pDevIns->pReg->szName, pDevIns->iInstance, hEvent, cNsTimeout));
 
     RT_NOREF(pDevIns, hEvent, cNsTimeout);
+#ifndef VBOX_TSTDEV_NOT_IMPLEMENTED_STUBS_FAKE_SUCCESS
     int rc = VERR_NOT_IMPLEMENTED;
     AssertFailed();
+#else
+    int rc = VINF_SUCCESS;
+#endif
 
     LogFlow(("pdmR3DevHlp_SUPSemEventWaitNsRelIntr: caller='%s'/%d: returns %Rrc\n", pDevIns->pReg->szName, pDevIns->iInstance, rc));
     return rc;
@@ -3179,8 +3812,12 @@ static DECLCALLBACK(int) pdmR3DevHlp_SUPSemEventMultiCreate(PPDMDEVINS pDevIns, 
     LogFlow(("pdmR3DevHlp_SUPSemEventMultiCreate: caller='%s'/%d: phEventMulti=%p\n", pDevIns->pReg->szName, pDevIns->iInstance, phEventMulti));
 
     RT_NOREF(pDevIns, phEventMulti);
+#ifndef VBOX_TSTDEV_NOT_IMPLEMENTED_STUBS_FAKE_SUCCESS
     int rc = VERR_NOT_IMPLEMENTED;
     AssertFailed();
+#else
+    int rc = VINF_SUCCESS;
+#endif
 
     LogFlow(("pdmR3DevHlp_SUPSemEventMultiCreate: caller='%s'/%d: returns %Rrc *phEventMulti=%p\n", pDevIns->pReg->szName, pDevIns->iInstance, rc, *phEventMulti));
     return rc;
@@ -3194,8 +3831,12 @@ static DECLCALLBACK(int) pdmR3DevHlp_SUPSemEventMultiClose(PPDMDEVINS pDevIns, S
     LogFlow(("pdmR3DevHlp_SUPSemEventMultiClose: caller='%s'/%d: hEventMulti=%p\n", pDevIns->pReg->szName, pDevIns->iInstance, hEventMulti));
 
     RT_NOREF(pDevIns, hEventMulti);
+#ifndef VBOX_TSTDEV_NOT_IMPLEMENTED_STUBS_FAKE_SUCCESS
     int rc = VERR_NOT_IMPLEMENTED;
     AssertFailed();
+#else
+    int rc = VINF_SUCCESS;
+#endif
 
     LogFlow(("pdmR3DevHlp_SUPSemEventMultiClose: caller='%s'/%d: returns %Rrc\n", pDevIns->pReg->szName, pDevIns->iInstance, rc));
     return rc;
@@ -3209,8 +3850,12 @@ static DECLCALLBACK(int) pdmR3DevHlp_SUPSemEventMultiSignal(PPDMDEVINS pDevIns, 
     LogFlow(("pdmR3DevHlp_SUPSemEventMultiSignal: caller='%s'/%d: hEventMulti=%p\n", pDevIns->pReg->szName, pDevIns->iInstance, hEventMulti));
 
     RT_NOREF(pDevIns, hEventMulti);
+#ifndef VBOX_TSTDEV_NOT_IMPLEMENTED_STUBS_FAKE_SUCCESS
     int rc = VERR_NOT_IMPLEMENTED;
     AssertFailed();
+#else
+    int rc = VINF_SUCCESS;
+#endif
 
     LogFlow(("pdmR3DevHlp_SUPSemEventMultiSignal: caller='%s'/%d: returns %Rrc\n", pDevIns->pReg->szName, pDevIns->iInstance, rc));
     return rc;
@@ -3224,8 +3869,12 @@ static DECLCALLBACK(int) pdmR3DevHlp_SUPSemEventMultiReset(PPDMDEVINS pDevIns, S
     LogFlow(("pdmR3DevHlp_SUPSemEventMultiReset: caller='%s'/%d: hEventMulti=%p\n", pDevIns->pReg->szName, pDevIns->iInstance, hEventMulti));
 
     RT_NOREF(pDevIns, hEventMulti);
+#ifndef VBOX_TSTDEV_NOT_IMPLEMENTED_STUBS_FAKE_SUCCESS
     int rc = VERR_NOT_IMPLEMENTED;
     AssertFailed();
+#else
+    int rc = VINF_SUCCESS;
+#endif
 
     LogFlow(("pdmR3DevHlp_SUPSemEventMultiReset: caller='%s'/%d: returns %Rrc\n", pDevIns->pReg->szName, pDevIns->iInstance, rc));
     return rc;
@@ -3241,9 +3890,12 @@ static DECLCALLBACK(int) pdmR3DevHlp_SUPSemEventMultiWaitNoResume(PPDMDEVINS pDe
              pDevIns->pReg->szName, pDevIns->iInstance, hEventMulti, cMillies));
 
     RT_NOREF(pDevIns, hEventMulti, cMillies);
+#ifndef VBOX_TSTDEV_NOT_IMPLEMENTED_STUBS_FAKE_SUCCESS
     int rc = VERR_NOT_IMPLEMENTED;
     AssertFailed();
-
+#else
+    int rc = VINF_SUCCESS;
+#endif
     LogFlow(("pdmR3DevHlp_SUPSemEventMultiWaitNoResume: caller='%s'/%d: returns %Rrc\n", pDevIns->pReg->szName, pDevIns->iInstance, rc));
     return rc;
 }
@@ -3258,8 +3910,12 @@ static DECLCALLBACK(int) pdmR3DevHlp_SUPSemEventMultiWaitNsAbsIntr(PPDMDEVINS pD
              pDevIns->pReg->szName, pDevIns->iInstance, hEventMulti, uNsTimeout));
 
     RT_NOREF(pDevIns, hEventMulti, uNsTimeout);
+#ifndef VBOX_TSTDEV_NOT_IMPLEMENTED_STUBS_FAKE_SUCCESS
     int rc = VERR_NOT_IMPLEMENTED;
     AssertFailed();
+#else
+    int rc = VINF_SUCCESS;
+#endif
 
     LogFlow(("pdmR3DevHlp_SUPSemEventMultiWaitNsAbsIntr: caller='%s'/%d: returns %Rrc\n", pDevIns->pReg->szName, pDevIns->iInstance, rc));
     return rc;
@@ -3275,8 +3931,12 @@ static DECLCALLBACK(int) pdmR3DevHlp_SUPSemEventMultiWaitNsRelIntr(PPDMDEVINS pD
              pDevIns->pReg->szName, pDevIns->iInstance, hEventMulti, cNsTimeout));
 
     RT_NOREF(pDevIns, hEventMulti, cNsTimeout);
+#ifndef VBOX_TSTDEV_NOT_IMPLEMENTED_STUBS_FAKE_SUCCESS
     int rc = VERR_NOT_IMPLEMENTED;
     AssertFailed();
+#else
+    int rc = VINF_SUCCESS;
+#endif
 
     LogFlow(("pdmR3DevHlp_SUPSemEventMultiWaitNsRelIntr: caller='%s'/%d: returns %Rrc\n", pDevIns->pReg->szName, pDevIns->iInstance, rc));
     return rc;
@@ -3449,8 +4109,12 @@ static DECLCALLBACK(bool)     pdmR3DevHlp_CritSectIsInitialized(PPDMDEVINS pDevI
     PDMDEV_ASSERT_DEVINS(pDevIns);
 
     RT_NOREF(pDevIns, pCritSect);
+#ifndef VBOX_TSTDEV_NOT_IMPLEMENTED_STUBS_FAKE_SUCCESS
     AssertFailed();
     return false;
+#else
+    return true;
+#endif
 }
 
 
@@ -3508,8 +4172,13 @@ static DECLCALLBACK(int) pdmR3DevHlp_ThreadCreate(PPDMDEVINS pDevIns, PPPDMTHREA
              pDevIns->pReg->szName, pDevIns->iInstance, ppThread, pvUser, pfnThread, pfnWakeup, cbStack, enmType, pszName, pszName));
 
     RT_NOREF(ppThread, pvUser, pfnThread, pfnWakeup, cbStack, enmType, pszName);
+
+#ifndef VBOX_TSTDEV_NOT_IMPLEMENTED_STUBS_FAKE_SUCCESS
     int rc = VERR_NOT_IMPLEMENTED;
     AssertFailed();
+#else
+    int rc = VINF_SUCCESS;
+#endif
 
     LogFlow(("pdmR3DevHlp_ThreadCreate: caller='%s'/%d: returns %Rrc *ppThread=%RTthrd\n", pDevIns->pReg->szName, pDevIns->iInstance,
             rc, *ppThread));
@@ -3887,9 +4556,8 @@ static DECLCALLBACK(PVMCC) pdmR3DevHlp_GetVM(PPDMDEVINS pDevIns)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
 
-    AssertFailed();
-    LogFlow(("pdmR3DevHlp_GetVM: caller='%s'/%d: returns %p\n", pDevIns->pReg->szName, pDevIns->iInstance, NULL));
-    return NULL;
+    LogFlow(("pdmR3DevHlp_GetVM: caller='%s'/%d: returns %p\n", pDevIns->pReg->szName, pDevIns->iInstance, pDevIns->Internal.s.pDut->pVm));
+    return pDevIns->Internal.s.pDut->pVm;
 }
 
 
