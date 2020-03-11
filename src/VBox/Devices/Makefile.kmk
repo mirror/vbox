@@ -153,6 +153,7 @@ if !defined(VBOX_ONLY_EXTPACKS) && "$(intersects $(KBUILD_TARGET_ARCH),$(VBOX_SU
  	Bus/DevPciIch9.cpp \
  	Bus/MsiCommon.cpp \
  	Bus/MsixCommon.cpp \
+ 	$(if $(VBOX_WITH_IOMMU_AMD),Bus/DevIommuAmd.cpp,) \
 	EFI/DevSmc.cpp \
 	EFI/DevFlash.cpp \
 	EFI/FlashCore.cpp \
@@ -922,6 +923,7 @@ endif
   	Bus/DevPciIch9.cpp \
   	Bus/MsiCommon.cpp \
   	Bus/MsixCommon.cpp \
+  	$(if $(VBOX_WITH_IOMMU_AMD),Bus/DevIommuAmd.cpp,) \
   	EFI/DevSmc.cpp \
   	Graphics/DevVGA.cpp \
   	Input/DevPS2.cpp \
@@ -1106,6 +1108,7 @@ endif
  	Bus/DevPciIch9.cpp \
  	Bus/MsiCommon.cpp \
  	Bus/MsixCommon.cpp \
+ 	$(if $(VBOX_WITH_IOMMU_AMD),Bus/DevIommuAmd.cpp,) \
  	EFI/DevSmc.cpp \
  	EFI/DevFlash.cpp \
 	EFI/FlashCore.cpp \

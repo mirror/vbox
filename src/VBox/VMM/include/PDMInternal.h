@@ -106,6 +106,8 @@ typedef PPDMLUN *PPPDMLUN;
 
 /** Pointer to a PDM PCI Bus instance. */
 typedef struct PDMPCIBUS *PPDMPCIBUS;
+/** Pointer to a PDM IOMMU instance. */
+typedef struct PDMIOMMU *PPDMIOMMU;
 /** Pointer to a DMAC instance. */
 typedef struct PDMDMAC *PPDMDMAC;
 /** Pointer to a RTC instance. */
@@ -616,6 +618,27 @@ typedef struct PDMDRV
 
 
 /**
+ * PDM registered IOMMU device.
+ */
+typedef struct PDMIOMMU
+{
+    /** IOMMU index. */
+    uint32_t                        idxIommu;
+    uint32_t                        uPadding0; /**< Alignment padding.*/
+
+    /** Pointer to the IOMMU device instance - R3. */
+    PPDMDEVINSR3                    pDevInsR3;
+
+    /** Pointer to the IOMMU device instance - R0. */
+    PPDMDEVINSR0                    pDevInsR0;
+
+    /** Pointer to the IOMMU device instance - RC. */
+    PPDMDEVINSRC                    pDevInsRC;
+    RTRCPTR                         RCPtrPadding;
+} PDMIOMMU;
+
+
+/**
  * PDM registered PIC device.
  */
 typedef struct PDMPIC
@@ -694,7 +717,9 @@ typedef struct PDMIOAPIC
 } PDMIOAPIC;
 
 /** Maximum number of PCI busses for a VM. */
-#define PDM_PCI_BUSSES_MAX 8
+#define PDM_PCI_BUSSES_MAX  8
+/** Maximum number of IOMMUs (at most one per PCI bus). */
+#define PDM_IOMMUS_MAX      PDM_PCI_BUSSES_MAX
 
 
 #ifdef IN_RING3
@@ -1224,6 +1249,8 @@ typedef struct PDM
 
     /** PCI Buses. */
     PDMPCIBUS                       aPciBuses[PDM_PCI_BUSSES_MAX];
+    /** IOMMU devices. */
+    PDMIOMMU                        aIommus[PDM_IOMMUS_MAX];
     /** The register PIC device. */
     PDMPIC                          Pic;
     /** The registered APIC device. */
@@ -1393,6 +1420,7 @@ extern const PDMPICHLP      g_pdmR3DevPicHlp;
 extern const PDMIOAPICHLP   g_pdmR3DevIoApicHlp;
 extern const PDMFWHLPR3     g_pdmR3DevFirmwareHlp;
 extern const PDMPCIHLPR3    g_pdmR3DevPciHlp;
+extern const PDMIOMMUHLPR3  g_pdmR3DevIommuHlp;
 extern const PDMDMACHLP     g_pdmR3DevDmacHlp;
 extern const PDMRTCHLP      g_pdmR3DevRtcHlp;
 extern const PDMHPETHLPR3   g_pdmR3DevHpetHlp;

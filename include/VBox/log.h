@@ -120,6 +120,8 @@ typedef enum VBOXLOGGROUP
     LOG_GROUP_DEV_INIP,
     /** I/O APIC Device group. */
     LOG_GROUP_DEV_IOAPIC,
+    /** IOMMU Device group. */
+    LOG_GROUP_DEV_IOMMU,
     /** KeyBoard Controller Device group. */
     LOG_GROUP_DEV_KBD,
     /** Low Pin Count Device group. */
@@ -792,6 +794,7 @@ typedef enum VBOXLOGGROUP
     "DEV_IDE", \
     "DEV_INIP", \
     "DEV_IOAPIC", \
+    "DEV_IOMMU", \
     "DEV_KBD", \
     "DEV_LPC", \
     "DEV_LSILOGICSCSI", \

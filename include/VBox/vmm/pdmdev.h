@@ -1242,6 +1242,128 @@ typedef R3PTRTYPE(const PDMPCIHLPR3 *) PCPDMPCIHLPR3;
 
 
 /**
+ * IOMMU registration structure for ring-0.
+ */
+typedef struct PDMIOMMUREGR0
+{
+    /** Structure version number. PDM_IOMMUREG_VERSION defines the current
+     *  version. */
+    uint32_t            u32Version;
+    /** Index into the PDM IOMMU array (PDM::aIommus) from ring-3. */
+    uint32_t            idxIommu;
+    /** Just a safety precaution. */
+    uint32_t            u32TheEnd;
+} PDMIOMMUREGR0;
+/** Pointer to a IOMMU registration structure. */
+typedef PDMIOMMUREGR0 *PPDMIOMMUREGR0;
+
+/** Current PDMIOMMUREG version number. */
+#define PDM_IOMMUREGR0_VERSION                      PDM_VERSION_MAKE(0xff10, 1, 0)
+
+
+/**
+ * IOMMU registration structure for raw-mode.
+ */
+typedef struct PDMIOMMUREGRC
+{
+    /** Structure version number. PDM_IOMMUREG_VERSION defines the current
+     *  version. */
+    uint32_t            u32Version;
+    /** Index into the PDM IOMMU array (PDM::aIommus) from ring-3. */
+    uint32_t            idxIommu;
+    /** Just a safety precaution. */
+    uint32_t            u32TheEnd;
+} PDMIOMMUREGRC;
+/** Pointer to a IOMMU registration structure. */
+typedef PDMIOMMUREGRC *PPDMIOMMUREGRC;
+
+/** Current PDMIOMMUREG version number. */
+#define PDM_IOMMUREGRC_VERSION                      PDM_VERSION_MAKE(0xff11, 1, 0)
+
+
+/**
+ * IOMMU registration structure for ring-3.
+ */
+typedef struct PDMIOMMUREGR3
+{
+    /** Structure version number. PDM_IOMMUREG_VERSION defines the current
+     *  version. */
+    uint32_t            u32Version;
+    /** Just a safety precaution. */
+    uint32_t            u32TheEnd;
+} PDMIOMMUREGR3;
+/** Pointer to a IOMMU registration structure. */
+typedef PDMIOMMUREGR3 *PPDMIOMMUREGR3;
+
+/** Current PDMIOMMUREG version number. */
+#define PDM_IOMMUREGR3_VERSION                      PDM_VERSION_MAKE(0xff12, 1, 0)
+
+/** IOMMU registration structure for the current context. */
+typedef CTX_SUFF(PDMIOMMUREG)  PDMIOMMUREGCC;
+/** Pointer to an IOMMU registration structure for the current context. */
+typedef CTX_SUFF(PPDMIOMMUREG) PPDMIOMMUREGCC;
+/** IOMMU registration structure version for the current context. */
+#define PDM_IOMMUREGCC_VERSION CTX_MID(PDM_IOMMUREG,_VERSION)
+
+
+/**
+ * IOMMU helpers for ring-0.
+ */
+typedef struct PDMIOMMUHLPR0
+{
+    /** Structure version. PDM_IOMMUHLP_VERSION defines the current version. */
+    uint32_t                u32Version;
+    /** Just a safety precaution. */
+    uint32_t                u32TheEnd;
+} PDMIOMMUHLPR0;
+/** Pointer to IOMMU helpers for ring-0. */
+typedef PDMIOMMUHLPR0 *PPDMIOMMUHLPR0;
+/** Pointer to const IOMMU helpers for ring-0. */
+typedef const PDMIOMMUHLPR0 *PCPDMIOMMUHLPR0;
+
+/** Current PDMIOMMUHLPR0 version number. */
+#define PDM_IOMMUHLPR0_VERSION                      PDM_VERSION_MAKE(0xff13, 1, 0)
+
+
+/**
+ * IOMMU helpers for raw-mode.
+ */
+typedef struct PDMIOMMUHLPRC
+{
+    /** Structure version. PDM_IOMMUHLP_VERSION defines the current version. */
+    uint32_t                u32Version;
+    /** Just a safety precaution. */
+    uint32_t                u32TheEnd;
+} PDMIOMMUHLPRC;
+/** Pointer to IOMMU helpers for raw-mode. */
+typedef PDMIOMMUHLPRC *PPDMIOMMUHLPRC;
+/** Pointer to const IOMMU helpers for raw-mode. */
+typedef const PDMIOMMUHLPRC *PCPDMIOMMUHLPRC;
+
+/** Current PDMIOMMUHLPRC version number. */
+#define PDM_IOMMUHLPRC_VERSION                      PDM_VERSION_MAKE(0xff14, 1, 0)
+
+
+/**
+ * IOMMU helpers for ring-3.
+ */
+typedef struct PDMIOMMUHLPR3
+{
+    /** Structure version. PDM_IOMMUHLP_VERSION defines the current version. */
+    uint32_t                u32Version;
+    /** Just a safety precaution. */
+    uint32_t                u32TheEnd;
+} PDMIOMMUHLPR3;
+/** Pointer to IOMMU helpers for raw-mode. */
+typedef PDMIOMMUHLPR3 *PPDMIOMMUHLPR3;
+/** Pointer to const IOMMU helpers for raw-mode. */
+typedef const PDMIOMMUHLPR3 *PCPDMIOMMUHLPR3;
+
+/** Current PDMIOMMUHLPR3 version number. */
+#define PDM_IOMMUHLPR3_VERSION                      PDM_VERSION_MAKE(0xff15, 1, 0)
+
+
+/**
  * Programmable Interrupt Controller registration structure (all contexts).
  */
 typedef struct PDMPICREG
@@ -1963,7 +2085,7 @@ typedef const PDMRTCHLP *PCPDMRTCHLP;
 /** @} */
 
 /** Current PDMDEVHLPR3 version number. */
-#define PDM_DEVHLPR3_VERSION                    PDM_VERSION_MAKE_PP(0xffe7, 41, 0)
+#define PDM_DEVHLPR3_VERSION                    PDM_VERSION_MAKE_PP(0xffe7, 42, 0)
 
 /**
  * PDM Device API.
@@ -3433,6 +3555,17 @@ typedef struct PDMDEVHLPR3
      */
     DECLR3CALLBACKMEMBER(int, pfnPCIBusRegister,(PPDMDEVINS pDevIns, PPDMPCIBUSREGR3 pPciBusReg,
                                                  PCPDMPCIHLPR3 *ppPciHlp, uint32_t *piBus));
+
+    /**
+     * Register the IOMMU device.
+     *
+     * @returns VBox status code.
+     * @param   pDevIns             The device instance.
+     * @param   pIommuReg           Pointer to a IOMMU registration structure.
+     * @param   ppIommuHlp          Where to store the pointer to the ring-3 IOMMU
+     *                              helpers.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnIommuRegister,(PPDMDEVINS pDevIns, PPDMIOMMUREGR3 pIommuReg, PCPDMIOMMUHLPR3 *ppIommuHlp));
 
     /**
      * Register the PIC device.
@@ -7216,6 +7349,14 @@ DECLINLINE(int) PDMDevHlpRTCRegister(PPDMDEVINS pDevIns, PCPDMRTCREG pRtcReg, PC
 DECLINLINE(int) PDMDevHlpPCIBusRegister(PPDMDEVINS pDevIns, PPDMPCIBUSREGR3 pPciBusReg, PCPDMPCIHLPR3 *ppPciHlp, uint32_t *piBus)
 {
     return pDevIns->pHlpR3->pfnPCIBusRegister(pDevIns, pPciBusReg, ppPciHlp, piBus);
+}
+
+/**
+ * @copydoc PDMDEVHLPR3::pfnIommuRegister
+ */
+DECLINLINE(int) PDMDevHlpIommuRegister(PPDMDEVINS pDevIns, PPDMIOMMUREGR3 pIommuReg, PCPDMIOMMUHLPR3 *ppIommuHlp)
+{
+    return pDevIns->pHlpR3->pfnIommuRegister(pDevIns, pIommuReg, ppIommuHlp);
 }
 
 /**

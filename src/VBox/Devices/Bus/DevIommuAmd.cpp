@@ -618,7 +618,7 @@ typedef union
         uint32_t    u1Translation : 1;      /**< Bit  56     - TR: Translation. */
         uint32_t    u2Type : 2;             /**< Bits 58:57  - Type: The type of hardware error. */
         uint32_t    u1Rsvd1 : 1;            /**< Bit  59     - Reserved. */
-        uint16_t    u4EventCode : 4;        /**< Bits 63:60  - Event code. */
+        uint32_t    u4EventCode : 4;        /**< Bits 63:60  - Event code. */
         uint32_t    u4Rsvd0 : 4;            /**< Bits 67:64  - Reserved. */
         uint32_t    u28AddrLo : 28;         /**< Bits 95:68  - Address: System Physical Address (Lo). */
         uint32_t    u32AddrHi;              /**< Bits 127:96 - Address: System Physical Address (Hi). */
@@ -819,7 +819,7 @@ typedef CTX_SUFF(PIOMMU) PIOMMUCC;
 /**
  * @interface_method_impl{PDMDEVREG,pfnReset}
  */
-static DECLCALLBACK(void) iommuR3Reset(PPDMDEVINS pDevIns)
+static DECLCALLBACK(void) iommuAmdR3Reset(PPDMDEVINS pDevIns)
 {
     NOREF(pDevIns);
 }
@@ -828,7 +828,7 @@ static DECLCALLBACK(void) iommuR3Reset(PPDMDEVINS pDevIns)
 /**
  * @interface_method_impl{PDMDEVREG,pfnDestruct}
  */
-static DECLCALLBACK(int) iommuR3Destruct(PPDMDEVINS pDevIns)
+static DECLCALLBACK(int) iommuAmdR3Destruct(PPDMDEVINS pDevIns)
 {
     NOREF(pDevIns);
     return VINF_SUCCESS;
@@ -838,7 +838,7 @@ static DECLCALLBACK(int) iommuR3Destruct(PPDMDEVINS pDevIns)
 /**
  * @interface_method_impl{PDMDEVREG,pfnConstruct}
  */
-static DECLCALLBACK(int) iommuR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE pCfg)
+static DECLCALLBACK(int) iommuAmdR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE pCfg)
 {
     NOREF(iInstance);
     NOREF(pCfg);
@@ -864,7 +864,7 @@ static DECLCALLBACK(int) iommuR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
 /**
  * @callback_method_impl{PDMDEVREGR0,pfnConstruct}
  */
-static DECLCALLBACK(int) iommuRZConstruct(PPDMDEVINS pDevIns)
+static DECLCALLBACK(int) iommuAmdRZConstruct(PPDMDEVINS pDevIns)
 {
     PDMDEV_CHECK_VERSIONS_RETURN(pDevIns);
     return VINF_SUCCESS;
@@ -875,14 +875,13 @@ static DECLCALLBACK(int) iommuRZConstruct(PPDMDEVINS pDevIns)
 /**
  * The device registration structure.
  */
-const PDMDEVREG g_DeviceIommu =
+const PDMDEVREG g_DeviceIommuAmd =
 {
     /* .u32Version = */             PDM_DEVREG_VERSION,
     /* .uReserved0 = */             0,
-    /* .szName = */                 "iommu",
+    /* .szName = */                 "iommu-amd",
     /* .fFlags = */                 PDM_DEVREG_FLAGS_DEFAULT_BITS | PDM_DEVREG_FLAGS_RZ | PDM_DEVREG_FLAGS_NEW_STYLE,
-    /* .fClass = */                 PDM_DEVREG_CLASS_BUS_PCI,  /** @todo IOMMU: We want to be instantiated
-                                                                   before PDM_DEVREG_CLASS_BUS_PCI? Maybe doesn't matter? */
+    /* .fClass = */                 PDM_DEVREG_CLASS_BUS_ISA,   /* Instantiate after PDM_DEVREG_CLASS_BUS_PCI */
     /* .cMaxInstances = */          ~0U,
     /* .uSharedVersion = */         42,
     /* .cbInstanceShared = */       sizeof(IOMMU),
@@ -894,12 +893,12 @@ const PDMDEVREG g_DeviceIommu =
 #if defined(IN_RING3)
     /* .pszRCMod = */               "VBoxDDRC.rc",
     /* .pszR0Mod = */               "VBoxDDR0.r0",
-    /* .pfnConstruct = */           iommuR3Construct,
-    /* .pfnDestruct = */            iommuR3Destruct,
+    /* .pfnConstruct = */           iommuAmdR3Construct,
+    /* .pfnDestruct = */            iommuAmdR3Destruct,
     /* .pfnRelocate = */            NULL,
     /* .pfnMemSetup = */            NULL,
     /* .pfnPowerOn = */             NULL,
-    /* .pfnReset = */               iommuR3Reset,
+    /* .pfnReset = */               iommuAmdR3Reset,
     /* .pfnSuspend = */             NULL,
     /* .pfnResume = */              NULL,
     /* .pfnAttach = */              NULL,
@@ -918,7 +917,7 @@ const PDMDEVREG g_DeviceIommu =
     /* .pfnReserved7 = */           NULL,
 #elif defined(IN_RING0)
     /* .pfnEarlyConstruct = */      NULL,
-    /* .pfnConstruct = */           iommuRZConstruct,
+    /* .pfnConstruct = */           iommuAmdRZConstruct,
     /* .pfnDestruct = */            NULL,
     /* .pfnFinalDestruct = */       NULL,
     /* .pfnRequest = */             NULL,
@@ -931,7 +930,7 @@ const PDMDEVREG g_DeviceIommu =
     /* .pfnReserved6 = */           NULL,
     /* .pfnReserved7 = */           NULL,
 #elif defined(IN_RC)
-    /* .pfnConstruct = */           iommuRZConstruct,
+    /* .pfnConstruct = */           iommuAmdRZConstruct,
     /* .pfnReserved0 = */           NULL,
     /* .pfnReserved1 = */           NULL,
     /* .pfnReserved2 = */           NULL,

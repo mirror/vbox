@@ -4625,6 +4625,36 @@ static DECLCALLBACK(int) pdmR3DevHlp_PCIBusRegister(PPDMDEVINS pDevIns, PPDMPCIB
 }
 
 
+/** @interface_method_impl{PDMDEVHLPR3,pfnIommuRegister} */
+static DECLCALLBACK(int) pdmR3DevHlp_IommuRegister(PPDMDEVINS pDevIns, PPDMIOMMUREG pIommuReg, PCPDMIOMMUHLP *ppIommuHlp)
+{
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    LogFlow(("pdmR3DevHlp_IommuRegister: caller='%s'/%d: pIommuReg=%p:{.u32Version=%#x, .u32TheEnd=%#x } ppIommuHlp=%p\n",
+             pDevIns->pReg->szName, pDevIns->iInstance, pIommuReg, pIommuReg->u32Version, pIommuReg->u32TheEnd, ppIommuHlp));
+
+    /*
+     * Validate input.
+     */
+    AssertMsgReturn(pIommuReg->u32Version == PDM_IOMMUREG_VERSION,
+                    ("%s/%d: u32Version=%#x expected %#x\n", pDevIns->pReg->szName, pDevIns->iInstance, pIommuReg->u32Version, PDM_IOMMUREG_VERSION),
+                    VERR_INVALID_PARAMETER);
+
+    /** @todo IOMMU: Validate other parameters */
+
+    AssertMsgReturn(pIommuReg->u32TheEnd == PDM_IOMMUREG_VERSION,
+                    ("%s/%d: u32TheEnd=%#x expected %#x\n", pDevIns->pReg->szName, pDevIns->iInstance, pIommuReg->u32TheEnd, PDM_IOMMUREG_VERSION),
+                    VERR_INVALID_PARAMETER);
+    AssertPtrReturn(ppIommuHlp, VERR_INVALID_POINTER);
+
+    int rc = VERR_NOT_IMPLEMENTED;
+    AssertFailed();
+    Log(("PDM: Registered IOMMU device '%s'/%d pDevIns=%p\n", pDevIns->pReg->szName, pDevIns->iInstance, pDevIns));
+
+    LogFlow(("pdmR3DevHlp_IommuRegister: caller='%s'/%d: returns %Rrc\n", pDevIns->pReg->szName, pDevIns->iInstance, rc));
+    return rc;
+}
+
+
 /** @interface_method_impl{PDMDEVHLPR3,pfnPICRegister} */
 static DECLCALLBACK(int) pdmR3DevHlp_PICRegister(PPDMDEVINS pDevIns, PPDMPICREG pPicReg, PCPDMPICHLP *ppPicHlp)
 {

@@ -235,6 +235,14 @@ const PDMPCIHLPR3 g_pdmR3DevPciHlp =
 /** @} */
 
 
+/**
+ * IOMMU Device Helpers.
+ */
+const PDMIOMMUHLPR3 g_pdmR3DevIommuHlp =
+{
+    PDM_IOMMUHLPR3_VERSION,
+    PDM_IOMMUHLPR3_VERSION /* the end */
+};
 
 
 /** @name Ring-3 HPET Helpers

@@ -3246,6 +3246,57 @@ static DECLCALLBACK(int) pdmR3DevHlp_PCIBusRegister(PPDMDEVINS pDevIns, PPDMPCIB
 }
 
 
+/** @interface_method_impl{PDMDEVHLPR3,pfnIommuRegister} */
+static DECLCALLBACK(int) pdmR3DevHlp_IommuRegister(PPDMDEVINS pDevIns, PPDMIOMMUREGR3 pIommuReg, PCPDMIOMMUHLPR3 *ppIommuHlp)
+{
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    VM_ASSERT_EMT(pDevIns->Internal.s.pVMR3);
+    LogFlow(("pdmR3DevHlp_IommuRegister: caller='%s'/%d: pIommuReg=%p:{.u32Version=%#x, .u32TheEnd=%#x } ppIommuHlp=%p\n",
+             pDevIns->pReg->szName, pDevIns->iInstance, pIommuReg, pIommuReg->u32Version, pIommuReg->u32TheEnd, ppIommuHlp));
+    PVM pVM = pDevIns->Internal.s.pVMR3;
+
+    /*
+     * Validate input.
+     */
+    AssertMsgReturn(pIommuReg->u32Version == PDM_IOMMUREGR3_VERSION,
+                    ("%s/%d: u32Version=%#x expected %#x\n", pDevIns->pReg->szName, pDevIns->iInstance, pIommuReg->u32Version, PDM_IOMMUREGR3_VERSION),
+                    VERR_INVALID_PARAMETER);
+    /** @todo IOMMU: Validate other parameters, see also tstDevicePdmDevHlp.cpp. */
+    AssertMsgReturn(pIommuReg->u32TheEnd == PDM_IOMMUREGR3_VERSION,
+                    ("%s/%d: u32TheEnd=%#x expected %#x\n", pDevIns->pReg->szName, pDevIns->iInstance, pIommuReg->u32TheEnd, PDM_IOMMUREGR3_VERSION),
+                    VERR_INVALID_PARAMETER);
+    AssertPtrReturn(ppIommuHlp, VERR_INVALID_POINTER);
+
+    VM_ASSERT_STATE_RETURN(pVM, VMSTATE_CREATING, VERR_WRONG_ORDER);
+    VM_ASSERT_EMT0_RETURN(pVM, VERR_VM_THREAD_NOT_EMT);
+
+    /*
+     * Find free IOMMU slot.
+     */
+    unsigned idxIommu = 0;
+    for (idxIommu = 0; idxIommu < RT_ELEMENTS(pVM->pdm.s.aIommus); idxIommu++)
+        if (!pVM->pdm.s.aIommus[idxIommu].pDevInsR3)
+            break;
+    AssertLogRelMsgReturn(idxIommu < RT_ELEMENTS(pVM->pdm.s.aIommus),
+                          ("Too many IOMMUs. Max=%u\n", RT_ELEMENTS(pVM->pdm.s.aIommus)),
+                          VERR_OUT_OF_RESOURCES);
+    PPDMIOMMU pIommu = &pVM->pdm.s.aIommus[idxIommu];
+
+    /*
+     * Init the R3 bits.
+     */
+    pIommu->idxIommu = idxIommu;
+    pIommu->pDevInsR3 = pDevIns;
+    Log(("PDM: Registered IOMMU device '%s'/%d pDevIns=%p\n", pDevIns->pReg->szName, pDevIns->iInstance, pDevIns));
+
+    /* Set the helper pointer and return. */
+    *ppIommuHlp = &g_pdmR3DevIommuHlp;
+    LogFlow(("pdmR3DevHlp_IommuRegister: caller='%s'/%d: returns %Rrc\n", pDevIns->pReg->szName, pDevIns->iInstance, VINF_SUCCESS));
+    return VINF_SUCCESS;
+}
+
+
+
 /** @interface_method_impl{PDMDEVHLPR3,pfnPICRegister} */
 static DECLCALLBACK(int) pdmR3DevHlp_PICRegister(PPDMDEVINS pDevIns, PPDMPICREG pPicReg, PCPDMPICHLP *ppPicHlp)
 {
@@ -4117,6 +4168,7 @@ const PDMDEVHLPR3 g_pdmR3DevHlpTrusted =
     pdmR3DevHlp_AsyncNotificationCompleted,
     pdmR3DevHlp_RTCRegister,
     pdmR3DevHlp_PCIBusRegister,
+    pdmR3DevHlp_IommuRegister,
     pdmR3DevHlp_PICRegister,
     pdmR3DevHlp_ApicRegister,
     pdmR3DevHlp_IoApicRegister,
@@ -4601,6 +4653,7 @@ const PDMDEVHLPR3 g_pdmR3DevHlpUnTrusted =
     pdmR3DevHlp_AsyncNotificationCompleted,
     pdmR3DevHlp_RTCRegister,
     pdmR3DevHlp_PCIBusRegister,
+    pdmR3DevHlp_IommuRegister,
     pdmR3DevHlp_PICRegister,
     pdmR3DevHlp_ApicRegister,
     pdmR3DevHlp_IoApicRegister,
