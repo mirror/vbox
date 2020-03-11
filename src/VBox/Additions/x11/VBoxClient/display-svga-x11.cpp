@@ -232,10 +232,6 @@ static void queryMonitorPositions()
         mpMonitorPositions = NULL;
     }
 
-    // XRRScreenResources *pScreenResources = XRRGetScreenResources(x11Context.pDisplay, DefaultRootWindow(x11Context.pDisplay));
-    // AssertReturnVoid(pScreenResources);
-    // XRRFreeScreenResources(pScreenResources);
-
     int iMonitorCount = 0;
     XRRMonitorInfo *pMonitorInfo = NULL;
 #ifdef WITH_DISTRO_XRAND_XINERAMA
