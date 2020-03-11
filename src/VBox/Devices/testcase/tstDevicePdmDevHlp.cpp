@@ -5275,6 +5275,7 @@ const PDMDEVHLPR3 g_tstDevPdmDevHlpR3 =
     pdmR3DevHlp_AsyncNotificationCompleted,
     pdmR3DevHlp_RTCRegister,
     pdmR3DevHlp_PCIBusRegister,
+    pdmR3DevHlp_IommuRegister,
     pdmR3DevHlp_PICRegister,
     pdmR3DevHlp_ApicRegister,
     pdmR3DevHlp_IoApicRegister,
