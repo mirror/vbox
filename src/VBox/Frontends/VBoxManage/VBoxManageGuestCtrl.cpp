@@ -1146,7 +1146,7 @@ static RTEXITCODE gctlRunCalculateExitCode(ProcessStatus_T enmStatus, ULONG uExi
  *
  * @return  IPRT status code.
  * @param   pProcess        Pointer to appropriate process object.
- * @param   hVfsIosDst      Where to write the data.
+ * @param   hVfsIosDst      Where to write the data. Can be the bit bucket or a (valid [std]) handle.
  * @param   uHandle         Handle where to read the data from.
  * @param   cMsTimeout      Timeout (in ms) to wait for the operation to
  *                          complete.
@@ -1185,7 +1185,8 @@ static int gctlRunPumpOutput(IProcess *pProcess, RTVFSIOSTREAM hVfsIosDst, ULONG
  * Configures a host handle for pumping guest bits.
  *
  * @returns true if enabled and we successfully configured it.
- * @param   fEnabled            Whether pumping this pipe is configured.
+ * @param   fEnabled            Whether pumping this pipe is configured to std handles,
+ *                              or going to the bit bucket instead.
  * @param   enmHandle           The IPRT standard handle designation.
  * @param   pszName             The name for user messages.
  * @param   enmTransformation   The transformation to apply.
@@ -1208,6 +1209,18 @@ static bool gctlRunSetupHandle(bool fEnabled, RTHANDLESTD enmHandle, const char 
         }
         RTMsgWarning("Error getting %s handle: %Rrc", pszName, vrc);
     }
+    else /* If disabled, all goes to / gets fed to/from the bit bucket. */
+    {
+        RTFILE hFile;
+        int vrc = RTFileOpenBitBucket(&hFile, enmHandle == RTHANDLESTD_INPUT ? RTFILE_O_READ : RTFILE_O_WRITE);
+        if (RT_SUCCESS(vrc))
+        {
+            vrc = RTVfsIoStrmFromRTFile(hFile, 0 /* fOpen */, false /* fLeaveOpen */, phVfsIos);
+            if (RT_SUCCESS(vrc))
+                return true;
+        }
+    }
+
     return false;
 }
 
@@ -1523,6 +1536,8 @@ static RTEXITCODE gctlHandleRunCommon(PGCTLCMDCTX pCtx, int argc, char **argv, b
                          * yield to reduce the CPU load due to busy waiting. */
                         RTThreadYield();
                         fReadStdOut = fReadStdErr = true;
+                        /* Note: In case the user specified explicitly not wanting to wait for stdout / stderr,
+                         * the configured VFS handle goes to / will be fed from the bit bucket. */
                         break;
                     case ProcessWaitResult_Timeout:
                     {
