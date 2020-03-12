@@ -250,13 +250,22 @@ typedef struct VMSVGAState
     uint32_t                    cGMR;
     uint32_t                    uScreenOffset; /* Used only for loading older saved states. */
 
+    /** Legacy cursor state. */
+    uint32_t                    uCursorX;
+    uint32_t                    uCursorY;
+    uint32_t                    uCursorID;
+    uint32_t                    uCursorOn;
+
     /** Scratch array.
      * Putting this at the end since it's big it probably not . */
     uint32_t                    au32ScratchRegion[VMSVGA_SCRATCH_SIZE];
 
     STAMCOUNTER                 StatRegBitsPerPixelWr;
     STAMCOUNTER                 StatRegBusyWr;
-    STAMCOUNTER                 StatRegCursorXxxxWr;
+    STAMCOUNTER                 StatRegCursorXWr;
+    STAMCOUNTER                 StatRegCursorYWr;
+    STAMCOUNTER                 StatRegCursorIdWr;
+    STAMCOUNTER                 StatRegCursorOnWr;
     STAMCOUNTER                 StatRegDepthWr;
     STAMCOUNTER                 StatRegDisplayHeightWr;
     STAMCOUNTER                 StatRegDisplayIdWr;
@@ -289,7 +298,10 @@ typedef struct VMSVGAState
     STAMCOUNTER                 StatRegBytesPerLineRd;
     STAMCOUNTER                 StatRegCapabilitesRd;
     STAMCOUNTER                 StatRegConfigDoneRd;
-    STAMCOUNTER                 StatRegCursorXxxxRd;
+    STAMCOUNTER                 StatRegCursorXRd;
+    STAMCOUNTER                 StatRegCursorYRd;
+    STAMCOUNTER                 StatRegCursorIdRd;
+    STAMCOUNTER                 StatRegCursorOnRd;
     STAMCOUNTER                 StatRegDepthRd;
     STAMCOUNTER                 StatRegDisplayHeightRd;
     STAMCOUNTER                 StatRegDisplayIdRd;

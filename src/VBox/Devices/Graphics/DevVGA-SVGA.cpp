@@ -267,6 +267,8 @@ typedef struct VMSVGAR3STATE
     STAMCOUNTER             StatR3CmdUpdateVerbose;
     STAMCOUNTER             StatR3CmdDefineCursor;
     STAMCOUNTER             StatR3CmdDefineAlphaCursor;
+    STAMCOUNTER             StatR3CmdMoveCursor;
+    STAMCOUNTER             StatR3CmdDisplayCursor;
     STAMCOUNTER             StatR3CmdEscape;
     STAMCOUNTER             StatR3CmdDefineScreen;
     STAMCOUNTER             StatR3CmdDestroyScreen;
@@ -430,6 +432,8 @@ static SSMFIELD const g_aVMSVGAR3STATEFields[] =
     SSMFIELD_ENTRY_IGNORE(      VMSVGAR3STATE, StatR3CmdUpdateVerbose),
     SSMFIELD_ENTRY_IGNORE(      VMSVGAR3STATE, StatR3CmdDefineCursor),
     SSMFIELD_ENTRY_IGNORE(      VMSVGAR3STATE, StatR3CmdDefineAlphaCursor),
+    SSMFIELD_ENTRY_IGNORE(      VMSVGAR3STATE, StatR3CmdMoveCursor),
+    SSMFIELD_ENTRY_IGNORE(      VMSVGAR3STATE, StatR3CmdDisplayCursor),
     SSMFIELD_ENTRY_IGNORE(      VMSVGAR3STATE, StatR3CmdEscape),
     SSMFIELD_ENTRY_IGNORE(      VMSVGAR3STATE, StatR3CmdDefineScreen),
     SSMFIELD_ENTRY_IGNORE(      VMSVGAR3STATE, StatR3CmdDestroyScreen),
@@ -527,6 +531,10 @@ static SSMFIELD const g_aVGAStateSVGAFields[] =
     SSMFIELD_ENTRY(                 VMSVGAState, uBpp),
     SSMFIELD_ENTRY(                 VMSVGAState, cbScanline),
     SSMFIELD_ENTRY_VER(             VMSVGAState, uScreenOffset, VGA_SAVEDSTATE_VERSION_VMSVGA),
+    SSMFIELD_ENTRY_VER(             VMSVGAState, uCursorX, VGA_SAVEDSTATE_VERSION_VMSVGA_CURSOR),
+    SSMFIELD_ENTRY_VER(             VMSVGAState, uCursorY, VGA_SAVEDSTATE_VERSION_VMSVGA_CURSOR),
+    SSMFIELD_ENTRY_VER(             VMSVGAState, uCursorID, VGA_SAVEDSTATE_VERSION_VMSVGA_CURSOR),
+    SSMFIELD_ENTRY_VER(             VMSVGAState, uCursorOn, VGA_SAVEDSTATE_VERSION_VMSVGA_CURSOR),
     SSMFIELD_ENTRY(                 VMSVGAState, u32MaxWidth),
     SSMFIELD_ENTRY(                 VMSVGAState, u32MaxHeight),
     SSMFIELD_ENTRY(                 VMSVGAState, u32ActionFlags),
@@ -657,6 +665,8 @@ static const char *vmsvgaR3FifoCmdToString(uint32_t u32Cmd)
         case SVGA_CMD_UPDATE:                   return "SVGA_CMD_UPDATE";
         case SVGA_CMD_RECT_COPY:                return "SVGA_CMD_RECT_COPY";
         case SVGA_CMD_DEFINE_CURSOR:            return "SVGA_CMD_DEFINE_CURSOR";
+        case SVGA_CMD_DISPLAY_CURSOR:           return "SVGA_CMD_DISPLAY_CURSOR";
+        case SVGA_CMD_MOVE_CURSOR:              return "SVGA_CMD_MOVE_CURSOR";
         case SVGA_CMD_DEFINE_ALPHA_CURSOR:      return "SVGA_CMD_DEFINE_ALPHA_CURSOR";
         case SVGA_CMD_UPDATE_VERBOSE:           return "SVGA_CMD_UPDATE_VERBOSE";
         case SVGA_CMD_FRONT_ROP_FILL:           return "SVGA_CMD_FRONT_ROP_FILL";
@@ -1297,10 +1307,23 @@ static int vmsvgaReadPort(PPDMDEVINS pDevIns, PVGASTATE pThis, uint32_t *pu32)
 
         /* Mouse cursor support. */
         case SVGA_REG_CURSOR_ID:
+            STAM_REL_COUNTER_INC(&pThis->svga.StatRegCursorIdRd);
+            *pu32 = pThis->svga.uCursorID;
+            break;
+
         case SVGA_REG_CURSOR_X:
+            STAM_REL_COUNTER_INC(&pThis->svga.StatRegCursorXRd);
+            *pu32 = pThis->svga.uCursorX;
+            break;
+
         case SVGA_REG_CURSOR_Y:
+            STAM_REL_COUNTER_INC(&pThis->svga.StatRegCursorYRd);
+            *pu32 = pThis->svga.uCursorY;
+            break;
+
         case SVGA_REG_CURSOR_ON:
-            STAM_REL_COUNTER_INC(&pThis->svga.StatRegCursorXxxxRd);
+            STAM_REL_COUNTER_INC(&pThis->svga.StatRegCursorOnRd);
+            *pu32 = pThis->svga.uCursorOn;
             break;
 
         /* Legacy multi-monitor support */
@@ -1556,6 +1579,49 @@ DECLINLINE(void) vmsvgaHCUpdatePitch(PVGASTATE pThis, PVGASTATECC pThisCC)
 
 #endif /* IN_RING0 || IN_RING3 */
 
+#ifdef IN_RING3
+
+/**
+ * Sends cursor position and visibility information from legacy
+ * SVGA registers to the front-end.
+ */
+static void vmsvgaR3RegUpdateCursor(PVGASTATECC pThisCC, PVGASTATE pThis, uint32_t uCursorOn)
+{
+    /*
+     * Writing the X/Y/ID registers does not trigger changes; only writing the
+     * SVGA_REG_CURSOR_ON register does. That minimizes the overhead.
+     * We boldly assume that guests aren't stupid and aren't writing the CURSOR_ON
+     * register if they don't have to.
+     */
+    uint32_t x, y, idScreen;
+    uint32_t fFlags = VBVA_CURSOR_VALID_DATA;
+
+    x = pThis->svga.uCursorX;
+    y = pThis->svga.uCursorY;
+    idScreen = SVGA_ID_INVALID; /* The old register interface is single screen only. */
+
+    /* The original values for SVGA_REG_CURSOR_ON were off (0) and on (1); later, the values
+     * were extended as follows:
+     *
+     *   SVGA_CURSOR_ON_HIDE               0
+     *   SVGA_CURSOR_ON_SHOW               1
+     *   SVGA_CURSOR_ON_REMOVE_FROM_FB     2 - cursor on but not in the framebuffer
+     *   SVGA_CURSOR_ON_RESTORE_TO_FB      3 - cursor on, possibly in the framebuffer
+     *
+     * Since we never draw the cursor into the guest's framebuffer, we do not need to
+     * distinguish between the non-zero values but still remember them.
+     */
+    if (RT_BOOL(pThis->svga.uCursorOn) != RT_BOOL(uCursorOn))
+    {
+        LogRel2(("vmsvgaR3RegUpdateCursor: uCursorOn %d prev CursorOn %d (%d,%d)\n", uCursorOn, pThis->svga.uCursorOn, x, y));
+        pThisCC->pDrv->pfnVBVAMousePointerShape(pThisCC->pDrv, RT_BOOL(uCursorOn), false, 0, 0, 0, 0, NULL);
+    }
+    pThis->svga.uCursorOn = uCursorOn;
+    pThisCC->pDrv->pfnVBVAReportCursorPosition(pThisCC->pDrv, fFlags, idScreen, x, y);
+}
+
+#endif /* IN_RING3 */
+
 
 /**
  * Write port register
@@ -1802,10 +1868,28 @@ static VBOXSTRICTRC vmsvgaWritePort(PPDMDEVINS pDevIns, PVGASTATE pThis, PVGASTA
 
         /* Mouse cursor support */
         case SVGA_REG_CURSOR_ID:
+            STAM_REL_COUNTER_INC(&pThis->svga.StatRegCursorIdWr);
+            pThis->svga.uCursorID = u32;
+            break;
+
         case SVGA_REG_CURSOR_X:
+            STAM_REL_COUNTER_INC(&pThis->svga.StatRegCursorXWr);
+            pThis->svga.uCursorX = u32;
+            break;
+
         case SVGA_REG_CURSOR_Y:
+            STAM_REL_COUNTER_INC(&pThis->svga.StatRegCursorYWr);
+            pThis->svga.uCursorY = u32;
+            break;
+
         case SVGA_REG_CURSOR_ON:
-            STAM_REL_COUNTER_INC(&pThis->svga.StatRegCursorXxxxWr);
+#ifdef IN_RING3
+            /* The cursor is only updated when SVGA_REG_CURSOR_ON is written. */
+            STAM_REL_COUNTER_INC(&pThis->svga.StatRegCursorOnWr);
+            vmsvgaR3RegUpdateCursor(pThisCC, pThis, u32);
+#else
+            rc = VINF_IOM_R3_IOPORT_WRITE;
+#endif
             break;
 
         /* Legacy multi-monitor support */
@@ -3848,6 +3932,38 @@ static DECLCALLBACK(int) vmsvgaR3FifoLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread
                 break;
             }
 
+            case SVGA_CMD_MOVE_CURSOR:
+            {
+                /* Deprecated; there should be no driver which *requires* this command. However, if
+                 * we do ecncounter this command, it might be useful to not get the FIFO completely out of
+                 * alignment.
+                 * May be issued by guest if SVGA_CAP_CURSOR_BYPASS is missing.
+                 */
+                SVGAFifoCmdMoveCursor *pMoveCursor;
+                VMSVGAFIFO_GET_CMD_BUFFER_BREAK(pMoveCursor, SVGAFifoCmdMoveCursor, sizeof(*pMoveCursor));
+                STAM_REL_COUNTER_INC(&pSVGAState->StatR3CmdMoveCursor);
+
+                Log(("vmsvgaR3FifoLoop: MOVE CURSOR to %d,%d\n", pMoveCursor->pos.x, pMoveCursor->pos.y));
+                LogRelMax(4, ("Unsupported SVGA_CMD_MOVE_CURSOR command ignored.\n"));
+                break;
+            }
+
+            case SVGA_CMD_DISPLAY_CURSOR:
+            {
+                /* Deprecated; there should be no driver which *requires* this command. However, if
+                 * we do ecncounter this command, it might be useful to not get the FIFO completely out of
+                 * alignment.
+                 * May be issued by guest if SVGA_CAP_CURSOR_BYPASS is missing.
+                 */
+                SVGAFifoCmdDisplayCursor *pDisplayCursor;
+                VMSVGAFIFO_GET_CMD_BUFFER_BREAK(pDisplayCursor, SVGAFifoCmdDisplayCursor, sizeof(*pDisplayCursor));
+                STAM_REL_COUNTER_INC(&pSVGAState->StatR3CmdDisplayCursor);
+
+                Log(("vmsvgaR3FifoLoop: DISPLAY CURSOR id=%d state=%d\n", pDisplayCursor->id, pDisplayCursor->state));
+                LogRelMax(4, ("Unsupported SVGA_CMD_DISPLAY_CURSOR command ignored.\n"));
+                break;
+            }
+
             case SVGA_CMD_ESCAPE:
             {
                 /* Followed by nsize bytes of data. */
@@ -5572,6 +5688,8 @@ static DECLCALLBACK(void) vmsvgaR3Info(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, c
     pHlp->pfnPrintf(pHlp, "Cursor size:        %ux%u\n", pSVGAState->Cursor.width, pSVGAState->Cursor.height);
     pHlp->pfnPrintf(pHlp, "Cursor byte size:   %u (%#x)\n", pSVGAState->Cursor.cbData, pSVGAState->Cursor.cbData);
 
+    pHlp->pfnPrintf(pHlp, "Legacy cursor:      ID %u, state %u\n", pThis->svga.uCursorID, pThis->svga.uCursorOn);
+    pHlp->pfnPrintf(pHlp, "Legacy cursor at:   %u,%u\n", pThis->svga.uCursorX, pThis->svga.uCursorY);
 # ifdef VBOX_WITH_VMSVGA3D
     pHlp->pfnPrintf(pHlp, "3D enabled:         %RTbool\n", pThis->svga.f3DEnabled);
 # endif
@@ -5972,6 +6090,7 @@ static void vmsvgaR3InitCaps(PVGASTATE pThis, PVGASTATECC pThisCC)
     pThis->svga.u32RegCaps = SVGA_CAP_GMR
                            | SVGA_CAP_GMR2
                            | SVGA_CAP_CURSOR
+                           | SVGA_CAP_CURSOR_BYPASS
                            | SVGA_CAP_CURSOR_BYPASS_2
                            | SVGA_CAP_EXTENDED_FIFO
                            | SVGA_CAP_IRQMASK
@@ -6413,6 +6532,8 @@ int vmsvgaR3Init(PPDMDEVINS pDevIns)
     REG_CNT(&pSVGAState->StatR3CmdBlitScreentoGmrFb,      "VMSVGA/Cmd/BlitScreentoGmrFb",          "SVGA_CMD_BLIT_SCREEN_TO_GMRFB");
     REG_CNT(&pSVGAState->StatR3CmdDefineAlphaCursor,      "VMSVGA/Cmd/DefineAlphaCursor",          "SVGA_CMD_DEFINE_ALPHA_CURSOR");
     REG_CNT(&pSVGAState->StatR3CmdDefineCursor,           "VMSVGA/Cmd/DefineCursor",               "SVGA_CMD_DEFINE_CURSOR");
+    REG_CNT(&pSVGAState->StatR3CmdMoveCursor,             "VMSVGA/Cmd/MoveCursor",                 "SVGA_CMD_MOVE_CURSOR");
+    REG_CNT(&pSVGAState->StatR3CmdDisplayCursor,          "VMSVGA/Cmd/DisplayCursor",              "SVGA_CMD_DISPLAY_CURSOR");
     REG_CNT(&pSVGAState->StatR3CmdDefineGmr2,             "VMSVGA/Cmd/DefineGmr2",                 "SVGA_CMD_DEFINE_GMR2");
     REG_CNT(&pSVGAState->StatR3CmdDefineGmr2Free,         "VMSVGA/Cmd/DefineGmr2/Free",            "Number of SVGA_CMD_DEFINE_GMR2 commands that only frees.");
     REG_CNT(&pSVGAState->StatR3CmdDefineGmr2Modify,       "VMSVGA/Cmd/DefineGmr2/Modify",          "Number of SVGA_CMD_DEFINE_GMR2 commands that redefines a non-free GMR.");
@@ -6433,7 +6554,10 @@ int vmsvgaR3Init(PPDMDEVINS pDevIns)
     REG_CNT(&pSVGAState->StatR3RegGmrDescriptorWrFree,    "VMSVGA/Reg/GmrDescriptorWrite/Free",    "Number of SVGA_REG_GMR_DESCRIPTOR commands only freeing the GMR.");
     REG_CNT(&pThis->svga.StatRegBitsPerPixelWr,           "VMSVGA/Reg/BitsPerPixelWrite",          "SVGA_REG_BITS_PER_PIXEL writes.");
     REG_CNT(&pThis->svga.StatRegBusyWr,                   "VMSVGA/Reg/BusyWrite",                  "SVGA_REG_BUSY writes.");
-    REG_CNT(&pThis->svga.StatRegCursorXxxxWr,             "VMSVGA/Reg/CursorXxxxWrite",            "SVGA_REG_CURSOR_XXXX writes.");
+    REG_CNT(&pThis->svga.StatRegCursorXWr,                "VMSVGA/Reg/CursorXWrite",               "SVGA_REG_CURSOR_X writes.");
+    REG_CNT(&pThis->svga.StatRegCursorYWr,                "VMSVGA/Reg/CursorYWrite",               "SVGA_REG_CURSOR_Y writes.");
+    REG_CNT(&pThis->svga.StatRegCursorIdWr,               "VMSVGA/Reg/CursorIdWrite",              "SVGA_REG_CURSOR_ID writes.");
+    REG_CNT(&pThis->svga.StatRegCursorOnWr,               "VMSVGA/Reg/CursorOnWrite",              "SVGA_REG_CURSOR_ON writes.");
     REG_CNT(&pThis->svga.StatRegDepthWr,                  "VMSVGA/Reg/DepthWrite",                 "SVGA_REG_DEPTH writes.");
     REG_CNT(&pThis->svga.StatRegDisplayHeightWr,          "VMSVGA/Reg/DisplayHeightWrite",         "SVGA_REG_DISPLAY_HEIGHT writes.");
     REG_CNT(&pThis->svga.StatRegDisplayIdWr,              "VMSVGA/Reg/DisplayIdWrite",             "SVGA_REG_DISPLAY_ID writes.");
@@ -6466,7 +6590,10 @@ int vmsvgaR3Init(PPDMDEVINS pDevIns)
     REG_CNT(&pThis->svga.StatRegBytesPerLineRd,           "VMSVGA/Reg/BytesPerLineRead",           "SVGA_REG_BYTES_PER_LINE reads.");
     REG_CNT(&pThis->svga.StatRegCapabilitesRd,            "VMSVGA/Reg/CapabilitesRead",            "SVGA_REG_CAPABILITIES reads.");
     REG_CNT(&pThis->svga.StatRegConfigDoneRd,             "VMSVGA/Reg/ConfigDoneRead",             "SVGA_REG_CONFIG_DONE reads.");
-    REG_CNT(&pThis->svga.StatRegCursorXxxxRd,             "VMSVGA/Reg/CursorXxxxRead",             "SVGA_REG_CURSOR_XXXX reads.");
+    REG_CNT(&pThis->svga.StatRegCursorXRd,                "VMSVGA/Reg/CursorXRead",                "SVGA_REG_CURSOR_X reads.");
+    REG_CNT(&pThis->svga.StatRegCursorYRd,                "VMSVGA/Reg/CursorYRead",                "SVGA_REG_CURSOR_Y reads.");
+    REG_CNT(&pThis->svga.StatRegCursorIdRd,               "VMSVGA/Reg/CursorIdRead",               "SVGA_REG_CURSOR_ID reads.");
+    REG_CNT(&pThis->svga.StatRegCursorOnRd,               "VMSVGA/Reg/CursorOnRead",               "SVGA_REG_CURSOR_ON reads.");
     REG_CNT(&pThis->svga.StatRegDepthRd,                  "VMSVGA/Reg/DepthRead",                  "SVGA_REG_DEPTH reads.");
     REG_CNT(&pThis->svga.StatRegDisplayHeightRd,          "VMSVGA/Reg/DisplayHeightRead",          "SVGA_REG_DISPLAY_HEIGHT reads.");
     REG_CNT(&pThis->svga.StatRegDisplayIdRd,              "VMSVGA/Reg/DisplayIdRead",              "SVGA_REG_DISPLAY_ID reads.");

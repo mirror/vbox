@@ -46,7 +46,8 @@
         } \
     } while (0)
 
-#define VGA_SAVEDSTATE_VERSION                   21
+#define VGA_SAVEDSTATE_VERSION                   22
+#define VGA_SAVEDSTATE_VERSION_VMSVGA_CURSOR     22 /* Legacy cursor registers. */
 #define VGA_SAVEDSTATE_VERSION_VMSVGA_SCREENS    21 /* Screen objects. */
 #define VGA_SAVEDSTATE_VERSION_VMSVGA            20 /* Multiple updates and fixes for VMSVGA saved state. */
 #define VGA_SAVEDSTATE_VERSION_VMSVGA_TEX_STAGES 19

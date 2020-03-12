@@ -1012,6 +1012,8 @@ typedef enum {
    SVGA_CMD_UPDATE                = 1,
    SVGA_CMD_RECT_COPY             = 3,
    SVGA_CMD_DEFINE_CURSOR         = 19,
+   SVGA_CMD_DISPLAY_CURSOR        = 20, // Deprecated.
+   SVGA_CMD_MOVE_CURSOR           = 21, // Deprecated.
    SVGA_CMD_DEFINE_ALPHA_CURSOR   = 22,
    SVGA_CMD_UPDATE_VERBOSE        = 25,
    SVGA_CMD_FRONT_ROP_FILL        = 29,
@@ -1554,5 +1556,38 @@ struct {
     */
 }
 SVGAFifoCmdRemapGMR2;
+
+/*
+ * SVGA_CMD_DISPLAY_CURSOR --
+ *
+ *    Turn the cursor on or off.
+ *
+ *    Deprecated.
+ *
+ * Availability:
+ *    SVGA_CAP_CURSOR?
+ */
+
+typedef
+struct {
+   uint32_t id;             // Reserved, must be zero.
+   uint32_t state;          // 0=off
+} SVGAFifoCmdDisplayCursor;
+
+/*
+ * SVGA_CMD_MOVE_CURSOR --
+ *
+ *    Set the cursor position.
+ *
+ *    Deprecated.
+ *
+ * Availability:
+ *    SVGA_CAP_CURSOR?
+ */
+
+typedef
+struct {
+    SVGASignedPoint     pos;
+} SVGAFifoCmdMoveCursor;
 
 #endif /* !_SVGA_REG_H_ */
