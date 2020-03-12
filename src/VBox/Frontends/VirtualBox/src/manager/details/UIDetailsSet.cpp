@@ -119,7 +119,7 @@ void UIDetailsSet::buildSet(UIVirtualMachineItem *pMachineItem, bool fFullSet, c
     /* Cleanup if new types differs from old: */
     if (m_types != types)
     {
-        qDeleteAll(m_elements);
+        clearItems();
         m_elements.clear();
         updateGeometry();
     }
