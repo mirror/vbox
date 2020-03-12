@@ -5802,6 +5802,15 @@ int vmsvgaR3LoadDone(PPDMDEVINS pDevIns)
                                                          pSVGAState->Cursor.pData);
         AssertRC(rc);
     }
+
+    /* If the VRAM handler should not be registered, we have to explicitly
+     * unregister it here!
+     */
+    if (!pThis->svga.fVRAMTracking)
+    {
+        vgaR3UnregisterVRAMHandler(pDevIns, pThis);
+    }
+
     return VINF_SUCCESS;
 }
 
