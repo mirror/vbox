@@ -1473,46 +1473,6 @@ static int vgsvcGstCtrlProcessProcessWorker(PVBOXSERVICECTRLPROCESS pProcess)
     Assert((int)pProcess->StartupInfo.uNumArgs == cArgs + 1 /* Take argv[0] into account */);
 
     /*
-     * Prepare environment variables list.
-     */
-/** @todo r=bird: you don't need to prepare this, do you? Why don't you replace
- * the brilliant RTStrAPrintf call with RTEnvPutEx and drop the papszEnv related code? */
-    char **papszEnv = NULL;
-    uint32_t uNumEnvVars = 0; /* Initialize in case of failing ... */
-    if (RT_SUCCESS(rc))
-    {
-        /* Prepare environment list. */
-        if (pProcess->StartupInfo.uNumEnvVars)
-        {
-            papszEnv = (char **)RTMemAlloc(pProcess->StartupInfo.uNumEnvVars * sizeof(char*));
-            AssertPtr(papszEnv);
-            uNumEnvVars = pProcess->StartupInfo.uNumEnvVars;
-
-            const char *pszCur = pProcess->StartupInfo.szEnv;
-            uint32_t i = 0;
-            uint32_t cbLen = 0;
-            while (cbLen < pProcess->StartupInfo.cbEnv)
-            {
-                /* sanity check */
-                if (i >= pProcess->StartupInfo.uNumEnvVars)
-                {
-                    rc = VERR_INVALID_PARAMETER;
-                    break;
-                }
-                int cbStr = RTStrAPrintf(&papszEnv[i++], "%s", pszCur);
-                if (cbStr < 0)
-                {
-                    rc = VERR_NO_STR_MEMORY;
-                    break;
-                }
-                pszCur += cbStr + 1; /* Skip terminating '\0' */
-                cbLen  += cbStr + 1; /* Skip terminating '\0' */
-            }
-            Assert(i == pProcess->StartupInfo.uNumEnvVars);
-        }
-    }
-
-    /*
      * Create the environment.
      */
     if (RT_SUCCESS(rc))
@@ -1521,13 +1481,30 @@ static int vgsvcGstCtrlProcessProcessWorker(PVBOXSERVICECTRLPROCESS pProcess)
         rc = RTEnvClone(&hEnv, RTENV_DEFAULT);
         if (RT_SUCCESS(rc))
         {
-            size_t i;
-            for (i = 0; i < uNumEnvVars && papszEnv; i++)
+            VGSvcVerbose(3, "Additional environment variables: %RU32 (%RU32 bytes)\n",
+                         pProcess->StartupInfo.uNumEnvVars, pProcess->StartupInfo.cbEnv);
+
+            if (   pProcess->StartupInfo.uNumEnvVars
+                && pProcess->StartupInfo.cbEnv)
             {
-                rc = RTEnvPutEx(hEnv, papszEnv[i]);
-                if (RT_FAILURE(rc))
-                    break;
+                      uint32_t cbCur  = 0;
+                const char    *pszCur = pProcess->StartupInfo.szEnv;
+                while (cbCur < pProcess->StartupInfo.cbEnv)
+                {
+                    VGSvcVerbose(3, "Setting environment variable: '%s'\n", pszCur);
+                    rc = RTEnvPutEx(hEnv, pszCur);
+                    if (RT_FAILURE(rc))
+                    {
+                        VGSvcError("Setting environment variable '%s' failed: %Rrc\n", pszCur, rc);
+                        break;
+                    }
+                    cbCur  += (uint32_t)strlen(pszCur) + 1;
+                    AssertBreakStmt(cbCur <= GUESTPROCESS_MAX_ENV_LEN   , rc = VERR_INVALID_PARAMETER);
+                    AssertBreakStmt(cbCur <= pProcess->StartupInfo.cbEnv, rc = VERR_INVALID_PARAMETER);
+                    pszCur += cbCur;
+                }
             }
+
             if (RT_SUCCESS(rc))
             {
                 /*
@@ -1691,13 +1668,6 @@ static int vgsvcGstCtrlProcessProcessWorker(PVBOXSERVICECTRLPROCESS pProcess)
                        pProcess->uPID, rc2, rc);
     }
 
-    /* Free argument + environment variable lists. */
-    if (uNumEnvVars)
-    {
-        for (uint32_t i = 0; i < uNumEnvVars; i++)
-            RTStrFree(papszEnv[i]);
-        RTMemFree(papszEnv);
-    }
     if (cArgs)
         RTGetOptArgvFree(papszArgs);
 
