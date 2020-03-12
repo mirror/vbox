@@ -554,7 +554,7 @@ static int vgsvcGstCtrlProcessProcLoop(PVBOXSERVICECTRLPROCESS pProcess)
                     break;
 
                 case VBOXSERVICECTRLPIPEID_STDERR:
-                    rc = vgsvcGstCtrlProcessPollsetOnOutput(pProcess, fPollEvt, &pProcess->hPipeStdOutR, idPollHnd);
+                    rc = vgsvcGstCtrlProcessPollsetOnOutput(pProcess, fPollEvt, &pProcess->hPipeStdErrR, idPollHnd);
                     break;
 
                 case VBOXSERVICECTRLPIPEID_IPC_NOTIFY:
