@@ -43,7 +43,9 @@
 #include <VBox/vmm/tm.h>
 #include <VBox/vmm/ssm.h>
 #include <VBox/vmm/cfgm.h>
+#include <VBox/vmm/cpum.h>
 #include <VBox/vmm/dbgf.h>
+#include <VBox/vmm/pgm.h> /* PGMR3HandlerPhysicalTypeRegister() argument types. */
 #include <VBox/err.h>  /* VINF_EM_DBG_STOP, also 120+ source files expecting this. */
 #include <iprt/stdarg.h>
 #include <iprt/list.h>
@@ -2085,7 +2087,7 @@ typedef const PDMRTCHLP *PCPDMRTCHLP;
 /** @} */
 
 /** Current PDMDEVHLPR3 version number. */
-#define PDM_DEVHLPR3_VERSION                    PDM_VERSION_MAKE_PP(0xffe7, 42, 0)
+#define PDM_DEVHLPR3_VERSION                    PDM_VERSION_MAKE_PP(0xffe7, 43, 0)
 
 /**
  * PDM Device API.
@@ -3904,6 +3906,14 @@ typedef struct PDMDEVHLPR3
      */
     DECLR3CALLBACKMEMBER(void, pfnPhysBulkReleasePageMappingLocks,(PPDMDEVINS pDevIns, uint32_t cPages, PPGMPAGEMAPLOCK paLocks));
 
+    /**
+     * Returns the micro architecture used for the guest.
+     *
+     * @returns CPU micro architecture enum.
+     * @param   pDevIns             The device instance.
+     */
+    DECLR3CALLBACKMEMBER(CPUMMICROARCH, pfnCpuGetGuestMicroarch,(PPDMDEVINS pDevIns));
+
     /** Space reserved for future members.
      * @{ */
     DECLR3CALLBACKMEMBER(void, pfnReserved1,(void));
@@ -4114,6 +4124,35 @@ typedef struct PDMDEVHLPR3
      *          interface is exclusively for hacks in externally developed devices.
      */
     DECLR3CALLBACKMEMBER(void *, pfnQueryGenericUserObject,(PPDMDEVINS pDevIns, PCRTUUID pUuid));
+
+    /**
+     * Register a physical page access handler type.
+     *
+     * @returns VBox status code.
+     * @param   pDevIns             The device instance.
+     * @param   enmKind             The kind of access handler.
+     * @param   pfnHandlerR3        Pointer to the ring-3 handler callback.
+     * @param   pszModR0            The name of the ring-0 module, NULL is an alias for
+     *                              the main ring-0 module.
+     * @param   pszHandlerR0        The name of the ring-0 handler, NULL if the ring-3
+     *                              handler should be called.
+     * @param   pszPfHandlerR0      The name of the ring-0 \#PF handler, NULL if the
+     *                              ring-3 handler should be called.
+     * @param   pszModRC            The name of the raw-mode context module, NULL is an
+     *                              alias for the main RC module.
+     * @param   pszHandlerRC        The name of the raw-mode context handler, NULL if
+     *                              the ring-3 handler should be called.
+     * @param   pszPfHandlerRC      The name of the raw-mode context \#PF handler, NULL
+     *                              if the ring-3 handler should be called.
+     * @param   pszDesc             The type description.
+     * @param   phType              Where to return the type handle (cross context
+     *                              safe).
+     */
+    DECLR3CALLBACKMEMBER(int, pfnPGMHandlerPhysicalTypeRegister, (PPDMDEVINS pDevIns, PGMPHYSHANDLERKIND enmKind,
+                                                                  R3PTRTYPE(PFNPGMPHYSHANDLER) pfnHandlerR3,
+                                                                  const char *pszHandlerR0, const char *pszPfHandlerR0,
+                                                                  const char *pszHandlerRC, const char *pszPfHandlerRC,
+                                                                  const char *pszDesc, PPGMPHYSHANDLERTYPE phType));
 
     /** @} */
 
@@ -6199,6 +6238,14 @@ DECLINLINE(void) PDMDevHlpPhysBulkReleasePageMappingLocks(PPDMDEVINS pDevIns, ui
 }
 
 /**
+ * @copydoc PDMDEVHLPR3::pfnCpuGetGuestMicroarch
+ */
+DECLINLINE(CPUMMICROARCH) PDMDevHlpCpuGetGuestMicroarch(PPDMDEVINS pDevIns)
+{
+    return pDevIns->CTX_SUFF(pHlp)->pfnCpuGetGuestMicroarch(pDevIns);
+}
+
+/**
  * @copydoc PDMDEVHLPR3::pfnPhysReadGCVirt
  */
 DECLINLINE(int) PDMDevHlpPhysReadGCVirt(PPDMDEVINS pDevIns, void *pvDst, RTGCPTR GCVirtSrc, size_t cb)
@@ -7681,6 +7728,21 @@ DECLINLINE(PSUPDRVSESSION) PDMDevHlpGetSupDrvSession(PPDMDEVINS pDevIns)
 DECLINLINE(void *) PDMDevHlpQueryGenericUserObject(PPDMDEVINS pDevIns, PCRTUUID pUuid)
 {
     return pDevIns->pHlpR3->pfnQueryGenericUserObject(pDevIns, pUuid);
+}
+
+/**
+ * @copydoc PDMDEVHLPR3::pfnPGMHandlerPhysicalTypeRegister
+ */
+DECLINLINE(int) PDMDevHlpPGMHandlerPhysicalTypeRegister(PPDMDEVINS pDevIns, PGMPHYSHANDLERKIND enmKind,
+                                                        R3PTRTYPE(PFNPGMPHYSHANDLER) pfnHandlerR3,
+                                                        const char *pszHandlerR0, const char *pszPfHandlerR0,
+                                                        const char *pszHandlerRC, const char *pszPfHandlerRC,
+                                                        const char *pszDesc, PPGMPHYSHANDLERTYPE phType)
+{
+    return pDevIns->pHlpR3->pfnPGMHandlerPhysicalTypeRegister(pDevIns, enmKind, pfnHandlerR3,
+                                                              pszHandlerR0, pszPfHandlerR0,
+                                                              pszHandlerRC, pszPfHandlerRC,
+                                                              pszDesc, phType);
 }
 
 /** Wrapper around SSMR3GetU32 for simplifying getting enum values saved as uint32_t. */

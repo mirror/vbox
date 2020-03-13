@@ -2691,6 +2691,30 @@ static DECLCALLBACK(void *) pdmR3DevHlp_QueryGenericUserObject(PPDMDEVINS pDevIn
 }
 
 
+/** @interface_method_impl{PDMDEVHLPR3,pfnPGMHandlerPhysicalTypeRegister} */
+static DECLCALLBACK(int) pdmR3DevHlp_PGMHandlerPhysicalTypeRegister(PPDMDEVINS pDevIns, PGMPHYSHANDLERKIND enmKind,
+                                                                    R3PTRTYPE(PFNPGMPHYSHANDLER) pfnHandlerR3,
+                                                                    const char *pszHandlerR0, const char *pszPfHandlerR0,
+                                                                    const char *pszHandlerRC, const char *pszPfHandlerRC,
+                                                                    const char *pszDesc, PPGMPHYSHANDLERTYPE phType)
+{
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    RT_NOREF(enmKind, pfnHandlerR3, pszHandlerR0, pszPfHandlerR0, pszHandlerRC, pszPfHandlerRC, pszDesc, phType);
+    LogFlow(("pdmR3DevHlp_PGMHandlerPhysicalTypeRegister: caller='%s'/%d: enmKind=%d pfnHandlerR3=%p pszHandlerR0=%p:{%s} pszPfHandlerR0=%p:{%s} pszHandlerRC=%p:{%s} pszPfHandlerRC=%p:{%s} pszDesc=%p:{%s} phType=%p\n",
+             pDevIns->pReg->szName, pDevIns->iInstance, pfnHandlerR3,
+             pszHandlerR0, pszHandlerR0, pszPfHandlerR0, pszPfHandlerR0,
+             pszHandlerRC, pszHandlerRC, pszPfHandlerRC, pszPfHandlerRC,
+             pszDesc, pszDesc, phType));
+
+    int rc = VERR_NOT_IMPLEMENTED;
+    AssertFailed();
+
+    LogRel(("pdmR3DevHlp_PGMHandlerPhysicalTypeRegister: caller='%s'/%d: returns %Rrc\n",
+            pDevIns->pReg->szName, pDevIns->iInstance, rc));
+    return rc;
+}
+
+
 /** @interface_method_impl{PDMDEVHLPR3,pfnPhysRead} */
 static DECLCALLBACK(int) pdmR3DevHlp_PhysRead(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, void *pvBuf, size_t cbRead)
 {
@@ -2813,6 +2837,20 @@ static DECLCALLBACK(void) pdmR3DevHlp_PhysBulkReleasePageMappingLocks(PPDMDEVINS
     AssertFailed();
 
     Log(("pdmR3DevHlp_PhysBulkReleasePageMappingLocks: caller='%s'/%d: returns void\n", pDevIns->pReg->szName, pDevIns->iInstance));
+}
+
+
+/** @interface_method_impl{PDMDEVHLPR3,pfnCpuGetGuestMicroarch} */
+static DECLCALLBACK(CPUMMICROARCH) pdmR3DevHlp_CpuGetGuestMicroarch(PPDMDEVINS pDevIns)
+{
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    LogFlow(("pdmR3DevHlp_CpuGetGuestMicroarch: caller='%s'/%d\n",
+             pDevIns->pReg->szName, pDevIns->iInstance));
+
+    CPUMMICROARCH enmMicroarch = kCpumMicroarch_Intel_P6;
+
+    Log(("pdmR3DevHlp_CpuGetGuestMicroarch: caller='%s'/%d: returns %u\n", pDevIns->pReg->szName, pDevIns->iInstance, enmMicroarch));
+    return enmMicroarch;
 }
 
 
@@ -4626,7 +4664,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_PCIBusRegister(PPDMDEVINS pDevIns, PPDMPCIB
 
 
 /** @interface_method_impl{PDMDEVHLPR3,pfnIommuRegister} */
-static DECLCALLBACK(int) pdmR3DevHlp_IommuRegister(PPDMDEVINS pDevIns, PPDMIOMMUREG pIommuReg, PCPDMIOMMUHLP *ppIommuHlp)
+static DECLCALLBACK(int) pdmR3DevHlp_IommuRegister(PPDMDEVINS pDevIns, PPDMIOMMUREGR3 pIommuReg, PCPDMIOMMUHLPR3 *ppIommuHlp)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
     LogFlow(("pdmR3DevHlp_IommuRegister: caller='%s'/%d: pIommuReg=%p:{.u32Version=%#x, .u32TheEnd=%#x } ppIommuHlp=%p\n",
@@ -4635,14 +4673,14 @@ static DECLCALLBACK(int) pdmR3DevHlp_IommuRegister(PPDMDEVINS pDevIns, PPDMIOMMU
     /*
      * Validate input.
      */
-    AssertMsgReturn(pIommuReg->u32Version == PDM_IOMMUREG_VERSION,
-                    ("%s/%d: u32Version=%#x expected %#x\n", pDevIns->pReg->szName, pDevIns->iInstance, pIommuReg->u32Version, PDM_IOMMUREG_VERSION),
+    AssertMsgReturn(pIommuReg->u32Version == PDM_IOMMUREGR3_VERSION,
+                    ("%s/%d: u32Version=%#x expected %#x\n", pDevIns->pReg->szName, pDevIns->iInstance, pIommuReg->u32Version, PDM_IOMMUREGR3_VERSION),
                     VERR_INVALID_PARAMETER);
 
     /** @todo IOMMU: Validate other parameters */
 
-    AssertMsgReturn(pIommuReg->u32TheEnd == PDM_IOMMUREG_VERSION,
-                    ("%s/%d: u32TheEnd=%#x expected %#x\n", pDevIns->pReg->szName, pDevIns->iInstance, pIommuReg->u32TheEnd, PDM_IOMMUREG_VERSION),
+    AssertMsgReturn(pIommuReg->u32TheEnd == PDM_IOMMUREGR3_VERSION,
+                    ("%s/%d: u32TheEnd=%#x expected %#x\n", pDevIns->pReg->szName, pDevIns->iInstance, pIommuReg->u32TheEnd, PDM_IOMMUREGR3_VERSION),
                     VERR_INVALID_PARAMETER);
     AssertPtrReturn(ppIommuHlp, VERR_INVALID_POINTER);
 
@@ -5300,6 +5338,7 @@ const PDMDEVHLPR3 g_tstDevPdmDevHlpR3 =
     pdmR3DevHlp_PhysBulkGCPhys2CCPtr,
     pdmR3DevHlp_PhysBulkGCPhys2CCPtrReadOnly,
     pdmR3DevHlp_PhysBulkReleasePageMappingLocks,
+    pdmR3DevHlp_CpuGetGuestMicroarch,
     NULL,
     NULL,
     NULL,
@@ -5328,6 +5367,7 @@ const PDMDEVHLPR3 g_tstDevPdmDevHlpR3 =
     pdmR3DevHlp_TMTimeVirtGetNano,
     pdmR3DevHlp_GetSupDrvSession,
     pdmR3DevHlp_QueryGenericUserObject,
+    pdmR3DevHlp_PGMHandlerPhysicalTypeRegister,
     PDM_DEVHLPR3_VERSION /* the end */
 };
 

@@ -731,6 +731,32 @@ static DECLCALLBACK(void *) pdmR3DevHlp_QueryGenericUserObject(PPDMDEVINS pDevIn
 }
 
 
+/** @interface_method_impl{PDMDEVHLPR3,pfnPGMHandlerPhysicalTypeRegister} */
+static DECLCALLBACK(int) pdmR3DevHlp_PGMHandlerPhysicalTypeRegister(PPDMDEVINS pDevIns, PGMPHYSHANDLERKIND enmKind,
+                                                                    R3PTRTYPE(PFNPGMPHYSHANDLER) pfnHandlerR3,
+                                                                    const char *pszHandlerR0, const char *pszPfHandlerR0,
+                                                                    const char *pszHandlerRC, const char *pszPfHandlerRC,
+                                                                    const char *pszDesc, PPGMPHYSHANDLERTYPE phType)
+{
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    PVM  pVM = pDevIns->Internal.s.pVMR3;
+    LogFlow(("pdmR3DevHlp_PGMHandlerPhysicalTypeRegister: caller='%s'/%d: enmKind=%d pfnHandlerR3=%p pszHandlerR0=%p:{%s} pszPfHandlerR0=%p:{%s} pszHandlerRC=%p:{%s} pszPfHandlerRC=%p:{%s} pszDesc=%p:{%s} phType=%p\n",
+             pDevIns->pReg->szName, pDevIns->iInstance, pfnHandlerR3,
+             pszHandlerR0, pszHandlerR0, pszPfHandlerR0, pszPfHandlerR0,
+             pszHandlerRC, pszHandlerRC, pszPfHandlerRC, pszPfHandlerRC,
+             pszDesc, pszDesc, phType));
+
+    int rc = PGMR3HandlerPhysicalTypeRegister(pVM, enmKind, pfnHandlerR3,
+                                              pDevIns->pReg->pszR0Mod, pszHandlerR0, pszPfHandlerR0,
+                                              pDevIns->pReg->pszRCMod, pszHandlerRC, pszPfHandlerRC,
+                                              pszDesc, phType);
+
+    Log(("pdmR3DevHlp_PGMHandlerPhysicalTypeRegister: caller='%s'/%d: returns %Rrc\n",
+         pDevIns->pReg->szName, pDevIns->iInstance, rc));
+    return rc;
+}
+
+
 /** @interface_method_impl{PDMDEVHLPR3,pfnPhysRead} */
 static DECLCALLBACK(int) pdmR3DevHlp_PhysRead(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, void *pvBuf, size_t cbRead)
 {
@@ -919,6 +945,21 @@ static DECLCALLBACK(void) pdmR3DevHlp_PhysBulkReleasePageMappingLocks(PPDMDEVINS
     PGMPhysBulkReleasePageMappingLocks(pVM, cPages, paLocks);
 
     Log(("pdmR3DevHlp_PhysBulkReleasePageMappingLocks: caller='%s'/%d: returns void\n", pDevIns->pReg->szName, pDevIns->iInstance));
+}
+
+
+/** @interface_method_impl{PDMDEVHLPR3,pfnCpuGetGuestMicroarch} */
+static DECLCALLBACK(CPUMMICROARCH) pdmR3DevHlp_CpuGetGuestMicroarch(PPDMDEVINS pDevIns)
+{
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    PVM pVM = pDevIns->Internal.s.pVMR3;
+    LogFlow(("pdmR3DevHlp_CpuGetGuestMicroarch: caller='%s'/%d\n",
+             pDevIns->pReg->szName, pDevIns->iInstance));
+
+    CPUMMICROARCH enmMicroarch = CPUMGetGuestMicroarch(pVM);
+
+    Log(("pdmR3DevHlp_CpuGetGuestMicroarch: caller='%s'/%d: returns %u\n", pDevIns->pReg->szName, pDevIns->iInstance, enmMicroarch));
+    return enmMicroarch;
 }
 
 
@@ -4193,6 +4234,7 @@ const PDMDEVHLPR3 g_pdmR3DevHlpTrusted =
     pdmR3DevHlp_PhysBulkGCPhys2CCPtr,
     pdmR3DevHlp_PhysBulkGCPhys2CCPtrReadOnly,
     pdmR3DevHlp_PhysBulkReleasePageMappingLocks,
+    pdmR3DevHlp_CpuGetGuestMicroarch,
     0,
     0,
     0,
@@ -4221,6 +4263,7 @@ const PDMDEVHLPR3 g_pdmR3DevHlpTrusted =
     pdmR3DevHlp_TMTimeVirtGetNano,
     pdmR3DevHlp_GetSupDrvSession,
     pdmR3DevHlp_QueryGenericUserObject,
+    pdmR3DevHlp_PGMHandlerPhysicalTypeRegister,
     PDM_DEVHLPR3_VERSION /* the end */
 };
 
@@ -4364,6 +4407,21 @@ static DECLCALLBACK(void *) pdmR3DevHlp_Untrusted_QueryGenericUserObject(PPDMDEV
     AssertReleaseMsgFailed(("Untrusted device called trusted helper! '%s'/%d %RTuuid\n",
                             pDevIns->pReg->szName, pDevIns->iInstance, pUuid));
     return NULL;
+}
+
+
+/** @interface_method_impl{PDMDEVHLPR3,pfnPGMHandlerPhysicalTypeRegister} */
+static DECLCALLBACK(int) pdmR3DevHlp_Untrusted_PGMHandlerPhysicalTypeRegister(PPDMDEVINS pDevIns, PGMPHYSHANDLERKIND enmKind,
+                                                                              R3PTRTYPE(PFNPGMPHYSHANDLER) pfnHandlerR3,
+                                                                              const char *pszHandlerR0, const char *pszPfHandlerR0,
+                                                                              const char *pszHandlerRC, const char *pszPfHandlerRC,
+                                                                              const char *pszDesc, PPGMPHYSHANDLERTYPE phType)
+{
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    RT_NOREF(enmKind, pfnHandlerR3, pszHandlerR0, pszPfHandlerR0, pszHandlerRC, pszPfHandlerRC, pszDesc, phType);
+    AssertReleaseMsgFailed(("Untrusted device called trusted helper! '%s'/%d\n",
+                            pDevIns->pReg->szName, pDevIns->iInstance));
+    return VERR_ACCESS_DENIED;
 }
 
 
@@ -4678,6 +4736,7 @@ const PDMDEVHLPR3 g_pdmR3DevHlpUnTrusted =
     pdmR3DevHlp_PhysBulkGCPhys2CCPtr,
     pdmR3DevHlp_PhysBulkGCPhys2CCPtrReadOnly,
     pdmR3DevHlp_PhysBulkReleasePageMappingLocks,
+    pdmR3DevHlp_CpuGetGuestMicroarch,
     0,
     0,
     0,
@@ -4706,6 +4765,7 @@ const PDMDEVHLPR3 g_pdmR3DevHlpUnTrusted =
     pdmR3DevHlp_TMTimeVirtGetNano,
     pdmR3DevHlp_Untrusted_GetSupDrvSession,
     pdmR3DevHlp_Untrusted_QueryGenericUserObject,
+    pdmR3DevHlp_Untrusted_PGMHandlerPhysicalTypeRegister,
     PDM_DEVHLPR3_VERSION /* the end */
 };
 
