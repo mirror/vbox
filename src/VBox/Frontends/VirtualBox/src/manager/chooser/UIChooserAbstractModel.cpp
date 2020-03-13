@@ -275,44 +275,54 @@ void UIChooserAbstractModel::sltHandleCloudAcquireInstancesTaskComplete(UITask *
     /* Cast task to corresponding sub-class: */
     UITaskCloudAcquireInstances *pAcquiringTask = static_cast<UITaskCloudAcquireInstances*>(pTask);
 
-    /* Check whether there was an error: */
+    /* Make sure there were no errors: */
     if (!pAcquiringTask->errorInfo().isNull())
         return msgCenter().cannotAcquireCloudInstanceList(pAcquiringTask->errorInfo());
 
-    /* Acquire parent node we referencing: */
+    /* Acquire parent node and make sure it has children: */
+    /// @todo rework task to bring parent by id instead of pointer
+    ///       to object which maybe deleted to this moment already
     UIChooserNode *pParentNode = pAcquiringTask->parentNode();
     AssertPtrReturnVoid(pParentNode);
-
-    /* This node always have 1st child: */
     AssertReturnVoid(pParentNode->hasNodes());
-    UIChooserNode *pFirstChildNode = pParentNode->nodes().at(0);
+
+    /* Make sure this node have first child: */
+    UIChooserNode *pFirstChildNode = pParentNode->nodes().first();
     AssertPtrReturnVoid(pFirstChildNode);
 
-    /* Which is machine node of course: */
+    /* Which is machine node and has cache of fake-cloud-item type: */
     UIChooserNodeMachine *pFirstChildNodeMachine = pFirstChildNode->toMachineNode();
     AssertPtrReturnVoid(pFirstChildNodeMachine);
-
-    /* Which has cache of fake cloud item type: */
     AssertPtrReturnVoid(pFirstChildNodeMachine->cache());
     AssertReturnVoid(pFirstChildNodeMachine->cache()->itemType() == UIVirtualMachineItem::ItemType_CloudFake);
-    UIVirtualMachineItemCloud *pFakeCloudMachineItem = pFirstChildNodeMachine->cache()->toCloud();
-    AssertPtrReturnVoid(pFakeCloudMachineItem);
 
-    /* So that we could update this fake cloud item with new state and recache it: */
-    pFakeCloudMachineItem->setFakeCloudItemState(UIVirtualMachineItemCloud::FakeCloudItemState_Done);
-    pFakeCloudMachineItem->recache();
-
-    /* Add real cloud VM nodes: */
-    int iPosition = 1; /* we've got item with index 0 already, the "Empty" one .. */
-    foreach (const UICloudMachine &guiCloudMachine, pAcquiringTask->result())
+    /* And if we have at least one cloud instance: */
+    const QList<UICloudMachine> instances = pAcquiringTask->result();
+    if (!instances.isEmpty())
     {
-        /* Create new node: */
-        UIChooserNodeMachine *pNode = new UIChooserNodeMachine(pParentNode,
-                                                               false /* favorite */,
-                                                               iPosition++ /* position */,
-                                                               guiCloudMachine);
-        /* Request async node update: */
-        pNode->cache()->toCloud()->updateInfoAsync(false /* delayed? */);
+        /* Remove the "Empty" node: */
+        delete pFirstChildNodeMachine;
+
+        /* Add real cloud VM nodes: */
+        int iPosition = 0;
+        foreach (const UICloudMachine &guiCloudMachine, instances)
+        {
+            /* Create new node: */
+            UIChooserNodeMachine *pNode = new UIChooserNodeMachine(pParentNode,
+                                                                   false /* favorite */,
+                                                                   iPosition++ /* position */,
+                                                                   guiCloudMachine);
+            /* Request async node update: */
+            pNode->cache()->toCloud()->updateInfoAsync(false /* delayed? */);
+        }
+    }
+    else
+    {
+        /* Otherwise toggle and update "Empty" node: */
+        UIVirtualMachineItemCloud *pFakeCloudMachineItem = pFirstChildNodeMachine->cache()->toCloud();
+        AssertPtrReturnVoid(pFakeCloudMachineItem);
+        pFakeCloudMachineItem->setFakeCloudItemState(UIVirtualMachineItemCloud::FakeCloudItemState_Done);
+        pFakeCloudMachineItem->recache();
     }
 }
 #endif /* VBOX_GUI_WITH_CLOUD_VMS */
