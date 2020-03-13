@@ -26678,13 +26678,22 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   </interface>
 
 
+  <interface name="ICloudMachine" extends="$unknown"
+             uuid="8938b392-6470-11ea-be28-93dab375c226"
+             wsmap="managed"
+             reservedMethods="16" reservedAttributes="8">
+    <desc>
+      Virtual virtual machine (sic) in the cloud.
+    </desc>
+  </interface>
+
   <!--
   // ICloudClient
   //////////////////////////////////////////////////////////////////////////
   -->
   <interface
     name="ICloudClient" extends="$unknown"
-    uuid="435b66a2-0c60-11ea-a0ea-07eb0d1c4ead"
+    uuid="d5028594-5298-11ea-b1c3-47273cccaac7"
     wsmap="managed" reservedMethods="16" reservedAttributes="8"
     >
 
@@ -26791,6 +26800,13 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </param>
       <param name="progress" type="IProgress" dir="in">
         <desc>Progress object to track the operation completion.</desc>
+      </param>
+    </method>
+
+    <method name="listCloudMachines">
+      <param name="machines" type="ICloudMachine" safearray="yes" dir="out">
+      </param>
+      <param name="progress" type="IProgress" dir="return">
       </param>
     </method>
 
