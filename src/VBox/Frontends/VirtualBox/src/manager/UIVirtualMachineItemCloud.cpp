@@ -240,7 +240,7 @@ void UIVirtualMachineItemCloud::retranslateUi()
                     m_strMachineStateName = tr("Loading ...");
                     break;
                 case UIVirtualMachineItemCloud::FakeCloudItemState_Done:
-                    m_strMachineStateName = tr("Up-To-Date");
+                    m_strMachineStateName = tr("Empty");
                     break;
                 default:
                     break;
