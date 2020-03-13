@@ -134,6 +134,12 @@ private:
         UICloudMachine  m_guiCloudMachine;
     /** @} */
 
+    /** @name Basic attributes.
+      * @{ */
+        /** Holds the cloud instance id. */
+        QString  m_strInstanceId;
+    /** @} */
+
     /** @name Data attributes.
       * @{ */
         /** Holds fake cloud item state. */

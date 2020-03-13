@@ -350,7 +350,7 @@ void UIVirtualBoxManager::sltCurrentSnapshotItemChange()
     updateActionsAppearance();
 }
 
-void UIVirtualBoxManager::sltHandleCloudMachineStateChange(const QString /* strMachineId */)
+void UIVirtualBoxManager::sltHandleCloudMachineStateChange(const QUuid & /* uId */)
 {
     updateActionsAppearance();
 }

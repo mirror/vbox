@@ -54,7 +54,7 @@ UIVirtualMachineItemLocal::~UIVirtualMachineItemLocal()
 void UIVirtualMachineItemLocal::recache()
 {
     /* Determine attributes which are always available: */
-    m_strId = m_comMachine.GetId().toString();
+    m_uId = m_comMachine.GetId();
     m_strSettingsFile = m_comMachine.GetSettingsFilePath();
 
     /* Now determine whether VM is accessible: */
@@ -86,7 +86,7 @@ void UIVirtualMachineItemLocal::recache()
         m_enmConfigurationAccessLevel = ::configurationAccessLevel(m_enmSessionState, m_enmMachineState);
         /* Also take restrictions into account: */
         if (   m_enmConfigurationAccessLevel != ConfigurationAccessLevel_Null
-            && !gEDataManager->machineReconfigurationEnabled(m_strId))
+            && !gEDataManager->machineReconfigurationEnabled(m_uId))
             m_enmConfigurationAccessLevel = ConfigurationAccessLevel_Null;
 
         /* Determine PID finally: */
@@ -104,7 +104,7 @@ void UIVirtualMachineItemLocal::recache()
         }
 
         /* Determine whether we should show this VM details: */
-        m_fHasDetails = gEDataManager->showMachineInVirtualBoxManagerDetails(m_strId);
+        m_fHasDetails = gEDataManager->showMachineInVirtualBoxManagerDetails(m_uId);
     }
     else
     {

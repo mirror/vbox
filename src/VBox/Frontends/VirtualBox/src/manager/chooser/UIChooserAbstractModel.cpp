@@ -331,7 +331,7 @@ void UIChooserAbstractModel::sltHandleCloudMachineStateChange()
 {
     UIVirtualMachineItem *pCache = qobject_cast<UIVirtualMachineItem*>(sender());
     AssertPtrReturnVoid(pCache);
-    sigCloudMachineStateChange(pCache->id());
+    emit sigCloudMachineStateChange(pCache->id());
 }
 
 void UIChooserAbstractModel::sltGroupDefinitionsSaveComplete()

@@ -25,6 +25,7 @@
 #include <QIcon>
 #include <QMimeData>
 #include <QPixmap>
+#include <QUuid>
 
 /* GUI includes: */
 #include "QIWithRetranslateUI.h"
@@ -73,7 +74,7 @@ public:
     /** @name Basic attributes.
       * @{ */
         /** Returns cached machine id. */
-        QString id() const { return m_strId; }
+        QUuid id() const { return m_uId; }
         /** Returns cached machine name. */
         QString name() const { return m_strName; }
         /** Returns cached machine OS type id. */
@@ -155,7 +156,7 @@ protected:
     /** @name Basic attributes.
       * @{ */
         /** Holds cached machine id. */
-        QString  m_strId;
+        QUuid    m_uId;
         /** Holds cached machine name. */
         QString  m_strName;
         /** Holds cached machine OS type id. */

@@ -76,9 +76,9 @@ void UIVirtualMachineItemCloud::pauseOrResume(bool fPause, QWidget *pParent)
     /* Now execute async method: */
     CProgress comProgress;
     if (fPause)
-        comProgress = comCloudClient.PauseInstance(m_strId);
+        comProgress = comCloudClient.PauseInstance(m_strInstanceId);
     else
-        comProgress = comCloudClient.StartInstance(m_strId);
+        comProgress = comCloudClient.StartInstance(m_strInstanceId);
     if (!comCloudClient.isOk())
         msgCenter().cannotAcquireCloudClientParameter(comCloudClient);
     else
@@ -103,8 +103,9 @@ void UIVirtualMachineItemCloud::recache()
     /* Determine attributes which are always available: */
     if (!m_guiCloudMachine.isNull())
     {
-        m_strId = m_guiCloudMachine.instanceId();
+        m_strInstanceId = m_guiCloudMachine.instanceId();
         m_strName = m_guiCloudMachine.instanceName();
+        m_uId = m_guiCloudMachine.id();
     }
 
     /* Now determine whether VM is accessible: */

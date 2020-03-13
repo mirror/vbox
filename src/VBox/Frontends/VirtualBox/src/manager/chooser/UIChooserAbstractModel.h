@@ -51,8 +51,8 @@ signals:
 
     /** @name Cloud machine stuff.
       * @{ */
-        /** Notifies about state change for cloud machine with certain @a strId. */
-        void sigCloudMachineStateChange(const QString &strId);
+        /** Notifies about state change for cloud machine with certain @a uId. */
+        void sigCloudMachineStateChange(const QUuid &uId);
     /** @} */
 
     /** @name Group saving stuff.

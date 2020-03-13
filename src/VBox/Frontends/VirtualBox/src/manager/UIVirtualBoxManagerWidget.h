@@ -65,8 +65,8 @@ signals:
     /** Notifies listeners about current Snapshots pane item change. */
     void sigCurrentSnapshotItemChange();
 
-    /** Notifies about state change for cloud machine with certain @a strMachineId. */
-    void sigCloudMachineStateChange(const QString &strMachineId);
+    /** Notifies about state change for cloud machine with certain @a uId. */
+    void sigCloudMachineStateChange(const QUuid &uId);
 
 public:
 
@@ -157,8 +157,8 @@ private slots:
           * @param  enmDirection  Brings which direction was animation finished for. */
         void sltHandleSlidingAnimationComplete(SlidingDirection enmDirection);
 
-        /** Handles state change for cloud machine with specified @a strMachineId. */
-        void sltHandleCloudMachineStateChange(const QString &strId);
+        /** Handles state change for cloud machine with certain @a uId. */
+        void sltHandleCloudMachineStateChange(const QUuid &uId);
     /** @} */
 
     /** @name Tools stuff.

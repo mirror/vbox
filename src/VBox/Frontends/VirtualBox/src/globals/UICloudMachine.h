@@ -24,6 +24,7 @@
 /* Qt includes: */
 #include <QObject>
 #include <QSharedData>
+#include <QUuid>
 
 /* GUI includes: */
 #include "UILibraryDefs.h"
@@ -59,6 +60,9 @@ public:
     QString instanceId() const { return m_strInstanceId; }
     /** Returns cloud instance name. */
     QString instanceName() const { return m_strInstanceName; }
+
+    /** Returns cloud VM id. */
+    QUuid id() const { return m_uId; }
 
     /** Returns whether cloud VM is accessible. */
     bool accessible() const { return m_fAccessible; }
@@ -96,6 +100,9 @@ private:
     const QString  m_strInstanceId;
     /** Holds the cloud instance name. */
     const QString  m_strInstanceName;
+
+    /** Holds the cloud VM id. */
+    const QUuid  m_uId;
 
     /** Holds whether cloud VM is accessible. */
     bool     m_fAccessible;
@@ -158,6 +165,9 @@ public:
     QString instanceId() const { return d->instanceId(); }
     /** Returns cloud instance name. */
     QString instanceName() const { return d->instanceName(); }
+
+    /** Returns cloud VM id. */
+    QUuid id() const { return d->id(); }
 
     /** Returns whether cloud VM is accessible. */
     bool accessible() const { return d->accessible(); }
