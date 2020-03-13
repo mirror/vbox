@@ -153,7 +153,7 @@ int VGSvcGstCtrlProcessFree(PVBOXSERVICECTRLPROCESS pProcess)
         /*
          * Destroy other thread data.
          */
-        int rc = RTPollSetDestroy(pProcess->hPollSet);
+        rc = RTPollSetDestroy(pProcess->hPollSet);
         AssertRC(rc);
 
         rc = RTReqQueueDestroy(pProcess->hReqQueue);
