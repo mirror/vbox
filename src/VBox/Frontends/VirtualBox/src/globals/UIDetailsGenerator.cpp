@@ -139,7 +139,7 @@ UITextTable UIDetailsGenerator::generateMachineInformationGeneral(UICloudMachine
     /* Name: */
     if (fOptions & UIExtraDataMetaDefs::DetailsElementOptionTypeGeneral_Name)
         table << UITextTableLine(QApplication::translate("UIDetails", "Name", "details (general)"),
-                                 guiCloudMachine.name());
+                                 guiCloudMachine.instanceName());
 
     /* Operating system: */
     if (fOptions & UIExtraDataMetaDefs::DetailsElementOptionTypeGeneral_OS)

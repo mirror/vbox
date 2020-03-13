@@ -38,12 +38,12 @@ class SHARED_LIBRARY_STUFF UICloudMachineData : public QSharedData
 public:
 
     /** Constructs shared cloud VM data on the basis of arguments.
-      * @param  comCloudClient  Brings the cloud client object reference.
-      * @param  strId           Brings the cloud VM id.
-      * @param  strName         Brings the cloud VM name. */
+      * @param  comCloudClient   Brings the cloud client object reference.
+      * @param  strInstanceId    Brings the cloud instance id.
+      * @param  strInstanceName  Brings the cloud instance name. */
     UICloudMachineData(const CCloudClient &comCloudClient,
-                       const QString &strId,
-                       const QString &strName);
+                       const QString &strInstanceId,
+                       const QString &strInstanceName);
     /** Constructs shared cloud VM data on the basis of @a other data. */
     UICloudMachineData(const UICloudMachineData &other);
     /** Destructs shared cloud VM data. */
@@ -55,10 +55,10 @@ public:
     /** Returns cloud client object reference. */
     CCloudClient cloudClient() const { return m_comCloudClient; }
 
-    /** Returns cloud VM id. */
-    QString id() const { return m_strId; }
-    /** Returns cloud VM name. */
-    QString name() const { return m_strName; }
+    /** Returns cloud instance id. */
+    QString instanceId() const { return m_strInstanceId; }
+    /** Returns cloud instance name. */
+    QString instanceName() const { return m_strInstanceName; }
 
     /** Returns whether cloud VM is accessible. */
     bool accessible() const { return m_fAccessible; }
@@ -92,10 +92,10 @@ private:
     /** Holds the cloud client object reference. */
     CCloudClient  m_comCloudClient;
 
-    /** Holds the cloud VM id. */
-    const QString  m_strId;
-    /** Holds the cloud VM name. */
-    const QString  m_strName;
+    /** Holds the cloud instance id. */
+    const QString  m_strInstanceId;
+    /** Holds the cloud instance name. */
+    const QString  m_strInstanceName;
 
     /** Holds whether cloud VM is accessible. */
     bool     m_fAccessible;
@@ -136,12 +136,12 @@ public:
     /** Constructs null cloud VM wrapper. */
     UICloudMachine();
     /** Constructs cloud VM wrapper on the basis of arguments.
-      * @param  comCloudClient  Brings the cloud client object instance.
-      * @param  strId           Brings the cloud VM id.
-      * @param  strName         Brings the cloud VM name. */
+      * @param  comCloudClient   Brings the cloud client object instance.
+      * @param  strInstanceId    Brings the cloud instance id.
+      * @param  strInstanceName  Brings the cloud instance name. */
     UICloudMachine(const CCloudClient &comCloudClient,
-                   const QString &strId,
-                   const QString &strName);
+                   const QString &strInstanceId,
+                   const QString &strInstanceName);
     /** Constructs cloud VM wrapper on the basis of @a other wrapper. */
     UICloudMachine(const UICloudMachine &other);
 
@@ -154,10 +154,10 @@ public:
     /** Returns cloud client object reference. */
     CCloudClient client() const { return d->cloudClient(); }
 
-    /** Returns cloud VM id. */
-    QString id() const { return d->id(); }
-    /** Returns cloud VM name. */
-    QString name() const { return d->name(); }
+    /** Returns cloud instance id. */
+    QString instanceId() const { return d->instanceId(); }
+    /** Returns cloud instance name. */
+    QString instanceName() const { return d->instanceName(); }
 
     /** Returns whether cloud VM is accessible. */
     bool accessible() const { return d->accessible(); }

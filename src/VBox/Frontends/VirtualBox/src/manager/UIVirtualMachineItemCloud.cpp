@@ -103,8 +103,8 @@ void UIVirtualMachineItemCloud::recache()
     /* Determine attributes which are always available: */
     if (!m_guiCloudMachine.isNull())
     {
-        m_strId = m_guiCloudMachine.id();
-        m_strName = m_guiCloudMachine.name();
+        m_strId = m_guiCloudMachine.instanceId();
+        m_strName = m_guiCloudMachine.instanceName();
     }
 
     /* Now determine whether VM is accessible: */

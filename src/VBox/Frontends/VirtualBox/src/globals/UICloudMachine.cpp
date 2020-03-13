@@ -28,25 +28,25 @@
 *********************************************************************************************************************************/
 
 UICloudMachineData::UICloudMachineData(const CCloudClient &comCloudClient,
-                                       const QString &strId,
-                                       const QString &strName)
+                                       const QString &strInstanceId,
+                                       const QString &strInstanceName)
     : m_comCloudClient(comCloudClient)
-    , m_strId(strId)
-    , m_strName(strName)
+    , m_strInstanceId(strInstanceId)
+    , m_strInstanceName(strInstanceName)
     , m_fAccessible(true)
     , m_enmMachineState(KMachineState_PoweredOff)
     , m_strOsType("Other")
     , m_iMemorySize(0)
     , m_iCpuCount(0)
 {
-    //printf("Data for machine with id = {%s} is created\n", m_strId.toUtf8().constData());
+    //printf("Data for machine with id = {%s} is created\n", m_strInstanceId.toUtf8().constData());
 }
 
 UICloudMachineData::UICloudMachineData(const UICloudMachineData &other)
     : QSharedData(other)
     , m_comCloudClient(other.m_comCloudClient)
-    , m_strId(other.m_strId)
-    , m_strName(other.m_strName)
+    , m_strInstanceId(other.m_strInstanceId)
+    , m_strInstanceName(other.m_strInstanceName)
     , m_fAccessible(other.m_fAccessible)
     , m_strAccessError(other.m_strAccessError)
     , m_enmMachineState(other.m_enmMachineState)
@@ -58,12 +58,12 @@ UICloudMachineData::UICloudMachineData(const UICloudMachineData &other)
     , m_strBootingFirmware(other.m_strBootingFirmware)
     , m_strImageId(other.m_strImageId)
 {
-    //printf("Data for machine with id = {%s} is copied\n", m_strId.toUtf8().constData());
+    //printf("Data for machine with id = {%s} is copied\n", m_strInstanceId.toUtf8().constData());
 }
 
 UICloudMachineData::~UICloudMachineData()
 {
-    //printf("Data for machine with id = {%s} is deleted\n", m_strId.toUtf8().constData());
+    //printf("Data for machine with id = {%s} is deleted\n", m_strInstanceId.toUtf8().constData());
 }
 
 void UICloudMachineData::refresh()
@@ -72,7 +72,9 @@ void UICloudMachineData::refresh()
     m_strAccessError.clear();
 
     /* Acquire instance info sync way, be aware, this is blocking stuff, it takes some time: */
-    const QMap<KVirtualSystemDescriptionType, QString> instanceInfoMap = getInstanceInfo(m_comCloudClient, m_strId, m_strAccessError);
+    const QMap<KVirtualSystemDescriptionType, QString> instanceInfoMap = getInstanceInfo(m_comCloudClient,
+                                                                                         m_strInstanceId,
+                                                                                         m_strAccessError);
     /* Update accessibility state: */
     m_fAccessible = m_strAccessError.isNull();
 
@@ -133,9 +135,9 @@ UICloudMachine::UICloudMachine()
 }
 
 UICloudMachine::UICloudMachine(const CCloudClient &comCloudClient,
-                               const QString &strId,
-                               const QString &strName)
-    : d(new UICloudMachineData(comCloudClient, strId, strName))
+                               const QString &strInstanceId,
+                               const QString &strInstanceName)
+    : d(new UICloudMachineData(comCloudClient, strInstanceId, strInstanceName))
 {
 }
 
