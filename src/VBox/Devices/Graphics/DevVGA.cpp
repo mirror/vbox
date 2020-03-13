@@ -6401,7 +6401,6 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
     PDMDEV_CHECK_VERSIONS_RETURN(pDevIns);
     PVGASTATE       pThis   = PDMDEVINS_2_DATA(pDevIns, PVGASTATE);
     PVGASTATECC     pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PVGASTATECC);
-    PVM             pVM     = PDMDevHlpGetVM(pDevIns);
     PCPDMDEVHLPR3   pHlp    = pDevIns->pHlpR3;
     int             rc;
     unsigned        i;
@@ -6413,7 +6412,6 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
     unsigned        cb;
 
     Assert(iInstance == 0);
-    Assert(pVM);
 
     /*
      * Init static data.
