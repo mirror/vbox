@@ -88,7 +88,7 @@ RTR3DECL(int) RTProcDaemonize(const char * const *papszArgs, const char *pszDaem
             RTFileClose(hStdOutAndErr.u.hFile);
         }
 
-        RTFileClose(hStdOutAndErr.u.hFile);
+        RTFileClose(hStdIn.u.hFile);
     }
     RTMemFree(papszNewArgs);
     return rc;
