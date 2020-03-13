@@ -110,12 +110,20 @@ static RTEXITCODE listCloudInstances(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT 
     static const RTGETOPTDEF s_aOptions[] =
     {
         { "--compartment-id", 'c', RTGETOPT_REQ_STRING },
-        { "--state",          's', RTGETOPT_REQ_STRING }
+        { "--state",          's', RTGETOPT_REQ_STRING },
+        { "help",             1001, RTGETOPT_REQ_NOTHING },
+        { "--help",           1002, RTGETOPT_REQ_NOTHING }
     };
     RTGETOPTSTATE GetState;
     RTGETOPTUNION ValueUnion;
     int vrc = RTGetOptInit(&GetState, a->argc, a->argv, s_aOptions, RT_ELEMENTS(s_aOptions), iFirst, 0);
     AssertRCReturn(vrc, RTEXITCODE_FAILURE);
+    if (a->argc == iFirst)
+    {
+        RTPrintf("Empty command parameter list, show help.\n");
+        printHelp(g_pStdOut);
+        return RTEXITCODE_SUCCESS;
+    }
 
     Utf8Str strCompartmentId;
     com::SafeArray<CloudMachineState_T> machineStates;
@@ -155,7 +163,10 @@ static RTEXITCODE listCloudInstances(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT 
                     return errorArgument("Unknown cloud instance state \"%s\"", pszState);
                 break;
             }
-
+            case 1001:
+            case 1002:
+                printHelp(g_pStdOut);
+                return RTEXITCODE_SUCCESS;
             case VINF_GETOPT_NOT_OPTION:
                 return errorUnknownSubcommand(ValueUnion.psz);
 
@@ -165,6 +176,12 @@ static RTEXITCODE listCloudInstances(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT 
     }
 
     HRESULT hrc = S_OK;
+
+    /* Delayed check. It allows us to print help information.*/
+    hrc = checkAndSetCommonOptions(a, pCommonOpts);
+    if (FAILED(hrc))
+        return RTEXITCODE_FAILURE;
+
     ComPtr<IVirtualBox> pVirtualBox = a->virtualBox;
 
     ComPtr<ICloudProviderManager> pCloudProviderManager;
@@ -265,12 +282,20 @@ static RTEXITCODE listCloudImages(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT pCo
     static const RTGETOPTDEF s_aOptions[] =
     {
         { "--compartment-id", 'c', RTGETOPT_REQ_STRING },
-        { "--state",          's', RTGETOPT_REQ_STRING }
+        { "--state",          's', RTGETOPT_REQ_STRING },
+        { "help",             1001, RTGETOPT_REQ_NOTHING },
+        { "--help",           1002, RTGETOPT_REQ_NOTHING }
     };
     RTGETOPTSTATE GetState;
     RTGETOPTUNION ValueUnion;
     int vrc = RTGetOptInit(&GetState, a->argc, a->argv, s_aOptions, RT_ELEMENTS(s_aOptions), iFirst, 0);
     AssertRCReturn(vrc, RTEXITCODE_FAILURE);
+    if (a->argc == iFirst)
+    {
+        RTPrintf("Empty command parameter list, show help.\n");
+        printHelp(g_pStdOut);
+        return RTEXITCODE_SUCCESS;
+    }
 
     Utf8Str strCompartmentId;
     com::SafeArray<CloudImageState_T> imageStates;
@@ -304,7 +329,10 @@ static RTEXITCODE listCloudImages(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT pCo
                     return errorArgument("Unknown cloud image state \"%s\"", pszState);
                 break;
             }
-
+            case 1001:
+            case 1002:
+                printHelp(g_pStdOut);
+                return RTEXITCODE_SUCCESS;
             case VINF_GETOPT_NOT_OPTION:
                 return errorUnknownSubcommand(ValueUnion.psz);
 
@@ -315,6 +343,12 @@ static RTEXITCODE listCloudImages(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT pCo
 
 
     HRESULT hrc = S_OK;
+
+    /* Delayed check. It allows us to print help information.*/
+    hrc = checkAndSetCommonOptions(a, pCommonOpts);
+    if (FAILED(hrc))
+        return RTEXITCODE_FAILURE;
+
     ComPtr<IVirtualBox> pVirtualBox = a->virtualBox;
 
     ComPtr<ICloudProviderManager> pCloudProviderManager;
@@ -410,8 +444,14 @@ static RTEXITCODE listCloudImages(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT pCo
  */
 static RTEXITCODE handleCloudLists(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT pCommonOpts)
 {
-    if (a->argc < 1)
-        return errorNoSubcommand();
+    setCurrentCommand(HELP_CMD_CLOUDLIST);
+    setCurrentSubcommand(HELP_SCOPE_CLOUDLIST);
+    if (a->argc == iFirst)
+    {
+        RTPrintf("Empty command parameter list, show help.\n");
+        printHelp(g_pStdOut);
+        return RTEXITCODE_SUCCESS;
+    }
 
     static const RTGETOPTDEF s_aOptions[] =
     {
@@ -420,17 +460,19 @@ static RTEXITCODE handleCloudLists(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT pC
         { "networks",            1002, RTGETOPT_REQ_NOTHING },
         { "subnets",             1003, RTGETOPT_REQ_NOTHING },
         { "vcns",                1004, RTGETOPT_REQ_NOTHING },
-        { "objects",             1005, RTGETOPT_REQ_NOTHING }
+        { "objects",             1005, RTGETOPT_REQ_NOTHING },
+        { "help",                1006, RTGETOPT_REQ_NOTHING },
+        { "--help",              1007, RTGETOPT_REQ_NOTHING }
     };
 
-    Bstr bstrProvider(pCommonOpts->provider.pszProviderName);
-    Bstr bstrProfile(pCommonOpts->profile.pszProfileName);
-
-    /* check for required options */
-    if (bstrProvider.isEmpty())
-        return errorSyntax(USAGE_S_NEWCMD, "Parameter --provider is required");
-    if (bstrProfile.isEmpty())
-        return errorSyntax(USAGE_S_NEWCMD, "Parameter --profile is required");
+//  Bstr bstrProvider(pCommonOpts->provider.pszProviderName);
+//  Bstr bstrProfile(pCommonOpts->profile.pszProfileName);
+//
+//  /* check for required options */
+//  if (bstrProvider.isEmpty())
+//      return errorSyntax(USAGE_S_NEWCMD, "Parameter --provider is required");
+//  if (bstrProfile.isEmpty())
+//      return errorSyntax(USAGE_S_NEWCMD, "Parameter --profile is required");
 
     RTGETOPTSTATE GetState;
     int vrc = RTGetOptInit(&GetState, a->argc, a->argv, s_aOptions, RT_ELEMENTS(s_aOptions), iFirst, 0);
@@ -443,11 +485,15 @@ static RTEXITCODE handleCloudLists(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT pC
         switch (c)
         {
             case 1000:
-//              setCurrentSubcommand(HELP_SCOPE_CLOUDIMAGE_LIST);
+                setCurrentSubcommand(HELP_SCOPE_CLOUDLIST_IMAGES);
                 return listCloudImages(a, GetState.iNext, pCommonOpts);
             case 1001:
-//              setCurrentSubcommand(HELP_SCOPE_CLOUDINSTANCE_LIST);
+                setCurrentSubcommand(HELP_SCOPE_CLOUDLIST_INSTANCES);
                 return listCloudInstances(a, GetState.iNext, pCommonOpts);
+            case 1006:
+            case 1007:
+                printHelp(g_pStdOut);
+                return RTEXITCODE_SUCCESS;
             case VINF_GETOPT_NOT_OPTION:
                 return errorUnknownSubcommand(ValueUnion.psz);
 
@@ -462,9 +508,6 @@ static RTEXITCODE handleCloudLists(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT pC
 static RTEXITCODE createCloudInstance(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT pCommonOpts)
 {
     HRESULT hrc = S_OK;
-    hrc = checkAndSetCommonOptions(a, pCommonOpts);
-    if (FAILED(hrc))
-        return RTEXITCODE_FAILURE;
 
     static const RTGETOPTDEF s_aOptions[] =
     {
@@ -480,11 +523,19 @@ static RTEXITCODE createCloudInstance(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT
         { "--privateip",      'P', RTGETOPT_REQ_STRING },
         { "--launch",         'l', RTGETOPT_REQ_STRING },
         { "--public-ssh-key", 'k', RTGETOPT_REQ_STRING },
+        { "help",             1001, RTGETOPT_REQ_NOTHING },
+        { "--help",           1002, RTGETOPT_REQ_NOTHING }
     };
     RTGETOPTSTATE GetState;
     RTGETOPTUNION ValueUnion;
     int vrc = RTGetOptInit(&GetState, a->argc, a->argv, s_aOptions, RT_ELEMENTS(s_aOptions), iFirst, 0);
     AssertRCReturn(vrc, RTEXITCODE_FAILURE);
+    if (a->argc == iFirst)
+    {
+        RTPrintf("Empty command parameter list, show help.\n");
+        printHelp(g_pStdOut);
+        return RTEXITCODE_SUCCESS;
+    }
 
     ComPtr<IAppliance> pAppliance;
     CHECK_ERROR2_RET(hrc, a->virtualBox, CreateAppliance(pAppliance.asOutParam()), RTEXITCODE_FAILURE);
@@ -559,12 +610,21 @@ static RTEXITCODE createCloudInstance(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT
                 pVSD->AddDescription(VirtualSystemDescriptionType_CloudPublicSSHKey,
                                      Bstr(ValueUnion.psz).raw(), NULL);
                 break;
+            case 1001:
+            case 1002:
+                printHelp(g_pStdOut);
+                return RTEXITCODE_SUCCESS;
             case VINF_GETOPT_NOT_OPTION:
                 return errorUnknownSubcommand(ValueUnion.psz);
             default:
                 return errorGetOpt(c, &ValueUnion);
         }
     }
+
+    /* Delayed check. It allows us to print help information.*/
+    hrc = checkAndSetCommonOptions(a, pCommonOpts);
+    if (FAILED(hrc))
+        return RTEXITCODE_FAILURE;
 
     if (strPublicSSHKey.isEmpty())
         RTPrintf("Warning!!! Public SSH key doesn't present in the passed arguments...\n");
@@ -639,18 +699,22 @@ static RTEXITCODE showCloudInstanceInfo(HandlerArg *a, int iFirst, PCLOUDCOMMONO
 {
     HRESULT hrc = S_OK;
 
-    hrc = checkAndSetCommonOptions(a, pCommonOpts);
-    if (FAILED(hrc))
-        return RTEXITCODE_FAILURE;
-
     static const RTGETOPTDEF s_aOptions[] =
     {
-        { "--id", 'i', RTGETOPT_REQ_STRING }
+        { "--id",   'i', RTGETOPT_REQ_STRING },
+        { "help",   1001, RTGETOPT_REQ_NOTHING },
+        { "--help", 1002, RTGETOPT_REQ_NOTHING }
     };
     RTGETOPTSTATE GetState;
     RTGETOPTUNION ValueUnion;
     int vrc = RTGetOptInit(&GetState, a->argc, a->argv, s_aOptions, RT_ELEMENTS(s_aOptions), iFirst, 0);
     AssertRCReturn(vrc, RTEXITCODE_FAILURE);
+    if (a->argc == iFirst)
+    {
+        RTPrintf("Empty command parameter list, show help.\n");
+        printHelp(g_pStdOut);
+        return RTEXITCODE_SUCCESS;
+    }
 
     Utf8Str strInstanceId;
 
@@ -670,7 +734,10 @@ static RTEXITCODE showCloudInstanceInfo(HandlerArg *a, int iFirst, PCLOUDCOMMONO
 
                 break;
             }
-
+            case 1001:
+            case 1002:
+                printHelp(g_pStdOut);
+                return RTEXITCODE_SUCCESS;
             case VINF_GETOPT_NOT_OPTION:
                 return errorUnknownSubcommand(ValueUnion.psz);
 
@@ -679,9 +746,13 @@ static RTEXITCODE showCloudInstanceInfo(HandlerArg *a, int iFirst, PCLOUDCOMMONO
         }
     }
 
+    /* Delayed check. It allows us to print help information.*/
+    hrc = checkAndSetCommonOptions(a, pCommonOpts);
+    if (FAILED(hrc))
+        return RTEXITCODE_FAILURE;
+
     if (strInstanceId.isEmpty())
         return errorArgument("Missing parameter: --id");
-
 
     ComPtr<ICloudProfile> pCloudProfile = pCommonOpts->profile.pCloudProfile;
 
@@ -778,18 +849,23 @@ static RTEXITCODE showCloudInstanceInfo(HandlerArg *a, int iFirst, PCLOUDCOMMONO
 static RTEXITCODE startCloudInstance(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT pCommonOpts)
 {
     HRESULT hrc = S_OK;
-    hrc = checkAndSetCommonOptions(a, pCommonOpts);
-    if (FAILED(hrc))
-        return RTEXITCODE_FAILURE;
 
     static const RTGETOPTDEF s_aOptions[] =
     {
-        { "--id", 'i', RTGETOPT_REQ_STRING }
+        { "--id",   'i', RTGETOPT_REQ_STRING },
+        { "help",   1001, RTGETOPT_REQ_NOTHING },
+        { "--help", 1002, RTGETOPT_REQ_NOTHING }
     };
     RTGETOPTSTATE GetState;
     RTGETOPTUNION ValueUnion;
     int vrc = RTGetOptInit(&GetState, a->argc, a->argv, s_aOptions, RT_ELEMENTS(s_aOptions), iFirst, 0);
     AssertRCReturn(vrc, RTEXITCODE_FAILURE);
+    if (a->argc == iFirst)
+    {
+        RTPrintf("Empty command parameter list, show help.\n");
+        printHelp(g_pStdOut);
+        return RTEXITCODE_SUCCESS;
+    }
 
     Utf8Str strInstanceId;
 
@@ -809,7 +885,10 @@ static RTEXITCODE startCloudInstance(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT 
 
                 break;
             }
-
+            case 1001:
+            case 1002:
+                printHelp(g_pStdOut);
+                return RTEXITCODE_SUCCESS;
             case VINF_GETOPT_NOT_OPTION:
                 return errorUnknownSubcommand(ValueUnion.psz);
 
@@ -818,9 +897,13 @@ static RTEXITCODE startCloudInstance(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT 
         }
     }
 
+    /* Delayed check. It allows us to print help information.*/
+    hrc = checkAndSetCommonOptions(a, pCommonOpts);
+    if (FAILED(hrc))
+        return RTEXITCODE_FAILURE;
+
     if (strInstanceId.isEmpty())
         return errorArgument("Missing parameter: --id");
-
 
     ComPtr<ICloudProfile> pCloudProfile = pCommonOpts->profile.pCloudProfile;
 
@@ -849,19 +932,23 @@ static RTEXITCODE startCloudInstance(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT 
 static RTEXITCODE pauseCloudInstance(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT pCommonOpts)
 {
     HRESULT hrc = S_OK;
-    hrc = checkAndSetCommonOptions(a, pCommonOpts);
-
-    if (FAILED(hrc))
-        return RTEXITCODE_FAILURE;
 
     static const RTGETOPTDEF s_aOptions[] =
     {
-        { "--id", 'i', RTGETOPT_REQ_STRING }
+        { "--id",   'i', RTGETOPT_REQ_STRING },
+        { "help",   1001, RTGETOPT_REQ_NOTHING },
+        { "--help", 1002, RTGETOPT_REQ_NOTHING }
     };
     RTGETOPTSTATE GetState;
     RTGETOPTUNION ValueUnion;
     int vrc = RTGetOptInit(&GetState, a->argc, a->argv, s_aOptions, RT_ELEMENTS(s_aOptions), iFirst, 0);
     AssertRCReturn(vrc, RTEXITCODE_FAILURE);
+    if (a->argc == iFirst)
+    {
+        RTPrintf("Empty command parameter list, show help.\n");
+        printHelp(g_pStdOut);
+        return RTEXITCODE_SUCCESS;
+    }
 
     Utf8Str strInstanceId;
 
@@ -881,7 +968,10 @@ static RTEXITCODE pauseCloudInstance(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT 
 
                 break;
             }
-
+            case 1001:
+            case 1002:
+                printHelp(g_pStdOut);
+                return RTEXITCODE_SUCCESS;
             case VINF_GETOPT_NOT_OPTION:
                 return errorUnknownSubcommand(ValueUnion.psz);
 
@@ -890,9 +980,13 @@ static RTEXITCODE pauseCloudInstance(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT 
         }
     }
 
+    /* Delayed check. It allows us to print help information.*/
+    hrc = checkAndSetCommonOptions(a, pCommonOpts);
+    if (FAILED(hrc))
+        return RTEXITCODE_FAILURE;
+
     if (strInstanceId.isEmpty())
         return errorArgument("Missing parameter: --id");
-
 
     ComPtr<ICloudProfile> pCloudProfile = pCommonOpts->profile.pCloudProfile;
 
@@ -922,18 +1016,22 @@ static RTEXITCODE terminateCloudInstance(HandlerArg *a, int iFirst, PCLOUDCOMMON
 {
     HRESULT hrc = S_OK;
 
-    hrc = checkAndSetCommonOptions(a, pCommonOpts);
-    if (FAILED(hrc))
-        return RTEXITCODE_FAILURE;
-
     static const RTGETOPTDEF s_aOptions[] =
     {
-        { "--id", 'i', RTGETOPT_REQ_STRING }
+        { "--id",   'i', RTGETOPT_REQ_STRING },
+        { "help",   1001, RTGETOPT_REQ_NOTHING },
+        { "--help", 1002, RTGETOPT_REQ_NOTHING }
     };
     RTGETOPTSTATE GetState;
     RTGETOPTUNION ValueUnion;
     int vrc = RTGetOptInit(&GetState, a->argc, a->argv, s_aOptions, RT_ELEMENTS(s_aOptions), iFirst, 0);
     AssertRCReturn(vrc, RTEXITCODE_FAILURE);
+    if (a->argc == iFirst)
+    {
+        RTPrintf("Empty command parameter list, show help.\n");
+        printHelp(g_pStdOut);
+        return RTEXITCODE_SUCCESS;
+    }
 
     Utf8Str strInstanceId;
 
@@ -953,7 +1051,10 @@ static RTEXITCODE terminateCloudInstance(HandlerArg *a, int iFirst, PCLOUDCOMMON
 
                 break;
             }
-
+            case 1001:
+            case 1002:
+                printHelp(g_pStdOut);
+                return RTEXITCODE_SUCCESS;
             case VINF_GETOPT_NOT_OPTION:
                 return errorUnknownSubcommand(ValueUnion.psz);
 
@@ -961,6 +1062,11 @@ static RTEXITCODE terminateCloudInstance(HandlerArg *a, int iFirst, PCLOUDCOMMON
                 return errorGetOpt(c, &ValueUnion);
         }
     }
+
+    /* Delayed check. It allows us to print help information.*/
+    hrc = checkAndSetCommonOptions(a, pCommonOpts);
+    if (FAILED(hrc))
+        return RTEXITCODE_FAILURE;
 
     if (strInstanceId.isEmpty())
         return errorArgument("Missing parameter: --id");
@@ -992,8 +1098,14 @@ static RTEXITCODE terminateCloudInstance(HandlerArg *a, int iFirst, PCLOUDCOMMON
 
 static RTEXITCODE handleCloudInstance(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT pCommonOpts)
 {
-    if (a->argc < 1)
-        return errorNoSubcommand();
+    setCurrentCommand(HELP_CMD_CLOUDINSTANCE);
+    setCurrentSubcommand(HELP_SCOPE_CLOUDINSTANCE);
+    if (a->argc == iFirst)
+    {
+        RTPrintf("Empty command parameter list, show help.\n");
+        printHelp(g_pStdOut);
+        return RTEXITCODE_SUCCESS;
+    }
 
     static const RTGETOPTDEF s_aOptions[] =
     {
@@ -1002,7 +1114,9 @@ static RTEXITCODE handleCloudInstance(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT
         { "pause",          1002, RTGETOPT_REQ_NOTHING },
         { "info",           1003, RTGETOPT_REQ_NOTHING },
         { "update",         1004, RTGETOPT_REQ_NOTHING },
-        { "terminate",      1005, RTGETOPT_REQ_NOTHING }
+        { "terminate",      1005, RTGETOPT_REQ_NOTHING },
+        { "help",           1006, RTGETOPT_REQ_NOTHING },
+        { "--help",         1007, RTGETOPT_REQ_NOTHING }
     };
 
     RTGETOPTSTATE GetState;
@@ -1017,7 +1131,7 @@ static RTEXITCODE handleCloudInstance(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT
         {
             /* Sub-commands: */
             case 1000:
-//              setCurrentSubcommand(HELP_SCOPE_CLOUDINSTANCE_CREATE);
+                setCurrentSubcommand(HELP_SCOPE_CLOUDINSTANCE_CREATE);
                 return createCloudInstance(a, GetState.iNext, pCommonOpts);
             case 1001:
                 setCurrentSubcommand(HELP_SCOPE_CLOUDINSTANCE_START);
@@ -1034,6 +1148,10 @@ static RTEXITCODE handleCloudInstance(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT
             case 1005:
                 setCurrentSubcommand(HELP_SCOPE_CLOUDINSTANCE_TERMINATE);
                 return terminateCloudInstance(a, GetState.iNext, pCommonOpts);
+            case 1006:
+            case 1007:
+                printHelp(g_pStdOut);
+                return RTEXITCODE_SUCCESS;
             case VINF_GETOPT_NOT_OPTION:
                 return errorUnknownSubcommand(ValueUnion.psz);
 
@@ -1049,9 +1167,6 @@ static RTEXITCODE handleCloudInstance(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT
 static RTEXITCODE createCloudImage(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT pCommonOpts)
 {
     HRESULT hrc = S_OK;
-    hrc = checkAndSetCommonOptions(a, pCommonOpts);
-    if (FAILED(hrc))
-        return RTEXITCODE_FAILURE;
 
     static const RTGETOPTDEF s_aOptions[] =
     {
@@ -1061,11 +1176,19 @@ static RTEXITCODE createCloudImage(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT pC
         { "--instance-id",    'i', RTGETOPT_REQ_STRING },
         { "--display-name",   'd', RTGETOPT_REQ_STRING },
         { "--launch-mode",    'm', RTGETOPT_REQ_STRING },
+        { "help",             1001, RTGETOPT_REQ_NOTHING },
+        { "--help",           1002, RTGETOPT_REQ_NOTHING }
     };
     RTGETOPTSTATE GetState;
     RTGETOPTUNION ValueUnion;
     int vrc = RTGetOptInit(&GetState, a->argc, a->argv, s_aOptions, RT_ELEMENTS(s_aOptions), iFirst, 0);
     AssertRCReturn(vrc, RTEXITCODE_FAILURE);
+    if (a->argc == iFirst)
+    {
+        RTPrintf("Empty command parameter list, show help.\n");
+        printHelp(g_pStdOut);
+        return RTEXITCODE_SUCCESS;
+    }
 
     Utf8Str strCompartmentId;
     Utf8Str strInstanceId;
@@ -1103,12 +1226,21 @@ static RTEXITCODE createCloudImage(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT pC
                 strBucketName=ValueUnion.psz;
                 Bstr(Utf8Str("launch-mode=").append(ValueUnion.psz)).detachTo(parameters.appendedRaw());
                 break;
+            case 1001:
+            case 1002:
+                printHelp(g_pStdOut);
+                return RTEXITCODE_SUCCESS;
             case VINF_GETOPT_NOT_OPTION:
                 return errorUnknownSubcommand(ValueUnion.psz);
             default:
                 return errorGetOpt(c, &ValueUnion);
         }
     }
+
+    /* Delayed check. It allows us to print help information.*/
+    hrc = checkAndSetCommonOptions(a, pCommonOpts);
+    if (FAILED(hrc))
+        return RTEXITCODE_FAILURE;
 
     if (strInstanceId.isNotEmpty() && strObjectName.isNotEmpty())
         return errorArgument("Conflicting parameters: --instance-id and --object-name can't be used together. Choose one.");
@@ -1143,9 +1275,6 @@ static RTEXITCODE createCloudImage(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT pC
 static RTEXITCODE exportCloudImage(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT pCommonOpts)
 {
     HRESULT hrc = S_OK;
-    hrc = checkAndSetCommonOptions(a, pCommonOpts);
-    if (FAILED(hrc))
-        return RTEXITCODE_FAILURE;
 
     static const RTGETOPTDEF s_aOptions[] =
     {
@@ -1154,11 +1283,19 @@ static RTEXITCODE exportCloudImage(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT pC
         { "--object-name",    'o', RTGETOPT_REQ_STRING },
         { "--display-name",   'd', RTGETOPT_REQ_STRING },
         { "--launch-mode",    'm', RTGETOPT_REQ_STRING },
+        { "help",             1001, RTGETOPT_REQ_NOTHING },
+        { "--help",           1002, RTGETOPT_REQ_NOTHING }
     };
     RTGETOPTSTATE GetState;
     RTGETOPTUNION ValueUnion;
     int vrc = RTGetOptInit(&GetState, a->argc, a->argv, s_aOptions, RT_ELEMENTS(s_aOptions), iFirst, 0);
     AssertRCReturn(vrc, RTEXITCODE_FAILURE);
+    if (a->argc == iFirst)
+    {
+        RTPrintf("Empty command parameter list, show help.\n");
+        printHelp(g_pStdOut);
+        return RTEXITCODE_SUCCESS;
+    }
 
     Utf8Str strImageId;   /* XXX: this is vbox "image", i.e. medium */
     Utf8Str strBucketName;
@@ -1232,6 +1369,11 @@ static RTEXITCODE exportCloudImage(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT pC
                 break;
             }
 
+            case 1001:
+            case 1002:
+                printHelp(g_pStdOut);
+                return RTEXITCODE_SUCCESS;
+
             case VINF_GETOPT_NOT_OPTION:
                 return errorUnknownSubcommand(ValueUnion.psz);
 
@@ -1239,6 +1381,11 @@ static RTEXITCODE exportCloudImage(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT pC
                 return errorGetOpt(c, &ValueUnion);
         }
     }
+
+    /* Delayed check. It allows us to print help information.*/
+    hrc = checkAndSetCommonOptions(a, pCommonOpts);
+    if (FAILED(hrc))
+        return RTEXITCODE_FAILURE;
 
     if (strImageId.isNotEmpty())
         BstrFmt("image-id=%s", strImageId.c_str()).detachTo(parameters.appendedRaw());
@@ -1326,20 +1473,25 @@ static RTEXITCODE exportCloudImage(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT pC
 static RTEXITCODE importCloudImage(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT pCommonOpts)
 {
     HRESULT hrc = S_OK;
-    hrc = checkAndSetCommonOptions(a, pCommonOpts);
-    if (FAILED(hrc))
-        return RTEXITCODE_FAILURE;
 
     static const RTGETOPTDEF s_aOptions[] =
     {
         { "--id",             'i', RTGETOPT_REQ_STRING },
         { "--bucket-name",    'b', RTGETOPT_REQ_STRING },
-        { "--object-name",    'o', RTGETOPT_REQ_STRING }
+        { "--object-name",    'o', RTGETOPT_REQ_STRING },
+        { "help",             1001, RTGETOPT_REQ_NOTHING },
+        { "--help",           1002, RTGETOPT_REQ_NOTHING }
     };
     RTGETOPTSTATE GetState;
     RTGETOPTUNION ValueUnion;
     int vrc = RTGetOptInit(&GetState, a->argc, a->argv, s_aOptions, RT_ELEMENTS(s_aOptions), iFirst, 0);
     AssertRCReturn(vrc, RTEXITCODE_FAILURE);
+    if (a->argc == iFirst)
+    {
+        RTPrintf("Empty command parameter list, show help.\n");
+        printHelp(g_pStdOut);
+        return RTEXITCODE_SUCCESS;
+    }
 
     Utf8Str strImageId;
     Utf8Str strCompartmentId;
@@ -1364,12 +1516,21 @@ static RTEXITCODE importCloudImage(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT pC
                 strObjectName=ValueUnion.psz;
                 Bstr(Utf8Str("object-name=").append(ValueUnion.psz)).detachTo(parameters.appendedRaw());
                 break;
+            case 1001:
+            case 1002:
+                printHelp(g_pStdOut);
+                return RTEXITCODE_SUCCESS;
             case VINF_GETOPT_NOT_OPTION:
                 return errorUnknownSubcommand(ValueUnion.psz);
             default:
                 return errorGetOpt(c, &ValueUnion);
         }
     }
+
+    /* Delayed check. It allows us to print help information.*/
+    hrc = checkAndSetCommonOptions(a, pCommonOpts);
+    if (FAILED(hrc))
+        return RTEXITCODE_FAILURE;
 
     ComPtr<ICloudProfile> pCloudProfile = pCommonOpts->profile.pCloudProfile;
 
@@ -1400,18 +1561,23 @@ static RTEXITCODE importCloudImage(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT pC
 static RTEXITCODE showCloudImageInfo(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT pCommonOpts)
 {
     HRESULT hrc = S_OK;
-    hrc = checkAndSetCommonOptions(a, pCommonOpts);
-    if (FAILED(hrc))
-        return RTEXITCODE_FAILURE;
 
     static const RTGETOPTDEF s_aOptions[] =
     {
-        { "--id", 'i', RTGETOPT_REQ_STRING }
+        { "--id", 'i', RTGETOPT_REQ_STRING },
+        { "help",   1001, RTGETOPT_REQ_NOTHING },
+        { "--help", 1002, RTGETOPT_REQ_NOTHING }
     };
     RTGETOPTSTATE GetState;
     RTGETOPTUNION ValueUnion;
     int vrc = RTGetOptInit(&GetState, a->argc, a->argv, s_aOptions, RT_ELEMENTS(s_aOptions), iFirst, 0);
     AssertRCReturn(vrc, RTEXITCODE_FAILURE);
+    if (a->argc == iFirst)
+    {
+        RTPrintf("Empty command parameter list, show help.\n");
+        printHelp(g_pStdOut);
+        return RTEXITCODE_SUCCESS;
+    }
 
     Utf8Str strImageId;
 
@@ -1423,12 +1589,21 @@ static RTEXITCODE showCloudImageInfo(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT 
             case 'i':
                 strImageId = ValueUnion.psz;
                 break;
+            case 1001:
+            case 1002:
+                printHelp(g_pStdOut);
+                return RTEXITCODE_SUCCESS;
             case VINF_GETOPT_NOT_OPTION:
                 return errorUnknownSubcommand(ValueUnion.psz);
             default:
                 return errorGetOpt(c, &ValueUnion);
         }
     }
+
+    /* Delayed check. It allows us to print help information.*/
+    hrc = checkAndSetCommonOptions(a, pCommonOpts);
+    if (FAILED(hrc))
+        return RTEXITCODE_FAILURE;
 
     ComPtr<ICloudProfile> pCloudProfile = pCommonOpts->profile.pCloudProfile;
 
@@ -1478,18 +1653,23 @@ static RTEXITCODE updateCloudImage(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT pC
 static RTEXITCODE deleteCloudImage(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT pCommonOpts)
 {
     HRESULT hrc = S_OK;
-    hrc = checkAndSetCommonOptions(a, pCommonOpts);
-    if (FAILED(hrc))
-        return RTEXITCODE_FAILURE;
 
     static const RTGETOPTDEF s_aOptions[] =
     {
-        { "--id", 'i', RTGETOPT_REQ_STRING }
+        { "--id", 'i', RTGETOPT_REQ_STRING },
+        { "help",   1001, RTGETOPT_REQ_NOTHING },
+        { "--help", 1002, RTGETOPT_REQ_NOTHING }
     };
     RTGETOPTSTATE GetState;
     RTGETOPTUNION ValueUnion;
     int vrc = RTGetOptInit(&GetState, a->argc, a->argv, s_aOptions, RT_ELEMENTS(s_aOptions), iFirst, 0);
     AssertRCReturn(vrc, RTEXITCODE_FAILURE);
+    if (a->argc == iFirst)
+    {
+        RTPrintf("Empty command parameter list, show help.\n");
+        printHelp(g_pStdOut);
+        return RTEXITCODE_SUCCESS;
+    }
 
     Utf8Str strImageId;
 
@@ -1510,6 +1690,10 @@ static RTEXITCODE deleteCloudImage(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT pC
                 break;
             }
 
+            case 1001:
+            case 1002:
+                printHelp(g_pStdOut);
+                return RTEXITCODE_SUCCESS;
             case VINF_GETOPT_NOT_OPTION:
                 return errorUnknownSubcommand(ValueUnion.psz);
 
@@ -1517,6 +1701,11 @@ static RTEXITCODE deleteCloudImage(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT pC
                 return errorGetOpt(c, &ValueUnion);
         }
     }
+
+    /* Delayed check. It allows us to print help information.*/
+    hrc = checkAndSetCommonOptions(a, pCommonOpts);
+    if (FAILED(hrc))
+        return RTEXITCODE_FAILURE;
 
     if (strImageId.isEmpty())
         return errorArgument("Missing parameter: --id");
@@ -1545,8 +1734,14 @@ static RTEXITCODE deleteCloudImage(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT pC
 
 static RTEXITCODE handleCloudImage(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT pCommonOpts)
 {
-    if (a->argc < 1)
-        return errorNoSubcommand();
+    setCurrentCommand(HELP_CMD_CLOUDIMAGE);
+    setCurrentSubcommand(HELP_SCOPE_CLOUDIMAGE);
+    if (a->argc == iFirst)
+    {
+        RTPrintf("Empty command parameter list, show help.\n");
+        printHelp(g_pStdOut);
+        return RTEXITCODE_SUCCESS;
+    }
 
     static const RTGETOPTDEF s_aOptions[] =
     {
@@ -1555,7 +1750,9 @@ static RTEXITCODE handleCloudImage(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT pC
         { "import",         1002, RTGETOPT_REQ_NOTHING },
         { "info",           1003, RTGETOPT_REQ_NOTHING },
         { "update",         1004, RTGETOPT_REQ_NOTHING },
-        { "delete",         1005, RTGETOPT_REQ_NOTHING }
+        { "delete",         1005, RTGETOPT_REQ_NOTHING },
+        { "help",           1006, RTGETOPT_REQ_NOTHING },
+        { "--help",         1007, RTGETOPT_REQ_NOTHING }
     };
 
     RTGETOPTSTATE GetState;
@@ -1570,23 +1767,27 @@ static RTEXITCODE handleCloudImage(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT pC
         {
             /* Sub-commands: */
             case 1000:
-//              setCurrentSubcommand(HELP_SCOPE_CLOUDIMAGE_CREATE);
+                setCurrentSubcommand(HELP_SCOPE_CLOUDIMAGE_CREATE);
                 return createCloudImage(a, GetState.iNext, pCommonOpts);
             case 1001:
-//              setCurrentSubcommand(HELP_SCOPE_CLOUDIMAGE_EXPORT);
+                setCurrentSubcommand(HELP_SCOPE_CLOUDIMAGE_EXPORT);
                 return exportCloudImage(a, GetState.iNext, pCommonOpts);
             case 1002:
-//              setCurrentSubcommand(HELP_SCOPE_CLOUDIMAGE_IMPORT);
+                setCurrentSubcommand(HELP_SCOPE_CLOUDIMAGE_IMPORT);
                 return importCloudImage(a, GetState.iNext, pCommonOpts);
             case 1003:
-//              setCurrentSubcommand(HELP_SCOPE_CLOUDIMAGE_INFO);
+                setCurrentSubcommand(HELP_SCOPE_CLOUDIMAGE_INFO);
                 return showCloudImageInfo(a, GetState.iNext, pCommonOpts);
             case 1004:
 //              setCurrentSubcommand(HELP_SCOPE_CLOUDIMAGE_UPDATE);
                 return updateCloudImage(a, GetState.iNext, pCommonOpts);
             case 1005:
-//              setCurrentSubcommand(HELP_SCOPE_CLOUDIMAGE_DELETE);
+                setCurrentSubcommand(HELP_SCOPE_CLOUDIMAGE_DELETE);
                 return deleteCloudImage(a, GetState.iNext, pCommonOpts);
+            case 1006:
+            case 1007:
+                printHelp(g_pStdOut);
+                return RTEXITCODE_SUCCESS;
             case VINF_GETOPT_NOT_OPTION:
                 return errorUnknownSubcommand(ValueUnion.psz);
 
