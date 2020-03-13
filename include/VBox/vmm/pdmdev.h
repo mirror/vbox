@@ -4132,14 +4132,10 @@ typedef struct PDMDEVHLPR3
      * @param   pDevIns             The device instance.
      * @param   enmKind             The kind of access handler.
      * @param   pfnHandlerR3        Pointer to the ring-3 handler callback.
-     * @param   pszModR0            The name of the ring-0 module, NULL is an alias for
-     *                              the main ring-0 module.
      * @param   pszHandlerR0        The name of the ring-0 handler, NULL if the ring-3
      *                              handler should be called.
      * @param   pszPfHandlerR0      The name of the ring-0 \#PF handler, NULL if the
      *                              ring-3 handler should be called.
-     * @param   pszModRC            The name of the raw-mode context module, NULL is an
-     *                              alias for the main RC module.
      * @param   pszHandlerRC        The name of the raw-mode context handler, NULL if
      *                              the ring-3 handler should be called.
      * @param   pszPfHandlerRC      The name of the raw-mode context \#PF handler, NULL
