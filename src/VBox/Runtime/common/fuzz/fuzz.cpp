@@ -2078,11 +2078,12 @@ RTDECL(int) RTFuzzCtxInputGenerate(RTFUZZCTX hFuzzCtx, PRTFUZZINPUT phFuzzInput)
         if (!(pMutator->fFlags & RTFUZZMUTATOR_F_END_OF_BUF))
         {
             uint64_t offMax = pMutationParent->cbInput - 1;
-            if (   pMutation->cbMutNew != UINT64_MAX
-                && pMutation->offMutStartNew + pMutation->cbMutNew < offMax)
-                offMax = pMutation->offMutStartNew + pMutation->cbMutNew - 1;
+            if (   pMutationParent->cbMutNew != UINT64_MAX
+                && pMutationParent->offMutStartNew + pMutationParent->cbMutNew < offMax)
+                offMax = pMutationParent->offMutStartNew + pMutationParent->cbMutNew - 1;
 
-            offStart = RTRandAdvU64Ex(pThis->hRand, pMutation->offMutStartNew, offMax);
+            offMax = RT_MAX(pMutationParent->offMutStartNew, offMax);
+            offStart = RTRandAdvU64Ex(pThis->hRand, pMutationParent->offMutStartNew, offMax);
         }
         else
             offStart = pMutationParent->cbInput;
