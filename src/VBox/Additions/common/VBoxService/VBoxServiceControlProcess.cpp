@@ -135,37 +135,55 @@ static int vgsvcGstCtrlProcessInit(PVBOXSERVICECTRLPROCESS pProcess,
  *
  * @return  IPRT status code.
  * @param   pProcess                Guest process to free.
+ *                                  The pointer will not be valid anymore after return.
  */
 int VGSvcGstCtrlProcessFree(PVBOXSERVICECTRLPROCESS pProcess)
 {
     AssertPtrReturn(pProcess, VERR_INVALID_POINTER);
 
-    VGSvcVerbose(3, "[PID %RU32]: Freeing (cRefs=%RU32)...\n", pProcess->uPID, pProcess->cRefs);
-    Assert(pProcess->cRefs == 0);
+    int rc = RTCritSectEnter(&pProcess->CritSect);
+    if (RT_SUCCESS(rc))
+    {
+        VGSvcVerbose(3, "[PID %RU32]: Freeing (cRefs=%RU32)...\n", pProcess->uPID, pProcess->cRefs);
 
-    /*
-     * Destroy other thread data.
-     */
-    if (RTCritSectIsInitialized(&pProcess->CritSect))
+        AssertReturn(pProcess->cRefs == 0, VERR_WRONG_ORDER);
+        AssertReturn(pProcess->fStopped, VERR_WRONG_ORDER);
+        AssertReturn(pProcess->fShutdown, VERR_WRONG_ORDER);
+
+        /*
+         * Destroy other thread data.
+         */
+        int rc = RTPollSetDestroy(pProcess->hPollSet);
+        AssertRC(rc);
+
+        rc = RTReqQueueDestroy(pProcess->hReqQueue);
+        AssertRC(rc);
+
+        rc = RTPipeClose(pProcess->hNotificationPipeR);
+        AssertRC(rc);
+        rc = RTPipeClose(pProcess->hNotificationPipeW);
+        AssertRC(rc);
+
+        rc = RTPipeClose(pProcess->hPipeStdInW);
+        AssertRC(rc);
+        rc = RTPipeClose(pProcess->hPipeStdErrR);
+        AssertRC(rc);
+        rc = RTPipeClose(pProcess->hPipeStdOutR);
+        AssertRC(rc);
+
+        rc = RTCritSectLeave(&pProcess->CritSect);
+        AssertRC(rc);
+
         RTCritSectDelete(&pProcess->CritSect);
 
-    int rc = RTReqQueueDestroy(pProcess->hReqQueue);
-    AssertRC(rc);
+        /*
+         * Destroy thread structure as final step.
+         */
+        RTMemFree(pProcess);
+        pProcess = NULL;
+    }
 
-    /*
-     * Remove from list.
-     */
-    AssertPtr(pProcess->pSession);
-    rc = VGSvcGstCtrlSessionProcessRemove(pProcess->pSession, pProcess);
-    AssertRC(rc);
-
-    /*
-     * Destroy thread structure as final step.
-     */
-    RTMemFree(pProcess);
-    pProcess = NULL;
-
-    return VINF_SUCCESS;
+    return rc;
 }
 
 
@@ -192,27 +210,24 @@ int VGSvcGstCtrlProcessStop(PVBOXSERVICECTRLPROCESS pProcess)
 /**
  * Releases a previously acquired guest process (decreases the refcount).
  *
- * @param   pProcess            Process to unlock.
+ * @param   pProcess            Process to release.
  */
 void VGSvcGstCtrlProcessRelease(PVBOXSERVICECTRLPROCESS pProcess)
 {
     AssertPtrReturnVoid(pProcess);
 
-    bool fShutdown = false;
-
-    int rc = RTCritSectEnter(&pProcess->CritSect);
-    if (RT_SUCCESS(rc))
+    int rc2 = RTCritSectEnter(&pProcess->CritSect);
+    if (RT_SUCCESS(rc2))
     {
-        Assert(pProcess->cRefs);
+        AssertReturnVoid(pProcess->cRefs);
         pProcess->cRefs--;
-        fShutdown = pProcess->fStopped; /* Has the process' thread been stopped? */
 
-        rc = RTCritSectLeave(&pProcess->CritSect);
-        AssertRC(rc);
+        VGSvcVerbose(3, "[PID %RU32]: cRefs=%RU32, fShutdown=%RTbool, fStopped=%RTbool\n",
+                     pProcess->uPID, pProcess->cRefs, pProcess->fShutdown, pProcess->fStopped);
+
+        rc2 = RTCritSectLeave(&pProcess->CritSect);
+        AssertRC(rc2);
     }
-
-    if (fShutdown)
-        VGSvcGstCtrlProcessFree(pProcess);
 }
 
 
@@ -231,7 +246,8 @@ int VGSvcGstCtrlProcessWait(const PVBOXSERVICECTRLPROCESS pProcess, RTMSINTERVAL
     AssertPtrNullReturn(prc, VERR_INVALID_POINTER);
 
     int rc = vgsvcGstCtrlProcessLock(pProcess);
-    if (RT_SUCCESS(rc))
+    if (   RT_SUCCESS(rc)
+        && pProcess->Thread != NIL_RTTHREAD) /* Is there a thread we can wait for? */
     {
         VGSvcVerbose(2, "[PID %RU32]: Waiting for shutdown (%RU32ms) ...\n", pProcess->uPID, msTimeout);
 
@@ -239,34 +255,30 @@ int VGSvcGstCtrlProcessWait(const PVBOXSERVICECTRLPROCESS pProcess, RTMSINTERVAL
                         ("Tried to wait on guest process=%p (PID %RU32) which has not been started yet\n",
                          pProcess, pProcess->uPID), VERR_INVALID_PARAMETER);
 
-        /* Guest process already has been stopped, no need to wait. */
-        if (!pProcess->fStopped)
-        {
-            /* Unlock process before waiting. */
-            rc = vgsvcGstCtrlProcessUnlock(pProcess);
-            AssertRC(rc);
+        /* Unlock process before waiting. */
+        rc = vgsvcGstCtrlProcessUnlock(pProcess);
+        AssertRC(rc);
 
-            /* Do the actual waiting. */
-            int rcThread;
-            Assert(pProcess->Thread != NIL_RTTHREAD);
-            rc = RTThreadWait(pProcess->Thread, msTimeout, &rcThread);
-            if (RT_SUCCESS(rc))
-            {
-                pProcess->Thread = NIL_RTTHREAD;
-                VGSvcVerbose(3, "[PID %RU32]: Thread shutdown complete, thread rc=%Rrc\n", pProcess->uPID, rcThread);
-                if (prc)
-                    *prc = rcThread;
-            }
-            else
-                VGSvcError("[PID %RU32]: Waiting for shutting down thread returned error rc=%Rrc\n", pProcess->uPID, rc);
+        /* Do the actual waiting. */
+        int rcThread;
+        Assert(pProcess->Thread != NIL_RTTHREAD);
+        rc = RTThreadWait(pProcess->Thread, msTimeout, &rcThread);
+
+        int rc2 = vgsvcGstCtrlProcessLock(pProcess);
+        AssertRC(rc2);
+
+        if (RT_SUCCESS(rc))
+        {
+            pProcess->Thread = NIL_RTTHREAD;
+            VGSvcVerbose(3, "[PID %RU32]: Thread shutdown complete, thread rc=%Rrc\n", pProcess->uPID, rcThread);
+            if (prc)
+                *prc = rcThread;
         }
         else
-        {
-            VGSvcVerbose(3, "[PID %RU32]: Thread already shut down, no waiting needed\n", pProcess->uPID);
+            VGSvcError("[PID %RU32]: Waiting for shutting down thread returned error rc=%Rrc\n", pProcess->uPID, rc);
 
-            int rc2 = vgsvcGstCtrlProcessUnlock(pProcess);
-            AssertRC(rc2);
-        }
+        rc2 = vgsvcGstCtrlProcessUnlock(pProcess);
+        AssertRC(rc2);
     }
 
     VGSvcVerbose(3, "[PID %RU32]: Waiting resulted in rc=%Rrc\n", pProcess->uPID, rc);
@@ -1453,7 +1465,7 @@ static int vgsvcGstCtrlProcessProcessWorker(PVBOXSERVICECTRLPROCESS pProcess)
     int rc = VGSvcGstCtrlSessionProcessAdd(pProcess->pSession, pProcess);
     if (RT_FAILURE(rc))
     {
-        VGSvcError("Errorwhile adding guest process '%s' (%p) to session process list, rc=%Rrc\n",
+        VGSvcError("Error while adding guest process '%s' (%p) to session process list, rc=%Rrc\n",
                    pProcess->StartupInfo.szCmd, pProcess, rc);
         RTThreadUserSignal(RTThreadSelf());
         return rc;
@@ -1609,14 +1621,9 @@ static int vgsvcGstCtrlProcessProcessWorker(PVBOXSERVICECTRLPROCESS pProcess)
                                          * the guest from getting stuck accessing them.
                                          * So, NIL the handles to avoid closing them again.
                                          */
-                                        /** @todo r=bird: Can't see how hNotificationPipeR could be closed here!  Found (and fixed)
-                                         * confused comments documenting hNotificationPipeW, probably related. */
                                         if (RT_FAILURE(RTPollSetQueryHandle(pProcess->hPollSet,
                                                                             VBOXSERVICECTRLPIPEID_IPC_NOTIFY, NULL)))
-                                        {
-                                            pProcess->hNotificationPipeR = NIL_RTPIPE;
                                             pProcess->hNotificationPipeW = NIL_RTPIPE;
-                                        }
                                         if (RT_FAILURE(RTPollSetQueryHandle(pProcess->hPollSet,
                                                                             VBOXSERVICECTRLPIPEID_STDERR, NULL)))
                                             pProcess->hPipeStdErrR = NIL_RTPIPE;
@@ -1629,6 +1636,7 @@ static int vgsvcGstCtrlProcessProcessWorker(PVBOXSERVICECTRLPROCESS pProcess)
                                     }
                                 }
                                 RTPollSetDestroy(pProcess->hPollSet);
+                                pProcess->hPollSet = NIL_RTPOLLSET;
 
                                 RTPipeClose(pProcess->hNotificationPipeR);
                                 pProcess->hNotificationPipeR = NIL_RTPIPE;
@@ -1637,7 +1645,7 @@ static int vgsvcGstCtrlProcessProcessWorker(PVBOXSERVICECTRLPROCESS pProcess)
                             }
                             RTPipeClose(pProcess->hPipeStdErrR);
                             pProcess->hPipeStdErrR = NIL_RTPIPE;
-                            RTHandleClose(phStdErr);
+                            RTHandleClose(&hStdErr);
                             if (phStdErr)
                                 RTHandleClose(phStdErr);
                         }
@@ -1649,7 +1657,9 @@ static int vgsvcGstCtrlProcessProcessWorker(PVBOXSERVICECTRLPROCESS pProcess)
                     }
                     RTPipeClose(pProcess->hPipeStdInW);
                     pProcess->hPipeStdInW = NIL_RTPIPE;
-                    RTHandleClose(phStdIn);
+                    RTHandleClose(&hStdIn);
+                    if (phStdIn)
+                        RTHandleClose(phStdIn);
                 }
             }
             RTEnvDestroy(hEnv);
@@ -1668,6 +1678,9 @@ static int vgsvcGstCtrlProcessProcessWorker(PVBOXSERVICECTRLPROCESS pProcess)
                        pProcess->uPID, rc2, rc);
     }
 
+    /* Update stopped status. */
+    ASMAtomicWriteBool(&pProcess->fStopped, true);
+
     if (cArgs)
         RTGetOptArgvFree(papszArgs);
 
@@ -1675,15 +1688,17 @@ static int vgsvcGstCtrlProcessProcessWorker(PVBOXSERVICECTRLPROCESS pProcess)
      * If something went wrong signal the user event so that others don't wait
      * forever on this thread.
      */
-    if (RT_FAILURE(rc) && !fSignalled)
+    if (   RT_FAILURE(rc)
+        && !fSignalled)
+    {
         RTThreadUserSignal(RTThreadSelf());
+    }
 
-    VGSvcVerbose(3, "[PID %RU32]: Thread of process '%s' ended with rc=%Rrc\n",
-                 pProcess->uPID, pProcess->StartupInfo.szCmd, rc);
-
-    /* Finally, update stopped status. */
-    ASMAtomicWriteBool(&pProcess->fStopped, true);
+    /* Set shut down flag in case we've forgotten it. */
     ASMAtomicWriteBool(&pProcess->fShutdown, true);
+
+    VGSvcVerbose(3, "[PID %RU32]: Thread of process '%s' ended with rc=%Rrc (fSignalled=%RTbool)\n",
+                 pProcess->uPID, pProcess->StartupInfo.szCmd, rc, fSignalled);
 
     return rc;
 }

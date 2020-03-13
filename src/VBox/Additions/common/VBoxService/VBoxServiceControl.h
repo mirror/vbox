@@ -178,8 +178,12 @@ typedef struct VBOXSERVICECTRLSESSION
     /** List of active guest process threads
      *  (VBOXSERVICECTRLPROCESS). */
     RTLISTANCHOR                    lstProcesses;
+    /** Number of guest processes in the process list. */
+    uint32_t                        cProcesses;
     /** List of guest control files (VBOXSERVICECTRLFILE). */
     RTLISTANCHOR                    lstFiles;
+    /** Number of guest files in the file list. */
+    uint32_t                        cFiles;
     /** The session's critical section. */
     RTCRITSECT                      CritSect;
     /** Internal session flags, not related
@@ -277,7 +281,7 @@ typedef struct VBOXSERVICECTRLPROCESS
      *  guest process' stdout.*/
     RTPIPE                          hPipeStdOutR;
     /** StdOut pipe for addressing reads from
-     *  guest process' stdout.*/
+     *  guest process' stderr.*/
     RTPIPE                          hPipeStdErrR;
 
     /** The write end of the notification pipe that is used to poke the thread
@@ -316,7 +320,7 @@ extern int                      VGSvcGstCtrlSessionInit(PVBOXSERVICECTRLSESSION 
 extern int                      VGSvcGstCtrlSessionHandler(PVBOXSERVICECTRLSESSION pSession, uint32_t uMsg, PVBGLR3GUESTCTRLCMDCTX pHostCtx, void *pvScratchBuf, size_t cbScratchBuf, volatile bool *pfShutdown);
 extern int                      VGSvcGstCtrlSessionProcessAdd(PVBOXSERVICECTRLSESSION pSession, PVBOXSERVICECTRLPROCESS pProcess);
 extern int                      VGSvcGstCtrlSessionProcessRemove(PVBOXSERVICECTRLSESSION pSession, PVBOXSERVICECTRLPROCESS pProcess);
-extern int                      VGSvcGstCtrlSessionProcessStartAllowed(const PVBOXSERVICECTRLSESSION pSession, bool *pbAllowed);
+extern int                      VGSvcGstCtrlSessionProcessStartAllowed(const PVBOXSERVICECTRLSESSION pSession, bool *pfAllowed);
 extern int                      VGSvcGstCtrlSessionReapProcesses(PVBOXSERVICECTRLSESSION pSession);
 /** @} */
 /** @name Per-guest process functions.

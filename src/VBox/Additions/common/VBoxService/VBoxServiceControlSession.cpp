@@ -61,6 +61,9 @@ enum
 };
 
 
+static int vgsvcGstCtrlSessionCleanupProcesses(const PVBOXSERVICECTRLSESSION pSession);
+
+
 /**
  * Helper that grows the scratch buffer.
  * @returns Success indicator.
@@ -1053,6 +1056,8 @@ static int vgsvcGstCtrlSessionHandleProcExec(PVBOXSERVICECTRLSESSION pSession, P
         rc = VGSvcGstCtrlSessionProcessStartAllowed(pSession, &fStartAllowed);
         if (RT_SUCCESS(rc))
         {
+            vgsvcGstCtrlSessionCleanupProcesses(pSession);
+
             if (fStartAllowed)
                 rc = VGSvcGstCtrlProcessStart(pSession, &startupInfo, pHostCtx->uContextID);
             else
@@ -1225,6 +1230,8 @@ static int vgsvcGstCtrlSessionHandleProcTerminate(const PVBOXSERVICECTRLSESSION 
         if (pProcess)
         {
             rc = VGSvcGstCtrlProcessHandleTerm(pProcess);
+            if (RT_FAILURE(rc))
+                VGSvcError("Error terminating PID=%RU32, rc=%Rrc\n", uPID, rc);
 
             VGSvcGstCtrlProcessRelease(pProcess);
         }
@@ -1232,11 +1239,6 @@ static int vgsvcGstCtrlSessionHandleProcTerminate(const PVBOXSERVICECTRLSESSION 
         {
             VGSvcError("Could not find PID %u for termination.\n", uPID);
             rc = VERR_PROCESS_NOT_FOUND;
-/** @todo r=bird:
- *
- *  No way to report status status code for output requests?
- *
- */
         }
     }
     else
@@ -1837,15 +1839,11 @@ int VGSvcGstCtrlSessionClose(PVBOXSERVICECTRLSESSION pSession)
         VGSvcVerbose(0, "Stopping all guest processes ...\n");
 
         /* Signal all guest processes in the active list that we want to shutdown. */
-        size_t cProcesses = 0;
         PVBOXSERVICECTRLPROCESS pProcess;
         RTListForEach(&pSession->lstProcesses, pProcess, VBOXSERVICECTRLPROCESS, Node)
-        {
             VGSvcGstCtrlProcessStop(pProcess);
-            cProcesses++;
-        }
 
-        VGSvcVerbose(1, "%zu guest processes were signalled to stop\n", cProcesses);
+        VGSvcVerbose(1, "%RU32 guest processes were signalled to stop\n", pSession->cProcesses);
 
         /* Wait for all active threads to shutdown and destroy the active thread list. */
         pProcess = RTListGetFirst(&pSession->lstProcesses, VBOXSERVICECTRLPROCESS, Node);
@@ -1946,6 +1944,9 @@ int VGSvcGstCtrlSessionInit(PVBOXSERVICECTRLSESSION pSession, uint32_t fFlags)
     RTListInit(&pSession->lstProcesses);
     RTListInit(&pSession->lstFiles);
 
+    pSession->cProcesses = 0;
+    pSession->cFiles     = 0;
+
     pSession->fFlags = fFlags;
 
     /* Init critical section for protecting the thread lists. */
@@ -1971,10 +1972,14 @@ int VGSvcGstCtrlSessionProcessAdd(PVBOXSERVICECTRLSESSION pSession, PVBOXSERVICE
     int rc = RTCritSectEnter(&pSession->CritSect);
     if (RT_SUCCESS(rc))
     {
-        VGSvcVerbose( 3, "Adding process (PID %RU32) to session ID=%RU32\n", pProcess->uPID, pSession->StartupInfo.uSessionID);
+        VGSvcVerbose(3, "Adding process (PID %RU32) to session ID=%RU32\n", pProcess->uPID, pSession->StartupInfo.uSessionID);
 
         /* Add process to session list. */
         RTListAppend(&pSession->lstProcesses, &pProcess->Node);
+
+        pSession->cProcesses++;
+        VGSvcVerbose(3, "Now session ID=%RU32 has %RU32 processes total\n",
+                     pSession->StartupInfo.uSessionID, pSession->cProcesses);
 
         int rc2 = RTCritSectLeave(&pSession->CritSect);
         if (RT_SUCCESS(rc))
@@ -2001,16 +2006,21 @@ int VGSvcGstCtrlSessionProcessRemove(PVBOXSERVICECTRLSESSION pSession, PVBOXSERV
     if (RT_SUCCESS(rc))
     {
         VGSvcVerbose(3, "Removing process (PID %RU32) from session ID=%RU32\n", pProcess->uPID, pSession->StartupInfo.uSessionID);
-        Assert(pProcess->cRefs == 0);
+        AssertReturn(pProcess->cRefs == 0, VERR_WRONG_ORDER);
 
         RTListNodeRemove(&pProcess->Node);
+
+        AssertReturn(pSession->cProcesses, VERR_WRONG_ORDER);
+        pSession->cProcesses--;
+        VGSvcVerbose(3, "Now session ID=%RU32 has %RU32 processes total\n",
+                     pSession->StartupInfo.uSessionID, pSession->cProcesses);
 
         int rc2 = RTCritSectLeave(&pSession->CritSect);
         if (RT_SUCCESS(rc))
             rc = rc2;
     }
 
-    return VINF_SUCCESS;
+    return rc;
 }
 
 
@@ -2020,13 +2030,13 @@ int VGSvcGstCtrlSessionProcessRemove(PVBOXSERVICECTRLSESSION pSession, PVBOXSERV
  *
  * @return  VBox status code.
  * @param   pSession            The guest session.
- * @param   pbAllowed           True if starting (another) guest process
- *                              is allowed, false if not.
+ * @param   pfAllowed           \c True if starting (another) guest process
+ *                              is allowed, \c false if not.
  */
-int VGSvcGstCtrlSessionProcessStartAllowed(const PVBOXSERVICECTRLSESSION pSession, bool *pbAllowed)
+int VGSvcGstCtrlSessionProcessStartAllowed(const PVBOXSERVICECTRLSESSION pSession, bool *pfAllowed)
 {
     AssertPtrReturn(pSession, VERR_INVALID_POINTER);
-    AssertPtrReturn(pbAllowed, VERR_INVALID_POINTER);
+    AssertPtrReturn(pfAllowed, VERR_INVALID_POINTER);
 
     int rc = RTCritSectEnter(&pSession->CritSect);
     if (RT_SUCCESS(rc))
@@ -2038,27 +2048,74 @@ int VGSvcGstCtrlSessionProcessStartAllowed(const PVBOXSERVICECTRLSESSION pSessio
         bool fLimitReached = false;
         if (pSession->uProcsMaxKept) /* If we allow unlimited processes (=0), take a shortcut. */
         {
-            uint32_t uProcsRunning = 0;
-            PVBOXSERVICECTRLPROCESS pProcess;
-            RTListForEach(&pSession->lstProcesses, pProcess, VBOXSERVICECTRLPROCESS, Node)
-                uProcsRunning++;
+            VGSvcVerbose(3, "Maximum kept guest processes set to %RU32, acurrent=%RU32\n",
+                         pSession->uProcsMaxKept, pSession->cProcesses);
 
-            VGSvcVerbose(3, "Maximum served guest processes set to %u, running=%u\n", pSession->uProcsMaxKept, uProcsRunning);
-
-            int32_t iProcsLeft = (pSession->uProcsMaxKept - uProcsRunning - 1);
+            int32_t iProcsLeft = (pSession->uProcsMaxKept - pSession->cProcesses - 1);
             if (iProcsLeft < 0)
             {
-                VGSvcVerbose(3, "Maximum running guest processes reached (%u)\n", pSession->uProcsMaxKept);
+                VGSvcVerbose(3, "Maximum running guest processes reached (%RU32)\n", pSession->uProcsMaxKept);
                 fLimitReached = true;
             }
         }
 
-        *pbAllowed = !fLimitReached;
+        *pfAllowed = !fLimitReached;
 
         int rc2 = RTCritSectLeave(&pSession->CritSect);
         if (RT_SUCCESS(rc))
             rc = rc2;
     }
+
+    return rc;
+}
+
+
+/**
+ * Cleans up stopped and no longer used processes.
+ *
+ * This will free and remove processes from the session's process list.
+ *
+ * @returns VBox status code.
+ * @param   pSession            Session to clean up processes for.
+ */
+static int vgsvcGstCtrlSessionCleanupProcesses(const PVBOXSERVICECTRLSESSION pSession)
+{
+    AssertPtrReturn(pSession, VERR_INVALID_POINTER);
+
+    VGSvcVerbose(3, "Cleaning up stopped processes for session %RU32 ...\n", pSession->StartupInfo.uSessionID);
+
+    int rc2 = RTCritSectEnter(&pSession->CritSect);
+    AssertRC(rc2);
+
+    int rc = VINF_SUCCESS;
+
+    PVBOXSERVICECTRLPROCESS pCurProcess, pNextProcess;
+    RTListForEachSafe(&pSession->lstProcesses, pCurProcess, pNextProcess, VBOXSERVICECTRLPROCESS, Node)
+    {
+        if (ASMAtomicReadBool(&pCurProcess->fStopped))
+        {
+            rc2 = RTCritSectLeave(&pSession->CritSect);
+            AssertRC(rc2);
+
+            rc = VGSvcGstCtrlProcessWait(pCurProcess, 30 * 1000 /* Wait 30 seconds max. */, NULL /* rc */);
+            if (RT_SUCCESS(rc))
+            {
+                VGSvcGstCtrlSessionProcessRemove(pSession, pCurProcess);
+                VGSvcGstCtrlProcessFree(pCurProcess);
+            }
+
+            rc2 = RTCritSectEnter(&pSession->CritSect);
+            AssertRC(rc2);
+
+            /* If failed, try next time we're being called. */
+        }
+    }
+
+    rc2 = RTCritSectLeave(&pSession->CritSect);
+    AssertRC(rc2);
+
+    if (RT_FAILURE(rc))
+        VGSvcError("Cleaning up stopped processes for session %RU32 failed with %Rrc\n", pSession->StartupInfo.uSessionID, rc);
 
     return rc;
 }
