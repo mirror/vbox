@@ -990,32 +990,12 @@ static int vmsvgaReadPort(PPDMDEVINS pDevIns, PVGASTATE pThis, uint32_t *pu32)
 
         case SVGA_REG_HOST_BITS_PER_PIXEL: /* (Deprecated) */
             STAM_REL_COUNTER_INC(&pThis->svga.StatRegHostBitsPerPixelRd);
-            if (    pThis->svga.fEnabled
-                &&  pThis->svga.uBpp != VMSVGA_VAL_UNINITIALIZED)
-                *pu32 = pThis->svga.uBpp;
-            else
-            {
-#ifndef IN_RING3
-                rc = VINF_IOM_R3_IOPORT_READ;
-#else
-                *pu32 = pThisCC->pDrv->cBits;
-#endif
-            }
+            *pu32 = pThis->svga.uHostBpp;
             break;
 
         case SVGA_REG_BITS_PER_PIXEL:      /* Current bpp in the guest */
             STAM_REL_COUNTER_INC(&pThis->svga.StatRegBitsPerPixelRd);
-            if (    pThis->svga.fEnabled
-                &&  pThis->svga.uBpp != VMSVGA_VAL_UNINITIALIZED)
-                *pu32 = (pThis->svga.uBpp + 7) & ~7;
-            else
-            {
-#ifndef IN_RING3
-                rc = VINF_IOM_R3_IOPORT_READ;
-#else
-                *pu32 = (pThisCC->pDrv->cBits + 7) & ~7;
-#endif
-            }
+            *pu32 = pThis->svga.uBpp;
             break;
 
         case SVGA_REG_PSEUDOCOLOR:
@@ -1029,20 +1009,11 @@ static int vmsvgaReadPort(PPDMDEVINS pDevIns, PVGASTATE pThis, uint32_t *pu32)
         {
             uint32_t uBpp;
 
-            if (    pThis->svga.fEnabled
-                &&  pThis->svga.uBpp != VMSVGA_VAL_UNINITIALIZED)
-            {
+            if (pThis->svga.fEnabled)
                 uBpp = pThis->svga.uBpp;
-            }
             else
-            {
-#ifndef IN_RING3
-                rc = VINF_IOM_R3_IOPORT_READ;
-                break;
-#else
-                uBpp = pThisCC->pDrv->cBits;
-#endif
-            }
+                uBpp = pThis->svga.uHostBpp;
+
             uint32_t u32RedMask, u32GreenMask, u32BlueMask;
             switch (uBpp)
             {
@@ -1468,7 +1439,7 @@ static int vmsvgaR3ChangeMode(PVGASTATE pThis, PVGASTATECC pThisCC)
          */
         pThis->svga.uWidth  = VMSVGA_VAL_UNINITIALIZED;
         pThis->svga.uHeight = VMSVGA_VAL_UNINITIALIZED;
-        pThis->svga.uBpp    = VMSVGA_VAL_UNINITIALIZED;
+        pThis->svga.uBpp    = pThis->svga.uHostBpp;
     }
 
     vmsvgaR3VBVAResize(pThis, pThisCC);
@@ -1701,8 +1672,7 @@ static VBOXSTRICTRC vmsvgaWritePort(PPDMDEVINS pDevIns, PVGASTATE pThis, PVGASTA
             if (pThis->svga.fEnabled)
             {
                 if (    pThis->svga.uWidth  == VMSVGA_VAL_UNINITIALIZED
-                    &&  pThis->svga.uHeight == VMSVGA_VAL_UNINITIALIZED
-                    &&  pThis->svga.uBpp    == VMSVGA_VAL_UNINITIALIZED)
+                    &&  pThis->svga.uHeight == VMSVGA_VAL_UNINITIALIZED)
                 {
                     /* Keep the current mode. */
                     pThis->svga.uWidth  = pThisCC->pDrv->cx;
@@ -1711,8 +1681,7 @@ static VBOXSTRICTRC vmsvgaWritePort(PPDMDEVINS pDevIns, PVGASTATE pThis, PVGASTA
                 }
 
                 if (    pThis->svga.uWidth  != VMSVGA_VAL_UNINITIALIZED
-                    &&  pThis->svga.uHeight != VMSVGA_VAL_UNINITIALIZED
-                    &&  pThis->svga.uBpp    != VMSVGA_VAL_UNINITIALIZED)
+                    &&  pThis->svga.uHeight != VMSVGA_VAL_UNINITIALIZED)
                     ASMAtomicOrU32(&pThis->svga.u32ActionFlags, VMSVGA_ACTION_CHANGEMODE);
 # ifdef LOG_ENABLED
                 uint32_t *pFIFO = pThisCC->svga.pau32FIFO;
@@ -6308,7 +6277,7 @@ int vmsvgaR3Reset(PPDMDEVINS pDevIns)
     /* Invalidate current settings. */
     pThis->svga.uWidth       = VMSVGA_VAL_UNINITIALIZED;
     pThis->svga.uHeight      = VMSVGA_VAL_UNINITIALIZED;
-    pThis->svga.uBpp         = VMSVGA_VAL_UNINITIALIZED;
+    pThis->svga.uBpp         = pThis->svga.uHostBpp;
     pThis->svga.cbScanline   = 0;
     pThis->svga.u32PitchLock = 0;
 
@@ -6428,10 +6397,20 @@ int vmsvgaR3Init(PPDMDEVINS pDevIns)
     /* VRAM tracking is enabled by default during bootup. */
     pThis->svga.fVRAMTracking = true;
 
+    /* Set up the host bpp. This value is as a default for the programmable
+     * bpp value. On old implementations, SVGA_REG_HOST_BITS_PER_PIXEL did not
+     * exist and SVGA_REG_BITS_PER_PIXEL was read-only, returning what was later
+     * separated as SVGA_REG_HOST_BITS_PER_PIXEL.
+     *
+     * NB: The driver cBits value is currently constant for the lifetime of the
+     * VM. If that changes, the host bpp logic might need revisiting.
+     */
+    pThis->svga.uHostBpp = (pThisCC->pDrv->cBits + 7) & ~7;
+
     /* Invalidate current settings. */
     pThis->svga.uWidth     = VMSVGA_VAL_UNINITIALIZED;
     pThis->svga.uHeight    = VMSVGA_VAL_UNINITIALIZED;
-    pThis->svga.uBpp       = VMSVGA_VAL_UNINITIALIZED;
+    pThis->svga.uBpp       = pThis->svga.uHostBpp;
     pThis->svga.cbScanline = 0;
 
     pThis->svga.u32MaxWidth  = VBE_DISPI_MAX_YRES;
