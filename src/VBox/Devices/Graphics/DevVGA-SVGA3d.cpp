@@ -645,8 +645,8 @@ int vmsvga3dSurfaceDMA(PVGASTATE pThis, PVGASTATECC pThisCC, SVGA3dGuestImage gu
                                          cBlocksY);
                 AssertRC(rc);
 
-                Log4(("first line [z=%d]:\n%.*Rhxd\n",
-                      z, pMipLevel->cbSurfacePitch, (uint8_t *)pMipLevel->pSurfaceData + uHostOffset));
+                Log4(("first line [z=%d] (updated at offset 0x%x):\n%.*Rhxd\n",
+                      z, uHostOffset, pMipLevel->cbSurfacePitch, pMipLevel->pSurfaceData));
 
                 uHostOffset += pMipLevel->cbSurfacePlane;
                 uGuestOffset += pMipLevel->mipmapSize.height * cbGuestPitch;
