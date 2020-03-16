@@ -317,10 +317,13 @@ static VBOXSTRICTRC kbd_write_command(PPDMDEVINS pDevIns, PKBDSTATE s, uint32_t 
         break;
     case KBD_CCMD_MOUSE_DISABLE:
         s->mode |= KBD_MODE_DISABLE_MOUSE;
+        PS2MLineDisable(&s->Aux);
         break;
     case KBD_CCMD_MOUSE_ENABLE:
+        PS2MLineEnable(&s->Aux);
         s->mode &= ~KBD_MODE_DISABLE_MOUSE;
         /* Check for queued input. */
+        ///@todo: Can there actually be any?
         kbd_update_irq(pDevIns, s);
         break;
     case KBD_CCMD_TEST_MOUSE:
@@ -487,7 +490,11 @@ static VBOXSTRICTRC kbd_write_data(PPDMDEVINS pDevIns, PKBDSTATE s, uint32_t val
         break;
     case KBD_CCMD_WRITE_MOUSE:
         /* Automatically enables aux interface. */
-        s->mode &= ~KBD_MODE_DISABLE_MOUSE;
+        if (s->mode & KBD_MODE_DISABLE_MOUSE)
+        {
+            PS2MLineEnable(&s->Aux);
+            s->mode &= ~KBD_MODE_DISABLE_MOUSE;
+        }
         rc = PS2MByteToAux(pDevIns, &s->Aux, val);
         if (rc == VINF_SUCCESS)
             kbd_update_irq(pDevIns, s);
@@ -922,7 +929,68 @@ static DECLCALLBACK(int) kbdR3LoadDone(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
     PKBDSTATE    pThis   = PDMDEVINS_2_DATA(pDevIns, PKBDSTATE);
     PKBDSTATER3  pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PKBDSTATER3);
     RT_NOREF(pSSM);
+    if (pThis->mode & KBD_MODE_DISABLE_MOUSE)
+        PS2MLineDisable(&pThis->Aux);
+    if (pThis->mode & KBD_MODE_DISABLE_KBD)
+        PS2KLineDisable(&pThis->Kbd);
     return PS2KR3LoadDone(pDevIns, &pThis->Kbd, &pThisCC->Kbd);
+}
+
+
+/**
+ * Debug device info handler. Prints basic auxiliary device state.
+ *
+ * @param   pDevIns     Device instance which registered the info.
+ * @param   pHlp        Callback functions for doing output.
+ * @param   pszArgs     Argument string. Optional and specific to the handler.
+ */
+static DECLCALLBACK(void) kbdR3InfoState(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *pszArgs)
+{
+    PKBDSTATE    pThis   = PDMDEVINS_2_DATA(pDevIns, PKBDSTATE);
+    NOREF(pszArgs);
+
+    pHlp->pfnPrintf(pHlp, "Keyboard controller: Active command %02X, DBB out %02X, translation %s\n",
+                    pThis->write_cmd, pThis->dbbout, pThis->translate ? "on"  : "off");
+
+    pHlp->pfnPrintf(pHlp, "Mode: %02X ( ", pThis->mode);
+    if (pThis->mode & KBD_MODE_DISABLE_KBD)
+        pHlp->pfnPrintf(pHlp, "DISABLE_KBD ");
+    if (pThis->mode & KBD_MODE_KBD_INT)
+        pHlp->pfnPrintf(pHlp, "KBD_INT ");
+    if (pThis->mode & KBD_MODE_MOUSE_INT)
+        pHlp->pfnPrintf(pHlp, "AUX_INT ");
+    if (pThis->mode & KBD_MODE_SYS)
+        pHlp->pfnPrintf(pHlp, "SYS ");
+    if (pThis->mode & KBD_MODE_NO_KEYLOCK)
+        pHlp->pfnPrintf(pHlp, "NO_KEYLOCK ");
+    if (pThis->mode & KBD_MODE_DISABLE_KBD)
+        pHlp->pfnPrintf(pHlp, "DISABLE_KBD ");
+    if (pThis->mode & KBD_MODE_DISABLE_MOUSE)
+        pHlp->pfnPrintf(pHlp, "DISABLE_AUX ");
+    if (pThis->mode & KBD_MODE_KCC)
+        pHlp->pfnPrintf(pHlp, "KCC ");
+    if (pThis->mode & KBD_MODE_RFU)
+        pHlp->pfnPrintf(pHlp, "RFU ");
+    pHlp->pfnPrintf(pHlp, " )\n");
+
+    pHlp->pfnPrintf(pHlp, "Status: %02X ( ", pThis->status);
+    if (pThis->status & KBD_STAT_OBF)
+        pHlp->pfnPrintf(pHlp, "OBF ");
+    if (pThis->status & KBD_STAT_IBF)
+        pHlp->pfnPrintf(pHlp, "IBF ");
+    if (pThis->status & KBD_STAT_SELFTEST)
+        pHlp->pfnPrintf(pHlp, "SELFTEST ");
+    if (pThis->status & KBD_STAT_CMD)
+        pHlp->pfnPrintf(pHlp, "CMD ");
+    if (pThis->status & KBD_STAT_UNLOCKED)
+        pHlp->pfnPrintf(pHlp, "UNLOCKED ");
+    if (pThis->status & KBD_STAT_MOUSE_OBF)
+        pHlp->pfnPrintf(pHlp, "AUX_OBF ");
+    if (pThis->status & KBD_STAT_GTO)
+        pHlp->pfnPrintf(pHlp, "GTO ");
+    if (pThis->status & KBD_STAT_PERR)
+        pHlp->pfnPrintf(pHlp, "PERR ");
+    pHlp->pfnPrintf(pHlp, " )\n");
 }
 
 
@@ -1068,6 +1136,11 @@ static DECLCALLBACK(int) kbdR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
                                 NULL, kbdR3SaveExec, NULL,
                                 NULL, kbdR3LoadExec, kbdR3LoadDone);
     AssertRCReturn(rc, rc);
+
+    /*
+     * Register debugger info callbacks.
+     */
+    PDMDevHlpDBGFInfoRegister(pDevIns, "ps2c", "Display keyboard/mouse controller state.", kbdR3InfoState);
 
     /*
      * Attach to the keyboard and mouse drivers.

@@ -482,6 +482,33 @@ static void ps2kSetDefaults(PPDMDEVINS pDevIns, PPS2K pThis)
 }
 
 /**
+ * The keyboard controller disabled the keyboard serial line.
+ *
+ * @param   pDevIns The device instance.
+ * @param   pThis   The PS/2 auxiliary device shared instance data.
+ */
+void PS2KLineDisable(PPS2K pThis)
+{
+    pThis->fLineDisabled = true;
+}
+
+/**
+ * The keyboard controller enabled the keyboard serial line.
+ *
+ * @param   pDevIns The device instance.
+ * @param   pThis   The PS/2 auxiliary device shared instance data.
+ */
+void PS2KLineEnable(PPS2K pThis)
+{
+    pThis->fLineDisabled = false;
+
+    /* If there was anything in the input queue,
+     * consider it lost and throw it away.
+     */
+    PS2Q_CLEAR(&pThis->keyQ);
+}
+
+/**
  * Receive and process a byte sent by the keyboard controller.
  *
  * @param   pDevIns The device instance.
@@ -1030,8 +1057,9 @@ static DECLCALLBACK(void) ps2kR3InfoState(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp
     PPS2K       pThis   = &pParent->Kbd;
     NOREF(pszArgs);
 
-    pHlp->pfnPrintf(pHlp, "PS/2 Keyboard: scan set %d, scanning %s\n",
-                    pThis->u8ScanSet, pThis->fScanning ? "enabled" : "disabled");
+    pHlp->pfnPrintf(pHlp, "PS/2 Keyboard: scan set %d, scanning %s, serial line %s\n",
+                    pThis->u8ScanSet, pThis->fScanning ? "enabled" : "disabled",
+                    pThis->fLineDisabled ? "disabled" : "enabled");
     pHlp->pfnPrintf(pHlp, "Active command %02X\n", pThis->u8CurrCmd);
     pHlp->pfnPrintf(pHlp, "LED state %02X, Num Lock %s\n", pThis->u8LEDs,
                     pThis->fNumLockOn ? "on" : "off");

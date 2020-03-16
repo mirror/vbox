@@ -256,6 +256,8 @@ static void ps2mSetDefaults(PPS2M pThis)
 /* Handle the sampling rate 'knock' sequence which selects protocol. */
 static void ps2mRateProtocolKnock(PPS2M pThis, uint8_t rate)
 {
+    PS2M_PROTO          enmOldProtocol = pThis->enmProtocol;
+
     switch (pThis->enmKnockState)
     {
     case PS2M_KNOCK_INITIAL:
@@ -298,6 +300,12 @@ static void ps2mRateProtocolKnock(PPS2M pThis, uint8_t rate)
     default:
         pThis->enmKnockState = PS2M_KNOCK_INITIAL;
     }
+
+    /* If the protocol changed, throw away any queued input because it now
+     * has the wrong format, which could severely confuse the guest.
+     */
+    if (enmOldProtocol != pThis->enmProtocol)
+        PS2Q_CLEAR(&pThis->evtQ);
 }
 
 /* Three-button event mask. */
@@ -410,6 +418,35 @@ bool ps2mIsRateSupported(uint8_t rate)
 
    return fValid;
 }
+
+
+/**
+ * The keyboard controller disabled the auxiliary serial line.
+ *
+ * @param   pDevIns The device instance.
+ * @param   pThis   The PS/2 auxiliary device shared instance data.
+ */
+void PS2MLineDisable(PPS2M pThis)
+{
+    pThis->fLineDisabled = true;
+}
+
+/**
+ * The keyboard controller enabled the auxiliary serial line.
+ *
+ * @param   pDevIns The device instance.
+ * @param   pThis   The PS/2 auxiliary device shared instance data.
+ */
+void PS2MLineEnable(PPS2M pThis)
+{
+    pThis->fLineDisabled = false;
+
+    /* If there was anything in the input queue,
+     * consider it lost and throw it away.
+     */
+    PS2Q_CLEAR(&pThis->evtQ);
+}
+
 
 /**
  * Receive and process a byte sent by the keyboard controller.
@@ -742,10 +779,11 @@ static DECLCALLBACK(void) ps2mR3InfoState(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp
     NOREF(pszArgs);
 
     Assert(pThis->enmMode < RT_ELEMENTS(s_apcszModes));
-    pHlp->pfnPrintf(pHlp, "PS/2 mouse state: %s, %s mode, reporting %s\n",
+    pHlp->pfnPrintf(pHlp, "PS/2 mouse state: %s, %s mode, reporting %s, serial line %s\n",
                     s_apcszModes[pThis->enmMode],
                     pThis->u8State & AUX_STATE_REMOTE  ? "remote"  : "stream",
-                    pThis->u8State & AUX_STATE_ENABLED ? "enabled" : "disabled");
+                    pThis->u8State & AUX_STATE_ENABLED ? "enabled" : "disabled",
+                    pThis->fLineDisabled ? "disabled" : "enabled");
     Assert(pThis->enmProtocol < RT_ELEMENTS(s_apcszProtocols));
     pHlp->pfnPrintf(pHlp, "Protocol: %s, scaling %u:1\n",
                     s_apcszProtocols[pThis->enmProtocol],
