@@ -4389,15 +4389,11 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
             # Only destination given:
             [ tdTestCopyToFile(sDst = oTestVm.pathJoin(sScratchGst, 'dstfile')), tdTestResultFailure() ],
             [ tdTestCopyToDir( sDst = sScratchGst), tdTestResultFailure() ],
+            # Both given, but invalid flags.
+            [ tdTestCopyToFile(sSrc = sBigFileHst, sDst = sScratchGst, afFlags = [ 0x40000000] ), tdTestResultFailure() ],
+            [ tdTestCopyToDir( sSrc = sScratchEmptyDirHst, sDst = sScratchGst, afFlags = [ 0x40000000] ),
+              tdTestResultFailure() ],
         ];
-        if not self.fSkipKnownBugs:
-            atTests.extend([
-                ## @todo Apparently Main doesn't check the flags, so the first test succeeds.
-                # Both given, but invalid flags.
-                [ tdTestCopyToFile(sSrc = sBigFileHst, sDst = sScratchGst, afFlags = [ 0x40000000] ), tdTestResultFailure() ],
-                [ tdTestCopyToDir( sSrc = sScratchEmptyDirHst, sDst = sScratchGst, afFlags = [ 0x40000000] ),
-                  tdTestResultFailure() ],
-            ]);
         atTests.extend([
             # Non-existing source, but no destination:
             [ tdTestCopyToFile(sSrc = sScratchHstNotExist), tdTestResultFailure() ],
@@ -4576,14 +4572,11 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
             # Missing destination.
             [ tdTestCopyFromFile(oSrc = oExistingFileGst), tdTestResultFailure() ],
             [ tdTestCopyFromDir( sSrc = self.oTestFiles.oManyDir.sPath), tdTestResultFailure() ],
-            ##
-            ## @todo main isn't validating flags, so these theses will succeed.
-            ##
-            ## Invalid flags:
-            #[ tdTestCopyFromFile(oSrc = oExistingFileGst, sDst = os.path.join(sScratchHst, 'somefile'), afFlags = [0x40000000]),
-            #  tdTestResultFailure() ],
-            #[ tdTestCopyFromDir( oSrc = oEmptyDirGst, sDst = os.path.join(sScratchHst, 'somedir'),  afFlags = [ 0x40000000] ),
-            #  tdTestResultFailure() ],
+            # Invalid flags:
+            [ tdTestCopyFromFile(oSrc = oExistingFileGst, sDst = os.path.join(sScratchHst, 'somefile'), afFlags = [0x40000000]),
+              tdTestResultFailure() ],
+            [ tdTestCopyFromDir( oSrc = oEmptyDirGst, sDst = os.path.join(sScratchHst, 'somedir'),  afFlags = [ 0x40000000] ),
+              tdTestResultFailure() ],
             # Non-existing sources:
             [ tdTestCopyFromFile(sSrc = oTestVm.pathJoin(self.oTestFiles.oRoot.sPath, 'no-such-file-or-directory'),
                                  sDst = os.path.join(sScratchHst, 'somefile')), tdTestResultFailure() ],
