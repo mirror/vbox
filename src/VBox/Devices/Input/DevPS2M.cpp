@@ -423,7 +423,6 @@ bool ps2mIsRateSupported(uint8_t rate)
 /**
  * The keyboard controller disabled the auxiliary serial line.
  *
- * @param   pDevIns The device instance.
  * @param   pThis   The PS/2 auxiliary device shared instance data.
  */
 void PS2MLineDisable(PPS2M pThis)
@@ -434,7 +433,6 @@ void PS2MLineDisable(PPS2M pThis)
 /**
  * The keyboard controller enabled the auxiliary serial line.
  *
- * @param   pDevIns The device instance.
  * @param   pThis   The PS/2 auxiliary device shared instance data.
  */
 void PS2MLineEnable(PPS2M pThis)
