@@ -230,9 +230,12 @@ void hdaR3StreamDestroy(PHDASTREAM pStreamShared, PHDASTREAMR3 pStreamR3)
  */
 int hdaR3StreamSetUp(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTREAM pStreamShared, PHDASTREAMR3 pStreamR3, uint8_t uSD)
 {
+    /* This must be valid all times. */
+    AssertReturn(uSD < HDA_MAX_STREAMS, VERR_INVALID_PARAMETER);
+
     /* These member can only change on data corruption, despite what the code does further down (bird).  */
-    Assert(pStreamShared->u8SD == uSD);
-    Assert(pStreamR3->u8SD     == uSD);
+    AssertReturn(pStreamShared->u8SD == uSD, VERR_WRONG_ORDER);
+    AssertReturn(pStreamR3->u8SD     == uSD, VERR_WRONG_ORDER);
 
     const uint64_t u64BDLBase = RT_MAKE_U64(HDA_STREAM_REG(pThis, BDPL, uSD),
                                             HDA_STREAM_REG(pThis, BDPU, uSD));

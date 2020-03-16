@@ -3884,6 +3884,11 @@ static DECLCALLBACK(int) hdaR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint
         rc = pHlp->pfnSSMGetU8(pSSM, &idStream);
         AssertRCReturn(rc, rc);
 
+        /* Paranoia. */
+        AssertLogRelMsgReturn(idStream < HDA_MAX_STREAMS,
+                              ("HDA: Saved state contains bogus stream ID %RU8 for stream #%RU8", idStream, i),
+                              VERR_SSM_INVALID_STATE);
+
         HDASTREAM    StreamDummyShared;
         HDASTREAMR3  StreamDummyR3;
         PHDASTREAM   pStreamShared = idStream < RT_ELEMENTS(pThis->aStreams) ? &pThis->aStreams[idStream] : &StreamDummyShared;
