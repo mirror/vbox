@@ -47,23 +47,6 @@ const int iMaximumQueueSize = 120;
 const int iMetricSetupCount = 1;
 const int iDecimalCount = 2;
 
-enum InfoRow
-{
-    InfoRow_Title = 0,
-    InfoRow_Resolution,
-    InfoRow_Uptime,
-    InfoRow_ClipboardMode,
-    InfoRow_DnDMode,
-    InfoRow_ExecutionEngine,
-    InfoRow_NestedPaging,
-    InfoRow_UnrestrictedExecution,
-    InfoRow_Paravirtualization,
-    InfoRow_GuestAdditions,
-    InfoRow_GuestOSType,
-    InfoRow_RemoteDesktop,
-    InfoRow_Max
-};
-
 /*********************************************************************************************************************************
 *   UIChart definition.                                                                                     *
 *********************************************************************************************************************************/
