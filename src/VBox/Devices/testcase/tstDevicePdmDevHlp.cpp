@@ -2706,8 +2706,12 @@ static DECLCALLBACK(int) pdmR3DevHlp_PGMHandlerPhysicalTypeRegister(PPDMDEVINS p
              pszHandlerRC, pszHandlerRC, pszPfHandlerRC, pszPfHandlerRC,
              pszDesc, pszDesc, phType));
 
+#ifndef VBOX_TSTDEV_NOT_IMPLEMENTED_STUBS_FAKE_SUCCESS
     int rc = VERR_NOT_IMPLEMENTED;
     AssertFailed();
+#else
+    int rc = VINF_SUCCESS;
+#endif
 
     LogRel(("pdmR3DevHlp_PGMHandlerPhysicalTypeRegister: caller='%s'/%d: returns %Rrc\n",
             pDevIns->pReg->szName, pDevIns->iInstance, rc));
@@ -4209,14 +4213,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_ThreadCreate(PPDMDEVINS pDevIns, PPPDMTHREA
     LogFlow(("pdmR3DevHlp_ThreadCreate: caller='%s'/%d: ppThread=%p pvUser=%p pfnThread=%p pfnWakeup=%p cbStack=%#zx enmType=%d pszName=%p:{%s}\n",
              pDevIns->pReg->szName, pDevIns->iInstance, ppThread, pvUser, pfnThread, pfnWakeup, cbStack, enmType, pszName, pszName));
 
-    RT_NOREF(ppThread, pvUser, pfnThread, pfnWakeup, cbStack, enmType, pszName);
-
-#ifndef VBOX_TSTDEV_NOT_IMPLEMENTED_STUBS_FAKE_SUCCESS
-    int rc = VERR_NOT_IMPLEMENTED;
-    AssertFailed();
-#else
-    int rc = VINF_SUCCESS;
-#endif
+    int rc = tstDevPdmR3ThreadCreateDevice(pDevIns->Internal.s.pDut, pDevIns, ppThread, pvUser, pfnThread, pfnWakeup, cbStack, enmType, pszName);
 
     LogFlow(("pdmR3DevHlp_ThreadCreate: caller='%s'/%d: returns %Rrc *ppThread=%RTthrd\n", pDevIns->pReg->szName, pDevIns->iInstance,
             rc, *ppThread));
@@ -4226,55 +4223,37 @@ static DECLCALLBACK(int) pdmR3DevHlp_ThreadCreate(PPDMDEVINS pDevIns, PPPDMTHREA
 
 static DECLCALLBACK(int) pdmR3DevHlp_ThreadDestroy(PPDMTHREAD pThread, int *pRcThread)
 {
-    RT_NOREF(pThread, pRcThread);
-    int rc = VERR_NOT_IMPLEMENTED;
-    AssertFailed();
-    return rc;
+    return tstDevPdmR3ThreadDestroy(pThread, pRcThread);
 }
 
 
 static DECLCALLBACK(int) pdmR3DevHlp_ThreadIAmSuspending(PPDMTHREAD pThread)
 {
-    RT_NOREF(pThread);
-    int rc = VERR_NOT_IMPLEMENTED;
-    AssertFailed();
-    return rc;
+    return tstDevPdmR3ThreadIAmSuspending(pThread);
 }
 
 
 static DECLCALLBACK(int) pdmR3DevHlp_ThreadIamRunning(PPDMTHREAD pThread)
 {
-    RT_NOREF(pThread);
-    int rc = VERR_NOT_IMPLEMENTED;
-    AssertFailed();
-    return rc;
+    return tstDevPdmR3ThreadIAmRunning(pThread);
 }
 
 
 static DECLCALLBACK(int) pdmR3DevHlp_ThreadSleep(PPDMTHREAD pThread, RTMSINTERVAL cMillies)
 {
-    RT_NOREF(pThread, cMillies);
-    int rc = VERR_NOT_IMPLEMENTED;
-    AssertFailed();
-    return rc;
+    return tstDevPdmR3ThreadSleep(pThread, cMillies);
 }
 
 
 static DECLCALLBACK(int) pdmR3DevHlp_ThreadSuspend(PPDMTHREAD pThread)
 {
-    RT_NOREF(pThread);
-    int rc = VERR_NOT_IMPLEMENTED;
-    AssertFailed();
-    return rc;
+    return tstDevPdmR3ThreadSuspend(pThread);
 }
 
 
 static DECLCALLBACK(int) pdmR3DevHlp_ThreadResume(PPDMTHREAD pThread)
 {
-    RT_NOREF(pThread);
-    int rc = VERR_NOT_IMPLEMENTED;
-    AssertFailed();
-    return rc;
+    return tstDevPdmR3ThreadResume(pThread);
 }
 
 

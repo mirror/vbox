@@ -1355,6 +1355,7 @@ endif
  	testcase/tstDevice.cpp \
  	testcase/tstDeviceCfg.cpp \
  	testcase/tstDevicePdmDevHlp.cpp \
+ 	testcase/tstDevicePdmThread.cpp \
  	testcase/tstDeviceSsmFuzz.cpp
  endif
 

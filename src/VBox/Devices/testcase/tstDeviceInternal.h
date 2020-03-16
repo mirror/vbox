@@ -140,6 +140,47 @@ typedef const TSTDEVMMHEAPALLOC *PCTSTDEVMMHEAPALLOC;
 AssertCompileMemberAlignment(TSTDEVMMHEAPALLOC, abAlloc, HC_ARCH_BITS == 64 ? 16 : 8);
 
 
+/**
+ * The usual device/driver/internal/external stuff.
+ */
+typedef enum
+{
+    /** The usual invalid entry. */
+    PDMTHREADTYPE_INVALID = 0,
+    /** Device type. */
+    PDMTHREADTYPE_DEVICE,
+    /** USB Device type. */
+    PDMTHREADTYPE_USB,
+    /** Driver type. */
+    PDMTHREADTYPE_DRIVER,
+    /** Internal type. */
+    PDMTHREADTYPE_INTERNAL,
+    /** External type. */
+    PDMTHREADTYPE_EXTERNAL,
+    /** The usual 32-bit hack. */
+    PDMTHREADTYPE_32BIT_HACK = 0x7fffffff
+} PDMTHREADTYPE;
+
+
+/**
+ * The internal structure for the thread.
+ */
+typedef struct PDMTHREADINT
+{
+    /** Node for the list of threads. */
+    RTLISTNODE                      NdPdmThrds;
+    /** Pointer to the device under test the allocation was made for. */
+    PTSTDEVDUTINT                   pDut;
+    /** The event semaphore the thread blocks on when not running. */
+    RTSEMEVENTMULTI                 BlockEvent;
+    /** The event semaphore the thread sleeps on while running. */
+    RTSEMEVENTMULTI                 SleepEvent;
+    /** The thread type. */
+    PDMTHREADTYPE                   enmType;
+} PDMTHREADINT;
+
+
+#define PDMTHREADINT_DECLARED
 #define PDMCRITSECTINT_DECLARED
 #define PDMDEVINSINT_DECLARED
 #define PDMPCIDEVINT_DECLARED
@@ -147,6 +188,7 @@ AssertCompileMemberAlignment(TSTDEVMMHEAPALLOC, abAlloc, HC_ARCH_BITS == 64 ? 16
 #define VMM_INCLUDED_SRC_include_VMMInternal_h
 RT_C_DECLS_END
 #include <VBox/vmm/pdmcritsect.h>
+#include <VBox/vmm/pdmthread.h>
 #include <VBox/vmm/pdmdev.h>
 #include <VBox/vmm/pdmpci.h>
 #include <VBox/vmm/pdmdrv.h>
@@ -414,6 +456,28 @@ DECLINLINE(int) tstDevDutUnlockExcl(PTSTDEVDUTINT pThis)
 {
     return RTCritSectRwLeaveExcl(&pThis->CritSectLists);
 }
+
+DECLHIDDEN(int) tstDevPdmR3ThreadCreateDevice(PTSTDEVDUTINT pDut, PPDMDEVINS pDevIns, PPPDMTHREAD ppThread, void *pvUser, PFNPDMTHREADDEV pfnThread,
+                                              PFNPDMTHREADWAKEUPDEV pfnWakeUp, size_t cbStack, RTTHREADTYPE enmType, const char *pszName);
+DECLHIDDEN(int) tstDevPdmR3ThreadCreateUsb(PTSTDEVDUTINT pDut, PPDMUSBINS pUsbIns, PPPDMTHREAD ppThread, void *pvUser, PFNPDMTHREADUSB pfnThread,
+                                           PFNPDMTHREADWAKEUPUSB pfnWakeUp, size_t cbStack, RTTHREADTYPE enmType, const char *pszName);
+DECLHIDDEN(int) tstDevPdmR3ThreadCreateDriver(PTSTDEVDUTINT pDut, PPDMDRVINS pDrvIns, PPPDMTHREAD ppThread, void *pvUser, PFNPDMTHREADDRV pfnThread,
+                                              PFNPDMTHREADWAKEUPDRV pfnWakeUp, size_t cbStack, RTTHREADTYPE enmType, const char *pszName);
+DECLHIDDEN(int) tstDevPdmR3ThreadCreate(PTSTDEVDUTINT pDut, PPPDMTHREAD ppThread, void *pvUser, PFNPDMTHREADINT pfnThread,
+                                        PFNPDMTHREADWAKEUPINT pfnWakeUp, size_t cbStack, RTTHREADTYPE enmType, const char *pszName);
+DECLHIDDEN(int) tstDevPdmR3ThreadCreateExternal(PTSTDEVDUTINT pDut, PPPDMTHREAD ppThread, void *pvUser, PFNPDMTHREADEXT pfnThread,
+                                                PFNPDMTHREADWAKEUPEXT pfnWakeUp, size_t cbStack, RTTHREADTYPE enmType, const char *pszName);
+DECLHIDDEN(int) tstDevPdmR3ThreadDestroy(PPDMTHREAD pThread, int *pRcThread);
+DECLHIDDEN(int) tstDevPdmR3ThreadDestroyDevice(PTSTDEVDUTINT pDut, PPDMDEVINS pDevIns);
+DECLHIDDEN(int) tstDevPdmR3ThreadDestroyUsb(PTSTDEVDUTINT pDut, PPDMUSBINS pUsbIns);
+DECLHIDDEN(int) tstDevPdmR3ThreadDestroyDriver(PTSTDEVDUTINT pDut, PPDMDRVINS pDrvIns);
+DECLHIDDEN(void) tstDevPdmR3ThreadDestroyAll(PTSTDEVDUTINT pDut);
+DECLHIDDEN(int) tstDevPdmR3ThreadIAmSuspending(PPDMTHREAD pThread);
+DECLHIDDEN(int) tstDevPdmR3ThreadIAmRunning(PPDMTHREAD pThread);
+DECLHIDDEN(int) tstDevPdmR3ThreadSleep(PPDMTHREAD pThread, RTMSINTERVAL cMillies);
+DECLHIDDEN(int) tstDevPdmR3ThreadSuspend(PPDMTHREAD pThread);
+DECLHIDDEN(int) tstDevPdmR3ThreadResume(PPDMTHREAD pThread);
+
 
 RT_C_DECLS_END
 
