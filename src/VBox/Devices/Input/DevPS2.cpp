@@ -323,7 +323,7 @@ static VBOXSTRICTRC kbd_write_command(PPDMDEVINS pDevIns, PKBDSTATE s, uint32_t 
         PS2MLineEnable(&s->Aux);
         s->mode &= ~KBD_MODE_DISABLE_MOUSE;
         /* Check for queued input. */
-        ///@todo: Can there actually be any?
+        /// @todo Can there actually be any?
         kbd_update_irq(pDevIns, s);
         break;
     case KBD_CCMD_TEST_MOUSE:
