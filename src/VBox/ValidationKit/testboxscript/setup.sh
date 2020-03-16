@@ -374,6 +374,7 @@ common_testboxscript_args_to_config()
             "--testrsrc-server-user")   TESTBOXSCRIPT_TESTRSRC_USER="$2"; shift;;
             "--testrsrc-server-passwd") TESTBOXSCRIPT_TESTRSRC_PASSWD="$2"; shift;;
             "--testrsrc-server-mountopt") TESTBOXSCRIPT_TESTRSRC_MOUNTOPT="$2"; shift;;
+            "--spb")                     ;;
             "--putenv")
                 MY_FOUND=no
                 MY_VAR=`echo $2 | sed -e 's/=.*$//' `
@@ -462,6 +463,9 @@ common_compile_testboxscript_command_line() {
             fi
         fi
     done
+    if [ -n "${TESTBOXSCRIPT_SPB}" ]; then
+        os_add_args "--spb"
+    fi
 
     i=0
     while [ "${i}" -lt "${#TESTBOXSCRIPT_ENVVARS[@]}" ];
@@ -499,8 +503,9 @@ HOST_ARCH=${RETVAL}
 # Config.
 #
 TESTBOXSCRIPT_CFG_NAMES="DIR PYTHON USER HWVIRT IOMMU NESTED_PAGING SYSTEM_UUID PATH_TESTRSRC TEST_MANAGER SCRATCH_ROOT"
-TESTBOXSCRIPT_CFG_NAMES="${TESTBOXSCRIPT_CFG_NAMES}   BUILDS_PATH   BUILDS_TYPE   BUILDS_NAME   BUILDS_SHARE   BUILDS_USER   BUILDS_PASSWD   BUILDS_MOUNTOPT"
-TESTBOXSCRIPT_CFG_NAMES="${TESTBOXSCRIPT_CFG_NAMES} TESTRSRC_PATH TESTRSRC_TYPE TESTRSRC_NAME TESTRSRC_SHARE TESTRSRC_USER TESTRSRC_PASSWD TESTRSRC_MOUNTOPT"
+TESTBOXSCRIPT_CFG_NAMES="${TESTBOXSCRIPT_CFG_NAMES} BUILDS_PATH   BUILDS_TYPE   BUILDS_NAME   BUILDS_SHARE   BUILDS_USER"
+TESTBOXSCRIPT_CFG_NAMES="${TESTBOXSCRIPT_CFG_NAMES} BUILDS_PASSWD BUILDS_MOUNTOPT TESTRSRC_PATH TESTRSRC_TYPE TESTRSRC_NAME"
+TESTBOXSCRIPT_CFG_NAMES="${TESTBOXSCRIPT_CFG_NAMES} TESTRSRC_SHARE TESTRSRC_USER TESTRSRC_PASSWD TESTRSRC_MOUNTOPT"
 
 # testboxscript.py option to config mappings.
 TESTBOXSCRIPT_OPT_DIR="--skip"
@@ -633,6 +638,7 @@ do
         --testrsrc-server-user)     TESTBOXSCRIPT_TESTRSRC_USER="$2"; shift;;
         --testrsrc-server-passwd)   TESTBOXSCRIPT_TESTRSRC_PASSWD="$2"; shift;;
         --testrsrc-server-mountopt) TESTBOXSCRIPT_TESTRSRC_MOUNTOPT="$2"; shift;;
+        --spb)                      TESTBOXSCRIPT_SPB="yes";;
         *)
             echo 'Syntax error: Unknown option:' "$1" >&2;
             exit 1;
