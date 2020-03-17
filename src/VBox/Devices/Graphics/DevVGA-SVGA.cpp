@@ -1695,9 +1695,17 @@ static VBOXSTRICTRC vmsvgaWritePort(PPDMDEVINS pDevIns, PVGASTATE pThis, PVGASTA
                 /* bird: Whatever this is was added to make screenshot work, ask sunlover should explain... */
                 for (uint32_t idScreen = 0; idScreen < pThis->cMonitors; ++idScreen)
                     pThisCC->pDrv->pfnVBVAEnable(pThisCC->pDrv, idScreen, NULL /*pHostFlags*/);
+
+                /* Make the cursor visible again as needed. */
+                if (pSVGAState->Cursor.fActive)
+                    pThisCC->pDrv->pfnVBVAMousePointerShape(pThisCC->pDrv, true /*fVisible*/, false, 0, 0, 0, 0, NULL);
             }
             else
             {
+                /* Make sure the cursor is off. */
+                if (pSVGAState->Cursor.fActive)
+                    pThisCC->pDrv->pfnVBVAMousePointerShape(pThisCC->pDrv, false /*fVisible*/, false, 0, 0, 0, 0, NULL);
+
                 /* Restore the text mode backup. */
                 memcpy(pThisCC->pbVRam, pThisCC->svga.pbVgaFrameBufferR3, VMSVGA_VGA_FB_BACKUP_SIZE);
 
@@ -2907,7 +2915,7 @@ static void vmsvgaR3CmdDefineCursor(PVGASTATE pThis, PVGASTATECC pThisCC, PVMSVG
     }
 
     /* Convert the XOR mask. */
-    uint32_t *pu32Dst = (uint32_t *)(pbCopy + cbDstAndMask);
+    uint32_t *pu32Dst = (uint32_t *)(pbCopy + RT_ALIGN_32(cbDstAndMask, 4));
     pbSrc  = pbSrcXorMask;
     switch (pCursor->xorMaskDepth)
     {
