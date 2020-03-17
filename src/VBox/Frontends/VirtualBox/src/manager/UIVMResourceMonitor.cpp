@@ -76,8 +76,18 @@ public:
     bool operator==(const UIVMResourceMonitorItem& other) const;
     QUuid    m_VMuid;
     QString  m_strVMName;
-    qulonglong    m_uCPUGuestLoad;
-    qulonglong    m_uCPUVMMLoad;
+    quint64 m_uCPUGuestLoad;
+    quint64 m_uCPUVMMLoad;
+    quint64 m_uNetworkDownRate;
+    quint64 m_uNetworkUpRate;
+    quint64 m_uNetworkDownTotal;
+    quint64 m_uNetworkUpTotal;
+
+    quint64 m_uDiskWriteRate;
+    quint64 m_uDiskReadRate;
+    quint64 m_uDiskWriteTotal;
+    quint64 m_uDiskReadTotal;
+
     CMachineDebugger m_comDebugger;
 
 };
@@ -135,8 +145,16 @@ private:
 *   Class UIVMResouceMonitorItem implementation.                                                                           *
 *********************************************************************************************************************************/
 UIVMResourceMonitorItem::UIVMResourceMonitorItem(const QUuid &uid, const QString &strVMName)
-    :m_VMuid(uid)
+    : m_VMuid(uid)
     , m_strVMName(strVMName)
+    , m_uNetworkDownRate(0)
+    , m_uNetworkUpRate(0)
+    , m_uNetworkDownTotal(0)
+    , m_uNetworkUpTotal(0)
+    , m_uDiskWriteRate(0)
+    , m_uDiskReadRate(0)
+    , m_uDiskWriteTotal(0)
+    , m_uDiskReadTotal(0)
 {
     CSession comSession = uiCommon().openSession(uid, KLockType_Shared);
     if (!comSession.isNull())
@@ -148,12 +166,28 @@ UIVMResourceMonitorItem::UIVMResourceMonitorItem(const QUuid &uid, const QString
 }
 
 UIVMResourceMonitorItem::UIVMResourceMonitorItem()
-    :m_VMuid(QUuid())
+    : m_VMuid(QUuid())
+    , m_uNetworkDownRate(0)
+    , m_uNetworkUpRate(0)
+    , m_uNetworkDownTotal(0)
+    , m_uNetworkUpTotal(0)
+    , m_uDiskWriteRate(0)
+    , m_uDiskReadRate(0)
+    , m_uDiskWriteTotal(0)
+    , m_uDiskReadTotal(0)
 {
 }
 
 UIVMResourceMonitorItem::UIVMResourceMonitorItem(const QUuid &uid)
-    :m_VMuid(uid)
+    : m_VMuid(uid)
+    , m_uNetworkDownRate(0)
+    , m_uNetworkUpRate(0)
+    , m_uNetworkDownTotal(0)
+    , m_uNetworkUpTotal(0)
+    , m_uDiskWriteRate(0)
+    , m_uDiskReadRate(0)
+    , m_uDiskWriteTotal(0)
+    , m_uDiskReadTotal(0)
 {
 }
 
@@ -218,6 +252,9 @@ QVariant UIVMResourceMonitorModel::data(const QModelIndex &index, int role) cons
             break;
         case VMResouceMonitorColumn_CPUVMMLoad:
             return m_itemList[index.row()].m_uCPUVMMLoad;
+            break;
+        case VMResouceMonitorColumn_NetworkDownUpRate:
+            return QString("%1/%2").arg(m_itemList[index.row()].m_uNetworkDownRate).arg(m_itemList[index.row()].m_uNetworkUpRate);
             break;
         default:
             break;
