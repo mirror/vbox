@@ -76,11 +76,8 @@ public:
     bool operator==(const UIVMResourceMonitorItem& other) const;
     QUuid    m_VMuid;
     QString  m_strVMName;
-
-
-
-    ULONG    m_uCPUGuestLoad;
-    ULONG    m_uCPUVMMLoad;
+    qulonglong    m_uCPUGuestLoad;
+    qulonglong    m_uCPUVMMLoad;
     CMachineDebugger m_comDebugger;
 
 };
@@ -223,7 +220,6 @@ QVariant UIVMResourceMonitorModel::data(const QModelIndex &index, int role) cons
             return m_itemList[index.row()].m_uCPUVMMLoad;
             break;
         default:
-            return QVariant();
             break;
     }
     return QVariant();
@@ -307,8 +303,6 @@ void UIVMResourceMonitorModel::sltTimeout()
             m_itemList[i].m_comDebugger.GetCPULoad(0x7fffffff, aPctExecuting, aPctHalted, aPctVMM);
             m_itemList[i].m_uCPUGuestLoad = aPctExecuting;
             m_itemList[i].m_uCPUVMMLoad = aPctVMM;
-
-            printf("%s %u\n", qPrintable(m_itemList[i].m_strVMName), aPctExecuting);
         }
     }
     emit layoutChanged();
