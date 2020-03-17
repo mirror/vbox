@@ -122,6 +122,13 @@ public:
     UIInformationPerformanceMonitor(QWidget *pParent, const CMachine &machine, const CConsole &console, const UISession *pSession);
     ~UIInformationPerformanceMonitor();
 
+    /** @name Static utlity methods that query and parse IMachineDebugger outputs for specific metrix types.
+      * @{ */
+        static void getNetworkLoad(CMachineDebugger &debugger, quint64 &uOutNetworkReceived, quint64 &uOutNetworkTransmitted);
+        static void getDiskLoad(CMachineDebugger &debugger, quint64 &uOutDiskWritten, quint64 &uOutDiskRead);
+        static void getVMMExitCount(CMachineDebugger &debugger, quint64 &uOutVMMExitCount);
+    /** @} */
+
 protected:
 
     void retranslateUi();
@@ -154,7 +161,7 @@ private:
     /** Returns a QColor for the chart with @p strChartName and data series with @p iDataIndex. */
     QString dataColorString(const QString &strChartName, int iDataIndex);
     /** Parses the xml string we get from the IMachineDebugger and returns an array of UIDebuggerMetricData. */
-    QVector<UIDebuggerMetricData> getAndParseStatsFromDebugger(const QString &strQuery);
+    static QVector<UIDebuggerMetricData> getAndParseStatsFromDebugger(CMachineDebugger &debugger, const QString &strQuery);
 
     bool m_fGuestAdditionsAvailable;
     CMachine m_machine;

@@ -889,6 +889,7 @@ enum UIToolType
     UIToolType_Media,
     UIToolType_Network,
     UIToolType_Cloud,
+    UIToolType_VMResourceMonitor,
     /* Machine types: */
     UIToolType_Error,
     UIToolType_Details,

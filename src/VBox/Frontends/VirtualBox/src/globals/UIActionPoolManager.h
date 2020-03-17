@@ -122,6 +122,7 @@ enum UIActionIndexST
     UIActionIndexST_M_Tools_M_Global_S_VirtualMediaManager,
     UIActionIndexST_M_Tools_M_Global_S_HostNetworkManager,
     UIActionIndexST_M_Tools_M_Global_S_CloudProfileManager,
+    UIActionIndexST_M_Tools_M_Global_S_VMResourceMonitor,
 
     /* Snapshot Pane actions: */
     UIActionIndexST_M_Snapshot,

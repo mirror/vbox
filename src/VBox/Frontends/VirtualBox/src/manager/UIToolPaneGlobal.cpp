@@ -28,6 +28,7 @@
 #include "UIHostNetworkManager.h"
 #include "UIMediumManager.h"
 #include "UIToolPaneGlobal.h"
+#include "UIVMResourceMonitor.h"
 #include "UIWelcomePane.h"
 
 /* Other VBox includes: */
@@ -42,6 +43,7 @@ UIToolPaneGlobal::UIToolPaneGlobal(UIActionPool *pActionPool, QWidget *pParent /
     , m_pPaneMedia(0)
     , m_pPaneNetwork(0)
     , m_pPaneCloud(0)
+    , m_pPaneResourceMonitor(0)
 {
     /* Prepare: */
     prepare();
@@ -164,6 +166,25 @@ void UIToolPaneGlobal::openTool(UIToolType enmType)
                     m_pLayout->addWidget(m_pPaneCloud);
                     m_pLayout->setCurrentWidget(m_pPaneCloud);
                 }
+                break;
+            }
+            case UIToolType_VMResourceMonitor:
+            {
+                m_pPaneResourceMonitor = new UIVMResourceMonitorWidget(EmbedTo_Stack, m_pActionPool, false /* show toolbar */);
+                AssertPtrReturnVoid(m_pPaneResourceMonitor);
+                {
+#ifndef VBOX_WS_MAC
+                    const int iMargin = qApp->style()->pixelMetric(QStyle::PM_LayoutLeftMargin) / 4;
+                    m_pPaneResourceMonitor->setContentsMargins(iMargin, 0, iMargin, 0);
+#endif
+
+                    /* Configure pane: */
+                    m_pPaneResourceMonitor->setProperty("ToolType", QVariant::fromValue(UIToolType_VMResourceMonitor));
+                    /* Add into layout: */
+                    m_pLayout->addWidget(m_pPaneResourceMonitor);
+                    m_pLayout->setCurrentWidget(m_pPaneResourceMonitor);
+                }
+
                 break;
             }
             default:

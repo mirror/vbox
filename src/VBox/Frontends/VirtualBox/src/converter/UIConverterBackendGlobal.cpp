@@ -1505,13 +1505,14 @@ template<> QString toInternalString(const UIToolType &enmToolType)
     QString strResult;
     switch (enmToolType)
     {
-        case UIToolType_Welcome:   strResult = "Welcome"; break;
-        case UIToolType_Media:     strResult = "Media"; break;
-        case UIToolType_Network:   strResult = "Network"; break;
-        case UIToolType_Cloud:     strResult = "Cloud"; break;
-        case UIToolType_Details:   strResult = "Details"; break;
-        case UIToolType_Snapshots: strResult = "Snapshots"; break;
-        case UIToolType_Logs:      strResult = "Logs"; break;
+        case UIToolType_Welcome:           strResult =  "Welcome"; break;
+        case UIToolType_Media:             strResult = "Media"; break;
+        case UIToolType_Network:           strResult = "Network"; break;
+        case UIToolType_Cloud:             strResult = "Cloud"; break;
+        case UIToolType_VMResourceMonitor: strResult = "VM Resource Monitor"; break;
+        case UIToolType_Details:           strResult = "Details"; break;
+        case UIToolType_Snapshots:         strResult = "Snapshots"; break;
+        case UIToolType_Logs:              strResult = "Logs"; break;
         default:
         {
             AssertMsgFailed(("No text for tool type=%d", enmToolType));
@@ -1527,13 +1528,14 @@ template<> UIToolType fromInternalString<UIToolType>(const QString &strToolType)
     /* Here we have some fancy stuff allowing us
      * to search through the keys using 'case-insensitive' rule: */
     QStringList keys;    QList<UIToolType> values;
-    keys << "Welcome";   values << UIToolType_Welcome;
-    keys << "Media";     values << UIToolType_Media;
-    keys << "Network";   values << UIToolType_Network;
-    keys << "Cloud";     values << UIToolType_Cloud;
-    keys << "Details";   values << UIToolType_Details;
-    keys << "Snapshots"; values << UIToolType_Snapshots;
-    keys << "Logs";      values << UIToolType_Logs;
+    keys << "Welcome";               values << UIToolType_Welcome;
+    keys << "Media";                 values << UIToolType_Media;
+    keys << "Network";               values << UIToolType_Network;
+    keys << "Cloud";                 values << UIToolType_Cloud;
+    keys << "VM Resource Monitor";   values << UIToolType_VMResourceMonitor;
+    keys << "Details";               values << UIToolType_Details;
+    keys << "Snapshots";             values << UIToolType_Snapshots;
+    keys << "Logs";                  values << UIToolType_Logs;
     /* Invalid type for unknown words: */
     if (!keys.contains(strToolType, Qt::CaseInsensitive))
         return UIToolType_Invalid;

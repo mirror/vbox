@@ -624,6 +624,7 @@ VirtualBox_QT_MOCHDRS = \
 	src/manager/UIVirtualMachineItem.h \
 	src/manager/UIVirtualMachineItemCloud.h \
 	src/manager/UIVirtualMachineItemLocal.h \
+	src/manager/UIVMResourceMonitor.h \
 	src/manager/UIWelcomePane.h \
 	src/manager/chooser/UIChooser.h \
 	src/manager/chooser/UIChooserAbstractModel.h \
@@ -956,6 +957,7 @@ UICommon_QT_MOCHDRS.darwin += \
 #
 VirtualBox_QT_MOCSRCS = \
 	src/hostnetwork/UIHostNetworkManager.cpp \
+	src/manager/UIVMResourceMonitor.cpp \
 	src/manager/UIWelcomePane.cpp \
 	src/snapshots/UISnapshotDetailsWidget.cpp \
 	src/snapshots/UISnapshotPane.cpp \
@@ -1071,6 +1073,7 @@ VirtualBox_SOURCES = \
 	src/manager/UIVirtualMachineItem.cpp \
 	src/manager/UIVirtualMachineItemCloud.cpp \
 	src/manager/UIVirtualMachineItemLocal.cpp \
+	src/manager/UIVMResourceMonitor.cpp \
 	src/manager/UIWelcomePane.cpp \
 	src/manager/chooser/UIChooser.cpp \
 	src/manager/chooser/UIChooserAbstractModel.cpp \

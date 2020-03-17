@@ -1000,16 +1000,7 @@ void UIInformationPerformanceMonitor::sltTimeout()
     {
         quint64 cbNetworkTotalReceived = 0;
         quint64 cbNetworkTotalTransmitted = 0;
-        QVector<UIDebuggerMetricData> xmlData = getAndParseStatsFromDebugger("/Public/NetAdapter/*/Bytes*");
-        foreach (const UIDebuggerMetricData &data, xmlData)
-        {
-            if (data.m_strName.endsWith("BytesReceived"))
-                cbNetworkTotalReceived += data.m_counter;
-            else if (data.m_strName.endsWith("BytesTransmitted"))
-                cbNetworkTotalTransmitted += data.m_counter;
-            else
-                AssertMsgFailed(("name=%s\n", data.m_strName.toLocal8Bit().data()));
-        }
+        getNetworkLoad(m_machineDebugger, cbNetworkTotalReceived, cbNetworkTotalTransmitted);
         updateNetworkGraphsAndMetric(cbNetworkTotalReceived, cbNetworkTotalTransmitted);
     }
 
@@ -1017,31 +1008,60 @@ void UIInformationPerformanceMonitor::sltTimeout()
     {
         quint64 cbDiskIOTotalWritten = 0;
         quint64 cbDiskIOTotalRead = 0;
-        QVector<UIDebuggerMetricData> xmlData = getAndParseStatsFromDebugger("/Public/Storage/*/Port*/Bytes*");
-        foreach (const UIDebuggerMetricData &data, xmlData)
-        {
-            if (data.m_strName.endsWith("BytesWritten"))
-                cbDiskIOTotalWritten += data.m_counter;
-            else if (data.m_strName.endsWith("BytesRead"))
-                cbDiskIOTotalRead += data.m_counter;
-            else
-                AssertMsgFailed(("name=%s\n", data.m_strName.toLocal8Bit().data()));
-        }
+        getDiskLoad(m_machineDebugger, cbDiskIOTotalWritten, cbDiskIOTotalRead);
         updateDiskIOGraphsAndMetric(cbDiskIOTotalWritten, cbDiskIOTotalRead);
     }
 
     /* Update the VM exit chart with values we find as /PROF/CPU?/EM/RecordedExits: */
     {
         quint64 cTotalVMExits = 0;
-        QVector<UIDebuggerMetricData> xmlData = getAndParseStatsFromDebugger("/PROF/CPU*/EM/RecordedExits");
-        foreach (const UIDebuggerMetricData &data, xmlData)
-        {
-            if (data.m_strName.endsWith("RecordedExits"))
-                cTotalVMExits += data.m_counter;
-            else
-                AssertMsgFailed(("name=%s\n", data.m_strName.toLocal8Bit().data()));
-        }
+        getVMMExitCount(m_machineDebugger, cTotalVMExits);
         updateVMExitMetric(cTotalVMExits);
+    }
+}
+
+/* static */
+void UIInformationPerformanceMonitor::getNetworkLoad(CMachineDebugger &debugger, quint64 &uOutNetworkReceived, quint64 &uOutNetworkTransmitted)
+{
+    uOutNetworkReceived = 0;
+    uOutNetworkTransmitted = 0;
+    QVector<UIDebuggerMetricData> xmlData = getAndParseStatsFromDebugger(debugger, "/Public/NetAdapter/*/Bytes*");
+    foreach (const UIDebuggerMetricData &data, xmlData)
+    {
+        if (data.m_strName.endsWith("BytesReceived"))
+            uOutNetworkReceived += data.m_counter;
+        else if (data.m_strName.endsWith("BytesTransmitted"))
+            uOutNetworkTransmitted += data.m_counter;
+        else
+            AssertMsgFailed(("name=%s\n", data.m_strName.toLocal8Bit().data()));
+    }
+}
+
+/* static */
+void UIInformationPerformanceMonitor::getDiskLoad(CMachineDebugger &debugger, quint64 &uOutDiskWritten, quint64 &uOutDiskRead)
+{
+    QVector<UIDebuggerMetricData> xmlData = getAndParseStatsFromDebugger(debugger, "/Public/Storage/*/Port*/Bytes*");
+    foreach (const UIDebuggerMetricData &data, xmlData)
+    {
+        if (data.m_strName.endsWith("BytesWritten"))
+            uOutDiskWritten += data.m_counter;
+        else if (data.m_strName.endsWith("BytesRead"))
+            uOutDiskRead += data.m_counter;
+        else
+            AssertMsgFailed(("name=%s\n", data.m_strName.toLocal8Bit().data()));
+    }
+}
+
+/* static */
+void UIInformationPerformanceMonitor::getVMMExitCount(CMachineDebugger &debugger, quint64 &uOutVMMExitCount)
+{
+    QVector<UIDebuggerMetricData> xmlData = getAndParseStatsFromDebugger(debugger, "/PROF/CPU*/EM/RecordedExits");
+    foreach (const UIDebuggerMetricData &data, xmlData)
+    {
+        if (data.m_strName.endsWith("RecordedExits"))
+            uOutVMMExitCount += data.m_counter;
+        else
+            AssertMsgFailed(("name=%s\n", data.m_strName.toLocal8Bit().data()));
     }
 }
 
@@ -1318,12 +1338,13 @@ QString UIInformationPerformanceMonitor::dataColorString(const QString &strChart
     return pChart->dataSeriesColor(iDataIndex).name(QColor::HexRgb);
 }
 
-QVector<UIDebuggerMetricData> UIInformationPerformanceMonitor::getAndParseStatsFromDebugger(const QString &strQuery)
+/* static */
+QVector<UIDebuggerMetricData> UIInformationPerformanceMonitor::getAndParseStatsFromDebugger(CMachineDebugger &debugger, const QString &strQuery)
 {
     QVector<UIDebuggerMetricData> xmlData;
     if (strQuery.isEmpty())
         return xmlData;
-    QString strStats = m_machineDebugger.GetStats(strQuery, false);
+    QString strStats = debugger.GetStats(strQuery, false);
     QXmlStreamReader xmlReader;
     xmlReader.addData(strStats);
     if (xmlReader.readNextStartElement())

@@ -112,4 +112,3 @@ private:
 #define gVBoxEvents UIVirtualBoxEventHandler::instance()
 
 #endif /* !FEQT_INCLUDED_SRC_globals_UIVirtualBoxEventHandler_h */
-

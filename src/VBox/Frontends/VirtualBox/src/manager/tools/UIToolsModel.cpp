@@ -447,13 +447,14 @@ void UIToolsModel::retranslateUi()
     {
         switch (pItem->itemType())
         {
-            case UIToolType_Welcome:   pItem->reconfigure(tr("Welcome")); break;
-            case UIToolType_Media:     pItem->reconfigure(tr("Media")); break;
-            case UIToolType_Network:   pItem->reconfigure(tr("Network")); break;
-            case UIToolType_Cloud:     pItem->reconfigure(tr("Cloud")); break;
-            case UIToolType_Details:   pItem->reconfigure(tr("Details")); break;
-            case UIToolType_Snapshots: pItem->reconfigure(tr("Snapshots")); break;
-            case UIToolType_Logs:      pItem->reconfigure(tr("Logs")); break;
+            case UIToolType_Welcome:            pItem->reconfigure(tr("Welcome")); break;
+            case UIToolType_Media:              pItem->reconfigure(tr("Media")); break;
+            case UIToolType_Network:            pItem->reconfigure(tr("Network")); break;
+            case UIToolType_Cloud:              pItem->reconfigure(tr("Cloud")); break;
+            case UIToolType_VMResourceMonitor:  pItem->reconfigure(tr("VM Resource Monitor")); break;
+            case UIToolType_Details:            pItem->reconfigure(tr("Details")); break;
+            case UIToolType_Snapshots:          pItem->reconfigure(tr("Snapshots")); break;
+            case UIToolType_Logs:               pItem->reconfigure(tr("Logs")); break;
             default: break;
         }
     }
@@ -511,6 +512,10 @@ void UIToolsModel::prepareItems()
     if (fExtPackAccessible)
         m_items << new UIToolsItem(scene(), UIToolClass_Global, UIToolType_Cloud, QString(),
                                    UIIconPool::iconSet(":/cloud_profile_manager_24px.png", ":/cloud_profile_manager_disabled_24px.png"));
+
+    /* VM Resource Monitor: */
+    m_items << new UIToolsItem(scene(), UIToolClass_Global, UIToolType_VMResourceMonitor, QString(),
+                               UIIconPool::iconSet(":/cloud_profile_manager_24px.png", ":/cloud_profile_manager_disabled_24px.png"));
 
     /* Details: */
     m_items << new UIToolsItem(scene(), UIToolClass_Machine, UIToolType_Details, QString(),
