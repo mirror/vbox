@@ -63,6 +63,7 @@ class TestFileSet(testfileset.TestFileSet):
                  oRngTreeDirs  = xrange(2, 16),
                  cchMaxPath    = 230,
                  cchMaxName    = 230,
+                 asCompatibleWith = None,
                  uSeed         = None):
 
         asCompOses = [oTestVm.getGuestOs(), ];
