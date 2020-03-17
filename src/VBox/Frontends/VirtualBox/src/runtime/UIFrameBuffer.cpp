@@ -1510,7 +1510,8 @@ void UIFrameBufferPrivate::paintDefault(QPaintEvent *pEvent)
     /* Paint cursor if it has valid shape and position.
      * Also, please take into account, we are not currently painting
      * framebuffer cursor if mouse integration is supported and enabled. */
-    if (   !m_pMachineView->uisession()->isHidingHostPointer()
+    if (   !m_cursorRectangle.isNull()
+        && !m_pMachineView->uisession()->isHidingHostPointer()
         && m_pMachineView->uisession()->isValidPointerShapePresent()
         && m_pMachineView->uisession()->isValidCursorPositionPresent()
         && (   !m_pMachineView->uisession()->isMouseIntegrated()
@@ -1619,7 +1620,8 @@ void UIFrameBufferPrivate::paintSeamless(QPaintEvent *pEvent)
     /* Paint cursor if it has valid shape and position.
      * Also, please take into account, we are not currently painting
      * framebuffer cursor if mouse integration is supported and enabled. */
-    if (   !m_pMachineView->uisession()->isHidingHostPointer()
+    if (   !m_cursorRectangle.isNull()
+        && !m_pMachineView->uisession()->isHidingHostPointer()
         && m_pMachineView->uisession()->isValidPointerShapePresent()
         && m_pMachineView->uisession()->isValidCursorPositionPresent()
         && (   !m_pMachineView->uisession()->isMouseIntegrated()
