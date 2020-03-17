@@ -275,10 +275,8 @@ public:
 
 protected slots:
 
-    /** Handles guest request to change the mouse pointer shape. */
-    void sltMousePointerShapeChange();
-    /** Handles guest request to change the cursor position. */
-    void sltCursorPositionChange();
+    /** Handles guest requests to change mouse pointer shape or position. */
+    void sltMousePointerShapeOrPositionChange();
 
 protected:
 
@@ -1299,15 +1297,7 @@ void UIFrameBufferPrivate::performRescale()
 //           scaleFactor(), scaledSize().width(), scaledSize().height());
 }
 
-void UIFrameBufferPrivate::sltMousePointerShapeChange()
-{
-    /* Call for a cursor area update in any case, whether we are drawing it or not: */
-    if (   m_pMachineView
-        && m_cursorRectangle.isValid())
-        m_pMachineView->viewport()->update(m_cursorRectangle);
-}
-
-void UIFrameBufferPrivate::sltCursorPositionChange()
+void UIFrameBufferPrivate::sltMousePointerShapeOrPositionChange()
 {
     /* Do we have view and valid cursor position?
      * Also, please take into account, we are not currently painting
@@ -1377,9 +1367,9 @@ void UIFrameBufferPrivate::prepareConnections()
 
     /* Attach GUI connections: */
     connect(m_pMachineView->uisession(), &UISession::sigMousePointerShapeChange,
-            this, &UIFrameBufferPrivate::sltMousePointerShapeChange);
+            this, &UIFrameBufferPrivate::sltMousePointerShapeOrPositionChange);
     connect(m_pMachineView->uisession(), &UISession::sigCursorPositionChange,
-            this, &UIFrameBufferPrivate::sltCursorPositionChange);
+            this, &UIFrameBufferPrivate::sltMousePointerShapeOrPositionChange);
 }
 
 void UIFrameBufferPrivate::cleanupConnections()
@@ -1395,8 +1385,10 @@ void UIFrameBufferPrivate::cleanupConnections()
                m_pMachineView, &UIMachineView::sltHandle3DOverlayVisibilityChange);
 
     /* Detach GUI connections: */
+    disconnect(m_pMachineView->uisession(), &UISession::sigMousePointerShapeChange,
+               this, &UIFrameBufferPrivate::sltMousePointerShapeOrPositionChange);
     disconnect(m_pMachineView->uisession(), &UISession::sigCursorPositionChange,
-               this, &UIFrameBufferPrivate::sltCursorPositionChange);
+               this, &UIFrameBufferPrivate::sltMousePointerShapeOrPositionChange);
 }
 
 void UIFrameBufferPrivate::updateCoordinateSystem()
