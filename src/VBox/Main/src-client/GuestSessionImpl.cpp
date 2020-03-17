@@ -961,6 +961,15 @@ inline bool GuestSession::i_directoryExists(uint32_t uDirID, ComObjPtr<GuestDire
     return false;
 }
 
+/**
+ * Queries information about a directory on the guest.
+ *
+ * @returns VBox status code, or VERR_NOT_A_DIRECTORY if the file system object exists but is not a directory.
+ * @param   strPath             Path to directory to query information for.
+ * @param   fFollowSymlinks     Whether to follow symlinks or not.
+ * @param   objData             Where to store the information returned on success.
+ * @param   prcGuest            Guest rc, when returning VERR_GSTCTL_GUEST_ERROR.
+ */
 int GuestSession::i_directoryQueryInfo(const Utf8Str &strPath, bool fFollowSymlinks,
                                        GuestFsObjData &objData, int *prcGuest)
 {
@@ -3348,9 +3357,6 @@ HRESULT GuestSession::directoryCreateTemp(const com::Utf8Str &aTemplateName, ULO
 
 HRESULT GuestSession::directoryExists(const com::Utf8Str &aPath, BOOL aFollowSymlinks, BOOL *aExists)
 {
-    AutoCaller autoCaller(this); /** @todo r=bird: GuestSessionWrap.cpp does already, doesn't it? */
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
-
     if (RT_UNLIKELY(aPath.isEmpty()))
         return setError(E_INVALIDARG, tr("Empty path"));
 
@@ -3362,20 +3368,10 @@ HRESULT GuestSession::directoryExists(const com::Utf8Str &aPath, BOOL aFollowSym
 
     GuestFsObjData objData;
     int rcGuest = VERR_IPE_UNINITIALIZED_STATUS;
-    /** @todo r=bird: Please look at i_directoryQueryInfo() and explain why there
-     * is an extra FsObjType_Directory check here...
-     *
-     * Looks a lot like you wanted to replicate the RTDirExists behavior, but when
-     * refactoring in i_directoryQueryInfo you lost overview here.   One problem
-     * could be that the documention is VirtualBox.xidl does not mention what
-     * happens when the path leads to a file system object that isn't a
-     * directory.
-     *
-     * Fix the documention and behaviour so it works like RTDirExists and
-     * RTFileExists.  */
+
     int vrc = i_directoryQueryInfo(aPath, aFollowSymlinks != FALSE, objData, &rcGuest);
     if (RT_SUCCESS(vrc))
-        *aExists = objData.mType == FsObjType_Directory;
+        *aExists = TRUE;
     else
     {
         switch (vrc)
@@ -3392,6 +3388,12 @@ HRESULT GuestSession::directoryExists(const com::Utf8Str &aPath, BOOL aFollowSym
                                            aPath.c_str(), GuestProcess::i_guestErrorToString(rcGuest).c_str());
                         break;
                 }
+                break;
+            }
+
+            case VERR_NOT_A_DIRECTORY:
+            {
+                *aExists = FALSE;
                 break;
             }
 

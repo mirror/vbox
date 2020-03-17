@@ -13448,7 +13448,7 @@
         </desc>
       </param>
       <param name="exists" type="boolean" dir="return">
-        <desc>Returns @c true if the directory exists, @c false if not.</desc>
+        <desc>Returns @c true if the directory exists, @c false if not, or is not a directory.</desc>
       </param>
     </method>
 
