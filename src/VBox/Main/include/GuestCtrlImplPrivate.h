@@ -610,6 +610,9 @@ public:
  */
 struct GuestDirectoryOpenInfo
 {
+    GuestDirectoryOpenInfo(void)
+        : mFlags(0) { }
+
     /** The directory path. */
     Utf8Str                 mPath;
     /** Then open filter. */
@@ -625,6 +628,13 @@ struct GuestDirectoryOpenInfo
  */
 struct GuestFileOpenInfo
 {
+    GuestFileOpenInfo(void)
+        : mAccessMode((FileAccessMode_T)0)
+        , mOpenAction((FileOpenAction_T)0)
+        , mSharingMode((FileSharingMode_T)0)
+        , mCreationMode(0)
+        , mfOpenEx(0) { }
+
     /** The filename. */
     Utf8Str                 mFilename;
     /** The file access mode. */
@@ -646,6 +656,23 @@ struct GuestFileOpenInfo
  */
 struct GuestFsObjData
 {
+    GuestFsObjData(void)
+        : mType(FsObjType_Unknown)
+        , mObjectSize(0)
+        , mAllocatedSize(0)
+        , mAccessTime(0)
+        , mBirthTime(0)
+        , mChangeTime(0)
+        , mModificationTime(0)
+        , mUID(0)
+        , mGID(0)
+        , mNodeID(0)
+        , mNodeIDDevice(0)
+        , mNumHardLinks(0)
+        , mDeviceNumber(0)
+        , mGenerationID(0)
+        , mUserFlags(0) { }
+
     /** @name Helper functions to extract the data from a certin VBoxService tool's guest stream block.
      * @{ */
     int FromLs(const GuestProcessStreamBlock &strmBlk, bool fLong);
