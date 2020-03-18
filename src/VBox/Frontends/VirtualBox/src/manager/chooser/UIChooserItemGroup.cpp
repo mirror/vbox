@@ -482,8 +482,14 @@ UIChooserItem* UIChooserItemGroup::searchForItem(const QString &strSearchTag, in
     /* Are we searching among group-items? */
     if (iItemSearchFlags & UIChooserItemSearchFlag_Group)
     {
+        /* Are we searching by the exact ID? */
+        if (iItemSearchFlags & UIChooserItemSearchFlag_ExactId)
+        {
+            // Groups doesn't have IDs, but we should prevent
+            // search procedure from going to 'else' path..
+        }
         /* Are we searching by the exact name? */
-        if (iItemSearchFlags & UIChooserItemSearchFlag_ExactName)
+        else if (iItemSearchFlags & UIChooserItemSearchFlag_ExactName)
         {
             /* Exact name matches? */
             if (name() == strSearchTag)

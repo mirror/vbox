@@ -240,12 +240,19 @@ void UIChooserItemMachine::removeItem(UIChooserItem*)
 
 UIChooserItem* UIChooserItemMachine::searchForItem(const QString &strSearchTag, int iItemSearchFlags)
 {
-    /* Ignoring if we are not searching for the machine-item? */
+    /* Ignore if we are not searching for the machine-item: */
     if (!(iItemSearchFlags & UIChooserItemSearchFlag_Machine))
         return 0;
 
+    /* Are we searching by the exact ID? */
+    if (iItemSearchFlags & UIChooserItemSearchFlag_ExactId)
+    {
+        /* Exact ID doesn't match? */
+        if (id() != QUuid(strSearchTag))
+            return 0;
+    }
     /* Are we searching by the exact name? */
-    if (iItemSearchFlags & UIChooserItemSearchFlag_ExactName)
+    else if (iItemSearchFlags & UIChooserItemSearchFlag_ExactName)
     {
         /* Exact name doesn't match? */
         if (name() != strSearchTag)

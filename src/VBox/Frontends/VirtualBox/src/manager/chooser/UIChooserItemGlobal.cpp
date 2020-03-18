@@ -206,7 +206,7 @@ void UIChooserItemGlobal::removeItem(UIChooserItem *)
 
 UIChooserItem *UIChooserItemGlobal::searchForItem(const QString &, int iItemSearchFlags)
 {
-    /* Ignoring if we are not searching for the global-item? */
+    /* Ignore if we are not searching for the global-item: */
     if (!(iItemSearchFlags & UIChooserItemSearchFlag_Global))
         return 0;
 
