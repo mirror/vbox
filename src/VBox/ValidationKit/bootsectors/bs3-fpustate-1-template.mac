@@ -83,8 +83,8 @@ TONLY16 push    xPRE [xBP + xCB + cbCurRetAddr + sCB + 2]
         movdqu  xmm0, [TMPL_DATA16_WRT(g_r32_0dot1)]
         movdqu  xmm1, [TMPL_DATA16_WRT(g_r32_Two)]
         movdqu  xmm2, [TMPL_DATA16_WRT(g_r32_ThirtyTwo)]
-        movdqu  xmm3, [TMPL_DATA16_WRT(g_r32_ThirtyTwo)]
-        movdqu  xmm4, [TMPL_DATA16_WRT(g_r32_SNaN)]
+        movdqu  xmm3, [TMPL_DATA16_WRT(g_r32_SNaN)]
+        movdqu  xmm4, [TMPL_DATA16_WRT(g_r80_ThirtyTwo)]
         movdqu  xmm5, [TMPL_DATA16_WRT(g_r32_NegQNaN)]
         movdqu  xmm6, [TMPL_DATA16_WRT(g_r64_Zero)]
         movdqu  xmm7, [TMPL_DATA16_WRT(g_r64_Two)]
@@ -210,7 +210,7 @@ TONLY16 push    ds
 TONLY16 mov     ds,  [xBP + xCB + cbCurRetAddr + 2]
 
         ; Do read.
-        movdqu  [xBX], xmm3
+        movdqu  [xBX], xmm0
 
 TONLY16 pop     ds
         pop     xBX
@@ -226,7 +226,7 @@ BS3_PROC_END_MODE   bs3FpuState1_MovDQU_Write
 ; BS3_DECL_NEAR(void) TMPL_NM(bs3FpuState1_MovDQU_Read)(void *pvMmioReg);
 ;
 BS3_PROC_BEGIN_MODE bs3FpuState1_MovDQU_Read, BS3_PBC_NEAR
-        BS3_CALL_CONV_PROLOG 1
+        BS3_CALL_CONV_PROLOG 2
         push    xBP
         mov     xBP, xSP
         push    xBX
@@ -246,6 +246,11 @@ TONLY16 mov     ds,  [xBP + xCB + cbCurRetAddr + 2]
         ; Do read.
         movdqu  xmm2, [xBX]
 
+        ; Save the result.
+        mov     xBX, [xBP + xCB + cbCurRetAddr + sCB]
+TONLY16 mov     ds,  [xBP + xCB + cbCurRetAddr + sCB + 2]
+        movups  [xBX], xmm2
+
 %if TMPL_BITS == 16
         movdqu  xmm2, [xBP - xCB - xCB - 2 - 18h]
 %else
@@ -256,9 +261,82 @@ TONLY16 pop     ds
         pop     xBX
         mov     xSP, xBP
         pop     xBP
-        BS3_CALL_CONV_EPILOG 1
+        BS3_CALL_CONV_EPILOG 2
         BS3_HYBRID_RET
 BS3_PROC_END_MODE   bs3FpuState1_MovDQU_Read
+
+
+;;
+; Performs a MOVUPS write on the specified memory.
+;
+; BS3_DECL_NEAR(void) TMPL_NM(bs3FpuState1_MovUPS_Write)(void *pvMmioReg);
+;
+BS3_PROC_BEGIN_MODE bs3FpuState1_MovUPS_Write, BS3_PBC_NEAR
+        BS3_CALL_CONV_PROLOG 1
+        push    xBP
+        mov     xBP, xSP
+        push    xBX
+TONLY16 push    ds
+
+        ; Load the register pointer.
+        mov     xBX, [xBP + xCB + cbCurRetAddr]
+TONLY16 mov     ds,  [xBP + xCB + cbCurRetAddr + 2]
+
+        ; Do read.
+        movups  [xBX], xmm3
+
+TONLY16 pop     ds
+        pop     xBX
+        leave
+        BS3_CALL_CONV_EPILOG 1
+        BS3_HYBRID_RET
+BS3_PROC_END_MODE   bs3FpuState1_MovUPS_Write
+
+
+;;
+; Performs a MOVUPS write to the specified memory.
+;
+; BS3_DECL_NEAR(void) TMPL_NM(bs3FpuState1_MovUPS_Read)(void *pvMmioReg, void *pvResult);
+;
+BS3_PROC_BEGIN_MODE bs3FpuState1_MovUPS_Read, BS3_PBC_NEAR
+        BS3_CALL_CONV_PROLOG 2
+        push    xBP
+        mov     xBP, xSP
+        push    xBX
+TONLY16 push    ds
+        sub     xSP, 20h
+%if TMPL_BITS == 16
+        movups  [xBP - xCB - xCB - 2 - 18h], xmm1
+%else
+        movups  [xSP], xmm1
+%endif
+
+        ; Load the register pointer.
+        mov     xBX, [xBP + xCB + cbCurRetAddr]
+TONLY16 mov     ds,  [xBP + xCB + cbCurRetAddr + 2]
+
+
+        ; Do read.
+        movups  xmm1, [xBX]
+
+        ; Save the result.
+        mov     xBX, [xBP + xCB + cbCurRetAddr + sCB]
+TONLY16 mov     ds,  [xBP + xCB + cbCurRetAddr + sCB + 2]
+        movups  [xBX], xmm1
+
+%if TMPL_BITS == 16
+        movups  xmm1, [xBP - xCB - xCB - 2 - 18h]
+%else
+        movups  xmm1, [xSP]
+%endif
+        add     xSP, 20h
+TONLY16 pop     ds
+        pop     xBX
+        mov     xSP, xBP
+        pop     xBP
+        BS3_CALL_CONV_EPILOG 2
+        BS3_HYBRID_RET
+BS3_PROC_END_MODE   bs3FpuState1_MovUPS_Read
 
 
 ;;
@@ -292,10 +370,10 @@ BS3_PROC_END_MODE   bs3FpuState1_FNStEnv
 ;;
 ; Performs a FMUL on the specified memory, after writing a 64-bit value to it first.
 ;
-; BS3_DECL_NEAR(void) TMPL_NM(bs3FpuState1_FMul)(void *pvMmioReg);
+; BS3_DECL_NEAR(void) TMPL_NM(bs3FpuState1_FMul)(void *pvMmioReg, void *pvResultIgnored);
 ;
 BS3_PROC_BEGIN_MODE bs3FpuState1_FMul, BS3_PBC_NEAR
-        BS3_CALL_CONV_PROLOG 1
+        BS3_CALL_CONV_PROLOG 2
         push    xBP
         mov     xBP, xSP
         push    xBX
@@ -318,7 +396,7 @@ TONLY16 pop     ds
         pop     xBX
         mov     xSP, xBP
         pop     xBP
-        BS3_CALL_CONV_EPILOG 1
+        BS3_CALL_CONV_EPILOG 2
         BS3_HYBRID_RET
 .do_it:
         fmul    qword [xBX]
