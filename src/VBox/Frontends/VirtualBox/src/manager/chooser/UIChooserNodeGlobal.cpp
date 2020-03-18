@@ -130,24 +130,27 @@ int UIChooserNodeGlobal::positionOf(UIChooserNode *pNode)
 
 void UIChooserNodeGlobal::searchForNodes(const QString &strSearchTerm, int iItemSearchFlags, QList<UIChooserNode*> &matchedItems)
 {
+    /* Ignore if we are not searching for the global-node: */
     if (!(iItemSearchFlags & UIChooserItemSearchFlag_Global))
         return;
 
+    /* If the search term is empty we just add the node to the matched list: */
     if (strSearchTerm.isEmpty())
-    {
         matchedItems << this;
-        return;
-    }
-
-    if (iItemSearchFlags & UIChooserItemSearchFlag_ExactName)
-    {
-        if (name() == strSearchTerm)
-            matchedItems << this;
-    }
     else
     {
-        if (name().contains(strSearchTerm, Qt::CaseInsensitive))
-            matchedItems << this;
+        /* If exact name flag specified => check full node name: */
+        if (iItemSearchFlags & UIChooserItemSearchFlag_ExactName)
+        {
+            if (name() == strSearchTerm)
+                matchedItems << this;
+        }
+        /* Otherwise check if name contains search term: */
+        else
+        {
+            if (name().contains(strSearchTerm, Qt::CaseInsensitive))
+                matchedItems << this;
+        }
     }
 }
 

@@ -199,24 +199,29 @@ int UIChooserNodeMachine::positionOf(UIChooserNode *pNode)
 
 void UIChooserNodeMachine::searchForNodes(const QString &strSearchTerm, int iItemSearchFlags, QList<UIChooserNode*> &matchedItems)
 {
+    /* Ignore if we are not searching for the machine-node: */
     if (!(iItemSearchFlags & UIChooserItemSearchFlag_Machine))
         return;
 
+    /* If the search term is empty we just add the node to the matched list: */
     if (strSearchTerm.isEmpty())
-    {
         matchedItems << this;
-        return;
-    }
-
-    if (iItemSearchFlags & UIChooserItemSearchFlag_ExactName)
+    else
     {
-        if (name() == strSearchTerm)
-            matchedItems << this;
-        return;
+        /* If exact name flag specified => check full node name: */
+        if (iItemSearchFlags & UIChooserItemSearchFlag_ExactName)
+        {
+            if (name() == strSearchTerm)
+                matchedItems << this;
+        }
+        /* Otherwise check if name contains search term, including wildcards: */
+        else
+        {
+            QRegExp searchRegEx(strSearchTerm, Qt::CaseInsensitive, QRegExp::WildcardUnix);
+            if (name().contains(searchRegEx))
+                matchedItems << this;
+        }
     }
-    QRegExp searchRegEx(strSearchTerm, Qt::CaseInsensitive, QRegExp::WildcardUnix);
-    if (name().contains(searchRegEx))
-        matchedItems << this;
 }
 
 void UIChooserNodeMachine::sortNodes()

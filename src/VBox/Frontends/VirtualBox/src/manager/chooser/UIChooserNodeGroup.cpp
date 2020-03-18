@@ -217,18 +217,21 @@ void UIChooserNodeGroup::setName(const QString &strName)
 
 void UIChooserNodeGroup::searchForNodes(const QString &strSearchTerm, int iItemSearchFlags, QList<UIChooserNode*> &matchedItems)
 {
+    /* If we are searching for the group-node: */
     if (iItemSearchFlags & UIChooserItemSearchFlag_Group)
     {
-        /* if the search term is empty we just add the node to the matched list: */
+        /* If the search term is empty we just add the node to the matched list: */
         if (strSearchTerm.isEmpty())
             matchedItems << this;
         else
         {
+            /* If exact name flag specified => check full node name: */
             if (iItemSearchFlags & UIChooserItemSearchFlag_ExactName)
             {
                 if (name() == strSearchTerm)
                     matchedItems << this;
             }
+            /* Otherwise check if name contains search term: */
             else
             {
                 if (name().contains(strSearchTerm, Qt::CaseInsensitive))
@@ -237,12 +240,11 @@ void UIChooserNodeGroup::searchForNodes(const QString &strSearchTerm, int iItemS
         }
     }
 
+    /* Search among all the children: */
     foreach (UIChooserNode *pNode, m_nodesGroup)
         pNode->searchForNodes(strSearchTerm, iItemSearchFlags, matchedItems);
-
     foreach (UIChooserNode *pNode, m_nodesGlobal)
         pNode->searchForNodes(strSearchTerm, iItemSearchFlags, matchedItems);
-
     foreach (UIChooserNode *pNode, m_nodesMachine)
         pNode->searchForNodes(strSearchTerm, iItemSearchFlags, matchedItems);
 }
