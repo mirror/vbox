@@ -28,8 +28,11 @@ UIChooserNodeGlobal::UIChooserNodeGlobal(UIChooserNode *pParent,
                                          const QString &)
     : UIChooserNode(pParent, fFavorite)
 {
+    /* Add to parent: */
     if (parentNode())
         parentNode()->addNode(this, iPosition);
+
+    /* Apply language settings: */
     retranslateUi();
 }
 
@@ -38,14 +41,20 @@ UIChooserNodeGlobal::UIChooserNodeGlobal(UIChooserNode *pParent,
                                          int iPosition)
     : UIChooserNode(pParent, pCopyFrom->isFavorite())
 {
+    /* Add to parent: */
     if (parentNode())
         parentNode()->addNode(this, iPosition);
+
+    /* Apply language settings: */
     retranslateUi();
 }
 
 UIChooserNodeGlobal::~UIChooserNodeGlobal()
 {
+    /* Delete item: */
     delete item();
+
+    /* Remove from parent: */
     if (parentNode())
         parentNode()->removeNode(this);
 }

@@ -29,8 +29,11 @@ UIChooserNodeMachine::UIChooserNodeMachine(UIChooserNode *pParent,
     : UIChooserNode(pParent, fFavorite)
     , m_pCache(new UIVirtualMachineItemLocal(comMachine))
 {
+    /* Add to parent: */
     if (parentNode())
         parentNode()->addNode(this, iPosition);
+
+    /* Apply language settings: */
     retranslateUi();
 }
 
@@ -41,13 +44,17 @@ UIChooserNodeMachine::UIChooserNodeMachine(UIChooserNode *pParent,
     : UIChooserNode(pParent, fFavorite)
     , m_pCache(new UIVirtualMachineItemCloud(guiCloudMachine))
 {
+    /* Add to parent: */
     if (parentNode())
         parentNode()->addNode(this, iPosition);
+
     /* Cloud VM item can notify machine node only directly (no console), we have to setup listener: */
     connect(static_cast<UIVirtualMachineItemCloud*>(m_pCache), &UIVirtualMachineItemCloud::sigStateChange,
             this, &UIChooserNodeMachine::sltHandleStateChange);
     connect(static_cast<UIVirtualMachineItemCloud*>(m_pCache), &UIVirtualMachineItemCloud::sigStateChange,
             static_cast<UIChooserAbstractModel*>(model()), &UIChooserAbstractModel::sltHandleCloudMachineStateChange);
+
+    /* Apply language settings: */
     retranslateUi();
 }
 
@@ -57,8 +64,11 @@ UIChooserNodeMachine::UIChooserNodeMachine(UIChooserNode *pParent,
     : UIChooserNode(pParent, fFavorite)
     , m_pCache(new UIVirtualMachineItemCloud)
 {
+    /* Add to parent: */
     if (parentNode())
         parentNode()->addNode(this, iPosition);
+
+    /* Apply language settings: */
     retranslateUi();
 }
 
@@ -67,6 +77,7 @@ UIChooserNodeMachine::UIChooserNodeMachine(UIChooserNode *pParent,
                                            int iPosition)
     : UIChooserNode(pParent, pCopyFrom->isFavorite())
 {
+    /* Prepare cache of corresponding type: */
     switch (pCopyFrom->cache()->itemType())
     {
         case UIVirtualMachineItem::ItemType_Local:
@@ -79,16 +90,24 @@ UIChooserNodeMachine::UIChooserNodeMachine(UIChooserNode *pParent,
             break;
     }
 
+    /* Add to parent: */
     if (parentNode())
         parentNode()->addNode(this, iPosition);
+
+    /* Apply language settings: */
     retranslateUi();
 }
 
 UIChooserNodeMachine::~UIChooserNodeMachine()
 {
+    /* Delete item: */
     delete item();
+
+    /* Remove from parent: */
     if (parentNode())
         parentNode()->removeNode(this);
+
+    /* Cleanup cache: */
     delete m_pCache;
 }
 
