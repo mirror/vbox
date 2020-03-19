@@ -446,7 +446,7 @@ class SchedGroupLogic(ModelLogicBase): # pylint: disable=too-few-public-methods
             self._oDb.execute('SELECT   *\n'
                               'FROM     SchedGroups\n'
                               'WHERE    tsExpire = \'infinity\'::TIMESTAMP\n'
-                              'ORDER BY idSchedGroup DESC\n'
+                              'ORDER BY fEnabled DESC, sName DESC\n'
                               'LIMIT %s OFFSET %s\n'
                               , (cMaxRows, iStart,));
         else:
@@ -454,7 +454,7 @@ class SchedGroupLogic(ModelLogicBase): # pylint: disable=too-few-public-methods
                               'FROM     SchedGroups\n'
                               'WHERE    tsExpire     > %s\n'
                               '     AND tsEffective <= %s\n'
-                              'ORDER BY idSchedGroup DESC\n'
+                              'ORDER BY fEnabled DESC, sName DESC\n'
                               'LIMIT %s OFFSET %s\n'
                               , (tsNow, tsNow, cMaxRows, iStart,));
 
