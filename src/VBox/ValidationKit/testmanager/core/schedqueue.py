@@ -51,7 +51,6 @@ class SchedQueueEntry(ModelDataBase):
         self.sTestGroup         = None
         self.sTestCase          = None
         self.fUpToDate          = None
-        self.fEnabled           = None
 
     def initFromDbRow(self, aoRow):
         """
@@ -67,7 +66,6 @@ class SchedQueueEntry(ModelDataBase):
         self.sTestGroup         = aoRow[3]
         self.sTestCase          = aoRow[4]
         self.fUpToDate          = aoRow[5]
-        self.fEnabled           = aoRow[6]
         return self
 
 
@@ -97,7 +95,6 @@ SELECT SchedQueues.idItem,
        AND TestGroups.tsExpire   = 'infinity'::TIMESTAMP
        AND TestCaseArgs.tsExpire = 'infinity'::TIMESTAMP
        AND TestCases.tsExpire    = 'infinity'::TIMESTAMP AS fUpToDate,
-       SchedGroups.fEnabled,
        ROW_NUMBER() OVER (PARTITION BY SchedQueues.idSchedGroup
                               ORDER BY SchedQueues.tsLastScheduled,
                                        SchedQueues.idItem) AS iPerSchedGroupRowNumber
@@ -117,7 +114,6 @@ FROM   SchedQueues
               AND TestCases.tsExpire             > SchedQueues.tsConfig
               AND TestCases.tsEffective         <= SchedQueues.tsConfig
 ORDER BY iPerSchedGroupRowNumber,
-         SchedGroups.fEnabled,
          SchedGroups.sName
 LIMIT %s OFFSET %s''' % (cMaxRows, iStart,))
         aoRows = []

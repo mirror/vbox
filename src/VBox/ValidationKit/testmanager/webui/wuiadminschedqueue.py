@@ -52,7 +52,5 @@ class WuiAdminSchedQueueList(WuiListContentBase):
     def _formatListEntry(self, iEntry):
         oEntry = self._aoEntries[iEntry] # type: SchedQueueEntry
         sState = 'up-to-date' if oEntry.fUpToDate else 'outdated';
-        if not oEntry.fEnabled:
-            sState += ' disabled';
         return [ oEntry.tsLastScheduled, oEntry.sSchedGroup, oEntry.sTestGroup, oEntry.sTestCase, sState, oEntry.idItem ];
 
