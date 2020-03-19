@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - UIVMResourceMonitor class implementation.
+ * VBox Qt GUI - UIResourceMonitor class implementation.
  */
 
 /*
@@ -32,7 +32,7 @@
 #include "UIExtraDataManager.h"
 #include "UIIconPool.h"
 #include "UIInformationPerformanceMonitor.h"
-#include "UIVMResourceMonitor.h"
+#include "UIResourceMonitor.h"
 #include "UIMessageCenter.h"
 #include "UIToolBar.h"
 #include "UIVirtualBoxEventHandler.h"
@@ -67,13 +67,13 @@ enum VMResouceMonitorColumn
 /*********************************************************************************************************************************
 *   Class UIVMResouceMonitorItem definition.                                                                           *
 *********************************************************************************************************************************/
-class UIVMResourceMonitorItem
+class UIResourceMonitorItem
 {
 public:
-    UIVMResourceMonitorItem(const QUuid &uid, const QString &strVMName);
-    UIVMResourceMonitorItem(const QUuid &uid);
-    UIVMResourceMonitorItem();
-    bool operator==(const UIVMResourceMonitorItem& other) const;
+    UIResourceMonitorItem(const QUuid &uid, const QString &strVMName);
+    UIResourceMonitorItem(const QUuid &uid);
+    UIResourceMonitorItem();
+    bool operator==(const UIResourceMonitorItem& other) const;
     QUuid    m_VMuid;
     QString  m_strVMName;
     quint64 m_uCPUGuestLoad;
@@ -95,14 +95,14 @@ public:
 /*********************************************************************************************************************************
 *   Class UIVMResouceMonitorProxyModel definition.                                                                           *
 *********************************************************************************************************************************/
-class UIVMResourceMonitorProxyModel : public QSortFilterProxyModel
+class UIResourceMonitorProxyModel : public QSortFilterProxyModel
 {
 
     Q_OBJECT;
 
 public:
 
-    UIVMResourceMonitorProxyModel(QObject *parent = 0);
+    UIResourceMonitorProxyModel(QObject *parent = 0);
 
 protected:
 
@@ -114,15 +114,15 @@ private:
 
 
 /*********************************************************************************************************************************
-*   Class UIVMResourceMonitorModel definition.                                                                                   *
+*   Class UIResourceMonitorModel definition.                                                                                     *
 *********************************************************************************************************************************/
-class UIVMResourceMonitorModel : public QAbstractTableModel
+class UIResourceMonitorModel : public QAbstractTableModel
 {
     Q_OBJECT;
 
 public:
 
-    UIVMResourceMonitorModel(QObject *parent = 0);
+    UIResourceMonitorModel(QObject *parent = 0);
     int      rowCount(const QModelIndex &parent = QModelIndex()) const /* override */;
     int      columnCount(const QModelIndex &parent = QModelIndex()) const /* override */;
     QVariant data(const QModelIndex &index, int role) const /* override */;
@@ -135,7 +135,7 @@ private slots:
 
 private:
 
-    QVector<UIVMResourceMonitorItem> m_itemList;
+    QVector<UIResourceMonitorItem> m_itemList;
     void initializeItems();
 
     QTimer *m_pTimer;
@@ -144,7 +144,7 @@ private:
 /*********************************************************************************************************************************
 *   Class UIVMResouceMonitorItem implementation.                                                                           *
 *********************************************************************************************************************************/
-UIVMResourceMonitorItem::UIVMResourceMonitorItem(const QUuid &uid, const QString &strVMName)
+UIResourceMonitorItem::UIResourceMonitorItem(const QUuid &uid, const QString &strVMName)
     : m_VMuid(uid)
     , m_strVMName(strVMName)
     , m_uNetworkDownRate(0)
@@ -165,7 +165,7 @@ UIVMResourceMonitorItem::UIVMResourceMonitorItem(const QUuid &uid, const QString
     }
 }
 
-UIVMResourceMonitorItem::UIVMResourceMonitorItem()
+UIResourceMonitorItem::UIResourceMonitorItem()
     : m_VMuid(QUuid())
     , m_uNetworkDownRate(0)
     , m_uNetworkUpRate(0)
@@ -178,7 +178,7 @@ UIVMResourceMonitorItem::UIVMResourceMonitorItem()
 {
 }
 
-UIVMResourceMonitorItem::UIVMResourceMonitorItem(const QUuid &uid)
+UIResourceMonitorItem::UIResourceMonitorItem(const QUuid &uid)
     : m_VMuid(uid)
     , m_uNetworkDownRate(0)
     , m_uNetworkUpRate(0)
@@ -191,7 +191,7 @@ UIVMResourceMonitorItem::UIVMResourceMonitorItem(const QUuid &uid)
 {
 }
 
-bool UIVMResourceMonitorItem::operator==(const UIVMResourceMonitorItem& other) const
+bool UIResourceMonitorItem::operator==(const UIResourceMonitorItem& other) const
 {
     if (m_VMuid == other.m_VMuid)
         return true;
@@ -202,43 +202,43 @@ bool UIVMResourceMonitorItem::operator==(const UIVMResourceMonitorItem& other) c
 /*********************************************************************************************************************************
 *   Class UIVMResouceMonitorProxyModel implementation.                                                                           *
 *********************************************************************************************************************************/
-UIVMResourceMonitorProxyModel::UIVMResourceMonitorProxyModel(QObject *parent /* = 0 */)
+UIResourceMonitorProxyModel::UIResourceMonitorProxyModel(QObject *parent /* = 0 */)
     :QSortFilterProxyModel(parent)
 {
 }
 
 
 /*********************************************************************************************************************************
-*   Class UIVMResourceMonitorModel implementation.                                                                               *
+*   Class UIResourceMonitorModel implementation.                                                                                 *
 *********************************************************************************************************************************/
-UIVMResourceMonitorModel::UIVMResourceMonitorModel(QObject *parent /*= 0*/)
+UIResourceMonitorModel::UIResourceMonitorModel(QObject *parent /*= 0*/)
     :QAbstractTableModel(parent)
     , m_pTimer(new QTimer(this))
 {
     initializeItems();
     connect(gVBoxEvents, &UIVirtualBoxEventHandler::sigMachineStateChange,
-            this, &UIVMResourceMonitorModel::sltMachineStateChanged);
+            this, &UIResourceMonitorModel::sltMachineStateChanged);
 
     if (m_pTimer)
     {
-        connect(m_pTimer, &QTimer::timeout, this, &UIVMResourceMonitorModel::sltTimeout);
+        connect(m_pTimer, &QTimer::timeout, this, &UIResourceMonitorModel::sltTimeout);
         m_pTimer->start(1000);
     }
 }
 
-int UIVMResourceMonitorModel::rowCount(const QModelIndex &parent /* = QModelIndex() */) const
+int UIResourceMonitorModel::rowCount(const QModelIndex &parent /* = QModelIndex() */) const
 {
     Q_UNUSED(parent);
     return m_itemList.size();
 }
 
-int UIVMResourceMonitorModel::columnCount(const QModelIndex &parent /* = QModelIndex() */) const
+int UIResourceMonitorModel::columnCount(const QModelIndex &parent /* = QModelIndex() */) const
 {
     Q_UNUSED(parent);
     return VMResouceMonitorColumn_Max;
 }
 
-QVariant UIVMResourceMonitorModel::data(const QModelIndex &index, int role) const
+QVariant UIResourceMonitorModel::data(const QModelIndex &index, int role) const
 {
     if (!index.isValid() || role != Qt::DisplayRole || index.row() >= rowCount())
         return QVariant();
@@ -262,7 +262,7 @@ QVariant UIVMResourceMonitorModel::data(const QModelIndex &index, int role) cons
     return QVariant();
 }
 
-QVariant UIVMResourceMonitorModel::headerData(int section, Qt::Orientation orientation, int role) const
+QVariant UIResourceMonitorModel::headerData(int section, Qt::Orientation orientation, int role) const
 {
     if (role == Qt::DisplayRole && orientation == Qt::Horizontal)
     {
@@ -295,7 +295,7 @@ QVariant UIVMResourceMonitorModel::headerData(int section, Qt::Orientation orien
     return QVariant();
 }
 
-void UIVMResourceMonitorModel::initializeItems()
+void UIResourceMonitorModel::initializeItems()
 {
     foreach (const CMachine &comMachine, uiCommon().virtualBox().GetMachines())
     {
@@ -303,15 +303,15 @@ void UIVMResourceMonitorModel::initializeItems()
         {
             if (comMachine.GetState() == KMachineState_Running)
             {
-                m_itemList << UIVMResourceMonitorItem(comMachine.GetId(), comMachine.GetName());
+                m_itemList << UIResourceMonitorItem(comMachine.GetId(), comMachine.GetName());
             }
         }
     }
 }
 
-void UIVMResourceMonitorModel::sltMachineStateChanged(const QUuid &uId, const KMachineState state)
+void UIResourceMonitorModel::sltMachineStateChanged(const QUuid &uId, const KMachineState state)
 {
-    int iIndex = m_itemList.indexOf(UIVMResourceMonitorItem(uId));
+    int iIndex = m_itemList.indexOf(UIResourceMonitorItem(uId));
     /* Remove the machine in case machine is no longer working. */
     if (iIndex != -1 && state != KMachineState_Running)
     {
@@ -323,12 +323,12 @@ void UIVMResourceMonitorModel::sltMachineStateChanged(const QUuid &uId, const KM
     if (iIndex == -1 && state == KMachineState_Running)
     {
         CMachine comMachine = uiCommon().virtualBox().FindMachine(uId.toString());
-        m_itemList << UIVMResourceMonitorItem(uId, comMachine.GetName());
+        m_itemList << UIResourceMonitorItem(uId, comMachine.GetName());
         emit layoutChanged();
     }
 }
 
-void UIVMResourceMonitorModel::sltTimeout()
+void UIResourceMonitorModel::sltTimeout()
 {
     ULONG aPctExecuting;
     ULONG aPctHalted;
@@ -349,10 +349,10 @@ void UIVMResourceMonitorModel::sltTimeout()
 
 
 /*********************************************************************************************************************************
-*   Class UIVMResourceMonitorWidget implementation.                                                                              *
+*   Class UIResourceMonitorWidget implementation.                                                                                *
 *********************************************************************************************************************************/
 
-UIVMResourceMonitorWidget::UIVMResourceMonitorWidget(EmbedTo enmEmbedding, UIActionPool *pActionPool,
+UIResourceMonitorWidget::UIResourceMonitorWidget(EmbedTo enmEmbedding, UIActionPool *pActionPool,
                                                        bool fShowToolbar /* = true */, QWidget *pParent /* = 0 */)
     : QIWithRetranslateUI<QWidget>(pParent)
     , m_enmEmbedding(enmEmbedding)
@@ -365,26 +365,26 @@ UIVMResourceMonitorWidget::UIVMResourceMonitorWidget(EmbedTo enmEmbedding, UIAct
     prepare();
 }
 
-QMenu *UIVMResourceMonitorWidget::menu() const
+QMenu *UIResourceMonitorWidget::menu() const
 {
     return m_pActionPool->action(UIActionIndexST_M_NetworkWindow)->menu();
 }
 
-void UIVMResourceMonitorWidget::retranslateUi()
+void UIResourceMonitorWidget::retranslateUi()
 {
 }
 
-void UIVMResourceMonitorWidget::resizeEvent(QResizeEvent *pEvent)
+void UIResourceMonitorWidget::resizeEvent(QResizeEvent *pEvent)
 {
     QIWithRetranslateUI<QWidget>::resizeEvent(pEvent);
 }
 
-void UIVMResourceMonitorWidget::showEvent(QShowEvent *pEvent)
+void UIResourceMonitorWidget::showEvent(QShowEvent *pEvent)
 {
     QIWithRetranslateUI<QWidget>::showEvent(pEvent);
 }
 
-void UIVMResourceMonitorWidget::prepare()
+void UIResourceMonitorWidget::prepare()
 {
     prepareActions();
     prepareWidgets();
@@ -392,11 +392,11 @@ void UIVMResourceMonitorWidget::prepare()
     retranslateUi();
 }
 
-void UIVMResourceMonitorWidget::prepareActions()
+void UIResourceMonitorWidget::prepareActions()
 {
 }
 
-void UIVMResourceMonitorWidget::prepareWidgets()
+void UIResourceMonitorWidget::prepareWidgets()
 {
     /* Create main-layout: */
     new QVBoxLayout(this);
@@ -413,8 +413,8 @@ void UIVMResourceMonitorWidget::prepareWidgets()
     if (m_fShowToolbar)
         prepareToolBar();
 
-    m_pModel = new UIVMResourceMonitorModel(this);
-    m_pProxyModel = new UIVMResourceMonitorProxyModel(this);
+    m_pModel = new UIResourceMonitorModel(this);
+    m_pProxyModel = new UIResourceMonitorProxyModel(this);
 
     m_pTableWidget = new QTableView();
     if (m_pTableWidget && m_pModel && m_pProxyModel)
@@ -439,7 +439,7 @@ void UIVMResourceMonitorWidget::prepareWidgets()
     }
 }
 
-void UIVMResourceMonitorWidget::prepareToolBar()
+void UIResourceMonitorWidget::prepareToolBar()
 {
     /* Create toolbar: */
     m_pToolBar = new UIToolBar(parentWidget());
@@ -465,50 +465,50 @@ void UIVMResourceMonitorWidget::prepareToolBar()
 }
 
 
-void UIVMResourceMonitorWidget::loadSettings()
+void UIResourceMonitorWidget::loadSettings()
 {
 }
 
 
 /*********************************************************************************************************************************
-*   Class UIVMResourceMonitorFactory implementation.                                                                             *
+*   Class UIResourceMonitorFactory implementation.                                                                               *
 *********************************************************************************************************************************/
 
-UIVMResourceMonitorFactory::UIVMResourceMonitorFactory(UIActionPool *pActionPool /* = 0 */)
+UIResourceMonitorFactory::UIResourceMonitorFactory(UIActionPool *pActionPool /* = 0 */)
     : m_pActionPool(pActionPool)
 {
 }
 
-void UIVMResourceMonitorFactory::create(QIManagerDialog *&pDialog, QWidget *pCenterWidget)
+void UIResourceMonitorFactory::create(QIManagerDialog *&pDialog, QWidget *pCenterWidget)
 {
-    pDialog = new UIVMResourceMonitor(pCenterWidget, m_pActionPool);
+    pDialog = new UIResourceMonitor(pCenterWidget, m_pActionPool);
 }
 
 
 /*********************************************************************************************************************************
-*   Class UIVMResourceMonitor implementation.                                                                                    *
+*   Class UIResourceMonitor implementation.                                                                                      *
 *********************************************************************************************************************************/
 
-UIVMResourceMonitor::UIVMResourceMonitor(QWidget *pCenterWidget, UIActionPool *pActionPool)
+UIResourceMonitor::UIResourceMonitor(QWidget *pCenterWidget, UIActionPool *pActionPool)
     : QIWithRetranslateUI<QIManagerDialog>(pCenterWidget)
     , m_pActionPool(pActionPool)
 {
 }
 
-void UIVMResourceMonitor::retranslateUi()
+void UIResourceMonitor::retranslateUi()
 {
     setWindowTitle(tr("VM Resource Monitor"));
 }
 
-void UIVMResourceMonitor::configure()
+void UIResourceMonitor::configure()
 {
     /* Apply window icons: */
     setWindowIcon(UIIconPool::iconSetFull(":/host_iface_manager_32px.png", ":/host_iface_manager_16px.png"));
 }
 
-void UIVMResourceMonitor::configureCentralWidget()
+void UIResourceMonitor::configureCentralWidget()
 {
-    UIVMResourceMonitorWidget *pWidget = new UIVMResourceMonitorWidget(EmbedTo_Dialog, m_pActionPool, true, this);
+    UIResourceMonitorWidget *pWidget = new UIResourceMonitorWidget(EmbedTo_Dialog, m_pActionPool, true, this);
     AssertPtrReturnVoid(pWidget);
     {
         setWidget(pWidget);
@@ -520,20 +520,20 @@ void UIVMResourceMonitor::configureCentralWidget()
     }
 }
 
-void UIVMResourceMonitor::configureButtonBox()
+void UIResourceMonitor::configureButtonBox()
 {
 }
 
-void UIVMResourceMonitor::finalize()
+void UIResourceMonitor::finalize()
 {
     /* Apply language settings: */
     retranslateUi();
 }
 
-UIVMResourceMonitorWidget *UIVMResourceMonitor::widget()
+UIResourceMonitorWidget *UIResourceMonitor::widget()
 {
-    return qobject_cast<UIVMResourceMonitorWidget*>(QIManagerDialog::widget());
+    return qobject_cast<UIResourceMonitorWidget*>(QIManagerDialog::widget());
 }
 
 
-#include "UIVMResourceMonitor.moc"
+#include "UIResourceMonitor.moc"

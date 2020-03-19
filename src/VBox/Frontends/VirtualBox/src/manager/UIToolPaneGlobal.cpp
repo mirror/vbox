@@ -28,7 +28,7 @@
 #include "UIHostNetworkManager.h"
 #include "UIMediumManager.h"
 #include "UIToolPaneGlobal.h"
-#include "UIVMResourceMonitor.h"
+#include "UIResourceMonitor.h"
 #include "UIWelcomePane.h"
 
 /* Other VBox includes: */
@@ -170,7 +170,7 @@ void UIToolPaneGlobal::openTool(UIToolType enmType)
             }
             case UIToolType_VMResourceMonitor:
             {
-                m_pPaneResourceMonitor = new UIVMResourceMonitorWidget(EmbedTo_Stack, m_pActionPool, false /* show toolbar */);
+                m_pPaneResourceMonitor = new UIResourceMonitorWidget(EmbedTo_Stack, m_pActionPool, false /* show toolbar */);
                 AssertPtrReturnVoid(m_pPaneResourceMonitor);
                 {
 #ifndef VBOX_WS_MAC

@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - UIVMResourceMonitor class declaration.
+ * VBox Qt GUI - UIResourceMonitor class declaration.
  */
 
 /*
@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef FEQT_INCLUDED_SRC_manager_UIVMResourceMonitor_h
-#define FEQT_INCLUDED_SRC_manager_UIVMResourceMonitor_h
+#ifndef FEQT_INCLUDED_SRC_monitor_resource_UIResourceMonitor_h
+#define FEQT_INCLUDED_SRC_monitor_resource_UIResourceMonitor_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -35,12 +35,12 @@ class QTreeWidgetItem;
 class QIDialogButtonBox;
 class UIActionPool;
 class UIToolBar;
-class UIVMResourceMonitorProxyModel;
-class UIVMResourceMonitorModel;
+class UIResourceMonitorProxyModel;
+class UIResourceMonitorModel;
 
 
 /** QWidget extension to display a Linux top like utility that sort running vm wrt. resource allocations. */
-class UIVMResourceMonitorWidget : public QIWithRetranslateUI<QWidget>
+class UIResourceMonitorWidget : public QIWithRetranslateUI<QWidget>
 {
     Q_OBJECT;
 
@@ -49,7 +49,7 @@ signals:
 
 public:
 
-    UIVMResourceMonitorWidget(EmbedTo enmEmbedding, UIActionPool *pActionPool,
+    UIResourceMonitorWidget(EmbedTo enmEmbedding, UIActionPool *pActionPool,
                                bool fShowToolbar = true, QWidget *pParent = 0);
 
     QMenu *menu() const;
@@ -94,17 +94,17 @@ private:
       * @{ */
         UIToolBar *m_pToolBar;
         QTableView *m_pTableWidget;
-        UIVMResourceMonitorProxyModel *m_pProxyModel;
-        UIVMResourceMonitorModel      *m_pModel;
+        UIResourceMonitorProxyModel *m_pProxyModel;
+        UIResourceMonitorModel      *m_pModel;
     /** @} */
 
 };
 
-class UIVMResourceMonitorFactory : public QIManagerDialogFactory
+class UIResourceMonitorFactory : public QIManagerDialogFactory
 {
 public:
 
-    UIVMResourceMonitorFactory(UIActionPool *pActionPool = 0);
+    UIResourceMonitorFactory(UIActionPool *pActionPool = 0);
 
 protected:
 
@@ -112,13 +112,13 @@ protected:
     UIActionPool *m_pActionPool;
 };
 
-class UIVMResourceMonitor : public QIWithRetranslateUI<QIManagerDialog>
+class UIResourceMonitor : public QIWithRetranslateUI<QIManagerDialog>
 {
     Q_OBJECT;
 
 private:
 
-    UIVMResourceMonitor(QWidget *pCenterWidget, UIActionPool *pActionPool);
+    UIResourceMonitor(QWidget *pCenterWidget, UIActionPool *pActionPool);
 
     virtual void retranslateUi() /* override */;
 
@@ -132,7 +132,7 @@ private:
 
     /** @name Widget stuff.
       * @{ */
-        virtual UIVMResourceMonitorWidget *widget() /* override */;
+        virtual UIResourceMonitorWidget *widget() /* override */;
     /** @} */
 
     /** @name Action related variables.
@@ -140,7 +140,7 @@ private:
         UIActionPool *m_pActionPool;
     /** @} */
 
-    friend class UIVMResourceMonitorFactory;
+    friend class UIResourceMonitorFactory;
 };
 
-#endif /* !FEQT_INCLUDED_SRC_manager_UIVMResourceMonitor_h */
+#endif /* !FEQT_INCLUDED_SRC_monitor_resource_UIResourceMonitor_h */
