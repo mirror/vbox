@@ -795,18 +795,7 @@ HRESULT GuestSession::i_copyToGuest(const GuestSessionFsSourceSet &SourceSet,
 
     LogFlowThisFuncEnter();
 
-    /* Validate stuff. */
-/** @todo r=bird: these validations are better left to the caller.  The first one in particular as there is only one
- * of the four callers which supplies a user specified source set, making an assertion more appropriate and efficient
- * here. */
-    if (RT_UNLIKELY(SourceSet.size() == 0)) /* At least one source must be present. */
-        return setError(E_INVALIDARG, tr("No sources specified"));
-    if (RT_UNLIKELY(SourceSet[0].strSource.isEmpty()))
-        return setError(E_INVALIDARG, tr("First source entry is empty"));
-    if (RT_UNLIKELY(strDestination.isEmpty()))
-        return setError(E_INVALIDARG, tr("No destination specified"));
-
-    /* Create a task and return the progress obejct for it. */
+    /* Create a task and return the progress object for it. */
     GuestSessionTaskCopyTo *pTask = NULL;
     try
     {
@@ -3196,6 +3185,14 @@ HRESULT GuestSession::copyToGuest(const std::vector<com::Utf8Str> &aSources, con
 
         ++itSource;
     }
+
+    /* (Re-)Validate stuff. */
+    if (RT_UNLIKELY(SourceSet.size() == 0)) /* At least one source must be present. */
+        return setError(E_INVALIDARG, tr("No sources specified"));
+    if (RT_UNLIKELY(SourceSet[0].strSource.isEmpty()))
+        return setError(E_INVALIDARG, tr("First source entry is empty"));
+    if (RT_UNLIKELY(aDestination.isEmpty()))
+        return setError(E_INVALIDARG, tr("No destination specified"));
 
     return i_copyToGuest(SourceSet, aDestination, aProgress);
 }
