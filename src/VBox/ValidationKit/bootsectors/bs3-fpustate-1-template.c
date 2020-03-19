@@ -132,7 +132,10 @@ BS3_DECL_FAR(uint8_t) TMPL_NM(bs3FpuState1_Corruption)(uint8_t bMode)
     bool                fReadBackError = false;
     bool                fReadError = false;
     BS3PTRUNION         MmioReg;
-
+    BS3CPUVENDOR const  enmCpuVendor = Bs3GetCpuVendor();
+    bool const          fFastFxSaveRestore = RT_BOOL(ASMCpuId_EDX(0x80000001) & X86_CPUID_AMD_FEATURE_EDX_FFXSR);
+    //bool const          fFdpXcptOnly = (ASMCpuIdEx_EBX(7, 0) & X86_CPUID_STEXT_FEATURE_EBX_FDP_EXCPTN_ONLY)
+    //                                && ASMCpuId_EAX(0) >= 7;
 
 # undef  CHECK_STATE
 # define CHECK_STATE(a_Instr) \
@@ -294,14 +297,16 @@ BS3_DECL_FAR(uint8_t) TMPL_NM(bs3FpuState1_Corruption)(uint8_t bMode)
 
         /* Using the FPU is a little complicated, but we really need to check these things. */
         CHECK_READBACK_READ_RUN(FMUL,    TMPL_NM(bs3FpuState1_FMul),         uint64_t);
-        if (1)
+        if (enmCpuVendor == BS3CPUVENDOR_INTEL)
 # if BS3_MODE_IS_16BIT_CODE(TMPL_MODE)
-            pExpected->FOP    =  0x40f; // skylake 6700k
+            pExpected->FOP    = 0x040f; // skylake 6700k
 # else
-            pExpected->FOP    =  0x40b; // skylake 6700k
+            pExpected->FOP    = 0x040b; // skylake 6700k
 # endif
+        else if (enmCpuVendor == BS3CPUVENDOR_AMD && fFastFxSaveRestore)
+            pExpected->FOP    = 0x0000; // Zen2 (3990x)
         else
-            pExpected->FOP    = 0x7dc; // dunno where we got this.
+            pExpected->FOP    = 0x07dc; // dunno where we got this.
 # if ARCH_BITS == 64
         pExpected->FPUDP  = (uint32_t) (uintptr_t)&MmioReg.pb[off];
         pExpected->DS     = (uint16_t)((uintptr_t)&MmioReg.pb[off] >> 32);
@@ -311,6 +316,8 @@ BS3_DECL_FAR(uint8_t) TMPL_NM(bs3FpuState1_Corruption)(uint8_t bMode)
 # else
         pExpected->FPUDP  = BS3_FP_OFF(&MmioReg.pb[off]);
 # endif
+        if (enmCpuVendor == BS3CPUVENDOR_AMD && fFastFxSaveRestore)
+            pExpected->FPUDP = 0; // Zen2 (3990x)
         CHECK_STATE(FMUL);
 
         /* check for timeout every now an then. */
