@@ -834,7 +834,8 @@ int GuestSessionTask::fileCopyToGuest(const Utf8Str &strSrc, const Utf8Str &strD
                 if (fFileCopyFlags & FileCopyFlag_Update)
                 {
                     GuestFsObjData dstObjData;
-                    rc = mSession->i_fileQueryInfo(strDstFinal, fFileCopyFlags & FileCopyFlag_FollowLinks, dstObjData, &rcGuest);
+                    rc = mSession->i_fileQueryInfo(strDstFinal, RT_BOOL(fFileCopyFlags & FileCopyFlag_FollowLinks), dstObjData,
+                                                   &rcGuest);
                     if (RT_SUCCESS(rc))
                     {
                         RTTIMESPEC dstModificationTimeTS;
