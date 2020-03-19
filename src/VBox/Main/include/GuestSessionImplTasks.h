@@ -46,13 +46,19 @@ struct GuestSessionFsSourceSpec
     GuestSessionFsSourceSpec()
         : enmType(FsObjType_Unknown)
         , enmPathStyle(PathStyle_Unknown)
-        , fDryRun(false) { } /** @todo r=bird: only half initialized. See comments in GuestSession::fileCopyToGuest(). */
+        , fDryRun(false) { RT_ZERO(Type); }
 
+    /** The (absolute) path to the source to use. */
     Utf8Str     strSource;
+    /** Filter to use. Currently not implemented and thus ignored. */
     Utf8Str     strFilter;
+    /** The object type of this source. */
     FsObjType_T enmType;
+    /** The path style to use. */
     PathStyle_T enmPathStyle;
+    /** Whether to do a dry run (e.g. not really touching anything) or not. */
     bool        fDryRun;
+    /** Union to keep type-specific data. Must be a POD type (zero'ing). */
     union
     {
         /** Directory-specific data. */
@@ -60,7 +66,9 @@ struct GuestSessionFsSourceSpec
         {
             /** Directory copy flags. */
             DirectoryCopyFlag_T fCopyFlags;
+            /** Whether to follow symbolic links or not. */
             bool                fFollowSymlinks; /** @todo Remove once we have that parameter in DirectoryCopyFlag_T. */
+            /** Whether to copy the directory recursively or not. */
             bool                fRecursive;
         } Dir;
         /** File-specific data. */
@@ -68,11 +76,11 @@ struct GuestSessionFsSourceSpec
         {
             /** File copy flags. */
             FileCopyFlag_T      fCopyFlags;
+            /** Source file offset to start copying from. */
+            size_t              offStart;
             /** Host file handle to use for reading from / writing to.
              *  Optional and can be NULL if not used. */
             PRTFILE             phFile;
-            /** Source file offset to start copying from. */
-            size_t              offStart;
             /** Source size (in bytes) to copy. */
             uint64_t            cbSize;
         } File;
