@@ -227,6 +227,14 @@ void UIChooserModel::setSelectedItem(const QString &strDefinition)
                                       UIChooserItemSearchFlag_Group |
                                       UIChooserItemSearchFlag_ExactName);
     }
+    /* Its a global-item definition? */
+    else if (strItemType == "n")
+    {
+        /* Search for global-item with required name: */
+        pItem = root()->searchForItem(strItemDescriptor,
+                                      UIChooserItemSearchFlag_Global |
+                                      UIChooserItemSearchFlag_ExactName);
+    }
     /* Its a machine-item definition? */
     else if (strItemType == "m")
     {
@@ -718,10 +726,16 @@ void UIChooserModel::sltHandleCloudAcquireInstancesTaskComplete(UITask *pTask)
     /* Call to base-class: */
     UIChooserAbstractModel::sltHandleCloudAcquireInstancesTaskComplete(pTask);
 
+    /* Remember first selected item definition: */
+    const QString strDefinition = firstSelectedItem()->definition();
+
     /* Rebuild tree for main root: */
     buildTreeForMainRoot();
     updateNavigationItemList();
     updateLayout();
+
+    /* Restore selection: */
+    setSelectedItem(strDefinition);
 }
 #endif /* VBOX_GUI_WITH_CLOUD_VMS */
 
