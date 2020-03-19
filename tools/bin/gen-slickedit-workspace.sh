@@ -80,6 +80,7 @@ my_abs_dir()
 {
     if test -n "${PWD}"; then
         MY_ABS_DIR=`cd ${MY_ROOT_DIR}/${1} && echo ${PWD}`
+
     else
         # old cygwin shell has no PWD and need adjusting.
         MY_ABS_DIR=`cd ${MY_ROOT_DIR}/${1} && pwd | ${MY_SED} -e 's,^/cygdrive/\(.\)/,\1:/,'`
@@ -1111,7 +1112,6 @@ my_generate_project "HGSMI-GH"      "src/VBox/GuestHost/HGSMI"              --be
 if test -z "$MY_OPT_MINIMAL"; then
     my_generate_project "DnD-GH"    "src/VBox/GuestHost/DragAndDrop"        --begin-incs "include"                                          --end-includes "src/VBox/GuestHost/DragAndDrop"
 fi
-my_generate_project "OpenGL-GH"     "src/VBox/GuestHost/OpenGL"             --begin-incs "include" "src/VBox/GuestHost/OpenGL"              --end-includes "src/VBox/GuestHost/OpenGL"
 my_generate_project "ShClip-GH"     "src/VBox/GuestHost/SharedClipboard"    --begin-incs "include"                                          --end-includes "src/VBox/GuestHost/SharedClipboard"
 
 # src/VBox/HostDrivers
@@ -1127,7 +1127,6 @@ my_generate_project "DragAndDrop"   "src/VBox/HostServices/DragAndDrop"     --be
 my_generate_project "GuestProps"    "src/VBox/HostServices/GuestProperties" --begin-incs "include" "src/VBox/HostServices/GuestProperties"  --end-includes "src/VBox/HostServices/GuestProperties"
 my_generate_project "ShClip-HS"     "src/VBox/HostServices/SharedClipboard" --begin-incs "include" "src/VBox/HostServices/SharedClipboard"  --end-includes "src/VBox/HostServices/SharedClipboard"
 my_generate_project "SharedFolders" "src/VBox/HostServices/SharedFolders"   --begin-incs "include" "src/VBox/HostServices/SharedFolders"    --end-includes "src/VBox/HostServices/SharedFolders" "include/VBox/shflsvc.h"
-my_generate_project "OpenGL-HS"     "src/VBox/HostServices/SharedOpenGL"    --begin-incs "include" "src/VBox/HostServices/SharedOpenGL"     --end-includes "src/VBox/HostServices/SharedOpenGL"
 
 # src/VBox/ImageMounter
 my_generate_project "ImageMounter"  "src/VBox/ImageMounter"                 --begin-incs "include" "src/VBox/ImageMounter"                  --end-includes "src/VBox/ImageMounter"
