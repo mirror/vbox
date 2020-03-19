@@ -308,7 +308,7 @@ static int __init VBoxDrvLinuxInit(void)
     /*
      * Check for synchronous/asynchronous TSC mode.
      */
-    printk(KERN_DEBUG "vboxdrv: Found %u processor cores\n", (unsigned)RTMpGetOnlineCount());
+    printk(KERN_DEBUG "vboxdrv: Found %u processor cores/threads\n", (unsigned)RTMpGetOnlineCount());
     rc = misc_register(&gMiscDeviceSys);
     if (rc)
     {
