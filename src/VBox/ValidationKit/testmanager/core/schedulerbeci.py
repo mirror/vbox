@@ -56,7 +56,7 @@ class SchdulerBeci(SchedulerBase): # pylint: disable=too-few-public-methods
             for oTestCase in oTestGroup.aoTestCases:
                 iPrio = oTestCase.iSchedPriority;
                 assert iPrio in range(32);
-                iPrio = iPrio / 4;
+                iPrio = iPrio // 4;
                 assert iPrio in range(8);
                 if iPrio > iMaxPriority:
                     iMaxPriority = iPrio;

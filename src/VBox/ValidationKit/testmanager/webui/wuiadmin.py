@@ -684,9 +684,14 @@ class WuiAdmin(WuiDispatcherBase):
                             #    self._sPageBody += '<p>%s.</p>' % (webutils.escapeElem(oError[0]),);
                             else:
                                 self._sPageBody += '<p>%s. [Cannot link to %s]</p>' \
-                                                 % (webutils.escapeElem(oError[0]), webutils.escapeElem(str(oError[1])));
+                                                 % (webutils.escapeElem(oError[0]), webutils.escapeElem(str(oError[1])),);
                     for sMsg in asMessages:
                         self._sPageBody += '<p>%s<p>\n' % (webutils.escapeElem(sMsg),);
+
+            # Remove leftovers from deleted scheduling groups.
+            self._sPageBody += '<h3>Cleanups</h3>\n';
+            cOrphans = SchedulerBase.cleanUpOrphanedQueues(self._oDb);
+            self._sPageBody += '<p>Removed %s orphaned (deleted) queue%s.<p>\n' % (cOrphans, '' if cOrphans == 1 else 's', );
         else:
             self._sPageBody = webutils.escapeElem('%s is a read only user and may not regenerate the scheduling queues!'
                                                   % (self._oCurUser.sUsername,));
