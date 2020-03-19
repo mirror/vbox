@@ -157,6 +157,7 @@ class WuiAdmin(WuiDispatcherBase):
     ksActionSchedGroupDoRemove      = 'SchedGroupDel';
     ksActionSchedGroupEdit          = 'SchedGroupEdit';
     ksActionSchedGroupEditPost      = 'SchedGroupEditPost';
+    ksActionSchedQueueList          = 'SchedQueueList';
     ## @}
 
     def __init__(self, oSrvGlue): # pylint: disable=too-many-locals,too-many-statements
@@ -298,7 +299,7 @@ class WuiAdmin(WuiDispatcherBase):
         self._dDispatch[self.ksActionTestCfgRegenQueues]        = self._actionRegenQueuesCommon;
 
         #
-        # Scheduling Group actions
+        # Scheduling Group and Queue actions
         #
         self._dDispatch[self.ksActionSchedGroupList]            = self._actionSchedGroupList;
         self._dDispatch[self.ksActionSchedGroupAdd]             = self._actionSchedGroupAdd;
@@ -308,6 +309,7 @@ class WuiAdmin(WuiDispatcherBase):
         self._dDispatch[self.ksActionSchedGroupAddPost]         = self._actionSchedGroupAddPost;
         self._dDispatch[self.ksActionSchedGroupEditPost]        = self._actionSchedGroupEditPost;
         self._dDispatch[self.ksActionSchedGroupDoRemove]        = self._actionSchedGroupDoRemove;
+        self._dDispatch[self.ksActionSchedQueueList]            = self._actionSchedQueueList;
 
 
         #
@@ -353,6 +355,7 @@ class WuiAdmin(WuiDispatcherBase):
                     [ 'Scheduling groups',      self._sActionUrlBase + self.ksActionSchedGroupList,         False ],
                     [ 'New testbox',            self._sActionUrlBase + self.ksActionTestBoxAdd,             True  ],
                     [ 'New scheduling group',   self._sActionUrlBase + self.ksActionSchedGroupAdd,          True  ],
+                    [ 'View scheduling queues', self._sActionUrlBase + self.ksActionSchedQueueList,         False ],
                     [ 'Regenerate all scheduling queues', self._sActionUrlBase + self.ksActionTestBoxesRegenQueues, True  ],
                 ]
             ],
@@ -636,6 +639,11 @@ class WuiAdmin(WuiDispatcherBase):
         from testmanager.core.schedgroup                import SchedGroupData, SchedGroupLogic;
         return self._actionGenericDoRemove(SchedGroupLogic, SchedGroupData.ksParam_idSchedGroup, self.ksActionSchedGroupList)
 
+    def _actionSchedQueueList(self):
+        """ Action wrapper. """
+        from testmanager.core.schedqueue                import SchedQueueLogic;
+        from testmanager.webui.wuiadminschedqueue       import WuiAdminSchedQueueList;
+        return self._actionGenericListing(SchedQueueLogic, WuiAdminSchedQueueList);
 
     def _actionRegenQueuesCommon(self):
         """
@@ -740,6 +748,7 @@ class WuiAdmin(WuiDispatcherBase):
         return self._actionGenericDoRemove(TestCaseLogic, TestCaseData.ksParam_idTestCase, self.ksActionTestCaseList);
 
     # Test Group actions
+
     def _actionTestGroupList(self):
         """ Action wrapper. """
         from testmanager.core.testgroup                 import TestGroupLogic;

@@ -744,12 +744,13 @@ class WuiListContentBase(WuiContentBase):
     """
 
     def __init__(self, aoEntries, iPage, cItemsPerPage, tsEffectiveDate, sTitle, # pylint: disable=too-many-arguments
-                 sId = None, fnDPrint = None, oDisp = None, aiSelectedSortColumns = None):
+                 sId = None, fnDPrint = None, oDisp = None, aiSelectedSortColumns = None, fTimeNavigation = True):
         WuiContentBase.__init__(self, fnDPrint = fnDPrint, oDisp = oDisp);
         self._aoEntries         = aoEntries; ## @todo should replace this with a Logic object and define methods for querying.
         self._iPage             = iPage;
         self._cItemsPerPage     = cItemsPerPage;
         self._tsEffectiveDate   = tsEffectiveDate;
+        self._fTimeNavigation   = fTimeNavigation;
         self._sTitle            = sTitle;       assert len(sTitle) > 1;
         if sId is None:
             sId                 = sTitle.strip().replace(' ', '').lower();
@@ -930,9 +931,10 @@ class WuiListContentBase(WuiContentBase):
             sNavigation += '      <td></td>\n';
 
         # Time scale.
-        sNavigation += '<td align="center" class="tmtimenav">';
-        sNavigation += self._generateTimeNavigation(sWhere);
-        sNavigation += '</td>';
+        if self._fTimeNavigation:
+            sNavigation += '<td align="center" class="tmtimenav">';
+            sNavigation += self._generateTimeNavigation(sWhere);
+            sNavigation += '</td>';
 
         # Next
         if len(self._aoEntries) > self._cItemsPerPage:
