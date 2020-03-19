@@ -114,7 +114,7 @@ FROM   SchedQueues
               AND TestCases.tsExpire             > SchedQueues.tsConfig
               AND TestCases.tsEffective         <= SchedQueues.tsConfig
 ORDER BY iPerSchedGroupRowNumber,
-         SchedGroups.sName
+         SchedGroups.sName DESC
 LIMIT %s OFFSET %s''' % (cMaxRows, iStart,))
         aoRows = []
         for _ in range(self._oDb.getRowCount()):
