@@ -207,21 +207,10 @@ HRESULT GuestSessionTask::setProgressErrorMsg(HRESULT hr, const Utf8Str &strMsg)
         && SUCCEEDED(mProgress->COMGETTER(Completed(&fCompleted)))
         && !fCompleted)
     {
-#if 0 /* Had to quick fix this myself now that the test case triggers it. Please address properly as suggested below. */
         HRESULT hr2 = mProgress->i_notifyComplete(hr,
                                                   COM_IIDOF(IGuestSession),
                                                   GuestSession::getStaticComponentName(),
-                                                  /** @todo r=bird: i_notifyComplete takes a format string, so this is
-                                                   *        potentially risky business if a user input mentioned by the message
-                                                   *        text contains '%s'!  With code below for how to do this less
-                                                   *        painfully and with fewer string copies. */
                                                   strMsg.c_str());
-#else
-        HRESULT hr2 = mProgress->i_notifyComplete(hr,
-                                                  COM_IIDOF(IGuestSession),
-                                                  GuestSession::getStaticComponentName(),
-                                                  "%s", strMsg.c_str());
-#endif
         if (FAILED(hr2))
             return hr2;
     }
