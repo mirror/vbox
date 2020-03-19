@@ -531,7 +531,6 @@ HRESULT Guest::updateGuestAdditions(const com::Utf8Str &aSource, const std::vect
     startupInfo.mName = "Updating Guest Additions";
 
     GuestCredentials guestCreds;
-    RT_ZERO(guestCreds);
 
     HRESULT hrc;
     ComObjPtr<GuestSession> pSession;

@@ -1476,8 +1476,6 @@ int GuestSession::i_fileOpenEx(const com::Utf8Str &aPath, FileAccessMode_T aAcce
                                ComObjPtr<GuestFile> &pFile, int *prcGuest)
 {
     GuestFileOpenInfo openInfo;
-    RT_ZERO(openInfo);
-
     openInfo.mFilename     = aPath;
     openInfo.mCreationMode = aCreationMode;
     openInfo.mAccessMode   = aAccessMode;
