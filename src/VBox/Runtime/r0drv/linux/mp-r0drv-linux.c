@@ -38,10 +38,14 @@
 #include <iprt/thread.h>
 #include "r0drv/mp-r0drv.h"
 
-#ifdef nr_cpumask_bits
-# define VBOX_NR_CPUMASK_BITS   nr_cpumask_bits
+
+/*********************************************************************************************************************************
+*   Defined Constants And Macros                                                                                                 *
+*********************************************************************************************************************************/
+#if defined(nr_cpumask_bits) || LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 27)
+# define VBOX_NR_CPUMASK_BITS   (nr_cpumask_bits)   /* same as nr_cpu_ids */
 #else
-# define VBOX_NR_CPUMASK_BITS   NR_CPUS
+# define VBOX_NR_CPUMASK_BITS   (NR_CPUS)
 #endif
 
 
@@ -75,14 +79,14 @@ RT_EXPORT_SYMBOL(RTMpCpuIdToSetIndex);
 
 RTDECL(RTCPUID) RTMpCpuIdFromSetIndex(int iCpu)
 {
-    return iCpu < VBOX_NR_CPUMASK_BITS ? (RTCPUID)iCpu : NIL_RTCPUID;
+    return (unsigned)iCpu < VBOX_NR_CPUMASK_BITS ? (RTCPUID)iCpu : NIL_RTCPUID;
 }
 RT_EXPORT_SYMBOL(RTMpCpuIdFromSetIndex);
 
 
 RTDECL(RTCPUID) RTMpGetMaxCpuId(void)
 {
-    return VBOX_NR_CPUMASK_BITS - 1; //???
+    return VBOX_NR_CPUMASK_BITS - 1;
 }
 RT_EXPORT_SYMBOL(RTMpGetMaxCpuId);
 
@@ -90,13 +94,10 @@ RT_EXPORT_SYMBOL(RTMpGetMaxCpuId);
 RTDECL(bool) RTMpIsCpuPossible(RTCPUID idCpu)
 {
 #if defined(CONFIG_SMP)
-    if (RT_UNLIKELY(idCpu >= VBOX_NR_CPUMASK_BITS))
-        return false;
-
-# if defined(cpu_possible)
-    return cpu_possible(idCpu);
+# if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 2) || defined(cpu_possible)
+    return idCpu < VBOX_NR_CPUMASK_BITS && cpu_possible(idCpu);
 # else /* < 2.5.29 */
-    return idCpu < (RTCPUID)smp_num_cpus;
+    return idCpu < (RTCPUID)(smp_num_cpus);
 # endif
 #else
     return idCpu == RTMpCpuId();
@@ -124,9 +125,7 @@ RT_EXPORT_SYMBOL(RTMpGetSet);
 RTDECL(RTCPUID) RTMpGetCount(void)
 {
 #ifdef CONFIG_SMP
-# if defined(CONFIG_HOTPLUG_CPU) /* introduced & uses cpu_present */
-    return num_present_cpus();
-# elif defined(num_possible_cpus)
+# if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 4) || defined(num_possible_cpus)
     return num_possible_cpus();
 # elif LINUX_VERSION_CODE < KERNEL_VERSION(2, 5, 0)
     return smp_num_cpus;
@@ -145,12 +144,10 @@ RT_EXPORT_SYMBOL(RTMpGetCount);
 RTDECL(bool) RTMpIsCpuOnline(RTCPUID idCpu)
 {
 #ifdef CONFIG_SMP
-    if (RT_UNLIKELY(idCpu >= VBOX_NR_CPUMASK_BITS))
-        return false;
-# ifdef cpu_online
-    return cpu_online(idCpu);
+# if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0) || defined(cpu_online)
+    return idCpu < VBOX_NR_CPUMASK_BITS && cpu_online(idCpu);
 # else /* 2.4: */
-    return cpu_online_map & RT_BIT_64(idCpu);
+    return idCpu < VBOX_NR_CPUMASK_BITS && cpu_online_map & RT_BIT_64(idCpu);
 # endif
 #else
     return idCpu == RTMpCpuId();
@@ -183,7 +180,7 @@ RT_EXPORT_SYMBOL(RTMpGetOnlineSet);
 RTDECL(RTCPUID) RTMpGetOnlineCount(void)
 {
 #ifdef CONFIG_SMP
-# if defined(num_online_cpus)
+# if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0) || defined(num_online_cpus)
     return num_online_cpus();
 # else
     RTCPUSET Set;
