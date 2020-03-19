@@ -981,7 +981,7 @@ int FsList::AddEntryFromGuest(const Utf8Str &strFile, const GuestFsObjData &fsOb
 
         mVecEntries.push_back(pEntry);
     }
-    catch (...)
+    catch (std::bad_alloc &)
     {
         if (pEntry)
             delete pEntry;
@@ -1011,7 +1011,7 @@ int FsList::AddEntryFromHost(const Utf8Str &strFile, PCRTFSOBJINFO pcObjInfo)
 
         mVecEntries.push_back(pEntry);
     }
-    catch (...)
+    catch (std::bad_alloc &)
     {
         if (pEntry)
             delete pEntry;
@@ -1526,7 +1526,7 @@ HRESULT GuestSessionTaskCopyFrom::Init(const Utf8Str &strTaskDesc)
 
             mVecLists.push_back(pFsList);
         }
-        catch (...)  /** @todo r=bird: Catch std:bad_alloc &, not ... Will avoid headscratching if something is thrown. */
+        catch (std::bad_alloc &)
         {
             vrc = VERR_NO_MEMORY;
             break;
@@ -1767,7 +1767,7 @@ HRESULT GuestSessionTaskCopyTo::Init(const Utf8Str &strTaskDesc)
 
             mVecLists.push_back(pFsList);
         }
-        catch (...)
+        catch (std::bad_alloc &)
         {
             rc = VERR_NO_MEMORY;
             break;
