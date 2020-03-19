@@ -97,6 +97,7 @@ static int autostartGetProcessDomainUser(com::Utf8Str &aUser)
         return RTErrConvertFromWin32(GetLastError());
     rc = RTUtf16ToUtf8(wszUsername, &pszUser);
     aUser = pszUser;
+    aUser.toLower();
     RTStrFree(pszUser);
     return rc;
 }
@@ -110,6 +111,7 @@ static int autostartGetLocalDomain(com::Utf8Str &aDomain)
     char *pszDomain = NULL;
     int rc = RTUtf16ToUtf8(pwszDomain, &pszDomain);
     aDomain = pszDomain;
+    aDomain.toLower();
     RTStrFree(pszDomain);
     return rc;
 }
@@ -131,6 +133,8 @@ static int autostartGetDomainAndUser(const com::Utf8Str &aDomainAndUser, com::Ut
         }
         aDomain = aDomainAndUser.substr(0, offDelim);
         aUser   = aDomainAndUser.substr(offDelim + 1);
+        aDomain.toLower();
+        aUser.toLower();
         return VINF_SUCCESS;
     }
 
@@ -150,12 +154,16 @@ static int autostartGetDomainAndUser(const com::Utf8Str &aDomainAndUser, com::Ut
         }
         aDomain = aDomainAndUser.substr(offDelim + 1);
         aUser   = aDomainAndUser.substr(0, offDelim);
+        aDomain.toLower();
+        aUser.toLower();
         return VINF_SUCCESS;
     }
 
     // only user is specified
     int rc = autostartGetLocalDomain(aDomain);
     aUser = aDomainAndUser;
+    aDomain.toLower();
+    aUser.toLower();
     return rc;
 }
 
