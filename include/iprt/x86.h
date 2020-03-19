@@ -2873,19 +2873,22 @@ typedef const X86PML4 *PCX86PML4;
  */
 typedef struct X86FSTENV32P
 {
-    uint16_t    FCW;
-    uint16_t    padding1;
-    uint16_t    FSW;
-    uint16_t    padding2;
-    uint16_t    FTW;
-    uint16_t    padding3;
-    uint32_t    FPUIP;
-    uint16_t    FPUCS;
-    uint16_t    FOP;
-    uint32_t    FPUDP;
-    uint16_t    FPUDS;
-    uint16_t    padding4;
+    uint16_t    FCW;            /**< 0x00 */
+    uint16_t    padding1;       /**< 0x02 */
+    uint16_t    FSW;            /**< 0x04 */
+    uint16_t    padding2;       /**< 0x06 */
+    uint16_t    FTW;            /**< 0x08 */
+    uint16_t    padding3;       /**< 0x0a */
+    uint32_t    FPUIP;          /**< 0x0c */
+    uint16_t    FPUCS;          /**< 0x10 */
+    uint16_t    FOP;            /**< 0x12 */
+    uint32_t    FPUDP;          /**< 0x14 */
+    uint16_t    FPUDS;          /**< 0x18 */
+    uint16_t    padding4;       /**< 0x1a */
 } X86FSTENV32P;
+#ifndef VBOX_FOR_DTRACE_LIB
+AssertCompileSize(X86FSTENV32P, 0x1c);
+#endif
 /** Pointer to a 32-bit protected mode FSTENV image. */
 typedef X86FSTENV32P *PX86FSTENV32P;
 /** Pointer to a const 32-bit protected mode FSTENV image. */
