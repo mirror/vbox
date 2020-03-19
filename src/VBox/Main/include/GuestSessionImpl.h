@@ -280,6 +280,7 @@ public:
                                           ComPtr<IProgress> &pProgress);
     int                     i_closeSession(uint32_t uFlags, uint32_t uTimeoutMS, int *pGuestRc);
     HRESULT                 i_directoryCopyFlagFromStr(const com::Utf8Str &strFlags, DirectoryCopyFlag_T *pfFlags);
+    bool                    i_directoryExists(const Utf8Str &strPath);
     inline bool             i_directoryExists(uint32_t uDirID, ComObjPtr<GuestDirectory> *pDir);
     int                     i_directoryUnregister(GuestDirectory *pDirectory);
     int                     i_directoryRemove(const Utf8Str &strPath, uint32_t fFlags, int *pGuestRc);

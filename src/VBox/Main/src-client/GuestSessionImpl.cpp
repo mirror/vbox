@@ -938,6 +938,21 @@ int GuestSession::i_directoryCreate(const Utf8Str &strPath, uint32_t uMode,
     return vrc;
 }
 
+/**
+ * Checks if a directory on the guest exists.
+ *
+ * @returns \c true if directory exists on the guest, \c false if not.
+ * @param   strPath             Path of directory to check.
+ */
+bool GuestSession::i_directoryExists(const Utf8Str &strPath)
+{
+    GuestFsObjData objDataIgnored;
+    int rcGuestIgnored;
+    int rc = i_directoryQueryInfo(strPath, true /* fFollowSymlinks */, objDataIgnored, &rcGuestIgnored);
+
+    return RT_SUCCESS(rc);
+}
+
 inline bool GuestSession::i_directoryExists(uint32_t uDirID, ComObjPtr<GuestDirectory> *pDir)
 {
     SessionDirectories::const_iterator it = mData.mDirectories.find(uDirID);
