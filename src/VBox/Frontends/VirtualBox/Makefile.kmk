@@ -332,7 +332,8 @@ VBOX_GUI_INC_DIRS += \
 	./src/manager/details \
 	./src/manager/tools \
 	./src/monitor \
-	./src/monitor/resource
+	./src/monitor/resource \
+	./src/monitor/performance
 
 ifdef VBOX_GUI_WITH_NETWORK_MANAGER
 VBOX_GUI_INC_DIRS += \
@@ -718,6 +719,7 @@ VirtualBox_QT_MOCHDRS = \
 #
 VirtualBoxVM_QT_MOCHDRS = \
 	src/globals/UIStarter.h \
+	src/monitor/performance/UIPerformanceMonitor.h \
 	src/runtime/UIConsoleEventHandler.h \
 	src/runtime/UIFrameBuffer.h \
 	src/runtime/UIIndicatorsPool.h \
@@ -736,7 +738,6 @@ VirtualBoxVM_QT_MOCHDRS = \
 	src/runtime/fullscreen/UIMachineWindowFullscreen.h \
 	src/runtime/information/UIInformationConfiguration.h \
 	src/runtime/information/UIVMInformationDialog.h \
-	src/runtime/information/UIInformationPerformanceMonitor.h \
 	src/runtime/information/UIInformationRuntime.h \
 	src/guestctrl/UIFileManager.h \
 	src/guestctrl/UIFileManagerDialog.h \
@@ -976,10 +977,10 @@ VirtualBox_QT_MOCSRCS = \
 # Sources containing local definitions of classes that use the Q_OBJECT macro.
 #
 VirtualBoxVM_QT_MOCSRCS = \
+	src/monitor/performance/UIPerformanceMonitor.cpp \
 	src/runtime/UIConsoleEventHandler.cpp \
 	src/runtime/UIFrameBuffer.cpp \
 	src/runtime/UIIndicatorsPool.cpp \
-	src/runtime/information/UIInformationPerformanceMonitor.cpp \
 	src/runtime/information/UIInformationRuntime.cpp \
 	src/guestctrl/UIFileManager.cpp \
 	src/guestctrl/UIFileManagerLogPanel.cpp \
@@ -1189,6 +1190,7 @@ $(call VBOX_SET_VER_INFO_EXE,VirtualBox,VirtualBox Manager,$(VBOX_WINDOWS_ICON_F
 VirtualBoxVM_SOURCES = \
 	src/main.cpp \
 	src/globals/UIStarter.cpp \
+	src/monitor/performance/UIPerformanceMonitor.cpp \
 	src/runtime/UIConsoleEventHandler.cpp \
 	src/runtime/UIFrameBuffer.cpp \
 	src/runtime/UIIndicatorsPool.cpp \
@@ -1207,7 +1209,6 @@ VirtualBoxVM_SOURCES = \
 	src/runtime/fullscreen/UIMachineWindowFullscreen.cpp \
 	src/runtime/information/UIInformationConfiguration.cpp \
 	src/runtime/information/UIVMInformationDialog.cpp \
-	src/runtime/information/UIInformationPerformanceMonitor.cpp \
 	src/runtime/information/UIInformationRuntime.cpp \
 	src/guestctrl/UIFileManager.cpp \
 	src/guestctrl/UIFileManagerDialog.cpp \

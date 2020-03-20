@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - UIInformationPerformanceMonitor class declaration.
+ * VBox Qt GUI - UIPerformanceMonitor class declaration.
  */
 
 /*
@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef FEQT_INCLUDED_SRC_runtime_information_UIInformationPerformanceMonitor_h
-#define FEQT_INCLUDED_SRC_runtime_information_UIInformationPerformanceMonitor_h
+#ifndef FEQT_INCLUDED_SRC_monitor_performance_UIPerformanceMonitor_h
+#define FEQT_INCLUDED_SRC_monitor_performance_UIPerformanceMonitor_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -105,12 +105,12 @@ private:
     bool m_fIsInitialized;
 };
 
-/** UIInformationPerformanceMonitor class displays some high level performance metric of the guest system.
+/** UIPerformanceMonitor class displays some high level performance metric of the guest system.
   * The values are read in certain periods and cached in the GUI side. Currently we draw some line charts
   * and pie charts (where applicable) alongside with some text. IPerformanceCollector and IMachineDebugger are
   * two sources of the performance metrics. Unfortunately these two have very distinct APIs resulting a bit too much
   * special casing etc.*/
-class UIInformationPerformanceMonitor : public QIWithRetranslateUI<QWidget>
+class UIPerformanceMonitor : public QIWithRetranslateUI<QWidget>
 {
     Q_OBJECT;
 
@@ -119,8 +119,8 @@ public:
     /** Constructs information-tab passing @a pParent to the QWidget base-class constructor.
       * @param machine is machine reference.
       * @param console is machine console reference. */
-    UIInformationPerformanceMonitor(QWidget *pParent, const CMachine &machine, const CConsole &console, const UISession *pSession);
-    ~UIInformationPerformanceMonitor();
+    UIPerformanceMonitor(QWidget *pParent, const CMachine &machine, const CConsole &console, const UISession *pSession);
+    ~UIPerformanceMonitor();
 
     /** @name Static utlity methods that query and parse IMachineDebugger outputs for specific metrix types.
       * @{ */
@@ -226,4 +226,4 @@ private:
     quint64 m_iTimeStep;
 };
 
-#endif /* !FEQT_INCLUDED_SRC_runtime_information_UIInformationPerformanceMonitor_h */
+#endif /* !FEQT_INCLUDED_SRC_monitor_performance_UIPerformanceMonitor_h */

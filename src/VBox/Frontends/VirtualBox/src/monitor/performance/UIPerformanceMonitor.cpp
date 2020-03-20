@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - UIInformationPerformanceMonitor class implementation.
+ * VBox Qt GUI - UIPerformanceMonitor class implementation.
  */
 
 /*
@@ -28,7 +28,7 @@
 
 /* GUI includes: */
 #include "UICommon.h"
-#include "UIInformationPerformanceMonitor.h"
+#include "UIPerformanceMonitor.h"
 #include "UISession.h"
 
 /* COM includes: */
@@ -778,10 +778,10 @@ void UIMetric::reset()
 
 
 /*********************************************************************************************************************************
-*   UIInformationPerformanceMonitor implementation.                                                                              *
+*   UIPerformanceMonitor implementation.                                                                              *
 *********************************************************************************************************************************/
 
-UIInformationPerformanceMonitor::UIInformationPerformanceMonitor(QWidget *pParent, const CMachine &machine, const CConsole &console, const UISession *pSession)
+UIPerformanceMonitor::UIPerformanceMonitor(QWidget *pParent, const CMachine &machine, const CConsole &console, const UISession *pSession)
     : QIWithRetranslateUI<QWidget>(pParent)
     , m_fGuestAdditionsAvailable(false)
     , m_machine(machine)
@@ -799,7 +799,7 @@ UIInformationPerformanceMonitor::UIInformationPerformanceMonitor(QWidget *pParen
     if (!m_console.isNull())
         m_comGuest = m_console.GetGuest();
     m_fGuestAdditionsAvailable = guestAdditionsAvailable(6 /* minimum major version */);
-    connect(pSession, &UISession::sigAdditionsStateChange, this, &UIInformationPerformanceMonitor::sltGuestAdditionsStateChange);
+    connect(pSession, &UISession::sigAdditionsStateChange, this, &UIPerformanceMonitor::sltGuestAdditionsStateChange);
 
     prepareMetrics();
     prepareObjects();
@@ -807,11 +807,11 @@ UIInformationPerformanceMonitor::UIInformationPerformanceMonitor(QWidget *pParen
     retranslateUi();
 }
 
-UIInformationPerformanceMonitor::~UIInformationPerformanceMonitor()
+UIPerformanceMonitor::~UIPerformanceMonitor()
 {
 }
 
-void UIInformationPerformanceMonitor::retranslateUi()
+void UIPerformanceMonitor::retranslateUi()
 {
     foreach (UIChart *pChart, m_charts)
         pChart->setXAxisLabel(QApplication::translate("UIVMInformationDialog", "Seconds"));
@@ -876,7 +876,7 @@ void UIInformationPerformanceMonitor::retranslateUi()
     sltTimeout();
 }
 
-void UIInformationPerformanceMonitor::prepareObjects()
+void UIPerformanceMonitor::prepareObjects()
 {
     m_pMainLayout = new QVBoxLayout(this);
     if (!m_pMainLayout)
@@ -886,7 +886,7 @@ void UIInformationPerformanceMonitor::prepareObjects()
     m_pTimer = new QTimer(this);
     if (m_pTimer)
     {
-        connect(m_pTimer, &QTimer::timeout, this, &UIInformationPerformanceMonitor::sltTimeout);
+        connect(m_pTimer, &QTimer::timeout, this, &UIPerformanceMonitor::sltTimeout);
         m_pTimer->start(1000 * iPeriod);
     }
 
@@ -942,7 +942,7 @@ void UIInformationPerformanceMonitor::prepareObjects()
     pContainerLayout->addWidget(bottomSpacerWidget, iRow, 0, 1, 2);
 }
 
-void UIInformationPerformanceMonitor::sltTimeout()
+void UIPerformanceMonitor::sltTimeout()
 {
     if (m_performanceMonitor.isNull())
         return;
@@ -1021,7 +1021,7 @@ void UIInformationPerformanceMonitor::sltTimeout()
 }
 
 /* static */
-void UIInformationPerformanceMonitor::getNetworkLoad(CMachineDebugger &debugger, quint64 &uOutNetworkReceived, quint64 &uOutNetworkTransmitted)
+void UIPerformanceMonitor::getNetworkLoad(CMachineDebugger &debugger, quint64 &uOutNetworkReceived, quint64 &uOutNetworkTransmitted)
 {
     uOutNetworkReceived = 0;
     uOutNetworkTransmitted = 0;
@@ -1038,7 +1038,7 @@ void UIInformationPerformanceMonitor::getNetworkLoad(CMachineDebugger &debugger,
 }
 
 /* static */
-void UIInformationPerformanceMonitor::getDiskLoad(CMachineDebugger &debugger, quint64 &uOutDiskWritten, quint64 &uOutDiskRead)
+void UIPerformanceMonitor::getDiskLoad(CMachineDebugger &debugger, quint64 &uOutDiskWritten, quint64 &uOutDiskRead)
 {
     QVector<UIDebuggerMetricData> xmlData = getAndParseStatsFromDebugger(debugger, "/Public/Storage/*/Port*/Bytes*");
     foreach (const UIDebuggerMetricData &data, xmlData)
@@ -1053,7 +1053,7 @@ void UIInformationPerformanceMonitor::getDiskLoad(CMachineDebugger &debugger, qu
 }
 
 /* static */
-void UIInformationPerformanceMonitor::getVMMExitCount(CMachineDebugger &debugger, quint64 &uOutVMMExitCount)
+void UIPerformanceMonitor::getVMMExitCount(CMachineDebugger &debugger, quint64 &uOutVMMExitCount)
 {
     QVector<UIDebuggerMetricData> xmlData = getAndParseStatsFromDebugger(debugger, "/PROF/CPU*/EM/RecordedExits");
     foreach (const UIDebuggerMetricData &data, xmlData)
@@ -1069,7 +1069,7 @@ void UIInformationPerformanceMonitor::getVMMExitCount(CMachineDebugger &debugger
  *
  * @returns
  */
-void UIInformationPerformanceMonitor::sltGuestAdditionsStateChange()
+void UIPerformanceMonitor::sltGuestAdditionsStateChange()
 {
     bool fGuestAdditionsAvailable = guestAdditionsAvailable(6 /* minimum major version */);
     if (m_fGuestAdditionsAvailable == fGuestAdditionsAvailable)
@@ -1078,7 +1078,7 @@ void UIInformationPerformanceMonitor::sltGuestAdditionsStateChange()
     enableDisableGuestAdditionDependedWidgets(m_fGuestAdditionsAvailable);
 }
 
-void UIInformationPerformanceMonitor::prepareMetrics()
+void UIPerformanceMonitor::prepareMetrics()
 {
     m_performanceMonitor = uiCommon().virtualBox().GetPerformanceCollector();
     m_machineDebugger = m_console.GetDebugger();
@@ -1125,7 +1125,7 @@ void UIInformationPerformanceMonitor::prepareMetrics()
     }
 }
 
-bool UIInformationPerformanceMonitor::guestAdditionsAvailable(int iMinimumMajorVersion)
+bool UIPerformanceMonitor::guestAdditionsAvailable(int iMinimumMajorVersion)
 {
     if (m_comGuest.isNull())
         return false;
@@ -1144,7 +1144,7 @@ bool UIInformationPerformanceMonitor::guestAdditionsAvailable(int iMinimumMajorV
     return false;
 }
 
-void UIInformationPerformanceMonitor::enableDisableGuestAdditionDependedWidgets(bool fEnable)
+void UIPerformanceMonitor::enableDisableGuestAdditionDependedWidgets(bool fEnable)
 {
     for (QMap<QString, UIMetric>::const_iterator iterator =  m_metrics.begin();
          iterator != m_metrics.end(); ++iterator)
@@ -1164,7 +1164,7 @@ void UIInformationPerformanceMonitor::enableDisableGuestAdditionDependedWidgets(
     }
 }
 
-void UIInformationPerformanceMonitor::updateCPUGraphsAndMetric(ULONG iExecutingPercentage, ULONG iOtherPercentage)
+void UIPerformanceMonitor::updateCPUGraphsAndMetric(ULONG iExecutingPercentage, ULONG iOtherPercentage)
 {
     UIMetric &CPUMetric = m_metrics[m_strCPUMetricName];
     CPUMetric.addData(0, iExecutingPercentage);
@@ -1189,7 +1189,7 @@ void UIInformationPerformanceMonitor::updateCPUGraphsAndMetric(ULONG iExecutingP
         m_charts[m_strCPUMetricName]->update();
 }
 
-void UIInformationPerformanceMonitor::updateRAMGraphsAndMetric(quint64 iTotalRAM, quint64 iFreeRAM)
+void UIPerformanceMonitor::updateRAMGraphsAndMetric(quint64 iTotalRAM, quint64 iFreeRAM)
 {
     UIMetric &RAMMetric = m_metrics[m_strRAMMetricName];
     RAMMetric.setMaximum(iTotalRAM);
@@ -1209,7 +1209,7 @@ void UIInformationPerformanceMonitor::updateRAMGraphsAndMetric(quint64 iTotalRAM
         m_charts[m_strRAMMetricName]->update();
 }
 
-void UIInformationPerformanceMonitor::updateNetworkGraphsAndMetric(quint64 iReceiveTotal, quint64 iTransmitTotal)
+void UIPerformanceMonitor::updateNetworkGraphsAndMetric(quint64 iReceiveTotal, quint64 iTransmitTotal)
 {
     UIMetric &NetMetric = m_metrics[m_strNetworkMetricName];
 
@@ -1252,7 +1252,7 @@ void UIInformationPerformanceMonitor::updateNetworkGraphsAndMetric(quint64 iRece
         m_charts[m_strNetworkMetricName]->update();
 }
 
-void UIInformationPerformanceMonitor::updateDiskIOGraphsAndMetric(quint64 uDiskIOTotalWritten, quint64 uDiskIOTotalRead)
+void UIPerformanceMonitor::updateDiskIOGraphsAndMetric(quint64 uDiskIOTotalWritten, quint64 uDiskIOTotalRead)
 {
     UIMetric &diskMetric = m_metrics[m_strDiskIOMetricName];
 
@@ -1295,7 +1295,7 @@ void UIInformationPerformanceMonitor::updateDiskIOGraphsAndMetric(quint64 uDiskI
         m_charts[m_strDiskIOMetricName]->update();
 }
 
-void UIInformationPerformanceMonitor::updateVMExitMetric(quint64 uTotalVMExits)
+void UIPerformanceMonitor::updateVMExitMetric(quint64 uTotalVMExits)
 {
     if (uTotalVMExits <= 0)
         return;
@@ -1328,7 +1328,7 @@ void UIInformationPerformanceMonitor::updateVMExitMetric(quint64 uTotalVMExits)
         m_charts[m_strVMExitMetricName]->update();
 }
 
-QString UIInformationPerformanceMonitor::dataColorString(const QString &strChartName, int iDataIndex)
+QString UIPerformanceMonitor::dataColorString(const QString &strChartName, int iDataIndex)
 {
     if (!m_charts.contains(strChartName))
         return QColor(Qt::red).name(QColor::HexRgb);
@@ -1339,7 +1339,7 @@ QString UIInformationPerformanceMonitor::dataColorString(const QString &strChart
 }
 
 /* static */
-QVector<UIDebuggerMetricData> UIInformationPerformanceMonitor::getAndParseStatsFromDebugger(CMachineDebugger &debugger, const QString &strQuery)
+QVector<UIDebuggerMetricData> UIPerformanceMonitor::getAndParseStatsFromDebugger(CMachineDebugger &debugger, const QString &strQuery)
 {
     QVector<UIDebuggerMetricData> xmlData;
     if (strQuery.isEmpty())
@@ -1368,4 +1368,4 @@ QVector<UIDebuggerMetricData> UIInformationPerformanceMonitor::getAndParseStatsF
     }
     return xmlData;
 }
-#include "UIInformationPerformanceMonitor.moc"
+#include "UIPerformanceMonitor.moc"

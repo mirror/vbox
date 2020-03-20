@@ -31,7 +31,7 @@
 #include "UICommon.h"
 #include "UIExtraDataManager.h"
 #include "UIIconPool.h"
-#include "UIInformationPerformanceMonitor.h"
+#include "UIPerformanceMonitor.h"
 #include "UIResourceMonitor.h"
 #include "UIMessageCenter.h"
 #include "UIToolBar.h"

@@ -34,7 +34,7 @@
 #include "UICommon.h"
 #include "VBoxUtils.h"
 #include "UIInformationConfiguration.h"
-#include "UIInformationPerformanceMonitor.h"
+#include "UIPerformanceMonitor.h"
 #include "UIInformationRuntime.h"
 #include "UIGuestProcessControlWidget.h"
 #include "UIMachine.h"
@@ -198,8 +198,8 @@ void UIVMInformationDialog::prepareTabWidget()
         }
 
         /* Create Performance Monitor tab: */
-        UIInformationPerformanceMonitor *pPerformanceMonitorWidget =
-            new UIInformationPerformanceMonitor(this, m_pMachineWindow->machine(), m_pMachineWindow->console(), m_pMachineWindow->uisession());
+        UIPerformanceMonitor *pPerformanceMonitorWidget =
+            new UIPerformanceMonitor(this, m_pMachineWindow->machine(), m_pMachineWindow->console(), m_pMachineWindow->uisession());
         if (pPerformanceMonitorWidget)
         {
             m_tabs.insert(2, pPerformanceMonitorWidget);
