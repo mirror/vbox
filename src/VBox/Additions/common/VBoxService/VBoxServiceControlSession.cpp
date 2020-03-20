@@ -324,23 +324,41 @@ static int vgsvcGstCtrlSessionHandleFileOpen(PVBOXSERVICECTRLSESSION pSession, P
                     rc = RTFileOpen(&pFile->hFile, pFile->szName, fFlags);
                     if (RT_SUCCESS(rc))
                     {
-                        /* Seeking is optional. However, the whole operation
-                         * will fail if we don't succeed seeking to the wanted position. */
-                        if (offOpen)
-                            rc = RTFileSeek(pFile->hFile, (int64_t)offOpen, RTFILE_SEEK_BEGIN, NULL /* Current offset */);
+                        RTFSOBJINFO objInfo;
+                        rc = RTFileQueryInfo(pFile->hFile, &objInfo, RTFSOBJATTRADD_NOTHING);
                         if (RT_SUCCESS(rc))
                         {
-                            /*
-                             * Succeeded!
-                             */
-                            uHandle = VBOX_GUESTCTRL_CONTEXTID_GET_OBJECT(pHostCtx->uContextID);
-                            pFile->uHandle = uHandle;
-                            pFile->fOpen   = fFlags;
-                            RTListAppend(&pSession->lstFiles, &pFile->Node);
-                            VGSvcVerbose(2, "[File %s] Opened (ID=%RU32)\n", pFile->szName, pFile->uHandle);
+                            /* Make sure that we only open stuff we really support.
+                             * Only POSIX / UNIX we could open stuff like directories and sockets as well. */
+                            if (   RT_LIKELY(RTFS_IS_FILE(objInfo.Attr.fMode))
+                                ||           RTFS_IS_SYMLINK(objInfo.Attr.fMode))
+                            {
+                                /* Seeking is optional. However, the whole operation
+                                 * will fail if we don't succeed seeking to the wanted position. */
+                                if (offOpen)
+                                    rc = RTFileSeek(pFile->hFile, (int64_t)offOpen, RTFILE_SEEK_BEGIN, NULL /* Current offset */);
+                                if (RT_SUCCESS(rc))
+                                {
+                                    /*
+                                     * Succeeded!
+                                     */
+                                    uHandle = VBOX_GUESTCTRL_CONTEXTID_GET_OBJECT(pHostCtx->uContextID);
+                                    pFile->uHandle = uHandle;
+                                    pFile->fOpen   = fFlags;
+                                    RTListAppend(&pSession->lstFiles, &pFile->Node);
+                                    VGSvcVerbose(2, "[File %s] Opened (ID=%RU32)\n", pFile->szName, pFile->uHandle);
+                                }
+                                else
+                                    VGSvcError("[File %s] Seeking to offset %RU64 failed: rc=%Rrc\n", pFile->szName, offOpen, rc);
+                            }
+                            else
+                            {
+                                VGSvcError("[File %s] Unsupported mode %#x\n", pFile->szName, objInfo.Attr.fMode);
+                                rc = VERR_NOT_SUPPORTED;
+                            }
                         }
                         else
-                            VGSvcError("[File %s] Seeking to offset %RU64 failed: rc=%Rrc\n", pFile->szName, offOpen, rc);
+                            VGSvcError("[File %s] Getting mode failed with rc=%Rrc\n", pFile->szName, rc);
                     }
                     else
                         VGSvcError("[File %s] Opening failed with rc=%Rrc\n", pFile->szName, rc);
