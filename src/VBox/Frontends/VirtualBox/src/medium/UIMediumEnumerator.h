@@ -160,8 +160,10 @@ private:
     /** Holds a set of current medium-enumeration tasks. */
     QSet<UITask*>  m_tasks;
 
-    /** Holds a map of current cached (enumerated) media. */
+    /** Holds a map of currently cached (enumerated) media. */
     UIMediumMap  m_media;
+    /** Holds a set of currently registered media IDs. */
+    QSet<QUuid>  m_registeredMediaIds;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_medium_UIMediumEnumerator_h */

@@ -313,12 +313,19 @@ void UIMediumEnumerator::sltHandleMediumRegistered(const QUuid &uMediumId, KDevi
         /* Make sure this medium isn't already cached: */
         if (!medium(uMediumId).isNull())
         {
-            /* This medium can be known because of async event nature. Currently medium registration event
-             * comes very late and other even unrealted events can come before it and request for this
-             * particular medium enumeration, so we just ignore that and enumerate this UIMedium again. */
-            LogRel2(("GUI: UIMediumEnumerator:  Medium {%s} is cached already and will be enumerated..\n",
-                     uMediumId.toString().toUtf8().constData()));
-            createMediumEnumerationTask(m_media.value(uMediumId));
+            /* This medium can be known because of async event nature. Currently medium registration event comes
+             * very late and other even unrelated events can come before it and request for this particular medium
+             * enumeration, so we just ignore repetitive events but enumerate this UIMedium at least once if it
+             * wasn't registered before. */
+            if (!m_registeredMediaIds.contains(uMediumId))
+            {
+                LogRel2(("GUI: UIMediumEnumerator:  Medium {%s} is cached but not registered already, so will be enumerated..\n",
+                         uMediumId.toString().toUtf8().constData()));
+                createMediumEnumerationTask(m_media.value(uMediumId));
+
+                /* Mark medium registered: */
+                m_registeredMediaIds << uMediumId;
+            }
         }
         else
         {
@@ -346,6 +353,9 @@ void UIMediumEnumerator::sltHandleMediumRegistered(const QUuid &uMediumId, KDevi
 
                 /* Enumerate corresponding UIMedium: */
                 createMediumEnumerationTask(m_media.value(uMediumId));
+
+                /* Mark medium registered: */
+                m_registeredMediaIds << uMediumId;
             }
         }
     }
@@ -378,6 +388,9 @@ void UIMediumEnumerator::sltHandleMediumRegistered(const QUuid &uMediumId, KDevi
             QList<QUuid> result;
             enumerateAllMediaOfMediumWithId(uMediumId, result);
         }
+
+        /* Mark medium unregistered: */
+        m_registeredMediaIds.remove(uMediumId);
     }
 }
 
