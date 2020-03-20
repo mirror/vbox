@@ -1353,7 +1353,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
             'copy_to', 'copy_from',
             'update_additions'
         ];
-        self.asTests        = 'copy_to'; # self.asTestsDef;
+        self.asTests        = self.asTestsDef;
         self.fSkipKnownBugs = False;
         self.oTestFiles     = None  # type: vboxtestfileset.TestFileSet
 
