@@ -1357,6 +1357,7 @@ UICommon_SOURCES = \
 	src/logviewer/UIVMLogViewerSearchPanel.cpp \
 	src/logviewer/UIVMLogViewerTextEdit.cpp \
 	src/logviewer/UIVMLogViewerWidget.cpp \
+	src/monitor/UIMonitorCommon.cpp \
 	src/medium/UIFDCreationDialog.cpp \
 	src/medium/UIMedium.cpp \
 	src/medium/UIMediumDefs.cpp \

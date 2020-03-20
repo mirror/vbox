@@ -1000,7 +1000,7 @@ void UIPerformanceMonitor::sltTimeout()
     {
         quint64 cbNetworkTotalReceived = 0;
         quint64 cbNetworkTotalTransmitted = 0;
-        getNetworkLoad(m_machineDebugger, cbNetworkTotalReceived, cbNetworkTotalTransmitted);
+        UIMonitorCommon::getNetworkLoad(m_machineDebugger, cbNetworkTotalReceived, cbNetworkTotalTransmitted);
         updateNetworkGraphsAndMetric(cbNetworkTotalReceived, cbNetworkTotalTransmitted);
     }
 
@@ -1008,60 +1008,15 @@ void UIPerformanceMonitor::sltTimeout()
     {
         quint64 cbDiskIOTotalWritten = 0;
         quint64 cbDiskIOTotalRead = 0;
-        getDiskLoad(m_machineDebugger, cbDiskIOTotalWritten, cbDiskIOTotalRead);
+        UIMonitorCommon::getDiskLoad(m_machineDebugger, cbDiskIOTotalWritten, cbDiskIOTotalRead);
         updateDiskIOGraphsAndMetric(cbDiskIOTotalWritten, cbDiskIOTotalRead);
     }
 
     /* Update the VM exit chart with values we find as /PROF/CPU?/EM/RecordedExits: */
     {
         quint64 cTotalVMExits = 0;
-        getVMMExitCount(m_machineDebugger, cTotalVMExits);
+        UIMonitorCommon::getVMMExitCount(m_machineDebugger, cTotalVMExits);
         updateVMExitMetric(cTotalVMExits);
-    }
-}
-
-/* static */
-void UIPerformanceMonitor::getNetworkLoad(CMachineDebugger &debugger, quint64 &uOutNetworkReceived, quint64 &uOutNetworkTransmitted)
-{
-    uOutNetworkReceived = 0;
-    uOutNetworkTransmitted = 0;
-    QVector<UIDebuggerMetricData> xmlData = getAndParseStatsFromDebugger(debugger, "/Public/NetAdapter/*/Bytes*");
-    foreach (const UIDebuggerMetricData &data, xmlData)
-    {
-        if (data.m_strName.endsWith("BytesReceived"))
-            uOutNetworkReceived += data.m_counter;
-        else if (data.m_strName.endsWith("BytesTransmitted"))
-            uOutNetworkTransmitted += data.m_counter;
-        else
-            AssertMsgFailed(("name=%s\n", data.m_strName.toLocal8Bit().data()));
-    }
-}
-
-/* static */
-void UIPerformanceMonitor::getDiskLoad(CMachineDebugger &debugger, quint64 &uOutDiskWritten, quint64 &uOutDiskRead)
-{
-    QVector<UIDebuggerMetricData> xmlData = getAndParseStatsFromDebugger(debugger, "/Public/Storage/*/Port*/Bytes*");
-    foreach (const UIDebuggerMetricData &data, xmlData)
-    {
-        if (data.m_strName.endsWith("BytesWritten"))
-            uOutDiskWritten += data.m_counter;
-        else if (data.m_strName.endsWith("BytesRead"))
-            uOutDiskRead += data.m_counter;
-        else
-            AssertMsgFailed(("name=%s\n", data.m_strName.toLocal8Bit().data()));
-    }
-}
-
-/* static */
-void UIPerformanceMonitor::getVMMExitCount(CMachineDebugger &debugger, quint64 &uOutVMMExitCount)
-{
-    QVector<UIDebuggerMetricData> xmlData = getAndParseStatsFromDebugger(debugger, "/PROF/CPU*/EM/RecordedExits");
-    foreach (const UIDebuggerMetricData &data, xmlData)
-    {
-        if (data.m_strName.endsWith("RecordedExits"))
-            uOutVMMExitCount += data.m_counter;
-        else
-            AssertMsgFailed(("name=%s\n", data.m_strName.toLocal8Bit().data()));
     }
 }
 
@@ -1338,34 +1293,4 @@ QString UIPerformanceMonitor::dataColorString(const QString &strChartName, int i
     return pChart->dataSeriesColor(iDataIndex).name(QColor::HexRgb);
 }
 
-/* static */
-QVector<UIDebuggerMetricData> UIPerformanceMonitor::getAndParseStatsFromDebugger(CMachineDebugger &debugger, const QString &strQuery)
-{
-    QVector<UIDebuggerMetricData> xmlData;
-    if (strQuery.isEmpty())
-        return xmlData;
-    QString strStats = debugger.GetStats(strQuery, false);
-    QXmlStreamReader xmlReader;
-    xmlReader.addData(strStats);
-    if (xmlReader.readNextStartElement())
-    {
-        while (xmlReader.readNextStartElement())
-        {
-            if (xmlReader.name() == "Counter")
-            {
-                QXmlStreamAttributes attributes = xmlReader.attributes();
-                quint64 iCounter = attributes.value("c").toULongLong();
-                xmlData.push_back(UIDebuggerMetricData(attributes.value("name"), iCounter));
-            }
-            else if (xmlReader.name() == "U64")
-            {
-                QXmlStreamAttributes attributes = xmlReader.attributes();
-                quint64 iCounter = attributes.value("val").toULongLong();
-                xmlData.push_back(UIDebuggerMetricData(attributes.value("name"), iCounter));
-            }
-            xmlReader.skipCurrentElement();
-        }
-    }
-    return xmlData;
-}
 #include "UIPerformanceMonitor.moc"
