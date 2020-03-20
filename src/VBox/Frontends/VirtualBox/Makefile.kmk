@@ -834,7 +834,6 @@ UICommon_QT_MOCHDRS = \
 	src/globals/UIMainEventListener.h \
 	src/globals/UIMessageCenter.h \
 	src/globals/UIModalWindowManager.h \
-	src/globals/UIPathOperations.h \
 	src/globals/UIPopupCenter.h \
 	src/globals/UIProgressEventHandler.h \
 	src/globals/UIShortcutPool.h \
