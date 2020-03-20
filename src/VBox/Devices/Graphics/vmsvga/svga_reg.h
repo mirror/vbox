@@ -1010,7 +1010,9 @@ struct SVGAScreenObject {
 typedef enum {
    SVGA_CMD_INVALID_CMD           = 0,
    SVGA_CMD_UPDATE                = 1,
+   SVGA_CMD_RECT_FILL             = 2,  // No longer documented, used by old drivers.
    SVGA_CMD_RECT_COPY             = 3,
+   SVGA_CMD_RECT_ROP_COPY         = 14, // No longer documented, used by old drivers.
    SVGA_CMD_DEFINE_CURSOR         = 19,
    SVGA_CMD_DISPLAY_CURSOR        = 20, // Deprecated.
    SVGA_CMD_MOVE_CURSOR           = 21, // Deprecated.
@@ -1073,6 +1075,28 @@ struct {
 
 
 /*
+ * SVGA_CMD_RECT_FILL --
+ *
+ *    Fill a rectangular area in the the GFB, and copy the result
+ *    to any screens which intersect it.
+ *
+ *    Deprecated?
+ *
+ * Availability:
+ *    SVGA_CAP_RECT_FILL
+ */
+
+typedef
+struct {
+   uint32_t pixel;
+   uint32_t destX;
+   uint32_t destY;
+   uint32_t width;
+   uint32_t height;
+} SVGAFifoCmdRectFill;
+
+
+/*
  * SVGA_CMD_RECT_COPY --
  *
  *    Perform a rectangular DMA transfer from one area of the GFB to
@@ -1091,6 +1115,32 @@ struct {
    uint32_t width;
    uint32_t height;
 } SVGAFifoCmdRectCopy;
+
+
+/*
+ * SVGA_CMD_RECT_ROP_COPY --
+ *
+ *    Perform a rectangular DMA transfer from one area of the GFB to
+ *    another using a a raster op, and copy the result to any screens
+ *    which intersect it.
+ *
+ *    XFree86 4.1.0/4.2.0 drivers incorrectly use this command when
+ *    SVGA_CAP_RECT_COPY is present even when SVGA_CAP_RASTER_OP is not.
+ *
+ * Availability:
+ *    SVGA_CAP_RECT_COPY + SVGA_CAP_RASTER_OP
+ */
+
+typedef
+struct {
+   uint32_t srcX;
+   uint32_t srcY;
+   uint32_t destX;
+   uint32_t destY;
+   uint32_t width;
+   uint32_t height;
+   uint32_t rop;
+} SVGAFifoCmdRectRopCopy;
 
 
 /*

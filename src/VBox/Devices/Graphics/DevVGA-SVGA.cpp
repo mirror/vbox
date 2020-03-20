@@ -269,6 +269,9 @@ typedef struct VMSVGAR3STATE
     STAMCOUNTER             StatR3CmdDefineAlphaCursor;
     STAMCOUNTER             StatR3CmdMoveCursor;
     STAMCOUNTER             StatR3CmdDisplayCursor;
+    STAMCOUNTER             StatR3CmdRectFill;
+    STAMCOUNTER             StatR3CmdRectCopy;
+    STAMCOUNTER             StatR3CmdRectRopCopy;
     STAMCOUNTER             StatR3CmdEscape;
     STAMCOUNTER             StatR3CmdDefineScreen;
     STAMCOUNTER             StatR3CmdDestroyScreen;
@@ -434,6 +437,9 @@ static SSMFIELD const g_aVMSVGAR3STATEFields[] =
     SSMFIELD_ENTRY_IGNORE(      VMSVGAR3STATE, StatR3CmdDefineAlphaCursor),
     SSMFIELD_ENTRY_IGNORE(      VMSVGAR3STATE, StatR3CmdMoveCursor),
     SSMFIELD_ENTRY_IGNORE(      VMSVGAR3STATE, StatR3CmdDisplayCursor),
+    SSMFIELD_ENTRY_IGNORE(      VMSVGAR3STATE, StatR3CmdRectFill),
+    SSMFIELD_ENTRY_IGNORE(      VMSVGAR3STATE, StatR3CmdRectCopy),
+    SSMFIELD_ENTRY_IGNORE(      VMSVGAR3STATE, StatR3CmdRectRopCopy),
     SSMFIELD_ENTRY_IGNORE(      VMSVGAR3STATE, StatR3CmdEscape),
     SSMFIELD_ENTRY_IGNORE(      VMSVGAR3STATE, StatR3CmdDefineScreen),
     SSMFIELD_ENTRY_IGNORE(      VMSVGAR3STATE, StatR3CmdDestroyScreen),
@@ -664,6 +670,7 @@ static const char *vmsvgaR3FifoCmdToString(uint32_t u32Cmd)
         case SVGA_CMD_INVALID_CMD:              return "SVGA_CMD_INVALID_CMD";
         case SVGA_CMD_UPDATE:                   return "SVGA_CMD_UPDATE";
         case SVGA_CMD_RECT_COPY:                return "SVGA_CMD_RECT_COPY";
+        case SVGA_CMD_RECT_ROP_COPY:            return "SVGA_CMD_RECT_ROP_COPY";
         case SVGA_CMD_DEFINE_CURSOR:            return "SVGA_CMD_DEFINE_CURSOR";
         case SVGA_CMD_DISPLAY_CURSOR:           return "SVGA_CMD_DISPLAY_CURSOR";
         case SVGA_CMD_MOVE_CURSOR:              return "SVGA_CMD_MOVE_CURSOR";
@@ -1589,6 +1596,62 @@ static void vmsvgaR3RegUpdateCursor(PVGASTATECC pThisCC, PVGASTATE pThis, uint32
     }
     pThis->svga.uCursorOn = uCursorOn;
     pThisCC->pDrv->pfnVBVAReportCursorPosition(pThisCC->pDrv, fFlags, idScreen, x, y);
+}
+
+
+/**
+ * Copy a rectangle of pixels within guest VRAM.
+ */
+static void vmsvgaR3RectCopy(PVGASTATECC pThisCC, VMSVGASCREENOBJECT const *pScreen, uint32_t srcX, uint32_t srcY,
+                             uint32_t dstX, uint32_t dstY, uint32_t width, uint32_t height, unsigned cbFrameBuffer)
+{
+    if (!width || !height)
+        return; /* Nothing to do, don't even bother. */
+
+    /*
+     * The guest VRAM (aka GFB) is considered to be a bitmap in the format
+     * corresponding to the current display mode.
+     */
+    uint32_t const  cbPixel = RT_ALIGN(pScreen->cBpp, 8) / 8;
+    uint32_t const  cbScanline = pScreen->cbPitch ? pScreen->cbPitch : width * cbPixel;
+    uint8_t const   *pSrc;
+    uint8_t         *pDst;
+    unsigned const  cbRectWidth = width * cbPixel;
+    unsigned        uMaxOffset;
+
+    uMaxOffset = (RT_MAX(srcY, dstY) + height) * cbScanline + (RT_MAX(srcX, dstX) + width) * cbPixel;
+    if (uMaxOffset >= cbFrameBuffer)
+    {
+        Log(("Max offset (%u) too big for framebuffer (%u bytes), ignoring!\n", uMaxOffset, cbFrameBuffer));
+        return; /* Just don't listen to a bad guest. */
+    }
+
+    pSrc = pDst = pThisCC->pbVRam;
+    pSrc += srcY * cbScanline + srcX * cbPixel;
+    pDst += dstY * cbScanline + dstX * cbPixel;
+
+    if (srcY >= dstY)
+    {
+        /* Source below destination, copy top to bottom. */
+        for (; height > 0; height--)
+        {
+            memmove(pDst, pSrc, cbRectWidth);
+            pSrc += cbScanline;
+            pDst += cbScanline;
+        }
+    }
+    else
+    {
+        /* Source above destination, copy bottom to top. */
+        pSrc += cbScanline * (height - 1);
+        pDst += cbScanline * (height - 1);
+        for (; height > 0; height--)
+        {
+            memmove(pDst, pSrc, cbRectWidth);
+            pSrc -= cbScanline;
+            pDst -= cbScanline;
+        }
+    }
 }
 
 #endif /* IN_RING3 */
@@ -3941,6 +4004,76 @@ static DECLCALLBACK(int) vmsvgaR3FifoLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread
                 break;
             }
 
+            case SVGA_CMD_RECT_FILL:
+            {
+                SVGAFifoCmdRectFill *pRectFill;
+                VMSVGAFIFO_GET_CMD_BUFFER_BREAK(pRectFill, SVGAFifoCmdRectFill, sizeof(*pRectFill));
+                STAM_REL_COUNTER_INC(&pSVGAState->StatR3CmdRectFill);
+
+                Log(("vmsvgaR3FifoLoop: RECT FILL %08X @ %d,%d (%dx%d)\n", pRectFill->pixel, pRectFill->destX, pRectFill->destY, pRectFill->width, pRectFill->height));
+                LogRelMax(4, ("Unsupported SVGA_CMD_RECT_FILL command ignored.\n"));
+                break;
+            }
+
+            case SVGA_CMD_RECT_COPY:
+            {
+                SVGAFifoCmdRectCopy *pRectCopy;
+                VMSVGAFIFO_GET_CMD_BUFFER_BREAK(pRectCopy, SVGAFifoCmdRectCopy, sizeof(*pRectCopy));
+                STAM_REL_COUNTER_INC(&pSVGAState->StatR3CmdRectCopy);
+
+                Log(("vmsvgaR3FifoLoop: RECT COPY %d,%d -> %d,%d (%dx%d)\n", pRectCopy->srcX, pRectCopy->srcY, pRectCopy->destX, pRectCopy->destY, pRectCopy->width, pRectCopy->height));
+                VMSVGASCREENOBJECT *pScreen = vmsvgaR3GetScreenObject(pThisCC, 0);
+                AssertBreak(pScreen);
+
+                /* Check that arguments aren't complete junk. A precise check is done in vmsvgaR3RectCopy(). */
+                AssertBreak(pRectCopy->srcX < pThis->svga.u32MaxWidth);
+                AssertBreak(pRectCopy->destX < pThis->svga.u32MaxWidth);
+                AssertBreak(pRectCopy->width < pThis->svga.u32MaxWidth);
+                AssertBreak(pRectCopy->srcY < pThis->svga.u32MaxHeight);
+                AssertBreak(pRectCopy->destY < pThis->svga.u32MaxHeight);
+                AssertBreak(pRectCopy->height < pThis->svga.u32MaxHeight);
+
+                vmsvgaR3RectCopy(pThisCC, pScreen, pRectCopy->srcX, pRectCopy->srcY, pRectCopy->destX, pRectCopy->destY,
+                                 pRectCopy->width, pRectCopy->height, pThis->vram_size);
+                vmsvgaR3UpdateScreen(pThisCC, pScreen, pRectCopy->destX, pRectCopy->destY, pRectCopy->width, pRectCopy->height);
+                break;
+            }
+
+            case SVGA_CMD_RECT_ROP_COPY:
+            {
+                SVGAFifoCmdRectRopCopy *pRRCopy;
+                VMSVGAFIFO_GET_CMD_BUFFER_BREAK(pRRCopy, SVGAFifoCmdRectRopCopy, sizeof(*pRRCopy));
+                STAM_REL_COUNTER_INC(&pSVGAState->StatR3CmdRectRopCopy);
+
+                Log(("vmsvgaR3FifoLoop: RECT ROP COPY %d,%d -> %d,%d (%dx%d) ROP %X\n", pRRCopy->srcX, pRRCopy->srcY, pRRCopy->destX, pRRCopy->destY, pRRCopy->width, pRRCopy->height, pRRCopy->rop));
+                if (pRRCopy->rop != SVGA_ROP_COPY)
+                {
+                    /* We only support the plain copy ROP which makes SVGA_CMD_RECT_ROP_COPY exactly the same
+                     * as SVGA_CMD_RECT_COPY. XFree86 4.1.0 and 4.2.0 drivers (driver version 10.4.0 and 10.7.0,
+                     * respectively) issue SVGA_CMD_RECT_ROP_COPY when SVGA_CAP_RECT_COPY is present even when
+                     * SVGA_CAP_RASTER_OP is not. However, the ROP will always be SVGA_ROP_COPY.
+                     */
+                    LogRelMax(4, ("RECT ROP COPY %d,%d -> %d,%d (%dx%d) ROP %X unsupported\n", pRRCopy->srcX, pRRCopy->srcY, pRRCopy->destX, pRRCopy->destY, pRRCopy->width, pRRCopy->height, pRRCopy->rop));
+                    break;
+                }
+
+                VMSVGASCREENOBJECT *pScreen = vmsvgaR3GetScreenObject(pThisCC, 0);
+                AssertBreak(pScreen);
+
+                /* Check that arguments aren't complete junk. A precise check is done in vmsvgaR3RectCopy(). */
+                AssertBreak(pRRCopy->srcX < pThis->svga.u32MaxWidth);
+                AssertBreak(pRRCopy->destX < pThis->svga.u32MaxWidth);
+                AssertBreak(pRRCopy->width < pThis->svga.u32MaxWidth);
+                AssertBreak(pRRCopy->srcY < pThis->svga.u32MaxHeight);
+                AssertBreak(pRRCopy->destY < pThis->svga.u32MaxHeight);
+                AssertBreak(pRRCopy->height < pThis->svga.u32MaxHeight);
+
+                vmsvgaR3RectCopy(pThisCC, pScreen, pRRCopy->srcX, pRRCopy->srcY, pRRCopy->destX, pRRCopy->destY,
+                                 pRRCopy->width, pRRCopy->height, pThis->vram_size);
+                vmsvgaR3UpdateScreen(pThisCC, pScreen, pRRCopy->destX, pRRCopy->destY, pRRCopy->width, pRRCopy->height);
+                break;
+            }
+
             case SVGA_CMD_ESCAPE:
             {
                 /* Followed by nsize bytes of data. */
@@ -4457,8 +4590,6 @@ static DECLCALLBACK(int) vmsvgaR3FifoLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread
                 AssertFailed();
                 break;
             }
-
-            /** @todo SVGA_CMD_RECT_COPY  - see with ubuntu */
 
             default:
 # ifdef VBOX_WITH_VMSVGA3D
@@ -5887,15 +6018,23 @@ int vmsvgaR3LoadDone(PPDMDEVINS pDevIns)
     /* Set the active cursor. */
     if (pSVGAState->Cursor.fActive)
     {
+        /* We don't store the alpha flag, but we can take a guess that if
+         * the old register interface was used, the cursor was B&W.
+         */
+        bool    fAlpha = pThis->svga.uCursorOn ? false : true;
+
         int rc = pThisCC->pDrv->pfnVBVAMousePointerShape(pThisCC->pDrv,
                                                          true /*fVisible*/,
-                                                         true /*fAlpha*/,
+                                                         fAlpha,
                                                          pSVGAState->Cursor.xHotspot,
                                                          pSVGAState->Cursor.yHotspot,
                                                          pSVGAState->Cursor.width,
                                                          pSVGAState->Cursor.height,
                                                          pSVGAState->Cursor.pData);
         AssertRC(rc);
+
+        if (pThis->svga.uCursorOn)
+            pThisCC->pDrv->pfnVBVAReportCursorPosition(pThisCC->pDrv, VBVA_CURSOR_VALID_DATA, SVGA_ID_INVALID, pThis->svga.uCursorX, pThis->svga.uCursorY);
     }
 
     /* If the VRAM handler should not be registered, we have to explicitly
@@ -6072,6 +6211,7 @@ static void vmsvgaR3InitCaps(PVGASTATE pThis, PVGASTATECC pThisCC)
                            | SVGA_CAP_EXTENDED_FIFO
                            | SVGA_CAP_IRQMASK
                            | SVGA_CAP_PITCHLOCK
+                           | SVGA_CAP_RECT_COPY
                            | SVGA_CAP_TRACES
                            | SVGA_CAP_SCREEN_OBJECT_2
                            | SVGA_CAP_ALPHA_CURSOR;
@@ -6521,6 +6661,9 @@ int vmsvgaR3Init(PPDMDEVINS pDevIns)
     REG_CNT(&pSVGAState->StatR3CmdDefineCursor,           "VMSVGA/Cmd/DefineCursor",               "SVGA_CMD_DEFINE_CURSOR");
     REG_CNT(&pSVGAState->StatR3CmdMoveCursor,             "VMSVGA/Cmd/MoveCursor",                 "SVGA_CMD_MOVE_CURSOR");
     REG_CNT(&pSVGAState->StatR3CmdDisplayCursor,          "VMSVGA/Cmd/DisplayCursor",              "SVGA_CMD_DISPLAY_CURSOR");
+    REG_CNT(&pSVGAState->StatR3CmdRectFill,               "VMSVGA/Cmd/RectFill",                   "SVGA_CMD_RECT_FILL");
+    REG_CNT(&pSVGAState->StatR3CmdRectCopy,               "VMSVGA/Cmd/RectCopy",                   "SVGA_CMD_RECT_COPY");
+    REG_CNT(&pSVGAState->StatR3CmdRectRopCopy,            "VMSVGA/Cmd/RectRopCopy",                "SVGA_CMD_RECT_ROP_COPY");
     REG_CNT(&pSVGAState->StatR3CmdDefineGmr2,             "VMSVGA/Cmd/DefineGmr2",                 "SVGA_CMD_DEFINE_GMR2");
     REG_CNT(&pSVGAState->StatR3CmdDefineGmr2Free,         "VMSVGA/Cmd/DefineGmr2/Free",            "Number of SVGA_CMD_DEFINE_GMR2 commands that only frees.");
     REG_CNT(&pSVGAState->StatR3CmdDefineGmr2Modify,       "VMSVGA/Cmd/DefineGmr2/Modify",          "Number of SVGA_CMD_DEFINE_GMR2 commands that redefines a non-free GMR.");
