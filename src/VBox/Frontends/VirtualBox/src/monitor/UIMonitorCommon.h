@@ -21,20 +21,6 @@
 # pragma once
 #endif
 
-/* Qt includes: */
-#include <QWidget>
-#include <QMap>
-#include <QQueue>
-
-/* COM includes: */
-#include "COMEnums.h"
-#include "CConsole.h"
-#include "CGuest.h"
-#include "CMachine.h"
-#include "CMachineDebugger.h"
-#include "CPerformanceCollector.h"
-
-
 /** UIDebuggerMetricData is used as data storage while parsing the xml stream received from IMachineDebugger. */
 struct UIDebuggerMetricData
 {

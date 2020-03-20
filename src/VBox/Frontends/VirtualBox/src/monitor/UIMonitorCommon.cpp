@@ -16,36 +16,15 @@
  */
 
 /* Qt includes: */
-#include <QApplication>
-#include <QLabel>
-#include <QMenu>
-#include <QPainter>
-#include <QGridLayout>
-#include <QScrollArea>
-#include <QStyle>
 #include <QXmlStreamReader>
-#include <QTimer>
+
 
 /* GUI includes: */
 #include "UICommon.h"
 #include "UIMonitorCommon.h"
-#include "UISession.h"
 
 /* COM includes: */
-#include "CGuest.h"
-#include "CPerformanceCollector.h"
-#include "CPerformanceMetric.h"
-
-/* External includes: */
-# include <math.h>
-
-/** The time in seconds between metric inquries done to API. */
-const ULONG iPeriod = 1;
-/** The number of data points we store in UIChart. with iPeriod=1 it corresponds to 2 min. of data. */
-const int iMaximumQueueSize = 120;
-/** This is passed to IPerformanceCollector during its setup. When 1 that means IPerformanceCollector object does a data cache of size 1. */
-const int iMetricSetupCount = 1;
-const int iDecimalCount = 2;
+#include "CMachineDebugger.h"
 
 /* static */
 void UIMonitorCommon::getNetworkLoad(CMachineDebugger &debugger, quint64 &uOutNetworkReceived, quint64 &uOutNetworkTransmitted)
