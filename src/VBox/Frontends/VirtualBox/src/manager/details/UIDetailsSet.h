@@ -140,8 +140,8 @@ private slots:
 
     /** @name Item stuff.
       * @{ */
-        /** Updates item appearance. */
-        void sltUpdateAppearance();
+        /** Handles enumerated signal for medium with @a uId. */
+        void sltMediumEnumerated(const QUuid &uId);
     /** @} */
 
 private:

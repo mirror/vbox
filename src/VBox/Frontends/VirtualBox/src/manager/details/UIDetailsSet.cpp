@@ -25,6 +25,7 @@
 #include "UIDetailsElements.h"
 #include "UIDetailsModel.h"
 #include "UIDetailsSet.h"
+#include "UIMedium.h"
 #include "UIVirtualBoxEventHandler.h"
 #include "UIVirtualMachineItemCloud.h"
 #include "UIVirtualMachineItemLocal.h"
@@ -580,8 +581,14 @@ void UIDetailsSet::sltMachineAttributesChange(const QUuid &uId)
     rebuildSet();
 }
 
-void UIDetailsSet::sltUpdateAppearance()
+void UIDetailsSet::sltMediumEnumerated(const QUuid &uId)
 {
+    /* Is this our medium changed? */
+    const UIMedium guiMedium = uiCommon().medium(uId);
+    if (   guiMedium.isNull()
+        || !guiMedium.machineIds().contains(m_machine.GetId()))
+        return;
+
     /* Update appearance: */
     rebuildSet();
 }
@@ -604,8 +611,7 @@ void UIDetailsSet::prepareConnections()
     connect(gVBoxEvents, &UIVirtualBoxEventHandler::sigSnapshotRestore, this, &UIDetailsSet::sltMachineAttributesChange);
 
     /* Meidum-enumeration connections: */
-    connect(&uiCommon(), &UICommon::sigMediumEnumerationStarted, this, &UIDetailsSet::sltUpdateAppearance);
-    connect(&uiCommon(), &UICommon::sigMediumEnumerationFinished, this, &UIDetailsSet::sltUpdateAppearance);
+    connect(&uiCommon(), &UICommon::sigMediumEnumerated, this, &UIDetailsSet::sltMediumEnumerated);
 }
 
 QVariant UIDetailsSet::data(int iKey) const
