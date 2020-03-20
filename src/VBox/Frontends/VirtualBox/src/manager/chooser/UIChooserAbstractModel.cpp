@@ -455,7 +455,7 @@ void UIChooserAbstractModel::loadTree()
                                                                           UIChooserItemType_Group,
                                                                           strProviderName),
                                                    strProviderName,
-                                                   true /* opened */);
+                                                   false /* opened */);
 
                         /* Iterate through existing profile names: */
                         foreach (const QString &strProfileName, profileNames)
