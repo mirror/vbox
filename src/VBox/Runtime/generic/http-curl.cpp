@@ -3640,6 +3640,9 @@ RTR3DECL(int) RTHttpPerform(RTHTTP hHttp, const char *pszUrl, RTHTTPMETHOD enmMe
                 pThis->ReadData.Mem.cbMem  = cbReqBody;
                 pThis->ReadData.Mem.offMem = 0;
                 rcCurl = rtHttpSetReadCallback(pThis, rtHttpReadData, pThis);
+                /* curl will use chunked transfer is it doesn't know the body size */
+                if (enmMethod == RTHTTPMETHOD_PUT && CURL_SUCCESS(rcCurl))
+                    rcCurl = curl_easy_setopt(pThis->pCurl, CURLOPT_INFILESIZE_LARGE, cbReqBody);
             }
         }
         else if (pThis->pfnUploadCallback && CURL_SUCCESS(rcCurl))
