@@ -668,6 +668,14 @@ table.tmtable th {
 .tmtable td {
 }
 
+tr.tmseparator td {
+    border-bottom:      2px solid black;
+    font-size:          0;
+    padding-top:        0;
+    padding-bottom:     0;
+}
+
+
 
 /*
  * Table placed inside of a big table used to display *all* stuff of a category.

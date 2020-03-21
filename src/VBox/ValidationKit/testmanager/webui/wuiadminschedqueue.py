@@ -48,9 +48,22 @@ class WuiAdminSchedQueueList(WuiListContentBase):
         self._asColumnAttribs = [
             'align="center"', 'align="center"',   'align="center"', 'align="center"', 'align="center"', 'align="center"'
         ];
+        self._iPrevPerSchedGroupRowNumber = 0;
 
     def _formatListEntry(self, iEntry):
         oEntry = self._aoEntries[iEntry] # type: SchedQueueEntry
         sState = 'up-to-date' if oEntry.fUpToDate else 'outdated';
         return [ oEntry.tsLastScheduled, oEntry.sSchedGroup, oEntry.sTestGroup, oEntry.sTestCase, sState, oEntry.idItem ];
+
+    def _formatListEntryHtml(self, iEntry):
+        sHtml = WuiListContentBase._formatListEntryHtml(self, iEntry);
+
+        # Insert separator row?
+        if iEntry < len(self._aoEntries):
+            oEntry = self._aoEntries[iEntry] # type: SchedQueueEntry
+            if oEntry.iPerSchedGroupRowNumber != self._iPrevPerSchedGroupRowNumber:
+                if iEntry > 0:
+                    sHtml += '<tr class="tmseparator"><td colspan=%s> </td></tr>\n' % (len(self._asColumnHeaders),);
+                self._iPrevPerSchedGroupRowNumber = oEntry.iPerSchedGroupRowNumber;
+        return sHtml;
 
