@@ -74,7 +74,7 @@ def dbTimestampToDatetime(oValue):
     if isinstance(oValue, datetime.datetime):
         return oValue;
     if utils.isString(oValue):
-        raise Exception('TODO');
+        return utils.parseIsoTimestamp(oValue);
     return oValue.pydatetime();
 
 def dbTimestampToZuluDatetime(oValue):
