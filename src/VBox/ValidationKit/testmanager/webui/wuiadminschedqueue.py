@@ -62,7 +62,7 @@ class WuiAdminSchedQueueList(WuiListContentBase):
         if iEntry < len(self._aoEntries):
             oEntry = self._aoEntries[iEntry] # type: SchedQueueEntry
             if oEntry.iPerSchedGroupRowNumber != self._iPrevPerSchedGroupRowNumber:
-                if iEntry > 0:
+                if iEntry > 0 and iEntry + 1 < min(len(self._aoEntries), self._cItemsPerPage):
                     sHtml += '<tr class="tmseparator"><td colspan=%s> </td></tr>\n' % (len(self._asColumnHeaders),);
                 self._iPrevPerSchedGroupRowNumber = oEntry.iPerSchedGroupRowNumber;
         return sHtml;
