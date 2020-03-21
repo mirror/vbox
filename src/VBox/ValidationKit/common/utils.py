@@ -1447,9 +1447,32 @@ def getTimePrefixAndIsoTimestamp():
         sTsPrf = sTsIso = 'getTimePrefix-exception';
     return (sTsPrf, sTsIso);
 
+class UtcTzInfo(datetime.tzinfo):
+    """UTC TZ Info Class"""
+    def utcoffset(self, _):
+        return datetime.timedelta(0);
+    def tzname(self, _):
+        return "UTC";
+    def dst(self, _):
+        return datetime.timedelta(0);
+
+class GenTzInfo(datetime.tzinfo):
+    """Generic TZ Info Class"""
+    def __init__(self, offInMin):
+        datetime.tzinfo.__init__(self);
+        self.offInMin = offInMin;
+    def utcoffset(self, _):
+        return datetime.timedelta(minutes = self.offInMin);
+    def tzname(self, _):
+        if self.offInMin >= 0:
+            return "+%02d%02d" % (self.offInMin // 60, self.offInMin % 60);
+        return "-%02d%02d" % (-self.offInMin // 60, -self.offInMin % 60);
+    def dst(self, _):
+        return datetime.timedelta(0);
+
 def formatIsoTimestamp(oNow):
     """Formats the datetime object as an ISO timestamp."""
-    assert oNow.tzinfo is None;
+    assert oNow.tzinfo is None or isinstance(oNow.tzinfo, UtcTzInfo);
     sTs = '%s.%09uZ' % (oNow.strftime('%Y-%m-%dT%H:%M:%S'), oNow.microsecond * 1000);
     return sTs;
 
@@ -1457,6 +1480,90 @@ def getIsoTimestamp():
     """Returns the current UTC timestamp as a string."""
     return formatIsoTimestamp(datetime.datetime.utcnow());
 
+def convertDateTimeToZulu(oDateTime):
+    """ Converts oDateTime to zulu time if it has timezone info. """
+    if oDateTime.tzinfo is not None:
+        oDateTime = oDateTime.astimezone(UtcTzInfo());
+    else:
+        oDateTime = oDateTime.replace(tzinfo = UtcTzInfo());
+    return oDateTime;
+
+def parseIsoTimestamp(sTs):
+    """
+    Parses a typical ISO timestamp, returing a datetime object, reasonably
+    forgiving, but will throw weird indexing/conversion errors if the input
+    is malformed.
+    """
+    # YYYY-MM-DD
+    iYear  = int(sTs[0:4]);
+    assert(sTs[4] == '-');
+    iMonth = int(sTs[5:7]);
+    assert(sTs[7] == '-');
+    iDay   = int(sTs[8:10]);
+
+    # Skip separator
+    sTime = sTs[10:];
+    while sTime[0] in 'Tt \t\n\r':
+        sTime = sTime[1:];
+
+    # HH:MM:SS
+    iHour = int(sTime[0:2]);
+    assert(sTime[2] == ':');
+    iMin  = int(sTime[3:5]);
+    assert(sTime[5] == ':');
+    iSec  = int(sTime[6:8]);
+
+    # Fraction?
+    offTime = 8;
+    iMicroseconds = 0;
+    if offTime < len(sTime) and sTime[offTime] in '.,':
+        offTime += 1;
+        cchFraction = 0;
+        while offTime + cchFraction < len(sTime) and sTime[offTime + cchFraction] in '0123456789':
+            cchFraction += 1;
+        if cchFraction > 0:
+            iMicroseconds = int(sTime[offTime : (offTime + cchFraction)]);
+            offTime += cchFraction;
+            while cchFraction < 6:
+                iMicroseconds *= 10;
+                cchFraction += 1;
+            while cchFraction > 6:
+                iMicroseconds = iMicroseconds // 10;
+                cchFraction -= 1;
+
+    # Naive?
+    if offTime >= len(sTime):
+        return datetime.datetime(iYear, iMonth, iDay, iHour, iMin, iSec, iMicroseconds);
+
+    # Zulu?
+    if offTime >= len(sTime) or sTime[offTime] in 'Zz':
+        return datetime.datetime(iYear, iMonth, iDay, iHour, iMin, iSec, iMicroseconds, tzinfo = UtcTzInfo());
+
+    # Some kind of offset afterwards, and strptime is useless. sigh.
+    if sTime[offTime] in '+-':
+        chSign = sTime[offTime];
+        offTime += 1;
+        cMinTz = int(sTime[offTime : (offTime + 2)]) * 60;
+        offTime += 2;
+        if offTime  < len(sTime) and sTime[offTime] in ':':
+            offTime += 1;
+        if offTime + 2 <= len(sTime):
+            cMinTz += int(sTime[offTime : (offTime + 2)]);
+            offTime += 2;
+        assert offTime == len(sTime);
+        if chSign == '-':
+            cMinTz = -cMinTz;
+        return datetime.datetime(iYear, iMonth, iDay, iHour, iMin, iSec, iMicroseconds, tzinfo = GenTzInfo(cMinTz));
+    assert False, sTs;
+    return datetime.datetime(iYear, iMonth, iDay, iHour, iMin, iSec, iMicroseconds);
+
+def normalizeIsoTimestampToZulu(sTs):
+    """
+    Takes a iso timestamp string and normalizes it (basically parseIsoTimestamp
+    + convertDateTimeToZulu + formatIsoTimestamp).
+    Returns ISO tiemstamp string.
+    """
+    return formatIsoTimestamp(convertDateTimeToZulu(parseIsoTimestamp(sTs)));
 
 def getLocalHourOfWeek():
     """ Local hour of week (0 based). """
@@ -2230,6 +2337,13 @@ class BuildCategoryDataTestCase(unittest.TestCase):
         self.assertEqual(parseIntervalSeconds('1 Z 4'), (5, 'Unknown unit "Z".'));
         self.assertEqual(parseIntervalSeconds('1 hour 2m 5second'), (3725, None));
         self.assertEqual(parseIntervalSeconds('1 hour,2m ; 5second'), (3725, None));
+
+    def testZuluNormalization(self):
+        self.assertEqual(normalizeIsoTimestampToZulu('2011-01-02T03:34:25.000000000Z'), '2011-01-02T03:34:25.000000000Z');
+        self.assertEqual(normalizeIsoTimestampToZulu('2011-01-02T03:04:25-0030'), '2011-01-02T03:34:25.000000000Z');
+        self.assertEqual(normalizeIsoTimestampToZulu('2011-01-02T03:04:25+0030'), '2011-01-02T02:34:25.000000000Z');
+        self.assertEqual(normalizeIsoTimestampToZulu('2020-03-20T20:47:39,832312863+01:00'), '2020-03-20T19:47:39.832312000Z');
+        self.assertEqual(normalizeIsoTimestampToZulu('2020-03-20T20:47:39,832312863-02:00'), '2020-03-20T22:47:39.832312000Z');
 
     def testHasNonAsciiChars(self):
         self.assertEqual(hasNonAsciiCharacters(''), False);
