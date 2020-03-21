@@ -615,11 +615,15 @@ class ModelDataBase(ModelBase): # pylint: disable=too-few-public-methods
                    or int(oRes.group(7)) >= 60):
                 sError = 'Invalid timezone offset.';
         elif len(sValue) == len('2012-10-08 01:54:06.00'):
-            oRes = re.match(r'(\d{4})-([01]\d)-([0123])\d ([012]\d):[0-5]\d:([0-6]\d).\d{2}', sValue);
+            oRes = re.match(r'(\d{4})-([01]\d)-([0123])\d[ Tt]([012]\d):[0-5]\d:([0-6]\d).\d{2}', sValue);
+        elif len(sValue) == len('2012-10-08 01:54:06.00Z'):
+            oRes = re.match(r'(\d{4})-([01]\d)-([0123])\d[ Tt]([012]\d):[0-5]\d:([0-6]\d).\d{2}[Zz]', sValue);
         elif len(sValue) == len('9999-12-31 23:59:59.999999'):
-            oRes = re.match(r'(\d{4})-([01]\d)-([0123])\d ([012]\d):[0-5]\d:([0-6]\d).\d{6}', sValue);
+            oRes = re.match(r'(\d{4})-([01]\d)-([0123])\d[ Tt]([012]\d):[0-5]\d:([0-6]\d).\d{6}', sValue);
+        elif len(sValue) == len('9999-12-31 23:59:59.999999Z'):
+            oRes = re.match(r'(\d{4})-([01]\d)-([0123])\d[ Tt]([012]\d):[0-5]\d:([0-6]\d).\d{6}[Zz]', sValue);
         elif len(sValue) == len('999999-12-31 00:00:00.00'):
-            oRes = re.match(r'(\d{6})-([01]\d)-([0123])\d ([012]\d):[0-5]\d:([0-6]\d).\d{2}', sValue);
+            oRes = re.match(r'(\d{6})-([01]\d)-([0123])\d[ Tt]([012]\d):[0-5]\d:([0-6]\d).\d{2}', sValue);
         elif len(sValue) == len('9999-12-31T23:59:59.999999Z'):
             oRes = re.match(r'(\d{4})-([01]\d)-([0123])\d[Tt]([012]\d):[0-5]\d:([0-6]\d).\d{6}[Zz]', sValue);
         elif len(sValue) == len('9999-12-31T23:59:59.999999999Z'):
