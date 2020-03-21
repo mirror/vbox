@@ -392,69 +392,6 @@ class WuiMain(WuiDispatcherBase):
         return WuiTmLink('Show all results' if fOnlyFailures else 'Only show failed tests', '', dParams,
                          fBracketed = False).toHtml();
 
-    def _generateTimeSelector(self, dParams, sPreamble, sPostamble):
-        """
-        Generate HTML code for time selector.
-        """
-
-        if WuiDispatcherBase.ksParamEffectiveDate in dParams:
-            tsEffective = dParams[WuiDispatcherBase.ksParamEffectiveDate]
-            del dParams[WuiDispatcherBase.ksParamEffectiveDate]
-        else:
-            tsEffective = ''
-
-        # Forget about page No when changing a period
-        if WuiDispatcherBase.ksParamPageNo in dParams:
-            del dParams[WuiDispatcherBase.ksParamPageNo]
-
-        sHtmlTimeSelector  = '<form name="TimeForm" method="GET">\n'
-        sHtmlTimeSelector += sPreamble;
-        sHtmlTimeSelector += '\n  <select name="%s" onchange="window.location=' % WuiDispatcherBase.ksParamEffectiveDate
-        sHtmlTimeSelector += '\'?%s&%s=\' + ' % (webutils.encodeUrlParams(dParams), WuiDispatcherBase.ksParamEffectiveDate)
-        sHtmlTimeSelector += 'this.options[this.selectedIndex].value;" title="Effective date">\n'
-
-        aoWayBackPoints = [
-            ('+0000-00-00 00:00:00.00', 'Now', ' title="Present Day. Present Time."'), # lain :)
-
-            ('-0000-00-00 01:00:00.00', '1 hour ago', ''),
-            ('-0000-00-00 02:00:00.00', '2 hours ago', ''),
-            ('-0000-00-00 03:00:00.00', '3 hours ago', ''),
-
-            ('-0000-00-01 00:00:00.00', '1 day ago', ''),
-            ('-0000-00-02 00:00:00.00', '2 days ago', ''),
-            ('-0000-00-03 00:00:00.00', '3 days ago', ''),
-
-            ('-0000-00-07 00:00:00.00', '1 week ago', ''),
-            ('-0000-00-14 00:00:00.00', '2 weeks ago', ''),
-            ('-0000-00-21 00:00:00.00', '3 weeks ago', ''),
-
-            ('-0000-01-00 00:00:00.00', '1 month ago', ''),
-            ('-0000-02-00 00:00:00.00', '2 months ago', ''),
-            ('-0000-03-00 00:00:00.00', '3 months ago', ''),
-            ('-0000-04-00 00:00:00.00', '4 months ago', ''),
-            ('-0000-05-00 00:00:00.00', '5 months ago', ''),
-            ('-0000-06-00 00:00:00.00', 'Half a year ago', ''),
-
-            ('-0001-00-00 00:00:00.00', '1 year ago', ''),
-        ]
-        fSelected = False;
-        for sTimestamp, sWayBackPointCaption, sExtraAttrs in aoWayBackPoints:
-            if sTimestamp == tsEffective:
-                fSelected = True;
-            sHtmlTimeSelector += '    <option value="%s"%s%s>%s</option>\n' \
-                              % (webutils.quoteUrl(sTimestamp),
-                                 ' selected="selected"' if sTimestamp == tsEffective else '',
-                                 sExtraAttrs, sWayBackPointCaption)
-        if not fSelected and tsEffective != '':
-            sHtmlTimeSelector += '    <option value="%s" selected>%s</option>\n' \
-                              % (webutils.quoteUrl(tsEffective), tsEffective)
-
-        sHtmlTimeSelector += '  </select>\n';
-        sHtmlTimeSelector += sPostamble;
-        sHtmlTimeSelector += '\n</form>\n'
-
-        return sHtmlTimeSelector
-
     def _generateTimeWalker(self, dParams, tsEffective, sCurPeriod):
         """
         Generates HTML code for walking back and forth in time.
@@ -486,7 +423,9 @@ class WuiMain(WuiDispatcherBase):
         else:
             sNext = '&nbsp;&nbsp;&gt;&gt;';
 
-        return self._generateTimeSelector(self.getParameters(), sPrev, sNext);
+        from wuicontentbase import WuiListContentBase; ## @todo move to better place.
+        return WuiListContentBase.generateTimeNavigation('top', self.getParameters(), self.getEffectiveDateParam(),
+                                                         sPrev, sNext, False);
 
     def _generateResultPeriodSelector(self, dParams, sCurPeriod):
         """
@@ -602,30 +541,11 @@ class WuiMain(WuiDispatcherBase):
     def _generateItemPerPageSelector(self, dParams, cItemsPerPage):
         """
         Generate HTML code for items per page selector
+        Note! Modifies dParams!
         """
 
-        if WuiDispatcherBase.ksParamItemsPerPage in dParams:
-            del dParams[WuiDispatcherBase.ksParamItemsPerPage]
-
-        # Forced reset of the page number
-        dParams[WuiDispatcherBase.ksParamPageNo] = 0
-        sHtmlItemsPerPageSelector  = '<form name="AgesPerPageForm" method="GET">\n' \
-                                     '  Max <select name="%s" onchange="window.location=\'?%s&%s=\' + ' \
-                                     'this.options[this.selectedIndex].value;" title="Max items per page">\n' \
-                                   % (WuiDispatcherBase.ksParamItemsPerPage,
-                                      webutils.encodeUrlParams(dParams),
-                                      WuiDispatcherBase.ksParamItemsPerPage)
-
-        aiItemsPerPage = [16, 32, 64, 128, 256, 384, 512, 768, 1024, 1536, 2048, 3072, 4096];
-        for iItemsPerPage in aiItemsPerPage:
-            sHtmlItemsPerPageSelector += '    <option value="%d" %s>%d</option>\n' \
-                                       % (iItemsPerPage,
-                                          'selected="selected"' if iItemsPerPage == cItemsPerPage else '',
-                                          iItemsPerPage)
-        sHtmlItemsPerPageSelector += '  </select> items per page\n' \
-                                     '</form>\n'
-
-        return sHtmlItemsPerPageSelector
+        from wuicontentbase import WuiListContentBase; ## @todo move to better place.
+        return WuiListContentBase.generateItemPerPageSelector('top', dParams, cItemsPerPage);
 
     def _generateResultNavigation(self, cItems, cItemsPerPage, iPage, tsEffective, sCurPeriod, fOnlyFailures,
                                   sHtmlMemberSelector):

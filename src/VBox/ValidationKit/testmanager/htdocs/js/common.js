@@ -482,6 +482,22 @@ function clearForm(sIdForm)
 }
 
 
+/**
+ * Used by the time navigation to update the hidden efficient date field when
+ * either of the date or time fields changes.
+ *
+ * @param oForm     The form.
+ */
+function timeNavigationUpdateHiddenEffDate(oForm, sIdSuffix)
+{
+    var sDate = document.getElementById('EffDate' + sIdSuffix).value;
+    var sTime = document.getElementById('EffTime' + sIdSuffix).value;
+
+    var oField = document.getElementById('EffDateTime' + sIdSuffix);
+    oField.value =  sDate + 'T' + sTime + '.00Z';
+}
+
+
 /** @name Collapsible / Expandable items
  * @{
  */

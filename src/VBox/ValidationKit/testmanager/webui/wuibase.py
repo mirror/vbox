@@ -818,7 +818,7 @@ class WuiDispatcherBase(object):
         oListContentType is a child of WuiListContentBase.
         """
         tsEffective     = self.getEffectiveDateParam();
-        cItemsPerPage   = self.getIntParam(self.ksParamItemsPerPage, iMin = 2, iMax =   9999, iDefault = 300);
+        cItemsPerPage   = self.getIntParam(self.ksParamItemsPerPage, iMin = 2, iMax =   9999, iDefault = 384);
         iPage           = self.getIntParam(self.ksParamPageNo,       iMin = 0, iMax = 999999, iDefault = 0);
         aiSortColumnsDup = self.getListOfIntParams(self.ksParamSortColumns,
                                                    iMin = -getattr(oLogicType, 'kcMaxSortColumns', 0) + 1,

@@ -527,6 +527,24 @@ ul.sf-checkbox-expandable {
 #top-menu .current_page_item a {
 }
 
+/*
+ * Time navigation forms on a line with some padding between them.
+ */
+.tmtimenav form {
+    display: inline-block;
+}
+
+.tmtimenav form + form {
+    padding-left: 0.6em;
+}
+
+/*
+ * Items per page and next.
+ */
+.tmnextanditemsperpage form {
+    display: inline-block;
+    padding-left: 1em;
+}
 
 /*
  * Error message (typically a paragraph in the body).
