@@ -99,6 +99,7 @@ class PartialDbDump(object): # pylint: disable=too-few-public-methods
         'TestGroupMembers',
         'SchedGroups',
         'SchedGroupMembers',            # ?
+        'TestBoxesInSchedGroups',       # ?
         'SchedQueues',
         'Builds',                       # ??
         'VcsRevisions',                 # ?
@@ -240,6 +241,7 @@ class PartialDbDump(object): # pylint: disable=too-few-public-methods
             'TestBoxStrTab',
             'TestBoxes',
             'SchedGroupMembers',
+            'TestBoxesInSchedGroups',
             'SchedQueues',
             'Builds',
             'SystemLog',
