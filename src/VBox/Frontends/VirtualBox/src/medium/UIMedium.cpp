@@ -471,7 +471,7 @@ QPixmap UIMedium::icon(bool fNoDiffs /* = false */, bool fCheckRO /* = false */)
 
     if (fCheckRO && m_fReadOnly)
     {
-        QIcon icon = UIIconPool::iconSet(":/hd_new_16px.png");
+        QIcon icon = UIIconPool::iconSet(":/hd_create_16px.png");
         pixmap = UICommon::joinPixmaps(pixmap, icon.pixmap(icon.availableSizes().value(0, QSize(16, 16))));
     }
 

@@ -319,8 +319,6 @@
         <file alias="hd_move_32px.png">images/hd_move_32px.png</file>
         <file alias="hd_move_disabled_16px.png">images/hd_move_disabled_16px.png</file>
         <file alias="hd_move_disabled_32px.png">images/hd_move_disabled_32px.png</file>
-        <file alias="hd_new_16px.png">images/hd_new_16px.png</file>
-        <file alias="hd_new_disabled_16px.png">images/hd_new_disabled_16px.png</file>
         <file alias="hd_read_16px.png">images/hd_read_16px.png</file>
         <file alias="hd_release_16px.png">images/hd_release_16px.png</file>
         <file alias="hd_release_32px.png">images/hd_release_32px.png</file>

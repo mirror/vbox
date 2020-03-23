@@ -132,8 +132,6 @@ enum PixmapType
 
     ChooseExistingEn,
     ChooseExistingDis,
-    HDNewEn,
-    HDNewDis,
     CDUnmountEnabled,
     CDUnmountDisabled,
     FDUnmountEnabled,
@@ -1088,8 +1086,6 @@ UIIconPoolStorageSettings::UIIconPoolStorageSettings()
     /* Specific attachment custom file-names: */
     m_names.insert(ChooseExistingEn,             ":/select_file_16px.png");
     m_names.insert(ChooseExistingDis,            ":/select_file_disabled_16px.png");
-    m_names.insert(HDNewEn,                      ":/hd_new_16px.png");
-    m_names.insert(HDNewDis,                     ":/hd_new_disabled_16px.png");
     m_names.insert(CDUnmountEnabled,             ":/cd_unmount_16px.png");
     m_names.insert(CDUnmountDisabled,            ":/cd_unmount_disabled_16px.png");
     m_names.insert(FDUnmountEnabled,             ":/fd_unmount_16px.png");
