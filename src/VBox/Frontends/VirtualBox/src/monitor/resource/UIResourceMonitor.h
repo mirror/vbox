@@ -94,7 +94,7 @@ private:
     /** @name Misc members.
       * @{ */
         UIToolBar *m_pToolBar;
-        QTableView *m_pTableWidget;
+        QTableView *m_pTableView;
         UIResourceMonitorProxyModel *m_pProxyModel;
         UIResourceMonitorModel      *m_pModel;
     /** @} */

@@ -18,6 +18,7 @@
 /* Qt includes: */
 #include <QAbstractTableModel>
 #include <QHeaderView>
+#include <QItemDelegate>
 #include <QMenuBar>
 #include <QPushButton>
 #include <QTableView>
@@ -144,6 +145,21 @@ private:
     void initializeItems();
 
     QTimer *m_pTimer;
+};
+
+
+/*********************************************************************************************************************************
+*   UIVMResouceMonitorDelegate definition.                                                                                       *
+*********************************************************************************************************************************/
+/** A QItemDelegate child class to disable dashed lines drawn around selected cells in QTableViews */
+class UIVMResouceMonitorDelegate : public QItemDelegate
+{
+
+    Q_OBJECT;
+
+protected:
+
+    virtual void drawFocus ( QPainter * /*painter*/, const QStyleOptionViewItem & /*option*/, const QRect & /*rect*/ ) const {}
 };
 
 /*********************************************************************************************************************************
@@ -372,20 +388,23 @@ void UIResourceMonitorModel::sltTimeout()
             m_itemList[i].m_comDebugger.GetCPULoad(0x7fffffff, aPctExecuting, aPctHalted, aPctVMM);
             m_itemList[i].m_uCPUGuestLoad = aPctExecuting;
             m_itemList[i].m_uCPUVMMLoad = aPctVMM;
+            /* Network rate: */
+            quint64 uPrevDownTotal = m_itemList[i].m_uNetworkDownTotal;
+            quint64 uPrevUpTotal = m_itemList[i].m_uNetworkUpTotal;
             UIMonitorCommon::getNetworkLoad(m_itemList[i].m_comDebugger,
-                                            m_itemList[i].m_uNetworkDownRate, m_itemList[i].m_uNetworkUpRate);
-            m_itemList[i].m_uNetworkDownTotal += m_itemList[i].m_uNetworkDownRate;
-            m_itemList[i].m_uNetworkUpTotal += m_itemList[i].m_uNetworkUpRate;
+                                            m_itemList[i].m_uNetworkDownTotal, m_itemList[i].m_uNetworkUpTotal);
+            m_itemList[i].m_uNetworkDownRate = m_itemList[i].m_uNetworkDownTotal - uPrevDownTotal;
+            m_itemList[i].m_uNetworkUpRate = m_itemList[i].m_uNetworkUpTotal - uPrevUpTotal;
 
+            /* IO rate: */
+            quint64 uPrevWriteTotal = m_itemList[i].m_uDiskWriteTotal;
+            quint64 uPrevReadTotal = m_itemList[i].m_uDiskReadTotal;
             UIMonitorCommon::getDiskLoad(m_itemList[i].m_comDebugger,
-                                         m_itemList[i].m_uDiskWriteRate, m_itemList[i].m_uDiskReadRate);
-            m_itemList[i].m_uDiskWriteTotal += m_itemList[i].m_uDiskWriteRate;
-            m_itemList[i].m_uDiskReadTotal += m_itemList[i].m_uDiskReadRate;
+                                         m_itemList[i].m_uDiskWriteTotal, m_itemList[i].m_uDiskReadTotal);
+            m_itemList[i].m_uDiskWriteRate = m_itemList[i].m_uDiskWriteTotal - uPrevWriteTotal;
+            m_itemList[i].m_uDiskReadRate = m_itemList[i].m_uDiskReadTotal - uPrevReadTotal;
         }
     }
-    //emit layoutChanged();
-    /* dataChanged signal result in view update when there is a proxy model in between. */
-    //emit dataChanged(index(0,0), index(rowCount(), columnCount()));
     emit sigDataUpdate();
 }
 
@@ -401,7 +420,7 @@ UIResourceMonitorWidget::UIResourceMonitorWidget(EmbedTo enmEmbedding, UIActionP
     , m_pActionPool(pActionPool)
     , m_fShowToolbar(fShowToolbar)
     , m_pToolBar(0)
-    , m_pTableWidget(0)
+    , m_pTableView(0)
 {
     /* Prepare: */
     prepare();
@@ -458,28 +477,29 @@ void UIResourceMonitorWidget::prepareWidgets()
     m_pModel = new UIResourceMonitorModel(this);
     m_pProxyModel = new UIResourceMonitorProxyModel(this);
 
-    m_pTableWidget = new QTableView();
-    if (m_pTableWidget && m_pModel && m_pProxyModel)
+    m_pTableView = new QTableView();
+    if (m_pTableView && m_pModel && m_pProxyModel)
     {
-        layout()->addWidget(m_pTableWidget);
+        layout()->addWidget(m_pTableView);
         m_pProxyModel->setSourceModel(m_pModel);
-        m_pTableWidget->setModel(m_pProxyModel);
-        m_pTableWidget->setSelectionMode(QAbstractItemView::NoSelection);
+        m_pTableView->setModel(m_pProxyModel);
+        m_pTableView->setItemDelegate(new UIVMResouceMonitorDelegate);
+        m_pTableView->setSelectionMode(QAbstractItemView::NoSelection);
 
-        /* m_pTableWidget->setSelectionMode(QAbstractItemView::SingleSelection);
-           m_pTableWidget->setSelectionBehavior(QAbstractItemView::SelectRows);*/
-        m_pTableWidget->setShowGrid(false);
-        m_pTableWidget->horizontalHeader()->setHighlightSections(false);
-        m_pTableWidget->horizontalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
-        m_pTableWidget->horizontalHeader()->setStretchLastSection(true);
+        /* m_pTableView->setSelectionMode(QAbstractItemView::SingleSelection);
+           m_pTableView->setSelectionBehavior(QAbstractItemView::SelectRows);*/
+        m_pTableView->setShowGrid(false);
+        m_pTableView->horizontalHeader()->setHighlightSections(false);
+        m_pTableView->horizontalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
+        m_pTableView->horizontalHeader()->setStretchLastSection(true);
 
-        m_pTableWidget->verticalHeader()->setVisible(false);
-        m_pTableWidget->setEditTriggers(QAbstractItemView::NoEditTriggers);
+        m_pTableView->verticalHeader()->setVisible(false);
+        m_pTableView->setEditTriggers(QAbstractItemView::NoEditTriggers);
         /* Minimize the row height: */
-        m_pTableWidget->verticalHeader()->setDefaultSectionSize(m_pTableWidget->verticalHeader()->minimumSectionSize());
-        m_pTableWidget->setAlternatingRowColors(true);
-        m_pTableWidget->setSortingEnabled(true);
-        m_pTableWidget->sortByColumn(0, Qt::AscendingOrder);
+        m_pTableView->verticalHeader()->setDefaultSectionSize(m_pTableView->verticalHeader()->minimumSectionSize());
+        m_pTableView->setAlternatingRowColors(true);
+        m_pTableView->setSortingEnabled(true);
+        m_pTableView->sortByColumn(0, Qt::AscendingOrder);
         connect(m_pModel, &UIResourceMonitorModel::sigDataUpdate, this, &UIResourceMonitorWidget::sltHandleDataUpdate);
     }
 }

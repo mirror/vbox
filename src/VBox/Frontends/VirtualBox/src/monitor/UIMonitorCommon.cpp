@@ -46,6 +46,8 @@ void UIMonitorCommon::getNetworkLoad(CMachineDebugger &debugger, quint64 &uOutNe
 /* static */
 void UIMonitorCommon::getDiskLoad(CMachineDebugger &debugger, quint64 &uOutDiskWritten, quint64 &uOutDiskRead)
 {
+    uOutDiskWritten = 0;
+    uOutDiskRead = 0;
     QVector<UIDebuggerMetricData> xmlData = getAndParseStatsFromDebugger(debugger, "/Public/Storage/*/Port*/Bytes*");
     foreach (const UIDebuggerMetricData &data, xmlData)
     {
@@ -61,6 +63,7 @@ void UIMonitorCommon::getDiskLoad(CMachineDebugger &debugger, quint64 &uOutDiskW
 /* static */
 void UIMonitorCommon::getVMMExitCount(CMachineDebugger &debugger, quint64 &uOutVMMExitCount)
 {
+    uOutVMMExitCount = 0;
     QVector<UIDebuggerMetricData> xmlData = getAndParseStatsFromDebugger(debugger, "/PROF/CPU*/EM/RecordedExits");
     foreach (const UIDebuggerMetricData &data, xmlData)
     {
