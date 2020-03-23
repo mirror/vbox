@@ -127,6 +127,7 @@
         <file alias="seamless_disabled_16px_x3.png">images/x3/seamless_disabled_16px_x3.png</file>
         <file alias="seamless_on_16px_x3.png">images/x3/seamless_on_16px_x3.png</file>
         <file alias="seamless_on_disabled_16px_x3.png">images/x3/seamless_on_disabled_16px_x3.png</file>
+        <file alias="search_16px_x3.png">images/x3/search_16px_x3.png</file>
         <file alias="select_file_16px_x3.png">images/x3/select_file_16px_x3.png</file>
         <file alias="select_file_disabled_16px_x3.png">images/x3/select_file_disabled_16px_x3.png</file>
         <file alias="serial_port_16px_x3.png">images/x3/serial_port_16px_x3.png</file>

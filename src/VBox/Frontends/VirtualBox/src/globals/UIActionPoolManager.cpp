@@ -869,7 +869,7 @@ public:
 
     /** Constructs action passing @a pParent to the base-class. */
     UIActionSimpleSelectorMachinePerformSearch(UIActionPool *pParent)
-        : UIActionSimple(pParent, ":/sort_16px.png", ":/sort_disabled_16px.png")
+        : UIActionSimple(pParent, ":/search_16px.png", ":/search_16px.png")
     {}
 
 protected:
