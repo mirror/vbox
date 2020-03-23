@@ -883,6 +883,15 @@ RTDECL(void *)  RTMemEfRealloc(void *pvOld, size_t cbNew, const char *pszTag, RT
 }
 
 
+RTDECL(void *)  RTMemEfReallocZ(void *pvOld, size_t cbOld, size_t cbNew, const char *pszTag, RT_SRC_POS_DECL) RT_NO_THROW_DEF
+{
+    void *pvDst = rtR3MemRealloc("ReallocZ", RTMEMTYPE_RTMEMREALLOC, pvOld, cbNew, pszTag, ASMReturnAddress(), RT_SRC_POS_ARGS);
+    if (pvDst && cbNew > cbOld)
+        memset((uint8_t *)pvDst + cbOld, 0, cbNew - cbOld);
+    return pvDst;
+}
+
+
 RTDECL(void)    RTMemEfFree(void *pv, RT_SRC_POS_DECL) RT_NO_THROW_DEF
 {
     if (pv)
@@ -977,6 +986,15 @@ RTDECL(void *)  RTMemEfAllocZVarNP(size_t cbUnaligned, const char *pszTag) RT_NO
 RTDECL(void *)  RTMemEfReallocNP(void *pvOld, size_t cbNew, const char *pszTag) RT_NO_THROW_DEF
 {
     return rtR3MemRealloc("Realloc", RTMEMTYPE_RTMEMREALLOC, pvOld, cbNew, pszTag, ASMReturnAddress(), NULL, 0, NULL);
+}
+
+
+RTDECL(void *)  RTMemEfReallocZNP(void *pvOld, size_t cbOld, size_t cbNew, const char *pszTag) RT_NO_THROW_DEF
+{
+    void *pvDst = rtR3MemRealloc("ReallocZ", RTMEMTYPE_RTMEMREALLOC, pvOld, cbNew, pszTag, ASMReturnAddress(), NULL, 0, NULL);
+    if (pvDst && cbNew > cbOld)
+        memset((uint8_t *)pvDst + cbOld, 0, cbNew - cbOld);
+    return pvDst;
 }
 
 
