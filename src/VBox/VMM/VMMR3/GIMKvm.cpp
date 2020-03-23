@@ -415,7 +415,10 @@ VMMR3_INT_DECL(int) gimR3KvmEnableSystemTime(PVM pVM, PVMCPU pVCpu)
     SystemTime.u32TscScale = ASMDivU64ByU32RetU32(RT_NS_1SEC_64 << 32, uTscFreqLo);
 
     /*
-     * Update guest memory with the system-time struct.
+     * Update guest memory with the system-time struct. Technically we are cheating
+     * by only writing the struct once with the version incremented by two; in reality,
+     * the system-time struct is enabled once by the boot CPU and not concurrently read
+     * by other VCPUs at the same time.
      */
     Assert(!(SystemTime.u32Version & UINT32_C(1)));
     int rc = PGMPhysSimpleWriteGCPhys(pVM, pKvmCpu->GCPhysSystemTime, &SystemTime, sizeof(GIMKVMSYSTEMTIME));
