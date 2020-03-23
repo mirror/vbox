@@ -26810,6 +26810,28 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </param>
     </method>
 
+    <method name="addCloudMachine">
+      <desc>
+        Adopt a running instance and register it as cloud machine.
+        This is kinda like adding a local .vbox file as a local VM.
+      </desc>
+      <param name="instanceId" type="wstring" dir="in">
+        <desc>
+          ID of an instance to be added as a cloud machine.
+        </desc>
+      </param>
+      <!--
+      <param name="machine" type="ICloudMachine" dir="out">
+        <desc>
+          Object that represents the newly registered cloud machine.
+        </desc>
+      </param>
+      -->
+      <param name="progress" type="IProgress" dir="return">
+        <desc>Progress object to track the operation completion.</desc>
+      </param>
+    </method>
+
     <method name="listInstances" const="yes">
       <desc>
         Returns the list of the instances in the Cloud.
