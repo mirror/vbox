@@ -71,6 +71,7 @@ public slots:
 
 private slots:
 
+    void sltHandleDataUpdate();
 
 private:
 

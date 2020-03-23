@@ -58,9 +58,9 @@ enum VMResouceMonitorColumn
     // VMResouceMonitorColumn_RAMUsedAndTotal,
     // VMResouceMonitorColumn_RAMUsedPercentage,
     VMResouceMonitorColumn_NetworkDownUpRate,
-    // VMResouceMonitorColumn_NetworkDownUpTotal,
-    // VMResouceMonitorColumn_DiskIOWriteReadRate,
-    // VMResouceMonitorColumn_DiskIOWriteReadTotal,
+    VMResouceMonitorColumn_NetworkDownUpTotal,
+    VMResouceMonitorColumn_DiskIOWriteReadRate,
+    VMResouceMonitorColumn_DiskIOWriteReadTotal,
     VMResouceMonitorColumn_Max
 };
 
@@ -103,6 +103,7 @@ class UIResourceMonitorProxyModel : public QSortFilterProxyModel
 public:
 
     UIResourceMonitorProxyModel(QObject *parent = 0);
+    void dataUpdate();
 
 protected:
 
@@ -119,6 +120,10 @@ private:
 class UIResourceMonitorModel : public QAbstractTableModel
 {
     Q_OBJECT;
+
+signals:
+
+    void sigDataUpdate();
 
 public:
 
@@ -207,6 +212,12 @@ UIResourceMonitorProxyModel::UIResourceMonitorProxyModel(QObject *parent /* = 0 
 {
 }
 
+void UIResourceMonitorProxyModel::dataUpdate()
+{
+    if (sourceModel())
+        emit dataChanged(index(0,0), index(sourceModel()->rowCount(), sourceModel()->columnCount()));
+}
+
 
 /*********************************************************************************************************************************
 *   Class UIResourceMonitorModel implementation.                                                                                 *
@@ -240,6 +251,7 @@ int UIResourceMonitorModel::columnCount(const QModelIndex &parent /* = QModelInd
 
 QVariant UIResourceMonitorModel::data(const QModelIndex &index, int role) const
 {
+    int iDecimalCount = 2;
     if (!index.isValid() || role != Qt::DisplayRole || index.row() >= rowCount())
         return QVariant();
     switch (index.column())
@@ -254,7 +266,20 @@ QVariant UIResourceMonitorModel::data(const QModelIndex &index, int role) const
             return m_itemList[index.row()].m_uCPUVMMLoad;
             break;
         case VMResouceMonitorColumn_NetworkDownUpRate:
-            return QString("%1/%2").arg(m_itemList[index.row()].m_uNetworkDownRate).arg(m_itemList[index.row()].m_uNetworkUpRate);
+            return QString("%1/%2").arg(uiCommon().formatSize(m_itemList[index.row()].m_uNetworkDownRate, iDecimalCount)).
+                arg(uiCommon().formatSize(m_itemList[index.row()].m_uNetworkUpRate, iDecimalCount));
+            break;
+        case VMResouceMonitorColumn_NetworkDownUpTotal:
+            return QString("%1/%2").arg(uiCommon().formatSize(m_itemList[index.row()].m_uNetworkDownTotal, iDecimalCount)).
+                arg(uiCommon().formatSize(m_itemList[index.row()].m_uNetworkUpTotal, iDecimalCount));
+            break;
+        case VMResouceMonitorColumn_DiskIOWriteReadRate:
+            return QString("%1/%2").arg(uiCommon().formatSize(m_itemList[index.row()].m_uDiskWriteRate, iDecimalCount)).
+                arg(uiCommon().formatSize(m_itemList[index.row()].m_uDiskReadRate, iDecimalCount));
+            break;
+        case VMResouceMonitorColumn_DiskIOWriteReadTotal:
+            return QString("%1/%2").arg(uiCommon().formatSize(m_itemList[index.row()].m_uDiskWriteTotal, iDecimalCount)).
+                arg(uiCommon().formatSize(m_itemList[index.row()].m_uDiskReadTotal, iDecimalCount));
             break;
         default:
             break;
@@ -272,10 +297,10 @@ QVariant UIResourceMonitorModel::headerData(int section, Qt::Orientation orienta
                 return tr("VM Name");
                 break;
             case VMResouceMonitorColumn_CPUGuestLoad:
-                return tr("CPU Load (Guest)");
+                return tr("CPU Load\n(Guest)");
                 break;
             case VMResouceMonitorColumn_CPUVMMLoad:
-                return tr("CPU Load (VMM)");
+                return tr("CPU Load\n(VMM)");
                 break;
             // case VMResouceMonitorColumn_RAMUsedAndTotal:
             //     return tr("RAM (Used/Total)");
@@ -284,7 +309,16 @@ QVariant UIResourceMonitorModel::headerData(int section, Qt::Orientation orienta
             //     return tr("RAM % Used");
             //     break;
             case VMResouceMonitorColumn_NetworkDownUpRate:
-                return tr("Network Up/Down Rate");
+                return tr("Network Up/Down\nRate");
+                break;
+            case VMResouceMonitorColumn_NetworkDownUpTotal:
+                return tr("Network Up/Down\nTotal");
+                break;
+            case VMResouceMonitorColumn_DiskIOWriteReadRate:
+                return tr("Disk Write/Read\nRate");
+                break;
+            case VMResouceMonitorColumn_DiskIOWriteReadTotal:
+                return tr("Disk Write/Read\nTotal");
                 break;
 
             default:
@@ -311,21 +345,19 @@ void UIResourceMonitorModel::initializeItems()
 
 void UIResourceMonitorModel::sltMachineStateChanged(const QUuid &uId, const KMachineState state)
 {
+    emit layoutAboutToBeChanged();
     int iIndex = m_itemList.indexOf(UIResourceMonitorItem(uId));
     /* Remove the machine in case machine is no longer working. */
     if (iIndex != -1 && state != KMachineState_Running)
-    {
         m_itemList.remove(iIndex);
-        emit layoutChanged();
-    }
 
     /* Insert the machine if it is working. */
     if (iIndex == -1 && state == KMachineState_Running)
     {
         CMachine comMachine = uiCommon().virtualBox().FindMachine(uId.toString());
         m_itemList << UIResourceMonitorItem(uId, comMachine.GetName());
-        emit layoutChanged();
     }
+    emit layoutChanged();
 }
 
 void UIResourceMonitorModel::sltTimeout()
@@ -340,11 +372,21 @@ void UIResourceMonitorModel::sltTimeout()
             m_itemList[i].m_comDebugger.GetCPULoad(0x7fffffff, aPctExecuting, aPctHalted, aPctVMM);
             m_itemList[i].m_uCPUGuestLoad = aPctExecuting;
             m_itemList[i].m_uCPUVMMLoad = aPctVMM;
+            UIMonitorCommon::getNetworkLoad(m_itemList[i].m_comDebugger,
+                                            m_itemList[i].m_uNetworkDownRate, m_itemList[i].m_uNetworkUpRate);
+            m_itemList[i].m_uNetworkDownTotal += m_itemList[i].m_uNetworkDownRate;
+            m_itemList[i].m_uNetworkUpTotal += m_itemList[i].m_uNetworkUpRate;
+
+            UIMonitorCommon::getDiskLoad(m_itemList[i].m_comDebugger,
+                                         m_itemList[i].m_uDiskWriteRate, m_itemList[i].m_uDiskReadRate);
+            m_itemList[i].m_uDiskWriteTotal += m_itemList[i].m_uDiskWriteRate;
+            m_itemList[i].m_uDiskReadTotal += m_itemList[i].m_uDiskReadRate;
         }
     }
-    emit layoutChanged();
+    //emit layoutChanged();
     /* dataChanged signal result in view update when there is a proxy model in between. */
     //emit dataChanged(index(0,0), index(rowCount(), columnCount()));
+    emit sigDataUpdate();
 }
 
 
@@ -436,6 +478,9 @@ void UIResourceMonitorWidget::prepareWidgets()
         /* Minimize the row height: */
         m_pTableWidget->verticalHeader()->setDefaultSectionSize(m_pTableWidget->verticalHeader()->minimumSectionSize());
         m_pTableWidget->setAlternatingRowColors(true);
+        m_pTableWidget->setSortingEnabled(true);
+        m_pTableWidget->sortByColumn(0, Qt::AscendingOrder);
+        connect(m_pModel, &UIResourceMonitorModel::sigDataUpdate, this, &UIResourceMonitorWidget::sltHandleDataUpdate);
     }
 }
 
@@ -467,6 +512,12 @@ void UIResourceMonitorWidget::prepareToolBar()
 
 void UIResourceMonitorWidget::loadSettings()
 {
+}
+
+void UIResourceMonitorWidget::sltHandleDataUpdate()
+{
+    if (m_pProxyModel)
+        m_pProxyModel->dataUpdate();
 }
 
 
