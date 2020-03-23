@@ -982,12 +982,12 @@ class WuiListContentBase(WuiContentBase):
         if WuiDispatcherBase.ksParamPageNo in dParams:
             del dParams[WuiDispatcherBase.ksParamPageNo];
 
-        sHtmlItemsPerPageSelector  = '<form name="TmItemsPerPageForm-%s" method="GET" class="tmitemsperpage-%s tmitemsperpage">\n' \
-                                     '  <select name="%s" onchange="window.location=\'?%s&%s=\' + ' \
-                                     'this.options[this.selectedIndex].value;" title="Max items per page">\n' \
-                                   % (sWhere, WuiDispatcherBase.ksParamItemsPerPage, sWhere,
-                                      webutils.encodeUrlParams(dParams),
-                                      WuiDispatcherBase.ksParamItemsPerPage)
+        sHtmlItemsPerPageSelector = '<form name="TmItemsPerPageForm-%s" method="GET" class="tmitemsperpage-%s tmitemsperpage">\n'\
+                                    '  <select name="%s" onchange="window.location=\'?%s&%s=\' + ' \
+                                    'this.options[this.selectedIndex].value;" title="Max items per page">\n' \
+                                  % (sWhere, WuiDispatcherBase.ksParamItemsPerPage, sWhere,
+                                     webutils.encodeUrlParams(dParams),
+                                     WuiDispatcherBase.ksParamItemsPerPage)
 
         acItemsPerPage = [16, 32, 64, 128, 256, 384, 512, 768, 1024, 1536, 2048, 3072, 4096];
         for cItemsPerPage in acItemsPerPage:

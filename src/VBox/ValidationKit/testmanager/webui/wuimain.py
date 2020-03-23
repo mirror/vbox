@@ -423,7 +423,7 @@ class WuiMain(WuiDispatcherBase):
         else:
             sNext = '&nbsp;&nbsp;&gt;&gt;';
 
-        from wuicontentbase import WuiListContentBase; ## @todo move to better place.
+        from testmanager.webui.wuicontentbase import WuiListContentBase; ## @todo move to better place.
         return WuiListContentBase.generateTimeNavigation('top', self.getParameters(), self.getEffectiveDateParam(),
                                                          sPrev, sNext, False);
 
@@ -544,7 +544,7 @@ class WuiMain(WuiDispatcherBase):
         Note! Modifies dParams!
         """
 
-        from wuicontentbase import WuiListContentBase; ## @todo move to better place.
+        from testmanager.webui.wuicontentbase import WuiListContentBase; ## @todo move to better place.
         return WuiListContentBase.generateItemPerPageSelector('top', dParams, cItemsPerPage);
 
     def _generateResultNavigation(self, cItems, cItemsPerPage, iPage, tsEffective, sCurPeriod, fOnlyFailures,
