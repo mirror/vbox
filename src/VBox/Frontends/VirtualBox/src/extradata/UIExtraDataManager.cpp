@@ -1394,8 +1394,8 @@ void UIExtraDataManagerWindow::prepareMenu()
         AssertReturnVoid(m_pActionAdd);
         {
             /* Configure 'Add' action: */
-            m_pActionAdd->setIcon(UIIconPool::iconSetFull(":/edata_add_22px.png", ":/edata_add_16px.png",
-                                                          ":/edata_add_disabled_22px.png", ":/edata_add_disabled_16px.png"));
+            m_pActionAdd->setIcon(UIIconPool::iconSetFull(":/edata_add_24px.png", ":/edata_add_16px.png",
+                                                          ":/edata_add_disabled_24px.png", ":/edata_add_disabled_16px.png"));
             m_pActionAdd->setShortcut(QKeySequence("Ctrl+T"));
             connect(m_pActionAdd, &QAction::triggered, this, &UIExtraDataManagerWindow::sltAdd);
         }
@@ -1404,8 +1404,8 @@ void UIExtraDataManagerWindow::prepareMenu()
         AssertReturnVoid(m_pActionDel);
         {
             /* Configure 'Del' action: */
-            m_pActionDel->setIcon(UIIconPool::iconSetFull(":/edata_remove_22px.png", ":/edata_remove_16px.png",
-                                                          ":/edata_remove_disabled_22px.png", ":/edata_remove_disabled_16px.png"));
+            m_pActionDel->setIcon(UIIconPool::iconSetFull(":/edata_remove_24px.png", ":/edata_remove_16px.png",
+                                                          ":/edata_remove_disabled_24px.png", ":/edata_remove_disabled_16px.png"));
             m_pActionDel->setShortcut(QKeySequence("Ctrl+R"));
             connect(m_pActionDel, &QAction::triggered, this, &UIExtraDataManagerWindow::sltDel);
         }
@@ -1418,8 +1418,8 @@ void UIExtraDataManagerWindow::prepareMenu()
         AssertReturnVoid(m_pActionLoad);
         {
             /* Configure 'Load' action: */
-            m_pActionLoad->setIcon(UIIconPool::iconSetFull(":/edata_load_22px.png", ":/edata_load_16px.png",
-                                                           ":/edata_load_disabled_22px.png", ":/edata_load_disabled_16px.png"));
+            m_pActionLoad->setIcon(UIIconPool::iconSetFull(":/edata_load_24px.png", ":/edata_load_16px.png",
+                                                           ":/edata_load_disabled_24px.png", ":/edata_load_disabled_16px.png"));
             m_pActionLoad->setShortcut(QKeySequence("Ctrl+L"));
             connect(m_pActionLoad, &QAction::triggered, this, &UIExtraDataManagerWindow::sltLoad);
         }
@@ -1428,8 +1428,8 @@ void UIExtraDataManagerWindow::prepareMenu()
         AssertReturnVoid(m_pActionSave);
         {
             /* Configure 'Save' action: */
-            m_pActionSave->setIcon(UIIconPool::iconSetFull(":/edata_save_22px.png", ":/edata_save_16px.png",
-                                                           ":/edata_save_disabled_22px.png", ":/edata_save_disabled_16px.png"));
+            m_pActionSave->setIcon(UIIconPool::iconSetFull(":/edata_save_24px.png", ":/edata_save_16px.png",
+                                                           ":/edata_save_disabled_24px.png", ":/edata_save_disabled_16px.png"));
             m_pActionSave->setShortcut(QKeySequence("Ctrl+S"));
             connect(m_pActionSave, &QAction::triggered, this, &UIExtraDataManagerWindow::sltSave);
         }
@@ -1479,7 +1479,7 @@ void UIExtraDataManagerWindow::prepareToolBar()
     AssertPtrReturnVoid(m_pToolBar);
     {
         /* Configure tool-bar: */
-        m_pToolBar->setIconSize(QSize(22, 22));
+        m_pToolBar->setIconSize(QSize(24, 24));
         m_pToolBar->setToolButtonStyle(Qt::ToolButtonTextUnderIcon);
         /* Add actions: */
         m_pToolBar->addAction(m_pActionAdd);
