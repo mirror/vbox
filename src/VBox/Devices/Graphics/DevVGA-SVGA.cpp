@@ -3559,6 +3559,29 @@ void vmsvgaR3FifoWatchdogTimer(PPDMDEVINS pDevIns, PVGASTATE pThis, PVGASTATECC 
 }
 
 
+/**
+ * Called by the FIFO thread to process pending actions.
+ *
+ * @param   pDevIns     The device instance.
+ * @param   pThis       The shared VGA/VMSVGA instance data.
+ * @param   pThisCC     The VGA/VMSVGA state for ring-3.
+ */
+void vmsvgaR3FifoPendingActions(PPDMDEVINS pDevIns, PVGASTATE pThis, PVGASTATECC pThisCC)
+{
+    RT_NOREF(pDevIns);
+
+    /* Currently just mode changes. */
+    if (ASMBitTestAndClear(&pThis->svga.u32ActionFlags, VMSVGA_ACTION_CHANGEMODE_BIT))
+    {
+        vmsvgaR3ChangeMode(pThis, pThisCC);
+# ifdef VBOX_WITH_VMSVGA3D
+        if (pThisCC->svga.p3dState != NULL)
+            vmsvga3dChangeMode(pThisCC);
+# endif
+    }
+}
+
+
 /*
  * These two macros are put outside vmsvgaR3FifoLoop because doxygen gets confused,
  * even the latest version, and thinks we're documenting vmsvgaR3FifoLoop. Sigh.
@@ -3685,6 +3708,9 @@ static DECLCALLBACK(int) vmsvgaR3FifoLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread
         if (pThis->svga.f3DEnabled)
             vmsvga3dCocoaServiceRunLoop();
 # endif
+
+        /* First check any pending actions. */
+        vmsvgaR3FifoPendingActions(pDevIns, pThis, pThisCC);
 
         /*
          * Unless there's already work pending, go to sleep for a short while.
@@ -3834,14 +3860,7 @@ static DECLCALLBACK(int) vmsvgaR3FifoLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread
             Assert(offCurrentCmd < offFifoMax && offCurrentCmd >= offFifoMin);
 
             /* First check any pending actions. */
-            if (ASMBitTestAndClear(&pThis->svga.u32ActionFlags, VMSVGA_ACTION_CHANGEMODE_BIT))
-            {
-                vmsvgaR3ChangeMode(pThis, pThisCC);
-# ifdef VBOX_WITH_VMSVGA3D
-                if (pThisCC->svga.p3dState != NULL)
-                    vmsvga3dChangeMode(pThisCC);
-# endif
-            }
+            vmsvgaR3FifoPendingActions(pDevIns, pThis, pThisCC);
 
             /* Check for pending external commands (reset). */
             if (pThis->svga.u8FIFOExtCommand != VMSVGA_FIFO_EXTCMD_NONE)
@@ -6013,8 +6032,6 @@ int vmsvgaR3LoadDone(PPDMDEVINS pDevIns)
     PVGASTATECC     pThisCC    = PDMDEVINS_2_DATA_CC(pDevIns, PVGASTATECC);
     PVMSVGAR3STATE  pSVGAState = pThisCC->svga.pSvgaR3State;
 
-    ASMAtomicOrU32(&pThis->svga.u32ActionFlags, VMSVGA_ACTION_CHANGEMODE);
-
     /* Set the active cursor. */
     if (pSVGAState->Cursor.fActive)
     {
@@ -6044,6 +6061,9 @@ int vmsvgaR3LoadDone(PPDMDEVINS pDevIns)
     {
         vgaR3UnregisterVRAMHandler(pDevIns, pThis);
     }
+
+    /* Let the FIFO thread deal with changing the mode. */
+    ASMAtomicOrU32(&pThis->svga.u32ActionFlags, VMSVGA_ACTION_CHANGEMODE);
 
     return VINF_SUCCESS;
 }
