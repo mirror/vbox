@@ -109,6 +109,43 @@ class TestBoxInSchedGroupDataEx(TestBoxInSchedGroupData):
         self.oSchedGroup        = SchedGroupData().initFromDbWithId(oDb, self.idSchedGroup, tsNow, sPeriodBack);
         return self;
 
+class TestBoxDataForSchedGroup(TestBoxInSchedGroupData):
+    """
+    Extended version of TestBoxInSchedGroupData that adds the testbox data (if available).
+    Used by TestBoxLogic.fetchForSchedGroup
+    """
+
+    def __init__(self):
+        TestBoxInSchedGroupData.__init__(self);
+        self.oTestBox           = None  # type: TestBoxData
+
+    def initFromDbRow(self, aoRow):
+        """
+        The row is: TestBoxesInSchedGroups.*, TestBoxesWithStrings.*
+        """
+        TestBoxInSchedGroupData.initFromDbRow(self, aoRow);
+        if aoRow[self.kcDbColumns]:
+            self.oTestBox = TestBoxData().initFromDbRow(aoRow[self.kcDbColumns:]);
+        else:
+            self.oTestBox = None;
+        return self;
+
+    def getDataAttributes(self):
+        asAttributes = TestBoxInSchedGroupData.getDataAttributes(self);
+        asAttributes.remove('oTestBox');
+        return asAttributes;
+
+    def _validateAndConvertWorker(self, asAllowNullAttributes, oDb, enmValidateFor = ModelDataBase.ksValidateFor_Other):
+        dErrors = TestBoxInSchedGroupData._validateAndConvertWorker(self, asAllowNullAttributes, oDb, enmValidateFor);
+        if self.ksParam_idTestBox not in dErrors:
+            self.oTestBox = TestBoxData();
+            try:
+                self.oTestBox.initFromDbWithId(oDb, self.idTestBox);
+            except Exception as oXcpt:
+                self.oTestBox = TestBoxData()
+                dErrors[self.ksParam_idTestBox] = str(oXcpt);
+        return dErrors;
+
 
 # pylint: disable=invalid-name
 class TestBoxData(ModelDataBase):  # pylint: disable=too-many-instance-attributes
@@ -810,6 +847,49 @@ class TestBoxLogic(ModelLogicBase):
             aoRows.append(oTestBox);
         return aoRows;
 
+    def fetchForSchedGroup(self, idSchedGroup, tsNow, aiSortColumns = None):
+        """
+        Fetches testboxes for listing.
+
+        Returns an array (list) of TestBoxDataForSchedGroup items, empty list if none.
+
+        Raises exception on error.
+        """
+        if not aiSortColumns:
+            aiSortColumns = [self.kiSortColumn_sName,];
+
+        if tsNow is None:
+            self._oDb.execute('''
+SELECT  TestBoxesInSchedGroups.*,
+        TestBoxesWithStrings.*
+FROM    TestBoxesInSchedGroups
+        LEFT OUTER JOIN TestBoxesWithStrings
+                     ON TestBoxesWithStrings.idTestBox = TestBoxesInSchedGroups.idTestBox
+                    AND TestBoxesWithStrings.tsExpire  = 'infinity'::TIMESTAMP
+WHERE   TestBoxesInSchedGroups.idSchedGroup = %s
+    AND TestBoxesInSchedGroups.tsExpire     = 'infinity'::TIMESTAMP
+ORDER BY ''' + ', '.join([self.kdSortColumnMap[i] for i in aiSortColumns]) + '''
+''', (idSchedGroup, ));
+        else:
+            self._oDb.execute('''
+SELECT  TestBoxesInSchedGroups.*,
+        TestBoxesWithStrings.*
+FROM    TestBoxesInSchedGroups
+        LEFT OUTER JOIN TestBoxesWithStrings
+                     ON TestBoxesWithStrings.idTestBox    = TestBoxesInSchedGroups.idTestBox
+                    AND TestBoxesWithStrings.tsExpire     > %s
+                    AND TestBoxesWithStrings.tsEffective <= %s
+WHERE   TestBoxesInSchedGroups.idSchedGroup = %s
+    AND TestBoxesInSchedGroups.tsExpire     > %
+    AND TestBoxesInSchedGroups.tsEffective <= %
+ORDER BY ''' + ', '.join([self.kdSortColumnMap[i] for i in aiSortColumns]) + '''
+''', (tsNow, tsNow, idSchedGroup, tsNow, tsNow, ));
+
+        aoRows = [];
+        for aoOne in self._oDb.fetchAll():
+            aoRows.append(TestBoxDataForSchedGroup().initFromDbRow(aoOne));
+        return aoRows;
+
     def fetchForChangeLog(self, idTestBox, iStart, cMaxRows, tsNow): # pylint: disable=too-many-locals
         """
         Fetches change log entries for a testbox.
@@ -1062,7 +1142,8 @@ class TestBoxLogic(ModelLogicBase):
         """
         self._oDb.execute('SELECT   *\n'
                           'FROM     TestBoxesWithStrings\n'
-                          'WHERE    tsExpire=\'infinity\'::timestamp;')
+                          'WHERE    tsExpire=\'infinity\'::timestamp\n'
+                          'ORDER BY sName')
 
         aaoRows = self._oDb.fetchAll()
         aoRet = []

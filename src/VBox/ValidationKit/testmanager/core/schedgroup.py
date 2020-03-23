@@ -38,7 +38,7 @@ from testmanager.core.base          import ModelDataBase, ModelDataBaseTestCase,
 from testmanager.core.buildsource   import BuildSourceData;
 from testmanager.core.testcase      import TestCaseData;
 from testmanager.core.testcaseargs  import TestCaseArgsData;
-from testmanager.core.testbox       import TestBoxData, TestBoxLogic;
+from testmanager.core.testbox       import TestBoxLogic, TestBoxDataForSchedGroup;
 from testmanager.core.testgroup     import TestGroupData;
 
 
@@ -249,22 +249,24 @@ class SchedGroupDataEx(SchedGroupData):
     """
 
     ksParam_aoMembers    = 'SchedGroup_aoMembers';
-    kasAltArrayNull      = [ 'aoMembers', ];
+    ksParam_aoTestBoxes  = 'SchedGroup_aoTestboxes';
+    kasAltArrayNull      = [ 'aoMembers', 'aoTestboxes' ];
 
     ## Helper parameter containing the comma separated list with the IDs of
     #  potential members found in the parameters.
     ksParam_aidTestGroups = 'TestGroupDataEx_aidTestGroups';
+    ## Ditto for testbox meembers.
+    ksParam_aidTestBoxes  = 'TestGroupDataEx_aidTestBoxes';
 
 
     def __init__(self):
         SchedGroupData.__init__(self);
-        self.aoMembers          = []        # type: SchedGroupMemberDataEx
+        self.aoMembers              = []    # type: list[SchedGroupMemberDataEx]
+        self.aoTestBoxes            = []    # type: list[TestBoxDataForSchedGroup]
 
-        # Two build sources for convenience sake.
-        self.oBuildSrc          = None      # type: TestBoxData
-        self.oBuildSrcValidationKit = None  # type: TestBoxData
-        # List of test boxes that uses this group for convenience.
-        self.aoTestBoxes        = None      # type: list[TestBoxData]
+        # The two build sources for the sake of convenience.
+        self.oBuildSrc              = None  # type: BuildSourceData
+        self.oBuildSrcValidationKit = None  # type: BuildSourceData
 
     def _initExtraMembersFromDb(self, oDb, tsNow = None, sPeriodBack = None):
         """
@@ -272,13 +274,13 @@ class SchedGroupDataEx(SchedGroupData):
         Returns self.  Raises exception if no row or database error.
         """
         #
-        # It all upfront so the object has some kind of consistency if anything
-        # below raises exceptions.
+        # Clear all members upfront so the object has some kind of consistency
+        # if anything below raises exceptions.
         #
-        self.oBuildSrc    = None;
+        self.oBuildSrc              = None;
         self.oBuildSrcValidationKit = None;
-        self.aoTestBoxes = [];
-        self.aoMembers   = [];
+        self.aoTestBoxes            = [];
+        self.aoMembers              = [];
 
         #
         # Build source.
@@ -293,17 +295,7 @@ class SchedGroupDataEx(SchedGroupData):
         #
         # Test Boxes.
         #
-        oDb.execute('SELECT TestBoxesWithStrings.*\n'
-                    'FROM   TestBoxesWithStrings,\n'
-                    '       TestBoxesInSchedGroups\n'
-                    'WHERE  TestBoxesInSchedGroups.idSchedGroup = %s\n'
-                    + self.formatSimpleNowAndPeriod(oDb, tsNow, sPeriodBack, sTablePrefix = 'TestBoxesInSchedGroups.') +
-                    '   AND TestBoxesWithStrings.idTestBox      = TestBoxesInSchedGroups.idTestBox\n'
-                    + self.formatSimpleNowAndPeriod(oDb, tsNow, sPeriodBack, sTablePrefix = 'TestBoxesWithStrings.') +
-                    'ORDER BY TestBoxesWithStrings.sName, TestBoxesWithStrings.idTestBox\n'
-                    , (self.idSchedGroup,));
-        for aoRow in oDb.fetchAll():
-            self.aoTestBoxes.append(TestBoxData().initFromDbRow(aoRow));
+        self.aoTestBoxes = TestBoxLogic(oDb).fetchForSchedGroup(self.idSchedGroup, tsNow);
 
         #
         # Test groups.
@@ -340,51 +332,78 @@ class SchedGroupDataEx(SchedGroupData):
         asAttributes = SchedGroupData.getDataAttributes(self);
         asAttributes.remove('oBuildSrc');
         asAttributes.remove('oBuildSrcValidationKit');
-        asAttributes.remove('aoTestBoxes');
         return asAttributes;
 
     def getAttributeParamNullValues(self, sAttr):
-        if sAttr != 'aoMembers':
+        if sAttr not in [ 'aoMembers', 'aoTestBoxes' ]:
             return SchedGroupData.getAttributeParamNullValues(self, sAttr);
         return ['', [], None];
 
     def convertParamToAttribute(self, sAttr, sParam, oValue, oDisp, fStrict):
-        if sAttr != 'aoMembers':
-            return SchedGroupData.convertParamToAttribute(self, sAttr, sParam, oValue, oDisp, fStrict);
-
         aoNewValue  = [];
-        aidSelected = oDisp.getListOfIntParams(sParam, iMin = 1, iMax = 0x7ffffffe, aiDefaults = [])
-        sIds        = oDisp.getStringParam(self.ksParam_aidTestGroups, sDefault = '');
-        for idTestGroup in sIds.split(','):
-            try:    idTestGroup = int(idTestGroup);
-            except: pass;
-            oDispWrapper = self.DispWrapper(oDisp, '%s[%s][%%s]' % (SchedGroupDataEx.ksParam_aoMembers, idTestGroup,))
-            oMember = SchedGroupMemberDataEx().initFromParams(oDispWrapper, fStrict = False);
-            if idTestGroup in aidSelected:
-                aoNewValue.append(oMember);
+        if sAttr == 'aoMembers':
+            aidSelected = oDisp.getListOfIntParams(sParam, iMin = 1, iMax = 0x7ffffffe, aiDefaults = [])
+            sIds        = oDisp.getStringParam(self.ksParam_aidTestGroups, sDefault = '');
+            for idTestGroup in sIds.split(','):
+                try:    idTestGroup = int(idTestGroup);
+                except: pass;
+                oDispWrapper = self.DispWrapper(oDisp, '%s[%s][%%s]' % (SchedGroupDataEx.ksParam_aoMembers, idTestGroup,))
+                oMember = SchedGroupMemberDataEx().initFromParams(oDispWrapper, fStrict = False);
+                if idTestGroup in aidSelected:
+                    aoNewValue.append(oMember);
+        elif sAttr == 'aoTestBoxes':
+            aidSelected = oDisp.getListOfIntParams(sParam, iMin = 1, iMax = 0x7ffffffe, aiDefaults = [])
+            sIds        = oDisp.getStringParam(self.ksParam_aidTestBoxes, sDefault = '');
+            for idTestBox in sIds.split(','):
+                try:    idTestBox = int(idTestBox);
+                except: pass;
+                oDispWrapper = self.DispWrapper(oDisp, '%s[%s][%%s]' % (SchedGroupDataEx.ksParam_aoTestBoxes, idTestBox,))
+                oTestBox = TestBoxDataForSchedGroup().initFromParams(oDispWrapper, fStrict = False);
+                if idTestBox in aidSelected:
+                    aoNewValue.append(oTestBox);
+        else:
+            return SchedGroupData.convertParamToAttribute(self, sAttr, sParam, oValue, oDisp, fStrict);
         return aoNewValue;
 
     def _validateAndConvertAttribute(self, sAttr, sParam, oValue, aoNilValues, fAllowNull, oDb):
-        if sAttr != 'aoMembers':
+        if sAttr not in [ 'aoMembers', 'aoTestBoxes' ]:
             return SchedGroupData._validateAndConvertAttribute(self, sAttr, sParam, oValue, aoNilValues, fAllowNull, oDb);
 
         asErrors     = [];
         aoNewMembers = [];
-        for oOldMember in oValue:
-            oNewMember = SchedGroupMemberDataEx().initFromOther(oOldMember);
-            aoNewMembers.append(oNewMember);
+        if sAttr == 'aoMembers':
+            for oOldMember in oValue:
+                oNewMember = SchedGroupMemberDataEx().initFromOther(oOldMember);
+                aoNewMembers.append(oNewMember);
 
-            dErrors = oNewMember.validateAndConvert(oDb, ModelDataBase.ksValidateFor_Other);
-            if dErrors:
-                asErrors.append(str(dErrors));
+                dErrors = oNewMember.validateAndConvert(oDb, ModelDataBase.ksValidateFor_Other);
+                if dErrors:
+                    asErrors.append(str(dErrors));
 
-        if not asErrors:
-            for i, _ in enumerate(aoNewMembers):
-                idTestGroup = aoNewMembers[i];
-                for j in range(i + 1, len(aoNewMembers)):
-                    if aoNewMembers[j].idTestGroup == idTestGroup:
-                        asErrors.append('Duplicate test group #%d!' % (idTestGroup, ));
-                        break;
+            if not asErrors:
+                for i, _ in enumerate(aoNewMembers):
+                    idTestGroup = aoNewMembers[i];
+                    for j in range(i + 1, len(aoNewMembers)):
+                        if aoNewMembers[j].idTestGroup == idTestGroup:
+                            asErrors.append('Duplicate test group #%d!' % (idTestGroup, ));
+                            break;
+        else:
+            for oOldMember in oValue:
+                oNewMember = TestBoxDataForSchedGroup().initFromOther(oOldMember);
+                aoNewMembers.append(oNewMember);
+
+                dErrors = oNewMember.validateAndConvert(oDb, ModelDataBase.ksValidateFor_Other);
+                if dErrors:
+                    asErrors.append(str(dErrors));
+
+            if not asErrors:
+                for i, _ in enumerate(aoNewMembers):
+                    idTestBox = aoNewMembers[i];
+                    for j in range(i + 1, len(aoNewMembers)):
+                        if aoNewMembers[j].idTestBox == idTestBox:
+                            asErrors.append('Duplicate test group #%d!' % (idTestBox, ));
+                            break;
+
 
         return (aoNewMembers, None if not asErrors else '<br>\n'.join(asErrors));
 
@@ -500,6 +519,10 @@ class SchedGroupLogic(ModelLogicBase): # pylint: disable=too-few-public-methods
         idSchedGroup = self._oDb.fetchOne()[0];
         oData.idSchedGroup = idSchedGroup;
 
+        for oBoxInGrp in oData.aoTestBoxes:
+            oBoxInGrp.idSchedGroup = idSchedGroup;
+            self._addSchedGroupTestBox(uidAuthor, oBoxInGrp);
+
         for oMember in oData.aoMembers:
             oMember.idSchedGroup = idSchedGroup;
             self._addSchedGroupMember(uidAuthor, oMember);
@@ -552,6 +575,31 @@ class SchedGroupLogic(ModelLogicBase): # pylint: disable=too-few-public-methods
                 self._historizeSchedGroupMember(oMember);
                 self._addSchedGroupMember(uidAuthor, oMember);
 
+        # Remove testboxes.
+        for oOld in oOldData.aoTestBoxes:
+            fRemove = True;
+            for oNew in oData.aoTestBoxes:
+                if oNew.idTestBox == oOld.idTestBox:
+                    fRemove = False;
+                    break;
+            if fRemove:
+                self._removeSchedGroupTestBox(uidAuthor, oOld);
+
+        # Add / modify testboxes.
+        for oBoxInGrp in oData.aoTestBoxes:
+            oOldBoxInGrp = None;
+            for oOld in oOldData.aoTestBoxes:
+                if oOld.idTestBox == oBoxInGrp.idTestBox:
+                    oOldBoxInGrp = oOld;
+                    break;
+
+            oBoxInGrp.idSchedGroup = oData.idSchedGroup;
+            if oOldBoxInGrp is None:
+                self._addSchedGroupTestBox(uidAuthor, oBoxInGrp);
+            elif not oBoxInGrp.isEqualEx(oOldBoxInGrp, ['tsEffective', 'tsExpire', 'uidAuthor', 'oTestBox']):
+                self._historizeSchedGroupTestBox(oBoxInGrp);
+                self._addSchedGroupTestBox(uidAuthor, oBoxInGrp);
+
         self._oDb.maybeCommit(fCommit);
         return True;
 
@@ -559,6 +607,7 @@ class SchedGroupLogic(ModelLogicBase): # pylint: disable=too-few-public-methods
         """
         Deletes a scheduling group.
         """
+        _ = fCascade;
 
         #
         # Input validation and retrival of current data.
@@ -568,28 +617,18 @@ class SchedGroupLogic(ModelLogicBase): # pylint: disable=too-few-public-methods
         oData = SchedGroupDataEx().initFromDbWithId(self._oDb, idSchedGroup);
 
         #
-        # We use cascade a little different here... We don't actually delete
-        # associated testboxes or testgroups.
+        # Remove the test box member records.
         #
-        if oData.aoTestBoxes:
-            if fCascade is not True:
-                # Complain about there being associated testboxes.
-                asTestBoxes = ['%s (#%d)' % (oTestBox.sName, oTestBox.idTestBox) for oTestBox in oData.aoTestBoxes];
-                raise TMRowInUse('Scheduling group #%d is associated with one or more test boxes: %s'
-                                 % (idSchedGroup, ', '.join(asTestBoxes),));
-            # Reassign testboxes to scheduling group #1 (the default group).
-            oTbLogic = TestBoxLogic(self._oDb);
-            for oTestBox in oData.aoTestBoxes:
-                oTbCopy = TestBoxData().initFromOther(oTestBox);
-                oTbCopy.idSchedGroup = 1;
-                oTbLogic.editEntry(oTbCopy, uidAuthor, fCommit = False);
-
-            oData = SchedGroupDataEx().initFromDbWithId(self._oDb, idSchedGroup);
-            if oData.aoTestBoxes:
-                raise TMRowInUse('More testboxes was added to the scheduling group as we were trying to delete it.');
+        for oBoxInGrp in oData.aoTestBoxes:
+            self._removeSchedGroupTestBox(uidAuthor, oBoxInGrp);
+        self._oDb.execute('UPDATE   TestBoxesInSchedGroups\n'
+                          'SET      tsExpire     = CURRENT_TIMESTAMP\n'
+                          'WHERE    idSchedGroup = %s\n'
+                          '     AND tsExpire     = \'infinity\'::TIMESTAMP\n'
+                          , (idSchedGroup,));
 
         #
-        # Remove the group and all member records.
+        # Remove the test group member records.
         #
         for oMember in oData.aoMembers:
             self._removeSchedGroupMember(uidAuthor, oMember);
@@ -599,6 +638,9 @@ class SchedGroupLogic(ModelLogicBase): # pylint: disable=too-few-public-methods
                           '     AND tsExpire     = \'infinity\'::TIMESTAMP\n'
                           , (idSchedGroup,));
 
+        #
+        # Now the SchedGroups entry.
+        #
         (tsCur, tsCurMinusOne) = self._oDb.getCurrentTimestamps();
         if oData.tsEffective != tsCur and oData.tsEffective != tsCurMinusOne:
             self._historizeEntry(idSchedGroup, tsCurMinusOne);
@@ -973,6 +1015,55 @@ class SchedGroupLogic(ModelLogicBase): # pylint: disable=too-few-public-methods
                           , ( tsExpire, oMember.idSchedGroup, oMember.idTestGroup, ));
         return True;
 
+    #
+    def _addSchedGroupTestBox(self, uidAuthor, oBoxInGroup, tsEffective = None):
+        """
+        addEntry worker for adding a test box to a scheduling group.
+        """
+        if tsEffective is None:
+            tsEffective = self._oDb.getCurrentTimestamp();
+        self._oDb.execute('INSERT INTO TestBoxesInSchedGroups(\n'
+                          '         idSchedGroup,\n'
+                          '         idTestBox,\n'
+                          '         tsEffective,\n'
+                          '         uidAuthor,\n'
+                          '         iSchedPriority)\n'
+                          'VALUES (%s, %s, %s, %s, %s)\n'
+                          , ( oBoxInGroup.idSchedGroup,
+                              oBoxInGroup.idTestBox,
+                              tsEffective,
+                              uidAuthor,
+                              oBoxInGroup.iSchedPriority, ));
+        return True;
+
+    def _removeSchedGroupTestBox(self, uidAuthor, oBoxInGroup):
+        """
+        Removes a testbox from a scheduling group.
+        """
+
+        # Try record who removed it by adding an dummy entry that expires immediately.
+        (tsCur, tsCurMinusOne) = self._oDb.getCurrentTimestamps();
+        if oBoxInGroup.tsEffective != tsCur and oBoxInGroup.tsEffective != tsCurMinusOne:
+            self._historizeSchedGroupTestBox(oBoxInGroup, tsCurMinusOne);
+            self._addSchedGroupTestBox(uidAuthor, oBoxInGroup, tsCurMinusOne); # lazy bird.
+            self._historizeSchedGroupTestBox(oBoxInGroup);
+        else:
+            self._historizeSchedGroupTestBox(oBoxInGroup);
+        return True;
+
+    def _historizeSchedGroupTestBox(self, oBoxInGroup, tsExpire = None):
+        """
+        Historizes the current entry for the given scheduling group.
+        """
+        if tsExpire is None:
+            tsExpire = self._oDb.getCurrentTimestamp();
+        self._oDb.execute('UPDATE TestBoxesInSchedGroups\n'
+                          'SET    tsExpire = %s\n'
+                          'WHERE  idSchedGroup = %s\n'
+                          '   AND idTestBox    = %s\n'
+                          '   AND tsExpire     = \'infinity\'::TIMESTAMP\n'
+                          , ( tsExpire, oBoxInGroup.idSchedGroup, oBoxInGroup.idTestBox, ));
+        return True;
 
 
 

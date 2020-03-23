@@ -45,12 +45,13 @@ class SchedQueueEntry(ModelDataBase):
     def __init__(self):
         ModelDataBase.__init__(self)
 
-        self.idItem             = None
-        self.tsLastScheduled    = None
-        self.sSchedGroup        = None
-        self.sTestGroup         = None
-        self.sTestCase          = None
-        self.fUpToDate          = None
+        self.idItem                     = None
+        self.tsLastScheduled            = None
+        self.sSchedGroup                = None
+        self.sTestGroup                 = None
+        self.sTestCase                  = None
+        self.fUpToDate                  = None
+        self.iPerSchedGroupRowNumber    = None;
 
     def initFromDbRow(self, aoRow):
         """
@@ -60,12 +61,13 @@ class SchedQueueEntry(ModelDataBase):
         if aoRow is None:
             raise TMExceptionBase('TestCaseQueue row not found.')
 
-        self.idItem             = aoRow[0]
-        self.tsLastScheduled    = aoRow[1]
-        self.sSchedGroup        = aoRow[2]
-        self.sTestGroup         = aoRow[3]
-        self.sTestCase          = aoRow[4]
-        self.fUpToDate          = aoRow[5]
+        self.idItem                     = aoRow[0]
+        self.tsLastScheduled            = aoRow[1]
+        self.sSchedGroup                = aoRow[2]
+        self.sTestGroup                 = aoRow[3]
+        self.sTestCase                  = aoRow[4]
+        self.fUpToDate                  = aoRow[5]
+        self.iPerSchedGroupRowNumber    = aoRow[6];
         return self
 
 
