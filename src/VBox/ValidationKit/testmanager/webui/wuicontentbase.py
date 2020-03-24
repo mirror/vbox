@@ -523,12 +523,16 @@ class WuiFormContentBase(WuiSingleContentBase): # pylint: disable=too-few-public
         for oChange in oEntry.aoChanges:
             if isinstance(oChange, AttributeChangeEntryPre):
                 sContent += '        <tr class="%s%s"><td>%s</td>'\
-                            '<td><div class="tdpre"><pre>%s</pre></div></td>' \
-                            '<td><div class="tdpre"><pre>%s</pre></div></td></tr>\n' \
+                            '<td><div class="tdpre">%s%s%s</div></td>' \
+                            '<td><div class="tdpre">%s%s%s</div></td></tr>\n' \
                           % ( sRowClass, 'odd' if j & 1 else 'even',
                               webutils.escapeElem(oChange.sAttr),
-                              webutils.escapeElem(oChange.sOldText),
-                              webutils.escapeElem(oChange.sNewText), );
+                              '<pre>' if oChange.sOldText else '',
+                               webutils.escapeElem(oChange.sOldText),
+                              '</pre>' if oChange.sOldText else '',
+                              '<pre>' if oChange.sNewText else '',
+                              webutils.escapeElem(oChange.sNewText),
+                              '</pre>' if oChange.sNewText else '', );
             else:
                 sContent += '        <tr class="%s%s"><td>%s</td><td>%s</td><td>%s</td></tr>\n' \
                           % ( sRowClass, 'odd' if j & 1 else 'even',
@@ -554,7 +558,7 @@ class WuiFormContentBase(WuiSingleContentBase): # pylint: disable=too-few-public
             dParams[WuiDispatcherBase.ksParamEffectiveDate]       = tsNow;
 
         # Prev and combo box in one cell. Both inside the form for formatting reasons.
-        sNavigation += '    <td align="left">\n' \
+        sNavigation += '    <td>\n' \
                        '    <form name="ChangeLogEntriesPerPageForm" method="GET">\n'
 
         # Prev
@@ -591,10 +595,10 @@ class WuiFormContentBase(WuiSingleContentBase): # pylint: disable=too-few-public
         # Next
         if fMoreEntries:
             dParams[WuiDispatcherBase.ksParamChangeLogPageNo] = iPageNo + 1;
-            sNavigation += '    <td align="right"><a href="?%s#tmchangelog">Next</a></td>\n' \
+            sNavigation += '      <td><a href="?%s#tmchangelog">Next</a></td>\n' \
                          % (webutils.encodeUrlParams(dParams),);
         else:
-            sNavigation += '      <td align="right">Next</td>\n';
+            sNavigation += '      <td>Next</td>\n';
 
         sNavigation += '    </tr>\n' \
                        '  </table>\n' \
@@ -644,7 +648,7 @@ class WuiFormContentBase(WuiSingleContentBase): # pylint: disable=too-few-public
         for iEntry, _ in enumerate(aoEntries):
             sContent += self.formatChangeLogEntry(aoEntries, iEntry, sUrl, dParams);
 
-        sContent += '    <tbody>\n' \
+        sContent += '    </tbody>\n' \
                     '  </table>\n';
         if fShowNavigation and len(aoEntries) >= 8:
             sContent += self._showChangeLogNavi(fMoreEntries, iPageNo, cEntriesPerPage, tsNow, 'bottom');

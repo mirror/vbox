@@ -738,6 +738,11 @@ table.tmformtbl tr.tmodd {
     background:     #e2e2e2;
 }
 
+table.tmformtblschedgroupmembers tr td:nth-child(3),
+table.tmformtblschedgroupmembers tr td:nth-child(4) {
+    text-align: center;
+}
+
 
 /*
  * Change log table (used with tmtable).
@@ -820,6 +825,14 @@ li.tmshowall {
  */
 table.tmlistnavtab {
     width:          100%;
+}
+
+table.tmlistnavtab tr td:nth-child(1) {
+    text-align:     left;
+}
+
+table.tmlistnavtab tr td:nth-child(2) {
+    text-align:     right;
 }
 
 
@@ -1071,6 +1084,18 @@ table.tmsqltable, table.tmsqltable tr, table.tmsqltable td, table.tmsqltable th 
 table.tmsqltable pre {
     text-align:     left;
 }
+
+table.tmsqltable tr td {
+    text-align:     left;
+}
+
+table.tmsqltable tr td:nth-child(1),
+table.tmsqltable tr td:nth-child(2),
+table.tmsqltable tr td:nth-child(3),
+table.tmsqltable tr td:nth-child(4) {
+    text-align:     right;
+}
+
 
 
 /*

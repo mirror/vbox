@@ -641,10 +641,10 @@ class TMDatabaseConnection(object):
         for aEntry in self._aoTraceBack:
             iEntry += 1;
             sDebug += ' <tr>\n' \
-                      '  <td align="right">%s</td>\n' \
-                      '  <td align="right">%s</td>\n' \
-                      '  <td align="right">%s</td>\n' \
-                      '  <td align="right">%s</td>\n' \
+                      '  <td>%s</td>\n' \
+                      '  <td>%s</td>\n' \
+                      '  <td>%s</td>\n' \
+                      '  <td>%s</td>\n' \
                       '  <td><pre>%s</pre></td>\n' \
                       '  <td>%s</td>\n' \
                       ' </tr>\n' \
