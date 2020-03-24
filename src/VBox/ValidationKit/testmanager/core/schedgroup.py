@@ -34,12 +34,15 @@ import unittest;
 
 # Validation Kit imports.
 from testmanager.core.base          import ModelDataBase, ModelDataBaseTestCase, ModelLogicBase, TMExceptionBase, \
-                                           TMRowInUse, TMInvalidData, TMRowAlreadyExists, TMRowNotFound;
+                                           TMRowInUse, TMInvalidData, TMRowAlreadyExists, TMRowNotFound, \
+                                           ChangeLogEntry, AttributeChangeEntry, AttributeChangeEntryPre;
 from testmanager.core.buildsource   import BuildSourceData;
+from testmanager.core               import db;
 from testmanager.core.testcase      import TestCaseData;
 from testmanager.core.testcaseargs  import TestCaseArgsData;
 from testmanager.core.testbox       import TestBoxLogic, TestBoxDataForSchedGroup;
 from testmanager.core.testgroup     import TestGroupData;
+from testmanager.core.useraccount   import UserAccountLogic;
 
 
 
@@ -143,6 +146,7 @@ class SchedGroupMemberDataEx(SchedGroupMemberData):
                 self.oTestGroup = TestGroupData()
                 dErrors[self.ksParam_idTestGroup] = str(oXcpt);
         return dErrors;
+
 
 
 
@@ -299,6 +303,7 @@ class SchedGroupDataEx(SchedGroupData):
 
         #
         # Test groups.
+        # The fetchForChangeLog method makes ASSUMPTIONS about sorting!
         #
         oDb.execute('SELECT SchedGroupMembers.*, TestGroups.*\n'
                     'FROM   SchedGroupMembers\n'
@@ -306,7 +311,9 @@ class SchedGroupDataEx(SchedGroupData):
                     'WHERE  SchedGroupMembers.idSchedGroup = %s\n'
                     + self.formatSimpleNowAndPeriod(oDb, tsNow, sPeriodBack, sTablePrefix = 'SchedGroupMembers.')
                     + self.formatSimpleNowAndPeriod(oDb, tsNow, sPeriodBack, sTablePrefix = 'TestGroups.') +
-                    'ORDER BY SchedGroupMembers.idTestGroupPreReq, SchedGroupMembers.idTestGroup\n'
+                    'ORDER BY SchedGroupMembers.idTestGroupPreReq ASC NULLS FIRST,\n'
+                    '         TestGroups.sName,\n'
+                    '         SchedGroupMembers.idTestGroup\n'
                     , (self.idSchedGroup,));
         for aoRow in oDb.fetchAll():
             self.aoMembers.append(SchedGroupMemberDataEx().initFromDbRow(aoRow));
@@ -350,6 +357,7 @@ class SchedGroupDataEx(SchedGroupData):
                 oDispWrapper = self.DispWrapper(oDisp, '%s[%s][%%s]' % (SchedGroupDataEx.ksParam_aoMembers, idTestGroup,))
                 oMember = SchedGroupMemberDataEx().initFromParams(oDispWrapper, fStrict = False);
                 if idTestGroup in aidSelected:
+                    oMember.idTestGroup = idTestGroup;
                     aoNewValue.append(oMember);
         elif sAttr == 'aoTestBoxes':
             aidSelected = oDisp.getListOfIntParams(sParam, iMin = 1, iMax = 0x7ffffffe, aiDefaults = [])
@@ -358,9 +366,10 @@ class SchedGroupDataEx(SchedGroupData):
                 try:    idTestBox = int(idTestBox);
                 except: pass;
                 oDispWrapper = self.DispWrapper(oDisp, '%s[%s][%%s]' % (SchedGroupDataEx.ksParam_aoTestBoxes, idTestBox,))
-                oTestBox = TestBoxDataForSchedGroup().initFromParams(oDispWrapper, fStrict = False);
+                oBoxInGrp = TestBoxDataForSchedGroup().initFromParams(oDispWrapper, fStrict = False);
                 if idTestBox in aidSelected:
-                    aoNewValue.append(oTestBox);
+                    oBoxInGrp.idTestBox = idTestBox;
+                    aoNewValue.append(oBoxInGrp);
         else:
             return SchedGroupData.convertParamToAttribute(self, sAttr, sParam, oValue, oDisp, fStrict);
         return aoNewValue;
@@ -369,14 +378,21 @@ class SchedGroupDataEx(SchedGroupData):
         if sAttr not in [ 'aoMembers', 'aoTestBoxes' ]:
             return SchedGroupData._validateAndConvertAttribute(self, sAttr, sParam, oValue, aoNilValues, fAllowNull, oDb);
 
+        if oValue in aoNilValues:
+            return ([], None);
+
         asErrors     = [];
         aoNewMembers = [];
         if sAttr == 'aoMembers':
+            asAllowNulls = ['bmHourlySchedule', 'idTestGroupPreReq', 'tsEffective', 'tsExpire', 'uidAuthor', ];
+            if self.idSchedGroup in [None, '-1', -1]:
+                asAllowNulls.append('idSchedGroup'); # Probably new group, so allow null scheduling group.
+
             for oOldMember in oValue:
                 oNewMember = SchedGroupMemberDataEx().initFromOther(oOldMember);
                 aoNewMembers.append(oNewMember);
 
-                dErrors = oNewMember.validateAndConvert(oDb, ModelDataBase.ksValidateFor_Other);
+                dErrors = oNewMember.validateAndConvertEx(asAllowNulls, oDb, ModelDataBase.ksValidateFor_Other);
                 if dErrors:
                     asErrors.append(str(dErrors));
 
@@ -388,11 +404,15 @@ class SchedGroupDataEx(SchedGroupData):
                             asErrors.append('Duplicate test group #%d!' % (idTestGroup, ));
                             break;
         else:
+            asAllowNulls = list(TestBoxDataForSchedGroup.kasAllowNullAttributes);
+            if self.idSchedGroup in [None, '-1', -1]:
+                asAllowNulls.append('idSchedGroup'); # Probably new group, so allow null scheduling group.
+
             for oOldMember in oValue:
                 oNewMember = TestBoxDataForSchedGroup().initFromOther(oOldMember);
                 aoNewMembers.append(oNewMember);
 
-                dErrors = oNewMember.validateAndConvert(oDb, ModelDataBase.ksValidateFor_Other);
+                dErrors = oNewMember.validateAndConvertEx(asAllowNulls, oDb, ModelDataBase.ksValidateFor_Other);
                 if dErrors:
                     asErrors.append(str(dErrors));
 
@@ -401,9 +421,8 @@ class SchedGroupDataEx(SchedGroupData):
                     idTestBox = aoNewMembers[i];
                     for j in range(i + 1, len(aoNewMembers)):
                         if aoNewMembers[j].idTestBox == idTestBox:
-                            asErrors.append('Duplicate test group #%d!' % (idTestBox, ));
+                            asErrors.append('Duplicate test box #%d!' % (idTestBox, ));
                             break;
-
 
         return (aoNewMembers, None if not asErrors else '<br>\n'.join(asErrors));
 
@@ -481,6 +500,241 @@ class SchedGroupLogic(ModelLogicBase): # pylint: disable=too-few-public-methods
         for aoRow in self._oDb.fetchAll():
             aoRet.append(SchedGroupDataEx().initFromDbRowEx(aoRow, self._oDb, tsNow));
         return aoRet;
+
+    def fetchForChangeLog(self, idSchedGroup, iStart, cMaxRows, tsNow): # pylint: disable=too-many-locals
+        """
+        Fetches change log entries for a scheduling group.
+
+        Returns an array of ChangeLogEntry instance and an indicator whether
+        there are more entries.
+        Raises exception on error.
+        """
+
+        ## @todo calc changes to scheduler group!
+
+        if tsNow is None:
+            tsNow = self._oDb.getCurrentTimestamp();
+
+        #
+        # First gather the change log timeline using the effective dates.
+        # (ASSUMES that we'll always have a separate delete entry, rather
+        # than just setting tsExpire.)
+        #
+        self._oDb.execute('''
+(
+SELECT      tsEffective,
+            uidAuthor
+FROM        SchedGroups
+WHERE       idSchedGroup = %s
+        AND tsEffective <= %s
+ORDER BY    tsEffective DESC
+) UNION (
+SELECT      tsEffective,
+            uidAuthor
+FROM        SchedGroupMembers
+WHERE       idSchedGroup = %s
+        AND tsEffective <= %s
+ORDER BY    tsEffective DESC
+) UNION (
+SELECT      tsEffective,
+            uidAuthor
+FROM        TestBoxesInSchedGroups
+WHERE       idSchedGroup = %s
+        AND tsEffective <= %s
+ORDER BY    tsEffective DESC
+)
+ORDER BY    tsEffective DESC
+LIMIT %s OFFSET %s
+''', (idSchedGroup, tsNow, idSchedGroup, tsNow, idSchedGroup, tsNow, cMaxRows + 1, iStart, ));
+
+        aoEntries = [] # type: list[ChangeLogEntry]
+        tsPrevious = tsNow;
+        for aoDbRow in self._oDb.fetchAll():
+            (tsEffective, uidAuthor) = aoDbRow;
+            aoEntries.append(ChangeLogEntry(uidAuthor, None, tsEffective, tsPrevious, None, None, []));
+            tsPrevious = db.dbTimestampPlusOneTick(tsEffective);
+
+        if True:
+            #
+            # Fetch data for each for each change log entry point.
+            #
+            # We add one tick to the timestamp here to skip past delete records
+            # that only there to record the user doing the deletion.
+            #
+            for iEntry, oEntry in enumerate(aoEntries):
+                oEntry.oNewRaw = SchedGroupDataEx().initFromDbWithId(self._oDb, idSchedGroup,
+                                                                     db.dbTimestampPlusOneTick(oEntry.tsEffective));
+                if iEntry > 0:
+                    aoEntries[iEntry - 1].oOldRaw = oEntry.oNewRaw;
+
+            # Chop off the +1 entry, if any.
+            fMore = len(aoEntries) > cMaxRows;
+            if fMore:
+                aoEntries = aoEntries[:-1];
+
+            # Figure out the changes.
+            for oEntry in aoEntries:
+                oOld = oEntry.oOldRaw;
+                if not oOld:
+                    break;
+                oNew      = oEntry.oNewRaw;
+                aoChanges = oEntry.aoChanges;
+                for sAttr in oNew.getDataAttributes():
+                    if sAttr in [ 'tsEffective', 'tsExpire', 'uidAuthor', ]:
+                        continue;
+                    oOldAttr = getattr(oOld, sAttr);
+                    oNewAttr = getattr(oNew, sAttr);
+                    if oOldAttr == oNewAttr:
+                        continue;
+                    if sAttr in [ 'aoMembers', 'aoTestBoxes', ]:
+                        iNew = 0;
+                        iOld = 0;
+                        asNewAttr = [];
+                        asOldAttr = [];
+                        if sAttr == 'aoMembers':
+                            # ASSUMES aoMembers is sorted by idTestGroupPreReq (nulls first), oTestGroup.sName, idTestGroup!
+                            while iNew < len(oNewAttr) and iOld < len(oOldAttr):
+                                if oNewAttr[iNew].idTestGroup == oOldAttr[iOld].idTestGroup:
+                                    if oNewAttr[iNew].idTestGroupPreReq != oOldAttr[iOld].idTestGroupPreReq:
+                                        if oNewAttr[iNew].idTestGroupPreReq is None:
+                                            asOldAttr.append('Dropped test group #%s (%s) dependency on #%s'
+                                                             % (oNewAttr[iNew].idTestGroup, oNewAttr[iNew].oTestGroup.sName,
+                                                                oOldAttr[iOld].idTestGroupPreReq));
+                                        elif oOldAttr[iOld].idTestGroupPreReq is None:
+                                            asNewAttr.append('Added test group #%s (%s) dependency on #%s'
+                                                             % (oNewAttr[iNew].idTestGroup, oNewAttr[iNew].oTestGroup.sName,
+                                                                oNewAttr[iOld].idTestGroupPreReq));
+                                        else:
+                                            asNewAttr.append('Test group #%s (%s) dependency on #%s'
+                                                             % (oNewAttr[iNew].idTestGroup, oNewAttr[iNew].oTestGroup.sName,
+                                                                oNewAttr[iNew].idTestGroupPreReq));
+                                            asOldAttr.append('Test group #%s (%s) dependency on #%s'
+                                                             % (oNewAttr[iNew].idTestGroup, oNewAttr[iNew].oTestGroup.sName,
+                                                                oOldAttr[iOld].idTestGroupPreReq));
+                                    if oNewAttr[iNew].iSchedPriority != oOldAttr[iOld].iSchedPriority:
+                                        asNewAttr.append('Test group #%s (%s) priority %s'
+                                                         % (oNewAttr[iNew].idTestGroup, oNewAttr[iNew].oTestGroup.sName,
+                                                            oNewAttr[iNew].iSchedPriority));
+                                        asOldAttr.append('Test group #%s (%s) priority %s'
+                                                         % (oNewAttr[iNew].idTestGroup, oNewAttr[iNew].oTestGroup.sName,
+                                                            oOldAttr[iOld].iSchedPriority));
+                                    iNew += 1;
+                                    iOld += 1;
+                                elif oNewAttr[iNew].oTestGroup.sName      <  oOldAttr[iOld].oTestGroup.sName \
+                                  or (    oNewAttr[iNew].oTestGroup.sName == oOldAttr[iOld].oTestGroup.sName
+                                      and oNewAttr[iNew].idTestGroup      <  oOldAttr[iOld].idTestGroup):
+                                    asNewAttr.append('New test group #%s - %s'
+                                                     % (oNewAttr[iNew].idTestGroup, oNewAttr[iNew].oTestGroup.sName));
+                                    iNew += 1;
+                                else:
+                                    asOldAttr.append('Removed test group #%s - %s'
+                                                     % (oOldAttr[iOld].idTestGroup, oOldAttr[iOld].oTestGroup.sName));
+                                    iOld += 1;
+                            while iNew < len(oNewAttr):
+                                asNewAttr.append('New test group #%s - %s'
+                                                 % (oNewAttr[iNew].idTestGroup, oNewAttr[iNew].oTestGroup.sName));
+                                iNew += 1;
+                            while iOld < len(oOldAttr):
+                                asOldAttr.append('Removed test group #%s - %s'
+                                                 % (oOldAttr[iOld].idTestGroup, oOldAttr[iOld].oTestGroup.sName));
+                                iOld += 1;
+                        else:
+                            dNewIds    = { oBoxInGrp.idTestBox: oBoxInGrp for oBoxInGrp in oNewAttr };
+                            dOldIds    = { oBoxInGrp.idTestBox: oBoxInGrp for oBoxInGrp in oOldAttr };
+                            hCommonIds = set(dNewIds.keys()) & set(dOldIds.keys());
+                            for idTestBox in hCommonIds:
+                                oNewBoxInGrp = dNewIds[idTestBox];
+                                oOldBoxInGrp = dOldIds[idTestBox];
+                                if oNewBoxInGrp.iSchedPriority != oOldBoxInGrp.iSchedPriority:
+                                    asNewAttr.append('Test box \'%s\' (#%s) priority %s'
+                                                     % (getattr(oNewBoxInGrp.oTestBox, 'sName', '[Partial DB]'),
+                                                        oNewBoxInGrp.idTestBox, oNewBoxInGrp.iSchedPriority));
+                                    asOldAttr.append('Test box \'%s\' (#%s) priority %s'
+                                                     % (getattr(oOldBoxInGrp.oTestBox, 'sName', '[Partial DB]'),
+                                                        oOldBoxInGrp.idTestBox, oOldBoxInGrp.iSchedPriority));
+                            asNewAttr = sorted(asNewAttr);
+                            asOldAttr = sorted(asOldAttr);
+                            for idTestBox in set(dNewIds.keys()) - hCommonIds:
+                                oNewBoxInGrp = dNewIds[idTestBox];
+                                asNewAttr.append('New test box \'%s\' (#%s) priority %s'
+                                                 % (getattr(oNewBoxInGrp.oTestBox, 'sName', '[Partial DB]'),
+                                                    oNewBoxInGrp.idTestBox, oNewBoxInGrp.iSchedPriority));
+                            for idTestBox in set(dOldIds.keys()) - hCommonIds:
+                                oOldBoxInGrp = dOldIds[idTestBox];
+                                asOldAttr.append('Removed test box \'%s\' (#%s) priority %s'
+                                                 % (getattr(oOldBoxInGrp.oTestBox, 'sName', '[Partial DB]'),
+                                                    oOldBoxInGrp.idTestBox, oOldBoxInGrp.iSchedPriority));
+
+                        if asNewAttr or asOldAttr:
+                            aoChanges.append(AttributeChangeEntryPre(sAttr, oNewAttr, oOldAttr,
+                                                                     '\n'.join(asNewAttr), '\n'.join(asOldAttr)));
+                    else:
+                        aoChanges.append(AttributeChangeEntry(sAttr, oNewAttr, oOldAttr, str(oNewAttr), str(oOldAttr)));
+
+        else:
+            ##
+            ## @todo Incomplete: A more complicate apporach, probably faster though.
+            ##
+            def findEntry(tsEffective, iPrev = 0):
+                """ Find entry with matching effective + expiration time """
+                self._oDb.dprint('findEntry: iPrev=%s len(aoEntries)=%s tsEffective=%s' % (iPrev, len(aoEntries), tsEffective));
+                while iPrev < len(aoEntries):
+                    self._oDb.dprint('%s iPrev=%u' % (aoEntries[iPrev].tsEffective, iPrev, ));
+                    if aoEntries[iPrev].tsEffective > tsEffective:
+                        iPrev += 1;
+                    elif aoEntries[iPrev].tsEffective == tsEffective:
+                        self._oDb.dprint('hit %u' % (iPrev,));
+                        return iPrev;
+                    else:
+                        break;
+                self._oDb.dprint('%s not found!' % (tsEffective,));
+                return -1;
+
+            fMore = True;
+
+            #
+            # Track scheduling group changes.  Not terribly efficient for large cMaxRows
+            # values, but not in the mood for figure out if there is any way to optimize that.
+            #
+            self._oDb.execute('''
+SELECT      *
+FROM        SchedGroups
+WHERE       idSchedGroup = %s
+        AND tsEffective <= %s
+ORDER BY    tsEffective DESC
+LIMIT %s''', (idSchedGroup, aoEntries[0].tsEffective, cMaxRows + 1,));
+
+            iEntry  = 0;
+            aaoRows = self._oDb.fetchAll();
+            for iRow, oRow in enumerate(aaoRows):
+                oNew   = SchedGroupData().initFromDbRow(oRow);
+                iEntry = findEntry(oNew.tsEffective, iEntry);
+                self._oDb.dprint('iRow=%s iEntry=%s' % (iRow, iEntry));
+                if iEntry < 0:
+                    break;
+                oEntry = aoEntries[iEntry];
+                aoChanges = oEntry.aoChanges;
+                oEntry.oNewRaw = oNew;
+                if iRow + 1 < len(aaoRows):
+                    oOld = SchedGroupData().initFromDbRow(aaoRows[iRow + 1]);
+                    self._oDb.dprint('oOld=%s' % (oOld,));
+                    for sAttr in oNew.getDataAttributes():
+                        if sAttr not in [ 'tsEffective', 'tsExpire', 'uidAuthor', ]:
+                            oOldAttr = getattr(oOld, sAttr);
+                            oNewAttr = getattr(oNew, sAttr);
+                            if oOldAttr != oNewAttr:
+                                aoChanges.append(AttributeChangeEntry(sAttr, oNewAttr, oOldAttr, str(oNewAttr), str(oOldAttr)));
+                else:
+                    self._oDb.dprint('New');
+
+            #
+            # ...
+            #
+
+        # FInally
+        UserAccountLogic(self._oDb).resolveChangeLogAuthors(aoEntries);
+        return (aoEntries, fMore);
+
 
     def addEntry(self, oData, uidAuthor, fCommit = False):
         """Add Scheduling Group record"""

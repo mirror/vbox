@@ -58,7 +58,7 @@ class TestBoxInSchedGroupData(ModelDataBase):
     ksParam_uidAuthor           = 'TestBoxInSchedGroup_uidAuthor';
     ksParam_iSchedPriority      = 'TestBoxInSchedGroup_iSchedPriority';
 
-    kasAllowNullAttributes      = [ 'idTestBox', 'tsEffective', 'tsExpire', 'uidAuthor', ]
+    kasAllowNullAttributes      = [ 'tsEffective', 'tsExpire', 'uidAuthor', ]
 
     kiMin_iSchedPriority        = 0;
     kiMax_iSchedPriority        = 32;
@@ -857,6 +857,8 @@ class TestBoxLogic(ModelLogicBase):
         """
         if not aiSortColumns:
             aiSortColumns = [self.kiSortColumn_sName,];
+        asSortColumns = [self.kdSortColumnMap[i] for i in aiSortColumns];
+        asSortColumns.append('TestBoxesInSchedGroups.idTestBox');
 
         if tsNow is None:
             self._oDb.execute('''
@@ -868,8 +870,7 @@ FROM    TestBoxesInSchedGroups
                     AND TestBoxesWithStrings.tsExpire  = 'infinity'::TIMESTAMP
 WHERE   TestBoxesInSchedGroups.idSchedGroup = %s
     AND TestBoxesInSchedGroups.tsExpire     = 'infinity'::TIMESTAMP
-ORDER BY ''' + ', '.join([self.kdSortColumnMap[i] for i in aiSortColumns]) + '''
-''', (idSchedGroup, ));
+ORDER BY ''' + ', '.join(asSortColumns), (idSchedGroup, ));
         else:
             self._oDb.execute('''
 SELECT  TestBoxesInSchedGroups.*,
@@ -880,10 +881,9 @@ FROM    TestBoxesInSchedGroups
                     AND TestBoxesWithStrings.tsExpire     > %s
                     AND TestBoxesWithStrings.tsEffective <= %s
 WHERE   TestBoxesInSchedGroups.idSchedGroup = %s
-    AND TestBoxesInSchedGroups.tsExpire     > %
-    AND TestBoxesInSchedGroups.tsEffective <= %
-ORDER BY ''' + ', '.join([self.kdSortColumnMap[i] for i in aiSortColumns]) + '''
-''', (tsNow, tsNow, idSchedGroup, tsNow, tsNow, ));
+    AND TestBoxesInSchedGroups.tsExpire     > %s
+    AND TestBoxesInSchedGroups.tsEffective <= %s
+ORDER BY ''' + ', '.join(asSortColumns), (tsNow, tsNow, idSchedGroup, tsNow, tsNow, ));
 
         aoRows = [];
         for aoOne in self._oDb.fetchAll():

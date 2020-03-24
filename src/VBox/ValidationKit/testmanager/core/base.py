@@ -403,6 +403,12 @@ class ModelDataBase(ModelBase): # pylint: disable=too-few-public-methods
         return self._validateAndConvertWorker(getattr(self, 'kasAllowNullAttributes', list()), oDb,
                                               enmValidateFor = enmValidateFor);
 
+    def validateAndConvertEx(self, asAllowNullAttributes, oDb, enmValidateFor = ksValidateFor_Other):
+        """
+        Same as validateAndConvert but with custom allow-null list.
+        """
+        return self._validateAndConvertWorker(asAllowNullAttributes, oDb, enmValidateFor = enmValidateFor);
+
     def convertParamToAttribute(self, sAttr, sParam, oValue, oDisp, fStrict):
         """
         Calculate the attribute value when initialized from a parameter.
