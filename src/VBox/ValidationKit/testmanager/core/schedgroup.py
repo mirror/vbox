@@ -529,14 +529,14 @@ WHERE       idSchedGroup = %s
         AND tsEffective <= %s
 ORDER BY    tsEffective DESC
 ) UNION (
-SELECT      tsEffective,
+SELECT      CASE WHEN tsEffective + %s::INTERVAL = tsExpire THEN tsExpire ELSE tsEffective END,
             uidAuthor
 FROM        SchedGroupMembers
 WHERE       idSchedGroup = %s
         AND tsEffective <= %s
 ORDER BY    tsEffective DESC
 ) UNION (
-SELECT      tsEffective,
+SELECT      CASE WHEN tsEffective + %s::INTERVAL = tsExpire THEN tsExpire ELSE tsEffective END,
             uidAuthor
 FROM        TestBoxesInSchedGroups
 WHERE       idSchedGroup = %s
@@ -545,7 +545,10 @@ ORDER BY    tsEffective DESC
 )
 ORDER BY    tsEffective DESC
 LIMIT %s OFFSET %s
-''', (idSchedGroup, tsNow, idSchedGroup, tsNow, idSchedGroup, tsNow, cMaxRows + 1, iStart, ));
+''', (idSchedGroup, tsNow,
+      db.dbOneTickIntervalString(), idSchedGroup, tsNow,
+      db.dbOneTickIntervalString(), idSchedGroup, tsNow,
+      cMaxRows + 1, iStart, ));
 
         aoEntries = [] # type: list[ChangeLogEntry]
         tsPrevious = tsNow;
@@ -562,8 +565,7 @@ LIMIT %s OFFSET %s
             # that only there to record the user doing the deletion.
             #
             for iEntry, oEntry in enumerate(aoEntries):
-                oEntry.oNewRaw = SchedGroupDataEx().initFromDbWithId(self._oDb, idSchedGroup,
-                                                                     db.dbTimestampPlusOneTick(oEntry.tsEffective));
+                oEntry.oNewRaw = SchedGroupDataEx().initFromDbWithId(self._oDb, idSchedGroup, oEntry.tsEffective);
                 if iEntry > 0:
                     aoEntries[iEntry - 1].oOldRaw = oEntry.oNewRaw;
 
