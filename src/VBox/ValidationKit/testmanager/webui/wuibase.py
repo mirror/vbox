@@ -783,7 +783,7 @@ class WuiDispatcherBase(object):
         """
 
         sHtml  = '<div id="debug-panel">\n' \
-                 ' <form id="debug-panel-form" type="get" action="#">\n';
+                 ' <form id="debug-panel-form" method="get" action="#">\n';
 
         for sKey, oValue in self._dParams.items():
             if sKey not in self.kasDbgParams:
