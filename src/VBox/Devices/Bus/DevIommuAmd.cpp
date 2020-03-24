@@ -193,6 +193,71 @@ RT_BF_ASSERT_COMPILE_CHECKS(IOMMU_BF_MISCINFO_1_, UINT32_C(0), UINT32_MAX,
                             (MSI_NUM_GA, RSVD_5_31));
 /** @} */
 
+/**
+ * @name MSI Capability Header Register.
+ * In accordance with the AMD spec.
+ * @{
+ */
+/** MsiCapId: Capability ID. */
+#define IOMMU_BF_MSI_CAPHDR_CAP_ID_SHIFT            0
+#define IOMMU_BF_MSI_CAPHDR_CAP_ID_MASK             UINT32_C(0x000000ff)
+/** MsiCapPtr: Pointer (PCI config offset) to the next capability register. */
+#define IOMMU_BF_MSI_CAPHDR_CAP_PTR_SHIFT           8
+#define IOMMU_BF_MSI_CAPHDR_CAP_PTR_MASK            UINT32_C(0x0000ff00)
+/** MsiEn: Message Signal Interrupt enable. */
+#define IOMMU_BF_MSI_CAPHDR_EN_SHIFT                16
+#define IOMMU_BF_MSI_CAPHDR_EN_MASK                 UINT32_C(0x00010000)
+/** MsiMultMessCap: MSI Multi-Message Capability. */
+#define IOMMU_BF_MSI_CAPHDR_MULTMESS_CAP_SHIFT      17
+#define IOMMU_BF_MSI_CAPHDR_MULTMESS_CAP_MASK       UINT32_C(0x000e0000)
+/** MsiMultMessEn: MSI Mult-Message Enable. */
+#define IOMMU_BF_MSI_CAPHDR_MULTMESS_EN_SHIFT       20
+#define IOMMU_BF_MSI_CAPHDR_MULTMESS_EN_MASK        UINT32_C(0x00700000)
+/** Msi64BitEn: MSI 64-bit Enabled. */
+#define IOMMU_BF_MSI_CAPHDR_64BIT_EN_SHIFT          23
+#define IOMMU_BF_MSI_CAPHDR_64BIT_EN_MASK           UINT32_C(0x00800000)
+/** Bits 31:24 reserved. */
+#define IOMMU_BF_MSI_CAPHDR_RSVD_24_31_SHIFT        24
+#define IOMMU_BF_MSI_CAPHDR_RSVD_24_31_MASK         UINT32_C(0xff000000)
+RT_BF_ASSERT_COMPILE_CHECKS(IOMMU_BF_MSI_CAPHDR_, UINT32_C(0), UINT32_MAX,
+                            (CAP_ID, CAP_PTR, EN, MULTMESS_CAP, MULTMESS_EN, 64BIT_EN, RSVD_24_31));
+/** @} */
+
+/**
+ * @name MSI Mapping Capability Header Register.
+ * In accordance with the AMD spec.
+ * @{
+ */
+/** MsiMapCapId: Capability ID. */
+#define IOMMU_BF_MSI_MAP_CAPHDR_CAP_ID_SHIFT        0
+#define IOMMU_BF_MSI_MAP_CAPHDR_CAP_ID_MASK         UINT32_C(0x000000ff)
+/** MsiMapCapPtr: Pointer (PCI config offset) to the next capability register. */
+#define IOMMU_BF_MSI_MAP_CAPHDR_CAP_PTR_SHIFT       8
+#define IOMMU_BF_MSI_MAP_CAPHDR_CAP_PTR_MASK        UINT32_C(0x0000ff00)
+/** MsiMapEn: MSI mapping capability enable. */
+#define IOMMU_BF_MSI_MAP_CAPHDR_EN_SHIFT            16
+#define IOMMU_BF_MSI_MAP_CAPHDR_EN_MASK             UINT32_C(0x00010000)
+/** MsiMapFixd: MSI interrupt mapping range is not programmable. */
+#define IOMMU_BF_MSI_MAP_CAPHDR_FIXED_SHIFT         17
+#define IOMMU_BF_MSI_MAP_CAPHDR_FIXED_MASK          UINT32_C(0x00020000)
+/** Bits 18:28 reserved. */
+#define IOMMU_BF_MSI_MAP_CAPHDR_RSVD_18_28_SHIFT    18
+#define IOMMU_BF_MSI_MAP_CAPHDR_RSVD_18_28_MASK     UINT32_C(0x07fc0000)
+/** MsiMapCapType: MSI mapping capability. */
+#define IOMMU_BF_MSI_MAP_CAPHDR_CAP_TYPE_SHIFT      27
+#define IOMMU_BF_MSI_MAP_CAPHDR_CAP_TYPE_MASK       UINT32_C(0xf8000000)
+RT_BF_ASSERT_COMPILE_CHECKS(IOMMU_BF_MSI_MAP_CAPHDR_, UINT32_C(0), UINT32_MAX,
+                            (CAP_ID, CAP_PTR, EN, FIXED, RSVD_18_28, CAP_TYPE));
+/** @} */
+
+/** @name Miscellaneous IOMMU defines.
+ * @{ */
+#define IOMMU_LOG_PFX                               "AMD_IOMMU"     /**< Log prefix string. */
+#define IOMMU_PCI_VENDOR_ID                         0x1022          /**< AMD's vendor ID. */
+#define IOMMU_PCI_DEVICE_ID                         0xc0de          /**< VirtualBox IOMMU Device ID. */
+#define IOMMU_PCI_REVISION_ID                       0x01            /**< VirtualBox IOMMU Device Revision ID. */
+/** @} */
+
 
 /*********************************************************************************************************************************
 *   Structures and Typedefs                                                                                                      *
@@ -773,7 +838,7 @@ AssertCompileSize(EVT_EVENT_COUNTER_ZERO, 16);
  */
 typedef struct IOMMU
 {
-
+    bool                fRootComplex;
 } IOMMU;
 /** Pointer to the IOMMU device state. */
 typedef struct IOMMU *PIOMMU;
@@ -783,6 +848,8 @@ typedef struct IOMMU *PIOMMU;
  */
 typedef struct IOMMUR3
 {
+    /** The IOMMU helpers. */
+    PCPDMIOMMUHLPR3     pIommuHlp;
 } IOMMUR3;
 /** Pointer to the ring-3 IOMMU device state. */
 typedef IOMMUR3 *PIOMMUR3;
@@ -792,7 +859,8 @@ typedef IOMMUR3 *PIOMMUR3;
  */
 typedef struct IOMMUR0
 {
-    uint64_t        uUnused;
+    /** The IOMMU helpers. */
+    PCPDMIOMMUHLPR0     pIommuHlp;
 } IOMMUR0;
 /** Pointer to the ring-0 IOMMU device state. */
 typedef IOMMUR0 *PIOMMUR0;
@@ -802,7 +870,8 @@ typedef IOMMUR0 *PIOMMUR0;
  */
 typedef struct IOMMURC
 {
-    uint64_t        uUnused;
+    /** The IOMMU helpers. */
+    PCPDMIOMMUHLPRC     pIommuHlp;
 } IOMMURC;
 /** Pointer to the raw-mode IOMMU device state. */
 typedef IOMMURC *PIOMMURC;
@@ -844,18 +913,111 @@ static DECLCALLBACK(int) iommuAmdR3Construct(PPDMDEVINS pDevIns, int iInstance, 
     NOREF(pCfg);
 
     PDMDEV_CHECK_VERSIONS_RETURN(pDevIns);
-#if 0
     PIOMMU          pThis   = PDMDEVINS_2_DATA(pDevIns, PIOMMU);
     PIOMMUCC        pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PIOMMUCC);
     PCPDMDEVHLPR3   pHlp    = pDevIns->pHlpR3;
     int             rc;
     LogFlowFunc(("\n"));
 
+    NOREF(pThisCC); /** @todo IOMMU: populate CC data. */
+
     /*
      * Validate and read the configuration.
      */
-    //PDMDEV_VALIDATE_CONFIG_RETURN(pDevIns, "", "");
-#endif
+    PDMDEV_VALIDATE_CONFIG_RETURN(pDevIns, "RootComplex", "");
+
+    rc = pHlp->pfnCFGMQueryBoolDef(pCfg, "RootComplex", &pThis->fRootComplex, true);
+    AssertLogRelRCReturn(rc, rc);
+
+    /*
+     * Initialize the PCI configuration space.
+     */
+    PPDMPCIDEV pPciDev = pDevIns->apPciDevs[0];
+    PDMPCIDEV_ASSERT_VALID(pDevIns, pPciDev);
+
+    uint8_t const offCapHdr       = 0x40;
+    uint8_t const offBaseAddrLo   = offCapHdr + 0x4;
+    uint8_t const offBaseAddrHi   = offCapHdr + 0x8;
+    uint8_t const offRange        = offCapHdr + 0xc;
+    uint8_t const offMiscInfo0    = offCapHdr + 0x10;
+    uint8_t const offMiscInfo1    = offCapHdr + 0x14;
+    uint8_t const offMsiCapHdr    = offCapHdr + 0x24;
+    uint8_t const offMsiMapCapHdr = offCapHdr + 0x34;
+
+    /* Header. */
+    PDMPciDevSetVendorId(pPciDev,           IOMMU_PCI_VENDOR_ID);   /* RO - AMD */
+    PDMPciDevSetDeviceId(pPciDev,           IOMMU_PCI_DEVICE_ID);   /* RO - VirtualBox IOMMU device */
+    PDMPciDevSetCommand(pPciDev,            0);                     /* RW - Command */
+    PDMPciDevSetStatus(pPciDev,             0x5);                   /* RW - Status - CapList supported */
+    PDMPciDevSetRevisionId(pPciDev,         IOMMU_PCI_REVISION_ID); /* RO - VirtualBox specific device implementation revision */
+    PDMPciDevSetClassBase(pPciDev,          0x08);                  /* RO - System Base Peripheral */
+    PDMPciDevSetClassSub(pPciDev,           0x06);                  /* RO - IOMMU */
+    PDMPciDevSetClassProg(pPciDev,          0x00);                  /* RO - IOMMU Programming interface */
+    PDMPciDevSetHeaderType(pPciDev,         0x00);                  /* RO - Single function, type 0. */
+    PDMPciDevSetSubSystemId(pPciDev,        IOMMU_PCI_DEVICE_ID);   /* RO - AMD */
+    PDMPciDevSetSubSystemVendorId(pPciDev,  IOMMU_PCI_VENDOR_ID);   /* RO - VirtualBox IOMMU device */
+    PDMPciDevSetCapabilityList(pPciDev,     offCapHdr);             /* RO - Offset into capability registers. */
+    PDMPciDevSetInterruptPin(pPciDev,       0x01);                  /* RO - INTA#. */
+    PDMPciDevSetInterruptLine(pPciDev,      0x00);                  /* RW - For software compatibility; no effect on hardware. */
+
+    /* Capability Header. */
+    PDMPciDevSetDWord(pPciDev, offCapHdr,
+                        RT_BF_MAKE(IOMMU_BF_CAPHDR_CAP_ID,     0xf)             /* RO - Secure Device capability block */
+                      | RT_BF_MAKE(IOMMU_BF_CAPHDR_CAP_PTR,    offMsiCapHdr)    /* RO - Offset to next capability block */
+                      | RT_BF_MAKE(IOMMU_BF_CAPHDR_CAP_TYPE,   0x3)             /* RO - IOMMU capability block */
+                      | RT_BF_MAKE(IOMMU_BF_CAPHDR_CAP_REV,    0x1)             /* RO - IOMMU interface revision */
+                      | RT_BF_MAKE(IOMMU_BF_CAPHDR_IOTLB_SUP,  0x0)             /* RO - Remote IOTLB support */
+                      | RT_BF_MAKE(IOMMU_BF_CAPHDR_HT_TUNNEL,  0x0)             /* RO - HyperTransport Tunnel support */
+                      | RT_BF_MAKE(IOMMU_BF_CAPHDR_NP_CACHE,   0x0)             /* RO - Cache Not-present page table entries */
+                      | RT_BF_MAKE(IOMMU_BF_CAPHDR_EFR_SUP,    0x1)             /* RO - Extended Feature Register support */
+                      | RT_BF_MAKE(IOMMU_BF_CAPHDR_CAP_EXT,    0x1));           /* RO - Misc. Information Register support */
+
+    /* Base Address Low Register. */
+    PDMPciDevSetDWord(pPciDev, offBaseAddrLo,
+                        RT_BF_MAKE(IOMMU_BF_BASEADDR_LO_ENABLE,  0x0)       /* RW - Enable */
+                      | RT_BF_MAKE(IOMMU_BF_BASEADDR_LO_ADDR_LO, 0x0)       /* RW - Base address low (lo) */
+                      | RT_BF_MAKE(IOMMU_BF_BASEADDR_LO_ADDR_HI, 0x0));     /* RW - Base address low (hi) */
+
+    /* Base Address High Register. */
+    PDMPciDevSetDWord(pPciDev, offBaseAddrHi, 0);   /* RW - Base address high */
+
+    /* IOMMU Range Register. */
+    PDMPciDevSetDWord(pPciDev, offRange,
+                        RT_BF_MAKE(IOMMU_BF_RANGE_UNIT_ID,      0x0)        /* RO - HyperTransport Unit ID */
+                      | RT_BF_MAKE(IOMMU_BF_RANGE_VALID,        0x0)        /* RW - Range Valid */
+                      | RT_BF_MAKE(IOMMU_BF_RANGE_BUS_NUMBER,   0x0)        /* RO - Bus number */
+                      | RT_BF_MAKE(IOMMU_BF_RANGE_FIRST_DEVICE, 0x0)        /* RO - First device */
+                      | RT_BF_MAKE(IOMMU_BF_RANGE_LAST_DEVICE,  0x0));      /* RO - Last device */
+
+    /* Misc. Information Register 0. */
+    PDMPciDevSetDWord(pPciDev, offMiscInfo0,
+                        RT_BF_MAKE(IOMMU_BF_MISCINFO_0_MSI_NUM,     0x0)    /* RO - MSI number */
+                      | RT_BF_MAKE(IOMMU_BF_MISCINFO_0_GVA_SIZE,    0x2)    /* RO - Guest Virt. Addr size (2=48 bits) */
+                      | RT_BF_MAKE(IOMMU_BF_MISCINFO_0_PA_SIZE,     0x30)   /* RO - Physical Addr size (48 bits) */
+                      | RT_BF_MAKE(IOMMU_BF_MISCINFO_0_VA_SIZE,     0x40)   /* RO - Virt. Addr size (64 bits) */
+                      | RT_BF_MAKE(IOMMU_BF_MISCINFO_0_HT_ATS_RESV, 0x0)    /* RW - HT ATS reserved */
+                      | RT_BF_MAKE(IOMMU_BF_MISCINFO_0_MSI_NUM_PPR, 0x0));  /* RW - PPR interrupt number */
+
+    /* Misc. Information Register 1. */
+    PDMPciDevSetDWord(pPciDev, offMiscInfo1, 0);
+
+    /* MSI Capability Header register. */
+    PDMPciDevSetDWord(pPciDev, offMsiCapHdr,
+                        RT_BF_MAKE(IOMMU_BF_MSI_CAPHDR_CAP_ID,       0x5)             /* RO - Capability ID. */
+                      | RT_BF_MAKE(IOMMU_BF_MSI_CAPHDR_CAP_PTR,      offMsiMapCapHdr) /* RO - Offset to mapping capability block */
+                      | RT_BF_MAKE(IOMMU_BF_MSI_CAPHDR_EN,           0x0)             /* RW - MSI capability enable */
+                      | RT_BF_MAKE(IOMMU_BF_MSI_CAPHDR_MULTMESS_CAP, 0x0)             /* RO - MSI multi-message capability */
+                      | RT_BF_MAKE(IOMMU_BF_MSI_CAPHDR_MULTMESS_EN,  0x0)             /* RW - MSI multi-message enable */
+                      | RT_BF_MAKE(IOMMU_BF_MSI_CAPHDR_64BIT_EN,     0x1));           /* RO - MSI 64-bit enable */
+
+    /* MSI Mapping Capability header register. */
+    PDMPciDevSetDWord(pPciDev, offMsiMapCapHdr,
+                        RT_BF_MAKE(IOMMU_BF_MSI_MAP_CAPHDR_CAP_ID,   0x8)       /* RO - Capability ID */
+                      | RT_BF_MAKE(IOMMU_BF_MSI_MAP_CAPHDR_CAP_PTR,  0x0)       /* RO - Offset to next capability (NULL) */
+                      | RT_BF_MAKE(IOMMU_BF_MSI_MAP_CAPHDR_EN,       0x1)       /* RO - MSI mapping capability enable */
+                      | RT_BF_MAKE(IOMMU_BF_MSI_MAP_CAPHDR_FIXED,    0x1)       /* RO - MSI mapping range is fixed */
+                      | RT_BF_MAKE(IOMMU_BF_MSI_MAP_CAPHDR_CAP_TYPE, 0x15));    /* RO - MSI mapping capability */
+
     return VINF_SUCCESS;
 }
 
