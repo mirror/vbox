@@ -764,7 +764,7 @@ class WuiHlpForm(object):
                          u'</table>\n');
 
     def addListOfSchedGroupMembers(self, sName, aoSchedGroupMembers, aoAllRelevantTestGroups,  # pylint: disable=too-many-locals
-                                   sLabel, fReadOnly = True):
+                                   sLabel, idSchedGroup, fReadOnly = True):
         """
         For WuiAdminSchedGroup.
         """
@@ -820,7 +820,7 @@ class WuiHlpForm(object):
                       u'    </td>\n'
                       % ( 'tmodd' if iTestGroup & 1 else 'tmeven',
                           sPrefix, SchedGroupMemberData.ksParam_idTestGroup,    oTestGroup.idTestGroup,
-                          sPrefix, SchedGroupMemberData.ksParam_idSchedGroup,   -1 if oMember is None else oMember.idSchedGroup,
+                          sPrefix, SchedGroupMemberData.ksParam_idSchedGroup,   idSchedGroup,
                           sPrefix, SchedGroupMemberData.ksParam_tsExpire,       '' if oMember is None else oMember.tsExpire,
                           sPrefix, SchedGroupMemberData.ksParam_tsEffective,    '' if oMember is None else oMember.tsEffective,
                           sPrefix, SchedGroupMemberData.ksParam_uidAuthor,      '' if oMember is None else oMember.uidAuthor,
@@ -862,8 +862,8 @@ class WuiHlpForm(object):
         return self._add(u' </tbody>\n'
                          u'</table>\n');
 
-    def addListOfSchedGroupBoxes(self, sName, aoSchedGroupBoxes, aoAllRelevantTestBoxes,  # pylint: disable=too-many-locals
-                                 sLabel, fReadOnly = True): # (str, list[TestBoxDataEx], list[TestBoxDataEx], str, bool) -> str
+    def addListOfSchedGroupBoxes(self, sName, aoSchedGroupBoxes, aoAllRelevantTestBoxes, sLabel, # pylint: disable=too-many-locals
+                                 idSchedGroup, fReadOnly = True): # (str, list[TestBoxDataEx], list[TestBoxDataEx], str, bool) -> str
         """
         For WuiAdminSchedGroup.
         """
@@ -917,7 +917,7 @@ class WuiHlpForm(object):
                       u'    </td>\n'
                       % ( 'tmodd' if iTestBox & 1 else 'tmeven',
                           sPrefix, TestBoxDataForSchedGroup.ksParam_idTestBox,    oTestBox.idTestBox,
-                          sPrefix, TestBoxDataForSchedGroup.ksParam_idSchedGroup, -1 if oMember is None else oMember.idSchedGroup,
+                          sPrefix, TestBoxDataForSchedGroup.ksParam_idSchedGroup, idSchedGroup,
                           sPrefix, TestBoxDataForSchedGroup.ksParam_tsExpire,     '' if oMember is None else oMember.tsExpire,
                           sPrefix, TestBoxDataForSchedGroup.ksParam_tsEffective,  '' if oMember is None else oMember.tsEffective,
                           sPrefix, TestBoxDataForSchedGroup.ksParam_uidAuthor,    '' if oMember is None else oMember.uidAuthor,
@@ -939,7 +939,7 @@ class WuiHlpForm(object):
                          u'</table>\n');
 
     def addListOfSchedGroupsForTestBox(self, sName, aoInSchedGroups, aoAllSchedGroups, sLabel,  # pylint: disable=too-many-locals
-                                       fReadOnly = None):
+                                       idTestBox, fReadOnly = None):
         # type: (str, TestBoxInSchedGroupDataEx, SchedGroupData, str, bool) -> str
         """
         For WuiTestGroup.
@@ -1003,8 +1003,8 @@ class WuiHlpForm(object):
                       u'      <input name="%s" type="checkbox"%s%s value="%d" class="tmform-checkbox" title="#%d - %s">\n' #(list)
                       u'    </td>\n'
                       % ( 'tmodd' if iSchedGroup & 1 else 'tmeven',
-                          sPrefix, TestBoxInSchedGroupData.ksParam_idSchedGroup,  oSchedGroup.idSchedGroup,
-                          sPrefix, TestBoxInSchedGroupData.ksParam_idTestBox,   -1 if oMember is None else oMember.idTestBox,
+                          sPrefix, TestBoxInSchedGroupData.ksParam_idSchedGroup, oSchedGroup.idSchedGroup,
+                          sPrefix, TestBoxInSchedGroupData.ksParam_idTestBox,   idTestBox,
                           sPrefix, TestBoxInSchedGroupData.ksParam_tsExpire,    '' if oMember is None else oMember.tsExpire,
                           sPrefix, TestBoxInSchedGroupData.ksParam_tsEffective, '' if oMember is None else oMember.tsEffective,
                           sPrefix, TestBoxInSchedGroupData.ksParam_uidAuthor,   '' if oMember is None else oMember.uidAuthor,

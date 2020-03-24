@@ -85,11 +85,11 @@ class WuiSchedGroup(WuiFormContentBase):
 
         oForm.addListOfSchedGroupMembers(SchedGroupDataEx.ksParam_aoMembers,
                                          oData.aoMembers, self._aoAllRelevantTestGroups,    'Test groups',
-                                         fReadOnly = self._sMode == WuiFormContentBase.ksMode_Show);
+                                         oData.idSchedGroup, fReadOnly = self._sMode == WuiFormContentBase.ksMode_Show);
 
         oForm.addListOfSchedGroupBoxes(SchedGroupDataEx.ksParam_aoTestBoxes,
                                        oData.aoTestBoxes, self._aoAllRelevantTestBoxes,     'Test boxes',
-                                       fReadOnly = self._sMode == WuiFormContentBase.ksMode_Show);
+                                       oData.idSchedGroup, fReadOnly = self._sMode == WuiFormContentBase.ksMode_Show);
 
         oForm.addMultilineText(SchedGroupData.ksParam_sComment,     oData.sComment,         'Comment');
         oForm.addSubmit()

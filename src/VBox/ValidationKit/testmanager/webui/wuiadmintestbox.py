@@ -110,7 +110,7 @@ class WuiTestBox(WuiFormContentBase):
         oForm.addListOfSchedGroupsForTestBox(TestBoxDataEx.ksParam_aoInSchedGroups,
                                              oData.aoInSchedGroups,
                                              SchedGroupLogic(TMDatabaseConnection()).fetchOrderedByName(),
-                                             'Scheduling Group');
+                                             'Scheduling Group', oData.idTestBox);
         # Command, comment and submit button.
         if self._sMode == WuiFormContentBase.ksMode_Edit:
             oForm.addComboBox(TestBoxData.ksParam_enmPendingCmd,    oData.enmPendingCmd, 'Pending command',
