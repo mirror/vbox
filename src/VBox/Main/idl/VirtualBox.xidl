@@ -26685,6 +26685,10 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     <desc>
       Virtual virtual machine (sic) in the cloud.
     </desc>
+
+    <attribute name="id" type="uuid" mod="string" readonly="yes">
+      <desc>UUID of the cloud machine.</desc>
+    </attribute>
   </interface>
 
   <!--
