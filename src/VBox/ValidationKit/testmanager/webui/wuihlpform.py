@@ -33,13 +33,13 @@ import copy;
 import sys;
 
 # Validation Kit imports.
-from common                         import utils;
-from common.webutils                import escapeAttr, escapeElem;
-from testmanager                    import config;
-from testmanager.core.schedgroup    import SchedGroupMemberData, SchedGroupDataEx;
-from testmanager.core.testcaseargs  import TestCaseArgsData;
-from testmanager.core.testgroup     import TestGroupMemberData, TestGroupDataEx;
-from testmanager.core.testbox       import TestBoxDataForSchedGroup;
+from common                             import utils;
+from common.webutils                    import escapeAttr, escapeElem;
+from testmanager                        import config;
+from testmanager.core.schedgroup        import SchedGroupMemberData, SchedGroupDataEx;
+from testmanager.core.testcaseargs      import TestCaseArgsData;
+from testmanager.core.testgroup         import TestGroupMemberData, TestGroupDataEx;
+from testmanager.core.testbox           import TestBoxDataForSchedGroup;
 
 # Python 3 hacks:
 if sys.version_info[0] >= 3:
@@ -863,8 +863,8 @@ class WuiHlpForm(object):
                          u'</table>\n');
 
     def addListOfSchedGroupBoxes(self, sName, aoSchedGroupBoxes, # pylint: disable=too-many-locals
-                                 aoAllRelevantTestBoxes, sLabel, idSchedGroup,
-                                 fReadOnly = True): # (str, list[TestBoxDataEx], list[TestBoxDataEx], str, bool) -> str
+                                 aoAllRelevantTestBoxes, sLabel, idSchedGroup, fReadOnly = True,
+                                 fUseTable = False): # (str, list[TestBoxDataEx], list[TestBoxDataEx], str, bool, bool) -> str
         """
         For WuiAdminSchedGroup.
         """
@@ -879,7 +879,88 @@ class WuiHlpForm(object):
                   % ( SchedGroupDataEx.ksParam_aidTestBoxes,
                       ','.join([unicode(oTestBox.idTestBox) for oTestBox in aoAllRelevantTestBoxes]), ));
 
-        ## @todo replace with tmform-field-list tricks.
+        sCheckBoxAttr     = u' readonly onclick="return false" onkeydown="return false"' if fReadOnly else '';
+        oDefMember        = TestBoxDataForSchedGroup();
+        aoSchedGroupBoxes = list(aoSchedGroupBoxes); # Copy it so we can pop.
+
+        from testmanager.webui.wuiadmin         import WuiAdmin;
+        from testmanager.webui.wuicontentbase   import WuiAdminLink;
+
+        if not fUseTable:
+            #
+            # Non-table version (see also addListOfOsArches).
+            #
+            self._add('          <div class="tmform-checkboxes-container">\n');
+
+            for iTestBox, oTestBox in enumerate(aoAllRelevantTestBoxes):
+                # Is it a member?
+                oMember = None;
+                for i, _ in enumerate(aoSchedGroupBoxes):
+                    if aoSchedGroupBoxes[i].oTestBox and aoSchedGroupBoxes[i].oTestBox.idTestBox == oTestBox.idTestBox:
+                        oMember = aoSchedGroupBoxes.pop(i);
+                        break;
+
+                # Start on the rows...
+                sPrf = u'%s[%d]' % (sName, oTestBox.idTestBox,);
+                self._add(u'  <div class="tmform-checkbox-holder">\n'
+                          u'  <input name="%s[%s]" type="hidden" value="%s">\n' # idTestBox
+                          u'  <input name="%s[%s]" type="hidden" value="%s">\n' # idSchedGroup
+                          u'  <input name="%s[%s]" type="hidden" value="%s">\n' # tsExpire
+                          u'  <input name="%s[%s]" type="hidden" value="%s">\n' # tsEffective
+                          u'  <input name="%s[%s]" type="hidden" value="%s">\n' # uidAuthor
+                          u'  <input name="%s" type="checkbox"%s%s value="%d" class="tmform-checkbox" title="#%d - %s">\n' #(list)
+                          % ( #'tmodd' if iTestBox & 1 else 'tmeven',
+                              sPrf, TestBoxDataForSchedGroup.ksParam_idTestBox,    oTestBox.idTestBox,
+                              sPrf, TestBoxDataForSchedGroup.ksParam_idSchedGroup, idSchedGroup,
+                              sPrf, TestBoxDataForSchedGroup.ksParam_tsExpire,     '' if oMember is None else oMember.tsExpire,
+                              sPrf, TestBoxDataForSchedGroup.ksParam_tsEffective,  '' if oMember is None else oMember.tsEffective,
+                              sPrf, TestBoxDataForSchedGroup.ksParam_uidAuthor,    '' if oMember is None else oMember.uidAuthor,
+                              SchedGroupDataEx.ksParam_aoTestBoxes, '' if oMember is None else ' checked', sCheckBoxAttr,
+                              oTestBox.idTestBox, oTestBox.idTestBox, escapeElem(oTestBox.sName),
+                              ));
+
+                self._add(u'    <span class="tmform-priority tmform-testbox-priority">'
+                          u'<input name="%s[%s]" type="text" value="%s" style="max-width:3em;" %s title="%s"></span>\n'
+                          % ( sPrf, TestBoxDataForSchedGroup.ksParam_iSchedPriority,
+                              (oMember if oMember is not None else oDefMember).iSchedPriority,
+                              ' readonly class="tmform-input-readonly"' if fReadOnly else '',
+                              escapeAttr("Priority [0..31].  Higher value means run more often.") ));
+
+                asFeatures = [];
+                if oTestBox.fCpuHwVirt:
+                    asFeatures.append('AMD-V' if oTestBox.sCpuVendor in ['AuthenticAMD',] else 'VT-x');
+                if oTestBox.fCpuNestedPaging:
+                    asFeatures.append('Nested-Paging');
+                if oTestBox.fCpu64BitGuest:
+                    asFeatures.append('64-bit-Guest');
+                if oTestBox.fChipsetIoMmu:
+                    asFeatures.append('IOMMU');
+                self._add(u'    <span class="tmform-testbox-name">%s</span>\n'
+                          % ( WuiAdminLink('%s (%s)' % (oTestBox.sName, oTestBox.sOs),
+                                           WuiAdmin.ksActionTestBoxDetails, fBracketed = False,
+                                           dParams = { oTestBox.ksParam_idGenTestBox: oTestBox.idGenTestBox},
+                                           sTitle = 'CPU:     \t%s\n'
+                                                    'Threads: \t%u - %s\n'
+                                                    'Features:\t%s\n'
+                                                    'RAM:     \t%u MiB\n'
+                                                    'OpSys:   \t%s - %s\n'
+                                                    'Arch:    \t%s\n'
+                                                    'IP-Addr: \t%s\n'
+                                                  % ( ' '.join(oTestBox.sCpuName.split()),
+                                                      oTestBox.cCpus, oTestBox.sCpuVendor,
+                                                      ', '.join(asFeatures),
+                                                      oTestBox.cMbMemory,
+                                                      oTestBox.sOs, oTestBox.sOsVersion,
+                                                      oTestBox.sCpuArch,
+                                                      oTestBox.ip
+                                                      )), ));
+                self._add(u'  </div>\n');
+            return self._add(u'        </div></div></div>\n'
+                             u'      </li>\n');
+
+        #
+        # Table version.
+        #
         self._add(u'<table class="tmformtbl">\n'
                   u' <thead>\n'
                   u'  <tr>\n'
@@ -891,13 +972,7 @@ class WuiHlpForm(object):
                   u' <tbody>\n'
                   );
 
-        sCheckBoxAttr = u' readonly onclick="return false" onkeydown="return false"' if fReadOnly else '';
-
-        oDefMember = TestBoxDataForSchedGroup();
-        aoSchedGroupBoxes = list(aoSchedGroupBoxes); # Copy it so we can pop.
-        for iTestBox, _ in enumerate(aoAllRelevantTestBoxes):
-            oTestBox = aoAllRelevantTestBoxes[iTestBox];
-
+        for iTestBox, oTestBox in enumerate(aoAllRelevantTestBoxes):
             # Is it a member?
             oMember = None;
             for i, _ in enumerate(aoSchedGroupBoxes):
