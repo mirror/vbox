@@ -66,7 +66,7 @@ g_kfLoginNameCaseInsensitive = True;
 ## The TestManager directory.
 g_ksTestManagerDir      = os.path.dirname(os.path.abspath(__file__));
 ## The Validation Kit directory.
-g_ksValidationKitDir        = os.path.dirname(g_ksTestManagerDir);
+g_ksValidationKitDir    = os.path.dirname(g_ksTestManagerDir);
 ## The TestManager htdoc directory.
 g_ksTmHtDocDir          = os.path.join(g_ksTestManagerDir, 'htdocs');
 ## The TestManager download directory (under htdoc somewhere), for validationkit zips.
@@ -158,6 +158,10 @@ g_kfSrvGlueCgiTb        = False;
 g_kfSrvGlueDebug        = False;
 ## Timestamp and pid prefix the glue debug output.
 g_kfSrvGlueDebugTS      = True;
+## Whether to dumping CGI environment variables.
+g_kfSrvGlueCgiDumpEnv   = False;
+## Whether to dumping CGI script arguments.
+g_kfSrvGlueCgiDumpArgs  = False;
 ## Enables task scheduler debug output to g_ksSrcGlueDebugLogDst.
 g_kfSrvGlueDebugScheduler = False;
 

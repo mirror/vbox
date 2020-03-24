@@ -71,6 +71,12 @@ class WebServerGlueBase(object):
         self._oDbgFile         = sys.stderr;
         if config.g_ksSrcGlueDebugLogDst is not None and config.g_kfSrvGlueDebug is True:
             self._oDbgFile = open(config.g_ksSrcGlueDebugLogDst, 'a');
+            if config.g_kfSrvGlueCgiDumpArgs:
+                self._oDbgFile.write('Arguments: %s\nEnvironment:\n' % (sys.argv,));
+            if config.g_kfSrvGlueCgiDumpEnv:
+                for sVar in sorted(os.environ):
+                    self._oDbgFile.write('  %s=\'%s\' \\\n' % (sVar, os.environ[sVar],));
+
         self._afnDebugInfo     = [];
 
         # HTTP header.
