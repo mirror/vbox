@@ -110,6 +110,13 @@ def dbTimestampMinusOneTick(oValue):
     oValue = dbTimestampToZuluDatetime(oValue);
     return oValue - datetime.timedelta(microseconds = 1);
 
+def dbTimestampPlusOneTick(oValue):
+    """
+    Returns a new timestamp that's one tick after the given one.
+    """
+    oValue = dbTimestampToZuluDatetime(oValue);
+    return oValue + datetime.timedelta(microseconds = 1);
+
 def isDbInterval(oValue):
     """
     Checks if oValue is a DB interval object.
