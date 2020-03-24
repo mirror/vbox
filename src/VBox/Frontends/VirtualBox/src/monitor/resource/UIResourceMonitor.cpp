@@ -46,6 +46,7 @@
 #include "CConsole.h"
 #include "CMachine.h"
 #include "CMachineDebugger.h"
+#include "CPerformanceMetric.h"
 
 /* Other VBox includes: */
 #include <iprt/cidr.h>
@@ -87,8 +88,13 @@ public:
     bool operator==(const UIResourceMonitorItem& other) const;
     QUuid    m_VMuid;
     QString  m_strVMName;
-    quint64 m_uCPUGuestLoad;
-    quint64 m_uCPUVMMLoad;
+    quint64  m_uCPUGuestLoad;
+    quint64  m_uCPUVMMLoad;
+
+    quint64  m_uTotalRAM;
+    quint64  m_uUsedRAM;
+    float    m_fRAMUsagePercentage;
+
     quint64 m_uNetworkDownRate;
     quint64 m_uNetworkUpRate;
     quint64 m_uNetworkDownTotal;
@@ -103,8 +109,19 @@ public:
     quint64 m_uVMExitTotal;
 
     CMachineDebugger m_comDebugger;
+    /** @name The following are used during UIPerformanceCollector::QueryMetricsData(..)
+      * @{ */
+        QVector<QString> m_nameList;
+        QVector<CUnknown> m_objectList;
+    /** @} */
+    CPerformanceCollector m_performanceMonitor;
+
+private:
+
+    void initPerformanceCollector();
 
 };
+
 
 /*********************************************************************************************************************************
 *   Class UIVMResouceMonitorProxyModel definition.                                                                           *
@@ -164,6 +181,7 @@ private:
     QVector<QString>             m_columnCaptions;
 
     QTimer *m_pTimer;
+
 };
 
 
@@ -187,6 +205,11 @@ protected:
 UIResourceMonitorItem::UIResourceMonitorItem(const QUuid &uid, const QString &strVMName)
     : m_VMuid(uid)
     , m_strVMName(strVMName)
+    , m_uCPUGuestLoad(0)
+    , m_uCPUVMMLoad(0)
+    , m_uTotalRAM(0)
+    , m_uUsedRAM(0)
+    , m_fRAMUsagePercentage(0)
     , m_uNetworkDownRate(0)
     , m_uNetworkUpRate(0)
     , m_uNetworkDownTotal(0)
@@ -205,10 +228,16 @@ UIResourceMonitorItem::UIResourceMonitorItem(const QUuid &uid, const QString &st
         if (!comConsole.isNull())
             m_comDebugger = comConsole.GetDebugger();
     }
+    initPerformanceCollector();
 }
 
 UIResourceMonitorItem::UIResourceMonitorItem()
     : m_VMuid(QUuid())
+    , m_uCPUGuestLoad(0)
+    , m_uCPUVMMLoad(0)
+    , m_uTotalRAM(0)
+    , m_uUsedRAM(0)
+    , m_fRAMUsagePercentage(0)
     , m_uNetworkDownRate(0)
     , m_uNetworkUpRate(0)
     , m_uNetworkDownTotal(0)
@@ -220,10 +249,16 @@ UIResourceMonitorItem::UIResourceMonitorItem()
     , m_uVMExitRate(0)
     , m_uVMExitTotal(0)
 {
+    initPerformanceCollector();
 }
 
 UIResourceMonitorItem::UIResourceMonitorItem(const QUuid &uid)
     : m_VMuid(uid)
+    , m_uCPUGuestLoad(0)
+    , m_uCPUVMMLoad(0)
+    , m_uTotalRAM(0)
+    , m_uUsedRAM(0)
+    , m_fRAMUsagePercentage(0)
     , m_uNetworkDownRate(0)
     , m_uNetworkUpRate(0)
     , m_uNetworkDownTotal(0)
@@ -235,6 +270,7 @@ UIResourceMonitorItem::UIResourceMonitorItem(const QUuid &uid)
     , m_uVMExitRate(0)
     , m_uVMExitTotal(0)
 {
+    initPerformanceCollector();
 }
 
 bool UIResourceMonitorItem::operator==(const UIResourceMonitorItem& other) const
@@ -244,6 +280,16 @@ bool UIResourceMonitorItem::operator==(const UIResourceMonitorItem& other) const
     return false;
 }
 
+void UIResourceMonitorItem::initPerformanceCollector()
+{
+    /* Initialize and configure CPerformanceCollector: */
+    const ULONG iPeriod = 1;
+    const int iMetricSetupCount = 1;
+    m_performanceMonitor = uiCommon().virtualBox().GetPerformanceCollector();
+    m_nameList << "Guest/RAM/Usage*";
+    m_objectList = QVector<CUnknown>(m_nameList.size(), CUnknown());
+    m_performanceMonitor.SetupMetrics(m_nameList, m_objectList, iPeriod, iMetricSetupCount);
+}
 
 /*********************************************************************************************************************************
 *   Class UIVMResouceMonitorProxyModel implementation.                                                                           *
@@ -309,8 +355,7 @@ QVariant UIResourceMonitorModel::data(const QModelIndex &index, int role) const
     int iDecimalCount = 2;
     if (!index.isValid() || role != Qt::DisplayRole || index.row() >= rowCount())
         return QVariant();
-    // if (index.column() >= m_columnShown.size() || !m_columnShown[index.column()])
-    //     return QVariant();
+
     switch (index.column())
     {
         case VMResouceMonitorColumn_Name:
@@ -321,6 +366,13 @@ QVariant UIResourceMonitorModel::data(const QModelIndex &index, int role) const
             break;
         case VMResouceMonitorColumn_CPUVMMLoad:
             return m_itemList[index.row()].m_uCPUVMMLoad;
+            break;
+        case VMResouceMonitorColumn_RAMUsedAndTotal:
+            return QString("%1/%2").arg(uiCommon().formatSize(_1K * m_itemList[index.row()].m_uUsedRAM, iDecimalCount)).
+                arg(uiCommon().formatSize(_1K * m_itemList[index.row()].m_uTotalRAM, iDecimalCount));
+            break;
+        case VMResouceMonitorColumn_RAMUsedPercentage:
+            return m_itemList[index.row()].m_fRAMUsagePercentage;
             break;
         case VMResouceMonitorColumn_NetworkUpRate:
             return QString("%1").arg(uiCommon().formatSize(m_itemList[index.row()].m_uNetworkUpRate, iDecimalCount));
@@ -406,11 +458,24 @@ void UIResourceMonitorModel::sltTimeout()
     ULONG aPctVMM;
     for (int i = 0; i < m_itemList.size(); ++i)
     {
+        if (!m_itemList[i].m_performanceMonitor.isNull())
+        {
+            /* RAM usage: */
+            quint64 uFreeRAM = 0;
+            UIMonitorCommon::getRAMLoad(m_itemList[i].m_performanceMonitor, m_itemList[i].m_nameList, m_itemList[i].m_objectList,
+                                        m_itemList[i].m_uTotalRAM, uFreeRAM);
+            m_itemList[i].m_uUsedRAM = m_itemList[i].m_uTotalRAM - uFreeRAM;
+            if (m_itemList[i].m_uTotalRAM != 0)
+                m_itemList[i].m_fRAMUsagePercentage = 100.f * (m_itemList[i].m_uUsedRAM / (float)m_itemList[i].m_uTotalRAM);
+        }
+
         if (!m_itemList[i].m_comDebugger.isNull())
         {
+            /* CPU Load: */
             m_itemList[i].m_comDebugger.GetCPULoad(0x7fffffff, aPctExecuting, aPctHalted, aPctVMM);
             m_itemList[i].m_uCPUGuestLoad = aPctExecuting;
             m_itemList[i].m_uCPUVMMLoad = aPctVMM;
+
             /* Network rate: */
             quint64 uPrevDownTotal = m_itemList[i].m_uNetworkDownTotal;
             quint64 uPrevUpTotal = m_itemList[i].m_uNetworkUpTotal;
