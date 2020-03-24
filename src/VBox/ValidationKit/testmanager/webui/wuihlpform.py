@@ -862,8 +862,9 @@ class WuiHlpForm(object):
         return self._add(u' </tbody>\n'
                          u'</table>\n');
 
-    def addListOfSchedGroupBoxes(self, sName, aoSchedGroupBoxes, aoAllRelevantTestBoxes, sLabel, # pylint: disable=too-many-locals
-                                 idSchedGroup, fReadOnly = True): # (str, list[TestBoxDataEx], list[TestBoxDataEx], str, bool) -> str
+    def addListOfSchedGroupBoxes(self, sName, aoSchedGroupBoxes, # pylint: disable=too-many-locals
+                                 aoAllRelevantTestBoxes, sLabel, idSchedGroup,
+                                 fReadOnly = True): # (str, list[TestBoxDataEx], list[TestBoxDataEx], str, bool) -> str
         """
         For WuiAdminSchedGroup.
         """
