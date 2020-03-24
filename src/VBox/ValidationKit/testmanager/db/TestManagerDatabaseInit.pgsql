@@ -1904,6 +1904,9 @@ CREATE TABLE SchedQueues (
     --
     cMissingGangMembers smallint    DEFAULT 1  NOT NULL,
 
+    --- @todo
+    --- The number of times this has been considered for scheduling.
+    -- cConsidered SMALLINT DEFAULT 0 NOT NULL,
 
     PRIMARY KEY (idSchedGroup, idItem)
 );
