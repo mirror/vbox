@@ -50,21 +50,31 @@
 /* Other VBox includes: */
 #include <iprt/cidr.h>
 
-
+/* The first element must be 0 and the rest must be consecutive: */
 enum VMResouceMonitorColumn
 {
     VMResouceMonitorColumn_Name = 0,
     VMResouceMonitorColumn_CPUGuestLoad,
     VMResouceMonitorColumn_CPUVMMLoad,
-    // VMResouceMonitorColumn_RAMUsedAndTotal,
-    // VMResouceMonitorColumn_RAMUsedPercentage,
-    VMResouceMonitorColumn_NetworkDownUpRate,
-    VMResouceMonitorColumn_NetworkDownUpTotal,
-    VMResouceMonitorColumn_DiskIOWriteReadRate,
-    VMResouceMonitorColumn_DiskIOWriteReadTotal,
+    VMResouceMonitorColumn_RAMUsedAndTotal,
+    VMResouceMonitorColumn_RAMUsedPercentage,
+    VMResouceMonitorColumn_NetworkUpRate,
+    VMResouceMonitorColumn_NetworkDownRate,
+    VMResouceMonitorColumn_NetworkUpTotal,
+    VMResouceMonitorColumn_NetworkDownTotal,
+    VMResouceMonitorColumn_DiskIOReadRate,
+    VMResouceMonitorColumn_DiskIOWriteRate,
+    VMResouceMonitorColumn_DiskIOReadTotal,
+    VMResouceMonitorColumn_DiskIOWriteTotal,
+    VMResouceMonitorColumn_VMExits,
     VMResouceMonitorColumn_Max
 };
 
+struct ResourceColumn
+{
+    QString m_strName;
+    bool    m_fEnabled;
+};
 /*********************************************************************************************************************************
 *   Class UIVMResouceMonitorItem definition.                                                                           *
 *********************************************************************************************************************************/
@@ -89,6 +99,9 @@ public:
     quint64 m_uDiskWriteTotal;
     quint64 m_uDiskReadTotal;
 
+    quint64 m_uVMExitRate;
+    quint64 m_uVMExitTotal;
+
     CMachineDebugger m_comDebugger;
 
 };
@@ -105,12 +118,16 @@ public:
 
     UIResourceMonitorProxyModel(QObject *parent = 0);
     void dataUpdate();
+    void setColumnShown(const QVector<bool>& columnShown);
 
 protected:
 
     //virtual bool lessThan(const QModelIndex &left, const QModelIndex &right) const /* override */;
+    virtual bool filterAcceptsColumn(int source_column, const QModelIndex &source_parent) const /* override */;
 
 private:
+
+    QVector<bool> m_columnShown;
 
 };
 
@@ -133,6 +150,7 @@ public:
     int      columnCount(const QModelIndex &parent = QModelIndex()) const /* override */;
     QVariant data(const QModelIndex &index, int role) const /* override */;
     QVariant headerData(int section, Qt::Orientation orientation, int role) const;
+    void setColumnCaptions(const QVector<QString>& captions);
 
 private slots:
 
@@ -143,6 +161,7 @@ private:
 
     QVector<UIResourceMonitorItem> m_itemList;
     void initializeItems();
+    QVector<QString>             m_columnCaptions;
 
     QTimer *m_pTimer;
 };
@@ -176,6 +195,8 @@ UIResourceMonitorItem::UIResourceMonitorItem(const QUuid &uid, const QString &st
     , m_uDiskReadRate(0)
     , m_uDiskWriteTotal(0)
     , m_uDiskReadTotal(0)
+    , m_uVMExitRate(0)
+    , m_uVMExitTotal(0)
 {
     CSession comSession = uiCommon().openSession(uid, KLockType_Shared);
     if (!comSession.isNull())
@@ -196,6 +217,8 @@ UIResourceMonitorItem::UIResourceMonitorItem()
     , m_uDiskReadRate(0)
     , m_uDiskWriteTotal(0)
     , m_uDiskReadTotal(0)
+    , m_uVMExitRate(0)
+    , m_uVMExitTotal(0)
 {
 }
 
@@ -209,6 +232,8 @@ UIResourceMonitorItem::UIResourceMonitorItem(const QUuid &uid)
     , m_uDiskReadRate(0)
     , m_uDiskWriteTotal(0)
     , m_uDiskReadTotal(0)
+    , m_uVMExitRate(0)
+    , m_uVMExitTotal(0)
 {
 }
 
@@ -232,6 +257,20 @@ void UIResourceMonitorProxyModel::dataUpdate()
 {
     if (sourceModel())
         emit dataChanged(index(0,0), index(sourceModel()->rowCount(), sourceModel()->columnCount()));
+}
+
+bool UIResourceMonitorProxyModel::filterAcceptsColumn(int iSourceColumn, const QModelIndex &sourceParent) const
+{
+    Q_UNUSED(sourceParent);
+    if (iSourceColumn >= m_columnShown.size())
+        return true;
+    return m_columnShown[iSourceColumn];
+}
+
+void UIResourceMonitorProxyModel::setColumnShown(const QVector<bool>& columnShown)
+{
+    m_columnShown = columnShown;
+    invalidateFilter();
 }
 
 
@@ -262,6 +301,12 @@ int UIResourceMonitorModel::rowCount(const QModelIndex &parent /* = QModelIndex(
 int UIResourceMonitorModel::columnCount(const QModelIndex &parent /* = QModelIndex() */) const
 {
     Q_UNUSED(parent);
+    // int iCount = 0;
+    // for (int i = 0; i < m_columnShown.size(); ++i)
+    //     if (m_columnShown[i])
+    //         ++iCount;
+    // printf("column count %d\n", iCount);
+    // return iCount;
     return VMResouceMonitorColumn_Max;
 }
 
@@ -270,6 +315,8 @@ QVariant UIResourceMonitorModel::data(const QModelIndex &index, int role) const
     int iDecimalCount = 2;
     if (!index.isValid() || role != Qt::DisplayRole || index.row() >= rowCount())
         return QVariant();
+    // if (index.column() >= m_columnShown.size() || !m_columnShown[index.column()])
+    //     return QVariant();
     switch (index.column())
     {
         case VMResouceMonitorColumn_Name:
@@ -281,21 +328,33 @@ QVariant UIResourceMonitorModel::data(const QModelIndex &index, int role) const
         case VMResouceMonitorColumn_CPUVMMLoad:
             return m_itemList[index.row()].m_uCPUVMMLoad;
             break;
-        case VMResouceMonitorColumn_NetworkDownUpRate:
-            return QString("%1/%2").arg(uiCommon().formatSize(m_itemList[index.row()].m_uNetworkDownRate, iDecimalCount)).
-                arg(uiCommon().formatSize(m_itemList[index.row()].m_uNetworkUpRate, iDecimalCount));
+        case VMResouceMonitorColumn_NetworkUpRate:
+            return QString("%1").arg(uiCommon().formatSize(m_itemList[index.row()].m_uNetworkUpRate, iDecimalCount));
             break;
-        case VMResouceMonitorColumn_NetworkDownUpTotal:
-            return QString("%1/%2").arg(uiCommon().formatSize(m_itemList[index.row()].m_uNetworkDownTotal, iDecimalCount)).
-                arg(uiCommon().formatSize(m_itemList[index.row()].m_uNetworkUpTotal, iDecimalCount));
+        case VMResouceMonitorColumn_NetworkDownRate:
+            return QString("%1").arg(uiCommon().formatSize(m_itemList[index.row()].m_uNetworkDownRate, iDecimalCount));
             break;
-        case VMResouceMonitorColumn_DiskIOWriteReadRate:
-            return QString("%1/%2").arg(uiCommon().formatSize(m_itemList[index.row()].m_uDiskWriteRate, iDecimalCount)).
-                arg(uiCommon().formatSize(m_itemList[index.row()].m_uDiskReadRate, iDecimalCount));
+        case VMResouceMonitorColumn_NetworkUpTotal:
+            return QString("%1").arg(uiCommon().formatSize(m_itemList[index.row()].m_uNetworkUpTotal, iDecimalCount));
             break;
-        case VMResouceMonitorColumn_DiskIOWriteReadTotal:
-            return QString("%1/%2").arg(uiCommon().formatSize(m_itemList[index.row()].m_uDiskWriteTotal, iDecimalCount)).
-                arg(uiCommon().formatSize(m_itemList[index.row()].m_uDiskReadTotal, iDecimalCount));
+        case VMResouceMonitorColumn_NetworkDownTotal:
+            return QString("%1").arg(uiCommon().formatSize(m_itemList[index.row()].m_uNetworkDownTotal, iDecimalCount));
+            break;
+        case VMResouceMonitorColumn_DiskIOReadRate:
+            return QString("%1").arg(uiCommon().formatSize(m_itemList[index.row()].m_uDiskReadRate, iDecimalCount));
+            break;
+        case VMResouceMonitorColumn_DiskIOWriteRate:
+            return QString("%1").arg(uiCommon().formatSize(m_itemList[index.row()].m_uDiskWriteRate, iDecimalCount));
+            break;
+        case VMResouceMonitorColumn_DiskIOReadTotal:
+            return QString("%1/%2").arg(uiCommon().formatSize(m_itemList[index.row()].m_uDiskReadTotal, iDecimalCount));
+            break;
+        case VMResouceMonitorColumn_DiskIOWriteTotal:
+            return QString("%1/%2").arg(uiCommon().formatSize(m_itemList[index.row()].m_uDiskWriteTotal, iDecimalCount));
+            break;
+        case VMResouceMonitorColumn_VMExits:
+           return QString("%1/%2").arg(UICommon::addMetricSuffixToNumber(m_itemList[index.row()].m_uVMExitRate)).
+               arg(UICommon::addMetricSuffixToNumber(m_itemList[index.row()].m_uVMExitTotal));
             break;
         default:
             break;
@@ -305,44 +364,14 @@ QVariant UIResourceMonitorModel::data(const QModelIndex &index, int role) const
 
 QVariant UIResourceMonitorModel::headerData(int section, Qt::Orientation orientation, int role) const
 {
-    if (role == Qt::DisplayRole && orientation == Qt::Horizontal)
-    {
-        switch (section)
-        {
-            case VMResouceMonitorColumn_Name:
-                return tr("VM Name");
-                break;
-            case VMResouceMonitorColumn_CPUGuestLoad:
-                return tr("CPU Load\n(Guest)");
-                break;
-            case VMResouceMonitorColumn_CPUVMMLoad:
-                return tr("CPU Load\n(VMM)");
-                break;
-            // case VMResouceMonitorColumn_RAMUsedAndTotal:
-            //     return tr("RAM (Used/Total)");
-            //     break;
-            // case VMResouceMonitorColumn_RAMUsedPercentage:
-            //     return tr("RAM % Used");
-            //     break;
-            case VMResouceMonitorColumn_NetworkDownUpRate:
-                return tr("Network Up/Down\nRate");
-                break;
-            case VMResouceMonitorColumn_NetworkDownUpTotal:
-                return tr("Network Up/Down\nTotal");
-                break;
-            case VMResouceMonitorColumn_DiskIOWriteReadRate:
-                return tr("Disk Write/Read\nRate");
-                break;
-            case VMResouceMonitorColumn_DiskIOWriteReadTotal:
-                return tr("Disk Write/Read\nTotal");
-                break;
-
-            default:
-                return QString();
-                break;
-        }
-    }
+    if (role == Qt::DisplayRole && orientation == Qt::Horizontal && section < m_columnCaptions.size())
+        return m_columnCaptions[section];
     return QVariant();
+}
+
+void UIResourceMonitorModel::setColumnCaptions(const QVector<QString>& captions)
+{
+    m_columnCaptions = captions;
 }
 
 void UIResourceMonitorModel::initializeItems()
@@ -403,6 +432,11 @@ void UIResourceMonitorModel::sltTimeout()
                                          m_itemList[i].m_uDiskWriteTotal, m_itemList[i].m_uDiskReadTotal);
             m_itemList[i].m_uDiskWriteRate = m_itemList[i].m_uDiskWriteTotal - uPrevWriteTotal;
             m_itemList[i].m_uDiskReadRate = m_itemList[i].m_uDiskReadTotal - uPrevReadTotal;
+
+           /* VM Exits: */
+            quint64 uPrevVMExitsTotal = m_itemList[i].m_uVMExitTotal;
+            UIMonitorCommon::getVMMExitCount(m_itemList[i].m_comDebugger, m_itemList[i].m_uVMExitTotal);
+            m_itemList[i].m_uVMExitRate = m_itemList[i].m_uVMExitTotal - uPrevVMExitsTotal;
         }
     }
     emit sigDataUpdate();
@@ -433,6 +467,24 @@ QMenu *UIResourceMonitorWidget::menu() const
 
 void UIResourceMonitorWidget::retranslateUi()
 {
+    m_columnCaptions.resize(VMResouceMonitorColumn_Max);
+    m_columnCaptions[VMResouceMonitorColumn_Name] = tr("VM Name");
+    m_columnCaptions[VMResouceMonitorColumn_CPUGuestLoad] = tr("CPU Load\n(Guest)");
+    m_columnCaptions[VMResouceMonitorColumn_CPUVMMLoad] = tr("CPU Load\n(VMM)");
+    m_columnCaptions[VMResouceMonitorColumn_RAMUsedAndTotal] = tr("RAM\nUsed/Total");
+    m_columnCaptions[VMResouceMonitorColumn_RAMUsedPercentage] = tr("RAM\n% Used");
+    m_columnCaptions[VMResouceMonitorColumn_NetworkUpRate] = tr("Network Up\nRate");
+    m_columnCaptions[VMResouceMonitorColumn_NetworkDownRate] = tr("Network Down\nRate");
+    m_columnCaptions[VMResouceMonitorColumn_NetworkUpTotal] = tr("Network Up\nTotal");
+    m_columnCaptions[VMResouceMonitorColumn_NetworkDownTotal] = tr("Network Down\nTotal");
+    m_columnCaptions[VMResouceMonitorColumn_DiskIOReadRate] = tr("Disk Read\nRate");
+    m_columnCaptions[VMResouceMonitorColumn_DiskIOWriteRate] = tr("Disk Write\nRate");
+    m_columnCaptions[VMResouceMonitorColumn_DiskIOReadTotal] = tr("Disk Read\nTotal");
+    m_columnCaptions[VMResouceMonitorColumn_DiskIOWriteTotal] = tr("Disk Write\nTotal");
+    m_columnCaptions[VMResouceMonitorColumn_VMExits] = tr("VM Exits");
+    if (m_pModel)
+        m_pModel->setColumnCaptions(m_columnCaptions);
+
 }
 
 void UIResourceMonitorWidget::resizeEvent(QResizeEvent *pEvent)
@@ -447,14 +499,12 @@ void UIResourceMonitorWidget::showEvent(QShowEvent *pEvent)
 
 void UIResourceMonitorWidget::prepare()
 {
-    prepareActions();
+    m_columnShown.resize(VMResouceMonitorColumn_Max);
+    for (int i = 0; i < m_columnShown.size(); ++i)
+        m_columnShown[i] = true;
     prepareWidgets();
     loadSettings();
     retranslateUi();
-}
-
-void UIResourceMonitorWidget::prepareActions()
-{
 }
 
 void UIResourceMonitorWidget::prepareWidgets()
@@ -481,11 +531,13 @@ void UIResourceMonitorWidget::prepareWidgets()
     if (m_pTableView && m_pModel && m_pProxyModel)
     {
         layout()->addWidget(m_pTableView);
+        m_pTableView->setContextMenuPolicy(Qt::CustomContextMenu);
+        connect(m_pTableView, &QTableView::customContextMenuRequested,
+                this, &UIResourceMonitorWidget::sltCreateContextMenu);
         m_pProxyModel->setSourceModel(m_pModel);
         m_pTableView->setModel(m_pProxyModel);
         m_pTableView->setItemDelegate(new UIVMResouceMonitorDelegate);
         m_pTableView->setSelectionMode(QAbstractItemView::NoSelection);
-
         /* m_pTableView->setSelectionMode(QAbstractItemView::SingleSelection);
            m_pTableView->setSelectionBehavior(QAbstractItemView::SelectRows);*/
         m_pTableView->setShowGrid(false);
@@ -501,6 +553,8 @@ void UIResourceMonitorWidget::prepareWidgets()
         m_pTableView->setSortingEnabled(true);
         m_pTableView->sortByColumn(0, Qt::AscendingOrder);
         connect(m_pModel, &UIResourceMonitorModel::sigDataUpdate, this, &UIResourceMonitorWidget::sltHandleDataUpdate);
+
+        m_pProxyModel->setColumnShown(m_columnShown);
     }
 }
 
@@ -529,15 +583,56 @@ void UIResourceMonitorWidget::prepareToolBar()
     }
 }
 
-
 void UIResourceMonitorWidget::loadSettings()
 {
+}
+
+void UIResourceMonitorWidget::sltCreateContextMenu(const QPoint &point)
+{
+    if (!m_pTableView)
+        return;
+    QMenu menu;
+
+    for (int i = 0; i < VMResouceMonitorColumn_Max; ++i)
+    {
+        QAction *pAction = menu.addAction(m_columnCaptions[i]);
+        if (!pAction)
+            continue;
+        pAction->setData(i);
+        pAction->setCheckable(true);
+        if (i < m_columnShown.size())
+            pAction->setChecked(m_columnShown[i]);
+        connect(pAction, &QAction::triggered, this, &UIResourceMonitorWidget::sltHandleColumnAction);
+    }
+    menu.exec(m_pTableView->mapToGlobal(point));
+}
+
+void UIResourceMonitorWidget::sltHandleColumnAction(bool fChecked)
+{
+    QAction* pSender = qobject_cast<QAction*>(sender());
+    if (!pSender)
+        return;
+    int iColumnId = pSender->data().toInt();
+    if (iColumnId >= m_columnShown.size())
+        return;
+    setColumnShown(iColumnId, fChecked);
 }
 
 void UIResourceMonitorWidget::sltHandleDataUpdate()
 {
     if (m_pProxyModel)
         m_pProxyModel->dataUpdate();
+}
+
+void UIResourceMonitorWidget::setColumnShown(int iColumnId, bool fShown)
+{
+    if (iColumnId >= m_columnShown.size())
+        return;
+    if (m_columnShown[iColumnId] == fShown)
+        return;
+    m_columnShown[iColumnId] = fShown;
+    if (m_pProxyModel)
+        m_pProxyModel->setColumnShown(m_columnShown);
 }
 
 
