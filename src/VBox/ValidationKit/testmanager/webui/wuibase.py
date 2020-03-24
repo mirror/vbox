@@ -96,6 +96,8 @@ class WuiDispatcherBase(object):
     ksParamChangeLogPageNo          = 'ChangeLogPageNo';
     ## The name of the parameter indicate number of change log entries per page.
     ksParamChangeLogEntriesPerPage  = 'ChangeLogEntriesPerPage';
+    ## The change log related parameters.
+    kasChangeLogParams = (ksParamChangeLogEnabled, ksParamChangeLogPageNo, ksParamChangeLogEntriesPerPage,);
 
     ## @name Dispatcher debugging parameters.
     ## {@

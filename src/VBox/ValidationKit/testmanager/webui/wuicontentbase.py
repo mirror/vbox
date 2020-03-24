@@ -662,22 +662,26 @@ class WuiFormContentBase(WuiSingleContentBase): # pylint: disable=too-few-public
         aoActions = [];
         if self._sMode == self.ksMode_Show and self._fEditable:
             # Remove _idGen and effective date since we're always editing the current data,
-            # and make sure the primary ID is present.
+            # and make sure the primary ID is present.  Also remove change log stuff.
             dParams = self._oDisp.getParameters();
             if hasattr(oData, 'ksIdGenAttr'):
                 sIdGenParam = getattr(oData, 'ksParam_' + oData.ksIdGenAttr);
                 if sIdGenParam in dParams:
                     del dParams[sIdGenParam];
-            if WuiDispatcherBase.ksParamEffectiveDate in dParams:
-                del dParams[WuiDispatcherBase.ksParamEffectiveDate];
+            for sParam in [ WuiDispatcherBase.ksParamEffectiveDate, ] + list(WuiDispatcherBase.kasChangeLogParams):
+                if sParam in dParams:
+                    del dParams[sParam];
             dParams[getattr(oData, 'ksParam_' + oData.ksIdAttr)] = getattr(oData, oData.ksIdAttr);
 
             dParams[WuiDispatcherBase.ksParamAction] = getattr(self._oDisp, self._sActionBase + 'Edit');
             aoActions.append(WuiTmLink('Edit', '', dParams));
 
-            # Add clone operation if available. This uses the same data selection as for showing details.
+            # Add clone operation if available. This uses the same data selection as for showing details.  No change log.
             if hasattr(self._oDisp, self._sActionBase + 'Clone'):
                 dParams = self._oDisp.getParameters();
+                for sParam in WuiDispatcherBase.kasChangeLogParams:
+                    if sParam in dParams:
+                        del dParams[sParam];
                 dParams[WuiDispatcherBase.ksParamAction] = getattr(self._oDisp, self._sActionBase + 'Clone');
                 aoActions.append(WuiTmLink('Clone', '', dParams));
 
