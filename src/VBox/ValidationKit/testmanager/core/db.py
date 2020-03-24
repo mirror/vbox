@@ -103,6 +103,18 @@ def dbTimestampPythonNow():
     """
     return dbTimestampToZuluDatetime(datetime.datetime.utcnow());
 
+def dbOneTickIntervalString():
+    """
+    Returns the interval string for one tick.
+
+    Mogrify the return value into the SQL:
+        "... %s::INTERVAL ..."
+    or
+        "INTERVAL %s"
+    The completed SQL will contain the necessary ticks.
+    """
+    return '1 microsecond';
+
 def dbTimestampMinusOneTick(oValue):
     """
     Returns a new timestamp that's one tick before the given one.
