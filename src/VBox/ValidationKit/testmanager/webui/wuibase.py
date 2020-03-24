@@ -355,6 +355,19 @@ class WuiDispatcherBase(object):
     # Interface for WuiContentBase classes.
     #
 
+    def getUrlNoParams(self):
+        """
+        Returns the base URL without any parameters (no trailing '?' or &).
+        """
+        return self._sUrlBase[:self._sUrlBase.rindex('?')];
+
+    def getUrlBase(self):
+        """
+        Returns the base URL, ending with '?' or '&'.
+        This may already include some debug parameters.
+        """
+        return self._sUrlBase;
+
     def getParameters(self):
         """
         Returns a (shallow) copy of the request parameter dictionary.

@@ -484,15 +484,26 @@ class WuiFormContentBase(WuiSingleContentBase): # pylint: disable=too-few-public
         return 'Modified by %s.' % (sAuthor,);
 
     @staticmethod
-    def formatChangeLogEntry(aoEntries, iEntry):
+    def formatChangeLogEntry(aoEntries, iEntry, sUrl, dParams):
         """
         Formats one change log entry into one or more HTML table rows.
+
+        The sUrl and dParams arguments are used to construct links to historical
+        data using the tsEffective value.  If no links wanted, they'll both be None.
 
         Note! The parameters are given as array + index in case someone wishes
               to access adjacent entries later in order to generate better
               change descriptions.
         """
         oEntry = aoEntries[iEntry];
+
+        # Turn the effective date into a URL if we can:
+        if sUrl:
+            dParams[WuiDispatcherBase.ksParamEffectiveDate] = oEntry.tsEffective;
+            sEffective = WuiLinkBase(WuiFormContentBase.formatTsShort(oEntry.tsEffective), sUrl,
+                                     dParams, fBracketed = False).toHtml();
+        else:
+            sEffective = webutils.escapeElem(WuiFormContentBase.formatTsShort(oEntry.tsEffective))
 
         # The primary row.
         sRowClass = 'tmodd' if (iEntry + 1) & 1 else 'tmeven';
@@ -502,7 +513,7 @@ class WuiFormContentBase(WuiSingleContentBase): # pylint: disable=too-few-public
                    '      <td colspan="3">%s%s</td>\n' \
                    '    </tr>\n' \
                  % ( sRowClass,
-                     len(oEntry.aoChanges) + 1, webutils.escapeElem(WuiFormContentBase.formatTsShort(oEntry.tsEffective)),
+                     len(oEntry.aoChanges) + 1, sEffective,
                      len(oEntry.aoChanges) + 1, webutils.escapeElem(WuiFormContentBase.formatTsShort(oEntry.tsExpire)),
                      WuiFormContentBase._guessChangeLogEntryDescription(aoEntries, iEntry),
                      ' '.join(oLink.toHtml() for oLink in WuiFormContentBase._calcChangeLogEntryLinks(aoEntries, iEntry)),);
@@ -623,8 +634,15 @@ class WuiFormContentBase(WuiSingleContentBase): # pylint: disable=too-few-public
                     '    </thead>\n' \
                     '    <tbody>\n';
 
+        if self._sMode == self.ksMode_Show:
+            sUrl    = self._oDisp.getUrlNoParams();
+            dParams = self._oDisp.getParameters();
+        else:
+            sUrl    = None;
+            dParams = None;
+
         for iEntry, _ in enumerate(aoEntries):
-            sContent += self.formatChangeLogEntry(aoEntries, iEntry);
+            sContent += self.formatChangeLogEntry(aoEntries, iEntry, sUrl, dParams);
 
         sContent += '    <tbody>\n' \
                     '  </table>\n';
