@@ -301,12 +301,6 @@ int UIResourceMonitorModel::rowCount(const QModelIndex &parent /* = QModelIndex(
 int UIResourceMonitorModel::columnCount(const QModelIndex &parent /* = QModelIndex() */) const
 {
     Q_UNUSED(parent);
-    // int iCount = 0;
-    // for (int i = 0; i < m_columnShown.size(); ++i)
-    //     if (m_columnShown[i])
-    //         ++iCount;
-    // printf("column count %d\n", iCount);
-    // return iCount;
     return VMResouceMonitorColumn_Max;
 }
 
@@ -484,7 +478,6 @@ void UIResourceMonitorWidget::retranslateUi()
     m_columnCaptions[VMResouceMonitorColumn_VMExits] = tr("VM Exits");
     if (m_pModel)
         m_pModel->setColumnCaptions(m_columnCaptions);
-
 }
 
 void UIResourceMonitorWidget::resizeEvent(QResizeEvent *pEvent)
@@ -592,7 +585,6 @@ void UIResourceMonitorWidget::sltCreateContextMenu(const QPoint &point)
     if (!m_pTableView)
         return;
     QMenu menu;
-
     for (int i = 0; i < VMResouceMonitorColumn_Max; ++i)
     {
         QAction *pAction = menu.addAction(m_columnCaptions[i]);
@@ -602,6 +594,8 @@ void UIResourceMonitorWidget::sltCreateContextMenu(const QPoint &point)
         pAction->setCheckable(true);
         if (i < m_columnShown.size())
             pAction->setChecked(m_columnShown[i]);
+        if (i == (int)VMResouceMonitorColumn_Name)
+            pAction->setEnabled(false);
         connect(pAction, &QAction::triggered, this, &UIResourceMonitorWidget::sltHandleColumnAction);
     }
     menu.exec(m_pTableView->mapToGlobal(point));
@@ -692,7 +686,6 @@ void UIResourceMonitor::configureButtonBox()
 
 void UIResourceMonitor::finalize()
 {
-    /* Apply language settings: */
     retranslateUi();
 }
 

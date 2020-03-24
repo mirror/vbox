@@ -25,6 +25,7 @@
 
 /* COM includes: */
 #include "CMachineDebugger.h"
+#include "CPerformanceCollector.h"
 
 /* static */
 void UIMonitorCommon::getNetworkLoad(CMachineDebugger &debugger, quint64 &uOutNetworkReceived, quint64 &uOutNetworkTransmitted)
@@ -104,4 +105,44 @@ QVector<UIDebuggerMetricData> UIMonitorCommon::getAndParseStatsFromDebugger(CMac
         }
     }
     return xmlData;
+}
+
+/* static */
+void UIMonitorCommon::getRAMLoad(CPerformanceCollector &comPerformanceCollector, QVector<QString> &nameList,
+                                 QVector<CUnknown>& objectList, quint64 &iOutTotalRAM, quint64 &iOutFreeRAM)
+{
+    iOutTotalRAM = 0;
+    iOutFreeRAM = 0;
+    QVector<QString>  aReturnNames;
+    QVector<CUnknown>  aReturnObjects;
+    QVector<QString>  aReturnUnits;
+    QVector<ULONG>  aReturnScales;
+    QVector<ULONG>  aReturnSequenceNumbers;
+    QVector<ULONG>  aReturnDataIndices;
+    QVector<ULONG>  aReturnDataLengths;
+    /* Make a query to CPerformanceCollector to fetch some metrics (e.g RAM usage): */
+    QVector<LONG> returnData = comPerformanceCollector.QueryMetricsData(nameList,
+                                                                        objectList,
+                                                                        aReturnNames,
+                                                                        aReturnObjects,
+                                                                        aReturnUnits,
+                                                                        aReturnScales,
+                                                                        aReturnSequenceNumbers,
+                                                                        aReturnDataIndices,
+                                                                        aReturnDataLengths);
+    /* Parse the result we get from CPerformanceCollector to get respective values: */
+    for (int i = 0; i < aReturnNames.size(); ++i)
+    {
+        if (aReturnDataLengths[i] == 0)
+            continue;
+        /* Read the last of the return data disregarding the rest since we are caching the data in GUI side: */
+        float fData = returnData[aReturnDataIndices[i] + aReturnDataLengths[i] - 1] / (float)aReturnScales[i];
+        if (aReturnNames[i].contains("RAM", Qt::CaseInsensitive) && !aReturnNames[i].contains(":"))
+        {
+            if (aReturnNames[i].contains("Total", Qt::CaseInsensitive))
+                iOutTotalRAM = (quint64)fData;
+            if (aReturnNames[i].contains("Free", Qt::CaseInsensitive))
+                iOutFreeRAM = (quint64)fData;
+        }
+    }
 }

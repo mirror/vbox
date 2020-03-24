@@ -45,6 +45,8 @@ public:
         static void getDiskLoad(CMachineDebugger &debugger, quint64 &uOutDiskWritten, quint64 &uOutDiskRead);
         static void getVMMExitCount(CMachineDebugger &debugger, quint64 &uOutVMMExitCount);
     /** @} */
+        static void getRAMLoad(CPerformanceCollector &comPerformanceCollector, QVector<QString> &nameList,
+                               QVector<CUnknown>& objectList, quint64 &iOutTotalRAM, quint64 &iOutFreeRAM);
 
 private:
 

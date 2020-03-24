@@ -947,44 +947,14 @@ void UIPerformanceMonitor::sltTimeout()
     if (m_performanceMonitor.isNull())
         return;
     ++m_iTimeStep;
-    QVector<QString> allNames;// = new ArrayList<IUnknown>();
-    QVector<CUnknown> allObjects;// = new ArrayList<IUnknown>();
-    QVector<QString>  aReturnNames;
-    QVector<CUnknown>  aReturnObjects;
-    QVector<QString>  aReturnUnits;
-    QVector<ULONG>  aReturnScales;
-    QVector<ULONG>  aReturnSequenceNumbers;
-    QVector<ULONG>  aReturnDataIndices;
-    QVector<ULONG>  aReturnDataLengths;
-    /* Make a query to CPerformanceCollector to fetch some metrics (e.g RAM usage): */
-    QVector<LONG> returnData = m_performanceMonitor.QueryMetricsData(m_nameList,
-                                                                     m_objectList,
-                                                                     aReturnNames,
-                                                                     aReturnObjects,
-                                                                     aReturnUnits,
-                                                                     aReturnScales,
-                                                                     aReturnSequenceNumbers,
-                                                                     aReturnDataIndices,
-                                                                     aReturnDataLengths);
-    quint64 iTotalRAM = 0;
-    quint64 iFreeRAM = 0;
-    /* Parse the result we get from CPerformanceCollector to get respective values: */
-    for (int i = 0; i < aReturnNames.size(); ++i)
-    {
-        if (aReturnDataLengths[i] == 0)
-            continue;
-        /* Read the last of the return data disregarding the rest since we are caching the data in GUI side: */
-        float fData = returnData[aReturnDataIndices[i] + aReturnDataLengths[i] - 1] / (float)aReturnScales[i];
-        if (aReturnNames[i].contains("RAM", Qt::CaseInsensitive) && !aReturnNames[i].contains(":"))
-        {
-            if (aReturnNames[i].contains("Total", Qt::CaseInsensitive))
-                iTotalRAM = (quint64)fData;
-            if (aReturnNames[i].contains("Free", Qt::CaseInsensitive))
-                iFreeRAM = (quint64)fData;
-        }
-    }
-    if (m_metrics.contains(m_strRAMMetricName))
-        updateRAMGraphsAndMetric(iTotalRAM, iFreeRAM);
+
+   if (m_metrics.contains(m_strRAMMetricName))
+   {
+       quint64 iTotalRAM = 0;
+       quint64 iFreeRAM = 0;
+       UIMonitorCommon::getRAMLoad(m_performanceMonitor, m_nameList, m_objectList, iTotalRAM, iFreeRAM);
+       updateRAMGraphsAndMetric(iTotalRAM, iFreeRAM);
+   }
 
     /* Update the CPU load chart with values we get from IMachineDebugger::getCPULoad(..): */
     if (m_metrics.contains(m_strCPUMetricName))
