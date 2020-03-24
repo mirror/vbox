@@ -92,10 +92,8 @@
         <file alias="os_solaris_64.png">images/os_solaris_64.png</file>
         <file alias="os_turbolinux.png">images/os_turbolinux.png</file>
         <file alias="os_turbolinux_64.png">images/os_turbolinux_64.png</file>
-        <file alias="os_type_16px.png">images/os_type_16px.png</file>
         <file alias="os_ubuntu.png">images/os_ubuntu.png</file>
         <file alias="os_ubuntu_64.png">images/os_ubuntu_64.png</file>
-        <file alias="os_version_16px.png">images/os_version_16px.png</file>
         <file alias="os_win10.png">images/os_win10.png</file>
         <file alias="os_win10_64.png">images/os_win10_64.png</file>
         <file alias="os_win2k.png">images/os_win2k.png</file>
@@ -300,6 +298,8 @@
         <file alias="statusbar_settings_16px.png">images/statusbar_settings_16px.png</file>
         <file alias="statusbar_settings_disabled_16px.png">images/statusbar_settings_disabled_16px.png</file>
         <file alias="subnet_16px.png">images/subnet_16px.png</file>
+        <file alias="system_type_16px.png">images/system_type_16px.png</file>
+        <file alias="system_version_16px.png">images/system_version_16px.png</file>
         <file alias="tools_banner_global_200px.png">images/tools_banner_global_200px.png</file>
         <file alias="tools_banner_machine_200px.png">images/tools_banner_machine_200px.png</file>
         <file alias="tools_global_32px.png">images/tools_global_32px.png</file>

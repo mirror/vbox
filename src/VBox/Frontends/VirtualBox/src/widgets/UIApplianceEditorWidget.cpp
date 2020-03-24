@@ -649,7 +649,7 @@ QVariant UIVirtualHardwareItem::data(int iColumn, int iRole) const
                     case KVirtualSystemDescriptionType_Version:
                     case KVirtualSystemDescriptionType_Description:
                     case KVirtualSystemDescriptionType_License:                value = UIIconPool::iconSet(":/description_16px.png"); break;
-                    case KVirtualSystemDescriptionType_OS:                     value = UIIconPool::iconSet(":/os_type_16px.png"); break;
+                    case KVirtualSystemDescriptionType_OS:                     value = UIIconPool::iconSet(":/system_type_16px.png"); break;
                     case KVirtualSystemDescriptionType_CPU:                    value = UIIconPool::iconSet(":/cpu_16px.png"); break;
                     case KVirtualSystemDescriptionType_Memory:                 value = UIIconPool::iconSet(":/ram_16px.png"); break;
                     case KVirtualSystemDescriptionType_HardDiskControllerIDE:  value = UIIconPool::iconSet(":/ide_16px.png"); break;
