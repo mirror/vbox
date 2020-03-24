@@ -79,8 +79,8 @@ class SystemChangelogLogic(ModelLogicBase):
         ksWhat_FailureCategory:  ( 'FailureCategories',  'idFailureCategory',   None, ),
         ksWhat_FailureReason:    ( 'FailureReasons',     'idFailureReason',     None, ),
         ksWhat_GlobalRsrc:       ( 'GlobalResources',    'idGlobalRsrc',        None, ),
-        ksWhat_SchedGroup:       ( 'SchedGroupes',       'idSchedGroup',        None, ),
-        ksWhat_TestGroup:        ( 'TestGroupes',        'idTestGroup',         None, ),
+        ksWhat_SchedGroup:       ( 'SchedGroups',        'idSchedGroup',        None, ),
+        ksWhat_TestGroup:        ( 'TestGroups',         'idTestGroup',         None, ),
         ksWhat_User:             ( 'Users',              'idUser',              None, ),
         ksWhat_TestResult:       ( 'TestResults',        'idTestResult',        None, ),
     }, **{sEvent: ( 'SystemLog',  'tsCreated',  'TimestampId', ) for sEvent in SystemLogData.kasEvents});
@@ -153,7 +153,7 @@ class SystemChangelogLogic(ModelLogicBase):
 
         # Special entry for the system log.
         sQuery  = '(\n'
-        sQuery += '    SELECT NULL AS uidAuthor,\n';
+        sQuery += '    SELECT NULL      AS uidAuthor,\n';
         sQuery += '           tsCreated AS tsEffective,\n';
         sQuery += '           sEvent    AS sEvent,\n';
         sQuery += '           NULL      AS idWhat,\n';
