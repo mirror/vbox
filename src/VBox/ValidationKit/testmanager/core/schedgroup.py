@@ -501,7 +501,7 @@ class SchedGroupLogic(ModelLogicBase): # pylint: disable=too-few-public-methods
             aoRet.append(SchedGroupDataEx().initFromDbRowEx(aoRow, self._oDb, tsNow));
         return aoRet;
 
-    def fetchForChangeLog(self, idSchedGroup, iStart, cMaxRows, tsNow): # pylint: disable=too-many-locals
+    def fetchForChangeLog(self, idSchedGroup, iStart, cMaxRows, tsNow): # pylint: disable=too-many-locals,too-many-statements
         """
         Fetches change log entries for a scheduling group.
 
@@ -554,7 +554,7 @@ LIMIT %s OFFSET %s
             aoEntries.append(ChangeLogEntry(uidAuthor, None, tsEffective, tsPrevious, None, None, []));
             tsPrevious = db.dbTimestampPlusOneTick(tsEffective);
 
-        if True:
+        if True: # pylint: disable=using-constant-test
             #
             # Fetch data for each for each change log entry point.
             #
