@@ -610,7 +610,7 @@ void UIResourceMonitorWidget::retranslateUi()
     m_columnCaptions[VMResouceMonitorColumn_CPUGuestLoad] = tr("CPU Guest");
     m_columnCaptions[VMResouceMonitorColumn_CPUVMMLoad] = tr("CPU VMM");
     m_columnCaptions[VMResouceMonitorColumn_RAMUsedAndTotal] = tr("RAM Used/Total");
-    m_columnCaptions[VMResouceMonitorColumn_RAMUsedPercentage] = tr("RAM \%");
+    m_columnCaptions[VMResouceMonitorColumn_RAMUsedPercentage] = tr("RAM %");
     m_columnCaptions[VMResouceMonitorColumn_NetworkUpRate] = tr("Network Up Rate");
     m_columnCaptions[VMResouceMonitorColumn_NetworkDownRate] = tr("Network Down Rate");
     m_columnCaptions[VMResouceMonitorColumn_NetworkUpTotal] = tr("Network Up Total");
