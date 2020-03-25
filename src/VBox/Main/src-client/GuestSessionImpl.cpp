@@ -4126,8 +4126,12 @@ HRESULT GuestSession::processCreateEx(const com::Utf8Str &aExecutable, const std
     /* Executable and arguments. */
     procInfo.mExecutable = pszExecutable;
     if (aArguments.size())
+    {
         for (size_t i = 0; i < aArguments.size(); i++)
             procInfo.mArguments.push_back(aArguments[i]);
+    }
+    else /* If no arguments were given, add the executable as argv[0] by default. */
+        procInfo.mArguments.push_back(procInfo.mExecutable);
 
     /* Combine the environment changes associated with the ones passed in by
        the caller, giving priority to the latter.  The changes are putenv style

@@ -1066,7 +1066,10 @@ static int vgsvcGstCtrlProcessAllocateArgv(const char *pszArgv0, const char * co
     if (!papszNewArgv)
         return VERR_NO_MEMORY;
 
-#ifdef DEBUG
+#ifdef DEBUG /* Never log this stuff in release mode! */
+    VGSvcVerbose(3, "VGSvcGstCtrlProcessAllocateArgv: pszArgv0 = '%s'\n", pszArgv0);
+    for (uint32_t i = 0; i < cArgs; i++)
+        VGSvcVerbose(3, "VGSvcGstCtrlProcessAllocateArgv: papszArgs[%RU32] = '%s'\n", i, papszArgs[i]);
     VGSvcVerbose(3, "VGSvcGstCtrlProcessAllocateArgv: cbSize=%RU32, cArgs=%RU32\n", cbSize, cArgs);
 #endif
 
@@ -1341,10 +1344,21 @@ static int vgsvcGstCtrlProcessCreateProcess(const char *pszExec, const char * co
 #endif
     if (RT_SUCCESS(rc))
     {
-        const char *pszArgv0 = RT_BOOL(g_fControlHostFeatures0 & VBOX_GUESTCTRL_HF_0_PROCESS_ARGV0)
-                             ? papszArgs[0] : pszExec;
+        /**
+         * This one is a bit tricky to also support older hosts:
+         *
+         * - If the host does not provide a dedicated argv[0] (< VBox 6.1.x), we use the
+         *   executable name (pszExec) as the (default) argv[0]. This is wrong, but we can't do
+         *   much about it. The rest (argv[1,2,n]) then gets set starting at papszArgs[0].
+         *
+         * - Newer hosts (>= VBox 6.1.x) provide a correct argv[0] independently of the actual
+         *   executable name though, so actually use argv[0] *and* argv[1,2,n] as intended.
+         */
+        const bool fHasArgv0 = RT_BOOL(g_fControlHostFeatures0 & VBOX_GUESTCTRL_HF_0_PROCESS_ARGV0);
+
         char **papszArgsExp;
-        rc = vgsvcGstCtrlProcessAllocateArgv(pszArgv0, papszArgs,
+        rc = vgsvcGstCtrlProcessAllocateArgv(fHasArgv0 ?  papszArgs[0] :  pszExec,
+                                             fHasArgv0 ? &papszArgs[1] : &papszArgs[0],
                                              fFlags, &papszArgsExp);
         if (RT_FAILURE(rc))
         {
@@ -1497,14 +1511,26 @@ static int vgsvcGstCtrlProcessProcessWorker(PVBOXSERVICECTRLPROCESS pProcess)
     /*
      * Prepare argument list.
      */
+    VGSvcVerbose(3, "vgsvcGstCtrlProcessProcessWorker: fHostFeatures0       = %#x\n",     g_fControlHostFeatures0);
+    VGSvcVerbose(3, "vgsvcGstCtrlProcessProcessWorker: StartupInfo.szCmd    = '%s'\n",    pProcess->StartupInfo.szCmd);
+    VGSvcVerbose(3, "vgsvcGstCtrlProcessProcessWorker: StartupInfo.uNumArgs = '%RU32'\n", pProcess->StartupInfo.uNumArgs);
+#ifdef DEBUG /* Never log this stuff in release mode! */
+    VGSvcVerbose(3, "vgsvcGstCtrlProcessProcessWorker: StartupInfo.szArgs   = '%s'\n",    pProcess->StartupInfo.szArgs);
+#endif
+
     char **papszArgs;
     int cArgs = 0; /* Initialize in case of RTGetOptArgvFromString() is failing ... */
     rc = RTGetOptArgvFromString(&papszArgs, &cArgs,
                                 pProcess->StartupInfo.uNumArgs > 0 ? pProcess->StartupInfo.szArgs : "",
                                 RTGETOPTARGV_CNV_QUOTE_BOURNE_SH, NULL);
-    /* Did we get the same result? */
-    Assert((int)pProcess->StartupInfo.uNumArgs == cArgs + 1 /* Take argv[0] into account */);
 
+    const bool fHasArgv0 = RT_BOOL(g_fControlHostFeatures0 & VBOX_GUESTCTRL_HF_0_PROCESS_ARGV0);
+
+    /* Did we get the same result?
+     * Take into account that we might not have supplied a (correct) argv[0] from the host. */
+    AssertMsg((int)pProcess->StartupInfo.uNumArgs == cArgs + fHasArgv0 ? 0 : 1,
+              ("StartupInfo.uNumArgs=%RU32 != cArgs=%d, fHostFeatures0=%#x\n",
+               pProcess->StartupInfo.uNumArgs, cArgs, g_fControlHostFeatures0));
     /*
      * Create the environment.
      */

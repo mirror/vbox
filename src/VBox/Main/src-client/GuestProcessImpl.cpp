@@ -47,6 +47,7 @@
 #include "ThreadTask.h"
 
 #include <memory> /* For auto_ptr. */
+#include <algorithm> /* For std::rotate. */
 
 #include <iprt/asm.h>
 #include <iprt/cpp/utils.h> /* For unconst(). */
@@ -1080,8 +1081,10 @@ int GuestProcess::i_startProcessInner(uint32_t cMsTimeout, AutoWriteLock &rLock,
         Guest *pGuest = mSession->i_getParent();
         AssertPtr(pGuest);
 
+        const uint64_t fGuestControlFeatures0 = pGuest->i_getGuestControlFeatures0();
+
         /* If the Guest Additions don't support using argv[0] correctly (< 6.1.x), don't supply it. */
-        if (!RT_BOOL(pGuest->i_getGuestControlFeatures0() & VBOX_GUESTCTRL_GF_0_PROCESS_ARGV0))
+        if (!(fGuestControlFeatures0 & VBOX_GUESTCTRL_GF_0_PROCESS_ARGV0))
             vrc = RTGetOptArgvToString(&pszArgs, papszArgv + 1, RTGETOPTARGV_CNV_QUOTE_BOURNE_SH);
         else /* ... else send the whole argv, including argv[0]. */
             vrc = RTGetOptArgvToString(&pszArgs, papszArgv, RTGETOPTARGV_CNV_QUOTE_BOURNE_SH);
