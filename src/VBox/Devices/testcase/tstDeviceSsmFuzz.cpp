@@ -103,81 +103,72 @@ static DECLCALLBACK(int) tstDevSsmFuzzEntry(TSTDEVDUT hDut, PCTSTDEVCFGITEM paCf
     int rc = RTFuzzCtxCreate(&hFuzzCtx, RTFUZZCTXTYPE_BLOB);
     if (RT_SUCCESS(rc))
     {
-        uint64_t cbMutateRange = tstDevSsmFuzzGetCfgU64(paCfg, cCfgItems, "OffMutateSize");
-        if (!cbMutateRange)
-            cbMutateRange = UINT64_MAX;
-
-        rc = RTFuzzCtxCfgSetMutationRange(hFuzzCtx,
-                                          tstDevSsmFuzzGetCfgU64(paCfg, cCfgItems, "OffMutateStart"),
-                                          cbMutateRange);
-        if (RT_SUCCESS(rc))
-            rc = RTFuzzCtxCorpusInputAddFromDirPath(hFuzzCtx, tstDevSsmFuzzGetCfgString(paCfg, cCfgItems, "CorpusPath"));
+        RTFUZZCFG hFuzzCfg;
+        rc = RTFuzzCfgCreateFromFile(&hFuzzCfg, tstDevSsmFuzzGetCfgString(paCfg, cCfgItems, "CorpusPath"), NULL);
         if (RT_SUCCESS(rc))
         {
-            rc = RTFuzzCtxCfgSetInputSeedMaximum(hFuzzCtx, (size_t)tstDevSsmFuzzGetCfgU64(paCfg, cCfgItems, "InputSizeMax"));
-            if (RT_SUCCESS(rc))
+            rc = RTFuzzCfgImport(hFuzzCfg, hFuzzCtx, RTFUZZCFG_IMPORT_F_DEFAULT);
+            RTFuzzCfgRelease(hFuzzCfg);
+        }
+
+        if (RT_SUCCESS(rc))
+        {
+            /* Create a new SSM handle to use. */
+            PSSMHANDLE pSsm = (PSSMHANDLE)RTMemAllocZ(sizeof(*pSsm));
+            if (RT_LIKELY(pSsm))
             {
-                rc = RTFuzzCtxReseed(hFuzzCtx, tstDevSsmFuzzGetCfgU64(paCfg, cCfgItems, "Seed"));
-                if (RT_SUCCESS(rc))
+                pSsm->pDut          = hDut;
+                pSsm->pbSavedState  = NULL;
+                pSsm->cbSavedState  = 0;
+                pSsm->offDataBuffer = 0;
+                pSsm->uCurUnitVer   = tstDevSsmFuzzGetCfgU32(paCfg, cCfgItems, "UnitVersion");
+                pSsm->rc            = VINF_SUCCESS;
+
+                uint64_t cRuntimeMs = tstDevSsmFuzzGetCfgU64(paCfg, cCfgItems, "RuntimeSec") * RT_MS_1SEC_64;
+                uint64_t tsStart = RTTimeMilliTS();
+                uint64_t cFuzzedInputs = 0;
+                do
                 {
-                    /* Create a new SSM handle to use. */
-                    PSSMHANDLE pSsm = (PSSMHANDLE)RTMemAllocZ(sizeof(*pSsm));
-                    if (RT_LIKELY(pSsm))
+                    RTFUZZINPUT hFuzzInp;
+                    rc = RTFuzzCtxInputGenerate(hFuzzCtx, &hFuzzInp);
+                    if (RT_SUCCESS(rc))
                     {
-                        pSsm->pDut          = hDut;
-                        pSsm->pbSavedState  = NULL;
-                        pSsm->cbSavedState  = 0;
-                        pSsm->offDataBuffer = 0;
-                        pSsm->uCurUnitVer   = tstDevSsmFuzzGetCfgU32(paCfg, cCfgItems, "UnitVersion");
-                        pSsm->rc            = VINF_SUCCESS;
+                        void *pvBlob = NULL;
+                        size_t cbBlob = 0;
 
-                        uint64_t cRuntimeMs = tstDevSsmFuzzGetCfgU64(paCfg, cCfgItems, "RuntimeSec") * RT_MS_1SEC_64;
-                        uint64_t tsStart = RTTimeMilliTS();
-                        uint64_t cFuzzedInputs = 0;
-                        do
+                        rc = RTFuzzInputQueryBlobData(hFuzzInp, &pvBlob, &cbBlob);
+                        if (RT_SUCCESS(rc))
                         {
-                            RTFUZZINPUT hFuzzInp;
-                            rc = RTFuzzCtxInputGenerate(hFuzzCtx, &hFuzzInp);
-                            if (RT_SUCCESS(rc))
+                            pSsm->pbSavedState  = (uint8_t *)pvBlob;
+                            pSsm->cbSavedState  = cbBlob;
+                            pSsm->offDataBuffer = 0;
+                            pSsm->rc            = VINF_SUCCESS;
+
+                            /* Get the SSM handler from the device. */
+                            int rcDut = VINF_SUCCESS;
+                            PTSTDEVDUTSSM pSsmClbks = RTListGetFirst(&hDut->LstSsmHandlers, TSTDEVDUTSSM, NdSsm);
+                            if (pSsmClbks)
                             {
-                                void *pvBlob = NULL;
-                                size_t cbBlob = 0;
+                                /* Load preparations. */
+                                if (pSsmClbks->pfnLoadPrep)
+                                    rcDut = pSsmClbks->pfnLoadPrep(hDut->pDevIns, pSsm);
+                                if (RT_SUCCESS(rcDut))
+                                    rcDut = pSsmClbks->pfnLoadExec(hDut->pDevIns, pSsm, pSsm->uCurUnitVer, SSM_PASS_FINAL);
 
-                                rc = RTFuzzInputQueryBlobData(hFuzzInp, &pvBlob, &cbBlob);
-                                if (RT_SUCCESS(rc))
-                                {
-                                    pSsm->pbSavedState  = (uint8_t *)pvBlob;
-                                    pSsm->cbSavedState  = cbBlob;
-                                    pSsm->offDataBuffer = 0;
-                                    pSsm->rc            = VINF_SUCCESS;
-
-                                    /* Get the SSM handler from the device. */
-                                    int rcDut = VINF_SUCCESS;
-                                    PTSTDEVDUTSSM pSsmClbks = RTListGetFirst(&hDut->LstSsmHandlers, TSTDEVDUTSSM, NdSsm);
-                                    if (pSsmClbks)
-                                    {
-                                        /* Load preparations. */
-                                        if (pSsmClbks->pfnLoadPrep)
-                                            rcDut = pSsmClbks->pfnLoadPrep(hDut->pDevIns, pSsm);
-                                        if (RT_SUCCESS(rcDut))
-                                            rcDut = pSsmClbks->pfnLoadExec(hDut->pDevIns, pSsm, pSsm->uCurUnitVer, SSM_PASS_FINAL);
-
-                                        cFuzzedInputs++;
-                                    }
-                                    if (RT_SUCCESS(rcDut))
-                                        RTFuzzInputAddToCtxCorpus(hFuzzInp);
-                                }
-                                RTFuzzInputRelease(hFuzzInp);
+                                cFuzzedInputs++;
                             }
-                        } while (   RT_SUCCESS(rc)
-                                 && RTTimeMilliTS() - tsStart < cRuntimeMs);
-
-                        RTMemFree(pSsm);
+                            if (RT_SUCCESS(rcDut))
+                                RTFuzzInputAddToCtxCorpus(hFuzzInp);
+                        }
+                        RTFuzzInputRelease(hFuzzInp);
                     }
-                    else
-                        rc = VERR_NO_MEMORY;
-                }
+                } while (   RT_SUCCESS(rc)
+                         && RTTimeMilliTS() - tsStart < cRuntimeMs);
+
+                RTMemFree(pSsm);
             }
+            else
+                rc = VERR_NO_MEMORY;
         }
 
         RTFuzzCtxRelease(hFuzzCtx);
