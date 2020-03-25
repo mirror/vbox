@@ -124,6 +124,18 @@ RTDECL(int) RTJsonParseFromString(PRTJSONVAL phJsonVal, const char *pszStr, PRTE
 RTDECL(int) RTJsonParseFromFile(PRTJSONVAL phJsonVal, const char *pszFilename, PRTERRINFO pErrInfo);
 
 /**
+ * Parses a JSON document from the given VFS file
+ * returning the root JSON value.
+ *
+ * @returns IPRT status code.
+ * @retval  VERR_JSON_MALFORMED if the document does not conform to the spec.
+ * @param   phJsonVal       Where to store the handle to the JSON value on success.
+ * @param   hVfsFile        The VFS file to parse.
+ * @param   pErrInfo        Where to store extended error info. Optional.
+ */
+RTDECL(int) RTJsonParseFromVfsFile(PRTJSONVAL phJsonVal, RTVFSFILE hVfsFile, PRTERRINFO pErrInfo);
+
+/**
  * Retain a given JSON value.
  *
  * @returns New reference count.

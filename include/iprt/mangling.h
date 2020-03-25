@@ -1170,6 +1170,7 @@
 # define RTJsonParseFromBuf                             RT_MANGLER(RTJsonParseFromBuf)
 # define RTJsonParseFromFile                            RT_MANGLER(RTJsonParseFromFile)
 # define RTJsonParseFromString                          RT_MANGLER(RTJsonParseFromString)
+# define RTJsonParseFromVfsFile                         RT_MANGLER(RTJsonParseFromVfsFile)
 # define RTJsonValueGetArraySize                        RT_MANGLER(RTJsonValueGetArraySize)
 # define RTJsonValueGetString                           RT_MANGLER(RTJsonValueGetString)
 # define RTJsonValueGetType                             RT_MANGLER(RTJsonValueGetType)
