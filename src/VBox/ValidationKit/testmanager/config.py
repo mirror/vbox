@@ -89,6 +89,8 @@ g_ksBuildBinUrlPrefix   = '/builds/'
 g_ksBuildBinRootDir     = '/mnt/builds/'
 ## File on the build binary share that can be used to check that it's mounted.
 g_ksBuildBinRootFile    = 'builds.txt'
+## Template for paratial database dump files.  One argument: UID
+g_ksTmDbDumpFileTemplate = '/var/tmp/tm-partial-db-dump-for-%u.zip'
 ## @}
 
 
@@ -141,6 +143,19 @@ g_kcMbMaxUploadTotal    = 200;
 ## The max number of files that can be uploaded.
 g_kcMaxUploads          = 256;
 ## @}
+
+
+## @name Partial Database Dump
+## @{
+
+## Minimum number of day.  Set higher than g_kcTmDbDumpMaxDays to disable.
+g_kcTmDbDumpMinDays     = 1;
+## Maximum number of day.  Keep low - consider space and runtime.
+g_kcTmDbDumpMaxDays     = 31;
+## The default number of days.
+g_kcTmDbDumpDefaultDays = 14;
+## @}
+
 
 ## @name Debug Features
 ## @{

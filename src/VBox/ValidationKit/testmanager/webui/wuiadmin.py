@@ -34,7 +34,7 @@ import cgitb;
 import sys;
 
 # Validation Kit imports.
-from common                                    import webutils
+from common                                    import utils, webutils;
 from testmanager                               import config;
 from testmanager.webui.wuibase                 import WuiDispatcherBase, WuiException
 
@@ -54,6 +54,8 @@ class WuiAdmin(WuiDispatcherBase):
     ## @{
     ksActionSystemLogList           = 'SystemLogList'
     ksActionSystemChangelogList     = 'SystemChangelogList'
+    ksActionSystemDbDump            = 'SystemDbDump'
+    ksActionSystemDbDumpDownload    = 'SystemDbDumpDownload'
 
     ksActionUserList                = 'UserList'
     ksActionUserAdd                 = 'UserAdd'
@@ -166,10 +168,12 @@ class WuiAdmin(WuiDispatcherBase):
 
 
         #
-        # System Log actions.
+        # System actions.
         #
         self._dDispatch[self.ksActionSystemChangelogList]       = self._actionSystemChangelogList;
         self._dDispatch[self.ksActionSystemLogList]             = self._actionSystemLogList;
+        self._dDispatch[self.ksActionSystemDbDump]              = self._actionSystemDbDump;
+        self._dDispatch[self.ksActionSystemDbDumpDownload]      = self._actionSystemDbDumpDownload;
 
         #
         # User Account actions.
@@ -344,6 +348,7 @@ class WuiAdmin(WuiDispatcherBase):
                 [
                     [ 'Changelog',              self._sActionUrlBase + self.ksActionSystemChangelogList,    False ],
                     [ 'System log',             self._sActionUrlBase + self.ksActionSystemLogList,          False ],
+                    [ 'Partial DB Dump',        self._sActionUrlBase + self.ksActionSystemDbDump,           False ],
                     [ 'User accounts',          self._sActionUrlBase + self.ksActionUserList,               False ],
                     [ 'New user',               self._sActionUrlBase + self.ksActionUserAdd,                True  ],
                 ]
@@ -422,7 +427,7 @@ class WuiAdmin(WuiDispatcherBase):
     # System wide changelog actions.
 
     def _actionSystemChangelogList(self):
-        """ Action wrapper. """
+        """ Action handler. """
         from testmanager.core.systemchangelog          import SystemChangelogLogic;
         from testmanager.webui.wuiadminsystemchangelog import WuiAdminSystemChangelogList;
 
@@ -446,6 +451,70 @@ class WuiAdmin(WuiDispatcherBase):
         from testmanager.core.systemlog                import SystemLogLogic;
         from testmanager.webui.wuiadminsystemlog       import WuiAdminSystemLogList;
         return self._actionGenericListing(SystemLogLogic, WuiAdminSystemLogList)
+
+    def _actionSystemDbDump(self):
+        """ Action handler. """
+        from testmanager.webui.wuiadminsystemdbdump    import WuiAdminSystemDbDumpForm;
+
+        cDaysBack = self.getIntParam(self.ksParamDaysBack, iMin = config.g_kcTmDbDumpMinDays,
+                                     iMax = config.g_kcTmDbDumpMaxDays, iDefault = config.g_kcTmDbDumpDefaultDays);
+        self._checkForUnknownParameters();
+
+        oContent = WuiAdminSystemDbDumpForm(cDaysBack, oDisp = self);
+        (self._sPageTitle, self._sPageBody) = oContent.showForm();
+        return True;
+
+    def _actionSystemDbDumpDownload(self):
+        """ Action handler. """
+        import datetime;
+        import os;
+
+        cDaysBack = self.getIntParam(self.ksParamDaysBack, iMin = config.g_kcTmDbDumpMinDays,
+                                     iMax = config.g_kcTmDbDumpMaxDays, iDefault = config.g_kcTmDbDumpDefaultDays);
+        self._checkForUnknownParameters();
+
+        #
+        # Generate the dump.
+        #
+        # We generate a file name that's unique to a user is smart enough to only
+        # issue one of these requests at the time.  This also makes sure we  won't
+        #  waste too much space should this code get interrupted and rerun.
+        #
+        oFile    = None;
+        oNow     = datetime.datetime.utcnow();
+        sTmpFile = config.g_ksTmDbDumpFileTemplate % (self._oCurUser.uid,);
+        sScript  = os.path.join(config.g_ksTestManagerDir, 'db', 'partial-db-dump.py');
+        try:
+            (iExitCode, sStdOut, sStdErr) = utils.processOutputUnchecked([sScript, '--days-to-dump', str(cDaysBack),
+                                                                          '-f', sTmpFile,]);
+            if iExitCode != 0:
+                raise Exception('iExitCode=%s\n--- stderr ---\n%s\n--- stdout ---\n%s' % (iExitCode, sStdOut, sStdErr,));
+
+            #
+            # Open and send the dump.
+            #
+            oFile = open(sTmpFile, 'rb');
+            cbFile = os.fstat(oFile.fileno()).st_size;
+
+            self._oSrvGlue.setHeaderField('Content-Type', 'application/zip');
+            self._oSrvGlue.setHeaderField('Content-Disposition',
+                                          oNow.strftime('attachment; filename="partial-db-dump-%Y-%m-%dT%H-%M-%S.zip"'));
+            self._oSrvGlue.setHeaderField('Content-Length', str(cbFile));
+
+            while True:
+                abChunk = oFile.read(262144);
+                if not abChunk:
+                    break;
+                self._oSrvGlue.writeRaw(abChunk);
+
+        finally:
+            # Delete the file to save space.
+            if oFile:
+                try:    oFile.close();
+                except: pass;
+            utils.noxcptDeleteFile(sTmpFile);
+        return self.ksDispatchRcAllDone;
+
 
     # User Account actions.
 
