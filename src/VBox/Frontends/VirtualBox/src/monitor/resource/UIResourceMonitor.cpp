@@ -92,6 +92,7 @@ public:
     quint64  m_uCPUVMMLoad;
 
     quint64  m_uTotalRAM;
+    quint64  m_uFreeRAM;
     quint64  m_uUsedRAM;
     float    m_fRAMUsagePercentage;
 
@@ -109,16 +110,10 @@ public:
     quint64 m_uVMExitTotal;
 
     CMachineDebugger m_comDebugger;
-    /** @name The following are used during UIPerformanceCollector::QueryMetricsData(..)
-      * @{ */
-        QVector<QString> m_nameList;
-        QVector<CUnknown> m_objectList;
-    /** @} */
-    CPerformanceCollector m_performanceMonitor;
 
 private:
 
-    void initPerformanceCollector();
+    void setupPerformanceCollector();
 
 };
 
@@ -176,11 +171,23 @@ private slots:
 
 private:
 
-    QVector<UIResourceMonitorItem> m_itemList;
     void initializeItems();
-    QVector<QString>             m_columnCaptions;
+    void setupPerformanceCollector();
+    void queryRAMLoad();
+    void addItem(const QUuid& uMachineId, const QString& strMachineName);
+    void removeItem(const QUuid& uMachineId);
 
+    QVector<UIResourceMonitorItem> m_itemList;
+    /* Used to find machines by uid. key is the machine uid and int is the index to m_itemList */
+    QMap<QUuid, int>               m_itemMap;
+    QVector<QString>               m_columnCaptions;
     QTimer *m_pTimer;
+    /** @name The following are used during UIPerformanceCollector::QueryMetricsData(..)
+      * @{ */
+        QVector<QString> m_nameList;
+        QVector<CUnknown> m_objectList;
+    /** @} */
+    CPerformanceCollector m_performanceMonitor;
 
 };
 
@@ -208,6 +215,7 @@ UIResourceMonitorItem::UIResourceMonitorItem(const QUuid &uid, const QString &st
     , m_uCPUGuestLoad(0)
     , m_uCPUVMMLoad(0)
     , m_uTotalRAM(0)
+    , m_uFreeRAM(0)
     , m_uUsedRAM(0)
     , m_fRAMUsagePercentage(0)
     , m_uNetworkDownRate(0)
@@ -228,7 +236,6 @@ UIResourceMonitorItem::UIResourceMonitorItem(const QUuid &uid, const QString &st
         if (!comConsole.isNull())
             m_comDebugger = comConsole.GetDebugger();
     }
-    initPerformanceCollector();
 }
 
 UIResourceMonitorItem::UIResourceMonitorItem()
@@ -249,7 +256,6 @@ UIResourceMonitorItem::UIResourceMonitorItem()
     , m_uVMExitRate(0)
     , m_uVMExitTotal(0)
 {
-    initPerformanceCollector();
 }
 
 UIResourceMonitorItem::UIResourceMonitorItem(const QUuid &uid)
@@ -270,7 +276,6 @@ UIResourceMonitorItem::UIResourceMonitorItem(const QUuid &uid)
     , m_uVMExitRate(0)
     , m_uVMExitTotal(0)
 {
-    initPerformanceCollector();
 }
 
 bool UIResourceMonitorItem::operator==(const UIResourceMonitorItem& other) const
@@ -280,16 +285,6 @@ bool UIResourceMonitorItem::operator==(const UIResourceMonitorItem& other) const
     return false;
 }
 
-void UIResourceMonitorItem::initPerformanceCollector()
-{
-    /* Initialize and configure CPerformanceCollector: */
-    const ULONG iPeriod = 1;
-    const int iMetricSetupCount = 1;
-    m_performanceMonitor = uiCommon().virtualBox().GetPerformanceCollector();
-    m_nameList << "Guest/RAM/Usage*";
-    m_objectList = QVector<CUnknown>(m_nameList.size(), CUnknown());
-    m_performanceMonitor.SetupMetrics(m_nameList, m_objectList, iPeriod, iMetricSetupCount);
-}
 
 
 /*********************************************************************************************************************************
@@ -304,6 +299,7 @@ void UIResourceMonitorProxyModel::dataUpdate()
 {
     if (sourceModel())
         emit dataChanged(index(0,0), index(sourceModel()->rowCount(), sourceModel()->columnCount()));
+    invalidate();
 }
 
 bool UIResourceMonitorProxyModel::filterAcceptsColumn(int iSourceColumn, const QModelIndex &sourceParent) const
@@ -316,8 +312,10 @@ bool UIResourceMonitorProxyModel::filterAcceptsColumn(int iSourceColumn, const Q
 
 void UIResourceMonitorProxyModel::setColumnShown(const QVector<bool>& columnShown)
 {
+    emit layoutAboutToBeChanged();
     m_columnShown = columnShown;
     invalidateFilter();
+    emit layoutChanged();
 }
 
 
@@ -373,7 +371,7 @@ QVariant UIResourceMonitorModel::data(const QModelIndex &index, int role) const
                 arg(uiCommon().formatSize(_1K * m_itemList[index.row()].m_uTotalRAM, iDecimalCount));
             break;
         case VMResouceMonitorColumn_RAMUsedPercentage:
-            return m_itemList[index.row()].m_fRAMUsagePercentage;
+            return QString("%1\%").arg(QString::number(m_itemList[index.row()].m_fRAMUsagePercentage, 'f', 2));
             break;
         case VMResouceMonitorColumn_NetworkUpRate:
             return QString("%1").arg(uiCommon().formatSize(m_itemList[index.row()].m_uNetworkUpRate, iDecimalCount));
@@ -394,10 +392,10 @@ QVariant UIResourceMonitorModel::data(const QModelIndex &index, int role) const
             return QString("%1").arg(uiCommon().formatSize(m_itemList[index.row()].m_uDiskWriteRate, iDecimalCount));
             break;
         case VMResouceMonitorColumn_DiskIOReadTotal:
-            return QString("%1/%2").arg(uiCommon().formatSize(m_itemList[index.row()].m_uDiskReadTotal, iDecimalCount));
+            return QString("%1").arg(uiCommon().formatSize(m_itemList[index.row()].m_uDiskReadTotal, iDecimalCount));
             break;
         case VMResouceMonitorColumn_DiskIOWriteTotal:
-            return QString("%1/%2").arg(uiCommon().formatSize(m_itemList[index.row()].m_uDiskWriteTotal, iDecimalCount));
+            return QString("%1").arg(uiCommon().formatSize(m_itemList[index.row()].m_uDiskWriteTotal, iDecimalCount));
             break;
         case VMResouceMonitorColumn_VMExits:
            return QString("%1/%2").arg(UICommon::addMetricSuffixToNumber(m_itemList[index.row()].m_uVMExitRate)).
@@ -428,28 +426,33 @@ void UIResourceMonitorModel::initializeItems()
         if (!comMachine.isNull())
         {
             if (comMachine.GetState() == KMachineState_Running)
-            {
-                m_itemList << UIResourceMonitorItem(comMachine.GetId(), comMachine.GetName());
-            }
+                addItem(comMachine.GetId(), comMachine.GetName());
         }
     }
+    setupPerformanceCollector();
 }
 
 void UIResourceMonitorModel::sltMachineStateChanged(const QUuid &uId, const KMachineState state)
 {
-    emit layoutAboutToBeChanged();
-    int iIndex = m_itemList.indexOf(UIResourceMonitorItem(uId));
+    int iIndex = m_itemMap.value(uId, -1);
     /* Remove the machine in case machine is no longer working. */
     if (iIndex != -1 && state != KMachineState_Running)
-        m_itemList.remove(iIndex);
-
+    {
+        emit layoutAboutToBeChanged();
+        removeItem(uId);
+        emit layoutChanged();
+        setupPerformanceCollector();
+    }
     /* Insert the machine if it is working. */
     if (iIndex == -1 && state == KMachineState_Running)
     {
+        emit layoutAboutToBeChanged();
         CMachine comMachine = uiCommon().virtualBox().FindMachine(uId.toString());
-        m_itemList << UIResourceMonitorItem(uId, comMachine.GetName());
+        if (!comMachine.isNull())
+            addItem(uId, comMachine.GetName());
+        emit layoutChanged();
+        setupPerformanceCollector();
     }
-    emit layoutChanged();
 }
 
 void UIResourceMonitorModel::sltTimeout()
@@ -457,19 +460,12 @@ void UIResourceMonitorModel::sltTimeout()
     ULONG aPctExecuting;
     ULONG aPctHalted;
     ULONG aPctVMM;
+    /* RAM usage: */
+    if (!m_performanceMonitor.isNull())
+        queryRAMLoad();
+
     for (int i = 0; i < m_itemList.size(); ++i)
     {
-        if (!m_itemList[i].m_performanceMonitor.isNull())
-        {
-            /* RAM usage: */
-            quint64 uFreeRAM = 0;
-            UIMonitorCommon::getRAMLoad(m_itemList[i].m_performanceMonitor, m_itemList[i].m_nameList, m_itemList[i].m_objectList,
-                                        m_itemList[i].m_uTotalRAM, uFreeRAM);
-            m_itemList[i].m_uUsedRAM = m_itemList[i].m_uTotalRAM - uFreeRAM;
-            if (m_itemList[i].m_uTotalRAM != 0)
-                m_itemList[i].m_fRAMUsagePercentage = 100.f * (m_itemList[i].m_uUsedRAM / (float)m_itemList[i].m_uTotalRAM);
-        }
-
         if (!m_itemList[i].m_comDebugger.isNull())
         {
             /* CPU Load: */
@@ -500,6 +496,88 @@ void UIResourceMonitorModel::sltTimeout()
         }
     }
     emit sigDataUpdate();
+}
+
+void UIResourceMonitorModel::setupPerformanceCollector()
+{
+    m_nameList.clear();
+    m_objectList.clear();
+    /* Initialize and configure CPerformanceCollector: */
+    const ULONG iPeriod = 1;
+    const int iMetricSetupCount = 1;
+    if (m_performanceMonitor.isNull())
+        m_performanceMonitor = uiCommon().virtualBox().GetPerformanceCollector();
+    for (int i = 0; i < m_itemList.size(); ++i)
+        m_nameList << "Guest/RAM/Usage*";
+    m_objectList = QVector<CUnknown>(m_nameList.size(), CUnknown());
+    m_performanceMonitor.SetupMetrics(m_nameList, m_objectList, iPeriod, iMetricSetupCount);
+}
+
+void UIResourceMonitorModel::queryRAMLoad()
+{
+    QVector<QString>  aReturnNames;
+    QVector<CUnknown>  aReturnObjects;
+    QVector<QString>  aReturnUnits;
+    QVector<ULONG>  aReturnScales;
+    QVector<ULONG>  aReturnSequenceNumbers;
+    QVector<ULONG>  aReturnDataIndices;
+    QVector<ULONG>  aReturnDataLengths;
+    /* Make a query to CPerformanceCollector to fetch some metrics (e.g RAM usage): */
+    QVector<LONG> returnData = m_performanceMonitor.QueryMetricsData(m_nameList,
+                                                                        m_objectList,
+                                                                        aReturnNames,
+                                                                        aReturnObjects,
+                                                                        aReturnUnits,
+                                                                        aReturnScales,
+                                                                        aReturnSequenceNumbers,
+                                                                        aReturnDataIndices,
+                                                                        aReturnDataLengths);
+    /* Parse the result we get from CPerformanceCollector to get respective values: */
+    for (int i = 0; i < aReturnNames.size(); ++i)
+    {
+        if (aReturnDataLengths[i] == 0)
+            continue;
+        /* Read the last of the return data disregarding the rest since we are caching the data in GUI side: */
+        float fData = returnData[aReturnDataIndices[i] + aReturnDataLengths[i] - 1] / (float)aReturnScales[i];
+        if (aReturnNames[i].contains("RAM", Qt::CaseInsensitive) && !aReturnNames[i].contains(":"))
+            if (aReturnNames[i].contains("Total", Qt::CaseInsensitive) || aReturnNames[i].contains("Free", Qt::CaseInsensitive))
+            {
+                {
+                    CMachine comMachine = (CMachine)aReturnObjects[i];
+                    if (comMachine.isNull())
+                        continue;
+                    int iIndex = m_itemMap.value(comMachine.GetId(), -1);
+                    if (iIndex == -1 || iIndex >= m_itemList.size())
+                        continue;
+                    if (aReturnNames[i].contains("Total", Qt::CaseInsensitive))
+                        m_itemList[iIndex].m_uTotalRAM = fData;
+                    else
+                        m_itemList[iIndex].m_uFreeRAM = fData;
+                }
+            }
+    }
+    for (int i = 0; i < m_itemList.size(); ++i)
+    {
+        m_itemList[i].m_uUsedRAM = m_itemList[i].m_uTotalRAM - m_itemList[i].m_uFreeRAM;
+        if (m_itemList[i].m_uTotalRAM != 0)
+            m_itemList[i].m_fRAMUsagePercentage = 100.f * (m_itemList[i].m_uUsedRAM / (float)m_itemList[i].m_uTotalRAM);
+    }
+}
+
+void UIResourceMonitorModel::addItem(const QUuid& uMachineId, const QString& strMachineName)
+{
+    int iIndex = m_itemList.size();
+    m_itemList.append(UIResourceMonitorItem(uMachineId, strMachineName));
+    m_itemMap[uMachineId] = iIndex;
+}
+
+void UIResourceMonitorModel::removeItem(const QUuid& uMachineId)
+{
+    int iIndex = m_itemMap.value(uMachineId, -1);
+    if (iIndex == -1)
+        return;
+    m_itemList.remove(iIndex);
+    m_itemMap.remove(uMachineId);
 }
 
 
@@ -601,8 +679,8 @@ void UIResourceMonitorWidget::prepareWidgets()
            m_pTableView->setSelectionBehavior(QAbstractItemView::SelectRows);*/
         m_pTableView->setShowGrid(false);
         m_pTableView->horizontalHeader()->setHighlightSections(false);
-        m_pTableView->horizontalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
-        m_pTableView->horizontalHeader()->setStretchLastSection(true);
+        m_pTableView->horizontalHeader()->setSectionResizeMode(QHeaderView::Interactive);
+        //m_pTableView->horizontalHeader()->setStretchLastSection(true);
 
         m_pTableView->verticalHeader()->setVisible(false);
         m_pTableView->setEditTriggers(QAbstractItemView::NoEditTriggers);
