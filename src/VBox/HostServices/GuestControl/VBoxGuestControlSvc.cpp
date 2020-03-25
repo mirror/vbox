@@ -933,8 +933,8 @@ private:
 
 
 /** Host feature mask for GUEST_MSG_REPORT_FEATURES/GUEST_MSG_QUERY_FEATURES. */
-static uint64_t const g_fGstCtrlHostFeatures0 = VBOX_GUESTCTRL_HF_0_NOTIFY_RDWR_OFFSET;
-
+static uint64_t const g_fGstCtrlHostFeatures0 = VBOX_GUESTCTRL_HF_0_NOTIFY_RDWR_OFFSET
+                                              | VBOX_GUESTCTRL_HF_0_PROCESS_ARGV0;
 
 
 /**

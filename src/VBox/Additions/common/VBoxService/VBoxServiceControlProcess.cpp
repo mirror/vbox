@@ -1070,11 +1070,10 @@ static int vgsvcGstCtrlProcessAllocateArgv(const char *pszArgv0, const char * co
     VGSvcVerbose(3, "VGSvcGstCtrlProcessAllocateArgv: cbSize=%RU32, cArgs=%RU32\n", cbSize, cArgs);
 #endif
 
-    /* HACK ALERT! Since we still don't allow the user to really specify the first
-                   argument separately from the executable image, we have to fudge
+    /* HACK ALERT! Older hosts (< VBox 6.1.x) did not allow the user to really specify the first
+                   argument separately from the executable image, so we have to fudge
                    a little in the unquoted argument case to deal with executables
                    containing spaces. */
-    /** @todo Fix the stupid host/guest protocol so the user can do this for us! */
     if (   !(fFlags & EXECUTEPROCESSFLAG_UNQUOTED_ARGS)
         || !strpbrk(pszArgv0, " \t\n\r")
         || pszArgv0[0] == '"')
@@ -1093,6 +1092,7 @@ static int vgsvcGstCtrlProcessAllocateArgv(const char *pszArgv0, const char * co
             *pszDst   = '\0';
         }
     }
+
     if (RT_SUCCESS(rc))
     {
         size_t i;
@@ -1341,11 +1341,10 @@ static int vgsvcGstCtrlProcessCreateProcess(const char *pszExec, const char * co
 #endif
     if (RT_SUCCESS(rc))
     {
+        const char *pszArgv0 = RT_BOOL(g_fControlHostFeatures0 & VBOX_GUESTCTRL_HF_0_PROCESS_ARGV0)
+                             ? papszArgs[0] : pszExec;
         char **papszArgsExp;
-        /** @todo r-bird: pszExec != argv[0]! When are you going to get that?!? How many
-         * times does this need to be pointed out?  HOST/GUEST INTERFACE IS MISDESIGNED! */
-        rc = vgsvcGstCtrlProcessAllocateArgv(pszExec /* Always use the unmodified executable name as argv0. */,
-                                             papszArgs /* Append the rest of the argument vector (if any). */,
+        rc = vgsvcGstCtrlProcessAllocateArgv(pszArgv0, papszArgs,
                                              fFlags, &papszArgsExp);
         if (RT_FAILURE(rc))
         {

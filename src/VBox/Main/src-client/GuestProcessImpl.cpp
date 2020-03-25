@@ -34,6 +34,7 @@
 #ifndef VBOX_WITH_GUEST_CONTROL
 # error "VBOX_WITH_GUEST_CONTROL must defined in this file"
 #endif
+#include "GuestImpl.h"
 #include "GuestProcessImpl.h"
 #include "GuestSessionImpl.h"
 #include "GuestCtrlImplPrivate.h"
@@ -1076,9 +1077,13 @@ int GuestProcess::i_startProcessInner(uint32_t cMsTimeout, AutoWriteLock &rLock,
         }
         papszArgv[cArgs] = NULL;
 
-        if (uProtocol < UINT32_C(0xdeadbeef) ) /** @todo implement a way of sending argv[0], best idea is a new command. */
+        Guest *pGuest = mSession->i_getParent();
+        AssertPtr(pGuest);
+
+        /* If the Guest Additions don't support using argv[0] correctly (< 6.1.x), don't supply it. */
+        if (!RT_BOOL(pGuest->i_getGuestControlFeatures0() & VBOX_GUESTCTRL_GF_0_PROCESS_ARGV0))
             vrc = RTGetOptArgvToString(&pszArgs, papszArgv + 1, RTGETOPTARGV_CNV_QUOTE_BOURNE_SH);
-        else
+        else /* ... else send the whole argv, including argv[0]. */
             vrc = RTGetOptArgvToString(&pszArgs, papszArgv, RTGETOPTARGV_CNV_QUOTE_BOURNE_SH);
 
         RTMemFree(papszArgv);

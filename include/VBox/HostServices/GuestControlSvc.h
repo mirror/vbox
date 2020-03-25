@@ -138,18 +138,15 @@ enum eHostMsg
     /**
      * The host wants to execute something in the guest. This can be a command
      * line or starting a program.
-     * @note Legacy (VBox < 4.3) message.
      */
     HOST_MSG_EXEC_CMD = 100,
     /**
      * Sends input data for stdin to a running process executed by HOST_EXEC_CMD.
-     * @note Legacy (VBox < 4.3) message.
      */
     HOST_MSG_EXEC_SET_INPUT = 101,
     /**
      * Gets the current status of a running process, e.g.
      * new data on stdout/stderr, process terminated etc.
-     * @note Legacy (VBox < 4.3) message.
      */
     HOST_MSG_EXEC_GET_OUTPUT = 102,
     /**
@@ -691,10 +688,13 @@ enum GUEST_FILE_SEEKTYPE
  * @sa GUEST_MSG_REPORT_FEATURES
  * @{ */
 /** Supports HOST_MSG_FILE_SET_SIZE. */
-#define VBOX_GUESTCTRL_GF_0_SET_SIZE     RT_BIT_64(0)
+#define VBOX_GUESTCTRL_GF_0_SET_SIZE                RT_BIT_64(0)
+/** Supports (fixes) treating argv[0] separately from the actual execution command.
+ *  Without this flag the actual execution command is taken as argv[0]. */
+#define VBOX_GUESTCTRL_GF_0_PROCESS_ARGV0           RT_BIT_64(1)
 /** Bit that must be set in the 2nd parameter, will be cleared if the host reponds
  * correctly (old hosts might not). */
-#define VBOX_GUESTCTRL_GF_1_MUST_BE_ONE RT_BIT_64(63)
+#define VBOX_GUESTCTRL_GF_1_MUST_BE_ONE             RT_BIT_64(63)
 /** @} */
 
 /** @name VBOX_GUESTCTRL_HF_XXX - Host features.
@@ -703,6 +703,10 @@ enum GUEST_FILE_SEEKTYPE
 /** Host supports the GUEST_FILE_NOTIFYTYPE_READ_OFFSET and
  *  GUEST_FILE_NOTIFYTYPE_WRITE_OFFSET notification types. */
 #define VBOX_GUESTCTRL_HF_0_NOTIFY_RDWR_OFFSET      RT_BIT_64(0)
+/** Host supports sending (treating) argv[0] separately from the actual execution command.
+ *  Needed when newer Guest Additions which support VBOX_GUESTCTRL_GF_0_PROCESS_ARGV0 run on an older
+ *  host which doesn't in turn support VBOX_GUESTCTRL_HF_0_PROCESS_ARGV0. */
+#define VBOX_GUESTCTRL_HF_0_PROCESS_ARGV0           RT_BIT_64(1)
 /** @} */
 
 
