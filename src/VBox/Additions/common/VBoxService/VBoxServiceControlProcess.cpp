@@ -1765,11 +1765,9 @@ int VGSvcGstCtrlProcessStart(const PVBOXSERVICECTRLSESSION pSession,
     if (RT_SUCCESS(rc))
     {
         static uint32_t s_uCtrlExecThread = 0;
-        if (s_uCtrlExecThread++ == UINT32_MAX) /** @todo r=bird: ????????????? */
-            s_uCtrlExecThread = 0; /* Wrap around to not let IPRT freak out. */
         rc = RTThreadCreateF(&pProcess->Thread, vgsvcGstCtrlProcessThread,
                              pProcess /*pvUser*/, 0 /*cbStack*/,
-                             RTTHREADTYPE_DEFAULT, RTTHREADFLAGS_WAITABLE, "gctl%u", s_uCtrlExecThread);
+                             RTTHREADTYPE_DEFAULT, RTTHREADFLAGS_WAITABLE, "gctl%RU32", s_uCtrlExecThread++);
         if (RT_FAILURE(rc))
         {
             VGSvcError("Creating thread for guest process '%s' failed: rc=%Rrc, pProcess=%p\n",
