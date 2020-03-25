@@ -291,6 +291,7 @@ void UIResourceMonitorItem::initPerformanceCollector()
     m_performanceMonitor.SetupMetrics(m_nameList, m_objectList, iPeriod, iMetricSetupCount);
 }
 
+
 /*********************************************************************************************************************************
 *   Class UIVMResouceMonitorProxyModel implementation.                                                                           *
 *********************************************************************************************************************************/
