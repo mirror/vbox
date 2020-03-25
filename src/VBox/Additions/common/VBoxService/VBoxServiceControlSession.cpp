@@ -2681,12 +2681,14 @@ RTEXITCODE VGSvcGstCtrlSessionSpawnInit(int argc, char **argv)
                 break;
 
             case VINF_GETOPT_NOT_OPTION:
-                /* Ignore; might be "guestsession" main command. */
-                /** @todo r=bird: We DO NOT ignore stuff on the command line! */
-                break;
-
+            {
+                if (!RTStrICmp(ValueUnion.psz, VBOXSERVICECTRLSESSION_GETOPT_PREFIX))
+                    break;
+                /* else fall through and bail out. */
+                RT_FALL_THROUGH();
+            }
             default:
-                return RTMsgErrorExit(RTEXITCODE_SYNTAX, "Unknown command '%s'", ValueUnion.psz);
+                return RTMsgErrorExit(RTEXITCODE_SYNTAX, "Unknown argument '%s'", ValueUnion.psz);
         }
     }
 

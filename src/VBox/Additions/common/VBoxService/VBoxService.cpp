@@ -914,7 +914,7 @@ int main(int argc, char **argv)
      * handles a guest control session.
      */
     if (   argc >= 2
-        && !RTStrICmp(argv[1], "guestsession"))
+        && !RTStrICmp(argv[1], VBOXSERVICECTRLSESSION_GETOPT_PREFIX))
         fUserSession = true;
 #endif
 

@@ -144,6 +144,10 @@ typedef struct VBOXSERVICECTRLSESSIONTHREAD
 /** Pointer to thread data. */
 typedef VBOXSERVICECTRLSESSIONTHREAD *PVBOXSERVICECTRLSESSIONTHREAD;
 
+/** Defines the prefix being used for telling our service executable that we're going
+ *  to spawn a new (Guest Control) user session. */
+#define VBOXSERVICECTRLSESSION_GETOPT_PREFIX             "guestsession"
+
 /** Flag indicating that this session has been spawned from
  *  the main executable. */
 #define VBOXSERVICECTRLSESSION_FLAG_SPAWN                RT_BIT(0)
