@@ -1928,6 +1928,49 @@ RTDECL(int) RTFuzzCtxCorpusInputAddFromVfsFileEx(RTFUZZCTX hFuzzCtx, RTVFSFILE h
 }
 
 
+RTDECL(int) RTFuzzCtxCorpusInputAddFromVfsIoStrm(RTFUZZCTX hFuzzCtx, RTVFSIOSTREAM hVfsIos)
+{
+    PRTFUZZCTXINT pThis = hFuzzCtx;
+    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
+    AssertReturn(hVfsIos != NIL_RTVFSIOSTREAM, VERR_INVALID_HANDLE);
+
+    return RTFuzzCtxCorpusInputAddFromVfsIoStrmEx(hFuzzCtx, hVfsIos, pThis->offMutStart, pThis->cbMutRange);
+}
+
+RTDECL(int) RTFuzzCtxCorpusInputAddFromVfsIoStrmEx(RTFUZZCTX hFuzzCtx, RTVFSIOSTREAM hVfsIos,
+                                                   uint64_t offMutStart, uint64_t cbMutRange)
+{
+    PRTFUZZCTXINT pThis = hFuzzCtx;
+    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
+    AssertReturn(hVfsIos != NIL_RTVFSIOSTREAM, VERR_INVALID_HANDLE);
+
+    void *pvCorpus = NULL;
+    RTFSOBJINFO ObjInfo;
+    int rc = RTVfsIoStrmQueryInfo(hVfsIos, &ObjInfo, RTFSOBJATTRADD_UNIX);
+    if (RT_SUCCESS(rc))
+    {
+        PRTFUZZMUTATION pMutation = rtFuzzMutationCreateEx(pThis, 0, NULL, offMutStart, cbMutRange,
+                                                           ObjInfo.cbObject, &pvCorpus);
+        if (RT_LIKELY(pMutation))
+        {
+            pMutation->pMutator = &g_MutatorCorpus;
+            pMutation->cbInput  = ObjInfo.cbObject;
+            pMutation->pvInput  = pvCorpus;
+            rc = RTVfsIoStrmRead(hVfsIos, pvCorpus, ObjInfo.cbObject, true /*fBlocking*/, NULL);
+            if (RT_SUCCESS(rc))
+                rc = rtFuzzCtxMutationAdd(pThis, pMutation);
+
+            if (RT_FAILURE(rc))
+                rtFuzzMutationDestroy(pMutation);
+        }
+        else
+            rc = VERR_NO_MEMORY;
+    }
+
+    return rc;
+}
+
+
 RTDECL(int) RTFuzzCtxCorpusInputAddFromDirPath(RTFUZZCTX hFuzzCtx, const char *pszDirPath)
 {
     PRTFUZZCTXINT pThis = hFuzzCtx;

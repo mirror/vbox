@@ -2159,6 +2159,7 @@ VBoxRT_SOURCES                := \
 		$(patsubst common/checksum/alt-%,common/checksum/openssl-%,$(RuntimeR3_SOURCES)) ) ) \
 	common/checksum/crc32-zlib.cpp \
 	common/fuzz/fuzz.cpp \
+	common/fuzz/fuzz-config.cpp \
 	common/fuzz/fuzz-observer.cpp \
 	common/fuzz/fuzz-target-recorder.cpp \
 	common/fuzz/fuzzmastercmd.cpp \
