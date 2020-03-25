@@ -1524,6 +1524,7 @@ static int vgsvcGstCtrlProcessProcessWorker(PVBOXSERVICECTRLPROCESS pProcess)
                                 pProcess->StartupInfo.uNumArgs > 0 ? pProcess->StartupInfo.szArgs : "",
                                 RTGETOPTARGV_CNV_QUOTE_BOURNE_SH, NULL);
 
+#ifdef VBOX_STRICT
     const bool fHasArgv0 = RT_BOOL(g_fControlHostFeatures0 & VBOX_GUESTCTRL_HF_0_PROCESS_ARGV0);
 
     /* Did we get the same result?
@@ -1531,6 +1532,8 @@ static int vgsvcGstCtrlProcessProcessWorker(PVBOXSERVICECTRLPROCESS pProcess)
     AssertMsg((int)pProcess->StartupInfo.uNumArgs == cArgs + fHasArgv0 ? 0 : 1,
               ("StartupInfo.uNumArgs=%RU32 != cArgs=%d, fHostFeatures0=%#x\n",
                pProcess->StartupInfo.uNumArgs, cArgs, g_fControlHostFeatures0));
+#endif
+
     /*
      * Create the environment.
      */

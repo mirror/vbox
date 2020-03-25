@@ -47,7 +47,6 @@
 #include "ThreadTask.h"
 
 #include <memory> /* For auto_ptr. */
-#include <algorithm> /* For std::rotate. */
 
 #include <iprt/asm.h>
 #include <iprt/cpp/utils.h> /* For unconst(). */
