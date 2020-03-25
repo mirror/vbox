@@ -79,7 +79,7 @@ class WuiMain(WuiDispatcherBase):
     ksActionReportTestBoxFailures       = 'ReportTestBoxFailures';
     ksActionReportFailureReasons        = 'ReportFailureReasons';
     ksActionGraphWiz                    = 'GraphWiz';
-    ksActionVcsHistoryTooltip           = 'VcsHistoryTooltip';
+    ksActionVcsHistoryTooltip           = 'VcsHistoryTooltip';  ##< Hardcoded in common.js.
     ## @}
 
     ## @name Standard report parameters

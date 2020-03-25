@@ -70,7 +70,7 @@ class WuiVcsHistoryTooltip(WuiContentBase):
                        % (oTsZulu.strftime('%Y-%m-%d'),);
 
             sEntry  = '  <dt id="r%s">' % (oEntry.iRevision, );
-            sEntry += '<a href="%s">' \
+            sEntry += '<a href="%s" target="_blank">' \
                     % ( webutils.escapeAttr(config.g_ksTracChangsetUrlFmt
                                             % { 'iRevision': oEntry.iRevision, 'sRepository': oEntry.sRepository,}), );
 
