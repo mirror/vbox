@@ -716,6 +716,35 @@ def processOutputChecked(*aPositionalArgs, **dKeywordArgs):
         sOutput = sOutput.decode(sEncoding, 'ignore' if fIgnoreEncoding else 'strict');
     return sOutput;
 
+def processOutputUnchecked(*aPositionalArgs, **dKeywordArgs):
+    """
+    Similar to processOutputChecked, but returns status code and both stdout
+    and stderr results.
+
+    Extra keywords for specifying now output is to be decoded:
+        sEncoding='utf-8
+        fIgnoreEncoding=True/False
+    """
+    sEncoding = dKeywordArgs.get('sEncoding');
+    if sEncoding is not None:   del dKeywordArgs['sEncoding'];
+    else:                       sEncoding = 'utf-8';
+
+    fIgnoreEncoding = dKeywordArgs.get('fIgnoreEncoding');
+    if fIgnoreEncoding is not None:   del dKeywordArgs['fIgnoreEncoding'];
+    else:                             fIgnoreEncoding = True;
+
+    _processFixPythonInterpreter(aPositionalArgs, dKeywordArgs);
+    oProcess = processPopenSafe(stdout = subprocess.PIPE, stderr = subprocess.PIPE, *aPositionalArgs, **dKeywordArgs);
+
+    sOutput, sError = oProcess.communicate();
+    iExitCode       = oProcess.poll();
+
+    if hasattr(sOutput, 'decode'):
+        sOutput = sOutput.decode(sEncoding, 'ignore' if fIgnoreEncoding else 'strict');
+    if hasattr(sError, 'decode'):
+        sError = sError.decode(sEncoding, 'ignore' if fIgnoreEncoding else 'strict');
+    return (iExitCode, sOutput, sError);
+
 g_fOldSudo = None;
 def _sudoFixArguments(aPositionalArgs, dKeywordArgs, fInitialEnv = True):
     """
