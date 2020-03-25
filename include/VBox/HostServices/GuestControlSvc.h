@@ -689,8 +689,11 @@ enum GUEST_FILE_SEEKTYPE
  * @{ */
 /** Supports HOST_MSG_FILE_SET_SIZE. */
 #define VBOX_GUESTCTRL_GF_0_SET_SIZE                RT_BIT_64(0)
-/** Supports (fixes) treating argv[0] separately from the actual execution command.
- *  Without this flag the actual execution command is taken as argv[0]. */
+/** Supports passing process arguments starting at argv[0] rather than argv[1].
+ * Guest additions which doesn't support this feature will instead use the
+ * executable image path as argv[0].
+ * @sa    VBOX_GUESTCTRL_HF_0_PROCESS_ARGV0
+ * @since 6.1.6  */
 #define VBOX_GUESTCTRL_GF_0_PROCESS_ARGV0           RT_BIT_64(1)
 /** Bit that must be set in the 2nd parameter, will be cleared if the host reponds
  * correctly (old hosts might not). */
@@ -703,9 +706,9 @@ enum GUEST_FILE_SEEKTYPE
 /** Host supports the GUEST_FILE_NOTIFYTYPE_READ_OFFSET and
  *  GUEST_FILE_NOTIFYTYPE_WRITE_OFFSET notification types. */
 #define VBOX_GUESTCTRL_HF_0_NOTIFY_RDWR_OFFSET      RT_BIT_64(0)
-/** Host supports sending (treating) argv[0] separately from the actual execution command.
- *  Needed when newer Guest Additions which support VBOX_GUESTCTRL_GF_0_PROCESS_ARGV0 run on an older
- *  host which doesn't in turn support VBOX_GUESTCTRL_HF_0_PROCESS_ARGV0. */
+/** Host supports process passing arguments starting at argv[0] rather than
+ * argv[1], when the guest additions reports VBOX_GUESTCTRL_GF_0_PROCESS_ARGV0.
+ * @since 6.1.6  */
 #define VBOX_GUESTCTRL_HF_0_PROCESS_ARGV0           RT_BIT_64(1)
 /** @} */
 
