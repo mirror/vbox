@@ -482,18 +482,22 @@ class WuiAdmin(WuiDispatcherBase):
         #
         oFile    = None;
         oNow     = datetime.datetime.utcnow();
-        sTmpFile = config.g_ksTmDbDumpFileTemplate % (self._oCurUser.uid,);
+        sOutFile = config.g_ksTmDbDumpOutFileTmpl % (self._oCurUser.uid,);
+        sTmpFile = config.g_ksTmDbDumpTmpFileTmpl % (self._oCurUser.uid,);
         sScript  = os.path.join(config.g_ksTestManagerDir, 'db', 'partial-db-dump.py');
         try:
-            (iExitCode, sStdOut, sStdErr) = utils.processOutputUnchecked([sScript, '--days-to-dump', str(cDaysBack),
-                                                                          '-f', sTmpFile,]);
+            (iExitCode, sStdOut, sStdErr) = utils.processOutputUnchecked([ sScript,
+                                                                           '--days-to-dump', str(cDaysBack),
+                                                                           '-f', sOutFile,
+                                                                           '-t', sTmpFile,
+                                                                           ]);
             if iExitCode != 0:
                 raise Exception('iExitCode=%s\n--- stderr ---\n%s\n--- stdout ---\n%s' % (iExitCode, sStdOut, sStdErr,));
 
             #
             # Open and send the dump.
             #
-            oFile = open(sTmpFile, 'rb');
+            oFile = open(sOutFile, 'rb');
             cbFile = os.fstat(oFile.fileno()).st_size;
 
             self._oSrvGlue.setHeaderField('Content-Type', 'application/zip');
@@ -512,6 +516,7 @@ class WuiAdmin(WuiDispatcherBase):
             if oFile:
                 try:    oFile.close();
                 except: pass;
+            utils.noxcptDeleteFile(sOutFile);
             utils.noxcptDeleteFile(sTmpFile);
         return self.ksDispatchRcAllDone;
 
