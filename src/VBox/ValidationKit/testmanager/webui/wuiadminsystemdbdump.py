@@ -60,5 +60,3 @@ class WuiAdminSystemDbDumpForm(WuiFormContentBase):
 
         return True;
 
-
-
