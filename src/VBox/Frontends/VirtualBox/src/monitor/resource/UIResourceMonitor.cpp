@@ -371,7 +371,7 @@ QVariant UIResourceMonitorModel::data(const QModelIndex &index, int role) const
                 arg(uiCommon().formatSize(_1K * m_itemList[index.row()].m_uTotalRAM, iDecimalCount));
             break;
         case VMResouceMonitorColumn_RAMUsedPercentage:
-            return QString("%1\%").arg(QString::number(m_itemList[index.row()].m_fRAMUsagePercentage, 'f', 2));
+            return QString("%1%").arg(QString::number(m_itemList[index.row()].m_fRAMUsagePercentage, 'f', 2));
             break;
         case VMResouceMonitorColumn_NetworkUpRate:
             return QString("%1").arg(uiCommon().formatSize(m_itemList[index.row()].m_uNetworkUpRate, iDecimalCount));
@@ -607,18 +607,18 @@ void UIResourceMonitorWidget::retranslateUi()
 {
     m_columnCaptions.resize(VMResouceMonitorColumn_Max);
     m_columnCaptions[VMResouceMonitorColumn_Name] = tr("VM Name");
-    m_columnCaptions[VMResouceMonitorColumn_CPUGuestLoad] = tr("CPU Load\n(Guest)");
-    m_columnCaptions[VMResouceMonitorColumn_CPUVMMLoad] = tr("CPU Load\n(VMM)");
-    m_columnCaptions[VMResouceMonitorColumn_RAMUsedAndTotal] = tr("RAM\nUsed/Total");
-    m_columnCaptions[VMResouceMonitorColumn_RAMUsedPercentage] = tr("RAM\n% Used");
-    m_columnCaptions[VMResouceMonitorColumn_NetworkUpRate] = tr("Network Up\nRate");
-    m_columnCaptions[VMResouceMonitorColumn_NetworkDownRate] = tr("Network Down\nRate");
-    m_columnCaptions[VMResouceMonitorColumn_NetworkUpTotal] = tr("Network Up\nTotal");
-    m_columnCaptions[VMResouceMonitorColumn_NetworkDownTotal] = tr("Network Down\nTotal");
-    m_columnCaptions[VMResouceMonitorColumn_DiskIOReadRate] = tr("Disk Read\nRate");
-    m_columnCaptions[VMResouceMonitorColumn_DiskIOWriteRate] = tr("Disk Write\nRate");
-    m_columnCaptions[VMResouceMonitorColumn_DiskIOReadTotal] = tr("Disk Read\nTotal");
-    m_columnCaptions[VMResouceMonitorColumn_DiskIOWriteTotal] = tr("Disk Write\nTotal");
+    m_columnCaptions[VMResouceMonitorColumn_CPUGuestLoad] = tr("CPU Guest");
+    m_columnCaptions[VMResouceMonitorColumn_CPUVMMLoad] = tr("CPU VMM");
+    m_columnCaptions[VMResouceMonitorColumn_RAMUsedAndTotal] = tr("RAM Used/Total");
+    m_columnCaptions[VMResouceMonitorColumn_RAMUsedPercentage] = tr("RAM \%");
+    m_columnCaptions[VMResouceMonitorColumn_NetworkUpRate] = tr("Network Up Rate");
+    m_columnCaptions[VMResouceMonitorColumn_NetworkDownRate] = tr("Network Down Rate");
+    m_columnCaptions[VMResouceMonitorColumn_NetworkUpTotal] = tr("Network Up Total");
+    m_columnCaptions[VMResouceMonitorColumn_NetworkDownTotal] = tr("Network Down Total");
+    m_columnCaptions[VMResouceMonitorColumn_DiskIOReadRate] = tr("Disk Read Rate");
+    m_columnCaptions[VMResouceMonitorColumn_DiskIOWriteRate] = tr("Disk Write Rate");
+    m_columnCaptions[VMResouceMonitorColumn_DiskIOReadTotal] = tr("Disk Read Total");
+    m_columnCaptions[VMResouceMonitorColumn_DiskIOWriteTotal] = tr("Disk Write Total");
     m_columnCaptions[VMResouceMonitorColumn_VMExits] = tr("VM Exits");
     if (m_pModel)
         m_pModel->setColumnCaptions(m_columnCaptions);
