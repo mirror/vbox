@@ -723,13 +723,15 @@ class GuestSessionStartupInfo
 public:
 
     GuestSessionStartupInfo(void)
-        : mIsInternal(false /* Non-internal session */),
-          mOpenTimeoutMS(30 * 1000 /* 30s opening timeout */),
-          mOpenFlags(0 /* No opening flags set */) { }
+        : mID(UINT32_MAX)
+        , mIsInternal(false /* Non-internal session */)
+        , mOpenTimeoutMS(30 * 1000 /* 30s opening timeout */)
+        , mOpenFlags(0 /* No opening flags set */) { }
 
     /** The session's friendly name. Optional. */
     Utf8Str                     mName;
-    /** The session's unique ID. Used to encode a context ID. */
+    /** The session's unique ID. Used to encode a context ID.
+     *  UINT32_MAX if not initialized. */
     uint32_t                    mID;
     /** Flag indicating if this is an internal session
      *  or not. Internal session are not accessible by
@@ -751,9 +753,10 @@ class GuestProcessStartupInfo
 public:
 
     GuestProcessStartupInfo(void)
-        : mFlags(ProcessCreateFlag_None),
-          mTimeoutMS(UINT32_MAX /* No timeout by default */),
-          mPriority(ProcessPriority_Default) { }
+        : mFlags(ProcessCreateFlag_None)
+        , mTimeoutMS(UINT32_MAX /* No timeout by default */)
+        , mPriority(ProcessPriority_Default)
+        , mAffinity(0) { }
 
     /** The process' friendly name. */
     Utf8Str                     mName;
@@ -895,50 +898,6 @@ protected:
 
 class Guest;
 class Progress;
-
-class GuestTask
-{
-
-public:
-
-    enum TaskType
-    {
-        /** Copies a file from host to the guest. */
-        TaskType_CopyFileToGuest   = 50,
-        /** Copies a file from guest to the host. */
-        TaskType_CopyFileFromGuest = 55,
-        /** Update Guest Additions by directly copying the required installer
-         *  off the .ISO file, transfer it to the guest and execute the installer
-         *  with system privileges. */
-        TaskType_UpdateGuestAdditions = 100
-    };
-
-    GuestTask(TaskType aTaskType, Guest *aThat, Progress *aProgress);
-
-    virtual ~GuestTask();
-
-    int startThread();
-
-    static int taskThread(RTTHREAD aThread, void *pvUser);
-    static int uploadProgress(unsigned uPercent, void *pvUser);
-    static HRESULT setProgressSuccess(ComObjPtr<Progress> pProgress);
-    static HRESULT setProgressErrorMsg(HRESULT hr,
-                                       ComObjPtr<Progress> pProgress, const char * pszText, ...);
-    static HRESULT setProgressErrorParent(HRESULT hr,
-                                          ComObjPtr<Progress> pProgress, ComObjPtr<Guest> pGuest);
-
-    TaskType taskType;
-    ComObjPtr<Guest> pGuest;
-    ComObjPtr<Progress> pProgress;
-    HRESULT rc;
-
-    /* Task data. */
-    Utf8Str strSource;
-    Utf8Str strDest;
-    Utf8Str strUserName;
-    Utf8Str strPassword;
-    ULONG   uFlags;
-};
 
 class GuestWaitEventPayload
 {
