@@ -55,6 +55,14 @@ typedef RTFUZZINPUT              *PRTFUZZINPUT;
 #define NIL_RTFUZZINPUT          ((RTFUZZINPUT)~(uintptr_t)0)
 
 
+/** A fuzzer config handle. */
+typedef struct RTFUZZCFGINT      *RTFUZZCFG;
+/** Pointer to a fuzzer config handle. */
+typedef RTFUZZCFG                *PRTFUZZCFG;
+/** NIL fuzzer config handle. */
+#define NIL_RTFUZZCFG            ((RTFUZZCFG)~(uintptr_t)0)
+
+
 /** A fuzzer target recorder handler. */
 typedef struct RTFUZZTGTRECINT   *RTFUZZTGTREC;
 /** Pointer to a fuzzer target recorder handle. */
@@ -138,6 +146,17 @@ typedef RTFUZZCTXSTATS *PRTFUZZCTXSTATS;
 #define RTFUZZTGT_REC_STATE_F_SANCOV               RT_BIT_32(3)
 /** Mask of all valid flags. */
 #define RTFUZZTGT_REC_STATE_F_VALID                UINT32_C(0x0000000f)
+/** @} */
+
+
+/** @name RTFUZZCFG_IMPORT_F_XXX - Flags for RTFuzzCfgImport().
+ * @{ */
+/** Default flags. */
+#define RTFUZZCFG_IMPORT_F_DEFAULT                 0
+/** Adds only the inputs and doesn't set any glboal configuration flags of the fuzzing context. */
+#define RTFUZZCFG_IMPORT_F_ONLY_INPUT              RT_BIT_32(0)
+/** Mask of all valid flags. */
+#define RTFUZZCFG_IMPORT_F_VALID                   UINT32_C(0x00000001)
 /** @} */
 
 
@@ -331,6 +350,28 @@ RTDECL(int) RTFuzzCtxCorpusInputAddFromVfsFileEx(RTFUZZCTX hFuzzCtx, RTVFSFILE h
                                                  uint64_t offMutStart, uint64_t cbMutRange);
 
 /**
+ * Adds a new seed to the input corpus of the given fuzzing context from the given VFS I/O stream.
+ *
+ * @returns IPRT status code.
+ * @param   hFuzzCtx            The fuzzing context handle.
+ * @param   hVfsIos             The VFS I/O stream handle to load the seed from.
+ */
+RTDECL(int) RTFuzzCtxCorpusInputAddFromVfsIoStrm(RTFUZZCTX hFuzzCtx, RTVFSIOSTREAM hVfsIos);
+
+/**
+ * Adds a new seed to the input corpus of the given fuzzing context from the given VFS I/O stream - extended version.
+ *
+ * @returns IPRT status code.
+ * @param   hFuzzCtx            The fuzzing context handle.
+ * @param   hVfsIos             The VFS I/O stream handle to load the seed from.
+ * @param   offMutStart         Start offset at which a mutation can happen.
+ * @param   cbMutRange          Size of the range in bytes where a mutation can happen,
+ *                              use UINT64_MAX to allow mutations till the end of the input.
+ */
+RTDECL(int) RTFuzzCtxCorpusInputAddFromVfsIoStrmEx(RTFUZZCTX hFuzzCtx, RTVFSIOSTREAM hVfsIos,
+                                                   uint64_t offMutStart, uint64_t cbMutRange);
+
+/**
  * Adds new seeds to the input corpus of the given fuzzing context from the given directory.
  *
  * Will only process regular files, i.e. ignores directories, symbolic links, devices, fifos
@@ -496,6 +537,62 @@ RTDECL(int) RTFuzzInputAddToCtxCorpus(RTFUZZINPUT hFuzzInput);
  * @param   hFuzzInput          The fuzzing input handle.
  */
 RTDECL(int) RTFuzzInputRemoveFromCtxCorpus(RTFUZZINPUT hFuzzInput);
+
+
+/**
+ * Creates a fuzzing config from the given VFS file handle.
+ *
+ * @returns IPRT status code.
+ * @param   phFuzzCfg           Where to store the handle to the fuzzing config on success.
+ * @param   hVfsFile            The VFS file to use (retained).
+ * @param   pErrInfo            Where to store extended error info. Optional.
+ */
+RTDECL(int) RTFuzzCfgCreateFromVfsFile(PRTFUZZCFG phFuzzCfg, RTVFSFILE hVfsFile, PRTERRINFO pErrInfo);
+
+/**
+ * Creates a fuzzing config from the given file path.
+ *
+ * @returns IPRT status code.
+ * @param   phFuzzCfg           Where to store the handle to the fuzzing config on success.
+ * @param   pszFilename         Filename to load the config from.
+ * @param   pErrInfo            Where to store extended error info. Optional.
+ */
+RTDECL(int) RTFuzzCfgCreateFromFile(PRTFUZZCFG phFuzzCfg, const char *pszFilename, PRTERRINFO pErrInfo);
+
+/**
+ * Retains a reference to the given fuzzing config.
+ *
+ * @returns New reference count on success.
+ * @param   hFuzzCfg            Handle of the fuzzing config.
+ */
+RTDECL(uint32_t) RTFuzzCfgRetain(RTFUZZCFG hFuzzCfg);
+
+/**
+ * Releases a reference from the given fuzzing config, destroying it when reaching 0.
+ *
+ * @returns New reference count on success, 0 if the fuzzing config got destroyed.
+ * @param   hFuzzCfg            Handle of the fuzzing config.
+ */
+RTDECL(uint32_t) RTFuzzCfgRelease(RTFUZZCFG hFuzzCfg);
+
+/**
+ * Imports the given fuzzing config into a previously created fuzzing context.
+ *
+ * @returns IPRT status code.
+ * @param   hFuzzCfg            Handle of the fuzzing config.
+ * @param   hFuzzCtx            Handle of the fuzzing context.
+ * @param   fFlags              Flags controlling what to import exactly, combination of RTFUZZCFG_IMPORT_F_XXX.
+ */
+RTDECL(int) RTFuzzCfgImport(RTFUZZCFG hFuzzCfg, RTFUZZCTX hFuzzCtx, uint32_t fFlags);
+
+/**
+ * Queries the custom config for the controller of the fuzzing process.
+ *
+ * @returns IPRT status code.
+ * @param   hFuzzCfg            Handle of the fuzzing config.
+ * @param   phVfsFile           Where to store the handle of the VFS file containing the custom config.
+ */
+RTDECL(int) RTFuzzCfgQueryCustomCfg(RTFUZZCFG hFuzzCfg, PRTVFSFILE phVfsFile);
 
 
 /**
