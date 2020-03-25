@@ -2374,12 +2374,6 @@ int VGSvcGstCtrlSessionThreadCreate(PRTLISTANCHOR pList, const PVBOXSERVICECTRLS
 
     /* Static counter to help tracking session thread <-> process relations. */
     static uint32_t s_uCtrlSessionThread = 0;
-#if 1
-    if (++s_uCtrlSessionThread == 100000)
-#else /* This must be some joke, right? ;-) */
-    if (s_uCtrlSessionThread++ == UINT32_MAX)
-#endif
-        s_uCtrlSessionThread = 0; /* Wrap around to not let IPRT freak out. */
 
     /*
      * Allocate and initialize the session thread structure.
@@ -2421,6 +2415,8 @@ int VGSvcGstCtrlSessionThreadCreate(PRTLISTANCHOR pList, const PVBOXSERVICECTRLS
             }
             if (RT_SUCCESS(rc))
             {
+                s_uCtrlSessionThread++;
+
                 /*
                  * Start the session child process.
                  */
@@ -2431,7 +2427,7 @@ int VGSvcGstCtrlSessionThreadCreate(PRTLISTANCHOR pList, const PVBOXSERVICECTRLS
                      * Start the session thread.
                      */
                     rc = RTThreadCreateF(&pSessionThread->Thread, vgsvcGstCtrlSessionThread, pSessionThread /*pvUser*/, 0 /*cbStack*/,
-                                         RTTHREADTYPE_DEFAULT, RTTHREADFLAGS_WAITABLE, "CtrlSess%u", s_uCtrlSessionThread);
+                                         RTTHREADTYPE_DEFAULT, RTTHREADFLAGS_WAITABLE, "gctls%RU32", s_uCtrlSessionThread);
                     if (RT_SUCCESS(rc))
                     {
                         /* Wait for the thread to initialize. */
