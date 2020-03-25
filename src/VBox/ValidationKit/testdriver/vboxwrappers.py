@@ -1649,6 +1649,44 @@ class SessionWrapper(TdTaskBase):
         self.oTstDrv.processPendingEvents();
         return fRc;
 
+    def setVideoControllerType(self, eControllerType):
+        """
+        Set the video controller type of the VM.
+        Returns True on success and False on failure.  Error information is logged.
+        """
+        fRc = True;
+        try:
+            if self.fpApiVer >= 6.1 and hasattr(self.o.machine, 'graphicsAdapter'):
+                self.o.machine.graphicsAdapter.graphicsControllerType = eControllerType;
+            else:
+                self.o.machine.graphicsControllerType = eControllerType;
+        except:
+            reporter.errorXcpt('failed to set the video controller type of "%s" to %s' % (self.sName, eControllerType));
+            fRc = False;
+        else:
+            reporter.log('set the video controller type of "%s" to %s' % (self.sName, eControllerType));
+        self.oTstDrv.processPendingEvents();
+        return fRc;
+
+    def setAccelerate3DEnabled(self, fEnabled):
+        """
+        Set the video controller type of the VM.
+        Returns True on success and False on failure.  Error information is logged.
+        """
+        fRc = True;
+        try:
+            if self.fpApiVer >= 6.1 and hasattr(self.o.machine, 'graphicsAdapter'):
+                self.o.machine.graphicsAdapter.accelerate3DEnabled = fEnabled;
+            else:
+                self.o.machine.accelerate3DEnabled = fEnabled;
+        except:
+            reporter.errorXcpt('failed to set the accelerate3DEnabled of "%s" to %s' % (self.sName, fEnabled));
+            fRc = False;
+        else:
+            reporter.log('set the accelerate3DEnabled of "%s" to %s' % (self.sName, fEnabled));
+        self.oTstDrv.processPendingEvents();
+        return fRc;
+
     def setCpuCount(self, cCpus):
         """
         Set the number of CPUs.
