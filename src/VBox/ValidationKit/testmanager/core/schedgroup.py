@@ -709,7 +709,7 @@ LIMIT %s''', (idSchedGroup, aoEntries[0].tsEffective, cMaxRows + 1,));
             iEntry  = 0;
             aaoRows = self._oDb.fetchAll();
             for iRow, oRow in enumerate(aaoRows):
-                oNew   = SchedGroupData().initFromDbRow(oRow);
+                oNew   = SchedGroupDataEx().initFromDbRow(oRow);
                 iEntry = findEntry(oNew.tsEffective, iEntry);
                 self._oDb.dprint('iRow=%s iEntry=%s' % (iRow, iEntry));
                 if iEntry < 0:
@@ -718,7 +718,7 @@ LIMIT %s''', (idSchedGroup, aoEntries[0].tsEffective, cMaxRows + 1,));
                 aoChanges = oEntry.aoChanges;
                 oEntry.oNewRaw = oNew;
                 if iRow + 1 < len(aaoRows):
-                    oOld = SchedGroupData().initFromDbRow(aaoRows[iRow + 1]);
+                    oOld = SchedGroupDataEx().initFromDbRow(aaoRows[iRow + 1]);
                     self._oDb.dprint('oOld=%s' % (oOld,));
                     for sAttr in oNew.getDataAttributes():
                         if sAttr not in [ 'tsEffective', 'tsExpire', 'uidAuthor', ]:
