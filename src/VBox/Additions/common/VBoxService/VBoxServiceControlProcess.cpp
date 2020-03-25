@@ -32,6 +32,7 @@
 #include <iprt/process.h>
 #include <iprt/semaphore.h>
 #include <iprt/string.h>
+#include <iprt/string.h>
 #include <iprt/thread.h>
 
 #include <VBox/VBoxGuestLib.h>
@@ -1417,26 +1418,47 @@ static int vgsvcGstCtrlProcessCreateProcess(const char *pszExec, const char * co
 
 
 #ifdef DEBUG
-static int vgsvcGstCtrlProcessDumpToFile(const char *pszFileName, void *pvBuf, size_t cbBuf)
+/**
+ * Dumps content to a file in the OS temporary directory.
+ *
+ * @returns VBox status code.
+ * @param   pvBuf               Buffer of content to dump.
+ * @param   cbBuf               Size (in bytes) of content to dump.
+ * @param   pszFileNmFmt        Pointer to the file name format string, @see pg_rt_str_format.
+ * @param   ...                 The format argument.
+ */
+static int vgsvcGstCtrlProcessDbgDumpToFileF(const void *pvBuf, size_t cbBuf, const char *pszFileNmFmt, ...)
 {
-    AssertPtrReturn(pszFileName, VERR_INVALID_POINTER);
+    AssertPtrReturn(pszFileNmFmt, VERR_INVALID_POINTER);
     AssertPtrReturn(pvBuf, VERR_INVALID_POINTER);
 
     if (!cbBuf)
         return VINF_SUCCESS;
 
-    char szFile[RTPATH_MAX];
+    va_list va;
+    va_start(va, pszFileNmFmt);
 
-    int rc = RTPathTemp(szFile, sizeof(szFile));
+    char *pszFileName = NULL;
+    const int cchFileName = RTStrAPrintfV(&pszFileName, pszFileNmFmt, va);
+
+    va_end(va);
+
+    if (!cchFileName)
+        return VERR_NO_MEMORY;
+
+    char szPathFileAbs[RTPATH_MAX];
+    int rc = RTPathTemp(szPathFileAbs, sizeof(szPathFileAbs));
     if (RT_SUCCESS(rc))
-        rc = RTPathAppend(szFile, sizeof(szFile), pszFileName);
+        rc = RTPathAppend(szPathFileAbs, sizeof(szPathFileAbs), pszFileName);
+
+    RTStrFree(pszFileName);
 
     if (RT_SUCCESS(rc))
     {
-        VGSvcVerbose(4, "Dumping %ld bytes to '%s'\n", cbBuf, szFile);
+        VGSvcVerbose(4, "Dumping %zu bytes to '%s'\n", cbBuf, szPathFileAbs);
 
         RTFILE fh;
-        rc = RTFileOpen(&fh, szFile, RTFILE_O_OPEN_CREATE | RTFILE_O_WRITE | RTFILE_O_DENY_WRITE);
+        rc = RTFileOpen(&fh, szPathFileAbs, RTFILE_O_OPEN_CREATE | RTFILE_O_WRITE | RTFILE_O_DENY_WRITE);
         if (RT_SUCCESS(rc))
         {
             rc = RTFileWrite(fh, pvBuf, cbBuf, NULL /* pcbWritten */);
@@ -1922,23 +1944,15 @@ static DECLCALLBACK(int) vgsvcGstCtrlProcessOnOutput(PVBOXSERVICECTRLPROCESS pTh
                     || uHandle == OUTPUT_HANDLE_ID_STDOUT_DEPRECATED)
                )
             {
-                /** @todo r=bird: vgsvcGstCtrlProcessDumpToFile(void *pvBuf, size_t cbBuf, const char *pszFileNmFmt, ...) */
-                char szDumpFile[RTPATH_MAX];
-                if (!RTStrPrintf(szDumpFile, sizeof(szDumpFile), "VBoxService_Session%RU32_PID%RU32_StdOut.txt",
-                                 pSession->StartupInfo.uSessionID, pThis->uPID)) rc = VERR_BUFFER_UNDERFLOW;
-                if (RT_SUCCESS(rc))
-                    rc = vgsvcGstCtrlProcessDumpToFile(szDumpFile, pvBuf, cbRead);
+                rc = vgsvcGstCtrlProcessDbgDumpToFileF(pvBuf, cbRead, "VBoxService_Session%RU32_PID%RU32_StdOut.txt",
+                                                pSession->StartupInfo.uSessionID, pThis->uPID);
                 AssertRC(rc);
             }
             else if (   pSession->fFlags & VBOXSERVICECTRLSESSION_FLAG_DUMPSTDERR
                      && uHandle == OUTPUT_HANDLE_ID_STDERR)
             {
-                char szDumpFile[RTPATH_MAX];
-                if (!RTStrPrintf(szDumpFile, sizeof(szDumpFile), "VBoxService_Session%RU32_PID%RU32_StdErr.txt",
-                                 pSession->StartupInfo.uSessionID, pThis->uPID))
-                    rc = VERR_BUFFER_UNDERFLOW;
-                if (RT_SUCCESS(rc))
-                    rc = vgsvcGstCtrlProcessDumpToFile(szDumpFile, pvBuf, cbRead);
+                rc = vgsvcGstCtrlProcessDbgDumpToFileF(pvBuf, cbRead, "VBoxService_Session%RU32_PID%RU32_StdErr.txt",
+                                                pSession->StartupInfo.uSessionID, pThis->uPID);
                 AssertRC(rc);
             }
         }
