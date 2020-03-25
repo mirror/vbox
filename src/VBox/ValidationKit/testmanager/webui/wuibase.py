@@ -844,6 +844,15 @@ class WuiDispatcherBase(object):
                 aiSortColumns.append(iSortColumn);
         self._checkForUnknownParameters();
 
+        ## @todo fetchForListing could be made more useful if it returned a tuple
+        # that includes the total number of entries, thus making paging more user
+        # friendly (known number of pages).  So, the return should be:
+        #       (aoEntries, cAvailableEntries)
+        #
+        # In addition, we could add a new parameter to include deleted entries,
+        # making it easier to find old deleted testboxes/testcases/whatever and
+        # clone them back to life.  The temporal navigation is pretty usless here.
+        #
         aoEntries  = oLogicType(self._oDb).fetchForListing(iPage * cItemsPerPage, cItemsPerPage + 1, tsEffective, aiSortColumns);
         oContent   = oListContentType(aoEntries, iPage, cItemsPerPage, tsEffective,
                                       fnDPrint = self._oSrvGlue.dprint, oDisp = self, aiSelectedSortColumns = aiSortColumns);
