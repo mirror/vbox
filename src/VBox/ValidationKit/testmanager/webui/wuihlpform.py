@@ -885,6 +885,7 @@ class WuiHlpForm(object):
 
         from testmanager.webui.wuiadmin         import WuiAdmin;
         from testmanager.webui.wuicontentbase   import WuiAdminLink;
+        from testmanager.webui.wuiadmintestbox  import WuiTestBoxDetailsLink;
 
         if not fUseTable:
             #
@@ -926,34 +927,8 @@ class WuiHlpForm(object):
                               ' readonly class="tmform-input-readonly"' if fReadOnly else '',
                               escapeAttr("Priority [0..31].  Higher value means run more often.") ));
 
-                asFeatures = [];
-                if oTestBox.fCpuHwVirt:
-                    asFeatures.append('AMD-V' if oTestBox.sCpuVendor in ['AuthenticAMD',] else 'VT-x');
-                if oTestBox.fCpuNestedPaging:
-                    asFeatures.append('Nested-Paging');
-                if oTestBox.fCpu64BitGuest:
-                    asFeatures.append('64-bit-Guest');
-                if oTestBox.fChipsetIoMmu:
-                    asFeatures.append('IOMMU');
                 self._add(u'    <span class="tmform-testbox-name">%s</span>\n'
-                          % ( WuiAdminLink('%s (%s)' % (oTestBox.sName, oTestBox.sOs),
-                                           WuiAdmin.ksActionTestBoxDetails, fBracketed = False,
-                                           dParams = { oTestBox.ksParam_idGenTestBox: oTestBox.idGenTestBox},
-                                           sTitle = 'CPU:     \t%s\n'
-                                                    'Threads: \t%u - %s\n'
-                                                    'Features:\t%s\n'
-                                                    'RAM:     \t%u MiB\n'
-                                                    'OpSys:   \t%s - %s\n'
-                                                    'Arch:    \t%s\n'
-                                                    'IP-Addr: \t%s\n'
-                                                  % ( ' '.join(oTestBox.sCpuName.split()),
-                                                      oTestBox.cCpus, oTestBox.sCpuVendor,
-                                                      ', '.join(asFeatures),
-                                                      oTestBox.cMbMemory,
-                                                      oTestBox.sOs, oTestBox.sOsVersion,
-                                                      oTestBox.sCpuArch,
-                                                      oTestBox.ip
-                                                      )), ));
+                          % ( WuiTestBoxDetailsLink(oTestBox, sName = '%s (%s)' % (oTestBox.sName, oTestBox.sOs,)),));
                 self._add(u'  </div>\n');
             return self._add(u'        </div></div></div>\n'
                              u'      </li>\n');

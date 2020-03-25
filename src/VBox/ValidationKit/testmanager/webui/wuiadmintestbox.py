@@ -44,10 +44,10 @@ from testmanager.core.db                import isDbTimestampInfinity;
 
 
 
-class WuiTestBoxDetailsLink(WuiTmLink):
+class WuiTestBoxDetailsLinkById(WuiTmLink):
     """  Test box details link by ID. """
 
-    def __init__(self, idTestBox, sName = WuiContentBase.ksShortDetailsLink, fBracketed = False, tsNow = None):
+    def __init__(self, idTestBox, sName = WuiContentBase.ksShortDetailsLink, fBracketed = False, tsNow = None, sTitle = None):
         from testmanager.webui.wuiadmin import WuiAdmin;
         dParams = {
             WuiAdmin.ksParamAction:             WuiAdmin.ksActionTestBoxDetails,
@@ -55,9 +55,88 @@ class WuiTestBoxDetailsLink(WuiTmLink):
         };
         if tsNow is not None:
             dParams[WuiAdmin.ksParamEffectiveDate] = tsNow; ## ??
-        WuiTmLink.__init__(self, sName, WuiAdmin.ksScriptName, dParams, fBracketed = fBracketed);
+        WuiTmLink.__init__(self, sName, WuiAdmin.ksScriptName, dParams, fBracketed = fBracketed, sTitle = sTitle);
         self.idTestBox = idTestBox;
 
+
+class WuiTestBoxDetailsLink(WuiTestBoxDetailsLinkById):
+    """  Test box details link by TestBoxData instance. """
+
+    def __init__(self, oTestBox, sName = None, fBracketed = False, tsNow = None): # (TestBoxData, str, bool, Any) -> None
+        WuiTestBoxDetailsLinkById.__init__(self, oTestBox.idTestBox,
+                                           sName if sName else oTestBox.sName,
+                                           fBracketed = fBracketed,
+                                           tsNow = tsNow,
+                                           sTitle = self.formatTitleText(oTestBox));
+        self.oTestBox = oTestBox;
+
+    @staticmethod
+    def formatTitleText(oTestBox): # (TestBoxData) -> str
+        """
+        Formats the title text for a TestBoxData object.
+        """
+
+        # Note! Somewhat similar code is found in testresults.py
+
+        #
+        # Collect field/value tuples.
+        #
+        aasTestBoxTitle = [
+            (u'Identifier:',  '#%u' % (oTestBox.idTestBox,),),
+            (u'Name:',        oTestBox.sName,),
+        ];
+        if oTestBox.sCpuVendor:
+            aasTestBoxTitle.append((u'CPU\u00a0vendor:',    oTestBox.sCpuVendor, ));
+        if oTestBox.sCpuName:
+            aasTestBoxTitle.append((u'CPU\u00a0name:',      u'\u00a0'.join(oTestBox.sCpuName.split()),));
+        if oTestBox.cCpus:
+            aasTestBoxTitle.append((u'CPU\u00a0threads:',   u'%s' % ( oTestBox.cCpus, ),));
+
+        asFeatures = [];
+        if oTestBox.fCpuHwVirt       is True:
+            if oTestBox.sCpuVendor is None:
+                asFeatures.append(u'HW\u2011Virt');
+            elif oTestBox.sCpuVendor in ['AuthenticAMD',]:
+                asFeatures.append(u'HW\u2011Virt(AMD\u2011V)');
+            else:
+                asFeatures.append(u'HW\u2011Virt(VT\u2011x)');
+        if oTestBox.fCpuNestedPaging is True: asFeatures.append(u'Nested\u2011Paging');
+        if oTestBox.fCpu64BitGuest   is True: asFeatures.append(u'64\u2011bit\u2011Guest');
+        if oTestBox.fChipsetIoMmu    is True: asFeatures.append(u'I/O\u2011MMU');
+        aasTestBoxTitle.append((u'CPU\u00a0features:',      u',\u00a0'.join(asFeatures),));
+
+        if oTestBox.cMbMemory:
+            aasTestBoxTitle.append((u'System\u00a0RAM:',    u'%s MiB' % ( oTestBox.cMbMemory, ),));
+        if oTestBox.sOs:
+            aasTestBoxTitle.append((u'OS:',                 oTestBox.sOs, ));
+        if oTestBox.sCpuArch:
+            aasTestBoxTitle.append((u'OS\u00a0arch:',       oTestBox.sCpuArch,));
+        if oTestBox.sOsVersion:
+            aasTestBoxTitle.append((u'OS\u00a0version:',    u'\u00a0'.join(oTestBox.sOsVersion.split()),));
+        if oTestBox.ip:
+            aasTestBoxTitle.append((u'IP\u00a0address:',    u'%s' % ( oTestBox.ip, ),));
+
+        #
+        # Do a guestimation of the max field name width and pad short
+        # names when constructing the title text lines.
+        #
+        cchMaxWidth = 0;
+        for sEntry, _ in aasTestBoxTitle:
+            cchMaxWidth = max(WuiTestBoxDetailsLink.estimateStringWidth(sEntry), cchMaxWidth);
+        asTestBoxTitle = [];
+        for sEntry, sValue in aasTestBoxTitle:
+            asTestBoxTitle.append(u'%s%s\t\t%s'
+                                  % (sEntry, WuiTestBoxDetailsLink.getStringWidthPadding(sEntry, cchMaxWidth), sValue));
+
+        return u'\n'.join(asTestBoxTitle);
+
+
+class WuiTestBoxDetailsLinkShort(WuiTestBoxDetailsLink):
+    """  Test box details link by TestBoxData instance, but with ksShortDetailsLink as default name. """
+
+    def __init__(self, oTestBox, sName = WuiContentBase.ksShortDetailsLink, fBracketed = False,
+                 tsNow = None): # (TestBoxData, str, bool, Any) -> None
+        WuiTestBoxDetailsLink.__init__(self, oTestBox, sName = sName, fBracketed = fBracketed, tsNow = tsNow);
 
 
 class WuiTestBox(WuiFormContentBase):

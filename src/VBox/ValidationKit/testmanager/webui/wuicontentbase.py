@@ -116,6 +116,40 @@ class WuiLinkBase(WuiHtmlBase): # pylint: disable=too-few-public-methods
             sFmt = '<a %shref="%s">%s</a>';
         return sFmt % (sExtraAttrs, webutils.escapeAttr(self.sUrl), webutils.escapeElem(self.sName));
 
+    @staticmethod
+    def estimateStringWidth(sString):
+        """
+        Takes a string and estimate it's width so the caller can pad with
+        U+2002 before tab in a title text.  This is very very rough.
+        """
+        cchWidth = 0;
+        for ch in sString:
+            if ch.isupper() or ch in u'wm\u2007\u2003\u2001\u3000':
+                cchWidth += 2;
+            else:
+                cchWidth += 1;
+        return cchWidth;
+
+    @staticmethod
+    def getStringWidthPaddingEx(cchWidth, cchMaxWidth):
+        """ Works with estiamteStringWidth(). """
+        if cchWidth + 2 <= cchMaxWidth:
+            return u'\u2002' * ((cchMaxWidth - cchWidth) * 2 // 3)
+        return u'';
+
+    @staticmethod
+    def getStringWidthPadding(sString, cchMaxWidth):
+        """ Works with estiamteStringWidth(). """
+        return WuiLinkBase.getStringWidthPaddingEx(WuiLinkBase.estimateStringWidth(sString), cchMaxWidth);
+
+    @staticmethod
+    def padStringToWidth(sString, cchMaxWidth):
+        """ Works with estimateStringWidth. """
+        cchWidth = WuiLinkBase.estimateStringWidth(sString);
+        if cchWidth < cchMaxWidth:
+            return sString + WuiLinkBase.getStringWidthPaddingEx(cchWidth, cchMaxWidth);
+        return sString;
+
 
 class WuiTmLink(WuiLinkBase): # pylint: disable=too-few-public-methods
     """ Local link to the test manager. """

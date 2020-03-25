@@ -35,7 +35,7 @@ from testmanager.webui.wuicontentbase   import WuiContentBase, WuiTmLink, WuiSvn
 from testmanager.webui.wuihlpgraph      import WuiHlpGraphDataTable, WuiHlpBarGraph;
 from testmanager.webui.wuitestresult    import WuiTestSetLink, WuiTestResultsForTestCaseLink, WuiTestResultsForTestBoxLink;
 from testmanager.webui.wuiadmintestcase import WuiTestCaseDetailsLink;
-from testmanager.webui.wuiadmintestbox  import WuiTestBoxDetailsLink;
+from testmanager.webui.wuiadmintestbox  import WuiTestBoxDetailsLinkShort;
 from testmanager.core.report            import ReportModelBase, ReportFilter;
 from testmanager.core.testresults       import TestResultFilter;
 
@@ -720,7 +720,7 @@ class WuiReportTestBoxFailures(WuiReportFailuresWithTotalBase):
 
     def _formatEdgeOccurenceSubject(self, oTransient):
         sHtml = u'%s ' % ( webutils.escapeElem(oTransient.oSubject.sName),);
-        sHtml += WuiTestBoxDetailsLink(oTransient.oSubject.idTestBox, fBracketed = False).toHtml();
+        sHtml += WuiTestBoxDetailsLinkShort(oTransient.oSubject).toHtml();
         return sHtml;
 
     def _formatSeriesNameColumnHeadersForTable(self):
@@ -731,7 +731,7 @@ class WuiReportTestBoxFailures(WuiReportFailuresWithTotalBase):
         sHtml  = u'<td>';
         sHtml += WuiTestResultsForTestBoxLink(idKey, oTestBox.sName, self._dExtraTestResultsParams).toHtml()
         sHtml += u' ';
-        sHtml += WuiTestBoxDetailsLink(oTestBox.idTestBox).toHtml();
+        sHtml += WuiTestBoxDetailsLinkShort(oTestBox).toHtml();
         sHtml += u' ';
         sHtml += WuiReportSummaryLink(ReportModelBase.ksSubTestBox, oTestBox.idTestBox,
                                       dExtraParams = self._dExtraParams).toHtml();

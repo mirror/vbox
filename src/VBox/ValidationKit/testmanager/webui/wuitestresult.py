@@ -885,7 +885,13 @@ class WuiGroupedResultList(WuiListContentBase):
         if oEntry.sOsVersion is not None:
             sTestBoxTitle += 'OS version:\t%s\n' % ( oEntry.sOsVersion, );
         asFeatures = [];
-        if oEntry.fCpuHwVirt       is True: asFeatures.append(u'HW\u2011Virt');
+        if oEntry.fCpuHwVirt       is True:
+            if oEntry.sCpuVendor is None:
+                asFeatures.append(u'HW\u2011Virt');
+            elif oEntry.sCpuVendor in ['AuthenticAMD',]:
+                asFeatures.append(u'HW\u2011Virt(AMD\u2011V)');
+            else:
+                asFeatures.append(u'HW\u2011Virt(VT\u2011x)');
         if oEntry.fCpuNestedPaging is True: asFeatures.append(u'Nested\u2011Paging');
         if oEntry.fCpu64BitGuest   is True: asFeatures.append(u'64\u2011bit\u2011Guest');
         #if oEntry.fChipsetIoMmu    is True: asFeatures.append(u'I/O\u2011MMU');
