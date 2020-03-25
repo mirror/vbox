@@ -883,9 +883,7 @@ class WuiHlpForm(object):
         oDefMember        = TestBoxDataForSchedGroup();
         aoSchedGroupBoxes = list(aoSchedGroupBoxes); # Copy it so we can pop.
 
-        from testmanager.webui.wuiadmin         import WuiAdmin;
-        from testmanager.webui.wuicontentbase   import WuiAdminLink;
-        from testmanager.webui.wuiadmintestbox  import WuiTestBoxDetailsLink;
+        from testmanager.webui.wuiadmintestbox import WuiTestBoxDetailsLink;
 
         if not fUseTable:
             #

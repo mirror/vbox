@@ -34,7 +34,7 @@ from testmanager.core.buildsource       import BuildSourceData, BuildSourceLogic
 from testmanager.core.db                import isDbTimestampInfinity;
 from testmanager.core.schedgroup        import SchedGroupData, SchedGroupDataEx;
 from testmanager.core.testgroup         import TestGroupData, TestGroupLogic;
-from testmanager.core.testbox           import TestBoxData, TestBoxLogic;
+from testmanager.core.testbox           import TestBoxLogic;
 from testmanager.webui.wuicontentbase   import WuiFormContentBase, WuiListContentBase, WuiTmLink, WuiRawHtml;
 from testmanager.webui.wuiadmintestbox  import WuiTestBoxDetailsLink;
 
