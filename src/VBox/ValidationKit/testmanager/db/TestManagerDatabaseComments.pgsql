@@ -1177,3 +1177,7 @@ and
     SELECT cGangMembers FROM TestCaseArgs WHERE idGenTestCaseArgs = :idTest;
 to figure out whether to remain in ''gather-gang''::TestBoxState_T.';
 
+COMMENT ON INDEX SchedQueuesItemIdx IS
+  'The number of times this has been considered for scheduling.
+cConsidered SMALLINT DEFAULT 0 NOT NULL,';
+
