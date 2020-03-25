@@ -901,14 +901,14 @@ class WuiHlpForm(object):
 
                 # Start on the rows...
                 sPrf = u'%s[%d]' % (sName, oTestBox.idTestBox,);
-                self._add(u'  <div class="tmform-checkbox-holder">\n'
+                self._add(u'  <div class="tmform-checkbox-holder tmshade%u">\n'
                           u'  <input name="%s[%s]" type="hidden" value="%s">\n' # idTestBox
                           u'  <input name="%s[%s]" type="hidden" value="%s">\n' # idSchedGroup
                           u'  <input name="%s[%s]" type="hidden" value="%s">\n' # tsExpire
                           u'  <input name="%s[%s]" type="hidden" value="%s">\n' # tsEffective
                           u'  <input name="%s[%s]" type="hidden" value="%s">\n' # uidAuthor
                           u'  <input name="%s" type="checkbox"%s%s value="%d" class="tmform-checkbox" title="#%d - %s">\n' #(list)
-                          % ( #'tmodd' if iTestBox & 1 else 'tmeven',
+                          % ( iTestBox & 8,
                               sPrf, TestBoxDataForSchedGroup.ksParam_idTestBox,    oTestBox.idTestBox,
                               sPrf, TestBoxDataForSchedGroup.ksParam_idSchedGroup, idSchedGroup,
                               sPrf, TestBoxDataForSchedGroup.ksParam_tsExpire,     '' if oMember is None else oMember.tsExpire,
