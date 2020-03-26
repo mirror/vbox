@@ -63,6 +63,25 @@ function isBrowserEdgeChromium()
 }
 
 /**
+ * Detects the chromium-based edge browser.
+ */
+function isBrowserInternetExplorer()
+{
+    /* documentMode is an IE only property. Values are 5,7,8,9,10 or 11
+       according to google results. */
+    if (typeof document.documentMode !== 'undefined')
+    {
+        if (document.documentMode)
+            return true;
+    }
+    /* IE only conditional compiling feature.  Here, the 'true || ' part
+       will be included in the if when executing in IE: */
+    if (/*@cc_on true || @*/false)
+        return true;
+    return false;
+}
+
+/**
  * Detects the safari browser (v3+).
  */
 function isBrowserSafari()
@@ -815,7 +834,7 @@ function tooltipRepositionOnLoad()
         {
             xPos = xScroll + oRelToRect.right;
             g_oCurrentTooltip.cxMax = cxRight;
-            console.log('tooltipRepositionOnLoad: #5');
+            //console.log('tooltipRepositionOnLoad: #5');
         }
         else
         {
@@ -823,11 +842,11 @@ function tooltipRepositionOnLoad()
             if (xPos < xScroll)
                 xPos = xScroll;
             g_oCurrentTooltip.cxMax = cxNeeded;
-            console.log('tooltipRepositionOnLoad: #6');
+            //console.log('tooltipRepositionOnLoad: #6');
         }
         g_oCurrentTooltip.xPos    = xPos;
         g_oCurrentTooltip.xScroll = xScroll;
-        console.log('tooltipRepositionOnLoad: xPos=' + xPos + ' xScroll=' + xScroll);
+        //console.log('tooltipRepositionOnLoad: xPos=' + xPos + ' xScroll=' + xScroll);
 
         g_oCurrentTooltip.oElm.style.top  = yPos + 'px';
         g_oCurrentTooltip.oElm.style.left = xPos + 'px';
@@ -863,6 +882,7 @@ function tooltipReallyShow(oTooltip, oRelTo)
         //console.log('showing tooltip');
     }
 
+    //oTooltip.oElm.setAttribute('style', 'display: block; position: absolute;');
     oTooltip.oElm.style.position = 'absolute';
     oTooltip.oElm.style.display  = 'block';
     oRect = oRelTo.getBoundingClientRect();
@@ -968,9 +988,9 @@ function svnHistoryTooltipOnLoad()
             oIFrameElement.style.overflowY = 'scroll';
         }
 
-        console.log('cyNeeded='+cyNeeded+' cyMax='+g_oCurrentTooltip.cyMax+' cySpace='+cySpace+' cy='+cy);
-        console.log('oIFrameElement.offsetTop='+oIFrameElement.offsetTop);
-        console.log('svnHistoryTooltipOnLoad: cx='+cx+'cxMax='+g_oCurrentTooltip.cxMax+' cxNeeded='+cxNeeded+' cy='+cy+' cyMax='+g_oCurrentTooltip.cyMax);
+        //console.log('cyNeeded='+cyNeeded+' cyMax='+g_oCurrentTooltip.cyMax+' cySpace='+cySpace+' cy='+cy);
+        //console.log('oIFrameElement.offsetTop='+oIFrameElement.offsetTop);
+        //console.log('svnHistoryTooltipOnLoad: cx='+cx+'cxMax='+g_oCurrentTooltip.cxMax+' cxNeeded='+cxNeeded+' cy='+cy+' cyMax='+g_oCurrentTooltip.cyMax);
 
         tooltipRepositionOnLoad();
     }
@@ -1039,6 +1059,7 @@ function svnHistoryTooltipShowEx(oEvt, sRepository, iRevision, sUrlPrefix)
             oTooltip.oElm = document.createElement('div');
             oTooltip.oElm.setAttribute('id', sKey);
             oTooltip.oElm.className      = 'tmvcstooltip';
+            //oTooltip.oElm.setAttribute('style', 'display:none; position: absolute;');
             oTooltip.oElm.style.display  = 'none';  /* Note! Must stay hidden till loaded, or parent jumps with #rXXXX.*/
             oTooltip.oElm.style.position = 'absolute';
             oTooltip.oElm.style.zIndex   = 6001;
@@ -1063,7 +1084,8 @@ function svnHistoryTooltipShowEx(oEvt, sRepository, iRevision, sUrlPrefix)
             document.body.appendChild(oTooltip.oElm);
 
             oIFrameElement.onload = function() { /* A slight delay here to give time for #rXXXX scrolling before we show it. */
-                setTimeout(function(){tooltipReallyShow(oTooltip, oParent); svnHistoryTooltipOnLoad();}, 64);
+                setTimeout(function(){tooltipReallyShow(oTooltip, oParent); svnHistoryTooltipOnLoad();},
+                           isBrowserInternetExplorer() ? 256 : 64);
             };
 
             var sUrl = sUrlPrefix + 'index.py?Action=VcsHistoryTooltip&repo=' + sRepository
@@ -1084,9 +1106,9 @@ function svnHistoryTooltipShowEx(oEvt, sRepository, iRevision, sUrlPrefix)
                 if (!isBrowserFirefox()) /* Chrome updates stuff like expected; Firefox OTOH doesn't change anything. */
                 {
                     setTimeout(function() { /* Slight delay to make sure it scrolls before it's shown. */
-                        tooltipReallyShow(oTooltip, oParent);
-                        svnHistoryTooltipOnLoad();
-                    }, 64);
+                                   tooltipReallyShow(oTooltip, oParent);
+                                   svnHistoryTooltipOnLoad();
+                               }, isBrowserInternetExplorer() ? 256 : 64);
                 }
                 else
                     oTooltip.oIFrame.contentWindow.location.reload();
