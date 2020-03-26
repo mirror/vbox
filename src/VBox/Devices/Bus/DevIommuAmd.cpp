@@ -34,7 +34,7 @@
  * @{
  */
 #define IOMMU_CMD_COMPLETION_WAIT                   0x01
-#define IOMMU_CMD_INV_DEVTAB_ENTRY                  0x02
+#define IOMMU_CMD_INV_DEV_TAB_ENTRY                 0x02
 #define IOMMU_CMD_INV_IOMMU_PAGES                   0x03
 #define IOMMU_CMD_INV_IOTLB_PAGES                   0x04
 #define IOMMU_CMD_INV_INTR_TABLE                    0x05
@@ -183,7 +183,7 @@ RT_BF_ASSERT_COMPILE_CHECKS(IOMMU_BF_MISCINFO_0_, UINT32_C(0), UINT32_MAX,
  * In accordance with the AMD spec.
  * @{
  */
-/** MsiNumGA: MSI message number for guest vAPIC. */
+/** MsiNumGA: MSI message number for guest virtual-APIC log. */
 #define IOMMU_BF_MISCINFO_1_MSI_NUM_GA_SHIFT        0
 #define IOMMU_BF_MISCINFO_1_MSI_NUM_GA_MASK         UINT32_C(0x0000001f)
 /** Bits 31:5 reserved. */
@@ -201,7 +201,7 @@ RT_BF_ASSERT_COMPILE_CHECKS(IOMMU_BF_MISCINFO_1_, UINT32_C(0), UINT32_MAX,
 /** MsiCapId: Capability ID. */
 #define IOMMU_BF_MSI_CAPHDR_CAP_ID_SHIFT            0
 #define IOMMU_BF_MSI_CAPHDR_CAP_ID_MASK             UINT32_C(0x000000ff)
-/** MsiCapPtr: Pointer (PCI config offset) to the next capability register. */
+/** MsiCapPtr: Pointer (PCI config offset) to the next capability. */
 #define IOMMU_BF_MSI_CAPHDR_CAP_PTR_SHIFT           8
 #define IOMMU_BF_MSI_CAPHDR_CAP_PTR_MASK            UINT32_C(0x0000ff00)
 /** MsiEn: Message Signal Interrupt enable. */
@@ -231,7 +231,7 @@ RT_BF_ASSERT_COMPILE_CHECKS(IOMMU_BF_MSI_CAPHDR_, UINT32_C(0), UINT32_MAX,
 /** MsiMapCapId: Capability ID. */
 #define IOMMU_BF_MSI_MAP_CAPHDR_CAP_ID_SHIFT        0
 #define IOMMU_BF_MSI_MAP_CAPHDR_CAP_ID_MASK         UINT32_C(0x000000ff)
-/** MsiMapCapPtr: Pointer (PCI config offset) to the next capability register. */
+/** MsiMapCapPtr: Pointer (PCI config offset) to the next capability. */
 #define IOMMU_BF_MSI_MAP_CAPHDR_CAP_PTR_SHIFT       8
 #define IOMMU_BF_MSI_MAP_CAPHDR_CAP_PTR_MASK        UINT32_C(0x0000ff00)
 /** MsiMapEn: MSI mapping capability enable. */
@@ -295,17 +295,17 @@ typedef union
         uint32_t    u20PageTableRootPtrLo : 20;       /**< Bits 31:12   - Page Table Root Pointer (Lo). */
         uint32_t    u20PageTableRootPtrHi : 20;       /**< Bits 51:32   - Page Table Root Pointer (Hi). */
         uint32_t    u1Ppr : 1;                        /**< Bit  52      - PPR: Peripheral Page Request. */
-        uint32_t    u1Grpr : 1;                       /**< Bit  53      - GRPR: Guest PPR Response with PASID. */
-        uint32_t    u1GIov : 1;                       /**< Bit  54      - GIoV: Guest I/O Protection Valid. */
-        uint32_t    u1GValid : 1;                     /**< Bit  55      - GV: Guest translation Valid. */
-        uint32_t    u2Glx : 2;                        /**< Bits 57:56   - GLX: Guest Levels Translated. */
-        uint32_t    u3GCr3TableRootPtrLo : 2;         /**< Bits 60:58   - GCR3 TRP: Guest CR3 Table Root Pointer (Lo). */
+        uint32_t    u1GstPprRespPasid : 1;            /**< Bit  53      - GRPR: Guest PPR Response with PASID. */
+        uint32_t    u1GstIoValid : 1;                 /**< Bit  54      - GIoV: Guest I/O Protection Valid. */
+        uint32_t    u1GstTranslateValid : 1;          /**< Bit  55      - GV: Guest translation Valid. */
+        uint32_t    u2GstCr3RootTblTranslated : 2;    /**< Bits 57:56   - GLX: Guest Levels Translated. */
+        uint32_t    u3GstCr3TableRootPtrLo : 2;       /**< Bits 60:58   - GCR3 TRP: Guest CR3 Table Root Pointer (Lo). */
         uint32_t    u1IoRead : 1;                     /**< Bit  61      - IR: I/O Read permission. */
         uint32_t    u1IoWrite : 1;                    /**< Bit  62      - IW: I/O Write permission. */
         uint32_t    u1Rsvd0 : 1;                      /**< Bit  63      - Reserved. */
         uint32_t    u16DomainId : 1;                  /**< Bits 79:64   - Domain ID. */
-        uint32_t    u16GCr3TableRootPtrMed : 16;      /**< Bits 95:80   - GCR3 TRP: Guest CR3 Table Root Pointer (Mid). */
-        uint32_t    u1IotlbEnable : 1;                /**< Bit  96      - IOTLB Enable. */
+        uint32_t    u16GstCr3TableRootPtrMed : 16;    /**< Bits 95:80   - GCR3 TRP: Guest CR3 Table Root Pointer (Mid). */
+        uint32_t    u1IoTlbEnable : 1;                /**< Bit  96      - IOTLB Enable. */
         uint32_t    u1SuppressPfEvents : 1;           /**< Bit  97      - SE: Supress Page-fault events. */
         uint32_t    u1SuppressAllPfEvents : 1;        /**< Bit  98      - SA: Supress All Page-fault events. */
         uint32_t    u2IoCtl : 1;                      /**< Bits 100:99  - IoCtl: Port I/O Control. */
@@ -314,7 +314,7 @@ typedef union
         uint32_t    u1AllowExclusion : 1;             /**< Bit  103     - EX: Allow Exclusion. */
         uint32_t    u2SysMgt : 2;                     /**< Bits 105:104 - SysMgt: System Management message enable. */
         uint32_t    u1Rsvd1 : 1;                      /**< Bit  106     - Reserved. */
-        uint32_t    u21Gcr3TableRootPtrHi : 21;       /**< Bits 127:107 - GCR3 TRP: Guest CR3 Table Root Pointer (Hi). */
+        uint32_t    u21GstCr3TableRootPtrHi : 21;     /**< Bits 127:107 - GCR3 TRP: Guest CR3 Table Root Pointer (Hi). */
         uint32_t    u1IntrMapValid : 1;               /**< Bit  128     - IV: Interrupt map Valid. */
         uint32_t    u4IntrTableLength : 4;            /**< Bits 132:129 - IntTabLen: Interrupt Table Length. */
         uint32_t    u1IgnoreUnmappedIntrs : 1;        /**< Bits 133     - IG: Ignore unmapped interrupts. */
@@ -398,7 +398,7 @@ typedef union
 {
     struct
     {
-        uint32_t    u1RemapEnable : 1;      /**< Bit  0     - RemapEn: Remap enable. */
+        uint32_t    u1RemapEnable : 1;      /**< Bit  0     - RemapEn: Remap Enable. */
         uint32_t    u1SuppressPf : 1;       /**< Bit  1     - SupIOPF: Supress I/O Page Fault. */
         uint32_t    u3IntrType : 1;         /**< Bits 4:2   - IntType: Interrupt Type. */
         uint32_t    u1ReqEoi : 1;           /**< Bit  5     - RqEoi: Request EOI. */
@@ -439,9 +439,9 @@ typedef union
 {
     struct
     {
-        uint32_t    u1Store : 1;           /**< Bit 0       - S: Completion Store. */
-        uint32_t    u1Interrupt : 1;       /**< Bit 1       - I: Completion Interrupt. */
-        uint32_t    u1Flush : 1;           /**< Bit 2       - F: Flush Queue. */
+        uint32_t    u1Store : 1;           /**< Bit  0      - S: Completion Store. */
+        uint32_t    u1Interrupt : 1;       /**< Bit  1      - I: Completion Interrupt. */
+        uint32_t    u1Flush : 1;           /**< Bit  2      - F: Flush Queue. */
         uint32_t    u29StoreAddrLo : 29;   /**< Bits 31:3   - Store Address (Lo). */
         uint32_t    u20StoreAddrHi : 20;   /**< Bits 51:32  - Store Address (Hi). */
         uint32_t    u8Rsvd0 : 8;           /**< Bits 59:52  - Reserved. */
@@ -832,13 +832,492 @@ typedef union
 } EVT_EVENT_COUNTER_ZERO;
 AssertCompileSize(EVT_EVENT_COUNTER_ZERO, 16);
 
+/**
+ * Device Table Base Address Register (MMIO).
+ * In accordance with the AMD spec.
+ */
+typedef union
+{
+    struct
+    {
+        RT_GCC_EXTENSION uint64_t   u9Size : 9;             /**< Bits 8:0   - Size: Size of the device table. */
+        RT_GCC_EXTENSION uint64_t   u3Rsvd0 : 3;            /**< Bits 11:9  - Reserved. */
+        RT_GCC_EXTENSION uint64_t   u40DevTabBase : 40;     /**< Bits 51:12 - DevTabBase: Device table base address. */
+        RT_GCC_EXTENSION uint64_t   u12Rsvd0 : 12;          /**< Bits 63:52 - Reserved. */
+    } n;
+    /** The 64-bit unsigned integer view. */
+    uint64_t    u64;
+} DEV_TAB_BAR_T;
+AssertCompileSize(DEV_TAB_BAR_T, 8);
 
 /**
- * The IOMMU device state.
+ * Command Buffer Base Address Register (MMIO).
+ * In accordance with the AMD spec.
+ */
+typedef union
+{
+    struct
+    {
+        RT_GCC_EXTENSION uint64_t   u12Rsvd0 : 12;      /**< Bits 11:0  - Reserved. */
+        RT_GCC_EXTENSION uint64_t   u40CmdBase : 40;    /**< Bits 51:12 - ComBase: Command buffer base address. */
+        RT_GCC_EXTENSION uint64_t   u4Rsvd0 : 4;        /**< Bits 55:52 - Reserved. */
+        RT_GCC_EXTENSION uint64_t   u4CmdLen : 4;       /**< Bits 59:56 - ComLen: Command buffer length. */
+        RT_GCC_EXTENSION uint64_t   u4Rsvd1 : 4;        /**< Bits 63:60 - Reserved. */
+    } n;
+    /** The 64-bit unsigned integer view. */
+    uint64_t    u64;
+} CMD_BUF_BAR_T;
+AssertCompileSize(CMD_BUF_BAR_T, 8);
+
+/**
+ * Event Log Base Address Register (MMIO).
+ * In accordance with the AMD spec.
+ */
+typedef union
+{
+    struct
+    {
+        RT_GCC_EXTENSION uint64_t   u12Rsvd0 : 12;      /**< Bits 11:0  - Reserved. */
+        RT_GCC_EXTENSION uint64_t   u40EvtBase : 40;    /**< Bits 51:12 - EventBase: Event log base address. */
+        RT_GCC_EXTENSION uint64_t   u4Rsvd0 : 4;        /**< Bits 55:52 - Reserved. */
+        RT_GCC_EXTENSION uint64_t   u4EvtLen : 4;       /**< Bits 59:56 - EventLen: Event log length. */
+        RT_GCC_EXTENSION uint64_t   u4Rsvd1 : 4;        /**< Bits 63:60 - Reserved. */
+    } n;
+    /** The 64-bit unsigned integer view. */
+    uint64_t    u64;
+} EVT_LOG_BUF_BAR_T;
+AssertCompileSize(EVT_LOG_BUF_BAR_T, 8);
+
+/**
+ * IOMMU Control Register (MMIO).
+ * In accordance with the AMD spec.
+ */
+typedef union
+{
+    struct
+    {
+        uint32_t    u1IommuEn : 1;               /**< Bit  0     - IommuEn: IOMMU Enable. */
+        uint32_t    u1HtTunEn : 1;               /**< Bit  1     - HtTunEn: HyperTransport Tunnel Enable. */
+        uint32_t    u1EvtLogEn : 1;              /**< Bit  2     - EventLogEn: Event Log Enable. */
+        uint32_t    u1EvtIntrEn : 1;             /**< Bit  3     - EventIntEn: Event Log Interrupt Enable. */
+        uint32_t    u1CompWaitIntrEn : 1;        /**< Bit  4     - ComWaitIntEn: Completion Wait Interrupt Enable. */
+        uint32_t    u3InvTimeOut : 3;            /**< Bits 7:5   - InvTimeOut: Invalidation Timeout. */
+        uint32_t    u1PassPW : 1;                /**< Bit  8     - PassPW: Pass Posted Write. */
+        uint32_t    u1ResPassPW : 1;             /**< Bit  9     - ResPassPW: Response Pass Posted Write. */
+        uint32_t    u1Coherent : 1;              /**< Bit  10    - Coherent: HT read request packet Coherent bit. */
+        uint32_t    u1Isoc : 1;                  /**< Bit  11    - Isoc: HT read request packet Isochronous bit. */
+        uint32_t    u1CmdBufEn : 1;              /**< Bit  12    - CmdBufEn: Command Buffer Enable. */
+        uint32_t    u1PprLogEn : 1;              /**< Bit  13    - PprLogEn: Peripheral Page Request (PPR) Log Enable. */
+        uint32_t    u1PprIntrEn : 1;             /**< Bit  14    - PprIntrEn: Peripheral Page Request Interrupt Enable. */
+        uint32_t    u1PprEn : 1;                 /**< Bit  15    - PprEn: Peripheral Page Request processing Enable. */
+        uint32_t    u1GstTranslateEn : 1;        /**< Bit  16    - GTEn: Guest Translate Enable. */
+        uint32_t    u1GstVirtApicEn : 1;         /**< Bit  17    - GAEn: Guest Virtual-APIC Enable. */
+        uint32_t    u4Crw : 1;                   /**< Bits 21:18 - CRW: Intended for future use (not documented). */
+        uint32_t    u1SmiFilterEn : 1;           /**< Bit  22    - SmiFEn: SMI Filter Enable. */
+        uint32_t    u1SelfWriteBackDis : 1;      /**< Bit  23    - SlfWBDis: Self Write-Back Disable. */
+        uint32_t    u1SmiFilterLogEn : 1;        /**< Bit  24    - SmiFLogEn: SMI Filter Log Enable. */
+        uint32_t    u3GstVirtApicModeEn : 3;     /**< Bits 27:25 - GAMEn: Guest Virtual-APIC Mode Enable. */
+        uint32_t    u1GstLogEn : 1;              /**< Bit  28    - GALogEn: Guest Virtual-APIC GA Log Enable. */
+        uint32_t    u1GstIntrEn : 1;             /**< Bit  29    - GAIntEn: Guest Virtual-APIC Interrupt Enable. */
+        uint32_t    u2DualPprLogEn : 2;          /**< Bits 31:30 - DualPprLogEn: Dual Peripheral Page Request Log Enable. */
+        uint32_t    u2DualEvtLogEn : 2;          /**< Bits 33:32 - DualEventLogEn: Dual Event Log Enable. */
+        uint32_t    u3DevTabSegEn : 3;           /**< Bits 36:34 - DevTblSegEn: Device Table Segment Enable. */
+        uint32_t    u2PrivAbortEn : 2;           /**< Bits 38:37 - PrivAbrtEn: Privilege Abort Enable. */
+        uint32_t    u1PprAutoRespEn : 1;         /**< Bit  39    - PprAutoRspEn: Peripheral Page Request Auto Response Enable. */
+        uint32_t    u1MarcEn : 1;                /**< Bit  40    - MarcEn: Memory Address Routing and Control Enable. */
+        uint32_t    u1BlockStopMarkEn : 1;       /**< Bit  41    - BlkStopMarkEn: Block StopMark messages Enable. */
+        uint32_t    u1PprAutoRespAlwaysOnEn : 1; /**< Bit  42    - PprAutoRspAon:: PPR Auto Response - Always On Enable. */
+        uint32_t    u1DomainIDPNE : 1;           /**< Bit  43    - DomainIDPE: Reserved (not documented). */
+        uint32_t    u1Rsvd0 : 1;                 /**< Bit  44    - Reserved. */
+        uint32_t    u1EnhancedPpr : 1;           /**< Bit  45    - EPHEn: Enhanced Peripheral Page Request Handling Enable. */
+        uint32_t    u2HstAccDirtyBitUpdate : 2;  /**< Bits 47:46 - HADUpdate: Access and Dirty Bit updated in host page table. */
+        uint32_t    u1GstDirtyUpdateDis : 1;     /**< Bit  48    - GDUpdateDis: Disable hardare update of Dirty bit in GPT. */
+        uint32_t    u1Rsvd1 : 1;                 /**< Bit  49    - Reserved. */
+        uint32_t    u1X2ApicEn : 1;              /**< Bit  50    - XTEn: Enable X2APIC. */
+        uint32_t    u1X2ApicIntrGenEn : 1;       /**< Bit  51    - IntCapXTEn: Enable IOMMU X2APIC Interrupt generation. */
+        uint32_t    u2Rsvd0 : 2;                 /**< Bits 53:52 - Reserved. */
+        uint32_t    u1GstAccessUpdateDis : 1;    /**< Bit  54    - GAUpdateDis: Disable hardare update of Access bit in GPT. */
+        uint32_t    u8Rsvd0 : 8;                 /**< Bits 63:55 - Reserved. */
+    } n;
+    /** The 64-bit unsigned integer view. */
+    uint64_t    u64;
+} IOMMU_CTRL_T;
+AssertCompileSize(IOMMU_CTRL_T, 8);
+
+/**
+ * IOMMU Exclusion Base Register (MMIO).
+ * In accordance with the AMD spec.
+ */
+typedef union
+{
+    struct
+    {
+        RT_GCC_EXTENSION uint64_t   u1ExclEnable : 1;       /**< Bit 0      - ExEn: Exclusion Range Enable. */
+        RT_GCC_EXTENSION uint64_t   u1AllowAll : 1;         /**< Bit 1      - Allow: Allow All Devices. */
+        RT_GCC_EXTENSION uint64_t   u10Rsvd0 : 10;          /**< Bits 11:2  - Reserved. */
+        RT_GCC_EXTENSION uint64_t   u40ExclRangeBase : 40;  /**< Bits 51:12 - Exclusion Range Base Address. */
+        RT_GCC_EXTENSION uint64_t   u12Rsvd0 : 12;          /**< Bits 63:52 - Reserved. */
+    } n;
+    /** The 64-bit unsigned integer view. */
+    uint64_t    u64;
+} IOMMU_EXCL_BASE_T;
+AssertCompileSize(IOMMU_EXCL_BASE_T, 8);
+
+/**
+ * IOMMU Exclusion Range Limit Register (MMIO).
+ * In accordance with the AMD spec.
+ */
+typedef union
+{
+    struct
+    {
+        RT_GCC_EXTENSION uint64_t   u12Rsvd0 : 12;      /**< Bits 11:0  - Reserved. */
+        RT_GCC_EXTENSION uint64_t   u40ExclLimit : 40;  /**< Bits 51:12 - Exclusion Range Limit. */
+        RT_GCC_EXTENSION uint64_t   u12Rsvd1 : 12;      /**< Bits 63:52 - Reserved. */
+    } n;
+    /** The 64-bit unsigned integer view. */
+    uint64_t    u64;
+} IOMMU_EXCL_RANGE_LIMIT_T;
+AssertCompileSize(IOMMU_EXCL_RANGE_LIMIT_T, 8);
+
+/**
+ * IOMMU Extended Feature Register (MMIO).
+ * In accordance with the AMD spec.
+ */
+typedef union
+{
+    struct
+    {
+        uint32_t    u1PrefetchSup : 1;            /**< Bit  0     - PreFSup: Prefetch Support. */
+        uint32_t    u1PprSup : 1;                 /**< Bit  1     - PPRSup: Peripheral Page Request Support. */
+        uint32_t    u1X2ApicSup : 1;              /**< Bit  2     - XTSup: x2Apic Support. */
+        uint32_t    u1NoExecuteSup : 1;           /**< Bit  3     - NXSup: No-Execute and Privilege Level Support. */
+        uint32_t    u1GstTranslateSup : 1;        /**< Bit  4     - GTSup: Guest Translations Support. */
+        uint32_t    u1Rsvd0 : 1;                  /**< Bit  5     - Reserved. */
+        uint32_t    u1InvAllSup : 1;              /**< Bit  6     - IASup: Invalidate-All Support. */
+        uint32_t    u1GstVirtApicSup : 1;         /**< Bit  7     - GASup: Guest Virtual-APIC Support. */
+        uint32_t    u1HwErrorSup : 1;             /**< Bit  8     - HESup: Hardware Error registers Support. */
+        uint32_t    u1PerfCounterSup : 1;         /**< Bit  8     - PCSup: Performance Counter Support. */
+        uint32_t    u2HostAddrTranslateSize : 2;  /**< Bits 11:10 - HATS: Host Address Translation Size. */
+        uint32_t    u2GstAddrTranslateSize : 2;   /**< Bits 13:12 - GATS: Guest Address Translation Size. */
+        uint32_t    u2GstCr3RootTblLevel : 2;     /**< Bits 15:14 - GLXSup: Guest CR3 Root Table Level (Max) Size Support. */
+        uint32_t    u2SmiFilterSup : 2;           /**< Bits 17:16 - SmiFSup: SMI Filter Register Support. */
+        uint32_t    u3SmiFilterCount : 3;         /**< Bits 20:18 - SmiFRC: SMI Filter Register Count. */
+        uint32_t    u3GstVirtApicModeSup : 3;     /**< Bits 23:21 - GAMSup: Guest Virtual-APIC Modes Supported. */
+        uint32_t    u2DualPprLogSup : 2;          /**< Bits 25:24 - DualPprLogSup: Dual Peripheral Page Request Log Support. */
+        uint32_t    u2Rsvd0 : 2;                  /**< Bits 27:26 - Reserved. */
+        uint32_t    u2DualEvtLogSup : 2;          /**< Bits 29:28 - DualEventLogSup: Dual Event Log Support. */
+        uint32_t    u2Rsvd1 : 2;                  /**< Bits 31:30 - Reserved. */
+
+        uint32_t    u5MaxPasidSup : 5;            /**< Bits 36:32 - PASMax: Maximum PASID Supported. */
+        uint32_t    u1UserSupervisorSup : 1;      /**< Bit  37    - USSup: User/Supervisor Page Protection Support. */
+        uint32_t    u2DevTabSegSup : 2;           /**< Bits 39:38 - DevTlbSegSup: Segmented Device Table Support. */
+        uint32_t    u1PprLogOverflowWarn : 1;     /**< Bit  40    - PprOvrflwEarlySup: PPR Log Overflow Early Warning Support. */
+        uint32_t    u1PprAutoRespSup : 1;         /**< Bit  41    - PprAutoRspSup: PPR Automatic Response Support. */
+        uint32_t    u2MarcSup : 2;                /**< Bit  43:42 - MarcSup: Memory Access Routing and Control Support. */
+        uint32_t    u1BlockStopMarkSup : 1;       /**< Bit  44    - BlkStopMarkSup: Block StopMark messages Support. */
+        uint32_t    u1PerfOptSup : 1;             /**< Bit  45    - PerfOptSup: IOMMU Performance Optimization Support. */
+        uint32_t    u1MsiCapMmioSup : 1;          /**< Bit  46    - MsiCapMmioSup: MSI Capability Register MMIO Access Support. */
+        uint32_t    u1Rsvd1 : 1;                  /**< Bit  47    - Reserved. */
+        uint32_t    u1GstIoSup : 1;               /**< Bit  48    - GIoSup: Guest I/O Protection Support. */
+        uint32_t    u1HostAccessSup : 1;          /**< Bit  49    - HASup: Host Access Support. */
+        uint32_t    u1EnhancedPprSup : 1;         /**< Bit  50    - EPHSup: Enhanced Peripheral Page Request Handling Support. */
+        uint32_t    u1AttrForwardSup : 1;         /**< Bit  51    - AttrFWSup: Attribute Forward Support. */
+        uint32_t    u1HostDirtySup : 1;           /**< Bit  52    - HDSup: Host Dirty Support. */
+        uint32_t    u1Rsvd2 : 1;                  /**< Bit  53    - Reserved. */
+        uint32_t    u1InvIoTlbTypeSup : 1;        /**< Bit  54    - InvIotlbTypeSup: Invalidate IOTLB Type Support. */
+        uint32_t    u6Rsvd0 : 6;                  /**< Bit  60:55 - Reserved. */
+        uint32_t    u1GstUpdateDisSup : 1;        /**< Bit  61    - GAUpdateDisSup: Disable hardware update on GPT Support. */
+        uint32_t    u1ForcePhysDstSup : 1;        /**< Bit  62    - ForcePhyDestSup: Force Phys. Dst. Mode for Remapped Intr. */
+        uint32_t    u1Rsvd3 : 1;                  /**< Bit  63    - Reserved. */
+    } n;
+    /** The 64-bit unsigned integer view. */
+    uint64_t    u64;
+} IOMMU_EFR_T;
+AssertCompileSize(IOMMU_EFR_T, 8);
+
+/**
+ * Peripheral Page Request Log Base Address Register (MMIO).
+ * In accordance with the AMD spec.
+ */
+typedef union
+{
+    struct
+    {
+        RT_GCC_EXTENSION uint64_t   u12Rsvd0 : 12;      /**< Bit 11:0   - Reserved. */
+        RT_GCC_EXTENSION uint64_t   u40PprLogBase : 40; /**< Bits 51:12 - PPRLogBase: Peripheral Page Request Log Base Address. */
+        RT_GCC_EXTENSION uint64_t   u4Rsvd0 : 4;        /**< Bits 55:52 - Reserved. */
+        RT_GCC_EXTENSION uint64_t   u4PprLogLen : 4;    /**< Bits 59:56 - PPRLogLen: Peripheral Page Request Log Length. */
+        RT_GCC_EXTENSION uint64_t   u4Rsvd1 : 4;        /**< Bits 63:60 - Reserved. */
+    } n;
+    /** The 64-bit unsigned integer view. */
+    uint64_t    u64;
+} PPR_LOG_BAR_T;
+AssertCompileSize(PPR_LOG_BAR_T, 8);
+
+/**
+ * IOMMU Hardware Event Upper Register (MMIO).
+ * In accordance with the AMD spec.
+ */
+typedef union
+{
+    struct
+    {
+        RT_GCC_EXTENSION uint64_t   u60FirstOperand : 60;   /**< Bits 59:0  - First event code dependent operand. */
+        RT_GCC_EXTENSION uint64_t   u4EvtCode : 4;          /**< Bits 63:60 - Event Code. */
+    } n;
+    /** The 64-bit unsigned integer view. */
+    uint64_t    u64;
+} IOMMU_HW_EVT_HI_T;
+AssertCompileSize(PPR_LOG_BAR_T, 8);
+
+/**
+ * IOMMU Hardware Event Lower Register (MMIO).
+ * In accordance with the AMD spec.
+ */
+typedef uint64_t IOMMU_HW_EVT_LO_T;
+
+/**
+ * IOMMU Hardware Event Status (MMIO).
+ * In accordance with the AMD spec.
+ */
+typedef union
+{
+    struct
+    {
+        uint32_t   u1HwEventValid : 1;      /**< Bit 0      - HEV: Hardware Event Valid. */
+        uint32_t   u1HwEventOverflow : 1;   /**< Bit 1      - HEO: Hardware Event Overflow. */
+        uint32_t   u30Rsvd0 : 30;           /**< Bits 31:2  - Reserved. */
+        uint32_t   u32Rsvd0;                /**< Bits 63:32 - Reserved. */
+    } n;
+    /** The 64-bit unsigned integer view. */
+    uint64_t    u64;
+} IOMMU_HW_EVT_STATUS_T;
+AssertCompileSize(IOMMU_HW_EVT_STATUS_T, 8);
+
+/**
+ * Device Table Segment Register (MMIO).
+ * In accordance with the AMD spec.
+ */
+typedef union
+{
+    struct
+    {
+        RT_GCC_EXTENSION uint64_t   u8Size : 8;             /**< Bits 7:0   - Size: Size of the Device Table segment. */
+        RT_GCC_EXTENSION uint64_t   u4Rsvd0 : 4;            /**< Bits 11:8  - Reserved. */
+        RT_GCC_EXTENSION uint64_t   u40DevTabBase : 40;     /**< Bits 51:12 - DevTabBase: Device Table Segment Base Address. */
+        RT_GCC_EXTENSION uint64_t   u12Rsvd0 : 12;          /**< Bits 63:52 - Reserved. */
+    } n;
+    /** The 64-bit unsigned integer view. */
+    uint64_t    u64;
+} DEV_TAB_SEG_BAR_T;
+AssertCompileSize(DEV_TAB_SEG_BAR_T, 8);
+
+/**
+ * Device-specific Feature Extension (DSFX) Register (MMIO).
+ * In accordance with the AMD spec.
+ */
+typedef union
+{
+    struct
+    {
+        uint32_t    u24DevSpecFeatSup : 24;     /**< Bits 23:0  - DevSpecificFeatSupp: Implementation specific features. */
+        uint32_t    u4RevMinor : 4;             /**< Bits 27:24 - RevMinor: Minor revision identifier. */
+        uint32_t    u4RevMajor : 4;             /**< Bits 31:28 - RevMajor: Major revision identifier. */
+        uint32_t    u32Rsvd0;                   /**< Bits 63:32 - Reserved.*/
+    } n;
+    /** The 64-bit unsigned integer view. */
+    uint64_t    u64;
+} DEV_SPECIFIC_FEAT_T;
+AssertCompileSize(DEV_SPECIFIC_FEAT_T, 8);
+
+/**
+ * Device-specific Control Extension (DSCX) Register (MMIO).
+ * In accordance with the AMD spec.
+ */
+typedef union
+{
+    struct
+    {
+        uint32_t    u24DevSpecFeatSup : 24;     /**< Bits 23:0  - DevSpecificFeatCntrl: Implementation specific control. */
+        uint32_t    u4RevMinor : 4;             /**< Bits 27:24 - RevMinor: Minor revision identifier. */
+        uint32_t    u4RevMajor : 4;             /**< Bits 31:28 - RevMajor: Major revision identifier. */
+        uint32_t    u32Rsvd0;                   /**< Bits 63:32 - Reserved.*/
+    } n;
+    /** The 64-bit unsigned integer view. */
+    uint64_t    u64;
+} DEV_SPECIFIC_CTRL_T;
+AssertCompileSize(DEV_SPECIFIC_CTRL_T, 8);
+
+/**
+ * Device-specific Status Extension (DSSX) Register (MMIO).
+ * In accordance with the AMD spec.
+ */
+typedef union
+{
+    struct
+    {
+        uint32_t    u24DevSpecStatus : 24;      /**< Bits 23:0  - DevSpecificFeatStatus: Implementation specific status. */
+        uint32_t    u4RevMinor : 4;             /**< Bits 27:24 - RevMinor: Minor revision identifier. */
+        uint32_t    u4RevMajor : 4;             /**< Bits 31:28 - RevMajor: Major revision identifier. */
+        uint32_t    u32Rsvd0;                   /**< Bits 63:32 - Reserved.*/
+    } n;
+    /** The 64-bit unsigned integer view. */
+    uint64_t    u64;
+} DEV_SPECIFIC_STATUS_T;
+AssertCompileSize(DEV_SPECIFIC_STATUS_T, 8);
+
+/**
+ * MSI Information Register 0 and 1 (PCI) / MSI Vector Register 0 and 1 (MMIO).
+ * In accordance with the AMD spec.
+ */
+typedef union
+{
+    struct
+    {
+        uint32_t    u5MsiNum : 5;           /**< Bits 4:0   - MsiNum: MSI Vector used for interrupt messages generated by the IOMMU. */
+        uint32_t    u3GstVirtAddrSize: 3;   /**< Bits 7:5   - GVAsize: Guest Virtual Address Size. */
+        uint32_t    u7PhysAddrSize : 7;     /**< Bits 14:8  - PAsize: Physical Address Size. */
+        uint32_t    u7VirtAddrSize : 7;     /**< Bits 21:15 - VAsize: Virtual Address Size. */
+        uint32_t    u1HtAtsResv: 1;         /**< Bit  22    - HtAtsResv: HyperTransport ATS Response Address range Reserved. */
+        uint32_t    u4Rsvd0 : 4;            /**< Bits 26:23 - Reserved. */
+        uint32_t    u5MsiNumPpr : 5;        /**< Bits 31:27 - MsiNumPPR: Peripheral Page Request MSI message number. */
+        uint32_t    u5MsiNumGa : 5;         /**< Bits 36:32 - MsiNumGa: MSI message number for guest virtual-APIC log. */
+        uint32_t    u27Rsvd0: 27;           /**< Bits 63:37 - Reserved. */
+    } n;
+    /** The 32-bit unsigned integer view. */
+    uint32_t    au32[2];
+    /** The 64-bit unsigned integer view. */
+    uint64_t    u64;
+} MSI_MISC_INFO_T;
+AssertCompileSize(MSI_MISC_INFO_T, 8);
+/** MSI Vector Register 0 and 1 (MMIO). */
+typedef MSI_MISC_INFO_T       MSI_VECTOR_T;
+
+/**
+ * MSI Capability Header Register (PCI + MMIO).
+ * In accordance with the AMD spec.
+ */
+typedef union
+{
+    struct
+    {
+        uint32_t    u8MsiCapId : 8;         /**< Bits 7:0   - MsiCapId: Capability ID. */
+        uint32_t    u8MsiCapPtr : 8;        /**< Bits 15:8  - MsiCapPtr: Pointer (PCI config offset) to the next capability. */
+        uint32_t    u1MsiEnable : 1;        /**< Bit  16    - MsiEn: Message Signal Interrupt Enable. */
+        uint32_t    u3MsiMultiMessCap : 3;  /**< Bits 19:17 - MsiMultMessCap: MSI Multi-Message Capability. */
+        uint32_t    u3MsiMultiMessEn : 3;   /**< Bits 22:20 - MsiMultMessEn: MSI Multi-Message Enable. */
+        uint32_t    u1Msi64BitEn : 1;       /**< Bit  23    - Msi64BitEn: MSI 64-bit Enable. */
+        uint32_t    u8Rsvd0 : 8;            /**< Bits 31:24 - Reserved. */
+    } n;
+    /** The 32-bit unsigned integer view. */
+    uint32_t    u32;
+} MSI_CAP_HDR_T;
+AssertCompileSize(MSI_CAP_HDR_T, 4);
+
+/**
+ * MSI Address Register (PCI + MMIO).
+ * In accordance with the AMD spec.
+ */
+typedef union
+{
+    struct
+    {
+        uint32_t    u2Rsvd : 2;         /**< Bits 1:0   - Reserved. */
+        uint32_t    u30MsiAddrLo : 30;  /**< Bits 31:2  - MsiAddr: MSI Address (Lo). */
+        uint32_t    u32MsiAddrHi;       /**< Bits 63:32 - MsiAddr: MSI Address (Hi). */
+    } n;
+    /** The 32-bit unsigned integer view. */
+    uint32_t    au32[2];
+    /** The 64-bit unsigned integer view. */
+    uint64_t    u64;
+} MSI_ADDR_T;
+AssertCompileSize(MSI_ADDR_T, 8);
+
+/**
+ * MSI Data Register (PCI + MMIO).
+ * In accordance with the AMD spec.
+ */
+typedef union
+{
+    struct
+    {
+        uint16_t    u16MsiData;     /**< Bits 15:0  - MsiData: MSI Data. */
+        uint16_t    u16Rsvd0;       /**< Bits 31:16 - Reserved. */
+    } n;
+    /** The 32-bit unsigned integer view. */
+    uint32_t    u32;
+} MSI_DATA_T;
+AssertCompileSize(MSI_DATA_T, 4);
+
+/**
+ * MSI Mapping Capability Header Register (PCI + MMIO).
+ * In accordance with the AMD spec.
+ */
+typedef union
+{
+    struct
+    {
+        uint32_t    u8MsiMapCapId : 8;  /**< Bits 7:0   - MsiMapCapId: MSI Map capability ID. */
+        uint32_t    u8Rsvd0 : 8;        /**< Bits 15:8  - Reserved. */
+        uint32_t    u1MsiMapEn : 1;     /**< Bit  16    - MsiMapEn: MSI Map enable. */
+        uint32_t    u1MsiMapFixed : 1;  /**< Bit  17    - MsiMapFixd: MSI Map fixed. */
+        uint32_t    u9Rsvd0 : 9;        /**< Bits 26:18 - Reserved. */
+        uint32_t    u5MapCapType : 5;   /**< Bits 31:27 - MsiMapCapType: MSI Mapping capability type. */
+    } n;
+} MSI_MAP_CAP_HDR_T;
+AssertCompileSize(MSI_MAP_CAP_HDR_T, 4);
+
+
+/**
+ * The shared IOMMU device state.
  */
 typedef struct IOMMU
 {
-    bool                fRootComplex;
+    /** Whether this IOMMU is at the top of the PCI tree hierarchy or not. */
+    bool                        fRootComplex;
+    /** Alignment padding. */
+    bool                        afPadding[3];
+
+    /** @name MMIO: Control and status registers.
+     * @{ */
+    DEV_TAB_BAR_T               DevTabBaseAddr;     /**< Device table base address register. */
+    CMD_BUF_BAR_T               CmdBufBaseAddr;     /**< Command buffer base address register. */
+    EVT_LOG_BUF_BAR_T           EvtLogBaseAddr;     /**< Event log base address register. */
+    IOMMU_CTRL_T                IommuCtrl;          /**< IOMMU control register. */
+    IOMMU_EXCL_BASE_T           ExclBase;           /**< IOMMU exclusion base register. */
+    IOMMU_EXCL_RANGE_LIMIT_T    ExclRangeLimit;     /**< IOMMU exclusion range limit. */
+    IOMMU_EFR_T                 ExtFeat;            /**< IOMMU extended feature register. */
+    /** @} */
+
+    /** @name MMIO: PPR Log registers.
+     * @{ */
+    PPR_LOG_BAR_T               PprLogBaseAddr;     /**< PPR Log base address register. */
+    IOMMU_HW_EVT_HI_T           IommuHwEvtHi;       /**< IOMMU hardware event register (Hi). */
+    IOMMU_HW_EVT_LO_T           IommuHwEvtLo;       /**< IOMMU hardware event register (Lo). */
+    IOMMU_HW_EVT_STATUS_T       IommuHwEvtStatus;   /**< IOMMU hardware event status. */
+    /** @} */
+
+    /** @name MMIO: Device table segment registers.
+     * @{ */
+    DEV_TAB_SEG_BAR_T           DevTabSeg[7];       /**< Device Table Segment base address register. */
+    /** @} */
+
+    /** @name MMIO: Device-specific feature registers.
+     * @{ */
+    DEV_SPECIFIC_FEAT_T         DevSpecificFeat;    /**< Device-specific feature extension register (DSFX). */
+    DEV_SPECIFIC_CTRL_T         DevSpecificCtrl;    /**< Device-specific control extension register (DSCX). */
+    DEV_SPECIFIC_STATUS_T       DevSpecificStatus;  /**< Device-specific status extension register (DSSX). */
+    /** @} */
+
+    /** @name MMIO: MSI Capability Block registers.
+     * @{ */
+    MSI_MISC_INFO_T             MsiMiscInfo0;       /**< MSI Misc. info registers / MSI Vector registers. */
+    MSI_CAP_HDR_T               MsiCapHdr;          /**< MSI Capability header register. */
+    MSI_ADDR_T                  MsiAddr;            /**< MSI Address register.*/
+    MSI_DATA_T                  MsiData;            /**< MSI Data register. */
+    MSI_MAP_CAP_HDR_T           MsiMapCapHdr;       /**< MSI Mapping Capability Header register. */
+    /** @} */
 } IOMMU;
 /** Pointer to the IOMMU device state. */
 typedef struct IOMMU *PIOMMU;
@@ -942,6 +1421,9 @@ static DECLCALLBACK(int) iommuAmdR3Construct(PPDMDEVINS pDevIns, int iInstance, 
     uint8_t const offMiscInfo0    = offCapHdr + 0x10;
     uint8_t const offMiscInfo1    = offCapHdr + 0x14;
     uint8_t const offMsiCapHdr    = offCapHdr + 0x24;
+    uint8_t const offMsiAddrLo    = offCapHdr + 0x28;
+    uint8_t const offMsiAddrHi    = offCapHdr + 0x2c;
+    uint8_t const offMsiData      = offCapHdr + 0x30;
     uint8_t const offMsiMapCapHdr = offCapHdr + 0x34;
 
     /* Header. */
@@ -979,7 +1461,7 @@ static DECLCALLBACK(int) iommuAmdR3Construct(PPDMDEVINS pDevIns, int iInstance, 
                       | RT_BF_MAKE(IOMMU_BF_BASEADDR_LO_ADDR_HI, 0x0));     /* RW - Base address low (hi) */
 
     /* Base Address High Register. */
-    PDMPciDevSetDWord(pPciDev, offBaseAddrHi, 0);   /* RW - Base address high */
+    PDMPciDevSetDWord(pPciDev, offBaseAddrHi, 0);                           /* RW - Base address high */
 
     /* IOMMU Range Register. */
     PDMPciDevSetDWord(pPciDev, offRange,
@@ -1010,7 +1492,16 @@ static DECLCALLBACK(int) iommuAmdR3Construct(PPDMDEVINS pDevIns, int iInstance, 
                       | RT_BF_MAKE(IOMMU_BF_MSI_CAPHDR_MULTMESS_EN,  0x0)             /* RW - MSI multi-message enable */
                       | RT_BF_MAKE(IOMMU_BF_MSI_CAPHDR_64BIT_EN,     0x1));           /* RO - MSI 64-bit enable */
 
-    /* MSI Mapping Capability header register. */
+    /* MSI Address Lo. */
+    PDMPciDevSetDWord(pPciDev, offMsiAddrLo, 0);                            /* RW - MSI message address (Lo). */
+
+    /* MSI Address Hi. */
+    PDMPciDevSetDWord(pPciDev, offMsiAddrHi, 0);                            /* RW - MSI message address (Hi). */
+
+    /* MSI Data. */
+    PDMPciDevSetDWord(pPciDev, offMsiData, 0);                              /* RW - MSI data. */
+
+    /* MSI Mapping Capability Header register. */
     PDMPciDevSetDWord(pPciDev, offMsiMapCapHdr,
                         RT_BF_MAKE(IOMMU_BF_MSI_MAP_CAPHDR_CAP_ID,   0x8)       /* RO - Capability ID */
                       | RT_BF_MAKE(IOMMU_BF_MSI_MAP_CAPHDR_CAP_PTR,  0x0)       /* RO - Offset to next capability (NULL) */
