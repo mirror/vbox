@@ -893,17 +893,9 @@ function tooltipReallyShow(oTooltip, oRelTo)
     g_oCurrentTooltip = oTooltip;
 
     /*
-     * This function does the repositioning at some point.
+     * Do repositioning (again).
      */
     tooltipRepositionOnLoad();
-    if (oTooltip.oElm.onload === null)
-    {
-        oTooltip.oElm.onload = function() {
-            console.log('div/onload');
-            /* tooltipRepositionOnLoad();           - do we need this any more? Don't think it's ever called...
-            setTimeout(tooltipRepositionOnLoad, 0); - do we need this any more? */
-        };
-    }
 }
 
 /**
@@ -1088,8 +1080,11 @@ function svnHistoryTooltipShowEx(oEvt, sRepository, iRevision, sUrlPrefix)
             document.body.appendChild(oTooltip.oElm);
 
             oIFrameElement.onload = function() { /* A slight delay here to give time for #rXXXX scrolling before we show it. */
-                setTimeout(function(){console.log('iframe/onload'); tooltipReallyShow(oTooltip, oParent); svnHistoryTooltipOnLoad();},
-                           isBrowserInternetExplorer() ? 256 : 64);
+                setTimeout(function(){
+                                /*console.log('iframe/onload');*/
+                                tooltipReallyShow(oTooltip, oParent);
+                                svnHistoryTooltipOnLoad();
+                           }, isBrowserInternetExplorer() ? 256 : 128);
             };
 
             var sUrl = sUrlPrefix + 'index.py?Action=VcsHistoryTooltip&repo=' + sRepository
