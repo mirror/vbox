@@ -1,5 +1,6 @@
 <RCC>
     <qresource suffix="/">
+        <file alias="log_viewer_search_forward_16px_x2.png">images/x2/log_viewer_search_forward_16px_x2.png</file>
         <file alias="machine_16px_x2.png">images/x2/machine_16px_x2.png</file>
         <file alias="machine_24px_x2.png">images/x2/machine_24px_x2.png</file>
         <file alias="machine_32px_x2.png">images/x2/machine_32px_x2.png</file>

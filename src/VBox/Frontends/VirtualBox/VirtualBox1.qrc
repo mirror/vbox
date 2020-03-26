@@ -430,5 +430,6 @@
         <file alias="machine_16px.png">images/machine_16px.png</file>
         <file alias="machine_24px.png">images/machine_24px.png</file>
         <file alias="machine_32px.png">images/machine_32px.png</file>
+        <file alias="machine_abstract_16px.png">images/machine_abstract_16px.png</file>
     </qresource>
 </RCC>
