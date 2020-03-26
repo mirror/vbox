@@ -291,20 +291,16 @@ static int vgsvcToolboxParseMode(const char *pcszMode, RTFMODE *pfMode)
  */
 static void vgsvcToolboxPathBufDestroy(PRTLISTNODE pList)
 {
-    AssertPtr(pList);
-    /** @todo use RTListForEachSafe */
-    PVBOXSERVICETOOLBOXPATHENTRY pNode = RTListGetFirst(pList, VBOXSERVICETOOLBOXPATHENTRY, Node);
-    while (pNode)
+    if (!pList)
+        return;
+
+    PVBOXSERVICETOOLBOXPATHENTRY pEntry, pEntryNext;
+    RTListForEachSafe(pList, pEntry, pEntryNext, VBOXSERVICETOOLBOXPATHENTRY, Node)
     {
-        PVBOXSERVICETOOLBOXPATHENTRY pNext = RTListNodeIsLast(pList, &pNode->Node)
-                                           ? NULL
-                                           : RTListNodeGetNext(&pNode->Node, VBOXSERVICETOOLBOXPATHENTRY, Node);
-        RTListNodeRemove(&pNode->Node);
+        RTListNodeRemove(&pEntry->Node);
 
-        RTStrFree(pNode->pszName);
-
-        RTMemFree(pNode);
-        pNode = pNext;
+        RTStrFree(pEntry->pszName);
+        RTMemFree(pEntry);
     }
 }
 
