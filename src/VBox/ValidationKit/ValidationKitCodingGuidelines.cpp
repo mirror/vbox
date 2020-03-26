@@ -53,7 +53,7 @@
  * Collection qualifiers:
  *      - 'a' for a list or an array.
  *      - 'd' for a dictionary.
- *      - 'h' for a hash.
+ *      - 'h' for a set (hashed).
  *      - 't' for a tuple.
  *
  * Other qualifiers:
