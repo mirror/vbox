@@ -756,6 +756,12 @@ public:
         QStringList logViewerVisiblePanels();
     /** @} */
 
+    /** @name Manager UI: VM Resource Monitor
+      * @{ */
+        void setVMResourceMonitorHiddenColumnList(const QStringList &hiddenColumnList);
+        QStringList VMResourceMonitorHiddenColumnList();
+    /** @} */
+
 private slots:
 
     /** Handles 'extra-data change' event: */

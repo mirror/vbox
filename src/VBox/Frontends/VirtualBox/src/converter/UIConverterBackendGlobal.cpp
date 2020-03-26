@@ -79,6 +79,7 @@ template<> bool canConvert<InformationElementType>() { return true; }
 template<> bool canConvert<MaxGuestResolutionPolicy>() { return true; }
 template<> bool canConvert<UIMediumFormat>() { return true; }
 template<> bool canConvert<UISettingsDefs::RecordingMode>() { return true; }
+template<> bool canConvert<VMResouceMonitorColumn>(){ return true; };
 
 
 /* QString <= SizeSuffix: */
@@ -2567,4 +2568,55 @@ template<> UISettingsDefs::RecordingMode fromString<UISettingsDefs::RecordingMod
         return UISettingsDefs::RecordingMode_VideoAudio;
     /* Corresponding format for known words: */
     return values.at(keys.indexOf(QRegExp(strRecordingMode, Qt::CaseInsensitive)));
+}
+
+template<> QString toInternalString(const VMResouceMonitorColumn &enmVMResourceMonitorColumn)
+{
+    QString strResult;
+    switch (enmVMResourceMonitorColumn)
+    {
+        case VMResouceMonitorColumn_Name:              strResult = "VMName"; break;
+        case VMResouceMonitorColumn_CPUGuestLoad:      strResult = "CPUGuestLoad"; break;
+        case VMResouceMonitorColumn_CPUVMMLoad:        strResult = "CPUVMMLoad"; break;
+        case VMResouceMonitorColumn_RAMUsedAndTotal:   strResult = "RAMUsedAndTotal"; break;
+        case VMResouceMonitorColumn_RAMUsedPercentage: strResult = "RAMUsedPercentage"; break;
+        case VMResouceMonitorColumn_NetworkUpRate:     strResult = "NetworkUpRate"; break;
+        case VMResouceMonitorColumn_NetworkDownRate:   strResult = "NetworkDownRate"; break;
+        case VMResouceMonitorColumn_NetworkUpTotal:    strResult = "NetworkUpTotal"; break;
+        case VMResouceMonitorColumn_NetworkDownTotal:  strResult = "NetworkDownTotal"; break;
+        case VMResouceMonitorColumn_DiskIOReadRate:    strResult = "DiskIOReadRate"; break;
+        case VMResouceMonitorColumn_DiskIOWriteRate:   strResult = "DiskIOWriteRate"; break;
+        case VMResouceMonitorColumn_DiskIOReadTotal:   strResult = "DiskIOReadTotal"; break;
+        case VMResouceMonitorColumn_DiskIOWriteTotal:  strResult = "DiskIOWriteTotal"; break;
+        case VMResouceMonitorColumn_VMExits:           strResult = "VMExits"; break;
+        default:
+            {
+                AssertMsgFailed(("No text for VM Resource Monitor Column=%d", enmVMResourceMonitorColumn));
+                break;
+            }
+    }
+    return strResult;
+}
+
+template<> VMResouceMonitorColumn fromInternalString<VMResouceMonitorColumn>(const QString &strVMResourceMonitorColumn)
+{
+    QStringList keys;    QList<VMResouceMonitorColumn> values;
+    keys << "VMName";             values << VMResouceMonitorColumn_Name;
+    keys << "CPUGuestLoad";       values << VMResouceMonitorColumn_CPUGuestLoad;
+    keys << "CPUVMMLoad";         values << VMResouceMonitorColumn_CPUVMMLoad;
+    keys << "RAMUsedAndTotal";    values << VMResouceMonitorColumn_RAMUsedAndTotal;
+    keys << "RAMUsedPercentage";  values << VMResouceMonitorColumn_RAMUsedPercentage;
+    keys << "NetworkUpRate";      values << VMResouceMonitorColumn_NetworkUpRate;
+    keys << "NetworkDownRate";    values << VMResouceMonitorColumn_NetworkDownRate;
+    keys << "NetworkUpTotal";     values << VMResouceMonitorColumn_NetworkUpTotal;
+    keys << "NetworkDownTotal";   values << VMResouceMonitorColumn_NetworkDownTotal;
+    keys << "DiskIOReadRate";     values << VMResouceMonitorColumn_DiskIOReadRate;
+    keys << "DiskIOWriteRate";    values << VMResouceMonitorColumn_DiskIOWriteRate;
+    keys << "DiskIOReadTotal";    values << VMResouceMonitorColumn_DiskIOReadTotal;
+    keys << "DiskIOWriteTotal";   values << VMResouceMonitorColumn_DiskIOWriteTotal;
+    keys << "VMExits";            values << VMResouceMonitorColumn_VMExits;
+    if (!keys.contains(strVMResourceMonitorColumn, Qt::CaseInsensitive))
+        return VMResouceMonitorColumn_Max;
+    /* Corresponding format for known words: */
+    return values.at(keys.indexOf(QRegExp(strVMResourceMonitorColumn, Qt::CaseInsensitive)));
 }

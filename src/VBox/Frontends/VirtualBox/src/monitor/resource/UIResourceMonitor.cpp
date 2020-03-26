@@ -31,6 +31,8 @@
 #include "QIDialogButtonBox.h"
 #include "UIActionPoolManager.h"
 #include "UICommon.h"
+#include "UIConverter.h"
+#include "UIExtraDataDefs.h"
 #include "UIExtraDataManager.h"
 #include "UIIconPool.h"
 #include "UIPerformanceMonitor.h"
@@ -51,26 +53,6 @@
 
 /* Other VBox includes: */
 #include <iprt/cidr.h>
-
-/* The first element must be 0 and the rest must be consecutive: */
-enum VMResouceMonitorColumn
-{
-    VMResouceMonitorColumn_Name = 0,
-    VMResouceMonitorColumn_CPUGuestLoad,
-    VMResouceMonitorColumn_CPUVMMLoad,
-    VMResouceMonitorColumn_RAMUsedAndTotal,
-    VMResouceMonitorColumn_RAMUsedPercentage,
-    VMResouceMonitorColumn_NetworkUpRate,
-    VMResouceMonitorColumn_NetworkDownRate,
-    VMResouceMonitorColumn_NetworkUpTotal,
-    VMResouceMonitorColumn_NetworkDownTotal,
-    VMResouceMonitorColumn_DiskIOReadRate,
-    VMResouceMonitorColumn_DiskIOWriteRate,
-    VMResouceMonitorColumn_DiskIOReadTotal,
-    VMResouceMonitorColumn_DiskIOWriteTotal,
-    VMResouceMonitorColumn_VMExits,
-    VMResouceMonitorColumn_Max
-};
 
 struct ResourceColumn
 {
@@ -634,6 +616,11 @@ UIResourceMonitorWidget::UIResourceMonitorWidget(EmbedTo enmEmbedding, UIActionP
     prepare();
 }
 
+UIResourceMonitorWidget::~UIResourceMonitorWidget()
+{
+    saveSettings();
+}
+
 QMenu *UIResourceMonitorWidget::menu() const
 {
     return NULL;
@@ -678,9 +665,7 @@ void UIResourceMonitorWidget::paintEvent(QPaintEvent *pEvent)
 
 void UIResourceMonitorWidget::prepare()
 {
-    m_columnShown.resize(VMResouceMonitorColumn_Max);
-    for (int i = 0; i < m_columnShown.size(); ++i)
-        m_columnShown[i] = true;
+    loadHiddenColumnList();
     prepareWidgets();
     loadSettings();
     retranslateUi();
@@ -798,6 +783,31 @@ void UIResourceMonitorWidget::prepareToolBar()
 
 void UIResourceMonitorWidget::loadSettings()
 {
+}
+
+void UIResourceMonitorWidget::loadHiddenColumnList()
+{
+    QStringList hiddenColumnList = gEDataManager->VMResourceMonitorHiddenColumnList();
+    m_columnShown.resize(VMResouceMonitorColumn_Max);
+    for (int i = 0; i < m_columnShown.size(); ++i)
+        m_columnShown[i] = true;
+    foreach(const QString& strColumn, hiddenColumnList)
+    {
+        VMResouceMonitorColumn enmColumn = gpConverter->fromInternalString<VMResouceMonitorColumn>(strColumn);
+        if ((int)enmColumn < m_columnShown.size())
+            m_columnShown[(int)enmColumn] = false;
+    }
+}
+
+void UIResourceMonitorWidget::saveSettings()
+{
+    QStringList hiddenColumnList;
+    for (int i = 0; i < m_columnShown.size(); ++i)
+    {
+        if (!m_columnShown[i])
+            hiddenColumnList << gpConverter->toInternalString((VMResouceMonitorColumn) i);
+    }
+    gEDataManager->setVMResourceMonitorHiddenColumnList(hiddenColumnList);
 }
 
 void UIResourceMonitorWidget::sltToggleColumnSelectionMenu(bool fChecked)

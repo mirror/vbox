@@ -51,6 +51,7 @@ public:
 
     UIResourceMonitorWidget(EmbedTo enmEmbedding, UIActionPool *pActionPool,
                                bool fShowToolbar = true, QWidget *pParent = 0);
+    ~UIResourceMonitorWidget();
 
     QMenu *menu() const;
 
@@ -84,6 +85,8 @@ private:
         void prepareToolBar();
         void prepareActions();
         void loadSettings();
+        void loadHiddenColumnList();
+        void saveSettings();
     /** @} */
 
     /** @name General variables.

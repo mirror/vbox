@@ -4566,6 +4566,16 @@ QStringList UIExtraDataManager::logViewerVisiblePanels()
     return extraDataStringList(GUI_GuestControl_LogViewerVisiblePanels);
 }
 
+void UIExtraDataManager::setVMResourceMonitorHiddenColumnList(const QStringList &hiddenColumnList)
+{
+    setExtraDataStringList(GUI_VMResourceManager_HiddenColumns, hiddenColumnList);
+}
+
+QStringList UIExtraDataManager::VMResourceMonitorHiddenColumnList()
+{
+    return extraDataStringList(GUI_VMResourceManager_HiddenColumns);
+}
+
 void UIExtraDataManager::sltExtraDataChange(const QUuid &uMachineID, const QString &strKey, const QString &strValue)
 {
     /* Re-cache value only if uMachineID known already: */

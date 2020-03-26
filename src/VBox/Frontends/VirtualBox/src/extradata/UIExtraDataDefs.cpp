@@ -239,6 +239,9 @@ const char *UIExtraDataDefs::GUI_LogViewerShowLineNumbersDisabled = "showLineNum
 const char *UIExtraDataDefs::GUI_LogViewerNoFontStyleName = "noFontStyleName";
 const char *UIExtraDataDefs::GUI_GuestControl_LogViewerVisiblePanels = "GUI/LogViewerVisiblePanels";
 
+/* VM Resource Monitor: */
+const char *UIExtraDataDefs::GUI_VMResourceManager_HiddenColumns = "GUI/VMResourceManagerHiddenColumns";
+
 /* Obsolete keys: */
 QMap<QString, QString> UIExtraDataDefs::prepareObsoleteKeysMap()
 {
