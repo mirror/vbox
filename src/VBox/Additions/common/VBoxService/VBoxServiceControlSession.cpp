@@ -1577,13 +1577,14 @@ static DECLCALLBACK(int) vgsvcGstCtrlSessionThread(RTTHREAD hThreadSelf, void *p
     {
         for (int i = 0; i < 3; i++)
         {
+            if (i)
+                RTThreadSleep(3000);
+
             VGSvcVerbose(2, "Guest session ID=%RU32 process still alive, killing attempt %d/3\n", idSession, i + 1);
 
             rc2 = RTProcTerminate(pThread->hProcess);
             if (RT_SUCCESS(rc2))
                 break;
-            /** @todo r=bird: What's the point of sleeping 3 second after the last attempt? */
-            RTThreadSleep(3000);
         }
 
         VGSvcVerbose(2, "Guest session ID=%RU32 process termination resulted in rc=%Rrc\n", idSession, rc2);
