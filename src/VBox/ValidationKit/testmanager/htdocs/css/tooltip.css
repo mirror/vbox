@@ -114,7 +114,7 @@
 }
 
 /* This helps highlighting the revision we're showing the tooltip for. */
-.tmvcstimeline :target, .tmvcstimeline :target + dd {
+.tmvcstimeline-highlight, .tmvcstimeline :target, .tmvcstimeline :target + dd {
     background-color: #d8e8ff;
     padding-top:    0.2em;
     padding-bottom: 0.2em;

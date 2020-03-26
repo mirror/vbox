@@ -1150,7 +1150,8 @@ table.tmsqltable tr td:nth-child(4) {
     margin:     0px;
     border:     0px none;
     width:      100%;
-    overflow:   auto;
+    //overflow:   auto;
+    overflow:   hidden;
 }
 
 
