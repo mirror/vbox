@@ -83,6 +83,9 @@ typedef enum VBOXSERVICETOOLBOXOUTPUTFLAG
     VBOXSERVICETOOLBOXOUTPUTFLAG_PARSEABLE
 } VBOXSERVICETOOLBOXOUTPUTFLAG;
 
+/** The size of the directory entry buffer we're using. */
+#define VBOXSERVICETOOLBOX_DIRENTRY_BUF_SIZE (sizeof(RTDIRENTRYEX) + RTPATH_MAX)
+
 
 /*********************************************************************************************************************************
 *   Structures and Typedefs                                                                                                      *
@@ -120,14 +123,6 @@ typedef struct VBOXSERVICETOOLBOXPATHENTRY
     /** Name of the entry. */
     char       *pszName;
 } VBOXSERVICETOOLBOXPATHENTRY, *PVBOXSERVICETOOLBOXPATHENTRY;
-
-typedef struct VBOXSERVICETOOLBOXDIRENTRY
-{
-    /** Our node. */
-    RTLISTNODE   Node;
-    /** The actual entry. */
-    RTDIRENTRYEX dirEntry;
-} VBOXSERVICETOOLBOXDIRENTRY, *PVBOXSERVICETOOLBOXDIRENTRY;
 
 /** ID cache entry. */
 typedef struct VGSVCTOOLBOXUIDENTRY
@@ -844,13 +839,137 @@ static int vgsvcToolboxPrintFsInfo(const char *pszName, size_t cchName, uint32_t
     return VINF_SUCCESS;
 }
 
+/**
+ * Helper routine for ls tool for handling sub directories.
+ *
+ * @return  IPRT status code.
+ * @param   pszDir          Pointer to the directory buffer.
+ * @param   cchDir          The length of pszDir in pszDir.
+ * @param   pDirEntry       Pointer to the directory entry.
+ * @param   fFlags          Flags of type VBOXSERVICETOOLBOXLSFLAG.
+ * @param   fOutputFlags    Flags of type VBOXSERVICETOOLBOXOUTPUTFLAG.
+ * @param   pIdCache        The ID cache.
+ */
+static int vgsvcToolboxLsHandleDirSub(char *pszDir, size_t cchDir, PRTDIRENTRYEX pDirEntry,
+                                      uint32_t fFlags, uint32_t fOutputFlags, PVGSVCTOOLBOXIDCACHE pIdCache)
+{
+    Assert(cchDir > 0); Assert(pszDir[cchDir] == '\0');
+
+    if (fFlags & VBOXSERVICETOOLBOXOUTPUTFLAG_PARSEABLE)
+        RTPrintf("dname=%s%c", pszDir, 0);
+    else if (fFlags & VBOXSERVICETOOLBOXLSFLAG_RECURSIVE)
+        RTPrintf("%s:\n", pszDir);
+
+    /* Make sure we've got some room in the path, to save us extra work further down. */
+    if (cchDir + 3 >= RTPATH_MAX)
+    {
+        if (!(fOutputFlags & VBOXSERVICETOOLBOXOUTPUTFLAG_PARSEABLE))
+            RTMsgError("Path too long: '%s'\n", pszDir);
+        return VERR_BUFFER_OVERFLOW;
+    }
+
+    /* Open directory. */
+    RTDIR hDir;
+    int rc = RTDirOpen(&hDir, pszDir);
+    if (RT_FAILURE(rc))
+    {
+        if (!(fOutputFlags & VBOXSERVICETOOLBOXOUTPUTFLAG_PARSEABLE))
+            RTMsgError("Failed to open directory '%s', rc=%Rrc\n", pszDir, rc);
+        return rc;
+    }
+
+    /* Ensure we've got a trailing slash (there is space for it see above). */
+    if (!RTPATH_IS_SEP(pszDir[cchDir - 1]))
+    {
+        pszDir[cchDir++] = RTPATH_SLASH;
+        pszDir[cchDir]   = '\0';
+    }
+
+    /*
+     * Process the files and subdirs.
+     */
+    for (;;)
+    {
+        /* Get the next directory. */
+        size_t cbDirEntry = VBOXSERVICETOOLBOX_DIRENTRY_BUF_SIZE;
+        rc = RTDirReadEx(hDir, pDirEntry, &cbDirEntry, RTFSOBJATTRADD_UNIX, RTPATH_F_ON_LINK);
+        if (RT_FAILURE(rc))
+            break;
+
+        /* Skip the dot and dot-dot links. */
+        if (RTDirEntryExIsStdDotLink(pDirEntry))
+            continue;
+
+        /* Check length. */
+        if (pDirEntry->cbName + cchDir + 3 >= RTPATH_MAX)
+        {
+            if (!(fOutputFlags & VBOXSERVICETOOLBOXOUTPUTFLAG_PARSEABLE))
+                RTMsgError("Path too long: '%s' in '%.*s'\n", pDirEntry->szName, cchDir, pszDir);
+            rc = VERR_BUFFER_OVERFLOW;
+            break;
+        }
+
+        switch (pDirEntry->Info.Attr.fMode & RTFS_TYPE_MASK)
+        {
+            case RTFS_TYPE_SYMLINK:
+            {
+                if (!(fFlags & VBOXSERVICETOOLBOXLSFLAG_SYMLINKS))
+                    break;
+                RT_FALL_THRU();
+            }
+            case RTFS_TYPE_DIRECTORY:
+            {
+                if (RTDirEntryExIsStdDotLink(pDirEntry))
+                    continue;
+
+                if (!(fFlags & VBOXSERVICETOOLBOXLSFLAG_RECURSIVE))
+                    continue;
+
+                memcpy(&pszDir[cchDir], pDirEntry->szName, pDirEntry->cbName + 1);
+                int rc2 = vgsvcToolboxLsHandleDirSub(pszDir, cchDir + pDirEntry->cbName, pDirEntry, fFlags, fOutputFlags, pIdCache);
+                if (RT_SUCCESS(rc))
+                    rc = rc2;
+                break;
+            }
+
+            case RTFS_TYPE_FILE:
+            {
+                rc = vgsvcToolboxPrintFsInfo(pDirEntry->szName, pDirEntry->cbName, fOutputFlags, pszDir,
+                                             pIdCache, &pDirEntry->Info);
+                break;
+            }
+
+            default:
+            {
+                if (!(fOutputFlags & VBOXSERVICETOOLBOXOUTPUTFLAG_PARSEABLE))
+                    RTMsgError("Entry '%.*s%s' of mode %#x not supported, skipping",
+                               cchDir, pszDir, pDirEntry->szName, pDirEntry->Info.Attr.fMode & RTFS_TYPE_MASK);
+                break;
+            }
+        }
+    }
+    if (rc != VERR_NO_MORE_FILES)
+    {
+        if (!(fOutputFlags & VBOXSERVICETOOLBOXOUTPUTFLAG_PARSEABLE))
+            RTMsgError("RTDirReadEx failed: %Rrc\npszDir=%.*s", rc, cchDir, pszDir);
+    }
+
+    rc = RTDirClose(hDir);
+    if (RT_FAILURE(rc))
+    {
+        if (!(fOutputFlags & VBOXSERVICETOOLBOXOUTPUTFLAG_PARSEABLE))
+            RTMsgError("RTDirClose failed: %Rrc\npszDir=%.*s", rc, cchDir, pszDir);
+    }
+
+    return rc;
+}
 
 /**
  * Helper routine for ls tool doing the actual parsing and output of
  * a specified directory.
  *
  * @return  IPRT status code.
- * @param   pszDir          Directory (path) to ouptut.
+ * @param   pszDir          Absolute path to directory to ouptut.
  * @param   fFlags          Flags of type VBOXSERVICETOOLBOXLSFLAG.
  * @param   fOutputFlags    Flags of type VBOXSERVICETOOLBOXOUTPUTFLAG.
  * @param   pIdCache        The ID cache.
@@ -858,132 +977,23 @@ static int vgsvcToolboxPrintFsInfo(const char *pszName, size_t cchName, uint32_t
 static int vgsvcToolboxLsHandleDir(const char *pszDir, uint32_t fFlags, uint32_t fOutputFlags, PVGSVCTOOLBOXIDCACHE pIdCache)
 {
     AssertPtrReturn(pszDir, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pIdCache, VERR_INVALID_PARAMETER);
 
-    if (fFlags & VBOXSERVICETOOLBOXOUTPUTFLAG_PARSEABLE)
-        RTPrintf("dname=%s%c", pszDir, 0);
-    else if (fFlags & VBOXSERVICETOOLBOXLSFLAG_RECURSIVE)
-        RTPrintf("%s:\n", pszDir);
-
-    char szPathAbs[RTPATH_MAX + 1];
-    int rc = RTPathAbs(pszDir, szPathAbs, sizeof(szPathAbs));
+    char szPath[RTPATH_MAX];
+    int rc = RTPathAbs(pszDir, szPath, sizeof(szPath));
     if (RT_FAILURE(rc))
     {
         if (!(fOutputFlags & VBOXSERVICETOOLBOXOUTPUTFLAG_PARSEABLE))
-            RTMsgError("Failed to retrieve absolute path of '%s', rc=%Rrc\n", pszDir, rc);
+            RTMsgError("RTPathAbs failed on '%s': %Rrc\n", pszDir, rc);
         return rc;
     }
 
-    RTDIR hDir;
-    rc = RTDirOpen(&hDir, szPathAbs);
-    if (RT_FAILURE(rc))
+    union
     {
-        if (!(fOutputFlags & VBOXSERVICETOOLBOXOUTPUTFLAG_PARSEABLE))
-            RTMsgError("Failed to open directory '%s', rc=%Rrc\n", szPathAbs, rc);
-        return rc;
-    }
-
-    RTLISTANCHOR dirList;
-    RTListInit(&dirList);
-
-    /* To prevent races we need to read in the directory entries once
-     * and process them afterwards: First loop is displaying the current
-     * directory's content and second loop is diving deeper into
-     * sub directories (if wanted). */
-/** @todo r=bird: Which races are these exactly???  Please, do considering that directory with half a
- * million files in it, because this isn't going to fly well there (especially not in the recursive case)...
- * So, this needs to be rewritten unless there is an actual race you're avoiding by doing this! */
-    do
-    {
-        RTDIRENTRYEX DirEntry;
-        rc = RTDirReadEx(hDir, &DirEntry, NULL, RTFSOBJATTRADD_UNIX, RTPATH_F_ON_LINK);
-        if (RT_SUCCESS(rc))
-        {
-            PVBOXSERVICETOOLBOXDIRENTRY pNode = (PVBOXSERVICETOOLBOXDIRENTRY)RTMemAlloc(sizeof(VBOXSERVICETOOLBOXDIRENTRY));
-            if (pNode)
-            {
-                memcpy(&pNode->dirEntry, &DirEntry, sizeof(RTDIRENTRYEX));
-                RTListAppend(&dirList, &pNode->Node);
-            }
-            else
-                rc = VERR_NO_MEMORY;
-        }
-        /** @todo r=bird: missing DirEntry overflow handling. */
-    } while (RT_SUCCESS(rc));
-
-    if (rc == VERR_NO_MORE_FILES)
-        rc = VINF_SUCCESS;
-
-    int rc2 = RTDirClose(hDir);
-    if (RT_FAILURE(rc2))
-    {
-        if (!(fOutputFlags & VBOXSERVICETOOLBOXOUTPUTFLAG_PARSEABLE))
-            RTMsgError("Failed to close dir '%s', rc=%Rrc\n", pszDir, rc2);
-        if (RT_SUCCESS(rc))
-            rc = rc2;
-    }
-
-    if (RT_SUCCESS(rc))
-    {
-        PVBOXSERVICETOOLBOXDIRENTRY pNodeIt;
-        RTListForEach(&dirList, pNodeIt, VBOXSERVICETOOLBOXDIRENTRY, Node)
-        {
-            rc = vgsvcToolboxPrintFsInfo(pNodeIt->dirEntry.szName, pNodeIt->dirEntry.cbName, fOutputFlags,
-                                         szPathAbs, pIdCache, &pNodeIt->dirEntry.Info);
-            if (RT_FAILURE(rc))
-                break;
-        }
-
-        /* If everything went fine we do the second run (if needed) ... */
-        if (   RT_SUCCESS(rc)
-            && (fFlags & VBOXSERVICETOOLBOXLSFLAG_RECURSIVE))
-        {
-            /* Process all sub-directories. */
-            RTListForEach(&dirList, pNodeIt, VBOXSERVICETOOLBOXDIRENTRY, Node)
-            {
-                RTFMODE fMode = pNodeIt->dirEntry.Info.Attr.fMode;
-                switch (fMode & RTFS_TYPE_MASK)
-                {
-                    case RTFS_TYPE_SYMLINK:
-                        if (!(fFlags & VBOXSERVICETOOLBOXLSFLAG_SYMLINKS))
-                            break;
-                        RT_FALL_THRU();
-                    case RTFS_TYPE_DIRECTORY:
-                    {
-                        const char *pszName = pNodeIt->dirEntry.szName;
-                        if (   !RTStrICmp(pszName, ".")  /** @todo r=bird: Please do explain what the upper/lower casing of  '.' is! I'm really curious. */
-                            || !RTStrICmp(pszName, "..")) /** @todo r=bird: There is a RTDir API for checking these. Use it! */
-                        {
-                            /* Skip dot directories. */
-                            continue;
-                        }
-
-                        char szPath[RTPATH_MAX]; /** @todo r=bird: This is going to kill your stack pretty quickly if deep
-                                                  * directory nesting.  There is another buffer further up the function too.
-                                                  * You need to share the path buffer between recursions!  There should be
-                                                  * several examples of how to efficiently traverse a tree. */
-                        rc = RTPathJoin(szPath, sizeof(szPath), pszDir, pNodeIt->dirEntry.szName);
-                        if (RT_SUCCESS(rc))
-                            rc = vgsvcToolboxLsHandleDir(szPath, fFlags, fOutputFlags, pIdCache);
-                        break;
-                    }
-
-                    default: /* Ignore the rest. */
-                        break;
-                }
-                if (RT_FAILURE(rc))
-                    break;
-            }
-        }
-    }
-
-    /* Clean up the mess. */
-    PVBOXSERVICETOOLBOXDIRENTRY pNode, pSafe;
-    RTListForEachSafe(&dirList, pNode, pSafe, VBOXSERVICETOOLBOXDIRENTRY, Node)
-    {
-        RTListNodeRemove(&pNode->Node);
-        RTMemFree(pNode);
-    }
-    return rc;
+        uint8_t         abPadding[VBOXSERVICETOOLBOX_DIRENTRY_BUF_SIZE];
+        RTDIRENTRYEX    DirEntry;
+    } uBuf;
+    return vgsvcToolboxLsHandleDirSub(szPath, strlen(szPath), &uBuf.DirEntry, fFlags, fOutputFlags, pIdCache);
 }
 
 
@@ -1029,8 +1039,7 @@ static RTEXITCODE vgsvcToolboxLs(int argc, char **argv)
     uint32_t fFlags       = VBOXSERVICETOOLBOXLSFLAG_NONE;
     uint32_t fOutputFlags = VBOXSERVICETOOLBOXOUTPUTFLAG_NONE;
 
-    while (   (ch = RTGetOpt(&GetState, &ValueUnion))
-           && RT_SUCCESS(rc) /** @todo r=bird: WTF is this doing here? rc isn't set in the loop!! And there is an AssertRCReturn after the previous place it was set. */)
+    while ((ch = RTGetOpt(&GetState, &ValueUnion)))
     {
         /* For options that require an argument, ValueUnion has received the value. */
         switch (ch)
@@ -1079,81 +1088,71 @@ static RTEXITCODE vgsvcToolboxLs(int argc, char **argv)
             break;
     }
 
-    if (RT_SUCCESS(rc)) /** @todo r=bird: WTF?!? The state handling here is certifiably insane. Crap like this drives me CRAZY!! */
+    /* Print magic/version. */
+    if (fOutputFlags & VBOXSERVICETOOLBOXOUTPUTFLAG_PARSEABLE)
     {
-        /* Print magic/version. */
-        if (fOutputFlags & VBOXSERVICETOOLBOXOUTPUTFLAG_PARSEABLE)
+        rc = vgsvcToolboxStrmInit();
+        if (RT_FAILURE(rc))
+            RTMsgError("Error while initializing parseable streams, rc=%Rrc\n", rc);
+        vgsvcToolboxPrintStrmHeader("vbt_ls", 1 /* Stream version */);
+    }
+
+    VGSVCTOOLBOXIDCACHE IdCache;
+    RT_ZERO(IdCache);
+
+    char szDirCur[RTPATH_MAX];
+    rc = RTPathGetCurrent(szDirCur, sizeof(szDirCur));
+    if (RT_FAILURE(rc))
+    {
+        RTMsgError("Getting current directory failed, rc=%Rrc\n", rc);
+        return RTEXITCODE_FAILURE;
+    }
+
+    ch = RTGetOpt(&GetState, &ValueUnion);
+    do
+    {
+        char const *pszPath;
+
+        if (ch == 0) /* Use current directory if no element specified. */
+            pszPath = szDirCur;
+        else
+            pszPath = ValueUnion.psz;
+
+        RTFSOBJINFO objInfo;
+        int rc2 = RTPathQueryInfoEx(pszPath, &objInfo,
+                                    RTFSOBJATTRADD_UNIX,
+                                    fFlags & VBOXSERVICETOOLBOXLSFLAG_SYMLINKS ? RTPATH_F_FOLLOW_LINK : RTPATH_F_ON_LINK);
+        if (RT_SUCCESS(rc2))
         {
-            rc = vgsvcToolboxStrmInit();
-            if (RT_FAILURE(rc))
-                RTMsgError("Error while initializing parseable streams, rc=%Rrc\n", rc);
-            vgsvcToolboxPrintStrmHeader("vbt_ls", 1 /* Stream version */);
-        }
-
-        VGSVCTOOLBOXIDCACHE IdCache;
-        RT_ZERO(IdCache);
-
-        ch = RTGetOpt(&GetState, &ValueUnion);
-        do
-        {
-            char *pszEntry = NULL; /** @todo r=bird: Bad name choice. pszEntry sounds like RTDIRENTRY::szName, i.e. no path. */
-
-            if (ch == 0) /* Use current directory if no element specified. */
+            if (   RTFS_IS_FILE(objInfo.Attr.fMode)
+                || (   RTFS_IS_SYMLINK(objInfo.Attr.fMode)
+                    && (fFlags & VBOXSERVICETOOLBOXLSFLAG_SYMLINKS)))
             {
-                char szDirCur[RTPATH_MAX + 1];  /** @todo r=bird: Just put this outside the if(ch==0) and make pszEntry point to it.  There is no need to duplicate any strings here! */
-                rc = RTPathGetCurrent(szDirCur, sizeof(szDirCur));
-                if (RT_FAILURE(rc))
-                    RTMsgError("Getting current directory failed, rc=%Rrc\n", rc);
-
-                pszEntry = RTStrDup(szDirCur);
-                if (!pszEntry)
-                    RTMsgError("Allocating current directory failed\n");
-            }
-            else
-            {
-                pszEntry = RTStrDup(ValueUnion.psz);
-                if (!pszEntry)
-                    RTMsgError("Allocating directory '%s' failed\n", ValueUnion.psz);
-            }
-
-            /** @todo r=bird: RTFileExists == RTPathQueryInfo, so just do
-             *        RTPathQueryInfoEx here!  Also, you _need_ to figure out whether or
-             *        not to follow "commandline" links! */
-            if (RTFileExists(pszEntry))
-            {
-                RTFSOBJINFO objInfo;
-                int rc2 = RTPathQueryInfoEx(pszEntry, &objInfo,
-                                            RTFSOBJATTRADD_UNIX, RTPATH_F_ON_LINK /** @todo Follow link? */);
-                if (RT_FAILURE(rc2))
-                {
-                    if (!(fOutputFlags & VBOXSERVICETOOLBOXOUTPUTFLAG_PARSEABLE))
-                        RTMsgError("Cannot access '%s': No such file or directory\n", pszEntry);
-                    rc = VERR_FILE_NOT_FOUND;
-                    /* Do not break here -- process every element in the list
-                     * and keep failing rc. */
-                }
-                else
-                {
-                    rc2 = vgsvcToolboxPrintFsInfo(pszEntry, strlen(pszEntry), fOutputFlags, NULL, &IdCache, &objInfo);
-                    if (RT_FAILURE(rc2))
-                        rc = rc2;
-                }
-            }
-            else
-            {
-                int rc2 = vgsvcToolboxLsHandleDir(pszEntry, fFlags, fOutputFlags, &IdCache);
-                if (RT_FAILURE(rc2))
+                rc2 = vgsvcToolboxPrintFsInfo(pszPath, strlen(pszPath), fOutputFlags, NULL, &IdCache, &objInfo);
+                if (RT_SUCCESS(rc)) /* Keep initial failing rc. */
                     rc = rc2;
             }
+            else if (RTFS_IS_DIRECTORY(objInfo.Attr.fMode))
+            {
+                rc2 = vgsvcToolboxLsHandleDir(pszPath, fFlags, fOutputFlags, &IdCache);
+                if (RT_SUCCESS(rc)) /* Keep initial failing rc. */
+                    rc = rc2;
+            }
+        }
+        else
+        {
+            if (!(fOutputFlags & VBOXSERVICETOOLBOXOUTPUTFLAG_PARSEABLE))
+                RTMsgError("Cannot access '%s': No such file or directory\n", pszPath);
+            if (RT_SUCCESS(rc))
+                rc = VERR_FILE_NOT_FOUND;
+            /* Do not break here -- process every element in the list
+             * and keep failing rc. */
+        }
 
-            RTStrFree(pszEntry);
-        } while ((ch = RTGetOpt(&GetState, &ValueUnion)) != 0);
+    } while ((ch = RTGetOpt(&GetState, &ValueUnion)) != 0);
 
-        if (fOutputFlags & VBOXSERVICETOOLBOXOUTPUTFLAG_PARSEABLE) /* Output termination. */
-            vgsvcToolboxPrintStrmTermination();
-    }
-    else if (fVerbose)
-        RTMsgError("Failed with rc=%Rrc\n", rc);
+    if (fOutputFlags & VBOXSERVICETOOLBOXOUTPUTFLAG_PARSEABLE) /* Output termination. */
+        vgsvcToolboxPrintStrmTermination();
 
     return RT_SUCCESS(rc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
 }
