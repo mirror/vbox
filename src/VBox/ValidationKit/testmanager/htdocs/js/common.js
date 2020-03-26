@@ -756,58 +756,78 @@ function tooltipRepositionOnLoad()
         var cxNeeded   = g_oCurrentTooltip.oElm.offsetWidth  + 8;
         var cyNeeded   = g_oCurrentTooltip.oElm.offsetHeight + 8;
 
+        var cyWindow        = window.innerHeight;
         var yScroll         = window.pageYOffset || document.documentElement.scrollTop;
-        var yScrollBottom   = yScroll + window.innerHeight;
+        var yScrollBottom   = yScroll + cyWindow;
+        var cxWindow        = window.innerWidth;
         var xScroll         = window.pageXOffset || document.documentElement.scrollLeft;
-        var xScrollRight    = xScroll + window.innerWidth;
+        var xScrollRight    = xScroll + cxWindow;
 
-        var cyAbove    = Math.max(oRelToRect.top  - yScroll, 0);
-        var cyBelow    = Math.max(yScrollBottom - oRelToRect.bottom, 0);
-        var cxLeft     = Math.max(oRelToRect.left - xScroll, 0);
-        var cxRight    = Math.max(xScrollRight  - oRelToRect.right, 0);
+        var cyAbove    = Math.max(oRelToRect.top, 0);
+        var cyBelow    = Math.max(cyWindow - oRelToRect.bottom, 0);
+        var cxLeft     = Math.max(oRelToRect.left, 0);
+        var cxRight    = Math.max(cxWindow - oRelToRect.right, 0);
 
         var xPos;
         var yPos;
+
+        console.log('tooltipRepositionOnLoad: rect: x,y=' + oRelToRect.x + ',' + oRelToRect.y
+                    + ' cx,cy=' + oRelToRect.width + ',' + oRelToRect.height + ' top=' + oRelToRect.top
+                    + ' bottom=' + oRelToRect.bottom + ' left=' + oRelToRect.left + ' right=' + oRelToRect.right);
+        //console.log('tooltipRepositionOnLoad: yScroll=' + yScroll + ' yScrollBottom=' + yScrollBottom);
+        //console.log('tooltipRepositionOnLoad: cyAbove=' + cyAbove + ' cyBelow=' + cyBelow + ' cyNeeded=' + cyNeeded);
+        console.log('tooltipRepositionOnLoad: xScroll=' + xScroll + ' xScrollRight=' + xScrollRight);
+        console.log('tooltipRepositionOnLoad: cxLeft=' + cxLeft + ' cxRight=' + cxRight + ' cxNeeded=' + cxNeeded);
 
         /*
          * Decide where to put the thing.
          */
         if (cyNeeded < cyBelow)
         {
-            yPos = oRelToRect.bottom;
+            yPos = yScroll + oRelToRect.top;
             g_oCurrentTooltip.cyMax = cyBelow;
+            //console.log('tooltipRepositionOnLoad: #1');
         }
         else if (cyBelow >= cyAbove)
         {
             yPos = yScrollBottom - cyNeeded;
             g_oCurrentTooltip.cyMax = yScrollBottom - yPos;
+            //console.log('tooltipRepositionOnLoad: #2');
         }
         else
         {
-            yPos = oRelToRect.top - cyNeeded;
+            yPos = yScroll + oRelToRect.bottom - cyNeeded;
             g_oCurrentTooltip.cyMax = yScrollBottom - yPos;
+            //console.log('tooltipRepositionOnLoad: #3');
         }
         if (yPos < yScroll)
         {
             yPos = yScroll;
             g_oCurrentTooltip.cyMax = yScrollBottom - yPos;
+            //console.log('tooltipRepositionOnLoad: #4');
         }
         g_oCurrentTooltip.yPos    = yPos;
         g_oCurrentTooltip.yScroll = yScroll;
         g_oCurrentTooltip.cyMaxUp = yPos - yScroll;
+        //console.log('tooltipRepositionOnLoad: yPos=' + yPos + ' yScroll=' + yScroll + ' cyMaxUp=' + g_oCurrentTooltip.cyMaxUp);
 
-        if (cxNeeded < cxRight || cxNeeded > cxRight)
+        if (cxNeeded < cxRight)
         {
-            xPos = oRelToRect.right;
+            xPos = xScroll + oRelToRect.right;
             g_oCurrentTooltip.cxMax = cxRight;
+            console.log('tooltipRepositionOnLoad: #5');
         }
         else
         {
-            xPos = oRelToRect.left - cxNeeded;
+            xPos = xScroll + oRelToRect.left - cxNeeded;
+            if (xPos < xScroll)
+                xPos = xScroll;
             g_oCurrentTooltip.cxMax = cxNeeded;
+            console.log('tooltipRepositionOnLoad: #6');
         }
         g_oCurrentTooltip.xPos    = xPos;
         g_oCurrentTooltip.xScroll = xScroll;
+        console.log('tooltipRepositionOnLoad: xPos=' + xPos + ' xScroll=' + xScroll);
 
         g_oCurrentTooltip.oElm.style.top  = yPos + 'px';
         g_oCurrentTooltip.oElm.style.left = xPos + 'px';
@@ -948,9 +968,9 @@ function svnHistoryTooltipOnLoad()
             oIFrameElement.style.overflowY = 'scroll';
         }
 
-        //console.log('cyNeeded='+cyNeeded+' cyMax='+g_oCurrentTooltip.cyMax+' cySpace='+cySpace+' cy='+cy);
-        //console.log('oIFrameElement.offsetTop='+oIFrameElement.offsetTop);
-        //console.log('svnHistoryTooltipOnLoad: cx='+cx+'cxMax='+g_oCurrentTooltip.cxMax+' cxNeeded='+cxNeeded+' cy='+cy+' cyMax='+g_oCurrentTooltip.cyMax);
+        console.log('cyNeeded='+cyNeeded+' cyMax='+g_oCurrentTooltip.cyMax+' cySpace='+cySpace+' cy='+cy);
+        console.log('oIFrameElement.offsetTop='+oIFrameElement.offsetTop);
+        console.log('svnHistoryTooltipOnLoad: cx='+cx+'cxMax='+g_oCurrentTooltip.cxMax+' cxNeeded='+cxNeeded+' cy='+cy+' cyMax='+g_oCurrentTooltip.cyMax);
 
         tooltipRepositionOnLoad();
     }
