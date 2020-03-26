@@ -1265,8 +1265,183 @@ typedef union
         uint32_t    u9Rsvd0 : 9;        /**< Bits 26:18 - Reserved. */
         uint32_t    u5MapCapType : 5;   /**< Bits 31:27 - MsiMapCapType: MSI Mapping capability type. */
     } n;
+    /** The 32-bit unsigned integer view. */
+    uint32_t    u32;
 } MSI_MAP_CAP_HDR_T;
 AssertCompileSize(MSI_MAP_CAP_HDR_T, 4);
+
+/**
+ * Performance Optimization Control Register (MMIO).
+ * In accordance with the AMD spec.
+ */
+typedef union
+{
+    struct
+    {
+        uint32_t    u13Rsvd0 : 13;      /**< Bits 12:0  - Reserved. */
+        uint32_t    u1PerfOptEn : 1;    /**< Bit  13    - PerfOptEn: Performance Optimization Enable. */
+        uint32_t    u17Rsvd0 : 18;      /**< Bits 31:14 - Reserved. */
+    } n;
+    /** The 32-bit unsigned integer view. */
+    uint32_t    u32;
+} IOMMU_PERF_OPT_CTRL_T;
+AssertCompileSize(IOMMU_PERF_OPT_CTRL_T, 4);
+
+/**
+ * XT (x2APIC) IOMMU General Interrupt Control Register (MMIO).
+ * In accordance with the AMD spec.
+ */
+typedef union
+{
+    struct
+    {
+        uint32_t    u2Rsvd0 : 2;                    /**< Bits 1:0   - Reserved.*/
+        uint32_t    u1X2ApicIntrDstMode : 1;        /**< Bit  2     - Destination Mode for general interrupt.*/
+        uint32_t    u4Rsvd0 : 4;                    /**< Bits 7:3   - Reserved.*/
+        uint32_t    u24X2ApicIntrDstLo : 24;        /**< Bits 31:8  - Destination for general interrupt (Lo).*/
+        uint32_t    u8X2ApicIntrVector : 8;         /**< Bits 39:32 - Vector for general interrupt.*/
+        uint32_t    u1X2ApicIntrDeliveryMode : 1;   /**< Bit  40    - Delivery Mode for general interrupt.*/
+        uint32_t    u15Rsvd0 : 15;                  /**< Bits 55:41 - Reserved.*/
+        uint32_t    u7X2ApicIntrDstHi : 7;          /**< Bits 63:56 - Destination for general interrupt (Hi) .*/
+    } n;
+    /** The 64-bit unsigned integer view. */
+    uint64_t    u64;
+} IOMMU_XT_GEN_INTR_CTRL_T;
+AssertCompileSize(IOMMU_XT_GEN_INTR_CTRL_T, 8);
+
+/**
+ * XT (x2APIC) IOMMU General Interrupt Control Register (MMIO).
+ * In accordance with the AMD spec.
+ */
+typedef union
+{
+    struct
+    {
+        uint32_t    u2Rsvd0 : 2;                    /**< Bits 1:0   - Reserved.*/
+        uint32_t    u1X2ApicIntrDstMode : 1;        /**< Bit  2     - Destination Mode for the interrupt.*/
+        uint32_t    u4Rsvd0 : 4;                    /**< Bits 7:3   - Reserved.*/
+        uint32_t    u24X2ApicIntrDstLo : 24;        /**< Bits 31:8  - Destination for the interrupt (Lo).*/
+        uint32_t    u8X2ApicIntrVector : 8;         /**< Bits 39:32 - Vector for the interrupt.*/
+        uint32_t    u1X2ApicIntrDeliveryMode : 1;   /**< Bit  40    - Delivery Mode for the interrupt.*/
+        uint32_t    u15Rsvd0 : 15;                  /**< Bits 55:41 - Reserved.*/
+        uint32_t    u7X2ApicIntrDstHi : 7;          /**< Bits 63:56 - Destination for the interrupt (Hi) .*/
+    } n;
+    /** The 64-bit unsigned integer view. */
+    uint64_t    u64;
+} IOMMU_XT_INTR_CTRL_T;
+AssertCompileSize(IOMMU_XT_INTR_CTRL_T, 8);
+
+/**
+ * XT (x2APIC) IOMMU PPR Interrupt Control Register (MMIO).
+ * In accordance with the AMD spec.
+ * Currently identical to IOMMU_XT_INTR_CTRL_T.
+ */
+typedef IOMMU_XT_INTR_CTRL_T    IOMMU_XT_PPR_INTR_CTRL_T;
+
+/**
+ * XT (x2APIC) IOMMU GA (Guest Address) Log Control Register (MMIO).
+ * In accordance with the AMD spec.
+ * Currently identical to IOMMU_XT_INTR_CTRL_T.
+ */
+typedef IOMMU_XT_INTR_CTRL_T    IOMMU_XT_GALOG_INTR_CTRL_T;
+
+/**
+ * IOMMU Reserved Register (MMIO).
+ * In accordance with the AMD spec.
+ * This register is reserved for hardware use (although RW?).
+ */
+typedef uint64_t    IOMMU_RSVD_REG_T;
+
+/**
+ * Command Buffer Head Pointer Register (MMIO).
+ * In accordance with the AMD spec.
+ */
+typedef union
+{
+    struct
+    {
+        uint32_t    u4Rsvd0 : 4;    /**< Bits 3:0   - Reserved. */
+        uint32_t    u15Ptr : 15;    /**< Bits 18:14 - Buffer pointer. */
+        uint32_t    u13Rsvd0 : 13;  /**< Bits 31:19 - Reserved. */
+        uint32_t    u32Rsvd0;       /**< Bits 63:32 - Reserved. */
+    } n;
+    /** The 32-bit unsigned integer view. */
+    uint32_t    au32[2];
+    /** The 64-bit unsigned integer view. */
+    uint64_t    u64;
+} CMD_BUF_HEAD_PTR_T;
+AssertCompileSize(CMD_BUF_HEAD_PTR_T, 8);
+
+/**
+ * Command Buffer Tail Pointer Register (MMIO).
+ * In accordance with the AMD spec.
+ * Currently identical to CMD_BUF_HEAD_PTR_T.
+ */
+typedef CMD_BUF_HEAD_PTR_T    CMD_BUF_TAIL_PTR_T;
+
+/**
+ * Event Log Head Pointer Register (MMIO).
+ * In accordance with the AMD spec.
+ * Currently identical to CMD_BUF_HEAD_PTR_T.
+ */
+typedef CMD_BUF_HEAD_PTR_T    EVT_LOG_HEAD_PTR_T;
+
+/**
+ * Event Log Tail Pointer Register (MMIO).
+ * In accordance with the AMD spec.
+ * Currently identical to CMD_BUF_HEAD_PTR_T.
+ */
+typedef CMD_BUF_HEAD_PTR_T    EVT_LOG_TAIL_PTR_T;
+
+/**
+ * IOMMU Status Register (MMIO).
+ * In accordance with the AMD spec.
+ */
+typedef union
+{
+    struct
+    {
+        uint32_t    u1EvtOverflow : 1;          /**< Bit  0     - EventOverflow: Event log overflow. */
+        uint32_t    u1EvtLogIntr : 1;           /**< Bit  1     - EventLogInt: Event log interrupt. */
+        uint32_t    u1CompWaitIntr : 1;         /**< Bit  2     - ComWaitInt: Completion wait interrupt . */
+        uint32_t    u1EvtLogRunning : 1;        /**< Bit  3     - EventLogRun: Event logging is running. */
+        uint32_t    u1CmdBufRunning : 1;        /**< Bit  4     - CmdBufRun: Command buffer is running. */
+        uint32_t    u1PprOverflow : 1;          /**< Bit  5     - PprOverflow: Peripheral Page Request Log (PPR) overflow. */
+        uint32_t    u1PprIntr : 1;              /**< Bit  6     - PprInt: PPR interrupt. */
+        uint32_t    u1PprLogRunning : 1;        /**< Bit  7     - PprLogRun: PPR logging is running. */
+        uint32_t    u1GstLogRunning : 1;        /**< Bit  8     - GALogRun: Guest virtual-APIC logging is running. */
+        uint32_t    u1GstLogOverflow : 1;       /**< Bit  9     - GALOverflow: Guest virtual-APIC log overflow. */
+        uint32_t    u1GstLogIntr : 1;           /**< Bit  10    - GAInt: Guest virtual-APIC log interrupt. */
+        uint32_t    u1PprOverflowB : 1;         /**< Bit  11    - PprOverflowB: PPR log B overflow. */
+        uint32_t    u1PprLogActive : 1;         /**< Bit  12    - PprLogActive: PPR log A is active. */
+        uint32_t    u2Rsvd0 : 2;                /**< Bits 14:13 - Reserved. */
+        uint32_t    u1EvtOverflowB : 1;         /**< Bit  15    - EvtOverflowB: Event log B overflow. */
+        uint32_t    u1EvtLogActive : 1;         /**< Bit  16    - EvtLogActive: Event log A active. */
+        uint32_t    u1PprOverflowEarlyB : 1;    /**< Bit  17    - PprOverflowEarlyB: PPR log B overflow early warning. */
+        uint32_t    u1PprOverflowEarly : 1;     /**< Bit  18    - PprOverflowEarly: PPR log overflow early warning. */
+        uint32_t    u13Rsvd0 : 13;              /**< Bits 31:19 - Reserved. */
+        uint32_t    u32Rsvd0;                   /**< Bits 63:32 - Reserved . */
+    } n;
+    /** The 32-bit unsigned integer view. */
+    uint32_t    au32[2];
+    /** The 64-bit unsigned integer view. */
+    uint64_t    u64;
+} IOMMU_STATUS_T;
+AssertCompileSize(IOMMU_STATUS_T, 8);
+
+/**
+ * PPR Log Head Pointer Register (MMIO).
+ * In accordance with the AMD spec.
+ * Currently identical to CMD_BUF_HEAD_PTR_T.
+ */
+typedef CMD_BUF_HEAD_PTR_T    PPR_LOG_HEAD_PTR_T;
+
+/**
+ * PPR Log Tail Pointer Register (MMIO).
+ * In accordance with the AMD spec.
+ * Currently identical to CMD_BUF_HEAD_PTR_T.
+ */
+typedef CMD_BUF_HEAD_PTR_T    PPR_LOG_TAIL_PTR_T;
 
 
 /**
@@ -1316,7 +1491,43 @@ typedef struct IOMMU
     MSI_CAP_HDR_T               MsiCapHdr;          /**< MSI Capability header register. */
     MSI_ADDR_T                  MsiAddr;            /**< MSI Address register.*/
     MSI_DATA_T                  MsiData;            /**< MSI Data register. */
-    MSI_MAP_CAP_HDR_T           MsiMapCapHdr;       /**< MSI Mapping Capability Header register. */
+    MSI_MAP_CAP_HDR_T           MsiMapCapHdr;       /**< MSI Capping capability header register. */
+    /** @} */
+
+    /** @name MMIO: Performance Optimization Control registers.
+     *  @{ */
+    IOMMU_PERF_OPT_CTRL_T       IommuPerfOptCtrl;   /**< IOMMU Performance optimization control register. */
+    /** @} */
+
+    /** @name MMIO: x2APIC Control registers.
+     * @{ */
+    IOMMU_XT_GEN_INTR_CTRL_T    IommuXtGenIntrCtrl;     /**< IOMMU X2APIC General interrupt control register. */
+    IOMMU_XT_PPR_INTR_CTRL_T    IommuXtPprIntrCtrl;     /**< IOMMU X2APIC PPR interrupt control register. */
+    IOMMU_XT_GALOG_INTR_CTRL_T  IommuXtGALogIntrCtrl;   /**< IOMMU X2APIC Guest Log interrupt control register. */
+    /** @} */
+
+    /** @name MMIO: Reserved register.
+     *  @{ */
+    IOMMU_RSVD_REG_T            IommuRsvdReg;       /**< IOMMU Reserved Register. */
+    /** @} */
+
+    /** @name MMIO: Command and Event Log registers.
+     * @{ */
+    CMD_BUF_HEAD_PTR_T          CmdBufHeadPtr;      /**< Command buffer head pointer register. */
+    CMD_BUF_TAIL_PTR_T          CmdBufTailPtr;      /**< Command buffer tail pointer register. */
+    EVT_LOG_HEAD_PTR_T          EvtLogHeadPtr;      /**< Event log head pointer register. */
+    EVT_LOG_TAIL_PTR_T          EvtLogTailPtr;      /**< Event log tail pointer register. */
+    /** @} */
+
+    /** @name MMIO: Command Event status register.
+     * @{ */
+    IOMMU_STATUS_T              IommuStatus;        /**< IOMMU status register. */
+    /** @} */
+
+    /** @name MMIO: PPR Log Head and Tail Pointer registers.
+     * @{ */
+    PPR_LOG_HEAD_PTR_T          PprLogHeadPtr;      /**< IOMMU PPR log head pointer register. */
+    PPR_LOG_TAIL_PTR_T          PprLogTailPtr;      /**< IOMMU PPR log tail pointer register. */
     /** @} */
 } IOMMU;
 /** Pointer to the IOMMU device state. */
