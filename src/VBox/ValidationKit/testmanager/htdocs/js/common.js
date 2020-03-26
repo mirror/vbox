@@ -891,46 +891,6 @@ function tooltipElementOnMouseOut()
 }
 
 /**
- * Highlights the desired revision.
- *
- * This is a WORKAROUND for browser where we cannot use the URL fragment to
- * do this.
- */
-function svnHistoryTooltipHighligh(oTooltip)
-{
-    var iRevision = oTooltip.iRevision;
-    if (false && isBrowserFirefox())
-    {
-        var sDesiredHash = '#r' + iRevision;
-        var sCurrentHash = oTooltip.oIFrame.contentWindow.location.hash;
-        //console.log('before: location.hash=' + sCurrentHash + ' src=' + oTooltip.oIFrame.src);
-        if (sCurrentHash != sDesiredHash)
-        {
-            oTooltip.oIFrame.contentWindow.location.hash = sDesiredHash;
-            oTooltip.oIFrame.contentWindow.location.reload();
-            //console.log('after:  location.hash=' + oTooltip.oIFrame.contentWindow.location.hash + ' src='+oTooltip.oIFrame.src);
-        }
-        return true;
-    }
-
-    /* Clear old selection - not needed as we appear to be reloading the page each time... */
-    var aoElements = oTooltip.oIFrame.contentDocument.getElementsByTagName('dt');
-    var i;
-    for (i = 0; i < aoElements.length; i++)
-        aoElements[i].className = '';
-    aoElements = oTooltip.oIFrame.contentDocument.getElementsByTagName('dd');
-    for (i = 0; i < aoElements.length; i++)
-        aoElements[i].className = '';
-
-    /* New selection: */
-    var oDt = oTooltip.oIFrame.contentDocument.getElementById('r' + iRevision);
-    oDt.className = 'tmvcstimeline-highlight';
-    oDt.nextElementSibling.className = 'tmvcstimeline-highlight';
-
-    return true;
-}
-
-/**
  * iframe.onload hook that repositions and resizes the tooltip.
  *
  * This is a little hacky and we're calling it one or three times too many to
@@ -946,26 +906,24 @@ function svnHistoryTooltipOnLoad()
     tooltipRepositionOnLoad(); /* Sets cxMax and cyMax. */
     if (g_oCurrentTooltip && g_oCurrentTooltip.oIFrame.contentWindow)
     {
-        var oSubElement = g_oCurrentTooltip.oIFrame;
-        svnHistoryTooltipHighligh(g_oCurrentTooltip); /* do early as it increases the element padding */
-
-        var cxSpace  = Math.max(oSubElement.offsetLeft * 2, 0); /* simplified */
-        var cySpace  = Math.max(oSubElement.offsetTop  * 2, 0); /* simplified */
-        var cxNeeded = oSubElement.contentWindow.document.body.scrollWidth  + cxSpace;
-        var cyNeeded = oSubElement.contentWindow.document.body.scrollHeight + cySpace;
+        var oIFrameElement = g_oCurrentTooltip.oIFrame;
+        var cxSpace  = Math.max(oIFrameElement.offsetLeft * 2, 0); /* simplified */
+        var cySpace  = Math.max(oIFrameElement.offsetTop  * 2, 0); /* simplified */
+        var cxNeeded = oIFrameElement.contentWindow.document.body.scrollWidth  + cxSpace;
+        var cyNeeded = oIFrameElement.contentWindow.document.body.scrollHeight + cySpace;
         var cx = Math.min(cxNeeded, g_oCurrentTooltip.cxMax);
         var cy;
 
         g_oCurrentTooltip.oElm.width = cx + 'px';
-        oSubElement.width            = (cx - cxSpace) + 'px';
+        oIFrameElement.width            = (cx - cxSpace) + 'px';
         if (cx >= cxNeeded)
         {
             //console.log('svnHistoryTooltipOnLoad: overflowX -> hidden');
-            oSubElement.style.overflowX = 'hidden';
+            oIFrameElement.style.overflowX = 'hidden';
         }
         else
         {
-            oSubElement.style.overflowX = 'scroll';
+            oIFrameElement.style.overflowX = 'scroll';
         }
 
         cy = Math.min(cyNeeded, g_oCurrentTooltip.cyMax);
@@ -979,19 +937,19 @@ function svnHistoryTooltipOnLoad()
         }
 
         g_oCurrentTooltip.oElm.height = cy + 'px';
-        oSubElement.height            = (cy - cySpace) + 'px';
+        oIFrameElement.height            = (cy - cySpace) + 'px';
         if (cy >= cyNeeded)
         {
             //console.log('svnHistoryTooltipOnLoad: overflowY -> hidden');
-            oSubElement.style.overflowY = 'hidden';
+            oIFrameElement.style.overflowY = 'hidden';
         }
         else
         {
-            oSubElement.style.overflowY = 'scroll';
+            oIFrameElement.style.overflowY = 'scroll';
         }
 
         //console.log('cyNeeded='+cyNeeded+' cyMax='+g_oCurrentTooltip.cyMax+' cySpace='+cySpace+' cy='+cy);
-        //console.log('oSubElement.offsetTop='+oSubElement.offsetTop);
+        //console.log('oIFrameElement.offsetTop='+oIFrameElement.offsetTop);
         //console.log('svnHistoryTooltipOnLoad: cx='+cx+'cxMax='+g_oCurrentTooltip.cxMax+' cxNeeded='+cxNeeded+' cy='+cy+' cyMax='+g_oCurrentTooltip.cyMax);
 
         tooltipRepositionOnLoad();
@@ -1041,17 +999,15 @@ function svnHistoryTooltipCalcId(sRepository, iRevision)
  */
 function svnHistoryTooltipShowEx(oEvt, sRepository, iRevision, sUrlPrefix)
 {
-    var sKey        = svnHistoryTooltipCalcId(sRepository, iRevision);
-    var oTooltip    = g_dTooltips[sKey];
-    var oParent     = oEvt.currentTarget;
+    var sKey    = svnHistoryTooltipCalcId(sRepository, iRevision);
+    var oParent = oEvt.currentTarget;
     //console.log('svnHistoryTooltipShow ' + sRepository);
 
     function svnHistoryTooltipDelayedShow()
     {
-        var oSubElement;
         var sSrc;
 
-        oTooltip = g_dTooltips[sKey];
+        var oTooltip = g_dTooltips[sKey];
         //console.log('svnHistoryTooltipDelayedShow ' + sRepository + ' ' + oTooltip);
         if (!oTooltip)
         {
@@ -1062,9 +1018,10 @@ function svnHistoryTooltipShowEx(oEvt, sRepository, iRevision, sUrlPrefix)
             oTooltip = {};
             oTooltip.oElm = document.createElement('div');
             oTooltip.oElm.setAttribute('id', sKey);
-            oTooltip.oElm.setAttribute('class', 'tmvcstooltip');
+            oTooltip.oElm.className      = 'tmvcstooltip';
+            oTooltip.oElm.style.display  = 'none';  /* Note! Must stay hidden till loaded, or parent jumps with #rXXXX.*/
             oTooltip.oElm.style.position = 'absolute';
-            oTooltip.oElm.style.zIndex = 6001;
+            oTooltip.oElm.style.zIndex   = 6001;
             oTooltip.xPos      = 0;
             oTooltip.yPos      = 0;
             oTooltip.cxMax     = 0;
@@ -1074,40 +1031,56 @@ function svnHistoryTooltipShowEx(oEvt, sRepository, iRevision, sUrlPrefix)
             oTooltip.yScroll   = 0;
             oTooltip.iRevision = iRevision;   /**< For  :target/highlighting */
 
-            oSubElement = document.createElement('iframe');
-            oSubElement.setAttribute('id', sKey + '_iframe');
-            oSubElement.setAttribute('style', 'position: relative;"');
-            oSubElement.onmouseenter = tooltipElementOnMouseEnter;
-            oSubElement.onmouseout   = tooltipElementOnMouseOut;
-            oTooltip.oElm.appendChild(oSubElement);
-            oTooltip.oIFrame = oSubElement;
+            var oIFrameElement = document.createElement('iframe');
+            oIFrameElement.setAttribute('id', sKey + '_iframe');
+            oIFrameElement.style.position = 'relative';
+            oIFrameElement.onmouseenter   = tooltipElementOnMouseEnter;
+            oIFrameElement.onmouseout     = tooltipElementOnMouseOut;
+            oTooltip.oElm.appendChild(oIFrameElement);
+            oTooltip.oIFrame = oIFrameElement;
             g_dTooltips[sKey] = oTooltip;
 
             document.body.appendChild(oTooltip.oElm);
 
-            oSubElement.onload = function() { tooltipReallyShow(oTooltip, oParent); svnHistoryTooltipOnLoad();  };
+            oIFrameElement.onload = function() { /* A slight delay here to give time for #rXXXX scrolling before we show it. */
+                setTimeout(function(){tooltipReallyShow(oTooltip, oParent); svnHistoryTooltipOnLoad();}, 64);
+            };
 
             var sUrl = sUrlPrefix + 'index.py?Action=VcsHistoryTooltip&repo=' + sRepository
                      + '&rev=' + svnHistoryTooltipCalcLastRevision(iRevision)
-                     + '&cEntries=' + g_cTooltipSvnRevisions;
-            if (false && isBrowserFirefox()) /* The other browsers will scroll the main window when jumping to the revision. */
-                sUrl = sUrl + '#r' + iRevision;
-            oSubElement.setAttribute('src', sUrl);
-
+                     + '&cEntries=' + g_cTooltipSvnRevisions
+                     + '#r' + iRevision;
+            oIFrameElement.src = sUrl;
         }
         else
         {
-            /* Show the existing one with different :target/highlighting */
-            oTooltip.iRevision = iRevision;
-            if (false && isBrowserFirefox()) /* The other browsers will scroll the main window when jumping to the revision. */
-                svnHistoryTooltipHighligh(oTooltip);
-            tooltipReallyShow(oTooltip, oParent);
-            svnHistoryTooltipOnLoad();
+            /*
+             * Show the existing one, possibly with different :target/highlighting.
+             */
+            if (oTooltip.iRevision != iRevision)
+            {
+                //console.log('Changing revision ' + oTooltip.iRevision + ' -> ' + iRevision);
+                oTooltip.oIFrame.contentWindow.location.hash = '#r' + iRevision;
+                if (!isBrowserFirefox()) /* Chrome updates stuff like expected; Firefox OTOH doesn't change anything. */
+                {
+                    setTimeout(function() { /* Slight delay to make sure it scrolls before it's shown. */
+                        tooltipReallyShow(oTooltip, oParent);
+                        svnHistoryTooltipOnLoad();
+                    }, 64);
+                }
+                else
+                    oTooltip.oIFrame.contentWindow.location.reload();
+            }
+            else
+            {
+                tooltipReallyShow(oTooltip, oParent);
+                svnHistoryTooltipOnLoad();
+            }
         }
     }
 
     /*
-     * Delay the change.
+     * Delay the change (in case the mouse moves on).
      */
     tooltipResetShowTimer();
     g_idTooltipShowTimer = setTimeout(svnHistoryTooltipDelayedShow, 512);
