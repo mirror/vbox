@@ -218,6 +218,8 @@ static void ps2mR3SetDriverState(PPS2MR3 pThisCC, bool fEnabled)
 /* Reset the pointing device. */
 static void ps2mR3Reset(PPS2M pThis, PPS2MR3 pThisCC)
 {
+    LogFlowFunc(());
+
     PS2Q_INSERT(&pThis->cmdQ, ARSP_BAT_OK);
     PS2Q_INSERT(&pThis->cmdQ, 0);
     pThis->enmMode   = AUX_MODE_STD;
@@ -257,6 +259,7 @@ static void ps2mSetDefaults(PPS2M pThis)
 static void ps2mRateProtocolKnock(PPS2M pThis, uint8_t rate)
 {
     PS2M_PROTO          enmOldProtocol = pThis->enmProtocol;
+    LogFlowFunc(("rate=%u\n", rate));
 
     switch (pThis->enmKnockState)
     {
@@ -320,6 +323,8 @@ static void ps2mReportAccumulatedEvents(PPS2M pThis, PPS2QHDR pQHdr, size_t cQEl
     uint8_t     val;
     int         dX, dY, dZ, dW;
 
+    LogFlowFunc(("cQElements=%zu, fAccumBtns=%RTbool\n", cQElements, fAccumBtns));
+
     /* Clamp the accumulated delta values to the allowed range. */
     dX = RT_MIN(RT_MAX(pThis->iAccumX, -255), 255);
     dY = RT_MIN(RT_MAX(pThis->iAccumY, -255), 255);
@@ -333,6 +338,7 @@ static void ps2mReportAccumulatedEvents(PPS2M pThis, PPS2QHDR pQHdr, size_t cQEl
         val |= RT_BIT(5);
 
     /* Send the standard 3-byte packet (always the same). */
+    LogFlowFunc(("Queuing standard 3-byte packet\n"));
     PS2CmnInsertQueue(pQHdr, cQElements, pbQElements, val);
     PS2CmnInsertQueue(pQHdr, cQElements, pbQElements, dX);
     PS2CmnInsertQueue(pQHdr, cQElements, pbQElements, dY);
@@ -346,6 +352,7 @@ static void ps2mReportAccumulatedEvents(PPS2M pThis, PPS2QHDR pQHdr, size_t cQEl
         if (pThis->enmProtocol == PS2M_PROTO_IMPS2)
         {
             /* NB: Only uses 4-bit dZ range, despite using a full byte. */
+            LogFlowFunc(("Queuing ImPS/2 last byte\n"));
             PS2CmnInsertQueue(pQHdr, cQElements, pbQElements, dZ);
             pThis->iAccumZ -= dZ;
         }
@@ -355,6 +362,7 @@ static void ps2mReportAccumulatedEvents(PPS2M pThis, PPS2QHDR pQHdr, size_t cQEl
            val  = (fBtnState & PS2M_IMEX_BTN_MASK) << 1;
            val |= dZ & 0x0f;
            pThis->iAccumZ -= dZ;
+           LogFlowFunc(("Queuing ImEx last byte\n"));
            PS2CmnInsertQueue(pQHdr, cQElements, pbQElements, val);
         }
         else
@@ -387,6 +395,7 @@ static void ps2mReportAccumulatedEvents(PPS2M pThis, PPS2QHDR pQHdr, size_t cQEl
                /* Just Buttons 4/5 in bits 4 and 5. No scrolling. */
                val = (fBtnState & PS2M_IMEX_BTN_MASK) << 1;
             }
+            LogFlowFunc(("Queuing ImEx+horz last byte\n"));
             PS2CmnInsertQueue(pQHdr, cQElements, pbQElements, val);
         }
     }
@@ -427,6 +436,8 @@ bool ps2mIsRateSupported(uint8_t rate)
  */
 void PS2MLineDisable(PPS2M pThis)
 {
+    LogFlowFunc(("Disabling mouse serial line\n"));
+
     pThis->fLineDisabled = true;
 }
 
@@ -437,6 +448,8 @@ void PS2MLineDisable(PPS2M pThis)
  */
 void PS2MLineEnable(PPS2M pThis)
 {
+    LogFlowFunc(("Enabling mouse serial line\n"));
+
     pThis->fLineDisabled = false;
 
     /* If there was anything in the input queue,
@@ -812,6 +825,8 @@ static DECLCALLBACK(void) ps2mR3InfoState(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp
  */
 static int ps2mR3PutEventWorker(PPDMDEVINS pDevIns, PPS2M pThis, int32_t dx, int32_t dy, int32_t dz, int32_t dw, uint32_t fButtons)
 {
+    LogFlowFunc(("dx=%d, dy=%d, dz=%d, dw=%d, fButtons=%X\n", dx, dy, dz, dw, fButtons));
+
     /* Update internal accumulators and button state. Ignore any buttons beyond 5. */
     pThis->iAccumX += dx;
     pThis->iAccumY += dy;
@@ -1048,6 +1063,10 @@ void PS2MR3Reset(PPS2M pThis)
 int PS2MR3Construct(PPDMDEVINS pDevIns, PPS2M pThis, PPS2MR3 pThisCC)
 {
     LogFlowFunc(("\n"));
+
+    pThis->cmdQ.Hdr.pszDesc = "Aux Cmd";
+    pThis->evtQ.Hdr.pszDesc = "Aux Evt";
+
 #ifdef RT_STRICT
     ps2mR3TestAccumulation();
 #endif
@@ -1109,6 +1128,8 @@ static void ps2mR3TestAccumulation(void)
     RT_ZERO(This);
     This.u8State = AUX_STATE_ENABLED;
     This.fThrottleActive = true;
+    This.cmdQ.Hdr.pszDesc = "Test Aux Cmd";
+    This.evtQ.Hdr.pszDesc = "Test Aux Evt";
     /* Certain Windows touch pad drivers report a double tap as a press, then
      * a release-press-release all within a single 10ms interval.  Simulate
      * this to check that it is handled right. */

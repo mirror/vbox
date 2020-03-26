@@ -730,7 +730,7 @@ static DECLCALLBACK(VBOXSTRICTRC) kbdIOPortCommandWrite(PPDMDEVINS pDevIns, void
 void PS2CmnClearQueue(PPS2QHDR pQHdr, size_t cElements)
 {
     Assert(cElements > 0);
-    LogFlowFunc(("Clearing queue %p\n", pQHdr));
+    LogFlowFunc(("Clearing %s queue %p\n", pQHdr->pszDesc, pQHdr));
     pQHdr->wpos  = pQHdr->rpos = pQHdr->rpos % cElements;
     pQHdr->cUsed = 0;
 }
@@ -763,12 +763,12 @@ void PS2CmnInsertQueue(PPS2QHDR pQHdr, size_t cElements, uint8_t *pbElements, ui
             pQHdr->wpos = 0; /* Roll over. */
         pQHdr->cUsed = cUsed + 1;
 
-        LogRelFlowFunc(("inserted %#04x into queue %p\n", bValue, pQHdr));
+        LogRelFlowFunc(("inserted %#04x into %s queue %p\n", bValue, pQHdr->pszDesc, pQHdr));
     }
     else
     {
         Assert(cUsed == cElements);
-        LogRelFlowFunc(("queue %p full (%zu entries)\n", pQHdr, cElements));
+        LogRelFlowFunc(("%s queue %p full (%zu entries)\n", pQHdr->pszDesc, pQHdr, cElements));
     }
 }
 
@@ -803,12 +803,12 @@ int PS2CmnRemoveQueue(PPS2QHDR pQHdr, size_t cElements, uint8_t const *pbElement
             pQHdr->rpos = 0;   /* Roll over. */
         pQHdr->cUsed = cUsed - 1;
 
-        LogFlowFunc(("removed 0x%02X from queue %p\n", *pbValue, pQHdr));
+        LogFlowFunc(("removed 0x%02X from %s queue %p\n", *pbValue, pQHdr->pszDesc, pQHdr));
         rc = VINF_SUCCESS;
     }
     else
     {
-        LogFlowFunc(("queue %p empty\n", pQHdr));
+        LogFlowFunc(("%s queue %p empty\n", pQHdr->pszDesc, pQHdr));
         rc = VINF_TRY_AGAIN;
     }
     return rc;
@@ -834,7 +834,7 @@ void PS2CmnR3SaveQueue(PCPDMDEVHLPR3 pHlp, PSSMHANDLE pSSM, PPS2QHDR pQHdr, size
      */
     pHlp->pfnSSMPutU32(pSSM, cItems);
 
-    LogFlow(("Storing %u items from queue %p\n", cItems, pQHdr));
+    LogFlow(("Storing %u items from %s queue %p\n", cItems, pQHdr->pszDesc, pQHdr));
 
     /* Save queue data - only the bytes actually used (typically zero). */
     for (uint32_t i = pQHdr->rpos % cElements; cItems-- > 0; i = (i + 1) % cElements)
@@ -859,7 +859,7 @@ int PS2CmnR3LoadQueue(PCPDMDEVHLPR3 pHlp, PSSMHANDLE pSSM, PPS2QHDR pQHdr, size_
     int rc = pHlp->pfnSSMGetU32(pSSM, &cUsed);
     AssertRCReturn(rc, rc);
 
-    LogFlow(("Loading %u items to queue %p\n", cUsed, pQHdr));
+    LogFlow(("Loading %u items to %s queue %p\n", cUsed, pQHdr->pszDesc, pQHdr));
 
     AssertMsgReturn(cUsed <= cElements, ("Saved size=%u, actual=%zu\n", cUsed, cElements),
                     VERR_SSM_DATA_UNIT_FORMAT_CHANGED);

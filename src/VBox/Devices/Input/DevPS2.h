@@ -36,6 +36,8 @@ typedef struct PS2QHDR
     uint32_t volatile   rpos;
     uint32_t volatile   wpos;
     uint32_t volatile   cUsed;
+    uint32_t            uPadding;
+    const char          *pszDesc;
 } PS2QHDR;
 /** Pointer to a queue header. */
 typedef PS2QHDR *PPS2QHDR;
