@@ -218,7 +218,7 @@ static void ps2mR3SetDriverState(PPS2MR3 pThisCC, bool fEnabled)
 /* Reset the pointing device. */
 static void ps2mR3Reset(PPS2M pThis, PPS2MR3 pThisCC)
 {
-    LogFlowFunc(());
+    LogFlowFunc(("Reset"));
 
     PS2Q_INSERT(&pThis->cmdQ, ARSP_BAT_OK);
     PS2Q_INSERT(&pThis->cmdQ, 0);
