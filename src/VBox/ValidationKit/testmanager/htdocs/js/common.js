@@ -887,8 +887,6 @@ function tooltipReallyShow(oTooltip, oRelTo)
     oTooltip.oElm.style.display  = 'block';
     oRect = oRelTo.getBoundingClientRect();
     oTooltip.oRelToRect = oRect;
-    oTooltip.oElm.style.left     = oRect.right + 'px';
-    oTooltip.oElm.style.top      = oRect.bottom + 'px';
 
     g_oCurrentTooltip = oTooltip;
 
