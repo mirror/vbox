@@ -30,6 +30,7 @@
 
 /* Forward declarations: */
 class QAbstractButton;
+class QFrame;
 class QTableView;
 class QTreeWidgetItem;
 class QIDialogButtonBox;
@@ -64,12 +65,13 @@ protected:
         virtual void retranslateUi() /* override */;
         virtual void resizeEvent(QResizeEvent *pEvent) /* override */;
         virtual void showEvent(QShowEvent *pEvent) /* override */;
+        virtual void paintEvent(QPaintEvent *pEvent) /* override */;
     /** @} */
 
 private slots:
 
     void sltHandleDataUpdate();
-    void sltCreateContextMenu(const QPoint &point);
+    void sltToggleColumnSelectionMenu(bool fChecked);
     void sltHandleColumnAction(bool fChecked);
 
 private:
@@ -80,6 +82,7 @@ private:
         void prepare();
         void prepareWidgets();
         void prepareToolBar();
+        void prepareActions();
         void loadSettings();
     /** @} */
 
@@ -99,7 +102,7 @@ private:
         QVector<QString>             m_columnCaptions;
         QVector<bool>                m_columnShown;
     /** @} */
-
+    QFrame* m_pColumnSelectionMenu;
 };
 
 class UIResourceMonitorFactory : public QIManagerDialogFactory

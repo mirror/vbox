@@ -656,6 +656,12 @@ void UIVirtualBoxManagerWidget::updateToolbar()
                     m_pToolBar->addAction(actionPool()->action(UIActionIndexST_M_Cloud_S_Help));
                     break;
                 }
+                case UIToolType_VMResourceMonitor:
+                {
+                    m_pToolBar->addAction(actionPool()->action(UIActionIndexST_M_VMResourceMonitor_T_Columns));
+                    break;
+                }
+
                 default:
                     break;
             }

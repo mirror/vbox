@@ -17,6 +17,7 @@
 
 /* Qt includes: */
 #include <QAbstractTableModel>
+#include <QCheckBox>
 #include <QHeaderView>
 #include <QItemDelegate>
 #include <QMenuBar>
@@ -117,6 +118,22 @@ private:
 
 };
 
+/*********************************************************************************************************************************
+*   Class UIVMResouceMonitorCheckBox definition.                                                                           *
+*********************************************************************************************************************************/
+class UIVMResouceMonitorCheckBox : public QCheckBox
+{
+    Q_OBJECT;
+
+public:
+
+    UIVMResouceMonitorCheckBox(QWidget *parent = 0);
+    void setData(const QVariant& data);
+    const QVariant data() const;
+
+private:
+    QVariant m_data;
+};
 
 /*********************************************************************************************************************************
 *   Class UIVMResouceMonitorProxyModel definition.                                                                           *
@@ -285,6 +302,24 @@ bool UIResourceMonitorItem::operator==(const UIResourceMonitorItem& other) const
     return false;
 }
 
+
+/*********************************************************************************************************************************
+*   Class UIVMResouceMonitorCheckBox implementation.                                                                             *
+*********************************************************************************************************************************/
+
+UIVMResouceMonitorCheckBox::UIVMResouceMonitorCheckBox(QWidget *parent /* = 0 */)
+    :QCheckBox(parent)
+{
+}
+void UIVMResouceMonitorCheckBox::setData(const QVariant& data)
+{
+    m_data = data;
+}
+
+const QVariant UIVMResouceMonitorCheckBox::data() const
+{
+    return m_data;
+}
 
 
 /*********************************************************************************************************************************
@@ -593,6 +628,7 @@ UIResourceMonitorWidget::UIResourceMonitorWidget(EmbedTo enmEmbedding, UIActionP
     , m_fShowToolbar(fShowToolbar)
     , m_pToolBar(0)
     , m_pTableView(0)
+    , m_pColumnSelectionMenu(0)
 {
     /* Prepare: */
     prepare();
@@ -600,7 +636,7 @@ UIResourceMonitorWidget::UIResourceMonitorWidget(EmbedTo enmEmbedding, UIActionP
 
 QMenu *UIResourceMonitorWidget::menu() const
 {
-    return m_pActionPool->action(UIActionIndexST_M_NetworkWindow)->menu();
+    return NULL;
 }
 
 void UIResourceMonitorWidget::retranslateUi()
@@ -634,6 +670,12 @@ void UIResourceMonitorWidget::showEvent(QShowEvent *pEvent)
     QIWithRetranslateUI<QWidget>::showEvent(pEvent);
 }
 
+void UIResourceMonitorWidget::paintEvent(QPaintEvent *pEvent)
+{
+    QIWithRetranslateUI<QWidget>::paintEvent(pEvent);
+}
+
+
 void UIResourceMonitorWidget::prepare()
 {
     m_columnShown.resize(VMResouceMonitorColumn_Max);
@@ -642,6 +684,7 @@ void UIResourceMonitorWidget::prepare()
     prepareWidgets();
     loadSettings();
     retranslateUi();
+    prepareActions();
 }
 
 void UIResourceMonitorWidget::prepareWidgets()
@@ -668,9 +711,9 @@ void UIResourceMonitorWidget::prepareWidgets()
     if (m_pTableView && m_pModel && m_pProxyModel)
     {
         layout()->addWidget(m_pTableView);
-        m_pTableView->setContextMenuPolicy(Qt::CustomContextMenu);
-        connect(m_pTableView, &QTableView::customContextMenuRequested,
-                this, &UIResourceMonitorWidget::sltCreateContextMenu);
+        // m_pTableView->setContextMenuPolicy(Qt::CustomContextMenu);
+        // connect(m_pTableView, &QTableView::customContextMenuRequested,
+        //         this, &UIResourceMonitorWidget::sltCreateContextMenu);
         m_pProxyModel->setSourceModel(m_pModel);
         m_pTableView->setModel(m_pProxyModel);
         m_pTableView->setItemDelegate(new UIVMResouceMonitorDelegate);
@@ -693,6 +736,39 @@ void UIResourceMonitorWidget::prepareWidgets()
 
         m_pProxyModel->setColumnShown(m_columnShown);
     }
+}
+
+void UIResourceMonitorWidget::prepareActions()
+{
+    connect(m_pActionPool->action(UIActionIndexST_M_VMResourceMonitor_T_Columns), &QAction::toggled,
+            this, &UIResourceMonitorWidget::sltToggleColumnSelectionMenu);
+    m_pColumnSelectionMenu  = new QFrame(this);
+    m_pColumnSelectionMenu->setAutoFillBackground(true);
+    m_pColumnSelectionMenu->setFrameStyle(QFrame::Panel | QFrame::Plain);
+    m_pColumnSelectionMenu->hide();
+    QVBoxLayout* pLayout = new QVBoxLayout(m_pColumnSelectionMenu);
+    int iLength = 0;
+    for (int i = 0; i < VMResouceMonitorColumn_Max; ++i)
+    {
+        UIVMResouceMonitorCheckBox* pCheckBox = new UIVMResouceMonitorCheckBox;
+        pCheckBox->setText(m_columnCaptions[i]);
+        iLength = m_columnCaptions[i].length() > iLength ? m_columnCaptions[i].length() : iLength;
+        if (!pCheckBox)
+            continue;
+        pLayout->addWidget(pCheckBox);
+        pCheckBox->setData(i);
+        if (i < m_columnShown.size())
+            pCheckBox->setChecked(m_columnShown[i]);
+        if (i == (int)VMResouceMonitorColumn_Name)
+            pCheckBox->setEnabled(false);
+        connect(pCheckBox, &UIVMResouceMonitorCheckBox::toggled, this, &UIResourceMonitorWidget::sltHandleColumnAction);
+    }
+    QFontMetrics fontMetrics(m_pColumnSelectionMenu->font());
+    int iWidth = iLength * fontMetrics.width('x') +
+        QApplication::style()->pixelMetric(QStyle::PM_IndicatorWidth) +
+        2 * QApplication::style()->pixelMetric(QStyle::PM_LayoutLeftMargin) +
+        2 * QApplication::style()->pixelMetric(QStyle::PM_LayoutRightMargin);
+    m_pColumnSelectionMenu->setFixedWidth(iWidth);
 }
 
 void UIResourceMonitorWidget::prepareToolBar()
@@ -724,30 +800,37 @@ void UIResourceMonitorWidget::loadSettings()
 {
 }
 
-void UIResourceMonitorWidget::sltCreateContextMenu(const QPoint &point)
+void UIResourceMonitorWidget::sltToggleColumnSelectionMenu(bool fChecked)
 {
-    if (!m_pTableView)
+    if (!m_pColumnSelectionMenu)
         return;
-    QMenu menu;
-    for (int i = 0; i < VMResouceMonitorColumn_Max; ++i)
+    m_pColumnSelectionMenu->setVisible(fChecked);
+
+    if (fChecked)
     {
-        QAction *pAction = menu.addAction(m_columnCaptions[i]);
-        if (!pAction)
-            continue;
-        pAction->setData(i);
-        pAction->setCheckable(true);
-        if (i < m_columnShown.size())
-            pAction->setChecked(m_columnShown[i]);
-        if (i == (int)VMResouceMonitorColumn_Name)
-            pAction->setEnabled(false);
-        connect(pAction, &QAction::triggered, this, &UIResourceMonitorWidget::sltHandleColumnAction);
+        m_pColumnSelectionMenu->move(0, 0);
+        m_pColumnSelectionMenu->raise();
+        m_pColumnSelectionMenu->resize(400, 400);
+        m_pColumnSelectionMenu->show();
+        m_pColumnSelectionMenu->setFocus();
     }
-    menu.exec(m_pTableView->mapToGlobal(point));
+    else
+        m_pColumnSelectionMenu->hide();
+
+    update();
+
+    // QPoint point(0, 0);
+    // if (!m_pTableView)
+    //     return;
+    // if (fChecked)
+    //     m_pMenu->exec(m_pTableView->mapToGlobal(point));
+    // else
+    //     m_pMenu->hide();
 }
 
 void UIResourceMonitorWidget::sltHandleColumnAction(bool fChecked)
 {
-    QAction* pSender = qobject_cast<QAction*>(sender());
+    UIVMResouceMonitorCheckBox* pSender = qobject_cast<UIVMResouceMonitorCheckBox*>(sender());
     if (!pSender)
         return;
     int iColumnId = pSender->data().toInt();

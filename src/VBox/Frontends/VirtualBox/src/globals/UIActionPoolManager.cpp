@@ -2798,6 +2798,48 @@ protected:
     }
 };
 
+/** Toggle action extension, used as 'Toggle Columns' action class. */
+class UIActionMenuSelectorVMResourceManagerToggleColumns : public UIActionToggle
+{
+    Q_OBJECT;
+
+public:
+
+    /** Constructs action passing @a pParent to the base-class. */
+    UIActionMenuSelectorVMResourceManagerToggleColumns(UIActionPool *pParent)
+        : UIActionToggle(pParent)
+    {
+        setShortcutContext(Qt::WidgetWithChildrenShortcut);
+        setIcon(UIIconPool::iconSetFull(":/cloud_profile_edit_32px.png",          ":/cloud_profile_edit_16px.png",
+                                        ":/cloud_profile_edit_disabled_32px.png", ":/cloud_profile_edit_disabled_16px.png"));
+    }
+
+protected:
+
+    /** Returns shortcut extra-data ID. */
+    virtual QString shortcutExtraDataID() const /* override */
+    {
+        return QString("ToggleVMResourceMonitorColumns");
+    }
+
+    /** Returns default shortcut. */
+    virtual QKeySequence defaultShortcut(UIActionPoolType) const /* override */
+    {
+        return QKeySequence();
+    }
+
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */
+    {
+        setIconText(QApplication::translate("UIActionPool", "Columns"));
+        setName(QApplication::translate("UIActionPool", "Add Remove Columns"));
+        //setShortcutScope(QApplication::translate("UIActionPool", "Cloud Profile Manager"));
+        setStatusTip(QApplication::translate("UIActionPool", "Open context menu to disable/menu table columns"));
+        setToolTip(  QApplication::translate("UIActionPool", "Open context menu to disable/menu table columns")
+                   + (shortcut().isEmpty() ? QString() : QString(" (%1)").arg(shortcut().toString())));
+    }
+};
+
 
 /*********************************************************************************************************************************
 *   Class UIActionPoolManager implementation.                                                                                    *
@@ -2934,6 +2976,9 @@ void UIActionPoolManager::preparePool()
     m_pool[UIActionIndexST_M_Cloud_T_Details] = new UIActionMenuSelectorCloudToggleProperties(this);
     m_pool[UIActionIndexST_M_Cloud_S_TryPage] = new UIActionMenuSelectorCloudShowTryPage(this);
     m_pool[UIActionIndexST_M_Cloud_S_Help] = new UIActionMenuSelectorCloudShowHelp(this);
+
+    /* VM resource Monitor actions: */
+    m_pool[UIActionIndexST_M_VMResourceMonitor_T_Columns] = new UIActionMenuSelectorVMResourceManagerToggleColumns(this);
 
     /* 'Group' action groups: */
     m_groupPool[UIActionIndexST_M_Group_M_Tools] = new QActionGroup(m_pool.value(UIActionIndexST_M_Group_M_Tools));

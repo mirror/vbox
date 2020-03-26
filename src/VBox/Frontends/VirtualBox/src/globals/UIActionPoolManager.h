@@ -163,6 +163,9 @@ enum UIActionIndexST
     UIActionIndexST_M_Cloud_S_TryPage,
     UIActionIndexST_M_Cloud_S_Help,
 
+    /* VM resource Monitor actions: */
+    UIActionIndexST_M_VMResourceMonitor_T_Columns,
+
     /* Maximum index: */
     UIActionIndexST_Max
 };
