@@ -26807,12 +26807,22 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </param>
     </method>
 
-    <method name="listCloudMachines">
-      <param name="machines" type="ICloudMachine" safearray="yes" dir="out">
-      </param>
+    <method name="readCloudMachineList">
+      <desc>
+        Make the list of cloud machines available via
+        <link to="#cloudMachineList"/> attribute.
+      </desc>
       <param name="progress" type="IProgress" dir="return">
+        <desc>
+          Progress object to track the operation completion.
+        </desc>
       </param>
     </method>
+    <attribute name="cloudMachineList" type="ICloudMachine" safearray="yes" readonly="yes">
+      <desc>
+        See <link to="#readCloudMachineList"/>.
+      </desc>
+    </attribute>
 
     <method name="addCloudMachine">
       <desc>
