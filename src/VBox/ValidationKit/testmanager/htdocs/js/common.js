@@ -898,7 +898,11 @@ function tooltipReallyShow(oTooltip, oRelTo)
     tooltipRepositionOnLoad();
     if (oTooltip.oElm.onload === null)
     {
-        oTooltip.oElm.onload = function(){ tooltipRepositionOnLoad(); setTimeout(tooltipRepositionOnLoad, 0); };
+        oTooltip.oElm.onload = function() {
+            console.log('div/onload');
+            /* tooltipRepositionOnLoad();           - do we need this any more? Don't think it's ever called...
+            setTimeout(tooltipRepositionOnLoad, 0); - do we need this any more? */
+        };
     }
 }
 
@@ -1084,7 +1088,7 @@ function svnHistoryTooltipShowEx(oEvt, sRepository, iRevision, sUrlPrefix)
             document.body.appendChild(oTooltip.oElm);
 
             oIFrameElement.onload = function() { /* A slight delay here to give time for #rXXXX scrolling before we show it. */
-                setTimeout(function(){tooltipReallyShow(oTooltip, oParent); svnHistoryTooltipOnLoad();},
+                setTimeout(function(){console.log('iframe/onload'); tooltipReallyShow(oTooltip, oParent); svnHistoryTooltipOnLoad();},
                            isBrowserInternetExplorer() ? 256 : 64);
             };
 
