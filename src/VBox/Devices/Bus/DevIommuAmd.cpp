@@ -1491,7 +1491,7 @@ typedef struct IOMMU
     MSI_CAP_HDR_T               MsiCapHdr;          /**< MSI Capability header register. */
     MSI_ADDR_T                  MsiAddr;            /**< MSI Address register.*/
     MSI_DATA_T                  MsiData;            /**< MSI Data register. */
-    MSI_MAP_CAP_HDR_T           MsiMapCapHdr;       /**< MSI Capping capability header register. */
+    MSI_MAP_CAP_HDR_T           MsiMapCapHdr;       /**< MSI Mapping capability header register. */
     /** @} */
 
     /** @name MMIO: Performance Optimization Control registers.
