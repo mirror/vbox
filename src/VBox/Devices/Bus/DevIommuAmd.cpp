@@ -1548,6 +1548,54 @@ typedef CMD_BUF_HEAD_PTR_T      EVT_LOG_B_HEAD_PTR_T;
  */
 typedef CMD_BUF_HEAD_PTR_T      EVT_LOG_B_TAIL_PTR_T;
 
+/**
+ * PPR Log Auto Response Register (MMIO).
+ * In accordance with the AMD spec.
+ */
+typedef union
+{
+    struct
+    {
+        uint32_t    u3AutoRespCode : 4;     /**< Bits 3:0   - PprAutoRespCode: PPR log Auto Response Code. */
+        uint32_t    u1AutoRespMaskGen : 1;  /**< Bit  4     - PprAutoRespMaskGn: PPR log Auto Response Mask Gen. */
+        uint32_t    u27Rsvd0 : 27;          /**< Bits 31:5  - Reserved. */
+        uint32_t    u32Rsvd0;               /**< Bits 63:32 - Reserved.*/
+    } n;
+    /** The 32-bit unsigned integer view. */
+    uint32_t    au32[2];
+    /** The 64-bit unsigned integer view. */
+    uint64_t    u64;
+} PPR_LOG_AUTO_RESP_T;
+AssertCompileSize(PPR_LOG_AUTO_RESP_T, 8);
+
+/**
+ * PPR Log Overflow Early Indicator Register (MMIO).
+ * In accordance with the AMD spec.
+ */
+typedef union
+{
+    struct
+    {
+        uint32_t    u15Threshold : 15;  /**< Bits 14:0  - PprOvrflwEarlyThreshold: Overflow early indicator threshold. */
+        uint32_t    u15Rsvd0 : 15;      /**< Bits 29:15 - Reserved. */
+        uint32_t    u1IntrEn : 1;       /**< Bit  30    - PprOvrflwEarlyIntEn: Overflow early indicator interrupt enable. */
+        uint32_t    u1Enable : 1;       /**< Bit  31    - PprOvrflwEarlyEn: Overflow early indicator enable. */
+        uint32_t    u32Rsvd0;           /**< Bits 63:32 - Reserved. */
+    } n;
+    /** The 32-bit unsigned integer view. */
+    uint32_t    au32[2];
+    /** The 64-bit unsigned integer view. */
+    uint64_t    u64;
+} PPR_LOG_OVERFLOW_EARLY_T;
+AssertCompileSize(PPR_LOG_OVERFLOW_EARLY_T, 8);
+
+/**
+ * PPR Log B Overflow Early Indicator Register (MMIO).
+ * In accordance with the AMD spec.
+ * Currently identical to PPR_LOG_OVERFLOW_EARLY_T.
+ */
+typedef PPR_LOG_OVERFLOW_EARLY_T        PPR_LOG_B_OVERFLOW_EARLY_T;
+
 
 /**
  * The shared IOMMU device state.
@@ -1578,6 +1626,8 @@ typedef struct IOMMU
     IOMMU_HW_EVT_STATUS_T       IommuHwEvtStatus;   /**< IOMMU hardware event status. */
     /** @} */
 
+    /** @todo IOMMU: SMI filter. */
+
     /** @name MMIO: Guest Virtual-APIC Log registers.
      * @{ */
     GALOG_BAR_T                 GALogBaseAddr;      /**< Guest Virtual-APIC Log base address register. */
@@ -1604,7 +1654,7 @@ typedef struct IOMMU
 
     /** @name MMIO: MSI Capability Block registers.
      * @{ */
-    MSI_MISC_INFO_T             MsiMiscInfo0;       /**< MSI Misc. info registers / MSI Vector registers. */
+    MSI_MISC_INFO_T             MsiMiscInfo;        /**< MSI Misc. info registers / MSI Vector registers. */
     MSI_CAP_HDR_T               MsiCapHdr;          /**< MSI Capability header register. */
     MSI_ADDR_T                  MsiAddr;            /**< MSI Address register.*/
     MSI_DATA_T                  MsiData;            /**< MSI Data register. */
@@ -1623,12 +1673,14 @@ typedef struct IOMMU
     IOMMU_XT_GALOG_INTR_CTRL_T  IommuXtGALogIntrCtrl;   /**< IOMMU X2APIC Guest Log interrupt control register. */
     /** @} */
 
+    /** @todo MARC registers. */
+
     /** @name MMIO: Reserved register.
      *  @{ */
     IOMMU_RSVD_REG_T            IommuRsvdReg;       /**< IOMMU Reserved Register. */
     /** @} */
 
-    /** @name MMIO: Command and Event Log registers.
+    /** @name MMIO: Command and Event Log pointer registers.
      * @{ */
     CMD_BUF_HEAD_PTR_T          CmdBufHeadPtr;      /**< Command buffer head pointer register. */
     CMD_BUF_TAIL_PTR_T          CmdBufTailPtr;      /**< Command buffer tail pointer register. */
@@ -1636,35 +1688,43 @@ typedef struct IOMMU
     EVT_LOG_TAIL_PTR_T          EvtLogTailPtr;      /**< Event log tail pointer register. */
     /** @} */
 
-    /** @name MMIO: Command Event status register.
+    /** @name MMIO: Command and Event Status register.
      * @{ */
     IOMMU_STATUS_T              IommuStatus;        /**< IOMMU status register. */
     /** @} */
 
-    /** @name MMIO: PPR Log Head and Tail Pointer registers.
+    /** @name MMIO: PPR Log Head and Tail pointer registers.
      * @{ */
     PPR_LOG_HEAD_PTR_T          PprLogHeadPtr;      /**< IOMMU PPR log head pointer register. */
     PPR_LOG_TAIL_PTR_T          PprLogTailPtr;      /**< IOMMU PPR log tail pointer register. */
     /** @} */
 
-    /** @name MMIO: Guest Virtual-APIC Log Head and Tail Pointer registers.
+    /** @name MMIO: Guest Virtual-APIC Log Head and Tail pointer registers.
      * @{ */
     GALOG_HEAD_PTR_T            GALogHeadPtr;       /**< Guest Virtual-APIC log head pointer register. */
     GALOG_TAIL_PTR_T            GALogTailPtr;       /**< Guest Virtual-APIC log tail pointer register. */
     /** @} */
 
-    /** @name MMIO: PPR Log B Head and Tail Pointer registers.
+    /** @name MMIO: PPR Log B Head and Tail pointer registers.
      *  @{ */
     PPR_LOG_B_HEAD_PTR_T        PprLogBHeadPtr;     /**< PPR log B head pointer register. */
     PPR_LOG_B_TAIL_PTR_T        PprLogBTailPtr;     /**< PPR log B tail pointer register. */
     /** @} */
 
-    /** @name MMIO: Event Log B Head and Tail Pointer registers.
+    /** @name MMIO: Event Log B Head and Tail pointer registers.
      * @{ */
     EVT_LOG_B_HEAD_PTR_T        EvtLogBHeadPtr;     /**< Event log B head pointer register. */
     EVT_LOG_B_TAIL_PTR_T        EvtLogBTailPtr;     /**< Event log B tail pointer register. */
     /** @} */
 
+    /** @name MMIO: PPR Log Overflow protection registers.
+     * @{ */
+    PPR_LOG_AUTO_RESP_T         PprLogAutoResp;         /**< PPR Log Auto Response register. */
+    PPR_LOG_OVERFLOW_EARLY_T    PprLogOverflowEarly;    /**< PPR Log Overflow Early Indicator register. */
+    PPR_LOG_B_OVERFLOW_EARLY_T  PprLogBOverflowEarly;   /**< PPR Log B Overflow Early Indicator register. */
+    /** @} */
+
+    /** @todo IOMMU: IOMMU Event counter registers. */
 } IOMMU;
 /** Pointer to the IOMMU device state. */
 typedef struct IOMMU *PIOMMU;
