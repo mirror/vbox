@@ -359,6 +359,12 @@ DECLINLINE(void) RTTimeSpecGetSecondsAndNano(PRTTIMESPEC pTime, int32_t *pi32Sec
 /* PORTME: Add struct timeval guard macro here. */
 #if defined(RTTIME_INCL_TIMEVAL) || defined(_STRUCT_TIMEVAL) || defined(_SYS__TIMEVAL_H_) || defined(_SYS_TIME_H) || defined(_TIMEVAL) || defined(_LINUX_TIME_H) \
  || (defined(RT_OS_NETBSD) && defined(_SYS_TIME_H_))
+/*
+ * Starting with Linux kernel version 5.6-rc3, the struct timeval is no longer
+ * available to kernel code and must not be used in kernel code.
+ * Only 64-bit time-interfaces are allowed into the kernel.
+ */
+# if defined(RT_OS_LINUX) && (!defined(__KERNEL__) || !defined(_LINUX_TIME64_H))
 /**
  * Gets the time as POSIX timeval.
  *
@@ -392,6 +398,7 @@ DECLINLINE(PRTTIMESPEC) RTTimeSpecSetTimeval(PRTTIMESPEC pTime, const struct tim
 {
     return RTTimeSpecAddMicro(RTTimeSpecSetSeconds(pTime, pTimeval->tv_sec), pTimeval->tv_usec);
 }
+# endif /* RT_OS_LINUX ... */
 #endif /* various ways of detecting struct timeval */
 
 
@@ -431,15 +438,19 @@ DECLINLINE(PRTTIMESPEC) RTTimeSpecSetTimespec(PRTTIMESPEC pTime, const struct ti
 {
     return RTTimeSpecAddNano(RTTimeSpecSetSeconds(pTime, pTimespec->tv_sec), pTimespec->tv_nsec);
 }
+#endif /* various ways of detecting struct timespec */
 
-
-# ifdef _LINUX_TIME64_H
+#if defined(RT_OS_LINUX) && defined(_LINUX_TIME64_H)
+/*
+ * Starting with Linux kernel version 5.6-rc3, the _STRUCT_TIMESPEC is only defined
+ * under !__KERNEL__ guard and _LINUX_TIME64_H does not define a corresponding
+ * _STRUCT_TIMESPEC64. Only 64-bit time-interfaces are now allowed into the kernel.
+ */
 DECLINLINE(PRTTIMESPEC) RTTimeSpecSetTimespec64(PRTTIMESPEC pTime, const struct timespec64 *pTimeval)
 {
     return RTTimeSpecAddNano(RTTimeSpecSetSeconds(pTime, pTimeval->tv_sec), pTimeval->tv_nsec);
 }
-# endif
-#endif /* various ways of detecting struct timespec */
+#endif /* RT_OS_LINUX && _LINUX_TIME64_H */
 
 
 
