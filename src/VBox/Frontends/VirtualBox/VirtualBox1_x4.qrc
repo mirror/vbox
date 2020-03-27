@@ -104,8 +104,8 @@
         <file alias="cloud_vm_new_disabled_16px_x4.png">images/x4/cloud_vm_new_disabled_16px_x4.png</file>
         <file alias="cloud_vm_new_disabled_32px_x4.png">images/x4/cloud_vm_new_disabled_32px_x4.png</file>
         <file alias="collapse_all_16px_x4.png">images/x4/collapse_all_16px_x4.png</file>
-        <file alias="connect_16px_on_x4.png">images/x4/connect_16px_on_x4.png</file>
         <file alias="connect_16px_x4.png">images/x4/connect_16px_x4.png</file>
+        <file alias="connect_on_16px_x4.png">images/x4/connect_on_16px_x4.png</file>
         <file alias="controller_add_16px_x4.png">images/x4/controller_add_16px_x4.png</file>
         <file alias="controller_add_disabled_16px_x4.png">images/x4/controller_add_disabled_16px_x4.png</file>
         <file alias="controller_remove_16px_x4.png">images/x4/controller_remove_16px_x4.png</file>
