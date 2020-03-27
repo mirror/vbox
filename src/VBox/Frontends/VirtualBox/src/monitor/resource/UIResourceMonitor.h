@@ -79,6 +79,7 @@ private:
 
     void setColumnVisible(int iColumnId, bool fVisible);
     bool columnVisible(int iColumnId) const;
+    void updateModelColumVisibilityCache();
 
     /** @name Prepare/cleanup cascade.
       * @{ */

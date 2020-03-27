@@ -131,7 +131,7 @@ public:
 
     UIResourceMonitorProxyModel(QObject *parent = 0);
     void dataUpdate();
-    void setColumnVisible(const QMap<int, bool>& columnVisible);
+    void reFilter();
 
 protected:
 
@@ -139,8 +139,6 @@ protected:
     virtual bool filterAcceptsColumn(int source_column, const QModelIndex &source_parent) const /* override */;
 
 private:
-
-    QMap<int, bool> m_columnVisible;
 
 };
 
@@ -164,6 +162,8 @@ public:
     QVariant data(const QModelIndex &index, int role) const /* override */;
     QVariant headerData(int section, Qt::Orientation orientation, int role) const;
     void setColumnCaptions(const QVector<QString>& captions);
+    void setColumnVisible(const QMap<int, bool>& columnVisible);
+    bool columnVisible(int iColumnId) const;
 
 private slots:
 
@@ -189,6 +189,7 @@ private:
         QVector<CUnknown> m_objectList;
     /** @} */
     CPerformanceCollector m_performanceMonitor;
+    QMap<int, bool> m_columnVisible;
 
 };
 
@@ -331,18 +332,21 @@ void UIResourceMonitorProxyModel::dataUpdate()
     invalidate();
 }
 
+void UIResourceMonitorProxyModel::reFilter()
+{
+    emit layoutAboutToBeChanged();
+    invalidateFilter();
+    emit layoutChanged();
+}
+
+
 bool UIResourceMonitorProxyModel::filterAcceptsColumn(int iSourceColumn, const QModelIndex &sourceParent) const
 {
     Q_UNUSED(sourceParent);
-    return m_columnVisible.value(iSourceColumn, true);
-}
-
-void UIResourceMonitorProxyModel::setColumnVisible(const QMap<int, bool>& columnVisible)
-{
-    emit layoutAboutToBeChanged();
-    m_columnVisible = columnVisible;
-    invalidateFilter();
-    emit layoutChanged();
+    UIResourceMonitorModel* pModel = qobject_cast<UIResourceMonitorModel*>(sourceModel());
+    if (!pModel)
+        return true;
+    return pModel->columnVisible(iSourceColumn);
 }
 
 
@@ -494,8 +498,22 @@ void UIResourceMonitorModel::sltTimeout()
     ULONG aPctExecuting;
     ULONG aPctHalted;
     ULONG aPctVMM;
+
+    bool fRAMColumns = columnVisible(VMResouceMonitorColumn_RAMUsedAndTotal)
+        || columnVisible(VMResouceMonitorColumn_RAMUsedPercentage);
+    bool fCPUColumns = columnVisible(VMResouceMonitorColumn_CPUVMMLoad) || columnVisible(VMResouceMonitorColumn_CPUGuestLoad);
+    bool fNetworkColumns = columnVisible(VMResouceMonitorColumn_NetworkUpRate)
+        || columnVisible(VMResouceMonitorColumn_NetworkDownRate)
+        || columnVisible(VMResouceMonitorColumn_NetworkUpTotal)
+        || columnVisible(VMResouceMonitorColumn_NetworkDownTotal);
+    bool fIOColumns = columnVisible(VMResouceMonitorColumn_DiskIOReadRate)
+        || columnVisible(VMResouceMonitorColumn_DiskIOWriteRate)
+        || columnVisible(VMResouceMonitorColumn_DiskIOReadTotal)
+        || columnVisible(VMResouceMonitorColumn_DiskIOWriteTotal);
+    bool fVMExitColumn = columnVisible(VMResouceMonitorColumn_VMExits);
+
     /* RAM usage: */
-    if (!m_performanceMonitor.isNull())
+    if (!m_performanceMonitor.isNull() && fRAMColumns)
         queryRAMLoad();
 
     for (int i = 0; i < m_itemList.size(); ++i)
@@ -503,30 +521,42 @@ void UIResourceMonitorModel::sltTimeout()
         if (!m_itemList[i].m_comDebugger.isNull())
         {
             /* CPU Load: */
-            m_itemList[i].m_comDebugger.GetCPULoad(0x7fffffff, aPctExecuting, aPctHalted, aPctVMM);
-            m_itemList[i].m_uCPUGuestLoad = aPctExecuting;
-            m_itemList[i].m_uCPUVMMLoad = aPctVMM;
+            if (fCPUColumns)
+            {
+                m_itemList[i].m_comDebugger.GetCPULoad(0x7fffffff, aPctExecuting, aPctHalted, aPctVMM);
+                m_itemList[i].m_uCPUGuestLoad = aPctExecuting;
+                m_itemList[i].m_uCPUVMMLoad = aPctVMM;
+            }
 
             /* Network rate: */
-            quint64 uPrevDownTotal = m_itemList[i].m_uNetworkDownTotal;
-            quint64 uPrevUpTotal = m_itemList[i].m_uNetworkUpTotal;
-            UIMonitorCommon::getNetworkLoad(m_itemList[i].m_comDebugger,
-                                            m_itemList[i].m_uNetworkDownTotal, m_itemList[i].m_uNetworkUpTotal);
-            m_itemList[i].m_uNetworkDownRate = m_itemList[i].m_uNetworkDownTotal - uPrevDownTotal;
-            m_itemList[i].m_uNetworkUpRate = m_itemList[i].m_uNetworkUpTotal - uPrevUpTotal;
+            if (fNetworkColumns)
+            {
+                quint64 uPrevDownTotal = m_itemList[i].m_uNetworkDownTotal;
+                quint64 uPrevUpTotal = m_itemList[i].m_uNetworkUpTotal;
+                UIMonitorCommon::getNetworkLoad(m_itemList[i].m_comDebugger,
+                                                m_itemList[i].m_uNetworkDownTotal, m_itemList[i].m_uNetworkUpTotal);
+                m_itemList[i].m_uNetworkDownRate = m_itemList[i].m_uNetworkDownTotal - uPrevDownTotal;
+                m_itemList[i].m_uNetworkUpRate = m_itemList[i].m_uNetworkUpTotal - uPrevUpTotal;
+            }
 
             /* IO rate: */
-            quint64 uPrevWriteTotal = m_itemList[i].m_uDiskWriteTotal;
-            quint64 uPrevReadTotal = m_itemList[i].m_uDiskReadTotal;
-            UIMonitorCommon::getDiskLoad(m_itemList[i].m_comDebugger,
-                                         m_itemList[i].m_uDiskWriteTotal, m_itemList[i].m_uDiskReadTotal);
-            m_itemList[i].m_uDiskWriteRate = m_itemList[i].m_uDiskWriteTotal - uPrevWriteTotal;
-            m_itemList[i].m_uDiskReadRate = m_itemList[i].m_uDiskReadTotal - uPrevReadTotal;
+            if (fIOColumns)
+            {
+                quint64 uPrevWriteTotal = m_itemList[i].m_uDiskWriteTotal;
+                quint64 uPrevReadTotal = m_itemList[i].m_uDiskReadTotal;
+                UIMonitorCommon::getDiskLoad(m_itemList[i].m_comDebugger,
+                                             m_itemList[i].m_uDiskWriteTotal, m_itemList[i].m_uDiskReadTotal);
+                m_itemList[i].m_uDiskWriteRate = m_itemList[i].m_uDiskWriteTotal - uPrevWriteTotal;
+                m_itemList[i].m_uDiskReadRate = m_itemList[i].m_uDiskReadTotal - uPrevReadTotal;
+            }
 
            /* VM Exits: */
-            quint64 uPrevVMExitsTotal = m_itemList[i].m_uVMExitTotal;
-            UIMonitorCommon::getVMMExitCount(m_itemList[i].m_comDebugger, m_itemList[i].m_uVMExitTotal);
-            m_itemList[i].m_uVMExitRate = m_itemList[i].m_uVMExitTotal - uPrevVMExitsTotal;
+           if (fVMExitColumn)
+           {
+               quint64 uPrevVMExitsTotal = m_itemList[i].m_uVMExitTotal;
+               UIMonitorCommon::getVMMExitCount(m_itemList[i].m_comDebugger, m_itemList[i].m_uVMExitTotal);
+               m_itemList[i].m_uVMExitRate = m_itemList[i].m_uVMExitTotal - uPrevVMExitsTotal;
+           }
         }
     }
     emit sigDataUpdate();
@@ -614,6 +644,16 @@ void UIResourceMonitorModel::removeItem(const QUuid& uMachineId)
     m_itemMap.remove(uMachineId);
 }
 
+void UIResourceMonitorModel::setColumnVisible(const QMap<int, bool>& columnVisible)
+{
+    m_columnVisible = columnVisible;
+}
+
+bool UIResourceMonitorModel::columnVisible(int iColumnId) const
+{
+    return m_columnVisible.value(iColumnId, true);
+}
+
 
 /*********************************************************************************************************************************
 *   Class UIResourceMonitorWidget implementation.                                                                                *
@@ -627,6 +667,8 @@ UIResourceMonitorWidget::UIResourceMonitorWidget(EmbedTo enmEmbedding, UIActionP
     , m_fShowToolbar(fShowToolbar)
     , m_pToolBar(0)
     , m_pTableView(0)
+    , m_pProxyModel(0)
+    , m_pModel(0)
     , m_pColumnSelectionMenu(0)
 {
     /* Prepare: */
@@ -687,6 +729,7 @@ void UIResourceMonitorWidget::prepare()
     loadSettings();
     retranslateUi();
     prepareActions();
+    updateModelColumVisibilityCache();
 }
 
 void UIResourceMonitorWidget::prepareWidgets()
@@ -736,7 +779,7 @@ void UIResourceMonitorWidget::prepareWidgets()
         m_pTableView->sortByColumn(0, Qt::AscendingOrder);
         connect(m_pModel, &UIResourceMonitorModel::sigDataUpdate, this, &UIResourceMonitorWidget::sltHandleDataUpdate);
 
-        m_pProxyModel->setColumnVisible(m_columnVisible);
+        m_pModel->setColumnVisible(m_columnVisible);
     }
 }
 
@@ -837,16 +880,7 @@ void UIResourceMonitorWidget::sltToggleColumnSelectionMenu(bool fChecked)
     }
     else
         m_pColumnSelectionMenu->hide();
-
     update();
-
-    // QPoint point(0, 0);
-    // if (!m_pTableView)
-    //     return;
-    // if (fChecked)
-    //     m_pMenu->exec(m_pTableView->mapToGlobal(point));
-    // else
-    //     m_pMenu->hide();
 }
 
 void UIResourceMonitorWidget::sltHandleColumnAction(bool fChecked)
@@ -868,8 +902,15 @@ void UIResourceMonitorWidget::setColumnVisible(int iColumnId, bool fVisible)
     if (m_columnVisible.contains(iColumnId) && m_columnVisible[iColumnId] == fVisible)
         return;
     m_columnVisible[iColumnId] = fVisible;
+    updateModelColumVisibilityCache();
+}
+
+void UIResourceMonitorWidget::updateModelColumVisibilityCache()
+{
+    if (m_pModel)
+        m_pModel->setColumnVisible(m_columnVisible);
     if (m_pProxyModel)
-        m_pProxyModel->setColumnVisible(m_columnVisible);
+        m_pProxyModel->reFilter();
 }
 
 bool UIResourceMonitorWidget::columnVisible(int iColumnId) const
