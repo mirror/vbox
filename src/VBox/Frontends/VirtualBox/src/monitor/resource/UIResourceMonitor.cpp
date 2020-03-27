@@ -381,6 +381,7 @@ QVariant UIResourceMonitorModel::data(const QModelIndex &index, int role) const
     int iDecimalCount = 2;
     if (!index.isValid() || role != Qt::DisplayRole || index.row() >= rowCount())
         return QVariant();
+    UIResourceMonitorItem* pItem = static_cast<UIResourceMonitorItem*>(index.internalPointer());
 
     switch (index.column())
     {
@@ -394,11 +395,17 @@ QVariant UIResourceMonitorModel::data(const QModelIndex &index, int role) const
             return m_itemList[index.row()].m_uCPUVMMLoad;
             break;
         case VMResouceMonitorColumn_RAMUsedAndTotal:
-            return QString("%1/%2").arg(uiCommon().formatSize(_1K * m_itemList[index.row()].m_uUsedRAM, iDecimalCount)).
-                arg(uiCommon().formatSize(_1K * m_itemList[index.row()].m_uTotalRAM, iDecimalCount));
+            if (pItem && pItem->isWithGuestAdditions())
+                return QString("%1/%2").arg(uiCommon().formatSize(_1K * m_itemList[index.row()].m_uUsedRAM, iDecimalCount)).
+                    arg(uiCommon().formatSize(_1K * m_itemList[index.row()].m_uTotalRAM, iDecimalCount));
+            else
+                return tr("N/A");
             break;
         case VMResouceMonitorColumn_RAMUsedPercentage:
-            return QString("%1%").arg(QString::number(m_itemList[index.row()].m_fRAMUsagePercentage, 'f', 2));
+            if (pItem && pItem->isWithGuestAdditions())
+                return QString("%1%").arg(QString::number(m_itemList[index.row()].m_fRAMUsagePercentage, 'f', 2));
+            else
+                return tr("N/A");
             break;
         case VMResouceMonitorColumn_NetworkUpRate:
             return QString("%1").arg(uiCommon().formatSize(m_itemList[index.row()].m_uNetworkUpRate, iDecimalCount));
