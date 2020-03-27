@@ -69,6 +69,8 @@ public:
     UIResourceMonitorItem(const QUuid &uid);
     UIResourceMonitorItem();
     bool operator==(const UIResourceMonitorItem& other) const;
+    bool isWithGuestAdditions();
+
     QUuid    m_VMuid;
     QString  m_strVMName;
     quint64  m_uCPUGuestLoad;
@@ -93,7 +95,7 @@ public:
     quint64 m_uVMExitTotal;
 
     CMachineDebugger m_comDebugger;
-
+    CGuest           m_comGuest;
 private:
 
     void setupPerformanceCollector();
@@ -129,7 +131,7 @@ public:
 
     UIResourceMonitorProxyModel(QObject *parent = 0);
     void dataUpdate();
-    void setColumnShown(const QVector<bool>& columnShown);
+    void setColumnVisible(const QMap<int, bool>& columnVisible);
 
 protected:
 
@@ -138,7 +140,7 @@ protected:
 
 private:
 
-    QVector<bool> m_columnShown;
+    QMap<int, bool> m_columnVisible;
 
 };
 
@@ -233,7 +235,10 @@ UIResourceMonitorItem::UIResourceMonitorItem(const QUuid &uid, const QString &st
     {
         CConsole comConsole = comSession.GetConsole();
         if (!comConsole.isNull())
+        {
+            m_comGuest = comConsole.GetGuest();
             m_comDebugger = comConsole.GetDebugger();
+        }
     }
 }
 
@@ -284,6 +289,13 @@ bool UIResourceMonitorItem::operator==(const UIResourceMonitorItem& other) const
     return false;
 }
 
+bool UIResourceMonitorItem::isWithGuestAdditions()
+{
+    if (m_comGuest.isNull())
+        return false;
+    return m_comGuest.GetAdditionsStatus(m_comGuest.GetAdditionsRunLevel());
+}
+
 
 /*********************************************************************************************************************************
 *   Class UIVMResouceMonitorCheckBox implementation.                                                                             *
@@ -322,15 +334,13 @@ void UIResourceMonitorProxyModel::dataUpdate()
 bool UIResourceMonitorProxyModel::filterAcceptsColumn(int iSourceColumn, const QModelIndex &sourceParent) const
 {
     Q_UNUSED(sourceParent);
-    if (iSourceColumn >= m_columnShown.size())
-        return true;
-    return m_columnShown[iSourceColumn];
+    return m_columnVisible.value(iSourceColumn, true);
 }
 
-void UIResourceMonitorProxyModel::setColumnShown(const QVector<bool>& columnShown)
+void UIResourceMonitorProxyModel::setColumnVisible(const QMap<int, bool>& columnVisible)
 {
     emit layoutAboutToBeChanged();
-    m_columnShown = columnShown;
+    m_columnVisible = columnVisible;
     invalidateFilter();
     emit layoutChanged();
 }
@@ -719,7 +729,7 @@ void UIResourceMonitorWidget::prepareWidgets()
         m_pTableView->sortByColumn(0, Qt::AscendingOrder);
         connect(m_pModel, &UIResourceMonitorModel::sigDataUpdate, this, &UIResourceMonitorWidget::sltHandleDataUpdate);
 
-        m_pProxyModel->setColumnShown(m_columnShown);
+        m_pProxyModel->setColumnVisible(m_columnVisible);
     }
 }
 
@@ -742,8 +752,7 @@ void UIResourceMonitorWidget::prepareActions()
             continue;
         pLayout->addWidget(pCheckBox);
         pCheckBox->setData(i);
-        if (i < m_columnShown.size())
-            pCheckBox->setChecked(m_columnShown[i]);
+        pCheckBox->setChecked(columnVisible(i));
         if (i == (int)VMResouceMonitorColumn_Name)
             pCheckBox->setEnabled(false);
         connect(pCheckBox, &UIVMResouceMonitorCheckBox::toggled, this, &UIResourceMonitorWidget::sltHandleColumnAction);
@@ -788,23 +797,18 @@ void UIResourceMonitorWidget::loadSettings()
 void UIResourceMonitorWidget::loadHiddenColumnList()
 {
     QStringList hiddenColumnList = gEDataManager->VMResourceMonitorHiddenColumnList();
-    m_columnShown.resize(VMResouceMonitorColumn_Max);
-    for (int i = 0; i < m_columnShown.size(); ++i)
-        m_columnShown[i] = true;
+    for (int i = (int)VMResouceMonitorColumn_Name; i < (int)VMResouceMonitorColumn_Max; ++i)
+        m_columnVisible[i] = true;
     foreach(const QString& strColumn, hiddenColumnList)
-    {
-        VMResouceMonitorColumn enmColumn = gpConverter->fromInternalString<VMResouceMonitorColumn>(strColumn);
-        if ((int)enmColumn < m_columnShown.size())
-            m_columnShown[(int)enmColumn] = false;
-    }
+        setColumnVisible((int)gpConverter->fromInternalString<VMResouceMonitorColumn>(strColumn), false);
 }
 
 void UIResourceMonitorWidget::saveSettings()
 {
     QStringList hiddenColumnList;
-    for (int i = 0; i < m_columnShown.size(); ++i)
+    for (int i = 0; i < m_columnVisible.size(); ++i)
     {
-        if (!m_columnShown[i])
+        if (!columnVisible(i))
             hiddenColumnList << gpConverter->toInternalString((VMResouceMonitorColumn) i);
     }
     gEDataManager->setVMResourceMonitorHiddenColumnList(hiddenColumnList);
@@ -843,10 +847,7 @@ void UIResourceMonitorWidget::sltHandleColumnAction(bool fChecked)
     UIVMResouceMonitorCheckBox* pSender = qobject_cast<UIVMResouceMonitorCheckBox*>(sender());
     if (!pSender)
         return;
-    int iColumnId = pSender->data().toInt();
-    if (iColumnId >= m_columnShown.size())
-        return;
-    setColumnShown(iColumnId, fChecked);
+    setColumnVisible(pSender->data().toInt(), fChecked);
 }
 
 void UIResourceMonitorWidget::sltHandleDataUpdate()
@@ -855,15 +856,18 @@ void UIResourceMonitorWidget::sltHandleDataUpdate()
         m_pProxyModel->dataUpdate();
 }
 
-void UIResourceMonitorWidget::setColumnShown(int iColumnId, bool fShown)
+void UIResourceMonitorWidget::setColumnVisible(int iColumnId, bool fVisible)
 {
-    if (iColumnId >= m_columnShown.size())
+    if (m_columnVisible.contains(iColumnId) && m_columnVisible[iColumnId] == fVisible)
         return;
-    if (m_columnShown[iColumnId] == fShown)
-        return;
-    m_columnShown[iColumnId] = fShown;
+    m_columnVisible[iColumnId] = fVisible;
     if (m_pProxyModel)
-        m_pProxyModel->setColumnShown(m_columnShown);
+        m_pProxyModel->setColumnVisible(m_columnVisible);
+}
+
+bool UIResourceMonitorWidget::columnVisible(int iColumnId) const
+{
+    return m_columnVisible.value(iColumnId, true);
 }
 
 
