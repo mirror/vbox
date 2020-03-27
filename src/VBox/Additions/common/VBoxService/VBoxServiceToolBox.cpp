@@ -892,10 +892,6 @@ static int vgsvcToolboxLsHandleDirSub(char *pszDir, size_t cchDir, PRTDIRENTRYEX
         if (RT_FAILURE(rc))
             break;
 
-        /* Skip the dot and dot-dot links. */
-        if (RTDirEntryExIsStdDotLink(pDirEntry))
-            continue;
-
         /* Check length. */
         if (pDirEntry->cbName + cchDir + 3 >= RTPATH_MAX)
         {
@@ -915,6 +911,11 @@ static int vgsvcToolboxLsHandleDirSub(char *pszDir, size_t cchDir, PRTDIRENTRYEX
             }
             case RTFS_TYPE_DIRECTORY:
             {
+                rc = vgsvcToolboxPrintFsInfo(pDirEntry->szName, pDirEntry->cbName, fOutputFlags, pszDir,
+                                             pIdCache, &pDirEntry->Info);
+                if (RT_FAILURE(rc))
+                    break;
+
                 if (RTDirEntryExIsStdDotLink(pDirEntry))
                     continue;
 
