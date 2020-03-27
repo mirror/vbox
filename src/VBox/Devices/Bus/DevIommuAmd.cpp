@@ -885,8 +885,8 @@ typedef union
     } n;
     /** The 64-bit unsigned integer view. */
     uint64_t    u64;
-} EVT_LOG_BUF_BAR_T;
-AssertCompileSize(EVT_LOG_BUF_BAR_T, 8);
+} EVT_LOG_BAR_T;
+AssertCompileSize(EVT_LOG_BAR_T, 8);
 
 /**
  * IOMMU Control Register (MMIO).
@@ -1069,7 +1069,7 @@ typedef union
     /** The 64-bit unsigned integer view. */
     uint64_t    u64;
 } IOMMU_HW_EVT_HI_T;
-AssertCompileSize(PPR_LOG_BAR_T, 8);
+AssertCompileSize(IOMMU_HW_EVT_HI_T, 8);
 
 /**
  * IOMMU Hardware Event Lower Register (MMIO).
@@ -1094,6 +1094,56 @@ typedef union
     uint64_t    u64;
 } IOMMU_HW_EVT_STATUS_T;
 AssertCompileSize(IOMMU_HW_EVT_STATUS_T, 8);
+
+/**
+ * Guest Virtual-APIC Log Base Address Register (MMIO).
+ * In accordance with the AMD spec.
+ */
+typedef union
+{
+    struct
+    {
+        RT_GCC_EXTENSION uint64_t   u12Rsvd0 : 12;      /**< Bit 11:0   - Reserved. */
+        RT_GCC_EXTENSION uint64_t   u40GALogBase : 40;  /**< Bits 51:12 - GALogBase: Guest Virtual-APIC Log Base Address. */
+        RT_GCC_EXTENSION uint64_t   u4Rsvd0 : 4;        /**< Bits 55:52 - Reserved. */
+        RT_GCC_EXTENSION uint64_t   u4GALogLen : 4;     /**< Bits 59:56 - GALogLen: Guest Virtual-APIC Log Length. */
+        RT_GCC_EXTENSION uint64_t   u4Rsvd1 : 4;        /**< Bits 63:60 - Reserved. */
+    } n;
+    /** The 64-bit unsigned integer view. */
+    uint64_t    u64;
+} GALOG_BAR_T;
+AssertCompileSize(GALOG_BAR_T, 8);
+
+/**
+ * Guest Virtual-APIC Log Tail Address Register (MMIO).
+ * In accordance with the AMD spec.
+ */
+typedef union
+{
+    struct
+    {
+        RT_GCC_EXTENSION uint64_t   u3Rsvd0 : 3;            /**< Bits 2:0   - Reserved. */
+        RT_GCC_EXTENSION uint64_t   u40GALogTailAddr : 48;  /**< Bits 51:3  - GATAddr: Guest Virtual-APIC Tail Log Address. */
+        RT_GCC_EXTENSION uint64_t   u11Rsvd1 : 11;          /**< Bits 63:52 - Reserved. */
+    } n;
+    /** The 64-bit unsigned integer view. */
+    uint64_t    u64;
+} GALOG_TAIL_ADDR_T;
+AssertCompileSize(GALOG_TAIL_ADDR_T, 8);
+
+/**
+ * PPR Log B Base Address Register (MMIO).
+ * In accordance with the AMD spec.
+ * Currently identical to PPR_LOG_BAR_T.
+ */
+typedef PPR_LOG_BAR_T       PPR_LOG_B_BAR_T;
+
+/**
+ * Event Log B Base Address Register (MMIO).
+ * In accordance with the AMD spec.
+ * Currently identical to EVT_LOG_BAR_T.
+ */
+typedef EVT_LOG_BAR_T       EVT_LOG_B_BAR_T;
 
 /**
  * Device Table Segment Register (MMIO).
@@ -1361,7 +1411,7 @@ typedef union
     struct
     {
         uint32_t    u4Rsvd0 : 4;    /**< Bits 3:0   - Reserved. */
-        uint32_t    u15Ptr : 15;    /**< Bits 18:14 - Buffer pointer. */
+        uint32_t    u15Ptr : 15;    /**< Bits 18:4  - Buffer pointer. */
         uint32_t    u13Rsvd0 : 13;  /**< Bits 31:19 - Reserved. */
         uint32_t    u32Rsvd0;       /**< Bits 63:32 - Reserved. */
     } n;
@@ -1434,14 +1484,69 @@ AssertCompileSize(IOMMU_STATUS_T, 8);
  * In accordance with the AMD spec.
  * Currently identical to CMD_BUF_HEAD_PTR_T.
  */
-typedef CMD_BUF_HEAD_PTR_T    PPR_LOG_HEAD_PTR_T;
+typedef CMD_BUF_HEAD_PTR_T      PPR_LOG_HEAD_PTR_T;
 
 /**
  * PPR Log Tail Pointer Register (MMIO).
  * In accordance with the AMD spec.
  * Currently identical to CMD_BUF_HEAD_PTR_T.
  */
-typedef CMD_BUF_HEAD_PTR_T    PPR_LOG_TAIL_PTR_T;
+typedef CMD_BUF_HEAD_PTR_T      PPR_LOG_TAIL_PTR_T;
+
+/**
+ * Guest Virtual-APIC Log Head Pointer Register (MMIO).
+ * In accordance with the AMD spec.
+ */
+typedef union
+{
+    struct
+    {
+        uint32_t    u2Rsvd0 : 2;            /**< Bits  2:0  - Reserved. */
+        uint32_t    u12GALogPtr : 12;       /**< Bits 15:3  - Guest Virtual-APIC Log Head or Tail Pointer. */
+        uint32_t    u16Rsvd0 : 16;          /**< Bits 31:16 - Reserved. */
+        uint32_t    u32Rsvd0;               /**< Bits 63:32 - Reserved. */
+    } n;
+    /** The 32-bit unsigned integer view. */
+    uint32_t    au32[2];
+    /** The 64-bit unsigned integer view. */
+    uint64_t    u64;
+} GALOG_HEAD_PTR_T;
+AssertCompileSize(GALOG_HEAD_PTR_T, 8);
+
+/**
+ * Guest Virtual-APIC Log Tail Pointer Register (MMIO).
+ * In accordance with the AMD spec.
+ * Currently identical to GALOG_HEAD_PTR_T.
+ */
+typedef GALOG_HEAD_PTR_T        GALOG_TAIL_PTR_T;
+
+/**
+ * PPR Log B Head Pointer Register (MMIO).
+ * In accordance with the AMD spec.
+ * Currently identical to CMD_BUF_HEAD_PTR_T.
+ */
+typedef CMD_BUF_HEAD_PTR_T      PPR_LOG_B_HEAD_PTR_T;
+
+/**
+ * PPR Log B Tail Pointer Register (MMIO).
+ * In accordance with the AMD spec.
+ * Currently identical to CMD_BUF_HEAD_PTR_T.
+ */
+typedef CMD_BUF_HEAD_PTR_T      PPR_LOG_B_TAIL_PTR_T;
+
+/**
+ * Event Log B Head Pointer Register (MMIO).
+ * In accordance with the AMD spec.
+ * Currently identical to CMD_BUF_HEAD_PTR_T.
+ */
+typedef CMD_BUF_HEAD_PTR_T      EVT_LOG_B_HEAD_PTR_T;
+
+/**
+ * Event Log B Tail Pointer Register (MMIO).
+ * In accordance with the AMD spec.
+ * Currently identical to CMD_BUF_HEAD_PTR_T.
+ */
+typedef CMD_BUF_HEAD_PTR_T      EVT_LOG_B_TAIL_PTR_T;
 
 
 /**
@@ -1458,7 +1563,7 @@ typedef struct IOMMU
      * @{ */
     DEV_TAB_BAR_T               DevTabBaseAddr;     /**< Device table base address register. */
     CMD_BUF_BAR_T               CmdBufBaseAddr;     /**< Command buffer base address register. */
-    EVT_LOG_BUF_BAR_T           EvtLogBaseAddr;     /**< Event log base address register. */
+    EVT_LOG_BAR_T               EvtLogBaseAddr;     /**< Event log base address register. */
     IOMMU_CTRL_T                IommuCtrl;          /**< IOMMU control register. */
     IOMMU_EXCL_BASE_T           ExclBase;           /**< IOMMU exclusion base register. */
     IOMMU_EXCL_RANGE_LIMIT_T    ExclRangeLimit;     /**< IOMMU exclusion range limit. */
@@ -1471,6 +1576,18 @@ typedef struct IOMMU
     IOMMU_HW_EVT_HI_T           IommuHwEvtHi;       /**< IOMMU hardware event register (Hi). */
     IOMMU_HW_EVT_LO_T           IommuHwEvtLo;       /**< IOMMU hardware event register (Lo). */
     IOMMU_HW_EVT_STATUS_T       IommuHwEvtStatus;   /**< IOMMU hardware event status. */
+    /** @} */
+
+    /** @name MMIO: Guest Virtual-APIC Log registers.
+     * @{ */
+    GALOG_BAR_T                 GALogBaseAddr;      /**< Guest Virtual-APIC Log base address register. */
+    GALOG_TAIL_ADDR_T           GALogTailAddr;      /**< Guest Virtual-APIC Log Tail address register. */
+    /** @} */
+
+    /** @name MMIO: Alternate PPR and Event Log registers.
+     *  @{ */
+    PPR_LOG_B_BAR_T             PprLogBBaseAddr;    /**< PPR Log B base address register. */
+    EVT_LOG_B_BAR_T             EvtLogBBaseAddr;    /**< Event Log B base address register. */
     /** @} */
 
     /** @name MMIO: Device table segment registers.
@@ -1529,6 +1646,25 @@ typedef struct IOMMU
     PPR_LOG_HEAD_PTR_T          PprLogHeadPtr;      /**< IOMMU PPR log head pointer register. */
     PPR_LOG_TAIL_PTR_T          PprLogTailPtr;      /**< IOMMU PPR log tail pointer register. */
     /** @} */
+
+    /** @name MMIO: Guest Virtual-APIC Log Head and Tail Pointer registers.
+     * @{ */
+    GALOG_HEAD_PTR_T            GALogHeadPtr;       /**< Guest Virtual-APIC log head pointer register. */
+    GALOG_TAIL_PTR_T            GALogTailPtr;       /**< Guest Virtual-APIC log tail pointer register. */
+    /** @} */
+
+    /** @name MMIO: PPR Log B Head and Tail Pointer registers.
+     *  @{ */
+    PPR_LOG_B_HEAD_PTR_T        PprLogBHeadPtr;     /**< PPR log B head pointer register. */
+    PPR_LOG_B_TAIL_PTR_T        PprLogBTailPtr;     /**< PPR log B tail pointer register. */
+    /** @} */
+
+    /** @name MMIO: Event Log B Head and Tail Pointer registers.
+     * @{ */
+    EVT_LOG_B_HEAD_PTR_T        EvtLogBHeadPtr;     /**< Event log B head pointer register. */
+    EVT_LOG_B_TAIL_PTR_T        EvtLogBTailPtr;     /**< Event log B tail pointer register. */
+    /** @} */
+
 } IOMMU;
 /** Pointer to the IOMMU device state. */
 typedef struct IOMMU *PIOMMU;
