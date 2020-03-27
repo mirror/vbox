@@ -26679,7 +26679,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
 
   <interface name="ICloudMachine" extends="$unknown"
-             uuid="8938b392-6470-11ea-be28-93dab375c226"
+             uuid="1686e906-6fa9-11ea-9211-4f68777c1ecb"
              wsmap="managed"
              reservedMethods="16" reservedAttributes="8">
     <desc>
@@ -26688,6 +26688,23 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
     <attribute name="id" type="uuid" mod="string" readonly="yes">
       <desc>UUID of the cloud machine.</desc>
+    </attribute>
+
+    <method name="readState">
+      <desc>
+        Read the state of the cloud machine and make it available via
+        the <link to="#state"/> attribute.
+      </desc>
+      <param name="progress" type="IProgress" dir="return">
+        <desc>
+          Progress object to track the operation completion.
+        </desc>
+      </param>
+    </method>
+    <attribute name="state" type="MachineState" readonly="yes">
+      <desc>
+        See <link to="#readState"/>.
+      </desc>
     </attribute>
   </interface>
 
