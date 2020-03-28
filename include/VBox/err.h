@@ -2870,8 +2870,8 @@
 #define VERR_NEM_NOT_AVAILABLE                      (-6801)
 /** NEM init failed. */
 #define VERR_NEM_INIT_FAILED                        (-6802)
-/** NEM init failed because of missing kernel API. */
-#define VERR_NEM_MISSING_KERNEL_API                 (-6803)
+/** NEM init failed because of missing kernel API (\#1). */
+#define VERR_NEM_MISSING_KERNEL_API_1               (-6803)
 /** NEM can only operate from ring-3. */
 #define VERR_NEM_RING3_ONLY                         (-6804)
 /** NEM failed to create a native VM instance. */
@@ -2890,6 +2890,14 @@
 #define VINF_NEM_FLUSH_TLB                          (6810)
 /** NEM failed to set TSC. */
 #define VERR_NEM_SET_TSC                            (-6811)
+/** NEM init failed because of missing kernel API (\#2). */
+#define VERR_NEM_MISSING_KERNEL_API_2               (-6812)
+/** NEM init failed because of missing kernel API (\#3). */
+#define VERR_NEM_MISSING_KERNEL_API_3               (-6813)
+/** NEM init failed because of missing kernel API (\#4). */
+#define VERR_NEM_MISSING_KERNEL_API_4               (-6814)
+/** NEM init failed because of missing kernel API (\#5). */
+#define VERR_NEM_MISSING_KERNEL_API_5               (-6815)
 
 /** NEM internal processing error \#0. */
 #define VERR_NEM_IPE_0                              (-6890)

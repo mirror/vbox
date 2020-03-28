@@ -178,8 +178,14 @@ VMMR0_INT_DECL(int) NEMR0InitVM(PGVM pGVM)
     if (RT_SUCCESS(rc))
     {
         rc = RTR0DbgKrnlInfoQuerySymbol(hKrnlInfo, NULL, "HvlInvokeHypercall", (void **)&g_pfnHvlInvokeHypercall);
+        if (RT_FAILURE(rc))
+            rc = VERR_NEM_MISSING_KERNEL_API_1;
         if (RT_SUCCESS(rc))
+        {
             rc = RTR0DbgKrnlInfoQuerySymbol(hKrnlInfo, "winhvr.sys", "WinHvDepositMemory", (void **)&g_pfnWinHvDepositMemory);
+            if (RT_FAILURE(rc))
+                rc = rc == VERR_MODULE_NOT_FOUND ? VERR_NEM_MISSING_KERNEL_API_2 : VERR_NEM_MISSING_KERNEL_API_3;
+        }
         RTR0DbgKrnlInfoRelease(hKrnlInfo);
         if (RT_SUCCESS(rc))
         {
@@ -222,8 +228,6 @@ VMMR0_INT_DECL(int) NEMR0InitVM(PGVM pGVM)
                 RTCritSectDelete(&pGVM->nemr0.s.HypercallDataCritSect);
             }
         }
-        else
-            rc = VERR_NEM_MISSING_KERNEL_API;
     }
 
     return rc;
@@ -426,7 +430,7 @@ NEM_TMPL_STATIC int nemR0WinMapPages(PGVM pGVM, PGVMCPU pGVCpu, RTGCPHYS GCPhysS
     /*
      * Validate.
      */
-    AssertReturn(g_pfnHvlInvokeHypercall, VERR_NEM_MISSING_KERNEL_API);
+    AssertReturn(g_pfnHvlInvokeHypercall, VERR_NEM_MISSING_KERNEL_API_1);
 
     AssertReturn(cPages > 0, VERR_OUT_OF_RANGE);
     AssertReturn(cPages <= NEM_MAX_MAP_PAGES, VERR_OUT_OF_RANGE);
@@ -533,7 +537,7 @@ NEM_TMPL_STATIC int nemR0WinUnmapPages(PGVM pGVM, PGVMCPU pGVCpu, RTGCPHYS GCPhy
     /*
      * Validate input.
      */
-    AssertReturn(g_pfnHvlInvokeHypercall, VERR_NEM_MISSING_KERNEL_API);
+    AssertReturn(g_pfnHvlInvokeHypercall, VERR_NEM_MISSING_KERNEL_API_1);
 
     AssertReturn(cPages > 0, VERR_OUT_OF_RANGE);
     AssertReturn(cPages <= NEM_MAX_UNMAP_PAGES, VERR_OUT_OF_RANGE);
@@ -616,7 +620,7 @@ NEM_TMPL_STATIC int nemR0WinExportState(PGVM pGVM, PGVMCPU pGVCpu, PCPUMCTX pCtx
 {
     HV_INPUT_SET_VP_REGISTERS *pInput = (HV_INPUT_SET_VP_REGISTERS *)pGVCpu->nemr0.s.HypercallData.pbPage;
     AssertPtrReturn(pInput, VERR_INTERNAL_ERROR_3);
-    AssertReturn(g_pfnHvlInvokeHypercall, VERR_NEM_MISSING_KERNEL_API);
+    AssertReturn(g_pfnHvlInvokeHypercall, VERR_NEM_MISSING_KERNEL_API_1);
 
     pInput->PartitionId = pGVM->nemr0.s.idHvPartition;
     pInput->VpIndex     = pGVCpu->idCpu;
@@ -1300,7 +1304,7 @@ VMMR0_INT_DECL(int)  NEMR0ExportState(PGVM pGVM, VMCPUID idCpu)
     if (RT_SUCCESS(rc))
     {
         PGVMCPU pGVCpu = &pGVM->aCpus[idCpu];
-        AssertReturn(g_pfnHvlInvokeHypercall, VERR_NEM_MISSING_KERNEL_API);
+        AssertReturn(g_pfnHvlInvokeHypercall, VERR_NEM_MISSING_KERNEL_API_1);
 
         /*
          * Call worker.
@@ -1332,7 +1336,7 @@ NEM_TMPL_STATIC int nemR0WinImportState(PGVM pGVM, PGVMCPU pGVCpu, PCPUMCTX pCtx
 {
     HV_INPUT_GET_VP_REGISTERS *pInput = (HV_INPUT_GET_VP_REGISTERS *)pGVCpu->nemr0.s.HypercallData.pbPage;
     AssertPtrReturn(pInput, VERR_INTERNAL_ERROR_3);
-    AssertReturn(g_pfnHvlInvokeHypercall, VERR_NEM_MISSING_KERNEL_API);
+    AssertReturn(g_pfnHvlInvokeHypercall, VERR_NEM_MISSING_KERNEL_API_1);
     Assert(pCtx == &pGVCpu->cpum.GstCtx);
 
     fWhat &= pCtx->fExtrn;
@@ -2217,7 +2221,7 @@ VMMR0_INT_DECL(int) NEMR0ImportState(PGVM pGVM, VMCPUID idCpu, uint64_t fWhat)
     if (RT_SUCCESS(rc))
     {
         PGVMCPU pGVCpu = &pGVM->aCpus[idCpu];
-        AssertReturn(g_pfnHvlInvokeHypercall, VERR_NEM_MISSING_KERNEL_API);
+        AssertReturn(g_pfnHvlInvokeHypercall, VERR_NEM_MISSING_KERNEL_API_1);
 
         /*
          * Call worker.
@@ -2249,7 +2253,7 @@ NEM_TMPL_STATIC int nemR0WinQueryCpuTick(PGVM pGVM, PGVMCPU pGVCpu, uint64_t *pc
      */
     HV_INPUT_GET_VP_REGISTERS *pInput = (HV_INPUT_GET_VP_REGISTERS *)pGVCpu->nemr0.s.HypercallData.pbPage;
     AssertPtrReturn(pInput, VERR_INTERNAL_ERROR_3);
-    AssertReturn(g_pfnHvlInvokeHypercall, VERR_NEM_MISSING_KERNEL_API);
+    AssertReturn(g_pfnHvlInvokeHypercall, VERR_NEM_MISSING_KERNEL_API_1);
 
     pInput->PartitionId = pGVM->nemr0.s.idHvPartition;
     pInput->VpIndex     = pGVCpu->idCpu;
@@ -2299,7 +2303,7 @@ VMMR0_INT_DECL(int) NEMR0QueryCpuTick(PGVM pGVM, VMCPUID idCpu)
     if (RT_SUCCESS(rc))
     {
         PGVMCPU pGVCpu = &pGVM->aCpus[idCpu];
-        AssertReturn(g_pfnHvlInvokeHypercall, VERR_NEM_MISSING_KERNEL_API);
+        AssertReturn(g_pfnHvlInvokeHypercall, VERR_NEM_MISSING_KERNEL_API_1);
 
         /*
          * Call worker.
@@ -2328,7 +2332,7 @@ VMMR0_INT_DECL(int) NEMR0QueryCpuTick(PGVM pGVM, VMCPUID idCpu)
  */
 NEM_TMPL_STATIC int nemR0WinResumeCpuTickOnAll(PGVM pGVM, PGVMCPU pGVCpu, uint64_t uPausedTscValue)
 {
-    AssertReturn(g_pfnHvlInvokeHypercall, VERR_NEM_MISSING_KERNEL_API);
+    AssertReturn(g_pfnHvlInvokeHypercall, VERR_NEM_MISSING_KERNEL_API_1);
 
     /*
      * Set up the hypercall parameters.
@@ -2407,7 +2411,7 @@ VMMR0_INT_DECL(int) NEMR0ResumeCpuTickOnAll(PGVM pGVM, VMCPUID idCpu, uint64_t u
     if (RT_SUCCESS(rc))
     {
         PGVMCPU pGVCpu = &pGVM->aCpus[idCpu];
-        AssertReturn(g_pfnHvlInvokeHypercall, VERR_NEM_MISSING_KERNEL_API);
+        AssertReturn(g_pfnHvlInvokeHypercall, VERR_NEM_MISSING_KERNEL_API_1);
 
         /*
          * Call worker.
@@ -2457,7 +2461,7 @@ VMMR0_INT_DECL(int)  NEMR0UpdateStatistics(PGVM pGVM, VMCPUID idCpu)
         rc = GVMMR0ValidateGVMandEMT(pGVM, idCpu);
     if (RT_SUCCESS(rc))
     {
-        AssertReturn(g_pfnHvlInvokeHypercall, VERR_NEM_MISSING_KERNEL_API);
+        AssertReturn(g_pfnHvlInvokeHypercall, VERR_NEM_MISSING_KERNEL_API_1);
 
         PNEMR0HYPERCALLDATA pHypercallData = idCpu != NIL_VMCPUID
                                            ? &pGVM->aCpus[idCpu].nemr0.s.HypercallData
@@ -2525,7 +2529,7 @@ VMMR0_INT_DECL(int) NEMR0DoExperiment(PGVM pGVM, VMCPUID idCpu, uint64_t u64Arg)
     int rc = GVMMR0ValidateGVMandEMT(pGVM, idCpu);
     if (RT_SUCCESS(rc))
     {
-        AssertReturn(g_pfnHvlInvokeHypercall, VERR_NEM_MISSING_KERNEL_API);
+        AssertReturn(g_pfnHvlInvokeHypercall, VERR_NEM_MISSING_KERNEL_API_1);
 
         PGVMCPU pGVCpu = &pGVM->aCpus[idCpu];
         if (u64Arg == 0)
