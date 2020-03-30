@@ -58,7 +58,8 @@ public:
     /** @name Public internal methods.
      * @{ */
     int            i_closeInternal(int *pGuestRc);
-    int            i_readInternal(ComObjPtr<GuestFsObjInfo> &fsObjInfo, int *pGuestRc);
+    int            i_read(ComObjPtr<GuestFsObjInfo> &fsObjInfo, int *pGuestRc);
+    int            i_readInternal(GuestFsObjData &objData, int *prcGuest);
     /** @}  */
 
 public:
@@ -88,6 +89,9 @@ private:
         GuestDirectoryOpenInfo     mOpenInfo;
         /** The process tool instance to use. */
         GuestProcessTool           mProcessTool;
+        /** Object data cache.
+         *  Its mName attribute acts as a beacon if the cache is valid or not. */
+        GuestFsObjData             mObjData;
     } mData;
 };
 

@@ -1109,7 +1109,7 @@ int FsList::AddDirFromGuest(const Utf8Str &strPath, const Utf8Str &strSubDir /* 
     if (RT_SUCCESS(rc))
     {
         ComObjPtr<GuestFsObjInfo> fsObjInfo;
-        while (RT_SUCCESS(rc = pDir->i_readInternal(fsObjInfo, &rcGuest)))
+        while (RT_SUCCESS(rc = pDir->i_read(fsObjInfo, &rcGuest)))
         {
             FsObjType_T enmObjType = FsObjType_Unknown; /* Shut up MSC. */
             HRESULT hr2 = fsObjInfo->COMGETTER(Type)(&enmObjType);

@@ -1164,35 +1164,46 @@ int GuestSession::i_directoryOpen(const GuestDirectoryOpenInfo &openInfo,
         return vrc;
     }
 
+    /* We need to release the write lock first before initializing the directory object below,
+     * as we're starting a guest process as part of it. This in turn will try to acquire the session's
+     * write lock. */
+    alock.release();
+
     Console *pConsole = mParent->i_getConsole();
     AssertPtr(pConsole);
 
     vrc = pDirectory->init(pConsole, this /* Parent */, idObject, openInfo);
     if (RT_FAILURE(vrc))
-        return vrc;
-
-    /*
-     * Since this is a synchronous guest call we have to
-     * register the file object first, releasing the session's
-     * lock and then proceed with the actual opening command
-     * -- otherwise the file's opening callback would hang
-     * because the session's lock still is in place.
-     */
-    try
     {
-        /* Add the created directory to our map. */
-        mData.mDirectories[idObject] = pDirectory;
+        /* Make sure to acquire the write lock again before unregistering the object. */
+        alock.acquire();
 
-        LogFlowFunc(("Added new guest directory \"%s\" (Session: %RU32) (now total %zu directories)\n",
-                     openInfo.mPath.c_str(), mData.mSession.mID, mData.mDirectories.size()));
+        int vrc2 = i_objectUnregister(idObject);
+        AssertRC(vrc2);
 
-        alock.release(); /* Release lock before firing off event. */
-
-        /** @todo Fire off a VBoxEventType_OnGuestDirectoryRegistered event? */
+        pDirectory.setNull();
     }
-    catch (std::bad_alloc &)
+    else
     {
-        vrc = VERR_NO_MEMORY;
+        /* Make sure to acquire the write lock again before continuing. */
+        alock.acquire();
+
+        try
+        {
+            /* Add the created directory to our map. */
+            mData.mDirectories[idObject] = pDirectory;
+
+            LogFlowFunc(("Added new guest directory \"%s\" (Session: %RU32) (now total %zu directories)\n",
+                         openInfo.mPath.c_str(), mData.mSession.mID, mData.mDirectories.size()));
+
+            alock.release(); /* Release lock before firing off event. */
+
+            /** @todo Fire off a VBoxEventType_OnGuestDirectoryRegistered event? */
+        }
+        catch (std::bad_alloc &)
+        {
+            vrc = VERR_NO_MEMORY;
+        }
     }
 
     if (RT_SUCCESS(vrc))

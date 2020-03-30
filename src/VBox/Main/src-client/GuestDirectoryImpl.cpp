@@ -82,7 +82,7 @@ int GuestDirectory::init(Console *pConsole, GuestSession *pSession, ULONG aObjec
     {
         /* Start the directory process on the guest. */
         GuestProcessStartupInfo procInfo;
-        procInfo.mName      = Utf8StrFmt(tr("Reading directory \"%s\""), openInfo.mPath.c_str());
+        procInfo.mName      = Utf8StrFmt(tr("Opening directory \"%s\""), openInfo.mPath.c_str());
         procInfo.mTimeoutMS = 5 * 60 * 1000; /* 5 minutes timeout. */
         procInfo.mFlags     = ProcessCreateFlag_WaitForStdOut;
         procInfo.mExecutable= Utf8Str(VBOXSERVICE_TOOL_LS);
@@ -99,17 +99,31 @@ int GuestDirectory::init(Console *pConsole, GuestSession *pSession, ULONG aObjec
         procInfo.mArguments.push_back(openInfo.mPath); /* The directory we want to open. */
 
         /*
-         * Start the process asynchronously and keep it around so that we can use
+         * Start the process synchronously and keep it around so that we can use
          * it later in subsequent read() calls.
-         * Note: No guest rc available because operation is asynchronous.
          */
-        vrc = mData.mProcessTool.init(mSession, procInfo, true /* Async */, NULL /* Guest rc */);
+        vrc = mData.mProcessTool.init(mSession, procInfo, false /* Async */, NULL /* Guest rc */);
+        if (RT_SUCCESS(vrc))
+        {
+            /* As we need to know if the directory we were about to open exists and and is accessible,
+             * do the first read here in order to return a meaningful status here. */
+            int rcGuest = VERR_IPE_UNINITIALIZED_STATUS;
+            vrc = i_readInternal(mData.mObjData, &rcGuest);
+            if (RT_FAILURE(vrc))
+            {
+                /*
+                 * We need to actively terminate our process tool in case of an error here,
+                 * as this otherwise would be done on (directory) object destruction implicitly.
+                 * This in turn then will run into a timeout, as the directory object won't be
+                 * around anymore at that time. Ugly, but that's how it is for the moment.
+                 */
+                int vrcTerm = mData.mProcessTool.terminate(30 * RT_MS_1SEC, NULL /* prcGuest */);
+                AssertRC(vrcTerm);
 
-/** @todo r=bird: IGuest::directoryOpen need to fail if the directory doesn't
- *        exist like it is documented to do.  It seems this async approach or
- *        something is delaying such errors till GuestDirectory::read() is
- *        called, which is clearly messed up.
- */
+                if (vrc == VERR_GSTCTL_GUEST_ERROR)
+                    vrc = rcGuest;
+            }
+        }
     }
 
     /* Confirm a successful initialization when it's the case. */
@@ -117,6 +131,8 @@ int GuestDirectory::init(Console *pConsole, GuestSession *pSession, ULONG aObjec
         autoInitSpan.setSucceeded();
     else
         autoInitSpan.setFailed();
+
+    LogFlowFuncLeaveRC(vrc);
     return vrc;
 }
 
@@ -283,20 +299,15 @@ int GuestDirectory::i_closeInternal(int *prcGuest)
 }
 
 /**
- * Reads the next directory entry.
+ * Reads the next directory entry, internal version.
  *
  * @return VBox status code. Will return VERR_NO_MORE_FILES if no more entries are available.
- * @param  fsObjInfo            Where to store the read directory entry.
+ * @param  objData              Where to store the read directory entry as internal object data.
  * @param  prcGuest             Where to store the guest result code in case VERR_GSTCTL_GUEST_ERROR is returned.
  */
-int GuestDirectory::i_readInternal(ComObjPtr<GuestFsObjInfo> &fsObjInfo, int *prcGuest)
+int GuestDirectory::i_readInternal(GuestFsObjData &objData, int *prcGuest)
 {
     AssertPtrReturn(prcGuest, VERR_INVALID_POINTER);
-
-    /* Create the FS info object. */
-    HRESULT hr = fsObjInfo.createObject();
-    if (FAILED(hr))
-        return VERR_COM_UNEXPECTED;
 
     GuestProcessStreamBlock curBlock;
     int rc = mData.mProcessTool.waitEx(GUESTPROCESSTOOL_WAIT_FLAG_STDOUT_BLOCK, &curBlock, prcGuest);
@@ -313,11 +324,9 @@ int GuestDirectory::i_readInternal(ComObjPtr<GuestFsObjInfo> &fsObjInfo, int *pr
         {
             if (curBlock.GetCount()) /* Did we get content? */
             {
-                GuestFsObjData objData;
-                rc = objData.FromLs(curBlock, true /* fLong */);
-                if (RT_SUCCESS(rc))
+                if (curBlock.GetString("name"))
                 {
-                   rc = fsObjInfo->init(objData);
+                    rc = objData.FromLs(curBlock, true /* fLong */);
                 }
                 else
                     rc = VERR_PATH_NOT_FOUND;
@@ -328,6 +337,46 @@ int GuestDirectory::i_readInternal(ComObjPtr<GuestFsObjInfo> &fsObjInfo, int *pr
                 rc = VERR_NO_MORE_FILES;
             }
         }
+    }
+
+    LogFlowThisFunc(("Returning rc=%Rrc\n", rc));
+    return rc;
+}
+
+/**
+ * Reads the next directory entry.
+ *
+ * @return VBox status code. Will return VERR_NO_MORE_FILES if no more entries are available.
+ * @param  fsObjInfo            Where to store the read directory entry.
+ * @param  prcGuest             Where to store the guest result code in case VERR_GSTCTL_GUEST_ERROR is returned.
+ */
+int GuestDirectory::i_read(ComObjPtr<GuestFsObjInfo> &fsObjInfo, int *prcGuest)
+{
+    AssertPtrReturn(prcGuest, VERR_INVALID_POINTER);
+
+    /* Create the FS info object. */
+    HRESULT hr = fsObjInfo.createObject();
+    if (FAILED(hr))
+        return VERR_COM_UNEXPECTED;
+
+    int rc;
+
+    /* If we have a valid object data cache, read from it. */
+    if (mData.mObjData.mName.isNotEmpty())
+    {
+        rc = fsObjInfo->init(mData.mObjData);
+        if (RT_SUCCESS(rc))
+        {
+            mData.mObjData.mName = ""; /* Mark the object data as being empty (beacon). */
+        }
+    }
+    else /* Otherwise ask the guest for the next object data (block). */
+    {
+
+        GuestFsObjData objData;
+        rc = i_readInternal(objData, prcGuest);
+        if (RT_SUCCESS(rc))
+            rc = fsObjInfo->init(objData);
     }
 
     LogFlowThisFunc(("Returning rc=%Rrc\n", rc));
@@ -390,7 +439,7 @@ HRESULT GuestDirectory::read(ComPtr<IFsObjInfo> &aObjInfo)
 
     ComObjPtr<GuestFsObjInfo> fsObjInfo;
     int rcGuest = VERR_IPE_UNINITIALIZED_STATUS;
-    int vrc = i_readInternal(fsObjInfo, &rcGuest);
+    int vrc = i_read(fsObjInfo, &rcGuest);
     if (RT_SUCCESS(vrc))
     {
         /* Return info object to the caller. */
