@@ -45,6 +45,7 @@ UIToolPaneMachine::UIToolPaneMachine(UIActionPool *pActionPool, QWidget *pParent
     , m_pPaneDetails(0)
     , m_pPaneSnapshots(0)
     , m_pPaneLogViewer(0)
+    , m_fActive(false)
 {
     /* Prepare: */
     prepare();
@@ -54,6 +55,18 @@ UIToolPaneMachine::~UIToolPaneMachine()
 {
     /* Cleanup: */
     cleanup();
+}
+
+void UIToolPaneMachine::setActive(bool fActive)
+{
+    /* Save activity: */
+    if (m_fActive != fActive)
+    {
+        m_fActive = fActive;
+
+        /* Handle token change: */
+        handleTokenChange();
+    }
 }
 
 UIToolType UIToolPaneMachine::currentTool() const
@@ -174,6 +187,9 @@ void UIToolPaneMachine::openTool(UIToolType enmType)
                 AssertFailedReturnVoid();
         }
     }
+
+    /* Handle token change: */
+    handleTokenChange();
 }
 
 void UIToolPaneMachine::closeTool(UIToolType enmType)
@@ -201,6 +217,9 @@ void UIToolPaneMachine::closeTool(UIToolType enmType)
         m_pLayout->removeWidget(pWidget);
         delete pWidget;
     }
+
+    /* Handle token change: */
+    handleTokenChange();
 }
 
 void UIToolPaneMachine::setErrorDetails(const QString &strDetails)
@@ -276,4 +295,9 @@ void UIToolPaneMachine::cleanup()
         m_pLayout->removeWidget(pWidget);
         delete pWidget;
     }
+}
+
+void UIToolPaneMachine::handleTokenChange()
+{
+    // printf("UIToolPaneMachine::handleTokenChange: Active = %d, current tool = %d\n", m_fActive, currentTool());
 }

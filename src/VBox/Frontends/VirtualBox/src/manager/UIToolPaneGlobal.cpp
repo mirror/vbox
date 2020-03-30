@@ -44,6 +44,7 @@ UIToolPaneGlobal::UIToolPaneGlobal(UIActionPool *pActionPool, QWidget *pParent /
     , m_pPaneNetwork(0)
     , m_pPaneCloud(0)
     , m_pPaneResourceMonitor(0)
+    , m_fActive(false)
 {
     /* Prepare: */
     prepare();
@@ -53,6 +54,18 @@ UIToolPaneGlobal::~UIToolPaneGlobal()
 {
     /* Cleanup: */
     cleanup();
+}
+
+void UIToolPaneGlobal::setActive(bool fActive)
+{
+    /* Save activity: */
+    if (m_fActive != fActive)
+    {
+        m_fActive = fActive;
+
+        /* Handle token change: */
+        handleTokenChange();
+    }
 }
 
 UIToolType UIToolPaneGlobal::currentTool() const
@@ -193,6 +206,9 @@ void UIToolPaneGlobal::openTool(UIToolType enmType)
                 AssertFailedReturnVoid();
         }
     }
+
+    /* Handle token change: */
+    handleTokenChange();
 }
 
 void UIToolPaneGlobal::closeTool(UIToolType enmType)
@@ -220,6 +236,9 @@ void UIToolPaneGlobal::closeTool(UIToolType enmType)
         m_pLayout->removeWidget(pWidget);
         delete pWidget;
     }
+
+    /* Handle token change: */
+    handleTokenChange();
 }
 
 void UIToolPaneGlobal::prepare()
@@ -240,4 +259,9 @@ void UIToolPaneGlobal::cleanup()
         m_pLayout->removeWidget(pWidget);
         delete pWidget;
     }
+}
+
+void UIToolPaneGlobal::handleTokenChange()
+{
+    // printf("UIToolPaneGlobal::handleTokenChange: Active = %d, current tool = %d\n", m_fActive, currentTool());
 }

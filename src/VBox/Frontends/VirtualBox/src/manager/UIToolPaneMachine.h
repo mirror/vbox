@@ -67,6 +67,11 @@ public:
     /** Destructs tools pane. */
     virtual ~UIToolPaneMachine() /* override */;
 
+    /** Defines whether this pane is @a fActive. */
+    void setActive(bool fActive);
+    /** Returns whether this pane is active. */
+    bool active() const { return m_fActive; }
+
     /** Returns type of tool currently opened. */
     UIToolType currentTool() const;
     /** Returns whether tool of particular @a enmType is opened. */
@@ -100,6 +105,9 @@ private:
     /** Cleanups all. */
     void cleanup();
 
+    /** Handles token change. */
+    void handleTokenChange();
+
     /** Holds the action pool reference. */
     UIActionPool *m_pActionPool;
 
@@ -116,6 +124,9 @@ private:
     UISnapshotPane      *m_pPaneSnapshots;
     /** Holds the Logviewer pane instance. */
     UIVMLogViewerWidget *m_pPaneLogViewer;
+
+    /** Holds whether this pane is active. */
+    bool  m_fActive;
 
     /** Holds the cache of passed items. */
     QList<UIVirtualMachineItem*>  m_items;
