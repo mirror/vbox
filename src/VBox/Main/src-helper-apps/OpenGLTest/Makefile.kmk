@@ -69,7 +69,6 @@ if (   defined(VBOX_WITH_QTGUI) \
   endif
   if1of ($(KBUILD_TARGET), freebsd linux netbsd openbsd solaris) # the X11 gang
    VBoxTestOGL_LIBS += \
-  	Xmu \
   	X11 \
   	Xext
    VBoxTestOGL_LIBPATH = \
