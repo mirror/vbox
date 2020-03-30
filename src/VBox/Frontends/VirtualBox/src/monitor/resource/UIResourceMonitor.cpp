@@ -237,8 +237,9 @@ protected:
     virtual void drawFocus ( QPainter * /*painter*/, const QStyleOptionViewItem & /*option*/, const QRect & /*rect*/ ) const {}
 };
 
+
 /*********************************************************************************************************************************
-*   Class UIVMResouceMonitorTableView implementation.                                                                           *
+*   Class UIVMResouceMonitorTableView implementation.                                                                            *
 *********************************************************************************************************************************/
 
 UIVMResouceMonitorTableView::UIVMResouceMonitorTableView(QWidget *pParent /* = 0 */)
