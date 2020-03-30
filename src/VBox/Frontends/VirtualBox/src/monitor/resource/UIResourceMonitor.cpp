@@ -72,6 +72,8 @@ class UIVMResouceMonitorTableView : public QTableView
 public:
 
     UIVMResouceMonitorTableView(QWidget *pParent = 0);
+    void setMinimumColumnWidths(const QVector<int>& widths);
+    void updateColumVisibility();
 
 protected:
 
@@ -79,13 +81,12 @@ protected:
 
 private slots:
 
-    void sltHeaderResized(int iIndex, int iOldSize, int iNewSize);
+
 
 private:
 
     void resizeHeader();
-    QSet<int> m_userResizedColums;
-
+    QVector<int> m_minimumColumnWidths;
 };
 
 /*********************************************************************************************************************************
@@ -145,6 +146,7 @@ public:
     const QVariant data() const;
 
 private:
+
     QVariant m_data;
 };
 
@@ -165,7 +167,9 @@ public:
 protected:
 
     //virtual bool lessThan(const QModelIndex &left, const QModelIndex &right) const /* override */;
-    virtual bool filterAcceptsColumn(int source_column, const QModelIndex &source_parent) const /* override */;
+    /** Section (column) visibility is controlled by the QHeaderView (see UIVMResouceMonitorTableView::updateColumVisibility)
+     *  to have somewhat meaningful column resizing. */
+    //virtual bool filterAcceptsColumn(int source_column, const QModelIndex &source_parent) const /* override */;
 
 private:
 
@@ -238,24 +242,45 @@ protected:
 };
 
 
+
 /*********************************************************************************************************************************
 *   Class UIVMResouceMonitorTableView implementation.                                                                            *
 *********************************************************************************************************************************/
 
 UIVMResouceMonitorTableView::UIVMResouceMonitorTableView(QWidget *pParent /* = 0 */)
     :QTableView(pParent)
+    , m_minimumColumnWidths(QVector<int>((int)VMResouceMonitorColumn_Max, 0))
 {
-    QHeaderView* pHeader = horizontalHeader();
-    if (pHeader)
+}
+
+void UIVMResouceMonitorTableView::setMinimumColumnWidths(const QVector<int>& widths)
+{
+    m_minimumColumnWidths = widths;
+}
+
+void UIVMResouceMonitorTableView::updateColumVisibility()
+{
+    UIResourceMonitorProxyModel *pProxyModel = qobject_cast<UIResourceMonitorProxyModel *>(model());
+    if (!pProxyModel)
+        return;
+    UIResourceMonitorModel *pModel = qobject_cast<UIResourceMonitorModel *>(pProxyModel->sourceModel());
+    QHeaderView *pHeader = horizontalHeader();
+
+    if (!pModel || !pHeader)
+        return;
+    for (int i = (int)VMResouceMonitorColumn_Name; i < (int)VMResouceMonitorColumn_Max; ++i)
     {
-        connect(pHeader, &QHeaderView::sectionResized, this, &UIVMResouceMonitorTableView::sltHeaderResized);
-        //pHeader->setResizeMode(QHeaderView::ResizeToContents);
+        if (!pModel->columnVisible(i))
+            pHeader->hideSection(i);
+        else
+            pHeader->showSection(i);
     }
+    resizeHeader();
 }
 
 void UIVMResouceMonitorTableView::resizeEvent(QResizeEvent *pEvent)
 {
-    //resizeHeader();
+    resizeHeader();
     QTableView::resizeEvent(pEvent);
 }
 
@@ -265,14 +290,14 @@ void UIVMResouceMonitorTableView::resizeHeader()
     if (!pHeader)
         return;
     int iSectionCount = pHeader->count();
-    if (iSectionCount <= 0)
-        return;
-    pHeader->setDefaultSectionSize(width() / iSectionCount);
-}
-
-void UIVMResouceMonitorTableView::sltHeaderResized(int iIndex, int iOldSize, int iNewSize)
-{
-    printf("section resize %d %d %d\n", iIndex, iOldSize, iNewSize);
+    int iHiddenSectionCount = pHeader->hiddenSectionCount();
+    int iWidth = width() / (iSectionCount - iHiddenSectionCount);
+    for (int i = 0; i < iSectionCount && i < m_minimumColumnWidths.size(); ++i)
+    {
+        if (pHeader->isSectionHidden(i))
+            continue;
+        pHeader->resizeSection(i, iWidth < m_minimumColumnWidths[i] ? m_minimumColumnWidths[i] : iWidth);
+    }
 }
 
 
@@ -407,15 +432,15 @@ void UIResourceMonitorProxyModel::reFilter()
     emit layoutChanged();
 }
 
-
-bool UIResourceMonitorProxyModel::filterAcceptsColumn(int iSourceColumn, const QModelIndex &sourceParent) const
-{
-    Q_UNUSED(sourceParent);
-    UIResourceMonitorModel* pModel = qobject_cast<UIResourceMonitorModel*>(sourceModel());
-    if (!pModel)
-        return true;
-    return pModel->columnVisible(iSourceColumn);
-}
+/* See the function definition comment: */
+// bool UIResourceMonitorProxyModel::filterAcceptsColumn(int iSourceColumn, const QModelIndex &sourceParent) const
+// {
+//     Q_UNUSED(sourceParent);
+//     UIResourceMonitorModel* pModel = qobject_cast<UIResourceMonitorModel*>(sourceModel());
+//     if (!pModel)
+//         return true;
+//     return pModel->columnVisible(iSourceColumn);
+// }
 
 
 /*********************************************************************************************************************************
@@ -782,6 +807,18 @@ void UIResourceMonitorWidget::retranslateUi()
     m_columnCaptions[VMResouceMonitorColumn_VMExits] = tr("VM Exits");
     if (m_pModel)
         m_pModel->setColumnCaptions(m_columnCaptions);
+    if (m_pTableView)
+    {
+        QFontMetrics fontMetrics(m_pTableView->font());
+        QVector<int> columnWidths;
+        foreach (const QString strCaption, m_columnCaptions)
+        {
+            columnWidths << fontMetrics.width(strCaption) +
+                QApplication::style()->pixelMetric(QStyle::PM_LayoutLeftMargin) +
+                QApplication::style()->pixelMetric(QStyle::PM_LayoutRightMargin);
+        }
+        m_pTableView->setMinimumColumnWidths(columnWidths);
+    }
 }
 
 void UIResourceMonitorWidget::resizeEvent(QResizeEvent *pEvent)
@@ -845,9 +882,7 @@ void UIResourceMonitorWidget::prepareWidgets()
            m_pTableView->setSelectionBehavior(QAbstractItemView::SelectRows);*/
         m_pTableView->setShowGrid(false);
         m_pTableView->horizontalHeader()->setHighlightSections(false);
-        //m_pTableView->horizontalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
-        //m_pTableView->horizontalHeader()->setStretchLastSection(true);
-
+        m_pTableView->horizontalHeader()->setSectionResizeMode(QHeaderView::Fixed);
         m_pTableView->verticalHeader()->setVisible(false);
         m_pTableView->setEditTriggers(QAbstractItemView::NoEditTriggers);
         /* Minimize the row height: */
@@ -857,7 +892,7 @@ void UIResourceMonitorWidget::prepareWidgets()
         m_pTableView->sortByColumn(0, Qt::AscendingOrder);
         connect(m_pModel, &UIResourceMonitorModel::sigDataUpdate, this, &UIResourceMonitorWidget::sltHandleDataUpdate);
 
-        m_pModel->setColumnVisible(m_columnVisible);
+        updateModelColumVisibilityCache();
     }
 }
 
@@ -987,8 +1022,9 @@ void UIResourceMonitorWidget::updateModelColumVisibilityCache()
 {
     if (m_pModel)
         m_pModel->setColumnVisible(m_columnVisible);
-    if (m_pProxyModel)
-        m_pProxyModel->reFilter();
+    /* Notify the table view for the changed column visibility: */
+    if (m_pTableView)
+        m_pTableView->updateColumVisibility();
 }
 
 bool UIResourceMonitorWidget::columnVisible(int iColumnId) const
