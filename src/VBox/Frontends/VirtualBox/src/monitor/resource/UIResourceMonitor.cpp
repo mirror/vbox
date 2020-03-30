@@ -197,6 +197,7 @@ public:
     void setColumnCaptions(const QVector<QString>& captions);
     void setColumnVisible(const QMap<int, bool>& columnVisible);
     bool columnVisible(int iColumnId) const;
+    void setShouldUpdate(bool fShouldUpdate);
 
 private slots:
 
@@ -223,7 +224,9 @@ private:
     /** @} */
     CPerformanceCollector m_performanceMonitor;
     QMap<int, bool> m_columnVisible;
-
+    /** If true the table data and corresponding view is updated. Possibly set by host widget to true only
+      *  when the widget is visible in the main UI. */
+    bool m_fShouldUpdate;
 };
 
 
@@ -449,6 +452,7 @@ void UIResourceMonitorProxyModel::reFilter()
 UIResourceMonitorModel::UIResourceMonitorModel(QObject *parent /*= 0*/)
     :QAbstractTableModel(parent)
     , m_pTimer(new QTimer(this))
+    , m_fShouldUpdate(true)
 {
     initializeItems();
     connect(gVBoxEvents, &UIVirtualBoxEventHandler::sigMachineStateChange,
@@ -471,6 +475,11 @@ int UIResourceMonitorModel::columnCount(const QModelIndex &parent /* = QModelInd
 {
     Q_UNUSED(parent);
     return VMResouceMonitorColumn_Max;
+}
+
+void UIResourceMonitorModel::setShouldUpdate(bool fShouldUpdate)
+{
+    m_fShouldUpdate = fShouldUpdate;
 }
 
 QVariant UIResourceMonitorModel::data(const QModelIndex &index, int role) const
@@ -587,6 +596,8 @@ void UIResourceMonitorModel::sltMachineStateChanged(const QUuid &uId, const KMac
 
 void UIResourceMonitorModel::sltTimeout()
 {
+    if (!m_fShouldUpdate)
+        return;
     ULONG aPctExecuting;
     ULONG aPctHalted;
     ULONG aPctVMM;
@@ -786,6 +797,8 @@ bool UIResourceMonitorWidget::isCurrentTool() const
 void UIResourceMonitorWidget::setIsCurrentTool(bool fIsCurrentTool)
 {
     m_fIsCurrentTool = fIsCurrentTool;
+    if (m_pModel)
+        m_pModel->setShouldUpdate(fIsCurrentTool);
 }
 
 void UIResourceMonitorWidget::retranslateUi()
