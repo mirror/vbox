@@ -7059,16 +7059,15 @@ HMSVM_EXIT_DECL hmR0SvmExitIret(PVMCPUCC pVCpu, PSVMTRANSIENT pSvmTransient)
 {
     HMSVM_VALIDATE_EXIT_HANDLER_PARAMS(pVCpu, pSvmTransient);
 
-    /* Clear NMI blocking. */
-    if (VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_BLOCK_NMIS))
-        VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_BLOCK_NMIS);
-
-    /* Indicate that we no longer need to #VMEXIT when the guest is ready to receive NMIs, it is now ready. */
+    /* Indicate that we no longer need to #VMEXIT when the guest is ready to receive NMIs, it is now (almost) ready. */
     PSVMVMCB pVmcb = hmR0SvmGetCurrentVmcb(pVCpu);
     hmR0SvmClearCtrlIntercept(pVCpu, pVmcb, SVM_CTRL_INTERCEPT_IRET);
 
-    /* Deliver the pending NMI via hmR0SvmEvaluatePendingEvent() and resume guest execution. */
-    return VINF_SUCCESS;
+    /* Emulate the IRET. We have to execute the IRET before an NMI, but must potentially
+     * deliver a pending NMI right after. If the IRET faults, an NMI can come before the
+     * handler executes. Yes, x86 is ugly.
+     */
+    return VINF_EM_RAW_EMULATE_INSTR;
 }
 
 
