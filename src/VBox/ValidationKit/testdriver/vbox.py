@@ -1054,6 +1054,21 @@ class TestDriver(base.TestDriver):                                              
             assert(self.oVBoxSvcProcess is None);
         return self.fImportedVBoxApi;
 
+    def sanitizeLogFlagsString(self, sString):
+        """
+        Sanitizes a given log flag string by removing any separators (":" and ",") with
+        a space and removes quotes.
+
+        ## @todo !!! HACK ALERT !!! Needed until we have proper argument parsing / quoting support.
+        """
+        for ch in [ ':', ',' ]:
+            if ch in sString:
+                sString = sString.replace(ch, " ");
+        for ch in [ '\'', '"' ]:
+            if ch in sString:
+                sString = sString.replace(ch, "");
+        return sString;
+
     def _startVBoxSVC(self): # pylint: disable=too-many-statements
         """ Starts VBoxSVC. """
         assert(self.oVBoxSvcProcess is None);
@@ -1064,7 +1079,8 @@ class TestDriver(base.TestDriver):                                              
         try:    os.remove(self.sVBoxSvcLogFile);
         except: pass;
         os.environ['VBOX_LOG']       = self.sLogSvcGroups;
-        os.environ['VBOX_LOG_FLAGS'] = '%s append' % (self.sLogSvcFlags,);  # Append becuse of VBoxXPCOMIPCD.
+        # Append because of VBoxXPCOMIPCD.
+        os.environ['VBOX_LOG_FLAGS'] = '%s append' % (self.sanitizeLogFlagsString(self.sLogSvcFlags),);
         if self.sLogSvcDest:
             os.environ['VBOX_LOG_DEST'] = 'nodeny ' + self.sLogSvcDest;
         else:
@@ -1290,7 +1306,7 @@ class TestDriver(base.TestDriver):                                              
         try:    os.remove(self.sSelfLogFile);
         except: pass;
         os.environ['VBOX_LOG']       = self.sLogSelfGroups;
-        os.environ['VBOX_LOG_FLAGS'] = '%s append' % (self.sLogSelfFlags, );
+        os.environ['VBOX_LOG_FLAGS'] = '%s append' % (self.sanitizeLogFlagsString(self.sLogSelfFlags), );
         if self.sLogSelfDest:
             os.environ['VBOX_LOG_DEST'] = 'nodeny ' + self.sLogSelfDest;
         else:
@@ -1810,7 +1826,7 @@ class TestDriver(base.TestDriver):                                              
         elif asArgs[iArg] == '--vbox-log-flags':
             iArg += 1;
             if iArg >= len(asArgs):
-                raise base.InvalidOption('The "--vbox-svc-flags" takes an argument');
+                raise base.InvalidOption('The "--vbox-log-flags" takes an argument');
             self.sLogSelfFlags     = asArgs[iArg];
             self.sLogSessionFlags  = asArgs[iArg];
             self.sLogSvcFlags      = asArgs[iArg];
@@ -2766,7 +2782,7 @@ class TestDriver(base.TestDriver):                                              
             sLogDest = 'file=%s' % (sLogFile,);
         asEnvFinal = [
             'VBOX_LOG=%s' % (self.sLogSessionGroups,),
-            'VBOX_LOG_FLAGS=%s' % (self.sLogSessionFlags,),
+            'VBOX_LOG_FLAGS=%s' % (self.sanitizeLogFlagsString(self.sLogSessionFlags),),
             'VBOX_LOG_DEST=nodeny %s' % (sLogDest,),
             'VBOX_RELEASE_LOG_FLAGS=append time',
         ];
