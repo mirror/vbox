@@ -194,9 +194,9 @@ RTDECL(PRTTIMESPEC) RTTimeNow(PRTTIMESPEC pTime)
     IPRT_LINUX_RESTORE_EFL_AC();
 # ifdef _LINUX_TIME64_H
     return RTTimeSpecSetTimespec64(pTime, &Ts);
-#else
+# else
     return RTTimeSpecSetTimespec(pTime, &Ts);
-#endif
+# endif
 #else   /* < 2.6.16 */
     struct timeval Tv;
     do_gettimeofday(&Tv);
