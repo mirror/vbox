@@ -38,6 +38,7 @@ class UIActionPool;
 class UIToolBar;
 class UIResourceMonitorProxyModel;
 class UIResourceMonitorModel;
+class UIVMResouceMonitorTableView;
 
 /** QWidget extension to display a Linux top like utility that sort running vm wrt. resource allocations. */
 class UIResourceMonitorWidget : public QIWithRetranslateUI<QWidget>
@@ -52,8 +53,10 @@ public:
     UIResourceMonitorWidget(EmbedTo enmEmbedding, UIActionPool *pActionPool,
                                bool fShowToolbar = true, QWidget *pParent = 0);
     ~UIResourceMonitorWidget();
-
     QMenu *menu() const;
+
+    bool isCurrentTool() const;
+    void setIsCurrentTool(bool fIsCurrentTool);
 
 #ifdef VBOX_WS_MAC
     UIToolBar *toolbar() const { return m_pToolBar; }
@@ -102,14 +105,16 @@ private:
     /** @name Misc members.
       * @{ */
         UIToolBar *m_pToolBar;
-        QTableView *m_pTableView;
+        UIVMResouceMonitorTableView *m_pTableView;
         UIResourceMonitorProxyModel *m_pProxyModel;
         UIResourceMonitorModel      *m_pModel;
         QVector<QString>             m_columnCaptions;
         /* The key is the column id (VMResouceMonitorColumn) and value is true if the column is visible. */
         QMap<int, bool>              m_columnVisible;
     /** @} */
-    QFrame* m_pColumnSelectionMenu;
+    QFrame *m_pColumnSelectionMenu;
+    /** Indicates if this widget's host tool is current tool. */
+    bool    m_fIsCurrentTool;
 };
 
 class UIResourceMonitorFactory : public QIManagerDialogFactory

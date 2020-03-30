@@ -59,6 +59,35 @@ struct ResourceColumn
     QString m_strName;
     bool    m_fEnabled;
 };
+
+
+/*********************************************************************************************************************************
+*   Class UIVMResouceMonitorTableView definition.                                                                           *
+*********************************************************************************************************************************/
+
+class UIVMResouceMonitorTableView : public QTableView
+{
+    Q_OBJECT;
+
+public:
+
+    UIVMResouceMonitorTableView(QWidget *pParent = 0);
+
+protected:
+
+    virtual void resizeEvent(QResizeEvent *pEvent) /* override */;
+
+private slots:
+
+    void sltHeaderResized(int iIndex, int iOldSize, int iNewSize);
+
+private:
+
+    void resizeHeader();
+    QSet<int> m_userResizedColums;
+
+};
+
 /*********************************************************************************************************************************
 *   Class UIVMResouceMonitorItem definition.                                                                           *
 *********************************************************************************************************************************/
@@ -69,7 +98,7 @@ public:
     UIResourceMonitorItem(const QUuid &uid);
     UIResourceMonitorItem();
     bool operator==(const UIResourceMonitorItem& other) const;
-    bool isWithGuestAdditions();
+    bool isWithGuestAdditions() const;
 
     QUuid    m_VMuid;
     QString  m_strVMName;
@@ -95,7 +124,7 @@ public:
     quint64 m_uVMExitTotal;
 
     CMachineDebugger m_comDebugger;
-    CGuest           m_comGuest;
+    mutable CGuest           m_comGuest;
 private:
 
     void setupPerformanceCollector();
@@ -209,6 +238,44 @@ protected:
 };
 
 /*********************************************************************************************************************************
+*   Class UIVMResouceMonitorTableView implementation.                                                                           *
+*********************************************************************************************************************************/
+
+UIVMResouceMonitorTableView::UIVMResouceMonitorTableView(QWidget *pParent /* = 0 */)
+    :QTableView(pParent)
+{
+    QHeaderView* pHeader = horizontalHeader();
+    if (pHeader)
+    {
+        connect(pHeader, &QHeaderView::sectionResized, this, &UIVMResouceMonitorTableView::sltHeaderResized);
+        //pHeader->setResizeMode(QHeaderView::ResizeToContents);
+    }
+}
+
+void UIVMResouceMonitorTableView::resizeEvent(QResizeEvent *pEvent)
+{
+    //resizeHeader();
+    QTableView::resizeEvent(pEvent);
+}
+
+void UIVMResouceMonitorTableView::resizeHeader()
+{
+    QHeaderView* pHeader = horizontalHeader();
+    if (!pHeader)
+        return;
+    int iSectionCount = pHeader->count();
+    if (iSectionCount <= 0)
+        return;
+    pHeader->setDefaultSectionSize(width() / iSectionCount);
+}
+
+void UIVMResouceMonitorTableView::sltHeaderResized(int iIndex, int iOldSize, int iNewSize)
+{
+    printf("section resize %d %d %d\n", iIndex, iOldSize, iNewSize);
+}
+
+
+/*********************************************************************************************************************************
 *   Class UIVMResouceMonitorItem implementation.                                                                           *
 *********************************************************************************************************************************/
 UIResourceMonitorItem::UIResourceMonitorItem(const QUuid &uid, const QString &strVMName)
@@ -290,7 +357,7 @@ bool UIResourceMonitorItem::operator==(const UIResourceMonitorItem& other) const
     return false;
 }
 
-bool UIResourceMonitorItem::isWithGuestAdditions()
+bool UIResourceMonitorItem::isWithGuestAdditions() const
 {
     if (m_comGuest.isNull())
         return false;
@@ -385,7 +452,6 @@ QVariant UIResourceMonitorModel::data(const QModelIndex &index, int role) const
     int iDecimalCount = 2;
     if (!index.isValid() || role != Qt::DisplayRole || index.row() >= rowCount())
         return QVariant();
-    UIResourceMonitorItem* pItem = static_cast<UIResourceMonitorItem*>(index.internalPointer());
 
     switch (index.column())
     {
@@ -399,14 +465,14 @@ QVariant UIResourceMonitorModel::data(const QModelIndex &index, int role) const
             return m_itemList[index.row()].m_uCPUVMMLoad;
             break;
         case VMResouceMonitorColumn_RAMUsedAndTotal:
-            if (pItem && pItem->isWithGuestAdditions())
+            if (m_itemList[index.row()].isWithGuestAdditions())
                 return QString("%1/%2").arg(uiCommon().formatSize(_1K * m_itemList[index.row()].m_uUsedRAM, iDecimalCount)).
                     arg(uiCommon().formatSize(_1K * m_itemList[index.row()].m_uTotalRAM, iDecimalCount));
             else
                 return tr("N/A");
             break;
         case VMResouceMonitorColumn_RAMUsedPercentage:
-            if (pItem && pItem->isWithGuestAdditions())
+            if (m_itemList[index.row()].isWithGuestAdditions())
                 return QString("%1%").arg(QString::number(m_itemList[index.row()].m_fRAMUsagePercentage, 'f', 2));
             else
                 return tr("N/A");
@@ -670,6 +736,7 @@ UIResourceMonitorWidget::UIResourceMonitorWidget(EmbedTo enmEmbedding, UIActionP
     , m_pProxyModel(0)
     , m_pModel(0)
     , m_pColumnSelectionMenu(0)
+    , m_fIsCurrentTool(true)
 {
     /* Prepare: */
     prepare();
@@ -683,6 +750,16 @@ UIResourceMonitorWidget::~UIResourceMonitorWidget()
 QMenu *UIResourceMonitorWidget::menu() const
 {
     return NULL;
+}
+
+bool UIResourceMonitorWidget::isCurrentTool() const
+{
+    return m_fIsCurrentTool;
+}
+
+void UIResourceMonitorWidget::setIsCurrentTool(bool fIsCurrentTool)
+{
+    m_fIsCurrentTool = fIsCurrentTool;
 }
 
 void UIResourceMonitorWidget::retranslateUi()
@@ -752,7 +829,7 @@ void UIResourceMonitorWidget::prepareWidgets()
     m_pModel = new UIResourceMonitorModel(this);
     m_pProxyModel = new UIResourceMonitorProxyModel(this);
 
-    m_pTableView = new QTableView();
+    m_pTableView = new UIVMResouceMonitorTableView();
     if (m_pTableView && m_pModel && m_pProxyModel)
     {
         layout()->addWidget(m_pTableView);
@@ -767,7 +844,7 @@ void UIResourceMonitorWidget::prepareWidgets()
            m_pTableView->setSelectionBehavior(QAbstractItemView::SelectRows);*/
         m_pTableView->setShowGrid(false);
         m_pTableView->horizontalHeader()->setHighlightSections(false);
-        m_pTableView->horizontalHeader()->setSectionResizeMode(QHeaderView::Interactive);
+        //m_pTableView->horizontalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
         //m_pTableView->horizontalHeader()->setStretchLastSection(true);
 
         m_pTableView->verticalHeader()->setVisible(false);
