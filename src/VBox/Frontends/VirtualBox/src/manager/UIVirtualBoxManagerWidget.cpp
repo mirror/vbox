@@ -284,43 +284,48 @@ void UIVirtualBoxManagerWidget::sltHandleSlidingAnimationComplete(SlidingDirecti
 
 void UIVirtualBoxManagerWidget::sltHandleCloudMachineStateChange(const QUuid &uId)
 {
-    /* Acquire current item: */
-    UIVirtualMachineItem *pItem = currentItem();
-    const bool fCurrentItemIsOk = pItem && pItem->accessible();
-
-    /* If current item is Ok: */
-    if (fCurrentItemIsOk)
+    /* Not for global items: */
+    if (!isGlobalItemSelected())
     {
-        /* If Error-pane is chosen currently => open tool currently chosen in Tools-pane: */
-        if (m_pPaneToolsMachine->currentTool() == UIToolType_Error)
-            sltHandleToolsPaneIndexChange();
+        /* Acquire current item: */
+        UIVirtualMachineItem *pItem = currentItem();
+        const bool fCurrentItemIsOk = pItem && pItem->accessible();
 
-        /* If we still have same item selected: */
-        if (pItem && pItem->id() == uId)
+        /* If current item is Ok: */
+        if (fCurrentItemIsOk)
         {
-            /* Propagate current items to update the Details-pane: */
-            m_pPaneToolsMachine->setItems(currentItems());
-            /* Repeat the task a bit delayed: */
-            pItem->toCloud()->updateInfoAsync(true /* delayed? */);
-        }
-    }
-    else
-    {
-        /* Make sure Error pane raised: */
-        m_pPaneToolsMachine->openTool(UIToolType_Error);
+            /* If Error-pane is chosen currently => open tool currently chosen in Tools-pane: */
+            if (m_pPaneToolsMachine->currentTool() == UIToolType_Error)
+                sltHandleToolsPaneIndexChange();
 
-        /* If we still have same item selected: */
-        if (pItem && pItem->id() == uId)
+            /* If we still have same item selected: */
+            if (pItem && pItem->id() == uId)
+            {
+                /* Propagate current items to update the Details-pane: */
+                m_pPaneToolsMachine->setItems(currentItems());
+                /* Repeat the task a bit delayed: */
+                pItem->toCloud()->updateInfoAsync(true /* delayed? */);
+            }
+        }
+        else
         {
-            /* Propagate current items to update the Details-pane (in any case): */
-            m_pPaneToolsMachine->setItems(currentItems());
-            /* Propagate last access error to update the Error-pane (if machine selected but inaccessible): */
-            m_pPaneToolsMachine->setErrorDetails(pItem->accessError());
-        }
-    }
+            /* Make sure Error pane raised: */
+            if (m_pPaneToolsMachine->currentTool() != UIToolType_Error)
+                m_pPaneToolsMachine->openTool(UIToolType_Error);
 
-    /* Pass the signal further: */
-    emit sigCloudMachineStateChange(uId);
+            /* If we still have same item selected: */
+            if (pItem && pItem->id() == uId)
+            {
+                /* Propagate current items to update the Details-pane (in any case): */
+                m_pPaneToolsMachine->setItems(currentItems());
+                /* Propagate last access error to update the Error-pane (if machine selected but inaccessible): */
+                m_pPaneToolsMachine->setErrorDetails(pItem->accessError());
+            }
+        }
+
+        /* Pass the signal further: */
+        emit sigCloudMachineStateChange(uId);
+    }
 }
 
 void UIVirtualBoxManagerWidget::sltHandleToolMenuRequested(UIToolClass enmClass, const QPoint &position)
