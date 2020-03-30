@@ -35,8 +35,8 @@ class UIActionPool;
 class UICloudProfileManagerWidget;
 class UIHostNetworkManagerWidget;
 class UIMediumManagerWidget;
-class UIVirtualMachineItem;
 class UIResourceMonitorWidget;
+class UIVirtualMachineItem;
 class UIWelcomePane;
 class CMachine;
 
@@ -89,8 +89,8 @@ private:
     UIHostNetworkManagerWidget  *m_pPaneNetwork;
     /** Holds the Cloud Profile Manager instance. */
     UICloudProfileManagerWidget *m_pPaneCloud;
-    /** The VM Resource Monitor instance. */
-    UIResourceMonitorWidget   *m_pPaneResourceMonitor;
+    /** Holds the VM Resource Monitor instance. */
+    UIResourceMonitorWidget     *m_pPaneResourceMonitor;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_manager_UIToolPaneGlobal_h */
