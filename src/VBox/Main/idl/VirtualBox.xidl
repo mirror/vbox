@@ -26706,6 +26706,37 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         See <link to="#readState"/>.
       </desc>
     </attribute>
+
+    <method name="powerUp">
+      <desc>
+        Start cloud virual machine execution.
+      </desc>
+      <param name="progress" type="IProgress" dir="return">
+        <desc>
+          Progress object to track the operation completion.
+        </desc>
+      </param>
+    </method>
+
+    <method name="powerDown">
+      <desc>
+        Initiates the power down procedure to stop the virtual machine
+        execution.
+
+        The completion of the power down procedure is tracked using the returned
+        IProgress object. After the operation is complete, the machine will go
+        to the PoweredOff state.
+        <result name="VBOX_E_INVALID_VM_STATE">
+          Virtual machine must be Running, to be powered down.
+        </result>
+      </desc>
+      <param name="progress" type="IProgress" dir="return">
+        <desc>
+        Progress object to track the operation completion.
+        </desc>
+      </param>
+    </method>
+
   </interface>
 
   <!--
