@@ -201,6 +201,7 @@
         <file alias="seamless_on_16px.png">images/seamless_on_16px.png</file>
         <file alias="seamless_on_disabled_16px.png">images/seamless_on_disabled_16px.png</file>
         <file alias="search_16px.png">images/search_16px.png</file>
+        <file alias="search_disabled_16px.png">images/search_disabled_16px.png</file>
         <file alias="select_file_16px.png">images/select_file_16px.png</file>
         <file alias="select_file_disabled_16px.png">images/select_file_disabled_16px.png</file>
         <file alias="serial_port_16px.png">images/serial_port_16px.png</file>

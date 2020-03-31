@@ -204,6 +204,7 @@
         <file alias="seamless_on_16px_x2.png">images/x2/seamless_on_16px_x2.png</file>
         <file alias="seamless_on_disabled_16px_x2.png">images/x2/seamless_on_disabled_16px_x2.png</file>
         <file alias="search_16px_x2.png">images/x2/search_16px_x2.png</file>
+        <file alias="search_disabled_16px_x2.png">images/x2/search_disabled_16px_x2.png</file>
         <file alias="select_file_16px_x2.png">images/x2/select_file_16px_x2.png</file>
         <file alias="select_file_disabled_16px_x2.png">images/x2/select_file_disabled_16px_x2.png</file>
         <file alias="serial_port_16px_x2.png">images/x2/serial_port_16px_x2.png</file>
