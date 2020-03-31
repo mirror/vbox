@@ -107,16 +107,9 @@ private:
        void drawCombinedPieCharts(QPainter &painter, quint64 iMaximum);
        void drawDoughnutChart(QPainter &painter, quint64 iMaximum, int iDataIndex,
                               const QRectF &chartRect, const QRectF &innerRect);
-       /** Draws a doughnut shaped shart for two data series combines. the 2nd data is added on top of 1st. */
-       void drawCombinedDoughnutChart(QPainter &painter, quint64 iMaximum,
-                                      const QRectF &chartRect, const QRectF &innerRect);
 
        /** Drawing an overlay rectangle over the charts to indicate that they are disabled. */
        void drawDisabledChartRectangle(QPainter &painter);
-       /* Returns a half translucent complete arc. */
-       QPainterPath wholeArc(const QRectF &rectangle);
-       QPainterPath doughnutSlice(const QRectF &outerRectangle, const QRectF &innerRectangle,
-                                  float fStartAngle, float fSweepAngle);
        QConicalGradient conicalGradientForDataSeries(const QRectF &rectangle, int iDataIndex);
     /** @} */
 
@@ -186,7 +179,6 @@ UIChart::UIChart(QWidget *pParent, UIMetric *pMetric)
 
     retranslateUi();
 }
-
 
 bool UIChart::isPieChartAllowed() const
 {
@@ -473,7 +465,7 @@ void UIChart::drawPieChart(QPainter &painter, quint64 iMaximum, int iDataIndex,
     }
 
    /* Draw a white filled circle and that the arc for data: */
-    QPainterPath background = wholeArc(chartRect);
+    QPainterPath background = UIMonitorCommon::wholeArc(chartRect);
     painter.setPen(Qt::NoPen);
     painter.setBrush(QColor(255, 255, 255, m_iOverlayAlpha));
     painter.drawPath(background);
@@ -501,7 +493,7 @@ void UIChart::drawDoughnutChart(QPainter &painter, quint64 iMaximum, int iDataIn
     painter.drawArc(innerRect, 0, 3600 * 16);
 
     /* Draw a white filled circle and the arc for data: */
-    QPainterPath background = wholeArc(chartRect).subtracted(wholeArc(innerRect));
+    QPainterPath background = UIMonitorCommon::wholeArc(chartRect).subtracted(UIMonitorCommon::wholeArc(innerRect));
     painter.setPen(Qt::NoPen);
     painter.setBrush(QColor(255, 255, 255, m_iOverlayAlpha));
     painter.drawPath(background);
@@ -509,49 +501,7 @@ void UIChart::drawDoughnutChart(QPainter &painter, quint64 iMaximum, int iDataIn
     /* Draw the doughnut slice for the data: */
     float fAngle = 360.f * data->back() / (float)iMaximum;
     painter.setBrush(conicalGradientForDataSeries(chartRect, iDataIndex));
-    painter.drawPath(doughnutSlice(chartRect, innerRect, 90, fAngle));
-}
-
-void UIChart::drawCombinedDoughnutChart(QPainter &painter, quint64  iMaximum,
-                               const QRectF &chartRect, const QRectF &innerRect)
-{
-    int iDataIndex = 0;
-    const QQueue<quint64> *data = m_pMetric->data(iDataIndex);
-    if (!data || data->isEmpty())
-        return;
-
-    /* Draw two arcs. one for the inner the other for the outer circle: */
-    painter.setPen(QPen(QColor(100, 100, 100, m_iOverlayAlpha), 1));
-    painter.drawArc(chartRect, 0, 3600 * 16);
-    painter.drawArc(innerRect, 0, 3600 * 16);
-
-    /* Draw a translucent white background: */
-    QPainterPath background = wholeArc(chartRect).subtracted(wholeArc(innerRect));
-    painter.setPen(Qt::NoPen);
-    painter.setBrush(QColor(255, 255, 255, m_iOverlayAlpha));
-    painter.drawPath(background);
-
-    /* Draw a doughnut slice for the first data series: */
-    float fAngle = 360.f * data->back() / (float)iMaximum;
-    painter.setBrush(dataSeriesColor(iDataIndex, 50));
-    painter.drawPath(doughnutSlice(chartRect, innerRect, 90, fAngle));
-
-    /* Draw another slice for 2nd data series on top of the first if necessary: */
-    iDataIndex = 1;
-    const QQueue<quint64> *data2 = m_pMetric->data(iDataIndex);
-    if (data2 && !data2->isEmpty())
-    {
-        float fAngle2 = 360.f * data2->back() / (float)iMaximum;
-        painter.setBrush(dataSeriesColor(iDataIndex, 50));
-        painter.drawPath(doughnutSlice(chartRect, innerRect, 90 - fAngle, fAngle2));
-    }
-}
-
-QPainterPath UIChart::wholeArc(const QRectF &rectangle)
-{
-    QPainterPath arc;
-    arc.addEllipse(rectangle);
-    return arc;
+    painter.drawPath(UIMonitorCommon::doughnutSlice(chartRect, innerRect, 90, fAngle));
 }
 
 QConicalGradient UIChart::conicalGradientForDataSeries(const QRectF &rectangle, int iDataIndex)
@@ -564,23 +514,6 @@ QConicalGradient UIChart::conicalGradientForDataSeries(const QRectF &rectangle, 
     pieColor.setAlpha(m_iOverlayAlpha);
     gradient.setColorAt(1, pieColor);
     return gradient;
-}
-
-QPainterPath UIChart::doughnutSlice(const QRectF &outerRectangle, const QRectF &innerRectangle, float fStartAngle, float fSweepAngle)
-{
-    QPainterPath subPath1;
-    subPath1.moveTo(outerRectangle.center());
-    subPath1.arcTo(outerRectangle, fStartAngle,
-                   -1.f * fSweepAngle);
-    subPath1.closeSubpath();
-
-    QPainterPath subPath2;
-    subPath2.moveTo(innerRectangle.center());
-    subPath2.arcTo(innerRectangle, fStartAngle,
-                   -1.f * fSweepAngle);
-    subPath2.closeSubpath();
-
-    return subPath1.subtracted(subPath2);
 }
 
 void UIChart::drawCombinedPieCharts(QPainter &painter, quint64 iMaximum)
@@ -599,7 +532,11 @@ void UIChart::drawCombinedPieCharts(QPainter &painter, quint64 iMaximum)
         QRectF innerRect(QPointF(chartRect.left() + 0.25 * chartRect.width(), chartRect.top() + 0.25 * chartRect.height()),
                          QSizeF(0.5 * chartRect.width(), 0.5 * chartRect.height()));
         /* Draw a doughnut chart where data series are stacked on to of each other: */
-        drawCombinedDoughnutChart(painter, iMaximum, chartRect, innerRect);
+        if (m_pMetric->data(0) && !m_pMetric->data(0)->isEmpty() &&
+            m_pMetric->data(1) && !m_pMetric->data(1)->isEmpty())
+            UIMonitorCommon::drawCombinedDoughnutChart(m_pMetric->data(0)->back(), dataSeriesColor(0, 50),
+                                                       m_pMetric->data(1)->back(), dataSeriesColor(1, 50),
+                                                       painter, iMaximum, chartRect, innerRect, m_iOverlayAlpha);
 #if 0
         /* Draw a doughnut shaped chart and then pie chart inside it: */
         drawDoughnutChart(painter, iMaximum, 0 /* iDataIndex */, chartRect, innerRect);

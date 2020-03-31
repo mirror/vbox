@@ -16,6 +16,7 @@
  */
 
 /* Qt includes: */
+#include <QPainter>
 #include <QXmlStreamReader>
 
 
@@ -145,4 +146,57 @@ void UIMonitorCommon::getRAMLoad(CPerformanceCollector &comPerformanceCollector,
                 iOutFreeRAM = (quint64)fData;
         }
     }
+}
+
+/* static */
+QPainterPath UIMonitorCommon::doughnutSlice(const QRectF &outerRectangle, const QRectF &innerRectangle, float fStartAngle, float fSweepAngle)
+{
+    QPainterPath subPath1;
+    subPath1.moveTo(outerRectangle.center());
+    subPath1.arcTo(outerRectangle, fStartAngle,
+                   -1.f * fSweepAngle);
+    subPath1.closeSubpath();
+
+    QPainterPath subPath2;
+    subPath2.moveTo(innerRectangle.center());
+    subPath2.arcTo(innerRectangle, fStartAngle,
+                   -1.f * fSweepAngle);
+    subPath2.closeSubpath();
+
+    return subPath1.subtracted(subPath2);
+}
+
+/* static */
+QPainterPath UIMonitorCommon::wholeArc(const QRectF &rectangle)
+{
+    QPainterPath arc;
+    arc.addEllipse(rectangle);
+    return arc;
+}
+
+/* static */
+void UIMonitorCommon::drawCombinedDoughnutChart(quint64 data1, const QColor &data1Color,
+                               quint64 data2, const QColor &data2Color,
+                               QPainter &painter, quint64  iMaximum,
+                               const QRectF &chartRect, const QRectF &innerRect, int iOverlayAlpha)
+{
+    /* Draw two arcs. one for the inner the other for the outer circle: */
+    painter.setPen(QPen(QColor(100, 100, 100, iOverlayAlpha), 1));
+    painter.drawArc(chartRect, 0, 3600 * 16);
+    painter.drawArc(innerRect, 0, 3600 * 16);
+
+    /* Draw a translucent white background: */
+    QPainterPath background = wholeArc(chartRect).subtracted(wholeArc(innerRect));
+    painter.setPen(Qt::NoPen);
+    painter.setBrush(QColor(255, 255, 255, iOverlayAlpha));
+    painter.drawPath(background);
+
+    /* Draw a doughnut slice for the first data series: */
+    float fAngle = 360.f * data1 / (float)iMaximum;
+    painter.setBrush(data1Color);
+    painter.drawPath(doughnutSlice(chartRect, innerRect, 90, fAngle));
+
+    float fAngle2 = 360.f * data2 / (float)iMaximum;
+    painter.setBrush(data2Color);
+    painter.drawPath(doughnutSlice(chartRect, innerRect, 90 - fAngle, fAngle2));
 }

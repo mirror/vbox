@@ -48,6 +48,15 @@ public:
         static void getRAMLoad(CPerformanceCollector &comPerformanceCollector, QVector<QString> &nameList,
                                QVector<CUnknown>& objectList, quint64 &iOutTotalRAM, quint64 &iOutFreeRAM);
 
+
+        static QPainterPath doughnutSlice(const QRectF &outerRectangle, const QRectF &innerRectangle, float fStartAngle, float fSweepAngle);
+        static QPainterPath wholeArc(const QRectF &rectangle);
+        static void drawCombinedDoughnutChart(quint64 data1, const QColor &data1Color,
+                                              quint64 data2, const QColor &data2Color,
+                                              QPainter &painter, quint64  iMaximum,
+                                              const QRectF &chartRect, const QRectF &innerRect, int iOverlayAlpha);
+
+
 private:
 
     /** Parses the xml string we get from the IMachineDebugger and returns an array of UIDebuggerMetricData. */
