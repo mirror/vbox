@@ -133,8 +133,25 @@ private:
 };
 
 /*********************************************************************************************************************************
+*   Class UIVMResouceMonitorHostStats definition.                                                                           *
+*********************************************************************************************************************************/
+
+class UIVMResouceMonitorHostStats
+{
+
+public:
+
+    UIVMResouceMonitorHostStats();
+    quint64 m_fCPUUserLoad;
+    quint64 m_fCPUKernelLoad;
+    quint64 m_iTotalRAM;
+    quint64 m_iFreeRAM;
+};
+
+/*********************************************************************************************************************************
 *   Class UIVMResouceMonitorCheckBox definition.                                                                           *
 *********************************************************************************************************************************/
+
 class UIVMResouceMonitorCheckBox : public QCheckBox
 {
     Q_OBJECT;
@@ -208,9 +225,10 @@ private:
 
     void initializeItems();
     void setupPerformanceCollector();
-    void queryRAMLoad();
+    void queryPerformanceCollector();
     void addItem(const QUuid& uMachineId, const QString& strMachineName);
     void removeItem(const QUuid& uMachineId);
+    void getHostRAMStats();
 
     QVector<UIResourceMonitorItem> m_itemList;
     /* Used to find machines by uid. key is the machine uid and int is the index to m_itemList */
@@ -227,6 +245,7 @@ private:
     /** If true the table data and corresponding view is updated. Possibly set by host widget to true only
       *  when the widget is visible in the main UI. */
     bool m_fShouldUpdate;
+    UIVMResouceMonitorHostStats m_hostStats;
 };
 
 
@@ -391,6 +410,19 @@ bool UIResourceMonitorItem::isWithGuestAdditions() const
     if (m_comGuest.isNull())
         return false;
     return m_comGuest.GetAdditionsStatus(m_comGuest.GetAdditionsRunLevel());
+}
+
+
+/*********************************************************************************************************************************
+*   Class UIVMResouceMonitorHostStats implementation.                                                                            *
+*********************************************************************************************************************************/
+
+UIVMResouceMonitorHostStats::UIVMResouceMonitorHostStats()
+    : m_fCPUUserLoad(0)
+    , m_fCPUKernelLoad(0)
+    , m_iTotalRAM(0)
+    , m_iFreeRAM(0)
+{
 }
 
 
@@ -594,6 +626,13 @@ void UIResourceMonitorModel::sltMachineStateChanged(const QUuid &uId, const KMac
     }
 }
 
+void UIResourceMonitorModel::getHostRAMStats()
+{
+    CHost comHost = uiCommon().host();
+    m_hostStats.m_iTotalRAM = _1M * (quint64)comHost.GetMemorySize();
+    m_hostStats.m_iFreeRAM = _1M * (quint64)comHost.GetMemoryAvailable();
+}
+
 void UIResourceMonitorModel::sltTimeout()
 {
     if (!m_fShouldUpdate)
@@ -602,8 +641,8 @@ void UIResourceMonitorModel::sltTimeout()
     ULONG aPctHalted;
     ULONG aPctVMM;
 
-    bool fRAMColumns = columnVisible(VMResouceMonitorColumn_RAMUsedAndTotal)
-        || columnVisible(VMResouceMonitorColumn_RAMUsedPercentage);
+    // bool fRAMColumns = columnVisible(VMResouceMonitorColumn_RAMUsedAndTotal)
+    //     || columnVisible(VMResouceMonitorColumn_RAMUsedPercentage);
     bool fCPUColumns = columnVisible(VMResouceMonitorColumn_CPUVMMLoad) || columnVisible(VMResouceMonitorColumn_CPUGuestLoad);
     bool fNetworkColumns = columnVisible(VMResouceMonitorColumn_NetworkUpRate)
         || columnVisible(VMResouceMonitorColumn_NetworkDownRate)
@@ -615,9 +654,11 @@ void UIResourceMonitorModel::sltTimeout()
         || columnVisible(VMResouceMonitorColumn_DiskIOWriteTotal);
     bool fVMExitColumn = columnVisible(VMResouceMonitorColumn_VMExits);
 
-    /* RAM usage: */
-    if (!m_performanceMonitor.isNull() && fRAMColumns)
-        queryRAMLoad();
+    getHostRAMStats();
+
+    /* RAM usage and Host CPU: */
+    //if (!m_performanceMonitor.isNull() && fRAMColumns)
+    queryPerformanceCollector();
 
     for (int i = 0; i < m_itemList.size(); ++i)
     {
@@ -676,11 +717,14 @@ void UIResourceMonitorModel::setupPerformanceCollector()
         m_performanceMonitor = uiCommon().virtualBox().GetPerformanceCollector();
     for (int i = 0; i < m_itemList.size(); ++i)
         m_nameList << "Guest/RAM/Usage*";
+    /* This is for the host: */
+    m_nameList << "CPU/Load/User:avg";
+    m_nameList << "CPU/Load/Kernel:avg";
     m_objectList = QVector<CUnknown>(m_nameList.size(), CUnknown());
     m_performanceMonitor.SetupMetrics(m_nameList, m_objectList, iPeriod, iMetricSetupCount);
 }
 
-void UIResourceMonitorModel::queryRAMLoad()
+void UIResourceMonitorModel::queryPerformanceCollector()
 {
     QVector<QString>  aReturnNames;
     QVector<CUnknown>  aReturnObjects;
@@ -689,7 +733,7 @@ void UIResourceMonitorModel::queryRAMLoad()
     QVector<ULONG>  aReturnSequenceNumbers;
     QVector<ULONG>  aReturnDataIndices;
     QVector<ULONG>  aReturnDataLengths;
-    /* Make a query to CPerformanceCollector to fetch some metrics (e.g RAM usage): */
+
     QVector<LONG> returnData = m_performanceMonitor.QueryMetricsData(m_nameList,
                                                                         m_objectList,
                                                                         aReturnNames,
@@ -707,6 +751,7 @@ void UIResourceMonitorModel::queryRAMLoad()
         /* Read the last of the return data disregarding the rest since we are caching the data in GUI side: */
         float fData = returnData[aReturnDataIndices[i] + aReturnDataLengths[i] - 1] / (float)aReturnScales[i];
         if (aReturnNames[i].contains("RAM", Qt::CaseInsensitive) && !aReturnNames[i].contains(":"))
+        {
             if (aReturnNames[i].contains("Total", Qt::CaseInsensitive) || aReturnNames[i].contains("Free", Qt::CaseInsensitive))
             {
                 {
@@ -722,6 +767,19 @@ void UIResourceMonitorModel::queryRAMLoad()
                         m_itemList[iIndex].m_uFreeRAM = fData;
                 }
             }
+        }
+        else if (aReturnNames[i].contains("CPU/Load/User", Qt::CaseInsensitive))
+        {
+            CHost comHost = (CHost)aReturnObjects[i];
+            if (!comHost.isNull())
+                m_hostStats.m_fCPUUserLoad = fData;
+        }
+        else if (aReturnNames[i].contains("CPU/Load/Kernel", Qt::CaseInsensitive))
+        {
+            CHost comHost = (CHost)aReturnObjects[i];
+            if (!comHost.isNull())
+                m_hostStats.m_fCPUKernelLoad = fData;
+        }
     }
     for (int i = 0; i < m_itemList.size(); ++i)
     {
