@@ -62,7 +62,7 @@
 /** @} */
 
 /**
- * @name Capability Header.
+ * @name IOMMU Capability Header.
  * In accordance with the AMD spec.
  * @{
  */
@@ -101,7 +101,7 @@ RT_BF_ASSERT_COMPILE_CHECKS(IOMMU_BF_CAPHDR_, UINT32_C(0), UINT32_MAX,
 /** @} */
 
 /**
- * @name Base Address Low Register.
+ * @name IOMMU Base Address Low Register.
  * In accordance with the AMD spec.
  * @{
  */
@@ -111,18 +111,15 @@ RT_BF_ASSERT_COMPILE_CHECKS(IOMMU_BF_CAPHDR_, UINT32_C(0), UINT32_MAX,
 /** Bits 13:1 reserved. */
 #define IOMMU_BF_BASEADDR_LO_RSVD_1_13_SHIFT        1
 #define IOMMU_BF_BASEADDR_LO_RSVD_1_13_MASK         UINT32_C(0x00003ffe)
-/** Base Address[18:14]: Low Base address (Lo) of IOMMU control registers. */
-#define IOMMU_BF_BASEADDR_LO_ADDR_LO_SHIFT          14
-#define IOMMU_BF_BASEADDR_LO_ADDR_LO_MASK           UINT32_C(0x0007c000)
-/** Base Address[31:19]: Low Base address (Hi) of IOMMU control registers. */
-#define IOMMU_BF_BASEADDR_LO_ADDR_HI_SHIFT          19
-#define IOMMU_BF_BASEADDR_LO_ADDR_HI_MASK           UINT32_C(0xfff80000)
+/** Base Address[31:14]: Low Base address of IOMMU MMIO control registers. */
+#define IOMMU_BF_BASEADDR_LO_ADDR_SHIFT             14
+#define IOMMU_BF_BASEADDR_LO_ADDR_MASK              UINT32_C(0xffffc000)
 RT_BF_ASSERT_COMPILE_CHECKS(IOMMU_BF_BASEADDR_LO_, UINT32_C(0), UINT32_MAX,
-                            (ENABLE, RSVD_1_13, ADDR_LO, ADDR_HI));
+                            (ENABLE, RSVD_1_13, ADDR));
 /** @} */
 
 /**
- * @name Range Register.
+ * @name IOMMU Range Register.
  * In accordance with the AMD spec.
  * @{
  */
@@ -149,7 +146,7 @@ RT_BF_ASSERT_COMPILE_CHECKS(IOMMU_BF_RANGE_, UINT32_C(0), UINT32_MAX,
 /** @} */
 
 /**
- * @name Miscellaneous Information Register 0.
+ * @name IOMMU Miscellaneous Information Register 0.
  * In accordance with the AMD spec.
  * @{
  */
@@ -179,7 +176,7 @@ RT_BF_ASSERT_COMPILE_CHECKS(IOMMU_BF_MISCINFO_0_, UINT32_C(0), UINT32_MAX,
 /** @} */
 
 /**
- * @name Miscellaneous Information Register 1.
+ * @name IOMMU Miscellaneous Information Register 1.
  * In accordance with the AMD spec.
  * @{
  */
@@ -253,9 +250,11 @@ RT_BF_ASSERT_COMPILE_CHECKS(IOMMU_BF_MSI_MAP_CAPHDR_, UINT32_C(0), UINT32_MAX,
 /** @name Miscellaneous IOMMU defines.
  * @{ */
 #define IOMMU_LOG_PFX                               "AMD_IOMMU"     /**< Log prefix string. */
+#define IOMMU_SAVED_STATE_VERSION                   1               /**< The current saved state version. */
 #define IOMMU_PCI_VENDOR_ID                         0x1022          /**< AMD's vendor ID. */
 #define IOMMU_PCI_DEVICE_ID                         0xc0de          /**< VirtualBox IOMMU Device ID. */
 #define IOMMU_PCI_REVISION_ID                       0x01            /**< VirtualBox IOMMU Device Revision ID. */
+#define IOMMU_MMIO_SIZE                             _16K            /**< Size of the MMIO region in bytes. */
 /** @} */
 
 
@@ -831,6 +830,33 @@ typedef union
     uint32_t    au32[4];
 } EVT_EVENT_COUNTER_ZERO;
 AssertCompileSize(EVT_EVENT_COUNTER_ZERO, 16);
+
+/* Not needed as we can initialize from bitfields and set/get using PCI config PDM helpers. */
+#if 0
+/**
+ * IOMMU Capability Header (PCI).
+ * In accordance with the AMD spec.
+ */
+typedef union
+{
+    struct
+    {
+        uint32_t    u8CapId : 8;        /**< Bits 7:0   - CapId: Capability ID. */
+        uint32_t    u8CapPtr : 8;       /**< Bits 15:8  - CapPtr: Pointer (PCI config offset) to the next capability. */
+        uint32_t    u3CapType : 3;      /**< Bits 18:16 - CapType: Capability Type. */
+        uint32_t    u5CapRev : 5;       /**< Bits 23:19 - CapRev: Capability revision. */
+        uint32_t    u1IoTlbSup : 1;     /**< Bit  24    - IotlbSup: IOTLB Support. */
+        uint32_t    u1HtTunnel : 1;     /**< Bit  25    - HtTunnel: HyperTransport Tunnel translation support. */
+        uint32_t    u1NpCache : 1;      /**< Bit  26    - NpCache: Not Present table entries are cached. */
+        uint32_t    u1EfrSup : 1;       /**< Bit  27    - EFRSup: Extended Feature Register Support. */
+        uint32_t    u1CapExt : 1;       /**< Bit  28    - CapExt: Misc. Information Register 1 Support. */
+        uint32_t    u4Rsvd0 : 4;        /**< Bits 31:29 - Reserved. */
+    } n;
+    /** The 32-bit unsigned integer view. */
+    uint32_t    u32;
+} IOMMU_CAP_HDR_T;
+AssertCompileSize(IOMMU_CAP_HDR_T, 4);
+#endif
 
 /**
  * Device Table Base Address Register (MMIO).
@@ -1606,6 +1632,8 @@ typedef struct IOMMU
     bool                        fRootComplex;
     /** Alignment padding. */
     bool                        afPadding[3];
+    /** The MMIO handle. */
+    IOMMMIOHANDLE               hMmio;
 
     /** @name MMIO: Control and status registers.
      * @{ */
@@ -1770,7 +1798,50 @@ typedef CTX_SUFF(PIOMMU) PIOMMUCC;
 
 #ifndef VBOX_DEVICE_STRUCT_TESTCASE
 
+/**
+ * @callback_method_impl{FNIOMMMIONEWWRITE}
+ */
+static DECLCALLBACK(VBOXSTRICTRC) iommuAmdMmioWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS off, void const *pv, unsigned cb)
+{
+    /** @todo IOMMU: MMIO write. */
+    RT_NOREF5(pDevIns, pvUser, off, pv, cb);
+    return VERR_NOT_IMPLEMENTED;
+}
+
+
+/**
+ * @callback_method_impl{FNIOMMMIONEWREAD}
+ */
+static DECLCALLBACK(VBOXSTRICTRC) iommuAmdMmioRead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS off, void *pv, unsigned cb)
+{
+    /** @todo IOMMU: MMIO read. */
+    RT_NOREF5(pDevIns, pvUser, off, pv, cb);
+    return VERR_NOT_IMPLEMENTED;
+}
+
+
 # ifdef IN_RING3
+/**
+ * @callback_method_impl{FNSSMDEVSAVEEXEC}
+ */
+static DECLCALLBACK(int) iommuAmdR3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
+{
+    /** @todo IOMMU: Save state. */
+    RT_NOREF2(pDevIns, pSSM);
+    return VERR_NOT_IMPLEMENTED;
+}
+
+/**
+ * @callback_method_impl{FNSSMDEVLOADEXEC}
+ */
+static DECLCALLBACK(int) iommuAmdR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass)
+{
+    /** @todo IOMMU: Load state. */
+    RT_NOREF4(pDevIns, pSSM, uVersion, uPass);
+    return VERR_NOT_IMPLEMENTED;
+}
+
+
 /**
  * @interface_method_impl{PDMDEVREG,pfnReset}
  */
@@ -1796,7 +1867,6 @@ static DECLCALLBACK(int) iommuAmdR3Destruct(PPDMDEVINS pDevIns)
 static DECLCALLBACK(int) iommuAmdR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE pCfg)
 {
     NOREF(iInstance);
-    NOREF(pCfg);
 
     PDMDEV_CHECK_VERSIONS_RETURN(pDevIns);
     PIOMMU          pThis   = PDMDEVINS_2_DATA(pDevIns, PIOMMU);
@@ -1810,10 +1880,19 @@ static DECLCALLBACK(int) iommuAmdR3Construct(PPDMDEVINS pDevIns, int iInstance, 
     /*
      * Validate and read the configuration.
      */
-    PDMDEV_VALIDATE_CONFIG_RETURN(pDevIns, "RootComplex", "");
+    PDMDEV_VALIDATE_CONFIG_RETURN(pDevIns, "RootComplex|MmioBase", "");
 
     rc = pHlp->pfnCFGMQueryBoolDef(pCfg, "RootComplex", &pThis->fRootComplex, true);
-    AssertLogRelRCReturn(rc, rc);
+    if (RT_FAILURE(rc))
+        return PDMDEV_SET_ERROR(pDevIns, rc, N_("IOMMU: Failed to query \"RootComplex\""));
+
+    uint64_t u64MmioBase;
+    rc = pHlp->pfnCFGMQueryU64Def(pCfg, "MmioBase", &u64MmioBase, 0);
+    if (RT_FAILURE(rc))
+        return PDMDEV_SET_ERROR(pDevIns, rc, N_("IOMMU: Failed to query \"MmioBase\""));
+    /* Must be 16KB aligned when we don't support IOMMU performance counters.  */
+    if (u64MmioBase & 0x3fff)
+        return PDMDEV_SET_ERROR(pDevIns, rc, N_("IOMMU: \"MmioBase\" must be 16 KB aligned"));
 
     /*
      * Initialize the PCI configuration space.
@@ -1863,20 +1942,14 @@ static DECLCALLBACK(int) iommuAmdR3Construct(PPDMDEVINS pDevIns, int iInstance, 
 
     /* Base Address Low Register. */
     PDMPciDevSetDWord(pPciDev, offBaseAddrLo,
-                        RT_BF_MAKE(IOMMU_BF_BASEADDR_LO_ENABLE,  0x0)       /* RW - Enable */
-                      | RT_BF_MAKE(IOMMU_BF_BASEADDR_LO_ADDR_LO, 0x0)       /* RW - Base address low (lo) */
-                      | RT_BF_MAKE(IOMMU_BF_BASEADDR_LO_ADDR_HI, 0x0));     /* RW - Base address low (hi) */
+                        RT_BF_MAKE(IOMMU_BF_BASEADDR_LO_ENABLE, 0x1)                    /* RW1S - Enable */
+                      | RT_BF_MAKE(IOMMU_BF_BASEADDR_LO_ADDR,   (u64MmioBase >> 14)));  /* RO - Base address (Lo) */
 
     /* Base Address High Register. */
-    PDMPciDevSetDWord(pPciDev, offBaseAddrHi, 0);                           /* RW - Base address high */
+    PDMPciDevSetDWord(pPciDev, offBaseAddrHi, RT_HI_U32(u64MmioBase));      /* RO - Base address (Hi) */
 
     /* IOMMU Range Register. */
-    PDMPciDevSetDWord(pPciDev, offRange,
-                        RT_BF_MAKE(IOMMU_BF_RANGE_UNIT_ID,      0x0)        /* RO - HyperTransport Unit ID */
-                      | RT_BF_MAKE(IOMMU_BF_RANGE_VALID,        0x0)        /* RW - Range Valid */
-                      | RT_BF_MAKE(IOMMU_BF_RANGE_BUS_NUMBER,   0x0)        /* RO - Bus number */
-                      | RT_BF_MAKE(IOMMU_BF_RANGE_FIRST_DEVICE, 0x0)        /* RO - First device */
-                      | RT_BF_MAKE(IOMMU_BF_RANGE_LAST_DEVICE,  0x0));      /* RO - Last device */
+    PDMPciDevSetDWord(pPciDev, offRange, 0x0);                              /* RO - Range register. */
 
     /* Misc. Information Register 0. */
     PDMPciDevSetDWord(pPciDev, offMiscInfo0,
@@ -1915,6 +1988,29 @@ static DECLCALLBACK(int) iommuAmdR3Construct(PPDMDEVINS pDevIns, int iInstance, 
                       | RT_BF_MAKE(IOMMU_BF_MSI_MAP_CAPHDR_EN,       0x1)       /* RO - MSI mapping capability enable */
                       | RT_BF_MAKE(IOMMU_BF_MSI_MAP_CAPHDR_FIXED,    0x1)       /* RO - MSI mapping range is fixed */
                       | RT_BF_MAKE(IOMMU_BF_MSI_MAP_CAPHDR_CAP_TYPE, 0x15));    /* RO - MSI mapping capability */
+
+    /*
+     * Register the PCI device with PDM.
+     */
+    rc = PDMDevHlpPCIRegister(pDevIns, pDevIns->apPciDevs[0]);
+    AssertRCReturn(rc, rc);
+
+    /*
+     * Map MMIO registers.
+     */
+    rc = PDMDevHlpMmioCreateAndMap(pDevIns, u64MmioBase, _16K, iommuAmdMmioWrite, iommuAmdMmioRead,
+                                   IOMMMIO_FLAGS_READ_PASSTHRU | IOMMMIO_FLAGS_WRITE_PASSTHRU,
+                                   "IOMMU-AMD", &pThis->hMmio);
+    AssertRCReturn(rc, rc);
+
+    /*
+     * Register saved state.
+     */
+    rc = PDMDevHlpSSMRegisterEx(pDevIns, IOMMU_SAVED_STATE_VERSION, sizeof(IOMMU), NULL,
+                                NULL, NULL, NULL,
+                                NULL, iommuAmdR3SaveExec, NULL,
+                                NULL, iommuAmdR3LoadExec, NULL);
+    AssertRCReturn(rc, rc);
 
     return VINF_SUCCESS;
 }
