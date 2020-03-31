@@ -2009,6 +2009,11 @@ static DECLCALLBACK(int) virtioScsiR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSS
     {
         uint16_t cReqsRedo;
         pHlp->pfnSSMGetU16(pSSM, &cReqsRedo);
+        if (cReqsRedo >= VIRTQ_MAX_SIZE)
+        {
+            LogFunc(("Bad count of I/O transactions to re-do in SSM state data. Skipping\n"));
+            continue;
+        }
 
         for (uint16_t qIdx = VIRTQ_REQ_BASE; qIdx < VIRTIOSCSI_QUEUE_CNT; qIdx++)
         {
@@ -2023,6 +2028,16 @@ static DECLCALLBACK(int) virtioScsiR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSS
             pHlp->pfnSSMGetU16(pSSM, &qIdx);
             pHlp->pfnSSMGetU16(pSSM, &uHeadIdx);
 
+            if (qIdx >= VIRTIOSCSI_QUEUE_CNT)
+            {
+                LogFunc(("Bad queue index in SSM state data. Skipping\n"));
+                continue;
+            }
+            if (uHeadIdx >= VIRTQ_MAX_SIZE)
+            {
+                LogFunc(("Bad queue elem index in SSM state data. Skipping\n"));
+                continue;
+            }
             PVIRTIOSCSIWORKERR3 pWorkerR3 = &pThisCC->aWorkers[qIdx];
             pWorkerR3->auRedoDescs[pWorkerR3->cRedoDescs++] = uHeadIdx;
             pWorkerR3->cRedoDescs %= VIRTQ_MAX_SIZE;
