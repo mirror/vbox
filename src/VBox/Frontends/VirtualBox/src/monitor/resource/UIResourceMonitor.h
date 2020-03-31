@@ -38,7 +38,7 @@ class UIActionPool;
 class UIToolBar;
 class UIResourceMonitorProxyModel;
 class UIResourceMonitorModel;
-class UIVMResouceMonitorTableView;
+class UIVMResourceMonitorTableView;
 
 /** QWidget extension to display a Linux top like utility that sort running vm wrt. resource allocations. */
 class UIResourceMonitorWidget : public QIWithRetranslateUI<QWidget>
@@ -105,11 +105,11 @@ private:
     /** @name Misc members.
       * @{ */
         UIToolBar *m_pToolBar;
-        UIVMResouceMonitorTableView *m_pTableView;
+        UIVMResourceMonitorTableView *m_pTableView;
         UIResourceMonitorProxyModel *m_pProxyModel;
         UIResourceMonitorModel      *m_pModel;
         QVector<QString>             m_columnCaptions;
-        /* The key is the column id (VMResouceMonitorColumn) and value is true if the column is visible. */
+        /* The key is the column id (VMResourceMonitorColumn) and value is true if the column is visible. */
         QMap<int, bool>              m_columnVisible;
     /** @} */
     QFrame *m_pColumnSelectionMenu;

@@ -1070,23 +1070,23 @@ enum MaxGuestResolutionPolicy
 
 /** Manager UI: VM resource Monitor Column types.
   * @note The first element must be 0 and the rest must be consecutive */
-enum VMResouceMonitorColumn
+enum VMResourceMonitorColumn
 {
-    VMResouceMonitorColumn_Name = 0,
-    VMResouceMonitorColumn_CPUGuestLoad,
-    VMResouceMonitorColumn_CPUVMMLoad,
-    VMResouceMonitorColumn_RAMUsedAndTotal,
-    VMResouceMonitorColumn_RAMUsedPercentage,
-    VMResouceMonitorColumn_NetworkUpRate,
-    VMResouceMonitorColumn_NetworkDownRate,
-    VMResouceMonitorColumn_NetworkUpTotal,
-    VMResouceMonitorColumn_NetworkDownTotal,
-    VMResouceMonitorColumn_DiskIOReadRate,
-    VMResouceMonitorColumn_DiskIOWriteRate,
-    VMResouceMonitorColumn_DiskIOReadTotal,
-    VMResouceMonitorColumn_DiskIOWriteTotal,
-    VMResouceMonitorColumn_VMExits,
-    VMResouceMonitorColumn_Max
+    VMResourceMonitorColumn_Name = 0,
+    VMResourceMonitorColumn_CPUGuestLoad,
+    VMResourceMonitorColumn_CPUVMMLoad,
+    VMResourceMonitorColumn_RAMUsedAndTotal,
+    VMResourceMonitorColumn_RAMUsedPercentage,
+    VMResourceMonitorColumn_NetworkUpRate,
+    VMResourceMonitorColumn_NetworkDownRate,
+    VMResourceMonitorColumn_NetworkUpTotal,
+    VMResourceMonitorColumn_NetworkDownTotal,
+    VMResourceMonitorColumn_DiskIOReadRate,
+    VMResourceMonitorColumn_DiskIOWriteRate,
+    VMResourceMonitorColumn_DiskIOReadTotal,
+    VMResourceMonitorColumn_DiskIOWriteTotal,
+    VMResourceMonitorColumn_VMExits,
+    VMResourceMonitorColumn_Max
 };
 
 #endif /* !FEQT_INCLUDED_SRC_extradata_UIExtraDataDefs_h */

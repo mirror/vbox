@@ -125,7 +125,7 @@ template<> SHARED_LIBRARY_STUFF bool canConvert<InformationElementType>();
 template<> SHARED_LIBRARY_STUFF bool canConvert<MaxGuestResolutionPolicy>();
 template<> SHARED_LIBRARY_STUFF bool canConvert<UIMediumFormat>();
 template<> SHARED_LIBRARY_STUFF bool canConvert<UISettingsDefs::RecordingMode>();
-template<> SHARED_LIBRARY_STUFF bool canConvert<VMResouceMonitorColumn>();
+template<> SHARED_LIBRARY_STUFF bool canConvert<VMResourceMonitorColumn>();
 
 /* Declare COM canConvert specializations: */
 template<> SHARED_LIBRARY_STUFF bool canConvert<KMachineState>();
@@ -268,8 +268,8 @@ template<> SHARED_LIBRARY_STUFF QString toInternalString(const UIMediumFormat &e
 template<> SHARED_LIBRARY_STUFF UIMediumFormat fromInternalString<UIMediumFormat>(const QString &strUIMediumFormat);
 template<> SHARED_LIBRARY_STUFF QString toString(const UISettingsDefs::RecordingMode &enmRecordingMode);
 template<> SHARED_LIBRARY_STUFF UISettingsDefs::RecordingMode fromString<UISettingsDefs::RecordingMode>(const QString &enmRecordingMode);
-template<> SHARED_LIBRARY_STUFF QString toInternalString(const VMResouceMonitorColumn &enmVMResourceMonitorColumn);
-template<> SHARED_LIBRARY_STUFF VMResouceMonitorColumn fromInternalString<VMResouceMonitorColumn>(const QString &strVMResourceMonitorColumn);
+template<> SHARED_LIBRARY_STUFF QString toInternalString(const VMResourceMonitorColumn &enmVMResourceMonitorColumn);
+template<> SHARED_LIBRARY_STUFF VMResourceMonitorColumn fromInternalString<VMResourceMonitorColumn>(const QString &strVMResourceMonitorColumn);
 
 /* Declare COM conversion specializations: */
 template<> SHARED_LIBRARY_STUFF QColor toColor(const KMachineState &state);
