@@ -1226,6 +1226,8 @@ int GstCtrlService::clientReportFeatures(ClientState *pClient, VBOXHGCMCALLHANDL
 int GstCtrlService::clientQueryFeatures(ClientState *pClient,
                                         VBOXHGCMCALLHANDLE hCall, uint32_t cParms, VBOXHGCMSVCPARM paParms[])
 {
+    RT_NOREF(pClient);
+
     /*
      * Validate the request.
      */
