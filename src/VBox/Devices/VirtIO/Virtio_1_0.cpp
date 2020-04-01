@@ -765,9 +765,10 @@ int  virtioCoreR3QueuePendingCount(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint
 {
     uint16_t uAvailRingIdx = virtioReadAvailRingIdx(pDevIns, pVirtio, idxQueue);
     uint16_t uNextAvailIdx = pVirtio->virtqState[idxQueue].uAvailIdx;
-    int16_t  iDelta = uAvailRingIdx - uNextAvailIdx;
     uint16_t uDelta = uAvailRingIdx - uNextAvailIdx;
-    return iDelta >= 0 ? uDelta : VIRTQ_MAX_CNT + uDelta;
+    if (uAvailRingIdx > uNextAvailIdx)
+        return uDelta;
+    return VIRTQ_MAX_CNT + uDelta;
 }
 /**
  * Fetches descriptor chain using avail ring of indicated queue and converts the descriptor
@@ -905,11 +906,7 @@ int virtioCoreR3QueuePut(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t idxQu
     Log6Func(("Copying client data to %s, desc chain (head desc_idx %d)\n",
               VIRTQNAME(pVirtio, idxQueue), virtioReadUsedRingIdx(pDevIns, pVirtio, idxQueue)));
 
-    /*
-     * Copy s/g buf (virtual memory) to guest phys mem (IN direction). This virtual memory
-     * block will be small (fixed portion of response header + sense buffer area or
-     * control commands or error return values)... The bulk of req data xfers to phys mem
-     * is handled by client */
+    /* Copy s/g buf (virtual memory) to guest phys mem (IN direction). */
 
     size_t cbCopy = 0, cbTotal = 0, cbRemain = 0;
 
@@ -936,7 +933,6 @@ int virtioCoreR3QueuePut(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t idxQu
         Assert(!(cbCopy >> 32));
     }
 
-
     /* If this write-ahead crosses threshold where the driver wants to get an event flag it */
     if (pVirtio->uDriverFeatures & VIRTIO_F_EVENT_IDX)
         if (pVirtq->uUsedIdx == virtioReadAvailUsedEvent(pDevIns, pVirtio, idxQueue))
@@ -945,10 +941,11 @@ int virtioCoreR3QueuePut(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t idxQu
     /*
      * Place used buffer's descriptor in used ring but don't update used ring's slot index.
      * That will be done with a subsequent client call to virtioCoreQueueSync() */
-    virtioWriteUsedElem(pDevIns, pVirtio, idxQueue, pVirtq->uUsedIdx++, pDescChain->uHeadIdx, (uint32_t)cbCopy);
+    virtioWriteUsedElem(pDevIns, pVirtio, idxQueue, pVirtq->uUsedIdx++, pDescChain->uHeadIdx, (uint32_t)cbTotal);
 
-    Log6Func((".... Copied %zu bytes in %d segs to %u byte buffer, residual=%zu\n",
-              cbTotal - cbRemain, pSgVirtReturn->cSegs, pDescChain->cbPhysReturn, pDescChain->cbPhysReturn - cbCopy));
+    if (pSgVirtReturn)
+        Log6Func((".... Copied %zu bytes in %d segs to %u byte buffer, residual=%zu\n",
+              cbTotal - cbRemain, pSgVirtReturn->cSegs, pDescChain->cbPhysReturn, pDescChain->cbPhysReturn - cbTotal));
 
     Log6Func(("Write ahead used_idx=%u, %s used_idx=%u\n",
               pVirtq->uUsedIdx, VIRTQNAME(pVirtio, idxQueue), virtioReadUsedRingIdx(pDevIns, pVirtio, idxQueue)));
@@ -1068,9 +1065,8 @@ static void virtioNotifyGuestDriver(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uin
             virtioKick(pDevIns, pVirtio, VIRTIO_ISR_VIRTQ_INTERRUPT, pVirtio->uQueueMsixVector[idxQueue], fForce);
             return;
         }
-/* REMOVE THIS!!!!!!! DON'T INTEGRATE! EXPERIMENTAL/DEBUG */
-//virtioKick(pDevIns, pVirtio, VIRTIO_ISR_VIRTQ_INTERRUPT, pVirtio->uQueueMsixVector[idxQueue], fForce);
-//        Log6Func(("...skipping interrupt. Guest flagged VIRTQ_AVAIL_F_NO_INTERRUPT for queue\n"));
+
+        Log6Func(("...skipping interrupt. Guest flagged VIRTQ_AVAIL_F_NO_INTERRUPT for queue\n"));
     }
 }
 
