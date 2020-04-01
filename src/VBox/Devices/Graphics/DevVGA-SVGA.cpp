@@ -1861,6 +1861,10 @@ static VBOXSTRICTRC vmsvgaWritePort(PPDMDEVINS pDevIns, PVGASTATE pThis, PVGASTA
             {
 #if defined(IN_RING3) || defined(IN_RING0)
                 Log(("SVGA_REG_SYNC: SVGA_FIFO_BUSY=%d\n", pThisCC->svga.pau32FIFO[SVGA_FIFO_BUSY]));
+                /*
+                 * The VMSVGA_BUSY_F_EMT_FORCE flag makes sure we will check if the FIFO is empty
+                 * at least once; VMSVGA_BUSY_F_FIFO alone does not ensure that.
+                 */
                 ASMAtomicWriteU32(&pThis->svga.fBusy, VMSVGA_BUSY_F_EMT_FORCE | VMSVGA_BUSY_F_FIFO);
                 if (VMSVGA_IS_VALID_FIFO_REG(SVGA_FIFO_BUSY, pThisCC->svga.pau32FIFO[SVGA_FIFO_MIN]))
                     vmsvgaHCSafeFifoBusyRegUpdate(pThis, pThisCC, true);
