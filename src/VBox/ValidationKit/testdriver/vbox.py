@@ -1765,7 +1765,6 @@ class TestDriver(base.TestDriver):                                              
             if iArg >= len(asArgs):
                 raise base.InvalidOption('The "--vbox-self-log-flags" takes an argument');
             self.sLogSelfFlags = asArgs[iArg];
-            print('self.sLogSelfFlags="%s"' % (self.sLogSelfFlags,))
         elif asArgs[iArg] == '--vbox-self-log-dest':
             iArg += 1;
             if iArg >= len(asArgs):
