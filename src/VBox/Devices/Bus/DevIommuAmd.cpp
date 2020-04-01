@@ -252,9 +252,9 @@ RT_BF_ASSERT_COMPILE_CHECKS(IOMMU_BF_MSI_MAP_CAPHDR_, UINT32_C(0), UINT32_MAX,
 #define IOMMU_LOG_PFX                               "AMD_IOMMU"     /**< Log prefix string. */
 #define IOMMU_SAVED_STATE_VERSION                   1               /**< The current saved state version. */
 #define IOMMU_PCI_VENDOR_ID                         0x1022          /**< AMD's vendor ID. */
-#define IOMMU_PCI_DEVICE_ID                         0xc0de          /**< VirtualBox IOMMU Device ID. */
-#define IOMMU_PCI_REVISION_ID                       0x01            /**< VirtualBox IOMMU Device Revision ID. */
-#define IOMMU_MMIO_SIZE                             _16K            /**< Size of the MMIO region in bytes. */
+#define IOMMU_PCI_DEVICE_ID                         0xc0de          /**< VirtualBox IOMMU device ID. */
+#define IOMMU_PCI_REVISION_ID                       0x01            /**< VirtualBox IOMMU device revision ID. */
+#define IOMMU_MMIO_REGION_SIZE                      _16K            /**< Size of the MMIO region in bytes. */
 /** @} */
 
 
@@ -1880,11 +1880,7 @@ static DECLCALLBACK(int) iommuAmdR3Construct(PPDMDEVINS pDevIns, int iInstance, 
     /*
      * Validate and read the configuration.
      */
-    PDMDEV_VALIDATE_CONFIG_RETURN(pDevIns, "RootComplex|MmioBase", "");
-
-    rc = pHlp->pfnCFGMQueryBoolDef(pCfg, "RootComplex", &pThis->fRootComplex, true);
-    if (RT_FAILURE(rc))
-        return PDMDEV_SET_ERROR(pDevIns, rc, N_("IOMMU: Failed to query \"RootComplex\""));
+    PDMDEV_VALIDATE_CONFIG_RETURN(pDevIns, "Device|Function|MmioBase", "");
 
     uint64_t u64MmioBase;
     rc = pHlp->pfnCFGMQueryU64Def(pCfg, "MmioBase", &u64MmioBase, 0);
@@ -1893,6 +1889,17 @@ static DECLCALLBACK(int) iommuAmdR3Construct(PPDMDEVINS pDevIns, int iInstance, 
     /* Must be 16KB aligned when we don't support IOMMU performance counters.  */
     if (u64MmioBase & 0x3fff)
         return PDMDEV_SET_ERROR(pDevIns, rc, N_("IOMMU: \"MmioBase\" must be 16 KB aligned"));
+    /** @todo IOMMU: Ensure u64MmioBase isn't 0. */
+
+    uint8_t uPciDevice;
+    rc = pHlp->pfnCFGMQueryU8Def(pCfg, "Device", &uPciDevice, 0);
+    if (RT_FAILURE(rc))
+        return PDMDEV_SET_ERROR(pDevIns, rc, N_("IOMMU: Failed to query \"Device\""));
+
+    uint8_t uPciFunction;
+    rc = pHlp->pfnCFGMQueryU8Def(pCfg, "Function", &uPciFunction, 2);
+    if (RT_FAILURE(rc))
+        return PDMDEV_SET_ERROR(pDevIns, rc, N_("IOMMU: Failed to query \"Function\""));
 
     /*
      * Initialize the PCI configuration space.
@@ -1990,15 +1997,15 @@ static DECLCALLBACK(int) iommuAmdR3Construct(PPDMDEVINS pDevIns, int iInstance, 
                       | RT_BF_MAKE(IOMMU_BF_MSI_MAP_CAPHDR_CAP_TYPE, 0x15));    /* RO - MSI mapping capability */
 
     /*
-     * Register the PCI device with PDM.
+     * Register the PCI function with PDM.
      */
-    rc = PDMDevHlpPCIRegister(pDevIns, pDevIns->apPciDevs[0]);
-    AssertRCReturn(rc, rc);
+    rc = PDMDevHlpPCIRegisterEx(pDevIns, pPciDev, 0 /* fFlags */, uPciDevice, uPciFunction, "amd-iommu");
+    AssertLogRelRCReturn(rc, rc);
 
     /*
      * Map MMIO registers.
      */
-    rc = PDMDevHlpMmioCreateAndMap(pDevIns, u64MmioBase, _16K, iommuAmdMmioWrite, iommuAmdMmioRead,
+    rc = PDMDevHlpMmioCreateAndMap(pDevIns, u64MmioBase, IOMMU_MMIO_REGION_SIZE, iommuAmdMmioWrite, iommuAmdMmioRead,
                                    IOMMMIO_FLAGS_READ_PASSTHRU | IOMMMIO_FLAGS_WRITE_PASSTHRU,
                                    "IOMMU-AMD", &pThis->hMmio);
     AssertRCReturn(rc, rc);
