@@ -1038,7 +1038,7 @@ static int vgsvcGstCtrlProcessResolveExecutable(const char *pszFileName, char *p
  * and relative paths.
  *
  * @return IPRT status code.
- * @param  pszArgv0         First argument (argv0), either original or modified version.  Optional.
+ * @param  pszArgv0         First argument (argv0), either original or modified version.
  * @param  papszArgs        Original argv command line from the host, starting at argv[1].
  * @param  fFlags           The process creation flags pass to us from the host.
  * @param  ppapszArgv       Pointer to a pointer with the new argv command line.
@@ -1047,10 +1047,11 @@ static int vgsvcGstCtrlProcessResolveExecutable(const char *pszFileName, char *p
 static int vgsvcGstCtrlProcessAllocateArgv(const char *pszArgv0, const char * const *papszArgs, uint32_t fFlags,
                                            char ***ppapszArgv)
 {
-    AssertPtrReturn(ppapszArgv, VERR_INVALID_POINTER);
-
     VGSvcVerbose(3, "VGSvcGstCtrlProcessPrepareArgv: pszArgv0=%p, papszArgs=%p, fFlags=%#x, ppapszArgv=%p\n",
                  pszArgv0, papszArgs, fFlags, ppapszArgv);
+
+    AssertPtrReturn(pszArgv0,   VERR_INVALID_POINTER);
+    AssertPtrReturn(ppapszArgv, VERR_INVALID_POINTER);
 
     int rc = VINF_SUCCESS;
     uint32_t cArgs;
@@ -1066,11 +1067,13 @@ static int vgsvcGstCtrlProcessAllocateArgv(const char *pszArgv0, const char * co
     if (!papszNewArgv)
         return VERR_NO_MEMORY;
 
+    VGSvcVerbose(3, "VGSvcGstCtrlProcessAllocateArgv: pszArgv0 = '%s', cArgs=%RU32, cbSize=%zu\n", pszArgv0, cArgs, cbSize);
 #ifdef DEBUG /* Never log this stuff in release mode! */
-    VGSvcVerbose(3, "VGSvcGstCtrlProcessAllocateArgv: pszArgv0 = '%s'\n", pszArgv0);
-    for (uint32_t i = 0; i < cArgs; i++)
-        VGSvcVerbose(3, "VGSvcGstCtrlProcessAllocateArgv: papszArgs[%RU32] = '%s'\n", i, papszArgs[i]);
-    VGSvcVerbose(3, "VGSvcGstCtrlProcessAllocateArgv: cbSize=%RU32, cArgs=%RU32\n", cbSize, cArgs);
+    if (cArgs)
+    {
+        for (uint32_t i = 0; i < cArgs; i++)
+            VGSvcVerbose(3, "VGSvcGstCtrlProcessAllocateArgv: papszArgs[%RU32] = '%s'\n", i, papszArgs[i]);
+    }
 #endif
 
     /* HACK ALERT! Older hosts (< VBox 6.1.x) did not allow the user to really specify the first
@@ -1080,10 +1083,13 @@ static int vgsvcGstCtrlProcessAllocateArgv(const char *pszArgv0, const char * co
     if (   !(fFlags & EXECUTEPROCESSFLAG_UNQUOTED_ARGS)
         || !strpbrk(pszArgv0, " \t\n\r")
         || pszArgv0[0] == '"')
+    {
         rc = RTStrDupEx(&papszNewArgv[0], pszArgv0);
+    }
     else
     {
         size_t cchArgv0 = strlen(pszArgv0);
+        AssertReturn(cchArgv0, VERR_INVALID_PARAMETER); /* Paranoia. */
         rc = RTStrAllocEx(&papszNewArgv[0], 1 + cchArgv0 + 1 + 1);
         if (RT_SUCCESS(rc))
         {
@@ -1348,7 +1354,7 @@ static int vgsvcGstCtrlProcessCreateProcess(const char *pszExec, const char * co
          * This one is a bit tricky to also support older hosts:
          *
          * - If the host does not provide a dedicated argv[0] (< VBox 6.1.x), we use the
-         *   executable name (pszExec) as the (default) argv[0]. This is wrong, but we can't do
+         *   unmodified executable name (pszExec) as the (default) argv[0]. This is wrong, but we can't do
          *   much about it. The rest (argv[1,2,n]) then gets set starting at papszArgs[0].
          *
          * - Newer hosts (>= VBox 6.1.x) provide a correct argv[0] independently of the actual
@@ -1356,10 +1362,17 @@ static int vgsvcGstCtrlProcessCreateProcess(const char *pszExec, const char * co
          */
         const bool fHasArgv0 = RT_BOOL(g_fControlHostFeatures0 & VBOX_GUESTCTRL_HF_0_PROCESS_ARGV0);
 
+        const char *pcszArgv0 = (fHasArgv0 && papszArgs[0]) ? papszArgs[0] : pszExec;
+        AssertPtrReturn(pcszArgv0, VERR_INVALID_POINTER); /* Paranoia. */
+
+        const char * const *pcszArgvN = fHasArgv0 && papszArgs + 1 ? papszArgs + 1 : papszArgs;
+        AssertPtrReturn(pcszArgvN, VERR_INVALID_POINTER); /* Ditto. */
+
+        VGSvcVerbose(3, "vgsvcGstCtrlProcessCreateProcess: fHasArgv0=%RTbool, pcszArgv0=%p, pcszArgvN=%p, g_fControlHostFeatures0=%#x\n",
+                     fHasArgv0, pcszArgv0, pcszArgvN, g_fControlHostFeatures0);
+
         char **papszArgsExp;
-        rc = vgsvcGstCtrlProcessAllocateArgv(fHasArgv0 ?  papszArgs[0] :  pszExec,
-                                             fHasArgv0 ? &papszArgs[1] : &papszArgs[0],
-                                             fFlags, &papszArgsExp);
+        rc = vgsvcGstCtrlProcessAllocateArgv(pcszArgv0, pcszArgvN, fFlags, &papszArgsExp);
         if (RT_FAILURE(rc))
         {
             /* Don't print any arguments -- may contain passwords or other sensible data! */
@@ -1525,13 +1538,14 @@ static int vgsvcGstCtrlProcessProcessWorker(PVBOXSERVICECTRLPROCESS pProcess)
                                 RTGETOPTARGV_CNV_QUOTE_BOURNE_SH, NULL);
 
 #ifdef VBOX_STRICT
-    const bool fHasArgv0 = RT_BOOL(g_fControlHostFeatures0 & VBOX_GUESTCTRL_HF_0_PROCESS_ARGV0);
+    const bool fHasArgv0    = RT_BOOL(g_fControlHostFeatures0 & VBOX_GUESTCTRL_HF_0_PROCESS_ARGV0); RT_NOREF(fHasArgv0);
+    const int  cArgsToCheck = cArgs; /** @ŧodo Do we still need to do this?    + (fHasArgv0 ? 0 : 1); */
 
     /* Did we get the same result?
      * Take into account that we might not have supplied a (correct) argv[0] from the host. */
-    AssertMsg((int)pProcess->StartupInfo.uNumArgs == cArgs + fHasArgv0 ? 0 : 1,
-              ("StartupInfo.uNumArgs=%RU32 != cArgs=%d, fHostFeatures0=%#x\n",
-               pProcess->StartupInfo.uNumArgs, cArgs, g_fControlHostFeatures0));
+    AssertMsg((int)pProcess->StartupInfo.uNumArgs == cArgsToCheck,
+              ("rc=%Rrc, StartupInfo.uNumArgs=%RU32 != cArgsToCheck=%d, cArgs=%d, fHostFeatures0=%#x\n",
+               rc, pProcess->StartupInfo.uNumArgs, cArgsToCheck, cArgs, g_fControlHostFeatures0));
 #endif
 
     /*

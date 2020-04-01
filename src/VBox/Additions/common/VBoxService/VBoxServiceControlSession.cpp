@@ -1719,12 +1719,15 @@ static RTEXITCODE vgsvcGstCtrlSessionSpawnWorker(PVBOXSERVICECTRLSESSION pSessio
         return VGSvcError("Error connecting to guest control service, rc=%Rrc\n", rc);
     g_fControlSupportsOptimizations = VbglR3GuestCtrlSupportsOptimizations(idClient);
     g_idControlSvcClient            = idClient;
-    VbglR3GuestCtrlQueryFeatures(idClient, &g_fControlHostFeatures0);
+
+    int rc2 = VbglR3GuestCtrlQueryFeatures(idClient, &g_fControlHostFeatures0);
+    if (RT_FAILURE(rc2)) /* Querying host features is not fatal -- do not use rc here. */
+        VGSvcVerbose(1, "Querying host features failed with %Rrc\n", rc2);
 
     rc = vgsvcGstCtrlSessionReadKeyAndAccept(idClient, pSession->StartupInfo.uSessionID);
     if (RT_SUCCESS(rc))
     {
-        VGSvcVerbose(1, "Using client ID=%RU32\n", idClient);
+        VGSvcVerbose(1, "Using client ID=%RU32, g_fControlHostFeatures0=%#x\n", idClient, g_fControlHostFeatures0);
 
         /*
          * Report started status.
