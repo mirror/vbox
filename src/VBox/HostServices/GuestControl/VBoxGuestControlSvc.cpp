@@ -910,7 +910,7 @@ public:
 private:
     int clientMakeMeMaster(ClientState *pClient, VBOXHGCMCALLHANDLE hCall, uint32_t cParms);
     int clientReportFeatures(ClientState *pClient, VBOXHGCMCALLHANDLE hCall, uint32_t cParms, VBOXHGCMSVCPARM paParms[]);
-    int clientQueryFeatures(VBOXHGCMCALLHANDLE hCall, uint32_t cParms, VBOXHGCMSVCPARM paParms[]);
+    int clientQueryFeatures(ClientState *pClient, VBOXHGCMCALLHANDLE hCall, uint32_t cParms, VBOXHGCMSVCPARM paParms[]);
     int clientMsgPeek(ClientState *pClient, VBOXHGCMCALLHANDLE hCall, uint32_t cParms, VBOXHGCMSVCPARM paParms[], bool fWait);
     int clientMsgGet(ClientState *pClient, VBOXHGCMCALLHANDLE hCall, uint32_t cParms, VBOXHGCMSVCPARM paParms[]);
     int clientMsgCancel(ClientState *pClient, uint32_t cParms);
@@ -1197,7 +1197,7 @@ int GstCtrlService::clientReportFeatures(ClientState *pClient, VBOXHGCMCALLHANDL
     {
         m_fGuestFeatures0 = fFeatures0;
         m_fGuestFeatures1 = fFeatures1;
-        Log(("[Client %RU32] features: %#RX64 %#RX64\n", pClient->m_idClient, fFeatures0, fFeatures1));
+        Log(("[Client %RU32] reported features: %#RX64 %#RX64\n", pClient->m_idClient, fFeatures0, fFeatures1));
 
         /*
          * Forward the info to main.
@@ -1218,11 +1218,13 @@ int GstCtrlService::clientReportFeatures(ClientState *pClient, VBOXHGCMCALLHANDL
  * @retval  VINF_HGCM_ASYNC_EXECUTE on success (we complete the message here).
  * @retval  VERR_WRONG_PARAMETER_COUNT
  *
+ * @param   pClient     The client state.
  * @param   hCall       The client's call handle.
  * @param   cParms      Number of parameters.
  * @param   paParms     Array of parameters.
  */
-int GstCtrlService::clientQueryFeatures(VBOXHGCMCALLHANDLE hCall, uint32_t cParms, VBOXHGCMSVCPARM paParms[])
+int GstCtrlService::clientQueryFeatures(ClientState *pClient,
+                                        VBOXHGCMCALLHANDLE hCall, uint32_t cParms, VBOXHGCMSVCPARM paParms[])
 {
     /*
      * Validate the request.
@@ -1238,7 +1240,11 @@ int GstCtrlService::clientQueryFeatures(VBOXHGCMCALLHANDLE hCall, uint32_t cParm
     paParms[0].u.uint64 = g_fGstCtrlHostFeatures0;
     paParms[1].u.uint64 = 0;
     int rc = mpHelpers->pfnCallComplete(hCall, VINF_SUCCESS);
-    if (RT_FAILURE(rc))
+    if (RT_SUCCESS(rc))
+    {
+        Log(("[Client %RU32] query features: %#RX64 0\n", pClient->m_idClient, g_fGstCtrlHostFeatures0));
+    }
+    else
         LogFunc(("pfnCallComplete -> %Rrc\n", rc));
 
     return VINF_HGCM_ASYNC_EXECUTE;
@@ -2112,7 +2118,7 @@ GstCtrlService::svcCall(void *pvService, VBOXHGCMCALLHANDLE hCall, uint32_t idCl
             break;
         case GUEST_MSG_QUERY_FEATURES:
             LogFlowFunc(("[Client %RU32] GUEST_MSG_QUERY_FEATURES\n", idClient));
-            rc = pThis->clientQueryFeatures(hCall, cParms, paParms);
+            rc = pThis->clientQueryFeatures(pClient, hCall, cParms, paParms);
             break;
         case GUEST_MSG_PEEK_NOWAIT:
             LogFlowFunc(("[Client %RU32] GUEST_MSG_PEEK_NOWAIT\n", idClient));
