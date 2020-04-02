@@ -1774,14 +1774,8 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         cFiles   = 0;    # Number of files read.
         cOthers  = 0;    # Other files.
 
-        ##
-        ## @todo r=bird: Unlike fileOpen, directoryOpen will not fail if the directory does not exist.
-        ##       This is of course a bug in the implementation, as it is documented to return
-        ##       VBOX_E_OBJECT_NOT_FOUND or VBOX_E_IPRT_ERROR!
-        ##
-
         # Open the directory:
-        #reporter.log2('Directory="%s", filter="%s", afFlags="%s"' % (sCurDir, sFilter, afFlags));
+        reporter.log2('Directory="%s", filter="%s", afFlags="%s"' % (sCurDir, sFilter, afFlags));
         try:
             oCurDir = oGuestSession.directoryOpen(sCurDir, sFilter, afFlags);
         except:
@@ -1794,13 +1788,10 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                 oFsObjInfo = oCurDir.read();
             except Exception as oXcpt:
                 if vbox.ComError.notEqual(oXcpt, vbox.ComError.VBOX_E_OBJECT_NOT_FOUND):
-                    ##
-                    ## @todo r=bird: Change this to reporter.errorXcpt() once directoryOpen() starts
-                    ##       working the way it is documented.
-                    ##
-                    reporter.maybeErrXcpt(fIsError, 'Error reading directory "%s":' % (sCurDir,)); # See above why 'maybe'.
+                    reporter.errorXcpt('Error reading directory "%s":' % (sCurDir,));
                     fRc = False;
-                #else: reporter.log2('\tNo more directory entries for "%s"' % (sCurDir,));
+                else:
+                    reporter.log2('\tNo more directory entries for "%s"' % (sCurDir,));
                 break;
 
             try:
@@ -1815,7 +1806,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                     fRc = reporter.error('Wrong type for "%s": %d, expected %d (Directory)'
                                          % (sName, eType, vboxcon.FsObjType_Directory));
             elif eType == vboxcon.FsObjType_Directory:
-                #reporter.log2('  Directory "%s"' % oFsObjInfo.name);
+                reporter.log2('  Directory "%s"' % oFsObjInfo.name);
                 aSubResult = self.gctrlReadDirTree(oTest, oGuestSession, fIsError,
                                                    oTestVm.pathJoin(sSubDir, sName) if sSubDir else sName);
                 fRc      = aSubResult[0];
@@ -1823,10 +1814,10 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                 cFiles  += aSubResult[2];
                 cOthers += aSubResult[3];
             elif eType is vboxcon.FsObjType_File:
-                #reporter.log2('  File "%s"' % oFsObjInfo.name);
+                reporter.log2('  File "%s"' % oFsObjInfo.name);
                 cFiles += 1;
             elif eType is vboxcon.FsObjType_Symlink:
-                 #reporter.log2('  Symlink "%s" -- not tested yet' % oFsObjInfo.name);
+                reporter.log2('  Symlink "%s" -- not tested yet' % oFsObjInfo.name);
                 cOthers += 1;
             elif    oTestVm.isWindows() \
                  or oTestVm.isOS2() \
@@ -3752,12 +3743,11 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                              eAction = vboxcon.FileOpenAction_OpenExistingTruncated),                   tdTestResultFailure() ],
             [ tdTestFileOpen(sFile = oTestVm.pathJoin(sTempDir, 'no-such-dir', 'no-such-file')),        tdTestResultFailure() ],
         ];
-        if oTestVm.isWindows() or not self.fSkipKnownBugs: # We can open directories on linux, but we shouldn't, right...
-            atTests.extend([
-                # Wrong type:
-                [ tdTestFileOpen(sFile = self.getGuestTempDir(oTestVm)),                                tdTestResultFailure() ],
-                [ tdTestFileOpen(sFile = self.getGuestSystemDir(oTestVm)),                              tdTestResultFailure() ],
-            ]);
+        atTests.extend([
+            # Wrong type:
+            [ tdTestFileOpen(sFile = self.getGuestTempDir(oTestVm)),                                tdTestResultFailure() ],
+            [ tdTestFileOpen(sFile = self.getGuestSystemDir(oTestVm)),                              tdTestResultFailure() ],
+        ]);
         atTests.extend([
             # O_EXCL and such:
             [ tdTestFileOpen(sFile = sFileForReading, eAction = vboxcon.FileOpenAction_CreateNew,
