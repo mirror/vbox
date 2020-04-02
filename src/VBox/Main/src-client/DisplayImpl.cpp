@@ -3556,6 +3556,8 @@ DECLCALLBACK(void) Display::i_displayVBVAReportCursorPosition(PPDMIDISPLAYCONNEC
     PDRVMAINDISPLAY pDrv = PDMIDISPLAYCONNECTOR_2_MAINDISPLAY(pInterface);
     Display *pThis = pDrv->pDisplay;
 
+    AssertReturnVoid(aScreenId < pThis->mcMonitors);
+
     if (fFlags & VBVA_CURSOR_SCREEN_RELATIVE)
     {
         x += pThis->maFramebuffers[aScreenId].xOrigin;
