@@ -5458,6 +5458,7 @@ int vmsvga3dSetLightData(PVGASTATECC pThisCC, uint32_t cid, uint32_t index, SVGA
     AssertReturn(pState, VERR_NO_MEMORY);
 
     LogFunc(("vmsvga3dSetLightData cid=%u index=%d type=%d\n", cid, index, pData->type));
+    AssertReturn(index < SVGA3D_MAX_LIGHTS, VERR_INVALID_PARAMETER);
 
     PVMSVGA3DCONTEXT pContext;
     int rc = vmsvga3dContextFromCid(pState, cid, &pContext);
@@ -5466,13 +5467,8 @@ int vmsvga3dSetLightData(PVGASTATECC pThisCC, uint32_t cid, uint32_t index, SVGA
     VMSVGA3D_SET_CURRENT_CONTEXT(pState, pContext);
 
     /* Store for vm state save/restore */
-    if (index < SVGA3D_MAX_LIGHTS)
-    {
-        pContext->state.aLightData[index].fValidData = true;
-        pContext->state.aLightData[index].data = *pData;
-    }
-    else
-        AssertFailed();
+    pContext->state.aLightData[index].fValidData = true;
+    pContext->state.aLightData[index].data = *pData;
 
     if (    pData->attenuation0 < 0.0f
         ||  pData->attenuation1 < 0.0f
