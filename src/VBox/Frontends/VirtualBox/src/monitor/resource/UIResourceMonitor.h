@@ -31,6 +31,7 @@
 /* Forward declarations: */
 class QAbstractButton;
 class QFrame;
+class QLabel;
 class QTableView;
 class QTreeWidgetItem;
 class QIDialogButtonBox;
@@ -38,6 +39,8 @@ class UIActionPool;
 class UIToolBar;
 class UIResourceMonitorProxyModel;
 class UIResourceMonitorModel;
+class UIVMResourceMonitorHostStats;
+class UIVMResourceMonitorHostStatsWidget;
 class UIVMResourceMonitorTableView;
 
 /** QWidget extension to display a Linux top like utility that sort running vm wrt. resource allocations. */
@@ -77,6 +80,7 @@ private slots:
     void sltHandleDataUpdate();
     void sltToggleColumnSelectionMenu(bool fChecked);
     void sltHandleColumnAction(bool fChecked);
+    void sltHandleHostStatsUpdate(const UIVMResourceMonitorHostStats &stats);
 
 private:
 
@@ -88,6 +92,7 @@ private:
       * @{ */
         void prepare();
         void prepareWidgets();
+        void prepareHostStatsWidgets();
         void prepareToolBar();
         void prepareActions();
         void loadSettings();
@@ -105,12 +110,15 @@ private:
     /** @name Misc members.
       * @{ */
         UIToolBar *m_pToolBar;
-        UIVMResourceMonitorTableView *m_pTableView;
-        UIResourceMonitorProxyModel *m_pProxyModel;
-        UIResourceMonitorModel      *m_pModel;
-        QVector<QString>             m_columnCaptions;
+        UIVMResourceMonitorTableView       *m_pTableView;
+        UIResourceMonitorProxyModel        *m_pProxyModel;
+        UIResourceMonitorModel             *m_pModel;
+        QVector<QString>                    m_columnCaptions;
         /* The key is the column id (VMResourceMonitorColumn) and value is true if the column is visible. */
-        QMap<int, bool>              m_columnVisible;
+        QMap<int, bool>                     m_columnVisible;
+        UIVMResourceMonitorHostStatsWidget *m_pHostStatsWidget;
+
+
     /** @} */
     QFrame *m_pColumnSelectionMenu;
     /** Indicates if this widget's host tool is current tool. */

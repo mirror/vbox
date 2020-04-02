@@ -180,6 +180,9 @@ void UIMonitorCommon::drawCombinedDoughnutChart(quint64 data1, const QColor &dat
                                QPainter &painter, quint64  iMaximum,
                                const QRectF &chartRect, const QRectF &innerRect, int iOverlayAlpha)
 {
+    (void)data2;
+    (void)data2Color;
+    (void)iOverlayAlpha;
     /* Draw two arcs. one for the inner the other for the outer circle: */
     painter.setPen(QPen(QColor(100, 100, 100, iOverlayAlpha), 1));
     painter.drawArc(chartRect, 0, 3600 * 16);
@@ -199,4 +202,37 @@ void UIMonitorCommon::drawCombinedDoughnutChart(quint64 data1, const QColor &dat
     float fAngle2 = 360.f * data2 / (float)iMaximum;
     painter.setBrush(data2Color);
     painter.drawPath(doughnutSlice(chartRect, innerRect, 90 - fAngle, fAngle2));
+}
+
+/* static */
+QRectF UIMonitorCommon::getScaledRect(const QRectF &outerFrame, float fScaleX, float fScaleY)
+{
+    if (!outerFrame.isValid())
+        return QRectF();
+    QPointF center = outerFrame.center();
+    float iWidth = fScaleX * outerFrame.width();
+    float iHeight = fScaleY * outerFrame.height();
+    return QRectF(QPointF(center.x() - 0.5 * iWidth, center.y() - 0.5 * iHeight),
+                 QSizeF(iWidth, iHeight));
+}
+
+/* static */
+void UIMonitorCommon::drawDoughnutChart(QPainter &painter, quint64 iMaximum, quint64 data,
+                                        const QRectF &chartRect, const QRectF &innerRect, int iOverlayAlpha, const QColor &color)
+{
+    /* Draw a whole non-filled circle: */
+    painter.setPen(QPen(QColor(100, 100, 100, iOverlayAlpha), 1));
+    painter.drawArc(chartRect, 0, 3600 * 16);
+    painter.drawArc(innerRect, 0, 3600 * 16);
+
+    /* Draw a white filled circle and the arc for data: */
+    QPainterPath background = UIMonitorCommon::wholeArc(chartRect).subtracted(UIMonitorCommon::wholeArc(innerRect));
+    painter.setPen(Qt::NoPen);
+    painter.setBrush(QColor(255, 255, 255, iOverlayAlpha));
+    painter.drawPath(background);
+
+    /* Draw the doughnut slice for the data: */
+    float fAngle = 360.f * data / (float)iMaximum;
+    painter.setBrush(color);
+    painter.drawPath(UIMonitorCommon::doughnutSlice(chartRect, innerRect, 90, fAngle));
 }

@@ -56,6 +56,11 @@ public:
                                               QPainter &painter, quint64  iMaximum,
                                               const QRectF &chartRect, const QRectF &innerRect, int iOverlayAlpha);
 
+        /* Returns a rectangle which is co-centric with @p outerFrame and scaled by @p fScaleX and fScaleY. */
+        static QRectF getScaledRect(const QRectF &outerFrame, float fScaleX, float fScaleY);
+
+        static void drawDoughnutChart(QPainter &painter, quint64 iMaximum, quint64 data,
+                                      const QRectF &chartRect, const QRectF &innerRect, int iOverlayAlpha, const QColor &color);
 
 private:
 

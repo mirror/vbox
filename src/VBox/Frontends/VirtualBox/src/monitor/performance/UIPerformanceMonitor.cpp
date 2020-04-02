@@ -105,8 +105,6 @@ private:
        void drawXAxisLabels(QPainter &painter, int iXSubAxisCount);
        void drawPieChart(QPainter &painter, quint64 iMaximum, int iDataIndex, const QRectF &chartRect, bool fWithBorder = true);
        void drawCombinedPieCharts(QPainter &painter, quint64 iMaximum);
-       void drawDoughnutChart(QPainter &painter, quint64 iMaximum, int iDataIndex,
-                              const QRectF &chartRect, const QRectF &innerRect);
 
        /** Drawing an overlay rectangle over the charts to indicate that they are disabled. */
        void drawDisabledChartRectangle(QPainter &painter);
@@ -480,30 +478,6 @@ void UIChart::drawPieChart(QPainter &painter, quint64 iMaximum, int iDataIndex,
     painter.drawPath(dataPath);
 }
 
-void UIChart::drawDoughnutChart(QPainter &painter, quint64 iMaximum, int iDataIndex,
-                                const QRectF &chartRect, const QRectF &innerRect)
-{
-    const QQueue<quint64> *data = m_pMetric->data(iDataIndex);
-    if (!data || data->isEmpty())
-        return;
-
-    /* Draw a whole non-filled circle: */
-    painter.setPen(QPen(QColor(100, 100, 100, m_iOverlayAlpha), 1));
-    painter.drawArc(chartRect, 0, 3600 * 16);
-    painter.drawArc(innerRect, 0, 3600 * 16);
-
-    /* Draw a white filled circle and the arc for data: */
-    QPainterPath background = UIMonitorCommon::wholeArc(chartRect).subtracted(UIMonitorCommon::wholeArc(innerRect));
-    painter.setPen(Qt::NoPen);
-    painter.setBrush(QColor(255, 255, 255, m_iOverlayAlpha));
-    painter.drawPath(background);
-
-    /* Draw the doughnut slice for the data: */
-    float fAngle = 360.f * data->back() / (float)iMaximum;
-    painter.setBrush(conicalGradientForDataSeries(chartRect, iDataIndex));
-    painter.drawPath(UIMonitorCommon::doughnutSlice(chartRect, innerRect, 90, fAngle));
-}
-
 QConicalGradient UIChart::conicalGradientForDataSeries(const QRectF &rectangle, int iDataIndex)
 {
     QConicalGradient gradient;
@@ -529,17 +503,17 @@ void UIChart::drawCombinedPieCharts(QPainter &painter, quint64 iMaximum)
 
     if (fData0 && fData1)
     {
-        QRectF innerRect(QPointF(chartRect.left() + 0.25 * chartRect.width(), chartRect.top() + 0.25 * chartRect.height()),
-                         QSizeF(0.5 * chartRect.width(), 0.5 * chartRect.height()));
         /* Draw a doughnut chart where data series are stacked on to of each other: */
         if (m_pMetric->data(0) && !m_pMetric->data(0)->isEmpty() &&
             m_pMetric->data(1) && !m_pMetric->data(1)->isEmpty())
-            UIMonitorCommon::drawCombinedDoughnutChart(m_pMetric->data(0)->back(), dataSeriesColor(0, 50),
-                                                       m_pMetric->data(1)->back(), dataSeriesColor(1, 50),
-                                                       painter, iMaximum, chartRect, innerRect, m_iOverlayAlpha);
+            UIMonitorCommon::drawCombinedDoughnutChart(m_pMetric->data(1)->back(), dataSeriesColor(1, 50),
+                                                       m_pMetric->data(0)->back(), dataSeriesColor(0, 50),
+                                                       painter, iMaximum, chartRect,
+                                                       UIMonitorCommon::getScaledRect(chartRect, 0.5f, 0.5f), m_iOverlayAlpha);
 #if 0
         /* Draw a doughnut shaped chart and then pie chart inside it: */
-        drawDoughnutChart(painter, iMaximum, 0 /* iDataIndex */, chartRect, innerRect);
+        UIMonitorCommon::drawDoughnutChart(painter, iMaximum, m_pMetric->data(0)->back(),
+                                           chartRect, innerRect, m_iOverlayAlpha, dataSeriesColor(0));
         drawPieChart(painter, iMaximum, 1 /* iDataIndex */, innerRect, false);
 #endif
     }
