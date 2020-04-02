@@ -949,7 +949,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         vrc = com::VBoxLogRelCreate("COM Service", pszLogFile,
                                     RTLOGFLAGS_PREFIX_THREAD | RTLOGFLAGS_PREFIX_TIME_PROG,
                                     VBOXSDS_LOG_DEFAULT, "VBOXSDS_RELEASE_LOG",
-                                    RTLOGDEST_FILE, UINT32_MAX /* cMaxEntriesPerGroup */,
+                                    RTLOGDEST_FILE | RTLOGDEST_FIXED_FILE | RTLOGDEST_FIXED_DIR,
+                                    UINT32_MAX /* cMaxEntriesPerGroup */,
                                     cHistory, uHistoryFileTime, uHistoryFileSize,
                                     RTErrInfoInitStatic(&ErrInfo));
         if (RT_FAILURE(vrc))
