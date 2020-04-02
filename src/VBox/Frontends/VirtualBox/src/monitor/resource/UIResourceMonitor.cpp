@@ -112,8 +112,10 @@ public:
     quint64 m_iCPUUserLoad;
     quint64 m_iCPUKernelLoad;
     quint64 m_iCPUFreq;
-    quint64 m_iTotalRAM;
-    quint64 m_iFreeRAM;
+    quint64 m_iRAMTotal;
+    quint64 m_iRAMFree;
+    quint64 m_iFSTotal;
+    quint64 m_iFSFree;
 };
 
 
@@ -138,25 +140,28 @@ protected:
 private:
 
     void prepare();
+    void addVerticalLine(QHBoxLayout *pLayout);
     void updateLabels();
 
     UIVMResourceMonitorDoughnutChart   *m_pHostCPUChart;
     UIVMResourceMonitorDoughnutChart   *m_pHostRAMChart;
+    UIVMResourceMonitorDoughnutChart   *m_pHostFSChart;
     QLabel                             *m_pCPUTitleLabel;
     QLabel                             *m_pCPUUserLabel;
     QLabel                             *m_pCPUKernelLabel;
     QLabel                             *m_pCPUTotalLabel;
-
     QLabel                             *m_pRAMTitleLabel;
     QLabel                             *m_pRAMUsedLabel;
     QLabel                             *m_pRAMFreeLabel;
     QLabel                             *m_pRAMTotalLabel;
-
+    QLabel                             *m_pFSTitleLabel;
+    QLabel                             *m_pFSUsedLabel;
+    QLabel                             *m_pFSFreeLabel;
+    QLabel                             *m_pFSTotalLabel;
     QColor                              m_CPUUserColor;
     QColor                              m_CPUKernelColor;
     QColor                              m_RAMFreeColor;
     QColor                              m_RAMUsedColor;
-
     UIVMResourceMonitorHostStats        m_hostStats;
 };
 
@@ -418,6 +423,7 @@ UIVMResourceMonitorHostStatsWidget::UIVMResourceMonitorHostStatsWidget(QWidget *
     : QIWithRetranslateUI<QWidget>(pParent)
     , m_pHostCPUChart(0)
     , m_pHostRAMChart(0)
+    , m_pHostFSChart(0)
     , m_pCPUTitleLabel(0)
     , m_pCPUUserLabel(0)
     , m_pCPUKernelLabel(0)
@@ -426,6 +432,10 @@ UIVMResourceMonitorHostStatsWidget::UIVMResourceMonitorHostStatsWidget(QWidget *
     , m_pRAMUsedLabel(0)
     , m_pRAMFreeLabel(0)
     , m_pRAMTotalLabel(0)
+    , m_pFSTitleLabel(0)
+    , m_pFSUsedLabel(0)
+    , m_pFSFreeLabel(0)
+    , m_pFSTotalLabel(0)
     , m_CPUUserColor(Qt::red)
     , m_CPUKernelColor(Qt::blue)
     , m_RAMFreeColor(Qt::blue)
@@ -452,22 +462,43 @@ void UIVMResourceMonitorHostStatsWidget::setHostStats(const UIVMResourceMonitorH
     }
     if (m_pHostRAMChart)
     {
-        quint64 iUsedRAM = m_hostStats.m_iTotalRAM - m_hostStats.m_iFreeRAM;
-        m_pHostRAMChart->updateData(iUsedRAM, m_hostStats.m_iFreeRAM);
-        m_pHostRAMChart->setDataMaximum(m_hostStats.m_iTotalRAM);
-        if (m_hostStats.m_iTotalRAM != 0)
+        quint64 iUsedRAM = m_hostStats.m_iRAMTotal - m_hostStats.m_iRAMFree;
+        m_pHostRAMChart->updateData(iUsedRAM, m_hostStats.m_iRAMFree);
+        m_pHostRAMChart->setDataMaximum(m_hostStats.m_iRAMTotal);
+        if (m_hostStats.m_iRAMTotal != 0)
         {
-            quint64 iUsedRamPer = 100 * (iUsedRAM / (float) m_hostStats.m_iTotalRAM);
+            quint64 iUsedRamPer = 100 * (iUsedRAM / (float) m_hostStats.m_iRAMTotal);
             QString strCenter = QString("%1%\n%2").arg(iUsedRamPer).arg(tr("Used"));
             m_pHostRAMChart->setChartCenterString(strCenter);
         }
     }
+    if (m_pHostFSChart)
+    {
+        quint64 iUsedFS = m_hostStats.m_iFSTotal - m_hostStats.m_iFSFree;
+        m_pHostFSChart->updateData(iUsedFS, m_hostStats.m_iFSFree);
+        m_pHostFSChart->setDataMaximum(m_hostStats.m_iFSTotal);
+        if (m_hostStats.m_iFSTotal != 0)
+        {
+            quint64 iUsedRamPer = 100 * (iUsedFS / (float) m_hostStats.m_iFSTotal);
+            QString strCenter = QString("%1%\n%2").arg(iUsedRamPer).arg(tr("Used"));
+            m_pHostFSChart->setChartCenterString(strCenter);
+        }
+    }
+
     updateLabels();
 }
 
 void UIVMResourceMonitorHostStatsWidget::retranslateUi()
 {
     updateLabels();
+}
+
+void UIVMResourceMonitorHostStatsWidget::addVerticalLine(QHBoxLayout *pLayout)
+{
+    QFrame *pLine = new QFrame;
+    pLine->setFrameShape(QFrame::VLine);
+    pLine->setFrameShadow(QFrame::Sunken);
+    pLayout->addWidget(pLine);
 }
 
 void UIVMResourceMonitorHostStatsWidget::prepare()
@@ -512,6 +543,7 @@ void UIVMResourceMonitorHostStatsWidget::prepare()
             m_pHostCPUChart->setChartColors(m_CPUUserColor, m_CPUKernelColor);
         }
     }
+    addVerticalLine(pLayout);
     /* RAM Stuff: */
     {
         QWidget *pRAMLabelContainer = new QWidget;
@@ -520,6 +552,7 @@ void UIVMResourceMonitorHostStatsWidget::prepare()
         pLayout->addWidget(pRAMLabelContainer);
         QVBoxLayout *pRAMLabelsLayout = new QVBoxLayout;
         pRAMLabelsLayout->setContentsMargins(0, 0, 0, 0);
+        pRAMLabelsLayout->setSpacing(0);
         pRAMLabelContainer->setLayout(pRAMLabelsLayout);
         m_pRAMTitleLabel = new QLabel;
         pRAMLabelsLayout->addWidget(m_pRAMTitleLabel);
@@ -538,6 +571,34 @@ void UIVMResourceMonitorHostStatsWidget::prepare()
             m_pHostRAMChart->setChartColors(m_RAMUsedColor, m_RAMFreeColor);
         }
     }
+    addVerticalLine(pLayout);
+    /* FS Stuff: */
+    {
+        QWidget *pFSLabelContainer = new QWidget;
+        pLayout->addWidget(pFSLabelContainer);
+        pFSLabelContainer->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Maximum);
+        QVBoxLayout *pFSLabelsLayout = new QVBoxLayout;
+        pFSLabelsLayout->setContentsMargins(0, 0, 0, 0);
+        pFSLabelsLayout->setSpacing(0);
+        pFSLabelContainer->setLayout(pFSLabelsLayout);
+        m_pFSTitleLabel = new QLabel;
+        pFSLabelsLayout->addWidget(m_pFSTitleLabel);
+        m_pFSUsedLabel = new QLabel;
+        pFSLabelsLayout->addWidget(m_pFSUsedLabel);
+        m_pFSFreeLabel = new QLabel;
+        pFSLabelsLayout->addWidget(m_pFSFreeLabel);
+        m_pFSTotalLabel = new QLabel;
+        pFSLabelsLayout->addWidget(m_pFSTotalLabel);
+
+        m_pHostFSChart = new UIVMResourceMonitorDoughnutChart;
+        if (m_pHostFSChart)
+        {
+            m_pHostFSChart->setMinimumSize(iMinimumSize, iMinimumSize);
+            pLayout->addWidget(m_pHostFSChart);
+            m_pHostFSChart->setChartColors(m_RAMUsedColor, m_RAMFreeColor);
+        }
+
+    }
     pLayout->addStretch(2);
 }
 
@@ -548,36 +609,53 @@ void UIVMResourceMonitorHostStatsWidget::updateLabels()
     if (m_pCPUUserLabel)
     {
         QString strColor = QColor(m_CPUUserColor).name(QColor::HexRgb);
-        m_pCPUUserLabel->setText(QString("<font color=\"%1\">%2:%3%</font>").arg(strColor).arg(tr("User")).arg(QString::number(m_hostStats.m_iCPUUserLoad)));
+        m_pCPUUserLabel->setText(QString("<font color=\"%1\">%2: %3%</font>").arg(strColor).arg(tr("User")).arg(QString::number(m_hostStats.m_iCPUUserLoad)));
     }
     if (m_pCPUKernelLabel)
     {
         QString strColor = QColor(m_CPUKernelColor).name(QColor::HexRgb);
-        m_pCPUKernelLabel->setText(QString("<font color=\"%1\">%2:%3%</font>").arg(strColor).arg(tr("Kernel")).arg(QString::number(m_hostStats.m_iCPUKernelLoad)));
+        m_pCPUKernelLabel->setText(QString("<font color=\"%1\">%2: %3%</font>").arg(strColor).arg(tr("Kernel")).arg(QString::number(m_hostStats.m_iCPUKernelLoad)));
     }
     if (m_pCPUTotalLabel)
-        m_pCPUTotalLabel->setText(QString("%1:%2%").arg(tr("Total")).arg(m_hostStats.m_iCPUUserLoad + m_hostStats.m_iCPUKernelLoad));
+        m_pCPUTotalLabel->setText(QString("%1: %2%").arg(tr("Total")).arg(m_hostStats.m_iCPUUserLoad + m_hostStats.m_iCPUKernelLoad));
     if (m_pRAMTitleLabel)
         m_pRAMTitleLabel->setText(QString("<b>%1</b>").arg(tr("Host RAM Usage")));
     if (m_pRAMFreeLabel)
     {
-        QString strRAM = uiCommon().formatSize(m_hostStats.m_iFreeRAM);
+        QString strRAM = uiCommon().formatSize(m_hostStats.m_iRAMFree);
         QString strColor = QColor(m_RAMFreeColor).name(QColor::HexRgb);
-        m_pRAMFreeLabel->setText(QString("<font color=\"%1\">%2:%3</font>").arg(strColor).arg(tr("Free")).arg(strRAM));
+        m_pRAMFreeLabel->setText(QString("<font color=\"%1\">%2: %3</font>").arg(strColor).arg(tr("Free")).arg(strRAM));
     }
-
     if (m_pRAMUsedLabel)
     {
-        QString strRAM = uiCommon().formatSize(m_hostStats.m_iTotalRAM - m_hostStats.m_iFreeRAM);
+        QString strRAM = uiCommon().formatSize(m_hostStats.m_iRAMTotal - m_hostStats.m_iRAMFree);
         QString strColor = QColor(m_RAMUsedColor).name(QColor::HexRgb);
-        m_pRAMUsedLabel->setText(QString("<font color=\"%1\">%2:%3</font>").arg(strColor).arg(tr("Used")).arg(strRAM));
+        m_pRAMUsedLabel->setText(QString("<font color=\"%1\">%2: %3</font>").arg(strColor).arg(tr("Used")).arg(strRAM));
     }
     if (m_pRAMTotalLabel)
     {
-        QString strRAM = uiCommon().formatSize(m_hostStats.m_iTotalRAM);
-        m_pRAMTotalLabel->setText(QString("%1:%2").arg(tr("Total")).arg(strRAM));
+        QString strRAM = uiCommon().formatSize(m_hostStats.m_iRAMTotal);
+        m_pRAMTotalLabel->setText(QString("%1: %2").arg(tr("Total")).arg(strRAM));
     }
-
+    if (m_pFSTitleLabel)
+        m_pFSTitleLabel->setText(QString("<b>%1</b>").arg(tr("Host File System")));
+    if (m_pFSFreeLabel)
+    {
+        QString strFS = uiCommon().formatSize(m_hostStats.m_iFSFree);
+        QString strColor = QColor(m_RAMFreeColor).name(QColor::HexRgb);
+        m_pFSFreeLabel->setText(QString("<font color=\"%1\">%2: %3</font>").arg(strColor).arg(tr("Free")).arg(strFS));
+    }
+    if (m_pFSUsedLabel)
+    {
+        QString strFS = uiCommon().formatSize(m_hostStats.m_iFSTotal - m_hostStats.m_iFSFree);
+        QString strColor = QColor(m_RAMUsedColor).name(QColor::HexRgb);
+        m_pFSUsedLabel->setText(QString("<font color=\"%1\">%2: %3</font>").arg(strColor).arg(tr("Used")).arg(strFS));
+    }
+    if (m_pFSTotalLabel)
+    {
+        QString strFS = uiCommon().formatSize(m_hostStats.m_iFSTotal);
+        m_pFSTotalLabel->setText(QString("%1: %2").arg(tr("Total")).arg(strFS));
+    }
 }
 
 
@@ -738,8 +816,10 @@ UIVMResourceMonitorHostStats::UIVMResourceMonitorHostStats()
     : m_iCPUUserLoad(0)
     , m_iCPUKernelLoad(0)
     , m_iCPUFreq(0)
-    , m_iTotalRAM(0)
-    , m_iFreeRAM(0)
+    , m_iRAMTotal(0)
+    , m_iRAMFree(0)
+    , m_iFSTotal(0)
+    , m_iFSFree(0)
 {
 }
 
@@ -947,8 +1027,8 @@ void UIResourceMonitorModel::sltMachineStateChanged(const QUuid &uId, const KMac
 void UIResourceMonitorModel::getHostRAMStats()
 {
     CHost comHost = uiCommon().host();
-    m_hostStats.m_iTotalRAM = _1M * (quint64)comHost.GetMemorySize();
-    m_hostStats.m_iFreeRAM = _1M * (quint64)comHost.GetMemoryAvailable();
+    m_hostStats.m_iRAMTotal = _1M * (quint64)comHost.GetMemorySize();
+    m_hostStats.m_iRAMFree = _1M * (quint64)comHost.GetMemoryAvailable();
 }
 
 void UIResourceMonitorModel::sltTimeout()
@@ -1035,7 +1115,7 @@ void UIResourceMonitorModel::setupPerformanceCollector()
         m_nameList << "Guest/RAM/Usage*";
     /* This is for the host: */
     m_nameList << "CPU*";
-    //m_nameList << "CPU/Load/Kernel*";
+    m_nameList << "FS*";
     m_objectList = QVector<CUnknown>(m_nameList.size(), CUnknown());
     m_performanceMonitor.SetupMetrics(m_nameList, m_objectList, iPeriod, iMetricSetupCount);
 }
@@ -1102,7 +1182,22 @@ void UIResourceMonitorModel::queryPerformanceCollector()
             if (!comHost.isNull())
                 m_hostStats.m_iCPUFreq = fData;
         }
-
+       else if (aReturnNames[i].contains("FS", Qt::CaseInsensitive) &&
+                aReturnNames[i].contains("Total", Qt::CaseInsensitive) &&
+                !aReturnNames[i].contains(":"))
+       {
+            CHost comHost = (CHost)aReturnObjects[i];
+            if (!comHost.isNull())
+                m_hostStats.m_iFSTotal = _1M * fData;
+       }
+       else if (aReturnNames[i].contains("FS", Qt::CaseInsensitive) &&
+                aReturnNames[i].contains("Free", Qt::CaseInsensitive) &&
+                !aReturnNames[i].contains(":"))
+       {
+            CHost comHost = (CHost)aReturnObjects[i];
+            if (!comHost.isNull())
+                m_hostStats.m_iFSFree = _1M * fData;
+       }
     }
     for (int i = 0; i < m_itemList.size(); ++i)
     {
