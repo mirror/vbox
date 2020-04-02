@@ -63,8 +63,10 @@ struct ResourceColumn
 };
 
 ///#define DEBUG_BACKGROUND
+
+
 /*********************************************************************************************************************************
-*   Class UIVMResourceMonitorHostStats definition.                                                                           *
+*   Class UIVMResourceMonitorHostStats definition.                                                                               *
 *********************************************************************************************************************************/
 
 class UIVMResourceMonitorHostStats
@@ -105,10 +107,39 @@ private:
     quint64 m_iCPUUserLoad;
     quint64 m_iCPUKernelLoad;
     quint64 m_iCPUFreq;
-    int m_iMinimumHeight;
     int m_iMargin;
     QColor m_CPUUserColor;
     QColor m_CPUKernelColor;
+};
+
+
+/*********************************************************************************************************************************
+*   Class UIVMResourceMonitorHostRAMWidget definition.                                                                           *
+*********************************************************************************************************************************/
+
+class UIVMResourceMonitorHostRAMWidget : public QWidget
+{
+
+    Q_OBJECT;
+
+public:
+
+    UIVMResourceMonitorHostRAMWidget(QWidget *pParent = 0);
+    void setRAMStats(quint64 iTotalRAM, quint64 iFreeRAM);
+    void setChartColors(const QColor &RAMFreeColor, const QColor &RAMUsedColor);
+
+protected:
+
+    virtual void paintEvent(QPaintEvent *pEvent) /* override */;
+
+private:
+
+    quint64 m_iTotalRAM;
+    quint64 m_iFreeRAM;
+
+    int m_iMargin;
+    QColor m_RAMFreeColor;
+    QColor m_RAMUsedColor;
 };
 
 
@@ -136,17 +167,28 @@ private:
     void updateLabels();
 
     UIVMResourceMonitorHostCPUWidget   *m_pHostCPUChart;
+    UIVMResourceMonitorHostRAMWidget   *m_pHostRAMChart;
     QLabel                             *m_pCPUTitleLabel;
     QLabel                             *m_pCPUUserLabel;
     QLabel                             *m_pCPUKernelLabel;
     QLabel                             *m_pCPUTotalLabel;
+
+    QLabel                             *m_pRAMTitleLabel;
+    QLabel                             *m_pRAMUsedLabel;
+    QLabel                             *m_pRAMFreeLabel;
+    QLabel                             *m_pRAMTotalLabel;
+
     QColor                              m_CPUUserColor;
     QColor                              m_CPUKernelColor;
+    QColor                              m_RAMFreeColor;
+    QColor                              m_RAMUsedColor;
+
     UIVMResourceMonitorHostStats        m_hostStats;
 };
 
+
 /*********************************************************************************************************************************
-*   Class UIVMResourceMonitorTableView definition.                                                                           *
+*   Class UIVMResourceMonitorTableView definition.                                                                               *
 *********************************************************************************************************************************/
 
 class UIVMResourceMonitorTableView : public QTableView
@@ -174,8 +216,8 @@ private:
 };
 
 /*********************************************************************************************************************************
-*   Class UIVMResourceMonitorItem definition.                                                                           *
-*********************************************************************************************************************************/
+ *   Class UIVMResourceMonitorItem definition.                                                                           *
+ *********************************************************************************************************************************/
 class UIResourceMonitorItem
 {
 public:
@@ -217,8 +259,8 @@ private:
 };
 
 /*********************************************************************************************************************************
-*   Class UIVMResourceMonitorCheckBox definition.                                                                           *
-*********************************************************************************************************************************/
+ *   Class UIVMResourceMonitorCheckBox definition.                                                                           *
+ *********************************************************************************************************************************/
 
 class UIVMResourceMonitorCheckBox : public QCheckBox
 {
@@ -306,14 +348,14 @@ private:
     QVector<QString>               m_columnCaptions;
     QTimer *m_pTimer;
     /** @name The following are used during UIPerformanceCollector::QueryMetricsData(..)
-      * @{ */
-        QVector<QString> m_nameList;
-        QVector<CUnknown> m_objectList;
+     * @{ */
+    QVector<QString> m_nameList;
+    QVector<CUnknown> m_objectList;
     /** @} */
     CPerformanceCollector m_performanceMonitor;
     QMap<int, bool> m_columnVisible;
     /** If true the table data and corresponding view is updated. Possibly set by host widget to true only
-      *  when the widget is visible in the main UI. */
+     *  when the widget is visible in the main UI. */
     bool m_fShouldUpdate;
     UIVMResourceMonitorHostStats m_hostStats;
 };
@@ -345,8 +387,6 @@ UIVMResourceMonitorHostCPUWidget::UIVMResourceMonitorHostCPUWidget(QWidget *pPar
     , m_iCPUFreq(0)
 {
     m_iMargin = 3;
-    m_iMinimumHeight =  3 * QApplication::style()->pixelMetric(QStyle::PM_LargeIconSize);
-    setMinimumSize(m_iMinimumHeight, m_iMinimumHeight);
 }
 
 void UIVMResourceMonitorHostCPUWidget::setCPULoad(quint64 iUserLoad, quint64 iKernelLoad, quint64 iFreq)
@@ -370,7 +410,7 @@ void UIVMResourceMonitorHostCPUWidget::paintEvent(QPaintEvent *pEvent)
     QPainter painter(this);
     painter.setRenderHint(QPainter::Antialiasing);
 
-    int iFrameHeight = m_iMinimumHeight - 2 * m_iMargin;
+    int iFrameHeight = height()- 2 * m_iMargin;
     QRectF outerRect = QRectF(QPoint(m_iMargin,m_iMargin), QSize(iFrameHeight, iFrameHeight));
     QRectF innerRect = UIMonitorCommon::getScaledRect(outerRect, 0.6f, 0.6f);
     UIMonitorCommon::drawCombinedDoughnutChart(m_iCPUKernelLoad, m_CPUKernelColor,
@@ -385,18 +425,79 @@ void UIVMResourceMonitorHostCPUWidget::paintEvent(QPaintEvent *pEvent)
 
 
 /*********************************************************************************************************************************
+*   Class UIVMResourceMonitorHostRAMWidget implementation.                                                                       *
+*********************************************************************************************************************************/
+
+UIVMResourceMonitorHostRAMWidget::UIVMResourceMonitorHostRAMWidget(QWidget *pParent /* = 0 */)
+    :QWidget(pParent)
+    , m_iTotalRAM(0)
+    , m_iFreeRAM(0)
+{
+    m_iMargin = 3;
+}
+void UIVMResourceMonitorHostRAMWidget::setRAMStats(quint64 iTotalRAM, quint64 iFreeRAM)
+{
+    m_iTotalRAM = iTotalRAM;
+    m_iFreeRAM = iFreeRAM;
+    update();
+}
+
+void UIVMResourceMonitorHostRAMWidget::setChartColors(const QColor &RAMFreeColor, const QColor &RAMUsedColor)
+{
+    m_RAMFreeColor = RAMFreeColor;
+    m_RAMUsedColor = RAMUsedColor;
+}
+
+void UIVMResourceMonitorHostRAMWidget::paintEvent(QPaintEvent *pEvent)
+{
+
+    QWidget::paintEvent(pEvent);
+
+    QPainter painter(this);
+    painter.setRenderHint(QPainter::Antialiasing);
+
+    int iFrameHeight = height()- 2 * m_iMargin;
+    QRectF outerRect = QRectF(QPoint(m_iMargin,m_iMargin), QSize(iFrameHeight, iFrameHeight));
+    QRectF innerRect = UIMonitorCommon::getScaledRect(outerRect, 0.6f, 0.6f);
+    quint64 iUsedRAM = m_iTotalRAM - m_iFreeRAM;
+
+    UIMonitorCommon::drawCombinedDoughnutChart(iUsedRAM, m_RAMUsedColor,
+                                               m_iFreeRAM, m_RAMFreeColor,
+                                               painter, m_iTotalRAM,
+                                               outerRect, innerRect, 80);
+
+    if (m_iTotalRAM != 0)
+    {
+        float mul = 1.f / 1.4f;
+        QRectF textRect =  UIMonitorCommon::getScaledRect(innerRect, mul, mul);
+        painter.setPen(Qt::black);
+        int iPercent = 100 * (iUsedRAM / (float) m_iTotalRAM);
+        painter.drawText(textRect, Qt::AlignCenter, QString("%1%\nUsed").arg(QString::number(iPercent)));
+    }
+
+}
+
+
+/*********************************************************************************************************************************
 *   Class UIVMResourceMonitorHostStatsWidget implementation.                                                                     *
 *********************************************************************************************************************************/
 
 UIVMResourceMonitorHostStatsWidget::UIVMResourceMonitorHostStatsWidget(QWidget *pParent /* = 0 */)
     : QIWithRetranslateUI<QWidget>(pParent)
     , m_pHostCPUChart(0)
+    , m_pHostRAMChart(0)
     , m_pCPUTitleLabel(0)
     , m_pCPUUserLabel(0)
     , m_pCPUKernelLabel(0)
     , m_pCPUTotalLabel(0)
+    , m_pRAMTitleLabel(0)
+    , m_pRAMUsedLabel(0)
+    , m_pRAMFreeLabel(0)
+    , m_pRAMTotalLabel(0)
     , m_CPUUserColor(Qt::red)
     , m_CPUKernelColor(Qt::blue)
+    , m_RAMFreeColor(Qt::blue)
+    , m_RAMUsedColor(Qt::red)
 {
     prepare();
     retranslateUi();
@@ -413,6 +514,8 @@ void UIVMResourceMonitorHostStatsWidget::setHostStats(const UIVMResourceMonitorH
     m_hostStats = hostStats;
     if (m_pHostCPUChart)
         m_pHostCPUChart->setCPULoad(m_hostStats.m_iCPUUserLoad, m_hostStats.m_iCPUKernelLoad, m_hostStats.m_iCPUFreq);
+    if (m_pHostRAMChart)
+        m_pHostRAMChart->setRAMStats(m_hostStats.m_iTotalRAM, m_hostStats.m_iFreeRAM);
     updateLabels();
 }
 
@@ -425,38 +528,69 @@ void UIVMResourceMonitorHostStatsWidget::prepare()
 {
     QHBoxLayout *pLayout = new QHBoxLayout;
     setLayout(pLayout);
+    int iMinimumSize =  3 * QApplication::style()->pixelMetric(QStyle::PM_LargeIconSize);
 
-    /* Host CPU Labels: */
-    QWidget *pCPULabelContainer = new QWidget;
-    pCPULabelContainer->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Maximum);
+    /* CPU Stuff: */
+    {
+        /* Host CPU Labels: */
+        QWidget *pCPULabelContainer = new QWidget;
+        pCPULabelContainer->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Maximum);
 
 #ifdef DEBUG_BACKGROUND
-    QPalette pal = pCPULabelContainer->palette();
-    pal.setColor(QPalette::Background, Qt::yellow);
-    pCPULabelContainer->setAutoFillBackground(true);
-    pCPULabelContainer->setPalette(pal);
+        QPalette pal = pCPULabelContainer->palette();
+        pal.setColor(QPalette::Background, Qt::yellow);
+        pCPULabelContainer->setAutoFillBackground(true);
+        pCPULabelContainer->setPalette(pal);
 #endif
-    pLayout->addWidget(pCPULabelContainer);
-    QVBoxLayout *pCPULabelsLayout = new QVBoxLayout;
-    pCPULabelsLayout->setContentsMargins(0, 0, 0, 0);
-    pCPULabelContainer->setLayout(pCPULabelsLayout);
-    m_pCPUTitleLabel = new QLabel;
-    pCPULabelsLayout->addWidget(m_pCPUTitleLabel);
-    m_pCPUUserLabel = new QLabel;
-    pCPULabelsLayout->addWidget(m_pCPUUserLabel);
-    m_pCPUKernelLabel = new QLabel;
-    pCPULabelsLayout->addWidget(m_pCPUKernelLabel);
-    m_pCPUTotalLabel = new QLabel;
-    pCPULabelsLayout->addWidget(m_pCPUTotalLabel);
-    pCPULabelsLayout->setAlignment(Qt::AlignTop);
-    //pLayout->setAlignment(Qt::AlignTop);
-    pCPULabelsLayout->setSpacing(0);
-    /* Host CPU chart widget: */
-    m_pHostCPUChart = new UIVMResourceMonitorHostCPUWidget;
-    if (m_pHostCPUChart)
+        pLayout->addWidget(pCPULabelContainer);
+        QVBoxLayout *pCPULabelsLayout = new QVBoxLayout;
+        pCPULabelsLayout->setContentsMargins(0, 0, 0, 0);
+        pCPULabelContainer->setLayout(pCPULabelsLayout);
+        m_pCPUTitleLabel = new QLabel;
+        pCPULabelsLayout->addWidget(m_pCPUTitleLabel);
+        m_pCPUUserLabel = new QLabel;
+        pCPULabelsLayout->addWidget(m_pCPUUserLabel);
+        m_pCPUKernelLabel = new QLabel;
+        pCPULabelsLayout->addWidget(m_pCPUKernelLabel);
+        m_pCPUTotalLabel = new QLabel;
+        pCPULabelsLayout->addWidget(m_pCPUTotalLabel);
+        pCPULabelsLayout->setAlignment(Qt::AlignTop);
+        //pLayout->setAlignment(Qt::AlignTop);
+        pCPULabelsLayout->setSpacing(0);
+        /* Host CPU chart widget: */
+        m_pHostCPUChart = new UIVMResourceMonitorHostCPUWidget;
+        if (m_pHostCPUChart)
+        {
+            m_pHostCPUChart->setMinimumSize(iMinimumSize, iMinimumSize);
+            pLayout->addWidget(m_pHostCPUChart);
+            m_pHostCPUChart->setChartColors(m_CPUUserColor, m_CPUKernelColor);
+        }
+    }
+    /* RAM Stuff: */
     {
-        pLayout->addWidget(m_pHostCPUChart);
-        m_pHostCPUChart->setChartColors(m_CPUUserColor, m_CPUKernelColor);
+        QWidget *pRAMLabelContainer = new QWidget;
+        pRAMLabelContainer->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Maximum);
+
+        pLayout->addWidget(pRAMLabelContainer);
+        QVBoxLayout *pRAMLabelsLayout = new QVBoxLayout;
+        pRAMLabelsLayout->setContentsMargins(0, 0, 0, 0);
+        pRAMLabelContainer->setLayout(pRAMLabelsLayout);
+        m_pRAMTitleLabel = new QLabel;
+        pRAMLabelsLayout->addWidget(m_pRAMTitleLabel);
+        m_pRAMUsedLabel = new QLabel;
+        pRAMLabelsLayout->addWidget(m_pRAMUsedLabel);
+        m_pRAMFreeLabel = new QLabel;
+        pRAMLabelsLayout->addWidget(m_pRAMFreeLabel);
+        m_pRAMTotalLabel = new QLabel;
+        pRAMLabelsLayout->addWidget(m_pRAMTotalLabel);
+
+        m_pHostRAMChart = new UIVMResourceMonitorHostRAMWidget;
+        if (m_pHostRAMChart)
+        {
+            m_pHostRAMChart->setMinimumSize(iMinimumSize, iMinimumSize);
+            pLayout->addWidget(m_pHostRAMChart);
+            m_pHostRAMChart->setChartColors(m_RAMFreeColor, m_RAMUsedColor);
+        }
     }
     pLayout->addStretch(2);
 }
@@ -477,6 +611,27 @@ void UIVMResourceMonitorHostStatsWidget::updateLabels()
     }
     if (m_pCPUTotalLabel)
         m_pCPUTotalLabel->setText(QString("%1:%2%").arg(tr("Total")).arg(m_hostStats.m_iCPUUserLoad + m_hostStats.m_iCPUKernelLoad));
+    if (m_pRAMTitleLabel)
+        m_pRAMTitleLabel->setText(QString("<b>%1</b>").arg(tr("Host RAM Usage")));
+    if (m_pRAMFreeLabel)
+    {
+        QString strRAM = uiCommon().formatSize(m_hostStats.m_iFreeRAM);
+        QString strColor = QColor(m_RAMFreeColor).name(QColor::HexRgb);
+        m_pRAMFreeLabel->setText(QString("<font color=\"%1\">%2:%3</font>").arg(strColor).arg(tr("Free")).arg(strRAM));
+    }
+
+    if (m_pRAMUsedLabel)
+    {
+        QString strRAM = uiCommon().formatSize(m_hostStats.m_iTotalRAM - m_hostStats.m_iFreeRAM);
+        QString strColor = QColor(m_RAMUsedColor).name(QColor::HexRgb);
+        m_pRAMUsedLabel->setText(QString("<font color=\"%1\">%2:%3</font>").arg(strColor).arg(tr("Used")).arg(strRAM));
+    }
+    if (m_pRAMTotalLabel)
+    {
+        QString strRAM = uiCommon().formatSize(m_hostStats.m_iTotalRAM);
+        m_pRAMTotalLabel->setText(QString("%1:%2").arg(tr("Total")).arg(strRAM));
+    }
+
 }
 
 
@@ -540,8 +695,8 @@ void UIVMResourceMonitorTableView::resizeHeader()
 
 
 /*********************************************************************************************************************************
-*   Class UIVMResourceMonitorItem implementation.                                                                           *
-*********************************************************************************************************************************/
+ *   Class UIVMResourceMonitorItem implementation.                                                                           *
+ *********************************************************************************************************************************/
 UIResourceMonitorItem::UIResourceMonitorItem(const QUuid &uid, const QString &strVMName)
     : m_VMuid(uid)
     , m_strVMName(strVMName)
@@ -743,10 +898,10 @@ QVariant UIResourceMonitorModel::data(const QModelIndex &index, int role) const
             return m_itemList[index.row()].m_strVMName;
             break;
         case VMResourceMonitorColumn_CPUGuestLoad:
-            return m_itemList[index.row()].m_uCPUGuestLoad;
+            return QString("%1%").arg(QString::number(m_itemList[index.row()].m_uCPUGuestLoad));
             break;
         case VMResourceMonitorColumn_CPUVMMLoad:
-            return m_itemList[index.row()].m_uCPUVMMLoad;
+            return QString("%1%").arg(QString::number(m_itemList[index.row()].m_uCPUVMMLoad));
             break;
         case VMResourceMonitorColumn_RAMUsedAndTotal:
             if (m_itemList[index.row()].isWithGuestAdditions())
@@ -786,8 +941,8 @@ QVariant UIResourceMonitorModel::data(const QModelIndex &index, int role) const
             return QString("%1").arg(uiCommon().formatSize(m_itemList[index.row()].m_uDiskWriteTotal, iDecimalCount));
             break;
         case VMResourceMonitorColumn_VMExits:
-           return QString("%1/%2").arg(UICommon::addMetricSuffixToNumber(m_itemList[index.row()].m_uVMExitRate)).
-               arg(UICommon::addMetricSuffixToNumber(m_itemList[index.row()].m_uVMExitTotal));
+            return QString("%1/%2").arg(UICommon::addMetricSuffixToNumber(m_itemList[index.row()].m_uVMExitRate)).
+                arg(UICommon::addMetricSuffixToNumber(m_itemList[index.row()].m_uVMExitTotal));
             break;
         default:
             break;
@@ -908,13 +1063,13 @@ void UIResourceMonitorModel::sltTimeout()
                 m_itemList[i].m_uDiskWriteRate = m_itemList[i].m_uDiskWriteTotal - uPrevWriteTotal;
                 m_itemList[i].m_uDiskReadRate = m_itemList[i].m_uDiskReadTotal - uPrevReadTotal;
             }
-           /* VM Exits: */
-           if (fVMExitColumn)
-           {
-               quint64 uPrevVMExitsTotal = m_itemList[i].m_uVMExitTotal;
-               UIMonitorCommon::getVMMExitCount(m_itemList[i].m_comDebugger, m_itemList[i].m_uVMExitTotal);
-               m_itemList[i].m_uVMExitRate = m_itemList[i].m_uVMExitTotal - uPrevVMExitsTotal;
-           }
+            /* VM Exits: */
+            if (fVMExitColumn)
+            {
+                quint64 uPrevVMExitsTotal = m_itemList[i].m_uVMExitTotal;
+                UIMonitorCommon::getVMMExitCount(m_itemList[i].m_comDebugger, m_itemList[i].m_uVMExitTotal);
+                m_itemList[i].m_uVMExitRate = m_itemList[i].m_uVMExitTotal - uPrevVMExitsTotal;
+            }
         }
     }
     emit sigDataUpdate();
@@ -950,14 +1105,14 @@ void UIResourceMonitorModel::queryPerformanceCollector()
     QVector<ULONG>  aReturnDataLengths;
 
     QVector<LONG> returnData = m_performanceMonitor.QueryMetricsData(m_nameList,
-                                                                        m_objectList,
-                                                                        aReturnNames,
-                                                                        aReturnObjects,
-                                                                        aReturnUnits,
-                                                                        aReturnScales,
-                                                                        aReturnSequenceNumbers,
-                                                                        aReturnDataIndices,
-                                                                        aReturnDataLengths);
+                                                                     m_objectList,
+                                                                     aReturnNames,
+                                                                     aReturnObjects,
+                                                                     aReturnUnits,
+                                                                     aReturnScales,
+                                                                     aReturnSequenceNumbers,
+                                                                     aReturnDataIndices,
+                                                                     aReturnDataLengths);
     /* Parse the result we get from CPerformanceCollector to get respective values: */
     for (int i = 0; i < aReturnNames.size(); ++i)
     {
@@ -1043,7 +1198,7 @@ bool UIResourceMonitorModel::columnVisible(int iColumnId) const
 *********************************************************************************************************************************/
 
 UIResourceMonitorWidget::UIResourceMonitorWidget(EmbedTo enmEmbedding, UIActionPool *pActionPool,
-                                                       bool fShowToolbar /* = true */, QWidget *pParent /* = 0 */)
+                                                 bool fShowToolbar /* = true */, QWidget *pParent /* = 0 */)
     : QIWithRetranslateUI<QWidget>(pParent)
     , m_enmEmbedding(enmEmbedding)
     , m_pActionPool(pActionPool)
