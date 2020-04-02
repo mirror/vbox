@@ -66,6 +66,40 @@ struct ResourceColumn
 
 
 /*********************************************************************************************************************************
+*   Class UIVMResourceMonitorDoughnutChart definition.                                                                           *
+*********************************************************************************************************************************/
+
+class UIVMResourceMonitorDoughnutChart : public QWidget
+{
+
+    Q_OBJECT;
+
+public:
+
+    UIVMResourceMonitorDoughnutChart(QWidget *pParent = 0);
+    void updateData(quint64 iData0, quint64 iData1);
+    void setChartColors(const QColor &color0, const QColor &color1);
+    void setChartCenterString(const QString &strCenter);
+    void setDataMaximum(quint64 iMax);
+
+protected:
+
+    virtual void paintEvent(QPaintEvent *pEvent) /* override */;
+
+private:
+
+    quint64 m_iData0;
+    quint64 m_iData1;
+    quint64 m_iDataMaximum;
+    int m_iMargin;
+    QColor m_color0;
+    QColor m_color1;
+    /** If not empty this text is drawn at the center of the doughnut chart. */
+    QString m_strCenter;
+};
+
+
+/*********************************************************************************************************************************
 *   Class UIVMResourceMonitorHostStats definition.                                                                               *
 *********************************************************************************************************************************/
 
@@ -80,66 +114,6 @@ public:
     quint64 m_iCPUFreq;
     quint64 m_iTotalRAM;
     quint64 m_iFreeRAM;
-};
-
-
-/*********************************************************************************************************************************
-*   Class UIVMResourceMonitorHostCPUWidget definition.                                                                           *
-*********************************************************************************************************************************/
-
-class UIVMResourceMonitorHostCPUWidget : public QWidget
-{
-
-    Q_OBJECT;
-
-public:
-
-    UIVMResourceMonitorHostCPUWidget(QWidget *pParent = 0);
-    void setCPULoad(quint64 iUserLoad, quint64 iKernelLoad, quint64 iCPUFreq);
-    void setChartColors(const QColor &CPUUserLoadColor, const QColor &CPUKernelLoadColor);
-
-protected:
-
-    virtual void paintEvent(QPaintEvent *pEvent) /* override */;
-
-private:
-
-    quint64 m_iCPUUserLoad;
-    quint64 m_iCPUKernelLoad;
-    quint64 m_iCPUFreq;
-    int m_iMargin;
-    QColor m_CPUUserColor;
-    QColor m_CPUKernelColor;
-};
-
-
-/*********************************************************************************************************************************
-*   Class UIVMResourceMonitorHostRAMWidget definition.                                                                           *
-*********************************************************************************************************************************/
-
-class UIVMResourceMonitorHostRAMWidget : public QWidget
-{
-
-    Q_OBJECT;
-
-public:
-
-    UIVMResourceMonitorHostRAMWidget(QWidget *pParent = 0);
-    void setRAMStats(quint64 iTotalRAM, quint64 iFreeRAM);
-    void setChartColors(const QColor &RAMFreeColor, const QColor &RAMUsedColor);
-
-protected:
-
-    virtual void paintEvent(QPaintEvent *pEvent) /* override */;
-
-private:
-
-    quint64 m_iTotalRAM;
-    quint64 m_iFreeRAM;
-
-    int m_iMargin;
-    QColor m_RAMFreeColor;
-    QColor m_RAMUsedColor;
 };
 
 
@@ -166,8 +140,8 @@ private:
     void prepare();
     void updateLabels();
 
-    UIVMResourceMonitorHostCPUWidget   *m_pHostCPUChart;
-    UIVMResourceMonitorHostRAMWidget   *m_pHostRAMChart;
+    UIVMResourceMonitorDoughnutChart   *m_pHostCPUChart;
+    UIVMResourceMonitorDoughnutChart   *m_pHostRAMChart;
     QLabel                             *m_pCPUTitleLabel;
     QLabel                             *m_pCPUUserLabel;
     QLabel                             *m_pCPUKernelLabel;
@@ -377,33 +351,42 @@ protected:
 
 
 /*********************************************************************************************************************************
-*   Class UIVMResourceMonitorHostCPUWidget implementation.                                                                       *
+*   Class UIVMResourceMonitorDoughnutChart implementation.                                                                       *
 *********************************************************************************************************************************/
 
-UIVMResourceMonitorHostCPUWidget::UIVMResourceMonitorHostCPUWidget(QWidget *pParent /* = 0 */)
+UIVMResourceMonitorDoughnutChart::UIVMResourceMonitorDoughnutChart(QWidget *pParent /* = 0 */)
     :QWidget(pParent)
-    , m_iCPUUserLoad(0)
-    , m_iCPUKernelLoad(0)
-    , m_iCPUFreq(0)
+    , m_iData0(0)
+    , m_iData1(0)
+    , m_iDataMaximum(0)
+    , m_iMargin(3)
 {
-    m_iMargin = 3;
 }
 
-void UIVMResourceMonitorHostCPUWidget::setCPULoad(quint64 iUserLoad, quint64 iKernelLoad, quint64 iFreq)
+void UIVMResourceMonitorDoughnutChart::updateData(quint64 iData0, quint64 iData1)
 {
-    m_iCPUUserLoad = iUserLoad;
-    m_iCPUKernelLoad = iKernelLoad;
-    m_iCPUFreq = iFreq;
+    m_iData0 = iData0;
+    m_iData1 = iData1;
     update();
 }
 
-void UIVMResourceMonitorHostCPUWidget::setChartColors(const QColor &CPUUserLoadColor, const QColor &CPUKernelLoadColor)
+void UIVMResourceMonitorDoughnutChart::setChartColors(const QColor &color0, const QColor &color1)
 {
-    m_CPUUserColor = CPUUserLoadColor;
-    m_CPUKernelColor = CPUKernelLoadColor;
+    m_color0 = color0;
+    m_color1 = color1;
 }
 
-void UIVMResourceMonitorHostCPUWidget::paintEvent(QPaintEvent *pEvent)
+void UIVMResourceMonitorDoughnutChart::setChartCenterString(const QString &strCenter)
+{
+    m_strCenter = strCenter;
+}
+
+void UIVMResourceMonitorDoughnutChart::setDataMaximum(quint64 iMax)
+{
+    m_iDataMaximum = iMax;
+}
+
+void UIVMResourceMonitorDoughnutChart::paintEvent(QPaintEvent *pEvent)
 {
     QWidget::paintEvent(pEvent);
 
@@ -413,68 +396,17 @@ void UIVMResourceMonitorHostCPUWidget::paintEvent(QPaintEvent *pEvent)
     int iFrameHeight = height()- 2 * m_iMargin;
     QRectF outerRect = QRectF(QPoint(m_iMargin,m_iMargin), QSize(iFrameHeight, iFrameHeight));
     QRectF innerRect = UIMonitorCommon::getScaledRect(outerRect, 0.6f, 0.6f);
-    UIMonitorCommon::drawCombinedDoughnutChart(m_iCPUKernelLoad, m_CPUKernelColor,
-                                               m_iCPUUserLoad, m_CPUUserColor,
-                                               painter, 100,
+    UIMonitorCommon::drawCombinedDoughnutChart(m_iData0, m_color0,
+                                               m_iData1, m_color1,
+                                               painter, m_iDataMaximum,
                                                outerRect, innerRect, 80);
-    float mul = 1.f / 1.4f;
-    QRectF textRect =  UIMonitorCommon::getScaledRect(innerRect, mul, mul);
-    painter.setPen(Qt::black);
-    painter.drawText(textRect, Qt::AlignCenter, QString("%1\nMHz").arg(QString::number(m_iCPUFreq)));
-}
-
-
-/*********************************************************************************************************************************
-*   Class UIVMResourceMonitorHostRAMWidget implementation.                                                                       *
-*********************************************************************************************************************************/
-
-UIVMResourceMonitorHostRAMWidget::UIVMResourceMonitorHostRAMWidget(QWidget *pParent /* = 0 */)
-    :QWidget(pParent)
-    , m_iTotalRAM(0)
-    , m_iFreeRAM(0)
-{
-    m_iMargin = 3;
-}
-void UIVMResourceMonitorHostRAMWidget::setRAMStats(quint64 iTotalRAM, quint64 iFreeRAM)
-{
-    m_iTotalRAM = iTotalRAM;
-    m_iFreeRAM = iFreeRAM;
-    update();
-}
-
-void UIVMResourceMonitorHostRAMWidget::setChartColors(const QColor &RAMFreeColor, const QColor &RAMUsedColor)
-{
-    m_RAMFreeColor = RAMFreeColor;
-    m_RAMUsedColor = RAMUsedColor;
-}
-
-void UIVMResourceMonitorHostRAMWidget::paintEvent(QPaintEvent *pEvent)
-{
-
-    QWidget::paintEvent(pEvent);
-
-    QPainter painter(this);
-    painter.setRenderHint(QPainter::Antialiasing);
-
-    int iFrameHeight = height()- 2 * m_iMargin;
-    QRectF outerRect = QRectF(QPoint(m_iMargin,m_iMargin), QSize(iFrameHeight, iFrameHeight));
-    QRectF innerRect = UIMonitorCommon::getScaledRect(outerRect, 0.6f, 0.6f);
-    quint64 iUsedRAM = m_iTotalRAM - m_iFreeRAM;
-
-    UIMonitorCommon::drawCombinedDoughnutChart(iUsedRAM, m_RAMUsedColor,
-                                               m_iFreeRAM, m_RAMFreeColor,
-                                               painter, m_iTotalRAM,
-                                               outerRect, innerRect, 80);
-
-    if (m_iTotalRAM != 0)
+    if (!m_strCenter.isEmpty())
     {
         float mul = 1.f / 1.4f;
         QRectF textRect =  UIMonitorCommon::getScaledRect(innerRect, mul, mul);
         painter.setPen(Qt::black);
-        int iPercent = 100 * (iUsedRAM / (float) m_iTotalRAM);
-        painter.drawText(textRect, Qt::AlignCenter, QString("%1%\nUsed").arg(QString::number(iPercent)));
+        painter.drawText(textRect, Qt::AlignCenter, m_strCenter);
     }
-
 }
 
 
@@ -513,9 +445,23 @@ void UIVMResourceMonitorHostStatsWidget::setHostStats(const UIVMResourceMonitorH
 {
     m_hostStats = hostStats;
     if (m_pHostCPUChart)
-        m_pHostCPUChart->setCPULoad(m_hostStats.m_iCPUUserLoad, m_hostStats.m_iCPUKernelLoad, m_hostStats.m_iCPUFreq);
+    {
+        m_pHostCPUChart->updateData(m_hostStats.m_iCPUUserLoad, m_hostStats.m_iCPUKernelLoad);
+        QString strCenter = QString("%1\nMHz").arg(m_hostStats.m_iCPUFreq);
+        m_pHostCPUChart->setChartCenterString(strCenter);
+    }
     if (m_pHostRAMChart)
-        m_pHostRAMChart->setRAMStats(m_hostStats.m_iTotalRAM, m_hostStats.m_iFreeRAM);
+    {
+        quint64 iUsedRAM = m_hostStats.m_iTotalRAM - m_hostStats.m_iFreeRAM;
+        m_pHostRAMChart->updateData(iUsedRAM, m_hostStats.m_iFreeRAM);
+        m_pHostRAMChart->setDataMaximum(m_hostStats.m_iTotalRAM);
+        if (m_hostStats.m_iTotalRAM != 0)
+        {
+            quint64 iUsedRamPer = 100 * (iUsedRAM / (float) m_hostStats.m_iTotalRAM);
+            QString strCenter = QString("%1%\n%2").arg(iUsedRamPer).arg(tr("Used"));
+            m_pHostRAMChart->setChartCenterString(strCenter);
+        }
+    }
     updateLabels();
 }
 
@@ -555,13 +501,13 @@ void UIVMResourceMonitorHostStatsWidget::prepare()
         m_pCPUTotalLabel = new QLabel;
         pCPULabelsLayout->addWidget(m_pCPUTotalLabel);
         pCPULabelsLayout->setAlignment(Qt::AlignTop);
-        //pLayout->setAlignment(Qt::AlignTop);
         pCPULabelsLayout->setSpacing(0);
         /* Host CPU chart widget: */
-        m_pHostCPUChart = new UIVMResourceMonitorHostCPUWidget;
+        m_pHostCPUChart = new UIVMResourceMonitorDoughnutChart;
         if (m_pHostCPUChart)
         {
             m_pHostCPUChart->setMinimumSize(iMinimumSize, iMinimumSize);
+            m_pHostCPUChart->setDataMaximum(100);
             pLayout->addWidget(m_pHostCPUChart);
             m_pHostCPUChart->setChartColors(m_CPUUserColor, m_CPUKernelColor);
         }
@@ -584,12 +530,12 @@ void UIVMResourceMonitorHostStatsWidget::prepare()
         m_pRAMTotalLabel = new QLabel;
         pRAMLabelsLayout->addWidget(m_pRAMTotalLabel);
 
-        m_pHostRAMChart = new UIVMResourceMonitorHostRAMWidget;
+        m_pHostRAMChart = new UIVMResourceMonitorDoughnutChart;
         if (m_pHostRAMChart)
         {
             m_pHostRAMChart->setMinimumSize(iMinimumSize, iMinimumSize);
             pLayout->addWidget(m_pHostRAMChart);
-            m_pHostRAMChart->setChartColors(m_RAMFreeColor, m_RAMUsedColor);
+            m_pHostRAMChart->setChartColors(m_RAMUsedColor, m_RAMFreeColor);
         }
     }
     pLayout->addStretch(2);
