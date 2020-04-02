@@ -1788,7 +1788,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                 oFsObjInfo = oCurDir.read();
             except Exception as oXcpt:
                 if vbox.ComError.notEqual(oXcpt, vbox.ComError.VBOX_E_OBJECT_NOT_FOUND):
-                    if oTstDrv.fpApiVer > 5.2:
+                    if self.oTstDrv.fpApiVer > 5.2:
                         reporter.errorXcpt('Error reading directory "%s":' % (sCurDir,));
                     else:
                         # Unlike fileOpen, directoryOpen will not fail if the directory does not exist.
