@@ -34,7 +34,7 @@ class QLabel;
 class QPushButton;
 class QIArrowSplitter;
 class QIDialogButtonBox;
-class QILabel;
+class QIRichTextLabel;
 
 
 /** Button types. */
@@ -166,7 +166,7 @@ private:
     /** Holds the message. */
     QString m_strMessage;
     /** Holds the message-label instance. */
-    QILabel *m_pLabelText;
+    QIRichTextLabel *m_pLabelText;
 
     /** Holds the flag check-box instance. */
     QCheckBox *m_pFlagCheckBox;

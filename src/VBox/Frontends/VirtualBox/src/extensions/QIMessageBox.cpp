@@ -28,8 +28,8 @@
 /* GUI includes: */
 #include "QIArrowSplitter.h"
 #include "QIDialogButtonBox.h"
-#include "QILabel.h"
 #include "QIMessageBox.h"
+#include "QIRichTextLabel.h"
 #include "UIIconPool.h"
 
 /* Other VBox includes: */
@@ -119,10 +119,6 @@ void QIMessageBox::setButtonText(int iButton, const QString &strText)
 
 void QIMessageBox::polishEvent(QShowEvent *pPolishEvent)
 {
-    /* Tune text-label size: */
-    m_pLabelText->useSizeHintForWidth(m_pLabelText->width());
-    m_pLabelText->updateGeometry();
-
     /* Call to base-class: */
     QIDialog::polishEvent(pPolishEvent);
 
@@ -212,15 +208,11 @@ void QIMessageBox::prepare()
                 pTopLayout->addWidget(m_pLabelIcon);
             }
             /* Create text-label: */
-            m_pLabelText = new QILabel(m_strMessage);
+            m_pLabelText = new QIRichTextLabel;
             AssertPtrReturnVoid(m_pLabelText);
             {
                 /* Configure text-label: */
-                m_pLabelText->setWordWrap(true);
-                m_pLabelText->setAlignment(Qt::AlignLeft | Qt::AlignTop);
-                QSizePolicy sizePolicy(QSizePolicy::Minimum, QSizePolicy::Minimum);
-                sizePolicy.setHeightForWidth(true);
-                m_pLabelText->setSizePolicy(sizePolicy);
+                m_pLabelText->setText(m_strMessage);
                 /* Add text-label into top-layout: */
                 pTopLayout->addWidget(m_pLabelText);
             }
