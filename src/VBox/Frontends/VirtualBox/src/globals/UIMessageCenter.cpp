@@ -842,7 +842,7 @@ void UIMessageCenter::cannotDiscardSavedState(const CMachine &machine) const
 {
     error(0, MessageType_Error,
           tr("Failed to discard the saved state of the virtual machine <b>%1</b>.")
-             .arg(machine.GetName()),
+             .arg(CMachine(machine).GetName()),
           UIErrorString::formatErrorInfo(machine));
 }
 
@@ -850,7 +850,7 @@ void UIMessageCenter::cannotSaveMachineState(const CMachine &machine)
 {
     error(0, MessageType_Error,
           tr("Failed to save the state of the virtual machine <b>%1</b>.")
-             .arg(machine.GetName()),
+             .arg(CMachine(machine).GetName()),
           UIErrorString::formatErrorInfo(machine));
 }
 
@@ -1238,7 +1238,7 @@ void UIMessageCenter::cannotChangeMachineAttribute(const CMachine &comMachine, Q
 {
     error(pParent, MessageType_Error,
           tr("Failed to change the attribute of the virtual machine <b>%1</b>.")
-             .arg(comMachine.GetName()),
+             .arg(CMachine(comMachine).GetName()),
           UIErrorString::formatErrorInfo(comMachine));
 }
 
@@ -1246,7 +1246,7 @@ void UIMessageCenter::cannotSaveMachineSettings(const CMachine &machine, QWidget
 {
     error(pParent, MessageType_Error,
           tr("Failed to save the settings of the virtual machine <b>%1</b> to <b><nobr>%2</nobr></b>.")
-             .arg(machine.GetName(), CMachine(machine).GetSettingsFilePath()),
+             .arg(CMachine(machine).GetName(), CMachine(machine).GetSettingsFilePath()),
           UIErrorString::formatErrorInfo(machine));
 }
 
