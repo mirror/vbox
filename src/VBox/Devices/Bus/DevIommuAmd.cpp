@@ -21,6 +21,7 @@
 *********************************************************************************************************************************/
 #define LOG_GROUP LOG_GROUP_DEV_IOMMU
 #include <VBox/vmm/pdmdev.h>
+#include <VBox/AssertGuest.h>
 
 #include "VBoxDD.h"
 
@@ -28,6 +29,100 @@
 /*********************************************************************************************************************************
 *   Defined Constants And Macros                                                                                                 *
 *********************************************************************************************************************************/
+/** @name PCI configuration register offsets.
+ @{ */
+#define IOMMU_PCI_OFF_CAP_HDR                       0x00
+#define IOMMU_PCI_OFF_BASE_ADDR_REG_LO              0x04
+#define IOMMU_PCI_OFF_BASE_ADDR_REG_HI              0x08
+#define IOMMU_PCI_OFF_RANGE_REG                     0x0c
+#define IOMMU_PCI_OFF_MISCINFO_REG_0                0x10
+#define IOMMU_PCI_OFF_MISCINFO_REG_1                0x14
+/** @} */
+
+/** @name MMIO register offsets.
+ * @{ */
+#define IOMMU_MMIO_OFF_DEV_TAB_BAR                  0x00
+#define IOMMU_MMIO_OFF_CMD_BUF_BAR                  0x08
+#define IOMMU_MMIO_OFF_EVT_LOG_BAR                  0x10
+#define IOMMU_MMIO_OFF_CTRL                         0x18
+#define IOMMU_MMIO_OFF_EXCL_BAR                     0x20
+#define IOMMU_MMIO_OFF_EXCL_RANGE_LIMIT             0x28
+#define IOMMU_MMIO_OFF_EXT_FEAT                     0x30
+
+#define IOMMU_MMIO_OFF_PPR_LOG_BAR                  0x38
+#define IOMMU_MMIO_OFF_HW_EVT_HI                    0x40
+#define IOMMU_MMIO_OFF_HW_EVT_LO                    0x48
+#define IOMMU_MMIO_OFF_HW_EVT_STATUS                0x50
+
+#define IOMMU_MMIO_OFF_SMI_FLT_FIRST                0x60
+#define IOMMU_MMIO_OFF_SMI_FLT_LAST                 0xd8
+
+#define IOMMU_MMIO_OFF_GALOG_BAR                    0xe0
+#define IOMMU_MMIO_OFF_GALOG_TAIL_ADDR              0xe8
+
+#define IOMMU_MMIO_OFF_PPR_LOG_B_BAR                0xf0
+#define IOMMU_MMIO_OFF_PPR_EVT_B_BAR                0xf8
+
+#define IOMMU_MMIO_OFF_DEV_TAB_SEG_FIRST            0x100
+#define IOMMU_MMIO_OFF_DEV_TAB_SEG_LAST             0x130
+
+#define IOMMU_MMIO_OFF_DEV_SPECIFIC_FEAT            0x138
+#define IOMMU_MMIO_OFF_DEV_SPECIFIC_CTRL            0x140
+#define IOMMU_MMIO_OFF_DEV_SPECIFIC_STATUS          0x148
+
+#define IOMMU_MMIO_OFF_MSI_VECTOR_0                 0x150
+#define IOMMU_MMIO_OFF_MSI_VECTOR_1                 0x154
+#define IOMMU_MMIO_OFF_MSI_CAP_HDR                  0x158
+#define IOMMU_MMIO_OFF_MSI_ADDR_LO                  0x15c
+#define IOMMU_MMIO_OFF_MSI_ADDR_HI                  0x160
+#define IOMMU_MMIO_OFF_MSI_DATA                     0x164
+#define IOMMU_MMIO_OFF_MSI_MAPPING_CAP_HDR          0x168
+
+#define IOMMU_MMIO_OFF_PERF_OPT_CTRL                0x16c
+
+#define IOMMU_MMIO_OFF_XT_GEN_INTR_CTRL             0x170
+#define IOMMU_MMIO_OFF_XT_PPR_INTR_CTRL             0x178
+#define IOMMU_MMIO_OFF_XT_GALOG_INT_CTRL            0x180
+
+#define IOMMU_MMIO_OFF_MARC_APER_BAR_0              0x200
+#define IOMMU_MMIO_OFF_MARC_APER_RELOC_0            0x208
+#define IOMMU_MMIO_OFF_MARC_APER_LEN_0              0x210
+#define IOMMU_MMIO_OFF_MARC_APER_BAR_1              0x218
+#define IOMMU_MMIO_OFF_MARC_APER_RELOC_1            0x220
+#define IOMMU_MMIO_OFF_MARC_APER_LEN_1              0x228
+#define IOMMU_MMIO_OFF_MARC_APER_BAR_2              0x230
+#define IOMMU_MMIO_OFF_MARC_APER_RELOC_2            0x238
+#define IOMMU_MMIO_OFF_MARC_APER_LEN_2              0x240
+#define IOMMU_MMIO_OFF_MARC_APER_BAR_3              0x248
+#define IOMMU_MMIO_OFF_MARC_APER_RELOC_3            0x250
+#define IOMMU_MMIO_OFF_MARC_APER_LEN_3              0x258
+
+#define IOMMU_MMIO_OFF_RSVD_REG                     0x1ff8
+
+#define IOMMU_MMIO_CMD_BUF_HEAD_PTR                 0x2000
+#define IOMMU_MMIO_CMD_BUF_TAIL_PTR                 0x2008
+#define IOMMU_MMIO_EVT_LOG_HEAD_PTR                 0x2010
+#define IOMMU_MMIO_EVT_LOG_TAIL_PTR                 0x2018
+
+#define IOMMU_MMIO_OFF_STATUS                       0x2020
+
+#define IOMMU_MMIO_OFF_PPR_LOG_HEAD_PTR             0x2030
+#define IOMMU_MMIO_OFF_PPR_LOG_TAIL_PTR             0x2038
+
+#define IOMMU_MMIO_OFF_GALOG_HEAD_PTR               0x2040
+#define IOMMU_MMIO_OFF_GALOG_TAIL_PTR               0x2048
+
+#define IOMMU_MMIO_OFF_PPR_LOG_B_HEAD_PTR           0x2050
+#define IOMMU_MMIO_OFF_PPR_LOG_B_TAIL_PTR           0x2058
+
+#define IOMMU_MMIO_OFF_EVT_LOG_B_HEAD_PTR           0x2070
+#define IOMMU_MMIO_OFF_EVT_LOG_B_TAIL_PTR           0x2078
+
+#define IOMMU_MMIO_OFF_PPR_LOG_AUTO_RESP            0x2080
+#define IOMMU_MMIO_OFF_PPR_LOG_OVERFLOW_EARLY       0x2088
+#define IOMMU_MMIO_OFF_PPR_LOG_B_OVERFLOW_EARLY     0x2090
+/** @} */
+
 /**
  * @name Commands.
  * In accordance with the AMD spec.
@@ -1422,6 +1517,70 @@ typedef IOMMU_XT_INTR_CTRL_T    IOMMU_XT_PPR_INTR_CTRL_T;
 typedef IOMMU_XT_INTR_CTRL_T    IOMMU_XT_GALOG_INTR_CTRL_T;
 
 /**
+ * Memory Access and Routing Control (MARC) Aperture Base Register (MMIO).
+ * In accordance with the AMD spec.
+ */
+typedef union
+{
+    struct
+    {
+        RT_GCC_EXTENSION uint64_t   u12Rsvd0 : 12;          /**< Bits 11:0  - Reserved. */
+        RT_GCC_EXTENSION uint64_t   u40MarcBaseAddr : 40;   /**< Bits 51:12 - MarcBaseAddr: MARC Aperture Base Address. */
+        RT_GCC_EXTENSION uint64_t   u12Rsvd1 : 12;          /**< Bits 63:52 - Reserved. */
+    } n;
+    /** The 64-bit unsigned integer view. */
+    uint64_t    u64;
+} MARC_APER_BAR_T;
+AssertCompileSize(MARC_APER_BAR_T, 8);
+
+/**
+ * Memory Access and Routing Control (MARC) Relocation Register (MMIO).
+ * In accordance with the AMD spec.
+ */
+typedef union
+{
+    struct
+    {
+        RT_GCC_EXTENSION uint64_t   u1RelocEn : 1;          /**< Bit  0     - RelocEn: Relocation Enabled. */
+        RT_GCC_EXTENSION uint64_t   u1ReadOnly : 1;         /**< Bit  1     - ReadOnly: Whether only read-only acceses allowed. */
+        RT_GCC_EXTENSION uint64_t   u10Rsvd0 : 10;          /**< Bits 11:2  - Reserved. */
+        RT_GCC_EXTENSION uint64_t   u40MarcRelocAddr : 40;  /**< Bits 51:12 - MarcRelocAddr: MARC Aperture Relocation Address. */
+        RT_GCC_EXTENSION uint64_t   u12Rsvd1 : 12;          /**< Bits 63:52 - Reserved. */
+    } n;
+    /** The 64-bit unsigned integer view. */
+    uint64_t    u64;
+} MARC_APER_RELOC_T;
+AssertCompileSize(MARC_APER_RELOC_T, 8);
+
+/**
+ * Memory Access and Routing Control (MARC) Length Register (MMIO).
+ * In accordance with the AMD spec.
+ */
+typedef union
+{
+    struct
+    {
+        RT_GCC_EXTENSION uint64_t   u12Rsvd0 : 12;          /**< Bits 11:0  - Reserved. */
+        RT_GCC_EXTENSION uint64_t   u40MarcLength : 40;     /**< Bits 51:12 - MarcLength: MARC Aperture Length. */
+        RT_GCC_EXTENSION uint64_t   u12Rsvd1 : 12;          /**< Bits 63:52 - Reserved. */
+    } n;
+    /** The 64-bit unsigned integer view. */
+    uint64_t    u64;
+} MARC_APER_LEN_T;
+
+/**
+ * Memory Access and Routing Control (MARC) Aperture Register.
+ * This combines other registers to match the MMIO layout for convenient access.
+ */
+typedef struct
+{
+    MARC_APER_BAR_T     Base;
+    MARC_APER_RELOC_T   Reloc;
+    MARC_APER_LEN_T     Length;
+} MARC_APER_T;
+AssertCompileSize(MARC_APER_T, 24);
+
+/**
  * IOMMU Reserved Register (MMIO).
  * In accordance with the AMD spec.
  * This register is reserved for hardware use (although RW?).
@@ -1640,7 +1799,7 @@ typedef struct IOMMU
     DEV_TAB_BAR_T               DevTabBaseAddr;     /**< Device table base address register. */
     CMD_BUF_BAR_T               CmdBufBaseAddr;     /**< Command buffer base address register. */
     EVT_LOG_BAR_T               EvtLogBaseAddr;     /**< Event log base address register. */
-    IOMMU_CTRL_T                IommuCtrl;          /**< IOMMU control register. */
+    IOMMU_CTRL_T                Ctrl;               /**< IOMMU control register. */
     IOMMU_EXCL_BASE_T           ExclBase;           /**< IOMMU exclusion base register. */
     IOMMU_EXCL_RANGE_LIMIT_T    ExclRangeLimit;     /**< IOMMU exclusion range limit. */
     IOMMU_EFR_T                 ExtFeat;            /**< IOMMU extended feature register. */
@@ -1649,9 +1808,9 @@ typedef struct IOMMU
     /** @name MMIO: PPR Log registers.
      * @{ */
     PPR_LOG_BAR_T               PprLogBaseAddr;     /**< PPR Log base address register. */
-    IOMMU_HW_EVT_HI_T           IommuHwEvtHi;       /**< IOMMU hardware event register (Hi). */
-    IOMMU_HW_EVT_LO_T           IommuHwEvtLo;       /**< IOMMU hardware event register (Lo). */
-    IOMMU_HW_EVT_STATUS_T       IommuHwEvtStatus;   /**< IOMMU hardware event status. */
+    IOMMU_HW_EVT_HI_T           HwEvtHi;            /**< IOMMU hardware event register (Hi). */
+    IOMMU_HW_EVT_LO_T           HwEvtLo;            /**< IOMMU hardware event register (Lo). */
+    IOMMU_HW_EVT_STATUS_T       HwEvtStatus;        /**< IOMMU hardware event status. */
     /** @} */
 
     /** @todo IOMMU: SMI filter. */
@@ -1691,21 +1850,24 @@ typedef struct IOMMU
 
     /** @name MMIO: Performance Optimization Control registers.
      *  @{ */
-    IOMMU_PERF_OPT_CTRL_T       IommuPerfOptCtrl;   /**< IOMMU Performance optimization control register. */
+    IOMMU_PERF_OPT_CTRL_T       PerfOptCtrl;       /**< IOMMU Performance optimization control register. */
     /** @} */
 
     /** @name MMIO: x2APIC Control registers.
      * @{ */
-    IOMMU_XT_GEN_INTR_CTRL_T    IommuXtGenIntrCtrl;     /**< IOMMU X2APIC General interrupt control register. */
-    IOMMU_XT_PPR_INTR_CTRL_T    IommuXtPprIntrCtrl;     /**< IOMMU X2APIC PPR interrupt control register. */
-    IOMMU_XT_GALOG_INTR_CTRL_T  IommuXtGALogIntrCtrl;   /**< IOMMU X2APIC Guest Log interrupt control register. */
+    IOMMU_XT_GEN_INTR_CTRL_T    XtGenIntrCtrl;     /**< IOMMU X2APIC General interrupt control register. */
+    IOMMU_XT_PPR_INTR_CTRL_T    XtPprIntrCtrl;     /**< IOMMU X2APIC PPR interrupt control register. */
+    IOMMU_XT_GALOG_INTR_CTRL_T  XtGALogIntrCtrl;   /**< IOMMU X2APIC Guest Log interrupt control register. */
     /** @} */
 
-    /** @todo MARC registers. */
+    /** @name MMIO: MARC registers.
+     * @{ */
+    MARC_APER_T                 aMarcApers[4];     /**< MARC Aperture Registers. */
+    /** @} */
 
     /** @name MMIO: Reserved register.
      *  @{ */
-    IOMMU_RSVD_REG_T            IommuRsvdReg;       /**< IOMMU Reserved Register. */
+    IOMMU_RSVD_REG_T            RsvdReg;           /**< IOMMU Reserved Register. */
     /** @} */
 
     /** @name MMIO: Command and Event Log pointer registers.
@@ -1718,7 +1880,7 @@ typedef struct IOMMU
 
     /** @name MMIO: Command and Event Status register.
      * @{ */
-    IOMMU_STATUS_T              IommuStatus;        /**< IOMMU status register. */
+    IOMMU_STATUS_T              Status;             /**< IOMMU status register. */
     /** @} */
 
     /** @name MMIO: PPR Log Head and Tail pointer registers.
@@ -1753,9 +1915,13 @@ typedef struct IOMMU
     /** @} */
 
     /** @todo IOMMU: IOMMU Event counter registers. */
+
+    /** @todo IOMMU: Stat counters. */
 } IOMMU;
 /** Pointer to the IOMMU device state. */
 typedef struct IOMMU *PIOMMU;
+/** Pointer to the const IOMMU device state. */
+typedef const struct IOMMU *PCIOMMU;
 
 /**
  * The ring-3 IOMMU device state.
@@ -1798,6 +1964,118 @@ typedef CTX_SUFF(PIOMMU) PIOMMUCC;
 
 #ifndef VBOX_DEVICE_STRUCT_TESTCASE
 
+static VBOXSTRICTRC iommuAmdReadRegister(PCIOMMU pThis, uint32_t off, uint8_t cb, uint64_t *puResult)
+{
+    Assert(off < _16K);
+    Assert(cb == 4 || cb == 8);
+    Assert(cb == 4 || !(off & 7));
+    Assert(cb == 8 || !(off & 3));
+
+    switch (off)
+    {
+        case IOMMU_MMIO_OFF_DEV_TAB_BAR:          *puResult = pThis->DevTabBaseAddr.u64;        break;
+        case IOMMU_MMIO_OFF_CMD_BUF_BAR:          *puResult = pThis->CmdBufBaseAddr.u64;        break;
+        case IOMMU_MMIO_OFF_EVT_LOG_BAR:          *puResult = pThis->EvtLogBaseAddr.u64;        break;
+        case IOMMU_MMIO_OFF_CTRL:                 *puResult = pThis->Ctrl.u64;                  break;
+        case IOMMU_MMIO_OFF_EXCL_BAR:             *puResult = pThis->ExclBase.u64;              break;
+        case IOMMU_MMIO_OFF_EXCL_RANGE_LIMIT:     *puResult = pThis->ExclRangeLimit.u64;        break;
+        case IOMMU_MMIO_OFF_EXT_FEAT:             *puResult = pThis->ExtFeat.u64;               break;
+
+        case IOMMU_MMIO_OFF_PPR_LOG_BAR:          *puResult = pThis->PprLogBaseAddr.u64;        break;
+        case IOMMU_MMIO_OFF_HW_EVT_HI:            *puResult = pThis->HwEvtHi.u64;               break;
+        case IOMMU_MMIO_OFF_HW_EVT_LO:            *puResult = pThis->HwEvtLo;                   break;
+        case IOMMU_MMIO_OFF_HW_EVT_STATUS:        *puResult = pThis->HwEvtStatus.u64;           break;
+
+        case IOMMU_MMIO_OFF_GALOG_BAR:            *puResult = pThis->GALogBaseAddr.u64;         break;
+        case IOMMU_MMIO_OFF_GALOG_TAIL_ADDR:      *puResult = pThis->GALogTailAddr.u64;         break;
+
+        case IOMMU_MMIO_OFF_PPR_LOG_B_BAR:        *puResult = pThis->PprLogBBaseAddr.u64;       break;
+        case IOMMU_MMIO_OFF_PPR_EVT_B_BAR:        *puResult = pThis->EvtLogBBaseAddr.u64;       break;
+
+        case IOMMU_MMIO_OFF_DEV_TAB_SEG_FIRST:
+        case IOMMU_MMIO_OFF_DEV_TAB_SEG_LAST:
+        {
+            uint8_t const idxDevTabSeg = (off - IOMMU_MMIO_OFF_DEV_TAB_SEG_FIRST) >> 3;
+            Assert(idxDevTabSeg < RT_ELEMENTS(pThis->DevTabSeg));
+            *puResult = pThis->DevTabSeg[idxDevTabSeg].u64;
+            break;
+        }
+
+        case IOMMU_MMIO_OFF_DEV_SPECIFIC_FEAT:    *puResult = pThis->DevSpecificFeat.u64;       break;
+        case IOMMU_MMIO_OFF_DEV_SPECIFIC_CTRL:    *puResult = pThis->DevSpecificCtrl.u64;       break;
+        case IOMMU_MMIO_OFF_DEV_SPECIFIC_STATUS:  *puResult = pThis->DevSpecificStatus.u64;     break;
+
+        case IOMMU_MMIO_OFF_MSI_VECTOR_0:         *puResult = pThis->MsiMiscInfo.u64;           break;
+        case IOMMU_MMIO_OFF_MSI_VECTOR_1:         *puResult = pThis->MsiMiscInfo.au32[1];       break;
+        case IOMMU_MMIO_OFF_MSI_CAP_HDR:          *puResult = RT_MAKE_U64(pThis->MsiCapHdr.u32, pThis->MsiAddr.au32[0]);    break;
+        case IOMMU_MMIO_OFF_MSI_ADDR_LO:          *puResult = pThis->MsiAddr.au32[0];           break;
+        case IOMMU_MMIO_OFF_MSI_ADDR_HI:          *puResult = RT_MAKE_U64(pThis->MsiAddr.au32[1], pThis->MsiData.u32);      break;
+        case IOMMU_MMIO_OFF_MSI_DATA:             *puResult = pThis->MsiData.u32;               break;
+        case IOMMU_MMIO_OFF_MSI_MAPPING_CAP_HDR:  *puResult = RT_MAKE_U64(pThis->MsiMapCapHdr.u32, pThis->PerfOptCtrl.u32); break;
+
+        case IOMMU_MMIO_OFF_PERF_OPT_CTRL:        *puResult = pThis->PerfOptCtrl.u32;           break;
+
+        case IOMMU_MMIO_OFF_XT_GEN_INTR_CTRL:     *puResult = pThis->XtGenIntrCtrl.u64;         break;
+        case IOMMU_MMIO_OFF_XT_PPR_INTR_CTRL:     *puResult = pThis->XtPprIntrCtrl.u64;         break;
+        case IOMMU_MMIO_OFF_XT_GALOG_INT_CTRL:    *puResult = pThis->XtGALogIntrCtrl.u64;       break;
+
+        case IOMMU_MMIO_OFF_MARC_APER_BAR_0:      *puResult = pThis->aMarcApers[0].Base.u64;    break;
+        case IOMMU_MMIO_OFF_MARC_APER_RELOC_0:    *puResult = pThis->aMarcApers[0].Reloc.u64;   break;
+        case IOMMU_MMIO_OFF_MARC_APER_LEN_0:      *puResult = pThis->aMarcApers[0].Length.u64;  break;
+        case IOMMU_MMIO_OFF_MARC_APER_BAR_1:      *puResult = pThis->aMarcApers[1].Base.u64;    break;
+        case IOMMU_MMIO_OFF_MARC_APER_RELOC_1:    *puResult = pThis->aMarcApers[1].Reloc.u64;   break;
+        case IOMMU_MMIO_OFF_MARC_APER_LEN_1:      *puResult = pThis->aMarcApers[1].Length.u64;  break;
+        case IOMMU_MMIO_OFF_MARC_APER_BAR_2:      *puResult = pThis->aMarcApers[2].Base.u64;    break;
+        case IOMMU_MMIO_OFF_MARC_APER_RELOC_2:    *puResult = pThis->aMarcApers[2].Reloc.u64;   break;
+        case IOMMU_MMIO_OFF_MARC_APER_LEN_2:      *puResult = pThis->aMarcApers[2].Length.u64;  break;
+        case IOMMU_MMIO_OFF_MARC_APER_BAR_3:      *puResult = pThis->aMarcApers[3].Base.u64;    break;
+        case IOMMU_MMIO_OFF_MARC_APER_RELOC_3:    *puResult = pThis->aMarcApers[3].Reloc.u64;   break;
+        case IOMMU_MMIO_OFF_MARC_APER_LEN_3:      *puResult = pThis->aMarcApers[3].Length.u64;  break;
+
+        case IOMMU_MMIO_OFF_RSVD_REG:             *puResult = pThis->RsvdReg;                   break;
+
+        case IOMMU_MMIO_CMD_BUF_HEAD_PTR:         *puResult = pThis->CmdBufHeadPtr.u64;         break;
+        case IOMMU_MMIO_CMD_BUF_TAIL_PTR:         *puResult = pThis->CmdBufTailPtr.u64;         break;
+        case IOMMU_MMIO_EVT_LOG_HEAD_PTR:         *puResult = pThis->EvtLogHeadPtr.u64;         break;
+        case IOMMU_MMIO_EVT_LOG_TAIL_PTR:         *puResult = pThis->EvtLogTailPtr.u64;         break;
+
+        case IOMMU_MMIO_OFF_STATUS:               *puResult = pThis->Status.u64;                break;
+
+        case IOMMU_MMIO_OFF_PPR_LOG_HEAD_PTR:     *puResult = pThis->PprLogHeadPtr.u64;         break;
+        case IOMMU_MMIO_OFF_PPR_LOG_TAIL_PTR:     *puResult = pThis->PprLogTailPtr.u64;         break;
+
+        case IOMMU_MMIO_OFF_GALOG_HEAD_PTR:       *puResult = pThis->GALogHeadPtr.u64;          break;
+        case IOMMU_MMIO_OFF_GALOG_TAIL_PTR:       *puResult = pThis->GALogTailPtr.u64;          break;
+
+        case IOMMU_MMIO_OFF_PPR_LOG_B_HEAD_PTR:   *puResult = pThis->PprLogBHeadPtr.u64;        break;
+        case IOMMU_MMIO_OFF_PPR_LOG_B_TAIL_PTR:   *puResult = pThis->PprLogBTailPtr.u64;        break;
+
+        case IOMMU_MMIO_OFF_EVT_LOG_B_HEAD_PTR:   *puResult = pThis->EvtLogBHeadPtr.u64;        break;
+        case IOMMU_MMIO_OFF_EVT_LOG_B_TAIL_PTR:   *puResult = pThis->EvtLogBTailPtr.u64;        break;
+
+        case IOMMU_MMIO_OFF_PPR_LOG_AUTO_RESP:          *puResult = pThis->PprLogAutoResp.u64;          break;
+        case IOMMU_MMIO_OFF_PPR_LOG_OVERFLOW_EARLY:     *puResult = pThis->PprLogOverflowEarly.u64;     break;
+        case IOMMU_MMIO_OFF_PPR_LOG_B_OVERFLOW_EARLY:   *puResult = pThis->PprLogBOverflowEarly.u64;    break;
+
+        /* Not implemented. */
+        case IOMMU_MMIO_OFF_SMI_FLT_FIRST:
+        case IOMMU_MMIO_OFF_SMI_FLT_LAST:
+        {
+            *puResult = 0;
+            break;
+        }
+
+        /* Unknown */
+        default:
+        {
+            *puResult = 0;
+            ASSERT_GUEST_MSG_FAILED((IOMMU_LOG_PFX ": iommuAmdReadRegister: Unknown offset %u (cb=%u)\n", off, cb));
+            break;
+        }
+    }
+}
+
+
 /**
  * @callback_method_impl{FNIOMMMIONEWWRITE}
  */
@@ -1814,9 +2092,18 @@ static DECLCALLBACK(VBOXSTRICTRC) iommuAmdMmioWrite(PPDMDEVINS pDevIns, void *pv
  */
 static DECLCALLBACK(VBOXSTRICTRC) iommuAmdMmioRead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS off, void *pv, unsigned cb)
 {
-    /** @todo IOMMU: MMIO read. */
-    RT_NOREF5(pDevIns, pvUser, off, pv, cb);
-    return VERR_NOT_IMPLEMENTED;
+    NOREF(pvUser);
+    Assert(cb == 4 || cb == 8);
+
+    uint64_t uResult = 0;
+    PIOMMU   pThis   = PDMDEVINS_2_DATA(pDevIns, PIOMMU);
+    VBOXSTRICTRC rcStrict = iommuAmdReadRegister(pThis, off, cb, &uResult);
+    if (cb == 8)
+        *(uint64_t *)pv = uResult;
+    else
+        *(uint32_t *)pv = (uint32_t)uResult;
+
+    return rcStrict;
 }
 
 
@@ -2006,7 +2293,7 @@ static DECLCALLBACK(int) iommuAmdR3Construct(PPDMDEVINS pDevIns, int iInstance, 
      * Map MMIO registers.
      */
     rc = PDMDevHlpMmioCreateAndMap(pDevIns, u64MmioBase, IOMMU_MMIO_REGION_SIZE, iommuAmdMmioWrite, iommuAmdMmioRead,
-                                   IOMMMIO_FLAGS_READ_PASSTHRU | IOMMMIO_FLAGS_WRITE_PASSTHRU,
+                                   IOMMMIO_FLAGS_READ_DWORD_QWORD | IOMMMIO_FLAGS_WRITE_DWORD_QWORD_READ_MISSING,
                                    "IOMMU-AMD", &pThis->hMmio);
     AssertRCReturn(rc, rc);
 
