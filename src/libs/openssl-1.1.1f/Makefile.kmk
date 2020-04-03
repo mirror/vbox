@@ -1,0 +1,105 @@
+# $Id: Makefile.kmk 125764 2018-10-12 17:09:46Z michael $
+## @file
+# Sub-Makefile for the OpenSSL base directory.
+#
+
+#
+# Copyright (C) 2006-2020 Oracle Corporation
+#
+# Oracle Corporation confidential
+# All rights reserved
+#
+
+SUB_DEPTH = ../../..
+include $(KBUILD_PATH)/subheader.kmk
+
+# Make sure our Config.kmk is included.
+ifndef VBOX_PATH_CRYPTO
+ include $(PATH_SUB_CURRENT)/Config.kmk
+endif
+
+# Include sub-makefiles.
+include $(PATH_SUB_CURRENT)/crypto/Makefile.kmk
+include $(PATH_SUB_CURRENT)/ssl/Makefile.kmk
+
+# Let kBuild generate the rules.
+include $(FILE_KBUILD_SUB_FOOTER)
+
+
+#
+# How to regenerate the openssl-mangling.h
+#
+openssl-mangling.h openssl-mangling-new.h: $(VBox-libcrypto_1_TARGET) $(VBox-libssl_1_TARGET) FORCE
+	$(RM) -f -- $@
+	$(APPEND_EXT) -tn $@ \
+		'/* $(DOLLAR)Id: $(DOLLAR) */' \
+		"/** @file" \
+		" * Autogenerate symbol mangling header for openssl." \
+		" */" \
+		"" \
+		"/*" \
+		" * Copyright (C) 2011$(if-expr $(date %Y) > 2011,-$(date %Y),) Oracle Corporation" \
+		" *" \
+		" * This file is part of VirtualBox Open Source Edition (OSE), as" \
+		" * available from http://www.virtualbox.org. This file is free software;" \
+		" * you can redistribute it and/or modify it under the terms of the GNU" \
+		" * General Public License (GPL) as published by the Free Software" \
+		" * Foundation, in version 2 as it comes in the \"COPYING\" file of the" \
+		" * VirtualBox OSE distribution. VirtualBox OSE is distributed in the" \
+		" * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind." \
+		" *" \
+		" * The contents of this file may alternatively be used under the terms" \
+		" * of the Common Development and Distribution License Version 1.0" \
+		" * (CDDL) only, as it comes in the \"COPYING.CDDL\" file of the" \
+		" * VirtualBox OSE distribution, in which case the provisions of the" \
+		" * CDDL are applicable instead of those of the GPL." \
+		" *" \
+		" * You may elect to license modified versions of this file under the" \
+		" * terms and conditions of either the GPL or the CDDL or both." \
+		" */" \
+		"" \
+		"#ifndef ___openssl_mangling_h___" \
+		"#define ___openssl_mangling_h___" \
+		"# ifdef VBOX_IN_EXTPACK" \
+		"#  define OPENSSL_MANGLER(a_Name) OracleExtPack_ ## a_Name" \
+		"#  define OPENSSL_MANGLER_ASM(a_Name) _OracleExtPack_ ## a_Name" \
+		"# else" \
+		"#  define OPENSSL_MANGLER(a_Name) VBox_ ## a_Name" \
+		"#  define OPENSSL_MANGLER_ASM(a_Name) _VBox_ ## a_Name" \
+		"# endif"
+	nm $(filter-out FORCE, $+) \
+		| $(SED) \
+			-e '/^[[:xdigit:]][[:xdigit:]]* [TSDBC] /!d' \
+			-e '/\.eh$(DOLLAR)/d' \
+			-e 's/^[^ ]* [TSDBC] $(if $(intersects $(KBUILD_TARGET), darwin os2 win),_,)\([[:alpha:]_].*\)/\1/' \
+			-e 's/[[:space:]]*//g' \
+			-e 's/^VBox_//' \
+		| sort \
+		| $(SED) -e 's/^\(.*\)$(DOLLAR)/#ifndef OPENSSL_MANGLE_ASM\n# ifndef \1\n#  define \1 OPENSSL_MANGLER(\1)\n# endif\n#else\n# ifndef _\1\n#  define _\1 OPENSSL_MANGLER_ASM(\1)\n# endif\n#endif/' --append-text $@
+	$(APPEND_EXT) -n $@ \
+		"#endif" \
+		""
+
+#
+# Lists unmangled symbols.
+#
+.PHONY: check-openssl-mangling
+check-openssl-mangling: \
+		$(VBox-libcrypto_1_TARGET) \
+		$(VBox-libssl_1_TARGET) \
+		$(VBoxExtPack-libcrypto_1_TARGET) \
+		$(VBoxExtPack-libssl_1_TARGET) FORCE
+	nm $(VBox-libcrypto_1_TARGET) $(VBox-libssl_1_TARGET) \
+		| $(SED) \
+			-e '/^[[:xdigit:]][[:xdigit:]]* [TSDBC] /!d' \
+			-e 's/^[^ ]* [TSDBC] $(if $(intersects $(KBUILD_TARGET), darwin os2 win),_,)\([[:alpha:]_].*\)/\1/' \
+			-e 's/[[:space:]]*//g' \
+			-e '/^VBox_/d' \
+		| sort
+	nm $(VBoxExtPack-libcrypto_1_TARGET) $(VBoxExtPack-libssl_1_TARGET) \
+		| $(SED) \
+			-e '/^[[:xdigit:]][[:xdigit:]]* [TSDBC] /!d' \
+			-e 's/^[^ ]* [TSDBC] $(if $(intersects $(KBUILD_TARGET), darwin os2 win),_,)\([[:alpha:]_].*\)/\1/' \
+			-e 's/[[:space:]]*//g' \
+			-e '/^OracleExtPack_/d' \
+		| sort
