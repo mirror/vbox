@@ -1362,7 +1362,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         ];
         self.asTests        = self.asTestsDef;
         self.fSkipKnownBugs = False;
-        self.oTestFiles     = None;  # type: vboxtestfileset.TestFileSet
+        self.oTestFiles     = None # type: vboxtestfileset.TestFileSet
         self.oDebug         = tdDebugSettings();
 
     def parseOption(self, asArgs, iArg):                                        # pylint: disable=too-many-branches,too-many-statements
