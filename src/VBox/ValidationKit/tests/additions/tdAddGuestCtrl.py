@@ -1335,6 +1335,12 @@ class tdTestResultSession(tdTestResult):
         tdTestResult.__init__(self, fRc = fRc);
         self.cNumSessions = cNumSessions;
 
+class tdDebugSettings():
+    """
+    Contains local test debug settings.
+    """
+    def __init__(self, sImgPath = None):
+        self.sImgPath = sImgPath;
 
 class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
     """
@@ -1346,6 +1352,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
 
         ## @todo base.TestBase.
         self.asTestsDef = [
+            'debug',
             'session_basic', 'session_env', 'session_file_ref', 'session_dir_ref', 'session_proc_ref', 'session_reboot',
             'exec_basic', 'exec_timeout',
             'dir_create', 'dir_create_temp', 'dir_read',
@@ -1355,7 +1362,8 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         ];
         self.asTests        = self.asTestsDef;
         self.fSkipKnownBugs = False;
-        self.oTestFiles     = None  # type: vboxtestfileset.TestFileSet
+        self.oTestFiles     = None;  # type: vboxtestfileset.TestFileSet
+        self.oDebug         = tdDebugSettings();
 
     def parseOption(self, asArgs, iArg):                                        # pylint: disable=too-many-branches,too-many-statements
         if asArgs[iArg] == '--add-guest-ctrl-tests':
@@ -1376,6 +1384,11 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         if asArgs[iArg] == '--no-add-guest-ctrl-skip-known-bugs':
             self.fSkipKnownBugs = False;
             return iArg + 1;
+        if asArgs[iArg] == '--add-guest-ctrl-debug-img':
+            iArg += 1;
+            iNext = self.oTstDrv.requireMoreArgs(1, asArgs, iArg);
+            self.oDebug.sImgPath = asArgs[iArg];
+            return iNext;
         return iArg;
 
     def showUsage(self):
@@ -1384,6 +1397,9 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         reporter.log('      Default: %s  (all)' % (':'.join(self.asTestsDef)));
         reporter.log('  --add-guest-ctrl-skip-known-bugs');
         reporter.log('      Skips known bugs.  Default: --no-add-guest-ctrl-skip-known-bugs');
+        reporter.log('Debugging:');
+        reporter.log('  --add-guest-ctrl-debug-img');
+        reporter.log('      Sets VBoxService image to deploy for debugging');
         return True;
 
     def testIt(self, oTestVm, oSession, oTxsSession):
@@ -1397,6 +1413,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         # The tests. Must-succeed tests should be first.
         atTests = [
             ( True,  self.prepareGuestForTesting,           None,               'Preparations',),
+            ( True,  self.prepareGuestForDebugging,         None,               'Manaul Debugging',),
             ( True,  self.testGuestCtrlSession,             'session_basic',    'Session Basics',),
             ( True,  self.testGuestCtrlExec,                'exec_basic',       'Execution',),
             ( False, self.testGuestCtrlExecTimeout,         'exec_timeout',     'Execution Timeouts',),
@@ -1504,6 +1521,37 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         if oTestVm.isOS2():
             return SubTstDrvAddGuestCtrl.getGuestSystemDir(oTestVm) + '\\DOSCALL1.DLL';
         return "/bin/sh";
+
+    def prepareGuestForDebugging(self, oSession, oTxsSession, oTestVm):
+        """
+        Prepares a guest for (manual) debugging.
+
+        This involves copying over and invoking a the locally built VBoxService binary.
+        """
+
+        if self.oDebug.sImgPath is None: # If no debugging enabled, bail out.
+            return True
+
+        reporter.log('Preparing for debugging ...');
+
+        try:
+
+            if oTestVm.isLinux():
+                reporter.log('Uploading %s ...' % self.oDebug.sImgPath);
+                sFileVBoxServiceHst = self.oDebug.sImgPath;
+                sFileVBoxServiceGst = "/tmp/VBoxService-txs";
+                oTxsSession.syncUploadFile(sFileVBoxServiceHst, sFileVBoxServiceGst);
+                oTxsSession.syncExec("/bin/chmod", ("/bin/chmod", "755", sFileVBoxServiceGst) ); # syncChMod not implemented yet.
+                reporter.log('Executing VBoxService (in background)...');
+                oTxsSession.syncExec(sFileVBoxServiceGst, (sFileVBoxServiceGst, "-vvvv", "--only-control", \
+                                                           "--logfile", "/tmp/VBoxService-txs.log") );
+            else: ## @todo Implement others.
+                return reporter.errorXcpt('Debugging not available on this guest OS yet');
+
+        except:
+            return reporter.errorXcpt('Unable to prepare for debugging');
+
+        return True;
 
     #
     # Guest test files.
