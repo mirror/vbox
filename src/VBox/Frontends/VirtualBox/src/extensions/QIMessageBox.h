@@ -155,6 +155,9 @@ private:
     /** Generates standard pixmap for passed @a iconType using @a pWidget as hint. */
     static QPixmap standardPixmap(AlertIconType iconType, QWidget *pWidget = 0);
 
+    /** Compresses @a strText with ellipsis on the basis of certain logic. */
+    static QString compressLongWords(QString strText);
+
     /** Holds the title. */
     QString m_strTitle;
 
