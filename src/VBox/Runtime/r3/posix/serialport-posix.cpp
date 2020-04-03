@@ -821,7 +821,7 @@ RTDECL(int) RTSerialPortRead(RTSERIALPORT hSerialPort, void *pvBuf, size_t cbToR
          * Attempt read.
          */
         ssize_t cbRead = read(pThis->iFd, pvBuf, cbToRead);
-        if (cbRead >= 0)
+        if (cbRead > 0)
         {
             if (pcbRead)
                 /* caller can handle partial read. */
@@ -834,11 +834,15 @@ RTDECL(int) RTSerialPortRead(RTSERIALPORT hSerialPort, void *pvBuf, size_t cbToR
                     ssize_t cbReadPart = read(pThis->iFd, (uint8_t *)pvBuf + cbRead, cbToRead - cbRead);
                     if (cbReadPart < 0)
                         return RTErrConvertFromErrno(errno);
+                    else if (cbReadPart == 0)
+                        return VERR_DEV_IO_ERROR;
 
                     cbRead += cbReadPart;
                 }
             }
         }
+        else if (cbRead == 0)
+            rc = VERR_DEV_IO_ERROR;
         else
             rc = RTErrConvertFromErrno(errno);
     }
@@ -873,7 +877,15 @@ RTDECL(int) RTSerialPortReadNB(RTSERIALPORT hSerialPort, void *pvBuf, size_t cbT
 
             *pcbRead = cbThisRead;
         }
-        else if (cbThisRead == 0 || errno == EAGAIN || errno == EWOULDBLOCK)
+        else if (cbThisRead == 0)
+            rc = VERR_DEV_IO_ERROR;
+        else if (   errno == EAGAIN
+# ifdef EWOULDBLOCK
+#  if EWOULDBLOCK != EAGAIN
+                 || errno == EWOULDBLOCK
+#  endif
+# endif
+                )
             rc = VINF_TRY_AGAIN;
         else
             rc = RTErrConvertFromErrno(errno);
@@ -898,7 +910,7 @@ RTDECL(int) RTSerialPortWrite(RTSERIALPORT hSerialPort, const void *pvBuf, size_
          * Attempt write.
          */
         ssize_t cbWritten = write(pThis->iFd, pvBuf, cbToWrite);
-        if (cbWritten >= 0)
+        if (cbWritten > 0)
         {
             if (pcbWritten)
                 /* caller can handle partial write. */
@@ -911,10 +923,16 @@ RTDECL(int) RTSerialPortWrite(RTSERIALPORT hSerialPort, const void *pvBuf, size_
                     ssize_t cbWrittenPart = write(pThis->iFd, (const uint8_t *)pvBuf + cbWritten, cbToWrite - cbWritten);
                     if (cbWrittenPart < 0)
                         return RTErrConvertFromErrno(errno);
+                    else if (cbWrittenPart == 0)
+                        return VERR_DEV_IO_ERROR;
                     cbWritten += cbWrittenPart;
                 }
             }
         }
+        else if (cbWritten == 0)
+            rc = VERR_DEV_IO_ERROR;
+        else
+            rc = RTErrConvertFromErrno(errno);
     }
 
     return rc;
@@ -938,7 +956,15 @@ RTDECL(int) RTSerialPortWriteNB(RTSERIALPORT hSerialPort, const void *pvBuf, siz
         ssize_t cbThisWrite = write(pThis->iFd, pvBuf, cbToWrite);
         if (cbThisWrite > 0)
             *pcbWritten = cbThisWrite;
-        else if (cbThisWrite == 0 || errno == EAGAIN || errno == EWOULDBLOCK)
+        else if (cbThisWrite == 0)
+            rc = VERR_DEV_IO_ERROR;
+        else if (   errno == EAGAIN
+# ifdef EWOULDBLOCK
+#  if EWOULDBLOCK != EAGAIN
+                 || errno == EWOULDBLOCK
+#  endif
+# endif
+                )
             rc = VINF_TRY_AGAIN;
         else
             rc = RTErrConvertFromErrno(errno);
@@ -1091,9 +1117,14 @@ RTDECL(int) RTSerialPortEvtPoll(RTSERIALPORT hSerialPort, uint32_t fEvtMask, uin
         {
             if (aPollFds[0].revents != 0)
             {
-                fEvtsPending |= (aPollFds[0].revents & POLLIN) ? RTSERIALPORT_EVT_F_DATA_RX : 0;
-                fEvtsPending |= (aPollFds[0].revents & POLLOUT) ? RTSERIALPORT_EVT_F_DATA_TX : 0;
-                /** @todo BREAK condition detection. */
+                if (aPollFds[0].revents & POLLERR)
+                    rc = VERR_DEV_IO_ERROR;
+                else
+                {
+                    fEvtsPending |= (aPollFds[0].revents & POLLIN) ? RTSERIALPORT_EVT_F_DATA_RX : 0;
+                    fEvtsPending |= (aPollFds[0].revents & POLLOUT) ? RTSERIALPORT_EVT_F_DATA_TX : 0;
+                    /** @todo BREAK condition detection. */
+                }
             }
 
             if (aPollFds[1].revents != 0)
