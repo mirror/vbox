@@ -583,7 +583,6 @@ static int drvHostSerialIoLoopNormal(PPDMDRVINS pDrvIns, PDRVHOSTSERIAL pThis, P
  * The error I/O loop.
  *
  * @returns VBox status code.
- * @param   pDrvIns             Pointer to the driver instance data.
  * @param   pThis               Host serial driver instance data.
  * @param   pThread             Thread instance data.
  */
