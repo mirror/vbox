@@ -121,7 +121,7 @@ static DECLCALLBACK(int) rtldrLoadOnce(void *)
     int         rc;
 
     LogFlowFunc(("\n"));
-    rc = RTLdrLoad(RT_RUNTIME_LOADER_LIB_NAME, &hLib);
+    rc = RTLdrLoadEx(RT_RUNTIME_LOADER_LIB_NAME, &hLib, RTLDRLOAD_FLAGS_LOCAL | RTLDRLOAD_FLAGS_NO_UNLOAD, NULL);
     for (unsigned i = 0; RT_SUCCESS(rc) && g_aSharedFuncs[i].pszName != NULL; ++i)
         rc = RTLdrGetSymbol(hLib, g_aSharedFuncs[i].pszName, (void **)g_aSharedFuncs[i].ppfn);
     LogFlowFunc(("rc = %Rrc\n", rc));
