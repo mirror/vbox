@@ -160,8 +160,11 @@ RTDECL(int) RTLdrLoadEx(const char *pszFilename, PRTLDRMOD phLdrMod, uint32_t fF
         rc = rtldrNativeLoad(pszFilename, &pMod->hNative, fFlags, pErrInfo);
         if (RT_SUCCESS(rc))
         {
+            if (fFlags & RTLDRLOAD_FLAGS_NO_UNLOAD)
+                RTMEM_MAY_LEAK(pMod);
+
             *phLdrMod = &pMod->Core;
-            LogFlow(("RTLdrLoad: returns %Rrc *phLdrMod=%RTldrm\n", rc, *phLdrMod));
+            LogFlow(("RTLdrLoad: returns %Rrc *phLdrMod=%RTldrm\n", rc,*phLdrMod));
             return rc;
         }
 
