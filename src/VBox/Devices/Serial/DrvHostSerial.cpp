@@ -61,6 +61,8 @@ typedef struct DRVHOSTSERIAL
     RTSERIALPORT                hSerialPort;
     /** the device path */
     char                        *pszDevicePath;
+    /** The active config of the serial port. */
+    RTSERIALPORTCFG             Cfg;
 
     /** Flag whether data is available from the device/driver above as notified by the driver. */
     volatile bool               fAvailWrExt;
@@ -79,6 +81,12 @@ typedef struct DRVHOSTSERIAL
     volatile uint32_t           offRead;
     /** Current amount of data in the buffer. */
     volatile size_t             cbReadBuf;
+
+    /* Flag whether the host device ran into a fatal error condition and I/O is suspended
+     * until the nuext VM suspend/resume cycle where we will try again. */
+    volatile bool               fIoFatalErr;
+    /** Event semaphore the I/O thread is waiting on */
+    RTSEMEVENT                  hSemEvtIoFatalErr;
 
     /** Read/write statistics */
     STAMCOUNTER                 StatBytesRead;
@@ -185,6 +193,22 @@ DECLINLINE(void) drvHostSerialReadBufReadAdv(PDRVHOSTSERIAL pThis, size_t cbAdv)
 }
 
 
+/**
+ * Wakes up the serial port I/O thread.
+ *
+ * @returns VBox status code.
+ * @param   pThis               The host serial driver instance.
+ */
+static int drvHostSerialWakeupIoThread(PDRVHOSTSERIAL pThis)
+{
+
+    if (RT_UNLIKELY(pThis->fIoFatalErr))
+        return RTSemEventSignal(pThis->hSemEvtIoFatalErr);
+
+    return RTSerialPortEvtPollInterrupt(pThis->hSerialPort);
+}
+
+
 /* -=-=-=-=- IBase -=-=-=-=- */
 
 /**
@@ -211,7 +235,7 @@ static DECLCALLBACK(int) drvHostSerialDataAvailWrNotify(PPDMISERIALCONNECTOR pIn
     int rc = VINF_SUCCESS;
     bool fAvailOld = ASMAtomicXchgBool(&pThis->fAvailWrExt, true);
     if (!fAvailOld)
-        rc = RTSerialPortEvtPollInterrupt(pThis->hSerialPort);
+        rc = drvHostSerialWakeupIoThread(pThis);
 
     return rc;
 }
@@ -247,7 +271,7 @@ static DECLCALLBACK(int) drvHostSerialReadRdr(PPDMISERIALCONNECTOR pInterface, v
     *pcbRead = cbReadAll;
     /* Kick the I/O thread if there is nothing to read to recalculate the poll flags. */
     if (!drvHostSerialReadBufGetRead(pThis, NULL))
-        rc = RTSerialPortEvtPollInterrupt(pThis->hSerialPort);
+        rc = drvHostSerialWakeupIoThread(pThis);
 
     STAM_COUNTER_ADD(&pThis->StatBytesRead, cbReadAll);
     return rc;
@@ -262,68 +286,67 @@ static DECLCALLBACK(int) drvHostSerialChgParams(PPDMISERIALCONNECTOR pInterface,
                                                 PDMSERIALSTOPBITS enmStopBits)
 {
     PDRVHOSTSERIAL pThis = RT_FROM_MEMBER(pInterface, DRVHOSTSERIAL, ISerialConnector);
-    RTSERIALPORTCFG Cfg;
 
-    Cfg.uBaudRate = uBps;
+    pThis->Cfg.uBaudRate = uBps;
 
     switch (enmParity)
     {
         case PDMSERIALPARITY_EVEN:
-            Cfg.enmParity = RTSERIALPORTPARITY_EVEN;
+            pThis->Cfg.enmParity = RTSERIALPORTPARITY_EVEN;
             break;
         case PDMSERIALPARITY_ODD:
-            Cfg.enmParity = RTSERIALPORTPARITY_ODD;
+            pThis->Cfg.enmParity = RTSERIALPORTPARITY_ODD;
             break;
         case PDMSERIALPARITY_NONE:
-            Cfg.enmParity = RTSERIALPORTPARITY_NONE;
+            pThis->Cfg.enmParity = RTSERIALPORTPARITY_NONE;
             break;
         case PDMSERIALPARITY_MARK:
-            Cfg.enmParity = RTSERIALPORTPARITY_MARK;
+            pThis->Cfg.enmParity = RTSERIALPORTPARITY_MARK;
             break;
         case PDMSERIALPARITY_SPACE:
-            Cfg.enmParity = RTSERIALPORTPARITY_SPACE;
+            pThis->Cfg.enmParity = RTSERIALPORTPARITY_SPACE;
             break;
         default:
             AssertMsgFailed(("Unsupported parity setting %d\n", enmParity)); /* Should not happen. */
-            Cfg.enmParity = RTSERIALPORTPARITY_NONE;
+            pThis->Cfg.enmParity = RTSERIALPORTPARITY_NONE;
     }
 
     switch (cDataBits)
     {
         case 5:
-            Cfg.enmDataBitCount = RTSERIALPORTDATABITS_5BITS;
+            pThis->Cfg.enmDataBitCount = RTSERIALPORTDATABITS_5BITS;
             break;
         case 6:
-            Cfg.enmDataBitCount = RTSERIALPORTDATABITS_6BITS;
+            pThis->Cfg.enmDataBitCount = RTSERIALPORTDATABITS_6BITS;
             break;
         case 7:
-            Cfg.enmDataBitCount = RTSERIALPORTDATABITS_7BITS;
+            pThis->Cfg.enmDataBitCount = RTSERIALPORTDATABITS_7BITS;
             break;
         case 8:
-            Cfg.enmDataBitCount = RTSERIALPORTDATABITS_8BITS;
+            pThis->Cfg.enmDataBitCount = RTSERIALPORTDATABITS_8BITS;
             break;
         default:
             AssertMsgFailed(("Unsupported data bit count %u\n", cDataBits)); /* Should not happen. */
-            Cfg.enmDataBitCount = RTSERIALPORTDATABITS_8BITS;
+            pThis->Cfg.enmDataBitCount = RTSERIALPORTDATABITS_8BITS;
     }
 
     switch (enmStopBits)
     {
         case PDMSERIALSTOPBITS_ONE:
-            Cfg.enmStopBitCount = RTSERIALPORTSTOPBITS_ONE;
+            pThis->Cfg.enmStopBitCount = RTSERIALPORTSTOPBITS_ONE;
             break;
         case PDMSERIALSTOPBITS_ONEPOINTFIVE:
-            Cfg.enmStopBitCount = RTSERIALPORTSTOPBITS_ONEPOINTFIVE;
+            pThis->Cfg.enmStopBitCount = RTSERIALPORTSTOPBITS_ONEPOINTFIVE;
             break;
         case PDMSERIALSTOPBITS_TWO:
-            Cfg.enmStopBitCount = RTSERIALPORTSTOPBITS_TWO;
+            pThis->Cfg.enmStopBitCount = RTSERIALPORTSTOPBITS_TWO;
             break;
         default:
             AssertMsgFailed(("Unsupported stop bit count %d\n", enmStopBits)); /* Should not happen. */
-            Cfg.enmStopBitCount = RTSERIALPORTSTOPBITS_ONE;
+            pThis->Cfg.enmStopBitCount = RTSERIALPORTSTOPBITS_ONE;
     }
 
-    return RTSerialPortCfgSet(pThis->hSerialPort, &Cfg, NULL);
+    return RTSerialPortCfgSet(pThis->hSerialPort, &pThis->Cfg, NULL);
 }
 
 
@@ -387,7 +410,7 @@ static DECLCALLBACK(int) drvHostSerialQueuesFlush(PPDMISERIALCONNECTOR pInterfac
     {
         size_t cbOld = drvHostSerialReadBufReset(pThis);
         if (cbOld) /* Kick the I/O thread to fetch new data. */
-            rc = RTSerialPortEvtPollInterrupt(pThis->hSerialPort);
+            rc = drvHostSerialWakeupIoThread(pThis);
     }
 
     LogFlowFunc(("-> %Rrc\n", rc));
@@ -398,20 +421,18 @@ static DECLCALLBACK(int) drvHostSerialQueuesFlush(PPDMISERIALCONNECTOR pInterfac
 /* -=-=-=-=- I/O thread -=-=-=-=- */
 
 /**
- * I/O thread loop.
+ * The normal I/O loop.
  *
- * @returns VINF_SUCCESS.
- * @param   pDrvIns     PDM driver instance data.
- * @param   pThread     The PDM thread data.
+ * @returns VBox status code.
+ * @param   pDrvIns             Pointer to the driver instance data.
+ * @param   pThis               Host serial driver instance data.
+ * @param   pThread             Thread instance data.
  */
-static DECLCALLBACK(int) drvHostSerialIoThread(PPDMDRVINS pDrvIns, PPDMTHREAD pThread)
+static int drvHostSerialIoLoopNormal(PPDMDRVINS pDrvIns, PDRVHOSTSERIAL pThis, PPDMTHREAD pThread)
 {
-    PDRVHOSTSERIAL pThis = PDMINS_2_DATA(pDrvIns, PDRVHOSTSERIAL);
-
-    if (pThread->enmState == PDMTHREADSTATE_INITIALIZING)
-        return VINF_SUCCESS;
-
-    while (pThread->enmState == PDMTHREADSTATE_RUNNING)
+    int rc = VINF_SUCCESS;
+    while (   pThread->enmState == PDMTHREADSTATE_RUNNING
+           && RT_SUCCESS(rc))
     {
         uint32_t fEvtFlags = RTSERIALPORT_EVT_F_STATUS_LINE_CHANGED | RTSERIALPORT_EVT_F_BREAK_DETECTED;
 
@@ -428,7 +449,7 @@ static DECLCALLBACK(int) drvHostSerialIoThread(PPDMDRVINS pDrvIns, PPDMTHREAD pT
             fEvtFlags |= RTSERIALPORT_EVT_F_DATA_RX;
 
         uint32_t fEvtsRecv = 0;
-        int rc = RTSerialPortEvtPoll(pThis->hSerialPort, fEvtFlags, &fEvtsRecv, RT_INDEFINITE_WAIT);
+        rc = RTSerialPortEvtPoll(pThis->hSerialPort, fEvtFlags, &fEvtsRecv, RT_INDEFINITE_WAIT);
         if (RT_SUCCESS(rc))
         {
             if (fEvtsRecv & RTSERIALPORT_EVT_F_DATA_TX)
@@ -463,7 +484,8 @@ static DECLCALLBACK(int) drvHostSerialIoThread(PPDMDRVINS pDrvIns, PPDMTHREAD pT
                             && cbProcessed)
                         {
                             /* Move the data in the TX buffer to the front to fill the end again. */
-                            memmove(&pThis->abTxBuf[0], &pThis->abTxBuf[cbProcessed], pThis->cbTxUsed);                        }
+                            memmove(&pThis->abTxBuf[0], &pThis->abTxBuf[cbProcessed], pThis->cbTxUsed);
+                        }
                         else
                             pThis->pDrvSerialPort->pfnDataSentNotify(pThis->pDrvSerialPort);
                         STAM_COUNTER_ADD(&pThis->StatBytesWritten, cbProcessed);
@@ -530,10 +552,14 @@ static DECLCALLBACK(int) drvHostSerialIoThread(PPDMDRVINS pDrvIns, PPDMTHREAD pT
                         /* Notifying device failed, continue but log it */
                         LogRelMax(10, ("HostSerial#%d: Notifying device about changed status lines failed with error %Rrc; continuing.\n",
                                        pDrvIns->iInstance, rc));
+                        rc = VINF_SUCCESS;
                     }
                 }
                 else
+                {
                     LogRelMax(10, ("HostSerial#%d: Getting status lines state failed with error %Rrc; continuing.\n", pDrvIns->iInstance, rc));
+                    rc = VINF_SUCCESS;
+                }
             }
 
             if (fEvtsRecv & RTSERIALPORT_EVT_F_STATUS_LINE_MONITOR_FAILED)
@@ -545,6 +571,87 @@ static DECLCALLBACK(int) drvHostSerialIoThread(PPDMDRVINS pDrvIns, PPDMTHREAD pT
             rc = VINF_SUCCESS;
         }
     }
+
+    LogRel(("HostSerial#%d: The underlying host device run into a fatal error condition %Rrc, any data transfer is disabled\n",
+            pDrvIns->iInstance, rc));
+
+    return rc;
+}
+
+
+/**
+ * The error I/O loop.
+ *
+ * @returns VBox status code.
+ * @param   pDrvIns             Pointer to the driver instance data.
+ * @param   pThis               Host serial driver instance data.
+ * @param   pThread             Thread instance data.
+ */
+static void drvHostSerialIoLoopError(PDRVHOSTSERIAL pThis, PPDMTHREAD pThread)
+{
+    ASMAtomicXchgBool(&pThis->fIoFatalErr, true);
+
+    PDMDrvHlpVMSetRuntimeError(pThis->pDrvIns, 0 /*fFlags*/, "SerialPortIoError",
+                               N_("The host serial port \"%s\" encountered a fatal error and stopped functioning. "
+                                  "This can be caused by bad cabling or USB to serial converters being unplugged by accident. "
+                                  "To restart I/O transfers suspend and resume the VM after fixing the underlying issue."),
+                               pThis->pszDevicePath);
+
+    while (pThread->enmState == PDMTHREADSTATE_RUNNING)
+    {
+        /*
+         * We have to discard any data which is going to be send (the error
+         * mode resembles the "someone just pulled the plug on the serial port" situation)
+         */
+        RTSemEventWait(pThis->hSemEvtIoFatalErr, RT_INDEFINITE_WAIT);
+
+        if (ASMAtomicXchgBool(&pThis->fAvailWrExt, false))
+        {
+            size_t cbFetched = 0;
+
+            do
+            {
+                /* Stuff as much data into the TX buffer as we can. */
+                uint8_t abDiscard[64];
+                int rc = pThis->pDrvSerialPort->pfnReadWr(pThis->pDrvSerialPort, &abDiscard, sizeof(abDiscard),
+                                                          &cbFetched);
+                AssertRC(rc);
+            } while (cbFetched > 0);
+
+            /* Acknowledge the sent data. */
+            pThis->pDrvSerialPort->pfnDataSentNotify(pThis->pDrvSerialPort);
+
+            /*
+             * Sleep a bit to avoid excessive I/O loop CPU usage, timing is not important in
+             * this mode.
+             */
+            PDMR3ThreadSleep(pThread, 100);
+        }
+    }
+}
+
+
+/**
+ * I/O thread loop.
+ *
+ * @returns VINF_SUCCESS.
+ * @param   pDrvIns     PDM driver instance data.
+ * @param   pThread     The PDM thread data.
+ */
+static DECLCALLBACK(int) drvHostSerialIoThread(PPDMDRVINS pDrvIns, PPDMTHREAD pThread)
+{
+    PDRVHOSTSERIAL pThis = PDMINS_2_DATA(pDrvIns, PDRVHOSTSERIAL);
+
+    if (pThread->enmState == PDMTHREADSTATE_INITIALIZING)
+        return VINF_SUCCESS;
+
+    int rc = VINF_SUCCESS;
+    if (!pThis->fIoFatalErr)
+        rc = drvHostSerialIoLoopNormal(pDrvIns, pThis, pThread);
+
+    if (   RT_FAILURE(rc)
+        || pThis->fIoFatalErr)
+        drvHostSerialIoLoopError(pThis, pThread);
 
     return VINF_SUCCESS;
 }
@@ -562,11 +669,68 @@ static DECLCALLBACK(int) drvHostSerialWakeupIoThread(PPDMDRVINS pDrvIns, PPDMTHR
     RT_NOREF(pThread);
     PDRVHOSTSERIAL pThis = PDMINS_2_DATA(pDrvIns, PDRVHOSTSERIAL);
 
-    return RTSerialPortEvtPollInterrupt(pThis->hSerialPort);
+    return drvHostSerialWakeupIoThread(pThis);
 }
 
 
 /* -=-=-=-=- driver interface -=-=-=-=- */
+
+/**
+ * @callback_method_impl{FNPDMDRVRESUME}
+ */
+static DECLCALLBACK(void) drvHostSerialResume(PPDMDRVINS pDrvIns)
+{
+    PDRVHOSTSERIAL pThis = PDMINS_2_DATA(pDrvIns, PDRVHOSTSERIAL);
+
+    if (RT_UNLIKELY(pThis->fIoFatalErr))
+    {
+        /* Try to reopen the device and set the old config. */
+        uint32_t fOpenFlags =   RTSERIALPORT_OPEN_F_READ
+                              | RTSERIALPORT_OPEN_F_WRITE
+                              | RTSERIALPORT_OPEN_F_SUPPORT_STATUS_LINE_MONITORING
+                              | RTSERIALPORT_OPEN_F_DETECT_BREAK_CONDITION;
+        int rc = RTSerialPortOpen(&pThis->hSerialPort, pThis->pszDevicePath, fOpenFlags);
+        if (rc == VERR_NOT_SUPPORTED)
+        {
+            /*
+             * For certain devices (or pseudo terminals) status line monitoring does not work
+             * so try again without it.
+             */
+            fOpenFlags &= ~RTSERIALPORT_OPEN_F_SUPPORT_STATUS_LINE_MONITORING;
+            rc = RTSerialPortOpen(&pThis->hSerialPort, pThis->pszDevicePath, fOpenFlags);
+        }
+
+        if (RT_SUCCESS(rc))
+        {
+            /* Set the config which is currently active. */
+            rc = RTSerialPortCfgSet(pThis->hSerialPort, &pThis->Cfg, NULL);
+            if (RT_FAILURE(rc))
+                LogRelMax(10, ("HostSerial#%d: Setting the active serial port config failed with error %Rrc during VM resume; continuing.\n", pDrvIns->iInstance, rc));
+            /* Reset the I/O error flag on success to resume the normal I/O thread loop. */
+            ASMAtomicXchgBool(&pThis->fIoFatalErr, false);
+        }
+    }
+}
+
+
+/**
+ * @callback_method_impl{FNPDMDRVSUSPEND}
+ */
+static DECLCALLBACK(void) drvHostSerialSuspend(PPDMDRVINS pDrvIns)
+{
+    PDRVHOSTSERIAL pThis = PDMINS_2_DATA(pDrvIns, PDRVHOSTSERIAL);
+
+    if (RT_UNLIKELY(pThis->fIoFatalErr))
+    {
+        /* Close the device and try reopening it on resume. */
+        if (pThis->hSerialPort != NIL_RTSERIALPORT)
+        {
+            RTSerialPortClose(pThis->hSerialPort);
+            pThis->hSerialPort = NIL_RTSERIALPORT;
+        }
+    }
+}
+
 
 /**
  * Destruct a char driver instance.
@@ -586,6 +750,12 @@ static DECLCALLBACK(void) drvHostSerialDestruct(PPDMDRVINS pDrvIns)
     {
         RTSerialPortClose(pThis->hSerialPort);
         pThis->hSerialPort = NIL_RTSERIALPORT;
+    }
+
+    if (pThis->hSemEvtIoFatalErr != NIL_RTSEMEVENT)
+    {
+        RTSemEventDestroy(pThis->hSemEvtIoFatalErr);
+        pThis->hSemEvtIoFatalErr = NIL_RTSEMEVENT;
     }
 
     if (pThis->pszDevicePath)
@@ -619,6 +789,8 @@ static DECLCALLBACK(int) drvHostSerialConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pC
     pThis->offWrite                              = 0;
     pThis->offRead                               = 0;
     pThis->cbReadBuf                             = 0;
+    pThis->fIoFatalErr                           = false;
+    pThis->hSemEvtIoFatalErr                     = NIL_RTSEMEVENT;
     /* IBase. */
     pDrvIns->IBase.pfnQueryInterface             = drvHostSerialQueryInterface;
     /* ISerialConnector. */
@@ -683,6 +855,10 @@ static DECLCALLBACK(int) drvHostSerialConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pC
         }
     }
 
+    rc = RTSemEventCreate(&pThis->hSemEvtIoFatalErr);
+    if (RT_FAILURE(rc))
+        return PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS, N_("HostSerial#%d failed to create event semaphore"), pDrvIns->iInstance);
+
     /*
      * Get the ISerialPort interface of the above driver/device.
      */
@@ -744,9 +920,9 @@ const PDMDRVREG g_DrvHostSerial =
     /* pfnReset */
     NULL,
     /* pfnSuspend */
-    NULL,
+    drvHostSerialSuspend,
     /* pfnResume */
-    NULL,
+    drvHostSerialResume,
     /* pfnAttach */
     NULL,
     /* pfnDetach */
