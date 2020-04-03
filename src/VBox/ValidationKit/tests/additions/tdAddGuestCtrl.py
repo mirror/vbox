@@ -1335,7 +1335,7 @@ class tdTestResultSession(tdTestResult):
         tdTestResult.__init__(self, fRc = fRc);
         self.cNumSessions = cNumSessions;
 
-class tdDebugSettings():
+class tdDebugSettings(object):
     """
     Contains local test debug settings.
     """
@@ -1522,7 +1522,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
             return SubTstDrvAddGuestCtrl.getGuestSystemDir(oTestVm) + '\\DOSCALL1.DLL';
         return "/bin/sh";
 
-    def prepareGuestForDebugging(self, oSession, oTxsSession, oTestVm):
+    def prepareGuestForDebugging(self, oSession, oTxsSession, oTestVm): # pylint: disable=unused-argument
         """
         Prepares a guest for (manual) debugging.
 
