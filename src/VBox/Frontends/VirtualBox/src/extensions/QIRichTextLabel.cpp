@@ -16,6 +16,7 @@
  */
 
 /* Qt includes: */
+#include <QtMath>
 #include <QUrl>
 #include <QVBoxLayout>
 
@@ -114,11 +115,26 @@ void QIRichTextLabel::setText(const QString &strText)
 
     /* Get corresponding QTextDocument: */
     QTextDocument *pTextDocument = m_pTextEdit->document();
-    /* Adjust text-edit size: */
-    pTextDocument->adjustSize();
-    /* Get corresponding QTextDocument size: */
-    QSize size = pTextDocument->size().toSize();
+
+    // WORKAROUND:
+    // Ok, here is the trick.  In Qt 5.6.x initial QTextDocument size is always 0x0
+    // even if contents present.  To make QTextDocument calculate initial size we
+    // need to pass it some initial text-width, that way size should be calualated
+    // on the basis of passed width.  No idea why but in Qt 5.6.x first calculated
+    // size doesn't actually linked to initially passed text-width, somehow it
+    // always have 640px width and various height which depends on currently set
+    // contents.  So, we just using 640px as initial text-width.
+    pTextDocument->setTextWidth(640);
+
+    /* Now get that initial size which is 640xY, and propose new text-width as 4/3
+     * of hypothetical width current content would have laid out as square: */
+    const QSize oldSize = pTextDocument->size().toSize();
+    const int iProposedWidth = qSqrt(oldSize.width() * oldSize.height()) * 4 / 3;
+    pTextDocument->setTextWidth(iProposedWidth);
+
+    /* Get effective QTextDocument size: */
+    const QSize newSize = pTextDocument->size().toSize();
 
     /* Set minimum text width to corresponding value: */
-    setMinimumTextWidth(m_iMinimumTextWidth == 0 ? size.width() : m_iMinimumTextWidth);
+    setMinimumTextWidth(m_iMinimumTextWidth == 0 ? newSize.width() : m_iMinimumTextWidth);
 }
