@@ -716,8 +716,8 @@ class ConsoleEventHandlerBase(EventHandlerBase):
             except:
                 reporter.logXcpt();
         ## @todo implement the other events.
-        if  eType != vboxcon.VBoxEventType_OnMousePointerShapeChanged \
-        and eType != vboxcon.VBoxEventType_OnCursorPositionChanged:
+        if eType not in (vboxcon.VBoxEventType_OnMousePointerShapeChanged,
+                         vboxcon.VBoxEventType_OnCursorPositionChanged):
             if eType in self.dEventNo2Name:
                 reporter.log2('%s(%s)/%s' % (self.dEventNo2Name[eType], str(eType), self.sName));
             else:
