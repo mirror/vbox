@@ -2722,7 +2722,7 @@ endif
 
 # Figures the pylint version.
 VBOX_PYLINT_FIGURE_VERSION = $(shell $(1) --version 2> /dev/null \
-	| $(SED_EXT) -n -e 's/pylint-[^ \t]*/pylint/' \
+	| $(SED_EXT) -n -e 's/pylint-[^[:blank:]]*/pylint/' \
 	-e 's|^ *pylint *\([0-9][0-9]*\).\([0-9][0-9]*\)\.\([0-9][0-9]*\).*$(DOLLAR)|$$(expr \1 * 10000 + \2 * 100 + \3)|p' )
 
 # Java stuff.
