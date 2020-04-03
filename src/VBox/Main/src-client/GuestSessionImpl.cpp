@@ -1496,7 +1496,7 @@ int GuestSession::i_fileOpenEx(const com::Utf8Str &aPath, FileAccessMode_T aAcce
     /* Combine and validate flags. */
     uint32_t fOpenEx = 0;
     for (size_t i = 0; i < aFlags.size(); i++)
-        fOpenEx = aFlags[i];
+        fOpenEx |= aFlags[i];
     if (fOpenEx)
         return VERR_INVALID_PARAMETER; /* FileOpenExFlag not implemented yet. */
     openInfo.mfOpenEx = fOpenEx;
@@ -3771,10 +3771,6 @@ HRESULT GuestSession::fileOpenEx(const com::Utf8Str &aPath, FileAccessMode_T aAc
 
     LogFlowThisFuncEnter();
 
-    GuestFileOpenInfo openInfo;
-    openInfo.mFilename = aPath;
-    openInfo.mCreationMode = aCreationMode;
-
     /* Validate aAccessMode. */
     switch (aAccessMode)
     {
@@ -3783,7 +3779,6 @@ HRESULT GuestSession::fileOpenEx(const com::Utf8Str &aPath, FileAccessMode_T aAc
         case FileAccessMode_WriteOnly:
             RT_FALL_THRU();
         case FileAccessMode_ReadWrite:
-            openInfo.mAccessMode = aAccessMode;
             break;
         case FileAccessMode_AppendOnly:
             RT_FALL_THRU();
@@ -3807,7 +3802,6 @@ HRESULT GuestSession::fileOpenEx(const com::Utf8Str &aPath, FileAccessMode_T aAc
         case FileOpenAction_OpenExistingTruncated:
             RT_FALL_THRU();
         case FileOpenAction_AppendOrCreate:
-            openInfo.mOpenAction = aOpenAction;
             break;
         default:
             return setError(E_INVALIDARG, tr("Unknown FileOpenAction value %u (%#x)"), aAccessMode, aAccessMode);
@@ -3817,7 +3811,6 @@ HRESULT GuestSession::fileOpenEx(const com::Utf8Str &aPath, FileAccessMode_T aAc
     switch (aSharingMode)
     {
         case FileSharingMode_All:
-            openInfo.mSharingMode = aSharingMode;
             break;
         case FileSharingMode_Read:
         case FileSharingMode_Write:
@@ -3834,10 +3827,9 @@ HRESULT GuestSession::fileOpenEx(const com::Utf8Str &aPath, FileAccessMode_T aAc
     /* Combine and validate flags. */
     uint32_t fOpenEx = 0;
     for (size_t i = 0; i < aFlags.size(); i++)
-        fOpenEx = aFlags[i];
+        fOpenEx |= aFlags[i];
     if (fOpenEx)
         return setError(E_INVALIDARG, tr("Unsupported FileOpenExFlag value(s) in aFlags (%#x)"), fOpenEx);
-    openInfo.mfOpenEx = fOpenEx;
 
     ComObjPtr <GuestFile> pFile;
     int rcGuest = VERR_IPE_UNINITIALIZED_STATUS;
