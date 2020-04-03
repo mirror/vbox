@@ -155,18 +155,20 @@ static int rtPollNoResumeWorker(RTPOLLSETINTERNAL *pThis, uint64_t MsStart, RTMS
 {
     int rc;
 
-    if (RT_UNLIKELY(pThis->cHandles == 0 && cMillies == RT_INDEFINITE_WAIT))
-        return VERR_DEADLOCK;
-
     /*
      * Check for special case, RTThreadSleep...
      */
     uint32_t const  cHandles = pThis->cHandles;
     if (cHandles == 0)
     {
-        rc = RTThreadSleep(cMillies);
-        if (RT_SUCCESS(rc))
-            rc = VERR_TIMEOUT;
+        if (RT_LIKELY(cMillies != RT_INDEFINITE_WAIT))
+        {
+            rc = RTThreadSleep(cMillies);
+            if (RT_SUCCESS(rc))
+                rc = VERR_TIMEOUT;
+        }
+        else
+            rc = VERR_DEADLOCK;
         return rc;
     }
 
