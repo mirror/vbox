@@ -1165,6 +1165,7 @@ ifdef VBOX_WITH_COMBINED_PACKAGE
  endif
 else
  RePackScripts_SOURCES += \
+ 	$(RePackScripts_0_OUTDIR)/Single-0-All.cmd \
  	$(RePackScripts_0_OUTDIR)/Single-1-Prepare.cmd \
  	$(RePackScripts_0_OUTDIR)/Single-3-Repack.cmd
 endif
@@ -1183,6 +1184,7 @@ $(call VBOX_EDIT_VERSION_AND_BUILD_RULE_FN,RePackScripts,Scripts/Combined-1-Prep
 $(call VBOX_EDIT_VERSION_AND_BUILD_RULE_FN,RePackScripts,Scripts/Combined-3-Repack.cmd,Combined-3-Repack.cmd)
 $(call VBOX_EDIT_VERSION_AND_BUILD_RULE_FN,RePackScripts,Scripts/Combined-3-RepackAdditions.cmd,Combined-3-RepackAdditions.cmd)
 else
+$(call VBOX_EDIT_VERSION_AND_BUILD_RULE_FN,RePackScripts,Scripts/Single-0-All.cmd,Single-0-All.cmd)
 $(call VBOX_EDIT_VERSION_AND_BUILD_RULE_FN,RePackScripts,Scripts/Single-1-Prepare.cmd,Single-1-Prepare.cmd)
 $(call VBOX_EDIT_VERSION_AND_BUILD_RULE_FN,RePackScripts,Scripts/Single-3-Repack.cmd,Single-3-Repack.cmd)
 endif
