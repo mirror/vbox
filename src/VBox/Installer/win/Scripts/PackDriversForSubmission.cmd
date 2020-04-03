@@ -189,7 +189,7 @@ if ".%_MY_OPT_GADIR%" == "."        set _MY_OPT_GADIR=%_MY_OPT_BINDIR%\additions
 if not exist "%_MY_OPT_GADIR%"      goto error_additions_does_not_exist
 :no_additions_validation
 
-if ".%_MY_OPT_OUTPUT%" == "."       set _MY_OPT_OUTPUT=VBoxDrivers-6.1.0_RC1_SPBr135037-%_MY_OPT_ARCH%.cab
+if ".%_MY_OPT_OUTPUT%" == "."       set _MY_OPT_OUTPUT=VBoxDrivers-@VBOX_VERSION_STRING@r@VBOX_SVN_REV@-%_MY_OPT_ARCH%.cab
 if exist "%_MY_OPT_OUTPUT%"         goto error_output_exists
 
 if ".%_MY_OPT_DDF_FILE%" == "."     set _MY_OPT_DDF_FILE=%_MY_OPT_OUTPUT%.ddf
