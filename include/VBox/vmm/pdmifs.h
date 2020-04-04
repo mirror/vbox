@@ -1131,7 +1131,7 @@ typedef struct PDMISTREAM
      * @retval  VERR_TIMEOUT     if the maximum waiting time was reached.
      * @param   pInterface      Pointer to the interface structure containing the called function pointer.
      * @param   fEvts           The events to poll for, see RTPOLL_EVT_XXX.
-     * @param   *pfEvts         Where to return details about the events that occurred.
+     * @param   pfEvts          Where to return details about the events that occurred.
      * @param   cMillies        Number of milliseconds to wait.  Use
      *                          RT_INDEFINITE_WAIT to wait for ever.
      */
