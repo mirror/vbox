@@ -705,7 +705,7 @@ RTDECL(void) rtR3MemFree(const char *pszOp, RTMEMTYPE enmType, void *pv, size_t 
                   ("cbUser=%#zx cbUnaligned=%#zx\n", cbUser, pBlock->cbUnaligned));
         if (enmType == RTMEMTYPE_RTMEMFREEZ)
             RT_BZERO(pv, pBlock->cbUnaligned);
-#ifdef RTALLOC_EFENCE_FREE_FILL
+# ifdef RTALLOC_EFENCE_FREE_FILL
         else
             memset(pv, RTALLOC_EFENCE_FREE_FILL, pBlock->cbUnaligned);
 # endif
@@ -774,6 +774,8 @@ RTDECL(void) rtR3MemFree(const char *pszOp, RTMEMTYPE enmType, void *pv, size_t 
      * Let's just expand the E-fence to the first page of the user bit
      * since we know that it's around.
      */
+    if (enmType == RTMEMTYPE_RTMEMFREEZ)
+        RT_BZERO(pv, cbUser);
     int rc = RTMemProtect((void *)((uintptr_t)pv & ~(uintptr_t)PAGE_OFFSET_MASK), PAGE_SIZE, RTMEM_PROT_NONE);
     if (RT_FAILURE(rc))
         rtmemComplain(pszOp, "RTMemProtect(%p, PAGE_SIZE, RTMEM_PROT_NONE) -> %d\n", (void *)((uintptr_t)pv & ~(uintptr_t)PAGE_OFFSET_MASK), rc);
