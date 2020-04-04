@@ -1629,7 +1629,8 @@ static DECLCALLBACK(int) vgsvcGstCtrlSessionThread(RTTHREAD hThreadSelf, void *p
     VGSvcVerbose(3, "Reporting final status %RU32 of session ID=%RU32\n", uSessionStatus, idSession);
     Assert(uSessionStatus != GUEST_SESSION_NOTIFYTYPE_UNDEFINED);
 
-    VBGLR3GUESTCTRLCMDCTX ctx = { g_idControlSvcClient, VBOX_GUESTCTRL_CONTEXTID_MAKE_SESSION(idSession)};
+    VBGLR3GUESTCTRLCMDCTX ctx = { idClient, VBOX_GUESTCTRL_CONTEXTID_MAKE_SESSION(idSession),
+                                  0 /* uProtocol, unused */, 0 /* uNumParms, unused */ };
     rc2 = VbglR3GuestCtrlSessionNotify(&ctx, uSessionStatus, uSessionRc);
     if (RT_FAILURE(rc2))
         VGSvcError("Reporting final status of session ID=%RU32 failed with rc=%Rrc\n", idSession, rc2);
