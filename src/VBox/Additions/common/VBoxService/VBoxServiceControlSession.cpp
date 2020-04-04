@@ -1622,20 +1622,21 @@ static DECLCALLBACK(int) vgsvcGstCtrlSessionThread(RTTHREAD hThreadSelf, void *p
         uSessionStatus = GUEST_SESSION_NOTIFYTYPE_TEN;
     }
 
-    VGSvcVerbose(3, "Guest session ID=%RU32 thread ended with sessionStatus=%RU32, sessionRc=%Rrc\n",
-                 idSession, uSessionStatus, uSessionRc);
+    /* Make sure to set stopped state before we let the host know. */
+    ASMAtomicWriteBool(&pThread->fStopped, true);
 
-    /*
-     * Report final status.
-     */
+    /* Report final status, regardless if we failed to wait above, so that the host knows what's going on. */
+    VGSvcVerbose(3, "Reporting final status %RU32 of session ID=%RU32\n", uSessionStatus, idSession);
     Assert(uSessionStatus != GUEST_SESSION_NOTIFYTYPE_UNDEFINED);
-    VBGLR3GUESTCTRLCMDCTX ctx = { idClient, VBOX_GUESTCTRL_CONTEXTID_MAKE_SESSION(idSession),
-                                  0 /* uProtocol, unused */, 0 /* uNumParms, unused */ };
+
+    VBGLR3GUESTCTRLCMDCTX ctx = { g_idControlSvcClient, VBOX_GUESTCTRL_CONTEXTID_MAKE_SESSION(idSession)};
     rc2 = VbglR3GuestCtrlSessionNotify(&ctx, uSessionStatus, uSessionRc);
     if (RT_FAILURE(rc2))
-        VGSvcError("Reporting session ID=%RU32 final status failed with rc=%Rrc\n", idSession, rc2);
+        VGSvcError("Reporting final status of session ID=%RU32 failed with rc=%Rrc\n", idSession, rc2);
 
-    VGSvcVerbose(3, "Session ID=%RU32 thread ending\n", idSession);
+    VGSvcVerbose(3, "Thread for session ID=%RU32 ended with sessionStatus=%RU32, sessionRc=%Rrc\n",
+                 idSession, uSessionStatus, uSessionRc);
+
     return VINF_SUCCESS;
 }
 
@@ -2389,9 +2390,10 @@ int VGSvcGstCtrlSessionThreadCreate(PRTLISTANCHOR pList, const PVBOXSERVICECTRLS
     PVBOXSERVICECTRLSESSIONTHREAD pSessionCur;
     RTListForEach(pList, pSessionCur, VBOXSERVICECTRLSESSIONTHREAD, Node)
     {
-        AssertMsgReturn(pSessionCur->StartupInfo.uSessionID != pSessionStartupInfo->uSessionID,
-                        ("Guest session thread ID=%RU32 (%p) already exists when it should not\n",
-                         pSessionCur->StartupInfo.uSessionID, pSessionCur), VERR_ALREADY_EXISTS);
+        AssertMsgReturn(   pSessionCur->fStopped == true
+                        || pSessionCur->StartupInfo.uSessionID != pSessionStartupInfo->uSessionID,
+                        ("Guest session thread ID=%RU32 already exists (fStopped=%RTbool)\n",
+                         pSessionCur->StartupInfo.uSessionID, pSessionCur->fStopped), VERR_ALREADY_EXISTS);
     }
 #endif
 
@@ -2544,11 +2546,19 @@ int VGSvcGstCtrlSessionThreadWait(PVBOXSERVICECTRLSESSIONTHREAD pThread, uint32_
         int rcThread;
         rc = RTThreadWait(pThread->Thread, uTimeoutMS, &rcThread);
         if (RT_SUCCESS(rc))
+        {
+            AssertMsg(pThread->fStopped, ("Thread of session ID=%RU32 not in stopped state when it should\n",
+                      pThread->StartupInfo.uSessionID));
+
             VGSvcVerbose(3, "Session thread ID=%RU32 ended with rc=%Rrc\n", pThread->StartupInfo.uSessionID, rcThread);
+        }
         else
             VGSvcError("Waiting for session thread ID=%RU32 to close failed with rc=%Rrc\n", pThread->StartupInfo.uSessionID, rc);
     }
+    else
+        VGSvcVerbose(3, "Thread for session ID=%RU32 not in started state, skipping wait\n", pThread->StartupInfo.uSessionID);
 
+    LogFlowFuncLeaveRC(rc);
     return rc;
 }
 
@@ -2564,14 +2574,21 @@ int VGSvcGstCtrlSessionThreadDestroy(PVBOXSERVICECTRLSESSIONTHREAD pThread, uint
 {
     AssertPtrReturn(pThread, VERR_INVALID_POINTER);
 
+    const uint32_t uSessionID = pThread->StartupInfo.uSessionID;
+
+    VGSvcVerbose(3, "Destroying session ID=%RU32 ...\n", uSessionID);
+
     int rc = VGSvcGstCtrlSessionThreadWait(pThread, 5 * 60 * 1000 /* 5 minutes timeout */, fFlags);
+    if (RT_SUCCESS(rc))
+    {
+        /* Remove session from list and destroy object. */
+        RTListNodeRemove(&pThread->Node);
 
-    /* Remove session from list and destroy object. */
-    RTListNodeRemove(&pThread->Node);
+        RTMemFree(pThread);
+        pThread = NULL;
+    }
 
-    RTMemFree(pThread);
-    pThread = NULL;
-
+    VGSvcVerbose(3, "Destroyed session ID=%RU32 with %Rrc\n", uSessionID, rc);
     return rc;
 }
 
