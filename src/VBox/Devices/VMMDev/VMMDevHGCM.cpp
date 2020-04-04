@@ -351,7 +351,7 @@ static void vmmdevR3HgcmCmdFree(PPDMDEVINS pDevIns, PVMMDEVCC pThisCC, PVBOXHGCM
                 VBOXHGCMGUESTPARM * const pGuestParm = &pCmd->u.call.paGuestParms[i];
 
                 if (pHostParm->type == VBOX_HGCM_SVC_PARM_PTR)
-                    RTMemFree(pHostParm->u.pointer.addr);
+                    RTMemFreeZ(pHostParm->u.pointer.addr, pHostParm->u.pointer.size);
 
                 if (   pGuestParm->enmType == VMMDevHGCMParmType_LinAddr_In
                     || pGuestParm->enmType == VMMDevHGCMParmType_LinAddr_Out
@@ -1590,7 +1590,7 @@ static int hgcmCompletedWorker(PPDMIHGCMPORT pInterface, int32_t result, PVBOXHG
                 /* Now, when the command was removed from the internal list, notify the guest. */
                 VMMDevNotifyGuest(pDevIns, pThis, pThisCC, VMMDEV_EVENT_HGCM);
 
-                RTMemFree(pHeader);
+                RTMemFreeZ(pHeader, pCmd->cbRequest);
             }
             else
             {

@@ -3082,7 +3082,7 @@ vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_
                 if (!pRequestHeaderFree)
                 { /* likely */ }
                 else
-                    RTMemFree(pRequestHeaderFree);
+                    RTMemFreeZ(pRequestHeaderFree, RT_MAX(requestHeader.size, 512));
                 return rcRet;
             }
 
