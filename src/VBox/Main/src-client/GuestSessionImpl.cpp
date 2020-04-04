@@ -1856,6 +1856,7 @@ int GuestSession::i_onSessionStatusChange(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXG
     {
         case GUEST_SESSION_NOTIFYTYPE_ERROR:
             sessionStatus = GuestSessionStatus_Error;
+            LogRel(("Guest Control: Error starting session #%RU32 (%Rrc) \n", mData.mSession.mID, rcGuest));
             break;
 
         case GUEST_SESSION_NOTIFYTYPE_STARTED:
@@ -1879,24 +1880,29 @@ int GuestSession::i_onSessionStatusChange(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXG
                 }
             }
 #endif
+            LogRel(("Guest Control: Session #%RU32 was successfully started\n", mData.mSession.mID));
             break;
 
         case GUEST_SESSION_NOTIFYTYPE_TEN:
         case GUEST_SESSION_NOTIFYTYPE_TES:
         case GUEST_SESSION_NOTIFYTYPE_TEA:
             sessionStatus = GuestSessionStatus_Terminated;
+            LogRel(("Guest Control: Session #%RU32 was successfully terminated\n", mData.mSession.mID));
             break;
 
         case GUEST_SESSION_NOTIFYTYPE_TOK:
             sessionStatus = GuestSessionStatus_TimedOutKilled;
+            LogRel(("Guest Control: Session #%RU32 timed out and was killed\n", mData.mSession.mID));
             break;
 
         case GUEST_SESSION_NOTIFYTYPE_TOA:
             sessionStatus = GuestSessionStatus_TimedOutAbnormally;
+            LogRel(("Guest Control: Session #%RU32 timed out and was not killed successfully\n", mData.mSession.mID));
             break;
 
         case GUEST_SESSION_NOTIFYTYPE_DWN:
             sessionStatus = GuestSessionStatus_Down;
+            LogRel(("Guest Control: Session #%RU32 got killed as guest service/OS is down\n", mData.mSession.mID));
             break;
 
         case GUEST_SESSION_NOTIFYTYPE_UNDEFINED:
