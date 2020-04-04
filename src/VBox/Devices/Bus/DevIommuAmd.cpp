@@ -353,6 +353,24 @@ RT_BF_ASSERT_COMPILE_CHECKS(IOMMU_BF_MSI_MAP_CAPHDR_, UINT32_C(0), UINT32_MAX,
 #define IOMMU_MMIO_REGION_SIZE                      _16K            /**< Size of the MMIO region in bytes. */
 /** @} */
 
+/**
+ * Acquires the IOMMU lock or returns.
+ */
+#define IOMMU_LOCK_RET(a_pDevIns, a_pThis, a_rcBusy)  \
+    do { \
+        int rcLock = PDMDevHlpCritSectEnter((a_pDevIns), &(a_pThis)->CritSect, (a_rcBusy)); \
+        if (RT_LIKELY(rcLock == VINF_SUCCESS)) \
+        { /* likely */ } \
+        else \
+            return rcLock; \
+    } while (0)
+
+/**
+ * Releases the IOMMU lock.
+ */
+#define IOMMU_UNLOCK(a_pDevIns, a_pThis) \
+    do { PDMDevHlpCritSectLeave((a_pDevIns), &(a_pThis)->CritSect); } while (0)
+
 
 /*********************************************************************************************************************************
 *   Structures and Typedefs                                                                                                      *
@@ -1963,13 +1981,12 @@ typedef CTX_SUFF(PIOMMU) PIOMMUCC;
 
 #ifndef VBOX_DEVICE_STRUCT_TESTCASE
 
-static VBOXSTRICTRC iommuAmdReadRegister(PCIOMMU pThis, uint32_t off, uint8_t cb, uint64_t *puResult)
+static VBOXSTRICTRC iommuAmdReadRegister(PCIOMMU pThis, uint32_t off, uint64_t *puResult)
 {
     Assert(off < _16K);
-    Assert(cb == 4 || cb == 8);
-    Assert(cb == 4 || !(off & 7));
-    Assert(cb == 8 || !(off & 3));
+    Assert(!(off & 7) || !(off & 3));
 
+    /** @todo locking? */
     switch (off)
     {
         case IOMMU_MMIO_OFF_DEV_TAB_BAR:          *puResult = pThis->DevTabBaseAddr.u64;        break;
@@ -2060,6 +2077,8 @@ static VBOXSTRICTRC iommuAmdReadRegister(PCIOMMU pThis, uint32_t off, uint8_t cb
         case IOMMU_MMIO_OFF_SMI_FLT_FIRST:
         case IOMMU_MMIO_OFF_SMI_FLT_LAST:
         {
+            Log((IOMMU_LOG_PFX ": iommuAmdReadRegister: Reading unsupported register: SMI filter %u\n",
+                 (off - IOMMU_MMIO_OFF_SMI_FLT_FIRST) >> 3));
             *puResult = 0;
             break;
         }
@@ -2067,11 +2086,12 @@ static VBOXSTRICTRC iommuAmdReadRegister(PCIOMMU pThis, uint32_t off, uint8_t cb
         /* Unknown */
         default:
         {
+            Log((IOMMU_LOG_PFX ": iommuAmdReadRegister: Trying to read unknown register at %u (%#x)\n", off, off));
             *puResult = 0;
-            ASSERT_GUEST_MSG_FAILED((IOMMU_LOG_PFX ": iommuAmdReadRegister: Unknown offset %u (cb=%u)\n", off, cb));
-            break;
+            return VINF_IOM_MMIO_UNUSED_00;
         }
     }
+    return VINF_SUCCESS;
 }
 
 
@@ -2093,10 +2113,12 @@ static DECLCALLBACK(VBOXSTRICTRC) iommuAmdMmioRead(PPDMDEVINS pDevIns, void *pvU
 {
     NOREF(pvUser);
     Assert(cb == 4 || cb == 8);
+    Assert(cb == 4 || !(off & 7));
+    Assert(cb == 8 || !(off & 3));
 
-    uint64_t uResult = 0;
-    PIOMMU   pThis   = PDMDEVINS_2_DATA(pDevIns, PIOMMU);
-    VBOXSTRICTRC rcStrict = iommuAmdReadRegister(pThis, off, cb, &uResult);
+    uint64_t uResult  = 0;
+    PIOMMU pThis = PDMDEVINS_2_DATA(pDevIns, PIOMMU);
+    VBOXSTRICTRC rcStrict = iommuAmdReadRegister(pThis, off, &uResult);
     if (cb == 8)
         *(uint64_t *)pv = uResult;
     else
