@@ -3172,6 +3172,7 @@ DECLCALLBACK(int) Display::i_displayVBVAEnable(PPDMIDISPLAYCONNECTOR pInterface,
 
     PDRVMAINDISPLAY pDrv = PDMIDISPLAYCONNECTOR_2_MAINDISPLAY(pInterface);
     Display *pThis = pDrv->pDisplay;
+    AssertReturn(uScreenId < pThis->mcMonitors, VERR_INVALID_PARAMETER);
 
     if (pThis->maFramebuffers[uScreenId].fVBVAEnabled)
     {
@@ -3200,6 +3201,7 @@ DECLCALLBACK(void) Display::i_displayVBVADisable(PPDMIDISPLAYCONNECTOR pInterfac
 
     PDRVMAINDISPLAY pDrv = PDMIDISPLAYCONNECTOR_2_MAINDISPLAY(pInterface);
     Display *pThis = pDrv->pDisplay;
+    AssertReturnVoid(uScreenId < pThis->mcMonitors);
 
     DISPLAYFBINFO *pFBInfo = &pThis->maFramebuffers[uScreenId];
 
@@ -3263,7 +3265,10 @@ DECLCALLBACK(void) Display::i_displayVBVAUpdateProcess(PPDMIDISPLAYCONNECTOR pIn
 
     PDRVMAINDISPLAY pDrv = PDMIDISPLAYCONNECTOR_2_MAINDISPLAY(pInterface);
     Display *pThis = pDrv->pDisplay;
-    DISPLAYFBINFO *pFBInfo = &pThis->maFramebuffers[uScreenId];
+    DISPLAYFBINFO *pFBInfo;
+    AssertReturnVoid(uScreenId < pThis->mcMonitors);
+
+    pFBInfo = &pThis->maFramebuffers[uScreenId];
 
     if (pFBInfo->fDefaultFormat)
     {
@@ -3346,7 +3351,10 @@ DECLCALLBACK(void) Display::i_displayVBVAUpdateEnd(PPDMIDISPLAYCONNECTOR pInterf
 
     PDRVMAINDISPLAY pDrv = PDMIDISPLAYCONNECTOR_2_MAINDISPLAY(pInterface);
     Display *pThis = pDrv->pDisplay;
-    DISPLAYFBINFO *pFBInfo = &pThis->maFramebuffers[uScreenId];
+    DISPLAYFBINFO *pFBInfo;
+    AssertReturnVoid(uScreenId < pThis->mcMonitors);
+
+    pFBInfo = &pThis->maFramebuffers[uScreenId];
 
     /** @todo handleFramebufferUpdate (uScreenId,
      *                                x - pThis->maFramebuffers[uScreenId].xOrigin,
