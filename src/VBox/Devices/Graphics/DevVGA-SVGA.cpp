@@ -2808,7 +2808,7 @@ static void vmsvgaR3InstallNewCursor(PVGASTATECC pThisCC, PVMSVGAR3STATE pSVGASt
     AssertRC(rc);
 
     if (pSVGAState->Cursor.fActive)
-        RTMemFree(pSVGAState->Cursor.pData);
+        RTMemFreeZ(pSVGAState->Cursor.pData, pSVGAState->Cursor.cbData);
 
     pSVGAState->Cursor.fActive  = true;
     pSVGAState->Cursor.xHotspot = xHot;
@@ -2977,7 +2977,7 @@ static void vmsvgaR3CmdDefineCursor(PVGASTATE pThis, PVGASTATECC pThisCC, PVMSVG
             }
             break;
         default:
-            RTMemFree(pbCopy);
+            RTMemFreeZ(pbCopy, cbCopy);
             AssertFailedReturnVoid();
     }
 
@@ -3057,7 +3057,7 @@ static void vmsvgaR3CmdDefineCursor(PVGASTATE pThis, PVGASTATECC pThisCC, PVMSVG
             }
             break;
         default:
-            RTMemFree(pbCopy);
+            RTMemFreeZ(pbCopy, cbCopy);
             AssertFailedReturnVoid();
     }
 
@@ -6181,7 +6181,7 @@ static void vmsvgaR3StateTerm(PVGASTATE pThis, PVMSVGAR3STATE pSVGAState)
 
     if (pSVGAState->Cursor.fActive)
     {
-        RTMemFree(pSVGAState->Cursor.pData);
+        RTMemFreeZ(pSVGAState->Cursor.pData, pSVGAState->Cursor.cbData);
         pSVGAState->Cursor.pData = NULL;
         pSVGAState->Cursor.fActive = false;
     }
