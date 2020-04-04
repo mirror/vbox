@@ -1629,7 +1629,8 @@ static DECLCALLBACK(int) vgsvcGstCtrlSessionThread(RTTHREAD hThreadSelf, void *p
      * Report final status.
      */
     Assert(uSessionStatus != GUEST_SESSION_NOTIFYTYPE_UNDEFINED);
-    VBGLR3GUESTCTRLCMDCTX ctx = { idClient, VBOX_GUESTCTRL_CONTEXTID_MAKE_SESSION(idSession) };
+    VBGLR3GUESTCTRLCMDCTX ctx = { idClient, VBOX_GUESTCTRL_CONTEXTID_MAKE_SESSION(idSession),
+                                  0 /* uProtocol, unused */, 0 /* uNumParms, unused */ };
     rc2 = VbglR3GuestCtrlSessionNotify(&ctx, uSessionStatus, uSessionRc);
     if (RT_FAILURE(rc2))
         VGSvcError("Reporting session ID=%RU32 final status failed with rc=%Rrc\n", idSession, rc2);
@@ -1737,7 +1738,8 @@ static RTEXITCODE vgsvcGstCtrlSessionSpawnWorker(PVBOXSERVICECTRLSESSION pSessio
          * Report started status.
          * If session status cannot be posted to the host for some reason, bail out.
          */
-        VBGLR3GUESTCTRLCMDCTX ctx = { idClient, VBOX_GUESTCTRL_CONTEXTID_MAKE_SESSION(pSession->StartupInfo.uSessionID) };
+        VBGLR3GUESTCTRLCMDCTX ctx = { idClient, VBOX_GUESTCTRL_CONTEXTID_MAKE_SESSION(pSession->StartupInfo.uSessionID),
+                                      0 /* uProtocol, unused */, 0 /* uNumParms, unused */ };
         rc = VbglR3GuestCtrlSessionNotify(&ctx, GUEST_SESSION_NOTIFYTYPE_STARTED, VINF_SUCCESS);
         if (RT_SUCCESS(rc))
         {
