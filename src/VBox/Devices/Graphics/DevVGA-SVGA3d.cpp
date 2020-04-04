@@ -364,7 +364,7 @@ int vmsvga3dSurfaceDestroy(PVGASTATECC pThisCC, uint32_t sid)
     if (pSurface->paMipmapLevels)
     {
         for (uint32_t i = 0; i < pSurface->cMipmapLevels; ++i)
-            RTMemFree(pSurface->paMipmapLevels[i].pSurfaceData);
+            RTMemFreeZ(pSurface->paMipmapLevels[i].pSurfaceData, pSurface->paMipmapLevels[i].cbSurface);
         RTMemFree(pSurface->paMipmapLevels);
     }
 
