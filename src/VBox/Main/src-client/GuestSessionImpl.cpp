@@ -1494,12 +1494,9 @@ int GuestSession::i_fileOpenEx(const com::Utf8Str &aPath, FileAccessMode_T aAcce
     openInfo.mSharingMode  = aSharingMode;
 
     /* Combine and validate flags. */
-    uint32_t fOpenEx = 0;
     for (size_t i = 0; i < aFlags.size(); i++)
-        fOpenEx |= aFlags[i];
-    if (fOpenEx)
-        return VERR_INVALID_PARAMETER; /* FileOpenExFlag not implemented yet. */
-    openInfo.mfOpenEx = fOpenEx;
+        openInfo.mfOpenEx |= aFlags[i];
+    /* Validation is done in i_fileOpen(). */
 
     return i_fileOpen(openInfo, pFile, prcGuest);
 }
@@ -1519,6 +1516,9 @@ int GuestSession::i_fileOpen(const GuestFileOpenInfo &openInfo, ComObjPtr<GuestF
             *prcGuest = VERR_NOT_SUPPORTED;
         return VERR_GSTCTL_GUEST_ERROR;
     }
+
+    if (!openInfo.IsValid())
+        return VERR_INVALID_PARAMETER;
 
     /* Create the directory object. */
     HRESULT hr = pFile.createObject();

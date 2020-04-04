@@ -635,6 +635,44 @@ struct GuestFileOpenInfo
         , mCreationMode(0)
         , mfOpenEx(0) { }
 
+    /**
+     * Validates a file open info.
+     *
+     * @returns \c true if valid, \c false if not.
+     */
+    bool IsValid(void) const
+    {
+        if (mfOpenEx) /** @todo Open flags not implemented yet. */
+            return false;
+
+        switch (mOpenAction)
+        {
+            case FileOpenAction_OpenExisting:
+                break;
+            case FileOpenAction_OpenOrCreate:
+                break;
+            case FileOpenAction_CreateNew:
+                break;
+            case FileOpenAction_CreateOrReplace:
+                break;
+            case FileOpenAction_OpenExistingTruncated:
+            {
+                if (   mAccessMode == FileAccessMode_ReadOnly
+                    || mAccessMode == FileAccessMode_AppendOnly
+                    || mAccessMode == FileAccessMode_AppendRead)
+                    return false;
+                break;
+            }
+            case FileOpenAction_AppendOrCreate: /* Deprecated, do not use. */
+                break;
+            default:
+                AssertFailedReturn(false);
+                break;
+        }
+
+        return true; /** @todo Do we need more checks here? */
+    }
+
     /** The filename. */
     Utf8Str                 mFilename;
     /** The file access mode. */
