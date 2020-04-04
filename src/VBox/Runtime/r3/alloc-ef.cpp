@@ -703,6 +703,7 @@ RTDECL(void) rtR3MemFree(const char *pszOp, RTMEMTYPE enmType, void *pv, size_t 
          */
         AssertMsg(enmType != RTMEMTYPE_RTMEMFREEZ || cbUser == pBlock->cbUnaligned,
                   ("cbUser=%#zx cbUnaligned=%#zx\n", cbUser, pBlock->cbUnaligned));
+        RT_NOREF(cbUser);
         if (enmType == RTMEMTYPE_RTMEMFREEZ)
             RT_BZERO(pv, pBlock->cbUnaligned);
 # ifdef RTALLOC_EFENCE_FREE_FILL
