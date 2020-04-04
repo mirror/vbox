@@ -350,20 +350,25 @@ static void vmmdevR3HgcmCmdFree(PPDMDEVINS pDevIns, PVMMDEVCC pThisCC, PVBOXHGCM
                 VBOXHGCMSVCPARM   * const pHostParm  = &pCmd->u.call.paHostParms[i];
                 VBOXHGCMGUESTPARM * const pGuestParm = &pCmd->u.call.paGuestParms[i];
 
-                if (pHostParm->type == VBOX_HGCM_SVC_PARM_PTR)
-                    RTMemFreeZ(pHostParm->u.pointer.addr, pHostParm->u.pointer.size);
-
                 if (   pGuestParm->enmType == VMMDevHGCMParmType_LinAddr_In
                     || pGuestParm->enmType == VMMDevHGCMParmType_LinAddr_Out
                     || pGuestParm->enmType == VMMDevHGCMParmType_LinAddr
                     || pGuestParm->enmType == VMMDevHGCMParmType_PageList
                     || pGuestParm->enmType == VMMDevHGCMParmType_ContiguousPageList)
                 {
+                    Assert(pHostParm->type == VBOX_HGCM_SVC_PARM_PTR);
                     if (pGuestParm->u.ptr.paPages != &pGuestParm->u.ptr.GCPhysSinglePage)
                         RTMemFree(pGuestParm->u.ptr.paPages);
+                    RTMemFreeZ(pHostParm->u.pointer.addr, pGuestParm->u.ptr.cbData);
+                }
+                else if (pGuestParm->enmType == VMMDevHGCMParmType_Embedded)
+                {
+                    Assert(pHostParm->type == VBOX_HGCM_SVC_PARM_PTR);
+                    RTMemFreeZ(pHostParm->u.pointer.addr, pGuestParm->u.ptr.cbData);
                 }
                 else if (pGuestParm->enmType == VMMDevHGCMParmType_NoBouncePageList)
                 {
+                    Assert(pHostParm->type == VBOX_HGCM_SVC_PARM_PAGES);
                     if (pGuestParm->u.Pages.paPgLocks)
                     {
                         if (pGuestParm->u.Pages.fLocked)
@@ -373,6 +378,8 @@ static void vmmdevR3HgcmCmdFree(PPDMDEVINS pDevIns, PVMMDEVCC pThisCC, PVBOXHGCM
                         pGuestParm->u.Pages.paPgLocks = NULL;
                     }
                 }
+                else
+                    Assert(pHostParm->type != VBOX_HGCM_SVC_PARM_PTR && pHostParm->type != VBOX_HGCM_SVC_PARM_PAGES);
             }
         }
 
@@ -706,7 +713,6 @@ static int vmmdevR3HgcmInitHostParameters(PPDMDEVINS pDevIns, PVBOXHGCMCMD pCmd,
             }
 
             case VMMDevHGCMParmType_PageList:
-                RT_FALL_THRU();
             case VMMDevHGCMParmType_LinAddr_In:
             case VMMDevHGCMParmType_LinAddr_Out:
             case VMMDevHGCMParmType_LinAddr:
