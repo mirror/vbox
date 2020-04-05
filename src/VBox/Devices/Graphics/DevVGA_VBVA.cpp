@@ -111,7 +111,7 @@ static void vbvaDataCleanup(VBVADATA *pVBVAData)
         pVBVAData->guest.pVBVA->hostFlags.u32SupportedOrders = 0;
     }
 
-    RTMemFree(pVBVAData->partialRecord.pu8);
+    RTMemFreeZ(pVBVAData->partialRecord.pu8, pVBVAData->partialRecord.cb);
 
     RT_ZERO(*pVBVAData);
     pVBVAData->u32VBVAOffset = HGSMIOFFSET_VOID;
@@ -765,7 +765,7 @@ static int vbvaMousePointerShape(PVGASTATECC pThisCC, VBVACONTEXT *pCtx,
         /* Reallocate memory buffer if necessary. */
         if (cbPointerData > pCtx->mouseShapeInfo.cbAllocated)
         {
-            RTMemFree(pCtx->mouseShapeInfo.pu8Shape);
+            RTMemFreeZ(pCtx->mouseShapeInfo.pu8Shape, pCtx->mouseShapeInfo.cbAllocated);
             pCtx->mouseShapeInfo.pu8Shape = NULL;
             pCtx->mouseShapeInfo.cbShape = 0;
 
@@ -2743,7 +2743,7 @@ void VBVAReset(PPDMDEVINS pDevIns, PVGASTATE pThis, PVGASTATECC pThisCC)
             vbvaDisable(pThis, pThisCC, pCtx, idScreen);
 
         pCtx->mouseShapeInfo.fSet = false;
-        RTMemFree(pCtx->mouseShapeInfo.pu8Shape);
+        RTMemFreeZ(pCtx->mouseShapeInfo.pu8Shape, pCtx->mouseShapeInfo.cbAllocated);
         pCtx->mouseShapeInfo.pu8Shape = NULL;
         pCtx->mouseShapeInfo.cbAllocated = 0;
         pCtx->mouseShapeInfo.cbShape = 0;
@@ -2856,7 +2856,7 @@ void VBVADestroy(PVGASTATECC pThisCC)
     {
         VBVACONTEXT *pCtx = (VBVACONTEXT *)HGSMIContext(pHgsmi);
         pCtx->mouseShapeInfo.fSet = false;
-        RTMemFree(pCtx->mouseShapeInfo.pu8Shape);
+        RTMemFreeZ(pCtx->mouseShapeInfo.pu8Shape, pCtx->mouseShapeInfo.cbAllocated);
         pCtx->mouseShapeInfo.pu8Shape = NULL;
         pCtx->mouseShapeInfo.cbAllocated = 0;
         pCtx->mouseShapeInfo.cbShape = 0;
