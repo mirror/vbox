@@ -767,11 +767,13 @@ static void virtioScsiR3FreeReq(PVIRTIOSCSITARGET pTarget, PVIRTIOSCSIREQ pReq)
 static int virtioScsiR3ReqErr(PPDMDEVINS pDevIns, PVIRTIOSCSI pThis, PVIRTIOSCSICC pThisCC, uint16_t qIdx,
                               PVIRTIO_DESC_CHAIN_T pDescChain, REQ_RESP_HDR_T *pRespHdr, uint8_t *pbSense)
 {
+    /** @todo r=bird: There is too much allocating here and we'll leak stuff if
+     *        we're low on memory and one of the RTMemAllocZ calls fail! */
     uint8_t *pabSenseBuf = (uint8_t *)RTMemAllocZ(pThis->virtioScsiConfig.uSenseSize);
     AssertReturn(pabSenseBuf, VERR_NO_MEMORY);
 
     Log2Func(("   status: %s    response: %s\n",
-        SCSIStatusText(pRespHdr->uStatus), virtioGetReqRespText(pRespHdr->uResponse)));
+              SCSIStatusText(pRespHdr->uStatus), virtioGetReqRespText(pRespHdr->uResponse)));
 
     PRTSGBUF pReqSegBuf = (PRTSGBUF)RTMemAllocZ(sizeof(RTSGBUF));
     AssertReturn(pReqSegBuf, VERR_NO_MEMORY);
@@ -790,12 +792,14 @@ static int virtioScsiR3ReqErr(PPDMDEVINS pDevIns, PVIRTIOSCSI pThis, PVIRTIOSCSI
         pRespHdr->cbSenseLen = 0;
 
     /* Copy segment data to malloc'd memory to avoid stack out-of-scope errors sanitizer doesn't detect */
+    /** @todo r=bird: The above comment makes zero sense as the memory is freed
+     *        before we return, so there cannot be any trouble with out-of-scope
+     *        stuff here. */
     for (int i = 0; i < 2; i++)
     {
         void *pv = paReqSegs[i].pvSeg;
-        paReqSegs[i].pvSeg = RTMemAlloc(paReqSegs[i].cbSeg);
+        paReqSegs[i].pvSeg = RTMemDup(pv, paReqSegs[i].cbSeg);
         AssertReturn(paReqSegs[i].pvSeg, VERR_NO_MEMORY);
-        memcpy(paReqSegs[i].pvSeg, pv, paReqSegs[i].cbSeg);
     }
 
     RTSgBufInit(pReqSegBuf, paReqSegs, 2);
@@ -929,8 +933,6 @@ static DECLCALLBACK(int) virtioScsiR3IoReqFinish(PPDMIMEDIAEXPORT pInterface, PD
         LogFunc(("Sense Ext3: %s\n", SCSISenseExtText(pReq->pbSense[12], pReq->pbSense[13])));
     }
 
-    int cSegs = 0;
-
     if (   (VIRTIO_IS_IN_DIRECTION(pReq->enmTxDir)  && cbXfer32 > pReq->cbDataIn)
         || (VIRTIO_IS_OUT_DIRECTION(pReq->enmTxDir) && cbXfer32 > pReq->cbDataOut))
     {
@@ -949,6 +951,8 @@ static DECLCALLBACK(int) virtioScsiR3IoReqFinish(PPDMIMEDIAEXPORT pInterface, PD
         Assert(pReq->pbSense != NULL);
 
         /* req datain bytes already in guest phys mem. via virtioScsiIoReqCopyFromBuf() */
+        /** @todo r=bird: There is too much allocating here and we'll leak stuff if
+         *        we're low on memory and one of the RTMemAllocZ calls fail! */
 
         PRTSGBUF pReqSegBuf = (PRTSGBUF)RTMemAllocZ(sizeof(RTSGBUF));
         AssertReturn(pReqSegBuf, VERR_NO_MEMORY);
@@ -956,6 +960,7 @@ static DECLCALLBACK(int) virtioScsiR3IoReqFinish(PPDMIMEDIAEXPORT pInterface, PD
         PRTSGSEG paReqSegs  = (PRTSGSEG)RTMemAllocZ(sizeof(RTSGSEG) * 2);
         AssertReturn(paReqSegs, VERR_NO_MEMORY);
 
+        int cSegs = 0;
         paReqSegs[cSegs].pvSeg = &respHdr;
         paReqSegs[cSegs++].cbSeg = sizeof(respHdr);
 
@@ -963,12 +968,14 @@ static DECLCALLBACK(int) virtioScsiR3IoReqFinish(PPDMIMEDIAEXPORT pInterface, PD
         paReqSegs[cSegs++].cbSeg = pReq->cbSenseAlloc; /* VirtIO 1.0 spec 5.6.4/5.6.6.1 */
 
         /* Copy segment data to malloc'd memory to avoid stack out-of-scope errors sanitizer doesn't detect */
+        /** @todo r=bird: The above comment makes zero sense as the memory is freed
+         *        before we return, so there cannot be any trouble with out-of-scope
+         *        stuff here. */
         for (int i = 0; i < cSegs; i++)
         {
             void *pv = paReqSegs[i].pvSeg;
-            paReqSegs[i].pvSeg = RTMemAlloc(paReqSegs[i].cbSeg);
+            paReqSegs[i].pvSeg = RTMemDup(pv, paReqSegs[i].cbSeg);
             AssertReturn(paReqSegs[i].pvSeg, VERR_NO_MEMORY);
-            memcpy(paReqSegs[i].pvSeg, pv, paReqSegs[i].cbSeg);
         }
 
         RTSgBufInit(pReqSegBuf, paReqSegs, cSegs);
@@ -1125,7 +1132,7 @@ static int virtioScsiR3ReqSubmit(PPDMDEVINS pDevIns, PVIRTIOSCSI pThis, PVIRTIOS
     if (uType == 0xc1 && uTarget == 0x01)
     {
         LogRel(("* * * REPORT LUNS LU ACCESSED * * * "));
-        /* Force rejection. todo: figure out right way to handle. Note this is a very
+        /* Force rejection. */ /** @todo figure out right way to handle. Note this is a very
          * vague and confusing part of the VirtIO spec which deviates from the SCSI standard
          * I have not been able to determine how to implement this properly.  Guest drivers
          * whose source code has been checked, so far, don't seem to use it. If it starts
@@ -1165,7 +1172,7 @@ static int virtioScsiR3ReqSubmit(PPDMDEVINS pDevIns, PVIRTIOSCSI pThis, PVIRTIOS
         respHdr.uResponse  = VIRTIOSCSI_S_FAILURE;
         respHdr.uResidual  = cbDataIn + cbDataOut;
         virtioScsiR3ReqErr(pDevIns, pThis, pThisCC, qIdx, pDescChain, &respHdr , NULL);
-        RTMemFree(pVirtqReq);
+        RTMemFreeZ(pVirtqReq, cbReqHdr);
         return VINF_SUCCESS;
     }
 
@@ -1185,7 +1192,7 @@ static int virtioScsiR3ReqSubmit(PPDMDEVINS pDevIns, PVIRTIOSCSI pThis, PVIRTIOS
         respHdr.uResponse  = VIRTIOSCSI_S_BAD_TARGET;
         respHdr.uResidual  = cbDataOut + cbDataIn;
         virtioScsiR3ReqErr(pDevIns, pThis, pThisCC, qIdx, pDescChain, &respHdr, abSense);
-        RTMemFree(pVirtqReq);
+        RTMemFreeZ(pVirtqReq, cbReqHdr);
         return VINF_SUCCESS;
 
     }
@@ -1203,7 +1210,7 @@ static int virtioScsiR3ReqSubmit(PPDMDEVINS pDevIns, PVIRTIOSCSI pThis, PVIRTIOS
         respHdr.uResponse  = VIRTIOSCSI_S_OK;
         respHdr.uResidual  = cbDataOut + cbDataIn;
         virtioScsiR3ReqErr(pDevIns, pThis, pThisCC, qIdx, pDescChain, &respHdr, abSense);
-        RTMemFree(pVirtqReq);
+        RTMemFreeZ(pVirtqReq, cbReqHdr);
         return VINF_SUCCESS;
     }
     if (RT_LIKELY(!pThis->fResetting))
@@ -1217,7 +1224,7 @@ static int virtioScsiR3ReqSubmit(PPDMDEVINS pDevIns, PVIRTIOSCSI pThis, PVIRTIOS
         respHdr.uResponse  = VIRTIOSCSI_S_RESET;
         respHdr.uResidual  = cbDataIn + cbDataOut;
         virtioScsiR3ReqErr(pDevIns, pThis, pThisCC, qIdx, pDescChain, &respHdr, NULL);
-        RTMemFree(pVirtqReq);
+        RTMemFreeZ(pVirtqReq, cbReqHdr);
         return VINF_SUCCESS;
     }
 
@@ -1236,7 +1243,7 @@ static int virtioScsiR3ReqSubmit(PPDMDEVINS pDevIns, PVIRTIOSCSI pThis, PVIRTIOS
         respHdr.uResponse  = VIRTIOSCSI_S_FAILURE;
         respHdr.uResidual  = cbDataIn + cbDataOut;
         virtioScsiR3ReqErr(pDevIns, pThis, pThisCC, qIdx, pDescChain, &respHdr , abSense);
-        RTMemFree(pVirtqReq);
+        RTMemFreeZ(pVirtqReq, cbReqHdr);
         return VINF_SUCCESS;
     }
 
@@ -1252,7 +1259,7 @@ static int virtioScsiR3ReqSubmit(PPDMDEVINS pDevIns, PVIRTIOSCSI pThis, PVIRTIOS
 
     if (RT_FAILURE(rc))
     {
-        RTMemFree(pVirtqReq);
+        RTMemFreeZ(pVirtqReq, cbReqHdr);
         AssertMsgRCReturn(rc, ("Failed to allocate I/O request, rc=%Rrc\n", rc), rc);
     }
 
@@ -1268,7 +1275,7 @@ static int virtioScsiR3ReqSubmit(PPDMDEVINS pDevIns, PVIRTIOSCSI pThis, PVIRTIOS
     pReq->cbSenseAlloc = pThis->virtioScsiConfig.uSenseSize;
     pReq->pbSense      = (uint8_t *)RTMemAllocZ(pReq->cbSenseAlloc);
     AssertMsgReturnStmt(pReq->pbSense, ("Out of memory allocating sense buffer"),
-                        virtioScsiR3FreeReq(pTarget, pReq); RTMemFree(pVirtqReq), VERR_NO_MEMORY);
+                        virtioScsiR3FreeReq(pTarget, pReq); RTMemFreeZ(pVirtqReq, cbReqHdr);, VERR_NO_MEMORY);
 
     /* Note: DrvSCSI allocates one virtual memory buffer for input and output phases of the request */
     rc = pIMediaEx->pfnIoReqSendScsiCmd(pIMediaEx, pReq->hIoReq, uScsiLun,
@@ -1308,7 +1315,7 @@ static int virtioScsiR3ReqSubmit(PPDMDEVINS pDevIns, PVIRTIOSCSI pThis, PVIRTIOS
         virtioScsiR3FreeReq(pTarget, pReq);
     }
 
-    RTMemFree(pVirtqReq);
+    RTMemFreeZ(pVirtqReq, cbReqHdr);
     return VINF_SUCCESS;
 }
 
@@ -1347,14 +1354,18 @@ static int virtioScsiR3Ctrl(PPDMDEVINS pDevIns, PVIRTIOSCSI pThis, PVIRTIOSCSICC
         cb -= cbSeg;
     }
 
+    /** @todo r=bird: Memory leak here.  */
     AssertReturn(   (pScsiCtrlUnion->scsiCtrl.uType == VIRTIOSCSI_T_TMF
                      && pDescChain->cbPhysSend >= sizeof(VIRTIOSCSI_CTRL_TMF_T))
                  || ( (   pScsiCtrlUnion->scsiCtrl.uType == VIRTIOSCSI_T_AN_QUERY
                        || pScsiCtrlUnion->scsiCtrl.uType == VIRTIOSCSI_T_AN_SUBSCRIBE)
                      && pDescChain->cbPhysSend >= sizeof(VIRTIOSCSI_CTRL_AN_T)), 0);
 
+    /** @todo r=bird: This segment handling is unnecessary. A stack array should
+     *        suffice.  The stack variable w/ initializer + memcpy into paReqSegs
+     *        done in the switch below is also weird + suboptimal. */
     PRTSGSEG paReqSegs = (PRTSGSEG)RTMemAllocZ(sizeof(RTSGSEG) * 2);
-    AssertReturn(paReqSegs, VERR_NO_MEMORY);
+    AssertReturn(paReqSegs, VERR_NO_MEMORY); /** @todo r=bird: Memory leak here.  */
 
     switch (pScsiCtrlUnion->scsiCtrl.uType)
     {
@@ -1491,15 +1502,17 @@ static int virtioScsiR3Ctrl(PPDMDEVINS pDevIns, PVIRTIOSCSI pThis, PVIRTIOSCSICC
     LogFunc(("Response code: %s\n", virtioGetReqRespText(bResponse)));
 
     PRTSGBUF pReqSegBuf = (PRTSGBUF)RTMemAllocZ(sizeof(RTSGBUF));
-    AssertReturn(pReqSegBuf, VERR_NO_MEMORY);
+    AssertReturn(pReqSegBuf, VERR_NO_MEMORY); /** @todo r=bird: Memory leak here.  */
 
     /* Copy segment data to malloc'd memory to avoid stack out-of-scope errors sanitizer doesn't detect */
+    /** @todo r=bird: The above comment makes zero sense as the memory is freed
+     *        before we return, so there cannot be any trouble with out-of-scope
+     *        stuff here. */
     for (int i = 0; i < cSegs; i++)
     {
         void *pv = paReqSegs[i].pvSeg;
-        paReqSegs[i].pvSeg = RTMemAlloc(paReqSegs[i].cbSeg);
-        AssertReturn(paReqSegs[i].pvSeg, VERR_NO_MEMORY);
-        memcpy(paReqSegs[i].pvSeg, pv, paReqSegs[i].cbSeg);
+        paReqSegs[i].pvSeg = RTMemDup(pv, paReqSegs[i].cbSeg);
+        AssertReturn(paReqSegs[i].pvSeg, VERR_NO_MEMORY); /** @todo r=bird: Memory leak here.  */
     }
 
     RTSgBufInit(pReqSegBuf, paReqSegs, cSegs);
@@ -1512,6 +1525,7 @@ static int virtioScsiR3Ctrl(PPDMDEVINS pDevIns, PVIRTIOSCSI pThis, PVIRTIOSCSICC
 
     RTMemFree(paReqSegs);
     RTMemFree(pReqSegBuf);
+    /** @todo r=bird: Leaking pScsiCtrlUnion here! */
 
     return VINF_SUCCESS;
 }
