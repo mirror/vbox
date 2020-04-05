@@ -917,10 +917,11 @@ int virtioCoreR3QueuePut(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t idxQu
         while (cbRemain)
         {
             PVIRTIOSGSEG paSeg = &pSgPhysReturn->paSegs[pSgPhysReturn->idxSeg];
-            uint64_t dstSgStart = (uint64_t)paSeg->gcPhys;
-            uint64_t dstSgLen   = (uint64_t)paSeg->cbSeg;
-            uint64_t dstSgCur   = (uint64_t)pSgPhysReturn->gcPhysCur;
-            cbCopy = RT_MIN((uint64_t)pSgVirtReturn->cbSegLeft, dstSgLen - (dstSgCur - dstSgStart));
+            /** @todo r=bird: Shouldn't this be: RT_MIN(pSgVirtReturn->cbSegLeft, pSgPhysReturn->cbSegLeft); */
+            cbCopy = RT_MIN(pSgVirtReturn->cbSegLeft, paSeg->cbSeg - (size_t)(pSgPhysReturn->gcPhysCur - paSeg->gcPhys));
+            Assert(cbCopy > 0); /** @todo r=bird: There is no check that there is sufficient space in the output
+                                 * buffer (pSgPhysReturn), so we might loop here forever if the caller is careless,
+                                 * right?  I'm pretty sure virtioScsiR3SendEvent could do more checks. */
             PDMDevHlpPhysWrite(pDevIns, (RTGCPHYS)pSgPhysReturn->gcPhysCur, pSgVirtReturn->pvSegCur, cbCopy);
             RTSgBufAdvance(pSgVirtReturn, cbCopy);
             virtioCoreSgBufAdvance(pSgPhysReturn, cbCopy);
@@ -945,19 +946,19 @@ int virtioCoreR3QueuePut(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t idxQu
 
     if (pSgVirtReturn)
         Log6Func((".... Copied %zu bytes in %d segs to %u byte buffer, residual=%zu\n",
-              cbTotal - cbRemain, pSgVirtReturn->cSegs, pDescChain->cbPhysReturn, pDescChain->cbPhysReturn - cbTotal));
+                  cbTotal - cbRemain, pSgVirtReturn->cSegs, pDescChain->cbPhysReturn, pDescChain->cbPhysReturn - cbTotal));
 
     Log6Func(("Write ahead used_idx=%u, %s used_idx=%u\n",
               pVirtq->uUsedIdx, VIRTQNAME(pVirtio, idxQueue), virtioReadUsedRingIdx(pDevIns, pVirtio, idxQueue)));
 
     if (pDescChain->pSgPhysSend)
     {
-        RTMemFree((void *)pDescChain->pSgPhysSend->paSegs);
+        RTMemFree(pDescChain->pSgPhysSend->paSegs);
         RTMemFree(pDescChain->pSgPhysSend);
     }
     if (pDescChain->pSgPhysReturn)
     {
-        RTMemFree((void *)pSgPhysReturn->paSegs);
+        RTMemFree(pSgPhysReturn->paSegs);
         RTMemFree(pSgPhysReturn);
     }
     RTMemFree(pDescChain);
