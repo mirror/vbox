@@ -764,61 +764,46 @@ static void virtioScsiR3FreeReq(PVIRTIOSCSITARGET pTarget, PVIRTIOSCSIREQ pReq)
  * @param   pDescChain  Pointer to pre-processed descriptor chain pulled from virtq
  * @param   pRespHdr    Response header
  * @param   pbSense     Pointer to sense buffer or NULL if none.
+ * @param   cbSenseCfg  The configured sense buffer size.
  *
- * @returns VBox status code.
+ * @returns VINF_SUCCESS
  */
 static int virtioScsiR3ReqErr(PPDMDEVINS pDevIns, PVIRTIOSCSI pThis, PVIRTIOSCSICC pThisCC, uint16_t qIdx,
-                              PVIRTIO_DESC_CHAIN_T pDescChain, REQ_RESP_HDR_T *pRespHdr, uint8_t *pbSense)
+                              PVIRTIO_DESC_CHAIN_T pDescChain, REQ_RESP_HDR_T *pRespHdr, uint8_t *pbSense,
+                              uint32_t cbSenseCfg)
 {
-    /** @todo r=bird: There is too much allocating here and we'll leak stuff if
-     *        we're low on memory and one of the RTMemAllocZ calls fail! */
-    uint8_t *pabSenseBuf = (uint8_t *)RTMemAllocZ(pThis->virtioScsiConfig.uSenseSize);
-    AssertReturn(pabSenseBuf, VERR_NO_MEMORY);
-
     Log2Func(("   status: %s    response: %s\n",
               SCSIStatusText(pRespHdr->uStatus), virtioGetReqRespText(pRespHdr->uResponse)));
 
-    PRTSGBUF pReqSegBuf = (PRTSGBUF)RTMemAllocZ(sizeof(RTSGBUF));
-    AssertReturn(pReqSegBuf, VERR_NO_MEMORY);
+    RTSGSEG aReqSegs[2];
 
-    PRTSGSEG paReqSegs  = (PRTSGSEG)RTMemAllocZ(sizeof(RTSGSEG) * 2);
-    AssertReturn(paReqSegs, VERR_NO_MEMORY);
+    /* Segment #1: Request header*/
+    aReqSegs[0].pvSeg = pRespHdr;
+    aReqSegs[0].cbSeg = sizeof(*pRespHdr);
 
-    paReqSegs[0].cbSeg = sizeof(*pRespHdr);
-    paReqSegs[0].pvSeg = pRespHdr;
-    paReqSegs[1].cbSeg = pThis->virtioScsiConfig.uSenseSize;
-    paReqSegs[1].pvSeg = pabSenseBuf;
+    /* Segment #2: Sense data. */
+    uint8_t abSenseBuf[VIRTIOSCSI_SENSE_SIZE_MAX];
+    AssertCompile(VIRTIOSCSI_SENSE_SIZE_MAX <= 4096);
+    Assert(cbSenseCfg <= sizeof(abSenseBuf));
 
+    RT_ZERO(abSenseBuf);
     if (pbSense && pRespHdr->cbSenseLen)
-        memcpy(pabSenseBuf, pbSense, pRespHdr->cbSenseLen);
+        memcpy(abSenseBuf, pbSense, RT_MIN(pRespHdr->cbSenseLen, sizeof(abSenseBuf)));
     else
         pRespHdr->cbSenseLen = 0;
 
-    /* Copy segment data to malloc'd memory to avoid stack out-of-scope errors sanitizer doesn't detect */
-    /** @todo r=bird: The above comment makes zero sense as the memory is freed
-     *        before we return, so there cannot be any trouble with out-of-scope
-     *        stuff here. */
-    for (int i = 0; i < 2; i++)
-    {
-        void *pv = paReqSegs[i].pvSeg;
-        paReqSegs[i].pvSeg = RTMemDup(pv, paReqSegs[i].cbSeg);
-        AssertReturn(paReqSegs[i].pvSeg, VERR_NO_MEMORY);
-    }
+    aReqSegs[1].pvSeg = abSenseBuf;
+    aReqSegs[1].cbSeg = cbSenseCfg;
 
-    RTSgBufInit(pReqSegBuf, paReqSegs, 2);
+    /* Init S/G buffer. */
+    RTSGBUF ReqSgBuf;
+    RTSgBufInit(&ReqSgBuf, aReqSegs, RT_ELEMENTS(aReqSegs));
 
     if (pThis->fResetting)
         pRespHdr->uResponse = VIRTIOSCSI_S_RESET;
 
-    virtioCoreR3QueuePut(pDevIns, &pThis->Virtio, qIdx, pReqSegBuf, pDescChain, true /* fFence */);
+    virtioCoreR3QueuePut(pDevIns, &pThis->Virtio, qIdx, &ReqSgBuf, pDescChain, true /* fFence */);
     virtioCoreQueueSync(pDevIns, &pThis->Virtio, qIdx);
-
-    for (int i = 0; i < 2; i++)
-        RTMemFree(paReqSegs[i].pvSeg);
-
-    RTMemFree(paReqSegs);
-    RTMemFree(pReqSegBuf);
-    RTMemFree(pabSenseBuf);
 
     if (!ASMAtomicDecU32(&pThis->cActiveReqs) && pThisCC->fQuiescing)
         PDMDevHlpAsyncNotificationCompleted(pDevIns);
@@ -947,7 +932,8 @@ static DECLCALLBACK(int) virtioScsiR3IoReqFinish(PPDMIMEDIAEXPORT pInterface, PD
         respHdr.uResponse  = VIRTIOSCSI_S_OVERRUN;
         respHdr.uResidual  = pReq->cbDataIn;
 
-        virtioScsiR3ReqErr(pDevIns, pThis, pThisCC, pReq->qIdx, pReq->pDescChain, &respHdr, abSense);
+        virtioScsiR3ReqErr(pDevIns, pThis, pThisCC, pReq->qIdx, pReq->pDescChain, &respHdr, abSense,
+                           RT_MIN(pThis->virtioScsiConfig.uSenseSize, VIRTIOSCSI_SENSE_SIZE_MAX));
     }
     else
     {
@@ -1197,7 +1183,7 @@ static int virtioScsiR3ReqSubmit(PPDMDEVINS pDevIns, PVIRTIOSCSI pThis, PVIRTIOS
         respHdr.uStatus    = 0;
         respHdr.uResponse  = VIRTIOSCSI_S_FAILURE;
         respHdr.uResidual  = cbDataIn + cbDataOut;
-        virtioScsiR3ReqErr(pDevIns, pThis, pThisCC, qIdx, pDescChain, &respHdr , NULL);
+        virtioScsiR3ReqErr(pDevIns, pThis, pThisCC, qIdx, pDescChain, &respHdr, NULL, cbSense);
         return VINF_SUCCESS;
     }
 
@@ -1216,7 +1202,7 @@ static int virtioScsiR3ReqSubmit(PPDMDEVINS pDevIns, PVIRTIOSCSI pThis, PVIRTIOS
         respHdr.uStatus    = SCSI_STATUS_CHECK_CONDITION;
         respHdr.uResponse  = VIRTIOSCSI_S_BAD_TARGET;
         respHdr.uResidual  = cbDataOut + cbDataIn;
-        virtioScsiR3ReqErr(pDevIns, pThis, pThisCC, qIdx, pDescChain, &respHdr, abSense);
+        virtioScsiR3ReqErr(pDevIns, pThis, pThisCC, qIdx, pDescChain, &respHdr, abSense, cbSense);
         return VINF_SUCCESS;
 
     }
@@ -1233,7 +1219,7 @@ static int virtioScsiR3ReqSubmit(PPDMDEVINS pDevIns, PVIRTIOSCSI pThis, PVIRTIOS
         respHdr.uStatus    = SCSI_STATUS_CHECK_CONDITION;
         respHdr.uResponse  = VIRTIOSCSI_S_OK;
         respHdr.uResidual  = cbDataOut + cbDataIn;
-        virtioScsiR3ReqErr(pDevIns, pThis, pThisCC, qIdx, pDescChain, &respHdr, abSense);
+        virtioScsiR3ReqErr(pDevIns, pThis, pThisCC, qIdx, pDescChain, &respHdr, abSense, cbSense);
         return VINF_SUCCESS;
     }
     if (RT_LIKELY(!pThis->fResetting))
@@ -1246,7 +1232,7 @@ static int virtioScsiR3ReqSubmit(PPDMDEVINS pDevIns, PVIRTIOSCSI pThis, PVIRTIOS
         respHdr.uStatus    = SCSI_STATUS_OK;
         respHdr.uResponse  = VIRTIOSCSI_S_RESET;
         respHdr.uResidual  = cbDataIn + cbDataOut;
-        virtioScsiR3ReqErr(pDevIns, pThis, pThisCC, qIdx, pDescChain, &respHdr, NULL);
+        virtioScsiR3ReqErr(pDevIns, pThis, pThisCC, qIdx, pDescChain, &respHdr, NULL, cbSense);
         return VINF_SUCCESS;
     }
 
@@ -1264,7 +1250,7 @@ static int virtioScsiR3ReqSubmit(PPDMDEVINS pDevIns, PVIRTIOSCSI pThis, PVIRTIOS
         respHdr.uStatus    = SCSI_STATUS_CHECK_CONDITION;
         respHdr.uResponse  = VIRTIOSCSI_S_FAILURE;
         respHdr.uResidual  = cbDataIn + cbDataOut;
-        virtioScsiR3ReqErr(pDevIns, pThis, pThisCC, qIdx, pDescChain, &respHdr , abSense);
+        virtioScsiR3ReqErr(pDevIns, pThis, pThisCC, qIdx, pDescChain, &respHdr, abSense, cbSense);
         return VINF_SUCCESS;
     }
 
@@ -1328,7 +1314,7 @@ static int virtioScsiR3ReqSubmit(PPDMDEVINS pDevIns, PVIRTIOSCSI pThis, PVIRTIOS
         respHdr.uStatus    = SCSI_STATUS_CHECK_CONDITION;
         respHdr.uResponse  = VIRTIOSCSI_S_FAILURE;
         respHdr.uResidual  = cbDataIn + cbDataOut;
-        virtioScsiR3ReqErr(pDevIns, pThis, pThisCC, qIdx, pDescChain, &respHdr, abSense);
+        virtioScsiR3ReqErr(pDevIns, pThis, pThisCC, qIdx, pDescChain, &respHdr, abSense, cbSense);
         virtioScsiR3FreeReq(pTarget, pReq);
     }
 
