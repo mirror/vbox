@@ -309,9 +309,9 @@ AssertCompileSize(VIRTIOSCSI_CTRL_AN_T, 16);
 
 typedef union VIRTIO_SCSI_CTRL_UNION_T
 {
-    VIRTIOSCSI_CTRL_T       scsiCtrl;
-    VIRTIOSCSI_CTRL_TMF_T   scsiCtrlTmf;
-    VIRTIOSCSI_CTRL_AN_T    scsiCtrlAsyncNotify;
+    VIRTIOSCSI_CTRL_T       Type;
+    VIRTIOSCSI_CTRL_TMF_T   Tmf;
+    VIRTIOSCSI_CTRL_AN_T    AsyncNotify;
     uint8_t                 ab[24];
 } VIRTIO_SCSI_CTRL_UNION_T, *PVIRTIO_SCSI_CTRL_UNION_T;
 AssertCompile(sizeof(VIRTIO_SCSI_CTRL_UNION_T) == 24); /* VIRTIOSCSI_CTRL_T forces 4 byte alignment, the other two are byte packed. */
@@ -1336,10 +1336,10 @@ static int virtioScsiR3Ctrl(PPDMDEVINS pDevIns, PVIRTIOSCSI pThis, PVIRTIOSCSICC
         offCtrl += cbSeg;
     }
 
-    AssertReturn(   (ScsiCtrlUnion.scsiCtrl.uType == VIRTIOSCSI_T_TMF
+    AssertReturn(   (ScsiCtrlUnion.Type.uType == VIRTIOSCSI_T_TMF
                      && pDescChain->cbPhysSend >= sizeof(VIRTIOSCSI_CTRL_TMF_T))
-                 || ( (   ScsiCtrlUnion.scsiCtrl.uType == VIRTIOSCSI_T_AN_QUERY
-                       || ScsiCtrlUnion.scsiCtrl.uType == VIRTIOSCSI_T_AN_SUBSCRIBE)
+                 || ( (   ScsiCtrlUnion.Type.uType == VIRTIOSCSI_T_AN_QUERY
+                       || ScsiCtrlUnion.Type.uType == VIRTIOSCSI_T_AN_SUBSCRIBE)
                      && pDescChain->cbPhysSend >= sizeof(VIRTIOSCSI_CTRL_AN_T)),
                     0 /** @todo r=bird: what kind of status is '0' here? */);
 
@@ -1350,15 +1350,14 @@ static int virtioScsiR3Ctrl(PPDMDEVINS pDevIns, PVIRTIOSCSI pThis, PVIRTIOSCSICC
     uint8_t bResponse = VIRTIOSCSI_S_OK;
     uint8_t cSegs;
     RTSGSEG aReqSegs[2];
-    switch (ScsiCtrlUnion.scsiCtrl.uType)
+    switch (ScsiCtrlUnion.Type.uType)
     {
         case VIRTIOSCSI_T_TMF: /* Task Management Functions */
         {
-            uint8_t  uTarget  = ScsiCtrlUnion.scsiCtrlTmf.abScsiLun[1];
-            uint32_t uScsiLun = RT_MAKE_U16(ScsiCtrlUnion.scsiCtrlTmf.abScsiLun[3],
-                                            ScsiCtrlUnion.scsiCtrlTmf.abScsiLun[2]) & 0x3fff;
+            uint8_t  uTarget  = ScsiCtrlUnion.Tmf.abScsiLun[1];
+            uint32_t uScsiLun = RT_MAKE_U16(ScsiCtrlUnion.Tmf.abScsiLun[3], ScsiCtrlUnion.Tmf.abScsiLun[2]) & 0x3fff;
             Log2Func(("[%s] (Target: %d LUN: %d)  Task Mgt Function: %s\n",
-                      VIRTQNAME(qIdx), uTarget, uScsiLun, virtioGetTMFTypeText(ScsiCtrlUnion.scsiCtrlTmf.uSubtype)));
+                      VIRTQNAME(qIdx), uTarget, uScsiLun, virtioGetTMFTypeText(ScsiCtrlUnion.Tmf.uSubtype)));
 
             if (uTarget >= pThis->cTargets || !pThisCC->paTargetInstances[uTarget].fPresent)
                 bResponse = VIRTIOSCSI_S_BAD_TARGET;
@@ -1366,7 +1365,7 @@ static int virtioScsiR3Ctrl(PPDMDEVINS pDevIns, PVIRTIOSCSI pThis, PVIRTIOSCSICC
             if (uScsiLun != 0)
                 bResponse = VIRTIOSCSI_S_INCORRECT_LUN;
             else
-                switch (ScsiCtrlUnion.scsiCtrlTmf.uSubtype)
+                switch (ScsiCtrlUnion.Tmf.uSubtype)
                 {
                     case VIRTIOSCSI_T_TMF_ABORT_TASK:
                         bResponse = VIRTIOSCSI_S_FUNCTION_SUCCEEDED;
@@ -1401,10 +1400,9 @@ static int virtioScsiR3Ctrl(PPDMDEVINS pDevIns, PVIRTIOSCSI pThis, PVIRTIOSCSICC
         }
         case VIRTIOSCSI_T_AN_QUERY: /* Guest SCSI driver is querying supported async event notifications */
         {
-            PVIRTIOSCSI_CTRL_AN_T const pScsiCtrlAnQuery = &ScsiCtrlUnion.scsiCtrlAsyncNotify;
-
-            uint8_t  uTarget  = pScsiCtrlAnQuery->abScsiLun[1];
-            uint32_t uScsiLun = RT_MAKE_U16(pScsiCtrlAnQuery->abScsiLun[3], pScsiCtrlAnQuery->abScsiLun[2]) & 0x3fff;
+            uint8_t  uTarget  = ScsiCtrlUnion.AsyncNotify.abScsiLun[1];
+            uint32_t uScsiLun = RT_MAKE_U16(ScsiCtrlUnion.AsyncNotify.abScsiLun[3],
+                                            ScsiCtrlUnion.AsyncNotify.abScsiLun[2]) & 0x3fff;
 
             if (uTarget >= pThis->cTargets || !pThisCC->paTargetInstances[uTarget].fPresent)
                 bResponse = VIRTIOSCSI_S_BAD_TARGET;
@@ -1418,7 +1416,7 @@ static int virtioScsiR3Ctrl(PPDMDEVINS pDevIns, PVIRTIOSCSI pThis, PVIRTIOSCSICC
             if (LogIs2Enabled())
             {
                 char szTypeText[128];
-                virtioGetControlAsyncMaskText(szTypeText, sizeof(szTypeText), pScsiCtrlAnQuery->fEventsRequested);
+                virtioGetControlAsyncMaskText(szTypeText, sizeof(szTypeText), ScsiCtrlUnion.AsyncNotify.fEventsRequested);
                 Log2Func(("[%s] (Target: %d LUN: %d)  Async. Notification Query: %s\n",
                           VIRTQNAME(qIdx), uTarget, uScsiLun, szTypeText));
             }
@@ -1431,20 +1429,19 @@ static int virtioScsiR3Ctrl(PPDMDEVINS pDevIns, PVIRTIOSCSI pThis, PVIRTIOSCSICC
         }
         case VIRTIOSCSI_T_AN_SUBSCRIBE: /* Guest SCSI driver is subscribing to async event notification(s) */
         {
-            PVIRTIOSCSI_CTRL_AN_T const pScsiCtrlAnSubscribe = &ScsiCtrlUnion.scsiCtrlAsyncNotify;
-
-            if (pScsiCtrlAnSubscribe->fEventsRequested & ~SUBSCRIBABLE_EVENTS)
+            if (ScsiCtrlUnion.AsyncNotify.fEventsRequested & ~SUBSCRIBABLE_EVENTS)
                 LogFunc(("Unsupported bits in event subscription event mask: %#x\n",
-                         pScsiCtrlAnSubscribe->fEventsRequested));
+                         ScsiCtrlUnion.AsyncNotify.fEventsRequested));
 
-            uint8_t  uTarget  = pScsiCtrlAnSubscribe->abScsiLun[1];
-            uint32_t uScsiLun = RT_MAKE_U16(pScsiCtrlAnSubscribe->abScsiLun[3], pScsiCtrlAnSubscribe->abScsiLun[2]) & 0x3fff;
+            uint8_t  uTarget  = ScsiCtrlUnion.AsyncNotify.abScsiLun[1];
+            uint32_t uScsiLun = RT_MAKE_U16(ScsiCtrlUnion.AsyncNotify.abScsiLun[3],
+                                            ScsiCtrlUnion.AsyncNotify.abScsiLun[2]) & 0x3fff;
 
 #ifdef LOG_ENABLED
             if (LogIs2Enabled())
             {
                 char szTypeText[128];
-                virtioGetControlAsyncMaskText(szTypeText, sizeof(szTypeText), pScsiCtrlAnSubscribe->fEventsRequested);
+                virtioGetControlAsyncMaskText(szTypeText, sizeof(szTypeText), ScsiCtrlUnion.AsyncNotify.fEventsRequested);
                 Log2Func(("[%s] (Target: %d LUN: %d)  Async. Notification Subscribe: %s\n",
                           VIRTQNAME(qIdx), uTarget, uScsiLun, szTypeText));
             }
@@ -1457,7 +1454,7 @@ static int virtioScsiR3Ctrl(PPDMDEVINS pDevIns, PVIRTIOSCSI pThis, PVIRTIOSCSICC
             else
             {
                 bResponse = VIRTIOSCSI_S_FUNCTION_SUCCEEDED; /* or VIRTIOSCSI_S_FUNCTION_COMPLETE? */
-                pThis->fAsyncEvtsEnabled = SUPPORTED_EVENTS & pScsiCtrlAnSubscribe->fEventsRequested;
+                pThis->fAsyncEvtsEnabled = SUPPORTED_EVENTS & ScsiCtrlUnion.AsyncNotify.fEventsRequested;
             }
 
             aReqSegs[0].pvSeg = &pThis->fAsyncEvtsEnabled;
@@ -1467,7 +1464,7 @@ static int virtioScsiR3Ctrl(PPDMDEVINS pDevIns, PVIRTIOSCSI pThis, PVIRTIOSCSICC
         }
         default:
         {
-            LogFunc(("Unknown control type extracted from %s: %u\n", VIRTQNAME(qIdx), ScsiCtrlUnion.scsiCtrl.uType));
+            LogFunc(("Unknown control type extracted from %s: %u\n", VIRTQNAME(qIdx), ScsiCtrlUnion.Type.uType));
 
             bResponse = VIRTIOSCSI_S_FAILURE;
             cSegs = 0; /* only bResponse */
