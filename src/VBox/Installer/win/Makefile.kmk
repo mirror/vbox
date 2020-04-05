@@ -1167,7 +1167,8 @@ else
  RePackScripts_SOURCES += \
  	$(RePackScripts_0_OUTDIR)/Single-0-All.cmd \
  	$(RePackScripts_0_OUTDIR)/Single-1-Prepare.cmd \
- 	$(RePackScripts_0_OUTDIR)/Single-3-Repack.cmd
+ 	$(RePackScripts_0_OUTDIR)/Single-3-Repack.cmd \
+	Scripts/sign-attestation.sh
 endif
 RePackScripts_CLEAN = \
 	$(RePackScripts_0_OUTDIR)/PackDriversForSubmission.cmd \

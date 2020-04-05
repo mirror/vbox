@@ -196,6 +196,10 @@ rem
 rem Generate script for taking the next step.
 rem
 set _MY_NEXT_SCRIPT=%_MY_OPT_OUTDIR%\Single-3-Repack.cmd
+rem If out dir is the same as repack dir this would erase original repack script
+if not exist "%_MY_NEXT_SCRIPT%" goto generate_next_script
+set _MY_NEXT_SCRIPT=%_MY_OPT_OUTDIR%\Single-3-Repack-Gen.cmd
+:generate_next_script
 echo cd /d "%cd%" > "%_MY_NEXT_SCRIPT%"
 echo call "%_MY_SCRIPT_DIR%\Single-3-Repack.cmd" --extpack "%_MY_OPT_EXTPACK%" ^
     --extpack-enterprise "%_MY_OPT_EXTPACK_ENTERPRISE%" ^
