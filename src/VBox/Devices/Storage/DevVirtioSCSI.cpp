@@ -974,49 +974,26 @@ static DECLCALLBACK(int) virtioScsiR3IoReqFinish(PPDMIMEDIAEXPORT pInterface, PD
         Assert(pReq->pbSense != NULL);
 
         /* req datain bytes already in guest phys mem. via virtioScsiIoReqCopyFromBuf() */
-        /** @todo r=bird: There is too much allocating here and we'll leak stuff if
-         *        we're low on memory and one of the RTMemAllocZ calls fail! */
+        RTSGSEG aReqSegs[2];
 
-        PRTSGBUF pReqSegBuf = (PRTSGBUF)RTMemAllocZ(sizeof(RTSGBUF));
-        AssertReturn(pReqSegBuf, VERR_NO_MEMORY);
+        paReqSegs[0].pvSeg = &respHdr;
+        paReqSegs[0].cbSeg = sizeof(respHdr);
 
-        PRTSGSEG paReqSegs  = (PRTSGSEG)RTMemAllocZ(sizeof(RTSGSEG) * 2);
-        AssertReturn(paReqSegs, VERR_NO_MEMORY);
+        paReqSegs[1].pvSeg = pReq->pbSense;
+        paReqSegs[1].cbSeg = pReq->cbSenseAlloc; /* VirtIO 1.0 spec 5.6.4/5.6.6.1 */
 
-        int cSegs = 0;
-        paReqSegs[cSegs].pvSeg = &respHdr;
-        paReqSegs[cSegs++].cbSeg = sizeof(respHdr);
+        RTSGBUF ReqSgBuf
+        RTSgBufInit(&ReqSgBuf, aReqSegs, RT_ELEMENTS(aRegSegs));
 
-        paReqSegs[cSegs].pvSeg = pReq->pbSense;
-        paReqSegs[cSegs++].cbSeg = pReq->cbSenseAlloc; /* VirtIO 1.0 spec 5.6.4/5.6.6.1 */
-
-        /* Copy segment data to malloc'd memory to avoid stack out-of-scope errors sanitizer doesn't detect */
-        /** @todo r=bird: The above comment makes zero sense as the memory is freed
-         *        before we return, so there cannot be any trouble with out-of-scope
-         *        stuff here. */
-        for (int i = 0; i < cSegs; i++)
-        {
-            void *pv = paReqSegs[i].pvSeg;
-            paReqSegs[i].pvSeg = RTMemDup(pv, paReqSegs[i].cbSeg);
-            AssertReturn(paReqSegs[i].pvSeg, VERR_NO_MEMORY);
-        }
-
-        RTSgBufInit(pReqSegBuf, paReqSegs, cSegs);
-
-        size_t cbReqSgBuf = RTSgBufCalcTotalLength(pReqSegBuf);
+        size_t cbReqSgBuf = RTSgBufCalcTotalLength(&ReqSgBuf);
+        /** @todo r=bird: Returning here looks a little bogus... */
         AssertMsgReturn(cbReqSgBuf <= pReq->pDescChain->cbPhysReturn,
-                       ("Guest expected less req data (space needed: %d, avail: %d)\n",
-                         cbReqSgBuf, pReq->pDescChain->cbPhysReturn),
-                       VERR_BUFFER_OVERFLOW);
+                       ("Guest expected less req data (space needed: %zu, avail: %u)\n",
+                        cbReqSgBuf, pReq->pDescChain->cbPhysReturn),
+                        VERR_BUFFER_OVERFLOW);
 
-        virtioCoreR3QueuePut(pDevIns, &pThis->Virtio, pReq->qIdx, pReqSegBuf, pReq->pDescChain, true /* fFence TBD */);
+        virtioCoreR3QueuePut(pDevIns, &pThis->Virtio, pReq->qIdx, &ReqSgBuf, pReq->pDescChain, true /* fFence TBD */);
         virtioCoreQueueSync(pDevIns, &pThis->Virtio, pReq->qIdx);
-
-        for (int i = 0; i < cSegs; i++)
-            RTMemFree(paReqSegs[i].pvSeg);
-
-        RTMemFree(paReqSegs);
-        RTMemFree(pReqSegBuf);
 
         Log2(("-----------------------------------------------------------------------------------------\n"));
     }
@@ -1026,7 +1003,7 @@ static DECLCALLBACK(int) virtioScsiR3IoReqFinish(PPDMIMEDIAEXPORT pInterface, PD
     if (!ASMAtomicDecU32(&pThis->cActiveReqs) && pThisCC->fQuiescing)
         PDMDevHlpAsyncNotificationCompleted(pDevIns);
 
-    return VINF_SUCCESS;
+    return rc;
 }
 
 /**
