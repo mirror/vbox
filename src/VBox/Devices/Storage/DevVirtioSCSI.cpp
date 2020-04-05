@@ -32,6 +32,7 @@
 #include <VBox/vmm/pdmdev.h>
 #include <VBox/vmm/pdmstorageifs.h>
 #include <VBox/vmm/pdmcritsect.h>
+#include <VBox/AssertGuest.h>
 #include <VBox/msi.h>
 #include <VBox/version.h>
 #include <VBox/log.h>
@@ -95,7 +96,9 @@
 #define VIRTIOSCSI_PCI_CLASS                        0x01        /**< Base class Mass Storage?                        */
 
 #define VIRTIOSCSI_SENSE_SIZE_DEFAULT               96          /**< VirtIO 1.0: 96 on reset, guest can change       */
+#define VIRTIOSCSI_SENSE_SIZE_MAX                   4096        /**< Picked out of thin air by bird.                 */
 #define VIRTIOSCSI_CDB_SIZE_DEFAULT                 32          /**< VirtIO 1.0: 32 on reset, guest can change       */
+#define VIRTIOSCSI_CDB_SIZE_MAX                     255         /**< Picked out of thin air by bird.                 */
 #define VIRTIOSCSI_PI_BYTES_IN                      1           /**< Value TBD (see section 5.6.6.1)                 */
 #define VIRTIOSCSI_PI_BYTES_OUT                     1           /**< Value TBD (see section 5.6.6.1)                 */
 #define VIRTIOSCSI_DATA_OUT                         512         /**< Value TBD (see section 5.6.6.1)                 */
@@ -645,15 +648,15 @@ DECLINLINE(void) virtioGetControlAsyncMaskText(char *pszOutput, uint32_t cbOutpu
 static uint8_t virtioScsiEstimateCdbLen(uint8_t uCmd, uint8_t cbMax)
 {
     if (uCmd < 0x1f)
-        return 6;
+        return RT_MIN(6, cbMax);
     if (uCmd >= 0x20 && uCmd < 0x60)
-        return 10;
+        return RT_MIN(10, cbMax);
     if (uCmd >= 0x60 && uCmd < 0x80)
         return cbMax;
     if (uCmd >= 0x80 && uCmd < 0xa0)
-        return 16;
+        return RT_MIN(16, cbMax);
     if (uCmd >= 0xa0 && uCmd < 0xc0)
-        return 12;
+        return RT_MIN(12, cbMax);
     return cbMax;
 }
 
@@ -1106,27 +1109,47 @@ static int virtioScsiR3ReqSubmit(PPDMDEVINS pDevIns, PVIRTIOSCSI pThis, PVIRTIOS
     ASMAtomicIncU32(&pThis->cActiveReqs);
 
     /*
-     * Extract command header and CDB from guest physical memory
+     * Validate configuration values we use here before we start.
      */
-    size_t cbReqHdr = sizeof(REQ_CMD_HDR_T) + pThis->virtioScsiConfig.uCdbSize;
+    /** @todo Report these as errors to the guest or does the caller do that? */
+    uint32_t const cbCdb   = pThis->virtioScsiConfig.uCdbSize;
+    ASSERT_GUEST_LOGREL_MSG_RETURN(cbCdb <= VIRTIOSCSI_CDB_SIZE_MAX, ("cbCdb=%#x\n", cbCdb), VERR_OUT_OF_RANGE);
+    uint32_t const cbSense = pThis->virtioScsiConfig.uSenseSize;
+    ASSERT_GUEST_LOGREL_MSG_RETURN(cbSense <= VIRTIOSCSI_SENSE_SIZE_MAX, ("cbSense=%#x\n", cbSense), VERR_OUT_OF_RANGE);
 
+    /*
+     * Extract command header and CDB from guest physical memory
+     * The max size is rather small here (19 + 255 = 274), so put
+     * it on the stack.
+     */
+    size_t const cbReqHdr = sizeof(REQ_CMD_HDR_T) + cbCdb;
     AssertReturn(pDescChain->cbPhysSend >= cbReqHdr, VERR_INVALID_PARAMETER);
 
-    PVIRTIOSCSI_REQ_CMD_T pVirtqReq = (PVIRTIOSCSI_REQ_CMD_T)RTMemAllocZ(cbReqHdr);
-    AssertReturn(pVirtqReq, VERR_NO_MEMORY);
-    uint8_t *pb = (uint8_t *)pVirtqReq;
-    for (size_t cb = RT_MIN(pDescChain->cbPhysSend, cbReqHdr); cb; )
+    AssertCompile(VIRTIOSCSI_CDB_SIZE_MAX < 4096);
+    union
     {
-        size_t cbSeg = cb;
+        /*VIRTIOSCSI_REQ_CMD_T    ReqCmd; - not needed */
+        struct
+        {
+            REQ_CMD_HDR_T       ReqHdr;
+            uint8_t             abCdb[VIRTIOSCSI_CDB_SIZE_MAX];
+        };
+        uint8_t                 ab[sizeof(REQ_CMD_HDR_T) + VIRTIOSCSI_CDB_SIZE_MAX];
+        uint64_t                au64Align[(sizeof(REQ_CMD_HDR_T) + VIRTIOSCSI_CDB_SIZE_MAX) / sizeof(uint64_t)];
+    } VirtqReq;
+    RT_ZERO(VirtqReq);
+
+    for (size_t offReq = 0; offReq < cbReqHdr; )
+    {
+        size_t cbSeg = cbReqHdr - offReq;
         RTGCPHYS GCPhys = virtioCoreSgBufGetNextSegment(pDescChain->pSgPhysSend, &cbSeg);
-        PDMDevHlpPCIPhysRead(pDevIns, GCPhys, pb, cbSeg);
-        pb += cbSeg;
-        cb -= cbSeg;
+        PDMDevHlpPCIPhysRead(pDevIns, GCPhys, &VirtqReq.ab[offReq], cbSeg);
+        offReq += cbSeg;
     }
 
-    uint8_t uType = pVirtqReq->ReqHdr.abVirtioLun[0];
-    uint8_t  uTarget  = pVirtqReq->ReqHdr.abVirtioLun[1];
-    uint32_t uScsiLun = (pVirtqReq->ReqHdr.abVirtioLun[2] << 8 | pVirtqReq->ReqHdr.abVirtioLun[3]) & 0x3fff;
+    uint8_t  const uType    = VirtqReq.ReqHdr.abVirtioLun[0];
+    uint8_t  const uTarget  = VirtqReq.ReqHdr.abVirtioLun[1];
+    uint32_t       uScsiLun = RT_MAKE_U16(VirtqReq.ReqHdr.abVirtioLun[3], VirtqReq.ReqHdr.abVirtioLun[2]) & 0x3fff;
 
     bool fBadLUNFormat = false;
     if (uType == 0xc1 && uTarget == 0x01)
@@ -1144,19 +1167,22 @@ static int virtioScsiR3ReqSubmit(PPDMDEVINS pDevIns, PVIRTIOSCSI pThis, PVIRTIOS
         fBadLUNFormat = true;
 
     LogFunc(("[%s] (Target: %d LUN: %d)  CDB: %.*Rhxs\n",
-             SCSICmdText(pVirtqReq->uCdb[0]), uTarget, uScsiLun,
-             virtioScsiEstimateCdbLen(pVirtqReq->uCdb[0], pThis->virtioScsiConfig.uCdbSize), pVirtqReq->uCdb));
+             SCSICmdText(VirtqReq.abCdb[0]), uTarget, uScsiLun,
+             virtioScsiEstimateCdbLen(VirtqReq.abCdb[0], cbCdb), &VirtqReq.abCdb[0]));
 
     Log3Func(("cmd id: %RX64, attr: %x, prio: %d, crn: %x\n",
-              pVirtqReq->ReqHdr.uId, pVirtqReq->ReqHdr.uTaskAttr, pVirtqReq->ReqHdr.uPrio, pVirtqReq->ReqHdr.uCrn));
+              VirtqReq.ReqHdr.uId, VirtqReq.ReqHdr.uTaskAttr, VirtqReq.ReqHdr.uPrio, VirtqReq.ReqHdr.uCrn));
 
     /*
-     * Calculate request offsets
+     * Calculate request offsets and data sizes.
      */
-    off_t uDataOutOff = sizeof(REQ_CMD_HDR_T)  + pThis->virtioScsiConfig.uCdbSize;
-    off_t uDataInOff  = sizeof(REQ_RESP_HDR_T) + pThis->virtioScsiConfig.uSenseSize;
-    uint32_t cbDataOut = pDescChain->cbPhysSend - uDataOutOff;
-    uint32_t cbDataIn  = pDescChain->cbPhysReturn - uDataInOff;
+    uint32_t const offDataOut = sizeof(REQ_CMD_HDR_T)  + cbCdb;
+    uint32_t const offDataIn  = sizeof(REQ_RESP_HDR_T) + cbSense;
+    uint32_t const cbDataOut  = pDescChain->cbPhysSend - offDataOut;
+    /** @todo r=bird: Validate cbPhysReturn properly? I've just RT_MAX'ed it for now. */
+    uint32_t const cbDataIn   = RT_MAX(pDescChain->cbPhysReturn, offDataIn) - offDataIn;
+    Assert(offDataOut <= UINT16_MAX);
+    Assert(offDataIn  <= UINT16_MAX);
 
     /*
      * Handle submission errors
@@ -1172,7 +1198,6 @@ static int virtioScsiR3ReqSubmit(PPDMDEVINS pDevIns, PVIRTIOSCSI pThis, PVIRTIOS
         respHdr.uResponse  = VIRTIOSCSI_S_FAILURE;
         respHdr.uResidual  = cbDataIn + cbDataOut;
         virtioScsiR3ReqErr(pDevIns, pThis, pThisCC, qIdx, pDescChain, &respHdr , NULL);
-        RTMemFreeZ(pVirtqReq, cbReqHdr);
         return VINF_SUCCESS;
     }
 
@@ -1192,7 +1217,6 @@ static int virtioScsiR3ReqSubmit(PPDMDEVINS pDevIns, PVIRTIOSCSI pThis, PVIRTIOS
         respHdr.uResponse  = VIRTIOSCSI_S_BAD_TARGET;
         respHdr.uResidual  = cbDataOut + cbDataIn;
         virtioScsiR3ReqErr(pDevIns, pThis, pThisCC, qIdx, pDescChain, &respHdr, abSense);
-        RTMemFreeZ(pVirtqReq, cbReqHdr);
         return VINF_SUCCESS;
 
     }
@@ -1210,7 +1234,6 @@ static int virtioScsiR3ReqSubmit(PPDMDEVINS pDevIns, PVIRTIOSCSI pThis, PVIRTIOS
         respHdr.uResponse  = VIRTIOSCSI_S_OK;
         respHdr.uResidual  = cbDataOut + cbDataIn;
         virtioScsiR3ReqErr(pDevIns, pThis, pThisCC, qIdx, pDescChain, &respHdr, abSense);
-        RTMemFreeZ(pVirtqReq, cbReqHdr);
         return VINF_SUCCESS;
     }
     if (RT_LIKELY(!pThis->fResetting))
@@ -1224,7 +1247,6 @@ static int virtioScsiR3ReqSubmit(PPDMDEVINS pDevIns, PVIRTIOSCSI pThis, PVIRTIOS
         respHdr.uResponse  = VIRTIOSCSI_S_RESET;
         respHdr.uResidual  = cbDataIn + cbDataOut;
         virtioScsiR3ReqErr(pDevIns, pThis, pThisCC, qIdx, pDescChain, &respHdr, NULL);
-        RTMemFreeZ(pVirtqReq, cbReqHdr);
         return VINF_SUCCESS;
     }
 
@@ -1243,7 +1265,6 @@ static int virtioScsiR3ReqSubmit(PPDMDEVINS pDevIns, PVIRTIOSCSI pThis, PVIRTIOS
         respHdr.uResponse  = VIRTIOSCSI_S_FAILURE;
         respHdr.uResidual  = cbDataIn + cbDataOut;
         virtioScsiR3ReqErr(pDevIns, pThis, pThisCC, qIdx, pDescChain, &respHdr , abSense);
-        RTMemFreeZ(pVirtqReq, cbReqHdr);
         return VINF_SUCCESS;
     }
 
@@ -1257,11 +1278,7 @@ static int virtioScsiR3ReqSubmit(PPDMDEVINS pDevIns, PVIRTIOSCSI pThis, PVIRTIOS
     int rc = pIMediaEx->pfnIoReqAlloc(pIMediaEx, &hIoReq, (void **)&pReq, 0 /* uIoReqId */,
                                       PDMIMEDIAEX_F_SUSPEND_ON_RECOVERABLE_ERR);
 
-    if (RT_FAILURE(rc))
-    {
-        RTMemFreeZ(pVirtqReq, cbReqHdr);
-        AssertMsgRCReturn(rc, ("Failed to allocate I/O request, rc=%Rrc\n", rc), rc);
-    }
+    AssertMsgRCReturn(rc, ("Failed to allocate I/O request, rc=%Rrc\n", rc), rc);
 
     pReq->hIoReq      = hIoReq;
     pReq->pTarget     = pTarget;
@@ -1269,17 +1286,17 @@ static int virtioScsiR3ReqSubmit(PPDMDEVINS pDevIns, PVIRTIOSCSI pThis, PVIRTIOS
     pReq->cbDataIn    = cbDataIn;
     pReq->cbDataOut   = cbDataOut;
     pReq->pDescChain  = pDescChain;
-    pReq->uDataInOff  = uDataInOff;
-    pReq->uDataOutOff = uDataOutOff;
+    pReq->uDataInOff  = offDataIn;
+    pReq->uDataOutOff = offDataOut;
 
-    pReq->cbSenseAlloc = pThis->virtioScsiConfig.uSenseSize;
+    pReq->cbSenseAlloc = cbSense;
     pReq->pbSense      = (uint8_t *)RTMemAllocZ(pReq->cbSenseAlloc);
     AssertMsgReturnStmt(pReq->pbSense, ("Out of memory allocating sense buffer"),
-                        virtioScsiR3FreeReq(pTarget, pReq); RTMemFreeZ(pVirtqReq, cbReqHdr);, VERR_NO_MEMORY);
+                        virtioScsiR3FreeReq(pTarget, pReq);, VERR_NO_MEMORY);
 
     /* Note: DrvSCSI allocates one virtual memory buffer for input and output phases of the request */
     rc = pIMediaEx->pfnIoReqSendScsiCmd(pIMediaEx, pReq->hIoReq, uScsiLun,
-                                        pVirtqReq->uCdb, (size_t)pThis->virtioScsiConfig.uCdbSize,
+                                        &VirtqReq.abCdb[0], cbCdb,
                                         PDMMEDIAEXIOREQSCSITXDIR_UNKNOWN, &pReq->enmTxDir,
                                         RT_MAX(cbDataIn, cbDataOut),
                                         pReq->pbSense, pReq->cbSenseAlloc, &pReq->cbSenseLen,
@@ -1315,7 +1332,6 @@ static int virtioScsiR3ReqSubmit(PPDMDEVINS pDevIns, PVIRTIOSCSI pThis, PVIRTIOS
         virtioScsiR3FreeReq(pTarget, pReq);
     }
 
-    RTMemFreeZ(pVirtqReq, cbReqHdr);
     return VINF_SUCCESS;
 }
 
