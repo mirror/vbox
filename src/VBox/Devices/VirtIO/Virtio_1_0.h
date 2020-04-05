@@ -83,6 +83,7 @@ typedef struct VIRTIOSGBUF
     PVIRTIOSGSEG paSegs;                                       /**< Pointer to the scatter/gather array       */
     unsigned  cSegs;                                            /**< Number of segments                        */
     unsigned  idxSeg;                                           /**< Current segment we are in                 */
+    /** @todo r=bird: s/gcPhys/GCPhys/g as this is how we write it everywhere. */
     RTGCPHYS  gcPhysCur;                                        /**< Ptr to byte within the current seg        */
     size_t    cbSegLeft;                                        /**< # of bytes left in the current segment    */
 } VIRTIOSGBUF;
