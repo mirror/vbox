@@ -664,15 +664,6 @@ static uint8_t virtioScsiEstimateCdbLen(uint8_t uCmd, uint8_t cbMax)
 
 static int virtioScsiR3SendEvent(PPDMDEVINS pDevIns, PVIRTIOSCSI pThis, uint16_t uTarget, uint32_t uEventType, uint32_t uReason)
 {
-    VIRTIOSCSI_EVENT_T event;
-    event.uEvent = uEventType;
-    event.uReason = uReason;
-    event.abVirtioLun[0] = 1;
-    event.abVirtioLun[1] = uTarget;
-    event.abVirtioLun[2] = (LUN0 >> 8) & 0x40;
-    event.abVirtioLun[3] = LUN0 & 0xff;
-    event.abVirtioLun[4] = event.abVirtioLun[5] = event.abVirtioLun[6] = event.abVirtioLun[7] = 0;
-
     switch (uEventType)
     {
         case VIRTIOSCSI_T_NO_EVENT:
@@ -713,6 +704,11 @@ static int virtioScsiR3SendEvent(PPDMDEVINS pDevIns, PVIRTIOSCSI pThis, uint16_t
             return VINF_SUCCESS;
     }
 
+    /** @todo r=bird: virtioCoreQueueIsEmpty() only differs in one step from what
+     *        virtioCoreR3QueueGet() also does, and that is checking
+     *        VIRTIO_STATUS_DRIVER_OK.  So, why not combine the two and check the
+     *        virtioCoreR3QueueGet status code?!  (Actually, I've added a status
+     *        check there myself, as we'll dump core if it fails and we don't.) */
     if (virtioCoreQueueIsEmpty(pDevIns, &pThis->Virtio, EVENTQ_IDX))
     {
         LogFunc(("eventq is empty, events missed (driver didn't preload queue)!\n"));
@@ -721,27 +717,30 @@ static int virtioScsiR3SendEvent(PPDMDEVINS pDevIns, PVIRTIOSCSI pThis, uint16_t
     }
 
     PVIRTIO_DESC_CHAIN_T pDescChain;
-    virtioCoreR3QueueGet(pDevIns, &pThis->Virtio, EVENTQ_IDX, &pDescChain, true);
+    int rc = virtioCoreR3QueueGet(pDevIns, &pThis->Virtio, EVENTQ_IDX, &pDescChain, true);
+    AssertRCReturn(rc, rc);
 
-    PRTSGBUF pReqSegBuf = (PRTSGBUF)RTMemAllocZ(sizeof(RTSGBUF));
-    AssertReturn(pReqSegBuf, VERR_NO_MEMORY);
+    VIRTIOSCSI_EVENT_T Event;
+    Event.uEvent = uEventType;
+    Event.uReason = uReason;
+    Event.abVirtioLun[0] = 1;
+    Event.abVirtioLun[1] = uTarget;
+    Event.abVirtioLun[2] = (LUN0 >> 8) & 0x40;
+    Event.abVirtioLun[3] = LUN0 & 0xff;
+    Event.abVirtioLun[4] = 0;
+    Event.abVirtioLun[5] = 0;
+    Event.abVirtioLun[6] = 0;
+    Event.abVirtioLun[7] = 0;
 
-    PRTSGSEG paReqSegs  = (PRTSGSEG)RTMemAllocZ(sizeof(RTSGSEG) * 2);
-    AssertReturn(paReqSegs, VERR_NO_MEMORY);
+    RTSGSEG aReqSegs[1];
+    aReqSegs[0].pvSeg = &Event;
+    aReqSegs[0].cbSeg = sizeof(Event);
 
-    /* Copy segment data to malloc'd memory to avoid stack out-of-scope errors sanitizer doesn't detect */
-    paReqSegs[0].pvSeg = RTMemAlloc(sizeof(event));
-    AssertReturn(paReqSegs[0].pvSeg, VERR_NO_MEMORY);
-    memcpy(paReqSegs[0].pvSeg, &event, sizeof(event));
+    RTSGBUF ReqSgBuf;
+    RTSgBufInit(&ReqSgBuf, aReqSegs, RT_ELEMENTS(aReqSegs));
 
-    RTSgBufInit(pReqSegBuf, paReqSegs, 1);
-
-    virtioCoreR3QueuePut(pDevIns, &pThis->Virtio, EVENTQ_IDX, pReqSegBuf, pDescChain, true /*fFence*/);
+    virtioCoreR3QueuePut(pDevIns, &pThis->Virtio, EVENTQ_IDX, &ReqSgBuf, pDescChain, true /*fFence*/);
     virtioCoreQueueSync(pDevIns, &pThis->Virtio, EVENTQ_IDX);
-
-    RTMemFree(paReqSegs[0].pvSeg);
-    RTMemFree(paReqSegs);
-    RTMemFree(pReqSegBuf);
 
     return VINF_SUCCESS;
 }
