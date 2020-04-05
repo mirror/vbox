@@ -1029,17 +1029,19 @@ static DECLCALLBACK(int) virtioScsiR3IoReqCopyFromBuf(PPDMIMEDIAEXPORT pInterfac
     size_t cbCopied = 0;
     size_t cbRemain = pReq->cbDataIn;
 
+    /* Skip past the REQ_RESP_HDR_T and sense code if we're at the start of the buffer. */
     if (!pSgPhysReturn->idxSeg && pSgPhysReturn->cbSegLeft == pSgPhysReturn->paSegs[0].cbSeg)
         virtioCoreSgBufAdvance(pSgPhysReturn, pReq->uDataInOff);
 
     while (cbRemain)
     {
-        PVIRTIOSGSEG paSeg = &pSgPhysReturn->paSegs[pSgPhysReturn->idxSeg];
-        uint64_t dstSgStart = (uint64_t)paSeg->gcPhys;
-        uint64_t dstSgLen   = (uint64_t)paSeg->cbSeg;
-        uint64_t dstSgCur   = (uint64_t)pSgPhysReturn->gcPhysCur;
-        cbCopied = RT_MIN((uint64_t)pSgBuf->cbSegLeft, dstSgLen - (dstSgCur - dstSgStart));
-        PDMDevHlpPCIPhysWrite(pDevIns, (RTGCPHYS)pSgPhysReturn->gcPhysCur, pSgBuf->pvSegCur, cbCopied);
+        PVIRTIOSGSEG pSeg = &pSgPhysReturn->paSegs[pSgPhysReturn->idxSeg];
+        /** @todo r=bird: add inline function for getting number of bytes left in the
+         *        current segment.  Actually, shouldn't pSgPhysReturn->cbSegLeft have
+         *        this value? */
+        cbCopied = RT_MIN(pSgBuf->cbSegLeft, pSeg->cbSeg - (size_t)(pSgPhysReturn->gcPhysCur - pSeg->gcPhys));
+        Assert(cbCopied > 0);
+        PDMDevHlpPCIPhysWrite(pDevIns, pSgPhysReturn->gcPhysCur, pSgBuf->pvSegCur, cbCopied);
         RTSgBufAdvance(pSgBuf, cbCopied);
         virtioCoreSgBufAdvance(pSgPhysReturn, cbCopied);
         cbRemain -= cbCopied;
@@ -1047,7 +1049,7 @@ static DECLCALLBACK(int) virtioScsiR3IoReqCopyFromBuf(PPDMIMEDIAEXPORT pInterfac
     RT_UNTRUSTED_NONVOLATILE_COPY_FENCE(); /* needed? */
 
     Log3Func((".... Copied %lu bytes from %lu byte guest buffer, residual=%lu\n",
-         cbCopy, pReq->pDescChain->cbPhysReturn, pReq->pDescChain->cbPhysReturn - cbCopy));
+              cbCopy, pReq->pDescChain->cbPhysReturn, pReq->pDescChain->cbPhysReturn - cbCopy));
 
     return VINF_SUCCESS;
 }
@@ -1075,20 +1077,20 @@ static DECLCALLBACK(int) virtioScsiR3IoReqCopyToBuf(PPDMIMEDIAEXPORT pInterface,
     size_t cbRemain = pReq->cbDataOut;
     while (cbRemain)
     {
-        PVIRTIOSGSEG paSeg  = &pSgPhysSend->paSegs[pSgPhysSend->idxSeg];
-        uint64_t srcSgStart = (uint64_t)paSeg->gcPhys;
-        uint64_t srcSgLen   = (uint64_t)paSeg->cbSeg;
-        uint64_t srcSgCur   = (uint64_t)pSgPhysSend->gcPhysCur;
-        cbCopied = RT_MIN((uint64_t)pSgBuf->cbSegLeft, srcSgLen - (srcSgCur - srcSgStart));
-        PDMDevHlpPCIPhysRead(pDevIns,
-                          (RTGCPHYS)pSgPhysSend->gcPhysCur, pSgBuf->pvSegCur, cbCopied);
+        PVIRTIOSGSEG const pSeg = &pSgPhysSend->paSegs[pSgPhysSend->idxSeg];
+        /** @todo r=bird: add inline function for getting number of bytes left in the
+         *        current segment.  Actually, shouldn't pSgPhysSend->cbSegLeft have
+         *        this value? */
+        cbCopied = RT_MIN(pSgBuf->cbSegLeft, pSeg->cbSeg - (size_t)(pSgPhysSend->gcPhysCur - pSeg->gcPhys));
+        Assert(cbCopied > 0);
+        PDMDevHlpPCIPhysRead(pDevIns, pSgPhysSend->gcPhysCur, pSgBuf->pvSegCur, cbCopied);
         RTSgBufAdvance(pSgBuf, cbCopied);
         virtioCoreSgBufAdvance(pSgPhysSend, cbCopied);
         cbRemain -= cbCopied;
     }
 
     Log2Func((".... Copied %lu bytes to %lu byte guest buffer, residual=%lu\n",
-         cbCopy, pReq->pDescChain->cbPhysReturn, pReq->pDescChain->cbPhysReturn - cbCopy));
+              cbCopy, pReq->pDescChain->cbPhysReturn, pReq->pDescChain->cbPhysReturn - cbCopy));
 
     return VINF_SUCCESS;
 }
