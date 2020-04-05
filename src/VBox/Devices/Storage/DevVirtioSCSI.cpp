@@ -736,7 +736,7 @@ static int virtioScsiR3SendEvent(PPDMDEVINS pDevIns, PVIRTIOSCSI pThis, uint16_t
 
     RTSgBufInit(pReqSegBuf, paReqSegs, 1);
 
-    virtioCoreR3QueuePut(pDevIns, &pThis->Virtio, EVENTQ_IDX, pReqSegBuf, pDescChain, true);
+    virtioCoreR3QueuePut(pDevIns, &pThis->Virtio, EVENTQ_IDX, pReqSegBuf, pDescChain, true /*fFence*/);
     virtioCoreQueueSync(pDevIns, &pThis->Virtio, EVENTQ_IDX);
 
     RTMemFree(paReqSegs[0].pvSeg);
@@ -1318,50 +1318,47 @@ static int virtioScsiR3ReqSubmit(PPDMDEVINS pDevIns, PVIRTIOSCSI pThis, PVIRTIOS
 static int virtioScsiR3Ctrl(PPDMDEVINS pDevIns, PVIRTIOSCSI pThis, PVIRTIOSCSICC pThisCC,
                             uint16_t qIdx, PVIRTIO_DESC_CHAIN_T pDescChain)
 {
-    uint8_t bResponse = VIRTIOSCSI_S_OK;
-    uint8_t cSegs = 0;
-
     AssertReturn(pDescChain->cbPhysSend >= RT_MIN(sizeof(VIRTIOSCSI_CTRL_AN_T),
                                                   sizeof(VIRTIOSCSI_CTRL_TMF_T)), 0);
 
     /*
      * Allocate buffer and read in the control command
      */
-    PVIRTIO_SCSI_CTRL_UNION_T pScsiCtrlUnion = (PVIRTIO_SCSI_CTRL_UNION_T)RTMemAllocZ(sizeof(VIRTIO_SCSI_CTRL_UNION_T));
-    AssertPtrReturn(pScsiCtrlUnion, VERR_NO_MEMORY /*ignored*/);
+    VIRTIO_SCSI_CTRL_UNION_T ScsiCtrlUnion;
+    RT_ZERO(ScsiCtrlUnion);
 
-    uint8_t *pb = pScsiCtrlUnion->ab;
-    for (size_t cb = RT_MIN(pDescChain->cbPhysSend, sizeof(VIRTIO_SCSI_CTRL_UNION_T)); cb; )
+    size_t const cbCtrl = RT_MIN(pDescChain->cbPhysSend, sizeof(VIRTIO_SCSI_CTRL_UNION_T));
+    for (size_t offCtrl = 0; offCtrl < cbCtrl; )
     {
-        size_t cbSeg = cb;
+        size_t cbSeg = cbCtrl - offCtrl;
         RTGCPHYS GCPhys = virtioCoreSgBufGetNextSegment(pDescChain->pSgPhysSend, &cbSeg);
-        PDMDevHlpPCIPhysRead(pDevIns, GCPhys, pb, cbSeg);
-        pb += cbSeg;
-        cb -= cbSeg;
+        PDMDevHlpPCIPhysRead(pDevIns, GCPhys, &ScsiCtrlUnion.ab[offCtrl], cbSeg);
+        offCtrl += cbSeg;
     }
 
-    /** @todo r=bird: Memory leak here.  */
-    AssertReturn(   (pScsiCtrlUnion->scsiCtrl.uType == VIRTIOSCSI_T_TMF
+    AssertReturn(   (ScsiCtrlUnion.scsiCtrl.uType == VIRTIOSCSI_T_TMF
                      && pDescChain->cbPhysSend >= sizeof(VIRTIOSCSI_CTRL_TMF_T))
-                 || ( (   pScsiCtrlUnion->scsiCtrl.uType == VIRTIOSCSI_T_AN_QUERY
-                       || pScsiCtrlUnion->scsiCtrl.uType == VIRTIOSCSI_T_AN_SUBSCRIBE)
-                     && pDescChain->cbPhysSend >= sizeof(VIRTIOSCSI_CTRL_AN_T)), 0);
+                 || ( (   ScsiCtrlUnion.scsiCtrl.uType == VIRTIOSCSI_T_AN_QUERY
+                       || ScsiCtrlUnion.scsiCtrl.uType == VIRTIOSCSI_T_AN_SUBSCRIBE)
+                     && pDescChain->cbPhysSend >= sizeof(VIRTIOSCSI_CTRL_AN_T)),
+                    0 /** @todo r=bird: what kind of status is '0' here? */);
 
-    /** @todo r=bird: This segment handling is unnecessary. A stack array should
-     *        suffice.  The stack variable w/ initializer + memcpy into paReqSegs
-     *        done in the switch below is also weird + suboptimal. */
-    PRTSGSEG paReqSegs = (PRTSGSEG)RTMemAllocZ(sizeof(RTSGSEG) * 2);
-    AssertReturn(paReqSegs, VERR_NO_MEMORY); /** @todo r=bird: Memory leak here.  */
-
-    switch (pScsiCtrlUnion->scsiCtrl.uType)
+    union
+    {
+        uint32_t fSupportedEvents;
+    }       uData;
+    uint8_t bResponse = VIRTIOSCSI_S_OK;
+    uint8_t cSegs;
+    RTSGSEG aReqSegs[2];
+    switch (ScsiCtrlUnion.scsiCtrl.uType)
     {
         case VIRTIOSCSI_T_TMF: /* Task Management Functions */
         {
-            uint8_t  uTarget  = pScsiCtrlUnion->scsiCtrlTmf.abScsiLun[1];
-            uint32_t uScsiLun = (pScsiCtrlUnion->scsiCtrlTmf.abScsiLun[2] << 8
-                               | pScsiCtrlUnion->scsiCtrlTmf.abScsiLun[3]) & 0x3fff;
+            uint8_t  uTarget  = ScsiCtrlUnion.scsiCtrlTmf.abScsiLun[1];
+            uint32_t uScsiLun = RT_MAKE_U16(ScsiCtrlUnion.scsiCtrlTmf.abScsiLun[3],
+                                            ScsiCtrlUnion.scsiCtrlTmf.abScsiLun[2]) & 0x3fff;
             Log2Func(("[%s] (Target: %d LUN: %d)  Task Mgt Function: %s\n",
-                      VIRTQNAME(qIdx), uTarget, uScsiLun, virtioGetTMFTypeText(pScsiCtrlUnion->scsiCtrlTmf.uSubtype)));
+                      VIRTQNAME(qIdx), uTarget, uScsiLun, virtioGetTMFTypeText(ScsiCtrlUnion.scsiCtrlTmf.uSubtype)));
 
             if (uTarget >= pThis->cTargets || !pThisCC->paTargetInstances[uTarget].fPresent)
                 bResponse = VIRTIOSCSI_S_BAD_TARGET;
@@ -1369,7 +1366,7 @@ static int virtioScsiR3Ctrl(PPDMDEVINS pDevIns, PVIRTIOSCSI pThis, PVIRTIOSCSICC
             if (uScsiLun != 0)
                 bResponse = VIRTIOSCSI_S_INCORRECT_LUN;
             else
-                switch (pScsiCtrlUnion->scsiCtrlTmf.uSubtype)
+                switch (ScsiCtrlUnion.scsiCtrlTmf.uSubtype)
                 {
                     case VIRTIOSCSI_T_TMF_ABORT_TASK:
                         bResponse = VIRTIOSCSI_S_FUNCTION_SUCCEEDED;
@@ -1399,19 +1396,15 @@ static int virtioScsiR3Ctrl(PPDMDEVINS pDevIns, PVIRTIOSCSI pThis, PVIRTIOSCSICC
                         LogFunc(("Unknown TMF type\n"));
                         bResponse = VIRTIOSCSI_S_FAILURE;
                 }
-
-            RTSGSEG aSegs[] = { { &bResponse,  sizeof(bResponse) } };
-            memcpy(paReqSegs, aSegs, sizeof(aSegs));
-            cSegs = RT_ELEMENTS(aSegs);
+            cSegs = 0; /* only bResponse */
             break;
         }
         case VIRTIOSCSI_T_AN_QUERY: /* Guest SCSI driver is querying supported async event notifications */
         {
-
-            PVIRTIOSCSI_CTRL_AN_T pScsiCtrlAnQuery = &pScsiCtrlUnion->scsiCtrlAsyncNotify;
+            PVIRTIOSCSI_CTRL_AN_T const pScsiCtrlAnQuery = &ScsiCtrlUnion.scsiCtrlAsyncNotify;
 
             uint8_t  uTarget  = pScsiCtrlAnQuery->abScsiLun[1];
-            uint32_t uScsiLun = (pScsiCtrlAnQuery->abScsiLun[2] << 8 | pScsiCtrlAnQuery->abScsiLun[3]) & 0x3fff;
+            uint32_t uScsiLun = RT_MAKE_U16(pScsiCtrlAnQuery->abScsiLun[3], pScsiCtrlAnQuery->abScsiLun[2]) & 0x3fff;
 
             if (uTarget >= pThis->cTargets || !pThisCC->paTargetInstances[uTarget].fPresent)
                 bResponse = VIRTIOSCSI_S_BAD_TARGET;
@@ -1430,24 +1423,22 @@ static int virtioScsiR3Ctrl(PPDMDEVINS pDevIns, PVIRTIOSCSI pThis, PVIRTIOSCSICC
                           VIRTQNAME(qIdx), uTarget, uScsiLun, szTypeText));
             }
 #endif
-            uint32_t fSupportedEvents = SUPPORTED_EVENTS;
-            RTSGSEG aSegs[] = { { &fSupportedEvents, sizeof(fSupportedEvents) },
-                                { &bResponse, sizeof(bResponse) } };
-            memcpy(paReqSegs, aSegs, sizeof(aSegs));
-            cSegs = RT_ELEMENTS(aSegs);
+            uData.fSupportedEvents = SUPPORTED_EVENTS;
+            aReqSegs[0].pvSeg = &uData.fSupportedEvents;
+            aReqSegs[0].cbSeg = sizeof(uData.fSupportedEvents);
+            cSegs = 1;
             break;
         }
         case VIRTIOSCSI_T_AN_SUBSCRIBE: /* Guest SCSI driver is subscribing to async event notification(s) */
         {
-            PVIRTIOSCSI_CTRL_AN_T pScsiCtrlAnSubscribe = &pScsiCtrlUnion->scsiCtrlAsyncNotify;
+            PVIRTIOSCSI_CTRL_AN_T const pScsiCtrlAnSubscribe = &ScsiCtrlUnion.scsiCtrlAsyncNotify;
 
             if (pScsiCtrlAnSubscribe->fEventsRequested & ~SUBSCRIBABLE_EVENTS)
                 LogFunc(("Unsupported bits in event subscription event mask: %#x\n",
                          pScsiCtrlAnSubscribe->fEventsRequested));
 
             uint8_t  uTarget  = pScsiCtrlAnSubscribe->abScsiLun[1];
-            uint32_t uScsiLun = (pScsiCtrlAnSubscribe->abScsiLun[2] << 8
-                               | pScsiCtrlAnSubscribe->abScsiLun[3]) & 0x3fff;
+            uint32_t uScsiLun = RT_MAKE_U16(pScsiCtrlAnSubscribe->abScsiLun[3], pScsiCtrlAnSubscribe->abScsiLun[2]) & 0x3fff;
 
 #ifdef LOG_ENABLED
             if (LogIs2Enabled())
@@ -1469,49 +1460,34 @@ static int virtioScsiR3Ctrl(PPDMDEVINS pDevIns, PVIRTIOSCSI pThis, PVIRTIOSCSICC
                 pThis->fAsyncEvtsEnabled = SUPPORTED_EVENTS & pScsiCtrlAnSubscribe->fEventsRequested;
             }
 
-            RTSGSEG aSegs[] = { { &pThis->fAsyncEvtsEnabled, sizeof(pThis->fAsyncEvtsEnabled) },
-                                { &bResponse, sizeof(bResponse) } };
-            memcpy(paReqSegs, aSegs, sizeof(aSegs));
-            cSegs = RT_ELEMENTS(aSegs);
+            aReqSegs[0].pvSeg = &pThis->fAsyncEvtsEnabled;
+            aReqSegs[0].cbSeg = sizeof(pThis->fAsyncEvtsEnabled);
+            cSegs = 1;
             break;
         }
         default:
         {
-            LogFunc(("Unknown control type extracted from %s: %u\n", VIRTQNAME(qIdx), pScsiCtrlUnion->scsiCtrl.uType));
+            LogFunc(("Unknown control type extracted from %s: %u\n", VIRTQNAME(qIdx), ScsiCtrlUnion.scsiCtrl.uType));
 
             bResponse = VIRTIOSCSI_S_FAILURE;
-            RTSGSEG aSegs[] = { { &bResponse, sizeof(bResponse) } };
-            memcpy(paReqSegs, aSegs, sizeof(aSegs));
-            cSegs = RT_ELEMENTS(aSegs);
+            cSegs = 0; /* only bResponse */
+            break;
         }
     }
+
+    /* Add the response code: */
+    aReqSegs[cSegs].pvSeg = &bResponse;
+    aReqSegs[cSegs].cbSeg = sizeof(bResponse);
+    cSegs++;
+    Assert(cSegs <= RT_ELEMENTS(aReqSegs));
+
     LogFunc(("Response code: %s\n", virtioGetReqRespText(bResponse)));
 
-    PRTSGBUF pReqSegBuf = (PRTSGBUF)RTMemAllocZ(sizeof(RTSGBUF));
-    AssertReturn(pReqSegBuf, VERR_NO_MEMORY); /** @todo r=bird: Memory leak here.  */
+    RTSGBUF ReqSgBuf;
+    RTSgBufInit(&ReqSgBuf, aReqSegs, cSegs);
 
-    /* Copy segment data to malloc'd memory to avoid stack out-of-scope errors sanitizer doesn't detect */
-    /** @todo r=bird: The above comment makes zero sense as the memory is freed
-     *        before we return, so there cannot be any trouble with out-of-scope
-     *        stuff here. */
-    for (int i = 0; i < cSegs; i++)
-    {
-        void *pv = paReqSegs[i].pvSeg;
-        paReqSegs[i].pvSeg = RTMemDup(pv, paReqSegs[i].cbSeg);
-        AssertReturn(paReqSegs[i].pvSeg, VERR_NO_MEMORY); /** @todo r=bird: Memory leak here.  */
-    }
-
-    RTSgBufInit(pReqSegBuf, paReqSegs, cSegs);
-
-    virtioCoreR3QueuePut(pDevIns, &pThis->Virtio, qIdx, pReqSegBuf, pDescChain, true);
+    virtioCoreR3QueuePut(pDevIns, &pThis->Virtio, qIdx, &ReqSgBuf, pDescChain, true /*fFence*/);
     virtioCoreQueueSync(pDevIns, &pThis->Virtio, qIdx);
-
-    for (int i = 0; i < cSegs; i++)
-        RTMemFree(paReqSegs[i].pvSeg);
-
-    RTMemFree(paReqSegs);
-    RTMemFree(pReqSegBuf);
-    /** @todo r=bird: Leaking pScsiCtrlUnion here! */
 
     return VINF_SUCCESS;
 }
