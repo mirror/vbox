@@ -976,14 +976,14 @@ static DECLCALLBACK(int) virtioScsiR3IoReqFinish(PPDMIMEDIAEXPORT pInterface, PD
         /* req datain bytes already in guest phys mem. via virtioScsiIoReqCopyFromBuf() */
         RTSGSEG aReqSegs[2];
 
-        paReqSegs[0].pvSeg = &respHdr;
-        paReqSegs[0].cbSeg = sizeof(respHdr);
+        aReqSegs[0].pvSeg = &respHdr;
+        aReqSegs[0].cbSeg = sizeof(respHdr);
 
-        paReqSegs[1].pvSeg = pReq->pbSense;
-        paReqSegs[1].cbSeg = pReq->cbSenseAlloc; /* VirtIO 1.0 spec 5.6.4/5.6.6.1 */
+        aReqSegs[1].pvSeg = pReq->pbSense;
+        aReqSegs[1].cbSeg = pReq->cbSenseAlloc; /* VirtIO 1.0 spec 5.6.4/5.6.6.1 */
 
-        RTSGBUF ReqSgBuf
-        RTSgBufInit(&ReqSgBuf, aReqSegs, RT_ELEMENTS(aRegSegs));
+        RTSGBUF ReqSgBuf;
+        RTSgBufInit(&ReqSgBuf, aReqSegs, RT_ELEMENTS(aReqSegs));
 
         size_t cbReqSgBuf = RTSgBufCalcTotalLength(&ReqSgBuf);
         /** @todo r=bird: Returning here looks a little bogus... */
