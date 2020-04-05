@@ -813,6 +813,40 @@ static int virtioScsiR3ReqErr(PPDMDEVINS pDevIns, PVIRTIOSCSI pThis, PVIRTIOSCSI
     return VINF_SUCCESS;
 }
 
+
+/**
+ * Variant of virtioScsiR3ReqErr that takes four (4) REQ_RESP_HDR_T member
+ * fields rather than a pointer to an initialized structure.
+ *
+ * @param   pDevIns     The device instance.
+ * @param   pThis       VirtIO SCSI shared instance data.
+ * @param   pThisCC     VirtIO SCSI ring-3 instance data.
+ * @param   qIdx        Queue index
+ * @param   pDescChain  Pointer to pre-processed descriptor chain pulled from virtq
+ * @param   pRespHdr    Response header
+ * @param   cbResidual  The number of residual bytes or something like that.
+ * @param   bStatus     The SCSI status code.
+ * @param   bResponse   The virtio SCSI response code.
+ * @param   pbSense     Pointer to sense buffer or NULL if none.
+ * @param   cbSense     The number of bytes of sense data. Zero if none.
+ * @param   cbSenseCfg  The configured sense buffer size.
+ *
+ * @returns VINF_SUCCESS
+ */
+static int virtioScsiR3ReqErr4(PPDMDEVINS pDevIns, PVIRTIOSCSI pThis, PVIRTIOSCSICC pThisCC, uint16_t qIdx,
+                               PVIRTIO_DESC_CHAIN_T pDescChain, uint32_t cbResidual, uint8_t bStatus, uint8_t bResponse,
+                               uint8_t *pbSense, uint32_t cbSense, uint32_t cbSenseCfg)
+{
+    REQ_RESP_HDR_T RespHdr;
+    RespHdr.cbSenseLen       = cbSense;
+    RespHdr.uResidual        = cbResidual;
+    RespHdr.uStatusQualifier = 0;
+    RespHdr.uStatus          = bStatus;
+    RespHdr.uResponse        = bResponse;
+
+    return virtioScsiR3ReqErr(pDevIns, pThis, pThisCC, qIdx, pDescChain, &RespHdr, pbSense, cbSenseCfg);
+}
+
 static void virtioScsiR3SenseKeyToVirtioResp(REQ_RESP_HDR_T *respHdr, uint8_t uSenseKey)
 {
     switch (uSenseKey)
@@ -1097,11 +1131,11 @@ static int virtioScsiR3ReqSubmit(PPDMDEVINS pDevIns, PVIRTIOSCSI pThis, PVIRTIOS
     /*
      * Validate configuration values we use here before we start.
      */
+    uint32_t const cbCdb      = pThis->virtioScsiConfig.uCdbSize;
+    uint32_t const cbSenseCfg = pThis->virtioScsiConfig.uSenseSize;
     /** @todo Report these as errors to the guest or does the caller do that? */
-    uint32_t const cbCdb   = pThis->virtioScsiConfig.uCdbSize;
     ASSERT_GUEST_LOGREL_MSG_RETURN(cbCdb <= VIRTIOSCSI_CDB_SIZE_MAX, ("cbCdb=%#x\n", cbCdb), VERR_OUT_OF_RANGE);
-    uint32_t const cbSense = pThis->virtioScsiConfig.uSenseSize;
-    ASSERT_GUEST_LOGREL_MSG_RETURN(cbSense <= VIRTIOSCSI_SENSE_SIZE_MAX, ("cbSense=%#x\n", cbSense), VERR_OUT_OF_RANGE);
+    ASSERT_GUEST_LOGREL_MSG_RETURN(cbSenseCfg <= VIRTIOSCSI_SENSE_SIZE_MAX, ("cbSenseCfg=%#x\n", cbSenseCfg), VERR_OUT_OF_RANGE);
 
     /*
      * Extract command header and CDB from guest physical memory
@@ -1163,7 +1197,7 @@ static int virtioScsiR3ReqSubmit(PPDMDEVINS pDevIns, PVIRTIOSCSI pThis, PVIRTIOS
      * Calculate request offsets and data sizes.
      */
     uint32_t const offDataOut = sizeof(REQ_CMD_HDR_T)  + cbCdb;
-    uint32_t const offDataIn  = sizeof(REQ_RESP_HDR_T) + cbSense;
+    uint32_t const offDataIn  = sizeof(REQ_RESP_HDR_T) + cbSenseCfg;
     uint32_t const cbDataOut  = pDescChain->cbPhysSend - offDataOut;
     /** @todo r=bird: Validate cbPhysReturn properly? I've just RT_MAX'ed it for now. */
     uint32_t const cbDataIn   = RT_MAX(pDescChain->cbPhysReturn, offDataIn) - offDataIn;
@@ -1178,18 +1212,14 @@ static int virtioScsiR3ReqSubmit(PPDMDEVINS pDevIns, PVIRTIOSCSI pThis, PVIRTIOS
     else
     {
         Log2Func(("Error submitting request, bad LUN format\n"));
-        REQ_RESP_HDR_T respHdr = { 0 };
-        respHdr.cbSenseLen = 0;
-        respHdr.uStatus    = 0;
-        respHdr.uResponse  = VIRTIOSCSI_S_FAILURE;
-        respHdr.uResidual  = cbDataIn + cbDataOut;
-        virtioScsiR3ReqErr(pDevIns, pThis, pThisCC, qIdx, pDescChain, &respHdr, NULL, cbSense);
-        return VINF_SUCCESS;
+        return virtioScsiR3ReqErr4(pDevIns, pThis, pThisCC, qIdx, pDescChain, cbDataIn + cbDataOut, 0 /*bStatus*/,
+                                   VIRTIOSCSI_S_FAILURE, NULL /*pbSense*/, 0 /*cbSense*/, cbSenseCfg);
     }
 
+    PVIRTIOSCSITARGET const pTarget = &pThisCC->paTargetInstances[uTarget];
     if (RT_LIKELY(   uTarget < pThis->cTargets
-                  && pThisCC->paTargetInstances[uTarget].fPresent
-                  && pThisCC->paTargetInstances[uTarget].pDrvMediaEx))
+                  && pTarget->fPresent
+                  && pTarget->pDrvMediaEx))
     { /*  likely */ }
     else
     {
@@ -1197,14 +1227,8 @@ static int virtioScsiR3ReqSubmit(PPDMDEVINS pDevIns, PVIRTIOSCSI pThis, PVIRTIOS
         uint8_t abSense[] = { RT_BIT(7) | SCSI_SENSE_RESPONSE_CODE_CURR_FIXED,
                               0, SCSI_SENSE_ILLEGAL_REQUEST,
                               0, 0, 0, 0, 10, SCSI_ASC_LOGICAL_UNIT_NOT_SUPPORTED, 0, 0 };
-        REQ_RESP_HDR_T respHdr = { 0 };
-        respHdr.cbSenseLen = sizeof(abSense);
-        respHdr.uStatus    = SCSI_STATUS_CHECK_CONDITION;
-        respHdr.uResponse  = VIRTIOSCSI_S_BAD_TARGET;
-        respHdr.uResidual  = cbDataOut + cbDataIn;
-        virtioScsiR3ReqErr(pDevIns, pThis, pThisCC, qIdx, pDescChain, &respHdr, abSense, cbSense);
-        return VINF_SUCCESS;
-
+        return virtioScsiR3ReqErr4(pDevIns, pThis, pThisCC, qIdx, pDescChain, cbDataIn + cbDataOut, SCSI_STATUS_CHECK_CONDITION,
+                                   VIRTIOSCSI_S_BAD_TARGET, abSense, sizeof(abSense), cbSenseCfg);
     }
     if (RT_LIKELY(uScsiLun == 0))
     { /*  likely */ }
@@ -1214,29 +1238,17 @@ static int virtioScsiR3ReqSubmit(PPDMDEVINS pDevIns, PVIRTIOSCSI pThis, PVIRTIOS
         uint8_t abSense[] = { RT_BIT(7) | SCSI_SENSE_RESPONSE_CODE_CURR_FIXED,
                               0, SCSI_SENSE_ILLEGAL_REQUEST,
                               0, 0, 0, 0, 10, SCSI_ASC_LOGICAL_UNIT_NOT_SUPPORTED, 0, 0 };
-        REQ_RESP_HDR_T respHdr = { 0 };
-        respHdr.cbSenseLen = sizeof(abSense);
-        respHdr.uStatus    = SCSI_STATUS_CHECK_CONDITION;
-        respHdr.uResponse  = VIRTIOSCSI_S_OK;
-        respHdr.uResidual  = cbDataOut + cbDataIn;
-        virtioScsiR3ReqErr(pDevIns, pThis, pThisCC, qIdx, pDescChain, &respHdr, abSense, cbSense);
-        return VINF_SUCCESS;
+        return virtioScsiR3ReqErr4(pDevIns, pThis, pThisCC, qIdx, pDescChain, cbDataIn + cbDataOut, SCSI_STATUS_CHECK_CONDITION,
+                                   VIRTIOSCSI_S_OK, abSense, sizeof(abSense), cbSenseCfg);
     }
     if (RT_LIKELY(!pThis->fResetting))
     { /*  likely */ }
     else
     {
         Log2Func(("Aborting req submission because reset is in progress\n"));
-        REQ_RESP_HDR_T respHdr = { 0 };
-        respHdr.cbSenseLen = 0;
-        respHdr.uStatus    = SCSI_STATUS_OK;
-        respHdr.uResponse  = VIRTIOSCSI_S_RESET;
-        respHdr.uResidual  = cbDataIn + cbDataOut;
-        virtioScsiR3ReqErr(pDevIns, pThis, pThisCC, qIdx, pDescChain, &respHdr, NULL, cbSense);
-        return VINF_SUCCESS;
+        return virtioScsiR3ReqErr4(pDevIns, pThis, pThisCC, qIdx, pDescChain, cbDataIn + cbDataOut, SCSI_STATUS_OK,
+                                   VIRTIOSCSI_S_RESET, NULL /*pbSense*/, 0 /*cbSense*/, cbSenseCfg);
     }
-
-    PVIRTIOSCSITARGET pTarget = &pThisCC->paTargetInstances[uTarget];
 
     if (RT_LIKELY(!cbDataIn || !cbDataOut || pThis->fHasInOutBufs)) /* VirtIO 1.0, 5.6.6.1.1 */
     { /*  likely */ }
@@ -1245,21 +1257,16 @@ static int virtioScsiR3ReqSubmit(PPDMDEVINS pDevIns, PVIRTIOSCSI pThis, PVIRTIOS
         Log2Func(("Error submitting request, got datain & dataout bufs w/o INOUT feature negotated\n"));
         uint8_t abSense[] = { RT_BIT(7) | SCSI_SENSE_RESPONSE_CODE_CURR_FIXED,
                               0, SCSI_SENSE_ILLEGAL_REQUEST, 0, 0, 0, 0, 10, 0, 0, 0 };
-        REQ_RESP_HDR_T respHdr = { 0 };
-        respHdr.cbSenseLen = sizeof(abSense);
-        respHdr.uStatus    = SCSI_STATUS_CHECK_CONDITION;
-        respHdr.uResponse  = VIRTIOSCSI_S_FAILURE;
-        respHdr.uResidual  = cbDataIn + cbDataOut;
-        virtioScsiR3ReqErr(pDevIns, pThis, pThisCC, qIdx, pDescChain, &respHdr, abSense, cbSense);
-        return VINF_SUCCESS;
+        return virtioScsiR3ReqErr4(pDevIns, pThis, pThisCC, qIdx, pDescChain, cbDataIn + cbDataOut, SCSI_STATUS_CHECK_CONDITION,
+                                   VIRTIOSCSI_S_FAILURE, abSense, sizeof(abSense), cbSenseCfg);
     }
 
     /*
      * Have underlying driver allocate a req of size set during initialization of this device.
      */
-    PDMMEDIAEXIOREQ hIoReq = NULL;
-    PVIRTIOSCSIREQ  pReq;
-    PPDMIMEDIAEX    pIMediaEx = pTarget->pDrvMediaEx;
+    PDMMEDIAEXIOREQ     hIoReq    = NULL;
+    PVIRTIOSCSIREQ      pReq      = NULL;
+    PPDMIMEDIAEX        pIMediaEx = pTarget->pDrvMediaEx;
 
     int rc = pIMediaEx->pfnIoReqAlloc(pIMediaEx, &hIoReq, (void **)&pReq, 0 /* uIoReqId */,
                                       PDMIMEDIAEX_F_SUSPEND_ON_RECOVERABLE_ERR);
@@ -1275,7 +1282,7 @@ static int virtioScsiR3ReqSubmit(PPDMDEVINS pDevIns, PVIRTIOSCSI pThis, PVIRTIOS
     pReq->uDataInOff  = offDataIn;
     pReq->uDataOutOff = offDataOut;
 
-    pReq->cbSenseAlloc = cbSense;
+    pReq->cbSenseAlloc = cbSenseCfg;
     pReq->pbSense      = (uint8_t *)RTMemAllocZ(pReq->cbSenseAlloc);
     AssertMsgReturnStmt(pReq->pbSense, ("Out of memory allocating sense buffer"),
                         virtioScsiR3FreeReq(pTarget, pReq);, VERR_NO_MEMORY);
@@ -1314,7 +1321,7 @@ static int virtioScsiR3ReqSubmit(PPDMDEVINS pDevIns, PVIRTIOSCSI pThis, PVIRTIOS
         respHdr.uStatus    = SCSI_STATUS_CHECK_CONDITION;
         respHdr.uResponse  = VIRTIOSCSI_S_FAILURE;
         respHdr.uResidual  = cbDataIn + cbDataOut;
-        virtioScsiR3ReqErr(pDevIns, pThis, pThisCC, qIdx, pDescChain, &respHdr, abSense, cbSense);
+        virtioScsiR3ReqErr(pDevIns, pThis, pThisCC, qIdx, pDescChain, &respHdr, abSense, cbSenseCfg);
         virtioScsiR3FreeReq(pTarget, pReq);
     }
 
