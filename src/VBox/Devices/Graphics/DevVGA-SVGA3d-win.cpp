@@ -2527,11 +2527,14 @@ int vmsvga3dGenerateMipmaps(PVGASTATECC pThisCC, uint32_t sid, SVGA3dTextureFilt
         rc = vmsvga3dBackCreateTexture(pState, pContext, cid, pSurface);
         AssertRCReturn(rc, rc);
     }
-    else
-    {
-        hr = pSurface->u.pTexture->SetAutoGenFilterType((D3DTEXTUREFILTERTYPE)filter);
-        AssertMsg(hr == D3D_OK, ("SetAutoGenFilterType failed with %x\n", hr));
-    }
+
+    AssertReturn(   pSurface->enmD3DResType == VMSVGA3D_D3DRESTYPE_TEXTURE
+                 || pSurface->enmD3DResType == VMSVGA3D_D3DRESTYPE_CUBE_TEXTURE
+                 || pSurface->enmD3DResType == VMSVGA3D_D3DRESTYPE_VOLUME_TEXTURE,
+                 VERR_INVALID_PARAMETER);
+
+    hr = pSurface->u.pTexture->SetAutoGenFilterType((D3DTEXTUREFILTERTYPE)filter);
+    AssertMsg(hr == D3D_OK, ("SetAutoGenFilterType failed with %x\n", hr));
 
     /* Generate the mip maps. */
     pSurface->u.pTexture->GenerateMipSubLevels();
@@ -4914,7 +4917,7 @@ static int vmsvga3dDrawPrimitivesSyncVertexBuffer(PVMSVGA3DCONTEXT pContext,
         && pVertexSurface->enmD3DResType != VMSVGA3D_D3DRESTYPE_VERTEX_BUFFER)
     {
         /* The buffer object is not an vertex one. Recreate the D3D resource. */
-        Assert(pVertexSurface->enmD3DResType == VMSVGA3D_D3DRESTYPE_INDEX_BUFFER);
+        AssertReturn(pVertexSurface->enmD3DResType == VMSVGA3D_D3DRESTYPE_INDEX_BUFFER, VERR_INVALID_PARAMETER);
         D3D_RELEASE(pVertexSurface->u.pIndexBuffer);
         pVertexSurface->enmD3DResType = VMSVGA3D_D3DRESTYPE_NONE;
 
@@ -4969,7 +4972,7 @@ static int vmsvga3dDrawPrimitivesSyncIndexBuffer(PVMSVGA3DCONTEXT pContext,
         && pIndexSurface->enmD3DResType != VMSVGA3D_D3DRESTYPE_INDEX_BUFFER)
     {
         /* The buffer object is not an index one. Must recreate the D3D resource. */
-        Assert(pIndexSurface->enmD3DResType == VMSVGA3D_D3DRESTYPE_VERTEX_BUFFER);
+        AssertReturn(pIndexSurface->enmD3DResType == VMSVGA3D_D3DRESTYPE_VERTEX_BUFFER, VERR_INVALID_PARAMETER);
         D3D_RELEASE(pIndexSurface->u.pVertexBuffer);
         pIndexSurface->enmD3DResType = VMSVGA3D_D3DRESTYPE_NONE;
 
