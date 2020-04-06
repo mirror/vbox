@@ -387,9 +387,9 @@ static int dhcp_send_nack(PNATState pData, struct bootp_t *bp, BOOTPClient *bc, 
 
 static int dhcp_send_ack(PNATState pData, struct bootp_t *bp, BOOTPClient *bc, struct mbuf *m, int fDhcpRequest)
 {
-    AssertReturn(bc != NULL, -1);
-
     int offReply = 0; /* boot_reply will fill general options and add END before sending response */
+
+    AssertReturn(bc != NULL, -1);
 
     dhcp_create_msg(pData, bp, m, DHCPACK);
     slirp_update_guest_addr_guess(pData, bc->addr.s_addr, "DHCP ACK");
