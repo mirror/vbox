@@ -572,14 +572,6 @@ static int dhcp_decode_request(PNATState pData, struct bootp_t *bp, size_t vlen,
             bc->addr.s_addr = ui32;
             break;
 
-        case REBINDING:
-            LogRel(("NAT: REBINDING state isn't impemented\n"));
-            return -1;
-
-        case SELECTING:
-            LogRel(("NAT: SELECTING state isn't impemented\n"));
-            return -1;
-
         case NONE:
             return -1;
 
