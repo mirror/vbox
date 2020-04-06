@@ -1267,8 +1267,8 @@ void vusbUrbDoReapAsync(PRTLISTANCHOR pUrbLst, RTMSINTERVAL cMillies)
                    && ((pRipe = pDev->pUsbIns->pReg->pfnUrbReap(pDev->pUsbIns, cMillies)) != NULL))
             {
                 vusbUrbAssert(pRipe);
-                if (pRipe == pVUsbUrbNext->pUrb)
-                    pVUsbUrbNext = RTListGetNext(pUrbLst, pVUsbUrb, VUSBURBVUSBINT, NdLst);
+                if (pVUsbUrbNext && pRipe == pVUsbUrbNext->pUrb)
+                    pVUsbUrbNext = RTListGetNext(pUrbLst, pVUsbUrbNext, VUSBURBVUSBINT, NdLst);
                 vusbUrbRipe(pRipe);
             }
         }
