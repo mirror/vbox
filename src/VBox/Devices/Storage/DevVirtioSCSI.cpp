@@ -716,7 +716,7 @@ static int virtioScsiR3SendEvent(PPDMDEVINS pDevIns, PVIRTIOSCSI pThis, uint16_t
         return VINF_SUCCESS;
     }
 
-    PVIRTIO_DESC_CHAIN_T pDescChain;
+    PVIRTIO_DESC_CHAIN_T pDescChain = NULL;
     int rc = virtioCoreR3QueueGet(pDevIns, &pThis->Virtio, EVENTQ_IDX, &pDescChain, true);
     AssertRCReturn(rc, rc);
 
@@ -741,6 +741,7 @@ static int virtioScsiR3SendEvent(PPDMDEVINS pDevIns, PVIRTIOSCSI pThis, uint16_t
 
     virtioCoreR3QueuePut(pDevIns, &pThis->Virtio, EVENTQ_IDX, &ReqSgBuf, pDescChain, true /*fFence*/);
     virtioCoreQueueSync(pDevIns, &pThis->Virtio, EVENTQ_IDX);
+    virtioCoreR3DescChainRelease(pDescChain);
 
     return VINF_SUCCESS;
 }
@@ -750,6 +751,8 @@ static void virtioScsiR3FreeReq(PVIRTIOSCSITARGET pTarget, PVIRTIOSCSIREQ pReq)
 {
     RTMemFree(pReq->pbSense);
     pReq->pbSense = NULL;
+    virtioCoreR3DescChainRelease(pReq->pDescChain);
+    pReq->pDescChain = NULL;
     pTarget->pDrvMediaEx->pfnIoReqFree(pTarget->pDrvMediaEx, pReq->hIoReq);
 }
 
@@ -1256,6 +1259,7 @@ static int virtioScsiR3ReqSubmit(PPDMDEVINS pDevIns, PVIRTIOSCSI pThis, PVIRTIOS
     pReq->cbDataIn    = cbDataIn;
     pReq->cbDataOut   = cbDataOut;
     pReq->pDescChain  = pDescChain;
+    virtioCoreR3DescChainRetain(pDescChain); /* (For pReq->pDescChain. Released by virtioScsiR3FreeReq.) */
     pReq->uDataInOff  = offDataIn;
     pReq->uDataOutOff = offDataOut;
 
@@ -1549,21 +1553,23 @@ static DECLCALLBACK(int) virtioScsiR3WorkerThread(PPDMDEVINS pDevIns, PPDMTHREAD
                   int rc = virtioCoreR3DescChainGet(pDevIns, &pThis->Virtio, qIdx,
                                                     pWorkerR3->auRedoDescs[i], &pDescChain);
                   if (RT_FAILURE(rc))
-                     LogRel(("Error fetching desc chain to redo, %Rrc", rc));
+                      LogRel(("Error fetching desc chain to redo, %Rrc", rc));
 
                   rc = virtioScsiR3ReqSubmit(pDevIns, pThis, pThisCC, qIdx, pDescChain);
                   if (RT_FAILURE(rc))
-                     LogRel(("Error submitting req packet, resetting %Rrc", rc));
+                      LogRel(("Error submitting req packet, resetting %Rrc", rc));
+
+                  virtioCoreR3DescChainRelease(pDescChain);
              }
              pWorkerR3->cRedoDescs = 0;
 
              Log6Func(("fetching next descriptor chain from %s\n", VIRTQNAME(qIdx)));
-             PVIRTIO_DESC_CHAIN_T pDescChain;
+             PVIRTIO_DESC_CHAIN_T pDescChain = NULL;
              int rc = virtioCoreR3QueueGet(pDevIns, &pThis->Virtio, qIdx, &pDescChain, true);
              if (rc == VERR_NOT_AVAILABLE)
              {
-                Log6Func(("Nothing found in %s\n", VIRTQNAME(qIdx)));
-                continue;
+                 Log6Func(("Nothing found in %s\n", VIRTQNAME(qIdx)));
+                 continue;
              }
 
              AssertRC(rc);
@@ -1571,10 +1577,12 @@ static DECLCALLBACK(int) virtioScsiR3WorkerThread(PPDMDEVINS pDevIns, PPDMTHREAD
                  virtioScsiR3Ctrl(pDevIns, pThis, pThisCC, qIdx, pDescChain);
              else /* request queue index */
              {
-                  rc = virtioScsiR3ReqSubmit(pDevIns, pThis, pThisCC, qIdx, pDescChain);
-                  if (RT_FAILURE(rc))
-                      LogRel(("Error submitting req packet, resetting %Rrc", rc));
+                 rc = virtioScsiR3ReqSubmit(pDevIns, pThis, pThisCC, qIdx, pDescChain);
+                 if (RT_FAILURE(rc))
+                     LogRel(("Error submitting req packet, resetting %Rrc", rc));
              }
+
+             virtioCoreR3DescChainRelease(pDescChain);
         }
     }
     return VINF_SUCCESS;
