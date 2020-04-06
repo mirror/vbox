@@ -1426,7 +1426,7 @@ static int virtioNetR3HandleRxPacket(PPDMDEVINS pDevIns, PVIRTIONET pThis, PVIRT
 
     uint16_t cSegsAllocated = VIRTIONET_PREALLOCATE_RX_SEG_COUNT;
 
-    /**  @todo r=bird: error codepaths below are almost all leaky!  Maybe keep
+    /** @todo r=bird: error codepaths below are almost all leaky!  Maybe keep
      *         allocations and cleanup here and put the code doing the complicated
      *         work into a helper that can AssertReturn at will without needing to
      *         care about cleaning stuff up. */
