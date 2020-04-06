@@ -80,12 +80,12 @@ typedef struct DRVTCP
     RTPIPE              hPipeWakeR;
     /** Writing end of the wakeup pipe. */
     RTPIPE              hPipeWakeW;
-    /** Flag whether the socket is in the pollset. */
-    bool                fTcpSockInPollSet;
     /** Flag whether the send buffer is full nad it is required to wait for more
      * space until there is room again. */
     bool                fXmitBufFull;
 
+    /** Number of connections active. */
+    volatile uint32_t   cConnections;
     /** Thread for listening for new connections. */
     RTTHREAD            ListenThread;
     /** Flag to signal listening thread to shut down. */
@@ -99,6 +99,26 @@ typedef struct DRVTCP
 
 
 /**
+ * Kicks any possibly polling thread to get informed about changes - extended version
+ * sending additional data along with the wakeup reason.
+ *
+ * @returns VBOx status code.
+ * @param   pThis                   The TCP driver instance.
+ * @param   bReason                 The reason code to handle.
+ * @param   pvData                  The additional to send along with the wakeup reason.
+ * @param   cbData                  Number of bytes to send along.
+ */
+static int drvTcpPollerKickEx(PDRVTCP pThis, uint8_t bReason, const void *pvData, size_t cbData)
+{
+    size_t cbWritten = 0;
+    int rc = RTPipeWriteBlocking(pThis->hPipeWakeW, &bReason, 1, &cbWritten);
+    if (RT_SUCCESS(rc))
+        rc = RTPipeWriteBlocking(pThis->hPipeWakeW, pvData, cbData, &cbWritten);
+    return rc;
+}
+
+
+/**
  * Kicks any possibly polling thread to get informed about changes.
  *
  * @returns VBOx status code.
@@ -108,7 +128,7 @@ typedef struct DRVTCP
 static int drvTcpPollerKick(PDRVTCP pThis, uint8_t bReason)
 {
     size_t cbWritten = 0;
-    return RTPipeWrite(pThis->hPipeWakeW, &bReason, 1, &cbWritten);
+    return RTPipeWriteBlocking(pThis->hPipeWakeW, &bReason, 1, &cbWritten);
 }
 
 
@@ -120,23 +140,12 @@ static DECLCALLBACK(int) drvTcpPoll(PPDMISTREAM pInterface, uint32_t fEvts, uint
 
     if (pThis->hTcpSock != NIL_RTSOCKET)
     {
-        if (!pThis->fTcpSockInPollSet)
-        {
-            rc = RTPollSetAddSocket(pThis->hPollSet, pThis->hTcpSock,
-                                    fEvts, DRVTCP_POLLSET_ID_SOCKET);
-            if (RT_SUCCESS(rc))
-            {
-                pThis->fTcpSockInPollSet = true;
-                pThis->fXmitBufFull = false;
-            }
-        }
-        else
-        {
-            /* Always include error event. */
-            fEvts |= RTPOLL_EVT_ERROR;
-            rc = RTPollSetEventsChange(pThis->hPollSet, DRVTCP_POLLSET_ID_SOCKET, fEvts);
-            AssertRC(rc);
-        }
+        Assert(ASMAtomicReadU32(&pThis->cConnections) > 0);
+
+        /* Always include error event. */
+        fEvts |= RTPOLL_EVT_ERROR;
+        rc = RTPollSetEventsChange(pThis->hPollSet, DRVTCP_POLLSET_ID_SOCKET, fEvts);
+        AssertRC(rc);
     }
 
     if (RT_SUCCESS(rc))
@@ -145,6 +154,8 @@ static DECLCALLBACK(int) drvTcpPoll(PPDMISTREAM pInterface, uint32_t fEvts, uint
         {
             uint32_t fEvtsRecv = 0;
             uint32_t idHnd = 0;
+            uint64_t tsStartMs = RTTimeMilliTS();
+            RTMSINTERVAL cThisWaitMs = cMillies;
 
             /*
              * Just check for data available to be read if the send buffer wasn't full till now and
@@ -156,10 +167,14 @@ static DECLCALLBACK(int) drvTcpPoll(PPDMISTREAM pInterface, uint32_t fEvts, uint
              */
             if (   (fEvts & RTPOLL_EVT_WRITE)
                 && !pThis->fXmitBufFull
-                && pThis->fTcpSockInPollSet)
-                cMillies = 0;
+                && pThis->hTcpSock != NIL_RTSOCKET)
+                cThisWaitMs = 0;
 
-            rc = RTPoll(pThis->hPollSet, cMillies, &fEvtsRecv, &idHnd);
+            rc = RTPoll(pThis->hPollSet, cThisWaitMs, &fEvtsRecv, &idHnd);
+
+            /* Adjust remaining time to wait. */
+            uint64_t tsPollSpanMs = RTTimeMilliTS() - tsStartMs;
+            cMillies -= RT_MIN(cMillies, tsPollSpanMs);
             if (RT_SUCCESS(rc))
             {
                 if (idHnd == DRVTCP_POLLSET_ID_WAKEUP)
@@ -174,11 +189,19 @@ static DECLCALLBACK(int) drvTcpPoll(PPDMISTREAM pInterface, uint32_t fEvts, uint
                         rc = VERR_INTERRUPTED;
                     else if (bReason == DRVTCP_WAKEUP_REASON_NEW_CONNECTION)
                     {
-                        Assert(!pThis->fTcpSockInPollSet);
-                        rc = RTPollSetAddSocket(pThis->hPollSet, pThis->hTcpSock,
+                        Assert(pThis->hTcpSock == NIL_RTSOCKET);
+
+                        /* Read the socket handle. */
+                        RTSOCKET hTcpSockNew = NIL_RTSOCKET;
+                        rc = RTPipeReadBlocking(pThis->hPipeWakeR, &hTcpSockNew, sizeof(hTcpSockNew), NULL);
+                        AssertRC(rc);
+
+                        /* Always include error event. */
+                        fEvts |= RTPOLL_EVT_ERROR;
+                        rc = RTPollSetAddSocket(pThis->hPollSet, hTcpSockNew,
                                                 fEvts, DRVTCP_POLLSET_ID_SOCKET);
                         if (RT_SUCCESS(rc))
-                            pThis->fTcpSockInPollSet = true;
+                            pThis->hTcpSock = hTcpSockNew;
                     }
                     else
                         AssertMsgFailed(("Unknown wakeup reason in pipe %u\n", bReason));
@@ -198,7 +221,7 @@ static DECLCALLBACK(int) drvTcpPoll(PPDMISTREAM pInterface, uint32_t fEvts, uint
                         else
                             RTSocketClose(pThis->hTcpSock);
                         pThis->hTcpSock = NIL_RTSOCKET;
-                        pThis->fTcpSockInPollSet = false;
+                        ASMAtomicDecU32(&pThis->cConnections);
                         /* Continue with polling. */
                     }
                     else
@@ -260,7 +283,6 @@ static DECLCALLBACK(int) drvTcpRead(PPDMISTREAM pInterface, void *pvBuf, size_t 
                 else
                     RTSocketClose(pThis->hTcpSock);
                 pThis->hTcpSock = NIL_RTSOCKET;
-                pThis->fTcpSockInPollSet = false;
                 rc = VINF_SUCCESS;
             }
             *pcbRead = cbRead;
@@ -337,16 +359,17 @@ static DECLCALLBACK(int) drvTCPListenLoop(RTTHREAD hThreadSelf, void *pvUser)
         int rc = RTTcpServerListen2(pThis->hTcpServ, &hTcpSockNew);
         if (RT_SUCCESS(rc))
         {
-            if (pThis->hTcpSock != NIL_RTSOCKET)
+            if (ASMAtomicReadU32(&pThis->cConnections) > 0)
             {
                 LogRel(("DrvTCP%d: only single connection supported\n", pThis->pDrvIns->iInstance));
                 RTTcpServerDisconnectClient2(hTcpSockNew);
             }
             else
             {
-                pThis->hTcpSock = hTcpSockNew;
+                ASMAtomicIncU32(&pThis->cConnections);
+
                 /* Inform the poller about the new socket. */
-                drvTcpPollerKick(pThis, DRVTCP_WAKEUP_REASON_NEW_CONNECTION);
+                drvTcpPollerKickEx(pThis, DRVTCP_WAKEUP_REASON_NEW_CONNECTION, &hTcpSockNew, sizeof(hTcpSockNew));
             }
         }
     }
@@ -484,6 +507,8 @@ static DECLCALLBACK(int) drvTCPConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uin
     pThis->pDrvIns                      = pDrvIns;
     pThis->pszLocation                  = NULL;
     pThis->fIsServer                    = false;
+    pThis->fXmitBufFull                 = false;
+    pThis->cConnections                 = 0;
 
     pThis->hTcpServ                     = NULL;
     pThis->hTcpSock                     = NIL_RTSOCKET;
@@ -491,7 +516,6 @@ static DECLCALLBACK(int) drvTCPConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uin
     pThis->hPollSet                     = NIL_RTPOLLSET;
     pThis->hPipeWakeR                   = NIL_RTPIPE;
     pThis->hPipeWakeW                   = NIL_RTPIPE;
-    pThis->fTcpSockInPollSet            = false;
 
     pThis->ListenThread                 = NIL_RTTHREAD;
     pThis->fShutdown                    = false;
@@ -590,7 +614,7 @@ static DECLCALLBACK(int) drvTCPConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uin
                                        N_("DrvTCP#%d failed to add socket for %s to poll set"),
                                        pDrvIns->iInstance, pThis->pszLocation);
 
-        pThis->fTcpSockInPollSet = true;
+        ASMAtomicIncU32(&pThis->cConnections);
     }
 
     LogRel(("DrvTCP: %s, %s\n", pThis->pszLocation, pThis->fIsServer ? "server" : "client"));
