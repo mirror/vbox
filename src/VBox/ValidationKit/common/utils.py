@@ -1509,6 +1509,15 @@ def getIsoTimestamp():
     """Returns the current UTC timestamp as a string."""
     return formatIsoTimestamp(datetime.datetime.utcnow());
 
+def formatShortIsoTimestamp(oNow):
+    """Formats the datetime object as an ISO timestamp, but w/o microseconds."""
+    assert oNow.tzinfo is None or isinstance(oNow.tzinfo, UtcTzInfo);
+    return oNow.strftime('%Y-%m-%dT%H:%M:%SZ');
+
+def getShortIsoTimestamp():
+    """Returns the current UTC timestamp as a string, but w/o microseconds."""
+    return formatShortIsoTimestamp(datetime.datetime.utcnow());
+
 def convertDateTimeToZulu(oDateTime):
     """ Converts oDateTime to zulu time if it has timezone info. """
     if oDateTime.tzinfo is not None:
