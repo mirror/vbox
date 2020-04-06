@@ -1984,17 +1984,23 @@ static DECLCALLBACK(int) virtioScsiR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSS
     pHlp->pfnSSMGetU32(pSSM,  &pThis->fHasLunChange);
     pHlp->pfnSSMGetU32(pSSM,  &pThis->fResetting);
 
-    pHlp->pfnSSMGetU32(pSSM, &pThis->cTargets);
+    uint32_t cTargets;
+    int rc = pHlp->pfnSSMGetU32(pSSM, &cTargets);
+    AssertRCReturn(rc, rc);
+    AssertReturn(cTargets == pThis->cTargets,
+                 pHlp->pfnSSMSetLoadError(pSSM, VERR_SSM_LOAD_CONFIG_MISMATCH, RT_SRC_POS,
+                                          N_("target count has changed: %u saved, %u configured now"),
+                                          cTargets, pThis->cTargets));
 
     for (uint16_t uTarget = 0; uTarget < pThis->cTargets; uTarget++)
     {
         uint16_t cReqsRedo;
-        pHlp->pfnSSMGetU16(pSSM, &cReqsRedo);
-        if (cReqsRedo >= VIRTQ_MAX_SIZE)
-        {
-            LogFunc(("Bad count of I/O transactions to re-do in SSM state data. Skipping\n"));
-            continue;
-        }
+        rc = pHlp->pfnSSMGetU16(pSSM, &cReqsRedo);
+        AssertRCReturn(rc, rc);
+        AssertReturn(cReqsRedo < VIRTQ_MAX_SIZE,
+                     pHlp->pfnSSMSetLoadError(pSSM, VERR_SSM_DATA_UNIT_FORMAT_CHANGED, RT_SRC_POS,
+                                              N_("Bad count of I/O transactions to re-do in saved state (%#x, max %#x - 1)"),
+                                              cReqsRedo, VIRTQ_MAX_SIZE));
 
         for (uint16_t qIdx = VIRTQ_REQ_BASE; qIdx < VIRTIOSCSI_QUEUE_CNT; qIdx++)
         {
@@ -2004,23 +2010,24 @@ static DECLCALLBACK(int) virtioScsiR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSS
 
         for (int i = 0; i < cReqsRedo; i++)
         {
-            uint16_t qIdx, uHeadIdx;
+            uint16_t qIdx;
+            rc = pHlp->pfnSSMGetU16(pSSM, &qIdx);
+            AssertRCReturn(rc, rc);
+            AssertReturn(qIdx < VIRTIOSCSI_QUEUE_CNT,
+                         pHlp->pfnSSMSetLoadError(pSSM, VERR_SSM_DATA_UNIT_FORMAT_CHANGED, RT_SRC_POS,
+                                                  N_("Bad queue index for re-do in saved state (%#x, max %#x)"),
+                                                  qIdx, VIRTIOSCSI_QUEUE_CNT - 1));
 
-            pHlp->pfnSSMGetU16(pSSM, &qIdx);
-            pHlp->pfnSSMGetU16(pSSM, &uHeadIdx);
+            uint16_t idxHead;
+            rc = pHlp->pfnSSMGetU16(pSSM, &idxHead);
+            AssertRCReturn(rc, rc);
+            AssertReturn(idxHead < VIRTQ_MAX_SIZE,
+                         pHlp->pfnSSMSetLoadError(pSSM, VERR_SSM_DATA_UNIT_FORMAT_CHANGED, RT_SRC_POS,
+                                                  N_("Bad queue element index for re-do in saved state (%#x, max %#x)"),
+                                                  idxHead, VIRTQ_MAX_SIZE - 1));
 
-            if (qIdx >= VIRTIOSCSI_QUEUE_CNT)
-            {
-                LogFunc(("Bad queue index in SSM state data. Skipping\n"));
-                continue;
-            }
-            if (uHeadIdx >= VIRTQ_MAX_SIZE)
-            {
-                LogFunc(("Bad queue elem index in SSM state data. Skipping\n"));
-                continue;
-            }
             PVIRTIOSCSIWORKERR3 pWorkerR3 = &pThisCC->aWorkers[qIdx];
-            pWorkerR3->auRedoDescs[pWorkerR3->cRedoDescs++] = uHeadIdx;
+            pWorkerR3->auRedoDescs[pWorkerR3->cRedoDescs++] = idxHead;
             pWorkerR3->cRedoDescs %= VIRTQ_MAX_SIZE;
         }
     }
@@ -2028,7 +2035,7 @@ static DECLCALLBACK(int) virtioScsiR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSS
     /*
      * Call the virtio core to let it load its state.
      */
-    int rc = virtioCoreR3LoadExec(&pThis->Virtio, pDevIns->pHlpR3, pSSM);
+    rc = virtioCoreR3LoadExec(&pThis->Virtio, pDevIns->pHlpR3, pSSM);
 
     /*
      * Nudge request queue workers
@@ -2038,10 +2045,11 @@ static DECLCALLBACK(int) virtioScsiR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSS
         if (pThis->afQueueAttached[qIdx])
         {
             LogFunc(("Waking %s worker.\n", VIRTQNAME(qIdx)));
-            rc = PDMDevHlpSUPSemEventSignal(pDevIns, pThis->aWorkers[qIdx].hEvtProcess);
-            AssertRCReturn(rc, rc);
+            int rc2 = PDMDevHlpSUPSemEventSignal(pDevIns, pThis->aWorkers[qIdx].hEvtProcess);
+            AssertRCReturn(rc, rc2);
         }
     }
+
     return rc;
 }
 
