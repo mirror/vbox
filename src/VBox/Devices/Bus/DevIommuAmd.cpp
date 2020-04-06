@@ -2145,6 +2145,32 @@ static void iommuAmdR3DecodeBufferLength(uint8_t uEncodedLen, uint32_t *pcEntrie
 
 
 /**
+ * @callback_method_impl{FNPCICONFIGREAD}
+ */
+static DECLCALLBACK(VBOXSTRICTRC) iommuAmdR3PciConfigRead(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t uAddress,
+                                                          unsigned cb, uint32_t *pu32Value)
+{
+    /** @todo IOMMU: PCI config read stat counter. */
+    VBOXSTRICTRC rcStrict = PDMDevHlpPCIConfigRead(pDevIns, pPciDev, uAddress, cb, pu32Value);
+    Log3((IOMMU_LOG_PFX ": PCI config read: At %#x (%u) -> %#x %Rrc\n", uAddress, cb, *pu32Value, VBOXSTRICTRC_VAL(rcStrict)));
+    return rcStrict;
+}
+
+
+/**
+ * @callback_method_impl{FNPCICONFIGWRITE}
+ */
+static DECLCALLBACK(VBOXSTRICTRC) iommuAmdR3PciConfigWrite(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t uAddress,
+                                                           unsigned cb, uint32_t u32Value)
+{
+    /** @todo IOMMU: PCI config write. */
+    VBOXSTRICTRC rcStrict = PDMDevHlpPCIConfigWrite(pDevIns, pPciDev, uAddress, cb, u32Value);
+    Log3((IOMMU_LOG_PFX ": PCI config write: %#x -> To %#x (%u) %Rrc\n", u32Value, uAddress, cb, VBOXSTRICTRC_VAL(rcStrict)));
+    return rcStrict;
+}
+
+
+/**
  * @callback_method_impl{FNDBGFHANDLERDEV}
  */
 static DECLCALLBACK(void) iommuAmdR3DbgInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *pszArgs)
@@ -2690,32 +2716,6 @@ static DECLCALLBACK(void) iommuAmdR3DbgInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pH
             pHlp->pfnPrintf(pHlp, "    Enable                                  = %RTbool\n", PprLogBOverflowEarly.n.u1Enable);
         }
     }
-}
-
-
-/**
- * @callback_method_impl{FNPCICONFIGREAD}
- */
-static DECLCALLBACK(VBOXSTRICTRC) iommuAmdR3PciConfigRead(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t uAddress,
-                                                          unsigned cb, uint32_t *pu32Value)
-{
-    /** @todo IOMMU: PCI config read stat counter. */
-    VBOXSTRICTRC rcStrict = PDMDevHlpPCIConfigRead(pDevIns, pPciDev, uAddress, cb, pu32Value);
-    Log3((IOMMU_LOG_PFX ": PCI config read: At %#x (%u) -> %#x %Rrc\n", uAddress, cb, *pu32Value, VBOXSTRICTRC_VAL(rcStrict)));
-    return rcStrict;
-}
-
-
-/**
- * @callback_method_impl{FNPCICONFIGWRITE}
- */
-static DECLCALLBACK(VBOXSTRICTRC) iommuAmdR3PciConfigWrite(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t uAddress,
-                                                           unsigned cb, uint32_t u32Value)
-{
-    /** @todo IOMMU: PCI config write. */
-    VBOXSTRICTRC rcStrict = PDMDevHlpPCIConfigWrite(pDevIns, pPciDev, uAddress, cb, u32Value);
-    Log3((IOMMU_LOG_PFX ": PCI config write: %#x -> To %#x (%u) %Rrc\n", u32Value, uAddress, cb, VBOXSTRICTRC_VAL(rcStrict)));
-    return rcStrict;
 }
 
 
