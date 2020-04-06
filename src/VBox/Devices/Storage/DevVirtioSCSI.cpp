@@ -822,7 +822,6 @@ static int virtioScsiR3ReqErr(PPDMDEVINS pDevIns, PVIRTIOSCSI pThis, PVIRTIOSCSI
  * @param   pThisCC     VirtIO SCSI ring-3 instance data.
  * @param   qIdx        Queue index
  * @param   pDescChain  Pointer to pre-processed descriptor chain pulled from virtq
- * @param   pRespHdr    Response header
  * @param   cbResidual  The number of residual bytes or something like that.
  * @param   bStatus     The SCSI status code.
  * @param   bResponse   The virtio SCSI response code.
