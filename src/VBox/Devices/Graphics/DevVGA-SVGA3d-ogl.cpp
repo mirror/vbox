@@ -6834,15 +6834,23 @@ int vmsvga3dShaderDefine(PVGASTATECC pThisCC, uint32_t cid, uint32_t shid, SVGA3
     AssertReturn(pState, VERR_NO_MEMORY);
 
     Log(("vmsvga3dShaderDefine cid=%u shid=%d type=%s cbData=0x%x\n", cid, shid, (type == SVGA3D_SHADERTYPE_VS) ? "VERTEX" : "PIXEL", cbData));
-    Log3(("shader code:\n%.*Rhxd\n", cbData, pShaderData));
 
     PVMSVGA3DCONTEXT pContext;
     int rc = vmsvga3dContextFromCid(pState, cid, &pContext);
     AssertRCReturn(rc, rc);
 
+    AssertReturn(shid < SVGA3D_MAX_SHADER_IDS, VERR_INVALID_PARAMETER);
+
+    rc = vmsvga3dShaderParse(cbData, pShaderData);
+    if (RT_FAILURE(rc))
+    {
+        AssertRC(rc);
+        vmsvga3dShaderLogRel("Failed to parse", type, cbData, pShaderData);
+        return rc;
+    }
+
     VMSVGA3D_SET_CURRENT_CONTEXT(pState, pContext);
 
-    AssertReturn(shid < SVGA3D_MAX_SHADER_IDS, VERR_INVALID_PARAMETER);
     if (type == SVGA3D_SHADERTYPE_VS)
     {
         if (shid >= pContext->cVertexShaders)
@@ -6917,6 +6925,8 @@ int vmsvga3dShaderDefine(PVGASTATECC pThisCC, uint32_t cid, uint32_t shid, SVGA3
     }
     if (rc != VINF_SUCCESS)
     {
+        vmsvga3dShaderLogRel("Failed to create", type, cbData, pShaderData);
+
         RTMemFree(pShader->pShaderProgram);
         memset(pShader, 0, sizeof(*pShader));
         pShader->id = SVGA3D_INVALID_ID;

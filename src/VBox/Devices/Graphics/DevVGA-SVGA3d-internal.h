@@ -1394,5 +1394,8 @@ void FormatConvReadTexture(PVMSVGA3DSTATE pState,
                            uint32_t iMipmap);
 #endif
 
+int vmsvga3dShaderParse(uint32_t cbShaderData, uint32_t const *pShaderData);
+void vmsvga3dShaderLogRel(char const *pszMsg, SVGA3dShaderType type, uint32_t cbShaderData, uint32_t const *pShaderData);
+
 #endif /* !VBOX_INCLUDED_SRC_Graphics_DevVGA_SVGA3d_internal_h */
 

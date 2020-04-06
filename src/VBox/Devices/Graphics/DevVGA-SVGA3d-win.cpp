@@ -5412,31 +5412,21 @@ int vmsvga3dShaderDefine(PVGASTATECC pThisCC, uint32_t cid, uint32_t shid, SVGA3
     AssertReturn(pState, VERR_NO_MEMORY);
 
     Log(("vmsvga3dShaderDefine %x shid=%x type=%s cbData=%x\n", cid, shid, (type == SVGA3D_SHADERTYPE_VS) ? "VERTEX" : "PIXEL", cbData));
-#ifdef LOG_ENABLED
-    Log3(("Shader code:\n"));
-    const uint32_t cTokensPerLine = 8;
-    const uint32_t *paTokens = (uint32_t *)pShaderData;
-    const uint32_t cTokens = cbData / sizeof(uint32_t);
-    for (uint32_t iToken = 0; iToken < cTokens; ++iToken)
-    {
-        if ((iToken % cTokensPerLine) == 0)
-        {
-            if (iToken == 0)
-                Log3(("0x%08X,", paTokens[iToken]));
-            else
-                Log3(("\n0x%08X,", paTokens[iToken]));
-        }
-        else
-            Log3((" 0x%08X,", paTokens[iToken]));
-    }
-    Log3(("\n"));
-#endif
 
     PVMSVGA3DCONTEXT pContext;
     int rc = vmsvga3dContextFromCid(pState, cid, &pContext);
     AssertRCReturn(rc, rc);
 
     AssertReturn(shid < SVGA3D_MAX_SHADER_IDS, VERR_INVALID_PARAMETER);
+
+    rc = vmsvga3dShaderParse(cbData, pShaderData);
+    if (RT_FAILURE(rc))
+    {
+        AssertRC(rc);
+        vmsvga3dShaderLogRel("Failed to parse", type, cbData, pShaderData);
+        return rc;
+    }
+
     if (type == SVGA3D_SHADERTYPE_VS)
     {
         if (shid >= pContext->cVertexShaders)
@@ -5510,29 +5500,7 @@ int vmsvga3dShaderDefine(PVGASTATECC pThisCC, uint32_t cid, uint32_t shid, SVGA3
     if (hr != D3D_OK)
     {
         /* Dump the shader code. */
-        static int scLogged = 0;
-        if (scLogged < 8)
-        {
-            ++scLogged;
-
-            LogRel(("VMSVGA: Failed to create %s shader:\n", (type == SVGA3D_SHADERTYPE_VS) ? "VERTEX" : "PIXEL"));
-            const uint32_t cTokensPerLine = 8;
-            const uint32_t *paTokens = (uint32_t *)pShaderData;
-            const uint32_t cTokens = cbData / sizeof(uint32_t);
-            for (uint32_t iToken = 0; iToken < cTokens; ++iToken)
-            {
-                if ((iToken % cTokensPerLine) == 0)
-                {
-                    if (iToken == 0)
-                        LogRel(("0x%08X,", paTokens[iToken]));
-                    else
-                        LogRel(("\n0x%08X,", paTokens[iToken]));
-                }
-                else
-                    LogRel((" 0x%08X,", paTokens[iToken]));
-            }
-            LogRel(("\n"));
-        }
+        vmsvga3dShaderLogRel("Failed to create", type, cbData, pShaderData);
 
         RTMemFree(pShader->pShaderProgram);
         memset(pShader, 0, sizeof(*pShader));
