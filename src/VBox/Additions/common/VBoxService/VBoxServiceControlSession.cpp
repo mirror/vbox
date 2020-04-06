@@ -62,6 +62,7 @@ enum
 
 
 static int vgsvcGstCtrlSessionCleanupProcesses(const PVBOXSERVICECTRLSESSION pSession);
+static int vgsvcGstCtrlSessionProcessRemoveInternal(PVBOXSERVICECTRLSESSION pSession, PVBOXSERVICECTRLPROCESS pProcess);
 
 
 /**
@@ -89,7 +90,7 @@ static bool vgsvcGstCtrlSessionGrowScratchBuf(void **ppvScratchBuf, uint32_t *pc
 
 
 
-static int vgsvcGstCtrlSessionFileDestroy(PVBOXSERVICECTRLFILE pFile)
+static int vgsvcGstCtrlSessionFileFree(PVBOXSERVICECTRLFILE pFile)
 {
     AssertPtrReturn(pFile, VERR_INVALID_POINTER);
 
@@ -424,7 +425,7 @@ static int vgsvcGstCtrlSessionHandleFileClose(const PVBOXSERVICECTRLSESSION pSes
         if (pFile)
         {
             VGSvcVerbose(2, "[File %s] Closing (handle=%RU32)\n", pFile ? pFile->szName : "<Not found>", uHandle);
-            rc = vgsvcGstCtrlSessionFileDestroy(pFile);
+            rc = vgsvcGstCtrlSessionFileFree(pFile);
         }
         else
         {
@@ -1889,59 +1890,42 @@ int VGSvcGstCtrlSessionClose(PVBOXSERVICECTRLSESSION pSession)
         VGSvcVerbose(1, "%RU32 guest processes were signalled to stop\n", pSession->cProcesses);
 
         /* Wait for all active threads to shutdown and destroy the active thread list. */
-        pProcess = RTListGetFirst(&pSession->lstProcesses, VBOXSERVICECTRLPROCESS, Node);
-        while (pProcess)
+        PVBOXSERVICECTRLPROCESS pProcessNext;
+        RTListForEachSafe(&pSession->lstProcesses, pProcess, pProcessNext, VBOXSERVICECTRLPROCESS, Node)
         {
-            PVBOXSERVICECTRLPROCESS pNext = RTListNodeGetNext(&pProcess->Node, VBOXSERVICECTRLPROCESS, Node);
-            bool fLast = RTListNodeIsLast(&pSession->lstProcesses, &pProcess->Node);
+            int rc3 = RTCritSectLeave(&pSession->CritSect);
+            AssertRC(rc3);
 
-            int rc2 = RTCritSectLeave(&pSession->CritSect);
-            AssertRC(rc2);
+            int rc2 = VGSvcGstCtrlProcessWait(pProcess, 30 * 1000 /* Wait 30 seconds max. */, NULL /* rc */);
 
-            rc2 = VGSvcGstCtrlProcessWait(pProcess, 30 * 1000 /* Wait 30 seconds max. */, NULL /* rc */);
-
-            int rc3 = RTCritSectEnter(&pSession->CritSect);
+            rc3 = RTCritSectEnter(&pSession->CritSect);
             AssertRC(rc3);
 
             if (RT_SUCCESS(rc2))
-                VGSvcGstCtrlProcessFree(pProcess);
-
-            if (fLast)
-                break;
-
-            pProcess = pNext;
+            {
+                rc2 = vgsvcGstCtrlSessionProcessRemoveInternal(pSession, pProcess);
+                if (RT_SUCCESS(rc2))
+                {
+                    VGSvcGstCtrlProcessFree(pProcess);
+                    pProcess = NULL;
+                }
+            }
         }
 
-#ifdef DEBUG
-        pProcess = RTListGetFirst(&pSession->lstProcesses, VBOXSERVICECTRLPROCESS, Node);
-        while (pProcess)
-        {
-            PVBOXSERVICECTRLPROCESS pNext = RTListNodeGetNext(&pProcess->Node, VBOXSERVICECTRLPROCESS, Node);
-            bool fLast = RTListNodeIsLast(&pSession->lstProcesses, &pProcess->Node);
-
-            VGSvcVerbose(1, "Process %p (PID %RU32) still in list\n", pProcess, pProcess->uPID);
-            if (fLast)
-                break;
-
-            pProcess = pNext;
-        }
-#endif
+        AssertMsg(pSession->cProcesses == 0,
+                  ("Session process list still contains %RU32 when it should not\n", pSession->cProcesses));
         AssertMsg(RTListIsEmpty(&pSession->lstProcesses),
-                  ("Guest process list still contains entries when it should not\n"));
+                  ("Session process list is not empty when it should\n"));
 
         /*
          * Close all left guest files.
          */
         VGSvcVerbose(0, "Closing all guest files ...\n");
 
-        PVBOXSERVICECTRLFILE pFile;
-        pFile = RTListGetFirst(&pSession->lstFiles, VBOXSERVICECTRLFILE, Node);
-        while (pFile)
+        PVBOXSERVICECTRLFILE pFile, pFileNext;
+        RTListForEachSafe(&pSession->lstFiles, pFile, pFileNext, VBOXSERVICECTRLFILE, Node)
         {
-            PVBOXSERVICECTRLFILE pNext = RTListNodeGetNext(&pFile->Node, VBOXSERVICECTRLFILE, Node);
-            bool fLast = RTListNodeIsLast(&pSession->lstFiles, &pFile->Node);
-
-            int rc2 = vgsvcGstCtrlSessionFileDestroy(pFile);
+            int rc2 = vgsvcGstCtrlSessionFileFree(pFile);
             if (RT_FAILURE(rc2))
             {
                 VGSvcError("Unable to close file '%s'; rc=%Rrc\n", pFile->szName, rc2);
@@ -1950,13 +1934,13 @@ int VGSvcGstCtrlSessionClose(PVBOXSERVICECTRLSESSION pSession)
                 /* Keep going. */
             }
 
-            if (fLast)
-                break;
-
-            pFile = pNext;
+            pFile = NULL; /* To make it obvious. */
         }
 
-        AssertMsg(RTListIsEmpty(&pSession->lstFiles), ("Guest file list still contains entries when it should not\n"));
+        AssertMsg(pSession->cFiles == 0,
+                  ("Session file list still contains %RU32 when it should not\n", pSession->cFiles));
+        AssertMsg(RTListIsEmpty(&pSession->lstFiles),
+                  ("Session file list is not empty when it should\n"));
 
         int rc2 = RTCritSectLeave(&pSession->CritSect);
         if (RT_SUCCESS(rc))
@@ -2032,6 +2016,28 @@ int VGSvcGstCtrlSessionProcessAdd(PVBOXSERVICECTRLSESSION pSession, PVBOXSERVICE
     return VINF_SUCCESS;
 }
 
+/**
+ * Removes a guest process from a session's process list.
+ * Internal version, does not do locking.
+ *
+ * @return  VBox status code.
+ * @param   pSession                Guest session to remove process from.
+ * @param   pProcess                Guest process to remove.
+ */
+static int vgsvcGstCtrlSessionProcessRemoveInternal(PVBOXSERVICECTRLSESSION pSession, PVBOXSERVICECTRLPROCESS pProcess)
+{
+    VGSvcVerbose(3, "Removing process (PID %RU32) from session ID=%RU32\n", pProcess->uPID, pSession->StartupInfo.uSessionID);
+    AssertReturn(pProcess->cRefs == 0, VERR_WRONG_ORDER);
+
+    RTListNodeRemove(&pProcess->Node);
+
+    AssertReturn(pSession->cProcesses, VERR_WRONG_ORDER);
+    pSession->cProcesses--;
+    VGSvcVerbose(3, "Now session ID=%RU32 has %RU32 processes total\n",
+                 pSession->StartupInfo.uSessionID, pSession->cProcesses);
+
+    return VINF_SUCCESS;
+}
 
 /**
  * Removes a guest process from a session's process list.
@@ -2048,15 +2054,7 @@ int VGSvcGstCtrlSessionProcessRemove(PVBOXSERVICECTRLSESSION pSession, PVBOXSERV
     int rc = RTCritSectEnter(&pSession->CritSect);
     if (RT_SUCCESS(rc))
     {
-        VGSvcVerbose(3, "Removing process (PID %RU32) from session ID=%RU32\n", pProcess->uPID, pSession->StartupInfo.uSessionID);
-        AssertReturn(pProcess->cRefs == 0, VERR_WRONG_ORDER);
-
-        RTListNodeRemove(&pProcess->Node);
-
-        AssertReturn(pSession->cProcesses, VERR_WRONG_ORDER);
-        pSession->cProcesses--;
-        VGSvcVerbose(3, "Now session ID=%RU32 has %RU32 processes total\n",
-                     pSession->StartupInfo.uSessionID, pSession->cProcesses);
+        rc = vgsvcGstCtrlSessionProcessRemoveInternal(pSession, pProcess);
 
         int rc2 = RTCritSectLeave(&pSession->CritSect);
         if (RT_SUCCESS(rc))
