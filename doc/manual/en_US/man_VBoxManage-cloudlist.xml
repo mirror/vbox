@@ -50,8 +50,8 @@
       <arg choice="req">--profile=<replaceable>name</replaceable></arg>
       <arg choice="plain">list</arg>
       <arg choice="plain">images</arg>
+      <arg choice="req">--compartment-id=<replaceable>string</replaceable></arg>
       <arg>--state=<replaceable>string</replaceable></arg>
-      <arg>--compartment-id=<replaceable>string</replaceable></arg>
     </cmdsynopsis>
   </refsynopsisdiv>
 
