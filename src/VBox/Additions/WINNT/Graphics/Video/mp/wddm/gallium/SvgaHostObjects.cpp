@@ -318,6 +318,8 @@ NTSTATUS SvgaSurfaceCreate(VBOXWDDM_EXT_VMSVGA *pSvga,
     NTSTATUS Status = svgaHostObjectsProcessPending(pSvga);
     AssertReturn(Status == STATUS_SUCCESS, Status);
 
+    AssertReturn(cSizes <= pSvga->u32MaxTextureLevels, STATUS_INVALID_PARAMETER);
+
     SURFACEOBJECT *pSO = (SURFACEOBJECT *)GaMemAllocZero(sizeof(SURFACEOBJECT));
     if (pSO)
     {

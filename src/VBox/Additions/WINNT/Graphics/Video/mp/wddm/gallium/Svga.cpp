@@ -62,6 +62,13 @@ static NTSTATUS svgaHwInit(VBOXWDDM_EXT_VMSVGA *pSvga)
         pSvga->u32MaxTextureHeight = 8192;
     }
 
+    /* 1 + floor(log2(max(u32MaxTextureWidth, u32MaxTextureHeight))):
+     * In Direct3D the next mipmap level size is floor(prev_size / 2), for example 5 -> 2 -> 1
+     * Therefore we only need to know the position of the highest non-zero bit. And since
+     * ASMBitLastSetU32 returns a 1 based index, there is no need to add 1.
+     */
+    pSvga->u32MaxTextureLevels = ASMBitLastSetU32(RT_MAX(pSvga->u32MaxTextureWidth, pSvga->u32MaxTextureHeight));
+
     NTSTATUS Status = SvgaFifoInit(pSvga);
     if (NT_SUCCESS(Status))
     {

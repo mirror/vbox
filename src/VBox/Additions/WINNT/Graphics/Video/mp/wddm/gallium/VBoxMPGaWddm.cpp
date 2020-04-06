@@ -1740,7 +1740,6 @@ NTSTATUS APIENTRY GaDxgkDdiEscape(const HANDLE hAdapter,
             GASURFCREATE *pCreateParms = (GASURFCREATE *)&pGaSurfaceDefine[1];
             GASURFSIZE *paSizes = (GASURFSIZE *)&pCreateParms[1];
 
-            /// @todo verify the data
             Status = gaSurfaceDefine(pDevExt->pGa, pCreateParms, paSizes, pGaSurfaceDefine->cSizes, &pGaSurfaceDefine->u32Sid);
             break;
         }
@@ -1828,7 +1827,7 @@ NTSTATUS APIENTRY GaDxgkDdiEscape(const HANDLE hAdapter,
             }
 
             VBOXDISPIFESCAPE_GAFENCEUNREF *pFenceUnref = (VBOXDISPIFESCAPE_GAFENCEUNREF *)pEscapeHdr;
-            Status = GaFenceUnref(pDevExt->pGa, pFenceUnref->u32FenceHandle);
+            Status = GaFenceDelete(pDevExt->pGa, pFenceUnref->u32FenceHandle);
             break;
         }
         default:

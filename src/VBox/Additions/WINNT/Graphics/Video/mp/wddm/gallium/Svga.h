@@ -83,6 +83,8 @@ typedef struct VBOXWDDM_EXT_VMSVGA
     uint32_t u32MaxTextureWidth;  /** SVGA3D_DEVCAP_MAX_TEXTURE_WIDTH */
     uint32_t u32MaxTextureHeight; /** SVGA3D_DEVCAP_MAX_TEXTURE_HEIGHT */
 
+    uint32_t u32MaxTextureLevels; /** 1 + floor(log2(max(u32MaxTextureWidth, u32MaxTextureHeight))) */
+
     /** Fifo state. */
     VMSVGAFIFO fifo;
 

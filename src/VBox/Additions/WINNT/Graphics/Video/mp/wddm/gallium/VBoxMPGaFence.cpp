@@ -248,13 +248,24 @@ NTSTATUS GaFenceWait(PVBOXWDDM_EXT_GA pGaDevExt,
     return Status;
 }
 
-NTSTATUS GaFenceUnref(PVBOXWDDM_EXT_GA pGaDevExt,
-                      uint32_t u32FenceHandle)
+NTSTATUS GaFenceDelete(PVBOXWDDM_EXT_GA pGaDevExt,
+                       uint32_t u32FenceHandle)
 {
     gaFenceObjectsLock(pGaDevExt);
 
     GAFENCEOBJECT *pFO = GaFenceLookup(pGaDevExt, u32FenceHandle);
     AssertReturnStmt(pFO, gaFenceObjectsUnlock(pGaDevExt), STATUS_INVALID_PARAMETER);
+
+    if (RT_BOOL(pFO->fu32FenceFlags & GAFENCE_F_DELETED))
+    {
+        /* Undo GaFenceLookup ref. */
+        GaFenceUnrefLocked(pGaDevExt, pFO);
+
+        gaFenceObjectsUnlock(pGaDevExt);
+        return STATUS_INVALID_PARAMETER;
+    }
+
+    pFO->fu32FenceFlags |= GAFENCE_F_DELETED;
 
     if (RT_BOOL(pFO->fu32FenceFlags & GAFENCE_F_WAITED))
     {
@@ -262,15 +273,15 @@ NTSTATUS GaFenceUnref(PVBOXWDDM_EXT_GA pGaDevExt,
         pFO->fu32FenceFlags &= ~GAFENCE_F_WAITED;
     }
 
+    /* Undo GaFenceLookup ref. */
+    GaFenceUnrefLocked(pGaDevExt, pFO);
+
+    /* Undo the GaFenceCreate ref. */
+    GaFenceUnrefLocked(pGaDevExt, pFO);
+
     gaFenceObjectsUnlock(pGaDevExt);
 
     GALOG(("u32FenceHandle = %d, pFO %p\n", u32FenceHandle, pFO));
-
-    /* Undo GaFenceLookup ref. */
-    gaFenceUnref(pGaDevExt, pFO);
-
-    /* Undo the GaFenceCreate ref. */
-    gaFenceUnref(pGaDevExt, pFO);
 
     return STATUS_SUCCESS;
 }
