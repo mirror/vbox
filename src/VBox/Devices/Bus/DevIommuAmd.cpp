@@ -2153,20 +2153,19 @@ static DECLCALLBACK(void) iommuAmdR3DbgInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pH
     Assert(pThis);
 
     LogFlow((IOMMU_LOG_PFX ": iommuAmdR3DbgInfo: pThis=%p pszArgs=%s\n", pThis, pszArgs));
-#if 0
-    bool const fVerbose = !strncmp(pszArgs, RT_STR_TUPLE("verbose") ? true : false;
-#else
-    NOREF(pszArgs);
-#endif
+    bool const fVerbose = !strncmp(pszArgs, RT_STR_TUPLE("verbose")) ? true : false;
 
     pHlp->pfnPrintf(pHlp, "AMD-IOMMU:\n");
     /* Device Table Base Address. */
     {
         DEV_TAB_BAR_T const DevTabBar = pThis->DevTabBaseAddr;
         pHlp->pfnPrintf(pHlp, "  Device Table BAR                        = %#RX64\n", DevTabBar.u64);
-        pHlp->pfnPrintf(pHlp, "    Size                                    = %u (%u bytes)\n", DevTabBar.n.u9Size,
-                    (DevTabBar.n.u9Size + 1) * _4K);
-        pHlp->pfnPrintf(pHlp, "    Base address                            = %#RX64\n", DevTabBar.n.u40DevTabBase);
+        if (fVerbose)
+        {
+            pHlp->pfnPrintf(pHlp, "    Size                                    = %u (%u bytes)\n", DevTabBar.n.u9Size,
+                        (DevTabBar.n.u9Size + 1) * _4K);
+            pHlp->pfnPrintf(pHlp, "    Base address                            = %#RX64\n", DevTabBar.n.u40DevTabBase);
+        }
     }
     /* Command Buffer Base Address Register. */
     {
@@ -2176,9 +2175,12 @@ static DECLCALLBACK(void) iommuAmdR3DbgInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pH
         uint8_t const uEncodedLen = CmdBufBar.n.u4CmdLen;
         iommuAmdR3DecodeBufferLength(uEncodedLen, &cEntries, &cbBuffer);
         pHlp->pfnPrintf(pHlp, "  Command buffer BAR                      = %#RX64\n", CmdBufBar.u64);
-        pHlp->pfnPrintf(pHlp, "    Base address                            = %#RX64\n", CmdBufBar.n.u40CmdBase);
-        pHlp->pfnPrintf(pHlp, "    Length                                  = %u (%u entries, %u bytes)\n", uEncodedLen, cEntries,
-                        cbBuffer);
+        if (fVerbose)
+        {
+            pHlp->pfnPrintf(pHlp, "    Base address                            = %#RX64\n", CmdBufBar.n.u40CmdBase);
+            pHlp->pfnPrintf(pHlp, "    Length                                  = %u (%u entries, %u bytes)\n", uEncodedLen,
+                            cEntries, cbBuffer);
+        }
     }
     /* Event Log Base Address Register. */
     {
@@ -2188,105 +2190,118 @@ static DECLCALLBACK(void) iommuAmdR3DbgInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pH
         uint8_t const uEncodedLen = EvtLogBar.n.u4EvtLen;
         iommuAmdR3DecodeBufferLength(uEncodedLen, &cEntries, &cbBuffer);
         pHlp->pfnPrintf(pHlp, "  Event log BAR                           = %#RX64\n", EvtLogBar.u64);
-        pHlp->pfnPrintf(pHlp, "    Base address                            = %#RX64\n", EvtLogBar.n.u40EvtBase);
-        pHlp->pfnPrintf(pHlp, "    Length                                  = %u (%u entries, %u bytes)\n", uEncodedLen, cEntries,
-                        cbBuffer);
+        if (fVerbose)
+        {
+            pHlp->pfnPrintf(pHlp, "    Base address                            = %#RX64\n", EvtLogBar.n.u40EvtBase);
+            pHlp->pfnPrintf(pHlp, "    Length                                  = %u (%u entries, %u bytes)\n", uEncodedLen,
+                            cEntries, cbBuffer);
+        }
     }
     /* IOMMU Control Register. */
     {
         IOMMU_CTRL_T const Ctrl = pThis->Ctrl;
         pHlp->pfnPrintf(pHlp, "  Control                                 = %#RX64\n", Ctrl.u64);
-        pHlp->pfnPrintf(pHlp, "    IOMMU enable                            = %RTbool\n", Ctrl.n.u1IommuEn);
-        pHlp->pfnPrintf(pHlp, "    HT Tunnel translation enable            = %RTbool\n", Ctrl.n.u1HtTunEn);
-        pHlp->pfnPrintf(pHlp, "    Event log enable                        = %RTbool\n", Ctrl.n.u1EvtLogEn);
-        pHlp->pfnPrintf(pHlp, "    Event log interrupt enable              = %RTbool\n", Ctrl.n.u1EvtIntrEn);
-        pHlp->pfnPrintf(pHlp, "    Completion wait interrupt enable        = %RTbool\n", Ctrl.n.u1EvtIntrEn);
-        pHlp->pfnPrintf(pHlp, "    Invalidation timeout                    = %u\n",      Ctrl.n.u3InvTimeOut);
-        pHlp->pfnPrintf(pHlp, "    Pass posted write                       = %RTbool\n", Ctrl.n.u1PassPW);
-        pHlp->pfnPrintf(pHlp, "    Respose Pass posted write               = %RTbool\n", Ctrl.n.u1ResPassPW);
-        pHlp->pfnPrintf(pHlp, "    Coherent                                = %RTbool\n", Ctrl.n.u1Coherent);
-        pHlp->pfnPrintf(pHlp, "    Isochronous                             = %RTbool\n", Ctrl.n.u1Isoc);
-        pHlp->pfnPrintf(pHlp, "    Command buffer enable                   = %RTbool\n", Ctrl.n.u1CmdBufEn);
-        pHlp->pfnPrintf(pHlp, "    PPR log enable                          = %RTbool\n", Ctrl.n.u1PprLogEn);
-        pHlp->pfnPrintf(pHlp, "    PPR interrupt enable                    = %RTbool\n", Ctrl.n.u1PprIntrEn);
-        pHlp->pfnPrintf(pHlp, "    PPR enable                              = %RTbool\n", Ctrl.n.u1PprEn);
-        pHlp->pfnPrintf(pHlp, "    Guest translation eanble                = %RTbool\n", Ctrl.n.u1GstTranslateEn);
-        pHlp->pfnPrintf(pHlp, "    Guest virtual-APIC enable               = %RTbool\n", Ctrl.n.u1GstVirtApicEn);
-        pHlp->pfnPrintf(pHlp, "    CRW                                     = %#x\n",     Ctrl.n.u4Crw);
-        pHlp->pfnPrintf(pHlp, "    SMI filter enable                       = %RTbool\n", Ctrl.n.u1SmiFilterEn);
-        pHlp->pfnPrintf(pHlp, "    Self-writeback disable                  = %RTbool\n", Ctrl.n.u1SelfWriteBackDis);
-        pHlp->pfnPrintf(pHlp, "    SMI filter log enable                   = %RTbool\n", Ctrl.n.u1SmiFilterLogEn);
-        pHlp->pfnPrintf(pHlp, "    Guest virtual-APIC mode enable          = %#x\n",     Ctrl.n.u3GstVirtApicModeEn);
-        pHlp->pfnPrintf(pHlp, "    Guest virtual-APIC GA log enable        = %RTbool\n", Ctrl.n.u1GstLogEn);
-        pHlp->pfnPrintf(pHlp, "    Guest virtual-APIC interrupt enable     = %RTbool\n", Ctrl.n.u1GstIntrEn);
-        pHlp->pfnPrintf(pHlp, "    Dual PPR log enable                     = %#x\n",     Ctrl.n.u2DualPprLogEn);
-        pHlp->pfnPrintf(pHlp, "    Dual event log enable                   = %#x\n",     Ctrl.n.u2DualEvtLogEn);
-        pHlp->pfnPrintf(pHlp, "    Device table segmentation enable        = %#x\n",     Ctrl.n.u3DevTabSegEn);
-        pHlp->pfnPrintf(pHlp, "    Privilege abort enable                  = %#x\n",     Ctrl.n.u2PrivAbortEn);
-        pHlp->pfnPrintf(pHlp, "    PPR auto response enable                = %RTbool\n", Ctrl.n.u1PprAutoRespEn);
-        pHlp->pfnPrintf(pHlp, "    MARC enable                             = %RTbool\n", Ctrl.n.u1MarcEn);
-        pHlp->pfnPrintf(pHlp, "    Block StopMark enable                   = %RTbool\n", Ctrl.n.u1BlockStopMarkEn);
-        pHlp->pfnPrintf(pHlp, "    PPR auto response always-on enable      = %RTbool\n", Ctrl.n.u1PprAutoRespAlwaysOnEn);
-        pHlp->pfnPrintf(pHlp, "    Domain IDPNE                            = %RTbool\n", Ctrl.n.u1DomainIDPNE);
-        pHlp->pfnPrintf(pHlp, "    Enhanced PPR handling                   = %RTbool\n", Ctrl.n.u1EnhancedPpr);
-        pHlp->pfnPrintf(pHlp, "    Host page table access/dirty bit update = %#x\n",     Ctrl.n.u2HstAccDirtyBitUpdate);
-        pHlp->pfnPrintf(pHlp, "    Guest page table dirty bit disable      = %RTbool\n", Ctrl.n.u1GstDirtyUpdateDis);
-        pHlp->pfnPrintf(pHlp, "    x2APIC enable                           = %RTbool\n", Ctrl.n.u1X2ApicEn);
-        pHlp->pfnPrintf(pHlp, "    x2APIC interrupt enable                 = %RTbool\n", Ctrl.n.u1X2ApicIntrGenEn);
-        pHlp->pfnPrintf(pHlp, "    Guest page table access bit update      = %RTbool\n", Ctrl.n.u1GstAccessUpdateDis);
+        if (fVerbose)
+        {
+            pHlp->pfnPrintf(pHlp, "    IOMMU enable                            = %RTbool\n", Ctrl.n.u1IommuEn);
+            pHlp->pfnPrintf(pHlp, "    HT Tunnel translation enable            = %RTbool\n", Ctrl.n.u1HtTunEn);
+            pHlp->pfnPrintf(pHlp, "    Event log enable                        = %RTbool\n", Ctrl.n.u1EvtLogEn);
+            pHlp->pfnPrintf(pHlp, "    Event log interrupt enable              = %RTbool\n", Ctrl.n.u1EvtIntrEn);
+            pHlp->pfnPrintf(pHlp, "    Completion wait interrupt enable        = %RTbool\n", Ctrl.n.u1EvtIntrEn);
+            pHlp->pfnPrintf(pHlp, "    Invalidation timeout                    = %u\n",      Ctrl.n.u3InvTimeOut);
+            pHlp->pfnPrintf(pHlp, "    Pass posted write                       = %RTbool\n", Ctrl.n.u1PassPW);
+            pHlp->pfnPrintf(pHlp, "    Respose Pass posted write               = %RTbool\n", Ctrl.n.u1ResPassPW);
+            pHlp->pfnPrintf(pHlp, "    Coherent                                = %RTbool\n", Ctrl.n.u1Coherent);
+            pHlp->pfnPrintf(pHlp, "    Isochronous                             = %RTbool\n", Ctrl.n.u1Isoc);
+            pHlp->pfnPrintf(pHlp, "    Command buffer enable                   = %RTbool\n", Ctrl.n.u1CmdBufEn);
+            pHlp->pfnPrintf(pHlp, "    PPR log enable                          = %RTbool\n", Ctrl.n.u1PprLogEn);
+            pHlp->pfnPrintf(pHlp, "    PPR interrupt enable                    = %RTbool\n", Ctrl.n.u1PprIntrEn);
+            pHlp->pfnPrintf(pHlp, "    PPR enable                              = %RTbool\n", Ctrl.n.u1PprEn);
+            pHlp->pfnPrintf(pHlp, "    Guest translation eanble                = %RTbool\n", Ctrl.n.u1GstTranslateEn);
+            pHlp->pfnPrintf(pHlp, "    Guest virtual-APIC enable               = %RTbool\n", Ctrl.n.u1GstVirtApicEn);
+            pHlp->pfnPrintf(pHlp, "    CRW                                     = %#x\n",     Ctrl.n.u4Crw);
+            pHlp->pfnPrintf(pHlp, "    SMI filter enable                       = %RTbool\n", Ctrl.n.u1SmiFilterEn);
+            pHlp->pfnPrintf(pHlp, "    Self-writeback disable                  = %RTbool\n", Ctrl.n.u1SelfWriteBackDis);
+            pHlp->pfnPrintf(pHlp, "    SMI filter log enable                   = %RTbool\n", Ctrl.n.u1SmiFilterLogEn);
+            pHlp->pfnPrintf(pHlp, "    Guest virtual-APIC mode enable          = %#x\n",     Ctrl.n.u3GstVirtApicModeEn);
+            pHlp->pfnPrintf(pHlp, "    Guest virtual-APIC GA log enable        = %RTbool\n", Ctrl.n.u1GstLogEn);
+            pHlp->pfnPrintf(pHlp, "    Guest virtual-APIC interrupt enable     = %RTbool\n", Ctrl.n.u1GstIntrEn);
+            pHlp->pfnPrintf(pHlp, "    Dual PPR log enable                     = %#x\n",     Ctrl.n.u2DualPprLogEn);
+            pHlp->pfnPrintf(pHlp, "    Dual event log enable                   = %#x\n",     Ctrl.n.u2DualEvtLogEn);
+            pHlp->pfnPrintf(pHlp, "    Device table segmentation enable        = %#x\n",     Ctrl.n.u3DevTabSegEn);
+            pHlp->pfnPrintf(pHlp, "    Privilege abort enable                  = %#x\n",     Ctrl.n.u2PrivAbortEn);
+            pHlp->pfnPrintf(pHlp, "    PPR auto response enable                = %RTbool\n", Ctrl.n.u1PprAutoRespEn);
+            pHlp->pfnPrintf(pHlp, "    MARC enable                             = %RTbool\n", Ctrl.n.u1MarcEn);
+            pHlp->pfnPrintf(pHlp, "    Block StopMark enable                   = %RTbool\n", Ctrl.n.u1BlockStopMarkEn);
+            pHlp->pfnPrintf(pHlp, "    PPR auto response always-on enable      = %RTbool\n", Ctrl.n.u1PprAutoRespAlwaysOnEn);
+            pHlp->pfnPrintf(pHlp, "    Domain IDPNE                            = %RTbool\n", Ctrl.n.u1DomainIDPNE);
+            pHlp->pfnPrintf(pHlp, "    Enhanced PPR handling                   = %RTbool\n", Ctrl.n.u1EnhancedPpr);
+            pHlp->pfnPrintf(pHlp, "    Host page table access/dirty bit update = %#x\n",     Ctrl.n.u2HstAccDirtyBitUpdate);
+            pHlp->pfnPrintf(pHlp, "    Guest page table dirty bit disable      = %RTbool\n", Ctrl.n.u1GstDirtyUpdateDis);
+            pHlp->pfnPrintf(pHlp, "    x2APIC enable                           = %RTbool\n", Ctrl.n.u1X2ApicEn);
+            pHlp->pfnPrintf(pHlp, "    x2APIC interrupt enable                 = %RTbool\n", Ctrl.n.u1X2ApicIntrGenEn);
+            pHlp->pfnPrintf(pHlp, "    Guest page table access bit update      = %RTbool\n", Ctrl.n.u1GstAccessUpdateDis);
+        }
     }
     /* Exclusion Base Address Register. */
     {
         IOMMU_EXCL_RANGE_BAR_T const ExclRangeBar = pThis->ExclRangeBaseAddr;
         pHlp->pfnPrintf(pHlp, "  Exclusion BAR                           = %#RX64\n", ExclRangeBar.u64);
-        pHlp->pfnPrintf(pHlp, "    Exclusion enable                        = %RTbool\n", ExclRangeBar.n.u1ExclEnable);
-        pHlp->pfnPrintf(pHlp, "    Allow all devices                       = %RTbool\n", ExclRangeBar.n.u1AllowAll);
-        pHlp->pfnPrintf(pHlp, "    Base address                            = %#RX64\n", ExclRangeBar.n.u40ExclRangeBase);
+        if (fVerbose)
+        {
+            pHlp->pfnPrintf(pHlp, "    Exclusion enable                        = %RTbool\n", ExclRangeBar.n.u1ExclEnable);
+            pHlp->pfnPrintf(pHlp, "    Allow all devices                       = %RTbool\n", ExclRangeBar.n.u1AllowAll);
+            pHlp->pfnPrintf(pHlp, "    Base address                            = %#RX64\n", ExclRangeBar.n.u40ExclRangeBase);
+        }
     }
     /* Exclusion Range Limit Register. */
     {
         IOMMU_EXCL_RANGE_LIMIT_T const ExclRangeLimit = pThis->ExclRangeLimit;
         pHlp->pfnPrintf(pHlp, "  Exclusion Range Limit                   = %#RX64\n", ExclRangeLimit.u64);
-        pHlp->pfnPrintf(pHlp, "    Range limit                             = %#RX64\n", ExclRangeLimit.n.u40ExclLimit);
+        if (fVerbose)
+            pHlp->pfnPrintf(pHlp, "    Range limit                             = %#RX64\n", ExclRangeLimit.n.u40ExclLimit);
     }
     /* Extended Feature Register. */
     {
         IOMMU_EXT_FEAT_T ExtFeat = pThis->ExtFeat;
         pHlp->pfnPrintf(pHlp, "  Extended Feature Register               = %#RX64\n", ExtFeat.u64);
         pHlp->pfnPrintf(pHlp, "    Prefetch support                        = %RTbool\n", ExtFeat.n.u1PrefetchSup);
-        pHlp->pfnPrintf(pHlp, "    PPR support                             = %RTbool\n", ExtFeat.n.u1PprSup);
-        pHlp->pfnPrintf(pHlp, "    x2APIC support                          = %RTbool\n", ExtFeat.n.u1X2ApicSup);
-        pHlp->pfnPrintf(pHlp, "    NX and privilege level support          = %RTbool\n", ExtFeat.n.u1NoExecuteSup);
-        pHlp->pfnPrintf(pHlp, "    Guest translation support               = %RTbool\n", ExtFeat.n.u1GstTranslateSup);
-        pHlp->pfnPrintf(pHlp, "    Invalidate-All command support          = %RTbool\n", ExtFeat.n.u1InvAllSup);
-        pHlp->pfnPrintf(pHlp, "    Guest virtual-APIC support              = %RTbool\n", ExtFeat.n.u1GstVirtApicSup);
-        pHlp->pfnPrintf(pHlp, "    Hardware error register support         = %RTbool\n", ExtFeat.n.u1HwErrorSup);
-        pHlp->pfnPrintf(pHlp, "    Performance counters support            = %RTbool\n", ExtFeat.n.u1PerfCounterSup);
-        pHlp->pfnPrintf(pHlp, "    Host address translation size           = %#x\n",     ExtFeat.n.u2HostAddrTranslateSize);
-        pHlp->pfnPrintf(pHlp, "    Guest address translation size          = %#x\n",     ExtFeat.n.u2GstAddrTranslateSize);
-        pHlp->pfnPrintf(pHlp, "    Guest CR3 root table level support      = %#x\n",     ExtFeat.n.u2GstCr3RootTblLevel);
-        pHlp->pfnPrintf(pHlp, "    SMI filter register support             = %#x\n",     ExtFeat.n.u2SmiFilterSup);
-        pHlp->pfnPrintf(pHlp, "    SMI filter register count               = %#x\n",     ExtFeat.n.u3SmiFilterCount);
-        pHlp->pfnPrintf(pHlp, "    Guest virtual-APIC modes support        = %#x\n",     ExtFeat.n.u3GstVirtApicModeSup);
-        pHlp->pfnPrintf(pHlp, "    Dual PPR log support                    = %#x\n",     ExtFeat.n.u2DualPprLogSup);
-        pHlp->pfnPrintf(pHlp, "    Dual event log support                  = %#x\n",     ExtFeat.n.u2DualEvtLogSup);
-        pHlp->pfnPrintf(pHlp, "    Maximum PASID                           = %#x\n",     ExtFeat.n.u5MaxPasidSup);
-        pHlp->pfnPrintf(pHlp, "    User/supervisor page protection support = %RTbool\n", ExtFeat.n.u1UserSupervisorSup);
-        pHlp->pfnPrintf(pHlp, "    Device table segments supported         = %u\n",      (ExtFeat.n.u2DevTabSegSup << 1));
-        pHlp->pfnPrintf(pHlp, "    PPR log overflow early warning support  = %RTbool\n", ExtFeat.n.u1PprLogOverflowWarn);
-        pHlp->pfnPrintf(pHlp, "    PPR auto response support               = %RTbool\n", ExtFeat.n.u1PprAutoRespSup);
-        pHlp->pfnPrintf(pHlp, "    MARC support                            = %#x\n",     ExtFeat.n.u2MarcSup);
-        pHlp->pfnPrintf(pHlp, "    Block StopMark message support          = %RTbool\n", ExtFeat.n.u1BlockStopMarkSup);
-        pHlp->pfnPrintf(pHlp, "    Performance optimization support        = %RTbool\n", ExtFeat.n.u1PerfOptSup);
-        pHlp->pfnPrintf(pHlp, "    MSI capability MMIO access support      = %RTbool\n", ExtFeat.n.u1MsiCapMmioSup);
-        pHlp->pfnPrintf(pHlp, "    Guest I/O protection support            = %RTbool\n", ExtFeat.n.u1GstIoSup);
-        pHlp->pfnPrintf(pHlp, "    Host access support                     = %RTbool\n", ExtFeat.n.u1HostAccessSup);
-        pHlp->pfnPrintf(pHlp, "    Enhanced PPR handling support           = %RTbool\n", ExtFeat.n.u1EnhancedPprSup);
-        pHlp->pfnPrintf(pHlp, "    Attribute forward supported             = %RTbool\n", ExtFeat.n.u1AttrForwardSup);
-        pHlp->pfnPrintf(pHlp, "    Host dirty support                      = %RTbool\n", ExtFeat.n.u1HostDirtySup);
-        pHlp->pfnPrintf(pHlp, "    Invalidate IOTLB type support           = %RTbool\n", ExtFeat.n.u1InvIoTlbTypeSup);
-        pHlp->pfnPrintf(pHlp, "    Guest page table access bit hw disable  = %RTbool\n", ExtFeat.n.u1GstUpdateDisSup);
-        pHlp->pfnPrintf(pHlp, "    Force physical dest for remapped intr.  = %RTbool\n", ExtFeat.n.u1ForcePhysDstSup);
+        if (fVerbose)
+        {
+            pHlp->pfnPrintf(pHlp, "    PPR support                             = %RTbool\n", ExtFeat.n.u1PprSup);
+            pHlp->pfnPrintf(pHlp, "    x2APIC support                          = %RTbool\n", ExtFeat.n.u1X2ApicSup);
+            pHlp->pfnPrintf(pHlp, "    NX and privilege level support          = %RTbool\n", ExtFeat.n.u1NoExecuteSup);
+            pHlp->pfnPrintf(pHlp, "    Guest translation support               = %RTbool\n", ExtFeat.n.u1GstTranslateSup);
+            pHlp->pfnPrintf(pHlp, "    Invalidate-All command support          = %RTbool\n", ExtFeat.n.u1InvAllSup);
+            pHlp->pfnPrintf(pHlp, "    Guest virtual-APIC support              = %RTbool\n", ExtFeat.n.u1GstVirtApicSup);
+            pHlp->pfnPrintf(pHlp, "    Hardware error register support         = %RTbool\n", ExtFeat.n.u1HwErrorSup);
+            pHlp->pfnPrintf(pHlp, "    Performance counters support            = %RTbool\n", ExtFeat.n.u1PerfCounterSup);
+            pHlp->pfnPrintf(pHlp, "    Host address translation size           = %#x\n",     ExtFeat.n.u2HostAddrTranslateSize);
+            pHlp->pfnPrintf(pHlp, "    Guest address translation size          = %#x\n",     ExtFeat.n.u2GstAddrTranslateSize);
+            pHlp->pfnPrintf(pHlp, "    Guest CR3 root table level support      = %#x\n",     ExtFeat.n.u2GstCr3RootTblLevel);
+            pHlp->pfnPrintf(pHlp, "    SMI filter register support             = %#x\n",     ExtFeat.n.u2SmiFilterSup);
+            pHlp->pfnPrintf(pHlp, "    SMI filter register count               = %#x\n",     ExtFeat.n.u3SmiFilterCount);
+            pHlp->pfnPrintf(pHlp, "    Guest virtual-APIC modes support        = %#x\n",     ExtFeat.n.u3GstVirtApicModeSup);
+            pHlp->pfnPrintf(pHlp, "    Dual PPR log support                    = %#x\n",     ExtFeat.n.u2DualPprLogSup);
+            pHlp->pfnPrintf(pHlp, "    Dual event log support                  = %#x\n",     ExtFeat.n.u2DualEvtLogSup);
+            pHlp->pfnPrintf(pHlp, "    Maximum PASID                           = %#x\n",     ExtFeat.n.u5MaxPasidSup);
+            pHlp->pfnPrintf(pHlp, "    User/supervisor page protection support = %RTbool\n", ExtFeat.n.u1UserSupervisorSup);
+            pHlp->pfnPrintf(pHlp, "    Device table segments supported         = %u\n",      (ExtFeat.n.u2DevTabSegSup << 1));
+            pHlp->pfnPrintf(pHlp, "    PPR log overflow early warning support  = %RTbool\n", ExtFeat.n.u1PprLogOverflowWarn);
+            pHlp->pfnPrintf(pHlp, "    PPR auto response support               = %RTbool\n", ExtFeat.n.u1PprAutoRespSup);
+            pHlp->pfnPrintf(pHlp, "    MARC support                            = %#x\n",     ExtFeat.n.u2MarcSup);
+            pHlp->pfnPrintf(pHlp, "    Block StopMark message support          = %RTbool\n", ExtFeat.n.u1BlockStopMarkSup);
+            pHlp->pfnPrintf(pHlp, "    Performance optimization support        = %RTbool\n", ExtFeat.n.u1PerfOptSup);
+            pHlp->pfnPrintf(pHlp, "    MSI capability MMIO access support      = %RTbool\n", ExtFeat.n.u1MsiCapMmioSup);
+            pHlp->pfnPrintf(pHlp, "    Guest I/O protection support            = %RTbool\n", ExtFeat.n.u1GstIoSup);
+            pHlp->pfnPrintf(pHlp, "    Host access support                     = %RTbool\n", ExtFeat.n.u1HostAccessSup);
+            pHlp->pfnPrintf(pHlp, "    Enhanced PPR handling support           = %RTbool\n", ExtFeat.n.u1EnhancedPprSup);
+            pHlp->pfnPrintf(pHlp, "    Attribute forward supported             = %RTbool\n", ExtFeat.n.u1AttrForwardSup);
+            pHlp->pfnPrintf(pHlp, "    Host dirty support                      = %RTbool\n", ExtFeat.n.u1HostDirtySup);
+            pHlp->pfnPrintf(pHlp, "    Invalidate IOTLB type support           = %RTbool\n", ExtFeat.n.u1InvIoTlbTypeSup);
+            pHlp->pfnPrintf(pHlp, "    Guest page table access bit hw disable  = %RTbool\n", ExtFeat.n.u1GstUpdateDisSup);
+            pHlp->pfnPrintf(pHlp, "    Force physical dest for remapped intr.  = %RTbool\n", ExtFeat.n.u1ForcePhysDstSup);
+        }
     }
     /* PPR Log Base Address Register. */
     {
@@ -2296,16 +2311,22 @@ static DECLCALLBACK(void) iommuAmdR3DbgInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pH
         uint8_t const uEncodedLen = PprLogBar.n.u4PprLogLen;
         iommuAmdR3DecodeBufferLength(uEncodedLen, &cEntries, &cbBuffer);
         pHlp->pfnPrintf(pHlp, "  PPR Log BAR                             = %#RX64\n",   PprLogBar.u64);
-        pHlp->pfnPrintf(pHlp, "    Base address                            = %#RX64\n", PprLogBar.n.u40PprLogBase);
-        pHlp->pfnPrintf(pHlp, "    Length                                  = %u (%u entries, %u bytes)\n", uEncodedLen, cEntries,
-                        cbBuffer);
+        if (fVerbose)
+        {
+            pHlp->pfnPrintf(pHlp, "    Base address                            = %#RX64\n", PprLogBar.n.u40PprLogBase);
+            pHlp->pfnPrintf(pHlp, "    Length                                  = %u (%u entries, %u bytes)\n", uEncodedLen,
+                            cEntries, cbBuffer);
+        }
     }
     /* Hardware Event (Hi) Register. */
     {
         IOMMU_HW_EVT_HI_T HwEvtHi = pThis->HwEvtHi;
         pHlp->pfnPrintf(pHlp, "  Hardware Event (Hi)                     = %#RX64\n",   HwEvtHi.u64);
-        pHlp->pfnPrintf(pHlp, "    First operand                           = %#RX64\n", HwEvtHi.n.u60FirstOperand);
-        pHlp->pfnPrintf(pHlp, "    Event code                              = %#RX8\n",  HwEvtHi.n.u4EvtCode);
+        if (fVerbose)
+        {
+            pHlp->pfnPrintf(pHlp, "    First operand                           = %#RX64\n", HwEvtHi.n.u60FirstOperand);
+            pHlp->pfnPrintf(pHlp, "    Event code                              = %#RX8\n",  HwEvtHi.n.u4EvtCode);
+        }
     }
     /* Hardware Event (Lo) Register. */
     pHlp->pfnPrintf(pHlp, "  Hardware Event (Lo)                         = %#RX64\n", pThis->HwEvtLo);
@@ -2313,8 +2334,11 @@ static DECLCALLBACK(void) iommuAmdR3DbgInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pH
     {
         IOMMU_HW_EVT_STATUS_T HwEvtStatus = pThis->HwEvtStatus;
         pHlp->pfnPrintf(pHlp, "  Hardware Event Status                   = %#RX64\n",    HwEvtStatus.u64);
-        pHlp->pfnPrintf(pHlp, "    Valid                                   = %RTbool\n", HwEvtStatus.n.u1Valid);
-        pHlp->pfnPrintf(pHlp, "    Overflow                                = %RTbool\n", HwEvtStatus.n.u1Overflow);
+        if (fVerbose)
+        {
+            pHlp->pfnPrintf(pHlp, "    Valid                                   = %RTbool\n", HwEvtStatus.n.u1Valid);
+            pHlp->pfnPrintf(pHlp, "    Overflow                                = %RTbool\n", HwEvtStatus.n.u1Overflow);
+        }
     }
     /* Guest Virtual-APIC Log Base Address Register. */
     {
@@ -2324,15 +2348,19 @@ static DECLCALLBACK(void) iommuAmdR3DbgInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pH
         uint8_t const uEncodedLen = GALogBar.n.u4GALogLen;
         iommuAmdR3DecodeBufferLength(uEncodedLen, &cEntries, &cbBuffer);
         pHlp->pfnPrintf(pHlp, "  Guest Log BAR                           = %#RX64\n",    GALogBar.u64);
-        pHlp->pfnPrintf(pHlp, "    Base address                            = %RTbool\n", GALogBar.n.u40GALogBase);
-        pHlp->pfnPrintf(pHlp, "    Length                                  = %u (%u entries, %u bytes)\n", uEncodedLen, cEntries,
-                        cbBuffer);
+        if (fVerbose)
+        {
+            pHlp->pfnPrintf(pHlp, "    Base address                            = %RTbool\n", GALogBar.n.u40GALogBase);
+            pHlp->pfnPrintf(pHlp, "    Length                                  = %u (%u entries, %u bytes)\n", uEncodedLen,
+                            cEntries, cbBuffer);
+        }
     }
     /* Guest Virtual-APIC Log Tail Address Register. */
     {
         GALOG_TAIL_ADDR_T GALogTail = pThis->GALogTailAddr;
         pHlp->pfnPrintf(pHlp, "  Guest Log Tail Address                  = %#RX64\n",   GALogTail.u64);
-        pHlp->pfnPrintf(pHlp, "    Tail address                            = %#RX64\n", GALogTail.n.u40GALogTailAddr);
+        if (fVerbose)
+            pHlp->pfnPrintf(pHlp, "    Tail address                            = %#RX64\n", GALogTail.n.u40GALogTailAddr);
     }
     /* PPR Log B Base Address Register. */
     {
@@ -2342,9 +2370,12 @@ static DECLCALLBACK(void) iommuAmdR3DbgInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pH
         uint8_t const uEncodedLen = PprLogBBar.n.u4PprLogLen;
         iommuAmdR3DecodeBufferLength(uEncodedLen, &cEntries, &cbBuffer);
         pHlp->pfnPrintf(pHlp, "  PPR Log B BAR                           = %#RX64\n",   PprLogBBar.u64);
-        pHlp->pfnPrintf(pHlp, "    Base address                            = %#RX64\n", PprLogBBar.n.u40PprLogBase);
-        pHlp->pfnPrintf(pHlp, "    Length                                  = %u (%u entries, %u bytes)\n", uEncodedLen, cEntries,
-                        cbBuffer);
+        if (fVerbose)
+        {
+            pHlp->pfnPrintf(pHlp, "    Base address                            = %#RX64\n", PprLogBBar.n.u40PprLogBase);
+            pHlp->pfnPrintf(pHlp, "    Length                                  = %u (%u entries, %u bytes)\n", uEncodedLen,
+                            cEntries, cbBuffer);
+        }
     }
     /* Event Log B Base Address Register. */
     {
@@ -2354,127 +2385,163 @@ static DECLCALLBACK(void) iommuAmdR3DbgInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pH
         uint8_t const uEncodedLen = EvtLogBBar.n.u4EvtLen;
         iommuAmdR3DecodeBufferLength(uEncodedLen, &cEntries, &cbBuffer);
         pHlp->pfnPrintf(pHlp, "  Event Log B BAR                         = %#RX64\n",   EvtLogBBar.u64);
-        pHlp->pfnPrintf(pHlp, "    Base address                            = %#RX64\n", EvtLogBBar.n.u40EvtBase);
-        pHlp->pfnPrintf(pHlp, "    Length                                  = %u (%u entries, %u bytes)\n", uEncodedLen, cEntries,
-                        cbBuffer);
+        if (fVerbose)
+        {
+            pHlp->pfnPrintf(pHlp, "    Base address                            = %#RX64\n", EvtLogBBar.n.u40EvtBase);
+            pHlp->pfnPrintf(pHlp, "    Length                                  = %u (%u entries, %u bytes)\n", uEncodedLen,
+                            cEntries, cbBuffer);
+        }
     }
     /* Device Table Segment Registers. */
     for (unsigned i = 0; i < RT_ELEMENTS(pThis->DevTabSeg); i++)
     {
         DEV_TAB_SEG_BAR_T const DevTabSeg = pThis->DevTabSeg[i];
         pHlp->pfnPrintf(pHlp, "  Device Table Segment BAR [%u]            = %#RX64\n",  DevTabSeg.u64);
-        pHlp->pfnPrintf(pHlp, "    Base address                            = %#RX64\n", DevTabSeg.n.u40DevTabBase);
-        pHlp->pfnPrintf(pHlp, "    Size                                    = %#x (%u bytes)\n", DevTabSeg.n.u8Size,
-                        (DevTabSeg.n.u8Size + 1) << X86_PAGE_4K_SHIFT);
+        if (fVerbose)
+        {
+            pHlp->pfnPrintf(pHlp, "    Base address                            = %#RX64\n", DevTabSeg.n.u40DevTabBase);
+            pHlp->pfnPrintf(pHlp, "    Size                                    = %#x (%u bytes)\n", DevTabSeg.n.u8Size,
+                            (DevTabSeg.n.u8Size + 1) << X86_PAGE_4K_SHIFT);
+        }
     }
     /* Device-Specific Feature Extension Register. */
     {
         DEV_SPECIFIC_FEAT_T const DevSpecificFeat = pThis->DevSpecificFeat;
         pHlp->pfnPrintf(pHlp, "  Device-specific Feature                 = %#RX64\n",   DevSpecificFeat.u64);
-        pHlp->pfnPrintf(pHlp, "    Feature                                 = %#RX32\n", DevSpecificFeat.n.u24DevSpecFeat);
-        pHlp->pfnPrintf(pHlp, "    Minor revision ID                       = %#x\n",    DevSpecificFeat.n.u4RevMinor);
-        pHlp->pfnPrintf(pHlp, "    Major revision ID                       = %#x\n",    DevSpecificFeat.n.u4RevMajor);
+        if (fVerbose)
+        {
+            pHlp->pfnPrintf(pHlp, "    Feature                                 = %#RX32\n", DevSpecificFeat.n.u24DevSpecFeat);
+            pHlp->pfnPrintf(pHlp, "    Minor revision ID                       = %#x\n",    DevSpecificFeat.n.u4RevMinor);
+            pHlp->pfnPrintf(pHlp, "    Major revision ID                       = %#x\n",    DevSpecificFeat.n.u4RevMajor);
+        }
     }
     /* Device-Specific Control Extension Register. */
     {
         DEV_SPECIFIC_CTRL_T const DevSpecificCtrl = pThis->DevSpecificCtrl;
         pHlp->pfnPrintf(pHlp, "  Device-specific Control                 = %#RX64\n",   DevSpecificCtrl.u64);
-        pHlp->pfnPrintf(pHlp, "    Control                                 = %#RX32\n", DevSpecificCtrl.n.u24DevSpecCtrl);
-        pHlp->pfnPrintf(pHlp, "    Minor revision ID                       = %#x\n",    DevSpecificCtrl.n.u4RevMinor);
-        pHlp->pfnPrintf(pHlp, "    Major revision ID                       = %#x\n",    DevSpecificCtrl.n.u4RevMajor);
+        if (fVerbose)
+        {
+            pHlp->pfnPrintf(pHlp, "    Control                                 = %#RX32\n", DevSpecificCtrl.n.u24DevSpecCtrl);
+            pHlp->pfnPrintf(pHlp, "    Minor revision ID                       = %#x\n",    DevSpecificCtrl.n.u4RevMinor);
+            pHlp->pfnPrintf(pHlp, "    Major revision ID                       = %#x\n",    DevSpecificCtrl.n.u4RevMajor);
+        }
     }
     /* Device-Specific Status Extension Register. */
     {
         DEV_SPECIFIC_STATUS_T const DevSpecificStatus = pThis->DevSpecificStatus;
         pHlp->pfnPrintf(pHlp, "  Device-specific Control                 = %#RX64\n",   DevSpecificStatus.u64);
-        pHlp->pfnPrintf(pHlp, "    Status                                  = %#RX32\n", DevSpecificStatus.n.u24DevSpecStatus);
-        pHlp->pfnPrintf(pHlp, "    Minor revision ID                       = %#x\n",    DevSpecificStatus.n.u4RevMinor);
-        pHlp->pfnPrintf(pHlp, "    Major revision ID                       = %#x\n",    DevSpecificStatus.n.u4RevMajor);
+        if (fVerbose)
+        {
+            pHlp->pfnPrintf(pHlp, "    Status                                  = %#RX32\n", DevSpecificStatus.n.u24DevSpecStatus);
+            pHlp->pfnPrintf(pHlp, "    Minor revision ID                       = %#x\n",    DevSpecificStatus.n.u4RevMinor);
+            pHlp->pfnPrintf(pHlp, "    Major revision ID                       = %#x\n",    DevSpecificStatus.n.u4RevMajor);
+        }
     }
     /* MSI Miscellaneous Information Register (Lo and Hi). */
     {
         MSI_MISC_INFO_T const MsiMiscInfo = pThis->MsiMiscInfo;
         pHlp->pfnPrintf(pHlp, "  MSI Misc. Info. Register                = %#RX64\n",    MsiMiscInfo.u64);
-        pHlp->pfnPrintf(pHlp, "    Event Log MSI number                    = %#x\n",     MsiMiscInfo.n.u5MsiNumEvtLog);
-        pHlp->pfnPrintf(pHlp, "    Guest Virtual-Address Size              = %#x\n",     MsiMiscInfo.n.u3GstVirtAddrSize);
-        pHlp->pfnPrintf(pHlp, "    Physical Address Size                   = %#x\n",     MsiMiscInfo.n.u7PhysAddrSize);
-        pHlp->pfnPrintf(pHlp, "    Virtual-Address Size                    = %#x\n",     MsiMiscInfo.n.u7VirtAddrSize);
-        pHlp->pfnPrintf(pHlp, "    HT Transport ATS Range Reserved         = %RTbool\n", MsiMiscInfo.n.u1HtAtsResv);
-        pHlp->pfnPrintf(pHlp, "    PPR MSI number                          = %#x\n",     MsiMiscInfo.n.u5MsiNumPpr);
-        pHlp->pfnPrintf(pHlp, "    GA Log MSI number                       = %#x\n",     MsiMiscInfo.n.u5MsiNumGa);
+        if (fVerbose)
+        {
+            pHlp->pfnPrintf(pHlp, "    Event Log MSI number                    = %#x\n",     MsiMiscInfo.n.u5MsiNumEvtLog);
+            pHlp->pfnPrintf(pHlp, "    Guest Virtual-Address Size              = %#x\n",     MsiMiscInfo.n.u3GstVirtAddrSize);
+            pHlp->pfnPrintf(pHlp, "    Physical Address Size                   = %#x\n",     MsiMiscInfo.n.u7PhysAddrSize);
+            pHlp->pfnPrintf(pHlp, "    Virtual-Address Size                    = %#x\n",     MsiMiscInfo.n.u7VirtAddrSize);
+            pHlp->pfnPrintf(pHlp, "    HT Transport ATS Range Reserved         = %RTbool\n", MsiMiscInfo.n.u1HtAtsResv);
+            pHlp->pfnPrintf(pHlp, "    PPR MSI number                          = %#x\n",     MsiMiscInfo.n.u5MsiNumPpr);
+            pHlp->pfnPrintf(pHlp, "    GA Log MSI number                       = %#x\n",     MsiMiscInfo.n.u5MsiNumGa);
+        }
     }
     /* MSI Capability Header. */
     {
         MSI_CAP_HDR_T const MsiCapHdr = pThis->MsiCapHdr;
         pHlp->pfnPrintf(pHlp, "  MSI Capability Header                   = %#RX32\n",    MsiCapHdr.u32);
-        pHlp->pfnPrintf(pHlp, "    Capability ID                           = %#x\n",     MsiCapHdr.n.u8MsiCapId);
-        pHlp->pfnPrintf(pHlp, "    Capability Ptr (PCI config offset)      = %#x\n",     MsiCapHdr.n.u8MsiCapPtr);
-        pHlp->pfnPrintf(pHlp, "    Enable                                  = %RTbool\n", MsiCapHdr.n.u1MsiEnable);
-        pHlp->pfnPrintf(pHlp, "    Multi-message capability                = %#x\n",     MsiCapHdr.n.u3MsiMultiMessCap);
-        pHlp->pfnPrintf(pHlp, "    Multi-message enable                    = %#x\n",     MsiCapHdr.n.u3MsiMultiMessEn);
+        if (fVerbose)
+        {
+            pHlp->pfnPrintf(pHlp, "    Capability ID                           = %#x\n",     MsiCapHdr.n.u8MsiCapId);
+            pHlp->pfnPrintf(pHlp, "    Capability Ptr (PCI config offset)      = %#x\n",     MsiCapHdr.n.u8MsiCapPtr);
+            pHlp->pfnPrintf(pHlp, "    Enable                                  = %RTbool\n", MsiCapHdr.n.u1MsiEnable);
+            pHlp->pfnPrintf(pHlp, "    Multi-message capability                = %#x\n",     MsiCapHdr.n.u3MsiMultiMessCap);
+            pHlp->pfnPrintf(pHlp, "    Multi-message enable                    = %#x\n",     MsiCapHdr.n.u3MsiMultiMessEn);
+        }
     }
     /* MSI Address Register (Lo and Hi). */
     {
         MSI_ADDR_T const MsiAddr = pThis->MsiAddr;
         pHlp->pfnPrintf(pHlp, "  MSI Address                             = %#RX64\n",   MsiAddr.u64);
-        pHlp->pfnPrintf(pHlp, "    Address                                 = %#RX64\n", MsiAddr.n.u62MsiAddr);
+        if (fVerbose)
+            pHlp->pfnPrintf(pHlp, "    Address                                 = %#RX64\n", MsiAddr.n.u62MsiAddr);
     }
     /* MSI Data. */
     {
         MSI_DATA_T const MsiData = pThis->MsiData;
         pHlp->pfnPrintf(pHlp, "  MSI Data                                = %#RX32\n", MsiData.u32);
-        pHlp->pfnPrintf(pHlp, "    Data                                    = %#x\n",  MsiData.n.u16MsiData);
+        if (fVerbose)
+            pHlp->pfnPrintf(pHlp, "    Data                                    = %#x\n",  MsiData.n.u16MsiData);
     }
     /* MSI Mapping Capability Header. */
     {
         MSI_MAP_CAP_HDR_T const MsiMapCapHdr = pThis->MsiMapCapHdr;
         pHlp->pfnPrintf(pHlp, "  MSI Mapping Capability Header           = %#RX32\n",    MsiMapCapHdr.u32);
-        pHlp->pfnPrintf(pHlp, "    Capability ID                           = %#x\n",     MsiMapCapHdr.n.u8MsiMapCapId);
-        pHlp->pfnPrintf(pHlp, "    Map enable                              = %RTbool\n", MsiMapCapHdr.n.u1MsiMapEn);
-        pHlp->pfnPrintf(pHlp, "    Map fixed                               = %RTbool\n", MsiMapCapHdr.n.u1MsiMapFixed);
-        pHlp->pfnPrintf(pHlp, "    Map capability type                     = %#x\n",     MsiMapCapHdr.n.u5MapCapType);
+        if (fVerbose)
+        {
+            pHlp->pfnPrintf(pHlp, "    Capability ID                           = %#x\n",     MsiMapCapHdr.n.u8MsiMapCapId);
+            pHlp->pfnPrintf(pHlp, "    Map enable                              = %RTbool\n", MsiMapCapHdr.n.u1MsiMapEn);
+            pHlp->pfnPrintf(pHlp, "    Map fixed                               = %RTbool\n", MsiMapCapHdr.n.u1MsiMapFixed);
+            pHlp->pfnPrintf(pHlp, "    Map capability type                     = %#x\n",     MsiMapCapHdr.n.u5MapCapType);
+        }
     }
     /* Performance Optimization Control Register. */
     {
         IOMMU_PERF_OPT_CTRL_T const PerfOptCtrl = pThis->PerfOptCtrl;
         pHlp->pfnPrintf(pHlp, "  Performance Optimization Control        = %#RX32\n",    PerfOptCtrl.u32);
-        pHlp->pfnPrintf(pHlp, "    Enable                                  = %RTbool\n", PerfOptCtrl.n.u1PerfOptEn);
+        if (fVerbose)
+            pHlp->pfnPrintf(pHlp, "    Enable                                  = %RTbool\n", PerfOptCtrl.n.u1PerfOptEn);
     }
     /* XT (x2APIC) General Interrupt Control Register. */
     {
         IOMMU_XT_GEN_INTR_CTRL_T const XtGenIntrCtrl = pThis->XtGenIntrCtrl;
         pHlp->pfnPrintf(pHlp, "  XT General Interrupt Control            = %#RX64\n", XtGenIntrCtrl.u64);
-        pHlp->pfnPrintf(pHlp, "    Interrupt destination mode              = %s\n",
-                        !XtGenIntrCtrl.n.u1X2ApicIntrDstMode ? "physical" : "logical");
-        pHlp->pfnPrintf(pHlp, "    Interrupt destination                   = %#RX64\n",
-                        RT_MAKE_U64(XtGenIntrCtrl.n.u24X2ApicIntrDstLo, XtGenIntrCtrl.n.u7X2ApicIntrDstHi));
-        pHlp->pfnPrintf(pHlp, "    Interrupt vector                        = %#x\n", XtGenIntrCtrl.n.u8X2ApicIntrVector);
-        pHlp->pfnPrintf(pHlp, "    Interrupt delivery mode                 = %#x\n",
-                        !XtGenIntrCtrl.n.u8X2ApicIntrVector ? "fixed" : "arbitrated");
+        if (fVerbose)
+        {
+            pHlp->pfnPrintf(pHlp, "    Interrupt destination mode              = %s\n",
+                            !XtGenIntrCtrl.n.u1X2ApicIntrDstMode ? "physical" : "logical");
+            pHlp->pfnPrintf(pHlp, "    Interrupt destination                   = %#RX64\n",
+                            RT_MAKE_U64(XtGenIntrCtrl.n.u24X2ApicIntrDstLo, XtGenIntrCtrl.n.u7X2ApicIntrDstHi));
+            pHlp->pfnPrintf(pHlp, "    Interrupt vector                        = %#x\n", XtGenIntrCtrl.n.u8X2ApicIntrVector);
+            pHlp->pfnPrintf(pHlp, "    Interrupt delivery mode                 = %#x\n",
+                            !XtGenIntrCtrl.n.u8X2ApicIntrVector ? "fixed" : "arbitrated");
+        }
     }
     /* XT (x2APIC) PPR Interrupt Control Register. */
     {
         IOMMU_XT_PPR_INTR_CTRL_T const XtPprIntrCtrl = pThis->XtPprIntrCtrl;
         pHlp->pfnPrintf(pHlp, "  XT PPR Interrupt Control                = %#RX64\n", XtPprIntrCtrl.u64);
-        pHlp->pfnPrintf(pHlp, "   Interrupt destination mode               = %s\n",
-                        !XtPprIntrCtrl.n.u1X2ApicIntrDstMode ? "physical" : "logical");
-        pHlp->pfnPrintf(pHlp, "   Interrupt destination                    = %#RX64\n",
-                        RT_MAKE_U64(XtPprIntrCtrl.n.u24X2ApicIntrDstLo, XtPprIntrCtrl.n.u7X2ApicIntrDstHi));
-        pHlp->pfnPrintf(pHlp, "   Interrupt vector                         = %#x\n", XtPprIntrCtrl.n.u8X2ApicIntrVector);
-        pHlp->pfnPrintf(pHlp, "   Interrupt delivery mode                  = %#x\n",
-                        !XtPprIntrCtrl.n.u8X2ApicIntrVector ? "fixed" : "arbitrated");
+        if (fVerbose)
+        {
+            pHlp->pfnPrintf(pHlp, "   Interrupt destination mode               = %s\n",
+                            !XtPprIntrCtrl.n.u1X2ApicIntrDstMode ? "physical" : "logical");
+            pHlp->pfnPrintf(pHlp, "   Interrupt destination                    = %#RX64\n",
+                            RT_MAKE_U64(XtPprIntrCtrl.n.u24X2ApicIntrDstLo, XtPprIntrCtrl.n.u7X2ApicIntrDstHi));
+            pHlp->pfnPrintf(pHlp, "   Interrupt vector                         = %#x\n", XtPprIntrCtrl.n.u8X2ApicIntrVector);
+            pHlp->pfnPrintf(pHlp, "   Interrupt delivery mode                  = %#x\n",
+                            !XtPprIntrCtrl.n.u8X2ApicIntrVector ? "fixed" : "arbitrated");
+        }
     }
     /* XT (X2APIC) GA Log Interrupt Control Register. */
     {
         IOMMU_XT_GALOG_INTR_CTRL_T const XtGALogIntrCtrl = pThis->XtGALogIntrCtrl;
         pHlp->pfnPrintf(pHlp, "  XT PPR Interrupt Control                = %#RX64\n", XtGALogIntrCtrl.u64);
-        pHlp->pfnPrintf(pHlp, "    Interrupt destination mode              = %s\n",
-                        !XtGALogIntrCtrl.n.u1X2ApicIntrDstMode ? "physical" : "logical");
-        pHlp->pfnPrintf(pHlp, "    Interrupt destination                   = %#RX64\n",
-                        RT_MAKE_U64(XtGALogIntrCtrl.n.u24X2ApicIntrDstLo, XtGALogIntrCtrl.n.u7X2ApicIntrDstHi));
-        pHlp->pfnPrintf(pHlp, "    Interrupt vector                        = %#x\n", XtGALogIntrCtrl.n.u8X2ApicIntrVector);
-        pHlp->pfnPrintf(pHlp, "    Interrupt delivery mode                 = %#x\n",
-                        !XtGALogIntrCtrl.n.u8X2ApicIntrVector ? "fixed" : "arbitrated");
+        if (fVerbose)
+        {
+            pHlp->pfnPrintf(pHlp, "    Interrupt destination mode              = %s\n",
+                            !XtGALogIntrCtrl.n.u1X2ApicIntrDstMode ? "physical" : "logical");
+            pHlp->pfnPrintf(pHlp, "    Interrupt destination                   = %#RX64\n",
+                            RT_MAKE_U64(XtGALogIntrCtrl.n.u24X2ApicIntrDstLo, XtGALogIntrCtrl.n.u7X2ApicIntrDstHi));
+            pHlp->pfnPrintf(pHlp, "    Interrupt vector                        = %#x\n", XtGALogIntrCtrl.n.u8X2ApicIntrVector);
+            pHlp->pfnPrintf(pHlp, "    Interrupt delivery mode                 = %#x\n",
+                            !XtGALogIntrCtrl.n.u8X2ApicIntrVector ? "fixed" : "arbitrated");
+        }
     }
     /* MARC Registers. */
     {
@@ -2523,22 +2590,25 @@ static DECLCALLBACK(void) iommuAmdR3DbgInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pH
     {
         IOMMU_STATUS_T const Status = pThis->Status;
         pHlp->pfnPrintf(pHlp, "  Status Register                         = %#RX64\n", Status.u64);
-        pHlp->pfnPrintf(pHlp, "    Event log overflow                      = %RTbool\n", Status.n.u1EvtOverflow);
-        pHlp->pfnPrintf(pHlp, "    Event log interrupt                     = %RTbool\n", Status.n.u1EvtLogIntr);
-        pHlp->pfnPrintf(pHlp, "    Completion wait interrupt               = %RTbool\n", Status.n.u1CompWaitIntr);
-        pHlp->pfnPrintf(pHlp, "    Event log running                       = %RTbool\n", Status.n.u1EvtLogRunning);
-        pHlp->pfnPrintf(pHlp, "    Command buffer running                  = %RTbool\n", Status.n.u1CmdBufRunning);
-        pHlp->pfnPrintf(pHlp, "    PPR overflow                            = %RTbool\n", Status.n.u1PprOverflow);
-        pHlp->pfnPrintf(pHlp, "    PPR interrupt                           = %RTbool\n", Status.n.u1PprIntr);
-        pHlp->pfnPrintf(pHlp, "    PPR log running                         = %RTbool\n", Status.n.u1PprLogRunning);
-        pHlp->pfnPrintf(pHlp, "    Guest log running                       = %RTbool\n", Status.n.u1GstLogRunning);
-        pHlp->pfnPrintf(pHlp, "    Guest log interrupt                     = %RTbool\n", Status.n.u1GstLogIntr);
-        pHlp->pfnPrintf(pHlp, "    PPR log B overflow                      = %RTbool\n", Status.n.u1PprOverflowB);
-        pHlp->pfnPrintf(pHlp, "    PPR log active                          = %RTbool\n", Status.n.u1PprLogActive);
-        pHlp->pfnPrintf(pHlp, "    Event log B overflow                    = %RTbool\n", Status.n.u1EvtOverflowB);
-        pHlp->pfnPrintf(pHlp, "    Event log active                        = %RTbool\n", Status.n.u1EvtLogActive);
-        pHlp->pfnPrintf(pHlp, "    PPR log B overflow early warning        = %RTbool\n", Status.n.u1PprOverflowEarlyB);
-        pHlp->pfnPrintf(pHlp, "    PPR log overflow early warning          = %RTbool\n", Status.n.u1PprOverflowEarly);
+        if (fVerbose)
+        {
+            pHlp->pfnPrintf(pHlp, "    Event log overflow                      = %RTbool\n", Status.n.u1EvtOverflow);
+            pHlp->pfnPrintf(pHlp, "    Event log interrupt                     = %RTbool\n", Status.n.u1EvtLogIntr);
+            pHlp->pfnPrintf(pHlp, "    Completion wait interrupt               = %RTbool\n", Status.n.u1CompWaitIntr);
+            pHlp->pfnPrintf(pHlp, "    Event log running                       = %RTbool\n", Status.n.u1EvtLogRunning);
+            pHlp->pfnPrintf(pHlp, "    Command buffer running                  = %RTbool\n", Status.n.u1CmdBufRunning);
+            pHlp->pfnPrintf(pHlp, "    PPR overflow                            = %RTbool\n", Status.n.u1PprOverflow);
+            pHlp->pfnPrintf(pHlp, "    PPR interrupt                           = %RTbool\n", Status.n.u1PprIntr);
+            pHlp->pfnPrintf(pHlp, "    PPR log running                         = %RTbool\n", Status.n.u1PprLogRunning);
+            pHlp->pfnPrintf(pHlp, "    Guest log running                       = %RTbool\n", Status.n.u1GstLogRunning);
+            pHlp->pfnPrintf(pHlp, "    Guest log interrupt                     = %RTbool\n", Status.n.u1GstLogIntr);
+            pHlp->pfnPrintf(pHlp, "    PPR log B overflow                      = %RTbool\n", Status.n.u1PprOverflowB);
+            pHlp->pfnPrintf(pHlp, "    PPR log active                          = %RTbool\n", Status.n.u1PprLogActive);
+            pHlp->pfnPrintf(pHlp, "    Event log B overflow                    = %RTbool\n", Status.n.u1EvtOverflowB);
+            pHlp->pfnPrintf(pHlp, "    Event log active                        = %RTbool\n", Status.n.u1EvtLogActive);
+            pHlp->pfnPrintf(pHlp, "    PPR log B overflow early warning        = %RTbool\n", Status.n.u1PprOverflowEarlyB);
+            pHlp->pfnPrintf(pHlp, "    PPR log overflow early warning          = %RTbool\n", Status.n.u1PprOverflowEarly);
+        }
     }
     /* PPR Log Head Pointer. */
     {
@@ -2592,25 +2662,60 @@ static DECLCALLBACK(void) iommuAmdR3DbgInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pH
     {
         PPR_LOG_AUTO_RESP_T const PprLogAutoResp = pThis->PprLogAutoResp;
         pHlp->pfnPrintf(pHlp, "  PPR Log Auto Response Register          = %#RX64\n",     PprLogAutoResp.u64);
-        pHlp->pfnPrintf(pHlp, "    Code                                    = %#x\n",      PprLogAutoResp.n.u4AutoRespCode);
-        pHlp->pfnPrintf(pHlp, "    Mask Gen.                               = %RTbool\n",  PprLogAutoResp.n.u1AutoRespMaskGen);
+        if (fVerbose)
+        {
+            pHlp->pfnPrintf(pHlp, "    Code                                    = %#x\n",      PprLogAutoResp.n.u4AutoRespCode);
+            pHlp->pfnPrintf(pHlp, "    Mask Gen.                               = %RTbool\n",  PprLogAutoResp.n.u1AutoRespMaskGen);
+        }
     }
     /* PPR Log Overflow Early Warning Indicator Register. */
     {
         PPR_LOG_OVERFLOW_EARLY_T const PprLogOverflowEarly = pThis->PprLogOverflowEarly;
         pHlp->pfnPrintf(pHlp, "  PPR Log overflow early warning          = %#RX64\n",    PprLogOverflowEarly.u64);
-        pHlp->pfnPrintf(pHlp, "    Threshold                               = %#x\n",     PprLogOverflowEarly.n.u15Threshold);
-        pHlp->pfnPrintf(pHlp, "    Interrupt enable                        = %RTbool\n", PprLogOverflowEarly.n.u1IntrEn);
-        pHlp->pfnPrintf(pHlp, "    Enable                                  = %RTbool\n", PprLogOverflowEarly.n.u1Enable);
+        if (fVerbose)
+        {
+            pHlp->pfnPrintf(pHlp, "    Threshold                               = %#x\n",     PprLogOverflowEarly.n.u15Threshold);
+            pHlp->pfnPrintf(pHlp, "    Interrupt enable                        = %RTbool\n", PprLogOverflowEarly.n.u1IntrEn);
+            pHlp->pfnPrintf(pHlp, "    Enable                                  = %RTbool\n", PprLogOverflowEarly.n.u1Enable);
+        }
     }
     /* PPR Log Overflow Early Warning Indicator Register. */
     {
         PPR_LOG_OVERFLOW_EARLY_T const PprLogBOverflowEarly = pThis->PprLogBOverflowEarly;
         pHlp->pfnPrintf(pHlp, "  PPR Log B overflow early warning        = %#RX64\n",    PprLogBOverflowEarly.u64);
-        pHlp->pfnPrintf(pHlp, "    Threshold                               = %#x\n",     PprLogBOverflowEarly.n.u15Threshold);
-        pHlp->pfnPrintf(pHlp, "    Interrupt enable                        = %RTbool\n", PprLogBOverflowEarly.n.u1IntrEn);
-        pHlp->pfnPrintf(pHlp, "    Enable                                  = %RTbool\n", PprLogBOverflowEarly.n.u1Enable);
+        if (fVerbose)
+        {
+            pHlp->pfnPrintf(pHlp, "    Threshold                               = %#x\n",     PprLogBOverflowEarly.n.u15Threshold);
+            pHlp->pfnPrintf(pHlp, "    Interrupt enable                        = %RTbool\n", PprLogBOverflowEarly.n.u1IntrEn);
+            pHlp->pfnPrintf(pHlp, "    Enable                                  = %RTbool\n", PprLogBOverflowEarly.n.u1Enable);
+        }
     }
+}
+
+
+/**
+ * @callback_method_impl{FNPCICONFIGREAD}
+ */
+static DECLCALLBACK(VBOXSTRICTRC) iommuAmdR3PciConfigRead(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t uAddress,
+                                                          unsigned cb, uint32_t *pu32Value)
+{
+    /** @todo IOMMU: PCI config read stat counter. */
+    VBOXSTRICTRC rcStrict = PDMDevHlpPCIConfigRead(pDevIns, pPciDev, uAddress, cb, pu32Value);
+    Log3((IOMMU_LOG_PFX ": PCI config read: At %#x (%u) -> %#x %Rrc\n", uAddress, cb, *pu32Value, VBOXSTRICTRC_VAL(rcStrict)));
+    return rcStrict;
+}
+
+
+/**
+ * @callback_method_impl{FNPCICONFIGWRITE}
+ */
+static DECLCALLBACK(VBOXSTRICTRC) iommuAmdR3PciConfigWrite(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t uAddress,
+                                                           unsigned cb, uint32_t u32Value)
+{
+    /** @todo IOMMU: PCI config write. */
+    VBOXSTRICTRC rcStrict = PDMDevHlpPCIConfigWrite(pDevIns, pPciDev, uAddress, cb, u32Value);
+    Log3((IOMMU_LOG_PFX ": PCI config write: %#x -> To %#x (%u) %Rrc\n", u32Value, uAddress, cb, VBOXSTRICTRC_VAL(rcStrict)));
+    return rcStrict;
 }
 
 
@@ -2623,6 +2728,7 @@ static DECLCALLBACK(int) iommuAmdR3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
     RT_NOREF2(pDevIns, pSSM);
     return VERR_NOT_IMPLEMENTED;
 }
+
 
 /**
  * @callback_method_impl{FNSSMDEVLOADEXEC}
@@ -2794,6 +2900,12 @@ static DECLCALLBACK(int) iommuAmdR3Construct(PPDMDEVINS pDevIns, int iInstance, 
      */
     rc = PDMDevHlpPCIRegisterEx(pDevIns, pPciDev, 0 /* fFlags */, uPciDevice, uPciFunction, "amd-iommu");
     AssertLogRelRCReturn(rc, rc);
+
+    /*
+     * Intercept PCI config. space accesses.
+     */
+    rc = PDMDevHlpPCIInterceptConfigAccesses(pDevIns, pPciDev, iommuAmdR3PciConfigRead, iommuAmdR3PciConfigWrite);
+    AssertRCReturn(rc, rc);
 
     /*
      * Map MMIO registers.
