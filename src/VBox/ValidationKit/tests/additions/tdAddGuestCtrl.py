@@ -1341,6 +1341,7 @@ class tdDebugSettings(object):
     """
     def __init__(self, sImgPath = None):
         self.sImgPath = sImgPath;
+        self.fNoExit = False;
 
 class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
     """
@@ -1389,6 +1390,9 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
             iNext = self.oTstDrv.requireMoreArgs(1, asArgs, iArg);
             self.oDebug.sImgPath = asArgs[iArg];
             return iNext;
+        if asArgs[iArg] == '--add-guest-ctrl-debug-no-exit':
+            self.oDebug.fNoExit = True;
+            return iArg + 1;
         return iArg;
 
     def showUsage(self):
@@ -1400,6 +1404,8 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         reporter.log('Debugging:');
         reporter.log('  --add-guest-ctrl-debug-img');
         reporter.log('      Sets VBoxService image to deploy for debugging');
+        reporter.log('  --add-guest-ctrl-debug-no-exit');
+        reporter.log('      Does not tear down and exit the test driver after running the tests');
         return True;
 
     def testIt(self, oTestVm, oSession, oTxsSession):
@@ -4924,19 +4930,20 @@ class tdAddGuestCtrl(vbox.TestDriver):                                         #
         if oSession is not None:
             self.addTask(oTxsSession);
 
-            fManual = False; # Manual override for local testing. (Committed version shall be False.)
-            if not fManual:
-                fRc, oTxsSession = self.aoSubTstDrvs[0].testIt(oTestVm, oSession, oTxsSession);
-            else:
-                fRc, oTxsSession = self.testGuestCtrlManual(oSession, oTxsSession, oTestVm);
+            fRc, oTxsSession = self.aoSubTstDrvs[0].testIt(oTestVm, oSession, oTxsSession);
 
             # Cleanup.
             self.removeTask(oTxsSession);
-            if not fManual:
+            if not self.aoSubTstDrvs[0].oDebug.fNoExit:
                 self.terminateVmBySession(oSession);
         else:
             fRc = False;
         return fRc;
+
+    def onExit(self, iRc):
+        if self.aoSubTstDrvs[0].oDebug.fNoExit:
+            return True
+        return vbox.TestDriver.onExit(self, iRc);
 
     def gctrlReportError(self, progress):
         """
