@@ -1546,7 +1546,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                 oTxsSession.syncExec(sFileVBoxServiceGst, (sFileVBoxServiceGst, "-vvvv", "--only-control", \
                                                            "--logfile", "/tmp/VBoxService-txs.log") );
             else: ## @todo Implement others.
-                return reporter.errorXcpt('Debugging not available on this guest OS yet');
+                reporter.log('Debugging not available on this guest OS yet, skipping ...');
 
         except:
             return reporter.errorXcpt('Unable to prepare for debugging');
