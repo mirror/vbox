@@ -26679,7 +26679,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
 
   <interface name="ICloudMachine" extends="$unknown"
-             uuid="1686e906-6fa9-11ea-9211-4f68777c1ecb"
+             uuid="c34a1e0a-74e6-11ea-af3a-07c50a04dd08"
              wsmap="managed"
              reservedMethods="16" reservedAttributes="8">
     <desc>
@@ -26689,6 +26689,23 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     <attribute name="id" type="uuid" mod="string" readonly="yes">
       <desc>UUID of the cloud machine.</desc>
     </attribute>
+
+    <method name="getSettingsForm">
+      <desc>
+        Obtain a form with settings for this cloud machine.
+        The form is editable.
+      </desc>
+      <param name="form" type="IForm" dir="out">
+        <desc>
+          A form with the cloud machine settings.
+        </desc>
+      </param>
+      <param name="progress" type="IProgress" dir="return">
+        <desc>
+          Progress object to track the operation completion.
+        </desc>
+      </param>
+    </method>
 
     <method name="readState">
       <desc>
