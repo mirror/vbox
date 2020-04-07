@@ -1449,7 +1449,7 @@ static int virtioNetR3HandleRxPacket(PPDMDEVINS pDevIns, PVIRTIONET pThis, PVIRT
         /** @todo  Find a better way to deal with this */
         AssertMsgReturnStmt(rc == VINF_SUCCESS && pDescChain->cbPhysReturn,
                             ("Not enough Rx buffers in queue to accomodate ethernet packet\n"),
-                            virtioCoreR3DescChainRelease(pDescChain),
+                            virtioCoreR3DescChainRelease(&pThis->Virtio, pDescChain),
                             VERR_INTERNAL_ERROR);
 
         /* Unlikely that len of 1st seg of guest Rx (IN) buf is less than sizeof(virtio_net_pkt_hdr) == 12.
@@ -1457,7 +1457,7 @@ static int virtioNetR3HandleRxPacket(PPDMDEVINS pDevIns, PVIRTIONET pThis, PVIRT
          * virtio_net_header.num_buffers (to update field *after* hdr & pkts copied to gcPhys) */
         AssertMsgReturnStmt(pDescChain->pSgPhysReturn->paSegs[0].cbSeg >= sizeof(VIRTIONET_PKT_HDR_T),
                             ("Desc chain's first seg has insufficient space for pkt header!\n"),
-                            virtioCoreR3DescChainRelease(pDescChain),
+                            virtioCoreR3DescChainRelease(&pThis->Virtio, pDescChain),
                             VERR_INTERNAL_ERROR);
 
         uint32_t cbDescChainLeft = pDescChain->cbPhysReturn;
@@ -1506,7 +1506,7 @@ static int virtioNetR3HandleRxPacket(PPDMDEVINS pDevIns, PVIRTIONET pThis, PVIRT
                 break;
         }
 
-        virtioCoreR3DescChainRelease(pDescChain);
+        virtioCoreR3DescChainRelease(&pThis->Virtio, pDescChain);
     }
 
     /* Fix-up pkthdr (in guest phys. memory) with number buffers (descriptors) processed */
@@ -2078,7 +2078,7 @@ static void virtioNetR3TransmitPendingPackets(PPDMDEVINS pDevIns, PVIRTIONET pTh
         else
         {
             LogFunc(("%s failed to find expected data on %s, rc = %Rrc\n", INSTANCE(pThis), VIRTQNAME(idxQueue), rc));
-            virtioCoreR3DescChainRelease(pDescChain);
+            virtioCoreR3DescChainRelease(pVirtio, pDescChain);
             break;
         }
 
@@ -2150,7 +2150,7 @@ static void virtioNetR3TransmitPendingPackets(PPDMDEVINS pDevIns, PVIRTIONET pTh
             {
                 Log4Func(("Failed to allocate S/G buffer: size=%u rc=%Rrc\n", uSize, rc));
                 /* Stop trying to fetch TX descriptors until we get more bandwidth. */
-                virtioCoreR3DescChainRelease(pDescChain);
+                virtioCoreR3DescChainRelease(pVirtio, pDescChain);
                 break;
             }
 
@@ -2163,7 +2163,7 @@ static void virtioNetR3TransmitPendingPackets(PPDMDEVINS pDevIns, PVIRTIONET pTh
             virtioCoreQueueSync(pVirtio->pDevIns, pVirtio, idxQueue);
         }
 
-        virtioCoreR3DescChainRelease(pDescChain);
+        virtioCoreR3DescChainRelease(pVirtio, pDescChain);
         pDescChain = NULL;
     }
     virtioNetR3SetWriteLed(pThisCC, false);
@@ -2287,7 +2287,7 @@ static DECLCALLBACK(int) virtioNetR3WorkerThread(PPDMDEVINS pDevIns, PPDMTHREAD 
                     continue;
                  }
                  virtioNetR3Ctrl(pDevIns, pThis, pThisCC, pDescChain);
-                 virtioCoreR3DescChainRelease(pDescChain);
+                 virtioCoreR3DescChainRelease(&pThis->Virtio, pDescChain);
              }
              else if (IS_TX_QUEUE(idxQueue))
              {

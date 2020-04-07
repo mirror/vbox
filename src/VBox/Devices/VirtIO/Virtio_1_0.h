@@ -287,6 +287,14 @@ typedef struct VIRTIOCORE
 
     /** The MMIO handle for the PCI capability region (\#2). */
     IOMMMIOHANDLE               hMmioPciCap;
+
+    /** @name Statistics
+     * @{ */
+    STAMCOUNTER                 StatDescChainsAllocated;
+    STAMCOUNTER                 StatDescChainsFreed;
+    STAMCOUNTER                 StatDescChainsSegsIn;
+    STAMCOUNTER                 StatDescChainsSegsOut;
+    /** @} */
 } VIRTIOCORE;
 
 
@@ -396,7 +404,7 @@ int  virtioCoreR3QueueAttach(PVIRTIOCORE pVirtio, uint16_t idxQueue, const char 
 int  virtioCoreR3DescChainGet(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t idxQueue,
                              uint16_t uHeadIdx, PPVIRTIO_DESC_CHAIN_T ppDescChain);
 uint32_t virtioCoreR3DescChainRetain(PVIRTIO_DESC_CHAIN_T pDescChain);
-uint32_t virtioCoreR3DescChainRelease(PVIRTIO_DESC_CHAIN_T pDescChain);
+uint32_t virtioCoreR3DescChainRelease(PVIRTIOCORE pVirtio, PVIRTIO_DESC_CHAIN_T pDescChain);
 
 int  virtioCoreR3QueuePeek(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t idxQueue,
                            PPVIRTIO_DESC_CHAIN_T ppDescChain);

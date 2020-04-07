@@ -692,6 +692,7 @@ int virtioCoreR3DescChainGet(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t i
         virtioCoreSgBufInit(&pDescChain->SgBufIn, paSegsIn, cSegsIn);
         pDescChain->pSgPhysReturn = &pDescChain->SgBufIn;
         pDescChain->cbPhysReturn  = cbIn;
+        STAM_REL_COUNTER_ADD(&pVirtio->StatDescChainsSegsIn, cSegsIn);
     }
 
     if (cSegsOut)
@@ -699,8 +700,10 @@ int virtioCoreR3DescChainGet(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t i
         virtioCoreSgBufInit(&pDescChain->SgBufOut, paSegsOut, cSegsOut);
         pDescChain->pSgPhysSend   = &pDescChain->SgBufOut;
         pDescChain->cbPhysSend    = cbOut;
+        STAM_REL_COUNTER_ADD(&pVirtio->StatDescChainsSegsOut, cSegsOut);
     }
 
+    STAM_REL_COUNTER_INC(&pVirtio->StatDescChainsAllocated);
     Log6Func(("%s -- segs OUT: %u (%u bytes)   IN: %u (%u bytes) --\n", pVirtq->szVirtqName, cSegsOut, cbOut, cSegsIn, cbIn));
 
     return VINF_SUCCESS;
@@ -730,10 +733,11 @@ uint32_t virtioCoreR3DescChainRetain(PVIRTIO_DESC_CHAIN_T pDescChain)
  *
  * @returns New reference count.
  * @retval  0 if freed or invalid parameter.
+ * @param   pVirtio         Pointer to the shared virtio state.
  * @param   pDescChain      The descriptor chain to reference.  NULL is quietly
  *                          ignored (returns 0).
  */
-uint32_t virtioCoreR3DescChainRelease(PVIRTIO_DESC_CHAIN_T pDescChain)
+uint32_t virtioCoreR3DescChainRelease(PVIRTIOCORE pVirtio, PVIRTIO_DESC_CHAIN_T pDescChain)
 {
     if (!pDescChain)
         return 0;
@@ -745,6 +749,7 @@ uint32_t virtioCoreR3DescChainRelease(PVIRTIO_DESC_CHAIN_T pDescChain)
     {
         pDescChain->u32Magic = ~VIRTIO_DESC_CHAIN_MAGIC;
         RTMemFree(pDescChain);
+        STAM_REL_COUNTER_INC(&pVirtio->StatDescChainsFreed);
     }
     return cRefs;
 }
@@ -2102,7 +2107,19 @@ int virtioCoreR3Init(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, PVIRTIOCORECC pVir
                                         &pVirtio->hMmioPciCap);
     AssertLogRelRCReturn(rc, PDMDEV_SET_ERROR(pDevIns, rc, N_("virtio: cannot register PCI Capabilities address space")));
 
-    return rc;
+    /*
+     * Statistics.
+     */
+    PDMDevHlpSTAMRegisterF(pDevIns, &pVirtio->StatDescChainsAllocated,  STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
+                           "Total number of allocated descriptor chains",   "DescChainsAllocated");
+    PDMDevHlpSTAMRegisterF(pDevIns, &pVirtio->StatDescChainsFreed,      STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
+                           "Total number of freed descriptor chains",       "DescChainsFreed");
+    PDMDevHlpSTAMRegisterF(pDevIns, &pVirtio->StatDescChainsSegsIn,     STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
+                           "Total number of inbound segments",              "DescChainsSegsIn");
+    PDMDevHlpSTAMRegisterF(pDevIns, &pVirtio->StatDescChainsSegsOut,    STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
+                           "Total number of outbound segments",             "DescChainsSegsOut");
+
+    return VINF_SUCCESS;
 }
 
 #else  /* !IN_RING3 */

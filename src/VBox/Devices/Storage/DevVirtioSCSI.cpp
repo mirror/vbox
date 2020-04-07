@@ -367,8 +367,6 @@ typedef struct VIRTIOSCSITARGET
 {
     /** The ring-3 device instance so we can easily get our bearings. */
     PPDMDEVINSR3                    pDevIns;
-    PPDMDEVINSRC                    pDevInsRC;
-    PPDMDEVINSR0                    pDevInsR0;
 
     /** Pointer to attached driver's base interface. */
     R3PTRTYPE(PPDMIBASE)            pDrvBase;
@@ -741,7 +739,7 @@ static int virtioScsiR3SendEvent(PPDMDEVINS pDevIns, PVIRTIOSCSI pThis, uint16_t
 
     virtioCoreR3QueuePut(pDevIns, &pThis->Virtio, EVENTQ_IDX, &ReqSgBuf, pDescChain, true /*fFence*/);
     virtioCoreQueueSync(pDevIns, &pThis->Virtio, EVENTQ_IDX);
-    virtioCoreR3DescChainRelease(pDescChain);
+    virtioCoreR3DescChainRelease(&pThis->Virtio, pDescChain);
 
     return VINF_SUCCESS;
 }
@@ -749,9 +747,10 @@ static int virtioScsiR3SendEvent(PPDMDEVINS pDevIns, PVIRTIOSCSI pThis, uint16_t
 /** Internal worker. */
 static void virtioScsiR3FreeReq(PVIRTIOSCSITARGET pTarget, PVIRTIOSCSIREQ pReq)
 {
+    PVIRTIOSCSI pThis = PDMDEVINS_2_DATA(pTarget->pDevIns, PVIRTIOSCSI);
     RTMemFree(pReq->pbSense);
     pReq->pbSense = NULL;
-    virtioCoreR3DescChainRelease(pReq->pDescChain);
+    virtioCoreR3DescChainRelease(&pThis->Virtio, pReq->pDescChain);
     pReq->pDescChain = NULL;
     pTarget->pDrvMediaEx->pfnIoReqFree(pTarget->pDrvMediaEx, pReq->hIoReq);
 }
@@ -1559,7 +1558,7 @@ static DECLCALLBACK(int) virtioScsiR3WorkerThread(PPDMDEVINS pDevIns, PPDMTHREAD
                   if (RT_FAILURE(rc))
                       LogRel(("Error submitting req packet, resetting %Rrc", rc));
 
-                  virtioCoreR3DescChainRelease(pDescChain);
+                  virtioCoreR3DescChainRelease(&pThis->Virtio, pDescChain);
              }
              pWorkerR3->cRedoDescs = 0;
 
@@ -1582,7 +1581,7 @@ static DECLCALLBACK(int) virtioScsiR3WorkerThread(PPDMDEVINS pDevIns, PPDMTHREAD
                      LogRel(("Error submitting req packet, resetting %Rrc", rc));
              }
 
-             virtioCoreR3DescChainRelease(pDescChain);
+             virtioCoreR3DescChainRelease(&pThis->Virtio, pDescChain);
         }
     }
     return VINF_SUCCESS;
