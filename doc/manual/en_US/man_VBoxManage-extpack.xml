@@ -35,6 +35,7 @@
     <cmdsynopsis id="synopsis-vboxmanage-extpack-install"> <!-- The 'id' is mandatory and must start with 'synopsis-'. -->
       <command>VBoxManage extpack install</command>
       <arg>--replace</arg>
+      <arg>--accept-license=<replaceable>sha256</replaceable></arg>
       <arg choice="req"><replaceable>tarball</replaceable></arg>
     </cmdsynopsis>
     <cmdsynopsis id="synopsis-vboxmanage-extpack-uninstall">
@@ -62,6 +63,15 @@
       <variablelist>
         <varlistentry>
           <term><option>--replace</option></term><listitem><para>Uninstall existing extension pack version.</para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term><option>--accept-license=<replaceable>sha256</replaceable></option></term>
+          <listitem>
+            <para>Accept the license text with the given SHA-256 hash value.</para>
+            <para>VBoxManage will display the SHA-256 value when performing a manual
+            installation.  The hash can of course be calculated by looking inside
+            the extension pack and using sha256sum or similar on the license file.</para>
+          </listitem>
         </varlistentry>
         <varlistentry>
           <term><replaceable>tarball</replaceable></term>
