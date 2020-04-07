@@ -164,6 +164,7 @@ enum UIActionIndexST
     UIActionIndexST_M_Cloud_S_Help,
 
     /* VM resource Monitor actions: */
+    UIActionIndexST_M_VMResourceMonitor,
     UIActionIndexST_M_VMResourceMonitor_T_Columns,
 
     /* Maximum index: */
@@ -235,6 +236,11 @@ protected:
     void updateMenuCloud();
     /** Updates 'Cloud' @a pMenu. */
     void updateMenuCloudWrapper(UIMenu *pMenu);
+
+   /** Updates 'VM Resource Monitor' menu. */
+    void updateMenuVMResourceMonitor();
+    /** Updates 'VM Resource Monitor' @a pMenu. */
+    void updateMenuVMResourceMonitorWrapper(UIMenu *pMenu);
 
     /** Updates 'Snapshot' menu. */
     void updateMenuSnapshot();

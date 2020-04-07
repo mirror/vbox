@@ -2798,15 +2798,42 @@ protected:
     }
 };
 
-/** Toggle action extension, used as 'Toggle Columns' action class. */
-class UIActionMenuSelectorVMResourceManagerToggleColumns : public UIActionToggle
+/** Menu action extension, used as 'Resources' menu class. */
+class UIActionMenuVMResourceMonitor : public UIActionMenu
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs action passing @a pParent to the base-class. */
-    UIActionMenuSelectorVMResourceManagerToggleColumns(UIActionPool *pParent)
+    UIActionMenuVMResourceMonitor(UIActionPool *pParent)
+        : UIActionMenu(pParent)
+    {}
+
+protected:
+
+    /** Returns shortcut extra-data ID. */
+    virtual QString shortcutExtraDataID() const /* override */
+    {
+        return QString("VMResourceMonitorMenu");
+    }
+
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */
+    {
+        setName(QApplication::translate("UIActionPool", "&Resources"));
+    }
+};
+
+/** Toggle action extension, used as 'Toggle Columns' action class. */
+class UIActionMenuSelectorVMResourceMonitorToggleColumns : public UIActionToggle
+{
+    Q_OBJECT;
+
+public:
+
+    /** Constructs action passing @a pParent to the base-class. */
+    UIActionMenuSelectorVMResourceMonitorToggleColumns(UIActionPool *pParent)
         : UIActionToggle(pParent)
     {
         setShortcutContext(Qt::WidgetWithChildrenShortcut);
@@ -2978,7 +3005,8 @@ void UIActionPoolManager::preparePool()
     m_pool[UIActionIndexST_M_Cloud_S_Help] = new UIActionMenuSelectorCloudShowHelp(this);
 
     /* VM resource Monitor actions: */
-    m_pool[UIActionIndexST_M_VMResourceMonitor_T_Columns] = new UIActionMenuSelectorVMResourceManagerToggleColumns(this);
+    m_pool[UIActionIndexST_M_VMResourceMonitor] = new UIActionMenuVMResourceMonitor(this);
+    m_pool[UIActionIndexST_M_VMResourceMonitor_T_Columns] = new UIActionMenuSelectorVMResourceMonitorToggleColumns(this);
 
     /* 'Group' action groups: */
     m_groupPool[UIActionIndexST_M_Group_M_Tools] = new QActionGroup(m_pool.value(UIActionIndexST_M_Group_M_Tools));
@@ -3009,6 +3037,7 @@ void UIActionPoolManager::preparePool()
     m_menuUpdateHandlers[UIActionIndexST_M_Network].ptfm =               &UIActionPoolManager::updateMenuNetwork;
     m_menuUpdateHandlers[UIActionIndexST_M_CloudWindow].ptfm =           &UIActionPoolManager::updateMenuCloudWindow;
     m_menuUpdateHandlers[UIActionIndexST_M_Cloud].ptfm =                 &UIActionPoolManager::updateMenuCloud;
+    m_menuUpdateHandlers[UIActionIndexST_M_VMResourceMonitor].ptfm =     &UIActionPoolManager::updateMenuVMResourceMonitor;
     m_menuUpdateHandlers[UIActionIndexST_M_Snapshot].ptfm =              &UIActionPoolManager::updateMenuSnapshot;
 
     /* Call to base-class: */
@@ -3083,6 +3112,10 @@ void UIActionPoolManager::updateMenus()
     addMenu(m_mainMenus, action(UIActionIndexST_M_Cloud));
     updateMenuCloudWindow();
     updateMenuCloud();
+
+    /* 'VM Resource Monitor' menu: */
+    addMenu(m_mainMenus, action(UIActionIndexST_M_VMResourceMonitor));
+    updateMenuVMResourceMonitor();
 
     /* 'Snapshot' menu: */
     addMenu(m_mainMenus, action(UIActionIndexST_M_Snapshot));
@@ -3556,6 +3589,23 @@ void UIActionPoolManager::updateMenuCloudWrapper(UIMenu *pMenu)
     fSeparator = addAction(pMenu, action(UIActionIndexST_M_Cloud_S_TryPage)) || fSeparator;
     /* 'Help' action: */
     fSeparator = addAction(pMenu, action(UIActionIndexST_M_Cloud_S_Help)) || fSeparator;
+}
+
+void UIActionPoolManager::updateMenuVMResourceMonitor()
+{
+    /* Update corresponding menu: */
+    updateMenuVMResourceMonitorWrapper(action(UIActionIndexST_M_VMResourceMonitor)->menu());
+
+    /* Mark menu as valid: */
+    m_invalidations.remove(UIActionIndexST_M_VMResourceMonitor);
+}
+
+void UIActionPoolManager::updateMenuVMResourceMonitorWrapper(UIMenu *pMenu)
+{
+    /* Clear contents: */
+    pMenu->clear();
+
+    addAction(pMenu, action(UIActionIndexST_M_VMResourceMonitor_T_Columns));
 }
 
 void UIActionPoolManager::updateMenuSnapshot()
