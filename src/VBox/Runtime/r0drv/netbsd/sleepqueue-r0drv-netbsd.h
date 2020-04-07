@@ -37,7 +37,7 @@
 #include <iprt/time.h>
 
 static syncobj_t vbox_syncobj = {
-        SOBJ_SLEEPQ_FIFO,
+        SOBJ_SLEEPQ_SORTED,
         sleepq_unsleep,
         sleepq_changepri,
         sleepq_lendpri,
@@ -45,7 +45,7 @@ static syncobj_t vbox_syncobj = {
 };
 
 /**
- * Kernel mode Linux wait state structure.
+ * Kernel mode NetBSD wait state structure.
  */
 typedef struct RTR0SEMBSDSLEEP
 {
