@@ -1365,7 +1365,7 @@ static int vgsvcGstCtrlProcessCreateProcess(const char *pszExec, const char * co
         const char *pcszArgv0 = (fHasArgv0 && papszArgs[0]) ? papszArgs[0] : pszExec;
         AssertPtrReturn(pcszArgv0, VERR_INVALID_POINTER); /* Paranoia. */
 
-        const uint32_t uArgvIdx = (papszArgs[0] && papszArgs[1]) ? 1 : 0;
+        const uint32_t uArgvIdx = pcszArgv0 == papszArgs[0] ? 1 : 0;
 
         VGSvcVerbose(3, "vgsvcGstCtrlProcessCreateProcess: fHasArgv0=%RTbool, pcszArgv0=%p, uArgvIdx=%RU32, "
                         "g_fControlHostFeatures0=%#x\n",
@@ -1537,9 +1537,13 @@ static int vgsvcGstCtrlProcessProcessWorker(PVBOXSERVICECTRLPROCESS pProcess)
                                 pProcess->StartupInfo.uNumArgs > 0 ? pProcess->StartupInfo.szArgs : "",
                                 RTGETOPTARGV_CNV_QUOTE_BOURNE_SH, NULL);
 
+    VGSvcVerbose(3, "vgsvcGstCtrlProcessProcessWorker: cArgs = %d\n", cArgs);
 #ifdef VBOX_STRICT
+    for (int i = 0; i < cArgs; i++)
+        VGSvcVerbose(3, "vgsvcGstCtrlProcessProcessWorker: papszArgs[%d] = '%s'\n", i, papszArgs[i] ? papszArgs[i] : "<NULL>");
+
     const bool fHasArgv0    = RT_BOOL(g_fControlHostFeatures0 & VBOX_GUESTCTRL_HF_0_PROCESS_ARGV0); RT_NOREF(fHasArgv0);
-    const int  cArgsToCheck = cArgs; /** @ŧodo Do we still need to do this?    + (fHasArgv0 ? 0 : 1); */
+    const int  cArgsToCheck = cArgs + (fHasArgv0 ? 0 : 1);
 
     /* Did we get the same result?
      * Take into account that we might not have supplied a (correct) argv[0] from the host. */
