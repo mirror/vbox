@@ -56,6 +56,7 @@ public:
     UIResourceMonitorWidget(EmbedTo enmEmbedding, UIActionPool *pActionPool,
                                bool fShowToolbar = true, QWidget *pParent = 0);
     ~UIResourceMonitorWidget();
+    QMenu *columnVisiblityToggleMenu() const;
     QMenu *menu() const;
 
     bool isCurrentTool() const;
@@ -114,6 +115,7 @@ private:
         UIVMResourceMonitorTableView       *m_pTableView;
         UIResourceMonitorProxyModel        *m_pProxyModel;
         UIResourceMonitorModel             *m_pModel;
+        QMenu                              *m_pColumnVisibilityToggleMenu;
         /* The key is the column id (VMResourceMonitorColumn) and value is column title. */
         QMap<int, QString>                  m_columnCaptions;
         /* The key is the column id (VMResourceMonitorColumn) and value is true if the column is visible. */
@@ -122,7 +124,6 @@ private:
 
 
     /** @} */
-    QFrame *m_pColumnSelectionMenu;
     /** Indicates if this widget's host tool is current tool. */
     bool    m_fIsCurrentTool;
 };

@@ -1270,8 +1270,8 @@ UIResourceMonitorWidget::UIResourceMonitorWidget(EmbedTo enmEmbedding, UIActionP
     , m_pTableView(0)
     , m_pProxyModel(0)
     , m_pModel(0)
+    , m_pColumnVisibilityToggleMenu(0)
     , m_pHostStatsWidget(0)
-    , m_pColumnSelectionMenu(0)
     , m_fIsCurrentTool(true)
 {
     /* Prepare: */
@@ -1286,6 +1286,11 @@ UIResourceMonitorWidget::~UIResourceMonitorWidget()
 QMenu *UIResourceMonitorWidget::menu() const
 {
     return NULL;
+}
+
+QMenu *UIResourceMonitorWidget::columnVisiblityToggleMenu() const
+{
+    return m_pColumnVisibilityToggleMenu;
 }
 
 bool UIResourceMonitorWidget::isCurrentTool() const
@@ -1402,35 +1407,42 @@ void UIResourceMonitorWidget::prepareWidgets()
 
 void UIResourceMonitorWidget::prepareActions()
 {
-    connect(m_pActionPool->action(UIActionIndexST_M_VMResourceMonitor_T_Columns), &QAction::toggled,
-            this, &UIResourceMonitorWidget::sltToggleColumnSelectionMenu);
-    m_pColumnSelectionMenu  = new QFrame(this);
-    m_pColumnSelectionMenu->setAutoFillBackground(true);
-    m_pColumnSelectionMenu->setFrameStyle(QFrame::Panel | QFrame::Plain);
-    m_pColumnSelectionMenu->hide();
-    QVBoxLayout* pLayout = new QVBoxLayout(m_pColumnSelectionMenu);
-    int iLength = 0;
+    m_pColumnVisibilityToggleMenu = new QMenu(this);
     for (int i = 0; i < VMResourceMonitorColumn_Max; ++i)
     {
-        UIVMResourceMonitorCheckBox* pCheckBox = new UIVMResourceMonitorCheckBox;
-        QString strCaption = m_columnCaptions.value((VMResourceMonitorColumn)i, QString());
-        pCheckBox->setText(strCaption);
-        iLength = strCaption.length() > iLength ? strCaption.length() : iLength;
-        if (!pCheckBox)
-            continue;
-        pLayout->addWidget(pCheckBox);
-        pCheckBox->setData(i);
-        pCheckBox->setChecked(columnVisible(i));
-        if (i == (int)VMResourceMonitorColumn_Name)
-            pCheckBox->setEnabled(false);
-        connect(pCheckBox, &UIVMResourceMonitorCheckBox::toggled, this, &UIResourceMonitorWidget::sltHandleColumnAction);
+        QAction *pAction = m_pColumnVisibilityToggleMenu->addAction(m_columnCaptions[i]);
+        pAction->setCheckable(true);
     }
-    QFontMetrics fontMetrics(m_pColumnSelectionMenu->font());
-    int iWidth = iLength * fontMetrics.width('x') +
-        QApplication::style()->pixelMetric(QStyle::PM_IndicatorWidth) +
-        2 * QApplication::style()->pixelMetric(QStyle::PM_LayoutLeftMargin) +
-        2 * QApplication::style()->pixelMetric(QStyle::PM_LayoutRightMargin);
-    m_pColumnSelectionMenu->setFixedWidth(iWidth);
+
+    connect(m_pActionPool->action(UIActionIndexST_M_VMResourceMonitor_T_Columns), &QAction::toggled,
+            this, &UIResourceMonitorWidget::sltToggleColumnSelectionMenu);
+    return;
+//     m_pColumnSelectionMenu->setAutoFillBackground(true);
+//     m_pColumnSelectionMenu->setFrameStyle(QFrame::Panel | QFrame::Plain);
+//     m_pColumnSelectionMenu->hide();
+//     QVBoxLayout* pLayout = new QVBoxLayout(m_pColumnSelectionMenu);
+//     int iLength = 0;
+//     for (int i = 0; i < VMResourceMonitorColumn_Max; ++i)
+//     {
+//         UIVMResourceMonitorCheckBox* pCheckBox = new UIVMResourceMonitorCheckBox;
+//         QString strCaption = m_columnCaptions.value((VMResourceMonitorColumn)i, QString());
+//         pCheckBox->setText(strCaption);
+//         iLength = strCaption.length() > iLength ? strCaption.length() : iLength;
+//         if (!pCheckBox)
+//             continue;
+//         pLayout->addWidget(pCheckBox);
+//         pCheckBox->setData(i);
+//         pCheckBox->setChecked(columnVisible(i));
+//         if (i == (int)VMResourceMonitorColumn_Name)
+//             pCheckBox->setEnabled(false);
+//         connect(pCheckBox, &UIVMResourceMonitorCheckBox::toggled, this, &UIResourceMonitorWidget::sltHandleColumnAction);
+//     }
+//     QFontMetrics fontMetrics(m_pColumnSelectionMenu->font());
+//     int iWidth = iLength * fontMetrics.width('x') +
+//         QApplication::style()->pixelMetric(QStyle::PM_IndicatorWidth) +
+//         2 * QApplication::style()->pixelMetric(QStyle::PM_LayoutLeftMargin) +
+//         2 * QApplication::style()->pixelMetric(QStyle::PM_LayoutRightMargin);
+//     m_pColumnSelectionMenu->setFixedWidth(iWidth);
 }
 
 void UIResourceMonitorWidget::prepareToolBar()
@@ -1484,21 +1496,26 @@ void UIResourceMonitorWidget::saveSettings()
 
 void UIResourceMonitorWidget::sltToggleColumnSelectionMenu(bool fChecked)
 {
-    if (!m_pColumnSelectionMenu)
+    (void)fChecked;
+    if (!m_pColumnVisibilityToggleMenu)
         return;
-    m_pColumnSelectionMenu->setVisible(fChecked);
+    m_pColumnVisibilityToggleMenu->exec(this->mapToGlobal(QPoint(0,0)));
 
-    if (fChecked)
-    {
-        m_pColumnSelectionMenu->move(0, 0);
-        m_pColumnSelectionMenu->raise();
-        m_pColumnSelectionMenu->resize(400, 400);
-        m_pColumnSelectionMenu->show();
-        m_pColumnSelectionMenu->setFocus();
-    }
-    else
-        m_pColumnSelectionMenu->hide();
-    update();
+    // if (!m_pColumnSelectionMenu)
+    //     return;
+    // m_pColumnSelectionMenu->setVisible(fChecked);
+
+    // if (fChecked)
+    // {
+    //     m_pColumnSelectionMenu->move(0, 0);
+    //     m_pColumnSelectionMenu->raise();
+    //     m_pColumnSelectionMenu->resize(400, 400);
+    //     m_pColumnSelectionMenu->show();
+    //     m_pColumnSelectionMenu->setFocus();
+    // }
+    // else
+    //     m_pColumnSelectionMenu->hide();
+    //update();
 }
 
 void UIResourceMonitorWidget::sltHandleColumnAction(bool fChecked)
