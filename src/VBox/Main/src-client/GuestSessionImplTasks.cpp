@@ -1406,105 +1406,111 @@ HRESULT GuestSessionTaskCopyFrom::Init(const Utf8Str &strTaskDesc)
      */
 
     if (mDest.isEmpty())
-        return setProgressErrorMsg(VBOX_E_IPRT_ERROR, Utf8StrFmt(GuestSession::tr("Destination must not be empty")));
-
-    GuestSessionFsSourceSet::iterator itSrc = mSources.begin();
-    while (itSrc != mSources.end())
     {
-        Utf8Str strSrc = itSrc->strSource;
-        Utf8Str strDst = mDest;
-
-        bool    fFollowSymlinks;
-
-        if (strSrc.isEmpty())
+        strErrorInfo = Utf8StrFmt(GuestSession::tr("Destination must not be empty"));
+        vrc = VERR_INVALID_PARAMETER;
+    }
+    else
+    {
+        GuestSessionFsSourceSet::iterator itSrc = mSources.begin();
+        while (itSrc != mSources.end())
         {
-            strErrorInfo = Utf8StrFmt(GuestSession::tr("Source entry must not be empty"));
-            break;
-        }
+            Utf8Str strSrc = itSrc->strSource;
+            Utf8Str strDst = mDest;
 
-        if (itSrc->enmType == FsObjType_Directory)
-        {
-            /* If the source does not end with a slash, copy over the entire directory
-             * (and not just its contents). */
-            /** @todo r=bird: Try get the path style stuff right and stop assuming all guest are windows guests.  */
-            if (   !strSrc.endsWith("/")
-                && !strSrc.endsWith("\\"))
+            bool    fFollowSymlinks;
+
+            if (strSrc.isEmpty())
             {
-                if (!RTPATH_IS_SLASH(strDst[strDst.length() - 1]))
-                    strDst += "/";
-
-                strDst += Utf8Str(RTPathFilenameEx(strSrc.c_str(), mfPathStyle));
-            }
-
-            fFollowSymlinks = itSrc->Type.Dir.fFollowSymlinks;
-        }
-        else
-        {
-            fFollowSymlinks = RT_BOOL(itSrc->Type.File.fCopyFlags & FileCopyFlag_FollowLinks);
-        }
-
-        LogFlowFunc(("strSrc=%s, strDst=%s, fFollowSymlinks=%RTbool\n", strSrc.c_str(), strDst.c_str(), fFollowSymlinks));
-
-        GuestFsObjData srcObjData;
-        int rcGuest = VERR_IPE_UNINITIALIZED_STATUS;
-        vrc = mSession->i_fsQueryInfo(strSrc, fFollowSymlinks, srcObjData, &rcGuest);
-        if (RT_FAILURE(vrc))
-        {
-            strErrorInfo = Utf8StrFmt(GuestSession::tr("No such source file/directory: %s"), strSrc.c_str());
-            break;
-        }
-
-        if (srcObjData.mType == FsObjType_Directory)
-        {
-            if (itSrc->enmType != FsObjType_Directory)
-            {
-                strErrorInfo = Utf8StrFmt(GuestSession::tr("Source is not a file: %s"), strSrc.c_str());
-                vrc = VERR_NOT_A_FILE;
+                strErrorInfo = Utf8StrFmt(GuestSession::tr("Source entry must not be empty"));
+                vrc = VERR_INVALID_PARAMETER;
                 break;
             }
-        }
-        else
-        {
-            if (itSrc->enmType != FsObjType_File)
-            {
-                strErrorInfo = Utf8StrFmt(GuestSession::tr("Source is not a directory: %s"), strSrc.c_str());
-                vrc = VERR_NOT_A_DIRECTORY;
-                break;
-            }
-        }
 
-        FsList *pFsList = NULL;
-        try
-        {
-            pFsList = new FsList(*this);
-            vrc = pFsList->Init(strSrc, strDst, *itSrc);
-            if (RT_SUCCESS(vrc))
+            if (itSrc->enmType == FsObjType_Directory)
             {
-                if (itSrc->enmType == FsObjType_Directory)
-                    vrc = pFsList->AddDirFromGuest(strSrc);
-                else
-                    vrc = pFsList->AddEntryFromGuest(RTPathFilename(strSrc.c_str()), srcObjData);
+                /* If the source does not end with a slash, copy over the entire directory
+                 * (and not just its contents). */
+                /** @todo r=bird: Try get the path style stuff right and stop assuming all guest are windows guests.  */
+                if (   !strSrc.endsWith("/")
+                    && !strSrc.endsWith("\\"))
+                {
+                    if (!RTPATH_IS_SLASH(strDst[strDst.length() - 1]))
+                        strDst += "/";
+
+                    strDst += Utf8Str(RTPathFilenameEx(strSrc.c_str(), mfPathStyle));
+                }
+
+                fFollowSymlinks = itSrc->Type.Dir.fFollowSymlinks;
+            }
+            else
+            {
+                fFollowSymlinks = RT_BOOL(itSrc->Type.File.fCopyFlags & FileCopyFlag_FollowLinks);
             }
 
+            LogFlowFunc(("strSrc=%s, strDst=%s, fFollowSymlinks=%RTbool\n", strSrc.c_str(), strDst.c_str(), fFollowSymlinks));
+
+            GuestFsObjData srcObjData;
+            int rcGuest = VERR_IPE_UNINITIALIZED_STATUS;
+            vrc = mSession->i_fsQueryInfo(strSrc, fFollowSymlinks, srcObjData, &rcGuest);
             if (RT_FAILURE(vrc))
             {
-                delete pFsList;
-                strErrorInfo = Utf8StrFmt(GuestSession::tr("Error adding source '%s' to list: %Rrc"), strSrc.c_str(), vrc);
+                strErrorInfo = Utf8StrFmt(GuestSession::tr("No such source file/directory: %s"), strSrc.c_str());
                 break;
             }
 
-            mVecLists.push_back(pFsList);
-        }
-        catch (std::bad_alloc &)
-        {
-            vrc = VERR_NO_MEMORY;
-            break;
-        }
+            if (srcObjData.mType == FsObjType_Directory)
+            {
+                if (itSrc->enmType != FsObjType_Directory)
+                {
+                    strErrorInfo = Utf8StrFmt(GuestSession::tr("Source is not a file: %s"), strSrc.c_str());
+                    vrc = VERR_NOT_A_FILE;
+                    break;
+                }
+            }
+            else
+            {
+                if (itSrc->enmType != FsObjType_File)
+                {
+                    strErrorInfo = Utf8StrFmt(GuestSession::tr("Source is not a directory: %s"), strSrc.c_str());
+                    vrc = VERR_NOT_A_DIRECTORY;
+                    break;
+                }
+            }
 
-        AssertPtr(pFsList);
-        cOperations += (ULONG)pFsList->mVecEntries.size();
+            FsList *pFsList = NULL;
+            try
+            {
+                pFsList = new FsList(*this);
+                vrc = pFsList->Init(strSrc, strDst, *itSrc);
+                if (RT_SUCCESS(vrc))
+                {
+                    if (itSrc->enmType == FsObjType_Directory)
+                        vrc = pFsList->AddDirFromGuest(strSrc);
+                    else
+                        vrc = pFsList->AddEntryFromGuest(RTPathFilename(strSrc.c_str()), srcObjData);
+                }
 
-        itSrc++;
+                if (RT_FAILURE(vrc))
+                {
+                    delete pFsList;
+                    strErrorInfo = Utf8StrFmt(GuestSession::tr("Error adding source '%s' to list: %Rrc"), strSrc.c_str(), vrc);
+                    break;
+                }
+
+                mVecLists.push_back(pFsList);
+            }
+            catch (std::bad_alloc &)
+            {
+                vrc = VERR_NO_MEMORY;
+                break;
+            }
+
+            AssertPtr(pFsList);
+            cOperations += (ULONG)pFsList->mVecEntries.size();
+
+            itSrc++;
+        }
     }
 
     if (cOperations) /* Use the first element as description (if available). */
@@ -1522,7 +1528,8 @@ HRESULT GuestSessionTaskCopyFrom::Init(const Utf8Str &strTaskDesc)
 
     if (RT_FAILURE(vrc))
     {
-        Assert(strErrorInfo.isNotEmpty());
+        if (strErrorInfo.isEmpty())
+            strErrorInfo = Utf8StrFmt(GuestSession::tr("Failed with %Rrc"), vrc);
         setProgressErrorMsg(VBOX_E_IPRT_ERROR, vrc, "%s", strErrorInfo.c_str());
     }
 
@@ -1663,83 +1670,89 @@ HRESULT GuestSessionTaskCopyTo::Init(const Utf8Str &strTaskDesc)
      */
 
     if (mDest.isEmpty())
-        return setProgressErrorMsg(VBOX_E_IPRT_ERROR, Utf8StrFmt(GuestSession::tr("Destination must not be empty")));
-
-    GuestSessionFsSourceSet::iterator itSrc = mSources.begin();
-    while (itSrc != mSources.end())
     {
-        Utf8Str strSrc = itSrc->strSource;
-        Utf8Str strDst = mDest;
-
-        LogFlowFunc(("Source: strSrc=%s, strDst=%s\n", strSrc.c_str(), strDst.c_str()));
-
-        if (strSrc.isEmpty())
+        strErrorInfo = Utf8StrFmt(GuestSession::tr("Destination must not be empty"));
+        rc = VERR_INVALID_PARAMETER;
+    }
+    else
+    {
+        GuestSessionFsSourceSet::iterator itSrc = mSources.begin();
+        while (itSrc != mSources.end())
         {
-            strErrorInfo = Utf8StrFmt(GuestSession::tr("Source entry must not be empty"));
-            break;
-        }
+            Utf8Str strSrc = itSrc->strSource;
+            Utf8Str strDst = mDest;
 
-        RTFSOBJINFO srcFsObjInfo;
-        rc = RTPathQueryInfo(strSrc.c_str(), &srcFsObjInfo, RTFSOBJATTRADD_NOTHING);
-        if (RT_FAILURE(rc))
-        {
-            strErrorInfo = Utf8StrFmt(GuestSession::tr("No such source file/directory: %s"), strSrc.c_str());
-            break;
-        }
+            LogFlowFunc(("Source: strSrc=%s, strDst=%s\n", strSrc.c_str(), strDst.c_str()));
 
-        if (RTFS_IS_DIRECTORY(srcFsObjInfo.Attr.fMode))
-        {
-            if (itSrc->enmType != FsObjType_Directory)
+            if (strSrc.isEmpty())
             {
-                strErrorInfo = Utf8StrFmt(GuestSession::tr("Source is not a file: %s"), strSrc.c_str());
-                rc = VERR_NOT_A_FILE;
+                strErrorInfo = Utf8StrFmt(GuestSession::tr("Source entry must not be empty"));
+                rc = VERR_INVALID_PARAMETER;
                 break;
             }
-        }
-        else
-        {
-            if (itSrc->enmType == FsObjType_Directory)
+
+            RTFSOBJINFO srcFsObjInfo;
+            rc = RTPathQueryInfo(strSrc.c_str(), &srcFsObjInfo, RTFSOBJATTRADD_NOTHING);
+            if (RT_FAILURE(rc))
             {
-                strErrorInfo = Utf8StrFmt(GuestSession::tr("Source is not a directory: %s"), strSrc.c_str());
-                rc = VERR_NOT_A_DIRECTORY;
+                strErrorInfo = Utf8StrFmt(GuestSession::tr("No such source file/directory: %s"), strSrc.c_str());
                 break;
             }
-        }
 
-        FsList *pFsList = NULL;
-        try
-        {
-            pFsList = new FsList(*this);
-            rc = pFsList->Init(strSrc, strDst, *itSrc);
-            if (RT_SUCCESS(rc))
+            if (RTFS_IS_DIRECTORY(srcFsObjInfo.Attr.fMode))
+            {
+                if (itSrc->enmType != FsObjType_Directory)
+                {
+                    strErrorInfo = Utf8StrFmt(GuestSession::tr("Source is not a file: %s"), strSrc.c_str());
+                    rc = VERR_NOT_A_FILE;
+                    break;
+                }
+            }
+            else
             {
                 if (itSrc->enmType == FsObjType_Directory)
                 {
-                    rc = pFsList->AddDirFromHost(strSrc);
+                    strErrorInfo = Utf8StrFmt(GuestSession::tr("Source is not a directory: %s"), strSrc.c_str());
+                    rc = VERR_NOT_A_DIRECTORY;
+                    break;
                 }
-                else
-                    rc = pFsList->AddEntryFromHost(RTPathFilename(strSrc.c_str()), &srcFsObjInfo);
             }
 
-            if (RT_FAILURE(rc))
+            FsList *pFsList = NULL;
+            try
             {
-                delete pFsList;
-                strErrorInfo = Utf8StrFmt(GuestSession::tr("Error adding source '%s' to list: %Rrc"), strSrc.c_str(), rc);
+                pFsList = new FsList(*this);
+                rc = pFsList->Init(strSrc, strDst, *itSrc);
+                if (RT_SUCCESS(rc))
+                {
+                    if (itSrc->enmType == FsObjType_Directory)
+                    {
+                        rc = pFsList->AddDirFromHost(strSrc);
+                    }
+                    else
+                        rc = pFsList->AddEntryFromHost(RTPathFilename(strSrc.c_str()), &srcFsObjInfo);
+                }
+
+                if (RT_FAILURE(rc))
+                {
+                    delete pFsList;
+                    strErrorInfo = Utf8StrFmt(GuestSession::tr("Error adding source '%s' to list: %Rrc"), strSrc.c_str(), rc);
+                    break;
+                }
+
+                mVecLists.push_back(pFsList);
+            }
+            catch (std::bad_alloc &)
+            {
+                rc = VERR_NO_MEMORY;
                 break;
             }
 
-            mVecLists.push_back(pFsList);
-        }
-        catch (std::bad_alloc &)
-        {
-            rc = VERR_NO_MEMORY;
-            break;
-        }
+            AssertPtr(pFsList);
+            cOperations += (ULONG)pFsList->mVecEntries.size();
 
-        AssertPtr(pFsList);
-        cOperations += (ULONG)pFsList->mVecEntries.size();
-
-        itSrc++;
+            itSrc++;
+        }
     }
 
     if (cOperations) /* Use the first element as description (if available). */
@@ -1757,7 +1770,8 @@ HRESULT GuestSessionTaskCopyTo::Init(const Utf8Str &strTaskDesc)
 
     if (RT_FAILURE(rc))
     {
-        Assert(strErrorInfo.isNotEmpty());
+        if (strErrorInfo.isEmpty())
+            strErrorInfo = Utf8StrFmt(GuestSession::tr("Failed with %Rrc"), rc);
         setProgressErrorMsg(VBOX_E_IPRT_ERROR, strErrorInfo);
     }
 
