@@ -2870,6 +2870,7 @@ static DECLCALLBACK(int) iommuAmdR3Construct(PPDMDEVINS pDevIns, int iInstance, 
     PDMPciDevSetDWord(pPciDev, offMiscInfo1, 0);
 
     /* MSI Capability Header register. */
+#if 0
     PDMPciDevSetDWord(pPciDev, offMsiCapHdr,
                         RT_BF_MAKE(IOMMU_BF_MSI_CAPHDR_CAP_ID,       0x5)             /* RO - Capability ID. */
                       | RT_BF_MAKE(IOMMU_BF_MSI_CAPHDR_CAP_PTR,      offMsiMapCapHdr) /* RO - Offset to mapping capability block */
@@ -2877,6 +2878,15 @@ static DECLCALLBACK(int) iommuAmdR3Construct(PPDMDEVINS pDevIns, int iInstance, 
                       | RT_BF_MAKE(IOMMU_BF_MSI_CAPHDR_MULTMESS_CAP, 0x0)             /* RO - MSI multi-message capability */
                       | RT_BF_MAKE(IOMMU_BF_MSI_CAPHDR_MULTMESS_EN,  0x0)             /* RW - MSI multi-message enable */
                       | RT_BF_MAKE(IOMMU_BF_MSI_CAPHDR_64BIT_EN,     0x1));           /* RO - MSI 64-bit enable */
+#else
+    PDMMSIREG MsiReg;
+    RT_ZERO(MsiReg);
+    MsiReg.cMsiVectors    = 1;
+    MsiReg.iMsiCapOffset  = offMsiCapHdr;
+    MsiReg.iMsiNextOffset = offMsiMapCapHdr;
+    rc = PDMDevHlpPCIRegisterMsi(pDevIns, &MsiReg);
+    AssertRCReturn(rc, rc);
+#endif
 
     /* MSI Address Lo. */
     PDMPciDevSetDWord(pPciDev, offMsiAddrLo, 0);                            /* RW - MSI message address (Lo). */
@@ -2887,6 +2897,7 @@ static DECLCALLBACK(int) iommuAmdR3Construct(PPDMDEVINS pDevIns, int iInstance, 
     /* MSI Data. */
     PDMPciDevSetDWord(pPciDev, offMsiData, 0);                              /* RW - MSI data. */
 
+    /** @todo IOMMU: I don't know if we can support this, disable later if required. */
     /* MSI Mapping Capability Header register. */
     PDMPciDevSetDWord(pPciDev, offMsiMapCapHdr,
                         RT_BF_MAKE(IOMMU_BF_MSI_MAP_CAPHDR_CAP_ID,   0x8)       /* RO - Capability ID */
