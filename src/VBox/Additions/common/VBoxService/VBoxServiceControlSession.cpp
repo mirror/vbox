@@ -2265,13 +2265,35 @@ static int vgsvcVGSvcGstCtrlSessionThreadCreateProcess(const PVBOXSERVICECTRLSES
         if (!pszSuffix)
             pszSuffix = strchr(g_szLogFile, '\0');
         size_t cchBase = pszSuffix - g_szLogFile;
+
+        RTTIMESPEC Now;
+        RTTimeNow(&Now);
+        char szTime[64];
+        RTTimeSpecToString(&Now, szTime, sizeof(szTime));
+
+        /* Replace out characters not allowed on Windows platforms, put in by RTTimeSpecToString(). */
+        static const RTUNICP s_uszValidRangePairs[] =
+        {
+            ' ', ' ',
+            '(', ')',
+            '-', '.',
+            '0', '9',
+            'A', 'Z',
+            'a', 'z',
+            '_', '_',
+            0xa0, 0xd7af,
+            '\0'
+        };
+        ssize_t cReplaced = RTStrPurgeComplementSet(szTime, s_uszValidRangePairs, '_' /* chReplacement */);
+        AssertReturn(cReplaced, VERR_INVALID_UTF8_ENCODING);
+
 #ifndef DEBUG
-        RTStrPrintf(szParmLogFile, sizeof(szParmLogFile), "%.*s-%RU32-%s%s",
-                    cchBase, g_szLogFile, pSessionStartupInfo->uSessionID, pSessionStartupInfo->szUser, pszSuffix);
+        RTStrPrintf(szParmLogFile, sizeof(szParmLogFile), "%.*s-%RU32-%s-%s%s",
+                    cchBase, g_szLogFile, pSessionStartupInfo->uSessionID, pSessionStartupInfo->szUser, szTime, pszSuffix);
 #else
-        RTStrPrintf(szParmLogFile, sizeof(szParmLogFile), "%.*s-%RU32-%RU32-%s%s",
+        RTStrPrintf(szParmLogFile, sizeof(szParmLogFile), "%.*s-%RU32-%RU32-%s-%s%s",
                     cchBase, g_szLogFile, pSessionStartupInfo->uSessionID, uCtrlSessionThread,
-                    pSessionStartupInfo->szUser, pszSuffix);
+                    pSessionStartupInfo->szUser, szTime, pszSuffix);
 #endif
         apszArgs[idxArg++] = "--logfile";
         apszArgs[idxArg++] = szParmLogFile;
