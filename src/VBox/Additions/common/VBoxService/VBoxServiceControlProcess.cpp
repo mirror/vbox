@@ -1365,14 +1365,14 @@ static int vgsvcGstCtrlProcessCreateProcess(const char *pszExec, const char * co
         const char *pcszArgv0 = (fHasArgv0 && papszArgs[0]) ? papszArgs[0] : pszExec;
         AssertPtrReturn(pcszArgv0, VERR_INVALID_POINTER); /* Paranoia. */
 
-        const char * const *pcszArgvN = fHasArgv0 && papszArgs + 1 ? papszArgs + 1 : papszArgs;
-        AssertPtrReturn(pcszArgvN, VERR_INVALID_POINTER); /* Ditto. */
+        const uint32_t uArgvIdx = (papszArgs[0] && papszArgs[1]) ? 1 : 0;
 
-        VGSvcVerbose(3, "vgsvcGstCtrlProcessCreateProcess: fHasArgv0=%RTbool, pcszArgv0=%p, pcszArgvN=%p, g_fControlHostFeatures0=%#x\n",
-                     fHasArgv0, pcszArgv0, pcszArgvN, g_fControlHostFeatures0);
+        VGSvcVerbose(3, "vgsvcGstCtrlProcessCreateProcess: fHasArgv0=%RTbool, pcszArgv0=%p, uArgvIdx=%RU32, "
+                        "g_fControlHostFeatures0=%#x\n",
+                     fHasArgv0, pcszArgv0, uArgvIdx, g_fControlHostFeatures0);
 
         char **papszArgsExp;
-        rc = vgsvcGstCtrlProcessAllocateArgv(pcszArgv0, pcszArgvN, fFlags, &papszArgsExp);
+        rc = vgsvcGstCtrlProcessAllocateArgv(pcszArgv0, &papszArgs[uArgvIdx], fFlags, &papszArgsExp);
         if (RT_FAILURE(rc))
         {
             /* Don't print any arguments -- may contain passwords or other sensible data! */
