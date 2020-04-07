@@ -1117,7 +1117,7 @@ void UIResourceMonitorModel::sltTimeout()
     for (int i = 0; i < (int)VMResourceMonitorColumn_Max; ++i)
     {
         for (int j = 0; j < m_itemList.size(); ++j)
-            if (m_columnDataMaxLength.value(i, 0) < m_itemList[j].m_columnData[i])
+            if (m_columnDataMaxLength.value(i, 0) < m_itemList[j].m_columnData[i].length())
                 m_columnDataMaxLength[i] = m_itemList[j].m_columnData[i].length();
     }
     emit sigDataUpdate();
