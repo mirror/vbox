@@ -517,7 +517,6 @@ typedef struct
     AVLU32NODECORE          Core;
     union
     {
-        IDirect3DSurface9          *pSurface;
         IDirect3DTexture9          *pTexture;
         IDirect3DCubeTexture9      *pCubeTexture;
         IDirect3DVolumeTexture9    *pVolumeTexture;

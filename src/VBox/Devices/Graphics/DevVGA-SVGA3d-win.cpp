@@ -4069,6 +4069,7 @@ int vmsvga3dSetRenderTarget(PVGASTATECC pThisCC, uint32_t cid, SVGA3dRenderTarge
         else
         {
             Assert(pRenderTarget->idAssociatedContext == cid);
+            AssertReturn(pRenderTarget->enmD3DResType == VMSVGA3D_D3DRESTYPE_SURFACE, VERR_INVALID_PARAMETER);
             hr = pContext->pDevice->SetDepthStencilSurface(pRenderTarget->u.pSurface);
             AssertMsgReturn(hr == D3D_OK, ("SetDepthStencilSurface failed with %x\n", hr), VERR_INTERNAL_ERROR);
         }
@@ -4144,11 +4145,13 @@ int vmsvga3dSetRenderTarget(PVGASTATECC pThisCC, uint32_t cid, SVGA3dRenderTarge
                 AssertReturn(pRenderTarget->fUsageD3D & D3DUSAGE_RENDERTARGET, VERR_INVALID_PARAMETER);
 
             Assert(pRenderTarget->idAssociatedContext == cid);
-            Assert(pRenderTarget->enmD3DResType == VMSVGA3D_D3DRESTYPE_SURFACE);
+            AssertMsgReturn(pRenderTarget->enmD3DResType == VMSVGA3D_D3DRESTYPE_SURFACE,
+                            ("Invalid render target %#x\n", pRenderTarget->enmD3DResType),
+                            VERR_INVALID_PARAMETER);
             pSurface = pRenderTarget->u.pSurface;
         }
 
-        AssertReturn(pRenderTarget->u.pSurface, VERR_INVALID_PARAMETER);
+        AssertReturn(pSurface, VERR_INVALID_PARAMETER);
         Assert(!pRenderTarget->fDirty);
 
         pRenderTarget->fUsageD3D            |= D3DUSAGE_RENDERTARGET;
@@ -4356,12 +4359,14 @@ int vmsvga3dSetTextureState(PVGASTATECC pThisCC, uint32_t cid, uint32_t cTexture
                 }
                 else
                 {
-                    Assert(   pSurface->enmD3DResType == VMSVGA3D_D3DRESTYPE_TEXTURE
-                           || pSurface->enmD3DResType == VMSVGA3D_D3DRESTYPE_CUBE_TEXTURE
-                           || pSurface->enmD3DResType == VMSVGA3D_D3DRESTYPE_VOLUME_TEXTURE);
                     /* Must flush the other context's 3d pipeline to make sure all drawing is complete for the surface we're about to use. */
                     vmsvga3dSurfaceFlush(pSurface);
                 }
+
+                AssertReturn(   pSurface->enmD3DResType == VMSVGA3D_D3DRESTYPE_TEXTURE
+                             || pSurface->enmD3DResType == VMSVGA3D_D3DRESTYPE_CUBE_TEXTURE
+                             || pSurface->enmD3DResType == VMSVGA3D_D3DRESTYPE_VOLUME_TEXTURE,
+                             VERR_INVALID_PARAMETER);
 
 #ifndef VBOX_VMSVGA3D_WITH_WINE_OPENGL
                 if (pSurface->idAssociatedContext != cid)
