@@ -655,7 +655,7 @@ typedef struct _VBGLR3CLIPBOARDEVENT
     union
     {
         /** Reports available formats from the host. */
-        SHCLFORMATDATA       ReportedFormats;
+        SHCLFORMATS          fReportedFormats;
         /** Reports that data needs to be read from the guest. */
         SHCLFORMAT           fReadData;
 #  ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS

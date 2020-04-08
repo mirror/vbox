@@ -77,22 +77,6 @@ typedef struct SHCLDATAREQ
 typedef SHCLDATAREQ *PSHCLDATAREQ;
 
 /**
- * Shared Clipboard formats specification.
- * @todo r=bird: Pointless as we don't have any fFlags defined, so, unless
- *       someone can give me a plausible scenario where we will need flags here,
- *       this structure will be eliminated.
- */
-typedef struct SHCLFORMATDATA
-{
-    /** Available format(s) as bit map. */
-    SHCLFORMATS Formats;
-    /** Formats flags. Currently unused. */
-    uint32_t    fFlags;
-} SHCLFORMATDATA;
-/** Pointer to a shared clipboard formats specification. */
-typedef SHCLFORMATDATA *PSHCLFORMATDATA;
-
-/**
  * Shared Clipboard event payload (optional).
  */
 typedef struct SHCLEVENTPAYLOAD

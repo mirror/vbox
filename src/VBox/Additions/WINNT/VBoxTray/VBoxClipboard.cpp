@@ -255,12 +255,12 @@ static LRESULT vboxClipboardWinProcessMsg(PSHCLCONTEXT pCtx, HWND hwnd, UINT msg
 
                     /* Clipboard was updated by another application.
                      * Report available formats to the host. */
-                    SHCLFORMATDATA Formats;
-                    int rc = SharedClipboardWinGetFormats(pWinCtx, &Formats);
+                    SHCLFORMATS fFormats;
+                    int rc = SharedClipboardWinGetFormats(pWinCtx, &fFormats);
                     if (RT_SUCCESS(rc))
                     {
-                        LogFunc(("WM_CLIPBOARDUPDATE: Reporting formats %#x\n", Formats.Formats));
-                        rc = VbglR3ClipboardReportFormats(pCtx->CmdCtx.idClient, Formats.Formats);
+                        LogFunc(("WM_CLIPBOARDUPDATE: Reporting formats %#x\n", fFormats));
+                        rc = VbglR3ClipboardReportFormats(pCtx->CmdCtx.idClient, fFormats);
                     }
                 }
                 else
@@ -302,11 +302,11 @@ static LRESULT vboxClipboardWinProcessMsg(PSHCLCONTEXT pCtx, HWND hwnd, UINT msg
 
                     /* Clipboard was updated by another application. */
                     /* WM_DRAWCLIPBOARD always expects a return code of 0, so don't change "rc" here. */
-                    SHCLFORMATDATA Formats;
-                    rc = SharedClipboardWinGetFormats(pWinCtx, &Formats);
+                    SHCLFORMATS fFormats;
+                    rc = SharedClipboardWinGetFormats(pWinCtx, &fFormats);
                     if (   RT_SUCCESS(rc)
-                        && Formats.Formats != VBOX_SHCL_FMT_NONE)
-                        rc = VbglR3ClipboardReportFormats(pCtx->CmdCtx.idClient, Formats.Formats);
+                        && fFormats != VBOX_SHCL_FMT_NONE)
+                        rc = VbglR3ClipboardReportFormats(pCtx->CmdCtx.idClient, fFormats);
                 }
                 else
                 {
@@ -505,7 +505,7 @@ static LRESULT vboxClipboardWinProcessMsg(PSHCLCONTEXT pCtx, HWND hwnd, UINT msg
             AssertPtr(pEvent);
             Assert(pEvent->enmType == VBGLR3CLIPBOARDEVENTTYPE_REPORT_FORMATS);
 
-            const SHCLFORMATS fFormats = pEvent->u.ReportedFormats.Formats;
+            const SHCLFORMATS fFormats = pEvent->u.fReportedFormats;
 
             if (fFormats != VBOX_SHCL_FMT_NONE) /* Could arrive with some older GA versions. */
             {

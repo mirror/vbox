@@ -252,16 +252,16 @@ VBGLR3DECL(int) VbglR3ClipboardDisconnectEx(PVBGLR3SHCLCMDCTX pCtx)
  * Receives reported formats from the host.
  *
  * @returns VBox status code.
- * @param   pCtx                Shared Clipboard command context to use for the connection.
- * @param   pFormats            Where to store the received formats from the host.
+ * @param   pCtx        Shared Clipboard command context to use for the
+ *                      connection.
+ * @param   pfFormats   Where to store the received formats from the host.
  */
-static int vbglR3ClipboardFormatsReportRecv(PVBGLR3SHCLCMDCTX pCtx, PSHCLFORMATDATA pFormats)
+static int vbglR3ClipboardFormatsReportRecv(PVBGLR3SHCLCMDCTX pCtx, PSHCLFORMATS pfFormats)
 {
-    AssertPtrReturn(pCtx,     VERR_INVALID_POINTER);
-    AssertPtrReturn(pFormats, VERR_INVALID_POINTER);
+    AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
+    AssertPtrReturn(pfFormats, VERR_INVALID_POINTER);
 
-    pFormats->fFlags = 0;
-    pFormats->Formats = 0;
+    *pfFormats = 0;
 
     struct
     {
@@ -277,7 +277,7 @@ static int vbglR3ClipboardFormatsReportRecv(PVBGLR3SHCLCMDCTX pCtx, PSHCLFORMATD
     int rc = VbglR3HGCMCall(&Msg.Hdr, sizeof(Msg));
     if (RT_SUCCESS(rc))
     {
-        rc = Msg.f32Formats.GetUInt32(&pFormats->Formats);
+        rc = Msg.f32Formats.GetUInt32(pfFormats);
         AssertRC(rc);
     }
 
@@ -2331,7 +2331,7 @@ VBGLR3DECL(int) VbglR3ClipboardEventGetNextEx(uint32_t idMsg, uint32_t cParms,
         {
             case VBOX_SHCL_HOST_MSG_FORMATS_REPORT:
                 pEvent->enmType = VBGLR3CLIPBOARDEVENTTYPE_REPORT_FORMATS;
-                pEvent->u.ReportedFormats.Formats = cParms;
+                pEvent->u.fReportedFormats = cParms;
                 break;
 
             case VBOX_SHCL_HOST_MSG_READ_DATA:
@@ -2371,7 +2371,7 @@ VBGLR3DECL(int) VbglR3ClipboardEventGetNext(uint32_t idMsg, uint32_t cParms, PVB
         {
             case VBOX_SHCL_HOST_MSG_FORMATS_REPORT:
             {
-                rc = vbglR3ClipboardFormatsReportRecv(pCtx, &pEvent->u.ReportedFormats);
+                rc = vbglR3ClipboardFormatsReportRecv(pCtx, &pEvent->u.fReportedFormats);
                 if (RT_SUCCESS(rc))
                     pEvent->enmType = VBGLR3CLIPBOARDEVENTTYPE_REPORT_FORMATS;
                 break;
@@ -2431,7 +2431,7 @@ VBGLR3DECL(int) VbglR3ClipboardEventGetNext(uint32_t idMsg, uint32_t cParms, PVB
         {
             case VBOX_SHCL_HOST_MSG_FORMATS_REPORT:
                 pEvent->enmType = VBGLR3CLIPBOARDEVENTTYPE_REPORT_FORMATS;
-                pEvent->u.ReportedFormats.Formats = cParms;
+                pEvent->u.fReportedFormats = cParms;
                 break;
 
             case VBOX_SHCL_HOST_MSG_READ_DATA:

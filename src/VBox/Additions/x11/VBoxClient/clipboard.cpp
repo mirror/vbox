@@ -302,7 +302,7 @@ int vboxClipboardMain(void)
             {
                 case VBGLR3CLIPBOARDEVENTTYPE_REPORT_FORMATS:
                 {
-                    ShClX11ReportFormatsToX11(&g_Ctx.X11, pEvent->u.ReportedFormats.Formats);
+                    ShClX11ReportFormatsToX11(&g_Ctx.X11, pEvent->u.fReportedFormats);
                     break;
                 }
 

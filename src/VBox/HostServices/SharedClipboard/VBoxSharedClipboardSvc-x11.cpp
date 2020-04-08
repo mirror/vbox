@@ -145,12 +145,9 @@ int ShClSvcImplDisconnect(PSHCLCLIENT pClient)
     return rc;
 }
 
-int ShClSvcImplFormatAnnounce(PSHCLCLIENT pClient, PSHCLCLIENTCMDCTX pCmdCtx,
-                              PSHCLFORMATDATA pFormats)
+int ShClSvcImplFormatAnnounce(PSHCLCLIENT pClient, SHCLFORMATS fFormats)
 {
-    RT_NOREF(pCmdCtx);
-
-    int rc = ShClX11ReportFormatsToX11(&pClient->State.pCtx->X11, pFormats->Formats);
+    int rc = ShClX11ReportFormatsToX11(&pClient->State.pCtx->X11, fFormats);
 
     LogFlowFuncLeaveRC(rc);
     return rc;

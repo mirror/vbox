@@ -281,10 +281,10 @@ int ShClSvcImplDisconnect(PSHCLCLIENT pClient);
  *
  * @returns VBox status code.
  * @param   pClient             Shared Clipboard client context.
- * @param   pCmdCtx             Shared Clipboard command context.
- * @param   pFormats            Announced formats from the guest.
+ * @param   fFormats            The announced formats from the guest,
+ *                              VBOX_SHCL_FMT_XXX.
  */
-int ShClSvcImplFormatAnnounce(PSHCLCLIENT pClient, PSHCLCLIENTCMDCTX pCmdCtx, PSHCLFORMATDATA pFormats);
+int ShClSvcImplFormatAnnounce(PSHCLCLIENT pClient, SHCLFORMATS fFormats);
 /** @todo Document: Can return VINF_HGCM_ASYNC_EXECUTE to defer returning read data.*/
 /**
  * Called when the guest wants to read host clipboard data.

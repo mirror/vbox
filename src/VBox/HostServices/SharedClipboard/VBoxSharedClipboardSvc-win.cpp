@@ -572,13 +572,11 @@ static int vboxClipboardSvcWinSyncInternal(PSHCLCONTEXT pCtx)
 
     if (pCtx->pClient)
     {
-        SHCLFORMATDATA Formats;
-        RT_ZERO(Formats);
-
-        rc = SharedClipboardWinGetFormats(&pCtx->Win, &Formats);
+        SHCLFORMATS fFormats = 0;
+        rc = SharedClipboardWinGetFormats(&pCtx->Win, &fFormats);
         if (   RT_SUCCESS(rc)
-            && Formats.Formats != VBOX_SHCL_FMT_NONE) /** @todo r=bird: BUGBUG: revisit this. */
-            rc = ShClSvcHostReportFormats(pCtx->pClient, Formats.Formats);
+            && fFormats != VBOX_SHCL_FMT_NONE) /** @todo r=bird: BUGBUG: revisit this. */
+            rc = ShClSvcHostReportFormats(pCtx->pClient, fFormats);
     }
     else /* If we don't have any client data (yet), bail out. */
         rc = VINF_NO_CHANGE;
@@ -695,29 +693,24 @@ int ShClSvcImplDisconnect(PSHCLCLIENT pClient)
     return rc;
 }
 
-int ShClSvcImplFormatAnnounce(PSHCLCLIENT pClient, PSHCLCLIENTCMDCTX pCmdCtx,
-                              PSHCLFORMATDATA pFormats)
+int ShClSvcImplFormatAnnounce(PSHCLCLIENT pClient, SHCLFORMATS fFormats)
 {
     AssertPtrReturn(pClient, VERR_INVALID_POINTER);
-    RT_NOREF(pCmdCtx);
-
-    int rc;
 
     PSHCLCONTEXT pCtx = pClient->State.pCtx;
     AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
 
-    LogFlowFunc(("uFormats=0x%x, hWnd=%p\n", pFormats->Formats, pCtx->Win.hWnd));
+    LogFlowFunc(("fFormats=0x%x, hWnd=%p\n", fFormats, pCtx->Win.hWnd));
 
     /*
      * The guest announced formats. Forward to the window thread.
      */
     PostMessage(pCtx->Win.hWnd, SHCL_WIN_WM_REPORT_FORMATS,
-                0 /* wParam */, pFormats->Formats /* lParam */);
+                0 /* wParam */, fFormats /* lParam */);
 
-    rc = VINF_SUCCESS;
 
-    LogFlowFuncLeaveRC(rc);
-    return rc;
+    LogFlowFuncLeaveRC(VINF_SUCCESS);
+    return VINF_SUCCESS;
 }
 
 int ShClSvcImplReadData(PSHCLCLIENT pClient, PSHCLCLIENTCMDCTX pCmdCtx,

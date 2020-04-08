@@ -311,7 +311,7 @@ int ShClSvcImplInit() { return VINF_SUCCESS; }
 void ShClSvcImplDestroy() { }
 int ShClSvcImplDisconnect(PSHCLCLIENT) { return VINF_SUCCESS; }
 int ShClSvcImplConnect(PSHCLCLIENT, bool) { return VINF_SUCCESS; }
-int ShClSvcImplFormatAnnounce(PSHCLCLIENT, PSHCLCLIENTCMDCTX, PSHCLFORMATDATA) { AssertFailed(); return VINF_SUCCESS; }
+int ShClSvcImplFormatAnnounce(PSHCLCLIENT, SHCLFORMATS) { AssertFailed(); return VINF_SUCCESS; }
 int ShClSvcImplReadData(PSHCLCLIENT, PSHCLCLIENTCMDCTX, SHCLFORMAT, void *, uint32_t, unsigned int *) { AssertFailed(); return VERR_WRONG_ORDER; }
 int ShClSvcImplWriteData(PSHCLCLIENT, PSHCLCLIENTCMDCTX, SHCLFORMAT, void *, uint32_t) { AssertFailed(); return VINF_SUCCESS; }
 int ShClSvcImplSync(PSHCLCLIENT) { return VINF_SUCCESS; }

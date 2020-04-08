@@ -419,12 +419,12 @@ SHCLFORMAT SharedClipboardWinClipboardFormatToVBox(UINT uFormat)
  *
  * @returns VBox status code.
  * @param   pCtx                Windows clipboard context to retrieve formats for.
- * @param   pFormats            Where to store the retrieved formats.
+ * @param   pfFormats           Where to store the retrieved formats.
  */
-int SharedClipboardWinGetFormats(PSHCLWINCTX pCtx, PSHCLFORMATDATA pFormats)
+int SharedClipboardWinGetFormats(PSHCLWINCTX pCtx, PSHCLFORMATS pfFormats)
 {
-    AssertPtrReturn(pCtx,     VERR_INVALID_POINTER);
-    AssertPtrReturn(pFormats, VERR_INVALID_POINTER);
+    AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
+    AssertPtrReturn(pfFormats, VERR_INVALID_POINTER);
 
     SHCLFORMATS fFormats = VBOX_SHCL_FMT_NONE;
 
@@ -438,20 +438,12 @@ int SharedClipboardWinGetFormats(PSHCLWINCTX pCtx, PSHCLFORMATDATA pFormats)
 
         int rc2 = SharedClipboardWinClose();
         AssertRC(rc2);
-    }
-
-    if (RT_FAILURE(rc))
-    {
-        LogFunc(("Failed with rc=%Rrc\n", rc));
+        LogFlowFunc(("fFormats=%#x\n", fFormats));
     }
     else
-    {
-        LogFlowFunc(("fFormats=0x%08X\n", fFormats));
+        LogFunc(("Failed with rc=%Rrc (fFormats=%#x)\n", rc, fFormats));
 
-        pFormats->Formats = fFormats;
-        pFormats->fFlags   = 0; /** @todo Handle flags. */
-    }
-
+    *pfFormats = fFormats;
     return rc;
 }
 

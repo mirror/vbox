@@ -1463,15 +1463,7 @@ static int shClSvcClientReportFormats(PSHCLCLIENT pClient, uint32_t cParms, VBOX
                 g_ExtState.pfnExtension(g_ExtState.pvExtension, VBOX_CLIPBOARD_EXT_FN_FORMAT_ANNOUNCE, &parms, sizeof(parms));
             }
             else
-            {
-                SHCLCLIENTCMDCTX CmdCtx;
-                RT_ZERO(CmdCtx);
-
-                SHCLFORMATDATA FormatData;
-                FormatData.fFlags  = 0;
-                FormatData.Formats = fFormats;
-                rc = ShClSvcImplFormatAnnounce(pClient, &CmdCtx, &FormatData);
-            }
+                rc = ShClSvcImplFormatAnnounce(pClient, fFormats);
         }
     }
 
