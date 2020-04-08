@@ -353,8 +353,9 @@ int takePasteboardOwnership(PasteboardRef hPasteboard, uint64_t idOwnership,
  */
 int writeToPasteboard(PasteboardRef hPasteboard, uint64_t idOwnership, const void *pv, uint32_t cb, uint32_t fFormat)
 {
-    int rc;
-    OSStatus orc;
+    int       rc;
+    OSStatus  orc;
+    CFDataRef hData;
     Log(("writeToPasteboard: fFormat = %02X\n", fFormat));
 
     /* Make sure all is in sync */
@@ -363,7 +364,9 @@ int writeToPasteboard(PasteboardRef hPasteboard, uint64_t idOwnership, const voi
     /*
      * Handle the unicode text
      */
-    if (fFormat & VBOX_SHCL_FMT_UNICODETEXT)
+    /** @todo Figure out the format of kUTTypeHTML.  Seems it is neiter UTF-8 or
+     *        UTF-16. */
+    if (fFormat & (VBOX_SHCL_FMT_UNICODETEXT /*| VBOX_SHCL_FMT_HTML*/))
     {
         PCRTUTF16 const pwszSrc = (PCRTUTF16)pv;
         size_t const    cwcSrc  = cb / sizeof(RTUTF16);
@@ -396,52 +399,62 @@ int writeToPasteboard(PasteboardRef hPasteboard, uint64_t idOwnership, const voi
              * Create an immutable CFData object that we can place on the clipboard.
              */
             rc = VINF_SUCCESS;
-            CFDataRef hData = CFDataCreate(kCFAllocatorDefault, (const UInt8 *)pwszDst, cwcDst * sizeof(RTUTF16));
-            if (hData)
+            //if (fFormat & (VBOX_SHCL_FMT_UNICODETEXT | VBOX_SHCL_FMT_HTML))
             {
-                orc = PasteboardPutItemFlavor(hPasteboard, (PasteboardItemID)idOwnership,
-                                              kUTTypeUTF16PlainText, hData, kPasteboardFlavorNoFlags);
-                if (orc != 0)
+                hData = CFDataCreate(kCFAllocatorDefault, (const UInt8 *)pwszDst, cwcDst * sizeof(RTUTF16));
+                if (hData)
                 {
-                    Log(("writeToPasteboard: PasteboardPutItemFlavor/kUTTypeUTF16PlainText failed: %d (%#x)\n", orc, orc));
-                    rc = VERR_GENERAL_FAILURE;
+                    orc = PasteboardPutItemFlavor(hPasteboard, (PasteboardItemID)idOwnership,
+                                                  fFormat & VBOX_SHCL_FMT_UNICODETEXT ? kUTTypeUTF16PlainText : kUTTypeHTML,
+                                                  hData, kPasteboardFlavorNoFlags);
+                    if (orc != 0)
+                    {
+                        Log(("writeToPasteboard: PasteboardPutItemFlavor/%s failed: %d (%#x)\n",
+                             fFormat & VBOX_SHCL_FMT_UNICODETEXT ? "kUTTypeUTF16PlainText" : "kUTTypeHTML", orc, orc));
+                        rc = VERR_GENERAL_FAILURE;
+                    }
+                    else
+                    {
+                        Log(("writeToPasteboard: CFDataCreate/UTF16 failed!\n"));
+                        rc = VERR_NO_MEMORY;
+                    }
+                    CFRelease(hData);
                 }
-                else
-                {
-                    Log(("writeToPasteboard: CFDataCreate/UTF16 failed!\n"));
-                    rc = VERR_NO_MEMORY;
-                }
-                CFRelease(hData);
             }
 
             /*
              * Now for the UTF-8 version.
              */
-            char *pszDst;
-            int rc2 = RTUtf16ToUtf8(pwszDst, &pszDst);
-            if (RT_SUCCESS(rc2))
+            //if (fFormat & VBOX_SHCL_FMT_UNICODETEXT)
             {
-                hData = CFDataCreate(kCFAllocatorDefault, (const UInt8 *)pszDst, strlen(pszDst));
-                if (hData)
+                char *pszDst;
+                int rc2 = RTUtf16ToUtf8(pwszDst, &pszDst);
+                if (RT_SUCCESS(rc2))
                 {
-                    orc = PasteboardPutItemFlavor(hPasteboard, (PasteboardItemID)idOwnership,
-                                                  kUTTypeUTF8PlainText, hData, kPasteboardFlavorNoFlags);
-                    if (orc != 0)
+                    hData = CFDataCreate(kCFAllocatorDefault, (const UInt8 *)pszDst, strlen(pszDst));
+                    if (hData)
                     {
-                        Log(("writeToPasteboard: PasteboardPutItemFlavor/kUTTypeUTF8PlainText failed: %d (%#x)\n", orc, orc));
-                        rc = VERR_GENERAL_FAILURE;
+                        orc = PasteboardPutItemFlavor(hPasteboard, (PasteboardItemID)idOwnership,
+                                                      fFormat & VBOX_SHCL_FMT_UNICODETEXT ? kUTTypeUTF8PlainText : kUTTypeHTML,
+                                                      hData, kPasteboardFlavorNoFlags);
+                        if (orc != 0)
+                        {
+                            Log(("writeToPasteboard: PasteboardPutItemFlavor/%s failed: %d (%#x)\n",
+                                 fFormat & VBOX_SHCL_FMT_UNICODETEXT ? "kUTTypeUTF8PlainText" : "kUTTypeHTML", orc, orc));
+                            rc = VERR_GENERAL_FAILURE;
+                        }
+                        CFRelease(hData);
                     }
-                    CFRelease(hData);
+                    else
+                    {
+                        Log(("writeToPasteboard: CFDataCreate/UTF8 failed!\n"));
+                        rc = VERR_NO_MEMORY;
+                    }
+                    RTStrFree(pszDst);
                 }
                 else
-                {
-                    Log(("writeToPasteboard: CFDataCreate/UTF8 failed!\n"));
-                    rc = VERR_NO_MEMORY;
-                }
-                RTStrFree(pszDst);
+                    rc = rc2;
             }
-            else
-                rc = rc2;
         }
         else
             Log(("writeToPasteboard: clipboard conversion failed.  vboxClipboardUtf16WinToLin() returned %Rrc.  Abandoning.\n", rc));
@@ -460,7 +473,7 @@ int writeToPasteboard(PasteboardRef hPasteboard, uint64_t idOwnership, const voi
         rc = ShClDibToBmp(pv, cb, &pvBmp, &cbBmp);
         if (RT_SUCCESS(rc))
         {
-            CFDataRef hData = CFDataCreate(kCFAllocatorDefault, (UInt8 const *)pvBmp, cbBmp);
+            hData = CFDataCreate(kCFAllocatorDefault, (UInt8 const *)pvBmp, cbBmp);
             if (hData)
             {
                 orc = PasteboardPutItemFlavor(hPasteboard, (PasteboardItemID)idOwnership,
