@@ -3100,6 +3100,12 @@ DECLCALLBACK(void) Display::i_displayProcessDisplayDataCallback(PPDMIDISPLAYCONN
 
 int Display::i_handleVHWACommandProcess(int enmCmd, bool fGuestCmd, VBOXVHWACMD RT_UNTRUSTED_VOLATILE_GUEST *pCommand)
 {
+    /* bugref:9691 Disable the legacy VHWA interface.
+     * Keep the host commands enabled because they are needed when an old saved state is loaded.
+     */
+    if (fGuestCmd)
+        return VERR_NOT_IMPLEMENTED;
+
     unsigned id = (unsigned)pCommand->iDisplay;
     if (id >= mcMonitors)
         return VERR_INVALID_PARAMETER;
