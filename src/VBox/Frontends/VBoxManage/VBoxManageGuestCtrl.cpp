@@ -74,6 +74,7 @@ using namespace com;
 #define GCTLCMD_COMMON_OPT_DOMAIN           996 /**< The --domain option number. */
 /** Common option definitions. */
 #define GCTLCMD_COMMON_OPTION_DEFS() \
+        { "--user",                 GCTLCMD_COMMON_OPT_USER,            RTGETOPT_REQ_STRING  }, \
         { "--username",             GCTLCMD_COMMON_OPT_USER,            RTGETOPT_REQ_STRING  }, \
         { "--passwordfile",         GCTLCMD_COMMON_OPT_PASSWORD_FILE,   RTGETOPT_REQ_STRING  }, \
         { "--password",             GCTLCMD_COMMON_OPT_PASSWORD,        RTGETOPT_REQ_STRING  }, \
@@ -242,7 +243,7 @@ void usageGuestControl(PRTSTREAM pStrm, const char *pcszSep1, const char *pcszSe
     if (~fAnonSubCmds & fSubcommandScope)
         RTStrmPrintf(pStrm,
                      "%s guestcontrol %s    <uuid|vmname> [--verbose|-v] [--quiet|-q]\n"
-                     "                              [--username <name>] [--domain <domain>]\n"
+                     "                              [--user[name] <name>] [--domain <domain>]\n"
                      "                              [--passwordfile <file> | --password <password>]\n%s",
                      pcszSep1, pcszSep2, (fSubcommandScope & RTMSGREFENTRYSTR_SCOPE_MASK) == RTMSGREFENTRYSTR_SCOPE_GLOBAL ? "\n" : "");
     if (fSubcommandScope & HELP_SCOPE_GSTCTRL_RUN)
