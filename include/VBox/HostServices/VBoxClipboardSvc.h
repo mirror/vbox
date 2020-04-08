@@ -121,8 +121,8 @@
 #define VBOX_SHCL_HOST_MSG_QUIT                             1
 /** Request data for a specific format from the guest.
  *
- * Two parameters, first the 32-bit message ID followed by a  a 32-bit
- * format bit (VBOX_SHCL_FMT_XXX).  The guest will respond by issuing a
+ * Two parameters, first the 32-bit message ID followed by a 32-bit format bit
+ * (VBOX_SHCL_FMT_XXX).  The guest will respond by issuing a
  * VBOX_SHCL_GUEST_FN_DATA_WRITE.
  *
  * @note  The host may sometimes incorrectly set more than one format bit, in
@@ -160,7 +160,7 @@
  *
  * @note  The host may sometimes incorrectly set more than one format bit, in
  *        which case it's up to the guest to pick which to write back.
- * @since 6.3.2
+ * @since 6.1.2
  */
 #define VBOX_SHCL_HOST_MSG_READ_DATA_CID                    5
 

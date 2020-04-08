@@ -84,9 +84,8 @@ void destroyPasteboard(PasteboardRef *pPasteboardRef)
  */
 int queryNewPasteboardFormats(PasteboardRef pPasteboard, uint32_t *pfFormats, bool *pfChanged)
 {
-    Log(("queryNewPasteboardFormats\n"));
-
     OSStatus err = noErr;
+    *pfFormats = 0;
     *pfChanged = true;
 
     PasteboardSyncFlags syncFlags;
@@ -96,6 +95,7 @@ int queryNewPasteboardFormats(PasteboardRef pPasteboard, uint32_t *pfFormats, bo
     if (!(syncFlags & kPasteboardModified))
     {
         *pfChanged = false;
+        Log2(("queryNewPasteboardFormats: no change\n"));
         return VINF_SUCCESS;
     }
 
@@ -103,7 +103,10 @@ int queryNewPasteboardFormats(PasteboardRef pPasteboard, uint32_t *pfFormats, bo
     ItemCount itemCount;
     err = PasteboardGetItemCount(pPasteboard, &itemCount);
     if (itemCount < 1)
+    {
+        Log(("queryNewPasteboardFormats: changed: No items on the pasteboard\n"));
         return VINF_SUCCESS;
+    }
 
     /* The id of the first element in the pasteboard */
     int rc = VINF_SUCCESS;
@@ -120,18 +123,17 @@ int queryNewPasteboardFormats(PasteboardRef pPasteboard, uint32_t *pfFormats, bo
             for (CFIndex flavorIndex = 0; flavorIndex < flavorCount; flavorIndex++)
             {
                 CFStringRef flavorType;
-                flavorType = static_cast <CFStringRef>(CFArrayGetValueAtIndex(flavorTypeArray,
-                                                                               flavorIndex));
+                flavorType = static_cast <CFStringRef>(CFArrayGetValueAtIndex(flavorTypeArray, flavorIndex));
                 /* Currently only unicode supported */
-                if (UTTypeConformsTo(flavorType, kUTTypeUTF8PlainText) ||
-                    UTTypeConformsTo(flavorType, kUTTypeUTF16PlainText))
+                if (   UTTypeConformsTo(flavorType, kUTTypeUTF8PlainText)
+                    || UTTypeConformsTo(flavorType, kUTTypeUTF16PlainText))
                 {
-                    Log(("Unicode flavor detected.\n"));
+                    Log(("queryNewPasteboardFormats: Unicode flavor detected.\n"));
                     *pfFormats |= VBOX_SHCL_FMT_UNICODETEXT;
                 }
                 else if (UTTypeConformsTo(flavorType, kUTTypeBMP))
                 {
-                    Log(("BMP flavor detected.\n"));
+                    Log(("queryNewPasteboardFormats: BMP flavor detected.\n"));
                     *pfFormats |= VBOX_SHCL_FMT_BITMAP;
                 }
             }
@@ -139,7 +141,7 @@ int queryNewPasteboardFormats(PasteboardRef pPasteboard, uint32_t *pfFormats, bo
         }
     }
 
-    Log(("queryNewPasteboardFormats: rc = %02X\n", rc));
+    Log(("queryNewPasteboardFormats: changed: *pfFormats=%#x\n", *pfFormats));
     return rc;
 }
 

@@ -1208,9 +1208,9 @@ int ShClSvcDataReadRequest(PSHCLCLIENT pClient, SHCLFORMATS fFormats, PSHCLEVENT
 
     while (fFormats)
     {
-        SHCLFORMAT fFormat = VBOX_SHCL_FMT_NONE;
-
+        /* Pick the next format to get from the mask: */
         /** @todo Make format reporting precedence configurable? */
+        SHCLFORMAT fFormat;
         if (fFormats & VBOX_SHCL_FMT_UNICODETEXT)
             fFormat = VBOX_SHCL_FMT_UNICODETEXT;
         else if (fFormats & VBOX_SHCL_FMT_BITMAP)
@@ -1218,12 +1218,9 @@ int ShClSvcDataReadRequest(PSHCLCLIENT pClient, SHCLFORMATS fFormats, PSHCLEVENT
         else if (fFormats & VBOX_SHCL_FMT_HTML)
             fFormat = VBOX_SHCL_FMT_HTML;
         else
-            AssertStmt(fFormats == VBOX_SHCL_FMT_NONE, fFormat = VBOX_SHCL_FMT_NONE);
+            AssertMsgFailedBreak(("%#x\n", fFormats));
 
-        if (fFormat == VBOX_SHCL_FMT_NONE)
-            break;
-
-        /* Remove format from format list. */
+        /* Remove it from the mask. */
         fFormats &= ~fFormat;
 
         /*
@@ -1342,8 +1339,8 @@ int ShClSvcDataReadSignal(PSHCLCLIENT pClient, PSHCLCLIENTCMDCTX pCmdCtx,
  */
 int ShClSvcHostReportFormats(PSHCLCLIENT pClient, SHCLFORMATS fFormats)
 {
-    LogFlowFuncEnter();
-    AssertPtrReturn(pClient,  VERR_INVALID_POINTER);
+    LogFlowFunc(("fFormats=%#x\n", fFormats));
+    AssertPtrReturn(pClient, VERR_INVALID_POINTER);
 
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
     /*
