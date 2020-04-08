@@ -267,12 +267,8 @@ HRESULT GraphicsAdapter::getAccelerate2DVideoEnabled(BOOL *aAccelerate2DVideoEna
 {
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    /** @todo quick workaround for hang with Win10 guest when 2d accel
-     * is enabled when non-VBoxVGA graphics is configured. */
-    if (mData->graphicsControllerType == GraphicsControllerType_VBoxVGA)
-        *aAccelerate2DVideoEnabled = mData->fAccelerate2DVideo;
-    else
-        *aAccelerate2DVideoEnabled = FALSE;
+    /* bugref:9691 The legacy VHWA acceleration has been disabled completely. */
+    *aAccelerate2DVideoEnabled = FALSE;
 
     return S_OK;
 }
