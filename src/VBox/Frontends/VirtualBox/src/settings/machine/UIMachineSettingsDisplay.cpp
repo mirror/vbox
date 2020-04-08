@@ -871,11 +871,6 @@ void UIMachineSettingsDisplay::sltHandleGraphicsControllerComboChange()
 {
     /* Update Video RAM requirements: */
     m_pVideoMemoryEditor->setGraphicsControllerType(m_pGraphicsControllerEditor->value());
-#ifdef VBOX_WITH_VIDEOHWACCEL
-    m_pLayout2DVideo->setCurrentWidget(  graphicsControllerTypeCurrent() == KGraphicsControllerType_VBoxVGA
-                                       ? m_pCheckbox2DVideo
-                                       : m_pPlaceholder2DVideo);
-#endif
 
     /* Revalidate: */
     revalidate();
