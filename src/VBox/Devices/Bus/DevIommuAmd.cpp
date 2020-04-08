@@ -2779,16 +2779,7 @@ static DECLCALLBACK(int) iommuAmdR3Construct(PPDMDEVINS pDevIns, int iInstance, 
     /*
      * Validate and read the configuration.
      */
-    PDMDEV_VALIDATE_CONFIG_RETURN(pDevIns, "Device|Function|MmioBase", "");
-
-    uint64_t u64MmioBase;
-    rc = pHlp->pfnCFGMQueryU64Def(pCfg, "MmioBase", &u64MmioBase, 0);
-    if (RT_FAILURE(rc))
-        return PDMDEV_SET_ERROR(pDevIns, rc, N_("IOMMU: Failed to query \"MmioBase\""));
-    /* Must be 16KB aligned when we don't support IOMMU performance counters.  */
-    if (u64MmioBase & 0x3fff)
-        return PDMDEV_SET_ERROR(pDevIns, rc, N_("IOMMU: \"MmioBase\" must be 16 KB aligned"));
-    /** @todo IOMMU: Ensure u64MmioBase isn't 0. */
+    PDMDEV_VALIDATE_CONFIG_RETURN(pDevIns, "Device|Function", "");
 
     uint8_t uPciDevice;
     rc = pHlp->pfnCFGMQueryU8Def(pCfg, "Device", &uPciDevice, 0);
@@ -2847,15 +2838,13 @@ static DECLCALLBACK(int) iommuAmdR3Construct(PPDMDEVINS pDevIns, int iInstance, 
                       | RT_BF_MAKE(IOMMU_BF_CAPHDR_CAP_EXT,    0x1));           /* RO - Misc. Information Register support */
 
     /* Base Address Low Register. */
-    PDMPciDevSetDWord(pPciDev, offBaseAddrLo,
-                        RT_BF_MAKE(IOMMU_BF_BASEADDR_LO_ENABLE, 0x1)                    /* RW1S - Enable */
-                      | RT_BF_MAKE(IOMMU_BF_BASEADDR_LO_ADDR,   (u64MmioBase >> 14)));  /* RO - Base address (Lo) */
+    PDMPciDevSetDWord(pPciDev, offBaseAddrLo, 0x0);   /* RW - Base address (Lo) and enable bit. */
 
     /* Base Address High Register. */
-    PDMPciDevSetDWord(pPciDev, offBaseAddrHi, RT_HI_U32(u64MmioBase));      /* RO - Base address (Hi) */
+    PDMPciDevSetDWord(pPciDev, offBaseAddrHi, 0x0);   /* RW - Base address (Hi) */
 
     /* IOMMU Range Register. */
-    PDMPciDevSetDWord(pPciDev, offRange, 0x0);                              /* RO - Range register. */
+    PDMPciDevSetDWord(pPciDev, offRange, 0x0);        /* RO - Range register. */
 
     /* Misc. Information Register 0. */
     PDMPciDevSetDWord(pPciDev, offMiscInfo0,
@@ -2919,11 +2908,11 @@ static DECLCALLBACK(int) iommuAmdR3Construct(PPDMDEVINS pDevIns, int iInstance, 
     AssertRCReturn(rc, rc);
 
     /*
-     * Map MMIO registers.
+     * Register the MMIO region.
      */
-    rc = PDMDevHlpMmioCreateAndMap(pDevIns, u64MmioBase, IOMMU_MMIO_REGION_SIZE, iommuAmdMmioWrite, iommuAmdMmioRead,
-                                   IOMMMIO_FLAGS_READ_DWORD_QWORD | IOMMMIO_FLAGS_WRITE_DWORD_QWORD_READ_MISSING,
-                                   "IOMMU-AMD", &pThis->hMmio);
+    rc = PDMDevHlpMmioCreate(pDevIns, IOMMU_MMIO_REGION_SIZE, pPciDev, 0 /* iPciRegion */, iommuAmdMmioWrite, iommuAmdMmioRead,
+                             NULL /* pvUser */, IOMMMIO_FLAGS_READ_DWORD_QWORD | IOMMMIO_FLAGS_WRITE_DWORD_QWORD_ZEROED,
+                             "AMD-IOMMU", &pThis->hMmio);
     AssertRCReturn(rc, rc);
 
     /*
