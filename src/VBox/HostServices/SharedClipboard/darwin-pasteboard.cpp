@@ -283,23 +283,77 @@ int readFromPasteboard(PasteboardRef pPasteboard, uint32_t fFormat, void *pv, ui
 }
 
 /**
+ * Takes the ownership of the pasteboard.
+ *
+ * This is called when the other end reports available formats.
+ *
+ * @returns VBox status code.
+ * @param   hPasteboard         The pastboard handle (reference).
+ * @param   idOwnership         The ownership ID to use now.
+ * @param   pszOwnershipFlavor  The ownership indicator flavor
+ * @param   pszOwnershipValue   The ownership value (stringified format mask).
+ *
+ * @todo    Add fFormats so we can make promises about available formats at once
+ *          without needing to request any data first.  That might help on
+ *          flavor priority.
+ */
+int takePasteboardOwnership(PasteboardRef hPasteboard, uint64_t idOwnership,
+                            const char *pszOwnershipFlavor, const char *pszOwnershipValue)
+{
+    /*
+     * Clear the pasteboard and take ownership over it.
+     */
+    OSStatus orc = PasteboardClear(hPasteboard);
+    if (orc == 0)
+    {
+        /* For good measure. */
+        PasteboardSynchronize(hPasteboard);
+
+        /*
+         * Put the ownership flavor and value onto the clipboard.
+         */
+        CFDataRef hData = CFDataCreate(kCFAllocatorDefault, (const UInt8 *)pszOwnershipValue, strlen(pszOwnershipValue));
+        if (hData)
+        {
+            CFStringRef hFlavor = CFStringCreateWithCString(kCFAllocatorDefault, pszOwnershipFlavor, kCFStringEncodingUTF8);
+            if (hFlavor)
+            {
+                orc = PasteboardPutItemFlavor(hPasteboard, (PasteboardItemID)idOwnership,
+                                              hFlavor, hData, kPasteboardFlavorNoFlags);
+                if (orc == 0)
+                    Log(("takePasteboardOwnership: idOwnership=%RX64 flavor=%s value=%s\n",
+                         idOwnership, pszOwnershipFlavor, pszOwnershipValue));
+                else
+                    Log(("takePasteboardOwnership: PasteboardPutItemFlavor -> %d (%#x)!\n", orc, orc));
+                CFRelease(hFlavor);
+            }
+            else
+                Log(("takePasteboardOwnership: CFStringCreateWithCString failed!\n"));
+            CFRelease(hData);
+        }
+        else
+            Log(("takePasteboardOwnership: CFDataCreate failed!\n"));
+    }
+    else
+        Log(("takePasteboardOwnership: PasteboardClear failed -> %d (%#x)\n", orc, orc));
+    return orc == 0 ? VINF_SUCCESS : VERR_GENERAL_FAILURE;
+}
+
+/**
  * Write clipboard content to the host clipboard from the internal clipboard
  * structure.
  *
  * @param   pPasteboard    Reference to the global pasteboard.
+ * @param   idOwnership    The ownership ID.
  * @param   pv             The source buffer.
  * @param   cb             The size of the source buffer.
  * @param   fFormat        The format type which should be written.
  *
  * @returns IPRT status code.
  */
-int writeToPasteboard(PasteboardRef pPasteboard, void *pv, uint32_t cb, uint32_t fFormat)
+int writeToPasteboard(PasteboardRef pPasteboard, uint64_t idOwnership, void *pv, uint32_t cb, uint32_t fFormat)
 {
     Log(("writeToPasteboard: fFormat = %02X\n", fFormat));
-
-    /* Clear the pasteboard */
-    if (PasteboardClear(pPasteboard))
-        return VERR_NOT_SUPPORTED;
 
     /* Make sure all is in sync */
     PasteboardSynchronize(pPasteboard);
@@ -341,16 +395,12 @@ int writeToPasteboard(PasteboardRef pPasteboard, void *pv, uint32_t cb, uint32_t
         }
 
         CFDataRef textData = NULL;
-        /* Item id is 1. Nothing special here. */
-        PasteboardItemID itemId = (PasteboardItemID)1;
         /* Create a CData object which we could pass to the pasteboard */
         if ((textData = CFDataCreate(kCFAllocatorDefault,
                                      reinterpret_cast<UInt8*>(pwszDestText), cwDest * 2)))
         {
             /* Put the Utf-16 version to the pasteboard */
-            PasteboardPutItemFlavor(pPasteboard, itemId,
-                                    kUTTypeUTF16PlainText,
-                                    textData, 0);
+            PasteboardPutItemFlavor(pPasteboard, (PasteboardItemID)idOwnership, kUTTypeUTF16PlainText, textData, 0);
         }
         /* Create a Utf-8 version */
         char *pszDestText;
@@ -362,9 +412,7 @@ int writeToPasteboard(PasteboardRef pPasteboard, void *pv, uint32_t cb, uint32_t
                                          reinterpret_cast<UInt8*>(pszDestText), strlen(pszDestText))))
             {
                 /* Put the Utf-8 version to the pasteboard */
-                PasteboardPutItemFlavor(pPasteboard, itemId,
-                                        kUTTypeUTF8PlainText,
-                                        textData, 0);
+                PasteboardPutItemFlavor(pPasteboard, (PasteboardItemID)idOwnership, kUTTypeUTF8PlainText, textData, 0);
             }
             RTStrFree(pszDestText);
         }
@@ -379,8 +427,6 @@ int writeToPasteboard(PasteboardRef pPasteboard, void *pv, uint32_t cb, uint32_t
         void *pBmp;
         size_t cbBmpSize;
         CFDataRef bmpData = NULL;
-        /* Item id is 1. Nothing special here. */
-        PasteboardItemID itemId = (PasteboardItemID)1;
 
         rc = ShClDibToBmp(pv, cb, &pBmp, &cbBmpSize);
         if (RT_SUCCESS(rc))
@@ -390,9 +436,7 @@ int writeToPasteboard(PasteboardRef pPasteboard, void *pv, uint32_t cb, uint32_t
                                          reinterpret_cast<UInt8*>(pBmp), cbBmpSize)))
             {
                 /* Put the Utf-8 version to the pasteboard */
-                PasteboardPutItemFlavor(pPasteboard, itemId,
-                                        kUTTypeBMP,
-                                        bmpData, 0);
+                PasteboardPutItemFlavor(pPasteboard, (PasteboardItemID)idOwnership, kUTTypeBMP, bmpData, 0);
             }
             RTMemFree(pBmp);
         }

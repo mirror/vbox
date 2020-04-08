@@ -28,7 +28,9 @@ void destroyPasteboard(PasteboardRef *pPasteboardRef);
 
 int queryNewPasteboardFormats(PasteboardRef pPasteboard, uint32_t *pfFormats, bool *pfChanged);
 int readFromPasteboard(PasteboardRef pPasteboard, uint32_t fFormat, void *pv, uint32_t cb, uint32_t *pcbActual);
-int writeToPasteboard(PasteboardRef pPasteboard, void *pv, uint32_t cb, uint32_t fFormat);
+int takePasteboardOwnership(PasteboardRef pPasteboard, uint64_t idOwnership,
+                            const char *pszOwnershipFlavor, const char *pszOwnershipValue);
+int writeToPasteboard(PasteboardRef pPasteboard, uint64_t idOwnership, void *pv, uint32_t cb, uint32_t fFormat);
 
 #endif /* !VBOX_INCLUDED_SRC_SharedClipboard_darwin_pasteboard_h */
 

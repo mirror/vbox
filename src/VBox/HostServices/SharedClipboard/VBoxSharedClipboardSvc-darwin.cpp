@@ -24,6 +24,9 @@
 
 #include <iprt/assert.h>
 #include <iprt/asm.h>
+#include <iprt/process.h>
+#include <iprt/rand.h>
+#include <iprt/string.h>
 #include <iprt/thread.h>
 
 #include "VBoxSharedClipboardSvc-internal.h"
@@ -44,6 +47,10 @@ typedef struct SHCLCONTEXT
     PasteboardRef           hPasteboard;
     /** Shared clipboard client. */
     PSHCLCLIENT             pClient;
+    /** Random 64-bit number embedded into szGuestOwnershipFlavor. */
+    uint64_t                idGuestOwnership;
+    /** The guest ownership flavor (type) string. */
+    char                    szGuestOwnershipFlavor[64];
 } SHCLCONTEXT;
 
 
@@ -200,6 +207,31 @@ int ShClSvcImplFormatAnnounce(PSHCLCLIENT pClient, SHCLFORMATS fFormats)
         return VINF_SUCCESS;
 #endif
 
+    SHCLCONTEXT *pCtx = pClient->State.pCtx;
+    ShClSvcLock();
+
+    /*
+     * Generate a unique flavor string for this format announcement.
+     */
+    uint64_t idFlavor = RTRandU64();
+    pCtx->idGuestOwnership = idFlavor;
+    RTStrPrintf(pCtx->szGuestOwnershipFlavor, sizeof(pCtx->szGuestOwnershipFlavor),
+                "org.virtualbox.sharedclipboard.%RTproc.%RX64", RTProcSelf(), idFlavor);
+
+    /*
+     * Empty the pasteboard and put our ownership indicator flavor there
+     * with the stringified formats as value.
+     */
+    char szValue[32];
+    RTStrPrintf(szValue, sizeof(szValue), "%#x", fFormats);
+
+    takePasteboardOwnership(pCtx->hPasteboard, pCtx->idGuestOwnership, pCtx->szGuestOwnershipFlavor, szValue);
+
+    ShClSvcUnlock();
+
+    /*
+     * Now, request the data from the guest.
+     */
     return ShClSvcDataReadRequest(pClient, fFormats, NULL /* pidEvent */);
 }
 
@@ -226,7 +258,7 @@ int ShClSvcImplWriteData(PSHCLCLIENT pClient, PSHCLCLIENTCMDCTX pCmdCtx, SHCLFOR
 
     ShClSvcLock();
 
-    writeToPasteboard(pClient->State.pCtx->hPasteboard, pvData, cbData, fFormat);
+    writeToPasteboard(pClient->State.pCtx->hPasteboard, pClient->State.pCtx->idGuestOwnership, pvData, cbData, fFormat);
 
     ShClSvcUnlock();
 
