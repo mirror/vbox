@@ -32,12 +32,17 @@
 *********************************************************************************************************************************/
 /** @name PCI configuration register offsets.
  @{ */
-#define IOMMU_PCI_OFF_CAP_HDR                       0x00
-#define IOMMU_PCI_OFF_BASE_ADDR_REG_LO              0x04
-#define IOMMU_PCI_OFF_BASE_ADDR_REG_HI              0x08
-#define IOMMU_PCI_OFF_RANGE_REG                     0x0c
-#define IOMMU_PCI_OFF_MISCINFO_REG_0                0x10
-#define IOMMU_PCI_OFF_MISCINFO_REG_1                0x14
+#define IOMMU_PCI_OFF_CAP_HDR                       0x40
+#define IOMMU_PCI_OFF_BASE_ADDR_REG_LO              0x44
+#define IOMMU_PCI_OFF_BASE_ADDR_REG_HI              0x48
+#define IOMMU_PCI_OFF_RANGE_REG                     0x4c
+#define IOMMU_PCI_OFF_MISCINFO_REG_0                0x50
+#define IOMMU_PCI_OFF_MISCINFO_REG_1                0x54
+#define IOMMU_PCI_OFF_MSI_CAP_HDR                   0x64
+#define IOMMU_PCI_OFF_MSI_ADDR_LO                   0x68
+#define IOMMU_PCI_OFF_MSI_ADDR_HI                   0x6c
+#define IOMMU_PCI_OFF_MSI_DATA                      0x70
+#define IOMMU_PCI_OFF_MSI_MAP_CAP_HDR               0x74
 /** @} */
 
 /** @name MMIO register offsets.
@@ -2145,6 +2150,28 @@ static void iommuAmdR3DecodeBufferLength(uint8_t uEncodedLen, uint32_t *pcEntrie
 
 
 /**
+ * Resets read-write portions of the IOMMU state.
+ *
+ * State data not initialized here is expected to be initialized in the construct
+ * callback and remain read-only through the lifetime of the VM.
+ *
+ * @param   pDevIns   The device instance.
+ */
+static void iommuAmdR3Init(PPDMDEVINS pDevIns)
+{
+    PIOMMU pThis = PDMDEVINS_2_DATA(pDevIns, PIOMMU);
+    Assert(pThis);
+
+    PPDMPCIDEV pPciDev = pDevIns->apPciDevs[0];
+    PDMPCIDEV_ASSERT_VALID(pDevIns, pPciDev);
+
+    PDMPciDevSetDWord(pPciDev, IOMMU_PCI_OFF_BASE_ADDR_REG_LO, 0);
+    PDMPciDevSetDWord(pPciDev, IOMMU_PCI_OFF_BASE_ADDR_REG_HI, 0);
+    PDMPciDevSetDWord(pPciDev, IOMMU_PCI_OFF_RANGE_REG,        0);
+}
+
+
+/**
  * @callback_method_impl{FNPCICONFIGREAD}
  */
 static DECLCALLBACK(VBOXSTRICTRC) iommuAmdR3PciConfigRead(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t uAddress,
@@ -2746,7 +2773,7 @@ static DECLCALLBACK(int) iommuAmdR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM,
  */
 static DECLCALLBACK(void) iommuAmdR3Reset(PPDMDEVINS pDevIns)
 {
-    NOREF(pDevIns);
+    iommuAmdR3Init(pDevIns);
 }
 
 
@@ -2797,72 +2824,54 @@ static DECLCALLBACK(int) iommuAmdR3Construct(PPDMDEVINS pDevIns, int iInstance, 
     PPDMPCIDEV pPciDev = pDevIns->apPciDevs[0];
     PDMPCIDEV_ASSERT_VALID(pDevIns, pPciDev);
 
-    uint8_t const offCapHdr       = 0x40;
-    uint8_t const offBaseAddrLo   = offCapHdr + 0x4;
-    uint8_t const offBaseAddrHi   = offCapHdr + 0x8;
-    uint8_t const offRange        = offCapHdr + 0xc;
-    uint8_t const offMiscInfo0    = offCapHdr + 0x10;
-    uint8_t const offMiscInfo1    = offCapHdr + 0x14;
-    uint8_t const offMsiCapHdr    = offCapHdr + 0x24;
-    uint8_t const offMsiAddrLo    = offCapHdr + 0x28;
-    uint8_t const offMsiAddrHi    = offCapHdr + 0x2c;
-    uint8_t const offMsiData      = offCapHdr + 0x30;
-    uint8_t const offMsiMapCapHdr = offCapHdr + 0x34;
-
     /* Header. */
-    PDMPciDevSetVendorId(pPciDev,           IOMMU_PCI_VENDOR_ID);   /* RO - AMD */
-    PDMPciDevSetDeviceId(pPciDev,           IOMMU_PCI_DEVICE_ID);   /* RO - VirtualBox IOMMU device */
-    PDMPciDevSetCommand(pPciDev,            0);                     /* RW - Command */
-    PDMPciDevSetStatus(pPciDev,             0x5);                   /* RW - Status - CapList supported */
-    PDMPciDevSetRevisionId(pPciDev,         IOMMU_PCI_REVISION_ID); /* RO - VirtualBox specific device implementation revision */
-    PDMPciDevSetClassBase(pPciDev,          0x08);                  /* RO - System Base Peripheral */
-    PDMPciDevSetClassSub(pPciDev,           0x06);                  /* RO - IOMMU */
-    PDMPciDevSetClassProg(pPciDev,          0x00);                  /* RO - IOMMU Programming interface */
-    PDMPciDevSetHeaderType(pPciDev,         0x00);                  /* RO - Single function, type 0. */
-    PDMPciDevSetSubSystemId(pPciDev,        IOMMU_PCI_DEVICE_ID);   /* RO - AMD */
-    PDMPciDevSetSubSystemVendorId(pPciDev,  IOMMU_PCI_VENDOR_ID);   /* RO - VirtualBox IOMMU device */
-    PDMPciDevSetCapabilityList(pPciDev,     offCapHdr);             /* RO - Offset into capability registers. */
-    PDMPciDevSetInterruptPin(pPciDev,       0x01);                  /* RO - INTA#. */
-    PDMPciDevSetInterruptLine(pPciDev,      0x00);                  /* RW - For software compatibility; no effect on hardware. */
+    PDMPciDevSetVendorId(pPciDev,           IOMMU_PCI_VENDOR_ID);     /* AMD */
+    PDMPciDevSetDeviceId(pPciDev,           IOMMU_PCI_DEVICE_ID);     /* VirtualBox IOMMU device */
+    PDMPciDevSetCommand(pPciDev,            0);                       /* Command */
+    PDMPciDevSetStatus(pPciDev,             0x5);                     /* Status - CapList supported */
+    PDMPciDevSetRevisionId(pPciDev,         IOMMU_PCI_REVISION_ID);   /* VirtualBox specific device implementation revision */
+    PDMPciDevSetClassBase(pPciDev,          0x08);                    /* System Base Peripheral */
+    PDMPciDevSetClassSub(pPciDev,           0x06);                    /* IOMMU */
+    PDMPciDevSetClassProg(pPciDev,          0x00);                    /* IOMMU Programming interface */
+    PDMPciDevSetHeaderType(pPciDev,         0x00);                    /* Single function, type 0. */
+    PDMPciDevSetSubSystemId(pPciDev,        IOMMU_PCI_DEVICE_ID);     /* AMD */
+    PDMPciDevSetSubSystemVendorId(pPciDev,  IOMMU_PCI_VENDOR_ID);     /* VirtualBox IOMMU device */
+    PDMPciDevSetCapabilityList(pPciDev,     IOMMU_PCI_OFF_CAP_HDR);   /* Offset into capability registers. */
+    PDMPciDevSetInterruptPin(pPciDev,       0x01);                    /* INTA#. */
+    PDMPciDevSetInterruptLine(pPciDev,      0x00);                    /* For software compatibility; no effect on hardware. */
 
     /* Capability Header. */
-    PDMPciDevSetDWord(pPciDev, offCapHdr,
-                        RT_BF_MAKE(IOMMU_BF_CAPHDR_CAP_ID,     0xf)             /* RO - Secure Device capability block */
-                      | RT_BF_MAKE(IOMMU_BF_CAPHDR_CAP_PTR,    offMsiCapHdr)    /* RO - Offset to next capability block */
-                      | RT_BF_MAKE(IOMMU_BF_CAPHDR_CAP_TYPE,   0x3)             /* RO - IOMMU capability block */
-                      | RT_BF_MAKE(IOMMU_BF_CAPHDR_CAP_REV,    0x1)             /* RO - IOMMU interface revision */
-                      | RT_BF_MAKE(IOMMU_BF_CAPHDR_IOTLB_SUP,  0x0)             /* RO - Remote IOTLB support */
-                      | RT_BF_MAKE(IOMMU_BF_CAPHDR_HT_TUNNEL,  0x0)             /* RO - HyperTransport Tunnel support */
-                      | RT_BF_MAKE(IOMMU_BF_CAPHDR_NP_CACHE,   0x0)             /* RO - Cache Not-present page table entries */
-                      | RT_BF_MAKE(IOMMU_BF_CAPHDR_EFR_SUP,    0x1)             /* RO - Extended Feature Register support */
-                      | RT_BF_MAKE(IOMMU_BF_CAPHDR_CAP_EXT,    0x1));           /* RO - Misc. Information Register support */
-
+    PDMPciDevSetDWord(pPciDev, IOMMU_PCI_OFF_CAP_HDR,
+                        RT_BF_MAKE(IOMMU_BF_CAPHDR_CAP_ID,    0xf)    /* RO - Secure Device capability block */
+                      | RT_BF_MAKE(IOMMU_BF_CAPHDR_CAP_PTR,   IOMMU_PCI_OFF_MSI_CAP_HDR)  /* RO - Offset to next capability block */
+                      | RT_BF_MAKE(IOMMU_BF_CAPHDR_CAP_TYPE,  0x3)    /* RO - IOMMU capability block */
+                      | RT_BF_MAKE(IOMMU_BF_CAPHDR_CAP_REV,   0x1)    /* RO - IOMMU interface revision */
+                      | RT_BF_MAKE(IOMMU_BF_CAPHDR_IOTLB_SUP, 0x0)    /* RO - Remote IOTLB support */
+                      | RT_BF_MAKE(IOMMU_BF_CAPHDR_HT_TUNNEL, 0x0)    /* RO - HyperTransport Tunnel support */
+                      | RT_BF_MAKE(IOMMU_BF_CAPHDR_NP_CACHE,  0x0)    /* RO - Cache NP page table entries */
+                      | RT_BF_MAKE(IOMMU_BF_CAPHDR_EFR_SUP,   0x1)    /* RO - Extended Feature Register support */
+                      | RT_BF_MAKE(IOMMU_BF_CAPHDR_CAP_EXT,   0x1));  /* RO - Misc. Information Register support */
     /* Base Address Low Register. */
-    PDMPciDevSetDWord(pPciDev, offBaseAddrLo, 0x0);   /* RW - Base address (Lo) and enable bit. */
-
+    PDMPciDevSetDWord(pPciDev, IOMMU_PCI_OFF_BASE_ADDR_REG_LO, 0x0);  /* RW - Base address (Lo) and enable bit. */
     /* Base Address High Register. */
-    PDMPciDevSetDWord(pPciDev, offBaseAddrHi, 0x0);   /* RW - Base address (Hi) */
-
+    PDMPciDevSetDWord(pPciDev, IOMMU_PCI_OFF_BASE_ADDR_REG_HI, 0x0);  /* RW - Base address (Hi) */
     /* IOMMU Range Register. */
-    PDMPciDevSetDWord(pPciDev, offRange, 0x0);        /* RO - Range register. */
-
+    PDMPciDevSetDWord(pPciDev, IOMMU_PCI_OFF_RANGE_REG, 0x0);         /* RW - Range register. */
     /* Misc. Information Register 0. */
-    PDMPciDevSetDWord(pPciDev, offMiscInfo0,
+    PDMPciDevSetDWord(pPciDev, IOMMU_PCI_OFF_MISCINFO_REG_0,
                         RT_BF_MAKE(IOMMU_BF_MISCINFO_0_MSI_NUM,     0x0)    /* RO - MSI number */
                       | RT_BF_MAKE(IOMMU_BF_MISCINFO_0_GVA_SIZE,    0x2)    /* RO - Guest Virt. Addr size (2=48 bits) */
                       | RT_BF_MAKE(IOMMU_BF_MISCINFO_0_PA_SIZE,     0x30)   /* RO - Physical Addr size (48 bits) */
                       | RT_BF_MAKE(IOMMU_BF_MISCINFO_0_VA_SIZE,     0x40)   /* RO - Virt. Addr size (64 bits) */
                       | RT_BF_MAKE(IOMMU_BF_MISCINFO_0_HT_ATS_RESV, 0x0)    /* RW - HT ATS reserved */
                       | RT_BF_MAKE(IOMMU_BF_MISCINFO_0_MSI_NUM_PPR, 0x0));  /* RW - PPR interrupt number */
-
     /* Misc. Information Register 1. */
-    PDMPciDevSetDWord(pPciDev, offMiscInfo1, 0);
-
+    PDMPciDevSetDWord(pPciDev, IOMMU_PCI_OFF_MISCINFO_REG_0, 0);
     /* MSI Capability Header register. */
 #if 0
-    PDMPciDevSetDWord(pPciDev, offMsiCapHdr,
+    PDMPciDevSetDWord(pPciDev, IOMMU_PCI_OFF_MSI_CAP_HDR,
                         RT_BF_MAKE(IOMMU_BF_MSI_CAPHDR_CAP_ID,       0x5)             /* RO - Capability ID. */
-                      | RT_BF_MAKE(IOMMU_BF_MSI_CAPHDR_CAP_PTR,      offMsiMapCapHdr) /* RO - Offset to mapping capability block */
+                      | RT_BF_MAKE(IOMMU_BF_MSI_CAPHDR_CAP_PTR,      offMsiMapCapHdr) /* RO - Offset to next capability block */
                       | RT_BF_MAKE(IOMMU_BF_MSI_CAPHDR_EN,           0x0)             /* RW - MSI capability enable */
                       | RT_BF_MAKE(IOMMU_BF_MSI_CAPHDR_MULTMESS_CAP, 0x0)             /* RO - MSI multi-message capability */
                       | RT_BF_MAKE(IOMMU_BF_MSI_CAPHDR_MULTMESS_EN,  0x0)             /* RW - MSI multi-message enable */
@@ -2871,29 +2880,34 @@ static DECLCALLBACK(int) iommuAmdR3Construct(PPDMDEVINS pDevIns, int iInstance, 
     PDMMSIREG MsiReg;
     RT_ZERO(MsiReg);
     MsiReg.cMsiVectors    = 1;
-    MsiReg.iMsiCapOffset  = offMsiCapHdr;
-    MsiReg.iMsiNextOffset = offMsiMapCapHdr;
+    MsiReg.iMsiCapOffset  = IOMMU_PCI_OFF_MSI_CAP_HDR;
+    MsiReg.iMsiNextOffset = IOMMU_PCI_OFF_MSI_MAP_CAP_HDR;
     rc = PDMDevHlpPCIRegisterMsi(pDevIns, &MsiReg);
     AssertRCReturn(rc, rc);
 #endif
-
+#if 0
     /* MSI Address Lo. */
-    PDMPciDevSetDWord(pPciDev, offMsiAddrLo, 0);                            /* RW - MSI message address (Lo). */
-
+    PDMPciDevSetDWord(pPciDev, IOMMU_PCI_OFF_MSI_ADDR_LO, 0);         /* RW - MSI message address (Lo). */
     /* MSI Address Hi. */
-    PDMPciDevSetDWord(pPciDev, offMsiAddrHi, 0);                            /* RW - MSI message address (Hi). */
-
+    PDMPciDevSetDWord(pPciDev, IOMMU_PCI_OFF_MSI_ADDR_HI, 0);         /* RW - MSI message address (Hi). */
     /* MSI Data. */
-    PDMPciDevSetDWord(pPciDev, offMsiData, 0);                              /* RW - MSI data. */
-
+    PDMPciDevSetDWord(pPciDev, IOMMU_PCI_OFF_MSI_DATA, 0);            /* RW - MSI data. */
+#else
+    /* These are initialized in iommuAmdInit. */
+#endif
     /** @todo IOMMU: I don't know if we can support this, disable later if required. */
     /* MSI Mapping Capability Header register. */
-    PDMPciDevSetDWord(pPciDev, offMsiMapCapHdr,
+    PDMPciDevSetDWord(pPciDev, IOMMU_PCI_OFF_MSI_MAP_CAP_HDR,
                         RT_BF_MAKE(IOMMU_BF_MSI_MAP_CAPHDR_CAP_ID,   0x8)       /* RO - Capability ID */
                       | RT_BF_MAKE(IOMMU_BF_MSI_MAP_CAPHDR_CAP_PTR,  0x0)       /* RO - Offset to next capability (NULL) */
                       | RT_BF_MAKE(IOMMU_BF_MSI_MAP_CAPHDR_EN,       0x1)       /* RO - MSI mapping capability enable */
                       | RT_BF_MAKE(IOMMU_BF_MSI_MAP_CAPHDR_FIXED,    0x1)       /* RO - MSI mapping range is fixed */
                       | RT_BF_MAKE(IOMMU_BF_MSI_MAP_CAPHDR_CAP_TYPE, 0x15));    /* RO - MSI mapping capability */
+
+    /*
+     * Initialize parts of the IOMMU state as it would during reset.
+     */
+    iommuAmdR3Init(pDevIns);
 
     /*
      * Register the PCI function with PDM.
