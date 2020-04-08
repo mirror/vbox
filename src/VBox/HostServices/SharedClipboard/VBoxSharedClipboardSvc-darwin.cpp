@@ -49,6 +49,9 @@ typedef struct SHCLCONTEXT
     PSHCLCLIENT             pClient;
     /** Random 64-bit number embedded into szGuestOwnershipFlavor. */
     uint64_t                idGuestOwnership;
+    /** Ownership flavor CFStringRef returned by takePasteboardOwnership().
+     * This is the same a szGuestOwnershipFlavor only in core foundation terms. */
+    void                   *hStrOwnershipFlavor;
     /** The guest ownership flavor (type) string. */
     char                    szGuestOwnershipFlavor[64];
 } SHCLCONTEXT;
@@ -66,16 +69,19 @@ static SHCLCONTEXT g_ctx;
  *
  * @returns IPRT status code (ignored).
  * @param   pCtx    The context.
+ *
+ * @note    Call must own lock.
  */
 static int vboxClipboardChanged(SHCLCONTEXT *pCtx)
 {
     if (pCtx->pClient == NULL)
         return VINF_SUCCESS;
 
-    uint32_t fFormats = 0;
-    bool fChanged = false;
     /* Retrieve the formats currently in the clipboard and supported by vbox */
-    int rc = queryNewPasteboardFormats(pCtx->hPasteboard, &fFormats, &fChanged);
+    uint32_t fFormats = 0;
+    bool     fChanged = false;
+    int rc = queryNewPasteboardFormats(pCtx->hPasteboard, pCtx->idGuestOwnership, pCtx->hStrOwnershipFlavor,
+                                       &fFormats, &fChanged);
     if (   RT_SUCCESS(rc)
         && fChanged)
         rc = ShClSvcHostReportFormats(pCtx->pClient, fFormats);
@@ -196,6 +202,7 @@ int ShClSvcImplFormatAnnounce(PSHCLCLIENT pClient, SHCLFORMATS fFormats)
 {
     LogFlowFunc(("fFormats=%02X\n", fFormats));
 
+    /** @todo r=bird: BUGBUG: The following is probably a mistake. */
     if (fFormats == VBOX_SHCL_FMT_NONE)
     {
         /* This is just an automatism, not a genuine announcement */
@@ -225,7 +232,8 @@ int ShClSvcImplFormatAnnounce(PSHCLCLIENT pClient, SHCLFORMATS fFormats)
     char szValue[32];
     RTStrPrintf(szValue, sizeof(szValue), "%#x", fFormats);
 
-    takePasteboardOwnership(pCtx->hPasteboard, pCtx->idGuestOwnership, pCtx->szGuestOwnershipFlavor, szValue);
+    takePasteboardOwnership(pCtx->hPasteboard, pCtx->idGuestOwnership, pCtx->szGuestOwnershipFlavor, szValue,
+                            &pCtx->hStrOwnershipFlavor);
 
     ShClSvcUnlock();
 

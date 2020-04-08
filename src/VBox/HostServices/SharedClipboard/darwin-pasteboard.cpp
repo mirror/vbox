@@ -74,23 +74,28 @@ void destroyPasteboard(PasteboardRef *pPasteboardRef)
  * Inspect the global pasteboard for new content. Check if there is some type
  * that is supported by vbox and return it.
  *
- * @param   pPasteboard    Reference to the global pasteboard.
- * @param   pfFormats      Pointer for the bit combination of the
- *                         supported types.
- * @param   pfChanged      True if something has changed after the
- *                         last call.
+ * @param   hPasteboard         Reference to the global pasteboard.
+ * @param   idOwnership         Our ownership ID.
+ * @param   hStrOwnershipFlavor The ownership flavor string reference returned
+ *                              by takePasteboardOwnership().
+ * @param   pfFormats           Pointer for the bit combination of the
+ *                              supported types.
+ * @param   pfChanged           True if something has changed after the
+ *                              last call.
  *
- * @returns IPRT status code. (Always VINF_SUCCESS atm.)
+ * @returns VINF_SUCCESS.
  */
-int queryNewPasteboardFormats(PasteboardRef pPasteboard, uint32_t *pfFormats, bool *pfChanged)
+int queryNewPasteboardFormats(PasteboardRef hPasteboard, uint64_t idOwnership, void *hStrOwnershipFlavor,
+                              uint32_t *pfFormats, bool *pfChanged)
 {
-    OSStatus err = noErr;
+    OSStatus orc;
+
     *pfFormats = 0;
     *pfChanged = true;
 
     PasteboardSyncFlags syncFlags;
     /* Make sure all is in sync */
-    syncFlags = PasteboardSynchronize(pPasteboard);
+    syncFlags = PasteboardSynchronize(hPasteboard);
     /* If nothing changed return */
     if (!(syncFlags & kPasteboardModified))
     {
@@ -100,49 +105,82 @@ int queryNewPasteboardFormats(PasteboardRef pPasteboard, uint32_t *pfFormats, bo
     }
 
     /* Are some items in the pasteboard? */
-    ItemCount itemCount;
-    err = PasteboardGetItemCount(pPasteboard, &itemCount);
-    if (itemCount < 1)
+    ItemCount cItems = 0;
+    orc = PasteboardGetItemCount(hPasteboard, &cItems);
+    if (orc == 0)
     {
-        Log(("queryNewPasteboardFormats: changed: No items on the pasteboard\n"));
-        return VINF_SUCCESS;
-    }
-
-    /* The id of the first element in the pasteboard */
-    int rc = VINF_SUCCESS;
-    PasteboardItemID itemID;
-    if (!(err = PasteboardGetItemIdentifier(pPasteboard, 1, &itemID)))
-    {
-        /* Retrieve all flavors in the pasteboard, maybe there
-         * is something we can use. */
-        CFArrayRef flavorTypeArray;
-        if (!(err = PasteboardCopyItemFlavors(pPasteboard, itemID, &flavorTypeArray)))
+        if (cItems < 1)
+            Log(("queryNewPasteboardFormats: changed: No items on the pasteboard\n"));
+        else
         {
-            CFIndex flavorCount;
-            flavorCount = CFArrayGetCount(flavorTypeArray);
-            for (CFIndex flavorIndex = 0; flavorIndex < flavorCount; flavorIndex++)
+            /* The id of the first element in the pasteboard */
+            PasteboardItemID idItem = 0;
+            orc = PasteboardGetItemIdentifier(hPasteboard, 1, &idItem);
+            if (orc == 0)
             {
-                CFStringRef flavorType;
-                flavorType = static_cast <CFStringRef>(CFArrayGetValueAtIndex(flavorTypeArray, flavorIndex));
-                /* Currently only unicode supported */
-                if (   UTTypeConformsTo(flavorType, kUTTypeUTF8PlainText)
-                    || UTTypeConformsTo(flavorType, kUTTypeUTF16PlainText))
+                /*
+                 * Retrieve all flavors on the pasteboard, maybe there
+                 * is something we can use.  Or maybe we're the owner.
+                 */
+                CFArrayRef hFlavors = 0;
+                orc = PasteboardCopyItemFlavors(hPasteboard, idItem, &hFlavors);
+                if (orc == 0)
                 {
-                    Log(("queryNewPasteboardFormats: Unicode flavor detected.\n"));
-                    *pfFormats |= VBOX_SHCL_FMT_UNICODETEXT;
+                    CFIndex cFlavors = CFArrayGetCount(hFlavors);
+                    for (CFIndex idxFlavor = 0; idxFlavor < cFlavors; idxFlavor++)
+                    {
+                        CFStringRef hStrFlavor = (CFStringRef)CFArrayGetValueAtIndex(hFlavors, idxFlavor);
+                        if (   idItem == (PasteboardItemID)idOwnership
+                            && hStrOwnershipFlavor
+                            && CFStringCompare(hStrFlavor, (CFStringRef)hStrOwnershipFlavor, 0) == kCFCompareEqualTo)
+                        {
+                            /* We made the changes ourselves. */
+                            Log2(("queryNewPasteboardFormats: no-changed: our clipboard!\n"));
+                            *pfChanged = false;
+                            *pfFormats = 0;
+                            break;
+                        }
+
+                        if (UTTypeConformsTo(hStrFlavor, kUTTypeBMP))
+                        {
+                            Log(("queryNewPasteboardFormats: BMP flavor detected.\n"));
+                            *pfFormats |= VBOX_SHCL_FMT_BITMAP;
+                        }
+                        else if (   UTTypeConformsTo(hStrFlavor, kUTTypeUTF8PlainText)
+                                 || UTTypeConformsTo(hStrFlavor, kUTTypeUTF16PlainText))
+                        {
+                            Log(("queryNewPasteboardFormats: Unicode flavor detected.\n"));
+                            *pfFormats |= VBOX_SHCL_FMT_UNICODETEXT;
+                        }
+#ifdef LOG_ENABLED
+                        else if (LogIs2Enabled())
+                        {
+                            if (CFStringGetCharactersPtr(hStrFlavor))
+                                Log2(("queryNewPasteboardFormats: Unknown flavor: %ls.\n", CFStringGetCharactersPtr(hStrFlavor)));
+                            else if (CFStringGetCStringPtr(hStrFlavor, kCFStringEncodingUTF8))
+                                Log2(("queryNewPasteboardFormats: Unknown flavor: %s.\n",
+                                      CFStringGetCStringPtr(hStrFlavor, kCFStringEncodingUTF8)));
+                            else
+                                Log2(("queryNewPasteboardFormats: Unknown flavor: ???\n"));
+                        }
+#endif
+                    }
+
+                    CFRelease(hFlavors);
                 }
-                else if (UTTypeConformsTo(flavorType, kUTTypeBMP))
-                {
-                    Log(("queryNewPasteboardFormats: BMP flavor detected.\n"));
-                    *pfFormats |= VBOX_SHCL_FMT_BITMAP;
-                }
+                else
+                    Log(("queryNewPasteboardFormats: PasteboardCopyItemFlavors failed - %d (%#x)\n", orc, orc));
             }
-            CFRelease(flavorTypeArray);
+            else
+                Log(("queryNewPasteboardFormats: PasteboardGetItemIdentifier failed - %d (%#x)\n", orc, orc));
+
+            if (*pfChanged)
+                Log(("queryNewPasteboardFormats: changed: *pfFormats=%#x\n", *pfFormats));
         }
     }
-
-    Log(("queryNewPasteboardFormats: changed: *pfFormats=%#x\n", *pfFormats));
-    return rc;
+    else
+        Log(("queryNewPasteboardFormats: PasteboardGetItemCount failed - %d (%#x)\n", orc, orc));
+    return VINF_SUCCESS;
 }
 
 /**
@@ -288,18 +326,32 @@ int readFromPasteboard(PasteboardRef pPasteboard, uint32_t fFormat, void *pv, ui
  * This is called when the other end reports available formats.
  *
  * @returns VBox status code.
- * @param   hPasteboard         The pastboard handle (reference).
- * @param   idOwnership         The ownership ID to use now.
- * @param   pszOwnershipFlavor  The ownership indicator flavor
- * @param   pszOwnershipValue   The ownership value (stringified format mask).
+ * @param   hPasteboard             The pastboard handle (reference).
+ * @param   idOwnership             The ownership ID to use now.
+ * @param   pszOwnershipFlavor      The ownership indicator flavor
+ * @param   pszOwnershipValue       The ownership value (stringified format mask).
+ * @param   phStrOwnershipFlavor    Pointer to a CFStringRef variable holding
+ *                                  the current ownership flavor string.  This
+ *                                  will always be released, and set again on
+ *                                  success.
  *
  * @todo    Add fFormats so we can make promises about available formats at once
  *          without needing to request any data first.  That might help on
  *          flavor priority.
  */
-int takePasteboardOwnership(PasteboardRef hPasteboard, uint64_t idOwnership,
-                            const char *pszOwnershipFlavor, const char *pszOwnershipValue)
+int takePasteboardOwnership(PasteboardRef hPasteboard, uint64_t idOwnership, const char *pszOwnershipFlavor,
+                            const char *pszOwnershipValue, void **phStrOwnershipFlavor)
 {
+    /*
+     * Release the old string.
+     */
+    if (*phStrOwnershipFlavor)
+    {
+        CFStringRef hOldFlavor = (CFStringRef)*phStrOwnershipFlavor;
+        CFRelease(hOldFlavor);
+        *phStrOwnershipFlavor = NULL;
+    }
+
     /*
      * Clear the pasteboard and take ownership over it.
      */
@@ -321,11 +373,16 @@ int takePasteboardOwnership(PasteboardRef hPasteboard, uint64_t idOwnership,
                 orc = PasteboardPutItemFlavor(hPasteboard, (PasteboardItemID)idOwnership,
                                               hFlavor, hData, kPasteboardFlavorNoFlags);
                 if (orc == 0)
+                {
+                    *phStrOwnershipFlavor = (void *)hFlavor;
                     Log(("takePasteboardOwnership: idOwnership=%RX64 flavor=%s value=%s\n",
                          idOwnership, pszOwnershipFlavor, pszOwnershipValue));
+                }
                 else
+                {
                     Log(("takePasteboardOwnership: PasteboardPutItemFlavor -> %d (%#x)!\n", orc, orc));
-                CFRelease(hFlavor);
+                    CFRelease(hFlavor);
+                }
             }
             else
                 Log(("takePasteboardOwnership: CFStringCreateWithCString failed!\n"));
@@ -413,12 +470,12 @@ int writeToPasteboard(PasteboardRef hPasteboard, uint64_t idOwnership, const voi
                              fFormat & VBOX_SHCL_FMT_UNICODETEXT ? "kUTTypeUTF16PlainText" : "kUTTypeHTML", orc, orc));
                         rc = VERR_GENERAL_FAILURE;
                     }
-                    else
-                    {
-                        Log(("writeToPasteboard: CFDataCreate/UTF16 failed!\n"));
-                        rc = VERR_NO_MEMORY;
-                    }
                     CFRelease(hData);
+                }
+                else
+                {
+                    Log(("writeToPasteboard: CFDataCreate/UTF16 failed!\n"));
+                    rc = VERR_NO_MEMORY;
                 }
             }
 
