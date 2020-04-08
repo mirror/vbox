@@ -273,17 +273,6 @@ public:
 
     UIResourceMonitorProxyModel(QObject *parent = 0);
     void dataUpdate();
-    void reFilter();
-
-protected:
-
-    //virtual bool lessThan(const QModelIndex &left, const QModelIndex &right) const /* override */;
-    /** Section (column) visibility is controlled by the QHeaderView (see UIVMResourceMonitorTableView::updateColumVisibility)
-     *  to have somewhat meaningful column resizing. */
-    //virtual bool filterAcceptsColumn(int source_column, const QModelIndex &source_parent) const /* override */;
-
-private:
-
 };
 
 
@@ -330,7 +319,7 @@ private:
     QVector<UIResourceMonitorItem> m_itemList;
     /* Used to find machines by uid. key is the machine uid and int is the index to m_itemList */
     QMap<QUuid, int>               m_itemMap;
-    QMap<int, QString> m_columnCaptions;
+    QMap<int, QString> m_columnTitles;
     QTimer *m_pTimer;
     /** @name The following are used during UIPerformanceCollector::QueryMetricsData(..)
      * @{ */
@@ -867,23 +856,6 @@ void UIResourceMonitorProxyModel::dataUpdate()
     invalidate();
 }
 
-void UIResourceMonitorProxyModel::reFilter()
-{
-    emit layoutAboutToBeChanged();
-    invalidateFilter();
-    emit layoutChanged();
-}
-
-/* See the function definition comment: */
-// bool UIResourceMonitorProxyModel::filterAcceptsColumn(int iSourceColumn, const QModelIndex &sourceParent) const
-// {
-//     Q_UNUSED(sourceParent);
-//     UIResourceMonitorModel* pModel = qobject_cast<UIResourceMonitorModel*>(sourceModel());
-//     if (!pModel)
-//         return true;
-//     return pModel->columnVisible(iSourceColumn);
-// }
-
 
 /*********************************************************************************************************************************
 *   Class UIResourceMonitorModel implementation.                                                                                 *
@@ -944,13 +916,13 @@ QVariant UIResourceMonitorModel::data(const QModelIndex &index, int role) const
 QVariant UIResourceMonitorModel::headerData(int section, Qt::Orientation orientation, int role) const
 {
     if (role == Qt::DisplayRole && orientation == Qt::Horizontal)
-        return m_columnCaptions.value((VMResourceMonitorColumn)section, QString());;
+        return m_columnTitles.value((VMResourceMonitorColumn)section, QString());;
     return QVariant();
 }
 
 void UIResourceMonitorModel::setColumnCaptions(const QMap<int, QString>& captions)
 {
-    m_columnCaptions = captions;
+    m_columnTitles = captions;
 }
 
 void UIResourceMonitorModel::initializeItems()
@@ -1004,8 +976,6 @@ void UIResourceMonitorModel::sltTimeout()
     ULONG aPctHalted;
     ULONG aPctVMM;
 
-    // bool fRAMColumns = columnVisible(VMResourceMonitorColumn_RAMUsedAndTotal)
-    //     || columnVisible(VMResourceMonitorColumn_RAMUsedPercentage);
     bool fCPUColumns = columnVisible(VMResourceMonitorColumn_CPUVMMLoad) || columnVisible(VMResourceMonitorColumn_CPUGuestLoad);
     bool fNetworkColumns = columnVisible(VMResourceMonitorColumn_NetworkUpRate)
         || columnVisible(VMResourceMonitorColumn_NetworkDownRate)
@@ -1017,10 +987,10 @@ void UIResourceMonitorModel::sltTimeout()
         || columnVisible(VMResourceMonitorColumn_DiskIOWriteTotal);
     bool fVMExitColumn = columnVisible(VMResourceMonitorColumn_VMExits);
 
+    /* Host's RAM usage is obtained from IHost not from IPerformanceCollectior: */
     getHostRAMStats();
 
-    /* RAM usage and Host CPU: */
-    //if (!m_performanceMonitor.isNull() && fRAMColumns)
+    /* RAM usage and Host Stats: */
     queryPerformanceCollector();
 
     for (int i = 0; i < m_itemList.size(); ++i)
@@ -1274,7 +1244,6 @@ UIResourceMonitorWidget::UIResourceMonitorWidget(EmbedTo enmEmbedding, UIActionP
     , m_pHostStatsWidget(0)
     , m_fIsCurrentTool(true)
 {
-    /* Prepare: */
     prepare();
 }
 
@@ -1307,22 +1276,22 @@ void UIResourceMonitorWidget::setIsCurrentTool(bool fIsCurrentTool)
 
 void UIResourceMonitorWidget::retranslateUi()
 {
-    m_columnCaptions[VMResourceMonitorColumn_Name] = tr("VM Name");
-    m_columnCaptions[VMResourceMonitorColumn_CPUGuestLoad] = tr("CPU Guest");
-    m_columnCaptions[VMResourceMonitorColumn_CPUVMMLoad] = tr("CPU VMM");
-    m_columnCaptions[VMResourceMonitorColumn_RAMUsedAndTotal] = tr("RAM Used/Total");
-    m_columnCaptions[VMResourceMonitorColumn_RAMUsedPercentage] = tr("RAM %");
-    m_columnCaptions[VMResourceMonitorColumn_NetworkUpRate] = tr("Network Up Rate");
-    m_columnCaptions[VMResourceMonitorColumn_NetworkDownRate] = tr("Network Down Rate");
-    m_columnCaptions[VMResourceMonitorColumn_NetworkUpTotal] = tr("Network Up Total");
-    m_columnCaptions[VMResourceMonitorColumn_NetworkDownTotal] = tr("Network Down Total");
-    m_columnCaptions[VMResourceMonitorColumn_DiskIOReadRate] = tr("Disk Read Rate");
-    m_columnCaptions[VMResourceMonitorColumn_DiskIOWriteRate] = tr("Disk Write Rate");
-    m_columnCaptions[VMResourceMonitorColumn_DiskIOReadTotal] = tr("Disk Read Total");
-    m_columnCaptions[VMResourceMonitorColumn_DiskIOWriteTotal] = tr("Disk Write Total");
-    m_columnCaptions[VMResourceMonitorColumn_VMExits] = tr("VM Exits");
+    m_columnTitles[VMResourceMonitorColumn_Name] = tr("VM Name");
+    m_columnTitles[VMResourceMonitorColumn_CPUGuestLoad] = tr("CPU Guest");
+    m_columnTitles[VMResourceMonitorColumn_CPUVMMLoad] = tr("CPU VMM");
+    m_columnTitles[VMResourceMonitorColumn_RAMUsedAndTotal] = tr("RAM Used/Total");
+    m_columnTitles[VMResourceMonitorColumn_RAMUsedPercentage] = tr("RAM %");
+    m_columnTitles[VMResourceMonitorColumn_NetworkUpRate] = tr("Network Up Rate");
+    m_columnTitles[VMResourceMonitorColumn_NetworkDownRate] = tr("Network Down Rate");
+    m_columnTitles[VMResourceMonitorColumn_NetworkUpTotal] = tr("Network Up Total");
+    m_columnTitles[VMResourceMonitorColumn_NetworkDownTotal] = tr("Network Down Total");
+    m_columnTitles[VMResourceMonitorColumn_DiskIOReadRate] = tr("Disk Read Rate");
+    m_columnTitles[VMResourceMonitorColumn_DiskIOWriteRate] = tr("Disk Write Rate");
+    m_columnTitles[VMResourceMonitorColumn_DiskIOReadTotal] = tr("Disk Read Total");
+    m_columnTitles[VMResourceMonitorColumn_DiskIOWriteTotal] = tr("Disk Write Total");
+    m_columnTitles[VMResourceMonitorColumn_VMExits] = tr("VM Exits");
     if (m_pModel)
-        m_pModel->setColumnCaptions(m_columnCaptions);
+        m_pModel->setColumnCaptions(m_columnTitles);
     computeMinimumColumnWidths();
 }
 
@@ -1340,7 +1309,6 @@ void UIResourceMonitorWidget::paintEvent(QPaintEvent *pEvent)
 {
     QIWithRetranslateUI<QWidget>::paintEvent(pEvent);
 }
-
 
 void UIResourceMonitorWidget::prepare()
 {
@@ -1380,15 +1348,10 @@ void UIResourceMonitorWidget::prepareWidgets()
     if (m_pTableView && m_pModel && m_pProxyModel)
     {
         layout()->addWidget(m_pTableView);
-        // m_pTableView->setContextMenuPolicy(Qt::CustomContextMenu);
-        // connect(m_pTableView, &QTableView::customContextMenuRequested,
-        //         this, &UIResourceMonitorWidget::sltCreateContextMenu);
         m_pProxyModel->setSourceModel(m_pModel);
         m_pTableView->setModel(m_pProxyModel);
         m_pTableView->setItemDelegate(new UIVMResourceMonitorDelegate);
         m_pTableView->setSelectionMode(QAbstractItemView::NoSelection);
-        /* m_pTableView->setSelectionMode(QAbstractItemView::SingleSelection);
-           m_pTableView->setSelectionBehavior(QAbstractItemView::SelectRows);*/
         m_pTableView->setShowGrid(false);
         m_pTableView->horizontalHeader()->setHighlightSections(false);
         m_pTableView->horizontalHeader()->setSectionResizeMode(QHeaderView::Fixed);
@@ -1407,42 +1370,23 @@ void UIResourceMonitorWidget::prepareWidgets()
 
 void UIResourceMonitorWidget::prepareActions()
 {
-    m_pColumnVisibilityToggleMenu = new QMenu(this);
+    if (!m_pActionPool->action(UIActionIndexST_M_VMResourceMonitor_M_Columns))
+        return;
+    UIMenu *pMenu = m_pActionPool->action(UIActionIndexST_M_VMResourceMonitor_M_Columns)->menu();
+    if (!pMenu)
+        return;
+
     for (int i = 0; i < VMResourceMonitorColumn_Max; ++i)
     {
-        QAction *pAction = m_pColumnVisibilityToggleMenu->addAction(m_columnCaptions[i]);
+        QAction *pAction = pMenu->addAction(m_columnTitles[i]);
         pAction->setCheckable(true);
+        if (i == (int)VMResourceMonitorColumn_Name)
+            pAction->setEnabled(false);
+        pAction->setData(i);
+        pAction->setChecked(columnVisible(i));
+        connect(pAction, &QAction::toggled, this, &UIResourceMonitorWidget::sltHandleColumnAction);
     }
-
-    connect(m_pActionPool->action(UIActionIndexST_M_VMResourceMonitor_T_Columns), &QAction::toggled,
-            this, &UIResourceMonitorWidget::sltToggleColumnSelectionMenu);
     return;
-//     m_pColumnSelectionMenu->setAutoFillBackground(true);
-//     m_pColumnSelectionMenu->setFrameStyle(QFrame::Panel | QFrame::Plain);
-//     m_pColumnSelectionMenu->hide();
-//     QVBoxLayout* pLayout = new QVBoxLayout(m_pColumnSelectionMenu);
-//     int iLength = 0;
-//     for (int i = 0; i < VMResourceMonitorColumn_Max; ++i)
-//     {
-//         UIVMResourceMonitorCheckBox* pCheckBox = new UIVMResourceMonitorCheckBox;
-//         QString strCaption = m_columnCaptions.value((VMResourceMonitorColumn)i, QString());
-//         pCheckBox->setText(strCaption);
-//         iLength = strCaption.length() > iLength ? strCaption.length() : iLength;
-//         if (!pCheckBox)
-//             continue;
-//         pLayout->addWidget(pCheckBox);
-//         pCheckBox->setData(i);
-//         pCheckBox->setChecked(columnVisible(i));
-//         if (i == (int)VMResourceMonitorColumn_Name)
-//             pCheckBox->setEnabled(false);
-//         connect(pCheckBox, &UIVMResourceMonitorCheckBox::toggled, this, &UIResourceMonitorWidget::sltHandleColumnAction);
-//     }
-//     QFontMetrics fontMetrics(m_pColumnSelectionMenu->font());
-//     int iWidth = iLength * fontMetrics.width('x') +
-//         QApplication::style()->pixelMetric(QStyle::PM_IndicatorWidth) +
-//         2 * QApplication::style()->pixelMetric(QStyle::PM_LayoutLeftMargin) +
-//         2 * QApplication::style()->pixelMetric(QStyle::PM_LayoutRightMargin);
-//     m_pColumnSelectionMenu->setFixedWidth(iWidth);
 }
 
 void UIResourceMonitorWidget::prepareToolBar()
@@ -1500,27 +1444,11 @@ void UIResourceMonitorWidget::sltToggleColumnSelectionMenu(bool fChecked)
     if (!m_pColumnVisibilityToggleMenu)
         return;
     m_pColumnVisibilityToggleMenu->exec(this->mapToGlobal(QPoint(0,0)));
-
-    // if (!m_pColumnSelectionMenu)
-    //     return;
-    // m_pColumnSelectionMenu->setVisible(fChecked);
-
-    // if (fChecked)
-    // {
-    //     m_pColumnSelectionMenu->move(0, 0);
-    //     m_pColumnSelectionMenu->raise();
-    //     m_pColumnSelectionMenu->resize(400, 400);
-    //     m_pColumnSelectionMenu->show();
-    //     m_pColumnSelectionMenu->setFocus();
-    // }
-    // else
-    //     m_pColumnSelectionMenu->hide();
-    //update();
 }
 
 void UIResourceMonitorWidget::sltHandleColumnAction(bool fChecked)
 {
-    UIVMResourceMonitorCheckBox* pSender = qobject_cast<UIVMResourceMonitorCheckBox*>(sender());
+    QAction* pSender = qobject_cast<QAction*>(sender());
     if (!pSender)
         return;
     setColumnVisible(pSender->data().toInt(), fChecked);
@@ -1567,7 +1495,7 @@ void UIResourceMonitorWidget::computeMinimumColumnWidths()
     for (int i = 0; i < (int)VMResourceMonitorColumn_Max; ++i)
     {
         int iColumnStringWidth = columnDataStringLengths.value(i, 0);
-        int iColumnTitleWidth = m_columnCaptions.value(i, QString()).length();
+        int iColumnTitleWidth = m_columnTitles.value(i, QString()).length();
         int iMax = iColumnStringWidth > iColumnTitleWidth ? iColumnStringWidth : iColumnTitleWidth;
         columnWidthsInPixels[i] = iMax * fontMetrics.width('x') +
             QApplication::style()->pixelMetric(QStyle::PM_LayoutLeftMargin) +

@@ -19,6 +19,7 @@
 #include <QHBoxLayout>
 #include <QStackedWidget>
 #include <QStyle>
+#include <QToolButton>
 #include <QVBoxLayout>
 
 /* GUI includes: */
@@ -671,7 +672,15 @@ void UIVirtualBoxManagerWidget::updateToolbar()
                 }
                 case UIToolType_VMResourceMonitor:
                 {
-                    m_pToolBar->addAction(actionPool()->action(UIActionIndexST_M_VMResourceMonitor_T_Columns));
+                    m_pToolBar->addAction(actionPool()->action(UIActionIndexST_M_VMResourceMonitor_M_Columns));
+                    QToolButton *pButton =
+                        qobject_cast<QToolButton*>(m_pToolBar->widgetForAction(actionPool()->action(UIActionIndexST_M_VMResourceMonitor_M_Columns)));
+                    if (pButton)
+                    {
+                        pButton->setPopupMode(QToolButton::InstantPopup);
+                        pButton->setAutoRaise(true);
+                    }
+
                     break;
                 }
 

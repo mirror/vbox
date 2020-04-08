@@ -2826,7 +2826,7 @@ protected:
 };
 
 /** Toggle action extension, used as 'Toggle Columns' action class. */
-class UIActionMenuSelectorVMResourceMonitorToggleColumns : public UIActionToggle
+class UIActionMenuSelectorVMResourceMonitorToggleColumns : public UIActionMenu
 {
     Q_OBJECT;
 
@@ -2834,35 +2834,18 @@ public:
 
     /** Constructs action passing @a pParent to the base-class. */
     UIActionMenuSelectorVMResourceMonitorToggleColumns(UIActionPool *pParent)
-        : UIActionToggle(pParent)
-    {
-        setShortcutContext(Qt::WidgetWithChildrenShortcut);
-        setIcon(UIIconPool::iconSetFull(":/cloud_profile_edit_32px.png",          ":/cloud_profile_edit_16px.png",
-                                        ":/cloud_profile_edit_disabled_32px.png", ":/cloud_profile_edit_disabled_16px.png"));
-    }
+        : UIActionMenu(pParent, ":/exit_16px.png")
+    {}
 
 protected:
-
-    /** Returns shortcut extra-data ID. */
-    virtual QString shortcutExtraDataID() const /* override */
-    {
-        return QString("ToggleVMResourceMonitorColumns");
-    }
-
-    /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIActionPoolType) const /* override */
-    {
-        return QKeySequence();
-    }
 
     /** Handles translation event. */
     virtual void retranslateUi() /* override */
     {
+        setName(QApplication::translate("UIActionPool", "Columns"));
         setIconText(QApplication::translate("UIActionPool", "Columns"));
-        setName(QApplication::translate("UIActionPool", "Add Remove Columns"));
-        //setShortcutScope(QApplication::translate("UIActionPool", "Cloud Profile Manager"));
-        setStatusTip(QApplication::translate("UIActionPool", "Open context menu to disable/menu table columns"));
-        setToolTip(  QApplication::translate("UIActionPool", "Open context menu to disable/menu table columns")
+        setStatusTip(QApplication::translate("UIActionPool", "Show/Hide Columns"));
+        setToolTip(  QApplication::translate("UIActionPool", "Show/Hide Columns")
                    + (shortcut().isEmpty() ? QString() : QString(" (%1)").arg(shortcut().toString())));
     }
 };
@@ -3006,7 +2989,7 @@ void UIActionPoolManager::preparePool()
 
     /* VM resource Monitor actions: */
     m_pool[UIActionIndexST_M_VMResourceMonitor] = new UIActionMenuVMResourceMonitor(this);
-    m_pool[UIActionIndexST_M_VMResourceMonitor_T_Columns] = new UIActionMenuSelectorVMResourceMonitorToggleColumns(this);
+    m_pool[UIActionIndexST_M_VMResourceMonitor_M_Columns] = new UIActionMenuSelectorVMResourceMonitorToggleColumns(this);
 
     /* 'Group' action groups: */
     m_groupPool[UIActionIndexST_M_Group_M_Tools] = new QActionGroup(m_pool.value(UIActionIndexST_M_Group_M_Tools));
@@ -3604,8 +3587,7 @@ void UIActionPoolManager::updateMenuVMResourceMonitorWrapper(UIMenu *pMenu)
 {
     /* Clear contents: */
     pMenu->clear();
-
-    addAction(pMenu, action(UIActionIndexST_M_VMResourceMonitor_T_Columns));
+    addAction(pMenu, action(UIActionIndexST_M_VMResourceMonitor_M_Columns));
 }
 
 void UIActionPoolManager::updateMenuSnapshot()

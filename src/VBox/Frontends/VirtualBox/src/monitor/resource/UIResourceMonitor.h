@@ -117,7 +117,7 @@ private:
         UIResourceMonitorModel             *m_pModel;
         QMenu                              *m_pColumnVisibilityToggleMenu;
         /* The key is the column id (VMResourceMonitorColumn) and value is column title. */
-        QMap<int, QString>                  m_columnCaptions;
+        QMap<int, QString>                  m_columnTitles;
         /* The key is the column id (VMResourceMonitorColumn) and value is true if the column is visible. */
         QMap<int, bool>                     m_columnVisible;
         UIVMResourceMonitorHostStatsWidget *m_pHostStatsWidget;
