@@ -329,16 +329,26 @@ RTR3DECL(uint64_t) RTProcGetAffinityMask(void);
  * Gets the short process name.
  *
  * @returns Pointer to read-only name string.
+ * @note    IPRT must've been initialized or the string will be empty.
  */
 RTR3DECL(const char *) RTProcShortName(void);
 
 /**
  * Gets the path to the executable image of the current process.
  *
+ * @returns Pointer to read-only path string.
+ * @note    IPRT must've been initialized or the string will be empty.
+ */
+RTR3DECL(const char *) RTProcExecutablePath(void);
+
+/**
+ * Gets a copy of the path to the executable image of the current process.
+ *
  * @returns pszExecPath on success. NULL on buffer overflow or other errors.
  *
  * @param   pszExecPath     Where to store the path.
  * @param   cbExecPath      The size of the buffer.
+ * @note    IPRT must've been initialized or the string will be empty.
  */
 RTR3DECL(char *) RTProcGetExecutablePath(char *pszExecPath, size_t cbExecPath);
 

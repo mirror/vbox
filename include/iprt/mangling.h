@@ -1740,6 +1740,7 @@
 # define RTProcCreateEx                                 RT_MANGLER(RTProcCreateEx)
 # define RTProcDaemonize                                RT_MANGLER(RTProcDaemonize)
 # define RTProcDaemonizeUsingFork                       RT_MANGLER(RTProcDaemonizeUsingFork)
+# define RTProcExecutablePath                           RT_MANGLER(RTProcExecutablePath)
 # define RTProcGetAffinityMask                          RT_MANGLER(RTProcGetAffinityMask)
 # define RTProcGetExecutablePath                        RT_MANGLER(RTProcGetExecutablePath)
 # define RTProcGetPriority                              RT_MANGLER(RTProcGetPriority)

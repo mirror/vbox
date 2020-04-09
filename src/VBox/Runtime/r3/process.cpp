@@ -112,6 +112,12 @@ RTR3DECL(char *) RTProcGetExecutablePath(char *pszExecPath, size_t cbExecPath)
 }
 
 
+RTR3DECL(const char *) RTProcExecutablePath(void)
+{
+    return g_szrtProcExePath;
+}
+
+
 RTR3DECL(const char *) RTProcShortName(void)
 {
     return &g_szrtProcExePath[g_offrtProcName];
