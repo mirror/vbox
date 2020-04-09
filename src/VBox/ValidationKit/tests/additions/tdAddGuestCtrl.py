@@ -1341,6 +1341,7 @@ class tdDebugSettings(object):
     """
     def __init__(self, sImgPath = None):
         self.sImgPath = sImgPath;
+        self.sVBoxServiceLogPath = '';
         self.fNoExit = False;
 
 class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
@@ -1560,6 +1561,27 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         return True;
 
     #
+    # VBoxService handling.
+    #
+    def vboxServiceControl(self, oTxsSession, oTestVm, fStart):
+        """
+        Controls VBoxService on the guest by starting or stopping the service.
+        Returns success indicator.
+        """
+        if oTestVm.isWindows():
+            sPathSC = os.path.join(self.getGuestSystemDir(oTestVm), 'sc.exe');
+            if fStart:
+                return self.oTstDrv.txsRunTest(oTxsSession, 'Starting VBoxService with verbose logging', 30 * 1000,
+                                               sPathSC, (sPathSC, 'start', 'VBoxService'));
+            else:
+                return self.oTstDrv.txsRunTest(oTxsSession, 'Stopping VBoxService', 30 * 1000,
+                                               sPathSC, (sPathSC, 'stop', 'VBoxService'));
+        else:
+            reporter.log('Controlling VBoxService not supported for this guest yet');
+
+        return True;
+
+    #
     # Guest test files.
     #
 
@@ -1576,6 +1598,33 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         for sDir in [self.getGuestTempDir(oTestVm), ]:
             if oTxsSession.syncMkDirPath(sDir, 0o777) is not True:
                 return reporter.error('Failed to create directory "%s"!' % (sDir,));
+
+        #
+        # Enable VBoxService verbose logging.
+        #
+        self.oDebug.sVBoxServiceLogPath = os.path.join(self.getGuestTempDir(oTestVm), "VBoxService");
+        if oTxsSession.syncMkDirPath(self.oDebug.sVBoxServiceLogPath, 0o777) is not True:
+                return reporter.error('Failed to create directory "%s"!' % (self.oDebug.sVBoxServiceLogPath,));
+        sPathLogFile = os.path.join(self.oDebug.sVBoxServiceLogPath, 'VBoxService.log');
+
+        reporter.log('VBoxService logs will be stored in "%s"' % (self.oDebug.sVBoxServiceLogPath,));
+
+        if oTestVm.isWindows():
+            sPathRegExe         = os.path.join(self.getGuestSystemDir(oTestVm), 'reg.exe');
+            sPathVBoxServiceExe = os.path.join(self.getGuestSystemDir(oTestVm), 'VBoxService.exe');
+            sImagePath          = '%s -vvvv --only-control --logfile %s' % (sPathVBoxServiceExe, sPathLogFile);
+            self.oTstDrv.txsRunTest(oTxsSession, 'Enabling VBoxService verbose logging (via registry)', 30 * 1000,
+                                         sPathRegExe,
+                                         (sPathRegExe, 'add',
+                                         '"HKLM\\SYSTEM\\CurrentControlSet\\Services\\VBoxService"',
+                                         '/v', 'ImagePath', '/t', 'REG_SZ', '/d', sImagePath, '/f'));
+
+            self.vboxServiceControl(oTxsSession, oTestVm, fStart = False);
+            time.sleep(5);
+            self.vboxServiceControl(oTxsSession, oTestVm, fStart = True);
+
+        else:
+            reporter.log('Verbose logging for VBoxService not supported for this guest yet');
 
         #
         # Generate and upload some random files and dirs to the guest.
