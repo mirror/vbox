@@ -26679,7 +26679,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
 
   <interface name="ICloudMachine" extends="$unknown"
-             uuid="c34a1e0a-74e6-11ea-af3a-07c50a04dd08"
+             uuid="c26e1432-7a04-11ea-901f-3bf60e81ed96"
              wsmap="managed"
              reservedMethods="16" reservedAttributes="8">
     <desc>
@@ -26688,6 +26688,22 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
     <attribute name="id" type="uuid" mod="string" readonly="yes">
       <desc>UUID of the cloud machine.</desc>
+    </attribute>
+
+    <attribute name="name" type="wstring" readonly="yes">
+      <desc>
+        Convenience shortcut to retrieve the name of the cloud
+        machine.  The name is part of the machine settings that are
+        hidden behind the settings form (see <link to="#getSettingsForm"/>).
+      </desc>
+    </attribute>
+
+    <attribute name="OSTypeId" type="wstring" readonly="yes">
+      <desc>
+        Convenience shortcut to retrieve the OS Type id of the cloud
+        machine.  It is part of the machine settings that are hidden
+        behind the settings form (see <link to="#getSettingsForm"/>).
+      </desc>
     </attribute>
 
     <method name="getSettingsForm">
