@@ -38,7 +38,8 @@
 /*********************************************************************************************************************************
 *   Defined Constants And Macros                                                                                                 *
 *********************************************************************************************************************************/
-/*#define WITH_HTML_H2G*/
+#define WITH_HTML_H2G 1
+#define WITH_HTML_G2H 1
 
 /* For debugging */
 //#define SHOW_CLIPBOARD_CONTENT
@@ -532,7 +533,7 @@ int writeToPasteboard(PasteboardRef hPasteboard, uint64_t idOwnership, const voi
     int       rc;
     OSStatus  orc;
     CFDataRef hData;
-    Log(("writeToPasteboard: fFormat = %02X\n", fFormat));
+    Log(("writeToPasteboard: fFormat=%#x\n", fFormat));
 
     /* Make sure all is in sync */
     PasteboardSynchronize(hPasteboard);
@@ -540,9 +541,7 @@ int writeToPasteboard(PasteboardRef hPasteboard, uint64_t idOwnership, const voi
     /*
      * Handle the unicode text
      */
-    /** @todo Figure out the format of kUTTypeHTML.  Seems it is neiter UTF-8 or
-     *        UTF-16. */
-    if (fFormat & (VBOX_SHCL_FMT_UNICODETEXT /*| VBOX_SHCL_FMT_HTML*/))
+    if (fFormat & VBOX_SHCL_FMT_UNICODETEXT)
     {
         PCRTUTF16 const pwszSrc = (PCRTUTF16)pv;
         size_t const    cwcSrc  = cb / sizeof(RTUTF16);
@@ -574,63 +573,54 @@ int writeToPasteboard(PasteboardRef hPasteboard, uint64_t idOwnership, const voi
             /*
              * Create an immutable CFData object that we can place on the clipboard.
              */
-            rc = VINF_SUCCESS;
-            //if (fFormat & (VBOX_SHCL_FMT_UNICODETEXT | VBOX_SHCL_FMT_HTML))
+            hData = CFDataCreate(kCFAllocatorDefault, (const UInt8 *)pwszDst, cwcDst * sizeof(RTUTF16));
+            if (hData)
             {
-                hData = CFDataCreate(kCFAllocatorDefault, (const UInt8 *)pwszDst, cwcDst * sizeof(RTUTF16));
+                orc = PasteboardPutItemFlavor(hPasteboard, (PasteboardItemID)idOwnership,
+                                              kUTTypeUTF16PlainText, hData, kPasteboardFlavorNoFlags);
+                if (orc == 0)
+                    rc = VINF_SUCCESS;
+                else
+                {
+                    Log(("writeToPasteboard: PasteboardPutItemFlavor/kUTTypeUTF16PlainText failed: %d (%#x)\n", orc, orc));
+                    rc = VERR_GENERAL_FAILURE;
+                }
+                CFRelease(hData);
+            }
+            else
+            {
+                Log(("writeToPasteboard: CFDataCreate/UTF16 failed!\n"));
+                rc = VERR_NO_MEMORY;
+            }
+
+            /*
+             * Now for the UTF-8 version.
+             */
+            char *pszDst;
+            int rc2 = RTUtf16ToUtf8(pwszDst, &pszDst);
+            if (RT_SUCCESS(rc2))
+            {
+                hData = CFDataCreate(kCFAllocatorDefault, (const UInt8 *)pszDst, strlen(pszDst));
                 if (hData)
                 {
                     orc = PasteboardPutItemFlavor(hPasteboard, (PasteboardItemID)idOwnership,
-                                                  fFormat & VBOX_SHCL_FMT_UNICODETEXT ? kUTTypeUTF16PlainText : kUTTypeHTML,
-                                                  hData, kPasteboardFlavorNoFlags);
+                                                  kUTTypeUTF8PlainText, hData, kPasteboardFlavorNoFlags);
                     if (orc != 0)
                     {
-                        Log(("writeToPasteboard: PasteboardPutItemFlavor/%s failed: %d (%#x)\n",
-                             fFormat & VBOX_SHCL_FMT_UNICODETEXT ? "kUTTypeUTF16PlainText" : "kUTTypeHTML", orc, orc));
+                        Log(("writeToPasteboard: PasteboardPutItemFlavor/kUTTypeUTF8PlainText failed: %d (%#x)\n", orc, orc));
                         rc = VERR_GENERAL_FAILURE;
                     }
                     CFRelease(hData);
                 }
                 else
                 {
-                    Log(("writeToPasteboard: CFDataCreate/UTF16 failed!\n"));
+                    Log(("writeToPasteboard: CFDataCreate/UTF8 failed!\n"));
                     rc = VERR_NO_MEMORY;
                 }
+                RTStrFree(pszDst);
             }
-
-            /*
-             * Now for the UTF-8 version.
-             */
-            //if (fFormat & VBOX_SHCL_FMT_UNICODETEXT)
-            {
-                char *pszDst;
-                int rc2 = RTUtf16ToUtf8(pwszDst, &pszDst);
-                if (RT_SUCCESS(rc2))
-                {
-                    hData = CFDataCreate(kCFAllocatorDefault, (const UInt8 *)pszDst, strlen(pszDst));
-                    if (hData)
-                    {
-                        orc = PasteboardPutItemFlavor(hPasteboard, (PasteboardItemID)idOwnership,
-                                                      fFormat & VBOX_SHCL_FMT_UNICODETEXT ? kUTTypeUTF8PlainText : kUTTypeHTML,
-                                                      hData, kPasteboardFlavorNoFlags);
-                        if (orc != 0)
-                        {
-                            Log(("writeToPasteboard: PasteboardPutItemFlavor/%s failed: %d (%#x)\n",
-                                 fFormat & VBOX_SHCL_FMT_UNICODETEXT ? "kUTTypeUTF8PlainText" : "kUTTypeHTML", orc, orc));
-                            rc = VERR_GENERAL_FAILURE;
-                        }
-                        CFRelease(hData);
-                    }
-                    else
-                    {
-                        Log(("writeToPasteboard: CFDataCreate/UTF8 failed!\n"));
-                        rc = VERR_NO_MEMORY;
-                    }
-                    RTStrFree(pszDst);
-                }
-                else
-                    rc = rc2;
-            }
+            else
+                rc = rc2;
         }
         else
             Log(("writeToPasteboard: clipboard conversion failed.  vboxClipboardUtf16WinToLin() returned %Rrc.  Abandoning.\n", rc));
@@ -669,6 +659,42 @@ int writeToPasteboard(PasteboardRef hPasteboard, uint64_t idOwnership, const voi
             RTMemFree(pvBmp);
         }
     }
+#ifdef WITH_HTML_G2H
+    /*
+     * Handle HTML.  Expect UTF-8, ignore line endings and just put it
+     * straigh up on the pasteboard for now.
+     */
+    else if (fFormat & VBOX_SHCL_FMT_HTML)
+    {
+        const char   *pszSrc = (const char *)pv;
+        size_t const  cchSrc = RTStrNLen(pszSrc, cb);
+        rc = RTStrValidateEncodingEx(pszSrc, cchSrc, 0);
+        if (RT_SUCCESS(rc))
+        {
+            hData = CFDataCreate(kCFAllocatorDefault, (const UInt8 *)pszSrc, cchSrc);
+            if (hData)
+            {
+                orc = PasteboardPutItemFlavor(hPasteboard, (PasteboardItemID)idOwnership, kUTTypeHTML,
+                                              hData, kPasteboardFlavorNoFlags);
+                if (orc == 0)
+                    rc = VINF_SUCCESS;
+                else
+                {
+                    Log(("writeToPasteboard: PasteboardPutItemFlavor/kUTTypeHTML failed: %d (%#x)\n", orc, orc));
+                    rc = VERR_GENERAL_FAILURE;
+                }
+                CFRelease(hData);
+            }
+            else
+            {
+                Log(("writeToPasteboard: CFDataCreate/HTML failed!\n"));
+                rc = VERR_NO_MEMORY;
+            }
+        }
+        else
+            Log(("writeToPasteboard: HTML: Invalid UTF-8 encoding: %Rrc\n", rc));
+    }
+#endif
     else
         rc = VERR_NOT_IMPLEMENTED;
 
