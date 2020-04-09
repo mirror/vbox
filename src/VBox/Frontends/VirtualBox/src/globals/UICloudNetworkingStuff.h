@@ -28,6 +28,7 @@
 /* COM includes: */
 #include "COMEnums.h"
 #include "CCloudClient.h"
+#include "CCloudMachine.h"
 
 /** Cloud networking stuff namespace. */
 namespace UICloudNetworkingStuff
@@ -40,6 +41,14 @@ namespace UICloudNetworkingStuff
     SHARED_LIBRARY_STUFF QList<UICloudMachine> listInstances(const CCloudClient &comCloudClient,
                                                              QString &strErrorMessage,
                                                              QWidget *pParent = 0);
+    /** Acquires cloud machine list.
+      * @param  comCloudClient   Brings cloud client object.
+      * @param  strErrorMessage  Brings error message container.
+      * @param  pWidget          Brings parent widget to show messages according to,
+      *                          if no parent set, progress will be executed in blocking way. */
+    SHARED_LIBRARY_STUFF QVector<CCloudMachine> listCloudMachines(CCloudClient &comCloudClient,
+                                                                  QString &strErrorMessage,
+                                                                  QWidget *pParent = 0);
 
     /** Acquires instance info as a map.
       * @param  comCloudClient   Brings cloud client object.
@@ -62,6 +71,14 @@ namespace UICloudNetworkingStuff
                                                  const QString &strId,
                                                  QString &strErrorMessage,
                                                  QWidget *pParent = 0);
+    /** Refreshes cloud machine information.
+      * @param  comCloudMachine  Brings cloud machine object.
+      * @param  strErrorMessage  Brings error message container.
+      * @param  pWidget          Brings parent widget to show messages according to,
+      *                          if no parent set, progress will be executed in blocking way. */
+    SHARED_LIBRARY_STUFF void refreshCloudMachineInfo(CCloudMachine &comCloudMachine,
+                                                      QString &strErrorMessage,
+                                                      QWidget *pParent = 0);
 
     /** Acquires image info as a map.
       * @param  comCloudClient   Brings cloud client object.

@@ -82,6 +82,46 @@ QList<UICloudMachine> UICloudNetworkingStuff::listInstances(const CCloudClient &
     return QList<UICloudMachine>();
 }
 
+QVector<CCloudMachine> UICloudNetworkingStuff::listCloudMachines(CCloudClient &comCloudClient,
+                                                                 QString &strErrorMessage,
+                                                                 QWidget *pParent /* = 0 */)
+{
+    /* Execute ReadCloudMachineList async method: */
+    CProgress comProgress = comCloudClient.ReadCloudMachineList();
+    if (!comCloudClient.isOk())
+    {
+        if (pParent)
+            msgCenter().cannotAcquireCloudClientParameter(comCloudClient, pParent);
+        else
+            strErrorMessage = UIErrorString::formatErrorInfo(comCloudClient);
+    }
+    else
+    {
+        /* Show "Read cloud machines" progress: */
+        if (pParent)
+            msgCenter().showModalProgressDialog(comProgress,
+                                                UICommon::tr("Read cloud machines ..."),
+                                                ":/progress_reading_appliance_90px.png", pParent, 0);
+        else
+            comProgress.WaitForCompletion(-1);
+        if (!comProgress.isOk() || comProgress.GetResultCode() != 0)
+        {
+            if (pParent)
+                msgCenter().cannotAcquireCloudClientParameter(comProgress, pParent);
+            else
+                strErrorMessage = UIErrorString::formatErrorInfo(comProgress);
+        }
+        else
+        {
+            /* Return acquired cloud machines: */
+            return comCloudClient.GetCloudMachineList();
+        }
+    }
+
+    /* Return empty list by default: */
+    return QVector<CCloudMachine>();
+}
+
 QMap<KVirtualSystemDescriptionType, QString> UICloudNetworkingStuff::getInstanceInfo(const CCloudClient &comCloudClient,
                                                                                      const QString &strId,
                                                                                      QString &strErrorMessage,
@@ -173,6 +213,38 @@ QString UICloudNetworkingStuff::getInstanceInfo(KVirtualSystemDescriptionType en
                                                 QWidget *pParent /* = 0 */)
 {
     return getInstanceInfo(comCloudClient, strId, strErrorMessage, pParent).value(enmType, QString());
+}
+
+void UICloudNetworkingStuff::refreshCloudMachineInfo(CCloudMachine &comCloudMachine,
+                                                     QString &strErrorMessage,
+                                                     QWidget *pParent /* = 0 */)
+{
+    /* Execute ReadState async method: */
+    CProgress comProgress = comCloudMachine.ReadState();
+    if (!comCloudMachine.isOk())
+    {
+        if (pParent)
+            msgCenter().cannotAcquireCloudMachineParameter(comCloudMachine, pParent);
+        else
+            strErrorMessage = UIErrorString::formatErrorInfo(comCloudMachine);
+    }
+    else
+    {
+        /* Show "Read cloud machine state" progress: */
+        if (pParent)
+            msgCenter().showModalProgressDialog(comProgress,
+                                                UICommon::tr("Read cloud machine state ..."),
+                                                ":/progress_reading_appliance_90px.png", pParent, 0);
+        else
+            comProgress.WaitForCompletion(-1);
+        if (!comProgress.isOk() || comProgress.GetResultCode() != 0)
+        {
+            if (pParent)
+                msgCenter().cannotAcquireCloudMachineParameter(comProgress, pParent);
+            else
+                strErrorMessage = UIErrorString::formatErrorInfo(comProgress);
+        }
+    }
 }
 
 QMap<QString, QString> UICloudNetworkingStuff::getImageInfo(const CCloudClient &comCloudClient,
