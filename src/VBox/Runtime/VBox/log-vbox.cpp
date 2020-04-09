@@ -496,26 +496,32 @@ RTDECL(PRTLOGGER) RTLogDefaultInit(void)
      * Create the default logging instance.
      */
 #ifdef IN_RING3
-# ifndef IN_GUEST
-    char szExecName[RTPATH_MAX];
-    if (!RTProcGetExecutablePath(szExecName, sizeof(szExecName)))
-        strcpy(szExecName, "VBox");
+    const char *pszExeName = RTProcShortName();
+    if (!pszExeName)
+        pszExeName = "VBox";
     RTTIMESPEC TimeSpec;
     RTTIME Time;
     RTTimeExplode(&Time, RTTimeNow(&TimeSpec));
-    rc = RTLogCreate(&pLogger, 0, NULL, "VBOX_LOG", RT_ELEMENTS(g_apszGroups), &g_apszGroups[0], RTLOGDEST_FILE,
+    rc = RTLogCreate(&pLogger, 0, NULL, "VBOX_LOG", RT_ELEMENTS(g_apszGroups), &g_apszGroups[0],
+# ifdef IN_GUEST
+                     RTLOGDEST_USER /* backdoor */,
+                     "./VBoxGAs-%04d-%02d-%02d-%02d-%02d-%02d.%03d-%s-%d.log",
+# else
+                     RTLOGDEST_FILE,
                      "./%04d-%02d-%02d-%02d-%02d-%02d.%03d-%s-%d.log",
-                     Time.i32Year, Time.u8Month, Time.u8MonthDay, Time.u8Hour, Time.u8Minute, Time.u8Second, Time.u32Nanosecond / 10000000,
-                     RTPathFilename(szExecName), RTProcSelf());
+# endif
+                     Time.i32Year, Time.u8Month, Time.u8MonthDay, Time.u8Hour, Time.u8Minute, Time.u8Second,
+                     Time.u32Nanosecond / 10000000, pszExeName, RTProcSelf());
     if (RT_SUCCESS(rc))
     {
+# ifndef IN_GUEST
         /*
          * Write a log header.
          */
         char szBuf[RTPATH_MAX];
         RTTimeSpecToString(&TimeSpec, szBuf, sizeof(szBuf));
         RTLogLoggerEx(pLogger, 0, ~0U, "Log created: %s\n", szBuf);
-        RTLogLoggerEx(pLogger, 0, ~0U, "Executable: %s\n", szExecName);
+        RTLogLoggerEx(pLogger, 0, ~0U, "Executable: %s\n", RTProcGetExecutablePath(szBuf, sizeof(szBuf)));
 
         /* executable and arguments - tricky and all platform specific. */
 #  if defined(RT_OS_WINDOWS)
@@ -525,7 +531,7 @@ RTDECL(PRTLOGGER) RTLogDefaultInit(void)
         psinfo_t psi;
         char szArgFileBuf[80];
         RTStrPrintf(szArgFileBuf, sizeof(szArgFileBuf), "/proc/%ld/psinfo", (long)getpid());
-        FILE* pFile = fopen(szArgFileBuf, "rb");
+        FILE *pFile = fopen(szArgFileBuf, "rb");
         if (pFile)
         {
             if (fread(&psi, sizeof(psi), 1, pFile) == 1)
@@ -581,17 +587,17 @@ RTDECL(PRTLOGGER) RTLogDefaultInit(void)
 #  elif defined(RT_OS_FREEBSD) || defined(RT_OS_NETBSD)
         /* Retrieve the required length first */
         int aiName[4];
-#  if defined(RT_OS_FREEBSD)
+#   if defined(RT_OS_FREEBSD)
         aiName[0] = CTL_KERN;
         aiName[1] = KERN_PROC;
         aiName[2] = KERN_PROC_ARGS;     /* Introduced in FreeBSD 4.0 */
         aiName[3] = getpid();
-#  elif defined(RT_OS_NETBSD)
+#   elif defined(RT_OS_NETBSD)
         aiName[0] = CTL_KERN;
         aiName[1] = KERN_PROC_ARGS;
         aiName[2] = getpid();
         aiName[3] = KERN_PROC_ARGV;
-#  endif
+#   endif
         size_t cchArgs = 0;
         int rcBSD = sysctl(aiName, RT_ELEMENTS(aiName), NULL, &cchArgs, NULL, 0);
         if (cchArgs > 0)
@@ -624,12 +630,8 @@ RTDECL(PRTLOGGER) RTLogDefaultInit(void)
 #  else
 #   error needs porting.
 #  endif
-    }
-
-# else  /* IN_GUEST */
-    /* The user destination is backdoor logging. */
-    rc = RTLogCreate(&pLogger, 0, NULL, "VBOX_LOG", RT_ELEMENTS(g_apszGroups), &g_apszGroups[0], RTLOGDEST_USER, "VBox.log");
 # endif /* IN_GUEST */
+    }
 
 #else /* IN_RING0 */
 
