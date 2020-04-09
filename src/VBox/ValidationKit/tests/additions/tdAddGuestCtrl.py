@@ -1543,6 +1543,8 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
 
         try:
 
+            self.vboxServiceControl(oTxsSession, oTestVm, fStart = False);
+
             if oTestVm.isLinux():
                 reporter.log('Uploading %s ...' % self.oDebug.sImgPath);
                 sFileVBoxServiceHst = self.oDebug.sImgPath;
@@ -1552,8 +1554,20 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                 reporter.log('Executing VBoxService (in background)...');
                 oTxsSession.syncExec(sFileVBoxServiceGst, (sFileVBoxServiceGst, "-vvvv", "--only-control", \
                                                            "--logfile", "/tmp/VBoxService-txs.log") );
+            elif oTestVm.isWindows():
+                reporter.log('Uploading %s ...' % self.oDebug.sImgPath);
+                sFileVBoxServiceHst = self.oDebug.sImgPath;
+                sFileVBoxServiceGst = os.path.join(SubTstDrvAddGuestCtrl.getGuestSystemDir(oTestVm), 'VBoxService.exe');
+                oTxsSession.syncUploadFile(sFileVBoxServiceHst, sFileVBoxServiceGst);
+                sPathSC = os.path.join(SubTstDrvAddGuestCtrl.getGuestSystemDir(oTestVm), 'sc.exe');
+                oTxsSession.syncExec(sPathSC, (sPathSC, "stop", "VBoxService") );
+                time.sleep(5);
+                oTxsSession.syncExec(sPathSC, (sPathSC, "start", "VBoxService") );
+
             else: ## @todo Implement others.
                 reporter.log('Debugging not available on this guest OS yet, skipping ...');
+
+            self.vboxServiceControl(oTxsSession, oTestVm, fStart = True);
 
         except:
             return reporter.errorXcpt('Unable to prepare for debugging');
