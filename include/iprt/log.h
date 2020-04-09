@@ -468,6 +468,10 @@ typedef enum RTLOGDEST
     /** Delay opening the log file, logging to the buffer untill
      * RTLogClearFileDelayFlag is called. */
     RTLOGDEST_F_DELAY_FILE  = 0x00020000,
+    /** Don't allow changes to the filename or mode of opening it. */
+    RTLOGDEST_FIXED_FILE    = 0x01000000,
+    /** Don't allow changing the directory. */
+    RTLOGDEST_FIXED_DIR     = 0x02000000,
     /** Just a dummy flag to be used when no other flag applies. */
     RTLOGDEST_DUMMY         = 0x20000000,
     /** Log to a user defined output stream. */
