@@ -1550,7 +1550,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                 sFileVBoxServiceHst = self.oDebug.sImgPath;
                 sFileVBoxServiceGst = "/tmp/VBoxService-txs";
                 oTxsSession.syncUploadFile(sFileVBoxServiceHst, sFileVBoxServiceGst);
-                oTxsSession.syncExec("/bin/chmod", ("/bin/chmod", "755", sFileVBoxServiceGst) ); # syncChMod not implemented yet.
+                oTxsSession.syncChMod(sFileVBoxServiceGst, 0o755);
                 reporter.log('Executing VBoxService (in background)...');
                 oTxsSession.syncExec(sFileVBoxServiceGst, (sFileVBoxServiceGst, "-vvvv", "--only-control", \
                                                            "--logfile", "/tmp/VBoxService-txs.log") );
