@@ -219,8 +219,8 @@ void UICloudNetworkingStuff::refreshCloudMachineInfo(CCloudMachine &comCloudMach
                                                      QString &strErrorMessage,
                                                      QWidget *pParent /* = 0 */)
 {
-    /* Execute ReadState async method: */
-    CProgress comProgress = comCloudMachine.ReadState();
+    /* Execute Refresh async method: */
+    CProgress comProgress = comCloudMachine.Refresh();
     if (!comCloudMachine.isOk())
     {
         if (pParent)

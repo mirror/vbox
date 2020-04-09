@@ -26679,15 +26679,39 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
 
   <interface name="ICloudMachine" extends="$unknown"
-             uuid="c26e1432-7a04-11ea-901f-3bf60e81ed96"
+             uuid="bcb7c6d6-7a6e-11ea-9839-7f4258c13c14"
              wsmap="managed"
              reservedMethods="16" reservedAttributes="8">
     <desc>
       Virtual virtual machine (sic) in the cloud.
+
+      Reading object attributes returns cached values, use
+      <link to="#refresh"/> to refresh them.
     </desc>
 
     <attribute name="id" type="uuid" mod="string" readonly="yes">
       <desc>UUID of the cloud machine.</desc>
+    </attribute>
+
+    <attribute name="accessible" type="boolean" readonly="yes"
+               wrap-hint-server="limitedcaller">
+      <desc>
+        Whether this virtual machine is currently accessible or not.
+        TBD...
+      </desc>
+    </attribute>
+
+    <attribute name="accessError" type="IVirtualBoxErrorInfo" readonly="yes"
+               wrap-hint-server="limitedcaller">
+      <desc>
+        Error information describing the reason of machine
+        inaccessibility.
+
+        Reading this property is only valid after the last call to
+        <link to="#accessible"/> returned @c false (i.e. the
+        machine is currently inaccessible). Otherwise, a @c null
+        IVirtualBoxErrorInfo object will be returned.
+      </desc>
     </attribute>
 
     <attribute name="name" type="wstring" readonly="yes">
@@ -26706,6 +26730,23 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </desc>
     </attribute>
 
+    <attribute name="state" type="MachineState" readonly="yes">
+      <desc>
+        Machine state.
+      </desc>
+    </attribute>
+
+    <method name="refresh">
+      <desc>
+        Refresh information by reading it from the cloud.
+      </desc>
+      <param name="progress" type="IProgress" dir="return">
+        <desc>
+          Progress object to track the operation completion.
+        </desc>
+      </param>
+    </method>
+
     <method name="getSettingsForm">
       <desc>
         Obtain a form with settings for this cloud machine.
@@ -26722,23 +26763,6 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         </desc>
       </param>
     </method>
-
-    <method name="readState">
-      <desc>
-        Read the state of the cloud machine and make it available via
-        the <link to="#state"/> attribute.
-      </desc>
-      <param name="progress" type="IProgress" dir="return">
-        <desc>
-          Progress object to track the operation completion.
-        </desc>
-      </param>
-    </method>
-    <attribute name="state" type="MachineState" readonly="yes">
-      <desc>
-        See <link to="#readState"/>.
-      </desc>
-    </attribute>
 
     <method name="powerUp">
       <desc>
