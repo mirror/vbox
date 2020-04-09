@@ -1577,7 +1577,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
     #
     # VBoxService handling.
     #
-    def vboxServiceControl(self, oTxsSession, oTestVm, fStart):
+    def vboxServiceControl(self, oTxsSession, oTestVm, fStart): # pylint: disable=no-else-return
         """
         Controls VBoxService on the guest by starting or stopping the service.
         Returns success indicator.
