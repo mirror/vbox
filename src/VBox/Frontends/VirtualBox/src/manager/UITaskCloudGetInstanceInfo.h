@@ -29,9 +29,6 @@
 #include "UICloudMachine.h"
 #include "UITask.h"
 
-/* COM includes: */
-#include "CVirtualBoxErrorInfo.h"
-
 
 /** UITask extension used to get cloud instance state. */
 class UITaskCloudGetInstanceInfo : public UITask
@@ -45,7 +42,7 @@ public:
     UITaskCloudGetInstanceInfo(const UICloudMachine &guiCloudMachine);
 
     /** Returns error info. */
-    CVirtualBoxErrorInfo errorInfo();
+    QString errorInfo();
 
 protected:
 
@@ -60,8 +57,8 @@ private:
     /** Holds the cloud client object. */
     UICloudMachine  m_guiCloudMachine;
 
-    /** Holds the error info object. */
-    CVirtualBoxErrorInfo  m_comErrorInfo;
+    /** Holds the error info. */
+    QString  m_strErrorInfo;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_manager_UITaskCloudGetInstanceInfo_h */

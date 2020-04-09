@@ -25,12 +25,12 @@ UITaskCloudGetInstanceInfo::UITaskCloudGetInstanceInfo(const UICloudMachine &gui
 {
 }
 
-CVirtualBoxErrorInfo UITaskCloudGetInstanceInfo::errorInfo()
+QString UITaskCloudGetInstanceInfo::errorInfo()
 {
     m_mutex.lock();
-    CVirtualBoxErrorInfo comErrorInfo = m_comErrorInfo;
+    const QString strErrorInfo = m_strErrorInfo;
     m_mutex.unlock();
-    return comErrorInfo;
+    return strErrorInfo;
 }
 
 void UITaskCloudGetInstanceInfo::run()
