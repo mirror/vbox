@@ -1993,6 +1993,7 @@ template<> QString toInternalString(const WizardType &wizardType)
         case WizardType_ExportAppliance: strResult = "ExportAppliance"; break;
         case WizardType_ImportAppliance: strResult = "ImportAppliance"; break;
         case WizardType_NewCloudVM:      strResult = "NewCloudVM"; break;
+        case WizardType_AddCloudVM:      strResult = "AddCloudVM"; break;
         case WizardType_FirstRun:        strResult = "FirstRun"; break;
         case WizardType_NewVD:           strResult = "NewVD"; break;
         case WizardType_CloneVD:         strResult = "CloneVD"; break;
@@ -2016,6 +2017,7 @@ template<> WizardType fromInternalString<WizardType>(const QString &strWizardTyp
     keys << "ExportAppliance"; values << WizardType_ExportAppliance;
     keys << "ImportAppliance"; values << WizardType_ImportAppliance;
     keys << "NewCloudVM";      values << WizardType_NewCloudVM;
+    keys << "AddCloudVM";      values << WizardType_AddCloudVM;
     keys << "FirstRun";        values << WizardType_FirstRun;
     keys << "NewVD";           values << WizardType_NewVD;
     keys << "CloneVD";         values << WizardType_CloneVD;
