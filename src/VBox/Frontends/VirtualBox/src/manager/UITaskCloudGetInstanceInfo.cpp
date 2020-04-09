@@ -16,12 +16,13 @@
  */
 
 /* GUI includes: */
+#include "UICloudNetworkingStuff.h"
 #include "UITaskCloudGetInstanceInfo.h"
 
 
-UITaskCloudGetInstanceInfo::UITaskCloudGetInstanceInfo(const UICloudMachine &guiCloudMachine)
+UITaskCloudGetInstanceInfo::UITaskCloudGetInstanceInfo(const CCloudMachine &comCloudMachine)
     : UITask(Type_CloudGetInstanceState)
-    , m_guiCloudMachine(guiCloudMachine)
+    , m_comCloudMachine(comCloudMachine)
 {
 }
 
@@ -36,6 +37,6 @@ QString UITaskCloudGetInstanceInfo::errorInfo()
 void UITaskCloudGetInstanceInfo::run()
 {
     m_mutex.lock();
-    m_guiCloudMachine.refresh();
+    refreshCloudMachineInfo(m_comCloudMachine, m_strErrorInfo);
     m_mutex.unlock();
 }

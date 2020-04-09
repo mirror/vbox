@@ -40,9 +40,9 @@ UIChooserNodeMachine::UIChooserNodeMachine(UIChooserNode *pParent,
 UIChooserNodeMachine::UIChooserNodeMachine(UIChooserNode *pParent,
                                            bool fFavorite,
                                            int iPosition,
-                                           const UICloudMachine &guiCloudMachine)
+                                           const CCloudMachine &comCloudMachine)
     : UIChooserNode(pParent, fFavorite)
-    , m_pCache(new UIVirtualMachineItemCloud(guiCloudMachine))
+    , m_pCache(new UIVirtualMachineItemCloud(comCloudMachine))
 {
     /* Add to parent: */
     if (parentNode())

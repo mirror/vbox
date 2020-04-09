@@ -27,12 +27,12 @@ UITaskCloudAcquireInstances::UITaskCloudAcquireInstances(const CCloudClient &com
 {
 }
 
-QList<UICloudMachine> UITaskCloudAcquireInstances::result() const
+QVector<CCloudMachine> UITaskCloudAcquireInstances::result() const
 {
     m_mutex.lock();
-    const QList<UICloudMachine> resultList = m_result;
+    const QVector<CCloudMachine> resultVector = m_result;
     m_mutex.unlock();
-    return resultList;
+    return resultVector;
 }
 
 QString UITaskCloudAcquireInstances::errorInfo()
@@ -46,6 +46,6 @@ QString UITaskCloudAcquireInstances::errorInfo()
 void UITaskCloudAcquireInstances::run()
 {
     m_mutex.lock();
-    m_result = listInstances(m_comCloudClient, m_strErrorInfo);
+    m_result = listCloudMachines(m_comCloudClient, m_strErrorInfo);
     m_mutex.unlock();
 }

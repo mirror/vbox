@@ -105,7 +105,7 @@ void UIDetailsSet::buildSet(UIVirtualMachineItem *pMachineItem, bool fFullSet, c
             case UIVirtualMachineItem::ItemType_CloudReal:
             {
                 /* Get cloud machine: */
-                m_cloudMachine = m_pMachineItem->toCloud()->machine();
+//                m_cloudMachine = m_pMachineItem->toCloud()->machine();
 
                 /* Compose a list of types to build: */
                 types << DetailsElementType_General << DetailsElementType_System << DetailsElementType_Storage;

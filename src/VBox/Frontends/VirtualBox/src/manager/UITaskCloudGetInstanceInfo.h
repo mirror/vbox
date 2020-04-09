@@ -26,8 +26,11 @@
 #include <QMutex>
 
 /* GUI includes: */
-#include "UICloudMachine.h"
 #include "UITask.h"
+
+/* COM includes: */
+#include "COMEnums.h"
+#include "CCloudMachine.h"
 
 
 /** UITask extension used to get cloud instance state. */
@@ -37,9 +40,9 @@ class UITaskCloudGetInstanceInfo : public UITask
 
 public:
 
-    /** Constructs task taking @a guiCloudMachine as data.
-      * @param  guiCloudMachine  Brings the cloud VM wrapper. */
-    UITaskCloudGetInstanceInfo(const UICloudMachine &guiCloudMachine);
+    /** Constructs task taking @a comCloudMachine as data.
+      * @param  comCloudMachine  Brings the cloud VM wrapper. */
+    UITaskCloudGetInstanceInfo(const CCloudMachine &comCloudMachine);
 
     /** Returns error info. */
     QString errorInfo();
@@ -51,11 +54,11 @@ protected:
 
 private:
 
-    /** Holds the mutex to access m_guiCloudMachine member. */
+    /** Holds the mutex to access m_comCloudMachine member. */
     mutable QMutex  m_mutex;
 
-    /** Holds the cloud client object. */
-    UICloudMachine  m_guiCloudMachine;
+    /** Holds the cloud machine object. */
+    CCloudMachine  m_comCloudMachine;
 
     /** Holds the error info. */
     QString  m_strErrorInfo;

@@ -25,12 +25,12 @@
 #include <QMutex>
 
 /* GUI includes: */
-#include "UICloudMachine.h"
 #include "UITask.h"
 
 /* COM includes: */
 #include "COMEnums.h"
 #include "CCloudClient.h"
+#include "CCloudMachine.h"
 
 /* Forward declaratiuons: */
 class UIChooserNode;
@@ -56,7 +56,7 @@ public:
     QString errorInfo();
 
     /** Returns the task result. */
-    QList<UICloudMachine> result() const;
+    QVector<CCloudMachine> result() const;
 
 protected:
 
@@ -77,7 +77,7 @@ private:
     QString  m_strErrorInfo;
 
     /** Holds the task result. */
-    QList<UICloudMachine>  m_result;
+    QVector<CCloudMachine>  m_result;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_manager_UITaskCloudAcquireInstances_h */

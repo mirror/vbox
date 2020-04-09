@@ -22,8 +22,11 @@
 #endif
 
 /* GUI includes: */
-#include "UICloudMachine.h"
 #include "UIVirtualMachineItem.h"
+
+/* COM includes: */
+#include "COMEnums.h"
+#include "CCloudMachine.h"
 
 /* Forward declarations: */
 class UITask;
@@ -50,15 +53,15 @@ public:
 
     /** Constructs fake cloud VM item. */
     UIVirtualMachineItemCloud();
-    /** Constructs real cloud VM item on the basis of taken @a guiCloudMachine. */
-    UIVirtualMachineItemCloud(const UICloudMachine &guiCloudMachine);
+    /** Constructs real cloud VM item on the basis of taken @a comCloudMachine. */
+    UIVirtualMachineItemCloud(const CCloudMachine &comCloudMachine);
     /** Destructs cloud VM item. */
     virtual ~UIVirtualMachineItemCloud();
 
     /** @name Arguments.
       * @{ */
-        /** Returns cached cloud VM object. */
-        UICloudMachine machine() const { return m_guiCloudMachine; }
+        /** Returns cached cloud machine object. */
+        CCloudMachine machine() const { return m_comCloudMachine; }
     /** @} */
 
     /** @name Data attributes.
@@ -130,14 +133,8 @@ private:
 
     /** @name Arguments.
       * @{ */
-        /** Holds cached cloud VM object reference. */
-        UICloudMachine  m_guiCloudMachine;
-    /** @} */
-
-    /** @name Basic attributes.
-      * @{ */
-        /** Holds the cloud instance id. */
-        QString  m_strInstanceId;
+        /** Holds cached cloud machine object. */
+        CCloudMachine  m_comCloudMachine;
     /** @} */
 
     /** @name Data attributes.

@@ -28,7 +28,6 @@
 #include "UIVirtualBoxEventHandler.h"
 #include "UIVirtualMachineItem.h"
 #ifdef VBOX_GUI_WITH_CLOUD_VMS
-# include "UICloudMachine.h"
 # include "UITaskCloudAcquireInstances.h"
 # include "UIThreadPool.h"
 # include "UIVirtualMachineItemCloud.h"
@@ -38,6 +37,7 @@
 #include "CMachine.h"
 #ifdef VBOX_GUI_WITH_CLOUD_VMS
 # include "CCloudClient.h"
+# include "CCloudMachine.h"
 # include "CCloudProfile.h"
 # include "CCloudProvider.h"
 # include "CCloudProviderManager.h"
@@ -296,22 +296,22 @@ void UIChooserAbstractModel::sltHandleCloudAcquireInstancesTaskComplete(UITask *
     AssertPtrReturnVoid(pFirstChildNodeMachine->cache());
     AssertReturnVoid(pFirstChildNodeMachine->cache()->itemType() == UIVirtualMachineItem::ItemType_CloudFake);
 
-    /* And if we have at least one cloud instance: */
-    const QList<UICloudMachine> instances = pAcquiringTask->result();
-    if (!instances.isEmpty())
+    /* And if we have at least one cloud machine: */
+    const QVector<CCloudMachine> machines = pAcquiringTask->result();
+    if (!machines.isEmpty())
     {
         /* Remove the "Empty" node: */
         delete pFirstChildNodeMachine;
 
         /* Add real cloud VM nodes: */
         int iPosition = 0;
-        foreach (const UICloudMachine &guiCloudMachine, instances)
+        foreach (const CCloudMachine &comCloudMachine, machines)
         {
             /* Create new node: */
             UIChooserNodeMachine *pNode = new UIChooserNodeMachine(pParentNode,
                                                                    false /* favorite */,
                                                                    iPosition++ /* position */,
-                                                                   guiCloudMachine);
+                                                                   comCloudMachine);
             /* Request async node update: */
             pNode->cache()->toCloud()->updateInfoAsync(false /* delayed? */);
         }

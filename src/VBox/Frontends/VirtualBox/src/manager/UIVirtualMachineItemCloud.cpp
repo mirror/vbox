@@ -40,9 +40,9 @@ UIVirtualMachineItemCloud::UIVirtualMachineItemCloud()
     recache();
 }
 
-UIVirtualMachineItemCloud::UIVirtualMachineItemCloud(const UICloudMachine &guiCloudMachine)
+UIVirtualMachineItemCloud::UIVirtualMachineItemCloud(const CCloudMachine &comCloudMachine)
     : UIVirtualMachineItem(ItemType_CloudReal)
-    , m_guiCloudMachine(guiCloudMachine)
+    , m_comCloudMachine(comCloudMachine)
     , m_enmFakeCloudItemState(FakeCloudItemState_NotApplicable)
     , m_pTask(0)
 {
@@ -70,17 +70,14 @@ void UIVirtualMachineItemCloud::resume(QWidget *pParent)
 
 void UIVirtualMachineItemCloud::pauseOrResume(bool fPause, QWidget *pParent)
 {
-    /* Acquire cloud client: */
-    CCloudClient comCloudClient = m_guiCloudMachine.client();
-
-    /* Now execute async method: */
+    /* Execute async method: */
     CProgress comProgress;
     if (fPause)
-        comProgress = comCloudClient.PauseInstance(m_strInstanceId);
+        comProgress = m_comCloudMachine.PowerDown();
     else
-        comProgress = comCloudClient.StartInstance(m_strInstanceId);
-    if (!comCloudClient.isOk())
-        msgCenter().cannotAcquireCloudClientParameter(comCloudClient);
+        comProgress = m_comCloudMachine.PowerUp();
+    if (!m_comCloudMachine.isOk())
+        msgCenter().cannotAcquireCloudMachineParameter(m_comCloudMachine);
     else
     {
         /* Show progress: */
@@ -101,29 +98,28 @@ void UIVirtualMachineItemCloud::pauseOrResume(bool fPause, QWidget *pParent)
 void UIVirtualMachineItemCloud::recache()
 {
     /* Determine attributes which are always available: */
-    if (!m_guiCloudMachine.isNull())
+    if (!m_comCloudMachine.isNull())
     {
-        m_strInstanceId = m_guiCloudMachine.instanceId();
-        m_strName = m_guiCloudMachine.instanceName();
-        m_uId = m_guiCloudMachine.id();
+        m_uId = m_comCloudMachine.GetId();
+        m_strName = m_comCloudMachine.GetName();
     }
 
     /* Now determine whether VM is accessible: */
-    m_fAccessible = !m_guiCloudMachine.isNull()
-                  ? m_guiCloudMachine.accessible()
-                  : true;
-    m_strAccessError = !m_guiCloudMachine.isNull()
-                     ? m_guiCloudMachine.accessError()
-                     : QString();
+    m_fAccessible = /*!m_comCloudMachine.isNull()
+                  ? m_comCloudMachine.accessible()
+                  : */true;
+    m_strAccessError = /*!m_comCloudMachine.isNull()
+                     ? m_comCloudMachine.accessError()
+                     : */QString();
 
     /* Determine own VM attributes: */
-    m_strOSTypeId = !m_guiCloudMachine.isNull()
-                  ? m_guiCloudMachine.osType()
+    m_strOSTypeId = !m_comCloudMachine.isNull()
+                  ? m_comCloudMachine.GetOSTypeId()
                   : "Other";
 
     /* Determine VM states: */
-    m_enmMachineState = !m_guiCloudMachine.isNull()
-                      ? m_guiCloudMachine.machineState()
+    m_enmMachineState = !m_comCloudMachine.isNull()
+                      ? m_comCloudMachine.GetState()
                       : KMachineState_PoweredOff;
     m_strMachineStateName = gpConverter->toString(m_enmMachineState);
     if (itemType() == ItemType_CloudFake)
@@ -282,7 +278,7 @@ void UIVirtualMachineItemCloud::sltCreateGetCloudInstanceInfoTask()
     /* Create and start task to acquire info async way only if there is no task yet: */
     if (!m_pTask)
     {
-        m_pTask = new UITaskCloudGetInstanceInfo(m_guiCloudMachine);
+        m_pTask = new UITaskCloudGetInstanceInfo(m_comCloudMachine);
         connect(uiCommon().threadPoolCloud(), &UIThreadPool::sigTaskComplete,
                 this, &UIVirtualMachineItemCloud::sltHandleGetCloudInstanceInfoDone);
         uiCommon().threadPoolCloud()->enqueueTask(m_pTask);
