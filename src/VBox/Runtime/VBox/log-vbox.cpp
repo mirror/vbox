@@ -501,6 +501,7 @@ RTDECL(PRTLOGGER) RTLogDefaultInit(void)
         pszExeName = "VBox";
     RTTIMESPEC TimeSpec;
     RTTIME Time;
+    RTPROCESS pid = RTProcSelf();
     RTTimeExplode(&Time, RTTimeNow(&TimeSpec));
     rc = RTLogCreate(&pLogger, 0, NULL, "VBOX_LOG", RT_ELEMENTS(g_apszGroups), &g_apszGroups[0],
 # ifdef IN_GUEST
@@ -511,44 +512,50 @@ RTDECL(PRTLOGGER) RTLogDefaultInit(void)
                      "./%04d-%02d-%02d-%02d-%02d-%02d.%03d-%s-%d.log",
 # endif
                      Time.i32Year, Time.u8Month, Time.u8MonthDay, Time.u8Hour, Time.u8Minute, Time.u8Second,
-                     Time.u32Nanosecond / 10000000, pszExeName, RTProcSelf());
+                     Time.u32Nanosecond / 10000000, pszExeName, pid);
     if (RT_SUCCESS(rc))
     {
-# ifndef IN_GUEST
         /*
          * Write a log header.
          */
-        char szBuf[RTPATH_MAX];
-        RTTimeSpecToString(&TimeSpec, szBuf, sizeof(szBuf));
-        RTLogLoggerEx(pLogger, 0, ~0U, "Log created: %s\n", szBuf);
-        RTLogLoggerEx(pLogger, 0, ~0U, "Executable: %s\n", RTProcGetExecutablePath(szBuf, sizeof(szBuf)));
+        char      szBuf[80];
+        RTPROCESS pidParent = NIL_RTPROCESS;
+        RTProcQueryParent(pid, &pidParent);
+        RTLogLoggerEx(pLogger, 0, ~0U,
+                      "Log created: %s\n"
+                      "Process ID:  %d (%#x)\n"
+                      "Parent PID:  %d (%#x)\n"
+                      "Executable:  %s\n",
+                      RTTimeSpecToString(&TimeSpec, szBuf, sizeof(szBuf)),
+                      pid, pid,
+                      pidParent, pidParent,
+                      RTProcExecutablePath());
 
         /* executable and arguments - tricky and all platform specific. */
-#  if defined(RT_OS_WINDOWS)
+# if defined(RT_OS_WINDOWS)
         RTLogLoggerEx(pLogger, 0, ~0U, "Commandline: %ls\n", GetCommandLineW());
 
-#  elif defined(RT_OS_SOLARIS)
+# elif defined(RT_OS_SOLARIS)
         psinfo_t psi;
-        char szArgFileBuf[80];
-        RTStrPrintf(szArgFileBuf, sizeof(szArgFileBuf), "/proc/%ld/psinfo", (long)getpid());
-        FILE *pFile = fopen(szArgFileBuf, "rb");
+        RTStrPrintf(szBuf, sizeof(szBuf), "/proc/%ld/psinfo", (long)getpid());
+        FILE *pFile = fopen(szBuf, "rb");
         if (pFile)
         {
             if (fread(&psi, sizeof(psi), 1, pFile) == 1)
             {
-#   if 0     /* 100% safe:*/
+#  if 0     /* 100% safe:*/
                 RTLogLoggerEx(pLogger, 0, ~0U, "Args: %s\n", psi.pr_psargs);
-#   else     /* probably safe: */
+#  else     /* probably safe: */
                 const char * const *argv = (const char * const *)psi.pr_argv;
                 for (int iArg = 0; iArg < psi.pr_argc; iArg++)
                     RTLogLoggerEx(pLogger, 0, ~0U, "Arg[%d]: %s\n", iArg, argv[iArg]);
-#   endif
+#  endif
 
             }
             fclose(pFile);
         }
 
-#  elif defined(RT_OS_LINUX)
+# elif defined(RT_OS_LINUX)
         FILE *pFile = fopen("/proc/self/cmdline", "r");
         if (pFile)
         {
@@ -576,7 +583,7 @@ RTDECL(PRTLOGGER) RTLogDefaultInit(void)
             fclose(pFile);
         }
 
-#  elif defined(RT_OS_HAIKU)
+# elif defined(RT_OS_HAIKU)
         team_info info;
         if (get_team_info(0, &info) == B_OK)
         {
@@ -584,20 +591,20 @@ RTDECL(PRTLOGGER) RTLogDefaultInit(void)
             RTLogLoggerEx(pLogger, 0, ~0U, "Commandline: %.64s\n", info.args);
         }
 
-#  elif defined(RT_OS_FREEBSD) || defined(RT_OS_NETBSD)
+# elif defined(RT_OS_FREEBSD) || defined(RT_OS_NETBSD)
         /* Retrieve the required length first */
         int aiName[4];
-#   if defined(RT_OS_FREEBSD)
+#  if defined(RT_OS_FREEBSD)
         aiName[0] = CTL_KERN;
         aiName[1] = KERN_PROC;
         aiName[2] = KERN_PROC_ARGS;     /* Introduced in FreeBSD 4.0 */
         aiName[3] = getpid();
-#   elif defined(RT_OS_NETBSD)
+#  elif defined(RT_OS_NETBSD)
         aiName[0] = CTL_KERN;
         aiName[1] = KERN_PROC_ARGS;
         aiName[2] = getpid();
         aiName[3] = KERN_PROC_ARGV;
-#   endif
+#  endif
         size_t cchArgs = 0;
         int rcBSD = sysctl(aiName, RT_ELEMENTS(aiName), NULL, &cchArgs, NULL, 0);
         if (cchArgs > 0)
@@ -625,12 +632,11 @@ RTDECL(PRTLOGGER) RTLogDefaultInit(void)
             }
         }
 
-#  elif defined(RT_OS_OS2) || defined(RT_OS_DARWIN)
+# elif defined(RT_OS_OS2) || defined(RT_OS_DARWIN)
         /* commandline? */
-#  else
-#   error needs porting.
-#  endif
-# endif /* IN_GUEST */
+# else
+#  error needs porting.
+# endif
     }
 
 #else /* IN_RING0 */
