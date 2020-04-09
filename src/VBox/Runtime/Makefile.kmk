@@ -1947,6 +1947,7 @@ RuntimeBldProg_SOURCES.win = \
 	r3/nt/RTFileSetMode-r3-nt.cpp \
 	r3/nt/RTPathQueryInfo-nt.cpp \
 	r3/nt/RTPathSetMode-r3-nt.cpp \
+	r3/nt/RTProcQueryParent-r3-nt.cpp \
 	r3/win/alloc-win.cpp \
 	r3/win/allocex-win.cpp \
 	r3/win/dir-win.cpp \
