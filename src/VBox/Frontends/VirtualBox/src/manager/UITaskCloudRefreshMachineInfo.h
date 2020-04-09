@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - UITaskCloudGetInstanceInfo class declaration.
+ * VBox Qt GUI - UITaskCloudRefreshMachineInfo class declaration.
  */
 
 /*
@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef FEQT_INCLUDED_SRC_manager_UITaskCloudGetInstanceInfo_h
-#define FEQT_INCLUDED_SRC_manager_UITaskCloudGetInstanceInfo_h
+#ifndef FEQT_INCLUDED_SRC_manager_UITaskCloudRefreshMachineInfo_h
+#define FEQT_INCLUDED_SRC_manager_UITaskCloudRefreshMachineInfo_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -34,7 +34,7 @@
 
 
 /** UITask extension used to get cloud instance state. */
-class UITaskCloudGetInstanceInfo : public UITask
+class UITaskCloudRefreshMachineInfo : public UITask
 {
     Q_OBJECT;
 
@@ -42,7 +42,7 @@ public:
 
     /** Constructs task taking @a comCloudMachine as data.
       * @param  comCloudMachine  Brings the cloud VM wrapper. */
-    UITaskCloudGetInstanceInfo(const CCloudMachine &comCloudMachine);
+    UITaskCloudRefreshMachineInfo(const CCloudMachine &comCloudMachine);
 
     /** Returns error info. */
     QString errorInfo();
@@ -64,4 +64,4 @@ private:
     QString  m_strErrorInfo;
 };
 
-#endif /* !FEQT_INCLUDED_SRC_manager_UITaskCloudGetInstanceInfo_h */
+#endif /* !FEQT_INCLUDED_SRC_manager_UITaskCloudRefreshMachineInfo_h */

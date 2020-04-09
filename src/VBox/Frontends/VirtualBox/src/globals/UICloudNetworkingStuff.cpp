@@ -230,10 +230,10 @@ void UICloudNetworkingStuff::refreshCloudMachineInfo(CCloudMachine &comCloudMach
     }
     else
     {
-        /* Show "Read cloud machine state" progress: */
+        /* Show "Refresh cloud machine information" progress: */
         if (pParent)
             msgCenter().showModalProgressDialog(comProgress,
-                                                UICommon::tr("Read cloud machine state ..."),
+                                                UICommon::tr("Refresh cloud machine information ..."),
                                                 ":/progress_reading_appliance_90px.png", pParent, 0);
         else
             comProgress.WaitForCompletion(-1);

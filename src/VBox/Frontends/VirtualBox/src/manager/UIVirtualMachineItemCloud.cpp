@@ -24,7 +24,7 @@
 #include "UIConverter.h"
 #include "UIIconPool.h"
 #include "UIMessageCenter.h"
-#include "UITaskCloudGetInstanceInfo.h"
+#include "UITaskCloudRefreshMachineInfo.h"
 #include "UIThreadPool.h"
 #include "UIVirtualMachineItemCloud.h"
 
@@ -278,7 +278,7 @@ void UIVirtualMachineItemCloud::sltCreateGetCloudInstanceInfoTask()
     /* Create and start task to acquire info async way only if there is no task yet: */
     if (!m_pTask)
     {
-        m_pTask = new UITaskCloudGetInstanceInfo(m_comCloudMachine);
+        m_pTask = new UITaskCloudRefreshMachineInfo(m_comCloudMachine);
         connect(uiCommon().threadPoolCloud(), &UIThreadPool::sigTaskComplete,
                 this, &UIVirtualMachineItemCloud::sltHandleGetCloudInstanceInfoDone);
         uiCommon().threadPoolCloud()->enqueueTask(m_pTask);
