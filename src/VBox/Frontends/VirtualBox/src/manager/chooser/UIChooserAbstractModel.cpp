@@ -28,7 +28,7 @@
 #include "UIVirtualBoxEventHandler.h"
 #include "UIVirtualMachineItem.h"
 #ifdef VBOX_GUI_WITH_CLOUD_VMS
-# include "UITaskCloudAcquireInstances.h"
+# include "UITaskCloudListMachines.h"
 # include "UIThreadPool.h"
 # include "UIVirtualMachineItemCloud.h"
 #endif
@@ -273,7 +273,7 @@ void UIChooserAbstractModel::sltHandleCloudAcquireInstancesTaskComplete(UITask *
         return;
 
     /* Cast task to corresponding sub-class: */
-    UITaskCloudAcquireInstances *pAcquiringTask = static_cast<UITaskCloudAcquireInstances*>(pTask);
+    UITaskCloudListMachines *pAcquiringTask = static_cast<UITaskCloudListMachines*>(pTask);
 
     /* Make sure there were no errors: */
     if (!pAcquiringTask->errorInfo().isNull())
@@ -493,8 +493,8 @@ void UIChooserAbstractModel::loadTree()
                                                              0 /* position */);
 
                                     /* Create cloud acquire isntances task: */
-                                    UITaskCloudAcquireInstances *pTask = new UITaskCloudAcquireInstances(comCloudClient,
-                                                                                                         pProfileNode);
+                                    UITaskCloudListMachines *pTask = new UITaskCloudListMachines(comCloudClient,
+                                                                                                 pProfileNode);
                                     if (pTask)
                                     {
                                         connect(uiCommon().threadPoolCloud(), &UIThreadPool::sigTaskComplete,

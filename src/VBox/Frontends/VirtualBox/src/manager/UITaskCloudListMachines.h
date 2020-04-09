@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - UITaskCloudAcquireInstances class declaration.
+ * VBox Qt GUI - UITaskCloudListMachines class declaration.
  */
 
 /*
@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef FEQT_INCLUDED_SRC_manager_UITaskCloudAcquireInstances_h
-#define FEQT_INCLUDED_SRC_manager_UITaskCloudAcquireInstances_h
+#ifndef FEQT_INCLUDED_SRC_manager_UITaskCloudListMachines_h
+#define FEQT_INCLUDED_SRC_manager_UITaskCloudListMachines_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -35,8 +35,8 @@
 /* Forward declaratiuons: */
 class UIChooserNode;
 
-/** UITask extension used to load cloud instance list. */
-class UITaskCloudAcquireInstances : public UITask
+/** UITask extension used to list cloud machines. */
+class UITaskCloudListMachines : public UITask
 {
     Q_OBJECT;
 
@@ -45,7 +45,7 @@ public:
     /** Constructs update task taking @a comCloudClient and @a pParentNode as data.
       * @param  comCloudClient  Brings the cloud client object.
       * @param  m_pParentNode   Brings the parent node reference. */
-    UITaskCloudAcquireInstances(const CCloudClient &comCloudClient, UIChooserNode *pParentNode);
+    UITaskCloudListMachines(const CCloudClient &comCloudClient, UIChooserNode *pParentNode);
 
     /** Returns cloud client object. */
     CCloudClient cloudClient() const { return m_comCloudClient; }
@@ -53,7 +53,7 @@ public:
     UIChooserNode *parentNode() const { return m_pParentNode; }
 
     /** Returns error info. */
-    QString errorInfo();
+    QString errorInfo() const;
 
     /** Returns the task result. */
     QVector<CCloudMachine> result() const;
@@ -80,4 +80,4 @@ private:
     QVector<CCloudMachine>  m_result;
 };
 
-#endif /* !FEQT_INCLUDED_SRC_manager_UITaskCloudAcquireInstances_h */
+#endif /* !FEQT_INCLUDED_SRC_manager_UITaskCloudListMachines_h */

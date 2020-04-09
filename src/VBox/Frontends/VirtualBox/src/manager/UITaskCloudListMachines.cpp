@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - UITaskCloudAcquireInstances class implementation.
+ * VBox Qt GUI - UITaskCloudListMachines class implementation.
  */
 
 /*
@@ -17,17 +17,17 @@
 
 /* GUI includes: */
 #include "UICloudNetworkingStuff.h"
-#include "UITaskCloudAcquireInstances.h"
+#include "UITaskCloudListMachines.h"
 
 
-UITaskCloudAcquireInstances::UITaskCloudAcquireInstances(const CCloudClient &comCloudClient, UIChooserNode *pParentNode)
+UITaskCloudListMachines::UITaskCloudListMachines(const CCloudClient &comCloudClient, UIChooserNode *pParentNode)
     : UITask(Type_CloudAcquireInstances)
     , m_comCloudClient(comCloudClient)
     , m_pParentNode(pParentNode)
 {
 }
 
-QVector<CCloudMachine> UITaskCloudAcquireInstances::result() const
+QVector<CCloudMachine> UITaskCloudListMachines::result() const
 {
     m_mutex.lock();
     const QVector<CCloudMachine> resultVector = m_result;
@@ -35,7 +35,7 @@ QVector<CCloudMachine> UITaskCloudAcquireInstances::result() const
     return resultVector;
 }
 
-QString UITaskCloudAcquireInstances::errorInfo()
+QString UITaskCloudListMachines::errorInfo() const
 {
     m_mutex.lock();
     QString strErrorInfo = m_strErrorInfo;
@@ -43,7 +43,7 @@ QString UITaskCloudAcquireInstances::errorInfo()
     return strErrorInfo;
 }
 
-void UITaskCloudAcquireInstances::run()
+void UITaskCloudListMachines::run()
 {
     m_mutex.lock();
     m_result = listCloudMachines(m_comCloudClient, m_strErrorInfo);
