@@ -1618,7 +1618,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         #
         self.oDebug.sVBoxServiceLogPath = os.path.join(self.getGuestTempDir(oTestVm), "VBoxService");
         if oTxsSession.syncMkDirPath(self.oDebug.sVBoxServiceLogPath, 0o777) is not True:
-                return reporter.error('Failed to create directory "%s"!' % (self.oDebug.sVBoxServiceLogPath,));
+            return reporter.error('Failed to create directory "%s"!' % (self.oDebug.sVBoxServiceLogPath,));
         sPathLogFile = os.path.join(self.oDebug.sVBoxServiceLogPath, 'VBoxService.log');
 
         reporter.log('VBoxService logs will be stored in "%s"' % (self.oDebug.sVBoxServiceLogPath,));
@@ -1628,10 +1628,10 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
             sPathVBoxServiceExe = os.path.join(self.getGuestSystemDir(oTestVm), 'VBoxService.exe');
             sImagePath          = '%s -vvvv --only-control --logfile %s' % (sPathVBoxServiceExe, sPathLogFile);
             self.oTstDrv.txsRunTest(oTxsSession, 'Enabling VBoxService verbose logging (via registry)', 30 * 1000,
-                                         sPathRegExe,
-                                         (sPathRegExe, 'add',
-                                         '"HKLM\\SYSTEM\\CurrentControlSet\\Services\\VBoxService"',
-                                         '/v', 'ImagePath', '/t', 'REG_SZ', '/d', sImagePath, '/f'));
+                                    sPathRegExe,
+                                    (sPathRegExe, 'add',
+                                    '"HKLM\\SYSTEM\\CurrentControlSet\\Services\\VBoxService"',
+                                    '/v', 'ImagePath', '/t', 'REG_SZ', '/d', sImagePath, '/f'));
 
             self.vboxServiceControl(oTxsSession, oTestVm, fStart = False);
             time.sleep(5);
