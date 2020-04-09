@@ -33,7 +33,7 @@
 #include "CCloudMachine.h"
 
 
-/** UITask extension used to get cloud instance state. */
+/** UITask extension used to refresh cloud machine info. */
 class UITaskCloudRefreshMachineInfo : public UITask
 {
     Q_OBJECT;
@@ -45,7 +45,7 @@ public:
     UITaskCloudRefreshMachineInfo(const CCloudMachine &comCloudMachine);
 
     /** Returns error info. */
-    QString errorInfo();
+    QString errorInfo() const;
 
 protected:
 

@@ -26,7 +26,7 @@ UITaskCloudRefreshMachineInfo::UITaskCloudRefreshMachineInfo(const CCloudMachine
 {
 }
 
-QString UITaskCloudRefreshMachineInfo::errorInfo()
+QString UITaskCloudRefreshMachineInfo::errorInfo() const
 {
     m_mutex.lock();
     const QString strErrorInfo = m_strErrorInfo;
