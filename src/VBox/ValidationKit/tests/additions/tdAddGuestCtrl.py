@@ -1577,23 +1577,26 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
     #
     # VBoxService handling.
     #
-    def vboxServiceControl(self, oTxsSession, oTestVm, fStart): # pylint: disable=no-else-return
+    def vboxServiceControl(self, oTxsSession, oTestVm, fStart):
         """
         Controls VBoxService on the guest by starting or stopping the service.
         Returns success indicator.
         """
+
+        fRc = True;
+
         if oTestVm.isWindows():
             sPathSC = os.path.join(self.getGuestSystemDir(oTestVm), 'sc.exe');
             if fStart is True:
-                return self.oTstDrv.txsRunTest(oTxsSession, 'Starting VBoxService with verbose logging', 30 * 1000, \
-                                               sPathSC, (sPathSC, 'start', 'VBoxService'));
+                fRc = self.oTstDrv.txsRunTest(oTxsSession, 'Starting VBoxService with verbose logging', 30 * 1000, \
+                                              sPathSC, (sPathSC, 'start', 'VBoxService'));
             else:
-                return self.oTstDrv.txsRunTest(oTxsSession, 'Stopping VBoxService', 30 * 1000, \
-                                               sPathSC, (sPathSC, 'stop', 'VBoxService'));
+                fRc = self.oTstDrv.txsRunTest(oTxsSession, 'Stopping VBoxService', 30 * 1000, \
+                                              sPathSC, (sPathSC, 'stop', 'VBoxService'));
         else:
             reporter.log('Controlling VBoxService not supported for this guest yet');
 
-        return True;
+        return fRc;
 
     #
     # Guest test files.
