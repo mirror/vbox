@@ -304,39 +304,38 @@ static struct
     size_t      cchInstr;               /**< The size of the name. */
     uint32_t    fFlag;                  /**< The flag value. */
     bool        fInverted;              /**< Inverse meaning? */
-    uint32_t    fFixedDest;             /**< RTLOGDEST_FIXED_XXX flags blocking this. */
 } const g_aLogFlags[] =
 {
-    { "disabled",     sizeof("disabled"    ) - 1,   RTLOGFLAGS_DISABLED,            false, 0 },
-    { "enabled",      sizeof("enabled"     ) - 1,   RTLOGFLAGS_DISABLED,            true,  0 },
-    { "buffered",     sizeof("buffered"    ) - 1,   RTLOGFLAGS_BUFFERED,            false, 0 },
-    { "unbuffered",   sizeof("unbuffered"  ) - 1,   RTLOGFLAGS_BUFFERED,            true,  0 },
-    { "usecrlf",      sizeof("usecrlf"     ) - 1,   RTLOGFLAGS_USECRLF,             false, 0 },
-    { "uself",        sizeof("uself"       ) - 1,   RTLOGFLAGS_USECRLF,             true,  0 },
-    { "append",       sizeof("append"      ) - 1,   RTLOGFLAGS_APPEND,              false, RTLOGDEST_FIXED_FILE },
-    { "overwrite",    sizeof("overwrite"   ) - 1,   RTLOGFLAGS_APPEND,              true,  RTLOGDEST_FIXED_FILE },
-    { "rel",          sizeof("rel"         ) - 1,   RTLOGFLAGS_REL_TS,              false, 0 },
-    { "abs",          sizeof("abs"         ) - 1,   RTLOGFLAGS_REL_TS,              true,  0 },
-    { "dec",          sizeof("dec"         ) - 1,   RTLOGFLAGS_DECIMAL_TS,          false, 0 },
-    { "hex",          sizeof("hex"         ) - 1,   RTLOGFLAGS_DECIMAL_TS,          true,  0 },
-    { "writethru",    sizeof("writethru"   ) - 1,   RTLOGFLAGS_WRITE_THROUGH,       false, 0 },
-    { "writethrough", sizeof("writethrough") - 1,   RTLOGFLAGS_WRITE_THROUGH,       false, 0 },
-    { "flush",        sizeof("flush"       ) - 1,   RTLOGFLAGS_FLUSH,               false, 0 },
-    { "lockcnts",     sizeof("lockcnts"    ) - 1,   RTLOGFLAGS_PREFIX_LOCK_COUNTS,  false, 0 },
-    { "cpuid",        sizeof("cpuid"       ) - 1,   RTLOGFLAGS_PREFIX_CPUID,        false, 0 },
-    { "pid",          sizeof("pid"         ) - 1,   RTLOGFLAGS_PREFIX_PID,          false, 0 },
-    { "flagno",       sizeof("flagno"      ) - 1,   RTLOGFLAGS_PREFIX_FLAG_NO,      false, 0 },
-    { "flag",         sizeof("flag"        ) - 1,   RTLOGFLAGS_PREFIX_FLAG,         false, 0 },
-    { "groupno",      sizeof("groupno"     ) - 1,   RTLOGFLAGS_PREFIX_GROUP_NO,     false, 0 },
-    { "group",        sizeof("group"       ) - 1,   RTLOGFLAGS_PREFIX_GROUP,        false, 0 },
-    { "tid",          sizeof("tid"         ) - 1,   RTLOGFLAGS_PREFIX_TID,          false, 0 },
-    { "thread",       sizeof("thread"      ) - 1,   RTLOGFLAGS_PREFIX_THREAD,       false, 0 },
-    { "custom",       sizeof("custom"      ) - 1,   RTLOGFLAGS_PREFIX_CUSTOM,       false, 0 },
-    { "timeprog",     sizeof("timeprog"    ) - 1,   RTLOGFLAGS_PREFIX_TIME_PROG,    false, 0 },
-    { "time",         sizeof("time"        ) - 1,   RTLOGFLAGS_PREFIX_TIME,         false, 0 },
-    { "msprog",       sizeof("msprog"      ) - 1,   RTLOGFLAGS_PREFIX_MS_PROG,      false, 0 },
-    { "tsc",          sizeof("tsc"         ) - 1,   RTLOGFLAGS_PREFIX_TSC,          false, 0 }, /* before ts! */
-    { "ts",           sizeof("ts"          ) - 1,   RTLOGFLAGS_PREFIX_TS,           false, 0 },
+    { "disabled",     sizeof("disabled"    ) - 1,   RTLOGFLAGS_DISABLED,            false },
+    { "enabled",      sizeof("enabled"     ) - 1,   RTLOGFLAGS_DISABLED,            true  },
+    { "buffered",     sizeof("buffered"    ) - 1,   RTLOGFLAGS_BUFFERED,            false },
+    { "unbuffered",   sizeof("unbuffered"  ) - 1,   RTLOGFLAGS_BUFFERED,            true  },
+    { "usecrlf",      sizeof("usecrlf"     ) - 1,   RTLOGFLAGS_USECRLF,             false },
+    { "uself",        sizeof("uself"       ) - 1,   RTLOGFLAGS_USECRLF,             true  },
+    { "append",       sizeof("append"      ) - 1,   RTLOGFLAGS_APPEND,              false },
+    { "overwrite",    sizeof("overwrite"   ) - 1,   RTLOGFLAGS_APPEND,              true  },
+    { "rel",          sizeof("rel"         ) - 1,   RTLOGFLAGS_REL_TS,              false },
+    { "abs",          sizeof("abs"         ) - 1,   RTLOGFLAGS_REL_TS,              true  },
+    { "dec",          sizeof("dec"         ) - 1,   RTLOGFLAGS_DECIMAL_TS,          false },
+    { "hex",          sizeof("hex"         ) - 1,   RTLOGFLAGS_DECIMAL_TS,          true  },
+    { "writethru",    sizeof("writethru"   ) - 1,   RTLOGFLAGS_WRITE_THROUGH,       false },
+    { "writethrough", sizeof("writethrough") - 1,   RTLOGFLAGS_WRITE_THROUGH,       false },
+    { "flush",        sizeof("flush"       ) - 1,   RTLOGFLAGS_FLUSH,               false },
+    { "lockcnts",     sizeof("lockcnts"    ) - 1,   RTLOGFLAGS_PREFIX_LOCK_COUNTS,  false },
+    { "cpuid",        sizeof("cpuid"       ) - 1,   RTLOGFLAGS_PREFIX_CPUID,        false },
+    { "pid",          sizeof("pid"         ) - 1,   RTLOGFLAGS_PREFIX_PID,          false },
+    { "flagno",       sizeof("flagno"      ) - 1,   RTLOGFLAGS_PREFIX_FLAG_NO,      false },
+    { "flag",         sizeof("flag"        ) - 1,   RTLOGFLAGS_PREFIX_FLAG,         false },
+    { "groupno",      sizeof("groupno"     ) - 1,   RTLOGFLAGS_PREFIX_GROUP_NO,     false },
+    { "group",        sizeof("group"       ) - 1,   RTLOGFLAGS_PREFIX_GROUP,        false },
+    { "tid",          sizeof("tid"         ) - 1,   RTLOGFLAGS_PREFIX_TID,          false },
+    { "thread",       sizeof("thread"      ) - 1,   RTLOGFLAGS_PREFIX_THREAD,       false },
+    { "custom",       sizeof("custom"      ) - 1,   RTLOGFLAGS_PREFIX_CUSTOM,       false },
+    { "timeprog",     sizeof("timeprog"    ) - 1,   RTLOGFLAGS_PREFIX_TIME_PROG,    false },
+    { "time",         sizeof("time"        ) - 1,   RTLOGFLAGS_PREFIX_TIME,         false },
+    { "msprog",       sizeof("msprog"      ) - 1,   RTLOGFLAGS_PREFIX_MS_PROG,      false },
+    { "tsc",          sizeof("tsc"         ) - 1,   RTLOGFLAGS_PREFIX_TSC,          false }, /* before ts! */
+    { "ts",           sizeof("ts"          ) - 1,   RTLOGFLAGS_PREFIX_TS,           false },
     /* We intentionally omit RTLOGFLAGS_RESTRICT_GROUPS. */
 };
 
@@ -362,7 +361,6 @@ static struct
     { RT_STR_TUPLE("com"),          RTLOGDEST_COM },
     { RT_STR_TUPLE("nodeny"),       RTLOGDEST_F_NO_DENY },
     { RT_STR_TUPLE("user"),         RTLOGDEST_USER },
-    /* The RTLOGDEST_FIXED_XXX flags are omitted on purpose. */
 };
 
 #ifdef IN_RING3
@@ -2045,13 +2043,10 @@ RTDECL(int) RTLogFlags(PRTLOGGER pLogger, const char *pszValue)
         {
             if (!strncmp(pszValue, g_aLogFlags[i].pszInstr, g_aLogFlags[i].cchInstr))
             {
-                if (!(g_aLogFlags[i].fFixedDest & pLogger->fDestFlags))
-                {
-                    if (fNo == g_aLogFlags[i].fInverted)
-                        pLogger->fFlags |= g_aLogFlags[i].fFlag;
-                    else
-                        pLogger->fFlags &= ~g_aLogFlags[i].fFlag;
-                }
+                if (fNo == g_aLogFlags[i].fInverted)
+                    pLogger->fFlags |= g_aLogFlags[i].fFlag;
+                else
+                    pLogger->fFlags &= ~g_aLogFlags[i].fFlag;
                 pszValue += g_aLogFlags[i].cchInstr;
                 break;
             }
@@ -2319,34 +2314,28 @@ RTDECL(int) RTLogDestinations(PRTLOGGER pLogger, char const *pszValue)
                     /* log file name */
                     else if (i == 0 /* file */ && !fNo)
                     {
-                        if (!(pLogger->fDestFlags & RTLOGDEST_FIXED_FILE))
-                        {
-                            AssertReturn(cch < sizeof(pLogger->pInt->szFilename), VERR_OUT_OF_RANGE);
-                            memcpy(pLogger->pInt->szFilename, pszValue, cch);
-                            pLogger->pInt->szFilename[cch] = '\0';
-                            /** @todo reopen log file if pLogger->pInt->fCreated is true ... */
-                        }
+                        AssertReturn(cch < sizeof(pLogger->pInt->szFilename), VERR_OUT_OF_RANGE);
+                        memcpy(pLogger->pInt->szFilename, pszValue, cch);
+                        pLogger->pInt->szFilename[cch] = '\0';
+                        /** @todo reopen log file if pLogger->pInt->fCreated is true ... */
                     }
                     /* log directory */
                     else if (i == 1 /* dir */ && !fNo)
                     {
-                        if (!(pLogger->fDestFlags & RTLOGDEST_FIXED_DIR))
-                        {
-                            const char *pszFile = RTPathFilename(pLogger->pInt->szFilename);
-                            size_t      cchFile = pszFile ? strlen(pszFile) : 0;
-                            AssertReturn(cchFile + cch + 1 < sizeof(pLogger->pInt->szFilename), VERR_OUT_OF_RANGE);
-                            memcpy(szTmp, cchFile ? pszFile : "", cchFile + 1);
+                        const char *pszFile = RTPathFilename(pLogger->pInt->szFilename);
+                        size_t      cchFile = pszFile ? strlen(pszFile) : 0;
+                        AssertReturn(cchFile + cch + 1 < sizeof(pLogger->pInt->szFilename), VERR_OUT_OF_RANGE);
+                        memcpy(szTmp, cchFile ? pszFile : "", cchFile + 1);
 
-                            memcpy(pLogger->pInt->szFilename, pszValue, cch);
-                            pLogger->pInt->szFilename[cch] = '\0';
-                            RTPathStripTrailingSlash(pLogger->pInt->szFilename);
+                        memcpy(pLogger->pInt->szFilename, pszValue, cch);
+                        pLogger->pInt->szFilename[cch] = '\0';
+                        RTPathStripTrailingSlash(pLogger->pInt->szFilename);
 
-                            cch = strlen(pLogger->pInt->szFilename);
-                            pLogger->pInt->szFilename[cch++] = '/';
-                            memcpy(&pLogger->pInt->szFilename[cch], szTmp, cchFile);
-                            pLogger->pInt->szFilename[cch + cchFile] = '\0';
-                            /** @todo reopen log file if pLogger->pInt->fCreated is true ... */
-                        }
+                        cch = strlen(pLogger->pInt->szFilename);
+                        pLogger->pInt->szFilename[cch++] = '/';
+                        memcpy(&pLogger->pInt->szFilename[cch], szTmp, cchFile);
+                        pLogger->pInt->szFilename[cch + cchFile] = '\0';
+                        /** @todo reopen log file if pLogger->pInt->fCreated is true ... */
                     }
                     else if (i == 2 /* history */)
                     {
@@ -3201,10 +3190,7 @@ static int rtlogFileOpen(PRTLOGGER pLogger, PRTERRINFO pErrInfo)
     if (pLogger->fFlags & RTLOGFLAGS_APPEND)
         fOpen |= RTFILE_O_OPEN_CREATE | RTFILE_O_APPEND;
     else
-    {
-        RTFileDelete(pLogger->pInt->szFilename);
-        fOpen |= RTFILE_O_CREATE;
-    }
+        fOpen |= RTFILE_O_CREATE_REPLACE;
     if (pLogger->fFlags & RTLOGFLAGS_WRITE_THROUGH)
         fOpen |= RTFILE_O_WRITE_THROUGH;
     if (pLogger->fDestFlags & RTLOGDEST_F_NO_DENY)
@@ -3212,13 +3198,10 @@ static int rtlogFileOpen(PRTLOGGER pLogger, PRTERRINFO pErrInfo)
 
     unsigned cBackoff = 0;
     int rc = RTFileOpen(&pLogger->pInt->hFile, pLogger->pInt->szFilename, fOpen);
-    while (   (   rc == VERR_SHARING_VIOLATION
-               || (rc == VERR_ALREADY_EXISTS && !(pLogger->fFlags & RTLOGFLAGS_APPEND)))
+    while (   rc == VERR_SHARING_VIOLATION
            && cBackoff < RT_ELEMENTS(g_acMsLogBackoff))
     {
         RTThreadSleep(g_acMsLogBackoff[cBackoff++]);
-        if (!(pLogger->fFlags & RTLOGFLAGS_APPEND))
-            RTFileDelete(pLogger->pInt->szFilename);
         rc = RTFileOpen(&pLogger->pInt->hFile, pLogger->pInt->szFilename, fOpen);
     }
     if (RT_SUCCESS(rc))
