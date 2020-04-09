@@ -5642,7 +5642,6 @@ static DECLCALLBACK(int) vgaR3PciIORegionVRamMapUnmap(PPDMDEVINS pDevIns, PPDMPC
         if (RT_SUCCESS(rc))
         {
 # ifdef VBOX_WITH_VMSVGA
-            Assert(!pThis->svga.fEnabled || !pThis->svga.fVRAMTracking);
             if (    !pThis->svga.fEnabled
                 ||  (   pThis->svga.fEnabled
                      && pThis->svga.fVRAMTracking
@@ -5670,7 +5669,6 @@ static DECLCALLBACK(int) vgaR3PciIORegionVRamMapUnmap(PPDMDEVINS pDevIns, PPDMPC
          */
         Assert(pThis->GCPhysVRAM);
 # ifdef VBOX_WITH_VMSVGA
-        Assert(!pThis->svga.fEnabled || !pThis->svga.fVRAMTracking);
         if (    !pThis->svga.fEnabled
             ||  (   pThis->svga.fEnabled
                  && pThis->svga.fVRAMTracking
