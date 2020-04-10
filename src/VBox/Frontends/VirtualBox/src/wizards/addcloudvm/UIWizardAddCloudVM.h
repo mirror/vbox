@@ -27,6 +27,7 @@
 /* COM includes: */
 #include "COMEnums.h"
 #include "CCloudClient.h"
+#include "CCloudMachine.h"
 
 /** Add Cloud VM wizard. */
 class UIWizardAddCloudVM : public UIWizard
@@ -56,10 +57,13 @@ public:
     /** Prepares all. */
     virtual void prepare() /* override */;
 
-    /** Defines Cloud @a comClient object. */
+    /** Defines Cloud @a comClient object wrapper. */
     void setClient(const CCloudClient &comClient) { m_comClient = comClient; }
-    /** Returns Cloud Client object. */
+    /** Returns Cloud Client object wrapper. */
     CCloudClient client() const { return m_comClient; }
+
+    /** Returns Cloud Machine object wrapper list. */
+    QList<CCloudMachine> machines() const { return m_machines; }
 
     /** Adds cloud VMs. */
     bool addCloudVMs();
@@ -73,6 +77,9 @@ private:
 
     /** Holds the Cloud Client object wrapper. */
     CCloudClient  m_comClient;
+
+    /** Holds the Cloud Machine object wrapper list. */
+    QList<CCloudMachine>  m_machines;
 };
 
 /** Safe pointer to add cloud vm wizard. */

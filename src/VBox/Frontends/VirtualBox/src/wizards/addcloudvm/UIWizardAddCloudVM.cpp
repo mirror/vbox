@@ -22,7 +22,6 @@
 #include "UIWizardAddCloudVMPageExpert.h"
 
 /* COM includes: */
-#include "CCloudMachine.h"
 #include "CProgress.h"
 
 
@@ -68,38 +67,56 @@ void UIWizardAddCloudVM::prepare()
 
 bool UIWizardAddCloudVM::addCloudVMs()
 {
-    /* Acquire prepared client and description: */
+    /* Prepare result: */
+    bool fResult = false;
+
+    /* Acquire prepared client: */
     CCloudClient comClient = client();
-    AssertReturn(comClient.isNotNull(), false);
+    AssertReturn(comClient.isNotNull(), fResult);
 
     /* For each cloud instance name we have: */
     foreach (const QString &strInstanceName, field("instanceIds").toStringList())
     {
-        CCloudMachine comMachine;
-
         /* Initiate cloud VM add procedure: */
+        CCloudMachine comMachine;
         CProgress comProgress = comClient.AddCloudMachine(strInstanceName, comMachine);
-        RT_NOREF(comMachine);
+        /* Check for immediate errors: */
         if (!comClient.isOk())
         {
             msgCenter().cannotCreateCloudMachine(comClient, this);
-            return false;
+            break;
         }
-
-        /* Show "Add cloud machine" progress: */
-        msgCenter().showModalProgressDialog(comProgress, tr("Add cloud machine ..."),
-                                            ":/progress_new_cloud_vm_90px.png", this, 0);
-        if (comProgress.GetCanceled())
-            return false;
-        if (!comProgress.isOk() || comProgress.GetResultCode() != 0)
+        else
         {
-            msgCenter().cannotCreateCloudMachine(comProgress, this);
-            return false;
+            /* Show "Add cloud machine" progress: */
+            msgCenter().showModalProgressDialog(comProgress, tr("Add cloud machine ..."),
+                                                ":/progress_new_cloud_vm_90px.png", this, 0);
+            /* Check for canceled progress: */
+            if (comProgress.GetCanceled())
+                break;
+            else
+            {
+                /* Check for progress errors: */
+                if (!comProgress.isOk() || comProgress.GetResultCode() != 0)
+                {
+                    msgCenter().cannotCreateCloudMachine(comProgress, this);
+                    break;
+                }
+                else
+                {
+                    /* Check whether VM really added: */
+                    if (comMachine.isNotNull())
+                    {
+                        m_machines << comMachine;
+                        fResult = true;
+                    }
+                }
+            }
         }
     }
 
-    /* Success by default: */
-    return true;
+    /* Return result: */
+    return fResult;
 }
 
 void UIWizardAddCloudVM::retranslateUi()
