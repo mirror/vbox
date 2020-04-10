@@ -26679,7 +26679,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
 
   <interface name="ICloudMachine" extends="$unknown"
-             uuid="bcb7c6d6-7a6e-11ea-9839-7f4258c13c14"
+             uuid="bcc71a82-7b27-11ea-8c77-2b2257f699a6"
              wsmap="managed"
              reservedMethods="16" reservedAttributes="8">
     <desc>
@@ -26789,7 +26789,15 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </desc>
       <param name="progress" type="IProgress" dir="return">
         <desc>
-        Progress object to track the operation completion.
+          Progress object to track the operation completion.
+        </desc>
+      </param>
+    </method>
+
+    <method name="unregister" wrap-hint-server="limitedcaller,passcaller">
+      <param name="progress" type="IProgress" dir="return">
+        <desc>
+          Progress object to track the operation completion.
         </desc>
       </param>
     </method>
@@ -26939,13 +26947,11 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
           ID of an instance to be added as a cloud machine.
         </desc>
       </param>
-      <!--
       <param name="machine" type="ICloudMachine" dir="out">
         <desc>
           Object that represents the newly registered cloud machine.
         </desc>
       </param>
-      -->
       <param name="progress" type="IProgress" dir="return">
         <desc>Progress object to track the operation completion.</desc>
       </param>

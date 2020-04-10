@@ -22,6 +22,7 @@
 #include "UIWizardAddCloudVMPageExpert.h"
 
 /* COM includes: */
+#include "CCloudMachine.h"
 #include "CProgress.h"
 
 
@@ -74,8 +75,11 @@ bool UIWizardAddCloudVM::addCloudVMs()
     /* For each cloud instance name we have: */
     foreach (const QString &strInstanceName, field("instanceIds").toStringList())
     {
+        CCloudMachine comMachine;
+
         /* Initiate cloud VM add procedure: */
-        CProgress comProgress = comClient.AddCloudMachine(strInstanceName);
+        CProgress comProgress = comClient.AddCloudMachine(strInstanceName, comMachine);
+        RT_NOREF(comMachine);
         if (!comClient.isOk())
         {
             msgCenter().cannotCreateCloudMachine(comClient, this);
