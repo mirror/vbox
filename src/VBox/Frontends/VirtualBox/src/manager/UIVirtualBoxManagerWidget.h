@@ -97,6 +97,10 @@ public:
         bool isAllItemsOfOneGroupSelected() const;
         /** Returns whether single group is selected. */
         bool isSingleGroupSelected() const;
+        /** Returns whether single local group is selected. */
+        bool isSingleLocalGroupSelected() const;
+        /** Returns whether single cloud profile group is selected. */
+        bool isSingleCloudProfileGroupSelected() const;
 
         /** Defines tools @a enmType. */
         void setToolsType(UIToolType enmType);

@@ -1615,6 +1615,16 @@ bool UIVirtualBoxManager::isSingleGroupSelected() const
     return m_pWidget->isSingleGroupSelected();
 }
 
+bool UIVirtualBoxManager::isSingleLocalGroupSelected() const
+{
+    return m_pWidget->isSingleLocalGroupSelected();
+}
+
+bool UIVirtualBoxManager::isSingleCloudProfileGroupSelected() const
+{
+    return m_pWidget->isSingleCloudProfileGroupSelected();
+}
+
 void UIVirtualBoxManager::performStartOrShowVirtualMachines(const QList<UIVirtualMachineItem*> &items, UICommon::LaunchMode enmLaunchMode)
 {
     /* Do nothing while group saving is in progress: */
@@ -1892,7 +1902,8 @@ bool UIVirtualBoxManager::isActionEnabled(int iActionIndex, const QList<UIVirtua
         case UIActionIndexST_M_Group_S_New:
         {
             return !isGroupSavingInProgress() &&
-                   isSingleGroupSelected();
+                   (isSingleLocalGroupSelected() ||
+                    isSingleCloudProfileGroupSelected());
         }
         case UIActionIndexST_M_Group_S_Add:
         case UIActionIndexST_M_Group_S_Sort:
@@ -1912,8 +1923,7 @@ bool UIVirtualBoxManager::isActionEnabled(int iActionIndex, const QList<UIVirtua
         case UIActionIndexST_M_Machine_S_New:
         case UIActionIndexST_M_Machine_S_Add:
         {
-            return !isGroupSavingInProgress() &&
-                   isItemsLocal(items);
+            return !isGroupSavingInProgress();
         }
         case UIActionIndexST_M_Machine_S_Settings:
         {

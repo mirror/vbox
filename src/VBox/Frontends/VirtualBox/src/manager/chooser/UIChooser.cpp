@@ -78,6 +78,16 @@ bool UIChooser::isSingleGroupSelected() const
     return m_pChooserModel->isSingleGroupSelected();
 }
 
+bool UIChooser::isSingleLocalGroupSelected() const
+{
+    return m_pChooserModel->isSingleLocalGroupSelected();
+}
+
+bool UIChooser::isSingleCloudProfileGroupSelected() const
+{
+    return m_pChooserModel->isSingleCloudProfileGroupSelected();
+}
+
 bool UIChooser::isAllItemsOfOneGroupSelected() const
 {
     return m_pChooserModel->isAllItemsOfOneGroupSelected();

@@ -99,6 +99,16 @@ bool UIVirtualBoxManagerWidget::isSingleGroupSelected() const
     return m_pPaneChooser->isSingleGroupSelected();
 }
 
+bool UIVirtualBoxManagerWidget::isSingleLocalGroupSelected() const
+{
+    return m_pPaneChooser->isSingleLocalGroupSelected();
+}
+
+bool UIVirtualBoxManagerWidget::isSingleCloudProfileGroupSelected() const
+{
+    return m_pPaneChooser->isSingleCloudProfileGroupSelected();
+}
+
 void UIVirtualBoxManagerWidget::setToolsType(UIToolType enmType)
 {
     m_pPaneTools->setToolsType(enmType);

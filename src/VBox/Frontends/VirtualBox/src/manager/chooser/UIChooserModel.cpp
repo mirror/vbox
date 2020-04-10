@@ -335,6 +335,18 @@ bool UIChooserModel::isSingleGroupSelected() const
            && firstSelectedItem()->type() == UIChooserNodeType_Group;
 }
 
+bool UIChooserModel::isSingleLocalGroupSelected() const
+{
+    return    isSingleGroupSelected()
+           && firstSelectedItem()->node()->toGroupNode()->groupType() == UIChooserNodeGroupType_Local;
+}
+
+bool UIChooserModel::isSingleCloudProfileGroupSelected() const
+{
+    return    isSingleGroupSelected()
+           && firstSelectedItem()->node()->toGroupNode()->groupType() == UIChooserNodeGroupType_Profile;
+}
+
 bool UIChooserModel::isAllItemsOfOneGroupSelected() const
 {
     /* Make sure at least one item selected: */
