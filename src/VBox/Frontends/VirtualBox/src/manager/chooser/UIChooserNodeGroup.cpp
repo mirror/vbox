@@ -106,30 +106,30 @@ QString UIChooserNodeGroup::definition() const
     return QString("g=%1").arg(name());
 }
 
-bool UIChooserNodeGroup::hasNodes(UIChooserItemType enmType /* = UIChooserItemType_Any */) const
+bool UIChooserNodeGroup::hasNodes(UIChooserNodeType enmType /* = UIChooserNodeType_Any */) const
 {
     switch (enmType)
     {
-        case UIChooserItemType_Any:
-            return hasNodes(UIChooserItemType_Group) || hasNodes(UIChooserItemType_Global) || hasNodes(UIChooserItemType_Machine);
-        case UIChooserItemType_Group:
+        case UIChooserNodeType_Any:
+            return hasNodes(UIChooserNodeType_Group) || hasNodes(UIChooserNodeType_Global) || hasNodes(UIChooserNodeType_Machine);
+        case UIChooserNodeType_Group:
             return !m_nodesGroup.isEmpty();
-        case UIChooserItemType_Global:
+        case UIChooserNodeType_Global:
             return !m_nodesGlobal.isEmpty();
-        case UIChooserItemType_Machine:
+        case UIChooserNodeType_Machine:
             return !m_nodesMachine.isEmpty();
     }
     return false;
 }
 
-QList<UIChooserNode*> UIChooserNodeGroup::nodes(UIChooserItemType enmType /* = UIChooserItemType_Any */) const
+QList<UIChooserNode*> UIChooserNodeGroup::nodes(UIChooserNodeType enmType /* = UIChooserNodeType_Any */) const
 {
     switch (enmType)
     {
-        case UIChooserItemType_Any:     return m_nodesGlobal + m_nodesGroup + m_nodesMachine;
-        case UIChooserItemType_Group:   return m_nodesGroup;
-        case UIChooserItemType_Global:  return m_nodesGlobal;
-        case UIChooserItemType_Machine: return m_nodesMachine;
+        case UIChooserNodeType_Any:     return m_nodesGlobal + m_nodesGroup + m_nodesMachine;
+        case UIChooserNodeType_Group:   return m_nodesGroup;
+        case UIChooserNodeType_Global:  return m_nodesGlobal;
+        case UIChooserNodeType_Machine: return m_nodesMachine;
     }
     AssertFailedReturn(QList<UIChooserNode*>());
 }
@@ -138,9 +138,9 @@ void UIChooserNodeGroup::addNode(UIChooserNode *pNode, int iPosition)
 {
     switch (pNode->type())
     {
-        case UIChooserItemType_Group:   m_nodesGroup.insert(iPosition == -1 ? m_nodesGroup.size() : iPosition, pNode); return;
-        case UIChooserItemType_Global:  m_nodesGlobal.insert(iPosition == -1 ? m_nodesGlobal.size() : iPosition, pNode); return;
-        case UIChooserItemType_Machine: m_nodesMachine.insert(iPosition == -1 ? m_nodesMachine.size() : iPosition, pNode); return;
+        case UIChooserNodeType_Group:   m_nodesGroup.insert(iPosition == -1 ? m_nodesGroup.size() : iPosition, pNode); return;
+        case UIChooserNodeType_Global:  m_nodesGlobal.insert(iPosition == -1 ? m_nodesGlobal.size() : iPosition, pNode); return;
+        case UIChooserNodeType_Machine: m_nodesMachine.insert(iPosition == -1 ? m_nodesMachine.size() : iPosition, pNode); return;
         default: break;
     }
     AssertFailedReturnVoid();
@@ -150,9 +150,9 @@ void UIChooserNodeGroup::removeNode(UIChooserNode *pNode)
 {
     switch (pNode->type())
     {
-        case UIChooserItemType_Group:   m_nodesGroup.removeAll(pNode); return;
-        case UIChooserItemType_Global:  m_nodesGlobal.removeAll(pNode); return;
-        case UIChooserItemType_Machine: m_nodesMachine.removeAll(pNode); return;
+        case UIChooserNodeType_Group:   m_nodesGroup.removeAll(pNode); return;
+        case UIChooserNodeType_Global:  m_nodesGlobal.removeAll(pNode); return;
+        case UIChooserNodeType_Machine: m_nodesMachine.removeAll(pNode); return;
         default: break;
     }
     AssertFailedReturnVoid();
@@ -193,9 +193,9 @@ int UIChooserNodeGroup::positionOf(UIChooserNode *pNode)
 {
     switch (pNode->type())
     {
-        case UIChooserItemType_Group:   return m_nodesGroup.indexOf(pNode->toGroupNode());
-        case UIChooserItemType_Global:  return m_nodesGlobal.indexOf(pNode->toGlobalNode());
-        case UIChooserItemType_Machine: return m_nodesMachine.indexOf(pNode->toMachineNode());
+        case UIChooserNodeType_Group:   return m_nodesGroup.indexOf(pNode->toGroupNode());
+        case UIChooserNodeType_Global:  return m_nodesGlobal.indexOf(pNode->toGlobalNode());
+        case UIChooserNodeType_Machine: return m_nodesMachine.indexOf(pNode->toMachineNode());
         default: break;
     }
     AssertFailedReturn(0);
@@ -279,10 +279,10 @@ void UIChooserNodeGroup::retranslateUi()
 
 void UIChooserNodeGroup::copyContents(UIChooserNodeGroup *pCopyFrom)
 {
-    foreach (UIChooserNode *pNode, pCopyFrom->nodes(UIChooserItemType_Group))
+    foreach (UIChooserNode *pNode, pCopyFrom->nodes(UIChooserNodeType_Group))
         new UIChooserNodeGroup(this, pNode->toGroupNode(), m_nodesGroup.size());
-    foreach (UIChooserNode *pNode, pCopyFrom->nodes(UIChooserItemType_Global))
+    foreach (UIChooserNode *pNode, pCopyFrom->nodes(UIChooserNodeType_Global))
         new UIChooserNodeGlobal(this, pNode->toGlobalNode(), m_nodesGlobal.size());
-    foreach (UIChooserNode *pNode, pCopyFrom->nodes(UIChooserItemType_Machine))
+    foreach (UIChooserNode *pNode, pCopyFrom->nodes(UIChooserNodeType_Machine))
         new UIChooserNodeMachine(this, pNode->toMachineNode(), m_nodesMachine.size());
 }

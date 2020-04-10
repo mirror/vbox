@@ -100,7 +100,7 @@ public:
         AssertPtrReturn(item(), 0);
 
         /* Return the number of group children: */
-        if (item()->type() == UIChooserItemType_Group)
+        if (item()->type() == UIChooserNodeType_Group)
             return item()->items().size();
 
         /* Zero by default: */
@@ -167,7 +167,7 @@ public:
         AssertPtrReturn(item(), QAccessible::NoRole);
 
         /* Return the role of group: */
-        if (item()->type() == UIChooserItemType_Group)
+        if (item()->type() == UIChooserNodeType_Group)
             return QAccessible::List;
 
         /* ListItem by default: */
@@ -194,7 +194,7 @@ public:
         }
 
         /* Compose the state of group: */
-        if (item()->type() == UIChooserItemType_Group)
+        if (item()->type() == UIChooserNodeType_Group)
         {
             state.expandable = true;
             if (!item()->toGroupItem()->isClosed())
@@ -512,9 +512,9 @@ void UIChooserItem::dragMoveEvent(QGraphicsSceneDragDropEvent *pEvent)
     {
         /* Allow drag tokens only for the same item type as current: */
         bool fAllowDragToken = false;
-        if ((type() == UIChooserItemType_Group &&
+        if ((type() == UIChooserNodeType_Group &&
              pEvent->mimeData()->hasFormat(UIChooserItemGroup::className())) ||
-            (type() == UIChooserItemType_Machine &&
+            (type() == UIChooserNodeType_Machine &&
              pEvent->mimeData()->hasFormat(UIChooserItemMachine::className())))
             fAllowDragToken = true;
         /* Do we need a drag-token? */

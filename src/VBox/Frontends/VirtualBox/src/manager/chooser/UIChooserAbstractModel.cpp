@@ -98,7 +98,7 @@ QString UIChooserAbstractModel::uniqueGroupName(UIChooserNode *pRoot)
 {
     /* Enumerate all the group names: */
     QStringList groupNames;
-    foreach (UIChooserNode *pNode, pRoot->nodes(UIChooserItemType_Group))
+    foreach (UIChooserNode *pNode, pRoot->nodes(UIChooserNodeType_Group))
         groupNames << pNode->name();
 
     /* Prepare reg-exp: */
@@ -452,7 +452,7 @@ void UIChooserAbstractModel::loadTree()
                             new UIChooserNodeGroup(m_pInvisibleRootNode,
                                                    false /* favorite */,
                                                    getDesiredNodePosition(m_pInvisibleRootNode,
-                                                                          UIChooserItemType_Group,
+                                                                          UIChooserNodeType_Group,
                                                                           strProviderName),
                                                    strProviderName,
                                                    false /* opened */);
@@ -483,7 +483,7 @@ void UIChooserAbstractModel::loadTree()
                                         new UIChooserNodeGroup(pProviderNode,
                                                                false /* favorite */,
                                                                getDesiredNodePosition(pProviderNode,
-                                                                                      UIChooserItemType_Group,
+                                                                                      UIChooserNodeType_Group,
                                                                                       strProfileName),
                                                                strProfileName,
                                                                true /* opened */);
@@ -575,7 +575,7 @@ UIChooserNode *UIChooserAbstractModel::getGroupNode(const QString &strName, UICh
         /* Make sure first-suffix is NOT empty: */
         AssertMsg(!strFirstSuffix.isEmpty(), ("Invalid group name!"));
         /* Trying to get group node among our children: */
-        foreach (UIChooserNode *pGroupNode, pParentNode->nodes(UIChooserItemType_Group))
+        foreach (UIChooserNode *pGroupNode, pParentNode->nodes(UIChooserNodeType_Group))
         {
             if (pGroupNode->name() == strSecondSubName)
             {
@@ -592,7 +592,7 @@ UIChooserNode *UIChooserAbstractModel::getGroupNode(const QString &strName, UICh
     UIChooserNodeGroup *pNewGroupNode =
         new UIChooserNodeGroup(pParentNode,
                                false /* favorite */,
-                               getDesiredNodePosition(pParentNode, UIChooserItemType_Group, strSecondSubName),
+                               getDesiredNodePosition(pParentNode, UIChooserNodeType_Group, strSecondSubName),
                                strSecondSubName,
                                fAllGroupsOpened || shouldGroupNodeBeOpened(pParentNode, strSecondSubName));
     return strSecondSuffix.isEmpty() ? pNewGroupNode : getGroupNode(strFirstSuffix, pNewGroupNode, fAllGroupsOpened);
@@ -629,7 +629,7 @@ bool UIChooserAbstractModel::shouldGroupNodeBeOpened(UIChooserNode *pParentNode,
 void UIChooserAbstractModel::wipeOutEmptyGroupsStartingFrom(UIChooserNode *pParent)
 {
     /* Cleanup all the group-items recursively first: */
-    foreach (UIChooserNode *pNode, pParent->nodes(UIChooserItemType_Group))
+    foreach (UIChooserNode *pNode, pParent->nodes(UIChooserNodeType_Group))
         wipeOutEmptyGroupsStartingFrom(pNode);
     /* If parent has no nodes: */
     if (!pParent->hasNodes())
@@ -671,7 +671,7 @@ bool UIChooserAbstractModel::isGlobalNodeFavorite(UIChooserNode *pParentNode) co
     return false;
 }
 
-int UIChooserAbstractModel::getDesiredNodePosition(UIChooserNode *pParentNode, UIChooserItemType enmType, const QString &strName)
+int UIChooserAbstractModel::getDesiredNodePosition(UIChooserNode *pParentNode, UIChooserNodeType enmType, const QString &strName)
 {
     /* End of list (by default)? */
     int iNewNodeDesiredPosition = -1;
@@ -690,8 +690,8 @@ int UIChooserAbstractModel::getDesiredNodePosition(UIChooserNode *pParentNode, U
             /* Get current node: */
             UIChooserNode *pNode = nodes[i];
             /* Which position should be current node placed by definitions? */
-            QString strDefinitionName = pNode->type() == UIChooserItemType_Group ? pNode->name() :
-                                        pNode->type() == UIChooserItemType_Machine ? toOldStyleUuid(pNode->toMachineNode()->cache()->id()) :
+            QString strDefinitionName = pNode->type() == UIChooserNodeType_Group ? pNode->name() :
+                                        pNode->type() == UIChooserNodeType_Machine ? toOldStyleUuid(pNode->toMachineNode()->cache()->id()) :
                                         QString();
             AssertMsg(!strDefinitionName.isEmpty(), ("Wrong definition name!"));
             int iNodeDefinitionPosition = getDefinedNodePosition(pParentNode, enmType, strDefinitionName);
@@ -712,7 +712,7 @@ int UIChooserAbstractModel::getDesiredNodePosition(UIChooserNode *pParentNode, U
     return iNewNodeDesiredPosition;
 }
 
-int UIChooserAbstractModel::getDefinedNodePosition(UIChooserNode *pParentNode, UIChooserItemType enmType, const QString &strName)
+int UIChooserAbstractModel::getDefinedNodePosition(UIChooserNode *pParentNode, UIChooserNodeType enmType, const QString &strName)
 {
     /* Read group definitions: */
     const QStringList definitions = gEDataManager->selectorWindowGroupsDefinitions(pParentNode->fullName());
@@ -725,11 +725,11 @@ int UIChooserAbstractModel::getDefinedNodePosition(UIChooserNode *pParentNode, U
     QString strDefinitionTemplateFull;
     switch (enmType)
     {
-        case UIChooserItemType_Group:
+        case UIChooserNodeType_Group:
             strDefinitionTemplateShort = QString("^g(\\S)*=");
             strDefinitionTemplateFull = QString("^g(\\S)*=%1$").arg(strName);
             break;
-        case UIChooserItemType_Machine:
+        case UIChooserNodeType_Machine:
             strDefinitionTemplateShort = QString("^m=");
             strDefinitionTemplateFull = QString("^m=%1$").arg(strName);
             break;
@@ -761,7 +761,7 @@ void UIChooserAbstractModel::createMachineNode(UIChooserNode *pParentNode, const
     /* Create machine node: */
     new UIChooserNodeMachine(pParentNode,
                              false /* favorite */,
-                             getDesiredNodePosition(pParentNode, UIChooserItemType_Machine, toOldStyleUuid(comMachine.GetId())),
+                             getDesiredNodePosition(pParentNode, UIChooserNodeType_Machine, toOldStyleUuid(comMachine.GetId())),
                              comMachine);
 }
 
@@ -806,13 +806,13 @@ void UIChooserAbstractModel::gatherGroupDefinitions(QMap<QString, QStringList> &
                                                     UIChooserNode *pParentGroup)
 {
     /* Iterate over all the machine-nodes: */
-    foreach (UIChooserNode *pNode, pParentGroup->nodes(UIChooserItemType_Machine))
+    foreach (UIChooserNode *pNode, pParentGroup->nodes(UIChooserNodeType_Machine))
         if (UIChooserNodeMachine *pMachineNode = pNode->toMachineNode())
             if (   pMachineNode->cache()->itemType() == UIVirtualMachineItem::ItemType_Local
                 && pMachineNode->cache()->accessible())
                 definitions[toOldStyleUuid(pMachineNode->cache()->id())] << pParentGroup->fullName();
     /* Iterate over all the group-nodes: */
-    foreach (UIChooserNode *pNode, pParentGroup->nodes(UIChooserItemType_Group))
+    foreach (UIChooserNode *pNode, pParentGroup->nodes(UIChooserNodeType_Group))
         gatherGroupDefinitions(definitions, pNode);
 }
 
@@ -822,20 +822,20 @@ void UIChooserAbstractModel::gatherGroupOrders(QMap<QString, QStringList> &order
     /* Prepare extra-data key for current group: */
     const QString strExtraDataKey = pParentGroup->fullName();
     /* Iterate over all the global-nodes: */
-    foreach (UIChooserNode *pNode, pParentGroup->nodes(UIChooserItemType_Global))
+    foreach (UIChooserNode *pNode, pParentGroup->nodes(UIChooserNodeType_Global))
     {
         const QString strGlobalDescriptor(pNode->isFavorite() ? "nf" : "n");
         orders[strExtraDataKey] << QString("%1=GLOBAL").arg(strGlobalDescriptor);
     }
     /* Iterate over all the group-nodes: */
-    foreach (UIChooserNode *pNode, pParentGroup->nodes(UIChooserItemType_Group))
+    foreach (UIChooserNode *pNode, pParentGroup->nodes(UIChooserNodeType_Group))
     {
         const QString strGroupDescriptor(pNode->toGroupNode()->isOpened() ? "go" : "gc");
         orders[strExtraDataKey] << QString("%1=%2").arg(strGroupDescriptor, pNode->name());
         gatherGroupOrders(orders, pNode);
     }
     /* Iterate over all the machine-nodes: */
-    foreach (UIChooserNode *pNode, pParentGroup->nodes(UIChooserItemType_Machine))
+    foreach (UIChooserNode *pNode, pParentGroup->nodes(UIChooserNodeType_Machine))
         if (UIChooserNodeMachine *pMachineNode = pNode->toMachineNode())
             if (pMachineNode->cache()->itemType() == UIVirtualMachineItem::ItemType_Local)
                 orders[strExtraDataKey] << QString("m=%1").arg(toOldStyleUuid(pMachineNode->cache()->id()));

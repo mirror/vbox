@@ -189,7 +189,7 @@ void UIChooserItemGlobal::updateToolTip()
     // Nothing for now..
 }
 
-QList<UIChooserItem*> UIChooserItemGlobal::items(UIChooserItemType) const
+QList<UIChooserItem*> UIChooserItemGlobal::items(UIChooserNodeType) const
 {
     AssertMsgFailedReturn(("Global graphics item do NOT support children!"), QList<UIChooserItem*>());
 }

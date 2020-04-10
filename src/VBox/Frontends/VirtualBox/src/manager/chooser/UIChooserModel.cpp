@@ -137,10 +137,10 @@ void UIChooserModel::handleToolButtonClick(UIChooserItem *pItem)
 {
     switch (pItem->type())
     {
-        case UIChooserItemType_Global:
+        case UIChooserNodeType_Global:
             emit sigToolMenuRequested(UIToolClass_Global, pItem->mapToScene(QPointF(pItem->size().width(), 0)).toPoint());
             break;
-        case UIChooserItemType_Machine:
+        case UIChooserNodeType_Machine:
             emit sigToolMenuRequested(UIToolClass_Machine, pItem->mapToScene(QPointF(pItem->size().width(), 0)).toPoint());
             break;
         default:
@@ -152,7 +152,7 @@ void UIChooserModel::handlePinButtonClick(UIChooserItem *pItem)
 {
     switch (pItem->type())
     {
-        case UIChooserItemType_Global:
+        case UIChooserNodeType_Global:
             pItem->setFavorite(!pItem->isFavorite());
             break;
         default:
@@ -316,23 +316,23 @@ QList<UIVirtualMachineItem*> UIChooserModel::selectedMachineItems() const
 
 bool UIChooserModel::isGroupItemSelected() const
 {
-    return firstSelectedItem() && firstSelectedItem()->type() == UIChooserItemType_Group;
+    return firstSelectedItem() && firstSelectedItem()->type() == UIChooserNodeType_Group;
 }
 
 bool UIChooserModel::isGlobalItemSelected() const
 {
-    return firstSelectedItem() && firstSelectedItem()->type() == UIChooserItemType_Global;
+    return firstSelectedItem() && firstSelectedItem()->type() == UIChooserNodeType_Global;
 }
 
 bool UIChooserModel::isMachineItemSelected() const
 {
-    return firstSelectedItem() && firstSelectedItem()->type() == UIChooserItemType_Machine;
+    return firstSelectedItem() && firstSelectedItem()->type() == UIChooserNodeType_Machine;
 }
 
 bool UIChooserModel::isSingleGroupSelected() const
 {
     return    selectedItems().size() == 1
-           && firstSelectedItem()->type() == UIChooserItemType_Group;
+           && firstSelectedItem()->type() == UIChooserNodeType_Group;
 }
 
 bool UIChooserModel::isAllItemsOfOneGroupSelected() const
@@ -378,14 +378,14 @@ UIChooserItem *UIChooserModel::findClosestUnselectedItem() const
             if (idxBefore >= 0)
             {
                 pItem = navigationItems().at(idxBefore);
-                if (!selectedItems().contains(pItem) && pItem->type() == UIChooserItemType_Machine)
+                if (!selectedItems().contains(pItem) && pItem->type() == UIChooserNodeType_Machine)
                     return pItem;
                 --idxBefore;
             }
             if (idxAfter < navigationItems().size())
             {
                 pItem = navigationItems().at(idxAfter);
-                if (!selectedItems().contains(pItem) && pItem->type() == UIChooserItemType_Machine)
+                if (!selectedItems().contains(pItem) && pItem->type() == UIChooserNodeType_Machine)
                     return pItem;
                 ++idxAfter;
             }
@@ -579,7 +579,7 @@ void UIChooserModel::setGlobalItemHeightHint(int iHint)
     foreach (UIChooserItem *pItem, navigationItems())
     {
         /* And for each global item: */
-        if (pItem->type() == UIChooserItemType_Global)
+        if (pItem->type() == UIChooserNodeType_Global)
         {
             /* Apply the height hint we have: */
             UIChooserItemGlobal *pGlobalItem = pItem->toGlobalItem();
@@ -787,7 +787,7 @@ void UIChooserModel::sltUngroupSelectedGroup()
         return;
 
     /* Make sure current-item is of group type! */
-    AssertMsg(currentItem()->type() == UIChooserItemType_Group, ("This is not group-item!"));
+    AssertMsg(currentItem()->type() == UIChooserNodeType_Group, ("This is not group-item!"));
 
     /* Check if we have collisions with our siblings: */
     UIChooserItem *pCurrentItem = currentItem();
@@ -806,17 +806,17 @@ void UIChooserModel::sltUngroupSelectedGroup()
                 pCollisionSibling = pSibling;
         if (pCollisionSibling)
         {
-            if (pNode->type() == UIChooserItemType_Machine)
+            if (pNode->type() == UIChooserNodeType_Machine)
             {
-                if (pCollisionSibling->type() == UIChooserItemType_Machine)
+                if (pCollisionSibling->type() == UIChooserNodeType_Machine)
                     toBeRemoved << pNode;
-                else if (pCollisionSibling->type() == UIChooserItemType_Group)
+                else if (pCollisionSibling->type() == UIChooserNodeType_Group)
                 {
                     msgCenter().cannotResolveCollisionAutomatically(strItemName, pParentNode->name());
                     return;
                 }
             }
-            else if (pNode->type() == UIChooserItemType_Group)
+            else if (pNode->type() == UIChooserNodeType_Group)
             {
                 if (msgCenter().confirmAutomaticCollisionResolve(strItemName, pParentNode->name()))
                     toBeRenamed << pNode;
@@ -834,7 +834,7 @@ void UIChooserModel::sltUngroupSelectedGroup()
             continue;
         switch (pNode->type())
         {
-            case UIChooserItemType_Group:
+            case UIChooserNodeType_Group:
             {
                 UIChooserNodeGroup *pGroupNode = new UIChooserNodeGroup(pParentNode,
                                                                         pNode->toGroupNode(),
@@ -845,7 +845,7 @@ void UIChooserModel::sltUngroupSelectedGroup()
                 copiedItems << pGroupItem;
                 break;
             }
-            case UIChooserItemType_Machine:
+            case UIChooserNodeType_Machine:
             {
                 UIChooserNodeMachine *pMachineNode = new UIChooserNodeMachine(pParentNode,
                                                                               pNode->toMachineNode(),
@@ -956,7 +956,7 @@ void UIChooserModel::sltGroupSelectedMachines()
         /* For each of known types: */
         switch (pItem->type())
         {
-            case UIChooserItemType_Group:
+            case UIChooserNodeType_Group:
             {
                 /* Avoid name collisions: */
                 if (busyGroupNames.contains(pItem->name()))
@@ -971,7 +971,7 @@ void UIChooserModel::sltGroupSelectedMachines()
                 delete pItem->node();
                 break;
             }
-            case UIChooserItemType_Machine:
+            case UIChooserNodeType_Machine:
             {
                 /* Avoid name collisions: */
                 if (busyMachineNames.contains(pItem->name()))
@@ -1427,13 +1427,13 @@ bool UIChooserModel::processContextMenuEvent(QGraphicsSceneContextMenuEvent *pEv
                 /* If this item of known type? */
                 switch (pItem->type())
                 {
-                    case UIChooserItemType_Global:
+                    case UIChooserNodeType_Global:
                     {
                         /* Global context menu for global item cases: */
                         popupContextMenu(UIGraphicsSelectorContextMenuType_Global, pEvent->screenPos());
                         return true;
                     }
-                    case UIChooserItemType_Group:
+                    case UIChooserNodeType_Group:
                     {
                         /* Get group-item: */
                         UIChooserItem *pGroupItem = qgraphicsitem_cast<UIChooserItemGroup*>(pItem);
@@ -1449,7 +1449,7 @@ bool UIChooserModel::processContextMenuEvent(QGraphicsSceneContextMenuEvent *pEv
                         }
                     }
                     RT_FALL_THRU();
-                    case UIChooserItemType_Machine:
+                    case UIChooserNodeType_Machine:
                     {
                         /* Machine context menu for other Group/Machine cases: */
                         popupContextMenu(UIGraphicsSelectorContextMenuType_Machine, pEvent->screenPos());
@@ -1469,13 +1469,13 @@ bool UIChooserModel::processContextMenuEvent(QGraphicsSceneContextMenuEvent *pEv
                 /* If this item of known type? */
                 switch (pItem->type())
                 {
-                    case UIChooserItemType_Global:
+                    case UIChooserNodeType_Global:
                     {
                         /* Global context menu for global item cases: */
                         popupContextMenu(UIGraphicsSelectorContextMenuType_Machine, pEvent->screenPos());
                         return true;
                     }
-                    case UIChooserItemType_Group:
+                    case UIChooserNodeType_Group:
                     {
                         /* Is this group-item only the one selected? */
                         if (selectedItems().size() == 1)
@@ -1486,7 +1486,7 @@ bool UIChooserModel::processContextMenuEvent(QGraphicsSceneContextMenuEvent *pEv
                         }
                     }
                     RT_FALL_THRU();
-                    case UIChooserItemType_Machine:
+                    case UIChooserNodeType_Machine:
                     {
                         /* Machine context menu for other Group/Machine cases: */
                         popupContextMenu(UIGraphicsSelectorContextMenuType_Machine, pEvent->screenPos());
@@ -1543,17 +1543,17 @@ QList<UIChooserItem*> UIChooserModel::createNavigationItemList(UIChooserItem *pI
     QList<UIChooserItem*> navigationItems;
 
     /* Iterate over all the global-items: */
-    foreach (UIChooserItem *pGlobalItem, pItem->items(UIChooserItemType_Global))
+    foreach (UIChooserItem *pGlobalItem, pItem->items(UIChooserNodeType_Global))
         navigationItems << pGlobalItem;
     /* Iterate over all the group-items: */
-    foreach (UIChooserItem *pGroupItem, pItem->items(UIChooserItemType_Group))
+    foreach (UIChooserItem *pGroupItem, pItem->items(UIChooserNodeType_Group))
     {
         navigationItems << pGroupItem;
         if (pGroupItem->toGroupItem()->isOpened())
             navigationItems << createNavigationItemList(pGroupItem);
     }
     /* Iterate over all the machine-items: */
-    foreach (UIChooserItem *pMachineItem, pItem->items(UIChooserItemType_Machine))
+    foreach (UIChooserItem *pMachineItem, pItem->items(UIChooserNodeType_Machine))
         navigationItems << pMachineItem;
 
     /* Return navigation list: */

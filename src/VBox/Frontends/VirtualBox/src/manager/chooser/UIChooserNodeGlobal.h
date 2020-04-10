@@ -50,7 +50,7 @@ public:
     virtual ~UIChooserNodeGlobal() /* override */;
 
     /** Returns RTTI node type. */
-    virtual UIChooserItemType type() const /* override */ { return UIChooserItemType_Global; }
+    virtual UIChooserNodeType type() const /* override */ { return UIChooserNodeType_Global; }
 
     /** Returns node name. */
     virtual QString name() const /* override */;
@@ -62,9 +62,9 @@ public:
     virtual QString definition() const /* override */;
 
     /** Returns whether there are children of certain @a enmType. */
-    virtual bool hasNodes(UIChooserItemType enmType = UIChooserItemType_Any) const /* override */;
+    virtual bool hasNodes(UIChooserNodeType enmType = UIChooserNodeType_Any) const /* override */;
     /** Returns a list of nodes of certain @a enmType. */
-    virtual QList<UIChooserNode*> nodes(UIChooserItemType enmType = UIChooserItemType_Any) const /* override */;
+    virtual QList<UIChooserNode*> nodes(UIChooserNodeType enmType = UIChooserNodeType_Any) const /* override */;
 
     /** Adds passed @a pNode to specified @a iPosition. */
     virtual void addNode(UIChooserNode *pNode, int iPosition) /* override */;

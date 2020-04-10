@@ -54,7 +54,7 @@ public:
     virtual ~UIChooserNode() /* override */;
 
     /** Returns RTTI node type. */
-    virtual UIChooserItemType type() const = 0;
+    virtual UIChooserNodeType type() const = 0;
 
     /** Casts node to group one. */
     UIChooserNodeGroup *toGroupNode();
@@ -90,9 +90,9 @@ public:
     virtual QString definition() const = 0;
 
     /** Returns whether there are children of certain @a enmType. */
-    virtual bool hasNodes(UIChooserItemType enmType = UIChooserItemType_Any) const = 0;
+    virtual bool hasNodes(UIChooserNodeType enmType = UIChooserNodeType_Any) const = 0;
     /** Returns a list of nodes of certain @a enmType. */
-    virtual QList<UIChooserNode*> nodes(UIChooserItemType enmType = UIChooserItemType_Any) const = 0;
+    virtual QList<UIChooserNode*> nodes(UIChooserNodeType enmType = UIChooserNodeType_Any) const = 0;
 
     /** Adds passed @a pNode to specified @a iPosition. */
     virtual void addNode(UIChooserNode *pNode, int iPosition) = 0;

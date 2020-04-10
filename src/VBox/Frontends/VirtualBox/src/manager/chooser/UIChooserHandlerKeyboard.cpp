@@ -250,7 +250,7 @@ bool UIChooserHandlerKeyboard::handleKeyPress(QKeyEvent *pEvent) const
         case Qt::Key_F2:
         {
             /* If this item is of group type: */
-            if (model()->currentItem()->type() == UIChooserItemType_Group)
+            if (model()->currentItem()->type() == UIChooserNodeType_Group)
             {
                 /* Start embedded editing of current-item: */
                 model()->startEditingGroupItemName();
@@ -264,8 +264,8 @@ bool UIChooserHandlerKeyboard::handleKeyPress(QKeyEvent *pEvent) const
         case Qt::Key_Enter:
         {
             /* If this item is of group or machine type: */
-            if (   model()->currentItem()->type() == UIChooserItemType_Group
-                || model()->currentItem()->type() == UIChooserItemType_Machine)
+            if (   model()->currentItem()->type() == UIChooserNodeType_Group
+                || model()->currentItem()->type() == UIChooserNodeType_Machine)
             {
                 /* Activate item: */
                 model()->activateMachineItem();
@@ -281,7 +281,7 @@ bool UIChooserHandlerKeyboard::handleKeyPress(QKeyEvent *pEvent) const
             if (UIChooserItem *pCurrentItem = model()->currentItem())
             {
                 /* Of the group type: */
-                if (pCurrentItem->type() == UIChooserItemType_Group)
+                if (pCurrentItem->type() == UIChooserNodeType_Group)
                 {
                     /* Toggle that group: */
                     UIChooserItemGroup *pGroupItem = pCurrentItem->toGroupItem();
@@ -366,13 +366,13 @@ void UIChooserHandlerKeyboard::shift(UIItemShiftDirection enmDirection, UIItemSh
     UIChooserItem *pShiftedItem = 0;
     switch (pCurrentNode->type())
     {
-        case UIChooserItemType_Group:
+        case UIChooserNodeType_Group:
         {
             UIChooserNodeGroup *pNewNode = new UIChooserNodeGroup(pParentNode, pCurrentNode->toGroupNode(), iNewCurrentNodePosition);
             pShiftedItem = new UIChooserItemGroup(pParentNode->item(), pNewNode);
             break;
         }
-        case UIChooserItemType_Machine:
+        case UIChooserNodeType_Machine:
         {
             UIChooserNodeMachine *pNewNode = new UIChooserNodeMachine(pParentNode, pCurrentNode->toMachineNode(), iNewCurrentNodePosition);
             pShiftedItem = new UIChooserItemMachine(pParentNode->item(), pNewNode);

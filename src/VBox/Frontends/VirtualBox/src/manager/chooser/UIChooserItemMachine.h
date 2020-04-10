@@ -36,7 +36,7 @@ class UIChooserItemMachine : public UIChooserItem
 public:
 
     /** RTTI required for qgraphicsitem_cast. */
-    enum { Type = UIChooserItemType_Machine };
+    enum { Type = UIChooserNodeType_Machine };
 
     /** Build item for certain @a pNode, passing @a pParent to the base-class. */
     UIChooserItemMachine(UIChooserItem *pParent, UIChooserNodeMachine *pNode);
@@ -107,7 +107,7 @@ protected:
     /** @name Children stuff.
       * @{ */
         /** Returns children items of certain @a enmType. */
-        virtual QList<UIChooserItem*> items(UIChooserItemType enmType = UIChooserItemType_Any) const /* override */;
+        virtual QList<UIChooserItem*> items(UIChooserNodeType enmType = UIChooserNodeType_Any) const /* override */;
 
         /** Adds possible @a fFavorite child @a pItem to certain @a iPosition. */
         virtual void addItem(UIChooserItem *pItem, bool fFavorite, int iPosition) /* override */;

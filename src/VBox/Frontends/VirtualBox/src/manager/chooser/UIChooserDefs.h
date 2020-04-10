@@ -28,13 +28,13 @@
 #include <iprt/cdefs.h>
 
 
-/** UIChooserItem types. */
-enum UIChooserItemType
+/** UIChooserNode types. */
+enum UIChooserNodeType
 {
-    UIChooserItemType_Any     = QGraphicsItem::UserType,
-    UIChooserItemType_Group,
-    UIChooserItemType_Global,
-    UIChooserItemType_Machine
+    UIChooserNodeType_Any     = QGraphicsItem::UserType,
+    UIChooserNodeType_Group,
+    UIChooserNodeType_Global,
+    UIChooserNodeType_Machine
 };
 
 
@@ -56,6 +56,7 @@ enum UIChooserItemDragToken
     UIChooserItemDragToken_Up,
     UIChooserItemDragToken_Down
 };
+
 
 /** UIChooserItemMachine enumeration flags. */
 enum UIChooserItemMachineEnumerationFlag

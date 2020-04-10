@@ -114,7 +114,7 @@ void UIChooserItemMachine::enumerateMachineItems(const QList<UIChooserItem*> &il
     foreach (UIChooserItem *pItem, il)
     {
         /* If that is machine-item: */
-        if (pItem->type() == UIChooserItemType_Machine)
+        if (pItem->type() == UIChooserNodeType_Machine)
         {
             /* Get the iterated machine-item: */
             UIChooserItemMachine *pMachineItem = pItem->toMachineItem();
@@ -133,12 +133,12 @@ void UIChooserItemMachine::enumerateMachineItems(const QList<UIChooserItem*> &il
             ol << pMachineItem;
         }
         /* If that is group-item: */
-        else if (pItem->type() == UIChooserItemType_Group)
+        else if (pItem->type() == UIChooserNodeType_Group)
         {
             /* Enumerate all the machine-items recursively: */
-            enumerateMachineItems(pItem->items(UIChooserItemType_Machine), ol, iEnumerationFlags);
+            enumerateMachineItems(pItem->items(UIChooserNodeType_Machine), ol, iEnumerationFlags);
             /* Enumerate all the group-items recursively: */
-            enumerateMachineItems(pItem->items(UIChooserItemType_Group), ol, iEnumerationFlags);
+            enumerateMachineItems(pItem->items(UIChooserNodeType_Group), ol, iEnumerationFlags);
         }
     }
 }
@@ -222,7 +222,7 @@ void UIChooserItemMachine::updateToolTip()
     setToolTip(node()->toMachineNode()->cache()->toolTipText());
 }
 
-QList<UIChooserItem*> UIChooserItemMachine::items(UIChooserItemType) const
+QList<UIChooserItem*> UIChooserItemMachine::items(UIChooserNodeType) const
 {
     AssertMsgFailed(("Machine graphics item do NOT support children!"));
     return QList<UIChooserItem*>();

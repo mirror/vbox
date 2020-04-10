@@ -114,7 +114,7 @@ void UIChooserItemGroup::open(bool fAnimated /* = true */)
 void UIChooserItemGroup::updateFavorites()
 {
     /* Global items only for now, move items to corresponding layout: */
-    foreach (UIChooserItem *pItem, items(UIChooserItemType_Global))
+    foreach (UIChooserItem *pItem, items(UIChooserNodeType_Global))
         if (pItem->isFavorite())
         {
             for (int iIndex = 0; iIndex < m_pLayoutGlobal->count(); ++iIndex)
@@ -306,10 +306,10 @@ void UIChooserItemGroup::updateToolTip()
     }
 
     /* Should we add group info? */
-    if (!items(UIChooserItemType_Group).isEmpty())
+    if (!items(UIChooserNodeType_Group).isEmpty())
     {
         /* Template: */
-        QString strGroupCount = tr("%n group(s)", "Group item tool-tip / Group info", items(UIChooserItemType_Group).size());
+        QString strGroupCount = tr("%n group(s)", "Group item tool-tip / Group info", items(UIChooserNodeType_Group).size());
 
         /* Append value: */
         QString strValue = tr("<nobr>%1</nobr>", "Group item tool-tip / Group info wrapper").arg(strGroupCount);
@@ -317,15 +317,15 @@ void UIChooserItemGroup::updateToolTip()
     }
 
     /* Should we add machine info? */
-    if (!items(UIChooserItemType_Machine).isEmpty())
+    if (!items(UIChooserNodeType_Machine).isEmpty())
     {
         /* Check if 'this' group contains started VMs: */
         int iCountOfStartedMachineItems = 0;
-        foreach (UIChooserItem *pItem, items(UIChooserItemType_Machine))
+        foreach (UIChooserItem *pItem, items(UIChooserNodeType_Machine))
             if (pItem->node()->toMachineNode()->cache()->isItemStarted())
                 ++iCountOfStartedMachineItems;
         /* Template: */
-        QString strMachineCount = tr("%n machine(s)", "Group item tool-tip / Machine info", items(UIChooserItemType_Machine).size());
+        QString strMachineCount = tr("%n machine(s)", "Group item tool-tip / Machine info", items(UIChooserNodeType_Machine).size());
         QString strStartedMachineCount = tr("(%n running)", "Group item tool-tip / Running machine info", iCountOfStartedMachineItems);
 
         /* Append value: */
@@ -345,14 +345,14 @@ void UIChooserItemGroup::installEventFilterHelper(QObject *pSource)
     pSource->installEventFilter(m_pScrollArea);
 }
 
-QList<UIChooserItem*> UIChooserItemGroup::items(UIChooserItemType type /* = UIChooserItemType_Any */) const
+QList<UIChooserItem*> UIChooserItemGroup::items(UIChooserNodeType type /* = UIChooserNodeType_Any */) const
 {
     switch (type)
     {
-        case UIChooserItemType_Any: return items(UIChooserItemType_Global) + items(UIChooserItemType_Group) + items(UIChooserItemType_Machine);
-        case UIChooserItemType_Global: return m_globalItems;
-        case UIChooserItemType_Group: return m_groupItems;
-        case UIChooserItemType_Machine: return m_machineItems;
+        case UIChooserNodeType_Any: return items(UIChooserNodeType_Global) + items(UIChooserNodeType_Group) + items(UIChooserNodeType_Machine);
+        case UIChooserNodeType_Global: return m_globalItems;
+        case UIChooserNodeType_Group: return m_groupItems;
+        case UIChooserNodeType_Machine: return m_machineItems;
         default: break;
     }
     return QList<UIChooserItem*>();
@@ -363,7 +363,7 @@ void UIChooserItemGroup::addItem(UIChooserItem *pItem, bool fFavorite, int iPosi
     /* Check item type: */
     switch (pItem->type())
     {
-        case UIChooserItemType_Global:
+        case UIChooserNodeType_Global:
         {
             AssertMsg(!m_globalItems.contains(pItem), ("Global-item already added!"));
             if (iPosition < 0 || iPosition >= m_globalItems.size())
@@ -384,7 +384,7 @@ void UIChooserItemGroup::addItem(UIChooserItem *pItem, bool fFavorite, int iPosi
             }
             break;
         }
-        case UIChooserItemType_Group:
+        case UIChooserNodeType_Group:
         {
             AssertMsg(!m_groupItems.contains(pItem), ("Group-item already added!"));
             if (iPosition < 0 || iPosition >= m_groupItems.size())
@@ -399,7 +399,7 @@ void UIChooserItemGroup::addItem(UIChooserItem *pItem, bool fFavorite, int iPosi
             }
             break;
         }
-        case UIChooserItemType_Machine:
+        case UIChooserNodeType_Machine:
         {
             AssertMsg(!m_machineItems.contains(pItem), ("Machine-item already added!"));
             if (iPosition < 0 || iPosition >= m_machineItems.size())
@@ -433,7 +433,7 @@ void UIChooserItemGroup::removeItem(UIChooserItem *pItem)
     /* Check item type: */
     switch (pItem->type())
     {
-        case UIChooserItemType_Global:
+        case UIChooserNodeType_Global:
         {
             AssertMsg(m_globalItems.contains(pItem), ("Global-item was not found!"));
             m_globalItems.removeAt(m_globalItems.indexOf(pItem));
@@ -443,7 +443,7 @@ void UIChooserItemGroup::removeItem(UIChooserItem *pItem)
                 m_pLayoutGlobal->removeItem(pItem);
             break;
         }
-        case UIChooserItemType_Group:
+        case UIChooserNodeType_Group:
         {
             AssertMsg(m_groupItems.contains(pItem), ("Group-item was not found!"));
             m_groupItems.removeAt(m_groupItems.indexOf(pItem));
@@ -453,7 +453,7 @@ void UIChooserItemGroup::removeItem(UIChooserItem *pItem)
                 m_pLayoutGroup->removeItem(pItem);
             break;
         }
-        case UIChooserItemType_Machine:
+        case UIChooserNodeType_Machine:
         {
             AssertMsg(m_machineItems.contains(pItem), ("Machine-item was not found!"));
             m_machineItems.removeAt(m_machineItems.indexOf(pItem));
@@ -505,13 +505,13 @@ UIChooserItem* UIChooserItemGroup::searchForItem(const QString &strSearchTag, in
     }
 
     /* Search among all the children, but machines first: */
-    foreach (UIChooserItem *pItem, items(UIChooserItemType_Machine))
+    foreach (UIChooserItem *pItem, items(UIChooserNodeType_Machine))
         if (UIChooserItem *pFoundItem = pItem->searchForItem(strSearchTag, iItemSearchFlags))
             return pFoundItem;
-    foreach (UIChooserItem *pItem, items(UIChooserItemType_Global))
+    foreach (UIChooserItem *pItem, items(UIChooserNodeType_Global))
         if (UIChooserItem *pFoundItem = pItem->searchForItem(strSearchTag, iItemSearchFlags))
             return pFoundItem;
-    foreach (UIChooserItem *pItem, items(UIChooserItemType_Group))
+    foreach (UIChooserItem *pItem, items(UIChooserNodeType_Group))
         if (UIChooserItem *pFoundItem = pItem->searchForItem(strSearchTag, iItemSearchFlags))
             return pFoundItem;
 
@@ -522,13 +522,13 @@ UIChooserItem* UIChooserItemGroup::searchForItem(const QString &strSearchTag, in
 UIChooserItem *UIChooserItemGroup::firstMachineItem()
 {
     /* If this group-item have at least one machine-item: */
-    if (node()->hasNodes(UIChooserItemType_Machine))
+    if (node()->hasNodes(UIChooserNodeType_Machine))
         /* Return the first machine-item: */
-        return items(UIChooserItemType_Machine).first()->firstMachineItem();
+        return items(UIChooserNodeType_Machine).first()->firstMachineItem();
     /* If this group-item have at least one group-item: */
-    else if (node()->hasNodes(UIChooserItemType_Group))
+    else if (node()->hasNodes(UIChooserNodeType_Group))
         /* Return the first machine-item of the first group-item: */
-        return items(UIChooserItemType_Group).first()->firstMachineItem();
+        return items(UIChooserNodeType_Group).first()->firstMachineItem();
     /* Found nothing? */
     return 0;
 }
@@ -682,7 +682,7 @@ bool UIChooserItemGroup::isDropAllowed(QGraphicsSceneDragDropEvent *pEvent, UICh
         UIChooserItem *pItem = pCastedMimeData->item();
         /* Make sure passed group is mutable within this group: */
         if (pItem->toGroupItem()->isContainsLockedMachine() &&
-            !items(UIChooserItemType_Group).contains(pItem))
+            !items(UIChooserNodeType_Group).contains(pItem))
             return false;
         /* Make sure passed group is not 'this': */
         if (pItem == this)
@@ -705,7 +705,7 @@ bool UIChooserItemGroup::isDropAllowed(QGraphicsSceneDragDropEvent *pEvent, UICh
         UIChooserItem *pItem = pCastedMimeData->item();
         /* Make sure passed machine is mutable within this group: */
         if (pItem->toMachineItem()->isLockedMachine() &&
-            !items(UIChooserItemType_Machine).contains(pItem))
+            !items(UIChooserNodeType_Machine).contains(pItem))
             return false;
         switch (pEvent->proposedAction())
         {
@@ -876,7 +876,7 @@ void UIChooserItemGroup::sltNameEditingFinished()
 
     /* Enumerate all the group names: */
     QStringList groupNames;
-    foreach (UIChooserItem *pItem, parentItem()->items(UIChooserItemType_Group))
+    foreach (UIChooserItem *pItem, parentItem()->items(UIChooserNodeType_Group))
         groupNames << pItem->name();
     /* If proposed name is empty or not unique, reject it: */
     QString strNewName = m_pNameEditorWidget->text().trimmed();
@@ -1196,11 +1196,11 @@ void UIChooserItemGroup::updateToggleButtonToolTip()
 
 void UIChooserItemGroup::copyContents(UIChooserNodeGroup *pCopyFrom)
 {
-    foreach (UIChooserNode *pNode, pCopyFrom->nodes(UIChooserItemType_Group))
+    foreach (UIChooserNode *pNode, pCopyFrom->nodes(UIChooserNodeType_Group))
         new UIChooserItemGroup(this, pNode->toGroupNode());
-    foreach (UIChooserNode *pNode, pCopyFrom->nodes(UIChooserItemType_Global))
+    foreach (UIChooserNode *pNode, pCopyFrom->nodes(UIChooserNodeType_Global))
         new UIChooserItemGlobal(this, pNode->toGlobalNode());
-    foreach (UIChooserNode *pNode, pCopyFrom->nodes(UIChooserItemType_Machine))
+    foreach (UIChooserNode *pNode, pCopyFrom->nodes(UIChooserNodeType_Machine))
         new UIChooserItemMachine(this, pNode->toMachineNode());
 }
 
@@ -1217,11 +1217,11 @@ bool UIChooserItemGroup::isContainsMachine(const QUuid &uId) const
 bool UIChooserItemGroup::isContainsLockedMachine()
 {
     /* Check each machine-item: */
-    foreach (UIChooserItem *pItem, items(UIChooserItemType_Machine))
+    foreach (UIChooserItem *pItem, items(UIChooserNodeType_Machine))
         if (pItem->toMachineItem()->isLockedMachine())
             return true;
     /* Check each group-item: */
-    foreach (UIChooserItem *pItem, items(UIChooserItemType_Group))
+    foreach (UIChooserItem *pItem, items(UIChooserNodeType_Group))
         if (pItem->toGroupItem()->isContainsLockedMachine())
             return true;
     /* Found nothing? */
