@@ -1130,6 +1130,7 @@ typedef union
     uint64_t    u64;
 } IOMMU_EXCL_RANGE_BAR_T;
 AssertCompileSize(IOMMU_EXCL_RANGE_BAR_T, 8);
+#define IOMMU_EXCL_RANGE_BAR_VALID_MASK     UINT64_C(0x000ffffffffff003)
 
 /**
  * IOMMU Exclusion Range Limit Register (MMIO).
@@ -1147,6 +1148,8 @@ typedef union
     uint64_t    u64;
 } IOMMU_EXCL_RANGE_LIMIT_T;
 AssertCompileSize(IOMMU_EXCL_RANGE_LIMIT_T, 8);
+#define IOMMU_EXCL_RANGE_LIMIT_VALID_MASK   UINT64_C(0x000ffffffffff000)
+
 
 /**
  * IOMMU Extended Feature Register (MMIO).
@@ -1221,6 +1224,7 @@ typedef union
     uint64_t    u64;
 } PPR_LOG_BAR_T;
 AssertCompileSize(PPR_LOG_BAR_T, 8);
+#define IOMMU_PPR_LOG_BAR_VALID_MASK    UINT64_C(0x0f0ffffffffff000)
 
 /**
  * IOMMU Hardware Event Upper Register (MMIO).
@@ -2052,6 +2056,36 @@ static void iommuAmdDecodeBufferLength(uint8_t uEncodedLen, uint32_t *pcEntries,
 
 
 /**
+ * Logs if the buffer length is invalid.
+ *
+ * @param   uEncodedLen     The length to decode.
+ * @param   pszFunc         Name of the calling function for logging purposes.
+ */
+DECLINLINE(void) iommuAmdCheckBufferLength(uint8_t uEncodedLen, const char *pszFunc)
+{
+#ifdef VBOX_STRICT
+    uint32_t cEntries;
+    iommuAmdDecodeBufferLength(uEncodedLen, &cEntries, NULL /* pcbBuffer */);
+    if (!cEntries)
+        Log((IOMMU_LOG_PFX ": %s: Invalid length %#x\n", pszFunc, uEncodedLen));
+#else
+    RT_NOREF(uEncodedLen, pszFunc);
+#endif
+}
+
+
+/**
+ * Writes to a read-only register.
+ */
+static VBOXSTRICTRC iommuAmdIgnore_w(PPDMDEVINS pDevIns, PIOMMU pThis, uint32_t iReg, uint64_t  u64Value)
+{
+    RT_NOREF(pDevIns, pThis, iReg);
+    Log((IOMMU_LOG_PFX ": iommuAmdIgnore_w: Write to read-only register (%#x) with value %#RX64 ignored\n", iReg, u64Value));
+    return VINF_SUCCESS;
+}
+
+
+/**
  * Writes the Device Table Base Address Register.
  */
 static VBOXSTRICTRC iommuAmdDevTabBar_w(PPDMDEVINS pDevIns, PIOMMU pThis, uint32_t iReg, uint64_t  u64Value)
@@ -2069,14 +2103,7 @@ static VBOXSTRICTRC iommuAmdCmdBufBar_w(PPDMDEVINS pDevIns, PIOMMU pThis, uint32
 {
     RT_NOREF(pDevIns, pThis, iReg);
     pThis->CmdBufBaseAddr.u64 = u64Value & IOMMU_CMD_BUF_BAR_VALID_MASK;
-
-#ifdef VBOX_STRICT
-    uint32_t cEntries;
-    uint8_t const uLen = pThis->CmdBufBaseAddr.n.u4CmdLen;
-    iommuAmdDecodeBufferLength(uLen, &cEntries, NULL /* pcbBuffer */);
-    if (!cEntries)
-        Log((IOMMU_LOG_PFX ": iommuAmdCmdBufBar_w: Invalid length %#x\n", uLen));
-#endif
+    iommuAmdCheckBufferLength(pThis->CmdBufBaseAddr.n.u4CmdLen, __PRETTY_FUNCTION__);
     return VINF_SUCCESS;
 }
 
@@ -2087,14 +2114,41 @@ static VBOXSTRICTRC iommuAmdEvtLogBar_w(PPDMDEVINS pDevIns, PIOMMU pThis, uint32
 {
     RT_NOREF(pDevIns, pThis, iReg);
     pThis->EvtLogBaseAddr.u64 = u64Value & IOMMU_EVT_LOG_BAR_VALID_MASK;
+    iommuAmdCheckBufferLength(pThis->EvtLogBaseAddr.n.u4EvtLen, __PRETTY_FUNCTION__);
+    return VINF_SUCCESS;
+}
 
-#ifdef VBOX_STRICT
-    uint32_t cEntries;
-    uint8_t const uLen = pThis->EvtLogBaseAddr.n.u4EvtLen;
-    iommuAmdDecodeBufferLength(uLen, &cEntries, NULL /* pcbBuffer */);
-    if (!cEntries)
-        Log((IOMMU_LOG_PFX ": iommuAmdEvtLogBar_w: Invalid length %#x\n", uLen));
-#endif
+
+/**
+ * Writes to the Excluse Range Base Address Register.
+ */
+static VBOXSTRICTRC iommuAmdExclRangeBar_w(PPDMDEVINS pDevIns, PIOMMU pThis, uint32_t iReg, uint64_t  u64Value)
+{
+    RT_NOREF(pDevIns, pThis, iReg);
+    pThis->ExclRangeBaseAddr.u64 = u64Value & IOMMU_EXCL_RANGE_BAR_VALID_MASK;
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Writes to the Excluse Range Limit Register.
+ */
+static VBOXSTRICTRC iommuAmdExclRangeLimit_w(PPDMDEVINS pDevIns, PIOMMU pThis, uint32_t iReg, uint64_t  u64Value)
+{
+    RT_NOREF(pDevIns, pThis, iReg);
+    pThis->ExclRangeLimit.u64 = u64Value & IOMMU_EXCL_RANGE_LIMIT_VALID_MASK;
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Writes the PPR Log Base Address Register.
+ */
+static VBOXSTRICTRC iommuAmdPprLogBar_w(PPDMDEVINS pDevIns, PIOMMU pThis, uint32_t iReg, uint64_t  u64Value)
+{
+    RT_NOREF(pDevIns, pThis, iReg);
+    pThis->PprLogBaseAddr.u64 = u64Value & IOMMU_PPR_LOG_BAR_VALID_MASK;
+    iommuAmdCheckBufferLength(pThis->PprLogBaseAddr.n.u4PprLogLen, __PRETTY_FUNCTION__);
     return VINF_SUCCESS;
 }
 
@@ -2121,7 +2175,7 @@ static const IOMMUREGACC g_aTable1Regs[] =
  *
  * @returns Strict VBox status code.
  * @param   pDevIns     The device instance.
- * @param   off         Offset in bytes.
+ * @param   off         MMIO byte offset to the register.
  * @param   cb          The size of the write access.
  * @param   uValue      The value being written.
  */
@@ -2134,34 +2188,33 @@ static VBOXSTRICTRC iommuAmdWriteRegister(PPDMDEVINS pDevIns, uint32_t off, uint
     PIOMMU pThis = PDMDEVINS_2_DATA(pDevIns, PIOMMU);
     Assert(pThis);
 
-    VBOXSTRICTRC rcStrict;
     switch (off)
     {
         case IOMMU_MMIO_OFF_DEV_TAB_BAR:        return iommuAmdDevTabBar_w(pDevIns, pThis, off, uValue);
         case IOMMU_MMIO_OFF_CMD_BUF_BAR:        return iommuAmdCmdBufBar_w(pDevIns, pThis, off, uValue);
-        case IOMMU_MMIO_OFF_EVT_LOG_BAR:        return iommuAmdEvtLogBar_w(pDevIns, pThis, off,  uValue);
+        case IOMMU_MMIO_OFF_EVT_LOG_BAR:        return iommuAmdEvtLogBar_w(pDevIns, pThis, off, uValue);
         case IOMMU_MMIO_OFF_CTRL:
-        case IOMMU_MMIO_OFF_EXCL_BAR:
-        case IOMMU_MMIO_OFF_EXCL_RANGE_LIMIT:
-        case IOMMU_MMIO_OFF_EXT_FEAT:
+        case IOMMU_MMIO_OFF_EXCL_BAR:           return iommuAmdExclRangeBar_w(pDevIns, pThis, off, uValue);
+        case IOMMU_MMIO_OFF_EXCL_RANGE_LIMIT:   return iommuAmdExclRangeLimit_w(pDevIns, pThis, off, uValue);
+        case IOMMU_MMIO_OFF_EXT_FEAT:           return iommuAmdIgnore_w(pDevIns, pThis, off, uValue);
 
-        case IOMMU_MMIO_OFF_PPR_LOG_BAR:
-        case IOMMU_MMIO_OFF_HW_EVT_HI:
-        case IOMMU_MMIO_OFF_HW_EVT_LO:
+        case IOMMU_MMIO_OFF_PPR_LOG_BAR:        return iommuAmdPprLogBar_w(pDevIns, pThis, off, uValue);
+        case IOMMU_MMIO_OFF_HW_EVT_HI:          return iommuAmdIgnore_w(pDevIns, pThis, off, uValue);
+        case IOMMU_MMIO_OFF_HW_EVT_LO:          return iommuAmdIgnore_w(pDevIns, pThis, off, uValue);
         case IOMMU_MMIO_OFF_HW_EVT_STATUS:
 
-        case IOMMU_MMIO_OFF_GALOG_BAR:
-        case IOMMU_MMIO_OFF_GALOG_TAIL_ADDR:
+        case IOMMU_MMIO_OFF_GALOG_BAR:          return iommuAmdIgnore_w(pDevIns, pThis, off, uValue);
+        case IOMMU_MMIO_OFF_GALOG_TAIL_ADDR:    return iommuAmdIgnore_w(pDevIns, pThis, off, uValue);
 
-        case IOMMU_MMIO_OFF_PPR_LOG_B_BAR:
-        case IOMMU_MMIO_OFF_PPR_EVT_B_BAR:
+        case IOMMU_MMIO_OFF_PPR_LOG_B_BAR:      return iommuAmdIgnore_w(pDevIns, pThis, off, uValue);
+        case IOMMU_MMIO_OFF_PPR_EVT_B_BAR:      return iommuAmdIgnore_w(pDevIns, pThis, off, uValue);
 
         case IOMMU_MMIO_OFF_DEV_TAB_SEG_FIRST:
         case IOMMU_MMIO_OFF_DEV_TAB_SEG_LAST:
         {
             uint8_t const idxDevTabSeg = (off - IOMMU_MMIO_OFF_DEV_TAB_SEG_FIRST) >> 3;
             Assert(idxDevTabSeg < RT_ELEMENTS(pThis->DevTabSeg));
-            break;
+            return iommuAmdIgnore_w(pDevIns, pThis, off, uValue);
         }
 
         case IOMMU_MMIO_OFF_DEV_SPECIFIC_FEAT:
@@ -2226,8 +2279,7 @@ static VBOXSTRICTRC iommuAmdWriteRegister(PPDMDEVINS pDevIns, uint32_t off, uint
         {
             Log((IOMMU_LOG_PFX ": iommuAmdWriteRegister: Writing unsupported register: SMI filter %u -> Ignored\n",
                  (off - IOMMU_MMIO_OFF_SMI_FLT_FIRST) >> 3));
-            rcStrict = VINF_SUCCESS;
-            break;
+            return VINF_SUCCESS;
         }
 
         /* Unknown. */
@@ -2235,12 +2287,9 @@ static VBOXSTRICTRC iommuAmdWriteRegister(PPDMDEVINS pDevIns, uint32_t off, uint
         {
             Log((IOMMU_LOG_PFX ": iommuAmdWriteRegister: Trying to write unknown register at %u (%#x) with %#RX64\n", off, off,
                  uValue));
-            rcStrict = VINF_SUCCESS;
-            break;
+            return VINF_SUCCESS;
         }
     }
-
-    return rcStrict;
 }
 
 
