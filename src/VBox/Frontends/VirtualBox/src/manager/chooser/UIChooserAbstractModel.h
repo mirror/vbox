@@ -148,8 +148,8 @@ protected slots:
 #ifdef VBOX_GUI_WITH_CLOUD_VMS
     /** @name Cloud stuff.
       * @{ */
-        /** Handles acquire cloud instances task complete signal. */
-        virtual void sltHandleCloudAcquireInstancesTaskComplete(UITask *pTask);
+        /** Handles list cloud machines task complete signal. */
+        virtual void sltHandleCloudListMachinesTaskComplete(UITask *pTask);
     /** @} */
 #endif /* VBOX_GUI_WITH_CLOUD_VMS */
 

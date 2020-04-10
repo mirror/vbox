@@ -717,14 +717,14 @@ void UIChooserModel::sltReloadMachine(const QUuid &uId)
 }
 
 #ifdef VBOX_GUI_WITH_CLOUD_VMS
-void UIChooserModel::sltHandleCloudAcquireInstancesTaskComplete(UITask *pTask)
+void UIChooserModel::sltHandleCloudListMachinesTaskComplete(UITask *pTask)
 {
     /* Skip unrelated tasks: */
     if (!pTask || pTask->type() != UITask::Type_CloudAcquireInstances)
         return;
 
     /* Call to base-class: */
-    UIChooserAbstractModel::sltHandleCloudAcquireInstancesTaskComplete(pTask);
+    UIChooserAbstractModel::sltHandleCloudListMachinesTaskComplete(pTask);
 
     /* Remember first selected item definition: */
     const QString strDefinition = firstSelectedItem()->definition();

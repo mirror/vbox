@@ -266,7 +266,7 @@ void UIChooserAbstractModel::sltStartGroupSaving()
 }
 
 #ifdef VBOX_GUI_WITH_CLOUD_VMS
-void UIChooserAbstractModel::sltHandleCloudAcquireInstancesTaskComplete(UITask *pTask)
+void UIChooserAbstractModel::sltHandleCloudListMachinesTaskComplete(UITask *pTask)
 {
     /* Skip unrelated tasks: */
     if (!pTask || pTask->type() != UITask::Type_CloudAcquireInstances)
@@ -498,7 +498,7 @@ void UIChooserAbstractModel::loadTree()
                                     if (pTask)
                                     {
                                         connect(uiCommon().threadPoolCloud(), &UIThreadPool::sigTaskComplete,
-                                                this, &UIChooserAbstractModel::sltHandleCloudAcquireInstancesTaskComplete);
+                                                this, &UIChooserAbstractModel::sltHandleCloudListMachinesTaskComplete);
                                         uiCommon().threadPoolCloud()->enqueueTask(pTask);
                                     }
                                 }
