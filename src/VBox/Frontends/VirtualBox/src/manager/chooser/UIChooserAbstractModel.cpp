@@ -388,6 +388,7 @@ void UIChooserAbstractModel::loadTree()
                                                   false /* favorite */,
                                                   0 /* position */,
                                                   QString() /* name */,
+                                                  UIChooserNodeGroupType_Local,
                                                   true /* opened */);
     if (invisibleRoot())
     {
@@ -455,6 +456,7 @@ void UIChooserAbstractModel::loadTree()
                                                                           UIChooserNodeType_Group,
                                                                           strProviderName),
                                                    strProviderName,
+                                                   UIChooserNodeGroupType_Provider,
                                                    false /* opened */);
 
                         /* Iterate through existing profile names: */
@@ -486,6 +488,7 @@ void UIChooserAbstractModel::loadTree()
                                                                                       UIChooserNodeType_Group,
                                                                                       strProfileName),
                                                                strProfileName,
+                                                               UIChooserNodeGroupType_Profile,
                                                                true /* opened */);
                                     /* Add fake cloud VM item: */
                                     new UIChooserNodeMachine(pProfileNode,
@@ -594,6 +597,7 @@ UIChooserNode *UIChooserAbstractModel::getGroupNode(const QString &strName, UICh
                                false /* favorite */,
                                getDesiredNodePosition(pParentNode, UIChooserNodeType_Group, strSecondSubName),
                                strSecondSubName,
+                               UIChooserNodeGroupType_Local,
                                fAllGroupsOpened || shouldGroupNodeBeOpened(pParentNode, strSecondSubName));
     return strSecondSuffix.isEmpty() ? pNewGroupNode : getGroupNode(strFirstSuffix, pNewGroupNode, fAllGroupsOpened);
 }

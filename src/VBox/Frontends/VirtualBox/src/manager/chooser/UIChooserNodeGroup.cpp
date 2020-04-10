@@ -28,9 +28,11 @@ UIChooserNodeGroup::UIChooserNodeGroup(UIChooserNode *pParent,
                                        bool fFavorite,
                                        int iPosition,
                                        const QString &strName,
+                                       UIChooserNodeGroupType enmGroupType,
                                        bool fOpened)
     : UIChooserNode(pParent, fFavorite)
     , m_strName(strName)
+    , m_enmGroupType(enmGroupType)
     , m_fOpened(fOpened)
 {
     /* Add to parent: */
@@ -46,6 +48,7 @@ UIChooserNodeGroup::UIChooserNodeGroup(UIChooserNode *pParent,
                                        int iPosition)
     : UIChooserNode(pParent, pCopyFrom->isFavorite())
     , m_strName(pCopyFrom->name())
+    , m_enmGroupType(pCopyFrom->groupType())
     , m_fOpened(pCopyFrom->isOpened())
 {
     /* Add to parent: */

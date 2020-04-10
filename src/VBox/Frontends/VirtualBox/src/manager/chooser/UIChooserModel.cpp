@@ -945,6 +945,7 @@ void UIChooserModel::sltGroupSelectedMachines()
                                                                false /* favorite */,
                                                                invisibleRoot()->nodes().size() /* position */,
                                                                uniqueGroupName(invisibleRoot()),
+                                                               UIChooserNodeGroupType_Local,
                                                                true /* opened */);
     UIChooserItemGroup *pNewGroupItem = new UIChooserItemGroup(root(), pNewGroupNode);
 

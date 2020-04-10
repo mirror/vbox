@@ -33,14 +33,16 @@ class UIChooserNodeGroup : public UIChooserNode
 public:
 
     /** Constructs chooser node passing @a pParent to the base-class.
-      * @param  fFavorite  Brings whether the node is favorite.
-      * @param  iPosition  Brings the initial node position.
-      * @param  strName    Brings current node name.
-      * @param  fOpened    Brings whether this group node is opened. */
+      * @param  fFavorite     Brings whether the node is favorite.
+      * @param  iPosition     Brings the initial node position.
+      * @param  strName       Brings current node name.
+      * @param  enmGroupType  Brings group node type.
+      * @param  fOpened       Brings whether this group node is opened. */
     UIChooserNodeGroup(UIChooserNode *pParent,
                        bool fFavorite,
                        int iPosition,
                        const QString &strName,
+                       UIChooserNodeGroupType enmGroupType,
                        bool fOpened);
     /** Constructs chooser node passing @a pParent to the base-class.
       * @param  pCopyFrom  Brings the node to copy data from.
@@ -88,6 +90,9 @@ public:
     /** Defines node @a strName. */
     void setName(const QString &strName);
 
+    /** Returns group node type. */
+    UIChooserNodeGroupType groupType() const { return m_enmGroupType; }
+
     /** Returns whether this group node is opened. */
     bool isOpened() const { return m_fOpened; }
     /** Returns whether this group node is closed. */
@@ -115,9 +120,11 @@ private:
     void copyContents(UIChooserNodeGroup *pCopyFrom);
 
     /** Holds the node name. */
-    QString  m_strName;
+    QString                 m_strName;
+    /** Holds the group node type. */
+    UIChooserNodeGroupType  m_enmGroupType;
     /** Holds whether node is opened. */
-    bool     m_fOpened;
+    bool                    m_fOpened;
 
     /** Holds group children. */
     QList<UIChooserNode*>  m_nodesGroup;

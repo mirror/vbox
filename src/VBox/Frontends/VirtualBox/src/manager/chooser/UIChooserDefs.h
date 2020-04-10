@@ -38,6 +38,15 @@ enum UIChooserNodeType
 };
 
 
+/** UIChooserNodeGroup types. */
+enum UIChooserNodeGroupType
+{
+    UIChooserNodeGroupType_Local,
+    UIChooserNodeGroupType_Provider,
+    UIChooserNodeGroupType_Profile
+};
+
+
 /** UIChooserItem search flags. */
 enum UIChooserItemSearchFlag
 {
