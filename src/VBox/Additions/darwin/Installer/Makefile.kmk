@@ -185,8 +185,18 @@ $(VBOX_PATH_PACK_TMP)/VBoxGuestAdditions.pkg: \
 		--resources $(VBOX_PATH_PACK_TMP)/VBoxDarwinAdditions.dist.res \
 		--identifier org.VirtualBox.mpkg.GuestAdditions \
 		--version $(VBOX_VERSION_MAJOR).$(VBOX_VERSION_MINOR).$(VBOX_VERSION_BUILD) \
-		$(if $(VBOX_MACOSX_INSTALLER_SIGN),--sign "$(VBOX_MACOSX_INSTALLER_SIGN)",) \
+		$(if-expr defined(VBOX_MACOSX_INSTALLER_SIGN) && $(intersects darwin all 1,$(VBOX_WITH_CORP_CODE_SIGNING)) == "",--sign "$(VBOX_MACOSX_INSTALLER_SIGN)",) \
 		$@
+ifdef VBOX_SIGNING_MODE
+ if $(intersects darwin all 1,$(VBOX_WITH_CORP_CODE_SIGNING))
+	@# Sign the created pkg.
+	$(call VBOX_SIGN_PKG_FN,$@,org.VirtualBox.mpkg.GuestAdditions)
+  if $(intersects darwin all 1,$(VBOX_WITH_CORP_CODE_SIGNING))
+	@# Notarize the signed pkg (includes stapling).
+	$(call VBOX_NOTARIZE_FILE_FN,$@,org.virtualbox.VBoxGuestAdditions.$(VBOX_VERSION_MAJOR).$(VBOX_VERSION_MINOR).$(VBOX_VERSION_BUILD).$(VBOX_SVN_REV))
+  endif
+ endif
+endif
 
 	@# Cleanup.
 	sudo rm -Rf \
@@ -272,8 +282,14 @@ endif
 		--version $(VBOX_VERSION_MAJOR).$(VBOX_VERSION_MINOR).$(VBOX_VERSION_BUILD) \
 		--install-location /Library/Extensions/ \
 		--ownership preserve \
-		$(if $(VBOX_MACOSX_INSTALLER_SIGN),--sign "$(VBOX_MACOSX_INSTALLER_SIGN)",) \
+		$(if-expr defined(VBOX_MACOSX_INSTALLER_SIGN) && $(intersects darwin all 1,$(VBOX_WITH_CORP_CODE_SIGNING)) == "",--sign "$(VBOX_MACOSX_INSTALLER_SIGN)",) \
 		$@
+ifdef VBOX_SIGNING_MODE
+ if $(intersects darwin all 1,$(VBOX_WITH_CORP_CODE_SIGNING))
+	@# Sign the created pkg.
+	$(call VBOX_SIGN_PKG_FN,$@,org.virtualbox.pkg.vboxguestadditionskexts)
+ endif
+endif
 	@# Cleanup
 	sudo rm -Rf \
 		$(VBOX_PATH_PACK_TMP)/VBoxGuestAdditionsKEXTs.pkg.root \
@@ -332,6 +348,9 @@ else
 endif
 	# Add Uninstall.tool
 	$(INSTALL) -m 0755 $(VBOX_ADD_PATH_DI_SRC)/DiskImage/Uninstall.tool  "$(VBOX_PATH_PACK_TMP)/$(VBOX_GA_PKG).root/Library/Application Support/VirtualBox Guest Additions/"
+ifdef VBOX_SIGNING_MODE
+	$(call VBOX_SIGN_FILE_FN,"$(VBOX_PATH_PACK_TMP)/$(VBOX_GA_PKG).root/Library/Application Support/VirtualBox Guest Additions/Uninstall.tool",org.virtualbox.app.guestadditions.uninstaller)
+endif
 
 	@# Install launchd stuff
 	$(INSTALL) -m 0755 $(VBOX_ADD_PATH_DI_SRC)/VBoxGuestAdditionsToolsAndServices/VBoxServiceWrapper \
@@ -340,6 +359,23 @@ endif
 	                                                                         "$(VBOX_PATH_PACK_TMP)/$(VBOX_GA_PKG).root/Library/LaunchAgents/"
 	$(INSTALL) -m 644 $(VBOX_ADD_PATH_DI_SRC)/VBoxGuestAdditionsToolsAndServices/org.virtualbox.additions.vboxservice.plist \
 	                                                                         "$(VBOX_PATH_PACK_TMP)/$(VBOX_GA_PKG).root/Library/LaunchDaemons/"
+
+	@# Sign the binaries.
+ifdef VBOX_SIGNING_MODE
+ ifdef VBOX_WITH_COMBINED_PACKAGE
+	$(foreach binary, $(VBOX_DI_VB_GA_BINARIES) \
+		,$(NLTAB)$(call VBOX_SIGN_MACHO_FN,"$(VBOX_PATH_PACK_TMP)/$(VBOX_GA_PKG).root/Library/Application Support/VirtualBox Guest Additions/$(binary)",org.virtualbox.app.guestadditions.$(notdir $(binary))) )
+	$(foreach binary, $(VBOX_DI_VB_GA_BINARIES) \
+		,$(NLTAB)$(call VBOX_SIGN_MACHO_FN,"$(VBOX_PATH_PACK_TMP)/$(VBOX_GA_PKG).root/Library/Application Support/VirtualBox Guest Additions/$(binary)-x86",org.virtualbox.app.guestadditions.$(notdir $(binary))-x86) )
+	$(foreach binary, $(VBOX_DI_VB_GA_BINARIES) \
+		,$(NLTAB)$(call VBOX_SIGN_MACHO_FN,"$(VBOX_PATH_PACK_TMP)/$(VBOX_GA_PKG).root/Library/Application Support/VirtualBox Guest Additions/$(binary)-amd64",org.virtualbox.app.guestadditions.$(notdir $(binary))-amd64) )
+ else
+	$(foreach binary, $(VBOX_DI_VB_GA_BINARIES) \
+		,$(NLTAB)$(call VBOX_SIGN_MACHO_FN,"$(VBOX_PATH_PACK_TMP)/$(VBOX_GA_PKG).root/Library/Application Support/VirtualBox Guest Additions/$(binary)",org.virtualbox.app.guestadditions.$(notdir $(binary))) )
+	$(foreach binary, $(VBOX_DI_VB_GA_BINARIES) \
+		,$(NLTAB)$(call VBOX_SIGN_MACHO_FN,"$(VBOX_PATH_PACK_TMP)/$(VBOX_GA_PKG).root/Library/Application Support/VirtualBox Guest Additions/$(binary)-$(KBUILD_TARGET_ARCH)",org.virtualbox.app.guestadditions.$(notdir $(binary))-$(KBUILD_TARGET_ARCH)) )
+ endif
+endif
 
 	@# Correct ownership
 	sudo chown -R root:wheel "$(VBOX_PATH_PACK_TMP)/$(VBOX_GA_PKG).root/Library/"
@@ -352,8 +388,14 @@ endif
 		--version $(VBOX_VERSION_MAJOR).$(VBOX_VERSION_MINOR).$(VBOX_VERSION_BUILD) \
 		--install-location "/Library/" \
 		--ownership preserve \
-		$(if $(VBOX_MACOSX_INSTALLER_SIGN),--sign "$(VBOX_MACOSX_INSTALLER_SIGN)",) \
+		$(if-expr defined(VBOX_MACOSX_INSTALLER_SIGN) && $(intersects darwin all 1,$(VBOX_WITH_CORP_CODE_SIGNING)) == "",--sign "$(VBOX_MACOSX_INSTALLER_SIGN)",) \
 		$@
+ifdef VBOX_SIGNING_MODE
+ if $(intersects darwin all 1,$(VBOX_WITH_CORP_CODE_SIGNING))
+	@# Sign the created pkg.
+	$(call VBOX_SIGN_PKG_FN,$@,org.virtualbox.pkg.vboxguestadditions)
+ endif
+endif
 	@# Cleanup
 	sudo rm -Rf \
 		$(VBOX_PATH_PACK_TMP)/$(VBOX_GA_PKG).root \
