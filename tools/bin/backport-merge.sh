@@ -42,7 +42,7 @@ MY_TODO_REVS=
 test -n "${MY_DEBUG}" && echo "MY_REVISIONS=${MY_REVISIONS}"
 for MY_REV in ${MY_REVISIONS};
 do
-    if test -z "${MY_FAILED}"; then
+    if test -z "${MY_FAILED_REV}"; then
         echo "***"
         echo "*** Merging r${MY_REV} ..."
         echo "***"
