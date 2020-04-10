@@ -1453,6 +1453,7 @@ typedef union
     uint64_t    u64;
 } MSI_ADDR_T;
 AssertCompileSize(MSI_ADDR_T, 8);
+#define IOMMU_MSI_ADDR_VALID_MASK           UINT64_C(0xfffffffffffffffc)
 
 /**
  * MSI Data Register (PCI + MMIO).
@@ -1469,6 +1470,7 @@ typedef union
     uint32_t    u32;
 } MSI_DATA_T;
 AssertCompileSize(MSI_DATA_T, 4);
+#define IOMMU_MSI_DATA_VALID_MASK       UINT64_C(0x000000000000ffff)
 
 /**
  * MSI Mapping Capability Header Register (PCI + MMIO).
@@ -2077,9 +2079,9 @@ DECLINLINE(void) iommuAmdCheckBufferLength(uint8_t uEncodedLen, const char *pszF
 /**
  * Writes to a read-only register.
  */
-static VBOXSTRICTRC iommuAmdIgnore_w(PPDMDEVINS pDevIns, PIOMMU pThis, uint32_t iReg, uint64_t  u64Value)
+static VBOXSTRICTRC iommuAmdIgnore_w(PPDMDEVINS pDevIns, PIOMMU pThis, uint32_t iReg, uint64_t u64Value)
 {
-    RT_NOREF(pDevIns, pThis, iReg);
+    RT_NOREF(pDevIns, pThis, iReg, u64Value);
     Log((IOMMU_LOG_PFX ": iommuAmdIgnore_w: Write to read-only register (%#x) with value %#RX64 ignored\n", iReg, u64Value));
     return VINF_SUCCESS;
 }
@@ -2088,9 +2090,9 @@ static VBOXSTRICTRC iommuAmdIgnore_w(PPDMDEVINS pDevIns, PIOMMU pThis, uint32_t 
 /**
  * Writes the Device Table Base Address Register.
  */
-static VBOXSTRICTRC iommuAmdDevTabBar_w(PPDMDEVINS pDevIns, PIOMMU pThis, uint32_t iReg, uint64_t  u64Value)
+static VBOXSTRICTRC iommuAmdDevTabBar_w(PPDMDEVINS pDevIns, PIOMMU pThis, uint32_t iReg, uint64_t u64Value)
 {
-    RT_NOREF(pDevIns, pThis, iReg);
+    RT_NOREF(pDevIns, iReg);
     pThis->DevTabBaseAddr.u64 = u64Value & IOMMU_DEV_TAB_BAR_VALID_MASK;
     return VINF_SUCCESS;
 }
@@ -2099,9 +2101,9 @@ static VBOXSTRICTRC iommuAmdDevTabBar_w(PPDMDEVINS pDevIns, PIOMMU pThis, uint32
 /**
  * Writes the Command Buffer Base Address Register.
  */
-static VBOXSTRICTRC iommuAmdCmdBufBar_w(PPDMDEVINS pDevIns, PIOMMU pThis, uint32_t iReg, uint64_t  u64Value)
+static VBOXSTRICTRC iommuAmdCmdBufBar_w(PPDMDEVINS pDevIns, PIOMMU pThis, uint32_t iReg, uint64_t u64Value)
 {
-    RT_NOREF(pDevIns, pThis, iReg);
+    RT_NOREF(pDevIns, iReg);
     pThis->CmdBufBaseAddr.u64 = u64Value & IOMMU_CMD_BUF_BAR_VALID_MASK;
     iommuAmdCheckBufferLength(pThis->CmdBufBaseAddr.n.u4CmdLen, __PRETTY_FUNCTION__);
     return VINF_SUCCESS;
@@ -2110,9 +2112,9 @@ static VBOXSTRICTRC iommuAmdCmdBufBar_w(PPDMDEVINS pDevIns, PIOMMU pThis, uint32
 /**
  * Writes the Event Log Base Address Register.
  */
-static VBOXSTRICTRC iommuAmdEvtLogBar_w(PPDMDEVINS pDevIns, PIOMMU pThis, uint32_t iReg, uint64_t  u64Value)
+static VBOXSTRICTRC iommuAmdEvtLogBar_w(PPDMDEVINS pDevIns, PIOMMU pThis, uint32_t iReg, uint64_t u64Value)
 {
-    RT_NOREF(pDevIns, pThis, iReg);
+    RT_NOREF(pDevIns, iReg);
     pThis->EvtLogBaseAddr.u64 = u64Value & IOMMU_EVT_LOG_BAR_VALID_MASK;
     iommuAmdCheckBufferLength(pThis->EvtLogBaseAddr.n.u4EvtLen, __PRETTY_FUNCTION__);
     return VINF_SUCCESS;
@@ -2122,9 +2124,9 @@ static VBOXSTRICTRC iommuAmdEvtLogBar_w(PPDMDEVINS pDevIns, PIOMMU pThis, uint32
 /**
  * Writes to the Excluse Range Base Address Register.
  */
-static VBOXSTRICTRC iommuAmdExclRangeBar_w(PPDMDEVINS pDevIns, PIOMMU pThis, uint32_t iReg, uint64_t  u64Value)
+static VBOXSTRICTRC iommuAmdExclRangeBar_w(PPDMDEVINS pDevIns, PIOMMU pThis, uint32_t iReg, uint64_t u64Value)
 {
-    RT_NOREF(pDevIns, pThis, iReg);
+    RT_NOREF(pDevIns, iReg);
     pThis->ExclRangeBaseAddr.u64 = u64Value & IOMMU_EXCL_RANGE_BAR_VALID_MASK;
     return VINF_SUCCESS;
 }
@@ -2133,9 +2135,9 @@ static VBOXSTRICTRC iommuAmdExclRangeBar_w(PPDMDEVINS pDevIns, PIOMMU pThis, uin
 /**
  * Writes to the Excluse Range Limit Register.
  */
-static VBOXSTRICTRC iommuAmdExclRangeLimit_w(PPDMDEVINS pDevIns, PIOMMU pThis, uint32_t iReg, uint64_t  u64Value)
+static VBOXSTRICTRC iommuAmdExclRangeLimit_w(PPDMDEVINS pDevIns, PIOMMU pThis, uint32_t iReg, uint64_t u64Value)
 {
-    RT_NOREF(pDevIns, pThis, iReg);
+    RT_NOREF(pDevIns, iReg);
     pThis->ExclRangeLimit.u64 = u64Value & IOMMU_EXCL_RANGE_LIMIT_VALID_MASK;
     return VINF_SUCCESS;
 }
@@ -2144,11 +2146,46 @@ static VBOXSTRICTRC iommuAmdExclRangeLimit_w(PPDMDEVINS pDevIns, PIOMMU pThis, u
 /**
  * Writes the PPR Log Base Address Register.
  */
-static VBOXSTRICTRC iommuAmdPprLogBar_w(PPDMDEVINS pDevIns, PIOMMU pThis, uint32_t iReg, uint64_t  u64Value)
+static VBOXSTRICTRC iommuAmdPprLogBar_w(PPDMDEVINS pDevIns, PIOMMU pThis, uint32_t iReg, uint64_t u64Value)
 {
-    RT_NOREF(pDevIns, pThis, iReg);
+    RT_NOREF(pDevIns, iReg);
     pThis->PprLogBaseAddr.u64 = u64Value & IOMMU_PPR_LOG_BAR_VALID_MASK;
     iommuAmdCheckBufferLength(pThis->PprLogBaseAddr.n.u4PprLogLen, __PRETTY_FUNCTION__);
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Writes the MSI Address (Lo) Register (32-bit).
+ */
+static VBOXSTRICTRC iommuAmdMsiAddrLo_w(PPDMDEVINS pDevIns, PIOMMU pThis, uint32_t iReg, uint64_t u64Value)
+{
+    RT_NOREF(pDevIns, iReg);
+    Assert(!RT_HI_U32(u64Value));
+    pThis->MsiAddr.au32[0] = u64Value & IOMMU_MSI_ADDR_VALID_MASK;
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Writes the MSI Address (Hi) Register (32-bit).
+ */
+static VBOXSTRICTRC iommuAmdMsiAddrHi_w(PPDMDEVINS pDevIns, PIOMMU pThis, uint32_t iReg, uint64_t u64Value)
+{
+    RT_NOREF(pDevIns, iReg);
+    Assert(!RT_HI_U32(u64Value));
+    pThis->MsiAddr.au32[1] = u64Value;
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Writes the MSI Data Register (32-bit).
+ */
+static VBOXSTRICTRC iommuAmdMsiData_w(PPDMDEVINS pDevIns, PIOMMU pThis, uint32_t iReg, uint64_t u64Value)
+{
+    RT_NOREF(pDevIns, iReg);
+    pThis->MsiData.u32 = u64Value & IOMMU_MSI_DATA_VALID_MASK;
     return VINF_SUCCESS;
 }
 
@@ -2190,24 +2227,24 @@ static VBOXSTRICTRC iommuAmdWriteRegister(PPDMDEVINS pDevIns, uint32_t off, uint
 
     switch (off)
     {
-        case IOMMU_MMIO_OFF_DEV_TAB_BAR:        return iommuAmdDevTabBar_w(pDevIns, pThis, off, uValue);
-        case IOMMU_MMIO_OFF_CMD_BUF_BAR:        return iommuAmdCmdBufBar_w(pDevIns, pThis, off, uValue);
-        case IOMMU_MMIO_OFF_EVT_LOG_BAR:        return iommuAmdEvtLogBar_w(pDevIns, pThis, off, uValue);
-        case IOMMU_MMIO_OFF_CTRL:
-        case IOMMU_MMIO_OFF_EXCL_BAR:           return iommuAmdExclRangeBar_w(pDevIns, pThis, off, uValue);
-        case IOMMU_MMIO_OFF_EXCL_RANGE_LIMIT:   return iommuAmdExclRangeLimit_w(pDevIns, pThis, off, uValue);
-        case IOMMU_MMIO_OFF_EXT_FEAT:           return iommuAmdIgnore_w(pDevIns, pThis, off, uValue);
+        case IOMMU_MMIO_OFF_DEV_TAB_BAR:         return iommuAmdDevTabBar_w(pDevIns, pThis, off, uValue);
+        case IOMMU_MMIO_OFF_CMD_BUF_BAR:         return iommuAmdCmdBufBar_w(pDevIns, pThis, off, uValue);
+        case IOMMU_MMIO_OFF_EVT_LOG_BAR:         return iommuAmdEvtLogBar_w(pDevIns, pThis, off, uValue);
+        case IOMMU_MMIO_OFF_CTRL:                /** @todo IOMMU: Control register. */
+        case IOMMU_MMIO_OFF_EXCL_BAR:            return iommuAmdExclRangeBar_w(pDevIns, pThis, off, uValue);
+        case IOMMU_MMIO_OFF_EXCL_RANGE_LIMIT:    return iommuAmdExclRangeLimit_w(pDevIns, pThis, off, uValue);
+        case IOMMU_MMIO_OFF_EXT_FEAT:            return iommuAmdIgnore_w(pDevIns, pThis, off, uValue);
 
-        case IOMMU_MMIO_OFF_PPR_LOG_BAR:        return iommuAmdPprLogBar_w(pDevIns, pThis, off, uValue);
-        case IOMMU_MMIO_OFF_HW_EVT_HI:          return iommuAmdIgnore_w(pDevIns, pThis, off, uValue);
-        case IOMMU_MMIO_OFF_HW_EVT_LO:          return iommuAmdIgnore_w(pDevIns, pThis, off, uValue);
-        case IOMMU_MMIO_OFF_HW_EVT_STATUS:
+        case IOMMU_MMIO_OFF_PPR_LOG_BAR:         return iommuAmdPprLogBar_w(pDevIns, pThis, off, uValue);
+        case IOMMU_MMIO_OFF_HW_EVT_HI:
+        case IOMMU_MMIO_OFF_HW_EVT_LO:           return iommuAmdIgnore_w(pDevIns, pThis, off, uValue);
+        case IOMMU_MMIO_OFF_HW_EVT_STATUS:       /** @todo IOMMU: HW Event Status is RW. Figure this out later. */
 
-        case IOMMU_MMIO_OFF_GALOG_BAR:          return iommuAmdIgnore_w(pDevIns, pThis, off, uValue);
-        case IOMMU_MMIO_OFF_GALOG_TAIL_ADDR:    return iommuAmdIgnore_w(pDevIns, pThis, off, uValue);
+        case IOMMU_MMIO_OFF_GALOG_BAR:
+        case IOMMU_MMIO_OFF_GALOG_TAIL_ADDR:     return iommuAmdIgnore_w(pDevIns, pThis, off, uValue);
 
-        case IOMMU_MMIO_OFF_PPR_LOG_B_BAR:      return iommuAmdIgnore_w(pDevIns, pThis, off, uValue);
-        case IOMMU_MMIO_OFF_PPR_EVT_B_BAR:      return iommuAmdIgnore_w(pDevIns, pThis, off, uValue);
+        case IOMMU_MMIO_OFF_PPR_LOG_B_BAR:
+        case IOMMU_MMIO_OFF_PPR_EVT_B_BAR:       return iommuAmdIgnore_w(pDevIns, pThis, off, uValue);
 
         case IOMMU_MMIO_OFF_DEV_TAB_SEG_FIRST:
         case IOMMU_MMIO_OFF_DEV_TAB_SEG_LAST:
@@ -2219,21 +2256,35 @@ static VBOXSTRICTRC iommuAmdWriteRegister(PPDMDEVINS pDevIns, uint32_t off, uint
 
         case IOMMU_MMIO_OFF_DEV_SPECIFIC_FEAT:
         case IOMMU_MMIO_OFF_DEV_SPECIFIC_CTRL:
-        case IOMMU_MMIO_OFF_DEV_SPECIFIC_STATUS:
+        case IOMMU_MMIO_OFF_DEV_SPECIFIC_STATUS: return iommuAmdIgnore_w(pDevIns, pThis, off, uValue);
 
         case IOMMU_MMIO_OFF_MSI_VECTOR_0:
-        case IOMMU_MMIO_OFF_MSI_VECTOR_1:
+        case IOMMU_MMIO_OFF_MSI_VECTOR_1:        return iommuAmdIgnore_w(pDevIns, pThis, off, uValue);
         case IOMMU_MMIO_OFF_MSI_CAP_HDR:
-        case IOMMU_MMIO_OFF_MSI_ADDR_LO:
+        {
+            VBOXSTRICTRC rcStrict = iommuAmdIgnore_w(pDevIns, pThis, off, (uint32_t)uValue);
+            if (cb == 4 || RT_FAILURE(rcStrict))
+                return rcStrict;
+            uValue >>= 32;
+            RT_FALL_THRU();
+        }
+        case IOMMU_MMIO_OFF_MSI_ADDR_LO:         return iommuAmdMsiAddrLo_w(pDevIns, pThis, off, uValue);
         case IOMMU_MMIO_OFF_MSI_ADDR_HI:
-        case IOMMU_MMIO_OFF_MSI_DATA:
-        case IOMMU_MMIO_OFF_MSI_MAPPING_CAP_HDR:
+        {
+            VBOXSTRICTRC rcStrict = iommuAmdMsiAddrHi_w(pDevIns, pThis, off, (uint32_t)uValue);
+            if (cb == 4 || RT_FAILURE(rcStrict))
+                return rcStrict;
+            uValue >>= 32;
+            RT_FALL_THRU();
+        }
+        case IOMMU_MMIO_OFF_MSI_DATA:            return iommuAmdMsiData_w(pDevIns, pThis, off, uValue);
+        case IOMMU_MMIO_OFF_MSI_MAPPING_CAP_HDR: return iommuAmdIgnore_w(pDevIns, pThis, off, uValue);
 
-        case IOMMU_MMIO_OFF_PERF_OPT_CTRL:
+        case IOMMU_MMIO_OFF_PERF_OPT_CTRL:       return iommuAmdIgnore_w(pDevIns, pThis, off, uValue);
 
         case IOMMU_MMIO_OFF_XT_GEN_INTR_CTRL:
         case IOMMU_MMIO_OFF_XT_PPR_INTR_CTRL:
-        case IOMMU_MMIO_OFF_XT_GALOG_INT_CTRL:
+        case IOMMU_MMIO_OFF_XT_GALOG_INT_CTRL:   return iommuAmdIgnore_w(pDevIns, pThis, off, uValue);
 
         case IOMMU_MMIO_OFF_MARC_APER_BAR_0:
         case IOMMU_MMIO_OFF_MARC_APER_RELOC_0:
@@ -2246,9 +2297,9 @@ static VBOXSTRICTRC iommuAmdWriteRegister(PPDMDEVINS pDevIns, uint32_t off, uint
         case IOMMU_MMIO_OFF_MARC_APER_LEN_2:
         case IOMMU_MMIO_OFF_MARC_APER_BAR_3:
         case IOMMU_MMIO_OFF_MARC_APER_RELOC_3:
-        case IOMMU_MMIO_OFF_MARC_APER_LEN_3:
+        case IOMMU_MMIO_OFF_MARC_APER_LEN_3:     return iommuAmdIgnore_w(pDevIns, pThis, off, uValue);
 
-        case IOMMU_MMIO_OFF_RSVD_REG:
+        case IOMMU_MMIO_OFF_RSVD_REG:            return iommuAmdIgnore_w(pDevIns, pThis, off, uValue);
 
         case IOMMU_MMIO_CMD_BUF_HEAD_PTR:
         case IOMMU_MMIO_CMD_BUF_TAIL_PTR:
