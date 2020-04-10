@@ -66,12 +66,13 @@ else
         MY_COUNTER=`"${MY_EXPR}" ${MY_COUNTER} + 1`
     done
     echo "." >> "${MY_MSG_FILE}"
+    echo ""  >> "${MY_MSG_FILE}"
 
     # One bullet with the commit text.
     for MY_REV in ${MY_REVISIONS};
     do
         echo -n "* r${MY_REV}: " >> "${MY_MSG_FILE}"
-        if ! "${MY_SVN}" log "-r${MY_REV}" "${MY_TRUNK}" > "${MY_TMP_FILE}"; then
+        if ! "${MY_SVN}" log "-r${MY_REV}" "${MY_TRUNK_DIR}" > "${MY_TMP_FILE}"; then
             echo "error: failed to get log entry for revision ${MY_REV}"
             exit 1;
         fi
@@ -80,6 +81,15 @@ else
             exit 1;
         fi
     done
+
+    # This is a line ending hack for windows hosts.
+    if    "${MY_SED}" -e 's/1/1/g' --output-text "${MY_TMP_FILE}" "${MY_MSG_FILE}"
+       && "${MY_SED}" -e 's/1/1/g' --output-text "${MY_MSG_FILE}" "${MY_TMP_FILE}"; then
+
+    else
+        echo "error: SED failed to clean up commit message line-endings."
+        exit 1;
+    fi
 fi
 "${MY_RM}" -f -- "${MY_TMP_FILE}"
 
@@ -89,6 +99,7 @@ fi
 echo "***"
 echo "*** Commit message:"
 "${MY_CAT}" "${MY_MSG_FILE}"
+echo "*** end commit message ***"
 echo "***"
 IFS=`"${MY_PRINTF}" " \t\r\n"` # windows needs \r for proper 'read' operation.
 for MY_IGNORE in 1 2 3; do
@@ -113,6 +124,7 @@ for MY_IGNORE in 1 2 3; do
             exit 1
             ;;
         *)
+            echo
             echo "Please answer 'y' or 'n'... (MY_ANSWER=${MY_ANSWER})"
     esac
 done
