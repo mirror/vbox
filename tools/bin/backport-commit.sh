@@ -117,7 +117,7 @@ for MY_IGNORE in 1 2 3; do
                 "${MY_SVN}" up "${MY_BRANCH_DIR}"
                 exit 0
             fi
-            echo "error: commit failed" >2
+            echo "error: commit failed" 1>&2
             exit 1
             ;;
         n|N|[nN][oO])

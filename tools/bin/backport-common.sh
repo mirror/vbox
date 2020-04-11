@@ -25,8 +25,35 @@ MY_PRINTF=kmk_printf
    MY_SVN=svn
    MY_SED=kmk_sed
 
+#
+# Functions.
+#
+BranchDirToName()
+{
+    MY_DIR=$1
+    MY_NAME=`echo "${MY_DIR}" | "${MY_SED}" -e 's|^\(.*\)/\([^/][^/]*\)$|\2|'`
+    case "${MY_NAME}" in
+        VBox-[5-9].[0-3]|VBox-1[0-5].[0-3])
+            echo "${MY_NAME}" | "${MY_SED}" -e 's/VBox-//'
+            ;;
+        [Vv][Bb][Oo][Xx][5-9][0-3])
+            echo "${MY_NAME}" | "${MY_SED}" -e 's/[Vv][Bb][Oo][Xx]\([0-9]\)\([0-3]\)/\1.\2/'
+            ;;
+        [Tt][Rr][Uu][Nn][Kk])
+            echo trunk
+            ;;
+        *)
+            echo "warning: Unable to guess branch given ${MY_NAME} ($1)" 1>&2
+            ;;
+    esac
+}
+
+
+#
+# Figure default branch given the script location.
+#
 MY_BRANCH_DEFAULT_DIR=`cd "${MY_SCRIPT_DIR}"; cd ../..; pwd -L`
-MY_BRANCH_DEFAULT=`echo "${MY_BRANCH_DEFAULT_DIR}" | "${MY_SED}" -e 's|^\(.*\)/\([^/][^/]*\)$|\2|' -e 's/VBox-//'`
+MY_BRANCH_DEFAULT=`BranchDirToName "${MY_BRANCH_DEFAULT_DIR}"`
 if test "${MY_BRANCH_DEFAULT}" = "trunk"; then
     MY_TRUNK_DIR=${MY_BRANCH_DEFAULT_DIR}
 elif test -d "${MY_BRANCH_DEFAULT_DIR}/../../trunk"; then
@@ -34,6 +61,7 @@ elif test -d "${MY_BRANCH_DEFAULT_DIR}/../../trunk"; then
 else
     MY_TRUNK_DIR="^/trunk"
 fi
+
 
 #
 # Parse arguments.
@@ -52,12 +80,20 @@ do
     case "${ARG}" in
         r[0-9][0-9]*)
             MY_REV=`echo ${ARG} | "${MY_SED}" -e 's/^r//'`
-            MY_REVISIONS="${MY_REVISIONS} ${MY_REV}"
+            if test -z "${MY_REVISIONS}"; then
+                MY_REVISIONS=${MY_REV}
+            else
+                MY_REVISIONS="${MY_REVISIONS} ${MY_REV}"
+            fi
             MY_REVISION_COUNT=`${MY_EXPR} ${MY_REVISION_COUNT} + 1`
             ;;
 
         [0-9][0-9]*)
-            MY_REVISIONS="${MY_REVISIONS} ${ARG}"
+            if test -z "${MY_REVISIONS}"; then
+                MY_REVISIONS=${ARG}
+            else
+                MY_REVISIONS="${MY_REVISIONS} ${ARG}"
+            fi
             MY_REVISION_COUNT=`${MY_EXPR} ${MY_REVISION_COUNT} + 1`
             ;;
 
@@ -66,7 +102,7 @@ do
                 echo "error: missing --trunk-dir argument." 1>&2
                 exit 1;
             fi
-            MY_TRUNK_DIR=`echo "$1" | "${SED}" -e 's|\\\|/|g'`
+            MY_TRUNK_DIR=`echo "$1" | "${MY_SED}" -e 's|\\\|/|g'`
             shift
             ;;
 
@@ -75,7 +111,7 @@ do
                 echo "error: missing --branch-dir argument." 1>&2
                 exit 1;
             fi
-            MY_BRANCH_DIR=`echo "$1" | "${SED}" -e 's|\\\|/|g'`
+            MY_BRANCH_DIR=`echo "$1" | "${MY_SED}" -e 's|\\\|/|g'`
             shift
             ;;
 
@@ -127,6 +163,8 @@ done
 
 if test -n "${MY_DEBUG}"; then
     echo "        MY_SCRIPT_DIR=${MY_SCRIPT_DIR}"
+    echo "        MY_BRANCH_DIR=${MY_BRANCH_DIR}"
+    echo "            MY_BRANCH=${MY_BRANCH}"
     echo "MY_BRANCH_DEFAULT_DIR=${MY_BRANCH_DEFAULT_DIR}"
     echo "    MY_BRANCH_DEFAULT=${MY_BRANCH_DEFAULT}"
     echo "         MY_TRUNK_DIR=${MY_TRUNK_DIR}"
@@ -142,15 +180,15 @@ if test -z "${MY_BRANCH_DIR}" -a -z "${MY_BRANCH}"; then
 elif test -n "${MY_BRANCH}" -a -z "${MY_BRANCH_DIR}"; then
     MY_BRANCH_DIR=${MY_BRANCH_DEFAULT_DIR}
 elif test -z "${MY_BRANCH}" -a -n "${MY_BRANCH_DIR}"; then
-    MY_BRANCH=`echo "${MY_BRANCH_DIR}" | "${SED}" -e 's/^-([1]*[5-9]\.[0-5])[/]*$/\1/'`
+    MY_BRANCH=`BranchDirToName "${MY_BRANCH_DIR}"`
     if test -z "${MY_BRANCH}" -o  "${MY_BRANCH}" = "${MY_BRANCH_DIR}"; then
-        echo "error: Failed to guess branch name for: ${MY_BRANCH_DIR}" >2
-        echo "       Use --branch to specify it." >2
+        echo "error: Failed to guess branch name for: ${MY_BRANCH_DIR}" 1>&2
+        echo "       Use --branch to specify it." 1>&2
         exit 2;
     fi
 fi
 if test "${MY_BRANCH}" = "trunk"; then
-    echo "error: script does not work with 'trunk' as the branch" >2
+    echo "error: script does not work with 'trunk' as the branch" 1>&2
     exit 2;
 fi
 
@@ -158,7 +196,7 @@ fi
 # Stop if no revisions specified.
 #
 if test -z "${MY_REVISIONS}"; then
-    echo "error: No revisions specified" >&2;
+    echo "error: No revisions specified" 1>&2;
     exit 2;
 fi
 
