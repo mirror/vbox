@@ -128,6 +128,10 @@ do
             MY_FIRST_REV=1
             ;;
 
+        --update-first|--update|-u)
+            MY_UPDATE_FIRST=1
+            ;;
+
         --extra)
             if test $# -eq 0; then
                 echo "error: missing --extra argument." 1>&2
@@ -143,7 +147,8 @@ do
 
         # usage
         --h*|-h*|-?|--?)
-            echo "usage: $0 [--trunk-dir <dir>] [--branch <ver>] [--branch-dir <dir>] [--extra <svn-arg>] [--first-rev] rev1 [rev2..[revN]]]"
+            echo "usage: $0 [--trunk-dir <dir>] [--branch <ver>] [--branch-dir <dir>] [--extra <svn-arg>] \\"
+            echo "                   [--first-rev] [--update-first] rev1 [rev2..[revN]]]"
             echo ""
             echo "Options:"
             echo "  --trunk-dir <dir>"
@@ -154,6 +159,8 @@ do
             echo "    The name of the branch being backported to. default: auto"
             echo "  --first-rev, --first, -1"
             echo "    Merge only: Check that the branch does not have any pending changes."
+            echo "  --update-first, --update, -u"
+            echo "    Merge only: Update the branch before merging."
             echo "  --extra <svn-arg>"
             echo "    Additional arguments to specify to SVN."
             echo ""
