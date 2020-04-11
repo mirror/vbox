@@ -107,9 +107,13 @@ do
             echo ""
             echo "Options:"
             echo "  --trunk-dir <dir>"
-            echo "  --branch <ver>"
+            echo "    The source of the changeset being backported."
             echo "  --branch-dir <dir>"
+            echo "    The backport destination directory. default: script location"
+            echo "  --branch <ver>"
+            echo "    The name of the branch being backported to. default: auto"
             echo "  --extra <svn-arg>"
+            echo "    Additional arguments to specify to SVN."
             echo ""
             exit 2;
             ;;
