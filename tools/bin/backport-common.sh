@@ -124,6 +124,10 @@ do
             shift
             ;;
 
+        --first-rev|--first|-1)
+            MY_FIRST_REV=1
+            ;;
+
         --extra)
             if test $# -eq 0; then
                 echo "error: missing --extra argument." 1>&2
@@ -139,7 +143,7 @@ do
 
         # usage
         --h*|-h*|-?|--?)
-            echo "usage: $0 [--trunk-dir <dir>] [--branch <ver>] [--branch-dir <dir>] [--extra <svn-arg>] rev1 [rev2..[revN]]]"
+            echo "usage: $0 [--trunk-dir <dir>] [--branch <ver>] [--branch-dir <dir>] [--extra <svn-arg>] [--first-rev] rev1 [rev2..[revN]]]"
             echo ""
             echo "Options:"
             echo "  --trunk-dir <dir>"
@@ -148,6 +152,8 @@ do
             echo "    The backport destination directory. default: script location"
             echo "  --branch <ver>"
             echo "    The name of the branch being backported to. default: auto"
+            echo "  --first-rev, --first, -1"
+            echo "    Merge only: Check that the branch does not have any pending changes."
             echo "  --extra <svn-arg>"
             echo "    Additional arguments to specify to SVN."
             echo ""
