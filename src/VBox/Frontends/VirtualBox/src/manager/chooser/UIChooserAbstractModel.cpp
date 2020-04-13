@@ -306,15 +306,10 @@ void UIChooserAbstractModel::sltHandleCloudListMachinesTaskComplete(UITask *pTas
         /* Add real cloud VM nodes: */
         int iPosition = 0;
         foreach (const CCloudMachine &comCloudMachine, machines)
-        {
-            /* Create new node: */
-            UIChooserNodeMachine *pNode = new UIChooserNodeMachine(pParentNode,
-                                                                   false /* favorite */,
-                                                                   iPosition++ /* position */,
-                                                                   comCloudMachine);
-            /* Request async node update: */
-            pNode->cache()->toCloud()->updateInfoAsync(false /* delayed? */);
-        }
+            new UIChooserNodeMachine(pParentNode,
+                                     false /* favorite */,
+                                     iPosition++ /* position */,
+                                     comCloudMachine);
     }
     else
     {

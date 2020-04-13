@@ -942,15 +942,10 @@ void UIChooserModel::sltCreateNewMachine()
         // Hehey! Now we have to inject created VM nodes and then rebuild tree for the main root node ourselves
         // cause there is no corresponding event yet. Later this to be done in corresponding event handler instead.
         foreach (const CCloudMachine &comMachine, pWizard->machines())
-        {
-            // Create new node:
-            UIChooserNodeMachine *pNode = new UIChooserNodeMachine(pGroup->node(),
-                                                                   false /* favorite */,
-                                                                   pGroup->node()->nodes().size() /* position */,
-                                                                   comMachine);
-            // Request async node update:
-            pNode->cache()->toCloud()->updateInfoAsync(false /* delayed? */);
-        }
+            new UIChooserNodeMachine(pGroup->node(),
+                                     false /* favorite */,
+                                     pGroup->node()->nodes().size() /* position */,
+                                     comMachine);
         // Remember first selected item definition:
         const QString strDefinition = firstSelectedItem()->definition();
         // Rebuild tree for main root:
