@@ -28,6 +28,10 @@
 #include "UIChooserAbstractModel.h"
 #include "UIExtraDataDefs.h"
 
+/* COM includes: */
+#include "COMEnums.h"
+#include "CMachine.h"
+
 /* Forward declaration: */
 class QDrag;
 class UIActionPool;
@@ -358,8 +362,8 @@ private:
 
         /** Removes machine @a items. */
         void removeItems(const QList<UIChooserItem*> &items);
-        /** Unregisters virtual machines using list of @a ids. */
-        void unregisterMachines(const QList<QUuid> &ids);
+        /** Unregisters a list of virtual @a machines. */
+        void unregisterMachines(const QList<CMachine> &machines);
 
         /** Processes drag move @a pEvent. */
         bool processDragMoveEvent(QGraphicsSceneDragDropEvent *pEvent);

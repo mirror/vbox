@@ -45,6 +45,7 @@
 #include "UITask.h"
 #include "UIVirtualBoxManagerWidget.h"
 #include "UIVirtualMachineItemCloud.h"
+#include "UIVirtualMachineItemLocal.h"
 #include "UIWizardAddCloudVM.h"
 #include "UIWizardNewVM.h"
 
@@ -1122,19 +1123,19 @@ void UIChooserModel::sltRemoveSelectedMachine()
     /* Prepare arrays: */
     QMap<QUuid, bool> verdicts;
     QList<UIChooserItem*> itemsToRemove;
-    QList<QUuid> machinesToUnregister;
+    QList<CMachine> localMachinesToUnregister;
 
     /* For each selected machine-item: */
     foreach (UIChooserItem *pItem, selectedMachineItemList)
     {
         /* Get machine-item id: */
-        QUuid uId = pItem->toMachineItem()->id();
+        const QUuid uId = pItem->toMachineItem()->id();
 
         /* We already decided for that machine? */
         if (verdicts.contains(uId))
         {
             /* To remove similar machine items? */
-            if (!verdicts[uId])
+            if (!verdicts.value(uId))
                 itemsToRemove << pItem;
             continue;
         }
@@ -1152,10 +1153,10 @@ void UIChooserModel::sltRemoveSelectedMachine()
         /* If selected copy count equal to existing copy count,
          * we will propose ro unregister machine fully else
          * we will just propose to remove selected-items: */
-        bool fVerdict = iSelectedCopyCount == iExistingCopyCount;
+        const bool fVerdict = iSelectedCopyCount == iExistingCopyCount;
         verdicts.insert(uId, fVerdict);
         if (fVerdict)
-            machinesToUnregister.append(uId);
+            localMachinesToUnregister.append(pItem->node()->toMachineNode()->cache()->toLocal()->machine());
         else
             itemsToRemove << pItem;
     }
@@ -1163,9 +1164,9 @@ void UIChooserModel::sltRemoveSelectedMachine()
     /* If we have something to remove: */
     if (!itemsToRemove.isEmpty())
         removeItems(itemsToRemove);
-    /* If we have something to unregister: */
-    if (!machinesToUnregister.isEmpty())
-        unregisterMachines(machinesToUnregister);
+    /* If we have something local to unregister: */
+    if (!localMachinesToUnregister.isEmpty())
+        unregisterMachines(localMachinesToUnregister);
 }
 
 void UIChooserModel::sltStartScrolling()
@@ -1632,18 +1633,8 @@ void UIChooserModel::removeItems(const QList<UIChooserItem*> &itemsToRemove)
     saveGroupSettings();
 }
 
-void UIChooserModel::unregisterMachines(const QList<QUuid> &ids)
+void UIChooserModel::unregisterMachines(const QList<CMachine> &machines)
 {
-    /* Populate machine list: */
-    QList<CMachine> machines;
-    CVirtualBox vbox = uiCommon().virtualBox();
-    foreach (const QUuid &uId, ids)
-    {
-        CMachine machine = vbox.FindMachine(uId.toString());
-        if (!machine.isNull())
-            machines << machine;
-    }
-
     /* Confirm machine removal: */
     int iResultCode = msgCenter().confirmMachineRemoval(machines);
     if (iResultCode == AlertButton_Cancel)
@@ -1652,49 +1643,47 @@ void UIChooserModel::unregisterMachines(const QList<QUuid> &ids)
     /* Change selection to some close by item: */
     setSelectedItem(findClosestUnselectedItem());
 
-    /* For every selected-item: */
-    for (int iMachineIndex = 0; iMachineIndex < machines.size(); ++iMachineIndex)
+    /* For every selected machine: */
+    foreach (CMachine comMachine, machines)
     {
-        /* Get iterated machine: */
-        CMachine &machine = machines[iMachineIndex];
         if (iResultCode == AlertButton_Choice1)
         {
             /* Unregister machine first: */
-            CMediumVector media = machine.Unregister(KCleanupMode_DetachAllReturnHardDisksOnly);
-            if (!machine.isOk())
+            CMediumVector comMedia = comMachine.Unregister(KCleanupMode_DetachAllReturnHardDisksOnly);
+            if (!comMachine.isOk())
             {
-                msgCenter().cannotRemoveMachine(machine);
+                msgCenter().cannotRemoveMachine(comMachine);
                 continue;
             }
             /* Prepare cleanup progress: */
-            CProgress progress = machine.DeleteConfig(media);
-            if (!machine.isOk())
+            CProgress comProgress = comMachine.DeleteConfig(comMedia);
+            if (!comMachine.isOk())
             {
-                msgCenter().cannotRemoveMachine(machine);
+                msgCenter().cannotRemoveMachine(comMachine);
                 continue;
             }
             /* And show cleanup progress finally: */
-            msgCenter().showModalProgressDialog(progress, machine.GetName(), ":/progress_delete_90px.png");
-            if (!progress.isOk() || progress.GetResultCode() != 0)
+            msgCenter().showModalProgressDialog(comProgress, comMachine.GetName(), ":/progress_delete_90px.png");
+            if (!comProgress.isOk() || comProgress.GetResultCode() != 0)
             {
-                msgCenter().cannotRemoveMachine(machine, progress);
+                msgCenter().cannotRemoveMachine(comMachine, comProgress);
                 continue;
             }
         }
         else if (iResultCode == AlertButton_Choice2 || iResultCode == AlertButton_Ok)
         {
             /* Unregister machine first: */
-            CMediumVector media = machine.Unregister(KCleanupMode_DetachAllReturnHardDisksOnly);
-            if (!machine.isOk())
+            CMediumVector comMedia = comMachine.Unregister(KCleanupMode_DetachAllReturnHardDisksOnly);
+            if (!comMachine.isOk())
             {
-                msgCenter().cannotRemoveMachine(machine);
+                msgCenter().cannotRemoveMachine(comMachine);
                 continue;
             }
             /* Finally close all media, deliberately ignoring errors: */
-            foreach (CMedium medium, media)
+            foreach (CMedium comMedium, comMedia)
             {
-                if (!medium.isNull())
-                    medium.Close();
+                if (!comMedium.isNull())
+                    comMedium.Close();
             }
         }
     }
