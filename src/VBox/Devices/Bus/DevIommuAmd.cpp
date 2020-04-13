@@ -1657,6 +1657,7 @@ typedef union
     uint64_t    u64;
 } CMD_BUF_HEAD_PTR_T;
 AssertCompileSize(CMD_BUF_HEAD_PTR_T, 8);
+#define IOMMU_CMD_BUF_HEAD_PTR_VALID_MASK       UINT64_C(0x000000000007fff0)
 
 /**
  * Command Buffer Tail Pointer Register (MMIO).
@@ -1664,6 +1665,8 @@ AssertCompileSize(CMD_BUF_HEAD_PTR_T, 8);
  * Currently identical to CMD_BUF_HEAD_PTR_T.
  */
 typedef CMD_BUF_HEAD_PTR_T    CMD_BUF_TAIL_PTR_T;
+#define IOMMU_CMD_BUF_TAIL_PTR_VALID_MASK       UINT64_C(0x000000000007fff0)
+
 
 /**
  * Event Log Head Pointer Register (MMIO).
@@ -1844,6 +1847,8 @@ typedef struct IOMMU
     bool                        afPadding[3];
     /** The MMIO handle. */
     IOMMMIOHANDLE               hMmio;
+    /** The event semaphore the command thread waits on. */
+    SUPSEMEVENT                 hEvtCmdThread;
 
     /** @name MMIO: Control and status registers.
      * @{ */
@@ -1980,7 +1985,9 @@ typedef const struct IOMMU *PCIOMMU;
 typedef struct IOMMUR3
 {
     /** The IOMMU helpers. */
-    PCPDMIOMMUHLPR3     pIommuHlp;
+    PCPDMIOMMUHLPR3         pIommuHlp;
+    /** The command thread handle. */
+    R3PTRTYPE(PPDMTHREAD)   pCmdThread;
 } IOMMUR3;
 /** Pointer to the ring-3 IOMMU device state. */
 typedef IOMMUR3 *PIOMMUR3;
@@ -1991,7 +1998,7 @@ typedef IOMMUR3 *PIOMMUR3;
 typedef struct IOMMUR0
 {
     /** The IOMMU helpers. */
-    PCPDMIOMMUHLPR0     pIommuHlp;
+    PCPDMIOMMUHLPR0         pIommuHlp;
 } IOMMUR0;
 /** Pointer to the ring-0 IOMMU device state. */
 typedef IOMMUR0 *PIOMMUR0;
@@ -2002,7 +2009,7 @@ typedef IOMMUR0 *PIOMMUR0;
 typedef struct IOMMURC
 {
     /** The IOMMU helpers. */
-    PCPDMIOMMUHLPRC     pIommuHlp;
+    PCPDMIOMMUHLPRC         pIommuHlp;
 } IOMMURC;
 /** Pointer to the raw-mode IOMMU device state. */
 typedef IOMMURC *PIOMMURC;
@@ -2190,6 +2197,114 @@ static VBOXSTRICTRC iommuAmdMsiData_w(PPDMDEVINS pDevIns, PIOMMU pThis, uint32_t
 }
 
 
+/**
+ * Writes the Command Buffer Head Pointer Register (32-bit).
+ */
+static VBOXSTRICTRC iommuAmdCmdBufHeadPtr_w(PPDMDEVINS pDevIns, PIOMMU pThis, uint32_t iReg, uint64_t u64Value)
+{
+    RT_NOREF(pDevIns, iReg);
+
+    /*
+     * IOMMU behavior is undefined when software writes this register when the command buffer is running.
+     * In our emulation, we ignore the write entirely.
+     * See AMD IOMMU spec. 3.3.13 "Command and Event Log Pointer Registers".
+     */
+    IOMMU_STATUS_T const Status = pThis->Status;
+    if (Status.n.u1CmdBufRunning)
+    {
+        Log((IOMMU_LOG_PFX ": Setting CmdBufHeadPtr (%#RX64) when command buffer is running -> Ignored\n", u64Value));
+        return VINF_SUCCESS;
+    }
+
+    /*
+     * IOMMU behavior is undefined when software writes a value value outside the buffer length.
+     * In our emtulation, we ignore the write entirely.
+     */
+    uint32_t const      offBuf     = u64Value & IOMMU_CMD_BUF_HEAD_PTR_VALID_MASK;
+    CMD_BUF_BAR_T const CmdBufBar  = pThis->CmdBufBaseAddr;
+    uint32_t            cbBuf;
+    iommuAmdDecodeBufferLength(CmdBufBar.n.u4CmdLen, NULL, &cbBuf);
+    if (offBuf >= cbBuf)
+    {
+        Log((IOMMU_LOG_PFX ": Setting CmdBufHeadPtr (%#RX32) to a value that exceeds buffer length -> Ignored\n", offBuf, cbBuf));
+        return VINF_SUCCESS;
+    }
+
+    pThis->CmdBufHeadPtr.u64 = offBuf;
+    LogFlow((IOMMU_LOG_PFX ": Set CmdBufHeadPtr to %#RX32\n", offBuf));
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Writes the Command Buffer Tail Pointer Register (32-bit).
+ */
+static VBOXSTRICTRC iommuAmdCmdBufTailPtr_w(PPDMDEVINS pDevIns, PIOMMU pThis, uint32_t iReg, uint64_t u64Value)
+{
+    RT_NOREF(pDevIns, iReg);
+
+    /*
+     * IOMMU behavior is undefined when software advances this register equal or beyond its head pointer.
+     * In our emulation, we ignore the write entirely.
+     * See AMD IOMMU spec. 3.3.13 "Command and Event Log Pointer Registers".
+     */
+    uint32_t const offBufTail = u64Value & IOMMU_CMD_BUF_HEAD_PTR_VALID_MASK;
+    NOREF(offBufTail);
+    NOREF(pThis);
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Writes the Event Log Head Pointer Register (32-bit).
+ */
+static VBOXSTRICTRC iommuAmdEvtLogHeadPtr_w(PPDMDEVINS pDevIns, PIOMMU pThis, uint32_t iReg, uint64_t u64Value)
+{
+    RT_NOREF(pDevIns, iReg);
+    NOREF(pThis);
+    NOREF(u64Value);
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Writes the Event Log Tail Pointer Register (32-bit).
+ */
+static VBOXSTRICTRC iommuAmdEvtLogTailPtr_w(PPDMDEVINS pDevIns, PIOMMU pThis, uint32_t iReg, uint64_t u64Value)
+{
+    RT_NOREF(pDevIns, iReg);
+    NOREF(pThis);
+    NOREF(u64Value);
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * The IOMMU command thread.
+ *
+ * @returns VBox status code.
+ * @param   pDevIns     The device instance.
+ * @param   pThread     The command thread.
+ */
+static DECLCALLBACK(int) iommuAmdR3CmdThread(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
+{
+    RT_NOREF(pDevIns, pThread);
+}
+
+
+/**
+ * Unblocks the command thread so it can respond to a state change.
+ *
+ * @returns VBox status code.
+ * @param   pDevIns     The device instance.
+ * @param   pThread     The command thread.
+ */
+static DECLCALLBACK(int) iommuAmdR3CmdThreadWakeUp(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
+{
+    RT_NOREF(pDevIns, pThread);
+}
+
+
 #if 0
 /**
  * Table 0: Registers-access table.
@@ -2301,10 +2416,10 @@ static VBOXSTRICTRC iommuAmdWriteRegister(PPDMDEVINS pDevIns, uint32_t off, uint
 
         case IOMMU_MMIO_OFF_RSVD_REG:            return iommuAmdIgnore_w(pDevIns, pThis, off, uValue);
 
-        case IOMMU_MMIO_CMD_BUF_HEAD_PTR:
-        case IOMMU_MMIO_CMD_BUF_TAIL_PTR:
-        case IOMMU_MMIO_EVT_LOG_HEAD_PTR:
-        case IOMMU_MMIO_EVT_LOG_TAIL_PTR:
+        case IOMMU_MMIO_CMD_BUF_HEAD_PTR:        return iommuAmdCmdBufHeadPtr_w(pDevIns, pThis, off, uValue);
+        case IOMMU_MMIO_CMD_BUF_TAIL_PTR:        return iommuAmdCmdBufTailPtr_w(pDevIns, pThis, off, uValue);
+        case IOMMU_MMIO_EVT_LOG_HEAD_PTR:        return iommuAmdEvtLogHeadPtr_w(pDevIns, pThis, off, uValue);
+        case IOMMU_MMIO_EVT_LOG_TAIL_PTR:        return iommuAmdEvtLogTailPtr_w(pDevIns, pThis, off, uValue);
 
         case IOMMU_MMIO_OFF_STATUS:
 
@@ -2318,7 +2433,7 @@ static VBOXSTRICTRC iommuAmdWriteRegister(PPDMDEVINS pDevIns, uint32_t off, uint
         case IOMMU_MMIO_OFF_PPR_LOG_B_TAIL_PTR:
 
         case IOMMU_MMIO_OFF_EVT_LOG_B_HEAD_PTR:
-        case IOMMU_MMIO_OFF_EVT_LOG_B_TAIL_PTR:
+        case IOMMU_MMIO_OFF_EVT_LOG_B_TAIL_PTR:  return iommuAmdIgnore_w(pDevIns, pThis, off, uValue);
 
         case IOMMU_MMIO_OFF_PPR_LOG_AUTO_RESP:
         case IOMMU_MMIO_OFF_PPR_LOG_OVERFLOW_EARLY:
@@ -2512,112 +2627,6 @@ static DECLCALLBACK(VBOXSTRICTRC) iommuAmdMmioRead(PPDMDEVINS pDevIns, void *pvU
 
 
 # ifdef IN_RING3
-
-/**
- * Resets read-write portions of the IOMMU state.
- *
- * State data not initialized here is expected to be initialized in the construct
- * callback and remain read-only through the lifetime of the VM.
- *
- * @param   pDevIns   The device instance.
- */
-static void iommuAmdR3Init(PPDMDEVINS pDevIns)
-{
-    PIOMMU pThis = PDMDEVINS_2_DATA(pDevIns, PIOMMU);
-    Assert(pThis);
-
-    PPDMPCIDEV pPciDev = pDevIns->apPciDevs[0];
-    PDMPCIDEV_ASSERT_VALID(pDevIns, pPciDev);
-
-    pThis->DevTabBaseAddr.u64    = 0;
-    pThis->CmdBufBaseAddr.u64    = 0;
-    pThis->EvtLogBaseAddr.u64    = 0;
-    pThis->Ctrl.u64              = 0;
-    pThis->ExclRangeBaseAddr.u64 = 0;
-    pThis->ExclRangeLimit.u64    = 0;
-    pThis->ExtFeat.n.u1PrefetchSup           = 0;
-    pThis->ExtFeat.n.u1PprSup                = 0;
-    pThis->ExtFeat.n.u1X2ApicSup             = 0;
-    pThis->ExtFeat.n.u1NoExecuteSup          = 0;
-    pThis->ExtFeat.n.u1GstTranslateSup       = 0;
-    pThis->ExtFeat.n.u1InvAllSup             = 0;
-    pThis->ExtFeat.n.u1GstVirtApicSup        = 0;
-    pThis->ExtFeat.n.u1HwErrorSup            = 0;
-    pThis->ExtFeat.n.u1PerfCounterSup        = 0;
-    pThis->ExtFeat.n.u2HostAddrTranslateSize = 0;   /* Requires GstTranslateSup. */
-    pThis->ExtFeat.n.u2GstAddrTranslateSize  = 0;   /* Requires GstTranslateSup. */
-    pThis->ExtFeat.n.u2GstCr3RootTblLevel    = 0;   /* Requires GstTranslateSup. */
-    pThis->ExtFeat.n.u2SmiFilterSup          = 0;
-    pThis->ExtFeat.n.u3SmiFilterCount        = 0;
-    pThis->ExtFeat.n.u3GstVirtApicModeSup    = 0;   /* Requires GstVirtApicSup */
-    pThis->ExtFeat.n.u2DualPprLogSup         = 0;
-    pThis->ExtFeat.n.u2DualEvtLogSup         = 0;
-    pThis->ExtFeat.n.u5MaxPasidSup           = 0;   /* Requires GstTranslateSup. */
-    pThis->ExtFeat.n.u1UserSupervisorSup     = 0;
-    pThis->ExtFeat.n.u2DevTabSegSup          = 0;
-    pThis->ExtFeat.n.u1PprLogOverflowWarn    = 0;
-    pThis->ExtFeat.n.u1PprAutoRespSup        = 0;
-    pThis->ExtFeat.n.u2MarcSup               = 0;
-    pThis->ExtFeat.n.u1BlockStopMarkSup      = 0;
-    pThis->ExtFeat.n.u1PerfOptSup            = 0;
-    pThis->ExtFeat.n.u1MsiCapMmioSup         = 1;
-    pThis->ExtFeat.n.u1GstIoSup              = 0;
-    pThis->ExtFeat.n.u1HostAccessSup         = 0;
-    pThis->ExtFeat.n.u1EnhancedPprSup        = 0;
-    pThis->ExtFeat.n.u1AttrForwardSup        = 0;
-    pThis->ExtFeat.n.u1HostDirtySup          = 0;
-    pThis->ExtFeat.n.u1InvIoTlbTypeSup       = 0;
-    pThis->ExtFeat.n.u1GstUpdateDisSup       = 0;
-    pThis->ExtFeat.n.u1ForcePhysDstSup       = 0;
-    pThis->PprLogBaseAddr.u64                = 0;
-    pThis->HwEvtHi.u64                       = 0;
-    pThis->HwEvtLo                           = 0;
-    pThis->HwEvtStatus.u64                   = 0;
-    pThis->GALogBaseAddr.n.u40GALogBase      = 0;
-    pThis->GALogBaseAddr.n.u4GALogLen        = 8;
-    pThis->GALogTailAddr.u64                 = 0;
-    pThis->PprLogBBaseAddr.n.u40PprLogBase   = 0;
-    pThis->PprLogBBaseAddr.n.u4PprLogLen     = 8;
-    pThis->EvtLogBBaseAddr.n.u40EvtBase      = 0;
-    pThis->EvtLogBBaseAddr.n.u4EvtLen        = 8;
-    memset(&pThis->DevTabSeg[0], 0, sizeof(pThis->DevTabSeg));
-    pThis->DevSpecificFeat.u64               = 0;
-    pThis->DevSpecificCtrl.u64               = 0;
-    pThis->DevSpecificStatus.u64             = 0;
-    pThis->MsiMiscInfo.u64                   = 0;
-    pThis->MsiCapHdr.u32                     = PDMPciDevGetDWord(pPciDev, IOMMU_PCI_OFF_MSI_CAP_HDR);
-    pThis->MsiAddr.u64                       = 0;
-    pThis->MsiData.u32                       = 0;
-    pThis->MsiMapCapHdr.u32                  = 0;
-    pThis->PerfOptCtrl.u32                   = 0;
-    pThis->XtGenIntrCtrl.u64                 = 0;
-    pThis->XtPprIntrCtrl.u64                 = 0;
-    pThis->XtGALogIntrCtrl.u64               = 0;
-    memset(&pThis->aMarcApers[0], 0, sizeof(pThis->aMarcApers));
-    pThis->RsvdReg                           = 0;
-    pThis->CmdBufHeadPtr.u64                 = 0;
-    pThis->CmdBufTailPtr.u64                 = 0;
-    pThis->EvtLogHeadPtr.u64                 = 0;
-    pThis->EvtLogTailPtr.u64                 = 0;
-    pThis->Status.u64                        = 0;
-    pThis->PprLogHeadPtr.u64                 = 0;
-    pThis->PprLogTailPtr.u64                 = 0;
-    pThis->GALogHeadPtr.u64                  = 0;
-    pThis->GALogTailPtr.u64                  = 0;
-    pThis->PprLogBHeadPtr.u64                = 0;
-    pThis->PprLogBTailPtr.u64                = 0;
-    pThis->EvtLogBHeadPtr.u64                = 0;
-    pThis->EvtLogBTailPtr.u64                = 0;
-    pThis->PprLogAutoResp.u64                = 0;
-    pThis->PprLogOverflowEarly.u64           = 0;
-    pThis->PprLogBOverflowEarly.u64          = 0;
-
-    PDMPciDevSetDWord(pPciDev, IOMMU_PCI_OFF_BASE_ADDR_REG_LO, 0);
-    PDMPciDevSetDWord(pPciDev, IOMMU_PCI_OFF_BASE_ADDR_REG_HI, 0);
-    PDMPciDevSetDWord(pPciDev, IOMMU_PCI_OFF_RANGE_REG,        0);
-}
-
-
 /**
  * @callback_method_impl{FNPCICONFIGREAD}
  */
@@ -3220,7 +3229,104 @@ static DECLCALLBACK(int) iommuAmdR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM,
  */
 static DECLCALLBACK(void) iommuAmdR3Reset(PPDMDEVINS pDevIns)
 {
-    iommuAmdR3Init(pDevIns);
+    /*
+     * Resets read-write portion of the IOMMU state.
+     *
+     * State data not initialized here is expected to be initialized during
+     * device construction and remain read-only through the lifetime of the VM.
+     */
+    PIOMMU pThis = PDMDEVINS_2_DATA(pDevIns, PIOMMU);
+    Assert(pThis);
+
+    PPDMPCIDEV pPciDev = pDevIns->apPciDevs[0];
+    PDMPCIDEV_ASSERT_VALID(pDevIns, pPciDev);
+
+    pThis->DevTabBaseAddr.u64    = 0;
+    pThis->CmdBufBaseAddr.u64    = 0;
+    pThis->EvtLogBaseAddr.u64    = 0;
+    pThis->Ctrl.u64              = 0;
+    pThis->ExclRangeBaseAddr.u64 = 0;
+    pThis->ExclRangeLimit.u64    = 0;
+    pThis->ExtFeat.n.u1PrefetchSup           = 0;
+    pThis->ExtFeat.n.u1PprSup                = 0;
+    pThis->ExtFeat.n.u1X2ApicSup             = 0;
+    pThis->ExtFeat.n.u1NoExecuteSup          = 0;
+    pThis->ExtFeat.n.u1GstTranslateSup       = 0;
+    pThis->ExtFeat.n.u1InvAllSup             = 0;
+    pThis->ExtFeat.n.u1GstVirtApicSup        = 0;
+    pThis->ExtFeat.n.u1HwErrorSup            = 0;
+    pThis->ExtFeat.n.u1PerfCounterSup        = 0;
+    pThis->ExtFeat.n.u2HostAddrTranslateSize = 0;   /* Requires GstTranslateSup. */
+    pThis->ExtFeat.n.u2GstAddrTranslateSize  = 0;   /* Requires GstTranslateSup. */
+    pThis->ExtFeat.n.u2GstCr3RootTblLevel    = 0;   /* Requires GstTranslateSup. */
+    pThis->ExtFeat.n.u2SmiFilterSup          = 0;
+    pThis->ExtFeat.n.u3SmiFilterCount        = 0;
+    pThis->ExtFeat.n.u3GstVirtApicModeSup    = 0;   /* Requires GstVirtApicSup */
+    pThis->ExtFeat.n.u2DualPprLogSup         = 0;
+    pThis->ExtFeat.n.u2DualEvtLogSup         = 0;
+    pThis->ExtFeat.n.u5MaxPasidSup           = 0;   /* Requires GstTranslateSup. */
+    pThis->ExtFeat.n.u1UserSupervisorSup     = 0;
+    pThis->ExtFeat.n.u2DevTabSegSup          = 0;
+    pThis->ExtFeat.n.u1PprLogOverflowWarn    = 0;
+    pThis->ExtFeat.n.u1PprAutoRespSup        = 0;
+    pThis->ExtFeat.n.u2MarcSup               = 0;
+    pThis->ExtFeat.n.u1BlockStopMarkSup      = 0;
+    pThis->ExtFeat.n.u1PerfOptSup            = 0;
+    pThis->ExtFeat.n.u1MsiCapMmioSup         = 1;
+    pThis->ExtFeat.n.u1GstIoSup              = 0;
+    pThis->ExtFeat.n.u1HostAccessSup         = 0;
+    pThis->ExtFeat.n.u1EnhancedPprSup        = 0;
+    pThis->ExtFeat.n.u1AttrForwardSup        = 0;
+    pThis->ExtFeat.n.u1HostDirtySup          = 0;
+    pThis->ExtFeat.n.u1InvIoTlbTypeSup       = 0;
+    pThis->ExtFeat.n.u1GstUpdateDisSup       = 0;
+    pThis->ExtFeat.n.u1ForcePhysDstSup       = 0;
+    pThis->PprLogBaseAddr.u64                = 0;
+    pThis->HwEvtHi.u64                       = 0;
+    pThis->HwEvtLo                           = 0;
+    pThis->HwEvtStatus.u64                   = 0;
+    pThis->GALogBaseAddr.n.u40GALogBase      = 0;
+    pThis->GALogBaseAddr.n.u4GALogLen        = 8;
+    pThis->GALogTailAddr.u64                 = 0;
+    pThis->PprLogBBaseAddr.n.u40PprLogBase   = 0;
+    pThis->PprLogBBaseAddr.n.u4PprLogLen     = 8;
+    pThis->EvtLogBBaseAddr.n.u40EvtBase      = 0;
+    pThis->EvtLogBBaseAddr.n.u4EvtLen        = 8;
+    memset(&pThis->DevTabSeg[0], 0, sizeof(pThis->DevTabSeg));
+    pThis->DevSpecificFeat.u64               = 0;
+    pThis->DevSpecificCtrl.u64               = 0;
+    pThis->DevSpecificStatus.u64             = 0;
+    pThis->MsiMiscInfo.u64                   = 0;
+    pThis->MsiCapHdr.u32                     = PDMPciDevGetDWord(pPciDev, IOMMU_PCI_OFF_MSI_CAP_HDR);
+    pThis->MsiAddr.u64                       = 0;
+    pThis->MsiData.u32                       = 0;
+    pThis->MsiMapCapHdr.u32                  = 0;
+    pThis->PerfOptCtrl.u32                   = 0;
+    pThis->XtGenIntrCtrl.u64                 = 0;
+    pThis->XtPprIntrCtrl.u64                 = 0;
+    pThis->XtGALogIntrCtrl.u64               = 0;
+    memset(&pThis->aMarcApers[0], 0, sizeof(pThis->aMarcApers));
+    pThis->RsvdReg                           = 0;
+    pThis->CmdBufHeadPtr.u64                 = 0;
+    pThis->CmdBufTailPtr.u64                 = 0;
+    pThis->EvtLogHeadPtr.u64                 = 0;
+    pThis->EvtLogTailPtr.u64                 = 0;
+    pThis->Status.u64                        = 0;
+    pThis->PprLogHeadPtr.u64                 = 0;
+    pThis->PprLogTailPtr.u64                 = 0;
+    pThis->GALogHeadPtr.u64                  = 0;
+    pThis->GALogTailPtr.u64                  = 0;
+    pThis->PprLogBHeadPtr.u64                = 0;
+    pThis->PprLogBTailPtr.u64                = 0;
+    pThis->EvtLogBHeadPtr.u64                = 0;
+    pThis->EvtLogBTailPtr.u64                = 0;
+    pThis->PprLogAutoResp.u64                = 0;
+    pThis->PprLogOverflowEarly.u64           = 0;
+    pThis->PprLogBOverflowEarly.u64          = 0;
+
+    PDMPciDevSetDWord(pPciDev, IOMMU_PCI_OFF_BASE_ADDR_REG_LO, 0);
+    PDMPciDevSetDWord(pPciDev, IOMMU_PCI_OFF_BASE_ADDR_REG_HI, 0);
+    PDMPciDevSetDWord(pPciDev, IOMMU_PCI_OFF_RANGE_REG,        0);
 }
 
 
@@ -3357,12 +3463,6 @@ static DECLCALLBACK(int) iommuAmdR3Construct(PPDMDEVINS pDevIns, int iInstance, 
 #endif
 
     /*
-     * Initialize parts of the IOMMU state as it would during reset.
-     * Must be called -after- initializing PCI config. space registers.
-     */
-    iommuAmdR3Init(pDevIns);
-
-    /*
      * Register the PCI function with PDM.
      */
     rc = PDMDevHlpPCIRegisterEx(pDevIns, pPciDev, 0 /* fFlags */, uPciDevice, uPciFunction, "amd-iommu");
@@ -3372,7 +3472,7 @@ static DECLCALLBACK(int) iommuAmdR3Construct(PPDMDEVINS pDevIns, int iInstance, 
      * Intercept PCI config. space accesses.
      */
     rc = PDMDevHlpPCIInterceptConfigAccesses(pDevIns, pPciDev, iommuAmdR3PciConfigRead, iommuAmdR3PciConfigWrite);
-    AssertRCReturn(rc, rc);
+    AssertLogRelRCReturn(rc, rc);
 
     /*
      * Register the MMIO region.
@@ -3380,7 +3480,7 @@ static DECLCALLBACK(int) iommuAmdR3Construct(PPDMDEVINS pDevIns, int iInstance, 
     rc = PDMDevHlpMmioCreate(pDevIns, IOMMU_MMIO_REGION_SIZE, pPciDev, 0 /* iPciRegion */, iommuAmdMmioWrite, iommuAmdMmioRead,
                              NULL /* pvUser */, IOMMMIO_FLAGS_READ_DWORD_QWORD | IOMMMIO_FLAGS_WRITE_DWORD_QWORD_ZEROED,
                              "AMD-IOMMU", &pThis->hMmio);
-    AssertRCReturn(rc, rc);
+    AssertLogRelRCReturn(rc, rc);
 
     /*
      * Register saved state.
@@ -3389,13 +3489,29 @@ static DECLCALLBACK(int) iommuAmdR3Construct(PPDMDEVINS pDevIns, int iInstance, 
                                 NULL, NULL, NULL,
                                 NULL, iommuAmdR3SaveExec, NULL,
                                 NULL, iommuAmdR3LoadExec, NULL);
-    AssertRCReturn(rc, rc);
+    AssertLogRelRCReturn(rc, rc);
 
     /*
      * Register debugger info item.
      */
     rc = PDMDevHlpDBGFInfoRegister(pDevIns, "iommu", "Display IOMMU state.", iommuAmdR3DbgInfo);
-    AssertRCReturn(rc, rc);
+    AssertLogRelRCReturn(rc, rc);
+
+    /*
+     * Create the command thread and its event semaphore.
+     */
+    rc = PDMDevHlpThreadCreate(pDevIns, &pThisCC->pCmdThread, pThis, iommuAmdR3CmdThread, iommuAmdR3CmdThreadWakeUp,
+                               0 /* cbStack */, RTTHREADTYPE_IO, "AMD-IOMMU");
+    AssertLogRelRCReturn(rc, rc);
+
+    rc = PDMDevHlpSUPSemEventCreate(pDevIns, &pThis->hEvtCmdThread);
+    AssertLogRelRCReturn(rc, rc);
+
+    /*
+     * Initialize parts of the IOMMU state as it would during reset.
+     * Must be called -after- initializing PCI config. space registers.
+     */
+    iommuAmdR3Reset(pDevIns);
 
     return VINF_SUCCESS;
 }
