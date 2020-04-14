@@ -61,8 +61,137 @@ UIChooserAbstractModel:: UIChooserAbstractModel(UIChooser *pParent)
 
 void UIChooserAbstractModel::init()
 {
-    /* Load tree: */
-    loadTree();
+    /* Create invisible root group node: */
+    m_pInvisibleRootNode = new UIChooserNodeGroup(0 /* parent */,
+                                                  false /* favorite */,
+                                                  0 /* position */,
+                                                  QString() /* name */,
+                                                  UIChooserNodeGroupType_Local,
+                                                  true /* opened */);
+    if (invisibleRoot())
+    {
+        /* Link root to this model: */
+        invisibleRoot()->setModel(this);
+
+        /* Create global node: */
+        new UIChooserNodeGlobal(invisibleRoot(),
+                                isGlobalNodeFavorite(invisibleRoot()),
+                                0 /* position */,
+                                QString() /* tip */);
+
+        /* Add all the approved machine nodes into the tree: */
+        LogRelFlow(("UIChooserModel: Loading VMs...\n"));
+        foreach (const CMachine &comMachine, uiCommon().virtualBox().GetMachines())
+        {
+            const QUuid uMachineID = comMachine.GetId();
+            if (!uMachineID.isNull() && gEDataManager->showMachineInVirtualBoxManagerChooser(uMachineID))
+                addMachineIntoTheTree(comMachine);
+        }
+        LogRelFlow(("UIChooserModel: VMs loaded.\n"));
+
+#ifdef VBOX_GUI_WITH_CLOUD_VMS
+        /* Add cloud provider groups: */
+        LogRelFlow(("UIChooserModel: Loading cloud providers...\n"));
+        /* Acquire VBox: */
+        CVirtualBox comVBox = uiCommon().virtualBox();
+        /* Acquire Cloud Provider Manager: */
+        CCloudProviderManager comCloudProviderManager = comVBox.GetCloudProviderManager();
+        /* Show error message if necessary: */
+        if (!comVBox.isOk())
+            msgCenter().cannotAcquireCloudProviderManager(comVBox);
+        else
+        {
+            /* Acquire existing providers: */
+            const QVector<CCloudProvider> providers = comCloudProviderManager.GetProviders();
+            /* Show error message if necessary: */
+            if (!comCloudProviderManager.isOk())
+                msgCenter().cannotAcquireCloudProviderManagerParameter(comCloudProviderManager);
+            else
+            {
+                /* Iterate through existing providers: */
+                foreach (CCloudProvider comCloudProvider, providers)
+                {
+                    /* Skip if we have nothing to populate (file missing?): */
+                    if (comCloudProvider.isNull())
+                        continue;
+                    /* Skip if we have nothing to populate (profiles missing?): */
+                    const QVector<QString> profileNames = comCloudProvider.GetProfileNames();
+                    if (profileNames.isEmpty())
+                        continue;
+
+                    /* Get provider name: */
+                    const QString strProviderName = comCloudProvider.GetShortName();
+                    /* Show error message if necessary: */
+                    if (!comCloudProvider.isOk())
+                        msgCenter().cannotAcquireCloudProviderParameter(comCloudProvider);
+                    else
+                    {
+                        /* Add provider group node: */
+                        UIChooserNodeGroup *pProviderNode =
+                            new UIChooserNodeGroup(invisibleRoot(),
+                                                   false /* favorite */,
+                                                   getDesiredNodePosition(invisibleRoot(),
+                                                                          UIChooserNodeType_Group,
+                                                                          strProviderName),
+                                                   strProviderName,
+                                                   UIChooserNodeGroupType_Provider,
+                                                   false /* opened */);
+
+                        /* Iterate through existing profile names: */
+                        foreach (const QString &strProfileName, profileNames)
+                        {
+                            /* Skip if we have nothing to show (wtf happened?): */
+                            if (strProfileName.isEmpty())
+                                continue;
+
+                            /* Acquire Cloud Profile: */
+                            CCloudProfile comCloudProfile = comCloudProvider.GetProfileByName(strProfileName);
+                            /* Show error message if necessary: */
+                            if (!comCloudProvider.isOk())
+                                msgCenter().cannotFindCloudProfile(comCloudProvider, strProfileName);
+                            else
+                            {
+                                /* Create Cloud Client: */
+                                CCloudClient comCloudClient = comCloudProfile.CreateCloudClient();
+                                /* Show error message if necessary: */
+                                if (!comCloudProfile.isOk())
+                                    msgCenter().cannotCreateCloudClient(comCloudProfile);
+                                else
+                                {
+                                    /* Add profile sub-group node: */
+                                    UIChooserNodeGroup *pProfileNode =
+                                        new UIChooserNodeGroup(pProviderNode,
+                                                               false /* favorite */,
+                                                               getDesiredNodePosition(pProviderNode,
+                                                                                      UIChooserNodeType_Group,
+                                                                                      strProfileName),
+                                                               strProfileName,
+                                                               UIChooserNodeGroupType_Profile,
+                                                               true /* opened */);
+                                    /* Add fake cloud VM item: */
+                                    new UIChooserNodeMachine(pProfileNode,
+                                                             false /* favorite */,
+                                                             0 /* position */);
+
+                                    /* Create cloud acquire isntances task: */
+                                    UITaskCloudListMachines *pTask = new UITaskCloudListMachines(comCloudClient,
+                                                                                                 pProfileNode);
+                                    if (pTask)
+                                    {
+                                        connect(uiCommon().threadPoolCloud(), &UIThreadPool::sigTaskComplete,
+                                                this, &UIChooserAbstractModel::sltHandleCloudListMachinesTaskComplete);
+                                        uiCommon().threadPoolCloud()->enqueueTask(pTask);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        LogRelFlow(("UIChooserModel: Cloud providers loaded.\n"));
+#endif /* VBOX_GUI_WITH_CLOUD_VMS */
+    }
 }
 
 void UIChooserAbstractModel::deinit()
@@ -81,11 +210,6 @@ void UIChooserAbstractModel::deinit()
     /* Delete tree: */
     delete m_pInvisibleRootNode;
     m_pInvisibleRootNode = 0;
-}
-
-UIChooserNode *UIChooserAbstractModel::invisibleRoot() const
-{
-    return m_pInvisibleRootNode;
 }
 
 void UIChooserAbstractModel::wipeOutEmptyGroups()
@@ -374,141 +498,6 @@ void UIChooserAbstractModel::prepareConnections()
     connect(this, &UIChooserAbstractModel::sigStartGroupSaving,
             this, &UIChooserAbstractModel::sltStartGroupSaving,
             Qt::QueuedConnection);
-}
-
-void UIChooserAbstractModel::loadTree()
-{
-    /* Create invisible root group node: */
-    m_pInvisibleRootNode = new UIChooserNodeGroup(0 /* parent */,
-                                                  false /* favorite */,
-                                                  0 /* position */,
-                                                  QString() /* name */,
-                                                  UIChooserNodeGroupType_Local,
-                                                  true /* opened */);
-    if (invisibleRoot())
-    {
-        /* Link root to this model: */
-        m_pInvisibleRootNode->setModel(this);
-
-        /* Create global node: */
-        new UIChooserNodeGlobal(m_pInvisibleRootNode,
-                                isGlobalNodeFavorite(m_pInvisibleRootNode),
-                                0 /* position */,
-                                QString() /* tip */);
-
-        /* Add all the approved machine nodes into the tree: */
-        LogRelFlow(("UIChooserModel: Loading VMs...\n"));
-        foreach (const CMachine &comMachine, uiCommon().virtualBox().GetMachines())
-        {
-            const QUuid uMachineID = comMachine.GetId();
-            if (!uMachineID.isNull() && gEDataManager->showMachineInVirtualBoxManagerChooser(uMachineID))
-                addMachineIntoTheTree(comMachine);
-        }
-        LogRelFlow(("UIChooserModel: VMs loaded.\n"));
-
-#ifdef VBOX_GUI_WITH_CLOUD_VMS
-        /* Add cloud provider groups: */
-        LogRelFlow(("UIChooserModel: Loading cloud providers...\n"));
-        /* Acquire VBox: */
-        CVirtualBox comVBox = uiCommon().virtualBox();
-        /* Acquire Cloud Provider Manager: */
-        CCloudProviderManager comCloudProviderManager = comVBox.GetCloudProviderManager();
-        /* Show error message if necessary: */
-        if (!comVBox.isOk())
-            msgCenter().cannotAcquireCloudProviderManager(comVBox);
-        else
-        {
-            /* Acquire existing providers: */
-            const QVector<CCloudProvider> providers = comCloudProviderManager.GetProviders();
-            /* Show error message if necessary: */
-            if (!comCloudProviderManager.isOk())
-                msgCenter().cannotAcquireCloudProviderManagerParameter(comCloudProviderManager);
-            else
-            {
-                /* Iterate through existing providers: */
-                foreach (CCloudProvider comCloudProvider, providers)
-                {
-                    /* Skip if we have nothing to populate (file missing?): */
-                    if (comCloudProvider.isNull())
-                        continue;
-                    /* Skip if we have nothing to populate (profiles missing?): */
-                    const QVector<QString> profileNames = comCloudProvider.GetProfileNames();
-                    if (profileNames.isEmpty())
-                        continue;
-
-                    /* Get provider name: */
-                    const QString strProviderName = comCloudProvider.GetShortName();
-                    /* Show error message if necessary: */
-                    if (!comCloudProvider.isOk())
-                        msgCenter().cannotAcquireCloudProviderParameter(comCloudProvider);
-                    else
-                    {
-                        /* Add provider group node: */
-                        UIChooserNodeGroup *pProviderNode =
-                            new UIChooserNodeGroup(m_pInvisibleRootNode,
-                                                   false /* favorite */,
-                                                   getDesiredNodePosition(m_pInvisibleRootNode,
-                                                                          UIChooserNodeType_Group,
-                                                                          strProviderName),
-                                                   strProviderName,
-                                                   UIChooserNodeGroupType_Provider,
-                                                   false /* opened */);
-
-                        /* Iterate through existing profile names: */
-                        foreach (const QString &strProfileName, profileNames)
-                        {
-                            /* Skip if we have nothing to show (wtf happened?): */
-                            if (strProfileName.isEmpty())
-                                continue;
-
-                            /* Acquire Cloud Profile: */
-                            CCloudProfile comCloudProfile = comCloudProvider.GetProfileByName(strProfileName);
-                            /* Show error message if necessary: */
-                            if (!comCloudProvider.isOk())
-                                msgCenter().cannotFindCloudProfile(comCloudProvider, strProfileName);
-                            else
-                            {
-                                /* Create Cloud Client: */
-                                CCloudClient comCloudClient = comCloudProfile.CreateCloudClient();
-                                /* Show error message if necessary: */
-                                if (!comCloudProfile.isOk())
-                                    msgCenter().cannotCreateCloudClient(comCloudProfile);
-                                else
-                                {
-                                    /* Add profile sub-group node: */
-                                    UIChooserNodeGroup *pProfileNode =
-                                        new UIChooserNodeGroup(pProviderNode,
-                                                               false /* favorite */,
-                                                               getDesiredNodePosition(pProviderNode,
-                                                                                      UIChooserNodeType_Group,
-                                                                                      strProfileName),
-                                                               strProfileName,
-                                                               UIChooserNodeGroupType_Profile,
-                                                               true /* opened */);
-                                    /* Add fake cloud VM item: */
-                                    new UIChooserNodeMachine(pProfileNode,
-                                                             false /* favorite */,
-                                                             0 /* position */);
-
-                                    /* Create cloud acquire isntances task: */
-                                    UITaskCloudListMachines *pTask = new UITaskCloudListMachines(comCloudClient,
-                                                                                                 pProfileNode);
-                                    if (pTask)
-                                    {
-                                        connect(uiCommon().threadPoolCloud(), &UIThreadPool::sigTaskComplete,
-                                                this, &UIChooserAbstractModel::sltHandleCloudListMachinesTaskComplete);
-                                        uiCommon().threadPoolCloud()->enqueueTask(pTask);
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        LogRelFlow(("UIChooserModel: Cloud providers loaded.\n"));
-#endif /* VBOX_GUI_WITH_CLOUD_VMS */
-    }
 }
 
 void UIChooserAbstractModel::addMachineIntoTheTree(const CMachine &comMachine, bool fMakeItVisible /* = false */)

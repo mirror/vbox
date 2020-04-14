@@ -79,7 +79,7 @@ public:
     /** @name Children stuff.
       * @{ */
         /** Returns invisible root node instance. */
-        UIChooserNode *invisibleRoot() const;
+        UIChooserNode *invisibleRoot() const { return m_pInvisibleRootNode; }
 
         /** Wipes out empty groups. */
         void wipeOutEmptyGroups();
@@ -173,8 +173,6 @@ private:
 
     /** @name Children stuff.
       * @{ */
-        /** Loads tree. */
-        void loadTree();
         /** Adds machine item based on certain @a comMachine and optionally @a fMakeItVisible. */
         void addMachineIntoTheTree(const CMachine &comMachine, bool fMakeItVisible = false);
         /** Acquires group node, creates one if necessary.
