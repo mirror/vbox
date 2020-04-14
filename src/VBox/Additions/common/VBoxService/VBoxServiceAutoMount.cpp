@@ -1402,7 +1402,7 @@ static int vbsvcAutomounterMountIt(PVBSVCAUTOMOUNTERENTRY pEntry)
         return VINF_SUCCESS;
     }
     VGSvcError("vbsvcAutomounterMountIt: Failed to attach '%s' to '%s': %u\n",
-               pEntry->pszName, pEntry->pszActualMountPoint, rc);
+               pEntry->pszName, pEntry->pszActualMountPoint, dwErr);
     return VERR_OPEN_FAILED;
 
 #elif defined(RT_OS_OS2)
