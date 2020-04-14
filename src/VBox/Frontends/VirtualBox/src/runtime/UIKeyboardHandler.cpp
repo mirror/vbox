@@ -90,7 +90,7 @@ const int XKeyRelease = KeyRelease;
 #  undef FocusOut
 #  undef FocusIn
 # endif /* KeyPress */
-//# include <xcb/xcb.h>
+# include <xcb/xcb.h>
 #endif /* VBOX_WS_X11 */
 
 /* Enums representing different keyboard-states: */
