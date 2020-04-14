@@ -62,7 +62,7 @@ struct ResourceColumn
     bool    m_fEnabled;
 };
 
-///#define DEBUG_BACKGROUND
+/** Draws a doughnut shaped chart for the passed data values and can have a text drawn in the center. */
 
 
 /*********************************************************************************************************************************
@@ -98,6 +98,8 @@ private:
     QString m_strCenter;
 };
 
+/** A simple container to store host related performance values. */
+
 
 /*********************************************************************************************************************************
 *   Class UIVMResourceMonitorHostStats definition.                                                                               *
@@ -117,6 +119,8 @@ public:
     quint64 m_iFSTotal;
     quint64 m_iFSFree;
 };
+
+/** A container QWidget to layout host stats. related widgets. */
 
 
 /*********************************************************************************************************************************
@@ -169,7 +173,7 @@ private:
 /*********************************************************************************************************************************
 *   Class UIVMResourceMonitorTableView definition.                                                                               *
 *********************************************************************************************************************************/
-
+/** A QTableView extension so manage the column width a bit better than what Qt offers out of box. */
 class UIVMResourceMonitorTableView : public QTableView
 {
     Q_OBJECT;
@@ -190,11 +194,14 @@ private slots:
 
 private:
 
-    void resizeHeader();
+    /** Resizes all the columns in response to resizeEvent. Columns cannot be narrower than m_minimumColumnWidths values. */
+    void resizeHeaders();
     /** Value is in pixels. Columns cannot be narrower than this width. */
     QMap<int, int> m_minimumColumnWidths;
 };
 
+/** Each instance of UIVMResourceMonitorItem corresponds to a running vm whose stats are displayed.
+  * they are owned my the model. */
 /*********************************************************************************************************************************
  *   Class UIVMResourceMonitorItem definition.                                                                           *
  *********************************************************************************************************************************/
@@ -239,25 +246,6 @@ public:
 private:
 
     void setupPerformanceCollector();
-};
-
-/*********************************************************************************************************************************
- *   Class UIVMResourceMonitorCheckBox definition.                                                                           *
- *********************************************************************************************************************************/
-
-class UIVMResourceMonitorCheckBox : public QCheckBox
-{
-    Q_OBJECT;
-
-public:
-
-    UIVMResourceMonitorCheckBox(QWidget *parent = 0);
-    void setData(const QVariant& data);
-    const QVariant data() const;
-
-private:
-
-    QVariant m_data;
 };
 
 
@@ -355,7 +343,6 @@ protected:
 /*********************************************************************************************************************************
 *   Class UIVMResourceMonitorDoughnutChart implementation.                                                                       *
 *********************************************************************************************************************************/
-
 UIVMResourceMonitorDoughnutChart::UIVMResourceMonitorDoughnutChart(QWidget *pParent /* = 0 */)
     :QWidget(pParent)
     , m_iData0(0)
@@ -440,12 +427,6 @@ UIVMResourceMonitorHostStatsWidget::UIVMResourceMonitorHostStatsWidget(QWidget *
 {
     prepare();
     retranslateUi();
-#ifdef DEBUG_BACKGROUND
-    QPalette pal = palette();
-    pal.setColor(QPalette::Background, Qt::red);
-    setAutoFillBackground(true);
-    setPalette(pal);
-#endif
 }
 
 void UIVMResourceMonitorHostStatsWidget::setHostStats(const UIVMResourceMonitorHostStats &hostStats)
@@ -465,7 +446,7 @@ void UIVMResourceMonitorHostStatsWidget::setHostStats(const UIVMResourceMonitorH
         if (m_hostStats.m_iRAMTotal != 0)
         {
             quint64 iUsedRamPer = 100 * (iUsedRAM / (float) m_hostStats.m_iRAMTotal);
-            QString strCenter = QString("%1%\n%2").arg(iUsedRamPer).arg(tr("Used"));
+            QString strCenter = QString("%1%\n%2").arg(iUsedRamPer).arg(UIResourceMonitorWidget::tr("Used"));
             m_pHostRAMChart->setChartCenterString(strCenter);
         }
     }
@@ -477,7 +458,7 @@ void UIVMResourceMonitorHostStatsWidget::setHostStats(const UIVMResourceMonitorH
         if (m_hostStats.m_iFSTotal != 0)
         {
             quint64 iUsedRamPer = 100 * (iUsedFS / (float) m_hostStats.m_iFSTotal);
-            QString strCenter = QString("%1%\n%2").arg(iUsedRamPer).arg(tr("Used"));
+            QString strCenter = QString("%1%\n%2").arg(iUsedRamPer).arg(UIResourceMonitorWidget::tr("Used"));
             m_pHostFSChart->setChartCenterString(strCenter);
         }
     }
@@ -509,13 +490,6 @@ void UIVMResourceMonitorHostStatsWidget::prepare()
         /* Host CPU Labels: */
         QWidget *pCPULabelContainer = new QWidget;
         pCPULabelContainer->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Maximum);
-
-#ifdef DEBUG_BACKGROUND
-        QPalette pal = pCPULabelContainer->palette();
-        pal.setColor(QPalette::Background, Qt::yellow);
-        pCPULabelContainer->setAutoFillBackground(true);
-        pCPULabelContainer->setPalette(pal);
-#endif
         pLayout->addWidget(pCPULabelContainer);
         QVBoxLayout *pCPULabelsLayout = new QVBoxLayout;
         pCPULabelsLayout->setContentsMargins(0, 0, 0, 0);
@@ -602,56 +576,56 @@ void UIVMResourceMonitorHostStatsWidget::prepare()
 void UIVMResourceMonitorHostStatsWidget::updateLabels()
 {
     if (m_pCPUTitleLabel)
-        m_pCPUTitleLabel->setText(QString("<b>%1</b>").arg(tr("Host CPU Load")));
+        m_pCPUTitleLabel->setText(QString("<b>%1</b>").arg(UIResourceMonitorWidget::tr("Host CPU Load")));
     if (m_pCPUUserLabel)
     {
         QString strColor = QColor(m_CPUUserColor).name(QColor::HexRgb);
-        m_pCPUUserLabel->setText(QString("<font color=\"%1\">%2: %3%</font>").arg(strColor).arg(tr("User")).arg(QString::number(m_hostStats.m_iCPUUserLoad)));
+        m_pCPUUserLabel->setText(QString("<font color=\"%1\">%2: %3%</font>").arg(strColor).arg(UIResourceMonitorWidget::tr("User")).arg(QString::number(m_hostStats.m_iCPUUserLoad)));
     }
     if (m_pCPUKernelLabel)
     {
         QString strColor = QColor(m_CPUKernelColor).name(QColor::HexRgb);
-        m_pCPUKernelLabel->setText(QString("<font color=\"%1\">%2: %3%</font>").arg(strColor).arg(tr("Kernel")).arg(QString::number(m_hostStats.m_iCPUKernelLoad)));
+        m_pCPUKernelLabel->setText(QString("<font color=\"%1\">%2: %3%</font>").arg(strColor).arg(UIResourceMonitorWidget::tr("Kernel")).arg(QString::number(m_hostStats.m_iCPUKernelLoad)));
     }
     if (m_pCPUTotalLabel)
-        m_pCPUTotalLabel->setText(QString("%1: %2%").arg(tr("Total")).arg(m_hostStats.m_iCPUUserLoad + m_hostStats.m_iCPUKernelLoad));
+        m_pCPUTotalLabel->setText(QString("%1: %2%").arg(UIResourceMonitorWidget::tr("Total")).arg(m_hostStats.m_iCPUUserLoad + m_hostStats.m_iCPUKernelLoad));
     if (m_pRAMTitleLabel)
-        m_pRAMTitleLabel->setText(QString("<b>%1</b>").arg(tr("Host RAM Usage")));
+        m_pRAMTitleLabel->setText(QString("<b>%1</b>").arg(UIResourceMonitorWidget::tr("Host RAM Usage")));
     if (m_pRAMFreeLabel)
     {
         QString strRAM = uiCommon().formatSize(m_hostStats.m_iRAMFree);
         QString strColor = QColor(m_RAMFreeColor).name(QColor::HexRgb);
-        m_pRAMFreeLabel->setText(QString("<font color=\"%1\">%2: %3</font>").arg(strColor).arg(tr("Free")).arg(strRAM));
+        m_pRAMFreeLabel->setText(QString("<font color=\"%1\">%2: %3</font>").arg(strColor).arg(UIResourceMonitorWidget::tr("Free")).arg(strRAM));
     }
     if (m_pRAMUsedLabel)
     {
         QString strRAM = uiCommon().formatSize(m_hostStats.m_iRAMTotal - m_hostStats.m_iRAMFree);
         QString strColor = QColor(m_RAMUsedColor).name(QColor::HexRgb);
-        m_pRAMUsedLabel->setText(QString("<font color=\"%1\">%2: %3</font>").arg(strColor).arg(tr("Used")).arg(strRAM));
+        m_pRAMUsedLabel->setText(QString("<font color=\"%1\">%2: %3</font>").arg(strColor).arg(UIResourceMonitorWidget::tr("Used")).arg(strRAM));
     }
     if (m_pRAMTotalLabel)
     {
         QString strRAM = uiCommon().formatSize(m_hostStats.m_iRAMTotal);
-        m_pRAMTotalLabel->setText(QString("%1: %2").arg(tr("Total")).arg(strRAM));
+        m_pRAMTotalLabel->setText(QString("%1: %2").arg(UIResourceMonitorWidget::tr("Total")).arg(strRAM));
     }
     if (m_pFSTitleLabel)
-        m_pFSTitleLabel->setText(QString("<b>%1</b>").arg(tr("Host File System")));
+        m_pFSTitleLabel->setText(QString("<b>%1</b>").arg(UIResourceMonitorWidget::tr("Host File System")));
     if (m_pFSFreeLabel)
     {
         QString strFS = uiCommon().formatSize(m_hostStats.m_iFSFree);
         QString strColor = QColor(m_RAMFreeColor).name(QColor::HexRgb);
-        m_pFSFreeLabel->setText(QString("<font color=\"%1\">%2: %3</font>").arg(strColor).arg(tr("Free")).arg(strFS));
+        m_pFSFreeLabel->setText(QString("<font color=\"%1\">%2: %3</font>").arg(strColor).arg(UIResourceMonitorWidget::tr("Free")).arg(strFS));
     }
     if (m_pFSUsedLabel)
     {
         QString strFS = uiCommon().formatSize(m_hostStats.m_iFSTotal - m_hostStats.m_iFSFree);
         QString strColor = QColor(m_RAMUsedColor).name(QColor::HexRgb);
-        m_pFSUsedLabel->setText(QString("<font color=\"%1\">%2: %3</font>").arg(strColor).arg(tr("Used")).arg(strFS));
+        m_pFSUsedLabel->setText(QString("<font color=\"%1\">%2: %3</font>").arg(strColor).arg(UIResourceMonitorWidget::tr("Used")).arg(strFS));
     }
     if (m_pFSTotalLabel)
     {
         QString strFS = uiCommon().formatSize(m_hostStats.m_iFSTotal);
-        m_pFSTotalLabel->setText(QString("%1: %2").arg(tr("Total")).arg(strFS));
+        m_pFSTotalLabel->setText(QString("%1: %2").arg(UIResourceMonitorWidget::tr("Total")).arg(strFS));
     }
 }
 
@@ -669,7 +643,7 @@ UIVMResourceMonitorTableView::UIVMResourceMonitorTableView(QWidget *pParent /* =
 void UIVMResourceMonitorTableView::setMinimumColumnWidths(const QMap<int, int>& widths)
 {
     m_minimumColumnWidths = widths;
-    resizeHeader();
+    resizeHeaders();
 }
 
 void UIVMResourceMonitorTableView::updateColumVisibility()
@@ -689,16 +663,16 @@ void UIVMResourceMonitorTableView::updateColumVisibility()
         else
             pHeader->showSection(i);
     }
-    resizeHeader();
+    resizeHeaders();
 }
 
 void UIVMResourceMonitorTableView::resizeEvent(QResizeEvent *pEvent)
 {
-    resizeHeader();
+    resizeHeaders();
     QTableView::resizeEvent(pEvent);
 }
 
-void UIVMResourceMonitorTableView::resizeHeader()
+void UIVMResourceMonitorTableView::resizeHeaders()
 {
     QHeaderView* pHeader = horizontalHeader();
     if (!pHeader)
@@ -819,25 +793,6 @@ UIVMResourceMonitorHostStats::UIVMResourceMonitorHostStats()
     , m_iFSTotal(0)
     , m_iFSFree(0)
 {
-}
-
-
-/*********************************************************************************************************************************
-*   Class UIVMResourceMonitorCheckBox implementation.                                                                            *
-*********************************************************************************************************************************/
-
-UIVMResourceMonitorCheckBox::UIVMResourceMonitorCheckBox(QWidget *parent /* = 0 */)
-    :QCheckBox(parent)
-{
-}
-void UIVMResourceMonitorCheckBox::setData(const QVariant& data)
-{
-    m_data = data;
-}
-
-const QVariant UIVMResourceMonitorCheckBox::data() const
-{
-    return m_data;
 }
 
 
@@ -1047,13 +1002,13 @@ void UIResourceMonitorModel::sltTimeout()
                 QString("%1/%2").arg(uiCommon().formatSize(_1K * m_itemList[i].m_uUsedRAM, iDecimalCount)).
                 arg(uiCommon().formatSize(_1K * m_itemList[i].m_uTotalRAM, iDecimalCount));
         else
-            m_itemList[i].m_columnData[VMResourceMonitorColumn_RAMUsedAndTotal] = tr("N/A");
+            m_itemList[i].m_columnData[VMResourceMonitorColumn_RAMUsedAndTotal] = UIResourceMonitorWidget::tr("N/A");
 
         if (m_itemList[i].isWithGuestAdditions())
             m_itemList[i].m_columnData[VMResourceMonitorColumn_RAMUsedPercentage] =
                 QString("%1%").arg(QString::number(m_itemList[i].m_fRAMUsagePercentage, 'f', 2));
         else
-            m_itemList[i].m_columnData[VMResourceMonitorColumn_RAMUsedPercentage] = tr("N/A");
+            m_itemList[i].m_columnData[VMResourceMonitorColumn_RAMUsedPercentage] = UIResourceMonitorWidget::tr("N/A");
 
         m_itemList[i].m_columnData[VMResourceMonitorColumn_NetworkUpRate] =
             QString("%1").arg(uiCommon().formatSize(m_itemList[i].m_uNetworkUpRate, iDecimalCount));
@@ -1276,20 +1231,20 @@ void UIResourceMonitorWidget::setIsCurrentTool(bool fIsCurrentTool)
 
 void UIResourceMonitorWidget::retranslateUi()
 {
-    m_columnTitles[VMResourceMonitorColumn_Name] = tr("VM Name");
-    m_columnTitles[VMResourceMonitorColumn_CPUGuestLoad] = tr("CPU Guest");
-    m_columnTitles[VMResourceMonitorColumn_CPUVMMLoad] = tr("CPU VMM");
-    m_columnTitles[VMResourceMonitorColumn_RAMUsedAndTotal] = tr("RAM Used/Total");
-    m_columnTitles[VMResourceMonitorColumn_RAMUsedPercentage] = tr("RAM %");
-    m_columnTitles[VMResourceMonitorColumn_NetworkUpRate] = tr("Network Up Rate");
-    m_columnTitles[VMResourceMonitorColumn_NetworkDownRate] = tr("Network Down Rate");
-    m_columnTitles[VMResourceMonitorColumn_NetworkUpTotal] = tr("Network Up Total");
-    m_columnTitles[VMResourceMonitorColumn_NetworkDownTotal] = tr("Network Down Total");
-    m_columnTitles[VMResourceMonitorColumn_DiskIOReadRate] = tr("Disk Read Rate");
-    m_columnTitles[VMResourceMonitorColumn_DiskIOWriteRate] = tr("Disk Write Rate");
-    m_columnTitles[VMResourceMonitorColumn_DiskIOReadTotal] = tr("Disk Read Total");
-    m_columnTitles[VMResourceMonitorColumn_DiskIOWriteTotal] = tr("Disk Write Total");
-    m_columnTitles[VMResourceMonitorColumn_VMExits] = tr("VM Exits");
+    m_columnTitles[VMResourceMonitorColumn_Name] = UIResourceMonitorWidget::tr("VM Name");
+    m_columnTitles[VMResourceMonitorColumn_CPUGuestLoad] = UIResourceMonitorWidget::tr("CPU Guest");
+    m_columnTitles[VMResourceMonitorColumn_CPUVMMLoad] = UIResourceMonitorWidget::tr("CPU VMM");
+    m_columnTitles[VMResourceMonitorColumn_RAMUsedAndTotal] = UIResourceMonitorWidget::tr("RAM Used/Total");
+    m_columnTitles[VMResourceMonitorColumn_RAMUsedPercentage] = UIResourceMonitorWidget::tr("RAM %");
+    m_columnTitles[VMResourceMonitorColumn_NetworkUpRate] = UIResourceMonitorWidget::tr("Network Up Rate");
+    m_columnTitles[VMResourceMonitorColumn_NetworkDownRate] = UIResourceMonitorWidget::tr("Network Down Rate");
+    m_columnTitles[VMResourceMonitorColumn_NetworkUpTotal] = UIResourceMonitorWidget::tr("Network Up Total");
+    m_columnTitles[VMResourceMonitorColumn_NetworkDownTotal] = UIResourceMonitorWidget::tr("Network Down Total");
+    m_columnTitles[VMResourceMonitorColumn_DiskIOReadRate] = UIResourceMonitorWidget::tr("Disk Read Rate");
+    m_columnTitles[VMResourceMonitorColumn_DiskIOWriteRate] = UIResourceMonitorWidget::tr("Disk Write Rate");
+    m_columnTitles[VMResourceMonitorColumn_DiskIOReadTotal] = UIResourceMonitorWidget::tr("Disk Read Total");
+    m_columnTitles[VMResourceMonitorColumn_DiskIOWriteTotal] = UIResourceMonitorWidget::tr("Disk Write Total");
+    m_columnTitles[VMResourceMonitorColumn_VMExits] = UIResourceMonitorWidget::tr("VM Exits");
     if (m_pModel)
         m_pModel->setColumnCaptions(m_columnTitles);
     computeMinimumColumnWidths();
@@ -1537,7 +1492,7 @@ UIResourceMonitor::UIResourceMonitor(QWidget *pCenterWidget, UIActionPool *pActi
 
 void UIResourceMonitor::retranslateUi()
 {
-    setWindowTitle(tr("VM Resource Monitor"));
+    setWindowTitle(UIResourceMonitorWidget::tr("VM Resource Monitor"));
 }
 
 void UIResourceMonitor::configure()

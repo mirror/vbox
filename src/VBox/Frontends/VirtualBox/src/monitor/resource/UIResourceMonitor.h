@@ -48,9 +48,6 @@ class UIResourceMonitorWidget : public QIWithRetranslateUI<QWidget>
 {
     Q_OBJECT;
 
-signals:
-
-
 public:
 
     UIResourceMonitorWidget(EmbedTo enmEmbedding, UIActionPool *pActionPool,
@@ -121,8 +118,6 @@ private:
         /* The key is the column id (VMResourceMonitorColumn) and value is true if the column is visible. */
         QMap<int, bool>                     m_columnVisible;
         UIVMResourceMonitorHostStatsWidget *m_pHostStatsWidget;
-
-
     /** @} */
     /** Indicates if this widget's host tool is current tool. */
     bool    m_fIsCurrentTool;

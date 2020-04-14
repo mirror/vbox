@@ -2834,7 +2834,8 @@ public:
 
     /** Constructs action passing @a pParent to the base-class. */
     UIActionMenuSelectorVMResourceMonitorToggleColumns(UIActionPool *pParent)
-        : UIActionMenu(pParent, ":/exit_16px.png")
+        : UIActionMenu(pParent,
+                       ":/cloud_profile_try_32px.png", ":/cloud_profile_try_16px.png")
     {}
 
 protected:
