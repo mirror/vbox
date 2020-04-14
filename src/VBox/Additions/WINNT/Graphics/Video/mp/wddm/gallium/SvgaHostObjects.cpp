@@ -318,7 +318,41 @@ NTSTATUS SvgaSurfaceCreate(VBOXWDDM_EXT_VMSVGA *pSvga,
     NTSTATUS Status = svgaHostObjectsProcessPending(pSvga);
     AssertReturn(Status == STATUS_SUCCESS, Status);
 
-    AssertReturn(cSizes <= pSvga->u32MaxTextureLevels, STATUS_INVALID_PARAMETER);
+    /* A surface must have dimensions. */
+    AssertReturn(cSizes >= 1, STATUS_INVALID_PARAMETER);
+
+    /* Number of faces ('cFaces') is specified as the number of the first non-zero elements in the
+     * 'pCreateParms->mip_levels' array.
+     * Since only plain surfaces (cFaces == 1) and cubemaps (cFaces == 6) are supported
+     * (see also SVGA3dCmdDefineSurface definition in svga3d_reg.h), we ignore anything else.
+     */
+    uint32_t cRemainingSizes = cSizes;
+    uint32_t cFaces = 0;
+    for (uint32_t i = 0; i < RT_ELEMENTS(pCreateParms->mip_levels); ++i)
+    {
+        if (pCreateParms->mip_levels[i] == 0)
+            break;
+
+        /* Can't have too many mip levels. */
+        AssertReturn(pCreateParms->mip_levels[i] <= pSvga->u32MaxTextureLevels, STATUS_INVALID_PARAMETER);
+
+        /* All SVGA3dSurfaceFace structures must have the same value of numMipLevels field */
+        AssertReturn(pCreateParms->mip_levels[i] == pCreateParms->mip_levels[0], STATUS_INVALID_PARAMETER);
+
+        /* The miplevels count value can't be greater than the number of remaining elements in the paSizes array. */
+        AssertReturn(pCreateParms->mip_levels[i] <= cRemainingSizes, STATUS_INVALID_PARAMETER);
+        cRemainingSizes -= pCreateParms->mip_levels[i];
+
+        ++cFaces;
+    }
+    for (uint32_t i = cFaces; i < RT_ELEMENTS(pCreateParms->mip_levels); ++i)
+        AssertReturn(pCreateParms->mip_levels[i] == 0, STATUS_INVALID_PARAMETER);
+
+    /* cFaces must be 6 for a cubemap and 1 otherwise. */
+    AssertReturn(cFaces == (uint32_t)((pCreateParms->flags & SVGA3D_SURFACE_CUBEMAP) ? 6 : 1), STATUS_INVALID_PARAMETER);
+
+    /* Sum of pCreateParms->mip_levels[i] must be equal to cSizes. */
+    AssertReturn(cRemainingSizes == 0, STATUS_INVALID_PARAMETER);
 
     SURFACEOBJECT *pSO = (SURFACEOBJECT *)GaMemAllocZero(sizeof(SURFACEOBJECT));
     if (pSO)

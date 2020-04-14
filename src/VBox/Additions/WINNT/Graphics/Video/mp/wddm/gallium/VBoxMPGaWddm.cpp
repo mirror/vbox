@@ -1737,6 +1737,19 @@ NTSTATUS APIENTRY GaDxgkDdiEscape(const HANDLE hAdapter,
                 break;
             }
 
+            if (pGaSurfaceDefine->cbReq < sizeof(GASURFCREATE))
+            {
+                Status = STATUS_INVALID_PARAMETER;
+                break;
+            }
+
+            uint32_t const cSizes = (pGaSurfaceDefine->cbReq - sizeof(GASURFCREATE)) / sizeof(GASURFSIZE);
+            if (cSizes != pGaSurfaceDefine->cSizes)
+            {
+                Status = STATUS_INVALID_PARAMETER;
+                break;
+            }
+
             GASURFCREATE *pCreateParms = (GASURFCREATE *)&pGaSurfaceDefine[1];
             GASURFSIZE *paSizes = (GASURFSIZE *)&pCreateParms[1];
 
