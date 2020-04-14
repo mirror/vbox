@@ -20,24 +20,23 @@ include $(KBUILD_PATH)/subheader.kmk
 
 if defined(VBOX_WITH_TESTCASES) && !defined(VBOX_ONLY_ADDITIONS) && !defined(VBOX_ONLY_SDK)
 
- PROGRAMS += tstClipboardServiceHost tstClipboardServiceImpl
+ PROGRAMS += tstClipboardServiceHost
+ TESTING  += $(tstClipboardServiceHost_0_OUTDIR)/tstClipboardServiceHost.run
+ OTHERS   += $(tstClipboardServiceHost_0_OUTDIR)/tstClipboardServiceHost.run
 
- tstClipboardServiceHost_TEMPLATE = VBOXR3TSTEXE
+ tstClipboardServiceHost_TEMPLATE = VBOXR3AUTOTST
  tstClipboardServiceHost_DEFS     = VBOX_WITH_HGCM UNIT_TEST
  tstClipboardServiceHost_SOURCES  = \
 	../VBoxSharedClipboardSvc.cpp \
 	$(PATH_ROOT)/src/VBox/GuestHost/SharedClipboard/clipboard-common.cpp \
 	$(PATH_ROOT)/src/VBox/HostServices/common/message.cpp \
 	tstClipboardServiceHost.cpp
+ tstClipboardServiceHost_LIBS     = $(LIB_RUNTIME)
+ tstClipboardServiceHost_CLEAN    = $(tstClipboardServiceHost_0_OUTDIR)/tstClipboardServiceHost.run
 
  $$(tstClipboardServiceHost_0_OUTDIR)/tstClipboardServiceHost.run: $$(tstClipboardServiceHost_1_STAGE_TARGET)
 	export VBOX_LOG_DEST=nofile; $(tstClipboardServiceHost_1_STAGE_TARGET) quiet
 	$(QUIET)$(APPEND) -t "$@" "done"
-
- TESTING += $(tstClipboardServiceHost_0_OUTDIR)/tstClipboardServiceHost.run
- ifndef VBOX_ONLY_SDK
-  OTHERS += $(tstClipboardServiceHost_0_OUTDIR)/tstClipboardServiceHost.run
- endif
 
  if defined(VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS)
   tstClipboardServiceHost_DEFS    += VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
@@ -47,24 +46,25 @@ if defined(VBOX_WITH_TESTCASES) && !defined(VBOX_ONLY_ADDITIONS) && !defined(VBO
 	$(PATH_ROOT)/src/VBox/GuestHost/SharedClipboard/ClipboardArea.cpp
  endif
 
- tstClipboardServiceImpl_TEMPLATE = VBOXR3TSTEXE
+ PROGRAMS += tstClipboardServiceImpl
+ TESTING  += $(tstClipboardServiceImpl_0_OUTDIR)/tstClipboardServiceImpl.run
+ OTHERS   += $(tstClipboardServiceImpl_0_OUTDIR)/tstClipboardServiceImpl.run
+
+ tstClipboardServiceImpl_TEMPLATE = VBOXR3AUTOTST
  tstClipboardServiceImpl_DEFS     = VBOX_WITH_HGCM UNIT_TEST
  tstClipboardServiceImpl_SOURCES  = \
 	../VBoxSharedClipboardSvc.cpp \
 	$(PATH_ROOT)/src/VBox/GuestHost/SharedClipboard/clipboard-common.cpp \
 	$(PATH_ROOT)/src/VBox/HostServices/common/message.cpp \
 	tstClipboardServiceImpl.cpp
+ tstClipboardServiceImpl_LIBS     = $(LIB_RUNTIME)
+ tstClipboardServiceImpl_CLEAN    = $(tstClipboardServiceImpl_0_OUTDIR)/tstClipboardServiceImpl.run
 
  $$(tstClipboardServiceImpl_0_OUTDIR)/tstClipboardServiceImpl.run: $$(tstClipboardServiceImpl_1_STAGE_TARGET)
 	export VBOX_LOG_DEST=nofile; $(tstClipboardServiceImpl_1_STAGE_TARGET) quiet
 	$(QUIET)$(APPEND) -t "$@" "done"
 
- TESTING += $(tstClipboardServiceImpl_0_OUTDIR)/tstClipboardServiceImpl.run
- ifndef VBOX_ONLY_SDK
-  OTHERS += $(tstClipboardServiceImpl_0_OUTDIR)/tstClipboardServiceImpl.run
- endif
-
- if defined(VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS)
+  if defined(VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS)
   PROGRAMS += tstClipboardTransfers
   tstClipboardTransfers_TEMPLATE = VBOXR3TSTEXE
   tstClipboardTransfers_DEFS     = VBOX_WITH_HGCM UNIT_TEST VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
