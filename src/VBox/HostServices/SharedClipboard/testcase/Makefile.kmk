@@ -21,8 +21,10 @@ include $(KBUILD_PATH)/subheader.kmk
 if defined(VBOX_WITH_TESTCASES) && !defined(VBOX_ONLY_ADDITIONS) && !defined(VBOX_ONLY_SDK)
 
  PROGRAMS += tstClipboardServiceHost
- TESTING  += $(tstClipboardServiceHost_0_OUTDIR)/tstClipboardServiceHost.run
- OTHERS   += $(tstClipboardServiceHost_0_OUTDIR)/tstClipboardServiceHost.run
+ ifn1of ($(KBUILD_TARGET), darwin)
+  TESTING  += $(tstClipboardServiceHost_0_OUTDIR)/tstClipboardServiceHost.run
+  OTHERS   += $(tstClipboardServiceHost_0_OUTDIR)/tstClipboardServiceHost.run
+ endif
 
  tstClipboardServiceHost_TEMPLATE = VBOXR3AUTOTST
  tstClipboardServiceHost_DEFS     = VBOX_WITH_HGCM UNIT_TEST
@@ -47,8 +49,10 @@ if defined(VBOX_WITH_TESTCASES) && !defined(VBOX_ONLY_ADDITIONS) && !defined(VBO
  endif
 
  PROGRAMS += tstClipboardServiceImpl
- TESTING  += $(tstClipboardServiceImpl_0_OUTDIR)/tstClipboardServiceImpl.run
- OTHERS   += $(tstClipboardServiceImpl_0_OUTDIR)/tstClipboardServiceImpl.run
+ ifn1of ($(KBUILD_TARGET), darwin)
+  TESTING  += $(tstClipboardServiceImpl_0_OUTDIR)/tstClipboardServiceImpl.run
+  OTHERS   += $(tstClipboardServiceImpl_0_OUTDIR)/tstClipboardServiceImpl.run
+ endif
 
  tstClipboardServiceImpl_TEMPLATE = VBOXR3AUTOTST
  tstClipboardServiceImpl_DEFS     = VBOX_WITH_HGCM UNIT_TEST
