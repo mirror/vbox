@@ -2301,7 +2301,9 @@ static DECLCALLBACK(int) iommuAmdR3CmdThread(PPDMDEVINS pDevIns, PPDMTHREAD pThr
  */
 static DECLCALLBACK(int) iommuAmdR3CmdThreadWakeUp(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
 {
-    RT_NOREF(pDevIns, pThread);
+    NOREF(pThread);
+    PIOMMU pThis = PDMDEVINS_2_DATA(pDevIns, PIOMMU);
+    return PDMDevHlpSUPSemEventSignal(pDevIns, pThis->hEvtCmdThread);
 }
 
 
@@ -3335,7 +3337,16 @@ static DECLCALLBACK(void) iommuAmdR3Reset(PPDMDEVINS pDevIns)
  */
 static DECLCALLBACK(int) iommuAmdR3Destruct(PPDMDEVINS pDevIns)
 {
-    NOREF(pDevIns);
+    PDMDEV_CHECK_VERSIONS_RETURN_QUIET(pDevIns);
+    PIOMMU   pThis   = PDMDEVINS_2_DATA(pDevIns, PIOMMU);
+    LogFlowFunc(("\n"));
+
+    /* Close the command thread semaphore. */
+    if (pThis->hEvtCmdThread != NIL_SUPSEMEVENT)
+    {
+        PDMDevHlpSUPSemEventClose(pDevIns, pThis->hEvtCmdThread);
+        pThis->hEvtCmdThread = NIL_SUPSEMEVENT;
+    }
     return VINF_SUCCESS;
 }
 
