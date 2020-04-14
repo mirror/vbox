@@ -596,6 +596,13 @@ void UIMessageCenter::warnAboutInvalidEncryptionPassword(const QString &strPassw
              .arg(strPasswordId));
 }
 
+void UIMessageCenter::cannotAcquireVirtualBoxParameter(const CVirtualBox &comVBox, QWidget *pParent /* = 0 */) const
+{
+    /* Show the error: */
+    error(pParent, MessageType_Error,
+          tr("Failed to acquire VirtualBox parameter."), UIErrorString::formatErrorInfo(comVBox));
+}
+
 void UIMessageCenter::cannotAcquireMachineParameter(const CMachine &comMachine, QWidget *pParent /* = 0 */) const
 {
     /* Show the error: */
