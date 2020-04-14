@@ -21,7 +21,7 @@
 
 
 UITaskCloudListMachines::UITaskCloudListMachines(const CCloudClient &comCloudClient, UIChooserNode *pParentNode)
-    : UITask(Type_CloudAcquireInstances)
+    : UITask(Type_CloudListMachines)
     , m_comCloudClient(comCloudClient)
     , m_pParentNode(pParentNode)
 {

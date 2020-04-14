@@ -733,7 +733,7 @@ void UIChooserModel::sltReloadMachine(const QUuid &uId)
 void UIChooserModel::sltHandleCloudListMachinesTaskComplete(UITask *pTask)
 {
     /* Skip unrelated tasks: */
-    if (!pTask || pTask->type() != UITask::Type_CloudAcquireInstances)
+    if (!pTask || pTask->type() != UITask::Type_CloudListMachines)
         return;
 
     /* Call to base-class: */

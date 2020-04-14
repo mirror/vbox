@@ -435,7 +435,7 @@ void UIChooserAbstractModel::sltStartGroupSaving()
 void UIChooserAbstractModel::sltHandleCloudListMachinesTaskComplete(UITask *pTask)
 {
     /* Skip unrelated tasks: */
-    if (!pTask || pTask->type() != UITask::Type_CloudAcquireInstances)
+    if (!pTask || pTask->type() != UITask::Type_CloudListMachines)
         return;
 
     /* Cast task to corresponding sub-class: */

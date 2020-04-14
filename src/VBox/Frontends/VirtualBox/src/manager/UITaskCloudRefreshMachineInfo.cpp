@@ -21,7 +21,7 @@
 
 
 UITaskCloudRefreshMachineInfo::UITaskCloudRefreshMachineInfo(const CCloudMachine &comCloudMachine)
-    : UITask(Type_CloudGetInstanceState)
+    : UITask(Type_CloudRefreshMachineInfo)
     , m_comCloudMachine(comCloudMachine)
 {
 }
