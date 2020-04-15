@@ -750,6 +750,7 @@ private:
     int   m_iTopMargin;
     int   m_iRightMargin;
     int   m_iBottomMargin;
+    int   m_iBeforeNumPadWidth;
     Mode  m_enmMode;
     bool  m_fHideOSMenuKeys;
     bool  m_fHideNumPad;
@@ -2221,10 +2222,11 @@ UISoftKeyboardWidget::UISoftKeyboardWidget(QWidget *pParent /* = 0 */)
     , m_iInitialWidthNoNumPad(0)
     , m_iXSpacing(5)
     , m_iYSpacing(5)
-    , m_iLeftMargin(0)
+    , m_iLeftMargin(10)
     , m_iTopMargin(10)
-    , m_iRightMargin(0)
+    , m_iRightMargin(10)
     , m_iBottomMargin(10)
+    , m_iBeforeNumPadWidth(30)
     , m_enmMode(Mode_Keyboard)
     , m_fHideOSMenuKeys(false)
     , m_fHideNumPad(false)
@@ -2237,7 +2239,7 @@ UISoftKeyboardWidget::UISoftKeyboardWidget(QWidget *pParent /* = 0 */)
 
 QSize UISoftKeyboardWidget::minimumSizeHint() const
 {
-    float fScale = 0.5f;
+    float fScale = 1;//0.5f;
     return QSize(fScale * m_minimumSize.width(), fScale * m_minimumSize.height());
 }
 
@@ -2259,7 +2261,7 @@ void UISoftKeyboardWidget::paintEvent(QPaintEvent *pEvent) /* override */
         return;
 
     if (!m_fHideNumPad)
-        m_fScaleFactorX = width() / (float) m_iInitialWidth;
+        m_fScaleFactorX = width() / (float) (m_iInitialWidth + m_iBeforeNumPadWidth);
     else
         m_fScaleFactorX = width() / (float) m_iInitialWidthNoNumPad;
 
@@ -2305,8 +2307,6 @@ void UISoftKeyboardWidget::paintEvent(QPaintEvent *pEvent) /* override */
             else
                 painter.translate(key.keyGeometry().x(), key.keyGeometry().y());
 
-            int m_iBeforeNumPadWidth = 0;
-
             if (key.keyboardRegion() == KeyboardRegion_NumPad)
                 painter.translate(m_iBeforeNumPadWidth, 0);
 
@@ -2349,7 +2349,7 @@ void UISoftKeyboardWidget::paintEvent(QPaintEvent *pEvent) /* override */
             else
                 painter.translate(-key.keyGeometry().x(), -key.keyGeometry().y());
             if (key.keyboardRegion() == KeyboardRegion_NumPad)
-                painter.translate(- m_iBeforeNumPadWidth, 0);
+                painter.translate(-m_iBeforeNumPadWidth, 0);
         }
     }
 }
@@ -3018,14 +3018,15 @@ bool UISoftKeyboardWidget::loadPhysicalLayout(const QString &strLayoutFileName, 
                 iXNoNumPad += key.width();
                 if (j < row.keys().size() - 1)
                     iXNoNumPad += m_iXSpacing;
-                if (key.spaceWidthAfter() != 0)
-                    iXNoNumPad += key.spaceWidthAfter();
+                if (key.spaceWidthAfter() != 0 && j != row.keys().size() - 1)
+                    iXNoNumPad += (m_iXSpacing + key.spaceWidthAfter());
             }
         }
         if (row.spaceHeightAfter() != 0)
             iY += row.spaceHeightAfter() + m_iYSpacing;
         iMaxWidth = qMax(iMaxWidth, iX);
         iMaxWidthNoNumPad = qMax(iMaxWidthNoNumPad, iXNoNumPad);
+
         iY += iRowHeight;
         if (i < rows.size() - 1)
             iY += m_iYSpacing;
