@@ -1367,7 +1367,7 @@ static int vbsvcAutomounterMountIt(PVBSVCAUTOMOUNTERENTRY pEntry)
      * Attach the shared folder using WNetAddConnection2W.
      *
      * According to google we should get a drive symlink in \\GLOBAL?? when
-     * we are running under the system account.  Otherwise it will a session
+     * we are running under the system account.  Otherwise it will be a session
      * local link (\\??).
      */
     Assert(RT_C_IS_UPPER(pEntry->pszActualMountPoint[0]) && pEntry->pszActualMountPoint[1] == ':' && pEntry->pszActualMountPoint[2] == '\0');
@@ -1386,6 +1386,9 @@ static int vbsvcAutomounterMountIt(PVBSVCAUTOMOUNTERENTRY pEntry)
         return rc;
     }
 
+    VGSvcVerbose(3, "vbsvcAutomounterMountIt: wszDrive='%ls', wszPrefixedName='%ls'\n",
+                 wszDrive, wszPrefixedName);
+
     NETRESOURCEW NetRsrc;
     RT_ZERO(NetRsrc);
     NetRsrc.dwType          = RESOURCETYPE_DISK;
@@ -1401,8 +1404,8 @@ static int vbsvcAutomounterMountIt(PVBSVCAUTOMOUNTERENTRY pEntry)
                      pEntry->pszName, pEntry->pszActualMountPoint);
         return VINF_SUCCESS;
     }
-    VGSvcError("vbsvcAutomounterMountIt: Failed to attach '%s' to '%s': %u\n",
-               pEntry->pszName, pEntry->pszActualMountPoint, dwErr);
+    VGSvcError("vbsvcAutomounterMountIt: Failed to attach '%s' to '%s': %Rrc (%u)\n",
+               pEntry->pszName, pEntry->pszActualMountPoint, RTErrConvertFromWin32(dwErr), dwErr);
     return VERR_OPEN_FAILED;
 
 #elif defined(RT_OS_OS2)
