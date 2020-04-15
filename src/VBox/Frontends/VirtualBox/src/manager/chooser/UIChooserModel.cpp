@@ -939,11 +939,11 @@ void UIChooserModel::sltCreateNewMachine()
         return;
 
     /* Select the parent: */
-    UIChooserItem *pGroup = 0;
+    UIChooserNode *pGroup = 0;
     if (isSingleGroupSelected())
-        pGroup = firstSelectedItem();
+        pGroup = firstSelectedItem()->node();
     else if (!selectedItems().isEmpty())
-        pGroup = firstSelectedItem()->parentItem();
+        pGroup = firstSelectedItem()->parentItem()->node();
     QString strGroupName;
     if (pGroup)
         strGroupName = pGroup->fullName();
@@ -982,7 +982,7 @@ void UIChooserModel::sltCreateNewMachine()
         // Hehey! Now we have to inject created VM nodes and then rebuild tree for the main root node
         // ourselves cause there is no corresponding event yet. So we are calling actual handler to do that.
         foreach (const CCloudMachine &comMachine, pWizard->machines())
-            sltCloudMachineRegistered(pGroup->parentItem()->name() /* provider name */,
+            sltCloudMachineRegistered(pGroup->parentNode()->name() /* provider name */,
                                       pGroup->name() /* profile name */,
                                       comMachine.GetId() /* machine ID */,
                                       true /* registered? */);
