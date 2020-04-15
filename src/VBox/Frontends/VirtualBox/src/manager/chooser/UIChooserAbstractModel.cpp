@@ -116,7 +116,7 @@ void UIChooserAbstractModel::init()
                     continue;
 
                 /* Add machine into tree: */
-                addMachineIntoTheTree(comMachine);
+                addLocalMachineIntoTheTree(comMachine);
             }
         }
         LogRelFlow(("UIChooserAbstractModel: Local VMs loaded.\n"));
@@ -374,7 +374,7 @@ void UIChooserAbstractModel::sltMachineDataChanged(const QUuid &uMachineId)
     invisibleRoot()->updateAllNodes(uMachineId);
 }
 
-void UIChooserAbstractModel::sltMachineRegistered(const QUuid &uMachineId, const bool fRegistered)
+void UIChooserAbstractModel::sltLocalMachineRegistered(const QUuid &uMachineId, const bool fRegistered)
 {
     /* Existing VM unregistered? */
     if (!fRegistered)
@@ -392,7 +392,7 @@ void UIChooserAbstractModel::sltMachineRegistered(const QUuid &uMachineId, const
         {
             /* Add new machine-item: */
             const CMachine comMachine = uiCommon().virtualBox().FindMachine(uMachineId.toString());
-            addMachineIntoTheTree(comMachine, true /* make it visible */);
+            addLocalMachineIntoTheTree(comMachine, true /* make it visible */);
         }
     }
 }
@@ -421,7 +421,7 @@ void UIChooserAbstractModel::sltReloadMachine(const QUuid &uMachineId)
     {
         /* Add new machine-item: */
         const CMachine comMachine = uiCommon().virtualBox().FindMachine(uMachineId.toString());
-        addMachineIntoTheTree(comMachine, true /* make it visible */);
+        addLocalMachineIntoTheTree(comMachine, true /* make it visible */);
     }
 }
 
@@ -524,7 +524,7 @@ void UIChooserAbstractModel::prepareConnections()
     connect(gVBoxEvents, &UIVirtualBoxEventHandler::sigMachineDataChange,
             this, &UIChooserAbstractModel::sltMachineDataChanged);
     connect(gVBoxEvents, &UIVirtualBoxEventHandler::sigMachineRegistered,
-            this, &UIChooserAbstractModel::sltMachineRegistered);
+            this, &UIChooserAbstractModel::sltLocalMachineRegistered);
     connect(gVBoxEvents, &UIVirtualBoxEventHandler::sigSessionStateChange,
             this, &UIChooserAbstractModel::sltSessionStateChanged);
     connect(gVBoxEvents, &UIVirtualBoxEventHandler::sigSnapshotTake,
@@ -542,51 +542,55 @@ void UIChooserAbstractModel::prepareConnections()
             Qt::QueuedConnection);
 }
 
-void UIChooserAbstractModel::addMachineIntoTheTree(const CMachine &comMachine, bool fMakeItVisible /* = false */)
+void UIChooserAbstractModel::addLocalMachineIntoTheTree(const CMachine &comMachine,
+                                                        bool fMakeItVisible /* = false */)
 {
     /* Make sure passed VM is not NULL: */
     if (comMachine.isNull())
-        LogRelFlow(("UIChooserModel: ERROR: Passed VM is NULL!\n"));
+        LogRelFlow(("UIChooserModel: ERROR: Passed local VM is NULL!\n"));
     AssertReturnVoid(!comMachine.isNull());
 
     /* Which VM we are loading: */
-    LogRelFlow(("UIChooserModel: Loading VM with ID={%s}...\n", toOldStyleUuid(comMachine.GetId()).toUtf8().constData()));
+    const QUuid uMachineId = comMachine.GetId();
+    LogRelFlow(("UIChooserModel: Loading local VM with ID={%s}...\n",
+                toOldStyleUuid(uMachineId).toUtf8().constData()));
     /* Is that machine accessible? */
     if (comMachine.GetAccessible())
     {
-        /* VM is accessible: */
+        /* Acquire VM name: */
         const QString strName = comMachine.GetName();
-        LogRelFlow(("UIChooserModel:  VM {%s} is accessible.\n", strName.toUtf8().constData()));
+        LogRelFlow(("UIChooserModel:  Local VM {%s} is accessible.\n", strName.toUtf8().constData()));
         /* Which groups passed machine attached to? */
         const QVector<QString> groups = comMachine.GetGroups();
         const QStringList groupList = groups.toList();
         const QString strGroups = groupList.join(", ");
-        LogRelFlow(("UIChooserModel:  VM {%s} has groups: {%s}.\n", strName.toUtf8().constData(),
-                                                                    strGroups.toUtf8().constData()));
+        LogRelFlow(("UIChooserModel:  Local VM {%s} has groups: {%s}.\n",
+                    strName.toUtf8().constData(), strGroups.toUtf8().constData()));
         foreach (QString strGroup, groups)
         {
             /* Remove last '/' if any: */
             if (strGroup.right(1) == "/")
                 strGroup.truncate(strGroup.size() - 1);
             /* Create machine-item with found group-item as parent: */
-            LogRelFlow(("UIChooserModel:   Creating item for VM {%s} in group {%s}.\n", strName.toUtf8().constData(),
-                                                                                        strGroup.toUtf8().constData()));
-            createMachineNode(getGroupNode(strGroup, invisibleRoot(), fMakeItVisible), comMachine);
+            LogRelFlow(("UIChooserModel:   Creating node for local VM {%s} in group {%s}.\n",
+                        strName.toUtf8().constData(), strGroup.toUtf8().constData()));
+            createLocalMachineNode(getLocalGroupNode(strGroup, invisibleRoot(), fMakeItVisible), comMachine);
         }
         /* Update group definitions: */
-        m_groups[toOldStyleUuid(comMachine.GetId())] = groupList;
+        m_groups[toOldStyleUuid(uMachineId)] = groupList;
     }
     /* Inaccessible machine: */
     else
     {
         /* VM is accessible: */
-        LogRelFlow(("UIChooserModel:  VM {%s} is inaccessible.\n", toOldStyleUuid(comMachine.GetId()).toUtf8().constData()));
+        LogRelFlow(("UIChooserModel:  Local VM {%s} is inaccessible.\n",
+                    toOldStyleUuid(uMachineId).toUtf8().constData()));
         /* Create machine-item with main-root group-item as parent: */
-        createMachineNode(invisibleRoot(), comMachine);
+        createLocalMachineNode(invisibleRoot(), comMachine);
     }
 }
 
-UIChooserNode *UIChooserAbstractModel::getGroupNode(const QString &strName, UIChooserNode *pParentNode, bool fAllGroupsOpened)
+UIChooserNode *UIChooserAbstractModel::getLocalGroupNode(const QString &strName, UIChooserNode *pParentNode, bool fAllGroupsOpened)
 {
     /* Check passed stuff: */
     if (pParentNode->name() == strName)
@@ -606,9 +610,10 @@ UIChooserNode *UIChooserAbstractModel::getGroupNode(const QString &strName, UICh
         /* Trying to get group node among our children: */
         foreach (UIChooserNode *pGroupNode, pParentNode->nodes(UIChooserNodeType_Group))
         {
-            if (pGroupNode->name() == strSecondSubName)
+            if (   pGroupNode->toGroupNode()->groupType() == UIChooserNodeGroupType_Local
+                && pGroupNode->name() == strSecondSubName)
             {
-                UIChooserNode *pFoundNode = getGroupNode(strFirstSuffix, pGroupNode, fAllGroupsOpened);
+                UIChooserNode *pFoundNode = getLocalGroupNode(strFirstSuffix, pGroupNode, fAllGroupsOpened);
                 if (UIChooserNodeGroup *pFoundGroupNode = pFoundNode->toGroupNode())
                     if (fAllGroupsOpened && pFoundGroupNode->isClosed())
                         pFoundGroupNode->open();
@@ -625,7 +630,7 @@ UIChooserNode *UIChooserAbstractModel::getGroupNode(const QString &strName, UICh
                                strSecondSubName,
                                UIChooserNodeGroupType_Local,
                                fAllGroupsOpened || shouldGroupNodeBeOpened(pParentNode, strSecondSubName));
-    return strSecondSuffix.isEmpty() ? pNewGroupNode : getGroupNode(strFirstSuffix, pNewGroupNode, fAllGroupsOpened);
+    return strSecondSuffix.isEmpty() ? pNewGroupNode : getLocalGroupNode(strFirstSuffix, pNewGroupNode, fAllGroupsOpened);
 }
 
 bool UIChooserAbstractModel::shouldGroupNodeBeOpened(UIChooserNode *pParentNode, const QString &strName)
@@ -786,7 +791,7 @@ int UIChooserAbstractModel::getDefinedNodePosition(UIChooserNode *pParentNode, U
     return -1;
 }
 
-void UIChooserAbstractModel::createMachineNode(UIChooserNode *pParentNode, const CMachine &comMachine)
+void UIChooserAbstractModel::createLocalMachineNode(UIChooserNode *pParentNode, const CMachine &comMachine)
 {
     /* Create machine node: */
     new UIChooserNodeMachine(pParentNode,

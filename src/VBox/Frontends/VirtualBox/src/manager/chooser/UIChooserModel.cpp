@@ -652,10 +652,10 @@ bool UIChooserModel::eventFilter(QObject *pWatched, QEvent *pEvent)
     return QObject::eventFilter(pWatched, pEvent);
 }
 
-void UIChooserModel::sltMachineRegistered(const QUuid &uId, const bool fRegistered)
+void UIChooserModel::sltLocalMachineRegistered(const QUuid &uId, const bool fRegistered)
 {
     /* Call to base-class: */
-    UIChooserAbstractModel::sltMachineRegistered(uId, fRegistered);
+    UIChooserAbstractModel::sltLocalMachineRegistered(uId, fRegistered);
 
     /* Existing VM unregistered? */
     if (!fRegistered)
@@ -688,10 +688,9 @@ void UIChooserModel::sltMachineRegistered(const QUuid &uId, const bool fRegister
             updateLayout();
 
             /* Select newly added item: */
-            CMachine comMachine = uiCommon().virtualBox().FindMachine(uId.toString());
-            setSelectedItem(root()->searchForItem(comMachine.GetName(),
-                                                 UIChooserItemSearchFlag_Machine |
-                                                 UIChooserItemSearchFlag_ExactName));
+            setSelectedItem(root()->searchForItem(uId.toString(),
+                                                  UIChooserItemSearchFlag_Machine |
+                                                  UIChooserItemSearchFlag_ExactId));
         }
     }
 }
@@ -1166,7 +1165,7 @@ void UIChooserModel::sltRemoveSelectedMachine()
         removeItems(itemsToRemove);
     /* If we have something local to unregister: */
     if (!localMachinesToUnregister.isEmpty())
-        unregisterMachines(localMachinesToUnregister);
+        unregisterLocalMachines(localMachinesToUnregister);
 }
 
 void UIChooserModel::sltStartScrolling()
@@ -1633,7 +1632,7 @@ void UIChooserModel::removeItems(const QList<UIChooserItem*> &itemsToRemove)
     saveGroupSettings();
 }
 
-void UIChooserModel::unregisterMachines(const QList<CMachine> &machines)
+void UIChooserModel::unregisterLocalMachines(const QList<CMachine> &machines)
 {
     /* Confirm machine removal: */
     int iResultCode = msgCenter().confirmMachineRemoval(machines);

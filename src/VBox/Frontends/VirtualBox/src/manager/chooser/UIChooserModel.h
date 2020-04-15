@@ -246,8 +246,8 @@ protected slots:
 
     /** @name Main event handling stuff.
       * @{ */
-        /** Handles machine registering/unregistering for machine with certain @a uId. */
-        virtual void sltMachineRegistered(const QUuid &uId, const bool fRegistered) /* override */;
+        /** Handles local machine registering/unregistering for machine with certain @a uId. */
+        virtual void sltLocalMachineRegistered(const QUuid &uId, const bool fRegistered) /* override */;
     /** @} */
 
     /** @name Children stuff.
@@ -362,8 +362,8 @@ private:
 
         /** Removes machine @a items. */
         void removeItems(const QList<UIChooserItem*> &items);
-        /** Unregisters a list of virtual @a machines. */
-        void unregisterMachines(const QList<CMachine> &machines);
+        /** Unregisters a list of local virtual @a machines. */
+        void unregisterLocalMachines(const QList<CMachine> &machines);
 
         /** Processes drag move @a pEvent. */
         bool processDragMoveEvent(QGraphicsSceneDragDropEvent *pEvent);

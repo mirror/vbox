@@ -131,8 +131,8 @@ protected slots:
         virtual void sltMachineStateChanged(const QUuid &uMachineId, const KMachineState enmState);
         /** Handles machine data change for machine with certain @a uMachineId. */
         virtual void sltMachineDataChanged(const QUuid &uMachineId);
-        /** Handles machine registering/unregistering for machine with certain @a uMachineId. */
-        virtual void sltMachineRegistered(const QUuid &uMachineId, const bool fRegistered);
+        /** Handles local machine registering/unregistering for machine with certain @a uMachineId. */
+        virtual void sltLocalMachineRegistered(const QUuid &uMachineId, const bool fRegistered);
         /** Handles session @a enmState change for machine with certain @a uMachineId. */
         virtual void sltSessionStateChanged(const QUuid &uMachineId, const KSessionState enmState);
         /** Handles snapshot change for machine/snapshot with certain @a uMachineId / @a uSnapshotId. */
@@ -173,13 +173,15 @@ private:
 
     /** @name Children stuff.
       * @{ */
-        /** Adds machine item based on certain @a comMachine and optionally @a fMakeItVisible. */
-        void addMachineIntoTheTree(const CMachine &comMachine, bool fMakeItVisible = false);
-        /** Acquires group node, creates one if necessary.
+        /** Adds local machine item based on certain @a comMachine and optionally @a fMakeItVisible. */
+        void addLocalMachineIntoTheTree(const CMachine &comMachine, bool fMakeItVisible = false);
+
+        /** Acquires local group node, creates one if necessary.
           * @param  strName           Brings the name of group we looking for.
           * @param  pParentNode       Brings the parent we starting to look for a group from.
           * @param  fAllGroupsOpened  Brings whether we should open all the groups till the required one. */
-        UIChooserNode *getGroupNode(const QString &strName, UIChooserNode *pParentNode, bool fAllGroupsOpened);
+        UIChooserNode *getLocalGroupNode(const QString &strName, UIChooserNode *pParentNode, bool fAllGroupsOpened);
+
         /** Returns whether group node with certain @a strName should be opened, searching starting from the passed @a pParentItem. */
         bool shouldGroupNodeBeOpened(UIChooserNode *pParentNode, const QString &strName);
 
@@ -194,8 +196,8 @@ private:
         /** Acquires defined position for a child of @a pParentNode with specified @a enmType and @a strName. */
         int getDefinedNodePosition(UIChooserNode *pParentNode, UIChooserNodeType enmType, const QString &strName);
 
-        /** Creates machine node based on certain @a comMachine as a child of specified @a pParentNode. */
-        void createMachineNode(UIChooserNode *pParentNode, const CMachine &comMachine);
+        /** Creates local machine node based on certain @a comMachine as a child of specified @a pParentNode. */
+        void createLocalMachineNode(UIChooserNode *pParentNode, const CMachine &comMachine);
     /** @} */
 
     /** @name Group saving stuff.
