@@ -2221,9 +2221,9 @@ UISoftKeyboardWidget::UISoftKeyboardWidget(QWidget *pParent /* = 0 */)
     , m_iInitialWidthNoNumPad(0)
     , m_iXSpacing(5)
     , m_iYSpacing(5)
-    , m_iLeftMargin(10)
+    , m_iLeftMargin(0)
     , m_iTopMargin(10)
-    , m_iRightMargin(10)
+    , m_iRightMargin(0)
     , m_iBottomMargin(10)
     , m_enmMode(Mode_Keyboard)
     , m_fHideOSMenuKeys(false)
@@ -2305,6 +2305,11 @@ void UISoftKeyboardWidget::paintEvent(QPaintEvent *pEvent) /* override */
             else
                 painter.translate(key.keyGeometry().x(), key.keyGeometry().y());
 
+            int m_iBeforeNumPadWidth = 0;
+
+            if (key.keyboardRegion() == KeyboardRegion_NumPad)
+                painter.translate(m_iBeforeNumPadWidth, 0);
+
             if(&key  == m_pKeyBeingEdited)
                 painter.setBrush(QBrush(color(KeyboardColorType_Edit)));
             else if (&key  == m_pKeyUnderMouse)
@@ -2343,7 +2348,8 @@ void UISoftKeyboardWidget::paintEvent(QPaintEvent *pEvent) /* override */
                 painter.translate(-key.keyGeometry().x(), -key.keyGeometry().y() + m_multiMediaKeysLayout.totalHeight());
             else
                 painter.translate(-key.keyGeometry().x(), -key.keyGeometry().y());
-
+            if (key.keyboardRegion() == KeyboardRegion_NumPad)
+                painter.translate(- m_iBeforeNumPadWidth, 0);
         }
     }
 }
@@ -3013,7 +3019,7 @@ bool UISoftKeyboardWidget::loadPhysicalLayout(const QString &strLayoutFileName, 
                 if (j < row.keys().size() - 1)
                     iXNoNumPad += m_iXSpacing;
                 if (key.spaceWidthAfter() != 0)
-                    iXNoNumPad += (m_iXSpacing + key.spaceWidthAfter());
+                    iXNoNumPad += key.spaceWidthAfter();
             }
         }
         if (row.spaceHeightAfter() != 0)
@@ -3030,7 +3036,6 @@ bool UISoftKeyboardWidget::loadPhysicalLayout(const QString &strLayoutFileName, 
     m_iInitialWidth = qMax(m_iInitialWidth, iInitialWidth);
     m_iInitialWidthNoNumPad = qMax(m_iInitialWidthNoNumPad, iInitialWidthNoNumPad);
     m_iInitialHeight = qMax(m_iInitialHeight, iInitialHeight);
-
     return true;
 }
 

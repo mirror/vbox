@@ -229,9 +229,6 @@
             <scancodeprefix>0xe0</scancodeprefix>
             <scancode>0x49</scancode>
         </key>
-        <space>
-            <width>25</width>
-        </space>
     </row>
     <row>
         <key>
@@ -344,9 +341,6 @@
             <scancode>0x51</scancode>
             <scancodeprefix>0xe0</scancodeprefix>
         </key>
-        <space>
-            <width>25</width>
-        </space>
     </row>
     <row>
         <key>
@@ -433,13 +427,12 @@
             <scancode>0x1c</scancode>
         </key>
         <space>
-            <width>220</width>
+            <width>190</width>
         </space>
     </row>
     <row>
         <key>
             <width>125</width>
-
             <usageid>0xe1</usageid>
             <usagepage>0x7</usagepage>
             <type>modifier</type>
@@ -527,7 +520,7 @@
             <scancode>0x48</scancode>
         </key>
         <space>
-            <width>80</width>
+            <width>50</width>
         </space>
     </row>
     <row>
@@ -631,8 +624,5 @@
             <scancodeprefix>0xe0</scancodeprefix>
             <scancode>0x4d</scancode>
         </key>
-        <space>
-            <width>25</width>
-        </space>
     </row>
 </physicallayout>
