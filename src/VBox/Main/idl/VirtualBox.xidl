@@ -26920,6 +26920,25 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </param>
     </method>
 
+    <method name="getCloudMachine">
+      <desc>
+        Create an object that represents a cloud machine with the
+        specified UUID.  Note that the operation is synchronous.  The
+        returned machine is initiatally in inaccessible state and
+        requires a refresh to get its data from the cloud.
+      </desc>
+      <param name="id" type="uuid" mod="string" dir="in">
+        <desc>
+          UUID of a cloud machine.
+        </desc>
+      </param>
+      <param name="machine" type="ICloudMachine" dir="return">
+        <desc>
+          Object that represents the cloud machine with the specified UUID.
+        </desc>
+      </param>
+    </method>
+
     <method name="readCloudMachineList">
       <desc>
         Make the list of cloud machines available via
