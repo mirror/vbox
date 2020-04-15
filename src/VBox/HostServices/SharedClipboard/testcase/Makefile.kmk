@@ -23,7 +23,6 @@ if defined(VBOX_WITH_TESTCASES) && !defined(VBOX_ONLY_ADDITIONS) && !defined(VBO
  PROGRAMS += tstClipboardServiceHost
  ifn1of ($(KBUILD_TARGET), darwin)
   TESTING  += $(tstClipboardServiceHost_0_OUTDIR)/tstClipboardServiceHost.run
-  OTHERS   += $(tstClipboardServiceHost_0_OUTDIR)/tstClipboardServiceHost.run
  endif
 
  tstClipboardServiceHost_TEMPLATE = VBOXR3AUTOTST
@@ -51,7 +50,6 @@ if defined(VBOX_WITH_TESTCASES) && !defined(VBOX_ONLY_ADDITIONS) && !defined(VBO
  PROGRAMS += tstClipboardServiceImpl
  ifn1of ($(KBUILD_TARGET), darwin)
   TESTING  += $(tstClipboardServiceImpl_0_OUTDIR)/tstClipboardServiceImpl.run
-  OTHERS   += $(tstClipboardServiceImpl_0_OUTDIR)/tstClipboardServiceImpl.run
  endif
 
  tstClipboardServiceImpl_TEMPLATE = VBOXR3AUTOTST
