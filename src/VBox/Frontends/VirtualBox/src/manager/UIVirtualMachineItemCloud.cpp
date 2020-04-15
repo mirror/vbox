@@ -22,6 +22,7 @@
 #include "UICloudNetworkingStuff.h"
 #include "UICommon.h"
 #include "UIConverter.h"
+#include "UIErrorString.h"
 #include "UIIconPool.h"
 #include "UIMessageCenter.h"
 #include "UITaskCloudRefreshMachineInfo.h"
@@ -30,6 +31,7 @@
 
 /* COM includes: */
 #include "CProgress.h"
+#include "CVirtualBoxErrorInfo.h"
 
 
 UIVirtualMachineItemCloud::UIVirtualMachineItemCloud()
@@ -105,20 +107,24 @@ void UIVirtualMachineItemCloud::recache()
     }
 
     /* Now determine whether VM is accessible: */
-    m_fAccessible = /*!m_comCloudMachine.isNull()
-                  ? m_comCloudMachine.accessible()
-                  : */true;
-    m_strAccessError = /*!m_comCloudMachine.isNull()
-                     ? m_comCloudMachine.accessError()
-                     : */QString();
+    m_fAccessible = !m_comCloudMachine.isNull()
+                  ? m_comCloudMachine.GetAccessible()
+                  : true;
+    m_strAccessError =    !m_comCloudMachine.isNull()
+                       && !m_comCloudMachine.GetAccessible()
+                       && !m_comCloudMachine.GetAccessError().isNull()
+                     ? UIErrorString::formatErrorInfo(m_comCloudMachine.GetAccessError())
+                     : QString();
 
     /* Determine own VM attributes: */
-    m_strOSTypeId = !m_comCloudMachine.isNull()
+    m_strOSTypeId =    !m_comCloudMachine.isNull()
+                    && m_comCloudMachine.GetAccessible()
                   ? m_comCloudMachine.GetOSTypeId()
                   : "Other";
 
     /* Determine VM states: */
-    m_enmMachineState = !m_comCloudMachine.isNull()
+    m_enmMachineState =    !m_comCloudMachine.isNull()
+                        && m_comCloudMachine.GetAccessible()
                       ? m_comCloudMachine.GetState()
                       : KMachineState_PoweredOff;
     m_strMachineStateName = gpConverter->toString(m_enmMachineState);
@@ -154,21 +160,12 @@ void UIVirtualMachineItemCloud::recache()
 
 void UIVirtualMachineItemCloud::recachePixmap()
 {
-    /* If machine is accessible: */
-    if (m_fAccessible)
-    {
-        /* We are using icon corresponding to cached guest OS type: */
-        if (   itemType() == ItemType_CloudFake
-            && fakeCloudItemState() == FakeCloudItemState_Loading)
-            m_pixmap = uiCommon().vmGuestOSTypePixmapDefault("Cloud", &m_logicalPixmapSize);
-        else
-            m_pixmap = uiCommon().vmGuestOSTypePixmapDefault(m_strOSTypeId, &m_logicalPixmapSize);
-    }
-    /* Otherwise: */
+    /* We are using icon corresponding to cached guest OS type: */
+    if (   itemType() == ItemType_CloudFake
+        && fakeCloudItemState() == FakeCloudItemState_Loading)
+        m_pixmap = uiCommon().vmGuestOSTypePixmapDefault("Cloud", &m_logicalPixmapSize);
     else
-    {
-        /// @todo handle inaccessible cloud VM
-    }
+        m_pixmap = uiCommon().vmGuestOSTypePixmapDefault(m_strOSTypeId, &m_logicalPixmapSize);
 }
 
 bool UIVirtualMachineItemCloud::isItemEditable() const
@@ -226,7 +223,7 @@ bool UIVirtualMachineItemCloud::isItemStuck() const
 void UIVirtualMachineItemCloud::retranslateUi()
 {
     /* If machine is accessible: */
-    if (m_fAccessible)
+    if (accessible())
     {
         if (itemType() == ItemType_CloudFake)
         {
