@@ -1265,6 +1265,7 @@ typedef union
     uint64_t    u64;
 } IOMMU_HW_EVT_STATUS_T;
 AssertCompileSize(IOMMU_HW_EVT_STATUS_T, 8);
+#define IOMMU_HW_EVT_STATUS_VALID_MASK      UINT64_C(0x0000000000000003)
 
 /**
  * Guest Virtual-APIC Log Base Address Register (MMIO).
@@ -1841,14 +1842,14 @@ typedef PPR_LOG_OVERFLOW_EARLY_T        PPR_LOG_B_OVERFLOW_EARLY_T;
  */
 typedef struct IOMMU
 {
+    /** The event semaphore the command thread waits on. */
+    SUPSEMEVENT                 hEvtCmdThread;
+    /** The MMIO handle. */
+    IOMMMIOHANDLE               hMmio;
     /** Whether this IOMMU is at the top of the PCI tree hierarchy or not. */
     bool                        fRootComplex;
     /** Alignment padding. */
-    bool                        afPadding[3];
-    /** The MMIO handle. */
-    IOMMMIOHANDLE               hMmio;
-    /** The event semaphore the command thread waits on. */
-    SUPSEMEVENT                 hEvtCmdThread;
+    bool                        afPadding[7];
 
     /** @name MMIO: Control and status registers.
      * @{ */
@@ -1984,6 +1985,8 @@ typedef const struct IOMMU *PCIOMMU;
  */
 typedef struct IOMMUR3
 {
+    /** Device instance. */
+    PPDMDEVINSR3            pDevInsR3;
     /** The IOMMU helpers. */
     PCPDMIOMMUHLPR3         pIommuHlp;
     /** The command thread handle. */
@@ -1997,6 +2000,8 @@ typedef IOMMUR3 *PIOMMUR3;
  */
 typedef struct IOMMUR0
 {
+    /** Device instance. */
+    PPDMDEVINSR0            pDevInsR0;
     /** The IOMMU helpers. */
     PCPDMIOMMUHLPR0         pIommuHlp;
 } IOMMUR0;
@@ -2008,6 +2013,8 @@ typedef IOMMUR0 *PIOMMUR0;
  */
 typedef struct IOMMURC
 {
+    /** Device instance. */
+    PPDMDEVINSR0            pDevInsRC;
     /** The IOMMU helpers. */
     PCPDMIOMMUHLPRC         pIommuHlp;
 } IOMMURC;
@@ -2015,7 +2022,7 @@ typedef struct IOMMURC
 typedef IOMMURC *PIOMMURC;
 
 /** The IOMMU device state for the current context. */
-typedef CTX_SUFF(IOMMU) IOMMUCC;
+typedef CTX_SUFF(IOMMU)  IOMMUCC;
 /** Pointer to the IOMMU device state for the current context. */
 typedef CTX_SUFF(PIOMMU) PIOMMUCC;
 
@@ -2116,6 +2123,7 @@ static VBOXSTRICTRC iommuAmdCmdBufBar_w(PPDMDEVINS pDevIns, PIOMMU pThis, uint32
     return VINF_SUCCESS;
 }
 
+
 /**
  * Writes the Event Log Base Address Register.
  */
@@ -2158,6 +2166,59 @@ static VBOXSTRICTRC iommuAmdPprLogBar_w(PPDMDEVINS pDevIns, PIOMMU pThis, uint32
     RT_NOREF(pDevIns, iReg);
     pThis->PprLogBaseAddr.u64 = u64Value & IOMMU_PPR_LOG_BAR_VALID_MASK;
     iommuAmdCheckBufferLength(pThis->PprLogBaseAddr.n.u4PprLogLen, __PRETTY_FUNCTION__);
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Writes the Hardware Event Register (Hi).
+ */
+static VBOXSTRICTRC iommuAmdHwEvtHi_w(PPDMDEVINS pDevIns, PIOMMU pThis, uint32_t iReg, uint64_t u64Value)
+{
+    /** @todo IOMMU: Why the heck is this marked read/write by the AMD IOMMU spec? */
+    RT_NOREF(pDevIns, iReg);
+    Log((IOMMU_LOG_PFX ": Writing %#RX64 to hardware event (Hi) register!\n", u64Value));
+    pThis->HwEvtHi.u64 = u64Value;
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Writes the Hardware Event Register (Lo).
+ */
+static VBOXSTRICTRC iommuAmdHwEvtLo_w(PPDMDEVINS pDevIns, PIOMMU pThis, uint32_t iReg, uint64_t u64Value)
+{
+    /** @todo IOMMU: Why the heck is this marked read/write by the AMD IOMMU spec? */
+    RT_NOREF(pDevIns, iReg);
+    Log((IOMMU_LOG_PFX ": Writing %#RX64 to hardware event (Lo) register!\n", u64Value));
+    pThis->HwEvtLo = u64Value;
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Writes the Hardware Event Status Register.
+ */
+static VBOXSTRICTRC iommuAmdHwEvtStatus_w(PPDMDEVINS pDevIns, PIOMMU pThis, uint32_t iReg, uint64_t u64Value)
+{
+    RT_NOREF(pDevIns, iReg);
+
+    /* Ignore all unrecognized bits. */
+    u64Value &= IOMMU_HW_EVT_STATUS_VALID_MASK;
+
+    /*
+     * The two bits (HEO and HEV) are RW1C (Read/Write 1-to-Clear; writing 0 has no effect).
+     * If the current status bits or the bits being written are both 0, we've nothing to do.
+     * The Overflow bit (bit 1) is only valid when the Valid bit (bit 0) is 1.
+     */
+    uint64_t HwStatus = pThis->HwEvtStatus.u64;
+    if (!(HwStatus & RT_BIT(0)))
+        return VINF_SUCCESS;
+    if (u64Value & HwStatus & RT_BIT(0))
+        HwStatus &= ~RT_BIT(0);
+    if (u64Value & HwStatus & RT_BIT(1))
+        HwStatus &= ~RT_BIT(1);
+    pThis->HwEvtStatus.u64 = HwStatus;
     return VINF_SUCCESS;
 }
 
@@ -2353,9 +2414,9 @@ static VBOXSTRICTRC iommuAmdWriteRegister(PPDMDEVINS pDevIns, uint32_t off, uint
         case IOMMU_MMIO_OFF_EXT_FEAT:            return iommuAmdIgnore_w(pDevIns, pThis, off, uValue);
 
         case IOMMU_MMIO_OFF_PPR_LOG_BAR:         return iommuAmdPprLogBar_w(pDevIns, pThis, off, uValue);
-        case IOMMU_MMIO_OFF_HW_EVT_HI:
-        case IOMMU_MMIO_OFF_HW_EVT_LO:           return iommuAmdIgnore_w(pDevIns, pThis, off, uValue);
-        case IOMMU_MMIO_OFF_HW_EVT_STATUS:       /** @todo IOMMU: HW Event Status is RW. Figure this out later. */
+        case IOMMU_MMIO_OFF_HW_EVT_HI:           return iommuAmdHwEvtHi_w(pDevIns, pThis, off, uValue);
+        case IOMMU_MMIO_OFF_HW_EVT_LO:           return iommuAmdHwEvtLo_w(pDevIns, pThis, off, uValue);
+        case IOMMU_MMIO_OFF_HW_EVT_STATUS:       return iommuAmdHwEvtStatus_w(pDevIns, pThis, off, uValue);
 
         case IOMMU_MMIO_OFF_GALOG_BAR:
         case IOMMU_MMIO_OFF_GALOG_TAIL_ADDR:     return iommuAmdIgnore_w(pDevIns, pThis, off, uValue);
@@ -2473,14 +2534,17 @@ static VBOXSTRICTRC iommuAmdWriteRegister(PPDMDEVINS pDevIns, uint32_t off, uint
  * on 8-byte boundaries.
  *
  * @returns Strict VBox status code.
- * @param   pThis       The IOMMU device state.
+ * @param   pDevIns     The device instance.
  * @param   off         Offset in bytes.
  * @param   puResult    Where to store the value being read.
  */
-static VBOXSTRICTRC iommuAmdReadRegister(PCIOMMU pThis, uint32_t off, uint64_t *puResult)
+static VBOXSTRICTRC iommuAmdReadRegister(PPDMDEVINS pDevIns, uint32_t off, uint64_t *puResult)
 {
     Assert(off < IOMMU_MMIO_REGION_SIZE);
     Assert(!(off & 7) || !(off & 3));
+
+    PIOMMU pThis = PDMDEVINS_2_DATA(pDevIns, PIOMMU);
+    Assert(pThis);
 
     /** @todo IOMMU: fine-grained locking? */
     uint64_t uReg;
@@ -2617,8 +2681,7 @@ static DECLCALLBACK(VBOXSTRICTRC) iommuAmdMmioRead(PPDMDEVINS pDevIns, void *pvU
     Assert(!(off & (cb - 1)));
 
     uint64_t uResult;
-    PIOMMU pThis = PDMDEVINS_2_DATA(pDevIns, PIOMMU);
-    VBOXSTRICTRC rcStrict = iommuAmdReadRegister(pThis, off, &uResult);
+    VBOXSTRICTRC rcStrict = iommuAmdReadRegister(pDevIns, off, &uResult);
     if (cb == 8)
         *(uint64_t *)pv = uResult;
     else
@@ -3365,7 +3428,7 @@ static DECLCALLBACK(int) iommuAmdR3Construct(PPDMDEVINS pDevIns, int iInstance, 
     int             rc;
     LogFlowFunc(("\n"));
 
-    NOREF(pThisCC); /** @todo IOMMU: populate CC data. */
+    pThisCC->pDevInsR3 = pDevIns;
 
     /*
      * Validate and read the configuration.
@@ -3535,6 +3598,14 @@ static DECLCALLBACK(int) iommuAmdR3Construct(PPDMDEVINS pDevIns, int iInstance, 
 static DECLCALLBACK(int) iommuAmdRZConstruct(PPDMDEVINS pDevIns)
 {
     PDMDEV_CHECK_VERSIONS_RETURN(pDevIns);
+    PIOMMU   pThis   = PDMDEVINS_2_DATA(pDevIns, PIOMMU);
+    PIOMMUCC pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PIOMMUCC);
+
+    pThisCC->CTX_SUFF(pDevIns) = pDevIns;
+
+    int rc = PDMDevHlpMmioSetUpContext(pDevIns, pThis->hMmio, iommuAmdMmioWrite, iommuAmdMmioRead, NULL /* pvUser */);
+    AssertRCReturn(rc, rc);
+
     return VINF_SUCCESS;
 }
 
