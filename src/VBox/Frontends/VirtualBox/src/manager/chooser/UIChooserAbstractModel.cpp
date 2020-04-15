@@ -27,11 +27,10 @@
 #include "UIExtraDataManager.h"
 #include "UIMessageCenter.h"
 #include "UIVirtualBoxEventHandler.h"
-#include "UIVirtualMachineItem.h"
+#include "UIVirtualMachineItemCloud.h"
 #ifdef VBOX_GUI_WITH_CLOUD_VMS
 # include "UITaskCloudListMachines.h"
 # include "UIThreadPool.h"
-# include "UIVirtualMachineItemCloud.h"
 #endif
 
 /* COM includes: */
