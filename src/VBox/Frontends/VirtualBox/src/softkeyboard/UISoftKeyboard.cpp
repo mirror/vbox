@@ -742,15 +742,17 @@ private:
     float m_fScaleFactorX;
     float m_fScaleFactorY;
     int   m_iInitialHeight;
+    /** This is the width of the keyboard including the numpad but without m_iInitialWidthNoNumPad */
     int   m_iInitialWidth;
     int   m_iInitialWidthNoNumPad;
+    /** This widt is added while drawing the keyboard not to key geometries. */
+    int   m_iBeforeNumPadWidth;
     int   m_iXSpacing;
     int   m_iYSpacing;
     int   m_iLeftMargin;
     int   m_iTopMargin;
     int   m_iRightMargin;
     int   m_iBottomMargin;
-    int   m_iBeforeNumPadWidth;
     Mode  m_enmMode;
     bool  m_fHideOSMenuKeys;
     bool  m_fHideNumPad;
@@ -2220,13 +2222,13 @@ UISoftKeyboardWidget::UISoftKeyboardWidget(QWidget *pParent /* = 0 */)
     , m_iInitialHeight(0)
     , m_iInitialWidth(0)
     , m_iInitialWidthNoNumPad(0)
+    , m_iBeforeNumPadWidth(30)
     , m_iXSpacing(5)
     , m_iYSpacing(5)
     , m_iLeftMargin(10)
     , m_iTopMargin(10)
     , m_iRightMargin(10)
     , m_iBottomMargin(10)
-    , m_iBeforeNumPadWidth(30)
     , m_enmMode(Mode_Keyboard)
     , m_fHideOSMenuKeys(false)
     , m_fHideNumPad(false)
@@ -2239,7 +2241,7 @@ UISoftKeyboardWidget::UISoftKeyboardWidget(QWidget *pParent /* = 0 */)
 
 QSize UISoftKeyboardWidget::minimumSizeHint() const
 {
-    float fScale = 1;//0.5f;
+    float fScale = 0.5f;
     return QSize(fScale * m_minimumSize.width(), fScale * m_minimumSize.height());
 }
 
@@ -2995,6 +2997,7 @@ bool UISoftKeyboardWidget::loadPhysicalLayout(const QString &strLayoutFileName, 
         int iX = m_iLeftMargin + row.leftMargin();
         int iXNoNumPad = m_iLeftMargin;
         int iRowHeight = row.defaultHeight();
+        int iKeyWidth = 0;
         for (int j = 0; j < row.keys().size(); ++j)
         {
             UISoftKeyboardKey &key = (row.keys())[j];
@@ -3007,20 +3010,16 @@ bool UISoftKeyboardWidget::loadPhysicalLayout(const QString &strLayoutFileName, 
             key.setCornerRadius(0.1 * newPhysicalLayout->defaultKeyWidth());
             key.setPoints(UIPhysicalLayoutReader::computeKeyVertices(key));
             key.setParentWidget(this);
-            iX += key.width();
-            if (j < row.keys().size() - 1)
-                iX += m_iXSpacing;
-            if (key.spaceWidthAfter() != 0)
-                iX += (m_iXSpacing + key.spaceWidthAfter());
 
+            iKeyWidth = key.width();
+            if (j < row.keys().size() - 1)
+                iKeyWidth += m_iXSpacing;
+            if (key.spaceWidthAfter() != 0 && j != row.keys().size() - 1)
+                iKeyWidth += (m_iXSpacing + key.spaceWidthAfter());
+
+            iX += iKeyWidth;
             if (key.keyboardRegion() != KeyboardRegion_NumPad)
-            {
-                iXNoNumPad += key.width();
-                if (j < row.keys().size() - 1)
-                    iXNoNumPad += m_iXSpacing;
-                if (key.spaceWidthAfter() != 0 && j != row.keys().size() - 1)
-                    iXNoNumPad += (m_iXSpacing + key.spaceWidthAfter());
-            }
+                iXNoNumPad += iKeyWidth;
         }
         if (row.spaceHeightAfter() != 0)
             iY += row.spaceHeightAfter() + m_iYSpacing;
