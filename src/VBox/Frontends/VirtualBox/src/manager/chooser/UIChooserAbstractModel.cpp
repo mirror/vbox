@@ -23,6 +23,7 @@
 #include "UIChooserNodeGroup.h"
 #include "UIChooserNodeGlobal.h"
 #include "UIChooserNodeMachine.h"
+#include "UICloudNetworkingStuff.h"
 #include "UIExtraDataManager.h"
 #include "UIMessageCenter.h"
 #include "UIVirtualBoxEventHandler.h"
@@ -397,6 +398,27 @@ void UIChooserAbstractModel::sltLocalMachineRegistered(const QUuid &uMachineId, 
     }
 }
 
+void UIChooserAbstractModel::sltCloudMachineRegistered(const QString &strProviderShortName, const QString &strProfileName,
+                                                       const QUuid &uMachineId, const bool fRegistered)
+{
+    /* Existing VM unregistered? */
+    if (!fRegistered)
+    {
+        /* Remove machine-items with passed id: */
+        invisibleRoot()->removeAllNodes(uMachineId);
+        /// @todo make sure there is fake item if no real item exist, never wipe out empty groups ..
+    }
+    /* New VM registered? */
+    else
+    {
+        /* Add new machine-item: */
+        const QString strGroupName = QString("/%1/%2").arg(strProviderShortName, strProfileName);
+        const CCloudMachine comMachine = cloudMachineById(strProviderShortName, strProfileName, uMachineId);
+        addCloudMachineIntoTheTree(strGroupName, comMachine, true /* make it visible */);
+        /// @todo make sure there is no fake item if at least one real item exists ..
+    }
+}
+
 void UIChooserAbstractModel::sltSessionStateChanged(const QUuid &uMachineId, const KSessionState)
 {
     /* Update machine-nodes with passed id: */
@@ -551,9 +573,9 @@ void UIChooserAbstractModel::addLocalMachineIntoTheTree(const CMachine &comMachi
     AssertReturnVoid(!comMachine.isNull());
 
     /* Which VM we are loading: */
-    const QUuid uMachineId = comMachine.GetId();
+    const QUuid uId = comMachine.GetId();
     LogRelFlow(("UIChooserModel: Loading local VM with ID={%s}...\n",
-                toOldStyleUuid(uMachineId).toUtf8().constData()));
+                toOldStyleUuid(uId).toUtf8().constData()));
     /* Is that machine accessible? */
     if (comMachine.GetAccessible())
     {
@@ -577,17 +599,43 @@ void UIChooserAbstractModel::addLocalMachineIntoTheTree(const CMachine &comMachi
             createLocalMachineNode(getLocalGroupNode(strGroup, invisibleRoot(), fMakeItVisible), comMachine);
         }
         /* Update group definitions: */
-        m_groups[toOldStyleUuid(uMachineId)] = groupList;
+        m_groups[toOldStyleUuid(uId)] = groupList;
     }
     /* Inaccessible machine: */
     else
     {
         /* VM is accessible: */
         LogRelFlow(("UIChooserModel:  Local VM {%s} is inaccessible.\n",
-                    toOldStyleUuid(uMachineId).toUtf8().constData()));
+                    toOldStyleUuid(uId).toUtf8().constData()));
         /* Create machine-item with main-root group-item as parent: */
         createLocalMachineNode(invisibleRoot(), comMachine);
     }
+}
+
+void UIChooserAbstractModel::addCloudMachineIntoTheTree(const QString &strGroup,
+                                                        const CCloudMachine &comMachine,
+                                                        bool fMakeItVisible /* = false */)
+{
+    /* Make sure passed VM is not NULL: */
+    if (comMachine.isNull())
+        LogRelFlow(("UIChooserModel: ERROR: Passed cloud VM is NULL!\n"));
+    AssertReturnVoid(!comMachine.isNull());
+
+    /* Which VM we are loading: */
+    const QUuid uId = comMachine.GetId();
+    LogRelFlow(("UIChooserModel: Loading cloud VM with ID={%s}...\n",
+                toOldStyleUuid(uId).toUtf8().constData()));
+    /* Acquire VM name: */
+    QString strName = comMachine.GetName();
+    if (strName.isEmpty())
+        strName = uId.toString();
+    LogRelFlow(("UIChooserModel:  Creating node for cloud VM {%s} in group {%s}.\n",
+                strName.toUtf8().constData(), strGroup.toUtf8().constData()));
+    /* Create machine-item with found group-item as parent: */
+    createCloudMachineNode(getCloudGroupNode(strGroup, invisibleRoot(), fMakeItVisible), comMachine);
+    /* Update group definitions: */
+    const QStringList groupList(strGroup);
+    m_groups[toOldStyleUuid(uId)] = groupList;
 }
 
 UIChooserNode *UIChooserAbstractModel::getLocalGroupNode(const QString &strName, UIChooserNode *pParentNode, bool fAllGroupsOpened)
@@ -631,6 +679,41 @@ UIChooserNode *UIChooserAbstractModel::getLocalGroupNode(const QString &strName,
                                UIChooserNodeGroupType_Local,
                                fAllGroupsOpened || shouldGroupNodeBeOpened(pParentNode, strSecondSubName));
     return strSecondSuffix.isEmpty() ? pNewGroupNode : getLocalGroupNode(strFirstSuffix, pNewGroupNode, fAllGroupsOpened);
+}
+
+UIChooserNode *UIChooserAbstractModel::getCloudGroupNode(const QString &strName, UIChooserNode *pParentNode, bool fAllGroupsOpened)
+{
+    /* Check passed stuff: */
+    if (pParentNode->name() == strName)
+        return pParentNode;
+
+    /* Prepare variables: */
+    const QString strFirstSubName = strName.section('/', 0, 0);
+    const QString strFirstSuffix = strName.section('/', 1, -1);
+    const QString strSecondSubName = strFirstSuffix.section('/', 0, 0);
+
+    /* Passed group name equal to first sub-name: */
+    if (pParentNode->name() == strFirstSubName)
+    {
+        /* Make sure first-suffix is NOT empty: */
+        AssertMsg(!strFirstSuffix.isEmpty(), ("Invalid group name!"));
+        /* Trying to get group node among our children: */
+        foreach (UIChooserNode *pGroupNode, pParentNode->nodes(UIChooserNodeType_Group))
+        {
+            if (   pGroupNode->toGroupNode()->groupType() != UIChooserNodeGroupType_Local
+                && pGroupNode->name() == strSecondSubName)
+            {
+                UIChooserNode *pFoundNode = getCloudGroupNode(strFirstSuffix, pGroupNode, fAllGroupsOpened);
+                if (UIChooserNodeGroup *pFoundGroupNode = pFoundNode->toGroupNode())
+                    if (fAllGroupsOpened && pFoundGroupNode->isClosed())
+                        pFoundGroupNode->open();
+                return pFoundNode;
+            }
+        }
+    }
+
+    /* Found nothing? Returning parent: */
+    AssertFailedReturn(pParentNode);
 }
 
 bool UIChooserAbstractModel::shouldGroupNodeBeOpened(UIChooserNode *pParentNode, const QString &strName)
@@ -793,11 +876,23 @@ int UIChooserAbstractModel::getDefinedNodePosition(UIChooserNode *pParentNode, U
 
 void UIChooserAbstractModel::createLocalMachineNode(UIChooserNode *pParentNode, const CMachine &comMachine)
 {
-    /* Create machine node: */
     new UIChooserNodeMachine(pParentNode,
                              false /* favorite */,
                              getDesiredNodePosition(pParentNode, UIChooserNodeType_Machine, toOldStyleUuid(comMachine.GetId())),
                              comMachine);
+}
+
+void UIChooserAbstractModel::createCloudMachineNode(UIChooserNode *pParentNode, const CCloudMachine &comMachine)
+{
+    UIChooserNodeMachine *pNode = new UIChooserNodeMachine(pParentNode,
+                                                           false /* favorite */,
+                                                           getDesiredNodePosition(pParentNode,
+                                                                                  UIChooserNodeType_Machine,
+                                                                                  toOldStyleUuid(comMachine.GetId())),
+                                                           comMachine);
+    /* Request for async node update if necessary: */
+    if (!comMachine.GetAccessible())
+        pNode->cache()->toCloud()->updateInfoAsync(false /* delayed? */);
 }
 
 void UIChooserAbstractModel::saveGroupDefinitions()

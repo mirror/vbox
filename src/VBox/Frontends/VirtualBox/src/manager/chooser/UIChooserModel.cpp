@@ -695,6 +695,46 @@ void UIChooserModel::sltLocalMachineRegistered(const QUuid &uId, const bool fReg
     }
 }
 
+void UIChooserModel::sltCloudMachineRegistered(const QString &strProviderName, const QString &strProfileName,
+                                               const QUuid &uId, const bool fRegistered)
+{
+    /* Call to base-class: */
+    UIChooserAbstractModel::sltCloudMachineRegistered(strProviderName, strProfileName, uId, fRegistered);
+
+    /* Existing VM unregistered? */
+    if (!fRegistered)
+    {
+        /* Update tree for main root: */
+        updateNavigationItemList();
+        updateLayout();
+
+        /* Make sure selected-item present, if possible: */
+        if (!firstSelectedItem() && !navigationItems().isEmpty())
+        {
+            setSelectedItem(navigationItems().first());
+            emit sigSelectionInvalidated();
+        }
+        /* Make sure current-item present, if possible: */
+        else if (!currentItem() && firstSelectedItem())
+            setCurrentItem(firstSelectedItem());
+        /* Notify about selected-item change: */
+        emit sigSelectionChanged();
+    }
+    /* New VM registered? */
+    else
+    {
+        /* Rebuild tree for main root: */
+        buildTreeForMainRoot();
+        updateNavigationItemList();
+        updateLayout();
+
+        /* Select newly added item: */
+        setSelectedItem(root()->searchForItem(uId.toString(),
+                                              UIChooserItemSearchFlag_Machine |
+                                              UIChooserItemSearchFlag_ExactId));
+    }
+}
+
 void UIChooserModel::sltReloadMachine(const QUuid &uId)
 {
     /* Call to base-class: */
@@ -939,21 +979,13 @@ void UIChooserModel::sltCreateNewMachine()
         pWizard->exec();
 
         // WORKAROUND:
-        // Hehey! Now we have to inject created VM nodes and then rebuild tree for the main root node ourselves
-        // cause there is no corresponding event yet. Later this to be done in corresponding event handler instead.
+        // Hehey! Now we have to inject created VM nodes and then rebuild tree for the main root node
+        // ourselves cause there is no corresponding event yet. So we are calling actual handler to do that.
         foreach (const CCloudMachine &comMachine, pWizard->machines())
-            new UIChooserNodeMachine(pGroup->node(),
-                                     false /* favorite */,
-                                     pGroup->node()->nodes().size() /* position */,
-                                     comMachine);
-        // Remember first selected item definition:
-        const QString strDefinition = firstSelectedItem()->definition();
-        // Rebuild tree for main root:
-        buildTreeForMainRoot();
-        updateNavigationItemList();
-        updateLayout();
-        // Restore selection:
-        setSelectedItem(strDefinition);
+            sltCloudMachineRegistered(pGroup->parentItem()->name() /* provider name */,
+                                      pGroup->name() /* profile name */,
+                                      comMachine.GetId() /* machine ID */,
+                                      true /* registered? */);
 
         delete pWizard;
     }

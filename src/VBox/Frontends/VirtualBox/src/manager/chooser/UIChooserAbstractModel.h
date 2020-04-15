@@ -34,6 +34,7 @@
 class QUuid;
 class UIChooser;
 class UIChooserNode;
+class CCloudMachine;
 class CMachine;
 #ifdef VBOX_GUI_WITH_CLOUD_VMS
 class UITask;
@@ -133,6 +134,11 @@ protected slots:
         virtual void sltMachineDataChanged(const QUuid &uMachineId);
         /** Handles local machine registering/unregistering for machine with certain @a uMachineId. */
         virtual void sltLocalMachineRegistered(const QUuid &uMachineId, const bool fRegistered);
+        /** Handles cloud machine registering/unregistering for machine with certain @a uMachineId.
+          * @param  strProviderShortName  Brings provider short name.
+          * @param  strProfileName        Brings profile name. */
+        virtual void sltCloudMachineRegistered(const QString &strProviderShortName, const QString &strProfileName,
+                                               const QUuid &uMachineId, const bool fRegistered);
         /** Handles session @a enmState change for machine with certain @a uMachineId. */
         virtual void sltSessionStateChanged(const QUuid &uMachineId, const KSessionState enmState);
         /** Handles snapshot change for machine/snapshot with certain @a uMachineId / @a uSnapshotId. */
@@ -175,12 +181,19 @@ private:
       * @{ */
         /** Adds local machine item based on certain @a comMachine and optionally @a fMakeItVisible. */
         void addLocalMachineIntoTheTree(const CMachine &comMachine, bool fMakeItVisible = false);
+        /** Adds cloud machine item based on certain @a comMachine and optionally @a fMakeItVisible, into @a strGroup. */
+        void addCloudMachineIntoTheTree(const QString &strGroup, const CCloudMachine &comMachine, bool fMakeItVisible = false);
 
         /** Acquires local group node, creates one if necessary.
           * @param  strName           Brings the name of group we looking for.
           * @param  pParentNode       Brings the parent we starting to look for a group from.
           * @param  fAllGroupsOpened  Brings whether we should open all the groups till the required one. */
         UIChooserNode *getLocalGroupNode(const QString &strName, UIChooserNode *pParentNode, bool fAllGroupsOpened);
+        /** Acquires cloud group node, never create new, returns root if nothing found.
+          * @param  strName           Brings the name of group we looking for.
+          * @param  pParentNode       Brings the parent we starting to look for a group from.
+          * @param  fAllGroupsOpened  Brings whether we should open all the groups till the required one. */
+        UIChooserNode *getCloudGroupNode(const QString &strName, UIChooserNode *pParentNode, bool fAllGroupsOpened);
 
         /** Returns whether group node with certain @a strName should be opened, searching starting from the passed @a pParentItem. */
         bool shouldGroupNodeBeOpened(UIChooserNode *pParentNode, const QString &strName);
@@ -198,6 +211,8 @@ private:
 
         /** Creates local machine node based on certain @a comMachine as a child of specified @a pParentNode. */
         void createLocalMachineNode(UIChooserNode *pParentNode, const CMachine &comMachine);
+        /** Creates cloud machine node based on certain @a comMachine as a child of specified @a pParentNode. */
+        void createCloudMachineNode(UIChooserNode *pParentNode, const CCloudMachine &comMachine);
     /** @} */
 
     /** @name Group saving stuff.
