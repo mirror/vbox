@@ -1155,6 +1155,7 @@ void UIChooserModel::sltRemoveSelectedMachine()
     QMap<QUuid, bool> verdicts;
     QList<UIChooserItem*> itemsToRemove;
     QList<CMachine> localMachinesToUnregister;
+    QList<CCloudMachine> cloudMachinesToUnregister;
 
     /* For each selected machine-item: */
     foreach (UIChooserItem *pItem, selectedMachineItemList)
@@ -1187,7 +1188,12 @@ void UIChooserModel::sltRemoveSelectedMachine()
         const bool fVerdict = iSelectedCopyCount == iExistingCopyCount;
         verdicts.insert(uId, fVerdict);
         if (fVerdict)
-            localMachinesToUnregister.append(pItem->node()->toMachineNode()->cache()->toLocal()->machine());
+        {
+            if (pItem->node()->toMachineNode()->cache()->itemType() == UIVirtualMachineItem::ItemType_Local)
+                localMachinesToUnregister.append(pItem->node()->toMachineNode()->cache()->toLocal()->machine());
+            else if (pItem->node()->toMachineNode()->cache()->itemType() == UIVirtualMachineItem::ItemType_CloudReal)
+                cloudMachinesToUnregister.append(pItem->node()->toMachineNode()->cache()->toCloud()->machine());
+        }
         else
             itemsToRemove << pItem;
     }
@@ -1198,6 +1204,9 @@ void UIChooserModel::sltRemoveSelectedMachine()
     /* If we have something local to unregister: */
     if (!localMachinesToUnregister.isEmpty())
         unregisterLocalMachines(localMachinesToUnregister);
+    /* If we have something cloud to unregister: */
+    if (!cloudMachinesToUnregister.isEmpty())
+        unregisterCloudMachines(cloudMachinesToUnregister);
 }
 
 void UIChooserModel::sltStartScrolling()
@@ -1717,6 +1726,50 @@ void UIChooserModel::unregisterLocalMachines(const QList<CMachine> &machines)
                     comMedium.Close();
             }
         }
+    }
+}
+
+void UIChooserModel::unregisterCloudMachines(const QList<CCloudMachine> &machines)
+{
+    /* Confirm machine removal: */
+    if (!msgCenter().confirmCloudMachineRemoval(machines))
+        return;
+
+    /* Change selection to some close by item: */
+    setSelectedItem(findClosestUnselectedItem());
+
+    /* For every selected machine: */
+    foreach (CCloudMachine comMachine, machines)
+    {
+        /* Remember machine ID: */
+        const QUuid uId = comMachine.GetId();
+        if (!comMachine.isOk())
+        {
+            msgCenter().cannotAcquireMachineParameter(comMachine);
+            continue;
+        }
+        /* Prepare unregister progress: */
+        CProgress comProgress = comMachine.Unregister();
+        if (!comMachine.isOk())
+        {
+            msgCenter().cannotRemoveCloudMachine(comMachine);
+            continue;
+        }
+        /* And show unregister progress finally: */
+        msgCenter().showModalProgressDialog(comProgress, comMachine.GetName(), ":/progress_delete_90px.png");
+        if (!comProgress.isOk() || comProgress.GetResultCode() != 0)
+        {
+            msgCenter().cannotRemoveCloudMachine(comMachine, comProgress);
+            continue;
+        }
+
+        // WORKAROUND:
+        // Hehey! Now we have to remove deleted VM nodes and then update tree for the main root node
+        // ourselves cause there is no corresponding event yet. So we are calling actual handler to do that.
+        sltCloudMachineRegistered(QString() /* provider name */,
+                                  QString() /* profile name */,
+                                  uId /* machine ID */,
+                                  false /* registered? */);
     }
 }
 

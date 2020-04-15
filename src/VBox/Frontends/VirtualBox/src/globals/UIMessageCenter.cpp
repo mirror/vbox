@@ -610,6 +610,13 @@ void UIMessageCenter::cannotAcquireMachineParameter(const CMachine &comMachine, 
           tr("Failed to acquire machine parameter."), UIErrorString::formatErrorInfo(comMachine));
 }
 
+void UIMessageCenter::cannotAcquireMachineParameter(const CCloudMachine &comMachine, QWidget *pParent /* = 0 */) const
+{
+    /* Show the error: */
+    error(pParent, MessageType_Error,
+          tr("Failed to acquire machine parameter."), UIErrorString::formatErrorInfo(comMachine));
+}
+
 void UIMessageCenter::cannotAcquireCloudInstanceList(const QString &strErrorDetails, QWidget *pParent /* = 0 */) const
 {
     error(pParent, MessageType_Error,
@@ -757,6 +764,29 @@ int UIMessageCenter::confirmMachineRemoval(const QList<CMachine> &machines) cons
                    tr("Remove only"));
 }
 
+bool UIMessageCenter::confirmCloudMachineRemoval(const QList<CCloudMachine> &machines) const
+{
+    /* Enumerate the machines: */
+    QStringList machineNames;
+    foreach (const CCloudMachine &comMachine, machines)
+    {
+        /* Append machine name to the full name string: */
+        if (comMachine.GetAccessible())
+            machineNames << QString("<b>%1</b>").arg(comMachine.GetName());
+    }
+
+    /* Prepare message text: */
+    QString strText = tr("<p>You are about to remove following cloud virtual machines from the machine list:</p>"
+                         "<p>%1</p>")
+                         .arg(machineNames.join(", "));
+
+    /* Prepare message itself: */
+    return questionBinary(0, MessageType_Question,
+                          strText,
+                          0 /* auto-confirm id */,
+                          tr("Remove"));
+}
+
 void UIMessageCenter::cannotRemoveMachine(const CMachine &machine) const
 {
     error(0, MessageType_Error,
@@ -771,6 +801,22 @@ void UIMessageCenter::cannotRemoveMachine(const CMachine &machine, const CProgre
           tr("Failed to remove the virtual machine <b>%1</b>.")
              .arg(CMachine(machine).GetName()),
           UIErrorString::formatErrorInfo(progress));
+}
+
+void UIMessageCenter::cannotRemoveCloudMachine(const CCloudMachine &comMachine) const
+{
+    error(0, MessageType_Error,
+          tr("Failed to remove the cloud virtual machine <b>%1</b>.")
+             .arg(CCloudMachine(comMachine).GetName()),
+          UIErrorString::formatErrorInfo(comMachine));
+}
+
+void UIMessageCenter::cannotRemoveCloudMachine(const CCloudMachine &comMachine, const CProgress &comProgress) const
+{
+    error(0, MessageType_Error,
+          tr("Failed to remove the cloud virtual machine <b>%1</b>.")
+             .arg(CCloudMachine(comMachine).GetName()),
+          UIErrorString::formatErrorInfo(comProgress));
 }
 
 bool UIMessageCenter::warnAboutInaccessibleMedia() const

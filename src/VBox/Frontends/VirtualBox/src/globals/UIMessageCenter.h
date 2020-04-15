@@ -264,6 +264,7 @@ public:
     void warnAboutInvalidEncryptionPassword(const QString &strPasswordId, QWidget *pParent = 0);
     void cannotAcquireVirtualBoxParameter(const CVirtualBox &comVBox, QWidget *pParent = 0) const;
     void cannotAcquireMachineParameter(const CMachine &comMachine, QWidget *pParent = 0) const;
+    void cannotAcquireMachineParameter(const CCloudMachine &comMachine, QWidget *pParent = 0) const;
 
     /* API: Global cloud warnings: */
     void cannotAcquireCloudInstanceList(const QString &strErrorDetails, QWidget *pParent = 0) const;
@@ -276,8 +277,11 @@ public:
     void cannotSetGroups(const CMachine &machine) const;
     bool confirmMachineItemRemoval(const QStringList &names) const;
     int confirmMachineRemoval(const QList<CMachine> &machines) const;
+    bool confirmCloudMachineRemoval(const QList<CCloudMachine> &machines) const;
     void cannotRemoveMachine(const CMachine &machine) const;
     void cannotRemoveMachine(const CMachine &machine, const CProgress &progress) const;
+    void cannotRemoveCloudMachine(const CCloudMachine &comMachine) const;
+    void cannotRemoveCloudMachine(const CCloudMachine &comMachine, const CProgress &comProgress) const;
     bool warnAboutInaccessibleMedia() const;
     bool confirmDiscardSavedState(const QString &strNames) const;
     bool confirmResetMachine(const QString &strNames) const;

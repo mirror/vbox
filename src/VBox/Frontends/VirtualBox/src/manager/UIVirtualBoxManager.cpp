@@ -1952,8 +1952,7 @@ bool UIVirtualBoxManager::isActionEnabled(int iActionIndex, const QList<UIVirtua
         case UIActionIndexST_M_Machine_S_Remove:
         {
             return !isGroupSavingInProgress() &&
-                   isAtLeastOneItemRemovable(items) &&
-                   isItemsLocal(items);
+                   isAtLeastOneItemRemovable(items);
         }
         case UIActionIndexST_M_Machine_S_AddGroup:
         {

@@ -30,6 +30,7 @@
 
 /* COM includes: */
 #include "COMEnums.h"
+#include "CCloudMachine.h"
 #include "CMachine.h"
 
 /* Forward declaration: */
@@ -369,6 +370,8 @@ private:
         void removeItems(const QList<UIChooserItem*> &items);
         /** Unregisters a list of local virtual @a machines. */
         void unregisterLocalMachines(const QList<CMachine> &machines);
+        /** Unregisters a list of cloud virtual @a machines. */
+        void unregisterCloudMachines(const QList<CCloudMachine> &machines);
 
         /** Processes drag move @a pEvent. */
         bool processDragMoveEvent(QGraphicsSceneDragDropEvent *pEvent);
