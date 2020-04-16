@@ -22,7 +22,6 @@
 #endif
 
 /* GUI includes: */
-#include "UICloudMachine.h"
 #include "UILibraryDefs.h"
 
 /* COM includes: */
@@ -51,15 +50,15 @@ namespace UICloudNetworkingStuff
                                                         const QString &strProfileName,
                                                         const QUuid &uMachineId);
 
-    /** Acquires instance list.
+    /** Acquires instance map.
       * @param  comCloudClient   Brings cloud client object.
       * @param  strErrorMessage  Brings error message container.
       * @param  pWidget          Brings parent widget to show messages according to,
       *                          if no parent set, progress will be executed in blocking way. */
-    SHARED_LIBRARY_STUFF QList<UICloudMachine> listInstances(const CCloudClient &comCloudClient,
-                                                             QString &strErrorMessage,
-                                                             QWidget *pParent = 0);
-    /** Acquires cloud machine list.
+    SHARED_LIBRARY_STUFF QMap<QString, QString> listInstances(const CCloudClient &comCloudClient,
+                                                              QString &strErrorMessage,
+                                                              QWidget *pParent = 0);
+    /** Acquires cloud machine vector.
       * @param  comCloudClient   Brings cloud client object.
       * @param  strErrorMessage  Brings error message container.
       * @param  pWidget          Brings parent widget to show messages according to,

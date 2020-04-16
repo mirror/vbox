@@ -118,9 +118,9 @@ CCloudMachine UICloudNetworkingStuff::cloudMachineById(const QString &strProvide
     return CCloudMachine();
 }
 
-QList<UICloudMachine> UICloudNetworkingStuff::listInstances(const CCloudClient &comCloudClient,
-                                                            QString &strErrorMessage,
-                                                            QWidget *pParent /* = 0 */)
+QMap<QString, QString> UICloudNetworkingStuff::listInstances(const CCloudClient &comCloudClient,
+                                                             QString &strErrorMessage,
+                                                             QWidget *pParent /* = 0 */)
 {
     /* Prepare VM names, ids and states.
      * Currently we are interested in Running and Stopped VMs only. */
@@ -157,18 +157,18 @@ QList<UICloudMachine> UICloudNetworkingStuff::listInstances(const CCloudClient &
         }
         else
         {
-            /* Fetch acquired objects to lists: */
+            /* Fetch acquired objects to map: */
             const QVector<QString> instanceIds = comIDs.GetValues();
             const QVector<QString> instanceNames = comNames.GetValues();
-            QList<UICloudMachine> resultList;
+            QMap<QString, QString> resultMap;
             for (int i = 0; i < instanceIds.size(); ++i)
-                resultList << UICloudMachine(comCloudClient, instanceIds.at(i), instanceNames.at(i));
-            return resultList;
+                resultMap[instanceIds.at(i)] = instanceNames.at(i);
+            return resultMap;
         }
     }
 
-    /* Return empty list by default: */
-    return QList<UICloudMachine>();
+    /* Return empty map by default: */
+    return QMap<QString, QString>();
 }
 
 QVector<CCloudMachine> UICloudNetworkingStuff::listCloudMachines(CCloudClient &comCloudClient,
