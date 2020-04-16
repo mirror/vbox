@@ -1329,7 +1329,6 @@ UICommon_SOURCES = \
 	src/globals/UIActionPoolManager.cpp \
 	src/globals/UIActionPoolRuntime.cpp \
 	src/globals/UIAnimationFramework.cpp \
-	src/globals/UICloudMachine.cpp \
 	src/globals/UICloudNetworkingStuff.cpp \
 	src/globals/UICommon.cpp \
 	src/globals/UICustomFileSystemModel.cpp \
