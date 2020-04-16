@@ -2071,7 +2071,7 @@ static void iommuAmdDecodeBufferLength(uint8_t uEncodedLen, uint32_t *pcEntries,
 }
 
 
-DECLINLINE(IOMMU_STATUS_T) iommuAmdGetStatus(PCIOMMU pThis)
+DECL_FORCE_INLINE(IOMMU_STATUS_T) iommuAmdGetStatus(PCIOMMU pThis)
 {
     IOMMU_STATUS_T Status;
     Status.u64 = ASMAtomicReadU64((volatile uint64_t *)&pThis->Status.u64);
@@ -2128,6 +2128,26 @@ static VBOXSTRICTRC iommuAmdCmdBufBar_w(PPDMDEVINS pDevIns, PIOMMU pThis, uint32
     RT_NOREF(pDevIns, iReg);
     pThis->CmdBufBaseAddr.u64 = u64Value & IOMMU_CMD_BUF_BAR_VALID_MASK;
     iommuAmdCheckBufferLength(pThis->CmdBufBaseAddr.n.u4CmdLen, __PRETTY_FUNCTION__);
+
+    /*
+     * While this is not explicitly specified like the event log base address register,
+     * the AMD spec. does specify "CmdBufRun must be 0b to modify the command buffer registers properly".
+     * Inconsistent specs :/
+     */
+    IOMMU_STATUS_T const Status = iommuAmdGetStatus(pThis);
+    if (Status.n.u1CmdBufRunning)
+    {
+        Log((IOMMU_LOG_PFX ": Setting CmdBufBar (%#RX64) when command buffer is running -> Ignored\n", u64Value));
+        return VINF_SUCCESS;
+    }
+
+    /*
+     * Writing the command log base address, clears the command buffer head and tail pointers.
+     * See AMD spec. 2.4 "Commands".
+     */
+    pThis->CmdBufHeadPtr.u64 = 0;
+    pThis->CmdBufTailPtr.u64 = 0;
+
     return VINF_SUCCESS;
 }
 
@@ -3538,6 +3558,7 @@ static DECLCALLBACK(int) iommuAmdR3Construct(PPDMDEVINS pDevIns, int iInstance, 
     MsiReg.cMsiVectors    = 1;
     MsiReg.iMsiCapOffset  = IOMMU_PCI_OFF_MSI_CAP_HDR;
     MsiReg.iMsiNextOffset = 0; /* IOMMU_PCI_OFF_MSI_MAP_CAP_HDR */
+    MsiReg.fMsi64bit      = 1; /* 64-bit addressing support is mandatory; See AMD spec. 2.8 "IOMMU Interrupt Support". */
     rc = PDMDevHlpPCIRegisterMsi(pDevIns, &MsiReg);
     AssertRCReturn(rc, rc);
     /* This is later copied to its MMIO shadow register (MsiCapHdr), see iommuAmdR3Init. */
