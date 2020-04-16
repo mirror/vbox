@@ -64,10 +64,10 @@
 #define VBOXCLIENT_OPT_SERVICES             980
 #define VBOXCLIENT_OPT_CHECKHOSTVERSION     VBOXCLIENT_OPT_SERVICES
 #define VBOXCLIENT_OPT_CLIPBOARD            VBOXCLIENT_OPT_SERVICES + 1
-#define VBOXCLIENT_OPT_DRAGANDDROP          VBOXCLIENT_OPT_SERVICES + 3
-#define VBOXCLIENT_OPT_SEAMLESS             VBOXCLIENT_OPT_SERVICES + 4
-#define VBOXCLIENT_OPT_VMSVGA               VBOXCLIENT_OPT_SERVICES + 5
-#define VBOXCLIENT_OPT_VMSVGA_X11           VBOXCLIENT_OPT_SERVICES + 6
+#define VBOXCLIENT_OPT_DRAGANDDROP          VBOXCLIENT_OPT_SERVICES + 2
+#define VBOXCLIENT_OPT_SEAMLESS             VBOXCLIENT_OPT_SERVICES + 3
+#define VBOXCLIENT_OPT_VMSVGA               VBOXCLIENT_OPT_SERVICES + 4
+#define VBOXCLIENT_OPT_VMSVGA_X11           VBOXCLIENT_OPT_SERVICES + 5
 
 
 /*********************************************************************************************************************************
@@ -423,7 +423,6 @@ static void vboxClientUsage(const char *pcszFileName)
 #ifdef VBOX_WITH_DRAG_AND_DROP
              "--draganddrop|"
 #endif
-             "--display|"
 # ifdef VBOX_WITH_GUEST_PROPS
              "--checkhostversion|"
 #endif
@@ -438,7 +437,6 @@ static void vboxClientUsage(const char *pcszFileName)
 #ifdef VBOX_WITH_DRAG_AND_DROP
     RTPrintf("  --draganddrop      starts the drag and drop service\n");
 #endif
-    RTPrintf("  --display          starts the display management service\n");
 #ifdef VBOX_WITH_GUEST_PROPS
     RTPrintf("  --checkhostversion starts the host version notifier service\n");
 #endif
