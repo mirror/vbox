@@ -1638,8 +1638,8 @@ endif
 #
 ifndef VBOX_VCC_TOOL_STEM
  VBOX_VCC_TOOL_STEM := VCC100
-else ifn1of ($(VBOX_VCC_TOOL_STEM), VCC100 VCC110 VCC120)
- $(error VBox: VBOX_VCC_TOOL_STEM='$(VBOX_VCC_TOOL_STEM)' is not supported, only VCC100 and VCC110 is)
+else ifn1of ($(VBOX_VCC_TOOL_STEM), VCC100 VCC110 VCC120 VCC140 VCC141 VCC142)
+ $(error VBox: VBOX_VCC_TOOL_STEM='$(VBOX_VCC_TOOL_STEM)' is not supported, only VCC100, VCC110, VCC120, VCC140, VCC141, VCC142 are)
 endif
 ifndef VBOX_VCC_TOOL
  VBOX_VCC_TOOL := $(VBOX_VCC_TOOL_STEM)$(toupper $(KBUILD_TARGET_ARCH))
@@ -3124,14 +3124,26 @@ endif
 #      -wd4244: 'conversion' conversion from 'type1' to 'type2', possible loss of data
 #      -wd4200: nonstandard extension used : zero-sized array in struct/union
 #               Cannot generate copy-ctor or copy-assignment operator when UDT contains a zero-sized array
-VBOX_VCC_WARN_ALL ?= -W4 -Wall -wd4065 -wd4996 -wd4127 -wd4706 -wd4201 -wd4214 -wd4510 -wd4512 -wd4610 \
+#      -wd5039: 'RTStrSpaceDestroy': pointer or reference to potentially throwing function passed to extern C function under -EHc. Undefined behavior may occur if this function throws an exception.
+VBOX_VCC_WARN_ALL := -W4 -Wall -wd4065 -wd4996 -wd4127 -wd4706 -wd4201 -wd4214 -wd4510 -wd4512 -wd4610 \
 	-wd4514 -wd4820 -wd4365 -wd4987 -wd4710 -wd4061 -wd4986 -wd4191 -wd4574 -wd4917 -wd4711 -wd4611 -wd4571 -wd4324 -wd4505 \
 	-wd4263 -wd4264 -wd4738 -wd4200 -wd4371 -wd4748
 if1of ($(VBOX_VCC_TOOL_STEM), VCC120)
  #    -wd4350: behavior change: 'std::_Wrap_alloc<std::allocator<char>>::_Wrap_alloc(const std::_Wrap_alloc<std::allocator<char>> &) throw()' called instead of 'std::_Wrap_alloc<std::allocator<char>>::_Wrap_alloc<std::_Wrap_alloc<std::allocator<char>>>(_Other &) throw()'
  #    -wd4435: iprt/cpp/xml.h(185) : warning C4435: 'xml::Input' : Object layout under /vd2 will change due to virtual base 'xml::Stream'
  VBOX_VCC_WARN_ALL += -wd4350 -wd4435
- VBOX_VCC120_WARN_ALL ?= $(VBOX_VCC_WARN_ALL)
+ VBOX_VCC120_WARN_ALL := $(VBOX_VCC_WARN_ALL)
+endif
+if1of ($(VBOX_VCC_TOOL_STEM), VCC141 VCC142)
+ #    -wd5045: Compiler will insert Spectre mitigation for memory load if /Qspectre switch specified
+ #    -wd5039: 'RTStrSpaceDestroy': pointer or reference to potentially throwing function passed to extern C function under -EHc. Undefined behavior may occur if this function throws an exception.
+ #    -wd4464: relative include path contains '..'  (iprt/nocrt/compiler.msc.h)
+ #    -wd4623: 'VM': default constructor was implicitly defined as deleted
+ #    -wd4625: 'SUPDRVTRACERDATA': copy constructor was implicitly defined as deleted
+ #    -wd4626: 'SUPDRVTRACERDATA': assignment operator was implicitly defined as deleted
+ #    -wd5026: 'SUPDRVTRACERDATA': move constructor was implicitly defined as deleted
+ #    -wd5027: 'SUPDRVTRACERDATA': move assignment operator was implicitly defined as deleted
+ VBOX_VCC_WARN_ALL += -wd5045 -wd5039 -wd4464 -wd4623 -wd4625 -wd4626 -wd5026 -wd5027
 endif
 VBOX_VCC_WARN_ALL += -wd4242 -wd4244
 ifndef VBOX_NEWER_VCC_WARN_ALL
@@ -4349,8 +4361,11 @@ ifdef VBOX_WITH_RAW_MODE
 
  ifeq ($(VBOX_LDR_FMT32),pe)
   TEMPLATE_VBoxRc_TOOL               = $(VBOX_VCC_TOOL_STEM)X86
+  if "$(VBOX_VCC_TOOL_STEM)" >= "VCC141" # for stddef.h
+   TEMPLATE_VBoxRc_SDKS              = WINSDK10-UCRT-INCS
+  endif
   TEMPLATE_VBoxRc_RCDEFS             = VBOX_SVN_REV=$(VBOX_SVN_REV) VBOX_SVN_REV_MOD_5K=$(expr $(VBOX_SVN_REV) % 50000)
-  TEMPLATE_VBoxRc_CXXFLAGS          = -Zi -Zl -GR- -EHs- -GF -GS- -Zc:wchar_t- -Gs8192 $(VBOX_VCC_GC_OPT) $(VBOX_VCC_GC_FP) \
+  TEMPLATE_VBoxRc_CXXFLAGS           = -Zi -Zl -GR- -EHs- -GF -GS- -Zc:wchar_t- -Gs8192 $(VBOX_VCC_GC_OPT) $(VBOX_VCC_GC_FP) \
   	$(VBOX_VCC_WARN_ALL) -wd4505 $(VBOX_VCC_WERR)
   TEMPLATE_VBoxRc_CFLAGS             = $(TEMPLATE_VBoxRc_CXXFLAGS)
   TEMPLATE_VBoxRc_LDFLAGS            =  -Ignore:4197 \
@@ -4492,6 +4507,9 @@ endif
 ifeq ($(VBOX_LDR_FMT),pe)
 TEMPLATE_VBoxR0_TOOL                = $(VBOX_VCC_TOOL)
 TEMPLATE_VBoxR0_RCDEFS              = VBOX_SVN_REV=$(VBOX_SVN_REV) VBOX_SVN_REV_MOD_5K=$(expr $(VBOX_SVN_REV) % 50000)
+ if "$(VBOX_VCC_TOOL_STEM)" >= "VCC141" # for stddef.h
+TEMPLATE_VBoxR0_SDKS                = WINSDK10-UCRT-INCS
+ endif
 TEMPLATE_VBoxR0_CXXFLAGS            = -Zi -Zl -GR- -EHs- -GF -GS- -Zc:wchar_t- $(VBOX_VCC_OPT) $(VBOX_VCC_FP) \
   	$(VBOX_VCC_WARN_ALL) -wd4505 $(VBOX_VCC_WERR)
 TEMPLATE_VBoxR0_CFLAGS              = $(TEMPLATE_VBoxR0_CXXFLAGS)
@@ -4616,6 +4634,9 @@ endif
 
 ifeq ($(KBUILD_TARGET),win)
  TEMPLATE_VBOXR0DRV_TOOL               = $(VBOX_VCC_TOOL)
+ if "$(VBOX_VCC_TOOL_STEM)" >= "VCC141" # for stddef.h
+  TEMPLATE_VBOXR0DRV_SDKS              = WINSDK10-UCRT-INCS
+ endif
  TEMPLATE_VBOXR0DRV_RCDEFS             = VBOX_SVN_REV=$(VBOX_SVN_REV) VBOX_SVN_REV_MOD_5K=$(expr $(VBOX_SVN_REV) % 50000)
  TEMPLATE_VBOXR0DRV_DEFS.x86           = _X86_
  TEMPLATE_VBOXR0DRV_DEFS.x86          += NO_INTERLOCKED_INTRINSICS # Avoids intrisic VC/WDK trouble
@@ -5132,7 +5153,11 @@ ifeq ($(KBUILD_TARGET),win)
  TEMPLATE_VBOXR3EXE_TOOL.win.x86       = $(VBOX_VCC_TOOL_STEM)X86
  TEMPLATE_VBOXR3EXE_TOOL.win.amd64     = $(VBOX_VCC_TOOL_STEM)AMD64
  TEMPLATE_VBOXR3EXE_RCDEFS             = VBOX_SVN_REV=$(VBOX_SVN_REV) VBOX_SVN_REV_MOD_5K=$(expr $(VBOX_SVN_REV) % 50000)
- TEMPLATE_VBOXR3EXE_SDKS               = ReorderCompilerIncs $(VBOX_WINPSDK)
+ if "$(VBOX_VCC_TOOL_STEM)" >= "VCC141"
+  TEMPLATE_VBOXR3EXE_SDKS              = ReorderCompilerIncs WINSDK10-UCRT $(VBOX_WINPSDK)
+ else
+  TEMPLATE_VBOXR3EXE_SDKS              = ReorderCompilerIncs $(VBOX_WINPSDK)
+ endif
  TEMPLATE_VBOXR3EXE_CXXFLAGS           = -Zi -Zl -GR- -EHsc -GF -MD$(VBOX_VCC_CRT_TYPE) -Zc:wchar_t- $(VBOX_VCC_OPT) $(VBOX_VCC_FP) \
  	$(VBOX_VCC_WARN_ALL) $(VBOX_VCC_WERR)
  TEMPLATE_VBOXR3EXE_CXXFLAGS.debug     = -RTCsu
@@ -5163,14 +5188,28 @@ ifeq ($(KBUILD_TARGET),win)
    TEMPLATE_VBOXR3EXE_LDFLAGS         += -IntegrityCheck
  endif
 
- TEMPLATE_VBOXR3EXE_LIBS.x86           = \
- 	$(PATH_TOOL_$(TEMPLATE_VBOXR3EXE_TOOL.win.x86)_LIB)/msvcrt$(VBOX_VCC_CRT_TYPE).lib \
- 	$(PATH_TOOL_$(TEMPLATE_VBOXR3EXE_TOOL.win.x86)_LIB)/msvcprt$(VBOX_VCC_CRT_TYPE).lib \
- 	$(PATH_TOOL_$(TEMPLATE_VBOXR3EXE_TOOL.win.x86)_LIB)/oldnames.lib
- TEMPLATE_VBOXR3EXE_LIBS.amd64         = \
- 	$(PATH_TOOL_$(TEMPLATE_VBOXR3EXE_TOOL.win.amd64)_LIB)/msvcrt$(VBOX_VCC_CRT_TYPE).lib \
- 	$(PATH_TOOL_$(TEMPLATE_VBOXR3EXE_TOOL.win.amd64)_LIB)/msvcprt$(VBOX_VCC_CRT_TYPE).lib \
- 	$(PATH_TOOL_$(TEMPLATE_VBOXR3EXE_TOOL.win.amd64)_LIB)/oldnames.lib
+ if "$(VBOX_VCC_TOOL_STEM)" >= "VCC141"
+  TEMPLATE_VBOXR3EXE_LIBS.x86           = \
+  	$(PATH_TOOL_$(TEMPLATE_VBOXR3EXE_TOOL.win.x86)_LIB)/vcruntime$(VBOX_VCC_CRT_TYPE).lib \
+  	$(PATH_TOOL_$(TEMPLATE_VBOXR3EXE_TOOL.win.x86)_LIB)/msvcrt$(VBOX_VCC_CRT_TYPE).lib \
+  	$(PATH_TOOL_$(TEMPLATE_VBOXR3EXE_TOOL.win.x86)_LIB)/msvcprt$(VBOX_VCC_CRT_TYPE).lib \
+  	$(PATH_TOOL_$(TEMPLATE_VBOXR3EXE_TOOL.win.x86)_LIB)/oldnames.lib
+  TEMPLATE_VBOXR3EXE_LIBS.amd64         = \
+  	$(PATH_TOOL_$(TEMPLATE_VBOXR3EXE_TOOL.win.amd64)_LIB)/vcruntime$(VBOX_VCC_CRT_TYPE).lib \
+  	$(PATH_TOOL_$(TEMPLATE_VBOXR3EXE_TOOL.win.amd64)_LIB)/msvcrt$(VBOX_VCC_CRT_TYPE).lib \
+  	$(PATH_TOOL_$(TEMPLATE_VBOXR3EXE_TOOL.win.amd64)_LIB)/msvcprt$(VBOX_VCC_CRT_TYPE).lib \
+  	$(PATH_TOOL_$(TEMPLATE_VBOXR3EXE_TOOL.win.amd64)_LIB)/oldnames.lib
+ else
+  TEMPLATE_VBOXR3EXE_LIBS.x86           = \
+  	$(PATH_TOOL_$(TEMPLATE_VBOXR3EXE_TOOL.win.x86)_LIB)/msvcrt$(VBOX_VCC_CRT_TYPE).lib \
+  	$(PATH_TOOL_$(TEMPLATE_VBOXR3EXE_TOOL.win.x86)_LIB)/msvcprt$(VBOX_VCC_CRT_TYPE).lib \
+  	$(PATH_TOOL_$(TEMPLATE_VBOXR3EXE_TOOL.win.x86)_LIB)/oldnames.lib
+  TEMPLATE_VBOXR3EXE_LIBS.amd64         = \
+  	$(PATH_TOOL_$(TEMPLATE_VBOXR3EXE_TOOL.win.amd64)_LIB)/msvcrt$(VBOX_VCC_CRT_TYPE).lib \
+  	$(PATH_TOOL_$(TEMPLATE_VBOXR3EXE_TOOL.win.amd64)_LIB)/msvcprt$(VBOX_VCC_CRT_TYPE).lib \
+  	$(PATH_TOOL_$(TEMPLATE_VBOXR3EXE_TOOL.win.amd64)_LIB)/oldnames.lib
+ endif
+
  TEMPLATE_VBOXR3EXE_POST_CMDS          = $(VBOX_SIGN_IMAGE_CMDS)
  if defined(VBOX_WITH_MORE_NT4_COMPAT_BINARIES) && "$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)" == "win.x86"
   TEMPLATE_VBOXR3EXE_POST_CMDS.win.x86 = $(if $(eq $(tool_do),LINK_LIBRARY),,$(VBOX_PE_SET_VERSION) $(out)$$(NLTAB)$(TEMPLATE_VBOXR3EXE_POST_CMDS))
@@ -5422,6 +5461,9 @@ TEMPLATE_VBOXR3STATIC                  = VBox Static Ring 3 EXE
 TEMPLATE_VBOXR3STATIC_EXTENDS          = VBOXR3EXE
 TEMPLATE_VBOXR3STATIC_DEFS             = IN_RT_STATIC IN_RT_R3 IN_SUP_STATIC $(TEMPLATE_VBOXR3EXE_DEFS)
 ifeq ($(KBUILD_TARGET),win)
+ if "$(VBOX_VCC_TOOL_STEM)" >= "VCC141"
+  TEMPLATE_VBOXR3STATIC_SDKS           = $(subst WINSDK10-UCRT, WINSDK10-UCRT-STATIC,$(TEMPLATE_VBOXR3EXE_SDKS))
+ endif
  TEMPLATE_VBOXR3STATIC_CFLAGS          = $(filter-out -MD$(VBOX_VCC_CRT_TYPE), $(TEMPLATE_VBOXR3EXE_CFLAGS)) -MT$(VBOX_VCC_CRT_TYPE)
  TEMPLATE_VBOXR3STATIC_CXXFLAGS        = $(filter-out -MD$(VBOX_VCC_CRT_TYPE), $(TEMPLATE_VBOXR3EXE_CXXFLAGS)) -MT$(VBOX_VCC_CRT_TYPE)
  TEMPLATE_VBOXR3STATIC_PCHFLAGS        = $(filter-out -MD$(VBOX_VCC_CRT_TYPE), $(TEMPLATE_VBOXR3EXE_PCHFLAGS)) -MT$(VBOX_VCC_CRT_TYPE)
@@ -5429,15 +5471,32 @@ ifeq ($(KBUILD_TARGET),win)
 	/DISALLOWLIB:msvcrt.lib \
 	/DISALLOWLIB:msvcrtd.lib \
 	/DISALLOWLIB:msvcprt.lib \
-	/DISALLOWLIB:msvcprtd.lib
- TEMPLATE_VBOXR3STATIC_LIBS.x86           = \
- 	$(PATH_TOOL_$(TEMPLATE_VBOXR3STATIC_TOOL.win.x86)_LIB)/oldnames.lib \
- 	$(PATH_TOOL_$(TEMPLATE_VBOXR3STATIC_TOOL.win.x86)_LIB)/libcmt$(VBOX_VCC_CRT_TYPE).lib \
- 	$(PATH_TOOL_$(TEMPLATE_VBOXR3STATIC_TOOL.win.x86)_LIB)/libcpmt$(VBOX_VCC_CRT_TYPE).lib
- TEMPLATE_VBOXR3STATIC_LIBS.amd64         = \
- 	$(PATH_TOOL_$(TEMPLATE_VBOXR3STATIC_TOOL.win.amd64)_LIB)/libcmt$(VBOX_VCC_CRT_TYPE).lib \
- 	$(PATH_TOOL_$(TEMPLATE_VBOXR3STATIC_TOOL.win.amd64)_LIB)/libcpmt$(VBOX_VCC_CRT_TYPE).lib \
- 	$(PATH_TOOL_$(TEMPLATE_VBOXR3STATIC_TOOL.win.amd64)_LIB)/oldnames.lib
+	/DISALLOWLIB:msvcprtd.lib \
+	/DISALLOWLIB:vcruntime.lib \
+	/DISALLOWLIB:vcruntimed.lib \
+	/DISALLOWLIB:ucrt.lib \
+	/DISALLOWLIB:ucrtd.lib
+ if "$(VBOX_VCC_TOOL_STEM)" >= "VCC141"
+  TEMPLATE_VBOXR3STATIC_LIBS.x86           = \
+  	$(PATH_TOOL_$(TEMPLATE_VBOXR3STATIC_TOOL.win.x86)_LIB)/libvcruntime$(VBOX_VCC_CRT_TYPE).lib \
+  	$(PATH_TOOL_$(TEMPLATE_VBOXR3STATIC_TOOL.win.x86)_LIB)/libcmt$(VBOX_VCC_CRT_TYPE).lib \
+  	$(PATH_TOOL_$(TEMPLATE_VBOXR3STATIC_TOOL.win.x86)_LIB)/libcpmt$(VBOX_VCC_CRT_TYPE).lib \
+  	$(PATH_TOOL_$(TEMPLATE_VBOXR3STATIC_TOOL.win.x86)_LIB)/oldnames.lib
+  TEMPLATE_VBOXR3STATIC_LIBS.amd64         = \
+  	$(PATH_TOOL_$(TEMPLATE_VBOXR3STATIC_TOOL.win.amd64)_LIB)/libvcruntime$(VBOX_VCC_CRT_TYPE).lib \
+  	$(PATH_TOOL_$(TEMPLATE_VBOXR3STATIC_TOOL.win.amd64)_LIB)/libcmt$(VBOX_VCC_CRT_TYPE).lib \
+  	$(PATH_TOOL_$(TEMPLATE_VBOXR3STATIC_TOOL.win.amd64)_LIB)/libcpmt$(VBOX_VCC_CRT_TYPE).lib \
+  	$(PATH_TOOL_$(TEMPLATE_VBOXR3STATIC_TOOL.win.amd64)_LIB)/oldnames.lib
+ else
+  TEMPLATE_VBOXR3STATIC_LIBS.x86           = \
+  	$(PATH_TOOL_$(TEMPLATE_VBOXR3STATIC_TOOL.win.x86)_LIB)/oldnames.lib \
+  	$(PATH_TOOL_$(TEMPLATE_VBOXR3STATIC_TOOL.win.x86)_LIB)/libcmt$(VBOX_VCC_CRT_TYPE).lib \
+  	$(PATH_TOOL_$(TEMPLATE_VBOXR3STATIC_TOOL.win.x86)_LIB)/libcpmt$(VBOX_VCC_CRT_TYPE).lib
+  TEMPLATE_VBOXR3STATIC_LIBS.amd64         = \
+  	$(PATH_TOOL_$(TEMPLATE_VBOXR3STATIC_TOOL.win.amd64)_LIB)/libcmt$(VBOX_VCC_CRT_TYPE).lib \
+  	$(PATH_TOOL_$(TEMPLATE_VBOXR3STATIC_TOOL.win.amd64)_LIB)/libcpmt$(VBOX_VCC_CRT_TYPE).lib \
+  	$(PATH_TOOL_$(TEMPLATE_VBOXR3STATIC_TOOL.win.amd64)_LIB)/oldnames.lib
+ endif
 else ifn1of ($(KBUILD_TARGET), darwin linux solaris)
  # The gcc guys sans darwin, linux and solaris (don't depend on statically compiled system libs there)
  TEMPLATE_VBOXR3STATIC_CFLAGS          = $(TEMPLATE_VBOXR3EXE_CFLAGS) -static
@@ -5496,7 +5555,7 @@ endif
 #
 # Non-pedantic variation of VBoxR3Static
 #
-TEMPLATE_VBoxR3StaticNonPedantic            = VBox Static Ring-3 EXE, non-pedantic.
+TEMPLATE_VBoxR3StaticNonPedantic           = VBox Static Ring-3 EXE, non-pedantic.
 TEMPLATE_VBoxR3StaticNonPedantic_EXTENDS   = VBoxR3Static
 ifeq ($(KBUILD_TARGET),win)
  TEMPLATE_VBoxR3StaticNonPedantic_CFLAGS   = $(TEMPLATE_VBoxR3Static_CFLAGS)   $(VBOX_VCC_NON_PEDANTIC)
@@ -5575,7 +5634,9 @@ ifeq ($(KBUILD_TARGET),win) # No CRT!
  TEMPLATE_VBOXR3HARDENEDEXE_CFLAGS.debug  = $(filter-out -RTC% -GZ -GS,$(TEMPLATE_VBOXR3EXE_CFLAGS.debug)) -GS- -O2 -Oy-
  TEMPLATE_VBOXR3HARDENEDEXE_LDFLAGS       = $(TEMPLATE_VBOXR3EXE_LDFLAGS) \
 	/DISALLOWLIB:msvcrt$(VBOX_VCC_CRT_TYPE).lib \
-	/DISALLOWLIB:msvcprt$(VBOX_VCC_CRT_TYPE).lib
+	/DISALLOWLIB:msvcprt$(VBOX_VCC_CRT_TYPE).lib \
+	/DISALLOWLIB:vcruntime$(VBOX_VCC_CRT_TYPE).lib \
+	/DISALLOWLIB:ucrt$(VBOX_VCC_CRT_TYPE).lib
  TEMPLATE_VBOXR3HARDENEDEXE_LDFLAGS.win.x86   = $(TEMPLATE_VBOXR3EXE_LDFLAGS.win.x86)   /entry:suplibHardenedWindowsMain
  TEMPLATE_VBOXR3HARDENEDEXE_LDFLAGS.win.amd64 = $(TEMPLATE_VBOXR3EXE_LDFLAGS.win.amd64) /entry:suplibHardenedWindowsMain
  TEMPLATE_VBOXR3HARDENEDEXE_LIBS.x86       = $(NOT_SUCH_VARIABLE)
@@ -6040,10 +6101,14 @@ else
 endif
 
 ifeq ($(KBUILD_TARGET),win)
- TEMPLATE_VBOXMAINEXE_SDKS               = ReorderCompilerIncs $(VBOX_WINPSDK) $(VBOX_WINDDK)
  #TEMPLATE_VBOXMAINEXE_TOOL               = $(VBOX_VCC_TOOL)
  TEMPLATE_VBOXMAINEXE_TOOL.win.x86       = $(VBOX_VCC_TOOL_STEM)X86
  TEMPLATE_VBOXMAINEXE_TOOL.win.amd64     = $(VBOX_VCC_TOOL_STEM)AMD64
+ if "$(VBOX_VCC_TOOL_STEM)" >= "VCC141"
+  TEMPLATE_VBOXMAINEXE_SDKS              = ReorderCompilerIncs WINSDK10-UCRT $(VBOX_WINPSDK) $(VBOX_WINDDK)
+ else
+  TEMPLATE_VBOXMAINEXE_SDKS              = ReorderCompilerIncs $(VBOX_WINPSDK) $(VBOX_WINDDK)
+ endif
  TEMPLATE_VBOXMAINEXE_CXXFLAGS           = -Zi -Zl -GR -EHsc -GF -MD$(VBOX_VCC_CRT_TYPE) -Zc:wchar_t- $(VBOX_VCC_OPT) $(VBOX_VCC_FP)
  #    -wd4625: 'DisplaySourceBitmap' : copy constructor could not be generated because a base class copy constructor is inaccessible
  #    -wd4626: 'DisplaySourceBitmap' : assignment operator could not be generated because a base class assignment operator is inaccessible
@@ -6070,7 +6135,13 @@ ifeq ($(KBUILD_TARGET),win)
 	/DISALLOWLIB:libcmt.lib \
 	/DISALLOWLIB:libcmtd.lib \
 	/DISALLOWLIB:msvcrt$(VBOX_VCC_CRT_TYPE_N).lib \
-	/DISALLOWLIB:msvcprt$(VBOX_VCC_CRT_TYPE_N).lib
+	/DISALLOWLIB:msvcprt$(VBOX_VCC_CRT_TYPE_N).lib \
+	/DISALLOWLIB:vcruntime$(VBOX_VCC_CRT_TYPE_N).lib \
+	/DISALLOWLIB:ucrt$(VBOX_VCC_CRT_TYPE_N).lib \
+	/DISALLOWLIB:libvcruntime.lib \
+	/DISALLOWLIB:libvcruntimed.lib \
+	/DISALLOWLIB:libucrt.lib \
+	/DISALLOWLIB:libucrtd.lib
  if defined(VBOX_SIGNING_MODE) && defined(VBOX_WITH_HARDENING)
   TEMPLATE_VBOXMAINEXE_LDFLAGS          += -IntegrityCheck
  endif
@@ -6079,14 +6150,27 @@ ifeq ($(KBUILD_TARGET),win)
  endif
  TEMPLATE_VBOXMAINEXE_LIBS               = \
 	$(LIB_RUNTIME)
- TEMPLATE_VBOXMAINEXE_LIBS.x86           = \
-	$(PATH_TOOL_$(TEMPLATE_VBOXMAINEXE_TOOL.win.x86)_LIB)/msvcrt$(VBOX_VCC_CRT_TYPE).lib \
-	$(PATH_TOOL_$(TEMPLATE_VBOXMAINEXE_TOOL.win.x86)_LIB)/msvcprt$(VBOX_VCC_CRT_TYPE).lib \
-	$(PATH_TOOL_$(TEMPLATE_VBOXMAINEXE_TOOL.win.x86)_LIB)/oldnames.lib
- TEMPLATE_VBOXMAINEXE_LIBS.amd64         = \
-	$(PATH_TOOL_$(TEMPLATE_VBOXMAINEXE_TOOL.win.amd64)_LIB)/msvcrt$(VBOX_VCC_CRT_TYPE).lib \
-	$(PATH_TOOL_$(TEMPLATE_VBOXMAINEXE_TOOL.win.amd64)_LIB)/msvcprt$(VBOX_VCC_CRT_TYPE).lib \
-	$(PATH_TOOL_$(TEMPLATE_VBOXMAINEXE_TOOL.win.amd64)_LIB)/oldnames.lib
+ if "$(VBOX_VCC_TOOL_STEM)" >= "VCC141"
+  TEMPLATE_VBOXMAINEXE_LIBS.x86           = \
+  	$(PATH_TOOL_$(TEMPLATE_VBOXMAINEXE_TOOL.win.x86)_LIB)/vcruntime$(VBOX_VCC_CRT_TYPE).lib \
+  	$(PATH_TOOL_$(TEMPLATE_VBOXMAINEXE_TOOL.win.x86)_LIB)/msvcrt$(VBOX_VCC_CRT_TYPE).lib \
+  	$(PATH_TOOL_$(TEMPLATE_VBOXMAINEXE_TOOL.win.x86)_LIB)/msvcprt$(VBOX_VCC_CRT_TYPE).lib \
+  	$(PATH_TOOL_$(TEMPLATE_VBOXMAINEXE_TOOL.win.x86)_LIB)/oldnames.lib
+  TEMPLATE_VBOXMAINEXE_LIBS.amd64         = \
+  	$(PATH_TOOL_$(TEMPLATE_VBOXMAINEXE_TOOL.win.amd64)_LIB)/vcruntime$(VBOX_VCC_CRT_TYPE).lib \
+  	$(PATH_TOOL_$(TEMPLATE_VBOXMAINEXE_TOOL.win.amd64)_LIB)/msvcrt$(VBOX_VCC_CRT_TYPE).lib \
+  	$(PATH_TOOL_$(TEMPLATE_VBOXMAINEXE_TOOL.win.amd64)_LIB)/msvcprt$(VBOX_VCC_CRT_TYPE).lib \
+  	$(PATH_TOOL_$(TEMPLATE_VBOXMAINEXE_TOOL.win.amd64)_LIB)/oldnames.lib
+ else
+  TEMPLATE_VBOXMAINEXE_LIBS.x86           = \
+  	$(PATH_TOOL_$(TEMPLATE_VBOXMAINEXE_TOOL.win.x86)_LIB)/msvcrt$(VBOX_VCC_CRT_TYPE).lib \
+  	$(PATH_TOOL_$(TEMPLATE_VBOXMAINEXE_TOOL.win.x86)_LIB)/msvcprt$(VBOX_VCC_CRT_TYPE).lib \
+  	$(PATH_TOOL_$(TEMPLATE_VBOXMAINEXE_TOOL.win.x86)_LIB)/oldnames.lib
+  TEMPLATE_VBOXMAINEXE_LIBS.amd64         = \
+  	$(PATH_TOOL_$(TEMPLATE_VBOXMAINEXE_TOOL.win.amd64)_LIB)/msvcrt$(VBOX_VCC_CRT_TYPE).lib \
+  	$(PATH_TOOL_$(TEMPLATE_VBOXMAINEXE_TOOL.win.amd64)_LIB)/msvcprt$(VBOX_VCC_CRT_TYPE).lib \
+  	$(PATH_TOOL_$(TEMPLATE_VBOXMAINEXE_TOOL.win.amd64)_LIB)/oldnames.lib
+ endif
  TEMPLATE_VBOXMAINEXE_POST_CMDS          = $(VBOX_SIGN_IMAGE_CMDS)
 
 else # the GCC guys:
@@ -6331,11 +6415,11 @@ endif
 #
 # Template for building executables that use the VBox Main component.
 #
-TEMPLATE_VBOXMAINCLIENTEXE              = VBox Main Client (executable)
-TEMPLATE_VBOXMAINCLIENTEXE_EXTENDS      = VBOXMAINEXE
+TEMPLATE_VBOXMAINCLIENTEXE                 = VBox Main Client (executable)
+TEMPLATE_VBOXMAINCLIENTEXE_EXTENDS         = VBOXMAINEXE
 ifeq ($(KBUILD_TARGET),win)
- TEMPLATE_VBOXMAINCLIENTEXE_DEPS		= $(VBOX_PATH_SDK)/bindings/mscom/include/VirtualBox.h
- TEMPLATE_VBOXMAINCLIENTEXE_LIBS.win	= $(TEMPLATE_VBOXMAINEXE_LIBS.win) \
+ TEMPLATE_VBOXMAINCLIENTEXE_DEPS	    = $(VBOX_PATH_SDK)/bindings/mscom/include/VirtualBox.h
+ TEMPLATE_VBOXMAINCLIENTEXE_LIBS.win	    = $(TEMPLATE_VBOXMAINEXE_LIBS.win) \
    $(PATH_SDK_$(VBOX_WINPSDK)_LIB)/User32.Lib \
    $(PATH_SDK_$(VBOX_WINPSDK)_LIB)/Shell32.Lib \
    $(PATH_SDK_$(VBOX_WINPSDK)_LIB)/ShLwApi.Lib \
@@ -6343,8 +6427,8 @@ ifeq ($(KBUILD_TARGET),win)
    $(PATH_SDK_$(VBOX_WINPSDK)_LIB)/OleAut32.Lib \
    $(PATH_SDK_$(VBOX_WINPSDK)_LIB)/Uuid.Lib
 else
- TEMPLATE_VBOXMAINCLIENTEXE_DEPS		= $(VBOX_PATH_SDK)/bindings/xpcom/include/VirtualBox_XPCOM.h
- TEMPLATE_VBOXMAINCLIENTEXE_DEFS		= $(TEMPLATE_VBOXMAINEXE_DEFS) \
+ TEMPLATE_VBOXMAINCLIENTEXE_DEPS	    = $(VBOX_PATH_SDK)/bindings/xpcom/include/VirtualBox_XPCOM.h
+ TEMPLATE_VBOXMAINCLIENTEXE_DEFS	    = $(TEMPLATE_VBOXMAINEXE_DEFS) \
 	NDEBUG TRIMMED
  TEMPLATE_VBOXMAINCLIENTEXE_CXXFLAGS.linux = $(TEMPLATE_VBOXMAINEXE_CXXFLAGS.linux) -pthread
  TEMPLATE_VBOXMAINCLIENTEXE_PCHFLAGS.linux = $(TEMPLATE_VBOXMAINEXE_PCHFLAGS.linux) -pthread
@@ -6636,6 +6720,9 @@ ifdef VBOX_WITH_QTGUI
  ifeq ($(KBUILD_TARGET),win)
   # Note! No use of VBOX_VCC_CRT_TYPE here yet as it requires a /MDd build of Qt as well.
   TEMPLATE_VBOXQTGUIEXE_TOOL = $(VBOX_VCC_TOOL)
+  if "$(VBOX_VCC_TOOL_STEM)" >= "VCC141"
+   TEMPLATE_VBOXQTGUIEXE_SDKS = WINSDK10-UCRT
+  endif
   TEMPLATE_VBOXQTGUIEXE_DEFS += \
      _WIN32_WINNT=0x0500 UNICODE _UNICODE \
      QT_DLL _CRT_SECURE_NO_DEPRECATE \
@@ -6667,14 +6754,26 @@ ifdef VBOX_WITH_QTGUI
    TEMPLATE_VBOXQTGUIEXE_LDFLAGS += -IntegrityCheck
   endif
   TEMPLATE_VBOXQTGUIEXE_SDKS += $(VBOX_WINPSDK)
-  TEMPLATE_VBOXQTGUIEXE_LIBS = \
-	$(VBOX_LIBS_QT) \
-	$(LIB_RUNTIME) \
-	$(VBOX_LIB_VMM_LAZY) \
-	$(PATH_TOOL_$(VBOX_VCC_TOOL)_LIB)/msvcprt.lib \
-	$(PATH_TOOL_$(VBOX_VCC_TOOL)_LIB)/msvcrt.lib \
-	$(PATH_TOOL_$(VBOX_VCC_TOOL)_LIB)/oldnames.lib \
-	$(PATH_TOOL_$(VBOX_VCC_TOOL)_LIB)/delayimp.lib
+  if "$(VBOX_VCC_TOOL_STEM)" >= "VCC141"
+   TEMPLATE_VBOXQTGUIEXE_LIBS = \
+   	$(VBOX_LIBS_QT) \
+   	$(LIB_RUNTIME) \
+   	$(VBOX_LIB_VMM_LAZY) \
+   	$(PATH_TOOL_$(VBOX_VCC_TOOL)_LIB)/vcruntime.lib \
+   	$(PATH_TOOL_$(VBOX_VCC_TOOL)_LIB)/msvcrt.lib \
+   	$(PATH_TOOL_$(VBOX_VCC_TOOL)_LIB)/msvcprt.lib \
+   	$(PATH_TOOL_$(VBOX_VCC_TOOL)_LIB)/oldnames.lib \
+   	$(PATH_TOOL_$(VBOX_VCC_TOOL)_LIB)/delayimp.lib
+  else
+   TEMPLATE_VBOXQTGUIEXE_LIBS = \
+   	$(VBOX_LIBS_QT) \
+   	$(LIB_RUNTIME) \
+   	$(VBOX_LIB_VMM_LAZY) \
+   	$(PATH_TOOL_$(VBOX_VCC_TOOL)_LIB)/msvcprt.lib \
+   	$(PATH_TOOL_$(VBOX_VCC_TOOL)_LIB)/msvcrt.lib \
+   	$(PATH_TOOL_$(VBOX_VCC_TOOL)_LIB)/oldnames.lib \
+   	$(PATH_TOOL_$(VBOX_VCC_TOOL)_LIB)/delayimp.lib
+  endif
   TEMPLATE_VBOXQTGUIEXE_POST_CMDS = $(VBOX_SIGN_IMAGE_CMDS)
 
  else # the gcc guys:
@@ -6882,7 +6981,11 @@ else
 endif
 ifeq ($(KBUILD_HOST),win)
  TEMPLATE_VBoxBldProg_TOOL              := $(VBOX_VCC_TOOL_STEM)$(toupper $(KBUILD_HOST_ARCH))
- TEMPLATE_VBoxBldProg_SDKS              := ReorderCompilerIncs $(VBOX_WINPSDK)
+ if "$(VBOX_VCC_TOOL_STEM)" >= "VCC141"
+  TEMPLATE_VBoxBldProg_SDKS             := ReorderCompilerIncs WINSDK10-UCRT-STATIC $(VBOX_WINPSDK)
+ else
+  TEMPLATE_VBoxBldProg_SDKS             := ReorderCompilerIncs $(VBOX_WINPSDK)
+ endif
  TEMPLATE_VBoxBldProg_CXXFLAGS          := -Zi -Zl -GR- -EHsc -GF -Zc:wchar_t- $(VBOX_VCC_OPT) $(VBOX_VCC_FP) -MT$(VBOX_VCC_CRT_TYPE) \
 	$(VBOX_VCC_WARN_ALL) $(VBOX_VCC_WERR)
  TEMPLATE_VBoxBldProg_CXXFLAGS.debug    := -RTCsu
@@ -6902,18 +7005,32 @@ ifeq ($(KBUILD_HOST),win)
  TEMPLATE_VBoxBldProg_PCHFLAGS.profile   = $(TEMPLATE_VBoxBldProg_CXXFLAGS.profile)
  TEMPLATE_VBoxBldProg_PCHFLAGS.kprofile  = $(TEMPLATE_VBoxBldProg_CXXFLAGS.kprofile)
  TEMPLATE_VBoxBldProg_LDFLAGS            = -Ignore:4197 \
-	/NOD /INCREMENTAL:NO /MAPINFO:EXPORTS /LargeAddressAware /DynamicBase /NxCompat /Release /Debug /Opt:Ref /Opt:Icf \
-	/Version:$(VBOX_VERSION_MAJOR)0$(VBOX_VERSION_MINOR).$(VBOX_VERSION_BUILD) \
-	/DISALLOWLIB:libc$(VBOX_VCC_CRT_TYPE_N).lib \
-	/DISALLOWLIB:libcmt$(VBOX_VCC_CRT_TYPE_N).lib \
-	/DISALLOWLIB:msvcrt.lib \
-	/DISALLOWLIB:msvcrtd.lib \
-	/DISALLOWLIB:msvcprt.lib \
-	/DISALLOWLIB:msvcprtd.lib
- TEMPLATE_VBoxBldProg_LIBS               = \
-	$(PATH_TOOL_$(TEMPLATE_VBoxBldProg_TOOL)_LIB)/oldnames.lib \
-	$(PATH_TOOL_$(TEMPLATE_VBoxBldProg_TOOL)_LIB)/libcmt$(VBOX_VCC_CRT_TYPE).lib \
-	$(PATH_TOOL_$(TEMPLATE_VBoxBldProg_TOOL)_LIB)/libcpmt$(VBOX_VCC_CRT_TYPE).lib
+ 	/NOD /INCREMENTAL:NO /MAPINFO:EXPORTS /LargeAddressAware /DynamicBase /NxCompat /Release /Debug /Opt:Ref /Opt:Icf \
+ 	/Version:$(VBOX_VERSION_MAJOR)0$(VBOX_VERSION_MINOR).$(VBOX_VERSION_BUILD) \
+ 	/DISALLOWLIB:libc$(VBOX_VCC_CRT_TYPE_N).lib \
+ 	/DISALLOWLIB:libcmt$(VBOX_VCC_CRT_TYPE_N).lib \
+ 	/DISALLOWLIB:msvcrt.lib \
+ 	/DISALLOWLIB:msvcrtd.lib \
+ 	/DISALLOWLIB:msvcprt.lib \
+ 	/DISALLOWLIB:msvcprtd.lib \
+	/DISALLOWLIB:libvcruntime$(VBOX_VCC_CRT_TYPE_N).lib \
+	/DISALLOWLIB:libucrt$(VBOX_VCC_CRT_TYPE_N).lib \
+	/DISALLOWLIB:vcruntime.lib \
+	/DISALLOWLIB:vcruntimed.lib \
+	/DISALLOWLIB:ucrt.lib \
+	/DISALLOWLIB:ucrtd.lib
+ if "$(VBOX_VCC_TOOL_STEM)" >= "VCC141"
+  TEMPLATE_VBoxBldProg_LIBS               = \
+  	$(PATH_TOOL_$(TEMPLATE_VBoxBldProg_TOOL)_LIB)/libvcruntime$(VBOX_VCC_CRT_TYPE).lib \
+  	$(PATH_TOOL_$(TEMPLATE_VBoxBldProg_TOOL)_LIB)/libcmt$(VBOX_VCC_CRT_TYPE).lib \
+  	$(PATH_TOOL_$(TEMPLATE_VBoxBldProg_TOOL)_LIB)/libcpmt$(VBOX_VCC_CRT_TYPE).lib \
+  	$(PATH_TOOL_$(TEMPLATE_VBoxBldProg_TOOL)_LIB)/oldnames.lib
+ else
+  TEMPLATE_VBoxBldProg_LIBS               = \
+  	$(PATH_TOOL_$(TEMPLATE_VBoxBldProg_TOOL)_LIB)/oldnames.lib \
+  	$(PATH_TOOL_$(TEMPLATE_VBoxBldProg_TOOL)_LIB)/libcmt$(VBOX_VCC_CRT_TYPE).lib \
+  	$(PATH_TOOL_$(TEMPLATE_VBoxBldProg_TOOL)_LIB)/libcpmt$(VBOX_VCC_CRT_TYPE).lib
+ endif
 
 else
 # (gcc of some kind )
@@ -6955,12 +7072,12 @@ TEMPLATE_VBoxBldProg_OBJCXXFLAGS.amd64   = $(TEMPLATE_VBoxBldProg_CXXFLAGS.amd64
 TEMPLATE_VBoxBldProg_OBJCXXFLAGS.release = $(TEMPLATE_VBoxBldProg_CXXFLAGS.release)
 TEMPLATE_VBoxBldProg_OBJCXXFLAGS.profile = $(TEMPLATE_VBoxBldProg_CXXFLAGS.profile)
 TEMPLATE_VBoxBldProg_OBJCXXFLAGS.kprofile= $(TEMPLATE_VBoxBldProg_CXXFLAGS.kprofile)
-TEMPLATE_VBoxBldProg_PCHFLAGS         = $(TEMPLATE_VBoxBldProg_CXXFLAGS)
-TEMPLATE_VBoxBldProg_PCHFLAGS.x86     = $(TEMPLATE_VBoxBldProg_CXXFLAGS.x86)
-TEMPLATE_VBoxBldProg_PCHFLAGS.amd64   = $(TEMPLATE_VBoxBldProg_CXXFLAGS.amd64)
-TEMPLATE_VBoxBldProg_PCHFLAGS.release = $(TEMPLATE_VBoxBldProg_CXXFLAGS.release)
-TEMPLATE_VBoxBldProg_PCHFLAGS.profile = $(TEMPLATE_VBoxBldProg_CXXFLAGS.profile)
-TEMPLATE_VBoxBldProg_PCHFLAGS.kprofile= $(TEMPLATE_VBoxBldProg_CXXFLAGS.kprofile)
+TEMPLATE_VBoxBldProg_PCHFLAGS            = $(TEMPLATE_VBoxBldProg_CXXFLAGS)
+TEMPLATE_VBoxBldProg_PCHFLAGS.x86        = $(TEMPLATE_VBoxBldProg_CXXFLAGS.x86)
+TEMPLATE_VBoxBldProg_PCHFLAGS.amd64      = $(TEMPLATE_VBoxBldProg_CXXFLAGS.amd64)
+TEMPLATE_VBoxBldProg_PCHFLAGS.release    = $(TEMPLATE_VBoxBldProg_CXXFLAGS.release)
+TEMPLATE_VBoxBldProg_PCHFLAGS.profile    = $(TEMPLATE_VBoxBldProg_CXXFLAGS.profile)
+TEMPLATE_VBoxBldProg_PCHFLAGS.kprofile   = $(TEMPLATE_VBoxBldProg_CXXFLAGS.kprofile)
 TEMPLATE_VBoxBldProg_LDFLAGS.x86         = -m32
 TEMPLATE_VBoxBldProg_LDFLAGS.sparc32     = -m32
 TEMPLATE_VBoxBldProg_LDFLAGS.amd64       = -m64
@@ -7106,20 +7223,39 @@ endif
 TEMPLATE_VBOXGUESTR3EXE           = VBox Guest Program
 ifeq ($(KBUILD_TARGET),win)
  TEMPLATE_VBOXGUESTR3EXE_EXTENDS  = VBOXR3EXE
- TEMPLATE_VBOXGUESTR3EXE_SDKS     = ReorderCompilerIncs $(VBOX_WINPSDK_GST) VBOX_NTDLL
+ if "$(VBOX_VCC_TOOL_STEM)" >= "VCC141"
+  TEMPLATE_VBOXGUESTR3EXE_SDKS     = ReorderCompilerIncs WINSDK10-UCRT-STATIC $(VBOX_WINPSDK_GST) VBOX_NTDLL
+ else
+  TEMPLATE_VBOXGUESTR3EXE_SDKS     = ReorderCompilerIncs $(VBOX_WINPSDK_GST) VBOX_NTDLL
+ endif
  TEMPLATE_VBOXGUESTR3EXE_CFLAGS   = $(filter-out -MD$(VBOX_VCC_CRT_TYPE), $(TEMPLATE_VBOXR3EXE_CFLAGS)) -MT$(VBOX_VCC_CRT_TYPE)
  TEMPLATE_VBOXGUESTR3EXE_CXXFLAGS = $(filter-out -MD$(VBOX_VCC_CRT_TYPE), $(TEMPLATE_VBOXR3EXE_CFLAGS)) -MT$(VBOX_VCC_CRT_TYPE)
  TEMPLATE_VBOXGUESTR3EXE_LDFLAGS  = $(filter-out /DISALLOWLIB:libcmt$(VBOX_VCC_CRT_TYPE).lib /DISALLOWLIB:libcpmt$(VBOX_VCC_CRT_TYPE).lib, $(TEMPLATE_VBOXR3EXE_LDFLAGS)) \
 	/DISALLOWLIB:msvcrt$(VBOX_VCC_CRT_TYPE).lib \
-	/DISALLOWLIB:msvcprt$(VBOX_VCC_CRT_TYPE).lib
- TEMPLATE_VBOXGUESTR3EXE_LIBS.x86           = \
- 	$(PATH_TOOL_$(TEMPLATE_VBOXGUESTR3EXE_TOOL.win.x86)_LIB)/oldnames.lib \
- 	$(PATH_TOOL_$(TEMPLATE_VBOXGUESTR3EXE_TOOL.win.x86)_LIB)/libcmt$(VBOX_VCC_CRT_TYPE).lib \
- 	$(PATH_TOOL_$(TEMPLATE_VBOXGUESTR3EXE_TOOL.win.x86)_LIB)/libcpmt$(VBOX_VCC_CRT_TYPE).lib
- TEMPLATE_VBOXGUESTR3EXE_LIBS.amd64         = \
- 	$(PATH_TOOL_$(TEMPLATE_VBOXGUESTR3EXE_TOOL.win.amd64)_LIB)/oldnames.lib \
- 	$(PATH_TOOL_$(TEMPLATE_VBOXGUESTR3EXE_TOOL.win.amd64)_LIB)/libcmt$(VBOX_VCC_CRT_TYPE).lib \
- 	$(PATH_TOOL_$(TEMPLATE_VBOXGUESTR3EXE_TOOL.win.amd64)_LIB)/libcpmt$(VBOX_VCC_CRT_TYPE).lib
+	/DISALLOWLIB:msvcprt$(VBOX_VCC_CRT_TYPE).lib \
+	/DISALLOWLIB:vcruntime$(VBOX_VCC_CRT_TYPE).lib \
+	/DISALLOWLIB:ucrt$(VBOX_VCC_CRT_TYPE).lib
+ if "$(VBOX_VCC_TOOL_STEM)" >= "VCC141"
+  TEMPLATE_VBOXGUESTR3EXE_LIBS.x86           = \
+  	$(PATH_TOOL_$(TEMPLATE_VBOXGUESTR3EXE_TOOL.win.x86)_LIB)/libvcruntime$(VBOX_VCC_CRT_TYPE).lib \
+  	$(PATH_TOOL_$(TEMPLATE_VBOXGUESTR3EXE_TOOL.win.x86)_LIB)/libcmt$(VBOX_VCC_CRT_TYPE).lib \
+  	$(PATH_TOOL_$(TEMPLATE_VBOXGUESTR3EXE_TOOL.win.x86)_LIB)/libcpmt$(VBOX_VCC_CRT_TYPE).lib \
+  	$(PATH_TOOL_$(TEMPLATE_VBOXGUESTR3EXE_TOOL.win.x86)_LIB)/oldnames.lib
+  TEMPLATE_VBOXGUESTR3EXE_LIBS.amd64         = \
+  	$(PATH_TOOL_$(TEMPLATE_VBOXGUESTR3EXE_TOOL.win.amd64)_LIB)/libvcruntime$(VBOX_VCC_CRT_TYPE).lib \
+  	$(PATH_TOOL_$(TEMPLATE_VBOXGUESTR3EXE_TOOL.win.amd64)_LIB)/libcmt$(VBOX_VCC_CRT_TYPE).lib \
+  	$(PATH_TOOL_$(TEMPLATE_VBOXGUESTR3EXE_TOOL.win.amd64)_LIB)/libcpmt$(VBOX_VCC_CRT_TYPE).lib \
+  	$(PATH_TOOL_$(TEMPLATE_VBOXGUESTR3EXE_TOOL.win.amd64)_LIB)/oldnames.lib
+ else
+  TEMPLATE_VBOXGUESTR3EXE_LIBS.x86           = \
+  	$(PATH_TOOL_$(TEMPLATE_VBOXGUESTR3EXE_TOOL.win.x86)_LIB)/oldnames.lib \
+  	$(PATH_TOOL_$(TEMPLATE_VBOXGUESTR3EXE_TOOL.win.x86)_LIB)/libcmt$(VBOX_VCC_CRT_TYPE).lib \
+  	$(PATH_TOOL_$(TEMPLATE_VBOXGUESTR3EXE_TOOL.win.x86)_LIB)/libcpmt$(VBOX_VCC_CRT_TYPE).lib
+  TEMPLATE_VBOXGUESTR3EXE_LIBS.amd64         = \
+  	$(PATH_TOOL_$(TEMPLATE_VBOXGUESTR3EXE_TOOL.win.amd64)_LIB)/oldnames.lib \
+  	$(PATH_TOOL_$(TEMPLATE_VBOXGUESTR3EXE_TOOL.win.amd64)_LIB)/libcmt$(VBOX_VCC_CRT_TYPE).lib \
+  	$(PATH_TOOL_$(TEMPLATE_VBOXGUESTR3EXE_TOOL.win.amd64)_LIB)/libcpmt$(VBOX_VCC_CRT_TYPE).lib
+ endif
  # Hack for running on NT3x, NT4, W2K and XP w/o SP: Change OS and subsystem version in the image.
  # The .bss section trick is for NT 3.1 which doesn't support merging initialized and uninitialized
  # section because it doesn't recognize Misc.VirtualSize.  VBOX_PE_SET_VERSION will unset the !K flag.
@@ -7265,7 +7401,7 @@ endif
 #
 TEMPLATE_NewerVccVBoxGuestR3Dll          = VBOXGUESTR3DLL with the newer Visual C++ version (2013 or later).
 TEMPLATE_NewerVccVBoxGuestR3Dll_EXTENDS  = VBOXGUESTR3DLL
-ifeq ($(KBUILD_TARGET),win)
+if "$(KBUILD_TARGET)" == "win" && "$(VBOX_NEWER_VCC_TOOL_STEM)" != "$(VBOX_VCC_TOOL_STEM)"
  TEMPLATE_NewerVccVBoxGuestR3Dll_TOOL.win.x86    = $(VBOX_NEWER_VCC_TOOL_STEM)X86
  TEMPLATE_NewerVccVBoxGuestR3Dll_TOOL.win.amd64  = $(VBOX_NEWER_VCC_TOOL_STEM)AMD64
  TEMPLATE_NewerVccVBoxGuestR3Dll_CXXFLAGS        = \
