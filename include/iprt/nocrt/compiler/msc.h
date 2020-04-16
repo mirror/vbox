@@ -34,7 +34,11 @@
 #if !defined(_MT) && !defined(_DLL) && _MSC_VER < 1400
 # define errno msvcrt_errno
 #endif
-#include <../include/stddef.h>
+#if _MSC_VER >= 1910
+# include <../ucrt/stddef.h>
+#else
+# include <../include/stddef.h>
+#endif
 #undef errno
 
 #undef ssize_t
