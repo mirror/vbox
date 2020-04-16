@@ -240,7 +240,8 @@ static int SelectMember(const char *pszEndsWith)
         }
 
         if (g_cVerbosity > 2)
-            fprintf(stderr, "debug: %#08x: %#010x %*.*s\n", off, cbFile - cbExtra, cchName, cchName, pchName);
+            fprintf(stderr, "debug: %#08x: %#010x %*.*s\n",
+                    (unsigned)off, (unsigned)(cbFile - cbExtra), (int)cchName, (int)cchName, pchName);
 
         /*
          * Do matching.
@@ -252,7 +253,7 @@ static int SelectMember(const char *pszEndsWith)
             g_cbMember = (unsigned)(cbFile - cbExtra);
             if (g_cVerbosity > 1)
                 fprintf(stderr, "debug: selected '%*.*s': %#x LB %#x\n",
-                        cchName, cchName, pchName, off + sizeof(*pHdr) + cbExtra, g_cbMember);
+                        (int)cchName, (int)cchName, pchName, (unsigned)(off + sizeof(*pHdr) + cbExtra), g_cbMember);
             return 0;
         }
 
@@ -312,7 +313,7 @@ static int RedefineSymbol(const char *pszOldEqualNew)
 
     if (g_cVerbosity > 2)
         fprintf(stderr, "debug: redefining symbol '%*.*s' to '%*.*s'...\n",
-                cchOld, cchOld, pszOld, cchNew, cchNew, pszNew);
+                (int)cchOld, (int)cchOld, pszOld, (int)cchNew, (int)cchNew, pszNew);
 
     /*
      * Parse COFF header.
