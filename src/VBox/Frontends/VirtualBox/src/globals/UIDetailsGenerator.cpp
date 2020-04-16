@@ -21,7 +21,6 @@
 
 /* GUI includes: */
 #include "UIBootOrderEditor.h"
-#include "UICloudMachine.h"
 #include "UIConverter.h"
 #include "UIDetailsGenerator.h"
 #include "UIErrorString.h"
@@ -30,20 +29,32 @@
 /* COM includes: */
 #include "COMEnums.h"
 #include "CAudioAdapter.h"
+#include "CBooleanFormValue.h"
+#include "CChoiceFormValue.h"
+#include "CCloudMachine.h"
+#include "CForm.h"
+#include "CFormValue.h"
 #include "CGraphicsAdapter.h"
 #include "CMachine.h"
 #include "CMediumAttachment.h"
 #include "CNetworkAdapter.h"
+#include "CProgress.h"
+#include "CRangedIntegerFormValue.h"
 #include "CRecordingScreenSettings.h"
 #include "CRecordingSettings.h"
 #include "CSerialPort.h"
 #include "CSharedFolder.h"
 #include "CStorageController.h"
+#include "CStringFormValue.h"
 #include "CSystemProperties.h"
 #include "CUSBController.h"
 #include "CUSBDeviceFilter.h"
 #include "CUSBDeviceFilters.h"
 #include "CVRDEServer.h"
+
+/* VirtualBox interface declarations: */
+#include <VBox/com/VirtualBox.h>
+
 
 UITextTable UIDetailsGenerator::generateMachineInformationGeneral(CMachine &comMachine,
                                                                   const UIExtraDataMetaDefs::DetailsElementOptionTypeGeneral &fOptions)
@@ -122,38 +133,75 @@ UITextTable UIDetailsGenerator::generateMachineInformationGeneral(CMachine &comM
     return table;
 }
 
-UITextTable UIDetailsGenerator::generateMachineInformationGeneral(UICloudMachine &guiCloudMachine,
-                                                                  const UIExtraDataMetaDefs::DetailsElementOptionTypeGeneral &fOptions)
+UITextTable UIDetailsGenerator::generateMachineInformationGeneral(CCloudMachine &comCloudMachine,
+                                                                  const UIExtraDataMetaDefs::DetailsElementOptionTypeGeneral &)
 {
     UITextTable table;
 
-    if (guiCloudMachine.isNull())
+    if (comCloudMachine.isNull())
         return table;
 
-    if (!guiCloudMachine.accessible())
+    if (!comCloudMachine.GetAccessible())
     {
         table << UITextTableLine(QApplication::translate("UIDetails", "Information Inaccessible", "details"), QString());
         return table;
     }
 
-    /* Name: */
-    if (fOptions & UIExtraDataMetaDefs::DetailsElementOptionTypeGeneral_Name)
-        table << UITextTableLine(QApplication::translate("UIDetails", "Name", "details (general)"),
-                                 guiCloudMachine.instanceName());
-
-    /* Operating system: */
-    if (fOptions & UIExtraDataMetaDefs::DetailsElementOptionTypeGeneral_OS)
-        table << UITextTableLine(QApplication::translate("UIDetails", "Operating System", "details (general)"),
-                                 uiCommon().vmGuestOSTypeDescription(guiCloudMachine.osType()));
-
-    /* Domain: */
-    if (fOptions & UIExtraDataMetaDefs::DetailsElementOptionTypeGeneral_Location)
+    // WORKAROUND:
+    // While we are waiting for GetDetailsForm implementation we will be using GetSettingsForm.
+    // This requires to wait for progress to complete and handle out all possible value types.
+    CForm comForm;
+    CProgress comProgress = comCloudMachine.GetSettingsForm(comForm);
+    /* Ignore cloud machine errors: */
+    if (comCloudMachine.isOk())
     {
-        const QString strDomain = guiCloudMachine.domain();
-        const QString strResult = !strDomain.isEmpty()
-                                ? strDomain
-                                : QApplication::translate("UIDetails", "Checking ...", "details");
-        table << UITextTableLine(QApplication::translate("UIDetails", "Domain", "details (general)"), strResult);
+        /* Wait for progress to complete: */
+        comProgress.WaitForCompletion(-1);
+        /* Ignore progress errors: */
+        if (comProgress.isOk() && comProgress.GetResultCode() == 0)
+        {
+            /* For each form value: */
+            QVector<CFormValue> values = comForm.GetValues();
+            foreach (const CFormValue &comIteratedValue, values)
+            {
+                /* Handle possible value type: */
+                switch (comIteratedValue.GetType())
+                {
+                    case KFormValueType_Boolean:
+                    {
+                        CBooleanFormValue comValue(comIteratedValue);
+                        const bool fBool = comValue.GetSelected();
+                        table << UITextTableLine(comValue.GetLabel(),
+                                                 fBool ? QApplication::translate("UIDetails", "Enabled", "details (cloud value)")
+                                                       : QApplication::translate("UIDetails", "Disabled", "details (cloud value)"));
+                        break;
+                    }
+                    case KFormValueType_String:
+                    {
+                        CStringFormValue comValue(comIteratedValue);
+                        table << UITextTableLine(comValue.GetLabel(), comValue.GetString());
+                        break;
+                    }
+                    case KFormValueType_Choice:
+                    {
+                        CChoiceFormValue comValue(comIteratedValue);
+                        const QVector<QString> possibleValues = comValue.GetValues();
+                        const int iCurrentIndex = comValue.GetSelectedIndex();
+                        table << UITextTableLine(comValue.GetLabel(), possibleValues.at(iCurrentIndex));
+                        break;
+                    }
+                    case KFormValueType_RangedInteger:
+                    {
+                        CRangedIntegerFormValue comValue(comIteratedValue);
+                        table << UITextTableLine(comValue.GetLabel(),
+                                                 QString("%1 %2").arg(comValue.GetInteger()).arg(comValue.GetSuffix()));
+                        break;
+                    }
+                    default:
+                        break;
+                }
+            }
+        }
     }
 
     return table;
@@ -278,62 +326,6 @@ UITextTable UIDetailsGenerator::generateMachineInformationSystem(CMachine &comMa
         if (!acceleration.isEmpty())
             table << UITextTableLine(QApplication::translate("UIDetails", "Acceleration", "details (system)"),
                                      acceleration.join(", "));
-    }
-
-    return table;
-}
-
-UITextTable UIDetailsGenerator::generateMachineInformationSystem(UICloudMachine &guiCloudMachine,
-                                                                 const UIExtraDataMetaDefs::DetailsElementOptionTypeSystem &fOptions)
-{
-    UITextTable table;
-
-    if (guiCloudMachine.isNull())
-        return table;
-
-    if (!guiCloudMachine.accessible())
-    {
-        table << UITextTableLine(QApplication::translate("UIDetails", "Information Inaccessible", "details"), QString());
-        return table;
-    }
-
-    /* Shape: */
-    {
-        const QString strShape = guiCloudMachine.shape();
-        const QString strResult = !strShape.isEmpty()
-                                ? strShape
-                                : QApplication::translate("UIDetails", "Checking ...", "details");
-        table << UITextTableLine(QApplication::translate("UIDetails", "Shape", "details (system)"), strResult);
-    }
-
-    /* Base memory: */
-    if (fOptions & UIExtraDataMetaDefs::DetailsElementOptionTypeSystem_RAM)
-    {
-        const int iMemorySize = guiCloudMachine.memorySize();
-        const QString strResult = iMemorySize > 0
-                                ? QApplication::translate("UIDetails", "%1 MB").arg(iMemorySize)
-                                : QApplication::translate("UIDetails", "Checking ...", "details");
-        table << UITextTableLine(QApplication::translate("UIDetails", "Base Memory", "details (system)"), strResult);
-    }
-
-    /* Processors: */
-    if (fOptions & UIExtraDataMetaDefs::DetailsElementOptionTypeSystem_CPUCount)
-    {
-        const int cCpuCount = guiCloudMachine.cpuCount();
-        const QString strResult = cCpuCount > 0
-                                ? QString::number(cCpuCount)
-                                : QApplication::translate("UIDetails", "Checking ...", "details");
-        table << UITextTableLine(QApplication::translate("UIDetails", "Processors", "details (system)"), strResult);
-    }
-
-    /* Booting firmware: */
-    if (fOptions & UIExtraDataMetaDefs::DetailsElementOptionTypeSystem_Firmware)
-    {
-        const QString strBottingFirmware = guiCloudMachine.bootingFirmware();
-        const QString strResult = !strBottingFirmware.isEmpty()
-                                ? strBottingFirmware
-                                : QApplication::translate("UIDetails", "Checking ...", "details");
-        table << UITextTableLine(QApplication::translate("UIDetails", "Booting Firmware", "details (system)"), strResult);
     }
 
     return table;
@@ -558,34 +550,6 @@ UITextTable UIDetailsGenerator::generateMachineInformationStorage(CMachine &comM
     }
     if (table.isEmpty())
         table << UITextTableLine(QApplication::translate("UIDetails", "Not Attached", "details (storage)"), QString());
-
-    return table;
-}
-
-UITextTable UIDetailsGenerator::generateMachineInformationStorage(UICloudMachine &guiCloudMachine,
-                                                                  const UIExtraDataMetaDefs::DetailsElementOptionTypeStorage &fOptions)
-{
-    UITextTable table;
-
-    if (guiCloudMachine.isNull())
-        return table;
-
-    if (!guiCloudMachine.accessible())
-    {
-        table << UITextTableLine(QApplication::translate("UIDetails", "Information Inaccessible", "details"), QString());
-        return table;
-    }
-
-    /* Image: */
-    if (fOptions & UIExtraDataMetaDefs::DetailsElementOptionTypeStorage_HardDisks)
-    {
-        const QString strImageName = guiCloudMachine.imageName();
-        const QString strImageSize = guiCloudMachine.imageSize();
-        const QString strResult = !strImageName.isEmpty() && !strImageSize.isEmpty()
-                                ? QString("%1 (%2)").arg(strImageName, strImageSize)
-                                : QApplication::translate("UIDetails", "Checking ...", "details");
-        table << UITextTableLine(QApplication::translate("UIDetails", "Image", "details (storage)"), strResult);
-    }
 
     return table;
 }

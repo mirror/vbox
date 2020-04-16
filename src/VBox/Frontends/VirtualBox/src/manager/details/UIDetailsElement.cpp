@@ -304,7 +304,7 @@ const CMachine &UIDetailsElement::machine()
     return m_pSet->machine();
 }
 
-const UICloudMachine &UIDetailsElement::cloudMachine()
+const CCloudMachine &UIDetailsElement::cloudMachine()
 {
     return m_pSet->cloudMachine();
 }

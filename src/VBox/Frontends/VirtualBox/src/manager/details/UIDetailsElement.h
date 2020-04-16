@@ -33,10 +33,10 @@
 class QPropertyAnimation;
 class QStateMachine;
 class QTextLayout;
-class UICloudMachine;
 class UIDetailsSet;
 class UIGraphicsRotatorButton;
 class UIGraphicsTextPane;
+class CCloudMachine;
 class CMachine;
 
 
@@ -160,7 +160,7 @@ protected:
         /** Returns cached machine reference. */
         const CMachine &machine();
         /** Returns cached cloud machine reference. */
-        const UICloudMachine &cloudMachine();
+        const CCloudMachine &cloudMachine();
 
         /** Returns whether element is of local type. */
         bool isLocal() const;

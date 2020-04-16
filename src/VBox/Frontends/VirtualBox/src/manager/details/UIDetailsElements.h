@@ -39,8 +39,8 @@ public:
 
     /** Constructs update task taking @a comMachine as data. */
     UIDetailsUpdateTask(const CMachine &comMachine);
-    /** Constructs update task taking @a guiCloudMachine as data. */
-    UIDetailsUpdateTask(const UICloudMachine &guiCloudMachine);
+    /** Constructs update task taking @a comCloudMachine as data. */
+    UIDetailsUpdateTask(const CCloudMachine &comCloudMachine);
 };
 
 /** UIDetailsElement extension used as a wrapping interface to
@@ -144,9 +144,9 @@ class UIDetailsUpdateTaskGeneralCloud : public UIDetailsUpdateTask
 
 public:
 
-    /** Constructs update task passing @a guiCloudMachine to the base-class. */
-    UIDetailsUpdateTaskGeneralCloud(const UICloudMachine &guiCloudMachine, UIExtraDataMetaDefs::DetailsElementOptionTypeGeneral fOptions)
-        : UIDetailsUpdateTask(guiCloudMachine), m_fOptions(fOptions) {}
+    /** Constructs update task passing @a comCloudMachine to the base-class. */
+    UIDetailsUpdateTaskGeneralCloud(const CCloudMachine &comCloudMachine, UIExtraDataMetaDefs::DetailsElementOptionTypeGeneral fOptions)
+        : UIDetailsUpdateTask(comCloudMachine), m_fOptions(fOptions) {}
 
 private:
 
@@ -186,26 +186,6 @@ public:
     /** Constructs update task passing @a comMachine to the base-class. */
     UIDetailsUpdateTaskSystem(const CMachine &comMachine, UIExtraDataMetaDefs::DetailsElementOptionTypeSystem fOptions)
         : UIDetailsUpdateTask(comMachine), m_fOptions(fOptions) {}
-
-private:
-
-    /** Contains update task body. */
-    void run();
-
-    /** Holds the options. */
-    UIExtraDataMetaDefs::DetailsElementOptionTypeSystem m_fOptions;
-};
-
-/** UITask extension used as update task for the details-element type 'System' of cloud VM. */
-class UIDetailsUpdateTaskSystemCloud : public UIDetailsUpdateTask
-{
-    Q_OBJECT;
-
-public:
-
-    /** Constructs update task passing @a guiCloudMachine to the base-class. */
-    UIDetailsUpdateTaskSystemCloud(const UICloudMachine &guiCloudMachine, UIExtraDataMetaDefs::DetailsElementOptionTypeSystem fOptions)
-        : UIDetailsUpdateTask(guiCloudMachine), m_fOptions(fOptions) {}
 
 private:
 
@@ -284,26 +264,6 @@ public:
     /** Constructs update task passing @a comMachine to the base-class. */
     UIDetailsUpdateTaskStorage(const CMachine &comMachine, UIExtraDataMetaDefs::DetailsElementOptionTypeStorage fOptions)
         : UIDetailsUpdateTask(comMachine), m_fOptions(fOptions) {}
-
-private:
-
-    /** Contains update task body. */
-    void run();
-
-    /** Holds the options. */
-    UIExtraDataMetaDefs::DetailsElementOptionTypeStorage m_fOptions;
-};
-
-/** UITask extension used as update task for the details-element type 'Storage' of cloud VM. */
-class UIDetailsUpdateTaskStorageCloud : public UIDetailsUpdateTask
-{
-    Q_OBJECT;
-
-public:
-
-    /** Constructs update task passing @a guiCloudMachine to the base-class. */
-    UIDetailsUpdateTaskStorageCloud(const UICloudMachine &guiCloudMachine, UIExtraDataMetaDefs::DetailsElementOptionTypeStorage fOptions)
-        : UIDetailsUpdateTask(guiCloudMachine), m_fOptions(fOptions) {}
 
 private:
 

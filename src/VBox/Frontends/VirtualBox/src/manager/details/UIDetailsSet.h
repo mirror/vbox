@@ -22,13 +22,13 @@
 #endif
 
 /* GUI includes: */
-#include "UICloudMachine.h"
 #include "UIDetailsItem.h"
 #include "UIExtraDataDefs.h"
 #include "UISettingsDefs.h"
 
 /* COM includes: */
 #include "COMEnums.h"
+#include "CCloudMachine.h"
 #include "CMachine.h"
 
 /* Forward declarations: */
@@ -60,9 +60,9 @@ public:
         void buildSet(UIVirtualMachineItem *pMachineItem, bool fFullSet, const QMap<DetailsElementType, bool> &settings);
 
         /** Returns cached machine. */
-        const CMachine &machine() const { return m_machine; }
+        const CMachine &machine() const { return m_comMachine; }
         /** Returns cached cloud machine. */
-        const UICloudMachine &cloudMachine() const { return m_cloudMachine; }
+        const CCloudMachine &cloudMachine() const { return m_comCloudMachine; }
 
         /** Returns whether set is of local type. */
         bool isLocal() const { return m_fIsLocal; }
@@ -203,9 +203,9 @@ private:
         QMap<DetailsElementType, bool>  m_settings;
 
         /** Holds the machine reference. */
-        CMachine        m_machine;
+        CMachine       m_comMachine;
         /** Holds the cloud machine reference. */
-        UICloudMachine  m_cloudMachine;
+        CCloudMachine  m_comCloudMachine;
 
         /** Holds whether set is of local type. */
         bool                      m_fIsLocal;

@@ -26,7 +26,7 @@
 #include "UITextTable.h"
 
 /* Forward declarations: */
-class UICloudMachine;
+class CCloudMachine;
 class CMachine;
 
 /** Details generation namespace. */
@@ -35,13 +35,10 @@ namespace UIDetailsGenerator
     SHARED_LIBRARY_STUFF UITextTable generateMachineInformationGeneral(CMachine &comMachine,
                                                                        const UIExtraDataMetaDefs::DetailsElementOptionTypeGeneral &fOptions);
 
-    SHARED_LIBRARY_STUFF UITextTable generateMachineInformationGeneral(UICloudMachine &guiCloudMachine,
+    SHARED_LIBRARY_STUFF UITextTable generateMachineInformationGeneral(CCloudMachine &comCloudMachine,
                                                                        const UIExtraDataMetaDefs::DetailsElementOptionTypeGeneral &fOptions);
 
     SHARED_LIBRARY_STUFF UITextTable generateMachineInformationSystem(CMachine &comMachine,
-                                                                      const UIExtraDataMetaDefs::DetailsElementOptionTypeSystem &fOptions);
-
-    SHARED_LIBRARY_STUFF UITextTable generateMachineInformationSystem(UICloudMachine &guiCloudMachine,
                                                                       const UIExtraDataMetaDefs::DetailsElementOptionTypeSystem &fOptions);
 
     SHARED_LIBRARY_STUFF UITextTable generateMachineInformationDisplay(CMachine &comMachine,
@@ -50,9 +47,6 @@ namespace UIDetailsGenerator
     SHARED_LIBRARY_STUFF UITextTable generateMachineInformationStorage(CMachine &comMachine,
                                                                        const UIExtraDataMetaDefs::DetailsElementOptionTypeStorage &fOptions,
                                                                        bool fLink = true);
-
-    SHARED_LIBRARY_STUFF UITextTable generateMachineInformationStorage(UICloudMachine &guiCloudMachine,
-                                                                       const UIExtraDataMetaDefs::DetailsElementOptionTypeStorage &fOptions);
 
     SHARED_LIBRARY_STUFF UITextTable generateMachineInformationAudio(CMachine &comMachine,
                                                                      const UIExtraDataMetaDefs::DetailsElementOptionTypeAudio &fOptions);

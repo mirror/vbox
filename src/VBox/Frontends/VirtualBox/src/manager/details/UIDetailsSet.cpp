@@ -84,7 +84,7 @@ void UIDetailsSet::buildSet(UIVirtualMachineItem *pMachineItem, bool fFullSet, c
             case UIVirtualMachineItem::ItemType_Local:
             {
                 /* Get local machine: */
-                m_machine = m_pMachineItem->toLocal()->machine();
+                m_comMachine = m_pMachineItem->toLocal()->machine();
 
                 /* Compose a list of types to build: */
                 if (m_fFullSet)
@@ -96,8 +96,8 @@ void UIDetailsSet::buildSet(UIVirtualMachineItem *pMachineItem, bool fFullSet, c
                     types << DetailsElementType_General << DetailsElementType_System << DetailsElementType_Preview;
 
                 /* Take into account USB controller restrictions: */
-                const CUSBDeviceFilters &filters = m_machine.GetUSBDeviceFilters();
-                if (filters.isNull() || !m_machine.GetUSBProxyAvailable())
+                const CUSBDeviceFilters &filters = m_comMachine.GetUSBDeviceFilters();
+                if (filters.isNull() || !m_comMachine.GetUSBProxyAvailable())
                     m_settings.remove(DetailsElementType_USB);
 
                 break;
@@ -105,10 +105,10 @@ void UIDetailsSet::buildSet(UIVirtualMachineItem *pMachineItem, bool fFullSet, c
             case UIVirtualMachineItem::ItemType_CloudReal:
             {
                 /* Get cloud machine: */
-//                m_cloudMachine = m_pMachineItem->toCloud()->machine();
+                m_comCloudMachine = m_pMachineItem->toCloud()->machine();
 
                 /* Compose a list of types to build: */
-                types << DetailsElementType_General << DetailsElementType_System << DetailsElementType_Storage;
+                types << DetailsElementType_General;
 
                 break;
             }
@@ -564,7 +564,7 @@ int UIDetailsSet::minimumHeightHint() const
 void UIDetailsSet::sltMachineStateChange(const QUuid &uId)
 {
     /* Is this our VM changed? */
-    if (m_machine.GetId() != uId)
+    if (m_comMachine.GetId() != uId)
         return;
 
     /* Update appearance: */
@@ -574,7 +574,7 @@ void UIDetailsSet::sltMachineStateChange(const QUuid &uId)
 void UIDetailsSet::sltMachineAttributesChange(const QUuid &uId)
 {
     /* Is this our VM changed? */
-    if (m_machine.GetId() != uId)
+    if (m_comMachine.GetId() != uId)
         return;
 
     /* Update appearance: */
@@ -586,7 +586,7 @@ void UIDetailsSet::sltMediumEnumerated(const QUuid &uId)
     /* Is this our medium changed? */
     const UIMedium guiMedium = uiCommon().medium(uId);
     if (   guiMedium.isNull()
-        || !guiMedium.machineIds().contains(m_machine.GetId()))
+        || !guiMedium.machineIds().contains(m_comMachine.GetId()))
         return;
 
     /* Update appearance: */
