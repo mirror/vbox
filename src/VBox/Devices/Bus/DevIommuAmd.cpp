@@ -2071,6 +2071,14 @@ static void iommuAmdDecodeBufferLength(uint8_t uEncodedLen, uint32_t *pcEntries,
 }
 
 
+DECLINLINE(IOMMU_STATUS_T) iommuAmdGetStatus(PCIOMMU pThis)
+{
+    IOMMU_STATUS_T Status;
+    Status.u64 = ASMAtomicReadU64((volatile uint64_t *)&pThis->Status.u64);
+    return Status;
+}
+
+
 /**
  * Logs if the buffer length is invalid.
  *
@@ -2130,8 +2138,29 @@ static VBOXSTRICTRC iommuAmdCmdBufBar_w(PPDMDEVINS pDevIns, PIOMMU pThis, uint32
 static VBOXSTRICTRC iommuAmdEvtLogBar_w(PPDMDEVINS pDevIns, PIOMMU pThis, uint32_t iReg, uint64_t u64Value)
 {
     RT_NOREF(pDevIns, iReg);
+
+    /*
+     * IOMMU behavior is undefined when software writes this register when event logging is running.
+     * In our emulation, we ignore the write entirely.
+     * See AMD IOMMU spec. "Event Log Base Address Register".
+     */
+    IOMMU_STATUS_T const Status = iommuAmdGetStatus(pThis);
+    if (Status.n.u1EvtLogRunning)
+    {
+        Log((IOMMU_LOG_PFX ": Setting EvtLogBar (%#RX64) when event logging is running -> Ignored\n", u64Value));
+        return VINF_SUCCESS;
+    }
+
     pThis->EvtLogBaseAddr.u64 = u64Value & IOMMU_EVT_LOG_BAR_VALID_MASK;
     iommuAmdCheckBufferLength(pThis->EvtLogBaseAddr.n.u4EvtLen, __PRETTY_FUNCTION__);
+
+    /*
+     * Writing the event log base address, clears the event log head and tail pointers.
+     * See AMD spec. 2.5 "Event Logging".
+     */
+    pThis->EvtLogHeadPtr.u64 = 0;
+    pThis->EvtLogTailPtr.u64 = 0;
+
     return VINF_SUCCESS;
 }
 
@@ -2270,7 +2299,7 @@ static VBOXSTRICTRC iommuAmdCmdBufHeadPtr_w(PPDMDEVINS pDevIns, PIOMMU pThis, ui
      * In our emulation, we ignore the write entirely.
      * See AMD IOMMU spec. 3.3.13 "Command and Event Log Pointer Registers".
      */
-    IOMMU_STATUS_T const Status = pThis->Status;
+    IOMMU_STATUS_T const Status = iommuAmdGetStatus(pThis);
     if (Status.n.u1CmdBufRunning)
     {
         Log((IOMMU_LOG_PFX ": Setting CmdBufHeadPtr (%#RX64) when command buffer is running -> Ignored\n", u64Value));
@@ -2287,7 +2316,8 @@ static VBOXSTRICTRC iommuAmdCmdBufHeadPtr_w(PPDMDEVINS pDevIns, PIOMMU pThis, ui
     iommuAmdDecodeBufferLength(CmdBufBar.n.u4CmdLen, NULL, &cbBuf);
     if (offBuf >= cbBuf)
     {
-        Log((IOMMU_LOG_PFX ": Setting CmdBufHeadPtr (%#RX32) to a value that exceeds buffer length -> Ignored\n", offBuf, cbBuf));
+        Log((IOMMU_LOG_PFX ": Setting CmdBufHeadPtr (%#RX32) to a value that exceeds buffer length (%#RX23) -> Ignored\n",
+             offBuf, cbBuf));
         return VINF_SUCCESS;
     }
 
