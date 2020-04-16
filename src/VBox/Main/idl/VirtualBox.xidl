@@ -26747,6 +26747,18 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </param>
     </method>
 
+    <method name="getDetailsForm" const="yes">
+      <desc>
+        Obtain a form with the current settings for this cloud
+        machine.  The form is not editable. 
+      </desc>
+      <param name="form" type="IForm" dir="return">
+        <desc>
+          A form with the cloud machine settings.
+        </desc>
+      </param>
+    </method>
+
     <method name="getSettingsForm">
       <desc>
         Obtain a form with settings for this cloud machine.
