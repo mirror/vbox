@@ -570,6 +570,14 @@ int main(int argc, char *argv[])
 
             /* Services */
 
+            case VBOXCLIENT_OPT_CHECKHOSTVERSION:
+            {
+                if (g_pService)
+                    return vbclSyntaxOnlyOneService();
+                g_pService = VBClGetHostVersionService();
+                break;
+            }
+
 #ifdef VBOX_WITH_SHARED_CLIPBOARD
             case VBOXCLIENT_OPT_CLIPBOARD:
             {
