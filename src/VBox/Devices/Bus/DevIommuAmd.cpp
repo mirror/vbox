@@ -2214,10 +2214,10 @@ static VBOXSTRICTRC iommuAmdHwEvtStatus_w(PPDMDEVINS pDevIns, PIOMMU pThis, uint
     uint64_t HwStatus = pThis->HwEvtStatus.u64;
     if (!(HwStatus & RT_BIT(0)))
         return VINF_SUCCESS;
-    if (u64Value & HwStatus & RT_BIT(0))
-        HwStatus &= ~RT_BIT(0);
-    if (u64Value & HwStatus & RT_BIT(1))
-        HwStatus &= ~RT_BIT(1);
+    if (u64Value & HwStatus & RT_BIT_64(0))
+        HwStatus &= ~RT_BIT_64(0);
+    if (u64Value & HwStatus & RT_BIT_64(1))
+        HwStatus &= ~RT_BIT_64(1);
     pThis->HwEvtStatus.u64 = HwStatus;
     return VINF_SUCCESS;
 }
