@@ -1192,7 +1192,67 @@ static int vbsvcAutomounterQueryMountPoint(const char *pszMountPoint, const char
             rc = GetLastError();
             if (rc != ERROR_PATH_NOT_FOUND || g_cVerbosity >= 4)
                 VGSvcVerbose(3, "vbsvcAutomounterQueryMountPoint: GetVolumeInformationW('%ls',,,,) failed: %u\n", pwszMountPoint, rc);
-            rc = VWRN_NOT_FOUND;
+            if (rc == ERROR_PATH_NOT_FOUND)
+                rc = VWRN_NOT_FOUND;
+            else if (   RT_C_IS_ALPHA(pszMountPoint[0])
+                     && pszMountPoint[1] == ':'
+                     && (   pszMountPoint[2] == '\0'
+                         || (RTPATH_IS_SLASH(pszMountPoint[2]) && pszMountPoint[3] == '\0')))
+            {
+                /* See whether QueryDosDeviceW thinks its a malfunctioning shared folder or
+                   something else (it doesn't access the file system).  We've seen
+                   VERR_NET_HOST_NOT_FOUND here for shared folders that was removed on the
+                   host side.
+
+                   Note! This duplicates code from vbsvcAutomounterPopulateTable. */
+                rc = VERR_ACCESS_DENIED;
+                static const char s_szDevicePath[] = "\\Device\\VBoxMiniRdr\\;";
+                wszFileSystem[0] = pwszMountPoint[0];
+                wszFileSystem[1] = pwszMountPoint[1];
+                wszFileSystem[2] = '\0';
+                DWORD const cwcResult = QueryDosDeviceW(wszFileSystem, wszLabel, RT_ELEMENTS(wszLabel));
+                if (   cwcResult > sizeof(s_szDevicePath)
+                    && RTUtf16NICmpAscii(wszLabel, RT_STR_TUPLE(s_szDevicePath)) == 0)
+                {
+                    PCRTUTF16 pwsz = &wszLabel[RT_ELEMENTS(s_szDevicePath) - 1];
+                    Assert(pwsz[-1] == ';');
+                    if (   (pwsz[0] & ~(RTUTF16)0x20) == (wszFileSystem[0] & ~(RTUTF16)0x20)
+                        && pwsz[1] == ':'
+                        && pwsz[2] == '\\')
+                    {
+                        if (RTUtf16NICmpAscii(&pwsz[3], RT_STR_TUPLE("VBoxSvr\\")) == 0)
+                        {
+                            pwsz += 3 + 8;
+                            char *pszMountedName = NULL;
+                            rc = RTUtf16ToUtf8(pwsz, &pszMountedName);
+                            if (RT_SUCCESS(rc))
+                            {
+                                if (RTStrICmp(pszMountedName, pszName) == 0)
+                                {
+                                    rc = VINF_SUCCESS;
+                                    VGSvcVerbose(2, "vbsvcAutomounterQueryMountPoint: Found shared folder '%s' at '%s' (using QueryDosDeviceW).\n",
+                                                 pszName, pszMountPoint);
+                                }
+                                else
+                                {
+                                    VGSvcVerbose(2, "vbsvcAutomounterQueryMountPoint: Found shared folder '%s' at '%s' (using QueryDosDeviceW), not '%s'...\n",
+                                                 pszMountedName, pszMountPoint, pszName);
+                                    rc = VERR_RESOURCE_BUSY;
+                                }
+                                RTStrFree(pszMountedName);
+                            }
+                            else
+                            {
+                                VGSvcVerbose(2, "vbsvcAutomounterQueryMountPoint: RTUtf16ToUtf8 failed: %Rrc\n", rc);
+                                AssertRC(rc);
+                                rc = VERR_RESOURCE_BUSY;
+                            }
+                        }
+                    }
+                }
+            }
+            else
+                rc = VERR_ACCESS_DENIED;
         }
         RTUtf16Free(pwszMountPoint);
     }
