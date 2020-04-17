@@ -33,7 +33,6 @@
 
 #include <iprt/asm.h>
 #include <iprt/string.h>
-#include <iprt/err.h>
 #include <VBox/err.h>
 
 
@@ -46,24 +45,27 @@
 static const RTSTATUSMSG  g_aStatusMsgs[] =
 {
 #if !defined(IPRT_NO_ERROR_DATA) && !defined(DOXYGEN_RUNNING)
-# include "errmsgdata.h"
+# include "errmsgdata-sorted.h"
 #else
     { "Success.", "Success.", "VINF_SUCCESS", 0 },
 #endif
-    { NULL, NULL, NULL, 0 }
 };
 
 
 /** Temporary buffers to format unknown messages in.
  * @{
  */
-static char                 g_aszUnknownStr[4][64];
-static RTSTATUSMSG          g_aUnknownMsgs[4] =
+static char                 g_aszUnknownStr[8][64];
+static RTSTATUSMSG          g_aUnknownMsgs[8] =
 {
     { &g_aszUnknownStr[0][0], &g_aszUnknownStr[0][0], &g_aszUnknownStr[0][0], 0 },
     { &g_aszUnknownStr[1][0], &g_aszUnknownStr[1][0], &g_aszUnknownStr[1][0], 0 },
     { &g_aszUnknownStr[2][0], &g_aszUnknownStr[2][0], &g_aszUnknownStr[2][0], 0 },
-    { &g_aszUnknownStr[3][0], &g_aszUnknownStr[3][0], &g_aszUnknownStr[3][0], 0 }
+    { &g_aszUnknownStr[3][0], &g_aszUnknownStr[3][0], &g_aszUnknownStr[3][0], 0 },
+    { &g_aszUnknownStr[4][0], &g_aszUnknownStr[4][0], &g_aszUnknownStr[4][0], 0 },
+    { &g_aszUnknownStr[5][0], &g_aszUnknownStr[5][0], &g_aszUnknownStr[5][0], 0 },
+    { &g_aszUnknownStr[6][0], &g_aszUnknownStr[6][0], &g_aszUnknownStr[6][0], 0 },
+    { &g_aszUnknownStr[7][0], &g_aszUnknownStr[7][0], &g_aszUnknownStr[7][0], 0 },
 };
 /** Last used index in g_aUnknownMsgs. */
 static volatile uint32_t    g_iUnknownMsgs;
@@ -78,31 +80,38 @@ static volatile uint32_t    g_iUnknownMsgs;
  */
 RTDECL(PCRTSTATUSMSG) RTErrGet(int rc)
 {
-    unsigned iFound = ~0U;
-    unsigned i;
-    for (i = 0; i < RT_ELEMENTS(g_aStatusMsgs) - 1; i++)
+    /*
+     * Perform binary search (duplicate code in RTErrWinGet).
+     */
+    size_t iStart = 0;
+    size_t iEnd   = RT_ELEMENTS(g_aStatusMsgs);
+    for (;;)
     {
-        if (g_aStatusMsgs[i].iCode == rc)
+        size_t i = iStart + (iEnd - iStart) / 2;
+        int const iCode = g_aStatusMsgs[i].iCode;
+        if (rc < iCode)
         {
-            /*
-             * Found a match.
-             * Since this isn't a unique key, we must check that it's not
-             * one of those start/end #defines before we return.
-             */
-#define STR_ENDS_WITH(a_psz, a_cch, a_sz) \
-    ( (a_cch) >= sizeof(a_sz) && !strncmp((a_psz) + (a_cch) - sizeof(a_sz) + 1, RT_STR_TUPLE(a_sz)) )
-            size_t const cchDefine = strlen(g_aStatusMsgs[i].pszDefine);
-            if (   !STR_ENDS_WITH(g_aStatusMsgs[i].pszDefine, cchDefine, "_FIRST")
-                && !STR_ENDS_WITH(g_aStatusMsgs[i].pszDefine, cchDefine, "_LAST")
-                && !STR_ENDS_WITH(g_aStatusMsgs[i].pszDefine, cchDefine, "_LOWEST")
-                && !STR_ENDS_WITH(g_aStatusMsgs[i].pszDefine, cchDefine, "_HIGHEST")
-               )
-                return &g_aStatusMsgs[i];
-            iFound = i;
+            if (iStart < i)
+                iEnd = i;
+            else
+                break;
         }
+        else if (rc > iCode)
+        {
+            i++;
+            if (i < iEnd)
+                iStart = i;
+            else
+                break;
+        }
+        else
+            return &g_aStatusMsgs[i];
     }
-    if (iFound != ~0U)
-        return &g_aStatusMsgs[iFound];
+
+#ifdef RT_STRICT
+    for (size_t i = 0; i < RT_ELEMENTS(g_aStatusMsgs); i++)
+        Assert(g_aStatusMsgs[i].iCode != rc);
+#endif
 
     /*
      * Need to use the temporary stuff.

@@ -26,8 +26,8 @@
 
 --license-ose-dual
 
-
 /common/asn1/oiddb.cfg: --treat-as Makefile
+/common/err/errmsg.cpp: --no-fix-err-h
 
 # Skip test certificates.
 --filter-out-files /testcase/tstRTCrX509*.pem

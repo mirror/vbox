@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * IPRT - Status code messages, Windows, sorter build program.
+ * IPRT - Status code messages, sorter build program.
  */
 
 /*
@@ -28,51 +28,33 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
-#include <iprt/win/windows.h>
-
-#include <iprt/errcore.h>
+#include <iprt/err.h>
 #include <iprt/asm.h>
 #include <iprt/string.h>
+#include <VBox/err.h>
 
 #include <stdio.h>
 #include <stdlib.h>
 
 
 /*********************************************************************************************************************************
-*   Defined Constants And Macros                                                                                                 *
-*********************************************************************************************************************************/
-/* This is define casts the result to DWORD, whereas HRESULT and RTWINERRMSG
-   are using long, causing newer compilers to complain. */
-#undef _NDIS_ERROR_TYPEDEF_
-#define _NDIS_ERROR_TYPEDEF_(lErr) (long)(lErr)
-
-
-/*********************************************************************************************************************************
-*   Defined Constants And Macros                                                                                                 *
-*********************************************************************************************************************************/
-typedef long VBOXSTATUSTYPE; /* used by errmsgvboxcomdata.h */
-
-
-/*********************************************************************************************************************************
 *   Global Variables                                                                                                             *
 *********************************************************************************************************************************/
-static RTWINERRMSG  g_aStatusMsgs[] =
+static RTSTATUSMSG g_aStatusMsgs[] =
 {
 #if !defined(IPRT_NO_ERROR_DATA) && !defined(DOXYGEN_RUNNING)
-# include "errmsgwindata.h"
-# if defined(VBOX) && !defined(IN_GUEST)
-#  include "errmsgvboxcomdata.h"
-# endif
+# include "errmsgdata.h"
+#else
+    { "Success.", "Success.", "VINF_SUCCESS", 0 },
 #endif
-    { "Success.", "ERROR_SUCCESS", 0 },
 };
 
 
 /** qsort callback. */
-static int CompareWinErrMsg(const void *pv1, const void *pv2)
+static int CompareErrMsg(const void *pv1, const void *pv2)
 {
-    PCRTWINERRMSG p1 = (PCRTWINERRMSG)pv1;
-    PCRTWINERRMSG p2 = (PCRTWINERRMSG)pv2;
+    PCRTSTATUSMSG p1 = (PCRTSTATUSMSG)pv1;
+    PCRTSTATUSMSG p2 = (PCRTSTATUSMSG)pv2;
     int iDiff;
     if (p1->iCode < p2->iCode)
         iDiff = -1;
@@ -81,6 +63,42 @@ static int CompareWinErrMsg(const void *pv1, const void *pv2)
     else
         iDiff = 0;
     return iDiff;
+}
+
+
+/**
+ * Checks whether @a pszDefine is a deliberate duplicate define that should be
+ * omitted.
+ */
+static bool IgnoreDuplicateDefine(const char *pszDefine)
+{
+    size_t const cchDefine = strlen(pszDefine);
+
+    static const RTSTRTUPLE s_aTails[] =
+    {
+        { RT_STR_TUPLE("_FIRST") },
+        { RT_STR_TUPLE("_LAST") },
+        { RT_STR_TUPLE("_HIGEST") },
+        { RT_STR_TUPLE("_LOWEST") },
+    };
+    for (size_t i = 0; i < RT_ELEMENTS(s_aTails); i++)
+        if (   cchDefine > s_aTails[i].cch
+            && memcmp(&pszDefine[cchDefine - s_aTails[i].cch], s_aTails[i].psz, s_aTails[i].cch) == 0)
+            return true;
+
+    static const RTSTRTUPLE s_aDeliberateOrSilly[] =
+    {
+        { RT_STR_TUPLE("VERR_VRDP_TIMEOUT") },
+        { RT_STR_TUPLE("VINF_VRDP_SUCCESS") },
+        { RT_STR_TUPLE("VWRN_CONTINUE_RECOMPILE") },
+        { RT_STR_TUPLE("VWRN_PATM_CONTINUE_SEARCH") },
+    };
+    for (size_t i = 0; i < RT_ELEMENTS(s_aDeliberateOrSilly); i++)
+        if (   cchDefine == s_aDeliberateOrSilly[i].cch
+            && memcmp(pszDefine, s_aDeliberateOrSilly[i].psz, cchDefine) == 0)
+            return true;
+
+    return false;
 }
 
 
@@ -144,7 +162,7 @@ int main(int argc, char **argv)
     /*
      * Sort the table.
      */
-    qsort(g_aStatusMsgs, RT_ELEMENTS(g_aStatusMsgs), sizeof(g_aStatusMsgs[0]), CompareWinErrMsg);
+    qsort(g_aStatusMsgs, RT_ELEMENTS(g_aStatusMsgs), sizeof(g_aStatusMsgs[0]), CompareErrMsg);
 
     /*
      * Prepare output file.
@@ -158,32 +176,39 @@ int main(int argc, char **argv)
         /*
          * Print the table.
          */
-        static char s_szMsgTmp[_256K];
-        long iPrev = (long)0x80000000;
+        static char s_szMsgTmp1[_32K];
+        static char s_szMsgTmp2[_64K];
+        int iPrev = INT32_MAX;
         for (size_t i = 0; i < RT_ELEMENTS(g_aStatusMsgs); i++)
         {
-            PCRTWINERRMSG pMsg = &g_aStatusMsgs[i];
+            PCRTSTATUSMSG pMsg = &g_aStatusMsgs[i];
 
-            /* Paranoid ERROR_SUCCESS handling: */
-            if (pMsg->iCode > 0 && iPrev < 0)
-                fprintf(pOut, "/*%#010lx:*/ { \"Success.\", \"ERROR_SUCCESS\", 0 }\n", (unsigned long)0);
-            else if (pMsg->iCode == 0 && iPrev == 0)
-                continue;
-
-            /* Deal with duplicates in a gentle manner: */
+            /* Deal with duplicates, trying to eliminate unnecessary *_FIRST, *_LAST,
+               *_LOWEST, and *_HIGHEST entries as well as some deliberate duplicate entries.
+               This means we need to look forward and backwards here. */
             if (pMsg->iCode == iPrev && i != 0)
             {
-                PCRTWINERRMSG pPrev = &g_aStatusMsgs[i - 1];
-                if (strcmp(pMsg->pszDefine, pPrev->pszDefine) == 0)
+                if (IgnoreDuplicateDefine(pMsg->pszDefine))
                     continue;
+                PCRTSTATUSMSG pPrev = &g_aStatusMsgs[i - 1];
                 fprintf(stderr, "%s: warning: Duplicate value %#lx (%ld) - %s and %s\n",
                         argv[0], (unsigned long)iPrev, iPrev, pMsg->pszDefine, pPrev->pszDefine);
+            }
+            else if (i + 1 < RT_ELEMENTS(g_aStatusMsgs))
+            {
+                PCRTSTATUSMSG pNext = &g_aStatusMsgs[i];
+                if (   pMsg->iCode == pNext->iCode
+                    && IgnoreDuplicateDefine(pMsg->pszDefine))
+                    continue;
             }
             iPrev = pMsg->iCode;
 
             /* Produce the output: */
-            fprintf(pOut, "/*%#010lx:*/ { \"%s\", \"%s\", %ld },\n", (unsigned long)pMsg->iCode,
-                    EscapeString(pMsg->pszMsgFull, s_szMsgTmp, sizeof(s_szMsgTmp)), pMsg->pszDefine, pMsg->iCode);
+            fprintf(pOut, "/*%8d:*/ { \"%s\", \"%s\", \"%s\", %s },\n",
+                    pMsg->iCode,
+                    EscapeString(pMsg->pszMsgShort, s_szMsgTmp1, sizeof(s_szMsgTmp1)),
+                    EscapeString(pMsg->pszMsgFull, s_szMsgTmp2, sizeof(s_szMsgTmp2)),
+                    pMsg->pszDefine, pMsg->pszDefine);
         }
 
         /*

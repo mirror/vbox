@@ -3646,7 +3646,7 @@ endif
 #
 # errmsg.cpp depends on a generated header.
 #
-common/err/errmsg.cpp_DEPS = $(IPRT_OUT_DIR)/errmsgdata.h
+common/err/errmsg.cpp_DEPS = $(IPRT_OUT_DIR)/errmsgdata-sorted.h
 common/err/errmsg.cpp_INCS = $(IPRT_OUT_DIR)
 
 win/errmsgwin.cpp_DEPS = $(IPRT_OUT_DIR)/errmsgwindata-sorted.h
@@ -3672,6 +3672,13 @@ $(IPRT_OUT_DIR)/errmsgdata.h: \
 	$(call MSG_GENERATE,,$@,$(filter %.h,$^))
 	$(QUIET)$(REDIRECT) -wo $@ -- $(SED) -f $< $(filter %.h,$^)
 
+$(IPRT_OUT_DIR)/errmsgdata-sorted.h.ts +| $(IPRT_OUT_DIR)/errmsgdata-sorted.h: \
+		$$(bldRTErrMsgSorter_1_TARGET)
+	$(call MSG_GENERATE,,$@,$<)
+	$(QUIET)"$<" "$(IPRT_OUT_DIR)/errmsgdata-sorted.h.ts"
+	$(QUIET)$(CP) --changed -fv -- "$(IPRT_OUT_DIR)/errmsgdata-sorted.h.ts" "$(IPRT_OUT_DIR)/errmsgdata-sorted.h"
+
+
 $(IPRT_OUT_DIR)/errmsgwindata.h: \
 		$(VBOX_PATH_RUNTIME_SRC)/common/err/errmsgcom.sed \
 		$$(PATH_SDK_$(VBOX_WINPSDK)_INC)/WinError.h \
@@ -3693,16 +3700,26 @@ $(IPRT_OUT_DIR)/errmsgwindata-sorted.h.ts +| $(IPRT_OUT_DIR)/errmsgwindata-sorte
 	$(QUIET)"$<" "$(IPRT_OUT_DIR)/errmsgwindata-sorted.h.ts"
 	$(QUIET)$(CP) --changed -fv -- "$(IPRT_OUT_DIR)/errmsgwindata-sorted.h.ts" "$(IPRT_OUT_DIR)/errmsgwindata-sorted.h"
 
+
+#
+# Sorter for the IPRT status codes.
+#
+BLDPROGS.win += bldRTErrMsgSorter
+bldRTErrMsgSorter_TEMPLATE = VBoxBldProg
+bldRTErrMsgSorter_INCS     = $(IPRT_OUT_DIR)
+bldRTErrMsgSorter_DEPS     = $(IPRT_OUT_DIR)/errmsgdata.h
+bldRTErrMsgSorter_SOURCES  = common/err/errmsg-sorter.cpp
+
 #
 # Sorter for the windows error codes.
 #
 BLDPROGS.win += bldRTErrMsgWinSorter
 bldRTErrMsgWinSorter_TEMPLATE = VBoxBldProg
-bldRTErrMsgWinSorter_SOURCES  = win/errmsgwin-sorter.cpp
-win/errmsgwin-sorter.cpp_INCS = $(IPRT_OUT_DIR)
-win/errmsgwin-sorter.cpp_DEPS = \
+bldRTErrMsgWinSorter_INCS     = $(IPRT_OUT_DIR)
+bldRTErrMsgWinSorter_DEPS     = \
 	$(IPRT_OUT_DIR)/errmsgwindata.h \
 	$(IPRT_OUT_DIR)/errmsgvboxcomdata.h
+bldRTErrMsgWinSorter_SOURCES  = win/errmsgwin-sorter.cpp
 
 
 

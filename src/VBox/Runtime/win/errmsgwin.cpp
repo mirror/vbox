@@ -80,7 +80,7 @@ static volatile uint32_t    g_iUnknownMsgs;
 RTDECL(PCRTWINERRMSG) RTErrWinGet(long rc)
 {
     /*
-     * Perform binary search.
+     * Perform binary search (duplicate code in RTErrGet).
      */
     size_t iStart = 0;
     size_t iEnd   = RT_ELEMENTS(g_aStatusMsgs);
