@@ -846,40 +846,28 @@ void UIVirtualBoxManager::sltPerformPauseOrResumeMachine(bool fPause)
              enmState == KMachineState_LiveSnapshotting))
             continue;
 
-        /* For local machine: */
-        if (pItem->itemType() == UIVirtualMachineItem::ItemType_Local)
-        {
-            /* Open a session to modify VM state: */
-            CSession comSession = uiCommon().openExistingSession(pItem->id());
-            if (comSession.isNull())
-                return;
+        /* Open a session to modify VM state: */
+        CSession comSession = uiCommon().openExistingSession(pItem->id());
+        if (comSession.isNull())
+            return;
 
-            /* Get session console: */
-            CConsole comConsole = comSession.GetConsole();
-            /* Pause/resume VM: */
-            if (fPause)
-                comConsole.Pause();
-            else
-                comConsole.Resume();
-            if (!comConsole.isOk())
-            {
-                if (fPause)
-                    msgCenter().cannotPauseMachine(comConsole);
-                else
-                    msgCenter().cannotResumeMachine(comConsole);
-            }
-
-            /* Unlock machine finally: */
-            comSession.UnlockMachine();
-        }
-        /* For real cloud machine: */
-        else if (pItem->itemType() == UIVirtualMachineItem::ItemType_CloudReal)
+        /* Get session console: */
+        CConsole comConsole = comSession.GetConsole();
+        /* Pause/resume VM: */
+        if (fPause)
+            comConsole.Pause();
+        else
+            comConsole.Resume();
+        if (!comConsole.isOk())
         {
             if (fPause)
-                pItem->toCloud()->pause(this);
+                msgCenter().cannotPauseMachine(comConsole);
             else
-                pItem->toCloud()->resume(this);
+                msgCenter().cannotResumeMachine(comConsole);
         }
+
+        /* Unlock machine finally: */
+        comSession.UnlockMachine();
     }
 }
 
@@ -1058,27 +1046,50 @@ void UIVirtualBoxManager::sltPerformPowerOffMachine()
     /* For each selected item: */
     foreach (UIVirtualMachineItem *pItem, itemsToPowerOff)
     {
-        /* Open a session to modify VM state: */
-        CSession comSession = uiCommon().openExistingSession(pItem->id());
-        if (comSession.isNull())
-            break;
-
-        /* Get session console: */
-        CConsole comConsole = comSession.GetConsole();
-        /* Prepare machine power down: */
-        CProgress comProgress = comConsole.PowerDown();
-        if (!comConsole.isOk())
-            msgCenter().cannotPowerDownMachine(comConsole);
-        else
+        /* For local machine: */
+        if (pItem->itemType() == UIVirtualMachineItem::ItemType_Local)
         {
-            /* Show machine power down progress: */
-            msgCenter().showModalProgressDialog(comProgress, pItem->name(), ":/progress_poweroff_90px.png");
-            if (!comProgress.isOk() || comProgress.GetResultCode() != 0)
-                msgCenter().cannotPowerDownMachine(comProgress, pItem->name());
-        }
+            /* Open a session to modify VM state: */
+            CSession comSession = uiCommon().openExistingSession(pItem->id());
+            if (comSession.isNull())
+                break;
 
-        /* Unlock machine finally: */
-        comSession.UnlockMachine();
+            /* Get session console: */
+            CConsole comConsole = comSession.GetConsole();
+            /* Prepare machine power down: */
+            CProgress comProgress = comConsole.PowerDown();
+            if (!comConsole.isOk())
+                msgCenter().cannotPowerDownMachine(comConsole);
+            else
+            {
+                /* Show machine power down progress: */
+                msgCenter().showModalProgressDialog(comProgress, pItem->name(), ":/progress_poweroff_90px.png");
+                if (!comProgress.isOk() || comProgress.GetResultCode() != 0)
+                    msgCenter().cannotPowerDownMachine(comProgress, pItem->name());
+            }
+
+            /* Unlock machine finally: */
+            comSession.UnlockMachine();
+        }
+        /* For real cloud machine: */
+        else if (pItem->itemType() == UIVirtualMachineItem::ItemType_CloudReal)
+        {
+            /* Acquire cloud machine: */
+            CCloudMachine comCloudMachine = pItem->toCloud()->machine();
+            /* Prepare machine power down: */
+            CProgress comProgress = comCloudMachine.PowerDown();
+            if (!comCloudMachine.isOk())
+                msgCenter().cannotPowerDownMachine(comCloudMachine);
+            else
+            {
+                /* Show machine power down progress: */
+                msgCenter().showModalProgressDialog(comProgress, pItem->name(), ":/progress_poweroff_90px.png");
+                if (!comProgress.isOk() || comProgress.GetResultCode() != 0)
+                    msgCenter().cannotPowerDownMachine(comProgress, pItem->name());
+                /* Update info in any case: */
+                pItem->toCloud()->updateInfoAsync(false /* delayed? */);
+            }
+        }
     }
 }
 
@@ -1991,7 +2002,8 @@ bool UIVirtualBoxManager::isActionEnabled(int iActionIndex, const QList<UIVirtua
         case UIActionIndexST_M_Group_T_Pause:
         case UIActionIndexST_M_Machine_T_Pause:
         {
-            return isAtLeastOneItemStarted(items);
+            return isItemsLocal(items) &&
+                   isAtLeastOneItemStarted(items);
         }
         case UIActionIndexST_M_Group_S_Reset:
         case UIActionIndexST_M_Machine_S_Reset:
@@ -2023,8 +2035,7 @@ bool UIVirtualBoxManager::isActionEnabled(int iActionIndex, const QList<UIVirtua
         case UIActionIndexST_M_Group_M_Close:
         case UIActionIndexST_M_Machine_M_Close:
         {
-            return isItemsLocal(items) &&
-                   isAtLeastOneItemStarted(items);
+            return isAtLeastOneItemStarted(items);
         }
         case UIActionIndexST_M_Group_M_Close_S_Detach:
         case UIActionIndexST_M_Machine_M_Close_S_Detach:
@@ -2048,8 +2059,7 @@ bool UIVirtualBoxManager::isActionEnabled(int iActionIndex, const QList<UIVirtua
         case UIActionIndexST_M_Group_M_Close_S_PowerOff:
         case UIActionIndexST_M_Machine_M_Close_S_PowerOff:
         {
-            return isItemsLocal(items) &&
-                   isActionEnabled(UIActionIndexST_M_Machine_M_Close, items);
+            return isActionEnabled(UIActionIndexST_M_Machine_M_Close, items);
         }
         default:
             break;

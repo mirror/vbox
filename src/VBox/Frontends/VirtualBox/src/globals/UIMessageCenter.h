@@ -294,6 +294,7 @@ public:
     void cannotSaveMachineState(const CProgress &progress, const QString &strMachineName);
     void cannotACPIShutdownMachine(const CConsole &console) const;
     void cannotPowerDownMachine(const CConsole &console) const;
+    void cannotPowerDownMachine(const CCloudMachine &comMachine) const;
     void cannotPowerDownMachine(const CProgress &progress, const QString &strMachineName) const;
     bool confirmStartMultipleMachines(const QString &strNames) const;
     void cannotMoveMachine(const CMachine &machine, QWidget *pParent = 0) const;

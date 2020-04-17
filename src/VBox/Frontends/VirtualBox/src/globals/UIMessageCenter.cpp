@@ -932,6 +932,14 @@ void UIMessageCenter::cannotPowerDownMachine(const CConsole &console) const
           UIErrorString::formatErrorInfo(console));
 }
 
+void UIMessageCenter::cannotPowerDownMachine(const CCloudMachine &comMachine) const
+{
+    error(0, MessageType_Error,
+          tr("Failed to stop the virtual machine <b>%1</b>.")
+             .arg(CCloudMachine(comMachine).GetName()),
+          UIErrorString::formatErrorInfo(comMachine));
+}
+
 void UIMessageCenter::cannotPowerDownMachine(const CProgress &progress, const QString &strMachineName) const
 {
     error(0, MessageType_Error,
