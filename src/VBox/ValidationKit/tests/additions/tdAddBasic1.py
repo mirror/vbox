@@ -258,16 +258,15 @@ class tdAddBasic1(vbox.TestDriver):                                         # py
         #
         if oTestVm.sKind not in ('WindowsNT4', 'Windows2000', 'WindowsXP', 'Windows2003'):
             fRc = self.txsRunTest(oTxsSession, 'VBoxCertUtil.exe', 1 * 60 * 1000, '${CDROM}/cert/VBoxCertUtil.exe',
-                                  ('${CDROM}/cert/VBoxCertUtil.exe', 'add-trusted-publisher', '${CDROM}/cert/vbox-sha1.cer'));
-            if not fRc \
-            or oTxsSession.getResult() is False:
+                                  ('${CDROM}/cert/VBoxCertUtil.exe', 'add-trusted-publisher', '${CDROM}/cert/vbox-sha1.cer'),
+                                  fCheckSessionStatus = True);
+            if not fRc:
                 reporter.error('Error installing SHA1 certificate');
             else:
                 fRc = self.txsRunTest(oTxsSession, 'VBoxCertUtil.exe', 1 * 60 * 1000, '${CDROM}/cert/VBoxCertUtil.exe',
                                       ('${CDROM}/cert/VBoxCertUtil.exe', 'add-trusted-publisher',
-                                       '${CDROM}/cert/vbox-sha256.cer'));
-                if not fRc \
-                or oTxsSession.getResult() is False:
+                                       '${CDROM}/cert/vbox-sha256.cer'), fCheckSessionStatus = True);
+                if not fRc:
                     reporter.error('Error installing SHA256 certificate');
 
         #
@@ -290,7 +289,8 @@ class tdAddBasic1(vbox.TestDriver):                                         # py
                                                   'c:\\Windows\\System32\\reg.exe',
                                                   ('c:\\Windows\\System32\\reg.exe', 'add',
                                                    '"HKLM\\Software\\Microsoft\\Windows\\CurrentVersion\\Setup"',
-                                                   '/v', 'LogLevel', '/t', 'REG_DWORD', '/d', '0xFF'));
+                                                   '/v', 'LogLevel', '/t', 'REG_DWORD', '/d', '0xFF'),
+                                                   fCheckSessionStatus = True);
 
         for sFile in asLogFiles:
             self.txsRmFile(oSession, oTxsSession, sFile, 10 * 1000, fIgnoreErrors = True);
@@ -301,7 +301,7 @@ class tdAddBasic1(vbox.TestDriver):                                         # py
         # Also tell the installer to produce the appropriate log files.
         #
         fRc = self.txsRunTest(oTxsSession, 'VBoxWindowsAdditions.exe', 5 * 60 * 1000, '${CDROM}/VBoxWindowsAdditions.exe',
-                              ('${CDROM}/VBoxWindowsAdditions.exe', '/S', '/l', '/with_autologon'));
+                              ('${CDROM}/VBoxWindowsAdditions.exe', '/S', '/l', '/with_autologon'), fCheckSessionStatus = True);
 
         #
         # Reboot the VM and reconnect the TXS session.
@@ -343,14 +343,14 @@ class tdAddBasic1(vbox.TestDriver):                                         # py
         if oTestVm.sKind.startswith('Debian') \
         or oTestVm.sKind.startswith('Ubuntu'):
             fRc = self.txsRunTest(oTxsSession, 'Installing Kernel headers', 5 * 60 *1000,
-                                  '/usr/bin/apt-get', ('/usr/bin/apt-get', 'install', '-y', 'linux-headers-generic'));
-            if not fRc \
-            or oTxsSession.getResult() is False:
+                                  '/usr/bin/apt-get', ('/usr/bin/apt-get', 'install', '-y', 'linux-headers-generic'),
+                                  fCheckSessionStatus = True);
+            if not fRc:
                 reporter.error('Error installing Kernel headers');
             fRc = self.txsRunTest(oTxsSession, 'Installing Guest Additions depdendencies', 5 * 60 *1000, \
-                                  '/usr/bin/apt-get', ('/usr/bin/apt-get', 'install', '-y', 'build-essential', 'perl'));
-            if not fRc \
-            or oTxsSession.getResult() is False:
+                                  '/usr/bin/apt-get', ('/usr/bin/apt-get', 'install', '-y', 'build-essential', 'perl'),
+                                  fCheckSessionStatus = True);
+            if not fRc:
                 reporter.error('Error installing additional installer dependencies');
         elif oTestVm.sKind.startswith('OL') \
         or   oTestVm.sKind.startswith('Oracle') \
@@ -358,15 +358,15 @@ class tdAddBasic1(vbox.TestDriver):                                         # py
         or   oTestVm.sKind.startswith('Redhat') \
         or   oTestVm.sKind.startswith('Cent'):
             fRc = self.txsRunTest(oTxsSession, 'Installing Kernel headers', 5 * 60 *1000,
-                                  '/usr/bin/yum', ('/usr/bin/yum', '-y', 'install', 'kernel-headers'));
-            if not fRc \
-            or oTxsSession.getResult() is False:
+                                  '/usr/bin/yum', ('/usr/bin/yum', '-y', 'install', 'kernel-headers'),
+                                  fCheckSessionStatus = True);
+            if not fRc:
                 reporter.error('Error installing Kernel headers');
             fRc = self.txsRunTest(oTxsSession, 'Installing Guest Additions depdendencies', 5 * 60 *1000, \
                                   '/usr/bin/yum', ('/usr/bin/yum', '-y', 'install', \
-                                                   'make', 'automake', 'gcc', 'kernel-devel', 'dkms', 'bzip2', 'perl'));
-            if not fRc \
-            or oTxsSession.getResult() is False:
+                                                   'make', 'automake', 'gcc', 'kernel-devel', 'dkms', 'bzip2', 'perl'),
+                                  fCheckSessionStatus = True);
+            if not fRc:
                 reporter.error('Error installing additional installer dependencies');
         else:
             reporter.error('Installing Linux Additions for kind "%s" is not supported yet' % oTestVm.sKind);
@@ -378,9 +378,8 @@ class tdAddBasic1(vbox.TestDriver):                                         # py
             # Also tell the installer to produce the appropriate log files.
             #
             fRc = self.txsRunTest(oTxsSession, 'VBoxLinuxAdditions.run', 5 * 60 * 1000,
-                '/bin/sh', ('/bin/sh', '${CDROM}/VBoxLinuxAdditions.run'));
-            if not fRc \
-            or oTxsSession.getResult() is False:
+                '/bin/sh', ('/bin/sh', '${CDROM}/VBoxLinuxAdditions.run'), fCheckSessionStatus = True);
+            if not fRc:
                 reporter.error('Installing Linux Additions failed (see log file for details)');
 
             #

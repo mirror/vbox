@@ -3719,7 +3719,8 @@ class TestDriver(base.TestDriver):                                              
 
     # pylint: disable=too-many-locals,too-many-arguments
 
-    def txsRunTest(self, oTxsSession, sTestName, cMsTimeout, sExecName, asArgs = (), asAddEnv = (), sAsUser = ""):
+    def txsRunTest(self, oTxsSession, sTestName, cMsTimeout, sExecName, asArgs = (), asAddEnv = (), sAsUser = "",
+                   fCheckSessionStatus = False):
         """
         Executes the specified test task, waiting till it completes or times out.
 
@@ -3730,6 +3731,9 @@ class TestDriver(base.TestDriver):                                              
 
         Returns False if some unexpected task was signalled or we failed to
         submit the job.
+
+        If fCheckSessionStatus is set to True, the overall session status will be
+        taken into account and logged as an error on failure.
         """
         reporter.testStart(sTestName);
         reporter.log2('txsRunTest: cMsTimeout=%u sExecName=%s asArgs=%s' % (cMsTimeout, sExecName, asArgs));
@@ -3743,11 +3747,19 @@ class TestDriver(base.TestDriver):                                              
             while True:
                 oTask = self.waitForTasks(cMsTimeout + 1);
                 if oTask is None:
-                    reporter.log('txsRunTest: waitForTasks timed out');
+                    if fCheckSessionStatus:
+                        reporter.error('txsRunTest: waitForTasks for test "%s" timed out' % (sTestName,));
+                    else:
+                        reporter.log('txsRunTest: waitForTasks for test "%s" timed out' % (sTestName,));
                     break;
                 if oTask is oTxsSession:
-                    fRc = True;
-                    reporter.log('txsRunTest: isSuccess=%s getResult=%s' % (oTxsSession.isSuccess(), oTxsSession.getResult()));
+                    if      fCheckSessionStatus \
+                    and not oTxsSession.isSuccess():
+                        reporter.error('txsRunTest: Test "%s" failed' % (sTestName,));
+                    else:
+                        fRc = True;
+                        reporter.log('txsRunTest: isSuccess=%s getResult=%s' \
+                                     % (oTxsSession.isSuccess(), oTxsSession.getResult()));
                     break;
                 if not self.handleTask(oTask, 'txsRunTest'):
                     break;
