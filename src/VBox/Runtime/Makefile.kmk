@@ -3647,7 +3647,7 @@ endif
 common/err/errmsg.cpp_DEPS = $(IPRT_OUT_DIR)/errmsgdata.h
 common/err/errmsg.cpp_INCS = $(IPRT_OUT_DIR)
 
-win/errmsgwin.cpp_DEPS = $(IPRT_OUT_DIR)/errmsgcomdata.h
+win/errmsgwin.cpp_DEPS = $(IPRT_OUT_DIR)/errmsgwindata-sorted.h
 win/errmsgwin.cpp_INCS = $(IPRT_OUT_DIR)
 
 # Our COM errors only for R3 libraries on the host
@@ -3670,7 +3670,6 @@ $(IPRT_OUT_DIR)/errmsgdata.h: \
 	$(call MSG_GENERATE,,$@,$(filter %.h,$^))
 	$(QUIET)$(REDIRECT) -wo $@ -- $(SED) -f $< $(filter %.h,$^)
 
-## @todo r=bird: rename this to indicate that it's not only COM errors, but all win32/64 errors.
 $(IPRT_OUT_DIR)/errmsgcomdata.h: \
 		$(VBOX_PATH_RUNTIME_SRC)/common/err/errmsgcom.sed \
 		$$(PATH_SDK_$(VBOX_WINPSDK)_INC)/WinError.h \
@@ -3678,13 +3677,31 @@ $(IPRT_OUT_DIR)/errmsgcomdata.h: \
 	$(call MSG_GENERATE,,$@,$(filter %.h,$^))
 	$(QUIET)$(REDIRECT) -wo $@ -- $(SED) -f $< $(filter %.h,$^)
 
-$(IPRT_OUT_DIR)/errmsgvboxcomdata.h.ts +| $(IPRT_OUT_DIR)/errmsgvboxcomdata.h: \
+$(IPRT_OUT_DIR)/errmsgvboxdata.h.ts +| $(IPRT_OUT_DIR)/errmsgvboxcomdata.h: \
 		$(VBOX_PATH_RUNTIME_SRC)/VBox/errmsgvboxcom.xsl \
 		$(VBOX_XIDL_FILE_SRC) \
 		| $$(dir $$@)
 	$(call MSG_GENERATE,,$@,$(filter %.xidl,$^))
 	$(QUIET)$(VBOX_XSLTPROC) -o $(IPRT_OUT_DIR)/errmsgvboxcomdata.h.ts $< $(filter %.xidl,$^)
-	$(QUIET)$(CP) --changed -fv $(IPRT_OUT_DIR)/errmsgvboxcomdata.h.ts $(IPRT_OUT_DIR)/errmsgvboxcomdata.h
+	$(QUIET)$(CP) --changed -fv -- $(IPRT_OUT_DIR)/errmsgvboxcomdata.h.ts $(IPRT_OUT_DIR)/errmsgvboxcomdata.h
+
+$(IPRT_OUT_DIR)/errmsgwindata-sorted.h.ts +| $(IPRT_OUT_DIR)/errmsgwindata-sorted.h: \
+		$$(bldRTErrMsgWinSorter_1_TARGET)
+	$(call MSG_GENERATE,,$@,$<)
+	$(QUIET)"$<" "$(IPRT_OUT_DIR)/errmsgwindata-sorted.h.ts"
+	$(QUIET)$(CP) --changed -fv -- "$(IPRT_OUT_DIR)/errmsgwindata-sorted.h.ts" "$(IPRT_OUT_DIR)/errmsgwindata-sorted.h"
+
+#
+# Sorter for the windows error codes.
+#
+BLDPROGS.win += bldRTErrMsgWinSorter
+bldRTErrMsgWinSorter_TEMPLATE = VBoxBldProg
+bldRTErrMsgWinSorter_SOURCES  = win/errmsgwin-sorter.cpp
+win/errmsgwin-sorter.cpp_INCS = $(IPRT_OUT_DIR)
+win/errmsgwin-sorter.cpp_DEPS = \
+	$(IPRT_OUT_DIR)/errmsgcomdata.h \
+	$(IPRT_OUT_DIR)/errmsgvboxcomdata.h
+
 
 
 if "$(KBUILD_TARGET)" == "freebsd"

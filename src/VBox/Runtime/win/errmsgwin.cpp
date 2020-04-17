@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * IPRT - Status code messages.
+ * IPRT - Status code messages, Windows.
  */
 
 /*
@@ -33,7 +33,6 @@
 #include <iprt/errcore.h>
 #include <iprt/asm.h>
 #include <iprt/string.h>
-#include <iprt/errcore.h>
 
 
 /*********************************************************************************************************************************
@@ -44,28 +43,24 @@
  */
 static const RTWINERRMSG  g_aStatusMsgs[] =
 {
-#if !defined(IPRT_NO_ERROR_DATA) && !defined(DOXYGEN_RUNNING)
-# include "errmsgcomdata.h"
-# if defined(VBOX) && !defined(IN_GUEST)
-#  include "errmsgvboxcomdata.h"
-# endif
-#else
-    { "Success.", "ERROR_SUCCESS", 0 },
-#endif
-    { NULL, NULL, 0 }
+#include "errmsgwindata-sorted.h"
 };
 
 
 /** Temporary buffers to format unknown messages in.
  * @{
  */
-static char                 g_aszUnknownStr[4][64];
-static RTWINERRMSG          g_aUnknownMsgs[4] =
+static char                 g_aszUnknownStr[8][64];
+static RTWINERRMSG          g_aUnknownMsgs[8] =
 {
     { &g_aszUnknownStr[0][0], &g_aszUnknownStr[0][0], 0 },
     { &g_aszUnknownStr[1][0], &g_aszUnknownStr[1][0], 0 },
     { &g_aszUnknownStr[2][0], &g_aszUnknownStr[2][0], 0 },
-    { &g_aszUnknownStr[3][0], &g_aszUnknownStr[3][0], 0 }
+    { &g_aszUnknownStr[3][0], &g_aszUnknownStr[3][0], 0 },
+    { &g_aszUnknownStr[4][0], &g_aszUnknownStr[4][0], 0 },
+    { &g_aszUnknownStr[5][0], &g_aszUnknownStr[5][0], 0 },
+    { &g_aszUnknownStr[6][0], &g_aszUnknownStr[6][0], 0 },
+    { &g_aszUnknownStr[7][0], &g_aszUnknownStr[7][0], 0 },
 };
 /** Last used index in g_aUnknownMsgs. */
 static volatile uint32_t    g_iUnknownMsgs;
@@ -80,23 +75,80 @@ static volatile uint32_t    g_iUnknownMsgs;
  */
 RTDECL(PCRTWINERRMSG) RTErrWinGet(long rc)
 {
-    unsigned i;
-    for (i = 0; i < RT_ELEMENTS(g_aStatusMsgs) - 1U; i++)
-        if (g_aStatusMsgs[i].iCode == rc)
-            return &g_aStatusMsgs[i];
-
-    /* The g_aStatusMsgs table contains a wild mix of error codes with and
-     * without included facility and severity. So the chance is high that there
-     * was no exact match. Try to find a non-exact match, and include the
-     * actual value in case we pick the wrong entry. Better than always using
-     * the "Unknown Status" case. */
-    for (i = 0; i < RT_ELEMENTS(g_aStatusMsgs) - 1U; i++)
-        if (g_aStatusMsgs[i].iCode == HRESULT_CODE(rc))
+    /*
+     * Perform binary search.
+     */
+    size_t iStart = 0;
+    size_t iEnd   = RT_ELEMENTS(g_aStatusMsgs);
+    for (;;)
+    {
+        size_t i = iStart + (iEnd - iStart) / 2;
+        long const iCode = g_aStatusMsgs[i].iCode;
+        if (rc < iCode)
         {
-            int32_t iMsg = (ASMAtomicIncU32(&g_iUnknownMsgs) - 1) % RT_ELEMENTS(g_aUnknownMsgs);
-            RTStrPrintf(&g_aszUnknownStr[iMsg][0], sizeof(g_aszUnknownStr[iMsg]), "%s 0x%X", g_aStatusMsgs[i].pszDefine, rc);
-            return &g_aUnknownMsgs[iMsg];
+            if (iStart < i)
+                iEnd = i;
+            else
+                break;
         }
+        else if (rc > iCode)
+        {
+            i++;
+            if (i < iEnd)
+                iStart = i;
+            else
+                break;
+        }
+        else
+            return &g_aStatusMsgs[i];
+    }
+
+#ifdef RT_STRICT
+    for (size_t i = 0; i < RT_ELEMENTS(g_aStatusMsgs); i++)
+        Assert(g_aStatusMsgs[i].iCode != rc);
+#endif
+
+    /*
+     * If FACILITY_WIN32 kind of status, look up the win32 code.
+     */
+    if (SCODE_FACILITY(rc) == FACILITY_WIN32)
+    {
+        long const rcWin32 = HRESULT_CODE(rc);
+        iStart = 0;
+        iEnd   = RT_ELEMENTS(g_aStatusMsgs);
+        for (;;)
+        {
+            size_t i = iStart + (iEnd - iStart) / 2;
+            long const iCode = g_aStatusMsgs[i].iCode;
+            if (rcWin32 < iCode)
+            {
+                if (iStart < i)
+                    iEnd = i;
+                else
+                    break;
+            }
+            else if (rcWin32 > iCode)
+            {
+                i++;
+                if (i < iEnd)
+                    iStart = i;
+                else
+                    break;
+            }
+            else
+            {
+                /* Append the incoming rc, so we know it's not a regular WIN32 status: */
+                int32_t iMsg = (ASMAtomicIncU32(&g_iUnknownMsgs) - 1) % RT_ELEMENTS(g_aUnknownMsgs);
+                RTStrPrintf(&g_aszUnknownStr[iMsg][0], sizeof(g_aszUnknownStr[iMsg]), "%s/0x%x", g_aStatusMsgs[i].pszDefine, rc);
+                return &g_aUnknownMsgs[iMsg];
+            }
+        }
+
+#ifdef RT_STRICT
+        for (size_t i = 0; i < RT_ELEMENTS(g_aStatusMsgs); i++)
+            Assert(g_aStatusMsgs[i].iCode != rcWin32);
+#endif
+    }
 
     /*
      * Need to use the temporary stuff.

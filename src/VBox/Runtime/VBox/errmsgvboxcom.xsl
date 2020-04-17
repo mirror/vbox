@@ -65,9 +65,9 @@
     </xsl:choose>
     <xsl:text>", "</xsl:text>
     <xsl:value-of select="@name"/>
-    <xsl:text>", </xsl:text>
+    <xsl:text>", (VBOXSTATUSTYPE)</xsl:text>
     <xsl:value-of select="@value"/>
-    <xsl:text> },&#x0A;</xsl:text>
+    <xsl:text>L },&#x0A;</xsl:text>
   </xsl:for-each>
 </xsl:template>
 
