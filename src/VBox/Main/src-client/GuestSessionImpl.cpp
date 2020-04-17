@@ -2974,7 +2974,7 @@ HRESULT GuestSession::close()
     /* Note: Don't check if the session is ready via i_isReadyExternal() here;
      *       the session (already) could be in a stopped / aborted state. */
 
-    int vrc;
+    int vrc     = VINF_SUCCESS; /* Shut up MSVC. */
     int rcGuest = VINF_SUCCESS;
 
     uint32_t msTimeout = 30 * 1000; /* 30s timeout by default */
