@@ -31,7 +31,7 @@
 
 #include <iprt/cpp/ministring.h>
 #include <exception>
-#if RT_MSC_PREREQ(RT_MSC_VER_VC141)
+#if !defined(DOXYGEN_RUNNING) && RT_MSC_PREREQ(RT_MSC_VER_VC141)
 # pragma warning(push)
 # pragma warning(disable:4275) /* non dll-interface class 'std::exception' used as base for dll-interface class 'RTCError' */
 #endif
