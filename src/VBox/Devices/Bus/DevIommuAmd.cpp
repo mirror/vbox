@@ -1947,10 +1947,6 @@ typedef struct IOMMU
     /** @name MMIO: MSI Capability Block registers.
      * @{ */
     MSI_MISC_INFO_T             MsiMiscInfo;        /**< MSI Misc. info registers / MSI Vector registers. */
-    MSI_CAP_HDR_T               MsiCapHdr;          /**< MSI Capability header register. */
-    MSI_ADDR_T                  MsiAddr;            /**< MSI Address register.*/
-    MSI_DATA_T                  MsiData;            /**< MSI Data register. */
-    MSI_MAP_CAP_HDR_T           MsiMapCapHdr;       /**< MSI Mapping capability header register. */
     /** @} */
 
     /** @name MMIO: Performance Optimization Control registers.
@@ -2325,9 +2321,11 @@ static VBOXSTRICTRC iommuAmdHwEvtStatus_w(PPDMDEVINS pDevIns, PIOMMU pThis, uint
  */
 static VBOXSTRICTRC iommuAmdMsiAddrLo_w(PPDMDEVINS pDevIns, PIOMMU pThis, uint32_t iReg, uint64_t u64Value)
 {
-    RT_NOREF(pDevIns, iReg);
+    RT_NOREF(pThis, iReg);
     Assert(!RT_HI_U32(u64Value));
-    pThis->MsiAddr.au32[0] = u64Value & IOMMU_MSI_ADDR_VALID_MASK;
+    PPDMPCIDEV pPciDev = pDevIns->apPciDevs[0];
+    PDMPCIDEV_ASSERT_VALID(pDevIns, pPciDev);
+    PDMPciDevSetDWord(pPciDev, IOMMU_PCI_OFF_MSI_ADDR_LO, u64Value & IOMMU_MSI_ADDR_VALID_MASK);
     return VINF_SUCCESS;
 }
 
@@ -2337,9 +2335,11 @@ static VBOXSTRICTRC iommuAmdMsiAddrLo_w(PPDMDEVINS pDevIns, PIOMMU pThis, uint32
  */
 static VBOXSTRICTRC iommuAmdMsiAddrHi_w(PPDMDEVINS pDevIns, PIOMMU pThis, uint32_t iReg, uint64_t u64Value)
 {
-    RT_NOREF(pDevIns, iReg);
+    RT_NOREF(pThis, iReg);
     Assert(!RT_HI_U32(u64Value));
-    pThis->MsiAddr.au32[1] = u64Value;
+    PPDMPCIDEV pPciDev = pDevIns->apPciDevs[0];
+    PDMPCIDEV_ASSERT_VALID(pDevIns, pPciDev);
+    PDMPciDevSetDWord(pPciDev, IOMMU_PCI_OFF_MSI_ADDR_HI, u64Value);
     return VINF_SUCCESS;
 }
 
@@ -2349,8 +2349,10 @@ static VBOXSTRICTRC iommuAmdMsiAddrHi_w(PPDMDEVINS pDevIns, PIOMMU pThis, uint32
  */
 static VBOXSTRICTRC iommuAmdMsiData_w(PPDMDEVINS pDevIns, PIOMMU pThis, uint32_t iReg, uint64_t u64Value)
 {
-    RT_NOREF(pDevIns, iReg);
-    pThis->MsiData.u32 = u64Value & IOMMU_MSI_DATA_VALID_MASK;
+    RT_NOREF(pThis, iReg);
+    PPDMPCIDEV pPciDev = pDevIns->apPciDevs[0];
+    PDMPCIDEV_ASSERT_VALID(pDevIns, pPciDev);
+    PDMPciDevSetDWord(pPciDev, IOMMU_PCI_OFF_MSI_DATA, u64Value & IOMMU_MSI_DATA_VALID_MASK);
     return VINF_SUCCESS;
 }
 
@@ -2640,6 +2642,9 @@ static VBOXSTRICTRC iommuAmdReadRegister(PPDMDEVINS pDevIns, uint32_t off, uint6
     Assert(off < IOMMU_MMIO_REGION_SIZE);
     Assert(!(off & 7) || !(off & 3));
 
+    PPDMPCIDEV pPciDev = pDevIns->apPciDevs[0];
+    PDMPCIDEV_ASSERT_VALID(pDevIns, pPciDev);
+
     PIOMMU pThis = PDMDEVINS_2_DATA(pDevIns, PIOMMU);
     Assert(pThis);
 
@@ -2681,11 +2686,41 @@ static VBOXSTRICTRC iommuAmdReadRegister(PPDMDEVINS pDevIns, uint32_t off, uint6
 
         case IOMMU_MMIO_OFF_MSI_VECTOR_0:             uReg = pThis->MsiMiscInfo.u64;            break;
         case IOMMU_MMIO_OFF_MSI_VECTOR_1:             uReg = pThis->MsiMiscInfo.au32[1];        break;
-        case IOMMU_MMIO_OFF_MSI_CAP_HDR:              uReg = RT_MAKE_U64(pThis->MsiCapHdr.u32, pThis->MsiAddr.au32[0]);     break;
-        case IOMMU_MMIO_OFF_MSI_ADDR_LO:              uReg = pThis->MsiAddr.au32[0];            break;
-        case IOMMU_MMIO_OFF_MSI_ADDR_HI:              uReg = RT_MAKE_U64(pThis->MsiAddr.au32[1], pThis->MsiData.u32);       break;
-        case IOMMU_MMIO_OFF_MSI_DATA:                 uReg = pThis->MsiData.u32;                break;
-        case IOMMU_MMIO_OFF_MSI_MAPPING_CAP_HDR:      uReg = RT_MAKE_U64(pThis->MsiMapCapHdr.u32, pThis->PerfOptCtrl.u32);  break;
+        case IOMMU_MMIO_OFF_MSI_CAP_HDR:
+        {
+            uint32_t const uMsiCapHdr = PDMPciDevGetDWord(pPciDev, IOMMU_PCI_OFF_MSI_CAP_HDR);
+            uint32_t const uMsiAddrLo = PDMPciDevGetDWord(pPciDev, IOMMU_PCI_OFF_MSI_ADDR_LO);
+            uReg = RT_MAKE_U64(uMsiCapHdr, uMsiAddrLo);
+            break;
+        }
+        case IOMMU_MMIO_OFF_MSI_ADDR_LO:
+        {
+            uReg = PDMPciDevGetDWord(pPciDev, IOMMU_PCI_OFF_MSI_ADDR_LO);
+            break;
+        }
+        case IOMMU_MMIO_OFF_MSI_ADDR_HI:
+        {
+            uint32_t const uMsiAddrHi = PDMPciDevGetDWord(pPciDev, IOMMU_PCI_OFF_MSI_ADDR_HI);
+            uint32_t const uMsiData   = PDMPciDevGetDWord(pPciDev, IOMMU_PCI_OFF_MSI_DATA);
+            uReg = RT_MAKE_U64(uMsiAddrHi, uMsiData);
+            break;
+        }
+        case IOMMU_MMIO_OFF_MSI_DATA:
+        {
+            uReg = PDMPciDevGetDWord(pPciDev, IOMMU_PCI_OFF_MSI_DATA);
+            break;
+        }
+        case IOMMU_MMIO_OFF_MSI_MAPPING_CAP_HDR:
+        {
+            /*
+             * The PCI spec. lists MSI Mapping Capability 08H as related to HyperTransport capability.
+             * The AMD IOMMU spec. fails to mention it explicitly and lists values for this register as
+             * though HyperTransport is supported. We don't support HyperTransport, we thus just return
+             * 0 for this register.
+             */
+            uReg = RT_MAKE_U64(0, pThis->PerfOptCtrl.u32);
+            break;
+        }
 
         case IOMMU_MMIO_OFF_PERF_OPT_CTRL:            uReg = pThis->PerfOptCtrl.u32;            break;
 
@@ -2866,9 +2901,17 @@ static DECLCALLBACK(VBOXSTRICTRC) iommuAmdR3PciConfigWrite(PPDMDEVINS pDevIns, P
             break;
         }
 
+        case IOMMU_PCI_OFF_MSI_CAP_HDR:
+        {
+            u32Value |= RT_BIT(23);     /* 64-bit MSI addressess must always be enabled for IOMMU. */
+            RT_FALL_THRU();
+        }
+
         default:
+        {
             rcStrict = PDMDevHlpPCIConfigWrite(pDevIns, pPciDev, uAddress, cb, u32Value);
             break;
+        }
     }
 
     IOMMU_UNLOCK(pDevIns, pThis);
@@ -2883,6 +2926,9 @@ static DECLCALLBACK(VBOXSTRICTRC) iommuAmdR3PciConfigWrite(PPDMDEVINS pDevIns, P
  */
 static DECLCALLBACK(void) iommuAmdR3DbgInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *pszArgs)
 {
+    PPDMPCIDEV pPciDev = pDevIns->apPciDevs[0];
+    PDMPCIDEV_ASSERT_VALID(pDevIns, pPciDev);
+
     PCIOMMU pThis = PDMDEVINS_2_DATA(pDevIns, PIOMMU);
     Assert(pThis);
 
@@ -3188,7 +3234,8 @@ static DECLCALLBACK(void) iommuAmdR3DbgInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pH
     }
     /* MSI Capability Header. */
     {
-        MSI_CAP_HDR_T const MsiCapHdr = pThis->MsiCapHdr;
+        MSI_CAP_HDR_T MsiCapHdr;
+        MsiCapHdr.u32 = PDMPciDevGetDWord(pPciDev, IOMMU_PCI_OFF_MSI_CAP_HDR);
         pHlp->pfnPrintf(pHlp, "  MSI Capability Header                   = %#RX32\n",    MsiCapHdr.u32);
         if (fVerbose)
         {
@@ -3201,21 +3248,26 @@ static DECLCALLBACK(void) iommuAmdR3DbgInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pH
     }
     /* MSI Address Register (Lo and Hi). */
     {
-        MSI_ADDR_T const MsiAddr = pThis->MsiAddr;
+        uint32_t const uMsiAddrLo = PDMPciDevGetDWord(pPciDev, IOMMU_PCI_OFF_MSI_ADDR_LO);
+        uint32_t const uMsiAddrHi = PDMPciDevGetDWord(pPciDev, IOMMU_PCI_OFF_MSI_ADDR_HI);
+        MSI_ADDR_T MsiAddr;
+        MsiAddr.u64 = RT_MAKE_U64(uMsiAddrLo, uMsiAddrHi);
         pHlp->pfnPrintf(pHlp, "  MSI Address                             = %#RX64\n",   MsiAddr.u64);
         if (fVerbose)
             pHlp->pfnPrintf(pHlp, "    Address                                 = %#RX64\n", MsiAddr.n.u62MsiAddr);
     }
     /* MSI Data. */
     {
-        MSI_DATA_T const MsiData = pThis->MsiData;
+        MSI_DATA_T MsiData;
+        MsiData.u32 = PDMPciDevGetDWord(pPciDev, IOMMU_PCI_OFF_MSI_DATA);
         pHlp->pfnPrintf(pHlp, "  MSI Data                                = %#RX32\n", MsiData.u32);
         if (fVerbose)
             pHlp->pfnPrintf(pHlp, "    Data                                    = %#x\n",  MsiData.n.u16MsiData);
     }
-    /* MSI Mapping Capability Header. */
+    /* MSI Mapping Capability Header (HyperTransport, reporting all 0s currently). */
     {
-        MSI_MAP_CAP_HDR_T const MsiMapCapHdr = pThis->MsiMapCapHdr;
+        MSI_MAP_CAP_HDR_T MsiMapCapHdr;
+        MsiMapCapHdr.u32 = 0;
         pHlp->pfnPrintf(pHlp, "  MSI Mapping Capability Header           = %#RX32\n",    MsiMapCapHdr.u32);
         if (fVerbose)
         {
@@ -3522,10 +3574,6 @@ static DECLCALLBACK(void) iommuAmdR3Reset(PPDMDEVINS pDevIns)
     pThis->DevSpecificCtrl.u64               = 0;
     pThis->DevSpecificStatus.u64             = 0;
     pThis->MsiMiscInfo.u64                   = 0;
-    pThis->MsiCapHdr.u32                     = PDMPciDevGetDWord(pPciDev, IOMMU_PCI_OFF_MSI_CAP_HDR);
-    pThis->MsiAddr.u64                       = 0;
-    pThis->MsiData.u32                       = 0;
-    pThis->MsiMapCapHdr.u32                  = 0;
     pThis->PerfOptCtrl.u32                   = 0;
     pThis->XtGenIntrCtrl.u64                 = 0;
     pThis->XtPprIntrCtrl.u64                 = 0;
@@ -3551,7 +3599,6 @@ static DECLCALLBACK(void) iommuAmdR3Reset(PPDMDEVINS pDevIns)
 
     PDMPciDevSetDWord(pPciDev, IOMMU_PCI_OFF_BASE_ADDR_REG_LO, 0);
     PDMPciDevSetDWord(pPciDev, IOMMU_PCI_OFF_BASE_ADDR_REG_HI, 0);
-    PDMPciDevSetDWord(pPciDev, IOMMU_PCI_OFF_RANGE_REG,        0);
 }
 
 
@@ -3642,7 +3689,7 @@ static DECLCALLBACK(int) iommuAmdR3Construct(PPDMDEVINS pDevIns, int iInstance, 
     /* Base Address High Register. */
     PDMPciDevSetDWord(pPciDev, IOMMU_PCI_OFF_BASE_ADDR_REG_HI, 0x0);  /* RW - Base address (Hi) */
     /* IOMMU Range Register. */
-    PDMPciDevSetDWord(pPciDev, IOMMU_PCI_OFF_RANGE_REG, 0x0);         /* RW - Range register. */
+    PDMPciDevSetDWord(pPciDev, IOMMU_PCI_OFF_RANGE_REG, 0x0);         /* RW - Range register (implemented as RO by us). */
     /* Misc. Information Register 0. */
     PDMPciDevSetDWord(pPciDev, IOMMU_PCI_OFF_MISCINFO_REG_0,
                         RT_BF_MAKE(IOMMU_BF_MISCINFO_0_MSI_NUM,     0x0)    /* RO - MSI number */
@@ -3654,15 +3701,6 @@ static DECLCALLBACK(int) iommuAmdR3Construct(PPDMDEVINS pDevIns, int iInstance, 
     /* Misc. Information Register 1. */
     PDMPciDevSetDWord(pPciDev, IOMMU_PCI_OFF_MISCINFO_REG_0, 0);
     /* MSI Capability Header register. */
-#if 0
-    PDMPciDevSetDWord(pPciDev, IOMMU_PCI_OFF_MSI_CAP_HDR,
-                        RT_BF_MAKE(IOMMU_BF_MSI_CAPHDR_CAP_ID,       0x5)             /* RO - Capability ID. */
-                      | RT_BF_MAKE(IOMMU_BF_MSI_CAPHDR_CAP_PTR,      offMsiMapCapHdr) /* RO - Offset to next capability block */
-                      | RT_BF_MAKE(IOMMU_BF_MSI_CAPHDR_EN,           0x0)             /* RW - MSI capability enable */
-                      | RT_BF_MAKE(IOMMU_BF_MSI_CAPHDR_MULTMESS_CAP, 0x0)             /* RO - MSI multi-message capability */
-                      | RT_BF_MAKE(IOMMU_BF_MSI_CAPHDR_MULTMESS_EN,  0x0)             /* RW - MSI multi-message enable */
-                      | RT_BF_MAKE(IOMMU_BF_MSI_CAPHDR_64BIT_EN,     0x1));           /* RO - MSI 64-bit enable */
-#else
     PDMMSIREG MsiReg;
     RT_ZERO(MsiReg);
     MsiReg.cMsiVectors    = 1;
@@ -3671,10 +3709,8 @@ static DECLCALLBACK(int) iommuAmdR3Construct(PPDMDEVINS pDevIns, int iInstance, 
     MsiReg.fMsi64bit      = 1; /* 64-bit addressing support is mandatory; See AMD spec. 2.8 "IOMMU Interrupt Support". */
     rc = PDMDevHlpPCIRegisterMsi(pDevIns, &MsiReg);
     AssertRCReturn(rc, rc);
-    /* This is later copied to its MMIO shadow register (MsiCapHdr), see iommuAmdR3Init. */
-#endif
 
-    /* These read-write PCI config registers are initialized in iommuAmdR3Init. */
+    /* MSI Address (Lo, Hi) and MSI data are read-write PCI config registers handled by our generic PCI config space code. */
 #if 0
     /* MSI Address Lo. */
     PDMPciDevSetDWord(pPciDev, IOMMU_PCI_OFF_MSI_ADDR_LO, 0);         /* RW - MSI message address (Lo). */
