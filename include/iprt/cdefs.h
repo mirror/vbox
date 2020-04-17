@@ -218,6 +218,10 @@
 #define RT_MSC_VER_VC120    RT_MSC_VER_VS2013   /**< Visual C++ 12.0, aka Visual Studio 2013. */
 #define RT_MSC_VER_VS2015   (1900)              /**< Visual Studio 2015. */
 #define RT_MSC_VER_VC140    RT_MSC_VER_VS2015   /**< Visual C++ 14.0, aka Visual Studio 2015. */
+#define RT_MSC_VER_VS2017   (1910)              /**< Visual Studio 2017. */
+#define RT_MSC_VER_VC141    RT_MSC_VER_VS2017   /**< Visual C++ 14.1, aka Visual Studio 2017. */
+#define RT_MSC_VER_VS2019   (1920)              /**< Visual Studio 2017. */
+#define RT_MSC_VER_VC142    RT_MSC_VER_VS2019   /**< Visual C++ 14.2, aka Visual Studio 2019. */
 /** @} */
 
 /** @def RT_CLANG_PREREQ
