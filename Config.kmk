@@ -1658,6 +1658,13 @@ ifndef VBOX_NEWER_VCC_TOOL
 endif
 
 #
+# Temporary measure while kBuild / tools updates their define quoting.
+#
+if1of ($(VBOX_VCC_TOOL_STEM), VCC140 VCC141 VCC142)
+ VBOX_WITH_AUTOMATIC_DEFS_QUOTING = 1
+endif
+
+#
 # Default too nonsense.
 #
 ## @todo Remove the default tool crap here!
@@ -3143,7 +3150,8 @@ if1of ($(VBOX_VCC_TOOL_STEM), VCC141 VCC142)
  #    -wd4626: 'SUPDRVTRACERDATA': assignment operator was implicitly defined as deleted
  #    -wd5026: 'SUPDRVTRACERDATA': move constructor was implicitly defined as deleted
  #    -wd5027: 'SUPDRVTRACERDATA': move assignment operator was implicitly defined as deleted
- VBOX_VCC_WARN_ALL += -wd5045 -wd5039 -wd4464 -wd4623 -wd4625 -wd4626 -wd5026 -wd5027
+ #    -wd4435: 'xml::Input': Object layout under /vd2 will change due to virtual base 'xml::Stream'
+ VBOX_VCC_WARN_ALL += -wd5045 -wd5039 -wd4464 -wd4623 -wd4625 -wd4626 -wd5026 -wd5027 -wd4435
 endif
 VBOX_VCC_WARN_ALL += -wd4242 -wd4244
 ifndef VBOX_NEWER_VCC_WARN_ALL
