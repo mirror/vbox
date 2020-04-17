@@ -31,6 +31,11 @@
 
 #include <iprt/cpp/ministring.h>
 #include <exception>
+#if RT_MSC_PREREQ(RT_MSC_VER_VC141)
+# pragma warning(push)
+# pragma warning(disable:4275) /* non dll-interface class 'std::exception' used as base for dll-interface class 'RTCError' */
+#endif
+
 
 /** @defgroup grp_rt_cpp_exceptions     C++ Exceptions
  * @ingroup grp_rt_cpp
@@ -95,5 +100,8 @@ protected:
 
 /** @} */
 
+#if RT_MSC_PREREQ(RT_MSC_VER_VC141)
+# pragma warning(pop)
+#endif
 #endif /* !IPRT_INCLUDED_cpp_exception_h */
 
