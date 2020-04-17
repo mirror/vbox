@@ -32,12 +32,8 @@
 #include <iprt/types.h>
 
 #if defined(_MSC_VER) && RT_INLINE_ASM_USES_INTRIN
-# pragma warning(push)
-# pragma warning(disable:4668) /* Several incorrect __cplusplus uses. */
-# pragma warning(disable:4255) /* Incorrect __slwpcb prototype. */
-# include <intrin.h>
-# pragma warning(pop)
-  /* Emit the intrinsics at all optimization levels. */
+/* Emit the intrinsics at all optimization levels. */
+# include <iprt/win/msvc_intrin.h>
 # pragma intrinsic(__emul)
 # pragma intrinsic(__emulu)
 # ifdef RT_ARCH_AMD64

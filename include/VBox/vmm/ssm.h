@@ -237,7 +237,7 @@ typedef struct SSMFIELD
 /** Emit a SSMFIELD array entry.
  * @internal  */
 #define SSMFIELD_ENTRY_INT(Name, off, cb, enmTransformer, uFirstVer) \
-    { (PFNSSMFIELDGETPUT)(uintptr_t)(enmTransformer), (off), (cb), (uFirstVer), Name }
+    { (PFNSSMFIELDGETPUT)(uintptr_t)(enmTransformer), (uint32_t)(off), (uint32_t)(cb), (uFirstVer), Name }
 /** Emit a SSMFIELD array entry.
  * @internal  */
 #define SSMFIELD_ENTRY_TF_INT(Type, Field, enmTransformer, uFirstVer) \

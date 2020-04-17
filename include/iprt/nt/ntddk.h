@@ -30,11 +30,7 @@
 #endif
 
 /* Make sure we get the right prototypes. */
-#pragma warning(push)
-#pragma warning(disable:4668) /* Several incorrect __cplusplus uses. */
-#pragma warning(disable:4255) /* Incorrect __slwpcb prototype. */
-#include <intrin.h>
-#pragma warning(pop)
+#include <iprt/win/msvc_intrin.h>
 
 #define _InterlockedExchange           _InterlockedExchange_StupidDDKVsCompilerCrap
 #define _InterlockedExchangeAdd        _InterlockedExchangeAdd_StupidDDKVsCompilerCrap
