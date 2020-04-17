@@ -130,7 +130,7 @@ RTDECL(int) RTNtPathExpand8dot3Path(PUNICODE_STRING pUniStr, bool fPathOnly)
         {
             RT_ZERO(*puBuf);
 
-            IO_STATUS_BLOCK Ios = RTNT_IO_STATUS_BLOCK_INITIALIZER;
+            RTNT_IO_STATUS_BLOCK_REINIT(&Ios);
             UNICODE_STRING  NtFilterStr;
             NtFilterStr.Buffer = pwszFix;
             NtFilterStr.Length = (USHORT)((uintptr_t)pwszFixEnd - (uintptr_t)pwszFix);
