@@ -2134,7 +2134,8 @@ static bool convertCoffSectionsToSegDefsAndGrpDefs(POMFWRITER pThis, PCIMAGE_SEC
         else
         {
             /* Translate the name, group and class. */
-            if (strcmp(szName, ".text") == 0)
+            if (   strcmp(szName, ".text") == 0
+                || strcmp(szName, ".text$mn") == 0 /* Seen first in VC++ 14.1 (could be older). */)
             {
                 strcpy(szName, "BS3TEXT64");
                 pThis->paSegments[i].iGrpNm   = idxGrpFlat;
