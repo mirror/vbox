@@ -59,7 +59,7 @@ typedef long VBOXSTATUSTYPE; /* used by errmsgvboxcomdata.h */
 static RTWINERRMSG  g_aStatusMsgs[] =
 {
 #if !defined(IPRT_NO_ERROR_DATA) && !defined(DOXYGEN_RUNNING)
-# include "errmsgcomdata.h"
+# include "errmsgwindata.h"
 # if defined(VBOX) && !defined(IN_GUEST)
 #  include "errmsgvboxcomdata.h"
 # endif

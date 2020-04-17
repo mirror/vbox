@@ -126,7 +126,9 @@ IPRT_OUT_DIR := $(PATH_TARGET)/Runtime
 BLDDIRS += $(IPRT_OUT_DIR)
 OTHER_CLEAN += \
 	$(IPRT_OUT_DIR)/errmsgdata.h \
-	$(IPRT_OUT_DIR)/errmsgcomdata.h \
+	$(IPRT_OUT_DIR)/errmsgwindata.h \
+	$(IPRT_OUT_DIR)/errmsgwindata-sorted.h \
+	$(IPRT_OUT_DIR)/errmsgwindata-sorted.h.ts \
 	$(IPRT_OUT_DIR)/errmsgvboxcomdata.h \
 	$(IPRT_OUT_DIR)/errmsgvboxcomdata.h.ts \
 	$(IPRT_OUT_DIR)/odi2name.h \
@@ -3670,7 +3672,7 @@ $(IPRT_OUT_DIR)/errmsgdata.h: \
 	$(call MSG_GENERATE,,$@,$(filter %.h,$^))
 	$(QUIET)$(REDIRECT) -wo $@ -- $(SED) -f $< $(filter %.h,$^)
 
-$(IPRT_OUT_DIR)/errmsgcomdata.h: \
+$(IPRT_OUT_DIR)/errmsgwindata.h: \
 		$(VBOX_PATH_RUNTIME_SRC)/common/err/errmsgcom.sed \
 		$$(PATH_SDK_$(VBOX_WINPSDK)_INC)/WinError.h \
 		| $$(dir $$@)
@@ -3699,7 +3701,7 @@ bldRTErrMsgWinSorter_TEMPLATE = VBoxBldProg
 bldRTErrMsgWinSorter_SOURCES  = win/errmsgwin-sorter.cpp
 win/errmsgwin-sorter.cpp_INCS = $(IPRT_OUT_DIR)
 win/errmsgwin-sorter.cpp_DEPS = \
-	$(IPRT_OUT_DIR)/errmsgcomdata.h \
+	$(IPRT_OUT_DIR)/errmsgwindata.h \
 	$(IPRT_OUT_DIR)/errmsgvboxcomdata.h
 
 
