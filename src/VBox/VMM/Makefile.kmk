@@ -254,10 +254,17 @@ VBoxVMM_LDFLAGS.darwin = -install_name $(VBOX_DYLD_EXECUTABLE_PATH)/VBoxVMM.dyli
 VBoxVMM_LDFLAGS.solaris = -mimpure-text
 
 # SSM wish to know the build type, host os and arch.
-VMMR3/SSM.cpp_DEFS +=	\
+ifdef VBOX_WITH_AUTOMATIC_DEFS_QUOTING
+VMMR3/SSM.cpp_DEFS +=\
+	KBUILD_TYPE="$(KBUILD_TYPE)" \
+	KBUILD_TARGET="$(KBUILD_TARGET)" \
+	KBUILD_TARGET_ARCH="$(KBUILD_TARGET_ARCH)"
+else
+VMMR3/SSM.cpp_DEFS += \
 	KBUILD_TYPE=\"$(KBUILD_TYPE)\" \
 	KBUILD_TARGET=\"$(KBUILD_TARGET)\" \
 	KBUILD_TARGET_ARCH=\"$(KBUILD_TARGET_ARCH)\"
+endif
 
 ifdef VBOX_WITH_GCC_SANITIZER
 VMMR3/PGMPool.cpp_CXXFLAGS.linux += -fno-sanitize=address
