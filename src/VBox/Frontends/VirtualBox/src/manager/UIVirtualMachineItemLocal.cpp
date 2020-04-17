@@ -166,11 +166,6 @@ void UIVirtualMachineItemLocal::recachePixmap()
     }
 }
 
-bool UIVirtualMachineItemLocal::canSwitchTo() const
-{
-    return const_cast <CMachine&>(m_comMachine).CanShowConsoleWindow();
-}
-
 bool UIVirtualMachineItemLocal::switchTo()
 {
 #ifdef VBOX_WS_MAC
@@ -278,6 +273,12 @@ bool UIVirtualMachineItemLocal::isItemStuck() const
 {
     return    accessible()
            && machineState() == KMachineState_Stuck;
+}
+
+bool UIVirtualMachineItemLocal::isItemCanBeSwitchedTo() const
+{
+    return    const_cast<CMachine&>(m_comMachine).CanShowConsoleWindow()
+           || isItemRunningHeadless();
 }
 
 void UIVirtualMachineItemLocal::retranslateUi()

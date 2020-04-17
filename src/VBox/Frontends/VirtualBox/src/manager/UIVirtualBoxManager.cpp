@@ -2182,8 +2182,7 @@ bool UIVirtualBoxManager::isAtLeastOneItemCanBeShown(const QList<UIVirtualMachin
     {
         if (   pItem->toLocal()
             && pItem->isItemStarted()
-            && (   pItem->toLocal()->canSwitchTo()
-                || pItem->isItemRunningHeadless()))
+            && pItem->isItemCanBeSwitchedTo())
             return true;
     }
     return false;
@@ -2198,8 +2197,7 @@ bool UIVirtualBoxManager::isAtLeastOneItemCanBeStartedOrShown(const QList<UIVirt
             && (   (   pItem->isItemPoweredOff()
                     && pItem->isItemEditable())
                 || (   pItem->isItemStarted()
-                    && (   pItem->toLocal()->canSwitchTo()
-                        || pItem->isItemRunningHeadless()))))
+                    && pItem->isItemCanBeSwitchedTo())))
             return true;
     }
     return false;

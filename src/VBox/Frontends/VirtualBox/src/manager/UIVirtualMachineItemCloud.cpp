@@ -220,6 +220,11 @@ bool UIVirtualMachineItemCloud::isItemStuck() const
            && machineState() == KMachineState_Stuck;
 }
 
+bool UIVirtualMachineItemCloud::isItemCanBeSwitchedTo() const
+{
+    return false;
+}
+
 void UIVirtualMachineItemCloud::retranslateUi()
 {
     /* If machine is accessible: */
