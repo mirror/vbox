@@ -566,7 +566,10 @@ PREDEFINED             =  \
     "RT_IPRT_FORMAT_ATTR(a,b)=" \
     "RT_IPRT_FORMAT_ATTR_MAYBE_NULL(a,b)=" \
     RT_NO_THROW_PROTO= \
-    RTASN1CONTEXTTAG_IMPL_CURSOR_INLINES(a)= 
+    RTASN1CONTEXTTAG_IMPL_CURSOR_INLINES(a)= \
+    \
+    RT_MSC_PREREQ(a)=0 \
+    RT_MSC_PREREQ_EX(a,b)=b
 
 # decl and calling conventions.
 PREDEFINED += \
