@@ -56,7 +56,7 @@
 #endif
 #ifdef RT_OS_WINDOWS
 # include <iprt/win/windows.h>
-# include <ImageHlp.h>
+# include <iprt/win/imagehlp.h>
 #endif
 
 

@@ -1,5 +1,5 @@
 /** @file
- * Safe way to include dbghelp.h.
+ * Safe way to include Dbghelp.h.
  */
 
 /*
@@ -31,7 +31,7 @@
 
 #ifdef _MSC_VER
 /*
- * Unfortunately, the Windows.h file in SDK 7.1 is not clean wrt warning C2220 with VCC141:
+ * Unfortunately, the Windows.h file in SDK 7.1 is not clean wrt warning C4091 with VCC141:
  *      Dbghelp.h(1540): warning C4091: 'typedef ': ignored on left of '<unnamed-enum-hdBase>' when no variable is declared
  *      Dbghelp.h(3056): warning C4091: 'typedef ': ignored on left of '<unnamed-enum-sfImage>' when no variable is declared
  */
