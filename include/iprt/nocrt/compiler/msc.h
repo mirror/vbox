@@ -35,7 +35,7 @@
 # define errno msvcrt_errno
 #endif
 #if _MSC_VER >= 1910
-# include <../ucrt/stddef.h>
+# include <vcruntime.h>
 #else
 # include <../include/stddef.h>
 #endif
