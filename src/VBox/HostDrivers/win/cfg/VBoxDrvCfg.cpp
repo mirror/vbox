@@ -296,7 +296,7 @@ static HRESULT vboxDrvCfgInfQueryModelsSectionName(HINF hInf, LPWSTR *lppszValue
 
     for (DWORD i = 2; (hr = vboxDrvCfgInfQueryKeyValue(&InfCtx, i, &lpszPlatformCur, &cPlatformCur)) == S_OK; ++i)
     {
-        if (wcsicmp(lpszPlatformCur, L"NT"VBOXDRVCFG_ARCHSTR))
+        if (wcsicmp(lpszPlatformCur, L"NT" VBOXDRVCFG_ARCHSTR))
         {
             if (bNt)
             {
@@ -498,9 +498,11 @@ static HRESULT vboxDrvCfgCollectInfsSetupDi(const GUID * pGuid, LPCWSTR pPnPId, 
                             &dwReq /*OUT PDWORD RequiredSize OPTIONAL*/
                             ))
                     {
-                        for (WCHAR * pHwId = pDrvDetail->HardwareID; pHwId && *pHwId && pHwId < (TCHAR*)(DetailBuf + sizeof(DetailBuf)/sizeof(DetailBuf[0])) ;pHwId += wcslen(pHwId) + 1)
+                        for (WCHAR *pwszHwId = pDrvDetail->HardwareID;
+                             pwszHwId && *pwszHwId && (uintptr_t)pwszHwId < (uintptr_t)DetailBuf + sizeof(DetailBuf);
+                             pwszHwId += wcslen(pwszHwId) + 1)
                         {
-                            if (!wcsicmp(pHwId, pPnPId))
+                            if (!wcsicmp(pwszHwId, pPnPId))
                             {
                                 NonStandardAssert(pDrvDetail->InfFileName[0]);
                                 if (pDrvDetail->InfFileName)
@@ -513,16 +515,16 @@ static HRESULT vboxDrvCfgCollectInfsSetupDi(const GUID * pGuid, LPCWSTR pPnPId, 
                     }
                     else
                     {
-                        DWORD dwErr = GetLastError();
-                        NonStandardLogRelCrap((__FUNCTION__": SetupDiGetDriverInfoDetail fail dwErr=%ld, size(%d)", dwErr, dwReq));
+                        DWORD dwErr2 = GetLastError();
+                        NonStandardLogRelCrap((__FUNCTION__": SetupDiGetDriverInfoDetail fail dwErr=%ld, size(%d)", dwErr2, dwReq));
 //                        NonStandardAssert(0);
                     }
 
                 }
                 else
                 {
-                    DWORD dwErr = GetLastError();
-                    if (dwErr == ERROR_NO_MORE_ITEMS)
+                    DWORD dwErr2 = GetLastError();
+                    if (dwErr2 == ERROR_NO_MORE_ITEMS)
                     {
                         NonStandardLogRelCrap((__FUNCTION__": dwErr == ERROR_NO_MORE_ITEMS -> search was finished "));
                         break;
