@@ -445,7 +445,7 @@ NEM_TMPL_STATIC int nemHCWinCopyStateToHyperV(PVMCC pVM, PVMCPUCC pVCpu)
         ADD_REG64(WHvX64RegisterDeliverabilityNotifications, fDesiredIntWin);
         Assert(aValues[iReg - 1].DeliverabilityNotifications.NmiNotification == RT_BOOL(fDesiredIntWin & NEM_WIN_INTW_F_NMI));
         Assert(aValues[iReg - 1].DeliverabilityNotifications.InterruptNotification == RT_BOOL(fDesiredIntWin & NEM_WIN_INTW_F_REGULAR));
-        Assert(aValues[iReg - 1].DeliverabilityNotifications.InterruptPriority == (fDesiredIntWin & NEM_WIN_INTW_F_PRIO_MASK) >> NEM_WIN_INTW_F_PRIO_SHIFT);
+        Assert(aValues[iReg - 1].DeliverabilityNotifications.InterruptPriority == (unsigned)((fDesiredIntWin & NEM_WIN_INTW_F_PRIO_MASK) >> NEM_WIN_INTW_F_PRIO_SHIFT));
     }
 
     /// @todo WHvRegisterPendingEvent
@@ -1255,7 +1255,7 @@ VMM_INT_DECL(int) NEMHCResumeCpuTickOnAll(PVMCC pVM, PVMCPUCC pVCpu, uint64_t uP
         Assert(enmName == WHvX64RegisterTsc);
         const uint64_t offDelta = (ASMReadTSC() - uFirstTsc);
         Value.Reg64 = uPausedTscValue + offDelta;
-        HRESULT hrc = WHvSetVirtualProcessorRegisters(pVM->nem.s.hPartition, iCpu, &enmName, 1, &Value);
+        hrc = WHvSetVirtualProcessorRegisters(pVM->nem.s.hPartition, iCpu, &enmName, 1, &Value);
         AssertLogRelMsgReturn(SUCCEEDED(hrc),
                               ("WHvSetVirtualProcessorRegisters(%p, 0,{tsc},2,%#RX64 + %#RX64) -> %Rhrc (Last=%#x/%u)\n",
                                pVM->nem.s.hPartition, iCpu, uPausedTscValue, offDelta, hrc, RTNtLastStatusValue(), RTNtLastErrorValue())
