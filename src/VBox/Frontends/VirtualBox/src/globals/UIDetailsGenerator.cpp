@@ -147,59 +147,54 @@ UITextTable UIDetailsGenerator::generateMachineInformationGeneral(CCloudMachine 
         return table;
     }
 
-    // WORKAROUND:
-    // While we are waiting for GetDetailsForm implementation we will be using GetSettingsForm.
-    // This requires to wait for progress to complete and handle out all possible value types.
-    CForm comForm;
-    CProgress comProgress = comCloudMachine.GetSettingsForm(comForm);
+    /* Acquire details form: */
+    CForm comForm = comCloudMachine.GetDetailsForm();
     /* Ignore cloud machine errors: */
     if (comCloudMachine.isOk())
     {
-        /* Wait for progress to complete: */
-        comProgress.WaitForCompletion(-1);
-        /* Ignore progress errors: */
-        if (comProgress.isOk() && comProgress.GetResultCode() == 0)
+        /* For each form value: */
+        const QVector<CFormValue> values = comForm.GetValues();
+        foreach (const CFormValue &comIteratedValue, values)
         {
-            /* For each form value: */
-            QVector<CFormValue> values = comForm.GetValues();
-            foreach (const CFormValue &comIteratedValue, values)
+            /* Ignore invisible values: */
+            if (!comIteratedValue.GetVisible())
+                continue;
+            /* Handle possible value type: */
+            switch (comIteratedValue.GetType())
             {
-                /* Handle possible value type: */
-                switch (comIteratedValue.GetType())
+                case KFormValueType_Boolean:
                 {
-                    case KFormValueType_Boolean:
-                    {
-                        CBooleanFormValue comValue(comIteratedValue);
-                        const bool fBool = comValue.GetSelected();
-                        table << UITextTableLine(comValue.GetLabel(),
-                                                 fBool ? QApplication::translate("UIDetails", "Enabled", "details (cloud value)")
-                                                       : QApplication::translate("UIDetails", "Disabled", "details (cloud value)"));
-                        break;
-                    }
-                    case KFormValueType_String:
-                    {
-                        CStringFormValue comValue(comIteratedValue);
-                        table << UITextTableLine(comValue.GetLabel(), comValue.GetString());
-                        break;
-                    }
-                    case KFormValueType_Choice:
-                    {
-                        CChoiceFormValue comValue(comIteratedValue);
-                        const QVector<QString> possibleValues = comValue.GetValues();
-                        const int iCurrentIndex = comValue.GetSelectedIndex();
-                        table << UITextTableLine(comValue.GetLabel(), possibleValues.at(iCurrentIndex));
-                        break;
-                    }
-                    case KFormValueType_RangedInteger:
-                    {
-                        CRangedIntegerFormValue comValue(comIteratedValue);
-                        table << UITextTableLine(comValue.GetLabel(),
-                                                 QString("%1 %2").arg(comValue.GetInteger()).arg(comValue.GetSuffix()));
-                        break;
-                    }
-                    default:
-                        break;
+                    CBooleanFormValue comValue(comIteratedValue);
+                    const bool fBool = comValue.GetSelected();
+                    table << UITextTableLine(comValue.GetLabel(),
+                                             fBool ? QApplication::translate("UIDetails", "Enabled", "details (cloud value)")
+                                                   : QApplication::translate("UIDetails", "Disabled", "details (cloud value)"));
+                    break;
                 }
+                case KFormValueType_String:
+                {
+                    CStringFormValue comValue(comIteratedValue);
+                    table << UITextTableLine(comValue.GetLabel(), comValue.GetString());
+                    break;
+                }
+                case KFormValueType_Choice:
+                {
+                    AssertMsgFailed(("Aren't we decided to convert all choices to strings?\n"));
+                    CChoiceFormValue comValue(comIteratedValue);
+                    const QVector<QString> possibleValues = comValue.GetValues();
+                    const int iCurrentIndex = comValue.GetSelectedIndex();
+                    table << UITextTableLine(comValue.GetLabel(), possibleValues.at(iCurrentIndex));
+                    break;
+                }
+                case KFormValueType_RangedInteger:
+                {
+                    CRangedIntegerFormValue comValue(comIteratedValue);
+                    table << UITextTableLine(comValue.GetLabel(),
+                                             QString("%1 %2").arg(comValue.GetInteger()).arg(comValue.GetSuffix()));
+                    break;
+                }
+                default:
+                    break;
             }
         }
     }
