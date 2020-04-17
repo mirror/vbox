@@ -379,11 +379,12 @@ RT_BF_ASSERT_COMPILE_CHECKS(IOMMU_BF_MSI_MAP_CAPHDR_, UINT32_C(0), UINT32_MAX,
 /** @} */
 
 /**
- * Acquires the IOMMU lock or returns.
+ * Acquires the IOMMU PDM lock or returns @a a_rcBusy if it's busy.
  */
 #define IOMMU_LOCK_RET(a_pDevIns, a_pThis, a_rcBusy)  \
     do { \
-        int rcLock = PDMDevHlpCritSectEnter((a_pDevIns), &(a_pThis)->CritSect, (a_rcBusy)); \
+        NOREF(pThis); \
+        int rcLock = PDMDevHlpCritSectEnter((a_pDevIns), (a_pDevIns)->CTX_SUFF(pCritSectRo), (a_rcBusy)); \
         if (RT_LIKELY(rcLock == VINF_SUCCESS)) \
         { /* likely */ } \
         else \
@@ -391,10 +392,12 @@ RT_BF_ASSERT_COMPILE_CHECKS(IOMMU_BF_MSI_MAP_CAPHDR_, UINT32_C(0), UINT32_MAX,
     } while (0)
 
 /**
- * Releases the IOMMU lock.
+ * Releases the IOMMU PDM lock.
  */
 #define IOMMU_UNLOCK(a_pDevIns, a_pThis) \
-    do { PDMDevHlpCritSectLeave((a_pDevIns), &(a_pThis)->CritSect); } while (0)
+    do { \
+        PDMDevHlpCritSectLeave((a_pDevIns), (a_pDevIns)->CTX_SUFF(pCritSectRo)); \
+    } while (0)
 
 
 /*********************************************************************************************************************************
@@ -998,6 +1001,47 @@ AssertCompileSize(IOMMU_CAP_HDR_T, 4);
 #endif
 
 /**
+ * IOMMU Base Address (Lo and Hi) Register (PCI).
+ * In accordance with the AMD spec.
+ */
+typedef union
+{
+    struct
+    {
+        uint32_t   u1Enable : 1;       /**< Bit  1     - Enable: RW1S - Enable IOMMU MMIO region. */
+        uint32_t   u12Rsvd0 : 12;      /**< Bits 13:1  - Reserved. */
+        uint32_t   u18BaseAddrLo : 18; /**< Bits 31:14 - Base address (Lo) of the MMIO region. */
+        uint32_t   u32BaseAddrHi;      /**< Bits 63:32 - Base address (Hi) of the MMIO region. */
+    } n;
+    /** The 32-bit unsigned integer view. */
+    uint32_t    au32[2];
+    /** The 64-bit unsigned integer view. */
+    uint64_t    u64;
+} IOMMU_BAR_T;
+AssertCompileSize(IOMMU_BAR_T, 8);
+#define IOMMU_BAR_VALID_MASK    UINT64_C(0xffffffffffffc001)
+
+/**
+ * IOMMU Range Register (PCI).
+ * In accordance with the AMD spec.
+ */
+typedef union
+{
+    struct
+    {
+        uint32_t    u5HtUnitId : 5;     /**< Bits 4:0   - UnitID: IOMMU HyperTransport Unit ID (not used). */
+        uint32_t    u2Rsvd0 : 2;        /**< Bits 6:5   - Reserved. */
+        uint32_t    u1RangeValid : 1;   /**< Bit  7     - RngValid: Range Valid. */
+        uint32_t    u8Bus : 8;          /**< Bits 15:8  - BusNumber: Bus number of the first and last device. */
+        uint32_t    u8FirstDevice : 8;  /**< Bits 23:16 - FirstDevice: Device and function number of the first device. */
+        uint32_t    u8LastDevice: 8;    /**< Bits 31:24 - LastDevice: Device and function number of the last device. */
+    } n;
+    /** The 32-bit unsigned integer view. */
+    uint32_t    u32;
+} IOMMU_RANGE_T;
+AssertCompileSize(IOMMU_RANGE_T, 4);
+
+/**
  * Device Table Base Address Register (MMIO).
  * In accordance with the AMD spec.
  */
@@ -1149,7 +1193,6 @@ typedef union
 } IOMMU_EXCL_RANGE_LIMIT_T;
 AssertCompileSize(IOMMU_EXCL_RANGE_LIMIT_T, 8);
 #define IOMMU_EXCL_RANGE_LIMIT_VALID_MASK   UINT64_C(0x000ffffffffff000)
-
 
 /**
  * IOMMU Extended Feature Register (MMIO).
@@ -1851,6 +1894,11 @@ typedef struct IOMMU
     /** Alignment padding. */
     bool                        afPadding[7];
 
+    /** @name PCI: Base capability block registers.
+     * @{ */
+    IOMMU_BAR_T                 IommuBar;
+    /** @} */
+
     /** @name MMIO: Control and status registers.
      * @{ */
     DEV_TAB_BAR_T               DevTabBaseAddr;     /**< Device table base address register. */
@@ -2104,7 +2152,7 @@ DECLINLINE(void) iommuAmdCheckBufferLength(uint8_t uEncodedLen, const char *pszF
 static VBOXSTRICTRC iommuAmdIgnore_w(PPDMDEVINS pDevIns, PIOMMU pThis, uint32_t iReg, uint64_t u64Value)
 {
     RT_NOREF(pDevIns, pThis, iReg, u64Value);
-    Log((IOMMU_LOG_PFX ": iommuAmdIgnore_w: Write to read-only register (%#x) with value %#RX64 ignored\n", iReg, u64Value));
+    Log((IOMMU_LOG_PFX ": Write to read-only register (%#x) with value %#RX64 ignored\n", iReg, u64Value));
     return VINF_SUCCESS;
 }
 
@@ -2556,7 +2604,7 @@ static VBOXSTRICTRC iommuAmdWriteRegister(PPDMDEVINS pDevIns, uint32_t off, uint
         case IOMMU_MMIO_OFF_SMI_FLT_FIRST:
         case IOMMU_MMIO_OFF_SMI_FLT_LAST:
         {
-            Log((IOMMU_LOG_PFX ": iommuAmdWriteRegister: Writing unsupported register: SMI filter %u -> Ignored\n",
+            Log((IOMMU_LOG_PFX ": Writing unsupported register: SMI filter %u -> Ignored\n",
                  (off - IOMMU_MMIO_OFF_SMI_FLT_FIRST) >> 3));
             return VINF_SUCCESS;
         }
@@ -2564,8 +2612,7 @@ static VBOXSTRICTRC iommuAmdWriteRegister(PPDMDEVINS pDevIns, uint32_t off, uint
         /* Unknown. */
         default:
         {
-            Log((IOMMU_LOG_PFX ": iommuAmdWriteRegister: Trying to write unknown register at %u (%#x) with %#RX64\n", off, off,
-                 uValue));
+            Log((IOMMU_LOG_PFX ": Writing unknown register %u (%#x) with %#RX64 -> Ignored\n", off, off, uValue));
             return VINF_SUCCESS;
         }
     }
@@ -2688,8 +2735,7 @@ static VBOXSTRICTRC iommuAmdReadRegister(PPDMDEVINS pDevIns, uint32_t off, uint6
         case IOMMU_MMIO_OFF_SMI_FLT_FIRST:
         case IOMMU_MMIO_OFF_SMI_FLT_LAST:
         {
-            Log((IOMMU_LOG_PFX ": iommuAmdReadRegister: Reading unsupported register: SMI filter %u\n",
-                 (off - IOMMU_MMIO_OFF_SMI_FLT_FIRST) >> 3));
+            Log((IOMMU_LOG_PFX ": Reading unsupported register: SMI filter %u\n", (off - IOMMU_MMIO_OFF_SMI_FLT_FIRST) >> 3));
             uReg = 0;
             break;
         }
@@ -2697,7 +2743,7 @@ static VBOXSTRICTRC iommuAmdReadRegister(PPDMDEVINS pDevIns, uint32_t off, uint6
         /* Unknown. */
         default:
         {
-            Log((IOMMU_LOG_PFX ": iommuAmdReadRegister: Trying to read unknown register at %u (%#x)\n", off, off));
+            Log((IOMMU_LOG_PFX ": Reading unknown register %u (%#x) -> 0\n", off, off));
             uReg = 0;
             return VINF_IOM_MMIO_UNUSED_00;
         }
@@ -2750,7 +2796,8 @@ static DECLCALLBACK(VBOXSTRICTRC) iommuAmdR3PciConfigRead(PPDMDEVINS pDevIns, PP
 {
     /** @todo IOMMU: PCI config read stat counter. */
     VBOXSTRICTRC rcStrict = PDMDevHlpPCIConfigRead(pDevIns, pPciDev, uAddress, cb, pu32Value);
-    Log3((IOMMU_LOG_PFX ": PCI config read: At %#x (%u) -> %#x %Rrc\n", uAddress, cb, *pu32Value, VBOXSTRICTRC_VAL(rcStrict)));
+    Log3((IOMMU_LOG_PFX ": Reading PCI config register %#x (cb=%u) -> %#x %Rrc\n", uAddress, cb, *pu32Value,
+          VBOXSTRICTRC_VAL(rcStrict)));
     return rcStrict;
 }
 
@@ -2761,8 +2808,71 @@ static DECLCALLBACK(VBOXSTRICTRC) iommuAmdR3PciConfigRead(PPDMDEVINS pDevIns, PP
 static DECLCALLBACK(VBOXSTRICTRC) iommuAmdR3PciConfigWrite(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t uAddress,
                                                            unsigned cb, uint32_t u32Value)
 {
-    /** @todo IOMMU: PCI config write. */
-    VBOXSTRICTRC rcStrict = PDMDevHlpPCIConfigWrite(pDevIns, pPciDev, uAddress, cb, u32Value);
+    PIOMMU pThis = PDMDEVINS_2_DATA(pDevIns, PIOMMU);
+    Assert(pThis);
+
+    /*
+     * Discard writes to read-only registers that are specific to the IOMMU.
+     * Other common PCI registers are handled by the generic code, see devpciR3IsConfigByteWritable().
+     * See PCI spec. 6.1. "Configuration Space Organization".
+     */
+    switch (uAddress)
+    {
+        case IOMMU_PCI_OFF_CAP_HDR:
+        case IOMMU_PCI_OFF_RANGE_REG:
+        case IOMMU_PCI_OFF_MISCINFO_REG_0:
+        case IOMMU_PCI_OFF_MISCINFO_REG_1: /* We don't support guest-address translation (GASup=0). */
+        {
+            Log((IOMMU_LOG_PFX ": PCI config write (%#RX32) to read-only register %#x -> Ignored\n", u32Value, uAddress));
+            return VINF_SUCCESS;
+        }
+    }
+
+    IOMMU_LOCK_RET(pDevIns, pThis, VERR_IGNORED);
+
+    VBOXSTRICTRC rcStrict;
+    switch (uAddress)
+    {
+        case IOMMU_PCI_OFF_BASE_ADDR_REG_LO:
+        {
+            IOMMU_BAR_T const IommuBar = pThis->IommuBar;
+            if (!IommuBar.n.u1Enable)
+            {
+                pThis->IommuBar.au32[0] = u32Value & IOMMU_BAR_VALID_MASK;
+                Assert(pThis->hMmio == NIL_IOMMMIOHANDLE);
+                RTGCPHYS const GCPhysMmioBase = RT_MAKE_U64(pThis->IommuBar.n.u18BaseAddrLo, pThis->IommuBar.n.u32BaseAddrHi);
+                rcStrict = PDMDevHlpMmioMap(pDevIns, pThis->hMmio, GCPhysMmioBase);
+                if (RT_FAILURE(rcStrict))
+                    Log((IOMMU_LOG_PFX ": Failed to map IOMMU MMIO region at %#RGp. rc=%Rrc\n", GCPhysMmioBase, rcStrict));
+            }
+            else
+            {
+                rcStrict = VINF_SUCCESS;
+                Log((IOMMU_LOG_PFX ": Writing Base Address (Lo) when it's already enabled -> Ignored\n"));
+            }
+            break;
+        }
+
+        case IOMMU_PCI_OFF_BASE_ADDR_REG_HI:
+        {
+            IOMMU_BAR_T const IommuBar = pThis->IommuBar;
+            if (!IommuBar.n.u1Enable)
+                pThis->IommuBar.au32[1] = u32Value;
+            else
+            {
+                rcStrict = VINF_SUCCESS;
+                Log((IOMMU_LOG_PFX ": Writing Base Address (Hi) when it's already enabled -> Ignored\n"));
+            }
+            break;
+        }
+
+        default:
+            rcStrict = PDMDevHlpPCIConfigWrite(pDevIns, pPciDev, uAddress, cb, u32Value);
+            break;
+    }
+
+    IOMMU_UNLOCK(pDevIns, pThis);
+
     Log3((IOMMU_LOG_PFX ": PCI config write: %#x -> To %#x (%u) %Rrc\n", u32Value, uAddress, cb, VBOXSTRICTRC_VAL(rcStrict)));
     return rcStrict;
 }
@@ -2776,7 +2886,7 @@ static DECLCALLBACK(void) iommuAmdR3DbgInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pH
     PCIOMMU pThis = PDMDEVINS_2_DATA(pDevIns, PIOMMU);
     Assert(pThis);
 
-    LogFlow((IOMMU_LOG_PFX ": iommuAmdR3DbgInfo: pThis=%p pszArgs=%s\n", pThis, pszArgs));
+    LogFlow((IOMMU_LOG_PFX ": %s: pThis=%p pszArgs=%s\n", __PRETTY_FUNCTION__, pThis, pszArgs));
     bool const fVerbose = !strncmp(pszArgs, RT_STR_TUPLE("verbose")) ? true : false;
 
     pHlp->pfnPrintf(pHlp, "AMD-IOMMU:\n");
@@ -3369,7 +3479,7 @@ static DECLCALLBACK(void) iommuAmdR3Reset(PPDMDEVINS pDevIns)
     pThis->ExtFeat.n.u1GstTranslateSup       = 0;
     pThis->ExtFeat.n.u1InvAllSup             = 0;
     pThis->ExtFeat.n.u1GstVirtApicSup        = 0;
-    pThis->ExtFeat.n.u1HwErrorSup            = 0;
+    pThis->ExtFeat.n.u1HwErrorSup            = 1;
     pThis->ExtFeat.n.u1PerfCounterSup        = 0;
     pThis->ExtFeat.n.u2HostAddrTranslateSize = 0;   /* Requires GstTranslateSup. */
     pThis->ExtFeat.n.u2GstAddrTranslateSize  = 0;   /* Requires GstTranslateSup. */
@@ -3600,7 +3710,8 @@ static DECLCALLBACK(int) iommuAmdR3Construct(PPDMDEVINS pDevIns, int iInstance, 
     AssertLogRelRCReturn(rc, rc);
 
     /*
-     * Register the MMIO region.
+     * Create the MMIO region.
+     * Mapping of the region is done when software configures it via PCI config space.
      */
     rc = PDMDevHlpMmioCreate(pDevIns, IOMMU_MMIO_REGION_SIZE, pPciDev, 0 /* iPciRegion */, iommuAmdMmioWrite, iommuAmdMmioRead,
                              NULL /* pvUser */, IOMMMIO_FLAGS_READ_DWORD_QWORD | IOMMMIO_FLAGS_WRITE_DWORD_QWORD_ZEROED,
