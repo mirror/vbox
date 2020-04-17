@@ -31,10 +31,14 @@ VBox-libxml2_CFLAGS.win    += -wd4701 # potentially uninitialized local variable
 VBox-libxml2_CFLAGS.win    += -wd4232 # nonstandard extension used : 'xmlFree' : address of dllimport 'free' is not static, identity not guaranteed
 VBox-libxml2_CFLAGS.win    += -wd4305 # 'type cast' : truncation from 'xmlChar *' to 'long'
 VBox-libxml2_CFLAGS.win    += -wd4306 # 'type cast' : conversion from 'long' to 'void *' of greater size [TODO: check these out?]
-if1of ($(VBOX_VCC_TOOL_STEM), VCC120)
+if "$(VBOX_VCC_TOOL_STEM)" >= "VCC120"
  VBox-libxml2_CFLAGS.win   += -wd4311 # parser.c(1346) : warning C4311: 'type cast' : pointer truncation from 'void *' to 'long'
  VBox-libxml2_CFLAGS.win   += -wd4312 # parser.c(1327) : warning C4312: 'type cast' : conversion from 'long' to 'void *' of greater size
  VBox-libxml2_CFLAGS.win   += -wd4005 # sdk\v7.1\include\sal_supp.h(57) : warning C4005: '__useHeader' : macro redefinition
+endif
+if "$(VBOX_VCC_TOOL_STEM)" >= "VCC141"
+ VBox-libxml2_CFLAGS.win   += -wd4777 # timsort.h(326): warning C4777: 'fprintf' : format string '%lu' requires an argument of type 'unsigned long', but variadic argument 1 has type 'unsigned int'
+ VBox-libxml2_CFLAGS.win   += -wd4477 # timsort.h(326): warning C4477: 'fprintf' : format string '%lu' requires an argument of type 'unsigned long', but variadic argument 1 has type 'size_t'
 endif
 ifn1of ($(KBUILD_TARGET), win)
  VBox-libxml2_CFLAGS        = -Wno-format-security -Wno-strict-prototypes -Wno-format-extra-args
