@@ -121,7 +121,7 @@ class SubTstDrvAddSharedFolders1(base.SubTestDriverBase):
             reporter.log2('candle.dir check -> %s' % (fRc,));
             if fRc is fMustSucceed:
                 break;
-            if base.timestampMilli() - msStart > 10 * 90000:
+            if base.timestampMilli() - msStart > 30000:
                 reporter.error('Shared folder mounting timed out!');
                 break;
             self.oTstDrv.sleep(1);
@@ -163,7 +163,7 @@ class SubTstDrvAddSharedFolders1(base.SubTestDriverBase):
             reporter.log2('candle.dir check -> %s' % (fRc2,));
             if fRc2 is not fMustSucceed:
                 break;
-            if base.timestampMilli() - msStart > 10 * 90000:
+            if base.timestampMilli() - msStart > 30000:
                 reporter.error('Shared folder unmounting timed out!');
                 fRc = False;
                 break;
