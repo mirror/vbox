@@ -69,7 +69,7 @@ extern "C"
 #include "netif/etharp.h"
 }
 
-#include <string>
+#include <iprt/sanitized/string>
 #include <vector>
 #include <memory>
 

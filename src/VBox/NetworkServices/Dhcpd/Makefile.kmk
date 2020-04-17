@@ -49,7 +49,11 @@ endif
 # (current dir is for for lwipopts.h)
 VBoxNetDHCP_INCS += . $(addprefix ../../Devices/Network/lwip-new/,$(LWIP_INCS))
 
+ifdef VBOX_WITH_AUTOMATIC_DEFS_QUOTING
+VBoxNetDHCP_DEFS      = KBUILD_TYPE="$(KBUILD_TYPE)"
+else
 VBoxNetDHCP_DEFS      = KBUILD_TYPE=\"$(KBUILD_TYPE)\"
+endif
 #VBoxNetDHCP_DEFS     = IPv6
 #VBoxNetDHCP_DEFS.linux = WITH_VALGRIND
 ifneq ($(KBUILD_TARGET),win)
