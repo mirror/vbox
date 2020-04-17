@@ -169,23 +169,27 @@ class tdAddBasic1(vbox.TestDriver):                                         # py
                 fRc, oTxsSession = self.testInstallAdditions(oSession, oTxsSession, oTestVm);
             reporter.testDone(fSkip);
 
-            fSkip = 'guestprops' not in self.asTests;
-            reporter.testStart('Guest Properties');
-            if not fSkip:
-                fRc = self.testGuestProperties(oSession, oTxsSession, oTestVm) and fRc;
-            reporter.testDone(fSkip);
+            if  not fSkip \
+            and not fRc:
+                reporter.log('Skipping following tests as Guest Additions were not installed successfully');
+            else:
+                fSkip = 'guestprops' not in self.asTests;
+                reporter.testStart('Guest Properties');
+                if not fSkip:
+                    fRc = self.testGuestProperties(oSession, oTxsSession, oTestVm) and fRc;
+                reporter.testDone(fSkip);
 
-            fSkip = 'guestcontrol' not in self.asTests;
-            reporter.testStart('Guest Control');
-            if not fSkip:
-                fRc, oTxsSession = self.aoSubTstDrvs[0].testIt(oTestVm, oSession, oTxsSession);
-            reporter.testDone(fSkip);
+                fSkip = 'guestcontrol' not in self.asTests;
+                reporter.testStart('Guest Control');
+                if not fSkip:
+                    fRc, oTxsSession = self.aoSubTstDrvs[0].testIt(oTestVm, oSession, oTxsSession);
+                reporter.testDone(fSkip);
 
-            fSkip = 'sharedfolders' not in self.asTests and self.fpApiVer >= 6.0;
-            reporter.testStart('Shared Folders');
-            if not fSkip:
-                fRc, oTxsSession = self.aoSubTstDrvs[1].testIt(oTestVm, oSession, oTxsSession);
-            reporter.testDone(fSkip or fRc is None);
+                fSkip = 'sharedfolders' not in self.asTests and self.fpApiVer >= 6.0;
+                reporter.testStart('Shared Folders');
+                if not fSkip:
+                    fRc, oTxsSession = self.aoSubTstDrvs[1].testIt(oTestVm, oSession, oTxsSession);
+                reporter.testDone(fSkip or fRc is None);
 
             ## @todo Save and restore test.
 
