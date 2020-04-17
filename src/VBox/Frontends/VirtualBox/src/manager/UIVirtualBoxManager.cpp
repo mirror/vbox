@@ -1061,22 +1061,21 @@ void UIVirtualBoxManager::sltPerformPowerOffMachine()
         /* Open a session to modify VM state: */
         CSession comSession = uiCommon().openExistingSession(pItem->id());
         if (comSession.isNull())
-            return;
+            break;
 
         /* Get session console: */
         CConsole comConsole = comSession.GetConsole();
         /* Prepare machine power down: */
         CProgress comProgress = comConsole.PowerDown();
-        if (comConsole.isOk())
+        if (!comConsole.isOk())
+            msgCenter().cannotPowerDownMachine(comConsole);
+        else
         {
             /* Show machine power down progress: */
-            CMachine machine = comSession.GetMachine();
-            msgCenter().showModalProgressDialog(comProgress, machine.GetName(), ":/progress_poweroff_90px.png");
+            msgCenter().showModalProgressDialog(comProgress, pItem->name(), ":/progress_poweroff_90px.png");
             if (!comProgress.isOk() || comProgress.GetResultCode() != 0)
-                msgCenter().cannotPowerDownMachine(comProgress, machine.GetName());
+                msgCenter().cannotPowerDownMachine(comProgress, pItem->name());
         }
-        else
-            msgCenter().cannotPowerDownMachine(comConsole);
 
         /* Unlock machine finally: */
         comSession.UnlockMachine();
