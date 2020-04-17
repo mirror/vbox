@@ -76,7 +76,7 @@
 #ifdef BLDPROG_STRTAB_WITH_COMPRESSION
 # include <algorithm>
 # include <map>
-# if RT_MSC_PREREQ(RT_MSC_VER_VC141)
+# if !defined(DOXYGEN_RUNNING) && RT_MSC_PREREQ(RT_MSC_VER_VC141)
 #  pragma warning(push)
 #  pragma warning(disable:4774) /* string(530): warning C4774: '_scprintf' : format string expected in argument 1 is not a string literal */
 #  include <string>
