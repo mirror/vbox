@@ -2088,6 +2088,9 @@ PREDEFINED             = DOXYGEN_RUNNING \
                          RT_IPRT_FORMAT_ATTR(a,b)= \
                          RT_IPRT_FORMAT_ATTR_MAYBE_NULL(a,b)= \
                          RT_NO_THROW_PROTO=
+                         \
+                         RT_MSC_PREREQ(a)=0 \
+                         RT_MSC_PREREQ_EX(a,b)=b
 
 # If the MACRO_EXPANSION and EXPAND_ONLY_PREDEF tags are set to YES then this
 # tag can be used to specify a list of macro names that should be expanded. The
