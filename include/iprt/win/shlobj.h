@@ -37,6 +37,10 @@
 # pragma warning(disable:4005) /* sdk/v7.1/include/sal_supp.h(57) : warning C4005: '__useHeader' : macro redefinition */
 # pragma warning(disable:4255) /* windef.h(227) : warning C4255: 'NEARPROC' : no function prototype given: converting '()' to '(void)' */
 #endif
+#if _MSC_VER >= 1910 /*RT_MSC_VER_VC141*/
+# pragma warning(disable:4768) /* sdk/v7.1/include/shlobj.h(1065): warning C4768: __declspec attributes before linkage specification are ignored */
+# pragma warning(disable:4091) /* sdk/v7.1/include/shlobj.h(1151): warning C4091: 'typedef ': ignored on left of 'tagGPFIDL_FLAGS' when no variable is declared */
+#endif
 
 #include <shlobj.h>
 
