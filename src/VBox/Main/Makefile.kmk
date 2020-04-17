@@ -1428,6 +1428,18 @@ define def_VBoxMainDisableMscWarnings
 
 endef
 
+# Tricks to work around midl.exe problems with spaces in the /cpp_cmd value, it
+# forgets to quote it when creating the commandline and cl.exe gets very confused.
+if1of (quote, $(KBUILD_FEATURES))
+VBOX_MIDL_REDIRECT     = $(REDIRECT) -E "$(quote-sh-dq PATH=$(PATH_TOOL_$(VBOX_VCC_TOOL)_BIN);$(PATH))" --
+VBOX_MIDL_REDIRECT_X86 = $(REDIRECT) -E "$(quote-sh-dq PATH=$(PATH_TOOL_$(VBOX_VCC_TOOL_STEM)X86_BIN);$(PATH))" --
+else
+VBOX_MIDL_REDIRECT     = $(REDIRECT) -E 'PATH=$(PATH_TOOL_$(VBOX_VCC_TOOL)_BIN);$(PATH)' --
+VBOX_MIDL_REDIRECT_X86 = $(REDIRECT) -E 'PATH=$(PATH_TOOL_$(VBOX_VCC_TOOL_STEM)X86_BIN);$(PATH)' --
+endif
+VBOX_MIDL_CPP_CMD      = $(lastword $(notdir ,$(subst $(EXEC_X86_WIN32),,$(TOOL_$(VBOX_VCC_TOOL)_CC))))
+VBOX_MIDL_CPP_CMD_X86  = $(lastword $(notdir ,$(subst $(EXEC_X86_WIN32),,$(TOOL_$(VBOX_VCC_TOOL_STEM)X86_CC))))
+
 # Note! Because we've got a different proxy stub DLL for pre windows 7 64-bit hosts, we target windows 7 for AMD64.
 #       The output is different and hopefully more efficient, at least memory wise (using more helpers in OLE32).
 # Note! We're checking for win.amd64 below when setting the target because of the SDK build which happens on linux.amd64
@@ -1438,11 +1450,11 @@ $(if $(VBOX_WITH_MIDL_PROXY_STUB), + $(VBoxCOM_0_OUTDIR)/VirtualBox_p.c + $(VBox
 + $(VBoxCOM_0_OUTDIR)/VirtualBox.h \
 + $(VBoxCOM_0_OUTDIR)/VirtualBox.tlb: $(VBOX_IDL_FILE.MSCOM) | $$(dir $$@)
 	$(call KB_FN_AUTO_CMD_DEPS_COMMANDS)
-	$(VBOX_WIN_MIDL) /nologo /W4 \
+	$(VBOX_MIDL_REDIRECT) $(VBOX_WIN_MIDL) /nologo /W4 \
 		/env $(if-expr "$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)" == "win.amd64" ,amd64,win32) \
 		/robust /protocol all /target $(if-expr defined(VBOX_WITH_MIDL_PROXY_STUB),NT61,NT51) \
 		/out $(call VBOX_FN_MAKE_WIN_PATH,$(VBoxCOM_0_OUTDIR)) \
-		/cpp_cmd $(subst $(EXEC_X86_WIN32),,$(call VBOX_FN_MAKE_WIN_PATH,$(TOOL_$(VBOX_VCC_TOOL)_CC))) \
+		/cpp_cmd $(VBOX_MIDL_CPP_CMD) \
 		/I $(call VBOX_FN_MAKE_WIN_PATH,$(PATH_SDK_$(VBOX_WINPSDK)_INC)) \
 		/I idl \
 		$(call VBOX_FN_MAKE_WIN_PATH,$(VBOX_IDL_FILE.MSCOM))
@@ -1462,12 +1474,12 @@ $(VBoxCOM_0_OUTDIR)/legacy/VirtualBox_i.c \
 + $(VBoxCOM_0_OUTDIR)/legacy/VirtualBox.h \
 + $(VBoxCOM_0_OUTDIR)/legacy/VirtualBox.tlb: $(VBOX_IDL_FILE.MSCOM) | $$(dir $$@)
 	$(call KB_FN_AUTO_CMD_DEPS_COMMANDS)
-	$(VBOX_WIN_MIDL) /nologo /W4 \
+	$(VBOX_MIDL_REDIRECT) $(VBOX_WIN_MIDL) /nologo /W4 \
 		$(if-expr "$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)" == "win.amd64" \
 		,/env amd64 /x64 /target NT50 /robust \
 		,/env win32      /target NT51 /robust /protocol all ) \
 		/out $(call VBOX_FN_MAKE_WIN_PATH,$(dir $@)) \
-		/cpp_cmd $(subst $(EXEC_X86_WIN32),,$(call VBOX_FN_MAKE_WIN_PATH,$(TOOL_$(VBOX_VCC_TOOL)_CC))) \
+		/cpp_cmd $(VBOX_MIDL_CPP_CMD) \
 		/I $(call VBOX_FN_MAKE_WIN_PATH,$(PATH_SDK_$(VBOX_WINPSDK)_INC)) \
 		/I idl \
 		$(call VBOX_FN_MAKE_WIN_PATH,$(VBOX_IDL_FILE.MSCOM))
@@ -1484,11 +1496,11 @@ $(if $(VBOX_WITH_MIDL_PROXY_STUB), + $(VBoxCOM-x86_0_OUTDIR)/VirtualBox_p.c + $(
 + $(VBoxCOM-x86_0_OUTDIR)/VirtualBox.h \
 + $(VBoxCOM-x86_0_OUTDIR)/VirtualBox-x86.tlb: $(VBOX_IDL_FILE.MSCOM) | $$(dir $$@)
 	$(call KB_FN_AUTO_CMD_DEPS_COMMANDS)
-	$(VBOX_WIN_MIDL) /nologo /W4 \
+	$(VBOX_MIDL_REDIRECT_X86) $(VBOX_WIN_MIDL) /nologo /W4 \
 		/env win32 /target NT51 /robust /protocol all  \
 		/out $(call VBOX_FN_MAKE_WIN_PATH,$(VBoxCOM-x86_0_OUTDIR)) \
 		/tlb $(call VBOX_FN_MAKE_WIN_PATH,$(VBoxCOM-x86_0_OUTDIR)/VirtualBox-x86.tlb) \
-		/cpp_cmd $(subst $(EXEC_X86_WIN32),,$(call VBOX_FN_MAKE_WIN_PATH,$(TOOL_$(VBOX_VCC_TOOL_STEM)X86_CC))) \
+		/cpp_cmd $(VBOX_MIDL_CPP_CMD_X86) \
 		/I $(call VBOX_FN_MAKE_WIN_PATH,$(PATH_SDK_$(VBOX_WINPSDK)_INC)) \
 		/I idl \
 		$(call VBOX_FN_MAKE_WIN_PATH,$(VBOX_IDL_FILE.MSCOM))
