@@ -2974,9 +2974,26 @@ HRESULT GuestSession::close()
     /* Note: Don't check if the session is ready via i_isReadyExternal() here;
      *       the session (already) could be in a stopped / aborted state. */
 
-    /* Close session on guest. */
+    int vrc;
     int rcGuest = VINF_SUCCESS;
-    int vrc = i_closeSession(0 /* Flags */, 30 * 1000 /* Timeout */, &rcGuest);
+
+    uint32_t msTimeout = 30 * 1000; /* 30s timeout by default */
+    for (int i = 0; i < 10; i++)
+    {
+        if (i)
+        {
+            LogRel(("Guest Control: Closing session #%RU32 timed out (%RU32s timeout, attempt %d/10), retrying ...\n",
+                    mData.mSession.mID, msTimeout / RT_MS_1SEC, i + 1));
+            msTimeout += RT_MS_10SEC; /* Slightly increase the timeout. */
+        }
+
+        /* Close session on guest. */
+        vrc = i_closeSession(0 /* Flags */, msTimeout, &rcGuest);
+        if (   RT_SUCCESS(vrc)
+            || vrc != VERR_TIMEOUT) /* If something else happened there is no point in retrying further. */
+            break;
+    }
+
     /* On failure don't return here, instead do all the cleanup
      * work first and then return an error. */
 
