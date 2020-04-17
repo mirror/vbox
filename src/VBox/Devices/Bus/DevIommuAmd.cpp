@@ -2818,10 +2818,10 @@ static DECLCALLBACK(VBOXSTRICTRC) iommuAmdR3PciConfigWrite(PPDMDEVINS pDevIns, P
      */
     switch (uAddress)
     {
-        case IOMMU_PCI_OFF_CAP_HDR:
-        case IOMMU_PCI_OFF_RANGE_REG:
-        case IOMMU_PCI_OFF_MISCINFO_REG_0:
-        case IOMMU_PCI_OFF_MISCINFO_REG_1: /* We don't support guest-address translation (GASup=0). */
+        case IOMMU_PCI_OFF_CAP_HDR:         /* All fields are read-only. */
+        case IOMMU_PCI_OFF_RANGE_REG:       /* We don't have any devices integrated with the IOMMU. */
+        case IOMMU_PCI_OFF_MISCINFO_REG_0:  /* We don't support MSI-X. */
+        case IOMMU_PCI_OFF_MISCINFO_REG_1:  /* We don't support guest-address translation. */
         {
             Log((IOMMU_LOG_PFX ": PCI config write (%#RX32) to read-only register %#x -> Ignored\n", u32Value, uAddress));
             return VINF_SUCCESS;
