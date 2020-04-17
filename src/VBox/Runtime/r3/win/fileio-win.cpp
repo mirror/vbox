@@ -511,9 +511,9 @@ RTR3DECL(int)  RTFileRead(RTFILE hFile, void *pvBuf, size_t cbToRead, size_t *pc
         cbRead = 0;
         while (cbToReadAdj > cbRead)
         {
-            ULONG cbToRead   = RT_MIN(cbChunk, cbToReadAdj - cbRead);
-            ULONG cbReadPart = 0;
-            if (!ReadFile((HANDLE)RTFileToNative(hFile), (char *)pvBuf + cbRead, cbToRead, &cbReadPart, NULL))
+            ULONG cbToReadNow = RT_MIN(cbChunk, cbToReadAdj - cbRead);
+            ULONG cbReadPart  = 0;
+            if (!ReadFile((HANDLE)RTFileToNative(hFile), (char *)pvBuf + cbRead, cbToReadNow, &cbReadPart, NULL))
             {
                 /* If we failed because the buffer is too big, shrink it and
                    try again. */
@@ -649,9 +649,9 @@ RTR3DECL(int)  RTFileWrite(RTFILE hFile, const void *pvBuf, size_t cbToWrite, si
         cbWritten = 0;
         while (cbWritten < cbToWriteAdj)
         {
-            ULONG cbToWrite     = RT_MIN(cbChunk, cbToWriteAdj - cbWritten);
+            ULONG cbToWriteNow  = RT_MIN(cbChunk, cbToWriteAdj - cbWritten);
             ULONG cbWrittenPart = 0;
-            if (!WriteFile((HANDLE)RTFileToNative(hFile), (const char *)pvBuf + cbWritten, cbToWrite, &cbWrittenPart, NULL))
+            if (!WriteFile((HANDLE)RTFileToNative(hFile), (const char *)pvBuf + cbWritten, cbToWriteNow, &cbWrittenPart, NULL))
             {
                 /* If we failed because the buffer is too big, shrink it and
                    try again. */
@@ -664,7 +664,7 @@ RTR3DECL(int)  RTFileWrite(RTFILE hFile, const void *pvBuf, size_t cbToWrite, si
                 }
                 int rc = RTErrConvertFromWin32(dwErr);
                 if (rc == VERR_DISK_FULL)
-                    rc = rtFileWinCheckIfDiskReallyFull(hFile, RTFileTell(hFile) + cbToWrite);
+                    rc = rtFileWinCheckIfDiskReallyFull(hFile, RTFileTell(hFile) + cbToWriteNow);
                 return rc;
             }
             cbWritten += cbWrittenPart;
@@ -892,17 +892,17 @@ static HANDLE rtFileReOpenAppendOnlyWithFullWriteAccess(HANDLE hFile)
                 OBJECT_ATTRIBUTES   ObjAttr;
                 InitializeObjectAttributes(&ObjAttr, &NtName, BasicInfo.Attributes & ~OBJ_INHERIT, NULL, NULL);
 
-                NTSTATUS rcNt = NtCreateFile(&hDupFile,
-                                             BasicInfo.GrantedAccess | FILE_WRITE_DATA,
-                                             &ObjAttr,
-                                             &Ios,
-                                             NULL /* AllocationSize*/,
-                                             FILE_ATTRIBUTE_NORMAL,
-                                             FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
-                                             FILE_OPEN,
-                                             FILE_OPEN_FOR_BACKUP_INTENT /*??*/,
-                                             NULL /*EaBuffer*/,
-                                             0 /*EaLength*/);
+                rcNt = NtCreateFile(&hDupFile,
+                                    BasicInfo.GrantedAccess | FILE_WRITE_DATA,
+                                    &ObjAttr,
+                                    &Ios,
+                                    NULL /* AllocationSize*/,
+                                    FILE_ATTRIBUTE_NORMAL,
+                                    FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
+                                    FILE_OPEN,
+                                    FILE_OPEN_FOR_BACKUP_INTENT /*??*/,
+                                    NULL /*EaBuffer*/,
+                                    0 /*EaLength*/);
                 RTUtf16Free(NtName.Buffer);
                 if (NT_SUCCESS(rcNt))
                 {

@@ -2726,7 +2726,7 @@ static int rtLockValidatorDdDoDetection(PRTLOCKVALDDSTACK pStack, PRTLOCKVALRECU
             case RTLOCKVALRECSHRDOWN_MAGIC:
             case RTLOCKVALRECSHRDOWN_MAGIC_DEAD:
             default:
-                AssertMsgFailed(("%p: %#x\n", pRec, pRec->Core));
+                AssertMsgFailed(("%p: %#x\n", pRec, pRec->Core.u32Magic));
                 break;
         }
 

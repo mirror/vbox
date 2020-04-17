@@ -4521,7 +4521,7 @@ static int rtFsNtfsVol_QueryClusterStateSlow(PRTFSNTFSVOL pThis, uint64_t iClust
          * Load a cache line.
          */
         Assert(RT_IS_POWER_OF_TWO(pThis->cbBitmapAlloc));
-        uint64_t offLoad = offInBitmap & ~(pThis->cbBitmapAlloc - 1);
+        uint64_t offLoad = offInBitmap & ~(uint64_t)(pThis->cbBitmapAlloc - 1);
         uint32_t cbLoad  = (uint32_t)RT_MIN(cbWholeBitmap - offLoad, pThis->cbBitmapAlloc);
 
         memset(pThis->pvBitmap, 0xff, pThis->cbBitmapAlloc);

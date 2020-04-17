@@ -244,14 +244,13 @@ static DECLCALLBACK(int) rttimerCallback(RTTHREAD Thread, void *pvArg)
              */
 # ifdef USE_CATCH_UP
             pTimer->llNext.QuadPart += NSInterval;
-            LARGE_INTEGER ll;
             ll.QuadPart = RTTimeNanoTS() - pTimer->llNext.QuadPart;
             if (ll.QuadPart < -500000)
                 ll.QuadPart = ll.QuadPart / 100;
             else
                 ll.QuadPart = -500000 / 100; /* need to catch up, do a minimum wait of 0.5ms. */
 # else
-            LARGE_INTEGER ll = pTimer->llNext;
+            ll = pTimer->llNext;
 # endif
             BOOL fRc = SetWaitableTimer(pTimer->hTimer, &ll, 0, NULL, NULL, FALSE);
             AssertMsg(fRc || pTimer->u32Magic != RTTIMER_MAGIC, ("last error %d\n", GetLastError())); NOREF(fRc);
