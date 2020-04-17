@@ -2032,7 +2032,11 @@ VBOX_PYLINT_FLAGS = $(if-expr $(VBOX_PYLINT_VERSION) >= 10500,--reports=n,--repo
 
 # Define the macro for win path conversion.
 ifndef VBOX_ONLY_SDK
+ if1of (quote,$(KBUILD_FEATURES))
+  VBOX_FN_MAKE_WIN_PATH = "$(quote-sh-dq $(subst /,\,$(requote unquoted $(1))))"
+ else
   VBOX_FN_MAKE_WIN_PATH = $(subst /,\\,$(1))
+ endif
 else
   # on Wine Z: is always FS root
   VBOX_FN_MAKE_WIN_PATH = $(subst /,\\,$(patsubst /%,Z:/%,$(1)))
