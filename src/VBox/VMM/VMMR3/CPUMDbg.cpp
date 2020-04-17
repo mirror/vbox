@@ -1097,13 +1097,13 @@ static DBGFREGSUBFIELD const g_aCpumRegFields_sf_mask[] =
 static DBGFREGDESC const g_aCpumRegGstDescs[] =
 {
 #define CPU_REG_RW_AS(a_szName, a_RegSuff, a_TypeSuff, a_CpumCtxMemb, a_pfnGet, a_pfnSet, a_paAliases, a_paSubFields) \
-    { a_szName, DBGFREG_##a_RegSuff, DBGFREGVALTYPE_##a_TypeSuff, 0 /*fFlags*/,            RT_OFFSETOF(CPUMCPU, Guest.a_CpumCtxMemb), a_pfnGet, a_pfnSet, a_paAliases, a_paSubFields }
+    { a_szName, DBGFREG_##a_RegSuff, DBGFREGVALTYPE_##a_TypeSuff, 0 /*fFlags*/,            (uint32_t)RT_UOFFSETOF(CPUMCPU, Guest.a_CpumCtxMemb), a_pfnGet, a_pfnSet, a_paAliases, a_paSubFields }
 #define CPU_REG_RO_AS(a_szName, a_RegSuff, a_TypeSuff, a_CpumCtxMemb, a_pfnGet, a_pfnSet, a_paAliases, a_paSubFields) \
-    { a_szName, DBGFREG_##a_RegSuff, DBGFREGVALTYPE_##a_TypeSuff, DBGFREG_FLAGS_READ_ONLY, RT_OFFSETOF(CPUMCPU, Guest.a_CpumCtxMemb), a_pfnGet, a_pfnSet, a_paAliases, a_paSubFields }
+    { a_szName, DBGFREG_##a_RegSuff, DBGFREGVALTYPE_##a_TypeSuff, DBGFREG_FLAGS_READ_ONLY, (uint32_t)RT_UOFFSETOF(CPUMCPU, Guest.a_CpumCtxMemb), a_pfnGet, a_pfnSet, a_paAliases, a_paSubFields }
 #define CPU_REG_XS_RW_AS(a_szName, a_RegSuff, a_TypeSuff, a_XStateMemb, a_pfnGet, a_pfnSet, a_paAliases, a_paSubFields) \
-    { a_szName, DBGFREG_##a_RegSuff, DBGFREGVALTYPE_##a_TypeSuff, 0 /*fFlags*/,            RT_OFFSETOF(X86XSAVEAREA, a_XStateMemb),   a_pfnGet, a_pfnSet, a_paAliases, a_paSubFields }
+    { a_szName, DBGFREG_##a_RegSuff, DBGFREGVALTYPE_##a_TypeSuff, 0 /*fFlags*/,            (uint32_t)RT_UOFFSETOF(X86XSAVEAREA, a_XStateMemb),   a_pfnGet, a_pfnSet, a_paAliases, a_paSubFields }
 #define CPU_REG_XS_RO_AS(a_szName, a_RegSuff, a_TypeSuff, a_XStateMemb, a_pfnGet, a_pfnSet, a_paAliases, a_paSubFields) \
-    { a_szName, DBGFREG_##a_RegSuff, DBGFREGVALTYPE_##a_TypeSuff, DBGFREG_FLAGS_READ_ONLY, RT_OFFSETOF(X86XSAVEAREA, a_XStateMemb), a_pfnGet, a_pfnSet, a_paAliases, a_paSubFields }
+    { a_szName, DBGFREG_##a_RegSuff, DBGFREGVALTYPE_##a_TypeSuff, DBGFREG_FLAGS_READ_ONLY, (uint32_t)RT_UOFFSETOF(X86XSAVEAREA, a_XStateMemb), a_pfnGet, a_pfnSet, a_paAliases, a_paSubFields }
 #define CPU_REG_MSR(a_szName, UName, a_TypeSuff, a_paSubFields) \
     CPU_REG_EX_AS(a_szName,         MSR_##UName,    a_TypeSuff, MSR_##UName,    cpumR3RegGstGet_msr,  cpumR3RegGstSet_msr,  NULL,                       a_paSubFields)
 #define CPU_REG_ST(n) \
