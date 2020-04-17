@@ -1003,20 +1003,43 @@ void UIVirtualBoxManager::sltPerformShutdownMachine()
     /* For each selected item: */
     foreach (UIVirtualMachineItem *pItem, itemsToShutdown)
     {
-        /* Open a session to modify VM state: */
-        CSession comSession = uiCommon().openExistingSession(pItem->id());
-        if (comSession.isNull())
-            return;
+        /* For local machine: */
+        if (pItem->itemType() == UIVirtualMachineItem::ItemType_Local)
+        {
+            /* Open a session to modify VM state: */
+            CSession comSession = uiCommon().openExistingSession(pItem->id());
+            if (comSession.isNull())
+                return;
 
-        /* Get session console: */
-        CConsole comConsole = comSession.GetConsole();
-        /* ACPI Shutdown: */
-        comConsole.PowerButton();
-        if (!comConsole.isOk())
-            msgCenter().cannotACPIShutdownMachine(comConsole);
+            /* Get session console: */
+            CConsole comConsole = comSession.GetConsole();
+            /* ACPI Shutdown: */
+            comConsole.PowerButton();
+            if (!comConsole.isOk())
+                msgCenter().cannotACPIShutdownMachine(comConsole);
 
-        /* Unlock machine finally: */
-        comSession.UnlockMachine();
+            /* Unlock machine finally: */
+            comSession.UnlockMachine();
+        }
+        /* For real cloud machine: */
+        else if (pItem->itemType() == UIVirtualMachineItem::ItemType_CloudReal)
+        {
+            /* Acquire cloud machine: */
+            CCloudMachine comCloudMachine = pItem->toCloud()->machine();
+            /* Prepare machine ACPI shutdown: */
+            CProgress comProgress = comCloudMachine.Shutdown();
+            if (!comCloudMachine.isOk())
+                msgCenter().cannotACPIShutdownMachine(comCloudMachine);
+            else
+            {
+                /* Show machine ACPI shutdown progress: */
+                msgCenter().showModalProgressDialog(comProgress, pItem->name(), ":/progress_poweroff_90px.png");
+                if (!comProgress.isOk() || comProgress.GetResultCode() != 0)
+                    msgCenter().cannotACPIShutdownMachine(comProgress, pItem->name());
+                /* Update info in any case: */
+                pItem->toCloud()->updateInfoAsync(false /* delayed? */);
+            }
+        }
     }
 }
 
@@ -2069,8 +2092,7 @@ bool UIVirtualBoxManager::isActionEnabled(int iActionIndex, const QList<UIVirtua
         case UIActionIndexST_M_Group_M_Close_S_Shutdown:
         case UIActionIndexST_M_Machine_M_Close_S_Shutdown:
         {
-            return isItemsLocal(items) &&
-                   isActionEnabled(UIActionIndexST_M_Machine_M_Close, items) &&
+            return isActionEnabled(UIActionIndexST_M_Machine_M_Close, items) &&
                    isAtLeastOneItemAbleToShutdown(items);
         }
         case UIActionIndexST_M_Group_M_Close_S_PowerOff:
@@ -2113,25 +2135,36 @@ bool UIVirtualBoxManager::isAtLeastOneItemAbleToShutdown(const QList<UIVirtualMa
         /* Skip non-running machines: */
         if (!pItem->isItemRunning())
             continue;
-        /* Skip session failures: */
-        CSession session = uiCommon().openExistingSession(pItem->id());
-        if (session.isNull())
-            continue;
-        /* Skip console failures: */
-        CConsole console = session.GetConsole();
-        if (console.isNull())
+
+        /* For local machine: */
+        if (pItem->itemType() == UIVirtualMachineItem::ItemType_Local)
         {
+            /* Skip session failures: */
+            CSession session = uiCommon().openExistingSession(pItem->id());
+            if (session.isNull())
+                continue;
+            /* Skip console failures: */
+            CConsole console = session.GetConsole();
+            if (console.isNull())
+            {
+                /* Do not forget to release machine: */
+                session.UnlockMachine();
+                continue;
+            }
+            /* Is the guest entered ACPI mode? */
+            bool fGuestEnteredACPIMode = console.GetGuestEnteredACPIMode();
             /* Do not forget to release machine: */
             session.UnlockMachine();
-            continue;
+            /* True if the guest entered ACPI mode: */
+            if (fGuestEnteredACPIMode)
+                return true;
         }
-        /* Is the guest entered ACPI mode? */
-        bool fGuestEnteredACPIMode = console.GetGuestEnteredACPIMode();
-        /* Do not forget to release machine: */
-        session.UnlockMachine();
-        /* True if the guest entered ACPI mode: */
-        if (fGuestEnteredACPIMode)
+        /* For real cloud machine: */
+        else if (pItem->itemType() == UIVirtualMachineItem::ItemType_CloudReal)
+        {
+            /* Running cloud VM has it by definition: */
             return true;
+        }
     }
     /* False by default: */
     return false;

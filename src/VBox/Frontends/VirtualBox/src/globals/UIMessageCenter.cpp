@@ -924,6 +924,22 @@ void UIMessageCenter::cannotACPIShutdownMachine(const CConsole &console) const
           UIErrorString::formatErrorInfo(console));
 }
 
+void UIMessageCenter::cannotACPIShutdownMachine(const CCloudMachine &comMachine) const
+{
+    error(0, MessageType_Error,
+          tr("Failed to send the ACPI Power Button press event to virtual machine <b>%1</b>.")
+             .arg(CCloudMachine(comMachine).GetName()),
+          UIErrorString::formatErrorInfo(comMachine));
+}
+
+void UIMessageCenter::cannotACPIShutdownMachine(const CProgress &progress, const QString &strMachineName) const
+{
+    error(0, MessageType_Error,
+          tr("Failed to send the ACPI Power Button press event to virtual machine <b>%1</b>.")
+             .arg(strMachineName),
+          UIErrorString::formatErrorInfo(progress));
+}
+
 void UIMessageCenter::cannotPowerUpMachine(const CCloudMachine &comMachine) const
 {
     error(0, MessageType_Error,
