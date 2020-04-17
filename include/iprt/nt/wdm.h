@@ -30,7 +30,7 @@
 #endif
 
 /* Make sure we get the right prototypes. */
-#include <iprt/win/msvc_intrin.h>
+#include <iprt/sanitized/intrin.h>
 
 #define _InterlockedExchange           _InterlockedExchange_StupidDDKVsCompilerCrap
 #define _InterlockedExchangeAdd        _InterlockedExchangeAdd_StupidDDKVsCompilerCrap

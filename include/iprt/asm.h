@@ -44,7 +44,7 @@
 
 #if defined(_MSC_VER) && RT_INLINE_ASM_USES_INTRIN
 /* Emit the intrinsics at all optimization levels. */
-# include <iprt/win/msvc_intrin.h>
+# include <iprt/sanitized/intrin.h>
 # pragma intrinsic(_ReadWriteBarrier)
 # pragma intrinsic(__cpuid)
 # pragma intrinsic(__stosd)
