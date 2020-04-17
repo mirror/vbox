@@ -3713,7 +3713,7 @@ bldRTErrMsgSorter_SOURCES  = common/err/errmsg-sorter.cpp
 #
 # Sorter for the windows error codes.
 #
-BLDPROGS.win += bldRTErrMsgWinSorter
+BLDPROGS += bldRTErrMsgWinSorter
 bldRTErrMsgWinSorter_TEMPLATE = VBoxBldProg
 bldRTErrMsgWinSorter_INCS     = $(IPRT_OUT_DIR)
 bldRTErrMsgWinSorter_DEPS     = \

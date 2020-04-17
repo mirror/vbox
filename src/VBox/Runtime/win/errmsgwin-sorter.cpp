@@ -160,6 +160,7 @@ int main(int argc, char **argv)
          */
         static char s_szMsgTmp[_256K];
         long iPrev = (long)0x80000000;
+        rcExit = RTEXITCODE_SUCCESS;
         for (size_t i = 0; i < RT_ELEMENTS(g_aStatusMsgs); i++)
         {
             PCRTWINERRMSG pMsg = &g_aStatusMsgs[i];
@@ -176,8 +177,9 @@ int main(int argc, char **argv)
                 PCRTWINERRMSG pPrev = &g_aStatusMsgs[i - 1];
                 if (strcmp(pMsg->pszDefine, pPrev->pszDefine) == 0)
                     continue;
-                fprintf(stderr, "%s: warning: Duplicate value %#lx (%ld) - %s and %s\n",
+                fprintf(stderr, "%s: error: Duplicate value %#lx (%ld) - %s and %s\n",
                         argv[0], (unsigned long)iPrev, iPrev, pMsg->pszDefine, pPrev->pszDefine);
+                rcExit = RTEXITCODE_FAILURE;
             }
             iPrev = pMsg->iCode;
 
@@ -189,10 +191,11 @@ int main(int argc, char **argv)
         /*
          * Close the output file and we're done.
          */
-        if (fclose(pOut) == 0)
-            rcExit = RTEXITCODE_SUCCESS;
-        else
+        if (fclose(pOut) != 0)
+        {
             fprintf(stderr, "%s: Failed to flush/close '%s' after writing it!\n", argv[0], argv[1]);
+            rcExit = RTEXITCODE_FAILURE;
+        }
     }
     else
         fprintf(stderr, "%s: Failed to open '%s' for writing!\n", argv[0], argv[1]);
