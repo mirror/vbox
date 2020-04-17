@@ -54,6 +54,7 @@ class QMenu;
 class QSessionManager;
 class QSpinBox;
 class QToolButton;
+class CCloudMachine;
 class CHostVideoInputDevice;
 class CMachine;
 class CUSBDevice;
@@ -468,6 +469,8 @@ public:
         static bool switchToMachine(CMachine &comMachine);
         /** Launches certain @a comMachine in specified @a enmLaunchMode. */
         bool launchMachine(CMachine &comMachine, LaunchMode enmLaunchMode = LaunchMode_Default);
+        /** Launches certain @a comMachine. */
+        bool launchMachine(CCloudMachine &comMachine);
 
         /** Opens session of certain @a enmLockType for VM with certain @a uId. */
         CSession openSession(const QUuid &uId, KLockType enmLockType = KLockType_Write);

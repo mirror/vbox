@@ -293,6 +293,8 @@ public:
     void cannotSaveMachineState(const CMachine &machine);
     void cannotSaveMachineState(const CProgress &progress, const QString &strMachineName);
     void cannotACPIShutdownMachine(const CConsole &console) const;
+    void cannotPowerUpMachine(const CCloudMachine &comMachine) const;
+    void cannotPowerUpMachine(const CProgress &comProgress, const QString &strMachineName) const;
     void cannotPowerDownMachine(const CConsole &console) const;
     void cannotPowerDownMachine(const CCloudMachine &comMachine) const;
     void cannotPowerDownMachine(const CProgress &progress, const QString &strMachineName) const;

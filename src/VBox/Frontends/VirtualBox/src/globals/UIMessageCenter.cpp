@@ -924,6 +924,22 @@ void UIMessageCenter::cannotACPIShutdownMachine(const CConsole &console) const
           UIErrorString::formatErrorInfo(console));
 }
 
+void UIMessageCenter::cannotPowerUpMachine(const CCloudMachine &comMachine) const
+{
+    error(0, MessageType_Error,
+          tr("Failed to start the virtual machine <b>%1</b>.")
+             .arg(CCloudMachine(comMachine).GetName()),
+          UIErrorString::formatErrorInfo(comMachine));
+}
+
+void UIMessageCenter::cannotPowerUpMachine(const CProgress &comProgress, const QString &strMachineName) const
+{
+    error(0, MessageType_Error,
+          tr("Failed to start the virtual machine <b>%1</b>.")
+             .arg(strMachineName),
+          UIErrorString::formatErrorInfo(comProgress));
+}
+
 void UIMessageCenter::cannotPowerDownMachine(const CConsole &console) const
 {
     error(0, MessageType_Error,

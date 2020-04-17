@@ -1667,7 +1667,7 @@ void UIVirtualBoxManager::performStartOrShowVirtualMachines(const QList<UIVirtua
             || (   isAtLeastOneItemCanBeStarted(QList<UIVirtualMachineItem*>() << pItem)
                 && fStartConfirmed))
         {
-            /* Make sure item is local one: */
+            /* For local machine: */
             if (pItem->itemType() == UIVirtualMachineItem::ItemType_Local)
             {
                 /* Fetch item launch mode: */
@@ -1682,6 +1682,16 @@ void UIVirtualBoxManager::performStartOrShowVirtualMachines(const QList<UIVirtua
                 /* Launch current VM: */
                 CMachine machine = pItem->toLocal()->machine();
                 uiCommon().launchMachine(machine, enmItemLaunchMode);
+            }
+            /* For real cloud machine: */
+            else if (pItem->itemType() == UIVirtualMachineItem::ItemType_CloudReal)
+            {
+                /* Acquire cloud machine: */
+                CCloudMachine comCloudMachine = pItem->toCloud()->machine();
+                /* Launch current VM: */
+                uiCommon().launchMachine(comCloudMachine);
+                /* Update info in any case: */
+                pItem->toCloud()->updateInfoAsync(false /* delayed? */);
             }
         }
     }
@@ -1973,14 +1983,21 @@ bool UIVirtualBoxManager::isActionEnabled(int iActionIndex, const QList<UIVirtua
         }
         case UIActionIndexST_M_Group_M_StartOrShow:
         case UIActionIndexST_M_Group_M_StartOrShow_S_StartNormal:
-        case UIActionIndexST_M_Group_M_StartOrShow_S_StartHeadless:
-        case UIActionIndexST_M_Group_M_StartOrShow_S_StartDetachable:
         case UIActionIndexST_M_Machine_M_StartOrShow:
         case UIActionIndexST_M_Machine_M_StartOrShow_S_StartNormal:
+        {
+            return !isGroupSavingInProgress() &&
+                   isAtLeastOneItemCanBeStartedOrShown(items) &&
+                    (m_pWidget->currentMachineTool() != UIToolType_Snapshots ||
+                     m_pWidget->isCurrentStateItemSelected());
+        }
+        case UIActionIndexST_M_Group_M_StartOrShow_S_StartHeadless:
+        case UIActionIndexST_M_Group_M_StartOrShow_S_StartDetachable:
         case UIActionIndexST_M_Machine_M_StartOrShow_S_StartHeadless:
         case UIActionIndexST_M_Machine_M_StartOrShow_S_StartDetachable:
         {
             return !isGroupSavingInProgress() &&
+                   isItemsLocal(items) &&
                    isAtLeastOneItemCanBeStartedOrShown(items) &&
                     (m_pWidget->currentMachineTool() != UIToolType_Snapshots ||
                      m_pWidget->isCurrentStateItemSelected());
@@ -2180,8 +2197,7 @@ bool UIVirtualBoxManager::isAtLeastOneItemCanBeShown(const QList<UIVirtualMachin
 {
     foreach (UIVirtualMachineItem *pItem, items)
     {
-        if (   pItem->toLocal()
-            && pItem->isItemStarted()
+        if (   pItem->isItemStarted()
             && pItem->isItemCanBeSwitchedTo())
             return true;
     }
@@ -2193,11 +2209,10 @@ bool UIVirtualBoxManager::isAtLeastOneItemCanBeStartedOrShown(const QList<UIVirt
 {
     foreach (UIVirtualMachineItem *pItem, items)
     {
-        if (   pItem->toLocal()
-            && (   (   pItem->isItemPoweredOff()
-                    && pItem->isItemEditable())
-                || (   pItem->isItemStarted()
-                    && pItem->isItemCanBeSwitchedTo())))
+        if (   (   pItem->isItemPoweredOff()
+                && pItem->isItemEditable())
+            || (   pItem->isItemStarted()
+                && pItem->isItemCanBeSwitchedTo()))
             return true;
     }
     return false;

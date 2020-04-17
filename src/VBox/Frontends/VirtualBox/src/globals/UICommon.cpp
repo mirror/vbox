@@ -93,6 +93,7 @@
 /* COM includes: */
 #include "CAudioAdapter.h"
 #include "CBIOSSettings.h"
+#include "CCloudMachine.h"
 #include "CConsole.h"
 #include "CExtPack.h"
 #include "CExtPackFile.h"
@@ -2448,6 +2449,36 @@ bool UICommon::launchMachine(CMachine &comMachine, LaunchMode enmLaunchMode /* =
     comSession.UnlockMachine();
 
     /* True finally: */
+    return true;
+}
+
+bool UICommon::launchMachine(CCloudMachine &comMachine)
+{
+    /* Acquire machine name: */
+    const QString strName = comMachine.GetName();
+    if (!comMachine.isOk())
+    {
+        msgCenter().cannotAcquireMachineParameter(comMachine);
+        return false;
+    }
+
+    /* Prepare machine power up: */
+    CProgress comProgress = comMachine.PowerUp();
+    if (!comMachine.isOk())
+    {
+        msgCenter().cannotPowerUpMachine(comMachine);
+        return false;
+    }
+
+    /* Show machine power up progress: */
+    msgCenter().showModalProgressDialog(comProgress, strName, ":/progress_start_90px.png");
+    if (!comProgress.isOk() || comProgress.GetResultCode() != 0)
+    {
+        msgCenter().cannotPowerUpMachine(comProgress, strName);
+        return false;
+    }
+
+    /* Success by default: */
     return true;
 }
 
