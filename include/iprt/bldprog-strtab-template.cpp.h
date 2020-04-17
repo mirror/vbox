@@ -76,7 +76,14 @@
 #ifdef BLDPROG_STRTAB_WITH_COMPRESSION
 # include <algorithm>
 # include <map>
-# include <string>
+# if RT_MSC_PREREQ(RT_MSC_VER_VC141)
+#  pragma warning(push)
+#  pragma warning(disable:4774) /* string(530): warning C4774: '_scprintf' : format string expected in argument 1 is not a string literal */
+#  include <string>
+#  pragma warning(pop)
+# else
+#  include <string>
+# endif
 # include <vector>
 
 typedef std::map<std::string, size_t> BLDPROGWORDFREQMAP;
@@ -967,7 +974,10 @@ static void BldProgStrTab_WriteStringTable(PBLDPROGSTRTAB pThis, FILE *pOut,
         if (offEnd > off)
         {
             /* Comment with a uncompressed and more readable version of the string. */
-            fprintf(pOut, off == pCur->offStrTab ? "/* 0x%05x = \"" : "/* 0X%05x = \"", off);
+            if (off == pCur->offStrTab)
+                fprintf(pOut, "/* 0x%05x = \"", off);
+            else
+                fprintf(pOut, "/* 0X%05x = \"", off);
             BldProgStrTab_PrintCStringLitteral(pThis, pCur, pOut);
             fputs("\" */\n", pOut);
 
