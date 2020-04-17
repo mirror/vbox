@@ -44,7 +44,7 @@
 #include "internal/dbgmod.h"
 
 #include <iprt/win/windows.h>
-#include <Dbghelp.h>
+#include <iprt/win/dbghelp.h>
 #include <iprt/win/lazy-dbghelp.h>
 
 
