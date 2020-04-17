@@ -17,7 +17,11 @@
 #  error "Unsupported seeding method configured; must be os"
 # endif
 
+# ifdef VBOX
+#  include <iprt/win/windows.h>
+# else
 # include <windows.h>
+# endif
 /* On Windows Vista or higher use BCrypt instead of the legacy CryptoAPI */
 # if defined(_MSC_VER) && _MSC_VER > 1500 /* 1500 = Visual Studio 2008 */ \
      && defined(_WIN32_WINNT) && _WIN32_WINNT >= 0x0600 && !defined(VBOX) /* for now */

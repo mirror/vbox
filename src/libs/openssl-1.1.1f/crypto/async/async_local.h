@@ -17,7 +17,11 @@
 #endif
 
 #if defined(_WIN32)
+# ifdef VBOX
+#  include <iprt/win/windows.h>
+# else
 # include <windows.h>
+# endif
 #endif
 
 #include "crypto/async.h"

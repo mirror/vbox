@@ -153,11 +153,20 @@
         * it's sufficient to check for specific Winsock2 API availability
         * at run-time [DSO_global_lookup is recommended]...
         */
+#    ifdef VBOX
+#     include <iprt/win/winsock2.h>
+#     include <iprt/win/ws2tcpip.h>
+#    else
 #    include <winsock2.h>
 #    include <ws2tcpip.h>
+#    endif
        /* yes, they have to be #included prior to <windows.h> */
 #   endif
+#   ifdef VBOX
+#    include <iprt/win/windows.h>
+#   else
 #   include <windows.h>
+#   endif
 #   endif                   /* bird */
 #   include <stdio.h>
 #   include <stddef.h>
