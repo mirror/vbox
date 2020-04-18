@@ -151,7 +151,7 @@ int usblibOsChangeService(const char *pszDriverPath)
         SC_HANDLE hService = OpenService(hSMgrCreate,
                                          SERVICE_NAME,
                                          GENERIC_ALL);
-        DWORD dwLastError = GetLastError();
+        dwLastError = GetLastError();
         if (hService == NULL)
         {
             AssertMsg(hService, ("OpenService failed! LastError=%Rwa, pszDriver=%s\n", dwLastError, pszDriverPath));
@@ -207,7 +207,7 @@ int usblibOsCreateService(void)
     if (hSMgrCreate)
     {
         char szDriver[RTPATH_MAX];
-        int rc = RTPathExecDir(szDriver, sizeof(szDriver) - sizeof("\\VBoxUSBMon.sys"));
+        rc = RTPathExecDir(szDriver, sizeof(szDriver) - sizeof("\\VBoxUSBMon.sys"));
         if (RT_SUCCESS(rc))
         {
             strcat(szDriver, "\\VBoxUSBMon.sys");
@@ -221,7 +221,7 @@ int usblibOsCreateService(void)
                                                SERVICE_ERROR_NORMAL,
                                                szDriver,
                                                NULL, NULL, NULL, NULL, NULL);
-            DWORD dwLastError = GetLastError();
+            dwLastError = GetLastError();
             if (dwLastError == ERROR_SERVICE_EXISTS)
             {
                 RTPrintf("USB monitor driver service already exists, skipping creation.\n");

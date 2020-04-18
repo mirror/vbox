@@ -78,8 +78,7 @@ int usbMonStopService(void)
      */
     int rc = -1;
     SC_HANDLE   hSMgr = OpenSCManager(NULL, NULL, SERVICE_STOP | SERVICE_QUERY_STATUS);
-    DWORD LastError = GetLastError(); NOREF(LastError);
-    AssertMsg(hSMgr, ("OpenSCManager(,,delete) failed rc=%d\n", LastError));
+    AssertMsg(hSMgr, ("OpenSCManager(,,delete) failed rc=%d\n", GetLastError()));
     if (hSMgr)
     {
         SC_HANDLE hService = OpenServiceW(hSMgr, USBMON_SERVICE_NAME_W, SERVICE_STOP | SERVICE_QUERY_STATUS);
@@ -106,23 +105,18 @@ int usbMonStopService(void)
                    AssertMsgFailed(("Failed to stop service. status=%d\n", Status.dwCurrentState));
             }
             else
-            {
-                DWORD LastError = GetLastError(); NOREF(LastError);
-                AssertMsgFailed(("ControlService failed with LastError=%Rwa. status=%d\n", LastError, Status.dwCurrentState));
-            }
+                AssertMsgFailed(("ControlService failed with LastError=%Rwa. status=%d\n", GetLastError(), Status.dwCurrentState));
             CloseServiceHandle(hService);
         }
         else if (GetLastError() == ERROR_SERVICE_DOES_NOT_EXIST)
             rc = 0;
         else
-        {
-            DWORD LastError = GetLastError(); NOREF(LastError);
-            AssertMsgFailed(("OpenService failed LastError=%Rwa\n", LastError));
-        }
+            AssertMsgFailed(("OpenService failed LastError=%Rwa\n", GetLastError()));
         CloseServiceHandle(hSMgr);
     }
     return rc;
 }
+
 /**
  * Release specified USB device to the host.
  *
@@ -264,7 +258,7 @@ int usbMonitorInit()
         if (g_hUSBMonitor == INVALID_HANDLE_VALUE)
         {
             /* AssertFailed(); */
-            printf("usbproxy: Unable to open filter driver!! (rc=%d)\n", GetLastError());
+            printf("usbproxy: Unable to open filter driver!! (rc=%lu)\n", GetLastError());
             rc = VERR_FILE_NOT_FOUND;
             goto failure;
         }
@@ -276,7 +270,7 @@ int usbMonitorInit()
     cbReturned = 0;
     if (!DeviceIoControl(g_hUSBMonitor, SUPUSBFLT_IOCTL_GET_VERSION, NULL, 0,&version, sizeof(version),  &cbReturned, NULL))
     {
-        printf("usbproxy: Unable to query filter version!! (rc=%d)\n", GetLastError());
+        printf("usbproxy: Unable to query filter version!! (rc=%lu)\n", GetLastError());
         rc = VERR_VERSION_MISMATCH;
         goto failure;
     }

@@ -108,26 +108,6 @@
 /*********************************************************************************************************************************
 *   Defined Constants And Macros                                                                                                 *
 *********************************************************************************************************************************/
-/*
- * Note: Must match the VID & PID in the USB driver .inf file!!
- */
-/*
-  BusQueryDeviceID USB\Vid_80EE&Pid_CAFE
-  BusQueryInstanceID 2
-  BusQueryHardwareIDs USB\Vid_80EE&Pid_CAFE&Rev_0100
-  BusQueryHardwareIDs USB\Vid_80EE&Pid_CAFE
-  BusQueryCompatibleIDs USB\Class_ff&SubClass_00&Prot_00
-  BusQueryCompatibleIDs USB\Class_ff&SubClass_00
-  BusQueryCompatibleIDs USB\Class_ff
-*/
-
-#define szBusQueryDeviceId       L"USB\\Vid_80EE&Pid_CAFE"
-#define szBusQueryHardwareIDs    L"USB\\Vid_80EE&Pid_CAFE&Rev_0100\0USB\\Vid_80EE&Pid_CAFE\0\0"
-#define szBusQueryCompatibleIDs  L"USB\\Class_ff&SubClass_00&Prot_00\0USB\\Class_ff&SubClass_00\0USB\\Class_ff\0\0"
-
-#define szDeviceTextDescription          L"VirtualBox USB"
-
-
 #define VBOXUSBMON_MEMTAG 'MUBV'
 
 
@@ -179,6 +159,24 @@ typedef struct VBOXUSBMONGLOBALS
 *   Global Variables                                                                                                             *
 *********************************************************************************************************************************/
 static VBOXUSBMONGLOBALS g_VBoxUsbMonGlobals;
+
+/*
+ * Note: Must match the VID & PID in the USB driver .inf file!!
+ */
+/*
+  BusQueryDeviceID USB\Vid_80EE&Pid_CAFE
+  BusQueryInstanceID 2
+  BusQueryHardwareIDs USB\Vid_80EE&Pid_CAFE&Rev_0100
+  BusQueryHardwareIDs USB\Vid_80EE&Pid_CAFE
+  BusQueryCompatibleIDs USB\Class_ff&SubClass_00&Prot_00
+  BusQueryCompatibleIDs USB\Class_ff&SubClass_00
+  BusQueryCompatibleIDs USB\Class_ff
+*/
+
+static WCHAR const g_szBusQueryDeviceId[]      = L"USB\\Vid_80EE&Pid_CAFE";
+static WCHAR const g_szBusQueryHardwareIDs[]   = L"USB\\Vid_80EE&Pid_CAFE&Rev_0100\0USB\\Vid_80EE&Pid_CAFE\0\0";
+static WCHAR const g_szBusQueryCompatibleIDs[] = L"USB\\Class_ff&SubClass_00&Prot_00\0USB\\Class_ff&SubClass_00\0USB\\Class_ff\0\0";
+static WCHAR const g_szDeviceTextDescription[] = L"VirtualBox USB";
 
 
 
@@ -376,7 +374,7 @@ static NTSTATUS vboxUsbMonHandlePnPIoctl(PDEVICE_OBJECT pDevObj, PIO_STACK_LOCAT
                     KIRQL Iqrl = KeGetCurrentIrql();
                     /* IRQL should be always passive here */
                     ASSERT_WARN(Iqrl == PASSIVE_LEVEL, ("irql is not PASSIVE"));
-                    switch(pSl->Parameters.QueryDeviceText.DeviceTextType)
+                    switch (pSl->Parameters.QueryDeviceText.DeviceTextType)
                     {
                         case DeviceTextLocationInformation:
                             LOG(("DeviceTextLocationInformation"));
@@ -389,17 +387,13 @@ static NTSTATUS vboxUsbMonHandlePnPIoctl(PDEVICE_OBJECT pDevObj, PIO_STACK_LOCAT
                             if (VBoxUsbFltPdoIsFiltered(pDevObj))
                             {
                                 LOG(("PDO (0x%p) is filtered", pDevObj));
-                                WCHAR *pId = (WCHAR *)ExAllocatePool(PagedPool, sizeof(szDeviceTextDescription));
-                                if (!pId)
-                                {
-                                    AssertFailed();
-                                    break;
-                                }
-                                memcpy(pId, szDeviceTextDescription, sizeof(szDeviceTextDescription));
+                                WCHAR *pId2 = (WCHAR *)ExAllocatePool(PagedPool, sizeof(g_szDeviceTextDescription));
+                                AssertBreak(pId2);
+                                memcpy(pId2, g_szDeviceTextDescription, sizeof(g_szDeviceTextDescription));
                                 LOG(("NEW szDeviceTextDescription"));
-                                LOG_STRW(pId);
+                                LOG_STRW(pId2);
                                 ExFreePool((PVOID)pIoStatus->Information);
-                                pIoStatus->Information = (ULONG_PTR)pId;
+                                pIoStatus->Information = (ULONG_PTR)pId2;
                             }
                             else
                             {
@@ -442,7 +436,7 @@ static NTSTATUS vboxUsbMonHandlePnPIoctl(PDEVICE_OBJECT pDevObj, PIO_STACK_LOCAT
                         case BusQueryDeviceID:
                         {
                             LOG(("BusQueryDeviceID"));
-                            pId = (WCHAR *)ExAllocatePool(PagedPool, sizeof(szBusQueryDeviceId));
+                            pId = (WCHAR *)ExAllocatePool(PagedPool, sizeof(g_szBusQueryDeviceId));
                             if (!pId)
                             {
                                 WARN(("ExAllocatePool failed"));
@@ -467,7 +461,7 @@ static NTSTATUS vboxUsbMonHandlePnPIoctl(PDEVICE_OBJECT pDevObj, PIO_STACK_LOCAT
 
                             LOG(("PDO (0x%p) is filtered", pDevObj));
                             ExFreePool((PVOID)pIoStatus->Information);
-                            memcpy(pId, szBusQueryDeviceId, sizeof(szBusQueryDeviceId));
+                            memcpy(pId, g_szBusQueryDeviceId, sizeof(g_szBusQueryDeviceId));
                             pIoStatus->Information = (ULONG_PTR)pId;
                             break;
                         }
@@ -482,7 +476,7 @@ static NTSTATUS vboxUsbMonHandlePnPIoctl(PDEVICE_OBJECT pDevObj, PIO_STACK_LOCAT
                             pId++;
                         }
 #endif
-                        pId = (WCHAR *)ExAllocatePool(PagedPool, sizeof(szBusQueryHardwareIDs));
+                        pId = (WCHAR *)ExAllocatePool(PagedPool, sizeof(g_szBusQueryHardwareIDs));
                         if (!pId)
                         {
                             WARN(("ExAllocatePool failed"));
@@ -507,7 +501,7 @@ static NTSTATUS vboxUsbMonHandlePnPIoctl(PDEVICE_OBJECT pDevObj, PIO_STACK_LOCAT
 
                         LOG(("PDO (0x%p) is filtered", pDevObj));
 
-                        memcpy(pId, szBusQueryHardwareIDs, sizeof(szBusQueryHardwareIDs));
+                        memcpy(pId, g_szBusQueryHardwareIDs, sizeof(g_szBusQueryHardwareIDs));
 #ifdef VBOX_USB_WITH_VERBOSE_LOGGING
                         LOG(("NEW BusQueryHardwareIDs"));
                         pTmp = pId;
@@ -536,13 +530,13 @@ static NTSTATUS vboxUsbMonHandlePnPIoctl(PDEVICE_OBJECT pDevObj, PIO_STACK_LOCAT
                         if (VBoxUsbFltPdoIsFiltered(pDevObj))
                         {
                             LOG(("PDO (0x%p) is filtered", pDevObj));
-                            pId = (WCHAR *)ExAllocatePool(PagedPool, sizeof(szBusQueryCompatibleIDs));
+                            pId = (WCHAR *)ExAllocatePool(PagedPool, sizeof(g_szBusQueryCompatibleIDs));
                             if (!pId)
                             {
                                 WARN(("ExAllocatePool failed"));
                                 break;
                             }
-                            memcpy(pId, szBusQueryCompatibleIDs, sizeof(szBusQueryCompatibleIDs));
+                            memcpy(pId, g_szBusQueryCompatibleIDs, sizeof(g_szBusQueryCompatibleIDs));
 #ifdef VBOX_USB_WITH_VERBOSE_LOGGING
                             LOG(("NEW BusQueryCompatibleIDs"));
                             pTmp = pId;
