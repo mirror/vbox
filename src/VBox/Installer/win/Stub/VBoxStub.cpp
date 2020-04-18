@@ -168,7 +168,7 @@ static void ShowInfo(const char *pszFmt, ...)
         else
         {
             PRTUTF16 pwszMsg;
-            int rc = RTStrToUtf16(pszMsg, &pwszMsg);
+            rc = RTStrToUtf16(pszMsg, &pwszMsg);
             if (RT_SUCCESS(rc))
             {
                 MessageBoxW(GetDesktopWindow(), pwszMsg, MY_UNICODE(VBOX_STUB_TITLE), MB_ICONINFORMATION);

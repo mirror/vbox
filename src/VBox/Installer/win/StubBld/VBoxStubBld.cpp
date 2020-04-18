@@ -24,6 +24,7 @@
 #include <strsafe.h>
 
 #include <VBox/version.h>
+#include <iprt/types.h>
 
 #include "VBoxStubBld.h"
 
@@ -32,18 +33,14 @@ HRESULT GetFile (const char* pszFilePath,
                  DWORD* pdwFileSize)
 {
     HRESULT hr = S_OK;
-    *phFile = ::CreateFile(pszFilePath, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+    *phFile = CreateFile(pszFilePath, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
     if (INVALID_HANDLE_VALUE == *phFile)
-    {
         hr = HRESULT_FROM_WIN32(GetLastError());
-    }
     else
     {
         *pdwFileSize = ::GetFileSize(*phFile, NULL);
         if (!*pdwFileSize)
-        {
             hr = HRESULT_FROM_WIN32(GetLastError());
-        }
     }
     return hr;
 }
@@ -51,81 +48,50 @@ HRESULT GetFile (const char* pszFilePath,
 HRESULT UpdateResource(HANDLE hFile,
                        DWORD dwFileSize,
                        HANDLE hResourceUpdate,
-                       const char *szResourceType,
-                       const char *szResourceId)
+                       const char *pszResourceType,
+                       const char *pszResourceId)
 {
     HRESULT hr = S_OK;
-    PVOID pvFile = NULL;
-    HANDLE hMap = NULL;
 
-    hMap = ::CreateFileMapping(hFile, NULL, PAGE_READONLY, 0, 0, NULL);
-    pvFile = ::MapViewOfFile(hMap, FILE_MAP_READ, 0, 0, dwFileSize);
-    if (!::UpdateResourceA(hResourceUpdate, szResourceType, szResourceId,
-                           MAKELANGID(LANG_ENGLISH, SUBLANG_ENGLISH_US), pvFile, dwFileSize))
-    {
+    HANDLE hMap = CreateFileMapping(hFile, NULL, PAGE_READONLY, 0, 0, NULL);
+    PVOID pvFile = MapViewOfFile(hMap, FILE_MAP_READ, 0, 0, dwFileSize);
+    if (!UpdateResourceA(hResourceUpdate, pszResourceType, pszResourceId,
+                         MAKELANGID(LANG_ENGLISH, SUBLANG_ENGLISH_US), pvFile, dwFileSize))
         hr = HRESULT_FROM_WIN32(GetLastError());
-    }
 
     if (pvFile)
-    {
-        ::UnmapViewOfFile(pvFile);
-        pvFile = NULL;
-    }
+        UnmapViewOfFile(pvFile);
 
     if (hMap)
-    {
-        ::CloseHandle(hMap);
-        hMap = NULL;
-    }
+        CloseHandle(hMap);
 
     return hr;
 }
 
-HRESULT IntegrateFile (HANDLE hResourceUpdate,
-                       const char* szResourceType,
-                       const char* szResourceId,
-                       const char* pszFilePath)
+static HRESULT IntegrateFile(HANDLE hResourceUpdate, const char *pszResourceType,
+                             const char *pszResourceId, const char *pszFilePath)
 {
-    HRESULT hr = S_OK;
     HANDLE hFile = INVALID_HANDLE_VALUE;
     DWORD dwFileSize = 0;
-
-    do
+    HRESULT hr = GetFile(pszFilePath, &hFile, &dwFileSize);
+    if (SUCCEEDED(hr))
     {
-        hr = GetFile(pszFilePath, &hFile, &dwFileSize);
+        hr = UpdateResource(hFile, dwFileSize, hResourceUpdate, pszResourceType, pszResourceId);
         if (FAILED(hr))
-        {
-            hr = HRESULT_FROM_WIN32(GetLastError());
-            break;
-        }
-        else
-        {
-            hr = UpdateResource(hFile, dwFileSize, hResourceUpdate, szResourceType, szResourceId);
-            if (FAILED(hr))
-            {
-                printf("ERROR: Error updating resource for file %s!", pszFilePath);
-                break;
-            }
-        }
-
-    } while (0);
-
-
-    if (INVALID_HANDLE_VALUE != hFile)
-    {
-        ::CloseHandle(hFile);
-        hFile = INVALID_HANDLE_VALUE;
+            printf("ERROR: Error updating resource for file %s!", pszFilePath);
     }
+    else
+        hr = HRESULT_FROM_WIN32(GetLastError());
 
+    if (hFile != INVALID_HANDLE_VALUE)
+        CloseHandle(hFile);
     return hr;
 }
 
-static char * MyPathFilename(const char *pszPath)
+static char *MyPathFilename(const char *pszPath)
 {
-    const char *psz = pszPath;
     const char *pszName = pszPath;
-
-    for (;; psz++)
+    for (const char *psz = pszPath;; psz++)
     {
         switch (*psz)
         {
@@ -151,16 +117,16 @@ static char * MyPathFilename(const char *pszPath)
 }
 
 
-int main (int argc, char* argv[])
+int main(int argc, char* argv[])
 {
     HRESULT hr = S_OK;
-    int rc = 0;
+    int rcExit = RTEXITCODE_SUCCESS;
 
     char szSetupStub[_MAX_PATH] = {"VBoxStub.exe"};
     char szOutput[_MAX_PATH] = {"VirtualBox-MultiArch.exe"};
     HANDLE hUpdate = NULL;
 
-    do
+    do /* goto avoidance "loop" */
     {
         printf(VBOX_PRODUCT " Stub Builder v%d.%d.%d.%d\n",
                VBOX_VERSION_MAJOR, VBOX_VERSION_MINOR, VBOX_VERSION_BUILD, VBOX_SVN_REV);
@@ -179,37 +145,37 @@ int main (int argc, char* argv[])
 
         for (int i=1; i<argc; i++)
         {
-            if (0 == stricmp(argv[i], "-out") && argc > i+1)
+            if (!stricmp(argv[i], "-out") && argc > i+1)
             {
-                hr = ::StringCchCopy(szOutput, _MAX_PATH, argv[i+1]);
+                hr = StringCchCopy(szOutput, _MAX_PATH, argv[i+1]);
                 i++;
             }
 
-            else if (0 == stricmp(argv[i], "-stub") && argc > i+1)
+            else if (!stricmp(argv[i], "-stub") && argc > i+1)
             {
-                hr = ::StringCchCopy(szSetupStub, _MAX_PATH, argv[i+1]);
+                hr = StringCchCopy(szSetupStub, _MAX_PATH, argv[i+1]);
                 i++;
             }
 
-            else if (0 == stricmp(argv[i], "-target-all") && argc > i+1)
+            else if (!stricmp(argv[i], "-target-all") && argc > i+1)
             {
-                hr = ::StringCchCopy(stbBuildPkg[stbHeader.byCntPkgs].szSourcePath, _MAX_PATH, argv[i+1]);
+                hr = StringCchCopy(stbBuildPkg[stbHeader.byCntPkgs].szSourcePath, _MAX_PATH, argv[i+1]);
                 stbBuildPkg[stbHeader.byCntPkgs].byArch = VBOXSTUBPKGARCH_ALL;
                 stbHeader.byCntPkgs++;
                 i++;
             }
 
-            else if (0 == stricmp(argv[i], "-target-x86") && argc > i+1)
+            else if (!stricmp(argv[i], "-target-x86") && argc > i+1)
             {
-                hr = ::StringCchCopy(stbBuildPkg[stbHeader.byCntPkgs].szSourcePath, _MAX_PATH, argv[i+1]);
+                hr = StringCchCopy(stbBuildPkg[stbHeader.byCntPkgs].szSourcePath, _MAX_PATH, argv[i+1]);
                 stbBuildPkg[stbHeader.byCntPkgs].byArch = VBOXSTUBPKGARCH_X86;
                 stbHeader.byCntPkgs++;
                 i++;
             }
 
-            else if (0 == stricmp(argv[i], "-target-amd64") && argc > i+1)
+            else if (!stricmp(argv[i], "-target-amd64") && argc > i+1)
             {
-                hr = ::StringCchCopy(stbBuildPkg[stbHeader.byCntPkgs].szSourcePath, _MAX_PATH, argv[i+1]);
+                hr = StringCchCopy(stbBuildPkg[stbHeader.byCntPkgs].szSourcePath, _MAX_PATH, argv[i+1]);
                 stbBuildPkg[stbHeader.byCntPkgs].byArch = VBOXSTUBPKGARCH_AMD64;
                 stbHeader.byCntPkgs++;
                 i++;
@@ -217,12 +183,12 @@ int main (int argc, char* argv[])
             else
             {
                 printf("ERROR: Invalid parameter: %s\n", argv[i]);
-                hr = HRESULT_FROM_WIN32(ERROR_INVALID_PARAMETER);
+                hr = E_INVALIDARG;
                 break;
             }
             if (FAILED(hr))
             {
-                printf("ERROR: StringCchCopy failed: %#x\n", hr);
+                printf("ERROR: StringCchCopy failed: %#lx\n", hr);
                 break;
             }
         }
@@ -237,42 +203,42 @@ int main (int argc, char* argv[])
 
         printf("Stub: %s\n", szSetupStub);
         printf("Output: %s\n", szOutput);
-        printf("# Packages: %d\n", stbHeader.byCntPkgs);
+        printf("# Packages: %u\n", stbHeader.byCntPkgs);
 
-        if (!::CopyFile(szSetupStub, szOutput, FALSE))
+        if (!CopyFile(szSetupStub, szOutput, FALSE))
         {
             hr = HRESULT_FROM_WIN32(GetLastError());
-            printf("ERROR: Could not create stub loader: 0x%08x\n", hr);
+            printf("ERROR: Could not create stub loader: %#lx\n", hr);
             break;
         }
 
-        hUpdate = ::BeginUpdateResource(szOutput, FALSE);
+        hUpdate = BeginUpdateResource(szOutput, FALSE);
 
         PVBOXSTUBPKG pPackage = stbPkg;
         char szHeaderName[_MAX_PATH] = {0};
 
-        for (BYTE i=0; i<stbHeader.byCntPkgs; i++)
+        for (BYTE i = 0; i < stbHeader.byCntPkgs; i++)
         {
             printf("Integrating (Platform %d): %s\n", stbBuildPkg[i].byArch, stbBuildPkg[i].szSourcePath);
 
             /* Construct resource name. */
-            hr = ::StringCchPrintf(pPackage->szResourceName, _MAX_PATH, "BIN_%02d", i);
+            hr = StringCchPrintf(pPackage->szResourceName, _MAX_PATH, "BIN_%02d", i);
             pPackage->byArch = stbBuildPkg[i].byArch;
 
             /* Construct final name used when extracting. */
-            hr = ::StringCchCopy(pPackage->szFileName, _MAX_PATH, MyPathFilename(stbBuildPkg[i].szSourcePath));
+            hr = StringCchCopy(pPackage->szFileName, _MAX_PATH, MyPathFilename(stbBuildPkg[i].szSourcePath));
 
             /* Integrate header into binary. */
-            hr = ::StringCchPrintf(szHeaderName, _MAX_PATH, "HDR_%02d", i);
+            hr = StringCchPrintf(szHeaderName, _MAX_PATH, "HDR_%02d", i);
             hr = UpdateResource(hUpdate, RT_RCDATA, szHeaderName, MAKELANGID(LANG_ENGLISH, SUBLANG_ENGLISH_US), pPackage, sizeof(VBOXSTUBPKG));
 
             /* Integrate file into binary. */
             hr = IntegrateFile(hUpdate, RT_RCDATA, pPackage->szResourceName, stbBuildPkg[i].szSourcePath);
             if (FAILED(hr))
             {
-                printf("ERROR: Could not integrate binary %s (%s): 0x%08x\n",
+                printf("ERROR: Could not integrate binary %s (%s): %#lx\n",
                          pPackage->szResourceName, pPackage->szFileName, hr);
-                rc = 1;
+                rcExit = RTEXITCODE_FAILURE;
             }
 
             pPackage++;
@@ -281,13 +247,13 @@ int main (int argc, char* argv[])
         if (FAILED(hr))
             break;
 
-        if (!::UpdateResource(hUpdate, RT_RCDATA, "MANIFEST", MAKELANGID(LANG_ENGLISH, SUBLANG_ENGLISH_US), &stbHeader, sizeof(VBOXSTUBPKGHEADER)))
+        if (!UpdateResource(hUpdate, RT_RCDATA, "MANIFEST", MAKELANGID(LANG_ENGLISH, SUBLANG_ENGLISH_US), &stbHeader, sizeof(VBOXSTUBPKGHEADER)))
         {
             hr = HRESULT_FROM_WIN32(GetLastError());
             break;
         }
 
-        if (!::EndUpdateResource(hUpdate, FALSE))
+        if (!EndUpdateResource(hUpdate, FALSE))
         {
             hr = HRESULT_FROM_WIN32(GetLastError());
             break;
@@ -301,8 +267,8 @@ int main (int argc, char* argv[])
 
     if (FAILED(hr))
     {
-        printf("ERROR: Building failed! Last error: %d\n", GetLastError());
-        rc = 1;
+        printf("ERROR: Building failed! Last error: %lu\n", GetLastError());
+        rcExit = RTEXITCODE_FAILURE;
     }
-    return rc;
+    return rcExit;
 }
