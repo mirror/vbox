@@ -73,7 +73,7 @@
 
 #include <map>
 #include <vector>
-#include <string>
+#include <iprt/sanitized/string>
 
 #include <stdio.h>
 

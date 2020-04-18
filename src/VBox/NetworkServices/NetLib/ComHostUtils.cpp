@@ -51,7 +51,7 @@
 
 #include <vector>
 #include <list>
-#include <string>
+#include <iprt/sanitized/string>
 #include <map>
 
 #include "../NetLib/VBoxNetBaseService.h"

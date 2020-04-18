@@ -54,7 +54,7 @@
 #include <VBox/version.h>
 
 #include <vector>
-#include <string>
+#include <iprt/sanitized/string>
 
 #include <VBox/err.h>
 #include <VBox/log.h>
