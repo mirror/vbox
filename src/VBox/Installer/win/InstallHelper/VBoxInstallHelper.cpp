@@ -53,7 +53,7 @@
 
 
 /*********************************************************************************************************************************
-*   Header Files                                                                                                                 *
+*   Defined Constants And Macros                                                                                                 *
 *********************************************************************************************************************************/
 #ifdef DEBUG
 # define NonStandardAssert(_expr) assert(_expr)
@@ -312,9 +312,9 @@ static LONG installBrandingValue(MSIHANDLE hModule,
         WCHAR wszKey[_MAX_PATH];
 
         if (wcsicmp(L"General", pwszSection) != 0)
-            swprintf_s(wszKey, RT_ELEMENTS(wszKey), L"SOFTWARE\\%s\\VirtualBox\\Branding\\%s", VBOX_VENDOR_SHORT, pwszSection);
+            swprintf_s(wszKey, RT_ELEMENTS(wszKey), L"SOFTWARE\\%S\\VirtualBox\\Branding\\%s", VBOX_VENDOR_SHORT, pwszSection);
         else
-            swprintf_s(wszKey, RT_ELEMENTS(wszKey), L"SOFTWARE\\%s\\VirtualBox\\Branding", VBOX_VENDOR_SHORT);
+            swprintf_s(wszKey, RT_ELEMENTS(wszKey), L"SOFTWARE\\%S\\VirtualBox\\Branding", VBOX_VENDOR_SHORT);
 
         rc = RegOpenKeyExW(HKEY_LOCAL_MACHINE, wszKey, 0, KEY_WRITE, &hkBranding);
         if (rc == ERROR_SUCCESS)
@@ -884,16 +884,16 @@ static UINT _installNetLwf(MSIHANDLE hModule)
         if (uErr == ERROR_SUCCESS)
         {
             WCHAR wszInf[MAX_PATH];
-            DWORD cchInf = RT_ELEMENTS(wszInf) - sizeof(NETLWF_INF_NAME) - 1;
-            UINT uErr = MsiGetPropertyW(hModule, L"CustomActionData", wszInf, &cchInf);
+            DWORD cwcInf = RT_ELEMENTS(wszInf) - sizeof(NETLWF_INF_NAME) - 1;
+            uErr = MsiGetPropertyW(hModule, L"CustomActionData", wszInf, &cwcInf);
             if (uErr == ERROR_SUCCESS)
             {
-                if (cchInf)
+                if (cwcInf)
                 {
-                    if (wszInf[cchInf - 1] != L'\\')
+                    if (wszInf[cwcInf - 1] != L'\\')
                     {
-                        wszInf[cchInf++] = L'\\';
-                        wszInf[cchInf]   = L'\0';
+                        wszInf[cwcInf++] = L'\\';
+                        wszInf[cwcInf]   = L'\0';
                     }
 
                     wcscat(wszInf, NETLWF_INF_NAME);
