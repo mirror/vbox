@@ -34,10 +34,7 @@
 # include <VBox/com/VirtualBox.h>
 #endif /* !VBOX_ONLY_DOCS */
 
-#include <algorithm>
 #include <map>
-#include <sstream>
-#include <string>
 #include <vector>
 
 using namespace com;

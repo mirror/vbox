@@ -22,6 +22,9 @@
 #include <VBox/com/array.h>
 #include "VBoxWatchdogInternal.h"
 
+#include <iprt/sanitized/sstream>
+#include <algorithm>
+
 
 /**
  * Adds a group / a set of groups to the specified map.

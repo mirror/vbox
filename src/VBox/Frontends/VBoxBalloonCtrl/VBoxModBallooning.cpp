@@ -745,22 +745,31 @@ VBOXMODULE g_ModBallooning =
     /* uPriority. */
     0 /* Not used */,
     /* pszUsage. */
-    " [--balloon-dec=<MB>] [--balloon-groups=<string>] [--balloon-inc=<MB>]\n"
-    " [--balloon-interval=<ms>] [--balloon-lower-limit=<MB>]\n"
-    " [--balloon-max=<MB>]\n",
+    "           [--balloon-dec=<MB>] [--balloon-groups=<string>]\n"
+    "           [--balloon-inc=<MB>] [--balloon-interval=<ms>]\n"
+    "           [--balloon-lower-limit=<MB>] [--balloon-max=<MB>]\n"
+    "           [--balloon-safety-margin=<MB]\n",
     /* pszOptions. */
-    "--balloon-dec          Sets the ballooning decrement in MB (128 MB).\n"
-    "--balloon-groups       Sets the VM groups for ballooning (all).\n"
-    "--balloon-inc          Sets the ballooning increment in MB (256 MB).\n"
-    "--balloon-interval     Sets the check interval in ms (30 seconds).\n"
-    "--balloon-lower-limit  Sets the ballooning lower limit in MB (64 MB).\n"
-    "--balloon-max          Sets the balloon maximum limit in MB (0 MB).\n"
-    "                       Specifying \"0\" means disabled ballooning.\n"
+    "  --balloon-dec=<MB>\n"
+    "      Sets the ballooning decrement in MB (128 MB).\n"
+    "  --balloon-groups=<string>\n"
+    "      Sets the VM groups for ballooning (all).\n"
+    "  --balloon-inc=<MB>\n"
+    "      Sets the ballooning increment in MB (256 MB).\n"
+    "  --balloon-interval=<ms>\n"
+    "      Sets the check interval in ms (30 seconds).\n"
+    "  --balloon-lower-limit=<MB>\n"
+    "      Sets the ballooning lower limit in MB (64 MB).\n"
+    "  --balloon-max=<MB>\n"
+    "      Sets the balloon maximum limit in MB (0 MB).\n"
+    "      Specifying \"0\" means disabled ballooning.\n"
 #if 1
     /* (Legacy) note. */
-    "Set \"VBoxInternal/Guest/BalloonSizeMax\" for a per-VM maximum ballooning size.\n"
+    "      Set \"VBoxInternal/Guest/BalloonSizeMax\" for a per-VM\n"
+    "      maximum ballooning size.\n"
 #endif
-    "--balloon-safety-margin Free memory when deflating a balloon in MB (1024 MB).\n"
+    "  --balloon-safety-margin=<MB>\n"
+    "     Free memory when deflating a balloon in MB (1024 MB).\n"
     ,
     /* methods. */
     VBoxModBallooningPreInit,
