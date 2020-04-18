@@ -117,6 +117,7 @@ VBOX_HDRS_OMIT := \
 		VBox/usblib-win.h \
 		VBox/VBoxDrvCfg-win.h \
 		VBox/VBoxNetCfg-win.h \
+               iprt/sanitized/intrin.h \
 	,$(VBOX_HDRS_GCC_ONLY)) \
 	\
 	VBox/dbus-calls.h \
