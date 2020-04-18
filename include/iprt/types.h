@@ -36,7 +36,7 @@
 /*
  * Include standard C types.
  */
-#ifndef IPRT_NO_CRT
+#if !defined(IPRT_NO_CRT) && !defined(DOXYGEN_RUNNING)
 
 # if defined(IN_XF86_MODULE) && !defined(NO_ANSIC)
     /*
