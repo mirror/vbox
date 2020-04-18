@@ -671,7 +671,7 @@ endif
 
 ifdef VBOX_WITH_NETFLT
  VBoxSVC_LIBS.win += \
-	$(PATH_STAGE_LIB)/WinNetConfig$(VBOX_SUFF_LIB) \
+	$(PATH_STAGE_LIB)/WinNetConfigNonStatic$(VBOX_SUFF_LIB) \
 	$(PATH_STAGE_LIB)/VBoxDrvCfg$(VBOX_SUFF_LIB) \
 	$(PATH_SDK_$(VBOX_WINDDK)_LIB)/newdev.lib \
 	$(PATH_TOOL_$(VBOX_VCC_TOOL)_LIB)/comsupp.lib \
@@ -941,7 +941,7 @@ ifdef VBOX_WITH_NETFLT
  VBoxC_LIBS.win += \
 	$(PATH_STAGE_LIB)/VBoxDrvCfg$(VBOX_SUFF_LIB) \
 	$(PATH_SDK_$(VBOX_WINDDK)_LIB)/newdev.lib \
-	$(PATH_STAGE_LIB)/WinNetConfig$(VBOX_SUFF_LIB) \
+	$(PATH_STAGE_LIB)/WinNetConfigNonStatic$(VBOX_SUFF_LIB) \
 	$(PATH_TOOL_$(VBOX_VCC_TOOL)_LIB)/comsupp.lib \
 	$(PATH_SDK_$(VBOX_WINPSDK)_LIB)/WbemUuid.Lib
  VBoxC_LDFLAGS.win += \

@@ -232,11 +232,20 @@ $(PATH_TARGET)/VBoxNetLwfCat.dir/VBoxNetLwf.cat: \
  #
  LIBRARIES.win += WinNetConfig
  WinNetConfig_TEMPLATE = VBOXR3STATIC
- WinNetConfig_DEFS     = _WIN32_WINNT=0x0501 _UNICODE UNICODE
  WinNetConfig_SDKS     = ReorderCompilerIncs $(VBOX_WINPSDK) $(VBOX_WINDDK)
- WinNetConfig_SOURCES  = \
- 	win/cfg/VBoxNetCfg.cpp
- WinNetConfig_INCS.win += $(PATH_TOOL_$(VBOX_VCC_TOOL)_INC)
+ WinNetConfig_DEFS     = _WIN32_WINNT=0x0501 _UNICODE UNICODE
+ WinNetConfig_INCS.win = $(PATH_TOOL_$(VBOX_VCC_TOOL)_INC)
+ WinNetConfig_SOURCES  = win/cfg/VBoxNetCfg.cpp
+
+ #
+ # WinNetConfigNonStatic - static library with host network interface config API
+ #
+ LIBRARIES.win += WinNetConfigNonStatic
+ WinNetConfigNonStatic_TEMPLATE = VBoxR3Dll
+ WinNetConfigNonStatic_SDKS     = ReorderCompilerIncs $(VBOX_WINPSDK) $(VBOX_WINDDK)
+ WinNetConfigNonStatic_DEFS     = _WIN32_WINNT=0x0501 _UNICODE UNICODE
+ WinNetConfigNonStatic_INCS.win = $(PATH_TOOL_$(VBOX_VCC_TOOL)_INC)
+ WinNetConfigNonStatic_SOURCES  = win/cfg/VBoxNetCfg.cpp
 
  #
  # NetFltInstall
