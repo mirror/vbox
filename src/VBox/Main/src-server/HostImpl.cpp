@@ -163,7 +163,7 @@ typedef SOLARISDVD *PSOLARISDVD;
 #include <stdio.h>
 
 #include <algorithm>
-#include <string>
+#include <iprt/sanitized/string>
 #include <vector>
 
 #include "HostDnsService.h"
@@ -645,7 +645,7 @@ HRESULT Host::i_updatePersistentConfigForHostOnlyAdapters(void)
         if (strKey.startsWith("HostOnly/{"))
         {
             Bstr bstrValue;
-            HRESULT hrc = m->pParent->GetExtraData(aGlobalExtraDataKeys[i], bstrValue.asOutParam());
+            hrc = m->pParent->GetExtraData(aGlobalExtraDataKeys[i], bstrValue.asOutParam());
             if (hrc != S_OK)
                 continue;
 

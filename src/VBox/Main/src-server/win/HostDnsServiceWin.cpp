@@ -37,8 +37,8 @@
 #include <iprt/win/iphlpapi.h>
 
 #include <algorithm>
-#include <sstream>
-#include <string>
+#include <iprt/sanitized/sstream>
+#include <iprt/sanitized/string>
 #include <vector>
 
 static inline int registerNotification(const HKEY& hKey, HANDLE& hEvent);

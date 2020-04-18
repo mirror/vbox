@@ -38,7 +38,7 @@ typedef int socklen_t;
 
 #include <VBox/log.h>
 
-#include <string>
+#include <iprt/sanitized/string>
 
 #include "HostDnsService.h"
 #include "../../Devices/Network/slirp/resolv_conf_parser.h"

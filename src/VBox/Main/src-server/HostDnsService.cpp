@@ -31,7 +31,7 @@
 
 #include <algorithm>
 #include <set>
-#include <string>
+#include <iprt/sanitized/string>
 #include "HostDnsService.h"
 
 

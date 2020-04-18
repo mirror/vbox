@@ -43,7 +43,7 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 
-#include <string>
+#include <iprt/sanitized/string>
 #include <vector>
 #include "../HostDnsService.h"
 

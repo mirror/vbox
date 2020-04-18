@@ -612,11 +612,11 @@ VBoxSVC_SOURCES = \
 	$(VBOX_AUTOGEN_EVENT_CPP) \
 	$(if $(VBOX_WITH_XPCOM),src-server/xpcom/server.cpp,)
 
-src-server/ApplianceImplExport.cpp_DEFS = VBOX_SVN_REV=$(VBOX_SVN_REV)
+src-server/ApplianceImplExport.cpp_DEPS = $(VBOX_SVN_REV_HEADER)
 
 ifn1of ($(KBUILD_TARGET), win darwin)
-	VBoxSVC_SOURCES += $(PATH_ROOT)/src/VBox/Devices/Network/slirp/resolv_conf_parser.c
-#	$(PATH_ROOT)/src/VBox/Devices/Network/slirp/resolv_conf_parser.c_DEFS += LOG_GROUP=LOG_GROUP_MAIN
+VBoxSVC_SOURCES += $(PATH_ROOT)/src/VBox/Devices/Network/slirp/resolv_conf_parser.c
+#$(PATH_ROOT)/src/VBox/Devices/Network/slirp/resolv_conf_parser.c_DEFS += LOG_GROUP=LOG_GROUP_MAIN
 endif
 
 VBoxSVC_SOURCES.darwin = \

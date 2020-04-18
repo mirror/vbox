@@ -31,7 +31,7 @@
 
 #include <iprt/asm.h>
 
-#include <string>
+#include <iprt/sanitized/string>
 
 /****************************************************************************
  *

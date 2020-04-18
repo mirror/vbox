@@ -23,8 +23,8 @@
 #include "vboxwebsrv.nsmap"
 
 #include <iostream>
-#include <sstream>
-#include <string>
+#include <iprt/sanitized/sstream>
+#include <iprt/sanitized/string>
 
 #include <iprt/initterm.h>
 #include <iprt/message.h>

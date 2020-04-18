@@ -1909,7 +1909,7 @@ int NetIfList(std::list<ComObjPtr<HostNetworkInterface> > &list)
     else
     {
         std::list<BoundAdapter> boundAdapters;
-        HRESULT hr = netIfGetBoundAdapters(boundAdapters);
+        hr = netIfGetBoundAdapters(boundAdapters);
 #if 0
         if (hr != S_OK)
             hr = netIfGetBoundAdaptersFallback(boundAdapters);

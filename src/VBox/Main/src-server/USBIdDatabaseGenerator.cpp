@@ -23,7 +23,7 @@
 
 #include <algorithm>
 #include <map>
-#include <string>
+#include <iprt/sanitized/string>
 #include <vector>
 
 #include <iprt/err.h>

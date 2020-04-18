@@ -35,7 +35,7 @@
 #ifdef VBOX_WITH_HOSTNETIF_API
 
 #include <map>
-#include <string>
+#include <iprt/sanitized/string>
 #include <fcntl.h>
 #include <unistd.h>
 #include <stropts.h>

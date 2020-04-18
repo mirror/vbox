@@ -84,7 +84,7 @@
 
 // standard headers
 #include <map>
-#include <sstream>
+#include <iprt/sanitized/sstream>
 
 // shared strings for debug output
 const char *g_pcszCallingComMethod = "   calling COM method %s\n";

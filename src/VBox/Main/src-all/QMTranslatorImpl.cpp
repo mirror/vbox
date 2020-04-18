@@ -18,7 +18,7 @@
 #include <vector>
 #include <set>
 #include <algorithm>
-#include <iterator>
+#include <iprt/sanitized/iterator>
 #include <iprt/errcore.h>
 #include <iprt/file.h>
 #include <iprt/asm.h>

@@ -25,6 +25,7 @@
 #include <iprt/zip.h>
 
 #include <VBox/version.h>
+#include <revision-generated.h> /* VBOX_SVN_REV - PCH prevents putting it in DEFS. */
 
 #include "ApplianceImpl.h"
 #include "VirtualBoxImpl.h"

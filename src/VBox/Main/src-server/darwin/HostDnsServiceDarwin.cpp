@@ -27,7 +27,7 @@
 #include <CoreFoundation/CoreFoundation.h>
 #include <SystemConfiguration/SCDynamicStore.h>
 
-#include <string>
+#include <iprt/sanitized/string>
 #include <vector>
 #include "../HostDnsService.h"
 

@@ -160,13 +160,13 @@ void HostNetworkInterface::i_unregisterMetrics(PerformanceCollector *aCollector,
 HRESULT HostNetworkInterface::saveAdapterConfigParameter(const char *szParamName, const Utf8Str &strValue)
 {
     AssertReturn(mVirtualBox != NULL, E_POINTER);
-    return mVirtualBox->SetExtraData(BstrFmt("HostOnly/{%RTuuid}/%s", mGuid, szParamName).raw(), Bstr(strValue).raw());
+    return mVirtualBox->SetExtraData(BstrFmt("HostOnly/{%RTuuid}/%s", mGuid.raw(), szParamName).raw(), Bstr(strValue).raw());
 }
 
 HRESULT HostNetworkInterface::eraseAdapterConfigParameter(const char *szParamName)
 {
     AssertReturn(mVirtualBox != NULL, E_POINTER);
-    return mVirtualBox->SetExtraData(BstrFmt("HostOnly/{%RTuuid}/%s", mGuid, szParamName).raw(), NULL);
+    return mVirtualBox->SetExtraData(BstrFmt("HostOnly/{%RTuuid}/%s", mGuid.raw(), szParamName).raw(), NULL);
 }
 
 HRESULT HostNetworkInterface::saveAdapterConfigIPv4Dhcp()
@@ -203,7 +203,7 @@ bool HostNetworkInterface::isInConfigFile(void)
     if (mVirtualBox == NULL)
         return false; /* Trigger config update, which will fail with proper return code */
     Bstr tmpName;
-    mVirtualBox->GetExtraData(BstrFmt("HostOnly/{%RTuuid}/Name", mGuid).raw(), tmpName.asOutParam());
+    mVirtualBox->GetExtraData(BstrFmt("HostOnly/{%RTuuid}/Name", mGuid.raw()).raw(), tmpName.asOutParam());
     return (tmpName.isNotEmpty() && tmpName == mInterfaceName);
 
 }
