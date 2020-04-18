@@ -50,7 +50,7 @@
 #include <VBox/log.h>
 
 #include <vector>
-#include <string>
+#include <iprt/sanitized/string>
 
 #include "VBoxManage.h"
 #include "VBoxPortForwardString.h"
