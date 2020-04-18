@@ -400,9 +400,9 @@ $$(VBoxNetFltNobj_0_OUTDIR)/VBoxNetFltNobjT_i.c \
 + $$(VBoxNetFltNobj_0_OUTDIR)/VBoxNetFltNobjT.tlb: \
 		$(PATH_SUB_CURRENT)/win/nobj/VBoxNetFltNobjT.idl \
 		| $$(dir $$@)
-	$(VBOX_WIN_MIDL) /nologo \
+	$(VBOX_MIDL_REDIRECT) $(VBOX_WIN_MIDL) /nologo \
 		/out $(call VBOX_FN_MAKE_WIN_PATH,$(VBoxNetFltNobj_0_OUTDIR)) \
-		/cpp_cmd $(subst $(EXEC_X86_WIN32),,$(call VBOX_FN_MAKE_WIN_PATH,$(TOOL_$(VBOX_VCC_TOOL)_CC))) \
+		/cpp_cmd $(VBOX_MIDL_CPP_CMD) \
 		$(addprefix /I , $(call VBOX_FN_MAKE_WIN_PATH,$(SDK_$(VBOX_WINDDK)_INCS))) \
 		$(call VBOX_FN_MAKE_WIN_PATH,$<)
 

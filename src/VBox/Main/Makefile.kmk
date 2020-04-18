@@ -1432,18 +1432,6 @@ define def_VBoxMainDisableMscWarnings
 
 endef
 
-# Tricks to work around midl.exe problems with spaces in the /cpp_cmd value, it
-# forgets to quote it when creating the commandline and cl.exe gets very confused.
-if1of (quote, $(KBUILD_FEATURES))
-VBOX_MIDL_REDIRECT     = $(REDIRECT) -E "$(quote-sh-dq PATH=$(PATH_TOOL_$(VBOX_VCC_TOOL)_BIN);$(PATH))" --
-VBOX_MIDL_REDIRECT_X86 = $(REDIRECT) -E "$(quote-sh-dq PATH=$(PATH_TOOL_$(VBOX_VCC_TOOL_STEM)X86_BIN);$(PATH))" --
-else
-VBOX_MIDL_REDIRECT     = $(REDIRECT) -E 'PATH=$(PATH_TOOL_$(VBOX_VCC_TOOL)_BIN);$(PATH)' --
-VBOX_MIDL_REDIRECT_X86 = $(REDIRECT) -E 'PATH=$(PATH_TOOL_$(VBOX_VCC_TOOL_STEM)X86_BIN);$(PATH)' --
-endif
-VBOX_MIDL_CPP_CMD      = $(lastword $(notdir ,$(subst $(EXEC_X86_WIN32),,$(TOOL_$(VBOX_VCC_TOOL)_CC))))
-VBOX_MIDL_CPP_CMD_X86  = $(lastword $(notdir ,$(subst $(EXEC_X86_WIN32),,$(TOOL_$(VBOX_VCC_TOOL_STEM)X86_CC))))
-
 # Note! Because we've got a different proxy stub DLL for pre windows 7 64-bit hosts, we target windows 7 for AMD64.
 #       The output is different and hopefully more efficient, at least memory wise (using more helpers in OLE32).
 # Note! We're checking for win.amd64 below when setting the target because of the SDK build which happens on linux.amd64

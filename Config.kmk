@@ -2224,6 +2224,18 @@ VBOX_WIN_MIDL ?= $(EXEC_X86_WIN32) $(call VBOX_FN_MAKE_WIN_PATH,$(firstword $(wi
 	$(PATH_SDK_WINPSDK) \
 	)) Sorry_Cannot_Find_The_Midl_Compiler_In_The_PSDK))
 
+# Tricks to work around midl.exe problems with spaces in the /cpp_cmd value, it
+# forgets to quote it when creating the commandline and cl.exe gets very confused.
+if1of (quote, $(KBUILD_FEATURES))
+VBOX_MIDL_REDIRECT     = $(REDIRECT) -E "$(quote-sh-dq PATH=$(PATH_TOOL_$(VBOX_VCC_TOOL)_BIN);$(PATH))" --
+VBOX_MIDL_REDIRECT_X86 = $(REDIRECT) -E "$(quote-sh-dq PATH=$(PATH_TOOL_$(VBOX_VCC_TOOL_STEM)X86_BIN);$(PATH))" --
+else
+VBOX_MIDL_REDIRECT     = $(REDIRECT) -E 'PATH=$(PATH_TOOL_$(VBOX_VCC_TOOL)_BIN);$(PATH)' --
+VBOX_MIDL_REDIRECT_X86 = $(REDIRECT) -E 'PATH=$(PATH_TOOL_$(VBOX_VCC_TOOL_STEM)X86_BIN);$(PATH)' --
+endif
+VBOX_MIDL_CPP_CMD      = $(lastword $(notdir ,$(subst $(EXEC_X86_WIN32),,$(TOOL_$(VBOX_VCC_TOOL)_CC))))
+VBOX_MIDL_CPP_CMD_X86  = $(lastword $(notdir ,$(subst $(EXEC_X86_WIN32),,$(TOOL_$(VBOX_VCC_TOOL_STEM)X86_CC))))
+
 # XPCOM setup for all but win32.
 ifneq ($(KBUILD_TARGET),win)
  VBOX_WITH_XPCOM      = 1
