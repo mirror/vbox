@@ -33,7 +33,7 @@
 #define VBOX_NETFLT_MP_INF L".\\VBoxNetFltM.inf"
 #define VBOX_NETFLT_RETRIES 10
 
-static VOID winNetCfgLogger (LPCSTR szString)
+static VOID winNetCfgLogger(LPCSTR szString)
 {
     printf("%s", szString);
 }
@@ -41,69 +41,62 @@ static VOID winNetCfgLogger (LPCSTR szString)
 static int VBoxNetFltUninstall()
 {
     INetCfg *pnc;
-    LPWSTR lpszLockedBy = NULL;
-    int r;
+    int rcExit = RTEXITCODE_FAILURE;
 
     VBoxNetCfgWinSetLogging(winNetCfgLogger);
 
     HRESULT hr = CoInitialize(NULL);
     if (hr == S_OK)
     {
-        int i = 0;
-        do
+        for (int i = 0;; i++)
         {
-            hr = VBoxNetCfgWinQueryINetCfg(&pnc, TRUE, VBOX_NETCFG_APP_NAME, 10000, &lpszLockedBy);
+            LPWSTR pwszLockedBy = NULL;
+            hr = VBoxNetCfgWinQueryINetCfg(&pnc, TRUE, VBOX_NETCFG_APP_NAME, 10000, &pwszLockedBy);
             if (hr == S_OK)
             {
                 hr = VBoxNetCfgWinNetFltUninstall(pnc);
                 if (hr != S_OK && hr != S_FALSE)
-                {
-                    wprintf(L"error uninstalling VBoxNetFlt (0x%x)\n", hr);
-                    r = 1;
-                }
+                    wprintf(L"error uninstalling VBoxNetFlt (%#lx)\n", hr);
                 else
                 {
                     wprintf(L"uninstalled successfully\n");
-                    r = 0;
+                    rcExit = RTEXITCODE_SUCCESS;
                 }
 
                 VBoxNetCfgWinReleaseINetCfg(pnc, TRUE);
                 break;
             }
-            else if (hr == NETCFG_E_NO_WRITE_LOCK && lpszLockedBy)
+
+            if (hr == NETCFG_E_NO_WRITE_LOCK && pwszLockedBy)
             {
-                if (i < VBOX_NETFLT_RETRIES && !wcscmp(lpszLockedBy, L"6to4svc.dll"))
+                if (i < VBOX_NETFLT_RETRIES && !wcscmp(pwszLockedBy, L"6to4svc.dll"))
                 {
-                    wprintf(L"6to4svc.dll is holding the lock, retrying %d out of %d\n", ++i, VBOX_NETFLT_RETRIES);
-                    CoTaskMemFree(lpszLockedBy);
+                    wprintf(L"6to4svc.dll is holding the lock, retrying %d out of %d\n", i + 1, VBOX_NETFLT_RETRIES);
+                    CoTaskMemFree(pwszLockedBy);
                 }
                 else
                 {
-                    wprintf(L"Error: write lock is owned by another application (%s), close the application and retry uninstalling\n", lpszLockedBy);
-                    r = 1;
-                    CoTaskMemFree(lpszLockedBy);
+                    wprintf(L"Error: write lock is owned by another application (%s), close the application and retry uninstalling\n",
+                            pwszLockedBy);
+                    CoTaskMemFree(pwszLockedBy);
                     break;
                 }
             }
             else
             {
-                wprintf(L"Error getting the INetCfg interface (0x%x)\n", hr);
-                r = 1;
+                wprintf(L"Error getting the INetCfg interface (%#lx)\n", hr);
                 break;
             }
-        } while (true);
+        }
 
         CoUninitialize();
     }
     else
-    {
-        wprintf(L"Error initializing COM (0x%x)\n", hr);
-        r = 1;
-    }
+        wprintf(L"Error initializing COM (%#lx)\n", hr);
 
     VBoxNetCfgWinSetLogging(NULL);
 
-    return r;
+    return rcExit;
 }
 
 int __cdecl main(int argc, char **argv)

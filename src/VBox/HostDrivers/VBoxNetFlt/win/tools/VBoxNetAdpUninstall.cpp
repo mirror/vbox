@@ -31,19 +31,19 @@
 #include <devguid.h>
 
 #ifdef NDIS60
-#define VBOX_NETADP_HWID L"sun_VBoxNetAdp6"
-#else /* !NDIS60 */
-#define VBOX_NETADP_HWID L"sun_VBoxNetAdp"
-#endif /* !NDIS60 */
+# define VBOX_NETADP_HWID L"sun_VBoxNetAdp6"
+#else
+# define VBOX_NETADP_HWID L"sun_VBoxNetAdp"
+#endif
 
-static VOID winNetCfgLogger (LPCSTR szString)
+static VOID winNetCfgLogger(LPCSTR szString)
 {
     printf("%s", szString);
 }
 
-static int VBoxNetAdpUninstall()
+static int VBoxNetAdpUninstall(void)
 {
-    int r = 1;
+    int rcExit = RTEXITCODE_FAILURE;
     VBoxNetCfgWinSetLogging(winNetCfgLogger);
 
     printf("uninstalling all Host-Only interfaces..\n");
@@ -56,30 +56,22 @@ static int VBoxNetAdpUninstall()
         {
             hr = VBoxDrvCfgInfUninstallAllSetupDi(&GUID_DEVCLASS_NET, L"Net", VBOX_NETADP_HWID, 0/* could be SUOI_FORCEDELETE */);
             if (hr == S_OK)
-            {
                 printf("uninstalled successfully\n");
-            }
             else
-            {
                 printf("uninstalled successfully, but failed to remove infs\n");
-            }
-            r = 0;
+            rcExit = RTEXITCODE_SUCCESS;
         }
         else
-        {
-            printf("uninstall failed, hr = 0x%x\n", hr);
-        }
+            printf("uninstall failed, hr=%#lx\n", hr);
 
         CoUninitialize();
     }
     else
-    {
-        wprintf(L"Error initializing COM (0x%x)\n", hr);
-    }
+        wprintf(L"Error initializing COM (%#lx)\n", hr);
 
     VBoxNetCfgWinSetLogging(NULL);
 
-    return r;
+    return rcExit;
 }
 
 int __cdecl main(int argc, char **argv)

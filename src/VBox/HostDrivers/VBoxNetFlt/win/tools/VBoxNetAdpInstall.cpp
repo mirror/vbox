@@ -70,7 +70,7 @@ static DWORD MyGetfullPathNameW(LPCWSTR pwszName, size_t cchFull, LPWSTR pwszFul
     if (GetFileAttributesW(pwszFull) == INVALID_FILE_ATTRIBUTES)
     {
         WCHAR wsz[512];
-        DWORD cch = GetModuleFileNameW(GetModuleHandle(NULL), &wsz[0], sizeof(wsz) / sizeof(wsz[0]));
+        DWORD cch = GetModuleFileNameW(GetModuleHandle(NULL), &wsz[0], RT_ELEMENTS(wsz));
         if (cch > 0)
         {
             while (cch > 0 && wsz[cch - 1] != '/' && wsz[cch - 1] != '\\' && wsz[cch - 1] != ':')
@@ -106,7 +106,7 @@ static int VBoxNetAdpInstall(void)
         wprintf(L"adding host-only interface..\n");
 
         WCHAR wszInfFile[MAX_PATH];
-        DWORD cwcInfFile = MyGetfullPathNameW(VBOX_NETADP_INF, sizeof(wszInfFile) / sizeof(wszInfFile[0]), wszInfFile);
+        DWORD cwcInfFile = MyGetfullPathNameW(VBOX_NETADP_INF, RT_ELEMENTS(wszInfFile), wszInfFile);
         if (cwcInfFile > 0)
         {
             INetCfg *pnc;
@@ -118,18 +118,14 @@ static int VBoxNetAdpInstall(void)
                 hr = VBoxNetCfgWinNetAdpInstall(pnc, wszInfFile);
 
                 if (hr == S_OK)
-                {
                     wprintf(L"installed successfully\n");
-                }
                 else
-                {
-                    wprintf(L"error installing VBoxNetAdp (0x%x)\n", hr);
-                }
+                    wprintf(L"error installing VBoxNetAdp (%#lx)\n", hr);
 
                 VBoxNetCfgWinReleaseINetCfg(pnc, TRUE);
             }
             else
-                wprintf(L"VBoxNetCfgWinQueryINetCfg failed: hr = 0x%x\n", hr);
+                wprintf(L"VBoxNetCfgWinQueryINetCfg failed: hr=%#lx\n", hr);
             /*
             hr = VBoxDrvCfgInfInstall(MpInf);
             if (FAILED(hr))
@@ -150,33 +146,31 @@ static int VBoxNetAdpInstall(void)
                     ip = ip | (1 << 24);
                     hr = VBoxNetCfgWinEnableStaticIpConfig(&guid, ip, mask);
                     if (SUCCEEDED(hr))
-                    {
                         printf("installation successful\n");
-                    }
                     else
-                        printf("VBoxNetCfgWinEnableStaticIpConfig failed: hr = 0x%x\n", hr);
+                        printf("VBoxNetCfgWinEnableStaticIpConfig failed: hr=%#lx\n", hr);
                 }
                 else
-                    printf("VBoxNetCfgWinGenHostOnlyNetworkNetworkIp failed: hr = 0x%x\n", hr);
+                    printf("VBoxNetCfgWinGenHostOnlyNetworkNetworkIp failed: hr=%#lx\n", hr);
             }
             else
-                printf("VBoxNetCfgWinCreateHostOnlyNetworkInterface failed: hr = 0x%x\n", hr);
+                printf("VBoxNetCfgWinCreateHostOnlyNetworkInterface failed: hr=%#lx\n", hr);
             */
         }
         else
         {
             DWORD dwErr = GetLastError();
-            wprintf(L"GetFullPathNameW failed: winEr = %d\n", dwErr);
+            wprintf(L"GetFullPathNameW failed: winEr = %lu\n", dwErr);
             hr = HRESULT_FROM_WIN32(dwErr);
         }
         CoUninitialize();
     }
     else
-        wprintf(L"Error initializing COM (0x%x)\n", hr);
+        wprintf(L"Error initializing COM (%#lx)\n", hr);
 
     VBoxNetCfgWinSetLogging(NULL);
 
-    return SUCCEEDED(hr) ? 0 : 1;
+    return SUCCEEDED(hr) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
 }
 
 static int VBoxNetAdpUninstall(void)
@@ -193,22 +187,20 @@ static int VBoxNetAdpUninstall(void)
         {
             hr = VBoxDrvCfgInfUninstallAllSetupDi(&GUID_DEVCLASS_NET, L"Net", VBOX_NETADP_HWID, 0/* could be SUOI_FORCEDELETE */);
             if (SUCCEEDED(hr))
-            {
                 printf("uninstallation successful\n");
-            }
             else
                 printf("uninstalled successfully, but failed to remove infs\n");
         }
         else
-            printf("uninstall failed, hr = 0x%x\n", hr);
+            printf("uninstall failed, hr=%#lx\n", hr);
         CoUninitialize();
     }
     else
-        printf("Error initializing COM (0x%x)\n", hr);
+        printf("Error initializing COM (%#lx)\n", hr);
 
     VBoxNetCfgWinSetLogging(NULL);
 
-    return SUCCEEDED(hr) ? 0 : 1;
+    return SUCCEEDED(hr) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
 }
 
 static int VBoxNetAdpUpdate(void)
@@ -236,16 +228,16 @@ static int VBoxNetAdpUpdate(void)
             printf("updated successfully\n");
         }
         else
-            printf("update failed, hr = 0x%x\n", hr);
+            printf("update failed, hr=%#lx\n", hr);
 
         CoUninitialize();
     }
     else
-        printf("Error initializing COM (0x%x)\n", hr);
+        printf("Error initializing COM (%#lx)\n", hr);
 
     VBoxNetCfgWinSetLogging(NULL);
 
-    return SUCCEEDED(hr) ? 0 : 1;
+    return SUCCEEDED(hr) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
 }
 
 static int VBoxNetAdpDisable(void)
@@ -259,20 +251,18 @@ static int VBoxNetAdpDisable(void)
     {
         hr = VBoxNetCfgWinPropChangeAllNetDevicesOfId(VBOX_NETADP_HWID, VBOXNECTFGWINPROPCHANGE_TYPE_DISABLE);
         if (SUCCEEDED(hr))
-        {
             printf("disabling successful\n");
-        }
         else
-            printf("disable failed, hr = 0x%x\n", hr);
+            printf("disable failed, hr=%#lx\n", hr);
 
         CoUninitialize();
     }
     else
-        printf("Error initializing COM (0x%x)\n", hr);
+        printf("Error initializing COM (%#lx)\n", hr);
 
     VBoxNetCfgWinSetLogging(NULL);
 
-    return SUCCEEDED(hr) ? 0 : 1;
+    return SUCCEEDED(hr) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
 }
 
 static int VBoxNetAdpEnable(void)
@@ -286,20 +276,18 @@ static int VBoxNetAdpEnable(void)
     {
         hr = VBoxNetCfgWinPropChangeAllNetDevicesOfId(VBOX_NETADP_HWID, VBOXNECTFGWINPROPCHANGE_TYPE_ENABLE);
         if (SUCCEEDED(hr))
-        {
             printf("enabling successful\n");
-        }
         else
-            printf("enabling failed, hr = 0x%x\n", hr);
+            printf("enabling failed, hr=%#lx\n", hr);
 
         CoUninitialize();
     }
     else
-        printf("Error initializing COM (0x%x)\n", hr);
+        printf("Error initializing COM (%#lx)\n", hr);
 
     VBoxNetCfgWinSetLogging(NULL);
 
-    return SUCCEEDED(hr) ? 0 : 1;
+    return SUCCEEDED(hr) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
 }
 
 static void printUsage(void)
@@ -322,7 +310,7 @@ int __cdecl main(int argc, char **argv)
     if (argc > 2)
     {
         printUsage();
-        return 1;
+        return RTEXITCODE_SYNTAX;
     }
 
     if (!strcmp(argv[1], "i"))
@@ -337,5 +325,5 @@ int __cdecl main(int argc, char **argv)
         return VBoxNetAdpEnable();
 
     printUsage();
-    return !strcmp(argv[1], "h");
+    return !strcmp(argv[1], "h") ? RTEXITCODE_SUCCESS : RTEXITCODE_SYNTAX;
 }

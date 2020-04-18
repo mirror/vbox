@@ -35,7 +35,7 @@
 #define VBOX_NETFLT_RETRIES 10
 
 
-static VOID winNetCfgLogger (LPCSTR szString)
+static VOID winNetCfgLogger(LPCSTR szString)
 {
     printf("%s", szString);
 }
@@ -57,13 +57,13 @@ static DWORD MyGetfullPathNameW(LPCWSTR pwszName, size_t cchFull, LPWSTR pwszFul
     if (GetFileAttributesW(pwszFull) == INVALID_FILE_ATTRIBUTES)
     {
         WCHAR wsz[512];
-        DWORD cch = GetModuleFileNameW(GetModuleHandle(NULL), &wsz[0], sizeof(wsz) / sizeof(wsz[0]));
+        DWORD cch = GetModuleFileNameW(GetModuleHandle(NULL), &wsz[0], RT_ELEMENTS(wsz));
         if (cch > 0)
         {
             while (cch > 0 && wsz[cch - 1] != '/' && wsz[cch - 1] != '\\' && wsz[cch - 1] != ':')
                 cch--;
             unsigned i = 0;
-            while (cch < sizeof(wsz) / sizeof(wsz[0]))
+            while (cch < RT_ELEMENTS(wsz))
             {
                 wsz[cch] = pwszFilePart[i++];
                 if (!wsz[cch])
@@ -84,96 +84,88 @@ static DWORD MyGetfullPathNameW(LPCWSTR pwszName, size_t cchFull, LPWSTR pwszFul
 
 static int VBoxNetFltInstall()
 {
-    WCHAR PtInf[MAX_PATH];
-    WCHAR MpInf[MAX_PATH];
+    WCHAR wszPtInf[MAX_PATH];
+    WCHAR wszMpInf[MAX_PATH];
     INetCfg *pnc;
-    LPWSTR lpszLockedBy = NULL;
-    int r = 1;
+    int rcExit = RTEXITCODE_FAILURE;
 
     VBoxNetCfgWinSetLogging(winNetCfgLogger);
 
     HRESULT hr = CoInitialize(NULL);
     if (hr == S_OK)
     {
-        int i = 0;
-        do
+        for (int i = 0;; i++)
         {
-            hr = VBoxNetCfgWinQueryINetCfg(&pnc, TRUE, VBOX_NETCFG_APP_NAME, 10000, &lpszLockedBy);
+            LPWSTR pwszLockedBy = NULL;
+            hr = VBoxNetCfgWinQueryINetCfg(&pnc, TRUE, VBOX_NETCFG_APP_NAME, 10000, &pwszLockedBy);
             if (hr == S_OK)
             {
                 DWORD dwSize;
-                dwSize = MyGetfullPathNameW(VBOX_NETFLT_PT_INF, sizeof(PtInf)/sizeof(PtInf[0]), PtInf);
+                dwSize = MyGetfullPathNameW(VBOX_NETFLT_PT_INF, RT_ELEMENTS(wszPtInf), wszPtInf);
                 if (dwSize > 0)
                 {
-                    /** @todo add size check for (sizeof(PtInf)/sizeof(PtInf[0])) == dwSize (string length in sizeof(PtInf[0])) */
+                    /** @todo add size check for (RT_ELEMENTS(wszPtInf) == dwSize (string length in WCHARs) */
 
-                    dwSize = MyGetfullPathNameW(VBOX_NETFLT_MP_INF, sizeof(MpInf)/sizeof(MpInf[0]), MpInf);
+                    dwSize = MyGetfullPathNameW(VBOX_NETFLT_MP_INF, RT_ELEMENTS(wszMpInf), wszMpInf);
                     if (dwSize > 0)
                     {
-                        /** @todo add size check for (sizeof(MpInf)/sizeof(MpInf[0])) == dwSize (string length in sizeof(MpInf[0])) */
+                        /** @todo add size check for (RT_ELEMENTS(wszMpInf) == dwSize (string length in WHCARs) */
 
-                        LPCWSTR aInfs[] = {PtInf, MpInf};
-                        hr = VBoxNetCfgWinNetFltInstall(pnc, aInfs, 2);
+                        LPCWSTR apwszInfs[] = { wszPtInf, wszMpInf };
+                        hr = VBoxNetCfgWinNetFltInstall(pnc, apwszInfs, 2);
                         if (hr == S_OK)
                         {
                             wprintf(L"installed successfully\n");
-                            r = 0;
+                            rcExit = RTEXITCODE_SUCCESS;
                         }
                         else
-                        {
-                            wprintf(L"error installing VBoxNetFlt (0x%x)\n", hr);
-                        }
+                            wprintf(L"error installing VBoxNetFlt (%#lx)\n", hr);
                     }
                     else
                     {
                         hr = HRESULT_FROM_WIN32(GetLastError());
-                        wprintf(L"error getting full inf path for VBoxNetFltM.inf (0x%x)\n", hr);
+                        wprintf(L"error getting full inf path for VBoxNetFltM.inf (%#lx)\n", hr);
                     }
                 }
                 else
                 {
                     hr = HRESULT_FROM_WIN32(GetLastError());
-                    wprintf(L"error getting full inf path for VBoxNetFlt.inf (0x%x)\n", hr);
+                    wprintf(L"error getting full inf path for VBoxNetFlt.inf (%#lx)\n", hr);
                 }
-
 
                 VBoxNetCfgWinReleaseINetCfg(pnc, TRUE);
                 break;
             }
-            else if (hr == NETCFG_E_NO_WRITE_LOCK && lpszLockedBy)
+
+            if (hr == NETCFG_E_NO_WRITE_LOCK && pwszLockedBy)
             {
-                if (i < VBOX_NETFLT_RETRIES && !wcscmp(lpszLockedBy, L"6to4svc.dll"))
+                if (i < VBOX_NETFLT_RETRIES && !wcscmp(pwszLockedBy, L"6to4svc.dll"))
                 {
-                    wprintf(L"6to4svc.dll is holding the lock, retrying %d out of %d\n", ++i, VBOX_NETFLT_RETRIES);
-                    CoTaskMemFree(lpszLockedBy);
+                    wprintf(L"6to4svc.dll is holding the lock, retrying %d out of %d\n", i + 1, VBOX_NETFLT_RETRIES);
+                    CoTaskMemFree(pwszLockedBy);
                 }
                 else
                 {
-                    wprintf(L"Error: write lock is owned by another application (%s), close the application and retry installing\n", lpszLockedBy);
-                    r = 1;
-                    CoTaskMemFree(lpszLockedBy);
+                    wprintf(L"Error: write lock is owned by another application (%s), close the application and retry installing\n", pwszLockedBy);
+                    CoTaskMemFree(pwszLockedBy);
                     break;
                 }
             }
             else
             {
-                wprintf(L"Error getting the INetCfg interface (0x%x)\n", hr);
-                r = 1;
+                wprintf(L"Error getting the INetCfg interface (%#lx)\n", hr);
                 break;
             }
-        } while (true);
+        }
 
         CoUninitialize();
     }
     else
-    {
-        wprintf(L"Error initializing COM (0x%x)\n", hr);
-        r = 1;
-    }
+        wprintf(L"Error initializing COM (%#lx)\n", hr);
 
     VBoxNetCfgWinSetLogging(NULL);
 
-    return r;
+    return rcExit;
 }
 
 int __cdecl main(int argc, char **argv)
