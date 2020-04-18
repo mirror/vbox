@@ -28,7 +28,7 @@
 # include "win/resource.h"
 #endif
 
-#ifdef RT_OS_WINDOWS
+#if defined(RT_OS_WINDOWS) && !RT_MSC_PREREQ(RT_MSC_VER_VC141)
 [threading(free)]
 #endif
 class ATL_NO_VTABLE Session :
