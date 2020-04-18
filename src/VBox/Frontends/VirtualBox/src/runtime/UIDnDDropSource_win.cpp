@@ -35,9 +35,9 @@
 #include "UIDnDDataObject_win.h"
 
 UIDnDDropSource::UIDnDDropSource(QWidget *pParent, UIDnDDataObject *pDataObject)
-    : m_cRefCount(1)
-    , m_pParent(pParent)
+    : m_pParent(pParent)
     , m_pDataObject(pDataObject)
+    , m_cRefCount(1)
     , m_dwCurEffect(DROPEFFECT_NONE)
     , m_uCurAction(Qt::IgnoreAction)
 {

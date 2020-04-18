@@ -263,7 +263,7 @@ static const VBoxVHWAInfo & vboxVHWAGetSupportInfo(const QGLContext *pContext)
         else
         {
             VBoxGLTmpContext ctx;
-            const QGLContext *pContext = ctx.makeCurrent();
+            pContext = ctx.makeCurrent();
             Assert(pContext);
             if (pContext)
             {

@@ -37,18 +37,19 @@
 #include "CPerformanceMetric.h"
 
 /* External includes: */
-# include <math.h>
+#include <math.h>
 
 /** The time in seconds between metric inquries done to API. */
-const ULONG iPeriod = 1;
-/** The number of data points we store in UIChart. with iPeriod=1 it corresponds to 2 min. of data. */
-const int iMaximumQueueSize = 120;
+const ULONG g_iPeriod = 1;
+/** The number of data points we store in UIChart. with g_iPeriod=1 it corresponds to 2 min. of data. */
+const int g_iMaximumQueueSize = 120;
 /** This is passed to IPerformanceCollector during its setup. When 1 that means IPerformanceCollector object does a data cache of size 1. */
-const int iMetricSetupCount = 1;
-const int iDecimalCount = 2;
+const int g_iMetricSetupCount = 1;
+const int g_iDecimalCount = 2;
+
 
 /*********************************************************************************************************************************
-*   UIChart definition.                                                                                     *
+*   UIChart definition.                                                                                                          *
 *********************************************************************************************************************************/
 
 class UIChart : public QIWithRetranslateUI<QWidget>
@@ -292,7 +293,7 @@ void UIChart::retranslateUi()
 void UIChart::paintEvent(QPaintEvent *pEvent)
 {
     Q_UNUSED(pEvent);
-    if (!m_pMetric || iMaximumQueueSize <= 1)
+    if (!m_pMetric || g_iMaximumQueueSize <= 1)
         return;
 
     QPainter painter(this);
@@ -343,7 +344,7 @@ void UIChart::paintEvent(QPaintEvent *pEvent)
     if (iMaximum == 0)
         return;
     /* Draw the data lines: */
-    float fBarWidth = m_lineChartRect.width() / (float) (iMaximumQueueSize - 1);
+    float fBarWidth = m_lineChartRect.width() / (float) (g_iMaximumQueueSize - 1);
     float fH = m_lineChartRect.height() / (float)iMaximum;
     for (int k = 0; k < DATA_SERIES_SIZE; ++k)
     {
@@ -408,10 +409,10 @@ void UIChart::paintEvent(QPaintEvent *pEvent)
         if (m_pMetric->unit().compare("%", Qt::CaseInsensitive) == 0)
             strValue = QString::number(iValue);
         else if (m_pMetric->unit().compare("kb", Qt::CaseInsensitive) == 0)
-            strValue = uiCommon().formatSize(_1K * (quint64)iValue, iDecimalCount);
+            strValue = uiCommon().formatSize(_1K * (quint64)iValue, g_iDecimalCount);
         else if (m_pMetric->unit().compare("b", Qt::CaseInsensitive) == 0 ||
                  m_pMetric->unit().compare("b/s", Qt::CaseInsensitive) == 0)
-            strValue = uiCommon().formatSize(iValue, iDecimalCount);
+            strValue = uiCommon().formatSize(iValue, g_iDecimalCount);
         else if (m_pMetric->unit().compare("times", Qt::CaseInsensitive) == 0)
             strValue = UICommon::addMetricSuffixToNumber(iValue);
 
@@ -428,7 +429,7 @@ void UIChart::drawXAxisLabels(QPainter &painter, int iXSubAxisCount)
     QFontMetrics fontMetrics(painter.font());
     int iFontHeight = fontMetrics.height();
 
-    int iTotalSeconds = iPeriod * iMaximumQueueSize;
+    int iTotalSeconds = g_iPeriod * g_iMaximumQueueSize;
     for (int i = 0; i < iXSubAxisCount + 2; ++i)
     {
         int iTextX = m_lineChartRect.left() + i * m_lineChartRect.width() / (float) (iXSubAxisCount + 1);
@@ -577,15 +578,16 @@ void UIChart::sltSetUseAreaChart(bool fUseAreaChart)
     setUseAreaChart(fUseAreaChart);
 }
 
+
 /*********************************************************************************************************************************
-*   UIMetric implementation.                                                                                     *
+*   UIMetric implementation.                                                                                                     *
 *********************************************************************************************************************************/
 
 UIMetric::UIMetric(const QString &strName, const QString &strUnit, int iMaximumQueueSize)
     : m_strName(strName)
     , m_strUnit(strUnit)
     , m_iMaximum(0)
-    , m_iMaximumQueueSize(iMaximumQueueSize)
+    , m_iMaximumQueueSize(iMaximumQueueSize) /** @todo r=bird: m_iMaximumQueueSize is not used anywhere that I can see. */
     , m_fRequiresGuestAdditions(false)
     , m_fIsInitialized(false)
 {
@@ -631,7 +633,7 @@ void UIMetric::addData(int iDataSeriesIndex, quint64 fData)
     if (iDataSeriesIndex >= DATA_SERIES_SIZE)
         return;
     m_data[iDataSeriesIndex].enqueue(fData);
-    if (m_data[iDataSeriesIndex].size() > iMaximumQueueSize)
+    if (m_data[iDataSeriesIndex].size() > g_iMaximumQueueSize)
         m_data[iDataSeriesIndex].dequeue();
 }
 
@@ -772,7 +774,7 @@ void UIPerformanceMonitor::retranslateUi()
 
     /* Compute the maximum label string length and set it as a fixed width to labels to prevent always changing widths: */
     /* Add m_iDecimalCount plus 4 characters for the number and 3 for unit string: */
-    iMaximum += (iDecimalCount + 7);
+    iMaximum += (g_iDecimalCount + 7);
     if (!m_infoLabels.isEmpty())
     {
         QLabel *pLabel = m_infoLabels.begin().value();
@@ -798,7 +800,7 @@ void UIPerformanceMonitor::prepareObjects()
     if (m_pTimer)
     {
         connect(m_pTimer, &QTimer::timeout, this, &UIPerformanceMonitor::sltTimeout);
-        m_pTimer->start(1000 * iPeriod);
+        m_pTimer->start(1000 * g_iPeriod);
     }
 
     QScrollArea *pScrollArea = new QScrollArea(this);
@@ -923,7 +925,7 @@ void UIPerformanceMonitor::prepareMetrics()
 
     m_nameList << "Guest/RAM/Usage*";
     m_objectList = QVector<CUnknown>(m_nameList.size(), CUnknown());
-    m_performanceMonitor.SetupMetrics(m_nameList, m_objectList, iPeriod, iMetricSetupCount);
+    m_performanceMonitor.SetupMetrics(m_nameList, m_objectList, g_iPeriod, g_iMetricSetupCount);
     {
         QVector<CPerformanceMetric> metrics = m_performanceMonitor.GetMetrics(m_nameList, m_objectList);
         for (int i = 0; i < metrics.size(); ++i)
@@ -933,7 +935,7 @@ void UIPerformanceMonitor::prepareMetrics()
             {
                 if (strName.contains("RAM", Qt::CaseInsensitive) && strName.contains("Free", Qt::CaseInsensitive))
                 {
-                    UIMetric newMetric(m_strRAMMetricName, metrics[i].GetUnit(), iMaximumQueueSize);
+                    UIMetric newMetric(m_strRAMMetricName, metrics[i].GetUnit(), g_iMaximumQueueSize);
                     newMetric.setRequiresGuestAdditions(true);
                     m_metrics.insert(m_strRAMMetricName, newMetric);
                 }
@@ -941,22 +943,22 @@ void UIPerformanceMonitor::prepareMetrics()
         }
     }
 
-    m_metrics.insert(m_strCPUMetricName, UIMetric(m_strCPUMetricName, "%", iMaximumQueueSize));
+    m_metrics.insert(m_strCPUMetricName, UIMetric(m_strCPUMetricName, "%", g_iMaximumQueueSize));
     {
         /* Network metric: */
-        UIMetric networkMetric(m_strNetworkMetricName, "B", iMaximumQueueSize);
+        UIMetric networkMetric(m_strNetworkMetricName, "B", g_iMaximumQueueSize);
         m_metrics.insert(m_strNetworkMetricName, networkMetric);
     }
 
     /* Disk IO metric */
     {
-        UIMetric diskIOMetric(m_strDiskIOMetricName, "B", iMaximumQueueSize);
+        UIMetric diskIOMetric(m_strDiskIOMetricName, "B", g_iMaximumQueueSize);
         m_metrics.insert(m_strDiskIOMetricName, diskIOMetric);
     }
 
     /* VM exits metric */
     {
-        UIMetric VMExitsMetric(m_strVMExitMetricName, "times", iMaximumQueueSize);
+        UIMetric VMExitsMetric(m_strVMExitMetricName, "times", g_iMaximumQueueSize);
         m_metrics.insert(m_strVMExitMetricName, VMExitsMetric);
     }
 }
@@ -1034,9 +1036,9 @@ void UIPerformanceMonitor::updateRAMGraphsAndMetric(quint64 iTotalRAM, quint64 i
     {
         QString strInfo;
         if (m_infoLabels[m_strRAMMetricName]->isEnabled())
-            strInfo = QString("<b>%1</b><br/>%2: %3<br/>%4: %5<br/>%6: %7").arg(m_strRAMInfoLabelTitle).arg(m_strRAMInfoLabelTotal).arg(uiCommon().formatSize(_1K * iTotalRAM, iDecimalCount))
-                .arg(m_strRAMInfoLabelFree).arg(uiCommon().formatSize(_1K * (iFreeRAM), iDecimalCount))
-                .arg(m_strRAMInfoLabelUsed).arg(uiCommon().formatSize(_1K * (iTotalRAM - iFreeRAM), iDecimalCount));
+            strInfo = QString("<b>%1</b><br/>%2: %3<br/>%4: %5<br/>%6: %7").arg(m_strRAMInfoLabelTitle).arg(m_strRAMInfoLabelTotal).arg(uiCommon().formatSize(_1K * iTotalRAM, g_iDecimalCount))
+                .arg(m_strRAMInfoLabelFree).arg(uiCommon().formatSize(_1K * (iFreeRAM), g_iDecimalCount))
+                .arg(m_strRAMInfoLabelUsed).arg(uiCommon().formatSize(_1K * (iTotalRAM - iFreeRAM), g_iDecimalCount));
         else
             strInfo = QString("<b>%1</b><br/>%2: %3<br/>%4: %5<br/>%6: %7").arg(m_strRAMInfoLabelTitle).arg(m_strRAMInfoLabelTotal).arg("---").arg(m_strRAMInfoLabelFree).arg("---").arg(m_strRAMInfoLabelUsed).arg("---");
         m_infoLabels[m_strRAMMetricName]->setText(strInfo);
@@ -1072,10 +1074,10 @@ void UIPerformanceMonitor::updateNetworkGraphsAndMetric(quint64 iReceiveTotal, q
         if (m_infoLabels[m_strNetworkMetricName]->isEnabled())
             strInfo = QString("<b>%1</b></b><br/><font color=\"%2\">%3: %4<br/>%5 %6</font><br/><font color=\"%7\">%8: %9<br/>%10 %11</font>")
                 .arg(m_strNetworkInfoLabelTitle)
-                .arg(dataColorString(m_strNetworkMetricName, 0)).arg(m_strNetworkInfoLabelReceived).arg(uiCommon().formatSize((quint64)iReceiveRate, iDecimalCount))
-                .arg(m_strNetworkInfoLabelReceivedTotal).arg(uiCommon().formatSize((quint64)iReceiveTotal, iDecimalCount))
-                .arg(dataColorString(m_strNetworkMetricName, 1)).arg(m_strNetworkInfoLabelTransmitted).arg(uiCommon().formatSize((quint64)iTransmitRate, iDecimalCount))
-                .arg(m_strNetworkInfoLabelTransmittedTotal).arg(uiCommon().formatSize((quint64)iTransmitTotal, iDecimalCount));
+                .arg(dataColorString(m_strNetworkMetricName, 0)).arg(m_strNetworkInfoLabelReceived).arg(uiCommon().formatSize((quint64)iReceiveRate, g_iDecimalCount))
+                .arg(m_strNetworkInfoLabelReceivedTotal).arg(uiCommon().formatSize((quint64)iReceiveTotal, g_iDecimalCount))
+                .arg(dataColorString(m_strNetworkMetricName, 1)).arg(m_strNetworkInfoLabelTransmitted).arg(uiCommon().formatSize((quint64)iTransmitRate, g_iDecimalCount))
+                .arg(m_strNetworkInfoLabelTransmittedTotal).arg(uiCommon().formatSize((quint64)iTransmitTotal, g_iDecimalCount));
 
         else
             strInfo = QString("<b>%1</b><br/>%2: %3<br/>%4: %5").
@@ -1115,10 +1117,10 @@ void UIPerformanceMonitor::updateDiskIOGraphsAndMetric(quint64 uDiskIOTotalWritt
         if (m_infoLabels[m_strDiskIOMetricName]->isEnabled())
             strInfo = QString("<b>%1</b></b><br/><font color=\"%2\">%3: %4<br/>%5 %6</font><br/><font color=\"%7\">%8: %9<br/>%10 %11</font>")
                 .arg(m_strDiskIOInfoLabelTitle)
-                .arg(dataColorString(m_strDiskIOMetricName, 0)).arg(m_strDiskIOInfoLabelWritten).arg(uiCommon().formatSize((quint64)iWriteRate, iDecimalCount))
-                .arg(m_strDiskIOInfoLabelWrittenTotal).arg(uiCommon().formatSize((quint64)uDiskIOTotalWritten, iDecimalCount))
-                .arg(dataColorString(m_strDiskIOMetricName, 1)).arg(m_strDiskIOInfoLabelRead).arg(uiCommon().formatSize((quint64)iReadRate, iDecimalCount))
-                .arg(m_strDiskIOInfoLabelReadTotal).arg(uiCommon().formatSize((quint64)uDiskIOTotalRead, iDecimalCount));
+                .arg(dataColorString(m_strDiskIOMetricName, 0)).arg(m_strDiskIOInfoLabelWritten).arg(uiCommon().formatSize((quint64)iWriteRate, g_iDecimalCount))
+                .arg(m_strDiskIOInfoLabelWrittenTotal).arg(uiCommon().formatSize((quint64)uDiskIOTotalWritten, g_iDecimalCount))
+                .arg(dataColorString(m_strDiskIOMetricName, 1)).arg(m_strDiskIOInfoLabelRead).arg(uiCommon().formatSize((quint64)iReadRate, g_iDecimalCount))
+                .arg(m_strDiskIOInfoLabelReadTotal).arg(uiCommon().formatSize((quint64)uDiskIOTotalRead, g_iDecimalCount));
 
         else
             strInfo = QString("<b>%1</b><br/>%2: %3<br/>%4: %5").

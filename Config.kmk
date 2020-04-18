@@ -6768,10 +6768,18 @@ ifdef VBOX_WITH_QTGUI
   #    -wd4121: UIActionPool.h(393) : warning C4121: 'UIActionPool::PointerToFunction' : alignment of a member was sensitive to packing
   #    -wd4718: qmap.h(222) : warning C4718: 'QMapNode<enum DetailsElementType,bool>::destroySubTree' : recursive call has no side effects, deleting
   TEMPLATE_VBOXQTGUIEXE_CXXFLAGS += $(VBOX_VCC_WARN_ALL) -wd4481 -wd4625 -wd4626 -wd4640 -wd4350 -wd4371 -wd4121 -wd4718 $(VBOX_VCC_WERR)
-  if1of ($(VBOX_VCC_TOOL_STEM), VCC120)
+  if "$(VBOX_VCC_TOOL_STEM)" >= "VCC120"
    #   -wd4619: qvectro.h(305 : warning C4619: #pragma warning : there is no warning number '4345'
    TEMPLATE_VBOXQTGUIEXE_CXXFLAGS += -wd4619
   endif
+  if "$(VBOX_VCC_TOOL_STEM)" >= "VCC141"
+   #   -wd4774: string(530): warning C4774: '_scprintf' : format string expected in argument 1 is not a string literal
+   #   -wd4456: UICommon.cpp(1471): warning C4456: declaration of '_container_' hides previous local declaration  [nested foreach]
+   #   -wd4458: UISettingsDialogSpecific.cpp(416): warning C4458: declaration of 'data' hides class member
+   #            qwidget.h(730): note: see declaration of 'QWidget::data'
+   TEMPLATE_VBOXQTGUIEXE_CXXFLAGS += -wd4774 -wd4456 -wd4458
+  endif
+
   TEMPLATE_VBOXQTGUIEXE_CXXFLAGS.debug = -RTCsu
   TEMPLATE_VBOXQTGUIEXE_CXXFLAGS.debug = -RTCsu
   TEMPLATE_VBOXQTGUIEXE_CXXFLAGS.dbgopt = $(NO_SUCH_VARIABLE)

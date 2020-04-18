@@ -442,7 +442,7 @@ int UINetworkReplyPrivateThread::applyHttpsCertificates()
          * so we use RTPathQueryInfoEx here and not RTFileExists.
          */
         RTFSOBJINFO Info;
-        int rc = RTPathQueryInfoEx(pszCaCertFile, &Info, RTFSOBJATTRADD_NOTHING, RTPATH_F_FOLLOW_LINK);
+        rc = RTPathQueryInfoEx(pszCaCertFile, &Info, RTFSOBJATTRADD_NOTHING, RTPATH_F_FOLLOW_LINK);
         if (   RT_SUCCESS(rc)
             && RTFS_IS_FILE(Info.Attr.fMode))
         {

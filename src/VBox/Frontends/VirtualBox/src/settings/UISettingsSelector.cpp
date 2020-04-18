@@ -800,9 +800,9 @@ UISelectorActionItem *UISettingsSelectorToolBar::findActionItemByTabWidget(QTabW
     foreach (UISelectorItem *pItem, m_list)
         if (static_cast<UISelectorActionItem*>(pItem)->tabWidget() == pTabWidget)
         {
-            QTabWidget *pTabWidget = static_cast<UISelectorActionItem*>(pItem)->tabWidget();
+            QTabWidget *pTabWidget2 = static_cast<UISelectorActionItem*>(pItem)->tabWidget(); /// @todo r=bird: same as pTabWidget?
             pResult = static_cast<UISelectorActionItem*>(
-                findItemByPage(static_cast<UISettingsPage*>(pTabWidget->widget(iIndex))));
+                findItemByPage(static_cast<UISettingsPage*>(pTabWidget2->widget(iIndex))));
             break;
         }
 
