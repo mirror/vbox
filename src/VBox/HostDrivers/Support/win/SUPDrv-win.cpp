@@ -1794,7 +1794,7 @@ void VBOXCALL supdrvOSGipInitGroupBitsForCpu(PSUPDRVDEVEXT pDevExt, PSUPGLOBALIN
     /*
      * Translate the CPU index into a group and member.
      */
-    PROCESSOR_NUMBER ProcNum = { 0, pGipCpu->iCpuSet, 0 };
+    PROCESSOR_NUMBER ProcNum = { 0, (UCHAR)pGipCpu->iCpuSet, 0 };
     if (g_pfnKeGetProcessorNumberFromIndex)
     {
         NTSTATUS rcNt = g_pfnKeGetProcessorNumberFromIndex(pGipCpu->iCpuSet, &ProcNum);
