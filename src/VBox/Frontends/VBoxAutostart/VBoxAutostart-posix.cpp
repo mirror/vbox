@@ -275,15 +275,7 @@ static void displayHelp(const char *pszImage)
                  "Options:\n");
     for (unsigned i = 0; i < RT_ELEMENTS(g_aOptions); i++)
     {
-        char szOptions[128];
-        const char *pszOptions = g_aOptions[i].pszLong;
-        if (g_aOptions[i].iShort < 1000) /* Don't show short options which are defined by an ID! */
-        {
-            RTStrPrintf(szOptions, sizeof(szOptions), "%s, -%c", g_aOptions[i].pszLong, g_aOptions[i].iShort);
-            pszOptions = szOptions;
-        }
-
-        const char *pcszDescr = "";
+        const char *pcszDescr;
         switch (g_aOptions[i].iShort)
         {
             case 'h':
@@ -315,12 +307,23 @@ static void displayHelp(const char *pszImage)
             case 'c':
                 pcszDescr = "Name of the configuration file for the global overrides.";
                 break;
+            default:
+                AssertFailedBreakStmt(pcszDescr = "");
         }
 
-        RTStrmPrintf(g_pStdErr, "%-23s%s\n", pszOptions, pcszDescr);
+        if (g_aOptions[i].iShort < 1000)
+            RTStrmPrintf(g_pStdErr,
+                         "  %s, -%c\n"
+                         "      %s\n", g_aOptions[i].pszLong, g_aOptions[i].iShort, pcszDescr);
+        else
+            RTStrmPrintf(g_pStdErr,
+                         "  %s\n"
+                         "      %s\n", g_aOptions[i].pszLong, pcszDescr);
     }
 
-    RTStrmPrintf(g_pStdErr, "\nUse environment variable VBOXAUTOSTART_RELEASE_LOG for logging options.\n");
+    RTStrmPrintf(g_pStdErr,
+                 "\n"
+                 "Use environment variable VBOXAUTOSTART_RELEASE_LOG for logging options.\n");
 }
 
 int main(int argc, char *argv[])
