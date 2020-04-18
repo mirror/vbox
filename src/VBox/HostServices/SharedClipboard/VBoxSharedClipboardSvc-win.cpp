@@ -41,7 +41,7 @@
 #endif
 
 #include <process.h>
-#include <shlobj.h> /* Needed for shell objects. */
+#include <iprt/win/shlobj.h> /* Needed for shell objects. */
 
 #include "VBoxSharedClipboardSvc-internal.h"
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
