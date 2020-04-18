@@ -52,9 +52,6 @@
 #include <iprt/ctype.h>
 #include <iprt/dir.h>
 
-#include <algorithm>
-#include <list>
-#include <string>
 #include <signal.h>
 
 #include "VBoxAutostart.h"
@@ -267,29 +264,26 @@ static void displayHelp(const char *pszImage)
     displayHeader();
 
     RTStrmPrintf(g_pStdErr,
-                 "Usage:\n"
-                 " %s [-v|--verbose] [-h|-?|--help]\n"
-                 " [-F|--logfile=<file>] [-R|--logrotate=<num>] [-S|--logsize=<bytes>]\n"
-                 " [-I|--loginterval=<seconds>]\n"
-                 " [-c|--config=<config file>]\n", pszImage);
+                 "Usage: %s [-v|--verbose] [-h|-?|--help]\n"
+                 "           [-F|--logfile=<file>] [-R|--logrotate=<num>]\n"
+                 "           [-S|--logsize=<bytes>] [-I|--loginterval=<seconds>]\n"
+                 "           [-c|--config=<config file>]\n",
+                 pszImage);
 
-    RTStrmPrintf(g_pStdErr, "\n"
+    RTStrmPrintf(g_pStdErr,
+                 "\n"
                  "Options:\n");
-
-    for (unsigned i = 0;
-         i < RT_ELEMENTS(g_aOptions);
-         ++i)
+    for (unsigned i = 0; i < RT_ELEMENTS(g_aOptions); i++)
     {
-        std::string str(g_aOptions[i].pszLong);
+        char szOptions[128];
+        const char *pszOptions = g_aOptions[i].pszLong;
         if (g_aOptions[i].iShort < 1000) /* Don't show short options which are defined by an ID! */
         {
-            str += ", -";
-            str += g_aOptions[i].iShort;
+            RTStrPrintf(szOptions, sizeof(szOptions), "%s, -%c", g_aOptions[i].pszLong, g_aOptions[i].iShort);
+            pszOptions = szOptions;
         }
-        str += ":";
 
         const char *pcszDescr = "";
-
         switch (g_aOptions[i].iShort)
         {
             case 'h':
@@ -323,7 +317,7 @@ static void displayHelp(const char *pszImage)
                 break;
         }
 
-        RTStrmPrintf(g_pStdErr, "%-23s%s\n", str.c_str(), pcszDescr);
+        RTStrmPrintf(g_pStdErr, "%-23s%s\n", pszOptions, pcszDescr);
     }
 
     RTStrmPrintf(g_pStdErr, "\nUse environment variable VBOXAUTOSTART_RELEASE_LOG for logging options.\n");

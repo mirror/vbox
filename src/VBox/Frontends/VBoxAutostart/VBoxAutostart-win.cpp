@@ -834,7 +834,7 @@ static RTEXITCODE autostartStartVMs()
         PCFGAST pNode = pCfgAst->u.Compound.apAstNodes[i];
         com::Utf8Str sDomain;
         com::Utf8Str sUserTmp;
-        int rc = autostartGetDomainAndUser(pNode->pszKey, sDomain, sUserTmp);
+        rc = autostartGetDomainAndUser(pNode->pszKey, sDomain, sUserTmp);
         if (RT_FAILURE(rc))
             continue;
         com::Utf8StrFmt sDomainUser("%s\\%s", sDomain.c_str(), sUserTmp.c_str());
@@ -874,12 +874,12 @@ static RTEXITCODE autostartStartVMs()
         return autostartSvcLogError("User is not allowed to autostart VMs.\n");
     }
 
-    RTEXITCODE ec = autostartStartMain(pCfgAstUser);
+    RTEXITCODE rcExit = autostartStartMain(pCfgAstUser);
     autostartConfigAstDestroy(pCfgAst);
-    if (ec != RTEXITCODE_SUCCESS)
+    if (rcExit != RTEXITCODE_SUCCESS)
         autostartSvcLogError("Starting VMs failed\n");
 
-    return ec;
+    return rcExit;
 }
 
 /**

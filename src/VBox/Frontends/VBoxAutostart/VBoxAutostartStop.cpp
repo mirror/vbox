@@ -28,9 +28,7 @@
 #include <iprt/assert.h>
 #include <iprt/message.h>
 
-#include <algorithm>
 #include <list>
-#include <string>
 
 #include "VBoxAutostart.h"
 

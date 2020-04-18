@@ -29,11 +29,7 @@
 #include <iprt/thread.h>
 #include <iprt/stream.h>
 #include <iprt/log.h>
-#include <iprt/path.h>
-
-#include <algorithm>
-#include <list>
-#include <string>
+#include <iprt/path.h>      /* RTPATH_MAX */
 
 #include "VBoxAutostart.h"
 
