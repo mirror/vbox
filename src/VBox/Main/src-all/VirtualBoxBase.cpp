@@ -23,12 +23,11 @@
 #include <typeinfo>
 
 #if !defined(VBOX_WITH_XPCOM)
-#include <iprt/win/windows.h>
-#include <dbghelp.h>
+# include <iprt/win/windows.h>
 #else /* !defined(VBOX_WITH_XPCOM) */
 /// @todo remove when VirtualBoxErrorInfo goes away from here
-#include <nsIServiceManager.h>
-#include <nsIExceptionService.h>
+# include <nsIServiceManager.h>
+# include <nsIExceptionService.h>
 #endif /* !defined(VBOX_WITH_XPCOM) */
 
 #include "VirtualBoxBase.h"
