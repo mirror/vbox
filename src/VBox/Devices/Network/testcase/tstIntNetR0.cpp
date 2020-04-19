@@ -556,12 +556,12 @@ static void tstBidirectionalTransfer(PTSTSTATE pThis, uint32_t cbFrame)
                  pThis->pBuf0->cStatBadFrames.c);
     RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS,
                  "Buf0.Recv: Frames=%llu Bytes=%llu Overflows=%llu\n",
-                 pThis->pBuf0->Recv.cStatFrames,
+                 pThis->pBuf0->Recv.cStatFrames.c,
                  pThis->pBuf0->Recv.cbStatWritten.c,
                  pThis->pBuf0->Recv.cOverflows.c);
     RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS,
                  "Buf0.Send: Frames=%llu Bytes=%llu Overflows=%llu\n",
-                 pThis->pBuf0->Send.cStatFrames,
+                 pThis->pBuf0->Send.cStatFrames.c,
                  pThis->pBuf0->Send.cbStatWritten.c,
                  pThis->pBuf0->Send.cOverflows.c);
 
@@ -573,12 +573,12 @@ static void tstBidirectionalTransfer(PTSTSTATE pThis, uint32_t cbFrame)
                  pThis->pBuf1->cStatBadFrames.c);
     RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS,
                  "Buf1.Recv: Frames=%llu Bytes=%llu Overflows=%llu\n",
-                 pThis->pBuf1->Recv.cStatFrames,
+                 pThis->pBuf1->Recv.cStatFrames.c,
                  pThis->pBuf1->Recv.cbStatWritten.c,
                  pThis->pBuf1->Recv.cOverflows.c);
     RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS,
                  "Buf1.Send: Frames=%llu Bytes=%llu Overflows=%llu\n",
-                 pThis->pBuf1->Send.cStatFrames,
+                 pThis->pBuf1->Send.cStatFrames.c,
                  pThis->pBuf1->Send.cbStatWritten.c,
                  pThis->pBuf1->Send.cOverflows.c);
 
