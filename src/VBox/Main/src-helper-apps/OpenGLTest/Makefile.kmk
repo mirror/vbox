@@ -15,7 +15,7 @@
 # hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
 #
 
-SUB_DEPTH = ../../../..
+SUB_DEPTH = ../../../../..
 include $(KBUILD_PATH)/subheader.kmk
 
 
@@ -47,14 +47,19 @@ if (   defined(VBOX_WITH_QTGUI) \
   VBoxTestOGL_DEFS.solaris     = SunOS=1 _GNU_SOURCE #GLEXT_64_TYPES_DEFINED
   VBoxTestOGL_DEFS.darwin      = DARWIN=1 GL_GLEXT_LEGACY _GNU_SOURCE
   VBoxTestOGL_DEFS.freebsd     = FreeBSD=1 _GNU_SOURCE
+  ifdef VBOX_WITH_AUTOMATIC_DEFS_QUOTING
+   VBoxTestOGL_DEFS = VBOX_BUILD_TARGET="$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)"
+  else
+   VBoxTestOGL_DEFS = VBOX_BUILD_TARGET=\"$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)\"
+  endif
+  ifdef VBOX_WITH_VIDEOHWACCEL
+   VBoxTestOGL_DEFS += VBOX_WITH_VIDEOHWACCEL
+  endif
   VBoxTestOGL_SOURCES = OpenGLTestApp.cpp
   VBoxTestOGL_SOURCES.win = VBoxTestOGL.rc
   VBoxTestOGL_LIBS = \
   	$(if $(VBOX_WITH_VIDEOHWACCEL), $(PATH_STAGE_LIB)/VBoxOGL2D$(VBOX_SUFF_LIB),) \
   	$(LIB_RUNTIME)
-  VBoxTestOGL_DEFS += \
-    VBOX_BUILD_TARGET=\"$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)\" \
-    $(if $(VBOX_WITH_VIDEOHWACCEL), VBOX_WITH_VIDEOHWACCEL,)
   ifdef VBOX_WITH_VIDEOHWACCEL
    VBoxTestOGL_QT_MODULES   += Core Gui OpenGL Widgets
    VBoxTestOGL_LIBS.linux   += xcb
