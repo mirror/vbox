@@ -136,7 +136,7 @@ static HRESULT EventListenerDemoProcessEvent(IEvent *event)
     rc = IEvent_get_Type(event, &evType);
     if (FAILED(rc))
     {
-        printf("cannot get event type, rc=%#x\n", rc);
+        printf("cannot get event type, rc=%#lx\n", rc);
         return S_OK;
     }
 
@@ -161,7 +161,7 @@ static HRESULT EventListenerDemoProcessEvent(IEvent *event)
             rc = IEvent_QueryInterface(event, &IID_IStateChangedEvent, (void **)&ev);
             if (FAILED(rc))
             {
-                printf("cannot get StateChangedEvent interface, rc=%#x\n", rc);
+                printf("cannot get StateChangedEvent interface, rc=%#lx\n", rc);
                 return S_OK;
             }
             if (!ev)
@@ -171,7 +171,7 @@ static HRESULT EventListenerDemoProcessEvent(IEvent *event)
             }
             rc = IStateChangedEvent_get_State(ev, &state);
             if (FAILED(rc))
-                printf("warning: cannot get state, rc=%#x\n", rc);
+                printf("warning: cannot get state, rc=%#lx\n", rc);
             IStateChangedEvent_Release(ev);
             printf("OnStateChanged: %s\n", GetStateName(state));
 
@@ -620,7 +620,7 @@ static void registerPassiveEventListener(ISession *session)
                         rc = IEventSource_GetEvent(es, consoleListener, 250, &ev);
                         if (FAILED(rc))
                         {
-                            printf("Failed getting event: %#x\n", rc);
+                            printf("Failed getting event: %#lx\n", rc);
                             g_fStop = 1;
                             continue;
                         }
@@ -630,14 +630,14 @@ static void registerPassiveEventListener(ISession *session)
                         rc = EventListenerDemoProcessEvent(ev);
                         if (FAILED(rc))
                         {
-                            printf("Failed processing event: %#x\n", rc);
+                            printf("Failed processing event: %#lx\n", rc);
                             g_fStop = 1;
                             /* finish processing the event */
                         }
                         rc = IEventSource_EventProcessed(es, consoleListener, ev);
                         if (FAILED(rc))
                         {
-                            printf("Failed to mark event as processed: %#x\n", rc);
+                            printf("Failed to mark event as processed: %#lx\n", rc);
                             g_fStop = 1;
                             /* continue with event release */
                         }
@@ -770,7 +770,7 @@ static void startVM(const char *argv0, IVirtualBox *virtualBox, ISession *sessio
              * 16 bit number. So better play safe and use UTF-8. */
             char *group;
             g_pVBoxFuncs->pfnUtf16ToUtf8(groups[i], &group);
-            printf("Groups[%d]: %s\n", i, group);
+            printf("Groups[%lu]: %s\n", i, group);
             g_pVBoxFuncs->pfnUtf8Free(group);
         }
         for (i = 0; i < cGroups; ++i)
@@ -932,7 +932,7 @@ static void listVMs(const char *argv0, IVirtualBox *virtualBox, ISession *sessio
                 ULONG memorySize;
 
                 IMachine_get_MemorySize(machine, &memorySize);
-                printf("\tMemory size: %uMB\n", memorySize);
+                printf("\tMemory size: %luMB\n", memorySize);
             }
 
             {
@@ -1060,7 +1060,7 @@ int main(int argc, char **argv)
     /* 1. Revision */
     rc = IVirtualBox_get_Revision(vbox, &revision);
     if (SUCCEEDED(rc))
-        printf("\tRevision: %u\n", revision);
+        printf("\tRevision: %lu\n", revision);
     else
         PrintErrorInfo(argv[0], "GetRevision() failed", rc);
 

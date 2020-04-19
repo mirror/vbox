@@ -2112,7 +2112,7 @@ static void vbpsRemoveOldTypeLibs(VBPSREGSTATE *pState)
          * Open the TypeLib key, if it exists.
          */
         HKEY hkeyTypeLibs;
-        LRESULT rc;
+        LSTATUS rc;
         rc = RegOpenKeyExW(pState->aAltDeletes[iAlt].hkeyClasses, L"TypeLib", 0 /*fOptions*/, pState->fSamDelete, &hkeyTypeLibs);
         if (rc == ERROR_SUCCESS)
         {
@@ -2123,7 +2123,7 @@ static void vbpsRemoveOldTypeLibs(VBPSREGSTATE *pState)
             while (iTlb-- > 0)
             {
                 HKEY hkeyTypeLibId;
-                LONG rc = RegOpenKeyExW(hkeyTypeLibs, g_apwszTypeLibIds[iTlb], 0 /*fOptions*/, pState->fSamDelete, &hkeyTypeLibId);
+                rc = RegOpenKeyExW(hkeyTypeLibs, g_apwszTypeLibIds[iTlb], 0 /*fOptions*/, pState->fSamDelete, &hkeyTypeLibId);
                 if (rc == ERROR_SUCCESS)
                 {
                     unsigned iVer = RT_ELEMENTS(g_apwszTypelibVersions);

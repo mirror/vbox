@@ -53,14 +53,14 @@ int wmain(int cArgs, wchar_t **papwszArgs)
                     " ->       Product=%ls\n"
                     " ->     FeatureId=%ls\n"
                     " -> ComponentCode=%ls\n"
-                    " ->  offArguments=%#x (%d)\n"
+                    " ->  offArguments=%#lx (%ld)\n"
                     , iArg, papwszArgs[iArg], wszProductCode, wszFeatureId, wszComponentCode, offArguments, offArguments);
         }
         else
         {
             fprintf(stderr,
                     "#%u: '%ls'\n"
-                    " -> error %u (%#x)\n"
+                    " -> error %lu (%#lx)\n"
                     , iArg, papwszArgs[iArg], dwErr, dwErr);
             rcExit = 1;
         }

@@ -1343,7 +1343,6 @@ static RTEXITCODE RelaunchElevatedNative(const char *pszExecPath, const char **p
                                 RTMsgError("MsgWaitForMultipleObjects returned: %#x (%d), err=%u", dwRc, dwRc, GetLastError());
                                 break;
                             }
-                            MSG Msg;
                             while (PeekMessageW(&Msg, NULL, 0, 0, PM_REMOVE))
                             {
                                 TranslateMessage(&Msg);
