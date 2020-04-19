@@ -406,7 +406,7 @@ NTSTATUS DriverEntry(PDRIVER_OBJECT pDrvObj, PUNICODE_STRING pRegPath)
          * Dynamically resolve symbols not present in NT4.
          */
         RTDBGKRNLINFO hKrnlInfo;
-        int rc = RTR0DbgKrnlInfoOpen(&hKrnlInfo, 0 /*fFlags*/);
+        rc = RTR0DbgKrnlInfoOpen(&hKrnlInfo, 0 /*fFlags*/);
         if (RT_SUCCESS(rc))
         {
             g_pfnKeRegisterBugCheckCallback   = (decltype(KeRegisterBugCheckCallback) *)  RTR0DbgKrnlInfoGetSymbol(hKrnlInfo, NULL, "KeRegisterBugCheckCallback");
