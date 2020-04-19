@@ -1144,7 +1144,7 @@ DWORD APIENTRY NPGetResourceParent(LPNETRESOURCE pNetResource,
         || pLastSlash == pParent->lpRemoteName + 1)
     {
         /* It is a leading backslash. Construct "no parent" NETRESOURCE. */
-        NETRESOURCE *pNetResource = (NETRESOURCE *)pBuffer;
+        NETRESOURCE *pNetResourceNP = (NETRESOURCE *)pBuffer;
 
         cbEntry = sizeof(NETRESOURCE);
         cbEntry += sizeof(MRX_VBOX_PROVIDER_NAME_U); /* remote name */
@@ -1158,20 +1158,20 @@ DWORD APIENTRY NPGetResourceParent(LPNETRESOURCE pNetResource,
         }
         else
         {
-            memset (pNetResource, 0, sizeof (*pNetResource));
+            memset (pNetResourceNP, 0, sizeof (*pNetResourceNP));
 
-            pNetResource->dwType = RESOURCETYPE_ANY;
-            pNetResource->dwDisplayType = RESOURCEDISPLAYTYPE_NETWORK;
-            pNetResource->dwUsage = RESOURCEUSAGE_CONTAINER;
+            pNetResourceNP->dwType = RESOURCETYPE_ANY;
+            pNetResourceNP->dwDisplayType = RESOURCEDISPLAYTYPE_NETWORK;
+            pNetResourceNP->dwUsage = RESOURCEUSAGE_CONTAINER;
 
             WCHAR *pStrings = (WCHAR *)((PBYTE)pBuffer + *pBufferSize);
             pStrings = (PWCHAR)((PBYTE)pStrings - (cbEntry - sizeof(NETRESOURCE)));
 
-            pNetResource->lpRemoteName = pStrings;
+            pNetResourceNP->lpRemoteName = pStrings;
             CopyMemory (pStrings, MRX_VBOX_PROVIDER_NAME_U, sizeof(MRX_VBOX_PROVIDER_NAME_U));
             pStrings += sizeof(MRX_VBOX_PROVIDER_NAME_U) / sizeof(WCHAR);
 
-            pNetResource->lpProvider = pStrings;
+            pNetResourceNP->lpProvider = pStrings;
             CopyMemory (pStrings, MRX_VBOX_PROVIDER_NAME_U, sizeof(MRX_VBOX_PROVIDER_NAME_U));
             pStrings += sizeof(MRX_VBOX_PROVIDER_NAME_U) / sizeof(WCHAR);
 
