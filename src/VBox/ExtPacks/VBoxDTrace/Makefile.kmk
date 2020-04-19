@@ -64,6 +64,12 @@ if defined(VBOX_WITH_EXTPACK_VBOXDTRACE) && defined(VBOX_WITH_EXTPACK)
  TEMPLATE_VBoxR3ExtPackDTrace_EXTENDS = VBoxR3ExtPack
  TEMPLATE_VBoxR3ExtPackDTrace_INST = $(INST_EXTPACK_VBOXDTRACE)$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)/
  TEMPLATE_VBoxR3ExtPackDTrace_DEFS = $(TEMPLATE_VBoxR3ExtPack_DEFS) VBOX_IN_DTRACE_EXTPACK
+ if "$(VBOX_VCC_TOOL_STEM)" >= "VCC141"
+  # -wd4456: declaration of 'rval' hides previous local declaration
+  # -wd4477: 'fprintf' : format string '%02lu' requires an argument of type 'unsigned long', but variadic argument 1 has type 'ulong_t'
+  # -wd4457: warning C4457: declaration of 'arg' hides function parameter
+  TEMPLATE_VBoxR3ExtPackDTrace_CFLAGS.win = $(TEMPLATE_VBoxR3ExtPack_CFLAGS.win) -wd4456 -wd4477 -wd4457
+ endif
 
  TEMPLATE_VBoxR0ExtPackDTrace = For the ring-0 context modules in the VBoxDTrace extension pack.
  TEMPLATE_VBoxR0ExtPackDTrace_EXTENDS = VBoxR0ExtPack
@@ -101,7 +107,11 @@ if defined(VBOX_WITH_EXTPACK_VBOXDTRACE) && defined(VBOX_WITH_EXTPACK)
  ifneq ($(KBUILD_TARGET),solaris) # Temporarily disabled on Solaris (not really needed)...
  DLLS += VBoxDTraceCmd
  VBoxDTraceCmd_TEMPLATE = VBoxR3ExtPackDTrace
+ ifdef VBOX_WITH_AUTOMATIC_DEFS_QUOTING
+ VBoxDTraceCmd_DEFS = RTMEM_WRAP_TO_EF_APIS VBOX_EXTPACK_VBOXDTRACE_MANGLED_NAME="$(VBOX_EXTPACK_VBOXDTRACE_MANGLED_NAME)"
+ else
  VBoxDTraceCmd_DEFS = RTMEM_WRAP_TO_EF_APIS VBOX_EXTPACK_VBOXDTRACE_MANGLED_NAME=\"$(VBOX_EXTPACK_VBOXDTRACE_MANGLED_NAME)\"
+ endif
  #VBoxDTraceCmd_DEFS += YYDEBUG
  VBoxDTraceCmd_DEFS.linux = _XOPEN_SOURCE=700 _LARGEFILE64_SOURCE
  VBoxDTraceCmd_DEFS.win = YY_USE_PROTOS=1 YYENABLE_NLS=0 YYLTYPE_IS_TRIVIAL=0
