@@ -2020,6 +2020,12 @@
  */
 #define RT_BIT_64(bit)                          ( UINT64_C(1) << (bit) )
 
+/** @def RT_BIT_Z
+ * Convert a bit number into a size_t bitmask (for avoid MSC warnings).
+ * @param   a_iBit  The bit number.
+ */
+#define RT_BIT_Z(a_iBit)                        ( (size_t)(1) << (a_iBit) )
+
 
 /** @def RT_BF_GET
  * Gets the value of a bit field in an integer value.
