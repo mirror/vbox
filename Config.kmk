@@ -2145,7 +2145,7 @@ VBOX_VBOXTPG    ?= $(PATH_OBJ)/VBoxTpG/VBoxTpG$(HOSTSUFF_EXE)
 VBOX_PE_SET_VERSION ?= $(PATH_OBJ)/VBoxPeSetVersion/VBoxPeSetVersion$(HOSTSUFF_EXE)
 
 # Visual C++ EditBin.exe.
-VBOX_VCC_EDITBIN = $(if $(PATH_TOOL_$(VBOX_VCC_TOOL)_BIN),$(PATH_TOOL_$(VBOX_VCC_TOOL)_BIN)/,)editbin.exe /NoLogo
+VBOX_VCC_EDITBIN = $(if $(PATH_TOOL_$(VBOX_VCC_TOOL)_BIN_QSH),$(PATH_TOOL_$(VBOX_VCC_TOOL)_BIN_QSH)/,$(if $(PATH_TOOL_$(VBOX_VCC_TOOL)_BIN),$(PATH_TOOL_$(VBOX_VCC_TOOL)_BIN)/,))editbin.exe /NoLogo
 
 # filesplitter (splits java files)
 VBOX_FILESPLIT  ?= $(PATH_OBJ)/filesplitter/filesplitter$(HOSTSUFF_EXE)
@@ -4013,7 +4013,7 @@ VBOX_EDIT_INF64_FN = $(SED) \
 	--output $(2) \
 	$(1)
 
-##
+## @def VBOX_RE_SIGN_DLL_FN
 # Helper macro for re-signing DLL images from tools that we ship so they won't
 # cause trouble for the hardened build requirements.
 #
@@ -4027,11 +4027,33 @@ VBOX_EDIT_INF64_FN = $(SED) \
 # @param    3   Optional prefix to avoid name collisions.
 #
 if defined(VBOX_SIGNING_MODE) && "$(KBUILD_TARGET)" == "win"
- VBOX_RE_SIGN_DLL_FN = $(if-expr !defined($(1)_VBOX_RE_SIGNED_$(3)$(notdir $(2))),\
+ if1of (quote, $(KMK_FEATURES))
+ VBOX_RE_SIGN_DLL_FN = $(if-expr !defined($(1)_VBOX_RE_SIGNED_$(3)$(qnotdir ,$(2))),\
+	$(evalcall VBOX_RE_SIGN_DLL_INTERNAL_FN,$1,$2,$3)\
+	,)$($(1)_0_OUTDIR)/$(3)$(qnotdir ,$2)
+
+  define VBOX_RE_SIGN_DLL_INTERNAL_FN
+   local n = $(3)$(qnotdir ,$2)
+   ifndef $(1)_VBOX_RE_SIGNED_$(n)
+ $(1)_VBOX_RE_SIGNED_$(n) := 1
+ $(eval $(1)_CLEAN += $$($(1)_0_OUTDIR)/$(n))
+
+ $$($(1)_0_OUTDIR)/$(n): $(2) $(VBOX_VERSION_STAMP) | $$(dir $$@)
+	$(call MSG_TOOL,SIGNTOOL,,$<,$@)
+	$(RM) -f -- "$@"
+	$(CP) -- "$(quote-sh-dq $<)" "$@"
+	$(VBOX_VCC_EDITBIN) /LargeAddressAware /DynamicBase /NxCompat /Release /IntegrityCheck \
+		/Version:$(VBOX_VERSION_MAJOR)0$(VBOX_VERSION_MINOR).$(VBOX_VERSION_BUILD) \
+		"$@"
+	$(call VBOX_SIGN_IMAGE_FN,$@)
+   endif
+  endef # VBOX_RE_SIGN_DLL_INTERNAL_FN
+
+ else # old kmk: no quote feature
+VBOX_RE_SIGN_DLL_FN = $(if-expr !defined($(1)_VBOX_RE_SIGNED_$(3)$(notdir $(2))),\
 	$(evalcall VBOX_RE_SIGN_DLL_INTERNAL_FN,$1,$2,$3)\
 	,)$($(1)_0_OUTDIR)/$(3)$(notdir $2)
-
-define VBOX_RE_SIGN_DLL_INTERNAL_FN
+  define VBOX_RE_SIGN_DLL_INTERNAL_FN
 local n = $(3)$(notdir $2)
 ifndef $(1)_VBOX_RE_SIGNED_$(n)
  $(1)_VBOX_RE_SIGNED_$(n) := 1
@@ -4046,15 +4068,11 @@ ifndef $(1)_VBOX_RE_SIGNED_$(n)
 		"$@"
 	$(call VBOX_SIGN_IMAGE_FN,$@)
 endif
-endef # VBOX_RESIGN_DLL_FN
+  endef # VBOX_RE_SIGN_DLL_INTERNAL_FN
+ endif # old kmk: no quote feature
 else
  VBOX_RE_SIGN_DLL_FN = $(2)
 endif
-
-
-##
-# @param
-VBOX_RESIGN_DLL_FN =
 
 
 #

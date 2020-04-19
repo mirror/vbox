@@ -114,33 +114,60 @@ endif
 ifeq ($(KBUILD_TARGET).$(VBOX_WITHOUT_COMPILER_REDIST),win.)
  include $(KBUILD_PATH)/tools/$(VBOX_VCC_TOOL).kmk
  include $(KBUILD_PATH)/tools/$(VBOX_VCC_TOOL_STEM)X86.kmk
- VBOX_VCC_REDIR_BASE             := Microsoft.VC$(substr $(VBOX_VCC_TOOL),4,3)
- VBOX_PATH_VCC_REDIST             = $(PATH_TOOL_$(VBOX_VCC_TOOL))/redist/
- VBOX_PATH_VCC_REDIST_CRT         = $(VBOX_PATH_VCC_REDIST)/$(subst amd64,x64,$(KBUILD_TARGET_ARCH))/$(VBOX_VCC_REDIR_BASE).CRT
- VBOX_PATH_VCC_REDIST_CRT_DBG     = $(VBOX_PATH_VCC_REDIST)/Debug_NonRedist/$(subst amd64,x64,$(KBUILD_TARGET_ARCH))/$(VBOX_VCC_REDIR_BASE).DebugCRT
- VBOX_PATH_VCC_REDIST_CRT_X86     = $(VBOX_PATH_VCC_REDIST)/x86/$(VBOX_VCC_REDIR_BASE).CRT
- VBOX_PATH_VCC_REDIST_CRT_DBG_X86 = $(VBOX_PATH_VCC_REDIST)/Debug_NonRedist/x86/$(VBOX_VCC_REDIR_BASE).DebugCRT
-
- InstallExternalLibs_SOURCES += \
- 	$(call VBOX_RE_SIGN_DLL_FN,InstallExternalLibs,$(VBOX_PATH_VCC_REDIST_CRT)/msvcr$(substr $(VBOX_VCC_TOOL_STEM),4).dll) \
- 	$(call VBOX_RE_SIGN_DLL_FN,InstallExternalLibs,$(VBOX_PATH_VCC_REDIST_CRT)/msvcp$(substr $(VBOX_VCC_TOOL_STEM),4).dll) \
- 	$(call VBOX_RE_SIGN_DLL_FN,InstallExternalLibs,$(VBOX_PATH_VCC_REDIST_CRT)/msvcr$(substr $(VBOX_VCC_TOOL_STEM),4).dll)=>testcase/msvcr$(substr $(VBOX_VCC_TOOL_STEM),4).dll \
- 	$(call VBOX_RE_SIGN_DLL_FN,InstallExternalLibs,$(VBOX_PATH_VCC_REDIST_CRT)/msvcp$(substr $(VBOX_VCC_TOOL_STEM),4).dll)=>testcase/msvcp$(substr $(VBOX_VCC_TOOL_STEM),4).dll
- ifdef VBOX_WITH_32_ON_64_MAIN_API
-  InstallExternalLibs_SOURCES += \
-  	$(call VBOX_RE_SIGN_DLL_FN,InstallExternalLibs,$(VBOX_PATH_VCC_REDIST_CRT_X86)/msvcr$(substr $(VBOX_VCC_TOOL_STEM),4).dll,x86_)=>x86/msvcr$(substr $(VBOX_VCC_TOOL_STEM),4).dll \
-  	$(call VBOX_RE_SIGN_DLL_FN,InstallExternalLibs,$(VBOX_PATH_VCC_REDIST_CRT_X86)/msvcp$(substr $(VBOX_VCC_TOOL_STEM),4).dll,x86_)=>x86/msvcp$(substr $(VBOX_VCC_TOOL_STEM),4).dll
- endif
- ifeq ($(VBOX_VCC_CRT_TYPE),d)
-  InstallExternalLibs_SOURCES += \
-  	$(call VBOX_RE_SIGN_DLL_FN,InstallExternalLibs,$(VBOX_PATH_VCC_REDIST_CRT_DBG)/msvcr$(substr $(VBOX_VCC_TOOL_STEM),4)d.dll) \
-  	$(call VBOX_RE_SIGN_DLL_FN,InstallExternalLibs,$(VBOX_PATH_VCC_REDIST_CRT_DBG)/msvcp$(substr $(VBOX_VCC_TOOL_STEM),4)d.dll) \
-  	$(call VBOX_RE_SIGN_DLL_FN,InstallExternalLibs,$(VBOX_PATH_VCC_REDIST_CRT_DBG)/msvcr$(substr $(VBOX_VCC_TOOL_STEM),4)d.dll)=>testcase/msvcr$(substr $(VBOX_VCC_TOOL_STEM),4)d.dll \
-  	$(call VBOX_RE_SIGN_DLL_FN,InstallExternalLibs,$(VBOX_PATH_VCC_REDIST_CRT_DBG)/msvcp$(substr $(VBOX_VCC_TOOL_STEM),4)d.dll)=>testcase/msvcp$(substr $(VBOX_VCC_TOOL_STEM),4)d.dll
+ ifdef PATH_TOOL_$(VBOX_VCC_TOOL_STEM)_REDIST
+InstallExternalLibs_SOURCES += \
+	$(foreachfile redistdll, $(qaddprefix ,$(requote unq,$(PATH_TOOL_$(VBOX_VCC_TOOL)_REDIST_CRT)/), \
+		$(TOOL_$(VBOX_VCC_TOOL_STEM)_REDIST_CRT_DLLS) $(TOOL_$(VBOX_VCC_TOOL_STEM)_REDIST_CPP_DLLS)) \
+	,$(call VBOX_RE_SIGN_DLL_FN,InstallExternalLibs,$(redistdll)) \
+	$(call VBOX_RE_SIGN_DLL_FN,InstallExternalLibs,$(redistdll))=>testcase/$(qnotdir ,$(redistdll)))
   ifdef VBOX_WITH_32_ON_64_MAIN_API
-  InstallExternalLibs_SOURCES += \
-  	$(call VBOX_RE_SIGN_DLL_FN,InstallExternalLibs,$(VBOX_PATH_VCC_REDIST_CRT_DBG_X86)/msvcr$(substr $(VBOX_VCC_TOOL_STEM)d,4).dll,x86_)=>x86/msvcr$(substr $(VBOX_VCC_TOOL_STEM),4)d.dll \
-  	$(call VBOX_RE_SIGN_DLL_FN,InstallExternalLibs,$(VBOX_PATH_VCC_REDIST_CRT_DBG_X86)/msvcp$(substr $(VBOX_VCC_TOOL_STEM)d,4).dll,x86_)=>x86/msvcp$(substr $(VBOX_VCC_TOOL_STEM),4)d.dll
+InstallExternalLibs_SOURCES += \
+	$(foreachfile redistdll, $(qaddprefix ,$(requote unq,$(PATH_TOOL_$(VBOX_VCC_TOOL_STEM)X86_REDIST_CRT)/), \
+		$(TOOL_$(VBOX_VCC_TOOL_STEM)_REDIST_CRT_DLLS) $(TOOL_$(VBOX_VCC_TOOL_STEM)_REDIST_CPP_DLLS)) \
+	,$(call VBOX_RE_SIGN_DLL_FN,InstallExternalLibs,$(redistdll),x86)=>x86/$(qnotdir ,$(redistdll)))
+  endif
+  ifeq ($(VBOX_VCC_CRT_TYPE),d)
+InstallExternalLibs_SOURCES += \
+	$(foreachfile redistdll, $(qaddprefix ,$(requote unq,$(PATH_TOOL_$(VBOX_VCC_TOOL)_REDIST_DEBUG_CRT)/), \
+		$(addsuffix d.dll,$(basename $(TOOL_$(VBOX_VCC_TOOL_STEM)_REDIST_CRT_DLLS) $(TOOL_$(VBOX_VCC_TOOL_STEM)_REDIST_CPP_DLLS)))) \
+	,$(call VBOX_RE_SIGN_DLL_FN,InstallExternalLibs,$(redistdll)) \
+	$(call VBOX_RE_SIGN_DLL_FN,InstallExternalLibs,$(redistdll))=>testcase/$(qnotdir ,$(redistdll)))
+   ifdef VBOX_WITH_32_ON_64_MAIN_API
+InstallExternalLibs_SOURCES += \
+	$(foreachfile redistdll, $(qaddprefix ,$(requote unq,$(PATH_TOOL_$(VBOX_VCC_TOOL_STEM)X86_REDIST_DEBUG_CRT)/), \
+		$(addsuffix d.dll,$(basename $(TOOL_$(VBOX_VCC_TOOL_STEM)_REDIST_CRT_DLLS) $(TOOL_$(VBOX_VCC_TOOL_STEM)_REDIST_CPP_DLLS)))) \
+	,$(call VBOX_RE_SIGN_DLL_FN,InstallExternalLibs,$(redistdll),x86)=>x86/$(qnotdir ,$(redistdll)))
+   endif
+  endif
+ else
+VBOX_VCC_REDIR_BASE             := Microsoft.VC$(substr $(VBOX_VCC_TOOL),4,3)
+VBOX_PATH_VCC_REDIST             = $(PATH_TOOL_$(VBOX_VCC_TOOL))/redist/
+VBOX_PATH_VCC_REDIST_CRT         = $(VBOX_PATH_VCC_REDIST)/$(subst amd64,x64,$(KBUILD_TARGET_ARCH))/$(VBOX_VCC_REDIR_BASE).CRT
+VBOX_PATH_VCC_REDIST_CRT_DBG     = $(VBOX_PATH_VCC_REDIST)/Debug_NonRedist/$(subst amd64,x64,$(KBUILD_TARGET_ARCH))/$(VBOX_VCC_REDIR_BASE).DebugCRT
+VBOX_PATH_VCC_REDIST_CRT_X86     = $(VBOX_PATH_VCC_REDIST)/x86/$(VBOX_VCC_REDIR_BASE).CRT
+VBOX_PATH_VCC_REDIST_CRT_DBG_X86 = $(VBOX_PATH_VCC_REDIST)/Debug_NonRedist/x86/$(VBOX_VCC_REDIR_BASE).DebugCRT
+
+InstallExternalLibs_SOURCES += \
+	$(call VBOX_RE_SIGN_DLL_FN,InstallExternalLibs,$(VBOX_PATH_VCC_REDIST_CRT)/msvcr$(substr $(VBOX_VCC_TOOL_STEM),4).dll) \
+	$(call VBOX_RE_SIGN_DLL_FN,InstallExternalLibs,$(VBOX_PATH_VCC_REDIST_CRT)/msvcp$(substr $(VBOX_VCC_TOOL_STEM),4).dll) \
+	$(call VBOX_RE_SIGN_DLL_FN,InstallExternalLibs,$(VBOX_PATH_VCC_REDIST_CRT)/msvcr$(substr $(VBOX_VCC_TOOL_STEM),4).dll)=>testcase/msvcr$(substr $(VBOX_VCC_TOOL_STEM),4).dll \
+	$(call VBOX_RE_SIGN_DLL_FN,InstallExternalLibs,$(VBOX_PATH_VCC_REDIST_CRT)/msvcp$(substr $(VBOX_VCC_TOOL_STEM),4).dll)=>testcase/msvcp$(substr $(VBOX_VCC_TOOL_STEM),4).dll
+  ifdef VBOX_WITH_32_ON_64_MAIN_API
+InstallExternalLibs_SOURCES += \
+	$(call VBOX_RE_SIGN_DLL_FN,InstallExternalLibs,$(VBOX_PATH_VCC_REDIST_CRT_X86)/msvcr$(substr $(VBOX_VCC_TOOL_STEM),4).dll,x86_)=>x86/msvcr$(substr $(VBOX_VCC_TOOL_STEM),4).dll \
+	$(call VBOX_RE_SIGN_DLL_FN,InstallExternalLibs,$(VBOX_PATH_VCC_REDIST_CRT_X86)/msvcp$(substr $(VBOX_VCC_TOOL_STEM),4).dll,x86_)=>x86/msvcp$(substr $(VBOX_VCC_TOOL_STEM),4).dll
+  endif
+  ifeq ($(VBOX_VCC_CRT_TYPE),d)
+InstallExternalLibs_SOURCES += \
+	$(call VBOX_RE_SIGN_DLL_FN,InstallExternalLibs,$(VBOX_PATH_VCC_REDIST_CRT_DBG)/msvcr$(substr $(VBOX_VCC_TOOL_STEM),4)d.dll) \
+	$(call VBOX_RE_SIGN_DLL_FN,InstallExternalLibs,$(VBOX_PATH_VCC_REDIST_CRT_DBG)/msvcp$(substr $(VBOX_VCC_TOOL_STEM),4)d.dll) \
+	$(call VBOX_RE_SIGN_DLL_FN,InstallExternalLibs,$(VBOX_PATH_VCC_REDIST_CRT_DBG)/msvcr$(substr $(VBOX_VCC_TOOL_STEM),4)d.dll)=>testcase/msvcr$(substr $(VBOX_VCC_TOOL_STEM),4)d.dll \
+	$(call VBOX_RE_SIGN_DLL_FN,InstallExternalLibs,$(VBOX_PATH_VCC_REDIST_CRT_DBG)/msvcp$(substr $(VBOX_VCC_TOOL_STEM),4)d.dll)=>testcase/msvcp$(substr $(VBOX_VCC_TOOL_STEM),4)d.dll
+   ifdef VBOX_WITH_32_ON_64_MAIN_API
+InstallExternalLibs_SOURCES += \
+	$(call VBOX_RE_SIGN_DLL_FN,InstallExternalLibs,$(VBOX_PATH_VCC_REDIST_CRT_DBG_X86)/msvcr$(substr $(VBOX_VCC_TOOL_STEM)d,4).dll,x86_)=>x86/msvcr$(substr $(VBOX_VCC_TOOL_STEM),4)d.dll \
+	$(call VBOX_RE_SIGN_DLL_FN,InstallExternalLibs,$(VBOX_PATH_VCC_REDIST_CRT_DBG_X86)/msvcp$(substr $(VBOX_VCC_TOOL_STEM)d,4).dll,x86_)=>x86/msvcp$(substr $(VBOX_VCC_TOOL_STEM),4)d.dll
+   endif
   endif
  endif
 endif
