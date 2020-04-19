@@ -215,6 +215,11 @@ TEMPLATE_VBOXWEBR3EXE_CXXFLAGS = $(filter-out $(VBOX_GCC_fvisibility-hidden) $(V
 ifn1of ($(KBUILD_TARGET), win)
 TEMPLATE_VBOXWEBR3EXE_CXXFLAGS += $(VBOX_GCC_Wno-misleading-indentation)
 endif
+if "$(VBOX_VCC_TOOL_STEM)" >= "VCC141"
+ # -wd4774: string(532): warning C4774: 'sprintf_s' : format string expected in argument 3 is not a string literal
+ # -wd4458: stdsoap2.h(2644): warning C4458: declaration of 'type' hides class member
+ TEMPLATE_VBOXWEBR3EXE_CXXFLAGS.win = $(TEMPLATE_VBOXR3EXE_CXXFLAGS.win) -wd4774 -wd4458
+endif
 
 ifdef VBOX_GSOAP_INSTALLED
  ifndef VBOX_ONLY_SDK
@@ -332,6 +337,9 @@ ifdef VBOX_GSOAP_INSTALLED
     $(VBOX_GSOAP_CXX_SOURCES)_CXXFLAGS.win += -wd4056 # v2.8.36/stdsoap2.cpp(14008) : warning C4056: overflow in floating-point constant arithmetic
     $(VBOX_GSOAP_CXX_SOURCES)_CXXFLAGS.win += -wd4756 # v2.8.36/stdsoap2.cpp(14008) : warning C4756: overflow in constant arithmetic
    endif
+   if "$(VBOX_VCC_TOOL_STEM)" >= "VCC141"
+    $(VBOX_GSOAP_CXX_SOURCES)_CXXFLAGS.win += -wd4456 # stdsoap2.cpp(3127): warning C4456: declaration of 'i' hides previous local declaration
+   endif
   endif
 
   ifdef VBOX_SOAP_PRECOMPILED_HEADER
@@ -376,6 +384,10 @@ ifdef VBOX_GSOAP_INSTALLED
 	$(VBOXWEB_OUT_DIR) \
 	.
  vboxwebsrv_CXXFLAGS.win += -bigobj
+ if "$(VBOX_VCC_TOOL_STEM)" >= "VCC141"
+  vboxwebsrv_CXXFLAGS.win += -wd4774 # string(532): warning C4774: 'sprintf_s' : format string expected in argument 3 is not a string literal
+  vboxwebsrv_CXXFLAGS.win += -wd4458 # stdsoap2.h(2644): warning C4458: declaration of 'type' hides class member
+ endif
  ifn1of ($(KBUILD_TARGET), win)
   vboxwebsrv_CXXFLAGS += -Wno-shadow $(VBOX_GCC_Wno-literal-suffix) $(VBOX_GCC_Wno-misleading-indentation)
   ifn1of ($(KBUILD_TYPE), debug) # Save time+memory by using -O1 instead of -O2.
