@@ -41,11 +41,11 @@
 
 
 
-VBoxCredProvCredential::VBoxCredProvCredential(void) :
-    m_enmUsageScenario(CPUS_INVALID),
-    m_cRefs(1),
-    m_pEvents(NULL),
-    m_fHaveCreds(false)
+VBoxCredProvCredential::VBoxCredProvCredential(void)
+    : m_cRefs(1)
+    , m_enmUsageScenario(CPUS_INVALID)
+    , m_pEvents(NULL)
+    , m_fHaveCreds(false)
 {
     VBoxCredProvVerbose(0, "VBoxCredProvCredential: Created\n");
     VBoxCredentialProviderAcquire();

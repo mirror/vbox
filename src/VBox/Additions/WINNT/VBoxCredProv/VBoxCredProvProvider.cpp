@@ -33,12 +33,12 @@
 
 
 
-VBoxCredProvProvider::VBoxCredProvProvider(void) :
-    m_cRefs(1),
-    m_pPoller(NULL),
-    m_pCred(NULL),
-    m_pEvents(NULL),
-    m_fHandleRemoteSessions(false)
+VBoxCredProvProvider::VBoxCredProvProvider(void)
+    : m_cRefs(1)
+    , m_pCred(NULL)
+    , m_pPoller(NULL)
+    , m_pEvents(NULL)
+    , m_fHandleRemoteSessions(false)
 {
     VBoxCredentialProviderAcquire();
 

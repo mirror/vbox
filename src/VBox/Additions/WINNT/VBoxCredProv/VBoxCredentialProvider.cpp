@@ -319,8 +319,6 @@ static void VBoxCredentialProviderUnregisterSENS(void)
     {
         VBoxCredProvVerbose(0, "VBoxCredentialProviderUnregisterSENS\n");
 
-        HRESULT hr;
-
         for (int i = 0; i < RT_ELEMENTS(g_aSENSEvents); i++)
         {
             int  iErrorIdX;
