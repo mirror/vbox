@@ -1649,9 +1649,13 @@ endif
 # Decide which Visual C++ compiler version we're using for newer stuff.
 #
 ifndef VBOX_NEWER_VCC_TOOL_STEM
- VBOX_NEWER_VCC_TOOL_STEM := VCC120
-else ifn1of ($(VBOX_NEWER_VCC_TOOL_STEM), VCC120)
- $(error VBox: VBOX_NEWER_VCC_TOOL_STEM='$(VBOX_NEWER_VCC_TOOL_STEM)' is not supported, only VCC120 is)
+ if "$(VBOX_VCC_TOOL_STEM)" >= "VCC120"
+  VBOX_NEWER_VCC_TOOL_STEM := $(VBOX_VCC_TOOL_STEM)
+ else
+  VBOX_NEWER_VCC_TOOL_STEM := VCC120
+ endif
+else ifn1of ($(VBOX_NEWER_VCC_TOOL_STEM), VCC120 VCC140 VCC141 VCC142)
+ $(error VBox: VBOX_NEWER_VCC_TOOL_STEM='$(VBOX_NEWER_VCC_TOOL_STEM)' is not supported)
 endif
 ifndef VBOX_NEWER_VCC_TOOL
  VBOX_NEWER_VCC_TOOL := $(VBOX_NEWER_VCC_TOOL_STEM)$(toupper $(KBUILD_TARGET_ARCH))
