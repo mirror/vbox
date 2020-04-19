@@ -103,7 +103,7 @@ bool GetErrorMsg(DWORD dwLastError, _TCHAR *pszMsg, DWORD dwBufSize)
 {
     if (::FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, NULL, dwLastError, 0, pszMsg, dwBufSize / sizeof(TCHAR), NULL) == 0)
     {
-        _sntprintf(pszMsg, dwBufSize / sizeof(TCHAR), _T("Unknown error!\n"), dwLastError);
+        _sntprintf(pszMsg, dwBufSize / sizeof(TCHAR), _T("Unknown error!\n"));
         return false;
     }
     _TCHAR *p = _tcschr(pszMsg, _T('\r'));
@@ -125,10 +125,10 @@ void LogCallback(DIFXAPI_LOG Event, DWORD dwError, PCWSTR pEventDescription, PVO
     if (dwError == 0)
         _tprintf(_T("(%u) %ws\n"), Event, pEventDescription);
     else
-        _tprintf(_T("(%u) ERROR: %u - %ws\n"), Event, dwError, pEventDescription);
+        _tprintf(_T("(%u) ERROR: %lu - %ws\n"), Event, dwError, pEventDescription);
 
      if (pCallbackContext)
-         fwprintf((FILE*)pCallbackContext, _T("(%u) %u - %s\n"), Event, dwError, pEventDescription);
+         fwprintf((FILE*)pCallbackContext, _T("(%u) %lu - %s\n"), Event, dwError, pEventDescription);
 }
 
 /**
@@ -371,7 +371,7 @@ int VBoxInstallDriver(const BOOL fInstall, const _TCHAR *pszDriverPath, BOOL fSi
                         /* Try error lookup with GetErrorMsg(). */
                         TCHAR szErrMsg[1024];
                         GetErrorMsg(dwRet, szErrMsg, sizeof(szErrMsg));
-                        _tprintf(_T("ERROR (%08x): %ws\n"), dwRet, szErrMsg);
+                        _tprintf(_T("ERROR (%08lx): %ws\n"), dwRet, szErrMsg);
                         break;
                     }
                 }
@@ -517,7 +517,7 @@ int RegistryAddStringToMultiSZ(const TCHAR *pszSubKey, const TCHAR *pszKeyValue,
     DWORD disp, dwType;
     LONG lRet = RegCreateKeyEx(HKEY_LOCAL_MACHINE, pszSubKey, 0, NULL, REG_OPTION_NON_VOLATILE, KEY_READ | KEY_WRITE, NULL, &hKey, &disp);
     if (lRet != ERROR_SUCCESS)
-        _tprintf(_T("AddStringToMultiSZ: RegCreateKeyEx %ts failed with error %ld!\n"), pszSubKey, lRet);
+        _tprintf(_T("AddStringToMultiSZ: RegCreateKeyEx %s failed with error %ld!\n"), pszSubKey, lRet);
 
     if (lRet == ERROR_SUCCESS)
     {
@@ -529,7 +529,7 @@ int RegistryAddStringToMultiSZ(const TCHAR *pszSubKey, const TCHAR *pszKeyValue,
         if (   lRet != ERROR_SUCCESS
             || dwType != REG_MULTI_SZ)
         {
-           _tprintf(_T("AddStringToMultiSZ: RegQueryValueEx failed with error %ld, key type = 0x%x!\n"), lRet, dwType);
+           _tprintf(_T("AddStringToMultiSZ: RegQueryValueEx failed with error %ld, key type = %#lx!\n"), lRet, dwType);
         }
         else
         {
@@ -613,7 +613,7 @@ int RegistryRemoveStringFromMultiSZ(const TCHAR *pszSubKey, const TCHAR *pszKeyV
     DWORD disp, dwType;
     LONG lRet = RegCreateKeyEx(HKEY_LOCAL_MACHINE, pszKey, 0, NULL, REG_OPTION_NON_VOLATILE, KEY_READ | KEY_WRITE, NULL, &hkey, &disp);
     if (lRet != ERROR_SUCCESS)
-        _tprintf(_T("RemoveStringFromMultiSZ: RegCreateKeyEx %ts failed with error %ld!\n"), pszKey, lRet);
+        _tprintf(_T("RemoveStringFromMultiSZ: RegCreateKeyEx %s failed with error %ld!\n"), pszKey, lRet);
 
     if (lRet == ERROR_SUCCESS)
     {
@@ -624,13 +624,13 @@ int RegistryRemoveStringFromMultiSZ(const TCHAR *pszSubKey, const TCHAR *pszKeyV
         if (   lRet   != ERROR_SUCCESS
             || dwType != REG_MULTI_SZ)
         {
-            _tprintf(_T("RemoveStringFromMultiSZ: RegQueryValueEx failed with %d, key type = 0x%x!\n"), lRet, dwType);
+            _tprintf(_T("RemoveStringFromMultiSZ: RegQueryValueEx failed with %ld, key type = %#lx!\n"), lRet, dwType);
         }
         else
         {
-        #ifdef DEBUG
+#ifdef DEBUG
             _tprintf(_T("RemoveStringFromMultiSZ: Current key len: %ld\n"), cbKeyValue);
-        #endif
+#endif
 
             TCHAR szCurString[1024] = { 0 };
             TCHAR szFinalString[1024] = { 0 };
@@ -660,21 +660,21 @@ int RegistryRemoveStringFromMultiSZ(const TCHAR *pszSubKey, const TCHAR *pszKeyV
                 }
             }
             szFinalString[++iNewIndex] = _T('\0');
-        #ifdef DEBUG
+#ifdef DEBUG
             _tprintf(_T("RemoveStringFromMultiSZ: New key value: %ws (%u bytes)\n"),
-                     szFinalString, iNewIndex * sizeof(TCHAR));
-        #endif
+                     szFinalString, (unsigned)(iNewIndex * sizeof(TCHAR)));
+#endif
 
             lRet = RegSetValueExW(hkey, pszKeyValue, 0, REG_MULTI_SZ, (LPBYTE)szFinalString, iNewIndex * sizeof(TCHAR));
             if (lRet != ERROR_SUCCESS)
-                _tprintf(_T("RemoveStringFromMultiSZ: RegSetValueEx failed with %d!\n"), lRet);
+                _tprintf(_T("RemoveStringFromMultiSZ: RegSetValueEx failed with %ld!\n"), lRet);
         }
 
         RegCloseKey(hkey);
-    #ifdef DEBUG
+#ifdef DEBUG
         if (lRet == ERROR_SUCCESS)
             _tprintf(_T("RemoveStringFromMultiSZ: Value %ws successfully removed!\n"), pszValueToRemove);
-    #endif
+#endif
     }
 
     return (lRet == ERROR_SUCCESS) ? EXIT_OK : EXIT_FAIL;
@@ -700,7 +700,7 @@ int RegistryAddStringToList(const TCHAR *pszSubKey, const TCHAR *pszKeyValue, co
     DWORD disp, dwType;
     LONG lRet = RegCreateKeyEx(HKEY_LOCAL_MACHINE, pszSubKey, 0, NULL, REG_OPTION_NON_VOLATILE, KEY_READ | KEY_WRITE, NULL, &hKey, &disp);
     if (lRet != ERROR_SUCCESS)
-        _tprintf(_T("RegistryAddStringToList: RegCreateKeyEx %ts failed with error %ld!\n"), pszSubKey, lRet);
+        _tprintf(_T("RegistryAddStringToList: RegCreateKeyEx %s failed with error %ld!\n"), pszSubKey, lRet);
 
     TCHAR szKeyValue[512] = { 0 };
     TCHAR szNewKeyValue[512] = { 0 };
@@ -710,14 +710,14 @@ int RegistryAddStringToList(const TCHAR *pszSubKey, const TCHAR *pszKeyValue, co
     if (   lRet != ERROR_SUCCESS
         || dwType != REG_SZ)
     {
-        _tprintf(_T("RegistryAddStringToList: RegQueryValueEx failed with %d, key type = 0x%x!\n"), lRet, dwType);
+        _tprintf(_T("RegistryAddStringToList: RegQueryValueEx failed with %ld, key type = %#lx!\n"), lRet, dwType);
     }
 
     if (lRet == ERROR_SUCCESS)
     {
-    #ifdef DEBUG
+#ifdef DEBUG
         _tprintf(_T("RegistryAddStringToList: Key value: %ws\n"), szKeyValue);
-    #endif
+#endif
 
         /* Create entire new list. */
         unsigned int iPos = 0;
@@ -749,9 +749,9 @@ int RegistryAddStringToList(const TCHAR *pszSubKey, const TCHAR *pszKeyValue, co
                 iPos++;
             }
 
-    #ifdef DEBUG
+#ifdef DEBUG
             _tprintf (_T("RegistryAddStringToList: Temp new key value: %ws\n"), szNewKeyValue);
-    #endif
+#endif
             pszToken = pszNewToken;
         }
 
@@ -765,9 +765,9 @@ int RegistryAddStringToList(const TCHAR *pszSubKey, const TCHAR *pszKeyValue, co
 
         size_t iNewLen = (wcslen(szNewKeyValue) * sizeof(WCHAR)) + sizeof(WCHAR);
 
-    #ifdef DEBUG
-        _tprintf(_T("RegistryAddStringToList: New provider list: %ws (%u bytes)\n"), szNewKeyValue, iNewLen);
-    #endif
+#ifdef DEBUG
+        _tprintf(_T("RegistryAddStringToList: New provider list: %ws (%u bytes)\n"), szNewKeyValue, (unsigned)iNewLen);
+#endif
 
         lRet = RegSetValueExW(hKey, pszKeyValue, 0, REG_SZ, (LPBYTE)szNewKeyValue, (DWORD)iNewLen);
         if (lRet != ERROR_SUCCESS)
@@ -795,7 +795,7 @@ int RegistryRemoveStringFromList(const TCHAR *pszSubKey, const TCHAR *pszKeyValu
     DWORD disp, dwType;
     LONG lRet = RegCreateKeyEx(HKEY_LOCAL_MACHINE, pszSubKey, 0, NULL, REG_OPTION_NON_VOLATILE, KEY_READ | KEY_WRITE, NULL, &hKey, &disp);
     if (lRet != ERROR_SUCCESS)
-        _tprintf(_T("RegistryRemoveStringFromList: RegCreateKeyEx %ts failed with error %ld!\n"), pszSubKey, lRet);
+        _tprintf(_T("RegistryRemoveStringFromList: RegCreateKeyEx %s failed with error %ld!\n"), pszSubKey, lRet);
 
     TCHAR szKeyValue[512] = { 0 };
     TCHAR szNewKeyValue[512] = { 0 };
@@ -805,7 +805,7 @@ int RegistryRemoveStringFromList(const TCHAR *pszSubKey, const TCHAR *pszKeyValu
     if (   lRet != ERROR_SUCCESS
         || dwType != REG_SZ)
     {
-        _tprintf(_T("RegistryRemoveStringFromList: RegQueryValueEx failed with %d, key type = 0x%x!\n"), lRet, dwType);
+        _tprintf(_T("RegistryRemoveStringFromList: RegQueryValueEx failed with %ld, key type = %#lx!\n"), lRet, dwType);
     }
 
     if (lRet == ERROR_SUCCESS)
@@ -845,7 +845,7 @@ int RegistryRemoveStringFromList(const TCHAR *pszSubKey, const TCHAR *pszKeyValu
         size_t iNewLen = (wcslen(szNewKeyValue) * sizeof(WCHAR)) + sizeof(WCHAR);
 
     #ifdef DEBUG
-        _tprintf(_T("RegistryRemoveStringFromList: New provider list: %ws (%u bytes)\n"), szNewKeyValue, iNewLen);
+        _tprintf(_T("RegistryRemoveStringFromList: New provider list: %ws (%u bytes)\n"), szNewKeyValue, (unsigned)iNewLen);
     #endif
 
         lRet = RegSetValueExW(hKey, pszKeyValue, 0, REG_SZ, (LPBYTE)szNewKeyValue, (DWORD)iNewLen);

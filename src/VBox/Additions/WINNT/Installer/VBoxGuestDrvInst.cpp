@@ -450,7 +450,7 @@ int main(int argc, char **argv)
 
   if (!GetModuleFileName(hExe, &szInstallDir[0], sizeof(szInstallDir)))
     {
-      printf("GetModuleFileName failed! rc = %d\n", GetLastError());
+      printf("GetModuleFileName failed! rc=%lu\n", GetLastError());
       return -1;
     }
 
