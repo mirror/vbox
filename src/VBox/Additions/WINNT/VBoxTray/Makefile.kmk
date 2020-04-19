@@ -25,9 +25,11 @@ ifdef VBOX_SIGN_ADDITIONS # (See the parent makefile.)
  VBoxTray_DEBUG_INSTTYPE = both
 endif
 VBoxTray_SDKS     = ReorderCompilerIncs $(VBOX_WINDDK_GST)
-VBoxTray_DEFS     = \
-	VBOX_WITH_HGCM \
-	VBOX_BUILD_TARGET=\"$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)\"
+ifdef VBOX_WITH_AUTOMATIC_DEFS_QUOTING
+ VBoxTray_DEFS   := VBOX_WITH_HGCM VBOX_BUILD_TARGET="$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)"
+else
+ VBoxTray_DEFS   := VBOX_WITH_HGCM VBOX_BUILD_TARGET=\"$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)\"
+endif
 VBoxTray_INCS     = \
 	../include \
 	$(PATH_ROOT)/src/VBox/Additions/WINNT/Graphics/Video/disp/wddm/shared \

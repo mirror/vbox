@@ -256,7 +256,7 @@ static LRESULT vboxClipboardWinProcessMsg(PSHCLCONTEXT pCtx, HWND hwnd, UINT msg
                     /* Clipboard was updated by another application.
                      * Report available formats to the host. */
                     SHCLFORMATS fFormats;
-                    int rc = SharedClipboardWinGetFormats(pWinCtx, &fFormats);
+                    rc = SharedClipboardWinGetFormats(pWinCtx, &fFormats);
                     if (RT_SUCCESS(rc))
                     {
                         LogFunc(("WM_CLIPBOARDUPDATE: Reporting formats %#x\n", fFormats));

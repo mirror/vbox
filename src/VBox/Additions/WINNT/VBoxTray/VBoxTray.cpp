@@ -1163,7 +1163,7 @@ static LRESULT CALLBACK vboxToolWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPA
                                 if (fBlockWhileTracking)
                                     fTrack |= TPM_RETURNCMD | TPM_NONOTIFY;
 
-                                UINT uMsg = TrackPopupMenu(hContextMenu, fTrack, lpCursor.x, lpCursor.y, 0, hWnd, NULL);
+                                uMsg = TrackPopupMenu(hContextMenu, fTrack, lpCursor.x, lpCursor.y, 0, hWnd, NULL);
                                 if (   uMsg
                                     && fBlockWhileTracking)
                                 {

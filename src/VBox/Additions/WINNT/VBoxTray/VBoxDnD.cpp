@@ -123,12 +123,12 @@ VBoxDnDWnd::~VBoxDnDWnd(void)
  * @return  IPRT status code.
  * @param   pCtx    Pointer to context to use.
  */
-int VBoxDnDWnd::Initialize(PVBOXDNDCONTEXT pCtx)
+int VBoxDnDWnd::Initialize(PVBOXDNDCONTEXT a_pCtx)
 {
-    AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
+    AssertPtrReturn(a_pCtx, VERR_INVALID_POINTER);
 
     /* Save the context. */
-    this->pCtx = pCtx;
+    this->pCtx = a_pCtx;
 
     int rc = RTSemEventCreate(&mEventSem);
     if (RT_SUCCESS(rc))
@@ -145,7 +145,7 @@ int VBoxDnDWnd::Initialize(PVBOXDNDCONTEXT pCtx)
             int rc2 = RTThreadUserWait(hThread, 30 * 1000 /* Timeout in ms */);
             AssertRC(rc2);
 
-            if (!pCtx->fStarted) /* Did the thread fail to start? */
+            if (!a_pCtx->fStarted) /* Did the thread fail to start? */
                 rc = VERR_NOT_SUPPORTED; /* Report back DnD as not being supported. */
         }
     }
@@ -393,9 +393,9 @@ BOOL CALLBACK VBoxDnDWnd::MonitorEnumProc(HMONITOR hMonitor, HDC hdcMonitor, LPR
 /**
  * The proxy window's WndProc.
  */
-LRESULT CALLBACK VBoxDnDWnd::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+LRESULT CALLBACK VBoxDnDWnd::WndProc(HWND a_hWnd, UINT a_uMsg, WPARAM a_wParam, LPARAM a_lParam)
 {
-    switch (uMsg)
+    switch (a_uMsg)
     {
         case WM_CREATE:
         {
@@ -542,7 +542,7 @@ LRESULT CALLBACK VBoxDnDWnd::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM
 
         case WM_VBOXTRAY_DND_MESSAGE:
         {
-            PVBOXDNDEVENT pEvent = (PVBOXDNDEVENT)lParam;
+            PVBOXDNDEVENT pEvent = (PVBOXDNDEVENT)a_lParam;
             if (!pEvent)
                 break; /* No event received, bail out. */
 
@@ -664,7 +664,7 @@ LRESULT CALLBACK VBoxDnDWnd::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM
             break;
     }
 
-    return DefWindowProc(hWnd, uMsg, wParam, lParam);
+    return DefWindowProc(a_hWnd, a_uMsg, a_wParam, a_lParam);
 }
 
 #ifdef VBOX_WITH_DRAG_AND_DROP_GH
@@ -801,18 +801,18 @@ int VBoxDnDWnd::Abort(void)
  * the guest's screen to initiate a host -> guest DnD operation.
  *
  * @return  IPRT status code.
- * @param   lstFormats              Supported formats offered by the host.
- * @param   dndLstActionsAllowed    Supported actions offered by the host.
+ * @param   a_lstFormats            Supported formats offered by the host.
+ * @param   a_fDndLstActionsAllowed Supported actions offered by the host.
  */
-int VBoxDnDWnd::OnHgEnter(const RTCList<RTCString> &lstFormats, VBOXDNDACTIONLIST dndLstActionsAllowed)
+int VBoxDnDWnd::OnHgEnter(const RTCList<RTCString> &a_lstFormats, VBOXDNDACTIONLIST a_fDndLstActionsAllowed)
 {
     if (mMode == GH) /* Wrong mode? Bail out. */
         return VERR_WRONG_ORDER;
 
 #ifdef DEBUG
-    LogFlowThisFunc(("dndActionList=0x%x, lstFormats=%zu: ", dndLstActionsAllowed, lstFormats.size()));
-    for (size_t i = 0; i < lstFormats.size(); i++)
-        LogFlow(("'%s' ", lstFormats.at(i).c_str()));
+    LogFlowThisFunc(("dndActionList=0x%x, a_lstFormats=%zu: ", a_fDndLstActionsAllowed, a_lstFormats.size()));
+    for (size_t i = 0; i < a_lstFormats.size(); i++)
+        LogFlow(("'%s' ", a_lstFormats.at(i).c_str()));
     LogFlow(("\n"));
 #endif
 
@@ -827,7 +827,7 @@ int VBoxDnDWnd::OnHgEnter(const RTCList<RTCString> &lstFormats, VBOXDNDACTIONLIS
     try
     {
         /* Save all allowed actions. */
-        this->dndLstActionsAllowed = dndLstActionsAllowed;
+        this->dndLstActionsAllowed = a_fDndLstActionsAllowed;
 
         /*
          * Check if reported formats from host are compatible with this client.
@@ -842,18 +842,18 @@ int VBoxDnDWnd::OnHgEnter(const RTCList<RTCString> &lstFormats, VBOXDNDACTIONLIS
         RT_BZERO(pStgMeds, sizeof(STGMEDIUM) * cFormatsSup);
 
         LogRel2(("DnD: Reported formats:\n"));
-        for (size_t i = 0; i < lstFormats.size(); i++)
+        for (size_t i = 0; i < a_lstFormats.size(); i++)
         {
             bool fSupported = false;
             for (size_t a = 0; a < this->lstFmtSup.size(); a++)
             {
-                const char *pszFormat = lstFormats.at(i).c_str();
+                const char *pszFormat = a_lstFormats.at(i).c_str();
                 LogFlowThisFunc(("\t\"%s\" <=> \"%s\"\n", this->lstFmtSup.at(a).c_str(), pszFormat));
 
                 fSupported = RTStrICmp(this->lstFmtSup.at(a).c_str(), pszFormat) == 0;
                 if (fSupported)
                 {
-                    this->lstFmtActive.append(lstFormats.at(i));
+                    this->lstFmtActive.append(a_lstFormats.at(i));
 
                     /** @todo Put this into a \#define / struct. */
                     if (!RTStrICmp(pszFormat, "text/uri-list"))
@@ -890,7 +890,7 @@ int VBoxDnDWnd::OnHgEnter(const RTCList<RTCString> &lstFormats, VBOXDNDACTIONLIS
                 }
             }
 
-            LogRel2(("DnD: \t%s: %RTbool\n", lstFormats.at(i).c_str(), fSupported));
+            LogRel2(("DnD: \t%s: %RTbool\n", a_lstFormats.at(i).c_str(), fSupported));
         }
 
         /*
@@ -912,13 +912,13 @@ int VBoxDnDWnd::OnHgEnter(const RTCList<RTCString> &lstFormats, VBOXDNDACTIONLIS
 
         /* Translate our drop actions into allowed Windows drop effects. */
         startupInfo.dwOKEffects = DROPEFFECT_NONE;
-        if (dndLstActionsAllowed)
+        if (a_fDndLstActionsAllowed)
         {
-            if (dndLstActionsAllowed & VBOX_DND_ACTION_COPY)
+            if (a_fDndLstActionsAllowed & VBOX_DND_ACTION_COPY)
                 startupInfo.dwOKEffects |= DROPEFFECT_COPY;
-            if (dndLstActionsAllowed & VBOX_DND_ACTION_MOVE)
+            if (a_fDndLstActionsAllowed & VBOX_DND_ACTION_MOVE)
                 startupInfo.dwOKEffects |= DROPEFFECT_MOVE;
-            if (dndLstActionsAllowed & VBOX_DND_ACTION_LINK)
+            if (a_fDndLstActionsAllowed & VBOX_DND_ACTION_LINK)
                 startupInfo.dwOKEffects |= DROPEFFECT_LINK;
         }
 
