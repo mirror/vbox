@@ -498,8 +498,8 @@ static void vgsvcPageSharingInspectGuest(void)
 
                     pRec = &pModule->Core;
                 }
-                bool ret = RTAvlPVInsert(&pNewTree, pRec);
-                Assert(ret); NOREF(ret);
+                bool fRet = RTAvlPVInsert(&pNewTree, pRec);
+                Assert(fRet); NOREF(fRet);
             }
         }
 skipkernelmodules:

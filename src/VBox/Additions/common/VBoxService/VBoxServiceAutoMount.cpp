@@ -884,7 +884,7 @@ static int vbsvcAutomounterPopulateTable(PVBSVCAUTOMOUNTERTABLE pMountTable)
     static const char s_szDevicePath[] = "\\Device\\VBoxMiniRdr\\;";
     for (char chDrive = 'Z'; chDrive >= 'A'; chDrive--)
     {
-        RTUTF16 const wszMountPoint[4] = { chDrive, ':', '\0', '\0' };
+        RTUTF16 const wszMountPoint[4] = { (RTUTF16)chDrive, ':', '\0', '\0' };
         RTUTF16       wszTargetPath[RTPATH_MAX];
         DWORD const   cwcResult = QueryDosDeviceW(wszMountPoint, wszTargetPath, RT_ELEMENTS(wszTargetPath));
         if (   cwcResult > sizeof(s_szDevicePath)
@@ -1431,7 +1431,7 @@ static int vbsvcAutomounterMountIt(PVBSVCAUTOMOUNTERENTRY pEntry)
      * local link (\\??).
      */
     Assert(RT_C_IS_UPPER(pEntry->pszActualMountPoint[0]) && pEntry->pszActualMountPoint[1] == ':' && pEntry->pszActualMountPoint[2] == '\0');
-    RTUTF16 wszDrive[4] = { pEntry->pszActualMountPoint[0], ':', '\0', '\0' };
+    RTUTF16 wszDrive[4] = { (RTUTF16)pEntry->pszActualMountPoint[0], ':', '\0', '\0' };
 
     RTUTF16 wszPrefixedName[RTPATH_MAX];
     int rc = RTUtf16CopyAscii(wszPrefixedName, RT_ELEMENTS(wszPrefixedName), "\\\\VBoxSvr\\");
@@ -1859,7 +1859,7 @@ static int vbsvcAutomounterUnmount(const char *pszMountPoint, const char *pszNam
          */
 #ifdef RT_OS_WINDOWS
         Assert(RT_C_IS_UPPER(pszMountPoint[0]) && pszMountPoint[1] == ':' && pszMountPoint[2] == '\0');
-        RTUTF16 const wszDrive[4] = { pszMountPoint[0], ':', '\0', '\0' };
+        RTUTF16 const wszDrive[4] = { (RTUTF16)pszMountPoint[0], ':', '\0', '\0' };
         DWORD dwErr = WNetCancelConnection2W(wszDrive, 0 /*dwFlags*/, FALSE /*fForce*/);
         if (dwErr == NO_ERROR)
             return VINF_SUCCESS;
