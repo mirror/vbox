@@ -23,7 +23,7 @@
 
 #include <iprt/win/d3d9.h>
 #include <d3dumddi.h>
-#include <d3dkmthk.h>
+#include <iprt/win/d3dkmthk.h>
 
 #include <iprt/asm.h>
 #include <iprt/cdefs.h>

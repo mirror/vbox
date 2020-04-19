@@ -271,7 +271,7 @@ wddm_shared_surface_open(struct pipe_screen *screen,
         if (surface)
         {
             D3DKMT_HANDLE hDevice = GaDrvEnvKmtDeviceHandle(pEnv);
-            NTSTATUS Status = vboxKmtOpenSharedSurface(hDevice, (D3DKMT_HANDLE)hSharedSurface, surface);
+            NTSTATUS Status = vboxKmtOpenSharedSurface(hDevice, (D3DKMT_HANDLE)(uintptr_t)hSharedSurface, surface);
             if (Status != STATUS_SUCCESS)
             {
                 free(surface);

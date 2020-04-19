@@ -92,11 +92,23 @@ TEMPLATE_VBoxMesa3DGuestR3Lib_CXXFLAGS      = $(filter-out -WX,$(TEMPLATE_VBoxMe
 #  -wd4800: 'int' : forcing value to bool 'true' or 'false' (performance warning)
 #  -wd4805: '|=' : unsafe mix of type 'GLboolean' and type 'bool' in operation
 #  -wd4918: 'y' : invalid character in pragma optimization list
-VBOX_MESA3D_VCC_DISABLED_WARNINGS           = \
+VBOX_MESA3D_VCC_DISABLED_WARNINGS          := \
 	-wd4005 -wd4013 -wd4018 -wd4054 -wd4057 -wd4090 -wd4098 -wd4099 -wd4100 -wd4101 -wd4130 -wd4132 -wd4146 \
 	-wd4152 -wd4189 -wd4200 -wd4204 -wd4206 -wd4211 -wd4221 -wd4245 -wd4255 -wd4258 -wd4265 -wd4267 -wd4266 \
 	-wd4287 -wd4291 -wd4305 -wd4306 -wd4310 -wd4311 -wd4351 -wd4355 -wd4388 -wd4389 -wd4640 -wd4668 -wd4700 \
 	-wd4701 -wd4702 -wd4703 -wd4756 -wd4800 -wd4805 -wd4918
+if "$(VBOX_NEWER_VCC_TOOL_STEM)" >= "VCC141"
+# -wd4458: declaration of 'array' hides class member
+# -wd4477: 'fprintf' : format string '%u' requires an argument of type 'unsigned int', but variadic argument 1 has type 'LONGLONG'
+# -wd4774: 'printf' : format string expected in argument 1 is not a string literal
+# -wd4456: declaration of 'pos_dst' hides previous local declaration
+# -wd4777: '_snprintf' : format string '%u' requires an argument of type 'unsigned int', but variadic argument 1 has type 'const DWORD'
+# -wd4459: declaration of 'stw_dev' hides global declaration
+# -wd4457: declaration of 'usage' hides function parameter
+VBOX_MESA3D_VCC_DISABLED_WARNINGS          += \
+	-wd4458 -wd4477 -wd4774 -wd4456 -wd4777 -wd4459 -wd4457
+endif
+
 TEMPLATE_VBoxMesa3DGuestR3Lib_CFLAGS.win   += $(VBOX_MESA3D_VCC_DISABLED_WARNINGS)
 TEMPLATE_VBoxMesa3DGuestR3Lib_CXXFLAGS.win += $(VBOX_MESA3D_VCC_DISABLED_WARNINGS)
 endif
@@ -110,10 +122,17 @@ TEMPLATE_VBoxMesa3DGuestR3Lib_INCS          = \
 	$(VBOX_MESA)/src/compiler/nir \
 	$(VBOX_MESA)/src/gallium/state_trackers/wgl \
 	$(TEMPLATE_VBoxMesa3DGuestR3Dll_INCS)
+ifdef VBOX_WITH_AUTOMATIC_DEFS_QUOTING
+TEMPLATE_VBoxMesa3DGuestR3Lib_DEFS          = \
+	$(TEMPLATE_VBoxMesa3DGuestR3Dll_DEFS) \
+	PACKAGE_VERSION="$(VBOX_MESA)" \
+	PACKAGE_BUGREPORT="$(VBOX_MESA)"
+else
 TEMPLATE_VBoxMesa3DGuestR3Lib_DEFS          = \
 	$(TEMPLATE_VBoxMesa3DGuestR3Dll_DEFS) \
 	PACKAGE_VERSION=\"$(VBOX_MESA)\" \
 	PACKAGE_BUGREPORT=\"$(VBOX_MESA)\"
+endif
 # For wgl, glapi and mesa
 TEMPLATE_VBoxMesa3DGuestR3Lib_DEFS         += \
 	MAPI_MODE_UTIL _GDI32_ BUILD_GL32 KHRONOS_DLL_EXPORTS GL_API=GLAPI GL_APIENTRY=GLAPIENTRY _GLAPI_NO_EXPORTS

@@ -72,6 +72,10 @@ typedef struct WDDMGalliumDriverEnv
                                                void *pvMap);
 } WDDMGalliumDriverEnv;
 
+struct pipe_context;
+struct pipe_screen;
+struct pipe_resource;
+
 typedef struct pipe_screen * WINAPI FNGaDrvScreenCreate(const WDDMGalliumDriverEnv *pEnv);
 typedef FNGaDrvScreenCreate *PFNGaDrvScreenCreate;
 
