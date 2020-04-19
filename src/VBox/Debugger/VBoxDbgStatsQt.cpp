@@ -962,33 +962,33 @@ VBoxDbgStatsModel::removeAndDestroy(PDBGGUISTATSNODE pNode)
 #if 1
         /* destroy the children first with the appropriate begin/endRemoveRows signals. */
         DBGGUISTATSSTACK    Stack;
-        Stack.a[0].pNode = pNode;
+        Stack.a[0].pNode  = pNode;
         Stack.a[0].iChild = -1;
         Stack.iTop = 0;
         while (Stack.iTop >= 0)
         {
             /* get top element */
-            PDBGGUISTATSNODE pNode  = Stack.a[Stack.iTop].pNode;
-            uint32_t         iChild = ++Stack.a[Stack.iTop].iChild;
-            if (iChild < pNode->cChildren)
+            PDBGGUISTATSNODE pCurNode = Stack.a[Stack.iTop].pNode;
+            uint32_t         iChild   = ++Stack.a[Stack.iTop].iChild;
+            if (iChild < pCurNode->cChildren)
             {
                 /* push */
                 Stack.iTop++;
                 Assert(Stack.iTop < (int32_t)RT_ELEMENTS(Stack.a));
-                Stack.a[Stack.iTop].pNode = pNode->papChildren[iChild];
+                Stack.a[Stack.iTop].pNode  = pCurNode->papChildren[iChild];
                 Stack.a[Stack.iTop].iChild = 0;
             }
             else
             {
                 /* pop and destroy all the children. */
                 Stack.iTop--;
-                uint32_t i = pNode->cChildren;
+                uint32_t i = pCurNode->cChildren;
                 if (i)
                 {
-                    beginRemoveRows(createIndex(pNode->iSelf, 0, pNode), 0, i - 1);
+                    beginRemoveRows(createIndex(pCurNode->iSelf, 0, pCurNode), 0, i - 1);
                     while (i-- > 0)
-                        destroyNode(pNode->papChildren[i]);
-                    pNode->cChildren = 0;
+                        destroyNode(pCurNode->papChildren[i]);
+                    pCurNode->cChildren = 0;
                     endRemoveRows();
                 }
             }
