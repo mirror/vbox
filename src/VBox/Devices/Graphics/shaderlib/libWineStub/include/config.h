@@ -713,6 +713,10 @@
 
 /* Define to 1 if you have the `snprintf' function. */
 /* #undef HAVE_SNPRINTF */
+#include <iprt/cdefs.h>             /* VBox: Manual edit */
+#if RT_MSC_PREREQ(RT_MSC_VER_VC141) /* VBox: Manual edit */
+# define HAVE_SNPRINTF 1            /* VBox: Manual edit */
+#endif                              /* VBox: Manual edit */
 
 /* Define to 1 if you have the `socketpair' function. */
 #define HAVE_SOCKETPAIR 1
@@ -1028,6 +1032,9 @@
 
 /* Define to 1 if you have the `vsnprintf' function. */
 /* #undef HAVE_VSNPRINTF */
+#if RT_MSC_PREREQ(RT_MSC_VER_VC141) /* VBox: Manual edit */
+# define HAVE_VSNPRINTF 1           /* VBox: Manual edit */
+#endif                              /* VBox: Manual edit */
 
 /* Define to 1 if you have the `wait4' function. */
 #define HAVE_WAIT4 1

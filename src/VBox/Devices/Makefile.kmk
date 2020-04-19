@@ -1300,7 +1300,11 @@ endif
    PROGRAMS += tstIntNetHardened-1
    tstIntNetHardened-1_TEMPLATE = VBoxR3HardenedTstExe
    tstIntNetHardened-1_NAME     = tstIntNet-1
-   tstIntNetHardened-1_DEFS     = PROGRAM_NAME_STR=\"tstIntNet-1\"
+   ifdef VBOX_WITH_AUTOMATIC_DEFS_QUOTING
+    tstIntNetHardened-1_DEFS    = PROGRAM_NAME_STR="tstIntNet-1"
+   else
+    tstIntNetHardened-1_DEFS    = PROGRAM_NAME_STR=\"tstIntNet-1\"
+   endif
    tstIntNetHardened-1_SOURCES  = ../HostDrivers/Support/SUPR3HardenedMainTemplateTestcase.cpp
 
    DLLS += tstIntNet-1
@@ -1473,6 +1477,11 @@ if defined(VBOX_WITH_VMSVGA3D) && !defined(VBOX_ONLY_EXTPACKS) && "$(intersects 
  TEMPLATE_VBoxSVGA3D         := VBoxSVGA3D
  TEMPLATE_VBoxSVGA3D_EXTENDS := $(if-expr "$(KBUILD_TARGET)" == "darwin" && !defined(VBOX_WITH_NEW_XCODE),VBoxR3DllOsX107,VBOXR3)
  TEMPLATE_VBoxSVGA3D_CFLAGS      = $(filter-out -pedantic -Wstrict-prototypes,$(TEMPLATE_$(TEMPLATE_VBoxSVGA3D_EXTENDS)_CFLAGS))
+ if "$(VBOX_VCC_TOOL_STEM)" >= "VCC141"
+  # -wd4777: glsl_shader.c(1542): warning C4777: 'sprintf' : format string '%u' requires an argument of type 'unsigned int', but variadic argument 2 has type 'DWORD'
+  TEMPLATE_VBoxSVGA3D_CFLAGS.win = $(TEMPLATE_$(TEMPLATE_VBoxSVGA3D_EXTENDS)_CFLAGS.win) \
+  	-wd4777
+ endif
  TEMPLATE_VBoxSVGA3D_CXXFLAGS    = $(filter-out -pedantic,$(TEMPLATE_$(TEMPLATE_VBoxSVGA3D_EXTENDS)_CXXFLAGS))
  TEMPLATE_VBoxSVGA3D_OBJCFLAGS   = $(filter-out -pedantic,$(TEMPLATE_$(TEMPLATE_VBoxSVGA3D_EXTENDS)_OBJCFLAGS))
  TEMPLATE_VBoxSVGA3D_OBJCXXFLAGS = $(filter-out -pedantic,$(TEMPLATE_$(TEMPLATE_VBoxSVGA3D_EXTENDS)_OBJCXXFLAGS))
@@ -1487,24 +1496,37 @@ if defined(VBOX_WITH_VMSVGA3D) && !defined(VBOX_ONLY_EXTPACKS) && "$(intersects 
  VBoxSVGA3D_SDKS         = ReorderCompilerIncs
  VBoxSVGA3D_DEFS         = \
  	__WINESRC__ \
- 	WINE_UNICODE_API="" \
  	_REENTRANT \
  	WINE_NOWINSOCK \
  	VBOX_WITH_VMSVGA \
  	VBOX_WITH_VMSVGA3D \
- 	DLLDIR=\"\" \
- 	BINDIR=\"\" \
- 	LIB_TO_BINDIR=\"\" \
- 	LIB_TO_DLLDIR=\"\" \
- 	BIN_TO_DLLDIR=\"\" \
- 	LIB_TO_DATADIR=\"\" \
- 	BIN_TO_DATADIR=\"\" \
  	_USE_MATH_DEFINES \
  	VBOX_USING_WINDDK_W7_OR_LATER \
  	VBOX_WINE_WITH_SINGLE_SWAPCHAIN_CONTEXT \
  	IN_vmsvgashader_STATIC \
  	IN_VMSVGA3D \
  	VBOX_WINE_WITH_IPRT
+ ifdef VBOX_WITH_AUTOMATIC_DEFS_QUOTING
+ VBoxSVGA3D_DEFS        += \
+ 	WINE_UNICODE_API= \
+ 	DLLDIR="" \
+ 	BINDIR="" \
+ 	LIB_TO_BINDIR="" \
+ 	LIB_TO_DLLDIR="" \
+ 	BIN_TO_DLLDIR="" \
+ 	LIB_TO_DATADIR="" \
+ 	BIN_TO_DATADIR=""
+ else
+ VBoxSVGA3D_DEFS        += \
+ 	WINE_UNICODE_API="" \
+ 	DLLDIR=\"\" \
+ 	BINDIR=\"\" \
+ 	LIB_TO_BINDIR=\"\" \
+ 	LIB_TO_DLLDIR=\"\" \
+ 	BIN_TO_DLLDIR=\"\" \
+ 	LIB_TO_DATADIR=\"\" \
+ 	BIN_TO_DATADIR=\"\"
+ endif
  if "$(KBUILD_TYPE)" != "debug" || defined(VBOX_WINE_NO_DEBUG_MSGS)
   VBoxSVGA3D_DEFS       += WINE_NO_DEBUG_MSGS
  endif
