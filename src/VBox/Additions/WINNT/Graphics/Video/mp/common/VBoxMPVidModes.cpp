@@ -17,7 +17,7 @@
 
 #include "VBoxMPCommon.h"
 
-#if _MSC_VER >= 1400 /* bird: MS fixed swprintf to be standard-conforming... */
+#if _MSC_VER >= 1400 && _MSC_VER <= 1410 /* bird: MS fixed swprintf to be standard-conforming... */
 #define _INC_SWPRINTF_INL_
 extern "C" int __cdecl swprintf(wchar_t *, const wchar_t *, ...);
 #endif
@@ -801,7 +801,7 @@ void VBoxMPXpdmBuildVideoModesTable(PVBOXMP_DEVEXT pExt)
          * Only alternate index if one of mode parameters changed and
          * regardless of conditions always add 2 entries to the table.
          */
-        BOOLEAN bAlternativeIndex = FALSE;
+        bAlternativeIndex = FALSE;
 
         BOOLEAN bChanged = (pExt->Prev_xres!=specialMode.VisScreenWidth
                             || pExt->Prev_yres!=specialMode.VisScreenHeight

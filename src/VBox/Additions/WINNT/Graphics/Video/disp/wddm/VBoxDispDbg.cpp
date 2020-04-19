@@ -50,7 +50,7 @@ char *vboxVDbgDoGetModuleName()
 
 static void vboxDispLogDbgFormatStringV(char * szBuffer, uint32_t cbBuffer, const char * szString, va_list pArgList)
 {
-    uint32_t cbWritten = sprintf(szBuffer, "['%s' 0x%x.0x%x] Disp: ", vboxVDbgDoGetModuleName(), GetCurrentProcessId(), GetCurrentThreadId());
+    uint32_t cbWritten = sprintf(szBuffer, "['%s' 0x%lx.0x%lx] Disp: ", vboxVDbgDoGetModuleName(), GetCurrentProcessId(), GetCurrentThreadId());
     if (cbWritten > cbBuffer)
     {
         AssertReleaseFailed();
@@ -141,7 +141,7 @@ static VOID vboxVDbgDoDumpSummary(const char * pPrefix, PVBOXVDBG_DUMP_INFO pInf
     IDirect3DResource9 *pD3DRc = pInfo->pD3DRc;
     char rectBuf[24];
     if (pInfo->pRect)
-        _snprintf(rectBuf, sizeof(rectBuf) / sizeof(rectBuf[0]), "(%d:%d);(%d:%d)",
+        _snprintf(rectBuf, sizeof(rectBuf) / sizeof(rectBuf[0]), "(%ld:%ld);(%ld:%ld)",
                 pInfo->pRect->left, pInfo->pRect->top,
                 pInfo->pRect->right, pInfo->pRect->bottom);
     else

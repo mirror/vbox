@@ -1090,7 +1090,6 @@ static BOOLEAN g_bVBoxUmdD3DCAPS9IsInited = FALSE;
 
 static void vboxUmdDumpDword(DWORD *pvData, DWORD cData)
 {
-    char aBuf[16*4];
     DWORD dw1, dw2, dw3, dw4;
     for (UINT i = 0; i < (cData & (~3)); i+=4)
     {
@@ -1098,8 +1097,7 @@ static void vboxUmdDumpDword(DWORD *pvData, DWORD cData)
         dw2 = *pvData++;
         dw3 = *pvData++;
         dw4 = *pvData++;
-        sprintf(aBuf, "0x%08x, 0x%08x, 0x%08x, 0x%08x,\n", dw1, dw2, dw3, dw4);
-        LOGREL(("%s", aBuf));
+        LOGREL(("0x%08x, 0x%08x, 0x%08x, 0x%08x,\n", dw1, dw2, dw3, dw4));
     }
 
     cData = cData % 4;
@@ -1109,19 +1107,16 @@ static void vboxUmdDumpDword(DWORD *pvData, DWORD cData)
             dw1 = *pvData++;
             dw2 = *pvData++;
             dw3 = *pvData++;
-            sprintf(aBuf, "0x%08x, 0x%08x, 0x%08x\n", dw1, dw2, dw3);
-            LOGREL(("%s", aBuf));
+            LOGREL(("0x%08x, 0x%08x, 0x%08x\n", dw1, dw2, dw3));
             break;
         case 2:
             dw1 = *pvData++;
             dw2 = *pvData++;
-            sprintf(aBuf, "0x%08x, 0x%08x\n", dw1, dw2);
-            LOGREL(("%s", aBuf));
+            LOGREL(("0x%08x, 0x%08x\n", dw1, dw2));
             break;
         case 1:
             dw1 = *pvData++;
-            sprintf(aBuf, "0x%8x\n", dw1);
-            LOGREL(("%s", aBuf));
+            LOGREL(("0x%8x\n", dw1));
             break;
         default:
             break;

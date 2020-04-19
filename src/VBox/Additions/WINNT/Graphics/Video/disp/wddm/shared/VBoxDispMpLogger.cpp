@@ -246,7 +246,7 @@ DECLCALLBACK(void) VBoxWddmUmLog(const char *pszString)
     const int cbBuffer = sizeof(szBuffer);
     char *pszBuffer = &szBuffer[0];
 
-    int cbWritten = _snprintf(pszBuffer, cbBuffer, "['%s' 0x%x.0x%x]: ",
+    int cbWritten = _snprintf(pszBuffer, cbBuffer, "['%s' 0x%lx.0x%lx]: ",
                               vboxUmLogGetModuleName(), GetCurrentProcessId(), GetCurrentThreadId());
     if (cbWritten < 0 || cbWritten >= cbBuffer)
     {

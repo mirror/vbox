@@ -78,34 +78,31 @@ static VBOXDISPCALLSTATS gDispCallStats = {0,0,0,0,0,0,0,0,0};
 # define DUMPSURF(_s, _name)
 #endif
 
-#define VBVA_OPERATION(__psoDest, __fn, __a) do {                            \
-    if (VBoxDispIsScreenSurface(__psoDest))                                  \
-    {                                                                        \
-        PVBOXDISPDEV pDev = (PVBOXDISPDEV)__psoDest->dhpdev;                 \
-                                                                             \
-        if (   pDev->hgsmi.bSupported                                        \
-            && VBoxVBVABufferBeginUpdate(&pDev->vbvaCtx, &pDev->hgsmi.ctx))  \
-        {                                                                    \
-            vbvaDrv##__fn __a;                                               \
-                                                                             \
-            if (  pDev->vbvaCtx.pVBVA->hostFlags.u32HostEvents               \
-                & VBOX_VIDEO_INFO_HOST_EVENTS_F_VRDP_RESET)                  \
-            {                                                                \
-                vrdpReset(pDev);                                             \
-                                                                             \
-                pDev->vbvaCtx.pVBVA->hostFlags.u32HostEvents &=              \
-                          ~VBOX_VIDEO_INFO_HOST_EVENTS_F_VRDP_RESET;         \
-            }                                                                \
-                                                                             \
-            if (pDev->vbvaCtx.pVBVA->hostFlags.u32HostEvents                 \
-                & VBVA_F_MODE_VRDP)                                          \
-            {                                                                \
-                vrdpDrv##__fn __a;                                           \
-            }                                                                \
-                                                                             \
-            VBoxVBVABufferEndUpdate(&pDev->vbvaCtx);                         \
-        }                                                                    \
-    }                                                                        \
+#define VBVA_OPERATION(__psoDest, __fn, __a) do { \
+    if (VBoxDispIsScreenSurface(__psoDest)) \
+    { \
+        PVBOXDISPDEV pMacroDev = (PVBOXDISPDEV)__psoDest->dhpdev; \
+        \
+        if (   pMacroDev->hgsmi.bSupported \
+            && VBoxVBVABufferBeginUpdate(&pMacroDev->vbvaCtx, &pMacroDev->hgsmi.ctx)) \
+        { \
+            vbvaDrv##__fn __a; \
+            \
+            if (pMacroDev->vbvaCtx.pVBVA->hostFlags.u32HostEvents & VBOX_VIDEO_INFO_HOST_EVENTS_F_VRDP_RESET) \
+            { \
+                vrdpReset(pMacroDev); \
+                \
+                pMacroDev->vbvaCtx.pVBVA->hostFlags.u32HostEvents &= ~VBOX_VIDEO_INFO_HOST_EVENTS_F_VRDP_RESET; \
+            } \
+            \
+            if (pMacroDev->vbvaCtx.pVBVA->hostFlags.u32HostEvents & VBVA_F_MODE_VRDP) \
+            { \
+                vrdpDrv##__fn __a; \
+            } \
+            \
+            VBoxVBVABufferEndUpdate(&pMacroDev->vbvaCtx); \
+        } \
+    } \
 } while (0)
 
 BOOL VBoxDispIsScreenSurface(SURFOBJ *pso)

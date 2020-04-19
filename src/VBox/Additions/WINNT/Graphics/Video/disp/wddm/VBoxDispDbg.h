@@ -368,8 +368,8 @@ HRESULT vboxVDbgTimerStop(HANDLE hTimerQueue, HANDLE hTimer);
         if (fDumpShaded \
                 || VBOXVDBG_IS_DUMP_ALLOWED(DrawPrim)) \
         { \
-            vboxVDbgDoDumpRt("==>"__FUNCTION__": Rt: ", (_pDevice), "", VBOXVDBG_DUMP_FLAGS_FOR_TYPE(Shared) | VBOXVDBG_DUMP_FLAGS_FOR_TYPE(DrawPrim)); \
-            vboxVDbgDoDumpSamplers("==>"__FUNCTION__": Sl: ", (_pDevice), "", VBOXVDBG_DUMP_FLAGS_FOR_TYPE(Shared) | VBOXVDBG_DUMP_FLAGS_FOR_TYPE(DrawPrim)); \
+            vboxVDbgDoDumpRt("==>" __FUNCTION__ ": Rt: ", (_pDevice), "", VBOXVDBG_DUMP_FLAGS_FOR_TYPE(Shared) | VBOXVDBG_DUMP_FLAGS_FOR_TYPE(DrawPrim)); \
+            vboxVDbgDoDumpSamplers("==>" __FUNCTION__ ": Sl: ", (_pDevice), "", VBOXVDBG_DUMP_FLAGS_FOR_TYPE(Shared) | VBOXVDBG_DUMP_FLAGS_FOR_TYPE(DrawPrim)); \
         }\
     } while (0)
 
@@ -379,8 +379,8 @@ HRESULT vboxVDbgTimerStop(HANDLE hTimerQueue, HANDLE hTimer);
         if (fDumpShaded \
                 || VBOXVDBG_IS_DUMP_ALLOWED(DrawPrim)) \
         { \
-            vboxVDbgDoDumpRt("<=="__FUNCTION__": Rt: ", (_pDevice), "", VBOXVDBG_DUMP_FLAGS_FOR_TYPE(Shared) | VBOXVDBG_DUMP_FLAGS_FOR_TYPE(DrawPrim)); \
-            vboxVDbgDoDumpSamplers("<=="__FUNCTION__": Sl: ", (_pDevice), "", VBOXVDBG_DUMP_FLAGS_FOR_TYPE(Shared) | VBOXVDBG_DUMP_FLAGS_FOR_TYPE(DrawPrim)); \
+            vboxVDbgDoDumpRt("<==" __FUNCTION__ ": Rt: ", (_pDevice), "", VBOXVDBG_DUMP_FLAGS_FOR_TYPE(Shared) | VBOXVDBG_DUMP_FLAGS_FOR_TYPE(DrawPrim)); \
+            vboxVDbgDoDumpSamplers("<==" __FUNCTION__ ": Sl: ", (_pDevice), "", VBOXVDBG_DUMP_FLAGS_FOR_TYPE(Shared) | VBOXVDBG_DUMP_FLAGS_FOR_TYPE(DrawPrim)); \
         }\
     } while (0)
 
@@ -398,7 +398,7 @@ HRESULT vboxVDbgTimerStop(HANDLE hTimerQueue, HANDLE hTimer);
                 || VBOXVDBG_IS_DUMP_SHARED_ALLOWED(_pRc) \
                 ) \
         { \
-            vboxVDbgDoDumpRcRect("== "__FUNCTION__": ", &(_pRc)->aAllocations[0], NULL, NULL, "", \
+            vboxVDbgDoDumpRcRect("== " __FUNCTION__ ": ", &(_pRc)->aAllocations[0], NULL, NULL, "", \
                     VBOXVDBG_DUMP_FLAGS_FOR_TYPE(SetTexture) | VBOXVDBG_DUMP_FLAGS_FOR_TYPE(Shared)); \
         } \
     } while (0)
@@ -412,9 +412,9 @@ HRESULT vboxVDbgTimerStop(HANDLE hTimerQueue, HANDLE hTimer);
             RECT SrcRect = *(_pSrcRect); \
             RECT _DstRect; \
             vboxWddmRectMoved(&_DstRect, &SrcRect, (_pDstPoint)->x, (_pDstPoint)->y); \
-            vboxVDbgDoDumpRcRect("==> "__FUNCTION__": Src: ", &(_pSrcRc)->aAllocations[0], NULL, &SrcRect, "", \
+            vboxVDbgDoDumpRcRect("==> " __FUNCTION__ ": Src: ", &(_pSrcRc)->aAllocations[0], NULL, &SrcRect, "", \
                     VBOXVDBG_DUMP_FLAGS_FOR_TYPE(TexBlt) | VBOXVDBG_DUMP_FLAGS_FOR_TYPE(Shared)); \
-            vboxVDbgDoDumpRcRect("==> "__FUNCTION__": Dst: ", &(_pDstRc)->aAllocations[0], NULL, &_DstRect, "", \
+            vboxVDbgDoDumpRcRect("==> " __FUNCTION__ ": Dst: ", &(_pDstRc)->aAllocations[0], NULL, &_DstRect, "", \
                     VBOXVDBG_DUMP_FLAGS_FOR_TYPE(TexBlt) | VBOXVDBG_DUMP_FLAGS_FOR_TYPE(Shared)); \
         } \
     } while (0)
@@ -429,9 +429,9 @@ HRESULT vboxVDbgTimerStop(HANDLE hTimerQueue, HANDLE hTimer);
             RECT SrcRect = *(_pSrcRect); \
             RECT _DstRect; \
             vboxWddmRectMoved(&_DstRect, &SrcRect, (_pDstPoint)->x, (_pDstPoint)->y); \
-            vboxVDbgDoDumpRcRect("<== "__FUNCTION__": Src: ", &(_pSrcRc)->aAllocations[0], NULL, &SrcRect, "", \
+            vboxVDbgDoDumpRcRect("<== " __FUNCTION__ ": Src: ", &(_pSrcRc)->aAllocations[0], NULL, &SrcRect, "", \
                     VBOXVDBG_DUMP_FLAGS_FOR_TYPE(TexBlt) | VBOXVDBG_DUMP_FLAGS_FOR_TYPE(Shared)); \
-            vboxVDbgDoDumpRcRect("<== "__FUNCTION__": Dst: ", &(_pDstRc)->aAllocations[0], NULL, &_DstRect, "", \
+            vboxVDbgDoDumpRcRect("<== " __FUNCTION__ ": Dst: ", &(_pDstRc)->aAllocations[0], NULL, &_DstRect, "", \
                     VBOXVDBG_DUMP_FLAGS_FOR_TYPE(TexBlt) | VBOXVDBG_DUMP_FLAGS_FOR_TYPE(Shared)); \
         } \
     } while (0)
@@ -547,7 +547,7 @@ HRESULT vboxVDbgTimerStop(HANDLE hTimerQueue, HANDLE hTimer);
 #define VBOXVDBG_DUMP_SYNC_RT(_pBbSurf) do { \
         if (VBOXVDBG_IS_DUMP_ALLOWED(RtSynch)) \
         { \
-            vboxVDbgDoDumpRcRect("== "__FUNCTION__" Bb:\n", NULL, (_pBbSurf), NULL, "", VBOXVDBG_DUMP_FLAGS_FOR_TYPE(RtSynch)); \
+            vboxVDbgDoDumpRcRect("== " __FUNCTION__ " Bb:\n", NULL, (_pBbSurf), NULL, "", VBOXVDBG_DUMP_FLAGS_FOR_TYPE(RtSynch)); \
         } \
     } while (0)
 
@@ -555,7 +555,7 @@ HRESULT vboxVDbgTimerStop(HANDLE hTimerQueue, HANDLE hTimer);
 #define VBOXVDBG_DUMP_FLUSH(_pDevice) do { \
         if (VBOXVDBG_IS_DUMP_ALLOWED(Flush)) \
         { \
-            vboxVDbgDoDumpRt("== "__FUNCTION__": Rt: ", (_pDevice), "", \
+            vboxVDbgDoDumpRt("== " __FUNCTION__ ": Rt: ", (_pDevice), "", \
                     VBOXVDBG_DUMP_FLAGS_CLEAR(VBOXVDBG_DUMP_FLAGS_FOR_TYPE(Flush), VBOXVDBG_DUMP_TYPEF_SHARED_ONLY)); \
         }\
     } while (0)
@@ -565,7 +565,7 @@ HRESULT vboxVDbgTimerStop(HANDLE hTimerQueue, HANDLE hTimer);
                 || VBOXVDBG_IS_DUMP_ALLOWED(Unlock) \
                 ) \
         { \
-            vboxVDbgDoDumpLockSurfTex("== "__FUNCTION__": ", (_pData), "", VBOXVDBG_DUMP_FLAGS_FOR_TYPE(Lock)); \
+            vboxVDbgDoDumpLockSurfTex("== " __FUNCTION__ ": ", (_pData), "", VBOXVDBG_DUMP_FLAGS_FOR_TYPE(Lock)); \
         } \
     } while (0)
 
@@ -573,7 +573,7 @@ HRESULT vboxVDbgTimerStop(HANDLE hTimerQueue, HANDLE hTimer);
         if (VBOXVDBG_IS_DUMP_ALLOWED(Unlock) \
                 ) \
         { \
-            vboxVDbgDoDumpUnlockSurfTex("== "__FUNCTION__": ", (_pData), "", VBOXVDBG_DUMP_FLAGS_FOR_TYPE(Unlock)); \
+            vboxVDbgDoDumpUnlockSurfTex("== " __FUNCTION__ ": ", (_pData), "", VBOXVDBG_DUMP_FLAGS_FOR_TYPE(Unlock)); \
         } \
     } while (0)
 

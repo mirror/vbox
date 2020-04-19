@@ -1475,24 +1475,26 @@ VOID GaDxgkDdiDpcRoutine(const PVOID MiniportDeviceContext)
 
     gaFenceObjectsLock(pGaDevExt);
 
-    GAFENCEOBJECT *pIter, *pNext;
-    RTListForEachSafe(&pGaDevExt->fenceObjects.list, pIter, pNext, GAFENCEOBJECT, node)
     {
-        if (pIter->u32FenceState == GAFENCE_STATE_SUBMITTED)
+        GAFENCEOBJECT *pIter, *pNext;
+        RTListForEachSafe(&pGaDevExt->fenceObjects.list, pIter, pNext, GAFENCEOBJECT, node)
         {
-            if (gaFenceCmp(pIter->u32SubmissionFenceId, u32LastCompletedFenceId) <= 0)
+            if (pIter->u32FenceState == GAFENCE_STATE_SUBMITTED)
             {
-                GALOG(("u32SubmissionFenceId %u -> SIGNALED %RU64 ns\n",
-                       pIter->u32SubmissionFenceId, RTTimeNanoTS() - pIter->u64SubmittedTS));
-
-                ASMAtomicWriteU32(&pGaDevExt->u32LastCompletedSeqNo, pIter->u32SeqNo);
-                pIter->u32FenceState = GAFENCE_STATE_SIGNALED;
-                if (RT_BOOL(pIter->fu32FenceFlags & GAFENCE_F_WAITED))
+                if (gaFenceCmp(pIter->u32SubmissionFenceId, u32LastCompletedFenceId) <= 0)
                 {
-                    KeSetEvent(&pIter->event, 0, FALSE);
-                }
+                    GALOG(("u32SubmissionFenceId %u -> SIGNALED %RU64 ns\n",
+                           pIter->u32SubmissionFenceId, RTTimeNanoTS() - pIter->u64SubmittedTS));
 
-                GaFenceUnrefLocked(pGaDevExt, pIter);
+                    ASMAtomicWriteU32(&pGaDevExt->u32LastCompletedSeqNo, pIter->u32SeqNo);
+                    pIter->u32FenceState = GAFENCE_STATE_SIGNALED;
+                    if (RT_BOOL(pIter->fu32FenceFlags & GAFENCE_F_WAITED))
+                    {
+                        KeSetEvent(&pIter->event, 0, FALSE);
+                    }
+
+                    GaFenceUnrefLocked(pGaDevExt, pIter);
+                }
             }
         }
     }
