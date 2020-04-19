@@ -17,9 +17,11 @@
 
 #include "VBoxMPCommon.h"
 
-#if _MSC_VER >= 1400 && _MSC_VER <= 1410 /* bird: MS fixed swprintf to be standard-conforming... */
-#define _INC_SWPRINTF_INL_
+#ifndef DOXYGEN_RUNNING
+#if RT_MSC_PREREQ(RT_MSC_VER_VS2005) && RT_MSC_PREREQ(RT_MSC_VER_VS2017) /* bird: MS fixed swprintf to be standard-conforming... */
+#  define _INC_SWPRINTF_INL_
 extern "C" int __cdecl swprintf(wchar_t *, const wchar_t *, ...);
+# endif
 #endif
 #include <wchar.h>
 #include <VBoxVideoVBE.h>
