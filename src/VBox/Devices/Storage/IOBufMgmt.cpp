@@ -254,7 +254,7 @@ static size_t iobufMgrAllocSegment(PIOBUFMGRINT pThis, PRTSGSEG pSeg, size_t cb)
                 {
                     iBinCur--;
                     pBinCur = &pThis->paBins[iBinCur];
-                    iobufMgrBinObjAdd(pBinCur, pbMem + (size_t)RT_BIT(iBinCur + pThis->u32OrderMin)); /* (RT_BIT causes weird MSC warning without cast) */
+                    iobufMgrBinObjAdd(pBinCur, pbMem + RT_BIT_Z(iBinCur + pThis->u32OrderMin));
                 }
 
                 /* For the last bin we will get two new memory blocks. */
@@ -298,7 +298,7 @@ static size_t iobufMgrAllocSegment(PIOBUFMGRINT pThis, PRTSGSEG pSeg, size_t cb)
     else if (pBin->iFree != 0)
     {
         pSeg->pvSeg = iobufMgrBinObjRemove(pBin);
-        pSeg->cbSeg = (size_t)RT_BIT_32(u32Order);
+        pSeg->cbSeg = RT_BIT_Z(u32Order);
         cbAlloc = pSeg->cbSeg;
         AssertPtr(pSeg->pvSeg);
 
