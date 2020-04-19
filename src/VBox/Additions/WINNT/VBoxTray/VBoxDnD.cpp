@@ -121,7 +121,7 @@ VBoxDnDWnd::~VBoxDnDWnd(void)
  * Initializes the proxy window with a given DnD context.
  *
  * @return  IPRT status code.
- * @param   pCtx    Pointer to context to use.
+ * @param   a_pCtx  Pointer to context to use.
  */
 int VBoxDnDWnd::Initialize(PVBOXDNDCONTEXT a_pCtx)
 {

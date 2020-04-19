@@ -307,7 +307,7 @@ public:
 
 public:
 
-    int Initialize(PVBOXDNDCONTEXT pContext);
+    int Initialize(PVBOXDNDCONTEXT a_pCtx);
     void Destroy(void);
 
 public:
