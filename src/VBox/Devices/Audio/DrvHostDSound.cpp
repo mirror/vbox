@@ -2681,16 +2681,15 @@ static DECLCALLBACK(int) drvHostDSoundConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pC
         {
             pThis->m_pNotificationClient = new VBoxMMNotificationClient();
 
-            HRESULT hr = pThis->m_pNotificationClient->Initialize();
+            hr = pThis->m_pNotificationClient->Initialize();
             if (SUCCEEDED(hr))
                 hr = pThis->m_pNotificationClient->Register();
 
             if (FAILED(hr))
                 rc = VERR_AUDIO_BACKEND_INIT_FAILED;
         }
-        catch (std::bad_alloc &ex)
+        catch (std::bad_alloc &)
         {
-            RT_NOREF(ex);
             rc = VERR_NO_MEMORY;
         }
     }

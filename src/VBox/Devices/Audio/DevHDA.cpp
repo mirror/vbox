@@ -3268,7 +3268,7 @@ static DECLCALLBACK(VBOXSTRICTRC) hdaMmioWrite(PPDMDEVINS pDevIns, void *pvUser,
                 u64Value <<= cbBefore * 8;
                 u64Value  |= pThis->au32Regs[idxRegMem] & g_afMasks[cbBefore];
                 Log4Func(("\tWithin register, supplied %u leading bits: %#llx -> %#llx ...\n",
-                          cbBefore * 8, ~g_afMasks[cbBefore] & u64Value, u64Value));
+                          cbBefore * 8, ~(uint64_t)g_afMasks[cbBefore] & u64Value, u64Value));
                 STAM_COUNTER_INC(&pThis->CTX_SUFF_Z(StatRegMultiWrites));
             }
             else
