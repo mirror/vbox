@@ -17,14 +17,8 @@
 
 #include "VBoxMPCommon.h"
 
-#ifndef DOXYGEN_RUNNING
-#if RT_MSC_PREREQ(RT_MSC_VER_VS2005) && !RT_MSC_PREREQ(RT_MSC_VER_VS2017) /* bird: MS fixed swprintf to be standard-conforming... */
-#  define _INC_SWPRINTF_INL_
-extern "C" int __cdecl swprintf(wchar_t *, const wchar_t *, ...);
-# endif
-#endif
-#include <wchar.h>
 #include <VBoxVideoVBE.h>
+#include <iprt/utf16.h>
 
 #ifdef VBOX_WITH_WDDM
 # define VBOX_WITHOUT_24BPP_MODES
@@ -162,15 +156,15 @@ void VBoxMPCmnInitCustomVideoModes(PVBOXMP_DEVEXT pExt)
         }
         else
         {
-            wchar_t keyname[32];
-            swprintf(keyname, L"CustomXRes%d", iMode);
-            rc = VBoxMPCmnRegQueryDword(Registry, keyname, &CustomXRes);
+            wchar_t wszKeyName[32];
+            RTUtf16Printf(wszKeyName, RT_ELEMENTS(wszKeyName), "CustomXRes%d", iMode);
+            rc = VBoxMPCmnRegQueryDword(Registry, wszKeyName, &CustomXRes);
             VBOXMP_WARN_VPS_NOBP(rc);
-            swprintf(keyname, L"CustomYRes%d", iMode);
-            rc = VBoxMPCmnRegQueryDword(Registry, keyname, &CustomYRes);
+            RTUtf16Printf(wszKeyName, RT_ELEMENTS(wszKeyName), "CustomYRes%d", iMode);
+            rc = VBoxMPCmnRegQueryDword(Registry, wszKeyName, &CustomYRes);
             VBOXMP_WARN_VPS_NOBP(rc);
-            swprintf(keyname, L"CustomBPP%d", iMode);
-            rc = VBoxMPCmnRegQueryDword(Registry, keyname, &CustomBPP);
+            RTUtf16Printf(wszKeyName, RT_ELEMENTS(wszKeyName), "CustomBPP%d", iMode);
+            rc = VBoxMPCmnRegQueryDword(Registry, wszKeyName, &CustomBPP);
             VBOXMP_WARN_VPS_NOBP(rc);
         }
 
@@ -406,19 +400,19 @@ VBoxMPFillModesTable(PVBOXMP_DEVEXT pExt, int iDisplay, PVIDEO_MODE_INFORMATION 
             break;
         }
 
-        wchar_t keyname[24];
+        wchar_t wszKeyName[24];
         uint32_t xres, yres, bpp = 0;
 
-        swprintf(keyname, L"CustomMode%dWidth", curKey);
-        rc = VBoxMPCmnRegQueryDword(Registry, keyname, &xres);
+        RTUtf16Printf(wszKeyName, RT_ELEMENTS(wszKeyName), "CustomMode%dWidth", curKey);
+        rc = VBoxMPCmnRegQueryDword(Registry, wszKeyName, &xres);
         VBOXMP_CHECK_VPS_BREAK(rc);
 
-        swprintf(keyname, L"CustomMode%dHeight", curKey);
-        rc = VBoxMPCmnRegQueryDword(Registry, keyname, &yres);
+        RTUtf16Printf(wszKeyName, RT_ELEMENTS(wszKeyName), "CustomMode%dHeight", curKey);
+        rc = VBoxMPCmnRegQueryDword(Registry, wszKeyName, &yres);
         VBOXMP_CHECK_VPS_BREAK(rc);
 
-        swprintf(keyname, L"CustomMode%dBPP", curKey);
-        rc = VBoxMPCmnRegQueryDword(Registry, keyname, &bpp);
+        RTUtf16Printf(wszKeyName, RT_ELEMENTS(wszKeyName), "CustomMode%dBPP", curKey);
+        rc = VBoxMPCmnRegQueryDword(Registry, wszKeyName, &bpp);
         VBOXMP_CHECK_VPS_BREAK(rc);
 
         LOG(("got custom mode[%u]=%ux%u:%u", curKey, xres, yres, bpp));
@@ -703,15 +697,15 @@ static void VBoxMPRegSaveModeInfo(PVBOXMP_DEVEXT pExt, uint32_t iDisplay, PVIDEO
     }
     else
     {
-        wchar_t keyname[32];
-        swprintf(keyname, L"CustomXRes%d", iDisplay);
-        rc = VBoxMPCmnRegSetDword(Registry, keyname, pMode->VisScreenWidth);
+        wchar_t wszKeyName[32];
+        RTUtf16Printf(wszKeyName, RT_ELEMENTS(wszKeyName), "CustomXRes%d", iDisplay);
+        rc = VBoxMPCmnRegSetDword(Registry, wszKeyName, pMode->VisScreenWidth);
         VBOXMP_WARN_VPS(rc);
-        swprintf(keyname, L"CustomYRes%d", iDisplay);
-        rc = VBoxMPCmnRegSetDword(Registry, keyname, pMode->VisScreenHeight);
+        RTUtf16Printf(wszKeyName, RT_ELEMENTS(wszKeyName), "CustomYRes%d", iDisplay);
+        rc = VBoxMPCmnRegSetDword(Registry, wszKeyName, pMode->VisScreenHeight);
         VBOXMP_WARN_VPS(rc);
-        swprintf(keyname, L"CustomBPP%d", iDisplay);
-        rc = VBoxMPCmnRegSetDword(Registry, keyname, pMode->BitsPerPlane);
+        RTUtf16Printf(wszKeyName, RT_ELEMENTS(wszKeyName), "CustomBPP%d", iDisplay);
+        rc = VBoxMPCmnRegSetDword(Registry, wszKeyName, pMode->BitsPerPlane);
         VBOXMP_WARN_VPS(rc);
     }
 

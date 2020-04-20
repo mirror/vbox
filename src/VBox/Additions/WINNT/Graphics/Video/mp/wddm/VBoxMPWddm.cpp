@@ -28,6 +28,7 @@
 #include <iprt/asm.h>
 #include <iprt/param.h>
 #include <iprt/initterm.h>
+#include <iprt/utf16.h>
 
 #include <VBox/VBoxGuestLib.h>
 #include <VBox/VMMDev.h> /* for VMMDevVideoSetVisibleRegion */
@@ -40,8 +41,6 @@
 #ifdef VBOX_WITH_MESA3D
 #include "gallium/VBoxMPGaWddm.h"
 #endif
-
-#include <stdio.h>
 
 #ifdef DEBUG
 DWORD g_VBoxLogUm = VBOXWDDM_CFG_LOG_UM_BACKDOOR;
@@ -1092,7 +1091,6 @@ NTSTATUS DxgkDdiStartDevice(
 
                     DWORD dwVal = VBOXWDDM_CFG_DRV_DEFAULT;
                     HANDLE hKey = NULL;
-                    WCHAR aNameBuf[100];
 
                     Status = IoOpenDeviceRegistryKey(pDevExt->pPDO, PLUGPLAY_REGKEY_DRIVER, GENERIC_READ, &hKey);
                     if (!NT_SUCCESS(Status))
@@ -1124,8 +1122,9 @@ NTSTATUS DxgkDdiStartDevice(
                         }
                         else if (hKey)
                         {
-                            swprintf(aNameBuf, L"%s%d", VBOXWDDM_REG_DRV_DISPFLAGS_PREFIX, i);
-                            Status = vboxWddmRegQueryValueDword(hKey, aNameBuf, &dwVal);
+                            WCHAR wszNameBuf[sizeof(VBOXWDDM_REG_DRV_DISPFLAGS_PREFIX) / sizeof(WCHAR) + 32];
+                            RTUtf16Printf(wszNameBuf, RT_ELEMENTS(wszNameBuf), "%ls%u", VBOXWDDM_REG_DRV_DISPFLAGS_PREFIX, i);
+                            Status = vboxWddmRegQueryValueDword(hKey, wszNameBuf, &dwVal);
                             if (NT_SUCCESS(Status))
                             {
                                 pTarget->fConnected = !!(dwVal & VBOXWDDM_CFG_DRVTARGET_CONNECTED);
@@ -3217,7 +3216,6 @@ DxgkDdiEscape(
                 }
 
                 HANDLE hKey = NULL;
-                WCHAR aNameBuf[100];
                 uint32_t cAdjusted = 0;
 
                 for (int i = 0; i < VBoxCommonFromDeviceExt(pDevExt)->cDisplays; ++i)
@@ -3250,10 +3248,11 @@ DxgkDdiEscape(
 
                     Assert(hKey);
 
-                    swprintf(aNameBuf, L"%s%d", VBOXWDDM_REG_DRV_DISPFLAGS_PREFIX, i);
-                    Status = vboxWddmRegSetValueDword(hKey, aNameBuf, VBOXWDDM_CFG_DRVTARGET_CONNECTED);
+                    WCHAR wszNameBuf[sizeof(VBOXWDDM_REG_DRV_DISPFLAGS_PREFIX) / sizeof(WCHAR) + 32];
+                    RTUtf16Printf(wszNameBuf, RT_ELEMENTS(wszNameBuf), "%ls%d", VBOXWDDM_REG_DRV_DISPFLAGS_PREFIX, i);
+                    Status = vboxWddmRegSetValueDword(hKey, wszNameBuf, VBOXWDDM_CFG_DRVTARGET_CONNECTED);
                     if (!NT_SUCCESS(Status))
-                        WARN(("VBOXESC_CONFIGURETARGETS vboxWddmRegSetValueDword (%d) failed Status 0x%x\n", aNameBuf, Status));
+                        WARN(("VBOXESC_CONFIGURETARGETS vboxWddmRegSetValueDword (%ls) failed Status 0x%x\n", wszNameBuf, Status));
 
                 }
 

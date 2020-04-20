@@ -18,7 +18,7 @@
 #include "VBoxMPWddm.h"
 #include <VBoxVideoVBE.h>
 #include <iprt/param.h>
-#include <stdio.h>
+#include <iprt/utf16.h>
 
 /* simple handle -> value table API */
 NTSTATUS vboxWddmHTableCreate(PVBOXWDDM_HTABLE pTbl, uint32_t cSize)
@@ -215,7 +215,6 @@ NTSTATUS vboxWddmRegQueryDisplaySettingsKeyName(PVBOXMP_DEVEXT pDevExt, D3DDDI_V
         ULONG cbBuf, PWCHAR pBuf, PULONG pcbResult)
 {
     NTSTATUS Status = STATUS_SUCCESS;
-    PWCHAR pSuffix;
     const WCHAR* pKeyPrefix;
     UINT cbKeyPrefix;
     UNICODE_STRING* pVGuid = vboxWddmVGuidGet(pDevExt);
@@ -245,13 +244,9 @@ NTSTATUS vboxWddmRegQueryDisplaySettingsKeyName(PVBOXMP_DEVEXT pDevExt, D3DDDI_V
     ULONG cbResult = cbKeyPrefix + pVGuid->Length + 2 + 8; // L"\\" + "XXXX"
     if (cbBuf >= cbResult)
     {
-        wcscpy(pBuf, pKeyPrefix);
-        pSuffix = pBuf + (cbKeyPrefix-2)/2;
-        memcpy(pSuffix, pVGuid->Buffer, pVGuid->Length);
-        pSuffix += pVGuid->Length/2;
-        pSuffix[0] = L'\\';
-        pSuffix += 1;
-        swprintf(pSuffix, L"%04d", VidPnSourceId);
+        ssize_t cwcFmt = RTUtf16Printf(pBuf, cbBuf / sizeof(WCHAR), "%ls%.*ls\\%04d",
+                                       pKeyPrefix, pVGuid->Length / sizeof(WCHAR), pVGuid->Buffer, VidPnSourceId);
+        Assert((size_t)cwcFmt + 1 == cbResult / sizeof(WCHAR)); RT_NOREF(cwcFmt);
     }
     else
     {
