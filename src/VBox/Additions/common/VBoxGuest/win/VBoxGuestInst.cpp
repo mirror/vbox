@@ -50,7 +50,7 @@ static int installDriver(bool fStartIt)
     SC_HANDLE   hSMgrCreate = OpenSCManager(NULL, NULL, SERVICE_CHANGE_CONFIG);
     if (!hSMgrCreate)
     {
-        printf("OpenSCManager(,,create) failed rc=%d\n", GetLastError());
+        printf("OpenSCManager(,,create) failed rc=%lu\n", GetLastError());
         return -1;
     }
 
@@ -96,12 +96,12 @@ static int installDriver(bool fStartIt)
             if (StartService(hService, 0, NULL))
                 printf("successfully started driver '%s'\n", szDriver);
             else
-                printf("StartService failed: %d\n", GetLastError());
+                printf("StartService failed: %lu\n", GetLastError());
         }
         CloseServiceHandle(hService);
     }
     else
-        printf("CreateService failed! lasterr=%d (szDriver=%s)\n", GetLastError(), szDriver);
+        printf("CreateService failed! lasterr=%lu (szDriver=%s)\n", GetLastError(), szDriver);
     CloseServiceHandle(hSMgrCreate);
     return hService ? 0 : -1;
 }
@@ -112,7 +112,7 @@ static int uninstallDriver(void)
     SC_HANDLE   hSMgr = OpenSCManager(NULL, NULL, SERVICE_CHANGE_CONFIG);
     if (!hSMgr)
     {
-        printf("OpenSCManager(,,delete) failed rc=%d\n", GetLastError());
+        printf("OpenSCManager(,,delete) failed rc=%lu\n", GetLastError());
         return -1;
     }
     SC_HANDLE hService = OpenService(hSMgr, VBOXGUEST_SERVICE_NAME, SERVICE_STOP | SERVICE_QUERY_STATUS | DELETE);
@@ -137,7 +137,7 @@ static int uninstallDriver(void)
                 rc = VINF_SUCCESS;
             else
             {
-                printf("Failed to stop service. status=%d (%#x)\n", Status.dwCurrentState, Status.dwCurrentState);
+                printf("Failed to stop service. status=%ld (%#lx)\n", Status.dwCurrentState, Status.dwCurrentState);
                 rc = VERR_GENERAL_FAILURE;
             }
         }
@@ -149,7 +149,7 @@ static int uninstallDriver(void)
                 rc = VERR_RESOURCE_BUSY;    /* better than VERR_GENERAL_FAILURE */
             else
             {
-                printf("ControlService failed with dwErr=%u. status=%d (%#x)\n",
+                printf("ControlService failed with dwErr=%ld. status=%lu (%#lx)\n",
                        dwErr, Status.dwCurrentState, Status.dwCurrentState);
                 rc = -1;
             }
@@ -164,7 +164,7 @@ static int uninstallDriver(void)
                 rc = 0;
             else
             {
-                printf("DeleteService failed lasterr=%d\n", GetLastError());
+                printf("DeleteService failed lasterr=%lu\n", GetLastError());
                 rc = -1;
             }
         }
@@ -173,7 +173,7 @@ static int uninstallDriver(void)
     else if (GetLastError() == ERROR_SERVICE_DOES_NOT_EXIST)
         rc = 0;
     else
-        printf("OpenService failed lasterr=%d\n", GetLastError());
+        printf("OpenService failed lasterr=%lu\n", GetLastError());
     CloseServiceHandle(hSMgr);
     return rc;
 }
@@ -193,7 +193,7 @@ static HANDLE openDriver(void)
                          NULL);
     if (hDevice == INVALID_HANDLE_VALUE)
     {
-        printf("CreateFile did not work. GetLastError() 0x%x\n", GetLastError());
+        printf("CreateFile did not work. GetLastError() %lu\n", GetLastError());
     }
     return hDevice;
 }
