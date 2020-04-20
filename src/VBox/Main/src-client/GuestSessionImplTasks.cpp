@@ -2288,7 +2288,8 @@ int GuestSessionTaskUpdateAdditions::Run(void)
 
 #if 1 /* Only Windows is supported (and tested) at the moment. */
             if (   RT_SUCCESS(rc)
-                && osType != eOSType_Windows)
+                && (   osType != eOSType_Windows
+                    && osType != eOSType_Linux))
             {
                 hr = setProgressErrorMsg(VBOX_E_NOT_SUPPORTED,
                                          Utf8StrFmt(GuestSession::tr("Detected guest OS (%s) does not support automatic Guest Additions updating, please update manually"),
@@ -2323,14 +2324,9 @@ int GuestSessionTaskUpdateAdditions::Run(void)
             }
             else
             {
-                /* Set default installation directories. */
-                Utf8Str strUpdateDir = "/tmp/";
-                if (osType == eOSType_Windows)
-                     strUpdateDir = "C:\\Temp\\";
+                Utf8Str strUpdateDir;
 
                 rc = setProgress(5);
-
-                /* Try looking up the Guest Additions installation directory. */
                 if (RT_SUCCESS(rc))
                 {
                     /* Try getting the installed Guest Additions version to know whether we
@@ -2352,43 +2348,58 @@ int GuestSessionTaskUpdateAdditions::Run(void)
 
                     if (fUseInstallDir)
                     {
-                        if (RT_SUCCESS(rc))
-                            rc = getGuestProperty(pGuest, "/VirtualBox/GuestAdd/InstallDir", strUpdateDir);
+                        rc = getGuestProperty(pGuest, "/VirtualBox/GuestAdd/InstallDir", strUpdateDir);
                         if (RT_SUCCESS(rc))
                         {
-                            if (osType == eOSType_Windows)
+                            if (strUpdateDir.isNotEmpty())
                             {
-                                strUpdateDir.findReplace('/', '\\');
-                                strUpdateDir.append("\\Update\\");
+                                if (osType == eOSType_Windows)
+                                {
+                                    strUpdateDir.findReplace('/', '\\');
+                                    strUpdateDir.append("\\Update\\");
+                                }
+                                else
+                                    strUpdateDir.append("/update/");
                             }
-                            else
-                                strUpdateDir.append("/update/");
+                            /* else Older Guest Additions might not handle this property correctly. */
+                        }
+                        /* Ditto. */
+                    }
+
+                    /** @todo Set fallback installation directory. Make this a *lot* smarter. Later. */
+                    if (strUpdateDir.isEmpty())
+                    {
+                        if (osType == eOSType_Windows)
+                            strUpdateDir = "C:\\Temp\\";
+                        else
+                            strUpdateDir = "/tmp/";
+                    }
+                }
+
+                /* Create the installation directory. */
+                int rcGuest = VERR_IPE_UNINITIALIZED_STATUS;
+                if (RT_SUCCESS(rc))
+                {
+                    LogRel(("Guest Additions update directory is: %s\n", strUpdateDir.c_str()));
+
+                    rc = pSession->i_directoryCreate(strUpdateDir, 755 /* Mode */, DirectoryCreateFlag_Parents, &rcGuest);
+                    if (RT_FAILURE(rc))
+                    {
+                        switch (rc)
+                        {
+                            case VERR_GSTCTL_GUEST_ERROR:
+                                hr = setProgressErrorMsg(VBOX_E_IPRT_ERROR, GuestProcess::i_guestErrorToString(rcGuest));
+                                break;
+
+                            default:
+                                hr = setProgressErrorMsg(VBOX_E_IPRT_ERROR,
+                                                         Utf8StrFmt(GuestSession::tr("Error creating installation directory \"%s\" on the guest: %Rrc"),
+                                                                    strUpdateDir.c_str(), rc));
+                                break;
                         }
                     }
                 }
 
-                if (RT_SUCCESS(rc))
-                    LogRel(("Guest Additions update directory is: %s\n",
-                            strUpdateDir.c_str()));
-
-                /* Create the installation directory. */
-                int rcGuest = VERR_IPE_UNINITIALIZED_STATUS;
-                rc = pSession->i_directoryCreate(strUpdateDir, 755 /* Mode */, DirectoryCreateFlag_Parents, &rcGuest);
-                if (RT_FAILURE(rc))
-                {
-                    switch (rc)
-                    {
-                        case VERR_GSTCTL_GUEST_ERROR:
-                            hr = setProgressErrorMsg(VBOX_E_IPRT_ERROR, GuestProcess::i_guestErrorToString(rcGuest));
-                            break;
-
-                        default:
-                            hr = setProgressErrorMsg(VBOX_E_IPRT_ERROR,
-                                                     Utf8StrFmt(GuestSession::tr("Error creating installation directory \"%s\" on the guest: %Rrc"),
-                                                                strUpdateDir.c_str(), rc));
-                            break;
-                    }
-                }
                 if (RT_SUCCESS(rc))
                     rc = setProgress(10);
 
@@ -2510,8 +2521,35 @@ int GuestSessionTaskUpdateAdditions::Run(void)
                             break;
                         }
                         case eOSType_Linux:
-                            /** @todo Add Linux support. */
+                        {
+                            /* Copy over the installer to the guest but don't execute it.
+                             * Execution will be done by the shell instead. */
+                            mFiles.push_back(ISOFile("VBOXLINUXADDITIONS.RUN",
+                                                     strUpdateDir + "VBoxLinuxAdditions.run", ISOFILE_FLAG_COPY_FROM_ISO));
+
+                            GuestProcessStartupInfo siInstaller;
+                            siInstaller.mName = "VirtualBox Linux Guest Additions Installer";
+                            /* Set a running timeout of 5 minutes -- compiling modules and stuff for the Linux Guest Additions
+                             * setup can take quite a while, so be on the safe side. */
+                            siInstaller.mTimeoutMS = 5 * 60 * 1000;
+                            /* The argv[0] should contain full path to the shell we're using to execute the installer. */
+                            siInstaller.mArguments.push_back("/bin/sh");
+                            /* Now add the stuff we need in order to execute the installer.  */
+                            siInstaller.mArguments.push_back(strUpdateDir + "VBoxLinuxAdditions.run");
+                            /* Make sure to add "--nox11" to the makeself wrapper in order to not getting any blocking xterm
+                             * window spawned when doing any unattended Linux GA installations. */
+                            siInstaller.mArguments.push_back("--nox11");
+                            siInstaller.mArguments.push_back("--");
+                            /* Force the upgrade. Needed in order to skip the confirmation dialog about warning to upgrade. */
+                            siInstaller.mArguments.push_back("--force"); /** @todo We might want a dedicated "--silent" switch here. */
+                            /* If the caller does not want to wait for out guest update process to end,
+                             * complete the progress object now so that the caller can do other work. */
+                            if (mFlags & AdditionsUpdateFlag_WaitForUpdateStartOnly)
+                                siInstaller.mFlags |= ProcessCreateFlag_WaitForProcessStartOnly;
+                            mFiles.push_back(ISOFile("/bin/sh" /* Source */, "/bin/sh" /* Dest */,
+                                                     ISOFILE_FLAG_EXECUTE, siInstaller));
                             break;
+                        }
                         case eOSType_Solaris:
                             /** @todo Add Solaris support. */
                             break;
