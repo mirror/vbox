@@ -291,7 +291,7 @@ void UIVirtualBoxManager::sltHandleOpenUrlCall(QList<QUrl> list /* = QList<QUrl>
                 if (comVBox.isOk() && comMachine.isNotNull())
                     uiCommon().launchMachine(comMachine);
                 else
-                    sltOpenAddMachineDialog(strFile);
+                    openAddMachineDialog(strFile);
             }
             /* And has allowed VBox OVF file extension: */
             else if (UICommon::hasAllowedExtension(strFile, OVFFileExts))
@@ -464,7 +464,7 @@ void UIVirtualBoxManager::sltOpenImportApplianceWizard(const QString &strFileNam
     /* Lock the action preventing cascade calls: */
     UIQObjectPropertySetter guardBlock(actionPool()->action(UIActionIndexST_M_File_S_ImportAppliance), "opened", true);
     connect(&guardBlock, &UIQObjectPropertySetter::sigAboutToBeDestroyed,
-    this, &UIVirtualBoxManager::sltHandleUpdateActionAppearanceRequest);
+            this, &UIVirtualBoxManager::sltHandleUpdateActionAppearanceRequest);
     updateActionsAppearance();
 
     /* Use the "safe way" to open stack of Mac OS X Sheets: */
@@ -556,16 +556,8 @@ void UIVirtualBoxManager::sltPerformExit()
     close();
 }
 
-void UIVirtualBoxManager::sltOpenAddMachineDialog(const QString &strFileName /* = QString() */)
+void UIVirtualBoxManager::sltOpenAddMachineDialog()
 {
-    /* Initialize variables: */
-#ifdef VBOX_WS_MAC
-    QString strTmpFile = ::darwinResolveAlias(strFileName);
-#else
-    QString strTmpFile = strFileName;
-#endif
-    CVirtualBox comVBox = uiCommon().virtualBox();
-
     /* Lock the actions preventing cascade calls: */
     UIQObjectPropertySetter guardBlock(QList<QObject*>() << actionPool()->action(UIActionIndexST_M_Welcome_S_Add)
                                                          << actionPool()->action(UIActionIndexST_M_Machine_S_Add)
@@ -575,43 +567,8 @@ void UIVirtualBoxManager::sltOpenAddMachineDialog(const QString &strFileName /* 
             this, &UIVirtualBoxManager::sltHandleUpdateActionAppearanceRequest);
     updateActionsAppearance();
 
-    /* No file specified: */
-    if (strTmpFile.isEmpty())
-    {
-        QString strBaseFolder = comVBox.GetSystemProperties().GetDefaultMachineFolder();
-        QString strTitle = tr("Select a virtual machine file");
-        QStringList extensions;
-        for (int i = 0; i < VBoxFileExts.size(); ++i)
-            extensions << QString("*.%1").arg(VBoxFileExts[i]);
-        QString strFilter = tr("Virtual machine files (%1)").arg(extensions.join(" "));
-        /* Create open file dialog: */
-        QStringList fileNames = QIFileDialog::getOpenFileNames(strBaseFolder, strFilter, this, strTitle, 0, true, true);
-        if (!fileNames.isEmpty())
-            strTmpFile = fileNames.at(0);
-    }
-
-    /* Nothing was chosen? */
-    if (strTmpFile.isEmpty())
-        return;
-
-    /* Make sure this machine can be opened: */
-    CMachine comMachineNew = comVBox.OpenMachine(strTmpFile);
-    if (!comVBox.isOk())
-    {
-        msgCenter().cannotOpenMachine(comVBox, strTmpFile);
-        return;
-    }
-
-    /* Make sure this machine was NOT registered already: */
-    CMachine comMachineOld = comVBox.FindMachine(comMachineNew.GetId().toString());
-    if (!comMachineOld.isNull())
-    {
-        msgCenter().cannotReregisterExistingMachine(strTmpFile, comMachineOld.GetName());
-        return;
-    }
-
-    /* Register that machine: */
-    comVBox.RegisterMachine(comMachineNew);
+    /* Open add machine dialog: */
+    openAddMachineDialog();
 }
 
 void UIVirtualBoxManager::sltOpenMachineSettingsDialog(QString strCategory /* = QString() */,
@@ -1435,11 +1392,11 @@ void UIVirtualBoxManager::prepareConnections()
 
     /* 'Welcome' menu connections: */
     connect(actionPool()->action(UIActionIndexST_M_Welcome_S_Add), &UIAction::triggered,
-            this, &UIVirtualBoxManager::sltOpenAddMachineDialogDefault);
+            this, &UIVirtualBoxManager::sltOpenAddMachineDialog);
 
     /* 'Group' menu connections: */
     connect(actionPool()->action(UIActionIndexST_M_Group_S_Add), &UIAction::triggered,
-            this, &UIVirtualBoxManager::sltOpenAddMachineDialogDefault);
+            this, &UIVirtualBoxManager::sltOpenAddMachineDialog);
     connect(actionPool()->action(UIActionIndexST_M_Group_M_StartOrShow), &UIAction::triggered,
             this, &UIVirtualBoxManager::sltPerformStartOrShowMachine);
     connect(actionPool()->action(UIActionIndexST_M_Group_T_Pause), &UIAction::toggled,
@@ -1457,7 +1414,7 @@ void UIVirtualBoxManager::prepareConnections()
 
     /* 'Machine' menu connections: */
     connect(actionPool()->action(UIActionIndexST_M_Machine_S_Add), &UIAction::triggered,
-            this, &UIVirtualBoxManager::sltOpenAddMachineDialogDefault);
+            this, &UIVirtualBoxManager::sltOpenAddMachineDialog);
     connect(actionPool()->action(UIActionIndexST_M_Machine_S_Settings), &UIAction::triggered,
             this, &UIVirtualBoxManager::sltOpenMachineSettingsDialogDefault);
     connect(actionPool()->action(UIActionIndexST_M_Machine_S_Clone), &UIAction::triggered,
@@ -1629,6 +1586,55 @@ bool UIVirtualBoxManager::isSingleLocalGroupSelected() const
 bool UIVirtualBoxManager::isSingleCloudProfileGroupSelected() const
 {
     return m_pWidget->isSingleCloudProfileGroupSelected();
+}
+
+void UIVirtualBoxManager::openAddMachineDialog(const QString &strFileName /* = QString() */)
+{
+    /* Initialize variables: */
+#ifdef VBOX_WS_MAC
+    QString strTmpFile = ::darwinResolveAlias(strFileName);
+#else
+    QString strTmpFile = strFileName;
+#endif
+    CVirtualBox comVBox = uiCommon().virtualBox();
+
+    /* No file specified: */
+    if (strTmpFile.isEmpty())
+    {
+        QString strBaseFolder = comVBox.GetSystemProperties().GetDefaultMachineFolder();
+        QString strTitle = tr("Select a virtual machine file");
+        QStringList extensions;
+        for (int i = 0; i < VBoxFileExts.size(); ++i)
+            extensions << QString("*.%1").arg(VBoxFileExts[i]);
+        QString strFilter = tr("Virtual machine files (%1)").arg(extensions.join(" "));
+        /* Create open file dialog: */
+        QStringList fileNames = QIFileDialog::getOpenFileNames(strBaseFolder, strFilter, this, strTitle, 0, true, true);
+        if (!fileNames.isEmpty())
+            strTmpFile = fileNames.at(0);
+    }
+
+    /* Nothing was chosen? */
+    if (strTmpFile.isEmpty())
+        return;
+
+    /* Make sure this machine can be opened: */
+    CMachine comMachineNew = comVBox.OpenMachine(strTmpFile);
+    if (!comVBox.isOk())
+    {
+        msgCenter().cannotOpenMachine(comVBox, strTmpFile);
+        return;
+    }
+
+    /* Make sure this machine was NOT registered already: */
+    CMachine comMachineOld = comVBox.FindMachine(comMachineNew.GetId().toString());
+    if (!comMachineOld.isNull())
+    {
+        msgCenter().cannotReregisterExistingMachine(strTmpFile, comMachineOld.GetName());
+        return;
+    }
+
+    /* Register that machine: */
+    comVBox.RegisterMachine(comMachineNew);
 }
 
 void UIVirtualBoxManager::performStartOrShowVirtualMachines(const QList<UIVirtualMachineItem*> &items, UICommon::LaunchMode enmLaunchMode)

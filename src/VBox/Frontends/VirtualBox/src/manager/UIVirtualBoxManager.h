@@ -184,11 +184,8 @@ private slots:
 
     /** @name Machine menu stuff.
       * @{ */
-        /** Handles call to open Add Machine dialog.
-          * @param strFileName can bring the name of file to add machine from. */
-        void sltOpenAddMachineDialog(const QString &strFileName = QString());
-        /** Handles call to open Add Machine dialog the default way. */
-        void sltOpenAddMachineDialogDefault() { sltOpenAddMachineDialog(); }
+        /** Handles call to open add machine dialog. */
+        void sltOpenAddMachineDialog();
 
         /** Handles call to open Machine Settings dialog.
           * @param strCategory can bring the settings category to start from.
@@ -303,6 +300,12 @@ private:
         bool isSingleLocalGroupSelected() const;
         /** Returns whether single cloud profile group is selected. */
         bool isSingleCloudProfileGroupSelected() const;
+    /** @} */
+
+    /** @name VM add stuff.
+      * @{ */
+        /** Opens add machine dialog specifying initial name with @a strFileName. */
+        void openAddMachineDialog(const QString &strFileName = QString());
     /** @} */
 
     /** @name VM launching stuff.
