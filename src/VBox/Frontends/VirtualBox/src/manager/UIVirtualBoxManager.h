@@ -113,6 +113,9 @@ private slots:
         void sltHandleHostScreenAvailableAreaChange();
 #endif /* VBOX_WS_X11 */
 
+        /** Handles request to update actions. */
+        void sltHandleUpdateActionAppearanceRequest() { updateActionsAppearance(); }
+
         /** Handles signal about medium-enumeration finished. */
         void sltHandleMediumEnumerationFinish();
 

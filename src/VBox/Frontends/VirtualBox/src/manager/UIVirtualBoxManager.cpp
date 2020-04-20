@@ -32,30 +32,30 @@
 #include "UIMediumManager.h"
 #include "UIMessageCenter.h"
 #include "UIModalWindowManager.h"
+#include "UIQObjectStuff.h"
+#include "UISettingsDialogSpecific.h"
 #include "UIVirtualBoxManager.h"
 #include "UIVirtualBoxManagerWidget.h"
-#include "UISettingsDialogSpecific.h"
-#include "UIVMLogViewerDialog.h"
 #include "UIVirtualMachineItemCloud.h"
 #include "UIVirtualMachineItemLocal.h"
-#ifdef VBOX_GUI_WITH_NETWORK_MANAGER
-# include "UIUpdateManager.h"
-#endif
+#include "UIVMLogViewerDialog.h"
 #include "UIVirtualBoxEventHandler.h"
 #include "UIWizardCloneVM.h"
 #include "UIWizardExportApp.h"
 #include "UIWizardImportApp.h"
 #include "UIWizardNewCloudVM.h"
+#ifdef VBOX_GUI_WITH_NETWORK_MANAGER
+# include "UIUpdateManager.h"
+#endif
 #ifdef VBOX_WS_MAC
 # include "UIImageTools.h"
 # include "UIWindowMenuManager.h"
 # include "VBoxUtils.h"
+#else
+# include "UIMenuBar.h"
 #endif
 #ifdef VBOX_WS_X11
 # include "UIDesktopWidgetWatchdog.h"
-#endif
-#ifndef VBOX_WS_MAC
-# include "UIMenuBar.h"
 #endif
 
 /* COM includes: */
@@ -462,7 +462,9 @@ void UIVirtualBoxManager::sltOpenImportApplianceWizard(const QString &strFileNam
 #endif
 
     /* Lock the action preventing cascade calls: */
-    actionPool()->action(UIActionIndexST_M_File_S_ImportAppliance)->setProperty("opened", true);
+    UIQObjectPropertySetter guardBlock(actionPool()->action(UIActionIndexST_M_File_S_ImportAppliance), "opened", true);
+    connect(&guardBlock, &UIQObjectPropertySetter::sigAboutToBeDestroyed,
+    this, &UIVirtualBoxManager::sltHandleUpdateActionAppearanceRequest);
     updateActionsAppearance();
 
     /* Use the "safe way" to open stack of Mac OS X Sheets: */
@@ -473,13 +475,6 @@ void UIVirtualBoxManager::sltOpenImportApplianceWizard(const QString &strFileNam
     if (strFileName.isEmpty() || pWizard->isValid())
         pWizard->exec();
     delete pWizard;
-
-    /* Unlock the action allowing further calls: */
-    if (actionPool())
-    {
-        actionPool()->action(UIActionIndexST_M_File_S_ImportAppliance)->setProperty("opened", QVariant());
-        updateActionsAppearance();
-    }
 }
 
 void UIVirtualBoxManager::sltOpenExportApplianceWizard()
@@ -492,9 +487,12 @@ void UIVirtualBoxManager::sltOpenExportApplianceWizard()
     for (int i = 0; i < items.size(); ++i)
         names << items.at(i)->name();
 
-    /* Lock the action preventing cascade calls: */
-    actionPool()->action(UIActionIndexST_M_File_S_ExportAppliance)->setProperty("opened", true);
-    actionPool()->action(UIActionIndexST_M_Machine_S_ExportToOCI)->setProperty("opened", true);
+    /* Lock the actions preventing cascade calls: */
+    UIQObjectPropertySetter guardBlock(QList<QObject*>() << actionPool()->action(UIActionIndexST_M_File_S_ExportAppliance)
+                                                         << actionPool()->action(UIActionIndexST_M_Machine_S_ExportToOCI),
+                                       "opened", true);
+    connect(&guardBlock, &UIQObjectPropertySetter::sigAboutToBeDestroyed,
+            this, &UIVirtualBoxManager::sltHandleUpdateActionAppearanceRequest);
     updateActionsAppearance();
 
     /* Check what was the action invoked us: */
@@ -509,20 +507,14 @@ void UIVirtualBoxManager::sltOpenExportApplianceWizard()
     pWizard->prepare();
     pWizard->exec();
     delete pWizard;
-
-    /* Unlock the action allowing further calls: */
-    if (actionPool())
-    {
-        actionPool()->action(UIActionIndexST_M_File_S_ExportAppliance)->setProperty("opened", QVariant());
-        actionPool()->action(UIActionIndexST_M_Machine_S_ExportToOCI)->setProperty("opened", QVariant());
-        updateActionsAppearance();
-    }
 }
 
 void UIVirtualBoxManager::sltOpenNewCloudVMWizard()
 {
     /* Lock the action preventing cascade calls: */
-    actionPool()->action(UIActionIndexST_M_File_S_NewCloudVM)->setProperty("opened", true);
+    UIQObjectPropertySetter guardBlock(actionPool()->action(UIActionIndexST_M_File_S_NewCloudVM), "opened", true);
+    connect(&guardBlock, &UIQObjectPropertySetter::sigAboutToBeDestroyed,
+            this, &UIVirtualBoxManager::sltHandleUpdateActionAppearanceRequest);
     updateActionsAppearance();
 
     /* Use the "safe way" to open stack of Mac OS X Sheets: */
@@ -532,13 +524,6 @@ void UIVirtualBoxManager::sltOpenNewCloudVMWizard()
     pWizard->prepare();
     pWizard->exec();
     delete pWizard;
-
-    /* Unlock the action allowing further calls: */
-    if (actionPool())
-    {
-        actionPool()->action(UIActionIndexST_M_File_S_NewCloudVM)->setProperty("opened", QVariant());
-        updateActionsAppearance();
-    }
 }
 
 #ifdef VBOX_GUI_WITH_EXTRADATA_MANAGER_UI
@@ -555,20 +540,15 @@ void UIVirtualBoxManager::sltOpenPreferencesDialog()
     m_fFirstMediumEnumerationHandled = true;
 
     /* Lock the action preventing cascade calls: */
-    actionPool()->action(UIActionIndex_M_Application_S_Preferences)->setProperty("opened", true);
+    UIQObjectPropertySetter guardBlock(actionPool()->action(UIActionIndex_M_Application_S_Preferences), "opened", true);
+    connect(&guardBlock, &UIQObjectPropertySetter::sigAboutToBeDestroyed,
+            this, &UIVirtualBoxManager::sltHandleUpdateActionAppearanceRequest);
     updateActionsAppearance();
 
     /* Create and execute global settings window: */
     QPointer<UISettingsDialogGlobal> pDlg = new UISettingsDialogGlobal(this);
     pDlg->execute();
     delete pDlg;
-
-    /* Unlock the action allowing further calls: */
-    if (actionPool())
-    {
-        actionPool()->action(UIActionIndex_M_Application_S_Preferences)->setProperty("opened", QVariant());
-        updateActionsAppearance();
-    }
 }
 
 void UIVirtualBoxManager::sltPerformExit()
@@ -586,8 +566,13 @@ void UIVirtualBoxManager::sltOpenAddMachineDialog(const QString &strFileName /* 
 #endif
     CVirtualBox comVBox = uiCommon().virtualBox();
 
-    /* Lock the action preventing cascade calls: */
-    actionPool()->action(UIActionIndexST_M_Welcome_S_Add)->setProperty("opened", true);
+    /* Lock the actions preventing cascade calls: */
+    UIQObjectPropertySetter guardBlock(QList<QObject*>() << actionPool()->action(UIActionIndexST_M_Welcome_S_Add)
+                                                         << actionPool()->action(UIActionIndexST_M_Machine_S_Add)
+                                                         << actionPool()->action(UIActionIndexST_M_Group_S_Add),
+                                       "opened", true);
+    connect(&guardBlock, &UIQObjectPropertySetter::sigAboutToBeDestroyed,
+            this, &UIVirtualBoxManager::sltHandleUpdateActionAppearanceRequest);
     updateActionsAppearance();
 
     /* No file specified: */
@@ -603,13 +588,6 @@ void UIVirtualBoxManager::sltOpenAddMachineDialog(const QString &strFileName /* 
         QStringList fileNames = QIFileDialog::getOpenFileNames(strBaseFolder, strFilter, this, strTitle, 0, true, true);
         if (!fileNames.isEmpty())
             strTmpFile = fileNames.at(0);
-    }
-
-    /* Unlock the action allowing further calls: */
-    if (actionPool())
-    {
-        actionPool()->action(UIActionIndexST_M_Welcome_S_Add)->setProperty("opened", QVariant());
-        updateActionsAppearance();
     }
 
     /* Nothing was chosen? */
@@ -645,7 +623,9 @@ void UIVirtualBoxManager::sltOpenMachineSettingsDialog(QString strCategory /* = 
     AssertMsgReturnVoid(pItem, ("Current item should be selected!\n"));
 
     /* Lock the action preventing cascade calls: */
-    actionPool()->action(UIActionIndexST_M_Machine_S_Settings)->setProperty("opened", true);
+    UIQObjectPropertySetter guardBlock(actionPool()->action(UIActionIndexST_M_Machine_S_Settings), "opened", true);
+    connect(&guardBlock, &UIQObjectPropertySetter::sigAboutToBeDestroyed,
+            this, &UIVirtualBoxManager::sltHandleUpdateActionAppearanceRequest);
     updateActionsAppearance();
 
     /* Process href from VM details / description: */
@@ -676,13 +656,6 @@ void UIVirtualBoxManager::sltOpenMachineSettingsDialog(QString strCategory /* = 
                                                                              strCategory, strControl);
         pDlg->execute();
         delete pDlg;
-    }
-
-    /* Unlock the action allowing further calls: */
-    if (actionPool())
-    {
-        actionPool()->action(UIActionIndexST_M_Machine_S_Settings)->setProperty("opened", QVariant());
-        updateActionsAppearance();
     }
 }
 
@@ -1917,6 +1890,14 @@ void UIVirtualBoxManager::updateActionsAppearance()
 
 bool UIVirtualBoxManager::isActionEnabled(int iActionIndex, const QList<UIVirtualMachineItem*> &items)
 {
+    /* Make sure action pool exists: */
+    AssertPtrReturn(actionPool(), false);
+
+    /* Any "opened" action is by definition disabled: */
+    if (   actionPool()->action(iActionIndex)
+        && actionPool()->action(iActionIndex)->property("opened").toBool())
+        return false;
+
     /* For known *global* action types: */
     switch (iActionIndex)
     {
@@ -1925,9 +1906,7 @@ bool UIVirtualBoxManager::isActionEnabled(int iActionIndex, const QList<UIVirtua
         case UIActionIndexST_M_File_S_ImportAppliance:
         case UIActionIndexST_M_File_S_NewCloudVM:
         case UIActionIndexST_M_Welcome_S_Add:
-        {
-            return !actionPool()->action(iActionIndex)->property("opened").toBool();
-        }
+            return true;
         default:
             break;
     }
@@ -1970,8 +1949,7 @@ bool UIVirtualBoxManager::isActionEnabled(int iActionIndex, const QList<UIVirtua
         }
         case UIActionIndexST_M_Machine_S_Settings:
         {
-            return !actionPool()->action(iActionIndex)->property("opened").toBool() &&
-                   !isGroupSavingInProgress() &&
+            return !isGroupSavingInProgress() &&
                    items.size() == 1 &&
                    pItem->toLocal() &&
                    pItem->configurationAccessLevel() != ConfigurationAccessLevel_Null &&
@@ -1988,8 +1966,7 @@ bool UIVirtualBoxManager::isActionEnabled(int iActionIndex, const QList<UIVirtua
         }
         case UIActionIndexST_M_Machine_S_ExportToOCI:
         {
-            return !actionPool()->action(iActionIndex)->property("opened").toBool() &&
-                   items.size() == 1 &&
+            return items.size() == 1 &&
                    pItem->toLocal();
         }
         case UIActionIndexST_M_Machine_S_Remove:
