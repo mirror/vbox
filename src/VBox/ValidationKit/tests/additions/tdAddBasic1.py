@@ -342,9 +342,20 @@ class tdAddBasic1(vbox.TestDriver):                                         # py
         # Install Kernel headers, which are required for actually installing the Linux Additions.
         if oTestVm.sKind.startswith('Debian') \
         or oTestVm.sKind.startswith('Ubuntu'):
-            fRc = self.txsRunTest(oTxsSession, 'Updating package sources', 5 * 60 *1000,
-                                  '/usr/bin/apt-get', ('/usr/bin/apt-get', 'update'),
-                                  fCheckSessionStatus = True);
+
+            # As Ubuntu 15.10 is EOL we need to tweak the package sources by hand first in order to have a working
+            # package update path again; otherwise updating and installing packages will fail.
+            if 'ubuntu-15_10' in oTestVm.sKind:
+                fRc = self.txsRunTest(oTxsSession, 'Applying EOL upgrade path of Ubuntu 15.10', 5 * 60 *1000,
+                                      '/bin/sed',
+                                      ('/bin/sed', '-E', '-i',
+                                       '"s/http:\\/\\/.*\\.ubuntu\\.com/http:\\/\\/old-releases.ubuntu.com/"',
+                                       '/etc/apt/sources.list'),
+                                      fCheckSessionStatus = True);
+            if fRc:
+                fRc = self.txsRunTest(oTxsSession, 'Updating package sources', 5 * 60 *1000,
+                                      '/usr/bin/apt-get', ('/usr/bin/apt-get', 'update'),
+                                      fCheckSessionStatus = True);
             if fRc:
                 fRc = self.txsRunTest(oTxsSession, 'Installing Kernel headers', 5 * 60 *1000,
                                       '/usr/bin/apt-get', ('/usr/bin/apt-get', 'install', '-y', 'linux-headers-generic'),
