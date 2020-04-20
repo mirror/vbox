@@ -398,7 +398,7 @@ class tdAddBasic1(vbox.TestDriver):                                         # py
         or   oTestVm.sKind.startswith('Cent'):
 
             fRc = self.txsRunTest(oTxsSession, 'Updating package sources', cMsTimeout,
-                                               '/usr/bin/yum', ('/usr/bin/yum', 'update'),
+                                               '/usr/bin/yum', ('/usr/bin/yum', '-y', 'updateinfo'),
                                                asAddEnv = asEnv,
                                                fCheckSessionStatus = True);
             if fRc:
