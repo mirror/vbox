@@ -359,8 +359,8 @@ class tdAddBasic1(vbox.TestDriver):                                         # py
             if fNeedsProxy:
                 fRc = oTxsSession.syncMkDirPath("/etc/apt/apt.conf.d/", 0o755);
                 if fRc:
-                    fRc = oTxsSession.syncUploadString('Acquire::http::Proxy \"' + sHttpProxy + '\"\r\n'
-                                                       'Acquire::https::Proxy \"' + sHttpsProxy + '\"',
+                    fRc = oTxsSession.syncUploadString('Acquire::http::Proxy \"' + sHttpProxy + '\";\n'
+                                                       'Acquire::https::Proxy \"' + sHttpsProxy + '\";',
                                                        '/etc/apt/apt.conf.d/proxy.conf', 0o644);
                     if not fRc:
                         reporter.error('Unable to write to /etc/apt/apt.conf.d/proxy.conf');
