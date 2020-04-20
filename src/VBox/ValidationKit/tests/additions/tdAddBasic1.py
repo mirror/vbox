@@ -357,7 +357,7 @@ class tdAddBasic1(vbox.TestDriver):                                         # py
             if fNeedsProxy:
                 fRc = oTxsSession.syncMkDir("/etc/apt/apt.conf.d/", 0o755);
                 if fRc:
-                    fRc = oTxsSession.syncUploadString('"Acquire::http::Proxy \"' + sHttpProxy + '\"\r\n'
+                    fRc = oTxsSession.syncUploadString('Acquire::http::Proxy \"' + sHttpProxy + '\"\r\n'
                                                        'Acquire::https::Proxy \"' + sHttpsProxy + '\"',
                                                        '/etc/apt/apt.conf.d/proxy.conf', 0o644);
                     if not fRc:
@@ -371,7 +371,7 @@ class tdAddBasic1(vbox.TestDriver):                                         # py
                 fRc = self.txsRunTest(oTxsSession, 'Applying EOL upgrade path of Ubuntu 15.10', 5 * 60 *1000,
                                       '/bin/sed',
                                       ('/bin/sed', '-E', '-i',
-                                       '"s/http:\\/\\/.*\\.ubuntu\\.com/http:\\/\\/old-releases.ubuntu.com/"',
+                                       's/http:\\/\\/.*\\.ubuntu\\.com/http:\\/\\/old-releases.ubuntu.com/',
                                        '/etc/apt/sources.list'),
                                       fCheckSessionStatus = True);
             if fRc:
