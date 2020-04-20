@@ -999,7 +999,7 @@ DxgkDdiPresentLegacy(
     else if (pPresent->Flags.Flip)
     {
         Assert(pPresent->Flags.Value == 4); /* only Blt is set, we do not support anything else for now */
-        Assert(pContext->enmType == VBOXWDDM_CONTEXT_TYPE_CUSTOM_3D);
+        //Assert(pContext->enmType == VBOXWDDM_CONTEXT_TYPE_CUSTOM_3D);
         DXGK_ALLOCATIONLIST *pSrc =  &pPresent->pAllocationList[DXGK_PRESENT_SOURCE_INDEX];
         PVBOXWDDM_ALLOCATION pSrcAlloc = vboxWddmGetAllocationFromAllocList(pSrc);
 
@@ -1029,7 +1029,7 @@ DxgkDdiPresentLegacy(
     }
     else if (pPresent->Flags.ColorFill)
     {
-        Assert(pContext->enmType == VBOXWDDM_CONTEXT_TYPE_CUSTOM_2D);
+        //Assert(pContext->enmType == VBOXWDDM_CONTEXT_TYPE_CUSTOM_2D);
         Assert(pPresent->Flags.Value == 2); /* only ColorFill is set, we do not support anything else for now */
         DXGK_ALLOCATIONLIST *pDst =  &pPresent->pAllocationList[DXGK_PRESENT_DESTINATION_INDEX];
         PVBOXWDDM_ALLOCATION pDstAlloc = vboxWddmGetAllocationFromAllocList(pDst);

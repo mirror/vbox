@@ -23,12 +23,6 @@
 
 #define VBOX_WDDM_DRIVERNAME L"VBoxWddm"
 
-#ifndef DEBUG_misha
-# ifdef Assert
-#  error "VBoxMPWddm.h must be included first."
-# endif
-# define RT_NO_STRICT
-#endif
 #include "common/VBoxMPUtils.h"
 #include "common/VBoxMPDevExt.h"
 #include "../../common/VBoxVideoTools.h"
