@@ -6712,7 +6712,12 @@ ifdef VBOX_WITH_QTGUI
     endif
    endif
   else if1of ($(KBUILD_TARGET), win)
-   VBOX_PATH_QT ?= $(lastword $(filter %-$(tolower $(VBOX_VCC_TOOL_STEM)),$(sort $(wildcard $(KBUILD_DEVTOOLS_TRG)/qt/v5*))))
+   VBOX_PATH_QT := $(sort $(wildcard $(KBUILD_DEVTOOLS_TRG)/qt/v5*))
+   VBOX_PATH_QT := $(lastword $(filter %-$(tolower $(VBOX_VCC_TOOL_STEM)),$(VBOX_PATH_QT)) $(VBOX_PATH_QT))
+   ifdef VBOX_PATH_QT
+    PATH_SDK_QT5  := $(VBOX_PATH_QT)
+    PATH_TOOL_QT5 := $(VBOX_PATH_QT)
+   endif
   else if1of ($(KBUILD_TARGET), linux solaris)
    VBOX_PATH_QT ?= $(lastword $(sort $(wildcard $(KBUILD_DEVTOOLS_TRG)/qt/v5*)))
    ifneq ($(VBOX_PATH_QT),)
@@ -6735,26 +6740,19 @@ ifdef VBOX_WITH_QTGUI
  endif
 
  ifeq ($(KBUILD_TARGET), darwin)
-  VBOX_QT_MOD = \
-   QtCore QtGui QtWidgets QtPrintSupport QtMacExtras \
-   $(if $(VBOX_GUI_USE_QGL),QtOpenGL,)
+  VBOX_QT_MOD = QtCore QtGui QtWidgets QtPrintSupport QtMacExtras $(if $(VBOX_GUI_USE_QGL),QtOpenGL,)
  else if1of ($(KBUILD_TARGET), linux freebsd netbsd openbsd solaris win)
-  VBOX_QT_MOD += \
-   Qt5Core Qt5Gui Qt5Widgets Qt5PrintSupport \
-   $(if $(VBOX_GUI_USE_QGL),Qt5OpenGL,)
-   if1of ($(KBUILD_TARGET), linux freebsd netbsd openbsd solaris)
-    VBOX_QT_MOD += \
-     Qt5DBus Qt5XcbQpa Qt5X11Extras
-    # legacy libraries required to be installed on EL5
-    VBOX_QT_LEGACY_LIBS = \
-     $(if $(VBOX_LD_HAS_LIBXCB),,libxcb.so.1 libX11.so.6 libX11-xcb.so.1)
-    VBOX_QT_PLUGINS = \
-      plugins/platforms/libqxcb.so \
-      plugins/xcbglintegrations/libqxcb-glx-integration.so
-   else ifeq ($(KBUILD_TARGET), win)
-    VBOX_QT_MOD += \
-     Qt5WinExtras
-   endif # win
+  VBOX_QT_MOD += Qt5Core Qt5Gui Qt5Widgets Qt5PrintSupport $(if $(VBOX_GUI_USE_QGL),Qt5OpenGL,)
+  if1of ($(KBUILD_TARGET), linux freebsd netbsd openbsd solaris)
+   VBOX_QT_MOD += Qt5DBus Qt5XcbQpa Qt5X11Extras
+   # legacy libraries required to be installed on EL5
+   VBOX_QT_LEGACY_LIBS = $(if $(VBOX_LD_HAS_LIBXCB),,libxcb.so.1 libX11.so.6 libX11-xcb.so.1)
+   VBOX_QT_PLUGINS = \
+   	plugins/platforms/libqxcb.so \
+   	plugins/xcbglintegrations/libqxcb-glx-integration.so
+  else ifeq ($(KBUILD_TARGET), win)
+   VBOX_QT_MOD += Qt5WinExtras
+  endif # win
  endif # linux freebsd netbsd openbsd solaris win
 
  VBOX_QT_MOD_NAMES = $(foreach qtmod,$(VBOX_QT_MOD),$(qtmod)$(VBOX_QT_INFIX))
@@ -6811,7 +6809,8 @@ ifdef VBOX_WITH_QTGUI
    #   -wd4456: UICommon.cpp(1471): warning C4456: declaration of '_container_' hides previous local declaration  [nested foreach]
    #   -wd4458: UISettingsDialogSpecific.cpp(416): warning C4458: declaration of 'data' hides class member
    #            qwidget.h(730): note: see declaration of 'QWidget::data'
-   TEMPLATE_VBOXQTGUIEXE_CXXFLAGS += -wd4774 -wd4456 -wd4458
+   #   -wd4946: qmap.h(213): warning C4946: reinterpret_cast used between related classes: 'QMapNodeBase' and 'QMapNode<Key,T>'
+   TEMPLATE_VBOXQTGUIEXE_CXXFLAGS += -wd4774 -wd4456 -wd4458 -wd4946
   endif
 
   TEMPLATE_VBOXQTGUIEXE_CXXFLAGS.debug = -RTCsu

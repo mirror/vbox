@@ -41,7 +41,9 @@
 #include <qalgorithms.h>
 #include <qarraydata.h>
 #include <qatomic.h>
-#include <qatomic_msvc.h>
+#if _MSC_VER < 1910 /* Conflicts with qatomic_cxx11.h which is dragged in above somewhere. */
+# include <qatomic_msvc.h>
+#endif
 #include <qbasicatomic.h>
 #include <qbytearray.h>
 #include <qchar.h>
