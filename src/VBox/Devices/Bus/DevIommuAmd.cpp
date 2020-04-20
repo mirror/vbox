@@ -25,6 +25,7 @@
 
 #include "VBoxDD.h"
 #include <iprt/x86.h>
+#include <iprt/string.h>
 
 
 /*********************************************************************************************************************************
@@ -1885,6 +1886,10 @@ typedef PPR_LOG_OVERFLOW_EARLY_T        PPR_LOG_B_OVERFLOW_EARLY_T;
  */
 typedef struct IOMMU
 {
+    /** IOMMU device index. */
+    uint32_t                    idxIommu;
+    /** Alignment padding. */
+    uint32_t                    uPadding0;
     /** The event semaphore the command thread waits on. */
     SUPSEMEVENT                 hEvtCmdThread;
     /** The MMIO handle. */
@@ -2032,7 +2037,7 @@ typedef struct IOMMUR3
     /** Device instance. */
     PPDMDEVINSR3            pDevInsR3;
     /** The IOMMU helpers. */
-    PCPDMIOMMUHLPR3         pIommuHlp;
+    PCPDMIOMMUHLPR3         pIommuHlpR3;
     /** The command thread handle. */
     R3PTRTYPE(PPDMTHREAD)   pCmdThread;
 } IOMMUR3;
@@ -2047,7 +2052,7 @@ typedef struct IOMMUR0
     /** Device instance. */
     PPDMDEVINSR0            pDevInsR0;
     /** The IOMMU helpers. */
-    PCPDMIOMMUHLPR0         pIommuHlp;
+    PCPDMIOMMUHLPR0         pIommuHlpR0;
 } IOMMUR0;
 /** Pointer to the ring-0 IOMMU device state. */
 typedef IOMMUR0 *PIOMMUR0;
@@ -2060,7 +2065,7 @@ typedef struct IOMMURC
     /** Device instance. */
     PPDMDEVINSR0            pDevInsRC;
     /** The IOMMU helpers. */
-    PCPDMIOMMUHLPRC         pIommuHlp;
+    PCPDMIOMMUHLPRC         pIommuHlpRC;
 } IOMMURC;
 /** Pointer to the raw-mode IOMMU device state. */
 typedef IOMMURC *PIOMMURC;
@@ -2085,9 +2090,9 @@ typedef struct
 #ifndef VBOX_DEVICE_STRUCT_TESTCASE
 
 /**
- * Returns the number of entries and buffer size for a power-of-2 encoded length.
+ * Gets the buffer length length corresponding to a base address.
  *
- * @param   uEncodedLen     The length to decode.
+ * @param   uEncodedLen     The length to decode (power-of-2 encoded).
  * @param   pcEntries       Where to store the number of entries. Optional, can be
  *                          NULL.
  * @param   pcbBuffer       Where to store the size of the buffer. Optional, can be
@@ -2095,7 +2100,7 @@ typedef struct
  *
  * @remarks Both @a pcEntries and @a pcbBuffer cannot both be NULL.
  */
-static void iommuAmdDecodeBufferLength(uint8_t uEncodedLen, uint32_t *pcEntries, uint32_t *pcbBuffer)
+static void iommuAmdGetBaseBufferLength(uint8_t uEncodedLen, uint32_t *pcEntries, uint32_t *pcbBuffer)
 {
     uint32_t cEntries;
     uint32_t cbBuffer;
@@ -2133,7 +2138,7 @@ DECLINLINE(void) iommuAmdCheckBufferLength(uint8_t uEncodedLen, const char *pszF
 {
 #ifdef VBOX_STRICT
     uint32_t cEntries;
-    iommuAmdDecodeBufferLength(uEncodedLen, &cEntries, NULL /* pcbBuffer */);
+    iommuAmdGetBaseBufferLength(uEncodedLen, &cEntries, NULL /* pcbBuffer */);
     if (!cEntries)
         Log((IOMMU_LOG_PFX ": %s: Invalid length %#x\n", pszFunc, uEncodedLen));
 #else
@@ -2377,13 +2382,13 @@ static VBOXSTRICTRC iommuAmdCmdBufHeadPtr_w(PPDMDEVINS pDevIns, PIOMMU pThis, ui
     }
 
     /*
-     * IOMMU behavior is undefined when software writes a value value outside the buffer length.
-     * In our emtulation, we ignore the write entirely.
+     * IOMMU behavior is undefined when software writes a value outside the buffer length.
+     * In our emulation, we ignore the write entirely.
      */
     uint32_t const      offBuf     = u64Value & IOMMU_CMD_BUF_HEAD_PTR_VALID_MASK;
     CMD_BUF_BAR_T const CmdBufBar  = pThis->CmdBufBaseAddr;
     uint32_t            cbBuf;
-    iommuAmdDecodeBufferLength(CmdBufBar.n.u4CmdLen, NULL, &cbBuf);
+    iommuAmdGetBaseBufferLength(CmdBufBar.n.u4CmdLen, NULL, &cbBuf);
     if (offBuf >= cbBuf)
     {
         Log((IOMMU_LOG_PFX ": Setting CmdBufHeadPtr (%#RX32) to a value that exceeds buffer length (%#RX23) -> Ignored\n",
@@ -2853,7 +2858,7 @@ static DECLCALLBACK(VBOXSTRICTRC) iommuAmdR3PciConfigWrite(PPDMDEVINS pDevIns, P
      */
     switch (uAddress)
     {
-        case IOMMU_PCI_OFF_CAP_HDR:         /* All fields are read-only. */
+        case IOMMU_PCI_OFF_CAP_HDR:         /* All bits are read-only. */
         case IOMMU_PCI_OFF_RANGE_REG:       /* We don't have any devices integrated with the IOMMU. */
         case IOMMU_PCI_OFF_MISCINFO_REG_0:  /* We don't support MSI-X. */
         case IOMMU_PCI_OFF_MISCINFO_REG_1:  /* We don't support guest-address translation. */
@@ -2953,7 +2958,7 @@ static DECLCALLBACK(void) iommuAmdR3DbgInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pH
         uint32_t      cEntries;
         uint32_t      cbBuffer;
         uint8_t const uEncodedLen = CmdBufBar.n.u4CmdLen;
-        iommuAmdDecodeBufferLength(uEncodedLen, &cEntries, &cbBuffer);
+        iommuAmdGetBaseBufferLength(uEncodedLen, &cEntries, &cbBuffer);
         pHlp->pfnPrintf(pHlp, "  Command buffer BAR                      = %#RX64\n", CmdBufBar.u64);
         if (fVerbose)
         {
@@ -2968,7 +2973,7 @@ static DECLCALLBACK(void) iommuAmdR3DbgInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pH
         uint32_t      cEntries;
         uint32_t      cbBuffer;
         uint8_t const uEncodedLen = EvtLogBar.n.u4EvtLen;
-        iommuAmdDecodeBufferLength(uEncodedLen, &cEntries, &cbBuffer);
+        iommuAmdGetBaseBufferLength(uEncodedLen, &cEntries, &cbBuffer);
         pHlp->pfnPrintf(pHlp, "  Event log BAR                           = %#RX64\n", EvtLogBar.u64);
         if (fVerbose)
         {
@@ -3089,7 +3094,7 @@ static DECLCALLBACK(void) iommuAmdR3DbgInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pH
         uint32_t      cEntries;
         uint32_t      cbBuffer;
         uint8_t const uEncodedLen = PprLogBar.n.u4PprLogLen;
-        iommuAmdDecodeBufferLength(uEncodedLen, &cEntries, &cbBuffer);
+        iommuAmdGetBaseBufferLength(uEncodedLen, &cEntries, &cbBuffer);
         pHlp->pfnPrintf(pHlp, "  PPR Log BAR                             = %#RX64\n",   PprLogBar.u64);
         if (fVerbose)
         {
@@ -3126,7 +3131,7 @@ static DECLCALLBACK(void) iommuAmdR3DbgInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pH
         uint32_t      cEntries;
         uint32_t      cbBuffer;
         uint8_t const uEncodedLen = GALogBar.n.u4GALogLen;
-        iommuAmdDecodeBufferLength(uEncodedLen, &cEntries, &cbBuffer);
+        iommuAmdGetBaseBufferLength(uEncodedLen, &cEntries, &cbBuffer);
         pHlp->pfnPrintf(pHlp, "  Guest Log BAR                           = %#RX64\n",    GALogBar.u64);
         if (fVerbose)
         {
@@ -3148,7 +3153,7 @@ static DECLCALLBACK(void) iommuAmdR3DbgInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pH
         uint32_t      cEntries;
         uint32_t      cbBuffer;
         uint8_t const uEncodedLen = PprLogBBar.n.u4PprLogLen;
-        iommuAmdDecodeBufferLength(uEncodedLen, &cEntries, &cbBuffer);
+        iommuAmdGetBaseBufferLength(uEncodedLen, &cEntries, &cbBuffer);
         pHlp->pfnPrintf(pHlp, "  PPR Log B BAR                           = %#RX64\n",   PprLogBBar.u64);
         if (fVerbose)
         {
@@ -3163,7 +3168,7 @@ static DECLCALLBACK(void) iommuAmdR3DbgInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pH
         uint32_t      cEntries;
         uint32_t      cbBuffer;
         uint8_t const uEncodedLen = EvtLogBBar.n.u4EvtLen;
-        iommuAmdDecodeBufferLength(uEncodedLen, &cEntries, &cbBuffer);
+        iommuAmdGetBaseBufferLength(uEncodedLen, &cEntries, &cbBuffer);
         pHlp->pfnPrintf(pHlp, "  Event Log B BAR                         = %#RX64\n",   EvtLogBBar.u64);
         if (fVerbose)
         {
@@ -3653,6 +3658,25 @@ static DECLCALLBACK(int) iommuAmdR3Construct(PPDMDEVINS pDevIns, int iInstance, 
         return PDMDEV_SET_ERROR(pDevIns, rc, N_("IOMMU: Failed to query \"Function\""));
 
     /*
+     * Register the IOMMU with PDM.
+     */
+    PDMIOMMUREGCC IommuReg;
+    RT_ZERO(IommuReg);
+    IommuReg.u32Version = PDM_IOMMUREGCC_VERSION;
+    IommuReg.u32TheEnd  = PDM_IOMMUREGCC_VERSION;
+    rc = PDMDevHlpIommuRegister(pDevIns, &IommuReg, &pThisCC->CTX_SUFF(pIommuHlp), &pThis->idxIommu);
+    if (RT_FAILURE(rc))
+        return PDMDEV_SET_ERROR(pDevIns, rc, N_("Failed to register ourselves as an IOMMU device"));
+    if (pThisCC->CTX_SUFF(pIommuHlp)->u32Version != PDM_IOMMUHLPR3_VERSION)
+        return PDMDevHlpVMSetError(pDevIns, VERR_VERSION_MISMATCH, RT_SRC_POS,
+                                   N_("IOMMU helper version mismatch; got %#x expected %#x"),
+                                   pThisCC->CTX_SUFF(pIommuHlp)->u32Version, PDM_IOMMUHLPR3_VERSION);
+    if (pThisCC->CTX_SUFF(pIommuHlp)->u32TheEnd != PDM_IOMMUHLPR3_VERSION)
+        return PDMDevHlpVMSetError(pDevIns, VERR_VERSION_MISMATCH, RT_SRC_POS,
+                                   N_("IOMMU helper end-version mismatch; got %#x expected %#x"),
+                                   pThisCC->CTX_SUFF(pIommuHlp)->u32TheEnd, PDM_IOMMUHLPR3_VERSION);
+
+    /*
      * Initialize read-only PCI configuration space.
      */
     PPDMPCIDEV pPciDev = pDevIns->apPciDevs[0];
@@ -3801,7 +3825,17 @@ static DECLCALLBACK(int) iommuAmdRZConstruct(PPDMDEVINS pDevIns)
 
     pThisCC->CTX_SUFF(pDevIns) = pDevIns;
 
+    /* Set up the MMIO RZ handlers. */
     int rc = PDMDevHlpMmioSetUpContext(pDevIns, pThis->hMmio, iommuAmdMmioWrite, iommuAmdMmioRead, NULL /* pvUser */);
+    AssertRCReturn(rc, rc);
+
+    /* Set up the IOMMU RZ callbacks. */
+    PDMIOMMUREGCC IommuReg;
+    RT_ZERO(IommuReg);
+    IommuReg.u32Version = PDM_IOMMUREGCC_VERSION;
+    IommuReg.idxIommu   = pThis->idxIommu;
+    IommuReg.u32TheEnd  = PDM_IOMMUREGCC_VERSION;
+    rc = PDMDevHlpIommuSetUpContext(pDevIns, &IommuReg, &pThisCC->CTX_SUFF(pIommuHlp));
     AssertRCReturn(rc, rc);
 
     return VINF_SUCCESS;
