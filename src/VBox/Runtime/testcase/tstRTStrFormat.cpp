@@ -114,7 +114,7 @@ static void testUtf16Printf(RTTEST hTest)
     RTTestDisableAssertions(hTest);
     for (size_t cwcThisBuf = 0; cwcThisBuf < sizeof(s_szSimpleExpect) + 8; cwcThisBuf++)
     {
-        memset(pwszBuf, '0x88', cwcBuf * sizeof(*pwszBuf));
+        memset(pwszBuf, 0x88, cwcBuf * sizeof(*pwszBuf));
 
         PRTUTF16 pwszThisBuf = &pwszBuf[cwcBuf - cwcThisBuf];
         cwc = RTUtf16Printf(pwszThisBuf, cwcThisBuf, "Hello%c%s!", ' ', "world");
