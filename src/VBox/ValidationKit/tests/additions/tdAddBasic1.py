@@ -355,7 +355,7 @@ class tdAddBasic1(vbox.TestDriver):                                         # py
         or oTestVm.sKind.startswith('Ubuntu'):
 
             if fNeedsProxy:
-                fRc = oTxsSession.syncMkDir("/etc/apt/apt.conf.d/", 0o755);
+                fRc = oTxsSession.syncMkDir("/etc/apt/apt.conf.d/", 0o755, fIgnoreErrors = True);
                 if fRc:
                     fRc = oTxsSession.syncUploadString('Acquire::http::Proxy \"' + sHttpProxy + '\"\r\n'
                                                        'Acquire::https::Proxy \"' + sHttpsProxy + '\"',
