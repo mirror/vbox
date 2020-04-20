@@ -70,7 +70,7 @@ static void WaitForProcess2(HANDLE hProcess, int *piExitCode)
         if (   dwRc != WAIT_TIMEOUT
             && dwRc != WAIT_OBJECT_0 + 1)
         {
-            fwprintf(stderr, L"ERROR: MsgWaitForMultipleObjects failed: %u (%u)\n", dwRc, GetLastError());
+            fwprintf(stderr, L"ERROR: MsgWaitForMultipleObjects failed: %lu (%lu)\n", dwRc, GetLastError());
             break;
         }
     }
@@ -83,7 +83,7 @@ static void WaitForProcess2(HANDLE hProcess, int *piExitCode)
         *piExitCode = (int)dwExitCode;
     else
     {
-        fwprintf(stderr, L"ERROR: GetExitCodeProcess failed: %u\n", GetLastError());
+        fwprintf(stderr, L"ERROR: GetExitCodeProcess failed: %lu\n", GetLastError());
         *piExitCode = 16;
     }
 }
@@ -101,13 +101,13 @@ static void WaitForProcess(HANDLE hProcess, int *piExitCode)
             *piExitCode = (int)dwExitCode;
         else
         {
-            fwprintf(stderr, L"ERROR: GetExitCodeProcess failed: %u\n", GetLastError());
+            fwprintf(stderr, L"ERROR: GetExitCodeProcess failed: %lu\n", GetLastError());
             *piExitCode = 16;
         }
     }
     else
     {
-        fwprintf(stderr, L"ERROR: WaitForSingleObjectEx failed: %u (%u)\n", WaitRc, GetLastError());
+        fwprintf(stderr, L"ERROR: WaitForSingleObjectEx failed: %lu (%lu)\n", WaitRc, GetLastError());
         *piExitCode = 16;
     }
 }
@@ -125,7 +125,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     DWORD cchCurDir = GetCurrentDirectoryW(sizeof(wszCurDir), wszCurDir);
     if (cchCurDir == 0 || cchCurDir >= sizeof(wszCurDir))
     {
-        fwprintf(stderr, L"ERROR: GetCurrentDirectoryW failed: %u (ret %u)\n", GetLastError(), cchCurDir);
+        fwprintf(stderr, L"ERROR: GetCurrentDirectoryW failed: %lu (ret %lu)\n", GetLastError(), cchCurDir);
         return 12;
     }
 
@@ -134,7 +134,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     DWORD cchModule = GetModuleFileNameW(NULL, wszModule, sizeof(wszModule));
     if (cchModule == 0 || cchModule >= sizeof(wszModule))
     {
-        fwprintf(stderr, L"ERROR: GetModuleFileNameW failed: %u (ret %u)\n", GetLastError(), cchModule);
+        fwprintf(stderr, L"ERROR: GetModuleFileNameW failed: %lu (ret %lu)\n", GetLastError(), cchModule);
         return 13;
     }
 
@@ -159,7 +159,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     size_t        cchSuff  = wcslen(pwszSuff);
     if (cchSuff + cchModule >= sizeof(wszModule))
     {
-        fwprintf(stderr, L"ERROR: Real installer name is too long (%u chars)\n", cchSuff + cchModule);
+        fwprintf(stderr, L"ERROR: Real installer name is too long (%u chars)\n", (unsigned)(cchSuff + cchModule));
         return 14;
     }
     wcscpy(&wszModule[cchModule], pwszSuff);
@@ -282,13 +282,13 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         }
         else
         {
-            fwprintf(stderr, L"ERROR: Failed to execute '%ws' via ShellExecuteExW: %u\n", wszModule, GetLastError());
+            fwprintf(stderr, L"ERROR: Failed to execute '%ws' via ShellExecuteExW: %lu\n", wszModule, GetLastError());
             iRet = 9;
         }
     }
     else
     {
-        fwprintf(stderr, L"ERROR: Failed to execute '%ws' via CreateProcessW: %u\n", wszModule, GetLastError());
+        fwprintf(stderr, L"ERROR: Failed to execute '%ws' via CreateProcessW: %lu\n", wszModule, GetLastError());
         iRet = 8;
     }
 

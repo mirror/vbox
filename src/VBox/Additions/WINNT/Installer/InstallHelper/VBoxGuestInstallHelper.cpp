@@ -305,7 +305,7 @@ VBOXINSTALLHELPER_EXPORT FileGetArchitecture(HWND hwndParent, int string_size, T
     {
 #ifdef UNICODE
         char *pszFileUtf8;
-        int rc = RTUtf16ToUtf8(szFile, &pszFileUtf8);
+        rc = RTUtf16ToUtf8(szFile, &pszFileUtf8);
         if (RT_SUCCESS(rc))
         {
 #else
