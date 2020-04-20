@@ -25,12 +25,18 @@
 ;
 
 
-%include "vcc100-fakes.mac"
+%include "vcc-fakes.mac"
 
 %define FAKE_MODULE_NAME kernel32
 
 BEGINDATA
 GLOBALNAME vcc100_kernel32_fakes_asm
 
-%include "vcc100-kernel32-fakes.h"
+%ifdef VCC_FAKES_TARGET_VCC100
+ %include "vcc-fakes-kernel32-100.h"
+%elifdef VCC_FAKES_TARGET_VCC141
+ %include "vcc-fakes-kernel32-141.h"
+%else
+ %error "PORT ME!"
+%endif
 

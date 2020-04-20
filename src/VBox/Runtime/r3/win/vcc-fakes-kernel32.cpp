@@ -43,7 +43,7 @@
 
 #include <iprt/nt/nt-and-windows.h>
 
-#include "vcc100-fakes.h"
+#include "vcc-fakes.h"
 
 
 /*********************************************************************************************************************************
@@ -66,7 +66,51 @@
 *********************************************************************************************************************************/
 static volatile bool g_fInitialized = false;
 #define MAKE_IMPORT_ENTRY(a_uMajorVer, a_uMinorVer, a_Name, a_cb) DECLARE_FUNCTION_POINTER(a_Name, a_cb)
-#include "vcc100-kernel32-fakes.h"
+#ifdef VCC_FAKES_TARGET_VCC100
+# include "vcc-fakes-kernel32-100.h"
+#elif defined(VCC_FAKES_TARGET_VCC141)
+# include "vcc-fakes-kernel32-141.h"
+#else
+# error "Port me!"
+#endif
+
+
+static BOOL FakeSetLastErrorFromNtStatus(NTSTATUS rcNt)
+{
+    DWORD dwErr;
+    switch (rcNt)
+    {
+        case STATUS_INVALID_PARAMETER:
+        case STATUS_INVALID_PARAMETER_1:
+        case STATUS_INVALID_PARAMETER_2:
+        case STATUS_INVALID_PARAMETER_3:
+        case STATUS_INVALID_PARAMETER_4:
+        case STATUS_INVALID_PARAMETER_5:
+        case STATUS_INVALID_PARAMETER_6:
+        case STATUS_INVALID_PARAMETER_7:
+        case STATUS_INVALID_PARAMETER_8:
+        case STATUS_INVALID_PARAMETER_9:
+        case STATUS_INVALID_PARAMETER_10:
+        case STATUS_INVALID_PARAMETER_11:
+        case STATUS_INVALID_PARAMETER_12:
+            dwErr = ERROR_INVALID_PARAMETER;
+            break;
+
+        case STATUS_INVALID_HANDLE:
+            dwErr = ERROR_INVALID_HANDLE;
+            break;
+
+        case STATUS_ACCESS_DENIED:
+            dwErr = ERROR_ACCESS_DENIED;
+            break;
+
+        default:
+            dwErr = ERROR_INVALID_PARAMETER;
+            break;
+    }
+    SetLastError(dwErr);
+    return FALSE;
+}
 
 
 
@@ -334,9 +378,145 @@ DECL_KERNEL32(ULONGLONG) Fake_VerSetConditionMask(ULONGLONG fConditionMask, DWOR
 }
 
 
+#if VCC_FAKES_TARGET >= 141
+/** @since 5.0 (windows 2000) */
+DECL_KERNEL32(BOOL) Fake_GetModuleHandleExW(DWORD dwFlags, LPCWSTR pwszModuleName, HMODULE *phModule)
+{
+    HMODULE hmod;
+    if (dwFlags & GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS)
+    {
+        /** @todo search the loader list. */
+        SetLastError(ERROR_NOT_SUPPORTED);
+        return FALSE;
+    }
+    else
+    {
+        hmod = GetModuleHandleW(pwszModuleName);
+        if (!hmod)
+            return FALSE;
+    }
+
+    /*
+     * Get references to the module.
+     */
+    if (   !(dwFlags & (GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT | GET_MODULE_HANDLE_EX_FLAG_PIN))
+        && GetModuleHandleW(NULL) != hmod)
+    {
+        WCHAR wszModule[MAX_PATH];
+        if (GetModuleFileNameW(hmod, wszModule, RT_ELEMENTS(wszModule)) > 0)
+        {
+            if (dwFlags & GET_MODULE_HANDLE_EX_FLAG_PIN)
+            {
+                uint32_t cRefs = 32;
+                while (cRefs-- > 0)
+                    LoadLibraryW(wszModule);
+            }
+            else if (!LoadLibraryW(wszModule))
+                return FALSE;
+        }
+    }
+
+    *phModule = hmod;
+    return TRUE;
+}
+#endif /* VCC_FAKES_TARGET >= 141 */
+
+
+#if VCC_FAKES_TARGET >= 141
+/** @since 5.0 (windows 2000) */
+DECL_KERNEL32(BOOL) Fake_SetFilePointerEx(HANDLE hFile, LARGE_INTEGER offDistanceToMove,
+                                          PLARGE_INTEGER pNewFilePointer, DWORD dwMoveMethod)
+{
+    NTSTATUS                    rcNt;
+    IO_STATUS_BLOCK             Ios = RTNT_IO_STATUS_BLOCK_INITIALIZER;
+
+    FILE_POSITION_INFORMATION   PosInfo;
+    switch (dwMoveMethod)
+    {
+        case FILE_BEGIN:
+            PosInfo.CurrentByteOffset = offDistanceToMove;
+            break;
+
+        case FILE_CURRENT:
+            PosInfo.CurrentByteOffset.QuadPart = INT64_MAX;
+            rcNt = NtQueryInformationFile(hFile, &Ios, &PosInfo, sizeof(PosInfo), FilePositionInformation);
+            if (NT_SUCCESS(rcNt))
+            {
+                PosInfo.CurrentByteOffset.QuadPart += offDistanceToMove.QuadPart;
+                break;
+            }
+            return FakeSetLastErrorFromNtStatus(rcNt);
+
+        case FILE_END:
+        {
+            FILE_STANDARD_INFO StdInfo = {0};
+            rcNt = NtQueryInformationFile(hFile, &Ios, &StdInfo, sizeof(StdInfo), FileStandardInformation);
+            if (NT_SUCCESS(rcNt))
+            {
+                PosInfo.CurrentByteOffset.QuadPart = offDistanceToMove.QuadPart + StdInfo.EndOfFile.QuadPart;
+                break;
+            }
+            return FakeSetLastErrorFromNtStatus(rcNt);
+        }
+
+        default:
+            SetLastError(ERROR_INVALID_PARAMETER);
+            return FALSE;
+    }
+
+    rcNt = NtSetInformationFile(hFile, &Ios, &PosInfo, sizeof(PosInfo), FilePositionInformation);
+    if (NT_SUCCESS(rcNt))
+    {
+        if (pNewFilePointer)
+            *pNewFilePointer = PosInfo.CurrentByteOffset;
+        return TRUE;
+    }
+    return FakeSetLastErrorFromNtStatus(rcNt);
+}
+#endif /* VCC_FAKES_TARGET >= 141 */
+
+
+#if VCC_FAKES_TARGET >= 141
+/** @since 5.0 (windows 2000) */
+DECL_KERNEL32(BOOL) Fake_GetFileSizeEx(HANDLE hFile, PLARGE_INTEGER pcbFile)
+{
+    IO_STATUS_BLOCK    Ios     = RTNT_IO_STATUS_BLOCK_INITIALIZER;
+    FILE_STANDARD_INFO StdInfo = {0};
+    NTSTATUS rcNt = NtQueryInformationFile(hFile, &Ios, &StdInfo, sizeof(StdInfo), FileStandardInformation);
+    if (NT_SUCCESS(rcNt))
+    {
+        *pcbFile = StdInfo.EndOfFile;
+        return TRUE;
+    }
+    return FakeSetLastErrorFromNtStatus(rcNt);
+}
+#endif /* VCC_FAKES_TARGET >= 141 */
+
+
+
+
 /*
  * NT 3.51 stuff.
  */
+
+#if VCC_FAKES_TARGET >= 141
+/** @since 4.0 */
+DECL_KERNEL32(HANDLE) Fake_FindFirstFileExW(LPCWSTR pwszFileName, FINDEX_INFO_LEVELS enmInfoLevel, LPVOID pvFindFileData,
+                                            FINDEX_SEARCH_OPS enmSearchOp, LPVOID pvSearchFilter, DWORD dwAdditionalFlags)
+{
+    // STL:                FindFirstFileExW(, FindExInfoBasic,    , FindExSearchNameMatch, NULL, 0);
+    // CRT/_findfile:      FindFirstFileExW(, FindExInfoStandard, , FindExSearchNameMatch, NULL, 0);
+    // CRT/argv_wildcards: FindFirstFileExW(, FindExInfoStandard, , FindExSearchNameMatch, NULL, 0);
+    AssertReturnStmt(dwAdditionalFlags == 0, SetLastError(ERROR_INVALID_PARAMETER), INVALID_HANDLE_VALUE);
+    AssertReturnStmt(pvSearchFilter == NULL, SetLastError(ERROR_INVALID_PARAMETER), INVALID_HANDLE_VALUE);
+    AssertReturnStmt(enmSearchOp == FindExSearchNameMatch, SetLastError(ERROR_INVALID_PARAMETER), INVALID_HANDLE_VALUE);
+    AssertReturnStmt(enmInfoLevel == FindExInfoStandard || enmInfoLevel == FindExInfoBasic,
+                     SetLastError(ERROR_INVALID_PARAMETER), INVALID_HANDLE_VALUE);
+
+    return FindFirstFileW(pwszFileName, (WIN32_FIND_DATAW *)pvFindFileData);
+}
+#endif /* VCC_FAKES_TARGET >= 141 */
+
 
 DECL_KERNEL32(BOOL) Fake_IsProcessorFeaturePresent(DWORD enmProcessorFeature)
 {
@@ -370,6 +550,28 @@ DECL_KERNEL32(BOOL) Fake_CancelIo(HANDLE hHandle)
 /*
  * NT 3.50 stuff.
  */
+
+#if VCC_FAKES_TARGET >= 141
+/** @since 3.51 */
+DECL_KERNEL32(VOID) Fake_FreeLibraryAndExitThread(HMODULE hLibModule, DWORD dwExitCode)
+{
+    if (hLibModule)
+        FreeModule(hLibModule);
+    ExitThread(dwExitCode);
+}
+#endif /* VCC_FAKES_TARGET >= 141 */
+
+
+#if VCC_FAKES_TARGET >= 141
+/** @since 3.51 */
+DECL_KERNEL32(BOOL) Fake_EnumSystemLocalesW(LOCALE_ENUMPROCW pfnLocaleEnum, DWORD dwFlags)
+{
+    RT_NOREF(pfnLocaleEnum, dwFlags);
+    SetLastError(ERROR_NOT_SUPPORTED);
+    return FALSE;
+}
+#endif /* VCC_FAKES_TARGET >= 141 */
+
 
 DECL_KERNEL32(BOOL) Fake_IsDebuggerPresent(VOID)
 {
@@ -632,7 +834,13 @@ DECLASM(void) FakeResolve_kernel32(void)
 
 #undef MAKE_IMPORT_ENTRY
 #define MAKE_IMPORT_ENTRY(a_uMajorVer, a_uMinorVer, a_Name, a_cb) RESOLVE_IMPORT(a_uMajorVer, a_uMinorVer, a_Name, a_cb)
-#include "vcc100-kernel32-fakes.h"
+#ifdef VCC_FAKES_TARGET_VCC100
+# include "vcc-fakes-kernel32-100.h"
+#elif defined(VCC_FAKES_TARGET_VCC141)
+# include "vcc-fakes-kernel32-141.h"
+#else
+# error "Port me!"
+#endif
 
     g_fInitialized = true;
 }
