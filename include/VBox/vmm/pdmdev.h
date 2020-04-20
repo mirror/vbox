@@ -3566,8 +3566,10 @@ typedef struct PDMDEVHLPR3
      * @param   pIommuReg           Pointer to a IOMMU registration structure.
      * @param   ppIommuHlp          Where to store the pointer to the ring-3 IOMMU
      *                              helpers.
+     * @param   pidxIommu           Where to return the IOMMU index. Optional.
      */
-    DECLR3CALLBACKMEMBER(int, pfnIommuRegister,(PPDMDEVINS pDevIns, PPDMIOMMUREGR3 pIommuReg, PCPDMIOMMUHLPR3 *ppIommuHlp));
+    DECLR3CALLBACKMEMBER(int, pfnIommuRegister,(PPDMDEVINS pDevIns, PPDMIOMMUREGR3 pIommuReg, PCPDMIOMMUHLPR3 *ppIommuHlp,
+                                                uint32_t *pidxIommu));
 
     /**
      * Register the PIC device.
@@ -4514,6 +4516,20 @@ typedef struct PDMDEVHLPRC
     DECLRCCALLBACKMEMBER(int, pfnPCIBusSetUpContext,(PPDMDEVINS pDevIns, PPDMPCIBUSREGRC pPciBusReg, PCPDMPCIHLPRC *ppPciHlp));
 
     /**
+     * Sets up the IOMMU for the raw-mode context.
+     *
+     * This must be called after ring-3 has registered the IOMMU using
+     * PDMDevHlpIommuRegister().
+     *
+     * @returns VBox status code.
+     * @param   pDevIns     The device instance.
+     * @param   pIommuReg   The IOMMU registration information for raw-mode,
+     *                      considered volatile.
+     * @param   ppIommuHlp  Where to return the raw-mode IOMMU helpers.
+     */
+    DECLRCCALLBACKMEMBER(int, pfnIommuSetUpContext,(PPDMDEVINS pDevIns, PPDMIOMMUREGRC pIommuReg, PCPDMIOMMUHLPRC *ppIommuHlp));
+
+    /**
      * Sets up the PIC for the ring-0 context.
      *
      * This must be called after ring-3 has registered the PIC using
@@ -4589,7 +4605,7 @@ typedef RGPTRTYPE(struct PDMDEVHLPRC *) PPDMDEVHLPRC;
 typedef RGPTRTYPE(const struct PDMDEVHLPRC *) PCPDMDEVHLPRC;
 
 /** Current PDMDEVHLP version number. */
-#define PDM_DEVHLPRC_VERSION                    PDM_VERSION_MAKE(0xffe6, 14, 0)
+#define PDM_DEVHLPRC_VERSION                    PDM_VERSION_MAKE(0xffe6, 15, 0)
 
 
 /**
@@ -5035,6 +5051,20 @@ typedef struct PDMDEVHLPR0
     DECLR0CALLBACKMEMBER(int, pfnPCIBusSetUpContext,(PPDMDEVINS pDevIns, PPDMPCIBUSREGR0 pPciBusReg, PCPDMPCIHLPR0 *ppPciHlp));
 
     /**
+     * Sets up the IOMMU for the ring-0 context.
+     *
+     * This must be called after ring-3 has registered the IOMMU using
+     * PDMDevHlpIommuRegister().
+     *
+     * @returns VBox status code.
+     * @param   pDevIns     The device instance.
+     * @param   pIommuReg   The IOMMU registration information for ring-0,
+     *                      considered volatile and copied.
+     * @param   ppIommuHlp  Where to return the ring-0 IOMMU helpers.
+     */
+    DECLR0CALLBACKMEMBER(int, pfnIommuSetUpContext,(PPDMDEVINS pDevIns, PPDMIOMMUREGR0 pIommuReg, PCPDMIOMMUHLPR0 *ppIommuHlp));
+
+    /**
      * Sets up the PIC for the ring-0 context.
      *
      * This must be called after ring-3 has registered the PIC using
@@ -5110,7 +5140,7 @@ typedef R0PTRTYPE(struct PDMDEVHLPR0 *) PPDMDEVHLPR0;
 typedef R0PTRTYPE(const struct PDMDEVHLPR0 *) PCPDMDEVHLPR0;
 
 /** Current PDMDEVHLP version number. */
-#define PDM_DEVHLPR0_VERSION                    PDM_VERSION_MAKE(0xffe5, 16, 0)
+#define PDM_DEVHLPR0_VERSION                    PDM_VERSION_MAKE(0xffe5, 17, 0)
 
 
 /**
@@ -7397,9 +7427,9 @@ DECLINLINE(int) PDMDevHlpPCIBusRegister(PPDMDEVINS pDevIns, PPDMPCIBUSREGR3 pPci
 /**
  * @copydoc PDMDEVHLPR3::pfnIommuRegister
  */
-DECLINLINE(int) PDMDevHlpIommuRegister(PPDMDEVINS pDevIns, PPDMIOMMUREGR3 pIommuReg, PCPDMIOMMUHLPR3 *ppIommuHlp)
+DECLINLINE(int) PDMDevHlpIommuRegister(PPDMDEVINS pDevIns, PPDMIOMMUREGR3 pIommuReg, PCPDMIOMMUHLPR3 *ppIommuHlp, uint32_t *pidxIommu)
 {
-    return pDevIns->pHlpR3->pfnIommuRegister(pDevIns, pIommuReg, ppIommuHlp);
+    return pDevIns->pHlpR3->pfnIommuRegister(pDevIns, pIommuReg, ppIommuHlp, pidxIommu);
 }
 
 /**
@@ -7556,6 +7586,14 @@ DECLINLINE(PUVM) PDMDevHlpGetUVM(PPDMDEVINS pDevIns)
 DECLINLINE(int) PDMDevHlpPCIBusSetUpContext(PPDMDEVINS pDevIns, CTX_SUFF(PPDMPCIBUSREG) pPciBusReg, CTX_SUFF(PCPDMPCIHLP) *ppPciHlp)
 {
     return pDevIns->CTX_SUFF(pHlp)->pfnPCIBusSetUpContext(pDevIns, pPciBusReg, ppPciHlp);
+}
+
+/**
+ * @copydoc PDMDEVHLPR0::pfnIommuSetUpContext
+ */
+DECLINLINE(int) PDMDevHlpIommuSetUpContext(PPDMDEVINS pDevIns, CTX_SUFF(PPDMIOMMUREG) pIommuReg, CTX_SUFF(PCPDMIOMMUHLP) *ppIommuHlp)
+{
+    return pDevIns->CTX_SUFF(pHlp)->pfnIommuSetUpContext(pDevIns, pIommuReg, ppIommuHlp);
 }
 
 /**

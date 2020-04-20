@@ -56,6 +56,7 @@ extern DECLEXPORT(const PDMDEVHLPR0)    g_pdmR0DevHlp;
 extern DECLEXPORT(const PDMPICHLP)      g_pdmR0PicHlp;
 extern DECLEXPORT(const PDMIOAPICHLP)   g_pdmR0IoApicHlp;
 extern DECLEXPORT(const PDMPCIHLPR0)    g_pdmR0PciHlp;
+extern DECLEXPORT(const PDMIOMMUHLPR0)  g_pdmR0IommuHlp;
 extern DECLEXPORT(const PDMHPETHLPR0)   g_pdmR0HpetHlp;
 extern DECLEXPORT(const PDMPCIRAWHLPR0) g_pdmR0PciRawHlp;
 extern DECLEXPORT(const PDMDRVHLPR0)    g_pdmR0DrvHlp;
@@ -1124,6 +1125,58 @@ static DECLCALLBACK(int) pdmR0DevHlp_PCIBusSetUpContext(PPDMDEVINS pDevIns, PPDM
 }
 
 
+/** @interface_method_impl{PDMDEVHLPR0,pfnIommuSetUpContext} */
+static DECLCALLBACK(int) pdmR0DevHlp_IommuSetUpContext(PPDMDEVINS pDevIns, PPDMIOMMUREGR0 pIommuReg, PCPDMIOMMUHLPR0 *ppIommuHlp)
+{
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    LogFlow(("pdmR0DevHlp_IommuSetUpContext: caller='%p'/%d: pIommuReg=%p{.u32Version=%#x, u32TheEnd=%#x} ppIommuHlp=%p\n",
+             pDevIns, pDevIns->iInstance, pIommuReg, pIommuReg->u32Version, pIommuReg->u32TheEnd, ppIommuHlp));
+    PGVM pGVM = pDevIns->Internal.s.pGVM;
+
+    /*
+     * Validate input.
+     */
+    AssertPtrReturn(pIommuReg, VERR_INVALID_POINTER);
+    AssertLogRelMsgReturn(pIommuReg->u32Version == PDM_IOMMUREGCC_VERSION,
+                          ("%#x vs %#x\n", pIommuReg->u32Version, PDM_IOMMUREGCC_VERSION), VERR_VERSION_MISMATCH);
+    AssertLogRelMsgReturn(pIommuReg->u32TheEnd == PDM_IOMMUREGCC_VERSION,
+                          ("%#x vs %#x\n", pIommuReg->u32TheEnd, PDM_IOMMUREGCC_VERSION), VERR_VERSION_MISMATCH);
+
+    AssertPtrReturn(ppIommuHlp, VERR_INVALID_POINTER);
+
+    VM_ASSERT_STATE_RETURN(pGVM, VMSTATE_CREATING, VERR_WRONG_ORDER);
+    VM_ASSERT_EMT0_RETURN(pGVM, VERR_VM_THREAD_NOT_EMT);
+
+    /* Check the IOMMU shared data (registered earlier from ring-3). */
+    uint32_t const idxIommu = pIommuReg->idxIommu;
+    ASMCompilerBarrier();
+    AssertLogRelMsgReturn(idxIommu < RT_ELEMENTS(pGVM->pdm.s.aIommus), ("idxIommu=%#x\n", idxIommu), VERR_OUT_OF_RANGE);
+    PPDMIOMMU pIommuShared = &pGVM->pdm.s.aIommus[idxIommu];
+    AssertLogRelMsgReturn(pIommuShared->idxIommu == idxIommu, ("%u vs %u\n", pIommuShared->idxIommu, idxIommu), VERR_INVALID_PARAMETER);
+    AssertLogRelMsgReturn(pIommuShared->pDevInsR3 == pDevIns->pDevInsForR3,
+                          ("%p vs %p (idxIommu=%u)\n", pIommuShared->pDevInsR3, pDevIns->pDevInsForR3, idxIommu), VERR_NOT_OWNER);
+
+    /* Check that the IOMMU isn't already registered in ring-0. */
+    AssertCompile(RT_ELEMENTS(pGVM->pdm.s.aIommus) == RT_ELEMENTS(pGVM->pdmr0.s.aIommus));
+    PPDMIOMMUR0 pIommuR0 = &pGVM->pdmr0.s.aIommus[idxIommu];
+    AssertLogRelMsgReturn(pIommuR0->pDevInsR0 == NULL,
+                          ("%p (caller pDevIns=%p, idxIommu=%u)\n", pIommuR0->pDevInsR0, pDevIns, idxIommu),
+                          VERR_ALREADY_EXISTS);
+
+    /*
+     * Register.
+     */
+    pIommuR0->idxIommu    = idxIommu;
+    pIommuR0->uPadding0   = 0xdeaddead;
+    pIommuR0->pDevInsR0   = pDevIns;
+
+    *ppIommuHlp = &g_pdmR0IommuHlp;
+
+    LogFlow(("pdmR0DevHlp_IommuSetUpContext: caller='%p'/%d: returns VINF_SUCCESS\n", pDevIns, pDevIns->iInstance));
+    return VINF_SUCCESS;
+}
+
+
 /** @interface_method_impl{PDMDEVHLPR0,pfnPICSetUpContext} */
 static DECLCALLBACK(int) pdmR0DevHlp_PICSetUpContext(PPDMDEVINS pDevIns, PPDMPICREG pPicReg, PCPDMPICHLP *ppPicHlp)
 {
@@ -1371,6 +1424,7 @@ extern DECLEXPORT(const PDMDEVHLPR0) g_pdmR0DevHlp =
     pdmR0DevHlp_CritSectScheduleExitEvent,
     pdmR0DevHlp_DBGFTraceBuf,
     pdmR0DevHlp_PCIBusSetUpContext,
+    pdmR0DevHlp_IommuSetUpContext,
     pdmR0DevHlp_PICSetUpContext,
     pdmR0DevHlp_ApicSetUpContext,
     pdmR0DevHlp_IoApicSetUpContext,
@@ -1606,6 +1660,20 @@ extern DECLEXPORT(const PDMPCIHLPR0) g_pdmR0PciHlp =
 /** @} */
 
 
+/** @name IOMMU Ring-0 Helpers
+ * @{
+ */
+
+/**
+ * The Ring-0 IOMMU Helper Callbacks.
+ */
+extern DECLEXPORT(const PDMIOMMUHLPR0) g_pdmR0IommuHlp =
+{
+    PDM_IOMMUHLPR0_VERSION,
+    PDM_IOMMUHLPR0_VERSION, /* the end */
+};
+
+/** @} */
 
 
 /** @name HPET Ring-0 Helpers

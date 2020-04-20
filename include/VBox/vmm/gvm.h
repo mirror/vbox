@@ -201,7 +201,7 @@ typedef struct GVM
 #if defined(VMM_INCLUDED_SRC_include_PDMInternal_h) && defined(IN_RING0)
         struct PDMR0PERVM   s;
 #endif
-        uint8_t             padding[1792];
+        uint8_t             padding[1920];
     } pdmr0;
 
     union
@@ -230,9 +230,9 @@ typedef struct GVM
 
     /** Padding so aCpus starts on a page boundrary.  */
 #ifdef VBOX_WITH_NEM_R0
-    uint8_t         abPadding2[4096*2 - 64 - 256 - 1024 - 256 - 64 - 1792 - 640 - 512 - 64 - sizeof(PGVMCPU) * VMM_MAX_CPU_COUNT];
+    uint8_t         abPadding2[4096*2 - 64 - 256 - 1024 - 256 - 64 - 1920 - 640 - 512 - 64 - sizeof(PGVMCPU) * VMM_MAX_CPU_COUNT];
 #else
-    uint8_t         abPadding2[4096*2 - 64 - 256 - 1024       - 64 - 1792 - 640 - 512 - 64 - sizeof(PGVMCPU) * VMM_MAX_CPU_COUNT];
+    uint8_t         abPadding2[4096*2 - 64 - 256 - 1024       - 64 - 1920 - 640 - 512 - 64 - sizeof(PGVMCPU) * VMM_MAX_CPU_COUNT];
 #endif
 
     /** For simplifying CPU enumeration in VMMAll code. */

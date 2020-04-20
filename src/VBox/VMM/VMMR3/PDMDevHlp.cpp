@@ -3288,7 +3288,8 @@ static DECLCALLBACK(int) pdmR3DevHlp_PCIBusRegister(PPDMDEVINS pDevIns, PPDMPCIB
 
 
 /** @interface_method_impl{PDMDEVHLPR3,pfnIommuRegister} */
-static DECLCALLBACK(int) pdmR3DevHlp_IommuRegister(PPDMDEVINS pDevIns, PPDMIOMMUREGR3 pIommuReg, PCPDMIOMMUHLPR3 *ppIommuHlp)
+static DECLCALLBACK(int) pdmR3DevHlp_IommuRegister(PPDMDEVINS pDevIns, PPDMIOMMUREGR3 pIommuReg, PCPDMIOMMUHLPR3 *ppIommuHlp,
+                                                   uint32_t *pidxIommu)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
     VM_ASSERT_EMT(pDevIns->Internal.s.pVMR3);
@@ -3332,6 +3333,8 @@ static DECLCALLBACK(int) pdmR3DevHlp_IommuRegister(PPDMDEVINS pDevIns, PPDMIOMMU
 
     /* Set the helper pointer and return. */
     *ppIommuHlp = &g_pdmR3DevIommuHlp;
+    if (pidxIommu)
+        *pidxIommu = idxIommu;
     LogFlow(("pdmR3DevHlp_IommuRegister: caller='%s'/%d: returns %Rrc\n", pDevIns->pReg->szName, pDevIns->iInstance, VINF_SUCCESS));
     return VINF_SUCCESS;
 }

@@ -639,6 +639,22 @@ typedef struct PDMIOMMU
 
 
 /**
+ * Ring-0 PDM IOMMU instance data.
+ */
+typedef struct PDMIOMMUR0
+{
+    /** IOMMU index. */
+    uint32_t                        idxIommu;
+    uint32_t                        uPadding0; /**< Alignment padding.*/
+
+    /** Pointer to IOMMU device instance. */
+    PPDMDEVINSR0                    pDevInsR0;
+} PDMIOMMUR0;
+/** Pointer to the ring-0 IOMMU data. */
+typedef PDMIOMMUR0 *PPDMIOMMUR0;
+
+
+/**
  * PDM registered PIC device.
  */
 typedef struct PDMPIC
@@ -788,6 +804,7 @@ typedef struct PDMPCIBUSR0
 } PDMPCIBUSR0;
 /** Pointer to the ring-0 PCI bus data. */
 typedef PDMPCIBUSR0 *PPDMPCIBUSR0;
+
 
 #ifdef IN_RING3
 /**
@@ -1353,6 +1370,8 @@ typedef struct PDMR0PERVM
 {
     /** PCI Buses, ring-0 data. */
     PDMPCIBUSR0                     aPciBuses[PDM_PCI_BUSSES_MAX];
+    /** IOMMUs, ring-0 data. */
+    PDMIOMMUR0                      aIommus[PDM_IOMMUS_MAX];
     /** Number of valid ring-0 device instances (apDevInstances). */
     uint32_t                        cDevInstances;
     uint32_t                        u32Padding;
