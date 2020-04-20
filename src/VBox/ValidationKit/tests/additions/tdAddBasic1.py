@@ -419,8 +419,10 @@ class tdAddBasic1(vbox.TestDriver):                                         # py
             # The actual install.
             # Also tell the installer to produce the appropriate log files.
             #
+            # Make sure to add "--nox11" to the makeself wrapper in order to not getting any blocking
+            # xterm window spawned.
             fRc = self.txsRunTest(oTxsSession, 'VBoxLinuxAdditions.run', 5 * 60 * 1000,
-                                  '/bin/sh', ('/bin/sh', '${CDROM}/VBoxLinuxAdditions.run'));
+                                  '/bin/sh', ('/bin/sh', '${CDROM}/VBoxLinuxAdditions.run', '--nox11'));
             ## @todo We need to figure out why the result is != 0 when running the .run installer. For now just ignore it.
             if not fRc:
                 reporter.error('Installing Linux Additions failed (isSuccess=%s, iResult=%d, see log file for details)'
