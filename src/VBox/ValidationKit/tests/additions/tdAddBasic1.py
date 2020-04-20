@@ -350,6 +350,8 @@ class tdAddBasic1(vbox.TestDriver):                                         # py
             reporter.log('Using proxy: ' + sHttpProxy);
             asEnv += ('http_proxy='  + sHttpProxy, 'https_proxy=' + sHttpsProxy);
 
+        cMsTimeout = 15 * 60 * 1000; # Use a 15 minutes timeout; needed for sloooow internet connections :-/
+
         # Install Kernel headers, which are required for actually installing the Linux Additions.
         if oTestVm.sKind.startswith('Debian') \
         or oTestVm.sKind.startswith('Ubuntu'):
@@ -375,17 +377,17 @@ class tdAddBasic1(vbox.TestDriver):                                         # py
                                        '/etc/apt/sources.list'),
                                       fCheckSessionStatus = True);
             if fRc:
-                fRc = self.txsRunTest(oTxsSession, 'Updating package sources', 5 * 60 *1000,
+                fRc = self.txsRunTest(oTxsSession, 'Updating package sources', cMsTimeout,
                                       '/usr/bin/apt-get', ('/usr/bin/apt-get', 'update'),
                                       asAddEnv = asEnv,
                                       fCheckSessionStatus = True);
             if fRc:
-                fRc = self.txsRunTest(oTxsSession, 'Installing Kernel headers', 5 * 60 *1000,
+                fRc = self.txsRunTest(oTxsSession, 'Installing Kernel headers', cMsTimeout,
                                       '/usr/bin/apt-get', ('/usr/bin/apt-get', 'install', '-y', 'linux-headers-generic'),
                                       asAddEnv = asEnv,
                                       fCheckSessionStatus = True);
             if fRc:
-                fRc = self.txsRunTest(oTxsSession, 'Installing Guest Additions depdendencies', 5 * 60 *1000, \
+                fRc = self.txsRunTest(oTxsSession, 'Installing Guest Additions depdendencies', cMsTimeout, \
                                       '/usr/bin/apt-get', ('/usr/bin/apt-get', 'install', '-y', 'build-essential', 'perl'),
                                       asAddEnv = asEnv,
                                       fCheckSessionStatus = True);
@@ -395,17 +397,17 @@ class tdAddBasic1(vbox.TestDriver):                                         # py
         or   oTestVm.sKind.startswith('Redhat') \
         or   oTestVm.sKind.startswith('Cent'):
 
-            fRc = self.txsRunTest(oTxsSession, 'Updating package sources', 5 * 60 *1000,
+            fRc = self.txsRunTest(oTxsSession, 'Updating package sources', cMsTimeout,
                                                '/usr/bin/yum', ('/usr/bin/yum', 'update'),
                                                asAddEnv = asEnv,
                                                fCheckSessionStatus = True);
             if fRc:
-                fRc = self.txsRunTest(oTxsSession, 'Installing Kernel headers', 5 * 60 *1000,
+                fRc = self.txsRunTest(oTxsSession, 'Installing Kernel headers', cMsTimeout,
                                       '/usr/bin/yum', ('/usr/bin/yum', '-y', 'install', 'kernel-headers'),
                                       asAddEnv = asEnv,
                                       fCheckSessionStatus = True);
             if fRc:
-                fRc = self.txsRunTest(oTxsSession, 'Installing Guest Additions depdendencies', 5 * 60 *1000, \
+                fRc = self.txsRunTest(oTxsSession, 'Installing Guest Additions depdendencies', cMsTimeout, \
                                       '/usr/bin/yum', ('/usr/bin/yum', '-y', 'install', \
                                                    'make', 'automake', 'gcc', 'kernel-devel', 'dkms', 'bzip2', 'perl'),
                                       asAddEnv = asEnv,
