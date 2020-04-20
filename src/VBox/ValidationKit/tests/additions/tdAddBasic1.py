@@ -339,9 +339,31 @@ class tdAddBasic1(vbox.TestDriver):                                         # py
 
         fRc = False;
 
+        # Additional environment block to add to the following commands.
+        asEnv = ();
+
+        fNeedsProxy = True; ## @todo Make this more flexible / dynamic.
+        sHttpProxy  = 'http://emea-proxy.uk.oracle.com:80/';
+        sHttpsProxy = sHttpProxy;
+
+        if fNeedsProxy:
+            reporter.log('Using proxy: ' + sHttpProxy);
+            asEnv += ('http_proxy='  + sHttpProxy, 'https_proxy=' + sHttpsProxy);
+
         # Install Kernel headers, which are required for actually installing the Linux Additions.
         if oTestVm.sKind.startswith('Debian') \
         or oTestVm.sKind.startswith('Ubuntu'):
+
+            if fNeedsProxy:
+                fRc = oTxsSession.syncMkDir("/etc/apt/apt.conf.d/", 0o755);
+                if fRc:
+                    fRc = oTxsSession.syncUploadString('"Acquire::http::Proxy \"' + sHttpProxy + '\"\r\n'
+                                                       'Acquire::https::Proxy \"' + sHttpsProxy + '\"',
+                                                       '/etc/apt/apt.conf.d/proxy.conf', 0o644);
+                    if not fRc:
+                        reporter.error('Unable to write to /etc/apt/apt.conf.d/proxy.conf');
+                else:
+                    reporter.error('Unable to create /etc/apt/apt.conf.d');
 
             # As Ubuntu 15.10 is EOL we need to tweak the package sources by hand first in order to have a working
             # package update path again; otherwise updating and installing packages will fail.
@@ -355,31 +377,38 @@ class tdAddBasic1(vbox.TestDriver):                                         # py
             if fRc:
                 fRc = self.txsRunTest(oTxsSession, 'Updating package sources', 5 * 60 *1000,
                                       '/usr/bin/apt-get', ('/usr/bin/apt-get', 'update'),
+                                      asAddEnv = asEnv,
                                       fCheckSessionStatus = True);
             if fRc:
                 fRc = self.txsRunTest(oTxsSession, 'Installing Kernel headers', 5 * 60 *1000,
                                       '/usr/bin/apt-get', ('/usr/bin/apt-get', 'install', '-y', 'linux-headers-generic'),
+                                      asAddEnv = asEnv,
                                       fCheckSessionStatus = True);
             if fRc:
                 fRc = self.txsRunTest(oTxsSession, 'Installing Guest Additions depdendencies', 5 * 60 *1000, \
                                       '/usr/bin/apt-get', ('/usr/bin/apt-get', 'install', '-y', 'build-essential', 'perl'),
+                                      asAddEnv = asEnv,
                                       fCheckSessionStatus = True);
         elif oTestVm.sKind.startswith('OL') \
         or   oTestVm.sKind.startswith('Oracle') \
         or   oTestVm.sKind.startswith('RHEL') \
         or   oTestVm.sKind.startswith('Redhat') \
         or   oTestVm.sKind.startswith('Cent'):
+
             fRc = self.txsRunTest(oTxsSession, 'Updating package sources', 5 * 60 *1000,
                                                '/usr/bin/yum', ('/usr/bin/yum', 'update'),
+                                               asAddEnv = asEnv,
                                                fCheckSessionStatus = True);
             if fRc:
                 fRc = self.txsRunTest(oTxsSession, 'Installing Kernel headers', 5 * 60 *1000,
                                       '/usr/bin/yum', ('/usr/bin/yum', '-y', 'install', 'kernel-headers'),
+                                      asAddEnv = asEnv,
                                       fCheckSessionStatus = True);
             if fRc:
                 fRc = self.txsRunTest(oTxsSession, 'Installing Guest Additions depdendencies', 5 * 60 *1000, \
                                       '/usr/bin/yum', ('/usr/bin/yum', '-y', 'install', \
                                                    'make', 'automake', 'gcc', 'kernel-devel', 'dkms', 'bzip2', 'perl'),
+                                      asAddEnv = asEnv,
                                       fCheckSessionStatus = True);
         else:
             reporter.error('Installing Linux Additions for kind "%s" is not supported yet' % oTestVm.sKind);
