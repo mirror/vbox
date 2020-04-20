@@ -627,6 +627,7 @@ RuntimeR3_SOURCES       = \
 	common/string/utf-16.cpp \
 	common/string/utf-16-case.cpp \
 	common/string/utf-16-latin-1.cpp \
+	common/string/utf-16-printf.cpp \
 	common/string/utf-8.cpp \
 	common/string/utf-8-case.cpp \
 	common/string/utf-8-case2.cpp \

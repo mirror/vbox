@@ -1381,6 +1381,76 @@ DECLINLINE(bool) RTUtf16IsSurrogatePair(RTUTF16 wcHigh, RTUTF16 wcLow)
  */
 RTDECL(int) RTUtf16PrintHexBytes(PRTUTF16 pwszBuf, size_t cwcBuf, void const *pv, size_t cb, uint32_t fFlags);
 
+/**
+ * String printf producing UTF-16 output.
+ *
+ * @returns On success, positive count of formatted RTUTF16 units excluding the
+ *          terminator.  On buffer overflow, negative number giving the required
+ *          buffer size (including terminator) in RTUTF16 units.
+ *
+ * @param   pwszBuffer  Output buffer.
+ * @param   cwcBuffer   Size of the output buffer in RTUTF16 units.
+ * @param   pszFormat   Pointer to the format string, @see pg_rt_str_format.
+ * @param   args        The format argument.
+ *
+ * @note    This is similar to RTStrPrintf2V (not RTStrPrintfV)!
+ */
+RTDECL(ssize_t) RTUtf16PrintfV(PRTUTF16 pwszBuffer, size_t cwcBuffer, const char *pszFormat, va_list args) RT_IPRT_FORMAT_ATTR(3, 0);
+
+/**
+ * String printf producing UTF-16 output.
+ *
+ * @returns On success, positive count of formatted RTUTF16 units excluding the
+ *          terminator.  On buffer overflow, negative number giving the required
+ *          buffer size (including terminator) in RTUTF16 units.
+ *
+ * @param   pwszBuffer  Output buffer.
+ * @param   cwcBuffer   Size of the output buffer in RTUTF16 units.
+ * @param   pszFormat   Pointer to the format string, @see pg_rt_str_format.
+ * @param   ...         The format argument.
+ *
+ * @note    This is similar to RTStrPrintf2 (not RTStrPrintf)!
+ */
+RTDECL(ssize_t) RTUtf16Printf(PRTUTF16 pwszBuffer, size_t cwcBuffer, const char *pszFormat, ...) RT_IPRT_FORMAT_ATTR(3, 4);
+
+/**
+ * String printf producing UTF-16 output with custom formatting.
+ *
+ * @returns On success, positive count of formatted RTUTF16 units excluding the
+ *          terminator.  On buffer overflow, negative number giving the required
+ *          buffer size (including terminator) in RTUTF16 units.
+ *
+ * @param   pfnFormat   Pointer to handler function for the custom formats.
+ * @param   pvArg       Argument to the pfnFormat function.
+ * @param   pwszBuffer  Output buffer.
+ * @param   cwcBuffer   Size of the output buffer in RTUTF16 units.
+ * @param   pszFormat   Pointer to the format string, @see pg_rt_str_format.
+ * @param   args        The format argument.
+ *
+ * @note    This is similar to RTStrPrintf2ExV (not RTStrPrintfExV)!
+ */
+RTDECL(ssize_t) RTUtf16PrintfExV(PFNSTRFORMAT pfnFormat, void *pvArg, PRTUTF16 pwszBuffer, size_t cwcBuffer,
+                                 const char *pszFormat, va_list args)  RT_IPRT_FORMAT_ATTR(5, 0);
+
+/**
+ * String printf producing UTF-16 output with custom formatting.
+ *
+ * @returns On success, positive count of formatted RTUTF16 units excluding the
+ *          terminator.  On buffer overflow, negative number giving the required
+ *          buffer size (including terminator) in RTUTF16 units.
+ *
+ * @param   pfnFormat   Pointer to handler function for the custom formats.
+ * @param   pvArg       Argument to the pfnFormat function.
+ * @param   pwszBuffer  Output buffer.
+ * @param   cwcBuffer   Size of the output buffer in RTUTF16 units.
+ * @param   pszFormat   Pointer to the format string, @see pg_rt_str_format.
+ * @param   ...         The format argument.
+ *
+ * @note    This is similar to RTStrPrintf2Ex (not RTStrPrintfEx)!
+ */
+RTDECL(ssize_t) RTUtf16PrintfEx(PFNSTRFORMAT pfnFormat, void *pvArg, PRTUTF16 pwszBuffer, size_t cwcBuffer,
+                                const char *pszFormat, ...)  RT_IPRT_FORMAT_ATTR(5, 6);
+
 /** @} */
 RT_C_DECLS_END
 

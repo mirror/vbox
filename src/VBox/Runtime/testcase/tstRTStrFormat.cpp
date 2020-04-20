@@ -29,6 +29,7 @@
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
 #include <iprt/string.h>
+#include <iprt/utf16.h>
 
 #include <iprt/initterm.h>
 #include <iprt/net.h>
@@ -92,6 +93,55 @@ static void testNested(int iLine, const char *pszExpect, const char *pszFormat, 
     else if (cch != 5 + cchExpect + 5)
         RTTestIFailed("at line %d: Invalid length %d returned, expected %u!\n",
                       iLine, cch, 5 + cchExpect + 5);
+}
+
+
+static void testUtf16Printf(RTTEST hTest)
+{
+    RTTestSub(hTest, "RTUtf16Printf");
+    size_t const   cwcBuf  = 120;
+    PRTUTF16 const pwszBuf = (PRTUTF16)RTTestGuardedAllocTail(hTest, cwcBuf * sizeof(RTUTF16));
+
+    static const char    s_szSimpleExpect[] = "Hello world!";
+    static const ssize_t s_cwcSimpleExpect  = sizeof(s_szSimpleExpect) - 1;
+    ssize_t cwc = RTUtf16Printf(pwszBuf, cwcBuf, "Hello%c%s!", ' ', "world");
+    if (RTUtf16CmpAscii(pwszBuf, s_szSimpleExpect))
+        RTTestIFailed("error: '%ls'\n"
+                      "wanted '%s'\n", pwszBuf, s_szSimpleExpect);
+    if (cwc != s_cwcSimpleExpect)
+        RTTestIFailed("error: got %zd, expected %zd (#1)\n", cwc, s_cwcSimpleExpect);
+
+    RTTestDisableAssertions(hTest);
+    for (size_t cwcThisBuf = 0; cwcThisBuf < sizeof(s_szSimpleExpect) + 8; cwcThisBuf++)
+    {
+        memset(pwszBuf, '0x88', cwcBuf * sizeof(*pwszBuf));
+
+        PRTUTF16 pwszThisBuf = &pwszBuf[cwcBuf - cwcThisBuf];
+        cwc = RTUtf16Printf(pwszThisBuf, cwcThisBuf, "Hello%c%s!", ' ', "world");
+
+        if (cwcThisBuf <= s_cwcSimpleExpect)
+        {
+            if (cwcThisBuf > 1)
+            {
+                if (RTUtf16NCmpAscii(pwszThisBuf, s_szSimpleExpect, cwcThisBuf - 1))
+                    RTTestIFailed("error: '%.*ls'\n"
+                                  "wanted '%.*s'\n", cwcThisBuf - 1, pwszThisBuf, cwcThisBuf - 1, s_szSimpleExpect);
+            }
+            if (cwcThisBuf > 1 && pwszThisBuf[cwcThisBuf - 1] != '\0')
+                RTTestIFailed("error: cwcThisBuf=%zu not null terminated! %#x\n", cwcThisBuf, pwszThisBuf[cwcThisBuf - 1]);
+            if (cwc != -s_cwcSimpleExpect - 1)
+                RTTestIFailed("error: cwcThisBuf=%zu got %zd, expected %zd (#1)\n", cwcThisBuf, cwc, -s_cwcSimpleExpect - 1);
+        }
+        else
+        {
+            if (RTUtf16CmpAscii(pwszThisBuf, s_szSimpleExpect))
+                RTTestIFailed("error: '%ls'\n"
+                              "wanted '%s'\n", pwszThisBuf, s_szSimpleExpect);
+            if (cwc != s_cwcSimpleExpect)
+                RTTestIFailed("error: cwcThisBuf=%zu got %zd, expected %zd (#1)\n", cwcThisBuf, cwc, s_cwcSimpleExpect);
+        }
+    }
+    RTTestRestoreAssertions(hTest);
 }
 
 
@@ -874,6 +924,9 @@ int main()
     CHECKSTR("type3=10");
 
     RTTESTI_CHECK_RC(RTStrFormatTypeDeregister("type3"), VINF_SUCCESS);
+
+
+    testUtf16Printf(hTest);
 
     /*
      * Summarize and exit.
