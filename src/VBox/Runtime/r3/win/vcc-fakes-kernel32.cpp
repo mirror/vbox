@@ -507,11 +507,11 @@ DECL_KERNEL32(HANDLE) Fake_FindFirstFileExW(LPCWSTR pwszFileName, FINDEX_INFO_LE
     // STL:                FindFirstFileExW(, FindExInfoBasic,    , FindExSearchNameMatch, NULL, 0);
     // CRT/_findfile:      FindFirstFileExW(, FindExInfoStandard, , FindExSearchNameMatch, NULL, 0);
     // CRT/argv_wildcards: FindFirstFileExW(, FindExInfoStandard, , FindExSearchNameMatch, NULL, 0);
-    AssertReturnStmt(dwAdditionalFlags == 0, SetLastError(ERROR_INVALID_PARAMETER), INVALID_HANDLE_VALUE);
-    AssertReturnStmt(pvSearchFilter == NULL, SetLastError(ERROR_INVALID_PARAMETER), INVALID_HANDLE_VALUE);
-    AssertReturnStmt(enmSearchOp == FindExSearchNameMatch, SetLastError(ERROR_INVALID_PARAMETER), INVALID_HANDLE_VALUE);
-    AssertReturnStmt(enmInfoLevel == FindExInfoStandard || enmInfoLevel == FindExInfoBasic,
-                     SetLastError(ERROR_INVALID_PARAMETER), INVALID_HANDLE_VALUE);
+    MY_ASSERT_STMT_RETURN(dwAdditionalFlags == 0, SetLastError(ERROR_INVALID_PARAMETER), INVALID_HANDLE_VALUE);
+    MY_ASSERT_STMT_RETURN(pvSearchFilter == NULL, SetLastError(ERROR_INVALID_PARAMETER), INVALID_HANDLE_VALUE);
+    MY_ASSERT_STMT_RETURN(enmSearchOp == FindExSearchNameMatch, SetLastError(ERROR_INVALID_PARAMETER), INVALID_HANDLE_VALUE);
+    MY_ASSERT_STMT_RETURN(enmInfoLevel == FindExInfoStandard || enmInfoLevel == FindExInfoBasic,
+                          SetLastError(ERROR_INVALID_PARAMETER), INVALID_HANDLE_VALUE);
 
     return FindFirstFileW(pwszFileName, (WIN32_FIND_DATAW *)pvFindFileData);
 }
@@ -558,17 +558,6 @@ DECL_KERNEL32(VOID) Fake_FreeLibraryAndExitThread(HMODULE hLibModule, DWORD dwEx
     if (hLibModule)
         FreeModule(hLibModule);
     ExitThread(dwExitCode);
-}
-#endif /* VCC_FAKES_TARGET >= 141 */
-
-
-#if VCC_FAKES_TARGET >= 141
-/** @since 3.51 */
-DECL_KERNEL32(BOOL) Fake_EnumSystemLocalesW(LOCALE_ENUMPROCW pfnLocaleEnum, DWORD dwFlags)
-{
-    RT_NOREF(pfnLocaleEnum, dwFlags);
-    SetLastError(ERROR_NOT_SUPPORTED);
-    return FALSE;
 }
 #endif /* VCC_FAKES_TARGET >= 141 */
 
@@ -740,6 +729,17 @@ DECL_KERNEL32(int) Fake_GetLocaleInfoA(LCID idLocale, LCTYPE enmType, LPSTR pDat
     SetLastError(ERROR_NOT_SUPPORTED);
     return 0;
 }
+
+
+#if VCC_FAKES_TARGET >= 141
+/** @since 3.51 */
+DECL_KERNEL32(BOOL) Fake_EnumSystemLocalesW(LOCALE_ENUMPROCW pfnLocaleEnum, DWORD dwFlags)
+{
+    RT_NOREF(pfnLocaleEnum, dwFlags);
+    SetLastError(ERROR_NOT_SUPPORTED);
+    return FALSE;
+}
+#endif /* VCC_FAKES_TARGET >= 141 */
 
 
 DECL_KERNEL32(BOOL) Fake_EnumSystemLocalesA(LOCALE_ENUMPROCA pfnCallback, DWORD fFlags)
