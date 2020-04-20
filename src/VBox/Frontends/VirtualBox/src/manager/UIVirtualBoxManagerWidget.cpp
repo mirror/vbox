@@ -709,12 +709,16 @@ void UIVirtualBoxManagerWidget::updateToolbar()
                     if (isSingleGroupSelected())
                     {
                         m_pToolBar->addAction(actionPool()->action(UIActionIndexST_M_Group_S_New));
+                        m_pToolBar->addAction(actionPool()->action(UIActionIndexST_M_Group_S_Add));
+                        m_pToolBar->addSeparator();
                         m_pToolBar->addAction(actionPool()->action(UIActionIndexST_M_Group_S_Discard));
                         m_pToolBar->addAction(actionPool()->action(UIActionIndexST_M_Group_M_StartOrShow));
                     }
                     else
                     {
                         m_pToolBar->addAction(actionPool()->action(UIActionIndexST_M_Machine_S_New));
+                        m_pToolBar->addAction(actionPool()->action(UIActionIndexST_M_Machine_S_Add));
+                        m_pToolBar->addSeparator();
                         m_pToolBar->addAction(actionPool()->action(UIActionIndexST_M_Machine_S_Settings));
                         m_pToolBar->addAction(actionPool()->action(UIActionIndexST_M_Machine_S_Discard));
                         m_pToolBar->addAction(actionPool()->action(UIActionIndexST_M_Machine_M_StartOrShow));

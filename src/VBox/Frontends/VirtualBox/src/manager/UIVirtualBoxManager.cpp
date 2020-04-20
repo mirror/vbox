@@ -40,6 +40,7 @@
 #include "UIVirtualMachineItemLocal.h"
 #include "UIVMLogViewerDialog.h"
 #include "UIVirtualBoxEventHandler.h"
+#include "UIWizardAddCloudVM.h"
 #include "UIWizardCloneVM.h"
 #include "UIWizardExportApp.h"
 #include "UIWizardImportApp.h"
@@ -567,8 +568,30 @@ void UIVirtualBoxManager::sltOpenAddMachineDialog()
             this, &UIVirtualBoxManager::sltHandleUpdateActionAppearanceRequest);
     updateActionsAppearance();
 
-    /* Open add machine dialog: */
-    openAddMachineDialog();
+    /* Get selected items: */
+    QList<UIVirtualMachineItem*> items = currentItems();
+    AssertMsgReturnVoid(!items.isEmpty(), ("At least one item should be selected!\n"));
+    UIVirtualMachineItem *pItem = items.first();
+
+    /* For local machine: */
+    if (pItem->itemType() == UIVirtualMachineItem::ItemType_Local)
+    {
+        /* Open add machine dialog: */
+        openAddMachineDialog();
+    }
+    /* For real cloud machine: */
+    else if (pItem->itemType() == UIVirtualMachineItem::ItemType_CloudReal)
+    {
+        /* Use the "safe way" to open stack of Mac OS X Sheets: */
+        QWidget *pWizardParent = windowManager().realParentWindow(this);
+        UISafePointerWizardAddCloudVM pWizard = new UIWizardAddCloudVM(pWizardParent);
+        windowManager().registerNewParent(pWizard, pWizardParent);
+        pWizard->prepare();
+
+        /* Execute wizard: */
+        pWizard->exec();
+        delete pWizard;
+    }
 }
 
 void UIVirtualBoxManager::sltOpenMachineSettingsDialog(QString strCategory /* = QString() */,
@@ -1928,12 +1951,12 @@ bool UIVirtualBoxManager::isActionEnabled(int iActionIndex, const QList<UIVirtua
     switch (iActionIndex)
     {
         case UIActionIndexST_M_Group_S_New:
+        case UIActionIndexST_M_Group_S_Add:
         {
             return !isGroupSavingInProgress() &&
                    (isSingleLocalGroupSelected() ||
                     isSingleCloudProfileGroupSelected());
         }
-        case UIActionIndexST_M_Group_S_Add:
         case UIActionIndexST_M_Group_S_Sort:
         {
             return !isGroupSavingInProgress() &&

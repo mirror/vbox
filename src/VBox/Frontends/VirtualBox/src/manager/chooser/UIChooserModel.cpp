@@ -46,7 +46,7 @@
 #include "UIVirtualBoxManagerWidget.h"
 #include "UIVirtualMachineItemCloud.h"
 #include "UIVirtualMachineItemLocal.h"
-#include "UIWizardAddCloudVM.h"
+#include "UIWizardNewCloudVM.h"
 #include "UIWizardNewVM.h"
 
 /* COM includes: */
@@ -971,7 +971,7 @@ void UIChooserModel::sltCreateNewMachine()
     {
         /* Use the "safe way" to open stack of Mac OS X Sheets: */
         QWidget *pWizardParent = windowManager().realParentWindow(chooser()->managerWidget());
-        UISafePointerWizardAddCloudVM pWizard = new UIWizardAddCloudVM(pWizardParent);
+        UISafePointerWizardNewCloudVM pWizard = new UIWizardNewCloudVM(pWizardParent);
         windowManager().registerNewParent(pWizard, pWizardParent);
         pWizard->prepare();
 
