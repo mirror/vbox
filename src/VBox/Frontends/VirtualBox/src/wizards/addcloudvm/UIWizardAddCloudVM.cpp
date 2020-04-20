@@ -65,6 +65,16 @@ void UIWizardAddCloudVM::prepare()
     UIWizard::prepare();
 }
 
+QString UIWizardAddCloudVM::source() const
+{
+    return field("source").toString();
+}
+
+QString UIWizardAddCloudVM::profileName() const
+{
+    return field("profileName").toString();
+}
+
 bool UIWizardAddCloudVM::addCloudVMs()
 {
     /* Prepare result: */

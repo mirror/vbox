@@ -600,6 +600,8 @@ UIWizardAddCloudVMPageBasic1::UIWizardAddCloudVMPageBasic1()
             this, &UIWizardAddCloudVMPageBasic1::completeChanged);
 
     /* Register fields: */
+    registerField("source", this, "source");
+    registerField("profileName", this, "profileName");
     registerField("instanceIds", this, "instanceIds");
 }
 

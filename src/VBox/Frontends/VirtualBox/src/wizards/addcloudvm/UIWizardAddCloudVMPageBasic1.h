@@ -132,6 +132,8 @@ protected:
 class UIWizardAddCloudVMPageBasic1 : public UIWizardPage, public UIWizardAddCloudVMPage1
 {
     Q_OBJECT;
+    Q_PROPERTY(QString source READ source);
+    Q_PROPERTY(QString profileName READ profileName);
     Q_PROPERTY(QStringList instanceIds READ instanceIds);
 
 public:

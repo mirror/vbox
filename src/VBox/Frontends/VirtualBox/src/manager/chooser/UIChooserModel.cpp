@@ -938,16 +938,6 @@ void UIChooserModel::sltCreateNewMachine()
         && !actionPool()->action(UIActionIndexST_M_Group_S_New)->isEnabled())
         return;
 
-    /* Select the parent: */
-    UIChooserNode *pGroup = 0;
-    if (isSingleGroupSelected())
-        pGroup = firstSelectedItem()->node();
-    else if (!selectedItems().isEmpty())
-        pGroup = firstSelectedItem()->parentItem()->node();
-    QString strGroupName;
-    if (pGroup)
-        strGroupName = pGroup->fullName();
-
     /* Lock the action preventing cascade calls: */
     actionPool()->action(UIActionIndexST_M_Welcome_S_New)->setEnabled(false);
     actionPool()->action(UIActionIndexST_M_Machine_S_New)->setEnabled(false);
@@ -957,6 +947,16 @@ void UIChooserModel::sltCreateNewMachine()
     if (  !firstSelectedMachineItem()
         ||firstSelectedMachineItem()->itemType() == UIVirtualMachineItem::ItemType_Local)
     {
+        /* Select the parent: */
+        UIChooserNode *pGroup = 0;
+        if (isSingleGroupSelected())
+            pGroup = firstSelectedItem()->node();
+        else if (!selectedItems().isEmpty())
+            pGroup = firstSelectedItem()->parentItem()->node();
+        QString strGroupName;
+        if (pGroup)
+            strGroupName = pGroup->fullName();
+
         /* Use the "safe way" to open stack of Mac OS X Sheets: */
         QWidget *pWizardParent = windowManager().realParentWindow(chooser()->managerWidget());
         UISafePointerWizardNewVM pWizard = new UIWizardNewVM(pWizardParent, strGroupName);
@@ -982,8 +982,8 @@ void UIChooserModel::sltCreateNewMachine()
         // Hehey! Now we have to inject created VM nodes and then rebuild tree for the main root node
         // ourselves cause there is no corresponding event yet. So we are calling actual handler to do that.
         foreach (const CCloudMachine &comMachine, pWizard->machines())
-            sltCloudMachineRegistered(pGroup->parentNode()->name() /* provider name */,
-                                      pGroup->name() /* profile name */,
+            sltCloudMachineRegistered(pWizard->source() /* provider name */,
+                                      pWizard->profileName() /* profile name */,
                                       comMachine.GetId() /* machine ID */,
                                       true /* registered? */);
 

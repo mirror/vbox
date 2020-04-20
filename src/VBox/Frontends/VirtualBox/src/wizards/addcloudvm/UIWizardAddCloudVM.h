@@ -65,6 +65,11 @@ public:
     /** Returns Cloud Machine object wrapper list. */
     QList<CCloudMachine> machines() const { return m_machines; }
 
+    /** Returns source. */
+    QString source() const;
+    /** Returns profile name. */
+    QString profileName() const;
+
     /** Adds cloud VMs. */
     bool addCloudVMs();
 

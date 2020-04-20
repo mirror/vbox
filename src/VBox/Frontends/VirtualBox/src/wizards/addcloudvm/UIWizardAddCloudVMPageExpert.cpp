@@ -153,6 +153,8 @@ UIWizardAddCloudVMPageExpert::UIWizardAddCloudVMPageExpert()
             this, &UIWizardAddCloudVMPageExpert::completeChanged);
 
     /* Register fields: */
+    registerField("source", this, "source");
+    registerField("profileName", this, "profileName");
     registerField("instanceIds", this, "instanceIds");
 }
 
