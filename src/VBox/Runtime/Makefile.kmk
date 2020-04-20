@@ -2818,6 +2818,7 @@ RuntimeR0Drv_SOURCES    = \
 	common/string/utf-16.cpp \
 	common/string/utf-16-case.cpp \
 	common/string/utf-16-latin-1.cpp \
+	common/string/utf-16-printf.cpp \
 	common/table/avlpv.cpp \
 	common/table/avlu32.cpp \
 	common/time/time.cpp \
