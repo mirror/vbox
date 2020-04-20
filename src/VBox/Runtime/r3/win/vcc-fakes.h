@@ -24,8 +24,8 @@
  * terms and conditions of either the GPL or the CDDL or both.
  */
 
-#ifndef IPRT_INCLUDED_SRC_r3_win_vcc100_fakes_h
-#define IPRT_INCLUDED_SRC_r3_win_vcc100_fakes_h
+#ifndef IPRT_INCLUDED_SRC_r3_win_vcc_fakes_h
+#define IPRT_INCLUDED_SRC_r3_win_vcc_fakes_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -141,5 +141,5 @@
     } while (0);
 
 
-#endif /* !IPRT_INCLUDED_SRC_r3_win_vcc100_fakes_h */
+#endif /* !IPRT_INCLUDED_SRC_r3_win_vcc_fakes_h */
 
