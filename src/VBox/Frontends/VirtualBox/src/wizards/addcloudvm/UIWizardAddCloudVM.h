@@ -62,14 +62,6 @@ public:
     /** Returns Cloud Client object wrapper. */
     CCloudClient client() const { return m_comClient; }
 
-    /** Returns Cloud Machine object wrapper list. */
-    QList<CCloudMachine> machines() const { return m_machines; }
-
-    /** Returns source. */
-    QString source() const;
-    /** Returns profile name. */
-    QString profileName() const;
-
     /** Adds cloud VMs. */
     bool addCloudVMs();
 
@@ -82,9 +74,6 @@ private:
 
     /** Holds the Cloud Client object wrapper. */
     CCloudClient  m_comClient;
-
-    /** Holds the Cloud Machine object wrapper list. */
-    QList<CCloudMachine>  m_machines;
 };
 
 /** Safe pointer to add cloud vm wizard. */

@@ -977,16 +977,6 @@ void UIChooserModel::sltCreateNewMachine()
 
         /* Execute wizard: */
         pWizard->exec();
-
-        // WORKAROUND:
-        // Hehey! Now we have to inject created VM nodes and then rebuild tree for the main root node
-        // ourselves cause there is no corresponding event yet. So we are calling actual handler to do that.
-        foreach (const CCloudMachine &comMachine, pWizard->machines())
-            sltCloudMachineRegistered(pWizard->source() /* provider name */,
-                                      pWizard->profileName() /* profile name */,
-                                      comMachine.GetId() /* machine ID */,
-                                      true /* registered? */);
-
         delete pWizard;
     }
 

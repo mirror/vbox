@@ -2569,6 +2569,12 @@ CSession UICommon::tryToOpenSessionFor(CMachine &comMachine)
     return comSession;
 }
 
+void UICommon::notifyCloudMachineRegistered(const QString &strProviderShortName, const QString &strProfileName,
+                                            const QUuid &uId, const bool fRegistered)
+{
+    emit sigCloudMachineRegistered(strProviderShortName, strProfileName, uId, fRegistered);
+}
+
 void UICommon::enumerateMedia(const CMediumVector &comMedia /* = CMediumVector() */)
 {
     /* Make sure UICommon is already valid: */
