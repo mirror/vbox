@@ -501,7 +501,8 @@ static int rtR0DbgKrnlDarwinParseSymTab(RTDBGKRNLINFOINT *pThis, const char *psz
                         && strcmp(pszSym, "__mh_execute_header"))    /* in 10.8 it's no longer absolute (PIE?). */
                     {
                         LOG_BAD_SYM("RTR0DbgKrnlInfoOpen: %s: Symbol #%u '%s' problem: n_value (%#llx) < section addr (%#llx)\n",
-                                    pszKernelFile, iSym, pszSym, pSym->n_value, pThis->apSections[pSym->n_sect - 1]->addr);
+                                    pszKernelFile, iSym, pszSym, (uint64_t)pSym->n_value,
+                                    (uint64_t)pThis->apSections[pSym->n_sect - 1]->addr);
                         RETURN_VERR_BAD_EXE_FORMAT;
                     }
                     if (      pSym->n_value - pThis->apSections[pSym->n_sect - 1]->addr
@@ -509,8 +510,9 @@ static int rtR0DbgKrnlDarwinParseSymTab(RTDBGKRNLINFOINT *pThis, const char *psz
                         && strcmp(pszSym, "__mh_execute_header"))    /* see above. */
                     {
                         LOG_BAD_SYM("RTR0DbgKrnlInfoOpen: %s: Symbol #%u '%s' problem: n_value (%#llx) >= end of section (%#llx + %#llx)\n",
-                                    pszKernelFile, iSym, pszSym, pSym->n_value, pThis->apSections[pSym->n_sect - 1]->addr,
-                                    pThis->apSections[pSym->n_sect - 1]->size);
+                                    pszKernelFile, iSym, pszSym, (uint64_t)pSym->n_value,
+                                    (uint64_t)pThis->apSections[pSym->n_sect - 1]->addr,
+                                    (uint64_t)pThis->apSections[pSym->n_sect - 1]->size);
                         RETURN_VERR_BAD_EXE_FORMAT;
                     }
                     break;
