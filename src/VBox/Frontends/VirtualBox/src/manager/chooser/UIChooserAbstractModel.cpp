@@ -364,6 +364,12 @@ bool UIChooserAbstractModel::isGroupSavingInProgress() const
            || UIThreadGroupOrderSave::instance();
 }
 
+/* static */
+QString UIChooserAbstractModel::toOldStyleUuid(const QUuid &uId)
+{
+    return uId.toString().remove(QRegExp("[{}]"));
+}
+
 void UIChooserAbstractModel::sltMachineStateChanged(const QUuid &uMachineId, const KMachineState)
 {
     /* Update machine-nodes with passed id: */
@@ -988,12 +994,6 @@ void UIChooserAbstractModel::makeSureGroupOrdersSaveIsFinished()
     /* Cleanup if necessary: */
     if (UIThreadGroupOrderSave::instance())
         UIThreadGroupOrderSave::cleanup();
-}
-
-/* static */
-QString UIChooserAbstractModel::toOldStyleUuid(const QUuid &uId)
-{
-    return uId.toString().remove(QRegExp("[{}]"));
 }
 
 
