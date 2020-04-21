@@ -845,7 +845,7 @@ static int findExistingModeIndex(unsigned iXRes, unsigned iYRes)
 
 static bool disableCRTC(RRCrtc crtcID)
 {
-    Status ret;
+    Status ret = Success;
 #ifdef WITH_DISTRO_XRAND_XINERAMA
     ret = XRRSetCrtcConfig(x11Context.pDisplay, x11Context.pScreenResources, crtcID,
                            CurrentTime, 0, 0, None, RR_Rotate_0, NULL, 0);
@@ -1032,7 +1032,7 @@ static bool configureOutput(int iOutputIndex, struct RANDROUTPUT *paOutputs)
     pOutputInfo->crtc = pOutputInfo->crtcs[0];
 
     RRCrtc crtcId = pOutputInfo->crtcs[0];
-    Status ret;
+    Status ret = Success;
 #ifdef WITH_DISTRO_XRAND_XINERAMA
     ret = XRRSetCrtcConfig(x11Context.pDisplay, x11Context.pScreenResources, crtcId, CurrentTime,
                            paOutputs[iOutputIndex].x, paOutputs[iOutputIndex].y,
