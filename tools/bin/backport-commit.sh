@@ -83,7 +83,7 @@ else
     done
 
     # This is a line ending hack for windows hosts.
-    if    "${MY_SED}" -e 's/1/1/g' --output-text "${MY_TMP_FILE}" "${MY_MSG_FILE}"
+    if    "${MY_SED}" -e 's/1/1/g' --output-text "${MY_TMP_FILE}" "${MY_MSG_FILE}" \
        && "${MY_SED}" -e 's/1/1/g' --output-text "${MY_MSG_FILE}" "${MY_TMP_FILE}"; then
 
     else
