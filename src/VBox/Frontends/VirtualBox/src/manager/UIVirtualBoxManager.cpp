@@ -579,8 +579,8 @@ void UIVirtualBoxManager::sltOpenAddMachineDialog()
         /* Open add machine dialog: */
         openAddMachineDialog();
     }
-    /* For real cloud machine: */
-    else if (pItem->itemType() == UIVirtualMachineItem::ItemType_CloudReal)
+    /* For cloud machine: */
+    else
     {
         /* Use the "safe way" to open stack of Mac OS X Sheets: */
         QWidget *pWizardParent = windowManager().realParentWindow(this);
