@@ -189,11 +189,6 @@ void UIChooserNodeMachine::updateAllNodes(const QUuid &uId)
         item()->updateItem();
 }
 
-bool UIChooserNodeMachine::hasAtLeastOneCloudNode() const
-{
-    return cache()->itemType() != UIVirtualMachineItem::ItemType_Local;
-}
-
 int UIChooserNodeMachine::positionOf(UIChooserNode *pNode)
 {
     Q_UNUSED(pNode);

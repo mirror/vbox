@@ -682,24 +682,37 @@ bool UIChooserItemGroup::isDropAllowed(QGraphicsSceneDragDropEvent *pEvent, UICh
         UIChooserItem *pItem = pCastedMimeData->item();
         UIChooserItemGroup *pGroupItem = pItem->toGroupItem();
 
-        /* Make sure passed machine isn't immutable within own group: */
-        if (   pGroupItem->isContainsLockedMachine()
-            && !m_groupItems.contains(pItem))
-            return false;
-        /* Make sure passed group is not 'this': */
-        if (pItem == this)
-            return false;
-        /* Make sure passed group is not among our parents: */
-        const UIChooserItem *pTestedItem = this;
-        while (UIChooserItem *pParentOfTestedWidget = pTestedItem->parentItem())
+        /* For local items: */
+        if (   node()->toGroupNode()->groupType() == UIChooserNodeGroupType_Local
+            && pItem->node()->toGroupNode()->groupType() == UIChooserNodeGroupType_Local)
         {
-            if (pItem == pParentOfTestedWidget)
+            /* Make sure passed machine isn't immutable within own group: */
+            if (   pGroupItem->isContainsLockedMachine()
+                && !m_groupItems.contains(pItem))
                 return false;
-            pTestedItem = pParentOfTestedWidget;
-        }
+            /* Make sure passed group is not 'this': */
+            if (pItem == this)
+                return false;
+            /* Make sure passed group is not among our parents: */
+            const UIChooserItem *pTestedItem = this;
+            while (UIChooserItem *pParentOfTestedWidget = pTestedItem->parentItem())
+            {
+                if (pItem == pParentOfTestedWidget)
+                    return false;
+                pTestedItem = pParentOfTestedWidget;
+            }
 
-        /* Allow finally: */
-        return true;
+            /* Allow finally: */
+            return true;
+        }
+        /* For cloud items: */
+        else
+        if (   node()->toGroupNode()->groupType() == UIChooserNodeGroupType_Provider
+            && pItem->node()->toGroupNode()->groupType() == UIChooserNodeGroupType_Profile)
+        {
+            /* Make sure passed item is ours: */
+            return m_groupItems.contains(pItem);
+        }
     }
     else if (pMimeData->hasFormat(UIChooserItemMachine::className()))
     {
@@ -709,24 +722,37 @@ bool UIChooserItemGroup::isDropAllowed(QGraphicsSceneDragDropEvent *pEvent, UICh
         UIChooserItem *pItem = pCastedMimeData->item();
         UIChooserItemMachine *pMachineItem = pItem->toMachineItem();
 
-        /* Make sure passed machine isn't immutable within own group: */
-        if (   pMachineItem->isLockedMachine()
-            && !m_machineItems.contains(pItem))
-            return false;
-        switch (pEvent->proposedAction())
+        /* For local items: */
+        if (   node()->toGroupNode()->groupType() == UIChooserNodeGroupType_Local
+            && pMachineItem->node()->toMachineNode()->cache()->itemType() == UIVirtualMachineItem::ItemType_Local)
         {
-            case Qt::MoveAction:
+            /* Make sure passed machine isn't immutable within own group: */
+            if (   pMachineItem->isLockedMachine()
+                && !m_machineItems.contains(pItem))
+                return false;
+            switch (pEvent->proposedAction())
             {
-                /* Make sure passed item is ours or there is no other item with such id: */
-                return m_machineItems.contains(pItem) || !isContainsMachine(pMachineItem->id());
+                case Qt::MoveAction:
+                {
+                    /* Make sure passed item is ours or there is no other item with such id: */
+                    return m_machineItems.contains(pItem) || !isContainsMachine(pMachineItem->id());
+                }
+                case Qt::CopyAction:
+                {
+                    /* Make sure there is no other item with such id: */
+                    return !isContainsMachine(pMachineItem->id());
+                }
+                default:
+                    break;
             }
-            case Qt::CopyAction:
-            {
-                /* Make sure there is no other item with such id: */
-                return !isContainsMachine(pMachineItem->id());
-            }
-            default:
-                break;
+        }
+        /* For cloud items: */
+        else
+        if (   node()->toGroupNode()->groupType() == UIChooserNodeGroupType_Profile
+            && pMachineItem->node()->toMachineNode()->cache()->itemType() == UIVirtualMachineItem::ItemType_CloudReal)
+        {
+            /* Make sure passed item is ours: */
+            return m_machineItems.contains(pItem);
         }
     }
     /* That was invalid mime: */

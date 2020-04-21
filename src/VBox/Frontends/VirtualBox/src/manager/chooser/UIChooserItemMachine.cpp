@@ -393,6 +393,10 @@ bool UIChooserItemMachine::isDropAllowed(QGraphicsSceneDragDropEvent *pEvent, UI
         UIChooserItem *pItem = pCastedMimeData->item();
         UIChooserItemMachine *pMachineItem = pItem->toMachineItem();
 
+        /* No drops for cloud items: */
+        if (   node()->toMachineNode()->cache()->itemType() != UIVirtualMachineItem::ItemType_Local
+            || pMachineItem->node()->toMachineNode()->cache()->itemType() != UIVirtualMachineItem::ItemType_Local)
+            return false;
         /* No drops for immutable item: */
         if (pMachineItem->isLockedMachine())
             return false;

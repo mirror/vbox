@@ -494,15 +494,12 @@ void UIChooserItem::mouseMoveEvent(QGraphicsSceneMouseEvent *pEvent)
         QApplication::startDragDistance())
         return;
 
-    /* Initialize dragging for local VMs only: */
-    if (!m_pNode->hasAtLeastOneCloudNode())
-    {
-        QDrag *pDrag = new QDrag(pEvent->widget());
-        model()->setCurrentDragObject(pDrag);
-        pDrag->setPixmap(toPixmap());
-        pDrag->setMimeData(createMimeData());
-        pDrag->exec(Qt::MoveAction | Qt::CopyAction, Qt::MoveAction);
-    }
+    /* Initialize dragging: */
+    QDrag *pDrag = new QDrag(pEvent->widget());
+    model()->setCurrentDragObject(pDrag);
+    pDrag->setPixmap(toPixmap());
+    pDrag->setMimeData(createMimeData());
+    pDrag->exec(Qt::MoveAction | Qt::CopyAction, Qt::MoveAction);
 }
 
 void UIChooserItem::dragMoveEvent(QGraphicsSceneDragDropEvent *pEvent)

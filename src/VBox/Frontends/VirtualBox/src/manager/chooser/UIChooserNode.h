@@ -104,10 +104,6 @@ public:
     /** Updates all children with specified @a uId recursively. */
     virtual void updateAllNodes(const QUuid &uId) = 0;
 
-    /** Returns whether this node is a cloud node itself
-      * or contains at least one cloud VM node child. */
-    virtual bool hasAtLeastOneCloudNode() const = 0;
-
     /** Returns node position. */
     int position();
     /** Returns position of specified node inside this one. */
