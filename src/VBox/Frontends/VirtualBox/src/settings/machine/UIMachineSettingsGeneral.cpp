@@ -498,7 +498,9 @@ void UIMachineSettingsGeneral::polishPage()
 {
     /* Polish 'Basic' availability: */
     AssertPtrReturnVoid(m_pNameAndSystemEditor);
-    m_pNameAndSystemEditor->setEnabled(isMachineOffline());
+    m_pNameAndSystemEditor->setNameStuffEnabled(isMachineOffline() || isMachineSaved());
+    m_pNameAndSystemEditor->setPathStuffEnabled(isMachineOffline());
+    m_pNameAndSystemEditor->setOSTypeStuffEnabled(isMachineOffline());
 
     /* Polish 'Advanced' availability: */
     AssertPtrReturnVoid(mLbSnapshot);
@@ -780,7 +782,7 @@ bool UIMachineSettingsGeneral::saveAdvancedData()
         // VM name from 'Basic' data should go after the snapshot folder from the 'Advanced' data
         // as otherwise VM rename magic can collide with the snapshot folder one.
         /* Save machine name: */
-        if (fSuccess && isMachineOffline() && newGeneralData.m_strName != oldGeneralData.m_strName)
+        if (fSuccess && (isMachineOffline() || isMachineSaved()) && newGeneralData.m_strName != oldGeneralData.m_strName)
         {
             m_machine.SetName(newGeneralData.m_strName);
             fSuccess = m_machine.isOk();

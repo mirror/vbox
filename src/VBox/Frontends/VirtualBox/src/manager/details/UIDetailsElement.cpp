@@ -169,7 +169,8 @@ void UIDetailsElement::updateAppearance()
 
     /* Update anchor role restrictions: */
     ConfigurationAccessLevel cal = m_pSet->configurationAccessLevel();
-    m_pTextPane->setAnchorRoleRestricted("#machine_name", cal != ConfigurationAccessLevel_Full);
+    m_pTextPane->setAnchorRoleRestricted("#machine_name",    cal != ConfigurationAccessLevel_Full
+                                                          && cal != ConfigurationAccessLevel_Partial_Saved);
     m_pTextPane->setAnchorRoleRestricted("#machine_location", cal != ConfigurationAccessLevel_Full);
     m_pTextPane->setAnchorRoleRestricted("#os_type", cal != ConfigurationAccessLevel_Full);
     m_pTextPane->setAnchorRoleRestricted("#base_memory", cal != ConfigurationAccessLevel_Full);

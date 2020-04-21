@@ -61,6 +61,36 @@ UINameAndSystemEditor::UINameAndSystemEditor(QWidget *pParent,
     prepare();
 }
 
+void UINameAndSystemEditor::setNameStuffEnabled(bool fEnabled)
+{
+    if (m_pNameLabel)
+        m_pNameLabel->setEnabled(fEnabled);
+    if (m_pNameLineEdit)
+        m_pNameLineEdit->setEnabled(fEnabled);
+}
+
+void UINameAndSystemEditor::setPathStuffEnabled(bool fEnabled)
+{
+    if (m_pPathLabel)
+        m_pPathLabel->setEnabled(fEnabled);
+    if (m_pPathSelector)
+        m_pPathSelector->setEnabled(fEnabled);
+}
+
+void UINameAndSystemEditor::setOSTypeStuffEnabled(bool fEnabled)
+{
+    if (m_pLabelFamily)
+        m_pLabelFamily->setEnabled(fEnabled);
+    if (m_pLabelType)
+        m_pLabelType->setEnabled(fEnabled);
+    if (m_pIconType)
+        m_pIconType->setEnabled(fEnabled);
+    if (m_pComboFamily)
+        m_pComboFamily->setEnabled(fEnabled);
+    if (m_pComboType)
+        m_pComboType->setEnabled(fEnabled);
+}
+
 void UINameAndSystemEditor::setName(const QString &strName)
 {
     if (!m_pNameLineEdit)

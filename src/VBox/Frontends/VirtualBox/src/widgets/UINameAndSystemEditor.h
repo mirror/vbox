@@ -74,6 +74,13 @@ public:
                           bool fChoosePath = false,
                           bool fChooseType = true);
 
+    /** Defines whether VM name stuff is @a fEnabled. */
+    void setNameStuffEnabled(bool fEnabled);
+    /** Defines whether VM path stuff is @a fEnabled. */
+    void setPathStuffEnabled(bool fEnabled);
+    /** Defines whether VM OS type stuff is @a fEnabled. */
+    void setOSTypeStuffEnabled(bool fEnabled);
+
     /** Defines the VM @a strName. */
     void setName(const QString &strName);
     /** Returns the VM name. */
