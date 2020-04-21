@@ -135,7 +135,6 @@ bool UIChooserHandlerMouse::handleMousePress(QGraphicsSceneMouseEvent *pEvent) c
                             model()->addToSelectedItems(pClickedItem);
                         /* Make clicked item current one: */
                         model()->setCurrentItem(pClickedItem);
-                        model()->makeSureSomeItemIsSelected();
                     }
                     /* Was no modifiers pressed? */
                     else if (pEvent->modifiers() == Qt::NoModifier)

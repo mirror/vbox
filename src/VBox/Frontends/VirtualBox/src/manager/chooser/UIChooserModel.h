@@ -167,9 +167,6 @@ public:
         /** Finds closest non-selected-item. */
         UIChooserItem *findClosestUnselectedItem() const;
 
-        /** Makes sure some item is selected. */
-        void makeSureSomeItemIsSelected();
-
         /** Defines current @a pItem. */
         void setCurrentItem(UIChooserItem *pItem);
         /** Returns current-item. */

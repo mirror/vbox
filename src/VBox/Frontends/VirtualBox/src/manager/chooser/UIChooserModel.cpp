@@ -183,6 +183,10 @@ void UIChooserModel::setSelectedItems(const QList<UIChooserItem*> &items)
             AssertMsgFailed(("Passed item is not in navigation list!"));
     }
 
+    /* Make sure selection list is never empty if current-item present: */
+    if (m_selectedItems.isEmpty() && currentItem() && navigationItems().contains(currentItem()))
+        m_selectedItems << currentItem();
+
     /* Is there something really changed? */
     if (oldCurrentItems == m_selectedItems)
         return;
@@ -239,15 +243,10 @@ void UIChooserModel::setSelectedItem(const QString &strDefinition)
     /* Its a machine-item definition? */
     else if (strItemType == "m")
     {
-        /* Check if machine-item with passed descriptor (name or id) registered: */
-        CMachine comMachine = uiCommon().virtualBox().FindMachine(strItemDescriptor);
-        if (!comMachine.isNull())
-        {
-            /* Search for machine-item with required name: */
-            pItem = root()->searchForItem(comMachine.GetName(),
-                                          UIChooserItemSearchFlag_Machine |
-                                          UIChooserItemSearchFlag_ExactName);
-        }
+        /* Search for machine-item with required ID: */
+        pItem = root()->searchForItem(strItemDescriptor,
+                                      UIChooserItemSearchFlag_Machine |
+                                      UIChooserItemSearchFlag_ExactId);
     }
 
     /* Make sure found item is in navigation list: */
@@ -266,14 +265,17 @@ void UIChooserModel::clearSelectedItems()
 
 void UIChooserModel::addToSelectedItems(UIChooserItem *pItem)
 {
+    /* Prepare updated list: */
+    QList<UIChooserItem*> list(selectedItems());
+    list << pItem;
     /* Call for wrapper above: */
-    setSelectedItems(QList<UIChooserItem*>(m_selectedItems) << pItem);
+    setSelectedItems(list);
 }
 
 void UIChooserModel::removeFromSelectedItems(UIChooserItem *pItem)
 {
-    /* Prepare filtered list: */
-    QList<UIChooserItem*> list(m_selectedItems);
+    /* Prepare updated list: */
+    QList<UIChooserItem*> list(selectedItems());
     list.removeAll(pItem);
     /* Call for wrapper above: */
     setSelectedItems(list);
@@ -282,7 +284,7 @@ void UIChooserModel::removeFromSelectedItems(UIChooserItem *pItem)
 UIChooserItem *UIChooserModel::firstSelectedItem() const
 {
     /* Return first of selected-items, if any: */
-    return selectedItems().isEmpty() ? 0 : selectedItems().first();
+    return selectedItems().value(0);
 }
 
 const QList<UIChooserItem*> &UIChooserModel::selectedItems() const
@@ -407,14 +409,6 @@ UIChooserItem *UIChooserModel::findClosestUnselectedItem() const
     return 0;
 }
 
-void UIChooserModel::makeSureSomeItemIsSelected()
-{
-    /* Make sure selection list is never empty if at
-     * least one item (for example 'current') present: */
-    if (!firstSelectedItem() && currentItem())
-        setSelectedItem(currentItem());
-}
-
 void UIChooserModel::setCurrentItem(UIChooserItem *pItem)
 {
     /* Make sure real focus unset: */
@@ -441,6 +435,10 @@ void UIChooserModel::setCurrentItem(UIChooserItem *pItem)
     if (view() && view()->window() && root())
         if (view()->window()->isVisible() && pItem)
             root()->toGroupItem()->makeSureItemIsVisible(pItem);
+
+    /* Make sure selection list is never empty if current-item present: */
+    if (!firstSelectedItem() && m_pCurrentItem)
+        setSelectedItem(m_pCurrentItem);
 }
 
 UIChooserItem *UIChooserModel::currentItem() const
