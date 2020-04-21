@@ -658,18 +658,6 @@ void UIChooserModel::sltLocalMachineRegistered(const QUuid &uId, const bool fReg
     {
         /* Update tree for main root: */
         updateTreeForMainRoot();
-
-        /* Make sure selected-item present, if possible: */
-        if (!firstSelectedItem() && !navigationItems().isEmpty())
-        {
-            setSelectedItem(navigationItems().first());
-            emit sigSelectionInvalidated();
-        }
-        /* Make sure current-item present, if possible: */
-        else if (!currentItem() && firstSelectedItem())
-            setCurrentItem(firstSelectedItem());
-        /* Notify about selected-item change: */
-        emit sigSelectionChanged();
     }
     /* New VM registered? */
     else
@@ -699,18 +687,6 @@ void UIChooserModel::sltCloudMachineRegistered(const QString &strProviderName, c
     {
         /* Update tree for main root: */
         updateTreeForMainRoot();
-
-        /* Make sure selected-item present, if possible: */
-        if (!firstSelectedItem() && !navigationItems().isEmpty())
-        {
-            setSelectedItem(navigationItems().first());
-            emit sigSelectionInvalidated();
-        }
-        /* Make sure current-item present, if possible: */
-        else if (!currentItem() && firstSelectedItem())
-            setCurrentItem(firstSelectedItem());
-        /* Notify about selected-item change: */
-        emit sigSelectionChanged();
     }
     /* New VM registered? */
     else
