@@ -228,7 +228,7 @@ void UIChooserModel::setSelectedItem(const QString &strDefinition)
         /* Search for group-item with passed descriptor (name): */
         pItem = root()->searchForItem(strItemDescriptor,
                                       UIChooserItemSearchFlag_Group |
-                                      UIChooserItemSearchFlag_ExactName);
+                                      UIChooserItemSearchFlag_ExactId);
     }
     /* Its a global-item definition? */
     else if (strItemType == "n")

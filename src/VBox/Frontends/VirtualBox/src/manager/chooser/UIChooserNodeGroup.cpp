@@ -106,7 +106,7 @@ QString UIChooserNodeGroup::description() const
 
 QString UIChooserNodeGroup::definition() const
 {
-    return QString("g=%1").arg(name());
+    return QString("g=%1").arg(fullName());
 }
 
 bool UIChooserNodeGroup::hasNodes(UIChooserNodeType enmType /* = UIChooserNodeType_Any */) const
