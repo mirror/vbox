@@ -73,17 +73,6 @@ public:
 
         /** Updates cloud VM info async way, @a fDelayed if requested or instant otherwise. */
         void updateInfoAsync(bool fDelayed);
-
-        /** Puts cloud VM on pause.
-          * @param  pWidget  Brings parent widget to show messages according to. */
-        void pause(QWidget *pParent);
-        /** Resumes cloud VM execution.
-          * @param  pWidget  Brings parent widget to show messages according to. */
-        void resume(QWidget *pParent);
-        /** Wrapper to handle two tasks above.
-          * @param  fPause   Brings whether cloud VM should be paused or resumed otherwise.
-          * @param  pWidget  Brings parent widget to show messages according to. */
-        void pauseOrResume(bool fPause, QWidget *pParent);
     /** @} */
 
     /** @name Update stuff.

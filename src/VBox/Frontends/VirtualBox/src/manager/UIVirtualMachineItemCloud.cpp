@@ -60,43 +60,6 @@ void UIVirtualMachineItemCloud::updateInfoAsync(bool fDelayed)
     QTimer::singleShot(fDelayed ? 10000 : 0, this, SLOT(sltCreateGetCloudInstanceInfoTask()));
 }
 
-void UIVirtualMachineItemCloud::pause(QWidget *pParent)
-{
-    pauseOrResume(true /* pause? */, pParent);
-}
-
-void UIVirtualMachineItemCloud::resume(QWidget *pParent)
-{
-    pauseOrResume(false /* pause? */, pParent);
-}
-
-void UIVirtualMachineItemCloud::pauseOrResume(bool fPause, QWidget *pParent)
-{
-    /* Execute async method: */
-    CProgress comProgress;
-    if (fPause)
-        comProgress = m_comCloudMachine.PowerDown();
-    else
-        comProgress = m_comCloudMachine.PowerUp();
-    if (!m_comCloudMachine.isOk())
-        msgCenter().cannotAcquireCloudMachineParameter(m_comCloudMachine);
-    else
-    {
-        /* Show progress: */
-        /// @todo use proper pause icon
-        if (fPause)
-            msgCenter().showModalProgressDialog(comProgress, UICommon::tr("Pause instance ..."),
-                                                ":/progress_reading_appliance_90px.png", pParent, 0);
-        else
-            msgCenter().showModalProgressDialog(comProgress, UICommon::tr("Start instance ..."),
-                                                ":/progress_start_90px.png", pParent, 0);
-        if (!comProgress.isOk() || comProgress.GetResultCode() != 0)
-            msgCenter().cannotAcquireCloudClientParameter(comProgress);
-        else
-            updateInfoAsync(false /* delayed? */);
-    }
-}
-
 void UIVirtualMachineItemCloud::recache()
 {
     /* Determine attributes which are always available: */
