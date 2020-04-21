@@ -423,7 +423,7 @@ class tdAddBasic1(vbox.TestDriver):                                         # py
             #
             # Make sure to add "--nox11" to the makeself wrapper in order to not getting any blocking
             # xterm window spawned.
-            fRc = self.txsRunTest(oTxsSession, 'VBoxLinuxAdditions.run', 5 * 60 * 1000,
+            fRc = self.txsRunTest(oTxsSession, 'VBoxLinuxAdditions.run', 30 * 60 * 1000,
                                   '/bin/sh', ('/bin/sh', '${CDROM}/VBoxLinuxAdditions.run', '--nox11'));
             ## @todo We need to figure out why the result is != 0 when running the .run installer. For now just ignore it.
             if not fRc:
