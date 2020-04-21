@@ -2769,10 +2769,10 @@ static DECLCALLBACK(RTEXITCODE) gctlHandleUpdateAdditions(PGCTLCMDCTX pCtx, int 
             if (SUCCEEDED(rc))
                 CHECK_PROGRESS_ERROR(pProgress, ("Guest additions update failed"));
             vrc = gctlPrintProgressError(pProgress);
-            if (   RT_SUCCESS(vrc)
-                && pCtx->cVerbose)
+            if (RT_SUCCESS(vrc))
             {
-                RTPrintf("Guest Additions update successful\n");
+                RTPrintf("Guest Additions update successful.\n");
+                RTPrintf("The guest needs to be restarted in order to make use of the updated Guest Additions.\n");
             }
         }
     }

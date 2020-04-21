@@ -15325,7 +15325,7 @@
       <desc>
         Automatically updates already installed Guest Additions in a VM.
 
-        At the moment only Windows guests are supported.
+        At the moment only Windows and Linux guests are supported.
 
         Because the VirtualBox Guest Additions drivers are not WHQL-certified
         yet there might be warning dialogs during the actual Guest Additions
@@ -15336,6 +15336,9 @@
         the mentioned Windows versions anyway, the flag
         AdditionsUpdateFlag_WaitForUpdateStartOnly can be specified. See
         <link to="AdditionsUpdateFlag"/> for more information.
+
+        The guest needs to be restarted in order to make use of the updated
+        Guest Additions.
 
         <result name="VBOX_E_NOT_SUPPORTED">
           Guest OS is not supported for automated Guest Additions updates or the
