@@ -28,6 +28,7 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
+#include "internal/iprt.h"
 #include <iprt/string.h>
 
 
@@ -38,7 +39,7 @@ RTDECL(char *) RTStrEnd(const char *pszString, size_t cchMax)
         if (*pszString)
         { }
         else
-            return pszString;
+            return (char *)pszString;
         pszString++;
     }
     return NULL;
