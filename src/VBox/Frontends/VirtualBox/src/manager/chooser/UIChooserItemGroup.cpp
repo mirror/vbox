@@ -668,33 +668,37 @@ bool UIChooserItemGroup::isDropAllowed(QGraphicsSceneDragDropEvent *pEvent, UICh
     /* No drops while saving groups: */
     if (model()->isGroupSavingInProgress())
         return false;
-    /* Get mime: */
-    const QMimeData *pMimeData = pEvent->mimeData();
     /* If drag token is shown, its up to parent to decide: */
     if (where != UIChooserItemDragToken_Off)
         return parentItem()->isDropAllowed(pEvent);
+
     /* Else we should check mime format: */
+    const QMimeData *pMimeData = pEvent->mimeData();
     if (pMimeData->hasFormat(UIChooserItemGroup::className()))
     {
         /* Get passed group-item: */
         const UIChooserItemMimeData *pCastedMimeData = qobject_cast<const UIChooserItemMimeData*>(pMimeData);
         AssertMsg(pCastedMimeData, ("Can't cast passed mime-data to UIChooserItemMimeData!"));
         UIChooserItem *pItem = pCastedMimeData->item();
-        /* Make sure passed group is mutable within this group: */
-        if (pItem->toGroupItem()->isContainsLockedMachine() &&
-            !items(UIChooserNodeType_Group).contains(pItem))
+        UIChooserItemGroup *pGroupItem = pItem->toGroupItem();
+
+        /* Make sure passed machine isn't immutable within own group: */
+        if (   pGroupItem->isContainsLockedMachine()
+            && !m_groupItems.contains(pItem))
             return false;
         /* Make sure passed group is not 'this': */
         if (pItem == this)
             return false;
         /* Make sure passed group is not among our parents: */
-        const UIChooserItem *pTestedWidget = this;
-        while (UIChooserItem *pParentOfTestedWidget = pTestedWidget->parentItem())
+        const UIChooserItem *pTestedItem = this;
+        while (UIChooserItem *pParentOfTestedWidget = pTestedItem->parentItem())
         {
             if (pItem == pParentOfTestedWidget)
                 return false;
-            pTestedWidget = pParentOfTestedWidget;
+            pTestedItem = pParentOfTestedWidget;
         }
+
+        /* Allow finally: */
         return true;
     }
     else if (pMimeData->hasFormat(UIChooserItemMachine::className()))
@@ -703,23 +707,26 @@ bool UIChooserItemGroup::isDropAllowed(QGraphicsSceneDragDropEvent *pEvent, UICh
         const UIChooserItemMimeData *pCastedMimeData = qobject_cast<const UIChooserItemMimeData*>(pMimeData);
         AssertMsg(pCastedMimeData, ("Can't cast passed mime-data to UIChooserItemMimeData!"));
         UIChooserItem *pItem = pCastedMimeData->item();
-        /* Make sure passed machine is mutable within this group: */
-        if (pItem->toMachineItem()->isLockedMachine() &&
-            !items(UIChooserNodeType_Machine).contains(pItem))
+        UIChooserItemMachine *pMachineItem = pItem->toMachineItem();
+
+        /* Make sure passed machine isn't immutable within own group: */
+        if (   pMachineItem->isLockedMachine()
+            && !m_machineItems.contains(pItem))
             return false;
         switch (pEvent->proposedAction())
         {
             case Qt::MoveAction:
             {
                 /* Make sure passed item is ours or there is no other item with such id: */
-                return m_machineItems.contains(pItem) || !isContainsMachine(pItem->toMachineItem()->id());
+                return m_machineItems.contains(pItem) || !isContainsMachine(pMachineItem->id());
             }
             case Qt::CopyAction:
             {
                 /* Make sure there is no other item with such id: */
-                return !isContainsMachine(pItem->toMachineItem()->id());
+                return !isContainsMachine(pMachineItem->id());
             }
-            default: break; /* Shut up, MSC! */
+            default:
+                break;
         }
     }
     /* That was invalid mime: */

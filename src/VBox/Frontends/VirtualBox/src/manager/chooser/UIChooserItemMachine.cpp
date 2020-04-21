@@ -372,29 +372,36 @@ bool UIChooserItemMachine::isDropAllowed(QGraphicsSceneDragDropEvent *pEvent, UI
     /* No drops while saving groups: */
     if (model()->isGroupSavingInProgress())
         return false;
-    /* No drops for immutable item: */
-    if (isLockedMachine())
-        return false;
-    /* Get mime: */
-    const QMimeData *pMimeData = pEvent->mimeData();
     /* If drag token is shown, its up to parent to decide: */
     if (where != UIChooserItemDragToken_Off)
         return parentItem()->isDropAllowed(pEvent);
-    /* Else we should make sure machine is accessible: */
+
+    /* No drops for immutable item: */
+    if (isLockedMachine())
+        return false;
+    /* No drops for inaccessible item: */
     if (!accessible())
         return false;
+
     /* Else we should try to cast mime to known classes: */
+    const QMimeData *pMimeData = pEvent->mimeData();
     if (pMimeData->hasFormat(UIChooserItemMachine::className()))
     {
-        /* Make sure passed item id is not ours: */
+        /* Get passed machine-item: */
         const UIChooserItemMimeData *pCastedMimeData = qobject_cast<const UIChooserItemMimeData*>(pMimeData);
         AssertMsg(pCastedMimeData, ("Can't cast passed mime-data to UIChooserItemMimeData!"));
         UIChooserItem *pItem = pCastedMimeData->item();
         UIChooserItemMachine *pMachineItem = pItem->toMachineItem();
-        /* Make sure passed machine is mutable: */
+
+        /* No drops for immutable item: */
         if (pMachineItem->isLockedMachine())
             return false;
-        return pMachineItem->id() != id();
+        /* No drops for the same item: */
+        if (pMachineItem->id() == id())
+            return false;
+
+        /* Allow finally: */
+        return true;
     }
     /* That was invalid mime: */
     return false;
