@@ -86,6 +86,9 @@ UIChooserNodeMachine::UIChooserNodeMachine(UIChooserNode *pParent,
         case UIVirtualMachineItem::ItemType_CloudFake:
             m_pCache = new UIVirtualMachineItemCloud;
             break;
+        case UIVirtualMachineItem::ItemType_CloudReal:
+            m_pCache = new UIVirtualMachineItemCloud(pCopyFrom->cache()->toCloud()->machine());
+            break;
         default:
             break;
     }
