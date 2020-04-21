@@ -1064,6 +1064,16 @@ ifdef VBOX_QUICK
  VBOX_WITH_32_ON_64_MAIN_API=
 endif # VBOX_QUICK
 
+# Only AMD64 is supported for the main product, so disable most of the other bits.
+ifn1of ($(KBUILD_TARGET_ARCH), $(VBOX_SUPPORTED_HOST_ARCHS))
+ VBOX_WITH_MAIN=
+ VBOX_WITH_QTGUI=
+ VBOX_WITH_VBOXSDL=
+ VBOX_WITH_VBOXHEADLESS=
+ VBOX_WITH_WEBSERVICES=
+ VBOX_WITH_DEBUGGER_GUI=
+endif
+
 ifeq ($(KBUILD_TARGET),darwin)
  # Don't bother with SDL ttf for now.
  VBOX_WITH_SECURELABEL=
