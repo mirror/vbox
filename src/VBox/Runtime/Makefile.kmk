@@ -1810,7 +1810,6 @@ RuntimeBldProg_SOURCES         = \
 	common/string/RTStrCopy.cpp \
 	common/string/RTStrCopyEx.cpp \
 	common/string/RTStrCopyP.cpp \
-	common/string/RTStrEnd.cpp \
 	common/string/RTStrIStartsWith.cpp \
 	common/string/RTStrNCmp.cpp \
 	common/string/RTStrNLen.cpp \
