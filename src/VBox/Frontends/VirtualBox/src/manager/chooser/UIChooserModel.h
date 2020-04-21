@@ -362,6 +362,8 @@ private:
       * @{ */
         /** Build tree for main root. */
         void buildTreeForMainRoot();
+        /** Update tree for main root. */
+        void updateTreeForMainRoot();
 
         /** Removes machine @a items. */
         void removeItems(const QList<UIChooserItem*> &items);

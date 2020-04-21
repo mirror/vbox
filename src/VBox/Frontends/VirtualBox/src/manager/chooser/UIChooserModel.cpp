@@ -85,8 +85,6 @@ void UIChooserModel::init()
 
     /* Build tree for main root: */
     buildTreeForMainRoot();
-    updateNavigationItemList();
-    updateLayout();
 
     /* Load last selected-item: */
     loadLastSelectedItem();
@@ -659,8 +657,7 @@ void UIChooserModel::sltLocalMachineRegistered(const QUuid &uId, const bool fReg
     if (!fRegistered)
     {
         /* Update tree for main root: */
-        updateNavigationItemList();
-        updateLayout();
+        updateTreeForMainRoot();
 
         /* Make sure selected-item present, if possible: */
         if (!firstSelectedItem() && !navigationItems().isEmpty())
@@ -682,8 +679,6 @@ void UIChooserModel::sltLocalMachineRegistered(const QUuid &uId, const bool fReg
         {
             /* Rebuild tree for main root: */
             buildTreeForMainRoot();
-            updateNavigationItemList();
-            updateLayout();
 
             /* Select newly added item: */
             setSelectedItem(root()->searchForItem(uId.toString(),
@@ -703,8 +698,7 @@ void UIChooserModel::sltCloudMachineRegistered(const QString &strProviderName, c
     if (!fRegistered)
     {
         /* Update tree for main root: */
-        updateNavigationItemList();
-        updateLayout();
+        updateTreeForMainRoot();
 
         /* Make sure selected-item present, if possible: */
         if (!firstSelectedItem() && !navigationItems().isEmpty())
@@ -723,8 +717,6 @@ void UIChooserModel::sltCloudMachineRegistered(const QString &strProviderName, c
     {
         /* Rebuild tree for main root: */
         buildTreeForMainRoot();
-        updateNavigationItemList();
-        updateLayout();
 
         /* Select newly added item: */
         setSelectedItem(root()->searchForItem(uId.toString(),
@@ -743,8 +735,6 @@ void UIChooserModel::sltReloadMachine(const QUuid &uId)
     {
         /* Rebuild tree for main root: */
         buildTreeForMainRoot();
-        updateNavigationItemList();
-        updateLayout();
 
         /* Select newly added item: */
         CMachine comMachine = uiCommon().virtualBox().FindMachine(uId.toString());
@@ -781,8 +771,6 @@ void UIChooserModel::sltHandleCloudListMachinesTaskComplete(UITask *pTask)
 
     /* Rebuild tree for main root: */
     buildTreeForMainRoot();
-    updateNavigationItemList();
-    updateLayout();
 
     /* Restore selection if there was some item before: */
     if (!strDefinition.isNull())
@@ -841,8 +829,6 @@ void UIChooserModel::sltSortGroup()
 
     /* Rebuild tree for main root: */
     buildTreeForMainRoot();
-    updateNavigationItemList();
-    updateLayout();
 }
 
 void UIChooserModel::sltUngroupSelectedGroup()
@@ -928,8 +914,7 @@ void UIChooserModel::sltUngroupSelectedGroup()
     delete pCurrentNode;
 
     /* And update model: */
-    updateNavigationItemList();
-    updateLayout();
+    updateTreeForMainRoot();
     if (!copiedItems.isEmpty())
     {
         setSelectedItems(copiedItems);
@@ -1057,8 +1042,7 @@ void UIChooserModel::sltGroupSelectedMachines()
 
     /* Update model: */
     wipeOutEmptyGroups();
-    updateNavigationItemList();
-    updateLayout();
+    updateTreeForMainRoot();
     setSelectedItem(pNewGroupItem);
     saveGroupSettings();
 }
@@ -1068,7 +1052,6 @@ void UIChooserModel::sltSortParentGroup()
     /* Check if action is enabled: */
     if (!actionPool()->action(UIActionIndexST_M_Machine_S_SortParent)->isEnabled())
         return;
-
     /* Only if some item selected: */
     if (!firstSelectedItem())
         return;
@@ -1078,8 +1061,6 @@ void UIChooserModel::sltSortParentGroup()
 
     /* Rebuild tree for main root: */
     buildTreeForMainRoot();
-    updateNavigationItemList();
-    updateLayout();
 }
 
 void UIChooserModel::sltPerformRefreshAction()
@@ -1647,6 +1628,15 @@ void UIChooserModel::buildTreeForMainRoot()
     /* Install root as event-filter for scene view,
      * we need QEvent::Scroll events from it: */
     root()->installEventFilterHelper(view());
+
+    /* Update tree for main root: */
+    updateTreeForMainRoot();
+}
+
+void UIChooserModel::updateTreeForMainRoot()
+{
+    updateNavigationItemList();
+    updateLayout();
 }
 
 void UIChooserModel::removeItems(const QList<UIChooserItem*> &itemsToRemove)
@@ -1664,8 +1654,7 @@ void UIChooserModel::removeItems(const QList<UIChooserItem*> &itemsToRemove)
 
     /* And update model: */
     wipeOutEmptyGroups();
-    updateNavigationItemList();
-    updateLayout();
+    updateTreeForMainRoot();
     if (!navigationItems().isEmpty())
     {
         setSelectedItem(navigationItems().first());
