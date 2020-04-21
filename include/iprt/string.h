@@ -2610,8 +2610,6 @@ RTDECL(size_t) RTStrNLen(const char *pszString, size_t cchMax);
  */
 RTDECL(int) RTStrNLenEx(const char *pszString, size_t cchMax, size_t *pcch);
 
-RT_C_DECLS_END
-
 /** The maximum size argument of a memchr call. */
 #define RTSTR_MEMCHR_MAX            ((~(size_t)0 >> 1) - 15)
 
@@ -2624,41 +2622,7 @@ RT_C_DECLS_END
  * @param   pszString   The string.
  * @param   cchMax      The max string length.  RTSTR_MAX is fine.
  */
-#if defined(__cplusplus) && !defined(DOXYGEN_RUNNING)
-DECLINLINE(char const *) RTStrEnd(char const *pszString, size_t cchMax)
-{
-    /* Avoid potential issues with memchr seen in glibc.
-     * See sysdeps/x86_64/memchr.S in glibc versions older than 2.11 */
-    while (cchMax > RTSTR_MEMCHR_MAX)
-    {
-        char const *pszRet = (char const *)memchr(pszString, '\0', RTSTR_MEMCHR_MAX);
-        if (RT_LIKELY(pszRet))
-            return pszRet;
-        pszString += RTSTR_MEMCHR_MAX;
-        cchMax    -= RTSTR_MEMCHR_MAX;
-    }
-    return (char const *)memchr(pszString, '\0', cchMax);
-}
-
-DECLINLINE(char *) RTStrEnd(char *pszString, size_t cchMax)
-#else
-DECLINLINE(char *) RTStrEnd(const char *pszString, size_t cchMax)
-#endif
-{
-    /* Avoid potential issues with memchr seen in glibc.
-     * See sysdeps/x86_64/memchr.S in glibc versions older than 2.11 */
-    while (cchMax > RTSTR_MEMCHR_MAX)
-    {
-        char *pszRet = (char *)memchr(pszString, '\0', RTSTR_MEMCHR_MAX);
-        if (RT_LIKELY(pszRet))
-            return pszRet;
-        pszString += RTSTR_MEMCHR_MAX;
-        cchMax    -= RTSTR_MEMCHR_MAX;
-    }
-    return (char *)memchr(pszString, '\0', cchMax);
-}
-
-RT_C_DECLS_BEGIN
+RTDECL(char *) RTStrEnd(char const *pszString, size_t cchMax);
 
 /**
  * Finds the offset at which a simple character first occurs in a string.
@@ -2676,7 +2640,6 @@ DECLINLINE(size_t) RTStrOffCharOrTerm(const char *pszHaystack, char chNeedle)
         psz++;
     return psz - pszHaystack;
 }
-
 
 /**
  * Matches a simple string pattern.

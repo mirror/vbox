@@ -95,6 +95,7 @@ VBOXMOD_OBJS += \
 	common/string/RTStrCopy.o \
 	common/string/RTStrCopyEx.o \
 	common/string/RTStrCopyP.o \
+	common/string/RTStrEnd.o \
 	common/string/RTStrICmpAscii.o \
 	common/string/RTStrNICmpAscii.o \
 	common/string/RTStrNCmp.o \

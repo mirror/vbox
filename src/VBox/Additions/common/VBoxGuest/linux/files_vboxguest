@@ -141,6 +141,7 @@ FILES_VBOXGUEST_NOBIN=" \
     ${PATH_ROOT}/src/VBox/Runtime/common/string/RTStrCopy.cpp=>common/string/RTStrCopy.c \
     ${PATH_ROOT}/src/VBox/Runtime/common/string/RTStrCopyEx.cpp=>common/string/RTStrCopyEx.c \
     ${PATH_ROOT}/src/VBox/Runtime/common/string/RTStrCopyP.cpp=>common/string/RTStrCopyP.c \
+    ${PATH_ROOT}/src/VBox/Runtime/common/string/RTStrEnd.cpp=>common/string/RTStrEnd.c \
     ${PATH_ROOT}/src/VBox/Runtime/common/string/RTStrICmpAscii.cpp=>common/string/RTStrICmpAscii.c \
     ${PATH_ROOT}/src/VBox/Runtime/common/string/RTStrNICmpAscii.cpp=>common/string/RTStrNICmpAscii.c \
     ${PATH_ROOT}/src/VBox/Runtime/common/string/RTStrNCmp.cpp=>common/string/RTStrNCmp.c \

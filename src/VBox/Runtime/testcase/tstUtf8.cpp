@@ -1044,6 +1044,45 @@ static void testStrEnd(RTTEST hTest)
     for (size_t i = 0; i < _1M; i++)
         RTTESTI_CHECK(RTStrEnd(s_szEmpty, ~i) == &s_szEmpty[0]);
 
+    /* Check the implementation won't ever overshoot the '\0' in the input in
+       anyway that may lead to a SIGSEV. (VC++ 14.1 does this) */
+    size_t const cchStr = 1023;
+    char *pszStr = (char *)RTTestGuardedAllocTail(hTest, cchStr + 1);
+    memset(pszStr, ' ', cchStr);
+    char * const pszStrEnd = &pszStr[cchStr];
+    *pszStrEnd = '\0';
+    RTTEST_CHECK_RETV(hTest, strlen(pszStr) == cchStr);
+
+    for (size_t off = 0; off <= cchStr; off++)
+    {
+        RTTEST_CHECK(hTest, RTStrEnd(&pszStr[off], cchStr + 1 - off) == pszStrEnd);
+        RTTEST_CHECK(hTest, RTStrEnd(&pszStr[off], RTSTR_MAX) == pszStrEnd);
+
+        RTTEST_CHECK(hTest, memchr(&pszStr[off], '\0', cchStr + 1 - off) == pszStrEnd);
+        RTTEST_CHECK(hTest, strchr(&pszStr[off], '\0') == pszStrEnd);
+        RTTEST_CHECK(hTest, strchr(&pszStr[off], '?') == NULL);
+
+        size_t cchMax = 0;
+        for (; cchMax <= cchStr - off; cchMax++)
+        {
+            const char *pszRet = RTStrEnd(&pszStr[off], cchMax);
+            if (pszRet != NULL)
+            {
+                RTTestFailed(hTest, "off=%zu cchMax=%zu: %p, expected NULL\n", off, cchMax, pszRet);
+                break;
+            }
+        }
+        for (; cchMax <= _8K; cchMax++)
+        {
+            const char *pszRet = RTStrEnd(&pszStr[off], cchMax);
+            if (pszRet != pszStrEnd)
+            {
+                RTTestFailed(hTest, "off=%zu cchMax=%zu: off by %p\n", off, cchMax, pszRet);
+                break;
+            }
+        }
+    }
+    RTTestGuardedFree(hTest, pszStr);
 }
 
 
@@ -1423,9 +1462,10 @@ static void testNoTransation(RTTEST hTest)
     rc = RTStrUtf8ToCurrentCP(&pszOut, pszTest1);
     if (rc == VINF_SUCCESS)
     {
-        RTTESTI_CHECK(!strcmp(pszOut, pszTest1));
         RTTestIPrintf(RTTESTLVL_ALWAYS, "CurrentCP is UTF-8 or similar (LC_ALL=%s LANG=%s LC_CTYPE=%s)\n",
                       RTEnvGet("LC_ALL"), RTEnvGet("LANG"), RTEnvGet("LC_CTYPE"));
+        if (strcmp(pszOut, pszTest1))
+            RTTestFailed(hTest, "mismatch\nutf8: %.*Rhxs\n got: %.*Rhxs\n", strlen(pszTest1), pszTest1, strlen(pszOut), pszOut);
         RTStrFree(pszOut);
     }
     else

@@ -788,7 +788,8 @@ RuntimeR3_SOURCES.x86 += \
 	common/asm/ASMSerializeInstruction-rdtscp.asm \
 	common/dbg/dbgstackdumpself.cpp \
 	common/dbg/dbgstackdumpself-amd64-x86.asm \
-	common/math/bignum-amd64-x86.asm
+	common/math/bignum-amd64-x86.asm \
+       common/string/RTStrEnd.asm
 RuntimeR3_SOURCES.amd64 += \
 	common/asm/ASMCpuIdExSlow.asm \
 	common/asm/ASMAtomicUoAndU64.asm \
@@ -812,7 +813,8 @@ RuntimeR3_SOURCES.amd64 += \
 	common/dbg/dbgstackdumpself.cpp \
 	common/dbg/dbgstackdumpself-amd64-x86.asm \
 	common/math/bignum-amd64-x86.asm \
-	common/math/RTUInt128MulByU64.asm
+	common/math/RTUInt128MulByU64.asm \
+       common/string/RTStrEnd.asm
 
 # Some versions of GCC might require this.
 RuntimeR3_SOURCES.x86 += \
@@ -822,6 +824,15 @@ RuntimeR3_SOURCES.x86 += \
 	common/asm/ASMAtomicReadU64.asm	\
 	common/asm/ASMAtomicUoReadU64.asm
 
+# Some non-assembly for non-AMD64 / non-x86 targets:
+RuntimeR3_SOURCES.arm32 += \
+	common/string/RTStrEnd.cpp
+RuntimeR3_SOURCES.arm64 += \
+	common/string/RTStrEnd.cpp
+RuntimeR3_SOURCES.sparc32 += \
+	common/string/RTStrEnd.cpp
+RuntimeR3_SOURCES.sparc64 += \
+	common/string/RTStrEnd.cpp
 
 # VBox specific stuff.
 RuntimeR3_SOURCES += \
@@ -1799,6 +1810,7 @@ RuntimeBldProg_SOURCES         = \
 	common/string/RTStrCopy.cpp \
 	common/string/RTStrCopyEx.cpp \
 	common/string/RTStrCopyP.cpp \
+	common/string/RTStrEnd.cpp \
 	common/string/RTStrIStartsWith.cpp \
 	common/string/RTStrNCmp.cpp \
 	common/string/RTStrNLen.cpp \
@@ -2285,7 +2297,8 @@ $$(VBoxRT_0_OUTDIR)/VBoxRT.def: \
 		,$(PATH_SUB_CURRENT)/r3/win/VBoxRT-openssl-pre-1.1.def \
 		,$(PATH_SUB_CURRENT)/r3/win/VBoxRT-openssl-1.1plus.def )\
 		$(if-expr "$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)" == "win.x86" && defined(VBOX_WITH_MORE_NT4_COMPAT_BINARIES)\
-		,$(PATH_SUB_CURRENT)/r3/win/VBoxRT-msvcr100-win32.def ,) #$(PATH_SUB_CURRENT)/r3/win/VBoxRT-msvcp100-win32.def
+		,$(PATH_SUB_CURRENT)/r3/win/VBoxRT-msvcr100-win32.def ,) \
+		| $$(dir $$@) #$(PATH_SUB_CURRENT)/r3/win/VBoxRT-msvcp100-win32.def
 	$(RM) -f -- $@
 	$(REDIRECT) -wto $@ -- $(CAT_EXT) $^
 endif
@@ -2670,7 +2683,8 @@ RuntimeR0_SOURCES.x86 += \
 	common/asm/ASMFxSave.asm \
 	common/asm/ASMFxRstor.asm \
 	common/asm/ASMRdMsrEx.asm \
-	common/asm/ASMWrMsrEx.asm
+	common/asm/ASMWrMsrEx.asm \
+	common/string/RTStrEnd.asm
 RuntimeR0_SOURCES.amd64 += \
 	common/asm/ASMCpuIdExSlow.asm \
 	common/asm/ASMAtomicUoAndU64.asm \
@@ -2687,7 +2701,16 @@ RuntimeR0_SOURCES.amd64 += \
 	common/asm/ASMFxSave.asm \
 	common/asm/ASMFxRstor.asm \
 	common/asm/ASMRdMsrEx.asm \
-	common/asm/ASMWrMsrEx.asm
+	common/asm/ASMWrMsrEx.asm \
+	common/string/RTStrEnd.asm
+RuntimeR0_SOURCES.arm32 += \
+	common/string/RTStrEnd.cpp
+RuntimeR0_SOURCES.arm64 += \
+	common/string/RTStrEnd.cpp
+RuntimeR0_SOURCES.sparc32 += \
+	common/string/RTStrEnd.cpp
+RuntimeR0_SOURCES.sparc64 += \
+	common/string/RTStrEnd.cpp
 
 #if1of ($(KBUILD_TARGET_ARCH),amd64 x86)
 # RuntimeR0_SOURCES += common/time/timesupA.asm
@@ -2848,14 +2871,23 @@ RuntimeR0Drv_SOURCES.amd64 = \
 	common/asm/ASMRdMsrEx.asm \
 	common/asm/ASMWrMsrEx.asm \
 	common/math/bignum-amd64-x86.asm \
-	common/math/RTUInt128MulByU64.asm
+	common/math/RTUInt128MulByU64.asm \
+	common/string/RTStrEnd.asm
 RuntimeR0Drv_SOURCES.x86   = \
 	common/asm/ASMCpuIdExSlow.asm \
 	common/asm/ASMMemFirstMismatchingU8.asm \
 	common/asm/ASMRdMsrEx.asm \
 	common/asm/ASMWrMsrEx.asm \
-	common/math/bignum-amd64-x86.asm
-
+	common/math/bignum-amd64-x86.asm \
+	common/string/RTStrEnd.asm
+RuntimeR0Drv_SOURCES.arm32 += \
+	common/string/RTStrEnd.cpp
+RuntimeR0Drv_SOURCES.arm64 += \
+	common/string/RTStrEnd.cpp
+RuntimeR0Drv_SOURCES.sparc32 += \
+	common/string/RTStrEnd.cpp
+RuntimeR0Drv_SOURCES.sparc64 += \
+	common/string/RTStrEnd.cpp
 
 RuntimeR0Drv_SOURCES.linux = \
 	common/misc/thread.cpp \
@@ -3490,6 +3522,7 @@ ifdef VBOX_WITH_RAW_MODE
  	common/string/RTStrCmp.cpp \
  	common/string/RTStrCopy.cpp \
  	common/string/RTStrCopyEx.cpp \
+ 	common/string/RTStrEnd.asm \
  	common/string/RTStrICmpAscii.cpp \
  	common/table/avllu32.cpp \
  	common/table/avlou32.cpp \
