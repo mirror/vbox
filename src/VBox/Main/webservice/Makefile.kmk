@@ -218,7 +218,8 @@ endif
 if "$(VBOX_VCC_TOOL_STEM)" >= "VCC141"
  # -wd4774: string(532): warning C4774: 'sprintf_s' : format string expected in argument 3 is not a string literal
  # -wd4458: stdsoap2.h(2644): warning C4458: declaration of 'type' hides class member
- TEMPLATE_VBOXWEBR3EXE_CXXFLAGS.win = $(TEMPLATE_VBOXR3EXE_CXXFLAGS.win) -wd4774 -wd4458
+ # soapc-1.cpp(182) : warning C4883: 'soap_getelement': function size suppresses optimizations
+ TEMPLATE_VBOXWEBR3EXE_CXXFLAGS.win = $(TEMPLATE_VBOXR3EXE_CXXFLAGS.win) -wd4774 -wd4458 -wd4883
 endif
 
 ifdef VBOX_GSOAP_INSTALLED
