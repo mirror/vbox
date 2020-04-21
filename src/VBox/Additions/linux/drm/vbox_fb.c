@@ -416,7 +416,7 @@ int vbox_fbdev_init(struct drm_device *dev)
 {
 	struct vbox_private *vbox = dev->dev_private;
 	struct vbox_fbdev *fbdev;
-	int ret;
+	int ret = 0;
 
 	fbdev = devm_kzalloc(dev->dev, sizeof(*fbdev), GFP_KERNEL);
 	if (!fbdev)
@@ -430,9 +430,11 @@ int vbox_fbdev_init(struct drm_device *dev)
 #else
 	drm_fb_helper_prepare(dev, &fbdev->helper, &vbox_fb_helper_funcs);
 #endif
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 11, 0) || defined(RHEL_75)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 7, 0)
+        ret = drm_fb_helper_init(dev, &fbdev->helper);
+#elif LINUX_VERSION_CODE >= KERNEL_VERSION(4, 11, 0) || defined(RHEL_75)
 	ret = drm_fb_helper_init(dev, &fbdev->helper, vbox->num_crtcs);
-#else
+#else /* KERNEL_VERSION < 4.11.0 */
 	ret =
 	    drm_fb_helper_init(dev, &fbdev->helper, vbox->num_crtcs,
 			       vbox->num_crtcs);
@@ -440,9 +442,11 @@ int vbox_fbdev_init(struct drm_device *dev)
 	if (ret)
 		return ret;
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 7, 0)
 	ret = drm_fb_helper_single_add_all_connectors(&fbdev->helper);
 	if (ret)
 		goto err_fini;
+#endif
 
 	/* disable all the possible outputs/crtcs before entering KMS mode */
 	drm_helper_disable_unused_functions(dev);
