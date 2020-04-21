@@ -1015,7 +1015,7 @@ HRESULT Machine::setName(const com::Utf8Str &aName)
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    HRESULT rc = i_checkStateDependency(MutableStateDep);
+    HRESULT rc = i_checkStateDependency(MutableOrSavedStateDep);
     if (FAILED(rc)) return rc;
 
     i_setModified(IsModified_MachineData);
