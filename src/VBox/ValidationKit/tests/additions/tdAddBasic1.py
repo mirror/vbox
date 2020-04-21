@@ -417,29 +417,37 @@ class tdAddBasic1(vbox.TestDriver):                                         # py
             return (False, oTxsSession);
 
         if fRc:
-            #
-            # The actual install.
-            # Also tell the installer to produce the appropriate log files.
-            #
-            # Make sure to add "--nox11" to the makeself wrapper in order to not getting any blocking
-            # xterm window spawned.
-            fRc = self.txsRunTest(oTxsSession, 'VBoxLinuxAdditions.run', 30 * 60 * 1000,
-                                  '/bin/sh', ('/bin/sh', '${CDROM}/VBoxLinuxAdditions.run', '--nox11'));
-            ## @todo We need to figure out why the result is != 0 when running the .run installer. For now just ignore it.
-            if not fRc:
-                reporter.error('Installing Linux Additions failed (isSuccess=%s, iResult=%d, see log file for details)'
-                               % (oTxsSession.isSuccess(), oTxsSession.getResult()));
 
-            #
-            # Download log files.
-            # Ignore errors as all files above might not be present for whatever reason.
-            #
-            asLogFile = [];
-            asLogFile.append('/var/log/vboxadd-install.log');
-            self.txsDownloadFiles(oSession, oTxsSession, asLogFile, fIgnoreErrors = True);
+            # Make sure the new, updated kernel is in charge, which eventually got installed by the updating stuff above.
+            # Otherwise building the Guest Additions module might not work correctly.
+            reporter.log('Rebooting guest in order to get the latest kernel active ...');
+            (fRc, oTxsSession) = self.txsRebootAndReconnectViaTcp(oSession, oTxsSession, cMsTimeout);
+            if fRc is True:
 
-        if fRc:
-            (fRc, oTxsSession) = self.txsRebootAndReconnectViaTcp(oSession, oTxsSession, cMsTimeout = 3 * 60000);
+                #
+                # The actual install.
+                # Also tell the installer to produce the appropriate log files.
+                #
+                # Make sure to add "--nox11" to the makeself wrapper in order to not getting any blocking
+                # xterm window spawned.
+                fRc = self.txsRunTest(oTxsSession, 'VBoxLinuxAdditions.run', 30 * 60 * 1000,
+                                      '/bin/sh', ('/bin/sh', '${CDROM}/VBoxLinuxAdditions.run', '--nox11'));
+                ## @todo We need to figure out why the result is != 0 when running the .run installer. For now just ignore it.
+                if not fRc:
+                    reporter.error('Installing Linux Additions failed (isSuccess=%s, iResult=%d, see log file for details)'
+                                   % (oTxsSession.isSuccess(), oTxsSession.getResult()));
+
+                #
+                # Download log files.
+                # Ignore errors as all files above might not be present for whatever reason.
+                #
+                asLogFile = [];
+                asLogFile.append('/var/log/vboxadd-install.log');
+                self.txsDownloadFiles(oSession, oTxsSession, asLogFile, fIgnoreErrors = True);
+
+                # Do the final reboot to get the just installed Guest Additions up and running.
+                if fRc:
+                    (fRc, oTxsSession) = self.txsRebootAndReconnectViaTcp(oSession, oTxsSession, cMsTimeout);
 
         return (fRc, oTxsSession);
 
