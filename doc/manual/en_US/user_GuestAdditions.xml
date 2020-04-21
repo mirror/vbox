@@ -2137,10 +2137,10 @@ Name: /VirtualBox/GuestInfo/OS/Version, value: #59-Ubuntu SMP Thu Jan 28 01:23:0
     </para>
 
     <para>
-      The Guest Additions for Windows allow for automatic updating. This
-      applies for already installed Guest Additions versions. Also,
-      copying files from host to the guest as well as remotely creating
-      guest directories is available.
+      The Guest Additions for Windows and Linux allow for automatic updating.
+      This applies for already installed Guest Additions versions. Also,
+      copying files from/to the host as well as various other file system
+      operations are available.
     </para>
 
     <para>
