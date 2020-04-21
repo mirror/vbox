@@ -35,6 +35,9 @@
  *    supported desktop environment.  Dynamic resizing should work for the first
  *    screen, and enabling others should not be possible.
  *  - When VMSVGA is not enabled, VBoxClient --vmsvga should never stay running.
+ *  - The following assumptions are done and should be taken into account when reading/chaning the code:
+ *    # The order of the outputs (monitors) is assumed to be the same in RANDROUTPUT array and
+        XRRScreenResources.outputs array.
  */
 #include <stdio.h>
 #include <dlfcn.h>
@@ -52,6 +55,10 @@
 #include <X11/Xlibint.h>
 #include <X11/extensions/Xrandr.h>
 #include <X11/extensions/panoramiXproto.h>
+
+#define MILLIS_PER_INCH (25.4)
+#define DEFAULT_DPI (96.0)
+
 
 /** Maximum number of supported screens.  DRM and X11 both limit this to 32. */
 /** @todo if this ever changes, dynamically allocate resizeable arrays in the
@@ -103,6 +110,9 @@ AssertCompileSize(struct X11VMWRECT, 8);
 struct X11CONTEXT
 {
     Display *pDisplay;
+    Window rootWindow;
+    int iDefaultScreen;
+    XRRScreenResources *pScreenResources;
     int hRandRMajor;
     int hVMWCtrlMajorOpCode;
     int hRandRMinor;
@@ -111,13 +121,25 @@ struct X11CONTEXT
     int hEventMask;
     /** The number of outputs (monitors, including disconnect ones) xrandr reports. */
     int hOutputCount;
-    Window rootWindow;
     void *pRandLibraryHandle;
+    /** Function pointers we used if we dlopen libXrandr instead of linking. */
     void (*pXRRSelectInput) (Display *, Window, int);
     Bool (*pXRRQueryExtension) (Display *, int *, int *);
     Status (*pXRRQueryVersion) (Display *, int *, int*);
     XRRMonitorInfo* (*pXRRGetMonitors)(Display *, Window, Bool, int *);
+    XRRScreenResources* (*pXRRGetScreenResources)(Display *, Window);
+    Status (*pXRRSetCrtcConfig)(Display *, XRRScreenResources *, RRCrtc,
+                                Time, int, int, RRMode, Rotation, RROutput *, int);
     void (*pXRRFreeMonitors)(XRRMonitorInfo *);
+    void (*pXRRFreeScreenResources)(XRRScreenResources *);
+    void (*pXRRFreeModeInfo)(XRRModeInfo *);
+    void (*pXRRFreeOutputInfo)(XRROutputInfo *);
+    void (*pXRRSetScreenSize)(Display *, Window, int, int, int, int);
+    int (*pXRRUpdateConfiguration)(XEvent *event);
+    XRRModeInfo* (*pXRRAllocModeInfo)(_Xconst char *, int);
+    RRMode (*pXRRCreateMode) (Display *, Window, XRRModeInfo *);
+    XRROutputInfo* (*pXRRGetOutputInfo) (Display *, XRRScreenResources *, RROutput);
+    void (*pXRRAddOutputMode)(Display *, RROutput, RRMode);
 };
 
 static X11CONTEXT x11Context;
@@ -126,10 +148,6 @@ static X11CONTEXT x11Context;
 #define MAX_COMMAND_LINE_LEN 512
 #define MAX_MODE_LINE_LEN 512
 
-static const char *szDefaultOutputNamePrefix = "Virtual";
-static const char *pcszXrandr = "xrandr";
-static const char *pcszCvt = "cvt";
-
 struct RANDROUTPUT
 {
     int32_t x;
@@ -137,6 +155,24 @@ struct RANDROUTPUT
     uint32_t width;
     uint32_t height;
     bool fEnabled;
+};
+
+struct DisplayModeR {
+
+    /* These are the values that the user sees/provides */
+    int Clock;                  /* pixel clock freq (kHz) */
+    int HDisplay;               /* horizontal timing */
+    int HSyncStart;
+    int HSyncEnd;
+    int HTotal;
+    int HSkew;
+    int VDisplay;               /* vertical timing */
+    int VSyncStart;
+    int VSyncEnd;
+    int VTotal;
+    int VScan;
+    float HSync;
+    float VRefresh;
 };
 
 /** Forward declarations. */
@@ -153,6 +189,232 @@ static int determineOutputCount();
             return VERR_NOT_FOUND;                                      \
         }                                                               \
     }while(0)
+
+
+/** A slightly modified version of the xf86CVTMode function from xf86cvt.c
+  * from the xserver source code. Computes several parameters of a display mode
+  * out of horizontal and vertical resolutions. Replicated here to avoid further
+  * dependencies. */
+DisplayModeR f86CVTMode(int HDisplay, int VDisplay, float VRefresh, Bool Reduced,
+            Bool Interlaced)
+{
+    DisplayModeR Mode;
+
+    /* 1) top/bottom margin size (% of height) - default: 1.8 */
+#define CVT_MARGIN_PERCENTAGE 1.8
+
+    /* 2) character cell horizontal granularity (pixels) - default 8 */
+#define CVT_H_GRANULARITY 8
+
+    /* 4) Minimum vertical porch (lines) - default 3 */
+#define CVT_MIN_V_PORCH 3
+
+    /* 4) Minimum number of vertical back porch lines - default 6 */
+#define CVT_MIN_V_BPORCH 6
+
+    /* Pixel Clock step (kHz) */
+#define CVT_CLOCK_STEP 250
+
+    Bool Margins = false;
+    float VFieldRate, HPeriod;
+    int HDisplayRnd, HMargin;
+    int VDisplayRnd, VMargin, VSync;
+    float Interlace;            /* Please rename this */
+
+    /* CVT default is 60.0Hz */
+    if (!VRefresh)
+        VRefresh = 60.0;
+
+    /* 1. Required field rate */
+    if (Interlaced)
+        VFieldRate = VRefresh * 2;
+    else
+        VFieldRate = VRefresh;
+
+    /* 2. Horizontal pixels */
+    HDisplayRnd = HDisplay - (HDisplay % CVT_H_GRANULARITY);
+
+    /* 3. Determine left and right borders */
+    if (Margins) {
+        /* right margin is actually exactly the same as left */
+        HMargin = (((float) HDisplayRnd) * CVT_MARGIN_PERCENTAGE / 100.0);
+        HMargin -= HMargin % CVT_H_GRANULARITY;
+    }
+    else
+        HMargin = 0;
+
+    /* 4. Find total active pixels */
+    Mode.HDisplay = HDisplayRnd + 2 * HMargin;
+
+    /* 5. Find number of lines per field */
+    if (Interlaced)
+        VDisplayRnd = VDisplay / 2;
+    else
+        VDisplayRnd = VDisplay;
+
+    /* 6. Find top and bottom margins */
+    /* nope. */
+    if (Margins)
+        /* top and bottom margins are equal again. */
+        VMargin = (((float) VDisplayRnd) * CVT_MARGIN_PERCENTAGE / 100.0);
+    else
+        VMargin = 0;
+
+    Mode.VDisplay = VDisplay + 2 * VMargin;
+
+    /* 7. Interlace */
+    if (Interlaced)
+        Interlace = 0.5;
+    else
+        Interlace = 0.0;
+
+    /* Determine VSync Width from aspect ratio */
+    if (!(VDisplay % 3) && ((VDisplay * 4 / 3) == HDisplay))
+        VSync = 4;
+    else if (!(VDisplay % 9) && ((VDisplay * 16 / 9) == HDisplay))
+        VSync = 5;
+    else if (!(VDisplay % 10) && ((VDisplay * 16 / 10) == HDisplay))
+        VSync = 6;
+    else if (!(VDisplay % 4) && ((VDisplay * 5 / 4) == HDisplay))
+        VSync = 7;
+    else if (!(VDisplay % 9) && ((VDisplay * 15 / 9) == HDisplay))
+        VSync = 7;
+    else                        /* Custom */
+        VSync = 10;
+
+    if (!Reduced) {             /* simplified GTF calculation */
+
+        /* 4) Minimum time of vertical sync + back porch interval (µs)
+         * default 550.0 */
+#define CVT_MIN_VSYNC_BP 550.0
+
+        /* 3) Nominal HSync width (% of line period) - default 8 */
+#define CVT_HSYNC_PERCENTAGE 8
+
+        float HBlankPercentage;
+        int VSyncAndBackPorch, VBackPorch;
+        int HBlank;
+
+        /* 8. Estimated Horizontal period */
+        HPeriod = ((float) (1000000.0 / VFieldRate - CVT_MIN_VSYNC_BP)) /
+            (VDisplayRnd + 2 * VMargin + CVT_MIN_V_PORCH + Interlace);
+
+        /* 9. Find number of lines in sync + backporch */
+        if (((int) (CVT_MIN_VSYNC_BP / HPeriod) + 1) <
+            (VSync + CVT_MIN_V_PORCH))
+            VSyncAndBackPorch = VSync + CVT_MIN_V_PORCH;
+        else
+            VSyncAndBackPorch = (int) (CVT_MIN_VSYNC_BP / HPeriod) + 1;
+
+        /* 10. Find number of lines in back porch */
+        VBackPorch = VSyncAndBackPorch - VSync;
+        (void) VBackPorch;
+
+        /* 11. Find total number of lines in vertical field */
+        Mode.VTotal = VDisplayRnd + 2 * VMargin + VSyncAndBackPorch + Interlace
+            + CVT_MIN_V_PORCH;
+
+        /* 5) Definition of Horizontal blanking time limitation */
+        /* Gradient (%/kHz) - default 600 */
+#define CVT_M_FACTOR 600
+
+        /* Offset (%) - default 40 */
+#define CVT_C_FACTOR 40
+
+        /* Blanking time scaling factor - default 128 */
+#define CVT_K_FACTOR 128
+
+        /* Scaling factor weighting - default 20 */
+#define CVT_J_FACTOR 20
+
+#define CVT_M_PRIME CVT_M_FACTOR * CVT_K_FACTOR / 256
+#define CVT_C_PRIME (CVT_C_FACTOR - CVT_J_FACTOR) * CVT_K_FACTOR / 256 + \
+        CVT_J_FACTOR
+
+        /* 12. Find ideal blanking duty cycle from formula */
+        HBlankPercentage = CVT_C_PRIME - CVT_M_PRIME * HPeriod / 1000.0;
+
+        /* 13. Blanking time */
+        if (HBlankPercentage < 20)
+            HBlankPercentage = 20;
+
+        HBlank = Mode.HDisplay * HBlankPercentage / (100.0 - HBlankPercentage);
+        HBlank -= HBlank % (2 * CVT_H_GRANULARITY);
+
+        /* 14. Find total number of pixels in a line. */
+        Mode.HTotal = Mode.HDisplay + HBlank;
+
+        /* Fill in HSync values */
+        Mode.HSyncEnd = Mode.HDisplay + HBlank / 2;
+
+        Mode.HSyncStart = Mode.HSyncEnd -
+            (Mode.HTotal * CVT_HSYNC_PERCENTAGE) / 100;
+        Mode.HSyncStart += CVT_H_GRANULARITY -
+            Mode.HSyncStart % CVT_H_GRANULARITY;
+
+        /* Fill in VSync values */
+        Mode.VSyncStart = Mode.VDisplay + CVT_MIN_V_PORCH;
+        Mode.VSyncEnd = Mode.VSyncStart + VSync;
+
+    }
+    else {                      /* Reduced blanking */
+        /* Minimum vertical blanking interval time (µs) - default 460 */
+#define CVT_RB_MIN_VBLANK 460.0
+
+        /* Fixed number of clocks for horizontal sync */
+#define CVT_RB_H_SYNC 32.0
+
+        /* Fixed number of clocks for horizontal blanking */
+#define CVT_RB_H_BLANK 160.0
+
+        /* Fixed number of lines for vertical front porch - default 3 */
+#define CVT_RB_VFPORCH 3
+
+        int VBILines;
+
+        /* 8. Estimate Horizontal period. */
+        HPeriod = ((float) (1000000.0 / VFieldRate - CVT_RB_MIN_VBLANK)) /
+            (VDisplayRnd + 2 * VMargin);
+
+        /* 9. Find number of lines in vertical blanking */
+        VBILines = ((float) CVT_RB_MIN_VBLANK) / HPeriod + 1;
+
+        /* 10. Check if vertical blanking is sufficient */
+        if (VBILines < (CVT_RB_VFPORCH + VSync + CVT_MIN_V_BPORCH))
+            VBILines = CVT_RB_VFPORCH + VSync + CVT_MIN_V_BPORCH;
+
+        /* 11. Find total number of lines in vertical field */
+        Mode.VTotal = VDisplayRnd + 2 * VMargin + Interlace + VBILines;
+
+        /* 12. Find total number of pixels in a line */
+        Mode.HTotal = Mode.HDisplay + CVT_RB_H_BLANK;
+
+        /* Fill in HSync values */
+        Mode.HSyncEnd = Mode.HDisplay + CVT_RB_H_BLANK / 2;
+        Mode.HSyncStart = Mode.HSyncEnd - CVT_RB_H_SYNC;
+
+        /* Fill in VSync values */
+        Mode.VSyncStart = Mode.VDisplay + CVT_RB_VFPORCH;
+        Mode.VSyncEnd = Mode.VSyncStart + VSync;
+    }
+    /* 15/13. Find pixel clock frequency (kHz for xf86) */
+    Mode.Clock = Mode.HTotal * 1000.0 / HPeriod;
+    Mode.Clock -= Mode.Clock % CVT_CLOCK_STEP;
+
+    /* 16/14. Find actual Horizontal Frequency (kHz) */
+    Mode.HSync = ((float) Mode.Clock) / ((float) Mode.HTotal);
+
+    /* 17/15. Find actual Field rate */
+    Mode.VRefresh = (1000.0 * ((float) Mode.Clock)) /
+        ((float) (Mode.HTotal * Mode.VTotal));
+
+    /* 18/16. Find actual vertical frame frequency */
+    /* ignore - just set the mode flag for interlaced */
+    if (Interlaced)
+        Mode.VTotal *= 2;
+    return Mode;
+}
+
 
 bool VMwareCtrlSetTopology(Display *dpy, int hExtensionMajorOpcode,
                             int screen, xXineramaScreenInfo extents[], int number)
@@ -311,6 +573,7 @@ static DECLCALLBACK(int) x11MonitorThreadFunction(RTTHREAD ThreadSelf, void *pvU
 
 static int startX11MonitorThread()
 {
+    return 0;
     int rc;
 
     Assert(g_fMonitorThreadShutdown == false);
@@ -395,9 +658,12 @@ static void cleanup()
     }
 #ifdef WITH_DISTRO_XRAND_XINERAMA
     XRRSelectInput(x11Context.pDisplay, x11Context.rootWindow, 0);
+    XRRFreeScreenResources(x11Context.pScreenResources);
 #else
     if (x11Context.pXRRSelectInput)
         x11Context.pXRRSelectInput(x11Context.pDisplay, x11Context.rootWindow, 0);
+    if (x11Context.pXRRFreeScreenResources)
+        x11Context.pXRRFreeScreenResources(x11Context.pScreenResources);
 #endif
     XCloseDisplay(x11Context.pDisplay);
 }
@@ -429,8 +695,41 @@ static int openLibRandR()
     *(void **)(&x11Context.pXRRGetMonitors) = dlsym(x11Context.pRandLibraryHandle, "XRRGetMonitors");
     checkFunctionPtr(x11Context.pXRRGetMonitors);
 
+    *(void **)(&x11Context.pXRRGetScreenResources) = dlsym(x11Context.pRandLibraryHandle, "XRRGetScreenResources");
+    checkFunctionPtr(x11Context.pXRRGetScreenResources);
+
+    *(void **)(&x11Context.pXRRSetCrtcConfig) = dlsym(x11Context.pRandLibraryHandle, "XRRSetCrtcConfig");
+    checkFunctionPtr(x11Context.pXRRSetCrtcConfig);
+
     *(void **)(&x11Context.pXRRFreeMonitors) = dlsym(x11Context.pRandLibraryHandle, "XRRFreeMonitors");
     checkFunctionPtr(x11Context.pXRRFreeMonitors);
+
+    *(void **)(&x11Context.pXRRFreeScreenResources) = dlsym(x11Context.pRandLibraryHandle, "XRRFreeScreenResources");
+    checkFunctionPtr(x11Context.pXRRFreeMonitors);
+
+    *(void **)(&x11Context.pXRRFreeModeInfo) = dlsym(x11Context.pRandLibraryHandle, "XRRFreeModeInfo");
+    checkFunctionPtr(x11Context.pXRRFreeModeInfo);
+
+    *(void **)(&x11Context.pXRRFreeOutputInfo) = dlsym(x11Context.pRandLibraryHandle, "XRRFreeOutputInfo");
+    checkFunctionPtr(x11Context.pXRRFreeOutputInfo);
+
+    *(void **)(&x11Context.pXRRSetScreenSize) = dlsym(x11Context.pRandLibraryHandle, "XRRSetScreenSize");
+    checkFunctionPtr(x11Context.pXRRSetScreenSize);
+
+    *(void **)(&x11Context.pXRRUpdateConfiguration) = dlsym(x11Context.pRandLibraryHandle, "XRRUpdateConfiguration");
+    checkFunctionPtr(x11Context.pXRRUpdateConfiguration);
+
+    *(void **)(&x11Context.pXRRAllocModeInfo) = dlsym(x11Context.pRandLibraryHandle, "XRRUpdateConfiguration");
+    checkFunctionPtr(x11Context.pXRRAllocModeInfo);
+
+    *(void **)(&x11Context.pXRRAllocModeInfo) = dlsym(x11Context.pRandLibraryHandle, "XRRUpdateConfiguration");
+    checkFunctionPtr(x11Context.pXRRAllocModeInfo);
+
+    *(void **)(&x11Context.pXRRCreateMode) = dlsym(x11Context.pRandLibraryHandle, "XRRCreateMode");
+    checkFunctionPtr(x11Context.pXRRCreateMode);
+
+    *(void **)(&x11Context.pXRRGetOutputInfo) = dlsym(x11Context.pRandLibraryHandle, "XRRGetOutputInfo");
+    checkFunctionPtr(x11Context.pXRRGetOutputInfo);
 
     return VINF_SUCCESS;
 }
@@ -438,12 +737,24 @@ static int openLibRandR()
 
 static void x11Connect()
 {
+    x11Context.pScreenResources = NULL;
     x11Context.pXRRSelectInput = NULL;
     x11Context.pRandLibraryHandle = NULL;
     x11Context.pXRRQueryExtension = NULL;
     x11Context.pXRRQueryVersion = NULL;
     x11Context.pXRRGetMonitors = NULL;
+    x11Context.pXRRGetScreenResources = NULL;
+    x11Context.pXRRSetCrtcConfig = NULL;
     x11Context.pXRRFreeMonitors = NULL;
+    x11Context.pXRRFreeScreenResources = NULL;
+    x11Context.pXRRFreeOutputInfo = NULL;
+    x11Context.pXRRFreeModeInfo = NULL;
+    x11Context.pXRRSetScreenSize = NULL;
+    x11Context.pXRRUpdateConfiguration = NULL;
+    x11Context.pXRRAllocModeInfo = NULL;
+    x11Context.pXRRCreateMode = NULL;
+    x11Context.pXRRGetOutputInfo = NULL;
+    x11Context.pXRRAddOutputMode = NULL;
 
     int dummy;
     if (x11Context.pDisplay != NULL)
@@ -459,7 +770,6 @@ static void x11Connect()
         return;
     }
 #endif
-
     if (!XQueryExtension(x11Context.pDisplay, "VMWARE_CTRL",
                          &x11Context.hVMWCtrlMajorOpCode, &dummy, &dummy))
     {
@@ -491,8 +801,6 @@ static void x11Connect()
         }
     }
     x11Context.rootWindow = DefaultRootWindow(x11Context.pDisplay);
-    x11Context.hOutputCount = determineOutputCount();
-
     x11Context.hEventMask = RRScreenChangeNotifyMask;
     if (x11Context.hRandRMinor >= 2)
         x11Context.hEventMask |= RRCrtcChangeNotifyMask
@@ -506,229 +814,287 @@ static void x11Connect()
     if (x11Context.pXRRSelectInput)
         x11Context.pXRRSelectInput(x11Context.pDisplay, x11Context.rootWindow, x11Context.hEventMask);
 #endif
+#ifdef WITH_DISTRO_XRAND_XINERAMA
+    x11Context.pScreenResources = XRRGetScreenResources(x11Context.pDisplay, x11Context.rootWindow);
+#else
+    if (x11Context.pXRRGetScreenResources)
+        x11Context.pScreenResources = x11Context.pXRRGetScreenResources(x11Context.pDisplay, x11Context.rootWindow);
+#endif
+    x11Context.iDefaultScreen = DefaultScreen(x11Context.pDisplay);
+    x11Context.hOutputCount = determineOutputCount();
 }
 
-/** run the xrandr command without options to get the total # of outputs (monitors) including
- *  disbaled ones. */
 static int determineOutputCount()
 {
-    int iCount = 0;
-    char szCommand[MAX_COMMAND_LINE_LEN];
-    RTStrPrintf(szCommand, sizeof(szCommand), "%s ", pcszXrandr);
-
-    FILE *pFile;
-    pFile = popen(szCommand, "r");
-    if (pFile == NULL)
-    {
-        VBClLogError("Failed to run %s\n", szCommand);
-        return VMW_MAX_HEADS;
-    }
-    char szModeLine[MAX_COMMAND_LINE_LEN];
-    while (fgets(szModeLine, sizeof(szModeLine), pFile) != NULL)
-    {
-        if (RTStrIStr(szModeLine, szDefaultOutputNamePrefix))
-            ++iCount;
-    }
-    if (iCount == 0)
-        iCount = VMW_MAX_HEADS;
-    return iCount;
+    if (!x11Context.pScreenResources)
+        return 0;
+    return x11Context.pScreenResources->noutput;
 }
 
-/** Parse a single line of the output of xrandr command to extract Mode name.
- * Assumed to be null terminated and in following format:
- * e.g. 1016x559_vbox  59.70. where 1016x559_vbox is the mode name and at least one space in front
- * Set  mode name @p outPszModeName and return true if the name can be found, false otherwise.
- * outPszModeNameis assumed to be of length MAX_MODE_NAME_LEN. */
-static bool parseModeLine(char *pszLine, char *outPszModeName)
+static int findExistingModeIndex(unsigned iXRes, unsigned iYRes)
 {
-    char *p = pszLine;
-    (void*)outPszModeName;
-    /* Copy chars to outPszModeName starting from the first non-space until outPszModeName ends with 'vbox'*/
-    size_t iNameIndex = 0;
-    bool fInitialSpace = true;
-
-    while (*p)
+    if (!x11Context.pScreenResources)
+        return -1;
+    for (int i = 0; i < x11Context.pScreenResources->nmode; ++i)
     {
-        if (*p != ' ')
-            fInitialSpace = false;
-        if (!fInitialSpace && iNameIndex < MAX_MODE_NAME_LEN)
-        {
-            outPszModeName[iNameIndex] = *p;
-            ++iNameIndex;
-            if (iNameIndex >= 4)
-            {
-                if (   outPszModeName[iNameIndex-1] == 'x'
-                    && outPszModeName[iNameIndex-2] == 'o'
-                    && outPszModeName[iNameIndex-3] == 'b')
-                    break;
-            }
-        }
-        ++p;
+        if (x11Context.pScreenResources->modes[i].width == iXRes && x11Context.pScreenResources->modes[i].height == iYRes)
+            return i;
     }
-    outPszModeName[iNameIndex] = '\0';
+    return -1;
+}
+
+static bool disableCRTC(RRCrtc crtcID)
+{
+    Status ret;
+#ifdef WITH_DISTRO_XRAND_XINERAMA
+    ret = XRRSetCrtcConfig(x11Context.pDisplay, x11Context.pScreenResources, crtcID,
+                           CurrentTime, 0, 0, None, RR_Rotate_0, NULL, 0);
+#else
+    if (x11Context.pXRRSetCrtcConfig)
+        ret = x11Context.pXRRSetCrtcConfig(x11Context.pDisplay, x11Context.pScreenResources, crtcID,
+                                           CurrentTime, 0, 0, None, RR_Rotate_0, NULL, 0);
+#endif
+    if (ret == Success)
+        return false;
+    else
+    {
+        VBClLogFatalError("Crtc disable failed %lu\n", crtcID);
+        return false;
+    }
+}
+
+static XRRScreenSize currentSize()
+{
+    XRRScreenSize cSize;
+    cSize.width = DisplayWidth(x11Context.pDisplay, x11Context.iDefaultScreen);
+    cSize.mwidth = DisplayWidthMM(x11Context.pDisplay, x11Context.iDefaultScreen);
+    cSize.height = DisplayHeight(x11Context.pDisplay, x11Context.iDefaultScreen);
+    cSize.mheight = DisplayHeightMM(x11Context.pDisplay, x11Context.iDefaultScreen);
+    return cSize;
+}
+
+static unsigned int computeDpi(unsigned int pixels, unsigned int mm)
+{
+   unsigned int dpi = 0;
+   if (mm > 0) {
+      dpi = (unsigned int)((double)pixels * MILLIS_PER_INCH /
+                           (double)mm + 0.5);
+      printf("computed dpi %u\n", dpi);
+   }
+   return (dpi > 0) ? dpi : DEFAULT_DPI;
+}
+
+static bool resizeFrameBuffer(struct RANDROUTPUT *paOutputs)
+{
+    unsigned int iXRes = 0;
+    unsigned int iYRes = 0;
+    /* Don't care about the output positions for now. */
+    for (int i = 0; i < VMW_MAX_HEADS; ++i)
+    {
+        if (!paOutputs[i].fEnabled)
+            continue;
+        iXRes += paOutputs[i].width;
+        iYRes = iYRes < paOutputs[i].height ? paOutputs[i].height : iYRes;
+    }
+    XRRScreenSize cSize= currentSize();
+    unsigned int xdpi = computeDpi(cSize.width, cSize.mwidth);
+    unsigned int ydpi = computeDpi(cSize.height, cSize.mheight);
+    unsigned int xmm;
+    unsigned int ymm;
+    xmm = (int)(MILLIS_PER_INCH * iXRes / ((double)xdpi) + 0.5);
+    ymm = (int)(MILLIS_PER_INCH * iYRes / ((double)ydpi) + 0.5);
+#ifdef WITH_DISTRO_XRAND_XINERAMA
+    XRRSelectInput(x11Context.pDisplay, x11Context.rootWindow, RRScreenChangeNotifyMask);
+    XRRSetScreenSize(x11Context.pDisplay, x11Context.rootWindow, iXRes, iYRes, xmm, ymm);
+#else
+    if (x11Context.pXRRSelectInput)
+        x11Context.pXRRSelectInput(x11Context.pDisplay, x11Context.rootWindow, RRScreenChangeNotifyMask);
+    if (x11Context.pXRRSetScreenSize)
+        x11Context.pXRRSetScreenSize(x11Context.pDisplay, x11Context.rootWindow, iXRes, iYRes, xmm, ymm);
+#endif
+    XSync(x11Context.pDisplay, False);
+    XEvent configEvent;
+    bool event = false;
+    while (XCheckTypedEvent(x11Context.pDisplay, RRScreenChangeNotify + x11Context.hRandREventBase, &configEvent))
+    {
+#ifdef WITH_DISTRO_XRAND_XINERAMA
+        XRRUpdateConfiguration(&configEvent);
+#else
+        if (x11Context.pXRRUpdateConfiguration)
+            x11Context.pXRRUpdateConfiguration(&configEvent);
+#endif
+        event = true;
+    }
+#ifdef WITH_DISTRO_XRAND_XINERAMA
+    XRRSelectInput(x11Context.pDisplay, x11Context.rootWindow, 0);
+#else
+    if (x11Context.pXRRSelectInput)
+        x11Context.pXRRSelectInput(x11Context.pDisplay, x11Context.rootWindow, 0);
+#endif
+    XRRScreenSize newSize = currentSize();
+    /** @todo  In case of unsuccesful frame buffer resize we have to revert frame buffer size and crtc sizes. */
+    if (!event || newSize.width != (int)iXRes || newSize.height != (int)iYRes)
+    {
+        VBClLogError("Resizing frame buffer to %d %d has failed\n", iXRes, iYRes);
+        return false;
+    }
     return true;
 }
 
-/** Parse the output of the xrandr command to try to remove custom modes.
- * This function assumes all the outputs are named as VirtualX. */
-static void removeCustomModesFromOutputs()
+static XRRModeInfo *createMode(int iXRes, int iYRes)
 {
-    char szCommand[MAX_COMMAND_LINE_LEN];
-    RTStrPrintf(szCommand, sizeof(szCommand), "%s ", pcszXrandr);
+    XRRModeInfo *pModeInfo = NULL;
+    char sModeName[126];
+    sprintf(sModeName, "%dx%d_vbox", iXRes, iYRes);
+#ifdef WITH_DISTRO_XRAND_XINERAMA
+    pModeInfo = XRRAllocModeInfo(sModeName, strlen(sModeName));
+#else
+    if (x11Context.pXRRAllocModeInfo)
+        pModeInfo = x11Context.pXRRAllocModeInfo(sModeName, strlen(sModeName));
+#endif
+    pModeInfo->width = iXRes;
+    pModeInfo->height = iYRes;
 
-    FILE *pFile;
-    pFile = popen(szCommand, "r");
-    if (pFile == NULL)
-    {
-        VBClLogError("Failed to run %s\n", szCommand);
-        return;
-    }
-    char szModeLine[MAX_COMMAND_LINE_LEN];
-    char szModeName[MAX_MODE_NAME_LEN];
-    int iCount = 0;
-    char szRmModeCommand[MAX_COMMAND_LINE_LEN];
-    char szDelModeCommand[MAX_COMMAND_LINE_LEN];
+    DisplayModeR mode = f86CVTMode(iXRes, iYRes, 60 /*VRefresh */, true /*Reduced */, false  /* Interlaced */);
 
-    while (fgets(szModeLine, sizeof(szModeLine), pFile) != NULL)
+    pModeInfo->dotClock = mode.Clock;
+    pModeInfo->hSyncStart = mode.HSyncStart;
+    pModeInfo->hSyncEnd = mode.HSyncEnd;
+    pModeInfo->hTotal = mode.HTotal;
+    pModeInfo->hSkew = mode.HSkew;
+    pModeInfo->vSyncStart = mode.VSyncStart;
+    pModeInfo->vSyncEnd = mode.VSyncEnd;
+    pModeInfo->vTotal = mode.VTotal;
+
+    RRMode newMode = None;
+#ifdef WITH_DISTRO_XRAND_XINERAMA
+    newMode = XRRCreateMode(x11Context.pDisplay, x11Context.rootWindow, pModeInfo);
+#else
+    if (x11Context.pXRRCreateMode)
+        newMode = x11Context.pXRRCreateMode(x11Context.pDisplay, x11Context.rootWindow, pModeInfo);
+#endif
+    if (newMode == None)
     {
-        if (RTStrIStr(szModeLine, szDefaultOutputNamePrefix))
-        {
-            ++iCount;
-            continue;
-        }
-        if (iCount > 0 && RTStrIStr(szModeLine, "_vbox"))
-        {
-            parseModeLine(szModeLine, szModeName);
-            if (strlen(szModeName) >= 4)
-            {
-                /* Delete the mode from the outout. this fails if the mode is currently in use. */
-                RTStrPrintf(szDelModeCommand, sizeof(szDelModeCommand), "%s --delmode Virtual%d %s", pcszXrandr, iCount, szModeName);
-                system(szDelModeCommand);
-                /* Delete the mode from the xserver. note that this will fail if some output has still has this mode (even if unused).
-                 * thus this will fail most of the time. */
-                RTStrPrintf(szRmModeCommand, sizeof(szRmModeCommand), "%s --rmmode %s", pcszXrandr, szModeName);
-                system(szRmModeCommand);
-            }
-        }
+#ifdef WITH_DISTRO_XRAND_XINERAMA
+        XRRFreeModeInfo(pModeInfo);
+#else
+        if (x11Context.pXRRFreeModeInfo)
+            x11Context.pXRRFreeModeInfo(pModeInfo);
+#endif
+        return NULL;
     }
+    pModeInfo->id = newMode;
+    return pModeInfo;
 }
 
-static void getModeNameAndLineFromCVT(int iWidth, int iHeight, char *pszOutModeName, char *pszOutModeLine)
+static bool configureOutput(int iOutputIndex, struct RANDROUTPUT *paOutputs)
 {
-    char szCvtCommand[MAX_COMMAND_LINE_LEN];
-    const int iFreq = 60;
-    const int iMinNameLen = 4;
-    /* Make release builds happy. */
-    (void)iMinNameLen;
-    RTStrPrintf(szCvtCommand, sizeof(szCvtCommand), "%s %d %d %d", pcszCvt, iWidth, iHeight, iFreq);
-    FILE *pFile;
-    pFile = popen(szCvtCommand, "r");
-    if (pFile == NULL)
+    if (iOutputIndex >= x11Context.hOutputCount)
     {
-        VBClLogError("Failed to run %s\n", szCvtCommand);
-        return;
-    }
-
-    char szModeLine[MAX_COMMAND_LINE_LEN];
-    while (fgets(szModeLine, sizeof(szModeLine), pFile) != NULL)
-    {
-        if (RTStrStr(szModeLine, "Modeline"))
-        {
-            if(szModeLine[strlen(szModeLine) - 1] == '\n')
-                szModeLine[strlen(szModeLine) - 1] = '\0';
-            size_t iFirstQu = RTStrOffCharOrTerm(szModeLine, '\"');
-            size_t iModeLineLen = strlen(szModeLine);
-            /* Make release builds happy. */
-            (void)iModeLineLen;
-            Assert(iFirstQu < iModeLineLen - iMinNameLen);
-
-            char *p = &(szModeLine[iFirstQu + 1]);
-            size_t iSecondQu = RTStrOffCharOrTerm(p, '_');
-            Assert(iSecondQu > iMinNameLen);
-            Assert(iSecondQu < MAX_MODE_NAME_LEN);
-            Assert(iSecondQu < iModeLineLen);
-
-            RTStrCopy(pszOutModeName, iSecondQu + 2, p);
-            RTStrCat(pszOutModeName, MAX_MODE_NAME_LEN, "vbox");
-            iSecondQu = RTStrOffCharOrTerm(p, '\"');
-            RTStrCopy(pszOutModeLine, MAX_MODE_LINE_LEN, &(szModeLine[iFirstQu + iSecondQu + 2]));
-            break;
-        }
-    }
-}
-
-/** Add a new mode to xserver and to the output */
-static void addMode(const char *pszModeName, const char *pszModeLine)
-{
-    char szNewModeCommand[MAX_COMMAND_LINE_LEN];
-    RTStrPrintf(szNewModeCommand, sizeof(szNewModeCommand), "%s --newmode \"%s\" %s", pcszXrandr, pszModeName, pszModeLine);
-    system(szNewModeCommand);
-
-    char szAddModeCommand[1024];
-    /* try to add the new mode to all possible outputs. we currently dont care if most the are disabled. */
-    for(int i = 0; i < x11Context.hOutputCount; ++i)
-    {
-        RTStrPrintf(szAddModeCommand, sizeof(szAddModeCommand), "%s --addmode Virtual%d \"%s\"", pcszXrandr, i + 1, pszModeName);
-        system(szAddModeCommand);
-    }
-}
-
-static bool checkDefaultModes(struct RANDROUTPUT *pOutput, int iOutputIndex, char *pszModeName)
-{
-    const char szError[] = "cannot find mode";
-    char szXranrCommand[MAX_COMMAND_LINE_LEN];
-    RTStrPrintf(szXranrCommand, sizeof(szXranrCommand),
-                "%s --dryrun --output Virtual%u --mode %dx%d --pos %dx%d 2>/dev/stdout", pcszXrandr, iOutputIndex,
-                pOutput->width, pOutput->height, pOutput->x, pOutput->y);
-    RTStrPrintf(pszModeName, MAX_MODE_NAME_LEN, "%dx%d", pOutput->width, pOutput->height);
-    FILE *pFile;
-    pFile = popen(szXranrCommand, "r");
-    if (pFile == NULL)
-    {
-        VBClLogError("Failed to run %s\n", szXranrCommand);
+        VBClLogError("Output index %d is greater than # of oputputs %d\n", iOutputIndex, x11Context.hOutputCount);
         return false;
     }
-    char szResult[64];
-    if (fgets(szResult, sizeof(szResult), pFile) != NULL)
+    RROutput outputId = x11Context.pScreenResources->outputs[iOutputIndex];
+    XRROutputInfo *pOutputInfo = NULL;
+#ifdef WITH_DISTRO_XRAND_XINERAMA
+    pOutputInfo = XRRGetOutputInfo(x11Context.pDisplay, x11Context.pScreenResources, outputId);
+#else
+    if (x11Context.pXRRGetOutputInfo)
+        pOutputInfo = x11Context.pXRRGetOutputInfo(x11Context.pDisplay, x11Context.pScreenResources, outputId);
+#endif
+
+    XRRModeInfo *pModeInfo = NULL;
+    bool fNewMode = false;
+    /* Index of the mode within the XRRScreenResources.modes array. -1 if such a mode with required resolution does not exists*/
+    int iModeIndex = findExistingModeIndex(paOutputs[iOutputIndex].width, paOutputs[iOutputIndex].height);
+    if (iModeIndex != -1 && iModeIndex < x11Context.hOutputCount)
+        pModeInfo = &(x11Context.pScreenResources->modes[iModeIndex]);
+    else
     {
-        if (RTStrIStr(szResult, szError))
-            return false;
+        /* A mode with required size was not found. Create a new one. */
+        pModeInfo = createMode(paOutputs[iOutputIndex].width, paOutputs[iOutputIndex].height);
+        fNewMode = true;
+    }
+    if (!pModeInfo)
+    {
+        VBClLogError("Could not create mode for the resolution (%d, %d)\n",
+                     paOutputs[iOutputIndex].width, paOutputs[iOutputIndex].height);
+        return false;
+    }
+
+#ifdef WITH_DISTRO_XRAND_XINERAMA
+    XRRAddOutputMode(x11Context.pDisplay, outputId, pModeInfo->id);
+#else
+    if (x11Context.pXRRAddOutputMode)
+        x11Context.pXRRAddOutputMode(x11Context.pDisplay, outputId, pModeInfo->id);
+#endif
+    /* Make sure outputs crtc is set. */
+    pOutputInfo->crtc = pOutputInfo->crtcs[0];
+
+    RRCrtc crtcId = pOutputInfo->crtcs[0];
+    Status ret;
+#ifdef WITH_DISTRO_XRAND_XINERAMA
+    ret = XRRSetCrtcConfig(x11Context.pDisplay, x11Context.pScreenResources, crtcId, CurrentTime,
+                           paOutputs[iOutputIndex].x, paOutputs[iOutputIndex].y,
+                           pModeInfo->id, RR_Rotate_0, &(outputId), 1 /*int noutputs*/);
+#else
+    if (x11Context.pXRRSetCrtcConfig)
+        ret = x11Context.pXRRSetCrtcConfig(x11Context.pDisplay, x11Context.pScreenResources, crtcId, CurrentTime,
+                                           paOutputs[iOutputIndex].x, paOutputs[iOutputIndex].y,
+                                           pModeInfo->id, RR_Rotate_0, &(outputId), 1 /*int noutputs*/);
+#endif
+    if (ret != Success)
+        VBClLogError("crtc set config failed for output %d\n", iOutputIndex);
+
+#ifdef WITH_DISTRO_XRAND_XINERAMA
+    XRRFreeOutputInfo(pOutputInfo);
+#else
+    if (x11Context.pXRRFreeOutputInfo)
+        x11Context.pXRRFreeOutputInfo(pOutputInfo);
+#endif
+
+    if (fNewMode)
+    {
+#ifdef WITH_DISTRO_XRAND_XINERAMA
+        XRRFreeModeInfo(pModeInfo);
+#else
+        if (x11Context.pXRRFreeModeInfo)
+            x11Context.pXRRFreeModeInfo(pModeInfo);
+#endif
     }
     return true;
 }
 
 /** Construct the xrandr command which sets the whole monitor topology each time. */
-static void setXrandrModes(struct RANDROUTPUT *paOutputs)
+static void setXrandrTopology(struct RANDROUTPUT *paOutputs)
 {
-    char szCommand[MAX_COMMAND_LINE_LEN];
-    RTStrPrintf(szCommand, sizeof(szCommand), "%s ", pcszXrandr);
+    XGrabServer(x11Context.pDisplay);
+    (void*)paOutputs;
+    if (!x11Context.pScreenResources)
+        return;
+    /* Disable all crtcs. */
+    for (int i = 0; i , x11Context.pScreenResources->ncrtc; ++i)
+    {
+        if (!disableCRTC(x11Context.pScreenResources->crtcs[i]))
+        {
+            XUngrabServer(x11Context.pDisplay);
+            return;
+        }
+    }
+    /* Resize the frame buffer. */
+    resizeFrameBuffer(paOutputs);
 
+    /* Configure the outputs. */
     for (int i = 0; i < x11Context.hOutputCount; ++i)
     {
-        char line[64];
+        /* be paranoid. */
+        if (i >= x11Context.pScreenResources->noutput)
+            break;
         if (!paOutputs[i].fEnabled)
-            RTStrPrintf(line, sizeof(line), "--output Virtual%u --off ", i + 1);
-        else
-        {
-            char szModeName[MAX_MODE_NAME_LEN];
-            char szModeLine[MAX_MODE_LINE_LEN];
-            /* Check if there is a default mode for the widthxheight and if not create and add a custom mode. */
-            if (!checkDefaultModes(&(paOutputs[i]), i + 1, szModeName))
-            {
-                getModeNameAndLineFromCVT(paOutputs[i].width, paOutputs[i].height, szModeName, szModeLine);
-                addMode(szModeName, szModeLine);
-            }
-            else
-                RTStrPrintf(szModeName, sizeof(szModeName), "%dx%d ", paOutputs[i].width, paOutputs[i].height);
-
-            RTStrPrintf(line, sizeof(line), "--output Virtual%u --mode %s --pos %dx%d ", i + 1,
-                        szModeName, paOutputs[i].x, paOutputs[i].y);
-        }
-        RTStrCat(szCommand, sizeof(szCommand), line);
+            continue;
+        configureOutput(i, paOutputs);
     }
-    system(szCommand);
-    VBClLogInfo("=======xrandr topology command:=====\n%s\n", szCommand);
-    removeCustomModesFromOutputs();
+    XUngrabServer(x11Context.pDisplay);
 }
 
 static const char *getName()
@@ -810,7 +1176,7 @@ static int run(struct VBCLSERVICE **ppInterface, bool fDaemonised)
                 if (aOutputs[j].fEnabled)
                     iRunningX += aOutputs[j].width;
             }
-            setXrandrModes(aOutputs);
+            setXrandrTopology(aOutputs);
         }
         do
         {
