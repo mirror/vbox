@@ -2230,7 +2230,7 @@ VBOX_WIN_MIDL ?= $(EXEC_X86_WIN32) $(call VBOX_FN_MAKE_WIN_PATH,$(firstword $(wi
 
 # Tricks to work around midl.exe problems with spaces in the /cpp_cmd value, it
 # forgets to quote it when creating the commandline and cl.exe gets very confused.
-if1of (quote, $(KBUILD_FEATURES))
+if1of (quote, $(KMK_FEATURES))
 VBOX_MIDL_REDIRECT     = $(REDIRECT) --prepend "$(quote-sh-dq PATH=$(PATH_TOOL_$(VBOX_VCC_TOOL)_BIN);$(qaddsuffix ,;,$(PATH_TOOL_$(VBOX_VCC_TOOL)_DLL_BIN)))" --
 VBOX_MIDL_REDIRECT_X86 = $(REDIRECT) --prepend "$(quote-sh-dq PATH=$(PATH_TOOL_$(VBOX_VCC_TOOL_STEM)X86_BIN);$(qaddsuffix ,;,$(PATH_TOOL_$(VBOX_VCC_TOOL_STEM)X86_DLL_BIN)))" --
 else
