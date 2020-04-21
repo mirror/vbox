@@ -149,9 +149,6 @@ public:
         void setFocusItem(UIToolsItem *pItem);
         /** Returns focus item. */
         UIToolsItem *focusItem() const;
-
-        /** Makes sure some item is selected. */
-        void makeSureSomeItemIsSelected();
     /** @} */
 
     /** @name Navigation stuff.

@@ -287,14 +287,6 @@ UIToolsItem *UIToolsModel::focusItem() const
     return m_pFocusItem;
 }
 
-void UIToolsModel::makeSureSomeItemIsSelected()
-{
-    /* Make sure selection item list is never empty
-     * if at least one item (for example 'focus') present: */
-    if (!currentItem() && focusItem())
-        setCurrentItem(focusItem());
-}
-
 const QList<UIToolsItem*> &UIToolsModel::navigationList() const
 {
     return m_navigationList;
