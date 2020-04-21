@@ -5150,6 +5150,10 @@ iemRaiseXcptOrIntInLongMode(PVMCPUCC      pVCpu,
         return iemRaiseGeneralProtectionFault(pVCpu, X86_TRAP_ERR_IDT | ((uint16_t)u8Vector << X86_TRAP_ERR_SEL_SHIFT));
     }
     X86DESC64 Idte;
+#ifdef _MSC_VER /* Shut up silly compiler warning. */
+    Idte.au64[0] = 0;
+    Idte.au64[1] = 0;
+#endif
     VBOXSTRICTRC rcStrict = iemMemFetchSysU64(pVCpu, &Idte.au64[0], UINT8_MAX, pVCpu->cpum.GstCtx.idtr.pIdt + offIdt);
     if (RT_LIKELY(rcStrict == VINF_SUCCESS))
         rcStrict = iemMemFetchSysU64(pVCpu, &Idte.au64[1], UINT8_MAX, pVCpu->cpum.GstCtx.idtr.pIdt + offIdt + 8);
