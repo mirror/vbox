@@ -44,7 +44,8 @@ technical terms if no non-technical ones are clear enough.
 
     <itemizedlist>
       <listitem>
-        <para></para>
+        <para>Guest Control: Implemented initial support for automatic updating
+          of Guest Additions for Linux guests</para>
       </listitem>
 
     </itemizedlist>
