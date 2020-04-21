@@ -176,7 +176,8 @@ void UIChooserAbstractModel::init()
                                                                       strProviderName),
                                                strProviderName,
                                                UIChooserNodeGroupType_Provider,
-                                               false /* opened */);
+                                               shouldGroupNodeBeOpened(invisibleRoot(),
+                                                                       strProviderName));
 
                     /* Iterate through provider's profile names: */
                     foreach (const QString &strProfileName, profileNames)
@@ -212,7 +213,8 @@ void UIChooserAbstractModel::init()
                                                                           strProfileName),
                                                    strProfileName,
                                                    UIChooserNodeGroupType_Profile,
-                                                   true /* opened */);
+                                                   shouldGroupNodeBeOpened(pProviderNode,
+                                                                           strProfileName));
                         /* Add fake cloud VM item: */
                         new UIChooserNodeMachine(pProfileNode /* parent */,
                                                  false /* favorite */,
@@ -491,12 +493,8 @@ void UIChooserAbstractModel::sltHandleCloudListMachinesTaskComplete(UITask *pTas
         delete pFirstChildNodeMachine;
 
         /* Add real cloud VM nodes: */
-        int iPosition = 0;
         foreach (const CCloudMachine &comCloudMachine, machines)
-            new UIChooserNodeMachine(pParentNode,
-                                     false /* favorite */,
-                                     iPosition++ /* position */,
-                                     comCloudMachine);
+            createCloudMachineNode(pParentNode, comCloudMachine);
     }
     else
     {
@@ -882,7 +880,9 @@ void UIChooserAbstractModel::createLocalMachineNode(UIChooserNode *pParentNode, 
 {
     new UIChooserNodeMachine(pParentNode,
                              false /* favorite */,
-                             getDesiredNodePosition(pParentNode, UIChooserNodeType_Machine, toOldStyleUuid(comMachine.GetId())),
+                             getDesiredNodePosition(pParentNode,
+                                                    UIChooserNodeType_Machine,
+                                                    toOldStyleUuid(comMachine.GetId())),
                              comMachine);
 }
 
@@ -971,7 +971,8 @@ void UIChooserAbstractModel::gatherGroupOrders(QMap<QString, QStringList> &order
     /* Iterate over all the machine-nodes: */
     foreach (UIChooserNode *pNode, pParentGroup->nodes(UIChooserNodeType_Machine))
         if (UIChooserNodeMachine *pMachineNode = pNode->toMachineNode())
-            if (pMachineNode->cache()->itemType() == UIVirtualMachineItem::ItemType_Local)
+            if (   pMachineNode->cache()->itemType() == UIVirtualMachineItem::ItemType_Local
+                || pMachineNode->cache()->itemType() == UIVirtualMachineItem::ItemType_CloudReal)
                 orders[strExtraDataKey] << QString("m=%1").arg(toOldStyleUuid(pMachineNode->cache()->id()));
 }
 
