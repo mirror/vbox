@@ -811,7 +811,7 @@ void UIVirtualBoxManagerWidget::recacheCurrentItemInformation(bool fDontRaiseErr
 
     /* Update machine tools restrictions: */
     QList<UIToolType> retrictedTypes;
-    if (pItem->itemType() != UIVirtualMachineItem::ItemType_Local)
+    if (pItem && pItem->itemType() != UIVirtualMachineItem::ItemType_Local)
     {
         retrictedTypes << UIToolType_Snapshots << UIToolType_Logs;
         if (retrictedTypes.contains(m_pPaneTools->toolsType()))
