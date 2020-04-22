@@ -26597,6 +26597,9 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
              wsmap="managed"
              reservedMethods="4" reservedAttributes="4">
     <attribute name="values" type="IFormValue" safearray="yes" readonly="yes"/>
+    <method name="apply">
+      <param name="progress" type="IProgress" dir="return"/>
+    </method>
   </interface>
 
   <interface name="IVirtualSystemDescriptionForm" extends="IForm"
