@@ -95,6 +95,8 @@
 #undef LOG_GROUP
 #include "common/string/RTStrCopyP.c"
 #undef LOG_GROUP
+#include "common/string/RTStrEnd.c"
+#undef LOG_GROUP
 #include "common/string/RTStrICmpAscii.c"
 #undef LOG_GROUP
 #include "common/string/RTStrNICmpAscii.c"
