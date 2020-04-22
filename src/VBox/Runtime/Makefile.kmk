@@ -2425,7 +2425,8 @@ VBoxRT-x86_SOURCES.win = $(filter-out %.def %.rc,$(VBoxRT_SOURCES.win)) \
 VBoxRT-x86_CLEAN += $(VBoxRT-x86_0_OUTDIR)/VBoxRT-x86.def
 if1of ($(DLLS), VBoxRT-x86)
 $$(VBoxRT-x86_0_OUTDIR)/VBoxRT-x86.def: \
-		$(PATH_SUB_CURRENT)/r3/win/VBoxRT-win32.def # Hopefully no need to export openssl here.
+		$(PATH_SUB_CURRENT)/r3/win/VBoxRT-win32.def \
+		| $$(dir $$@) # Hopefully no need to export openssl here.
 	$(RM) -f -- $@
 	$(REDIRECT) -wto $@ -- $(CAT_EXT) $^
 endif
