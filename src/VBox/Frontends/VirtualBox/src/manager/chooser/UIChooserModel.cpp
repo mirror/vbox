@@ -1055,7 +1055,7 @@ void UIChooserModel::sltPerformRefreshAction()
     UIChooserItem *pSelectedItem = 0;
     foreach (UIChooserItemMachine *pItem, inaccessibleMachineItemList)
     {
-        switch (pItem->node()->toMachineNode()->cache()->itemType())
+        switch (pItem->node()->toMachineNode()->cacheType())
         {
             case UIVirtualMachineItemType_Local:
             {
@@ -1149,9 +1149,9 @@ void UIChooserModel::sltRemoveSelectedMachine()
         verdicts.insert(uId, fVerdict);
         if (fVerdict)
         {
-            if (pItem->node()->toMachineNode()->cache()->itemType() == UIVirtualMachineItemType_Local)
+            if (pItem->node()->toMachineNode()->cacheType() == UIVirtualMachineItemType_Local)
                 localMachinesToUnregister.append(pItem->node()->toMachineNode()->cache()->toLocal()->machine());
-            else if (pItem->node()->toMachineNode()->cache()->itemType() == UIVirtualMachineItemType_CloudReal)
+            else if (pItem->node()->toMachineNode()->cacheType() == UIVirtualMachineItemType_CloudReal)
                 cloudMachinesToUnregister.append(pItem->node()->toMachineNode()->cache()->toCloud()->machine());
         }
         else
@@ -1738,7 +1738,7 @@ void UIChooserModel::unregisterCloudMachines(const QList<CCloudMachine> &machine
                                                      UIChooserItemSearchFlag_Machine |
                                                      UIChooserItemSearchFlag_ExactId);
         AssertPtrReturnVoid(pItem);
-        AssertReturnVoid(pItem->node()->toMachineNode()->cache()->itemType() == UIVirtualMachineItemType_CloudReal);
+        AssertReturnVoid(pItem->node()->toMachineNode()->cacheType() == UIVirtualMachineItemType_CloudReal);
         AssertPtrReturnVoid(pItem->parentItem());
         AssertPtrReturnVoid(pItem->parentItem()->parentItem());
         const QString strProviderShortName = pItem->parentItem()->parentItem()->name();

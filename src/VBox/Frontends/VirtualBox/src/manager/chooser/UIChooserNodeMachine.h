@@ -23,6 +23,7 @@
 
 /* GUI includes: */
 #include "UIChooserNode.h"
+#include "UIManagerDefs.h"
 
 /* Forward declarations: */
 class UIVirtualMachineItem;
@@ -105,7 +106,9 @@ public:
     virtual void sortNodes() /* override */;
 
     /** Returns virtual machine cache instance. */
-    UIVirtualMachineItem *cache() const { return m_pCache; }
+    UIVirtualMachineItem *cache() const;
+    /** Returns virtual machine cache instance. */
+    UIVirtualMachineItemType cacheType() const;
 
 protected:
 

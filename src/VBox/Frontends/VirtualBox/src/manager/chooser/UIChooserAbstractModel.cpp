@@ -519,7 +519,7 @@ void UIChooserAbstractModel::sltHandleCloudListMachinesTaskComplete(UITask *pTas
     UIChooserNodeMachine *pFirstChildNodeMachine = pFirstChildNode->toMachineNode();
     AssertPtrReturnVoid(pFirstChildNodeMachine);
     AssertPtrReturnVoid(pFirstChildNodeMachine->cache());
-    AssertReturnVoid(pFirstChildNodeMachine->cache()->itemType() == UIVirtualMachineItemType_CloudFake);
+    AssertReturnVoid(pFirstChildNodeMachine->cacheType() == UIVirtualMachineItemType_CloudFake);
 
     /* And if we have at least one cloud machine: */
     const QVector<CCloudMachine> machines = pAcquiringTask->result();
@@ -978,7 +978,7 @@ void UIChooserAbstractModel::gatherGroupDefinitions(QMap<QString, QStringList> &
     /* Iterate over all the machine-nodes: */
     foreach (UIChooserNode *pNode, pParentGroup->nodes(UIChooserNodeType_Machine))
         if (UIChooserNodeMachine *pMachineNode = pNode->toMachineNode())
-            if (   pMachineNode->cache()->itemType() == UIVirtualMachineItemType_Local
+            if (   pMachineNode->cacheType() == UIVirtualMachineItemType_Local
                 && pMachineNode->cache()->accessible())
                 definitions[toOldStyleUuid(pMachineNode->cache()->id())] << pParentGroup->fullName();
     /* Iterate over all the group-nodes: */
@@ -1007,8 +1007,8 @@ void UIChooserAbstractModel::gatherGroupOrders(QMap<QString, QStringList> &order
     /* Iterate over all the machine-nodes: */
     foreach (UIChooserNode *pNode, pParentGroup->nodes(UIChooserNodeType_Machine))
         if (UIChooserNodeMachine *pMachineNode = pNode->toMachineNode())
-            if (   pMachineNode->cache()->itemType() == UIVirtualMachineItemType_Local
-                || pMachineNode->cache()->itemType() == UIVirtualMachineItemType_CloudReal)
+            if (   pMachineNode->cacheType() == UIVirtualMachineItemType_Local
+                || pMachineNode->cacheType() == UIVirtualMachineItemType_CloudReal)
                 orders[strExtraDataKey] << QString("m=%1").arg(toOldStyleUuid(pMachineNode->cache()->id()));
 }
 
