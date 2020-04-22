@@ -342,126 +342,37 @@ class tdAddBasic1(vbox.TestDriver):                                         # py
 
         fRc = False;
 
-        # Additional environment block to add to the following commands.
-        asEnv = ();
+        #
+        # The actual install.
+        # Also tell the installer to produce the appropriate log files.
+        #
+        # Make sure to add "--nox11" to the makeself wrapper in order to not getting any blocking
+        # xterm window spawned.
+        fRc = self.txsRunTest(oTxsSession, 'VBoxLinuxAdditions.run', 30 * 60 * 1000,
+                                '/bin/sh', ('/bin/sh', '${CDROM}/VBoxLinuxAdditions.run', '--nox11'));
+        ## @todo We need to figure out why the result is != 0 when running the .run installer. For now just ignore it.
+        if not fRc:
+            reporter.error('Installing Linux Additions failed (isSuccess=%s, iResult=%d, see log file for details)'
+                            % (oTxsSession.isSuccess(), oTxsSession.getResult()));
 
-        fNeedsProxy = True; ## @todo Make this more flexible / dynamic.
-        sHttpProxy  = 'http://emea-proxy.uk.oracle.com:80/';
-        sHttpsProxy = sHttpProxy;
+        #
+        # Download log files.
+        # Ignore errors as all files above might not be present for whatever reason.
+        #
+        asLogFile = [];
+        asLogFile.append('/var/log/vboxadd-install.log');
+        self.txsDownloadFiles(oSession, oTxsSession, asLogFile, fIgnoreErrors = True);
 
-        if fNeedsProxy:
-            reporter.log('Using proxy: ' + sHttpProxy);
-            asEnv += ('http_proxy='  + sHttpProxy, 'https_proxy=' + sHttpsProxy);
-
-        cMsTimeout = 15 * 60 * 1000; # Use a 15 minutes timeout; needed for sloooow internet connections :-/
-
-        # Install Kernel headers, which are required for actually installing the Linux Additions.
-        if oTestVm.sKind.startswith('Debian') \
-        or oTestVm.sKind.startswith('Ubuntu'):
-
-            if fNeedsProxy:
-                fRc = oTxsSession.syncMkDirPath("/etc/apt/apt.conf.d/", 0o755);
-                if fRc:
-                    fRc = oTxsSession.syncUploadString('Acquire::http::Proxy \"' + sHttpProxy + '\";\n'
-                                                       'Acquire::https::Proxy \"' + sHttpsProxy + '\";',
-                                                       '/etc/apt/apt.conf.d/proxy.conf', 0o644);
-                    if not fRc:
-                        reporter.error('Unable to write to /etc/apt/apt.conf.d/proxy.conf');
-                else:
-                    reporter.error('Unable to create /etc/apt/apt.conf.d');
-
-            # As Ubuntu 15.10 is EOL we need to tweak the package sources by hand first in order to have a working
-            # package update path again; otherwise updating and installing packages will fail.
-            if 'ubuntu-15_10' in oTestVm.sVmName:
-                fRc = self.txsRunTest(oTxsSession, 'Applying EOL upgrade path of Ubuntu 15.10', 5 * 60 *1000,
-                                      '/bin/sed',
-                                      ('/bin/sed', '-E', '-i',
-                                       's/http:\\/\\/.*\\.ubuntu\\.com/http:\\/\\/old-releases.ubuntu.com/',
-                                       '/etc/apt/sources.list'),
-                                      fCheckSessionStatus = True);
-            if fRc:
-                fRc = self.txsRunTest(oTxsSession, 'Updating package sources', cMsTimeout,
-                                      '/usr/bin/apt-get', ('/usr/bin/apt-get', 'update'),
-                                      asAddEnv = asEnv,
-                                      fCheckSessionStatus = True);
-            if fRc:
-                fRc = self.txsRunTest(oTxsSession, 'Installing Kernel headers', cMsTimeout,
-                                      '/usr/bin/apt-get', ('/usr/bin/apt-get', 'install', '-y', 'linux-headers-generic'),
-                                      asAddEnv = asEnv,
-                                      fCheckSessionStatus = True);
-            if fRc:
-                fRc = self.txsRunTest(oTxsSession, 'Installing Guest Additions depdendencies', cMsTimeout, \
-                                      '/usr/bin/apt-get', ('/usr/bin/apt-get', 'install', '-y', 'build-essential', 'perl'),
-                                      asAddEnv = asEnv,
-                                      fCheckSessionStatus = True);
-        elif oTestVm.sKind.startswith('OL') \
-        or   oTestVm.sKind.startswith('Oracle') \
-        or   oTestVm.sKind.startswith('RHEL') \
-        or   oTestVm.sKind.startswith('Redhat') \
-        or   oTestVm.sKind.startswith('Cent'):
-
-            fRc = self.txsRunTest(oTxsSession, 'Updating package sources', cMsTimeout,
-                                               '/usr/bin/yum', ('/usr/bin/yum', '-y', 'updateinfo'),
-                                               asAddEnv = asEnv,
-                                               fCheckSessionStatus = True);
-            if fRc:
-                fRc = self.txsRunTest(oTxsSession, 'Installing Kernel headers', cMsTimeout,
-                                      '/usr/bin/yum', ('/usr/bin/yum', '-y', 'install', 'kernel-headers'),
-                                      asAddEnv = asEnv,
-                                      fCheckSessionStatus = True);
-            if fRc:
-                fRc = self.txsRunTest(oTxsSession, 'Installing Guest Additions depdendencies', cMsTimeout, \
-                                      '/usr/bin/yum', ('/usr/bin/yum', '-y', 'install', \
-                                                   'make', 'automake', 'gcc', 'kernel-devel', 'dkms', 'bzip2', 'perl'),
-                                      asAddEnv = asEnv,
-                                      fCheckSessionStatus = True);
-        else:
-            reporter.error('Installing Linux Additions for kind "%s" is not supported yet' % oTestVm.sKind);
-            return (False, oTxsSession);
-
+        # Do the final reboot to get the just installed Guest Additions up and running.
         if fRc:
-            # Make sure the new, updated kernel is in charge, which eventually got installed by the updating stuff above.
-            # Otherwise building the Guest Additions module might not work correctly.
-            reporter.testStart('Rebooting guest w/ latest kernel active');
-            (fRc, oTxsSession) = self.txsRebootAndReconnectViaTcp(oSession, oTxsSession, cMsTimeout,
-                                                                  sFileCdWait = self.sFileCdWait);
-            if fRc is True:
-                reporter.testDone();
-
-                #
-                # The actual install.
-                # Also tell the installer to produce the appropriate log files.
-                #
-                # Make sure to add "--nox11" to the makeself wrapper in order to not getting any blocking
-                # xterm window spawned.
-                fRc = self.txsRunTest(oTxsSession, 'VBoxLinuxAdditions.run', 30 * 60 * 1000,
-                                      '/bin/sh', ('/bin/sh', '${CDROM}/VBoxLinuxAdditions.run', '--nox11'));
-                ## @todo We need to figure out why the result is != 0 when running the .run installer. For now just ignore it.
-                if not fRc:
-                    reporter.error('Installing Linux Additions failed (isSuccess=%s, iResult=%d, see log file for details)'
-                                   % (oTxsSession.isSuccess(), oTxsSession.getResult()));
-
-                #
-                # Download log files.
-                # Ignore errors as all files above might not be present for whatever reason.
-                #
-                asLogFile = [];
-                asLogFile.append('/var/log/vboxadd-install.log');
-                self.txsDownloadFiles(oSession, oTxsSession, asLogFile, fIgnoreErrors = True);
-
-                # Do the final reboot to get the just installed Guest Additions up and running.
-                if fRc:
-                    reporter.testStart('Rebooting guest w/ updated Guest Additions active');
-                    (fRc, oTxsSession) = self.txsRebootAndReconnectViaTcp(oSession, oTxsSession, cMsTimeout,
-                                                                          sFileCdWait = self.sFileCdWait);
-                    if fRc:
-                        pass
-                    else:
-                        reporter.testFailure('Rebooting and reconnecting to TXS service failed');
-                    reporter.testDone();
+            reporter.testStart('Rebooting guest w/ updated Guest Additions active');
+            (fRc, oTxsSession) = self.txsRebootAndReconnectViaTcp(oSession, oTxsSession, 15 * 60 * 1000,
+                                                                    sFileCdWait = self.sFileCdWait);
+            if fRc:
+                pass
             else:
                 reporter.testFailure('Rebooting and reconnecting to TXS service failed');
-                reporter.testDone();
+            reporter.testDone();
 
         return (fRc, oTxsSession);
 
