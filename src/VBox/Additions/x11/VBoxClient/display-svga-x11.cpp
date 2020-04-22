@@ -139,6 +139,7 @@ struct X11CONTEXT
     XRRModeInfo* (*pXRRAllocModeInfo)(_Xconst char *, int);
     RRMode (*pXRRCreateMode) (Display *, Window, XRRModeInfo *);
     XRROutputInfo* (*pXRRGetOutputInfo) (Display *, XRRScreenResources *, RROutput);
+    XRRCrtcInfo* (*pXRRGetCrtcInfo) (Display *, XRRScreenResources *, RRCrtc crtc);
     void (*pXRRAddOutputMode)(Display *, RROutput, RRMode);
 };
 
@@ -719,10 +720,7 @@ static int openLibRandR()
     *(void **)(&x11Context.pXRRUpdateConfiguration) = dlsym(x11Context.pRandLibraryHandle, "XRRUpdateConfiguration");
     checkFunctionPtr(x11Context.pXRRUpdateConfiguration);
 
-    *(void **)(&x11Context.pXRRAllocModeInfo) = dlsym(x11Context.pRandLibraryHandle, "XRRUpdateConfiguration");
-    checkFunctionPtr(x11Context.pXRRAllocModeInfo);
-
-    *(void **)(&x11Context.pXRRAllocModeInfo) = dlsym(x11Context.pRandLibraryHandle, "XRRUpdateConfiguration");
+    *(void **)(&x11Context.pXRRAllocModeInfo) = dlsym(x11Context.pRandLibraryHandle, "XRRAllocModeInfo");
     checkFunctionPtr(x11Context.pXRRAllocModeInfo);
 
     *(void **)(&x11Context.pXRRCreateMode) = dlsym(x11Context.pRandLibraryHandle, "XRRCreateMode");
@@ -730,6 +728,12 @@ static int openLibRandR()
 
     *(void **)(&x11Context.pXRRGetOutputInfo) = dlsym(x11Context.pRandLibraryHandle, "XRRGetOutputInfo");
     checkFunctionPtr(x11Context.pXRRGetOutputInfo);
+
+    *(void **)(&x11Context.pXRRGetCrtcInfo) = dlsym(x11Context.pRandLibraryHandle, "XRRGetCrtcInfo");
+    checkFunctionPtr(x11Context.pXRRGetCrtcInfo);
+
+    *(void **)(&x11Context.pXRRAddOutputMode) = dlsym(x11Context.pRandLibraryHandle, "XRRAddOutputMode");
+    checkFunctionPtr(x11Context.pXRRAddOutputMode);
 
     return VINF_SUCCESS;
 }
@@ -754,6 +758,7 @@ static void x11Connect()
     x11Context.pXRRAllocModeInfo = NULL;
     x11Context.pXRRCreateMode = NULL;
     x11Context.pXRRGetOutputInfo = NULL;
+    x11Context.pXRRGetCrtcInfo = NULL;
     x11Context.pXRRAddOutputMode = NULL;
 
     int dummy;
@@ -814,14 +819,21 @@ static void x11Connect()
     if (x11Context.pXRRSelectInput)
         x11Context.pXRRSelectInput(x11Context.pDisplay, x11Context.rootWindow, x11Context.hEventMask);
 #endif
+    x11Context.iDefaultScreen = DefaultScreen(x11Context.pDisplay);
+
 #ifdef WITH_DISTRO_XRAND_XINERAMA
     x11Context.pScreenResources = XRRGetScreenResources(x11Context.pDisplay, x11Context.rootWindow);
 #else
     if (x11Context.pXRRGetScreenResources)
         x11Context.pScreenResources = x11Context.pXRRGetScreenResources(x11Context.pDisplay, x11Context.rootWindow);
 #endif
-    x11Context.iDefaultScreen = DefaultScreen(x11Context.pDisplay);
     x11Context.hOutputCount = determineOutputCount();
+#ifdef WITH_DISTRO_XRAND_XINERAMA
+    XRRFreeScreenResources(x11Context.pScreenResources);
+#else
+    if (x11Context.pXRRFreeScreenResources)
+        x11Context.pXRRFreeScreenResources(x11Context.pScreenResources);
+#endif
 }
 
 static int determineOutputCount()
@@ -845,6 +857,18 @@ static int findExistingModeIndex(unsigned iXRes, unsigned iYRes)
 
 static bool disableCRTC(RRCrtc crtcID)
 {
+    XRRCrtcInfo *pCrctInfo = NULL;
+
+#ifdef WITH_DISTRO_XRAND_XINERAMA
+    pCrctInfo = XRRGetCrtcInfo(x11Context.pDisplay, x11Context.pScreenResources, crtcID);
+#else
+    if (x11Context.pXRRGetCrtcInfo)
+        pCrctInfo = x11Context.pXRRGetCrtcInfo(x11Context.pDisplay, x11Context.pScreenResources, crtcID);
+#endif
+
+    if (!pCrctInfo)
+        return false;
+
     Status ret = Success;
 #ifdef WITH_DISTRO_XRAND_XINERAMA
     ret = XRRSetCrtcConfig(x11Context.pDisplay, x11Context.pScreenResources, crtcID,
@@ -855,12 +879,9 @@ static bool disableCRTC(RRCrtc crtcID)
                                            CurrentTime, 0, 0, None, RR_Rotate_0, NULL, 0);
 #endif
     if (ret == Success)
-        return false;
+        return true;
     else
-    {
-        VBClLogFatalError("Crtc disable failed %lu\n", crtcID);
         return false;
-    }
 }
 
 static XRRScreenSize currentSize()
@@ -1002,12 +1023,13 @@ static bool configureOutput(int iOutputIndex, struct RANDROUTPUT *paOutputs)
     if (x11Context.pXRRGetOutputInfo)
         pOutputInfo = x11Context.pXRRGetOutputInfo(x11Context.pDisplay, x11Context.pScreenResources, outputId);
 #endif
-
+    if (!pOutputInfo)
+        return false;
     XRRModeInfo *pModeInfo = NULL;
     bool fNewMode = false;
     /* Index of the mode within the XRRScreenResources.modes array. -1 if such a mode with required resolution does not exists*/
     int iModeIndex = findExistingModeIndex(paOutputs[iOutputIndex].width, paOutputs[iOutputIndex].height);
-    if (iModeIndex != -1 && iModeIndex < x11Context.hOutputCount)
+    if (iModeIndex != -1 && iModeIndex < x11Context.pScreenResources->nmode)
         pModeInfo = &(x11Context.pScreenResources->modes[iModeIndex]);
     else
     {
@@ -1068,21 +1090,65 @@ static bool configureOutput(int iOutputIndex, struct RANDROUTPUT *paOutputs)
 /** Construct the xrandr command which sets the whole monitor topology each time. */
 static void setXrandrTopology(struct RANDROUTPUT *paOutputs)
 {
-    XGrabServer(x11Context.pDisplay);
-    (void*)paOutputs;
+#ifdef WITH_DISTRO_XRAND_XINERAMA
+    x11Context.pScreenResources = XRRGetScreenResources(x11Context.pDisplay, x11Context.rootWindow);
+#else
+    if (x11Context.pXRRGetScreenResources)
+        x11Context.pScreenResources = x11Context.pXRRGetScreenResources(x11Context.pDisplay, x11Context.rootWindow);
+#endif
+    x11Context.hOutputCount = determineOutputCount();
+
     if (!x11Context.pScreenResources)
         return;
-    /* Disable all crtcs. */
-    for (int i = 0; i , x11Context.pScreenResources->ncrtc; ++i)
+
+    XGrabServer(x11Context.pDisplay);
+
+    /* Disable crtcs. */
+    for (int i = 0; i < x11Context.pScreenResources->noutput; ++i)
     {
-        if (!disableCRTC(x11Context.pScreenResources->crtcs[i]))
+        XRROutputInfo *pOutputInfo = NULL;
+#ifdef WITH_DISTRO_XRAND_XINERAMA
+        pOutputInfo = XRRGetOutputInfo(x11Context.pDisplay, x11Context.pScreenResources, x11Context.pScreenResources->outputs[i]);
+#else
+        if (x11Context.pXRRGetOutputInfo)
+            pOutputInfo = x11Context.pXRRGetOutputInfo(x11Context.pDisplay, x11Context.pScreenResources, x11Context.pScreenResources->outputs[i]);
+#endif
+        if (!pOutputInfo)
+            continue;
+        if (pOutputInfo->crtc == None)
+            continue;
+
+        if (!disableCRTC(pOutputInfo->crtc))
         {
+            VBClLogFatalError("Crtc disable failed %lu\n", pOutputInfo->crtc);
             XUngrabServer(x11Context.pDisplay);
+#ifdef WITH_DISTRO_XRAND_XINERAMA
+            XRRFreeScreenResources(x11Context.pScreenResources);
+#else
+            if (x11Context.pXRRFreeScreenResources)
+                x11Context.pXRRFreeScreenResources(x11Context.pScreenResources);
+#endif
             return;
         }
+#ifdef WITH_DISTRO_XRAND_XINERAMA
+        XRRFreeOutputInfo(pOutputInfo);
+#else
+        if (x11Context.pXRRFreeOutputInfo)
+            x11Context.pXRRFreeOutputInfo(pOutputInfo);
+#endif
     }
     /* Resize the frame buffer. */
-    resizeFrameBuffer(paOutputs);
+    if (!resizeFrameBuffer(paOutputs))
+    {
+        XUngrabServer(x11Context.pDisplay);
+#ifdef WITH_DISTRO_XRAND_XINERAMA
+        XRRFreeScreenResources(x11Context.pScreenResources);
+#else
+        if (x11Context.pXRRFreeScreenResources)
+            x11Context.pXRRFreeScreenResources(x11Context.pScreenResources);
+#endif
+        return;
+    }
 
     /* Configure the outputs. */
     for (int i = 0; i < x11Context.hOutputCount; ++i)
@@ -1094,7 +1160,17 @@ static void setXrandrTopology(struct RANDROUTPUT *paOutputs)
             continue;
         configureOutput(i, paOutputs);
     }
+
     XUngrabServer(x11Context.pDisplay);
+    XFlush(x11Context.pDisplay);
+
+#ifdef WITH_DISTRO_XRAND_XINERAMA
+    XRRFreeScreenResources(x11Context.pScreenResources);
+#else
+    if (x11Context.pXRRFreeScreenResources)
+        x11Context.pXRRFreeScreenResources(x11Context.pScreenResources);
+#endif
+
 }
 
 static const char *getName()
@@ -1175,6 +1251,8 @@ static int run(struct VBCLSERVICE **ppInterface, bool fDaemonised)
                 aOutputs[j].fEnabled = !(aMonitors[j].fDisplayFlags & VMMDEV_DISPLAY_DISABLED);
                 if (aOutputs[j].fEnabled)
                     iRunningX += aOutputs[j].width;
+                printf("%d %d %d %d %d\n", aOutputs[j].x, aOutputs[j].y,
+                       aOutputs[j].width, aOutputs[j].height, aOutputs[j].fEnabled);
             }
             setXrandrTopology(aOutputs);
         }
