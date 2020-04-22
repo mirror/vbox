@@ -421,8 +421,8 @@ void virtioPrintFeatures(VIRTIOCORE *pVirtio)
     char *cp = pszBuf;
     for (unsigned i = 0; i < RT_ELEMENTS(s_aFeatures); ++i)
     {
-        bool isOffered    = pVirtio->uDeviceFeatures  & s_aFeatures[i].fFeatureBit;
-        bool isNegotiated = pVirtio->uDriverFeatures  & s_aFeatures[i].fFeatureBit;
+        bool isOffered    = !!(pVirtio->uDeviceFeatures  & s_aFeatures[i].fFeatureBit);
+        bool isNegotiated = !!(pVirtio->uDriverFeatures  & s_aFeatures[i].fFeatureBit);
         cp += RTStrPrintf(cp, cbBuf - (cp - pszBuf), "        %s       %s   %s",
                           isOffered ? "+" : "-", isNegotiated ? "x" : " ", s_aFeatures[i].pcszDesc);
     }
@@ -1177,7 +1177,8 @@ static void virtioNotifyGuestDriver(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uin
             virtioKick(pDevIns, pVirtio, VIRTIO_ISR_VIRTQ_INTERRUPT, pVirtio->uQueueMsixVector[idxQueue], fForce);
             return;
         }
-        Log6Func(("...skipping interrupt, queue %s, Guest flagged VIRTQ_AVAIL_F_NO_INTERRUPT for queue\n"));
+        Log6Func(("...skipping interrupt, queue %s, Guest flagged VIRTQ_AVAIL_F_NO_INTERRUPT for queue\n",
+                     VIRTQNAME(pVirtio, idxQueue)));
     }
 }
 
