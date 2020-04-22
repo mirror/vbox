@@ -41,7 +41,7 @@
  *  - This code does 2 related but separate things: 1- It resizes and enables/disables monitors upon host's
       requests (see the infinite loop in run()). 2- it listens to RandR events (caused by this or any other X11 client)
       on a different thread and notifies host about the new monitor positions. See sendMonitorPositions(...). This is
-      mainly work around since we have realized that vmsvga does not convey correct monitor positions thru FIFO.
+      mainly a work around since we have realized that vmsvga does not convey correct monitor positions thru FIFO.
  */
 #include <stdio.h>
 #include <dlfcn.h>
@@ -114,7 +114,7 @@ AssertCompileSize(struct X11VMWRECT, 8);
 struct X11CONTEXT
 {
     Display *pDisplay;
-    /* We use a separate connection for randr event listening for sharing  a
+    /* We use a separate connection for randr event listening since sharing  a
        single display object with resizing (main) and event listening threads ends up having a deadlock.*/
     Display *pDisplayRandRMonitoring;
     Window rootWindow;
