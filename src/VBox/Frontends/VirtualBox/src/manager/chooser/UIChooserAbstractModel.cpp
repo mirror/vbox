@@ -408,21 +408,51 @@ void UIChooserAbstractModel::sltLocalMachineRegistered(const QUuid &uMachineId, 
 void UIChooserAbstractModel::sltCloudMachineRegistered(const QString &strProviderShortName, const QString &strProfileName,
                                                        const QUuid &uMachineId, const bool fRegistered)
 {
+    /* Compose full group name: */
+    const QString strGroupName = QString("/%1/%2").arg(strProviderShortName, strProfileName);
+
     /* Existing VM unregistered? */
     if (!fRegistered)
     {
         /* Remove machine-items with passed id: */
         invisibleRoot()->removeAllNodes(uMachineId);
-        /// @todo make sure there is fake item if no real item exist, never wipe out empty groups ..
     }
     /* New VM registered? */
     else
     {
         /* Add new machine-item: */
-        const QString strGroupName = QString("/%1/%2").arg(strProviderShortName, strProfileName);
         const CCloudMachine comMachine = cloudMachineById(strProviderShortName, strProfileName, uMachineId);
         addCloudMachineIntoTheTree(strGroupName, comMachine, true /* make it visible */);
-        /// @todo make sure there is no fake item if at least one real item exists ..
+    }
+
+    /* Search for corresponding profile node: */
+    QList<UIChooserNode*> profileNodes;
+    invisibleRoot()->searchForNodes(strGroupName, UIChooserItemSearchFlag_Group | UIChooserItemSearchFlag_ExactId, profileNodes);
+    if (!profileNodes.isEmpty())
+    {
+        /* Acquire corresponding profile node: */
+        UIChooserNodeGroup *pProfileNode = profileNodes.first()->toGroupNode();
+        if (pProfileNode)
+        {
+            /* Add fake cloud VM item if necessary: */
+            if (!fRegistered && pProfileNode->nodes(UIChooserNodeType_Machine).isEmpty())
+            {
+                UIChooserNodeMachine *pFakeNode = new UIChooserNodeMachine(pProfileNode /* parent */,
+                                                                           false /* favorite */,
+                                                                           0 /* position */);
+                pFakeNode->toMachineNode()->cache()->toCloud()->setFakeCloudItemState(UIVirtualMachineItemCloud::FakeCloudItemState_Done);
+                pFakeNode->toMachineNode()->cache()->toCloud()->recache();
+            }
+            /* Remove fake cloud VM item otherwise: */
+            else if (fRegistered && !pProfileNode->nodes(UIChooserNodeType_Machine).isEmpty())
+            {
+                /* Search for corresponding fake node: */
+                QList<UIChooserNode*> fakeNodes;
+                pProfileNode->searchForNodes(toOldStyleUuid(QUuid()), UIChooserItemSearchFlag_Machine | UIChooserItemSearchFlag_ExactId, fakeNodes);
+                if (!fakeNodes.isEmpty())
+                    delete fakeNodes.first();
+            }
+        }
     }
 }
 
