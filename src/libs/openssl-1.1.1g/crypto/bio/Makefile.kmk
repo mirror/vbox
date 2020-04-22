@@ -1,0 +1,45 @@
+# $Id$
+## @file
+# OpenSSL Sub-Makefile.
+#
+
+#
+# Copyright (C) 2019 Oracle Corporation
+#
+# Oracle Corporation confidential
+# All rights reserved
+#
+
+SUB_DEPTH = ../../../../..
+include $(KBUILD_PATH)/subheader.kmk
+
+LIBRARIES += crypto_bio
+crypto_bio_TEMPLATE = SUBLIBCRYPTO
+crypto_bio_DEFS = OPENSSL_NO_DEPRECATED
+crypto_bio_SOURCES = \
+	b_addr.c \
+	b_dump.c \
+	b_print.c \
+	b_sock.c \
+	b_sock2.c \
+	bf_buff.c \
+	bf_lbuf.c \
+	bf_nbio.c \
+	bf_null.c \
+	bio_cb.c \
+	bio_err.c \
+	bio_lib.c \
+	bio_meth.c \
+	bss_acpt.c \
+	bss_bio.c \
+	bss_conn.c \
+	bss_dgram.c \
+	bss_fd.c \
+	bss_file.c \
+	bss_log.c \
+	bss_mem.c \
+	bss_null.c \
+	bss_sock.c
+$(evalcall VBOX_OPENSSL_X86,crypto_bio)
+
+include $(FILE_KBUILD_SUB_FOOTER)
