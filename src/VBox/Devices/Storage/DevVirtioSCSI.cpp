@@ -702,20 +702,14 @@ static int virtioScsiR3SendEvent(PPDMDEVINS pDevIns, PVIRTIOSCSI pThis, uint16_t
             return VINF_SUCCESS;
     }
 
-    /** @todo r=bird: virtioCoreQueueIsEmpty() only differs in one step from what
-     *        virtioCoreR3QueueGet() also does, and that is checking
-     *        VIRTIO_STATUS_DRIVER_OK.  So, why not combine the two and check the
-     *        virtioCoreR3QueueGet status code?!  (Actually, I've added a status
-     *        check there myself, as we'll dump core if it fails and we don't.) */
-    if (virtioCoreQueueIsEmpty(pDevIns, &pThis->Virtio, EVENTQ_IDX))
+    PVIRTIO_DESC_CHAIN_T pDescChain = NULL;
+    int rc = virtioCoreR3QueueGet(pDevIns, &pThis->Virtio, EVENTQ_IDX, &pDescChain, true);
+    if (rc == VERR_NOT_AVAILABLE)
     {
         LogFunc(("eventq is empty, events missed (driver didn't preload queue)!\n"));
         ASMAtomicWriteBool(&pThis->fEventsMissed, true);
         return VINF_SUCCESS;
     }
-
-    PVIRTIO_DESC_CHAIN_T pDescChain = NULL;
-    int rc = virtioCoreR3QueueGet(pDevIns, &pThis->Virtio, EVENTQ_IDX, &pDescChain, true);
     AssertRCReturn(rc, rc);
 
     VIRTIOSCSI_EVENT_T Event;
@@ -737,11 +731,14 @@ static int virtioScsiR3SendEvent(PPDMDEVINS pDevIns, PVIRTIOSCSI pThis, uint16_t
     RTSGBUF ReqSgBuf;
     RTSgBufInit(&ReqSgBuf, aReqSegs, RT_ELEMENTS(aReqSegs));
 
-    virtioCoreR3QueuePut(pDevIns, &pThis->Virtio, EVENTQ_IDX, &ReqSgBuf, pDescChain, true /*fFence*/);
-    virtioCoreQueueSync(pDevIns, &pThis->Virtio, EVENTQ_IDX);
+    rc = virtioCoreR3QueuePut(pDevIns, &pThis->Virtio, EVENTQ_IDX, &ReqSgBuf, pDescChain, true /*fFence*/);
+    if (rc == VINF_SUCCESS)
+        virtioCoreQueueSync(pDevIns, &pThis->Virtio, EVENTQ_IDX, false);
+    else
+        LogRel(("Error writing control message to guest\n"));
     virtioCoreR3DescChainRelease(&pThis->Virtio, pDescChain);
 
-    return VINF_SUCCESS;
+    return rc;
 }
 
 /** Internal worker. */
@@ -804,7 +801,7 @@ static int virtioScsiR3ReqErr(PPDMDEVINS pDevIns, PVIRTIOSCSI pThis, PVIRTIOSCSI
         pRespHdr->uResponse = VIRTIOSCSI_S_RESET;
 
     virtioCoreR3QueuePut(pDevIns, &pThis->Virtio, qIdx, &ReqSgBuf, pDescChain, true /* fFence */);
-    virtioCoreQueueSync(pDevIns, &pThis->Virtio, qIdx);
+    virtioCoreQueueSync(pDevIns, &pThis->Virtio, qIdx, false);
 
     if (!ASMAtomicDecU32(&pThis->cActiveReqs) && pThisCC->fQuiescing)
         PDMDevHlpAsyncNotificationCompleted(pDevIns);
@@ -993,7 +990,7 @@ static DECLCALLBACK(int) virtioScsiR3IoReqFinish(PPDMIMEDIAEXPORT pInterface, PD
                         VERR_BUFFER_OVERFLOW);
 
         virtioCoreR3QueuePut(pDevIns, &pThis->Virtio, pReq->qIdx, &ReqSgBuf, pReq->pDescChain, true /* fFence TBD */);
-        virtioCoreQueueSync(pDevIns, &pThis->Virtio, pReq->qIdx);
+        virtioCoreQueueSync(pDevIns, &pThis->Virtio, pReq->qIdx, false);
 
         Log2(("-----------------------------------------------------------------------------------------\n"));
     }
@@ -1036,11 +1033,7 @@ static DECLCALLBACK(int) virtioScsiR3IoReqCopyFromBuf(PPDMIMEDIAEXPORT pInterfac
 
     while (cbRemain)
     {
-        PVIRTIOSGSEG pSeg = &pSgPhysReturn->paSegs[pSgPhysReturn->idxSeg];
-        /** @todo r=bird: add inline function for getting number of bytes left in the
-         *        current segment.  Actually, shouldn't pSgPhysReturn->cbSegLeft have
-         *        this value? */
-        cbCopied = RT_MIN(pSgBuf->cbSegLeft, pSeg->cbSeg - (size_t)(pSgPhysReturn->gcPhysCur - pSeg->gcPhys));
+        cbCopied = RT_MIN(pSgBuf->cbSegLeft,  pSgPhysReturn->cbSegLeft);
         Assert(cbCopied > 0);
         PDMDevHlpPCIPhysWrite(pDevIns, pSgPhysReturn->gcPhysCur, pSgBuf->pvSegCur, cbCopied);
         RTSgBufAdvance(pSgBuf, cbCopied);
@@ -1078,11 +1071,7 @@ static DECLCALLBACK(int) virtioScsiR3IoReqCopyToBuf(PPDMIMEDIAEXPORT pInterface,
     size_t cbRemain = pReq->cbDataOut;
     while (cbRemain)
     {
-        PVIRTIOSGSEG const pSeg = &pSgPhysSend->paSegs[pSgPhysSend->idxSeg];
-        /** @todo r=bird: add inline function for getting number of bytes left in the
-         *        current segment.  Actually, shouldn't pSgPhysSend->cbSegLeft have
-         *        this value? */
-        cbCopied = RT_MIN(pSgBuf->cbSegLeft, pSeg->cbSeg - (size_t)(pSgPhysSend->gcPhysCur - pSeg->gcPhys));
+        cbCopied = RT_MIN(pSgBuf->cbSegLeft, pSgPhysSend->cbSegLeft);
         Assert(cbCopied > 0);
         PDMDevHlpPCIPhysRead(pDevIns, pSgPhysSend->gcPhysCur, pSgBuf->pvSegCur, cbCopied);
         RTSgBufAdvance(pSgBuf, cbCopied);
@@ -1127,7 +1116,6 @@ static int virtioScsiR3ReqSubmit(PPDMDEVINS pDevIns, PVIRTIOSCSI pThis, PVIRTIOS
     AssertCompile(VIRTIOSCSI_CDB_SIZE_MAX < 4096);
     union
     {
-        /*VIRTIOSCSI_REQ_CMD_T    ReqCmd; - not needed */
         RT_GCC_EXTENSION struct
         {
             REQ_CMD_HDR_T       ReqHdr;
@@ -1155,10 +1143,10 @@ static int virtioScsiR3ReqSubmit(PPDMDEVINS pDevIns, PVIRTIOSCSI pThis, PVIRTIOS
     {
         LogRel(("* * * REPORT LUNS LU ACCESSED * * * "));
         /* Force rejection. */ /** @todo figure out right way to handle. Note this is a very
-         * vague and confusing part of the VirtIO spec which deviates from the SCSI standard
-         * I have not been able to determine how to implement this properly.  Guest drivers
-         * whose source code has been checked, so far, don't seem to use it. If it starts
-         * showing up in the logs can try to work */
+         * vague and confusing part of the VirtIO spec (which deviates from the SCSI standard).
+         * I have not been able to determine how to implement this properly.  I've checked the
+         * source code of Guest drivers, so far, and none I've found use it. If logs show
+         * this warning implementing it can be re-visited */
         uScsiLun = 0xff;
     }
     else
@@ -1487,7 +1475,7 @@ static int virtioScsiR3Ctrl(PPDMDEVINS pDevIns, PVIRTIOSCSI pThis, PVIRTIOSCSICC
     RTSgBufInit(&ReqSgBuf, aReqSegs, cSegs);
 
     virtioCoreR3QueuePut(pDevIns, &pThis->Virtio, qIdx, &ReqSgBuf, pDescChain, true /*fFence*/);
-    virtioCoreQueueSync(pDevIns, &pThis->Virtio, qIdx);
+    virtioCoreQueueSync(pDevIns, &pThis->Virtio, qIdx, false);
 
     return VINF_SUCCESS;
 }

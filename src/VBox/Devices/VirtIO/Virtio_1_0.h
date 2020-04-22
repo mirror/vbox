@@ -268,7 +268,6 @@ typedef struct VIRTIOCORE
     uint8_t                     uDeviceStatus;                      /**< (MMIO) Device Status                GUEST */
     uint8_t                     uPrevDeviceStatus;                  /**< (MMIO) Prev Device Status           GUEST */
     uint8_t                     uConfigGeneration;                  /**< (MMIO) Device config sequencer       HOST */
-
     VIRTQSTATE                  virtqState[VIRTQ_MAX_CNT];          /**< Local impl-specific queue context         */
 
     /** @name The locations of the capability structures in PCI config space and the BAR.
@@ -280,9 +279,9 @@ typedef struct VIRTIOCORE
     VIRTIO_PCI_CAP_LOCATIONS_T  LocDeviceCap;                      /**< VIRTIO_PCI_CAP_T + custom data.  */
     /** @} */
 
-    bool                        fGenUpdatePending;                  /**< If set, update cfg gen after driver reads */
+    bool                        fGenUpdatePending;                 /**< If set, update cfg gen after driver reads */
     uint8_t                     uPciCfgDataOff;
-    uint8_t                     uISR;                               /**< Interrupt Status Register.                */
+    uint8_t                     uISR;                              /**< Interrupt Status Register.                */
     uint8_t                     fMsiSupport;
 
     /** The MMIO handle for the PCI capability region (\#2). */
@@ -418,12 +417,13 @@ int  virtioCoreR3QueuePut(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t idxQ
                           PVIRTIO_DESC_CHAIN_T pDescChain, bool fFence);
 
 int  virtioCoreR3QueuePendingCount(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t idxQueue);
-int  virtioCoreQueueSync(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t idxQueue);
+int  virtioCoreQueueSync(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t idxQueue, bool fForce);
 bool virtioCoreQueueIsEmpty(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t idxQueue);
 void virtioCoreQueueEnable(PVIRTIOCORE pVirtio, uint16_t idxQueue, bool fEnabled);
 void virtioCoreQueueSetNotify(PVIRTIOCORE pVirtio, uint16_t idxQueue, bool fEnabled);
 void virtioCoreNotifyConfigChanged(PVIRTIOCORE pVirtio);
 void virtioCoreResetAll(PVIRTIOCORE pVirtio);
+void virtioPrintFeatures(VIRTIOCORE *pVirtio);
 
 /**
  * Return queue enable state
@@ -474,6 +474,7 @@ DECLINLINE(uint64_t) virtioCoreGetAcceptedFeatures(PVIRTIOCORE pVirtio)
     return pVirtio->uDriverFeatures;
 }
 
+
 /**
  * Calculate the length of a GCPhys s/g buffer by tallying the size of each segment.
  *
@@ -502,6 +503,7 @@ RTGCPHYS virtioCoreSgBufAdvance(PVIRTIOSGBUF pGcSgBuf, size_t cbAdvance);
 void     virtioCoreSgBufInit(PVIRTIOSGBUF pSgBuf, PVIRTIOSGSEG paSegs, size_t cSegs);
 size_t   virtioCoreSgBufCalcTotalLength(PCVIRTIOSGBUF pGcSgBuf);
 void     virtioCoreSgBufReset(PVIRTIOSGBUF pGcSgBuf);
+size_t   virtioCoreSgBufCalcTotalLength(PVIRTIOSGBUF pGcSgBuf);
 int      virtioCoreR3SaveExec(PVIRTIOCORE pVirtio, PCPDMDEVHLPR3 pHlp, PSSMHANDLE pSSM);
 int      virtioCoreR3LoadExec(PVIRTIOCORE pVirtio, PCPDMDEVHLPR3 pHlp, PSSMHANDLE pSSM);
 void     virtioCoreR3VmStateChanged(PVIRTIOCORE pVirtio, VIRTIOVMSTATECHANGED enmState);
