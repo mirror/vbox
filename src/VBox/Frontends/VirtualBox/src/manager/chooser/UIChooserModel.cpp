@@ -1113,34 +1113,34 @@ void UIChooserModel::sltRemoveSelectedMachine()
 
     /* Prepare arrays: */
     QMap<QUuid, bool> verdicts;
-    QList<UIChooserItem*> itemsToRemove;
+    QList<UIChooserItemMachine*> itemsToRemove;
     QList<CMachine> localMachinesToUnregister;
     QList<CCloudMachine> cloudMachinesToUnregister;
 
     /* For each selected machine-item: */
-    foreach (UIChooserItem *pItem, selectedMachineItemList)
+    foreach (UIChooserItemMachine *pMachineItem, selectedMachineItemList)
     {
         /* Get machine-item id: */
-        const QUuid uId = pItem->toMachineItem()->id();
+        const QUuid uId = pMachineItem->id();
 
         /* We already decided for that machine? */
         if (verdicts.contains(uId))
         {
             /* To remove similar machine items? */
             if (!verdicts.value(uId))
-                itemsToRemove << pItem;
+                itemsToRemove << pMachineItem;
             continue;
         }
 
         /* Selected copy count: */
         int iSelectedCopyCount = 0;
-        foreach (UIChooserItem *pSelectedItem, selectedMachineItemList)
-            if (pSelectedItem->toMachineItem()->id() == uId)
+        foreach (UIChooserItemMachine *pSelectedItem, selectedMachineItemList)
+            if (pSelectedItem->id() == uId)
                 ++iSelectedCopyCount;
         /* Existing copy count: */
         int iExistingCopyCount = 0;
-        foreach (UIChooserItem *pExistingItem, existingMachineItemList)
-            if (pExistingItem->toMachineItem()->id() == uId)
+        foreach (UIChooserItemMachine *pExistingItem, existingMachineItemList)
+            if (pExistingItem->id() == uId)
                 ++iExistingCopyCount;
         /* If selected copy count equal to existing copy count,
          * we will propose ro unregister machine fully else
@@ -1149,13 +1149,13 @@ void UIChooserModel::sltRemoveSelectedMachine()
         verdicts.insert(uId, fVerdict);
         if (fVerdict)
         {
-            if (pItem->node()->toMachineNode()->cacheType() == UIVirtualMachineItemType_Local)
-                localMachinesToUnregister.append(pItem->node()->toMachineNode()->cache()->toLocal()->machine());
-            else if (pItem->node()->toMachineNode()->cacheType() == UIVirtualMachineItemType_CloudReal)
-                cloudMachinesToUnregister.append(pItem->node()->toMachineNode()->cache()->toCloud()->machine());
+            if (pMachineItem->nodeToMachineType()->cacheType() == UIVirtualMachineItemType_Local)
+                localMachinesToUnregister.append(pMachineItem->nodeToMachineType()->cache()->toLocal()->machine());
+            else if (pMachineItem->nodeToMachineType()->cacheType() == UIVirtualMachineItemType_CloudReal)
+                cloudMachinesToUnregister.append(pMachineItem->nodeToMachineType()->cache()->toCloud()->machine());
         }
         else
-            itemsToRemove << pItem;
+            itemsToRemove << pMachineItem;
     }
 
     /* If we have something to remove: */
@@ -1615,17 +1615,17 @@ void UIChooserModel::updateTreeForMainRoot()
     updateLayout();
 }
 
-void UIChooserModel::removeItems(const QList<UIChooserItem*> &itemsToRemove)
+void UIChooserModel::removeItems(const QList<UIChooserItemMachine*> &machineItems)
 {
     /* Confirm machine-items removal: */
     QStringList names;
-    foreach (UIChooserItem *pItem, itemsToRemove)
+    foreach (UIChooserItemMachine *pItem, machineItems)
         names << pItem->name();
     if (!msgCenter().confirmMachineItemRemoval(names))
         return;
 
     /* Remove all the passed nodes: */
-    foreach (UIChooserItem *pItem, itemsToRemove)
+    foreach (UIChooserItemMachine *pItem, machineItems)
         delete pItem->node();
 
     /* And update model: */

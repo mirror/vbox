@@ -40,6 +40,7 @@ class UIChooser;
 class UIChooserHandlerMouse;
 class UIChooserHandlerKeyboard;
 class UIChooserItem;
+class UIChooserItemMachine;
 class UIChooserNode;
 class UIChooserView;
 class UIVirtualMachineItem;
@@ -365,8 +366,8 @@ private:
         /** Update tree for main root. */
         void updateTreeForMainRoot();
 
-        /** Removes machine @a items. */
-        void removeItems(const QList<UIChooserItem*> &items);
+        /** Removes @a machineItems. */
+        void removeItems(const QList<UIChooserItemMachine*> &machineItems);
         /** Unregisters a list of local virtual @a machines. */
         void unregisterLocalMachines(const QList<CMachine> &machines);
         /** Unregisters a list of cloud virtual @a machines. */
