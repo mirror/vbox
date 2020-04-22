@@ -296,7 +296,7 @@ int UIChooserItemMachine::minimumWidthHint() const
     iProposedWidth += iMarginHL + iMarginHR;
     /* And machine-item content to take into account: */
     int iTopLineWidth = m_iMinimumNameWidth;
-    if (   node()->toMachineNode()->cache()->itemType() == UIVirtualMachineItem::ItemType_Local
+    if (   node()->toMachineNode()->cache()->itemType() == UIVirtualMachineItemType_Local
         && !node()->toMachineNode()->cache()->toLocal()->snapshotName().isEmpty())
         iTopLineWidth += (iMinorSpacing +
                           m_iMinimumSnapshotNameWidth);
@@ -394,8 +394,8 @@ bool UIChooserItemMachine::isDropAllowed(QGraphicsSceneDragDropEvent *pEvent, UI
         UIChooserItemMachine *pMachineItem = pItem->toMachineItem();
 
         /* No drops for cloud items: */
-        if (   node()->toMachineNode()->cache()->itemType() != UIVirtualMachineItem::ItemType_Local
-            || pMachineItem->node()->toMachineNode()->cache()->itemType() != UIVirtualMachineItem::ItemType_Local)
+        if (   node()->toMachineNode()->cache()->itemType() != UIVirtualMachineItemType_Local
+            || pMachineItem->node()->toMachineNode()->cache()->itemType() != UIVirtualMachineItemType_Local)
             return false;
         /* No drops for immutable item: */
         if (pMachineItem->isLockedMachine())
@@ -720,7 +720,7 @@ void UIChooserItemMachine::updateMinimumSnapshotNameWidth()
     /* Calculate new minimum snapshot-name width: */
     int iMinimumSnapshotNameWidth = 0;
     /* Is there any snapshot exists? */
-    if (   node()->toMachineNode()->cache()->itemType() == UIVirtualMachineItem::ItemType_Local
+    if (   node()->toMachineNode()->cache()->itemType() == UIVirtualMachineItemType_Local
         && !node()->toMachineNode()->cache()->toLocal()->snapshotName().isEmpty())
     {
         QFontMetrics fm(m_snapshotNameFont, model()->paintDevice());
@@ -806,7 +806,7 @@ void UIChooserItemMachine::updateVisibleName()
 void UIChooserItemMachine::updateVisibleSnapshotName()
 {
     /* Make sure this is local machine item: */
-    if (node()->toMachineNode()->cache()->itemType() != UIVirtualMachineItem::ItemType_Local)
+    if (node()->toMachineNode()->cache()->itemType() != UIVirtualMachineItemType_Local)
         return;
 
     /* Prepare variables: */
@@ -1112,7 +1112,7 @@ void UIChooserItemMachine::paintMachineInfo(QPainter *pPainter, const QRect &rec
                                       iMinorSpacing;
 
             /* Paint middle element: */
-            if (   node()->toMachineNode()->cache()->itemType() == UIVirtualMachineItem::ItemType_Local
+            if (   node()->toMachineNode()->cache()->itemType() == UIVirtualMachineItemType_Local
                 && !node()->toMachineNode()->cache()->toLocal()->snapshotName().isEmpty())
             {
                 /* Prepare variables: */

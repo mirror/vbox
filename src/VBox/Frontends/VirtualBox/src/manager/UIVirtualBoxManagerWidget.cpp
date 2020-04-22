@@ -811,7 +811,7 @@ void UIVirtualBoxManagerWidget::recacheCurrentItemInformation(bool fDontRaiseErr
 
     /* Update machine tools restrictions: */
     QList<UIToolType> retrictedTypes;
-    if (pItem && pItem->itemType() != UIVirtualMachineItem::ItemType_Local)
+    if (pItem && pItem->itemType() != UIVirtualMachineItemType_Local)
     {
         retrictedTypes << UIToolType_Snapshots << UIToolType_Logs;
         if (retrictedTypes.contains(m_pPaneTools->toolsType()))
@@ -834,10 +834,10 @@ void UIVirtualBoxManagerWidget::recacheCurrentItemInformation(bool fDontRaiseErr
         /* Propagate current items to update the Details-pane: */
         m_pPaneToolsMachine->setItems(currentItems());
         /* Propagate current machine to update the Snapshots-pane or/and Logviewer-pane: */
-        if (pItem->itemType() == UIVirtualMachineItem::ItemType_Local)
+        if (pItem->itemType() == UIVirtualMachineItemType_Local)
             m_pPaneToolsMachine->setMachine(pItem->toLocal()->machine());
         /* Update current cloud machine state: */
-        if (pItem->itemType() == UIVirtualMachineItem::ItemType_CloudReal)
+        if (pItem->itemType() == UIVirtualMachineItemType_CloudReal)
             pItem->toCloud()->updateInfoAsync(false /* delayed? */);
     }
     else

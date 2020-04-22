@@ -574,7 +574,7 @@ void UIVirtualBoxManager::sltOpenAddMachineDialog()
     UIVirtualMachineItem *pItem = items.first();
 
     /* For local machine: */
-    if (pItem->itemType() == UIVirtualMachineItem::ItemType_Local)
+    if (pItem->itemType() == UIVirtualMachineItemType_Local)
     {
         /* Open add machine dialog: */
         openAddMachineDialog();
@@ -957,7 +957,7 @@ void UIVirtualBoxManager::sltPerformShutdownMachine()
     foreach (UIVirtualMachineItem *pItem, itemsToShutdown)
     {
         /* For local machine: */
-        if (pItem->itemType() == UIVirtualMachineItem::ItemType_Local)
+        if (pItem->itemType() == UIVirtualMachineItemType_Local)
         {
             /* Open a session to modify VM state: */
             CSession comSession = uiCommon().openExistingSession(pItem->id());
@@ -975,7 +975,7 @@ void UIVirtualBoxManager::sltPerformShutdownMachine()
             comSession.UnlockMachine();
         }
         /* For real cloud machine: */
-        else if (pItem->itemType() == UIVirtualMachineItem::ItemType_CloudReal)
+        else if (pItem->itemType() == UIVirtualMachineItemType_CloudReal)
         {
             /* Acquire cloud machine: */
             CCloudMachine comCloudMachine = pItem->toCloud()->machine();
@@ -1023,7 +1023,7 @@ void UIVirtualBoxManager::sltPerformPowerOffMachine()
     foreach (UIVirtualMachineItem *pItem, itemsToPowerOff)
     {
         /* For local machine: */
-        if (pItem->itemType() == UIVirtualMachineItem::ItemType_Local)
+        if (pItem->itemType() == UIVirtualMachineItemType_Local)
         {
             /* Open a session to modify VM state: */
             CSession comSession = uiCommon().openExistingSession(pItem->id());
@@ -1048,7 +1048,7 @@ void UIVirtualBoxManager::sltPerformPowerOffMachine()
             comSession.UnlockMachine();
         }
         /* For real cloud machine: */
-        else if (pItem->itemType() == UIVirtualMachineItem::ItemType_CloudReal)
+        else if (pItem->itemType() == UIVirtualMachineItemType_CloudReal)
         {
             /* Acquire cloud machine: */
             CCloudMachine comCloudMachine = pItem->toCloud()->machine();
@@ -1693,7 +1693,7 @@ void UIVirtualBoxManager::performStartOrShowVirtualMachines(const QList<UIVirtua
                 && fStartConfirmed))
         {
             /* For local machine: */
-            if (pItem->itemType() == UIVirtualMachineItem::ItemType_Local)
+            if (pItem->itemType() == UIVirtualMachineItemType_Local)
             {
                 /* Fetch item launch mode: */
                 UICommon::LaunchMode enmItemLaunchMode = enmLaunchMode;
@@ -1709,7 +1709,7 @@ void UIVirtualBoxManager::performStartOrShowVirtualMachines(const QList<UIVirtua
                 uiCommon().launchMachine(machine, enmItemLaunchMode);
             }
             /* For real cloud machine: */
-            else if (pItem->itemType() == UIVirtualMachineItem::ItemType_CloudReal)
+            else if (pItem->itemType() == UIVirtualMachineItemType_CloudReal)
             {
                 /* Acquire cloud machine: */
                 CCloudMachine comCloudMachine = pItem->toCloud()->machine();
@@ -2143,7 +2143,7 @@ bool UIVirtualBoxManager::isAtLeastOneItemAbleToShutdown(const QList<UIVirtualMa
             continue;
 
         /* For local machine: */
-        if (pItem->itemType() == UIVirtualMachineItem::ItemType_Local)
+        if (pItem->itemType() == UIVirtualMachineItemType_Local)
         {
             /* Skip session failures: */
             CSession session = uiCommon().openExistingSession(pItem->id());
@@ -2166,7 +2166,7 @@ bool UIVirtualBoxManager::isAtLeastOneItemAbleToShutdown(const QList<UIVirtualMa
                 return true;
         }
         /* For real cloud machine: */
-        else if (pItem->itemType() == UIVirtualMachineItem::ItemType_CloudReal)
+        else if (pItem->itemType() == UIVirtualMachineItemType_CloudReal)
         {
             /* Running cloud VM has it by definition: */
             return true;

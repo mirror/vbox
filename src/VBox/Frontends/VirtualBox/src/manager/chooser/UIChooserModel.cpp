@@ -919,7 +919,7 @@ void UIChooserModel::sltCreateNewMachine()
 
     /* What first item do we have? */
     if (  !firstSelectedMachineItem()
-        ||firstSelectedMachineItem()->itemType() == UIVirtualMachineItem::ItemType_Local)
+        ||firstSelectedMachineItem()->itemType() == UIVirtualMachineItemType_Local)
     {
         /* Select the parent: */
         UIChooserNode *pGroup = 0;
@@ -1057,7 +1057,7 @@ void UIChooserModel::sltPerformRefreshAction()
     {
         switch (pItem->node()->toMachineNode()->cache()->itemType())
         {
-            case UIVirtualMachineItem::ItemType_Local:
+            case UIVirtualMachineItemType_Local:
             {
                 /* Recache: */
                 pItem->recache();
@@ -1078,7 +1078,7 @@ void UIChooserModel::sltPerformRefreshAction()
 
                 break;
             }
-            case UIVirtualMachineItem::ItemType_CloudReal:
+            case UIVirtualMachineItemType_CloudReal:
             {
                 /* Much more simple than for local items, we are not reloading them, just refreshing: */
                 pItem->node()->toMachineNode()->cache()->toCloud()->updateInfoAsync(false /* delayed */);
@@ -1149,9 +1149,9 @@ void UIChooserModel::sltRemoveSelectedMachine()
         verdicts.insert(uId, fVerdict);
         if (fVerdict)
         {
-            if (pItem->node()->toMachineNode()->cache()->itemType() == UIVirtualMachineItem::ItemType_Local)
+            if (pItem->node()->toMachineNode()->cache()->itemType() == UIVirtualMachineItemType_Local)
                 localMachinesToUnregister.append(pItem->node()->toMachineNode()->cache()->toLocal()->machine());
-            else if (pItem->node()->toMachineNode()->cache()->itemType() == UIVirtualMachineItem::ItemType_CloudReal)
+            else if (pItem->node()->toMachineNode()->cache()->itemType() == UIVirtualMachineItemType_CloudReal)
                 cloudMachinesToUnregister.append(pItem->node()->toMachineNode()->cache()->toCloud()->machine());
         }
         else
@@ -1738,7 +1738,7 @@ void UIChooserModel::unregisterCloudMachines(const QList<CCloudMachine> &machine
                                                      UIChooserItemSearchFlag_Machine |
                                                      UIChooserItemSearchFlag_ExactId);
         AssertPtrReturnVoid(pItem);
-        AssertReturnVoid(pItem->node()->toMachineNode()->cache()->itemType() == UIVirtualMachineItem::ItemType_CloudReal);
+        AssertReturnVoid(pItem->node()->toMachineNode()->cache()->itemType() == UIVirtualMachineItemType_CloudReal);
         AssertPtrReturnVoid(pItem->parentItem());
         AssertPtrReturnVoid(pItem->parentItem()->parentItem());
         const QString strProviderShortName = pItem->parentItem()->parentItem()->name();

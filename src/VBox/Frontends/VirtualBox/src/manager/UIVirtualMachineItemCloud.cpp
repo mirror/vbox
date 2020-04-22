@@ -35,17 +35,17 @@
 
 
 UIVirtualMachineItemCloud::UIVirtualMachineItemCloud()
-    : UIVirtualMachineItem(ItemType_CloudFake)
-    , m_enmFakeCloudItemState(FakeCloudItemState_Loading)
+    : UIVirtualMachineItem(UIVirtualMachineItemType_CloudFake)
+    , m_enmFakeCloudItemState(UIFakeCloudVirtualMachineItemState_Loading)
     , m_pTask(0)
 {
     recache();
 }
 
 UIVirtualMachineItemCloud::UIVirtualMachineItemCloud(const CCloudMachine &comCloudMachine)
-    : UIVirtualMachineItem(ItemType_CloudReal)
+    : UIVirtualMachineItem(UIVirtualMachineItemType_CloudReal)
     , m_comCloudMachine(comCloudMachine)
-    , m_enmFakeCloudItemState(FakeCloudItemState_NotApplicable)
+    , m_enmFakeCloudItemState(UIFakeCloudVirtualMachineItemState_NotApplicable)
     , m_pTask(0)
 {
     recache();
@@ -91,14 +91,14 @@ void UIVirtualMachineItemCloud::recache()
                       ? m_comCloudMachine.GetState()
                       : KMachineState_PoweredOff;
     m_strMachineStateName = gpConverter->toString(m_enmMachineState);
-    if (itemType() == ItemType_CloudFake)
+    if (itemType() == UIVirtualMachineItemType_CloudFake)
     {
         switch (m_enmFakeCloudItemState)
         {
-            case UIVirtualMachineItemCloud::FakeCloudItemState_Loading:
+            case UIFakeCloudVirtualMachineItemState_Loading:
                 m_machineStateIcon = UIIconPool::iconSet(":/state_loading_16px.png");
                 break;
-            case UIVirtualMachineItemCloud::FakeCloudItemState_Done:
+            case UIFakeCloudVirtualMachineItemState_Done:
                 m_machineStateIcon = UIIconPool::iconSet(":/vm_new_16px.png");
                 break;
             default:
@@ -124,8 +124,8 @@ void UIVirtualMachineItemCloud::recache()
 void UIVirtualMachineItemCloud::recachePixmap()
 {
     /* We are using icon corresponding to cached guest OS type: */
-    if (   itemType() == ItemType_CloudFake
-        && fakeCloudItemState() == FakeCloudItemState_Loading)
+    if (   itemType() == UIVirtualMachineItemType_CloudFake
+        && fakeCloudItemState() == UIFakeCloudVirtualMachineItemState_Loading)
         m_pixmap = uiCommon().vmGuestOSTypePixmapDefault("Cloud", &m_logicalPixmapSize);
     else
         m_pixmap = uiCommon().vmGuestOSTypePixmapDefault(m_strOSTypeId, &m_logicalPixmapSize);
@@ -193,15 +193,15 @@ void UIVirtualMachineItemCloud::retranslateUi()
     /* If machine is accessible: */
     if (accessible())
     {
-        if (itemType() == ItemType_CloudFake)
+        if (itemType() == UIVirtualMachineItemType_CloudFake)
         {
             /* Update machine/state name: */
             switch (m_enmFakeCloudItemState)
             {
-                case UIVirtualMachineItemCloud::FakeCloudItemState_Loading:
+                case UIFakeCloudVirtualMachineItemState_Loading:
                     m_strMachineStateName = tr("Loading ...");
                     break;
-                case UIVirtualMachineItemCloud::FakeCloudItemState_Done:
+                case UIFakeCloudVirtualMachineItemState_Done:
                     m_strMachineStateName = tr("Empty");
                     break;
                 default:
@@ -238,7 +238,7 @@ void UIVirtualMachineItemCloud::retranslateUi()
 void UIVirtualMachineItemCloud::sltCreateGetCloudInstanceInfoTask()
 {
     /* Make sure item is of real cloud type and is initialized: */
-    AssertReturnVoid(itemType() == ItemType_CloudReal);
+    AssertReturnVoid(itemType() == UIVirtualMachineItemType_CloudReal);
 
     /* Create and start task to acquire info async way only if there is no task yet: */
     if (!m_pTask)

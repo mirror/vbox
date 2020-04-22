@@ -43,14 +43,6 @@ signals:
 
 public:
 
-    /** Fake cloud item states. */
-    enum FakeCloudItemState
-    {
-        FakeCloudItemState_NotApplicable,
-        FakeCloudItemState_Loading,
-        FakeCloudItemState_Done
-    };
-
     /** Constructs fake cloud VM item. */
     UIVirtualMachineItemCloud();
     /** Constructs real cloud VM item on the basis of taken @a comCloudMachine. */
@@ -67,9 +59,9 @@ public:
     /** @name Data attributes.
       * @{ */
         /** Defines fake cloud item @a enmState. */
-        void setFakeCloudItemState(FakeCloudItemState enmState) { m_enmFakeCloudItemState = enmState; }
+        void setFakeCloudItemState(UIFakeCloudVirtualMachineItemState enmState) { m_enmFakeCloudItemState = enmState; }
         /** Returns fake cloud item state. */
-        FakeCloudItemState fakeCloudItemState() const { return m_enmFakeCloudItemState; }
+        UIFakeCloudVirtualMachineItemState fakeCloudItemState() const { return m_enmFakeCloudItemState; }
 
         /** Updates cloud VM info async way, @a fDelayed if requested or instant otherwise. */
         void updateInfoAsync(bool fDelayed);
@@ -131,7 +123,7 @@ private:
     /** @name Data attributes.
       * @{ */
         /** Holds fake cloud item state. */
-        FakeCloudItemState  m_enmFakeCloudItemState;
+        UIFakeCloudVirtualMachineItemState  m_enmFakeCloudItemState;
 
         /** Holds the info acquire task instance. */
         UITask *m_pTask;

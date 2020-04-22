@@ -440,8 +440,8 @@ void UIChooserAbstractModel::sltCloudMachineRegistered(const QString &strProvide
                 UIChooserNodeMachine *pFakeNode = new UIChooserNodeMachine(pProfileNode /* parent */,
                                                                            false /* favorite */,
                                                                            0 /* position */);
-                pFakeNode->toMachineNode()->cache()->toCloud()->setFakeCloudItemState(UIVirtualMachineItemCloud::FakeCloudItemState_Done);
-                pFakeNode->toMachineNode()->cache()->toCloud()->recache();
+                pFakeNode->cache()->toCloud()->setFakeCloudItemState(UIFakeCloudVirtualMachineItemState_Done);
+                pFakeNode->cache()->toCloud()->recache();
             }
             /* Remove fake cloud VM item otherwise: */
             else if (fRegistered && !pProfileNode->nodes(UIChooserNodeType_Machine).isEmpty())
@@ -519,7 +519,7 @@ void UIChooserAbstractModel::sltHandleCloudListMachinesTaskComplete(UITask *pTas
     UIChooserNodeMachine *pFirstChildNodeMachine = pFirstChildNode->toMachineNode();
     AssertPtrReturnVoid(pFirstChildNodeMachine);
     AssertPtrReturnVoid(pFirstChildNodeMachine->cache());
-    AssertReturnVoid(pFirstChildNodeMachine->cache()->itemType() == UIVirtualMachineItem::ItemType_CloudFake);
+    AssertReturnVoid(pFirstChildNodeMachine->cache()->itemType() == UIVirtualMachineItemType_CloudFake);
 
     /* And if we have at least one cloud machine: */
     const QVector<CCloudMachine> machines = pAcquiringTask->result();
@@ -537,7 +537,7 @@ void UIChooserAbstractModel::sltHandleCloudListMachinesTaskComplete(UITask *pTas
         /* Otherwise toggle and update "Empty" node: */
         UIVirtualMachineItemCloud *pFakeCloudMachineItem = pFirstChildNodeMachine->cache()->toCloud();
         AssertPtrReturnVoid(pFakeCloudMachineItem);
-        pFakeCloudMachineItem->setFakeCloudItemState(UIVirtualMachineItemCloud::FakeCloudItemState_Done);
+        pFakeCloudMachineItem->setFakeCloudItemState(UIFakeCloudVirtualMachineItemState_Done);
         pFakeCloudMachineItem->recache();
     }
 }
@@ -978,7 +978,7 @@ void UIChooserAbstractModel::gatherGroupDefinitions(QMap<QString, QStringList> &
     /* Iterate over all the machine-nodes: */
     foreach (UIChooserNode *pNode, pParentGroup->nodes(UIChooserNodeType_Machine))
         if (UIChooserNodeMachine *pMachineNode = pNode->toMachineNode())
-            if (   pMachineNode->cache()->itemType() == UIVirtualMachineItem::ItemType_Local
+            if (   pMachineNode->cache()->itemType() == UIVirtualMachineItemType_Local
                 && pMachineNode->cache()->accessible())
                 definitions[toOldStyleUuid(pMachineNode->cache()->id())] << pParentGroup->fullName();
     /* Iterate over all the group-nodes: */
@@ -1007,8 +1007,8 @@ void UIChooserAbstractModel::gatherGroupOrders(QMap<QString, QStringList> &order
     /* Iterate over all the machine-nodes: */
     foreach (UIChooserNode *pNode, pParentGroup->nodes(UIChooserNodeType_Machine))
         if (UIChooserNodeMachine *pMachineNode = pNode->toMachineNode())
-            if (   pMachineNode->cache()->itemType() == UIVirtualMachineItem::ItemType_Local
-                || pMachineNode->cache()->itemType() == UIVirtualMachineItem::ItemType_CloudReal)
+            if (   pMachineNode->cache()->itemType() == UIVirtualMachineItemType_Local
+                || pMachineNode->cache()->itemType() == UIVirtualMachineItemType_CloudReal)
                 orders[strExtraDataKey] << QString("m=%1").arg(toOldStyleUuid(pMachineNode->cache()->id()));
 }
 

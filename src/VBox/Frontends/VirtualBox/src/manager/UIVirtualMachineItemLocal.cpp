@@ -39,7 +39,7 @@
 *********************************************************************************************************************************/
 
 UIVirtualMachineItemLocal::UIVirtualMachineItemLocal(const CMachine &comMachine)
-    : UIVirtualMachineItem(ItemType_Local)
+    : UIVirtualMachineItem(UIVirtualMachineItemType_Local)
     , m_comMachine(comMachine)
     , m_cSnaphot(0)
     , m_enmSessionState(KSessionState_Null)

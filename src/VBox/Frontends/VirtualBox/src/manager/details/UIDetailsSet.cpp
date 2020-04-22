@@ -67,7 +67,7 @@ void UIDetailsSet::buildSet(UIVirtualMachineItem *pMachineItem, bool fFullSet, c
 {
     /* Remember passed arguments: */
     m_pMachineItem = pMachineItem;
-    m_fIsLocal = m_pMachineItem->itemType() == UIVirtualMachineItem::ItemType_Local;
+    m_fIsLocal = m_pMachineItem->itemType() == UIVirtualMachineItemType_Local;
     m_fHasDetails = m_pMachineItem->hasDetails();
     m_fFullSet = fFullSet;
     m_settings = settings;
@@ -81,7 +81,7 @@ void UIDetailsSet::buildSet(UIVirtualMachineItem *pMachineItem, bool fFullSet, c
         /* Special handling wrt item type: */
         switch (m_pMachineItem->itemType())
         {
-            case UIVirtualMachineItem::ItemType_Local:
+            case UIVirtualMachineItemType_Local:
             {
                 /* Get local machine: */
                 m_comMachine = m_pMachineItem->toLocal()->machine();
@@ -102,7 +102,7 @@ void UIDetailsSet::buildSet(UIVirtualMachineItem *pMachineItem, bool fFullSet, c
 
                 break;
             }
-            case UIVirtualMachineItem::ItemType_CloudReal:
+            case UIVirtualMachineItemType_CloudReal:
             {
                 /* Get cloud machine: */
                 m_comCloudMachine = m_pMachineItem->toCloud()->machine();
