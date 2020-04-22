@@ -295,9 +295,8 @@ UIVirtualMachineItem *UIChooserModel::firstSelectedMachineItem() const
     /* Return first machine-item of the selected-item: */
     return      firstSelectedItem()
              && firstSelectedItem()->firstMachineItem()
-             && firstSelectedItem()->firstMachineItem()->node()
-             && firstSelectedItem()->firstMachineItem()->node()->toMachineNode()
-           ? firstSelectedItem()->firstMachineItem()->node()->toMachineNode()->cache()
+             && firstSelectedItem()->firstMachineItem()->toMachineItem()
+           ? firstSelectedItem()->firstMachineItem()->toMachineItem()->cache()
            : 0;
 }
 
@@ -311,7 +310,7 @@ QList<UIVirtualMachineItem*> UIChooserModel::selectedMachineItems() const
     /* Reintegrate machine-items into valid format: */
     QList<UIVirtualMachineItem*> currentMachineList;
     foreach (UIChooserItemMachine *pItem, currentMachineItemList)
-        currentMachineList << pItem->nodeToMachineType()->cache();
+        currentMachineList << pItem->cache();
     return currentMachineList;
 }
 
@@ -1055,7 +1054,7 @@ void UIChooserModel::sltPerformRefreshAction()
     UIChooserItem *pSelectedItem = 0;
     foreach (UIChooserItemMachine *pItem, inaccessibleMachineItemList)
     {
-        switch (pItem->nodeToMachineType()->cacheType())
+        switch (pItem->cacheType())
         {
             case UIVirtualMachineItemType_Local:
             {
@@ -1081,7 +1080,7 @@ void UIChooserModel::sltPerformRefreshAction()
             case UIVirtualMachineItemType_CloudReal:
             {
                 /* Much more simple than for local items, we are not reloading them, just refreshing: */
-                pItem->nodeToMachineType()->cache()->toCloud()->updateInfoAsync(false /* delayed */);
+                pItem->cache()->toCloud()->updateInfoAsync(false /* delayed */);
 
                 break;
             }
@@ -1149,10 +1148,10 @@ void UIChooserModel::sltRemoveSelectedMachine()
         verdicts.insert(uId, fVerdict);
         if (fVerdict)
         {
-            if (pMachineItem->nodeToMachineType()->cacheType() == UIVirtualMachineItemType_Local)
-                localMachinesToUnregister.append(pMachineItem->nodeToMachineType()->cache()->toLocal()->machine());
-            else if (pMachineItem->nodeToMachineType()->cacheType() == UIVirtualMachineItemType_CloudReal)
-                cloudMachinesToUnregister.append(pMachineItem->nodeToMachineType()->cache()->toCloud()->machine());
+            if (pMachineItem->cacheType() == UIVirtualMachineItemType_Local)
+                localMachinesToUnregister.append(pMachineItem->cache()->toLocal()->machine());
+            else if (pMachineItem->cacheType() == UIVirtualMachineItemType_CloudReal)
+                cloudMachinesToUnregister.append(pMachineItem->cache()->toCloud()->machine());
         }
         else
             itemsToRemove << pMachineItem;

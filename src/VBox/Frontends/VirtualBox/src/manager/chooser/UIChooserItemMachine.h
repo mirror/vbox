@@ -23,9 +23,11 @@
 
 /* GUI includes: */
 #include "UIChooserItem.h"
+#include "UIManagerDefs.h"
 
 /* Forward declarations: */
 class UIChooserNodeMachine;
+class UIVirtualMachineItem;
 
 
 /** UIChooserItem extension implementing machine item. */
@@ -47,6 +49,11 @@ public:
       * @{ */
         /** Returns machine node reference. */
         UIChooserNodeMachine *nodeToMachineType() const;
+
+        /** Returns virtual machine cache instance. */
+        UIVirtualMachineItem *cache() const;
+        /** Returns virtual machine cache type. */
+        UIVirtualMachineItemType cacheType() const;
 
         /** Returns item machine id. */
         QUuid id() const;

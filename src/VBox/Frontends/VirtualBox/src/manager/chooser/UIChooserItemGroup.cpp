@@ -327,8 +327,14 @@ void UIChooserItemGroup::updateToolTip()
         /* Check if 'this' group contains started VMs: */
         int iCountOfStartedMachineItems = 0;
         foreach (UIChooserItem *pItem, items(UIChooserNodeType_Machine))
-            if (pItem->node()->toMachineNode()->cache()->isItemStarted())
+        {
+            AssertPtrReturnVoid(pItem);
+            UIChooserItemMachine *pMachineItem = pItem->toMachineItem();
+            AssertPtrReturnVoid(pMachineItem);
+            AssertPtrReturnVoid(pMachineItem->cache());
+            if (pMachineItem->cache()->isItemStarted())
                 ++iCountOfStartedMachineItems;
+        }
         /* Template: */
         QString strMachineCount = tr("%n machine(s)", "Group item tool-tip / Machine info", items(UIChooserNodeType_Machine).size());
         QString strStartedMachineCount = tr("(%n running)", "Group item tool-tip / Running machine info", iCountOfStartedMachineItems);
@@ -730,7 +736,7 @@ bool UIChooserItemGroup::isDropAllowed(QGraphicsSceneDragDropEvent *pEvent, UICh
 
         /* For local items: */
         if (   nodeToGroupType()->groupType() == UIChooserNodeGroupType_Local
-            && pMachineItem->nodeToMachineType()->cacheType() == UIVirtualMachineItemType_Local)
+            && pMachineItem->cacheType() == UIVirtualMachineItemType_Local)
         {
             /* Make sure passed machine isn't immutable within own group: */
             if (   pMachineItem->isLockedMachine()
@@ -755,7 +761,7 @@ bool UIChooserItemGroup::isDropAllowed(QGraphicsSceneDragDropEvent *pEvent, UICh
         /* For cloud items: */
         else
         if (   nodeToGroupType()->groupType() == UIChooserNodeGroupType_Profile
-            && pMachineItem->nodeToMachineType()->cacheType() == UIVirtualMachineItemType_CloudReal)
+            && pMachineItem->cacheType() == UIVirtualMachineItemType_CloudReal)
         {
             /* Make sure passed item is ours: */
             return m_machineItems.contains(pItem);
