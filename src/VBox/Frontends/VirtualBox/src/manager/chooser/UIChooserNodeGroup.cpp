@@ -215,8 +215,14 @@ void UIChooserNodeGroup::searchForNodes(const QString &strSearchTerm, int iItemS
             matchedItems << this;
         else
         {
-            /* If exact name flag specified => check full node name: */
-            if (iItemSearchFlags & UIChooserItemSearchFlag_ExactName)
+            /* If exact ID flag specified => check full node name: */
+            if (iItemSearchFlags & UIChooserItemSearchFlag_ExactId)
+            {
+                if (fullName() == strSearchTerm)
+                    matchedItems << this;
+            }
+            /* If exact name flag specified => check node name: */
+            else if (iItemSearchFlags & UIChooserItemSearchFlag_ExactName)
             {
                 if (name() == strSearchTerm)
                     matchedItems << this;
