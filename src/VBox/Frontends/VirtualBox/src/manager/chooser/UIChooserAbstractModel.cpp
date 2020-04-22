@@ -428,31 +428,31 @@ void UIChooserAbstractModel::sltCloudMachineRegistered(const QString &strProvide
     /* Search for corresponding profile node: */
     QList<UIChooserNode*> profileNodes;
     invisibleRoot()->searchForNodes(strGroupName, UIChooserItemSearchFlag_Group | UIChooserItemSearchFlag_ExactId, profileNodes);
-    if (!profileNodes.isEmpty())
+    /* Acquire corresponding profile node: */
+    AssertReturnVoid(!profileNodes.isEmpty());
+    UIChooserNodeGroup *pProfileNode = profileNodes.first()->toGroupNode();
+    AssertPtrReturnVoid(pProfileNode);
+    /* If we are unregistering and there are no items left: */
+    if (!fRegistered && pProfileNode->nodes(UIChooserNodeType_Machine).isEmpty())
     {
-        /* Acquire corresponding profile node: */
-        UIChooserNodeGroup *pProfileNode = profileNodes.first()->toGroupNode();
-        if (pProfileNode)
-        {
-            /* Add fake cloud VM item if necessary: */
-            if (!fRegistered && pProfileNode->nodes(UIChooserNodeType_Machine).isEmpty())
-            {
-                UIChooserNodeMachine *pFakeNode = new UIChooserNodeMachine(pProfileNode /* parent */,
-                                                                           false /* favorite */,
-                                                                           0 /* position */);
-                pFakeNode->cache()->toCloud()->setFakeCloudItemState(UIFakeCloudVirtualMachineItemState_Done);
-                pFakeNode->cache()->toCloud()->recache();
-            }
-            /* Remove fake cloud VM item otherwise: */
-            else if (fRegistered && !pProfileNode->nodes(UIChooserNodeType_Machine).isEmpty())
-            {
-                /* Search for corresponding fake node: */
-                QList<UIChooserNode*> fakeNodes;
-                pProfileNode->searchForNodes(toOldStyleUuid(QUuid()), UIChooserItemSearchFlag_Machine | UIChooserItemSearchFlag_ExactId, fakeNodes);
-                if (!fakeNodes.isEmpty())
-                    delete fakeNodes.first();
-            }
-        }
+        /* Add fake cloud VM item: */
+        UIChooserNodeMachine *pFakeNode = new UIChooserNodeMachine(pProfileNode /* parent */,
+                                                                   false /* favorite */,
+                                                                   0 /* position */);
+        AssertPtrReturnVoid(pFakeNode);
+        AssertReturnVoid(pFakeNode->cacheType() == UIVirtualMachineItemType_CloudFake);
+        pFakeNode->cache()->toCloud()->setFakeCloudItemState(UIFakeCloudVirtualMachineItemState_Done);
+        pFakeNode->cache()->toCloud()->recache();
+    }
+    /* If we are registering and there is at least one real item exists now: */
+    else if (fRegistered && !pProfileNode->nodes(UIChooserNodeType_Machine).isEmpty())
+    {
+        /* Search for corresponding fake node: */
+        QList<UIChooserNode*> fakeNodes;
+        pProfileNode->searchForNodes(toOldStyleUuid(QUuid()), UIChooserItemSearchFlag_Machine | UIChooserItemSearchFlag_ExactId, fakeNodes);
+        /* Delete the only fake node: */
+        AssertReturnVoid(!fakeNodes.isEmpty());
+        delete fakeNodes.first();
     }
 }
 
@@ -518,7 +518,6 @@ void UIChooserAbstractModel::sltHandleCloudListMachinesTaskComplete(UITask *pTas
     /* Which is machine node and has cache of fake-cloud-item type: */
     UIChooserNodeMachine *pFirstChildNodeMachine = pFirstChildNode->toMachineNode();
     AssertPtrReturnVoid(pFirstChildNodeMachine);
-    AssertPtrReturnVoid(pFirstChildNodeMachine->cache());
     AssertReturnVoid(pFirstChildNodeMachine->cacheType() == UIVirtualMachineItemType_CloudFake);
 
     /* And if we have at least one cloud machine: */
@@ -932,7 +931,11 @@ void UIChooserAbstractModel::createCloudMachineNode(UIChooserNode *pParentNode, 
                                                            comMachine);
     /* Request for async node update if necessary: */
     if (!comMachine.GetAccessible())
+    {
+        AssertPtrReturnVoid(pNode);
+        AssertReturnVoid(pNode->cacheType() == UIVirtualMachineItemType_CloudReal);
         pNode->cache()->toCloud()->updateInfoAsync(false /* delayed? */);
+    }
 }
 
 void UIChooserAbstractModel::saveGroupDefinitions()

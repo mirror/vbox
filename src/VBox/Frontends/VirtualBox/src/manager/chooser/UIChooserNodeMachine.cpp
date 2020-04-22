@@ -240,7 +240,7 @@ UIVirtualMachineItem *UIChooserNodeMachine::cache() const
 
 UIVirtualMachineItemType UIChooserNodeMachine::cacheType() const
 {
-    return cache() ? cache()->itemType() : UIVirtualMachineItemType_Local;
+    return cache() ? cache()->itemType() : UIVirtualMachineItemType_Invalid;
 }
 
 void UIChooserNodeMachine::retranslateUi()

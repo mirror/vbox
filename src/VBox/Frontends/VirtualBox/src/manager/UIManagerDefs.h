@@ -25,6 +25,7 @@
 /** Virtual machine item types. */
 enum UIVirtualMachineItemType
 {
+    UIVirtualMachineItemType_Invalid,
     UIVirtualMachineItemType_Local,
     UIVirtualMachineItemType_CloudFake,
     UIVirtualMachineItemType_CloudReal
