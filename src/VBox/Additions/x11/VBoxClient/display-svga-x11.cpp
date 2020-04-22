@@ -38,6 +38,10 @@
  *  - The following assumptions are done and should be taken into account when reading/chaning the code:
  *    # The order of the outputs (monitors) is assumed to be the same in RANDROUTPUT array and
         XRRScreenResources.outputs array.
+ *  - This code does 2 related but separate things: 1- It resizes and enables/disables monitors upon host's
+      requests (see the infinite loop in run()). 2- it listens to RandR events (caused by this or any other X11 client)
+      on a different thread and notifies host about the new monitor positions. See sendMonitorPositions(...). This is
+      mainly work around since we have realized that vmsvga does not convey correct monitor positions thru FIFO.
  */
 #include <stdio.h>
 #include <dlfcn.h>
@@ -110,6 +114,9 @@ AssertCompileSize(struct X11VMWRECT, 8);
 struct X11CONTEXT
 {
     Display *pDisplay;
+    /* We use a separate connection for randr event listening for sharing  a
+       single display object with resizing (main) and event listening threads ends up having a deadlock.*/
+    Display *pDisplayRandRMonitoring;
     Window rootWindow;
     int iDefaultScreen;
     XRRScreenResources *pScreenResources;
@@ -498,10 +505,12 @@ static void queryMonitorPositions()
     int iMonitorCount = 0;
     XRRMonitorInfo *pMonitorInfo = NULL;
 #ifdef WITH_DISTRO_XRAND_XINERAMA
-    pMonitorInfo = XRRGetMonitors(x11Context.pDisplay, DefaultRootWindow(x11Context.pDisplay), true, &iMonitorCount);
+    pMonitorInfo = XRRGetMonitors(x11Context.pDisplayRandRMonitoring,
+                                  DefaultRootWindow(x11Context.pDisplayRandRMonitoring), true, &iMonitorCount);
 #else
     if (x11Context.pXRRGetMonitors)
-        pMonitorInfo = x11Context.pXRRGetMonitors(x11Context.pDisplay, DefaultRootWindow(x11Context.pDisplay), true, &iMonitorCount);
+        pMonitorInfo = x11Context.pXRRGetMonitors(x11Context.pDisplayRandRMonitoring,
+                                                  DefaultRootWindow(x11Context.pDisplayRandRMonitoring), true, &iMonitorCount);
 #endif
     if (!pMonitorInfo)
         return;
@@ -518,7 +527,7 @@ static void queryMonitorPositions()
         }
         for (int i = 0; i < iMonitorCount; ++i)
         {
-            int iMonitorID = getMonitorIdFromName(XGetAtomName(x11Context.pDisplay, pMonitorInfo[i].name)) - 1;
+            int iMonitorID = getMonitorIdFromName(XGetAtomName(x11Context.pDisplayRandRMonitoring, pMonitorInfo[i].name)) - 1;
             if (iMonitorID >= x11Context.hOutputCount || iMonitorID == -1)
                 continue;
             VBClLogInfo("Monitor %d (w,h)=(%d,%d) (x,y)=(%d,%d)\n",
@@ -542,7 +551,7 @@ static void queryMonitorPositions()
 static void monitorRandREvents()
 {
     XEvent event;
-    XNextEvent(x11Context.pDisplay, &event);
+    XNextEvent(x11Context.pDisplayRandRMonitoring, &event);
     int eventTypeOffset = event.type - x11Context.hRandREventBase;
     switch (eventTypeOffset)
     {
@@ -656,15 +665,16 @@ static void cleanup()
         x11Context.pRandLibraryHandle = NULL;
     }
 #ifdef WITH_DISTRO_XRAND_XINERAMA
-    XRRSelectInput(x11Context.pDisplay, x11Context.rootWindow, 0);
+    XRRSelectInput(x11Context.pDisplayRandRMonitoring, x11Context.rootWindow, 0);
     XRRFreeScreenResources(x11Context.pScreenResources);
 #else
     if (x11Context.pXRRSelectInput)
-        x11Context.pXRRSelectInput(x11Context.pDisplay, x11Context.rootWindow, 0);
+        x11Context.pXRRSelectInput(x11Context.pDisplayRandRMonitoring, x11Context.rootWindow, 0);
     if (x11Context.pXRRFreeScreenResources)
         x11Context.pXRRFreeScreenResources(x11Context.pScreenResources);
 #endif
     XCloseDisplay(x11Context.pDisplay);
+    XCloseDisplay(x11Context.pDisplayRandRMonitoring);
 }
 
 #ifndef WITH_DISTRO_XRAND_XINERAMA
@@ -763,13 +773,16 @@ static void x11Connect()
     if (x11Context.pDisplay != NULL)
         VBClLogFatalError("%s called with bad argument\n", __func__);
     x11Context.pDisplay = XOpenDisplay(NULL);
+    x11Context.pDisplayRandRMonitoring = XOpenDisplay(NULL);
     if (x11Context.pDisplay == NULL)
         return;
 #ifndef WITH_DISTRO_XRAND_XINERAMA
     if (openLibRandR() != VINF_SUCCESS)
     {
         XCloseDisplay(x11Context.pDisplay);
+        XCloseDisplay(x11Context.pDisplayRandRMonitoring);
         x11Context.pDisplay = NULL;
+        x11Context.pDisplayRandRMonitoring = NULL;
         return;
     }
 #endif
@@ -777,7 +790,9 @@ static void x11Connect()
                          &x11Context.hVMWCtrlMajorOpCode, &dummy, &dummy))
     {
         XCloseDisplay(x11Context.pDisplay);
+        XCloseDisplay(x11Context.pDisplayRandRMonitoring);
         x11Context.pDisplay = NULL;
+        x11Context.pDisplayRandRMonitoring = NULL;
         return;
     }
     bool fSuccess = false;
@@ -812,10 +827,10 @@ static void x11Connect()
 
     /* Select the XEvent types we want to listen to. */
 #ifdef WITH_DISTRO_XRAND_XINERAMA
-    XRRSelectInput(x11Context.pDisplay, x11Context.rootWindow, x11Context.hEventMask);
+    XRRSelectInput(x11Context.pDisplayRandRMonitoring, x11Context.rootWindow, x11Context.hEventMask);
 #else
     if (x11Context.pXRRSelectInput)
-        x11Context.pXRRSelectInput(x11Context.pDisplay, x11Context.rootWindow, x11Context.hEventMask);
+        x11Context.pXRRSelectInput(x11Context.pDisplayRandRMonitoring, x11Context.rootWindow, x11Context.hEventMask);
 #endif
     x11Context.iDefaultScreen = DefaultScreen(x11Context.pDisplay);
 
