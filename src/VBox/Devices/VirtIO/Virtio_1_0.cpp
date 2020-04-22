@@ -265,6 +265,7 @@ DECLINLINE(uint16_t) virtioReadUsedRingFlags(PPDMDEVINS pDevIns, PVIRTIOCORE pVi
     return fFlags;
 }
 
+#ifdef IN_RING3
 DECLINLINE(void) virtioWriteUsedAvailEvent(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t idxQueue, uint32_t uAvailEventIdx)
 {
     /** VirtIO 1.0 uAvailEventIdx (avail_event) immediately follows ring */
@@ -273,7 +274,7 @@ DECLINLINE(void) virtioWriteUsedAvailEvent(PPDMDEVINS pDevIns, PVIRTIOCORE pVirt
                           pVirtio->aGCPhysQueueUsed[idxQueue] + RT_UOFFSETOF_DYN(VIRTQ_USED_T, aRing[pVirtio->uQueueSize[idxQueue]]),
                           &uAvailEventIdx, sizeof(uAvailEventIdx));
 }
-
+#endif
 
 /** @} */
 
@@ -1172,7 +1173,7 @@ static void virtioNotifyGuestDriver(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uin
         if (fForce || !(virtioReadUsedRingFlags(pDevIns, pVirtio, idxQueue) & VIRTQ_AVAIL_F_NO_INTERRUPT))
         {
             if (fForce)
-                Log6Func(("... kicking guest, queue %s, because force flag set\n"));
+                Log6Func(("... kicking guest, queue %s, because force flag set\n", VIRTQNAME(pVirtio, idxQueue)));
             virtioKick(pDevIns, pVirtio, VIRTIO_ISR_VIRTQ_INTERRUPT, pVirtio->uQueueMsixVector[idxQueue], fForce);
             return;
         }
