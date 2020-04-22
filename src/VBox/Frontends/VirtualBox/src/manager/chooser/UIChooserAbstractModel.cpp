@@ -410,21 +410,6 @@ void UIChooserAbstractModel::sltCloudMachineRegistered(const QString &strProvide
 {
     /* Compose full group name: */
     const QString strGroupName = QString("/%1/%2").arg(strProviderShortName, strProfileName);
-
-    /* Existing VM unregistered? */
-    if (!fRegistered)
-    {
-        /* Remove machine-items with passed id: */
-        invisibleRoot()->removeAllNodes(uMachineId);
-    }
-    /* New VM registered? */
-    else
-    {
-        /* Add new machine-item: */
-        const CCloudMachine comMachine = cloudMachineById(strProviderShortName, strProfileName, uMachineId);
-        addCloudMachineIntoTheTree(strGroupName, comMachine, true /* make it visible */);
-    }
-
     /* Search for corresponding profile node: */
     QList<UIChooserNode*> profileNodes;
     invisibleRoot()->searchForNodes(strGroupName, UIChooserItemSearchFlag_Group | UIChooserItemSearchFlag_ExactId, profileNodes);
@@ -432,27 +417,39 @@ void UIChooserAbstractModel::sltCloudMachineRegistered(const QString &strProvide
     AssertReturnVoid(!profileNodes.isEmpty());
     UIChooserNodeGroup *pProfileNode = profileNodes.first()->toGroupNode();
     AssertPtrReturnVoid(pProfileNode);
-    /* If we are unregistering and there are no items left: */
-    if (!fRegistered && pProfileNode->nodes(UIChooserNodeType_Machine).isEmpty())
+
+    /* Existing VM unregistered? */
+    if (!fRegistered)
     {
-        /* Add fake cloud VM item: */
-        UIChooserNodeMachine *pFakeNode = new UIChooserNodeMachine(pProfileNode /* parent */,
-                                                                   false /* favorite */,
-                                                                   0 /* position */);
-        AssertPtrReturnVoid(pFakeNode);
-        AssertReturnVoid(pFakeNode->cacheType() == UIVirtualMachineItemType_CloudFake);
-        pFakeNode->cache()->toCloud()->setFakeCloudItemState(UIFakeCloudVirtualMachineItemState_Done);
-        pFakeNode->cache()->toCloud()->recache();
+        /* Remove machine-items with passed id: */
+        invisibleRoot()->removeAllNodes(uMachineId);
+
+        /* If there are no items left: */
+        if (pProfileNode->nodes(UIChooserNodeType_Machine).isEmpty())
+        {
+            /* Add fake cloud VM item: */
+            UIChooserNodeMachine *pFakeNode = new UIChooserNodeMachine(pProfileNode /* parent */,
+                                                                       false /* favorite */,
+                                                                       0 /* position */);
+            AssertPtrReturnVoid(pFakeNode);
+            AssertReturnVoid(pFakeNode->cacheType() == UIVirtualMachineItemType_CloudFake);
+            pFakeNode->cache()->toCloud()->setFakeCloudItemState(UIFakeCloudVirtualMachineItemState_Done);
+            pFakeNode->cache()->toCloud()->recache();
+        }
     }
-    /* If we are registering and there is at least one real item exists now: */
-    else if (fRegistered && !pProfileNode->nodes(UIChooserNodeType_Machine).isEmpty())
+    /* New VM registered? */
+    else
     {
-        /* Search for corresponding fake node: */
+        /* Add new machine-item: */
+        const CCloudMachine comMachine = cloudMachineById(strProviderShortName, strProfileName, uMachineId);
+        addCloudMachineIntoTheTree(strGroupName, comMachine, true /* make it visible */);
+
+        /* Search for possible fake node: */
         QList<UIChooserNode*> fakeNodes;
         pProfileNode->searchForNodes(toOldStyleUuid(QUuid()), UIChooserItemSearchFlag_Machine | UIChooserItemSearchFlag_ExactId, fakeNodes);
-        /* Delete the only fake node: */
-        AssertReturnVoid(!fakeNodes.isEmpty());
-        delete fakeNodes.first();
+        /* Delete fake node if present: */
+        if (!fakeNodes.isEmpty())
+            delete fakeNodes.first();
     }
 }
 
