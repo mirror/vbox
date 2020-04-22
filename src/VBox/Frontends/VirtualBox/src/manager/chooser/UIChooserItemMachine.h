@@ -45,6 +45,9 @@ public:
 
     /** @name Item stuff.
       * @{ */
+        /** Returns machine node reference. */
+        UIChooserNodeMachine *nodeToMachineType() const;
+
         /** Returns item machine id. */
         QUuid id() const;
         /** Returns whether item accessible. */

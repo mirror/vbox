@@ -89,9 +89,14 @@ UIChooserItemGroup::~UIChooserItemGroup()
     cleanup();
 }
 
+UIChooserNodeGroup *UIChooserItemGroup::nodeToGroupType() const
+{
+    return node() ? node()->toGroupNode() : 0;
+}
+
 bool UIChooserItemGroup::isClosed() const
 {
-    return node()->toGroupNode()->isClosed() && !isRoot();
+    return nodeToGroupType()->isClosed() && !isRoot();
 }
 
 void UIChooserItemGroup::close(bool fAnimated /* = true */)
@@ -102,7 +107,7 @@ void UIChooserItemGroup::close(bool fAnimated /* = true */)
 
 bool UIChooserItemGroup::isOpened() const
 {
-    return node()->toGroupNode()->isOpened() || isRoot();
+    return nodeToGroupType()->isOpened() || isRoot();
 }
 
 void UIChooserItemGroup::open(bool fAnimated /* = true */)
@@ -684,8 +689,8 @@ bool UIChooserItemGroup::isDropAllowed(QGraphicsSceneDragDropEvent *pEvent, UICh
         UIChooserItemGroup *pGroupItem = pItem->toGroupItem();
 
         /* For local items: */
-        if (   node()->toGroupNode()->groupType() == UIChooserNodeGroupType_Local
-            && pItem->node()->toGroupNode()->groupType() == UIChooserNodeGroupType_Local)
+        if (   nodeToGroupType()->groupType() == UIChooserNodeGroupType_Local
+            && pGroupItem->nodeToGroupType()->groupType() == UIChooserNodeGroupType_Local)
         {
             /* Make sure passed machine isn't immutable within own group: */
             if (   pGroupItem->isContainsLockedMachine()
@@ -708,8 +713,8 @@ bool UIChooserItemGroup::isDropAllowed(QGraphicsSceneDragDropEvent *pEvent, UICh
         }
         /* For cloud items: */
         else
-        if (   node()->toGroupNode()->groupType() == UIChooserNodeGroupType_Provider
-            && pItem->node()->toGroupNode()->groupType() == UIChooserNodeGroupType_Profile)
+        if (   nodeToGroupType()->groupType() == UIChooserNodeGroupType_Provider
+            && pGroupItem->nodeToGroupType()->groupType() == UIChooserNodeGroupType_Profile)
         {
             /* Make sure passed item is ours: */
             return m_groupItems.contains(pItem);
@@ -724,8 +729,8 @@ bool UIChooserItemGroup::isDropAllowed(QGraphicsSceneDragDropEvent *pEvent, UICh
         UIChooserItemMachine *pMachineItem = pItem->toMachineItem();
 
         /* For local items: */
-        if (   node()->toGroupNode()->groupType() == UIChooserNodeGroupType_Local
-            && pMachineItem->node()->toMachineNode()->cacheType() == UIVirtualMachineItemType_Local)
+        if (   nodeToGroupType()->groupType() == UIChooserNodeGroupType_Local
+            && pMachineItem->nodeToMachineType()->cacheType() == UIVirtualMachineItemType_Local)
         {
             /* Make sure passed machine isn't immutable within own group: */
             if (   pMachineItem->isLockedMachine()
@@ -749,8 +754,8 @@ bool UIChooserItemGroup::isDropAllowed(QGraphicsSceneDragDropEvent *pEvent, UICh
         }
         /* For cloud items: */
         else
-        if (   node()->toGroupNode()->groupType() == UIChooserNodeGroupType_Profile
-            && pMachineItem->node()->toMachineNode()->cacheType() == UIVirtualMachineItemType_CloudReal)
+        if (   nodeToGroupType()->groupType() == UIChooserNodeGroupType_Profile
+            && pMachineItem->nodeToMachineType()->cacheType() == UIVirtualMachineItemType_CloudReal)
         {
             /* Make sure passed item is ours: */
             return m_machineItems.contains(pItem);
@@ -922,7 +927,7 @@ void UIChooserItemGroup::sltNameEditingFinished()
     strNewName.replace(QRegExp("[\\\\/:*?\"<>]"), "_");
 
     /* Set new name, save settings: */
-    node()->toGroupNode()->setName(strNewName);
+    nodeToGroupType()->setName(strNewName);
     model()->saveGroupSettings();
 }
 
@@ -939,7 +944,7 @@ void UIChooserItemGroup::sltGroupToggleStart()
     updateAnimationParameters();
 
     /* Group closed, we are opening it: */
-    if (node()->toGroupNode()->isClosed())
+    if (nodeToGroupType()->isClosed())
     {
         /* Toggle-state and navigation will be
          * updated on toggle-finish signal! */
@@ -948,7 +953,7 @@ void UIChooserItemGroup::sltGroupToggleStart()
     else
     {
         /* Update toggle-state: */
-        node()->toGroupNode()->close();
+        nodeToGroupType()->close();
         /* Update geometry: */
         updateGeometry();
         /* Update navigation: */
@@ -965,7 +970,7 @@ void UIChooserItemGroup::sltGroupToggleFinish(bool fToggled)
         return;
 
     /* Update toggle-state: */
-    fToggled ? node()->toGroupNode()->open() : node()->toGroupNode()->close();
+    fToggled ? nodeToGroupType()->open() : nodeToGroupType()->close();
     /* Update geometry: */
     updateGeometry();
     /* Update navigation: */
@@ -1102,7 +1107,7 @@ void UIChooserItemGroup::prepare()
         AssertFailedReturnVoid();
 
     /* Copy contents: */
-    copyContents(node()->toGroupNode());
+    copyContents(nodeToGroupType());
 
     /* Apply language settings: */
     retranslateUi();
@@ -1571,7 +1576,7 @@ void UIChooserItemGroup::paintBackground(QPainter *pPainter, const QRect &rect)
 
         /* Calculate top rectangle: */
         QRect tRect = rect;
-        if (node()->toGroupNode()->isOpened())
+        if (nodeToGroupType()->isOpened())
             tRect.setBottom(tRect.top() + iFullHeaderHeight - 1);
 
         /* Prepare top gradient: */
@@ -1583,7 +1588,7 @@ void UIChooserItemGroup::paintBackground(QPainter *pPainter, const QRect &rect)
         pPainter->fillRect(tRect, tGradient);
 
         /* Calculate bottom rectangle: */
-        if (node()->toGroupNode()->isOpened())
+        if (nodeToGroupType()->isOpened())
         {
             QRect bRect = rect;
             bRect.setTop(bRect.top() + iFullHeaderHeight);
@@ -1646,11 +1651,11 @@ void UIChooserItemGroup::paintFrame(QPainter *pPainter, const QRect &rectangle)
 
     /* Calculate top rectangle: */
     QRect topRect = rectangle;
-    if (node()->toGroupNode()->isOpened())
+    if (nodeToGroupType()->isOpened())
         topRect.setBottom(topRect.top() + iFullHeaderHeight - 1);
 
     /* Draw borders: */
-    if (node()->hasNodes() && node()->toGroupNode()->isOpened())
+    if (node()->hasNodes() && nodeToGroupType()->isOpened())
         pPainter->drawLine(topRect.bottomLeft() + QPoint(iParentIndent, 0), topRect.bottomRight() + QPoint(1, 0));
     else
         pPainter->drawLine(topRect.bottomLeft(), topRect.bottomRight() + QPoint(1, 0));

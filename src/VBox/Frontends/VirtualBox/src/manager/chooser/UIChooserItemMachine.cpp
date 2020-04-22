@@ -58,24 +58,29 @@ UIChooserItemMachine::~UIChooserItemMachine()
     cleanup();
 }
 
+UIChooserNodeMachine *UIChooserItemMachine::nodeToMachineType() const
+{
+    return node() ? node()->toMachineNode() : 0;
+}
+
 QUuid UIChooserItemMachine::id() const
 {
-    return node()->toMachineNode()->cache()->id();
+    return nodeToMachineType()->cache()->id();
 }
 
 bool UIChooserItemMachine::accessible() const
 {
-    return node()->toMachineNode()->cache()->accessible();
+    return nodeToMachineType()->cache()->accessible();
 }
 
 void UIChooserItemMachine::recache()
 {
-    node()->toMachineNode()->cache()->recache();
+    nodeToMachineType()->cache()->recache();
 }
 
 bool UIChooserItemMachine::isLockedMachine() const
 {
-    const KMachineState enmState = node()->toMachineNode()->cache()->machineState();
+    const KMachineState enmState = nodeToMachineType()->cache()->machineState();
     return enmState != KMachineState_PoweredOff &&
            enmState != KMachineState_Saved &&
            enmState != KMachineState_Teleported &&
@@ -153,7 +158,7 @@ void UIChooserItemMachine::showEvent(QShowEvent *pEvent)
     UIChooserItem::showEvent(pEvent);
 
     /* Recache and update pixmaps: */
-    node()->toMachineNode()->cache()->recachePixmap();
+    nodeToMachineType()->cache()->recachePixmap();
     updatePixmaps();
 }
 
@@ -219,7 +224,7 @@ void UIChooserItemMachine::updateItem()
 
 void UIChooserItemMachine::updateToolTip()
 {
-    setToolTip(node()->toMachineNode()->cache()->toolTipText());
+    setToolTip(nodeToMachineType()->cache()->toolTipText());
 }
 
 QList<UIChooserItem*> UIChooserItemMachine::items(UIChooserNodeType) const
@@ -296,8 +301,8 @@ int UIChooserItemMachine::minimumWidthHint() const
     iProposedWidth += iMarginHL + iMarginHR;
     /* And machine-item content to take into account: */
     int iTopLineWidth = m_iMinimumNameWidth;
-    if (   node()->toMachineNode()->cacheType() == UIVirtualMachineItemType_Local
-        && !node()->toMachineNode()->cache()->toLocal()->snapshotName().isEmpty())
+    if (   nodeToMachineType()->cacheType() == UIVirtualMachineItemType_Local
+        && !nodeToMachineType()->cache()->toLocal()->snapshotName().isEmpty())
         iTopLineWidth += (iMinorSpacing +
                           m_iMinimumSnapshotNameWidth);
     int iBottomLineWidth = m_statePixmapSize.width() +
@@ -394,8 +399,8 @@ bool UIChooserItemMachine::isDropAllowed(QGraphicsSceneDragDropEvent *pEvent, UI
         UIChooserItemMachine *pMachineItem = pItem->toMachineItem();
 
         /* No drops for cloud items: */
-        if (   node()->toMachineNode()->cacheType() != UIVirtualMachineItemType_Local
-            || pMachineItem->node()->toMachineNode()->cacheType() != UIVirtualMachineItemType_Local)
+        if (   nodeToMachineType()->cacheType() != UIVirtualMachineItemType_Local
+            || pMachineItem->nodeToMachineType()->cacheType() != UIVirtualMachineItemType_Local)
             return false;
         /* No drops for immutable item: */
         if (pMachineItem->isLockedMachine())
@@ -443,7 +448,7 @@ void UIChooserItemMachine::processDrop(QGraphicsSceneDragDropEvent *pEvent, UICh
                                                                            true /* true */);
                 UIChooserItemGroup *pNewGroupItem = new UIChooserItemGroup(parentItem(), pNewGroupNode);
                 UIChooserNodeMachine *pNewMachineNode1 = new UIChooserNodeMachine(pNewGroupNode,
-                                                                                  node()->toMachineNode(),
+                                                                                  nodeToMachineType(),
                                                                                   pNewGroupNode->nodes().size());
                 new UIChooserItemMachine(pNewGroupItem, pNewMachineNode1);
                 UIChooserNodeMachine *pNewMachineNode2 = new UIChooserNodeMachine(pNewGroupNode,
@@ -492,7 +497,7 @@ QMimeData* UIChooserItemMachine::createMimeData()
 void UIChooserItemMachine::sltHandleWindowRemapped()
 {
     /* Recache and update pixmaps: */
-    node()->toMachineNode()->cache()->recachePixmap();
+    nodeToMachineType()->cache()->recachePixmap();
     updatePixmaps();
 }
 
@@ -609,7 +614,7 @@ void UIChooserItemMachine::updatePixmap()
 {
     /* Get new pixmap and pixmap-size: */
     QSize pixmapSize;
-    QPixmap pixmap = node()->toMachineNode()->cache()->osPixmap(&pixmapSize);
+    QPixmap pixmap = nodeToMachineType()->cache()->osPixmap(&pixmapSize);
     /* Update linked values: */
     if (m_pixmapSize != pixmapSize)
     {
@@ -629,7 +634,7 @@ void UIChooserItemMachine::updateStatePixmap()
     /* Determine icon metric: */
     const int iIconMetric = QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize);
     /* Get new state-pixmap and state-pixmap size: */
-    const QIcon stateIcon = node()->toMachineNode()->cache()->machineStateIcon();
+    const QIcon stateIcon = nodeToMachineType()->cache()->machineStateIcon();
     AssertReturnVoid(!stateIcon.isNull());
     const QSize statePixmapSize = QSize(iIconMetric, iIconMetric);
     const QPixmap statePixmap = stateIcon.pixmap(gpManager->windowHandle(), statePixmapSize);
@@ -720,12 +725,12 @@ void UIChooserItemMachine::updateMinimumSnapshotNameWidth()
     /* Calculate new minimum snapshot-name width: */
     int iMinimumSnapshotNameWidth = 0;
     /* Is there any snapshot exists? */
-    if (   node()->toMachineNode()->cacheType() == UIVirtualMachineItemType_Local
-        && !node()->toMachineNode()->cache()->toLocal()->snapshotName().isEmpty())
+    if (   nodeToMachineType()->cacheType() == UIVirtualMachineItemType_Local
+        && !nodeToMachineType()->cache()->toLocal()->snapshotName().isEmpty())
     {
         QFontMetrics fm(m_snapshotNameFont, model()->paintDevice());
         int iBracketWidth = fm.width("()"); /* bracket width */
-        int iActualTextWidth = fm.width(node()->toMachineNode()->cache()->toLocal()->snapshotName()); /* snapshot-name width */
+        int iActualTextWidth = fm.width(nodeToMachineType()->cache()->toLocal()->snapshotName()); /* snapshot-name width */
         int iMinimumTextWidth = fm.width("..."); /* ellipsis width */
         iMinimumSnapshotNameWidth = iBracketWidth + qMin(iActualTextWidth, iMinimumTextWidth);
     }
@@ -806,7 +811,7 @@ void UIChooserItemMachine::updateVisibleName()
 void UIChooserItemMachine::updateVisibleSnapshotName()
 {
     /* Make sure this is local machine item: */
-    if (node()->toMachineNode()->cacheType() != UIVirtualMachineItemType_Local)
+    if (nodeToMachineType()->cacheType() != UIVirtualMachineItemType_Local)
         return;
 
     /* Prepare variables: */
@@ -814,7 +819,7 @@ void UIChooserItemMachine::updateVisibleSnapshotName()
 
     /* Calculate new visible snapshot-name: */
     int iBracketWidth = QFontMetrics(m_snapshotNameFont, pPaintDevice).width("()");
-    QString strVisibleSnapshotName = compressText(m_snapshotNameFont, pPaintDevice, node()->toMachineNode()->cache()->toLocal()->snapshotName(),
+    QString strVisibleSnapshotName = compressText(m_snapshotNameFont, pPaintDevice, nodeToMachineType()->cache()->toLocal()->snapshotName(),
                                                   m_iMaximumSnapshotNameWidth - iBracketWidth);
     strVisibleSnapshotName = QString("(%1)").arg(strVisibleSnapshotName);
     QSize visibleSnapshotNameSize = textSize(m_snapshotNameFont, pPaintDevice, strVisibleSnapshotName);
@@ -835,7 +840,7 @@ void UIChooserItemMachine::updateVisibleSnapshotName()
 void UIChooserItemMachine::updateStateTextSize()
 {
     /* Get new state-text and state-text size: */
-    const QSize stateTextSize = textSize(m_stateTextFont, model()->paintDevice(), node()->toMachineNode()->cache()->machineStateName());
+    const QSize stateTextSize = textSize(m_stateTextFont, model()->paintDevice(), nodeToMachineType()->cache()->machineStateName());
 
     /* Update linked values: */
     if (m_stateTextSize != stateTextSize)
@@ -1112,8 +1117,8 @@ void UIChooserItemMachine::paintMachineInfo(QPainter *pPainter, const QRect &rec
                                       iMinorSpacing;
 
             /* Paint middle element: */
-            if (   node()->toMachineNode()->cacheType() == UIVirtualMachineItemType_Local
-                && !node()->toMachineNode()->cache()->toLocal()->snapshotName().isEmpty())
+            if (   nodeToMachineType()->cacheType() == UIVirtualMachineItemType_Local
+                && !nodeToMachineType()->cache()->toLocal()->snapshotName().isEmpty())
             {
                 /* Prepare variables: */
                 int iSnapshotNameX = iSnapshotNameIndent;
@@ -1171,7 +1176,7 @@ void UIChooserItemMachine::paintMachineInfo(QPainter *pPainter, const QRect &rec
                           /* Paint device: */
                           model()->paintDevice(),
                           /* Text to paint: */
-                          node()->toMachineNode()->cache()->machineStateName());
+                          nodeToMachineType()->cache()->machineStateName());
             }
         }
     }

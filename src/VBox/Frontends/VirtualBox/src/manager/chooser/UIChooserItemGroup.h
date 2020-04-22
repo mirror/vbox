@@ -70,6 +70,9 @@ public:
 
     /** @name Item stuff.
       * @{ */
+        /** Returns group node reference. */
+        UIChooserNodeGroup *nodeToGroupType() const;
+
         /** Returns whether group is closed. */
         bool isClosed() const;
         /** Closes group in @a fAnimated way if requested. */

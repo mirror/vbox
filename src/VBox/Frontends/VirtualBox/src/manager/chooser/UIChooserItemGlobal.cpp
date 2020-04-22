@@ -52,6 +52,11 @@ UIChooserItemGlobal::~UIChooserItemGlobal()
     cleanup();
 }
 
+UIChooserNodeGlobal *UIChooserItemGlobal::nodeToGlobalType() const
+{
+    return node() ? node()->toGlobalNode() : 0;
+}
+
 bool UIChooserItemGlobal::isToolButtonArea(const QPoint &position, int iMarginMultiplier /* = 1 */) const
 {
     const int iFullWidth = geometry().width();

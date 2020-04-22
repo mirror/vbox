@@ -45,6 +45,9 @@ public:
 
     /** @name Item stuff.
       * @{ */
+        /** Returns global node reference. */
+        UIChooserNodeGlobal *nodeToGlobalType() const;
+
         /** Returns whether passed @a position belongs to tool button area. */
         bool isToolButtonArea(const QPoint &position, int iMarginMultiplier = 1) const;
         /** Returns whether passed @a position belongs to pin button area. */
