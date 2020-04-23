@@ -1917,9 +1917,9 @@ class TestVmManager(object):
                sKind = 'Ubuntu_64', acCpusSup = range(1, 33), fIoApic = True, sFirmwareType = 'efi',
                asParavirtModesSup = [g_ksParavirtProviderKVM,]),
         # Note: Deprecated / buggy; use the one in the 6.1 folder.
-        TestVm('tst-ubuntu-15_10-64-efi',   kfGrpStdSmoke,        sHd = '4.2/efi/ubuntu-15_10-efi-amd64.vdi',
-               sKind = 'Ubuntu_64', acCpusSup = range(1, 33), fIoApic = True, sFirmwareType = 'efi',
-               asParavirtModesSup = [g_ksParavirtProviderKVM,]),
+        #TestVm('tst-ubuntu-15_10-64-efi',   kfGrpStdSmoke,        sHd = '4.2/efi/ubuntu-15_10-efi-amd64.vdi',
+        #       sKind = 'Ubuntu_64', acCpusSup = range(1, 33), fIoApic = True, sFirmwareType = 'efi',
+        #       asParavirtModesSup = [g_ksParavirtProviderKVM,]),
         TestVm('tst-rhel5',                 kfGrpSmoke,           sHd = '3.0/tcp/rhel5.vdi',
                sKind = 'RedHat', acCpusSup = range(1, 33), fIoApic = True, sNic0AttachType = 'nat'),
         TestVm('tst-arch',                  kfGrpStandard,        sHd = '4.2/usb/tst-arch.vdi',
