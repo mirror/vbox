@@ -568,13 +568,12 @@ void UIVirtualBoxManager::sltOpenAddMachineDialog()
             this, &UIVirtualBoxManager::sltHandleUpdateActionAppearanceRequest);
     updateActionsAppearance();
 
-    /* Get selected items: */
-    QList<UIVirtualMachineItem*> items = currentItems();
-    AssertMsgReturnVoid(!items.isEmpty(), ("At least one item should be selected!\n"));
-    UIVirtualMachineItem *pItem = items.first();
+    /* Get first selected item: */
+    UIVirtualMachineItem *pItem = currentItems().value(0);
 
-    /* For local machine: */
-    if (pItem->itemType() == UIVirtualMachineItemType_Local)
+    /* For global item or local machine: */
+    if (   !pItem
+        || pItem->itemType() == UIVirtualMachineItemType_Local)
     {
         /* Open add machine dialog: */
         openAddMachineDialog();
