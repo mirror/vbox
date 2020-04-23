@@ -2817,7 +2817,7 @@ static int iommuAmdDeviceMemRead(PPDMDEVINS pDevIns, uint16_t uDeviceId, uint64_
  * @param   pDevIns     The IOMMU device instance.
  * @param   uDeviceId   The device identifier (bus, device, function).
  * @param   uDva        The device virtual address being written.
- * @param   cbRead      The number of bytes being written.
+ * @param   cbWrite     The number of bytes being written.
  * @param   pGCPhysOut  Where to store the translated physical address.
  *
  * @thread  Any.
