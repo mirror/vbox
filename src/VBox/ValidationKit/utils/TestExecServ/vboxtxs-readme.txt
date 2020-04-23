@@ -29,7 +29,7 @@ Linux Installation
 1.   mkdir -p /opt/validationkit
 2.   scp/download VBoxValidationKit*.zip there.
 3.   unzip VBoxValidationKit*.zip
-4.   chmod -R u+w,a+x /opt/validationkit/
+4.   chmod -R u+w,a+x /opt/validationkit/ && chown -R root.root /opt/
 5.   cd /etc/init.d/
 
 6 a) For init.rc distros:
@@ -55,6 +55,9 @@ Linux Installation
     mkdir -p /media/cdrom; vi /etc/fstab
      and enter this in /etc/fstab:
     /dev/sr0<tab>/media/cdrom<tab>udf,iso9660<tab>user,noauto,exec,utf8<tab>0<tab>0
+8c.  Optional: If SELinux denies execution of TXS, make sure to allow this, based on
+     how the distribution handles SELinux exceptions. Often there even is a GUI for that
+     (e.g. Oracle Linux 8+).
 9.   Make sure that the package sources are still valid and up to date (apt / yum / ++)
 10.  reboot / done.
 11.  Do test.
