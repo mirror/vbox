@@ -330,7 +330,6 @@ UISettingsDialogMachine::UISettingsDialogMachine(QWidget *pParent, const QUuid &
     , m_uMachineId(uMachineId)
     , m_strCategory(strCategory)
     , m_strControl(strControl)
-    , m_fAllowResetFirstRunFlag(false)
     , m_fResetFirstRunFlag(false)
 {
     /* Prepare: */
@@ -663,15 +662,10 @@ void UISettingsDialogMachine::sltMachineDataChanged(const QUuid &uMachineId)
     loadOwnData();
 }
 
-void UISettingsDialogMachine::sltAllowResetFirstRunFlag()
-{
-    m_fAllowResetFirstRunFlag = true;
-}
-
 void UISettingsDialogMachine::sltResetFirstRunFlag()
 {
     if (m_fAllowResetFirstRunFlag)
-        m_fResetFirstRunFlag = true;
+    m_fResetFirstRunFlag = true;
 }
 
 void UISettingsDialogMachine::prepare()
@@ -680,10 +674,6 @@ void UISettingsDialogMachine::prepare()
 #ifndef VBOX_WS_MAC
     setWindowIcon(QIcon(":/vm_settings_16px.png"));
 #endif
-
-    /* Allow to reset first-run flag just when medium-enumeration was finished: */
-    connect(&uiCommon(), &UICommon::sigMediumEnumerationFinished,
-            this, &UISettingsDialogMachine::sltAllowResetFirstRunFlag);
 
     /* Make sure settings window will be updated on session/machine state/data changes: */
     connect(gVBoxEvents, &UIVirtualBoxEventHandler::sigSessionStateChange,

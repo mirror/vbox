@@ -126,8 +126,6 @@ private slots:
     /** Handles machine data change for machine with certain @a uMachineId. */
     void sltMachineDataChanged(const QUuid &uMachineId);
 
-    /** Handles request to allow to reset first run flag. */
-    void sltAllowResetFirstRunFlag();
     /** Handles request to reset first run flag. */
     void sltResetFirstRunFlag();
 
@@ -164,10 +162,8 @@ private:
     /** Holds the console reference. */
     CConsole  m_console;
 
-    /** Holds whether we are allowed to reset first run flag. */
-    bool  m_fAllowResetFirstRunFlag : 1;
     /** Holds whether we have request to reset first run flag. */
-    bool  m_fResetFirstRunFlag : 1;
+    bool  m_fResetFirstRunFlag;
 };
 
 
