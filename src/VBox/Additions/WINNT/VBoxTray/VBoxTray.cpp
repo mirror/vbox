@@ -555,9 +555,8 @@ static void vboxTrayLogHeaderFooter(PRTLOGGER pLoggerRelease, RTLOGPHASE enmPhas
  * Pass NULL for disabled logging.
  *
  * @return  IPRT status code.
- * @param   pszLogFile              Filename for log output.  Optional.
  */
-static int vboxTrayLogCreate(const char *pszLogFile)
+static int vboxTrayLogCreate(void)
 {
     /* Create release logger (stdout + file). */
     static const char * const s_apszGroups[] = VBOX_LOGGROUP_NAMES;
@@ -576,7 +575,7 @@ static int vboxTrayLogCreate(const char *pszLogFile)
 #endif
                            RT_ELEMENTS(s_apszGroups), s_apszGroups, UINT32_MAX, RTLOGDEST_STDOUT,
                            vboxTrayLogHeaderFooter, g_cHistory, g_uHistoryFileSize, g_uHistoryFileTime,
-                           RTErrInfoInitStatic(&ErrInfo), pszLogFile);
+                           RTErrInfoInitStatic(&ErrInfo), NULL /*pszFilenameFmt*/);
     if (RT_SUCCESS(rc))
     {
 #ifdef DEBUG
@@ -990,7 +989,7 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
 
     LogRel(("%s r%s\n", RTBldCfgVersion(), RTBldCfgRevisionStr()));
 
-    rc = vboxTrayLogCreate(NULL /* pszLogFile */);
+    rc = vboxTrayLogCreate();
     if (RT_SUCCESS(rc))
     {
         rc = VbglR3Init();
