@@ -28,7 +28,7 @@ SUB_DEPTH = ../../../../..
 include $(KBUILD_PATH)/subheader.kmk
 
 PROGRAMS += LoadGenerator
-LoadGenerator_TEMPLATE = VBoxValidationKitR3Host
+LoadGenerator_TEMPLATE = VBoxValidationKitR3SupDrv
 LoadGenerator_SOURCES  = loadgenerator.cpp
 
 SYSMODS += loadgeneratorR0
