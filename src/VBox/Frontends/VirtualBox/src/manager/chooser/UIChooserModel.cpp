@@ -261,6 +261,11 @@ void UIChooserModel::clearSelectedItems()
     setSelectedItem(0);
 }
 
+const QList<UIChooserItem*> &UIChooserModel::selectedItems() const
+{
+    return m_selectedItems;
+}
+
 void UIChooserModel::addToSelectedItems(UIChooserItem *pItem)
 {
     /* Prepare updated list: */
@@ -285,11 +290,6 @@ UIChooserItem *UIChooserModel::firstSelectedItem() const
     return selectedItems().value(0);
 }
 
-const QList<UIChooserItem*> &UIChooserModel::selectedItems() const
-{
-    return m_selectedItems;
-}
-
 UIVirtualMachineItem *UIChooserModel::firstSelectedMachineItem() const
 {
     /* Return first machine-item of the selected-item: */
@@ -312,6 +312,15 @@ QList<UIVirtualMachineItem*> UIChooserModel::selectedMachineItems() const
     foreach (UIChooserItemMachine *pItem, currentMachineItemList)
         currentMachineList << pItem->cache();
     return currentMachineList;
+}
+
+void UIChooserModel::makeSureAtLeastOneItemSelected()
+{
+    if (!firstSelectedItem() && !navigationItems().isEmpty())
+    {
+        setSelectedItem(navigationItems().first());
+        emit sigSelectionInvalidated();
+    }
 }
 
 bool UIChooserModel::isGroupItemSelected() const
@@ -685,14 +694,17 @@ void UIChooserModel::sltCloudMachineRegistered(const QString &strProviderName, c
     if (!fRegistered)
     {
         /* Remember first selected item definition: */
-        AssertPtrReturnVoid(firstSelectedItem());
-        const QString strDefinition = firstSelectedItem()->definition();
+        const QString strDefinition = firstSelectedItem() ? firstSelectedItem()->definition() : QString();
 
         /* Rebuild tree for main root: */
         buildTreeForMainRoot();
 
-        /* Restore selected item: */
-        setSelectedItem(strDefinition);
+        /* Restore selection if there was some item before: */
+        if (!strDefinition.isNull())
+            setSelectedItem(strDefinition);
+        /* Else make sure at least one item selected: */
+        else
+            makeSureAtLeastOneItemSelected();
     }
     /* New VM registered? */
     else
@@ -712,27 +724,20 @@ void UIChooserModel::sltReloadMachine(const QUuid &uId)
     /* Call to base-class: */
     UIChooserAbstractModel::sltReloadMachine(uId);
 
-    /* Show machine if we should: */
+    /* Should we show this VM? */
     if (gEDataManager->showMachineInVirtualBoxManagerChooser(uId))
     {
         /* Rebuild tree for main root: */
         buildTreeForMainRoot();
 
         /* Select newly added item: */
-        CMachine comMachine = uiCommon().virtualBox().FindMachine(uId.toString());
-        setSelectedItem(root()->searchForItem(comMachine.GetName(),
-                                             UIChooserItemSearchFlag_Machine |
-                                             UIChooserItemSearchFlag_ExactName));
+        setSelectedItem(root()->searchForItem(uId.toString(),
+                                              UIChooserItemSearchFlag_Machine |
+                                              UIChooserItemSearchFlag_ExactId));
     }
+    /* Else make sure at least one item selected: */
     else
-    {
-        /* Make sure at least one item selected after that: */
-        if (!firstSelectedItem() && !navigationItems().isEmpty())
-        {
-            setSelectedItem(navigationItems().first());
-            emit sigSelectionInvalidated();
-        }
-    }
+        makeSureAtLeastOneItemSelected();
 
     /* Notify listeners about selection change: */
     emit sigSelectionChanged();
@@ -757,20 +762,9 @@ void UIChooserModel::sltHandleCloudListMachinesTaskComplete(UITask *pTask)
     /* Restore selection if there was some item before: */
     if (!strDefinition.isNull())
         setSelectedItem(strDefinition);
+    /* Else make sure at least one item selected: */
     else
-    {
-        /* Make sure selected-item present, if possible: */
-        if (!firstSelectedItem() && !navigationItems().isEmpty())
-        {
-            setSelectedItem(navigationItems().first());
-            emit sigSelectionInvalidated();
-        }
-        /* Make sure current-item present, if possible: */
-        else if (!currentItem() && firstSelectedItem())
-            setCurrentItem(firstSelectedItem());
-        /* Notify about selected-item change: */
-        emit sigSelectionChanged();
-    }
+        makeSureAtLeastOneItemSelected();
 }
 #endif /* VBOX_GUI_WITH_CLOUD_VMS */
 
@@ -1406,11 +1400,7 @@ void UIChooserModel::loadLastSelectedItem()
 {
     /* Load last selected-item (choose first if unable to load): */
     setSelectedItem(gEDataManager->selectorWindowLastItemChosen());
-    if (!firstSelectedItem() && !navigationItems().isEmpty())
-    {
-        setSelectedItem(navigationItems().first());
-        emit sigSelectionInvalidated();
-    }
+    makeSureAtLeastOneItemSelected();
 }
 
 void UIChooserModel::saveLastSelectedItem()
