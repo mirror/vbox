@@ -460,8 +460,12 @@ typedef enum PCIADDRESSSPACE
 #define VBOX_PCI_DEVFN_DEV_SHIFT    3
 /** The device number shift count for a device+function number. */
 #define VBOX_PCI_DEVFN_FUN_MASK     0x7
+/** The bus number shift count for a bus+device+function number. */
+#define VBOX_PCI_BUS_SHIFT          0xc
 /** Make a device+function number.   */
 #define VBOX_PCI_DEVFN_MAKE(a_uPciDevNo, a_uPciFunNo) (((a_uPciDevNo) << VBOX_PCI_DEVFN_DEV_SHIFT) | (a_uPciFunNo))
+/** Make a bus+device+function number. */
+#define VBOX_PCI_BUSDEVFN_MAKE(a_uPciBusNo, a_uPciDevFunNo) (((a_uPciBusNo) << VBOX_PCI_BUS_SHIFT) | (a_uPciDevFunNo))
 
 
 #if defined(__cplusplus) && defined(IN_RING3)

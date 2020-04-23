@@ -406,15 +406,15 @@ RT_BF_ASSERT_COMPILE_CHECKS(IOMMU_BF_MSI_MAP_CAPHDR_, UINT32_C(0), UINT32_MAX,
 *********************************************************************************************************************************/
 /**
  * The Device ID.
- * In accordance with the AMD spec.
+ * In accordance with VirtualBox's PCI configuration.
  */
 typedef union
 {
     struct
     {
-        uint16_t    uFunction : 3;  /**< Bits 2:0  - Function. */
-        uint16_t    uDevice : 5;    /**< Bits 7:3  - Device. */
-        uint16_t    uBus : 8;       /**< Bits 15:8 - Bus. */
+        uint16_t    u3Function : 3;  /**< Bits 2:0   - Function. */
+        uint16_t    u9Device : 9;    /**< Bits 11:3  - Device. */
+        uint16_t    u4Bus : 4;       /**< Bits 15:12 - Bus. */
     } n;
     /** The unsigned integer view. */
     uint16_t        u;
@@ -974,8 +974,6 @@ typedef union
 } EVT_EVENT_COUNTER_ZERO;
 AssertCompileSize(EVT_EVENT_COUNTER_ZERO, 16);
 
-/* Not needed as we can initialize from bitfields and set/get using PCI config PDM helpers. */
-#if 0
 /**
  * IOMMU Capability Header (PCI).
  * In accordance with the AMD spec.
@@ -993,13 +991,12 @@ typedef union
         uint32_t    u1NpCache : 1;      /**< Bit  26    - NpCache: Not Present table entries are cached. */
         uint32_t    u1EfrSup : 1;       /**< Bit  27    - EFRSup: Extended Feature Register Support. */
         uint32_t    u1CapExt : 1;       /**< Bit  28    - CapExt: Misc. Information Register 1 Support. */
-        uint32_t    u4Rsvd0 : 4;        /**< Bits 31:29 - Reserved. */
+        uint32_t    u3Rsvd0 : 3;        /**< Bits 31:29 - Reserved. */
     } n;
     /** The 32-bit unsigned integer view. */
     uint32_t    u32;
 } IOMMU_CAP_HDR_T;
 AssertCompileSize(IOMMU_CAP_HDR_T, 4);
-#endif
 
 /**
  * IOMMU Base Address (Lo and Hi) Register (PCI).
@@ -1886,7 +1883,7 @@ typedef PPR_LOG_OVERFLOW_EARLY_T        PPR_LOG_B_OVERFLOW_EARLY_T;
  */
 typedef struct IOMMU
 {
-    /** IOMMU device index. */
+    /** IOMMU device index (0 is at the top of the PCI tree hierarchy). */
     uint32_t                    idxIommu;
     /** Alignment padding. */
     uint32_t                    uPadding0;
@@ -1894,14 +1891,10 @@ typedef struct IOMMU
     SUPSEMEVENT                 hEvtCmdThread;
     /** The MMIO handle. */
     IOMMMIOHANDLE               hMmio;
-    /** Whether this IOMMU is at the top of the PCI tree hierarchy or not. */
-    bool                        fRootComplex;
-    /** Alignment padding. */
-    bool                        afPadding[7];
 
     /** @name PCI: Base capability block registers.
      * @{ */
-    IOMMU_BAR_T                 IommuBar;
+    IOMMU_BAR_T                 IommuBar;           /**< IOMMU base address register. */
     /** @} */
 
     /** @name MMIO: Control and status registers.
@@ -1961,19 +1954,19 @@ typedef struct IOMMU
 
     /** @name MMIO: x2APIC Control registers.
      * @{ */
-    IOMMU_XT_GEN_INTR_CTRL_T    XtGenIntrCtrl;     /**< IOMMU X2APIC General interrupt control register. */
-    IOMMU_XT_PPR_INTR_CTRL_T    XtPprIntrCtrl;     /**< IOMMU X2APIC PPR interrupt control register. */
-    IOMMU_XT_GALOG_INTR_CTRL_T  XtGALogIntrCtrl;   /**< IOMMU X2APIC Guest Log interrupt control register. */
+    IOMMU_XT_GEN_INTR_CTRL_T    XtGenIntrCtrl;      /**< IOMMU X2APIC General interrupt control register. */
+    IOMMU_XT_PPR_INTR_CTRL_T    XtPprIntrCtrl;      /**< IOMMU X2APIC PPR interrupt control register. */
+    IOMMU_XT_GALOG_INTR_CTRL_T  XtGALogIntrCtrl;    /**< IOMMU X2APIC Guest Log interrupt control register. */
     /** @} */
 
     /** @name MMIO: MARC registers.
      * @{ */
-    MARC_APER_T                 aMarcApers[4];     /**< MARC Aperture Registers. */
+    MARC_APER_T                 aMarcApers[4];      /**< MARC Aperture Registers. */
     /** @} */
 
     /** @name MMIO: Reserved register.
      *  @{ */
-    IOMMU_RSVD_REG_T            RsvdReg;           /**< IOMMU Reserved Register. */
+    IOMMU_RSVD_REG_T            RsvdReg;            /**< IOMMU Reserved Register. */
     /** @} */
 
     /** @name MMIO: Command and Event Log pointer registers.
@@ -2028,6 +2021,10 @@ typedef struct IOMMU
 typedef struct IOMMU *PIOMMU;
 /** Pointer to the const IOMMU device state. */
 typedef const struct IOMMU *PCIOMMU;
+AssertCompileMemberAlignment(IOMMU, hEvtCmdThread, 8);
+AssertCompileMemberAlignment(IOMMU, hMmio, 8);
+AssertCompileMemberAlignment(IOMMU, IommuBar, 8);
+
 
 /**
  * The ring-3 IOMMU device state.
@@ -2449,7 +2446,7 @@ static VBOXSTRICTRC iommuAmdEvtLogTailPtr_w(PPDMDEVINS pDevIns, PIOMMU pThis, ui
  * The IOMMU command thread.
  *
  * @returns VBox status code.
- * @param   pDevIns     The device instance.
+ * @param   pDevIns     The IOMMU device instance.
  * @param   pThread     The command thread.
  */
 static DECLCALLBACK(int) iommuAmdR3CmdThread(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
@@ -2462,7 +2459,7 @@ static DECLCALLBACK(int) iommuAmdR3CmdThread(PPDMDEVINS pDevIns, PPDMTHREAD pThr
  * Unblocks the command thread so it can respond to a state change.
  *
  * @returns VBox status code.
- * @param   pDevIns     The device instance.
+ * @param   pDevIns     The IOMMU device instance.
  * @param   pThread     The command thread.
  */
 static DECLCALLBACK(int) iommuAmdR3CmdThreadWakeUp(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
@@ -2494,7 +2491,7 @@ static const IOMMUREGACC g_aTable1Regs[] =
  * Writes an IOMMU register (32-bit and 64-bit).
  *
  * @returns Strict VBox status code.
- * @param   pDevIns     The device instance.
+ * @param   pDevIns     The IOMMU device instance.
  * @param   off         MMIO byte offset to the register.
  * @param   cb          The size of the write access.
  * @param   uValue      The value being written.
@@ -2638,7 +2635,7 @@ static VBOXSTRICTRC iommuAmdWriteRegister(PPDMDEVINS pDevIns, uint32_t off, uint
  * on 8-byte boundaries.
  *
  * @returns Strict VBox status code.
- * @param   pDevIns     The device instance.
+ * @param   pDevIns     The IOMMU device instance.
  * @param   off         Offset in bytes.
  * @param   puResult    Where to store the value being read.
  */
@@ -2792,6 +2789,45 @@ static VBOXSTRICTRC iommuAmdReadRegister(PPDMDEVINS pDevIns, uint32_t off, uint6
     *puResult = uReg;
     return VINF_SUCCESS;
 }
+
+
+/**
+ * Memory read transaction from a downstream device.
+ *
+ * @returns VBox status code.
+ * @param   pDevIns     The IOMMU device instance.
+ * @param   uDeviceId   The device identifier (bus, device, function).
+ * @param   uDva        The device virtual address being read.
+ * @param   cbRead      The number of bytes being read.
+ * @param   GCPhysOut   Where to store the translated physical address.
+ *
+ * @thread  Any.
+ */
+static int iommuAmdDeviceMemRead(PPDMDEVINS pDevIns, uint16_t uDeviceId, uint64_t uDva, size_t cbRead, PRTGCPHYS pGCPhysOut)
+{
+    RT_NOREF(pDevIns, uDeviceId, uDva, cbRead, pGCPhysOut);
+    return VERR_NOT_IMPLEMENTED;
+}
+
+
+/**
+ * Memory write transaction from a downstream device.
+ *
+ * @returns VBox status code.
+ * @param   pDevIns     The IOMMU device instance.
+ * @param   uDeviceId   The device identifier (bus, device, function).
+ * @param   uDva        The device virtual address being written.
+ * @param   cbRead      The number of bytes being written.
+ * @param   GCPhysOut   Where to store the translated physical address.
+ *
+ * @thread  Any.
+ */
+static int iommuAmdDeviceMemWrite(PPDMDEVINS pDevIns, uint16_t uDeviceId, uint64_t uDva, size_t cbWrite, PRTGCPHYS pGCPhysOut)
+{
+    RT_NOREF(pDevIns, uDeviceId, uDva, cbWrite, pGCPhysOut);
+    return VERR_NOT_IMPLEMENTED;
+}
+
 
 /**
  * @callback_method_impl{FNIOMMMIONEWWRITE}
@@ -3660,10 +3696,12 @@ static DECLCALLBACK(int) iommuAmdR3Construct(PPDMDEVINS pDevIns, int iInstance, 
     /*
      * Register the IOMMU with PDM.
      */
-    PDMIOMMUREGCC IommuReg;
+    PDMIOMMUREGR3 IommuReg;
     RT_ZERO(IommuReg);
-    IommuReg.u32Version = PDM_IOMMUREGCC_VERSION;
-    IommuReg.u32TheEnd  = PDM_IOMMUREGCC_VERSION;
+    IommuReg.u32Version  = PDM_IOMMUREGCC_VERSION;
+    IommuReg.pfnMemRead  = iommuAmdDeviceMemRead;
+    IommuReg.pfnMemWrite = iommuAmdDeviceMemWrite;
+    IommuReg.u32TheEnd   = PDM_IOMMUREGCC_VERSION;
     rc = PDMDevHlpIommuRegister(pDevIns, &IommuReg, &pThisCC->CTX_SUFF(pIommuHlp), &pThis->idxIommu);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc, N_("Failed to register ourselves as an IOMMU device"));
@@ -3832,9 +3870,11 @@ static DECLCALLBACK(int) iommuAmdRZConstruct(PPDMDEVINS pDevIns)
     /* Set up the IOMMU RZ callbacks. */
     PDMIOMMUREGCC IommuReg;
     RT_ZERO(IommuReg);
-    IommuReg.u32Version = PDM_IOMMUREGCC_VERSION;
-    IommuReg.idxIommu   = pThis->idxIommu;
-    IommuReg.u32TheEnd  = PDM_IOMMUREGCC_VERSION;
+    IommuReg.u32Version  = PDM_IOMMUREGCC_VERSION;
+    IommuReg.idxIommu    = pThis->idxIommu;
+    IommuReg.pfnMemRead  = iommuAmdDeviceMemRead;
+    IommuReg.pfnMemWrite = iommuAmdDeviceMemWrite;
+    IommuReg.u32TheEnd   = PDM_IOMMUREGCC_VERSION;
     rc = PDMDevHlpIommuSetUpContext(pDevIns, &IommuReg, &pThisCC->CTX_SUFF(pIommuHlp));
     AssertRCReturn(rc, rc);
 

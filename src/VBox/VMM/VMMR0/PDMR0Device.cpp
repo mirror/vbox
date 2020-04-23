@@ -273,6 +273,26 @@ static DECLCALLBACK(int) pdmR0DevHlp_PCIPhysRead(PPDMDEVINS pDevIns, PPDMPCIDEV 
     }
 #endif
 
+#ifdef VBOX_WITH_IOMMU_AMD
+    /** @todo IOMMU: Optimize/re-organize things here later. */
+    PGVM        pGVM         = pDevIns->Internal.s.pGVM;
+    PPDMIOMMUR0 pIommu       = &pGVM->pdmr0.s.aIommus[0];
+    PPDMDEVINS  pDevInsIommu = pIommu->CTX_SUFF(pDevIns);
+    if (   pDevInsIommu
+        && pDevInsIommu != pDevIns)
+    {
+        RTGCPHYS GCPhysOut;
+        uint16_t const uDeviceId = VBOX_PCI_BUSDEVFN_MAKE(pPciDev->Int.s.idxPdmBus, pPciDev->uDevFn);
+        int rc = pIommu->pfnMemRead(pDevInsIommu, uDeviceId, GCPhys, cbRead, &GCPhysOut);
+        if (RT_FAILURE(rc))
+        {
+            Log(("pdmR0DevHlp_PCIPhysRead: IOMMU translation failed. uDeviceId=%#x GCPhys=%#RGp cb=%u rc=%Rrc\n", uDeviceId,
+                 GCPhys, cbRead, rc));
+            return rc;
+        }
+    }
+#endif
+
     return pDevIns->pHlpR0->pfnPhysRead(pDevIns, GCPhys, pvBuf, cbRead);
 }
 
@@ -298,6 +318,26 @@ static DECLCALLBACK(int) pdmR0DevHlp_PCIPhysWrite(PPDMDEVINS pDevIns, PPDMPCIDEV
         Log(("pdmRCDevHlp_PCIPhysWrite: caller=%p/%d: returns %Rrc - Not bus master! GCPhys=%RGp cbWrite=%#zx\n",
              pDevIns, pDevIns->iInstance, VERR_PDM_NOT_PCI_BUS_MASTER, GCPhys, cbWrite));
         return VERR_PDM_NOT_PCI_BUS_MASTER;
+    }
+#endif
+
+#ifdef VBOX_WITH_IOMMU_AMD
+    /** @todo IOMMU: Optimize/re-organize things here later. */
+    PGVM        pGVM          = pDevIns->Internal.s.pGVM;
+    PPDMIOMMUR0 pIommu        = &pGVM->pdmr0.s.aIommus[0];
+    PPDMDEVINS   pDevInsIommu = pIommu->CTX_SUFF(pDevIns);
+    if (   pDevInsIommu
+        && pDevInsIommu != pDevIns)
+    {
+        RTGCPHYS GCPhysOut;
+        uint16_t const uDeviceId = VBOX_PCI_BUSDEVFN_MAKE(pPciDev->Int.s.idxPdmBus, pPciDev->uDevFn);
+        int rc = pIommu->pfnMemWrite(pDevInsIommu, uDeviceId, GCPhys, cbWrite, &GCPhysOut);
+        if (RT_FAILURE(rc))
+        {
+            Log(("pdmR0DevHlp_PCIPhysWrite: IOMMU translation failed. uDeviceId=%#x GCPhys=%#RGp cb=%u rc=%Rrc\n", uDeviceId,
+                 GCPhys, cbWrite, rc));
+            return rc;
+        }
     }
 #endif
 

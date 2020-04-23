@@ -1786,6 +1786,26 @@ pdmR3DevHlp_PCIPhysRead(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, RTGCPHYS GCPhys,
     }
 #endif
 
+#ifdef VBOX_WITH_IOMMU_AMD
+    /** @todo IOMMU: Optimize/re-organize things here later. */
+    PVM        pVM          = pDevIns->Internal.s.pVMR3;
+    PPDMIOMMU  pIommu       = &pVM->pdm.s.aIommus[0];
+    PPDMDEVINS pDevInsIommu = pIommu->CTX_SUFF(pDevIns);
+    if (   pDevInsIommu
+        && pDevInsIommu != pDevIns)
+    {
+        RTGCPHYS GCPhysOut;
+        uint16_t const uDeviceId = VBOX_PCI_BUSDEVFN_MAKE(pPciDev->Int.s.idxPdmBus, pPciDev->uDevFn);
+        int rc = pIommu->pfnMemRead(pDevInsIommu, uDeviceId, GCPhys, cbRead, &GCPhysOut);
+        if (RT_FAILURE(rc))
+        {
+            Log(("pdmR3DevHlp_PCIPhysRead: IOMMU translation failed. uDeviceId=%#x GCPhys=%#RGp cb=%u rc=%Rrc\n", uDeviceId,
+                 GCPhys, cbRead, rc));
+            return rc;
+        }
+    }
+#endif
+
     return pDevIns->pHlpR3->pfnPhysRead(pDevIns, GCPhys, pvBuf, cbRead);
 }
 
@@ -1811,6 +1831,26 @@ pdmR3DevHlp_PCIPhysWrite(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, RTGCPHYS GCPhys
         Log(("pdmR3DevHlp_PCIPhysWrite: caller='%s'/%d: returns %Rrc - Not bus master! GCPhys=%RGp cbWrite=%#zx\n",
              pDevIns->pReg->szName, pDevIns->iInstance, VERR_PDM_NOT_PCI_BUS_MASTER, GCPhys, cbWrite));
         return VERR_PDM_NOT_PCI_BUS_MASTER;
+    }
+#endif
+
+#ifdef VBOX_WITH_IOMMU_AMD
+    /** @todo IOMMU: Optimize/re-organize things here later. */
+    PVM        pVM          = pDevIns->Internal.s.pVMR3;
+    PPDMIOMMU  pIommu       = &pVM->pdm.s.aIommus[0];
+    PPDMDEVINS pDevInsIommu = pIommu->CTX_SUFF(pDevIns);
+    if (   pDevInsIommu
+        && pDevInsIommu != pDevIns)
+    {
+        RTGCPHYS GCPhysOut;
+        uint16_t const uDeviceId = VBOX_PCI_BUSDEVFN_MAKE(pPciDev->Int.s.idxPdmBus, pPciDev->uDevFn);
+        int rc = pIommu->pfnMemWrite(pDevInsIommu, uDeviceId, GCPhys, cbWrite, &GCPhysOut);
+        if (RT_FAILURE(rc))
+        {
+            Log(("pdmR3DevHlp_PCIPhysRead: IOMMU translation failed. uDeviceId=%#x GCPhys=%#RGp cb=%u rc=%Rrc\n", uDeviceId,
+                 GCPhys, cbWrite, rc));
+            return rc;
+        }
     }
 #endif
 
@@ -3314,6 +3354,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_IommuRegister(PPDMDEVINS pDevIns, PPDMIOMMU
 
     /*
      * Find free IOMMU slot.
+     * The IOMMU at the root complex is the one at 0.
      */
     unsigned idxIommu = 0;
     for (idxIommu = 0; idxIommu < RT_ELEMENTS(pVM->pdm.s.aIommus); idxIommu++)
@@ -3327,8 +3368,10 @@ static DECLCALLBACK(int) pdmR3DevHlp_IommuRegister(PPDMDEVINS pDevIns, PPDMIOMMU
     /*
      * Init the R3 bits.
      */
-    pIommu->idxIommu = idxIommu;
-    pIommu->pDevInsR3 = pDevIns;
+    pIommu->idxIommu    = idxIommu;
+    pIommu->pDevInsR3   = pDevIns;
+    pIommu->pfnMemRead  = pIommuReg->pfnMemRead;
+    pIommu->pfnMemWrite = pIommuReg->pfnMemWrite;
     Log(("PDM: Registered IOMMU device '%s'/%d pDevIns=%p\n", pDevIns->pReg->szName, pDevIns->iInstance, pDevIns));
 
     /* Set the helper pointer and return. */

@@ -1253,6 +1253,37 @@ typedef struct PDMIOMMUREGR0
     uint32_t            u32Version;
     /** Index into the PDM IOMMU array (PDM::aIommus) from ring-3. */
     uint32_t            idxIommu;
+
+    /**
+     * Performs a physical memory read transaction through the IOMMU.
+     *
+     * @returns VBox status code.
+     * @param   pDevIns     The IOMMU device instance.
+     * @param   uDeviceId   The device identifier (bus, device, function).
+     * @param   uDva        The device virtual address being read.
+     * @param   cbRead      The number of bytes being read.
+     * @param   pGCPhysOut  Where to store the translated physical address.
+     *
+     * @thread  Any.
+     */
+    DECLR0CALLBACKMEMBER(int, pfnMemRead,(PPDMDEVINS pDevIns, uint16_t uDeviceId, uint64_t uDva, size_t cbRead,
+                                          PRTGCPHYS pGCPhysOut));
+
+    /**
+     * Performs a physical memory write transaction through the IOMMU.
+     *
+     * @returns VBox status code.
+     * @param   pDevIns     The IOMMU device instance.
+     * @param   uDeviceId   The device identifier (bus, device, function).
+     * @param   uDva        The device virtual address being written.
+     * @param   cbRead      The number of bytes being written.
+     * @param   pGCPhysOut  Where to store the translated physical address.
+     *
+     * @thread  Any.
+     */
+    DECLR0CALLBACKMEMBER(int, pfnMemWrite,(PPDMDEVINS pDevIns, uint16_t uDeviceId, uint64_t uDva, size_t cbWrite,
+                                           PRTGCPHYS pGCPhysOut));
+
     /** Just a safety precaution. */
     uint32_t            u32TheEnd;
 } PDMIOMMUREGR0;
@@ -1273,6 +1304,37 @@ typedef struct PDMIOMMUREGRC
     uint32_t            u32Version;
     /** Index into the PDM IOMMU array (PDM::aIommus) from ring-3. */
     uint32_t            idxIommu;
+
+    /**
+     * Performs a physical memory read transaction through the IOMMU.
+     *
+     * @returns VBox status code.
+     * @param   pDevIns     The IOMMU device instance.
+     * @param   uDeviceId   The device identifier (bus, device, function).
+     * @param   uDva        The device virtual address.
+     * @param   cbRead      The number of bytes being read.
+     * @param   pGCPhysOut  Where to store the translated physical address.
+     *
+     * @thread  Any.
+     */
+    DECLRCCALLBACKMEMBER(int, pfnMemRead,(PPDMDEVINS pDevIns, uint16_t uDeviceId, uint64_t uDva, size_t cbRead,
+                                          PRTGCPHYS pGCPhysOut));
+
+    /**
+     * Performs a physical memory write transaction through the IOMMU.
+     *
+     * @returns VBox status code.
+     * @param   pDevIns     The IOMMU device instance.
+     * @param   uDeviceId   The device identifier (bus, device, function).
+     * @param   uDva        The device virtual address being written.
+     * @param   cbRead      The number of bytes being written.
+     * @param   pGCPhysOut  Where to store the translated physical address.
+     *
+     * @thread  Any.
+     */
+    DECLRCCALLBACKMEMBER(int, pfnMemWrite,(PPDMDEVINS pDevIns, uint16_t uDeviceId, uint64_t uDva, size_t cbWrite,
+                                           PRTGCPHYS pGCPhysOut));
+
     /** Just a safety precaution. */
     uint32_t            u32TheEnd;
 } PDMIOMMUREGRC;
@@ -1291,6 +1353,39 @@ typedef struct PDMIOMMUREGR3
     /** Structure version number. PDM_IOMMUREG_VERSION defines the current
      *  version. */
     uint32_t            u32Version;
+    /** Padding. */
+    uint32_t            uPadding0;
+
+    /**
+     * Performs a physical memory read transaction through the IOMMU.
+     *
+     * @returns VBox status code.
+     * @param   pDevIns     The IOMMU device instance.
+     * @param   uDeviceId   The device identifier (bus, device, function).
+     * @param   uDva        The device virtual address being read.
+     * @param   cbRead      The number of bytes being read.
+     * @param   pGCPhysOut  Where to store the translated physical address.
+     *
+     * @thread  Any.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnMemRead,(PPDMDEVINS pDevIns, uint16_t uDeviceId, uint64_t uDva, size_t cbRead,
+                                          PRTGCPHYS pGCPhysOut));
+
+    /**
+     * Performs a physical memory write transaction through the IOMMU.
+     *
+     * @returns VBox status code.
+     * @param   pDevIns     The IOMMU device instance.
+     * @param   uDeviceId   The device identifier (bus, device, function).
+     * @param   uDva        The device virtual address being written.
+     * @param   cbWrite     The number of bytes being written.
+     * @param   pGCPhysOut  Where to store the translated physical address.
+     *
+     * @thread  Any.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnMemWrite,(PPDMDEVINS pDevIns, uint16_t uDeviceId, uint64_t uDva, size_t cbWrite,
+                                           PRTGCPHYS pGCPhysOut));
+
     /** Just a safety precaution. */
     uint32_t            u32TheEnd;
 } PDMIOMMUREGR3;

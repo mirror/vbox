@@ -623,18 +623,17 @@ typedef struct PDMDRV
 typedef struct PDMIOMMU
 {
     /** IOMMU index. */
-    uint32_t                        idxIommu;
-    uint32_t                        uPadding0; /**< Alignment padding.*/
+    uint32_t                    idxIommu;
+    uint32_t                    uPadding0; /**< Alignment padding.*/
 
     /** Pointer to the IOMMU device instance - R3. */
-    PPDMDEVINSR3                    pDevInsR3;
-
-    /** Pointer to the IOMMU device instance - R0. */
-    PPDMDEVINSR0                    pDevInsR0;
-
-    /** Pointer to the IOMMU device instance - RC. */
-    PPDMDEVINSRC                    pDevInsRC;
-    RTRCPTR                         RCPtrPadding;
+    PPDMDEVINSR3                pDevInsR3;
+    /** @copydoc PDMIOMMUREGR3::pfnMemRead */
+    DECLR3CALLBACKMEMBER(int,   pfnMemRead,(PPDMDEVINS pDevIns, uint16_t uDeviceId, uint64_t uDva, size_t cbRead,
+                                            PRTGCPHYS pGCPhysOut));
+    /** @copydoc PDMIOMMUREGR3::pfnMemWrite */
+    DECLR3CALLBACKMEMBER(int,   pfnMemWrite,(PPDMDEVINS pDevIns, uint16_t uDeviceId, uint64_t uDva, size_t cbWrite,
+                                             PRTGCPHYS pGCPhysOut));
 } PDMIOMMU;
 
 
@@ -644,14 +643,22 @@ typedef struct PDMIOMMU
 typedef struct PDMIOMMUR0
 {
     /** IOMMU index. */
-    uint32_t                        idxIommu;
-    uint32_t                        uPadding0; /**< Alignment padding.*/
+    uint32_t                    idxIommu;
+    uint32_t                    uPadding0; /**< Alignment padding.*/
 
     /** Pointer to IOMMU device instance. */
-    PPDMDEVINSR0                    pDevInsR0;
+    PPDMDEVINSR0                pDevInsR0;
+    /** @copydoc PDMIOMMUREGR0::pfnMemRead */
+    DECLR0CALLBACKMEMBER(int,   pfnMemRead,(PPDMDEVINS pDevIns, uint16_t uDeviceId, uint64_t uDva, size_t cbRead,
+                                            PRTGCPHYS pGCPhysOut));
+    /** @copydoc PDMIOMMUREGR3::pfnMemWrite */
+    DECLR0CALLBACKMEMBER(int,   pfnMemWrite,(PPDMDEVINS pDevIns, uint16_t uDeviceId, uint64_t uDva, size_t cbWrite,
+                                             PRTGCPHYS pGCPhysOut));
 } PDMIOMMUR0;
-/** Pointer to the ring-0 IOMMU data. */
+/** Pointer to a ring-0 IOMMU data. */
 typedef PDMIOMMUR0 *PPDMIOMMUR0;
+/** Pointer to a const ring-0 IOMMU data. */
+typedef const PDMIOMMUR0 *PCPDMIOMMUR0;
 
 
 /**
