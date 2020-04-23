@@ -92,12 +92,12 @@ int SharedClipboardSvcImplDisconnect(PSHCLCLIENT pClient)
  *
  * @param pClient               Context data for the guest system.
  * @param pCmdCtx               Command context to use.
- * @param pFormats              Clipboard formats the guest is offering.
+ * @param fFormats              Clipboard formats the guest is offering.
  */
 int SharedClipboardSvcImplFormatAnnounce(PSHCLCLIENT pClient, PSHCLCLIENTCMDCTX pCmdCtx,
-                                         PSHCLFORMATDATA pFormats)
+                                         SHCLFORMATS fFormats)
 {
-    RT_NOREF(pClient, pCmdCtx, pFormats);
+    RT_NOREF(pClient, pCmdCtx, fFormats);
     return VINF_SUCCESS;
 }
 
