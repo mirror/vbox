@@ -242,13 +242,12 @@ int SharedClipboardWinChainAdd(PSHCLWINCTX pCtx)
 
     BOOL fRc;
     if (SharedClipboardWinIsNewAPI(pAPI))
-    {
         fRc = pAPI->pfnAddClipboardFormatListener(pCtx->hWnd);
-    }
     else
     {
+        SetLastError(NO_ERROR);
         pCtx->hWndNextInChain = SetClipboardViewer(pCtx->hWnd);
-        fRc = pCtx->hWndNextInChain != NULL;
+        fRc = pCtx->hWndNextInChain != NULL || GetLastError() == NO_ERROR;
     }
 
     int rc = VINF_SUCCESS;
