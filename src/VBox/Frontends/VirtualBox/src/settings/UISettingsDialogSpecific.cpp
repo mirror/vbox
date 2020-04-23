@@ -664,7 +664,6 @@ void UISettingsDialogMachine::sltMachineDataChanged(const QUuid &uMachineId)
 
 void UISettingsDialogMachine::sltResetFirstRunFlag()
 {
-    if (m_fAllowResetFirstRunFlag)
     m_fResetFirstRunFlag = true;
 }
 
