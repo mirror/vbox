@@ -2799,7 +2799,7 @@ static VBOXSTRICTRC iommuAmdReadRegister(PPDMDEVINS pDevIns, uint32_t off, uint6
  * @param   uDeviceId   The device identifier (bus, device, function).
  * @param   uDva        The device virtual address being read.
  * @param   cbRead      The number of bytes being read.
- * @param   GCPhysOut   Where to store the translated physical address.
+ * @param   pGCPhysOut  Where to store the translated physical address.
  *
  * @thread  Any.
  */
@@ -2818,7 +2818,7 @@ static int iommuAmdDeviceMemRead(PPDMDEVINS pDevIns, uint16_t uDeviceId, uint64_
  * @param   uDeviceId   The device identifier (bus, device, function).
  * @param   uDva        The device virtual address being written.
  * @param   cbRead      The number of bytes being written.
- * @param   GCPhysOut   Where to store the translated physical address.
+ * @param   pGCPhysOut  Where to store the translated physical address.
  *
  * @thread  Any.
  */
