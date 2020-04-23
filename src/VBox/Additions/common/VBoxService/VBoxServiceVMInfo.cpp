@@ -942,7 +942,7 @@ static int vgsvcVMInfoWriteNetwork(void)
            return VINF_SUCCESS;
 
     ULONG            cbAdpInfo = sizeof(IP_ADAPTER_INFO);
-    IP_ADAPTER_INFO *pAdpInfo  = (IP_ADAPTER_INFO *)RTMemAlloc(cbAdpInfo);
+    IP_ADAPTER_INFO *pAdpInfo  = (IP_ADAPTER_INFO *)RTMemAllocZ(cbAdpInfo);
     if (!pAdpInfo)
     {
         VGSvcError("VMInfo/Network: Failed to allocate IP_ADAPTER_INFO\n");
@@ -955,6 +955,7 @@ static int vgsvcVMInfoWriteNetwork(void)
         if (pAdpInfoNew)
         {
             pAdpInfo = pAdpInfoNew;
+            RT_BZERO(pAdpInfo, cbAdpInfo);
             dwRet = g_pfnGetAdaptersInfo(pAdpInfo, &cbAdpInfo);
         }
     }
@@ -964,7 +965,10 @@ static int vgsvcVMInfoWriteNetwork(void)
 
         /* If no network adapters available / present in the
          * system we pretend success to not bail out too early. */
-        dwRet = ERROR_SUCCESS;
+        RTMemFree(pAdpInfo);
+        pAdpInfo  = NULL;
+        cbAdpInfo = 0;
+        dwRet     = ERROR_SUCCESS;
     }
     if (dwRet != ERROR_SUCCESS)
     {
@@ -993,7 +997,7 @@ static int vgsvcVMInfoWriteNetwork(void)
 
     INTERFACE_INFO  aInterfaces[20] = {0};
     DWORD           cbReturned      = 0;
-# ifdef RT_ARCH_x86
+# ifdef RT_ARCH_X86
     /* Workaround for uninitialized variable used in memcpy in GetTcpipInterfaceList
        (NT4SP1 at least).  It seems to be happy enough with garbages, no failure
        returns so far, so we just need to prevent it from crashing by filling the
