@@ -79,7 +79,7 @@ static DECLCALLBACK(size_t) rtUtf16PrintfOutput(void *pvArg, const char *pachCha
             {
                 RTUNICP uc;
                 int rc = RTStrGetCpNEx(&pachChars, &cbChars, &uc);
-                AssertRCStmt(rc, uc = 0x7f);
+                AssertRCStmt(rc, uc = 0xfffd /* REPLACEMENT */);
 
                 /* Simple: */
                 if (RTUniCpIsBMP(uc))
@@ -114,7 +114,7 @@ static DECLCALLBACK(size_t) rtUtf16PrintfOutput(void *pvArg, const char *pachCha
                     AssertMsgFailed(("uc=%#x\n", uc));
                     cwcRet += 1;
                     if (RT_LIKELY(cwcLeft > 1))
-                        *pwszCur++ = 0x7f;
+                        *pwszCur++ = 0xfffd; /* REPLACEMENT */
                     else
                         break;
                     cwcLeft--;
@@ -158,7 +158,7 @@ static DECLCALLBACK(size_t) rtUtf16PrintfOutput(void *pvArg, const char *pachCha
     {
         RTUNICP uc;
         int rc = RTStrGetCpNEx(&pachChars, &cbChars, &uc);
-        AssertRCStmt(rc, uc = 0x7f);
+        AssertRCStmt(rc, uc = 0xfffd /* REPLACEMENT */);
 
         if (RTUniCpIsBMP(uc))
             cwcRet += 1;
