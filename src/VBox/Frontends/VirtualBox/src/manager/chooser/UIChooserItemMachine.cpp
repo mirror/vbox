@@ -63,6 +63,16 @@ UIChooserNodeMachine *UIChooserItemMachine::nodeToMachineType() const
     return node() ? node()->toMachineNode() : 0;
 }
 
+QUuid UIChooserItemMachine::id() const
+{
+    return nodeToMachineType() ? nodeToMachineType()->id() : QUuid();
+}
+
+bool UIChooserItemMachine::accessible() const
+{
+    return nodeToMachineType() ? nodeToMachineType()->accessible() : false;
+}
+
 UIVirtualMachineItem *UIChooserItemMachine::cache() const
 {
     return nodeToMachineType() ? nodeToMachineType()->cache() : 0;
@@ -71,16 +81,6 @@ UIVirtualMachineItem *UIChooserItemMachine::cache() const
 UIVirtualMachineItemType UIChooserItemMachine::cacheType() const
 {
     return cache() ? cache()->itemType() : UIVirtualMachineItemType_Invalid;
-}
-
-QUuid UIChooserItemMachine::id() const
-{
-    return cache() ? cache()->id() : QUuid();
-}
-
-bool UIChooserItemMachine::accessible() const
-{
-    return cache() ? cache()->accessible() : false;
 }
 
 void UIChooserItemMachine::recache()
@@ -132,10 +132,12 @@ void UIChooserItemMachine::enumerateMachineItems(const QList<UIChooserItem*> &il
     foreach (UIChooserItem *pItem, il)
     {
         /* If that is machine-item: */
+        AssertPtrReturnVoid(pItem);
         if (pItem->type() == UIChooserNodeType_Machine)
         {
             /* Get the iterated machine-item: */
             UIChooserItemMachine *pMachineItem = pItem->toMachineItem();
+            AssertPtrReturnVoid(pMachineItem);
             /* Skip if exactly this item is already enumerated: */
             if (ol.contains(pMachineItem))
                 continue;
@@ -410,9 +412,11 @@ bool UIChooserItemMachine::isDropAllowed(QGraphicsSceneDragDropEvent *pEvent, UI
     {
         /* Get passed machine-item: */
         const UIChooserItemMimeData *pCastedMimeData = qobject_cast<const UIChooserItemMimeData*>(pMimeData);
-        AssertMsg(pCastedMimeData, ("Can't cast passed mime-data to UIChooserItemMimeData!"));
+        AssertPtrReturn(pCastedMimeData, false);
         UIChooserItem *pItem = pCastedMimeData->item();
+        AssertPtrReturn(pItem, false);
         UIChooserItemMachine *pMachineItem = pItem->toMachineItem();
+        AssertPtrReturn(pMachineItem, false);
 
         /* No drops for cloud items: */
         if (   cacheType() != UIVirtualMachineItemType_Local

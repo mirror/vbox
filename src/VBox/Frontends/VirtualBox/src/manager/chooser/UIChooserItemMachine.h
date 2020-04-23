@@ -49,16 +49,16 @@ public:
       * @{ */
         /** Returns machine node reference. */
         UIChooserNodeMachine *nodeToMachineType() const;
+        /** Returns item machine id. */
+        QUuid id() const;
+        /** Returns whether item accessible. */
+        bool accessible() const;
 
         /** Returns virtual machine cache instance. */
         UIVirtualMachineItem *cache() const;
         /** Returns virtual machine cache type. */
         UIVirtualMachineItemType cacheType() const;
 
-        /** Returns item machine id. */
-        QUuid id() const;
-        /** Returns whether item accessible. */
-        bool accessible() const;
         /** Recaches item contents. */
         void recache();
 

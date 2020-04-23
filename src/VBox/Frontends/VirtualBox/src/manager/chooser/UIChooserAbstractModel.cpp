@@ -840,17 +840,18 @@ int UIChooserAbstractModel::getDesiredNodePosition(UIChooserNode *pParentNode, U
         for (int i = nodes.size() - 1; i >= 0; --i)
         {
             /* Get current node: */
-            UIChooserNode *pNode = nodes[i];
+            UIChooserNode *pNode = nodes.at(i);
+            AssertPtrReturn(pNode, iNewNodeDesiredPosition);
             /* Which position should be current node placed by definitions? */
-            QString strDefinitionName = pNode->type() == UIChooserNodeType_Group ? pNode->name() :
-                                        pNode->type() == UIChooserNodeType_Machine ? toOldStyleUuid(pNode->toMachineNode()->cache()->id()) :
-                                        QString();
-            AssertMsg(!strDefinitionName.isEmpty(), ("Wrong definition name!"));
+            QString strDefinitionName = pNode->type() == UIChooserNodeType_Group ? pNode->name()
+                                      : pNode->type() == UIChooserNodeType_Machine ? toOldStyleUuid(pNode->toMachineNode()->id())
+                                      : QString();
+            AssertReturn(!strDefinitionName.isEmpty(), iNewNodeDesiredPosition);
             int iNodeDefinitionPosition = getDefinedNodePosition(pParentNode, enmType, strDefinitionName);
             /* If some position wanted: */
             if (iNodeDefinitionPosition != -1)
             {
-                AssertMsg(iNodeDefinitionPosition != iNewNodeDefinitionPosition, ("Incorrect definitions!"));
+                AssertReturn(iNodeDefinitionPosition != iNewNodeDefinitionPosition, iNewNodeDesiredPosition);
                 if (iNodeDefinitionPosition < iNewNodeDefinitionPosition)
                 {
                     iNewNodeDesiredPosition = i + 1;
@@ -977,10 +978,16 @@ void UIChooserAbstractModel::gatherGroupDefinitions(QMap<QString, QStringList> &
 {
     /* Iterate over all the machine-nodes: */
     foreach (UIChooserNode *pNode, pParentGroup->nodes(UIChooserNodeType_Machine))
-        if (UIChooserNodeMachine *pMachineNode = pNode->toMachineNode())
-            if (   pMachineNode->cacheType() == UIVirtualMachineItemType_Local
-                && pMachineNode->cache()->accessible())
-                definitions[toOldStyleUuid(pMachineNode->cache()->id())] << pParentGroup->fullName();
+    {
+        /* Make sure it's really machine node: */
+        AssertPtrReturnVoid(pNode);
+        UIChooserNodeMachine *pMachineNode = pNode->toMachineNode();
+        AssertPtrReturnVoid(pMachineNode);
+        /* Make sure it's local machine node exactly and it's accessible: */
+        if (   pMachineNode->cacheType() == UIVirtualMachineItemType_Local
+            && pMachineNode->accessible())
+            definitions[toOldStyleUuid(pMachineNode->id())] << pParentGroup->fullName();
+    }
     /* Iterate over all the group-nodes: */
     foreach (UIChooserNode *pNode, pParentGroup->nodes(UIChooserNodeType_Group))
         gatherGroupDefinitions(definitions, pNode);
@@ -1006,10 +1013,16 @@ void UIChooserAbstractModel::gatherGroupOrders(QMap<QString, QStringList> &order
     }
     /* Iterate over all the machine-nodes: */
     foreach (UIChooserNode *pNode, pParentGroup->nodes(UIChooserNodeType_Machine))
-        if (UIChooserNodeMachine *pMachineNode = pNode->toMachineNode())
-            if (   pMachineNode->cacheType() == UIVirtualMachineItemType_Local
-                || pMachineNode->cacheType() == UIVirtualMachineItemType_CloudReal)
-                orders[strExtraDataKey] << QString("m=%1").arg(toOldStyleUuid(pMachineNode->cache()->id()));
+    {
+        /* Make sure it's really machine node: */
+        AssertPtrReturnVoid(pNode);
+        UIChooserNodeMachine *pMachineNode = pNode->toMachineNode();
+        AssertPtrReturnVoid(pMachineNode);
+        /* Make sure it's local or real cloud machine node exactly: */
+        if (   pMachineNode->cacheType() == UIVirtualMachineItemType_Local
+            || pMachineNode->cacheType() == UIVirtualMachineItemType_CloudReal)
+            orders[strExtraDataKey] << QString("m=%1").arg(toOldStyleUuid(pMachineNode->id()));
+    }
 }
 
 void UIChooserAbstractModel::makeSureGroupDefinitionsSaveIsFinished()

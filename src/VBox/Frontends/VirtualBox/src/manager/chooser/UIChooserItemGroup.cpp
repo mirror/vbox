@@ -690,9 +690,11 @@ bool UIChooserItemGroup::isDropAllowed(QGraphicsSceneDragDropEvent *pEvent, UICh
     {
         /* Get passed group-item: */
         const UIChooserItemMimeData *pCastedMimeData = qobject_cast<const UIChooserItemMimeData*>(pMimeData);
-        AssertMsg(pCastedMimeData, ("Can't cast passed mime-data to UIChooserItemMimeData!"));
+        AssertPtrReturn(pCastedMimeData, false);
         UIChooserItem *pItem = pCastedMimeData->item();
+        AssertPtrReturn(pItem, false);
         UIChooserItemGroup *pGroupItem = pItem->toGroupItem();
+        AssertPtrReturn(pGroupItem, false);
 
         /* For local items: */
         if (   nodeToGroupType()->groupType() == UIChooserNodeGroupType_Local
@@ -730,9 +732,11 @@ bool UIChooserItemGroup::isDropAllowed(QGraphicsSceneDragDropEvent *pEvent, UICh
     {
         /* Get passed machine-item: */
         const UIChooserItemMimeData *pCastedMimeData = qobject_cast<const UIChooserItemMimeData*>(pMimeData);
-        AssertMsg(pCastedMimeData, ("Can't cast passed mime-data to UIChooserItemMimeData!"));
+        AssertPtrReturn(pCastedMimeData, false);
         UIChooserItem *pItem = pCastedMimeData->item();
+        AssertPtrReturn(pItem, false);
         UIChooserItemMachine *pMachineItem = pItem->toMachineItem();
+        AssertPtrReturn(pMachineItem, false);
 
         /* For local items: */
         if (   nodeToGroupType()->groupType() == UIChooserNodeGroupType_Local
@@ -1253,8 +1257,14 @@ bool UIChooserItemGroup::isContainsMachine(const QUuid &uId) const
 {
     /* Check each machine-item: */
     foreach (UIChooserItem *pItem, m_machineItems)
-        if (pItem->toMachineItem()->id() == uId)
+    {
+        /* Make sure it's really machine node: */
+        AssertPtrReturn(pItem, false);
+        UIChooserItemMachine *pMachineItem = pItem->toMachineItem();
+        AssertPtrReturn(pMachineItem, false);
+        if (pMachineItem->id() == uId)
             return true;
+    }
     /* Found nothing? */
     return false;
 }

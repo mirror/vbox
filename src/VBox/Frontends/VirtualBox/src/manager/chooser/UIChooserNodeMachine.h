@@ -110,6 +110,11 @@ public:
     /** Returns virtual machine cache instance. */
     UIVirtualMachineItemType cacheType() const;
 
+    /** Returns node machine id. */
+    QUuid id() const;
+    /** Returns whether node accessible. */
+    bool accessible() const;
+
 protected:
 
     /** Handles translation event. */

@@ -1050,10 +1050,13 @@ void UIChooserModel::sltPerformRefreshAction()
                                                 UIChooserItemMachineEnumerationFlag_Unique |
                                                 UIChooserItemMachineEnumerationFlag_Inaccessible);
 
-    /* For each machine-item: */
+    /* Prepare item to be selected: */
     UIChooserItem *pSelectedItem = 0;
+
+    /* For each machine-item: */
     foreach (UIChooserItemMachine *pItem, inaccessibleMachineItemList)
     {
+        AssertPtrReturnVoid(pItem);
         switch (pItem->cacheType())
         {
             case UIVirtualMachineItemType_Local:
@@ -1061,18 +1064,18 @@ void UIChooserModel::sltPerformRefreshAction()
                 /* Recache: */
                 pItem->recache();
 
-                /* Become accessible? */
+                /* Became accessible? */
                 if (pItem->accessible())
                 {
-                    /* Machine name: */
-                    const QString strMachineName = ((UIChooserItem*)pItem)->name();
-                    /* We should reload this machine: */
-                    sltReloadMachine(pItem->id());
+                    /* Acquire machine ID: */
+                    const QUuid uId = pItem->id();
+                    /* Reload this machine: */
+                    sltReloadMachine(uId);
                     /* Select first of reloaded items: */
                     if (!pSelectedItem)
-                        pSelectedItem = root()->searchForItem(strMachineName,
+                        pSelectedItem = root()->searchForItem(uId.toString(),
                                                               UIChooserItemSearchFlag_Machine |
-                                                              UIChooserItemSearchFlag_ExactName);
+                                                              UIChooserItemSearchFlag_ExactId);
                 }
 
                 break;
@@ -1120,6 +1123,7 @@ void UIChooserModel::sltRemoveSelectedMachine()
     foreach (UIChooserItemMachine *pMachineItem, selectedMachineItemList)
     {
         /* Get machine-item id: */
+        AssertPtrReturnVoid(pMachineItem);
         const QUuid uId = pMachineItem->id();
 
         /* We already decided for that machine? */
@@ -1134,13 +1138,19 @@ void UIChooserModel::sltRemoveSelectedMachine()
         /* Selected copy count: */
         int iSelectedCopyCount = 0;
         foreach (UIChooserItemMachine *pSelectedItem, selectedMachineItemList)
+        {
+            AssertPtrReturnVoid(pSelectedItem);
             if (pSelectedItem->id() == uId)
                 ++iSelectedCopyCount;
+        }
         /* Existing copy count: */
         int iExistingCopyCount = 0;
         foreach (UIChooserItemMachine *pExistingItem, existingMachineItemList)
+        {
+            AssertPtrReturnVoid(pExistingItem);
             if (pExistingItem->id() == uId)
                 ++iExistingCopyCount;
+        }
         /* If selected copy count equal to existing copy count,
          * we will propose ro unregister machine fully else
          * we will just propose to remove selected-items: */

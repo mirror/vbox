@@ -137,7 +137,7 @@ QString UIChooserNodeMachine::description() const
 
 QString UIChooserNodeMachine::definition() const
 {
-    return QString("m=%1").arg(UIChooserAbstractModel::toOldStyleUuid(cache()->id()));
+    return QString("m=%1").arg(UIChooserAbstractModel::toOldStyleUuid(id()));
 }
 
 bool UIChooserNodeMachine::hasNodes(UIChooserNodeType enmType /* = UIChooserNodeType_Any */) const
@@ -168,7 +168,7 @@ void UIChooserNodeMachine::removeNode(UIChooserNode *pNode)
 void UIChooserNodeMachine::removeAllNodes(const QUuid &uId)
 {
     /* Skip other ids: */
-    if (QUuid(m_pCache->id()) != uId)
+    if (id() != uId)
         return;
 
     /* Remove this node: */
@@ -178,7 +178,7 @@ void UIChooserNodeMachine::removeAllNodes(const QUuid &uId)
 void UIChooserNodeMachine::updateAllNodes(const QUuid &uId)
 {
     /* Skip other ids: */
-    if (QUuid(m_pCache->id()) != uId)
+    if (id() != uId)
         return;
 
     /* Update cache: */
@@ -209,7 +209,7 @@ void UIChooserNodeMachine::searchForNodes(const QString &strSearchTerm, int iIte
         /* If exact ID flag specified => check node ID:  */
         if (iItemSearchFlags & UIChooserItemSearchFlag_ExactId)
         {
-            if (cache()->id() == QUuid(strSearchTerm))
+            if (id() == QUuid(strSearchTerm))
                 matchedItems << this;
         }
         /* If exact name flag specified => check full node name: */
@@ -241,6 +241,16 @@ UIVirtualMachineItem *UIChooserNodeMachine::cache() const
 UIVirtualMachineItemType UIChooserNodeMachine::cacheType() const
 {
     return cache() ? cache()->itemType() : UIVirtualMachineItemType_Invalid;
+}
+
+QUuid UIChooserNodeMachine::id() const
+{
+    return cache() ? cache()->id() : QUuid();
+}
+
+bool UIChooserNodeMachine::accessible() const
+{
+    return cache() ? cache()->accessible() : false;
 }
 
 void UIChooserNodeMachine::retranslateUi()
