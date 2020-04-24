@@ -1672,7 +1672,7 @@ VBOXSERVICE g_VMInfo =
     /* pszDescription. */
     "Virtual Machine Information",
     /* pszUsage. */
-    "              [--vminfo-interval <ms>] [--vminfo-user-idle-threshold <ms>]"
+    "           [--vminfo-interval <ms>] [--vminfo-user-idle-threshold <ms>]"
     ,
     /* pszOptions. */
     "    --vminfo-interval       Specifies the interval at which to retrieve the\n"

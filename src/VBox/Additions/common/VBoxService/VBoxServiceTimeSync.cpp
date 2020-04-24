@@ -768,12 +768,12 @@ VBOXSERVICE g_TimeSync =
     /* pszDescription. */
     "Time synchronization",
     /* pszUsage. */
-    "              [--timesync-interval <ms>] [--timesync-min-adjust <ms>]\n"
-    "              [--timesync-latency-factor <x>] [--timesync-max-latency <ms>]\n"
-    "              [--timesync-set-threshold <ms>]\n"
-    "              [--timesync-set-start|--timesync-no-set-start]\n"
-    "              [--timesync-set-on-restore|--timesync-no-set-on-restore]\n"
-    "              [--timesync-verbosity <level>]"
+    "           [--timesync-interval <ms>] [--timesync-min-adjust <ms>]\n"
+    "           [--timesync-latency-factor <x>] [--timesync-max-latency <ms>]\n"
+    "           [--timesync-set-threshold <ms>]\n"
+    "           [--timesync-set-start|--timesync-no-set-start]\n"
+    "           [--timesync-set-on-restore|--timesync-no-set-on-restore]\n"
+    "           [--timesync-verbosity <level>]"
     ,
     /* pszOptions. */
     "    --timesync-interval     Specifies the interval at which to synchronize the\n"

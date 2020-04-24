@@ -355,17 +355,17 @@ RTEXITCODE VGSvcWinInstall(void)
                 hService = OpenService(hSCManager, VBOXSERVICE_NAME, SERVICE_ALL_ACCESS);
                 if (hService)
                 {
-                    if (ChangeServiceConfig (hService,
-                                             SERVICE_WIN32_OWN_PROCESS | SERVICE_INTERACTIVE_PROCESS,
-                                             SERVICE_DEMAND_START,
-                                             SERVICE_ERROR_NORMAL,
-                                             imagePath,
-                                             NULL,
-                                             NULL,
-                                             NULL,
-                                             NULL,
-                                             NULL,
-                                             VBOXSERVICE_FRIENDLY_NAME))
+                    if (ChangeServiceConfig(hService,
+                                            SERVICE_WIN32_OWN_PROCESS | SERVICE_INTERACTIVE_PROCESS,
+                                            SERVICE_DEMAND_START,
+                                            SERVICE_ERROR_NORMAL,
+                                            imagePath,
+                                            NULL,
+                                            NULL,
+                                            NULL,
+                                            NULL,
+                                            NULL,
+                                            VBOXSERVICE_FRIENDLY_NAME))
                         VGSvcVerbose(1, "The service config has been successfully updated.\n");
                     else
                         rc = VGSvcError("Could not change service config! Error: %ld\n", GetLastError());

@@ -563,9 +563,9 @@ VBOXSERVICE g_Control =
     "Host-driven Guest Control",
     /* pszUsage. */
 #ifdef DEBUG
-    "              [--control-dump-stderr] [--control-dump-stdout]\n"
+    "           [--control-dump-stderr] [--control-dump-stdout]\n"
 #endif
-    "              [--control-interval <ms>]"
+    "           [--control-interval <ms>]"
     ,
     /* pszOptions. */
 #ifdef DEBUG
