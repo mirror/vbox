@@ -77,63 +77,60 @@ void UIInformationConfiguration::createTableItems()
         return;
     resetTable();
     QFontMetrics fontMetrics(m_pTableWidget->font());
-    QTextDocument textDocument;
-
     int iMaxColumn1Length = 0;
-
     /* General section: */
     insertTitleRow(m_strGeneralTitle, UIIconPool::iconSet(":/machine_16px.png"), fontMetrics);
     insertInfoRows(UIDetailsGenerator::generateMachineInformationGeneral(m_machine,
                                                                          UIExtraDataMetaDefs::DetailsElementOptionTypeGeneral_Default),
-                   fontMetrics, textDocument, iMaxColumn1Length);
+                   fontMetrics, iMaxColumn1Length);
 
     /* System section: */
     insertTitleRow(m_strSystemTitle, UIIconPool::iconSet(":/chipset_16px.png"), fontMetrics);
     insertInfoRows(UIDetailsGenerator::generateMachineInformationSystem(m_machine,
-                                                                         UIExtraDataMetaDefs::DetailsElementOptionTypeSystem_Default),
-                   fontMetrics, textDocument, iMaxColumn1Length);
+                                                                        UIExtraDataMetaDefs::DetailsElementOptionTypeSystem_Default),
+                   fontMetrics, iMaxColumn1Length);
 
     /* Display section: */
     insertTitleRow(m_strDisplayTitle, UIIconPool::iconSet(":/vrdp_16px.png"), fontMetrics);
     insertInfoRows(UIDetailsGenerator::generateMachineInformationDisplay(m_machine,
                                                                          UIExtraDataMetaDefs::DetailsElementOptionTypeDisplay_Default),
-                   fontMetrics, textDocument, iMaxColumn1Length);
+                   fontMetrics, iMaxColumn1Length);
 
     /* Storage section: */
     insertTitleRow(m_strStorageTitle, UIIconPool::iconSet(":/hd_16px.png"), fontMetrics);
     insertInfoRows(UIDetailsGenerator::generateMachineInformationStorage(m_machine,
                                                                          UIExtraDataMetaDefs::DetailsElementOptionTypeStorage_Default),
-                   fontMetrics, textDocument, iMaxColumn1Length);
+                   fontMetrics, iMaxColumn1Length);
 
     /* Audio section: */
     insertTitleRow(m_strAudioTitle, UIIconPool::iconSet(":/sound_16px.png"), fontMetrics);
     insertInfoRows(UIDetailsGenerator::generateMachineInformationAudio(m_machine,
-                                                                         UIExtraDataMetaDefs::DetailsElementOptionTypeAudio_Default),
-                   fontMetrics, textDocument, iMaxColumn1Length);
+                                                                       UIExtraDataMetaDefs::DetailsElementOptionTypeAudio_Default),
+                   fontMetrics, iMaxColumn1Length);
 
     /* Network section: */
     insertTitleRow(m_strNetworkTitle, UIIconPool::iconSet(":/nw_16px.png"), fontMetrics);
     insertInfoRows(UIDetailsGenerator::generateMachineInformationNetwork(m_machine,
                                                                          UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork_Default),
-                   fontMetrics, textDocument, iMaxColumn1Length);
+                   fontMetrics, iMaxColumn1Length);
 
     /* Serial port section: */
     insertTitleRow(m_strSerialPortsTitle, UIIconPool::iconSet(":/serial_port_16px.png"), fontMetrics);
     insertInfoRows(UIDetailsGenerator::generateMachineInformationSerial(m_machine,
                                                                         UIExtraDataMetaDefs::DetailsElementOptionTypeSerial_Default),
-                   fontMetrics, textDocument, iMaxColumn1Length);
+                   fontMetrics, iMaxColumn1Length);
 
     /* USB section: */
     insertTitleRow(m_strUSBTitle, UIIconPool::iconSet(":/usb_16px.png"), fontMetrics);
     insertInfoRows(UIDetailsGenerator::generateMachineInformationUSB(m_machine,
-                                                                        UIExtraDataMetaDefs::DetailsElementOptionTypeUsb_Default),
-                   fontMetrics, textDocument, iMaxColumn1Length);
+                                                                     UIExtraDataMetaDefs::DetailsElementOptionTypeUsb_Default),
+                   fontMetrics, iMaxColumn1Length);
 
     /* Share folders section: */
     insertTitleRow(m_strSharedFoldersTitle, UIIconPool::iconSet(":/sf_16px.png"), fontMetrics);
     insertInfoRows(UIDetailsGenerator::generateMachineInformationSharedFolders(m_machine,
                                                                                UIExtraDataMetaDefs::DetailsElementOptionTypeSharedFolders_Default),
-                   fontMetrics, textDocument, iMaxColumn1Length);
+                   fontMetrics, iMaxColumn1Length);
 
     m_pTableWidget->resizeColumnToContents(0);
     /* Resize the column 1 a bit larger than the max string if contains: */
@@ -166,13 +163,13 @@ void UIInformationConfiguration::prepareObjects()
     }
 }
 
-void UIInformationConfiguration::insertInfoRows(const UITextTable &table, const QFontMetrics &fontMetrics,
-                                                QTextDocument &textDocument, int &iMaxColumn1Length)
+void UIInformationConfiguration::insertInfoRows(const UITextTable &table, const QFontMetrics &fontMetrics, int &iMaxColumn1Length)
 {
     foreach (const UITextTableLine &line, table)
     {
-        textDocument.setHtml(line.string2());
-        insertInfoRow(line.string1(), textDocument.toPlainText(), fontMetrics, iMaxColumn1Length);
+        insertInfoRow(removeHtmlFromString(line.string1()),
+                      removeHtmlFromString(line.string2()),
+                      fontMetrics, iMaxColumn1Length);
     }
 }
 
@@ -211,4 +208,11 @@ void UIInformationConfiguration::resetTable()
         m_pTableWidget->setRowCount(0);
         m_pTableWidget->setColumnCount(m_iColumCount);
     }
+}
+
+QString UIInformationConfiguration::removeHtmlFromString(const QString &strOriginal)
+{
+    QTextDocument textDocument;
+    textDocument.setHtml(strOriginal);
+    return textDocument.toPlainText();
 }

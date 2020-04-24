@@ -65,11 +65,11 @@ private:
     void createTableItems();
     void prepareObjects();
     void insertTitleRow(const QString &strTitle, const QIcon &icon, const QFontMetrics &fontMetrics);
-    void insertInfoRows(const UITextTable &table, const QFontMetrics &fontMetrics,
-                        QTextDocument &textDocument, int &iMaxColumn1Length);
+    void insertInfoRows(const UITextTable &table, const QFontMetrics &fontMetrics, int &iMaxColumn1Length);
     void insertInfoRow(const QString strText1, const QString &strText2,
                        const QFontMetrics &fontMetrics, int &iMaxColumn1Length);
     void resetTable();
+    QString removeHtmlFromString(const QString &strOriginal);
 
     CMachine m_machine;
     CConsole m_console;
