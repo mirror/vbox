@@ -415,6 +415,10 @@ RT_BF_ASSERT_COMPILE_CHECKS(IOMMU_BF_MSI_MAP_CAPHDR_, UINT32_C(0), UINT32_MAX,
         PDMDevHlpCritSectLeave((a_pDevIns), (a_pDevIns)->CTX_SUFF(pCritSectRo)); \
     } while (0)
 
+/**
+ * Gets the device table size given the size field.
+ */
+#define IOMMU_GET_DEV_TAB_SIZE(a_uSize)     (((a_uSize) + 1) << X86_PAGE_4K_SHIFT)
 
 /*********************************************************************************************************************************
 *   Structures and Typedefs                                                                                                      *
@@ -1062,10 +1066,10 @@ typedef union
 {
     struct
     {
-        RT_GCC_EXTENSION uint64_t   u9Size : 9;             /**< Bits 8:0   - Size: Size of the device table. */
-        RT_GCC_EXTENSION uint64_t   u3Rsvd0 : 3;            /**< Bits 11:9  - Reserved. */
-        RT_GCC_EXTENSION uint64_t   u40DevTabBase : 40;     /**< Bits 51:12 - DevTabBase: Device table base address. */
-        RT_GCC_EXTENSION uint64_t   u12Rsvd0 : 12;          /**< Bits 63:52 - Reserved. */
+        RT_GCC_EXTENSION uint64_t   u9Size : 9;     /**< Bits 8:0   - Size: Size of the device table. */
+        RT_GCC_EXTENSION uint64_t   u3Rsvd0 : 3;    /**< Bits 11:9  - Reserved. */
+        RT_GCC_EXTENSION uint64_t   u40Base : 40;   /**< Bits 51:12 - DevTabBase: Device table base address. */
+        RT_GCC_EXTENSION uint64_t   u12Rsvd0 : 12;  /**< Bits 63:52 - Reserved. */
     } n;
     /** The 64-bit unsigned integer view. */
     uint64_t    u64;
@@ -1082,9 +1086,9 @@ typedef union
     struct
     {
         RT_GCC_EXTENSION uint64_t   u12Rsvd0 : 12;      /**< Bits 11:0  - Reserved. */
-        RT_GCC_EXTENSION uint64_t   u40CmdBase : 40;    /**< Bits 51:12 - ComBase: Command buffer base address. */
+        RT_GCC_EXTENSION uint64_t   u40Base : 40;       /**< Bits 51:12 - ComBase: Command buffer base address. */
         RT_GCC_EXTENSION uint64_t   u4Rsvd0 : 4;        /**< Bits 55:52 - Reserved. */
-        RT_GCC_EXTENSION uint64_t   u4CmdLen : 4;       /**< Bits 59:56 - ComLen: Command buffer length. */
+        RT_GCC_EXTENSION uint64_t   u4Len : 4;          /**< Bits 59:56 - ComLen: Command buffer length. */
         RT_GCC_EXTENSION uint64_t   u4Rsvd1 : 4;        /**< Bits 63:60 - Reserved. */
     } n;
     /** The 64-bit unsigned integer view. */
@@ -1102,9 +1106,9 @@ typedef union
     struct
     {
         RT_GCC_EXTENSION uint64_t   u12Rsvd0 : 12;      /**< Bits 11:0  - Reserved. */
-        RT_GCC_EXTENSION uint64_t   u40EvtBase : 40;    /**< Bits 51:12 - EventBase: Event log base address. */
+        RT_GCC_EXTENSION uint64_t   u40Base : 40;       /**< Bits 51:12 - EventBase: Event log base address. */
         RT_GCC_EXTENSION uint64_t   u4Rsvd0 : 4;        /**< Bits 55:52 - Reserved. */
-        RT_GCC_EXTENSION uint64_t   u4EvtLen : 4;       /**< Bits 59:56 - EventLen: Event log length. */
+        RT_GCC_EXTENSION uint64_t   u4Len : 4;          /**< Bits 59:56 - EventLen: Event log length. */
         RT_GCC_EXTENSION uint64_t   u4Rsvd1 : 4;        /**< Bits 63:60 - Reserved. */
     } n;
     /** The 64-bit unsigned integer view. */
@@ -1271,9 +1275,9 @@ typedef union
     struct
     {
         RT_GCC_EXTENSION uint64_t   u12Rsvd0 : 12;      /**< Bit 11:0   - Reserved. */
-        RT_GCC_EXTENSION uint64_t   u40PprLogBase : 40; /**< Bits 51:12 - PPRLogBase: Peripheral Page Request Log Base Address. */
+        RT_GCC_EXTENSION uint64_t   u40Base : 40;       /**< Bits 51:12 - PPRLogBase: Peripheral Page Request Log Base Address. */
         RT_GCC_EXTENSION uint64_t   u4Rsvd0 : 4;        /**< Bits 55:52 - Reserved. */
-        RT_GCC_EXTENSION uint64_t   u4PprLogLen : 4;    /**< Bits 59:56 - PPRLogLen: Peripheral Page Request Log Length. */
+        RT_GCC_EXTENSION uint64_t   u4Len : 4;          /**< Bits 59:56 - PPRLogLen: Peripheral Page Request Log Length. */
         RT_GCC_EXTENSION uint64_t   u4Rsvd1 : 4;        /**< Bits 63:60 - Reserved. */
     } n;
     /** The 64-bit unsigned integer view. */
@@ -1331,11 +1335,11 @@ typedef union
 {
     struct
     {
-        RT_GCC_EXTENSION uint64_t   u12Rsvd0 : 12;      /**< Bit 11:0   - Reserved. */
-        RT_GCC_EXTENSION uint64_t   u40GALogBase : 40;  /**< Bits 51:12 - GALogBase: Guest Virtual-APIC Log Base Address. */
-        RT_GCC_EXTENSION uint64_t   u4Rsvd0 : 4;        /**< Bits 55:52 - Reserved. */
-        RT_GCC_EXTENSION uint64_t   u4GALogLen : 4;     /**< Bits 59:56 - GALogLen: Guest Virtual-APIC Log Length. */
-        RT_GCC_EXTENSION uint64_t   u4Rsvd1 : 4;        /**< Bits 63:60 - Reserved. */
+        RT_GCC_EXTENSION uint64_t   u12Rsvd0 : 12;  /**< Bit 11:0   - Reserved. */
+        RT_GCC_EXTENSION uint64_t   u40Base : 40;   /**< Bits 51:12 - GALogBase: Guest Virtual-APIC Log Base Address. */
+        RT_GCC_EXTENSION uint64_t   u4Rsvd0 : 4;    /**< Bits 55:52 - Reserved. */
+        RT_GCC_EXTENSION uint64_t   u4Len : 4;      /**< Bits 59:56 - GALogLen: Guest Virtual-APIC Log Length. */
+        RT_GCC_EXTENSION uint64_t   u4Rsvd1 : 4;    /**< Bits 63:60 - Reserved. */
     } n;
     /** The 64-bit unsigned integer view. */
     uint64_t    u64;
@@ -1381,10 +1385,10 @@ typedef union
 {
     struct
     {
-        RT_GCC_EXTENSION uint64_t   u8Size : 8;             /**< Bits 7:0   - Size: Size of the Device Table segment. */
-        RT_GCC_EXTENSION uint64_t   u4Rsvd0 : 4;            /**< Bits 11:8  - Reserved. */
-        RT_GCC_EXTENSION uint64_t   u40DevTabBase : 40;     /**< Bits 51:12 - DevTabBase: Device Table Segment Base Address. */
-        RT_GCC_EXTENSION uint64_t   u12Rsvd0 : 12;          /**< Bits 63:52 - Reserved. */
+        RT_GCC_EXTENSION uint64_t   u8Size : 8;     /**< Bits 7:0   - Size: Size of the Device Table segment. */
+        RT_GCC_EXTENSION uint64_t   u4Rsvd0 : 4;    /**< Bits 11:8  - Reserved. */
+        RT_GCC_EXTENSION uint64_t   u40Base : 40;   /**< Bits 51:12 - DevTabBase: Device Table Segment Base Address. */
+        RT_GCC_EXTENSION uint64_t   u12Rsvd0 : 12;  /**< Bits 63:52 - Reserved. */
     } n;
     /** The 64-bit unsigned integer view. */
     uint64_t    u64;
@@ -2107,13 +2111,13 @@ typedef struct
  * An array of the number of device table segments supported.
  * Indexed by u2DevTabSegSup.
  */
-static uint8_t const g_aDevTabSegments[] = { 0, 2, 4, 8 };
+static uint8_t const g_acDevTabSegs[] = { 0, 2, 4, 8 };
 
 /**
  * The maximum size (inclusive) of each device table segment (0 to 7).
  * Indexed by the device table segment index.
  */
-static uint16_t const g_aDevTabSegmentSizes[] = { 0x1ff, 0xff, 0x7f, 0x7f, 0x3f, 0x3f, 0x3f, 0x3f };
+static uint16_t const g_auDevTabSegSizes[] = { 0x1ff, 0xff, 0x7f, 0x7f, 0x3f, 0x3f, 0x3f, 0x3f };
 
 
 #ifndef VBOX_DEVICE_STRUCT_TESTCASE
@@ -2157,22 +2161,11 @@ DECL_FORCE_INLINE(IOMMU_STATUS_T) iommuAmdGetStatus(PCIOMMU pThis)
 }
 
 
-/**
- * Logs if the buffer length is invalid.
- *
- * @param   uEncodedLen     The length to decode.
- * @param   pszFunc         Name of the calling function for logging purposes.
- */
-DECLINLINE(void) iommuAmdCheckBufferLength(uint8_t uEncodedLen, const char *pszFunc)
+DECL_FORCE_INLINE(IOMMU_CTRL_T) iommuAmdGetCtrl(PCIOMMU pThis)
 {
-#ifdef VBOX_STRICT
-    uint32_t cEntries;
-    iommuAmdGetBaseBufferLength(uEncodedLen, &cEntries, NULL /* pcbBuffer */);
-    if (!cEntries)
-        Log((IOMMU_LOG_PFX ": %s: Invalid length %#x\n", pszFunc, uEncodedLen));
-#else
-    RT_NOREF(uEncodedLen, pszFunc);
-#endif
+    IOMMU_CTRL_T Ctrl;
+    Ctrl.u64 = ASMAtomicReadU64((volatile uint64_t *)&pThis->Ctrl.u64);
+    return Ctrl;
 }
 
 
@@ -2193,7 +2186,18 @@ static VBOXSTRICTRC iommuAmdIgnore_w(PPDMDEVINS pDevIns, PIOMMU pThis, uint32_t 
 static VBOXSTRICTRC iommuAmdDevTabBar_w(PPDMDEVINS pDevIns, PIOMMU pThis, uint32_t iReg, uint64_t u64Value)
 {
     RT_NOREF(pDevIns, iReg);
-    pThis->DevTabBaseAddr.u64 = u64Value & IOMMU_DEV_TAB_BAR_VALID_MASK;
+
+    /* Mask out all unrecognized bits. */
+    u64Value &= IOMMU_DEV_TAB_BAR_VALID_MASK;
+    DEV_TAB_BAR_T DevTabBaseAddr;
+    DevTabBaseAddr.u64 = u64Value;
+
+    /* Validate the base address. */
+    RTGCPHYS const GCPhysDevTab = DevTabBaseAddr.n.u40Base;
+    if (!(GCPhysDevTab & X86_PAGE_4K_OFFSET_MASK))
+        pThis->DevTabBaseAddr.u64 = DevTabBaseAddr.u64;
+    else
+        Log((IOMMU_LOG_PFX ": Device table base address (%#RX64) misaligned -> Ignored\n", GCPhysDevTab));
     return VINF_SUCCESS;
 }
 
@@ -2204,8 +2208,6 @@ static VBOXSTRICTRC iommuAmdDevTabBar_w(PPDMDEVINS pDevIns, PIOMMU pThis, uint32
 static VBOXSTRICTRC iommuAmdCmdBufBar_w(PPDMDEVINS pDevIns, PIOMMU pThis, uint32_t iReg, uint64_t u64Value)
 {
     RT_NOREF(pDevIns, iReg);
-    pThis->CmdBufBaseAddr.u64 = u64Value & IOMMU_CMD_BUF_BAR_VALID_MASK;
-    iommuAmdCheckBufferLength(pThis->CmdBufBaseAddr.n.u4CmdLen, __PRETTY_FUNCTION__);
 
     /*
      * While this is not explicitly specified like the event log base address register,
@@ -2218,6 +2220,23 @@ static VBOXSTRICTRC iommuAmdCmdBufBar_w(PPDMDEVINS pDevIns, PIOMMU pThis, uint32
         Log((IOMMU_LOG_PFX ": Setting CmdBufBar (%#RX64) when command buffer is running -> Ignored\n", u64Value));
         return VINF_SUCCESS;
     }
+
+    /* Mask out all unrecognized bits. */
+    CMD_BUF_BAR_T CmdBufBaseAddr;
+    CmdBufBaseAddr.u64 = u64Value & IOMMU_CMD_BUF_BAR_VALID_MASK;
+
+    /* Validate the base address. */
+    RTGCPHYS const GCPhysCmdBuf = CmdBufBaseAddr.n.u40Base;
+    if (!(GCPhysCmdBuf & X86_PAGE_4K_OFFSET_MASK))
+    {
+        /* Validate the length. */
+        if (CmdBufBaseAddr.n.u4Len >= 8)
+            pThis->CmdBufBaseAddr.u64 = CmdBufBaseAddr.u64;
+        else
+            Log((IOMMU_LOG_PFX ": Command buffer length (%#x) invalid -> Ignored\n", CmdBufBaseAddr.n.u4Len));
+    }
+    else
+        Log((IOMMU_LOG_PFX ": Command buffer base address (%#RX64) misaligned -> Ignored\n", CmdBufBaseAddr.n.u40Base));
 
     /*
      * Writing the command log base address, clears the command buffer head and tail pointers.
@@ -2249,8 +2268,23 @@ static VBOXSTRICTRC iommuAmdEvtLogBar_w(PPDMDEVINS pDevIns, PIOMMU pThis, uint32
         return VINF_SUCCESS;
     }
 
-    pThis->EvtLogBaseAddr.u64 = u64Value & IOMMU_EVT_LOG_BAR_VALID_MASK;
-    iommuAmdCheckBufferLength(pThis->EvtLogBaseAddr.n.u4EvtLen, __PRETTY_FUNCTION__);
+    /* Mask out all unrecognized bits. */
+    u64Value &= IOMMU_EVT_LOG_BAR_VALID_MASK;
+    EVT_LOG_BAR_T EvtLogBaseAddr;
+    EvtLogBaseAddr.u64 = u64Value;
+
+    /* Validate the base address. */
+    RTGCPHYS const GCPhysEvtLog = EvtLogBaseAddr.n.u40Base;
+    if (!(GCPhysEvtLog & X86_PAGE_4K_OFFSET_MASK))
+    {
+        /* Validate the length. */
+        if (EvtLogBaseAddr.n.u4Len >= 8)
+            pThis->EvtLogBaseAddr.u64 = EvtLogBaseAddr.u64;
+        else
+            Log((IOMMU_LOG_PFX ": Event log length (%#x) invalid -> Ignored\n", EvtLogBaseAddr.n.u4Len));
+    }
+    else
+        Log((IOMMU_LOG_PFX ": Event log base address (%#RX64) misaligned -> Ignored\n", EvtLogBaseAddr.n.u40Base));
 
     /*
      * Writing the event log base address, clears the event log head and tail pointers.
@@ -2291,8 +2325,44 @@ static VBOXSTRICTRC iommuAmdExclRangeLimit_w(PPDMDEVINS pDevIns, PIOMMU pThis, u
 static VBOXSTRICTRC iommuAmdPprLogBar_w(PPDMDEVINS pDevIns, PIOMMU pThis, uint32_t iReg, uint64_t u64Value)
 {
     RT_NOREF(pDevIns, iReg);
-    pThis->PprLogBaseAddr.u64 = u64Value & IOMMU_PPR_LOG_BAR_VALID_MASK;
-    iommuAmdCheckBufferLength(pThis->PprLogBaseAddr.n.u4PprLogLen, __PRETTY_FUNCTION__);
+
+    /*
+     * IOMMU behavior is undefined when software writes this register when PPR logging is running.
+     * In our emulation, we ignore the write entirely.
+     * See AMD IOMMU spec. 3.3.2 "PPR Log Registers".
+     */
+    IOMMU_STATUS_T const Status = iommuAmdGetStatus(pThis);
+    if (Status.n.u1PprLogRunning)
+    {
+        Log((IOMMU_LOG_PFX ": Setting PprLogBar (%#RX64) when PPR logging is running -> Ignored\n", u64Value));
+        return VINF_SUCCESS;
+    }
+
+    /* Mask out all unrecognized bits. */
+    u64Value &= IOMMU_PPR_LOG_BAR_VALID_MASK;
+    PPR_LOG_BAR_T PprLogBaseAddr;
+    PprLogBaseAddr.u64 = u64Value;
+
+    /* Validate the base address. */
+    RTGCPHYS const GCPhysPprLog = PprLogBaseAddr.n.u40Base;
+    if (!(GCPhysPprLog & X86_PAGE_4K_OFFSET_MASK))
+    {
+        /* Validate the length. */
+        if (PprLogBaseAddr.n.u4Len >= 8)
+            pThis->PprLogBaseAddr.u64 = PprLogBaseAddr.u64;
+        else
+            Log((IOMMU_LOG_PFX ": PPR log length (%#x) invalid -> Ignored\n", PprLogBaseAddr.n.u4Len));
+    }
+    else
+        Log((IOMMU_LOG_PFX ": PPR log base address (%#RX64) misaligned -> Ignored\n", PprLogBaseAddr.n.u40Base));
+
+    /*
+     * Writing the event log base address, clears the PPR log head and tail pointers.
+     * See AMD spec. 2.6 "Peripheral Page Request (PPR) Logging"
+     */
+    pThis->PprLogHeadPtr.u64 = 0;
+    pThis->PprLogTailPtr.u64 = 0;
+
     return VINF_SUCCESS;
 }
 
@@ -2359,19 +2429,31 @@ static VBOXSTRICTRC iommuAmdDevTabSegBar_w(PPDMDEVINS pDevIns, PIOMMU pThis, uin
 
     /* Figure out which segment is being written. */
     uint8_t const idxDevTabSeg = (iReg - IOMMU_MMIO_OFF_DEV_TAB_SEG_FIRST) >> 3;
+    uint8_t const idxSegment   = idxDevTabSeg + 1;
     Assert(idxDevTabSeg < RT_ELEMENTS(pThis->DevTabSeg));
 
     /* Mask out all unrecognized bits. */
     u64Value &= IOMMU_DEV_TAB_SEG_BAR_VALID_MASK;
-    uint8_t const cbSegSize = u64Value & UINT64_C(0xff);
+    DEV_TAB_SEG_BAR_T DevTabSegBar;
+    DevTabSegBar.u64 = u64Value;
 
-    /* Validate the size and write the register. */
-    uint8_t const  idxSegment   = idxDevTabSeg + 1;
-    uint16_t const cbMaxSegSize = g_aDevTabSegmentSizes[idxSegment];
-    if (cbSegSize <= cbMaxSegSize)
-        pThis->DevTabSeg[idxDevTabSeg].u64 = u64Value;
+    /* Validate the base address. */
+    RTGCPHYS const GCPhysDevTab = DevTabSegBar.n.u40Base;
+    if (!(GCPhysDevTab & X86_PAGE_4K_OFFSET_MASK))
+    {
+        /* Validate the size. */
+        uint16_t const uSegSize    = DevTabSegBar.n.u8Size;
+        uint16_t const uMaxSegSize = g_auDevTabSegSizes[idxSegment];
+        if (uSegSize <= uMaxSegSize)
+        {
+            /* Finally, update the segment register. */
+            pThis->DevTabSeg[idxDevTabSeg].u64 = u64Value;
+        }
+        else
+            Log((IOMMU_LOG_PFX ": Device table segment (%u) size invalid (%#RX32) -> Ignored\n", idxSegment, uSegSize));
+    }
     else
-        Log((IOMMU_LOG_PFX ": Setting device table segment %u with invalid size (%#RX32) -> Ignored\n", idxSegment, cbSegSize));
+        Log((IOMMU_LOG_PFX ": Device table segment (%u) address misaligned (%#RX64) -> Ignored\n", idxSegment, GCPhysDevTab));
 
     return VINF_SUCCESS;
 }
@@ -2444,7 +2526,7 @@ static VBOXSTRICTRC iommuAmdCmdBufHeadPtr_w(PPDMDEVINS pDevIns, PIOMMU pThis, ui
     uint32_t const      offBuf     = u64Value & IOMMU_CMD_BUF_HEAD_PTR_VALID_MASK;
     CMD_BUF_BAR_T const CmdBufBar  = pThis->CmdBufBaseAddr;
     uint32_t            cbBuf;
-    iommuAmdGetBaseBufferLength(CmdBufBar.n.u4CmdLen, NULL, &cbBuf);
+    iommuAmdGetBaseBufferLength(CmdBufBar.n.u4Len, NULL, &cbBuf);
     if (offBuf >= cbBuf)
     {
         Log((IOMMU_LOG_PFX ": Setting CmdBufHeadPtr (%#RX32) to a value that exceeds buffer length (%#RX23) -> Ignored\n",
@@ -2523,7 +2605,7 @@ static DECLCALLBACK(int) iommuAmdR3CmdThread(PPDMDEVINS pDevIns, PPDMTHREAD pThr
  */
 static DECLCALLBACK(int) iommuAmdR3CmdThreadWakeUp(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
 {
-    NOREF(pThread);
+    RT_NOREF(pThread);
     PIOMMU pThis = PDMDEVINS_2_DATA(pDevIns, PIOMMU);
     return PDMDevHlpSUPSemEventSignal(pDevIns, pThis->hEvtCmdThread);
 }
@@ -2562,8 +2644,6 @@ static VBOXSTRICTRC iommuAmdWriteRegister(PPDMDEVINS pDevIns, uint32_t off, uint
     Assert(!(off & (cb - 1)));
 
     PIOMMU pThis = PDMDEVINS_2_DATA(pDevIns, PIOMMU);
-    Assert(pThis);
-
     switch (off)
     {
         case IOMMU_MMIO_OFF_DEV_TAB_BAR:         return iommuAmdDevTabBar_w(pDevIns, pThis, off, uValue);
@@ -2703,11 +2783,9 @@ static VBOXSTRICTRC iommuAmdReadRegister(PPDMDEVINS pDevIns, uint32_t off, uint6
     Assert(off < IOMMU_MMIO_REGION_SIZE);
     Assert(!(off & 7) || !(off & 3));
 
+    PIOMMU     pThis = PDMDEVINS_2_DATA(pDevIns, PIOMMU);
     PPDMPCIDEV pPciDev = pDevIns->apPciDevs[0];
     PDMPCIDEV_ASSERT_VALID(pDevIns, pPciDev);
-
-    PIOMMU pThis = PDMDEVINS_2_DATA(pDevIns, PIOMMU);
-    Assert(pThis);
 
     /** @todo IOMMU: fine-grained locking? */
     uint64_t uReg;
@@ -2858,30 +2936,31 @@ static VBOXSTRICTRC iommuAmdReadRegister(PPDMDEVINS pDevIns, uint32_t off, uint6
  * @param   idxSeg      The device table segment index.
  * @param   pvBuf       Where to store the device table segment.
  * @param   cbBuf       The size of the buffer in bytes.
+ *
+ * @thread  Any.
  */
 static int iommuAmdReadDeviceTableSegment(PPDMDEVINS pDevIns, uint8_t idxSeg, void *pvBuf, uint32_t cbBuf)
 {
     PIOMMU pThis = PDMDEVINS_2_DATA(pDevIns, PIOMMU);
-    Assert(pThis);
 
     /* Validate. */
     Assert(pvBuf);
     Assert(cbBuf <= _2M);
     Assert(!idxSeg || pThis->ExtFeat.n.u2DevTabSegSup);
-    Assert(!idxSeg || idxSeg < g_aDevTabSegments[pThis->ExtFeat.n.u2DevTabSegSup]);
+    Assert(!idxSeg || idxSeg < g_acDevTabSegs[pThis->ExtFeat.n.u2DevTabSegSup]);
 
     /* Get the base address and size of the segment. */
     RTGCPHYS GCPhysDevTab;
     uint32_t cbDevTab;
     if (!idxSeg)
     {
-        GCPhysDevTab = pThis->DevTabBaseAddr.n.u40DevTabBase;
-        cbDevTab     = pThis->DevTabBaseAddr.n.u9Size;
+        GCPhysDevTab = pThis->DevTabBaseAddr.n.u40Base;
+        cbDevTab     = IOMMU_GET_DEV_TAB_SIZE(pThis->DevTabBaseAddr.n.u9Size);
     }
     else
     {
-        GCPhysDevTab = pThis->DevTabSeg[idxSeg].n.u40DevTabBase;
-        cbDevTab     = pThis->DevTabSeg[idxSeg].n.u8Size;
+        GCPhysDevTab = pThis->DevTabSeg[idxSeg].n.u40Base;
+        cbDevTab     = IOMMU_GET_DEV_TAB_SIZE(pThis->DevTabSeg[idxSeg].n.u8Size);
     }
 
     /* Validate that the destination buffer is large enough to hold the segment. */
@@ -2900,7 +2979,38 @@ static int iommuAmdReadDeviceTableSegment(PPDMDEVINS pDevIns, uint8_t idxSeg, vo
 
 
 /**
- * Memory read transaction from a downstream device.
+ * Calculates and returns the total size of the device table.
+ * This includes device table segments if they are used.
+ *
+ * @returns The size of the device table in bytes.
+ * @param   pDevIns     The IOMMU device instance.
+ *
+ * @thread  Any.
+ */
+static uint32_t iommuAmdCalcTotalDevTabSize(PPDMDEVINS pDevIns)
+{
+    PCIOMMU pThis = PDMDEVINS_2_DATA(pDevIns, PIOMMU);
+    IOMMU_CTRL_T const Ctrl = iommuAmdGetCtrl(pThis);
+
+    /* The base address register always exists. */
+    uint32_t cbDevTabSize = IOMMU_GET_DEV_TAB_SIZE(pThis->DevTabBaseAddr.n.u9Size);
+
+    /* If segmentation is enabled, add the size of each segments. */
+    uint8_t const uSegmentsEnabled = Ctrl.n.u3DevTabSegEn;
+    if (uSegmentsEnabled)
+    {
+        Assert(uSegmentsEnabled < RT_ELEMENTS(g_acDevTabSegs));
+        uint8_t const cSegments = g_acDevTabSegs[uSegmentsEnabled] - 1;
+        for (uint8_t idxSegment = 0; idxSegment < cSegments - 1; idxSegment++)
+            cbDevTabSize += IOMMU_GET_DEV_TAB_SIZE(pThis->DevTabSeg[idxSegment].n.u8Size);
+    }
+
+    return cbDevTabSize;
+}
+
+
+/**
+ * Memory read transaction from a device.
  *
  * @returns VBox status code.
  * @param   pDevIns     The IOMMU device instance.
@@ -2919,7 +3029,7 @@ static int iommuAmdDeviceMemRead(PPDMDEVINS pDevIns, uint16_t uDeviceId, uint64_
 
 
 /**
- * Memory write transaction from a downstream device.
+ * Memory write transaction from a device.
  *
  * @returns VBox status code.
  * @param   pDevIns     The IOMMU device instance.
@@ -2993,7 +3103,6 @@ static DECLCALLBACK(VBOXSTRICTRC) iommuAmdR3PciConfigWrite(PPDMDEVINS pDevIns, P
                                                            unsigned cb, uint32_t u32Value)
 {
     PIOMMU pThis = PDMDEVINS_2_DATA(pDevIns, PIOMMU);
-    Assert(pThis);
 
     /*
      * Discard writes to read-only registers that are specific to the IOMMU.
@@ -3075,11 +3184,9 @@ static DECLCALLBACK(VBOXSTRICTRC) iommuAmdR3PciConfigWrite(PPDMDEVINS pDevIns, P
  */
 static DECLCALLBACK(void) iommuAmdR3DbgInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *pszArgs)
 {
+    PCIOMMU    pThis   = PDMDEVINS_2_DATA(pDevIns, PIOMMU);
     PPDMPCIDEV pPciDev = pDevIns->apPciDevs[0];
     PDMPCIDEV_ASSERT_VALID(pDevIns, pPciDev);
-
-    PCIOMMU pThis = PDMDEVINS_2_DATA(pDevIns, PIOMMU);
-    Assert(pThis);
 
     LogFlow((IOMMU_LOG_PFX ": %s: pThis=%p pszArgs=%s\n", __PRETTY_FUNCTION__, pThis, pszArgs));
     bool const fVerbose = !strncmp(pszArgs, RT_STR_TUPLE("verbose")) ? true : false;
@@ -3091,9 +3198,9 @@ static DECLCALLBACK(void) iommuAmdR3DbgInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pH
         pHlp->pfnPrintf(pHlp, "  Device Table BAR                        = %#RX64\n", DevTabBar.u64);
         if (fVerbose)
         {
-            pHlp->pfnPrintf(pHlp, "    Size                                    = %u (%u bytes)\n", DevTabBar.n.u9Size,
-                        (DevTabBar.n.u9Size + 1) * _4K);
-            pHlp->pfnPrintf(pHlp, "    Base address                            = %#RX64\n", DevTabBar.n.u40DevTabBase);
+            pHlp->pfnPrintf(pHlp, "    Size                                    = %#x (%u bytes)\n", DevTabBar.n.u9Size,
+                            IOMMU_GET_DEV_TAB_SIZE(DevTabBar.n.u9Size));
+            pHlp->pfnPrintf(pHlp, "    Base address                            = %#RX64\n", DevTabBar.n.u40Base);
         }
     }
     /* Command Buffer Base Address Register. */
@@ -3101,12 +3208,12 @@ static DECLCALLBACK(void) iommuAmdR3DbgInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pH
         CMD_BUF_BAR_T const CmdBufBar = pThis->CmdBufBaseAddr;
         uint32_t      cEntries;
         uint32_t      cbBuffer;
-        uint8_t const uEncodedLen = CmdBufBar.n.u4CmdLen;
+        uint8_t const uEncodedLen = CmdBufBar.n.u4Len;
         iommuAmdGetBaseBufferLength(uEncodedLen, &cEntries, &cbBuffer);
         pHlp->pfnPrintf(pHlp, "  Command buffer BAR                      = %#RX64\n", CmdBufBar.u64);
         if (fVerbose)
         {
-            pHlp->pfnPrintf(pHlp, "    Base address                            = %#RX64\n", CmdBufBar.n.u40CmdBase);
+            pHlp->pfnPrintf(pHlp, "    Base address                            = %#RX64\n", CmdBufBar.n.u40Base);
             pHlp->pfnPrintf(pHlp, "    Length                                  = %u (%u entries, %u bytes)\n", uEncodedLen,
                             cEntries, cbBuffer);
         }
@@ -3116,12 +3223,12 @@ static DECLCALLBACK(void) iommuAmdR3DbgInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pH
         EVT_LOG_BAR_T const EvtLogBar = pThis->EvtLogBaseAddr;
         uint32_t      cEntries;
         uint32_t      cbBuffer;
-        uint8_t const uEncodedLen = EvtLogBar.n.u4EvtLen;
+        uint8_t const uEncodedLen = EvtLogBar.n.u4Len;
         iommuAmdGetBaseBufferLength(uEncodedLen, &cEntries, &cbBuffer);
         pHlp->pfnPrintf(pHlp, "  Event log BAR                           = %#RX64\n", EvtLogBar.u64);
         if (fVerbose)
         {
-            pHlp->pfnPrintf(pHlp, "    Base address                            = %#RX64\n", EvtLogBar.n.u40EvtBase);
+            pHlp->pfnPrintf(pHlp, "    Base address                            = %#RX64\n", EvtLogBar.n.u40Base);
             pHlp->pfnPrintf(pHlp, "    Length                                  = %u (%u entries, %u bytes)\n", uEncodedLen,
                             cEntries, cbBuffer);
         }
@@ -3216,7 +3323,7 @@ static DECLCALLBACK(void) iommuAmdR3DbgInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pH
             pHlp->pfnPrintf(pHlp, "    Maximum PASID                           = %#x\n",      ExtFeat.n.u5MaxPasidSup);
             pHlp->pfnPrintf(pHlp, "    User/supervisor page protection support = %RTbool\n",  ExtFeat.n.u1UserSupervisorSup);
             pHlp->pfnPrintf(pHlp, "    Device table segments supported         = %#x (%u)\n", ExtFeat.n.u2DevTabSegSup,
-                            g_aDevTabSegments[ExtFeat.n.u2DevTabSegSup]);
+                            g_acDevTabSegs[ExtFeat.n.u2DevTabSegSup]);
             pHlp->pfnPrintf(pHlp, "    PPR log overflow early warning support  = %RTbool\n",  ExtFeat.n.u1PprLogOverflowWarn);
             pHlp->pfnPrintf(pHlp, "    PPR auto response support               = %RTbool\n",  ExtFeat.n.u1PprAutoRespSup);
             pHlp->pfnPrintf(pHlp, "    MARC support                            = %#x\n",      ExtFeat.n.u2MarcSup);
@@ -3238,12 +3345,12 @@ static DECLCALLBACK(void) iommuAmdR3DbgInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pH
         PPR_LOG_BAR_T PprLogBar = pThis->PprLogBaseAddr;
         uint32_t      cEntries;
         uint32_t      cbBuffer;
-        uint8_t const uEncodedLen = PprLogBar.n.u4PprLogLen;
+        uint8_t const uEncodedLen = PprLogBar.n.u4Len;
         iommuAmdGetBaseBufferLength(uEncodedLen, &cEntries, &cbBuffer);
         pHlp->pfnPrintf(pHlp, "  PPR Log BAR                             = %#RX64\n",   PprLogBar.u64);
         if (fVerbose)
         {
-            pHlp->pfnPrintf(pHlp, "    Base address                            = %#RX64\n", PprLogBar.n.u40PprLogBase);
+            pHlp->pfnPrintf(pHlp, "    Base address                            = %#RX64\n", PprLogBar.n.u40Base);
             pHlp->pfnPrintf(pHlp, "    Length                                  = %u (%u entries, %u bytes)\n", uEncodedLen,
                             cEntries, cbBuffer);
         }
@@ -3275,12 +3382,12 @@ static DECLCALLBACK(void) iommuAmdR3DbgInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pH
         GALOG_BAR_T const GALogBar = pThis->GALogBaseAddr;
         uint32_t      cEntries;
         uint32_t      cbBuffer;
-        uint8_t const uEncodedLen = GALogBar.n.u4GALogLen;
+        uint8_t const uEncodedLen = GALogBar.n.u4Len;
         iommuAmdGetBaseBufferLength(uEncodedLen, &cEntries, &cbBuffer);
         pHlp->pfnPrintf(pHlp, "  Guest Log BAR                           = %#RX64\n",    GALogBar.u64);
         if (fVerbose)
         {
-            pHlp->pfnPrintf(pHlp, "    Base address                            = %RTbool\n", GALogBar.n.u40GALogBase);
+            pHlp->pfnPrintf(pHlp, "    Base address                            = %RTbool\n", GALogBar.n.u40Base);
             pHlp->pfnPrintf(pHlp, "    Length                                  = %u (%u entries, %u bytes)\n", uEncodedLen,
                             cEntries, cbBuffer);
         }
@@ -3297,12 +3404,12 @@ static DECLCALLBACK(void) iommuAmdR3DbgInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pH
         PPR_LOG_B_BAR_T PprLogBBar = pThis->PprLogBBaseAddr;
         uint32_t      cEntries;
         uint32_t      cbBuffer;
-        uint8_t const uEncodedLen = PprLogBBar.n.u4PprLogLen;
+        uint8_t const uEncodedLen = PprLogBBar.n.u4Len;
         iommuAmdGetBaseBufferLength(uEncodedLen, &cEntries, &cbBuffer);
         pHlp->pfnPrintf(pHlp, "  PPR Log B BAR                           = %#RX64\n",   PprLogBBar.u64);
         if (fVerbose)
         {
-            pHlp->pfnPrintf(pHlp, "    Base address                            = %#RX64\n", PprLogBBar.n.u40PprLogBase);
+            pHlp->pfnPrintf(pHlp, "    Base address                            = %#RX64\n", PprLogBBar.n.u40Base);
             pHlp->pfnPrintf(pHlp, "    Length                                  = %u (%u entries, %u bytes)\n", uEncodedLen,
                             cEntries, cbBuffer);
         }
@@ -3312,12 +3419,12 @@ static DECLCALLBACK(void) iommuAmdR3DbgInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pH
         EVT_LOG_B_BAR_T EvtLogBBar = pThis->EvtLogBBaseAddr;
         uint32_t      cEntries;
         uint32_t      cbBuffer;
-        uint8_t const uEncodedLen = EvtLogBBar.n.u4EvtLen;
+        uint8_t const uEncodedLen = EvtLogBBar.n.u4Len;
         iommuAmdGetBaseBufferLength(uEncodedLen, &cEntries, &cbBuffer);
         pHlp->pfnPrintf(pHlp, "  Event Log B BAR                         = %#RX64\n",   EvtLogBBar.u64);
         if (fVerbose)
         {
-            pHlp->pfnPrintf(pHlp, "    Base address                            = %#RX64\n", EvtLogBBar.n.u40EvtBase);
+            pHlp->pfnPrintf(pHlp, "    Base address                            = %#RX64\n", EvtLogBBar.n.u40Base);
             pHlp->pfnPrintf(pHlp, "    Length                                  = %u (%u entries, %u bytes)\n", uEncodedLen,
                             cEntries, cbBuffer);
         }
@@ -3329,9 +3436,9 @@ static DECLCALLBACK(void) iommuAmdR3DbgInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pH
         pHlp->pfnPrintf(pHlp, "  Device Table Segment BAR [%u]            = %#RX64\n",  DevTabSeg.u64);
         if (fVerbose)
         {
-            pHlp->pfnPrintf(pHlp, "    Base address                            = %#RX64\n", DevTabSeg.n.u40DevTabBase);
+            pHlp->pfnPrintf(pHlp, "    Base address                            = %#RX64\n", DevTabSeg.n.u40Base);
             pHlp->pfnPrintf(pHlp, "    Size                                    = %#x (%u bytes)\n", DevTabSeg.n.u8Size,
-                            (DevTabSeg.n.u8Size + 1) << X86_PAGE_4K_SHIFT);
+                            IOMMU_GET_DEV_TAB_SIZE(DevTabSeg.n.u8Size));
         }
     }
     /* Device-Specific Feature Extension Register. */
@@ -3662,18 +3769,23 @@ static DECLCALLBACK(void) iommuAmdR3Reset(PPDMDEVINS pDevIns)
      * State data not initialized here is expected to be initialized during
      * device construction and remain read-only through the lifetime of the VM.
      */
-    PIOMMU pThis = PDMDEVINS_2_DATA(pDevIns, PIOMMU);
-    Assert(pThis);
-
+    PIOMMU     pThis   = PDMDEVINS_2_DATA(pDevIns, PIOMMU);
     PPDMPCIDEV pPciDev = pDevIns->apPciDevs[0];
     PDMPCIDEV_ASSERT_VALID(pDevIns, pPciDev);
 
-    pThis->DevTabBaseAddr.u64    = 0;
-    pThis->CmdBufBaseAddr.u64    = 0;
-    pThis->EvtLogBaseAddr.u64    = 0;
-    pThis->Ctrl.u64              = 0;
-    pThis->ExclRangeBaseAddr.u64 = 0;
-    pThis->ExclRangeLimit.u64    = 0;
+    pThis->DevTabBaseAddr.u64     = 0;
+
+    pThis->CmdBufBaseAddr.u64     = 0;
+    pThis->CmdBufBaseAddr.n.u4Len = 8;
+
+    pThis->EvtLogBaseAddr.u64     = 0;
+    pThis->EvtLogBaseAddr.n.u4Len = 8;
+
+    pThis->Ctrl.u64               = 0;
+
+    pThis->ExclRangeBaseAddr.u64  = 0;
+    pThis->ExclRangeLimit.u64     = 0;
+
     pThis->ExtFeat.n.u1PrefetchSup           = 0;
     pThis->ExtFeat.n.u1PprSup                = 0;
     pThis->ExtFeat.n.u1X2ApicSup             = 0;
@@ -3693,7 +3805,7 @@ static DECLCALLBACK(void) iommuAmdR3Reset(PPDMDEVINS pDevIns)
     pThis->ExtFeat.n.u2DualEvtLogSup         = 0;
     pThis->ExtFeat.n.u5MaxPasidSup           = 0;   /* Requires GstTranslateSup. */
     pThis->ExtFeat.n.u1UserSupervisorSup     = 0;
-    AssertCompile(IOMMU_MAX_DEV_TAB_SEGMENTS < RT_ELEMENTS(g_aDevTabSegments));
+    AssertCompile(IOMMU_MAX_DEV_TAB_SEGMENTS < RT_ELEMENTS(g_acDevTabSegs));
     pThis->ExtFeat.n.u2DevTabSegSup          = IOMMU_MAX_DEV_TAB_SEGMENTS;
     pThis->ExtFeat.n.u1PprLogOverflowWarn    = 0;
     pThis->ExtFeat.n.u1PprAutoRespSup        = 0;
@@ -3709,44 +3821,62 @@ static DECLCALLBACK(void) iommuAmdR3Reset(PPDMDEVINS pDevIns)
     pThis->ExtFeat.n.u1InvIoTlbTypeSup       = 0;
     pThis->ExtFeat.n.u1GstUpdateDisSup       = 0;
     pThis->ExtFeat.n.u1ForcePhysDstSup       = 0;
-    pThis->PprLogBaseAddr.u64                = 0;
-    pThis->HwEvtHi.u64                       = 0;
-    pThis->HwEvtLo                           = 0;
-    pThis->HwEvtStatus.u64                   = 0;
-    pThis->GALogBaseAddr.n.u40GALogBase      = 0;
-    pThis->GALogBaseAddr.n.u4GALogLen        = 8;
-    pThis->GALogTailAddr.u64                 = 0;
-    pThis->PprLogBBaseAddr.n.u40PprLogBase   = 0;
-    pThis->PprLogBBaseAddr.n.u4PprLogLen     = 8;
-    pThis->EvtLogBBaseAddr.n.u40EvtBase      = 0;
-    pThis->EvtLogBBaseAddr.n.u4EvtLen        = 8;
+
+    pThis->PprLogBaseAddr.u64        = 0;
+    pThis->PprLogBaseAddr.n.u4Len    = 8;
+
+    pThis->HwEvtHi.u64               = 0;
+    pThis->HwEvtLo                   = 0;
+    pThis->HwEvtStatus.u64           = 0;
+
+    pThis->GALogBaseAddr.n.u40Base   = 0;
+    pThis->GALogBaseAddr.n.u4Len     = 8;
+    pThis->GALogTailAddr.u64         = 0;
+
+    pThis->PprLogBBaseAddr.n.u40Base = 0;
+    pThis->PprLogBBaseAddr.n.u4Len   = 8;
+    pThis->EvtLogBBaseAddr.n.u40Base = 0;
+    pThis->EvtLogBBaseAddr.n.u4Len   = 8;
+
     memset(&pThis->DevTabSeg[0], 0, sizeof(pThis->DevTabSeg));
-    pThis->DevSpecificFeat.u64               = 0;
-    pThis->DevSpecificCtrl.u64               = 0;
-    pThis->DevSpecificStatus.u64             = 0;
-    pThis->MsiMiscInfo.u64                   = 0;
-    pThis->PerfOptCtrl.u32                   = 0;
-    pThis->XtGenIntrCtrl.u64                 = 0;
-    pThis->XtPprIntrCtrl.u64                 = 0;
-    pThis->XtGALogIntrCtrl.u64               = 0;
+
+    pThis->DevSpecificFeat.u64       = 0;
+    pThis->DevSpecificCtrl.u64       = 0;
+    pThis->DevSpecificStatus.u64     = 0;
+
+    pThis->MsiMiscInfo.u64           = 0;
+    pThis->PerfOptCtrl.u32           = 0;
+
+    pThis->XtGenIntrCtrl.u64         = 0;
+    pThis->XtPprIntrCtrl.u64         = 0;
+    pThis->XtGALogIntrCtrl.u64       = 0;
+
     memset(&pThis->aMarcApers[0], 0, sizeof(pThis->aMarcApers));
-    pThis->RsvdReg                           = 0;
-    pThis->CmdBufHeadPtr.u64                 = 0;
-    pThis->CmdBufTailPtr.u64                 = 0;
-    pThis->EvtLogHeadPtr.u64                 = 0;
-    pThis->EvtLogTailPtr.u64                 = 0;
-    pThis->Status.u64                        = 0;
-    pThis->PprLogHeadPtr.u64                 = 0;
-    pThis->PprLogTailPtr.u64                 = 0;
-    pThis->GALogHeadPtr.u64                  = 0;
-    pThis->GALogTailPtr.u64                  = 0;
-    pThis->PprLogBHeadPtr.u64                = 0;
-    pThis->PprLogBTailPtr.u64                = 0;
-    pThis->EvtLogBHeadPtr.u64                = 0;
-    pThis->EvtLogBTailPtr.u64                = 0;
-    pThis->PprLogAutoResp.u64                = 0;
-    pThis->PprLogOverflowEarly.u64           = 0;
-    pThis->PprLogBOverflowEarly.u64          = 0;
+
+    pThis->RsvdReg                   = 0;
+
+    pThis->CmdBufHeadPtr.u64         = 0;
+    pThis->CmdBufTailPtr.u64         = 0;
+    pThis->EvtLogHeadPtr.u64         = 0;
+    pThis->EvtLogTailPtr.u64         = 0;
+
+    pThis->Status.u64                = 0;
+
+    pThis->PprLogHeadPtr.u64         = 0;
+    pThis->PprLogTailPtr.u64         = 0;
+
+    pThis->GALogHeadPtr.u64          = 0;
+    pThis->GALogTailPtr.u64          = 0;
+
+    pThis->PprLogBHeadPtr.u64        = 0;
+    pThis->PprLogBTailPtr.u64        = 0;
+
+    pThis->EvtLogBHeadPtr.u64        = 0;
+    pThis->EvtLogBTailPtr.u64        = 0;
+
+    pThis->PprLogAutoResp.u64        = 0;
+    pThis->PprLogOverflowEarly.u64   = 0;
+    pThis->PprLogBOverflowEarly.u64  = 0;
 
     PDMPciDevSetDWord(pPciDev, IOMMU_PCI_OFF_BASE_ADDR_REG_LO, 0);
     PDMPciDevSetDWord(pPciDev, IOMMU_PCI_OFF_BASE_ADDR_REG_HI, 0);
