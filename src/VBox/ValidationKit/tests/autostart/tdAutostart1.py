@@ -88,12 +88,9 @@ class VBoxManageStdOutWrapper(object):
         """VBoxManage stdout write"""
         if sText is None:
             return None;
-        if isinstance(sText, buffer):
-            try:    sText = str(sText); # pylint: disable=redefined-variable-type
-            except: pass;
-        if isinstance(sText, array.array):
-            try:    sText = sText.tostring();
-            except: pass;
+
+        try:    sText = str(sText); # pylint: disable=redefined-variable-type
+        except: pass;
 
         asLines = sText.splitlines();
         for sLine in asLines:
@@ -580,9 +577,9 @@ class tdAutostartOsLinux(tdAutostartOs):
 
             if fRc:
                 break;
-            else:
-                self.oTestDriver.sleep(10);
-                cAttempt += 1;
+
+            self.oTestDriver.sleep(10);
+            cAttempt += 1;
 
         return fRc;
 
@@ -700,7 +697,7 @@ class tdAutostartOsLinux(tdAutostartOs):
                               '/tmp/' + os.path.basename(self.sTestBuild));
 
         if fRc:
-            (fRc, _, _, _) = self.guestProcessExecute(oGuestSession, 
+            (fRc, _, _, _) = self.guestProcessExecute(oGuestSession,
                                                       'Allowing execution for the vbox installer',
                                                       30 * 1000, '/usr/bin/sudo',
                                                       ['/usr/bin/sudo', '/bin/chmod', '755',
@@ -739,12 +736,14 @@ class tdAutostartOsLinux(tdAutostartOs):
         if fRc:
             (fRc, _, _, _) = self.guestProcessExecute(oGuestSession, 'Moving to destination',
                                                       30 * 1000, '/usr/bin/sudo',
-                                                      ['/usr/bin/sudo', '/bin/mv', '/tmp/virtualbox', '/etc/default/virtualbox'],
+                                                      ['/usr/bin/sudo', '/bin/mv', '/tmp/virtualbox',
+                                                       '/etc/default/virtualbox'],
                                                       False, True);
         if fRc:
             (fRc, _, _, _) = self.guestProcessExecute(oGuestSession, 'Setting permissions',
                                                       30 * 1000, '/usr/bin/sudo',
-                                                      ['/usr/bin/sudo', '/bin/chmod', '644', '/etc/default/virtualbox'],
+                                                      ['/usr/bin/sudo', '/bin/chmod', '644',
+                                                       '/etc/default/virtualbox'],
                                                       False, True);
 
         sVBoxCfg = self._createAutostartCfg(sDefaultPolicy, asUserAllow, asUserDeny);
@@ -752,12 +751,14 @@ class tdAutostartOsLinux(tdAutostartOs):
         if fRc:
             (fRc, _, _, _) = self.guestProcessExecute(oGuestSession, 'Moving to destination',
                                                       30 * 1000, '/usr/bin/sudo',
-                                                      ['/usr/bin/sudo', '/bin/mv', '/tmp/autostart.cfg', '/etc/vbox/autostart.cfg'],
+                                                      ['/usr/bin/sudo', '/bin/mv', '/tmp/autostart.cfg',
+                                                       '/etc/vbox/autostart.cfg'],
                                                       False, True);
         if fRc:
             (fRc, _, _, _) = self.guestProcessExecute(oGuestSession, 'Setting permissions',
                                                       30 * 1000, '/usr/bin/sudo',
-                                                      ['/usr/bin/sudo', '/bin/chmod', '644', '/etc/vbox/autostart.cfg'],
+                                                      ['/usr/bin/sudo', '/bin/chmod', '644',
+                                                       '/etc/vbox/autostart.cfg'],
                                                       False, True);
         fRc = self.closeSession(oGuestSession, True) and fRc and True; # pychecker hack.
         return fRc;
@@ -772,7 +773,8 @@ class tdAutostartOsLinux(tdAutostartOs):
         if fRc:
             (fRc, _, _, _) = self.guestProcessExecute(oGuestSession, 'Creating new user',
                                                       30 * 1000, '/usr/bin/sudo',
-                                                      ['/usr/bin/sudo', '/usr/sbin/useradd', '-m', '-U', sUser], False, True);
+                                                      ['/usr/bin/sudo', '/usr/sbin/useradd', '-m', '-U',
+                                                       sUser], False, True);
         fRc = self.closeSession(oGuestSession, True) and fRc and True; # pychecker hack.
         return fRc;
 
@@ -894,9 +896,9 @@ class tdAutostartOsWin(tdAutostartOs):
 
             if fRc:
                 break;
-            else:
-                self.oTestDriver.sleep(10);
-                cAttempt += 1;
+
+            self.oTestDriver.sleep(10);
+            cAttempt += 1;
 
         return fRc;
 
@@ -1229,7 +1231,7 @@ class tdAutostart(vbox.TestDriver):                                      # pylin
         reporter.log('      Skip the specified VMs when testing.');
         return rc;
 
-    def parseOption(self, asArgs, iArg):                                        # pylint: disable=too-many-branches,too-many-statements
+    def parseOption(self, asArgs, iArg): # pylint: disable=too-many-branches,too-many-statements
         if asArgs[iArg] == '--test-build-dir':
             iArg += 1;
             if iArg >= len(asArgs): raise base.InvalidOption('The "--test-build-dir" takes a path argument');
@@ -1365,13 +1367,17 @@ class tdAutostart(vbox.TestDriver):                                      # pylin
 
         oGuestOsHlp = None              # type: tdAutostartOs
         if sVmName == self.ksOsLinux:
-            oGuestOsHlp = tdAutostartOsLinux(self, self.sTestBuildDir, self.fpApiVer, self.sGuestAdditionsIso);   # pylint: disable=redefined-variable-type
+            oGuestOsHlp = tdAutostartOsLinux(self, self.sTestBuildDir, self.fpApiVer,
+                                             self.sGuestAdditionsIso);   # pylint: disable=redefined-variable-type
         elif sVmName == self.ksOsSolaris:
-            oGuestOsHlp = tdAutostartOsSolaris(self, self.sTestBuildDir, self.fpApiVer, self.sGuestAdditionsIso); # pylint: disable=redefined-variable-type
+            oGuestOsHlp = tdAutostartOsSolaris(self, self.sTestBuildDir, self.fpApiVer,
+                                               self.sGuestAdditionsIso); # pylint: disable=redefined-variable-type
         elif sVmName == self.ksOsDarwin:
-            oGuestOsHlp = tdAutostartOsDarwin(self, self.sTestBuildDir, self.fpApiVer, self.sGuestAdditionsIso);  # pylint: disable=redefined-variable-type
+            oGuestOsHlp = tdAutostartOsDarwin(self, self.sTestBuildDir, self.fpApiVer,
+                                              self.sGuestAdditionsIso);  # pylint: disable=redefined-variable-type
         elif sVmName == self.ksOsWindows:
-            oGuestOsHlp = tdAutostartOsWin(self, self.sTestBuildDir, self.fpApiVer, self.sGuestAdditionsIso);     # pylint: disable=redefined-variable-type
+            oGuestOsHlp = tdAutostartOsWin(self, self.sTestBuildDir, self.fpApiVer,
+                                           self.sGuestAdditionsIso);     # pylint: disable=redefined-variable-type
 
         sTestUserAllow = 'test1';
         sTestUserDeny = 'test2';
