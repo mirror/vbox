@@ -610,13 +610,6 @@ void UIMessageCenter::cannotAcquireMachineParameter(const CMachine &comMachine, 
           tr("Failed to acquire machine parameter."), UIErrorString::formatErrorInfo(comMachine));
 }
 
-void UIMessageCenter::cannotAcquireMachineParameter(const CCloudMachine &comMachine, QWidget *pParent /* = 0 */) const
-{
-    /* Show the error: */
-    error(pParent, MessageType_Error,
-          tr("Failed to acquire machine parameter."), UIErrorString::formatErrorInfo(comMachine));
-}
-
 void UIMessageCenter::cannotAcquireCloudInstanceList(const QString &strErrorDetails, QWidget *pParent /* = 0 */) const
 {
     error(pParent, MessageType_Error,
@@ -924,23 +917,23 @@ void UIMessageCenter::cannotACPIShutdownMachine(const CConsole &console) const
           UIErrorString::formatErrorInfo(console));
 }
 
-void UIMessageCenter::cannotACPIShutdownMachine(const CCloudMachine &comMachine) const
+void UIMessageCenter::cannotACPIShutdownCloudMachine(const CCloudMachine &comMachine) const
 {
     error(0, MessageType_Error,
-          tr("Failed to send the ACPI Power Button press event to virtual machine <b>%1</b>.")
+          tr("Failed to send the ACPI Power Button press event to the virtual machine <b>%1</b>.")
              .arg(CCloudMachine(comMachine).GetName()),
           UIErrorString::formatErrorInfo(comMachine));
 }
 
-void UIMessageCenter::cannotACPIShutdownMachine(const CProgress &progress, const QString &strMachineName) const
+void UIMessageCenter::cannotACPIShutdownCloudMachine(const CProgress &comProgress, const QString &strMachineName) const
 {
     error(0, MessageType_Error,
-          tr("Failed to send the ACPI Power Button press event to virtual machine <b>%1</b>.")
+          tr("Failed to send the ACPI Power Button press event to the virtual machine <b>%1</b>.")
              .arg(strMachineName),
-          UIErrorString::formatErrorInfo(progress));
+          UIErrorString::formatErrorInfo(comProgress));
 }
 
-void UIMessageCenter::cannotPowerUpMachine(const CCloudMachine &comMachine) const
+void UIMessageCenter::cannotPowerUpCloudMachine(const CCloudMachine &comMachine) const
 {
     error(0, MessageType_Error,
           tr("Failed to start the virtual machine <b>%1</b>.")
@@ -948,7 +941,7 @@ void UIMessageCenter::cannotPowerUpMachine(const CCloudMachine &comMachine) cons
           UIErrorString::formatErrorInfo(comMachine));
 }
 
-void UIMessageCenter::cannotPowerUpMachine(const CProgress &comProgress, const QString &strMachineName) const
+void UIMessageCenter::cannotPowerUpCloudMachine(const CProgress &comProgress, const QString &strMachineName) const
 {
     error(0, MessageType_Error,
           tr("Failed to start the virtual machine <b>%1</b>.")
@@ -956,15 +949,23 @@ void UIMessageCenter::cannotPowerUpMachine(const CProgress &comProgress, const Q
           UIErrorString::formatErrorInfo(comProgress));
 }
 
-void UIMessageCenter::cannotPowerDownMachine(const CConsole &console) const
+void UIMessageCenter::cannotPowerDownMachine(const CConsole &comConsole) const
 {
     error(0, MessageType_Error,
           tr("Failed to stop the virtual machine <b>%1</b>.")
-             .arg(CConsole(console).GetMachine().GetName()),
-          UIErrorString::formatErrorInfo(console));
+             .arg(CConsole(comConsole).GetMachine().GetName()),
+          UIErrorString::formatErrorInfo(comConsole));
 }
 
-void UIMessageCenter::cannotPowerDownMachine(const CCloudMachine &comMachine) const
+void UIMessageCenter::cannotPowerDownMachine(const CProgress &comProgress, const QString &strMachineName) const
+{
+    error(0, MessageType_Error,
+          tr("Failed to stop the virtual machine <b>%1</b>.")
+             .arg(strMachineName),
+          UIErrorString::formatErrorInfo(comProgress));
+}
+
+void UIMessageCenter::cannotPowerDownCloudMachine(const CCloudMachine &comMachine) const
 {
     error(0, MessageType_Error,
           tr("Failed to stop the virtual machine <b>%1</b>.")
@@ -972,12 +973,12 @@ void UIMessageCenter::cannotPowerDownMachine(const CCloudMachine &comMachine) co
           UIErrorString::formatErrorInfo(comMachine));
 }
 
-void UIMessageCenter::cannotPowerDownMachine(const CProgress &progress, const QString &strMachineName) const
+void UIMessageCenter::cannotPowerDownCloudMachine(const CProgress &comProgress, const QString &strMachineName) const
 {
     error(0, MessageType_Error,
           tr("Failed to stop the virtual machine <b>%1</b>.")
              .arg(strMachineName),
-          UIErrorString::formatErrorInfo(progress));
+          UIErrorString::formatErrorInfo(comProgress));
 }
 
 bool UIMessageCenter::confirmStartMultipleMachines(const QString &strNames) const

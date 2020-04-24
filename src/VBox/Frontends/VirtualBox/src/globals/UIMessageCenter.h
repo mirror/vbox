@@ -264,7 +264,6 @@ public:
     void warnAboutInvalidEncryptionPassword(const QString &strPasswordId, QWidget *pParent = 0);
     void cannotAcquireVirtualBoxParameter(const CVirtualBox &comVBox, QWidget *pParent = 0) const;
     void cannotAcquireMachineParameter(const CMachine &comMachine, QWidget *pParent = 0) const;
-    void cannotAcquireMachineParameter(const CCloudMachine &comMachine, QWidget *pParent = 0) const;
 
     /* API: Global cloud warnings: */
     void cannotAcquireCloudInstanceList(const QString &strErrorDetails, QWidget *pParent = 0) const;
@@ -293,13 +292,14 @@ public:
     void cannotSaveMachineState(const CMachine &machine);
     void cannotSaveMachineState(const CProgress &progress, const QString &strMachineName);
     void cannotACPIShutdownMachine(const CConsole &console) const;
-    void cannotACPIShutdownMachine(const CCloudMachine &comMachine) const;
-    void cannotACPIShutdownMachine(const CProgress &progress, const QString &strMachineName) const;
-    void cannotPowerUpMachine(const CCloudMachine &comMachine) const;
-    void cannotPowerUpMachine(const CProgress &comProgress, const QString &strMachineName) const;
-    void cannotPowerDownMachine(const CConsole &console) const;
-    void cannotPowerDownMachine(const CCloudMachine &comMachine) const;
-    void cannotPowerDownMachine(const CProgress &progress, const QString &strMachineName) const;
+    void cannotACPIShutdownCloudMachine(const CCloudMachine &comMachine) const;
+    void cannotACPIShutdownCloudMachine(const CProgress &comProgress, const QString &strMachineName) const;
+    void cannotPowerUpCloudMachine(const CCloudMachine &comMachine) const;
+    void cannotPowerUpCloudMachine(const CProgress &comProgress, const QString &strMachineName) const;
+    void cannotPowerDownMachine(const CConsole &comConsole) const;
+    void cannotPowerDownMachine(const CProgress &comProgress, const QString &strMachineName) const;
+    void cannotPowerDownCloudMachine(const CCloudMachine &comMachine) const;
+    void cannotPowerDownCloudMachine(const CProgress &comProgress, const QString &strMachineName) const;
     bool confirmStartMultipleMachines(const QString &strNames) const;
     void cannotMoveMachine(const CMachine &machine, QWidget *pParent = 0) const;
     void cannotMoveMachine(const CProgress &progress, const QString &strMachineName, QWidget *pParent = 0) const;

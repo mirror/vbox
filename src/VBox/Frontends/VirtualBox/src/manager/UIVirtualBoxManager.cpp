@@ -989,13 +989,13 @@ void UIVirtualBoxManager::sltPerformShutdownMachine()
             /* Prepare machine ACPI shutdown: */
             CProgress comProgress = comCloudMachine.Shutdown();
             if (!comCloudMachine.isOk())
-                msgCenter().cannotACPIShutdownMachine(comCloudMachine);
+                msgCenter().cannotACPIShutdownCloudMachine(comCloudMachine);
             else
             {
                 /* Show machine ACPI shutdown progress: */
                 msgCenter().showModalProgressDialog(comProgress, pItem->name(), ":/progress_poweroff_90px.png");
                 if (!comProgress.isOk() || comProgress.GetResultCode() != 0)
-                    msgCenter().cannotACPIShutdownMachine(comProgress, pItem->name());
+                    msgCenter().cannotACPIShutdownCloudMachine(comProgress, pItem->name());
                 /* Update info in any case: */
                 pItem->toCloud()->updateInfoAsync(false /* delayed? */);
             }
@@ -1062,13 +1062,13 @@ void UIVirtualBoxManager::sltPerformPowerOffMachine()
             /* Prepare machine power down: */
             CProgress comProgress = comCloudMachine.PowerDown();
             if (!comCloudMachine.isOk())
-                msgCenter().cannotPowerDownMachine(comCloudMachine);
+                msgCenter().cannotPowerDownCloudMachine(comCloudMachine);
             else
             {
                 /* Show machine power down progress: */
                 msgCenter().showModalProgressDialog(comProgress, pItem->name(), ":/progress_poweroff_90px.png");
                 if (!comProgress.isOk() || comProgress.GetResultCode() != 0)
-                    msgCenter().cannotPowerDownMachine(comProgress, pItem->name());
+                    msgCenter().cannotPowerDownCloudMachine(comProgress, pItem->name());
                 /* Update info in any case: */
                 pItem->toCloud()->updateInfoAsync(false /* delayed? */);
             }

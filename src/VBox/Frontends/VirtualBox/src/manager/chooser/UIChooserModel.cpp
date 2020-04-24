@@ -1719,7 +1719,7 @@ void UIChooserModel::unregisterCloudMachines(const QList<CCloudMachine> &machine
         const QUuid uId = comMachine.GetId();
         if (!comMachine.isOk())
         {
-            msgCenter().cannotAcquireMachineParameter(comMachine);
+            msgCenter().cannotAcquireCloudMachineParameter(comMachine);
             continue;
         }
         /* Prepare unregister progress: */

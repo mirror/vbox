@@ -2458,7 +2458,7 @@ bool UICommon::launchMachine(CCloudMachine &comMachine)
     const QString strName = comMachine.GetName();
     if (!comMachine.isOk())
     {
-        msgCenter().cannotAcquireMachineParameter(comMachine);
+        msgCenter().cannotAcquireCloudMachineParameter(comMachine);
         return false;
     }
 
@@ -2466,7 +2466,7 @@ bool UICommon::launchMachine(CCloudMachine &comMachine)
     CProgress comProgress = comMachine.PowerUp();
     if (!comMachine.isOk())
     {
-        msgCenter().cannotPowerUpMachine(comMachine);
+        msgCenter().cannotPowerUpCloudMachine(comMachine);
         return false;
     }
 
@@ -2474,7 +2474,7 @@ bool UICommon::launchMachine(CCloudMachine &comMachine)
     msgCenter().showModalProgressDialog(comProgress, strName, ":/progress_start_90px.png");
     if (!comProgress.isOk() || comProgress.GetResultCode() != 0)
     {
-        msgCenter().cannotPowerUpMachine(comProgress, strName);
+        msgCenter().cannotPowerUpCloudMachine(comProgress, strName);
         return false;
     }
 
