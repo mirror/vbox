@@ -26597,6 +26597,12 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
              wsmap="managed"
              reservedMethods="4" reservedAttributes="4">
     <attribute name="values" type="IFormValue" safearray="yes" readonly="yes"/>
+
+    <method name="getFieldGroup">
+      <param name="field" type="wstring" dir="in"/>
+      <param name="group" type="wstring" safearray="yes" dir="return"/>
+    </method>
+
     <method name="apply">
       <param name="progress" type="IProgress" dir="return"/>
     </method>
